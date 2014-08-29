@@ -32,6 +32,7 @@
 #include "libts.h"
 #include "I_Layout.h"
 #include "LocalManager.h"
+#include "Alarms.h"
 #include "WebHttp.h"
 #include "WebGlobals.h"
 #include "MgmtUtils.h"
@@ -52,21 +53,8 @@ extern "C"
 }
 #endif
 
-/* Ugly hack - define HEADER_MD_5 to prevent the SSLeay md5.h
- *  header file from being included since it conflicts with the
- *  md5 implememntation from ink_code.h
- *
- *  Additionally define HEAP_H and STACK_H to prevent stuff
- *   from the template library from being included which
- *   SUNPRO CC does not not like.
- */
-
-// part of ugly hack described no longer needed
-//#define HEADER_MD5_H
-#define HEAP_H
-#define STACK_H
-
 typedef int fd;
+static RecInt autoconf_localhost_only = 1;
 
 #define SOCKET_TIMEOUT 10*60
 
@@ -75,14 +63,14 @@ WebInterFaceGlobals wGlobals;
 
 // There are two web ports maintained
 //
-//  One is for adminstration.  This port serves
+//  One is for administration.  This port serves
 //     all the configuration and monitoring info.
 //     Most sites will have some security features
 //     (authentication and SSL) active on this
 //     port since it system administrator access
 //  The other is for things that we want to serve
 //     insecurely.  Client auto configuration falls
-//     in this catagory.  The public key for the
+//     in this category.  The public key for the
 //     administration server is another example
 //
 WebContext autoconfContext;
@@ -96,7 +84,7 @@ int aconf_port_arg = -1;
 //      directory exists and that the default file
 //      exists
 //
-//    returns 0 if everthing is OK
+//    returns 0 if everything is OK
 //    returns 1 if something is missing
 //
 int
@@ -171,6 +159,7 @@ newUNIXsocket(char *fpath)
     return socketFD;
   }
 
+  ink_zero(serv_addr);
   serv_addr.sun_family = AF_UNIX;
   ink_strlcpy(serv_addr.sun_path, fpath, sizeof(serv_addr.sun_path));
 #if defined(darwin) || defined(freebsd)
@@ -235,7 +224,11 @@ newTcpSocket(int port)
   memset(&socketInfo, 0, sizeof(socketInfo));
   socketInfo.sin_family = AF_INET;
   socketInfo.sin_port = htons(port);
-  socketInfo.sin_addr.s_addr = htonl(INADDR_ANY);
+  if (autoconf_localhost_only == 1) {
+    socketInfo.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+  } else {
+    socketInfo.sin_addr.s_addr = htonl(INADDR_ANY);
+  }
 
   // Allow for immediate re-binding to port
   if (setsockopt(socketFD, SOL_SOCKET, SO_REUSEADDR, (char *) &one, sizeof(int)) < 0) {
@@ -305,11 +298,7 @@ serviceThrReaper(void * /* arg ATS_UNUSED */)
     ink_mutex_release(&wGlobals.serviceThrLock);
 
     for (int j = 0; j < numJoined; j++) {
-#if defined(darwin)
-      ink_sem_post(wGlobals.serviceThrCount);
-#else
       ink_sem_post(&wGlobals.serviceThrCount);
-#endif
       ink_atomic_increment((int32_t *) & numServiceThr, -1);
     }
 
@@ -345,7 +334,6 @@ webIntr_main(void *)
 
   RecInt tempInt;
   bool found;
-  int autoconf_localhost_only = 0;
 
   int addrLen;
   int i;
@@ -359,16 +347,7 @@ webIntr_main(void *)
   lmgmt->syslogThrInit();
 
   // Set up the threads management
-#if defined(darwin)
-  static int qnum = 0;
-  char sname[NAME_MAX];
-  qnum++;
-  snprintf(sname,NAME_MAX,"%s%d","WebInterfaceMutex",qnum);
-  ink_sem_unlink(sname); // FIXME: remove, semaphore should be properly deleted after usage
-  wGlobals.serviceThrCount = ink_sem_open(sname, O_CREAT | O_EXCL, 0777, MAX_SERVICE_THREADS);
-#else /* !darwin */
   ink_sem_init(&wGlobals.serviceThrCount, MAX_SERVICE_THREADS);
-#endif /* !darwin */
   ink_mutex_init(&wGlobals.serviceThrLock, "Web Interface Mutex");
   wGlobals.serviceThrArray = new serviceThr_t[MAX_SERVICE_THREADS];
   for (i = 0; i < MAX_SERVICE_THREADS; i++) {
@@ -387,8 +366,7 @@ webIntr_main(void *)
   ink_mutex_init(&wGlobals.submitLock, "Submission Mutex");
 
   // Fix for INKqa10514
-  found = (RecGetRecordInt("proxy.config.admin.autoconf.localhost_only", &tempInt) == REC_ERR_OKAY);
-  autoconf_localhost_only = (int) tempInt;
+  found = (RecGetRecordInt("proxy.config.admin.autoconf.localhost_only", &autoconf_localhost_only) == REC_ERR_OKAY);
   ink_assert(found);
 
   // Set up the client autoconfiguration context
@@ -402,7 +380,7 @@ webIntr_main(void *)
     publicPort = (int) tempInt;
     ink_assert(found);
   }
-  Debug("ui", "[WebIntrMain] Starting Client AutoConfig Server on Port %d\n", publicPort);
+  Debug("ui", "[WebIntrMain] Starting Client AutoConfig Server on Port %d", publicPort);
 
   found = (RecGetRecordString_Xmalloc("proxy.config.admin.autoconf.doc_root", &(autoconfContext.docRoot)) == REC_ERR_OKAY);
   ink_assert(found);
@@ -432,7 +410,7 @@ webIntr_main(void *)
   // set up socket paths;
   char api_sock_path[1024];
   char event_sock_path[1024];
-  xptr<char> rundir(RecConfigReadRuntimeDir());
+  ats_scoped_str rundir(RecConfigReadRuntimeDir());
 
   bzero(api_sock_path, 1024);
   bzero(event_sock_path, 1024);
@@ -496,11 +474,7 @@ webIntr_main(void *)
     } else {
       ink_assert(!"[webIntrMain] Error on mgmt_select()\n");
     }
-#if defined(darwin)
-    ink_sem_wait(wGlobals.serviceThrCount);
-#else
     ink_sem_wait(&wGlobals.serviceThrCount);
-#endif
     ink_atomic_increment((int32_t *) & numServiceThr, 1);
 
     // coverity[alloc_fn]
@@ -510,11 +484,7 @@ webIntr_main(void *)
     // coverity[noescape]
     if ((clientFD = mgmt_accept(acceptFD, (sockaddr *) clientInfo, &addrLen)) < 0) {
       mgmt_log(stderr, "[WebIntrMain]: %s%s\n", "Accept on incoming connection failed: ", strerror(errno));
-#if defined(darwin)
-      ink_sem_post(wGlobals.serviceThrCount);
-#else
       ink_sem_post(&wGlobals.serviceThrCount);
-#endif
       ink_atomic_increment((int32_t *) & numServiceThr, -1);
     } else {                    // Accept succeeded
       if (safe_setsockopt(clientFD, IPPROTO_TCP, TCP_NODELAY, SOCKOPT_ON, sizeof(int)) < 0) {
@@ -528,11 +498,7 @@ webIntr_main(void *)
       if (serviceThr == AUTOCONF_THR && autoconf_localhost_only != 0 &&
           strcmp(inet_ntoa(clientInfo->sin_addr), "127.0.0.1") != 0) {
         mgmt_log("WARNING: connect by disallowed client %s, closing\n", inet_ntoa(clientInfo->sin_addr));
-#if defined(darwin)
-        ink_sem_post(wGlobals.serviceThrCount);
-#else
         ink_sem_post(&wGlobals.serviceThrCount);
-#endif
         ink_atomic_increment((int32_t *) & numServiceThr, -1);
         ats_free(clientInfo);
         close_socket(clientFD);
@@ -558,11 +524,7 @@ webIntr_main(void *)
               wGlobals.serviceThrArray[i].threadId = 0;
               wGlobals.serviceThrArray[i].fd = -1;
               close_socket(clientFD);
-#if defined(darwin)
-              ink_sem_post(wGlobals.serviceThrCount);
-#else
               ink_sem_post(&wGlobals.serviceThrCount);
-#endif
               ink_atomic_increment((int32_t *) & numServiceThr, -1);
             }
 

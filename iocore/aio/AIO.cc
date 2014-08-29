@@ -45,10 +45,10 @@ volatile int num_filedes = 1;
 // Don't need to acquire this for searching the array
 static ink_mutex insert_mutex;
 
-RecInt cache_config_threads_per_disk = 12;
-RecInt api_config_threads_per_disk = 12;
 int thread_is_created = 0;
 #endif // AIO_MODE == AIO_MODE_NATIVE
+RecInt cache_config_threads_per_disk = 12;
+RecInt api_config_threads_per_disk = 12;
 
 RecRawStatBlock *aio_rsb = NULL;
 Continuation *aio_err_callbck = 0;
@@ -150,21 +150,20 @@ ink_aio_init(ModuleVersion v)
 
   aio_rsb = RecAllocateRawStatBlock((int) AIO_STAT_COUNT);
   RecRegisterRawStat(aio_rsb, RECT_PROCESS, "proxy.process.cache.read_per_sec",
-                     RECD_FLOAT, RECP_NULL, (int) AIO_STAT_READ_PER_SEC, aio_stats_cb);
+                     RECD_FLOAT, RECP_PERSISTENT, (int) AIO_STAT_READ_PER_SEC, aio_stats_cb);
   RecRegisterRawStat(aio_rsb, RECT_PROCESS, "proxy.process.cache.write_per_sec",
-                     RECD_FLOAT, RECP_NULL, (int) AIO_STAT_WRITE_PER_SEC, aio_stats_cb);
+                     RECD_FLOAT, RECP_PERSISTENT, (int) AIO_STAT_WRITE_PER_SEC, aio_stats_cb);
   RecRegisterRawStat(aio_rsb, RECT_PROCESS,
                      "proxy.process.cache.KB_read_per_sec",
-                     RECD_FLOAT, RECP_NULL, (int) AIO_STAT_KB_READ_PER_SEC, aio_stats_cb);
+                     RECD_FLOAT, RECP_PERSISTENT, (int) AIO_STAT_KB_READ_PER_SEC, aio_stats_cb);
   RecRegisterRawStat(aio_rsb, RECT_PROCESS,
                      "proxy.process.cache.KB_write_per_sec",
-                     RECD_FLOAT, RECP_NULL, (int) AIO_STAT_KB_WRITE_PER_SEC, aio_stats_cb);
+                     RECD_FLOAT, RECP_PERSISTENT, (int) AIO_STAT_KB_WRITE_PER_SEC, aio_stats_cb);
 #if AIO_MODE != AIO_MODE_NATIVE
   memset(&aio_reqs, 0, MAX_DISKS_POSSIBLE * sizeof(AIO_Reqs *));
   ink_mutex_init(&insert_mutex, NULL);
-
-  REC_ReadConfigInteger(cache_config_threads_per_disk, "proxy.config.cache.threads_per_disk");
 #endif
+  REC_ReadConfigInteger(cache_config_threads_per_disk, "proxy.config.cache.threads_per_disk");
 }
 
 int
@@ -538,7 +537,7 @@ aio_thread_main(void *arg)
         op->thread->schedule_imm_signal(op);
       ink_mutex_acquire(&my_aio_req->aio_mutex);
     } while (1);
-    timespec timedwait_msec = ink_based_hrtime_to_timespec(ink_get_hrtime() + HRTIME_MSECONDS(net_config_poll_timeout));
+    timespec timedwait_msec = ink_hrtime_to_timespec(ink_get_hrtime() + HRTIME_MSECONDS(net_config_poll_timeout));
     ink_cond_timedwait(&my_aio_req->aio_cond, &my_aio_req->aio_mutex, &timedwait_msec);
   }
   return 0;
@@ -635,8 +634,7 @@ ink_aio_readv(AIOCallback *op, int /* fromAPI ATS_UNUSED */) {
 
   if (sz > 1) {
     ink_assert(op->action.continuation);
-    AIOVec *vec = new AIOVec(sz, op->action.continuation);
-    vec->action = op->action.continuation;
+    AIOVec *vec = new AIOVec(sz, op);
     while (--sz >= 0) {
       op->action = vec;
       op = op->then;
@@ -662,8 +660,7 @@ ink_aio_writev(AIOCallback *op, int /* fromAPI ATS_UNUSED */) {
 
   if (sz > 1) {
     ink_assert(op->action.continuation);
-    AIOVec *vec = new AIOVec(sz, op->action.continuation);
-    vec->action = op->action.continuation;
+    AIOVec *vec = new AIOVec(sz, op);
     while (--sz >= 0) {
       op->action = vec;
       op = op->then;

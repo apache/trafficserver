@@ -51,11 +51,10 @@
 //  heaps are hand unrolled in the code.  Chaning
 //  this value requires a full pass through HdrBuf.cc
 //  to fix the unrolled operations
-#define HDR_BUF_RONLY_HEAPS   3
+#define HDR_BUF_RONLY_HEAPS   3 
 
-// Changed these so they for sure fit one normal TCP packet full of headers.
 #define HDR_HEAP_DEFAULT_SIZE   2048
-#define HDR_STR_HEAP_DEFAULT_SIZE   2048
+#define HDR_STR_HEAP_DEFAULT_SIZE  2048 
 
 #define HDR_MAX_ALLOC_SIZE (HDR_HEAP_DEFAULT_SIZE - sizeof(HdrHeap))
 #define HDR_HEAP_HDR_SIZE ROUND(sizeof(HdrHeap), HDR_PTR_SIZE)
@@ -199,6 +198,10 @@ public:
   inkcoreapi int marshal_length();
   inkcoreapi int marshal(char *buf, int length);
   int unmarshal(int buf_length, int obj_type, HdrHeapObjImpl ** found_obj, RefCountObj * block_ref);
+  /// Computes the valid data size of an unmarshalled instance.
+  /// Callers should round up to HDR_PTR_SIZE to get the actual footprint.
+  int unmarshal_size() const; // TBD - change this name, it's confusing.
+  // One option - overload marshal_length to return this value if @a magic is HDR_BUF_MAGIC_MARSHALED.
 
   void inherit_string_heaps(const HdrHeap * inherit_from);
   int attach_block(IOBufferBlock * b, const char *use_start);
@@ -262,6 +265,7 @@ public:
   int demote_rw_str_heap();
   void coalesce_str_heaps(int incoming_size = 0);
   void evacuate_from_str_heaps(HdrStrHeap * new_heap);
+  size_t required_space_for_evacuation();
   int attach_str_heap(char *h_start, int h_len, RefCountObj * h_ref_obj, int *index);
 
   /** Struct to prevent garbage collection on heaps.
@@ -305,6 +309,11 @@ HdrHeap::free_string(const char *s, int len)
   if (s && len > 0) {
     m_lost_string_space += len;
   }
+}
+
+inline int
+HdrHeap::unmarshal_size() const {
+  return m_size + m_ronly_heap[0].m_heap_len;
 }
 
 

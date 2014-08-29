@@ -29,7 +29,7 @@ export CCACHE_BASEDIR
 # proxy/api/ts has to be built first, since so much of libraries and "core
 # depends on the generates ts/ts.h include file.
 
-SUBDIRS =  proxy/api/ts iocore lib proxy/hdrs proxy/shared mgmt proxy rc doc plugins cmd tools example
+SUBDIRS = lib/ck proxy/api/ts iocore lib proxy/hdrs proxy/shared mgmt proxy cmd plugins tools example rc doc
 
 
 DIST_BUILD_USER=`id -nu`
@@ -53,12 +53,6 @@ distclean-local:
 doxygen:
 	@cd doc && $(MAKE) $(AM_MAKEFLAGS) $@
 
-asf-distdir:
-	@$(am__remove_distdir)
-	test -d .git && git clone . $(distdir)
-	cd $(distdir) && autoreconf -i
-	rm -rf -- $(distdir)/autom4te.cache $(distdir)/.git $(distdir)/.gitignore $(distdir)/ci
-
 asf-dist: asf-distdir
 	tardir=$(distdir) && $(am__tar) --mtime=./configure.ac | bzip2 -9 -c >$(distdir).tar.bz2
 	@$(am__remove_distdir)
@@ -66,6 +60,12 @@ asf-dist: asf-distdir
 asf-dist-rc: asf-distdir
 	tardir=$(distdir) && $(am__tar) --mtime=./configure.ac | bzip2 -9 -c >$(distdir)-rc$(RC).tar.bz2
 	@$(am__remove_distdir)
+
+asf-distdir:
+	@$(am__remove_distdir)
+	test -d .git && git clone . $(distdir)
+	cd $(distdir) && git submodule update --init && autoreconf -i
+	$(RM) -r -- $(distdir)/autom4te.cache $(distdir)/ci `find $(distdir) -name .git -o -name .gitignore -o -name .gitmodules`
 
 asf-dist-sign: asf-dist
 	md5sum -b $(distdir).tar.bz2 >$(distdir).tar.bz2.md5
@@ -95,8 +95,11 @@ install-data-hook:
 rat:
 	java -jar $(top_srcdir)/ci/apache-rat-0.11-SNAPSHOT.jar -E $(top_srcdir)/ci/rat-regex.txt  -d $(top_srcdir)
 
+submodules:
+	git submodule update --init
+
 help:
-	@echo 'all              default target for building the package' && \
+	@echo 'all             default target for building the package' && \
 	echo 'check            run the test suite, if any' && \
 	echo 'clean            remove whatever make created' && \
 	echo 'distclean        remove whatever configure created' && \
@@ -108,6 +111,7 @@ help:
 	echo 'rel-candidate    recreate a signed relelease candidate source package and a signed git tag' && \
 	echo 'distcheck        verify dist by performing VPATH build and then distclean' && \
 	echo 'rat              produce a RAT licence compliance report of the source' && \
+	echo 'submodules       update the git submodules' && \
 	echo 'doxygen          generate doxygen docs in doc/html dir' && \
 	echo 'help             display this list of make targets' && \
 	echo 'install          install by copying the built files to system-wide dirs' && \

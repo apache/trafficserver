@@ -23,15 +23,12 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/mgmt \
   -I$(top_srcdir)/mgmt/api/include \
   -I$(top_srcdir)/mgmt/utils \
-  -I$(top_srcdir)/mgmt/web2 \
-  -I$(top_srcdir)/lib
+  -I$(top_srcdir)/lib \
+  -I$(top_builddir)/lib
 
-MGMT_DEFS = @MGMT_DEFS@
-DEFS += $(MGMT_DEFS)
+noinst_LTLIBRARIES = libcluster.la
 
-noinst_LIBRARIES = libcluster.a
-
-libcluster_a_SOURCES = \
+libcluster_la_SOURCES = \
   ClusterCom.cc \
   ClusterCom.h \
   VMap.cc \

@@ -69,6 +69,7 @@ struct RegressionSM :  public Continuation {
   {
     mutex = new_ProxyMutex();
   }
+
   RegressionSM(const RegressionSM &);
 };
 

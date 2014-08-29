@@ -40,6 +40,7 @@ struct RecMutex
 };
 
 int rec_mutex_init(RecMutex * m, const char *name = NULL);
+int rec_mutex_destroy(RecMutex * m);
 int rec_mutex_acquire(RecMutex * m);
 int rec_mutex_release(RecMutex * m);
 

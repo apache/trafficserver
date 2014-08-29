@@ -26,6 +26,7 @@
 
 #include "ink_apidefs.h"
 #include <openssl/md5.h>
+#include "ink_defs.h"
 
 /* INK_MD5 context. */
 typedef MD5_CTX INK_DIGEST_CTX;
@@ -34,9 +35,9 @@ typedef MD5_CTX INK_DIGEST_CTX;
   Wrappers around the MD5 functions, all of this should be depericated and just use the functions directly
 */
 
-inkcoreapi int ink_code_md5(unsigned char *input, int input_length, unsigned char *sixteen_byte_hash_pointer);
+inkcoreapi int ink_code_md5(unsigned char const* input, int input_length, unsigned char *sixteen_byte_hash_pointer);
 inkcoreapi char *ink_code_md5_stringify(char *dest33, const size_t destSize, const char *md5);
-inkcoreapi char *ink_code_md5_stringify_fast(char *dest33, const char *md5);
+inkcoreapi char *ink_code_to_hex_str(char *dest33, uint8_t const* md5);
 
 inkcoreapi int ink_code_incr_md5_init(INK_DIGEST_CTX * context);
 inkcoreapi int ink_code_incr_md5_update(INK_DIGEST_CTX * context, const char *input, int input_length);

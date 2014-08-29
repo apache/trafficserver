@@ -144,7 +144,9 @@ there are problems with the HTTP transactions requested by the browser.
 These Traffic Server response messages correspond to standard HTTP
 response codes, but provide more information. A list of the more
 frequently-encountered HTTP response codes is provided in :ref:`standard-http-response-messages`.
-You can customize the Traffic Server response messages, if desired.
+You can customize the Traffic Server response messages (typically in 
+proxy/config/body_factory/default/, but set by 
+:ts:cv:`proxy.config.body_factory.template_sets_dir`).
 
 The following table lists the hard-coded Traffic Server HTTP messages,
 with corresponding HTTP response codes and customizable files.
@@ -202,6 +204,12 @@ with corresponding HTTP response codes and customizable files.
    The origin server ``<server name>`` is using an unsupported version
    of the HTTP protocol.
    ``response#bad_version``
+
+``Invalid Content Length``
+   ``400``
+   Could not process this request because the specified ``Content-Length``
+   was invalid (less than 0)..
+   ``request#invalid_content_length``
 
 ``Invalid HTTP Request``
    ``400``
@@ -295,7 +303,7 @@ with corresponding HTTP response codes and customizable files.
    ``request#scheme_unsupported``
 
 
-.. standard-http-response-messages:
+.. _standard-http-response-messages:
 
 Standard HTTP Response Messages
 -------------------------------

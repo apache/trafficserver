@@ -191,8 +191,9 @@ process_args(const ArgumentDescription * argument_descriptions, unsigned n_argum
           usage(argument_descriptions, n_argument_descriptions, usage_string);
       }
     } else {
-      if (n_file_arguments > MAX_FILE_ARGUMENTS)
-        ink_fatal(1, (char *) "too many files");
+      if (n_file_arguments >= countof(file_arguments)) {
+        ink_fatal(1, "too many files");
+      }
       file_arguments[n_file_arguments++] = *argv;
       file_arguments[n_file_arguments] = NULL;
     }
@@ -213,8 +214,13 @@ usage(const ArgumentDescription * argument_descriptions, unsigned n_argument_des
   for (unsigned i = 0; i < n_argument_descriptions; i++) {
     if (!argument_descriptions[i].description)
       continue;
-    fprintf(stderr, "  -%c, --%-17s %s",
-            argument_descriptions[i].key,
+
+    fprintf(stderr, "  ");
+
+    if ('-' == argument_descriptions[i].key) fprintf(stderr, "   ");
+    else fprintf(stderr, "-%c,", argument_descriptions[i].key);
+                                               
+    fprintf(stderr, " --%-17s %s",
             argument_descriptions[i].name,
             argument_types_descriptions[argument_descriptions[i].type ?
                                         strchr(argument_types_keys,

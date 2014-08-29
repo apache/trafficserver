@@ -951,13 +951,19 @@ create_directory()
       }
     }
     dir = opendir(".");
+    if (dir == NULL) 
+      goto error_out;
     while ((d = readdir(dir))) {
       remove(d->d_name);
     }
-    if (chdir("..") == -1) return 0;
+    closedir(dir);
+    if (chdir("..") == -1)
+      return 0;
   }
 
-  if (chdir(cwd) == -1) return 0;
+  if (chdir(cwd) == -1)
+    return 0;
+
   return 1;
 
 error_out:
@@ -965,9 +971,10 @@ error_out:
       value of chdir() and cannot be silenced
       The reason is the combination of -D_FORTIFY_SOURCE=2 -O
    */
-  if(chdir(cwd) == -1) return 0;
-  return 0;
+  if (chdir(cwd) == -1)
+    return 0;
 
+  return 0;
 }
 
 static void
@@ -1023,81 +1030,79 @@ parse_config_line(char *line, const struct config_val_ul *cv)
   char *save = NULL;
   char *tok = strtok_r(line, delim, &save);
 
-  if (tok != NULL) {
-    while (cv->str) {
-      if (!strcmp(tok, cv->str)) {
-        tok = strtok_r(NULL, delim, &save);
-        if (tok) {
-          switch (cv->type) {
-          case TYPE_INT:{
-              char *end = tok;
-              int iv = strtol(tok, &end, 10);
-              if (end && *end == '\0') {
-                *((int *) cv->val) = iv;
-                TSError("Parsed int config value %s : %d", cv->str, iv);
-                TSDebug(DEBUG_TAG, "Parsed int config value %s : %d", cv->str, iv);
-              }
-              break;
+  while (tok && cv->str) {
+    if (!strcmp(tok, cv->str)) {
+      tok = strtok_r(NULL, delim, &save);
+      if (tok) {
+        switch (cv->type) {
+        case TYPE_INT:{
+            char *end = tok;
+            int iv = strtol(tok, &end, 10);
+            if (end && *end == '\0') {
+              *((int *) cv->val) = iv;
+              TSError("Parsed int config value %s : %d", cv->str, iv);
+              TSDebug(DEBUG_TAG, "Parsed int config value %s : %d", cv->str, iv);
             }
-          case TYPE_UINT:{
-              char *end = tok;
-              unsigned int uiv = strtoul(tok, &end, 10);
-              if (end && *end == '\0') {
-                *((unsigned int *) cv->val) = uiv;
-                TSError("Parsed uint config value %s : %u", cv->str, uiv);
-                TSDebug(DEBUG_TAG, "Parsed uint config value %s : %u", cv->str, uiv);
-              }
-              break;
-            }
-          case TYPE_LONG:{
-              char *end = tok;
-              long lv = strtol(tok, &end, 10);
-              if (end && *end == '\0') {
-                *((long *) cv->val) = lv;
-                TSError("Parsed long config value %s : %ld", cv->str, lv);
-                TSDebug(DEBUG_TAG, "Parsed long config value %s : %ld", cv->str, lv);
-              }
-              break;
-            }
-          case TYPE_ULONG:{
-              char *end = tok;
-              unsigned long ulv = strtoul(tok, &end, 10);
-              if (end && *end == '\0') {
-                *((unsigned long *) cv->val) = ulv;
-                TSError("Parsed ulong config value %s : %lu", cv->str, ulv);
-                TSDebug(DEBUG_TAG, "Parsed ulong config value %s : %lu", cv->str, ulv);
-              }
-              break;
-            }
-          case TYPE_STRING:{
-              size_t len = strlen(tok);
-              if (len > 0) {
-                *((char **) cv->val) = (char *) TSmalloc(len + 1);
-                strcpy(*((char **) cv->val), tok);
-                TSError("Parsed string config value %s : %s", cv->str, tok);
-                TSDebug(DEBUG_TAG, "Parsed string config value %s : %s", cv->str, tok);
-              }
-              break;
-            }
-          case TYPE_BOOL:{
-              size_t len = strlen(tok);
-              if (len > 0) {
-                if (*tok == '1' || *tok == 't')
-                  *((bool *) cv->val) = true;
-                else
-                  *((bool *) cv->val) = false;
-                TSError("Parsed bool config value %s : %d", cv->str, *((bool *) cv->val));
-                TSDebug(DEBUG_TAG, "Parsed bool config value %s : %d", cv->str, *((bool *) cv->val));
-              }
-              break;
-            }
-          default:
             break;
           }
+        case TYPE_UINT:{
+            char *end = tok;
+            unsigned int uiv = strtoul(tok, &end, 10);
+            if (end && *end == '\0') {
+              *((unsigned int *) cv->val) = uiv;
+              TSError("Parsed uint config value %s : %u", cv->str, uiv);
+              TSDebug(DEBUG_TAG, "Parsed uint config value %s : %u", cv->str, uiv);
+            }
+            break;
+          }
+        case TYPE_LONG:{
+            char *end = tok;
+            long lv = strtol(tok, &end, 10);
+            if (end && *end == '\0') {
+              *((long *) cv->val) = lv;
+              TSError("Parsed long config value %s : %ld", cv->str, lv);
+              TSDebug(DEBUG_TAG, "Parsed long config value %s : %ld", cv->str, lv);
+            }
+            break;
+          }
+        case TYPE_ULONG:{
+            char *end = tok;
+            unsigned long ulv = strtoul(tok, &end, 10);
+            if (end && *end == '\0') {
+              *((unsigned long *) cv->val) = ulv;
+              TSError("Parsed ulong config value %s : %lu", cv->str, ulv);
+              TSDebug(DEBUG_TAG, "Parsed ulong config value %s : %lu", cv->str, ulv);
+            }
+            break;
+          }
+        case TYPE_STRING:{
+            size_t len = strlen(tok);
+            if (len > 0) {
+              *((char **) cv->val) = (char *) TSmalloc(len + 1);
+              strcpy(*((char **) cv->val), tok);
+              TSError("Parsed string config value %s : %s", cv->str, tok);
+              TSDebug(DEBUG_TAG, "Parsed string config value %s : %s", cv->str, tok);
+            }
+            break;
+          }
+        case TYPE_BOOL:{
+            size_t len = strlen(tok);
+            if (len > 0) {
+              if (*tok == '1' || *tok == 't')
+                *((bool *) cv->val) = true;
+              else
+                *((bool *) cv->val) = false;
+              TSError("Parsed bool config value %s : %d", cv->str, *((bool *) cv->val));
+              TSDebug(DEBUG_TAG, "Parsed bool config value %s : %d", cv->str, *((bool *) cv->val));
+            }
+            break;
+          }
+        default:
+          break;
         }
       }
-      cv++;
     }
+    cv++;
   }
 }
 

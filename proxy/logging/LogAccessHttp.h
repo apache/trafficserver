@@ -71,7 +71,6 @@ public:
   virtual int marshal_client_req_header_len(char *);    // INT
   virtual int marshal_client_req_body_len(char *);      // INT
   virtual int marshal_client_finish_status_code(char *);        // INT
-  virtual int marshal_client_accelerator_id(char *);    // STR
 
   //
   // proxy -> client fields
@@ -128,12 +127,21 @@ public:
   virtual int marshal_transfer_time_ms(char *); // INT
   virtual int marshal_transfer_time_s(char *);  // INT
   virtual int marshal_file_size(char *); // INT
+  virtual int marshal_plugin_identity_id(char *);    // INT
+  virtual int marshal_plugin_identity_tag(char *);    // STR
 
   //
   // named fields from within a http header
   //
   virtual int marshal_http_header_field(LogField::Container container, char *field, char *buf);
   virtual int marshal_http_header_field_escapify(LogField::Container container, char *field, char *buf);
+
+  virtual void set_client_req_url(char *, int);        // STR
+  virtual void set_client_req_url_canon(char *, int);  // STR
+  virtual void set_client_req_unmapped_url_canon(char *, int); // STR
+  virtual void set_client_req_unmapped_url_path(char *, int);  // STR
+  virtual void set_client_req_unmapped_url_host(char *, int);  // STR
+  virtual void set_client_req_url_path(char *, int);   // STR
 
 private:
   HttpSM * m_http_sm;

@@ -28,7 +28,6 @@
  ***************************************************************************/
 #include "libts.h"
 
-#include "Resource.h"
 #include "Error.h"
 
 #include "LogUtils.h"
@@ -191,7 +190,7 @@ bool LogHost::connect()
   disconnect();                 // make sure connection members are initialized
 
   if (m_sock == NULL) {
-    m_sock = NEW(new LogSock());
+    m_sock = new LogSock();
     ink_assert(m_sock != NULL);
   }
   m_sock_fd = m_sock->connect(&target.sa);
@@ -241,7 +240,7 @@ LogHost::create_orphan_LogFile_object()
 
   // should check for conflicts with orphan filename
   //
-  m_orphan_file = NEW(new LogFile(name_buf, NULL, LOG_FILE_ASCII, m_object_signature));
+  m_orphan_file = new LogFile(name_buf, NULL, LOG_FILE_ASCII, m_object_signature);
   ink_assert(m_orphan_file != NULL);
   ats_free(name_buf);
 }
@@ -254,7 +253,6 @@ int
 LogHost::preproc_and_try_delete (LogBuffer *lb)
 {
   int ret = -1;
-  int bytes;
 
   if (lb == NULL) {
     Note("Cannot write LogBuffer to LogHost %s; LogBuffer is NULL", name());
@@ -273,20 +271,13 @@ LogHost::preproc_and_try_delete (LogBuffer *lb)
 
   // create a new collation client if necessary
   if (m_log_collation_client_sm == NULL) {
-    m_log_collation_client_sm = NEW(new LogCollationClientSM(this));
+    m_log_collation_client_sm = new LogCollationClientSM(this);
     ink_assert(m_log_collation_client_sm != NULL);
   }
 
-  // send log_buffer; orphan if necessary
-  bytes = m_log_collation_client_sm->send(lb);
-  if (bytes <= 0) {
-    orphan_write_and_try_delete(lb);
-#if defined(LOG_BUFFER_TRACKING)
-    Debug("log-buftrak", "[%d]LogHost::preproc_and_try_delete - orphan write complete",
-        lb->header()->id);
-#endif // defined(LOG_BUFFER_TRACKING)
-    return -1;
-  }
+  // send log_buffer;
+  if (m_log_collation_client_sm->send(lb) <= 0)
+    goto done;
 
   return 0;
 
@@ -387,7 +378,7 @@ LogHostList::add(LogHost * object, bool copy)
 {
   ink_assert(object != NULL);
   if (copy) {
-    m_host_list.enqueue(NEW(new LogHost(*object)));
+    m_host_list.enqueue(new LogHost(*object));
   } else {
     m_host_list.enqueue(object);
   }
@@ -417,6 +408,8 @@ LogHostList::preproc_and_try_delete(LogBuffer * lb)
 {
   int ret;
   unsigned nr_host, nr;
+  bool need_orphan = true;
+  LogHost *available_host = NULL;
 
   ink_release_assert(lb->m_references == 0);
 
@@ -425,19 +418,23 @@ LogHostList::preproc_and_try_delete(LogBuffer * lb)
 
   for (LogHost * host = first(); host && nr; host = next(host)) {
     LogHost *lh = host;
+    available_host = lh;
 
     do {
       ink_atomic_increment(&lb->m_references, 1);
       ret = lh->preproc_and_try_delete(lb);
+      need_orphan = need_orphan && (ret < 0);
     } while (ret < 0 && (lh = lh->failover_link.next));
 
-    LogBuffer::destroy(lb);
     nr--;
   }
 
-  if (nr_host == 0)
-    delete lb;
+  if (need_orphan && available_host) {
+    ink_atomic_increment(&lb->m_references, 1);
+    available_host->orphan_write_and_try_delete(lb);
+  }
 
+  LogBuffer::destroy(lb);
   return 0;
 }
 

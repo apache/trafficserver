@@ -100,17 +100,13 @@ struct NetAccept:public Continuation
   UnixNetVConnection *epoll_vc; // only storage for epoll events
   EventIO ep;
 
-  // Functions all THREAD_FREE and THREAD_ALLOC to be performed
-  // for both SSL and regular NetVConnection transparent to
-  // accept functions.
-  virtual UnixNetVConnection *allocateThread(EThread *t);
-  virtual void freeThread(UnixNetVConnection *vc, EThread *t);
-  virtual UnixNetVConnection *allocateGlobal();
-  virtual EventType getEtype();
+  virtual EventType getEtype() const;
+  virtual NetProcessor * getNetProcessor() const;
 
   void init_accept_loop(const char *);
   virtual void init_accept(EThread * t = NULL);
   virtual void init_accept_per_thread();
+  virtual NetAccept *clone() const;
   // 0 == success
   int do_listen(bool non_blocking, bool transparent = false);
 

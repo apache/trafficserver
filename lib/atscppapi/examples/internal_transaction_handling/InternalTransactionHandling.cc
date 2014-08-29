@@ -60,6 +60,6 @@ public:
 
 void TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED) {
   TS_DEBUG(TAG, "Loaded async_http_fetch_example plugin");
-  AllTransactionsGlobalPlugin *instance1 = new AllTransactionsGlobalPlugin();
-  NoInternalTransactionsGlobalPlugin *instance2 = new NoInternalTransactionsGlobalPlugin();
+  new AllTransactionsGlobalPlugin();
+  new NoInternalTransactionsGlobalPlugin();
 }

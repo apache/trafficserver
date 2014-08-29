@@ -115,9 +115,6 @@
 //      Support Data Structures
 //
 //////////////////////////////////////////////////////////////////////////////
-  class VConnection;
-
-typedef int (VConnection::*VConnectionHandler) (int event, void *data);
 
 /** Used in VConnection::shutdown(). */
 enum ShutdownHowTo_t

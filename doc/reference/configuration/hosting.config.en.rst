@@ -21,16 +21,17 @@ hosting.config
 
 .. configfile:: hosting.config
 
-The :file:`hosting.config` file enables you to assign cache partitions to
+The :file:`hosting.config` file (by default, located in 
+``/opt/trafficserver/etc/trafficserver/``) you to assign cache partitions to
 specific origin servers and/or domains so that you can manage cache
 space efficiently and restrict disk usage. For step-by-step instructions
 on partitioning the cache according to origin servers and/or domains,
 refer to `Partitioning the Cache <../configuring-cache#PartitoningCache>`_.
+
 Before you can assign cache partitions to specific
 origin servers and/or domains, you must first partition your cache
 according to size and protocol in the :file:`volume.config`
-file. For step-by-step instructions about partitioning your cache, refer
-to `Partitioning the Cache <../configuring-cache#PartitioningCache>`_.
+file.
 
 After you modify hosting.config, navigate to the Traffic Server bin
 directory and run :option:`traffic_line -x` to apply your changes.

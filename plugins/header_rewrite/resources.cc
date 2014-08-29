@@ -19,15 +19,20 @@
 // resources.cc: Implementation of the resources class.
 //
 //
-#include <ts/ts.h>
+#include "ts/ts.h"
 
 #include "resources.h"
 #include "lulu.h"
 
+// This is defined in header_rewrite.cc, used here for debugging
+extern char* HOOK_NAMES[];
+
+
+// Collect all resources
 void
 Resources::gather(const ResourceIDs ids, TSHttpHookID hook)
 {
-  TSDebug(PLUGIN_NAME, "Building resource structure for hook (%d)", hook);
+  TSDebug(PLUGIN_NAME, "Building resources, hook=%s", HOOK_NAMES[hook]);
 
   // If we need the client request headers, make sure it's also available in the client vars.
   if (ids & RSRC_CLIENT_REQUEST_HEADERS) {

@@ -31,7 +31,6 @@
 #define enable_read(_vc) (_vc)->read.enabled = 1
 #define enable_write(_vc) (_vc)->write.enabled = 1
 
-typedef struct iovec IOVec;
 #ifndef UIO_MAXIOV
 #define NET_MAX_IOV 16          // UIO_MAXIOV shall be at least 16 1003.1g (5.4.1.1)
 #else
@@ -259,6 +258,7 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
         }
         b = b->next;
       }
+
       if (niov == 1) {
         r = socketManager.read(vc->con.fd, tiovec[0].iov_base, tiovec[0].iov_len);
       } else {
@@ -266,7 +266,7 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
       }
       NET_DEBUG_COUNT_DYN_STAT(net_calls_to_read_stat, 1);
       total_read += rattempted;
-    } while (r == rattempted && total_read < toread);
+    } while (rattempted && r == rattempted && total_read < toread);
 
     // if we have already moved some bytes successfully, summarize in r
     if (total_read != rattempted) {
@@ -384,9 +384,7 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
       nh->read_ready_list.remove(vc);
       vc->write.triggered = 0;
       nh->write_ready_list.remove(vc);
-      if (ret == SSL_HANDSHAKE_WANT_READ || ret == SSL_HANDSHAKE_WANT_ACCEPT)
-        read_reschedule(nh, vc);
-      else
+      if (!(ret == SSL_HANDSHAKE_WANT_READ || ret == SSL_HANDSHAKE_WANT_ACCEPT))
         write_reschedule(nh, vc);
     } else if (ret == EVENT_DONE) {
       vc->write.triggered = 1;
@@ -682,7 +680,7 @@ UnixNetVConnection::send_OOB(Continuation *cont, char *buf, int len)
     return ACTION_RESULT_DONE;
   }
   if (written > 0 && written < len) {
-    u->oob_ptr = NEW(new OOB_callback(mutex, this, cont, buf + written, len - written));
+    u->oob_ptr = new OOB_callback(mutex, this, cont, buf + written, len - written);
     u->oob_ptr->trigger = mutex->thread_holding->schedule_in_local(u->oob_ptr, HRTIME_MSECONDS(10));
     return u->oob_ptr->trigger;
   } else {
@@ -690,7 +688,7 @@ UnixNetVConnection::send_OOB(Continuation *cont, char *buf, int len)
     // expensive for this
     written = -errno;
     ink_assert(written == -EAGAIN || written == -ENOTCONN);
-    u->oob_ptr = NEW(new OOB_callback(mutex, this, cont, buf, len));
+    u->oob_ptr = new OOB_callback(mutex, this, cont, buf, len);
     u->oob_ptr->trigger = mutex->thread_holding->schedule_in_local(u->oob_ptr, HRTIME_MSECONDS(10));
     return u->oob_ptr->trigger;
   }
@@ -945,7 +943,7 @@ UnixNetVConnection::startEvent(int /* event ATS_UNUSED */, Event *e)
     return EVENT_CONT;
   }
   if (!action_.cancelled)
-    connectUp(e->ethread);
+    connectUp(e->ethread, NO_FD);
   else
     free(e->ethread);
   return EVENT_DONE;
@@ -984,10 +982,14 @@ UnixNetVConnection::acceptEvent(int event, Event *e)
 
   nh->open_list.enqueue(this);
 
-  if (inactivity_timeout_in)
+  if (inactivity_timeout_in) {
     UnixNetVConnection::set_inactivity_timeout(inactivity_timeout_in);
-  if (active_timeout_in)
+  }
+
+  if (active_timeout_in) {
     UnixNetVConnection::set_active_timeout(active_timeout_in);
+  }
+
   action_.continuation->handleEvent(NET_EVENT_ACCEPT, this);
   return EVENT_DONE;
 }
@@ -1075,8 +1077,10 @@ UnixNetVConnection::mainEvent(int event, Event *e)
 
 
 int
-UnixNetVConnection::connectUp(EThread *t)
+UnixNetVConnection::connectUp(EThread *t, int fd)
 {
+  int res;
+
   thread = t;
   if (check_net_throttle(CONNECT, submit_time)) {
     check_throttle_warning();
@@ -1102,36 +1106,49 @@ UnixNetVConnection::connectUp(EThread *t)
     );
   }
 
-
-  int res = con.open(options);
-  if (0 == res) {
-    // Must connect after EventIO::Start() to avoid a race condition
-    // when edge triggering is used.
-    if (ep.start(get_PollDescriptor(t), this, EVENTIO_READ|EVENTIO_WRITE) < 0) {
-      lerrno = errno;
-      Debug("iocore_net", "connectUp : Failed to add to epoll list\n");
-      action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *)0); // 0 == res
-      free(t);
-      return CONNECT_FAILURE;
+  // If this is getting called from the TS API, then we are wiring up a file descriptor
+  // provided by the caller. In that case, we know that the socket is already connected.
+  if (fd == NO_FD) {
+    res = con.open(options);
+    if (res != 0) {
+      goto fail;
     }
-    res = con.connect(&server_addr.sa, options);
+  } else {
+    int len = sizeof(con.sock_type);
+
+    res = safe_getsockopt(fd, SOL_SOCKET, SO_TYPE, (char *)&con.sock_type, &len);
+    if (res != 0) {
+      goto fail;
+    }
+
+    safe_nonblocking(fd);
+    con.fd = fd;
+    con.is_connected = true;
+    con.is_bound = true;
   }
 
-  if (res) {
+  // Must connect after EventIO::Start() to avoid a race condition
+  // when edge triggering is used.
+  if (ep.start(get_PollDescriptor(t), this, EVENTIO_READ|EVENTIO_WRITE) < 0) {
     lerrno = errno;
-    action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *)(intptr_t)res);
+    Debug("iocore_net", "connectUp : Failed to add to epoll list\n");
+    action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *)0); // 0 == res
     free(t);
     return CONNECT_FAILURE;
   }
+
+  if (fd == NO_FD) {
+    res = con.connect(&server_addr.sa, options);
+    if (res != 0) {
+      goto fail;
+    }
+  }
+
   check_emergency_throttle(con);
 
   // start up next round immediately
 
   SET_HANDLER(&UnixNetVConnection::mainEvent);
-  // This function is empty for regular UnixNetVConnection, it has code
-  // in it for the inherited SSLUnixNetVConnection.  Allows the connectUp
-  // function code not to be duplicated in the inherited SSL class.
-  //  sslStartHandShake (SSL_EVENT_CLIENT, err);
 
   nh = get_NetHandler(t);
   nh->open_list.enqueue(this);
@@ -1140,6 +1157,12 @@ UnixNetVConnection::connectUp(EThread *t)
   ink_assert(!active_timeout_in);
   action_.continuation->handleEvent(NET_EVENT_OPEN, this);
   return CONNECT_SUCCESS;
+
+fail:
+  lerrno = errno;
+  action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *)(intptr_t)res);
+  free(t);
+  return CONNECT_FAILURE;
 }
 
 

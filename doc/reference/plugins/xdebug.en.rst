@@ -1,3 +1,5 @@
+.. _xdebug-plugin:
+
 XDebug Plugin
 *************
 
@@ -40,6 +42,27 @@ Via
     to ``3`` for the request.
 
 X-Cache-Key
-    The ``X-Cache-Key`` contains the URL that identifies the HTTP object in the
+    The ``X-Cache-Key`` header contains the URL that identifies the HTTP object in the
     Traffic Server cache. This header is particularly useful if a custom cache
     key is being used.
+
+X-Cache
+    The ``X-Cache`` header contains the results of any cache lookup.
+
+    ==========  ===========
+    Value       Description
+    ==========  ===========
+    none        No cache lookup was attempted.
+    miss        The object was not found in the cache.
+    hit-stale   The object was found in the cache, but it was stale.
+    hit-fresh   The object was fresh in the cache.
+    skipped     The cache lookup was skipped.
+    ==========  ===========
+
+X-Milestones
+    The ``X-Milestones`` header contains detailed information about
+    how long the transaction took to traverse portions of the HTTP
+    state machine. The timing information is obtained from the
+    :c:func:`TSHttpTxnMilestoneGet` API. Each milestone value is a
+    fractional number of seconds since the beginning of the
+    transaction.

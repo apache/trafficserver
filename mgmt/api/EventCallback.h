@@ -74,9 +74,9 @@ void delete_callback_table(CallbackTable * cb_table);
 // returns list of event_id that have at least one callback registered for it
 LLQ *get_events_with_callbacks(CallbackTable * cb_table);
 
-TSError cb_table_register(CallbackTable * cb_table, char *event_name, TSEventSignalFunc func, void *data,
+TSMgmtError cb_table_register(CallbackTable * cb_table, const char *event_name, TSEventSignalFunc func, void *data,
                            bool * first_cb);
-TSError cb_table_unregister(CallbackTable * cb_table, char *event_name, TSEventSignalFunc func);
+TSMgmtError cb_table_unregister(CallbackTable * cb_table, const char *event_name, TSEventSignalFunc func);
 
 #ifdef __cplusplus
 }

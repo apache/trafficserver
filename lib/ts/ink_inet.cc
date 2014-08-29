@@ -246,10 +246,10 @@ ats_ip_parse(ts::ConstBuffer src, ts::ConstBuffer* addr, ts::ConstBuffer* port) 
 }
 
 int
-ats_ip_pton(char const* text, sockaddr* ip) {
+ats_ip_pton(const ts::ConstBuffer& src, sockaddr* ip)
+{
   int zret = -1;
   ts::ConstBuffer addr, port;
-  ts::ConstBuffer src(text, strlen(text)+1);
 
   ats_ip_invalidate(ip);
   if (0 == ats_ip_parse(src, &addr, &port)) {
@@ -499,13 +499,13 @@ REGRESSION_TEST(Ink_Inet) (RegressionTest * t, int /* atype */, int * pstatus) {
       box.check(ats_ip_parse(ts::ConstBuffer(names[i].hostspec, strlen(names[i].hostspec)), &addr, &port) == 0,
           "ats_ip_parse(%s)", names[i].hostspec);
       box.check(strncmp(addr.data(), names[i].host, addr.size()) ==  0,
-          "ats_ip_parse(%s) gave addr '%.*s'", names[i].hostspec, addr.size(), addr.data());
+          "ats_ip_parse(%s) gave addr '%.*s'", names[i].hostspec, (int)addr.size(), addr.data());
       if (names[i].port) {
         box.check(strncmp(port.data(), names[i].port, port.size()) ==  0,
-          "ats_ip_parse(%s) gave port '%.*s'", names[i].hostspec, port.size(), port.data());
+          "ats_ip_parse(%s) gave port '%.*s'", names[i].hostspec, (int)port.size(), port.data());
       } else {
         box.check(port.size() == 0,
-          "ats_ip_parse(%s) gave port '%.*s'", names[i].hostspec, port.size(), port.data());
+          "ats_ip_parse(%s) gave port '%.*s'", names[i].hostspec, (int)port.size(), port.data());
       }
 
     }

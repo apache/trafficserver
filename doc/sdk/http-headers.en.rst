@@ -32,13 +32,13 @@ This chapter explains the functions used to manipulate HTTP headers.
 About HTTP Headers
 ------------------
 
-An ***HTTP message*** consists of the following:
+An **HTTP message** consists of the following:
 
 -  HTTP header
 -  body
 -  trailer
 
-The ***HTTP header*** consists of:
+The **HTTP header** consists of:
 
 -  A request or response line
 
@@ -52,16 +52,15 @@ A **MIME header** is comprised of zero or more MIME fields. A **MIME
 field** is composed of a field name, a colon, and (zero or more) field
 values. The values in a field are separated by commas. An HTTP header
 containing a request line is usually referred to as a **request**. The
-following example shows a typical request header.
+following example shows a typical request header:
 
-.. code-block:: HTTP
+.. code-block:: http
 
    GET http://www.tiggerwigger.com/ HTTP/1.0
    Proxy-Connection: Keep-Alive
    User-Agent: Mozilla/5.0 [en] (X11; I; Linux 2.2.3 i686)
    Host: www.tiggerwigger.com
    Accept: image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, image/png, */*
-
    Accept-Encoding: gzip
    Accept-Language: en
    Accept-Charset: iso-8859-1, *, utf-8
@@ -69,7 +68,7 @@ following example shows a typical request header.
 The **response header** for the above request might look like the
 following:
 
-.. code-block:: HTTP
+.. code-block:: http
 
    HTTP/1.0 200 OK
    Date: Fri, 13 Nov 2009 06:57:43 GMT

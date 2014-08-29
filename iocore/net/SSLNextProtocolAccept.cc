@@ -78,18 +78,23 @@ struct SSLNextProtocolTrampoline : public Continuation
     Continuation * plugin;
     SSLNetVConnection * netvc;
 
+    vio = static_cast<VIO *>(edata);
+    netvc = dynamic_cast<SSLNetVConnection *>(vio->vc_server);
+    ink_assert(netvc != NULL);
+
     switch (event) {
-    case VC_EVENT_INACTIVITY_TIMEOUT:
-    case VC_EVENT_READ_COMPLETE:
+    case VC_EVENT_EOS:
     case VC_EVENT_ERROR:
-      vio = static_cast<VIO *>(edata);
+    case VC_EVENT_ACTIVE_TIMEOUT:
+    case VC_EVENT_INACTIVITY_TIMEOUT:
+      netvc->do_io(VIO::CLOSE);
+      delete this;
+      return EVENT_CONT;
+    case VC_EVENT_READ_COMPLETE:
       break;
     default:
       return EVENT_ERROR;
     }
-
-    netvc = dynamic_cast<SSLNetVConnection *>(vio->vc_server);
-    ink_assert(netvc != NULL);
 
     plugin = netvc->endpoint();
     if (plugin) {
@@ -114,6 +119,7 @@ SSLNextProtocolAccept::mainEvent(int event, void * edata)
 {
   SSLNetVConnection * netvc = ssl_netvc_cast(event, edata);
 
+  netvc->sslHandshakeBeginTime = ink_get_hrtime();
   Debug("ssl", "[SSLNextProtocolAccept:mainEvent] event %d netvc %p", event, netvc);
 
   switch (event) {
@@ -124,12 +130,18 @@ SSLNextProtocolAccept::mainEvent(int event, void * edata)
     // the endpoint that there is an accept to handle until the read completes
     // and we know which protocol was negotiated.
     netvc->registerNextProtocolSet(&this->protoset);
-    netvc->do_io(VIO::READ, NEW(new SSLNextProtocolTrampoline(this, netvc->mutex)), 0, this->buffer, 0);
+    netvc->do_io(VIO::READ, new SSLNextProtocolTrampoline(this, netvc->mutex), 0, this->buffer, 0);
     return EVENT_CONT;
   default:
     netvc->do_io(VIO::CLOSE);
     return EVENT_DONE;
   }
+}
+
+void
+SSLNextProtocolAccept::accept(NetVConnection *, MIOBuffer *, IOBufferReader *)
+{
+  ink_release_assert(0);
 }
 
 bool
@@ -147,7 +159,7 @@ SSLNextProtocolAccept::unregisterEndpoint(
 }
 
 SSLNextProtocolAccept::SSLNextProtocolAccept(Continuation * ep)
-    : Continuation(NULL), buffer(new_empty_MIOBuffer()), endpoint(ep)
+    : SessionAccept(NULL), buffer(new_empty_MIOBuffer()), endpoint(ep)
 {
   SET_HANDLER(&SSLNextProtocolAccept::mainEvent);
 }

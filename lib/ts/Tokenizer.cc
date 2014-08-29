@@ -25,7 +25,7 @@
 #include "ink_platform.h"
 #include "Tokenizer.h"
 #include "ink_assert.h"
-#include "ink_resource.h"
+#include "ink_memory.h"
 
 /****************************************************************************
  *

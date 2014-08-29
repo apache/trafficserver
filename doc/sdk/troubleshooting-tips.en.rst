@@ -44,7 +44,6 @@ could use the following commands to building a shared library:
 
 ::
 
-        :::text
         tsxs -c hello-world.c -o hello-world.so
 
 To install this plugin in your ``plugindir`` use the equivalent of sudo
@@ -52,6 +51,5 @@ on your platform to execute:
 
 ::
 
-        :::text
         sudo tsxs -o hello-world.so -i
 

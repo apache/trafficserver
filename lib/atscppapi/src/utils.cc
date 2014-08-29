@@ -26,8 +26,6 @@
 #include <ts/ts.h>
 #include "logging_internal.h"
 
-const std::string atscppapi::utils::DISABLE_DATA_CACHING_ENV_FLAG("ATSCPPAPI_DISABLE_TRANSACTION_DATA_CACHING");
-
 std::string atscppapi::utils::getIpString(const sockaddr *sockaddress) {
   if (sockaddress == NULL) {
     LOG_ERROR("Cannot work on NULL sockaddress");

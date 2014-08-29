@@ -3,7 +3,12 @@ autom4te.cache
 build
 build-aux
 body_factory
+config.log
+config.nice
+config.status
+libtool
 blib
+stamp-h1
 .*\.txt$
 .*\.cfg$
 .*\.in$
@@ -17,8 +22,10 @@ blib
 .*\.default\.in$
 .*\.config$
 .gitignore
+.gitmodules
 .indent.pro
 .vimrc
+Doxyfile.*
 CHANGES
 LAYOUT
 README.*$
@@ -37,3 +44,11 @@ test_AIO.sample
 stale_while_revalidate.conf
 stats\.memo
 port\.h
+luajit
+diags.log
+pm_to_blib
+MurmurHash3.cc
+MurmurHash3.h
+^ck$
+HashFNV.cc
+HashSip.cc

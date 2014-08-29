@@ -340,7 +340,7 @@ private:
 
 charIndex::charIndex():illegalKey(NULL)
 {
-  root = NEW(new charIndex_el);
+  root = new charIndex_el;
 }
 
 charIndex::~charIndex()
@@ -412,7 +412,7 @@ charIndex::Insert(const char *match_data, HostBranch * toInsert)
 
       // Check to see if we need to expand the table
       if (next == NULL) {
-        next = NEW(new charIndex_el);
+        next = new charIndex_el;
         cur->next_level[index] = next;
       }
       cur = next;
@@ -777,7 +777,7 @@ num_el(-1),
 matcher_name(name)
 {
 
-  root = NEW(new HostBranch);
+  root = new HostBranch;
   root->level = 0;
   root->type = HOST_TERMINAL;
   root->next_level = NULL;
@@ -902,11 +902,11 @@ HostLookup::TableNewLevel(HostBranch * from, const char *level_data)
   // Use the charIndex for high speed matching at the first level of
   //   the table.  The first level is short strings, ie: com, edu, jp, fr
   if (from->level == 0) {
-    new_ci_table = NEW(new charIndex);
+    new_ci_table = new charIndex;
     from->type = HOST_INDEX;
     from->next_level = new_ci_table;
   } else {
-    new_ha_table = NEW(new hostArray);
+    new_ha_table = new hostArray;
     from->type = HOST_ARRAY;
     from->next_level = new_ha_table;
   }
@@ -937,7 +937,7 @@ HostLookup::InsertBranch(HostBranch * insert_in, const char *level_data)
   InkHashTable *new_ht;
 
 
-  HostBranch *new_branch = NEW(new HostBranch);
+  HostBranch *new_branch = new HostBranch;
   new_branch->type = HOST_TERMINAL;
   new_branch->level = insert_in->level + 1;
   new_branch->next_level = NULL;
@@ -945,8 +945,7 @@ HostLookup::InsertBranch(HostBranch * insert_in, const char *level_data)
   switch (insert_in->type) {
   case HOST_TERMINAL:
     // Should not happen
-    ink_assert(0);
-    delete new_branch;
+    ink_release_assert(0);
     break;
   case HOST_HASH:
     ink_hash_table_insert((InkHashTable *) insert_in->next_level, (char *) level_data, new_branch);
@@ -1289,7 +1288,7 @@ HostLookup::AllocateSpace(int num_entries)
   // Should not have been allocated before
   ink_assert(array_len == -1);
 
-  leaf_array = NEW(new HostLeaf[num_entries]);
+  leaf_array = new HostLeaf[num_entries];
   memset(leaf_array, 0, sizeof(HostLeaf) * num_entries);
 
   array_len = num_entries;

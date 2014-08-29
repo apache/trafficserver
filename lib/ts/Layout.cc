@@ -39,7 +39,7 @@ void
 Layout::create(const char *prefix)
 {
   if (layout == NULL) {
-    layout = NEW(new Layout(prefix));
+    layout = new Layout(prefix);
   }
 }
 
@@ -176,33 +176,6 @@ Layout::Layout(const char *_prefix)
   infodir = layout_relative(prefix, TS_BUILD_INFODIR);
   cachedir = layout_relative(prefix, TS_BUILD_CACHEDIR);
 
-#ifdef DEBUG
-// TODO: Use a propper Debug logging
-//
-#define PrintSTR(var) \
-  fprintf(stderr, "%18s = '%s'\n", "--" #var, (var == NULL? "NULL" : var));
-
-  fprintf(stderr, "Layout configuration\n");
-  PrintSTR(prefix);
-  PrintSTR(exec_prefix);
-  PrintSTR(bindir);
-  PrintSTR(sbindir);
-  PrintSTR(sysconfdir);
-  PrintSTR(datadir);
-  PrintSTR(includedir);
-  PrintSTR(libdir);
-  PrintSTR(libexecdir);
-  PrintSTR(localstatedir);
-  PrintSTR(runtimedir);
-  PrintSTR(logdir);
-  PrintSTR(mandir);
-  PrintSTR(infodir);
-  PrintSTR(cachedir);
-#endif
-
-  if (access(prefix, F_OK) == -1) {
-    ink_error("unable to access() TS_ROOT '%s': %d, %s\n", prefix, errno, strerror(errno));
-  }
 }
 
 Layout::~Layout()

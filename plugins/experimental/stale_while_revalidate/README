@@ -1,74 +1,26 @@
-ytrafficserver plugin to refresh content asynchronously while serving stale data
+This plugin was sponsored by Oregon Health & Science University.
 
-http://www.mnot.net/drafts/draft-nottingham-http-stale-while-revalidate-00.txt 
+Quick install:
 
-Version 0.0.17
---------------
-* max_age config param added. 
+Make sure devel packages for traffic-server are installed.
+Make sure that 'tsxs' is in your path.
 
-Version 0.0.16
---------------
-* Pass on connecting IP to HttpConnect
-* use INKHttpIsInternalRequest to check if request is local or not
+	make -f Makefile.tsxs
+	make -f Makefile.tsxs install
 
-Version 0.0.15
-------------
-* handle max stale age correctly for only-if-cached + background-fetch
+Add 'stale_while_revalidate.so' to plugin.config.
 
-Version 0.0.14
-------------
-* SWR overrides only-if-cached
-* Set cache lookup status to FRESH if within SWR window even for only-if-cached
+Restart traffic-server.
 
-Version 0.0.13
-------------
-* set cache lookup status to MISS after doing SWR for only-if-cached
+test_server.js is a test server written in JavaScript and
+meant to be run under node.js.
 
-Version 0.0.12
-------------
-* Fix for bug [3341089]
-* Support for background fetch on cache miss
+Logging:
 
-Version 0.0.11
-------------
-* Fix for bug [3338245]
+You can enable logging by adding parameters to the plugin.config
+line for the plugin.
 
-Version 0.0.10
-------------
-* use pristine URL in SWR sub request
-
-Version 0.0.9
-------------
-* Respect must-revalidate
-
-Version 0.0.8
-------------
-* Fix for bugs [3260033]
-
-Version 0.0.7
-------------
-* Fix for bugs [3260033 3282115 3275888]
-
-Version 0.0.6
-------------
-* Fix for bug [3263080]
-
-Version 0.0.5
-------------
-* Fix for bug [3262768]
-
-Version 0.0.4
-------------
-* Set cache status after doing SWR
-
-Version 0.0.3
-------------
-* No more time-to-wait support
-
-Version 0.0.2
--------------
-* Use INKHttpTxnCacheRespGet to get SWR information
-
-Version 0.0.1
--------------
-* initial version
+--log-all                       enable all logging
+--log-stale-while-revalidate    enable logging of stale-while-revalidate
+--log-stale-if-error            enable logging of stale-if-error
+--log-filename <name>           set the filename to log to (<name>.log)

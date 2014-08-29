@@ -20,6 +20,8 @@
 TSMimeHdrFieldValueStringGet
 ============================
 
+Get HTTP MIME header values.
+
 
 Synopsis
 ========

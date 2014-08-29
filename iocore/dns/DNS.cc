@@ -209,7 +209,7 @@ DNSProcessor::start(int, size_t stacksize) {
 void
 DNSProcessor::open(sockaddr const* target, int aoptions)
 {
-  DNSHandler *h = NEW(new DNSHandler);
+  DNSHandler *h = new DNSHandler;
 
   h->options = aoptions;
   h->mutex = thread->mutex;
@@ -384,11 +384,11 @@ DNSEntry::init(const char *x, int len, int qtype_arg, Continuation* acont,
     if (len) {
       len = len > (MAXDNAME - 1) ? (MAXDNAME - 1) : len;
       memcpy(qname, x, len);
-      qname_len = len;
       qname[len] = 0;
+      orig_qname_len = qname_len = len;
     } else {
-      ink_strlcpy(qname, x, MAXDNAME);
-      qname_len = strlen(qname);
+      qname_len = ink_strlcpy(qname, x, MAXDNAME);
+      orig_qname_len = qname_len;
     }
   } else {                    //T_PTR
     IpAddr const* ip = reinterpret_cast<IpAddr const*>(x);
@@ -920,7 +920,7 @@ DNSHandler::get_query_id()
   q2 = q1 = (uint16_t)(generator.random() & 0xFFFF);
   if (query_id_in_use(q2)) {
     uint16_t i = q2>>6;
-    while (qid_in_flight[i] == INTU64_MAX) {
+    while (qid_in_flight[i] == UINT64_MAX) {
       if (++i ==  sizeof(qid_in_flight)/sizeof(uint64_t)) {
         i = 0;
       }
@@ -1041,14 +1041,20 @@ DNSEntry::mainEvent(int event, Event *e)
         SET_HANDLER((DNSEntryHandler) & DNSEntry::delayEvent);
         return handleEvent(event, e);
       }
-      //if (dns_search && !strnchr(qname,'.',MAXDNAME)){
-      if (dns_search)
+
+      // trailing '.' indicates no domain expansion
+      if (dns_search && ('.' != qname[orig_qname_len - 1])) {
         domains = dnsH->m_res->dnsrch;
-      if (domains && !strnchr(qname, '.', MAXDNAME)) {
-        qname[qname_len] = '.';
-        ink_strlcpy(qname + qname_len + 1, *domains, MAXDNAME - (qname_len + 1));
-        qname_len = strlen(qname);
-        ++domains;
+        // start domain expansion straight away
+        // if lookup name has no '.'
+        if (domains && !strnchr(qname, '.', MAXDNAME)) {
+          qname[orig_qname_len] = '.';
+          qname_len = orig_qname_len + 1 + ink_strlcpy(qname + orig_qname_len + 1, *domains,
+                                                       MAXDNAME - (orig_qname_len + 1));
+          ++domains;
+        }
+      } else {
+        domains = NULL;
       }
       Debug("dns", "enqueing query %s", qname);
       DNSEntry *dup = get_entry(dnsH, qname, qtype);
@@ -1120,37 +1126,24 @@ dns_result(DNSHandler *h, DNSEntry *e, HostEnt *ent, bool retry) {
       return;
     } else if (e->domains && *e->domains) {
       do {
-        Debug("dns", "domain extending %s", e->qname);
-        //int l = _strlen(e->qname);
-        char *dot = strchr(e->qname, '.');
-        if (dot) {
-          if (e->qname_len + strlen(*e->domains) + 2 > MAXDNAME) {
-            Debug("dns", "domain too large %s + %s", e->qname, *e->domains);
-            goto LnextDomain;
-          }
-          if (e->qname[e->qname_len - 1] != '.') {
-            e->qname[e->qname_len] = '.';
-            ink_strlcpy(e->qname + e->qname_len + 1, *e->domains, MAXDNAME - (e->qname_len + 1));
-            e->qname_len = strlen(e->qname);
-          } else {
-            ink_strlcpy(e->qname + e->qname_len, *e->domains, MAXDNAME - e->qname_len);
-            e->qname_len = strlen(e->qname);
-          }
+        Debug("dns", "domain extending, last tried '%s', original '%.*s'", e->qname, e->orig_qname_len, e->qname);
+
+        // Make sure the next try fits
+        if (e->orig_qname_len + strlen(*e->domains) + 2 > MAXDNAME) {
+          Debug("dns", "domain too large %.*s + %s", e->orig_qname_len, e->qname, *e->domains);
         } else {
-          if (e->qname_len + strlen(*e->domains) + 2 > MAXDNAME) {
-            Debug("dns", "domain too large %s + %s", e->qname, *e->domains);
-            goto LnextDomain;
-          }
-          e->qname[e->qname_len] = '.';
-          ink_strlcpy(e->qname + e->qname_len + 1, *e->domains, MAXDNAME - (e->qname_len + 1));
-          e->qname_len = strlen(e->qname);
+          e->qname[e->orig_qname_len] = '.';
+          e->qname_len = e->orig_qname_len + 1 + ink_strlcpy(e->qname + e->orig_qname_len + 1, *e->domains,
+                                                             MAXDNAME - (e->orig_qname_len + 1));
+          ++(e->domains);
+          e->retries = dns_retries;
+          Debug("dns", "new name = %s retries = %d", e->qname, e->retries);
+          write_dns(h);
+
+          return;
         }
-        ++(e->domains);
-        e->retries = dns_retries;
-        Debug("dns", "new name = %s retries = %d", e->qname, e->retries);
-        write_dns(h);
-        return;
-      LnextDomain:
+
+        // Try another one
         ++(e->domains);
       } while (*e->domains);
     } else {
@@ -1629,11 +1622,11 @@ ink_dns_init(ModuleVersion v)
   //
   RecRegisterRawStat(dns_rsb, RECT_PROCESS,
                      "proxy.process.dns.total_dns_lookups",
-                     RECD_INT, RECP_NULL, (int) dns_total_lookups_stat, RecRawStatSyncSum);
+                     RECD_INT, RECP_PERSISTENT, (int) dns_total_lookups_stat, RecRawStatSyncSum);
 
   RecRegisterRawStat(dns_rsb, RECT_PROCESS,
                      "proxy.process.dns.lookup_avg_time",
-                     RECD_INT, RECP_NULL, (int) dns_response_time_stat, RecRawStatSyncHrTimeAvg);
+                     RECD_INT, RECP_PERSISTENT, (int) dns_response_time_stat, RecRawStatSyncHrTimeAvg);
 
   RecRegisterRawStat(dns_rsb, RECT_PROCESS,
                      "proxy.process.dns.success_avg_time",
@@ -1641,22 +1634,22 @@ ink_dns_init(ModuleVersion v)
 
   RecRegisterRawStat(dns_rsb, RECT_PROCESS,
                      "proxy.process.dns.lookup_successes",
-                     RECD_INT, RECP_NULL, (int) dns_lookup_success_stat, RecRawStatSyncSum);
+                     RECD_INT, RECP_PERSISTENT, (int) dns_lookup_success_stat, RecRawStatSyncSum);
 
   RecRegisterRawStat(dns_rsb, RECT_PROCESS,
                      "proxy.process.dns.fail_avg_time",
-                     RECD_INT, RECP_NULL, (int) dns_fail_time_stat, RecRawStatSyncHrTimeAvg);
+                     RECD_INT, RECP_PERSISTENT, (int) dns_fail_time_stat, RecRawStatSyncHrTimeAvg);
 
   RecRegisterRawStat(dns_rsb, RECT_PROCESS,
                      "proxy.process.dns.lookup_failures",
-                     RECD_INT, RECP_NULL, (int) dns_lookup_fail_stat, RecRawStatSyncSum);
+                     RECD_INT, RECP_PERSISTENT, (int) dns_lookup_fail_stat, RecRawStatSyncSum);
 
   RecRegisterRawStat(dns_rsb, RECT_PROCESS,
-                     "proxy.process.dns.retries", RECD_INT, RECP_NULL, (int) dns_retries_stat, RecRawStatSyncSum);
+                     "proxy.process.dns.retries", RECD_INT, RECP_PERSISTENT, (int) dns_retries_stat, RecRawStatSyncSum);
 
   RecRegisterRawStat(dns_rsb, RECT_PROCESS,
                      "proxy.process.dns.max_retries_exceeded",
-                     RECD_INT, RECP_NULL, (int) dns_max_retries_exceeded_stat, RecRawStatSyncSum);
+                     RECD_INT, RECP_PERSISTENT, (int) dns_max_retries_exceeded_stat, RecRawStatSyncSum);
 
   RecRegisterRawStat(dns_rsb, RECT_PROCESS,
                      "proxy.process.dns.in_flight",
@@ -1721,7 +1714,7 @@ static const char *dns_test_hosts[] = {
 };
 
 REGRESSION_TEST(DNS) (RegressionTest *t, int atype, int *pstatus) {
-  eventProcessor.schedule_in(NEW(new DNSRegressionContinuation(4, 4, dns_test_hosts, t, atype, pstatus)),
+  eventProcessor.schedule_in(new DNSRegressionContinuation(4, 4, dns_test_hosts, t, atype, pstatus),
                              HRTIME_SECONDS(1));
 }
 

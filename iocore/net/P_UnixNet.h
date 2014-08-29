@@ -246,7 +246,7 @@ check_shedding_warning()
   ink_hrtime t = ink_get_hrtime();
   if (t - last_shedding_warning > NET_THROTTLE_MESSAGE_EVERY) {
     last_shedding_warning = t;
-    REC_SignalWarning(REC_SIGNAL_SYSTEM_ERROR, "number of connections reaching shedding limit");
+    RecSignalWarning(REC_SIGNAL_SYSTEM_ERROR, "number of connections reaching shedding limit");
   }
 }
 
@@ -276,7 +276,7 @@ check_throttle_warning()
   ink_hrtime t = ink_get_hrtime();
   if (t - last_throttle_warning > NET_THROTTLE_MESSAGE_EVERY) {
     last_throttle_warning = t;
-    REC_SignalWarning(REC_SIGNAL_SYSTEM_ERROR, "too many connections, throttling");
+    RecSignalWarning(REC_SIGNAL_SYSTEM_ERROR, "too many connections, throttling");
 
   }
 }
@@ -300,7 +300,7 @@ check_emergency_throttle(Connection & con)
   if (fd > emergency) {
     int over = fd - emergency;
     emergency_throttle_time = ink_get_hrtime() + (over * over) * HRTIME_SECOND;
-    REC_SignalWarning(REC_SIGNAL_SYSTEM_ERROR, "too many open file descriptors, emergency throttling");
+    RecSignalWarning(REC_SIGNAL_SYSTEM_ERROR, "too many open file descriptors, emergency throttling");
     int hyper_emergency = fds_limit - HYPER_EMERGENCY_THROTTLE;
     if (fd > hyper_emergency)
       con.close();

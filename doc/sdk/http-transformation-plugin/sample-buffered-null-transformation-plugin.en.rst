@@ -32,54 +32,54 @@ transform:
 
 #.  Gets a handle to HTTP transactions.
 
-   .. code-block:: c
-   
-      void
-         TSPluginInit (int argc, const char *argv[]) {
-            TSHttpHookAdd (TS_HTTP_READ_RESPONSE_HDR_HOOK,
-               TSContCreate (transform_plugin, NULL)); }
+    .. code-block:: c
 
-   With this ``TSPluginInit`` routine, the plugin is called back every
-   time Traffic Server reads a response header.
+       void
+          TSPluginInit (int argc, const char *argv[]) {
+             TSHttpHookAdd (TS_HTTP_READ_RESPONSE_HDR_HOOK,
+                TSContCreate (transform_plugin, NULL)); }
+
+    With this ``TSPluginInit`` routine, the plugin is called back every
+    time Traffic Server reads a response header.
 
 #.  Checks to see if the transaction response is transformable.
 
-   .. code-block:: c
-   
-      static int transform_plugin (TSCont contp, TSEvent event, void *edata) {
-         TSHttpTxn txnp = (TSHttpTxn) edata;
-         switch (event) {
-            case TS_EVENT_HTTP_READ_RESPONSE_HDR:
-               if (transformable (txnp)) {
-                  transform_add (txnp);
-               }
+    .. code-block:: c
 
-   The default behavior for transformations is to cache the transformed
-   content (if desired, you also can tell Traffic Server to cache
-   untransformed content). Therefore, only responses received directly
-   from an origin server need to be transformed. Objects served from
-   the cache are already transformed. To determine whether the response
-   is from the origin server, the routine transformable checks the
-   response header for the "200 OK" server response.
+       static int transform_plugin (TSCont contp, TSEvent event, void *edata) {
+          TSHttpTxn txnp = (TSHttpTxn) edata;
+          switch (event) {
+             case TS_EVENT_HTTP_READ_RESPONSE_HDR:
+                if (transformable (txnp)) {
+                   transform_add (txnp);
+                }
 
-   .. code-block:: c
-   
-      {
-         TSMBuffer bufp;
-         TSMLoc hdr_loc;
-         TSHttpStatus resp_status;
-   
-         TSHttpTxnServerRespGet (txnp, &bufp, &hdr_loc);
-   
-         if(TS_HTTP_STATUS_OK==
-            (resp_status=TSHttpHdrStatusGet(bufp,hdr_loc)))
-         {
-            return 1;
-         }
-         else {
-            return 0;
-         }
-      }
+    The default behavior for transformations is to cache the transformed
+    content (if desired, you also can tell Traffic Server to cache
+    untransformed content). Therefore, only responses received directly
+    from an origin server need to be transformed. Objects served from
+    the cache are already transformed. To determine whether the response
+    is from the origin server, the routine transformable checks the
+    response header for the "200 OK" server response.
+
+    .. code-block:: c
+
+       {
+          TSMBuffer bufp;
+          TSMLoc hdr_loc;
+          TSHttpStatus resp_status;
+
+          TSHttpTxnServerRespGet (txnp, &bufp, &hdr_loc);
+
+          if(TS_HTTP_STATUS_OK==
+             (resp_status=TSHttpHdrStatusGet(bufp,hdr_loc)))
+          {
+             return 1;
+          }
+          else {
+             return 0;
+          }
+       }
 
 #. If the response is transformable, then the plugin creates a
    transformation vconnection that gets called back when the response
@@ -87,7 +87,7 @@ transform:
    server).
 
    .. code-block:: c
-   
+
       static void transform_add (TSHttpTxn txnp)
       {
          TSVConn connp;
@@ -120,23 +120,23 @@ transform:
    ``handle_buffering`` function for the following code fragment:
 
    .. code-block:: c
-   
+
       TSIOBufferCopy (data->output_buffer,
          TSVIOReaderGet (write_vio), towrite, 0);
 
 #. Tell the input buffer that the transformation has read the data. See
    the ``handle_buffering`` function for the following code fragment:
-   
+
    .. code-block:: c
-   
+
       TSIOBufferReaderConsume (TSVIOReaderGet (write_vio), towrite);
 
 #. Modify the input VIO to tell it how much data has been read
    (increase the value of ``ndone``). See the ``handle_buffering``
    function for the following code fragment:
-   
+
    .. code-block:: c
-   
+
       TSVIONDoneSet (write_vio, TSVIONDoneGet (write_vio) + towrite); }
 
 #. If there is more data left to read ( if ndone < nbytes), then the
@@ -144,7 +144,7 @@ transform:
    sending it ``WRITE_READY``:
 
    .. code-block:: c
-   
+
       if (TSVIONTodoGet (write_vio) > 0) {
          if (towrite > 0) {
             TSContCall (TSVIOContGet (write_vio),
@@ -175,7 +175,7 @@ transform:
    vconnection back with the ``WRITE_COMPLETE`` event.
 
    .. code-block:: c
-   
+
       data->state = STATE_OUTPUT_DATA;
       TSContCall (TSVIOContGet (write_vio),
          TS_EVENT_VCONN_WRITE_COMPLETE, write_vio);

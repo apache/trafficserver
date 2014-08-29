@@ -24,6 +24,6 @@ tmpfile=$(mktemp "$TMPDIR/logstats.XXXXXX")
 # Automake sets $srcdir.
 srcdir=$(cd $srcdir && pwd)
 
-./traffic_logstats --log_file "$srcdir/tests/logstats.blog" --summary > "$tmpfile"
+./traffic_logstats --log_file "$srcdir/tests/logstats.blog" --summary | fgrep -v 'symbol xid' > "$tmpfile"
 diff "$tmpfile" "$srcdir/tests/logstats.summary"
 rm -f -- "$tmpfile"

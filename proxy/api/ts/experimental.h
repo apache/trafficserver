@@ -37,8 +37,27 @@ extern "C"
 {
 #endif                          /* __cplusplus */
 
-  // Forward declaration of in_addr, any user of these APIs should probably 
-  // include net/netinet.h or whatever is appropriate on the platform.
+  typedef enum
+  {
+    TS_FETCH_EVENT_EXT_HEAD_READY = -1,
+    TS_FETCH_EVENT_EXT_HEAD_DONE = -2,
+    TS_FETCH_EVENT_EXT_BODY_READY = -3,
+    TS_FETCH_EVENT_EXT_BODY_DONE = -4,
+  } TSFetchEventExt;
+
+  typedef enum
+  {
+    TS_FETCH_FLAGS_NONE = 0,           // do nothing
+    TS_FETCH_FLAGS_STREAM = 1 << 1,    // enable stream IO
+    TS_FETCH_FLAGS_DECHUNK = 1 << 2,   // dechunk body content
+    TS_FETCH_FLAGS_NEWLOCK = 1 << 3,   // allocate new lock for fetch sm
+    TS_FETCH_FLAGS_NOT_INTERNAL_REQUEST = 1 << 4 // Allow this fetch to be created as a non-internal request.
+  } TSFetchFlags;
+
+  typedef struct tsapi_fetchsm* TSFetchSM;
+
+  /* Forward declaration of in_addr, any user of these APIs should probably 
+     include net/netinet.h or whatever is appropriate on the platform. */
   struct in_addr;
 
   /* Cache APIs that are not yet fully supported and/or frozen nor complete. */
@@ -122,7 +141,7 @@ extern "C"
 #define TS_HRTIME_USECOND  (1000*TS_HRTIME_NSECOND)
 #define TS_HRTIME_NSECOND  (1LL)
 
-#define TS_HRTIME_APPROX_SECONDS(_x) ((_x)>>30)    // off by 7.3%
+#define TS_HRTIME_APPROX_SECONDS(_x) ((_x)>>30)    /*  off by 7.3% */
 #define TS_HRTIME_APPROX_FACTOR      (((float)(1<<30))/(((float)HRTIME_SECOND)))
 
   /*
@@ -187,11 +206,7 @@ extern "C"
   tsapi TSReturnCode TSHttpTxnShutDown(TSHttpTxn txnp, TSEvent event);
   tsapi TSReturnCode TSHttpTxnCloseAfterResponse(TSHttpTxn txnp, int should_close);
 
-  // TS-2195: TSHttpTxnCacheLookupSkip() is deprecated, because TSHttpTxnConfigIntSet(txn, TS_CONFIG_HTTP_CACHE_HTTP, 0)
-  // does the same thing, but better. TSHttpTxnCacheLookupSkip will be removed in TrafficServer 5.0.
-  tsapi TS_DEPRECATED TSReturnCode TSHttpTxnCacheLookupSkip(TSHttpTxn txnp);
-
-  // TS-1996: These API swill be removed after v3.4.0 is cut. Do not use them!
+  /* TS-1996: These API swill be removed after v3.4.0 is cut. Do not use them! */
   tsapi TSReturnCode TSHttpTxnNewCacheLookupDo(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc url_loc);
   tsapi TSReturnCode TSHttpTxnSecondUrlTryLock(TSHttpTxn txnp);
 
@@ -479,6 +494,218 @@ extern "C"
    *  contact: OXY, DY
    ****************************************************************************/
   tsapi int TSSendClusterRPC(TSNodeHandle_t *nh, TSClusterRPCMsg_t *msg);
+
+
+
+  /*
+    This is for the prefetch APIs, this really has to be cleaned out. This is
+    some pretty seriously broken stuff, and we should decide whether it should
+    die and be redone properly. A few of the issues include:
+
+       * The hooks are not normal ATS continuations, just plain callbacks.
+       * The hooks are therefore not registered the normal way either...
+       * And thusly, there can only be one callback for each of the three
+         Prefetch "hooks".
+       * The example plugins don't compile, there are old / missing pieces.
+  */
+
+  typedef enum
+  {
+    TS_PREFETCH_UDP_BLAST = 0,
+    TS_PREFETCH_TCP_BLAST,
+    TS_PREFETCH_MULTICAST_BLAST
+  } TSPrefetchBlastType;
+
+  typedef struct
+  {
+    TSPrefetchBlastType type;
+    struct sockaddr_storage ip;
+  } TSPrefetchBlastData;
+
+  typedef enum
+  {
+    TS_PREFETCH_OBJ_BUF_NOT_NEEDED = 0,
+    TS_PREFETCH_OBJ_BUF_NEEDED,  /* The user wants the buffer but does not
+                                    want it to be transmitted to the child */
+    TS_PREFETCH_OBJ_BUF_NEEDED_N_TRANSMITTED     /* The object should
+                                                    be transmitted as well */
+  } TSPrefetchStatus;
+
+  /* return type for TSPrefetchHook */
+  typedef enum
+    {
+      TS_PREFETCH_CONTINUE,
+      TS_PREFETCH_DISCONTINUE
+    } TSPrefetchReturnCode;
+
+
+  /* prefetch hooks, which are *not* normal hooks (no continuations) */
+  typedef enum
+  {
+    TS_PREFETCH_PRE_PARSE_HOOK,
+    /* This hook is invoked just before we begin to parse a document
+       request and response headers are available.
+       Return value: TS_PREFETCH_CONTINUE  :continue parsing
+       TS_PREFETCH_DISCONTIUE: don't bother parser
+    */
+
+    TS_PREFETCH_EMBEDDED_URL_HOOK,
+    /* This hook is invoked when a URL is extracted.
+       url_proto and url_response_proto contain the default protocols used
+       for sending the url and actual url object respectively to the child.
+       The hook can change thes to one of the 3 methods mentioned above.
+       Return value: TS_PREFETCH_CONTINUE  : prefetch this url.
+       TS_PREFETCH_DISCONTIUE: don't bother prefetching this
+       url
+    */
+
+    TS_PREFETCH_EMBEDDED_OBJECT_HOOK
+    /* This hook is invoked when the user wants to have access to the buffer
+       of the embedded object we prefetched. We pass in the buffer reader.
+       The reader contains the data in the format specified in the Prefetch
+       document (with 12 byte header etc).
+       It is the users responsibility to free the reader.
+       The only valid field in the PrefetchInfo structure object_buf_reader.
+       embedded_url, object_buf, object_buf_reader, and object_buf_status are
+       set in TSPrefetchInfo passed as arguments
+    */
+  } TSPrefetchHookID;
+
+
+  /* This holds the main Prefetch information as used by the hook callbacks. */
+  typedef struct
+  {
+    /*request header */
+    TSMBuffer request_buf;
+    TSMLoc request_loc;
+
+    /*response header */
+    TSMBuffer response_buf;
+    TSMLoc response_loc;
+
+    /*child ip addr in network order */
+    struct sockaddr_storage client_ip;
+
+    /*the embedded url parsed by the parser */
+    const char *embedded_url;
+
+    /* flag which says if a perticular embedded url is present in the cache */
+    int present_in_cache;
+
+    /* Reader for the buffer which contains the prefetched object */
+    TSIOBuffer object_buf;
+    TSIOBufferReader object_buf_reader;
+
+    /* This specifies if we need to invoke the OBJECT_HOOK and whether we
+       need to send the buffer to child as well
+       This should set inside EMBEDDED_URL_HOOK by the user
+    */
+    int object_buf_status;
+
+    /** Method of sending data to child.
+
+        If set to @c MULTICAST_BLAST then the corresponding address
+        value must be set to a multicast address to use.
+    */
+    TSPrefetchBlastData url_blast;
+    TSPrefetchBlastData url_response_blast;
+
+  } TSPrefetchInfo;
+
+  typedef TSPrefetchReturnCode (*TSPrefetchHook) (TSPrefetchHookID hook, TSPrefetchInfo* prefetch_info);
+
+  /* Registers a hook for the given hook_no.
+     A hook is already present, it is replace by hook_fn
+     return value 0 indicates success */
+  tsapi int TSPrefetchHookSet(int hook_no, TSPrefetchHook hook_fn);
+
+
+  /**
+   * Extended FetchSM's AIPs
+   */
+
+  /*
+   * Create FetchSM, this API will enable stream IO automatically.
+   *
+   * @param contp: continuation to be callbacked.
+   * @param method: request method.
+   * @param url: scheme://host[:port]/path.
+   * @param version: client http version, eg: "HTTP/1.1".
+   * @param client_addr: client addr sent to log.
+   * @param flags: can be bitwise OR of several TSFetchFlags.
+   *
+   * return TSFetchSM which should be destroyed by TSFetchDestroy().
+   */
+  tsapi TSFetchSM TSFetchCreate(TSCont contp, const char *method,
+                                const char *url, const char *version,
+                                struct sockaddr const* client_addr, int flags);
+
+  /*
+   * Create FetchSM, this API will enable stream IO automatically.
+   *
+   * @param fetch_sm: returned value of TSFetchCreate().
+   * @param name: name of header.
+   * @param name_len: len of name.
+   * @param value: value of header.
+   * @param name_len: len of value.
+   *
+   * return TSFetchSM which should be destroyed by TSFetchDestroy().
+   */
+  tsapi void TSFetchHeaderAdd(TSFetchSM fetch_sm,
+                              const char *name, int name_len,
+                              const char *value, int value_len);
+
+  /*
+   * Write data to FetchSM
+   *
+   * @param fetch_sm: returned value of TSFetchCreate().
+   * @param data/len: data to be written to fetch sm.
+   */
+  tsapi void TSFetchWriteData(TSFetchSM fetch_sm, const void *data, size_t len);
+
+  /*
+   * Read up to *len* bytes from FetchSM into *buf*.
+   *
+   * @param fetch_sm: returned value of TSFetchCreate().
+   * @param buf/len: buffer to contain data from fetch sm.
+   */
+  tsapi ssize_t TSFetchReadData(TSFetchSM fetch_sm, void *buf, size_t len);
+
+  /*
+   * Lanuch FetchSM to do http request, before calling this API,
+   * you should append http request header into fetch sm through
+   * TSFetchWriteData() API
+   *
+   * @param fetch_sm: comes from returned value of TSFetchCreate().
+   */
+  tsapi void TSFetchLaunch(TSFetchSM fetch_sm);
+
+  /*
+   * Destroy FetchSM
+   *
+   * @param fetch_sm: returned value of TSFetchCreate().
+   */
+  tsapi void TSFetchDestroy(TSFetchSM fetch_sm);
+
+  /*
+   * Set user-defined data in FetchSM
+   */
+  tsapi void TSFetchUserDataSet(TSFetchSM fetch_sm, void *data);
+
+  /*
+   * Get user-defined data in FetchSM
+   */
+  tsapi void* TSFetchUserDataGet(TSFetchSM fetch_sm);
+
+  /*
+   * Get client response hdr mbuffer
+   */
+  tsapi TSMBuffer TSFetchRespHdrMBufGet(TSFetchSM fetch_sm);
+
+  /*
+   * Get client response hdr mloc
+   */
+  tsapi TSMLoc TSFetchRespHdrMLocGet(TSFetchSM fetch_sm);
 
 #ifdef __cplusplus
 }

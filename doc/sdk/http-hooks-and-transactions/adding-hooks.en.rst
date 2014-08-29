@@ -29,21 +29,21 @@ There are several ways to add hooks to your plugin.
 -  **Transaction hooks** Transaction hooks can be used to call plugins
    back for a specific HTTP transaction. You cannot add transaction
    hooks in ``TSPluginInit``; you first need a handle to a transaction.
-   See `Accessing the Transaction Being
-   Processed <../header-based-plugin-examples/blacklist-plugin/accessing-the-transaction-being-processed>`__
+   See :doc:`Accessing the Transaction Being
+   Processed <../header-based-plugin-examples/blacklist-plugin/accessing-the-transaction-being-processed.en>`
 
 -  **Transformation hooks** Transformation hooks are a special case of
    transaction hooks. See
-   ```TSVConnCacheObjectSizeGet`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#af5ca2c5b00e4859d2fa5dec466dfd058>`__
+   :c:func:`TSVConnCacheObjectSizeGet`
    for more information about transformation hooks. You add a
-   transformation hook using ``TSHttpTxnHookAdd``, as described in `HTTP
-   Transactions <HTTP_Transactions.html>`__.
+   transformation hook using ``TSHttpTxnHookAdd``, as described in :doc:`HTTP
+   Transactions <http-transactions.en>`.
 
 -  **Session hooks** An HTTP session starts when a client opens a
    connection to Traffic Server and ends when the connection closes. A
    session can consist of several transactions. Session hooks enable you
    to hook your plugin to a particular point in every transaction within
-   a specified session (see `HTTP Sessions <HTTPSessions.html>`__).
+   a specified session (see :doc:`HTTP Sessions <http-sessions.en>`).
    Session hooks are added in a manner similar to transaction hooks (ie,
    you first need a handle to an HTTP session).
 
@@ -51,13 +51,13 @@ There are several ways to add hooks to your plugin.
    to hook on to the alternate selection state. These hooks must be
    added globally, since Traffic Server does not have a handle to a
    transaction or session when alternate selection is taking place. See
-   `HTTP Alternate Selection <HTTPAlternateSelection.html>`__ for
+   :doc:`HTTP Alternate Selection <http-alternate-selection.en>` for
    information on the alternate selection mechanism.
 
 All of the hook addition functions
-(```TSHttpHookAdd`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#a19a663edd3ec439f66256fbbb26cc1db>`__,
-```TSHttpSsnHookAdd`` <HTTPSessionFunctions.html#TSHttpSsnHookAdd>`__,
-```TSHttpSsnReenable`` <HTTPSessionFunctions.html#TSHttpSsnReenable>`__)
+(:c:func:`TSHttpHookAdd`,
+:c:func:`TSHttpSsnHookAdd`,
+:c:func:`TSHttpSsnReenable`)
 take ``TSHttpHookID`` (identifies the hook to add on to) and ``TSCont``
 (the basic callback mechanism in Traffic Server). A single ``TSCont``
 can be added to any number of hooks at a time.
@@ -101,8 +101,7 @@ values for ``TSHttpHookID`` are:
     ``TS_EVENT_HTTP_READ_RESPONSE_HDR``.
 
 ``TS_HTTP_RESPONSE_TRANSFORM_HOOK``
-    See
-    "`"Transformations" <../http-transformation-plugin#Transformations>`__
+    See :ref:`"Transformations" <transformations>`
     for information about transformation hooks.
 
 ``TS_HTTP_READ_REQUEST_HDR_HOOK``
@@ -110,12 +109,11 @@ values for ``TSHttpHookID`` are:
     Corresponds to the event ``TS_EVENT_HTTP_READ_REQUEST_HDR``.
 
 ``TS_HTTP_REQUEST_TRANSFORM_HOOK``
-    See
-    "`"Transformations" <../http-transformation-plugin#Transformations>`__
+    See :ref:`"Transformations" <transformations>`
     for information about transformation hooks.
 
 ``TS_HTTP_SELECT_ALT_HOOK``
-    See `"HTTP Alternate Selection" <http-alternate-selection>`__ for
+    See :doc:`"HTTP Alternate Selection" <http-alternate-selection.en>` for
     information about the alternate selection mechanism.
 
 ``TS_HTTP_SEND_RESPONSE_HDR_HOOK``
@@ -150,4 +148,4 @@ values for ``TSHttpHookID`` are:
     was left open for keep alive has new data available.
 
 The function you use to add a global HTTP hook is
-```TSHttpHookAdd`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#a19a663edd3ec439f66256fbbb26cc1db>`__.
+:c:func:`TSHttpHookAdd`.

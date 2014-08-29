@@ -45,7 +45,7 @@ int handleTimerEvent(TSCont cont, TSEvent event, void *edata) {
   AsyncTimerState *state = static_cast<AsyncTimerState *>(TSContDataGet(cont));
   if (state->initial_timer_action_) {
     LOG_DEBUG("Received initial timer event.");
-    state->initial_timer_action_ = NULL; // mark it so that it won't be canceled in the destructor
+    state->initial_timer_action_ = NULL; // mark it so that it won't be canceled later on
     if (state->type_ == AsyncTimer::TYPE_PERIODIC) {
       LOG_DEBUG("Scheduling periodic event now");
       state->periodic_timer_action_ = TSContScheduleEvery(state->cont_, state->period_in_ms_,
@@ -63,12 +63,12 @@ int handleTimerEvent(TSCont cont, TSEvent event, void *edata) {
 
 AsyncTimer::AsyncTimer(Type type, int period_in_ms, int initial_period_in_ms) {
   state_ = new AsyncTimerState(type, period_in_ms, initial_period_in_ms, this);
-  TSMutex null_mutex = NULL;
-  state_->cont_ = TSContCreate(handleTimerEvent, null_mutex);
+  state_->cont_ = TSContCreate(handleTimerEvent, TSMutexCreate());
   TSContDataSet(state_->cont_, static_cast<void *>(state_));
 }
 
-void AsyncTimer::run(shared_ptr<AsyncDispatchControllerBase> dispatch_controller) {
+void AsyncTimer::run() {
+  state_->dispatch_controller_ = getDispatchController(); // keep a copy in state so that cont handler can use it
   int one_off_timeout_in_ms = 0;
   int regular_timeout_in_ms = 0;
   if (state_->type_ == AsyncTimer::TYPE_ONE_OFF) {
@@ -88,10 +88,14 @@ void AsyncTimer::run(shared_ptr<AsyncDispatchControllerBase> dispatch_controller
     state_->periodic_timer_action_ = TSContScheduleEvery(state_->cont_, regular_timeout_in_ms,
                                                          TS_THREAD_POOL_DEFAULT);
   }
-  state_->dispatch_controller_ = dispatch_controller;
 }
 
-AsyncTimer::~AsyncTimer() {
+void AsyncTimer::cancel() {
+  if (!state_->cont_) {
+    LOG_DEBUG("Already canceled");
+    return;
+  }
+  TSMutexLock(TSContMutexGet(state_->cont_)); // mutex will be unlocked in destroy
   if (state_->initial_timer_action_) {
     LOG_DEBUG("Canceling initial timer action");
     TSActionCancel(state_->initial_timer_action_);
@@ -102,5 +106,10 @@ AsyncTimer::~AsyncTimer() {
   }
   LOG_DEBUG("Destroying cont");
   TSContDestroy(state_->cont_);
+  state_->cont_ = NULL;
+}
+
+AsyncTimer::~AsyncTimer() {
+  cancel();
   delete state_;
 }

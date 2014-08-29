@@ -27,8 +27,8 @@
 DFA::~DFA()
 {
   dfa_pattern * p = _my_patterns;
-  dfa_pattern * t = p;
-  
+  dfa_pattern * t;
+
   while(p) {
     if (p->_pe)
       pcre_free(p->_pe);
@@ -39,60 +39,65 @@ DFA::~DFA()
     t = p->_next;
     ats_free(p);
     p = t;
-  } 
+  }
 }
 
 dfa_pattern *
-DFA::build(const char *pattern, REFlags flags)
+DFA::build(const char *pattern, unsigned flags)
 {
   const char *error;
   int erroffset;
   dfa_pattern* ret;
-  
+  int options = PCRE_ANCHORED;
+
   ret = (dfa_pattern*)ats_malloc(sizeof(dfa_pattern));
   ret->_p = NULL;
-  
-  if (flags & RE_CASE_INSENSITIVE)
-    ret->_re = pcre_compile(pattern, PCRE_CASELESS|PCRE_ANCHORED, &error, &erroffset, NULL);
-  else 
-    ret->_re = pcre_compile(pattern, PCRE_ANCHORED, &error, &erroffset, NULL);
-  
+
+  if (flags & RE_CASE_INSENSITIVE) {
+    options |= PCRE_CASELESS;
+  }
+
+  if (flags & RE_UNANCHORED) {
+    options &= ~PCRE_ANCHORED;
+  }
+
+  ret->_re = pcre_compile(pattern, options, &error, &erroffset, NULL);
   if (error) {
     ats_free(ret);
     return NULL;
   }
-  
+
   ret->_pe = pcre_study(ret->_re, 0, &error);
-  
+
   if (error) {
     ats_free(ret);
     return NULL;
   }
-  
+
   ret->_idx = 0;
   ret->_p = ats_strndup(pattern, strlen(pattern));
   ret->_next = NULL;
   return ret;
 }
 
-int DFA::compile(const char *pattern, REFlags flags) {
+int DFA::compile(const char *pattern, unsigned flags) {
   ink_assert(_my_patterns == NULL);
   _my_patterns = build(pattern,flags);
-  if (_my_patterns) 
+  if (_my_patterns)
     return 0;
-  else 
+  else
     return -1;
 }
 
 int
-DFA::compile(const char **patterns, int npatterns, REFlags flags)
+DFA::compile(const char **patterns, int npatterns, unsigned flags)
 {
   const char *pattern;
   dfa_pattern *ret = NULL;
   dfa_pattern *end = NULL;
   int i;
   //char buf[128];
-  
+
   for (i = 0; i < npatterns; i++) {
     pattern = patterns[i];
     //snprintf(buf,128,"%s",pattern);
@@ -100,13 +105,13 @@ DFA::compile(const char **patterns, int npatterns, REFlags flags)
     if (!ret) {
       continue;
     }
-    
+
     if (!_my_patterns) {
       _my_patterns = ret;
       _my_patterns->_next = NULL;
       _my_patterns->_idx = i;
     }
-    else { 
+    else {
       end = _my_patterns;
       while( end->_next ) {
         end = end->_next;
@@ -114,9 +119,9 @@ DFA::compile(const char **patterns, int npatterns, REFlags flags)
       end->_next = ret; //add to end
       ret->_idx = i;
     }
-    
+
   }
-  
+
   return 0;
 }
 
@@ -133,7 +138,7 @@ DFA::match(const char *str, int length) const
   int ovector[30];
   //int wspace[20];
   dfa_pattern * p = _my_patterns;
-  
+
   while(p) {
     rc = pcre_exec(p->_re, p->_pe, str, length , 0, 0, ovector, 30/*,wspace,20*/);
     if (rc > 0) {
@@ -144,4 +149,3 @@ DFA::match(const char *str, int length) const
 
   return -1;
 }
-

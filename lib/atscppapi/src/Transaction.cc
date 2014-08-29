@@ -29,7 +29,6 @@
 #include "atscppapi/shared_ptr.h"
 #include "logging_internal.h"
 #include "utils_internal.h"
-#include "InitializableValue.h"
 #include "atscppapi/noncopyable.h"
 
 using std::map;
@@ -114,16 +113,7 @@ void Transaction::error(const std::string &page) {
 
 void Transaction::setErrorBody(const std::string &page) {
   LOG_DEBUG("Transaction tshttptxn=%p setting error body page: %s", state_->txn_, page.c_str());
-  char *res_bdy = static_cast<char*>(TSmalloc(page.length() + 1));
-  strncpy(res_bdy, page.c_str(), page.length());
-  res_bdy[page.length()] = '\0';
-
-  std::string str_content_type = "text/html";
-  char *content_type = static_cast<char*>(TSmalloc(str_content_type.length() + 1));
-  strncpy(content_type, str_content_type.c_str(), str_content_type.length());
-  content_type[str_content_type.length()] = '\0';
-
-  TSHttpTxnErrorBodySet(state_->txn_, res_bdy, page.length(), content_type);
+  TSHttpTxnErrorBodySet(state_->txn_, TSstrdup(page.c_str()), page.length(), NULL); // Default to text/html
 }
 
 bool Transaction::isInternalRequest() const {
@@ -215,6 +205,28 @@ bool Transaction::setServerAddress(const sockaddr *sockaddress) {
 bool Transaction::setIncomingPort(uint16_t port) {
   TSHttpTxnClientIncomingPortSet(state_->txn_, port);
   return true; // In reality TSHttpTxnClientIncomingPortSet should return SUCCESS or ERROR.
+}
+
+/*
+ * Note: The following methods cannot be attached to a Response
+ * object because that would require the Response object to
+ * know that it's a server or client response because of the
+ * TS C api which is TSHttpTxnServerRespBodyBytesGet.
+ */
+size_t Transaction::getServerResponseBodySize() {
+  return static_cast<size_t>(TSHttpTxnServerRespBodyBytesGet(state_->txn_));
+}
+
+size_t Transaction::getServerResponseHeaderSize() {
+  return static_cast<size_t>(TSHttpTxnServerRespHdrBytesGet(state_->txn_));
+}
+
+size_t Transaction::getClientResponseBodySize() {
+  return static_cast<size_t>(TSHttpTxnClientRespBodyBytesGet(state_->txn_));
+}
+
+size_t Transaction::getClientResponseHeaderSize() {
+  return static_cast<size_t>(TSHttpTxnClientRespHdrBytesGet(state_->txn_));
 }
 
 void Transaction::setTimeout(Transaction::TimeoutType type, int time_ms) {

@@ -32,7 +32,6 @@ first MIME field value, and ``car`` is the second MIME field value.
 
 ::
 
-      :::text
       Foo: bar, car
 
 The following example is an augmented **Backus-Naur Form** (BNF) for the
@@ -47,7 +46,6 @@ are all equivalent.
 
 ::
 
-        :::text
     MIME-header = *MIME-field
     MIME-field = field-name ":" #field-value
     field-name = *token
@@ -68,13 +66,13 @@ field and the field does not exist, then it returns ``TS_NULL_MLOC``. In
 such a case, you wouldn't need to deallocate the handle with a call to
 ``TSHandleMLocRelease``.
 
-The location (``TSMLoc``) in the `MIME header
-functions <#MimeHeaderFxns>`__ can be either an HTTP header location or
+The location (``TSMLoc``) in the :ref:`MIME header
+functions <MimeHeaderFxns>` can be either an HTTP header location or
 a MIME header location. If an HTTP header location is passed to these
 functions, then the system locates the MIME header associated with that
 HTTP header and executes the corresponding MIME header operations
 specified by the functions (see the example in the description of
-```TSMimeHdrCopy`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a6e0a392b2e072db8e7f1d795151203b4>`__).
+:c:func:`TSMimeHdrCopy`).
 
 **Note:** MIME headers may contain more than one MIME field with the
 same name. Previous versions of Traffic Server joined multiple fields
@@ -391,47 +389,49 @@ custom log configuration file that explicitly logs such fields. This
 provides a useful mechanism for plugins to store information about an
 object in one of the MIME headers associated with the object.
 
+.. _MimeHeaderFxns:
+
 The MIME header functions are listed below:
 
--  ```TSMimeHdrFieldAppend`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#ae36c9bab9147a30b259d8e0223d697f2>`__
--  ```TSMimeHdrFieldClone`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#ade66cd69ddff40d14b015a9e2cd7b46f>`__
--  ```TSMimeHdrFieldCopy`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#a612ebefde403abc216af99f9150dd66f>`__
--  ```TSMimeHdrFieldCopyValues`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a5e4b2f68392a26643620641e50e5045b>`__
--  ```TSMimeHdrFieldCreate`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#a7f79c0bea2ce14ced3b017eac08f8916>`__
--  ```TSMimeHdrFieldDestroy`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#a6bf2d8e95e6f3ef351f63dbe8bc54020>`__
--  ```TSMimeHdrFieldLengthGet`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#a8a906f22ccf7a4a04fac817dc57a785f>`__
--  ```TSMimeHdrFieldNameGet`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#ad68f51073e4630ad6a0433efbfeef2ea>`__
--  ```TSMimeHdrFieldNameSet`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#a6856f6069fa4ee67d1a788bd642d59f0>`__
--  ```TSMimeHdrFieldNext`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#aaf3a205e8a4e7128f3fa3de70991df80>`__
--  ```TSMimeHdrFieldNextDup`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#af2d776615afe959ed7c3639830a7061f>`__
--  ```TSMimeHdrFieldValueAppend`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#ad1d4d1dda95311e3389245fd9fa961b5>`__
--  ```TSMimeHdrFieldValueAppend`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#ad1d4d1dda95311e3389245fd9fa961b5>`__
--  ```TSMimeHdrFieldValueDateGet`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#ad74a60f0da93397ee015d82f30021d15>`__
--  ```TSMimeHdrFieldValueDateInsert`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#a0520a29de96736b04f14e9d790ec8e9c>`__
--  ```TSMimeHdrFieldValueDateSet`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#abf85e014cb316977dedca38c341d4369>`__
--  ```TSMimeHdrFieldValueIntGet`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#ace1fac92d2be75ff7cbd8eb7725d3fac>`__
--  ```TSMimeHdrFieldValueIntSet`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#aec96c5629a750cdaec709228c4bd8a76>`__
--  ```TSMimeHdrFieldValueStringGet`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#a4aa55cd4eeb9e6d0a5151c02f0c18c28>`__
--  ```TSMimeHdrFieldValueStringInsert`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#a979d1591becf1c59de830af117d54923>`__
--  ```TSMimeHdrFieldValueStringSet`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#ac21e44e84b25c23e52ba7bea7bd09ed6>`__
--  ```TSMimeHdrFieldValueUintGet`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#a116b4c9144ad6eda66213adb0167706a>`__
--  ```TSMimeHdrFieldValueUintInsert`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#a88db3a90d3ac7766e55c734c89dfe86f>`__
--  ```TSMimeHdrFieldValueUintSet`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#a63b0a686b4a6ec6b8a4f1b796009c3cd>`__
--  ```TSMimeHdrFieldValuesClear`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a8fd3afaf88f6c76793fdb635bbd22113>`__
--  ```TSMimeHdrFieldValuesCount`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a326283521986acf9b8a9ec00f3d6d164>`__
--  ```TSMimeHdrClone`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#aa8ab95bda93c3e16e6d134fe35acd1b6>`__
--  ```TSMimeHdrCopy`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a6e0a392b2e072db8e7f1d795151203b4>`__
--  ```TSMimeHdrCreate`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#a3427dfbd6b79c531fcba4e8c8b4e217d>`__
--  ```TSMimeHdrDestroy`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a60ad7f4f4f9e2559dcc2ff28ebe8d96c>`__
--  ```TSMimeHdrFieldFind`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#a30e4ce224761b273a119dcd57f5a352b>`__
--  ```TSMimeHdrFieldGet`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a31c0c307010a5d19d027ffb3a2656745>`__
--  ```TSMimeHdrFieldRemove`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a96d9a50d0687456e6e67eb2e9a9c2d72>`__
--  ```TSMimeHdrFieldsClear`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#a65d7539e48c9f5c26075344dee6c6ae2>`__
--  ```TSMimeHdrFieldsCount`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#ab02f7d0cba75cf0146c6a9b507c79fcf>`__
--  ```TSMimeHdrLengthGet`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#a001cd786282f5c9d04189ddf7c96e269>`__
--  ```TSMimeHdrParse`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#a4a6042bcd5b5b0a21267c03cf102e90d>`__
--  ```TSMimeParserClear`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#ac173b595659d1909aae5410ecd1ce028>`__
--  ```TSMimeParserCreate`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a518072dc5a90b753df7726878119506b>`__
--  ```TSMimeParserDestroy`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a5f287f5016d931842c0a5012c3d227b7>`__
--  ```TSMimeHdrPrint`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#adfca8722edc6469df4410b8050406bb0>`__
+-  :c:func:`TSMimeHdrFieldAppend`
+-  :c:func:`TSMimeHdrFieldClone`
+-  :c:func:`TSMimeHdrFieldCopy`
+-  :c:func:`TSMimeHdrFieldCopyValues`
+-  :c:func:`TSMimeHdrFieldCreate`
+-  :c:func:`TSMimeHdrFieldDestroy`
+-  :c:func:`TSMimeHdrFieldLengthGet`
+-  :c:func:`TSMimeHdrFieldNameGet`
+-  :c:func:`TSMimeHdrFieldNameSet`
+-  :c:func:`TSMimeHdrFieldNext`
+-  :c:func:`TSMimeHdrFieldNextDup`
+-  :c:func:`TSMimeHdrFieldValueAppend`
+-  :c:func:`TSMimeHdrFieldValueAppend`
+-  :c:func:`TSMimeHdrFieldValueDateGet`
+-  :c:func:`TSMimeHdrFieldValueDateInsert`
+-  :c:func:`TSMimeHdrFieldValueDateSet`
+-  :c:func:`TSMimeHdrFieldValueIntGet`
+-  :c:func:`TSMimeHdrFieldValueIntSet`
+-  :c:func:`TSMimeHdrFieldValueStringGet`
+-  :c:func:`TSMimeHdrFieldValueStringInsert`
+-  :c:func:`TSMimeHdrFieldValueStringSet`
+-  :c:func:`TSMimeHdrFieldValueUintGet`
+-  :c:func:`TSMimeHdrFieldValueUintInsert`
+-  :c:func:`TSMimeHdrFieldValueUintSet`
+-  :c:func:`TSMimeHdrFieldValuesClear`
+-  :c:func:`TSMimeHdrFieldValuesCount`
+-  :c:func:`TSMimeHdrClone`
+-  :c:func:`TSMimeHdrCopy`
+-  :c:func:`TSMimeHdrCreate`
+-  :c:func:`TSMimeHdrDestroy`
+-  :c:func:`TSMimeHdrFieldFind`
+-  :c:func:`TSMimeHdrFieldGet`
+-  :c:func:`TSMimeHdrFieldRemove`
+-  :c:func:`TSMimeHdrFieldsClear`
+-  :c:func:`TSMimeHdrFieldsCount`
+-  :c:func:`TSMimeHdrLengthGet`
+-  :c:func:`TSMimeHdrParse`
+-  :c:func:`TSMimeParserClear`
+-  :c:func:`TSMimeParserCreate`
+-  :c:func:`TSMimeParserDestroy`
+-  :c:func:`TSMimeHdrPrint`
 

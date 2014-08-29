@@ -22,31 +22,40 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/mgmt \
   -I$(top_srcdir)/mgmt/api \
   -I$(top_srcdir)/mgmt/api/include \
-  -I$(top_srcdir)/mgmt/cluster \
-  -I$(top_srcdir)/mgmt/web2 \
   -I$(top_srcdir)/lib/tsconfig \
   -I$(top_srcdir)/proxy \
   -I$(top_srcdir)/lib/records \
   -I$(top_srcdir)/lib/ts \
+  -I$(top_builddir)/lib \
   -I$(top_srcdir)/lib
-
-MGMT_DEFS = @MGMT_DEFS@
-DEFS += $(MGMT_DEFS)
 
 # header files used by other libraries
 EXTRA_DIST = MgmtHashTable.h MgmtSocket.h
 
-noinst_LIBRARIES = libutils_lm.a libutils_p.a
+noinst_LTLIBRARIES = libutils_lm.la libutils_p.la
+check_PROGRAMS = test_marshall
 
-libutils_lm_a_CPPFLAGS = $(ink_with_modules_local) $(AM_CPPFLAGS)
-libutils_lm_a_SOURCES = \
-  ExpandingArray.cc \
-  ExpandingArray.h \
-  MgmtUtils.cc \
-  MgmtUtils.h \
-  WebMgmtUtils.cc \
-  WebMgmtUtils.h
+TESTS = $(check_PROGRAMS)
 
-libutils_p_a_SOURCES = \
+libutils_COMMON = \
+  MgmtMarshall.cc \
+  MgmtMarshall.h \
+  MgmtSocket.cc \
+  MgmtSocket.h \
   MgmtUtils.cc \
   MgmtUtils.h
+
+libutils_lm_la_SOURCES = \
+  $(libutils_COMMON) \
+  ExpandingArray.cc \
+  ExpandingArray.h \
+  MgmtLocalCleanup.cc
+
+libutils_p_la_SOURCES = \
+  $(libutils_COMMON) \
+  MgmtProcessCleanup.cc
+
+test_marshall_SOURCES = test_marshall.cc
+test_marshall_LDADD = \
+  libutils_p.la \
+  $(top_builddir)/lib/ts/libtsutil.la

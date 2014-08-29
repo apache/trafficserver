@@ -39,12 +39,12 @@ static int poll_read(int fd, int timeout);
  *         hdr_size -- size of the header
  *         body     -- pointer to the head of the body
  *         bdy_size -- size of the body
- * OUTPUT: TSError -- error status
+ * OUTPUT: TSMgmtError -- error status
  */
-TSError
+TSMgmtError
 parseHTTPResponse(char *buffer, char **header, int *hdr_size, char **body, int *bdy_size)
 {
-  TSError err = TS_ERR_OKAY;
+  TSMgmtError err = TS_ERR_OKAY;
   char *buf;
 
   // locate HTTP divider
@@ -77,7 +77,7 @@ END:
  *         bufsize -- the size allocated for the buffer
  * OUTPUT: bool -- true if everything went well. false otherwise
  */
-TSError
+TSMgmtError
 readHTTPResponse(int sock, char *buffer, int bufsize, uint64_t timeout)
 {
   int64_t err, idx;
@@ -131,7 +131,7 @@ error:                         /* "Houston, we have a problem!" (Apollo 13) */
  * OUTPUT: bool -- true if everything went well. false otherwise (and sock is
  *                 closed)
  */
-TSError
+TSMgmtError
 sendHTTPRequest(int sock, char *req, uint64_t timeout)
 {
   char request[BUFSIZ];
@@ -279,73 +279,6 @@ poll_write(int fd, int timeout)
 
   return err;
 }
-
-/***************************************************************************
- * socket_read_timeout
- *
- * purpose: need timeout for socket after sending a request and waiting to
- *          read reply check to see if anything to read;
- *          but only wait for fixed time specified in timeout struct
- * input: fd   - the socket to wait for
- *        sec  - time to wait in secs
- *        usec - time to wait in usecs
- * output: returns 0 if time expires and the fd is not ready
- *         return > 0 (actually 1) if fd is ready to read
- * reason: the client could send a reply, but if TM is down or has
- *         problems sending a reply then the client could end up hanging,
- *         waiting to read a replay from the local side
- ***************************************************************************/
-int
-socket_read_timeout(int fd, int sec, int usec)
-{
-  struct timeval timeout;
-  fd_set readSet;
-  timeout.tv_sec = sec;
-  timeout.tv_usec = usec;
-
-  if (fd < 0)
-    return -1;                  //ERROR: invalid fd
-
-  FD_ZERO(&readSet);
-  FD_SET(fd, &readSet);
-
-  return (mgmt_select(fd + 1, &readSet, NULL, NULL, &timeout));
-}
-
-/***************************************************************************
- * socket_write_timeout
- *
- * purpose: checks if the specified socket is ready to be written too; only
- *          checks for the specified time
- * input: fd   - the socket to wait for
- *        sec  - time to wait in secs
- *        usec - time to wait in usecs
- * output: return   0 if time expires and the fd is not ready to be written
- *         return > 0 (actually 1) if fd is ready to be written
- *         return < 0 if error
- ***************************************************************************/
-int
-socket_write_timeout(int fd, int sec, int usec)
-{
-  struct timeval timeout;
-  fd_set writeSet;
-  timeout.tv_sec = sec;
-  timeout.tv_usec = usec;
-
-  if (fd < 0)
-    return -1;
-
-  FD_ZERO(&writeSet);
-  FD_SET(fd, &writeSet);
-
-  if (sec < 0 && usec < 0)
-    //blocking select; only returns when fd is ready to write
-    return (mgmt_select(fd + 1, NULL, &writeSet, NULL, NULL));
-  else
-    return (mgmt_select(fd + 1, NULL, &writeSet, NULL, &timeout));
-}
-
-
 
 /**********************************************************************
  * Events

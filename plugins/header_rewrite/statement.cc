@@ -19,8 +19,7 @@
 // statement.cc: Implementation of the statement base class.
 //
 //
-
-#include <ts/ts.h>
+#include "ts/ts.h"
 
 #include "statement.h"
 

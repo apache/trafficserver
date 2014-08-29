@@ -58,7 +58,7 @@ FileManager::FileManager()
   ink_mutex_init(&accessLock, "File Manager Mutex");
   ink_mutex_init(&cbListLock, "File Changed Callback Mutex");
 
-  xptr<char> snapshotDir(RecConfigReadSnapshotDir());
+  ats_scoped_str snapshotDir(RecConfigReadSnapshotDir());
 
   // Check to see if the directory already exists, if not create it.
   if (access(snapshotDir, F_OK) == -1) {
@@ -152,6 +152,7 @@ FileManager::addFile(const char *baseFileName, bool root_access_needed)
   fileBinding *newBind = new fileBinding;
 
   newBind->rb = new Rollback(baseFileName, root_access_needed);
+  newBind->rb->configFiles = this;
 
   ink_mutex_acquire(&accessLock);
   ink_hash_table_insert(bindings, baseFileName, newBind);

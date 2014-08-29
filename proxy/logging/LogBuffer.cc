@@ -134,7 +134,7 @@ LogBuffer::LogBuffer(LogObject * owner, size_t size, size_t buf_align, size_t wr
 
   // create the buffer
   //
-  m_unaligned_buffer = NEW (new char [size + buf_align]);
+  m_unaligned_buffer = new char [size + buf_align];
   m_buffer = (char *)align_pointer_forward(m_unaligned_buffer, buf_align);
 
   // add the header
@@ -175,14 +175,15 @@ LogBuffer::LogBuffer(LogObject * owner, LogBufferHeader * header):
 
 LogBuffer::~LogBuffer()
 {
+  Debug("log-logbuffer", "[%p] Deleting buffer %u at address %p",
+        this_ethread(), m_id, m_unaligned_buffer ? m_unaligned_buffer : m_buffer);
+
   if (m_unaligned_buffer) {
     delete [] m_unaligned_buffer;
   } else {
     delete [] m_buffer;
   }
 
-  Debug("log-logbuffer", "[%p] Deleted buffer %u at address %p",
-        this_ethread(), m_id, m_unaligned_buffer ? m_unaligned_buffer : m_buffer);
   m_buffer = 0;
   m_unaligned_buffer = 0;
 }
@@ -658,6 +659,7 @@ LogBuffer::to_ascii(LogEntryHeader * entry, LogFormatType type,
 
   int i;
   LogFieldList *fieldlist = NULL;
+  bool delete_fieldlist_p = false; // need to free the fieldlist?
 
   for (i = 0; i < fieldlist_cache_entries; i++) {
     if (strcmp(symbol_str, fieldlist_cache[i].symbol_str) == 0) {
@@ -669,7 +671,7 @@ LogBuffer::to_ascii(LogEntryHeader * entry, LogFormatType type,
 
   if (!fieldlist) {
     Debug("log-fieldlist", "Fieldlist for %s not found; creating ...", symbol_str);
-    fieldlist = NEW(new LogFieldList);
+    fieldlist = new LogFieldList;
     ink_assert(fieldlist != NULL);
     bool contains_aggregates = false;
     LogFormat::parse_symbol_string(symbol_str, fieldlist, &contains_aggregates);
@@ -679,6 +681,8 @@ LogBuffer::to_ascii(LogEntryHeader * entry, LogFormatType type,
       fieldlist_cache[fieldlist_cache_entries].fieldlist = fieldlist;
       fieldlist_cache[fieldlist_cache_entries].symbol_str = ats_strdup(symbol_str);
       fieldlist_cache_entries++;
+    } else {
+      delete_fieldlist_p = true;
     }
   }
 
@@ -696,7 +700,7 @@ LogBuffer::to_ascii(LogEntryHeader * entry, LogFormatType type,
     }
 
     if (!bad_alt_format) {
-      alt_fieldlist = NEW(new LogFieldList);
+      alt_fieldlist = new LogFieldList;
       bool contains_aggs = false;
       int n_alt_fields2 = LogFormat::parse_symbol_string(alt_symbol_str,
                                                          alt_fieldlist, &contains_aggs);
@@ -724,6 +728,7 @@ LogBuffer::to_ascii(LogEntryHeader * entry, LogFormatType type,
   delete alt_fieldlist;
   ats_free(alt_printf_str);
   ats_free(alt_symbol_str);
+  if (delete_fieldlist_p) delete fieldlist;
 
   return ret;
 }

@@ -71,7 +71,7 @@ initiate_client_request(
 {
     TSReleaseAssert(stream->vconn == nullptr);
 
-    stream->vconn = TSHttpConnect(addr);
+    stream->vconn = TSHttpConnectWithProtoStack(addr, TSClientProtoStackCreate(TS_PROTO_TLS, TS_PROTO_SPDY, TS_PROTO_NULL));
     if (stream->vconn) {
         TSVConnRead(stream->vconn, contp, stream->input.buffer, std::numeric_limits<int64_t>::max());
         TSVConnWrite(stream->vconn, contp, stream->output.reader, std::numeric_limits<int64_t>::max());

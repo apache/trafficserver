@@ -42,7 +42,6 @@ public:
 
     ClientRequest &client_request = transaction.getClientRequest();
     Url &request_url = client_request.getUrl();
-    const Url &pristine_request_url = client_request.getPristineUrl();
 
     cout << "Method is " << HTTP_METHOD_STRINGS[client_request.getMethod()] << endl;
     cout << "Version is " << HTTP_VERSION_STRINGS[client_request.getVersion()] << endl;
@@ -107,6 +106,7 @@ public:
     cout << "Joining on a non-existant header gives: " << client_request_headers.values("i_dont_exist") << endl;
     cout << "Joining the accept encoding header gives: " << client_request_headers.values("accept-encoding") << endl;
     cout << "Joining the accept encoding header with space gives: " << client_request_headers.values("accept-encoding", ' ') << endl;
+    cout << "Joining the accept encoding header with long join string gives: " << client_request_headers.values("accept-encoding", "--join-string--") << endl;
 
     transaction.resume();
   }
@@ -124,5 +124,5 @@ public:
 };
 
 void TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED) {
-  GlobalPlugin *instance = new GlobalHookPlugin();
+  new GlobalHookPlugin();
 }

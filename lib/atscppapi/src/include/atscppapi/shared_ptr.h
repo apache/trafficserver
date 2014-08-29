@@ -25,7 +25,13 @@
 #ifndef ASTCPPAPI_SHARED_PTR_H_
 #define ASTCPPAPI_SHARED_PTR_H_
 
-#include <tr1/memory>
+#include "ink_autoconf.h"
+
+#if HAVE_STD_SHARED_PTR
+#  include <memory>
+#else
+#  include <tr1/memory>
+#endif
 
 namespace atscppapi {
 
@@ -34,7 +40,11 @@ namespace atscppapi {
  * \todo Consider adding a simple macro to check if c++0x/11 is enabled
  * and if so change it to std::shared_ptr and #include <memory>s
  */
-using std::tr1::shared_ptr;
+#if HAVE_STD_SHARED_PTR
+  using std::shared_ptr;
+#else
+  using std::tr1::shared_ptr;
+#endif
 
 } /* atscppapi */
 

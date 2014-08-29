@@ -28,7 +28,7 @@
  *
  ****************************************************************************/
 
-#include "ink_platform.h"
+#include "libts.h"
 
 #include "WebOverview.h"
 #include "WebGlobals.h"

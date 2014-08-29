@@ -61,7 +61,7 @@ void
 create_this_cluster_machine()
 {
   the_cluster_config_mutex = new_ProxyMutex();
-  cluster_machine = NEW(new ClusterMachine);
+  cluster_machine = new ClusterMachine;
 }
 
 ClusterMachine::ClusterMachine(char *ahostname, unsigned int aip, int aport)
@@ -198,7 +198,7 @@ free_ClusterMachine(ClusterMachine * m)
   // delay before the final free
   CLUSTER_INCREMENT_DYN_STAT(CLUSTER_MACHINES_FREED_STAT);
   m->dead = true;
-  eventProcessor.schedule_in(NEW(new MachineTimeoutContinuation(m)), MACHINE_TIMEOUT, ET_CALL);
+  eventProcessor.schedule_in(new MachineTimeoutContinuation(m), MACHINE_TIMEOUT, ET_CALL);
 }
 
 void
@@ -214,7 +214,7 @@ read_MachineList(char *filename, int afd)
   int n = -1, i = 0, ln = 0;
   MachineList *l = NULL;
   ink_assert(filename || (afd != -1));
-  xptr<char> path(Layout::get()->relative_to(Layout::get()->sysconfdir, filename));
+  ats_scoped_str path(Layout::get()->relative_to(Layout::get()->sysconfdir, filename));
 
   int fd = ((afd != -1) ? afd : open(path, O_RDONLY));
   if (fd >= 0) {

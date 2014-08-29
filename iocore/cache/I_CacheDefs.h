@@ -33,7 +33,7 @@
 #define CACHE_ALT_INDEX_DEFAULT     -1
 #define CACHE_ALT_REMOVED           -2
 
-#define CACHE_DB_MAJOR_VERSION      23
+#define CACHE_DB_MAJOR_VERSION      24
 #define CACHE_DB_MINOR_VERSION      0
 
 #define CACHE_DIR_MAJOR_VERSION     18
@@ -115,12 +115,13 @@ enum CacheDataType
 enum CacheFragType
 {
   CACHE_FRAG_TYPE_NONE,
+  CACHE_FRAG_TYPE_HTTP_V23, ///< DB version 23 or prior.
+  CACHE_FRAG_TYPE_RTSP, ///< Should be removed once Cache Toolkit is implemented.
   CACHE_FRAG_TYPE_HTTP,
-  CACHE_FRAG_TYPE_RTSP,
   NUM_CACHE_FRAG_TYPES
 };
 
-#define CacheKey INK_MD5
+typedef CryptoHash CacheKey;
 #define CACHE_ALLOW_MULTIPLE_WRITES 1
 #define CACHE_EXPECTED_SIZE 32768
 

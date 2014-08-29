@@ -19,26 +19,7 @@ API Reference
   under the License.
 
 .. toctree::
-  :maxdepth: 2
+   :glob:
+   :maxdepth: 1
 
-  TSAPI.en
-  TSDebug.en
-  TSHttpHookAdd.en
-  TSHttpParserCreate.en
-  TSHttpTxnMilestoneGet.en
-  TSIOBufferCreate.en
-  TSInstallDirGet.en
-  TSMBufferCreate.en
-  TSMimeHdrFieldValueStringGet.en
-  TSPluginInit.en
-  TSRemap.en
-  TSTrafficServerVersionGet.en
-  TSUrlCreate.en
-  TSUrlHostGet.en
-  TSUrlHostSet.en
-  TSUrlPercentEncode.en
-  TSUrlStringGet.en
-  TSLifecycleHookAdd.en
-  TSHttpOverridableConfig.en
-  TSmalloc.en
-  TSTypes.en
+   *

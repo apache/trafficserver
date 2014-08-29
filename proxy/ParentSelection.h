@@ -40,6 +40,10 @@
 
 #include "P_RecProcess.h"
 
+#include "libts.h"
+
+#define MAX_PARENTS 64
+
 struct RequestData;
 
 struct matcher_line;
@@ -62,7 +66,7 @@ struct ParentResult
   ParentResult()
     : r(PARENT_UNDEFINED), hostname(NULL), port(0), line_number(0), epoch(NULL), rec(NULL),
       last_parent(0), start_parent(0), wrap_around(false), retry(false)
-  { };
+  { memset(foundParents, 0, sizeof(foundParents)); };
 
   // For outside consumption
   ParentResultType r;
@@ -78,6 +82,9 @@ struct ParentResult
   uint32_t start_parent;
   bool wrap_around;
   bool retry;
+  //Arena *a;
+  ATSConsistentHashIter chashIter;
+  bool foundParents[MAX_PARENTS];
 };
 
 class HttpRequestData;
@@ -154,7 +161,7 @@ public:
 //
 //    A record for an invidual parent
 //
-struct pRecord
+struct pRecord : ATSConsistentHashNode
 {
   char hostname[MAXDNAME + 1];
   int port;
@@ -162,13 +169,16 @@ struct pRecord
   int failCount;
   int32_t upAt;
   const char *scheme;           // for which parent matches (if any)
+  int idx;
+  float weight;
 };
 
 enum ParentRR_t
 {
   P_NO_ROUND_ROBIN = 0,
   P_STRICT_ROUND_ROBIN,
-  P_HASH_ROUND_ROBIN
+  P_HASH_ROUND_ROBIN,
+  P_CONSISTENT_HASH
 };
 
 // class ParentRecord : public ControlBase
@@ -180,7 +190,7 @@ class ParentRecord: public ControlBase
 {
 public:
   ParentRecord()
-    : parents(NULL), num_parents(0), round_robin(P_NO_ROUND_ROBIN), rr_next(0), go_direct(true)
+    : parents(NULL), num_parents(0), round_robin(P_NO_ROUND_ROBIN), rr_next(0), go_direct(true), chash(NULL)
   { }
 
   ~ParentRecord();
@@ -198,9 +208,11 @@ public:
   const char *scheme;
   //private:
   const char *ProcessParents(char *val);
+  void buildConsistentHash(void);
   ParentRR_t round_robin;
   volatile uint32_t rr_next;
   bool go_direct;
+  ATSConsistentHash *chash;
 };
 
 // Helper Functions

@@ -154,38 +154,6 @@ register_plugin()
   return 1;
 }
 
-const char *
-load_dictionary(const char *preload_file)
-{
-  char *dict = (char *) malloc(800000);
-  uLong dictId = adler32(0L, Z_NULL, 0);
-  uLong *adler = &dictId;
-
-  FILE *fp;
-  int i = 0;
-
-  fp = fopen(preload_file, "r");
-  if (!fp) {
-    fatal("gzip-transform: ERROR: Unable to open dict file %s", preload_file);
-  }
-
-  /* dict = (char *) calloc(8000, sizeof(char)); */
-
-  i = 0;
-  while (!feof(fp)) {
-    if (fscanf(fp, "%s\n", dict + i) == 1) {
-      i = strlen(dict);
-      strcat(dict + i, " ");
-      ++i;
-    }
-  }
-  dict[i - 1] = '\0';
-
-  /* TODO get the adler compute right */
-  *adler = adler32(*adler, (const Byte *) dict, sizeof(dict));
-  return dict;
-}
-
 void
 gzip_log_ratio(int64_t in, int64_t out)
 {

@@ -209,9 +209,9 @@ template<typename T>
 void
 Trie<T>::Clear()
 {
-  forl_LL(T, iter, m_value_list)
+  T* iter;
+  while (NULL != (iter = m_value_list.pop()))
     delete iter;
-  m_value_list.clear();
 
   _Clear(&m_root);
   m_root.Clear();

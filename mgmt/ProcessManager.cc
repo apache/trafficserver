@@ -26,7 +26,6 @@
 #undef HTTP_CACHE
 #include "InkAPIInternal.h"
 #include "MgmtUtils.h"
-#define _PROCESS_MANAGER
 #include "ProcessManager.h"
 
 #include "ink_apidefs.h"
@@ -69,7 +68,7 @@ startProcessManager(void *arg)
 ProcessManager::ProcessManager(bool rlm):
 BaseManager(), require_lm(rlm), mgmt_sync_key(0), local_manager_sockfd(0), cbtable(NULL)
 {
-  xptr<char> rundir(RecConfigReadRuntimeDir());
+  ats_scoped_str rundir(RecConfigReadRuntimeDir());
 
   ink_strlcpy(pserver_path, rundir, sizeof(pserver_path));
   mgmt_signal_queue = create_queue();
@@ -125,7 +124,7 @@ ProcessManager::processEventQueue()
   while (!queue_is_empty(mgmt_event_queue)) {
     MgmtMessageHdr *mh = (MgmtMessageHdr *) dequeue(mgmt_event_queue);
 
-    Debug("pmgmt", "[ProcessManager] ==> Processing event id '%d'\n", mh->msg_id);
+    Debug("pmgmt", "[ProcessManager] ==> Processing event id '%d' payload=%d\n", mh->msg_id, mh->data_len);
     if (mh->data_len > 0) {
       executeMgmtCallback(mh->msg_id, (char *) mh + sizeof(MgmtMessageHdr), mh->data_len);
     } else {
@@ -332,6 +331,9 @@ ProcessManager::handleMgmtMsgFromLM(MgmtMessageHdr * mh)
     break;
   case MGMT_EVENT_LIBRECORDS:
     signalMgmtEntity(MGMT_EVENT_LIBRECORDS, data_raw, mh->data_len);
+    break;
+  case MGMT_EVENT_STORAGE_DEVICE_CMD_OFFLINE:
+    signalMgmtEntity(MGMT_EVENT_STORAGE_DEVICE_CMD_OFFLINE, data_raw, mh->data_len);
     break;
   default:
     mgmt_elog(stderr, 0, "[ProcessManager::pollLMConnection] unknown type %d\n", mh->msg_id);

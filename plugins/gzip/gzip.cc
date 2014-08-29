@@ -774,10 +774,6 @@ TSPluginInit(int argc, const char *argv[])
     fatal("The gzip plugin failed to register");
   }
 
-  //if (argc == 2) {
-  //  dictionary = load_dictionary(argv[1]);
-  //}
-
   if (TSHttpArgIndexReserve("gzip", "for remembering if the hook was set", &arg_idx_hooked) != TS_SUCCESS) {
     fatal("failed to reserve an argument index");
   }

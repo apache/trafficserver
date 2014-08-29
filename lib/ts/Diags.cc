@@ -35,6 +35,7 @@
  ****************************************************************************/
 
 #include "ink_platform.h"
+#include "ink_memory.h"
 #include "ink_defs.h"
 #include "ink_error.h"
 #include "ink_assert.h"
@@ -416,7 +417,7 @@ Diags::activate_taglist(const char *taglist, DiagsTagType mode)
     if (activated_tags[mode]) {
       delete activated_tags[mode];
     }
-    activated_tags[mode] = NEW(new DFA);
+    activated_tags[mode] = new DFA;
     activated_tags[mode]->compile(taglist);
     unlock();
   }
@@ -531,6 +532,12 @@ Diags::error_va(DiagsLevel level,
              const char *file, const char *func, const int line,
              const char *format_string, va_list ap) const
 {
+  va_list ap2;
+
+  if (DiagsLevel_IsTerminal(level)) {
+    va_copy(ap2, ap);
+  }
+
   if (show_location) {
     SrcLoc lp(file, func, line);
     print_va(NULL, level, &lp, format_string, ap);
@@ -541,6 +548,6 @@ Diags::error_va(DiagsLevel level,
   if (DiagsLevel_IsTerminal(level)) {
     if (cleanup_func)
       cleanup_func();
-    ink_fatal_va(1, format_string, ap);
+    ink_fatal_va(1, format_string, ap2);
   }
 }

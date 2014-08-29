@@ -25,7 +25,10 @@
 
 #if !defined (_P_IOBuffer_h)
 #define _P_IOBuffer_h
+
 #include "libts.h"
+#include "ink_resource.h"
+
 
 // TODO: I think we're overly aggressive here on making MIOBuffer 64-bit
 // but not sure it's worthwhile changing anything to 32-bit honestly.
@@ -133,7 +136,6 @@ iobufferblock_skip(IOBufferBlock * b, int64_t *poffset, int64_t *plen, int64_t w
 }
 
 #ifdef TRACK_BUFFER_USER
-struct Resource;
 extern Resource *res_lookup(const char *path);
 
 TS_INLINE void
@@ -528,10 +530,9 @@ IOBufferBlock::realloc_xmalloc(int64_t buf_size)
 TS_INLINE void
 IOBufferBlock::realloc(int64_t i)
 {
-  if (i == data->_size_index)
+  if ((i == data->_size_index) || (i >= (int64_t)countof(ioBufAllocator))) {
     return;
-  if (i >= (int64_t) sizeof(ioBufAllocator))
-    return;
+  }
 
   ink_release_assert(i > data->_size_index && i != BUFFER_SIZE_NOT_ALLOCATED);
   void *b = ioBufAllocator[i].alloc_void();
@@ -733,12 +734,12 @@ inkcoreapi extern ClassAllocator<MIOBuffer> ioAllocator;
 TS_INLINE
 MIOBuffer::MIOBuffer(void *b, int64_t bufsize, int64_t aWater_mark)
 {
-  set(b, bufsize);
-  water_mark = aWater_mark;
-  size_index = BUFFER_SIZE_NOT_ALLOCATED;
 #ifdef TRACK_BUFFER_USER
   _location = NULL;
 #endif
+  set(b, bufsize);
+  water_mark = aWater_mark;
+  size_index = BUFFER_SIZE_NOT_ALLOCATED;
   return;
 }
 

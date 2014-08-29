@@ -27,9 +27,8 @@ then resend the request.
 In the ``handle_dns`` routine, the following lines handle the
 authorization error case:
 
-::
+.. code-block:: c
 
-    :::c
     done:
          TSHttpTxnHookAdd (txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, contp);
          TSHttpTxnReenable (txnp, TS_EVENT_HTTP_ERROR);

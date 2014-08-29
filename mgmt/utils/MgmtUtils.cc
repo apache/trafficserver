@@ -24,19 +24,7 @@
 #include "MgmtUtils.h"
 #include "Diags.h"
 
-#ifdef LOCAL_MANAGER
-// mgmt/Main.h
 #include "LocalManager.h"
-//#include "../Main.h"
-#else
-// proxy/Main.h
-#include "../../proxy/Main.h"
-#endif
-
-#if defined(LOCAL_MANAGER) || defined(PROCESS_MANAGER)
-// diags_init defined in mgmt/Main.cc.
-extern int diags_init;
-#endif
 
 static int use_syslog = 0;
 
@@ -93,7 +81,6 @@ mgmt_readline(int soc, char *buf, int maxlen)
   }
   return n;
 }                               /* End mgmt_readline */
-
 
 /*
  * mgmt_writeline(...)
@@ -216,8 +203,6 @@ mgmt_write_pipe(int fd, char *buf, int bytes_to_write)
   return bytes_written;
 }
 
-
-
 void
 mgmt_blockAllSigs()
 {
@@ -245,11 +230,9 @@ mgmt_log(FILE * log, const char *message_format, ...)
 
   va_start(ap, message_format);
 
-#if defined(LOCAL_MANAGER) || defined(PROCESS_MANAGER)
-  if (diags_init) {
+  if (diags) {
     diags->print_va(NULL, DL_Note, NULL, message_format, ap);
   } else {
-#endif
 
     if (use_syslog) {
       snprintf(extended_format, sizeof(extended_format), "log ==> %s", message_format);
@@ -260,9 +243,7 @@ mgmt_log(FILE * log, const char *message_format, ...)
       vsprintf(message, extended_format, ap);
       ink_assert(fwrite(message, strlen(message), 1, log) == 1);
     }
-#if defined(LOCAL_MANAGER) || defined(PROCESS_MANAGER)
   }
-#endif
 
   va_end(ap);
   return;
@@ -275,11 +256,9 @@ mgmt_log(const char *message_format, ...)
   char extended_format[4096], message[4096];
 
   va_start(ap, message_format);
-#if defined(LOCAL_MANAGER) || defined(PROCESS_MANAGER)
-  if (diags_init) {
+  if (diags) {
     diags->print_va(NULL, DL_Note, NULL, message_format, ap);
   } else {
-#endif
 
     if (use_syslog) {
       snprintf(extended_format, sizeof(extended_format), "log ==> %s", message_format);
@@ -290,14 +269,11 @@ mgmt_log(const char *message_format, ...)
       vsprintf(message, extended_format, ap);
       ink_assert(fwrite(message, strlen(message), 1, stderr) == 1);
     }
-#if defined(LOCAL_MANAGER) || defined(PROCESS_MANAGER)
   }
-#endif
 
   va_end(ap);
   return;
 }                               /* End mgmt_log */
-
 
 /*
  * mgmt_log(...)
@@ -311,14 +287,12 @@ mgmt_elog(FILE * log, const int lerrno, const char *message_format, ...)
 
   va_start(ap, message_format);
 
-#if defined(LOCAL_MANAGER) || defined(PROCESS_MANAGER)
-  if (diags_init) {
+  if (diags) {
     diags->print_va(NULL, DL_Error, NULL, message_format, ap);
     if (lerrno != 0) {
       diags->print(NULL, DTA(DL_Error), " (last system error %d: %s)\n", lerrno, strerror(lerrno));
     }
   } else {
-#endif
     if (use_syslog) {
       snprintf(extended_format, sizeof(extended_format), "ERROR ==> %s", message_format);
       vsprintf(message, extended_format, ap);
@@ -335,14 +309,11 @@ mgmt_elog(FILE * log, const int lerrno, const char *message_format, ...)
         ink_assert(fwrite(message, strlen(message), 1, log) == 1);
       }
     }
-#if defined(LOCAL_MANAGER) || defined(PROCESS_MANAGER)
   }
-#endif
   va_end(ap);
 
   return;
 }                               /* End mgmt_elog */
-
 
 void
 mgmt_elog(const int lerrno, const char *message_format, ...)
@@ -352,14 +323,12 @@ mgmt_elog(const int lerrno, const char *message_format, ...)
 
   va_start(ap, message_format);
 
-#if defined(LOCAL_MANAGER) || defined(PROCESS_MANAGER)
-  if (diags_init) {
+  if (diags) {
     diags->print_va(NULL, DL_Error, NULL, message_format, ap);
     if (lerrno != 0) {
       diags->print(NULL, DTA(DL_Error), " (last system error %d: %s)\n", lerrno, strerror(lerrno));
     }
   } else {
-#endif
 
     if (use_syslog) {
       snprintf(extended_format, sizeof(extended_format), "ERROR ==> %s", message_format);
@@ -377,13 +346,10 @@ mgmt_elog(const int lerrno, const char *message_format, ...)
         ink_assert(fwrite(message, strlen(message), 1, stderr) == 1);
       }
     }
-#if defined(LOCAL_MANAGER) || defined(PROCESS_MANAGER)
   }
-#endif
   va_end(ap);
   return;
 }                               /* End mgmt_elog */
-
 
 /*
  * mgmt_fatal(...)
@@ -398,15 +364,12 @@ mgmt_fatal(FILE * log, const int lerrno, const char *message_format, ...)
 
   va_start(ap, message_format);
 
-
-#if defined(LOCAL_MANAGER) || defined(PROCESS_MANAGER)
-  if (diags_init) {
+  if (diags) {
     diags->print_va(NULL, DL_Fatal, NULL, message_format, ap);
     if (lerrno != 0) {
       diags->print(NULL, DTA(DL_Fatal), " (last system error %d: %s)\n", lerrno, strerror(lerrno));
     }
   } else {
-#endif
 
     snprintf(extended_format, sizeof(extended_format), "FATAL ==> %s", message_format);
     vsprintf(message, extended_format, ap);
@@ -424,17 +387,13 @@ mgmt_fatal(FILE * log, const int lerrno, const char *message_format, ...)
       }
     }
 
-#if defined(LOCAL_MANAGER) || defined(PROCESS_MANAGER)
   }
-#endif
 
   va_end(ap);
 
   mgmt_cleanup();
   _exit(1);
 }                               /* End mgmt_fatal */
-
-
 
 void
 mgmt_fatal(const int lerrno, const char *message_format, ...)
@@ -444,14 +403,12 @@ mgmt_fatal(const int lerrno, const char *message_format, ...)
 
   va_start(ap, message_format);
 
-#if defined(LOCAL_MANAGER) || defined(PROCESS_MANAGER)
-  if (diags_init) {
+  if (diags) {
     diags->print_va(NULL, DL_Fatal, NULL, message_format, ap);
     if (lerrno != 0) {
       diags->print(NULL, DTA(DL_Fatal), " (last system error %d: %s)\n", lerrno, strerror(lerrno));
     }
   } else {
-#endif
 
     snprintf(extended_format, sizeof(extended_format), "FATAL ==> %s", message_format);
     vsprintf(message, extended_format, ap);
@@ -469,25 +426,13 @@ mgmt_fatal(const int lerrno, const char *message_format, ...)
         syslog(LOG_ERR, " (last system error %d: %s)", lerrno, strerror(lerrno));
       }
     }
-#if defined(LOCAL_MANAGER) || defined(PROCESS_MANAGER)
   }
-#endif
 
   va_end(ap);
 
   mgmt_cleanup();
   _exit(1);
 }                               /* End mgmt_fatal */
-
-void
-mgmt_cleanup()
-{
-#if defined(LOCAL_MANAGER)
-  if (lmgmt != NULL) {
-    lmgmt->mgmtShutdown(true);
-  }
-#endif
-}
 
 static inline int
 get_interface_mtu(int sock_fd, struct ifreq *ifr)
@@ -550,7 +495,6 @@ mgmt_getAddrForIntr(char *intrName, sockaddr* addr, int *mtu)
     ats_free(ifbuf);
   }
 
-  ifr = ifc.ifc_req;
   found = false;
   // Loop through the list of interfaces
   ifend = (struct ifreq *) (ifc.ifc_buf + ifc.ifc_len);

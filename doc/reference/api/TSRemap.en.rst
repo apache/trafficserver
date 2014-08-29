@@ -20,11 +20,13 @@
 TSRemapInit
 ===========
 
+Traffic Server remap plugin entry points.
+
 Synopsis
 ========
 
-`#include <ts/ts.h>`
-`#include <ts/remap.h>`
+| `#include <ts/ts.h>`
+| `#include <ts/remap.h>`
 
 .. function:: TSReturnCode TSRemapInit(TSRemapInterface * api_info, char* errbuf, int errbuf_size)
 .. function:: void TSRemapDone(void)
@@ -44,7 +46,7 @@ file. Writing a remap plugin consists of implementing one or more of the
 remap entry points and configuring the remap.config configuration file to
 route the transaction through your plugin. Multiple remap plugins can be
 specified for a single remap rule, resulting in a remap plugin chain
-where each pligin is given an opportunity to examine the HTTP transaction.
+where each plugin is given an opportunity to examine the HTTP transaction.
 
 :func:`TSRemapInit` is a required entry point. This function will be called
 once when Traffic Server loads the plugin. If the optional :func:`TSRemapDone`

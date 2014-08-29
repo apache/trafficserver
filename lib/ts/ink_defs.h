@@ -29,18 +29,12 @@
 #include <stddef.h>
 
 #ifdef HAVE_STDINT_H
-# ifndef __STDC_LIMIT_MACROS
-#  define __STDC_LIMIT_MACROS 1
-# endif
 # include <stdint.h>
 #else
 // TODO: Add "standard" int types?
 #endif
 
 #ifdef HAVE_INTTYPES_H
-# ifndef __STDC_FORMAT_MACROS
-#  define __STDC_FORMAT_MACROS 1
-# endif
 # include <inttypes.h>
 #else
 // TODO: add PRI*64 stuff?
@@ -49,13 +43,8 @@
 #ifndef INT64_MIN
 #define INT64_MAX (9223372036854775807LL)
 #define INT64_MIN (-INT64_MAX -1LL)
-#define INTU32_MAX (4294967295U)
 #define INT32_MAX (2147483647)
 #define INT32_MIN (-2147483647-1)
-#endif
-// Hack for MacOSX, have to take this out of the group above.
-#ifndef INTU64_MAX
-#define INTU64_MAX (18446744073709551615ULL)
 #endif
 
 #define POSIX_THREAD
@@ -129,28 +118,6 @@ countof(const T (&)[N]) {
 
 #ifndef ROUNDUP
 #define ROUNDUP(x, y) ((((x)+((y)-1))/(y))*(y))
-#endif
-
-/* Debugging
-*/
-#ifdef NDEBUG
-
-#define FDBG
-#define DBG(s)
-#define DBG1(s,a)
-#define DBG2(s,a1,a2)
-#define DBG3(s,a1,a2,a3)
-#define DBG4(s,a1,a2,a3,a4)
-
-#else
-
-#define FDBG                if (debug_level==1) printf("debug "__FILE__":%d %s : entered\n" ,__LINE__,__FUNCTION__)
-#define DBG(s)              if (debug_level==1) printf("debug "__FILE__":%d %s :" s ,__LINE__,__FUNCTION__)
-#define DBG1(s,a)           if (debug_level==1) printf("debug "__FILE__":%d %s :" s ,__LINE__,__FUNCTION__, a)
-#define DBG2(s,a1,a2)       if (debug_level==1) printf("debug "__FILE__":%d %s :" s ,__LINE__,__FUNCTION__, a1,a2)
-#define DBG3(s,a1,a2,a3)    if (debug_level==1) printf("debug "__FILE__":%d %s :" s ,__LINE__,__FUNCTION__, a1,a2,a3)
-#define DBG4(s,a1,a2,a3,a4) if (debug_level==1) printf("debug "__FILE__":%d %s :" s ,__LINE__,__FUNCTION__, a1,a2,a3,a4)
-
 #endif
 
 /* Types

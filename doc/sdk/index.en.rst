@@ -36,12 +36,12 @@ supported different operating systems and more functions than the
 current version. As a result, some of the sections may refer to
 functionality that no longer exists.
 
-.. These links need fixing..
-
 If you find any such issues, you may want to submit a `bug or a
 patch <https://issues.apache.org/jira/secure/CreateIssue!default.jspa?pid=12310963>`__.
-Or find out how to `find bugs <>`__, `create useful bug reports <>`__ or
-`patches <>`__.
+We also have a Wiki page explaining how to `create useful bug reports
+<https://cwiki.apache.org/confluence/display/TS/Filing+useful+bug+reports>`__.
+We encourage everyone to file tickets, early and often. Looking for existing,
+duplicate bugs is encouraged, but not required.
 
 Contents:
 

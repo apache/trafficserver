@@ -22,10 +22,6 @@
  */
 
 #include <stdio.h>
-// XXX: HP-UX ??? Not part of configure supported hosts
-#if defined(hpux)
-#include <dl.h>
-#endif
 #include "ink_platform.h"
 #include "ink_file.h"
 #include "Compatability.h"
@@ -36,16 +32,6 @@
 #include "Main.h"
 #include "Plugin.h"
 #include "ink_cap.h"
-
-// HPUX:
-//   LD_SHAREDCMD=ld -b
-// SGI:
-//   LD_SHAREDCMD=ld -shared
-// OSF:
-//   LD_SHAREDCMD=ld -shared -all -expect_unresolved "*"
-// Solaris:
-//   LD_SHAREDCMD=ld -G
-
 
 static const char *plugin_dir = ".";
 
@@ -70,24 +56,6 @@ PluginRegInfo::PluginRegInfo()
     plugin_name(NULL), vendor_name(NULL), support_email(NULL)
 { }
 
-static void *
-dll_open(const char *path)
-{
-  return (void *) dlopen(path, RTLD_NOW);
-}
-
-static void *
-dll_findsym(void *dlp, const char *name)
-{
-  return (void *) dlsym(dlp, name);
-}
-
-static char *
-dll_error(void * /* dlp ATS_UNUSED */)
-{
-  return (char *) dlerror();
-}
-
 static void
 plugin_load(int argc, char *argv[])
 {
@@ -111,29 +79,30 @@ plugin_load(int argc, char *argv[])
     }
     plugin_reg_temp = (plugin_reg_temp->link).next;
   }
-
-  handle = dll_open(path);
-  if (!handle) {
-    Fatal("unable to load '%s': %s", path, dll_error(handle));
-  }
-
-  // Allocate a new registration structure for the
-  //    plugin we're starting up
-  ink_assert(plugin_reg_current == NULL);
-  plugin_reg_current = new PluginRegInfo;
-  plugin_reg_current->plugin_path = ats_strdup(path);
-
-  init = (init_func_t) dll_findsym(handle, "TSPluginInit");
-  if (!init) {
-    Fatal("unable to find TSPluginInit function '%s': %s", path, dll_error(handle));
-  }
-
   // elevate the access to read files as root if compiled with capabilities, if not
   // change the effective user to root
   {
     uint32_t elevate_access = 0;
     REC_ReadConfigInteger(elevate_access, "proxy.config.plugin.load_elevated");
     ElevateAccess access(elevate_access != 0);
+
+    handle = dlopen(path, RTLD_NOW);
+    if (!handle) {
+      Fatal("unable to load '%s': %s", path, dlerror());
+    }
+
+    // Allocate a new registration structure for the
+    //    plugin we're starting up
+    ink_assert(plugin_reg_current == NULL);
+    plugin_reg_current = new PluginRegInfo;
+    plugin_reg_current->plugin_path = ats_strdup(path);
+
+    init = (init_func_t) dlsym(handle, "TSPluginInit");
+    if (!init) {
+      Fatal("unable to find TSPluginInit function in '%s': %s", path, dlerror());
+      return; // this line won't get called since Fatal brings down ATS
+    }
+
     init(argc, argv);
   } // done elevating access
 

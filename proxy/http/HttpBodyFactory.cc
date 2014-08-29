@@ -122,11 +122,13 @@ HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State * 
   ///////////////////////////////////////////
   // check if we don't need to format body //
   ///////////////////////////////////////////
-  if (context->return_xbuf_plain && format) {
+  if (format) {
+    // The length from ink_bvsprintf includes the trailing NUL, so adjust the final
+    // length accordingly.
     int l = ink_bvsprintf(NULL, format, ap);
-    if (l < max_buffer_length) {
-      buffer = (char *)ats_malloc(l + 1);
-      *resulting_buffer_length = ink_bvsprintf(buffer, format, ap);
+    if (l <= max_buffer_length) {
+      buffer = (char *)ats_malloc(l);
+      *resulting_buffer_length = ink_bvsprintf(buffer, format, ap) - 1;
       plain_flag = true;
     }
   }
@@ -295,7 +297,7 @@ HttpBodyFactory::reconfigure()
   all_found = all_found && (rec_err == REC_ERR_OKAY);
   Debug("body_factory", "response_suppression_mode = %d (found = %" PRId64")", response_suppression_mode, e);
 
-  xptr<char> directory_of_template_sets;
+  ats_scoped_str directory_of_template_sets;
 
   rec_err = RecGetRecordString_Xmalloc("proxy.config.body_factory.template_sets_dir", &s);
   all_found = all_found && (rec_err == REC_ERR_OKAY);
@@ -613,7 +615,7 @@ HttpBodyFactory::load_sets_from_directory(char *set_dir)
     return (NULL);
   }
 
-  new_table_of_sets = NEW(new RawHashTable(RawHashTable_KeyType_String));
+  new_table_of_sets = new RawHashTable(RawHashTable_KeyType_String);
   entry_buffer = (struct dirent *)ats_malloc(sizeof(struct dirent) + MAXPATHLEN + 1);
 
   //////////////////////////////////////////
@@ -691,7 +693,7 @@ HttpBodyFactory::load_body_set_from_directory(char *set_name, char *tmpl_dir)
   // create body set, and loop over template files, loading them //
   /////////////////////////////////////////////////////////////////
 
-  HttpBodySet *body_set = NEW(new HttpBodySet);
+  HttpBodySet *body_set = new HttpBodySet;
   body_set->init(set_name, tmpl_dir);
 
   Debug("body_factory", "  body_set = %p (set_name '%s', lang '%s', charset '%s')",
@@ -719,7 +721,7 @@ HttpBodyFactory::load_body_set_from_directory(char *set_name, char *tmpl_dir)
     // read in this template file //
     ////////////////////////////////
 
-    tmpl = NEW(new HttpBodyTemplate());
+    tmpl = new HttpBodyTemplate();
     if (!tmpl->load_from_file(tmpl_dir, entry_buffer->d_name)) {
       delete tmpl;
     } else {
@@ -778,7 +780,7 @@ HttpBodySet::init(char *set, char *dir)
 
   if (this->table_of_pages)
     delete(this->table_of_pages);
-  this->table_of_pages = NEW(new RawHashTable(RawHashTable_KeyType_String));
+  this->table_of_pages = new RawHashTable(RawHashTable_KeyType_String);
 
   lineno = 0;
 

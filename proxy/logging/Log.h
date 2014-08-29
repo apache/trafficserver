@@ -374,9 +374,7 @@ public:
   enum InitFlags
   {
     FIELDS_INITIALIZED = 1,
-    THREADS_CREATED = 2,
-    PERIODIC_WAKEUP_SCHEDULED = 4,
-    FULLY_INITIALIZED = 8
+    FULLY_INITIALIZED = 2
   };
 
   enum ConfigFlags
@@ -384,6 +382,32 @@ public:
     NO_REMOTE_MANAGEMENT = 1,
     STANDALONE_COLLATOR = 2,
     LOGCAT = 4
+  };
+
+  enum CollationMode
+  {
+    NO_COLLATION = 0,
+    COLLATION_HOST,
+    SEND_STD_FMTS,
+    SEND_NON_XML_CUSTOM_FMTS,
+    SEND_STD_AND_NON_XML_CUSTOM_FMTS,
+    N_COLLATION_MODES
+  };
+
+  enum RollingEnabledValues
+  {
+    NO_ROLLING = 0,
+    ROLL_ON_TIME_ONLY,
+    ROLL_ON_SIZE_ONLY,
+    ROLL_ON_TIME_OR_SIZE,
+    ROLL_ON_TIME_AND_SIZE,
+    INVALID_ROLLING_VALUE
+  };
+
+  enum
+  {
+    MIN_ROLLING_INTERVAL_SEC = 60,   // 5 minute minimum rolling interval
+    MAX_ROLLING_INTERVAL_SEC = 86400  // 24 hrs rolling interval max
   };
 
   // main interface
@@ -451,5 +475,12 @@ private:
   Log(const Log & rhs);
   Log & operator=(const Log & rhs);
 };
+
+
+static inline bool
+LogRollingEnabledIsValid(int enabled)
+{
+  return (enabled >= Log::NO_ROLLING || enabled < Log::INVALID_ROLLING_VALUE);
+}
 
 #endif

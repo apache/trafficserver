@@ -27,7 +27,6 @@ Command Reference
   traffic_logstats.en
   traffic_manager.en
   traffic_server.en
-  traffic_shell.en
   traffic_top.en
   tspush.en
   tsxs.en

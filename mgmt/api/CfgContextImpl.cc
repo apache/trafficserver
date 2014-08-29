@@ -398,7 +398,6 @@ CongestionObj::formatEleToRule()
       pos += psize;
   }
 
-
   if (pos < sizeof(buf) &&
       (psize =
        snprintf(buf + pos, sizeof(buf) - pos, "max_connection_failures=%d ", m_ele->max_connection_failures)) > 0)
@@ -437,15 +436,13 @@ CongestionObj::formatEleToRule()
   }
   switch (m_ele->scheme) {
   case TS_HTTP_CONGEST_PER_IP:
-    if (pos<sizeof(buf) && (psize = snprintf(buf + pos, sizeof(buf) - pos, "congestion_scheme=per_ip "))> 0)
-      pos += psize;
+    snprintf(buf + pos, sizeof(buf) - pos, "congestion_scheme=per_ip ");
     break;
   case TS_HTTP_CONGEST_PER_HOST:
-    if (pos<sizeof(buf) && (psize = snprintf(buf + pos, sizeof(buf) - pos, "congestion_scheme=per_host "))> 0)
-      pos += psize;
+    snprintf(buf + pos, sizeof(buf) - pos, "congestion_scheme=per_host ");
     break;
   default:
-    ;
+    break;
   }
 
   return ats_strdup(buf);
@@ -2557,14 +2554,14 @@ CfgContext::~CfgContext()
   }
 }
 
-TSError CfgContext::addEle(CfgEleObj * ele)
+TSMgmtError CfgContext::addEle(CfgEleObj * ele)
 {
   ink_assert(ele != NULL);
   m_eles.enqueue(ele);          // enqueue CfgEleObj at end of Queue
   return TS_ERR_OKAY;
 }
 
-TSError CfgContext::removeEle(CfgEleObj * ele)
+TSMgmtError CfgContext::removeEle(CfgEleObj * ele)
 {
   ink_assert(ele != NULL);
   m_eles.remove(ele);
@@ -2574,7 +2571,7 @@ TSError CfgContext::removeEle(CfgEleObj * ele)
   return TS_ERR_OKAY;
 }
 
-TSError CfgContext::insertEle(CfgEleObj * ele, CfgEleObj * after_ele)
+TSMgmtError CfgContext::insertEle(CfgEleObj * ele, CfgEleObj * after_ele)
 {
   ink_assert(ele != NULL && after_ele != NULL);
   m_eles.insert(ele, after_ele);
@@ -2583,7 +2580,7 @@ TSError CfgContext::insertEle(CfgEleObj * ele, CfgEleObj * after_ele)
 }
 
 // insert Ele at front of the Queue
-TSError CfgContext::pushEle(CfgEleObj * ele)
+TSMgmtError CfgContext::pushEle(CfgEleObj * ele)
 {
   ink_assert(ele != NULL);
   m_eles.push(ele);

@@ -37,6 +37,7 @@
 #include "atscppapi/utils.h"
 #include "atscppapi/AsyncHttpFetch.h"
 #include "atscppapi/Transaction.h"
+#include "atscppapi/InterceptPlugin.h"
 
 namespace atscppapi {
 
@@ -80,6 +81,15 @@ public:
   static const std::list<TransactionPlugin *> &getTransactionPlugins(const Transaction &transaction) {
     return transaction.getPlugins();
   }
+
+  static void dispatchInterceptEvent(InterceptPlugin *plugin, TSEvent event, void *edata) {
+    plugin->handleEvent(static_cast<int>(event), edata);
+  }
+
+  static void deleteAsyncHttpFetch(AsyncHttpFetch *fetch) {
+    delete fetch;
+  }
+
 }; /* internal */
 
 } /* utils */

@@ -72,14 +72,10 @@
 #define BUFSIZE      1024
 
 // used by TSReadFromUrl
-TSError parseHTTPResponse(char *buffer, char **header, int *hdr_size, char **body, int *bdy_size);
-TSError readHTTPResponse(int sock, char *buffer, int bufsize, uint64_t timeout);
-TSError sendHTTPRequest(int sock, char *request, uint64_t timeout);
+TSMgmtError parseHTTPResponse(char *buffer, char **header, int *hdr_size, char **body, int *bdy_size);
+TSMgmtError readHTTPResponse(int sock, char *buffer, int bufsize, uint64_t timeout);
+TSMgmtError sendHTTPRequest(int sock, char *request, uint64_t timeout);
 int connectDirect(const char *host, int port, uint64_t timeout);
-
-// used by NetworkUtilRemote.cc and NetworkUtilLocal.cc
-int socket_read_timeout(int fd, int sec, int usec);
-int socket_write_timeout(int fd, int sec, int usec);
 
 // used for Events
 int get_event_id(const char *event_name);

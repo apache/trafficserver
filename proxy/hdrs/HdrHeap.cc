@@ -369,15 +369,7 @@ HdrHeap::coalesce_str_heaps(int incoming_size)
   ink_assert(incoming_size >= 0);
   ink_assert(m_writeable);
 
-  if (m_read_write_heap) {
-    new_heap_size += m_read_write_heap->m_heap_size;
-  }
-
-  for (int i = 0; i < HDR_BUF_RONLY_HEAPS; i++) {
-    if (m_ronly_heap[i].m_heap_start != NULL) {
-      new_heap_size += m_ronly_heap[i].m_heap_len;
-    }
-  }
+  new_heap_size += required_space_for_evacuation();
 
   HdrStrHeap *new_heap = new_HdrStrHeap(new_heap_size);
   evacuate_from_str_heaps(new_heap);
@@ -446,6 +438,44 @@ HdrHeap::evacuate_from_str_heaps(HdrStrHeap * new_heap)
     h = h->m_next;
 
   }
+}
+
+size_t
+HdrHeap::required_space_for_evacuation()
+{
+  size_t ret = 0;
+  HdrHeap *h = this;
+  while (h) {
+    char *data = h->m_data_start;
+
+    while (data < h->m_free_start) {
+      HdrHeapObjImpl *obj = (HdrHeapObjImpl *) data;
+
+      switch (obj->m_type) {
+      case HDR_HEAP_OBJ_URL:
+        ret += ((URLImpl *) obj)->strings_length();
+        break;
+      case HDR_HEAP_OBJ_HTTP_HEADER:
+        ret += ((HTTPHdrImpl *) obj)->strings_length();
+        break;
+      case HDR_HEAP_OBJ_MIME_HEADER:
+        ret += ((MIMEHdrImpl *) obj)->strings_length();
+        break;
+      case HDR_HEAP_OBJ_FIELD_BLOCK:
+        ret += ((MIMEFieldBlockImpl *) obj)->strings_length();
+        break;
+      case HDR_HEAP_OBJ_EMPTY:
+      case HDR_HEAP_OBJ_RAW:
+        // Nothing to do
+        break;
+      default:
+        ink_release_assert(0);
+      }
+      data = data + obj->m_length;
+    }
+    h = h->m_next;
+  }
+  return ret;
 }
 
 void
@@ -849,7 +879,7 @@ HdrHeap::unmarshal(int buf_length, int obj_type, HdrHeapObjImpl ** found_obj, Re
     return -1;
   }
 
-  int unmarshal_size = m_size + m_ronly_heap[0].m_heap_len;
+  int unmarshal_size = this->unmarshal_size();
   if (unmarshal_size > buf_length) {
     ink_assert(!"HdrHeap::unmarshal truncated header");
     return -1;
@@ -1168,68 +1198,96 @@ struct StrTest
   int len;
 };
 
-#ifdef TESTS
-static void
-hdr_heap_test_verify(StrTest * str_test, int n)
-{
-  for (int i = 0; i < n; i++) {
-    char *ptr = str_test[i].ptr;
-    int len = str_test[i].len;
+#if TS_HAS_TESTS
+#include <ts/TestBox.h>
+REGRESSION_TEST(HdrHeap_Coalesce)(RegressionTest* t, int /* atype ATS_UNUSED */, int*  pstatus) {
+  *pstatus = REGRESSION_TEST_PASSED;
+  /*
+   * This test is designed to test numerous pieces of the HdrHeaps including allocations,
+   * demotion of rw heaps to ronly heaps, and finally the coalesce and evacuate behaviours.
+   */
 
-    char c = (char) (len % 43);
-    for (int m = 0; m < len; m++) {
-      if (ptr[m] != c) {
-        Warning("Str Test failed on str %d of %d", i, n);
-        return;
-      }
-      c++;
+  // The amount of space we will need to overflow the StrHdrHeap is HDR_STR_HEAP_DEFAULT_SIZE - STR_HEAP_HDR_SIZE
+  size_t next_rw_heap_size = HDR_STR_HEAP_DEFAULT_SIZE;
+  size_t next_required_overflow_size = next_rw_heap_size - STR_HEAP_HDR_SIZE;
+  char buf[next_required_overflow_size];
+  for(unsigned int i = 0; i < sizeof(buf); ++i) {
+    buf[i] = ('a' + (i % 26));
+  }
+
+  TestBox tb(t, pstatus);
+  HdrHeap *heap = new_HdrHeap();
+  URLImpl *url = url_create(heap);
+
+  tb.check(heap->m_read_write_heap.m_ptr == NULL, "Checking that we have no rw heap.");
+  url_path_set(heap,url, buf, next_required_overflow_size, true);
+  tb.check(heap->m_read_write_heap->m_free_size == 0, "Checking that we've completely consumed the rw heap");
+  for (int i = 0; i < HDR_BUF_RONLY_HEAPS; ++i) {
+    tb.check(heap->m_ronly_heap[i].m_heap_start == (char*)NULL, "Checking ronly_heap[%d] is NULL", i);
+  }
+
+  // Now we have no ronly heaps in use and a completely full rwheap, so we will test that
+  // we demote to ronly heaps HDR_BUF_RONLY_HEAPS times.
+  for (int ronly_heap = 0; ronly_heap < HDR_BUF_RONLY_HEAPS; ++ronly_heap) {
+    next_rw_heap_size = 2 * heap->m_read_write_heap->m_heap_size;
+    next_required_overflow_size = next_rw_heap_size - STR_HEAP_HDR_SIZE;
+    char buf2[next_required_overflow_size];
+    for(unsigned int i = 0; i < sizeof(buf2); ++i) {
+      buf2[i] = ('a' + (i % 26));
+    }
+
+    URLImpl *url2 = url_create(heap);
+    url_path_set(heap,url2,buf2,next_required_overflow_size, true);
+
+    tb.check(heap->m_read_write_heap->m_heap_size == (uint32_t)next_rw_heap_size, "Checking the current rw heap is %d bytes", (int)next_rw_heap_size);
+    tb.check(heap->m_read_write_heap->m_free_size == 0, "Checking that we've completely consumed the rw heap");
+    tb.check(heap->m_ronly_heap[ronly_heap].m_heap_start != NULL, "Checking that we properly demoted the previous rw heap");
+    for (int i = ronly_heap + 1; i < HDR_BUF_RONLY_HEAPS; ++i) {
+      tb.check(heap->m_ronly_heap[i].m_heap_start == NULL, "Checking ronly_heap[%d] is NULL", i);
     }
   }
 
+  // We will rerun these checks after we introduce a non-copied string to make sure we didn't already coalesce
+  for (int i = 0; i < HDR_BUF_RONLY_HEAPS; ++i) {
+    tb.check(heap->m_ronly_heap[i].m_heap_start != (char*)NULL, "Pre non-copied string: Checking ronly_heap[%d] is NOT NULL", i);
+  }
+
+  // Now if we add a url object that contains only non-copied strings it shouldn't affect the size of the rwheap
+  // since it doesn't require allocating any storage on this heap.
+  char buf3[next_required_overflow_size];
+  for(unsigned int i = 0; i < sizeof(buf); ++i) {
+    buf3[i] = ('a' + (i % 26));
+  }
+
+  URLImpl *aliased_str_url = url_create(heap);
+  url_path_set(heap, aliased_str_url, buf3, next_required_overflow_size, false); // don't copy this string
+  tb.check(aliased_str_url->m_len_path == next_required_overflow_size, "Checking that the aliased string shows having proper length");
+  tb.check(aliased_str_url->m_ptr_path == buf3, "Checking that the aliased string is correctly pointing at buf");
+
+
+  for (int i = 0; i < HDR_BUF_RONLY_HEAPS; ++i) {
+    tb.check(heap->m_ronly_heap[i].m_heap_start != (char*)NULL, "Post non-copied string: Checking ronly_heap[%d] is NOT NULL", i);
+  }
+  tb.check(heap->m_read_write_heap->m_free_size == 0, "Checking that we've completely consumed the rw heap");
+  tb.check(heap->m_next == NULL, "Checking that we dont have any chained heaps");
+
+  // Now at this point we have a completely full rw_heap and no ronly heap slots, so any allocation would have to result
+  // in a coalesce, and to validate that we don't reintroduce TS-2766 we have an aliased string, so when it tries to
+  // coalesce it used to sum up the size of the ronly heaps and the rw heap which is incorrect because we never
+  // copied the above string onto the heap. The new behaviour fixed in TS-2766 will make sure that this non copied
+  // string is accounted for, in the old implementation it would result in an allocation failure.
+
+
+  char *str = heap->allocate_str(1); // this will force a coalese.
+  tb.check(str != NULL, "Checking that 1 byte allocated string is not NULL");
+
+  // Now we need to validate that aliased_str_url has a path that isn't NULL, if it's NULL then the
+  // coalesce is broken and didn't properly determine the size, if it's not null then everything worked as expected.
+  tb.check(aliased_str_url->m_len_path == next_required_overflow_size, "Checking that the aliased string shows having proper length");
+  tb.check(aliased_str_url->m_ptr_path != NULL, "Checking that the aliased string was properly moved during coalsece and evacuation");
+  tb.check(aliased_str_url->m_ptr_path != buf3, "Checking that the aliased string was properly moved during coalsece and evacuation (not pointing at buf3)");
+
+  // Clean up
+  heap->destroy();
 }
-
-// NOTE: the tests are current broken since
-//   they don't have objects that can
-//   string evacuation
-void
-hdr_heap_test()
-{
-  Note("Starting hdr heap test");
-
-  HdrHeap *h = new_HdrHeap();
-
-  int s;
-  for (int i = 0; i < 10; i++) {
-    s = 16;
-    while (s < HDR_MAX_ALLOC_SIZE) {
-      h->allocate_obj(s);
-      s++;
-    }
-  }
-
-
-  // Allocate a bunch of strings
-  StrTest str_test[10000];
-  s = 16;
-  for (int j = 0; j < 10000; j++) {
-    str_test[j].ptr = h->allocate_str(s);
-    str_test[j].len = s;
-
-    char c = (char) (s % 43);
-    for (int k = 0; k < s; k++) {
-      str_test[j].ptr[k] = c;
-      c++;
-    }
-
-    hdr_heap_test_verify(str_test, j + 1);
-    s += 1;
-  }
-
-
-  // Make sure the strings are all intact
-  hdr_heap_test_verify(str_test, 100);
-
-  Note("Str Test completed");
-}
-
 #endif

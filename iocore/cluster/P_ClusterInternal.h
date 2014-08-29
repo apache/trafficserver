@@ -484,8 +484,6 @@ typedef int (OutgoingControl::*OutgoingCtrlHandler) (int, void *);
 struct ClusterVConnection;
 typedef int (ClusterVConnection::*ClusterVConnHandler) (int, void *);
 
-typedef struct iovec IOVec;
-
 // Library  declarations
 extern void cluster_set_priority(ClusterHandler *, ClusterVConnState *, int);
 extern void cluster_lower_priority(ClusterHandler *, ClusterVConnState *);
@@ -497,7 +495,6 @@ extern void cluster_disable(ClusterHandler *, ClusterVConnection *, ClusterVConn
 extern void cluster_update_priority(ClusterHandler *, ClusterVConnection *, ClusterVConnState *, int64_t, int64_t);
 #define CLUSTER_BUMP_NO_REMOVE    -1
 extern void cluster_bump(ClusterHandler *, ClusterVConnectionBase *, ClusterVConnState *, int);
-extern int iov_memcpy(IOVec *, int, int, char *);
 
 extern IOBufferBlock *clone_IOBufferBlockList(IOBufferBlock *, int, int, IOBufferBlock **);
 extern IOBufferBlock *consume_IOBufferBlockList(IOBufferBlock *, int64_t);

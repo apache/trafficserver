@@ -49,7 +49,7 @@ Server will support parent caching for HTTP and HTTPS requests.
 
 **Note:** If you do not want all requests to go to the parent cache,
 then simply configure Traffic Server to route certain requests (such as
-requests containing specific URLs) directly to the origin server. SImply
+requests containing specific URLs) directly to the origin server. Simply
 set parent proxy rules in :file:`parent.config`
 
 The figure below illustrates a simple cache hierarchy with a Traffic
@@ -173,7 +173,7 @@ Run the command :option:`traffic_line -x` to apply the configuration changes.
    * :ts:cv:`proxy.config.icp.multicast_enabled`
    * :ts:cv:`proxy.config.icp.query_timeout`
 
-.. Edit `icp.config` file located in the Traffic Server `config` directory: 
+.. Edit :file:`icp.config` file located in the Traffic Server `config` directory: 
    For each ICP peer you want to identify, enter a separate rule in the :file:`icp.config` file.
 
 .. Run the command :option:`traffic_line -x` to apply the configuration changes.

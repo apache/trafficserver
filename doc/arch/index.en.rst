@@ -1,5 +1,5 @@
-Architecture
-******************
+Architecture and Hacking
+************************
 
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
@@ -21,9 +21,11 @@ Architecture
 Introduction
 --------------
 
-The original architectural documents for Traffic Server were lost in the transation to an open source project. The
+The original architectural documents for Traffic Server were lost in the transition to an open source project. The
 documents in this section are provisional and were written based on the existing code. The purpose is to have a high
 level description of aspects of Traffic Server to better inform ongoing work.
+
+In the final section on "hacking" we try to document our approaches to understanding and modifying the source.
 
 Contents:
 
@@ -32,3 +34,4 @@ Contents:
 
    cache/cache.en
    proposals/hostdb.en
+   hacking/index.en

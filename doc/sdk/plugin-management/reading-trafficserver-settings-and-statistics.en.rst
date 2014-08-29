@@ -29,27 +29,27 @@ statistics are stored in ``PROCESS`` variables.
    Not all ``CONFIG`` and ``PROCESS`` variables in :file:`records.config` are
    relevant to Traffic Server's configuration and statistics. Therefore,
    retrieve only the :file:`records.config` variables that are documented in
-   the `Traffic Server Administrator's Guide <../../admin/>`__.
+   the :doc:`Traffic Server Administrator's Guide <../../admin/index.en>`.
 
 To retrieve a variable, you need to know its type (``int``, ``counter``,
 ``float``, or ``string``). Plugins store the :file:`records.config` values
 as an ``TSMgmtInt``, ``TSMgmtCounter``, ``TSMgmtFloat``, or
 ``TSMgmtString``. You can look up :file:`records.config` variable types in
-the `Traffic Server Administrator's Guide <../../admin/>`__.
+the :doc:`Traffic Server Administrator's Guide <../../admin/index.en>`.
 
 Depending on the result type, you'll use ``TSMgmtIntGet``,
 ``TSMgmtCounterGet``, ``TSMgmtFloatGet``, or ``TSMgmtStringGet`` to
 obtain the variable value (see the example for
-```TSMgmtIntGet`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a097aaecda41d04b522796ae25eea9a3d>`__.
+:c:func:`TSMgmtIntGet`.
 
 The ``TSMgmt*Get`` functions are:
 
--  ```TSMgmtCounterGet`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a583e21e614b70256f68658fc6c455ea6>`__
+-  :c:func:`TSMgmtCounterGet`
 
--  ```TSMgmtFloatGet`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a2ace94b52c71656304b53824d3fa7080>`__
+-  :c:func:`TSMgmtFloatGet`
 
--  ```TSMgmtIntGet`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a097aaecda41d04b522796ae25eea9a3d>`__
+-  :c:func:`TSMgmtIntGet`
 
--  ```TSMgmtStringGet`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#a14167888ed89d5b30df5bdcdcfdf1c30>`__
+-  :c:func:`TSMgmtStringGet`
 
 

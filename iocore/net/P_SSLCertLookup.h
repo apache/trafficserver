@@ -43,6 +43,9 @@ struct SSLCertLookup : public ConfigInfo
   // Return the last-resort default TLS context if there is no name or address match.
   SSL_CTX * defaultContext() const { return ssl_default; }
 
+  unsigned count() const;
+  SSL_CTX * get(unsigned i) const;
+
   SSLCertLookup();
   virtual ~SSLCertLookup();
 };

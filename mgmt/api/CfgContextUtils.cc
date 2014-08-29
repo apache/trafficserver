@@ -947,20 +947,17 @@ pdest_sspec_to_string(TSPrimeDestT pd, char *pd_val, TSSspec * sspec)
       if (buf_pos < sizeof(buf)) {
         switch (sspec->scheme) {
         case TS_SCHEME_NONE:
-          psize = snprintf(buf + buf_pos, sizeof(buf) - buf_pos, "%c", DELIMITER);
+          snprintf(buf + buf_pos, sizeof(buf) - buf_pos, "%c", DELIMITER);
           break;
         case TS_SCHEME_HTTP:
-          psize = snprintf(buf + buf_pos, sizeof(buf) - buf_pos, "scheme=http ");
+          snprintf(buf + buf_pos, sizeof(buf) - buf_pos, "scheme=http ");
           break;
         case TS_SCHEME_HTTPS:
-          psize = snprintf(buf + buf_pos, sizeof(buf) - buf_pos, "scheme=https ");
+          snprintf(buf + buf_pos, sizeof(buf) - buf_pos, "scheme=https ");
           break;
         default:
-          psize = 0;
           break;
         }
-        if (psize > 0)
-          buf_pos += psize;
       }
     }
   } while (0);
@@ -976,7 +973,7 @@ pdest_sspec_to_string(TSPrimeDestT pd, char *pd_val, TSSspec * sspec)
  * <pd_type>#<pd_value>#<sspecs> --> TSPdSsFormat
  * NOTE that the entire data line, including the action type is being passed in
  */
-TSError
+TSMgmtError
 string_to_pdss_format(const char *str, TSPdSsFormat * pdss)
 {
   Tokenizer tokens(DELIMITER_STR);
@@ -1057,28 +1054,15 @@ Lerror:
 char *
 hms_time_to_string(TSHmsTime time)
 {
-  char *str;
   char buf[MAX_BUF_SIZE];
-  size_t buf_pos = 0;
-  int psize = 0;
+  size_t s;
 
-  memset(buf, 0, MAX_BUF_SIZE);
-  if (time.d > 0 && buf_pos < sizeof(buf) &&
-      (psize = snprintf(buf + buf_pos, sizeof(buf) - buf_pos, "%dd", time.d)) > 0)
-    buf_pos += psize;
-  if (time.h > 0 && buf_pos < sizeof(buf) &&
-      (psize = snprintf(buf + buf_pos, sizeof(buf) - buf_pos, "%dh", time.h)) > 0)
-    buf_pos += psize;
-  if (time.m > 0 && buf_pos < sizeof(buf) &&
-      (psize = snprintf(buf + buf_pos, sizeof(buf) - buf_pos, "%dm", time.m)) > 0)
-    buf_pos += psize;
-  if (time.s > 0 && buf_pos < sizeof(buf) &&
-      (psize = snprintf(buf + buf_pos, sizeof(buf) - buf_pos, "%ds", time.s)) > 0)
-    buf_pos += psize;
+  s = snprintf(buf, sizeof(buf), "%dd%dh%dm%ds", time.d, time.h, time.m, time.s);
 
-  str = ats_strdup(buf);
-
-  return str;
+  if ((s > 0) && (s < sizeof(buf)))
+    return ats_strdup(buf);
+  else
+    return NULL;
 }
 
 /*----------------------------------------------------------------------------
@@ -1088,7 +1072,7 @@ hms_time_to_string(TSHmsTime time)
  * Returns TS_ERR_FAIL if invalid hms format, eg. if there are invalid
  * characters, eg. "10xh", "10h15m30s34", or repeated values, eg. "10h15h"
  */
-TSError
+TSMgmtError
 string_to_hms_time(const char *str, TSHmsTime * time)
 {
   int i, pos = 0;
@@ -1161,7 +1145,7 @@ Lerror:
  *  } time
  * Returns TS_ERR_FAIL if invalid time string.
  */
-TSError
+TSMgmtError
 string_to_time_struct(const char *str, TSSspec * sspec)
 {
   Tokenizer time_tokens(":-");

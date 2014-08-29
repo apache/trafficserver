@@ -23,15 +23,24 @@ AM_CPPFLAGS = $(iocore_include_dirs) \
   -I$(top_srcdir)/lib -I$(top_builddir)/lib \
   -I$(top_srcdir)/lib/ts -I$(top_builddir)/lib/ts
 
+if BUILD_TEST_TOOLS
+bin_PROGRAMS = jtest/jtest
+else
 noinst_PROGRAMS = jtest/jtest
+endif
 
 jtest_jtest_SOURCES = jtest/jtest.cc
 jtest_jtest_LDADD = $(top_builddir)/lib/ts/libtsutil.la
 
 if BUILD_HTTP_LOAD
-noinst_PROGRAMS += http_load/http_load
 
-http_load_http_load_LDADD = @LIBSSL@
+if BUILD_TEST_TOOLS
+bin_PROGRAMS += http_load/http_load
+else
+noinst_PROGRAMS += http_load/http_load
+endif
+
+http_load_http_load_LDADD = @OPENSSL_LIBS@
 http_load_http_load_SOURCES =  \
   http_load/http_load.c \
   http_load/timers.c \

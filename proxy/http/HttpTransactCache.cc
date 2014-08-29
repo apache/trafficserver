@@ -879,7 +879,7 @@ HttpTransactCache::calculate_quality_of_accept_encoding_match(MIMEField * accept
     // TODO: Should we check the return value (count) here?
     content_field->value_get_comma_list(&c_values_list);
 
-    c_encoding = content_field->value_get(&c_encoding_len);
+    content_field->value_get(&c_encoding_len);
     if (c_encoding_len == 0) {
       is_identity_encoding = true;
     } else {

@@ -74,7 +74,6 @@ Cluster_read(ClusterMachine * owner_machine, int opcode,
   int vers = CacheOpMsg_long::protoToVersion(owner_machine->msg_proto_major);
   int flen;
   int len = 0;
-  int cur_len;
   int res = 0;
   char *msg;
   char *data;
@@ -89,7 +88,7 @@ Cluster_read(ClusterMachine * owner_machine, int opcode,
       int url_hlen;
       INK_MD5 url_only_md5;
 
-      Cache::generate_key(&url_only_md5, url, 0);
+      Cache::generate_key(&url_only_md5, url);
       url_hostname = url->host_get(&url_hlen);
 
       len += request->m_heap->marshal_length();
@@ -103,7 +102,8 @@ Cluster_read(ClusterMachine * owner_machine, int opcode,
       msg = (char *) ALLOCA_DOUBLE(flen + len);
       data = msg + flen;
 
-      cur_len = len;
+      int cur_len = len;
+
       res = request->m_heap->marshal(data, cur_len);
       if (res < 0) {
         goto err_exit;
@@ -113,7 +113,6 @@ Cluster_read(ClusterMachine * owner_machine, int opcode,
       if ((res = params->marshal(data, cur_len)) < 0)
         goto err_exit;
       data += res;
-      cur_len -= res;
       memcpy(data, url_hostname, url_hlen);
 
       CacheOpArgs_General readArgs;
@@ -226,17 +225,14 @@ Cluster_write(Continuation * cont, int expected_size,
       // Perform data Marshal operation
       msg = (char *) ALLOCA_DOUBLE(flen + len);
       data = msg + flen;
-      int res = 0;
-
-      int cur_len = len;
 
       if (old_info) {
-        res = old_info->marshal(data, cur_len);
+        int res = old_info->marshal(data, len);
+
         if (res < 0) {
           goto err_exit;
         }
         data += res;
-        cur_len -= res;
       }
       memcpy(data, url_hostname, url_hlen);
       break;

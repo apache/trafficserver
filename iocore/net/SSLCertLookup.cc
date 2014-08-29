@@ -75,6 +75,8 @@ struct SSLContextStorage
 
   bool insert(SSL_CTX * ctx, const char * name);
   SSL_CTX * lookup(const char * name) const;
+  unsigned count() const { return this->references.count(); }
+  SSL_CTX * get(unsigned i) const { return this->references[i]; }
 
 private:
   struct SSLEntry
@@ -93,7 +95,7 @@ private:
 };
 
 SSLCertLookup::SSLCertLookup()
-  : ssl_storage(NEW(new SSLContextStorage())), ssl_default(NULL)
+  : ssl_storage(new SSLContextStorage()), ssl_default(NULL)
 {
 }
 
@@ -141,6 +143,18 @@ SSLCertLookup::insert(SSL_CTX * ctx, const IpEndpoint& address)
   return this->ssl_storage->insert(ctx, key.get());
 }
 
+unsigned
+SSLCertLookup::count() const
+{
+  return ssl_storage->count();
+}
+
+SSL_CTX *
+SSLCertLookup::get(unsigned i) const
+{
+  return ssl_storage->get(i);
+}
+
 struct ats_wildcard_matcher
 {
   ats_wildcard_matcher() {
@@ -172,16 +186,8 @@ reverse_dns_name(const char * hostname, char (&reversed)[TS_MAX_HOST_NAME_LEN+1]
     ssize_t len = strcspn(part, ".");
     ssize_t remain = ptr - reversed;
 
-    // We are going to put the '.' separator back for all components except the first.
-    if (*ptr == '\0') {
-      if (remain < len) {
-        return NULL;
-      }
-    } else {
-      if (remain < (len + 1)) {
-        return NULL;
-      }
-      *(--ptr) = '.';
+    if (remain < (len + 1)) {
+      return NULL;
     }
 
     ptr -= len;
@@ -192,6 +198,7 @@ reverse_dns_name(const char * hostname, char (&reversed)[TS_MAX_HOST_NAME_LEN+1]
     part += len;
     if (*part == '.') {
       ++part;
+      *(--ptr) = '.';
     }
   }
 
@@ -216,32 +223,52 @@ bool
 SSLContextStorage::insert(SSL_CTX * ctx, const char * name)
 {
   ats_wildcard_matcher wildcard;
-  bool inserted = true;
+  bool inserted = false;
 
   if (wildcard.match(name)) {
     // We turn wildcards into the reverse DNS form, then insert them into the trie
     // so that we can do a longest match lookup.
     char namebuf[TS_MAX_HOST_NAME_LEN + 1];
     char * reversed;
-    xptr<SSLEntry> entry;
+    ats_scoped_obj<SSLEntry> entry;
 
-    reversed = reverse_dns_name(name + 2, namebuf);
+    reversed = reverse_dns_name(name + 1, namebuf);
     if (!reversed) {
       Error("wildcard name '%s' is too long", name);
       return false;
     }
 
-    Debug("ssl", "indexed wildcard certificate for '%s' as '%s' with SSL_CTX %p", name, reversed, ctx);
     entry = new SSLEntry(ctx);
     inserted = this->wildcards.Insert(reversed, entry, 0 /* rank */, -1 /* keylen */);
-    if (inserted) {
-      entry.release();
+    if (!inserted) {
+      SSLEntry * found;
+
+      // We fail to insert, so the longest wildcard match search should return the full match value.
+      found = this->wildcards.Search(reversed);
+      if (found != NULL && found->ctx != ctx) {
+        Warning("previously indexed wildcard certificate for '%s' as '%s', cannot index it with SSL_CTX %p now",
+            name, reversed, ctx);
+      }
+
+      goto done;
     }
+
+    Debug("ssl", "indexed wildcard certificate for '%s' as '%s' with SSL_CTX %p", name, reversed, ctx);
+    entry.release();
   } else {
-    Debug("ssl", "indexed '%s' with SSL_CTX %p", name, ctx);
+    InkHashTableValue value;
+
+    if (ink_hash_table_lookup(this->hostnames, name, &value) && (void *)ctx != value) {
+      Warning("previously indexed '%s' with SSL_CTX %p, cannot index it with SSL_CTX %p now", name, value, ctx);
+      goto done;
+    }
+
+    inserted = true;
     ink_hash_table_insert(this->hostnames, name, (void *)ctx);
+    Debug("ssl", "indexed '%s' with SSL_CTX %p", name, ctx);
   }
 
+done:
   // Keep a unique reference to the SSL_CTX, so that we can free it later. Since we index by name, multiple
   // certificates can be indexed for the same name. If this happens, we will overwrite the previous pointer
   // and leak a context. So if we insert a certificate, keep an ownership reference to it.

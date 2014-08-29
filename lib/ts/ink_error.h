@@ -53,7 +53,6 @@ void ink_dprintf(int debug_level, const char *message_format, ...) TS_PRINTFLIKE
 void ink_fatal_die(const char *message_format, ...) TS_PRINTFLIKE(1, 2) TS_NORETURN;
 
 void ink_die_die_die(int retval) TS_NORETURN;
-void ink_segv() TS_NORETURN;
 int ink_set_dprintf_level(int debug_level);
 
 #ifdef __cplusplus

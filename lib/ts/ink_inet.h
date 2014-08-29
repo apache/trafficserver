@@ -105,6 +105,9 @@ union IpEndpoint {
   in_port_t& port();
   /// Port in network order.
   in_port_t port() const;
+
+  operator sockaddr* () { return &sa; }
+  operator sockaddr const* () const { return &sa; }
 };
 
 struct ink_gethostbyname_r_data
@@ -762,6 +765,18 @@ inline bool operator != (IpEndpoint const& lhs, IpEndpoint const& rhs) {
   return 0 != ats_ip_addr_cmp(&lhs.sa, &rhs.sa);
 }
 
+/// Compare address and port for equality.
+inline bool ats_ip_addr_port_eq(sockaddr const* lhs, sockaddr const* rhs) {
+  bool zret = false;
+  if (lhs->sa_family == rhs->sa_family && ats_ip_port_cast(lhs) == ats_ip_port_cast(rhs)) {
+    if (AF_INET == lhs->sa_family)
+      zret = ats_ip4_cast(lhs)->sin_addr.s_addr == ats_ip4_cast(rhs)->sin_addr.s_addr;
+    else if (AF_INET6 == lhs->sa_family)
+      zret = 0 == memcmp(&ats_ip6_cast(lhs)->sin6_addr, &ats_ip6_cast(rhs)->sin6_addr, sizeof(in6_addr));
+  }
+  return zret;
+}
+
 //@}
 
 /// Get IP TCP/UDP port.
@@ -938,7 +953,7 @@ inline char const* ats_ip_nptop(
     @return 0 on success, non-zero on failure.
 */
 int ats_ip_pton(
-  char const* text, ///< [in] text.
+  const ts::ConstBuffer& text, ///< [in] text.
   sockaddr* addr ///< [out] address
 );
 
@@ -957,14 +972,28 @@ inline int ats_ip_pton(
   char const* text, ///< [in] text.
   sockaddr_in6* addr ///< [out] address
 ) {
-  return ats_ip_pton(text, ats_ip_sa_cast(addr));
+  return ats_ip_pton(ts::ConstBuffer(text, strlen(text)), ats_ip_sa_cast(addr));
 }
 
 inline int ats_ip_pton(
-  char const* text, ///< [in] text.
+  const ts::ConstBuffer& text, ///< [in] text.
   IpEndpoint* addr ///< [out] address
 ) {
   return ats_ip_pton(text, &addr->sa);
+}
+
+inline int ats_ip_pton(
+  const char * text, ///< [in] text.
+  IpEndpoint* addr ///< [out] address
+) {
+  return ats_ip_pton(ts::ConstBuffer(text, strlen(text)), &addr->sa);
+}
+
+inline int ats_ip_pton(
+  const char * text, ///< [in] text.
+  sockaddr * addr ///< [out] address
+) {
+  return ats_ip_pton(ts::ConstBuffer(text, strlen(text)), addr);
 }
 
 /** Get the best address info for @a name.

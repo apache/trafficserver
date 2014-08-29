@@ -1,3 +1,5 @@
+.. _stats-over-http-plugin:
+
 Stats over HTTP Plugin
 **********************
 

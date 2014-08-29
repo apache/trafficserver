@@ -24,71 +24,10 @@
 #include "P_EventSystem.h"      /* MAGIC_EDITING_TAG */
 #include <sched.h>
 #if TS_USE_HWLOC
-
-#if HAVE_HWLOC_H
+#include <alloca.h>
 #include <hwloc.h>
 #endif
-
-#if HAVE_SCHED_H
-#include <sched.h>
-#if !defined(solaris) && !defined(freebsd)
-typedef cpu_set_t ink_cpuset_t;
-#define PTR_FMT PRIuPTR
-#endif
-#endif
-
-#if HAVE_SYS_PARAM_H
-#include <sys/param.h>
-#endif
-
-#if HAVE_SYS_CPUSET_H
-#include <sys/cpuset.h>
-typedef cpuset_t ink_cpuset_t;
-#define PTR_FMT "p"
-#endif
-
-#if HAVE_SYS_PSET_H
-#include <sys/pset.h>
-typedef psetid_t ink_cpuset_t;
-#define PTR_FMT "u"
-#endif
-
-#if HAVE_SYS_TYPES_H
-#include <sys/types.h>
-#endif
-
-#endif
 #include "ink_defs.h"
-
-#if TS_USE_HWLOC
-static void
-set_cpu(ink_cpuset_t *cpuset, int cpu)
-{
-#if !defined(solaris)
-  CPU_ZERO(cpuset);
-  CPU_SET(cpu, cpuset);
-#else
-  pset_create(cpuset);
-  pset_assign(*cpuset, cpu, NULL);
-#endif
-}
-
-
-static bool
-bind_cpu(ink_cpuset_t *cpuset, ink_thread tid)
-{
-  if ( 0 != 
-#if !defined(solaris)
-    pthread_setaffinity_np(tid, sizeof(ink_cpuset_t), cpuset)
-#else
-    pset_bind(*cpuset, P_LWPID, P_MYID, NULL)
-#endif
-    ){
-    return false;
-  }
-  return true;
-}
-#endif
 
 EventType
 EventProcessor::spawn_event_threads(int n_threads, const char* et_name, size_t stacksize)
@@ -104,7 +43,7 @@ EventProcessor::spawn_event_threads(int n_threads, const char* et_name, size_t s
   new_thread_group_id = (EventType) n_thread_groups;
 
   for (i = 0; i < n_threads; i++) {
-    EThread *t = NEW(new EThread(REGULAR, n_ethreads + i));
+    EThread *t = new EThread(REGULAR, n_ethreads + i);
     all_ethreads[n_ethreads + i] = t;
     eventthread[new_thread_group_id][i] = t;
     t->set_event_type(new_thread_group_id);
@@ -118,7 +57,7 @@ EventProcessor::spawn_event_threads(int n_threads, const char* et_name, size_t s
 
   n_thread_groups++;
   n_ethreads += n_threads;
-  Debug("iocore_thread", "Created thread group '%s' id %d with %d threads", et_name, new_thread_group_id, n_threads); 
+  Debug("iocore_thread", "Created thread group '%s' id %d with %d threads", et_name, new_thread_group_id, n_threads);
 
   return new_thread_group_id;
 }
@@ -144,7 +83,7 @@ EventProcessor::start(int n_event_threads, size_t stacksize)
   int first_thread = 1;
 
   for (i = 0; i < n_event_threads; i++) {
-    EThread *t = NEW(new EThread(REGULAR, i));
+    EThread *t = new EThread(REGULAR, i);
     if (first_thread && !i) {
       ink_thread_setspecific(Thread::thread_data_key, t);
       global_mutex = t->mutex;
@@ -160,53 +99,64 @@ EventProcessor::start(int n_event_threads, size_t stacksize)
 #if TS_USE_HWLOC
   int affinity = 0;
   REC_ReadConfigInteger(affinity, "proxy.config.exec_thread.affinity");
-  ink_cpuset_t cpuset;
-  int socket = hwloc_get_nbobjs_by_type(ink_get_topology(), HWLOC_OBJ_SOCKET);
-  int cu = hwloc_get_nbobjs_by_type(ink_get_topology(), HWLOC_OBJ_CORE);
-  int pu = cu;
+  hwloc_obj_t obj;
+  hwloc_obj_type_t obj_type;
+  int obj_count = 0;
+  char *obj_name;
 
-  // Older versions of libhwloc (eg. Ubuntu 10.04) don't have pHWLOC_OBJ_PU.
+  switch(affinity) {
+    case 4:           // assign threads to logical processing units
+// Older versions of libhwloc (eg. Ubuntu 10.04) don't have HWLOC_OBJ_PU.
 #if HAVE_HWLOC_OBJ_PU
-  pu = hwloc_get_nbobjs_by_type(ink_get_topology(), HWLOC_OBJ_PU);
+      obj_type = HWLOC_OBJ_PU;
+      obj_name = (char *) "Logical Processor";
+      break;
 #endif
+    case 3:           // assign threads to real cores
+      obj_type = HWLOC_OBJ_CORE;
+      obj_name = (char *) "Core";
+      break;
+    case 1:           // assign threads to NUMA nodes (often 1:1 with sockets)
+      obj_type = HWLOC_OBJ_NODE;
+      obj_name = (char *) "NUMA Node";
+      if (hwloc_get_nbobjs_by_type(ink_get_topology(), obj_type) > 0) {
+        break;
+      }
+    case 2:           // assign threads to sockets
+      obj_type = HWLOC_OBJ_SOCKET;
+      obj_name = (char *) "Socket";
+      break;
+    default:         // assign threads to the machine as a whole (a level below SYSTEM)
+      obj_type = HWLOC_OBJ_MACHINE;
+      obj_name = (char *) "Machine";
+  }
 
-  Debug("iocore_thread", "socket: %d core: %d logical processor: %d affinity: %d", socket, cu, pu, affinity);
+  obj_count = hwloc_get_nbobjs_by_type(ink_get_topology(), obj_type);
+  Debug("iocore_thread", "Affinity: %d %ss: %d PU: %d", affinity, obj_name, obj_count, ink_number_of_processors());
+
 #endif
-
   for (i = first_thread; i < n_ethreads; i++) {
     snprintf(thr_name, MAX_THREAD_NAME_LENGTH, "[ET_NET %d]", i);
     ink_thread tid = all_ethreads[i]->start(thr_name, stacksize);
     (void)tid;
-
 #if TS_USE_HWLOC
-    if (affinity != 0) {
-      int logical_ratio;
-      switch(affinity) {
-      case 3:           // assign threads to logical cores
-        logical_ratio = 1;
-        break;
-      case 2:           // assign threads to real cores
-        logical_ratio = pu / cu;
-        break;
-      case 1:           // assign threads to sockets
-      default:
-        logical_ratio = pu / socket;
-      }
-
-      char debug_message[256];
-      int len = snprintf(debug_message, sizeof(debug_message), "setaffinity tid: %" PTR_FMT ", net thread: %u cpu:", tid, i);
-      for (int cpu_count = 0; cpu_count < logical_ratio; cpu_count++) {
-        int cpu = ((i - 1) * logical_ratio + cpu_count) % pu;
-        set_cpu(&cpuset, cpu);
-        len += snprintf(debug_message + len, sizeof(debug_message) - len, " %d", cpu);
-      }
-      Debug("iocore_thread", "%s", debug_message);
-      if (!bind_cpu(&cpuset, tid)){
-        Error("%s, failed with errno: %d", debug_message, errno);
-      }
+    if (obj_count > 0) {
+      obj = hwloc_get_obj_by_type(ink_get_topology(), obj_type, i % obj_count);
+#if HWLOC_API_VERSION >= 0x00010100
+      int cpu_mask_len = hwloc_bitmap_snprintf(NULL, 0, obj->cpuset) + 1;
+      char *cpu_mask = (char *) alloca(cpu_mask_len);
+      hwloc_bitmap_snprintf(cpu_mask, cpu_mask_len, obj->cpuset);
+      Debug("iocore_thread","EThread: %d %s: %d CPU Mask: %s\n", i, obj_name, obj->logical_index, cpu_mask);
+#else
+      Debug("iocore_thread","EThread: %d %s: %d\n", i, obj_name, obj->logical_index);
+#endif // HWLOC_API_VERSION
+      hwloc_set_thread_cpubind(ink_get_topology(), tid, obj->cpuset, HWLOC_CPUBIND_STRICT);
+    } else {
+      Warning("hwloc returned an unexpected value -- CPU affinity disabled");
     }
-#endif
+#endif // TS_USE_HWLOC
   }
+
   Debug("iocore_thread", "Created event thread group id %d with %d threads", ET_CALL, n_event_threads);
   return 0;
 }
@@ -217,13 +167,13 @@ EventProcessor::shutdown()
 }
 
 Event *
-EventProcessor::spawn_thread(Continuation *cont, const char* thr_name, size_t stacksize, ink_sem *sem)
+EventProcessor::spawn_thread(Continuation *cont, const char* thr_name, size_t stacksize)
 {
   ink_release_assert(n_dthreads < MAX_EVENT_THREADS);
   Event *e = eventAllocator.alloc();
 
   e->init(cont, 0, 0);
-  all_dthreads[n_dthreads] = NEW(new EThread(DEDICATED, e, sem));
+  all_dthreads[n_dthreads] = new EThread(DEDICATED, e);
   e->ethread = all_dthreads[n_dthreads];
   e->mutex = e->continuation->mutex = all_dthreads[n_dthreads]->mutex;
   n_dthreads++;

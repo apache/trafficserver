@@ -40,9 +40,8 @@ differs from the HTTP type).
 
 **Example:**
 
-::
+.. code-block:: c
 
-            :::c
         const unsigned char *key_name = "example key name";
 
         TSCacheKey key;

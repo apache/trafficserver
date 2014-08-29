@@ -33,28 +33,73 @@
 #error Traffic Server requires a OpenSSL library that support threads
 #endif
 
-// if we are compiling against an early version of OpenSSL, define our own values
-#ifndef SSL_OP_NO_TLSv1_1
-#define SSL_OP_NO_TLSv1_1 0x10000000L
-#endif
-#ifndef SSL_OP_NO_TLSv1_2
-#define SSL_OP_NO_TLSv1_2 0x08000000L
-#endif
-#define SSL_VERSION_1_0_1 0x010001000 // MMNNFFPPS: major minor fix patch status
-
 struct SSLConfigParams;
 struct SSLCertLookup;
+class SSLNetVConnection;
+struct RecRawStatBlock;
+
+enum SSL_Stats
+{
+  ssl_origin_server_expired_cert_stat,
+  ssl_user_agent_expired_cert_stat,
+  ssl_origin_server_revoked_cert_stat,
+  ssl_user_agent_revoked_cert_stat,
+  ssl_origin_server_unknown_cert_stat,
+  ssl_user_agent_unknown_cert_stat,
+  ssl_origin_server_cert_verify_failed_stat,
+  ssl_user_agent_cert_verify_failed_stat,
+  ssl_origin_server_bad_cert_stat,
+  ssl_user_agent_bad_cert_stat,
+  ssl_origin_server_decryption_failed_stat,
+  ssl_user_agent_decryption_failed_stat,
+  ssl_origin_server_wrong_version_stat,
+  ssl_user_agent_wrong_version_stat,
+  ssl_origin_server_other_errors_stat,
+  ssl_user_agent_other_errors_stat,
+  ssl_origin_server_unknown_ca_stat,
+  ssl_user_agent_unknown_ca_stat,
+  ssl_user_agent_sessions_stat,
+  ssl_user_agent_session_hit_stat,
+  ssl_user_agent_session_miss_stat,
+  ssl_user_agent_session_timeout_stat,
+  ssl_total_handshake_time_stat,
+  ssl_total_success_handshake_count_stat,
+  ssl_total_tickets_created_stat,
+  ssl_total_tickets_verified_stat,
+  ssl_total_tickets_not_found_stat,
+  ssl_total_tickets_renewed_stat,
+
+  /* error stats */
+  ssl_error_want_write,
+  ssl_error_want_read,
+  ssl_error_want_x509_lookup,
+  ssl_error_syscall,
+  ssl_error_read_eos,
+  ssl_error_zero_return,
+  ssl_error_ssl,
+  ssl_sni_name_set_failure,
+
+  ssl_cipher_stats_start = 100,
+  ssl_cipher_stats_end = 300,
+
+  Ssl_Stat_Count
+};
+
+extern RecRawStatBlock *ssl_rsb;
+
+/* Stats should only be accessed using these macros */
+#define SSL_INCREMENT_DYN_STAT(x) RecIncrRawStat(ssl_rsb, NULL, (int) x, 1)
+#define SSL_DECREMENT_DYN_STAT(x) RecIncrRawStat(ssl_rsb, NULL, (int) x, -1)
+#define SSL_SET_COUNT_DYN_STAT(x,count) RecSetRawStatCount(ssl_rsb, x, count)
+#define SSL_INCREMENT_DYN_STAT_EX(x, y) RecIncrRawStat(ssl_rsb, NULL, (int) x, y)
+#define SSL_CLEAR_DYN_STAT(x) \
+  do { \
+    RecSetRawStatSum(ssl_rsb, (x), 0); \
+    RecSetRawStatCount(ssl_rsb, (x), 0); \
+  } while (0);
 
 // Create a default SSL server context.
 SSL_CTX * SSLDefaultServerContext();
-
-// Create and initialize a SSL server context.
-SSL_CTX *
-SSLInitServerContext(
-    const SSLConfigParams * param,
-    const char * serverCertPtr,
-    const char * serverCaCertPtr,
-    const char * serverKeyPtr);
 
 // Create and initialize a SSL client context.
 SSL_CTX * SSLInitClientContext(const SSLConfigParams * param);
@@ -62,15 +107,20 @@ SSL_CTX * SSLInitClientContext(const SSLConfigParams * param);
 // Initialize the SSL library.
 void SSLInitializeLibrary();
 
+// Initialize SSL statistics.
+void SSLInitializeStatistics();
+
 // Release SSL_CTX and the associated data
 void SSLReleaseContext(SSL_CTX* ctx);
 
 // Log an SSL error.
-#define SSLError(fmt, ...) SSLDiagnostic(DiagsMakeLocation(), false, fmt, ##__VA_ARGS__)
+#define SSLError(fmt, ...) SSLDiagnostic(DiagsMakeLocation(), false, NULL, fmt, ##__VA_ARGS__)
+#define SSLErrorVC(vc,fmt, ...) SSLDiagnostic(DiagsMakeLocation(), false, vc, fmt, ##__VA_ARGS__)
 // Log a SSL diagnostic using the "ssl" diagnostic tag.
-#define SSLDebug(fmt, ...) SSLDiagnostic(DiagsMakeLocation(), true, fmt, ##__VA_ARGS__)
+#define SSLDebug(fmt, ...) SSLDiagnostic(DiagsMakeLocation(), true, NULL, fmt, ##__VA_ARGS__)
+#define SSLDebugVC(vc,fmt, ...) SSLDiagnostic(DiagsMakeLocation(), true, vc, fmt, ##__VA_ARGS__)
 
-void SSLDiagnostic(const SrcLoc& loc, bool debug, const char * fmt, ...) TS_PRINTFLIKE(3, 4);
+void SSLDiagnostic(const SrcLoc& loc, bool debug, SSLNetVConnection * vc, const char * fmt, ...) TS_PRINTFLIKE(4, 5);
 
 // Return a static string name for a SSL_ERROR constant.
 const char * SSLErrorName(int ssl_error);

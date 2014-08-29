@@ -31,7 +31,7 @@
 #include "StatSystem.h"
 #include "P_Net.h"
 #include "I_OneWayTunnel.h"
-#include "HttpAccept.h"
+#include "HttpSessionAccept.h"
 
 enum
 {
@@ -145,14 +145,14 @@ SocksProxy::mainEvent(int event, void *data)
 
     switch (state) {
     case HTTP_REQ:{
-      HttpAccept::Options ha_opt;
+      HttpSessionAccept::Options ha_opt;
       //This is a WRITE_COMPLETE. vio->nbytes == vio->ndone is true
 
       SOCKSPROXY_INC_STAT(socksproxy_http_connections_stat);
       Debug("SocksProxy", "Handing over the HTTP request\n");
 
       ha_opt.transport_type = clientVC->attributes;
-      HttpAccept http_accept(ha_opt);
+      HttpSessionAccept http_accept(ha_opt);
       http_accept.mainEvent(NET_EVENT_ACCEPT, clientVC);
       state = ALL_DONE;
       break;
@@ -528,18 +528,18 @@ start_SocksProxy(int port)
   Debug("SocksProxy", "Accepting SocksProxy connections on port %d\n", port);
   NetProcessor::AcceptOptions opt;
   opt.local_port = port;
-  netProcessor.main_accept(NEW(new SocksAccepter), NO_FD, opt);
+  netProcessor.main_accept(new SocksAccepter(), NO_FD, opt);
 
   socksproxy_stat_block = RecAllocateRawStatBlock(socksproxy_stat_count);
 
   if (socksproxy_stat_block) {
     RecRegisterRawStat(socksproxy_stat_block, RECT_PROCESS,
                        "proxy.process.socks.proxy.http_connections",
-                       RECD_INT, RECP_NULL, socksproxy_http_connections_stat, RecRawStatSyncCount);
+                       RECD_INT, RECP_PERSISTENT, socksproxy_http_connections_stat, RecRawStatSyncCount);
 
     RecRegisterRawStat(socksproxy_stat_block, RECT_PROCESS,
                        "proxy.process.socks.proxy.tunneled_connections",
-                       RECD_INT, RECP_NULL, socksproxy_tunneled_connections_stat, RecRawStatSyncCount);
+                       RECD_INT, RECP_PERSISTENT, socksproxy_tunneled_connections_stat, RecRawStatSyncCount);
   }
 }
 

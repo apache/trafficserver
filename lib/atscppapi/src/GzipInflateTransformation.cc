@@ -24,6 +24,7 @@
 #include <cstring>
 #include <vector>
 #include <zlib.h>
+#include <inttypes.h>
 #include "atscppapi/TransformationPlugin.h"
 #include "atscppapi/GzipInflateTransformation.h"
 #include "logging_internal.h"
@@ -110,6 +111,7 @@ void GzipInflateTransformation::consume(const string &data) {
 
     if (err != Z_OK && err != Z_STREAM_END) {
      LOG_ERROR("Iteration %d: Inflate failed with error '%d'", iteration, err);
+     state_->z_stream_.next_out = NULL;
      return;
     }
 
@@ -117,12 +119,13 @@ void GzipInflateTransformation::consume(const string &data) {
     produce(string(&buffer[0], (inflate_block_size - state_->z_stream_.avail_out)));
     state_->bytes_produced_ += (inflate_block_size - state_->z_stream_.avail_out);
   }
+  state_->z_stream_.next_out = NULL;
 }
 
 void GzipInflateTransformation::handleInputComplete() {
   int64_t bytes_written = setOutputComplete();
   if (state_->bytes_produced_ != bytes_written) {
-    LOG_ERROR("Gzip bytes produced sanity check failed, inflated bytes = %ld != written bytes = %ld", state_->bytes_produced_, bytes_written);
+    LOG_ERROR("Gzip bytes produced sanity check failed, inflated bytes = %" PRId64 " != written bytes = %" PRId64, state_->bytes_produced_, bytes_written);
   }
 }
 

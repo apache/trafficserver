@@ -213,7 +213,7 @@ A message similar to the following might display in web browsers: ::
 This is a Web browser issue and not a problem specific to (or caused by)
 Traffic Server. Because Web browsers maintain a separate local cache in
 memory and/or disk on the client system, messages about documents that
-have expired from cache refer to the browser's local cache and _not _
+have expired from cache refer to the browser's local cache and *not*
 to the Traffic Server cache. There is no Traffic Server message or
 condition that can cause such messages to appear in a web browser.
 
@@ -252,7 +252,7 @@ The following message appears in the system log file: ::
 A requested object was larger than the maximum size allowed in the
 Traffic Server cache, so Traffic Server provided proxy service for the
 oversized object but did not cache it. To set the object size limit for
-the cache, modify the :ts:cv:`proxy.config.cache.limits.http.max_doc_size`
+the cache, modify the :ts:cv:`proxy.config.cache.max_doc_size`
 variable in the records.config file. If you do not want to limit the
 size of objects in the cache, then set the document size
 to ``0`` (zero).
@@ -354,7 +354,7 @@ Connection throttle events can occur under the following conditions:
 
 If necessary, you can reset the maximum number of connections supported
 by Traffic Server by editing the value of the
-:ref:`proxy.config.net.connections_throttle` configuration variable in
+:ts:cv:`proxy.config.net.connections_throttle` configuration variable in
 the records.config file. Do not increase the connection throttle limit
 unless the system has adequate memory to handle the client connections
 required. A system with limited RAM might need a throttle limit lower

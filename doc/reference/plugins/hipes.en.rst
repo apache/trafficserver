@@ -1,3 +1,5 @@
+.. _hipes-plugin:
+
 HIPES plugin
 ************
 

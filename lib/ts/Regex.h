@@ -33,7 +33,8 @@
 
 enum REFlags
 {
-  RE_CASE_INSENSITIVE = 1
+  RE_CASE_INSENSITIVE = 0x0001, // default is case sensitive
+  RE_UNANCHORED = 0x0002        // default is to anchor at the first matching position
 };
 
 typedef struct __pat {
@@ -52,14 +53,15 @@ public:
   
   ~DFA();
 
-  int compile(const char *pattern, REFlags flags = (REFlags) 0);
-  int compile(const char **patterns, int npatterns, REFlags flags = (REFlags) 0);
-  dfa_pattern * build(const char *pattern, REFlags flags = (REFlags) 0);
+  int compile(const char *pattern, unsigned flags = 0);
+  int compile(const char **patterns, int npatterns, unsigned flags = 0);
   
   int match(const char *str) const;
   int match(const char *str, int length) const;
 
 private:
+  dfa_pattern * build(const char *pattern, unsigned flags = 0);
+
   dfa_pattern * _my_patterns;
 };
 

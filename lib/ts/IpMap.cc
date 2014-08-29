@@ -37,6 +37,14 @@
 // Validation / printing disabled until I figure out how to generalize so
 // as to not tie reporting into a particular project environment.
 
+/* @internal It is a bit ugly to store a @c sockaddr equivalent in the table
+    as all that is actually needed is the raw address. Unfortunately some clients
+    require a @c sockaddr* return via the iterator and that's expensive to
+    compute all the time. I should, at some point, re-examine this and see if we
+    can do better and have a more compact internal format. I suspect I did this
+    before we had IpAddr as a type.
+*/
+
 namespace ts { namespace detail {
 
 // Helper functions
@@ -1362,7 +1370,7 @@ IpMap::clear() {
 }
 
 IpMap::iterator
-IpMap::begin() {
+IpMap::begin() const {
   Node* x = 0;
   if (_m4) x = _m4->getHead();
   if (!x && _m6) x = _m6->getHead();

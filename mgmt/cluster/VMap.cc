@@ -30,9 +30,9 @@
  */
 #include "ink_platform.h"
 
-#include "Main.h"
 #include "LocalManager.h"
 #include "VMap.h"
+#include "ClusterCom.h"
 #include "MgmtUtils.h"
 #include "P_RecLocal.h"
 #include "I_Layout.h"
@@ -144,7 +144,6 @@ VMap::VMap(char *interface, unsigned long ip, ink_mutex * m)
       ats_free(ifbuf);
     }
 
-    ifr = ifc.ifc_req;
     ifend = (struct ifreq *) (ifc.ifc_buf + ifc.ifc_len);
     // Loop through the list of interfaces
     for (ifr = ifc.ifc_req; ifr < ifend;) {
@@ -311,7 +310,7 @@ VMap::lt_readAListFile(char * data)
   char tmp_addr[1024], tmp_interface[1024];
   FILE *fin;
   char tmp_id[1024];
-  xptr<char> vaddr_path(Layout::get()->relative_to(Layout::get()->sysconfdir, data));
+  ats_scoped_str vaddr_path(Layout::get()->relative_to(Layout::get()->sysconfdir, data));
 
   if (!(fin = fopen(vaddr_path, "r"))) {
     mgmt_log(stderr, "[VMap::lt_readAListFile] Unable to open file: %s, addr list unchanged\n", (const char *)vaddr_path);
@@ -777,7 +776,7 @@ VMap::lt_constructVMapMessage(char *ip, char *message, int max)
     return;
   }
   // Insert the standard mcast packet header
-  n = ClusterCom::constructSharedPacketHeader(message, ip, max);
+  n = ClusterCom::constructSharedPacketHeader(appVersionInfo, message, ip, max);
 
   if (!((n + (int) strlen("type: vmap\n")) < max)) {
     if (max >= 1) {
@@ -814,7 +813,6 @@ VMap::lt_constructVMapMessage(char *ip, char *message, int max)
       return;
     }
     ink_strlcpy(&message[n], "virt: none\n", max - n);
-    n += strlen("virt: none\n");
   }
   return;
 }                               /* End VMap::constructVMapMessage */

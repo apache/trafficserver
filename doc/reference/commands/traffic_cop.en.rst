@@ -15,6 +15,8 @@
   specific language governing permissions and limitations
   under the License.
 
+.. _traffic_cop:
+
 ===========
 traffic_cop
 ===========
@@ -38,19 +40,24 @@ and :ts:cv:`proxy.config.cop.linux_min_memfree_kb` variables.
 
 The following options are available:
 
-.. option:: -stop
+.. option:: -d, --debug
+
+   Emit debugging messages.
+
+.. option:: -o, --stdout
+
+  :program:`traffic_cop` ordinarily logs to syslog, however for
+  debugging purposes, this option causes it to print messages to
+  standard output instead.
+
+.. option:: -s, --stop
 
    Kill children using ``SIGSTOP`` instead of ``SIGKILL``. This
    option is primarily for debugging.
 
-.. option:: -V
+.. option:: -V, --version
 
    Print version information and exit.
-
-:program:`traffic_cop` ordinarily logs to syslog, however for
-debugging purposes, the ``--enable-cop-debug`` build option
-causes it to log trace messages to
-:file:`/tmp/traffic_cop.trace`.
 
 See also
 ========

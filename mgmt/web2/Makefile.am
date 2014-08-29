@@ -27,10 +27,8 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/mgmt/cluster \
   -I$(top_srcdir)/mgmt/utils \
   -I$(top_srcdir)/proxy/hdrs \
-  -I$(top_srcdir)/lib
-
-MGMT_DEFS = @MGMT_DEFS@
-DEFS  += $(MGMT_DEFS)
+  -I$(top_srcdir)/lib \
+  -I$(top_builddir)/lib
 
 noinst_LIBRARIES = libweb.a
 libweb_a_SOURCES = \

@@ -31,7 +31,6 @@ namespace atscppapi {
 
 struct HeadersState;
 struct HeaderFieldIteratorState;
-struct HeaderFieldState;
 struct HeaderFieldValueIteratorState;
 class Request;
 class ClientRequest;
@@ -165,7 +164,66 @@ class header_field_value_iterator : public std::iterator<std::forward_iterator_t
 
     friend class HeaderField;
 };
-class header_field_iterator;
+
+/**
+ * @brief A header field iterator is an iterator that dereferences to a HeaderField.
+ */
+class header_field_iterator : public std::iterator<std::forward_iterator_tag, int>
+{
+  private:
+    HeaderFieldIteratorState *state_;
+    header_field_iterator(void *hdr_buf, void *hdr_loc, void *field_loc);
+  public:
+    ~header_field_iterator();
+
+    /**
+      * Copy Constructor for header_field_iterator, this shouldn't need to be used directly.
+      * @param header_field_iterator: for constructing the iterator.
+      * @warning This shouldn't need to be used directly!
+     */
+    header_field_iterator(const header_field_iterator& it);
+
+    header_field_iterator &operator=(const header_field_iterator &rhs);
+
+    /**
+     * Advance the iterator to the next header field
+     * @return a reference to a the next iterator
+     */
+    header_field_iterator& operator++();
+
+    /**
+     * Advance the current iterator to the next header field
+     * @return a new iterator which points to the next element
+     */
+    header_field_iterator operator++(int);
+
+    /**
+     * Advance the iterator to the next header field with the same name
+     * @return a reference to a the next iterator
+     */
+    header_field_iterator& nextDup();
+
+    /**
+     * Comparison operator, compare two iterators
+     * @return true if the two iterators point to the same HeaderField
+     */
+    bool operator==(const header_field_iterator& rhs) const;
+
+    /**
+     * Inequality Operator, compare two iterators
+     * @return false if the two iterators are the same.
+     */
+    bool operator!=(const header_field_iterator& rhs) const;
+
+    /**
+     * Dereference an iterator
+     * @return a HeaderField pointed to by this iterator
+     */
+    HeaderField operator*();
+
+    friend class HeaderField;
+    friend class Headers;
+};
 
 /**
  * @brief A HeaderField is a class that contains the header field name and all of the values.
@@ -173,19 +231,13 @@ class header_field_iterator;
  */
 class HeaderField {
 private:
-  HeaderFieldState *state_;
+  header_field_iterator iter_;
+  HeaderField(header_field_iterator iter) : iter_(iter) { }
+  
 public:
   typedef unsigned int size_type;
   typedef header_field_value_iterator iterator;
 
-  /**
-   * Constructor for HeaderField, this shouldn't be used directly unless you're trying to mix the C++ and C apis.
-   * @param bufp the TSMBuffer associated with the header field
-   * @param mloc the TSMLoc associated with the headers
-   * @param field_loc the TSMLoc associated with the header field
-   * @warning This should only be used if you're mixing the C++ and C apis, it will be constructed automatically if using only the C++ api.
-   */
-  HeaderField(void *bufp, void *hdr_loc, void *field_loc);
   ~HeaderField();
 
   /**
@@ -339,86 +391,12 @@ public:
 };
 
 /**
- * @brief A header field iterator is an iterator that dereferences to a HeaderField.
- */
-class header_field_iterator : public std::iterator<std::forward_iterator_tag, int>
-{
-  private:
-    HeaderFieldIteratorState *state_;
-  public:
-    header_field_iterator();
-    ~header_field_iterator();
-
-   /**
-     * Constructor for header_field_iterator, this shouldn't need to be used directly.
-     * @param bufp the TSMBuffer associated with the headers
-     * @param mloc the TSMLoc associated with the headers.
-     * @param field_loc the TSMLoc assocated with the field.
-     * @warning This shouldn't need to be used directly!
-     */
-    header_field_iterator(void *bufp, void *hdr_loc, void *field_loc);
-
-    /**
-      * Constructor for header_field_iterator, this shouldn't need to be used directly.
-      * @param HeaderField the header field to use for constructing the iterator.
-      * @warning This shouldn't need to be used directly!
-      */
-    header_field_iterator(HeaderField &hf);
-
-    /**
-      * Copy Constructor for header_field_iterator, this shouldn't need to be used directly.
-      * @param header_field_iterator: for constructing the iterator.
-      * @warning This shouldn't need to be used directly!
-     */
-    header_field_iterator(const header_field_iterator& it);
-
-    /**
-     * Advance the iterator to the next header field
-     * @return a reference to a the next iterator
-     */
-    header_field_iterator& operator++();
-
-    /**
-     * Advance the current iterator to the next header field
-     * @return a new iterator which points to the next element
-     */
-    header_field_iterator operator++(int);
-
-    /**
-     * Comparison operator, compare two iterators
-     * @return true if the two iterators point to the same HeaderField
-     */
-    bool operator==(const header_field_iterator& rhs) const;
-
-    /**
-     * Inequality Operator, compare two iterators
-     * @return false if the two iterators are the same.
-     */
-    bool operator!=(const header_field_iterator& rhs) const;
-
-    /**
-     * Dereference an iterator
-     * @return a HeaderField pointed to by this iterator
-     */
-    HeaderField operator*();
-
-    /**
-     * Dereference an iterator
-     * @return a HeaderField pointed to by this iterator
-     */
-    HeaderField operator()();
-
-    friend class Headers;
-};
-
-/**
  * @brief Encapsulates the headers portion of a request or response.
  */
 class Headers: noncopyable {
 public:
   /**
-   * Constructor for Headers, this shouldn't be used directly unless you're trying to mix the C++ and C apis.
-   * @warning This should only be used if you're mixing the C++ and C apis, it will be constructed automatically if using only the C++ api.
+   * Constructor for Headers. This creates a "detached" headers, i.e., not tied to any transaction.
    */
   Headers();
 
@@ -547,6 +525,14 @@ public:
   std::string values(const std::string &key, const char join);
 
   /**
+    * Returns the value at given position of header with given name
+    * @param name of header
+    * @param position of value 
+    * @return value
+    */
+  std::string value(const std::string key, size_type index = 0);
+
+  /**
     * Returns an iterator to the first HeaderField with the name key.
     * @param key the name of first header field ot find.
     * @return an iterator that points to the first matching header field with name key.
@@ -575,7 +561,7 @@ public:
     * @param value the value of the header field to set.
     * @return an iterator to the new header field or the end() iterator if append fails.
     */
-  iterator eraseAndSet(const std::string &key, const std::string &value);
+  iterator set(const std::string &key, const std::string &value);
 
   /**
     * Set the header field values to the value given, the header field will be created
@@ -588,10 +574,16 @@ public:
   HeaderField operator[](const std::string &key);
 
   /**
-    * Get a string representing all the header fields.
+    * Get a human-readable/log-friendly string representing all the header fields.
     * @return a string representation of all the header fields
     */
   std::string str();
+
+  /**
+    * Get a string that can be put on the wire
+    * @return a string representation of all the header fields
+    */
+  std::string wireStr();
 
   friend std::ostream& operator<<(std::ostream &os, Headers &obj);
 

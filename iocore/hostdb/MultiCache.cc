@@ -193,9 +193,8 @@ MultiCacheBase::initialize(Store *astore, char *afilename,
   //
   //  Spread alloc from the store (using storage that can be mmapped)
   //
-  if (store)
-    delete store;
-  store = NEW(new Store);
+  delete store;
+  store = new Store;
   astore->spread_alloc(*store, blocks, true);
   unsigned int got = store->total_blocks();
 
@@ -213,7 +212,7 @@ MultiCacheBase::initialize(Store *astore, char *afilename,
 
   if (lowest_level_data)
     delete[]lowest_level_data;
-  lowest_level_data = NEW(new char[lowest_level_data_size()]);
+  lowest_level_data = new char[lowest_level_data_size()];
   ink_assert(lowest_level_data);
   memset(lowest_level_data, 0xFF, lowest_level_data_size());
 
@@ -221,7 +220,7 @@ MultiCacheBase::initialize(Store *astore, char *afilename,
 }
 
 char *
-MultiCacheBase::mmap_region(int blocks, int *fds, char *cur, bool private_flag, int zero_fill)
+MultiCacheBase::mmap_region(int blocks, int *fds, char *cur, size_t& total_length, bool private_flag, int zero_fill)
 {
   if (!blocks)
     return cur;
@@ -260,6 +259,7 @@ MultiCacheBase::mmap_region(int blocks, int *fds, char *cur, bool private_flag, 
         ink_assert(!cur || res == cur);
         cur = res + nbytes;
         blocks -= b;
+        total_length += nbytes; // total amount mapped.
       }
       p++;
     }
@@ -296,8 +296,10 @@ MultiCacheBase::unmap_data()
 int
 MultiCacheBase::mmap_data(bool private_flag, bool zero_fill)
 {
+  ats_scoped_fd fd;
   int fds[MULTI_CACHE_MAX_FILES] = { 0 };
   int n_fds = 0;
+  size_t total_mapped = 0; // total mapped memory from storage.
 
   // open files
   //
@@ -357,7 +359,6 @@ MultiCacheBase::mmap_data(bool private_flag, bool zero_fill)
     store = &tStore;
 
     char *cur = 0;
-    int fd = -1;
 
 // find a good address to start
 #if !defined(darwin)
@@ -381,7 +382,6 @@ MultiCacheBase::mmap_data(bool private_flag, bool zero_fill)
       Warning("unable to mmap anonymous region for %u bytes: %d, %s", totalsize, errno, strerror(errno));
 #else
       Warning("unable to mmap /dev/zero for %u bytes: %d, %s", totalsize, errno, strerror(errno));
-      close(fd);
 #endif
       goto Labort;
     }
@@ -391,25 +391,30 @@ MultiCacheBase::mmap_data(bool private_flag, bool zero_fill)
       Warning("unable to munmap anonymous region for %u bytes: %d, %s", totalsize, errno, strerror(errno));
 #else
       Warning("unable to munmap /dev/zero for %u bytes: %d, %s", totalsize, errno, strerror(errno));
-      close(fd);
 #endif
       goto Labort;
     }
+
+    /* We've done a mmap on a target region of the maximize size we need. Now we drop that mapping
+       and do the real one, keeping at the same address space (stored in @a data) which should work because
+       we just tested it.
+    */
+    // coverity[use_after_free]
     data = cur;
 
-    cur = mmap_region(blocks_in_level(0), fds, cur, private_flag, fd);
+    cur = mmap_region(blocks_in_level(0), fds, cur, total_mapped, private_flag, fd);
     if (!cur) {
       store = saved;
       goto Labort;
     }
     if (levels > 1)
-      cur = mmap_region(blocks_in_level(1), fds, cur, private_flag, fd);
+      cur = mmap_region(blocks_in_level(1), fds, cur, total_mapped, private_flag, fd);
     if (!cur) {
       store = saved;
       goto Labort;
     }
     if (levels > 2)
-      cur = mmap_region(blocks_in_level(2), fds, cur, private_flag, fd);
+      cur = mmap_region(blocks_in_level(2), fds, cur, total_mapped, private_flag, fd);
     if (!cur) {
       store = saved;
       goto Labort;
@@ -417,14 +422,14 @@ MultiCacheBase::mmap_data(bool private_flag, bool zero_fill)
 
     if (heap_size) {
       heap = cur;
-      cur = mmap_region(bytes_to_blocks(heap_size), fds, cur, private_flag, fd);
+      cur = mmap_region(bytes_to_blocks(heap_size), fds, cur, total_mapped, private_flag, fd);
       if (!cur) {
         store = saved;
         goto Labort;
       }
     }
     mapped_header = (MultiCacheHeader *) cur;
-    if (!mmap_region(1, fds, cur, private_flag, fd)) {
+    if (!mmap_region(1, fds, cur, total_mapped, private_flag, fd)) {
       store = saved;
       goto Labort;
     }
@@ -470,6 +475,8 @@ Labort:
     if (fds[i] >= 0)
       socketManager.close(fds[i]);
   }
+  if (total_mapped > 0)
+    munmap(data, total_mapped);
 
   return -1;
 }
@@ -495,12 +502,12 @@ int
 MultiCacheBase::read_config(const char *config_filename, Store & s, char *fn, int *pi, int *pbuck)
 {
   int scratch;
-  xptr<char> rundir(RecConfigReadRuntimeDir());
+  ats_scoped_str rundir(RecConfigReadRuntimeDir());
   char p[PATH_NAME_MAX + 1], buf[256];
 
   Layout::relative_to(p, sizeof(p), rundir, config_filename);
 
-  int fd =::open(p, O_RDONLY);
+  ats_scoped_fd fd(::open(p, O_RDONLY));
   if (fd < 0)
     return 0;
 
@@ -524,7 +531,6 @@ MultiCacheBase::read_config(const char *config_filename, Store & s, char *fn, in
 
   if (s.read(fd, fn) < 0)
     return -1;
-  ::close(fd);
 
   return 1;
 }
@@ -532,7 +538,7 @@ MultiCacheBase::read_config(const char *config_filename, Store & s, char *fn, in
 int
 MultiCacheBase::write_config(const char *config_filename, int nominal_size, int abuckets)
 {
-  xptr<char> rundir(RecConfigReadRuntimeDir());
+  ats_scoped_str rundir(RecConfigReadRuntimeDir());
   char p[PATH_NAME_MAX + 1], buf[256];
   int fd, retcode = -1;
 
@@ -726,16 +732,14 @@ Lfail:
   {
     unmap_data();
     if (!silent) {
-      char msg[PATH_NAME_MAX + 1024];
       if (reconfigure) {
-        snprintf(msg, PATH_NAME_MAX + 1024, "%s: [%s] %s: disabling database\n"
+        RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "%s: [%s] %s: disabling database\n"
                      "You may need to 'reconfigure' your cache manually.  Please refer to\n"
                      "the 'Configuration' chapter in the manual.", err, config_filename, serr ? serr : "");
       } else {
-        snprintf(msg, PATH_NAME_MAX + 1024, "%s: [%s] %s: reinitializing database", err, config_filename,
+        RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "%s: [%s] %s: reinitializing database", err, config_filename,
                      serr ? serr : "");
       }
-      REC_SignalWarning(REC_SIGNAL_CONFIG_ERROR, msg);
     }
   }
   ret = -1;
@@ -791,7 +795,7 @@ MultiCacheBase::rebuild(MultiCacheBase & old, int kind)
 
   // map in a chunk of space to use as scratch (check)
   // or to copy the database to.
-  int fd = socketManager.open("/dev/zero", O_RDONLY);
+  ats_scoped_fd fd(socketManager.open("/dev/zero", O_RDONLY));
   if (fd < 0) {
     Warning("unable to open /dev/zero: %d, %s", errno, strerror(errno));
     return -1;
@@ -804,7 +808,6 @@ MultiCacheBase::rebuild(MultiCacheBase & old, int kind)
     Warning("unable to mmap /dev/zero for %u bytes: %d, %s", totalsize,errno, strerror(errno));
     return -1;
   }
-  ::close(fd);
   // if we are rebuilding get the original data
 
   if (!data) {
@@ -1192,9 +1195,9 @@ MultiCacheBase::sync_partitions(Continuation *cont)
   // don't try to sync if we were not correctly initialized
   if (data && mapped_header) {
     if (heap_used[heap_halfspace] > halfspace_size() * MULTI_CACHE_HEAP_HIGH_WATER)
-      eventProcessor.schedule_imm(NEW(new MultiCacheHeapGC(cont, this)), ET_CALL);
+      eventProcessor.schedule_imm(new MultiCacheHeapGC(cont, this), ET_CALL);
     else
-      eventProcessor.schedule_imm(NEW(new MultiCacheSync(cont, this)), ET_CALL);
+      eventProcessor.schedule_imm(new MultiCacheSync(cont, this), ET_CALL);
   }
 }
 
@@ -1264,7 +1267,7 @@ UnsunkPtrRegistry::alloc(int *poffset, int base)
       return alloc(poffset, base);
     }
     if (!next) {
-      next = NEW(new UnsunkPtrRegistry);
+      next = new UnsunkPtrRegistry;
       next->mc = mc;
     }
     int s = MULTI_CACHE_UNSUNK_PTR_BLOCK_SIZE(mc->totalelements);

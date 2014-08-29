@@ -19,14 +19,14 @@
 AM_CPPFLAGS = \
   $(iocore_include_dirs) \
   -I$(top_srcdir)/lib \
+  -I$(top_builddir)/lib \
   -I$(top_srcdir)/lib/records \
   -I$(top_srcdir)/lib/ts \
   -I$(top_srcdir)/proxy \
   -I$(top_srcdir)/proxy/http \
   -I$(top_srcdir)/proxy/hdrs \
   -I$(top_srcdir)/mgmt \
-  -I$(top_srcdir)/mgmt/utils \
-  -I$(top_srcdir)/mgmt/preparse
+  -I$(top_srcdir)/mgmt/utils 
 
 noinst_LIBRARIES = libinkdns.a
 

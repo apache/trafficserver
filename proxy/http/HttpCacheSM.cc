@@ -292,8 +292,8 @@ HttpCacheSM::open_write(URL * url, HTTPHdr * request, CacheHTTPInfo * old_info, 
   //  a new write (could happen on a very busy document
   //  that must be revalidated every time)
   // Changed by YTS Team, yamsat Plugin
-  if (open_write_tries > master_sm->redirection_tries && open_write_tries >
-      master_sm->t_state.http_config_param->max_cache_open_write_retries) {
+  if (open_write_tries > master_sm->redirection_tries &&
+      open_write_tries > master_sm->t_state.http_config_param->max_cache_open_write_retries) {
     master_sm->handleEvent(CACHE_EVENT_OPEN_WRITE_FAILED, (void *) -ECACHE_DOC_BUSY);
     return ACTION_RESULT_DONE;
   }

@@ -24,8 +24,10 @@ pkglib_LTLIBRARIES = header_rewrite.la
 header_rewrite_la_SOURCES = \
   condition.cc \
   conditions.cc \
+  expander.cc \
   factory.cc \
   header_rewrite.cc \
+  lulu.cc \
   matcher.cc \
   operator.cc \
   operators.cc \
@@ -34,6 +36,7 @@ header_rewrite_la_SOURCES = \
   resources.cc \
   ruleset.cc \
   statement.cc
+
 header_rewrite_la_LDFLAGS = $(BOOST_LDFLAGS) $(TS_PLUGIN_LDFLAGS)
 
 endif

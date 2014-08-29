@@ -1702,12 +1702,14 @@ TSPluginInit(int argc, const char *argv[]) {
     return;
   }
   if (esiPluginInit(argc, argv, pOptionInfo) != 0) {
+    TSfree(pOptionInfo);
     return;
   }
 
   TSCont global_contp = TSContCreate(globalHookHandler, NULL);
   if (!global_contp) {
     TSError("[%s] Could not create global continuation", __FUNCTION__);
+    TSfree(pOptionInfo);
     return;
   }
   TSContDataSet(global_contp, pOptionInfo);
@@ -1766,6 +1768,7 @@ TSRemapNewInstance(int argc, char* argv[], void** ih, char* errbuf, int errbuf_s
   }
   if (esiPluginInit(index, new_argv, pOptionInfo) != 0) {
     snprintf(errbuf, errbuf_size, "esiPluginInit fail!");
+    TSfree(pOptionInfo);
     return TS_ERROR;
   }
   TSCont contp = TSContCreate(globalHookHandler, NULL);

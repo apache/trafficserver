@@ -16,13 +16,12 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-includedir=$(prefix)/include/ts
+library_includedir=$(includedir)/ts
 
-include_HEADERS = \
+library_include_HEADERS = \
   ts.h \
   remap.h \
   experimental.h
 
 noinst_HEADERS = \
-  InkAPIHughes.h \
   InkAPIPrivateIOCore.h

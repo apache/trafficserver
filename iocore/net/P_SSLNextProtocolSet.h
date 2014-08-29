@@ -25,6 +25,7 @@
 #define P_SSLNextProtocolSet_H_
 
 #include "List.h"
+#include "I_Net.h"
 
 class Continuation;
 
@@ -38,7 +39,6 @@ public:
   bool unregisterEndpoint(const char *, Continuation *);
   bool advertiseProtocols(const unsigned char ** out, unsigned * len) const;
 
-  Continuation * findEndpoint(const char *) const;
   Continuation * findEndpoint(const unsigned char *, unsigned) const;
 
   struct NextProtocolEndpoint

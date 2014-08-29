@@ -20,6 +20,8 @@
 TSDebug
 =======
 
+Traffic Server Debugging APIs.
+
 Synopsis
 ========
 `#include <ts/ts.h>`
@@ -32,6 +34,9 @@ Synopsis
 .. function:: void TSHttpSsnDebugSet(TSHttpSsn ssn, int on)
 .. function:: int TSHttpTxnDebugGet(TSHttpTxn txnp)
 .. function:: int TSHttpSsnDebugGet(TSHttpSsn ssn)
+.. function:: const char* TSHttpServerStateNameLookup(TSServerState state)
+.. function:: const char* TSHttpHookNameLookup(TSHttpHookID hook)
+.. function:: const char* TSHttpEventNameLookup(TSEvent event)
 .. macro:: void TSAssert(expression)
 .. macro:: void TSReleaseAssert(expression)
 
@@ -57,9 +62,14 @@ message and aborts in both release and debug mode.
 
 :func:`TSDebugSpecific` emits a debug line even if the debug tag
 is turned off, as long as debug flag is enabled. This can be used
-in conjuction with :func:`TSHttpTxnDebugSet`, :func:`TSHttpSsnDebugSet`,
+in conjunction with :func:`TSHttpTxnDebugSet`, :func:`TSHttpSsnDebugSet`,
 :func:`TSHttpTxnDebugGet` and :func:`TSHttpSsnDebugGet` to enable
 debugging on specific session and transaction objects.
+
+:func:`TSHttpServerStateNameLookup`, :func:`TSHttpHookNameLookup` and
+:func:`TSHttpEventNameLookup` converts the respective internal state to a
+string representation. This can be useful in debugging (:func:`TSDebug`),
+logging and other types notifications.
 
 Examples
 ========
@@ -68,6 +78,10 @@ This example uses :func:`TSDebugSpecific` to log a message when a specific
 debugging flag is enabled::
 
     #include <ts/ts.h>
+
+    // Produce information about a hook receiving an event
+    TSDebug(PLUGIN_NAME, "Entering hook=%s, event=%s",
+            TSHttpHookNameLookup(hook), TSHttpEventNameLookup(event));
 
     // Emit debug message if "tag" is enabled or the txn debug
     // flag is set.

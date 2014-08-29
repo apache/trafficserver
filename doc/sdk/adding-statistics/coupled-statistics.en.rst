@@ -78,9 +78,8 @@ To add coupled statistics:
 Example Using the redirect-1.c Sample Plugin
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-::
+.. code-block:: c
 
-        :::c
     static TSCoupledStat request_outcomes;
 
     static TSStat requests_all;

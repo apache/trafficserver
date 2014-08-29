@@ -24,10 +24,6 @@
 #ifndef __DYN_ARRAY_H__
 #define __DYN_ARRAY_H__
 
-
-#include "Resource.h"
-
-
 template<class T> class DynArray {
 public:
   DynArray(const T * val = 0, intptr_t initial_size = 0);
@@ -171,7 +167,7 @@ template<class T> inline void DynArray<T>::resize(intptr_t new_size)
     T *new_data;
     intptr_t i;
 
-    new_data = NEW(new T[new_size]);
+    new_data = new T[new_size];
 
     for (i = 0; i < size; i++) {
       new_data[i] = data[i];

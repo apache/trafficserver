@@ -125,7 +125,7 @@ int
 cacheControlFile_CB(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */,
                     RecData /* data ATS_UNUSED */, void * /* cookie ATS_UNUSED */)
 {
-  eventProcessor.schedule_imm(NEW(new CC_UpdateContinuation(reconfig_mutex)), ET_CACHE);
+  eventProcessor.schedule_imm(new CC_UpdateContinuation(reconfig_mutex), ET_CACHE);
   return 0;
 }
 
@@ -149,7 +149,7 @@ initCacheControl()
 {
   ink_assert(CacheControlTable == NULL);
   reconfig_mutex = new_ProxyMutex();
-  CacheControlTable = NEW(new CC_table("proxy.config.cache.control.filename", modulePrefix, &http_dest_tags));
+  CacheControlTable = new CC_table("proxy.config.cache.control.filename", modulePrefix, &http_dest_tags);
   REC_RegisterConfigUpdateFunc("proxy.config.cache.control.filename", cacheControlFile_CB, NULL);
 }
 
@@ -165,8 +165,8 @@ reloadCacheControl()
   CC_table *newTable;
 
   Debug("cache_control", "cache.config updated, reloading");
-  eventProcessor.schedule_in(NEW(new CC_FreerContinuation(CacheControlTable)), CACHE_CONTROL_TIMEOUT, ET_CACHE);
-  newTable = NEW(new CC_table("proxy.config.cache.control.filename", modulePrefix, &http_dest_tags));
+  eventProcessor.schedule_in(new CC_FreerContinuation(CacheControlTable), CACHE_CONTROL_TIMEOUT, ET_CACHE);
+  newTable = new CC_table("proxy.config.cache.control.filename", modulePrefix, &http_dest_tags);
   ink_atomic_swap(&CacheControlTable, newTable);
 }
 

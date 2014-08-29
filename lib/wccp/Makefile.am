@@ -20,7 +20,6 @@
 AM_CPPFLAGS = \
   -I$(top_srcdir)/lib \
   -I$(top_srcdir)/lib/ts \
-  -I$(top_builddir)/proxy/api/ts \
   -I$(top_srcdir)/proxy/api/ts
 
 #WCCP_DEFS = @WCCP_DEFS@

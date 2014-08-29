@@ -39,7 +39,6 @@ extern RecRecord *g_records;
 extern InkHashTable *g_records_ht;
 extern ink_rwlock g_records_rwlock;
 extern int g_num_records;
-extern int g_num_update[];
 extern RecModeT g_mode_type;
 extern RecTree *g_records_tree;
 
@@ -48,9 +47,6 @@ extern const char *g_rec_config_fpath;
 extern LLQ *g_rec_config_contents_llq;
 extern InkHashTable *g_rec_config_contents_ht;
 extern ink_mutex g_rec_config_lock;
-
-// stats.snap items
-extern const char *g_stats_snap_fpath;
 
 //-------------------------------------------------------------------------
 // Initialization
@@ -87,6 +83,7 @@ int RecGetRecord_Xmalloc(const char *name, RecDataT data_type, RecData * data, b
 int RecReadStatsFile();
 int RecSyncStatsFile();
 int RecReadConfigFile(bool inc_version);
+int RecWriteConfigFile(textBuffer *tb);
 int RecSyncConfigToTB(textBuffer * tb, bool *inc_version = NULL);
 
 //-------------------------------------------------------------------------

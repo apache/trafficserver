@@ -110,24 +110,27 @@ struct MIMEField
   uint8_t m_readiness:2;          // 2/8
   uint8_t m_flags:2;              // 2/8
 
-  int is_dup_head()
-  {
+  bool is_dup_head() const {
     return (m_flags & MIME_FIELD_SLOT_FLAGS_DUP_HEAD);
   }
-  int is_live()
-  {
-    return (m_readiness == MIME_FIELD_SLOT_READINESS_LIVE);
-  }
-  int is_cooked()
-  {
+
+  bool is_cooked() {
     return (m_flags & MIME_FIELD_SLOT_FLAGS_COOKED);
   }
-  int supports_commas()
-  {
+
+  bool is_live() const {
+    return (m_readiness == MIME_FIELD_SLOT_READINESS_LIVE);
+  }
+
+  bool is_detached() const {
+    return (m_readiness == MIME_FIELD_SLOT_READINESS_DETACHED);
+  }
+
+  bool supports_commas() const {
     if (m_wks_idx >= 0)
       return (hdrtoken_index_to_flags(m_wks_idx) & MIME_FLAGS_COMMAS);
     else
-      return (1);               // by default, assume supports commas
+      return true;               // by default, assume supports commas
   }
 
   const char *name_get(int *length);
@@ -167,6 +170,7 @@ struct MIMEFieldBlockImpl:public HdrHeapObjImpl
   int marshal(MarshalXlate * ptr_xlate, int num_ptr, MarshalXlate * str_xlate, int num_str);
   void unmarshal(intptr_t offset);
   void move_strings(HdrStrHeap * new_heap);
+  size_t strings_length();
 
   // Sanity Check Functions
   void check_strings(HeapCheck * heaps, int num_heaps);
@@ -239,12 +243,14 @@ struct MIMEHdrImpl:public HdrHeapObjImpl
   int marshal(MarshalXlate * ptr_xlate, int num_ptr, MarshalXlate * str_xlate, int num_str);
   void unmarshal(intptr_t offset);
   void move_strings(HdrStrHeap * new_heap);
+  size_t strings_length();
 
   // Sanity Check Functions
   void check_strings(HeapCheck * heaps, int num_heaps);
 
   // Cooked values
   void recompute_cooked_stuff(MIMEField * changing_field_or_null = NULL);
+  void recompute_accelerators_and_presence_bits();
 };
 
 /***********************************************************************
@@ -352,6 +358,7 @@ extern const char *MIME_FIELD_RETRY_AFTER;
 extern const char *MIME_FIELD_SENDER;
 extern const char *MIME_FIELD_SERVER;
 extern const char *MIME_FIELD_SET_COOKIE;
+extern const char *MIME_FIELD_STRICT_TRANSPORT_SECURITY;
 extern const char *MIME_FIELD_SUBJECT;
 extern const char *MIME_FIELD_SUMMARY;
 extern const char *MIME_FIELD_TE;
@@ -366,6 +373,8 @@ extern const char *MIME_FIELD_XREF;
 extern const char *MIME_FIELD_INT_DATA_INFO;
 extern const char *MIME_FIELD_X_ID;
 extern const char *MIME_FIELD_X_FORWARDED_FOR;
+extern const char *MIME_FIELD_SEC_WEBSOCKET_KEY;
+extern const char *MIME_FIELD_SEC_WEBSOCKET_VERSION;
 
 extern const char *MIME_VALUE_BYTES;
 extern const char *MIME_VALUE_CHUNKED;
@@ -389,6 +398,7 @@ extern const char *MIME_VALUE_PROXY_REVALIDATE;
 extern const char *MIME_VALUE_PUBLIC;
 extern const char *MIME_VALUE_S_MAXAGE;
 extern const char *MIME_VALUE_NEED_REVALIDATE_ONCE;
+extern const char *MIME_VALUE_WEBSOCKET;
 
 extern int MIME_LEN_ACCEPT;
 extern int MIME_LEN_ACCEPT_CHARSET;
@@ -449,6 +459,7 @@ extern int MIME_LEN_RETRY_AFTER;
 extern int MIME_LEN_SENDER;
 extern int MIME_LEN_SERVER;
 extern int MIME_LEN_SET_COOKIE;
+extern int MIME_LEN_STRICT_TRANSPORT_SECURITY;
 extern int MIME_LEN_SUBJECT;
 extern int MIME_LEN_SUMMARY;
 extern int MIME_LEN_TE;
@@ -486,6 +497,9 @@ extern int MIME_LEN_PROXY_REVALIDATE;
 extern int MIME_LEN_PUBLIC;
 extern int MIME_LEN_S_MAXAGE;
 extern int MIME_LEN_NEED_REVALIDATE_ONCE;
+
+extern int MIME_LEN_SEC_WEBSOCKET_KEY;
+extern int MIME_LEN_SEC_WEBSOCKET_VERSION;
 
 extern int MIME_WKSIDX_ACCEPT;
 extern int MIME_WKSIDX_ACCEPT_CHARSET;
@@ -546,6 +560,7 @@ extern int MIME_WKSIDX_RETRY_AFTER;
 extern int MIME_WKSIDX_SENDER;
 extern int MIME_WKSIDX_SERVER;
 extern int MIME_WKSIDX_SET_COOKIE;
+extern int MIME_WKSIDX_STRICT_TRANSPORT_SECURITY;
 extern int MIME_WKSIDX_SUBJECT;
 extern int MIME_WKSIDX_SUMMARY;
 extern int MIME_WKSIDX_TE;
@@ -559,6 +574,8 @@ extern int MIME_WKSIDX_WWW_AUTHENTICATE;
 extern int MIME_WKSIDX_XREF;
 extern int MIME_WKSIDX_INT_DATA_INFO;
 extern int MIME_WKSIDX_X_ID;
+extern int MIME_WKSIDX_SEC_WEBSOCKET_KEY;
+extern int MIME_WKSIDX_SEC_WEBSOCKET_VERSION;
 
 /***********************************************************************
  *                                                                     *
@@ -1123,7 +1140,7 @@ MIMEHdr::iter_get_next(MIMEFieldIter * iter)
   while (b) {
     for (; slot < (int) b->m_freetop; slot++) {
       f = &(b->m_field_slots[slot]);
-      if (f->m_readiness == MIME_FIELD_SLOT_READINESS_LIVE) {
+      if (f->is_live()) {
         iter->m_slot = slot;
         iter->m_block = b;
         return f;

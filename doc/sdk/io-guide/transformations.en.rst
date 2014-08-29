@@ -36,9 +36,8 @@ it only supports reading or writing).
 For example, the null transform plugin's transformation examines the
 input VIO by calling:
 
-::
+.. code-block:: c
 
-     :::c
      input_vio = TSVConnWriteVIOGet (contp);
 
 where ``contp`` is the transformation.
@@ -53,9 +52,8 @@ make some progress on the IO operations.
 It is common for the handler function for all vconnections to look
 similar. Their basic form looks something like the code fragment below:
 
-::
+.. code-block:: c
 
-        ::::c
     int
     vconnection_handler (TSCont contp, TSEvent event, void *edata)
     {
@@ -142,9 +140,8 @@ Here's how to make sure that all incoming data is consumed:
    and increase the value of ndone for the input VIO, as in the
    following example taken from ``null-transform.c``:
 
-   ::
+   .. code-block:: c
 
-               :::c
        TSIOBufferCopy (TSVIOBufferGet (data->output_vio),
        TSVIOReaderGet (input_vio), towrite, 0);
        /* Tell the read buffer that we have read the data and are no longer interested in it. */
@@ -177,6 +174,6 @@ Here's how to make sure that all incoming data is consumed:
    because it knows it already holds the mutex.
 
 The transformation functions are: \*
-```TSTransformCreate`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a54c4902bb537d3d40763bd947ed753b9>`__
+:c:func:`TSTransformCreate`
 \*
-```TSTransformOutputVConnGet`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#ac6832718a2d9f2658409ad231811e1e3>`__
+:c:func:`TSTransformOutputVConnGet`

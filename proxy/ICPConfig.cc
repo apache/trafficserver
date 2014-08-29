@@ -200,7 +200,7 @@ BitMap::BitMap(int bitmap_maxsize)
     _bitmap_byte_size = STATIC_BITMAP_BYTE_SIZE;
   } else {
     _bitmap_byte_size = (bitmap_maxsize + (BITS_PER_BYTE - 1)) / BITS_PER_BYTE;
-    _bitmap = NEW(new char[_bitmap_byte_size]);
+    _bitmap = new char[_bitmap_byte_size];
     _bitmap_size = bitmap_maxsize;
   }
   memset((void *) _bitmap, 0, _bitmap_byte_size);
@@ -380,8 +380,8 @@ ICPConfiguration::ICPConfiguration():_icp_config_callouts(0)
   //*********************************************************
   // Allocate working and current ICPConfigData structures
   //*********************************************************
-  _icp_cdata = NEW(new ICPConfigData());
-  _icp_cdata_current = NEW(new ICPConfigData());
+  _icp_cdata = new ICPConfigData();
+  _icp_cdata_current = new ICPConfigData();
 
   //********************************************************************
   // Read ICP config and setup update callbacks for "icp_cdata_current"
@@ -402,8 +402,8 @@ ICPConfiguration::ICPConfiguration():_icp_config_callouts(0)
   // Allocate working and current PeerConfigData structures
   //**********************************************************
   for (int n = 0; n <= MAX_DEFINED_PEERS; ++n) {
-    _peer_cdata[n] = NEW(new PeerConfigData);
-    _peer_cdata_current[n] = NEW(new PeerConfigData);
+    _peer_cdata[n] = new PeerConfigData;
+    _peer_cdata_current[n] = new PeerConfigData;
   }
 
   //*********************************************************
@@ -494,7 +494,7 @@ ICPConfiguration::mgr_icp_config_change_callback(const char * /* name ATS_UNUSED
 
   // Map this manager configuration callout onto ET_ICP
 
-  ICPConfigUpdateCont *rh = NEW(new ICPConfigUpdateCont(cookie, data.rec_string));
+  ICPConfigUpdateCont *rh = new ICPConfigUpdateCont(cookie, data.rec_string);
   SET_CONTINUATION_HANDLER(rh, (ICPCfgContHandler) & ICPConfigUpdateCont::RetryICPconfigUpdate);
   eventProcessor.schedule_imm(rh, ET_ICP);
   return EVENT_DONE;
@@ -527,7 +527,7 @@ ICPConfiguration::icp_config_change_callback(void *data, void *value, int startu
   //
   if (!startup && !ICPconfig->Lock()) {
     // Build retry continuation
-    ICPConfigUpdateCont *rh = NEW(new ICPConfigUpdateCont(data, value));
+    ICPConfigUpdateCont *rh = new ICPConfigUpdateCont(data, value);
     SET_CONTINUATION_HANDLER(rh, (ICPCfgContHandler) & ICPConfigUpdateCont::RetryICPconfigUpdate);
     eventProcessor.schedule_in(rh, HRTIME_MSECONDS(ICPConfigUpdateCont::RETRY_INTERVAL), ET_ICP);
     return EVENT_DONE;
@@ -538,18 +538,17 @@ ICPConfiguration::icp_config_change_callback(void *data, void *value, int startu
   //
   // Allocate working buffer for PeerConfigData[]
   //
-  PeerConfigData *P = NEW(new PeerConfigData[MAX_DEFINED_PEERS + 1]);
+  PeerConfigData *P = new PeerConfigData[MAX_DEFINED_PEERS + 1];
 
   //
   // Build pathname to "icp.config" and open file
   //
   ink_release_assert(filename != NULL);
 
-  xptr<char> config_path(Layout::get()->relative_to(Layout::get()->sysconfdir, filename));
+  ats_scoped_str config_path(Layout::get()->relative_to(Layout::get()->sysconfdir, filename));
   int fd = open(config_path, O_RDONLY);
   if (fd < 0) {
-    Warning("read icp.config, open failed");
-    REC_SignalWarning(REC_SIGNAL_CONFIG_ERROR, "read icp.config, open failed");
+    RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "read icp.config, open failed");
     delete[]P;
     return EVENT_DONE;
   }
@@ -592,8 +591,7 @@ ICPConfiguration::icp_config_change_callback(void *data, void *value, int startu
       continue;
 
     if (n >= MAX_DEFINED_PEERS) {
-      Warning("read icp.config, maximum peer entries exceeded");
-      REC_SignalWarning(REC_SIGNAL_CONFIG_ERROR, "read icp.config, maximum peer entries exceeded");
+      RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "read icp.config, maximum peer entries exceeded");
       error = 1;
       break;
     }
@@ -608,8 +606,7 @@ ICPConfiguration::icp_config_change_callback(void *data, void *value, int startu
     char* last = cur + len -1; // last character.
     if ('\n' == *last) --last; // back over trailing LF.
     if (NULL == strchr(" ;:|,", *last)) {
-      Warning("read icp.config, invalid separator [value %d]", *last);
-      REC_SignalWarning(REC_SIGNAL_CONFIG_ERROR, "read icp.config, invalid separator");
+      RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "read icp.config, invalid separator [value %d]", *last);
       error = 1;
       break;
     }
@@ -622,8 +619,7 @@ ICPConfiguration::icp_config_change_callback(void *data, void *value, int startu
       ++n_colons;
     }
     if (n_colons != colons_per_entry) {
-      Warning("read icp.config, invalid syntax, line %d: expected %d fields, found %d", ln, colons_per_entry, n_colons);
-      REC_SignalWarning(REC_SIGNAL_CONFIG_ERROR, "read icp.config, invalid syntax: wrong number of fields");
+      RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "read icp.config, invalid syntax, line %d: expected %d fields, found %d", ln, colons_per_entry, n_colons);
       error = 1;
       break;
     }
@@ -645,8 +641,7 @@ ICPConfiguration::icp_config_change_callback(void *data, void *value, int startu
     *next++ = 0;
     if (cur != (next - 1)) {
       if (0 != P[n]._ip_addr.load(cur)) {
-        Warning("read icp.config, bad host ip_addr, line %d", ln);
-        REC_SignalWarning(REC_SIGNAL_CONFIG_ERROR, "read icp.config, bad host ip_addr");
+        RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "read icp.config, bad host ip_addr, line %d", ln);
         error = 1;
         break;
       }
@@ -655,8 +650,7 @@ ICPConfiguration::icp_config_change_callback(void *data, void *value, int startu
     }
 
     if (!P[n]._hostname[0] && !P[n]._ip_addr.isValid()) {
-      Warning("read icp.config, bad hostname, line %d", ln);
-      REC_SignalWarning(REC_SIGNAL_CONFIG_ERROR, "read icp.config, bad hostname");
+      RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "read icp.config, bad hostname, line %d", ln);
       error = 1;
       break;
     }
@@ -669,14 +663,12 @@ ICPConfiguration::icp_config_change_callback(void *data, void *value, int startu
     if (cur != (next - 1)) {
       P[n]._ctype = atoi(cur);
       if ((P[n]._ctype != PeerConfigData::CTYPE_PARENT) && (P[n]._ctype != PeerConfigData::CTYPE_SIBLING)) {
-        Warning("read icp.config, bad ctype, line %d", ln);
-        REC_SignalWarning(REC_SIGNAL_CONFIG_ERROR, "read icp.config, bad ctype");
+        RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "read icp.config, bad ctype, line %d", ln);
         error = 1;
         break;
       }
     } else {
-      Warning("read icp.config, 2bad ctype, line %d", ln);
-      REC_SignalWarning(REC_SIGNAL_CONFIG_ERROR, "read icp.config, 2bad ctype");
+      RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "read icp.config, 2bad ctype, line %d", ln);
       error = 1;
       break;
     }
@@ -688,14 +680,12 @@ ICPConfiguration::icp_config_change_callback(void *data, void *value, int startu
     *next++ = 0;
     if (cur != (next - 1)) {
       if ((P[n]._proxy_port = atoi(cur)) <= 0) {
-        Warning("read icp.config, bad proxy_port, line %d", ln);
-        REC_SignalWarning(REC_SIGNAL_CONFIG_ERROR, "read icp.config, bad proxy_port");
+        RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "read icp.config, bad proxy_port, line %d", ln);
         error = 1;
         break;
       }
     } else {
-      Warning("read icp.config, 2bad proxy_port, line %d", ln);
-      REC_SignalWarning(REC_SIGNAL_CONFIG_ERROR, "read icp.config, 2bad proxy_port");
+      RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "read icp.config, 2bad proxy_port, line %d", ln);
       error = 1;
       break;
     }
@@ -707,14 +697,12 @@ ICPConfiguration::icp_config_change_callback(void *data, void *value, int startu
     *next++ = 0;
     if (cur != (next - 1)) {
       if ((P[n]._icp_port = atoi(cur)) <= 0) {
-        Warning("read icp.config, bad icp_port, line %d", ln);
-        REC_SignalWarning(REC_SIGNAL_CONFIG_ERROR, "read icp.config, bad icp_port");
+        RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "read icp.config, bad icp_port, line %d", ln);
         error = 1;
         break;
       }
     } else {
-      Warning("read icp.config, 2bad icp_port, line %d", ln);
-      REC_SignalWarning(REC_SIGNAL_CONFIG_ERROR, "read icp.config, 2bad icp_port");
+      RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "read icp.config, 2bad icp_port, line %d", ln);
       error = 1;
       break;
     }
@@ -726,20 +714,17 @@ ICPConfiguration::icp_config_change_callback(void *data, void *value, int startu
     *next++ = 0;
     if (cur != (next - 1)) {
       if ((P[n]._mc_member = atoi(cur)) < 0) {
-        Warning("read icp.config, bad mc_member, line %d", ln);
-        REC_SignalWarning(REC_SIGNAL_CONFIG_ERROR, "read icp.config, bad mc_member");
+        RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "read icp.config, bad mc_member, line %d", ln);
         error = 1;
         break;
       }
       if ((P[n]._mc_member != 0) && (P[n]._mc_member != 1)) {
-        Warning("read icp.config, bad mc_member (2), line %d", ln);
-        REC_SignalWarning(REC_SIGNAL_CONFIG_ERROR, "read icp.config, bad mc_member (2)");
+        RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "read icp.config, bad mc_member (2), line %d", ln);
         error = 1;
         break;
       }
     } else {
-      Warning("read icp.config, 2bad mc_member, line %d", ln);
-      REC_SignalWarning(REC_SIGNAL_CONFIG_ERROR, "read icp.config, 2bad mc_member");
+      RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "read icp.config, 2bad mc_member, line %d", ln);
       error = 1;
       break;
     }
@@ -753,8 +738,7 @@ ICPConfiguration::icp_config_change_callback(void *data, void *value, int startu
       P[n]._mc_ip_addr.load(cur);
       // Validate only if "multicast_member" is set.
       if (P[n]._mc_member != 0 && !P[n]._mc_ip_addr.isMulticast()) {
-        Warning("read icp.config, bad multicast ip_addr, line %d", ln);
-        REC_SignalWarning(REC_SIGNAL_CONFIG_ERROR, "read icp.config, bad multicast ip_addr");
+        RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "read icp.config, bad multicast ip_addr, line %d", ln);
         error = 1;
         break;
       }
@@ -771,14 +755,12 @@ ICPConfiguration::icp_config_change_callback(void *data, void *value, int startu
     if (cur != (next - 1)) {
       P[n]._mc_ttl = atoi(cur);
       if ((P[n]._mc_ttl = atoi(cur)) <= 0) {
-        Warning("read icp.config, bad mc_ttl, line %d", ln);
-        REC_SignalWarning(REC_SIGNAL_CONFIG_ERROR, "read icp.config, bad mc_ttl");
+        RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "read icp.config, bad mc_ttl, line %d", ln);
         error = 1;
         break;
       }
     } else {
-      Warning("read icp.config, 2bad mc_ttl, line %d", ln);
-      REC_SignalWarning(REC_SIGNAL_CONFIG_ERROR, "read icp.config, 2bad mc_ttl");
+      RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "read icp.config, 2bad mc_ttl, line %d", ln);
       error = 1;
       break;
     }
@@ -1208,7 +1190,7 @@ ICPPeriodicCont::PeriodicEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUS
     //
     // We have a configuration change, create worker continuation.
     //
-    ICPPeriodicCont *rc = NEW(new ICPPeriodicCont(_ICPpr));
+    ICPPeriodicCont *rc = new ICPPeriodicCont(_ICPpr);
     SET_CONTINUATION_HANDLER(rc, (ICPPeriodicContHandler) & ICPPeriodicCont::DoReconfigAction);
     eventProcessor.schedule_imm(rc);
   }

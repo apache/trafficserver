@@ -28,6 +28,7 @@
 #include "HdrToken.h"
 #include "HdrHeap.h"
 #include "INK_MD5.h"
+#include "MMH.h"
 #include "MIME.h"
 
 #include "ink_apidefs.h"
@@ -80,17 +81,49 @@ struct URLImpl:public HdrHeapObjImpl
   int marshal(MarshalXlate *str_xlate, int num_xlate);
   void unmarshal(intptr_t offset);
   void move_strings(HdrStrHeap *new_heap);
+  size_t strings_length();
 
   // Sanity Check Functions
   void check_strings(HeapCheck *heaps, int num_heaps);
 };
 
+/// Crypto Hash context for URLs.
+/// @internal This just forwards on to another specific context but avoids
+/// putting that switch logic in multiple places. The working context is put
+/// in to class local storage (@a _obj) via placement @a new.
+class URLHashContext : public CryptoContext {
+public:
+  URLHashContext();
+  /// Update the hash with @a data of @a length bytes.
+  virtual bool update(void const* data, int length);
+  /// Finalize and extract the @a hash.
+  virtual bool finalize(CryptoHash& hash);
+
+  enum HashType { UNSPECIFIED, MD5, MMH }; ///< What type of hash we really are.
+  static HashType Setting;
+
+  /// Size of storage for placement @c new of hashing context.
+  static size_t const OBJ_SIZE = 256;
+
+protected:
+  char _obj[OBJ_SIZE]; ///< Raw storage for instantiated context.
+};
+
+inline bool URLHashContext::update(void const* data, int length) {
+  return reinterpret_cast<CryptoContext*>(_obj)->update(data, length);
+}
+
+inline bool URLHashContext::finalize(CryptoHash& hash) {
+  return reinterpret_cast<CryptoContext*>(_obj)->finalize(hash);
+}
 
 extern const char *URL_SCHEME_FILE;
 extern const char *URL_SCHEME_FTP;
 extern const char *URL_SCHEME_GOPHER;
 extern const char *URL_SCHEME_HTTP;
 extern const char *URL_SCHEME_HTTPS;
+extern const char *URL_SCHEME_WS;
+extern const char *URL_SCHEME_WSS;
 extern const char *URL_SCHEME_MAILTO;
 extern const char *URL_SCHEME_NEWS;
 extern const char *URL_SCHEME_NNTP;
@@ -110,6 +143,8 @@ extern int URL_WKSIDX_FTP;
 extern int URL_WKSIDX_GOPHER;
 extern int URL_WKSIDX_HTTP;
 extern int URL_WKSIDX_HTTPS;
+extern int URL_WKSIDX_WS;
+extern int URL_WKSIDX_WSS;
 extern int URL_WKSIDX_MAILTO;
 extern int URL_WKSIDX_NEWS;
 extern int URL_WKSIDX_NNTP;
@@ -129,6 +164,8 @@ extern int URL_LEN_FTP;
 extern int URL_LEN_GOPHER;
 extern int URL_LEN_HTTP;
 extern int URL_LEN_HTTPS;
+extern int URL_LEN_WS;
+extern int URL_LEN_WSS;
 extern int URL_LEN_MAILTO;
 extern int URL_LEN_NEWS;
 extern int URL_LEN_NNTP;
@@ -169,8 +206,8 @@ void url_called_set(URLImpl *url);
 char *url_string_get_buf(URLImpl *url, char *dstbuf, int dstbuf_size, int *length);
 
 const char *url_scheme_get(URLImpl *url, int *length);
-void url_MD5_get(URLImpl *url, INK_MD5 *md5);
-void url_host_MD5_get(URLImpl *url, INK_MD5 *md5);
+void url_MD5_get(URLImpl *url, CryptoHash *md5);
+void url_host_MD5_get(URLImpl *url, CryptoHash *md5);
 const char *url_scheme_set(HdrHeap *heap, URLImpl *url,
                            const char *value, int value_wks_idx, int length, bool copy_string);
 
@@ -242,8 +279,8 @@ public:
   char *string_get(Arena *arena, int *length = NULL);
   char *string_get_ref(int *length = NULL);
   char *string_get_buf(char *dstbuf, int dsbuf_size, int *length = NULL);
-  void MD5_get(INK_MD5 *md5);
-  void host_MD5_get(INK_MD5 *md5);
+  void hash_get(CryptoHash *md5);
+  void host_hash_get(CryptoHash *md5);
 
   const char *scheme_get(int *length);
   int scheme_get_wksidx();
@@ -433,7 +470,7 @@ URL::string_get_buf(char *dstbuf, int dsbuf_size, int *length)
   -------------------------------------------------------------------------*/
 
 inline void
-URL::MD5_get(INK_MD5 *md5)
+URL::hash_get(CryptoHash *md5)
 {
   ink_assert(valid());
   url_MD5_get(m_url_impl, md5);
@@ -443,7 +480,7 @@ URL::MD5_get(INK_MD5 *md5)
   -------------------------------------------------------------------------*/
 
 inline void
-URL::host_MD5_get(INK_MD5 *md5)
+URL::host_hash_get(CryptoHash *md5)
 {
   ink_assert(valid());
   url_host_MD5_get(m_url_impl, md5);

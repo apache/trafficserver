@@ -31,7 +31,6 @@ using std::cout;
 using std::endl;
 
 Diags *diags;
-int diags_init = 0;
 #define DIAGS_LOG_FILE "diags.log"
 
 // Necessary for AIO
@@ -118,7 +117,7 @@ init_diags(const char *bdt, const char *bat)
     }
   }
 
-  diags = NEW(new Diags(bdt, bat, diags_log_fp));
+  diags = new Diags(bdt, bat, diags_log_fp);
 
   if (diags_log_fp == NULL) {
     Warning("couldn't open diags log file '%s', " "will not log to this file", diags_logpath);
@@ -486,10 +485,20 @@ main(int /* argc ATS_UNUSED */, char *argv[])
   RecProcessInit(RECM_STAND_ALONE);
   ink_event_system_init(EVENT_SYSTEM_MODULE_VERSION);
   eventProcessor.start(ink_number_of_processors());
+#if AIO_MODE == AIO_MODE_NATIVE
+  int etype = ET_NET;
+  int n_netthreads = eventProcessor.n_threads_for_type[etype];
+  EThread **netthreads = eventProcessor.eventthread[etype];
+  for (int i = 0; i < n_netthreads; ++i) {
+    netthreads[i]->diskHandler = new DiskHandler();
+    netthreads[i]->schedule_imm(netthreads[i]->diskHandler);
+  }
+#endif
+
   RecProcessStart();
   ink_aio_init(AIO_MODULE_VERSION);
   srand48(time(NULL));
-
+  printf("input file %s\n", argv[1]);
   if (!read_config(argv[1]))
     exit(1);
 

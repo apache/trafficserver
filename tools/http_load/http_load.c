@@ -446,7 +446,8 @@ main(int argc, char **argv)
         strcat(extra_headers, argv[++argn]);
       } else {
         extra_headers = malloc_check(65536);
-        strcpy(extra_headers, argv[++argn]);
+        strncpy(extra_headers, argv[++argn], 65536 - 1);
+        extra_headers[65536] = '\0';
       }
     } else if (strncmp(argv[argn], "-http_version", strlen(argv[argn])) == 0 && argn + 1 < argc) {
       http_version = argv[++argn];
@@ -638,7 +639,6 @@ usage(void)
 static void
 read_url_file(char *url_file)
 {
-  FILE *fp;
   char line[5000], hostname[5000];
   char *http = "http://";
   int http_len = strlen(http);
@@ -647,8 +647,8 @@ read_url_file(char *url_file)
   int proto_len, host_len;
   char *cp;
 
-  fp = fopen(url_file, "r");
-  if (fp == (FILE *) 0) {
+  FILE *fp = fopen(url_file, "r");
+  if (fp == NULL) {
     perror(url_file);
     exit(1);
   }
@@ -674,7 +674,7 @@ read_url_file(char *url_file)
   if (extra_headers != NULL) {
     hdr_bytes += snprintf(&hdr_buf[hdr_bytes], sizeof(hdr_buf) - hdr_bytes, "%s\r\n", extra_headers);
   }
-  hdr_bytes += snprintf(&hdr_buf[hdr_bytes], sizeof(hdr_buf) - hdr_bytes, "\r\n");
+  snprintf(&hdr_buf[hdr_bytes], sizeof(hdr_buf) - hdr_bytes, "\r\n");
 
   while (fgets(line, sizeof(line), fp) != (char *) 0) {
     char req_buf[2048];
@@ -703,7 +703,7 @@ read_url_file(char *url_file)
       urls[num_urls].protocol = PROTO_HTTPS;
     }
     else {
-      (void) fprintf(stderr, "%s: unknown protocol - %s\n", argv0, line);
+      fprintf(stderr, "%s: unknown protocol - %s\n", argv0, line);
       exit(1);
     }
     for (cp = line + proto_len; *cp != '\0' && *cp != ':' && *cp != '/'; ++cp);
@@ -732,7 +732,7 @@ read_url_file(char *url_file)
     urls[num_urls].got_checksum = 0;
     urls[num_urls].unique_id_offset = 0;
 
-    /* Pregenereate the request string, major performance improvement. */
+    /* Pre-generate the request string, major performance improvement. */
     if (do_proxy) {
       req_bytes = snprintf(req_buf, sizeof(req_buf), "GET %s://%.500s:%d%.500s HTTP/%s\r\n",
                            urls[num_urls].protocol == PROTO_HTTPS ? "https" : "http",
@@ -762,6 +762,7 @@ read_url_file(char *url_file)
 
     ++num_urls;
   }
+  fclose(fp);
 }
 
 
@@ -930,6 +931,7 @@ read_sip_file(char *sip_file)
     }
     ++num_sips;
   }
+  fclose(fp);
 }
 
 
@@ -2715,6 +2717,19 @@ handle_read(int cnum, struct timeval *nowP)
 
         }
       }
+
+      if (connections[cnum].conn_state == CNST_READING && connections[cnum].content_length == 0) {
+#ifdef DEBUG
+        fprintf(stderr, "[handle_read] content_length is 0, close connection\n");
+#endif
+        if (connections[cnum].keep_alive > 0)
+          connections[cnum].reusable = 1;
+
+        close_connection(cnum);
+
+        return;
+      }
+
       break;
 
     case CNST_READING:

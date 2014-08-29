@@ -1,0 +1,61 @@
+/** @file
+
+  Rough CI build dependency / setup.
+
+  @section license License
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+ */
+
+digraph {
+node [shape=box, style=rounded];
+subgraph clusterMain {
+"in_tree" [href="https://ci.trafficserver.apache.org/job/in_tree-master/"];
+"out_of_tree" [href="https://ci.trafficserver.apache.org/job/out_of_tree-master/"];
+"snapshot" [href="https://ci.trafficserver.apache.org/job/snapshot-master/"];
+"debian_6" [href="https://ci.trafficserver.apache.org/job/debian_6-master/"];
+"debian_7" [href="https://ci.trafficserver.apache.org/job/debian_7-master/"];
+"debian_jessie" [href="https://ci.trafficserver.apache.org/job/debian_jessie-master/"];
+"fedora_19" [href="https://ci.trafficserver.apache.org/job/fedora_19-master/"];
+"fedora_20" [href="https://ci.trafficserver.apache.org/job/fedora_20-master/"];
+"rhel_5" [href="https://ci.trafficserver.apache.org/job/rhel_5-master/"];
+"rhel_6" [href="https://ci.trafficserver.apache.org/job/rhel_6-master/"];
+"centos_7" [href="https://ci.trafficserver.apache.org/job/centos_7-master/"];
+"ubuntu_12_04" [href="https://ci.trafficserver.apache.org/job/ubuntu_12_04-master/"];
+"ubuntu_13_10" [href="https://ci.trafficserver.apache.org/job/ubuntu_13_10-master/"];
+"ubuntu_14_04" [href="https://ci.trafficserver.apache.org/job/ubuntu_14_04-master/"];
+"freebsd_9" [href="https://ci.trafficserver.apache.org/job/freebsd_9-master/"];
+"freebsd_10" [href="https://ci.trafficserver.apache.org/job/freebsd_10-master/"];
+"osx" [href="https://ci.trafficserver.apache.org/job/osx-master/"];
+color=invis;}
+"in_tree" -> "snapshot" [ color=blue  ] ;
+"out_of_tree" -> "snapshot" [ color=blue  ] ;
+"snapshot" -> "debian_6" [ color=green  ] ;
+"snapshot" -> "debian_7" [ color=green  ] ;
+"snapshot" -> "debian_jessie" [ color=green  ] ;
+"snapshot" -> "fedora_19" [ color=green  ] ;
+"snapshot" -> "fedora_20" [ color=green  ] ;
+"snapshot" -> "rhel_5" [ color=green  ] ;
+"snapshot" -> "rhel_6" [ color=green  ] ;
+"snapshot" -> "centos_7" [ color=green  ] ;
+"snapshot" -> "ubuntu_12_04" [ color=green  ] ;
+"snapshot" -> "ubuntu_13_10" [ color=green  ] ;
+"snapshot" -> "ubuntu_14_04" [ color=green  ] ;
+"snapshot" -> "freebsd_9" [ color=red  ] ;
+"snapshot" -> "freebsd_10" [ color=green  ] ;
+"snapshot" -> "osx" [ color=red  ] ;
+}

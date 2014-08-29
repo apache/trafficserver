@@ -22,7 +22,7 @@
 #include <utility>
 #include <boost/tokenizer.hpp>
 
-#include <ts/ts.h>
+#include "ts/ts.h"
 
 #include "parser.h"
 
@@ -98,7 +98,7 @@ Parser::preprocess(std::vector<std::string>& tokens)
 Parser::Parser(const std::string& line) :
   _cond(false), _empty(false)
 {
-  TSDebug("header_rewrite_dbg", "Calling CTOR for Parser");
+  TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Parser");
 
   if (line[0] == '#') {
     _empty = true;

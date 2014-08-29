@@ -117,6 +117,8 @@ extern "C" int plock(int);
 static const long MAX_LOGIN =  sysconf(_SC_LOGIN_NAME_MAX) <= 0 ? _POSIX_LOGIN_NAME_MAX :  sysconf(_SC_LOGIN_NAME_MAX);
 
 static void * mgmt_restart_shutdown_callback(void *, char *, int data_len);
+static void*  mgmt_storage_device_cmd_callback(void* x, char* data, int len);
+static void init_ssl_ctx_callback(void *ctx, bool server);
 
 static int version_flag = DEFAULT_VERSION_FLAG;
 
@@ -161,13 +163,6 @@ static int poll_timeout = -1; // No value set.
 static volatile int delay_listen_for_cache_p = 0;
 
 AppVersionInfo appVersionInfo;  // Build info for this application
-
-const Version version = {
-  {CACHE_DB_MAJOR_VERSION, CACHE_DB_MINOR_VERSION},     // cacheDB
-  {CACHE_DIR_MAJOR_VERSION, CACHE_DIR_MINOR_VERSION},   // cacheDir
-  {CLUSTER_MAJOR_VERSION, CLUSTER_MINOR_VERSION},       // current clustering
-  {MIN_CLUSTER_MAJOR_VERSION, MIN_CLUSTER_MINOR_VERSION},       // min clustering
-};
 
 static const ArgumentDescription argument_descriptions[] = {
   {"net_threads", 'n', "Number of Net Threads", "I", &num_of_net_threads, "PROXY_NET_THREADS", NULL},
@@ -246,8 +241,8 @@ init_system()
 static void
 check_lockfile()
 {
-  xptr<char> rundir(RecConfigReadRuntimeDir());
-  xptr<char> lockfile;
+  ats_scoped_str rundir(RecConfigReadRuntimeDir());
+  ats_scoped_str lockfile;
   pid_t holding_pid;
   int err;
 
@@ -276,7 +271,7 @@ check_lockfile()
 static void
 check_config_directories(void)
 {
-  xptr<char> rundir(RecConfigReadRuntimeDir());
+  ats_scoped_str rundir(RecConfigReadRuntimeDir());
 
   if (access(Layout::get()->sysconfdir, R_OK) == -1) {
     fprintf(stderr,"unable to access() config dir '%s': %d, %s\n",
@@ -315,7 +310,7 @@ initialize_process_manager()
   }
 
   // Start up manager
-  pmgmt = NEW(new ProcessManager(remote_management_flag));
+  pmgmt = new ProcessManager(remote_management_flag);
 
   pmgmt->start();
   RecProcessInitMessage(remote_management_flag ? RECM_CLIENT : RECM_STAND_ALONE);
@@ -325,13 +320,13 @@ initialize_process_manager()
   //
   // Define version info records
   //
-  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.short", appVersionInfo.VersionStr, RECP_NULL);
-  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.long", appVersionInfo.FullVersionInfoStr, RECP_NULL);
-  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_number", appVersionInfo.BldNumStr, RECP_NULL);
-  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_time", appVersionInfo.BldTimeStr, RECP_NULL);
-  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_date", appVersionInfo.BldDateStr, RECP_NULL);
-  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_machine", appVersionInfo.BldMachineStr, RECP_NULL);
-  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_person", appVersionInfo.BldPersonStr, RECP_NULL);
+  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.short", appVersionInfo.VersionStr, RECP_NON_PERSISTENT);
+  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.long", appVersionInfo.FullVersionInfoStr, RECP_NON_PERSISTENT);
+  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_number", appVersionInfo.BldNumStr, RECP_NON_PERSISTENT);
+  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_time", appVersionInfo.BldTimeStr, RECP_NON_PERSISTENT);
+  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_date", appVersionInfo.BldDateStr, RECP_NON_PERSISTENT);
+  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_machine", appVersionInfo.BldMachineStr, RECP_NON_PERSISTENT);
+  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_person", appVersionInfo.BldPersonStr, RECP_NON_PERSISTENT);
 }
 
 //
@@ -356,7 +351,7 @@ cmd_list(char * /* cmd ATS_UNUSED */)
   // show hostdb size
 
   int h_size = 120000;
-  TS_ReadConfigInteger(h_size, "proxy.config.hostdb.size");
+  REC_ReadConfigInteger(h_size, "proxy.config.hostdb.size");
   printf("Host Database size:\t%d\n", h_size);
 
   // show cache config information....
@@ -394,10 +389,26 @@ CB_After_Cache_Init()
   int start;
 
   start = ink_atomic_swap(&delay_listen_for_cache_p, -1);
+
+  // Check for cache BC after the cache is initialized and before listen, if possible.
+  if (cacheProcessor.min_stripe_version.ink_major < CACHE_DB_MAJOR_VERSION) {
+    // Versions before 23 need the MMH hash.
+    if (cacheProcessor.min_stripe_version.ink_major < 23) {
+      Debug("cache_bc", "Pre 4.0 stripe (cache version %d.%d) found, forcing MMH hash for cache URLs"
+        , cacheProcessor.min_stripe_version.ink_major, cacheProcessor.min_stripe_version.ink_minor
+        );
+      URLHashContext::Setting = URLHashContext::MMH;
+    }
+  }
+
   if (1 == start) {
     Debug("http_listen", "Delayed listen enable, cache initialization finished");
     start_HttpProxyServer();
   }
+
+  time_t cache_ready_at = time(NULL);
+  RecSetRecordInt("proxy.node.restarts.proxy.cache_ready_time", cache_ready_at);
+
   // Alert the plugins the cache is initialized.
   hook = lifecycle_hooks->get(TS_LIFECYCLE_CACHE_READY_HOOK);
   while (hook) {
@@ -472,7 +483,6 @@ cmd_check_internal(char * /* cmd ATS_UNUSED */, bool fix = false)
   const char *n = fix ? "REPAIR" : "CHECK";
 
   printf("%s\n\n", n);
-  int res = 0;
 
   hostdb_current_interval = (ink_get_based_hrtime() / HRTIME_MINUTE);
 
@@ -492,14 +502,14 @@ cmd_check_internal(char * /* cmd ATS_UNUSED */, bool fix = false)
     printf("\tunable to open Host Database, %s failed\n", n);
     return CMD_OK;
   }
-  res = hd.check("hostdb.config", fix) < 0 || res;
+  hd.check("hostdb.config", fix);
   hd.reset();
 
   if (cacheProcessor.start() < 0) {
     printf("\nbad cache configuration, %s failed\n", n);
     return CMD_FAILED;
   }
-  eventProcessor.schedule_every(NEW(new CmdCacheCont(true, fix)), HRTIME_SECONDS(1));
+  eventProcessor.schedule_every(new CmdCacheCont(true, fix), HRTIME_SECONDS(1));
 
   return CMD_IN_PROGRESS;
 }
@@ -529,8 +539,8 @@ cmd_clear(char *cmd)
   bool c_cache = !strcmp(cmd, "clear_cache");
 
   if (c_all || c_hdb) {
-    xptr<char> rundir(RecConfigReadRuntimeDir());
-    xptr<char> config(Layout::relative_to(rundir, "hostdb.config"));
+    ats_scoped_str rundir(RecConfigReadRuntimeDir());
+    ats_scoped_str config(Layout::relative_to(rundir, "hostdb.config"));
 
     Note("Clearing HostDB Configuration");
     if (unlink(config) < 0)
@@ -574,7 +584,7 @@ cmd_clear(char *cmd)
       Note("unable to open Cache, CLEAR failed");
       return CMD_FAILED;
     }
-    eventProcessor.schedule_every(NEW(new CmdCacheCont(false)), HRTIME_SECONDS(1));
+    eventProcessor.schedule_every(new CmdCacheCont(false), HRTIME_SECONDS(1));
     return CMD_IN_PROGRESS;
   }
 
@@ -687,7 +697,7 @@ static void
 check_fd_limit()
 {
   int fds_throttle = -1;
-  TS_ReadConfigInteger(fds_throttle, "proxy.config.net.connections_throttle");
+  REC_ReadConfigInteger(fds_throttle, "proxy.config.net.connections_throttle");
   if (fds_throttle > fds_limit + THROTTLE_FD_HEADROOM) {
     int new_fds_throttle = fds_limit - THROTTLE_FD_HEADROOM;
     if (new_fds_throttle < 1)
@@ -777,7 +787,7 @@ init_core_size()
     RecData rec_temp;
     rec_temp.rec_int = coreSize;
     set_core_size(NULL, RECD_INT, rec_temp, NULL);
-    found = (TS_RegisterConfigUpdateFunc("proxy.config.core_limit", set_core_size, NULL) == REC_ERR_OKAY);
+    found = (REC_RegisterConfigUpdateFunc("proxy.config.core_limit", set_core_size, NULL) == REC_ERR_OKAY);
 
     ink_assert(found);
   }
@@ -790,20 +800,37 @@ adjust_sys_settings(void)
   struct rlimit lim;
   int mmap_max = -1;
   int fds_throttle = -1;
+  float file_max_pct = 0.9;
+  FILE *fd;
 
   // TODO: I think we might be able to get rid of this?
-  TS_ReadConfigInteger(mmap_max, "proxy.config.system.mmap_max");
+  REC_ReadConfigInteger(mmap_max, "proxy.config.system.mmap_max");
   if (mmap_max >= 0)
     ats_mallopt(ATS_MMAP_MAX, mmap_max);
 
-  TS_ReadConfigInteger(fds_throttle, "proxy.config.net.connections_throttle");
+  if ((fd = fopen("/proc/sys/fs/file-max","r"))) {
+    ATS_UNUSED_RETURN(fscanf(fd, "%" PRIu64 "", &lim.rlim_max));
+    fclose(fd);
+    REC_ReadConfigFloat(file_max_pct, "proxy.config.system.file_max_pct");
+    lim.rlim_cur = lim.rlim_max = static_cast<rlim_t>(lim.rlim_max * file_max_pct);
+    if (!setrlimit(RLIMIT_NOFILE, &lim) && !getrlimit(RLIMIT_NOFILE, &lim)) {
+      fds_limit = (int) lim.rlim_cur;
+      syslog(LOG_NOTICE, "NOTE: RLIMIT_NOFILE(%d):cur(%d),max(%d)",RLIMIT_NOFILE, (int)lim.rlim_cur, (int)lim.rlim_max);
+    } else {
+      syslog(LOG_NOTICE, "NOTE: Unable to set RLIMIT_NOFILE(%d):cur(%d),max(%d)", RLIMIT_NOFILE, (int)lim.rlim_cur, (int)lim.rlim_max);
+    }
+  } else {
+    syslog(LOG_NOTICE, "NOTE: Unable to open /proc/sys/fs/file-max");
+  }
+
+  REC_ReadConfigInteger(fds_throttle, "proxy.config.net.connections_throttle");
 
   if (!getrlimit(RLIMIT_NOFILE, &lim)) {
     if (fds_throttle > (int) (lim.rlim_cur + THROTTLE_FD_HEADROOM)) {
       lim.rlim_cur = (lim.rlim_max = (rlim_t) fds_throttle);
       if (!setrlimit(RLIMIT_NOFILE, &lim) && !getrlimit(RLIMIT_NOFILE, &lim)) {
         fds_limit = (int) lim.rlim_cur;
-	syslog(LOG_NOTICE, "NOTE: RLIMIT_NOFILE(%d):cur(%d),max(%d)",RLIMIT_NOFILE, (int)lim.rlim_cur, (int)lim.rlim_max);
+        syslog(LOG_NOTICE, "NOTE: RLIMIT_NOFILE(%d):cur(%d),max(%d)",RLIMIT_NOFILE, (int)lim.rlim_cur, (int)lim.rlim_max);
       }
     }
   }
@@ -969,7 +996,7 @@ syslog_log_configure()
   char *facility_str = NULL;
   int facility;
 
-  TS_ReadConfigStringAlloc(facility_str, "proxy.config.syslog_facility");
+  REC_ReadConfigStringAlloc(facility_str, "proxy.config.syslog_facility");
 
   if (facility_str == NULL || (facility = facility_string_to_int(facility_str)) < 0) {
     syslog(LOG_WARNING, "Bad or missing syslog facility.  " "Defaulting to LOG_DAEMON");
@@ -1015,7 +1042,7 @@ static void
 run_AutoStop()
 {
   if (getenv("PROXY_AUTO_EXIT"))
-    eventProcessor.schedule_in(NEW(new AutoStopCont), HRTIME_SECONDS(atoi(getenv("PROXY_AUTO_EXIT"))));
+    eventProcessor.schedule_in(new AutoStopCont(), HRTIME_SECONDS(atoi(getenv("PROXY_AUTO_EXIT"))));
 }
 
 #if TS_HAS_TESTS
@@ -1054,7 +1081,7 @@ static void
 run_RegressionTest()
 {
   if (regression_level)
-    eventProcessor.schedule_every(NEW(new RegressionCont), HRTIME_SECONDS(1));
+    eventProcessor.schedule_every(new RegressionCont(), HRTIME_SECONDS(1));
 }
 #endif //TS_HAS_TESTS
 
@@ -1078,7 +1105,7 @@ chdir_root()
 static int
 getNumSSLThreads(void)
 {
-  int num_of_ssl_threads = 0;
+  int num_of_ssl_threads = -1;
 
   // Set number of ssl threads equal to num of processors if
   // SSL is enabled so it will scale properly. If SSL is not
@@ -1087,14 +1114,16 @@ getNumSSLThreads(void)
   if (HttpProxyPort::hasSSL()) {
     int config_num_ssl_threads = 0;
 
-    TS_ReadConfigInteger(config_num_ssl_threads, "proxy.config.ssl.number.threads");
+    REC_ReadConfigInteger(config_num_ssl_threads, "proxy.config.ssl.number.threads");
 
-    if (config_num_ssl_threads != 0) {
+    if (config_num_ssl_threads > 0) {
       num_of_ssl_threads = config_num_ssl_threads;
+    } else if (config_num_ssl_threads == -1) {
+      return -1; // This will disable ET_SSL threads entirely
     } else {
       float autoconfig_scale = 1.5;
 
-      TS_ReadConfigFloat(autoconfig_scale, "proxy.config.exec_thread.autoconfig.scale");
+      REC_ReadConfigFloat(autoconfig_scale, "proxy.config.exec_thread.autoconfig.scale");
       num_of_ssl_threads = (int)((float)ink_number_of_processors() * autoconfig_scale);
 
       // Last resort
@@ -1113,13 +1142,13 @@ adjust_num_of_net_threads(int nthreads)
   int nth_auto_config = 1;
   int num_of_threads_tmp = 1;
 
-  TS_ReadConfigInteger(nth_auto_config, "proxy.config.exec_thread.autoconfig");
+  REC_ReadConfigInteger(nth_auto_config, "proxy.config.exec_thread.autoconfig");
 
   Debug("threads", "initial number of net threads is %d", nthreads);
   Debug("threads", "net threads auto-configuration %s", nth_auto_config ? "enabled" : "disabled");
 
   if (!nth_auto_config) {
-    TS_ReadConfigInteger(num_of_threads_tmp, "proxy.config.exec_thread.limit");
+    REC_ReadConfigInteger(num_of_threads_tmp, "proxy.config.exec_thread.limit");
 
     if (num_of_threads_tmp <= 0) {
       num_of_threads_tmp = 1;
@@ -1130,15 +1159,15 @@ adjust_num_of_net_threads(int nthreads)
     nthreads = num_of_threads_tmp;
   } else {                      /* autoconfig is enabled */
     num_of_threads_tmp = nthreads;
-    TS_ReadConfigFloat(autoconfig_scale, "proxy.config.exec_thread.autoconfig.scale");
+    REC_ReadConfigFloat(autoconfig_scale, "proxy.config.exec_thread.autoconfig.scale");
     num_of_threads_tmp = (int) ((float) num_of_threads_tmp * autoconfig_scale);
-
-    if (num_of_threads_tmp) {
-      nthreads = num_of_threads_tmp;
-    }
 
     if (unlikely(num_of_threads_tmp > MAX_EVENT_THREADS)) {
       num_of_threads_tmp = MAX_EVENT_THREADS;
+    }
+
+    if (num_of_threads_tmp) {
+      nthreads = num_of_threads_tmp;
     }
   }
 
@@ -1287,7 +1316,7 @@ main(int /* argc ATS_UNUSED */, char **argv)
   // re-start Diag completely) because at initialize, TM only has 1 thread.
   // In TS, some threads have already created, so if we delete Diag and
   // re-start it again, TS will crash.
-  diagsConfig = NEW(new DiagsConfig(DIAGS_LOG_FILENAME, error_tags, action_tags, false));
+  diagsConfig = new DiagsConfig(DIAGS_LOG_FILENAME, error_tags, action_tags, false);
   diags = diagsConfig->diags;
   diags->prefix_str = "Server ";
   if (is_debug_tag_set("diags"))
@@ -1310,15 +1339,15 @@ main(int /* argc ATS_UNUSED */, char **argv)
   syslog_log_configure();
 
   if (!num_accept_threads)
-    TS_ReadConfigInteger(num_accept_threads, "proxy.config.accept_threads");
+    REC_ReadConfigInteger(num_accept_threads, "proxy.config.accept_threads");
 
   if (!num_task_threads)
-    TS_ReadConfigInteger(num_task_threads, "proxy.config.task_threads");
+    REC_ReadConfigInteger(num_task_threads, "proxy.config.task_threads");
 
-  xptr<char> user(MAX_LOGIN + 1);
+  ats_scoped_str user(MAX_LOGIN + 1);
 
   *user = '\0';
-  admin_user_p = ((REC_ERR_OKAY == TS_ReadConfigString(user, "proxy.config.admin.user_id", MAX_LOGIN)) &&
+  admin_user_p = ((REC_ERR_OKAY == REC_ReadConfigString(user, "proxy.config.admin.user_id", MAX_LOGIN)) &&
                   (*user != '\0') && (0 != strcmp(user, "#-1")));
 
 # if TS_USE_POSIX_CAP
@@ -1341,7 +1370,7 @@ main(int /* argc ATS_UNUSED */, char **argv)
   // This call is required for win_9xMe
   //without this this_ethread() is failing when
   //start_HttpProxyServer is called from main thread
-  Thread *main_thread = NEW(new EThread);
+  Thread *main_thread = new EThread;
   main_thread->set_specific();
 
   // Re-initialize diagsConfig based on records.config configuration
@@ -1349,7 +1378,7 @@ main(int /* argc ATS_UNUSED */, char **argv)
     RecDebugOff();
     delete(diagsConfig);
   }
-  diagsConfig = NEW(new DiagsConfig(DIAGS_LOG_FILENAME, error_tags, action_tags, true));
+  diagsConfig = new DiagsConfig(DIAGS_LOG_FILENAME, error_tags, action_tags, true);
   diags = diagsConfig->diags;
   RecSetDiags(diags);
   diags->prefix_str = "Server ";
@@ -1363,7 +1392,7 @@ main(int /* argc ATS_UNUSED */, char **argv)
   // Check if we should do mlockall()
 #if defined(MCL_FUTURE)
   int mlock_flags = 0;
-  TS_ReadConfigInteger(mlock_flags, "proxy.config.mlock_enabled");
+  REC_ReadConfigInteger(mlock_flags, "proxy.config.mlock_enabled");
 
   if (mlock_flags == 2) {
     if (0 != mlockall(MCL_CURRENT | MCL_FUTURE))
@@ -1402,9 +1431,10 @@ main(int /* argc ATS_UNUSED */, char **argv)
   // pmgmt->start() must occur after initialization of Diags but
   // before calling RecProcessInit()
 
-  TS_ReadConfigInteger(res_track_memory, "proxy.config.res_track_memory");
+  REC_ReadConfigInteger(res_track_memory, "proxy.config.res_track_memory");
 
   init_http_header();
+  ts_session_protocol_well_known_name_indices_init();
 
   // Sanity checks
   check_fd_limit();
@@ -1462,7 +1492,7 @@ main(int /* argc ATS_UNUSED */, char **argv)
 
   // This shouldn't happen, but lets make sure we run somewhat reasonable.
   if (net_config_poll_timeout < 0) {
-    net_config_poll_timeout = 30; // This is the solaris default value.
+    net_config_poll_timeout = 10; // Default value for all platform.
   }
 
   ink_event_system_init(makeModuleVersion(1, 0, PRIVATE_MODULE_HEADER));
@@ -1475,7 +1505,7 @@ main(int /* argc ATS_UNUSED */, char **argv)
   eventProcessor.start(num_of_net_threads, stacksize);
 
   int num_remap_threads = 0;
-  TS_ReadConfigInteger(num_remap_threads, "proxy.config.remap.num_remap_threads");
+  REC_ReadConfigInteger(num_remap_threads, "proxy.config.remap.num_remap_threads");
   if (num_remap_threads < 1)
     num_remap_threads = 0;
 
@@ -1507,18 +1537,21 @@ main(int /* argc ATS_UNUSED */, char **argv)
     SplitDNSConfig::startup();
 #endif
 
+# if TS_HAS_SPDY
+    extern int spdy_config_load ();
+    spdy_config_load(); // must be before HttpProxyPort init.
+# endif
     // Load HTTP port data. getNumSSLThreads depends on this.
     if (!HttpProxyPort::loadValue(http_accept_port_descriptor))
       HttpProxyPort::loadConfig();
     HttpProxyPort::loadDefaultIfEmpty();
 
     if (!accept_mss)
-      TS_ReadConfigInteger(accept_mss, "proxy.config.net.sock_mss_in");
+      REC_ReadConfigInteger(accept_mss, "proxy.config.net.sock_mss_in");
 
     NetProcessor::accept_mss = accept_mss;
     netProcessor.start(0, stacksize);
 
-    sslNetProcessor.start(getNumSSLThreads(), stacksize);
 
     dnsProcessor.start(0, stacksize);
     if (hostDBProcessor.start() < 0)
@@ -1530,6 +1563,9 @@ main(int /* argc ATS_UNUSED */, char **argv)
 
     // Init plugins as soon as logging is ready.
     plugin_init();        // plugin.config
+
+    SSLConfigParams::init_ssl_ctx_cb = init_ssl_ctx_callback;
+    sslNetProcessor.start(getNumSSLThreads(), stacksize);
     pmgmt->registerPluginCallbacks(global_config_cbs);
 
     cacheProcessor.set_after_init_callback(&CB_After_Cache_Init);
@@ -1537,7 +1573,7 @@ main(int /* argc ATS_UNUSED */, char **argv)
 
     // UDP net-threads are turned off by default.
     if (!num_of_udp_threads)
-      TS_ReadConfigInteger(num_of_udp_threads, "proxy.config.udp.threads");
+      REC_ReadConfigInteger(num_of_udp_threads, "proxy.config.udp.threads");
     if (num_of_udp_threads)
       udpNet.start(num_of_udp_threads, stacksize);
 
@@ -1550,7 +1586,7 @@ main(int /* argc ATS_UNUSED */, char **argv)
     start_stats_snap();
 
     // Initialize Response Body Factory
-    body_factory = NEW(new HttpBodyFactory);
+    body_factory = new HttpBodyFactory;
 
     // Start IP to userName cache processor used
     // by RADIUS and FW1 plug-ins.
@@ -1565,7 +1601,7 @@ main(int /* argc ATS_UNUSED */, char **argv)
 
     // Continuation Statistics Dump
     if (show_statistics)
-      eventProcessor.schedule_every(NEW(new ShowStats), HRTIME_SECONDS(show_statistics), ET_CALL);
+      eventProcessor.schedule_every(new ShowStats(), HRTIME_SECONDS(show_statistics), ET_CALL);
 
 
     //////////////////////////////////////
@@ -1577,11 +1613,11 @@ main(int /* argc ATS_UNUSED */, char **argv)
     init_HttpProxyServer(num_accept_threads);
 
     int http_enabled = 1;
-    TS_ReadConfigInteger(http_enabled, "proxy.config.http.enabled");
+    REC_ReadConfigInteger(http_enabled, "proxy.config.http.enabled");
 
     if (http_enabled) {
       int icp_enabled = 0;
-      TS_ReadConfigInteger(icp_enabled, "proxy.config.icp.enabled");
+      REC_ReadConfigInteger(icp_enabled, "proxy.config.icp.enabled");
 
       // call the ready hooks before we start accepting connections.
       APIHook* hook = lifecycle_hooks->get(TS_LIFECYCLE_PORTS_INITIALIZED_HOOK);
@@ -1591,7 +1627,7 @@ main(int /* argc ATS_UNUSED */, char **argv)
       }
 
       int delay_p = 0;
-      TS_ReadConfigInteger(delay_p, "proxy.config.http.wait_for_cache");
+      REC_ReadConfigInteger(delay_p, "proxy.config.http.wait_for_cache");
 
       // Delay only if config value set and flag value is zero
       // (-1 => cache already initialized)
@@ -1608,7 +1644,7 @@ main(int /* argc ATS_UNUSED */, char **argv)
     tasksProcessor.start(num_task_threads, stacksize);
 
     int back_door_port = NO_FD;
-    TS_ReadConfigInteger(back_door_port, "proxy.config.process_manager.mgmt_port");
+    REC_ReadConfigInteger(back_door_port, "proxy.config.process_manager.mgmt_port");
     if (back_door_port != NO_FD)
       start_HttpProxyServerBackDoor(back_door_port, num_accept_threads > 0 ? 1 : 0); // One accept thread is enough
 
@@ -1623,6 +1659,11 @@ main(int /* argc ATS_UNUSED */, char **argv)
 
     pmgmt->registerMgmtCallback(MGMT_EVENT_SHUTDOWN, mgmt_restart_shutdown_callback, NULL);
     pmgmt->registerMgmtCallback(MGMT_EVENT_RESTART, mgmt_restart_shutdown_callback, NULL);
+
+    // Callback for various storage commands. These all go to the same function so we
+    // pass the event code along so it can do the right thing. We cast that to <int> first
+    // just to be safe because the value is a #define, not a typed value.
+    pmgmt->registerMgmtCallback(MGMT_EVENT_STORAGE_DEVICE_CMD_OFFLINE, mgmt_storage_device_cmd_callback, reinterpret_cast<void*>(static_cast<int>(MGMT_EVENT_STORAGE_DEVICE_CMD_OFFLINE)));
 
     // The main thread also becomes a net thread.
     ink_set_thread_name("[ET_NET 0]");
@@ -1669,4 +1710,35 @@ mgmt_restart_shutdown_callback(void *, char *, int /* data_len ATS_UNUSED */)
 {
   sync_cache_dir_on_shutdown();
   return NULL;
+}
+
+static void*
+mgmt_storage_device_cmd_callback(void* data, char* arg, int len)
+{
+  // data is the device name to control
+  CacheDisk* d = cacheProcessor.find_by_path(arg, len);
+  // Actual command is in @a data.
+  intptr_t cmd = reinterpret_cast<intptr_t>(data);
+
+  if (d) {
+    switch (cmd) {
+    case MGMT_EVENT_STORAGE_DEVICE_CMD_OFFLINE:
+      Debug("server", "Marking %.*s offline", len, arg);
+      cacheProcessor.mark_storage_offline(d);
+      break;
+    }
+  }
+  return NULL;
+}
+
+static void
+init_ssl_ctx_callback(void *ctx, bool server)
+{
+  TSEvent event = server ? TS_EVENT_LIFECYCLE_SERVER_SSL_CTX_INITIALIZED : TS_EVENT_LIFECYCLE_CLIENT_SSL_CTX_INITIALIZED;
+  APIHook *hook = lifecycle_hooks->get(server ? TS_LIFECYCLE_SERVER_SSL_CTX_INITIALIZED_HOOK : TS_LIFECYCLE_CLIENT_SSL_CTX_INITIALIZED_HOOK);
+
+  while (hook) {
+    hook->invoke(event, ctx);
+    hook = hook->next();
+  }
 }

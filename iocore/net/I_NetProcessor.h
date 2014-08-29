@@ -221,6 +221,8 @@ public:
   */
   virtual int start(int number_of_net_threads, size_t stacksize) = 0;
 
+  inkcoreapi virtual NetVConnection *allocate_vc(EThread *) = 0;
+
   /** Private constructor. */
   NetProcessor()
   {

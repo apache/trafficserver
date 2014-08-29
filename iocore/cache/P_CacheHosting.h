@@ -80,7 +80,7 @@ public:
   CacheHostMatcher(const char * name, CacheType typ);
   ~CacheHostMatcher();
 
-  void Match(char *rdata, int rlen, CacheHostResult *result);
+  void Match(char const* rdata, int rlen, CacheHostResult *result);
   void AllocateSpace(int num_entries);
   void NewEntry(matcher_line *line_info);
   void Print();
@@ -107,7 +107,7 @@ public:
    ~CacheHostTable();
   int BuildTable(const char * config_file_path);
   int BuildTableFromString(const char * config_file_path, char *str);
-  void Match(char *rdata, int rlen, CacheHostResult *result);
+  void Match(char const* rdata, int rlen, CacheHostResult *result);
   void Print();
 
   int getEntryCount() const { return m_numEntries; }
@@ -146,7 +146,7 @@ struct CacheHostTableConfig: public Continuation
   {
     (void) e;
     (void) event;
-    CacheHostTable *t = NEW(new CacheHostTable((*ppt)->cache, (*ppt)->type));
+    CacheHostTable *t = new CacheHostTable((*ppt)->cache, (*ppt)->type);
     CacheHostTable *old = (CacheHostTable *) ink_atomic_swap(&t, *ppt);
     new_Deleter(old, CACHE_MEM_FREE_TIMEOUT);
     return EVENT_DONE;

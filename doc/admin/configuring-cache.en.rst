@@ -330,7 +330,7 @@ Traffic Server provides a Cache Inspector utility that enables you to
 view, delete, and invalidate URLs in the cache (HTTP only). The Cache
 Inspector utility is a powerful tool that's capable of deleting *all*
 the objects in your cache; therefore, make sure that only authorized
-administrators are allowed to access this utility, see :ref:`controlling-client-access-to-cache` and the ``@scr_ip`` option in :file:`remap.config`.
+administrators are allowed to access this utility, see :ref:`controlling-client-access-to-cache` and the ``@src_ip`` option in :file:`remap.config`.
 
 Accessing the Cache Inspector Utility
 -------------------------------------
@@ -343,14 +343,14 @@ To access the Cache Inspector utility, follow the steps below:
    restricted to a limited set of hosts using the ``@src_ip`` option.
    To restrict access to the network 172.28.56.0/24, use ::
 
-      map http://yourhost.com/myCI http://{cache} @action=allow @src_ip=172.28.56.1-172.28.56.254
+      map http://yourhost.com/myCI/ http://{cache} @action=allow @src_ip=172.28.56.1-172.28.56.254
 
 #. From the Traffic Server ``bin`` directory, enter the following
    command to re-read the configuration file: ``traffic_line -x``
 #. Open your web browser and configure it to use your Traffic Server as
    a proxy server. Type the following URL::
 
-      http://yourhost/myCI
+      http://yourhost/myCI/
 
 #. The Cache page opens.
 

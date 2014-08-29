@@ -52,7 +52,7 @@ Configuration
 =============
 
 In order to configure Apache Traffic Server as forward proxy you will
-have to edit `:file:`records.config` and set
+have to edit :file:`records.config` and set
 
 -  :ts:cv:`proxy.config.url_remap.remap_required` to  ``0``
 

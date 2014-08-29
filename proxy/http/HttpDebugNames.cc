@@ -266,137 +266,127 @@ const char *
 HttpDebugNames::get_action_name(HttpTransact::StateMachineAction_t e)
 {
   switch (e) {
-  case HttpTransact::STATE_MACHINE_ACTION_UNDEFINED:
-    return ("STATE_UNDEFINED");
+  case HttpTransact::SM_ACTION_UNDEFINED:
+    return ("SM_ACTION_UNDEFINED");
 
-  case HttpTransact::CACHE_ISSUE_WRITE:
-    return ("CACHE_ISSUE_WRITE");
+  case HttpTransact::SM_ACTION_CACHE_ISSUE_WRITE:
+    return ("SM_ACTION_CACHE_ISSUE_WRITE");
 
-  case HttpTransact::CACHE_ISSUE_WRITE_TRANSFORM:
-    return ("CACHE_ISSUE_WRITE_TRANSFORM");
+  case HttpTransact::SM_ACTION_CACHE_ISSUE_WRITE_TRANSFORM:
+    return ("SM_ACTION_CACHE_ISSUE_WRITE_TRANSFORM");
 
-  case HttpTransact::CACHE_LOOKUP:
-    return ("CACHE_LOOKUP");
+  case HttpTransact::SM_ACTION_CACHE_LOOKUP:
+    return ("SM_ACTION_CACHE_LOOKUP");
 
-  case HttpTransact::DNS_LOOKUP:
-    return ("DNS_LOOKUP");
+  case HttpTransact::SM_ACTION_DNS_LOOKUP:
+    return ("SM_ACTION_DNS_LOOKUP");
 
-  case HttpTransact::REVERSE_DNS_LOOKUP:
-    return ("REVERSE_DNS_LOOKUP");
+  case HttpTransact::SM_ACTION_DNS_REVERSE_LOOKUP:
+    return ("SM_ACTION_DNS_REVERSE_LOOKUP");
 
-  case HttpTransact::ICP_QUERY:
-    return ("ICP_QUERY");
+  case HttpTransact::SM_ACTION_ICP_QUERY:
+    return ("SM_ACTION_ICP_QUERY");
 
-  case HttpTransact::ISSUE_CACHE_DELETE:
-    return ("ISSUE_CACHE_DELETE");
+  case HttpTransact::SM_ACTION_CACHE_PREPARE_UPDATE:
+    return ("SM_ACTION_CACHE_PREPARE_UPDATE");
 
-  case HttpTransact::PREPARE_CACHE_UPDATE:
-    return ("PREPARE_CACHE_UPDATE");
+  case HttpTransact::SM_ACTION_CACHE_ISSUE_UPDATE:
+    return ("SM_ACTION_CACHE_ISSUE_UPDATE");
 
-  case HttpTransact::ISSUE_CACHE_UPDATE:
-    return ("ISSUE_CACHE_UPDATE");
+  case HttpTransact::SM_ACTION_ORIGIN_SERVER_OPEN:
+    return ("SM_ACTION_ORIGIN_SERVER_OPEN");
 
-  case HttpTransact::ORIGIN_SERVER_OPEN:
-    return ("ORIGIN_SERVER_OPEN");
+  case HttpTransact::SM_ACTION_ORIGIN_SERVER_RAW_OPEN:
+    return ("SM_ACTION_ORIGIN_SERVER_RAW_OPEN");
 
-  case HttpTransact::ORIGIN_SERVER_RAW_OPEN:
-    return ("ORIGIN_SERVER_RAW_OPEN");
+  case HttpTransact::SM_ACTION_ORIGIN_SERVER_RR_MARK_DOWN:
+    return ("SM_ACTION_ORIGIN_SERVER_RR_MARK_DOWN");
 
-  case HttpTransact::OS_RR_MARK_DOWN:
-    return ("OS_RR_MARK_DOWN");
+  case HttpTransact::SM_ACTION_READ_PUSH_HDR:
+    return ("SM_ACTION_READ_PUSH_HDR");
 
-  case HttpTransact::READ_PUSH_HDR:
-    return ("READ_PUSH_HDR");
+  case HttpTransact::SM_ACTION_STORE_PUSH_BODY:
+    return ("SM_ACTION_STORE_PUSH_BODY");
 
-  case HttpTransact::STORE_PUSH_BODY:
-    return ("STORE_PUSH_BODY");
+  case HttpTransact::SM_ACTION_INTERNAL_CACHE_WRITE:
+    return ("SM_ACTION_INTERNAL_CACHE_WRITE");
 
-  case HttpTransact::PROXY_INTERNAL_CACHE_WRITE:
-    return ("PROXY_INTERNAL_CACHE_WRITE");
+  case HttpTransact::SM_ACTION_INTERNAL_CACHE_DELETE:
+    return ("SM_ACTION_INTERNAL_CACHE_DELETE");
 
-  case HttpTransact::PROXY_INTERNAL_CACHE_DELETE:
-    return ("PROXY_INTERNAL_CACHE_DELETE");
+  case HttpTransact::SM_ACTION_INTERNAL_CACHE_NOOP:
+    return ("SM_ACTION_INTERNAL_CACHE_NOOP");
 
-  case HttpTransact::PROXY_INTERNAL_CACHE_NOOP:
-    return ("PROXY_INTERNAL_CACHE_NOOP");
+  case HttpTransact::SM_ACTION_INTERNAL_CACHE_UPDATE_HEADERS:
+    return ("SM_ACTION_INTERNAL_CACHE_UPDATE_HEADERS");
 
-  case HttpTransact::PROXY_INTERNAL_CACHE_UPDATE_HEADERS:
-    return ("PROXY_INTERNAL_CACHE_UPDATE_HEADERS");
+  case HttpTransact::SM_ACTION_INTERNAL_REQUEST:
+    return ("SM_ACTION_INTERNAL_REQUEST");
 
-  case HttpTransact::PROXY_INTERNAL_REQUEST:
-    return ("PROXY_INTERNAL_REQUEST");
+  case HttpTransact::SM_ACTION_SEND_ERROR_CACHE_NOOP:
+    return ("SM_ACTION_SEND_ERROR_CACHE_NOOP");
 
-  case HttpTransact::PROXY_SEND_ERROR_CACHE_NOOP:
-    return ("PROXY_SEND_ERROR_CACHE_NOOP");
+  case HttpTransact::SM_ACTION_SERVE_FROM_CACHE:
+    return ("SM_ACTION_SERVE_FROM_CACHE");
 
-  case HttpTransact::SERVE_FROM_CACHE:
-    return ("SERVE_FROM_CACHE");
+  case HttpTransact::SM_ACTION_SERVER_READ:
+    return ("SM_ACTION_SERVER_READ");
 
-  case HttpTransact::SERVER_READ:
-    return ("SERVER_READ");
+  case HttpTransact::SM_ACTION_SSL_TUNNEL:
+    return ("SM_ACTION_SSL_TUNNEL");
 
-  case HttpTransact::SSL_TUNNEL:
-    return ("SSL_TUNNEL");
+  case HttpTransact::SM_ACTION_CONTINUE:
+    return ("SM_ACTION_CONTINUE");
 
-  case HttpTransact::CONTINUE:
-    return ("CONTINUE");
+  case HttpTransact::SM_ACTION_API_READ_REQUEST_HDR:
+    return ("SM_ACTION_API_READ_REQUEST_HDR");
 
-  case HttpTransact::HTTP_API_READ_REQUEST_HDR:
-    return ("API_READ_REQUEST_HDR");
+  case HttpTransact::SM_ACTION_API_OS_DNS:
+    return ("SM_ACTION_API_OS_DNS");
 
-  case HttpTransact::HTTP_API_OS_DNS:
-    return ("API_OS_DNS");
+  case HttpTransact::SM_ACTION_API_SEND_REQUEST_HDR:
+    return ("SM_ACTION_API_SEND_REQUEST_HDR");
 
-  case HttpTransact::HTTP_API_SEND_REQUEST_HDR:
-    return ("API_SEND_REQUEST_HDR");
+  case HttpTransact::SM_ACTION_API_READ_CACHE_HDR:
+    return ("SM_ACTION_API_READ_CACHE_HDR");
 
-  case HttpTransact::HTTP_API_READ_CACHE_HDR:
-    return ("API_READ_CACHE_HDR");
+  case HttpTransact::SM_ACTION_API_CACHE_LOOKUP_COMPLETE:
+    return ("SM_ACTION_API_CACHE_LOOKUP_COMPLETE");
 
-  case HttpTransact::HTTP_API_CACHE_LOOKUP_COMPLETE:
-    return ("API_CACHE_LOOKUP_COMPLETE");
+  case HttpTransact::SM_ACTION_API_READ_RESPONSE_HDR:
+    return ("SM_ACTION_API_READ_RESPONSE_HDR");
 
-  case HttpTransact::HTTP_API_READ_RESPONSE_HDR:
-    return ("API_READ_RESPONSE_HDR");
+  case HttpTransact::SM_ACTION_API_SEND_RESPONSE_HDR:
+    return ("SM_ACTION_API_SEND_RESPONSE_HDR");
 
-  case HttpTransact::HTTP_API_SEND_RESPONSE_HDR:
-    return ("API_SEND_RESPONSE_HDR");
+  case HttpTransact::SM_ACTION_INTERNAL_100_RESPONSE:
+    return ("SM_ACTION_INTERNAL_100_RESPONSE");
 
-  case HttpTransact::PROXY_INTERNAL_100_RESPONSE:
-    return ("PROXY_INTERNAL_100_RESPONSE");
+  case HttpTransact::SM_ACTION_SERVER_PARSE_NEXT_HDR:
+    return ("SM_ACTION_SERVER_PARSE_NEXT_HDR");
 
-  case HttpTransact::SERVER_PARSE_NEXT_HDR:
-    return ("SERVER_PARSE_NEXT_HDR");
-
-  case HttpTransact::TRANSFORM_READ:
-    return ("TRANSFORM_READ");
+  case HttpTransact::SM_ACTION_TRANSFORM_READ:
+    return ("SM_ACTION_TRANSFORM_READ");
 
 #ifdef PROXY_DRAIN
-  case HttpTransact::PROXY_DRAIN_REQUEST_BODY:
-    return ("PROXY_DRAIN_REQUEST_BODY");
+  case HttpTransact::SM_ACTION_DRAIN_REQUEST_BODY:
+    return ("SM_ACTION_DRAIN_REQUEST_BODY");
 #endif /* PROXY_DRAIN */
 
-  //case HttpTransact::AUTH_LOOKUP:
-  //  return ("AUTH_LOOKUP");
-  case HttpTransact::SEND_QUERY_TO_INCOMING_ROUTER:
-    return ("SEND_QUERY_TO_INCOMING_ROUTER");
-  case HttpTransact::EXTENSION_METHOD_TUNNEL:
-    return ("EXTENSION_METHOD_TUNNEL");
-  case HttpTransact::HTTP_API_SM_START:
-    return ("HTTP_API_SM_START");
-  case HttpTransact::REDIRECT_READ:
-    return ("REDIRECT_READ");
-  case HttpTransact::HTTP_API_SM_SHUTDOWN:
-    return ("HTTP_API_SM_SHUTDOWN");
-  case HttpTransact::HTTP_REMAP_REQUEST:
-    return ("HTTP_REMAP_REQUEST");
-  case HttpTransact::HTTP_API_PRE_REMAP:
-    return ("HTTP_API_PRE_REMAP");
-  case HttpTransact::HTTP_API_POST_REMAP:
-    return ("HTTP_API_POST_REMAP");
-  case HttpTransact::HTTP_POST_REMAP_SKIP:
-    return ("HTTP_POST_REMAP_SKIP");
-
+  case HttpTransact::SM_ACTION_API_SM_START:
+    return ("SM_ACTION_API_SM_START");
+  case HttpTransact::SM_ACTION_REDIRECT_READ:
+    return ("SM_ACTION_REDIRECT_READ");
+  case HttpTransact::SM_ACTION_API_SM_SHUTDOWN:
+    return ("SM_ACTION_API_SM_SHUTDOWN");
+  case HttpTransact::SM_ACTION_REMAP_REQUEST:
+    return ("SM_ACTION_REMAP_REQUEST");
+  case HttpTransact::SM_ACTION_API_PRE_REMAP:
+    return ("SM_ACTION_API_PRE_REMAP");
+  case HttpTransact::SM_ACTION_API_POST_REMAP:
+    return ("SM_ACTION_API_POST_REMAP");
+  case HttpTransact::SM_ACTION_POST_REMAP_SKIP:
+    return ("SM_ACTION_POST_REMAP_SKIP");
   }
 
   return ("unknown state name");

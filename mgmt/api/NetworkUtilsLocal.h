@@ -21,61 +21,15 @@
   limitations under the License.
  */
 
-/***************************************************************************
- * NetworkUtils.h
- *
- * Defines interface for marshalling requests and unmarshalling responses
- * between the remote API client and Traffic Manager
- *
- *
- ***************************************************************************/
-
-/*****************************************************************************
- * NetworkUtils.h
- *
- * Defines interface for marshalling requests and unmarshalling responses
- * between the remote API client and Traffic Manager
- *****************************************************************************/
-
-#ifndef _NETWORK_UTILS_H_
-#define _NETWORK_UTILS_H_
+#ifndef _NETWORK_UTILS_LOCAL_H_
+#define _NETWORK_UTILS_LOCAL_H_
 
 #include "ink_defs.h"
-#include "WebUtils.h"           // for SocketInfo, socket_read, socket_write
-
 #include "mgmtapi.h"
-#include "NetworkUtilsDefs.h"
-
-/*****************************************************************************
- * general socket functions
- *****************************************************************************/
-TSError socket_flush(struct SocketInfo sock_info);
-TSError socket_read_n(struct SocketInfo sock_info, char *buf, int bytes);
-TSError socket_write_n(struct SocketInfo sock_info, const char *buf, int bytes);
 
 /*****************************************************************************
  * Unmarshalling/marshalling
  *****************************************************************************/
-TSError preprocess_msg(struct SocketInfo sock_info, OpType * op_t, char **msg);
+TSMgmtError preprocess_msg(int fd, void ** req, size_t * reqlen);
 
-TSError parse_request_name_value(char *req, char **name, char **val);
-TSError parse_record_get_request(char *req, char **rec_name);
-TSError parse_file_read_request(char *req, TSFileNameT * file);
-TSError parse_file_write_request(char *req, TSFileNameT * file, int *ver, int *size, char **text);
-TSError parse_diags_request(char *req, TSDiagsT * mode, char **diag_msg);
-TSError parse_proxy_state_request(char *req, TSProxyStateT * state, TSCacheClearT * clear);
-
-TSError send_reply(struct SocketInfo sock_info, TSError retval);
-TSError send_reply_list(struct SocketInfo sock_info, TSError retval, char *list);
-
-TSError send_record_get_reply(struct SocketInfo sock_info, TSError retval, void *val, int val_size,
-                               TSRecordT rec_type);
-TSError send_record_set_reply(struct SocketInfo sock_info, TSError retval, TSActionNeedT action_need);
-TSError send_file_read_reply(struct SocketInfo sock_info, TSError retval, int ver, int size, char *text);
-TSError send_proxy_state_get_reply(struct SocketInfo sock_info, TSProxyStateT state);
-
-TSError send_event_active_reply(struct SocketInfo sock_info, TSError retval, bool active);
-
-TSError send_event_notification(struct SocketInfo sock_info, TSEvent * event);
-
-#endif
+#endif /* _NETWORK_UTILS_LOCAL_H_ */

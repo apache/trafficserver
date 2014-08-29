@@ -96,7 +96,7 @@ struct NetTesterSM:public Continuation
       /* FALLSTHROUGH */
     case VC_EVENT_EOS:
       r = reader->read_avail();
-      str = NEW(new char[r + 10]);
+      str = new char[r + 10];
       reader->read(str, r);
       Debug("net_test", "%s", str);
       fflush(stdout);
@@ -152,7 +152,7 @@ struct NetTesterAccept:public Continuation
     Debug("net_test", "Accepted a connection\n");
     fflush(stdout);
     NetVConnection *vc = (NetVConnection *) data;
-    NEW(new NetTesterSM(new_ProxyMutex(), vc));
+    new NetTesterSM(new_ProxyMutex(), vc);
     return EVENT_CONT;
   }
 
@@ -189,8 +189,7 @@ test_main()
   memset(b + strlen(response_hdr), 'x', 8000);
   resp_blk->fill(doc_len = strlen(response_hdr) + 8000);
 
-  Action *a = sslNetProcessor.accept(NEW(new NetTesterAccept(new_ProxyMutex())),
-                                     8080, true);
+  Action *a = sslNetProcessor.accept(new NetTesterAccept(new_ProxyMutex()), 8080, true);
 
   return 0;
 }

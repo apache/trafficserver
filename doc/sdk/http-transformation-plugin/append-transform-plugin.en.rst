@@ -40,9 +40,8 @@ what the function does:
    Allocates and initializes a ``MyData`` structure. The plugin defines
    a struct, ``MyData``, as follows:
 
-   ::
+   .. code-block:: c
 
-       :::c
        typedef struct {
            TSVIO output_vio;
            TSIOBuffer output_buffer;

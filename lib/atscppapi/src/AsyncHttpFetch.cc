@@ -26,6 +26,8 @@
 #include "logging_internal.h"
 #include "utils_internal.h"
 
+#include <cstdio>
+
 using namespace atscppapi;
 using std::string;
 
@@ -35,6 +37,7 @@ using std::string;
 struct atscppapi::AsyncHttpFetchState : noncopyable {
   Request request_;
   Response response_;
+  string request_body_;
   AsyncHttpFetch::Result result_;
   const void *body_;
   size_t body_size_;
@@ -42,9 +45,9 @@ struct atscppapi::AsyncHttpFetchState : noncopyable {
   TSMLoc hdr_loc_;
   shared_ptr<AsyncDispatchControllerBase> dispatch_controller_;
 
-  AsyncHttpFetchState(const string &url_str, HttpMethod http_method)
-    : request_(url_str, http_method, HTTP_VERSION_1_0), result_(AsyncHttpFetch::RESULT_FAILURE), body_(NULL),
-      body_size_(0), hdr_buf_(NULL), hdr_loc_(NULL) { }
+  AsyncHttpFetchState(const string &url_str, HttpMethod http_method, string request_body)
+    : request_(url_str, http_method, HTTP_VERSION_1_0), request_body_(request_body),
+      result_(AsyncHttpFetch::RESULT_FAILURE), body_(NULL), body_size_(0), hdr_buf_(NULL), hdr_loc_(NULL) { }
   
   ~AsyncHttpFetchState() {
     if (hdr_loc_) {
@@ -71,44 +74,58 @@ static int handleFetchEvents(TSCont cont, TSEvent event, void *edata) {
     TSHttpTxn txn = static_cast<TSHttpTxn>(edata);
     int data_len;
     const char *data_start = TSFetchRespGet(txn, &data_len);
-    const char *data_end = data_start + data_len;
-    
-    TSHttpParser parser = TSHttpParserCreate();
-    state->hdr_buf_ = TSMBufferCreate();
-    state->hdr_loc_ = TSHttpHdrCreate(state->hdr_buf_);
-    TSHttpHdrTypeSet(state->hdr_buf_, state->hdr_loc_, TS_HTTP_TYPE_RESPONSE);
-    if (TSHttpHdrParseResp(parser, state->hdr_buf_, state->hdr_loc_, &data_start, data_end) == TS_PARSE_DONE) {
-      TSHttpStatus status = TSHttpHdrStatusGet(state->hdr_buf_, state->hdr_loc_);
-      state->body_ = data_start; // data_start will now be pointing to body
-      state->body_size_ = data_end - data_start;
-      utils::internal::initResponse(state->response_, state->hdr_buf_, state->hdr_loc_);
-      LOG_DEBUG("Fetch result had a status code of %d with a body length of %ld", status, state->body_size_);
-    } else {
-      LOG_ERROR("Unable to parse response; Request URL [%s]; transaction %p",
-                state->request_.getUrl().getUrlString().c_str(), txn);
+    if (data_start && (data_len > 0)) {
+      const char *data_end = data_start + data_len;
+      
+      TSHttpParser parser = TSHttpParserCreate();
+      state->hdr_buf_ = TSMBufferCreate();
+      state->hdr_loc_ = TSHttpHdrCreate(state->hdr_buf_);
+      TSHttpHdrTypeSet(state->hdr_buf_, state->hdr_loc_, TS_HTTP_TYPE_RESPONSE);
+      if (TSHttpHdrParseResp(parser, state->hdr_buf_, state->hdr_loc_, &data_start, data_end) == TS_PARSE_DONE) {
+        TSHttpStatus status = TSHttpHdrStatusGet(state->hdr_buf_, state->hdr_loc_);
+        state->body_ = data_start; // data_start will now be pointing to body
+        state->body_size_ = data_end - data_start;
+        utils::internal::initResponse(state->response_, state->hdr_buf_, state->hdr_loc_);
+        LOG_DEBUG("Fetch result had a status code of %d with a body length of %ld", status, state->body_size_);
+      } else {
+        LOG_ERROR("Unable to parse response; Request URL [%s]; transaction %p",
+                  state->request_.getUrl().getUrlString().c_str(), txn);
+        event = static_cast<TSEvent>(AsyncHttpFetch::RESULT_FAILURE);
+      }
+      TSHttpParserDestroy(parser);
+    }
+    else {
+      LOG_ERROR("Successful fetch did not result in any content. Assuming failure");
       event = static_cast<TSEvent>(AsyncHttpFetch::RESULT_FAILURE);
     }
-    TSHttpParserDestroy(parser);
   }
   state->result_ = static_cast<AsyncHttpFetch::Result>(event);
   if (!state->dispatch_controller_->dispatch()) {
     LOG_DEBUG("Unable to dispatch result from AsyncFetch because promise has died.");
   }
 
-  delete fetch_provider; // we must always be sure to clean up the provider when we're done with it.
+  utils::internal::deleteAsyncHttpFetch(fetch_provider); // we must always cleans up when we're done.
   TSContDestroy(cont);
   return 0;
 }
 
 }
 
-AsyncHttpFetch::AsyncHttpFetch(const std::string &url_str, HttpMethod http_method) {
-  LOG_DEBUG("Created new AsyncHttpFetch object %p", this);
-  state_ = new AsyncHttpFetchState(url_str, http_method);
+AsyncHttpFetch::AsyncHttpFetch(const string &url_str, const string &request_body) {
+  init(url_str, HTTP_METHOD_POST, request_body);
 }
 
-void AsyncHttpFetch::run(shared_ptr<AsyncDispatchControllerBase> sender) {
-  state_->dispatch_controller_ = sender;
+AsyncHttpFetch::AsyncHttpFetch(const string &url_str, HttpMethod http_method) {
+  init(url_str, http_method, "");
+}
+
+void AsyncHttpFetch::init(const string &url_str, HttpMethod http_method, const string &request_body) {
+  LOG_DEBUG("Created new AsyncHttpFetch object %p", this);
+  state_ = new AsyncHttpFetchState(url_str, http_method, request_body);
+}
+
+void AsyncHttpFetch::run() {
+  state_->dispatch_controller_ = getDispatchController(); // keep a copy in state so that cont handler can use it
 
   TSCont fetchCont = TSContCreate(handleFetchEvents, TSMutexCreate());
   TSContDataSet(fetchCont, static_cast<void *>(this)); // Providers have to clean themselves up when they are done.
@@ -129,16 +146,20 @@ void AsyncHttpFetch::run(shared_ptr<AsyncDispatchControllerBase> sender) {
   request_str += ' ';
   request_str += HTTP_VERSION_STRINGS[state_->request_.getVersion()];
   request_str += "\r\n";
-
- /* for (Headers::const_iterator iter = state_->request_.getHeaders().begin(),
-         end = state_->request_.getHeaders().end(); iter != end; ++iter) {
-    request_str += iter->first;
-    request_str += ": ";
-    request_str += Headers::getJoinedValues(iter->second);
-    request_str += "\r\n";
+  Headers &headers = state_->request_.getHeaders();
+  if (headers.size()) {
+    // remove the possibility of keep-alive
+    headers.erase("Connection");
+    headers.erase("Proxy-Connection");
   }
-*/
+  if (!state_->request_body_.empty()) {
+    char size_buf[128];
+    snprintf(size_buf, sizeof(size_buf), "%zu", state_->request_body_.size());
+    state_->request_.getHeaders().set("Content-Length", size_buf);
+  }
+  request_str += headers.wireStr();
   request_str += "\r\n";
+  request_str += state_->request_body_;
 
   LOG_DEBUG("Issing TSFetchUrl with request\n[%s]", request_str.c_str());
   TSFetchUrl(request_str.c_str(), request_str.size(), reinterpret_cast<struct sockaddr const *>(&addr), fetchCont,
@@ -155,6 +176,10 @@ AsyncHttpFetch::Result AsyncHttpFetch::getResult() const {
 
 const Url &AsyncHttpFetch::getRequestUrl() const {
   return state_->request_.getUrl();
+}
+
+const string &AsyncHttpFetch::getRequestBody() const {
+  return state_->request_body_;
 }
 
 const Response &AsyncHttpFetch::getResponse() const {

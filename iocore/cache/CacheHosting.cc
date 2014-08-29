@@ -30,9 +30,6 @@ matcher_tags CacheHosting_tags = {
   "hostname", "domain"
 };
 
-
-bool alarmAlready = false;
-
 /*************************************************************
  *   Begin class HostMatcher
  *************************************************************/
@@ -43,7 +40,7 @@ array_len(-1),
 num_el(-1),
 type(typ)
 {
-  host_lookup = NEW(new HostLookup(name));
+  host_lookup = new HostLookup(name);
 }
 
 CacheHostMatcher::~CacheHostMatcher()
@@ -92,7 +89,7 @@ CacheHostMatcher::AllocateSpace(int num_entries)
 
   host_lookup->AllocateSpace(num_entries);
 
-  data_array = NEW(new CacheHostRecord[num_entries]);
+  data_array = new CacheHostRecord[num_entries];
 
   array_len = num_entries;
   num_el = 0;
@@ -104,7 +101,7 @@ CacheHostMatcher::AllocateSpace(int num_entries)
 //    arg hostname
 //
 void
-CacheHostMatcher::Match(char *rdata, int rlen, CacheHostResult * result)
+CacheHostMatcher::Match(char const* rdata, int rlen, CacheHostResult * result)
 {
 
   void *opaque_ptr;
@@ -192,7 +189,7 @@ CacheHostMatcher::NewEntry(matcher_line * line_info)
 
 CacheHostTable::CacheHostTable(Cache * c, CacheType typ)
 {
-  xptr<char> config_path;
+  ats_scoped_str config_path;
 
   config_tags = &CacheHosting_tags;
   ink_assert(config_tags != NULL);
@@ -236,7 +233,7 @@ CacheHostTable::Print()
 //   Queries each table for the Result*
 //
 void
-CacheHostTable::Match(char *rdata, int rlen, CacheHostResult * result)
+CacheHostTable::Match(char const* rdata, int rlen, CacheHostResult * result)
 {
 
   hostMatch->Match(rdata, rlen, result);
@@ -247,7 +244,7 @@ CacheHostTable::config_callback(const char * /* name ATS_UNUSED */, RecDataT /* 
                                 RecData /* data ATS_UNUSED */, void *cookie)
 {
   CacheHostTable **ppt = (CacheHostTable **) cookie;
-  eventProcessor.schedule_imm(NEW(new CacheHostTableConfig(ppt)));
+  eventProcessor.schedule_imm(new CacheHostTableConfig(ppt));
   return 0;
 }
 
@@ -271,7 +268,6 @@ CacheHostTable::BuildTableFromString(const char * config_file_path, char *file_b
   int line_num = 0;
   int second_pass = 0;
   int numEntries = 0;
-  char errBuf[1024];
   const char *errPtr = NULL;
 
   // type counts
@@ -302,9 +298,8 @@ CacheHostTable::BuildTableFromString(const char * config_file_path, char *file_b
       errPtr = parseConfigLine((char *) tmp, current, config_tags);
 
       if (errPtr != NULL) {
-        snprintf(errBuf, sizeof(errBuf), "%s discarding %s entry at line %d : %s",
+        RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "%s discarding %s entry at line %d : %s",
                  matcher_name, config_file_path, line_num, errPtr);
-        REC_SignalError(errBuf, alarmAlready);
         ats_free(current);
       } else {
 
@@ -351,7 +346,7 @@ CacheHostTable::BuildTableFromString(const char * config_file_path, char *file_b
   }
 
   if (hostDomain > 0) {
-    hostMatch = NEW(new CacheHostMatcher(matcher_name, type));
+    hostMatch = new CacheHostMatcher(matcher_name, type);
     hostMatch->AllocateSpace(hostDomain);
   }
   // Traverse the list and build the records table
@@ -385,9 +380,8 @@ CacheHostTable::BuildTableFromString(const char * config_file_path, char *file_b
         hostMatch->NewEntry(current);
       }
     } else {
-      snprintf(errBuf, sizeof(errBuf), "%s discarding %s entry with unknown type at line %d",
+      RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "%s discarding %s entry with unknown type at line %d",
                matcher_name, config_file_path, current->line_num);
-      REC_SignalError(errBuf, alarmAlready);
     }
 
     // Deallocate the parsing structure
@@ -398,10 +392,9 @@ CacheHostTable::BuildTableFromString(const char * config_file_path, char *file_b
 
   if (!generic_rec_initd) {
     const char *cache_type = (type == CACHE_HTTP_TYPE) ? "http" : "mixt";
-    snprintf(errBuf, sizeof(errBuf),
+    RecSignalWarning(REC_SIGNAL_CONFIG_ERROR,
              "No Volumes specified for Generic Hostnames for %s documents: %s cache will be disabled", cache_type,
              cache_type);
-    REC_SignalError(errBuf, alarmAlready);
   }
 
   ink_assert(second_pass == numEntries);
@@ -438,9 +431,7 @@ CacheHostRecord::Init(CacheType typ)
   int i, j;
   extern Queue<CacheVol> cp_list;
   extern int cp_list_len;
-  char err[1024];
 
-  err[0] = 0;
   num_vols = 0;
   type = typ;
   cp = (CacheVol **)ats_malloc(cp_list_len * sizeof(CacheVol *));
@@ -456,8 +447,7 @@ CacheHostRecord::Init(CacheType typ)
     }
   }
   if (!num_cachevols) {
-    snprintf(err, 1024, "error: No volumes found for Cache Type %d\n", type);
-    REC_SignalError(err, alarmAlready);
+    RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "error: No volumes found for Cache Type %d", type);
     return -1;
   }
   vols = (Vol **)ats_malloc(num_vols * sizeof(Vol *));
@@ -479,8 +469,6 @@ CacheHostRecord::Init(matcher_line * line_info, CacheType typ)
 {
   int i, j;
   extern Queue<CacheVol> cp_list;
-  char err[1024];
-  err[0] = 0;
   int is_vol_present = 0;
   char config_file[PATH_NAME_MAX];
 
@@ -507,10 +495,9 @@ CacheHostRecord::Init(matcher_line * line_info, CacheType typ)
           s++;
           if (!(*s)) {
             const char *errptr = "A volume number expected";
-            snprintf(err, 1024,
+            RecSignalWarning(REC_SIGNAL_CONFIG_ERROR,
                          "%s discarding %s entry at line %d :%s",
                          "[CacheHosting]", config_file, line_info->line_num, errptr);
-            REC_SignalError(err, alarmAlready);
             if (val != NULL) {
               ats_free(val);
             }
@@ -518,10 +505,9 @@ CacheHostRecord::Init(matcher_line * line_info, CacheType typ)
           }
         }
         if ((*s<'0') || (*s> '9')) {
-          snprintf(err, 1024,
+          RecSignalWarning(REC_SIGNAL_CONFIG_ERROR,
                        "%s discarding %s entry at line %d : bad token [%c]",
                        "[CacheHosting]", config_file, line_info->line_num, *s);
-          REC_SignalError(err, alarmAlready);
           if (val != NULL) {
             ats_free(val);
           }
@@ -556,10 +542,9 @@ CacheHostRecord::Init(matcher_line * line_info, CacheType typ)
             }
           }
           if (!is_vol_present) {
-            snprintf(err, 1024,
+            RecSignalWarning(REC_SIGNAL_CONFIG_ERROR,
                          "%s discarding %s entry at line %d : bad volume number [%d]",
                          "[CacheHosting]", config_file, line_info->line_num, volume_number);
-            REC_SignalError(err, alarmAlready);
             if (val != NULL) {
               ats_free(val);
             }
@@ -577,18 +562,16 @@ CacheHostRecord::Init(matcher_line * line_info, CacheType typ)
       break;
     }
 
-    snprintf(err, 1024,
+    RecSignalWarning(REC_SIGNAL_CONFIG_ERROR,
                  "%s discarding %s entry at line %d : bad token [%s]",
                  "[CacheHosting]", config_file, line_info->line_num, label);
-    REC_SignalError(err, alarmAlready);
     return -1;
   }
 
   if (i == MATCHER_MAX_TOKENS) {
-    snprintf(err, 1024,
+    RecSignalWarning(REC_SIGNAL_CONFIG_ERROR,
                  "%s discarding %s entry at line %d : No volumes specified",
                  "[CacheHosting]", config_file, line_info->line_num);
-    REC_SignalError(err, alarmAlready);
     return -1;
   }
 
@@ -625,7 +608,7 @@ CacheHostRecord::Print()
 void
 ConfigVolumes::read_config_file()
 {
-  xptr<char> config_path;
+  ats_scoped_str config_path;
   char *file_buf;
 
   config_path = RecConfigReadConfigPath("proxy.config.cache.volume_filename");
@@ -661,11 +644,9 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
   char *line_end = NULL;
   int line_num = 0;
   int total = 0;                //added by YTS Team, yamsat for bug id 59632
-  char errBuf[1024];
 
   char volume_seen[256];
   int state = 0;                //changed by YTS Team, yamsat for bug id 59632
-  int manager_alarmed = false;
   int volume_number = 0;
   CacheType scheme = CACHE_NONE_TYPE;
   int size = 0;
@@ -697,7 +678,7 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
       if (!(*tmp) && state == DONE) {
         /* add the config */
 
-        ConfigVol *configp = NEW(new ConfigVol());
+        ConfigVol *configp = new ConfigVol();
         configp->number = volume_number;
         if (in_percent) {
           configp->percent = size;
@@ -724,10 +705,8 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
           break;
       } else {
         if (!(*tmp)) {
-          snprintf(errBuf, sizeof(errBuf), "%s discarding %s entry at line %d : Unexpected end of line",
+          RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "%s discarding %s entry at line %d : Unexpected end of line",
                    matcher_name, config_file_path, line_num);
-          REC_SignalError(errBuf, manager_alarmed);
-
           break;
         }
       }
@@ -768,9 +747,8 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
             err = "Volume Already Specified";
           }
 
-          snprintf(errBuf, sizeof(errBuf), "%s discarding %s entry at line %d : %s [%d]",
+          RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "%s discarding %s entry at line %d : %s [%d]",
                    matcher_name, config_file_path, line_num, err, volume_number);
-          REC_SignalError(errBuf, manager_alarmed);
           state = INK_ERROR;
           break;
         }
@@ -820,9 +798,8 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
           if (size > 100 || total > 100) {
             state = INK_ERROR_VOLUME;
             if (state == INK_ERROR_VOLUME || *tmp) {
-              snprintf(errBuf, sizeof(errBuf),
+              RecSignalWarning(REC_SIGNAL_CONFIG_ERROR,
                        "Total volume size added upto more than 100 percent,No volumes created");
-              REC_SignalError(errBuf, manager_alarmed);
               break;
             }
           }
@@ -837,16 +814,13 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
       }
 
       if (state == INK_ERROR || *tmp) {
-        snprintf(errBuf, sizeof(errBuf), "%s discarding %s entry at line %d : Invalid token [%s]",
+        RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "%s discarding %s entry at line %d : Invalid token [%s]",
                  matcher_name, config_file_path, line_num, tmp);
-        REC_SignalError(errBuf, manager_alarmed);
-
         break;
       }
       //added by YTS Team, yamsat for bug id 59632
       if (state == INK_ERROR_VOLUME || *tmp) {
-        snprintf(errBuf, sizeof(errBuf), "Total volume size added upto more than 100 percent,No volumes created");
-        REC_SignalError(errBuf, manager_alarmed);
+        RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "Total volume size added upto more than 100 percent,No volumes created");
         break;
       }
       // ends here
@@ -921,7 +895,7 @@ create_config(RegressionTest * t, int num)
       for (; blocks >= STORE_BLOCKS_PER_VOL; blocks -= STORE_BLOCKS_PER_VOL) {
         if (vol_num > 255)
           break;
-        ConfigVol *cp = NEW(new ConfigVol());
+        ConfigVol *cp = new ConfigVol();
         cp->number = vol_num++;
         cp->scheme = CACHE_HTTP_TYPE;
         cp->size = 128;
@@ -962,7 +936,7 @@ create_config(RegressionTest * t, int num)
       vol_num = 1;
       rprintf(t, "Cleared  disk\n");
       for (i = 0; i < 10; i++) {
-        ConfigVol *cp = NEW(new ConfigVol());
+        ConfigVol *cp = new ConfigVol();
         cp->number = vol_num++;
         cp->scheme = CACHE_HTTP_TYPE;
         cp->size = 10;
@@ -1021,7 +995,7 @@ create_config(RegressionTest * t, int num)
         ink_assert(blocks <= (int) total_space);
         total_space -= blocks;
 
-        ConfigVol *cp = NEW(new ConfigVol());
+        ConfigVol *cp = new ConfigVol();
 
         cp->number = vol_num++;
         cp->scheme = scheme;

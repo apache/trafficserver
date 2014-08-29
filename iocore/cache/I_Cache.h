@@ -52,6 +52,7 @@
 #define CACHE_COMPRESSION_LIBLZMA        3
 
 struct CacheVC;
+struct CacheDisk;
 #ifdef HTTP_CACHE
 class CacheLookupHttpConfig;
 class URL;
@@ -66,7 +67,9 @@ typedef HTTPInfo CacheHTTPInfo;
 struct CacheProcessor:public Processor
 {
   CacheProcessor()
-    : cb_after_init(0)
+    : min_stripe_version(CACHE_DB_MAJOR_VERSION, CACHE_DB_MINOR_VERSION)
+    , max_stripe_version(CACHE_DB_MAJOR_VERSION, CACHE_DB_MINOR_VERSION)
+    , cb_after_init(0)
   {}
 
   virtual int start(int n_cache_threads = 0, size_t stacksize = DEFAULT_STACKSIZE);
@@ -132,6 +135,27 @@ struct CacheProcessor:public Processor
 
   Action *deref(Continuation *cont, CacheKey *key, bool cluster_cache_local,
                 CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP, char *hostname = 0, int host_len = 0);
+
+  /** Mark physical disk/device/file as offline.
+      All stripes for this device are disabled.
+
+      @return @c true if there are any storage devices remaining online, @c false if not.
+
+      @note This is what is called if a disk is disabled due to I/O errors.
+  */
+  bool mark_storage_offline(CacheDisk* d);
+
+  /** Find the storage for a @a path.
+      If @a len is 0 then @a path is presumed null terminated.
+      @return @c NULL if the path does not match any defined storage.
+   */
+  CacheDisk* find_by_path(char const* path, int len = 0);
+
+  /** Check if there are any online storage devices.
+      If this returns @c false then the cache should be disabled as there is no storage available.
+  */
+  bool has_online_storage() const;
+
   static int IsCacheEnabled();
 
   static bool IsCacheReady(CacheFragType type);
@@ -162,6 +186,10 @@ struct CacheProcessor:public Processor
   static int fix;
   static int start_internal_flags;
   static int auto_clear_flag;
+  
+  VersionNumber min_stripe_version;
+  VersionNumber max_stripe_version;
+
   CALLBACK_FUNC cb_after_init;
 };
 

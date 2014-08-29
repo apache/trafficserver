@@ -83,6 +83,7 @@ public:
                                               char **file_name, char **file_header, LogFileFormat * file_type);
   static int parse_symbol_string(const char *symbol_string, LogFieldList *field_list, bool *contains_aggregates);
   static int parse_format_string(const char *format_str, char **printf_str, char **fields_str);
+  static int parse_escape_string(const char *str, int len);
 
   // these are static because m_tagging_on is a class variable
   static void turn_tagging_on() { m_tagging_on = true; }
@@ -125,8 +126,9 @@ private:
 // entire entry as a string without any field substitutions.  To
 // indicate this, the format_str will be NULL.
 static inline LogFormat *
-MakeTextLogFormat(const char * name = "text") {
-  return NEW(new LogFormat(name, NULL /* format_str */));
+MakeTextLogFormat(const char * name = "text")
+{
+  return new LogFormat(name, NULL /* format_str */);
 }
 
 /*-------------------------------------------------------------------------

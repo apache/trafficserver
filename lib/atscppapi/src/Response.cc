@@ -19,7 +19,6 @@
  * @file Response.cc
  */
 #include "atscppapi/Response.h"
-#include "InitializableValue.h"
 #include "atscppapi/noncopyable.h"
 #include "utils_internal.h"
 #include "logging_internal.h"
@@ -35,11 +34,8 @@ namespace atscppapi {
 struct ResponseState: noncopyable {
   TSMBuffer hdr_buf_;
   TSMLoc hdr_loc_;
-  InitializableValue<HttpVersion> version_;
-  InitializableValue<HttpStatus> status_code_;
-  InitializableValue<string> reason_phrase_;
   Headers headers_;
-  ResponseState() : hdr_buf_(NULL), hdr_loc_(NULL), version_(HTTP_VERSION_UNKNOWN, false), status_code_(HTTP_STATUS_UNKNOWN, false) { }
+  ResponseState() : hdr_buf_(NULL), hdr_loc_(NULL) { }
 };
 
 }
@@ -57,61 +53,53 @@ void Response::init(void *hdr_buf, void *hdr_loc) {
 }
 
 HttpVersion Response::getVersion() const {
-  if (state_->version_.isInitialized()) {
-    return state_->version_;
-  }
+  HttpVersion ret_val = HTTP_VERSION_UNKNOWN;
   if (state_->hdr_buf_ && state_->hdr_loc_) {
-    state_->version_ = utils::internal::getHttpVersion(state_->hdr_buf_, state_->hdr_loc_);
+    ret_val = utils::internal::getHttpVersion(state_->hdr_buf_, state_->hdr_loc_);
     LOG_DEBUG("Initializing response version to %d [%s] with hdr_buf=%p and hdr_loc=%p",
-        state_->version_.getValue(), HTTP_VERSION_STRINGS[state_->version_.getValue()].c_str(), state_->hdr_buf_, state_->hdr_loc_);
-    return state_->version_;
+        ret_val, HTTP_VERSION_STRINGS[ret_val].c_str(), state_->hdr_buf_, state_->hdr_loc_);
   }
-  return HTTP_VERSION_UNKNOWN;
+  return ret_val;
 }
 
 HttpStatus Response::getStatusCode() const {
-  if (state_->status_code_.isInitialized()) {
-    return state_->status_code_;
-  }
+  HttpStatus ret_val = HTTP_STATUS_UNKNOWN;
   if (state_->hdr_buf_ && state_->hdr_loc_) {
-    state_->status_code_ = static_cast<HttpStatus>(TSHttpHdrStatusGet(state_->hdr_buf_, state_->hdr_loc_));
+    ret_val = static_cast<HttpStatus>(TSHttpHdrStatusGet(state_->hdr_buf_, state_->hdr_loc_));
     LOG_DEBUG("Initializing response status code to %d with hdr_buf=%p and hdr_loc=%p",
-        state_->status_code_.getValue(), state_->hdr_buf_, state_->hdr_loc_);
-    return state_->status_code_;
+        ret_val, state_->hdr_buf_, state_->hdr_loc_);
   }
-
-  return HTTP_STATUS_UNKNOWN;
+  return ret_val;
 }
 
 void Response::setStatusCode(HttpStatus code) {
   if (state_->hdr_buf_ && state_->hdr_loc_) {
     TSHttpHdrStatusSet(state_->hdr_buf_, state_->hdr_loc_, static_cast<TSHttpStatus>(code));
-    state_->status_code_ = code;
     LOG_DEBUG("Changing response status code to %d with hdr_buf=%p and hdr_loc=%p",
-        state_->status_code_.getValue(), state_->hdr_buf_, state_->hdr_loc_);
+        code, state_->hdr_buf_, state_->hdr_loc_);
   }
 }
 
-const string &Response::getReasonPhrase() const {
-  if (!state_->reason_phrase_.isInitialized() && state_->hdr_buf_ && state_->hdr_loc_) {
+string Response::getReasonPhrase() const {
+  string ret_str;
+  if (state_->hdr_buf_ && state_->hdr_loc_) {
     int length;
     const char *str = TSHttpHdrReasonGet(state_->hdr_buf_, state_->hdr_loc_, &length);
     if (str && length) {
-      state_->reason_phrase_.getValueRef().assign(str, length);
+      ret_str.assign(str, length);
       LOG_DEBUG("Initializing response reason phrase to '%s' with hdr_buf=%p and hdr_loc=%p",
-          state_->reason_phrase_.getValueRef().c_str(), state_->hdr_buf_, state_->hdr_loc_);
+          ret_str.c_str(), state_->hdr_buf_, state_->hdr_loc_);
     } else {
       LOG_ERROR("TSHttpHdrReasonGet returned null string or zero length. str=%p, length=%d, hdr_buf=%p, hdr_loc=%p",
           str, length, state_->hdr_buf_, state_->hdr_loc_);
     }
   }
-  return state_->reason_phrase_; // if not initialized, we will just return an empty string
+  return ret_str; // if not initialized, we will just return an empty string
 }
 
 void Response::setReasonPhrase(const string &phrase) {
   if (state_->hdr_buf_ && state_->hdr_loc_) {
     TSHttpHdrReasonSet(state_->hdr_buf_, state_->hdr_loc_, phrase.c_str(), phrase.length());
-    state_->reason_phrase_ = phrase;
     LOG_DEBUG("Changing response reason phrase to '%s' with hdr_buf=%p and hdr_loc=%p",
         phrase.c_str(), state_->hdr_buf_, state_->hdr_loc_);
   }

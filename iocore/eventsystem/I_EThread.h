@@ -44,7 +44,7 @@
 struct DiskHandler;
 struct EventIO;
 
-class SessionBucket;
+class ServerSessionPool;
 class Event;
 class Continuation;
 
@@ -276,7 +276,7 @@ private:
 public:
   EThread();
   EThread(ThreadType att, int anid);
-  EThread(ThreadType att, Event *e, ink_sem *sem);
+  EThread(ThreadType att, Event *e);
   virtual ~EThread();
 
   Event *schedule_spawn(Continuation *cont);
@@ -321,9 +321,8 @@ public:
 
   ThreadType tt;
   Event *oneevent;              // For dedicated event thread
-  ink_sem *eventsem;            // For dedicated event thread
 
-  SessionBucket* l1_hash;
+  ServerSessionPool* server_session_pool;
 };
 
 /**

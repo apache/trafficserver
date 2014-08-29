@@ -31,27 +31,6 @@
 #ifndef _CORE_UTILS_H_
 #define _CORE_UTILS_H_
 
-
-#if defined(sparc)
-#include  <sys/regset.h>
-#include "DynArray.h"
-
-// to be sorted by lwpid, but lwps are assumed to come in order
-struct lwpTable
-{
-  intptr_t lwpId;
-  intptr_t framep;
-};
-
-// contains local and in registers, frame pointer, and stack base
-struct core_stack_state
-{
-  struct rwindow regs;
-  intptr_t framep;
-  intptr_t stkbase;
-};
-#endif
-
 #if defined(linux)
 #include <stdio.h>
 #include <sys/procfs.h>
@@ -174,10 +153,6 @@ public:
   * outputs: returns the active lwp id
   **********************************************************************/
 
-#if defined(sparc)
-  static intptr_t get_active_thread_Id();
-#endif
-
   /**********************************************************************
   * purpose: returns the base core_stack_state for the given thread id
   * inputs: int threadId, core_stack_state* coress
@@ -185,10 +160,6 @@ public:
   **********************************************************************/
 #if defined(linux)
   static void get_base_frame(intptr_t framep, core_stack_state * coress);
-#endif
-
-#if defined(sparc)
-  static void get_base_frame(intptr_t threadId, core_stack_state * coress);
 #endif
 
   /**********************************************************************

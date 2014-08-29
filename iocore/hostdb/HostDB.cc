@@ -175,7 +175,8 @@ HostDBMD5::refresh() {
     memset(buff, 0, 2);
     memcpy(buff+2, ip._addr._byte, n);
     memset(buff + 2 + n , 0, 2);
-    hash.encodeBuffer(buff, n+4);
+    MD5Context().hash_immediate(hash, buff, n+4);
+//    hash.encodeBuffer(buff, n+4);
   }
 }
 
@@ -386,7 +387,7 @@ HostDBCache::start(int flags)
   // If proxy.config.hostdb.storage_path is not set, use the local state dir. If it is set to
   // a relative path, make it relative to the prefix.
   if (storage_path[0] == '\0') {
-    xptr<char> rundir(RecConfigReadRuntimeDir());
+    ats_scoped_str rundir(RecConfigReadRuntimeDir());
     ink_strlcpy(storage_path, rundir, sizeof(storage_path));
   } else if (storage_path[0] != '/') {
     Layout::relative_to(storage_path, sizeof(storage_path), Layout::get()->prefix, storage_path);
@@ -399,15 +400,15 @@ HostDBCache::start(int flags)
     Warning("Please set 'proxy.config.hostdb.storage_path' or 'proxy.config.local_state_dir'");
   }
 
-  hostDBStore = NEW(new Store);
-  hostDBSpan = NEW(new Span);
+  hostDBStore = new Store;
+  hostDBSpan = new Span;
   hostDBSpan->init(storage_path, storage_size);
   hostDBStore->add(hostDBSpan);
 
   Debug("hostdb", "Opening %s, size=%d", hostdb_filename, hostdb_size);
   if (open(hostDBStore, "hostdb.config", hostdb_filename, hostdb_size, reconfigure, fix, false /* slient */ ) < 0) {
-    xptr<char> rundir(RecConfigReadRuntimeDir());
-    xptr<char> config(Layout::relative_to(rundir, "hostdb.config"));
+    ats_scoped_str rundir(RecConfigReadRuntimeDir());
+    ats_scoped_str config(Layout::relative_to(rundir, "hostdb.config"));
 
     Note("reconfiguring host database");
 
@@ -415,8 +416,8 @@ HostDBCache::start(int flags)
       Debug("hostdb", "unable to unlink %s", (const char *)config);
 
     delete hostDBStore;
-    hostDBStore = NEW(new Store);
-    hostDBSpan = NEW(new Span);
+    hostDBStore = new Store;
+    hostDBSpan = new Span;
     hostDBSpan->init(storage_path, storage_size);
     hostDBStore->add(hostDBSpan);
 
@@ -486,7 +487,7 @@ HostDBProcessor::start(int, size_t)
   // Sync HostDB, if we've asked for it.
   //
   if (hostdb_sync_frequency > 0)
-    eventProcessor.schedule_imm(NEW(new HostDBSyncer));
+    eventProcessor.schedule_imm(new HostDBSyncer);
   return 0;
 }
 
@@ -546,48 +547,45 @@ make_md5(INK_MD5 & md5, const char *hostname, int len, int port, char const* pDN
 }
 
 static bool
-reply_to_cont(Continuation * cont, HostDBInfo * ar, bool is_srv = false)
+reply_to_cont(Continuation * cont, HostDBInfo * r, bool is_srv = false)
 {
-  const char *reason = "none";
-  HostDBInfo *r = ar;
-
   if (r == NULL || r->is_srv != is_srv || r->failed()) {
     cont->handleEvent(is_srv ? EVENT_SRV_LOOKUP : EVENT_HOST_DB_LOOKUP, NULL);
     return false;
   }
 
-  {
-    if (r->reverse_dns) {
-      if (!r->hostname()) {
-        reason = "missing hostname";
-        ink_assert(!"missing hostname");
-        goto Lerror;
-      }
-      Debug("hostdb", "hostname = %s", r->hostname());
+  if (r->reverse_dns) {
+    if (!r->hostname()) {
+      ink_assert(!"missing hostname");
+      cont->handleEvent(is_srv ? EVENT_SRV_LOOKUP : EVENT_HOST_DB_LOOKUP, NULL);
+      Warning("bogus entry deleted from HostDB: missing hostname");
+      hostDB.delete_block(r);
+      return false;
     }
-
-    if (!r->is_srv && r->round_robin) {
-      if (!r->rr()) {
-        reason = "missing round-robin";
-        ink_assert(!"missing round-robin");
-        goto Lerror;
-      }
-      ip_text_buffer ipb;
-      Debug("hostdb", "RR of %d with %d good, 1st IP = %s", r->rr()->rrcount, r->rr()->good, ats_ip_ntop(r->ip(), ipb, sizeof ipb));
-    }
-
-    cont->handleEvent(is_srv ? EVENT_SRV_LOOKUP : EVENT_HOST_DB_LOOKUP, r);
-
-    if (!r->full)
-      goto Ldelete;
-    return true;
+    Debug("hostdb", "hostname = %s", r->hostname());
   }
-Lerror:
-  cont->handleEvent(is_srv ? EVENT_SRV_LOOKUP : EVENT_HOST_DB_LOOKUP, NULL);
-Ldelete:
-  Warning("bogus entry deleted from HostDB: %s", reason);
-  hostDB.delete_block(ar);
-  return false;
+
+  if (!r->is_srv && r->round_robin) {
+    if (!r->rr()) {
+      ink_assert(!"missing round-robin");
+      cont->handleEvent(is_srv ? EVENT_SRV_LOOKUP : EVENT_HOST_DB_LOOKUP, NULL);
+      Warning("bogus entry deleted from HostDB: missing round-robin");
+      hostDB.delete_block(r);
+      return false;
+    }
+    ip_text_buffer ipb;
+    Debug("hostdb", "RR of %d with %d good, 1st IP = %s", r->rr()->rrcount, r->rr()->good, ats_ip_ntop(r->ip(), ipb, sizeof ipb));
+  }
+
+  cont->handleEvent(is_srv ? EVENT_SRV_LOOKUP : EVENT_HOST_DB_LOOKUP, r);
+
+  if (!r->full) {
+    Warning("bogus entry deleted from HostDB: none");
+    hostDB.delete_block(r);
+    return false;
+  }
+
+  return true;
 }
 
 inline HostResStyle
@@ -1095,7 +1093,7 @@ HostDBProcessor::setby_srv(const char *hostname, int len, const char *target, Ho
 
   HostDBContinuation *c = hostDBContAllocator.alloc();
   c->init(md5);
-  strncpy(c->srv_target_name, target, MAXDNAME);
+  ink_strlcpy(c->srv_target_name, target, MAXDNAME);
   c->app.allotment.application1 = app->allotment.application1;
   c->app.allotment.application2 = app->allotment.application2;
   SET_CONTINUATION_HANDLER(c,
@@ -1484,7 +1482,8 @@ HostDBContinuation::dnsEvent(int event, HostEnt * e)
       r = lookup_done(md5.ip, e->ent.h_name, false, ttl_seconds, &e->srv_hosts);
     }
 
-    ink_assert(!r || (r->app.allotment.application1 == 0 && r->app.allotment.application2 == 0));
+    // @c lookup_done should always return a valid value so @a r should be null @c NULL.
+    ink_assert(r && r->app.allotment.application1 == 0 && r->app.allotment.application2 == 0);
 
     if (rr) {
       const int rrsize = HostDBRoundRobin::size(n, e->srv_hosts.srv_hosts_length);
@@ -2459,29 +2458,29 @@ ink_hostdb_init(ModuleVersion v)
 
   RecRegisterRawStat(hostdb_rsb, RECT_PROCESS,
                      "proxy.process.hostdb.total_entries",
-                     RECD_INT, RECP_NULL, (int) hostdb_total_entries_stat, RecRawStatSyncCount);
+                     RECD_INT, RECP_PERSISTENT, (int) hostdb_total_entries_stat, RecRawStatSyncCount);
 
   RecRegisterRawStat(hostdb_rsb, RECT_PROCESS,
                      "proxy.process.hostdb.total_lookups",
-                     RECD_INT, RECP_NULL, (int) hostdb_total_lookups_stat, RecRawStatSyncSum);
+                     RECD_INT, RECP_PERSISTENT, (int) hostdb_total_lookups_stat, RecRawStatSyncSum);
 
   RecRegisterRawStat(hostdb_rsb, RECT_PROCESS,
                      "proxy.process.hostdb.total_hits",
                      RECD_INT, RECP_NON_PERSISTENT, (int) hostdb_total_hits_stat, RecRawStatSyncSum);
 
   RecRegisterRawStat(hostdb_rsb, RECT_PROCESS,
-                     "proxy.process.hostdb.ttl", RECD_FLOAT, RECP_NULL, (int) hostdb_ttl_stat, RecRawStatSyncAvg);
+                     "proxy.process.hostdb.ttl", RECD_FLOAT, RECP_PERSISTENT, (int) hostdb_ttl_stat, RecRawStatSyncAvg);
 
   RecRegisterRawStat(hostdb_rsb, RECT_PROCESS,
                      "proxy.process.hostdb.ttl_expires",
-                     RECD_INT, RECP_NULL, (int) hostdb_ttl_expires_stat, RecRawStatSyncSum);
+                     RECD_INT, RECP_PERSISTENT, (int) hostdb_ttl_expires_stat, RecRawStatSyncSum);
 
   RecRegisterRawStat(hostdb_rsb, RECT_PROCESS,
                      "proxy.process.hostdb.re_dns_on_reload",
-                     RECD_INT, RECP_NULL, (int) hostdb_re_dns_on_reload_stat, RecRawStatSyncSum);
+                     RECD_INT, RECP_PERSISTENT, (int) hostdb_re_dns_on_reload_stat, RecRawStatSyncSum);
 
   RecRegisterRawStat(hostdb_rsb, RECT_PROCESS,
-                     "proxy.process.hostdb.bytes", RECD_INT, RECP_NULL, (int) hostdb_bytes_stat, RecRawStatSyncCount);
+                     "proxy.process.hostdb.bytes", RECD_INT, RECP_PERSISTENT, (int) hostdb_bytes_stat, RecRawStatSyncCount);
 
   ts_host_res_global_init();
 }

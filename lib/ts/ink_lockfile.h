@@ -24,7 +24,6 @@
 #ifndef __INK_LOCKFILE_H__
 #define __INK_LOCKFILE_H__
 
-#include "ink_resource.h"
 #include "ink_defs.h"
 #include "ink_string.h"
 

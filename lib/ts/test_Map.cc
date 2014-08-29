@@ -25,6 +25,80 @@
 
 typedef const char cchar;
 
+struct Item {
+  LINK(Item, m_link);
+  struct Hash {
+    typedef uint32_t ID;
+    typedef uint32_t Key;
+    typedef Item Value;
+    typedef DList(Item, m_link) ListHead;
+
+    static ID hash(Key key) { return key; }
+    static Key key(Value*);
+    static bool equal(Key lhs, Key rhs);
+  };
+
+  uint32_t _key;
+  uint32_t _value;
+
+  Item(uint32_t x) : _key(x), _value(x) {}
+  Item(uint32_t key, uint32_t value) : _key(key), _value(value) {}
+};
+
+uint32_t Item::Hash::key(Value* v) { return v->_key; }
+bool Item::Hash::equal(Key lhs, Key rhs) { return lhs == rhs; }
+
+typedef TSHashTable<Item::Hash> Table;
+
+void test_TSHashTable() {
+  static uint32_t const N = 270;
+  Table t;
+  Item* item;
+  Table::Location loc;
+  
+  item = new Item(1);
+  t.insert(item);
+  for ( uint32_t i = 2 ; i <= N ; ++i ) {
+    t.insert(new Item(i));
+  }
+
+  for ( uint32_t i = 1 ; i <= N ; ++i) {
+    Table::Location l = t.find(i);
+    ink_assert(l.isValid());
+    ink_assert(i == l->_value);
+  }
+
+  ink_assert(!(t.find(N*2).isValid()));
+
+  loc = t.find(N/2 | 1);
+  if (loc)
+    t.remove(loc);
+  else
+    ink_assert(! "Did not find expected value");
+
+  if (! loc)
+    ; // compiler check.
+
+  ink_assert(!(t.find(N/2 | 1).isValid()));
+  
+  for ( uint32_t i = 1 ; i <= N ; i += 2) {
+    t.remove(i);
+  }
+
+  for ( uint32_t i = 1 ; i <= N ; ++i) {
+    Table::Location l = t.find(i);
+    if (1 & i) ink_assert(! l.isValid());
+    else ink_assert(l.isValid());
+  }
+
+  int n = 0;
+  for ( Table::iterator spot = t.begin(), limit = t.end() ; spot != limit ; ++spot ) {
+    ++n;
+    ink_assert((spot->_value & 1) == 0);
+  }
+  ink_assert(n == N/2);
+}
+
 int main(int /* argc ATS_UNUSED */, char **/*argv ATS_UNUSED */) {
   typedef Map<cchar *, cchar *> SSMap;
   typedef MapElem<cchar *, cchar *> SSMapElem;
@@ -117,6 +191,10 @@ int main(int /* argc ATS_UNUSED */, char **/*argv ATS_UNUSED */) {
   Vec<cchar *> chars;
   ssh.get_keys(chars);
   ink_assert(chars.n == 8);
+
+
+  test_TSHashTable();
+
   printf("test_Map PASSED\n");
 }
 

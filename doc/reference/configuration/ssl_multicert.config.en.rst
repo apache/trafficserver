@@ -46,43 +46,58 @@ Each :file:`ssl_multicert.config` line consists of a sequence of
 `key=value` fields that specify how Traffic Server should use a
 particular SSL certificate.
 
-ssl_cert_name=FILENAME
-  The name of the file containing the TLS certificate. `FILENAME` is
-  located relative to the directory specified by the
+ssl_cert_name=FILENAME[,FILENAME ...]
+  The name of the file containing the TLS certificate. *FILENAME*
+  is located relative to the directory specified by the
   :ts:cv:`proxy.config.ssl.server.cert.path` configuration variable.
+  It may also include the intermediate CA certificates, sorted from
+  leaf to root.  At a minimum, the file must include a leaf
+  certificate.
+
+  When running with OpenSSL 1.0.2 or later, this directive can be
+  used to configure the intermediate CA chain on a per-certificate
+  basis.  Multiple chain files are separated by comma character.
+  For example, it is possible able to configure a ECDSA certificate
+  chain and a RSA certificate chain and serve them simultaneously,
+  allowing OpenSSL to determine which certificate would be used
+  when the TLS session cipher suites are negotiated.  Note that the
+  leaf certs in `FILENAME1` and `FILENAME2` must have the same
+  subjects and alternate names. The first certificate is used to
+  to match the client's SNI request.
+
   This is the only field that is required to be present.
 
-dest_ip=ADDRESS
+dest_ip=ADDRESS (optional)
   The IP (v4 or v6) address that the certificate should be presented
   on. This is now only used as a fallback in the case that the TLS
-  SubjectNameIndication extension is not supported. If `ADDRESS` is
+  SubjectNameIndication extension is not supported. If *ADDRESS* is
   `*`, the corresponding certificate will be used as the global
-  default fallback if no other match can be made.  The address may
+  default fallback if no other match can be made. The address may
   contain a port specifier, in which case the corresponding certificate
   will only match for connections accepted on the specified port.
   IPv6 addresses must be enclosed by square brackets if they have
-  a port, eg, [::1]:80.
+  a port, eg, [::1]:80. Care should be taken to make each ADDRESS unique.
 
-ssl_key_name=FILENAME
+ssl_key_name=FILENAME (optional)
   The name of the file containing the private key for this certificate.
   If the key is contained in the certificate file, this field can
-  be omitted, otherwise `FILENAME` is resolved relative to the
+  be omitted, otherwise *FILENAME* is resolved relative to the
   :ts:cv:`proxy.config.ssl.server.private_key.path` configuration variable.
 
-ssl_ca_name=FILENAME
+ssl_ca_name=FILENAME (optional)
   If the certificate is issued by an authority that is not in the
   system CA bundle, additional certificates may be needed to validate
-  the certificate chain. `FILENAME` is resolved relative to the
+  the certificate chain. *FILENAME* is resolved relative to the
   :ts:cv:`proxy.config.ssl.CA.cert.path` configuration variable.
 
-ssl_ticket_enabled=1|0
-  Enable :rfc:`5077` stateless TLS session tickets. To support this,
+ssl_ticket_enabled=1|0 (optional)
+  Enable RFC 5077 stateless TLS session tickets. To support this,
   OpenSSL should be upgraded to version 0.9.8f or higher. This
   option must be set to `0` to disable session ticket support.
 
-ticket_key_name=FILENAME
+ticket_key_name=FILENAME (optional)
   The name of session ticket key file which contains a secret for
-  encrypting and decrypting TLS session tickets. If `FILENAME` is
+  encrypting and decrypting TLS session tickets. If *FILENAME* is
   not an absolute path, it is resolved relative to the
   :ts:cv:`proxy.config.ssl.server.cert.path` configuration variable.
   This option has no effect if session tickets are disabled by the
@@ -93,6 +108,24 @@ ticket_key_name=FILENAME
   ``ssl_ticket_enabled`` and ``ticket_key_name`` options are
   specified, and internal session ticket key is generated. This
   key will be different each time Traffic Server is started.
+
+ssl_key_dialog=builtin|"exec:/path/to/program [args]" (optional)
+  Method used to provide a pass phrase for encrypted private keys.  If the
+  pass phrase is incorrect, SSL negotiation for this dest_ip will fail for
+  clients who attempt to connect.
+  Two options are supported: builtin and exec:
+
+    ``builtin`` - Requests pass phrase via stdin/stdout. User will be
+      provided the ssl_cert_name and be prompted for the pass phrase.
+      Useful for debugging.
+
+    ``exec:`` - Executes program /path/to/program and passes args, if
+      specified, to the program and reads the output from stdout for
+      the pass phrase.  If args are provided then the entire exec: string
+      must be quoted with "" (see examples).  Arguments with white space
+      are supported by single quoting (').  The intent is that this
+      program runs a security check to ensure that the system is not
+      compromised by an attacker before providing the pass phrase.
 
 Certificate Selection
 =====================
@@ -134,6 +167,24 @@ private key name is specified.
     dest_ip=11.1.1.1 ssl_cert_name=server1.pem
     dest_ip=* ssl_cert_name=default.pem
 
+The following example configures Traffic Server to use the ECDSA
+certificate chain ``ecdsa.pem`` or RSA certificate chain ``rsa.pem``
+for all requests.
+
+::
+
+    dest_ip=* ssl_cert_name=ecdsa.pem,rsa.pem
+
+The following example configures Traffic Server to use the ECDSA
+certificate chain ``ecdsa.pem`` or RSA certificate chain ``rsa.pem``
+for all requests, the public key and private key are in separate PEM files.
+Note that the number of files in ssl_key_name must match the files in ssl_cert_name,
+and they should be presented in the same order.
+
+::
+
+    dest_ip=* ssl_cert_name=ecdsa_pub.pem,rsa_pub.pem ssl_key_name=ecdsa_private.pem,rsa_private.pem
+
 The following example configures Traffic Server to use the SSL
 certificate ``server.pem`` and the private key ``serverKey.pem``
 for all requests to port 8443 on IP address 111.11.11.1. The
@@ -153,9 +204,21 @@ key.
     dest_ip=111.11.11.1 ssl_cert_name=server.pem ssl_ticket_enabled=1 ticket_key_name=ticket.key
 
 The following example configures Traffic Server to use the SSL
-certificate ``server.pem`` and disable sessiont ticket for all
+certificate ``server.pem`` and disable session tickets for all
 requests to the IP address 111.11.11.1.
 
 ::
 
     dest_ip=111.11.11.1 ssl_cert_name=server.pem ssl_ticket_enabled=0
+
+The following examples configure Traffic Server to use the SSL
+certificate ``server.pem`` which includes an encrypted private key.
+The external program /usr/bin/mypass will be called on startup with one
+parameter (foo) in the first example, and with two parameters (foo)
+and (ba r) in the second example, the program (mypass) will return the
+pass phrase to decrypt the keys.
+
+::
+
+    ssl_cert_name=server1.pem ssl_key_dialog="exec:/usr/bin/mypass foo"
+    ssl_cert_name=server2.pem ssl_key_dialog="exec:/usr/bin/mypass foo 'ba r'"

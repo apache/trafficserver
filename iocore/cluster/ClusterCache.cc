@@ -1929,7 +1929,7 @@ CacheContinuation::disposeOfDataBuffer(void *d)
     cc->write_cluster_vc->allow_remote_close();
     if (handleDisposeEvent(0, cc) == EVENT_CONT) {
       // Setup retry continuation.
-      retryDisposeOfDataBuffer *retryCont = NEW(new retryDisposeOfDataBuffer(cc));
+      retryDisposeOfDataBuffer *retryCont = new retryDisposeOfDataBuffer(cc);
       eventProcessor.schedule_in(retryCont, HRTIME_MSECONDS(10), ET_CALL);
     }
   }
@@ -3036,7 +3036,7 @@ CacheContinuation::forwardWaitEvent(int event, VConnection * c)
 
   // if the read and write are sucessful, tunnel the read to the write
   if (read_vc && write_vc) {
-    res_data = NEW(new VCTee(read_vc, write_vc, vio));
+    res_data = new VCTee(read_vc, write_vc, vio);
     if (vio) {                  // CACHE_EVENT_OPEN_READ_VIO
       res = event;
       res_data = &((VCTee *) read_vc)->vio;

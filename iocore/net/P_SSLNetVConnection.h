@@ -101,14 +101,24 @@ public:
   virtual ~SSLNetVConnection() { }
 
   SSL *ssl;
-  X509 *client_cert;
-  X509 *server_cert;
+  ink_hrtime sslHandshakeBeginTime;
 
-  static int advertise_next_protocol(SSL *ssl, const unsigned char **out, unsigned int *outlen, void *arg);
+  static int advertise_next_protocol(SSL * ssl, const unsigned char ** out, unsigned * outlen, void *);
+  static int select_next_protocol(SSL * ssl, const unsigned char ** out, unsigned char * outlen, const unsigned char * in, unsigned inlen, void *);
 
   Continuation * endpoint() const {
     return npnEndpoint;
   }
+
+  bool getSSLClientRenegotiationAbort() const
+  {
+    return sslClientRenegotiationAbort;
+  };
+
+  void setSSLClientRenegotiationAbort(bool state)
+  {
+    sslClientRenegotiationAbort = state;
+  };
 
 private:
   SSLNetVConnection(const SSLNetVConnection &);
@@ -116,6 +126,7 @@ private:
 
   bool sslHandShakeComplete;
   bool sslClientConnection;
+  bool sslClientRenegotiationAbort;
   const SSLNextProtocolSet * npnSet;
   Continuation * npnEndpoint;
 };

@@ -59,9 +59,8 @@ data because the continuation may have already been destroyed.
 
 Below is an example of typical usage for an action:
 
-::
+.. code-block:: c
 
-        ::::c
         #include <ts/ts.h>
         static int
         handler (TSCont contp, TSEvent event, void *edata)
@@ -86,7 +85,7 @@ Below is an example of typical usage for an action:
             return 0;
         }
 
-           void
+        void
         TSPluginInit (int argc, const char *argv[])
         {
             TSCont contp;
@@ -120,9 +119,8 @@ schedule itself to get called back in 30 seconds and then initiate the
 net connection. If the timeout expires first, then the plugin would
 cancel the action. The following sample code implements this:
 
-::
+.. code-block:: c
 
-        :::::c
         #include <ts/ts.h>
         static int
         handler (TSCont contp, TSEvent event, void *edata)
@@ -159,7 +157,7 @@ cancel the action. The following sample code implements this:
             return 0;
         }
 
-          void
+        void
         TSPluginInit (int argc, const char *argv[])
         {
             TSCont contp;
@@ -175,6 +173,6 @@ cancel the action. The following sample code implements this:
 
 The action functions are:
 
--  ```TSActionCancel`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a5d49a6addcc9dbdc7f339ee6b73ac0b6>`__
--  ```TSActionDone`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#abe189274ad59911f2a57d345d11bfecb>`__
+-  :c:func:`TSActionCancel`
+-  :c:func:`TSActionDone`
 

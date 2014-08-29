@@ -260,10 +260,6 @@ n_byte_bank(0), byte_bank_size(0), missed(0), missed_msg(false), read_state_t(RE
   iob_iov = new_IOBufferData(BUFFER_SIZE_FOR_XMALLOC(size));
   char *addr = (char *) align_pointer_forward(iob_iov->data(), pagesize);
 
-#if defined(__sparc)
-  if (mprotect(addr, pagesize, PROT_NONE))
-    perror("ClusterState mprotect0 failed");
-#endif
   iov = (IOVec *) (addr + pagesize);
 
   ///////////////////////////////////////////////////
@@ -276,10 +272,6 @@ n_byte_bank(0), byte_bank_size(0), missed(0), missed_msg(false), read_state_t(RE
 
   addr = (char *) align_pointer_forward(msg.iob_descriptor_block->data->data(), pagesize);
 
-#if defined(__sparc)
-  if (mprotect(addr, pagesize, PROT_NONE))
-    perror("ClusterState mprotect failed");
-#endif
   addr = addr + pagesize;
   memset(addr, 0, size - (2 * pagesize));
   msg.descriptor = (Descriptor *) (addr + sizeof(ClusterMsgHeader));
@@ -290,24 +282,11 @@ n_byte_bank(0), byte_bank_size(0), missed(0), missed_msg(false), read_state_t(RE
 ClusterState::~ClusterState()
 {
   mutex = 0;
-#if defined(__sparc)
-  int pagesize = ats_pagesize();
-#endif
   if (iov) {
-#if defined(__sparc)
-    iov = (IOVec *) ((char *) iov - pagesize);
-    if (mprotect((char *) iov, pagesize, (PROT_READ | PROT_WRITE)))
-      perror("~ClusterState mprotect0 failed");
-#endif
     iob_iov = 0;                // Free memory
   }
 
   if (msg.descriptor) {
-#if defined(__sparc)
-    char *a = (char *) msg.descriptor - (sizeof(ClusterMsgHeader) + pagesize);
-    if (mprotect(a, pagesize, (PROT_READ | PROT_WRITE)))
-      perror("~ClusterState mprotect failed");
-#endif
     msg.iob_descriptor_block = 0;       // Free memory
   }
   // Deallocate IO Core structures
@@ -756,7 +735,7 @@ ClusterHandler::machine_down()
 #endif
   machine_offline_APIcallout(ip);
   snprintf(textbuf, sizeof(textbuf), "%hhu.%hhu.%hhu.%hhu:%d", DOT_SEPARATED(ip), port);
-  REC_SignalManager(REC_SIGNAL_MACHINE_DOWN, textbuf);
+  RecSignalManager(REC_SIGNAL_MACHINE_DOWN, textbuf);
   if (net_vc) {
     net_vc->do_io(VIO::CLOSE);
     net_vc = 0;
@@ -818,7 +797,7 @@ ClusterHandler::connectClusterEvent(int event, Event * e)
     //
     MachineList *cc = the_cluster_config();
     if (!machine)
-      machine = NEW(new ClusterMachine(hostname, ip, port));
+      machine = new ClusterMachine(hostname, ip, port);
 #ifdef LOCAL_CLUSTER_TEST_MODE
     if (!(cc && cc->find(ip, port))) {
 #else
@@ -1147,7 +1126,7 @@ failed:
 
         // Signal the manager
         snprintf(textbuf, sizeof(textbuf), "%hhu.%hhu.%hhu.%hhu:%d", DOT_SEPARATED(ip), port);
-        REC_SignalManager(REC_SIGNAL_MACHINE_UP, textbuf);
+        RecSignalManager(REC_SIGNAL_MACHINE_UP, textbuf);
 #ifdef LOCAL_CLUSTER_TEST_MODE
         Note("machine up %hhu.%hhu.%hhu.%hhu:%d, protocol version=%d.%d",
              DOT_SEPARATED(ip), port, clusteringVersion._major, clusteringVersion._minor);
@@ -1156,8 +1135,8 @@ failed:
              DOT_SEPARATED(ip), id, clusteringVersion._major, clusteringVersion._minor);
 #endif
 
-        read_vcs = NEW((new Queue<ClusterVConnectionBase, ClusterVConnectionBase::Link_read_link>[CLUSTER_BUCKETS]));
-        write_vcs = NEW((new Queue<ClusterVConnectionBase, ClusterVConnectionBase::Link_write_link>[CLUSTER_BUCKETS]));
+        read_vcs = new Queue<ClusterVConnectionBase, ClusterVConnectionBase::Link_read_link>[CLUSTER_BUCKETS];
+        write_vcs = new Queue<ClusterVConnectionBase, ClusterVConnectionBase::Link_write_link>[CLUSTER_BUCKETS];
         SET_HANDLER((ClusterContHandler) & ClusterHandler::beginClusterEvent);
 
         // enable schedule_imm() on i/o completion (optimization)
@@ -1172,7 +1151,7 @@ failed:
         int procs_online = ink_number_of_processors();
         int total_callbacks = min(procs_online, MAX_COMPLETION_CALLBACK_EVENTS);
         for (int n = 0; n < total_callbacks; ++n) {
-          callout_cont[n] = NEW(new ClusterCalloutContinuation(this));
+          callout_cont[n] = new ClusterCalloutContinuation(this);
           callout_events[n] = eventProcessor.schedule_every(callout_cont[n], COMPLETION_CALLBACK_PERIOD, ET_NET);
         }
 

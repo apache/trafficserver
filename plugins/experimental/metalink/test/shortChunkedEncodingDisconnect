@@ -1,0 +1,97 @@
+#!/usr/bin/env python
+
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed
+# with this work for additional information regarding copyright
+# ownership.  The ASF licenses this file to you under the Apache
+# License, Version 2.0 (the "License"); you may not use this file
+# except in compliance with the License.  You may obtain a copy of the
+# License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+# implied.  See the License for the specific language governing
+# permissions and limitations under the License.
+
+print '''1..1 shortChunkedEncodingDisconnect
+# The proxy closes the client connection and doesn't send a final
+# chunk if the origin disconnects without sending one, before the
+# proxy sends the response headers'''
+
+from twisted.internet import error, protocol, reactor, tcp
+from twisted.web import http
+
+def callback():
+  print 'not ok 1 - The client was left hanging'
+
+  reactor.stop()
+
+reactor.callLater(1, callback)
+
+class factory(http.HTTPFactory):
+  class protocol(http.HTTPChannel):
+    class requestFactory(http.Request):
+      def requestReceived(ctx, method, target, version):
+
+        ctx.client = None
+        ctx.clientproto = version
+
+        ctx.write('shortChunkedEncodingDisconnect')
+
+        # Disconnect before the proxy sends the response headers
+        ctx.transport.loseConnection()
+
+origin = tcp.Port(0, factory())
+origin.startListening()
+
+print '# Listening on {0}:{1}'.format(*origin.socket.getsockname())
+
+class factory(protocol.ClientFactory):
+  def clientConnectionFailed(ctx, connector, reason):
+
+    print 'Bail out!'
+    reason.printTraceback()
+
+    reactor.stop()
+
+  class protocol(http.HTTPClient):
+    def connectionLost(ctx, reason):
+      try:
+        reactor.stop()
+
+      except error.ReactorNotRunning:
+        pass
+
+      else:
+        print 'ok 1 - The client connection closed'
+
+    def connectionMade(ctx):
+      ctx.transport.write('GET {0}:{1} HTTP/1.1\r\n\r\n'.format(*origin.socket.getsockname()))
+
+    def handleHeader(ctx, k, v):
+      if k.lower() == 'content-length':
+        print 'not ok 1 - Got a Content-Length header vs. a chunked response'
+
+        # Who cares what happens now?
+        reactor.stop()
+
+    # Avoid calling undefined handleResponse() at the end of the
+    # message (if the proxy sent a Content-Length header vs. a chunked
+    # response).  (Override connectionLost() when the proxy closes the
+    # client connection or we stop the reactor.)
+    def handleResponseEnd(ctx):
+      pass
+
+    def handleResponsePart(ctx, data):
+      if data.endswith('0\r\n\r\n'):
+        print 'not ok 1 - Got a final chunk'
+
+        # Who cares what happens now?
+        reactor.stop()
+
+tcp.Connector('localhost', 8080, factory(), 30, None, reactor).connect()
+
+reactor.run()

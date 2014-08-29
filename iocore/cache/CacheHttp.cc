@@ -154,7 +154,7 @@ CacheHTTPInfoVector::print(char *buffer, size_t buf_size, bool temps)
 
       if (temps || !(data[i].alternate.object_key_get() == zero_key)) {
         snprintf(p, buf_size, "[%d %s]", data[i].alternate.id_get(),
-                     CacheKey(data[i].alternate.object_key_get()).string(buf));
+                     CacheKey(data[i].alternate.object_key_get()).toHexStr(buf));
         tmp = strlen(p);
         p += tmp;
         buf_size -= tmp;

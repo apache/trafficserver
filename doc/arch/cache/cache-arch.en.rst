@@ -82,7 +82,7 @@ possible to control which cache spans (and hence, which cache stripes) are conta
 
 The layout and structure of the cache spans, the cache volumes, and the cache stripes that compose them are derived
 entirely from the :file:`storage.config` and :file:`cache.config` and is recomputed from scratch when the
-:process:`traffic_server` is started. Therefore any change to those files can (and almost always will) invalidate the
+:program:`traffic_server` is started. Therefore any change to those files can (and almost always will) invalidate the
 existing cache in its entirety.
 
 Stripe Structure
@@ -402,7 +402,7 @@ The in memory volume directory entries are defined as described below.
    big         unsigned in:2       Size multiplier
    size        unsigned int:6      Size
    tag         unsigned int:12     Partial key (fast collision check)
-   phase       unsigned int:1      Unknown
+   phase       unsigned int:1      Phase of the ``Doc`` (for dir valid check)
    head        unsigned int:1      Flag: first fragment in an object
    pinned      unsigned int:1      Flag: document is pinned
    token       unsigned int:1      Flag: Unknown
@@ -416,7 +416,7 @@ The in memory volume directory entries are defined as described below.
 
 .. _dir-size:
 
-   The *size* and *big* values are used to calculate the approximate size of the span which contains the object. This value is used as the number of bytes to read from storage at the offset value. The exact size is contained in the object metadata in :cpp:class:`Doc` which is consulted once the read has completed. For this reason the approximate size needs to be at least as large as the actual size but can be larger, at the cost of reading the extraneous bytes.
+   The *size* and *big* values are used to calculate the approximate size of the fragment which contains the object. This value is used as the number of bytes to read from storage at the offset value. The exact size is contained in the object metadata in :cpp:class:`Doc` which is consulted once the read has completed. For this reason the approximate size needs to be at least as large as the actual size but can be larger, at the cost of reading the extraneous bytes.
 
    The computation of the approximate size of the fragment is defined as::
 
@@ -482,7 +482,7 @@ probe.
 
 Given an ID, the top half (64 bits) is used as a :ref:`segment <dir-segment>` index, taken modulo the number of segments in
 the directory. The bottom half is used as a :ref:`bucket <dir-bucket>` index, taken modulo the number of buckets per
-segment. The :arg:`last_collision` value is used to mark the last matching entry returned by `dir_probe`.
+segment. The :arg:`last_collision` value is used to mark the last matching entry returned by :cpp:func:`dir_probe`.
 
 After computing the appropriate bucket, the entries in that bucket are searched to find a match. In this case a match is
 detected by comparison of the bottom 12 bits of the cache ID (the *cache tag*). The search starts at the base entry for
@@ -551,7 +551,15 @@ The checks that are done are
       In addition if a TTL is set for rule that matches in :file:`cache.config` then this check is not done.
 
    Range Request
-      Cache valid only if :ts:cv:`proxy.config.http.cache.range.lookup` in :file:`records.config` is non-zero. This does not mean the range request can be cached, only that it might be satisfiable from the cache.
+      Cache valid only if :ts:cv:`proxy.config.http.cache.range.lookup` in
+      :file:`records.config` is non-zero. This does not mean the range request
+	    can be cached, only that it might be satisfiable from the
+	    cache. In addition, :ts:cv:`proxy.config.http.cache.range.write`
+	    can be set to try to force a write on a range request. This
+	    probably has little value at the moment, but if for example the
+	    origin server ignores the ``Range:`` header, this option can allow
+	    for the response to be cached. It is disabled by default, for
+	    best performance.
 
 A plugin can call :c:func:`TSHttpTxnReqCacheableSet()` to force the request to be viewed as cache valid.
 
@@ -589,7 +597,7 @@ Cache read starts after a successful `cache lookup`_. At this point the first ``
 
 .. sidebar:: Read while write
 
-   There is provision in the code to support "read while write", that is serving an object from cache in one transaction while it is being written in another. It is unclear to me if this actually works. It must specifically enabled in :file:`records.config` and if not, a cache read will fail if the object is currently be written or updated.
+   There is provision in the code to support "read while write", that is serving an object from cache in one transaction while it is being written in another. Several settings are needed for it to be used. See :ref:`reducing-origin-server-requests-avoiding-the-thundering-herd`. It must specifically enabled in :file:`records.config` and if not, a cache read will fail if the object is currently be written or updated.
 
 At this point an alternate for the object is selected. This is done by comparing the client request to the stored response headers, but it can be controlled by a plugin using ``TS_HTTP_ALT_SELECT_HOOK``.
 
@@ -599,7 +607,7 @@ Most of this work is done in::
 
    HttpTransact::what_is_document_freshness
 
-First the TTL (time to live) value which can be set in:file:`cache.config` is checked if the request matches the configuration file line. This is done based on when the object was placed in cache, not on any data in the headers.
+First the TTL (time to live) value which can be set in :file:`cache.config` is checked if the request matches the configuration file line. This is done based on when the object was placed in cache, not on any data in the headers.
 
 Next an internal flag ("needs-revalidate-once") is checked if the :file:`cache.config` value "revalidate-after" is not set, and if set the object is marked "stale".
 
@@ -633,7 +641,7 @@ Cache Write
 
 Writing to cache is handled by an instance of the class :cpp:class:`CacheVC`. This is a virtual connection which
 receives data and writes it to cache, acting as a sink. For a standard transaction data transfers between virtual
-connections (*VConns*) are handled by :cpp:class:HttpTunnel. Writing to cache is done by attaching a ``CacheVC``
+connections (*VConns*) are handled by :cpp:class:`HttpTunnel`. Writing to cache is done by attaching a ``CacheVC``
 instance as a tunnel consumer. It therefore operates in parallel with the virtual connection that transfers data to the
 client. The data does not flow to the cache and then to the client, it is split and goes both directions in parallel.
 This avoids any data synchronization issues between the two.
@@ -686,7 +694,7 @@ Aggregation Buffer
 Disk writes to cache are handled through an *aggregation buffer*. There is one for each :cpp:class:`Vol` instance. To
 minimize the number of system calls data is written to disk in units of roughly :ref:`target fragment size
 <target-fragment-size>` bytes. The algorithm used is simple - data is piled up in the aggregation buffer until no more
-will fit without going over the targer fragment size, at which point the buffer is written to disk and the volume
+will fit without going over the target fragment size, at which point the buffer is written to disk and the volume
 directory entries for objects with data in the buffer are updated with the actual disk locations for those objects
 (which are determined by the write to disk action). After the buffer is written it is cleared and process repeats. There
 is a special lookup table for the aggregation buffer so that object lookup can find cache data in that memory.
@@ -718,7 +726,7 @@ the evacuation bucket (array element) that corresponds to the evacuation region 
 although no ordering per bucket is enforced in the linked list (this sorting is handled during evacuation). Objects are
 evacuated by specifying the first or earliest fragment in the evactuation block. The evactuation operation will then
 continue the evacuation for subsequent fragments in the object by adding those fragments in evacuation blocks. Note that
-the actual evacuation of those fragments is delayed until the write cursor reaches the fragments, it is not ncessarily
+the actual evacuation of those fragments is delayed until the write cursor reaches the fragments, it is not necessarily
 done at the time the first / earliest fragment is evacuated.
 
 There are two types of evacuations, reader based and forced. The ``EvacuationBlock`` has a reader count to track this.
@@ -736,7 +744,7 @@ buffer.
 
 When no more cache virtual connections can be processed (due to an empty queue or the aggregation buffer filling) then
 :cpp:member:`Vol::evac_range` is called to clear the range to be overwritten plus an additional
-:ts:const:`EVACUATION_SIZE` range. The buckets covering that range are checked. If there are any items in the buckets a
+:const:`EVACUATION_SIZE` range. The buckets covering that range are checked. If there are any items in the buckets a
 new cache virtual connection (a "doc evacuator") is created and used to read the evacuation item closest to the write
 cursor (i.e. with the smallest offset in the stripe) instead of the aggregation write proceeding. When the read
 completes it is checked for validity and if valid, the cache virtual connection for it is placed at the front of the
@@ -794,14 +802,14 @@ basically four types,
 * Disk
 * Raw device
 
-After creating all the `Span` instances they are grouped by device id to internal linked lists attached to the
+After creating all the :cpp:class:`Span` instances they are grouped by device id to internal linked lists attached to the
 :cpp:member:`Store::disk` array [#]_. Spans that refer to the same directory, disk, or raw device are coalesced in to a
 single span. Spans that refer to the same file with overlapping offsets are also coalesced [#]_. This is all done in
 :c:func:`ink_cache_init()` called during startup.
 
 .. note:: The span logic is also used by the HostDB and more than one otherwise inexplicable feature is provided by the span logic for that module.
 
-After configuration initialization the cache processor is started by calling :ccp:func:`CacheProcessor::start()`. This
+After configuration initialization the cache processor is started by calling :cpp:func:`CacheProcessor::start()`. This
 does a number of things.
 
 For each valid span, an instance of :cpp:class:`CacheDisk` is created. This class is a continuation and so can be used
@@ -840,7 +848,7 @@ While this procedure is determinstic it is sensitive to initial conditions, incl
    are in the ram cache.
 
 .. [#] This linked list is mostly ignored in later processing, causing all but one file or directory storage units on
-   the same device to be ignored. See `TS-1869 <https://issues.apache.org/jira/browse/TS-1869>`_.
+   the same device to be ignored. See TS-1869.
 
 .. [#] It is unclear to me how that can happen, as the offsets are computed later and should all be zero at the time the
    spans are coalesced, and as far as I can tell the sort / coalesce is only done during initialization.

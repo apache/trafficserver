@@ -35,6 +35,7 @@
 #include "LogBuffer.h"
 #include "LogAccess.h"
 #include "LogFilter.h"
+#include "ts/Vec.h"
 
 /*-------------------------------------------------------------------------
   LogObject
@@ -81,7 +82,9 @@ class LogBufferManager
     size_t preproc_buffers(LogBufferSink *sink);
 };
 
-class LogObject
+// LogObject is atomically reference counted, and the reference count is always owned by
+// one or more LogObjectManagers.
+class LogObject : public RefCountObj
 {
 public:
   enum LogObjectFlags
@@ -99,7 +102,7 @@ public:
 
   LogObject(const LogFormat *format, const char *log_dir, const char *basename,
                  LogFileFormat file_format, const char *header,
-                 int rolling_enabled, int flush_threads,
+                 Log::RollingEnabledValues rolling_enabled, int flush_threads,
                  int rolling_interval_sec = 0, int rolling_offset_hr = 0,
                  int rolling_size_mb = 0, bool auto_created = false)
     TS_NONNULL(2 /* format is required */);
@@ -116,7 +119,7 @@ public:
   int log(LogAccess * lad, const char *text_entry = NULL);
   int va_log(LogAccess * lad, const char * fmt, va_list ap);
 
-  int roll_files(long time_now = 0);
+  unsigned roll_files(long time_now = 0);
 
   int add_to_flush_queue(LogBuffer * buffer)
   {
@@ -160,7 +163,7 @@ public:
 
   void set_log_file_header(const char *header) { m_logFile->change_header(header); }
 
-  void set_rolling_enabled(int rolling_enabled)
+  void set_rolling_enabled(Log::RollingEnabledValues rolling_enabled)
   {
     _setup_rolling(rolling_enabled, m_rolling_interval_sec, m_rolling_offset_hr, m_rolling_size_mb);
   }
@@ -221,7 +224,7 @@ private:
   unsigned int m_flags;         // diverse object flags (see above)
   uint64_t m_signature;         // INK_MD5 signature for object
 
-  int m_rolling_enabled;
+  Log::RollingEnabledValues m_rolling_enabled;
   int m_flush_threads;          // number of flush threads
   int m_rolling_interval_sec;   // time interval between rolls
   // 0 means no rolling
@@ -230,15 +233,13 @@ private:
   long m_last_roll_time;        // the last time this object rolled
   // its files
 
-  int m_ref_count;
-
   volatile head_p m_log_buffer;     // current work buffer
   unsigned m_buffer_manager_idx;
   LogBufferManager *m_buffer_manager;
 
   void generate_filenames(const char *log_dir, const char *basename, LogFileFormat file_format);
-  void _setup_rolling(int rolling_enabled, int rolling_interval_sec, int rolling_offset_hr, int rolling_size_mb);
-  int _roll_files(long interval_start, long interval_end);
+  void _setup_rolling(Log::RollingEnabledValues rolling_enabled, int rolling_interval_sec, int rolling_offset_hr, int rolling_size_mb);
+  unsigned _roll_files(long interval_start, long interval_end);
 
   LogBuffer *_checkout_write(size_t * write_offset, size_t write_size);
 
@@ -257,13 +258,16 @@ class TextLogObject:public LogObject
 public:
   inkcoreapi TextLogObject(const char *name, const char *log_dir,
                            bool timestamps, const char *header,
-                           int rolling_enabled, int flush_threads,
+                           Log::RollingEnabledValues rolling_enabled,
+                           int flush_threads,
                            int rolling_interval_sec,
                            int rolling_offset_hr,
                            int rolling_size_mb);
 
   inkcoreapi int write(const char *format, ...) TS_PRINTFLIKE(2, 3);
   inkcoreapi int va_write(const char *format, va_list ap);
+
+  static const LogFormat * textfmt;
 };
 
 /*-------------------------------------------------------------------------
@@ -309,28 +313,19 @@ public:
 
 private:
 
-  LogObject ** _objects;      // array of objects managed
-  size_t _numObjects;           // the number of objects managed
-  size_t _maxObjects;           // the maximum capacity of the array
-  // of objects managed
+  typedef Vec<LogObject *> LogObjectList;
 
-  LogObject **_APIobjects;      // array of API objects
-  size_t _numAPIobjects;        // the number of API objects managed
-  size_t _maxAPIobjects;        // the maximum capacity of the array
-  // of API objects managed
+  LogObjectList _objects;         // array of configured objects
+  LogObjectList _APIobjects;      // array of API objects
 
 public:
-    ink_mutex * _APImutex;      // synchronize access to array of API
-  // objects
+    ink_mutex * _APImutex;      // synchronize access to array of API objects
 private:
 
   int _manage_object(LogObject * log_object, bool is_api_object, int maxConflicts);
-  static bool _has_internal_filename_conflict(const char *filename, LogObject ** objects, int numObjects);
+  static bool _has_internal_filename_conflict(const char *filename, LogObjectList& objects);
   int _solve_filename_conflicts(LogObject * log_obj, int maxConflicts);
   int _solve_internal_filename_conflicts(LogObject * log_obj, int maxConflicts, int fileNum = 0);
-  void _add_object(LogObject * object);
-  void _add_api_object(LogObject * object);
-  int _roll_files(long time_now, bool roll_only_if_needed);
 
 public:
   LogObjectManager();
@@ -356,9 +351,8 @@ public:
 
   LogObject *get_object_with_signature(uint64_t signature);
   void check_buffer_expiration(long time_now);
-  size_t get_num_objects() const { return _numObjects; }
 
-  int roll_files(long time_now);
+  unsigned roll_files(long time_now);
 
   int log(LogAccess * lad);
   void display(FILE * str = stdout);
@@ -368,9 +362,9 @@ public:
   void open_local_pipes();
   void transfer_objects(LogObjectManager & mgr);
 
-  bool has_api_objects() const  { return (_numAPIobjects > 0); }
-
-  size_t get_num_collation_clients() const;
+  bool has_api_objects() const  { return _APIobjects.length() > 0; }
+  unsigned get_num_objects() const { return _objects.length(); }
+  unsigned get_num_collation_clients() const;
 };
 
 inline bool

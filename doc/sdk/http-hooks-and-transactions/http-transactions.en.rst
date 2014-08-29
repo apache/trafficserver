@@ -32,9 +32,8 @@ reference back to the HTTP session that created it.
 The sample code below illustrates how to register locally to a
 transaction and associate data to the transaction.
 
-::
+.. code-block:: c
 
-    :::c
     /*
     * Simple plugin that illustrates:
     * - how to register locally to a transaction
@@ -149,57 +148,56 @@ transaction and associate data to the transaction.
        TSHttpHookAdd(TS_HTTP_TXN_START_HOOK, contp);
     }
 
-See `Adding Hooks <adding-hooks>`__ for background about HTTP
-transactions and HTTP hooks, as well as `HTTP Hooks and
-Transactions <../http-hooks-and-transactions>`__ Also see the [HTTP
-Transaction State Diagram
-](HTTPHooksAndTransactions.html(../http-hooks-and-transactions#HHTTPTxStateDiag)
+See :doc:`Adding Hooks <adding-hooks.en>` for background about HTTP
+transactions and HTTP hooks, as well as :doc:`HTTP Hooks and
+Transactions <../http-hooks-and-transactions.en>` Also see the :ref:`HTTP
+Transaction State Diagram <http-txn-state-diagram>`
 for an illustration of the steps involved in a typical HTTP transaction.
 
 The HTTP transaction functions are:
 
--  ```TSHttpTxnCacheLookupStatusGet`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#ad26c77fa4ba251fb8ccbbd1505a74687>`__
+-  :c:func:`TSHttpTxnCacheLookupStatusGet`
 
--  ```TSHttpTxnCachedReqGet`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#a889b626142157077f4f3cfe479e8b8e2>`__
+-  :c:func:`TSHttpTxnCachedReqGet`
    - Note that it is an error to modify cached headers.
 
--  ```TSHttpTxnCachedRespGet`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#ae8f24b8dabb5008ad11620a11682ffd6>`__
+-  :c:func:`TSHttpTxnCachedRespGet`
    - Note that it is an error to modify cached headers.
 
--  `TSHttpTxnClientIncomingPortGet <link/to/doxygen>`__
+-  :c:func:`TSHttpTxnClientIncomingPortGet`
 
--  `TSHttpTxnClientIPGet <link/to/doxygen>`__
+-  :c:func:`TSHttpTxnClientIPGet`
 
--  `TSHttpTxnClientRemotePortGet <link/to/doxygen>`__
+-  :c:func:`TSHttpTxnClientRemotePortGet`
 
--  ```TSHttpTxnClientReqGet`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#acca66f22d0f87bf8f08478ed926006a5>`__
+-  :c:func:`TSHttpTxnClientReqGet`
    - Plugins that must read client request headers use this call to
    retrieve the HTTP header.
 
--  ```TSHttpTxnClientRespGet`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#a92349c8363f72b1f6dfed3ae80901fff>`__
+-  :c:func:`TSHttpTxnClientRespGet`
 
--  ```TSHttpTxnErrorBodySet`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#ad7efc431279dc97de4b50a58d4ed33c1>`__
+-  :c:func:`TSHttpTxnErrorBodySet`
 
--  ```TSHttpTxnHookAdd`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a10382b88145bbfba0fa9d8ed6402f4b1>`__
+-  :c:func:`TSHttpTxnHookAdd`
 
--  ```TSHttpTxnNextHopAddrGet`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#aa0118beabfefe35d2642f007ac7afa97>`__
+-  :c:func:`TSHttpTxnNextHopAddrGet`
 
--  ```TSHttpTxnParentProxySet`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a2a1260b900b665d38a262544446b886c>`__
+-  :c:func:`TSHttpTxnParentProxySet`
 
--  ```TSHttpTxnReenable`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#ac367347e02709ac809994dfb21d3288a>`__
+-  :c:func:`TSHttpTxnReenable`
 
--  ```TSHttpTxnServerAddrGet`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a63917ec11275c4f1ed559362865cd65f>`__
+-  :c:func:`TSHttpTxnServerAddrGet`
 
--  ```TSHttpTxnServerReqGet`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#aac2343a8b47bf9150f3ff7cd4e692d57>`__
+-  :c:func:`TSHttpTxnServerReqGet`
 
--  ```TSHttpTxnServerRespGet`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a39e8bfb199eadabb54c067ff25a9a400>`__
+-  :c:func:`TSHttpTxnServerRespGet`
 
--  ```TSHttpTxnSsnGet`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#a8c5190bd2e940ef2d1969a5be65f0edd>`__
+-  :c:func:`TSHttpTxnSsnGet`
 
--  ```TSHttpTxnTransformedRespCache`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#a213b584cd04001e8f8ad509d187a4103>`__
+-  :c:func:`TSHttpTxnTransformedRespCache`
 
--  ```TSHttpTxnTransformRespGet`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a4fc46502733adcff09587a436e300114>`__
+-  :c:func:`TSHttpTxnTransformRespGet`
 
--  ```TSHttpTxnUntransformedRespCache`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#a8b9c0e61cbcb251417df0d06ae6c4408>`__
+-  :c:func:`TSHttpTxnUntransformedRespCache`
 
 

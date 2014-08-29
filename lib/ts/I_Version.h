@@ -35,7 +35,16 @@ struct VersionNumber
 {
   short int ink_major;          // incompatible change
   short int ink_minor;          // minor change, not incompatible
+
+  VersionNumber() {}
+  VersionNumber(short int major, short int minor) : ink_major(major), ink_minor(minor) {}
 };
+
+inline bool operator < (VersionNumber const& lhs, VersionNumber const& rhs) {
+  return lhs.ink_major < rhs.ink_major ||
+    (lhs.ink_major == rhs.ink_major && lhs.ink_minor < rhs.ink_minor)
+    ;
+}
 
 struct Version
 {

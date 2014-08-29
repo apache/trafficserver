@@ -23,6 +23,7 @@
 #include "ink_defs.h"
 
 #include "ts/ts.h"
+#include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
 #include <stdio.h>
@@ -32,6 +33,8 @@
 #define PLUGIN_NAME "remap_stats"
 #define DEBUG_TAG PLUGIN_NAME
 
+#define MAX_STAT_LENGTH (1<<8)
+
 typedef struct
 {
     bool post_remap_host;
@@ -40,16 +43,10 @@ typedef struct
     TSMutex stat_creation_mutex;
 } config_t;
 
-typedef struct
-{
-    char *hostname;
-    bool remap_success;
-} txn_data_t;
-
 static void
 stat_add(char *name, TSMgmtInt amount, TSStatPersistence persist_type, TSMutex create_mutex)
 {
-    int stat_id = -1, *statp;
+    int stat_id = -1;
     ENTRY search, *result = NULL;
     static __thread struct hsearch_data stat_cache;
     static __thread bool hash_init = false;
@@ -62,6 +59,7 @@ stat_add(char *name, TSMgmtInt amount, TSStatPersistence persist_type, TSMutex c
     }
 
     search.key = name;
+    search.data = 0;
     hsearch_r(search, FIND, &result, &stat_cache);
 
     if (unlikely(result == NULL))
@@ -80,15 +78,16 @@ stat_add(char *name, TSMgmtInt amount, TSStatPersistence persist_type, TSMutex c
         }
         TSMutexUnlock(create_mutex);
 
-        search.key = TSstrdup(name);
-        statp = TSmalloc(sizeof(int));
-        *statp = stat_id;
-        search.data = (void *) statp;
-        hsearch_r(search, ENTER, &result, &stat_cache);
-        TSDebug(DEBUG_TAG, "Cached stat_name: %s stat_id: %d", name, stat_id);
+        if (stat_id >= 0)
+        {
+            search.key = TSstrdup(name);
+            search.data = (void *)((intptr_t)stat_id);
+            hsearch_r(search, ENTER, &result, &stat_cache);
+            TSDebug(DEBUG_TAG, "Cached stat_name: %s stat_id: %d", name, stat_id);
+        }
     }
     else
-        stat_id = *((int *) result->data);
+        stat_id = (int)((intptr_t)result->data);
 
     if (likely(stat_id >= 0))
         TSStatIntIncrement(stat_id, amount);
@@ -118,30 +117,16 @@ get_effective_host(TSHttpTxn txn)
     return tmp;
 }
 
-static char *
-create_stat_name(char *hostname, char *basename)
-{
-    char *stat_name;
-    size_t stat_len;
-
-    stat_len = strlen(hostname) + strlen(basename) + strlen(PLUGIN_NAME) + 3 + strlen("plugin.");
-    stat_name = TSmalloc(stat_len * sizeof(char));
-    snprintf(stat_name, stat_len, "plugin.%s.%s.%s", PLUGIN_NAME, hostname, basename);
-    return stat_name;
-}
-
 static int
 handle_read_req_hdr(TSCont cont, TSEvent event ATS_UNUSED, void *edata)
 {
     TSHttpTxn txn = (TSHttpTxn) edata;
     config_t *config;
-    txn_data_t *txnd;
+    void *txnd;
 
     config = (config_t *) TSContDataGet(cont);
-    txnd = TSmalloc(sizeof(txn_data_t));
-    txnd->remap_success = false;
-    txnd->hostname = get_effective_host(txn);
-    TSHttpTxnArgSet(txn, config->txn_slot, (void *) txnd);
+    txnd = (void *) get_effective_host(txn); // low bit left 0 because we do not know that remap succeeded yet
+    TSHttpTxnArgSet(txn, config->txn_slot, txnd);
 
     TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
     TSDebug(DEBUG_TAG, "Read Req Handler Finished");
@@ -153,21 +138,16 @@ handle_post_remap(TSCont cont, TSEvent event ATS_UNUSED, void *edata)
 {
     TSHttpTxn txn = (TSHttpTxn) edata;
     config_t *config;
-    txn_data_t *txnd;
+    void *txnd = (void *) 0x01; // low bit 1 because we are post remap and thus success
 
     config = (config_t *) TSContDataGet(cont);
 
     if (config->post_remap_host)
-    {
-        txnd = TSmalloc(sizeof(txn_data_t));
-        txnd->remap_success = true;
-        txnd->hostname = NULL;
-        TSHttpTxnArgSet(txn, config->txn_slot, (void *) txnd);
-    }
+        TSHttpTxnArgSet(txn, config->txn_slot, txnd);
     else
     {
-        txnd = (txn_data_t *) TSHttpTxnArgGet(txn, config->txn_slot);
-        txnd->remap_success = true;
+        txnd = (void *) ((uintptr_t)txnd | (uintptr_t)TSHttpTxnArgGet(txn, config->txn_slot)); // We need the hostname pre-remap
+        TSHttpTxnArgSet(txn, config->txn_slot, txnd);
     }
 
     TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
@@ -175,80 +155,82 @@ handle_post_remap(TSCont cont, TSEvent event ATS_UNUSED, void *edata)
     return 0;
 }
 
+#define CREATE_STAT_NAME(s,h,b) snprintf(s, MAX_STAT_LENGTH, "plugin.%s.%s.%s", PLUGIN_NAME, h, b);
+
 static int
 handle_txn_close(TSCont cont, TSEvent event ATS_UNUSED, void *edata)
 {
     TSHttpTxn txn = (TSHttpTxn) edata;
     config_t *config;
-    txn_data_t *txnd;
-    TSHttpStatus status_code = 0;
+    void *txnd;
+    int status_code = 0;
     TSMBuffer buf;
     TSMLoc hdr_loc;
     uint64_t out_bytes, in_bytes;
-    char *remap, *stat_name;
+    char *remap, *hostname;
+    char *unknown = "unknown";
+    char stat_name[MAX_STAT_LENGTH];
 
     config = (config_t *) TSContDataGet(cont);
-    txnd = (txn_data_t *) TSHttpTxnArgGet(txn, config->txn_slot);
+    txnd = TSHttpTxnArgGet(txn, config->txn_slot);
+
+    hostname = (char *) ((uintptr_t)txnd & (~((uintptr_t) 0x01))); // Get hostname
 
     if (txnd)
     {
-        if (txnd->remap_success)
+        if ((uintptr_t) txnd & 0x01) // remap succeeded?
         {
             if (!config->post_remap_host)
-                remap = txnd->hostname;
+                remap = hostname;
             else
                 remap = get_effective_host(txn);
 
             if (!remap)
-                remap = TSstrdup("unknown");
+                remap = unknown;
 
             in_bytes = TSHttpTxnClientReqHdrBytesGet(txn);
             in_bytes += TSHttpTxnClientReqBodyBytesGet(txn);
 
-            stat_name = create_stat_name(remap, "in_bytes");
+            CREATE_STAT_NAME(stat_name, remap, "in_bytes")
             stat_add(stat_name, (TSMgmtInt) in_bytes, config->persist_type, config->stat_creation_mutex);
-            TSfree(stat_name);
 
             out_bytes = TSHttpTxnClientRespHdrBytesGet(txn);
             out_bytes += TSHttpTxnClientRespBodyBytesGet(txn);
 
-            stat_name = create_stat_name(remap, "out_bytes");
+            CREATE_STAT_NAME(stat_name, remap, "out_bytes")
             stat_add(stat_name, (TSMgmtInt) out_bytes, config->persist_type, config->stat_creation_mutex);
-            TSfree(stat_name);
 
             if (TSHttpTxnClientRespGet(txn, &buf, &hdr_loc) == TS_SUCCESS)
             {
-                status_code = TSHttpHdrStatusGet(buf, hdr_loc);
+                status_code = (int)TSHttpHdrStatusGet(buf, hdr_loc);
                 TSHandleMLocRelease(buf, TS_NULL_MLOC, hdr_loc);
 
-                if ((status_code >= 200) && (status_code <= 299))
-                    stat_name = create_stat_name(remap, "status_2xx");
-                else if ((status_code >= 300) && (status_code <= 399))
-                    stat_name = create_stat_name(remap, "status_3xx");
-                else if ((status_code >= 400) && (status_code <= 499))
-                    stat_name = create_stat_name(remap, "status_4xx");
-                else if ((status_code >= 500) && ((int)status_code <= 599))
-                    stat_name = create_stat_name(remap, "status_5xx");
+                if (status_code < 200)
+                    CREATE_STAT_NAME(stat_name, remap, "status_other")
+                else if (status_code <= 299)
+                    CREATE_STAT_NAME(stat_name, remap, "status_2xx")
+                else if (status_code <= 399)
+                    CREATE_STAT_NAME(stat_name, remap, "status_3xx")
+                else if (status_code <= 499)
+                    CREATE_STAT_NAME(stat_name, remap, "status_4xx")
+                else if (status_code <= 599)
+                    CREATE_STAT_NAME(stat_name, remap, "status_5xx")
                 else
-                    stat_name = create_stat_name(remap, "status_other");
+                    CREATE_STAT_NAME(stat_name, remap, "status_other")
 
                 stat_add(stat_name, 1, config->persist_type, config->stat_creation_mutex);
-                TSfree(stat_name);
             }
             else
             {
-                stat_name = create_stat_name(remap, "status_unknown");
+                CREATE_STAT_NAME(stat_name, remap, "status_unknown")
                 stat_add(stat_name, 1, config->persist_type, config->stat_creation_mutex);
-                TSfree(stat_name);
             }
 
-            TSfree(remap);
-
+            if (remap != unknown)
+                TSfree(remap);
         }
-        else if (txnd->hostname)
-            TSfree(txnd->hostname);
-
-        TSfree(txnd);
+        else if (hostname)
+            TSfree(hostname);
     }
 
     TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);

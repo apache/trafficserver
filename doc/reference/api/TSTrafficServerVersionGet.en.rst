@@ -20,6 +20,8 @@
 TSTrafficServerVersionGet
 =========================
 
+Return Traffic Server version information.
+
 Synopsis
 ========
 

@@ -51,33 +51,6 @@
 #include "LogConfig.h"
 #include "Log.h"
 
-// the FILESIZE_SAFE_THRESHOLD_FACTOR is used to compute the file size
-// limit as follows:
-//
-// size_limit = system_filesize_limit -
-//              FILESIZE_SAFE_THRESHOLD_FACTOR * log_buffer_size
-//
-// where system_filesize_limit is the current filesize limit as returned by
-// getrlimit(), and log_buffer_size is the config. value for the size of
-// a LogBuffer.
-//
-// This means that a file reaches its size_limit once it has no room to fit
-// FILESIZE_SAFE_THRESHOLD_FACTOR LogBuffers.
-//
-// A LogBuffer, when converted to ascii, can produce more than
-// log_buffer_size bytes, depending on the type of the logging fields it
-// stores. String fields don't change size, but integer fields do.
-// A 32 bit integer has a maximum value of 10 digits, which means it
-// can grow by a factor of 10/4 = 2.5 when translated to ascii.
-// Assuming all fields in a LogBuffer are (32 bit) integers, the maximum
-// amount of ascii data a LogBuffer can produce is 2.5 times its size, so
-// we should make sure we can always write this amount to a file.
-//
-// However, to be extra safe, we should set the
-// FILESIZE_SAFE_THRESHOLD_FACTOR higher than 3
-//
-static const int FILESIZE_SAFE_THRESHOLD_FACTOR = 10;
-
 /*-------------------------------------------------------------------------
   LogFile::LogFile
 
@@ -854,7 +827,7 @@ MetaInfo::_read_from_file()
 {
   _flags |= DATA_FROM_METAFILE;
   int fd = open(_filename, O_RDONLY);
-  if (fd <= 0) {
+  if (fd < 0) {
     Warning("Could not open metafile %s for reading: %s", _filename, strerror(errno));
   } else {
     _flags |= FILE_OPEN_SUCCESSFUL;

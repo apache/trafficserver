@@ -1,0 +1,101 @@
+#!/usr/bin/env python
+
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed
+# with this work for additional information regarding copyright
+# ownership.  The ASF licenses this file to you under the Apache
+# License, Version 2.0 (the "License"); you may not use this file
+# except in compliance with the License.  You may obtain a copy of the
+# License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+# implied.  See the License for the specific language governing
+# permissions and limitations under the License.
+
+print '''1..1 contentLength
+# The proxy forwards the Content-Length header to the client'''
+
+from twisted.internet import error, protocol, reactor, tcp
+from twisted.web import http
+
+def callback():
+  print 'not ok 1 - Why didn\'t the test finish yet?'
+
+  reactor.stop()
+
+reactor.callLater(1, callback)
+
+class factory(http.HTTPFactory):
+  class protocol(http.HTTPChannel):
+    class requestFactory(http.Request):
+      def requestReceived(ctx, method, target, version):
+
+        ctx.client = None
+        ctx.clientproto = version
+
+        ctx.setHeader('Content-Length', 13)
+        ctx.write('contentLength')
+
+origin = tcp.Port(0, factory())
+origin.startListening()
+
+print '# Listening on {0}:{1}'.format(*origin.socket.getsockname())
+
+class factory(protocol.ClientFactory):
+  def clientConnectionFailed(ctx, connector, reason):
+
+    print 'Bail out!'
+    reason.printTraceback()
+
+    reactor.stop()
+
+  class protocol(http.HTTPClient):
+    def connectionLost(ctx, reason):
+      try:
+        reactor.stop()
+
+      except error.ReactorNotRunning:
+        pass
+
+      else:
+        print 'not ok 1 - Did the proxy crash?  (The client connection closed.)'
+
+    def connectionMade(ctx):
+      ctx.transport.write('GET {0}:{1} HTTP/1.1\r\n\r\n'.format(*origin.socket.getsockname()))
+
+    def handleEndHeaders(ctx):
+      try:
+        reactor.stop()
+
+      except error.ReactorNotRunning:
+        pass
+
+      else:
+        print 'not ok 1 - No Content-Length header'
+
+    def handleHeader(ctx, k, v):
+      if k.lower() == 'content-length':
+        if v != '13':
+          print 'not',
+
+        print 'ok 1 - Content-Length header'
+
+        reactor.stop()
+
+    # Avoid calling undefined handleResponse() at the end of the
+    # message.  (Override connectionLost() when the proxy crashes or
+    # we stop the reactor.)
+    #
+    # Data that was already received will get processed (the end of
+    # the headers), then shutdown events will fire (connections will
+    # get closed), and then finally the reactor will grind to a halt.
+    def handleResponseEnd(ctx):
+      pass
+
+tcp.Connector('localhost', 8080, factory(), 30, None, reactor).connect()
+
+reactor.run()

@@ -1,5 +1,902 @@
                                                          -*- coding: utf-8 -*-
+Changes with Apache Traffic Server 5.2.0
+
+  *) [TS-3020] Blind Tunnel fake request URL is IPv4 only.
+   Author: Patrick McGleenon <Patrick.McGleenon@openwave.com>
+
+  *) [TS-2561] Remove example/app-template, it's no longer supported.
+
+  *) [TS-3048]: Remove hard coded directory in TSPluginDirGet() regression.
+   Author: Steven Feltner <steven.feltner@gmail.com>
+
+  *) [TS-3047] The Makefile.am for traffic_top is inconsistent with the rest
+   of the build system.
+
+  *) [TS-3042] Fix the option to build a static traffic_server binary.
+
+  *) [TS-3041] Add a traffic_layout tool to show the installed
+   and configured file locations.
+
+  *) [TS-3034] Use an unanchored regex match in traffic_line -m.
+
+  *) [TS-3033] Reimplement the management protocol to use a generic
+   message initial marshalling format.
+
+  *) [TS-3027] Add hashed intermediate SSL certificate support.
+   Author: Steven Feltner <steven.feltner@gmail.com>
+
+  *) [TS-3031] Race condition in SSLNextProtocolSet::advertiseProtocols
+
+  *) [TS-2983] Fix protocol probe to not skip data.
+
+  *) [TS-3026] SPDY not forwarding Accept-Encoding for FF
+
+  *) [TS-2970] Fix assertions with transparent pass through.
+   Author: Susan Hinrichs <shinrich@network-geographics.com>
+
+Changes with Apache Traffic Server 5.1.0
+
+  *) [TS-2993] Update ats_pagespeed towards PSOL 1.8.31.4-stable.
+
+  *) [TS-3005] Rename pagespeed plugin: ats_speed -> ats_pagespeed.
+
+  *) [TS-3003] Remove overwriting of robots.txt in ats_pagespeed.
+
+  *) [TS-2926] IP Clearance for ats_speed - PageSpeed optimization plugin.
+
+  *) [TS-2954] Protect against DNS cache poisoning when
+   proxy.config.http.use_client_target_addr is enabled.
+   Author: Susan Hinrichs <shinrich@network-geographics.com>
+
+  *) [TS-2995] Apply TOS/SO marks to client connection in all accept cases.
+
+  *) [TS-2912] Don't clear stale object on HEAD request.
+
+  *) [TS-2905] Change IP logging to print '0' instead of error text.
+
+  *) [TS-2982] Interim cache compile errors.
+
+  *) [TS-2584] Remove assert for negatively cached transformed objects.
+
+  *) [TS-3001] GlobalSign responds 403 when OCSP request posted without Host header
+
+  *) [TS-2913] Missing body factory template for permanent redirects.
+
+  *) [TS-2279] Update range for proxy.config.exec_thread.affinity.
+
+  *) [TS-3004] Update vendor_name and support_email in ats_speed plugin.
+
+  *) [TS-2947] Make the setting proxy.config.http.global_user_agent_header.
+
+  *) [TS-2902] Allow POST requests without a Content-Length header.
+
+  *) [TS-2423] Add option for server sessions that use auth headers that can
+   be placed into the shared pool.
+
+  *) [TS-2635] remove unused include <net/ppp_defs.h>.
+
+  *) [TS-3001] GlobalSign responds 403 when OCSP request posted without Host
+   header.
+
+  *) [TS-2722] authproxy: Eliminate the DNS lookup state, just use the client.
+
+  *) [TS-2933] Fix post remap and effective URL.
+
+  *) [TS-2972] authproxy: Change the hook used, to always do the auth.
+
+  *) [TS-698] Add IP filter to logging.
+
+  *) [TS-3002] Add DSCP support to header_rewrite.
+
+  *) [TS-2564] Cherry pick for full cache compatibility.
+
+  *) [TS-2362] Make cache backwards compatible to 3.2.0.
+
+  *) [TS-2357] Add option to cache POST requests.
+
+  *) [TS-2996] Add consistent hash method to parent selection.
+
+  *) [TS-2332] Add Consistent Hash class.
+
+  *) [TS-1800] Create one hashing infrastructure.
+
+  *) [TS-2860] Add AArch64 support.
+
+  *) [TS-2916] set response header properly for combo_handler plugin.
+
+  *) [TS-2883] Core dump in TSFetchCreate().
+
+  *) [TS-2991] SessionManager incorrectly releasing sessions back to pool.
+
+  *) [TS-2986] Adding stats to TLS errors.
+
+  *) [TS-2977] Move traffic_manager under the cmd subdirectory.
+
+  *) [TS-2971] Authproxy plugin has inconsistent debug symbol.
+
+  *) [TS-2976] Perform some librecords build cleanup.
+
+  *) [TS-2975] Add cache lookup status support to the xdebug plugin.
+
+  *) [TS-2974] Add a new metrics plugin to support the Epic monitoring system.
+
+  *) [TS-2973] Add milestones support to the xdebug plugin.
+
+  *) [TS-2957] Add new sslheaders plugin.
+
+  *) [TS-2802] Add SNI support for origin server connections.
+   Author: Wei Sun <sunwei@yahoo-inc.com>
+
+  *) [TS-2958] url_sig: remove printf's and make redirects use appropriate
+   status codes.
+
+  *) [TS-2939] Metalink: Fix crash when checking the digest of a file
+   that wasn't cacheable.
+
+  *) [TS-2922] Support the new ppc64le platform. Author: Breno Leitao
+
+  *) [TS-2944] Remove the proxy.config.http.record_tcp_mem_hit configuration variable.
+
+  *) [TS-2924] Configurable client's ssl protocols and cipher suite.
+
+  *) [TS-2915] SEGV occurs when POST request was posted without Expect:
+   100-continue header.
+
+  *) [TS-2940] Fix varargs corruption when logging fatal errors.
+
+  *) [TS-2935] Clean up semaphore platform code.
+
+  *) [TS-2930] missing hostname in ts.client_request.get_url() for lua plugin.
+
+  *) [TS-2934] Default remap rule will remap synthetic test.
+
+  *) [TS-2904] Add Via header decoder option to traffic_line.
+   Author: Meera Mosale Nataraja <mechins@gmail.com>
+
+  *) [TS-2932] Add an option to specify the build number at configure time.
+
+  *) [TS-2931] Plugin metrics fail after a crash.
+
+  *) [TS-2649] Use SSL certificate chain loading everywhere.
+
+  *) [TS-2780] Core dump in SpdyRequest::clear() in production testing of SPDY.
+
+  *) [TS-2929] SPDY should allow arbitrary methods.
+
+  *) [TS-2921] Fix build failure from TS-2893.
+   Author: Ryo Okubo <rokubo@yahoo-corp.jp>
+
+  *) [TS-2893: improved support for ECDSA certificates.
+   Author: Wei Sun <sunwei@yahoo-inc.com>
+
+  *) [TS-2919] Omit git contol files from tarball releases.
+
+  *) [TS-2906] SPDY incorrectly marks streams as internal requests.
+
+  *) [TS-2574] Sharing server sessions per thread doesn't work when doing
+   https to http.
+
+  *) [TS-2689] Remove extraneous TSfree that caused segfault.
+
+  *) [TS-2892] Keep alive post out enabled by default.
+
+  *) [TS-2889] Crash in FetchSM related to spdy FetchSM changes in 5.0.x.
+
+  *) [TS-2891] Fix casting bug in remap_stats.
+
+  *) [TS-2879] Remap errors and redirects should honor keep-alive.
+
+  *) [TS-2236] Remove trailing null in response body set by fabricate_with_old_api.
+   Author: Thach Tran <tranngocthachs@gmail.com>
+
+  *) [TS-2877] http_load waits until timeout when response body is zero.
+   Author: Masaori Koshiba <mkoshiba@yahoo-corp.jp>
+
+Changes with Apache Traffic Server 5.0.0
+
+  *) [TS-2885] Change LuaJIT to build statically, add --disable-luajit. This
+  is an option that will eventually be removed as we make LuaJIT mandatory. 
+
+  *) [TS-2886] Fix regression where body factory is not used.
+
+  *) [TS-2881] Redirection handling broken
+
+  *) [TS-2875] Change hwloc library env variables from hwloc_ to HWLOC_.
+
+  *) [TS-2874] Make some of the SPDY metrics persistent, and also fix how we
+   measure transaction time / total streams.
+
+  *) [TS-2872] Can't set "Send Window" for SPDY/3.1 > 64k. Code mostly
+   provided by our SPDY brainiac, Geffon.
+
+  *) [TS-2873] Cleanup SPDY metrics and configs, also make it use the common
+   pattern for stats increments/decrements (even though it's ugly, sorry amc).
+
+  *) [TS-2870] Update SPDY defaults to better match our other defaults.
+
+  *) [TS-2868] Error setting HSTS max age with traffic_line.
+
+  *) [TS-2776] Core dump inside openssl library.
+
+  *) [TS-2845] Commit e6b9cb533 causes problems with stats_over_http.
+
+  *) [TS-1981] Url remap and IPAllow method filtering is broken with non-wks method
+   and add support for arbitrary methods.
+
+  *) [TS-2865] Fix warnings in collapsed connection plugin.
+
+  *) [TS-2580] SSL Connection reset by peer errors in 4.2.0-rc0.
+
+  *) [TS-2783] Update documentation defaults, and fix RecordsConfig.cc.
+
+  *) [TS-2792] Large request header causes unexpected remap.
+   Author: Masakazu Kitajo <m4sk17@gmail.com>
+
+  *) [TS-2834] header_rewrite: Add Internal transaction and client-IP
+   conditions.
+
+  *) [TS-2855] Add the TSHttpIsInternalSession API.
+
+  *) [TS-2859] Remove DBG macros to not generate warnings from GCC 4.9.
+
+  *) [TS-2858] Build failures on OmniOS. Also add some LuaJIT flags as per
+   Theo's and Daniel's recommendations.
+
+  *) [TS-2857] Cleanup SPDY and SSL stat names.
+
+  *) [TS-2856] Remove proxy.config.spdy.verbose_in and use diags instead
+
+  *) [TS-2391] Traffic Server tries to reverse resolve 127.0.0.1.
+
+  *) [TS-2837] Dangling pointer in URLImpl which may cause core dump.
+
+  *) [TS-2842] Can't set SPDY inactivity timeout with traffic_line.
+
+  *) [TS-2618] IOBufferBlock::realloc()'s bounds check is wrong.
+
+  *) [TS-2850] Fix logging of response header length.
+
+  *) [TS-2839] tsxs does not work on OSX (Darwin).
+   Author: Masakazu Kitajo <m4sk17@gmail.com>
+
+  *) [TS-2820] Add check to Transformations in C++ api to prevent closing
+   connections twice.
+
+  *) [TS-2804] Add regex_revalidate plugin to explerimental plugins directory.
+
+  *) [TS-2528] Use <stdbool.h> in the public mgmtapi.h interface. This follows
+   the C99 standard, and we should move other public APIs to it.
+
+  *) [TS-2428] Move P_Freer.h continuations to run on ET_TASK (if available).
+
+  *) [TS-2344] 404 error was logged while url redirect request was processed
+   correctly.
+
+  *) [TS-2753] Add more SPDY and HTTPS statistics.
+
+  *) [TS-2677] Don't apply path / scheme URL changes in remap when method is
+   CONNECT.
+
+  *) [TS-2308] includedir in config.layout is not used.
+
+  *) [TS-2527] mgmtapi.h should be C style. This is slightly ugly in the core
+   now, but that public struct/union has to be named to be C99 compliant.
+
+  *) [TS-2838] Add logging fields for plugins to TS connect API. Use for SPDY.
+
+  *) [TS-2833] Remove REC_BUILD_STAND_ALONE, REC_BUILD_MGMT and
+   REC_BUILD_STUB. Dead code.
+
+  *) [TS-2547] Remove Resource.c/h, and NEW as well.
+
+  *) [TS-1588] slow log should include client addr
+
+  *) [TS-2728] The lib/perl Makefile.am does not properly detect in-source
+   builds, generating errors.
+
+  *) [TS-2723] add new features to ts_lua plugin.
+   Author: Quehan <quehan@taobao.com>
+
+  *) [TS-2816] Bump the minor cache version for ATS 5.0 release
+
+  *) [TS-2764] Remove when_to_add_no_cache_to_msie_requests configuration.
+
+  *) [TS-2737] Rename rfc5861 plugin to stale_while_revalidate.
+
+  *) [TS-2400] Our default SSL cipher-suite advocates speed over security
+
+  *) [TS-2818] TSHttpTxnServerAddrSet() doesn't update the server port
+
+  *) [TS-2793] Remove UnixNetVConnection::selected_next_protocol.
+
+  *) [TS-2831] Add SPDY stream count statistic.
+
+  *) [TS-1665] Remove the old traffic_shell (R.I.P.).
+
+  *) [TS-2830] Make SPDY configurable.
+
+  *) [TS-2684] Add a text-log format to background_fetch plugin.
+
+  *) [TS-2577] Tracing on e.g. -T http_hdrs does not show Proxy Request
+   headers accurately. Author: Masakazu Kitajo <m4sk17@gmail.com>
+
+  *) [TS-1486] Drop support for Sun Studio compilers.
+
+  *) [TS-2765] Memory Leak in SSLConfig initialization
+
+  *) [TS-1125] POST's with Expect: 100-continue are slowed by delayed 100
+  response
+
+  *) [TS-2826] SPDY implementation does not support OPTIONS and TRACE methods
+
+  *) [TS-2274] Minimize the default records.config, and also fix a number of
+   inconsistencies and missing configs in RecordsConfig.cc. This is as per
+   discussions on IRC etc. I have verified that traffic_line -m reports the
+   same internal values for all configs before and after this change. In
+   addition, the following defaults are changing:
+
+      - proxy.config.url_remap.pristine_host_hdr -> 0
+      - proxy.config.http.normalize_ae_gzip -> 1
+      - proxy.config.http.cache.ignore_client_cc_max_age -> 1
+      - proxy.config.http.background_fill_active_timeout -> 0
+      - proxy.config.http.background_fill_completed_threshold -> 0.0
+      - proxy.config.cache.enable_read_while_writer -> 1
+      - proxy.config.net.sock_send_buffer_size_in -> 0
+      - proxy.config.cache.permit.pinning -> 1
+      - proxy.config.diags.show_location -> 1
+      - proxy.config.dns.round_robin_nameservers -> 1
+      - proxy.config.http.connect_ports -> 443
+      - proxy.config.log.custom_logs_enabled -> 1
+      - proxy.config.spdy.client.max_concurrent_streams -> 100
+      - proxy.config.env_prep -> NULL
+
+  *) [TS-2824] Revert TS-2592.
+
+  *) [TS-2632] Do not lock the object in cache (by default) on Range
+   requests. This adds proxy.config.http.cache.range.write.
+
+  *) [TS-2822] Crash in LogBufferIterator::next
+
+  *) [TS-2705] Make the background fill check more robust.
+
+  *) [TS-1411] Seg fault when using %<cquuc>
+
+  *) [TS-2739] ATS doesn't send back Transfer-Encoding when client keep-alive
+     is turned off
+
+  *) [TS-2253] PluginVC::process_close Segmentation fault
+
+  *) [TS-2823] Change the Mgmt API names TSEvent and TSError to avoid name
+     collisions with the plugin API.
+
+  *) [TS-2029] Eliminate CacheHttpHdr argument from Cache::generate_key().
+
+  *) [TS-2821] Added configuration for max concurrent streams for SPDY.
+
+  *) [TS-2558] Remove check for inbound transparency vs. SSL.
+
+  *) [TS-2810] Add the TSVConnFdCreate API.
+
+  *) [TS-2342] Problem with cache.cache_responses_to_cookies value 0.
+   Author: Paul Marquess <Paul.Marquess@owmobility.com>
+
+  *) [TS-2751] Remove the ProtocolNetAccept layer.
+
+  *) [TS-2815] SSL orgin server connection hangs if ssl handshake is slow
+
+  *) [TS-2788] Make proxy.config.alarm.bin reloadable.
+
+  *) [TS-2811] Error logged in regex_remap when lowercase_substitutions option
+   is used.
+
+  *) [TS-2791] SPDY POST transactions failing with ERR_CLIENT_ABORT.
+
+  *) [TS-2805] Client connections are connecting with SPDY 3 instead of 3.1.
+
+  *) [TS-2619] Changed TSRecordDump declaration from TSRecordType to int to
+   accommodate bit-masks. Also changed TSRecordType enums to hexidecimal, as
+   this is easier to read for bit arguments.
+
+  *) [TS-2797] Build all manual pages in the doc/reference/api directory.
+
+  *) [TS-2733] Do not build the old SPDY plugin.
+
+  *) [TS-2716] Fix indentation for ts_lua plugin.
+
+  *) [TS-2789] Typo in HttpSessionManger would cause ATS reuse wrong session
+   to origin server.
+
+  *) [TS-2636] Enhance ATS custom logging to support WIPE_FIELD_VALUE filter
+   action.
+
+  *) [TS-2786, TS-2784] Make Lua and header_rewrite plugins compile on FBSD.
+
+  *) [TS-1375] Setting default inactivity timeout, if one is not set, to 1
+   day.
+
+  *) [TS-2780] Core dump in SpdyRequest::clear() in production testing of
+   SPDY.
+
+  *) [TS-2744] Remove TSNetAcceptNamedProtocol assertion for unknown
+   protocols.
+
+  *) [TS-898] Stop the esi plugin referencing invalidated strings.
+
+  *) [TS-2778] Websockets remap doesn't properly handle the implicit port for
+   wss.
+
+  *) [TS-2774] TS::AdminClient.pm's get_stat API broken in 5.0.
+
+  *) [TS-2766] HdrHeap::coalesce_str_heaps doesn't properly calculate new heap
+   size.
+
+  *) [TS-2767] ATS Memory Leak related to SPDY.
+
+  *) [TS-2757] Fix logging crashes on reconfiguration.
+
+  *) [TS-2770] Allow proxy.config.log.rolling_interval_sec to be as low as 60sec.
+  
+  *) [TS-2772] Clean up mgmt/preparse code.
+
+  *) [TS-2763] Remove the unused proxy.config.log.xuid_logging_enabled config
+   setting.
+
+  *) [TS-2762] Core dump when benchmarking SPDY.
+
+  *) [TS-2755] Document TSTextLogObjectRollingEnabledSet.
+
+  *) [TS-2746] Rename session accept layer with a standard convention.
+
+  *) [TS-2754] Emit a tcpinfo log on TS_EVENT_HTTP_TXN_CLOSE.
+
+  *) [TS-2760] Add TSFetchClientProtoStackSet/Get() API in experimental.h.
+
+  *) [TS-2743] Ignore invalid HTTP headers in SpdyNV carefully.
+
+  *) [TS-2742] TSFetchCreate should accept both IPv4 and IPv6.
+
+  *) [TS-2736] Add config option to set the max open files limit for the
+    traffic_server process to some percentage of the fs.file-max proc value on
+    Linux. The default is 90%.
+
+  *) [TS-2741] Add a server intercept example plugins and documentation.
+
+  *) [TS-2616] Sanitize duplicate Transfer-Encoding: chunked headers.
+   Author: Dimitry Andric <dimitry@andric.com>
+
+  *) [TS-645] Remove broken hard restart from traffic_shell.
+
+  *) [TS-2562] Improve init script support for Debian/Ubuntu.
+   Author: Tomasz Kuzemko <tomasz@kuzemko.net>
+
+  *) [TS-2735] Align all memory during freelist allocations.
+
+  *) [TS-2120] remove stale_while_revalidate plugin.
+
+  *) [TS-2732] Add url_sign (Signed URL's) plugin.
+   Author: Jan van Doorn <jvd@knutsel.com>
+
+  *) [TS-2650] Redirect handling enhancements in ATS.
+
+  *) [TS-2548] Add client IP to SSLError() calls in SSLNetVConnection
+
+  *) [TS-2710] ATS serves the wrong cert because it matches wildcard certs
+   incorrectly.
+
+  *) [TS-2704] Core dump in state_raw_http_server_open getting EVENT_INTERVAL
+   event.
+
+  *) [TS-2720] Fix bug with request transformations in C++ api 
+
+  *) [TS-2714] Promote the tcp_info plugin to stable as 'tcpinfo'.
+
+  *) [TS-2708] Refactor and modernize the tcp_info plugin.
+
+  *) [TS-2555] Adding global plugin support to ts_lua plugin.
+
+  *) [TS-2717] header-rewrite set-redirect not working.
+   Author: Igor Brezac
+
+  *) [TS-2715] Fix some ESI compile warnings, change the constants to
+   be part of an include.
+
+  *) [TS-898] Remove pointless NULL check on address of array.
+
+  *) [TS-898] Avoid passing -1 to close (2) in traffic_cop.
+
+  *) [TS-898] Fix minor regex_remap parsing bug.
+
+  *) [TS-2711] Include Lua JIT as a Submodule.
+
+  *) [TS-898] Ensure the cache span probe always closes file descriptors.
+
+  *) [TS-2706] Replace the tcp_info plugin config file with options.
+
+  *) [TS-2691] Fix how we count redirect retries in the core and APIs.
+
+  *) [TS-2693] Deprecate the old TSRedirectUrlSet()/TSRedirectUrlGet().
+
+  *) [TS-2692] Add an API to Get the current redirection retry count,
+   TSHttpTxnRedirectRetries().
+
+  *) [TS-2707] Migrate TSRedirectUrlSet/Get to TSHttpTxnRedirectUrlSet/Get.
+
+  *) [TS-2690] Fixes and improvements for the escalate plugin.
+
+  *) [TS-2699] Add TSClientProtoStackCreate API.
+
+  *) [TS-2678] Some sites (e.g. craigslist) fails to load due to
+   incorrect truncated response detection.
+
+  *) [TS-2603] Do not update HostDB for server intercept requests.
+   Author: Quehan <quehan@taobao.com>
+
+  *) [TS-2622] Optimize the ink_cluster_time() function.
+   Author: Yu Qing <zhuangyuan@taobao.com>
+
+  *) [TS-2701] Silence traffic_cop logging on chown of missing lock files.
+
+  *) [TS-2656 Determine server connection scheme immediately before
+   connecting. Author: Ron Barber <rwbarber2@gmail.com>
+
+  *) [TS-2578] Close the client connection when you close TransformTerminus.
+   Author: Jack Bates <jack@nottheoilrig.com>
+
+  *) [TS-2657] Eliminate TSHttpTxnSetHttpRetBody() and improve upon
+   TSHttpTxnErrorBodySet(). This also reduces the size of the HttpSM by 25%.
+
+  *) [TS-2589] Don't hold up the response until the server starts sending
+   content. Author: Jack Bates <jack@nottheoilrig.com>
+
+  *) [TS-2687] Support for MIPS paltform.
+   Author: Dejan Latinovic <Dejan.Latinovic@rt-rk.com> 
+
+  *) [TS-2688] atscppapi: new example plugin Boom.
+   Author: Omer Shapira <oshapira@linkedin.com>
+
+  *) [TS-2686] Change background_fetch to defer cacheability check until
+   SEND_RESPONSE_HDR hook. This allows for other READ_REQUEST_HDR hooks to
+   modify the response header before we evaluate.
+
+  *) [TS-2679] background_fetch plugin can use uninitialized cont pointer.
+
+  *) [TS-2675] Metalink: Fix crash and plug memory leaks.
+   Author: Jack Bates <jack@nottheoilrig.com>
+
+  *) [TS-2674] Remove debug printf() from traffic_top.
+
+  *) [TS-2652] atscppapi: Providing a cancel() in asyncproviders .
+  
+  *) [TS-2667] atscppapi: Allow intercept plugins to access request headers
+   object.
+
+  *) [TS-2672] TSMimeHdrFieldDestroy should not assert on removed fields.
+
+  *) [TS-2554] New plugin: background_fetch, which under certain conditions
+   will kick off a background fetch when it detects Range request and
+   responses. This allows for the cache to start populating objects that would
+   otherwise not be cacheable. This is ideally used together with the
+   read-while-writer feature as well.
+
+  *) [TS-2671] Restore missing .useflt remap directive.
+
+  *) [TS-2654] Crash in Range requests with read-while-writer.
+
+  *) [TS-2665] Clean up ink_stack_trace_dump code
+   Thanks to Alexey Ivanov <aivanov@linkedin.com> for reporting this issue.
+
+  *) [TS-2663] Wrong condition on log code for server connection errors.
+   Author: David Binderman <dcb314@hotmail.com>
+
+  *) [TS-2664] atscppapi: Removing initializable values.
+
+  *) [TS-2660] Rename StateMachineAction_t values for legibility.
+
+  *) [TS-2662] Re-enable KEEP_ALIVE_POST_OUT by default.
+
+  *) [TS-2661] Remove unused HttpSM::decided_cached_url.
+
+  *) [TS-2658] Additional debug logging for SSL certificates.
+
+  *) [TS-2431] Migrate Taobao SPDY plugin to ATS core.
+
+  *) [TS-2651] atscppapi: race conditions in destruction of async providers
+
+  *) [TS-2646] regex_remap: Add a new option, @caseless.
+
+  *) [TS-2647] atscppapi: Bug fixes in headers and atscppapi.
+
+  *) [TS-2598] Expose HttpDebugNames to public plugin APIs.
+
+  *) [TS-2639] Release HttpClientSession objects back to the proxy allocator.
+
+  *) [TS-2637] Add traffic_line records match option.
+
+  *) [TS-2630] Add lib/ts/apidefs.h to place common types.
+
+  *) [TS-2610] Add "client_protocol_stack"(%<cps>) field into LogFormat.
+
+  *) [TS-2612] Indroduce TSHttpConnectWithProtoStack() API.
+
+  *) [TS-1062] Extends and optimizes FetchSM.
+
+  *) [TS-2631] Header_rewrite should support changing destination in non-remap
+   case.
+
+  *) [TS-2623] Remove the limit on the number of cachurl regular expressions.
+
+  *) [TS-2628] traffic_line should tell you when a reload is needed.
+
+  *) [TS-2627] Reduce management socket code duplication.
+
+  *) [TS-2625] trafficserver.in doesn't use TS_BASE.
+
+  *) [TS-2624] Make thread affinity more robust.
+
+  *) [TS-2620] Make the stats_over_http plugin publish node and plugin stats.
+
+  *) [TS-2614] Response to invalid Content-Length for POST should be a 400
+   error. Author: Ron Barber <rbarber@yahoo-inc.com>
+
+  *) [TS-2615] Better logging and error handling in SSL client session startup.
+
+  *) [TS-2613] Can't turn on attach server session to client from
+   records.config.
+
+  *) [TS-2611] Add a new S3 authentication plugin, s3_auth. This only supports
+   the v2 features of the S3 API.
+
+  *) [TS-2522] Better hook management for header_rewrite plugin, and some
+   cleanup.
+
+  *) [TS-2169] Add SSL statistics
+   Author: Ron Barber <rbarber@yahoo-inc.com>
+
+  *) [TS-2607] Fix TS_USE_HWLOC #define in build process
+
+  *) [TS-2595] DNS lookup failed with multiple search domains. 
+   Author: Thach Tran <tranngocthachs@gmail.com>
+
+  *) [TS-2019] Fix the "vector inconsistency" errors.
+
+  *) [TS-2585] Add overridable configs support to regex_remap plugin.
+   Author: Ethan Lai <yzlai@yahoo.com>
+
+  *) [TS-2569] Set the default SSL options correctly.
+   Author: Ron Barber <rbarber@yahoo-inc.com>
+
+  *) [TS-2599] Remove dead code in RedCore related to Record Types
+
+  *) [TS-2593] HTTPS to origin fails on CentOS6.x. This is a regression of
+   sort from TS-2355.
+
+  *) [TS-2576] Add Oct/Hex escape representation into LogFormat
+
+  *) [TS-2494] fix the crash that return the stale cached document
+   when os is down, even if it`s status is not 200 (ok).
+
+  *) [TS-2590] Translate documentation into Japanese.
+   Authors: Masaori Koshiba <masaori335@gmail.com>
+            Masakazu Kitajo <m4sk17@gmail.com>
+            syucream <syucream1031@gmail.com>
+
+  *) [TS-2586] Improvements to the internal implementation of overridable
+   configuration lookups (_conf_to_memberp() ).
+   Author: Yu Qing <zhuangyuan@taobao.com>
+
+  *) [TS-2210] Add a plugin API to manipulate the session's SSL context.
+   Author: Kang Li <kangli@yahoo-inc.com>
+
+  *) [TS-2542] Turn on caching zero length responses by default.
+
+  *) [TS-2405] Change the default for proxy.config.net.sock_option_flag_out to
+   1, which enables TCP_NODELAY.
+
+  *) [TS-2531] The default remap rule doesn't match a forward proxy request
+
+  *) [TS-612] Add support for SSL keys with passphrases.
+   Author: Ron Barber <rbarber@yahoo-inc.com>
+
+  *) [TS-2319] Change default behavior for the various ignore-mismatch
+   configurations.
+
+  *) [TS-2563] Always set the SSL default verify paths.
+   Author: Wei Sun <sunwei@yahoo-inc.com>
+
+  *) [TS-2437] Add a lifecycle hook to expose loaded SSL certificates to
+   plugins. Author: Wei Sun <sunwei@yahoo-inc.com>
+
+  *) [TS-2582] Make traffic_cop debugging eadier by logging to stdout.
+
+  *) [TS-2579] Remove ipv4 limit for FetchSM and TSFetchUrl/TSFetchPages.
+
+  *) [TS-1893] Add more options to server session control.
+
+  *) [TS-2239] Initial ALPN TLS extension support.
+
+  *) [TS-2568] Better template messages.
+
+  *) [TS-2567] Add --install-test-tools configure option.
+
+  *) [TS-1622] Add a new API, TSHttpTxnIsCacheable(), which allows a plugin
+   to determine whether a request (and/or response) would be cacheable.
+
+  *) [TS-2560] regex_remap lowercase substitutions is not being initialized in
+   the construtor
+
+  *) [TS-2559] Disconnect clients on unrecoverable origin errors.
+
+  *) [TS-2556] Fix ink_hrtime_diff_msec.
+
+  *) [TS-2553] Fix a segfault in the Metalink plugin reported by Faysal Banna
+   and preserve the Content-Length header
+   Author: Jack Bates <jack@nottheoilrig.com>
+
+  *) [TS-2195] Remove the (deprecated) TSHttpTxnCacheLookupSkip API.
+
+  *) [TS-2229] Deprecate the header_filter plugin, use header_rewrite instead.
+
+  *) [TS-2290] Remove X-ID special log tag, and cleanup HdrToken confusion.
+
+  *) [TS-2088] Change TSRecordType enum values to powers of two
+
+
 Changes with Apache Traffic Server 4.2.0
+
+  *) [TS-2552] configure fails to detect missing the #define for
+   SSL_CTX_set_tlsext_ticket_key_cb().
+
+  *) [TS-2549] printf() compiler warnings  on OSX (clang) with the CPP APIs.
+
+  *) [TS-2532] Fix make distclean for C++ API examples.
+
+  *) [TS-2306] Client connection hang while downloading big file from origin
+   server over SSL connection
+
+  *) [TS-2353] Add ability to load ssl certs that are owned by root and only
+   read only by the user
+
+  *) [TS-2551] Eliminate the tr1 dependency from CPP APIs.
+
+  *) [TS-2541] Add WebSocket support
+
+  *) [TS-2550] Add inline configuration overrised to the conf_remap plugin.
+
+  *) [TS-2546] Move xptr and _xstrdup to ink_memory.{h,cc}.
+
+  *) [TS-2180] Small memory leak in RecCore.cc, from previous refactoring.
+
+  *) [TS-2534] Make sure RecRecord structs are always properly initialized.
+
+  *) [TS-2483] Add a new metric, proxy.node.restarts.proxy.cache_ready_time,
+   tracking absolute time when the cache started (finished
+   initialization). Until cache is available, or no cache configured, this
+   metric stays at a value of "0".
+
+  *) [TS-2517 First implementation of traffic_shell.pl, and reorg the modules
+   a bit for more consistency. Also fixes a timeout issue in AdminClient.pm.
+
+  *) [TS-1467] Disable client initiated renegotiation (SSL) DDoS by default
+
+  *) [TS-2538] Cleanup of ProcessMutex (unused) and InkMutex (dupe of
+   ink_mutex). We now use ink_mutex consistently.
+
+  *) [TS-2544] conf_remap plugin: allow for multiple configuration files.
+
+  *) [TS-2530] Check for loopback interfaces when computing the local address.
+   Author: Ron Barber rbarber@yahoo-inc.com
+
+  *) [TS-2031] Prevent duplicate SSL SNI name registration.
+   Author: Feifei Cai <ffcai@yahoo-inc.com>
+
+  *) [TS-2501] Refactor and improve performance for the case without
+   expansions. Review: Alexey Ivanov <aivanov@linkedin.com>.
+
+  *) [TS-2533 ] Add three commands previously provided by traffic_shell.
+
+  *) [TS-2304] Make the healthcheck plugin watch for file permission changes.
+
+  *) [TS-2519] Make build version metrics non-persistent.
+
+  *) [TS-1606] Log buffers are not flushed periodically when TS is launched 
+   with NO_REMOTE_MANAGEMENT flag
+
+  *) [TS-2481] Incorrect origin server port used sometimes (with keep-alive).
+   Author: Dimitry Andric <dimitry@andric.com>
+
+  *) [TS-2526] Remove the g_stats_snap_fpath global variable.
+
+  *) [TS-2525] Remove restrictions on outbound transparency with SSL.
+
+  *) [TS-2425] Update to TS-2261 for loading plugins as root
+
+  *) [TS-2505] Add traffic_line --offline option.
+
+  *) [TS-2305] Fall back to ftruncate if posix_fallocate fails.
+
+  *) [TS-2504] Support OpenSSL installations that use the lib64 directory.
+
+  *) [TS-799] Have AdminClient.pm created from .in file.
+
+  *) [TS-2509] Add the const qualifier to pure HttpTunnel member functions.
+
+  *) [TS-2508] Add a *highly* experimental escalation plugin.
+
+  *) [TS-2507] Fix the state transition logging in HttpSM::handle_server_setup_error.
+
+  *) [TS-1648] Segmentation fault in dir_clear_range()
+
+  *) [TS-2500] Fix handling of cache stripe assignment when a disk is
+   taken offline.
+
+  *) [TS-2499] Fix the header_rewrite plugin expansions of the new %<>
+   strings. Author: Alexey Ivanov <aivanov@linkedin.com>.
+
+  *) [TS-2498] Add a build option to install the example plugins.
+
+  *) [TS-2484] Add API support for the two missing overridable APIs:
+         proxy.config.http.cache.max_open_read_retries
+         proxy.config.http.cache.open_read_retry_time
+
+  *) [TS-2497] Failed post results in tunnel buffers being returned to
+   freelist prematurely.
+   Reporter: Thomas Jackson <thjackso@linkedin.com>
+
+  *) [TS-1668] Added HSTS configuration options to ATS
+
+  *) [TS-2495] Reduce the size of HttpVCTableEntry.
+
+  *) [TS-2491] stop other esi plugin unit test programs after error.
+   Author: Yu Qing <zhuangyuan@taobao.com>
+ 
+  *) [TS-1821] make the AIO test pass when build with native aio.
+
+  *) [TS-2412] fix the bug of restarting ATS causes complete cache data
+  loss when use linux-native-aio.
+
+  *) [TS-2488] enhance esi plugin to allow any of the space characters to
+   follow esi starting tags.
+   Author: Yu Qing <zhuangyuan@taobao.com>
+
+  *) [TS-2489] Fix esi plugin problem with contents in comments output 
+   twice when the node list is cached.
+   Author: Yu Qing <zhuangyuan@taobao.com>
+
+  *) [TS-2336] First attempt at moving the Prefetch APIs into some usable
+   state. There's still work to be done here, but separate bugs for that.
+
+  *) [TS-2487] Export PUSH HTTP method constants to the TS API.
+
+  *) [TS-2486] Eliminate SIMPLE_MEMCPY_INIT define.
+
+  *) [TS-2476] Fix size_t format string.
+   Author: Radim Kolar <hsn@sendmail.cz>
+
+  *) [TS-2471] Writing records.config can fail when the disk is full.
+   Author: Yu Qing <zhuangyuan@taobao.com>
+
+  *) [TS-2479] Don't output orphan log after failover sucessfully.
+
+  *) [TS-2370] SSL proxy.config.ssl.server.honor_cipher_order is backwards.
+  Changed the default setting and changed the meaning of it in the code.
+
+  *) [TS-2466] NOT increase the version of records.config when changing
+   the local parameter
+   Author: Yu Qing
+
+  *) [TS-2469] remove libreadline which is gpl licensed.
+   Author: Ben Aitchison <ben@meh.net.nz>
+
+  *) [TS-2235] url_print should NOT output "?" for empty query string,
+   fix two remains.
+   Author: Yu Qing
+
+  *) [TS-2475] Adding new transaction methods in C++ API
+
+  *) [TS-2474] Change proxy.config.net.poll_timeout to 10ms consistently.
+
+  *) [TS-2473] Fix C++ API includes for FreeBSD.
+   Author: Radim Kolar <hsn@sendmail.cz>
 
   *) [TS-2467] traffic_shell doesn't work with tcl 8.6.
    Author: Ben Aitchison <ben@meh.net.nz>
@@ -705,7 +1602,7 @@ Changes with Apache Traffic Server 3.3.3 (never released)
 
   *) [TS-1925] Remove obsolete MMH hash API.
 
-  *) [TS-1924] Add metalink plugin documentation.
+  *) [TS-1924] Add Metalink plugin documentation.
     Author: Jack Bates <jack@nottheoilrig.com>
 
   *) [TS-1913] Fix memory issue caused by resolve_logfield_string()
@@ -1087,7 +1984,7 @@ Changes with Apache Traffic Server 3.3.1
   *) [TS-1500] let ssl_multicert.config specify sslcert per port
 
   *) [TS-1621] Adopt ConfigUpdateHandler pattern.
-     Author: Ethan Lai <yzlai@yahoo.com>
+   Author: Ethan Lai <yzlai@yahoo.com>
 
   *) [TS-1619] simplify ConfigurationProcessor reconfiguration pattern.
 

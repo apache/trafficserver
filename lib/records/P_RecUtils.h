@@ -45,10 +45,17 @@
 
 
 //-------------------------------------------------------------------------
+// RecRecord Utils
+//-------------------------------------------------------------------------
+void RecRecordInit(RecRecord *r);
+void RecRecordFree(RecRecord *r);
+RecRecord *RecAlloc(RecT rec_type, const char *name, RecDataT data_type);
+
+
+//-------------------------------------------------------------------------
 // RecData Utils
 //-------------------------------------------------------------------------
 
-RecRecord *RecAlloc(RecT rec_type, const char *name, RecDataT data_type);
 void RecDataClear(RecDataT type, RecData * data);
 void RecDataSetMax(RecDataT type, RecData * data);
 void RecDataSetMin(RecDataT type, RecData * data);

@@ -1,3 +1,5 @@
+.. _regex-remap-plugin:
+
 Regex Remap Plugin
 ******************
 
@@ -121,6 +123,12 @@ remap.config. The following options are available ::
     @no_activity_timeout=<nnn>  - No activity timeout (in ms)
     @connect_timeout=<nnn>      - Connect timeouts (in ms)
     @dns_timeout=<nnn>          - Connect timeouts (in ms)
+
+    @overridable-config=<value> - see :ref:`ts-overridable-config`
+
+    @caseless                   - Make regular expressions case insensitive
+    @lowercase_substitutions    - Turn on (enable) lower case substitutions
+
 
 This can be useful to force a particular response for some URLs, e.g. ::
 

@@ -75,7 +75,6 @@ void restore_accept_encoding(TSHttpTxn txnp, TSMBuffer reqp, TSMLoc hdr_loc, con
 const char * init_hidden_header_name();
 int check_ts_version();
 int register_plugin();
-const char *load_dictionary(const char *preload_file);
 void gzip_log_ratio(int64_t in, int64_t out);
 
 #endif

@@ -30,7 +30,6 @@
 // #include "Marshal.h"
 #include "MIME.h"
 #include "Regex.h"
-#include "Resource.h"
 #include "URL.h"
 #include "HttpCompat.h"
 
@@ -884,7 +883,7 @@ test_arena()
   char *str;
   int failures = 0;
 
-  arena = NEW(new Arena);
+  arena = new Arena;
 
   failures += test_arena_aux(arena, 1);
   failures += test_arena_aux(arena, 127);

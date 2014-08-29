@@ -35,6 +35,7 @@
 #include "HttpSM.h"
 #include "HttpCacheSM.h"
 #include "InkAPIInternal.h"
+#include "P_CacheBC.h"
 #endif
 
 // Compilation Options
@@ -43,6 +44,8 @@
 
 static size_t DEFAULT_RAM_CACHE_MULTIPLIER = 10; // I.e. 10x 1MB per 1GB of disk.
 
+// This is the oldest version number that is still usable.
+static short int const CACHE_DB_MAJOR_VERSION_COMPATIBLE = 21;
 
 #define DOCACHE_CLEAR_DYN_STAT(x) \
 do { \
@@ -78,6 +81,9 @@ int cache_config_read_while_writer = 0;
 int cache_config_mutex_retry_delay = 2;
 #ifdef HTTP_CACHE
 static int enable_cache_empty_http_doc = 0;
+/// Fix up a specific known problem with the 4.2.0 release.
+/// Not used for stripes with a cache version later than 4.2.0.
+int cache_config_compatibility_4_2_0_fixup = 1;
 #endif
 
 #if TS_USE_INTERIM_CACHE == 1
@@ -116,7 +122,7 @@ ClassAllocator<EvacuationBlock> evacuationBlockAllocator("evacuationBlock");
 ClassAllocator<CacheRemoveCont> cacheRemoveContAllocator("cacheRemoveCont");
 ClassAllocator<EvacuationKey> evacuationKeyAllocator("evacuationKey");
 int CacheVC::size_to_init = -1;
-CacheKey zero_key(0, 0);
+CacheKey zero_key;
 #if TS_USE_INTERIM_CACHE == 1
 ClassAllocator<MigrateToInterimCache> migrateToInterimCacheAllocator("migrateToInterimCache");
 #endif
@@ -240,6 +246,7 @@ cache_stats_bytes_used_cb(const char *name, RecDataT data_type, RecData *data, R
   if (cacheProcessor.initialized == CACHE_INITIALIZED) {
     int64_t used, total =0;
     float percent_full;
+
     used =  cache_bytes_used(volume);
     RecSetGlobalRawStatSum(rsb, id, used);
     RecRawStatSyncSum(name, data_type, data, rsb, id);
@@ -287,7 +294,8 @@ update_cache_config(const char * /* name ATS_UNUSED */, RecDataT /* data_type AT
 CacheVC::CacheVC():alternate_index(CACHE_ALT_INDEX_DEFAULT)
 {
   size_to_init = sizeof(CacheVC) - (size_t) & ((CacheVC *) 0)->vio;
-  memset((char *) &vio, 0, size_to_init);
+  // coverity[overrun-buffer-arg]
+  memset((void *) &vio, 0, size_to_init);
   // the constructor does a memset() on the members that need to be initialized
   //coverity[uninit_member]
 }
@@ -647,7 +655,7 @@ CacheProcessor::start_internal(int flags)
         }
       }
       if (diskok) {
-        CacheDisk *disk = NEW(new CacheDisk());
+        CacheDisk *disk = new CacheDisk();
         Debug("cache_hosting", "interim Disk: %d, blocks: %d", gn_interim_disks, blocks);
         int sector_size = sd->hw_sector_size;
         if (sector_size < cache_config_force_sector_size)
@@ -731,10 +739,14 @@ CacheProcessor::start_internal(int flags)
         }
       }
       if (diskok) {
-        gdisks[gndisks] = NEW(new CacheDisk());
-        gdisks[gndisks]->forced_volume_num = sd->vol_num;
-        Debug("cache_hosting", "Disk: %d, blocks: %d", gndisks, blocks);
         int sector_size = sd->hw_sector_size;
+
+        gdisks[gndisks] = new CacheDisk();
+        gdisks[gndisks]->forced_volume_num = sd->forced_volume_num;
+        if (sd->hash_base_string)
+          gdisks[gndisks]->hash_base_string = ats_strdup(sd->hash_base_string);
+
+        Debug("cache_hosting", "Disk: %d, blocks: %d", gndisks, blocks);
 
         if (sector_size < cache_config_force_sector_size)
           sector_size = cache_config_force_sector_size;
@@ -745,10 +757,11 @@ CacheProcessor::start_internal(int flags)
         off_t skip = ROUND_TO_STORE_BLOCK((sd->offset < START_POS ? START_POS + sd->alignment : sd->offset));
         blocks = blocks - (skip >> STORE_BLOCK_SHIFT);
 #if AIO_MODE == AIO_MODE_NATIVE
-        eventProcessor.schedule_imm(NEW(new DiskInit(gdisks[gndisks], path, blocks, skip, sector_size, fd, clear)));
+        eventProcessor.schedule_imm(new DiskInit(gdisks[gndisks], path, blocks, skip, sector_size, fd, clear));
 #else
         gdisks[gndisks]->open(path, blocks, skip, sector_size, fd, clear);
 #endif
+        fd = 0;
         gndisks++;
       }
     } else {
@@ -756,6 +769,9 @@ CacheProcessor::start_internal(int flags)
         Warning("cache unable to open '%s': It must be placed on a file system that supports direct I/O.", path);
       else
         Warning("cache unable to open '%s': %s", path, strerror(errno));
+    }
+    if(fd > 0) {
+    	close(fd);
     }
   }
 
@@ -853,19 +869,19 @@ CacheProcessor::diskInitialized()
       d->sync();
     }
     if (config_volumes.num_volumes == 0) {
-      theCache = NEW(new Cache());
+      theCache = new Cache();
       theCache->scheme = CACHE_HTTP_TYPE;
       theCache->open(clear, fix);
       return;
     }
     if (config_volumes.num_http_volumes != 0) {
-      theCache = NEW(new Cache());
+      theCache = new Cache();
       theCache->scheme = CACHE_HTTP_TYPE;
       theCache->open(clear, fix);
     }
 
     if (config_volumes.num_stream_volumes != 0) {
-      theStreamCache = NEW(new Cache());
+      theStreamCache = new Cache();
       theStreamCache->scheme = CACHE_RTSP_TYPE;
       theStreamCache->open(clear, fix);
     }
@@ -928,6 +944,19 @@ CacheProcessor::cacheInitialized()
       caches[CACHE_FRAG_TYPE_RTSP] = theStreamCache;
     }
   }
+
+  // Update stripe version data.
+  if (gnvol) // start with whatever the first stripe is.
+    cacheProcessor.min_stripe_version = cacheProcessor.max_stripe_version = gvol[0]->header->version;
+  // scan the rest of the stripes.
+  for (i = 1; i < gnvol; i++) {
+    Vol* v = gvol[i];
+    if (v->header->version < cacheProcessor.min_stripe_version)
+      cacheProcessor.min_stripe_version = v->header->version;
+    if (cacheProcessor.max_stripe_version < v->header->version)
+      cacheProcessor.max_stripe_version = v->header->version;
+  }
+
 
   if (caches_ready) {
     Debug("cache_init", "CacheProcessor::cacheInitialized - caches_ready=0x%0X, gnvol=%d", (unsigned int) caches_ready,
@@ -1108,7 +1137,7 @@ int
 Vol::db_check(bool /* fix ATS_UNUSED */ )
 {
   char tt[256];
-  printf("    Data for [%s]\n", hash_id);
+  printf("    Data for [%s]\n", hash_text.get());
   printf("        Length:          %" PRIu64 "\n", (uint64_t)len);
   printf("        Write Position:  %" PRIu64 "\n", (uint64_t) (header->write_pos - skip));
   printf("        Phase:           %d\n", (int)!!header->phase);
@@ -1206,7 +1235,7 @@ vol_dir_clear(Vol *d)
   vol_clear_init(d);
 
   if (pwrite(d->fd, d->raw_dir, dir_len, d->skip) < 0) {
-    Warning("unable to clear cache directory '%s'", d->hash_id);
+    Warning("unable to clear cache directory '%s'", d->hash_text.get());
     return -1;
   }
   return 0;
@@ -1234,15 +1263,18 @@ Vol::clear_dir()
 int
 Vol::init(char *s, off_t blocks, off_t dir_skip, bool clear)
 {
+  char* seed_str = disk->hash_base_string ? disk->hash_base_string : s;
+  const size_t hash_seed_size = strlen(seed_str);
+  const size_t hash_text_size = hash_seed_size + 32;
+
+  hash_text = static_cast<char *>(ats_malloc(hash_text_size));
+  ink_strlcpy(hash_text, seed_str, hash_text_size);
+  snprintf(hash_text + hash_seed_size, (hash_text_size - hash_seed_size), " %" PRIu64 ":%" PRIu64 "",
+           (uint64_t)dir_skip, (uint64_t)blocks);
+  MD5Context().hash_immediate(hash_id, hash_text, strlen(hash_text));
+
   dir_skip = ROUND_TO_STORE_BLOCK((dir_skip < START_POS ? START_POS : dir_skip));
   path = ats_strdup(s);
-  const size_t hash_id_size = strlen(s) + 32;
-  hash_id = (char *)ats_malloc(hash_id_size);
-  ink_strlcpy(hash_id, s, hash_id_size);
-  const size_t s_size = strlen(s);
-  snprintf(hash_id + s_size, (hash_id_size - s_size), " %" PRIu64 ":%" PRIu64 "",
-           (uint64_t)dir_skip, (uint64_t)blocks);
-  hash_id_md5.encodeBuffer(hash_id, strlen(hash_id));
   len = blocks * STORE_BLOCK_SIZE;
   ink_assert(len <= MAX_VOL_SIZE);
   skip = dir_skip;
@@ -1280,7 +1312,7 @@ Vol::init(char *s, off_t blocks, off_t dir_skip, bool clear)
 #endif
 
   if (clear) {
-    Note("clearing cache directory '%s'", hash_id);
+    Note("clearing cache directory '%s'", hash_text.get());
     return clear_dir();
   }
 
@@ -1290,7 +1322,7 @@ Vol::init(char *s, off_t blocks, off_t dir_skip, bool clear)
   // try A
   off_t as = skip;
   if (is_debug_tag_set("cache_init"))
-    Note("reading directory '%s'", hash_id);
+    Note("reading directory '%s'", hash_text.get());
   SET_HANDLER(&Vol::handle_header_read);
   init_info->vol_aio[0].aiocb.aio_offset = as;
   init_info->vol_aio[1].aiocb.aio_offset = as + footer_offset;
@@ -1324,7 +1356,7 @@ Vol::handle_dir_clear(int event, void *data)
   if (event == AIO_EVENT_DONE) {
     op = (AIOCallback *) data;
     if ((size_t) op->aio_result != (size_t) op->aiocb.aio_nbytes) {
-      Warning("unable to clear cache directory '%s'", hash_id);
+      Warning("unable to clear cache directory '%s'", hash_text.get());
       fd = -1;
     }
 
@@ -1357,9 +1389,11 @@ Vol::handle_dir_read(int event, void *data)
     }
   }
 
-  if (header->magic != VOL_MAGIC || header->version.ink_major != CACHE_DB_MAJOR_VERSION || footer->magic != VOL_MAGIC) {
-    Warning("bad footer in cache directory for '%s', clearing", hash_id);
-    Note("clearing cache directory '%s'", hash_id);
+  if (!(header->magic == VOL_MAGIC &&  footer->magic == VOL_MAGIC &&
+        CACHE_DB_MAJOR_VERSION_COMPATIBLE <= header->version.ink_major &&  header->version.ink_major <= CACHE_DB_MAJOR_VERSION
+    )) {
+    Warning("bad footer in cache directory for '%s', clearing", hash_text.get());
+    Note("clearing cache directory '%s'", hash_text.get());
     clear_dir();
     return EVENT_DONE;
   }
@@ -1455,7 +1489,7 @@ Vol::handle_recover_from_data(int event, void * /* data ATS_UNUSED */ )
       io.aiocb.aio_nbytes = (skip + len) - recover_pos;
   } else if (event == AIO_EVENT_DONE) {
     if ((size_t) io.aiocb.aio_nbytes != (size_t) io.aio_result) {
-      Warning("disk read error on recover '%s', clearing", hash_id);
+      Warning("disk read error on recover '%s', clearing", hash_text.get());
       goto Lclear;
     }
     if (io.aiocb.aio_offset == header->last_write_pos) {
@@ -1472,7 +1506,7 @@ Vol::handle_recover_from_data(int event, void * /* data ATS_UNUSED */ )
       while (done < to_check) {
         Doc *doc = (Doc *) (s + done);
         if (doc->magic != DOC_MAGIC || doc->write_serial > header->write_serial) {
-          Warning("no valid directory found while recovering '%s', clearing", hash_id);
+          Warning("no valid directory found while recovering '%s', clearing", hash_text.get());
           goto Lclear;
         }
         done += round_to_approx_size(doc->len);
@@ -1615,7 +1649,7 @@ Ldone:{
     recover_pos += EVACUATION_SIZE;   // safely cover the max write size
     if (recover_pos < header->write_pos && (recover_pos + EVACUATION_SIZE >= header->write_pos)) {
       Debug("cache_init", "Head Pos: %" PRIu64 ", Rec Pos: %" PRIu64 ", Wrapped:%d", header->write_pos, recover_pos, recover_wrapped);
-      Warning("no valid directory found while recovering '%s', clearing", hash_id);
+      Warning("no valid directory found while recovering '%s', clearing", hash_text.get());
       goto Lclear;
     }
 
@@ -1722,7 +1756,7 @@ Vol::handle_header_read(int event, void *data)
         (hf[0]->sync_serial >= hf[2]->sync_serial || hf[2]->sync_serial != hf[3]->sync_serial)) {
       SET_HANDLER(&Vol::handle_dir_read);
       if (is_debug_tag_set("cache_init"))
-        Note("using directory A for '%s'", hash_id);
+        Note("using directory A for '%s'", hash_text.get());
       io.aiocb.aio_offset = skip;
       ink_assert(ink_aio_read(&io));
     }
@@ -1731,11 +1765,11 @@ Vol::handle_header_read(int event, void *data)
 
       SET_HANDLER(&Vol::handle_dir_read);
       if (is_debug_tag_set("cache_init"))
-        Note("using directory B for '%s'", hash_id);
+        Note("using directory B for '%s'", hash_text.get());
       io.aiocb.aio_offset = skip + vol_dirlen(this);
       ink_assert(ink_aio_read(&io));
     } else {
-      Note("no good directory, clearing '%s'", hash_id);
+      Note("no good directory, clearing '%s'", hash_text.get());
       clear_dir();
       delete init_info;
       init_info = 0;
@@ -1790,7 +1824,7 @@ InterimCacheVol::handle_recover_from_data(int event, void *data)
 
   if (event == EVENT_IMMEDIATE) {
     if (header->magic != VOL_MAGIC || header->version.ink_major != CACHE_DB_MAJOR_VERSION) {
-      Warning("bad header in cache directory for '%s', clearing", hash_id);
+      Warning("bad header in cache directory for '%s', clearing", hash_text.get());
       goto Lclear;
     } else if (header->sync_serial == 0) {
       io.aiocb.aio_buf = NULL;
@@ -1814,7 +1848,7 @@ InterimCacheVol::handle_recover_from_data(int event, void *data)
 
   } else if (event == AIO_EVENT_DONE) {
     if ((size_t) io.aiocb.aio_nbytes != (size_t) io.aio_result) {
-      Warning("disk read error on recover '%s', clearing", hash_id);
+      Warning("disk read error on recover '%s', clearing", hash_text.get());
       goto Lclear;
     }
 
@@ -1826,7 +1860,7 @@ InterimCacheVol::handle_recover_from_data(int event, void *data)
       while (done < to_check) {
         Doc *doc = (Doc *) (s + done);
         if (doc->magic != DOC_MAGIC || doc->write_serial > header->write_serial) {
-          Warning("no valid directory found while recovering '%s', clearing", hash_id);
+          Warning("no valid directory found while recovering '%s', clearing", hash_text.get());
           goto Lclear;
         }
         done += round_to_approx_size(doc->len);
@@ -1933,7 +1967,7 @@ Ldone: {
     recover_pos += EVACUATION_SIZE;
     if (recover_pos < header->write_pos && (recover_pos + EVACUATION_SIZE >= header->write_pos)) {
       Debug("cache_init", "Head Pos: %" PRIu64 ", Rec Pos: %" PRIu64 ", Wrapped:%d", header->write_pos, recover_pos, recover_wrapped);
-      Warning("no valid directory found while recovering '%s', clearing", hash_id);
+      Warning("no valid directory found while recovering '%s', clearing", hash_text.get());
       goto Lclear;
     }
 
@@ -1983,8 +2017,8 @@ Lfinish:
 
 // explicit pair for random table in build_vol_hash_table
 struct rtable_pair {
-  unsigned int rval;
-  unsigned int vol;
+  unsigned int rval; ///< relative value, used to sort.
+  unsigned int idx; ///< volume mapping table index.
 };
 
 // comparison operator for random table in build_vol_hash_table
@@ -2039,6 +2073,7 @@ build_vol_hash_table(CacheHostRecord *cp)
   unsigned int *gotvol = (unsigned int *) ats_malloc(sizeof(unsigned int) * num_vols);
   unsigned int *rnd = (unsigned int *) ats_malloc(sizeof(unsigned int) * num_vols);
   unsigned short *ttable = (unsigned short *)ats_malloc(sizeof(unsigned short) * VOL_HASH_TABLE_SIZE);
+  unsigned short *old_table;
   unsigned int *rtable_entries = (unsigned int *) ats_malloc(sizeof(unsigned int) * num_vols);
   unsigned int rtable_size = 0;
 
@@ -2056,7 +2091,7 @@ build_vol_hash_table(CacheHostRecord *cp)
     forvol[i % num_vols]++;
   // seed random number generator
   for (int i = 0; i < num_vols; i++) {
-    uint64_t x = p[i]->hash_id_md5.fold();
+    uint64_t x = p[i]->hash_id.fold();
     rnd[i] = (unsigned int) x;
   }
   // initialize table to "empty"
@@ -2068,28 +2103,28 @@ build_vol_hash_table(CacheHostRecord *cp)
   for (int i = 0; i < num_vols; i++)
     for (int j = 0; j < (int)rtable_entries[i]; j++) {
       rtable[rindex].rval = next_rand(&rnd[i]);
-      rtable[rindex].vol = i;
+      rtable[rindex].idx = i;
       rindex++;
     }
   ink_assert(rindex == (int)rtable_size);
   // sort (rand #, vol $ pairs)
   qsort(rtable, rtable_size, sizeof(rtable_pair), cmprtable);
   unsigned int width = (1LL << 32) / VOL_HASH_TABLE_SIZE;
-  unsigned int pos = width / 2;  // target position to allocate
+  unsigned int pos;  // target position to allocate
   // select vol with closest random number for each bucket
   int i = 0;  // index moving through the random numbers
   for (int j = 0; j < VOL_HASH_TABLE_SIZE; j++) {
     pos = width / 2 + j * width;  // position to select closest to
     while (pos > rtable[i].rval && i < (int)rtable_size - 1) i++;
-    ttable[j] = rtable[i].vol;
-    gotvol[ttable[j]]++;
+    ttable[j] = mapping[rtable[i].idx];
+    gotvol[rtable[i].idx]++;
   }
   for (int i = 0; i < num_vols; i++) {
-    Debug("cache_init", "build_vol_hash_table %d request %d got %d", i, forvol[i], gotvol[i]);
+    Debug("cache_init", "build_vol_hash_table index %d mapped to %d requested %d got %d", i, mapping[i], forvol[i], gotvol[i]);
   }
   // install new table
-  if (cp->vol_hash_table)
-    new_Freer(cp->vol_hash_table, CACHE_MEM_FREE_TIMEOUT);
+  if (0 != (old_table = ink_atomic_swap(&(cp->vol_hash_table), ttable)))
+    new_Freer(old_table, CACHE_MEM_FREE_TIMEOUT);
   ats_free(mapping);
   ats_free(p);
   ats_free(forvol);
@@ -2097,7 +2132,6 @@ build_vol_hash_table(CacheHostRecord *cp)
   ats_free(rnd);
   ats_free(rtable_entries);
   ats_free(rtable);
-  cp->vol_hash_table = ttable;
 }
 
 void
@@ -2108,107 +2142,123 @@ Cache::vol_initialized(bool result) {
     open_done();
 }
 
+/** Set the state of a disk programmatically.
+*/
+bool
+CacheProcessor::mark_storage_offline( CacheDisk* d ///< Target disk
+  ) {
+  bool zret; // indicates whether there's any online storage left.
+  int p;
+  uint64_t total_bytes_delete = 0;
+  uint64_t total_dir_delete = 0;
+  uint64_t used_dir_delete = 0;
+
+  if (!DISK_BAD(d)) SET_DISK_BAD(d);
+
+  for (p = 0; p < gnvol; p++) {
+    if (d->fd == gvol[p]->fd) {
+      total_dir_delete += gvol[p]->buckets * gvol[p]->segments * DIR_DEPTH;
+      used_dir_delete += dir_entries_used(gvol[p]);
+      total_bytes_delete += gvol[p]->len - vol_dirlen(gvol[p]);
+    }
+  }
+
+  RecIncrGlobalRawStat(cache_rsb, cache_bytes_total_stat, -total_bytes_delete);
+  RecIncrGlobalRawStat(cache_rsb, cache_direntries_total_stat, -total_dir_delete);
+  RecIncrGlobalRawStat(cache_rsb, cache_direntries_used_stat, -used_dir_delete);
+
+  if (theCache) {
+    rebuild_host_table(theCache);
+  }
+  if (theStreamCache) {
+    rebuild_host_table(theStreamCache);
+  }
+
+  zret = this->has_online_storage();
+  if (!zret) {
+    Warning("All storage devices offline, cache disabled");
+    CacheProcessor::cache_ready = 0;
+  } else { // check cache types specifically
+    if (theCache && !theCache->hosttable->gen_host_rec.vol_hash_table) {
+      unsigned int caches_ready = 0;
+      caches_ready = caches_ready | (1 << CACHE_FRAG_TYPE_HTTP);
+      caches_ready = caches_ready | (1 << CACHE_FRAG_TYPE_NONE);
+      caches_ready = ~caches_ready;
+      CacheProcessor::cache_ready &= caches_ready;
+      Warning("all volumes for http cache are corrupt, http cache disabled");
+    }
+    if (theStreamCache && !theStreamCache->hosttable->gen_host_rec.vol_hash_table) {
+      unsigned int caches_ready = 0;
+      caches_ready = caches_ready | (1 << CACHE_FRAG_TYPE_RTSP);
+      caches_ready = ~caches_ready;
+      CacheProcessor::cache_ready &= caches_ready;
+      Warning("all volumes for mixt cache are corrupt, mixt cache disabled");
+    }
+  }
+
+  return zret;
+}
+
+bool
+CacheProcessor::has_online_storage() const {
+  CacheDisk** dptr = gdisks;
+  for (int disk_no = 0 ; disk_no < gndisks ; ++disk_no, ++dptr) {
+    if (!DISK_BAD(*dptr)) return true;
+  }
+  return false;
+}
+
 int
 AIO_Callback_handler::handle_disk_failure(int /* event ATS_UNUSED */, void *data) {
   /* search for the matching file descriptor */
   if (!CacheProcessor::cache_ready)
     return EVENT_DONE;
   int disk_no = 0;
-  int good_disks = 0;
   AIOCallback *cb = (AIOCallback *) data;
 #if TS_USE_INTERIM_CACHE == 1
   for (; disk_no < gn_interim_disks; disk_no++) {
     CacheDisk *d = g_interim_disks[disk_no];
 
     if (d->fd == cb->aiocb.aio_fildes) {
+      char message[256];
+
       d->num_errors++;
       if (!DISK_BAD(d)) {
-        char message[128];
-        snprintf(message, sizeof(message), "Error accessing Disk %s", d->path);
+        snprintf(message, sizeof(message), "Error accessing Disk %s [%d/%d]", d->path, d->num_errors, cache_config_max_disk_errors);
         Warning("%s", message);
-        REC_SignalManager(REC_SIGNAL_CACHE_WARNING, message);
+        RecSignalManager(REC_SIGNAL_CACHE_WARNING, message);
       } else if (!DISK_BAD_SIGNALLED(d)) {
-        char message[128];
         snprintf(message, sizeof(message),
-            "too many errors accessing disk %s: declaring disk bad", d->path);
+                 "too many errors [%d] accessing disk %s: declaring disk bad", d->num_errors, d->path);
         Warning("%s", message);
-        REC_SignalManager(REC_SIGNAL_CACHE_ERROR, message);
+        RecSignalManager(REC_SIGNAL_CACHE_ERROR, message);
         good_interim_disks--;
       }
     }
   }
 #endif
+
   for (; disk_no < gndisks; disk_no++) {
     CacheDisk *d = gdisks[disk_no];
 
     if (d->fd == cb->aiocb.aio_fildes) {
+      char message[256];
       d->num_errors++;
 
       if (!DISK_BAD(d)) {
-        char message[128];
-        snprintf(message, sizeof(message), "Error accessing Disk %s", d->path);
+        snprintf(message, sizeof(message), "Error accessing Disk %s [%d/%d]", d->path, d->num_errors, cache_config_max_disk_errors);
         Warning("%s", message);
-        REC_SignalManager(REC_SIGNAL_CACHE_WARNING, message);
+        RecSignalManager(REC_SIGNAL_CACHE_WARNING, message);
       } else if (!DISK_BAD_SIGNALLED(d)) {
-
-        char message[128];
-        snprintf(message, sizeof(message), "too many errors accessing disk %s: declaring disk bad", d->path);
+        snprintf(message, sizeof(message), "too many errors accessing disk %s [%d/%d]: declaring disk bad", d->path, d->num_errors, cache_config_max_disk_errors);
         Warning("%s", message);
-        REC_SignalManager(REC_SIGNAL_CACHE_ERROR, message);
-        /* subtract the disk space that was being used from  the cache size stat */
-        // dir entries stat
-        int p;
-        uint64_t total_bytes_delete = 0;
-        uint64_t total_dir_delete = 0;
-        uint64_t used_dir_delete = 0;
-
-        for (p = 0; p < gnvol; p++) {
-          if (d->fd == gvol[p]->fd) {
-            total_dir_delete += gvol[p]->buckets * gvol[p]->segments * DIR_DEPTH;
-            used_dir_delete += dir_entries_used(gvol[p]);
-            total_bytes_delete += gvol[p]->len - vol_dirlen(gvol[p]);
-          }
-        }
-
-        RecIncrGlobalRawStat(cache_rsb, cache_bytes_total_stat, -total_bytes_delete);
-        RecIncrGlobalRawStat(cache_rsb, cache_direntries_total_stat, -total_dir_delete);
-        RecIncrGlobalRawStat(cache_rsb, cache_direntries_used_stat, -used_dir_delete);
-
-        if (theCache) {
-          rebuild_host_table(theCache);
-        }
-        if (theStreamCache) {
-          rebuild_host_table(theStreamCache);
-        }
+        RecSignalManager(REC_SIGNAL_CACHE_ERROR, message);
+        cacheProcessor.mark_storage_offline(d); // take it out of service
       }
-      if (good_disks)
-        return EVENT_DONE;
+      break;
     }
-    if (!DISK_BAD(d))
-      good_disks++;
-  }
-  if (!good_disks) {
-    Warning("all disks are bad, cache disabled");
-    CacheProcessor::cache_ready = 0;
-    delete cb;
-    return EVENT_DONE;
   }
 
-  if (theCache && !theCache->hosttable->gen_host_rec.vol_hash_table) {
-    unsigned int caches_ready = 0;
-    caches_ready = caches_ready | (1 << CACHE_FRAG_TYPE_HTTP);
-    caches_ready = caches_ready | (1 << CACHE_FRAG_TYPE_NONE);
-    caches_ready = ~caches_ready;
-    CacheProcessor::cache_ready &= caches_ready;
-    Warning("all volumes for http cache are corrupt, http cache disabled");
-  }
-  if (theStreamCache && !theStreamCache->hosttable->gen_host_rec.vol_hash_table) {
-    unsigned int caches_ready = 0;
-    caches_ready = caches_ready | (1 << CACHE_FRAG_TYPE_RTSP);
-    caches_ready = ~caches_ready;
-    CacheProcessor::cache_ready &= caches_ready;
-    Warning("all volumes for mixt cache are corrupt, mixt cache disabled");
-  }
   delete cb;
   return EVENT_DONE;
 }
@@ -2225,7 +2275,7 @@ Cache::open_done() {
     return 0;
   }
 
-  hosttable = NEW(new CacheHostTable(this, scheme));
+  hosttable = new CacheHostTable(this, scheme);
   hosttable->register_config_callback(&hosttable);
 
   if (hosttable->gen_host_rec.num_cachevols == 0)
@@ -2259,7 +2309,7 @@ Cache::open(bool clear, bool /* fix ATS_UNUSED */) {
         if (cp->disk_vols[i] && !DISK_BAD(cp->disk_vols[i]->disk)) {
           DiskVolBlockQueue *q = cp->disk_vols[i]->dpb_queue.head;
           for (; q; q = q->link.next) {
-            cp->vols[vol_no] = NEW(new Vol());
+            cp->vols[vol_no] = new Vol();
             CacheDisk *d = cp->disk_vols[i]->disk;
             cp->vols[vol_no]->disk = d;
             cp->vols[vol_no]->fd = d->fd;
@@ -2269,7 +2319,7 @@ Cache::open(bool clear, bool /* fix ATS_UNUSED */) {
 
             bool vol_clear = clear || d->cleared || q->new_block;
 #if AIO_MODE == AIO_MODE_NATIVE
-            eventProcessor.schedule_imm(NEW(new VolInit(cp->vols[vol_no], d->path, blocks, q->b->offset, vol_clear)));
+            eventProcessor.schedule_imm(new VolInit(cp->vols[vol_no], d->path, blocks, q->b->offset, vol_clear));
 #else
             cp->vols[vol_no]->init(d->path, blocks, q->b->offset, vol_clear);
 #endif
@@ -2321,8 +2371,89 @@ static void unmarshal_helper(Doc *doc, Ptr<IOBufferData> &buf, int &okay) {
     tmp += r;
   }
 }
+
+/** Upgrade a marshalled fragment buffer to the current version.
+
+    @internal I looked at doing this in place (rather than a copy & modify) but
+    - The in place logic would be even worse than this mess
+    - It wouldn't save you that much, since you end up doing inserts early in the buffer.
+      Without extreme care in the logic it could end up doing more copying thatn
+      the simpler copy & modify.
+
+    @internal This logic presumes the existence of some slack at the end of the buffer, which
+    is usually the case (because lots of rounding is done). If there isn't enough slack then
+    this fails and we have a cache miss. The assumption that this is sufficiently rare that
+    code simplicity takes precedence should be checked at some point.
+ */
+static bool upgrade_doc_version(Ptr<IOBufferData>& buf) {
+  // Type definition is close enough to use for initial checking.
+  cache_bc::Doc_v23* doc = reinterpret_cast<cache_bc::Doc_v23*>(buf->data());
+  bool zret = true;
+
+  if (DOC_MAGIC == doc->magic) {
+    if (0 == doc->hlen) {
+      Debug("cache_bc", "Doc %p without header, no upgrade needed.", doc);
+    } else if (CACHE_FRAG_TYPE_HTTP_V23 == doc->doc_type) {
+      cache_bc::HTTPCacheAlt_v21* alt = reinterpret_cast<cache_bc::HTTPCacheAlt_v21*>(doc->hdr());
+      if (alt && alt->is_unmarshalled_format()) {
+        Ptr<IOBufferData> d_buf(ioDataAllocator.alloc());
+        Doc* d_doc;
+        char* src;
+        char* dst;
+        char* hdr_limit = doc->data();
+        HTTPInfo::FragOffset* frags = reinterpret_cast<HTTPInfo::FragOffset*>(static_cast<char*>(buf->data()) + cache_bc::sizeofDoc_v23);
+        int frag_count = doc->_flen / sizeof(HTTPInfo::FragOffset);
+        size_t n = 0;
+        size_t content_size = doc->data_len();
+
+        Debug("cache_bc", "Doc %p is 3.2", doc);
+
+        // Use the same buffer size, fail if no fit.
+        d_buf->alloc(buf->_size_index, buf->_mem_type); // Duplicate.
+        d_doc = reinterpret_cast<Doc*>(d_buf->data());
+        n = d_buf->block_size();
+
+        src = buf->data();
+        dst = d_buf->data();
+        memcpy(dst, src, sizeofDoc);
+        src += sizeofDoc + doc->_flen; dst += sizeofDoc; n -= sizeofDoc;
+        
+        // We copy the fragment table iff there is a fragment table and there is only one alternate.
+        if (frag_count > 0 && cache_bc::HTTPInfo_v21::marshalled_length(src) > doc->hlen)
+          frag_count = 0; // inhibit fragment table insertion.
+
+        while (zret && src < hdr_limit) {
+          zret = cache_bc::HTTPInfo_v21::copy_and_upgrade_unmarshalled_to_v23(dst, src, n, frag_count, frags);
+        }
+        if (zret && content_size <= n) {
+          memcpy(dst, src, content_size); // content
+          // Must update new Doc::len and Doc::hlen
+          // dst points at the first byte of the content, or one past the last byte of the alt header.
+          d_doc->len = (dst - reinterpret_cast<char*>(d_doc)) + content_size;
+          d_doc->hlen = (dst - reinterpret_cast<char*>(d_doc)) - sizeofDoc;
+          buf = d_buf; // replace original buffer with new buffer.
+        } else {
+          zret = false;
+        }
+      }
+      Doc* n_doc = reinterpret_cast<Doc*>(buf->data()); // access as current version.
+      // For now the base header size is the same. If that changes we'll need to handle the v22/23 case here
+      // as with the v21 and shift the content down to accomodate the bigger header.
+      ink_assert(sizeof(*n_doc) == sizeof(*doc));
+
+      n_doc->doc_type = CACHE_FRAG_TYPE_HTTP; // We converted so adjust doc_type.
+      // Set these to zero for debugging - they'll be updated to the current values if/when this is
+      // put in the aggregation buffer.
+      n_doc->v_major = 0;
+      n_doc->v_minor = 0;
+      n_doc->unused = 0; // force to zero to make future use easier.
+    }
+  }
+  return zret;
+}
 #endif
 
+// [amc] I think this is where all disk reads from cache funnel through here.
 int
 CacheVC::handleReadDone(int event, Event *e)
 {
@@ -2343,26 +2474,52 @@ CacheVC::handleReadDone(int event, Event *e)
       if (!io.ok()) {
         Debug("cache_disk_error", "Read error on disk %s\n \
 	    read range : [%" PRIu64 " - %" PRIu64 " bytes]  [%" PRIu64 " - %" PRIu64 " blocks] \n",
-              vol->hash_id, (uint64_t)io.aiocb.aio_offset, (uint64_t)io.aiocb.aio_offset + io.aiocb.aio_nbytes,
+              vol->hash_text.get(), (uint64_t)io.aiocb.aio_offset, (uint64_t)io.aiocb.aio_offset + io.aiocb.aio_nbytes,
               (uint64_t)io.aiocb.aio_offset / 512, (uint64_t)(io.aiocb.aio_offset + io.aiocb.aio_nbytes) / 512);
       }
       goto Ldone;
     }
 
+    doc = reinterpret_cast<Doc*>(buf->data());
     ink_assert(vol->mutex->nthread_holding < 1000);
-    ink_assert(((Doc *) buf->data())->magic == DOC_MAGIC);
+    ink_assert(doc->magic == DOC_MAGIC);
+
+    /* We've read the raw data from disk, time to deserialize it. We have to account for a variety of formats that
+       may be present.
+
+       As of cache version 24 we changed the @a doc_type to indicate a format change in the header which includes
+       version data inside the header. Prior to that we must use heuristics to deduce the actual format. For this reason
+       we send that header type off for special processing. Otherwise we can use the in object version to determine
+       the format.
+
+       All of this processing must produce a serialized header that is compliant with the current version. This includes
+       updating the doc_type.
+    */
+
+    if (doc->doc_type == CACHE_FRAG_TYPE_HTTP_V23) {
+      if (upgrade_doc_version(buf)) {
+        doc = reinterpret_cast<Doc*>(buf->data()); // buf may be a new copy 
+      } else {
+        Debug("cache_bc", "Upgrade of fragment failed - disk %s - doc id = %" PRIx64 ":%" PRIx64 "\n"
+              , vol->hash_text.get(), read_key->slice64(0), read_key->slice64(1));
+        doc->magic = DOC_CORRUPT;
+        // Should really trash the directory entry for this, as it's never going to work in the future.
+        // Or does that happen later anyway?
+        goto Ldone;
+      }
+    } // else if (doc->doc_type == CACHE_FRAG_TYPE_HTTP) // handle any version updates based on the object version in the header.
+
 #ifdef VERIFY_JTEST_DATA
     char xx[500];
-    if (read_key && *read_key == ((Doc *) buf->data())->key && request.valid() && !dir_head(&dir) && !vio.ndone) {
+    if (read_key && *read_key == doc->key && request.valid() && !dir_head(&dir) && !vio.ndone) {
       int ib = 0, xd = 0;
       request.url_get()->print(xx, 500, &ib, &xd);
       char *x = xx;
       for (int q = 0; q < 3; q++)
         x = strchr(x + 1, '/');
-      ink_assert(!memcmp(((Doc *) buf->data())->data(), x, ib - (x - xx)));
+      ink_assert(!memcmp(doc->data(), x, ib - (x - xx)));
     }
 #endif
-    doc = (Doc *) buf->data();
 
     if (is_debug_tag_set("cache_read")) {
       char xt[33];
@@ -2436,10 +2593,10 @@ CacheVC::handleReadDone(int event, Event *e)
       bool http_copy_hdr = false;
 #ifdef HTTP_CACHE
       http_copy_hdr = cache_config_ram_cache_compress && !f.doc_from_ram_cache &&
-        doc->ftype == CACHE_FRAG_TYPE_HTTP && doc->hlen;
+        doc->doc_type == CACHE_FRAG_TYPE_HTTP && doc->hlen;
       // If http doc we need to unmarshal the headers before putting in the ram cache
       // unless it could be compressed
-      if (!http_copy_hdr && doc->ftype == CACHE_FRAG_TYPE_HTTP && doc->hlen && okay)
+      if (!http_copy_hdr && doc->doc_type == CACHE_FRAG_TYPE_HTTP && doc->hlen && okay)
         unmarshal_helper(doc, buf, okay);
 #endif
       // Put the request in the ram cache only if its a open_read or lookup
@@ -2485,7 +2642,7 @@ CacheVC::handleReadDone(int event, Event *e)
       }                           // end VIO::READ check
 #ifdef HTTP_CACHE
       // If it could be compressed, unmarshal after
-      if (http_copy_hdr && doc->ftype == CACHE_FRAG_TYPE_HTTP && doc->hlen && okay)
+      if (http_copy_hdr && doc->doc_type == CACHE_FRAG_TYPE_HTTP && doc->hlen && okay)
         unmarshal_helper(doc, buf, okay);
 #endif
     }                             // end io.ok() check
@@ -2517,13 +2674,15 @@ CacheVC::handleRead(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   ink_assert(vol->mutex->thread_holding == this_ethread());
 #if TS_USE_INTERIM_CACHE == 1
   uint64_t o = dir_get_offset(&dir);
-  if(f.read_from_interim && mts && mts->rewrite)
+  if (f.read_from_interim && mts && mts->rewrite) {
     goto LinterimRead;
+  }
 #else
   int64_t o = dir_offset(&dir);
 #endif
-  if (vol->ram_cache->get(read_key, &buf, (uint32_t)(o >> 32), (uint32_t)o))
+  if (vol->ram_cache->get(read_key, &buf, (uint32_t)(o >> 32), (uint32_t)o)) {
     goto LramHit;
+  }
 
   // check if it was read in the last open_read call
 #if TS_USE_INTERIM_CACHE == 1
@@ -2594,7 +2753,7 @@ LramHit: {
     f.doc_from_ram_cache = true;
     io.aio_result = io.aiocb.aio_nbytes;
     Doc *doc = (Doc*)buf->data();
-    if (cache_config_ram_cache_compress && doc->ftype == CACHE_FRAG_TYPE_HTTP && doc->hlen) {
+    if (cache_config_ram_cache_compress && doc->doc_type == CACHE_FRAG_TYPE_HTTP && doc->hlen) {
       SET_HANDLER(&CacheVC::handleReadDone);
       return EVENT_RETURN;
     }
@@ -2614,7 +2773,7 @@ LmemHit:
 }
 
 Action *
-Cache::lookup(Continuation *cont, CacheKey *key, CacheFragType type, char *hostname, int host_len)
+Cache::lookup(Continuation *cont, CacheKey *key, CacheFragType type, char const* hostname, int host_len)
 {
   if (!CacheProcessor::IsCacheReady(type)) {
     cont->handleEvent(CACHE_EVENT_LOOKUP_FAILED, 0);
@@ -2643,12 +2802,12 @@ Cache::lookup(Continuation *cont, CacheKey *key, CacheFragType type, char *hostn
 Action *
 Cache::lookup(Continuation *cont, CacheURL *url, CacheFragType type)
 {
-  INK_MD5 md5;
+  CryptoHash id;
 
-  url->MD5_get(&md5);
+  url->hash_get(&id);
   int len = 0;
-  const char *hostname = url->host_get(&len);
-  return lookup(cont, &md5, type, (char *) hostname, len);
+  char const* hostname = url->host_get(&len);
+  return lookup(cont, &id, type, hostname, len);
 }
 
 int
@@ -2804,7 +2963,7 @@ cplist_init()
       if (!p) {
         // did not find a volume in the cache vol list...create
         // a new one
-        CacheVol *new_p = NEW(new CacheVol());
+        CacheVol *new_p = new CacheVol();
         new_p->vol_number = dp[j]->vol_number;
         new_p->num_vols = dp[j]->num_volblocks;
         new_p->size = dp[j]->size;
@@ -2837,18 +2996,20 @@ cplist_update()
           /* delete this volume from all the disks */
           int d_no;
           int clearCV = 1;
+
           for (d_no = 0; d_no < gndisks; d_no++) {
-              if (cp->disk_vols[d_no]) {
-                 if(cp->disk_vols[d_no]->disk->forced_volume_num == cp->vol_number) {
-                    clearCV = 0;
-                    config_vol->cachep = cp;
-                 } else {
-                    cp->disk_vols[d_no]->disk->delete_volume(cp->vol_number);
-                 }
-             }
+            if (cp->disk_vols[d_no]) {
+              if (cp->disk_vols[d_no]->disk->forced_volume_num == cp->vol_number) {
+                clearCV = 0;
+                config_vol->cachep = cp;
+              } else {
+                cp->disk_vols[d_no]->disk->delete_volume(cp->vol_number);
+              }
+            }
           }
-          if (clearCV)
-              config_vol = NULL;
+          if (clearCV) {
+            config_vol = NULL;
+          }
         }
         break;
       }
@@ -2873,27 +3034,31 @@ cplist_update()
   }
 }
 
-static int fillExclusiveDisks(CacheVol *cp) {
+static int
+fillExclusiveDisks(CacheVol *cp)
+{
   int diskCount = 0;
   int volume_number = cp->vol_number;
+
   Debug("cache_init", "volume %d", volume_number);
+  for (int i = 0; i < gndisks; i++) {
+    if (gdisks[i]->forced_volume_num != volume_number) {
+      continue;
+    }
+    /* The user had created several volumes before - clear the disk
+       and create one volume for http */
+    for(int j = 0; j < (int)gdisks[i]->header->num_volumes; j++) {
+      if (volume_number != gdisks[i]->disk_vols[j]->vol_number) {
+        Note("Clearing Disk: %s", gdisks[i]->path);
+        gdisks[i]->delete_all_volumes();
+        break;
+      }
+    }
+    diskCount++;
 
-   for (int i = 0; i < gndisks; i++) {
-     if(gdisks[i]->forced_volume_num != volume_number)
-       continue;
-     /* The user had created several volumes before - clear the disk
-        and create one volume for http */
-     for(int j = 0; j < (int)gdisks[i]->header->num_volumes; j++) {
-       if (volume_number != gdisks[i]->disk_vols[j]->vol_number) {
-         Note("Clearing Disk: %s", gdisks[i]->path);
-         gdisks[i]->delete_all_volumes();
-         break;
-       }
-     }
+    int64_t size_diff = gdisks[i]->num_usable_blocks;
+    DiskVolBlock *dpb;
 
-     diskCount++;
-     int64_t size_diff = gdisks[i]->num_usable_blocks;
-     DiskVolBlock *dpb;
      do {
        dpb = gdisks[i]->create_volume(volume_number, size_diff, cp->scheme);
        if (dpb) {
@@ -2924,7 +3089,7 @@ cplist_reconfigure()
   gnvol = 0;
   if (config_volumes.num_volumes == 0) {
     /* only the http cache */
-    CacheVol *cp = NEW(new CacheVol());
+    CacheVol *cp = new CacheVol();
     cp->vol_number = 0;
     cp->scheme = CACHE_HTTP_TYPE;
     cp->disk_vols = (DiskVol **)ats_malloc(gndisks * sizeof(DiskVol *));
@@ -3005,7 +3170,6 @@ cplist_reconfigure()
 
     for (config_vol = config_volumes.cp_queue.head; config_vol; config_vol = config_vol->link.next) {
       // if volume is given exclusive disks, fill here and continue
-      volume_number = config_vol->number;
       if (!config_vol->cachep) {
         continue;
       }
@@ -3022,7 +3186,7 @@ cplist_reconfigure()
 
       size_in_blocks = ((off_t) size * 1024 * 1024) / STORE_BLOCK_SIZE;
 
-      if(config_vol->cachep && config_vol->cachep->num_vols > 0) {
+      if (config_vol->cachep && config_vol->cachep->num_vols > 0) {
         gnvol += config_vol->cachep->num_vols;
         continue;
       }
@@ -3030,11 +3194,13 @@ cplist_reconfigure()
       if (!config_vol->cachep) {
         // we did not find a corresponding entry in cache vol...creat one
 
-        CacheVol *new_cp = NEW(new CacheVol());
+        CacheVol *new_cp = new CacheVol();
         new_cp->disk_vols = (DiskVol **)ats_malloc(gndisks * sizeof(DiskVol *));
         memset(new_cp->disk_vols, 0, gndisks * sizeof(DiskVol *));
-        if (create_volume(config_vol->number, size_in_blocks, config_vol->scheme, new_cp))
-          return -1;
+        if (create_volume(config_vol->number, size_in_blocks, config_vol->scheme, new_cp)) {
+        	delete new_cp;
+        	return -1;
+        }
         cp_list.enqueue(new_cp);
         cp_list_len++;
         config_vol->cachep = new_cp;
@@ -3140,7 +3306,7 @@ create_volume(int volume_number, off_t size_in_blocks, int scheme, CacheVol *cp)
 
   cp->vol_number = volume_number;
   cp->scheme = scheme;
-  if(fillExclusiveDisks(cp)) {
+  if (fillExclusiveDisks(cp)) {
     Debug("cache_init", "volume successfully filled from forced disks: volume_number=%d", volume_number);
     return 0;
   }
@@ -3210,9 +3376,9 @@ rebuild_host_table(Cache *cache)
 
 // if generic_host_rec.vols == NULL, what do we do???
 Vol *
-Cache::key_to_vol(CacheKey *key, char *hostname, int host_len)
+Cache::key_to_vol(CacheKey *key, char const* hostname, int host_len)
 {
-  uint32_t h = (key->word(2) >> DIR_TAG_WIDTH) % VOL_HASH_TABLE_SIZE;
+  uint32_t h = (key->slice32(2) >> DIR_TAG_WIDTH) % VOL_HASH_TABLE_SIZE;
   unsigned short *hash_table = hosttable->gen_host_rec.vol_hash_table;
   CacheHostRecord *host_rec = &hosttable->gen_host_rec;
 
@@ -3364,6 +3530,8 @@ ink_cache_init(ModuleVersion v)
 
 #ifdef HTTP_CACHE
   REC_EstablishStaticConfigInt32(enable_cache_empty_http_doc, "proxy.config.http.cache.allow_empty_doc");
+
+  REC_EstablishStaticConfigInt32(cache_config_compatibility_4_2_0_fixup, "proxy.config.cache.http.compatibility.4-2-0-fixup");
 #endif
 
 #if TS_USE_INTERIM_CACHE == 1
@@ -3397,7 +3565,7 @@ ink_cache_init(ModuleVersion v)
   }
 
   if (theCacheStore.n_disks == 0) {
-    xptr<char> path(RecConfigReadConfigPath("proxy.config.cache.storage_filename", "storage.config"));
+    ats_scoped_str path(RecConfigReadConfigPath("proxy.config.cache.storage_filename", "storage.config"));
     Warning("no cache disks specified in %s: cache disabled\n", (const char *)path);
     //exit(1);
   }
@@ -3433,13 +3601,13 @@ CacheProcessor::open_write(Continuation *cont, int expected_size, URL *url, bool
 #ifdef CLUSTER_CACHE
   if (cache_clustering_enabled > 0 && !cluster_cache_local) {
     INK_MD5 url_md5;
-    Cache::generate_key(&url_md5, url, request);
+    Cache::generate_key(&url_md5, url);
     ClusterMachine *m = cluster_machine_at_depth(cache_hash(url_md5));
 
     if (m) {
       // Do remote open_write()
       INK_MD5 url_only_md5;
-      Cache::generate_key(&url_only_md5, url, 0);
+      Cache::generate_key(&url_only_md5, url);
       return Cluster_write(cont, expected_size, (MIOBuffer *) 0, m,
                            &url_only_md5, type,
                            false, pin_in_cache, CACHE_OPEN_WRITE_LONG,
@@ -3456,22 +3624,138 @@ CacheProcessor::open_write(Continuation *cont, int expected_size, URL *url, bool
 Action *
 CacheProcessor::remove(Continuation *cont, URL *url, bool cluster_cache_local, CacheFragType frag_type)
 {
-  INK_MD5 md5;
+  CryptoHash id;
   int len = 0;
   const char *hostname;
 
-  url->MD5_get(&md5);
+  url->hash_get(&id);
   hostname = url->host_get(&len);
 
   Debug("cache_remove", "[CacheProcessor::remove] Issuing cache delete for %s", url->string_get_ref());
 #ifdef CLUSTER_CACHE
   if (cache_clustering_enabled > 0 && !cluster_cache_local) {
     // Remove from cluster
-    return remove(cont, &md5, cluster_cache_local, frag_type, true, false, const_cast<char *>(hostname), len);
+    return remove(cont, &id, cluster_cache_local, frag_type, true, false, const_cast<char *>(hostname), len);
   }
 #endif
 
   // Remove from local cache only.
-  return caches[frag_type]->remove(cont, &md5, frag_type, true, false, const_cast<char*>(hostname), len);
+  return caches[frag_type]->remove(cont, &id, frag_type, true, false, const_cast<char*>(hostname), len);
 }
 
+CacheDisk*
+CacheProcessor::find_by_path(char const* path, int len)
+{
+  if (CACHE_INITIALIZED == initialized) {
+    // If no length is passed in, assume it's null terminated.
+    if (0 >= len && 0 != *path) len = strlen(path);
+
+    for ( int i = 0 ; i < gndisks ; ++i ) {
+      if (0 == strncmp(path, gdisks[i]->path, len))
+        return gdisks[i];
+    }
+  }
+
+  return 0;
+}
+
+// ----------------------------
+
+namespace cache_bc {
+  static size_t const HTTP_ALT_MARSHAL_SIZE = ROUND(sizeof(HTTPCacheAlt), HDR_PTR_SIZE); // current size.
+  size_t
+  HTTPInfo_v21::marshalled_length(void* data)
+  {
+    size_t zret = ROUND(sizeof(HTTPCacheAlt_v21), HDR_PTR_SIZE);
+    HTTPCacheAlt_v21* alt = static_cast<HTTPCacheAlt_v21*>(data);
+    HdrHeap* hdr;
+
+    hdr = reinterpret_cast<HdrHeap*>(reinterpret_cast<char*>(alt) + reinterpret_cast<uintptr_t>(alt->m_request_hdr.m_heap));
+    zret += ROUND(hdr->unmarshal_size(), HDR_PTR_SIZE);
+    hdr = reinterpret_cast<HdrHeap*>(reinterpret_cast<char*>(alt) + reinterpret_cast<uintptr_t>(alt->m_response_hdr.m_heap));
+    zret += ROUND(hdr->unmarshal_size(), HDR_PTR_SIZE);
+    return zret;
+  }
+
+  // Copy an unmarshalled instance from @a src to @a dst.
+  // @a src is presumed to be Cache version 21 and the result
+  // is Cache version 23. @a length is the buffer available in @a dst.
+  // @return @c false if something went wrong (e.g., data overrun).
+  bool
+  HTTPInfo_v21::copy_and_upgrade_unmarshalled_to_v23(
+    char*& dst, char*& src, size_t& length, int n_frags, FragOffset* frag_offsets
+    )
+  {
+    // Offsets of the data after the new stuff.
+    static const size_t OLD_OFFSET = offsetof(HTTPCacheAlt_v21, m_ext_buffer);
+    static const size_t NEW_OFFSET = offsetof(HTTPCacheAlt_v23, m_ext_buffer);
+
+    HTTPCacheAlt_v21* s_alt = reinterpret_cast<HTTPCacheAlt_v21*>(src);
+    HTTPCacheAlt_v23* d_alt = reinterpret_cast<HTTPCacheAlt_v23*>(dst);
+    HdrHeap_v23* s_hdr;
+    HdrHeap_v23* d_hdr;
+    size_t hdr_size;
+
+    if (length < HTTP_ALT_MARSHAL_SIZE) return false; // Absolutely no hope in this case.
+
+    memcpy(dst, src, OLD_OFFSET); // initially same data
+    // Now data that's now after extra
+    memcpy( static_cast<char*>(dst) + NEW_OFFSET
+            , static_cast<char*>(src) + OLD_OFFSET
+            , sizeof(HTTPCacheAlt_v21) - OLD_OFFSET
+      );
+    dst += HTTP_ALT_MARSHAL_SIZE; // move past fixed data.
+    length -= HTTP_ALT_MARSHAL_SIZE;
+
+    // Extra data is fragment table - set that if we have it.
+    if (n_frags) {
+      static size_t const IFT_SIZE = HTTPCacheAlt_v23::N_INTEGRAL_FRAG_OFFSETS * sizeof(FragOffset);
+      size_t ift_actual = min(n_frags, HTTPCacheAlt_v23::N_INTEGRAL_FRAG_OFFSETS) * sizeof(FragOffset);
+
+      if (length < (HTTP_ALT_MARSHAL_SIZE + n_frags * sizeof(FragOffset) - IFT_SIZE))
+        return false; // can't place fragment table.
+
+      d_alt->m_frag_offset_count = n_frags;
+      d_alt->m_frag_offsets = reinterpret_cast<FragOffset*>(dst - reinterpret_cast<char*>(d_alt));
+
+      memcpy(d_alt->m_integral_frag_offsets, frag_offsets, ift_actual);
+      n_frags -= HTTPCacheAlt_v23::N_INTEGRAL_FRAG_OFFSETS;
+      if (n_frags > 0) {
+        size_t k = sizeof(FragOffset) * n_frags;
+        memcpy(dst, frag_offsets + IFT_SIZE, k);
+        dst += k;
+        length -= k;
+      } else if (n_frags < 0) {
+        memset(dst + ift_actual, 0, IFT_SIZE - ift_actual);
+      }
+    } else {
+      d_alt->m_frag_offset_count = 0;
+      d_alt->m_frag_offsets = 0;
+      ink_zero(d_alt->m_integral_frag_offsets);
+    }
+
+    // Copy over the headers, tweaking the swizzled pointers.
+    s_hdr = reinterpret_cast<HdrHeap_v23*>(reinterpret_cast<char*>(s_alt) + reinterpret_cast<uintptr_t>(s_alt->m_request_hdr.m_heap));
+    d_hdr = reinterpret_cast<HdrHeap_v23*>(dst);
+    hdr_size = ROUND(s_hdr->unmarshal_size(), HDR_PTR_SIZE);
+    if (hdr_size > length) return false;
+    memcpy(d_hdr, s_hdr, hdr_size);
+    d_alt->m_request_hdr.m_heap = reinterpret_cast<HdrHeap_v23*>(reinterpret_cast<char*>(d_hdr) - reinterpret_cast<char*>(d_alt));
+    dst += hdr_size;
+    length -= hdr_size;
+
+    s_hdr = reinterpret_cast<HdrHeap_v23*>(reinterpret_cast<char*>(s_alt) + reinterpret_cast<uintptr_t>(s_alt->m_response_hdr.m_heap));
+    d_hdr = reinterpret_cast<HdrHeap_v23*>(dst);
+    hdr_size = ROUND(s_hdr->unmarshal_size(), HDR_PTR_SIZE);
+    if (hdr_size > length) return false;
+    memcpy(d_hdr, s_hdr, hdr_size);
+    d_alt->m_response_hdr.m_heap = reinterpret_cast<HdrHeap_v23*>(reinterpret_cast<char*>(d_hdr) - reinterpret_cast<char*>(d_alt));
+    dst += hdr_size;
+    length -= hdr_size;
+
+    src = reinterpret_cast<char*>(s_hdr) + hdr_size;
+  
+    return true;
+  }
+
+} // cache_bc

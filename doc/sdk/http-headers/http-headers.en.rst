@@ -77,6 +77,9 @@ the methods defined in the HTTP 1.1 specification
 ``TS_HTTP_METHOD_TRACE``
    "TRACE"
 
+``TS_HTTP_METHOD_PUSH``
+   "PUSH"
+
 Traffic Server also defines several common values that appear in HTTP
 headers.
 
@@ -156,28 +159,28 @@ known schemes, since this removes the possibility of a spelling error.
 
 The **HTTP Header Functions** are listed below:
 
--  ```TSHttpHdrClone`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#abd410a18e8bc73298302c4ff3ee9b0c6>`__
--  ```TSHttpHdrCopy`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a5ff26f3836a74e885113423dfd4d9ed6>`__
--  ```TSHttpHdrCreate`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a8bbd8c2aaf70fb579af4520053fd5e10>`__
--  ```TSHttpHdrDestroy`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a500ac4aae8f369221cf3ac2e3ce0d2a0>`__
--  ```TSHttpHdrLengthGet`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a3afc557e4e99565ab81bf6437b65181b>`__
--  ```TSHttpHdrMethodGet`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a358627e05506baa5c8270891652ac4d2>`__
--  ```TSHttpHdrMethodSet`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a32bbcacacbef997e89c04cc3898b0ca4>`__
--  ```TSHttpHdrPrint`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a7c88f30d6325a461fb038e6a117b3731>`__
--  ```TSHttpHdrReasonGet`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#a8b1609e9c8a8a52ebe7762b6109d3bef>`__
--  ```TSHttpHdrReasonLookup`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#ab49fded8874b8e3e17cf4395c9832378>`__
--  ```TSHttpHdrReasonSet`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#ab86e5f5e7c0af2092c77327d2e0d3b23>`__
--  ```TSHttpHdrStatusGet`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#ac29d5acc357a0c82c83874f42b1e487b>`__
--  ```TSHttpHdrStatusSet`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#af34459170ed7f3b002ddd597ae38af12>`__
--  ```TSHttpHdrTypeGet`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#afc1c6f0a3258c4bc6567805df1db1ca3>`__
--  ```TSHttpHdrTypeSet`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a86058d8590a665dbf43a529714202d3f>`__
--  ```TSHttpHdrUrlGet`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#af149d7b5c1b8902363afc0ad658c494e>`__
--  ```TSHttpHdrUrlSet`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#ad935635a3918575fa6cca6843c474cfe>`__
--  ```TSHttpHdrVersionGet`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a90cc8783f5d0bc159f226079aa0104e4>`__
--  ```TSHttpHdrVersionSet`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#aa2a2c03399cdc8dc39b8756f13e7f189>`__
--  ```TSHttpParserClear`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a7cb1b53b4464dc71287351616d6e7509>`__
--  ```TSHttpParserCreate`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#a6075fb4e8fc41eb75d640f258722115b>`__
--  `TSHttpParserDestroy <link/to/doxyge>`__
--  ```TSHttpHdrParseReq`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a64193b3c9ddff8bc434c1cc9332004cc>`__
--  ```TSHttpHdrParseResp`` <http://people.apache.org/~amc/ats/doc/html/InkAPI_8cc.html#a03c8a14b6ab2b7896ef0e4005222ecff>`__
+-  :c:func:`TSHttpHdrClone`
+-  :c:func:`TSHttpHdrCopy`
+-  :c:func:`TSHttpHdrCreate`
+-  :c:func:`TSHttpHdrDestroy`
+-  :c:func:`TSHttpHdrLengthGet`
+-  :c:func:`TSHttpHdrMethodGet`
+-  :c:func:`TSHttpHdrMethodSet`
+-  :c:func:`TSHttpHdrPrint`
+-  :c:func:`TSHttpHdrReasonGet`
+-  :c:func:`TSHttpHdrReasonLookup`
+-  :c:func:`TSHttpHdrReasonSet`
+-  :c:func:`TSHttpHdrStatusGet`
+-  :c:func:`TSHttpHdrStatusSet`
+-  :c:func:`TSHttpHdrTypeGet`
+-  :c:func:`TSHttpHdrTypeSet`
+-  :c:func:`TSHttpHdrUrlGet`
+-  :c:func:`TSHttpHdrUrlSet`
+-  :c:func:`TSHttpHdrVersionGet`
+-  :c:func:`TSHttpHdrVersionSet`
+-  :c:func:`TSHttpParserClear`
+-  :c:func:`TSHttpParserCreate`
+-  :c:func:`TSHttpParserDestroy`
+-  :c:func:`TSHttpHdrParseReq`
+-  :c:func:`TSHttpHdrParseResp`
 

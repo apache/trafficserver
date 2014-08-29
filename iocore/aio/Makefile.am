@@ -19,6 +19,7 @@
 AM_CPPFLAGS = \
   -I$(top_srcdir)/iocore/eventsystem \
   -I$(top_srcdir)/lib \
+  -I$(top_builddir)/lib \
   -I$(top_srcdir)/lib/records \
   -I$(top_srcdir)/lib/ts
 
@@ -38,8 +39,7 @@ test_AIO_SOURCES = \
 
 test_AIO_CXXFLAGS = \
   $(iocore_include_dirs) \
-  -I$(top_builddir)/proxy \
-  -I$(top_builddir)/proxy/api/ts \
+  -I$(top_srcdir)/proxy/api/ts \
   -I$(top_srcdir)/proxy/api \
   -I$(top_srcdir)/proxy \
   -I$(top_srcdir)/proxy/hdrs \
@@ -50,11 +50,9 @@ test_AIO_CXXFLAGS = \
 
 test_AIO_LDADD = \
   libinkaio.a \
-  $(top_builddir)/lib/records/librecprocess.a \
-  $(top_builddir)/mgmt/libmgmt_p.a \
-  $(top_builddir)/mgmt/utils/libutils_p.a \
+  $(top_builddir)/lib/records/librecords_p.a \
+  $(top_builddir)/mgmt/libmgmt_p.la \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/lib/ts/libtsutil.la \
   $(top_builddir)/proxy/shared/libUglyLogStubs.a \
-  @LIBTCL@
-
+  @LIBTCL@ @HWLOC_LIBS@

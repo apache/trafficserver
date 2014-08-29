@@ -77,7 +77,7 @@ ShowCacheInternal *theshowcacheInternal = NULL;
 Action *
 register_ShowCacheInternal(Continuation * c, HTTPHdr * h)
 {
-  theshowcacheInternal = NEW(new ShowCacheInternal(c, h));
+  theshowcacheInternal = new ShowCacheInternal(c, h);
   URL *u = h->url_get();
 
   int path_len;
@@ -283,7 +283,7 @@ ShowCacheInternal::showVolVolumes(int event, Event * e)
                   "<td>%u</td>" // sync serial
                   "<td>%u</td>" // write serial
                   "</tr>\n",
-                  p->hash_id,
+                  p->hash_text.get(),
                   (uint64_t)((p->len - (p->start - p->skip)) / CACHE_BLOCK_SIZE),
                   (uint64_t)(p->buckets * DIR_DEPTH * p->segments),
                   (uint64_t)((p->header->write_pos - p->start) / CACHE_BLOCK_SIZE),

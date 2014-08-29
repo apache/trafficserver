@@ -16,6 +16,10 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+library_includedir=$(includedir)/ts
+
+library_include_HEADERS = apidefs.h
+
 noinst_PROGRAMS = mkdfa CompileParseRules
 check_PROGRAMS = test_atomic test_freelist test_arena test_List test_Map test_Vec
 TESTS = $(check_PROGRAMS)
@@ -26,10 +30,10 @@ lib_LTLIBRARIES = libtsutil.la
 
 libtsutil_la_LDFLAGS = -no-undefined -version-info @TS_LIBTOOL_VERSION@
 libtsutil_la_LIBADD = \
-  @hwloc_LIBS@ \
+  @HWLOC_LIBS@ \
   @LIBOBJS@ \
   @LIBPCRE@ \
-  @LIBSSL@ \
+  @OPENSSL_LIBS@ \
   @LIBTCL@ \
   @LIBRESOLV@ \
   @LIBCAP@ \
@@ -42,11 +46,22 @@ libtsutil_la_SOURCES = \
   Bitops.cc \
   Bitops.h \
   Compatability.h \
+  Cryptohash.h \
+  ConsistentHash.cc \
+  ConsistentHash.h \
   Diags.cc \
   Diags.h \
   DynArray.h \
   EventNotify.cc \
   EventNotify.h \
+  Hash.cc \
+  Hash.h \
+  HashFNV.cc \
+  HashFNV.h \
+  HashMD5.cc \
+  HashMD5.h \
+  HashSip.cc \
+  HashSip.h \
   HostLookup.cc \
   HostLookup.h \
   INK_MD5.h \
@@ -66,6 +81,8 @@ libtsutil_la_SOURCES = \
   MatcherUtils.h \
   MimeTable.cc \
   MimeTable.h \
+  MMH.h \
+  MMH.cc \
   ParseRules.cc \
   ParseRules.h \
   Ptr.h \
@@ -75,8 +92,6 @@ libtsutil_la_SOURCES = \
   Regex.h \
   Regression.cc \
   Regression.h \
-  Resource.cc \
-  Resource.h \
   SimpleTokenizer.h \
   TestBox.h \
   TextBuffer.cc \

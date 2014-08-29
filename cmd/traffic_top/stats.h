@@ -21,8 +21,6 @@
     limitations under the License.
 */
 
-#define __STDC_FORMAT_MACROS 1
-
 #include <curl/curl.h>
 #include <map>
 #include <string>
@@ -305,7 +303,6 @@ public:
 
   int64_t getValue(const string &key, const map<string, string> *stats) const {
     map<string, string>::const_iterator stats_it = stats->find(key);
-    printf("trying to find %s\n", key.c_str());
     if (stats_it == stats->end())
       return 0;
     int64_t value = atoll(stats_it->second.c_str());

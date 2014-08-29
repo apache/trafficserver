@@ -25,8 +25,8 @@
 #include "I_Machine.h"
 
 #if HAVE_IFADDRS_H
-#include <ifaddrs.h>
-# endif
+#  include <ifaddrs.h>
+#endif
 
 // Singleton
 Machine* Machine::_instance = NULL;
@@ -83,7 +83,6 @@ Machine::Machine(char const* the_hostname, sockaddr const* addr)
         conf.ifc_len = sizeof(req);
         conf.ifc_req = req;
         status = ioctl(s, SIOCGIFCONF, &conf);
-        close(s);
       } else {
         status = -1;
       }
@@ -105,6 +104,7 @@ Machine::Machine(char const* the_hostname, sockaddr const* addr)
         GL  // Global.
       } spot_type = NA, ip4_type = NA, ip6_type = NA;
       sockaddr const* ifip;
+      unsigned int ifflags;
       for (
 #if HAVE_IFADDRS_H
         ifaddrs* spot = ifa_addrs ; spot ; spot = spot->ifa_next
@@ -114,17 +114,22 @@ Machine::Machine(char const* the_hostname, sockaddr const* addr)
       ) {
 #if HAVE_IFADDRS_H
         ifip = spot->ifa_addr;
+        ifflags = spot->ifa_flags;
 #else
         ifip = &spot->ifr_addr;
-#endif
 
+        // get the interface's flags
+        struct ifreq ifr;
+        ink_strlcpy(ifr.ifr_name, spot->ifr_name, IFNAMSIZ);
+        if (ioctl(s, SIOCGIFFLAGS, &ifr) == 0)   ifflags = ifr.ifr_flags;
+        else ifflags = 0; // flags not available, default to just looking at IP
+#endif
         if (!ats_is_ip(ifip)) spot_type = NA;
-        else if (ats_is_ip_loopback(ifip)) spot_type = LO;
+        else if (ats_is_ip_loopback(ifip) || (IFF_LOOPBACK & ifflags)) spot_type = LO;
         else if (ats_is_ip_linklocal(ifip)) spot_type = LL;
         else if (ats_is_ip_private(ifip)) spot_type = PR;
         else if (ats_is_ip_multicast(ifip)) spot_type = MC;
         else spot_type = GL;
-
         if (spot_type == NA) continue; // Next!
 
         if (ats_is_ip4(ifip)) {
@@ -150,6 +155,9 @@ Machine::Machine(char const* the_hostname, sockaddr const* addr)
       else
         ats_ip_copy(&ip.sa, &ip6.sa);
     }
+#if ! HAVE_IFADDRS_H
+    close(s);
+#endif
   } else { // address provided.
     ats_ip_copy(&ip, addr);
     if (ats_is_ip4(addr)) ats_ip_copy(&ip4, addr);

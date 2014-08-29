@@ -33,9 +33,10 @@
 #include "P_RecFile.h"
 
 #include "mgmtapi.h"
+#include "ProcessManager.h"
 
-static bool g_initialized = false;
-static bool g_message_initialized = false;
+// Marks whether the message handler has been initialized.
+static bool message_initialized_p = false;
 static bool g_started = false;
 static EventNotify g_force_req_notify;
 static int g_rec_raw_stat_sync_interval_ms = REC_RAW_STAT_SYNC_INTERVAL_MS;
@@ -46,7 +47,7 @@ static Event *config_update_cont_event;
 static Event *sync_cont_event;
 
 //-------------------------------------------------------------------------
-// i_am_the_record_owner, only used for librecprocess.a
+// i_am_the_record_owner, only used for librecords_p.a
 //-------------------------------------------------------------------------
 bool
 i_am_the_record_owner(RecT rec_type)
@@ -334,7 +335,7 @@ struct raw_stat_sync_cont: public Continuation
     SET_HANDLER(&raw_stat_sync_cont::exec_callbacks);
   }
 
-  int exec_callbacks(int event, Event *e)
+  int exec_callbacks(int /* event */, Event * /* e */)
   {
     RecExecRawStatSyncCbs();
     Debug("statsproc", "raw_stat_sync_cont() processed");
@@ -355,7 +356,7 @@ struct config_update_cont: public Continuation
     SET_HANDLER(&config_update_cont::exec_callbacks);
   }
 
-  int exec_callbacks(int event, Event *e)
+  int exec_callbacks(int /* event */, Event * /* e */)
   {
     RecExecConfigUpdateCbs(REC_PROCESS_UPDATE_REQUIRED);
     Debug("statsproc", "config_update_cont() processed");
@@ -376,7 +377,7 @@ struct sync_cont: public Continuation
     : Continuation(m)
   {
     SET_HANDLER(&sync_cont::sync);
-    m_tb = NEW(new textBuffer(65536));
+    m_tb = new textBuffer(65536);
   }
 
    ~sync_cont()
@@ -387,16 +388,12 @@ struct sync_cont: public Continuation
     }
   }
 
-  int sync(int event, Event *e)
+  int sync(int /* event */, Event * /* e */)
   {
     send_push_message();
     RecSyncStatsFile();
     if (RecSyncConfigToTB(m_tb) == REC_ERR_OKAY) {
-      int nbytes;
-      RecDebug(DL_Note, "Writing '%s'", g_rec_config_fpath);
-      RecHandle h_file = RecFileOpenW(g_rec_config_fpath);
-      RecFileWrite(h_file, m_tb->bufPtr(), m_tb->spaceUsed(), &nbytes);
-      RecFileClose(h_file);
+        RecWriteConfigFile(m_tb);
     }
     Debug("statsproc", "sync_cont() processed");
 
@@ -411,7 +408,9 @@ struct sync_cont: public Continuation
 int
 RecProcessInit(RecModeT mode_type, Diags *_diags)
 {
-  if (g_initialized) {
+  static bool initialized_p = false;
+
+  if (initialized_p) {
     return REC_ERR_OKAY;
   }
 
@@ -440,11 +439,19 @@ RecProcessInit(RecModeT mode_type, Diags *_diags)
    }
    */
 
-  g_initialized = true;
+  initialized_p = true;
 
   return REC_ERR_OKAY;
 }
 
+
+void
+RecMessageInit()
+{
+  ink_assert(g_mode_type != RECM_NULL);
+  pmgmt->registerMgmtCallback(MGMT_EVENT_LIBRECORDS, RecMessageRecvThis, NULL);
+  message_initialized_p = true;
+}
 
 //-------------------------------------------------------------------------
 // RecProcessInitMessage
@@ -452,14 +459,13 @@ RecProcessInit(RecModeT mode_type, Diags *_diags)
 int
 RecProcessInitMessage(RecModeT mode_type)
 {
-  if (g_message_initialized) {
+  static bool initialized_p = false;
+
+  if (initialized_p) {
     return REC_ERR_OKAY;
   }
 
-  if (RecMessageInit() == REC_ERR_FAIL) {
-    return REC_ERR_FAIL;
-  }
-
+  RecMessageInit();
   if (RecMessageRegisterRecvCb(recv_message_cb__process, NULL)) {
     return REC_ERR_FAIL;
   }
@@ -471,7 +477,7 @@ RecProcessInitMessage(RecModeT mode_type)
     g_force_req_notify.unlock();
   }
 
-  g_message_initialized = true;
+  initialized_p = true;
 
   return REC_ERR_OKAY;
 }
@@ -488,15 +494,15 @@ RecProcessStart(void)
   }
 
   Debug("statsproc", "Starting sync continuations:");
-  raw_stat_sync_cont *rssc = NEW(new raw_stat_sync_cont(new_ProxyMutex()));
+  raw_stat_sync_cont *rssc = new raw_stat_sync_cont(new_ProxyMutex());
   Debug("statsproc", "\traw-stat syncer");
   raw_stat_sync_cont_event = eventProcessor.schedule_every(rssc, HRTIME_MSECONDS(g_rec_raw_stat_sync_interval_ms), ET_TASK);
 
-  config_update_cont *cuc = NEW(new config_update_cont(new_ProxyMutex()));
+  config_update_cont *cuc = new config_update_cont(new_ProxyMutex());
   Debug("statsproc", "\tconfig syncer");
   config_update_cont_event = eventProcessor.schedule_every(cuc, HRTIME_MSECONDS(g_rec_config_update_interval_ms), ET_TASK);
 
-  sync_cont *sc = NEW(new sync_cont(new_ProxyMutex()));
+  sync_cont *sc = new sync_cont(new_ProxyMutex());
   Debug("statsproc", "\tremote syncer");
   sync_cont_event = eventProcessor.schedule_every(sc, HRTIME_MSECONDS(g_rec_remote_sync_interval_ms), ET_TASK);
 
@@ -536,7 +542,7 @@ RecAllocateRawStatBlock(int num_stats)
 // RecRegisterRawStat
 //-------------------------------------------------------------------------
 int
-RecRegisterRawStat(RecRawStatBlock *rsb, RecT rec_type, const char *name, RecDataT data_type, RecPersistT persist_type, int id,
+_RecRegisterRawStat(RecRawStatBlock *rsb, RecT rec_type, const char *name, RecDataT data_type, RecPersistT persist_type, int id,
                    RecRawStatSyncCb sync_cb)
 {
   Debug("stats", "RecRawStatSyncCb(%s): rsb pointer:%p id:%d\n", name, rsb, id);
@@ -891,3 +897,39 @@ RecExecRawStatSyncCbs()
 
   return REC_ERR_OKAY;
 }
+
+void
+RecSignalManager(int id, const char * msg, size_t msgsize)
+{
+  ink_assert(pmgmt);
+  pmgmt->signalManager(id, msg, msgsize);
+}
+
+int
+RecRegisterManagerCb(int _signal, RecManagerCb _fn, void *_data)
+{
+  return pmgmt->registerMgmtCallback(_signal, _fn, _data);
+}
+
+//-------------------------------------------------------------------------
+// RecMessageSend
+//-------------------------------------------------------------------------
+
+int
+RecMessageSend(RecMessage * msg)
+{
+  int msg_size;
+
+  if (!message_initialized_p)
+    return REC_ERR_OKAY;
+
+  // Make a copy of the record, but truncate it to the size actually used
+  if (g_mode_type == RECM_CLIENT || g_mode_type == RECM_SERVER) {
+    msg->o_end = msg->o_write;
+    msg_size = sizeof(RecMessageHdr) + (msg->o_write - msg->o_start);
+    pmgmt->signalManager(MGMT_SIGNAL_LIBRECORDS, (char *) msg, msg_size);
+  }
+
+  return REC_ERR_OKAY;
+}
+

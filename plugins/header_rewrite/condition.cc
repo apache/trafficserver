@@ -19,8 +19,9 @@
 // condition.cc: Implementation of the condition base class
 //
 //
-#include <ts/ts.h>
 #include <string>
+
+#include "ts/ts.h"
 
 #include "condition.h"
 

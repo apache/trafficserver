@@ -85,7 +85,7 @@ AIOVec::mainEvent(int /* event */, Event *) {
   else if (completed == size) {
     MUTEX_LOCK(lock, action.mutex, this_ethread());
     if (!action.cancelled)
-      action.continuation->handleEvent(AIO_EVENT_DONE, this);
+      action.continuation->handleEvent(AIO_EVENT_DONE, first);
     delete this;
     return EVENT_DONE;
   }
@@ -107,6 +107,7 @@ struct AIOCallbackInternal: public AIOCallback
   {
     const size_t to_zero = sizeof(AIOCallbackInternal)
       - (size_t) & (((AIOCallbackInternal *) 0)->aiocb);
+    // coverity[overrun-buffer-arg]
     memset((char *) &(this->aiocb), 0, to_zero);
     SET_HANDLER(&AIOCallbackInternal::io_complete);
     // we do a memset() on AIOCallback and AIOCallbackInternal, so it sets all the members to 0

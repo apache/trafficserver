@@ -124,8 +124,8 @@ struct VolHeaderFooter
 struct EvacuationKey
 {
   SLink<EvacuationKey> link;
-  INK_MD5 key;
-  INK_MD5 earliest_key;
+  CryptoHash key;
+  CryptoHash earliest_key;
 };
 
 struct EvacuationBlock
@@ -236,9 +236,9 @@ struct AccessHistory {
     return tail;
   }
 
-  void set_in_progress(INK_MD5 *key) {
-    uint32_t key_index = key->word(3);
-    uint16_t tag = (uint16_t) key->word(1);
+  void set_in_progress(CryptoHash *key) {
+    uint32_t key_index = key->slice32(3);
+    uint16_t tag = static_cast<uint16_t>(key->slice32(1));
     unsigned int hash_index = (uint32_t) (key_index % hash_size);
 
     uint32_t index = hash[hash_index];
@@ -248,9 +248,9 @@ struct AccessHistory {
     }
   }
 
-  void set_not_in_progress(INK_MD5 *key) {
-    uint32_t key_index = key->word(3);
-    uint16_t tag = (uint16_t) key->word(1);
+  void set_not_in_progress(CryptoHash *key) {
+    uint32_t key_index = key->slice32(3);
+    uint16_t tag = static_cast<uint16_t>(key->slice32(1));
     unsigned int hash_index = (uint32_t) (key_index % hash_size);
 
     uint32_t index = hash[hash_index];
@@ -260,9 +260,9 @@ struct AccessHistory {
     }
   }
 
-  void put_key(INK_MD5 *key) {
-    uint32_t key_index = key->word(3);
-    uint16_t tag = (uint16_t) key->word(1);
+  void put_key(CryptoHash *key) {
+    uint32_t key_index = key->slice32(3);
+    uint16_t tag = static_cast<uint16_t>(key->slice32(1));
     unsigned int hash_index = (uint32_t) (key_index % hash_size);
 
     uint32_t index = hash[hash_index];
@@ -292,11 +292,11 @@ struct AccessHistory {
     }
   }
 
-  bool remove_key(INK_MD5 *key) {
-    unsigned int hash_index = (uint32_t) (key->word(3) % hash_size);
+  bool remove_key(CryptoHash *key) {
+    unsigned int hash_index = static_cast<uint32_t>(key->slice32(3) % hash_size);
     uint32_t index = hash[hash_index];
     AccessEntry *entry = &base[index];
-    if (index != 0 && entry->item.tag == (uint16_t)key->word(1) && entry->item.index == key->word(3)) {
+    if (index != 0 && entry->item.tag == static_cast<uint16_t>(key->slice32(1)) && entry->item.index == key->slice32(3)) {
       remove(entry);
       freeEntry(entry);
       return true;
@@ -304,9 +304,9 @@ struct AccessHistory {
     return false;
   }
 
-  bool is_hot(INK_MD5 *key) {
-    uint32_t key_index = key->word(3);
-    uint16_t tag = (uint16_t) key->word(1);
+  bool is_hot(CryptoHash *key) {
+    uint32_t key_index = key->slice32(3);
+    uint16_t tag = (uint16_t) key->slice32(1);
     unsigned int hash_index = (uint32_t) (key_index % hash_size);
 
     uint32_t index = hash[hash_index];
@@ -337,7 +337,7 @@ struct MigrateToInterimCache
 
 struct InterimCacheVol: public Continuation
 {
-  char *hash_id;
+  ats_scoped_str hash_text;
   InterimVolHeaderFooter *header;
 
   off_t recover_pos;
@@ -381,9 +381,12 @@ struct InterimCacheVol: public Continuation
   }
 
   void init(off_t s, off_t l, CacheDisk *interim, Vol *v, InterimVolHeaderFooter *hptr) {
-    const size_t hash_id_size = strlen(interim->path) + 32;
-    hash_id = (char *)ats_malloc(hash_id_size);
-    snprintf(hash_id, hash_id_size, "%s %" PRIu64 ":%" PRIu64 "", interim->path, s, l);
+    char* seed_str = interim->hash_base_string ? interim->hash_base_string : interim->path;
+    const size_t hash_seed_size = strlen(seed_str);
+    const size_t hash_text_size = hash_seed_size + 32;
+
+    hash_text = static_cast<char *>(ats_malloc(hash_text_size));
+    snprintf(hash_text, hash_text_size, "%s %" PRIu64 ":%" PRIu64 "", seed_str, s, l);
 
     skip = start = s;
     len = l;
@@ -414,8 +417,8 @@ void dir_clean_interimvol(InterimCacheVol *d);
 struct Vol: public Continuation
 {
   char *path;
-  char *hash_id;
-  INK_MD5 hash_id_md5;
+  ats_scoped_str hash_text;
+  CryptoHash hash_id;
   int fd;
 
   char *raw_dir;
@@ -477,7 +480,7 @@ struct Vol: public Continuation
 
 
   bool migrate_probe(CacheKey *key, MigrateToInterimCache **result) {
-    uint32_t indx = key->word(3) % MIGRATE_BUCKETS;
+    uint32_t indx = key->slice32(3) % MIGRATE_BUCKETS;
     MigrateToInterimCache *m = mig_hash[indx].head;
     while (m != NULL && !(m->key == *key)) {
       m = mig_hash[indx].next(m);
@@ -488,17 +491,17 @@ struct Vol: public Continuation
   }
 
   void set_migrate_in_progress(MigrateToInterimCache *m) {
-    uint32_t indx = m->key.word(3) % MIGRATE_BUCKETS;
+    uint32_t indx = m->key.slice32(3) % MIGRATE_BUCKETS;
     mig_hash[indx].enqueue(m);
   }
 
   void set_migrate_failed(MigrateToInterimCache *m) {
-    uint32_t indx = m->key.word(3) % MIGRATE_BUCKETS;
+    uint32_t indx = m->key.slice32(3) % MIGRATE_BUCKETS;
     mig_hash[indx].remove(m);
   }
 
   void set_migrate_done(MigrateToInterimCache *m) {
-    uint32_t indx = m->key.word(3) % MIGRATE_BUCKETS;
+    uint32_t indx = m->key.slice32(3) % MIGRATE_BUCKETS;
     mig_hash[indx].remove(m);
     history.remove_key(&m->key);
   }
@@ -516,8 +519,8 @@ struct Vol: public Continuation
   int begin_read_lock(CacheVC *cont);
   // unused read-write interlock code
   // currently http handles a write-lock failure by retrying the read
-  OpenDirEntry *open_read(INK_MD5 *key);
-  OpenDirEntry *open_read_lock(INK_MD5 *key, EThread *t);
+  OpenDirEntry *open_read(CryptoHash *key);
+  OpenDirEntry *open_read_lock(CryptoHash *key, EThread *t);
   int close_read(CacheVC *cont);
   int close_read_lock(CacheVC *cont);
 
@@ -623,13 +626,15 @@ struct CacheVol
 struct Doc
 {
   uint32_t magic;         // DOC_MAGIC
-  uint32_t len;           // length of this segment (including hlen, flen & sizeof(Doc), unrounded)
+  uint32_t len;           // length of this fragment (including hlen & sizeof(Doc), unrounded)
   uint64_t total_len;     // total length of document
-  INK_MD5 first_key;    // first key in document (http: vector)
-  INK_MD5 key;
-  uint32_t hlen;          // header length
-  uint32_t ftype:8;       // fragment type CACHE_FRAG_TYPE_XX
-  uint32_t _flen:24;       // fragment table length [amc] NOT USED
+  CryptoHash first_key;    ///< first key in object.
+  CryptoHash key; ///< Key for this doc.
+  uint32_t hlen; ///< Length of this header.
+  uint32_t doc_type:8;       ///< Doc type - indicates the format of this structure and its content.
+  uint32_t v_major:8;   ///< Major version number.
+  uint32_t v_minor:8; ///< Minor version number.
+  uint32_t unused:8; ///< Unused, forced to zero.
   uint32_t sync_serial;
   uint32_t write_serial;
   uint32_t pinned;        // pinned until
@@ -774,31 +779,31 @@ vol_relative_length(Vol *v, off_t start_offset)
 TS_INLINE uint32_t
 Doc::prefix_len()
 {
-  return sizeofDoc + hlen + _flen;
+  return sizeofDoc + hlen;
 }
 
 TS_INLINE uint32_t
 Doc::data_len()
 {
-  return len - sizeofDoc - hlen - _flen;
+  return len - sizeofDoc - hlen;
 }
 
 TS_INLINE int
 Doc::single_fragment()
 {
-  return (data_len() == total_len);
+  return data_len() == total_len;
 }
 
 TS_INLINE char *
 Doc::hdr()
 {
-  return ((char *) this) + sizeofDoc + _flen;
+  return reinterpret_cast<char*>(this) + sizeofDoc;
 }
 
 TS_INLINE char *
 Doc::data()
 {
-  return ((char *) this) + sizeofDoc + _flen + hlen;
+  return this->hdr() +  hlen;
 }
 
 int vol_dir_clear(Vol *d);
@@ -849,7 +854,7 @@ free_EvacuationBlock(EvacuationBlock *b, EThread *t)
 }
 
 TS_INLINE OpenDirEntry *
-Vol::open_read(INK_MD5 *key)
+Vol::open_read(CryptoHash *key)
 {
   return open_dir.open_read(key);
 }

@@ -308,6 +308,7 @@ Variables::_getSubCookieValue(const string &cookie_str, size_t cookie_part_divid
   // character, and we don't need to create a copy of the string for
   // that; hence this shortcut
   string &non_const_cookie_str = const_cast<string &>(cookie_str);
+  StringHash::const_iterator it_part;
     
   non_const_cookie_str[cookie_part_divider] = '\0'; // make sure cookie name is NULL terminated
   const char *cookie_name = non_const_cookie_str.data(); /* above NULL will take effect */
@@ -317,25 +318,27 @@ Variables::_getSubCookieValue(const string &cookie_str, size_t cookie_part_divid
   if (it_cookie == _sub_cookies.end()) {
       _debugLog(_debug_tag, "[%s] Could not find value for cookie [%s]", 
               __FUNCTION__, cookie_name);
-      return EMPTY_STRING;
+      goto fail;
   }
 
-  non_const_cookie_str[cookie_part_divider] = ';'; // restore before returning
-
-  StringHash::const_iterator it_part = it_cookie->second.find(part_name);
+  it_part = it_cookie->second.find(part_name);
   if (it_part == it_cookie->second.end()) {
       _debugLog(_debug_tag, "[%s] Could not find value for part [%s] of cookie [%.*s]", __FUNCTION__,
               part_name, cookie_part_divider, cookie_name);
-      return EMPTY_STRING;
+      goto fail;
   }
 
   _debugLog(_debug_tag, "[%s] Got value [%s] for cookie name [%.*s] and part [%s]",
           __FUNCTION__, it_part->second.c_str(), cookie_part_divider, cookie_name, part_name);
 
-  // we need to do this as have to return a string reference
-  string &retval = const_cast<Variables &>(*this)._cached_sub_cookie_value;
-  retval.assign(it_part->second);
-  return retval;
+  non_const_cookie_str[cookie_part_divider] = ';'; // restore before returning
+
+  this->_cached_sub_cookie_value.assign(it_part->second);
+  return this->_cached_sub_cookie_value;
+
+fail:
+  non_const_cookie_str[cookie_part_divider] = ';'; // restore before returning
+  return EMPTY_STRING;
 }
 
 void

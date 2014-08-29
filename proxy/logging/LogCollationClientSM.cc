@@ -84,7 +84,7 @@ LogCollationClientSM::LogCollationClientSM(LogHost * log_host)
 
   // allocate send_list before we do anything
   // we can accept logs to send before we're fully initialized
-  m_buffer_send_list = NEW(new LogBufferList());
+  m_buffer_send_list = new LogBufferList();
   ink_assert(m_buffer_send_list != NULL);
 
   SET_HANDLER((LogCollationClientSMHandler) & LogCollationClientSM::client_handler);
@@ -412,7 +412,7 @@ LogCollationClientSM::client_fail(int event, void * /* data ATS_UNUSED */)
       snprintf(msg_buf, sizeof(msg_buf), "Collation host %s:%u down",
                m_log_host->ip_addr().toString(ipb, sizeof ipb), m_log_host->m_port
       );
-      REC_SignalManager(400, msg_buf);
+      RecSignalManager(MGMT_SIGNAL_SAC_SERVER_DOWN, msg_buf);
       m_host_is_up = false;
     }
 

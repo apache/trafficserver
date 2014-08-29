@@ -48,9 +48,8 @@
 #include "ink_memory.h"
 #include "ink_error.h"
 #include "ink_assert.h"
-#include "ink_resource.h"
 #include "ink_queue_ext.h"
-
+#include "ink_align.h"
 
 inkcoreapi volatile int64_t fastalloc_mem_in_use = 0;
 inkcoreapi volatile int64_t fastalloc_mem_total = 0;
@@ -104,7 +103,8 @@ ink_freelist_init(InkFreeList **fl, const char *name, uint32_t type_size,
   ink_assert(!(alignment & (alignment - 1)));
   f->alignment = alignment;
   f->chunk_size = chunk_size;
-  f->type_size = type_size;
+  // Make sure we align *all* the objects in the allocation, not just the first one
+  f->type_size = INK_ALIGN(type_size, alignment);
   SET_FREELIST_POINTER_VERSION(f->head, FROM_PTR(0), 0);
 
   f->used = 0;
@@ -232,9 +232,9 @@ ink_freelist_new(InkFreeList * f)
   void *newp = NULL;
 
   if (f->alignment)
-    newp = ats_memalign(f->alignment, f->chunk_size * f->type_size);
+    newp = ats_memalign(f->alignment, f->type_size);
   else
-    newp = ats_malloc(f->chunk_size * f->type_size);
+    newp = ats_malloc(f->type_size);
   return newp;
 #endif
 }
@@ -250,7 +250,7 @@ ink_freelist_free(InkFreeList * f, void *item)
   volatile_void_p *adr_of_next = (volatile_void_p *) ADDRESS_OF_NEXT(item, 0);
   head_p h;
   head_p item_pair;
-  int result;
+  int result = 0;
 
   // ink_assert(!((long)item&(f->alignment-1))); XXX - why is this no longer working? -bcall
 
@@ -264,8 +264,7 @@ ink_freelist_free(InkFreeList * f, void *item)
   }
 #endif /* DEADBEEF */
 
-  result = 0;
-  do {
+  while (!result) {
     INK_QUEUE_LD(h, f->head);
 #ifdef SANITY
     if (TO_PTR(FREELIST_POINTER(h)) == item)
@@ -283,9 +282,7 @@ ink_freelist_free(InkFreeList * f, void *item)
 #else
        result = ink_atomic_cas((int64_t *) & f->head, h.data, item_pair.data);
 #endif
-
   }
-  while (result == 0);
 
   ink_atomic_increment((int *) &f->used, -1);
   ink_atomic_increment(&fastalloc_mem_in_use, -(int64_t) f->type_size);
@@ -338,7 +335,7 @@ ink_freelists_dump_baselinerel(FILE * f)
     fll = fll->next;
   }
 #else // ! TS_USE_FREELIST
-  // TODO?
+  (void)f;
 #endif
 }
 
@@ -361,7 +358,7 @@ ink_freelists_dump(FILE * f)
     fll = fll->next;
   }
 #else // ! TS_USE_FREELIST
-  // TODO?
+  (void)f;
 #endif
 }
 

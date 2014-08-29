@@ -52,15 +52,17 @@ ink_die_die_die(int retval)
 
 */
 void
-ink_fatal_va(int return_code, const char *message_format, va_list ap)
+ink_fatal_va(int return_code, const char * fmt, va_list ap)
 {
-  char extended_format[4096], message[4096];
-  snprintf(extended_format, sizeof(extended_format) - 1, "FATAL: %s", message_format);
-  extended_format[sizeof(extended_format) - 1] = 0;
-  vsnprintf(message, sizeof(message) - 1, extended_format, ap);
-  message[sizeof(message) - 1] = 0;
-  fprintf(stderr, "%s\n", message);
-  syslog(LOG_CRIT, "%s", message);
+  char msg[1024];
+  const size_t len = sizeof("FATAL: ") - 1;
+
+  strncpy(msg, "FATAL: ", sizeof(msg));
+  vsnprintf(msg + len, sizeof(msg) - len, fmt, ap);
+  msg[sizeof(msg) - 1] = 0;
+
+  fprintf(stderr, "%s\n", msg);
+  syslog(LOG_CRIT, "%s", msg);
   ink_stack_trace_dump();
   ink_die_die_die(return_code);
 }
@@ -244,16 +246,4 @@ ink_set_dprintf_level(int debug_level)
   if ((ink_dprintf_level = debug_level) < 0)
     ink_dprintf_level = 0;
   return old_ink_dprintf_level;
-}
-
-/**
-  Initiates a SEGV the old-fashioned way, it earns it.
-
-*/
-void
-ink_segv()
-{
-  char *addr = NULL;
-  *addr = 0;
-  ink_die_die_die(1); // just keep clang happy ... it thinks we return from here ...
 }

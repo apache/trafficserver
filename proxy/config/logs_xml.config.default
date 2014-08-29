@@ -14,7 +14,7 @@ LogFormats
 An event log format specifies which fields are to be gathered from each
 protocol event access.  The following tags are possible for LogFormat
 specifications (a '*' denotes a tag that is required):
- 
+
 * <Name = "valid_format_name"/>
       Valid format names include anything except (squid, common, extended,
       extended2), which are the pre-defined formats.  There is no default.
@@ -48,8 +48,8 @@ specifications (a '*' denotes a tag that is required):
 
   <Interval = "aggregate_interval_secs"/>
       This tag is needed when the format contains any of the aggregate
-      operators.  The "aggregate_interval_secs" value is a number 
-      representing the number of seconds over which the entry is aggregated 
+      operators.  The "aggregate_interval_secs" value is a number
+      representing the number of seconds over which the entry is aggregated
       before being produced.  The valid set of aggregate operators are:
             COUNT	'*' can be used for the field value
 	    SUM
@@ -93,20 +93,20 @@ contains the following tags (a '*' denotes a tag that is required):
       value.
 
       The "valid_log_field"s are all Inktomi fields that are not a combination
-      of other (simpler) fields. 
+      of other (simpler) fields.
 
       "valid_filter_operator"s are:
 	MATCH
 	CASE_INSENSITIVE_MATCH
 	CONTAIN
 	CASE_INSENSITIVE_CONTAIN
-      These operators are all equivalent to MATCH for integer fields, but
-      provide different functionality for string fields:
+      These operators are all equivalent to MATCH for integer and IP address fields
+      but provide different functionality for string fields:
         MATCH: the field and the value must be identical strings
         CASE_INSENSITIVE_MATCH: the only difference between field and value
                                 is the case
         CONTAIN: value is a substring of field (case matters)
-        CASE_INSENSITIVE_CONTAIN: value is a substring of field (case does 
+        CASE_INSENSITIVE_CONTAIN: value is a substring of field (case does
                                   not matter)
 
 * <Action = "valid_action"/>
@@ -147,7 +147,7 @@ Example2: do not log requests for domain unwanted.com
   <Filename = "file_name"/>
       This tag specifies the name of the file to which this log object
       writes. This can be a local file, or a file on a different machine
-      if this Traffic Server is a collation client (see the LogHostName 
+      if this Traffic Server is a collation client (see the LogHostName
       tag below.)
       All filenames are relative to the default logging directory. If
       "file_name" has no file extension, then a ".log" extension will
@@ -166,7 +166,7 @@ Example2: do not log requests for domain unwanted.com
   <Mode = "valid_logging_mode"/>
       Valid logging modes include ascii, binary, and ascii_pipe.
       ascii: write log in human readable form (plain ascii).
-      binary: write log in a binary format that can later be read using 
+      binary: write log in a binary format that can later be read using
       the logcat utility.
       ascii_pipe: do not write log to a regular file, but to a named UNIX
       pipe (this option is only available on Linux and Solaris).
@@ -174,7 +174,7 @@ Example2: do not log requests for domain unwanted.com
   <Filters = "list of valid filter names"/>
       A comma separated list of valid filter names to apply to this
       object. Valid filter names include any previously-defined LogFilter.
-      If more than one filter is specified, then ALL filters should 
+      If more than one filter is specified, then ALL filters should
       accept a record for it to be logged (in other words, filters are
       ANDed together.)
 
@@ -187,7 +187,7 @@ Example2: do not log requests for domain unwanted.com
 
   <ServerHosts = "list of servers"/>
       This tag provides an easy way to create a filter that logs only the
-      requests to hosts in the comma separated list. Only entries from the 
+      requests to hosts in the comma separated list. Only entries from the
       named servers will be included in the log file. (Servers can only
       be specified by name, not by ip.)
 
@@ -212,7 +212,7 @@ Example2: do not log requests for domain unwanted.com
 
   <RollingEnabled = "rolling_enabled_value"/>
       This tag specifies the automatic rolling mode for the LogObject.
-      It overrides the configuration variable rolling_enabled. 
+      It overrides the configuration variable rolling_enabled.
       The possible values of rolling_enabled_value are as follows:
       0: do not roll
          do not automatically roll this log file
@@ -230,7 +230,7 @@ Example2: do not log requests for domain unwanted.com
 	 if the size of the file equals or exceeds the specified size
 
   <RollingIntervalSec = "seconds"/>
-      This tag specifies the seconds between consecutive log file 
+      This tag specifies the seconds between consecutive log file
       rolls for the LogObject. It overrides the configuration variable
       rolling_interval_sec.
 
@@ -246,7 +246,7 @@ Example2: do not log requests for domain unwanted.com
       This tag specifies the size (in megabytes) the log file must reach
       before it is rolled if rolling is based on size.
 
-  Please note: 
+  Please note:
 
   - The "Format" and "Filename" tags are mandatory, all others are optional.
 
@@ -276,7 +276,7 @@ Example2: do not log requests for domain unwanted.com
   Example2: create a local log file for the minimal format defined above, but
   do not log the domain unwanted.com (use the filter defined
   above). Create a binary log rather than an ascii log.
- 
+
   <LogObject>
       <Format = "minimal"/>
       <Filename = "minimal_without_unwanted"/>
@@ -284,7 +284,7 @@ Example2: do not log requests for domain unwanted.com
       <Mode = "binary"/>
   </LogObject>
 
-  Example3: like example2, but log only REFRESH_HIT entries (from all domains 
+  Example3: like example2, but log only REFRESH_HIT entries (from all domains
   except unwanted.com) and use the default ascii mode.
 
   <LogObject>
@@ -355,8 +355,8 @@ WebTrends Enhanced Log Format
 -----------------------------
 
 The following <LogFormat> is compatible with the WebTrends Enhanced Log
-Format. If you want to generate a log that can be parsed by WebTrends 
-reporting tools, simply create a <LogObject> that uses this format. 
+Format. If you want to generate a log that can be parsed by WebTrends
+reporting tools, simply create a <LogObject> that uses this format.
 
 -------------------------------------------------------------------------->
 
@@ -387,5 +387,3 @@ simply create a <LogObject> that uses this format.
   <Name = "squid_seconds_only_timestamp"/>
   <Format = "%<cqts> %<ttms> %<chi> %<crc>/%<pssc> %<psql> %<cqhm> %<cquc> %<caun> %<phr>/%<pqsn> %<psct>"/>
 </LogFormat>
-
-

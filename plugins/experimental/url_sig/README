@@ -1,0 +1,183 @@
+Signed URL plugin
+
+This ATS plugin checks a signature query string on the URL, and rejects (HTTP
+403), or redirects (HTTP 302) when this check fails. The signature is based on
+a secret (key) that a signing portal and the Traffic Server cache share. The
+algorithm for the signature can be MD5 or SHA1. When the check passes, the
+query string is stripped, and the request is handled as if there was no query
+string in the first place.
+
+This plugin comes with 2 example perl scripts. The sign.pl script shows how to
+sign a URL using the different options, this script is just an example, in any
+real usage scenario, the content owner will incorporate this functionality in
+their portal. The genkeys.pl script is a quick hack to generate a config file
+with random keys. Keep your keys to yourself (secret) if you are using this
+plugin, and only share them with the content owner.
+
+Signed URLs do not replace DRM.
+
+Quick install:
+	You can build with ./configure --enable-experimental-plugins or
+	with tsxs:
+
+		Make sure devel packages for traffic-server are installed.
+		Make sure that 'tsxs' is in your path.
+		Make sure versions of this plugin and ATS are compatible.
+
+			make -f Makefile.tsxs
+			make -f Makefile.tsxs install
+
+	add @plugin=url_sig.so @pparam=<config file> to the remap rule you want
+	to be signed
+
+
+Edge cache debugging
+	To enable the TSDebug verbose logging, change records.config to have:
+
+		CONFIG proxy.config.diags.debug.enabled INT 1
+		CONFIG proxy.config.diags.debug.tags STRING url_sig
+
+	and do a traffic_line -x; Debug output will go to traffic.out.
+	Failed transactions (signature check fails that is) will be logged
+	in to error.log.
+
+Signing a URL
+	At the signing portal take the full URL, without any query string, and
+	add on a query string with the following parameters:
+
+	Client IP address
+		The client IP address that this signature is valid for.
+		C=<client IP address>
+	Expiration
+		The Expiration time (seconds since epoch) of this signature.
+		E=<expiration time in secs since unix epoch>
+	Algorithm
+		The Algorithm used to create the signature. Only 1 (HMAC_SHA1)
+		and 2 (HMAC_MD5) are supported at this time
+		A=<algorithm number>
+	Key index
+		Index of the key used. This is the index of the key in the
+		configuration file on the cache. The set of keys is a shared
+		secret between the signing portal and the edge caches. There
+		is one set of keys per reverse proxy domain (fqdn).
+		K=<key index used>
+	Parts
+		Parts to use for the signature, always excluding the scheme
+		(http://).  parts0 = fqdn, parts1..x is the directory parts
+		of the path, if there are more parts to the path than letters
+		in the parts param, the last one is repeated for those.
+		Examples:
+			1: use fqdn and all of URl path
+			0110: use part1 and part 2 of path only
+			01: use everything except the fqdn
+		P=<parts string (0's and 1's>
+	Signature
+		The signature over the parts + the query string up to and
+		including "S=".
+		S=<signature>
+
+
+Example
+	Build, install
+
+		make -f Makefile.tsxs
+		make -f Makefile.tsxs install
+
+	Create the config file, using the genkeys script, or otherwise.
+
+		$ ./genkeys.pl  > /usr/local/trafficserver-master/etc/trafficserver/sign_test.config
+		$ cat /usr/local/trafficserver-master/etc/trafficserver/sign_test.config
+		key0 = YwG7iAxDo6Gaa38KJOceV4nsxiAJZ3DS
+		key1 = nLE3SZKRgaNM9hLz_HnIvrCw_GtTUJT1
+		key2 = YicZbmr6KlxfxPTJ3p9vYhARdPQ9WJYZ
+		key3 = DTV4Tcn046eM9BzJMeYrYpm3kbqOtBs7
+		key4 = C1r6R6MINoQd5YSH25fU66tuRhhz3fs_
+		key5 = l4dxe6YEpYbJtyiOmX5mafhwKImC5kej
+		key6 = ekKNHXu9_oOC5eqIGJVxV0vI9FYvKVya
+		key7 = BrjibTmpTTuhMHqphkQAuCWA0Zg97WQB
+		key8 = rEtWLb1jcYoq9VG8Z8TKgX4GxBuro20J
+		key9 = mrP_6ibDBG4iYpfDB6W8yn3ZyGmdwc6M
+		key10 = tbzoTTGZXPLcvpswCQCYz1DAIZcAOGyX
+		key11 = lWsn6gUeSEW79Fk2kwKVfzhVG87EXLna
+		key12 = Riox0SmGtBWsrieLUHVWtpj18STM4MP1
+		key13 = kBsn332B7yG3HdcV7Tw51pkvHod7_84l
+		key14 = hYI4GUoIlZRf0AyuXkT3QLvBMEoFxkma
+		key15 = EIgJKwIR0LU9CUeTUdVtjMgGmxeCIbdg
+		error_url = 403
+		$
+
+	Add the remap rule like
+
+		map http://test-remap.domain.com http://google.com @plugin=url_sig.so @pparam=sign_test.config
+
+	Restart traffic server or traffic_line -x - verify there are no errors in diags.log
+
+	Try the path unsigned:
+
+		$ curl -vs -H'Host: test-remap.domain.com' http://localhost:8080/
+		* Adding handle: conn: 0x200f8a0
+		* Adding handle: send: 0
+		* Adding handle: recv: 0
+		* Curl_addHandleToPipeline: length: 1
+		* - Conn 0 (0x200f8a0) send_pipe: 1, recv_pipe: 0
+		* About to connect() to localhost port 8080 (#0)
+		*   Trying 127.0.0.1...
+		* Connected to localhost (127.0.0.1) port 8080 (#0)
+		> GET / HTTP/1.1
+		> User-Agent: curl/7.32.0
+		> Accept: */*
+		> Host: test-remap.domain.com
+		>
+		< HTTP/1.1 403 Forbidden
+		< Date: Tue, 15 Apr 2014 22:57:32 GMT
+		< Connection: close
+		* Server ATS/5.0.0 is not blacklisted
+		< Server: ATS/5.0.0
+		< Cache-Control: no-store
+		< Content-Type: text/plain
+		< Content-Language: en
+		< Content-Length: 21
+		<
+		* Closing connection 0
+		Authorization Denied$
+		$
+
+	Sign the URL and try it again. Run the script with appropriate params, and it will output the curl line to run:
+
+		$ ./sign.pl --url http://test-remap.domain.com/ --useparts 1 --algorithm 1 --duration 60 --keyindex 3 --key DTV4Tcn046eM9BzJMeYrYpm3kbqOtBs7
+		curl -s -o /dev/null -v --max-redirs 0 'http://test-remap.domain.com/?E=1397603088&A=1&K=3&P=1&S=28d822f68ac7265db61a8441e0877a98fe1007cc'
+
+	Since test-remap.domain.com doesn't actually exist, we have to change that line slightly:
+
+		$ curl -s -o /dev/null -v --max-redirs 0 -H 'Host: test-remap.domain.com' 'http://localhost:8080/?E=1397603088&A=1&K=3&P=1&S=28d822f68ac7265db61a8441e0877a98fe1007cc'
+		* Adding handle: conn: 0xef0a90
+		* Adding handle: send: 0
+		* Adding handle: recv: 0
+		* Curl_addHandleToPipeline: length: 1
+		* - Conn 0 (0xef0a90) send_pipe: 1, recv_pipe: 0
+		* About to connect() to localhost port 8080 (#0)
+		*   Trying 127.0.0.1...
+		* Connected to localhost (127.0.0.1) port 8080 (#0)
+		> GET /?E=1397603088&A=1&K=3&P=1&S=28d822f68ac7265db61a8441e0877a98fe1007cc HTTP/1.1
+		> User-Agent: curl/7.32.0
+		> Accept: */*
+		> Host: test-remap.domain.com
+		>
+		< HTTP/1.1 200 OK
+		< Location: http://www.google.com/
+		< Content-Type: text/html; charset=UTF-8
+		< Date: Tue, 15 Apr 2014 23:04:36 GMT
+		< Expires: Thu, 15 May 2014 23:04:36 GMT
+		< Cache-Control: public, max-age=2592000
+		* Server ATS/5.0.0 is not blacklisted
+		< Server: ATS/5.0.0
+		< Content-Length: 219
+		< X-XSS-Protection: 1; mode=block
+		< X-Frame-Options: SAMEORIGIN
+		< Alternate-Protocol: 80:quic
+		< Age: 0
+		< Connection: keep-alive
+		<
+		{ [data not shown]
+		* Connection #0 to host localhost left intact
+		$

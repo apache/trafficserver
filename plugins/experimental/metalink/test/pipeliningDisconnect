@@ -1,0 +1,93 @@
+#!/usr/bin/env python
+
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed
+# with this work for additional information regarding copyright
+# ownership.  The ASF licenses this file to you under the Apache
+# License, Version 2.0 (the "License"); you may not use this file
+# except in compliance with the License.  You may obtain a copy of the
+# License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+# implied.  See the License for the specific language governing
+# permissions and limitations under the License.
+
+print '''1..1 pipeliningDisconnect
+# The proxy doesn't crash if INKVConnInternal::do_io_close() gets
+# called after a message is already complete'''
+
+from twisted.internet import error, protocol, reactor, tcp
+from twisted.web import http
+
+def callback():
+  print 'ok 1 - Did the connection close before the proxy made the second request?'
+
+  reactor.stop()
+
+reactor.callLater(2, callback)
+
+class factory(http.HTTPFactory):
+  class protocol(http.HTTPChannel):
+    class requestFactory(http.Request):
+      def requestReceived(ctx, method, target, version):
+        class requestFactory(http.Request):
+          def requestReceived(ctx, method, target, version):
+
+            ctx.client = None
+            ctx.clientproto = version
+
+            ctx.write('pipeliningDisconnect')
+            ctx.finish()
+
+            # Open another connection
+            class factory(protocol.ClientFactory):
+              def clientConnectionFailed(ctx, connector, reason):
+                print 'not ok 1 - Did the proxy crash?  (Can\'t open another connection to it.)'
+
+                reactor.stop()
+
+              class protocol(protocol.Protocol):
+                def connectionMade(ctx):
+                  print 'ok 1 - The proxy didn\'t crash (opened another connection to it)'
+
+                  reactor.stop()
+
+            reactor.callLater(1, tcp.Connector('localhost', 8080, factory(), 30, None, reactor).connect)
+
+        ctx.channel.requestFactory = requestFactory
+
+        ctx.client = None
+        ctx.clientproto = version
+
+        ctx.write('pipeliningDisconnect')
+        ctx.finish()
+
+origin = tcp.Port(0, factory())
+origin.startListening()
+
+print '# Listening on {0}:{1}'.format(*origin.socket.getsockname())
+
+class factory(protocol.ClientFactory):
+  def clientConnectionFailed(ctx, connector, reason):
+
+    print 'Bail out!'
+    reason.printTraceback()
+
+    reactor.stop()
+
+  class protocol(protocol.Protocol):
+    def connectionMade(ctx):
+
+      # Somehow these magic words frequently cause
+      # INKVConnInternal::do_io_close() to get called after a message
+      # is already complete
+      ctx.transport.write('GET {0}:{1}/pipeliningDisconnect0 HTTP/1.1\r\n\r\nGET {0}:{1}/pipeliningDisconnect1 HTTP/1.1\r\n\r\n'.format(*origin.socket.getsockname()))
+      ctx.transport.loseConnection()
+
+tcp.Connector('localhost', 8080, factory(), 30, None, reactor).connect()
+
+reactor.run()

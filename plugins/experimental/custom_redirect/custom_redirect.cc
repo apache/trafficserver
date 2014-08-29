@@ -71,9 +71,11 @@ handle_response (TSHttpTxn txnp, TSCont /* contp ATS_UNUSED */)
                         redirect_url_str = TSMimeHdrFieldValueStringGet (resp_bufp, resp_loc, redirect_url_loc, -1, &redirect_url_length);
                         if (redirect_url_str) {
                             if (redirect_url_length > 0) {
-                              TSRedirectUrlSet(txnp, redirect_url_str, redirect_url_length);
+                              char* url = (char*)TSmalloc(redirect_url_length+1);
+
+                              TSstrlcpy(url, redirect_url_str, redirect_url_length + 1);
+                              TSHttpTxnRedirectUrlSet(txnp, url, redirect_url_length);
                             }
-                            //TSHandleStringRelease(resp_bufp, redirect_url_loc, redirect_url_str);
                         }
                         TSHandleMLocRelease (resp_bufp, resp_loc, redirect_url_loc);
                     }

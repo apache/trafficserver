@@ -33,7 +33,6 @@
 #include "ink_error.h"
 #include "ink_hash_table.h"
 #include "ink_memory.h"
-#include "ink_resource.h"
 
 /*===========================================================================*
 
@@ -61,7 +60,6 @@ ink_hash_table_create(InkHashTableKeyType key_type)
 
   tcl_ht_ptr = (Tcl_HashTable*)ats_malloc(sizeof(Tcl_HashTable));
 
-  tcl_key_type = -1;
   if (key_type == InkHashTableKeyType_String)
     tcl_key_type = TCL_STRING_KEYS;
   else if (key_type == InkHashTableKeyType_Word)

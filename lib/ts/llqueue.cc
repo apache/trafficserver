@@ -22,6 +22,7 @@
  */
 
 #include "ink_config.h"
+#include "ink_memory.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -73,20 +74,10 @@ freerec(LLQ * Q, LLQrec * rec)
 LLQ *
 create_queue()
 {
-  const char *totally_bogus_name = "create_queue";
   LLQ * new_val = (LLQ *)ats_malloc(sizeof(LLQ));
 
-#if defined(darwin)
-  static int qnum = 0;
-  char sname[NAME_MAX];
-  qnum++;
-  snprintf(sname,NAME_MAX,"%s%d",totally_bogus_name,qnum);
-  ink_sem_unlink(sname); // FIXME: remove, semaphore should be properly deleted after usage
-  new_val->sema = ink_sem_open(sname, O_CREAT | O_EXCL, 0777, 0);
-#else /* !darwin */
   ink_sem_init(&(new_val->sema), 0);
-#endif /* !darwin */
-  ink_mutex_init(&(new_val->mux), totally_bogus_name);
+  ink_mutex_init(&(new_val->mux), "LLQ::create_queue");
 
   new_val->head = new_val->tail = new_val->free = NULL;
   new_val->len = new_val->highwater = 0;
@@ -102,6 +93,8 @@ delete_queue(LLQ * Q)
   // actually empty ...
   //
   //    LLQrec * qrec;
+  ink_sem_destroy(&(Q->sema));
+  ink_mutex_destroy(&(Q->mux));
   ats_free(Q);
   return;
 }
@@ -127,11 +120,7 @@ enqueue(LLQ * Q, void *data)
   if (Q->len > Q->highwater)
     Q->highwater = Q->len;
   ink_mutex_release(&(Q->mux));
-#if defined(darwin)
-  ink_sem_post(Q->sema);
-#else
   ink_sem_post(&(Q->sema));
-#endif
   return 1;
 }
 
@@ -198,11 +187,7 @@ dequeue(LLQ * Q)
 {
   LLQrec * rec;
   void *d;
-#if defined(darwin)
-  ink_sem_wait(Q->sema);
-#else
   ink_sem_wait(&(Q->sema));
-#endif
   ink_mutex_acquire(&(Q->mux));
 
 

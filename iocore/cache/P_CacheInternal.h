@@ -361,6 +361,10 @@ struct CacheVC: public CacheVConnection
       or @c NULL if there is no fragment table.
   */
   virtual HTTPInfo::FragOffset* get_frag_table();
+  /** Load alt pointers and do fixups if needed.
+      @return Length of header data used for alternates.
+   */
+  virtual uint32_t load_http_info(CacheHTTPInfoVector* info, struct Doc* doc, RefCountObj * block_ptr = NULL);
 #endif
   virtual bool is_pread_capable();
   virtual bool set_pin_in_cache(time_t time_pin);
@@ -1020,7 +1024,7 @@ struct Cache
   int open(bool reconfigure, bool fix);
   int close();
 
-  Action *lookup(Continuation *cont, CacheKey *key, CacheFragType type, char *hostname, int host_len);
+  Action *lookup(Continuation *cont, CacheKey *key, CacheFragType type, char const* hostname, int host_len);
   inkcoreapi Action *open_read(Continuation *cont, CacheKey *key, CacheFragType type, char *hostname, int len);
   inkcoreapi Action *open_write(Continuation *cont, CacheKey *key,
                                 CacheFragType frag_type, int options = 0,
@@ -1045,7 +1049,7 @@ struct Cache
   Action *open_write(Continuation *cont, URL *url, CacheHTTPHdr *request,
                      CacheHTTPInfo *old_info, time_t pin_in_cache = (time_t) 0,
                      CacheFragType type = CACHE_FRAG_TYPE_HTTP);
-  static void generate_key(INK_MD5 *md5, URL *url, CacheHTTPHdr *request);
+  static void generate_key(INK_MD5 *md5, URL *url);
 #endif
 
   Action *link(Continuation *cont, CacheKey *from, CacheKey *to, CacheFragType type, char *hostname, int host_len);
@@ -1055,7 +1059,7 @@ struct Cache
 
   int open_done();
 
-  Vol *key_to_vol(CacheKey *key, char *hostname, int host_len);
+  Vol *key_to_vol(CacheKey *key, char const* hostname, int host_len);
 
   Cache()
     : cache_read_done(0), total_good_nvol(0), total_nvol(0), ready(CACHE_INITIALIZING), cache_size(0),  // in store block size
@@ -1074,54 +1078,15 @@ Cache::open_read(Continuation *cont, CacheURL *url, CacheHTTPHdr *request,
 {
   INK_MD5 md5;
   int len;
-  url->MD5_get(&md5);
+  url->hash_get(&md5);
   const char *hostname = url->host_get(&len);
   return open_read(cont, &md5, request, params, type, (char *) hostname, len);
 }
 
 TS_INLINE void
-Cache::generate_key(INK_MD5 *md5, URL *url, CacheHTTPHdr */* request ATS_UNUSED */)
+Cache::generate_key(INK_MD5 *md5, URL *url)
 {
-#ifdef BROKEN_HACK_FOR_VARY_ON_UA
-  // We probably should make this configurable, both enabling it and what
-  // MIME types we want to treat differently. // Leif
-
-  if (cache_config_vary_on_user_agent && request) {
-    // If we are varying on user-agent, we only want to do
-    //  this for text content-types since expirence says
-    //  images do not vary.   Varying on images decimiates
-    //  the hitrate (INKqa04820)
-
-    // HDR FIX ME - mimeTable needs to be updated to support
-    //   ptr/len pairs
-
-    // Note: if 'proxy.config.http.global_user_agent_header' is set, we
-    // should ignore 'cache_config_vary_on_user_agent' flag because
-    // all requests to OS were sent with one so-called 'global user agent'
-    // header instead of original client's 'user-agent'
-
-    MimeTableEntry *url_mime_type_entry =
-//      mimeTable.get_entry_path(url->path_get());
-      NULL;
-
-    if (url_mime_type_entry && strstr(url_mime_type_entry->mime_type, "text")) {
-      url->MD5_get(md5);
-      int ua_len;
-      const char *value = request->value_get(MIME_FIELD_USER_AGENT,
-                                             MIME_LEN_USER_AGENT, &ua_len);
-      if (value) {
-        INK_DIGEST_CTX context;
-        // Mix the user-agent and URL INK_MD5's
-        ink_code_incr_md5_init(&context);
-        ink_code_incr_md5_update(&context, value, ua_len);
-        ink_code_incr_md5_update(&context, (char *) md5, sizeof(INK_MD5));
-        ink_code_incr_md5_final((char *) md5, &context);
-      }
-      return;
-    }
-  }
-#endif /* BROKEN_HACK_FOR_VARY_ON_UA */
-  url->MD5_get(md5);
+  url->hash_get(md5);
 }
 
 TS_INLINE Action *
@@ -1130,7 +1095,7 @@ Cache::open_write(Continuation *cont, CacheURL *url, CacheHTTPHdr *request,
 {
   (void) request;
   INK_MD5 url_md5;
-  url->MD5_get(&url_md5);
+  url->hash_get(&url_md5);
   int len;
   const char *hostname = url->host_get(&len);
 
@@ -1268,7 +1233,7 @@ CacheProcessor::lookup(Continuation *cont, URL *url, bool cluster_cache_local, b
 {
   (void) local_only;
   INK_MD5 md5;
-  url->MD5_get(&md5);
+  url->hash_get(&md5);
   int host_len = 0;
   const char *hostname = url->host_get(&host_len);
 
@@ -1318,7 +1283,7 @@ CacheProcessor::open_read_internal(int opcode,
 {
   INK_MD5 url_md5;
   if ((opcode == CACHE_OPEN_READ_LONG) || (opcode == CACHE_OPEN_READ_BUFFER_LONG)) {
-    Cache::generate_key(&url_md5, url, request);
+    Cache::generate_key(&url_md5, url);
   } else {
     url_md5 = *key;
   }

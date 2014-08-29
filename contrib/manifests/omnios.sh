@@ -20,7 +20,6 @@ pkg refresh
 
 # Base ATS build dependencies.
 pkg install \
-  developer/sunstudio12.1 \
   developer/gcc46 \
   developer/object-file \
   developer/linker \

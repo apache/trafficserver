@@ -33,6 +33,7 @@
 
 RecModeT g_mode_type = RECM_NULL;
 
+
 //-------------------------------------------------------------------------
 // send_reset_message
 //-------------------------------------------------------------------------
@@ -112,7 +113,7 @@ send_push_message()
     if (i_am_the_record_owner(r->rec_type)) {
       if (r->sync_required & REC_PEER_SYNC_REQUIRED) {
         m = RecMessageMarshal_Realloc(m, r);
-        r->sync_required = r->sync_required & ~REC_PEER_SYNC_REQUIRED;
+        r->sync_required &= ~REC_PEER_SYNC_REQUIRED;
         send_msg = true;
       }
     }
@@ -156,10 +157,10 @@ send_pull_message(RecMessageT msg_type)
       r = &(g_records[i]);
       if (i_am_the_record_owner(r->rec_type) ||
           (REC_TYPE_IS_STAT(r->rec_type) && !(r->registered)) ||
-          (REC_TYPE_IS_STAT(r->rec_type) && !(r->stat_meta.persist_type != RECP_NON_PERSISTENT))) {
+          (REC_TYPE_IS_STAT(r->rec_type) && (r->stat_meta.persist_type == RECP_NON_PERSISTENT))) {
         rec_mutex_acquire(&(r->lock));
         m = RecMessageMarshal_Realloc(m, r);
-        r->sync_required = r->sync_required & ~REC_PEER_SYNC_REQUIRED;
+        r->sync_required &= ~REC_PEER_SYNC_REQUIRED;
         rec_mutex_release(&(r->lock));
       }
     }
@@ -291,25 +292,25 @@ recv_message_cb(RecMessage * msg, RecMessageT msg_type, void */* cookie */)
   }
 
 int
-RecRegisterStatInt(RecT rec_type, const char *name, RecInt data_default, RecPersistT persist_type)
+_RecRegisterStatInt(RecT rec_type, const char *name, RecInt data_default, RecPersistT persist_type)
 {
   REC_REGISTER_STAT_XXX(rec_int, RECD_INT);
 }
 
 int
-RecRegisterStatFloat(RecT rec_type, const char *name, RecFloat data_default, RecPersistT persist_type)
+_RecRegisterStatFloat(RecT rec_type, const char *name, RecFloat data_default, RecPersistT persist_type)
 {
   REC_REGISTER_STAT_XXX(rec_float, RECD_FLOAT);
 }
 
 int
-RecRegisterStatString(RecT rec_type, const char *name, RecString data_default, RecPersistT persist_type)
+_RecRegisterStatString(RecT rec_type, const char *name, RecString data_default, RecPersistT persist_type)
 {
   REC_REGISTER_STAT_XXX(rec_string, RECD_STRING);
 }
 
 int
-RecRegisterStatCounter(RecT rec_type, const char *name, RecCounter data_default, RecPersistT persist_type)
+_RecRegisterStatCounter(RecT rec_type, const char *name, RecCounter data_default, RecPersistT persist_type)
 {
   REC_REGISTER_STAT_XXX(rec_counter, RECD_COUNTER);
 }
@@ -419,7 +420,6 @@ RecSetRecord(RecT rec_type, const char *name, RecDataT data_type, RecData *data,
             break;
           }
         }
-        g_num_update[r1->rec_type]++;
 
         if (RecDataSet(data_type, &(r1->data), data)) {
           r1->sync_required = REC_SYNC_REQUIRED;
@@ -439,7 +439,8 @@ RecSetRecord(RecT rec_type, const char *name, RecDataT data_type, RecData *data,
       // We don't need to ats_strdup() here as we will make copies of any
       // strings when we marshal them into our RecMessage buffer.
       RecRecord r2;
-      memset(&r2, 0, sizeof(RecRecord));
+
+      RecRecordInit(&r2);
       r2.rec_type = rec_type;
       r2.name = name;
       r2.data_type = (data_type != RECD_NULL) ? data_type : r1->data_type;
@@ -448,6 +449,7 @@ RecSetRecord(RecT rec_type, const char *name, RecDataT data_type, RecData *data,
         r2.stat_meta.data_raw = *data_raw;
       }
       err = send_set_message(&r2);
+      RecRecordFree(&r2);
     }
   } else {
     // Add the record but do not set the 'registered' flag, as this
@@ -531,15 +533,42 @@ RecReadStatsFile()
   RecRecord *r;
   RecMessage *m;
   RecMessageItr itr;
+  RecPersistT persist_type = RECP_NULL;
+  ats_scoped_str snap_fpath(RecConfigReadPersistentStatsPath());
 
   // lock our hash table
   ink_rwlock_wrlock(&g_records_rwlock);
 
-  if ((m = RecMessageReadFromDisk(g_stats_snap_fpath)) != NULL) {
+  if ((m = RecMessageReadFromDisk(snap_fpath)) != NULL) {
     if (RecMessageUnmarshalFirst(m, &itr, &r) != REC_ERR_FAIL) {
       do {
-        if ((r->name == NULL) || (!strlen(r->name)))
+        if ((r->name == NULL) || (!strlen(r->name))) {
           continue;
+        }
+
+        // If we don't have a persistence type for this record, it means that it is not a stat, or it is
+        // not registered yet. Either way, it's ok to just set the persisted value and keep going.
+        if (RecGetRecordPersistenceType(r->name, &persist_type, false /* lock */) != REC_ERR_OKAY) {
+          RecDebug(DL_Debug, "restoring value for persisted stat '%s'", r->name);
+          RecSetRecord(r->rec_type, r->name, r->data_type, &(r->data), &(r->stat_meta.data_raw), false);
+          continue;
+        }
+
+        if (!REC_TYPE_IS_STAT(r->rec_type)) {
+          // This should not happen, but be defensive against records changing their type ..
+          RecLog(DL_Warning, "skipping restore of non-stat record '%s'", r->name);
+          continue;
+        }
+
+        // Check whether the persistence type was changed by a new software version. If the record is
+        // already registered with an updated persistence type, then we don't want to set it. We should
+        // keep the registered value.
+        if (persist_type == RECP_NON_PERSISTENT) {
+          RecDebug(DL_Debug, "preserving current value of formerly persistent stat '%s'", r->name);
+          continue;
+        }
+
+        RecDebug(DL_Debug, "restoring value for persisted stat '%s'", r->name);
         RecSetRecord(r->rec_type, r->name, r->data_type, &(r->data), &(r->stat_meta.data_raw), false);
       } while (RecMessageUnmarshalNext(m, &itr, &r) != REC_ERR_FAIL);
     }
@@ -562,6 +591,7 @@ RecSyncStatsFile()
   RecMessage *m;
   int i, num_records;
   bool sync_to_disk;
+  ats_scoped_str snap_fpath(RecConfigReadPersistentStatsPath());
 
   /*
    * g_mode_type should be initialized by
@@ -577,7 +607,7 @@ RecSyncStatsFile()
       r = &(g_records[i]);
       rec_mutex_acquire(&(r->lock));
       if (REC_TYPE_IS_STAT(r->rec_type)) {
-        if (r->stat_meta.persist_type != RECP_NON_PERSISTENT) {
+        if (r->stat_meta.persist_type == RECP_PERSISTENT) {
           m = RecMessageMarshal_Realloc(m, r);
           sync_to_disk = true;
         }
@@ -585,8 +615,8 @@ RecSyncStatsFile()
       rec_mutex_release(&(r->lock));
     }
     if (sync_to_disk) {
-      RecDebug(DL_Note, "Writing '%s' [%d bytes]", g_stats_snap_fpath, m->o_write - m->o_start + sizeof(RecMessageHdr));
-      RecMessageWriteToDisk(m, g_stats_snap_fpath);
+      RecDebug(DL_Note, "Writing '%s' [%d bytes]", (const char *)snap_fpath, m->o_write - m->o_start + sizeof(RecMessageHdr));
+      RecMessageWriteToDisk(m, snap_fpath);
     }
     RecMessageFree(m);
   }
@@ -670,7 +700,7 @@ RecSyncConfigToTB(textBuffer * tb, bool *inc_version)
           sync_to_disk = true;
           if (r->sync_required & REC_INC_CONFIG_VERSION) {
             r->sync_required = r->sync_required & ~REC_INC_CONFIG_VERSION;
-            if (inc_version != NULL) {
+            if (r->rec_type != RECT_LOCAL && inc_version != NULL) {
               *inc_version = true;
             }
           }
@@ -822,13 +852,15 @@ RecResetStatRecord(const char *name)
       err = REC_ERR_OKAY;
     } else {
       RecRecord r2;
-      memset(&r2, 0, sizeof(RecRecord));
+
+      RecRecordInit(&r2);
       r2.rec_type = r1->rec_type;
       r2.name = r1->name;
       r2.data_type = r1->data_type;
       r2.data = r1->data_default;
 
       err = send_reset_message(&r2);
+      RecRecordFree(&r2);
     }
   } else {
     err = REC_ERR_FAIL;
@@ -865,13 +897,15 @@ RecResetStatRecord(RecT type, bool all)
         rec_mutex_release(&(r1->lock));
       } else {
         RecRecord r2;
-        memset(&r2, 0, sizeof(RecRecord));
+
+        RecRecordInit(&r2);
         r2.rec_type = r1->rec_type;
         r2.name = r1->name;
         r2.data_type = r1->data_type;
         r2.data = r1->data_default;
 
         err = send_reset_message(&r2);
+        RecRecordFree(&r2);
       }
     }
   }
@@ -908,13 +942,15 @@ RecSetSyncRequired(char *name, bool lock)
 
       /*
          RecRecord r2;
-         memset(&r2, 0, sizeof(RecRecord));
+
+         RecRecordInit(&r2);
          r2.rec_type  = r1->rec_type;
          r2.name      = r1->name;
          r2.data_type = r1->data_type;
          r2.data      = r1->data_default;
 
          err = send_set_message(&r2);
+         RecRecordFree(&r2);
        */
     }
   }
@@ -925,3 +961,82 @@ RecSetSyncRequired(char *name, bool lock)
 
   return err;
 }
+
+int RecWriteConfigFile(textBuffer *tb)
+{
+#define TMP_FILENAME_EXT_STR ".tmp"
+#define TMP_FILENAME_EXT_LEN (sizeof(TMP_FILENAME_EXT_STR) - 1)
+
+  int nbytes;
+  int filename_len;
+  int tmp_filename_len;
+  int result;
+  char buff[1024];
+  char *tmp_filename;
+
+  filename_len = strlen(g_rec_config_fpath);
+  tmp_filename_len = filename_len + TMP_FILENAME_EXT_LEN;
+  if (tmp_filename_len < (int)sizeof(buff)) {
+    tmp_filename = buff;
+  } else {
+    tmp_filename = (char *)ats_malloc(tmp_filename_len + 1);
+  }
+  sprintf(tmp_filename, "%s%s", g_rec_config_fpath, TMP_FILENAME_EXT_STR);
+
+  RecDebug(DL_Note, "Writing '%s'", g_rec_config_fpath);
+
+  RecHandle h_file = RecFileOpenW(tmp_filename);
+  do {
+    if (h_file == REC_HANDLE_INVALID) {
+      RecLog(DL_Warning, "open file: %s to write fail, errno: %d, error info: %s",
+          tmp_filename, errno, strerror(errno));
+      result = REC_ERR_FAIL;
+      break;
+    }
+
+    if (RecFileWrite(h_file, tb->bufPtr(), tb->spaceUsed(), &nbytes) != REC_ERR_OKAY) {
+      RecLog(DL_Warning, "write to file: %s fail, errno: %d, error info: %s",
+          tmp_filename, errno, strerror(errno));
+      result = REC_ERR_FAIL;
+      break;
+    }
+
+    if (nbytes != tb->spaceUsed()) {
+      RecLog(DL_Warning, "write to file: %s fail, disk maybe full", tmp_filename);
+      result = REC_ERR_FAIL;
+      break;
+    }
+
+    if (RecFileSync(h_file) != REC_ERR_OKAY) {
+      RecLog(DL_Warning, "fsync file: %s fail, errno: %d, error info: %s",
+          tmp_filename, errno, strerror(errno));
+      result = REC_ERR_FAIL;
+      break;
+    }
+    if (RecFileClose(h_file) != REC_ERR_OKAY) {
+      RecLog(DL_Warning, "close file: %s fail, errno: %d, error info: %s",
+          tmp_filename, errno, strerror(errno));
+      result = REC_ERR_FAIL;
+      break;
+    }
+    h_file = REC_HANDLE_INVALID;
+
+    if (rename(tmp_filename, g_rec_config_fpath) != 0) {
+      RecLog(DL_Warning, "rename file %s to %s fail, errno: %d, error info: %s",
+          tmp_filename, g_rec_config_fpath, errno, strerror(errno));
+      result = REC_ERR_FAIL;
+      break;
+    }
+
+    result = REC_ERR_OKAY;
+  } while (0);
+
+  if (h_file != REC_HANDLE_INVALID) {
+    RecFileClose(h_file);
+  }
+  if (tmp_filename != buff) {
+    ats_free(tmp_filename);
+  }
+  return result;
+}
+

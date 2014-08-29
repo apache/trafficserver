@@ -24,10 +24,6 @@
 #ifndef __CACHE_ARRAY_H__
 #define __CACHE_ARRAY_H__
 
-
-#include "Resource.h"
-
-
 #define FAST_DATA_SIZE    4
 
 
@@ -159,7 +155,7 @@ template<class T> TS_INLINE void CacheArray<T>::resize(int new_size)
     int i;
 
     if (new_size > FAST_DATA_SIZE) {
-      new_data = NEW(new T[new_size]);
+      new_data = new T[new_size];
     } else {
       new_data = fast_data;
     }

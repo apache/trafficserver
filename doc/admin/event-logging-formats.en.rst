@@ -75,6 +75,10 @@ The following list describes Traffic Server custom logging fields.
 ``chp``
     The port number of the client's host machine.
 
+``cps``
+    Client Protocol Stack, the output would be the conjunction of
+    protocol names in the stack spliced with '+', such as "TLS+SPDY".
+
 ``cqbl``
     The client request transfer length; the body length in the client
     request to Traffic Server (in bytes).
@@ -216,6 +220,16 @@ The following list describes Traffic Server custom logging fields.
 ``phr``
     The proxy hierarchy route; the route Traffic Server used to retrieve
     the object.
+    
+.. _piid:
+    
+``piid``
+   The plugin ID for the transaction. This is set for plugin driven transactions via :c:func:`TSHttpConnectWithPluginId`.
+
+.. _pitag:
+
+``pitag``
+   The plugin tag for the transaction. This is set for plugin driven transactions via :c:func:`TSHttpConnectWithPluginId`.
 
 ``pqbl``
     The proxy request transfer length; the body length in Traffic

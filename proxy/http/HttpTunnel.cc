@@ -37,7 +37,6 @@
 #include "HttpDebugNames.h"
 #include "ParseRules.h"
 
-static const int max_chunked_ahead_blocks = 128;
 static const int min_block_transfer_bytes = 256;
 static char const * const CHUNK_HEADER_FMT = "%" PRIx64"\r\n";
 // This should be as small as possible because it will only hold the
@@ -70,27 +69,63 @@ ChunkedHandler::ChunkedHandler()
 void
 ChunkedHandler::init(IOBufferReader * buffer_in, HttpTunnelProducer * p)
 {
+  if (p->do_chunking)
+    init_by_action(buffer_in, ACTION_DOCHUNK);
+  else if (p->do_dechunking)
+    init_by_action(buffer_in, ACTION_DECHUNK);
+  else
+    init_by_action(buffer_in, ACTION_PASSTHRU);
+  return;
+}
+
+void
+ChunkedHandler::init_by_action(IOBufferReader *buffer_in, Action action)
+{
   running_sum = 0;
   num_digits = 0;
   cur_chunk_size = 0;
   bytes_left = 0;
   truncation = false;
+  this->action = action;
 
-  if (p->do_chunking) {
+  switch (action) {
+  case ACTION_DOCHUNK:
     dechunked_reader = buffer_in->mbuf->clone_reader(buffer_in);
     dechunked_reader->mbuf->water_mark = min_block_transfer_bytes;
     chunked_buffer = new_MIOBuffer(CHUNK_IOBUFFER_SIZE_INDEX);
     chunked_size = 0;
-  } else {
-    ink_assert(p->do_dechunking || p->do_chunked_passthru);
+    break;
+  case ACTION_DECHUNK:
     chunked_reader = buffer_in->mbuf->clone_reader(buffer_in);
-
-    if (p->do_dechunking) {
-      // This is the min_block_transfer_bytes value.
-      dechunked_buffer = new_MIOBuffer(BUFFER_SIZE_INDEX_256);
-      dechunked_size = 0;
-    }
+    dechunked_buffer = new_MIOBuffer(BUFFER_SIZE_INDEX_256);
+    dechunked_size = 0;
+    break;
+  case ACTION_PASSTHRU:
+    chunked_reader = buffer_in->mbuf->clone_reader(buffer_in);
+    break;
+  default:
+    ink_release_assert(!"Unknown action");
   }
+
+  return;
+}
+
+void
+ChunkedHandler::clear()
+{
+  switch (action) {
+  case ACTION_DOCHUNK:
+    free_MIOBuffer(chunked_buffer);
+    break;
+  case ACTION_DECHUNK:
+    free_MIOBuffer(dechunked_buffer);
+    break;
+  case ACTION_PASSTHRU:
+  default:
+    break;
+  }
+
+  return;
 }
 
 void
@@ -180,7 +215,6 @@ ChunkedHandler::transfer_bytes()
 
   while (bytes_left > 0) {
     block_read_avail = chunked_reader->block_read_avail();
-    moved = 0;
 
     to_move = MIN(bytes_left, block_read_avail);
     if (to_move <= 0)
@@ -761,7 +795,6 @@ HttpTunnel::producer_run(HttpTunnelProducer * p)
 
   IOBufferReader *chunked_buffer_start = NULL, *dechunked_buffer_start = NULL;
   if (p->do_chunking || p->do_dechunking || p->do_chunked_passthru) {
-    producer_n = (consumer_n = INT64_MAX);
     p->chunked_handler.init(p->buffer_start, p);
 
     // Copy the header into the chunked/dechunked buffers.
@@ -868,8 +901,7 @@ HttpTunnel::producer_run(HttpTunnelProducer * p)
   //YTS Team, yamsat Plugin
   // Allocate and copy partial POST data to buffers. Check for the various parameters
   // including the maximum configured post data size
-  if (p->alive && sm->t_state.method == HTTP_WKSIDX_POST && sm->enable_redirection
-      && sm->redirection_tries == 0 && (p->vc_type == HT_HTTP_CLIENT)) {
+  if (p->alive && sm->t_state.method == HTTP_WKSIDX_POST && sm->enable_redirection && (p->vc_type == HT_HTTP_CLIENT)) {
     Debug("http_redirect", "[HttpTunnel::producer_run] client post: %" PRId64" max size: %" PRId64"",
           p->buffer_start->read_avail(), HttpConfig::m_master.post_copy_size);
 
@@ -891,8 +923,7 @@ HttpTunnel::producer_run(HttpTunnelProducer * p)
     p->chunked_handler.dechunked_reader->consume(p->chunked_handler.skip_bytes);
 
     // If there is data to process in the buffer, do it now
-    if (p->chunked_handler.dechunked_reader->read_avail())
-      producer_handler(VC_EVENT_READ_READY, p);
+    producer_handler(VC_EVENT_READ_READY, p);
   } else if (p->do_dechunking || p->do_chunked_passthru) {
     // remove the dechunked reader marker so that it doesn't act like a buffer guard
     if (p->do_dechunking)
@@ -912,9 +943,8 @@ HttpTunnel::producer_run(HttpTunnelProducer * p)
     //p->chunked_handler.chunked_reader->consume(
     //p->chunked_handler.skip_bytes);
 
-    if (p->chunked_handler.chunked_reader->read_avail()) {
-      producer_handler(VC_EVENT_READ_READY, p);
-    } else if (sm->redirection_tries > 0 && p->vc_type == HT_HTTP_CLIENT) {     // read_avail() == 0
+    producer_handler(VC_EVENT_READ_READY, p);
+    if (!p->chunked_handler.chunked_reader->read_avail() && sm->redirection_tries > 0 && p->vc_type == HT_HTTP_CLIENT) {     // read_avail() == 0
       // [bug 2579251]
       // Ugh, this is horrible but in the redirect case they are running a the tunnel again with the
       // now closed/empty producer to trigger PRECOMPLETE.  If the POST was chunked, producer_n is set
@@ -1075,7 +1105,6 @@ bool HttpTunnel::producer_handler(int event, HttpTunnelProducer * p)
       (event == VC_EVENT_READ_READY || event == VC_EVENT_READ_COMPLETE) && (p->vc_type == HT_HTTP_CLIENT)) {
     Debug("http_redirect", "[HttpTunnel::producer_handler] [%s %s]", p->name, HttpDebugNames::get_event_name(event));
 
-    c = p->consumer_list.head;
     if ((postbuf->postdata_copy_buffer_start->read_avail() + postbuf->ua_buffer_reader->read_avail())
         > HttpConfig::m_master.post_copy_size) {
       Debug("http_redirect",

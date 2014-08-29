@@ -156,12 +156,15 @@ ink_hrtime_from_nsec(unsigned int nsec)
 }
 
 static inline ink_hrtime
-ink_hrtime_from_timeval(struct timeval *tv)
+ink_hrtime_from_timespec(const struct timespec * ts)
 {
-  int64_t usecs;
+  return ink_hrtime_from_sec(ts->tv_sec) + ink_hrtime_from_nsec(ts->tv_nsec);
+}
 
-  usecs = tv->tv_sec * 1000000 + tv->tv_usec;
-  return (ink_hrtime_from_usec((unsigned int) usecs));
+static inline ink_hrtime
+ink_hrtime_from_timeval(const struct timeval * tv)
+{
+  return ink_hrtime_from_sec(tv->tv_sec) + ink_hrtime_from_usec(tv->tv_usec);
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -211,6 +214,16 @@ ink_hrtime_to_nsec(ink_hrtime t)
   return ((ink_hrtime) (t / HRTIME_NSECOND));
 }
 
+static inline struct timespec
+ink_hrtime_to_timespec(ink_hrtime t)
+{
+  struct timespec ts;
+
+  ts.tv_sec = ink_hrtime_to_sec(t);
+  ts.tv_nsec = t % HRTIME_SECOND;
+  return (ts);
+}
+
 static inline struct timeval
 ink_hrtime_to_timeval(ink_hrtime t)
 {
@@ -248,11 +261,11 @@ ink_get_hrtime_internal()
 #elif defined(freebsd)
   timespec ts;
   clock_gettime(CLOCK_REALTIME, &ts);
-  return (ts.tv_sec * HRTIME_SECOND + ts.tv_nsec * HRTIME_NSECOND);
+  return ink_hrtime_from_timespec(&ts);
 #else
   timeval tv;
   gettimeofday(&tv, NULL);
-  return (tv.tv_sec * HRTIME_SECOND + tv.tv_usec * HRTIME_USECOND);
+  return ink_hrtime_from_timeval(&tv);
 #endif
 #else /* !defined (NEED_HRTIME) */
   return gethrtime();
@@ -267,11 +280,11 @@ ink_get_based_hrtime_internal()
 #elif !HAVE_CLOCK_GETTIME
   timeval tv;
   gettimeofday(&tv, NULL);
-  return (tv.tv_sec * HRTIME_SECOND + tv.tv_usec * HRTIME_USECOND);
+  return ink_hrtime_from_timeval(&tv);
 #else
   timespec ts;
   clock_gettime(CLOCK_REALTIME, &ts);
-  return (ts.tv_sec * HRTIME_SECOND + ts.tv_nsec * HRTIME_NSECOND);
+  return ink_hrtime_from_timespec(&ts);
 #endif
 }
 
@@ -292,13 +305,13 @@ ink_gethrtimeofday(struct timeval *tp, void *)
 static inline int
 ink_time()
 {
-  return (int) (ink_get_based_hrtime_internal() / HRTIME_SECOND);
+  return (int) ink_hrtime_to_sec(ink_get_based_hrtime_internal());
 }
 
 static inline int
 ink_hrtime_diff_msec(ink_hrtime t1, ink_hrtime t2)
 {
-  return (int) ((t1 - t2) / 1000);
+  return (int) ink_hrtime_to_msec(t1 - t2);
 }
 
 static inline ink_hrtime
@@ -313,19 +326,11 @@ ink_hrtime_add(ink_hrtime t1, ink_hrtime t2)
   return (t1 + t2);
 }
 
-static inline timespec
-ink_based_hrtime_to_timespec(ink_hrtime t)
+static inline void
+ink_hrtime_sleep(ink_hrtime delay)
 {
-  timespec ts;
-  ts.tv_sec = (time_t) (t / HRTIME_SECOND);
-  ts.tv_nsec = (t % HRTIME_SECOND);
-  return ts;
-}
-
-static inline ink_hrtime
-ink_timespec_to_based_hrtime(timespec * ts)
-{
-  return (ts->tv_sec * HRTIME_SECOND + ts->tv_nsec * HRTIME_NSECOND);
+  struct timespec ts = ink_hrtime_to_timespec(delay);
+  nanosleep(&ts, NULL);
 }
 
 #endif /* _ink_hrtime_h_ */

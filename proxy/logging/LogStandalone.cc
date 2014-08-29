@@ -50,7 +50,6 @@ class HttpBodyFactory;
 extern int fds_limit;
 extern int cluster_port_number;
 
-int diags_init = 0;
 int command_flag = 0;
 int http_accept_port_number = 0;
 int http_accept_file_descriptor = 0;
@@ -110,7 +109,7 @@ initialize_process_manager()
 
   //
   // Start up manager
-  pmgmt = NEW(new ProcessManager(remote_management_flag));
+  pmgmt = new ProcessManager(remote_management_flag);
 
   pmgmt->start();
 
@@ -121,20 +120,17 @@ initialize_process_manager()
   //
   // Define version info records
   //
-  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.short", appVersionInfo.VersionStr, RECP_NULL);
-  RecRegisterStatString(RECT_PROCESS,
-                        "proxy.process.version.server.long", appVersionInfo.FullVersionInfoStr, RECP_NULL);
-  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_number", appVersionInfo.BldNumStr, RECP_NULL);
-  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_time", appVersionInfo.BldTimeStr, RECP_NULL);
-  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_date", appVersionInfo.BldDateStr, RECP_NULL);
-  RecRegisterStatString(RECT_PROCESS,
-                        "proxy.process.version.server.build_machine", appVersionInfo.BldMachineStr, RECP_NULL);
-  RecRegisterStatString(RECT_PROCESS,
-                        "proxy.process.version.server.build_person", appVersionInfo.BldPersonStr, RECP_NULL);
+  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.short", appVersionInfo.VersionStr, RECP_NON_PERSISTENT);
+  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.long", appVersionInfo.FullVersionInfoStr, RECP_NON_PERSISTENT);
+  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_number", appVersionInfo.BldNumStr, RECP_NON_PERSISTENT);
+  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_time", appVersionInfo.BldTimeStr, RECP_NON_PERSISTENT);
+  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_date", appVersionInfo.BldDateStr, RECP_NON_PERSISTENT);
+  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_machine", appVersionInfo.BldMachineStr, RECP_NON_PERSISTENT);
+  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_person", appVersionInfo.BldPersonStr, RECP_NON_PERSISTENT);
 //    RecRegisterStatString(RECT_PROCESS,
 //                         "proxy.process.version.server.build_compile_flags",
 //                         appVersionInfo.BldCompileFlagsStr,
-//                         RECP_NULL);
+//                         RECP_NON_PERSISTENT);
 }
 
 /*-------------------------------------------------------------------------
@@ -219,9 +215,8 @@ init_log_standalone(const char *pgm_name, bool one_copy)
 
   init_system(true);
   initialize_process_manager();
-  diagsConfig = NEW(new DiagsConfig(logfile, error_tags, action_tags));
+  diagsConfig = new DiagsConfig(logfile, error_tags, action_tags);
   diags = diagsConfig->diags;
-  diags_init = 1;
 }
 
 /*-------------------------------------------------------------------------
@@ -248,12 +243,11 @@ init_log_standalone_basic(const char *pgm_name)
 
   init_system(false);
   const bool use_records = false;
-  diagsConfig = NEW(new DiagsConfig(logfile, error_tags, action_tags, use_records));
+  diagsConfig = new DiagsConfig(logfile, error_tags, action_tags, use_records);
   diags = diagsConfig->diags;
   // set stdin/stdout to be unbuffered
   //
   setbuf(stdin, NULL);
   setbuf(stdout, NULL);
 
-  diags_init = 1;
 }

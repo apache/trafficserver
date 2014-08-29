@@ -75,10 +75,9 @@ To configure Traffic Server set the following values in
 
 ``proxy.config.http.server_port``
     ``STRING``
-    Default: *value from* ```--on-port`` <#on_port>`_
+    Default: *value from* ``--on-port``
 
-proxy.config.http.server_port_attr
-{#proxy.config.http.server_port_attr}
+``proxy.config.http.server_port_attr``
     ``STRING``
     Default: ``=``
 

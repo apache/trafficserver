@@ -63,8 +63,6 @@ public:
   INKContInternalMagic_t m_free_magic;
 };
 
-
-
 class INKVConnInternal:public INKContInternal
 {
 public:

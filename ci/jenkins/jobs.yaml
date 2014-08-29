@@ -48,7 +48,7 @@
         - shell: |
             cd "${WORKSPACE}/build/${JOB_NAME}.${BUILD_NUMBER}"
             export DEB_BUILD_HARDENING
-            "${WORKSPACE}"/src/configure --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}" --enable-werror --enable-experimental-plugins $ENABLE_WCCP $ENABLE_DEBUG $ENABLE_EXPERIMENTAL
+            "${WORKSPACE}"/src/configure --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}" --enable-werror --enable-experimental-plugins --enable-example-plugins --enable-test-tools $ENABLE_WCCP $ENABLE_DEBUG $ENABLE_EXPERIMENTAL
             make -j2 V=1
             make check
             make install
@@ -71,7 +71,7 @@
             export CXX=clang++
             export CXXFLAGS="-Qunused-arguments -std=c++11"
             export WITH_LIBCPLUSPLUS=yes
-            "${WORKSPACE}"/src/configure --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}" --enable-werror --enable-experimental-plugins $ENABLE_WCCP $ENABLE_DEBUG $ENABLE_EXPERIMENTAL
+            "${WORKSPACE}"/src/configure --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}" --enable-werror --enable-experimental-plugins --enable-example-plugins --enable-test-tools $ENABLE_WCCP $ENABLE_DEBUG $ENABLE_EXPERIMENTAL
             make -j2 V=1
             make check
             make install
@@ -92,7 +92,7 @@
             ( cd "${WORKSPACE}/src" && git clean -dfxq  && autoreconf -fi )
         - shell: |
             cd "${WORKSPACE}/build/${JOB_NAME}.${BUILD_NUMBER}"
-            "${WORKSPACE}"/src/configure --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}" --enable-werror --enable-experimental-plugins $ENABLE_DEBUG
+            "${WORKSPACE}"/src/configure --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}" --enable-werror --enable-experimental-plugins --enable-example-plugins --enable-test-tools $ENABLE_DEBUG
             gmake -j2 V=1
             gmake check
             gmake install
@@ -119,7 +119,7 @@
             export CXXFLAGS=-m64
             export CPPFLAGS=-I/opt/omni/include
             export LDFLAGS="-L/opt/omni/lib/amd64 -R/opt/omni/lib/amd64"
-            "${WORKSPACE}"/src/configure --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}" --enable-werror --with-tcl=/opt/omni/lib/amd64 --enable-experimental-plugins $ENABLE_DEBUG $ENABLE_EXPERIMENTAL
+            "${WORKSPACE}"/src/configure --prefix="${WORKSPACE}/install/${JOB_NAME}.${BUILD_NUMBER}" --enable-werror --with-tcl=/opt/omni/lib/amd64 --enable-experimental-plugins --enable-example-plugins --enable-test-tools $ENABLE_DEBUG $ENABLE_EXPERIMENTAL
             gmake -j2 V=1
             gmake check
             gmake install
@@ -220,12 +220,12 @@
             branch: 3.2.x
             repo: file:///home/jenkins/git/trafficserver_3.2
         - '{node}-{branch}-{tag}-regression':
-            branch: 4.1.x
+            branch: 4.2.x
             tag: debug
             debug: --enable-debug
             repo: file:///home/jenkins/git/trafficserver_4
         - '{node}-{branch}-{tag}-regression':
-            branch: 4.1.x
+            branch: 4.2.x
             repo: file:///home/jenkins/git/trafficserver_4
 
 
@@ -255,13 +255,13 @@
         - '{node}-{branch}-{tag}-regression':
             branch: 3.2.x
             repo: file:///home/jenkins/git/trafficserver_3.2
-        - '{node}-{branch}-regression':
-            branch: 4.1.x
+        - '{node}-{branch}-{tag}-regression':
+            branch: 4.2.x
             tag: debug
             debug: --enable-debug
             repo: file:///home/jenkins/git/trafficserver_4
         - '{node}-{branch}-{tag}-regression':
-            branch: 4.1.x
+            branch: 4.2.x
             repo: file:///home/jenkins/git/trafficserver_4
 
 - project:
@@ -291,12 +291,12 @@
             branch: 3.2.x
             repo: file:///home/jenkins/git/trafficserver_3.2
         - '{node}-{branch}-{tag}-regression':
-            branch: 4.1.x
+            branch: 4.2.x
             tag: debug
             debug: --enable-debug
             repo: file:///home/jenkins/git/trafficserver_4
         - '{node}-{branch}-{tag}-regression':
-            branch: 4.1.x
+            branch: 4.2.x
             repo: file:///home/jenkins/git/trafficserver_4
         - '{node}-{branch}-{tag}-regression':
             branch: master
@@ -331,12 +331,12 @@
             branch: 3.2.x
             repo: file:///home/jenkins/git/trafficserver_3.2
         - '{node}-{branch}-{tag}-regression':
-            branch: 4.1.x
+            branch: 4.2.x
             tag: debug
             debug: --enable-debug
             repo: file:///home/jenkins/git/trafficserver_4
         - '{node}-{branch}-{tag}-regression':
-            branch: 4.1.x
+            branch: 4.2.x
             repo: file:///home/jenkins/git/trafficserver_4
 
 - project:
@@ -366,12 +366,12 @@
             branch: 3.2.x
             repo: file:///home/jenkins/git/trafficserver_3.2
         - '{node}-{branch}-{tag}-regression':
-            branch: 4.1.x
+            branch: 4.2.x
             tag: debug
             debug: --enable-debug
             repo: file:///home/jenkins/git/trafficserver_4
         - '{node}-{branch}-{tag}-regression':
-            branch: 4.1.x
+            branch: 4.2.x
             repo: file:///home/jenkins/git/trafficserver_4
 
 - project:
@@ -401,12 +401,12 @@
             branch: 3.2.x
             repo: file:///home/jenkins/git/trafficserver_3.2
         - '{node}-{branch}-{tag}-regression':
-            branch: 4.1.x
+            branch: 4.2.x
             tag: debug
             debug: --enable-debug
             repo: file:///home/jenkins/git/trafficserver_4
         - '{node}-{branch}-{tag}-regression':
-            branch: 4.1.x
+            branch: 4.2.x
             repo: file:///home/jenkins/git/trafficserver_4
 
 - project:
@@ -436,12 +436,12 @@
             branch: 3.2.x
             repo: file:///home/jenkins/git/trafficserver_3.2
         - '{node}-{branch}-{tag}-regression':
-            branch: 4.1.x
+            branch: 4.2.x
             tag: debug
             debug: --enable-debug
             repo: file:///home/jenkins/git/trafficserver_4
         - '{node}-{branch}-{tag}-regression':
-            branch: 4.1.x
+            branch: 4.2.x
             repo: file:///home/jenkins/git/trafficserver_4
 
 - project:
@@ -471,12 +471,12 @@
             branch: 3.2.x
             repo: file:///home/jenkins/git/trafficserver_3.2
         - '{node}-{branch}-{tag}-regression':
-            branch: 4.1.x
+            branch: 4.2.x
             tag: debug
             debug: --enable-debug
             repo: file:///home/jenkins/git/trafficserver_4
         - '{node}-{branch}-{tag}-regression':
-            branch: 4.1.x
+            branch: 4.2.x
             repo: file:///home/jenkins/git/trafficserver_4
 
 - project:
@@ -506,12 +506,12 @@
             branch: 3.2.x
             repo: file:///home/jenkins/git/trafficserver_3.2
         - '{node}-{branch}-{tag}-regression':
-            branch: 4.1.x
+            branch: 4.2.x
             tag: debug
             debug: --enable-debug
             repo: file:///home/jenkins/git/trafficserver_4
         - '{node}-{branch}-{tag}-regression':
-            branch: 4.1.x
+            branch: 4.2.x
             repo: file:///home/jenkins/git/trafficserver_4
         - '{node}-{branch}-clang-{tag}-regression':
             branch: master
@@ -522,7 +522,7 @@
             branch: master
             repo: file:///home/jenkins/git/trafficserver
         - '{node}-{branch}-clang-{tag}-regression':
-            branch: 4.1.x
+            branch: 4.2.x
             repo: file:///home/jenkins/git/trafficserver_4
 
 - project:
@@ -552,12 +552,12 @@
             branch: 3.2.x
             repo: file:///home/jenkins/git/trafficserver_3.2
         - '{node}-{branch}-{tag}-regression':
-            branch: 4.1.x
+            branch: 4.2.x
             tag: debug
             debug: --enable-debug
             repo: file:///home/jenkins/git/trafficserver_4
         - '{node}-{branch}-{tag}-regression':
-            branch: 4.1.x
+            branch: 4.2.x
             repo: file:///home/jenkins/git/trafficserver_4
 
 - project:
@@ -587,10 +587,10 @@
             debug: --enable-debug
             repo: file:///home/jenkins/git/trafficserver_3.2
         - '{node}-{branch}-{tag}-regression':
-            branch: 4.1.x
+            branch: 4.2.x
             repo: file:///home/jenkins/git/trafficserver_4
         - '{node}-{branch}-{tag}-regression':
-            branch: 4.1.x
+            branch: 4.2.x
             tag: debug
             debug: --enable-debug
             repo: file:///home/jenkins/git/trafficserver_4
@@ -622,10 +622,10 @@
             debug: --enable-debug
             repo: file:///home/jenkins/git/trafficserver_3.2
         - '{node}-{branch}-{tag}-regression':
-            branch: 4.1.x
+            branch: 4.2.x
             repo: file:///home/jenkins/git/trafficserver_4
         - '{node}-{branch}-{tag}-regression':
-            branch: 4.1.x
+            branch: 4.2.x
             tag: debug
             debug: --enable-debug
             repo: file:///home/jenkins/git/trafficserver_4
@@ -657,10 +657,10 @@
             debug: --enable-debug
             repo: file:///home/jenkins/git/trafficserver_3.2
         - '{node}-{branch}-{tag}-regression':
-            branch: 4.1.x
+            branch: 4.2.x
             repo: file:///home/jenkins/git/trafficserver_4
         - '{node}-{branch}-{tag}-regression':
-            branch: 4.1.x
+            branch: 4.2.x
             tag: debug
             debug: --enable-debug
             repo: file:///home/jenkins/git/trafficserver_4
@@ -697,10 +697,10 @@
             debug: --enable-debug
             repo: file:///home/jenkins/git/trafficserver_3.2
         - '{node}-{branch}-{tag}-regression':
-            branch: 4.1.x
+            branch: 4.2.x
             repo: file:///home/jenkins/git/trafficserver_4
         - '{node}-{branch}-{tag}-regression':
-            branch: 4.1.x
+            branch: 4.2.x
             tag: debug
             debug: --enable-debug
             repo: file:///home/jenkins/git/trafficserver_4
@@ -737,15 +737,15 @@
             debug: --enable-debug
             repo: file:///home/jenkins/git/trafficserver_3.2
         - '{node}-{branch}-{tag}-regression':
-            branch: 4.1.x
+            branch: 4.2.x
             repo: file:///home/jenkins/git/trafficserver_4
         - '{node}-{branch}-{tag}-regression':
-            branch: 4.1.x
+            branch: 4.2.x
             tag: hardening
             hardening: '1'
             repo: file:///home/jenkins/git/trafficserver_4
         - '{node}-{branch}-{tag}-regression':
-            branch: 4.1.x
+            branch: 4.2.x
             tag: debug
             debug: --enable-debug
             repo: file:///home/jenkins/git/trafficserver_4
@@ -787,10 +787,10 @@
             debug: --enable-debug
             repo: file:///home/jenkins/git/trafficserver_3.2
         - '{node}-{branch}-{tag}-regression':
-            branch: 4.1.x
+            branch: 4.2.x
             repo: file:///home/jenkins/git/trafficserver_4
         - '{node}-{branch}-{tag}-regression':
-            branch: 4.1.x
+            branch: 4.2.x
             tag: debug
             debug: --enable-debug
             repo: file:///home/jenkins/git/trafficserver_4
@@ -822,10 +822,10 @@
             debug: --enable-debug
             repo: file:///Users/jenkins/git/trafficserver_3.2
         - '{node}-{branch}-{tag}-regression':
-            branch: 4.1.x
+            branch: 4.2.x
             repo: file:///Users/jenkins/git/trafficserver_4
         - '{node}-{branch}-{tag}-regression':
-            branch: 4.1.x
+            branch: 4.2.x
             tag: debug
             debug: --enable-debug
             repo: file:///Users/jenkins/git/trafficserver_4

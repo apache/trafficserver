@@ -22,98 +22,27 @@ dnl
 dnl TS_CHECK_CRYPTO: look for crypto libraries and headers
 dnl
 AC_DEFUN([TS_CHECK_CRYPTO], [
-  enable_crypto=no
   AC_SEARCH_LIBS([crypt], [crypt], [AC_SUBST([LIBCRYPT],["-lcrypt"])])
 
-  TS_CHECK_CRYPTO_OPENSSL
+  AX_CHECK_OPENSSL([
+    enable_crypto=yes
+  ], [
+    AC_ERROR(failed to find OpenSSL)
+    enable_crypto=no
+  ])
+
+  if test "x${enable_crypto}" = "xyes"; then
+    TS_ADDTO(LDFLAGS, [$OPENSSL_LDFLAGS])
+    TS_ADDTO(CPPFLAGS, [$OPENSSL_INCLUDES])
+  fi
+
   dnl add checks for other varieties of ssl here
 ])
 dnl
 
-AC_DEFUN([TS_CHECK_CRYPTO_OPENSSL], [
-enable_openssl=no
-AC_ARG_WITH(openssl, [AC_HELP_STRING([--with-openssl=DIR],[use a specific OpenSSL library])],
-[
-  if test "x$withval" != "xyes" && test "x$withval" != "x"; then
-    openssl_base_dir="$withval"
-    if test "$withval" != "no"; then
-      enable_openssl=yes
-      case "$withval" in
-      *":"*)
-        openssl_include="`echo $withval |sed -e 's/:.*$//'`"
-        openssl_ldflags="`echo $withval |sed -e 's/^.*://'`"
-        AC_MSG_CHECKING(checking for OpenSSL includes in $openssl_include libs in $openssl_ldflags )
-        ;;
-      *)
-        openssl_include="$withval/include"
-        openssl_ldflags="$withval/lib"
-        AC_MSG_CHECKING(checking for OpenSSL includes in $withval)
-        ;;
-      esac
-    fi
-  fi
-])
-
-if test "x$openssl_base_dir" = "x"; then
-  AC_MSG_CHECKING([for OpenSSL location])
-  AC_CACHE_VAL(ats_cv_openssl_dir,[
-  for dir in /usr/local/ssl /usr/pkg /usr/sfw /usr/local /usr; do
-    if test -d $dir && test -f $dir/include/openssl/x509.h; then
-      ats_cv_openssl_dir=$dir
-      break
-    fi
-  done
-  ])
-  openssl_base_dir=$ats_cv_openssl_dir
-  if test "x$openssl_base_dir" = "x"; then
-    enable_openssl=no
-    AC_MSG_RESULT([not found])
-  else
-    enable_openssl=yes
-    openssl_include="$openssl_base_dir/include"
-    openssl_ldflags="$openssl_base_dir/lib"
-    AC_MSG_RESULT([${openssl_base_dir}])
-  fi
-else
-  if test -d $openssl_include/openssl && test -d $openssl_ldflags && test -f $openssl_include/openssl/x509.h; then
-    AC_MSG_RESULT([ok])
-  else
-    AC_MSG_RESULT([not found])
-  fi
-fi
-
-if test "$enable_openssl" != "no"; then
-  saved_ldflags=$LDFLAGS
-  saved_cppflags=$CPPFLAGS
-  openssl_have_headers=0
-  openssl_have_libs=0
-  if test "$openssl_base_dir" != "/usr"; then
-    TS_ADDTO(CPPFLAGS, [-I${openssl_include}])
-    TS_ADDTO(LDFLAGS, [-L${openssl_ldflags}])
-    TS_ADDTO(LIBTOOL_LINK_FLAGS, [-R${openssl_ldflags}])
-  fi
-  AC_SEARCH_LIBS([BN_init],[crypto],
-      AC_SEARCH_LIBS([SSL_accept], [ssl], [openssl_have_libs=1], [], [-lcrypto]))
-  if test "$openssl_have_libs" != "0"; then
-      AC_CHECK_HEADERS(openssl/x509.h, [openssl_have_headers=1])
-  fi
-  if test "$openssl_have_headers" != "0"; then
-    AC_CHECK_DECLS([EVP_PKEY_CTX_new], [], [],
-                   [#include <openssl/evp.h>])
-    enable_crypto=yes
-    AC_SUBST([LIBSSL],["-lssl -lcrypto"])
-  else
-    enable_openssl=no
-    CPPFLAGS=$saved_cppflags
-    LDFLAGS=$saved_ldflags
-  fi
-fi
-
-])
-
 AC_DEFUN([TS_CHECK_CRYPTO_EC_KEYS], [
   _eckeys_saved_LIBS=$LIBS
-  TS_ADDTO(LIBS, [$LIBSSL])
+  TS_ADDTO(LIBS, [$OPENSSL_LIBS])
   AC_CHECK_HEADERS(openssl/ec.h)
   AC_CHECK_FUNCS(EC_KEY_new_by_curve_name, [enable_tls_eckey=yes], [enable_tls_eckey=no])
   LIBS=$_eckeys_saved_LIBS
@@ -127,58 +56,38 @@ AC_DEFUN([TS_CHECK_CRYPTO_EC_KEYS], [
 AC_DEFUN([TS_CHECK_CRYPTO_NEXTPROTONEG], [
   enable_tls_npn=yes
   _npn_saved_LIBS=$LIBS
-  TS_ADDTO(LIBS, [$LIBSSL])
+  TS_ADDTO(LIBS, [$OPENSSL_LIBS])
   AC_CHECK_FUNCS(SSL_CTX_set_next_protos_advertised_cb SSL_CTX_set_next_proto_select_cb SSL_select_next_proto SSL_get0_next_proto_negotiated,
     [], [enable_tls_npn=no]
   )
   LIBS=$_npn_saved_LIBS
 
-  AC_MSG_CHECKING(whether to enable NextProtocolNegotiation TLS extension support)
+  AC_MSG_CHECKING(whether to enable Next Protocol Negotiation TLS extension support)
   AC_MSG_RESULT([$enable_tls_npn])
   TS_ARG_ENABLE_VAR([use], [tls-npn])
   AC_SUBST(use_tls_npn)
 ])
 
-AC_DEFUN([TS_CHECK_CRYPTO_TICKETS], [
-  _tickets_saved_LIBS=$LIBS
-  enable_tls_tickets=yes
+AC_DEFUN([TS_CHECK_CRYPTO_ALPN], [
+  enable_tls_alpn=yes
+  _alpn_saved_LIBS=$LIBS
+  TS_ADDTO(LIBS, [$OPENSSL_LIBS])
+  AC_CHECK_FUNCS(SSL_CTX_set_alpn_protos SSL_CTX_set_alpn_select_cb SSL_get0_alpn_selected SSL_select_next_proto,
+    [], [enable_tls_alpn=no]
+  )
+  LIBS=$_alpn_saved_LIBS
 
-  TS_ADDTO(LIBS, [$LIBSSL])
-  AC_CHECK_HEADERS(openssl/tls1.h openssl/ssl.h openssl/ts.h openssl/hmac.h openssl/evp.h)
-  AC_MSG_CHECKING([for SSL_CTX_set_tlsext_ticket_key_cb])
-  AC_COMPILE_IFELSE(
-  [
-    AC_LANG_PROGRAM([[
-#if HAVE_OPENSSL_SSL_H
-#include <openssl/ssl.h>
-#endif
-#if HAVE_OPENSSL_TLS1_H
-#include <openssl/tls1.h>
-#endif
-      ]],
-      [[SSL_CTX_set_tlsext_ticket_key_cb(NULL, NULL);]])
-  ],
-  [
-    AC_MSG_RESULT([yes])
-  ],
-  [
-    AC_MSG_RESULT([no])
-    enable_tls_tickets=no
-  ])
-
-  LIBS=$_tickets_saved_LIBS
-
-  AC_MSG_CHECKING(whether to enable TLS session ticket support)
-  AC_MSG_RESULT([$enable_tls_tickets])
-  TS_ARG_ENABLE_VAR([use], [tls-tickets])
-  AC_SUBST(use_tls_tickets)
+  AC_MSG_CHECKING(whether to enable Application Layer Protocol Negotiation TLS extension support)
+  AC_MSG_RESULT([$enable_tls_alpn])
+  TS_ARG_ENABLE_VAR([use], [tls-alpn])
+  AC_SUBST(use_tls_alpn)
 ])
 
 AC_DEFUN([TS_CHECK_CRYPTO_SNI], [
   _sni_saved_LIBS=$LIBS
   enable_tls_sni=yes
 
-  TS_ADDTO(LIBS, [$LIBSSL])
+  TS_ADDTO(LIBS, [$OPENSSL_LIBS])
   AC_CHECK_HEADERS(openssl/tls1.h openssl/ssl.h openssl/ts.h)
   # We are looking for SSL_CTX_set_tlsext_servername_callback, but it's a
   # macro, so AC_CHECK_FUNCS is not going to do the business.

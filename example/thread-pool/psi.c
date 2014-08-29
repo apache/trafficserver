@@ -615,7 +615,7 @@ handle_transform(TSCont contp)
   TSVIO input_vio;
   ContData *data;
   TSIOBufferReader input_reader;
-  int toread, avail, psi, toconsume, towrite;
+  int toread, avail, psi, toconsume = 0, towrite = 0;
 
   /* Get the output (downstream) vconnection where we'll write data to. */
   output_conn = TSTransformOutputVConnGet(contp);

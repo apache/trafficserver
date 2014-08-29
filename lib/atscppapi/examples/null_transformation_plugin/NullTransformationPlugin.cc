@@ -27,15 +27,20 @@ using namespace atscppapi;
 using std::string;
 
 namespace {
-atscppapi::Logger *log;
 #define TAG "null_transformation"
 }
 
 class NullTransformationPlugin : public TransformationPlugin {
 public:
-  NullTransformationPlugin(Transaction &transaction)
-    : TransformationPlugin(transaction, RESPONSE_TRANSFORMATION) {
-    registerHook(HOOK_SEND_RESPONSE_HEADERS);
+  NullTransformationPlugin(Transaction &transaction, TransformationPlugin::Type xformType)
+    : TransformationPlugin(transaction, xformType) {
+    registerHook((xformType == TransformationPlugin::REQUEST_TRANSFORMATION) ? 
+                 HOOK_SEND_REQUEST_HEADERS : HOOK_SEND_RESPONSE_HEADERS);
+  }
+
+  void handleSendRequestHeaders(Transaction &transaction) {
+    transaction.getServerRequest().getHeaders()["X-Content-Transformed"] = "1";
+    transaction.resume();
   }
 
   void handleSendResponseHeaders(Transaction &transaction) {
@@ -61,17 +66,22 @@ private:
 class GlobalHookPlugin : public GlobalPlugin {
 public:
   GlobalHookPlugin() {
+    registerHook(HOOK_READ_REQUEST_HEADERS_POST_REMAP);
     registerHook(HOOK_READ_RESPONSE_HEADERS);
   }
 
-  virtual void handleReadResponseHeaders(Transaction &transaction) {
-    transaction.addPlugin(new NullTransformationPlugin(transaction));
+  virtual void handleReadRequestHeadersPostRemap(Transaction &transaction) {
+    transaction.addPlugin(new NullTransformationPlugin(transaction, TransformationPlugin::REQUEST_TRANSFORMATION));
     transaction.resume();
   }
 
+  virtual void handleReadResponseHeaders(Transaction &transaction) {
+    transaction.addPlugin(new NullTransformationPlugin(transaction, TransformationPlugin::RESPONSE_TRANSFORMATION));
+    transaction.resume();
+  }
 };
 
 void TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED) {
   TS_DEBUG(TAG, "TSPluginInit");
-  GlobalPlugin *instance = new GlobalHookPlugin();
+  new GlobalHookPlugin();
 }

@@ -24,6 +24,8 @@ the mutex interface.
 .. toctree::
    :maxdepth: 1
 
+.. _Mutexes:
+
 Mutexes
 -------
 
@@ -78,27 +80,24 @@ data. The blacklist plugin reads its blacklisted sites from a
 configuration file; file read operations are protected by a mutex
 created in ``TSPluginInit``. The ``blacklist-1.c`` code uses
 ``TSMutexLockTry`` instead of ``InkMutexLock``. For more detailed
-information, see the
-```blacklist-1.c`` <../sample-source-code#Sample_blacklist-1.c>`__ code;
-start by looking at the
-```TSPluginInit`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#a9a0b0ac9cbce9d6644f66bbe93098313>`__
-function.
+information, see the :ref:`blacklist-1.c` code;
+start by looking at the :c:func:`TSPluginInit` function.
 
 General guidelines for locking shared data are as follows:
 
 1. Create a mutex for the shared data with
-   ```TSMutexCreate`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#aa4300d8888c6962a44c9e827d633e433>`__.
+   :c:func:`TSMutexCreate`.
 
 2. Whenever you need to read or modify this data, first lock it by
    calling
-   ```TSMutexLockTry`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#ac9c08451aa529851b9474e3c035f44bb>`__;
+   :c:func:`TSMutexLockTry`;
    then read or modify the data.
 
 3. When you are done with the data, unlock it with
-   ```TSMutexUnlock`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#afbb474c217fd5b927f1f8487c45646dd>`__.
+   :c:func:`TSMutexUnlock`.
    If you are unlocking data accessed during the processing of an HTTP
    transaction, then you must unlock it before calling
-   ```TSHttpTxnReenable`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#ac367347e02709ac809994dfb21d3288a>`__.
+   :c:func:`TSHttpTxnReenable`.
 
 Protecting a Continuation's Data
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -109,9 +108,8 @@ accessed by other continuations or processes. Here's how:
 1. | Create a mutex for the continuation using ``TSMutexCreate``.
    | For example:
 
-   ::
+   .. code-block:: c
 
-               ::::c
        TSMutex mutexp;
        mutexp = TSMutexCreate ();
 
@@ -119,10 +117,9 @@ accessed by other continuations or processes. Here's how:
      continuation's mutex.
    | For example:
 
-   ::
+   .. code-block:: c
 
-               :::c
-               TSCont contp;
+       TSCont contp;
        contp = TSContCreate (handler, mutexp);
 
 If any other functions want to access ``contp``'s data, then it is up to
@@ -154,9 +151,8 @@ plugin continuation to be called back by HTTP transactions globally when
 they reach ``TS_HTTP_TXN_START_HOOK``. Refer to the example below, which
 uses a transaction-specific continuation called ``txn_contp``.
 
-::
+.. code-block:: c
 
-           ::::c
            void TSPluginInit(int argc, const char *argv[]) 
            { 
                /* Plugin continuation */ 
@@ -174,9 +170,8 @@ In the plugin continuation handler, create the new continuation
 ``txn_contp`` and then register it to be called back at
 ``TS_HTTP_TXN_CLOSE_HOOK``:
 
-::
+.. code-block:: c
 
-           ::::c
            static int plugin_cont_handler(TSCont contp, TSEvent event, void *edata) 
            { 
                TSHttpTxn txnp = (TSHttpTxn)edata; 
@@ -210,9 +205,9 @@ Remember that the ``txn_contp`` handler must destory itself when the
 HTTP transaction is closed. If you forget to do this, then your plugin
 will have a memory leak.
 
-::
+.. code-block:: c
 
-           ::::c
+
            static int txn_cont_handler(TSCont txn_contp, TSEvent event, void *edata) 
            { 
                TSHttpTxn txnp; 
@@ -241,9 +236,8 @@ For the example above, store the data in the ``txn_contp`` data
 structure - this means that you'll create your own data structure. Now
 suppose you want to store the state of the HTTP transaction:
 
-::
+.. code-block:: c
 
-           ::::c
        typedef struct { 
              int state; 
          } ContData;
@@ -252,9 +246,8 @@ You need to allocate the memory and initialize this structure for each
 HTTP ``txnp``. You can do that in the plugin continuation handler when
 it is called back with ``TS_EVENT_HTTP_TXN_START``
 
-::
+.. code-block:: c
 
-           ::::c
            static int plugin_cont_handler(TSCont contp, TSEvent event, void *edata) 
            { 
                TSHttpTxn txnp = (TSHttpTxn)edata; 
@@ -294,9 +287,8 @@ it is called back with ``TS_EVENT_HTTP_TXN_START``
 
 For accessing this data from anywhere, use TSContDataGet:
 
-::
+.. code-block:: c
 
-           ::::c
            TSCont txn_contp; 
            ContData *contData; 
 
@@ -308,9 +300,8 @@ For accessing this data from anywhere, use TSContDataGet:
 
 Remember to free this memory before destroying the continuation:
 
-::
+.. code-block:: c
 
-           ::::c
            static int txn_cont_handler(TSCont txn_contp, TSEvent event, void *edata) 
            { 
                TSHttpTxn txnp; 
@@ -374,9 +365,8 @@ HTTP transaction (``TSHttpTxn`` object) already has its own mutex.
 In the example below, it's not necessary to specify a mutex for the
 continuation created in ``txn_handler``:
 
-::
+.. code-block:: c
 
-        ::::c
     static void
     txn_handler (TSHttpTxn txnp, TSCont contp) {
         TSCont newCont;
@@ -389,23 +379,23 @@ continuation created in ``txn_handler``:
             TSHttpTxnReenable (txnp, TS_EVENT_HTTP_CONTINUE);
     }
 
-        static int
-        test_plugin (TSCont contp, TSEvent event, void *edata) {
-            TSHttpTxn txnp = (TSHttpTxn) edata;
+   static int
+   test_plugin (TSCont contp, TSEvent event, void *edata) {
+       TSHttpTxn txnp = (TSHttpTxn) edata;
 
-            switch (event) {
-                case TS_EVENT_HTTP_READ_REQUEST_HDR:
-                    txn_handler (txnp, contp);
-                    return 0;
-                default:
-                    break;
-            }
-            return 0;
-        }
+       switch (event) {
+           case TS_EVENT_HTTP_READ_REQUEST_HDR:
+               txn_handler (txnp, contp);
+               return 0;
+           default:
+               break;
+       }
+       return 0;
+   }
 
 The mutex functions are listed below:
 
--  ```TSMutexCreate`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#aa4300d8888c6962a44c9e827d633e433>`__
--  ```TSMutexLock`` <http://people.apache.org/~amc/ats/doc/html/InkIOCoreAPI_8cc.html#a306f9923bc9d3c0f417c185919531934>`__
--  ```TSMutexLockTry`` <http://people.apache.org/~amc/ats/doc/html/ts_8h.html#ac9c08451aa529851b9474e3c035f44bb>`__
+-  :c:func:`TSMutexCreate`
+-  :c:func:`TSMutexLock`
+-  :c:func:`TSMutexLockTry`
 

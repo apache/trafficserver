@@ -29,9 +29,8 @@ Below is an overview of the null transform plugin:
 
 1.  Gets a handle to HTTP transactions.
 
-    ::
+    .. code-block:: c
 
-        :::c
         void
         TSPluginInit (int argc, const char *argv[]) {
             TSHttpHookAdd (TS_HTTP_READ_RESPONSE_HDR_HOOK,
@@ -42,9 +41,8 @@ Below is an overview of the null transform plugin:
 
 2.  Checks to see if the transaction response is transformable.
 
-    ::
+    .. code-block:: c
 
-        :::c
         static int transform_plugin (TSCont contp, TSEvent event, void *edata) {
             TSHttpTxn txnp = (TSHttpTxn) edata;
             switch (event) {
@@ -61,9 +59,8 @@ Below is an overview of the null transform plugin:
     from the origin server, the routine ``transformable`` checks the
     response header for the "200 OK" server response.
 
-    ::
+    .. code-block:: c
 
-        :::c
         static int transformable (TSHttpTxn txnp)
         {
             TSMBuffer bufp;
@@ -84,9 +81,8 @@ Below is an overview of the null transform plugin:
     data is ready to be transformed (as it is streaming from the origin
     server).
 
-    ::
+    .. code-block:: c
 
-        :::c
         static void transform_add (TSHttpTxn txnp)
         {
             TSVConn connp;
@@ -100,17 +96,15 @@ Below is an overview of the null transform plugin:
 4.  Get a handle to the output vconnection (that receives data from the
     tranformation).
 
-    ::
+    .. code-block:: c
 
-        :::c
         output_conn = TSTransformOutputVConnGet (con
 
 5.  Get a handle to the input VIO. (See the ``handle_transform``
     function.)
 
-    ::
+    .. code-block:: c
 
-        :::c
         input_vio = TSVConnWriteVIOGet (contp);
 
     This is so that the transformation can get information about the
@@ -122,25 +116,23 @@ Below is an overview of the null transform plugin:
     from the output vconnection. See the ``handle_transform`` function
     for the following code fragment:
 
-    ::
+    .. code-block:: c
 
-        :::c
         data->output_vio = TSVConnWrite (output_conn, contp,
             data->output_reader, TSVIONBytesGet (input_vio));
 
 7.  Copy data from the input buffer to the output buffer. See the
     ``handle_transform`` function for the following code fragment:
 
-    ::
+    .. code-block:: c
 
-        ::::c
         TSIOBufferCopy (TSVIOBufferGet (data->output_vio),
                 TSVIOReaderGet (input_vio), towrite, 0);
 
 8.  Tell the input buffer that the transformation has read the data. See
     the ``handle_transform`` function for the following code fragment:
 
-    ::
+    .. code-block:: c
 
         TSIOBufferReaderConsume (TSVIOReaderGet (input_vio), towrite);
 
@@ -148,9 +140,8 @@ Below is an overview of the null transform plugin:
     (increase the value of ``ndone``). See the ``handle_transform``
     function for the following code fragment:
 
-    ::
+    .. code-block:: c
 
-        ::::c
         TSVIONDoneSet (input_vio, TSVIONDoneGet (input_vio) + towrite);
 
 10. If there is more data left to read ( if ndone < nbytes), then the
@@ -158,9 +149,8 @@ Below is an overview of the null transform plugin:
     with a reenable and wakes up the upstream vconnection by sending it
     ``WRITE_READY``:
 
-    ::
+    .. code-block:: c
 
-        :::c
         if (TSVIONTodoGet (input_vio) > 0) {
             if (towrite > 0) {
                 TSVIOReenable (data->output_vio);
@@ -210,9 +200,8 @@ Below is an overview of the null transform plugin:
     vconnection). See the ``null_plugin`` function for the following
     code fragment:
 
-    ::
+    .. code-block:: c
 
-        :::c
         case TS_EVENT_VCONN_WRITE_COMPLETE:
             TSVConnShutdown (TSTransformOutputVConnGet (contp), 0, 1
             break;

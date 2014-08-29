@@ -20,6 +20,8 @@
 TSPluginInit
 ============
 
+Traffic Server plugin loading and registration.
+
 Synopsis
 ========
 

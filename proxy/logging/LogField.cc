@@ -30,7 +30,6 @@
 #include "libts.h"
 
 #include "Error.h"
-#include "Resource.h"
 #include "LogUtils.h"
 #include "LogField.h"
 #include "LogBuffer.h"
@@ -142,10 +141,10 @@ LogSlice::toStrOffset(int strlen, int *offset)
   -------------------------------------------------------------------------*/
 
 // Generic field ctor
-LogField::LogField(const char *name, const char *symbol, Type type, MarshalFunc marshal, UnmarshalFunc unmarshal)
+LogField::LogField(const char *name, const char *symbol, Type type, MarshalFunc marshal, UnmarshalFunc unmarshal, SetFunc _setfunc)
   : m_name(ats_strdup(name)), m_symbol(ats_strdup(symbol)), m_type(type), m_container(NO_CONTAINER), m_marshal_func(marshal),
     m_unmarshal_func(unmarshal), m_unmarshal_func_map(NULL), m_agg_op(NO_AGGREGATE), m_agg_cnt(0), m_agg_val(0),
-    m_time_field(false), m_alias_map(0)
+    m_time_field(false), m_alias_map(0), m_set_func(_setfunc)
 {
   ink_assert(m_name != NULL);
   ink_assert(m_symbol != NULL);
@@ -159,10 +158,10 @@ LogField::LogField(const char *name, const char *symbol, Type type, MarshalFunc 
 }
 
 LogField::LogField(const char *name, const char *symbol, Type type,
-                   MarshalFunc marshal, UnmarshalFuncWithMap unmarshal, Ptr<LogFieldAliasMap> map)
+                   MarshalFunc marshal, UnmarshalFuncWithMap unmarshal, Ptr<LogFieldAliasMap> map, SetFunc _setfunc)
   : m_name(ats_strdup(name)), m_symbol(ats_strdup(symbol)), m_type(type), m_container(NO_CONTAINER), m_marshal_func(marshal),
     m_unmarshal_func(NULL), m_unmarshal_func_map(unmarshal), m_agg_op(NO_AGGREGATE), m_agg_cnt(0), m_agg_val(0),
-    m_time_field(false), m_alias_map(map)
+    m_time_field(false), m_alias_map(map), m_set_func(_setfunc)
 {
   ink_assert(m_name != NULL);
   ink_assert(m_symbol != NULL);
@@ -177,10 +176,10 @@ LogField::LogField(const char *name, const char *symbol, Type type,
 }
 
 // Container field ctor
-LogField::LogField(const char *field, Container container)
+LogField::LogField(const char *field, Container container, SetFunc _setfunc)
   : m_name(ats_strdup(field)), m_symbol(ats_strdup(container_names[container])), m_type(LogField::STRING),
     m_container(container), m_marshal_func(NULL), m_unmarshal_func(NULL), m_unmarshal_func_map(NULL),
-    m_agg_op(NO_AGGREGATE), m_agg_cnt(0), m_agg_val(0), m_time_field(false), m_alias_map(0)
+    m_agg_op(NO_AGGREGATE), m_agg_cnt(0), m_agg_val(0), m_time_field(false), m_alias_map(0), m_set_func(_setfunc)
 {
   ink_assert(m_name != NULL);
   ink_assert(m_symbol != NULL);
@@ -223,7 +222,7 @@ LogField::LogField(const char *field, Container container)
 LogField::LogField(const LogField &rhs)
   : m_name(ats_strdup(rhs.m_name)), m_symbol(ats_strdup(rhs.m_symbol)), m_type(rhs.m_type), m_container(rhs.m_container),
     m_marshal_func(rhs.m_marshal_func), m_unmarshal_func(rhs.m_unmarshal_func), m_unmarshal_func_map(rhs.m_unmarshal_func_map),
-    m_agg_op(rhs.m_agg_op), m_agg_cnt(0), m_agg_val(0), m_time_field(rhs.m_time_field), m_alias_map(rhs.m_alias_map)
+    m_agg_op(rhs.m_agg_op), m_agg_cnt(0), m_agg_val(0), m_time_field(rhs.m_time_field), m_alias_map(rhs.m_alias_map), m_set_func(rhs.m_set_func)
 {
   ink_assert(m_name != NULL);
   ink_assert(m_symbol != NULL);
@@ -280,6 +279,15 @@ LogField::marshal_len(LogAccess *lad)
   default:
     return 0;
   }
+}
+
+void
+LogField::updateField(LogAccess *lad, char *buf, int len)
+{
+  if (m_container == NO_CONTAINER) {
+    return (lad->*m_set_func) (buf, len);
+  }
+  // else...// future enhancement
 }
 
 /*-------------------------------------------------------------------------
@@ -529,7 +537,7 @@ LogFieldList::add(LogField *field, bool copy)
   ink_assert(field != NULL);
 
   if (copy) {
-    m_field_list.enqueue(NEW(new LogField(*field)));
+    m_field_list.enqueue(new LogField(*field));
   } else {
     m_field_list.enqueue(field);
   }

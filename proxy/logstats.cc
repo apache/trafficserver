@@ -1225,7 +1225,7 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
   URLScheme scheme;
 
   if (!fieldlist) {
-    fieldlist = NEW(new LogFieldList);
+    fieldlist = new LogFieldList;
     ink_assert(fieldlist != NULL);
     bool agg = false;
     LogFormat::parse_symbol_string(buf_header->fmt_fieldlist(), fieldlist, &agg);
@@ -1372,7 +1372,7 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
 
             // TODO: If we save state (struct) for a run, we probably need to always
             // update the origin data, no matter what the origin_set is.
-            if (origin_set ? (origin_set->find(tok) != origin_set->end()) : 1) {
+            if (origin_set->empty() || (origin_set->find(tok) != origin_set->end())) {
               o_iter = origins.find(tok);
               if (origins.end() == o_iter) {
                 o_stats = (OriginStats *)ats_malloc(sizeof(OriginStats));
@@ -1572,7 +1572,6 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
               update_counter(o_stats->content.application.zip, size);
             break;
           case JAVA_AS_INT:
-            tok_len = 22;
             update_counter(totals.content.application.javascript, size);
             if (o_stats != NULL)
               update_counter(o_stats->content.application.javascript, size);
@@ -1730,7 +1729,7 @@ process_file(int in_fd, off_t offset, unsigned max_age)
     unsigned second_read_size = sizeof(LogBufferHeader) - first_read_size;
     nread = read(in_fd, &buffer[first_read_size], second_read_size);
     if (!nread || EOF == nread) {
-      Debug("logstats", "Second read of header failed (attemped %d bytes at offset %d, got nothing).", second_read_size, first_read_size);
+      Debug("logstats", "Second read of header failed (attemped %d bytes at offset %d, got nothing), errno=%d.", second_read_size, first_read_size, errno);
       return 1;
     }
 
@@ -1746,11 +1745,29 @@ process_file(int in_fd, off_t offset, unsigned max_age)
       return 1;
     }
 
-    nread = read(in_fd, &buffer[sizeof(LogBufferHeader)], buffer_bytes);
-    if (!nread || EOF == nread) {
-      Debug("logstats", "Failed to read buffer payload [%d bytes]", buffer_bytes);
-      return 1;
-    }
+    const int MAX_READ_TRIES = 5;
+    int total_read = 0;
+    int read_tries_remaining = MAX_READ_TRIES; // since the data will be old anyway, let's only try a few times.
+    do {
+      nread = read(in_fd, &buffer[sizeof(LogBufferHeader) + total_read], buffer_bytes - total_read);
+      if (EOF == nread || !nread) { // just bail on error
+        Debug("logstats", "Read failed while reading log buffer, wanted %d bytes, nread=%d, errno=%d", buffer_bytes - total_read, nread, errno);
+        return 1;
+      } else {
+        total_read += nread;
+      }
+
+      if (total_read < buffer_bytes) {
+        if (--read_tries_remaining <= 0) {
+          Debug("logstats_failed_retries", "Unable to read after %d tries, total_read=%d, buffer_bytes=%d", MAX_READ_TRIES, total_read, buffer_bytes);
+          return 1;
+        }
+        // let's wait until we get more data on this file descriptor
+        Debug("logstats_partial_read", "Failed to read buffer payload [%d bytes], total_read=%d, buffer_bytes=%d, tries_remaining=%d",
+            buffer_bytes - total_read, total_read, buffer_bytes, read_tries_remaining);
+        usleep(50*1000); // wait 50ms
+      }
+    } while (total_read < buffer_bytes);
 
     // Possibly skip too old entries (the entire buffer is skipped)
     if (header->high_timestamp >= max_age) {
@@ -2189,7 +2206,7 @@ my_exit(const ExitStatus& status)
   }
 
   // Next the totals for all Origins, unless we specified a list of origins to filter.
-  if (!origin_set) {
+  if (origin_set->empty()) {
     first = false;
     if (cl.json) {
       std::cout << "{ \"total\": {" << std::endl;
@@ -2284,7 +2301,7 @@ main(int /* argc ATS_UNUSED */, char *argv[])
   memset(&totals, 0, sizeof(totals));
   init_elapsed(&totals);
 
-  origin_set = NULL;
+  origin_set = new OriginSet;
   parse_errors = 0;
 
   // Command line parsing
@@ -2309,13 +2326,9 @@ main(int /* argc ATS_UNUSED */, char *argv[])
     char *tok;
     char *sep_ptr;
 
-    if (NULL == origin_set)
-        origin_set = NEW(new OriginSet);
-    if (cl.origin_list) {
-      for (tok = strtok_r(cl.origin_list, ",", &sep_ptr); tok != NULL;) {
-        origin_set->insert(tok);
-        tok = strtok_r(NULL, ",", &sep_ptr);
-      }
+    for (tok = strtok_r(cl.origin_list, ",", &sep_ptr); tok != NULL;) {
+      origin_set->insert(tok);
+      tok = strtok_r(NULL, ",", &sep_ptr);
     }
   }
   // Load origins from an "external" file (\n separated)
@@ -2328,9 +2341,6 @@ main(int /* argc ATS_UNUSED */, char *argv[])
       usage(argument_descriptions, countof(argument_descriptions), USAGE_LINE);
       _exit(0);
     }
-
-    if (NULL == origin_set)
-      origin_set = NEW(new OriginSet);
 
     while (!fs.eof()) {
       std::string line;
@@ -2347,8 +2357,9 @@ main(int /* argc ATS_UNUSED */, char *argv[])
           char *buf;
 
           buf = ats_strdup(line.substr(start, end).c_str());
-          if (buf)
+          if (buf) {
             origin_set->insert(buf);
+          }
         }
       }
     }
@@ -2362,7 +2373,7 @@ main(int /* argc ATS_UNUSED */, char *argv[])
 
   // Should we calculate per URL data;
   if (cl.urls != 0) {
-    urls = NEW(new UrlLru(cl.urls, cl.show_urls));
+    urls = new UrlLru(cl.urls, cl.show_urls);
     if (cl.as_object)
       std::cout << "{" << std::endl;
     else

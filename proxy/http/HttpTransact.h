@@ -79,11 +79,19 @@
 }
 
 
-#define TRANSACT_RETURN(n, r)  \
+#define TRANSACT_SETUP_RETURN(n, r) \
 s->next_action = n; \
 s->transact_return_point = r; \
 DebugSpecific((s->state_machine && s->state_machine->debug_on), "http_trans", "Next action %s; %s", #n, #r); \
+
+#define TRANSACT_RETURN(n, r)  \
+TRANSACT_SETUP_RETURN(n, r) \
 return; \
+
+#define TRANSACT_RETURN_VAL(n, r, v) \
+TRANSACT_SETUP_RETURN(n, r) \
+return v; \
+
 
 #define SET_UNPREPARE_CACHE_ACTION(C) \
 { \
@@ -378,6 +386,7 @@ public:
     NON_EXISTANT_REQUEST_HEADER,
     SCHEME_NOT_SUPPORTED,
     UNACCEPTABLE_TE_REQUIRED,
+    INVALID_POST_CONTENT_LENGTH,
     TOTAL_REQUEST_ERROR_TYPES
   };
 
@@ -448,66 +457,61 @@ public:
   ////////////////////////////////////////////////
   enum StateMachineAction_t
   {
-    STATE_MACHINE_ACTION_UNDEFINED = 0,
+    SM_ACTION_UNDEFINED = 0,
 
-    DNS_LOOKUP,
-    REVERSE_DNS_LOOKUP,
-    //AUTH_LOOKUP,
+    // SM_ACTION_AUTH_LOOKUP,
+    SM_ACTION_DNS_LOOKUP,
+    SM_ACTION_DNS_REVERSE_LOOKUP,
 
-    CACHE_LOOKUP,
-    CACHE_ISSUE_WRITE,
-    CACHE_ISSUE_WRITE_TRANSFORM,
-    ISSUE_CACHE_DELETE,
-    PREPARE_CACHE_UPDATE,
-    ISSUE_CACHE_UPDATE,
+    SM_ACTION_CACHE_LOOKUP,
+    SM_ACTION_CACHE_ISSUE_WRITE,
+    SM_ACTION_CACHE_ISSUE_WRITE_TRANSFORM,
+    SM_ACTION_CACHE_PREPARE_UPDATE,
+    SM_ACTION_CACHE_ISSUE_UPDATE,
 
-    ICP_QUERY,
+    SM_ACTION_ICP_QUERY,
 
-    ORIGIN_SERVER_OPEN,
-    ORIGIN_SERVER_RAW_OPEN,
-    OS_RR_MARK_DOWN,
+    SM_ACTION_ORIGIN_SERVER_OPEN,
+    SM_ACTION_ORIGIN_SERVER_RAW_OPEN,
+    SM_ACTION_ORIGIN_SERVER_RR_MARK_DOWN,
 
-    READ_PUSH_HDR,
-    STORE_PUSH_BODY,
+    SM_ACTION_READ_PUSH_HDR,
+    SM_ACTION_STORE_PUSH_BODY,
 
-    PROXY_INTERNAL_CACHE_DELETE,
-    PROXY_INTERNAL_CACHE_NOOP,
-    PROXY_INTERNAL_CACHE_UPDATE_HEADERS,
-    PROXY_INTERNAL_CACHE_WRITE,
-    PROXY_INTERNAL_100_RESPONSE,
-    PROXY_INTERNAL_REQUEST,
-    PROXY_SEND_ERROR_CACHE_NOOP,
+    SM_ACTION_INTERNAL_CACHE_DELETE,
+    SM_ACTION_INTERNAL_CACHE_NOOP,
+    SM_ACTION_INTERNAL_CACHE_UPDATE_HEADERS,
+    SM_ACTION_INTERNAL_CACHE_WRITE,
+    SM_ACTION_INTERNAL_100_RESPONSE,
+    SM_ACTION_INTERNAL_REQUEST,
+    SM_ACTION_SEND_ERROR_CACHE_NOOP,
+
 #ifdef PROXY_DRAIN
-    PROXY_DRAIN_REQUEST_BODY,
+    SM_ACTION_DRAIN_REQUEST_BODY,
 #endif /* PROXY_DRAIN */
 
-    SEND_QUERY_TO_INCOMING_ROUTER,
-    SERVE_FROM_CACHE,
-    SERVER_READ,
-    SERVER_PARSE_NEXT_HDR,
-    TRANSFORM_READ,
+    SM_ACTION_SERVE_FROM_CACHE,
+    SM_ACTION_SERVER_READ,
+    SM_ACTION_SERVER_PARSE_NEXT_HDR,
+    SM_ACTION_TRANSFORM_READ,
+    SM_ACTION_SSL_TUNNEL,
+    SM_ACTION_CONTINUE,
 
-    SSL_TUNNEL,
-    EXTENSION_METHOD_TUNNEL,
+    SM_ACTION_API_SM_START,
+    SM_ACTION_API_READ_REQUEST_HDR,
+    SM_ACTION_API_PRE_REMAP,
+    SM_ACTION_API_POST_REMAP,
+    SM_ACTION_API_OS_DNS,
+    SM_ACTION_API_SEND_REQUEST_HDR,
+    SM_ACTION_API_READ_CACHE_HDR,
+    SM_ACTION_API_CACHE_LOOKUP_COMPLETE,
+    SM_ACTION_API_READ_RESPONSE_HDR,
+    SM_ACTION_API_SEND_RESPONSE_HDR,
+    SM_ACTION_API_SM_SHUTDOWN,
 
-    CONTINUE,
-
-    HTTP_API_SM_START,
-    
-    HTTP_API_READ_REQUEST_HDR,
-    HTTP_API_PRE_REMAP,
-    HTTP_REMAP_REQUEST,
-    HTTP_API_POST_REMAP,
-    HTTP_POST_REMAP_SKIP,
-    
-    HTTP_API_OS_DNS,
-    HTTP_API_SEND_REQUEST_HDR,
-    HTTP_API_READ_CACHE_HDR,
-    HTTP_API_CACHE_LOOKUP_COMPLETE,
-    HTTP_API_READ_RESPONSE_HDR,
-    HTTP_API_SEND_RESPONSE_HDR,
-    REDIRECT_READ,
-    HTTP_API_SM_SHUTDOWN
+    SM_ACTION_REMAP_REQUEST,
+    SM_ACTION_POST_REMAP_SKIP,
+    SM_ACTION_REDIRECT_READ
   };
 
   enum TransferEncoding_t
@@ -780,11 +784,15 @@ public:
     bool srv_lookup_success;
     short srv_port;
     HostDBApplicationInfo srv_app;
+    /*** Set to true by default.  If use_client_target_address is set 
+     * to 1, this value will be set to false if the client address is 
+     * not in the DNS pool */
+    bool lookup_validated; 
 
     _DNSLookupInfo()
     : attempts(0), os_addr_style(OS_ADDR_TRY_DEFAULT),
         lookup_success(false), lookup_name(NULL), looking_up(UNDEFINED_LOOKUP),
-        srv_lookup_success(false), srv_port(0)
+        srv_lookup_success(false), srv_port(0), lookup_validated(true)
     {
       srv_hostname[0] = '\0';
       srv_app.allotment.application1 = 0;
@@ -894,6 +902,16 @@ public:
     StateMachineAction_t next_action;   // out
     StateMachineAction_t api_next_action;       // out
     void (*transact_return_point) (HttpTransact::State* s);    // out
+
+    // We keep this so we can jump back to the upgrade handler after remap is complete
+    bool is_upgrade_request;
+    void (*post_remap_upgrade_return_point) (HttpTransact::State* s);    // out
+    const char *upgrade_token_wks;
+
+    // Some WebSocket state
+    bool is_websocket;
+    bool did_upgrade_succeed;
+
     char *internal_msg_buffer;  // out
     char *internal_msg_buffer_type;     // out
     int64_t internal_msg_buffer_size;       // out
@@ -939,9 +957,6 @@ public:
     remap_plugin_info::_tsremap_os_response *fp_tsremap_os_response;
     void* remap_plugin_instance;
     HTTPStatus http_return_code;
-    int return_xbuf_size;
-    bool return_xbuf_plain;
-    char return_xbuf[HTTP_TRANSACT_STATE_MAX_XBUF_SIZE];
     void *user_args[HTTP_SSN_TXN_MAX_USER_ARG];
 
     int api_txn_active_timeout_value;
@@ -1020,7 +1035,7 @@ public:
         pre_transform_source(SOURCE_NONE),
         req_flavor(REQ_FLAVOR_FWDPROXY),
         pending_work(NULL),
-        cdn_saved_next_action(STATE_MACHINE_ACTION_UNDEFINED),
+        cdn_saved_next_action(SM_ACTION_UNDEFINED),
         cdn_saved_transact_return_point(NULL),
         cdn_remap_complete(false),
         first_dns_lookup(true),
@@ -1028,11 +1043,16 @@ public:
         cache_lookup_result(CACHE_LOOKUP_NONE),
         backdoor_request(false),
         cop_test_page(false),
-        next_action(STATE_MACHINE_ACTION_UNDEFINED),
-        api_next_action(STATE_MACHINE_ACTION_UNDEFINED),
+        next_action(SM_ACTION_UNDEFINED),
+        api_next_action(SM_ACTION_UNDEFINED),
         transact_return_point(NULL),
-        internal_msg_buffer(0),
-        internal_msg_buffer_type(0),
+        is_upgrade_request(false),
+        post_remap_upgrade_return_point(NULL),
+        upgrade_token_wks(NULL),
+        is_websocket(false),
+        did_upgrade_succeed(false),
+        internal_msg_buffer(NULL),
+        internal_msg_buffer_type(NULL),
         internal_msg_buffer_size(0),
         internal_msg_buffer_fast_allocator_size(-1),
         internal_msg_buffer_index(0),
@@ -1057,8 +1077,6 @@ public:
         fp_tsremap_os_response(NULL),
         remap_plugin_instance(0),
         http_return_code(HTTP_STATUS_NONE),
-        return_xbuf_size(0),
-        return_xbuf_plain(false),
         api_txn_active_timeout_value(-1),
         api_txn_connect_timeout_value(-1),
         api_txn_dns_timeout_value(-1),
@@ -1077,12 +1095,12 @@ public:
         api_server_addr_set(false),
         api_update_cached_object(UPDATE_CACHED_OBJECT_NONE),
         api_lock_url(LOCK_URL_FIRST),
-        saved_update_next_action(STATE_MACHINE_ACTION_UNDEFINED),
+        saved_update_next_action(SM_ACTION_UNDEFINED),
         saved_update_cache_action(CACHE_DO_UNDEFINED),
         stale_icp_lookup(false),
         url_map(),
         pCongestionEntry(NULL),
-        congest_saved_next_action(STATE_MACHINE_ACTION_UNDEFINED),
+        congest_saved_next_action(SM_ACTION_UNDEFINED),
         congestion_control_crat(0),
         congestion_congested_or_failed(0),
         congestion_connection_opened(0),
@@ -1118,7 +1136,6 @@ public:
       via_string[VIA_DETAIL_SERVER_DESCRIPTOR] = VIA_DETAIL_SERVER_DESCRIPTOR_STRING;
       via_string[MAX_VIA_INDICES] = '\0';
 
-      memset(return_xbuf, 0, sizeof(return_xbuf));
       memset(user_args, 0, sizeof(user_args));
       memset(&host_db_info, 0, sizeof(host_db_info));
     }
@@ -1149,11 +1166,8 @@ public:
       record_transaction_stats();
       m_magic = HTTP_TRANSACT_MAGIC_DEAD;
 
-      if (internal_msg_buffer) {
-        free_internal_msg_buffer(internal_msg_buffer, internal_msg_buffer_fast_allocator_size);
-      }
-      if (internal_msg_buffer_type)
-        ats_free(internal_msg_buffer_type);
+      free_internal_msg_buffer();
+      ats_free(internal_msg_buffer_type);
 
       ParentConfig::release(parent_params);
       parent_params = NULL;
@@ -1200,10 +1214,21 @@ public:
       }
     }
 
+    void
+    free_internal_msg_buffer()
+    {
+      if (internal_msg_buffer) {
+        if (internal_msg_buffer_fast_allocator_size >= 0) {
+          ioBufAllocator[internal_msg_buffer_fast_allocator_size].free_void(internal_msg_buffer);
+        } else {
+          ats_free(internal_msg_buffer);
+        }
+        internal_msg_buffer = NULL;
+      }
+      internal_msg_buffer_size = 0;
+    }
+   
   }; // End of State struct.
-
-
-  static void free_internal_msg_buffer(char *buffer, int64_t size);
 
   static void HandleBlindTunnel(State* s);
   static void StartRemapRequest(State* s);
@@ -1259,6 +1284,10 @@ public:
   static void merge_warning_header(HTTPHdr* cached_header, HTTPHdr* response_header);
   static void SetCacheFreshnessLimit(State* s);
   static void HandleApiErrorJump(State *);
+  static void handle_websocket_upgrade_pre_remap(State *s);
+  static void handle_websocket_upgrade_post_remap(State *s);
+  static bool handle_upgrade_request(State *s);
+  static void handle_websocket_connection(State *s);
 
   static void HandleCacheOpenReadPush(State* s, bool read_successful);
   static void HandlePushResponseHdr(State* s);
@@ -1274,7 +1303,6 @@ public:
                                        HostDBInfo* host_db_info);
   static bool service_transaction_in_proxy_only_mode(State* s);
   static void setup_plugin_request_intercept(State* s);
-  static void handle_msie_reload_badness(State* s, HTTPHdr* client_request);
   static void add_client_ip_to_outgoing_request(State* s, HTTPHdr* request);
   static RequestError_t check_request_validity(State* s, HTTPHdr* incoming_hdr);
   static ResponseError_t check_response_validity(State* s, HTTPHdr* incoming_hdr);
@@ -1298,6 +1326,7 @@ public:
   static bool is_request_cache_lookupable(State* s);
   static bool is_request_valid(State* s, HTTPHdr* incoming_request);
   static bool is_request_retryable(State* s);
+
   static bool is_response_cacheable(State* s, HTTPHdr* request, HTTPHdr* response);
   static bool is_response_valid(State* s, HTTPHdr* incoming_response);
 
@@ -1354,46 +1383,6 @@ public:
 };
 
 typedef void (*TransactEntryFunc_t) (HttpTransact::State* s);
-
-inline void
-HttpTransact::free_internal_msg_buffer(char *buffer, int64_t size)
-{
-  ink_assert(buffer);
-  if (size >= 0) {
-    ioBufAllocator[size].free_void(buffer);
-  } else {
-    ats_free(buffer);
-  }
-}
-
-inline const char*
-conn_state_enum_to_str(HttpTransact::ServerState_t the_state)
-{
-  switch (the_state) {
-  case HttpTransact::STATE_UNDEFINED:
-    return "STATE_UNDEFINED";
-  case HttpTransact::ACTIVE_TIMEOUT:
-    return "ACTIVE_TIMEOUT";
-  case HttpTransact::BAD_INCOMING_RESPONSE:
-    return "BAD_INCOMING_RESPONSE";
-  case HttpTransact::CONNECTION_ALIVE:
-    return "CONNECTION_ALIVE";
-  case HttpTransact::CONNECTION_CLOSED:
-    return "CONNECTION_CLOSED";
-  case HttpTransact::CONNECTION_ERROR:
-    return "CONNECTION_ERROR";
-  case HttpTransact::INACTIVE_TIMEOUT:
-    return "INACTIVE_TIMEOUT";
-  case HttpTransact::OPEN_RAW_ERROR:
-    return "OPEN_RAW_ERROR";
-  case HttpTransact::PARSE_ERROR:
-    return "PARSE_ERROR";
-  case HttpTransact::TRANSACTION_COMPLETE:
-    return "TRANSACTION_COMPLETE";
-  default:
-    return "BOGUG_STATE";
-  }
-}
 
 inline bool
 is_response_body_precluded(HTTPStatus status_code, int method)

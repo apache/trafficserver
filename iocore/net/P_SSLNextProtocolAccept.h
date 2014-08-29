@@ -31,11 +31,13 @@
 #include "P_SSLNextProtocolSet.h"
 #include "I_IOBuffer.h"
 
-class SSLNextProtocolAccept: public Continuation
+class SSLNextProtocolAccept: public SessionAccept
 {
 public:
   SSLNextProtocolAccept(Continuation *);
   ~SSLNextProtocolAccept();
+
+  void accept(NetVConnection *, MIOBuffer *, IOBufferReader*);
 
   // Register handler as an endpoint for the specified protocol. Neither
   // handler nor protocol are copied, so the caller must guarantee their

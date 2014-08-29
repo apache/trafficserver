@@ -40,7 +40,6 @@
 #include "ink_memory.h"
 #include "ink_error.h"
 #include "ink_assert.h"
-#include "ink_resource.h"
 #include "ink_stack_trace.h"
 #include "ink_queue_ext.h"
 

@@ -44,7 +44,10 @@
 
 #include "ink_platform.h"
 #include "P_RecDefs.h"
+#include "I_Version.h"
 #include "Rollback.h"
+
+class FileManager;
 
 #define CLUSTER_MSG_SHUTDOWN_MANAGER  1000
 #define CLUSTER_MSG_SHUTDOWN_PROCESS  1001
@@ -86,10 +89,6 @@ typedef struct _cluster_peer_info
 
 } ClusterPeerInfo;
 
-void *drainIncomingChannel(void *arg);
-bool checkBackDoor(int req_fd, char *message);
-
-
 class ClusterCom
 {
 public:
@@ -115,7 +114,8 @@ public:
   void constructSharedGenericPacket(char *message, int max, RecT packet_type);
   void constructSharedStatPacket(char *message, int max);
   void constructSharedFilePacket(char *message, int max);
-  static int constructSharedPacketHeader(char *message, char *ip, int max);
+
+  static int constructSharedPacketHeader(const AppVersionInfo& version, char *message, char *ip, int max);
 
   bool sendClusterMessage(int msg_type, const char *args = NULL);
   bool sendOutgoingMessage(char *buf, int len);
@@ -147,6 +147,7 @@ public:
   unsigned long our_ip;
   char our_host[1024];
 
+  AppVersionInfo appVersionInfo;
   char sys_name[MAX_NODE_SYSINFO_STRING];
   char sys_release[MAX_NODE_SYSINFO_STRING];
 
@@ -167,6 +168,7 @@ public:
 
   char cluster_conf[1024];
   Rollback *cluster_file_rb;
+  FileManager *configFiles;
 
   int cluster_port;
   int reliable_server_port;

@@ -544,10 +544,10 @@ public:
     return (here->link).next;
   }
 
-  TSError addEle(CfgEleObj * ele);     /* enqueue EleObj at end of Queue */
-  TSError removeEle(CfgEleObj * ele);
-  TSError insertEle(CfgEleObj * ele, CfgEleObj * after_ele);
-  TSError pushEle(CfgEleObj * ele);
+  TSMgmtError addEle(CfgEleObj * ele);     /* enqueue EleObj at end of Queue */
+  TSMgmtError removeEle(CfgEleObj * ele);
+  TSMgmtError insertEle(CfgEleObj * ele, CfgEleObj * after_ele);
+  TSMgmtError pushEle(CfgEleObj * ele);
 
 private:
   TSFileNameT m_file;

@@ -1,4 +1,4 @@
-.. _header_rewrite-plugin
+.. _header-rewrite-plugin:
 
 Header Rewrite Plugin
 *********************
@@ -42,23 +42,28 @@ phase (the default) causes a transaction hook to be instantiated and used
 at a later time. This allows you to setup e.g. a rule that gets executed
 during the origin response header parsing, using READ_RESPONSE_HDR_HOOK.
 
+Configuration filenames without an absolute paths are searched for in the
+default configuration directory. This is typically where your main
+configuration files are, e.g. ``/usr/local/etc/trafficserver``.
+
 Operators
 ---------
 
 The following operators are available::
 
-  rm-header header-name                 [flags]
-  add-header header <value>             [flags]
-  set-status <status-code>              [flags]
-  set-status-reason <value>             [flags]
-  set-config config <value>             [flags]
-  no-op                                 [flags]
-  counter counter-name                  [flags]
+  rm-header header-name                      [operator_flags]
+  add-header header <value>                  [operator_flags]
+  set-header header <value>                  [operator_flags]
+  set-status <status-code>                   [operator_flags]
+  set-destination [qual] <value>             [operator_flags]
+  set-redirect <status-code> <destination>   [operator_flags]
+  set-timeout-out <value>                    [operator_flags]
+  set-status-reason <value>                  [operator_flags]
+  set-config overridable-config <value>      [operator_flags]
+  set-conn-dscp <value>                      [operator_flags]
+  counter counter-name                       [operator_flags]
+  no-op                                      [operator_flags]
 
-The following operator(s) currently only works when instantiating the
-plugin as a remap plugin::
-
-  set-destination [qual] value
 
 Where qual is one of the support URL qualifiers::
 
@@ -74,9 +79,12 @@ For example (as a remap rule)::
 
 Operator flags
 --------------
-::
+
+The operator flags are optional, and must not contain whitespaces inside
+the brackets. Currently, only one flag is supported::
 
   [L]   Last rule, do not continue
+  [QSA] Append query string
 
 Variable expansion
 ------------------
@@ -95,22 +103,22 @@ Conditions
 The conditions are used as qualifiers: The operators specified will
 only be evaluated if the condition(s) are met::
 
-  cond %{STATUS} operand                        [flags]
-  cond %{RANDOM:nn} operand                     [flags]
-  cond %{ACCESS:file}                           [flags]
-  cond %{TRUE}                                  [flags]
-  cond %{FALSE}                                 [flags]
-  cond %{HEADER:header-name} operand            [flags]
-  cond %{COOKIE:cookie-name} operand            [flags]
-  cond %{CLIENT-HEADER:header-name} operand     [flags]
-  cond %{PROTOCOL} operand                      [flags]
-  cond %{PORT} operand                          [flags]
-  cond %{HOST} operand                          [flags]
-  cond %{TOHOST} operand                        [false]
-  cond %{FROMHOST} operand                      [false]
-  cond %{PATH} operand                          [false]
-  cond %{PARAMS} operand                        [false]
-  cond %{QUERY} operand                         [false]
+  cond %{STATUS} operand                        [condition_flags]
+  cond %{RANDOM:nn} operand                     [condition_flags]
+  cond %{ACCESS:file}                           [condition_flags]
+  cond %{TRUE}                                  [condition_flags]
+  cond %{FALSE}                                 [condition_flags]
+  cond %{HEADER:header-name} operand            [condition_flags]
+  cond %{COOKIE:cookie-name} operand            [condition_flags]
+  cond %{CLIENT-HEADER:header-name} operand     [condition_flags]
+  cond %{PROTOCOL} operand                      [condition_flags]
+  cond %{HOST} operand                          [condition_flags]
+  cond %{TOHOST} operand                        [condition_flags]
+  cond %{FROMHOST} operand                      [condition_flags]
+  cond %{PATH} operand                          [condition_flags]
+  cond %{QUERY} operand                         [condition_flags]
+  cond %{INTERNAL-TRANSACTION}                  [condition_flags]
+  cond %{CLIENT-IP}                             [condition_flags]
 
 The difference between HEADER and CLIENT-HEADER is that HEADER adapts to the
 hook it's running in, whereas CLIENT-HEADER always applies to the client
@@ -122,6 +130,7 @@ each rule. This implies that a new hook condition starts a new rule as well.::
 
   cond %{READ_RESPONSE_HDR_HOOK}   (this is the default hook)
   cond %{READ_REQUEST_HDR_HOOK}
+  cond %{READ_REQUEST_PRE_REMAP_HOOK}
   cond %{SEND_REQUEST_HDR_HOOK}
   cond %{SEND_RESPONSE_HDR_HOOK}
 
@@ -132,9 +141,12 @@ configuration, but being the default it is also optional.
 ---------------
 Condition flags
 ---------------
-::
 
-  [NC]  Not case sensitive condition (when applicable)
+The condition flags are optional, and you can combine more than one into
+a comma separated list of flags. Note that whitespaces are not allowed inside
+the brackets::
+
+  [NC]  Not case sensitive condition (when applicable) [NOT IMPLEMENTED!]
   [AND] AND with next condition (default)
   [OR]  OR with next condition
   [NOT] Invert this condition
@@ -171,4 +183,3 @@ Examples
   rm-header Set-Cookie
   counter plugin.header_rewrite.x-y-foobar-dc1
   cond %{HEADER:X-Y-Foobar} "Some string" [AND,NC]
-

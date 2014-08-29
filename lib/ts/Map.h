@@ -31,8 +31,8 @@
 #include "Vec.h"
 
 #define MAP_INTEGRAL_SIZE               (1 << (2))
-#define MAP_INITIAL_SHIFT               ((2)+1)
-#define MAP_INITIAL_SIZE                (1 << MAP_INITIAL_SHIFT)
+//#define MAP_INITIAL_SHIFT               ((2)+1)
+//#define MAP_INITIAL_SIZE                (1 << MAP_INITIAL_SHIFT)
 
 typedef const char cchar;
 
@@ -94,13 +94,14 @@ template <class K, class C> class HashSetFns {
 
 template <class K, class AHashFns, class C, class A = DefaultAlloc> class HashMap : public Map<K,C,A> {
  public:
+  typedef MapElem<K,C> value_type; ///< What's stored in the table.
   using Map<K,C,A>::n;
   using Map<K,C,A>::i;
   using Map<K,C,A>::v;
   using Map<K,C,A>::e;
   MapElem<K,C> *get_internal(K akey);
   C get(K akey);
-  MapElem<K,C> *put(K akey, C avalue);
+  value_type* put(K akey, C avalue);
   void get_keys(Vec<K> &keys);
   void get_values(Vec<C> &values);
 };
@@ -937,5 +938,493 @@ NBlockHash<C, AHashFns, N, A>::move(NBlockHash<C, AHashFns, N, A> &hh) {
 }
 
 void test_map();
+
+/* ---------------------------------------------------------------------------------------------- */
+/** A hash map usable by ATS core.
+
+    This class depends on the @c DLL class from @c List.h. It assumes it can uses instances of that
+    class to store chains of elements.
+
+    Values stored in this container are not destroyed when the container is destroyed. These must be
+    released by the client.
+
+    Duplicate keys are allowed. Clients must walk the list for multiple entries.
+    @see @c Location::operator++()
+
+    By default the table automatically expands to limit the average chain length. This can be tuned. If set
+    to @c MANUAL then the table will expand @b only when explicitly requested to do so by the client.
+    @see @c ExpansionPolicy
+    @see @c setExpansionPolicy()
+    @see @c setExpansionLimit()
+    @see @c expand()
+
+    All the parameters for the hash map are passed via the template argument @a H. This is a struct
+    that contains both type definitions and static methods. It must have
+
+    - No state (cheap and risk free to copy).
+
+    - All required methods are static methods.
+
+    @a ID is a @c typedef for the hash type. This is the type of the value produced by the hash function. It must be
+    a numeric type.
+
+    @a Key is a @c typedef for the key type. This is passed to the @a hash function and used for equality
+    checking of elements. It is presumed cheap to copy. If the underlying key is not a simple type
+    then @a Key should be declared as a constant pointer or a constant reference. The hash table
+    will never attempt to modify a key.
+
+    @a Value is a @c typedef for the value type, the type of the element stored in the hash table.
+
+    @a ListHead is @c typedef for the @c DLL compatible class that can serve as the anchor for a chain of
+    @a Value instances. This is use both as data to be stored in a bucket and for access to next and
+    previous pointers from instances of @a Value.
+
+    Method @c hash converts a @c Key to a hash value. The key argument can be by value or by constant reference.
+    @code
+    ID hash(Key key);
+    @endcode
+
+    Method @c key extracts the key from a @c Value instance.
+    @code
+    Key key(Value const*);
+    @endcode
+
+    Method @c equal checks for equality between a @c Key and a @c Value. The key argument can be a
+    constant reference or by value. The arguments should be @c const if not by value.
+
+    @code
+    bool equal (Key lhs, Key rhs);
+    bool equal (Key key, Value const* value);
+    @endcode
+
+    Example for @c HttpServerSession keyed by the origin server IP address.
+
+    @code
+    struct Hasher {
+      typedef uint32_t ID;
+      typedef sockaddr const* Key;
+      typedef HttpServerSession Value;
+      typedef DList(HttpServerSession, ip_hash_link) ListHead;
+
+      static uint32_t hash(sockaddr const* key) { return ats_ip_hash(key); }
+      static sockaddr const* key(HttpServerSession const* value) { return &value->ip.sa }
+      static bool equal(sockaddr const* lhs, sockaddr const* rhs) { return ats_ip_eq(lhs, rhs); }
+      // Alternatively
+      // static ID hash(Key* key);
+      // static Key key(Value* value);
+      // static bool equal(Key lhs, Key rhs);
+    @endcode
+
+    In @c HttpServerSession is the definition
+
+    @code
+    LINK(HttpServerSession, ip_hash_link);
+    @endcode
+
+    which creates the internal links used by @c TSHashTable.
+
+ */
+template <
+  typename H ///< Hashing utility class.
+>
+class TSHashTable {
+public:
+  typedef TSHashTable self; ///< Self reference type.
+
+  // Make embedded types easier to use by importing them to the class namespace.
+  typedef H Hasher; ///< Rename and promote.
+  typedef typename Hasher::ID ID; ///< ID type.
+  typedef typename Hasher::Key Key; ///< Key type.
+  typedef typename Hasher::Value Value; ///< Stored value (element) type.
+  typedef typename Hasher::ListHead ListHead; ///< Anchor for chain.
+
+  /// When the hash table is expanded.
+  enum ExpansionPolicy {
+    MANUAL, ///< Client must explicitly expand the table.
+    AVERAGE, ///< Table expands if average chain length exceeds limit. [default]
+    MAXIMUM ///< Table expands if any chain length exceeds limit.
+  };
+
+  /** Hash bucket.
+      This is stored in the base array, anchoring the open chaining.
+
+      @internal The default values are selected so that zero initialization is correct. Be careful if you
+      change that.
+  */
+  struct Bucket {
+    ListHead m_chain; ///< Chain of elements.
+    size_t m_count; ///< # of elements in chain.
+
+    /** Internal chain for iteration.
+
+        Iteration is tricky because it needs to skip over empty buckets and detect end of buckets.
+        Both of these are difficult inside the iterator without excess data. So we chain the
+        non-empty buckets and let the iterator walk that. This makes end detection easy and
+        iteration on sparse data fast. If we make it a doubly linked list adding and removing buckets
+        is very fast as well.
+    */
+    LINK(Bucket, m_link);
+
+    /** Do the values in this bucket have different keys?
+        
+        @internal This can have a false positive, but that's OK, better than the expense of being
+        exact.  What we want is to avoid expanding to shorten the chain if it won't help, which it
+        won't if all the keys are the same.
+
+	@internal Because we've selected the default to be @c false so we can use @c Vec which zero fills empty elements.
+    */
+    bool m_mixed_p;
+
+    /// Default constructor - equivalent to zero filled.
+    Bucket() : m_count(0), m_mixed_p(false) { ink_zero(m_link); }
+  };
+
+  /** Information about locating a value in the hash table.
+      
+      An instance of this returned when searching for a key in the table. It can then be used to
+      check if a matching key was found, and to iterate over equivalent keys. Note this iterator
+      will touch only values which have a matching key.
+
+      @internal It's not really an iterator, although similar.
+      @internal we store the ID (hashed key value) for efficiency - we can get the actual key via the
+      @a m_value member.
+   */
+  struct Location {
+    Value* m_value; ///< The value located.
+    Bucket* m_bucket; ///< Containing bucket of value.
+    ID m_id; ///< ID (hashed key).
+    size_t m_distance; ///< How many values in the chain we've gone past to get here.
+
+    /// Default constructor - empty location.
+    Location() : m_value(NULL), m_bucket(NULL), m_id(0), m_distance(0) {}
+
+    /// Check for location being valid (referencing a value).
+    bool isValid() const { return NULL != m_value; }
+
+    /// Automatically cast to a @c Value* for convenience.
+    /// @note This lets you assign the return of @c find to a @c Value*.
+    /// @note This also permits the use of this class directly as a boolean expression.
+    operator Value* () const { return m_value; }
+
+    /// Dereference.
+    Value& operator * () const { return *m_value; }
+    /// Dereference.
+    Value* operator -> () const { return m_value; }
+
+    /// Find next value with matching key (prefix).
+    Location& operator ++ () { if (m_value) this->advance(); return *this; }
+    /// Find next value with matching key (postfix).
+    Location& operator ++ (int) {
+      Location zret(*this);
+      if (m_value) this->advance();
+      return zret;
+    }
+
+  protected:
+    /// Move to next matching value, no checks.
+    void advance();
+
+    friend class TSHashTable;
+  };
+
+  /** Standard iterator for walking the table.
+      This iterates over all elements.
+      @internal Iterator is end if m_value is NULL.
+   */
+  struct iterator {
+    Value* m_value; ///< Current location.
+    Bucket* m_bucket; ///< Current bucket;
+
+    iterator() : m_value(0), m_bucket(0) {}
+    iterator& operator ++ ();
+    Value& operator * () { return *m_value; }
+    Value* operator -> () { return m_value; }
+    bool operator == (iterator const& that) { return m_bucket == that.m_bucket && m_value == that.m_value; }
+    bool operator != (iterator const& that) { return !(*this == that); }
+
+  protected:
+    /// Internal iterator constructor.
+    iterator(Bucket* b, Value* v) : m_value(v), m_bucket(b) {}
+    friend class TSHashTable;
+  };
+
+  iterator begin(); ///< First element.
+  iterator end(); ///< Past last element.
+
+  /// The default starting number of buckets.
+  static size_t const DEFAULT_BUCKET_COUNT = 7; ///< POOMA.
+  /// The default expansion policy limit.
+  static size_t const DEFAULT_EXPANSION_LIMIT = 4; ///< Value from previous version.
+
+  /** Constructor (also default).
+      Constructs an empty table with at least @a nb buckets.
+  */
+  TSHashTable(size_t nb = DEFAULT_BUCKET_COUNT);
+
+  /** Insert a value in to the table.
+      The @a value must @b NOT already be in a table of this type.
+      @note The value itself is put in the table, @b not a copy.
+  */
+  void insert(Value* value);
+
+  /** Find a value that matches @a key.
+
+      @note This finds the first value with a matching @a key. No other properties
+      of the value are examined.
+
+      @return The @c Location of the value. Use @c Location::isValid() to check for success.
+  */
+  Location find(Key key);
+
+  /** Get a @c Location for @a value.
+
+      This is a bit obscure but needed in certain cases. It should only be used on a @a value that
+      is already known to be in the table. It just does the bucket lookup and uses that and the @a
+      value to construct a @c Location that can be used with other methods. The @a m_distance value
+      is not set in this case for performance reasons.
+   */
+  Location find(Value* value);
+
+  /** Remove the value at @a location from the table.
+
+      This method assumes a @a location is consistent. Be very careful if you modify a @c Location.
+
+      @return @c true if the value was removed, @c false otherwise.
+  */
+  bool remove(Location const& location);
+
+  /** Remove @b all values with @a key.
+
+      @note This does @b not clean up the removed elements. Use carefully to avoid leaks.
+
+      @return @c true if any value was removed, @c false otherwise.
+  */
+  bool remove(Key key);
+
+  /** Remove all values from the table.
+
+      The values are not cleaned up. The values are not touched in this method, therefore it is safe
+      to destroy them first and then @c clear this table.
+  */
+  void clear();
+
+  /// Get the number of elements in the table.
+  size_t count() const { return m_count; }
+
+  /// Get the number of buckets in the table.
+  size_t bucketCount() const { return m_array.n; }
+
+  /// Enable or disable expanding the table when chains are long.
+  void setExpansionPolicy(ExpansionPolicy p) { m_expansion_policy = p; }
+  /// Get the current expansion policy.
+  void expansionPolicy() const { return m_expansion_policy; }
+  /// Set the limit value for the expansion policy.
+  void setExpansionLimit(size_t n) { m_expansion_limit = n; }
+  /// Set the limit value for the expansion policy.
+  size_t expansionLimit() const { return m_expansion_limit; }
+
+  /** Expand the hash.
+
+      Useful primarily when the expansion policy is set to @c MANUAL.
+   */
+  void expand();
+
+protected:
+  typedef Vec<Bucket, DefaultAlloc, 0> Array; ///< Bucket array.
+
+  size_t m_count; ///< # of elements stored in the table.
+  ExpansionPolicy m_expansion_policy; ///< When to exand the table.
+  size_t m_expansion_limit; ///< Limit value for expansion.
+  Array m_array; ///< Bucket storage.
+  /// Make available to nested classes statically.
+  // We must reach inside the link hackery because we're in a template and
+  // must use typename. Older compilers don't handle typename outside of
+  // template context so if we put typename in the base definition it won't
+  // work in non-template classes.
+  typedef DLL<Bucket, typename Bucket::Link_m_link> BucketChain;
+  /// List of non-empty buckets.
+  BucketChain m_bucket_chain;
+
+  /** Get the ID and bucket for key.
+      Fills @a m_id and @a m_bucket in @a location from @a key.
+  */
+  void findBucket(Key key, Location& location);
+};
+
+template < typename H > typename TSHashTable<H>::iterator
+TSHashTable<H>::begin() {
+  // Get the first non-empty bucket, if any.
+  Bucket* b = m_bucket_chain.head;
+  return b && b->m_chain.head
+    ? iterator(b, b->m_chain.head)
+    : this->end()
+    ;
+}
+
+template < typename H > typename TSHashTable<H>::iterator
+TSHashTable<H>::end() {
+  return iterator(0,0);
+}
+
+template < typename H > typename TSHashTable<H>::iterator&
+TSHashTable<H>::iterator::operator ++ () {
+  if (m_value) {
+    if (NULL == (m_value = ListHead::next(m_value))) { // end of bucket, next bucket.
+      if (NULL != (m_bucket = BucketChain::next(m_bucket))) { // found non-empty next bucket.
+        m_value = m_bucket->m_chain.head;
+        ink_assert(m_value); // if bucket is in chain, must be non-empty.
+      }
+    }
+  }
+  return *this;
+}
+
+template < typename H > TSHashTable<H>::TSHashTable(size_t nb)
+  : m_count(0), m_expansion_policy(AVERAGE), m_expansion_limit(DEFAULT_EXPANSION_LIMIT) {
+  if (nb) {
+    int idx = 1;
+    while (prime2[idx] < nb) ++idx;
+    m_array.n = 1; // anything non-zero.
+    m_array.i = idx - 1;
+  }
+  m_array.set_expand();
+}
+
+template < typename H > void
+TSHashTable<H>::Location::advance() {
+  Key key = Hasher::key(m_value);
+  // assumes valid location with correct key, advance to next matching key or make location invalid.
+  do {
+    ++m_distance;
+    m_value = ListHead::next(m_value);
+  } while (m_value && ! Hasher::equal(key, Hasher::key(m_value)));
+}
+
+template < typename H > void
+TSHashTable<H>::findBucket(Key key, Location& location) {
+  location.m_id = Hasher::hash(key);
+  location.m_bucket = &(m_array[location.m_id % m_array.n]);
+}
+
+template < typename H > typename TSHashTable<H>::Location
+TSHashTable<H>::find(Key key) {
+  Location zret;
+  Value* v;
+
+  this->findBucket(key, zret); // zret gets updated to match the bucket.
+  v = zret.m_bucket->m_chain.head;
+  // Search for first matching key.
+  while (0 != v && ! Hasher::equal(key, Hasher::key(v)))
+    v = ListHead::next(v);
+  zret.m_value = v;
+  return zret;
+}
+
+template < typename H > typename TSHashTable<H>::Location
+TSHashTable<H>::find(Value* value) {
+  Location zret;
+  this->findBucket(Hasher::key(value), zret);
+  if (zret.m_bucket->m_chain.in(value)) // just checks value links and chain head.
+    zret.m_value = value;
+  return zret;
+}
+
+template < typename H > void
+TSHashTable<H>::insert(Value* value) {
+  Key key = Hasher::key(value);
+  Bucket* bucket = &(m_array[Hasher::hash(key) % m_array.n]);
+
+  // Bad client if already in a list!
+  ink_assert(! bucket->m_chain.in(value));
+
+  // Mark mixed if not already marked and we're adding a different key.
+  if (!bucket->m_mixed_p && !bucket->m_chain.empty() && ! Hasher::equal(key, Hasher::key(bucket->m_chain.head)))
+    bucket->m_mixed_p = true;
+
+  bucket->m_chain.push(value);
+  ++m_count;
+  if (1 == ++(bucket->m_count)) // not empty, put it on the non-empty list.
+    m_bucket_chain.push(bucket);
+  // auto expand if appropriate.
+  if ((AVERAGE == m_expansion_policy && (m_count / m_array.n) > m_expansion_limit)
+      || (MAXIMUM == m_expansion_policy && bucket->m_count > m_expansion_limit && bucket->m_mixed_p))
+    this->expand();
+}
+
+template < typename H > bool
+TSHashTable<H>::remove(Location const& l) {
+  bool zret = false;
+  if (l.isValid()) {
+    ink_assert(l.m_bucket->m_count);
+    ink_assert(l.m_bucket->m_chain.head);
+    l.m_bucket->m_chain.remove(l.m_value);
+    --m_count;
+    --(l.m_bucket->m_count);
+    if (0 == l.m_bucket->m_count)  // if it's now empty, take it out of the non-empty bucket chain.
+      m_bucket_chain.remove(l.m_bucket);
+    else if (1 == l.m_bucket->m_count) // if count drops to 1, then it's not mixed any more.
+      l.m_bucket->m_mixed_p = false;
+    zret = true;
+  }
+  return zret;
+}
+
+template < typename H > bool
+TSHashTable<H>::remove(Key key) {
+  Location loc = this->find(key);
+  bool zret = loc.isValid();
+  while (loc.isValid()) {
+    Location target(loc);
+    loc.advance();
+    this->remove(target);
+  }
+  return zret;
+}
+
+template < typename H > void
+TSHashTable<H>::clear() {
+  Bucket null_bucket;
+  // Remove the values but not the actual buckets.
+  for ( size_t i = 0 ; i < m_array.n ; ++i ) {
+    m_array[i] = null_bucket;
+  }
+  // Clear container data.
+  m_count = 0;
+  m_bucket_chain.clear();
+}
+
+template < typename H > void
+TSHashTable<H>::expand() {
+  Bucket* b = m_bucket_chain.head; // stash before reset.
+  ExpansionPolicy org_expansion_policy = m_expansion_policy;
+  Array tmp;
+  tmp.move(m_array); // stash the current array here.
+  // Reset to empty state.
+  m_count = 0;
+  m_bucket_chain.clear();
+
+  // Because we moved the array, we have to copy back a couple of things to make
+  // the expansion actually expand. How this is supposed to work without leaks or
+  // mucking about in the internal is unclear to me.
+  m_array.n = 1; // anything non-zero.
+  m_array.i = tmp.i;  // set the base index.
+  m_array.set_expand(); // bumps array size up to next index value.
+
+  m_expansion_policy = MANUAL; // disable any auto expand while we're expanding.
+  // Move the values from the stashed array to the expanded hash.
+  while (b) {
+    Value* v = b->m_chain.head;
+    while (v) {
+      b->m_chain.remove(v); // clear local pointers to be safe.
+      this->insert(v);
+      v = b->m_chain.head; // next value, because previous was removed.
+    }
+    b = BucketChain::next(b); // these buckets are in the stashed array so pointers are still valid.
+  }
+  // stashed array gets cleaned up when @a tmp goes out of scope.
+  m_expansion_policy = org_expansion_policy; // reset to original value.
+}
+
+/* ---------------------------------------------------------------------------------------------- */
 
 #endif

@@ -25,9 +25,6 @@ AM_CPPFLAGS = $(iocore_include_dirs) \
   -I$(top_srcdir)/mgmt/cluster \
   -I$(top_srcdir)/mgmt/api/include
 
-MGMT_DEFS = @MGMT_DEFS@
-DEFS += $(MGMT_DEFS)
-
 bin_PROGRAMS = traffic_cop
 
 traffic_cop_SOURCES = \
@@ -36,8 +33,7 @@ traffic_cop_SOURCES = \
 traffic_cop_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
 
 traffic_cop_LDADD = \
-  $(top_builddir)/mgmt/api/libtsmgmtshare.la \
   $(top_builddir)/mgmt/api/libtsmgmt.la \
   $(top_builddir)/lib/ts/libtsutil.la \
-  $(top_builddir)/lib/records/librec4cop.a \
-  @LIBRESOLV@ @LIBSSL@
+  $(top_builddir)/lib/records/librecords_cop.a \
+  @LIBRESOLV@ @OPENSSL_LIBS@

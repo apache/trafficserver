@@ -52,11 +52,10 @@ class UnixNetVConnection;
 //
 struct SSLNetAccept: public NetAccept
 {
-  virtual UnixNetVConnection *allocateThread(EThread * t);
-  virtual void freeThread(UnixNetVConnection * vc, EThread * t);
-  virtual UnixNetVConnection *allocateGlobal();
-  virtual EventType getEtype();
+  virtual NetProcessor * getNetProcessor() const;
+  virtual EventType getEtype() const;
   virtual void init_accept_per_thread();
+  virtual NetAccept *clone() const;
 
   SSLNetAccept()
     { };

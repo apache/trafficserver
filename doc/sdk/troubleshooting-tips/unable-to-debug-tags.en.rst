@@ -34,7 +34,6 @@ below:
 
 ::
 
-       :::text
        traffic_server -T"my-plugin"
 
 Set the following variables in :file:`records.config` (in the Traffic Server
@@ -42,7 +41,6 @@ Set the following variables in :file:`records.config` (in the Traffic Server
 
 ::
 
-       :::text
        CONFIG proxy.config.diags.debug.enabled INT 1
        CONFIG proxy.config.diags.debug.tags STRING debug-tag-name
 
@@ -50,9 +48,8 @@ In this case, debug output goes to ``traffic.out``.
 
 Example:
 
-::
+.. code-block:: c
 
-       :::c
        TSDebug ("my-plugin", "Starting my-plugin at %d\n", the_time);
 
 The statement ``"Starting my-plugin at <time>"`` appears whenever you
@@ -60,7 +57,6 @@ run Traffic Server with the ``my-plugin`` tag:
 
 ::
 
-       :::text
        traffic_server -T"my-plugin"
 
 Other Useful Internal Debug Tags

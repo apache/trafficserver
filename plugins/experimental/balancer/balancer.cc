@@ -84,6 +84,7 @@ TSRemapNewInstance(int argc, char * argv[], void ** instance, char * errbuf, int
       break;
     default:
       snprintf(errbuf, errbuf_size, "invalid balancer option '%d'", opt);
+      delete balancer;
       return TS_ERROR;
     }
 

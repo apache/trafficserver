@@ -34,39 +34,25 @@
 #ifndef _LOCAL_MANAGER_H
 #define _LOCAL_MANAGER_H
 
-#include "Main.h"
 #include "Alarms.h"
 #include "BaseManager.h"
-#include "ClusterCom.h"
-#include "VMap.h"
 #include <records/I_RecHttp.h>
 #if TS_HAS_WCCP
 #include <wccp/Wccp.h>
 #endif
 
-#define ink_get_hrtime ink_get_hrtime_internal
-#define ink_get_based_hrtime ink_get_based_hrtime_internal
+class FileManager;
+class ClusterCom;
+class VMap;
 
 class LocalManager: public BaseManager
 {
 public:
-  LocalManager(bool proxy_on);
-
-  ~LocalManager()
-  {
-    delete alarm_keeper;
-    delete virt_map;
-    delete ccom;
-    ats_free(bin_path);
-    ats_free(absolute_proxy_binary);
-    ats_free(proxy_name);
-    ats_free(proxy_binary);
-    ats_free(proxy_options);
-    ats_free(env_prep);
-  };
+  explicit LocalManager(bool proxy_on);
+  ~LocalManager();
 
   void initAlarm();
-  void initCCom(int mcport, char *addr, int rsport);
+  void initCCom(const AppVersionInfo& version, FileManager * files, int mcport, char *addr, int rsport);
   void initMgmtProcessServer();
   void pollMgmtProcessServer();
   void handleMgmtMsgFromProcesses(MgmtMessageHdr * mh);
@@ -123,8 +109,6 @@ public:
   int process_server_timeout_secs;
   int process_server_timeout_msecs;
 
-  char pserver_path[PATH_NAME_MAX];
-  char *bin_path;
   char *absolute_proxy_binary;
   char *proxy_name;
   char *proxy_binary;
@@ -139,15 +123,14 @@ public:
 
   Alarms *alarm_keeper;
   VMap *virt_map;
+  FileManager *configFiles;
 
   ClusterCom *ccom;
 
   volatile int internal_ticker;
   volatile pid_t watched_process_pid;
 
-#ifdef MGMT_USE_SYSLOG
   int syslog_facility;
-#endif
 
 #if TS_HAS_WCCP
   wccp::Cache wccp_cache;
@@ -156,6 +139,5 @@ private:
 };                              /* End class LocalManager */
 
 extern LocalManager *lmgmt;
-
 
 #endif /* _LOCAL_MANAGER_H */

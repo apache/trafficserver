@@ -164,10 +164,10 @@ test -f /lib/lsb/init-functions && . /lib/lsb/init-functions
 # with native OS rc.subr(8) features.
 test -f /etc/rc.subr && . /etc/rc.subr
 
-if [ ! -d @exp_runtimedir@ ]
+if [ ! -d $TS_BASE@exp_runtimedir@ ]
 then
-	mkdir -p @exp_runtimedir@
-	chown @pkgsysuser@:@pkgsysgroup@ @exp_runtimedir@
+	mkdir -p $TS_BASE@exp_runtimedir@
+	chown @pkgsysuser@:@pkgsysgroup@ $TS_BASE@exp_runtimedir@
 fi
 
 #
@@ -265,11 +265,11 @@ do_stop()
 case "$1" in
     start)
         if [ "$DISTRIB_ID" = "ubuntu" -o "$DISTRIB_ID" = "debian" ] ; then
-            test "x$VERBOSE" != "xno" && log_daemon_msg "Starting $DESC" "$NAME"
+            test "x$VERBOSE" != "xno" && log_daemon_msg "Starting ${TS_PACKAGE_NAME}" "$NAME"
             retval=0
             do_start
             test "$?" -ne 0 -a "$?" -ne 1 && retval=1
-            test "x$VERBOSE" != "xno" && log_daemon_msg "$retval"
+            test "x$VERBOSE" != "xno" && log_end_msg "$retval"
             exit "$retval"
         elif [ "$DISTRIB_ID" = "fedora" -o "$DISTRIB_ID" = "redhat" ]; then
             action "Starting ${TS_PACKAGE_NAME}:" forkdaemon $TC_DAEMON $TC_DAEMON_ARGS
@@ -295,11 +295,11 @@ case "$1" in
         ;;
     stop)
         if [ "$DISTRIB_ID" = "ubuntu" -o "$DISTRIB_ID" = "debian" ] ; then
-            test "x$VERBOSE" != "xno" && log_daemon_msg "Stopping $DESC" "$NAME"
+            test "x$VERBOSE" != "xno" && log_daemon_msg "Stopping ${TS_PACKAGE_NAME}" "$NAME"
             retval=0
             do_stop
             test "$?" -ne 0 -a "$?" -ne 1 && retval=1
-            test "x$VERBOSE" != "xno" && log_daemon_msg "$retval"
+            test "x$VERBOSE" != "xno" && log_end_msg "$retval"
             exit "$retval"
         elif [ "$DISTRIB_ID" = "fedora" -o "$DISTRIB_ID" = "redhat" ]; then
             action "Stopping ${TC_NAME}:" killproc -p $TC_PIDFILE $TC_DAEMON
@@ -344,11 +344,11 @@ case "$1" in
         ;;
     reload|force-reload)
         if [ "$DISTRIB_ID" = "ubuntu" -o "$DISTRIB_ID" = "debian" ] ; then
-            test "x$VERBOSE" != "xno" && log_daemon_msg "Reloading ${NAME}:"
+            test "x$VERBOSE" != "xno" && log_daemon_msg "Reloading ${TS_PACKAGE_NAME}" "$NAME"
             retval=0
             $TL_BINARY -x
             test "$?" -ne 0 -a "$?" -ne 1 && retval=1
-            test "x$VERBOSE" != "xno" && log_daemon_msg "$retval"
+            test "x$VERBOSE" != "xno" && log_end_msg "$retval"
             exit "$retval"
         elif [ "$DISTRIB_ID" = "fedora" -o "$DISTRIB_ID" = "redhat" ]; then
             action "Reloading ${NAME}:" $TL_BINARY -x
@@ -373,7 +373,7 @@ case "$1" in
       # If the "reload" option is implemented then remove the
       # 'force-reload' alias
       #
-            log_daemon_msg "Restarting $DESC" "$NAME"
+            log_daemon_msg "Restarting ${TS_PACKAGE_NAME}" "$NAME"
             do_stop
             case "$?" in
                 0|1)
@@ -400,6 +400,8 @@ case "$1" in
     status)
         if [ "$DISTRIB_ID" = "fedora" -o "$DISTRIB_ID" = "redhat" ]; then
             status -p $TC_PIDFILE $TC_NAME
+        elif [ "$DISTRIB_ID" = "ubuntu" -o "$DISTRIB_ID" = "debian" ] ; then
+            status_of_proc "$TC_DAEMON" "$TC_NAME" -p "$TC_PIDFILE" && exit 0 || exit $?
         elif [  "$DISTRIB_ID" = "suse" ]; then
             echo -n "Checking for service ${DM}: "
             checkproc -p $TC_PIDFILE $TC_NAME
@@ -443,7 +445,7 @@ case "$1" in
         ;;
     *)
         if [ "$DISTRIB_ID" = "ubuntu" -o "$DISTRIB_ID" = "debian" ] ; then
-            echo "Usage: $SCRIPTNAME {start|stop|restart}" >&2
+            echo "Usage: $SCRIPTNAME {start|stop|status|restart}" >&2
         elif [ "$DISTRIB_ID" = "fedora" -o "$DISTRIB_ID" = "redhat" ]; then
             echo "Usage: $0 {start|stop|status|restart|condrestart}"
         elif [ "$DISTRIB_ID" = "suse" ]; then

@@ -106,6 +106,14 @@ RemapProcessor::setup_for_remap(HttpTransact::State *s)
     mapping_found = rewrite_table->forwardMappingLookup(request_url, request_port, request_host, request_host_len, s->url_map);
   }
 
+  // If no rules match and we have a host, check empty host rules since
+  // they function as default rules for server requests.
+  // If there's no host, we've already done this.
+  if (!mapping_found && rewrite_table->nohost_rules && request_host_len) {
+    Debug("url_rewrite", "[lookup] nothing matched");
+    mapping_found = rewrite_table->forwardMappingLookup(request_url, 0, "", 0, s->url_map);
+  }
+
   if (!proxy_request) { // do extra checks on a server request
 
     // Save this information for later
@@ -113,14 +121,6 @@ RemapProcessor::setup_for_remap(HttpTransact::State *s)
     s->hh_info.host_len = request_host_len;
     s->hh_info.request_host = request_host;
     s->hh_info.request_port = request_port;
-
-    // If no rules match and we have a host, check empty host rules since
-    // they function as default rules for server requests.
-    // If there's no host, we've already done this.
-    if (!mapping_found && rewrite_table->nohost_rules && request_host_len) {
-      Debug("url_rewrite", "[lookup] nothing matched");
-      mapping_found = rewrite_table->forwardMappingLookup(request_url, 0, "", 0, s->url_map);
-    }
 
     if (mapping_found) {
       // Downstream mapping logic (e.g., self::finish_remap())
@@ -284,6 +284,8 @@ RemapProcessor::finish_remap(HttpTransact::State *s)
       request_header->value_set(MIME_FIELD_HOST, MIME_LEN_HOST, host_hdr_buf, tmp);
     }
   }
+
+  request_header->mark_target_dirty();
 
   return remap_found;
 }

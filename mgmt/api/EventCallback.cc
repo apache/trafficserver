@@ -30,7 +30,7 @@
  ***************************************************************************/
 
 #include "ink_config.h"
-#include "ink_resource.h"
+#include "ink_memory.h"
 
 #include "EventCallback.h"
 #include "CoreAPIShared.h"
@@ -181,8 +181,8 @@ get_events_with_callbacks(CallbackTable * cb_table)
  * output: TS_ERR_xx
  * notes:
  **********************************************************************/
-TSError
-cb_table_register(CallbackTable * cb_table, char *event_name, TSEventSignalFunc func, void *data, bool * first_cb)
+TSMgmtError
+cb_table_register(CallbackTable * cb_table, const char *event_name, TSEventSignalFunc func, void *data, bool * first_cb)
 {
   bool first_time = 0;
   int id;
@@ -250,8 +250,8 @@ cb_table_register(CallbackTable * cb_table, char *event_name, TSEventSignalFunc 
  * output: TS_ERR_xx
  * notes:
  **********************************************************************/
-TSError
-cb_table_unregister(CallbackTable * cb_table, char *event_name, TSEventSignalFunc func)
+TSMgmtError
+cb_table_unregister(CallbackTable * cb_table, const char *event_name, TSEventSignalFunc func)
 {
   TSEventSignalFunc cb_fun;
   EventCallbackT *event_cb;

@@ -109,6 +109,7 @@ const char *HTTP_VALUE_PROXY_REVALIDATE;
 const char *HTTP_VALUE_PUBLIC;
 const char *HTTP_VALUE_S_MAXAGE;
 const char *HTTP_VALUE_NEED_REVALIDATE_ONCE;
+const char *HTTP_VALUE_100_CONTINUE;
 // Cache-control: extension "need-revalidate-once" is used internally by T.S.
 // to invalidate a document, and it is not returned/forwarded.
 // If a cached document has this extension set (ie, is invalidated),
@@ -143,6 +144,7 @@ int HTTP_LEN_PROXY_REVALIDATE;
 int HTTP_LEN_PUBLIC;
 int HTTP_LEN_S_MAXAGE;
 int HTTP_LEN_NEED_REVALIDATE_ONCE;
+int HTTP_LEN_100_CONTINUE;
 
 Arena* const HTTPHdr::USE_HDR_HEAP_MAGIC = reinterpret_cast<Arena*>(1);
 
@@ -257,6 +259,7 @@ http_init()
     HTTP_VALUE_PUBLIC = hdrtoken_string_to_wks("public");
     HTTP_VALUE_S_MAXAGE = hdrtoken_string_to_wks("s-maxage");
     HTTP_VALUE_NEED_REVALIDATE_ONCE = hdrtoken_string_to_wks("need-revalidate-once");
+    HTTP_VALUE_100_CONTINUE = hdrtoken_string_to_wks("100-continue");
 
     HTTP_LEN_BYTES = hdrtoken_wks_to_length(HTTP_VALUE_BYTES);
     HTTP_LEN_CHUNKED = hdrtoken_wks_to_length(HTTP_VALUE_CHUNKED);
@@ -280,6 +283,7 @@ http_init()
     HTTP_LEN_PUBLIC = hdrtoken_wks_to_length(HTTP_VALUE_PUBLIC);
     HTTP_LEN_S_MAXAGE = hdrtoken_wks_to_length(HTTP_VALUE_S_MAXAGE);
     HTTP_LEN_NEED_REVALIDATE_ONCE = hdrtoken_wks_to_length(HTTP_VALUE_NEED_REVALIDATE_ONCE);
+    HTTP_LEN_100_CONTINUE = hdrtoken_wks_to_length(HTTP_VALUE_100_CONTINUE);
 
     // TODO: We need to look into enable these CC values as WKS XXX
 #if 0
@@ -1520,28 +1524,30 @@ class UrlPrintHack {
       URLImpl* ui = hdr->m_url_cached.m_url_impl;
       char port_buff[10];
 
-      // Save values that can be modified.
-      m_hdr = hdr; // mark as having saved values.
-      m_len_host = ui->m_len_host;
-      m_ptr_host = ui->m_ptr_host;
-      m_len_port = ui->m_len_port;
-      m_ptr_port = ui->m_ptr_port;
+      m_hdr = hdr; // mark as potentially having modified values.
 
       /* Get dirty. We reach in to the URL implementation to
          set the host and port if
-         1) They are not already set and
-         2) The values were in a HTTP header field.
+         1) They are not already set
+         AND
+         2) The values were in a HTTP header.
       */
       if (!hdr->m_target_in_url && hdr->m_host_length && hdr->m_host_mime) {
-        assert(0 == ui->m_ptr_host); // shouldn't be non-zero if not in URL.
+        ink_assert(0 == ui->m_ptr_host); // shouldn't be non-zero if not in URL.
         ui->m_ptr_host = hdr->m_host_mime->m_ptr_value;
         ui->m_len_host = hdr->m_host_length;
+        m_host_modified_p = true;
+      } else {
+        m_host_modified_p = false;
       }
 
       if (0 == hdr->m_url_cached.port_get_raw() && hdr->m_port_in_header) {
-        assert(0 == ui->m_ptr_port); // shouldn't be set if not in URL.
+        ink_assert(0 == ui->m_ptr_port); // shouldn't be set if not in URL.
         ui->m_ptr_port = port_buff;
         ui->m_len_port = sprintf(port_buff, "%.5d", hdr->m_port);
+        m_port_modified_p = true;
+      } else {
+        m_port_modified_p = false;
       }
     } else {
       m_hdr = 0;
@@ -1549,14 +1555,23 @@ class UrlPrintHack {
   }
 
   /// Destructor.
-  /// If we have a valid header, write the original URL values back.
   ~UrlPrintHack() {
-    if (m_hdr) {
+    if (m_hdr) { // There was a potentially modified header.
       URLImpl* ui = m_hdr->m_url_cached.m_url_impl;
-      ui->m_len_port = m_len_port;
-      ui->m_len_host = m_len_host;
-      ui->m_ptr_port = m_ptr_port;
-      ui->m_ptr_host = m_ptr_host;
+      // Because we only modified if not set, we can just set these values
+      // back to zero if modified. We want to be careful because if a
+      // heap re-allocation happened while this was active, then a saved value
+      // is wrong and will break things if restored. We don't have to worry
+      // about these because, if modified, they were originally NULL and should
+      // still be NULL after a re-allocate.
+      if (m_port_modified_p) {
+        ui->m_len_port = 0;
+        ui->m_ptr_port = 0;
+      }
+      if (m_host_modified_p) {
+        ui->m_len_host = 0;
+        ui->m_ptr_host = 0;
+      }
     }
   }
 
@@ -1567,10 +1582,8 @@ class UrlPrintHack {
    
   /// Saved values.
   ///@{
-  char const* m_ptr_host;
-  char const* m_ptr_port;
-  int m_len_host;
-  int m_len_port;
+  bool m_host_modified_p;
+  bool m_port_modified_p;
   HTTPHdr* m_hdr;
   ///@}
 };
@@ -1676,6 +1689,19 @@ HTTPHdrImpl::move_strings(HdrStrHeap *new_heap)
   } else {
     ink_release_assert(!"unknown m_polarity");
   }
+}
+
+size_t
+HTTPHdrImpl::strings_length()
+{
+  size_t ret = 0;
+
+  if (m_polarity == HTTP_TYPE_REQUEST) {
+   ret += u.req.m_len_method;
+  } else if (m_polarity == HTTP_TYPE_RESPONSE) {
+   ret += u.resp.m_len_reason;
+  }
+  return ret;
 }
 
 void
@@ -1862,7 +1888,7 @@ HTTPInfo::marshal(char *buf, int len)
   buf += HTTP_ALT_MARSHAL_SIZE;
   used += HTTP_ALT_MARSHAL_SIZE;
 
-  if (frag_len) {
+  if (frag_len > 0) {
     marshal_alt->m_frag_offsets = static_cast<FragOffset*>(reinterpret_cast<void*>(used));
     memcpy(buf, m_alt->m_frag_offsets + HTTPCacheAlt::N_INTEGRAL_FRAG_OFFSETS, frag_len);
     buf += frag_len;

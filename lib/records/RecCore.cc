@@ -36,16 +36,13 @@ InkHashTable *g_records_ht = NULL;
 ink_rwlock g_records_rwlock;
 int g_num_records = 0;
 
-const char *g_stats_snap_fpath = NULL;
-int g_num_update[RECT_MAX];
-
 RecTree *g_records_tree = NULL;
 
 //-------------------------------------------------------------------------
 // register_record
 //-------------------------------------------------------------------------
 static RecRecord *
-register_record(RecT rec_type, const char *name, RecDataT data_type, RecData data_default)
+register_record(RecT rec_type, const char *name, RecDataT data_type, RecData data_default, RecPersistT persist_type)
 {
   RecRecord *r = NULL;
 
@@ -62,6 +59,10 @@ register_record(RecT rec_type, const char *name, RecDataT data_type, RecData dat
     RecDataSet(r->data_type, &(r->data), &(data_default));
     RecDataSet(r->data_type, &(r->data_default), &(data_default));
     ink_hash_table_insert(g_records_ht, name, (void *) r);
+
+    if (REC_TYPE_IS_STAT(r->rec_type)) {
+      r->stat_meta.persist_type = persist_type;
+    }
   }
 
   // we're now registered
@@ -76,7 +77,7 @@ register_record(RecT rec_type, const char *name, RecDataT data_type, RecData dat
 // link_XXX
 //-------------------------------------------------------------------------
 static int
-link_int(const char *name, RecDataT data_type, RecData data, void *cookie)
+link_int(const char * /* name */, RecDataT /* data_type */, RecData data, void *cookie)
 {
   RecInt *rec_int = (RecInt *) cookie;
   ink_atomic_swap(rec_int, data.rec_int);
@@ -84,28 +85,28 @@ link_int(const char *name, RecDataT data_type, RecData data, void *cookie)
 }
 
 static int
-link_int32(const char *name, RecDataT data_type, RecData data, void *cookie)
+link_int32(const char * /* name */, RecDataT /* data_type */, RecData data, void *cookie)
 {
   *((int32_t *) cookie) = (int32_t) data.rec_int;
   return REC_ERR_OKAY;
 }
 
 static int
-link_uint32(const char *name, RecDataT data_type, RecData data, void *cookie)
+link_uint32(const char * /* name */, RecDataT /* data_type */, RecData data, void *cookie)
 {
   *((uint32_t *) cookie) = (uint32_t) data.rec_int;
   return REC_ERR_OKAY;
 }
 
 static int
-link_float(const char *name, RecDataT data_type, RecData data, void *cookie)
+link_float(const char * /* name */, RecDataT /* data_type */, RecData data, void *cookie)
 {
   *((RecFloat *) cookie) = data.rec_float;
   return REC_ERR_OKAY;
 }
 
 static int
-link_counter(const char *name, RecDataT data_type, RecData data, void *cookie)
+link_counter(const char * /* name */, RecDataT /* data_type */, RecData data, void *cookie)
 {
   RecCounter *rec_counter = (RecCounter *) cookie;
   ink_atomic_swap(rec_counter, data.rec_counter);
@@ -115,7 +116,7 @@ link_counter(const char *name, RecDataT data_type, RecData data, void *cookie)
 // This is a convenience wrapper, to allow us to treat the RecInt's as a
 // 1-byte entity internally.
 static int
-link_byte(const char *name, RecDataT data_type, RecData data, void *cookie)
+link_byte(const char * /* name */, RecDataT /* data_type */, RecData data, void *cookie)
 {
   RecByte *rec_byte = (RecByte *) cookie;
   RecByte byte = static_cast<RecByte>(data.rec_int);
@@ -128,7 +129,7 @@ link_byte(const char *name, RecDataT data_type, RecData data, void *cookie)
 // cookie e.g. is the DEFAULT_xxx_str value which this functiion keeps up to date with
 // the latest default applied during a config update from records.config
 static int
-link_string_alloc(const char *name, RecDataT data_type, RecData data, void *cookie)
+link_string_alloc(const char * /* name */, RecDataT /* data_type */, RecData data, void *cookie)
 {
   RecString _ss = data.rec_string;
   RecString _new_value = NULL;
@@ -167,7 +168,6 @@ RecCoreInit(RecModeT mode_type, Diags *_diags)
 
   // initialize record array for our internal stats (this can be reallocated later)
   g_records = (RecRecord *)ats_malloc(REC_MAX_RECORDS * sizeof(RecRecord));
-  memset(g_records, 0, REC_MAX_RECORDS * sizeof(RecRecord));
 
   // initialize record hash index
   g_records_ht = ink_hash_table_create(InkHashTableKeyType_String);
@@ -177,15 +177,11 @@ RecCoreInit(RecModeT mode_type, Diags *_diags)
   }
   // read stats
   if ((mode_type == RECM_SERVER) || (mode_type == RECM_STAND_ALONE)) {
-    xptr<char> rundir(RecConfigReadRuntimeDir());
-    g_stats_snap_fpath = Layout::relative_to(rundir, REC_RAW_STATS_FILE);
     RecReadStatsFile();
   }
   // read configs
   if ((mode_type == RECM_SERVER) || (mode_type == RECM_STAND_ALONE)) {
     ink_mutex_init(&g_rec_config_lock, NULL);
-    g_rec_config_contents_llq = create_queue();
-    g_rec_config_contents_ht = ink_hash_table_create(InkHashTableKeyType_String);
     // Import the file into memory; try the following in this order:
     // ./etc/trafficserver/records.config.shadow
     // ./records.config.shadow
@@ -204,10 +200,6 @@ RecCoreInit(RecModeT mode_type, Diags *_diags)
     if (file_exists) {
       RecReadConfigFile(true);
     }
-  }
-
-  for (int i = 0; i < RECT_MAX; i++) {
-    g_num_update[i] = 0;
   }
 
   g_initialized = true;
@@ -273,6 +265,15 @@ RecLinkConfigByte(const char *name, RecByte * rec_byte)
     return REC_ERR_FAIL;
   }
   return RecRegisterConfigUpdateCb(name, link_byte, (void *) rec_byte);
+}
+
+int
+RecLinkConfigBool(const char *name, RecBool * rec_bool)
+{
+  if (RecGetRecordBool(name, rec_bool) == REC_ERR_FAIL) {
+    return REC_ERR_FAIL;
+  }
+  return RecRegisterConfigUpdateCb(name, link_byte, (void *) rec_bool);
 }
 
 
@@ -412,6 +413,15 @@ RecGetRecordByte(const char *name, RecByte *rec_byte, bool lock)
   return err;
 }
 
+int
+RecGetRecordBool(const char *name, RecBool *rec_bool, bool lock)
+{
+  int err;
+  RecData data;
+  if ((err = RecGetRecord_Xmalloc(name, RECD_INT, &data, lock)) == REC_ERR_OKAY)
+    *rec_bool = 0 != data.rec_int;
+  return err;
+}
 
 //-------------------------------------------------------------------------
 // RecGetRec Attributes
@@ -470,9 +480,31 @@ RecGetRecordDataType(const char *name, RecDataT * data_type, bool lock)
 }
 
 int
-RecGetRecordUpdateCount(RecT data_type)
+RecGetRecordPersistenceType(const char *name, RecPersistT * persist_type, bool lock)
 {
-  return g_num_update[data_type];
+  int err = REC_ERR_FAIL;
+  RecRecord *r = NULL;
+
+  if (lock) {
+    ink_rwlock_rdlock(&g_records_rwlock);
+  }
+
+  *persist_type = RECP_NULL;
+
+  if (ink_hash_table_lookup(g_records_ht, name, (void **) &r)) {
+    rec_mutex_acquire(&(r->lock));
+    if (REC_TYPE_IS_STAT(r->rec_type)) {
+      *persist_type = r->stat_meta.persist_type;
+      err = REC_ERR_OKAY;
+    }
+    rec_mutex_release(&(r->lock));
+  }
+
+  if (lock) {
+    ink_rwlock_unlock(&g_records_rwlock);
+  }
+
+  return err;
 }
 
 int
@@ -590,12 +622,15 @@ RecGetRecordCheckExpr(const char *name, char **check_expr, bool lock)
   return err;
 }
 
-
 int
 RecGetRecordDefaultDataString_Xmalloc(char *name, char **buf, bool lock)
 {
   int err;
   RecRecord *r = NULL;
+
+  if (lock) {
+    ink_rwlock_rdlock(&g_records_rwlock);
+  }
 
   if (ink_hash_table_lookup(g_records_ht, name, (void **) &r)) {
     *buf = (char *)ats_malloc(sizeof(char) * 1024);
@@ -628,6 +663,10 @@ RecGetRecordDefaultDataString_Xmalloc(char *name, char **buf, bool lock)
     }
   } else {
     err = REC_ERR_FAIL;
+  }
+
+  if (lock) {
+    ink_rwlock_unlock(&g_records_rwlock);
   }
 
   return err;
@@ -693,10 +732,21 @@ RecRegisterStat(RecT rec_type, const char *name, RecDataT data_type, RecData dat
   RecRecord *r = NULL;
 
   ink_rwlock_wrlock(&g_records_rwlock);
-  if ((r = register_record(rec_type, name, data_type, data_default)) != NULL) {
+  if ((r = register_record(rec_type, name, data_type, data_default, persist_type)) != NULL) {
+    // If the persistence type we found in the records hash is not the same as the persistence
+    // type we are registering, then that means that it changed between the previous software
+    // version and the current version. If the metric changed to non-persistent, reset to the
+    // new default value.
+    if ((r->stat_meta.persist_type == RECP_NULL ||r->stat_meta.persist_type == RECP_PERSISTENT) &&
+        persist_type == RECP_NON_PERSISTENT) {
+      RecDebug(DL_Debug, "resetting default value for formerly persisted stat '%s'", r->name);
+      RecDataSet(r->data_type, &(r->data), &(data_default));
+    }
+
     r->stat_meta.persist_type = persist_type;
   } else {
     ink_assert(!"Can't register record!");
+    RecDebug(DL_Warning, "failed to register '%s' record", name);
   }
   ink_rwlock_unlock(&g_records_rwlock);
 
@@ -714,7 +764,7 @@ RecRegisterConfig(RecT rec_type, const char *name, RecDataT data_type,
 {
   RecRecord *r;
   ink_rwlock_wrlock(&g_records_rwlock);
-  if ((r = register_record(rec_type, name, data_type, data_default)) != NULL) {
+  if ((r = register_record(rec_type, name, data_type, data_default, RECP_NULL)) != NULL) {
     // Note: do not modify 'record->config_meta.update_required'
     r->config_meta.update_type = update_type;
     r->config_meta.check_type = check_type;
@@ -794,7 +844,10 @@ RecForceInsert(RecRecord * record)
   // set the record value
   RecDataSet(r->data_type, &(r->data), &(record->data));
   RecDataSet(r->data_type, &(r->data_default), &(record->data_default));
+
   r->registered = record->registered;
+  r->rsb_id = record->rsb_id;
+
   if (REC_TYPE_IS_STAT(r->rec_type)) {
     r->stat_meta.persist_type = record->stat_meta.persist_type;
     r->stat_meta.data_raw = record->stat_meta.data_raw;
@@ -824,7 +877,7 @@ RecForceInsert(RecRecord * record)
 //-------------------------------------------------------------------------
 
 static void
-debug_record_callback(RecT rec_type, void *edata, int registered, const char *name, int data_type, RecData *datum)
+debug_record_callback(RecT /* rec_type */, void * /* edata */, int registered, const char *name, int data_type, RecData *datum)
 {
   switch(data_type) {
   case RECD_INT:
@@ -853,7 +906,7 @@ RecDumpRecords(RecT rec_type, RecDumpEntryCb callback, void *edata)
   num_records = g_num_records;
   for (i = 0; i < num_records; i++) {
     RecRecord *r = &(g_records[i]);
-    if ((rec_type == RECT_NULL) || (rec_type == r->rec_type)) {
+    if ((rec_type == RECT_NULL) || (rec_type & r->rec_type)) {
       rec_mutex_acquire(&(r->lock));
       callback(rec_type, edata, r->registered, r->name, r->data_type, &r->data);
       rec_mutex_release(&(r->lock));
@@ -1073,6 +1126,23 @@ RecConfigReadLogDir()
 }
 
 //-------------------------------------------------------------------------
+// RecConfigReadBinDir
+//-------------------------------------------------------------------------
+char *
+RecConfigReadBinDir()
+{
+  char buf[PATH_NAME_MAX + 1];
+
+  buf[0] = '\0';
+  RecGetRecordString("proxy.config.bin_path", buf, PATH_NAME_MAX);
+  if (strlen(buf) > 0) {
+    return Layout::get()->relative(buf);
+  } else {
+    return ats_strdup(Layout::get()->bindir);
+  }
+}
+
+//-------------------------------------------------------------------------
 // RecConfigReadSnapshotDir.
 //-------------------------------------------------------------------------
 char *
@@ -1111,56 +1181,48 @@ RecConfigReadConfigPath(const char * file_variable, const char * default_value)
 }
 
 //-------------------------------------------------------------------------
-// REC_SignalManager (TS)
+// RecConfigReadPrefixPath
 //-------------------------------------------------------------------------
-#if defined (REC_BUILD_MGMT)
+char *
+RecConfigReadPrefixPath(const char * file_variable, const char * default_value)
+{
+  char buf[PATH_NAME_MAX + 1];
 
-#if defined(LOCAL_MANAGER)
+  buf[0] = '\0';
+  RecGetRecordString(file_variable, buf, PATH_NAME_MAX);
+  if (strlen(buf) > 0) {
+    return Layout::get()->relative_to(Layout::get()->prefix, buf);
+  }
 
-#include "LocalManager.h"
+  if (default_value) {
+    return Layout::get()->relative_to(Layout::get()->prefix, default_value);
+  }
+
+  return NULL;
+}
+
+//-------------------------------------------------------------------------
+// RecConfigReadPersistentStatsPath
+//-------------------------------------------------------------------------
+char *
+RecConfigReadPersistentStatsPath()
+{
+  ats_scoped_str rundir(RecConfigReadRuntimeDir());
+  return Layout::relative_to(rundir, REC_RAW_STATS_FILE);
+}
 
 void
-RecSignalManager(int /* id ATS_UNUSED */, const char */* msg ATS_UNUSED */)
+RecSignalWarning(int sig, const char * fmt, ...)
 {
+  char msg[1024];
+  va_list args;
+
+  va_start(args, fmt);
+  WarningV(fmt, args);
+  va_end(args);
+
+  va_start(args, fmt);
+  vsnprintf(msg, sizeof(msg), fmt, args);
+  RecSignalManager(sig, msg);
+  va_end(args);
 }
-
-int
-RecRegisterManagerCb(int _signal, RecManagerCb _fn, void *_data)
-{
-  return lmgmt->registerMgmtCallback(_signal, _fn, _data);
-}
-
-#elif defined(PROCESS_MANAGER)
-
-#include "ProcessManager.h"
-
-void
-RecSignalManager(int id, const char *msg)
-{
-  ink_assert(pmgmt);
-  pmgmt->signalManager(id, msg);
-}
-
-int
-RecRegisterManagerCb(int _signal, RecManagerCb _fn, void *_data)
-{
-  return pmgmt->registerMgmtCallback(_signal, _fn, _data);
-}
-
-#endif // LOCAL_MANAGER
-
-#else
-
-void
-RecSignalManager(int /* id ATS_UNUSED */, const char *msg)
-{
-  RecLog(DL_Warning, msg);
-}
-
-int
-RecRegisterManagerCb(int _signal, RecManagerCb _fn, void *_data)
-{
-  return -1;
-}
-
-#endif // REC_BUILD_MGMT

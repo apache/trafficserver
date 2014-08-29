@@ -43,11 +43,7 @@ typedef struct llq_s
   LLQrec * head, *tail, *free;
   uint64_t len, highwater;
   ink_mutex mux;
-#if defined(darwin)
-  ink_sem *sema;
-#else /* !darwin */
-  ink_sem sema;
-#endif /* !darwin */
+  ink_semaphore sema;
 } LLQ;
 
 LLQ *create_queue(void);

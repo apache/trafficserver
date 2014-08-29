@@ -19,14 +19,14 @@
 // conditions.cc: Implementation of the condition classes
 //
 //
+#include <sys/time.h>
 #include <unistd.h>
-#include <ts/ts.h>
+#include <arpa/inet.h>
+
+#include "ts/ts.h"
 
 #include "conditions.h"
 #include "lulu.h"
-
-#include <sys/time.h>
-
 
 // ConditionStatus
 void
@@ -384,7 +384,8 @@ ConditionDBM::eval(const Resources& res)
 
 
 // ConditionCookie: request or response header
-void ConditionCookie::initialize(Parser& p)
+void
+ConditionCookie::initialize(Parser& p)
 {
   Condition::initialize(p);
 
@@ -396,7 +397,8 @@ void ConditionCookie::initialize(Parser& p)
   require_resources(RSRC_CLIENT_REQUEST_HEADERS);
 }
 
-void ConditionCookie::append_value(std::string& s, const Resources& res)
+void
+ConditionCookie::append_value(std::string& s, const Resources& res)
 {
   TSMBuffer bufp = res.client_bufp;
   TSMLoc hdr_loc = res.client_hdr_loc;
@@ -436,7 +438,8 @@ out_release_field:
   TSHandleMLocRelease(bufp, hdr_loc, field_loc);
 }
 
-bool ConditionCookie::eval(const Resources& res)
+bool
+ConditionCookie::eval(const Resources& res)
 {
   std::string s;
 
@@ -444,4 +447,42 @@ bool ConditionCookie::eval(const Resources& res)
   bool rval = static_cast<const Matchers<std::string>*>(_matcher)->test(s);
   TSDebug(PLUGIN_NAME, "Evaluating COOKIE(%s): %s: rval: %d", _qualifier.c_str(), s.c_str(), rval);
   return rval;
+}
+
+bool
+ConditionInternalTransaction::eval(const Resources& res)
+{
+  return TSHttpIsInternalRequest(res.txnp) == TS_SUCCESS;
+}
+
+void
+ConditionClientIp::initialize(Parser &p)
+{
+  Condition::initialize(p);
+
+  Matchers<std::string>* match = new Matchers<std::string>(_cond_op);
+  match->set(p.get_arg());
+
+  _matcher = match;
+}
+
+bool
+ConditionClientIp::eval(const Resources &res)
+{
+  std::string s;
+
+  append_value(s, res);
+  bool rval = static_cast<const Matchers<std::string>*>(_matcher)->test(s);
+  TSDebug(PLUGIN_NAME, "Evaluating CLIENT-IP(): %s: rval: %d", s.c_str(), rval);
+  return rval;
+}
+
+void
+ConditionClientIp::append_value(std::string &s, const Resources &res)
+{
+  char ip[INET6_ADDRSTRLEN];
+
+  if (getIP(TSHttpTxnClientAddrGet(res.txnp), ip)) {
+    s.append(ip);
+  }
 }

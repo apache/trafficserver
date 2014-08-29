@@ -24,7 +24,6 @@ related to memory - you can use memory dump information. Enable
 
 ::
 
-      :::text
       CONFIG proxy.config.dump_mem_info_frequency INT <value>
 
 This causes Traffic Server to dump memory information to ``traffic.out``

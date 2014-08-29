@@ -37,8 +37,8 @@
 // ---------------------------------------------------------------------------
 namespace ts { namespace config {
 // ---------------------------------------------------------------------------
-Buffer const detail::NULL_BUFFER(0);
-ConstBuffer const detail::NULL_CONST_BUFFER(0);
+Buffer const detail::NULL_BUFFER;
+ConstBuffer const detail::NULL_CONST_BUFFER;
 detail::ValueItem detail::ValueTableImpl::NULL_ITEM(VoidValue);
 detail::PseudoBool::Type const detail::PseudoBool::FALSE = 0;
 detail::PseudoBool::Type const detail::PseudoBool::TRUE = &detail::PseudoBool::operator !;
@@ -332,7 +332,7 @@ Configuration::getRoot() const {
 Rv<Configuration>
 Configuration::loadFromPath(char const* path) {
     Rv<Configuration> zret;
-    Buffer buffer(0);
+    Buffer buffer;
     FILE* in = fopen(path, "r");
 
     if (in) {

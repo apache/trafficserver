@@ -41,10 +41,11 @@
 #include "ink_hash_table.h"
 #include "ink_mutex.h"
 
+class AppVersionInfo;
 
 /***********************************************************************
  *
- * MODULAIZATTION: if you are adding new alarms, please ensure to add
+ * MODULARIZATTION: if you are adding new alarms, please ensure to add
  *                 the corresponding alarms in librecords/I_RecAlarms.h
  *
  *
@@ -111,10 +112,10 @@ public:
   void registerCallback(AlarmCallbackFunc func);
   bool isCurrentAlarm(alarm_t a, char *ip = NULL);
 
-  void signalAlarm(alarm_t t, const char *desc = NULL, const char *ip = NULL);
+  void signalAlarm(alarm_t t, const char * desc, const char * ip = NULL);
   void resolveAlarm(alarm_t a, char *ip = NULL);
 
-  void constructAlarmMessage(char *ip, char *message, int max);
+  void constructAlarmMessage(const AppVersionInfo& version,  char *ip, char *message, int max);
   void resetSeenFlag(char *ip);
   void clearUnSeen(char *ip);
 
@@ -131,9 +132,6 @@ private:
 
   int cur_cb;
   ink_mutex mutex;
-
-  char *alarm_bin;
-  char *alarm_bin_path;
 
   InkHashTable *cblist;
   InkHashTable *local_alarms;

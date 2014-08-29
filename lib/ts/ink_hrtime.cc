@@ -212,8 +212,8 @@ init_hrtime_basis()
     // accuracy must be at least 100 microseconds
   } while (t2 - t1 > HRTIME_USECONDS(100));
   b = (t2 + t1) / 2;
-  now = ink_timespec_to_based_hrtime(&timespec_basis);
-  ts = ink_based_hrtime_to_timespec(now);
+  now = ink_hrtime_from_timespec(&timespec_basis);
+  ts = ink_hrtime_to_timespec(now);
   ink_assert(ts.tv_sec == timespec_basis.tv_sec && ts.tv_nsec == timespec_basis.tv_nsec);
   hrtime_offset = now - b;
   hrtime_basis = b;

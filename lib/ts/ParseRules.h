@@ -24,7 +24,6 @@
 #if !defined (_ParseRules_h_)
 #define _ParseRules_h_
 
-#include "Resource.h"
 #include <string.h>
 
 #include "ink_defs.h"
@@ -495,20 +494,6 @@ ParseRules::is_pchar(const char *seq)
   else
     return is_hex(seq[1]) && is_hex(seq[2]);
 #else
-#if defined(THIS_IS_THE_ORIGINAL_CODE)
-  if (is_uchar(seq))
-    return (true);
-
-  switch (seq[0]) {
-  case ':':
-  case '@':
-  case '&':
-  case '=':
-  case '+':
-    return (true);
-  }
-  return (false);
-#else
   if (is_unreserved(*seq))
     return (true);
 
@@ -521,7 +506,6 @@ ParseRules::is_pchar(const char *seq)
     return (true);
   }
   return (false);
-#endif
 #endif
 }
 

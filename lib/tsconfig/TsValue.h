@@ -644,8 +644,8 @@ namespace detail {
   inline ValueItem const& ValueTable::operator [] (ValueIndex idx) const { return const_cast<self*>(this)->operator [] (idx); }
   inline ValueTable& ValueTable::reset() { _ptr = 0; return *this; }
 
-  inline ValueItem::ValueItem() : _type(VoidValue), _text(0), _name(0) {}
-  inline ValueItem::ValueItem(ValueType type) : _type(type), _text(0), _name(0) {}
+  inline ValueItem::ValueItem() : _type(VoidValue) {}
+  inline ValueItem::ValueItem(ValueType type) : _type(type) {}
   inline ValueType ValueItem::getType() const { return _type; }
 }
 
@@ -722,7 +722,7 @@ inline Path& Path::append(size_t index) { this->instance()->_elements.push_back(
 inline size_t Path::count() const { return _ptr ? _ptr->_elements.size() : 0; }
 inline ConstBuffer const& Path::operator [] (size_t idx) const { return _ptr ? _ptr->_elements[idx] : detail::NULL_CONST_BUFFER; }
 
-inline Path::Parser::Parser() : _input(0), _c(0) { }
+inline Path::Parser::Parser() { }
 inline Path::Parser::Parser( ConstBuffer const& text ) : _input(text), _c(text._ptr) { }
 inline bool Path::Parser::hasInput() const { return _input._ptr && _input._ptr + _input._size > _c; }
 

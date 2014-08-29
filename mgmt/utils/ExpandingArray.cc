@@ -22,8 +22,8 @@
  */
 
 #include "ink_platform.h"
+#include "ink_memory.h"
 #include "ExpandingArray.h"
-#include "ink_resource.h"
 
 ExpandingArray::ExpandingArray(int initialSize, bool freeContents)
 {

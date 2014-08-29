@@ -180,17 +180,11 @@ UnixNetProcessor::accept_internal(Continuation * /* cont ATS_UNUSED */, int /* f
   return NULL;
 }
 
-UnixNetVConnection *
-UnixNetProcessor::allocateThread(EThread * /* t ATS_UNUSED */)
+NetVConnection *
+UnixNetProcessor::allocate_vc(EThread *)
 {
   ink_release_assert(false);
   return NULL;
-}
-
-void
-UnixNetProcessor::freeThread(UnixNetVConnection * /* vc ATS_UNUSED */, EThread * /* t ATS_UNUSED */)
-{
-  ink_release_assert(false);
 }
 
 // For Intel ICC

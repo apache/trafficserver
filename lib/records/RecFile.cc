@@ -34,7 +34,7 @@ RecHandle
 RecFileOpenR(const char *file)
 {
   RecHandle h_file;
-  return ((h_file =::open(file, O_RDONLY)) <= 0) ? REC_HANDLE_INVALID : h_file;
+  return ((h_file =::open(file, O_RDONLY)) < 0) ? REC_HANDLE_INVALID : h_file;
 }
 
 //-------------------------------------------------------------------------
@@ -54,13 +54,22 @@ RecFileOpenW(const char *file)
 }
 
 //-------------------------------------------------------------------------
+// RecFileSync
+//-------------------------------------------------------------------------
+
+int RecFileSync(RecHandle h_file)
+{
+  return (fsync(h_file) == 0) ? REC_ERR_OKAY : REC_ERR_FAIL;
+}
+
+//-------------------------------------------------------------------------
 // RecFileClose
 //-------------------------------------------------------------------------
 
-void
+int
 RecFileClose(RecHandle h_file)
 {
-  close(h_file);
+  return (close(h_file) == 0) ? REC_ERR_OKAY : REC_ERR_FAIL;
 }
 
 //-------------------------------------------------------------------------
@@ -177,17 +186,20 @@ RecPipeCreate(const char *base_path, const char *name)
   servaddr_len = sizeof(servaddr.sun_family) + strlen(servaddr.sun_path);
   if ((bind(listenfd, (struct sockaddr *) &servaddr, servaddr_len)) < 0) {
     RecLog(DL_Warning, "[RecPipeCreate] bind error\n");
+    close(listenfd);
     return REC_HANDLE_INVALID;
   }
   // listen, backlog of 1 (expecting only one client)
   if ((listen(listenfd, 1)) < 0) {
     RecLog(DL_Warning, "[RecPipeCreate] listen error\n");
+    close(listenfd);
     return REC_HANDLE_INVALID;
   }
   // block until we get a connection from the other side
   cliaddr_len = sizeof(cliaddr);
   if ((acceptfd = accept(listenfd, (struct sockaddr *) &cliaddr,
                          &cliaddr_len)) < 0) {
+    close(listenfd);
     return REC_HANDLE_INVALID;
   }
 
@@ -230,11 +242,13 @@ RecPipeConnect(const char *base_path, const char *name)
   // set so that child process doesn't inherit our fd
   if (fcntl(sockfd, F_SETFD, 1) < 0) {
     RecLog(DL_Warning, "[RecPipeConnect] fcntl error\n");
+    close(sockfd);
     return REC_HANDLE_INVALID;
   }
   // blocking connect
   if ((connect(sockfd, (struct sockaddr *) &servaddr, servaddr_len)) < 0) {
     RecLog(DL_Warning, "[RecPipeConnect] connect error\n");
+    close(sockfd);
     return REC_HANDLE_INVALID;
   }
 

@@ -39,7 +39,6 @@
  *                 eg. start, start:hostdb, start:all
  * stop:    turns Proxy off
  * restart: restarts Traffic Manager (Traffic Cop must be running)
- * kill_TC: restarts Traffic Cop (and TM and TS too)
  *
  * File operations:
  * ---------------
@@ -127,10 +126,10 @@
 /* ------------------------------------------------------------------------
  * print_err
  * ------------------------------------------------------------------------
- * used to print the error description associated with the TSError err
+ * used to print the error description associated with the TSMgmtError err
  */
 void
-print_err(const char *module, TSError err)
+print_err(const char *module, TSMgmtError err)
 {
   char *err_msg;
 
@@ -377,6 +376,7 @@ print_cache_ele(TSCacheEle * ele)
 {
   if (!ele) {
     printf("can't print ele\n");
+    return;
   }
 
   char *pd_str, *time_str;
@@ -447,6 +447,7 @@ print_hosting_ele(TSHostingEle * ele)
 {
   if (!ele) {
     printf("can't print ele\n");
+    return;
   }
 
   switch (ele->pd_type) {
@@ -478,6 +479,7 @@ print_icp_ele(TSIcpEle * ele)
 {
   if (!ele) {
     printf("can't print ele\n");
+    return;
   }
 
   int peer_type;
@@ -509,6 +511,7 @@ print_ip_allow_ele(TSIpAllowEle * ele)
 {
   if (!ele) {
     printf("can't print ele\n");
+    return;
   }
 
   print_ip_addr_ele(ele->src_ip_addr);
@@ -519,6 +522,7 @@ print_parent_ele(TSParentProxyEle * ele)
 {
   if (!ele) {
     printf("can't print ele\n");
+    return;
   }
 
   printf("parent rule type: %d\n", ele->cfg_ele.type);
@@ -534,6 +538,7 @@ print_volume_ele(TSVolumeEle * ele)
 {
   if (!ele) {
     printf("can't print ele\n");
+    return;
   }
 
   printf("volume #: %d\n", ele->volume_num);
@@ -557,6 +562,7 @@ print_plugin_ele(TSPluginEle * ele)
 {
   if (!ele) {
     printf("can't print plugin ele\n");
+    return;
   }
 
   printf("name: %s\t\t", ele->name);
@@ -573,6 +579,7 @@ print_remap_ele(TSRemapEle * ele)
 {
   if (!ele) {
     printf("can't print ele\n");
+    return;
   }
 
   char buf[MAX_BUF_SIZE];
@@ -752,6 +759,7 @@ print_storage_ele(TSStorageEle * ele)
 {
   if (!ele) {
     printf("can't print ele\n");
+    return;
   }
 
   if (ele->pathname)
@@ -763,6 +771,7 @@ print_update_ele(TSUpdateEle * ele)
 {
   if (!ele) {
     printf("can't print ele\n");
+    return;
   }
 
   printf("url: %s\n", ele->url);
@@ -776,6 +785,7 @@ print_vaddrs_ele(TSVirtIpAddrEle * ele)
 {
   if (!ele) {
     printf("can't print ele\n");
+    return;
   }
 
   printf("ip=%s, intr=%s, sub_intr=%d\n", ele->ip_addr, ele->intr, ele->sub_intr);
@@ -879,10 +889,11 @@ print_proxy_state()
 void
 start_TS(char *tsArgs)
 {
-  TSError ret;
+  TSMgmtError ret;
   TSCacheClearT clear = TS_CACHE_CLEAR_OFF;
+  char *args;
 
-  char *args = strtok(tsArgs, ":");
+  strtok(tsArgs, ":");
   args = strtok(NULL, ":");
   if (args) {
     if (strcmp(args, "all\n") == 0)
@@ -903,7 +914,7 @@ start_TS(char *tsArgs)
 void
 stop_TS()
 {
-  TSError ret;
+  TSMgmtError ret;
 
   printf("STOPPING PROXY\n");
   if ((ret = TSProxyStateSet(TS_PROXY_OFF, TS_CACHE_CLEAR_OFF)) != TS_ERR_OKAY)
@@ -915,7 +926,7 @@ stop_TS()
 void
 restart()
 {
-  TSError ret;
+  TSMgmtError ret;
 
   printf("RESTART - Cluster wide\n");
   if ((ret = TSRestart(true)) != TS_ERR_OKAY)
@@ -928,7 +939,7 @@ restart()
 void
 reconfigure()
 {
-  TSError ret;
+  TSMgmtError ret;
 
   printf("RECONFIGURE\n");
   if ((ret = TSReconfigure()) != TS_ERR_OKAY)
@@ -936,20 +947,6 @@ reconfigure()
 
   print_err("reconfigure", ret);
 }
-
-// currently does nothing
-void
-hard_restart()
-{
-  TSError ret;
-
-  printf("[hard_restart]Restart Traffic Cop\n");
-  if ((ret = TSHardRestart()) != TS_ERR_OKAY)
-    printf("[TSHardRestart] FAILED\n");
-
-  print_err("hard_restart", ret);
-}
-
 
 /* ------------------------------------------------------------------------
  * test_action_need
@@ -977,7 +974,7 @@ test_action_need(void)
 void
 bounce()
 {
-  TSError ret;
+  TSMgmtError ret;
 
   printf("BOUNCER - Cluster wide\n");
   if ((ret = TSBounce(true)) != TS_ERR_OKAY)
@@ -1001,7 +998,7 @@ test_error_records()
 {
   TSInt port1, new_port = 8080;
   TSActionNeedT action;
-  TSError ret;
+  TSMgmtError ret;
   TSFloat flt1;
   TSCounter ctr1;
 
@@ -1050,7 +1047,7 @@ test_records()
   TSInt port1, port2, new_port = 52432;
   TSFloat flt1, flt2, new_flt = 1.444;
   TSCounter ctr1, ctr2, new_ctr = 6666;
-  TSError err;
+  TSMgmtError err;
 
   /********************* START TEST SECTION *****************/
   printf("\n\n");
@@ -1098,6 +1095,7 @@ test_records()
   else
     printf("[TSRecordGetString] proxy.config.proxy_name=%s\n", rec_value);
   TSfree(rec_value);
+  rec_value = NULL;
 
   // test RecordSet
   err = TSRecordSetString("proxy.config.proxy_name", (TSString) new_str, &action);
@@ -1197,7 +1195,7 @@ void
 test_rec_get(char *rec_name)
 {
   TSRecordEle *rec_ele;
-  TSError ret;
+  TSMgmtError ret;
   char *name;
 
   name = ats_strdup(rec_name);
@@ -1210,16 +1208,16 @@ test_rec_get(char *rec_name)
   else {
     switch (rec_ele->rec_type) {
     case TS_REC_INT:
-      printf("[TSRecordGet] %s=%" PRId64 "\n", name, rec_ele->int_val);
+      printf("[TSRecordGet] %s=%" PRId64 "\n", name, rec_ele->valueT.int_val);
       break;
     case TS_REC_COUNTER:
-      printf("[TSRecordGet] %s=%" PRId64 "\n", name, rec_ele->counter_val);
+      printf("[TSRecordGet] %s=%" PRId64 "\n", name, rec_ele->valueT.counter_val);
       break;
     case TS_REC_FLOAT:
-      printf("[TSRecordGet] %s=%f\n", name, rec_ele->float_val);
+      printf("[TSRecordGet] %s=%f\n", name, rec_ele->valueT.float_val);
       break;
     case TS_REC_STRING:
-      printf("[TSRecordGet] %s=%s\n", name, rec_ele->string_val);
+      printf("[TSRecordGet] %s=%s\n", name, rec_ele->valueT.string_val);
       break;
     default:
       // Handled here:
@@ -1248,7 +1246,7 @@ test_record_get_mlt(void)
   TSList rec_list;
   int i, num;
   char *v1, *v2, *v3, *v6, *v7, *v8;
-  TSError ret;
+  TSMgmtError ret;
 
   name_list = TSStringListCreate();
   rec_list = TSListCreate();
@@ -1299,16 +1297,16 @@ test_record_get_mlt(void)
     printf("Record: %s = ", rec_ele->rec_name);
     switch (rec_ele->rec_type) {
     case TS_REC_INT:
-      printf("%" PRId64 "\n", rec_ele->int_val);
+      printf("%" PRId64 "\n", rec_ele->valueT.int_val);
       break;
     case TS_REC_COUNTER:
-      printf("%" PRId64 "\n", rec_ele->counter_val);
+      printf("%" PRId64 "\n", rec_ele->valueT.counter_val);
       break;
     case TS_REC_FLOAT:
-      printf("%f\n", rec_ele->float_val);
+      printf("%f\n", rec_ele->valueT.float_val);
       break;
     case TS_REC_STRING:
-      printf("%s\n", rec_ele->string_val);
+      printf("%s\n", rec_ele->valueT.string_val);
       break;
     default:
       // Handled here:
@@ -1335,34 +1333,34 @@ test_record_set_mlt(void)
   TSList list;
   TSRecordEle *ele1, *ele2, *ele3, *ele4, *ele5;
   TSActionNeedT action = TS_ACTION_UNDEFINED;
-  TSError err;
+  TSMgmtError err;
 
   list = TSListCreate();
 
   ele1 = TSRecordEleCreate();  // TS_TYPE_UNDEFINED action
   ele1->rec_name = TSstrdup("proxy.config.cli_binary");
   ele1->rec_type = TS_REC_STRING;
-  ele1->string_val = TSstrdup(ele1->rec_name);
+  ele1->valueT.string_val = TSstrdup(ele1->rec_name);
 
   ele2 = TSRecordEleCreate();  // reread action
   ele2->rec_name = TSstrdup("proxy.config.http.cache.fuzz.probability");
   ele2->rec_type = TS_REC_FLOAT;
-  ele2->float_val = 0.1234;
+  ele2->valueT.float_val = 0.1234;
 
   ele3 = TSRecordEleCreate();  // undefined action
   ele3->rec_name = TSstrdup("proxy.config.cop.core_signal");
   ele3->rec_type = TS_REC_INT;
-  ele3->int_val = -4;
+  ele3->valueT.int_val = -4;
 
   ele4 = TSRecordEleCreate();  //restart TM
   ele4->rec_name = (char *) TSstrdup("proxy.local.cluster.type");
   ele4->rec_type = TS_REC_INT;
-  ele4->int_val = 2;
+  ele4->valueT.int_val = 2;
 
   ele5 = TSRecordEleCreate();  // reread action
   ele5->rec_name = (char *) TSstrdup("proxy.config.cluster.mc_ttl");
   ele5->rec_type = TS_REC_INT;
-  ele5->int_val = 555;
+  ele5->valueT.int_val = 555;
 
 
   TSListEnqueue(list, ele4);
@@ -1397,7 +1395,7 @@ test_read_url(bool valid)
   int headerSize;
   char *body = NULL;
   int bodySize;
-  TSError err;
+  TSMgmtError err;
 
   if (!valid) {
     // first try
@@ -1528,8 +1526,9 @@ test_cfg_context_get(char *args)
 {
   TSCfgContext ctx;
   TSFileNameT file;
+  char *filename;
 
-  char *filename = strtok(args, ":");
+  strtok(args, ":");
   filename = strtok(NULL, ":");
   fprintf(stderr, "modify file: %s\n", filename);
   char *name = TSstrdup(filename);
@@ -1597,9 +1596,10 @@ test_cfg_context_move(char *args)
   TSCfgContext ctx;
   TSFileNameT file;
   int i;
-  TSError err;
+  TSMgmtError err;
+  char *filename;
 
-  char *filename = strtok(args, ":");
+  strtok(args, ":");
   filename = strtok(NULL, ":");
   fprintf(stderr, "modify file: %s\n", filename);
   char *name =TSstrdup(filename);
@@ -1681,7 +1681,7 @@ test_cfg_context_ops()
   // Not used here.
   //TSCfgIterState iter_state;
   //TSCfgEle *cfg_ele;
-  TSError err;
+  TSMgmtError err;
   TSCfgContext ctx;
   TSVirtIpAddrEle *ele;
   int rm_index = 0, i;
@@ -1934,7 +1934,7 @@ void
 print_active_events()
 {
   TSList events;
-  TSError ret;
+  TSMgmtError ret;
   int count, i;
   char *name;
 
@@ -1969,7 +1969,7 @@ bool
 check_active(char *event_name)
 {
   bool active;
-  TSError ret;
+  TSMgmtError ret;
 
   ret = TSEventIsActive(event_name, &active);
   print_err("TSEventIsActive", ret);
@@ -1996,7 +1996,7 @@ check_active(char *event_name)
 void
 try_resolve(char *event_name)
 {
-  TSError ret;
+  TSMgmtError ret;
   char *name;
 
   name = TSstrdup(event_name);
@@ -2033,7 +2033,7 @@ eventCallbackFn(char *name, char *msg, int /* pri ATS_UNUSED */, void * /* data 
 void
 register_event_callback(void)
 {
-  TSError err;
+  TSMgmtError err;
 
   printf("\n[register_event_callback] \n");
   err = TSEventSignalCbRegister(NULL, eventCallbackFn, NULL);
@@ -2050,7 +2050,7 @@ register_event_callback(void)
 void
 unregister_event_callback(void)
 {
-  TSError err;
+  TSMgmtError err;
 
   printf("\n[unregister_event_callback]\n");
   err = TSEventSignalCbUnregister(NULL, eventCallbackFn);
@@ -2065,7 +2065,7 @@ void
 print_snapshots()
 {
   TSStringList list;
-  TSError err;
+  TSMgmtError err;
   char *name;
 
   list = TSStringListCreate();
@@ -2090,12 +2090,14 @@ print_snapshots()
 void
 add_snapshot(char *args)
 {
-  char *snap_name = strtok(args, ":");
+  char *snap_name;
+
+  strtok(args, ":");
   snap_name = strtok(NULL, ":");
   fprintf(stderr, "add snapshot: %s\n", snap_name);
   char *name = TSstrdup(snap_name);
 
-  TSError err = TSSnapshotTake(name);
+  TSMgmtError err = TSSnapshotTake(name);
   print_err("TSSnapshotTake", err);
 
   TSfree(name);
@@ -2104,12 +2106,14 @@ add_snapshot(char *args)
 void
 remove_snapshot(char *args)
 {
-  char *snap_name = strtok(args, ":");
+  char *snap_name;
+
+  strtok(args, ":");
   snap_name = strtok(NULL, ":");
   fprintf(stderr, "remove snapshot: %s\n", snap_name);
   char *name = TSstrdup(snap_name);
 
-  TSError err = TSSnapshotRemove(name);
+  TSMgmtError err = TSSnapshotRemove(name);
   print_err("TSSnapshotRemove", err);
 
   TSfree(name);
@@ -2118,12 +2122,14 @@ remove_snapshot(char *args)
 void
 restore_snapshot(char *args)
 {
-  char *snap_name = strtok(args, ":");
+  char *snap_name;
+
+  strtok(args, ":");
   snap_name = strtok(NULL, ":");
   fprintf(stderr, "resotre snapshot: %s\n", snap_name);
   char *name = TSstrdup(snap_name);
 
-  TSError err = TSSnapshotRestore(name);
+  TSMgmtError err = TSSnapshotRestore(name);
   print_err("TSSnapshotRestore", err);
 
   TSfree(name);
@@ -2292,7 +2298,7 @@ print_stats()
 void
 reset_stats()
 {
-  TSError err = TSStatsReset(false);
+  TSMgmtError err = TSStatsReset(false, NULL);
   print_err("TSStatsReset", err);
   return;
 }
@@ -2315,7 +2321,7 @@ sync_test()
   else
     printf("[TSRecordSet] proxy.config.http.cache.fuzz.probability=-0.3333\n");
 
-  TSError ret;
+  TSMgmtError ret;
   if ((ret = TSProxyStateSet(TS_PROXY_OFF, TS_CACHE_CLEAR_OFF)) != TS_ERR_OKAY)
     printf("[TSProxyStateSet] turn off FAILED\n");
   print_err("stop_TS", ret);
@@ -2369,8 +2375,6 @@ runInteractive()
       restart();
     } else if (strstr(buf, "reconfig")) {
       reconfigure();
-    } else if (strstr(buf, "kill_TC")) {
-      hard_restart();
     } else if (strstr(buf, "records")) {
       test_records();
     } else if (strstr(buf, "err_recs")) {
@@ -2444,7 +2448,7 @@ runInteractive()
 int
 main(int /* argc ATS_UNUSED */, char ** /* argv ATS_UNUSED */)
 {
-  TSError ret;
+  TSMgmtError ret;
 
   if ((ret = TSInit(NULL, TS_MGMT_OPT_DEFAULTS)) == TS_ERR_OKAY) {
     runInteractive();

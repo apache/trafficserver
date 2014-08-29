@@ -56,6 +56,30 @@ make_ssl_connection(SSL_CTX * ctx, SSLNetVConnection * netvc)
   return ssl;
 }
 
+static void
+debug_certificate_name(const char * msg, X509_NAME * name)
+{
+  BIO * bio;
+
+  if (name == NULL) {
+    return;
+  }
+
+  bio = BIO_new(BIO_s_mem());
+  if (bio == NULL) {
+    return;
+  }
+
+  if (X509_NAME_print_ex(bio, name, 0 /* indent */, XN_FLAG_ONELINE) > 0) {
+    long len;
+    char * ptr;
+    len = BIO_get_mem_data(bio, &ptr);
+    Debug("ssl", "%s %.*s", msg, (int)len, ptr);
+  }
+
+  BIO_free(bio);
+}
+
 static inline int
 do_SSL_write(SSL * ssl, void *buf, int size)
 {
@@ -75,10 +99,9 @@ do_SSL_write(SSL * ssl, void *buf, int size)
 
 
 static int
-ssl_read_from_net(UnixNetVConnection * vc, EThread * lthread, int64_t &ret)
+ssl_read_from_net(SSLNetVConnection * sslvc, EThread * lthread, int64_t &ret)
 {
-  NetState *s = &vc->read;
-  SSLNetVConnection *sslvc = (SSLNetVConnection *) vc;
+  NetState *s = &sslvc->read;
   MIOBufferAccessor & buf = s->vio.buffer;
   IOBufferBlock *b = buf.writer()->first_write_block();
   int event = SSL_READ_ERROR_NONE;
@@ -117,22 +140,26 @@ ssl_read_from_net(UnixNetVConnection * vc, EThread * lthread, int64_t &ret)
 
       case SSL_ERROR_WANT_WRITE:
         event = SSL_WRITE_WOULD_BLOCK;
-        Debug("ssl", "[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_WOULD_BLOCK(write)");
+        SSL_INCREMENT_DYN_STAT(ssl_error_want_write);
+        Debug("ssl.error", "[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_WOULD_BLOCK(write)");
         break;
       case SSL_ERROR_WANT_READ:
         event = SSL_READ_WOULD_BLOCK;
-        Debug("ssl", "[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_WOULD_BLOCK(read)");
+        SSL_INCREMENT_DYN_STAT(ssl_error_want_read);
+        Debug("ssl.error", "[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_WOULD_BLOCK(read)");
         break;
       case SSL_ERROR_WANT_X509_LOOKUP:
         event = SSL_READ_WOULD_BLOCK;
-        Debug("ssl", "[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_WOULD_BLOCK(read/x509 lookup)");
+        SSL_INCREMENT_DYN_STAT(ssl_error_want_x509_lookup);
+        Debug("ssl.error", "[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_WOULD_BLOCK(read/x509 lookup)");
         break;
       case SSL_ERROR_SYSCALL:
+        SSL_INCREMENT_DYN_STAT(ssl_error_syscall);
         if (rres != 0) {
           // not EOF
           event = SSL_READ_ERROR;
           ret = errno;
-          SSLError("[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_SYSCALL, underlying IO error: %s", strerror(errno));
+          Debug("ssl.error", "[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_SYSCALL, underlying IO error: %s", strerror(errno));
         } else {
           // then EOF observed, treat it as EOS
           event = SSL_READ_EOS;
@@ -141,13 +168,15 @@ ssl_read_from_net(UnixNetVConnection * vc, EThread * lthread, int64_t &ret)
         break;
       case SSL_ERROR_ZERO_RETURN:
         event = SSL_READ_EOS;
-        Debug("ssl", "[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_ZERO_RETURN");
+        SSL_INCREMENT_DYN_STAT(ssl_error_zero_return);
+        Debug("ssl.error", "[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_ZERO_RETURN");
         break;
       case SSL_ERROR_SSL:
       default:
         event = SSL_READ_ERROR;
         ret = errno;
-        SSLError("[SSL_NetVConnection::ssl_read_from_net]");
+        SSL_INCREMENT_DYN_STAT(ssl_error_ssl);
+        Debug("ssl.error", "[SSL_NetVConnection::ssl_read_from_net]");
         break;
       }                         // switch
       break;
@@ -158,7 +187,7 @@ ssl_read_from_net(UnixNetVConnection * vc, EThread * lthread, int64_t &ret)
     Debug("ssl", "[SSL_NetVConnection::ssl_read_from_net] bytes_read=%" PRId64, bytes_read);
     buf.writer()->fill(bytes_read);
     s->vio.ndone += bytes_read;
-    vc->netActivity(lthread);
+    sslvc->netActivity(lthread);
 
     ret = bytes_read;
 
@@ -190,6 +219,13 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
   NetState *s = &this->read;
   MIOBufferAccessor &buf = s->vio.buffer;
   int64_t ntodo = s->vio.ntodo();
+
+  if (sslClientRenegotiationAbort == true) {
+    this->read.triggered = 0;
+    readSignalError(nh, (int)r);
+    Debug("ssl", "[SSLNetVConnection::net_read_io] client renegotiation setting read signal error");
+    return;
+  }
 
   MUTEX_TRY_LOCK_FOR(lock, s->vio.mutex, lthread, s->vio._cont);
   if (!lock) {
@@ -244,16 +280,14 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
     return;
   }
 
-  // If there is nothing to do, disable connection
-  if (ntodo <= 0) {
+  // If there is nothing to do or no space available, disable connection
+  if (ntodo <= 0 || !buf.writer()->write_avail()) {
     read_disable(nh, this);
     return;
   }
 
+  // not sure if this do-while loop is really needed here, please replace this comment if you know
   do {
-    if (!buf.writer()->write_avail()) {
-      buf.writer()->add_block();
-    }
     ret = ssl_read_from_net(this, lthread, r);
     if (ret == SSL_READ_READY || ret == SSL_READ_ERROR_NONE) {
       bytes += r;
@@ -404,28 +438,37 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, i
     case SSL_ERROR_WANT_READ:
       needs |= EVENTIO_READ;
       r = -EAGAIN;
-      Debug("ssl", "SSL_write-SSL_ERROR_WANT_READ");
+      SSL_INCREMENT_DYN_STAT(ssl_error_want_read);
+      Debug("ssl.error", "SSL_write-SSL_ERROR_WANT_READ");
       break;
     case SSL_ERROR_WANT_WRITE:
-    case SSL_ERROR_WANT_X509_LOOKUP:
+    case SSL_ERROR_WANT_X509_LOOKUP: {
+      if (SSL_ERROR_WANT_WRITE == err)
+        SSL_INCREMENT_DYN_STAT(ssl_error_want_write);
+      else if (SSL_ERROR_WANT_X509_LOOKUP == err)
+        SSL_INCREMENT_DYN_STAT(ssl_error_want_x509_lookup);
+
       needs |= EVENTIO_WRITE;
       r = -EAGAIN;
-      Debug("ssl", "SSL_write-SSL_ERROR_WANT_WRITE");
+      Debug("ssl.error", "SSL_write-SSL_ERROR_WANT_WRITE");
       break;
+    }
     case SSL_ERROR_SYSCALL:
       r = -errno;
-      Debug("ssl", "SSL_write-SSL_ERROR_SYSCALL");
+      SSL_INCREMENT_DYN_STAT(ssl_error_syscall);
+      Debug("ssl.error", "SSL_write-SSL_ERROR_SYSCALL");
       break;
       // end of stream
     case SSL_ERROR_ZERO_RETURN:
       r = -errno;
-      Debug("ssl", "SSL_write-SSL_ERROR_ZERO_RETURN");
+      SSL_INCREMENT_DYN_STAT(ssl_error_zero_return);
+      Debug("ssl.error", "SSL_write-SSL_ERROR_ZERO_RETURN");
       break;
     case SSL_ERROR_SSL:
     default:
       r = -errno;
-      Debug("ssl", "SSL_write-SSL_ERROR_SSL");
-      SSLError("SSL_write");
+      SSL_INCREMENT_DYN_STAT(ssl_error_ssl);
+      Debug("ssl.error", "SSL_write-SSL_ERROR_SSL");
       break;
     }
     return (r);
@@ -435,10 +478,12 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, i
 SSLNetVConnection::SSLNetVConnection():
   sslHandShakeComplete(false),
   sslClientConnection(false),
+  sslClientRenegotiationAbort(false),
   npnSet(NULL),
   npnEndpoint(NULL)
 {
   ssl = NULL;
+  sslHandshakeBeginTime = 0;
 }
 
 void
@@ -465,6 +510,7 @@ SSLNetVConnection::free(EThread * t) {
   }
   sslHandShakeComplete = false;
   sslClientConnection = false;
+  sslClientRenegotiationAbort = false;
   npnSet = NULL;
   npnEndpoint= NULL;
 
@@ -478,7 +524,9 @@ SSLNetVConnection::free(EThread * t) {
 int
 SSLNetVConnection::sslStartHandShake(int event, int &err)
 {
-  if (event == SSL_EVENT_SERVER) {
+
+  switch (event) {
+  case SSL_EVENT_SERVER:
     if (this->ssl == NULL) {
       SSLCertificateConfig::scoped_config lookup;
 
@@ -486,21 +534,30 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
       // to negotiate a SSL session, but it's enough to trampoline us into the SNI callback where we
       // can select the right server certificate.
       this->ssl = make_ssl_connection(lookup->defaultContext(), this);
-      if (this->ssl == NULL) {
-        Debug("ssl", "SSLNetVConnection::sslServerHandShakeEvent, ssl create failed");
-        SSLError("SSL_StartHandShake");
-        return EVENT_ERROR;
-      }
+    }
+
+    if (this->ssl == NULL) {
+      SSLErrorVC(this, "failed to create SSL server session");
+      return EVENT_ERROR;
     }
 
     return sslServerHandShakeEvent(err);
-  } else {
-    ink_assert(event == SSL_EVENT_CLIENT);
+
+  case SSL_EVENT_CLIENT:
     if (this->ssl == NULL) {
       this->ssl = make_ssl_connection(ssl_NetProcessor.client_ctx, this);
     }
-    ink_assert(event == SSL_EVENT_CLIENT);
-    return (sslClientHandShakeEvent(err));
+
+    if (this->ssl == NULL) {
+      SSLErrorVC(this, "failed to create SSL client session");
+      return EVENT_ERROR;
+    }
+
+    return sslClientHandShakeEvent(err);
+
+  default:
+    ink_assert(0);
+    return EVENT_ERROR;
   }
 
 }
@@ -508,53 +565,73 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
 int
 SSLNetVConnection::sslServerHandShakeEvent(int &err)
 {
-  int ret;
-  int ssl_error;
+  int ret = SSL_accept(ssl);
+  int ssl_error = SSL_get_error(ssl, ret);
 
-  ret = SSL_accept(ssl);
-
-  ssl_error = SSL_get_error(ssl, ret);
   if (ssl_error != SSL_ERROR_NONE) {
     err = errno;
-    SSLDebug("SSL handshake error: %s (%d), errno=%d", SSLErrorName(ssl_error), ssl_error, err);
+    SSLDebugVC(this,"SSL handshake error: %s (%d), errno=%d", SSLErrorName(ssl_error), ssl_error, err);
   }
 
   switch (ssl_error) {
   case SSL_ERROR_NONE:
-    Debug("ssl", "handshake completed successfully");
-    client_cert = SSL_get_peer_certificate(ssl);
-    if (client_cert != NULL) {
-/*	str = X509_NAME_oneline (X509_get_subject_name (client_cert), 0, 0);
-		Free (str);
+    if (is_debug_tag_set("ssl")) {
+      X509 * cert = SSL_get_peer_certificate(ssl);
 
-		str = X509_NAME_oneline (X509_get_issuer_name  (client_cert), 0, 0);
-		Free (str);
-
-		// Add any extra client cert verification stuff here.  SSL
-		// is set up in SSLNetProcessor::start to automatically verify
-		// the client cert's CA, if required.
-*/
-      X509_free(client_cert);
+      Debug("ssl", "SSL server handshake completed successfully");
+      if (cert) {
+        debug_certificate_name("client certificate subject CN is", X509_get_subject_name(cert));
+        debug_certificate_name("client certificate issuer CN is", X509_get_issuer_name(cert));
+        X509_free(cert);
+      }
     }
-    sslHandShakeComplete = 1;
 
-#if TS_USE_TLS_NPN
+    sslHandShakeComplete = true;
+
+    if (sslHandshakeBeginTime) {
+      const ink_hrtime ssl_handshake_time = ink_get_hrtime() - sslHandshakeBeginTime;
+      Debug("ssl", "ssl handshake time:%" PRId64, ssl_handshake_time);
+      sslHandshakeBeginTime = 0;
+      SSL_INCREMENT_DYN_STAT_EX(ssl_total_handshake_time_stat, ssl_handshake_time);
+      SSL_INCREMENT_DYN_STAT(ssl_total_success_handshake_count_stat);
+    }
+
     {
       const unsigned char * proto = NULL;
       unsigned len = 0;
 
-      SSL_get0_next_proto_negotiated(ssl, &proto, &len);
+      // If it's possible to negotiate both NPN and ALPN, then ALPN
+      // is preferred since it is the server's preference.  The server
+      // preference would not be meaningful if we let the client
+      // preference have priority.
+
+#if TS_USE_TLS_ALPN
+      SSL_get0_alpn_selected(ssl, &proto, &len);
+#endif /* TS_USE_TLS_ALPN */
+
+#if TS_USE_TLS_NPN
+      if (len == 0) {
+        SSL_get0_next_proto_negotiated(ssl, &proto, &len);
+      }
+#endif /* TS_USE_TLS_NPN */
+
       if (len) {
-        if (this->npnSet) {
-          this->npnEndpoint = this->npnSet->findEndpoint(proto, len);
-          this->npnSet = NULL;
+        // If there's no NPN set, we should not have done this negotiation.
+        ink_assert(this->npnSet != NULL);
+
+        this->npnEndpoint = this->npnSet->findEndpoint(proto, len);
+        this->npnSet = NULL;
+
+        if (this->npnEndpoint == NULL) {
+          Error("failed to find registered SSL endpoint for '%.*s'", (int)len, (const char *)proto);
+          return EVENT_ERROR;
         }
-        Debug("ssl", "client selected next protocol %.*s", len, proto);
+
+        Debug("ssl", "client selected next protocol '%.*s'", len, proto);
       } else {
         Debug("ssl", "client did not select a next protocol");
       }
     }
-#endif /* TS_USE_TLS_NPN */
 
     return EVENT_DONE;
 
@@ -586,36 +663,50 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
 {
   int ret;
 
+#if TS_USE_TLS_SNI
+  if (options.sni_servername) {
+    if (SSL_set_tlsext_host_name(ssl, options.sni_servername)) {
+      Debug("ssl", "using SNI name '%s' for client handshake", options.sni_servername);
+    } else {
+      Debug("ssl.error","failed to set SNI name '%s' for client handshake", options.sni_servername);
+      SSL_INCREMENT_DYN_STAT(ssl_sni_name_set_failure);
+    }
+  }
+#endif
+
   ret = SSL_connect(ssl);
   switch (SSL_get_error(ssl, ret)) {
   case SSL_ERROR_NONE:
-    Debug("ssl", "SSLNetVConnection::sslClientHandShakeEvent, handshake completed successfully");
-    server_cert = SSL_get_peer_certificate(ssl);
+    if (is_debug_tag_set("ssl")) {
+      X509 * cert = SSL_get_peer_certificate(ssl);
 
-/*	  str = X509_NAME_oneline (X509_get_subject_name (server_cert),0,0);
-	  Free (str);
+      Debug("ssl", "SSL client handshake completed successfully");
+      // if the handshake is complete and write is enabled reschedule the write
+      if (closed == 0 && write.enabled)
+        writeReschedule(nh);
+      if (cert) {
+        debug_certificate_name("server certificate subject CN is", X509_get_subject_name(cert));
+        debug_certificate_name("server certificate issuer CN is", X509_get_issuer_name(cert));
+        X509_free(cert);
+      }
+    }
 
-	  str = X509_NAME_oneline (X509_get_issuer_name  (server_cert),0,0);
-	  Free (str);
-*/
-
-/*	 Add certificate verification stuff here before
-     deallocating the certificate.
-*/
-
-    X509_free(server_cert);
-    sslHandShakeComplete = 1;
-
+    sslHandShakeComplete = true;
     return EVENT_DONE;
 
   case SSL_ERROR_WANT_WRITE:
+    Debug("ssl.error", "SSLNetVConnection::sslClientHandShakeEvent, SSL_ERROR_WANT_WRITE");
+    SSL_INCREMENT_DYN_STAT(ssl_error_want_write);
     return SSL_HANDSHAKE_WANT_WRITE;
 
   case SSL_ERROR_WANT_READ:
+    SSL_INCREMENT_DYN_STAT(ssl_error_want_read);
+    Debug("ssl.error", "SSLNetVConnection::sslClientHandShakeEvent, SSL_ERROR_WANT_READ");
     return SSL_HANDSHAKE_WANT_READ;
 
   case SSL_ERROR_WANT_X509_LOOKUP:
-    Debug("ssl", "SSLNetVConnection::sslClientHandShakeEvent, would block on read or write");
+    SSL_INCREMENT_DYN_STAT(ssl_error_want_x509_lookup);
+    Debug("ssl.error", "SSLNetVConnection::sslClientHandShakeEvent, SSL_ERROR_WANT_X509_LOOKUP");
     break;
 
   case SSL_ERROR_WANT_ACCEPT:
@@ -625,12 +716,14 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
     break;
 
   case SSL_ERROR_ZERO_RETURN:
-    Debug("ssl", "SSLNetVConnection::sslClientHandShakeEvent, EOS");
+    SSL_INCREMENT_DYN_STAT(ssl_error_zero_return);
+    Debug("ssl.error", "SSLNetVConnection::sslClientHandShakeEvent, EOS");
     return EVENT_ERROR;
 
   case SSL_ERROR_SYSCALL:
     err = errno;
-    Debug("ssl", "SSLNetVConnection::sslClientHandShakeEvent, syscall");
+    SSL_INCREMENT_DYN_STAT(ssl_error_syscall);
+    Debug("ssl.error", "SSLNetVConnection::sslClientHandShakeEvent, syscall");
     return EVENT_ERROR;
     break;
 
@@ -638,7 +731,8 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
   case SSL_ERROR_SSL:
   default:
     err = errno;
-    SSLError("sslClientHandShakeEvent");
+    SSL_INCREMENT_DYN_STAT(ssl_error_ssl);
+    Debug("ssl.error", "SSLNetVConnection::sslClientHandShakeEvent, SSL_ERROR_SSL");
     return EVENT_ERROR;
     break;
 
@@ -654,6 +748,9 @@ SSLNetVConnection::registerNextProtocolSet(const SSLNextProtocolSet * s)
   this->npnSet = s;
 }
 
+// NextProtocolNegotiation TLS extension callback. The NPN extension
+// allows the client to select a preferred protocol, so all we have
+// to do here is tell them what out protocol set is.
 int
 SSLNetVConnection::advertise_next_protocol(SSL *ssl, const unsigned char **out, unsigned int *outlen,
                                            void * /*arg ATS_UNUSED */)
@@ -667,5 +764,33 @@ SSLNetVConnection::advertise_next_protocol(SSL *ssl, const unsigned char **out, 
     return SSL_TLSEXT_ERR_OK;
   }
 
+  return SSL_TLSEXT_ERR_NOACK;
+}
+
+// ALPN TLS extension callback. Given the client's set of offered
+// protocols, we have to select a protocol to use for this session.
+int
+SSLNetVConnection::select_next_protocol(SSL * ssl, const unsigned char ** out, unsigned char * outlen, const unsigned char * in ATS_UNUSED, unsigned inlen ATS_UNUSED, void *)
+{
+  SSLNetVConnection * netvc = (SSLNetVConnection *)SSL_get_app_data(ssl);
+  const unsigned char * npn = NULL;
+  unsigned npnsz = 0;
+
+  ink_release_assert(netvc != NULL);
+
+  if (netvc->npnSet && netvc->npnSet->advertiseProtocols(&npn, &npnsz)) {
+    // SSL_select_next_proto chooses the first server-offered protocol that appears in the clients protocol set, ie. the
+    // server selects the protocol. This is a n^2 search, so it's preferable to keep the protocol set short.
+
+#if HAVE_SSL_SELECT_NEXT_PROTO
+    if (SSL_select_next_proto((unsigned char **)out, outlen, npn, npnsz, in, inlen) == OPENSSL_NPN_NEGOTIATED) {
+      Debug("ssl", "selected ALPN protocol %.*s", (int)(*outlen), *out);
+      return SSL_TLSEXT_ERR_OK;
+    }
+#endif /* HAVE_SSL_SELECT_NEXT_PROTO */
+  }
+
+  *out = NULL;
+  *outlen = 0;
   return SSL_TLSEXT_ERR_NOACK;
 }

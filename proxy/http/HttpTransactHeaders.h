@@ -32,7 +32,7 @@ class HttpTransactHeaders
 {
 public:
   static bool is_this_http_method_supported(int method);
-  static bool is_method_cacheable(int method);
+  static bool is_method_cacheable(const HttpConfigParams *http_config_param, const int method);
   static bool is_method_cache_lookupable(int method);
   static bool is_this_a_hop_by_hop_header(const char *field_name_wks);
   static bool is_this_method_supported(int the_scheme, int the_method);
@@ -62,7 +62,10 @@ public:
   static void generate_and_set_squid_codes(HTTPHdr * header, char *via_string,
                                           HttpTransact::SquidLogInfo * squid_codes);
 
-  static void handle_conditional_headers(HttpTransact::CacheLookupInfo * cache_info, HTTPHdr * header);
+  // Removing handle_conditional_headers.  Functionality appears to be elsewhere (issue_revalidate)
+  // and the only condition when it does anything causes an assert to go 
+  // off
+  // static void handle_conditional_headers(HttpTransact::CacheLookupInfo * cache_info, HTTPHdr * header);
   static void insert_warning_header(HttpConfigParams *http_config_param,
                                     HTTPHdr *header, HTTPWarningCode code,
                                     const char *warn_text = NULL, int warn_text_len = 0);
@@ -72,14 +75,16 @@ public:
   static void insert_server_header_in_response(const char *server_tag, int server_tag_size, HTTPHdr * header);
   static void insert_via_header_in_request(HttpTransact::State *s, HTTPHdr *header);
   static void insert_via_header_in_response(HttpTransact::State *s, HTTPHdr *header);
+  static void insert_hsts_header_in_response(HttpTransact::State *s, HTTPHdr *header);
 
   static bool is_request_proxy_authorized(HTTPHdr * incoming_hdr);
 
   static void insert_basic_realm_in_proxy_authenticate(const char *realm, HTTPHdr * header, bool bRevPrxy);
 
   static void remove_conditional_headers(HTTPHdr * outgoing);
+  static void remove_100_continue_headers(HttpTransact::State *s, HTTPHdr * outgoing);
   static void remove_host_name_from_url(HTTPHdr * outgoing_request);
-  static void add_global_user_agent_header_to_request(HttpConfigParams *http_config_param, HTTPHdr * header);
+  static void add_global_user_agent_header_to_request(OverridableHttpConfigParams *http_txn_conf, HTTPHdr * header);
   static void add_server_header_to_response(OverridableHttpConfigParams *http_txn_conf, HTTPHdr * header);
   static void remove_privacy_headers_from_request(HttpConfigParams *http_config_param,
                                                   OverridableHttpConfigParams *http_txn_conf, HTTPHdr * header);

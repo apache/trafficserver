@@ -24,8 +24,25 @@
 #include <string.h>
 #include <stdio.h>
 #include "ink_code.h"
+#include "INK_MD5.h"
 #include "ink_assert.h"
+#include "INK_MD5.h"
 
+ats::CryptoHash const ats::CRYPTO_HASH_ZERO; // default constructed is correct.
+
+MD5Context::MD5Context() {
+  MD5_Init(&_ctx);
+}
+
+bool
+MD5Context::update(void const* data, int length) {
+  return 0 != MD5_Update(&_ctx, data, length);
+}
+
+bool
+MD5Context::finalize(CryptoHash& hash) {
+  return 0 != MD5_Final(hash.u8, &_ctx);
+}
 
 /**
   @brief Wrapper around MD5_Init
@@ -57,7 +74,7 @@ ink_code_incr_md5_final(char *sixteen_byte_hash_pointer, INK_DIGEST_CTX * contex
   @return always returns 0, maybe some error checking should be done
 */
 int
-ink_code_md5(unsigned char *input, int input_length, unsigned char *sixteen_byte_hash_pointer)
+ink_code_md5(unsigned char const* input, int input_length, unsigned char *sixteen_byte_hash_pointer)
 {
   MD5_CTX context;
 
@@ -109,7 +126,7 @@ ink_code_md5_stringify(char *dest33, const size_t destSize, const char *md5)
 */
 /* reentrant version */
 char *
-ink_code_md5_stringify_fast(char *dest33, const char *md5)
+ink_code_to_hex_str(char *dest33, uint8_t const* hash)
 {
   int i;
   char *d;
@@ -118,17 +135,17 @@ ink_code_md5_stringify_fast(char *dest33, const char *md5)
 
   d = dest33;
   for (i = 0; i < 16; i += 4) {
-    *(d + 0) = hex_digits[((unsigned char) md5[i + 0]) >> 4];
-    *(d + 1) = hex_digits[((unsigned char) md5[i + 0]) & 15];
-    *(d + 2) = hex_digits[((unsigned char) md5[i + 1]) >> 4];
-    *(d + 3) = hex_digits[((unsigned char) md5[i + 1]) & 15];
-    *(d + 4) = hex_digits[((unsigned char) md5[i + 2]) >> 4];
-    *(d + 5) = hex_digits[((unsigned char) md5[i + 2]) & 15];
-    *(d + 6) = hex_digits[((unsigned char) md5[i + 3]) >> 4];
-    *(d + 7) = hex_digits[((unsigned char) md5[i + 3]) & 15];
+    *(d + 0) = hex_digits[hash[i + 0] >> 4];
+    *(d + 1) = hex_digits[hash[i + 0] & 15];
+    *(d + 2) = hex_digits[hash[i + 1] >> 4];
+    *(d + 3) = hex_digits[hash[i + 1] & 15];
+    *(d + 4) = hex_digits[hash[i + 2] >> 4];
+    *(d + 5) = hex_digits[hash[i + 2] & 15];
+    *(d + 6) = hex_digits[hash[i + 3] >> 4];
+    *(d + 7) = hex_digits[hash[i + 3] & 15];
     d += 8;
   }
   *d = '\0';
   return (dest33);
-}                               /* End ink_code_stringify_md5_fast */
+}
 

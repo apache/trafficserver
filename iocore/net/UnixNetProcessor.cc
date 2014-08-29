@@ -84,16 +84,17 @@ NetProcessor::main_accept(Continuation *cont, SOCKET fd, AcceptOptions const& op
 Action *
 UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions const& opt)
 {
-  EventType et = opt.etype; // setEtype requires non-const ref.
-  NetAccept *na = createNetAccept();
+  EventType upgraded_etype = opt.etype; // setEtype requires non-const ref.
   EThread *thread = this_ethread();
   ProxyMutex *mutex = thread->mutex;
   int accept_threads = opt.accept_threads; // might be changed.
   IpEndpoint accept_ip; // local binding address.
   char thr_name[MAX_THREAD_NAME_LENGTH];
 
+  NetAccept *na = createNetAccept();
+
   // Potentially upgrade to SSL.
-  upgradeEtype(et);
+  upgradeEtype(upgraded_etype);
 
   // Fill in accept thread from configuration if necessary.
   if (opt.accept_threads < 0) {
@@ -128,7 +129,7 @@ UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions cons
   if (should_filter_int > 0 && opt.etype == ET_NET)
     na->server.http_accept_filter = true;
 
-  na->action_ = NEW(new NetAcceptAction());
+  na->action_ = new NetAcceptAction();
   *na->action_ = cont;
   na->action_->server = &na->server;
   na->callback_on_open = opt.f_callback_on_open;
@@ -137,22 +138,22 @@ UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions cons
   na->sockopt_flags = opt.sockopt_flags;
   na->packet_mark = opt.packet_mark;
   na->packet_tos = opt.packet_tos;
-  na->etype = opt.etype;
+  na->etype = upgraded_etype;
   na->backdoor = opt.backdoor;
   if (na->callback_on_open)
     na->mutex = cont->mutex;
   if (opt.frequent_accept) { // true
     if (accept_threads > 0)  {
       if (0 == na->do_listen(BLOCKING, opt.f_inbound_transparent)) {
-        NetAccept *a;
 
         for (int i=1; i < accept_threads; ++i) {
-          a = createNetAccept();
-          *a = *na;
+          NetAccept * a = na->clone();
+
           snprintf(thr_name, MAX_THREAD_NAME_LENGTH, "[ACCEPT %d:%d]", i-1, ats_ip_port_host_order(&accept_ip));
           a->init_accept_loop(thr_name);
           Debug("iocore_net_accept", "Created accept thread #%d for port %d", i, ats_ip_port_host_order(&accept_ip));
         }
+
         // Start the "template" accept thread last.
         Debug("iocore_net_accept", "Created accept thread #%d for port %d", accept_threads, ats_ip_port_host_order(&accept_ip));
         snprintf(thr_name, MAX_THREAD_NAME_LENGTH, "[ACCEPT %d:%d]", accept_threads-1, ats_ip_port_host_order(&accept_ip));
@@ -161,8 +162,9 @@ UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions cons
     } else {
       na->init_accept_per_thread();
     }
-  } else
+  } else {
     na->init_accept();
+  }
 
 #ifdef TCP_DEFER_ACCEPT
   // set tcp defer accept timeout if it is configured, this will not trigger an accept until there is
@@ -192,7 +194,7 @@ UnixNetProcessor::connect_re_internal(
 ) {
   ProxyMutex *mutex = cont->mutex;
   EThread *t = mutex->thread_holding;
-  UnixNetVConnection *vc = allocateThread(t);
+  UnixNetVConnection *vc = (UnixNetVConnection *)this->allocate_vc(t);
 
   if (opt)
     vc->options = *opt;
@@ -248,7 +250,7 @@ UnixNetProcessor::connect_re_internal(
       MUTEX_TRY_LOCK(lock2, get_NetHandler(t)->mutex, t);
       if (lock2) {
         int ret;
-        ret = vc->connectUp(t);
+        ret = vc->connectUp(t, NO_FD);
         if ((using_socks) && (ret == CONNECT_SUCCESS))
           return &socksEntry->action_;
         else
@@ -379,7 +381,7 @@ NetProcessor::connect_s(Continuation * cont, sockaddr const* target,
                         int timeout, NetVCOptions * opt)
 {
   Debug("iocore_net_connect", "NetProcessor::connect_s called");
-  CheckConnect *c = NEW(new CheckConnect(cont->mutex));
+  CheckConnect *c = new CheckConnect(cont->mutex);
   return c->connect_s(cont, target, timeout, opt);
 }
 
@@ -414,7 +416,7 @@ UnixNetProcessor::start(int, size_t)
 
   // Socks
   if (!netProcessor.socks_conf_stuff) {
-    socks_conf_stuff = NEW(new socks_conf_struct);
+    socks_conf_stuff = new socks_conf_struct;
     loadSocksConfiguration(socks_conf_stuff);
     if (!socks_conf_stuff->socks_needed && socks_conf_stuff->accept_enabled) {
       Warning("We can not have accept_enabled and socks_needed turned off" " disabling Socks accept\n");
@@ -443,30 +445,28 @@ UnixNetProcessor::start(int, size_t)
   return 1;
 }
 
-// Functions all THREAD_FREE and THREAD_ALLOC to be performed
-// for both SSL and regular UnixNetVConnection transparent to
-// netProcessor connect functions. Yes it looks goofy to
-// have them in both places, but it saves a bunch of
-// code from being duplicated.
-UnixNetVConnection *
-UnixNetProcessor::allocateThread(EThread * t)
-{
-  return ((UnixNetVConnection *) THREAD_ALLOC(netVCAllocator, t));
-}
-
-void
-UnixNetProcessor::freeThread(UnixNetVConnection * vc, EThread * t)
-{
-  ink_assert(!vc->from_accept_thread);
-  THREAD_FREE(vc, netVCAllocator, t);
-}
-
 // Virtual function allows creation of an
 // SSLNetAccept or NetAccept transparent to NetProcessor.
 NetAccept *
 UnixNetProcessor::createNetAccept()
 {
-  return (NEW(new NetAccept));
+  return new NetAccept;
+}
+
+NetVConnection *
+UnixNetProcessor::allocate_vc(EThread *t)
+{
+  UnixNetVConnection *vc;
+
+  if (t) {
+    vc = THREAD_ALLOC(netVCAllocator, t);
+  } else {
+    if (likely(vc = netVCAllocator.alloc())) {
+      vc->from_accept_thread = true;
+    }
+  }
+
+  return vc;
 }
 
 struct socks_conf_struct *

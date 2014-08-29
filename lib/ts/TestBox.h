@@ -37,16 +37,21 @@ namespace {
     int* _status; ///< Current status pointer.
 
     /// Construct from @a test object and @a status pointer.
-  TestBox(RegressionTest* test, int* status) : _test(test), _status(status) {}
+    TestBox(RegressionTest* test, int* status) : _test(test), _status(status) {}
+
+    /// Construct from @a test object, @a status pointer and @a regression status.
+    TestBox(RegressionTest* test, int* status, int rstatus) : _test(test), _status(status) {
+      *this = rstatus;
+    }
+
     /// Check the result and print a message on failure.
-    bool check(bool result, char const* fmt, ...);
+    bool check(bool result, char const* fmt, ...) TS_PRINTFLIKE(3, 4);
 
     /// Directly assign status.
     self& operator = (int status) { *_status = status; return *this; }
   };
 
-  bool
-    TestBox::check(bool result, char const* fmt, ...) {
+  bool TestBox::check(bool result, char const* fmt, ...) {
     if (!result) {
       static size_t const N = 1<<16;
       char buffer[N]; // just stack, go big.

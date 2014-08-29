@@ -24,7 +24,6 @@
 #include "ink_platform.h"
 #include "ink_defs.h"
 #include "ink_assert.h"
-#include "ink_resource.h"
 #include "ink_error.h"
 #include "ink_file.h"
 #include "ink_string.h"
@@ -101,7 +100,7 @@ MultiFile::WalkFiles(ExpandingArray * fileList)
   DIR *dir;
   char *fileName;
   char *filePath;
-  char *records_config_filePath = NULL;
+  char *records_config_filePath;
   struct stat fileInfo;
   struct stat records_config_fileInfo;
   fileEntry *fileListEntry;
@@ -139,13 +138,13 @@ MultiFile::WalkFiles(ExpandingArray * fileList)
       }
     }
     delete[]filePath;
+    delete[]records_config_filePath;
   }
 
   ats_free(dirEntry);
   closedir(dir);
 
   fileList->sortWithFunction(fileEntryCmpFunc);
-  delete[]records_config_filePath;
   return MF_OK;
 }
 

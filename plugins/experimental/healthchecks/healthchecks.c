@@ -4,8 +4,6 @@ This is an origin server / intercept plugin, which implements flexible health ch
 
 @section license
 
-Copyright 2012 Go Daddy Operating Company, LLC
-
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -153,7 +151,7 @@ setup_watchers(int fd)
   char *dname;
 
   while (conf) {
-    conf->wd = inotify_add_watch(fd, conf->fname, IN_DELETE_SELF|IN_CLOSE_WRITE);
+    conf->wd = inotify_add_watch(fd, conf->fname, IN_DELETE_SELF|IN_CLOSE_WRITE|IN_ATTRIB);
     TSDebug(PLUGIN_NAME, "Setting up a watcher for %s", conf->fname);
     strncpy(fname, conf->fname, MAX_FILENAME_LEN - 1);
     dname = dirname(fname);
@@ -163,7 +161,7 @@ setup_watchers(int fd)
       dir = TSmalloc(sizeof(HCDirEntry));
       memset(dir, 0, sizeof(HCDirEntry));
       strncpy(dir->dname, dname, MAX_FILENAME_LEN - 1);
-      dir->wd = inotify_add_watch(fd, dname, IN_CREATE|IN_MOVED_FROM|IN_MOVED_TO);
+      dir->wd = inotify_add_watch(fd, dname, IN_CREATE|IN_MOVED_FROM|IN_MOVED_TO|IN_ATTRIB);
       if (!head_dir)
         head_dir = dir;
       else
@@ -193,7 +191,7 @@ hc_thread(void *data ATS_UNUSED)
   gettimeofday(&last_free, NULL);
 
   /* Setup watchers for the directories, these are a one time setup */
-  dirs = setup_watchers(fd);
+  setup_watchers(fd); // This is a leak, but since we enter an infinite loop this is ok?
 
   while (1) {
     HCFileData *fdata = fl_head, *fdata_prev = NULL;
@@ -242,7 +240,7 @@ hc_thread(void *data ATS_UNUSED)
           HCFileData *new_data = TSmalloc(sizeof(HCFileData));
           HCFileData *old_data;
 
-          if (event->mask & (IN_CLOSE_WRITE)) {
+          if (event->mask & (IN_CLOSE_WRITE|IN_ATTRIB)) {
             TSDebug(PLUGIN_NAME, "Modify file event (%d) on %s", event->mask, finfo->fname);
           } else if (event->mask & (IN_CREATE|IN_MOVED_TO)) {
             TSDebug(PLUGIN_NAME, "Create file event (%d) on %s", event->mask, finfo->fname);
@@ -319,11 +317,8 @@ parse_configs(const char* fname)
     int state = 0;
     char *ok=NULL, *miss=NULL, *mime=NULL;
 
-    /* Allocate a new config-info, if we don't have one already */
-    if (!finfo) {
-      finfo = TSmalloc(sizeof(HCFileInfo));
-      memset(finfo, 0, sizeof(HCFileInfo));
-    }
+    finfo = TSmalloc(sizeof(HCFileInfo));
+    memset(finfo, 0, sizeof(HCFileInfo));
 
     if (fgets(buf, sizeof(buf) - 1, fd)) {
       str = strtok_r(buf, SEPARATORS, &save);
@@ -374,7 +369,8 @@ parse_configs(const char* fname)
           prev_finfo->_next = finfo;
         }
         prev_finfo = finfo;
-        finfo = NULL; /* We used this one up, get a new one next iteration */
+      } else {
+        TSfree(finfo);
       }
     }
   }

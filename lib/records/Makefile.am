@@ -16,84 +16,57 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-DEFS += @ink_with_modules_def@
-
 AM_CPPFLAGS = \
   -I$(top_srcdir)/iocore/eventsystem \
   -I$(top_srcdir)/iocore/utils \
   -I$(top_srcdir)/mgmt \
-  -I$(top_srcdir)/mgmt/cluster \
-  -I$(top_srcdir)/mgmt/web2 \
   -I$(top_srcdir)/mgmt/api/include \
   -I$(top_srcdir)/mgmt/utils \
   -I$(top_srcdir)/lib \
+  -I$(top_builddir)/lib \
   -I$(top_srcdir)/lib/ts
 
-noinst_LIBRARIES = libreclocal.a librecprocess.a librec4cop.a
+noinst_LIBRARIES = librecords_lm.a librecords_p.a librecords_cop.a
 
-libreclocal_a_CXXFLAGS = $(ink_with_modules_local)
-libreclocal_a_SOURCES = \
+librecords_COMMON = \
   I_RecAlarms.h \
   I_RecCore.h \
   I_RecDefs.h \
   I_RecEvents.h \
+  I_RecHttp.h \
+  I_RecMutex.h \
+  I_RecSignals.h \
+  P_RecCore.cc \
+  P_RecCore.h \
+  P_RecDefs.h \
+  P_RecFile.h \
+  P_RecFile.h \
+  P_RecMessage.h \
+  P_RecTree.h \
+  P_RecUtils.h \
+  RecConfigParse.cc \
+  RecCore.cc \
+  RecDebug.cc \
+  RecFile.cc \
+  RecHttp.cc \
+  RecMessage.cc \
+  RecMutex.cc \
+  RecTree.cc \
+  RecUtils.cc
+
+librecords_lm_a_SOURCES = \
+  $(librecords_COMMON) \
   I_RecLocal.h \
-  I_RecMutex.h \
-  I_RecSignals.h \
-  P_RecFile.h \
-  P_RecCore.h \
-  P_RecCore.cc \
-  P_RecDefs.h \
   P_RecLocal.h \
-  P_RecMessage.h \
-  P_RecTree.h \
-  P_RecUtils.h \
-  P_RecFile.h \
-  RecFile.cc \
-  RecCore.cc \
-  RecLocal.cc \
-  RecMessage.cc \
-  RecMutex.cc \
-  RecTree.cc \
-  I_RecHttp.h \
-  RecHttp.cc \
-  RecUtils.cc \
-  RecDebug.cc \
-  RecConfigParse.cc
+  RecLocal.cc
 
-librecprocess_a_CXXFLAGS = $(ink_with_modules_process)
-librecprocess_a_SOURCES = \
-  I_RecAlarms.h \
-  I_RecCore.h \
-  I_RecDefs.h \
-  I_RecEvents.h \
-  I_RecMutex.h \
+librecords_p_a_SOURCES = \
+  $(librecords_COMMON) \
   I_RecProcess.h \
-  I_RecSignals.h \
-  P_RecFile.h \
-  P_RecCore.h \
-  P_RecCore.cc \
-  P_RecDefs.h \
-  P_RecMessage.h \
   P_RecProcess.h \
-  P_RecTree.h \
-  P_RecUtils.h \
-  P_RecFile.h \
-  RecFile.cc \
-  RecCore.cc \
-  RecMessage.cc \
-  RecMutex.cc \
-  RecProcess.cc \
-  RecTree.cc \
-  I_RecHttp.h \
-  RecHttp.cc \
-  RecUtils.cc \
-  RecDebug.cc \
-  RecConfigParse.cc
+  RecProcess.cc
 
-
-librec4cop_a_CXXFLAGS = $(ink_with_modules_process)
-librec4cop_a_SOURCES = \
+librecords_cop_a_SOURCES = \
   RecConfigParse.cc \
   RecFile.cc \
   RecDebug.cc

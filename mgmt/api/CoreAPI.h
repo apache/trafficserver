@@ -35,70 +35,62 @@
 #include "CfgContextDefs.h"
 #include "Tokenizer.h"
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif /* __cplusplus */
+TSMgmtError Init(const char *socket_path = NULL, TSInitOptionT options = TS_MGMT_OPT_DEFAULTS);
+TSMgmtError Terminate();
 
-TSError Init(const char *socket_path = NULL, TSInitOptionT options = TS_MGMT_OPT_DEFAULTS);
-TSError Terminate();
-
-void Diags(TSDiagsT mode, const char *fmt, va_list ap);
+void Diags(TSDiagsT mode, const char * fmt, va_list ap);
 
 /***************************************************************************
  * Control Operations
  ***************************************************************************/
 TSProxyStateT ProxyStateGet();
-TSError ProxyStateSet(TSProxyStateT state, TSCacheClearT clear);
+TSMgmtError ProxyStateSet(TSProxyStateT state, TSCacheClearT clear);
 
-TSError Reconfigure();         // TS reread config files
-TSError Restart(bool cluster); //restart TM
-TSError HardRestart();         //restart traffic_cop
-TSError Bounce(bool cluster);  //restart traffic_server
+TSMgmtError Reconfigure();         // TS reread config files
+TSMgmtError Restart(bool cluster); //restart TM
+TSMgmtError Bounce(bool cluster);  //restart traffic_server
+TSMgmtError StorageDeviceCmdOffline(const char * dev); // Storage device operation.
 
 /***************************************************************************
  * Record Operations
  ***************************************************************************/
 /* For remote implementation of this interface, these functions will have
    to marshal/unmarshal and send request across the network */
-TSError MgmtRecordGet(const char *rec_name, TSRecordEle * rec_ele);
+TSMgmtError MgmtRecordGet(const char * rec_name, TSRecordEle * rec_ele);
 
-TSError MgmtRecordSet(const char *rec_name, const char *val, TSActionNeedT * action_need);
-TSError MgmtRecordSetInt(const char *rec_name, MgmtInt int_val, TSActionNeedT * action_need);
-TSError MgmtRecordSetCounter(const char *rec_name, MgmtIntCounter counter_val, TSActionNeedT *action_need);
-TSError MgmtRecordSetFloat(const char *rec_name, MgmtFloat float_val, TSActionNeedT * action_need);
-TSError MgmtRecordSetString(const char *rec_name, const char*string_val, TSActionNeedT * action_need);
+TSMgmtError MgmtRecordSet(const char * rec_name, const char *val, TSActionNeedT * action_need);
+TSMgmtError MgmtRecordSetInt(const char * rec_name, MgmtInt int_val, TSActionNeedT * action_need);
+TSMgmtError MgmtRecordSetCounter(const char * rec_name, MgmtIntCounter counter_val, TSActionNeedT *action_need);
+TSMgmtError MgmtRecordSetFloat(const char * rec_name, MgmtFloat float_val, TSActionNeedT * action_need);
+TSMgmtError MgmtRecordSetString(const char * rec_name, const char * string_val, TSActionNeedT * action_need);
+TSMgmtError MgmtRecordGetMatching(const char * regex, TSList rec_vals);
 
 
 /***************************************************************************
  * File Operations
  ***************************************************************************/
-TSError ReadFile(TSFileNameT file, char **text, int *size, int *version);
-TSError WriteFile(TSFileNameT file, char *text, int size, int version);
+TSMgmtError ReadFile(TSFileNameT file, char ** text, int * size, int *version);
+TSMgmtError WriteFile(TSFileNameT file, const char * text, int size, int version);
 
 /***************************************************************************
  * Events
  ***************************************************************************/
 
-TSError EventSignal(char *event_name, va_list ap);
-TSError EventResolve(char *event_name);
-TSError ActiveEventGetMlt(LLQ * active_events);
-TSError EventIsActive(char *event_name, bool * is_current);
-TSError EventSignalCbRegister(char *event_name, TSEventSignalFunc func, void *data);
-TSError EventSignalCbUnregister(char *event_name, TSEventSignalFunc func);
+TSMgmtError EventSignal(const char * event_name, va_list ap);
+TSMgmtError EventResolve(const char * event_name);
+TSMgmtError ActiveEventGetMlt(LLQ * active_events);
+TSMgmtError EventIsActive(const char * event_name, bool * is_current);
+TSMgmtError EventSignalCbRegister(const char * event_name, TSEventSignalFunc func, void *data);
+TSMgmtError EventSignalCbUnregister(const char * event_name, TSEventSignalFunc func);
 
 /***************************************************************************
  * Snapshots
  ***************************************************************************/
-TSError SnapshotTake(char *snapshot_name);
-TSError SnapshotRestore(char *snapshot_name);
-TSError SnapshotRemove(char *snapshot_name);
-TSError SnapshotGetMlt(LLQ * snapshots);
+TSMgmtError SnapshotTake(const char * snapshot_name);
+TSMgmtError SnapshotRestore(const char * snapshot_name);
+TSMgmtError SnapshotRemove(const char * snapshot_name);
+TSMgmtError SnapshotGetMlt(LLQ * snapshots);
 
-TSError StatsReset(bool cluster, const char* name = NULL);
-
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
+TSMgmtError StatsReset(bool cluster, const char* name = NULL);
 
 #endif

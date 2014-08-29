@@ -28,6 +28,8 @@ To view statistics for your plugin, follow the steps below:
 
 2. In your ``<Traffic Server>/bin`` directory, enter the following:
 
-   ::::text ./traffic\_line -r the\_name
+   ::
+
+       ./traffic\_line -r the\_name
 
 

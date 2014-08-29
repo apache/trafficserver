@@ -42,18 +42,9 @@
 #include "WebOverview.h"
 
 #include "mgmtapi.h"
-//#include "I_AccCrypto.h"
-#include "LocalManager.h"
 #include "WebMgmtUtils.h"
 #include "MgmtUtils.h"
 #include "CfgContextUtils.h"
-
-// Ugly hack - define HEAP_H and STACK_H to prevent stuff from the
-// template library from being included which SUNPRO CC does not not
-// like.
-#define HEAP_H
-#define STACK_H
-
 
 //-------------------------------------------------------------------------
 // defines
@@ -353,7 +344,6 @@ write_response(WebHttpContext * whc)
   if (whc->request->getMethod() != METHOD_HEAD) {
     buf_p = whc->response_bdy->bufPtr();
     bytes_to_write = whc->response_bdy->spaceUsed();
-    bytes_written = 0;
     while (bytes_to_write) {
       bytes_written = socket_write(whc->si, buf_p, bytes_to_write);
       if (bytes_written < 0) {

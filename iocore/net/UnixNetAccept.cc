@@ -32,7 +32,7 @@ typedef int (NetAccept::*NetAcceptHandler) (int, void *);
 volatile int dummy_volatile = 0;
 int accept_till_done = 1;
 
-void
+static void
 safe_delay(int msec)
 {
   socketManager.poll(0, 0, msec);
@@ -43,7 +43,7 @@ safe_delay(int msec)
 // Send the throttling message to up to THROTTLE_AT_ONCE connections,
 // delaying to let some of the current connections complete
 //
-int
+static int
 send_throttle_message(NetAccept * na)
 {
   struct pollfd afd;
@@ -95,7 +95,7 @@ net_accept(NetAccept * na, void *ep, bool blockable)
   do {
     vc = (UnixNetVConnection *) na->alloc_cache;
     if (!vc) {
-      vc = na->allocateThread(e->ethread);
+      vc = (UnixNetVConnection *)na->getNetProcessor()->allocate_vc(e->ethread);
       NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, 1);
       vc->id = net_next_connection_number();
       na->alloc_cache = vc;
@@ -136,36 +136,6 @@ Ldone:
     MUTEX_UNTAKE_LOCK(na->action_->mutex, e->ethread);
   return count;
 }
-
-
-UnixNetVConnection *
-NetAccept::allocateThread(EThread * t)
-{
-  return ((UnixNetVConnection *)THREAD_ALLOC(netVCAllocator, t));
-}
-
-void
-NetAccept::freeThread(UnixNetVConnection * vc, EThread * t)
-{
-  ink_assert(!vc->from_accept_thread);
-  THREAD_FREE(vc, netVCAllocator, t);
-}
-
-// This allocates directly on the class allocator, used for accept threads.
-UnixNetVConnection *
-NetAccept::allocateGlobal()
-{
-  return (UnixNetVConnection *)netVCAllocator.alloc();
-}
-
-// Virtual function allows the correct
-// etype to be used in NetAccept functions (ET_SSL
-// or ET_NET).
-EventType NetAccept::getEtype()
-{
-  return etype;
-}
-
 
 //
 // Initialize the NetAccept for execution in its own thread.
@@ -223,10 +193,9 @@ NetAccept::init_accept_per_thread()
   NetAccept *a;
   n = eventProcessor.n_threads_for_type[ET_NET];
   for (i = 0; i < n; i++) {
-    if (i < n - 1) {
-      a = NEW(new NetAccept);
-      *a = *this;
-    } else
+    if (i < n - 1)
+      a = clone();
+    else
       a = this;
     EThread *t = eventProcessor.eventthread[ET_NET][i];
     PollDescriptor *pd = get_PollDescriptor(t);
@@ -236,7 +205,6 @@ NetAccept::init_accept_per_thread()
     t->schedule_every(a, period, etype);
   }
 }
-
 
 int
 NetAccept::do_listen(bool non_blocking, bool transparent)
@@ -264,25 +232,17 @@ NetAccept::do_listen(bool non_blocking, bool transparent)
   return res;
 }
 
-
 int
 NetAccept::do_blocking_accept(EThread * t)
 {
   int res = 0;
   int loop = accept_till_done;
   UnixNetVConnection *vc = NULL;
+  Connection con;
 
   //do-while for accepting all the connections
   //added by YTS Team, yamsat
   do {
-    vc = (UnixNetVConnection *)alloc_cache;
-    if (likely(!vc)) {
-      //vc = allocateThread(t);
-      vc = allocateGlobal(); // Bypass proxy / thread allocator
-      vc->from_accept_thread = true;
-      vc->id = net_next_connection_number();
-      alloc_cache = vc;
-    }
     ink_hrtime now = ink_get_hrtime();
 
     // Throttle accepts
@@ -297,7 +257,7 @@ NetAccept::do_blocking_accept(EThread * t)
       now = ink_get_hrtime();
     }
 
-    if ((res = server.accept(&vc->con)) < 0) {
+    if ((res = server.accept(&con)) < 0) {
     Lerror:
       int seriousness = accept_error_seriousness(res);
       if (seriousness >= 0) {   // not so bad
@@ -314,8 +274,31 @@ NetAccept::do_blocking_accept(EThread * t)
       }
       return -1;
     }
-    check_emergency_throttle(vc->con);
+
+#if TS_HAS_SO_MARK
+      if (packet_mark != 0) {
+        safe_setsockopt(con.fd, SOL_SOCKET, SO_MARK, reinterpret_cast<char *>(&packet_mark), sizeof(uint32_t));
+      }
+#endif
+
+#if TS_HAS_IP_TOS
+      if (packet_tos != 0) {
+        safe_setsockopt(con.fd, IPPROTO_IP, IP_TOS, reinterpret_cast<char *>(&packet_tos), sizeof(uint32_t));
+      }
+#endif
+
+    // Use 'NULL' to Bypass thread allocator
+    vc = (UnixNetVConnection *)this->getNetProcessor()->allocate_vc(NULL);
+    if (!vc) {
+      con.close();
+      return -1;
+    }
+    vc->con = con;
+    vc->from_accept_thread = true;
+    vc->id = net_next_connection_number();
     alloc_cache = NULL;
+
+    check_emergency_throttle(con);
 
     NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, 1);
     vc->submit_time = now;
@@ -383,6 +366,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
   (void) event;
   (void) e;
   int bufsz, res;
+  Connection con;
 
   PollDescriptor *pd = get_PollDescriptor(e->ethread);
   UnixNetVConnection *vc = NULL;
@@ -393,10 +377,10 @@ NetAccept::acceptFastEvent(int event, void *ep)
       ifd = -1;
       return EVENT_CONT;
     }
-    vc = allocateThread(e->ethread);
 
-    socklen_t sz = sizeof(vc->con.addr);
-    int fd = socketManager.accept(server.fd, &vc->con.addr.sa, &sz);
+    socklen_t sz = sizeof(con.addr);
+    int fd = socketManager.accept(server.fd, &con.addr.sa, &sz);
+    con.fd = fd;
 
     if (likely(fd >= 0)) {
       Debug("iocore_net", "accepted a new socket: %d", fd);
@@ -442,6 +426,15 @@ NetAccept::acceptFastEvent(int event, void *ep)
       do {
         res = safe_nonblocking(fd);
       } while (res < 0 && (errno == EAGAIN || errno == EINTR));
+
+      vc = (UnixNetVConnection *)this->getNetProcessor()->allocate_vc(e->ethread);
+      if (!vc) {
+        con.close();
+        goto Ldone;
+      }
+
+      vc->con = con;
+
     } else {
       res = fd;
     }
@@ -452,20 +445,15 @@ NetAccept::acceptFastEvent(int event, void *ep)
           || res == -EPIPE
 #endif
         ) {
-        ink_assert(vc->con.fd == NO_FD);
-        ink_assert(!vc->link.next && !vc->link.prev);
-        freeThread(vc, e->ethread);
         goto Ldone;
       } else if (accept_error_seriousness(res) >= 0) {
         check_transient_accept_error(res);
-        freeThread(vc, e->ethread);
         goto Ldone;
       }
       if (!action_->cancelled)
         action_->continuation->handleEvent(EVENT_ERROR, (void *)(intptr_t)res);
       goto Lerror;
     }
-    vc->con.fd = fd;
 
     NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, 1);
     vc->id = net_next_connection_number();
@@ -507,7 +495,8 @@ Ldone:
 Lerror:
   server.close();
   e->cancel();
-  freeThread(vc, e->ethread);
+  if (vc)
+    vc->free(e->ethread);
   NET_DECREMENT_DYN_STAT(net_accepts_currently_open_stat);
   delete this;
   return EVENT_DONE;
@@ -561,4 +550,27 @@ NetAccept::cancel()
 {
   action_->cancel();
   server.close();
+}
+
+NetAccept *
+NetAccept::clone() const
+{
+  NetAccept *na;
+  na = new NetAccept;
+  *na = *this;
+  return na;
+}
+
+// Virtual function allows the correct
+// etype to be used in NetAccept functions (ET_SSL
+// or ET_NET).
+EventType NetAccept::getEtype() const
+{
+  return etype;
+}
+
+NetProcessor *
+NetAccept::getNetProcessor() const
+{
+  return &netProcessor;
 }

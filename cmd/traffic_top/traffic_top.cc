@@ -62,7 +62,7 @@ namespace colorPair {
   const short yellow = 2;
   const short green = 3;
   const short blue = 4;
-  const short black = 5;
+  //  const short black = 5;
   const short grey = 6;
   const short cyan = 7;
   const short border = 8;

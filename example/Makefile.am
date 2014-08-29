@@ -18,7 +18,7 @@ include $(top_srcdir)/build/plugins.mk
 
 AM_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
 
-noinst_LTLIBRARIES = \
+plugins = \
   add-header.la \
   append-transform.la \
   basic-auth.la \
@@ -28,6 +28,7 @@ noinst_LTLIBRARIES = \
   cache-scan.la \
   file-1.la \
   hello.la \
+  intercept.la \
   lifecycle-plugin.la \
   null-transform.la \
   output-header.la \
@@ -37,9 +38,16 @@ noinst_LTLIBRARIES = \
   remap.la \
   replace-header.la \
   response-header-1.la \
+  secure-link.la \
   server-transform.la \
   thread-1.la \
   version.la
+
+if BUILD_EXAMPLE_PLUGINS
+pkglib_LTLIBRARIES = $(plugins)
+else
+noinst_LTLIBRARIES = $(plugins)
+endif
 
 add_header_la_SOURCES = add-header/add-header.c
 append_transform_la_SOURCES = append-transform/append-transform.c
@@ -50,6 +58,7 @@ bnull_transform_la_SOURCES = bnull-transform/bnull-transform.c
 cache_scan_la_SOURCES = cache-scan/cache-scan.cc
 file_1_la_SOURCES = file-1/file-1.c
 hello_la_SOURCES = hello/hello.c
+intercept_la_SOURCES = intercept/intercept.cc
 lifecycle_plugin_la_SOURCES = lifecycle-plugin/lifecycle-plugin.c
 null_transform_la_SOURCES = null-transform/null-transform.c
 output_header_la_SOURCES = output-header/output-header.c
@@ -62,6 +71,7 @@ server_transform_la_SOURCES = server-transform/server-transform.c
 thread_1_la_SOURCES = thread-1/thread-1.c
 psi_la_SOURCES = thread-pool/psi.c thread-pool/thread.c
 version_la_SOURCES = version/version.c
+secure_link_la_SOURCES = secure-link/secure-link.c
 
 # The following examples do not build:
 #

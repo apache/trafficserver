@@ -153,7 +153,7 @@ json_out_stats(stats_state * my_state)
   const char *version;
   APPEND("{ \"global\": {\n");
 
-  TSRecordDump(TS_RECORDTYPE_PROCESS, json_out_stat, my_state);
+  TSRecordDump((TSRecordType)(TS_RECORDTYPE_PLUGIN | TS_RECORDTYPE_NODE | TS_RECORDTYPE_PROCESS), json_out_stat, my_state);
   version = TSTrafficServerVersionGet();
   APPEND("\"server\": \"");
   APPEND(version);

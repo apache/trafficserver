@@ -16,20 +16,35 @@
 
 include $(top_srcdir)/build/plugins.mk
 
-if BUILD_LUA_SUPPORT
-
-# We have to use the per-target CPPFLAGS here to make sure that the Lua include
-# path comes first. If we have LuaJIT (/opt/local/include/luajit-2.0) and Lua
-# (/opt/local/include) headers, then we need to make sure that we don't end up
-# building with the Lua headers but linking LuaJIT.
 tslua_la_CPPFLAGS = \
-  $(LUA_CFLAGS) \
-  $(AM_CPPFLAGS)
+  $(AM_CPPFLAGS) \
+  -I$(top_srcdir)/lib/luajit/src
 
 pkglib_LTLIBRARIES = tslua.la
 
-tslua_la_LIBADD = $(LUA_LIBS)
-tslua_la_SOURCES = ts_lua.c ts_lua_cached_response.c ts_lua_client_request.c ts_lua_client_response.c ts_lua_context.c ts_lua_hook.c ts_lua_http.c ts_lua_http_intercept.c ts_lua_log.c ts_lua_misc.c ts_lua_server_request.c ts_lua_server_response.c ts_lua_transform.c ts_lua_util.c ts_lua_remap.c
-tslua_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
+#tslua_la_LIBADD = $(top_builddir)/lib/luajit/src/libluajit.a
 
-endif
+tslua_la_SOURCES = \
+  ts_lua.c \
+  ts_lua_cached_response.c \
+  ts_lua_client_request.c \
+  ts_lua_client_response.c \
+  ts_lua_context.c \
+  ts_lua_hook.c \
+  ts_lua_http.c \
+  ts_lua_http_intercept.c \
+  ts_lua_log.c \
+  ts_lua_misc.c \
+  ts_lua_server_request.c \
+  ts_lua_server_response.c \
+  ts_lua_transform.c \
+  ts_lua_util.c \
+  ts_lua_remap.c \
+  ts_lua_http_cntl.c \
+  ts_lua_http_config.c \
+  ts_lua_mgmt.c \
+  ts_lua_package.c \
+  ts_lua_string.c \
+  ts_lua_crypto.c
+
+tslua_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)

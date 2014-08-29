@@ -449,9 +449,9 @@ setup_request(TSCont contp, TSHttpTxn txnp)
         if (TSUrlParse(urlBuf, urlLoc, (const char **) &start, end) != TS_PARSE_DONE ||
             TSCacheKeyDigestFromUrlSet(cstate->key_to_delete, urlLoc) != TS_SUCCESS) {
           TSError("CacheKeyDigestFromUrlSet failed");
+          TSCacheKeyDestroy(cstate->key_to_delete);
           TSfree(cstate);
           TSHandleMLocRelease(urlBuf, NULL, urlLoc);
-          TSCacheKeyDestroy(cstate->key_to_delete);
           goto Ldone;
         }
         TSHandleMLocRelease(urlBuf, NULL, urlLoc);

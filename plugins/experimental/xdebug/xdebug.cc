@@ -18,12 +18,16 @@
 
 #include <ts/ts.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <strings.h>
+#include "ink_defs.h"
 
 // The name of the debug request header. This should probably be configurable.
 #define X_DEBUG_HEADER "X-Debug"
 
 #define XHEADER_X_CACHE_KEY   0x0004u
+#define XHEADER_X_MILESTONES  0x0008u
+#define XHEADER_X_CACHE       0x0010u
 
 static int XArgIndex = 0;
 static TSCont XInjectHeadersCont = NULL;
@@ -95,6 +99,114 @@ done:
   TSfree(strval.ptr);
 }
 
+static void
+InjectCacheHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
+{
+  TSMLoc dst = TS_NULL_MLOC;
+  int status;
+
+  static const char * names[] =
+  {
+    "miss" ,      // TS_CACHE_LOOKUP_MISS,
+    "hit-stale",  // TS_CACHE_LOOKUP_HIT_STALE,
+    "hit-fresh",  // TS_CACHE_LOOKUP_HIT_FRESH,
+    "skipped"     // TS_CACHE_LOOKUP_SKIPPED
+  };
+
+  TSDebug("xdebug", "attempting to inject X-Cache header");
+
+  // Create a new response header field.
+  dst = FindOrMakeHdrField(buffer, hdr, "X-Cache", lengthof("X-Cache"));
+  if (dst == TS_NULL_MLOC) {
+    goto done;
+  }
+
+  if (TSHttpTxnCacheLookupStatusGet(txn, &status) == TS_ERROR) {
+    // If the cache lookup hasn't happened yes, TSHttpTxnCacheLookupStatusGet will fail.
+    TSReleaseAssert(
+      TSMimeHdrFieldValueStringInsert(buffer, hdr, dst, 0 /* idx */, "none", 4) == TS_SUCCESS
+    );
+  } else {
+    const char * msg = (status < 0 || status >= (int)countof(names)) ? "unknown" : names[status];
+
+    TSReleaseAssert(
+      TSMimeHdrFieldValueStringInsert(buffer, hdr, dst, 0 /* idx */, msg, -1) == TS_SUCCESS
+    );
+  }
+
+done:
+  if (dst != TS_NULL_MLOC) {
+    TSHandleMLocRelease(buffer, hdr, dst);
+  }
+}
+
+struct milestone {
+  TSMilestonesType mstype;
+  const char * msname;
+};
+
+static void
+InjectMilestonesHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
+{
+  // The set of milestones we can publish. Some milestones happen after
+  // this hook, so we skip those ...
+  static const milestone milestones[] = {
+    { TS_MILESTONE_UA_BEGIN,                "UA-BEGIN" },
+    { TS_MILESTONE_UA_READ_HEADER_DONE,     "UA-READ-HEADER-DONE" },
+    { TS_MILESTONE_UA_BEGIN_WRITE,          "UA-BEGIN-WRITE" },
+    { TS_MILESTONE_SERVER_FIRST_CONNECT,    "SERVER-FIRST-CONNECT" },
+    { TS_MILESTONE_SERVER_CONNECT,          "SERVER-CONNECT" },
+    { TS_MILESTONE_SERVER_CONNECT_END,      "SERVER-CONNECT-END" },
+    { TS_MILESTONE_SERVER_BEGIN_WRITE,      "SERVER-BEGIN-WRITE" },
+    { TS_MILESTONE_SERVER_FIRST_READ,       "SERVER-FIRST-READ" },
+    { TS_MILESTONE_SERVER_READ_HEADER_DONE, "SERVER-READ-HEADER-DONE" },
+    { TS_MILESTONE_SERVER_CLOSE,            "SERVER-CLOSE" },
+    { TS_MILESTONE_CACHE_OPEN_READ_BEGIN,   "CACHE-OPEN-READ-BEGIN" },
+    { TS_MILESTONE_CACHE_OPEN_READ_END,     "CACHE-OPEN-READ-END" },
+    { TS_MILESTONE_CACHE_OPEN_WRITE_BEGIN,  "CACHE-OPEN-WRITE-BEGIN" },
+    { TS_MILESTONE_CACHE_OPEN_WRITE_END,    "CACHE-OPEN-WRITE-END" },
+    { TS_MILESTONE_DNS_LOOKUP_BEGIN,        "DNS-LOOKUP-BEGIN" },
+    { TS_MILESTONE_DNS_LOOKUP_END,          "DNS-LOOKUP-END" },
+  };
+
+  TSMLoc dst = TS_NULL_MLOC;
+  TSHRTime epoch;
+
+  // TS_MILESTONE_SM_START is stamped when the HTTP transaction is born. The slow
+  // log feature publishes the other times as seconds relative to this epoch. Let's
+  // do the same.
+  TSHttpTxnMilestoneGet(txn, TS_MILESTONE_SM_START, &epoch);
+
+  // Create a new response header field.
+  dst = FindOrMakeHdrField(buffer, hdr, "X-Milestones", lengthof("X-Milestones"));
+  if (dst == TS_NULL_MLOC) {
+    goto done;
+  }
+
+  for (unsigned i = 0; i < countof(milestones); ++i) {
+    TSHRTime time = 0;
+    char hdrval[64];
+
+    // If we got a milestone (it's in nanoseconds), convert it to seconds relative to
+    // the start of the transaction. We don't get milestone values for portions of the
+    // state machine the request doesn't traverse.
+    TSHttpTxnMilestoneGet(txn, milestones[i].mstype, &time);
+    if (time > 0) {
+      double elapsed = (double) (time - epoch) / 1000000000.0;
+      int len = (int)snprintf(hdrval, sizeof(hdrval), "%s=%1.9lf", milestones[i].msname, elapsed);
+
+      TSReleaseAssert(
+        TSMimeHdrFieldValueStringInsert(buffer, hdr, dst, 0 /* idx */, hdrval, len) == TS_SUCCESS
+      );
+    }
+  }
+
+done:
+  if (dst != TS_NULL_MLOC) {
+    TSHandleMLocRelease(buffer, hdr, dst);
+  }
+}
+
 static int
 XInjectResponseHeaders(TSCont /* contp */, TSEvent event, void * edata)
 {
@@ -116,6 +228,14 @@ XInjectResponseHeaders(TSCont /* contp */, TSEvent event, void * edata)
 
   if (xheaders & XHEADER_X_CACHE_KEY) {
     InjectCacheKeyHeader(txn, buffer, hdr);
+  }
+
+  if (xheaders & XHEADER_X_CACHE) {
+    InjectCacheHeader(txn, buffer, hdr);
+  }
+
+  if (xheaders & XHEADER_X_MILESTONES) {
+    InjectMilestonesHeader(txn, buffer, hdr);
   }
 
 done:
@@ -156,9 +276,15 @@ XScanRequestHeaders(TSCont /* contp */, TSEvent event, void * edata)
         continue;
       }
 
-      if (strncasecmp("x-cache-key", value, vsize) == 0) {
+#define header_field_eq(name, vptr, vlen) (((int)lengthof(name) == vlen) && (strncasecmp(name, vptr, vlen) == 0))
+
+      if (header_field_eq("x-cache-key", value, vsize)) {
         xheaders |= XHEADER_X_CACHE_KEY;
-      } else if (strncasecmp("via", value, vsize) == 0) {
+      } else if (header_field_eq("x-milestones", value, vsize)) {
+        xheaders |= XHEADER_X_MILESTONES;
+      } else if (header_field_eq("x-cache", value, vsize)) {
+        xheaders |= XHEADER_X_CACHE;
+      } else if (header_field_eq("via", value, vsize)) {
         // If the client requests the Via header, enable verbose Via debugging for this transaction.
         TSHttpTxnConfigIntSet(txn, TS_CONFIG_HTTP_INSERT_RESPONSE_VIA_STR, 3);
       } else {
@@ -166,11 +292,12 @@ XScanRequestHeaders(TSCont /* contp */, TSEvent event, void * edata)
       }
     }
 
+#undef header_field_eq
+
     // Get the next duplicate.
     next = TSMimeHdrFieldNextDup(buffer, hdr, field);
 
     // Destroy the current field that we have. We don't want this to go through and potentially confuse the origin.
-    TSMimeHdrFieldRemove(buffer, hdr, field);
     TSMimeHdrFieldDestroy(buffer, hdr, field);
 
     // Now release our reference.
@@ -181,6 +308,7 @@ XScanRequestHeaders(TSCont /* contp */, TSEvent event, void * edata)
   }
 
   if (xheaders) {
+    TSDebug("xdebug", "adding response hook for header mask %p", (void *)xheaders);
     TSHttpTxnHookAdd(txn, TS_HTTP_SEND_RESPONSE_HDR_HOOK, XInjectHeadersCont);
     TSHttpTxnArgSet(txn, XArgIndex, (void *)xheaders);
   }

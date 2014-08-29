@@ -32,8 +32,8 @@
 # Version number is calculated as MAJOR * 1000000 + MINOR * 1000 + MICRO
 # Version string is in the form of MAJOR.MINOR.MICRO[sufix]
 #
-m4_define([TS_VERSION_S],[4.2.0])
-m4_define([TS_VERSION_N],[4002000])
+m4_define([TS_VERSION_S],[5.2.0])
+m4_define([TS_VERSION_N],[5002000])
 
 AC_INIT([Apache Traffic Server], TS_VERSION_S(), [dev@trafficserver.apache.org], [trafficserver],[http://trafficserver.apache.org])
 AC_PREREQ([2.59])
@@ -46,8 +46,6 @@ AC_CONFIG_HEADERS([lib/ts/ink_autoconf.h])
 # Configure with --disable-silent-rules to get verbose output. For more info, see
 # http://www.gnu.org/software/automake/manual/html_node/Automake-silent_002drules-Option.html
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
-
-AC_DISABLE_STATIC
 
 # Libtool versioning uses different conventions on different
 # platforms.  At least on FreeBSD, libtool uses an overly complex
@@ -107,16 +105,6 @@ AC_CANONICAL_HOST
 HOST_GUESS="$host"
 AC_SUBST(HOST_GUESS)
 
-#
-# Build environment
-#
-build_person="`id -nu`"
-build_group="`id -ng`"
-build_machine="`uname -n`"
-AC_SUBST([build_machine])
-AC_SUBST([build_person])
-AC_SUBST([build_group])
-
 AC_ARG_WITH([user],
   [AS_HELP_STRING([--with-user],[specify the system user [default=nobody]])],
   [
@@ -137,6 +125,22 @@ AC_ARG_WITH([group],
 )
 AC_SUBST([pkgsysuser],[$with_user])
 AC_SUBST([pkgsysgroup],[$with_group])
+
+AC_ARG_WITH([build-number],
+  [AS_HELP_STRING([--with-build-number],[specify a version string for this build])],
+  [ build_number="$withval" ]
+)
+
+#
+# Build environment
+#
+build_person="`id -nu`"
+build_group="`id -ng`"
+build_machine="`uname -n`"
+AC_SUBST([build_machine])
+AC_SUBST([build_person])
+AC_SUBST([build_group])
+AC_SUBST([build_number])
 
 # -----------------------------------------------------------------------------
 # 2. SITE CONFIGURATION
@@ -216,34 +220,19 @@ AC_SUBST(has_tests)
 AM_CONDITIONAL([BUILD_TESTS], [test 0 -ne $has_tests])
 
 #
-# Micro
-#
-AC_MSG_CHECKING([whether to enable micro-TS])
-AC_ARG_ENABLE([micro],
-  [AS_HELP_STRING([--enable-micro],[enable micro-TS build [default=no]])],
-  [],
-  [enable_micro=no]
-)
-AC_MSG_RESULT([$enable_micro])
-AS_IF([test "x$enable_micro" = "xyes"], [is_micro_build=1], [is_micro_build=0])
-AC_SUBST(is_micro_build)
-
-AC_SUBST([ink_with_modules_def],["-DREC_BUILD_MGMT"])
-AC_SUBST([ink_with_modules_local],["-DLOCAL_MANAGER"])
-AC_SUBST([ink_with_modules_process],["-DPROCESS_MANAGER"])
-
-#
 # Force some static linkage (for testing / development only)
 #
-AC_MSG_CHECKING([whether to build some static libts (dev only)])
-AC_ARG_ENABLE([static-libts],
-  [AS_HELP_STRING([--enable-static-libts],[build some static libts (dev only)])],
-  [],
-  [enable_static_libts=no]
+AC_MSG_CHECKING([whether to build a static traffic_server binary])
+AC_ARG_ENABLE([static-proxy], [AS_HELP_STRING([--enable-static-proxy],[build a static traffic_server binary])], [
+    AC_ENABLE_STATIC
+  ], [
+    AC_DISABLE_STATIC
+    enable_static_proxy=no
+  ]
 )
-AC_MSG_RESULT([$enable_static_libts])
-TS_ARG_ENABLE_VAR([has],[static-libts])
-AM_CONDITIONAL([STATIC_LIBTS], [test 0 -ne $has_static_libts])
+AC_MSG_RESULT([$enable_static_proxy])
+TS_ARG_ENABLE_VAR([has],[static-proxy])
+AM_CONDITIONAL([BUILD_STATIC_PROXY], [test 0 -ne $has_static_proxy])
 
 #
 # Remote Coverity Prevent commit
@@ -341,21 +330,6 @@ AC_ARG_ENABLE([ccache],
 AC_MSG_RESULT([$enable_ccache])
 
 #
-# Enble traffic_cop debugging
-#
-AC_MSG_CHECKING([whether to enable traffic_cop debugging])
-AC_ARG_ENABLE([cop-debug],
-  [AS_HELP_STRING([--enable-cop-debug],[Enable Traffic Cop debugging (for developers)])],
-  [],
-  [enable_cop_debug="no"]
-)
-AC_MSG_RESULT([$enable_cop_debug])
-TS_ARG_ENABLE_VAR([use], [cop-debug])
-AC_SUBST(use_cop_debug)
-
-
-
-#
 # Use TPROXY for connection transparency.
 #
 AC_MSG_CHECKING([whether to enable TPROXY based transparency])
@@ -363,11 +337,11 @@ AC_ARG_ENABLE([tproxy],
   [AS_HELP_STRING([--enable-tproxy[[=ARG]]],
                   [Use TPROXY to enable connection transparency.
                    'auto' or omitted for local system default,
-		   'no' to disable,
-		   'force' to use built in default,
-		   number to use as IP_TRANSPARENT sockopt.
-		   [default=auto]
-		  ])
+                   'no' to disable,
+                   'force' to use built in default,
+                   number to use as IP_TRANSPARENT sockopt.
+                   [default=auto]
+                  ])
   ],
   [],
   [enable_tproxy="auto"]
@@ -398,10 +372,10 @@ AC_SUBST(use_freelist)
 if test "x${enable_freelist}" = "xyes"; then
   AC_MSG_CHECKING([whether to enable reclaimable freelist])
   AC_ARG_ENABLE([reclaimable-freelist],
-		[AS_HELP_STRING([--enable-reclaimable-freelist],
-				[enable reclaimable freelist support (effective only when freelist is enabled)])],
-		[],
-		[enable_reclaimable_freelist="no"])
+                [AS_HELP_STRING([--enable-reclaimable-freelist],
+                                [enable reclaimable freelist support (effective only when freelist is enabled)])],
+                [],
+                [enable_reclaimable_freelist="no"])
   AC_MSG_RESULT([$enable_reclaimable_freelist])
 else
   enable_reclaimable_freelist="no"
@@ -409,6 +383,20 @@ fi
 TS_ARG_ENABLE_VAR([use], [reclaimable_freelist])
 AC_SUBST(use_reclaimable_freelist)
 
+#
+# Options for SPDY
+#
+AC_MSG_CHECKING([whether to enable spdy])
+AC_ARG_ENABLE([spdy],
+        [AS_HELP_STRING([--enable-spdy], [turn on spdy protocol])],
+        [],
+        [enable_spdy="no"])
+AC_MSG_RESULT([$enable_spdy])
+TS_ARG_ENABLE_VAR([has], [spdy])
+AC_SUBST(has_spdy)
+AM_CONDITIONAL([BUILD_SPDY], [test 0 -ne $has_spdy])
+
+#
 # Configure how many stats to allocate for plugins. Default is 512.
 #
 AC_ARG_WITH([max-api-stats],
@@ -459,6 +447,34 @@ AC_ARG_ENABLE([experimental-plugins],
 AC_MSG_RESULT([$enable_experimental_plugins])
 AM_CONDITIONAL([BUILD_EXPERIMENTAL_PLUGINS], [ test "x${enable_experimental_plugins}" = "xyes" ])
 
+#
+# Example plugins. The example plugins are always built, but not always installed. Installing
+# them is useful for QA, but not useful for most users, so we default this to disabled.
+#
+
+AC_MSG_CHECKING([whether to install example plugins])
+AC_ARG_ENABLE([example-plugins],
+  [AS_HELP_STRING([--enable-example-plugins],[install example plugins])],
+  [],
+  [enable_example_plugins=no]
+)
+AC_MSG_RESULT([$enable_example_plugins])
+AM_CONDITIONAL([BUILD_EXAMPLE_PLUGINS], [ test "x${enable_example_plugins}" = "xyes" ])
+
+
+#
+# Test tools. The test tools are always built, but not always installed. Installing
+# them is useful for QA, but not useful for most users, so we default this to disabled.
+#
+
+AC_MSG_CHECKING([whether to install testing tools])
+AC_ARG_ENABLE([test-tools],
+  [AS_HELP_STRING([--enable-test-tools],[install testing tools])],
+  [],
+  [enable_test_tools=no]
+)
+AC_MSG_RESULT([$enable_test_tools])
+AM_CONDITIONAL([BUILD_TEST_TOOLS], [ test "x${enable_test_tools}" = "xyes" ])
 
 #
 # build c++ api
@@ -471,6 +487,19 @@ AC_ARG_ENABLE([cppapi],
 )
 AC_MSG_RESULT([$enable_cppapi])
 AM_CONDITIONAL([ENABLE_CPPAPI], [ test "x${enable_cppapi}" = "xyes" ])
+
+#
+# Disable LuaJIT? This is a interrim option, when Lua becomes part of the core
+# requirements, we will remove this option.
+#
+AC_MSG_CHECKING([whether to disable LuaJIT])
+AC_ARG_ENABLE([luajit],
+  [AS_HELP_STRING([--disable-luajit],[turn off LuaJIT])],
+  [],
+  [enable_luajit="yes"]
+)
+AC_MSG_RESULT([$enable_luajit])
+AM_CONDITIONAL([BUILD_LUAJIT], [ test "x${enable_luajit}" = "xyes" ])
 
 #
 # Installation directories
@@ -574,6 +603,24 @@ if test "x${have_gnu_cxx_hash_map}" = "xyes" ; then
   AC_DEFINE(HAVE_GNU_CXX_HASH_MAP, 1, [whether __gnu_cxx::hash_map is available])
 fi
 
+# And check for std::shared_ptr vs std::tr1::shared_ptr
+TS_FLAG_HEADERS([unordered_map unordered_set])
+AC_MSG_CHECKING([for std::shared_ptr])
+AC_COMPILE_IFELSE([
+  AC_LANG_PROGRAM([
+    #include <memory>
+    using std::shared_ptr;
+    ], [
+  ])],
+  [ have_std_shared_ptr=yes ],
+  [ have_std_shared_ptr=no ]
+)
+
+AC_MSG_RESULT([$have_std_shared_ptr])
+if test "x${have_std_shared_ptr}" = "xyes" ; then
+  AC_DEFINE(HAVE_STD_SHARED_PTR, 1, [whether std::shared_ptr is available])
+fi
+
 AC_LANG_POP()
 
 dnl AC_PROG_SED is only available from version 2.6 (released in 2003). CentosOS
@@ -621,6 +668,7 @@ case $host_os in
       *amd64*)
         TS_ADDTO(CFLAGS, -m64)
         TS_ADDTO(CXXFLAGS, -m64)
+        TS_ADDTO(LUA_LDFLAGS, -m64)
         ;;
     esac
     ;;
@@ -650,13 +698,13 @@ AC_ISC_POSIX
 
 AM_PATH_PYTHON([2.4], [
   dnl action-if-found
-  TS_MAN1_MANPAGES=`$PYTHON $srcdir/doc/conf.py --man-pages --section=1 | $AWK '{print "$(BUILDDIR)/man/" $0 }' | tr '\n' ' '`
-  TS_MAN3_MANPAGES=`$PYTHON $srcdir/doc/conf.py --man-pages --section=3 | $AWK '{print "$(BUILDDIR)/man/" $0 }' | tr '\n' ' '`
-  TS_MAN5_MANPAGES=`$PYTHON $srcdir/doc/conf.py --man-pages --section=5 | $AWK '{print "$(BUILDDIR)/man/" $0 }' | tr '\n' ' '`
-  TS_MAN8_MANPAGES=`$PYTHON $srcdir/doc/conf.py --man-pages --section=8 | $AWK '{print "$(BUILDDIR)/man/" $0 }' | tr '\n' ' '`
+  TS_MAN1_MANPAGES=`cd $srcdir/doc && $PYTHON manpages.py --section=1 | $AWK '{print "$(BUILDDIR)/man/" $0 }' | tr '\n' ' '`
+  TS_MAN3_MANPAGES=`cd $srcdir/doc && $PYTHON manpages.py --section=3 | $AWK '{print "$(BUILDDIR)/man/" $0 }' | tr '\n' ' '`
+  TS_MAN5_MANPAGES=`cd $srcdir/doc && $PYTHON manpages.py --section=5 | $AWK '{print "$(BUILDDIR)/man/" $0 }' | tr '\n' ' '`
+  TS_MAN8_MANPAGES=`cd $srcdir/doc && $PYTHON manpages.py --section=8 | $AWK '{print "$(BUILDDIR)/man/" $0 }' | tr '\n' ' '`
 
   # If we have python, check if the Sphinx version looks OK.
-  AS_IF(["$PYTHON" "$srcdir/doc/conf.py" --check-version], [
+  AS_IF(["$PYTHON" "$srcdir/doc/checkvers.py" --check-version], [
     sphinx_version_check=yes
   ])
 
@@ -696,10 +744,10 @@ AS_IF([test -n "$YACC"],
         `
         AS_IF([test "x$bison_version_check" != "xyes"],
           [ YACC=''
-	    AS_IF([test -z "$bison_version_check"],
-	      [bison_version_check='no version data']
-	    )
-	  ]
+            AS_IF([test -z "$bison_version_check"],
+              [bison_version_check='no version data']
+            )
+          ]
         )
       ],
       [ YACC=''
@@ -720,10 +768,10 @@ AS_IF([test -n "$LEX"],
         `
         AS_IF([test "x$flex_version_check" != "xyes"],
           [ LEX=''
-	    AS_IF([test -z "$flex_version_check"],
-	      [flex_version_check='no version data']
-	    )
-	  ]
+            AS_IF([test -z "$flex_version_check"],
+              [flex_version_check='no version data']
+            )
+          ]
         )
       ],
       [ LEX=''
@@ -758,19 +806,19 @@ AX_PROG_PERL_MODULES([ExtUtils::MakeMaker], AM_CONDITIONAL([BUILD_PERL_LIB], [tr
                                             AM_CONDITIONAL([BUILD_PERL_LIB], [false])
 )
 
-# Check for GNU-style -On and for Solaris Studio style -xOn.
+# Check for GNU-style -On optimization flags
 AC_MSG_CHECKING([checking whether to auto-set compiler optimization flags])
-has_optimizer_flags=`echo "$CFLAGS $CXXFLAGS" | ${AWK} '$0 !~ /-x?O.?/{print "no"}'`
+has_optimizer_flags=`echo "$CFLAGS $CXXFLAGS" | ${AWK} '$0 !~ /-O.?/{print "no"}'`
 AS_IF([test "x${has_optimizer_flags}" = "xno"],
-	[
-		optimizing_flags='-O3'
-		AC_MSG_RESULT([yes ${optimizing_flags}])
-	],
-	[
-		has_optimizer_flags='yes'
-		optimizing_flags=''
-		AC_MSG_RESULT([no])
-	]
+        [
+                optimizing_flags='-O3'
+                AC_MSG_RESULT([yes ${optimizing_flags}])
+        ],
+        [
+                has_optimizer_flags='yes'
+                optimizing_flags=''
+                AC_MSG_RESULT([no])
+        ]
 )
 
 AM_CONDITIONAL([BUILD_HAVE_LIBCXX], [ false ])
@@ -866,19 +914,6 @@ case $host_os_def in
     ;; # freebsd|kfreebsd)
 
   solaris)
-    AS_IF([test "x$ax_cv_c_compiler_vendor" = "xsun"], [
-      # XXX: Solaris Studio support is going away: https://issues.apache.org/jira/browse/TS-1486
-      common_opt="-mt -D__WORDSIZE=64" # FIXME: arch should be detected
-      debug_opt="-g $common_opt"
-      release_opt="-g $common_opt $optimizing_flags"
-      cxx_opt="-library=stlport4"
-      cxx_dbg="+w2"
-      cxx_rel="-erroff"
-
-      AC_DEFINE([_POSIX_PTHREAD_SEMANTICS], 1, [posix thread semantics])
-      AS_IF([test "x$solaris_use_stlport4" != "xyes"], [postdeps_CXX="-library=Crun"])
-    ])
-
     AS_IF([test "x$ax_cv_c_compiler_vendor" = "xgnu"], [
       common_opt="-pipe -Wall"
       debug_opt="-ggdb3 $common_opt"
@@ -956,9 +991,6 @@ if test "x${GCC}" = "xyes"; then
       i?86* | k[5-8]* | pentium* | athlon)
         cpu_architecture="-march=i586"
       ;;
-      *sparc*)
-        cpu_architecture="-mv8"
-      ;;
     esac
   else
     case "$host_cpu" in
@@ -966,13 +998,8 @@ if test "x${GCC}" = "xyes"; then
         # XXX: Any need for 64-bit arch flags?
         # cpu_architecture="-march=native"
       ;;
-      *sparc*)
-        cpu_architecture="-march=ultrasparc"
-      ;;
     esac
   fi
-  # TODO: Add support for other compilers
-  #
 fi
 
 # Overrride detected architecture with the user suplied one
@@ -1010,7 +1037,8 @@ else
 fi
 TS_ADDTO(CPPFLAGS, [-D_GNU_SOURCE])
 TS_ADDTO(CPPFLAGS, [-D_REENTRANT])
-
+TS_ADDTO(CPPFLAGS, [-D__STDC_LIMIT_MACROS=1])
+TS_ADDTO(CPPFLAGS, [-D__STDC_FORMAT_MACROS=1])
 
 AC_MSG_NOTICE([Build for host OS: $host_os, arch: $host_cpu, optimization: $host_os_def])
 
@@ -1039,8 +1067,8 @@ AC_MSG_NOTICE([Build for host OS: $host_os, arch: $host_cpu, optimization: $host
 if test "x$enable_ccache" = "xyes"; then
     AC_CHECK_PROG([CCACHE],[ccache],[ccache],[])
     if test "x${CCACHE}" = "xccache"; then
-	CC="$CCACHE $CC"
-	CXX="$CCACHE $CXX"
+        CC="$CCACHE $CC"
+        CXX="$CCACHE $CXX"
     fi
 fi
 
@@ -1093,14 +1121,14 @@ AX_BOOST_BASE([1.33],
 #
 # Check for SSL presence and usability
 TS_CHECK_CRYPTO
-if test "x${enable_crypto}" != "xyes"; then
-  AC_MSG_ERROR([Need at least one SSL library, --with-openssl is supported])
-fi
 
 #
 # Check for NextProtocolNegotiation TLS extension support.
 TS_CHECK_CRYPTO_NEXTPROTONEG
 
+#
+# Check for ALPN TLS extension support.
+TS_CHECK_CRYPTO_ALPN
 #
 # Check for EC key support.
 TS_CHECK_CRYPTO_EC_KEYS
@@ -1108,10 +1136,6 @@ TS_CHECK_CRYPTO_EC_KEYS
 #
 # Check for ServerNameIndication TLS extension support.
 TS_CHECK_CRYPTO_SNI
-
-#
-# Check for RFC5077 TLS session ticket support.
-TS_CHECK_CRYPTO_TICKETS
 
 #
 # Check for zlib presence and usability
@@ -1329,20 +1353,36 @@ AC_SUBST(use_linux_native_aio)
 # If we don't find it, disable checking for header.
 use_hwloc=0
 AS_IF([test "x$enable_hwloc" = "xyes"], [
-  AC_CHECK_HEADERS([hwloc.h], [],
-    [AC_MSG_WARN([hwloc.h header not found, try --disable-hwloc])], []
-  )
-
-  # Old versions of libhwloc don't have HWLOC_OBJ_PU.
-  AC_CHECK_DECL(HWLOC_OBJ_PU,
-    [AC_DEFINE(HAVE_HWLOC_OBJ_PU, 1, [Whether HWLOC_OBJ_PU is available])], [],
-    [#include <hwloc.h>]
-  )
-
   # Use pkg-config, because some distros (*cough* Ubuntu) put hwloc in unusual places.
-  PKG_CHECK_MODULES([hwloc], [hwloc], [use_hwloc=yes], [use_hwloc=no])
-  AC_SUBST([hwloc_CFLAGS])
-  AC_SUBST([hwloc_LIBS])
+  PKG_CHECK_MODULES([HWLOC], [hwloc], [
+    SAVE_LIBS="$LIBS"
+    LIBS="-lhwloc"
+    AC_LANG_PUSH([C++])
+    AC_MSG_CHECKING([for hwloc C++ linking])
+    AC_LINK_IFELSE([
+      AC_LANG_PROGRAM([#include <hwloc.h>],[hwloc_topology_t t; hwloc_topology_init(&t); hwloc_get_type_depth(t, HWLOC_OBJ_SOCKET);])],[
+      use_hwloc=1
+      AC_SUBST([HWLOC_CFLAGS])
+      AC_SUBST([HWLOC_LIBS])
+      AC_MSG_RESULT([yes])
+      # Old versions of libhwloc don't have HWLOC_OBJ_PU.
+      AC_CHECK_DECL(HWLOC_OBJ_PU,
+        [AC_DEFINE(HAVE_HWLOC_OBJ_PU, 1, [Whether HWLOC_OBJ_PU is available])], [],
+        [#include <hwloc.h>]
+      )
+    ], [
+      AC_MSG_RESULT([no])
+      AC_MSG_WARN([hwloc not linkable, try --disable-hwloc])
+      AC_SUBST([HWLOC_CFLAGS],[""])
+      AC_SUBST([HWLOC_LIBS],[""])
+    ])
+    AC_LANG_POP()
+    LIBS="$SAVE_LIBS"
+  ], [
+    AC_MSG_WARN([hwloc not found, try --disable-hwloc])
+    AC_SUBST([HWLOC_CFLAGS],[""])
+    AC_SUBST([HWLOC_LIBS],[""])
+  ])
 ])
 
 AC_SUBST(use_hwloc)
@@ -1373,76 +1413,32 @@ TS_CHECK_TCMALLOC
 # Check for libreadline/libedit
 AX_LIB_READLINE
 
-#
-# Check for Lua, at least version 5.1, sets LUA_CFLAGS and LUA_LIBS. We support both standard
-# Lua and LuaJIT, preferring LuaJIT if the user did not indicate a preference.
-AC_MSG_CHECKING([whether to enable Linux LuaJIT support])
-AC_ARG_ENABLE([luajit],
-  [AS_HELP_STRING([--enable-luajit], [enable LuaJIT support @<:@default=check@:>@])],
-  [enable_luajit="${enableval}"],
-  [enable_luajit=check]
-)
-AC_MSG_RESULT([$enable_luajit])
-
-PKG_CHECK_MODULES([luajit], [luajit], [have_luajit=yes], [have_luajit=no])
-CHECK_LUA([have_lua=yes], [have_lua=no])
-
-case $enable_luajit in
-yes)
-  # LuaJIT required. Fail if it's not available.
-  AS_IF([ test "x${have_luajit}" = "xyes" ], [
-    LUA_CFLAGS="${luajit_CFLAGS}"
-    LUA_LIBS="${luajit_LIBS}"
-    enable_lua_support=LuaJIT
-  ], [
-    AC_MSG_ERROR([LuaJIT package not available])
-  ])
-  ;;
-
-no)
-  # LuaJIT disabled, just check for the regular Lua support.
-  enable_lua_support="${have_lua}"
-  ;;
-
-*)
-  # No user preference, prefer LuaJIT over standard Lua.
-  AS_IF([ test "x${have_luajit}" = "xyes" ], [
-    LUA_CFLAGS="${luajit_CFLAGS}"
-    LUA_LIBS="${luajit_LIBS}"
-    enable_lua_support=LuaJIT
-  ], [
-    enable_lua_support="${have_lua}"
-  ])
-  ;;
-esac
-
-AC_SUBST(LUA_CFLAGS)
-AC_SUBST(LUA_LIBS)
-AC_MSG_CHECKING([whether to enable Lua support])
-AM_CONDITIONAL([BUILD_LUA_SUPPORT], [ test "x${enable_lua_support}" != "xno" ])
-AM_CONDITIONAL([BUILD_HAVE_LUAJIT], [ test "x${have_luajit}" = "xyes" ])
-AC_MSG_RESULT([$enable_lua_support])
-
 # On Darwin LuaJIT requires magic link options, otherwise it will crash in luaL_openlibs() at startup. See
 # http://luajit.org/install.html.
-case $host_os in
+case $host_os_def in
   darwin)
-    if test "x${enable_lua_support}" = "xLuaJIT"; then
-      LUA_LUAJIT_LDFLAGS="-Wl,-pagezero_size,10000 -Wl,-image_base,100000000"
-    fi
+    TS_LUAJIT_LDFLAGS="-Wl,-pagezero_size,10000 -Wl,-image_base,100000000"
     ;;
 esac
 
-AC_SUBST(LUA_LUAJIT_LDFLAGS)
+AC_SUBST(TS_LUAJIT_LDFLAGS)
+AC_SUBST(LUA_LDFLAGS)
 
 # We should be able to build http_load if epoll(2) is available.
 AM_CONDITIONAL([BUILD_HTTP_LOAD], [test x"$ac_cv_func_epoll_ctl" = x"yes"])
 
+# Check for spdylay library
+if test "x${enable_spdy}" = "xyes"; then
+  PKG_CHECK_MODULES([SPDYLAY],[libspdylay])
+fi
+
 # -----------------------------------------------------------------------------
 # 5. CHECK FOR HEADER FILES
 
-TS_FLAG_HEADERS([sys/types.h sys/mman.h])
-TS_FLAG_HEADERS([sys/epoll.h \
+TS_FLAG_HEADERS([sys/types.h \
+                  sys/uio.h \
+                  sys/mman.h \
+                  sys/epoll.h \
                   sys/event.h \
                   sys/param.h \
                   sys/pset.h \
@@ -1481,8 +1477,8 @@ TS_FLAG_HEADERS([sys/epoll.h \
                   stdbool.h \
                   net/ppp_defs.h \
                   ifaddrs.h\
-		  readline/readline.h \
-		  editline/readline.h ])
+                  readline/readline.h \
+                  editline/readline.h ])
 
 AC_SUBST(sys_epollh)
 AC_SUBST(sys_eventh)
@@ -1655,17 +1651,17 @@ AC_CHECK_MEMBER([struct sockaddr_in6.sin6_len], [], [], [#include <netinet/in.h>
 
 if test "x${ac_cv_member_struct_sockaddr_sa_len}" = xyes; then
     AC_DEFINE(HAVE_STRUCT_SOCKADDR_SA_LEN, 1,
-	    [Whether struct sockaddr_in has the sa_len member])
+            [Whether struct sockaddr_in has the sa_len member])
 fi
 
 if test "x${ac_cv_member_struct_sockaddr_in_sin_len}" = xyes ; then
 AC_DEFINE(HAVE_STRUCT_SOCKADDR_IN_SIN_LEN, 1,
-	    [Whether struct sockaddr_in has the sin_len member])
+            [Whether struct sockaddr_in has the sin_len member])
 fi
 
 if test "x${ac_cv_member_struct_sockaddr_in6_sin6_len}" = xyes; then
     AC_DEFINE(HAVE_STRUCT_SOCKADDR_IN6_SIN6_LEN, 1,
-	    [Whether struct sockaddr_in6 has the sin6_len member])
+            [Whether struct sockaddr_in6 has the sin6_len member])
 fi
 
 if test "x${with_profiler}" = "xyes"; then
@@ -1725,43 +1721,43 @@ AS_IF([test "x$enable_tproxy" != "xno"], [
     AC_MSG_CHECKING([for TPROXY sockopt IP_TRANSPARENT])
     case "$enable_tproxy" in
       [[0-9][0-9]*])
-	ip_transparent=$enable_tproxy
-	use_tproxy=1
-	AC_MSG_RESULT([forced to $ip_transparent])
-	;;
+        ip_transparent=$enable_tproxy
+        use_tproxy=1
+        AC_MSG_RESULT([forced to $ip_transparent])
+        ;;
       force)
-	ip_transparent=19
-	use_tproxy=1
-	AC_MSG_RESULT([forced to $ip_transparent])
-	;;
+        ip_transparent=19
+        use_tproxy=1
+        AC_MSG_RESULT([forced to $ip_transparent])
+        ;;
       yes|auto)
         AS_IF([test -r $tproxy_header], [
-	  ip_transparent=`$AWK "/^#define[ \t]+IP_TRANSPARENT[ \t]+[0-9]+/{print \\$3}" $tproxy_header`
-	  AS_IF([test "x$ip_transparent" != "x"], [
-	    use_tproxy=1
-	    AC_MSG_RESULT([set to $ip_transparent])
-	  ],[
-	    ip_transparent=0
-	    AS_IF([test "x$enable_tproxy" = xauto], [
-	     AC_MSG_RESULT([no])
-	    ],[
-	      AC_MSG_RESULT([failed])
-	      AC_MSG_FAILURE([tproxy feature enabled but the sockopt value was not found in $tproxy_header. Try one of$tproxy_usage_default$tproxy_usage_numeric$tproxy_usage_disable])
-	    ])
-	  ])
-	],[
-	  AS_IF([test "x$enable_tproxy" = xauto], [
-	    AC_MSG_RESULT([no])
-	  ],[
-	    AC_MSG_RESULT([failed])
-	    AC_MSG_FAILURE([tproxy feature enabled but the header file $tproxy_header was not readable. Try one of$tproxy_usage_default$tproxy_usage_numeric$tproxy_usage_disable])
-	  ])
-	])
-	;;
+          ip_transparent=`$AWK "/^#define[ \t]+IP_TRANSPARENT[ \t]+[0-9]+/{print \\$3}" $tproxy_header`
+          AS_IF([test "x$ip_transparent" != "x"], [
+            use_tproxy=1
+            AC_MSG_RESULT([set to $ip_transparent])
+          ],[
+            ip_transparent=0
+            AS_IF([test "x$enable_tproxy" = xauto], [
+             AC_MSG_RESULT([no])
+            ],[
+              AC_MSG_RESULT([failed])
+              AC_MSG_FAILURE([tproxy feature enabled but the sockopt value was not found in $tproxy_header. Try one of$tproxy_usage_default$tproxy_usage_numeric$tproxy_usage_disable])
+            ])
+          ])
+        ],[
+          AS_IF([test "x$enable_tproxy" = xauto], [
+            AC_MSG_RESULT([no])
+          ],[
+            AC_MSG_RESULT([failed])
+            AC_MSG_FAILURE([tproxy feature enabled but the header file $tproxy_header was not readable. Try one of$tproxy_usage_default$tproxy_usage_numeric$tproxy_usage_disable])
+          ])
+        ])
+        ;;
       *)
-	AC_MSG_RESULT([failed])
-	AC_MSG_FAILURE([Invalid argument to feature tproxy.$tproxy_usage])
-	;;
+        AC_MSG_RESULT([failed])
+        AC_MSG_FAILURE([Invalid argument to feature tproxy.$tproxy_usage])
+        ;;
       esac
   ])
 ])
@@ -1804,11 +1800,13 @@ TS_CHECK_GETHOSTBYNAME_R_STYLE
 TS_CHECK_MACRO_IN6_IS_ADDR_UNSPECIFIED
 
 AC_CHECK_TYPE([struct tcp_info],
-  [enable_tcpinfo_plugin=yes],
-  [enable_tcpinfo_plugin=no],
-  [[#include <netinet/tcp.h>]]
+  [AC_DEFINE(HAVE_STRUCT_TCP_INFO, 1, [whether struct tcp_info is available])],
+  [],
+  [[
+   #include <netinet/in.h>
+   #include <netinet/tcp.h>
+  ]]
 )
-AM_CONDITIONAL([BUILD_TCPINFO_PLUGIN], [ test "x${enable_tcpinfo_plugin}" != "xno" ])
 
 # See if we can build the remap_stats plugin
 AS_IF([test "x$enable_experimental_plugins" = xyes],
@@ -1822,6 +1820,9 @@ AS_IF([test "x$enable_experimental_plugins" = xyes],
   ])
 AM_CONDITIONAL([BUILD_REMAP_STATS_PLUGIN],
   [ test "x$enable_experimental_plugins" = "xyes" -a "x$ac_cv_header_search_h" = "xyes" -a "x$ac_cv_type_struct_hsearch_data" = "xyes" -a "x$ac_cv_func_hcreate_r" = "xyes" -a "x$ac_cv_func_hsearch_r" = "xyes" ])
+
+AM_CONDITIONAL([BUILD_COLLAPSED_CONNECTION_PLUGIN],
+  [ test "x$enable_experimental_plugins" = "xyes" -a "x${enable_collapsed_connection_plugin}" != "xno" ])
 
 #
 # use modular IOCORE
@@ -1838,8 +1839,6 @@ iocore_include_dirs="-I\$(top_srcdir)/iocore/eventsystem \
 # Testing Framework suffix generation hack
 TFW_PACKAGE_SUFFIX=$os_type
 
-MGMT_DEFS="$MGMT_DEFS -DMGMT_USE_SYSLOG"
-
 AC_SUBST([API_DEFS])
 AC_SUBST([CC])
 AC_SUBST([CFLAGS])
@@ -1851,7 +1850,6 @@ AC_SUBST([EXTRA_CXX_LDFLAGS])
 AC_SUBST([LIBTOOL_LINK_FLAGS])
 AC_SUBST([iocore_include_dirs])
 AC_SUBST([LDFLAGS])
-AC_SUBST([MGMT_DEFS])
 AC_SUBST([SHARED_CFLAGS])
 AC_SUBST([SHARED_CXXFLAGS])
 AC_SUBST([SHARED_CXXLINKFLAGS])
@@ -1865,8 +1863,9 @@ AC_CONFIG_FILES([
   Makefile
   cmd/Makefile
   cmd/traffic_cop/Makefile
+  cmd/traffic_layout/Makefile
   cmd/traffic_line/Makefile
-  cmd/traffic_shell/Makefile
+  cmd/traffic_manager/Makefile
   cmd/traffic_top/Makefile
   doc/Doxyfile
   doc/Makefile
@@ -1881,72 +1880,31 @@ AC_CONFIG_FILES([
   iocore/net/Makefile
   iocore/utils/Makefile
   lib/Makefile
+  lib/perl/Makefile
+  lib/perl/lib/Apache/TS.pm
   lib/records/Makefile
   lib/ts/Makefile
+  lib/ts/apidefs.h
   lib/ts/ink_config.h
   lib/tsconfig/Makefile
-  lib/atscppapi/Makefile
-  lib/atscppapi/src/Makefile
-  lib/atscppapi/examples/Makefile
-  lib/atscppapi/examples/helloworld/Makefile
-  lib/atscppapi/examples/globalhook/Makefile
-  lib/atscppapi/examples/transactionhook/Makefile
-  lib/atscppapi/examples/multiple_transaction_hooks/Makefile
-  lib/atscppapi/examples/clientrequest/Makefile
-  lib/atscppapi/examples/data_caching/Makefile
-  lib/atscppapi/examples/serverresponse/Makefile
-  lib/atscppapi/examples/clientredirect/Makefile
-  lib/atscppapi/examples/customresponse/Makefile
-  lib/atscppapi/examples/null_transformation_plugin/Makefile
-  lib/atscppapi/examples/post_buffer/Makefile
-  lib/atscppapi/examples/logger_example/Makefile
-  lib/atscppapi/examples/stat_example/Makefile
-  lib/atscppapi/examples/async_http_fetch/Makefile
-  lib/atscppapi/examples/remap_plugin/Makefile
-  lib/atscppapi/examples/gzip_transformation/Makefile
-  lib/atscppapi/examples/timeout_example/Makefile
-  lib/atscppapi/examples/internal_transaction_handling/Makefile
-  lib/atscppapi/examples/async_timer/Makefile
   lib/wccp/Makefile
-  lib/perl/Makefile
   mgmt/Makefile
   mgmt/api/Makefile
   mgmt/api/include/Makefile
   mgmt/cluster/Makefile
-  mgmt/preparse/Makefile
-  mgmt/stats/Makefile
   mgmt/utils/Makefile
   mgmt/web2/Makefile
   plugins/Makefile
   plugins/cacheurl/Makefile
   plugins/conf_remap/Makefile
-  plugins/experimental/Makefile
-  plugins/experimental/authproxy/Makefile
-  plugins/experimental/balancer/Makefile
-  plugins/experimental/buffer_upload/Makefile
-  plugins/experimental/channel_stats/Makefile
-  plugins/experimental/custom_redirect/Makefile
-  plugins/experimental/esi/Makefile
-  plugins/experimental/geoip_acl/Makefile
-  plugins/experimental/lua/Makefile
-  plugins/experimental/hipes/Makefile
-  plugins/experimental/ts_lua/Makefile
-  plugins/experimental/metalink/Makefile
-  plugins/experimental/rfc5861/Makefile
-  plugins/experimental/spdy/Makefile
-  plugins/experimental/tcp_info/Makefile
-  plugins/experimental/healthchecks/Makefile
-  plugins/experimental/remap_stats/Makefile
-  plugins/experimental/xdebug/Makefile
   plugins/gzip/Makefile
-  plugins/libloader/Makefile
-  plugins/header_filter/Makefile
   plugins/header_rewrite/Makefile
+  plugins/libloader/Makefile
   plugins/regex_remap/Makefile
   plugins/stats_over_http/Makefile
+  plugins/tcpinfo/Makefile
   proxy/Makefile
   proxy/api/ts/Makefile
-  proxy/api/ts/ts.h
   proxy/config/Makefile
   proxy/config/body_factory/Makefile
   proxy/config/body_factory/default/Makefile
@@ -1954,10 +1912,12 @@ AC_CONFIG_FILES([
   proxy/config/storage.config.default
   proxy/congest/Makefile
   proxy/hdrs/Makefile
-  proxy/shared/Makefile
   proxy/http/Makefile
   proxy/http/remap/Makefile
+  proxy/http2/Makefile
   proxy/logging/Makefile
+  proxy/shared/Makefile
+  proxy/spdy/Makefile
   rc/Makefile
   rc/trafficserver
   rc/trafficserver.conf
@@ -1966,6 +1926,62 @@ AC_CONFIG_FILES([
   tools/Makefile
   tools/tsxs
 ])
+
+AS_IF([test "x$enable_experimental_plugins" = xyes], [
+  AC_CONFIG_FILES([
+    plugins/experimental/Makefile
+    plugins/experimental/authproxy/Makefile
+    plugins/experimental/background_fetch/Makefile
+    plugins/experimental/balancer/Makefile
+    plugins/experimental/buffer_upload/Makefile
+    plugins/experimental/channel_stats/Makefile
+    plugins/experimental/collapsed_connection/Makefile
+    plugins/experimental/custom_redirect/Makefile
+    plugins/experimental/epic/Makefile
+    plugins/experimental/escalate/Makefile
+    plugins/experimental/esi/Makefile
+    plugins/experimental/geoip_acl/Makefile
+    plugins/experimental/healthchecks/Makefile
+    plugins/experimental/hipes/Makefile
+    plugins/experimental/metalink/Makefile
+    plugins/experimental/regex_revalidate/Makefile
+    plugins/experimental/remap_stats/Makefile
+    plugins/experimental/s3_auth/Makefile
+    plugins/experimental/sslheaders/Makefile
+    plugins/experimental/stale_while_revalidate/Makefile
+    plugins/experimental/ts_lua/Makefile
+    plugins/experimental/url_sig/Makefile
+    plugins/experimental/xdebug/Makefile
+])])
+
+AS_IF([test "x$enable_cppapi" = xyes], [
+  AC_CONFIG_FILES([
+  lib/atscppapi/Makefile
+  lib/atscppapi/examples/Makefile
+  lib/atscppapi/examples/async_http_fetch/Makefile
+  lib/atscppapi/examples/async_timer/Makefile
+  lib/atscppapi/examples/clientredirect/Makefile
+  lib/atscppapi/examples/clientrequest/Makefile
+  lib/atscppapi/examples/customresponse/Makefile
+  lib/atscppapi/examples/boom/Makefile
+  lib/atscppapi/examples/globalhook/Makefile
+  lib/atscppapi/examples/gzip_transformation/Makefile
+  lib/atscppapi/examples/helloworld/Makefile
+  lib/atscppapi/examples/intercept/Makefile
+  lib/atscppapi/examples/internal_transaction_handling/Makefile
+  lib/atscppapi/examples/logger_example/Makefile
+  lib/atscppapi/examples/multiple_transaction_hooks/Makefile
+  lib/atscppapi/examples/null_transformation_plugin/Makefile
+  lib/atscppapi/examples/post_buffer/Makefile
+  lib/atscppapi/examples/remap_plugin/Makefile
+  lib/atscppapi/examples/serverresponse/Makefile
+  lib/atscppapi/examples/stat_example/Makefile
+  lib/atscppapi/examples/timeout_example/Makefile
+  lib/atscppapi/examples/transactionhook/Makefile
+  lib/atscppapi/src/Makefile
+])])
+
+AC_CONFIG_SUBDIRS([lib/ck])
 
 # -----------------------------------------------------------------------------
 # 7. autoheader TEMPLATES
@@ -1987,6 +2003,6 @@ AC_MSG_NOTICE([Build option summary:
     EXTRA_CC_LDFLAGS:   $EXTRA_CC_LDFLAGS
     EXTRA_CXX_LDFLAGS:  $EXTRA_CXX_LDFLAGS
     LIBTOOL_LINK_FLAGS: $LIBTOOL_LINK_FLAGS
-    MGMT_DEFS:          $MGMT_DEFS
     API_DEFS:           $API_DEFS
+
 ])

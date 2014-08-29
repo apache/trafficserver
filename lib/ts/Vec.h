@@ -106,7 +106,7 @@ class Vec {
   C &first() const { return v[0]; }
   C &last() const { return v[n-1]; }
   Vec<C,A,S>& operator=(Vec<C,A,S> &v) { this->copy(v); return *this; }
-  int length () const { return n; }
+  unsigned length () const { return n; }
   // vector::size() intentionally not implemented because it should mean "bytes" not count of elements
   int write(int fd);
   int read(int fd);
@@ -122,11 +122,11 @@ private:
 
 // c -- class, p -- pointer to elements of v, v -- vector
 #define forv_Vec(_c, _p, _v) if ((_v).n) for (_c *qq__##_p = (_c*)0, *_p = (_v).v[0]; \
-                    ((intptr_t)(qq__##_p) < (_v).length()) && ((_p = (_v).v[(intptr_t)qq__##_p]) || 1); qq__##_p = (_c*)(((intptr_t)qq__##_p) + 1))
+                    ((uintptr_t)(qq__##_p) < (_v).length()) && ((_p = (_v).v[(intptr_t)qq__##_p]) || 1); qq__##_p = (_c*)(((intptr_t)qq__##_p) + 1))
 #define for_Vec(_c, _p, _v) if ((_v).n) for (_c *qq__##_p = (_c*)0, _p = (_v).v[0]; \
-                    ((intptr_t)(qq__##_p) < (_v).length()) && ((_p = (_v).v[(intptr_t)qq__##_p]) || 1); qq__##_p = (_c*)(((intptr_t)qq__##_p) + 1))
+                    ((uintptr_t)(qq__##_p) < (_v).length()) && ((_p = (_v).v[(intptr_t)qq__##_p]) || 1); qq__##_p = (_c*)(((intptr_t)qq__##_p) + 1))
 #define forvp_Vec(_c, _p, _v) if ((_v).n) for (_c *qq__##_p = (_c*)0, *_p = &(_v).v[0]; \
-                    ((intptr_t)(qq__##_p) < (_v).length()) && ((_p = &(_v).v[(intptr_t)qq__##_p]) || 1); qq__##_p = (_c*)(((intptr_t)qq__##_p) + 1))
+                    ((uintptr_t)(qq__##_p) < (_v).length()) && ((_p = &(_v).v[(intptr_t)qq__##_p]) || 1); qq__##_p = (_c*)(((intptr_t)qq__##_p) + 1))
 
 template <class C, class A = DefaultAlloc, int S = VEC_INTEGRAL_SHIFT_DEFAULT> class Accum { public:
   Vec<C,A,S> asset;

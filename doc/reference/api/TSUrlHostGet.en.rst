@@ -21,6 +21,8 @@
 TSUrlHostGet
 ============
 
+Traffic Server URL component retrieval API.
+
 Synopsis
 ========
 

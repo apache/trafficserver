@@ -73,9 +73,6 @@
 #include <ts/ink_inet.h>
 #include <resolv.h>
 #include <arpa/nameser.h>
-#ifdef HAVE_NET_PPP_DEFS_H
-#include <net/ppp_defs.h>
-#endif
 
 #if defined(openbsd)
 #define NS_INT16SZ          INT16SZ
@@ -195,10 +192,10 @@ ats_host_res_match(sockaddr const* addr);
 /** Parse a host resolution configuration string.
  */
 extern void
-parse_host_res_preferences(
-			   char const* value, ///< [in] Configuration string.
-			   HostResPreferenceOrder order /// [out] Order to update.
-			   );
+parse_host_res_preference(
+			 char const* value, ///< [in] Configuration string.
+			  HostResPreferenceOrder order /// [out] Order to update.
+			  );
 
 #ifndef NS_GET16
 #define NS_GET16(s, cp) do { \

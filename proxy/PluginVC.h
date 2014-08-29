@@ -36,6 +36,7 @@
 #ifndef _PLUGIN_VC_H_
 #define _PLUGIN_VC_H_
 
+#include "Plugin.h"
 #include "P_Net.h"
 #include "ink_atomic.h"
 
@@ -75,22 +76,17 @@ enum
   PLUGIN_VC_MAGIC_DEAD = 0xaabbdead
 };
 
-class PluginVC:public NetVConnection
+class PluginVC:public NetVConnection, public PluginIdentity
 {
   friend class PluginVCCore;
 public:
 
-    PluginVC();
+    PluginVC(PluginVCCore *core_obj);
    ~PluginVC();
 
   virtual VIO *do_io_read(Continuation * c = NULL, int64_t nbytes = INT64_MAX, MIOBuffer * buf = 0);
 
   virtual VIO *do_io_write(Continuation * c = NULL, int64_t nbytes = INT64_MAX, IOBufferReader * buf = 0, bool owner = false);
-
-  virtual bool is_over_ssl()
-  {
-    return (false);
-  }
 
   virtual void do_io_close(int lerrno = -1);
   virtual void do_io_shutdown(ShutdownHowTo_t howto);
@@ -118,6 +114,18 @@ public:
   virtual bool set_data(int id, void *data);
 
   virtual PluginVC* get_other_side() { return other_side; }
+
+  //@{ @name Plugin identity.
+  /// Override for @c PluginIdentity.
+  virtual char const* getPluginTag() const { return plugin_tag; }
+  /// Override for @c PluginIdentity.
+  virtual int64_t getPluginId() const { return plugin_id; }
+
+  /// Setter for plugin tag.
+  virtual void setPluginTag(char const* tag) { plugin_tag = tag; }
+  /// Setter for plugin id.
+  virtual void setPluginId(int64_t id) { plugin_id = id; }
+  //@}
 
   int main_handler(int event, void *data);
 
@@ -157,6 +165,9 @@ private:
   ink_hrtime inactive_timeout;
   ink_hrtime inactive_timeout_at;
   Event *inactive_event;
+
+  char const* plugin_tag;
+  int64_t plugin_id;
 };
 
 class PluginVCCore:public Continuation
@@ -203,15 +214,20 @@ public:
 
   void set_transparent(bool passive_side, bool active_side);
 
-private:
-
-  void destroy();
+  /// Set the plugin ID for the internal VCs.
+  void set_plugin_id(int64_t id);
+  /// Set the plugin tag for the internal VCs.
+  void set_plugin_tag(char const* tag);
 
   // The active vc is handed to the initiator of
   //   connection.  The passive vc is handled to
   //   receiver of the connection
   PluginVC active_vc;
   PluginVC passive_vc;
+private:
+
+  void destroy();
+
   Continuation *connect_to;
   bool connected;
 
@@ -233,8 +249,8 @@ private:
 
 inline
 PluginVCCore::PluginVCCore():
-active_vc(),
-passive_vc(),
+active_vc(this),
+passive_vc(this),
 connect_to(NULL),
 connected(false),
 p_to_a_buffer(NULL),

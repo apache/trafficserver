@@ -24,15 +24,10 @@
 
 #include "libts.h"
 #include "LocalManager.h"
+#include "ClusterCom.h"
 #include "MgmtUtils.h"
 #include "Alarms.h"
 #include "Diags.h"
-
-#if defined(MGMT_API)
-#include "TSControlMain.h"
-#include "Message.h"
-#include "Defs.h"
-#endif
 
 #include "P_RecCore.h"
 
@@ -64,26 +59,29 @@ const char *alarmText[] = {
 
 const int alarmTextNum = sizeof(alarmText) / sizeof(char *);
 
+// Return the alarm script directory. Use proxy.config.alarm.abs_path if it is
+// set, falling back to proxy.config.bin_path otherwise.
+static char *
+alarm_script_dir()
+{
+  char * path;
+
+  path = REC_readString("proxy.config.alarm.abs_path", NULL);
+  if (path && *path) {
+    return path;
+  }
+
+  return RecConfigReadBinDir();
+}
+
 Alarms::Alarms()
 {
-  bool found;
-
   cur_cb = 0;
   cblist = ink_hash_table_create(InkHashTableKeyType_String);
   local_alarms = ink_hash_table_create(InkHashTableKeyType_String);
   remote_alarms = ink_hash_table_create(InkHashTableKeyType_String);
   ink_mutex_init(&mutex, "alarms-mutex");
-  alarm_bin = REC_readString("proxy.config.alarm.bin", &found);
-  ink_assert(found);
-  alarm_bin_path = REC_readString("proxy.config.alarm.abs_path", &found);
-  ink_assert(found);
-  if (!alarm_bin_path) {
-    alarm_bin_path = REC_readString("proxy.config.bin_path", &found);
-    ink_assert(found);
-  }
   alarmOEMcount = minOEMkey;
-
-  return;
 }                               /* End Alarms::Alarms */
 
 
@@ -93,7 +91,6 @@ Alarms::~Alarms()
   ink_hash_table_destroy_and_xfree_values(local_alarms);
   ink_hash_table_destroy_and_xfree_values(remote_alarms);
   ink_mutex_destroy(&mutex);
-  return;
 }                               /* End Alarms::Alarms */
 
 
@@ -107,7 +104,6 @@ Alarms::registerCallback(AlarmCallbackFunc func)
   Debug("alarm", "[Alarms::registerCallback] Registering Alarms callback\n");
   ink_hash_table_insert(cblist, cb_buf, (void *) func);
   ink_mutex_release(&mutex);
-  return;
 }                               /* End Alarms::registerCallback */
 
 
@@ -203,7 +199,6 @@ Alarms::signalAlarm(alarm_t a, const char *desc, const char *ip)
     break;
   case MGMT_ALARM_PROXY_PROCESS_BORN:
     mgmt_log(stderr, "[Alarms::signalAlarm] Server Process born\n");
-    priority = 2;
     return;
   case MGMT_ALARM_ADD_ALARM:
     priority = 2;
@@ -235,19 +230,18 @@ Alarms::signalAlarm(alarm_t a, const char *desc, const char *ip)
 
   Debug("alarm", "[Alarms::signalAlarm] Sending Alarm: '%s'", desc);
 
-  if (!desc)
+  if (!desc) {
     desc = (char *) getAlarmText(a);
+  }
 
   /*
    * Exec alarm bin for priority alarms everytime, regardless if they are
    * potentially duplicates. However, only exec this for you own alarms,
    * don't want every node in the cluster reporting the same alarm.
    */
-  if (priority == 1 && alarm_bin && alarm_bin_path && !ip) {
+  if (priority == 1 && !ip) {
     execAlarmBin(desc);
   }
-
-
 
   ink_mutex_acquire(&mutex);
   if (!ip) {
@@ -314,36 +308,6 @@ Alarms::signalAlarm(alarm_t a, const char *desc, const char *ip)
   ink_strlcpy(atmp->description, desc, atmp_desc_size);
   ink_mutex_release(&mutex);
 
-#if defined(MGMT_API)
-  if (mgmt_alarm_event_q) {
-    // ADDED CODE here is where we Add to the queue of alarms one more
-    EventNoticeForm *new_alarm = (EventNoticeForm *)ats_malloc(sizeof(EventNoticeForm));
-
-    // allocated space copy over values
-    // remember AlarmID start from 0 exactly 1 off but everything else
-    // matches
-    new_alarm->alarm_t = (AlarmID) (atmp->type - 1);
-    new_alarm->priority = atmp->priority;
-    new_alarm->linger = atmp->linger;
-    new_alarm->local = atmp->local;
-    new_alarm->seen = atmp->seen;
-    if (!atmp->local)
-      new_alarm->inet_address = atmp->inet_address;
-    if (!atmp->description) {
-      new_alarm->description = NULL;
-    } else {
-      new_alarm->description = ats_strdup(atmp->description);
-    }
-
-    // new alarm is complete now add it
-    ink_mutex_acquire(&mgmt_alarm_event_q->mgmt_alarm_lock);
-
-    // enqueue
-    enqueue(mgmt_alarm_event_q->mgmt_alarm_q, new_alarm);
-
-    ink_mutex_release(&mgmt_alarm_event_q->mgmt_alarm_lock);
-  }
-#endif
 
   for (entry = ink_hash_table_iterator_first(cblist, &iterator_state);
        entry != NULL; entry = ink_hash_table_iterator_next(cblist, &iterator_state)) {
@@ -351,12 +315,12 @@ Alarms::signalAlarm(alarm_t a, const char *desc, const char *ip)
     Debug("alarm", "[Alarms::signalAlarm] invoke callback for %d", a);
     (*(func)) (a, ip, desc);
   }
+
   /* Priority 2 alarms get signalled if they are the first unsolved occurence. */
-  if (priority == 2 && alarm_bin && alarm_bin_path && !ip) {
+  if (priority == 2 && !ip) {
     execAlarmBin(desc);
   }
 
-  return;
 }                               /* End Alarms::signalAlarm */
 
 
@@ -424,7 +388,7 @@ Alarms::clearUnSeen(char *ip)
  * takes the current list of local alarms and builds an alarm message.
  */
 void
-Alarms::constructAlarmMessage(char *ip, char *message, int max)
+Alarms::constructAlarmMessage(const AppVersionInfo& version, char *ip, char *message, int max)
 {
   int n = 0, bsum = 0;
   char buf[4096];
@@ -435,7 +399,7 @@ Alarms::constructAlarmMessage(char *ip, char *message, int max)
     return;
   }
   // Insert the standard mcast packet header
-  n = ClusterCom::constructSharedPacketHeader(message, ip, max);
+  n = ClusterCom::constructSharedPacketHeader(version, message, ip, max);
 
   ink_mutex_acquire(&mutex);
   if (!((n + (int) strlen("type: alarm\n")) < max)) {
@@ -474,7 +438,6 @@ Alarms::constructAlarmMessage(char *ip, char *message, int max)
       return;
     }
     ink_strlcpy(&message[n], "alarm: none\n", max - n);
-    n += strlen("alarm: none\n");
   }
   ink_mutex_release(&mutex);
   return;
@@ -495,27 +458,27 @@ Alarms::checkSystemNAlert()
 void
 Alarms::execAlarmBin(const char *desc)
 {
-  char cmd_line[1024];
-  char *alarm_email_from_name = 0;
-  char *alarm_email_from_addr = 0;
-  char *alarm_email_to_addr = 0;
-  bool found;
+  ats_scoped_str bindir(alarm_script_dir());
+  char cmd_line[MAXPATHLEN];
 
-  // get email info
-  alarm_email_from_name = REC_readString("proxy.config.product_name", &found);
-  if (!found)
-    alarm_email_from_name = 0;
-  alarm_email_from_addr = REC_readString("proxy.config.admin.admin_user", &found);
-  if (!found)
-    alarm_email_from_addr = 0;
-  alarm_email_to_addr = REC_readString("proxy.config.alarm_email", &found);
-  if (!found)
-    alarm_email_to_addr = 0;
+  ats_scoped_str alarm_bin(REC_readString("proxy.config.alarm.bin", NULL));
+  ats_scoped_str alarm_email_from_name;
+  ats_scoped_str alarm_email_from_addr;
+  ats_scoped_str alarm_email_to_addr;
 
-  int status;
   pid_t pid;
 
-  ink_filepath_make(cmd_line, sizeof(cmd_line), alarm_bin_path, alarm_bin);
+  // If there's no alarm script configured, don't even bother.
+  if (!alarm_bin || *alarm_bin == '\0') {
+    return;
+  }
+
+  // get email info
+  alarm_email_from_name = REC_readString("proxy.config.product_name", NULL);
+  alarm_email_from_addr = REC_readString("proxy.config.admin.admin_user", NULL);
+  alarm_email_to_addr = REC_readString("proxy.config.alarm_email", NULL);
+
+  ink_filepath_make(cmd_line, sizeof(cmd_line), bindir, alarm_bin);
 
 #ifdef POSIX_THREAD
   if ((pid = fork()) < 0)
@@ -525,11 +488,12 @@ Alarms::execAlarmBin(const char *desc)
   {
     mgmt_elog(stderr, errno, "[Alarms::execAlarmBin] Unable to fork1 process\n");
   } else if (pid > 0) {         /* Parent */
-    // INKqa11769
+    int status;
     bool script_done = false;
-    time_t timeout = (time_t) REC_readInteger("proxy.config.alarm.script_runtime", &found);
-    if (!found)
+    time_t timeout = (time_t) REC_readInteger("proxy.config.alarm.script_runtime", NULL);
+    if (!timeout) {
       timeout = 5;              // default time = 5 secs
+    }
     time_t time_delta = 0;
     time_t first_time = time(0);
     while (time_delta <= timeout) {
@@ -552,19 +516,12 @@ Alarms::execAlarmBin(const char *desc)
   } else {
     int res;
     if (alarm_email_from_name && alarm_email_from_addr && alarm_email_to_addr) {
-      res = execl(cmd_line, alarm_bin, desc, alarm_email_from_name, alarm_email_from_addr, alarm_email_to_addr, (char*)NULL);
+      res = execl(cmd_line, (const char *)alarm_bin, desc, (const char *)alarm_email_from_name, (const char *)alarm_email_from_addr, (const char *)alarm_email_to_addr, (char*)NULL);
     } else {
-      res = execl(cmd_line, alarm_bin, desc, (char*)NULL);
+      res = execl(cmd_line, (const char *)alarm_bin, desc, (char*)NULL);
     }
     _exit(res);
   }
-
-
-
-  // free memory
-  ats_free(alarm_email_from_name);
-  ats_free(alarm_email_from_addr);
-  ats_free(alarm_email_to_addr);
 }
 
 //

@@ -26,16 +26,14 @@
 
 
  ***************************************************************************/
-#ifndef _STATTYPE_H_
-#define	_STATTYPE_H_
+#ifndef _GENERIC_PARSER_H_
+#define _GENERIC_PARSER_H_
 
 #include <string.h>
 #include "ink_assert.h"
 #include "Tokenizer.h"
 #include "List.h"
-#include "ink_resource.h"
 #include "mgmtapi.h"         // INKFileNameT
-
 
 #define MIN_CONFIG_TOKEN       1
 #define MAX_CONFIG_TOKEN       30
@@ -302,4 +300,5 @@ private:
  *****************************************************************************************/
 //char *strtrim(char *);
 const char *strtrim(const char *, char chr = ' ');
-#endif
+
+#endif /* _GENERIC_PARSER_H_ */

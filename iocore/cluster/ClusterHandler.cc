@@ -1569,7 +1569,6 @@ ClusterHandler::build_write_descriptors()
     if (VC_CLUSTER_CLOSED == vc->type) {
       vc->type = VC_NULL;
       clusterVCAllocator.free(vc);
-      vc = vc_next;
       continue;
     }
 
@@ -1676,7 +1675,6 @@ ClusterHandler::build_freespace_descriptors()
     if (VC_CLUSTER_CLOSED == vc->type) {
       vc->type = VC_NULL;
       clusterVCAllocator.free(vc);
-      vc = vc_next;
       continue;
     }
 
@@ -1703,7 +1701,6 @@ ClusterHandler::build_freespace_descriptors()
         freespace_descriptors_built++;
       }
     }
-    vc = vc_next;
   }
   return (freespace_descriptors_built);
 }

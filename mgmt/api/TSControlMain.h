@@ -33,42 +33,14 @@
 #ifndef TS_CONTROL_MAIN_H
 #define TS_CONTROL_MAIN_H
 
-#include "WebUtils.h"           // for SocketInfo
 #include "mgmtapi.h"
-#include "NetworkUtilsDefs.h"
 
 typedef struct
 {
-  SocketInfo sock_info;
+  int fd;
   struct sockaddr *adr;
 } ClientT;
 
-ClientT *create_client();
-void delete_client(ClientT * client);
-
 void *ts_ctrl_main(void *arg);
-
-TSError handle_record_get(struct SocketInfo sock_info, char *req);
-TSError handle_record_set(struct SocketInfo sock_info, char *req);
-
-TSError handle_file_read(struct SocketInfo sock_info, char *req);
-TSError handle_file_write(struct SocketInfo sock_info, char *req);
-
-TSError handle_proxy_state_get(struct SocketInfo sock_info);
-TSError handle_proxy_state_set(struct SocketInfo sock_info, char *req);
-TSError handle_reconfigure(struct SocketInfo sock_info);
-TSError handle_restart(struct SocketInfo sock_info, char *req, bool bounce);
-
-TSError handle_event_resolve(struct SocketInfo sock_info, char *req);
-TSError handle_event_get_mlt(struct SocketInfo sock_info);
-TSError handle_event_active(struct SocketInfo sock_info, char *req);
-
-TSError handle_snapshot(struct SocketInfo sock_info, char *req, OpType op);
-TSError handle_snapshot_get_mlt(struct SocketInfo sock_info);
-
-void handle_diags(struct SocketInfo sock_info, char *req);
-
-TSError handle_stats_reset(struct SocketInfo sock_info, char *req, OpType op);
-
 
 #endif

@@ -30,7 +30,8 @@
 // Initialization
 //-------------------------------------------------------------------------
 
-int RecMessageInit();
+//int RecMessageInit();
+void RecMessageRegister();
 
 //-------------------------------------------------------------------------
 // Message Operations

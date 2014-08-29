@@ -67,14 +67,13 @@ libinkevent_a_SOURCES = \
   Thread.cc \
   UnixEThread.cc \
   UnixEvent.cc \
-  UnixEventProcessor.cc 
+  UnixEventProcessor.cc
 
 check_PROGRAMS = test_Buffer test_Event
 
 test_CXXFLAGS = \
   $(iocore_include_dirs) \
-  -I$(top_builddir)/proxy \
-  -I$(top_builddir)/proxy/api/ts \
+  -I$(top_srcdir)/proxy/api/ts \
   -I$(top_srcdir)/proxy/api \
   -I$(top_srcdir)/proxy \
   -I$(top_srcdir)/proxy/hdrs \
@@ -85,13 +84,12 @@ test_CXXFLAGS = \
 
 test_LDADD = \
   libinkevent.a \
-  $(top_builddir)/lib/records/librecprocess.a \
-  $(top_builddir)/mgmt/libmgmt_p.a \
-  $(top_builddir)/mgmt/utils/libutils_p.a \
+  $(top_builddir)/lib/records/librecords_p.a \
+  $(top_builddir)/mgmt/libmgmt_p.la \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/lib/ts/libtsutil.la \
   $(top_builddir)/proxy/shared/libUglyLogStubs.a \
-  @LIBTCL@
+  @LIBTCL@ @HWLOC_LIBS@
 
 test_Buffer_SOURCES = \
   test_Buffer.cc

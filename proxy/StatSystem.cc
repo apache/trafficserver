@@ -280,8 +280,10 @@ write_stats_snap()
   int version = STATS_MAJOR_VERSION;
   char *buf = NULL;
 
-  if ((fd = open_stats_snap()) < 0)
-    goto Lerror;
+  if ((fd = open_stats_snap()) < 0) {
+    Warning("unable to snap statistics");
+    return;
+  }
 
   {
     int stats_size = MAX_HTTP_TRANS_STATS - NO_HTTP_TRANS_STATS + MAX_DYN_STATS - NO_DYN_STATS;
@@ -315,21 +317,17 @@ write_stats_snap()
       p += sizeof(count);
     }
     memcpy(p, (char *) &version, sizeof(version));
-    p += sizeof(version);
 
-    if (socketManager.write(fd, buf, buf_size) != buf_size)
-      goto Lerror;
+    if (socketManager.write(fd, buf, buf_size) != buf_size) {
+      Warning("unable to snap statistics");
+      ats_free(buf);
+      socketManager.close(fd);
+      return;
+    }
   }
   ats_free(buf);
-  //close(fd);
   socketManager.close(fd);
   Debug("stats", "snapped stats");
-  return;
-Lerror:
-  ats_free(buf);
-  Warning("unable to snap statistics");
-  //close(fd);
-  socketManager.close(fd);
 }
 
 struct SnapStatsContinuation: public Continuation
@@ -384,9 +382,9 @@ struct SnapCont: public Continuation
 void
 start_stats_snap()
 {
-  eventProcessor.schedule_every(NEW(new SnapCont(rusage_snap_mutex)), SNAP_USAGE_PERIOD, ET_CALL);
+  eventProcessor.schedule_every(new SnapCont(rusage_snap_mutex), SNAP_USAGE_PERIOD, ET_CALL);
   if (snap_stats_every)
-    eventProcessor.schedule_every(NEW(new SnapStatsContinuation()), HRTIME_SECONDS(snap_stats_every), ET_CALL);
+    eventProcessor.schedule_every(new SnapStatsContinuation(), HRTIME_SECONDS(snap_stats_every), ET_CALL);
   else
     Warning("disabling statistics snap");
 }
@@ -474,7 +472,7 @@ initialize_all_global_stats()
 {
   int istat, i;
   char snap_file[PATH_NAME_MAX + 1];
-  xptr<char> rundir(RecConfigReadRuntimeDir());
+  ats_scoped_str rundir(RecConfigReadRuntimeDir());
 
   if (access(rundir, R_OK | W_OK) == -1) {
     Warning("Unable to access() local state directory '%s': %d, %s", (const char *)rundir, errno, strerror(errno));

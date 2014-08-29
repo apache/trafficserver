@@ -30,7 +30,6 @@
 #include "HTTP.h"
 #include "MIME.h"
 #include "Regex.h"
-#include "Resource.h"
 #include "URL.h"
 #include "HttpCompat.h"
 

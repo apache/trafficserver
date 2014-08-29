@@ -1,3 +1,5 @@
+.. _combo-handler-plugin:
+
 Combohandler Plugin
 *******************
 

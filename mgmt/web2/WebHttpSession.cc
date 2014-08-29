@@ -29,7 +29,6 @@
  ****************************************************************************/
 
 #include "ink_platform.h"
-#include "ink_resource.h"
 #include "ink_hash_table.h"
 #include "ink_hash_table.h"
 
@@ -39,7 +38,7 @@
 #include "WebGlobals.h"
 #include "WebHttpSession.h"
 
-#include "LocalManager.h"
+//#include "LocalManager.h"
 
 #define SESSION_EXPIRES 600     // 10 minutes
 #define CURRENT_SESSION_EXPIRES 100     // 10 minutes

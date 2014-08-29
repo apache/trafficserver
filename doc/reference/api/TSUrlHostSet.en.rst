@@ -21,6 +21,8 @@
 TSUrlHostSet
 ============
 
+Traffic Server URL component manipulation API.
+
 Synopsis
 ========
 
@@ -48,14 +50,14 @@ information.
 :func:`TSUrlSchemeSet`, :func:`TSUrlUserSet`, :func:`TSUrlPasswordSet`,
 :func:`TSUrlHostSet`, :func:`TSUrlHttpParamsSet`, :func:`TSUrlHttpQuerySet`
 and :func:`TSUrlHttpFragmentSet` each set the specified portion of the URL
-located at offset within the marshal buffer :data:`bufp` to the string
-value. If :data:`length` is :data:`-1` then these functions assume that value
-is NULL-terminated. Otherwise, the length of the :data:`string` value is taken
-to be the value of :data:`length`. These functions copy the string to within
-:data:`bufp`, so it can be subsequently modified or deleted.
+located at offset within the marshal buffer :arg:`bufp` to the string
+value. If :arg:`length` is ``-1`` then these functions assume that value
+is NULL-terminated. Otherwise, the length of the :arg:`string` value is taken
+to be the value of :arg:`length`. These functions copy the string to within
+:arg:`bufp`, so it can be subsequently modified or deleted.
 
 :func:`TSUrlPortSet` sets the port number portion of the URL located at
-:data:`offset` within the marshal buffer :data:`bufp` to the value
+:arg:`offset` within the marshal buffer :arg:`bufp` to the value
 port. Normal canonicalization based on the URL scheme still applies.
 
 Return values

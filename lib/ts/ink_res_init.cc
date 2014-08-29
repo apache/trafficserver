@@ -579,7 +579,7 @@ ink_res_init(
 }
 
 void
-parse_host_res_preferences(char const* value, HostResPreferenceOrder order) {
+parse_host_res_preference(char const* value, HostResPreferenceOrder order) {
   Tokenizer tokens(";/|");
   // preference from the config string.
   int np = 0; // index in to @a m_host_res_preference
@@ -621,8 +621,8 @@ parse_host_res_preferences(char const* value, HostResPreferenceOrder order) {
       order[np++] = HOST_RES_PREFER_IPV4;
     if (!found[HOST_RES_PREFER_IPV6])
       order[np++] = HOST_RES_PREFER_IPV6;
-    if (np < N_HOST_RES_PREFERENCE)
-      order[np++] = HOST_RES_PREFER_NONE;
+    if (np < N_HOST_RES_PREFERENCE_ORDER) // was N_HOST_RES_PREFERENCE)
+      order[np] = HOST_RES_PREFER_NONE;
   }
 }      
 

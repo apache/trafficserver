@@ -23,13 +23,18 @@
 #include "libts.h"
 #include "I_Layout.h"
 #include "P_Net.h"
+#include "ink_cap.h"
+#include "P_OCSPStapling.h"
 
+#include <string>
 #include <openssl/err.h>
 #include <openssl/bio.h>
 #include <openssl/pem.h>
 #include <openssl/x509.h>
 #include <openssl/asn1.h>
 #include <openssl/rand.h>
+#include <unistd.h>
+#include <termios.h>
 
 #if HAVE_OPENSSL_EVP_H
 #include <openssl/evp.h>
@@ -54,6 +59,13 @@
 #define SSL_CA_TAG            "ssl_ca_name"
 #define SSL_SESSION_TICKET_ENABLED "ssl_ticket_enabled"
 #define SSL_SESSION_TICKET_KEY_FILE_TAG "ticket_key_name"
+#define SSL_KEY_DIALOG        "ssl_key_dialog"
+#define SSL_CERT_SEPARATE_DELIM ','
+
+// openssl version must be 0.9.4 or greater
+#if (OPENSSL_VERSION_NUMBER < 0x00090400L)
+# error Traffic Server requires an OpenSSL library version 0.9.4 or greater
+#endif
 
 #ifndef evp_md_func
 #ifdef OPENSSL_NO_SHA256
@@ -69,9 +81,30 @@ typedef const SSL_METHOD * ink_ssl_method_t;
 typedef SSL_METHOD * ink_ssl_method_t;
 #endif
 
-#if TS_USE_TLS_TICKETS
+// gather user provided settings from ssl_multicert.config in to a single struct
+struct ssl_user_config
+{
+  ssl_user_config () : session_ticket_enabled(1) {
+  }
+
+  int session_ticket_enabled;  // ssl_ticket_enabled - session ticket enabled
+  ats_scoped_str addr;   // dest_ip - IPv[64] address to match
+  ats_scoped_str cert;   // ssl_cert_name - certificate
+  ats_scoped_str first_cert; // the first certificate name when multiple cert files are in 'ssl_cert_name'
+  ats_scoped_str ca;     // ssl_ca_name - CA public certificate
+  ats_scoped_str key;    // ssl_key_name - Private key
+  ats_scoped_str ticket_key_filename; // ticket_key_name - session key file. [key_name (16Byte) + HMAC_secret (16Byte) + AES_key (16Byte)]
+  ats_scoped_str dialog; // ssl_key_dialog - Private key dialog
+};
+
+// Check if the ticket_key callback #define is available, and if so, enable session tickets.
+#ifdef SSL_CTX_set_tlsext_ticket_key_cb
+
+#define HAVE_OPENSSL_SESSION_TICKETS 1
+
+static void session_ticket_free(void *, void *, CRYPTO_EX_DATA *, int, long, void *);
 static int ssl_callback_session_ticket(SSL *, unsigned char *, unsigned char *, EVP_CIPHER_CTX *, HMAC_CTX *, int);
-#endif /* TS_USE_TLS_TICKETS */
+#endif /* SSL_CTX_set_tlsext_ticket_key_cb */
 
 struct ssl_ticket_key_t
 {
@@ -80,9 +113,12 @@ struct ssl_ticket_key_t
   unsigned char aes_key[16];
 };
 
-static int ssl_session_ticket_index = 0;
+static int ssl_session_ticket_index = -1;
 static pthread_mutex_t *mutex_buf = NULL;
 static bool open_ssl_initialized = false;
+
+RecRawStatBlock *ssl_rsb = NULL;
+static InkHashTable *ssl_cipher_name_table = NULL;
 
 struct ats_file_bio
 {
@@ -170,7 +206,14 @@ ssl_servername_callback(SSL * ssl, int * ad, void * arg)
   const char *        servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
   SSLNetVConnection * netvc = (SSLNetVConnection *)SSL_get_app_data(ssl);
 
-  Debug("ssl", "ssl=%p ad=%d lookup=%p server=%s", ssl, *ad, lookup, servername);
+  Debug("ssl", "ssl_servername_callback ssl=%p ad=%d lookup=%p server=%s handshake_complete=%d", ssl, *ad, lookup, servername,
+    netvc->getSSLHandShakeComplete());
+
+  // catch the client renegotiation early on
+  if (SSLConfigParams::ssl_allow_client_renegotiation == false && netvc->getSSLHandShakeComplete()) {
+    Debug("ssl", "ssl_servername_callback trying to renegotiate from the client");
+    return SSL_TLSEXT_ERR_ALERT_FATAL;
+  }
 
   // The incoming SSL_CTX is either the one mapped from the inbound IP address or the default one. If we
   // don't find a name-based match at this point, we *do not* want to mess with the context because we've
@@ -193,7 +236,7 @@ ssl_servername_callback(SSL * ssl, int * ad, void * arg)
   }
 
   ctx = SSL_get_SSL_CTX(ssl);
-  Debug("ssl", "found SSL context %p for requested name '%s'", ctx, servername);
+  Debug("ssl", "ssl_servername_callback found SSL context %p for requested name '%s'", ctx, servername);
 
   if (ctx == NULL) {
     return SSL_TLSEXT_ERR_NOACK;
@@ -246,8 +289,8 @@ ssl_context_enable_ecdh(SSL_CTX * ctx)
 static SSL_CTX *
 ssl_context_enable_tickets(SSL_CTX * ctx, const char * ticket_key_path)
 {
-#if TS_USE_TLS_TICKETS
-  xptr<char>          ticket_key_data;
+#if HAVE_OPENSSL_SESSION_TICKETS
+  ats_scoped_str          ticket_key_data;
   int                 ticket_key_len;
   ssl_ticket_key_t *  ticket_key = NULL;
 
@@ -262,7 +305,7 @@ ssl_context_enable_tickets(SSL_CTX * ctx, const char * ticket_key_path)
     goto fail;
   }
 
-  ticket_key = NEW(new ssl_ticket_key_t());
+  ticket_key = new ssl_ticket_key_t();
   memcpy(ticket_key->key_name, (const char *)ticket_key_data, 16);
   memcpy(ticket_key->hmac_secret, (const char *)ticket_key_data + 16, 16);
   memcpy(ticket_key->aes_key, (const char *)ticket_key_data + 32, 16);
@@ -287,10 +330,203 @@ fail:
   delete ticket_key;
   return ctx;
 
-#else /* TS_USE_TLS_TICKETS */
+#else /* !HAVE_OPENSSL_SESSION_TICKETS */
   (void)ticket_key_path;
   return ctx;
-#endif /* TS_USE_TLS_TICKETS */
+#endif /* HAVE_OPENSSL_SESSION_TICKETS */
+}
+
+struct passphrase_cb_userdata
+{
+    const SSLConfigParams * _configParams;
+    const char * _serverDialog;
+    const char * _serverCert;
+    const char * _serverKey;
+
+    passphrase_cb_userdata(const SSLConfigParams *params,const char *dialog, const char *cert, const char *key) :
+            _configParams(params), _serverDialog(dialog), _serverCert(cert), _serverKey(key) {}
+};
+
+// RAII implementation for struct termios
+struct ssl_termios : public  termios
+{
+  ssl_termios(int fd) {
+    _fd = -1;
+    // populate base class data
+    if (tcgetattr(fd, this) == 0) { // success
+       _fd = fd;
+    }
+    // save our copy
+    _initialAttr = *this;
+  }
+
+  ~ssl_termios() {
+    if (_fd != -1) {
+      tcsetattr(_fd, 0, &_initialAttr);
+    }
+  }
+
+  bool ok() {
+    return (_fd != -1);
+  }
+
+private:
+  int _fd;
+  struct termios _initialAttr;
+};
+
+static int
+ssl_getpassword(const char* prompt, char* buffer, int size)
+{
+  fprintf(stdout, "%s", prompt);
+
+  // disable echo and line buffering
+  ssl_termios tty_attr(STDIN_FILENO);
+
+  if (!tty_attr.ok()) {
+    return -1;
+  }
+
+  tty_attr.c_lflag &= ~ICANON; // no buffer, no backspace
+  tty_attr.c_lflag &= ~ECHO; // no echo
+  tty_attr.c_lflag &= ~ISIG; // no signal for ctrl-c
+
+  if (tcsetattr(STDIN_FILENO, 0, &tty_attr) < 0) {
+    return -1;
+  }
+
+  int i = 0;
+  int ch = 0;
+  *buffer = 0;
+  while ((ch = getchar()) != '\n' && ch != EOF) {
+    // make sure room in buffer
+    if (i >= size - 1) {
+      return -1;
+    }
+
+    buffer[i] = ch;
+    buffer[++i] = 0;
+  }
+
+  return i;
+}
+
+static int
+ssl_private_key_passphrase_callback_exec(char *buf, int size, int rwflag, void *userdata)
+{
+  if (0 == size) {
+    return 0;
+  }
+
+  *buf = 0;
+  passphrase_cb_userdata *ud = static_cast<passphrase_cb_userdata *> (userdata);
+
+  Debug("ssl", "ssl_private_key_passphrase_callback_exec rwflag=%d serverDialog=%s", rwflag, ud->_serverDialog);
+
+  // only respond to reading private keys, not writing them (does ats even do that?)
+  if (0 == rwflag) {
+    // execute the dialog program and use the first line output as the passphrase
+    FILE *f = popen(ud->_serverDialog, "r");
+    if (f) {
+      if (fgets(buf, size, f)) {
+        // remove any ending CR or LF
+        for (char *pass = buf; *pass; pass++) {
+          if (*pass == '\n' || *pass == '\r') {
+            *pass = 0;
+            break;
+          }
+        }
+      }
+      pclose(f);
+    } else {// popen failed
+      Error("could not open dialog '%s' - %s", ud->_serverDialog, strerror(errno));
+    }
+  }
+  return strlen(buf);
+}
+
+static int
+ssl_private_key_passphrase_callback_builtin(char *buf, int size, int rwflag, void *userdata)
+{
+  if (0 == size) {
+    return 0;
+  }
+
+  *buf = 0;
+  passphrase_cb_userdata *ud = static_cast<passphrase_cb_userdata *> (userdata);
+
+  Debug("ssl", "ssl_private_key_passphrase_callback rwflag=%d serverDialog=%s", rwflag, ud->_serverDialog);
+
+  // only respond to reading private keys, not writing them (does ats even do that?)
+  if (0 == rwflag) {
+    // output request
+    fprintf(stdout, "Some of your private key files are encrypted for security reasons.\n");
+    fprintf(stdout, "In order to read them you have to provide the pass phrases.\n");
+    fprintf(stdout, "ssl_cert_name=%s", ud->_serverCert);
+    if (ud->_serverKey) { // output ssl_key_name if provided
+      fprintf(stdout, " ssl_key_name=%s", ud->_serverKey);
+    }
+    fprintf(stdout, "\n");
+    // get passphrase
+    // if error, then no passphrase
+    if (ssl_getpassword("Enter passphrase:", buf, size) <= 0) {
+      *buf = 0;
+    }
+    fprintf(stdout, "\n");
+  }
+  return strlen(buf);
+}
+
+static bool
+ssl_private_key_validate_exec(const char *cmdLine)
+{
+  if (NULL == cmdLine) {
+    errno = EINVAL;
+    return false;
+  }
+
+  bool bReturn = false;
+  char *cmdLineCopy = ats_strdup(cmdLine);
+  char *ptr = cmdLineCopy;
+
+  while(*ptr && !isspace(*ptr)) ++ptr;
+  *ptr = 0;
+  if (access(cmdLineCopy, X_OK) != -1) {
+    bReturn = true;
+  }
+  ats_free(cmdLineCopy);
+  return bReturn;
+}
+
+static int
+SSLRecRawStatSyncCount(const char *name, RecDataT data_type, RecData *data, RecRawStatBlock *rsb, int id)
+{
+  // Grab all the stats we want from OpenSSL and set the stats. This function only needs to be called by one of the
+  // involved stats, all others *must* call RecRawStatSyncSum.
+  SSLCertificateConfig::scoped_config certLookup;
+
+  int64_t sessions = 0;
+  int64_t hits = 0;
+  int64_t misses = 0;
+  int64_t timeouts = 0;
+
+  if (certLookup) {
+    const unsigned ctxCount = certLookup->count();
+    for (size_t i = 0; i < ctxCount; i++) {
+      SSL_CTX * ctx = certLookup->get(i);
+
+      sessions += SSL_CTX_sess_accept_good(ctx);
+      hits += SSL_CTX_sess_hits(ctx);
+      misses += SSL_CTX_sess_misses(ctx);
+      timeouts += SSL_CTX_sess_timeouts(ctx);
+    }
+  }
+
+  SSL_SET_COUNT_DYN_STAT(ssl_user_agent_sessions_stat, sessions);
+  SSL_SET_COUNT_DYN_STAT(ssl_user_agent_session_hit_stat, hits);
+  SSL_SET_COUNT_DYN_STAT(ssl_user_agent_session_miss_stat, misses);
+  SSL_SET_COUNT_DYN_STAT(ssl_user_agent_session_timeout_stat, timeouts);
+  return RecRawStatSyncCount(name, data_type, data, rsb, id);
 }
 
 void
@@ -312,38 +548,330 @@ SSLInitializeLibrary()
     CRYPTO_set_id_callback(SSL_pthreads_thread_id);
   }
 
-  int iRet = SSL_get_ex_new_index(0, NULL, NULL, NULL, NULL);
-  if (iRet == -1) {
+#ifdef SSL_CTX_set_tlsext_ticket_key_cb
+  ssl_session_ticket_index = SSL_CTX_get_ex_new_index(0, NULL, NULL, NULL, session_ticket_free);
+  if (ssl_session_ticket_index == -1) {
     SSLError("failed to create session ticket index");
   }
-  ssl_session_ticket_index = (iRet == -1 ? 0 : iRet);
+#endif
+
+#ifdef HAVE_OPENSSL_OCSP_STAPLING
+  ssl_stapling_ex_init();
+#endif /* HAVE_OPENSSL_OCSP_STAPLING */
 
   open_ssl_initialized = true;
 }
 
 void
-SSLDiagnostic(const SrcLoc& loc, bool debug, const char * fmt, ...)
+SSLInitializeStatistics()
+{
+  SSL_CTX *               ctx;
+  SSL *                   ssl;
+  STACK_OF(SSL_CIPHER) *  ciphers;
+
+  // Allocate SSL statistics block.
+  ssl_rsb = RecAllocateRawStatBlock((int) Ssl_Stat_Count);
+  ink_assert(ssl_rsb != NULL);
+
+  // SSL client errors.
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_other_errors",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_user_agent_other_errors_stat,
+                     RecRawStatSyncSum);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_expired_cert",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_user_agent_expired_cert_stat,
+                     RecRawStatSyncSum);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_revoked_cert",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_user_agent_revoked_cert_stat,
+                     RecRawStatSyncSum);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_unknown_cert",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_user_agent_unknown_cert_stat,
+                     RecRawStatSyncSum);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_cert_verify_failed",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_user_agent_cert_verify_failed_stat,
+                     RecRawStatSyncSum);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_bad_cert",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_user_agent_bad_cert_stat,
+                     RecRawStatSyncSum);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_decryption_failed",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_user_agent_decryption_failed_stat,
+                     RecRawStatSyncSum);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_wrong_version",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_user_agent_wrong_version_stat,
+                     RecRawStatSyncSum);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_unknown_ca",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_user_agent_unknown_ca_stat,
+                     RecRawStatSyncSum);
+
+  // Polled SSL context statistics.
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_sessions",
+                     RECD_INT, RECP_NON_PERSISTENT, (int) ssl_user_agent_sessions_stat,
+                     SSLRecRawStatSyncCount); //<- only use this fn once
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_session_hit",
+                     RECD_INT, RECP_NON_PERSISTENT, (int) ssl_user_agent_session_hit_stat,
+                     RecRawStatSyncCount);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_session_miss",
+                     RECD_INT, RECP_NON_PERSISTENT, (int) ssl_user_agent_session_miss_stat,
+                     RecRawStatSyncCount);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_session_timeout",
+                     RECD_INT, RECP_NON_PERSISTENT, (int) ssl_user_agent_session_timeout_stat,
+                     RecRawStatSyncCount);
+
+  // SSL server errors.
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.origin_server_other_errors",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_origin_server_other_errors_stat,
+                     RecRawStatSyncSum);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.origin_server_expired_cert",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_origin_server_expired_cert_stat,
+                     RecRawStatSyncSum);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.origin_server_revoked_cert",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_origin_server_revoked_cert_stat,
+                     RecRawStatSyncSum);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.origin_server_unknown_cert",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_origin_server_unknown_cert_stat,
+                     RecRawStatSyncSum);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.origin_server_cert_verify_failed",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_origin_server_cert_verify_failed_stat,
+                     RecRawStatSyncSum);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.origin_server_bad_cert",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_origin_server_bad_cert_stat,
+                     RecRawStatSyncSum);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.origin_server_decryption_failed",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_origin_server_decryption_failed_stat,
+                     RecRawStatSyncSum);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.origin_server_wrong_version",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_origin_server_wrong_version_stat,
+                     RecRawStatSyncSum);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.origin_server_unknown_ca",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_origin_server_unknown_ca_stat,
+                     RecRawStatSyncSum);
+
+  // SSL handshake time
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.total_handshake_time",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_total_handshake_time_stat,
+                     RecRawStatSyncSum);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.total_success_handshake_count",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_total_success_handshake_count_stat,
+                     RecRawStatSyncCount);
+
+  // TLS tickets
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.total_tickets_created",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_total_tickets_created_stat,
+                     RecRawStatSyncCount);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.total_tickets_verified",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_total_tickets_verified_stat,
+                     RecRawStatSyncCount);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.total_tickets_not_found",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_total_tickets_not_found_stat,
+                     RecRawStatSyncCount);
+  // TODO: ticket renewal is not used right now.
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.total_tickets_renewed",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_total_tickets_renewed_stat,
+                     RecRawStatSyncCount);
+
+
+  /* error stats */
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_error_want_write",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_error_want_write,
+                     RecRawStatSyncCount);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_error_want_read",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_error_want_read,
+                     RecRawStatSyncCount);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_error_want_x509_lookup",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_error_want_x509_lookup,
+                     RecRawStatSyncCount);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_error_syscall",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_error_syscall,
+                     RecRawStatSyncCount);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_error_read_eos",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_error_read_eos,
+                     RecRawStatSyncCount);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_error_zero_return",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_error_zero_return,
+                     RecRawStatSyncCount);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_error_ssl",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_error_ssl,
+                     RecRawStatSyncCount);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_sni_name_set_failure",
+                       RECD_INT, RECP_PERSISTENT, (int) ssl_sni_name_set_failure,
+                       RecRawStatSyncCount);
+
+
+  // Get and register the SSL cipher stats. Note that we are using the default SSL context to obtain
+  // the cipher list. This means that the set of ciphers is fixed by the build configuration and not
+  // filtered by proxy.config.ssl.server.cipher_suite. This keeps the set of cipher suites stable across
+  // configuration reloads and works for the case where we honor the client cipher preference.
+
+  // initialize stat name->index hash table
+  ssl_cipher_name_table = ink_hash_table_create(InkHashTableKeyType_Word);
+
+  ctx = SSLDefaultServerContext();
+  ssl = SSL_new(ctx);
+  ciphers = SSL_get_ciphers(ssl);
+
+  for (int index = 0; index < sk_SSL_CIPHER_num(ciphers); index++) {
+    SSL_CIPHER * cipher = sk_SSL_CIPHER_value(ciphers, index);
+    const char * cipherName = SSL_CIPHER_get_name(cipher);
+    std::string  statName = "proxy.process.ssl.cipher.user_agent." + std::string(cipherName);
+
+    // If room in allocated space ...
+    if ((ssl_cipher_stats_start + index) > ssl_cipher_stats_end) {
+      // Too many ciphers, increase ssl_cipher_stats_end.
+      SSLError("too many ciphers to register metric '%s', increase SSL_Stats::ssl_cipher_stats_end",
+               statName.c_str());
+      continue;
+    }
+
+    // If not already registered ...
+    if (!ink_hash_table_isbound(ssl_cipher_name_table, cipherName)) {
+      ink_hash_table_insert(ssl_cipher_name_table, cipherName, (void *)(intptr_t) (ssl_cipher_stats_start + index));
+      // Register as non-persistent since the order/index is dependent upon configuration.
+      RecRegisterRawStat(ssl_rsb, RECT_PROCESS, statName.c_str(),
+                         RECD_INT, RECP_NON_PERSISTENT, (int) ssl_cipher_stats_start + index,
+                         RecRawStatSyncSum);
+      SSL_CLEAR_DYN_STAT((int) ssl_cipher_stats_start + index);
+      Debug("ssl", "registering SSL cipher metric '%s'", statName.c_str());
+    }
+  }
+
+  SSL_free(ssl);
+  SSL_CTX_free(ctx);
+}
+
+// return true if we have a stat for the error
+static bool
+increment_ssl_client_error(unsigned long err)
+{
+  // we only look for LIB_SSL errors atm
+  if (ERR_LIB_SSL != ERR_GET_LIB(err)) {
+    SSL_INCREMENT_DYN_STAT(ssl_user_agent_other_errors_stat);
+    return false;
+  }
+
+  // error was in LIB_SSL, now just switch on REASON
+  // (we ignore FUNCTION with the prejudice that we don't care what function
+  // the error came from, hope that's ok?)
+  switch (ERR_GET_REASON(err)) {
+  case SSL_R_SSLV3_ALERT_CERTIFICATE_EXPIRED:
+    SSL_INCREMENT_DYN_STAT(ssl_user_agent_expired_cert_stat);
+    break;
+  case SSL_R_SSLV3_ALERT_CERTIFICATE_REVOKED:
+    SSL_INCREMENT_DYN_STAT(ssl_user_agent_revoked_cert_stat);
+    break;
+  case SSL_R_SSLV3_ALERT_CERTIFICATE_UNKNOWN:
+    SSL_INCREMENT_DYN_STAT(ssl_user_agent_unknown_cert_stat);
+    break;
+  case SSL_R_CERTIFICATE_VERIFY_FAILED:
+    SSL_INCREMENT_DYN_STAT(ssl_user_agent_cert_verify_failed_stat);
+    break;
+  case SSL_R_SSLV3_ALERT_BAD_CERTIFICATE:
+    SSL_INCREMENT_DYN_STAT(ssl_user_agent_bad_cert_stat);
+    break;
+  case SSL_R_TLSV1_ALERT_DECRYPTION_FAILED:
+    SSL_INCREMENT_DYN_STAT(ssl_user_agent_decryption_failed_stat);
+    break;
+  case SSL_R_WRONG_VERSION_NUMBER:
+    SSL_INCREMENT_DYN_STAT(ssl_user_agent_wrong_version_stat);
+    break;
+  case SSL_R_TLSV1_ALERT_UNKNOWN_CA:
+    SSL_INCREMENT_DYN_STAT(ssl_user_agent_unknown_ca_stat);
+    break;
+  default:
+    SSL_INCREMENT_DYN_STAT(ssl_user_agent_other_errors_stat);
+    return false;
+  }
+
+  return true;
+}
+
+// return true if we have a stat for the error
+
+static bool
+increment_ssl_server_error(unsigned long err)
+{
+  // we only look for LIB_SSL errors atm
+  if (ERR_LIB_SSL != ERR_GET_LIB(err)) {
+    SSL_INCREMENT_DYN_STAT(ssl_origin_server_other_errors_stat);
+    return false;
+  }
+
+  // error was in LIB_SSL, now just switch on REASON
+  // (we ignore FUNCTION with the prejudice that we don't care what function
+  // the error came from, hope that's ok?)
+  switch (ERR_GET_REASON(err)) {
+  case SSL_R_SSLV3_ALERT_CERTIFICATE_EXPIRED:
+    SSL_INCREMENT_DYN_STAT(ssl_origin_server_expired_cert_stat);
+    break;
+  case SSL_R_SSLV3_ALERT_CERTIFICATE_REVOKED:
+    SSL_INCREMENT_DYN_STAT(ssl_origin_server_revoked_cert_stat);
+    break;
+  case SSL_R_SSLV3_ALERT_CERTIFICATE_UNKNOWN:
+    SSL_INCREMENT_DYN_STAT(ssl_origin_server_unknown_cert_stat);
+    break;
+  case SSL_R_CERTIFICATE_VERIFY_FAILED:
+    SSL_INCREMENT_DYN_STAT(ssl_origin_server_cert_verify_failed_stat);
+    break;
+  case SSL_R_SSLV3_ALERT_BAD_CERTIFICATE:
+    SSL_INCREMENT_DYN_STAT(ssl_origin_server_bad_cert_stat);
+    break;
+  case SSL_R_TLSV1_ALERT_DECRYPTION_FAILED:
+    SSL_INCREMENT_DYN_STAT(ssl_origin_server_decryption_failed_stat);
+    break;
+  case SSL_R_WRONG_VERSION_NUMBER:
+    SSL_INCREMENT_DYN_STAT(ssl_origin_server_wrong_version_stat);
+    break;
+  case SSL_R_TLSV1_ALERT_UNKNOWN_CA:
+    SSL_INCREMENT_DYN_STAT(ssl_origin_server_unknown_ca_stat);
+    break;
+  default:
+    SSL_INCREMENT_DYN_STAT(ssl_origin_server_other_errors_stat);
+    return false;
+  }
+
+  return true;
+}
+
+void
+SSLDiagnostic(const SrcLoc& loc, bool debug, SSLNetVConnection * vc, const char * fmt, ...)
 {
   unsigned long l;
   char buf[256];
   const char *file, *data;
   int line, flags;
   unsigned long es;
-
   va_list ap;
+
+  ip_text_buffer ip_buf;
+  bool ip_buf_flag = false;
+  if (vc) {
+    ats_ip_ntop(vc->get_remote_addr(), ip_buf, sizeof(ip_buf));
+    ip_buf_flag = true;
+  }
 
   es = CRYPTO_thread_id();
   while ((l = ERR_get_error_line_data(&file, &line, &data, &flags)) != 0) {
     if (debug) {
       if (unlikely(diags->on())) {
         diags->log("ssl", DL_Debug, loc.file, loc.func, loc.line,
-            "SSL::%lu:%s:%s:%d%s%s", es, ERR_error_string(l, buf), file, line,
-          (flags & ERR_TXT_STRING) ? ":" : "", (flags & ERR_TXT_STRING) ? data : "");
+            "SSL::%lu:%s:%s:%d%s%s%s%s", es, ERR_error_string(l, buf), file, line,
+          (flags & ERR_TXT_STRING) ? ":" : "", (flags & ERR_TXT_STRING) ? data : "",
+          ip_buf_flag? ": peer address is " : "", ip_buf);
       }
     } else {
       diags->error(DL_Error, loc.file, loc.func, loc.line,
-          "SSL::%lu:%s:%s:%d%s%s", es, ERR_error_string(l, buf), file, line,
-          (flags & ERR_TXT_STRING) ? ":" : "", (flags & ERR_TXT_STRING) ? data : "");
+          "SSL::%lu:%s:%s:%d%s%s%s%s", es, ERR_error_string(l, buf), file, line,
+          (flags & ERR_TXT_STRING) ? ":" : "", (flags & ERR_TXT_STRING) ? data : "",
+          ip_buf_flag? ": peer address is " : "", ip_buf);
+    }
+
+    // Tally desired stats (only client/server connection stats, not init
+    // issues where vc is NULL)
+    if (vc) {
+      // getSSLClientConnection - true if ats is client (we update server stats)
+      if (vc->getSSLClientConnection()) {
+        increment_ssl_server_error(l); // update server error stats
+      } else {
+        increment_ssl_client_error(l); // update client error stat
+      }
     }
   }
 
@@ -402,16 +930,45 @@ SSLDefaultServerContext()
   return SSL_CTX_new(meth);
 }
 
+static bool
+SSLPrivateKeyHandler(
+    SSL_CTX * ctx,
+    const SSLConfigParams * params,
+    const ats_scoped_str& completeServerCertPath,
+    const char * keyPath)
+{
+  if (!keyPath) {
+    // assume private key is contained in cert obtained from multicert file.
+    if (!SSL_CTX_use_PrivateKey_file(ctx, completeServerCertPath, SSL_FILETYPE_PEM)) {
+      SSLError("failed to load server private key from %s", (const char *) completeServerCertPath);
+      return false;
+    }
+  } else if (params->serverKeyPathOnly != NULL) {
+    ats_scoped_str completeServerKeyPath(Layout::get()->relative_to(params->serverKeyPathOnly, keyPath));
+    if (!SSL_CTX_use_PrivateKey_file(ctx, completeServerKeyPath, SSL_FILETYPE_PEM)) {
+      SSLError("failed to load server private key from %s", (const char *) completeServerKeyPath);
+      return false;
+    }
+  } else {
+    SSLError("empty SSL private key path in records.config");
+  }
+
+  if (!SSL_CTX_check_private_key(ctx)) {
+    SSLError("server private key does not match the certificate public key");
+    return false;
+  }
+
+  return true;
+}
+
 SSL_CTX *
 SSLInitServerContext(
     const SSLConfigParams * params,
-    const char * serverCertPtr,
-    const char * serverCaCertPtr,
-    const char * serverKeyPtr)
+    const ssl_user_config & sslMultCertSettings)
 {
   int         session_id_context;
   int         server_verify_client;
-  xptr<char>  completeServerCertPath;
+  ats_scoped_str  completeServerCertPath;
   SSL_CTX *   ctx = SSLDefaultServerContext();
 
   // disable selected protocols
@@ -431,56 +988,110 @@ SSLInitServerContext(
   }
 
 #ifdef SSL_MODE_RELEASE_BUFFERS
-  SSL_CTX_set_mode(ctx, SSL_MODE_RELEASE_BUFFERS);
+  if (OPENSSL_VERSION_NUMBER > 0x1000107fL) {
+    Debug("ssl", "enabling SSL_MODE_RELEASE_BUFFERS");
+    SSL_CTX_set_mode(ctx, SSL_MODE_RELEASE_BUFFERS);
+  }
 #endif
+
+#ifdef SSL_OP_SAFARI_ECDHE_ECDSA_BUG
+  SSL_CTX_set_options(ctx, SSL_OP_SAFARI_ECDHE_ECDSA_BUG);
+#endif
+
   SSL_CTX_set_quiet_shutdown(ctx, 1);
 
-  // XXX OpenSSL recommends that we should use SSL_CTX_use_certificate_chain_file() here. That API
-  // also loads only the first certificate, but it allows the intermediate CA certificate chain to
-  // be in the same file. SSL_CTX_use_certificate_chain_file() was added in OpenSSL 0.9.3.
-  completeServerCertPath = Layout::relative_to(params->serverCertPathOnly, serverCertPtr);
-  if (!SSL_CTX_use_certificate_file(ctx, completeServerCertPath, SSL_FILETYPE_PEM)) {
-    SSLError("failed to load certificate from %s", (const char *)completeServerCertPath);
-    goto fail;
+  // pass phrase dialog configuration
+  passphrase_cb_userdata ud(params, sslMultCertSettings.dialog, sslMultCertSettings.first_cert, sslMultCertSettings.key);
+
+  if (sslMultCertSettings.dialog) {
+    pem_password_cb * passwd_cb = NULL;
+    if (strncmp(sslMultCertSettings.dialog, "exec:", 5) == 0) {
+      ud._serverDialog = &sslMultCertSettings.dialog[5];
+      // validate the exec program
+      if (!ssl_private_key_validate_exec(ud._serverDialog)) {
+        SSLError("failed to access '%s' pass phrase program: %s", (const char *) ud._serverDialog, strerror(errno));
+        goto fail;
+      }
+      passwd_cb = ssl_private_key_passphrase_callback_exec;
+    } else if (strcmp(sslMultCertSettings.dialog, "builtin") == 0) {
+      passwd_cb = ssl_private_key_passphrase_callback_builtin;
+    } else { // unknown config
+      SSLError("unknown " SSL_KEY_DIALOG " configuration value '%s'", (const char *)sslMultCertSettings.dialog);
+      goto fail;
+    }
+    SSL_CTX_set_default_passwd_cb(ctx, passwd_cb);
+    SSL_CTX_set_default_passwd_cb_userdata(ctx, &ud);
   }
 
-  // First, load any CA chains from the global chain file.
-  if (params->serverCertChainFilename) {
-    xptr<char> completeServerCertChainPath(Layout::relative_to(params->serverCertPathOnly, params->serverCertChainFilename));
-    if (!SSL_CTX_add_extra_chain_cert_file(ctx, completeServerCertChainPath)) {
-      SSLError("failed to load global certificate chain from %s", (const char *)completeServerCertChainPath);
+  if (!params->serverCertChainFilename && !sslMultCertSettings.ca && sslMultCertSettings.cert) {
+    SimpleTokenizer cert_tok((const char *)sslMultCertSettings.cert, SSL_CERT_SEPARATE_DELIM);
+    SimpleTokenizer key_tok((sslMultCertSettings.key ? (const char *)sslMultCertSettings.key : ""), SSL_CERT_SEPARATE_DELIM);
+
+    if (sslMultCertSettings.key && cert_tok.getNumTokensRemaining() != key_tok.getNumTokensRemaining()) {
+        Error("the number of certificates in ssl_cert_name and ssl_key_name doesn't match");
+        goto fail;
+    }
+
+    for (const char * certname = cert_tok.getNext(); certname; certname = cert_tok.getNext()) {
+      completeServerCertPath = Layout::relative_to(params->serverCertPathOnly, certname);
+      if (SSL_CTX_use_certificate_chain_file(ctx, completeServerCertPath) < 0) {
+        SSLError("failed to load certificate chain from %s", (const char *)completeServerCertPath);
+        goto fail;
+      }
+
+      const char * keyPath = key_tok.getNext();
+      if (!SSLPrivateKeyHandler(ctx, params, completeServerCertPath, keyPath)) {
+        goto fail;
+      }
+    }
+  } else if (sslMultCertSettings.first_cert) { // For backward compatible
+      completeServerCertPath = Layout::relative_to(params->serverCertPathOnly, sslMultCertSettings.first_cert);
+      if (!SSL_CTX_use_certificate_chain_file(ctx, completeServerCertPath)) {
+          SSLError("failed to load certificate from %s", (const char *) completeServerCertPath);
+          goto fail;
+      }
+
+    // First, load any CA chains from the global chain file.
+    if (params->serverCertChainFilename) {
+      ats_scoped_str completeServerCertChainPath(Layout::relative_to(params->serverCertPathOnly, params->serverCertChainFilename));
+      if (!SSL_CTX_add_extra_chain_cert_file(ctx, completeServerCertChainPath)) {
+        SSLError("failed to load global certificate chain from %s", (const char *) completeServerCertChainPath);
+        goto fail;
+      }
+    }
+
+    // Now, load any additional certificate chains specified in this entry.
+    if (sslMultCertSettings.ca) {
+      ats_scoped_str completeServerCertChainPath(Layout::relative_to(params->serverCertPathOnly, sslMultCertSettings.ca));
+      if (!SSL_CTX_add_extra_chain_cert_file(ctx, completeServerCertChainPath)) {
+        SSLError("failed to load certificate chain from %s", (const char *) completeServerCertChainPath);
+        goto fail;
+      }
+    }
+
+    if (!SSLPrivateKeyHandler(ctx, params, completeServerCertPath, sslMultCertSettings.key)) {
       goto fail;
     }
   }
 
-  // Now, load any additional certificate chains specified in this entry.
-  if (serverCaCertPtr) {
-    xptr<char> completeServerCertChainPath(Layout::relative_to(params->serverCertPathOnly, serverCaCertPtr));
-    if (!SSL_CTX_add_extra_chain_cert_file(ctx, completeServerCertChainPath)) {
-      SSLError("failed to load certificate chain from %s", (const char *)completeServerCertChainPath);
+  // SSL_CTX_load_verify_locations() builds the cert chain from the
+  // serverCACertFilename if that is not NULL.  Otherwise, it uses the hashed
+  // symlinks in serverCACertPath.
+  //
+  // if ssl_ca_name is NOT configured for this cert in ssl_multicert.config
+  //     AND
+  // if proxy.config.ssl.CA.cert.filename and proxy.config.ssl.CA.cert.path
+  //     are configured
+  //   pass that file as the chain (include all certs in that file)
+  // else if proxy.config.ssl.CA.cert.path is configured (and
+  //       proxy.config.ssl.CA.cert.filename is NULL)
+  //   use the hashed symlinks in that directory to build the chain
+  if (!sslMultCertSettings.ca && params->serverCACertPath != NULL) {
+    if ((!SSL_CTX_load_verify_locations(ctx, params->serverCACertFilename, params->serverCACertPath)) ||
+        (!SSL_CTX_set_default_verify_paths(ctx))) {
+      SSLError("invalid CA Certificate file or CA Certificate path");
       goto fail;
     }
-  }
-
-  if (serverKeyPtr == NULL) {
-    // assume private key is contained in cert obtained from multicert file.
-    if (!SSL_CTX_use_PrivateKey_file(ctx, completeServerCertPath, SSL_FILETYPE_PEM)) {
-      SSLError("failed to load server private key from %s", (const char *)completeServerCertPath);
-      goto fail;
-    }
-  } else if (params->serverKeyPathOnly != NULL) {
-    xptr<char> completeServerKeyPath(Layout::get()->relative_to(params->serverKeyPathOnly, serverKeyPtr));
-    if (!SSL_CTX_use_PrivateKey_file(ctx, completeServerKeyPath, SSL_FILETYPE_PEM)) {
-      SSLError("failed to load server private key from %s", (const char *)completeServerKeyPath);
-      goto fail;
-    }
-  } else {
-    SSLError("empty SSL private key path in records.config");
-  }
-
-  if (!SSL_CTX_check_private_key(ctx)) {
-    SSLError("server private key does not match the certificate public key");
-    goto fail;
   }
 
   if (params->clientCertLevel != 0) {
@@ -520,11 +1131,18 @@ SSLInitServerContext(
       goto fail;
     }
   }
-
+#define SSL_CLEAR_PW_REFERENCES(UD,CTX) { \
+  memset(static_cast<void *>(&UD),0,sizeof(UD));\
+  SSL_CTX_set_default_passwd_cb(CTX, NULL);\
+  SSL_CTX_set_default_passwd_cb_userdata(CTX, NULL);\
+  }
+  SSL_CLEAR_PW_REFERENCES(ud,ctx)
   return ssl_context_enable_ecdh(ctx);
 
 fail:
+  SSL_CLEAR_PW_REFERENCES(ud,ctx)
   SSL_CTX_free(ctx);
+
   return NULL;
 }
 
@@ -549,6 +1167,16 @@ SSLInitClientContext(const SSLConfigParams * params)
     return NULL;
   }
 
+  if (params->ssl_client_ctx_protocols) {
+    SSL_CTX_set_options(client_ctx, params->ssl_client_ctx_protocols);
+  }
+  if (params->client_cipherSuite != NULL) {
+    if (!SSL_CTX_set_cipher_list(client_ctx, params->client_cipherSuite)) {
+      SSLError("invalid client cipher suite in records.config");
+      goto fail;
+    }
+  }
+
   // if no path is given for the client private key,
   // assume it is contained in the client certificate file.
   clientKeyPtr = params->clientKeyPath;
@@ -557,7 +1185,7 @@ SSLInitClientContext(const SSLConfigParams * params)
   }
 
   if (params->clientCertPath != 0) {
-    if (!SSL_CTX_use_certificate_file(client_ctx, params->clientCertPath, SSL_FILETYPE_PEM)) {
+    if (!SSL_CTX_use_certificate_chain_file(client_ctx, params->clientCertPath)) {
       SSLError("failed to load client certificate from %s", params->clientCertPath);
       goto fail;
     }
@@ -582,13 +1210,21 @@ SSLInitClientContext(const SSLConfigParams * params)
     SSL_CTX_set_verify_depth(client_ctx, params->client_verify_depth);
 
     if (params->clientCACertFilename != NULL && params->clientCACertPath != NULL) {
-      if ((!SSL_CTX_load_verify_locations(client_ctx, params->clientCACertFilename, params->clientCACertPath)) ||
-          (!SSL_CTX_set_default_verify_paths(client_ctx))) {
+      if (!SSL_CTX_load_verify_locations(client_ctx, params->clientCACertFilename, params->clientCACertPath)) {
         SSLError("invalid client CA Certificate file (%s) or CA Certificate path (%s)",
             params->clientCACertFilename, params->clientCACertPath);
         goto fail;
       }
     }
+
+    if (!SSL_CTX_set_default_verify_paths(client_ctx)) {
+      SSLError("failed to set the default verify paths");
+      goto fail;
+    }
+  }
+
+  if (SSLConfigParams::init_ssl_ctx_cb) {
+    SSLConfigParams::init_ssl_ctx_cb(client_ctx, false);
   }
 
   return client_ctx;
@@ -611,15 +1247,19 @@ asn1_strdup(ASN1_STRING * s)
 }
 
 // Given a certificate and it's corresponding SSL_CTX context, insert hash
-// table aliases for all of the subject and subjectAltNames. Note that we don't
-// deal with wildcards (yet).
+// table aliases for subject CN and subjectAltNames DNS without wildcard,
+// insert trie aliases for those with wildcard.
 static void
 ssl_index_certificate(SSLCertLookup * lookup, SSL_CTX * ctx, const char * certfile)
 {
-  X509_NAME * subject = NULL;
+  X509_NAME *   subject = NULL;
+  X509 *        cert;
+  ats_file_bio  bio(certfile, "r");
 
-  ats_file_bio bio(certfile, "r");
-  X509* cert = PEM_read_bio_X509_AUX(bio.bio, NULL, NULL, NULL);
+  cert = PEM_read_bio_X509_AUX(bio.bio, NULL, NULL, NULL);
+  if (NULL == cert) {
+    return;
+  }
 
   // Insert a key for the subject CN.
   subject = X509_get_subject_name(cert);
@@ -633,16 +1273,16 @@ ssl_index_certificate(SSLCertLookup * lookup, SSL_CTX * ctx, const char * certfi
 
       X509_NAME_ENTRY * e = X509_NAME_get_entry(subject, pos);
       ASN1_STRING * cn = X509_NAME_ENTRY_get_data(e);
-      xptr<char> name(asn1_strdup(cn));
+      ats_scoped_str name(asn1_strdup(cn));
 
-      Debug("ssl", "mapping '%s' to certificate %s", (const char *)name, certfile);
+      Debug("ssl", "mapping '%s' to certificate %s", (const char *) name, certfile);
       lookup->insert(ctx, name);
     }
   }
 
 #if HAVE_OPENSSL_TS_H
   // Traverse the subjectAltNames (if any) and insert additional keys for the SSL context.
-  GENERAL_NAMES * names = (GENERAL_NAMES *)X509_get_ext_d2i(cert, NID_subject_alt_name, NULL, NULL);
+  GENERAL_NAMES * names = (GENERAL_NAMES *) X509_get_ext_d2i(cert, NID_subject_alt_name, NULL, NULL);
   if (names) {
     unsigned count = sk_GENERAL_NAME_num(names);
     for (unsigned i = 0; i < count; ++i) {
@@ -650,8 +1290,8 @@ ssl_index_certificate(SSLCertLookup * lookup, SSL_CTX * ctx, const char * certfi
 
       name = sk_GENERAL_NAME_value(names, i);
       if (name->type == GEN_DNS) {
-        xptr<char> dns(asn1_strdup(name->d.dNSName));
-        Debug("ssl", "mapping '%s' to certificate %s", (const char *)dns, certfile);
+        ats_scoped_str dns(asn1_strdup(name->d.dNSName));
+        Debug("ssl", "mapping '%s' to certificate %s", (const char *) dns, certfile);
         lookup->insert(ctx, dns);
       }
     }
@@ -662,67 +1302,121 @@ ssl_index_certificate(SSLCertLookup * lookup, SSL_CTX * ctx, const char * certfi
   X509_free(cert);
 }
 
+// This callback function is executed while OpenSSL processes the SSL
+// handshake and does SSL record layer stuff.  It's used to trap
+// client-initiated renegotiations and update cipher stats
+static void
+ssl_callback_info(const SSL *ssl, int where, int ret)
+{
+  Debug("ssl", "ssl_callback_info ssl: %p where: %d ret: %d", ssl, where, ret);
+  SSLNetVConnection * netvc = (SSLNetVConnection *)SSL_get_app_data(ssl);
+
+  if ((where & SSL_CB_ACCEPT_LOOP) && netvc->getSSLHandShakeComplete() == true &&
+      SSLConfigParams::ssl_allow_client_renegotiation == false) {
+    int state = SSL_get_state(ssl);
+
+    if (state == SSL3_ST_SR_CLNT_HELLO_A || state == SSL23_ST_SR_CLNT_HELLO_A) {
+      netvc->setSSLClientRenegotiationAbort(true);
+      Debug("ssl", "ssl_callback_info trying to renegotiate from the client");
+    }
+  }
+  if (where & SSL_CB_HANDSHAKE_DONE) {
+    // handshake is complete
+    const SSL_CIPHER * cipher = SSL_get_current_cipher(ssl);
+    if (cipher) {
+      const char * cipherName = SSL_CIPHER_get_name(cipher);
+      // lookup index of stat by name and incr count
+      InkHashTableValue data;
+      if (ink_hash_table_lookup(ssl_cipher_name_table, cipherName, &data)) {
+        SSL_INCREMENT_DYN_STAT((intptr_t)data);
+      }
+    }
+  }
+}
+
 static bool
 ssl_store_ssl_context(
     const SSLConfigParams * params,
     SSLCertLookup *         lookup,
-    xptr<char>& addr,
-    xptr<char>& cert,
-    xptr<char>& ca,
-    xptr<char>& key,
-    const int session_ticket_enabled,
-    xptr<char>& ticket_key_filename)
+    const ssl_user_config & sslMultCertSettings)
 {
   SSL_CTX *   ctx;
-  xptr<char>  certpath;
-  xptr<char>  session_key_path;
+  ats_scoped_str  certpath;
+  ats_scoped_str  session_key_path;
 
-  ctx = ssl_context_enable_sni(SSLInitServerContext(params, cert, ca, key), lookup);
+  ctx = ssl_context_enable_sni(SSLInitServerContext(params, sslMultCertSettings), lookup);
   if (!ctx) {
     return false;
   }
+
+  SSL_CTX_set_info_callback(ctx, ssl_callback_info);
 
 #if TS_USE_TLS_NPN
   SSL_CTX_set_next_protos_advertised_cb(ctx, SSLNetVConnection::advertise_next_protocol, NULL);
 #endif /* TS_USE_TLS_NPN */
 
-  certpath = Layout::relative_to(params->serverCertPathOnly, cert);
+#if TS_USE_TLS_ALPN
+  SSL_CTX_set_alpn_select_cb(ctx, SSLNetVConnection::select_next_protocol, NULL);
+#endif /* TS_USE_TLS_ALPN */
+
+  certpath = Layout::relative_to(params->serverCertPathOnly, sslMultCertSettings.first_cert);
 
   // Index this certificate by the specified IP(v6) address. If the address is "*", make it the default context.
-  if (addr) {
-    if (strcmp(addr, "*") == 0) {
+  if (sslMultCertSettings.addr) {
+    if (strcmp(sslMultCertSettings.addr, "*") == 0) {
       lookup->ssl_default = ctx;
-      lookup->insert(ctx, addr);
+      lookup->insert(ctx, sslMultCertSettings.addr);
     } else {
       IpEndpoint ep;
 
-      if (ats_ip_pton(addr, &ep) == 0) {
-        Debug("ssl", "mapping '%s' to certificate %s", (const char *)addr, (const char *)certpath);
+      if (ats_ip_pton(sslMultCertSettings.addr, &ep) == 0) {
+        Debug("ssl", "mapping '%s' to certificate %s", (const char *)sslMultCertSettings.addr, (const char *)certpath);
         lookup->insert(ctx, ep);
       } else {
-        Error("'%s' is not a valid IPv4 or IPv6 address", (const char *)addr);
+        Error("'%s' is not a valid IPv4 or IPv6 address", (const char *)sslMultCertSettings.addr);
       }
     }
   }
 
 #if defined(SSL_OP_NO_TICKET)
   // Session tickets are enabled by default. Disable if explicitly requested.
-  if (session_ticket_enabled == 0) {
+  if (sslMultCertSettings.session_ticket_enabled == 0) {
     SSL_CTX_set_options(ctx, SSL_OP_NO_TICKET);
     Debug("ssl", "ssl session ticket is disabled");
   }
 #endif
 
   // Load the session ticket key if session tickets are not disabled and we have key name.
-  if (session_ticket_enabled != 0 && ticket_key_filename) {
-    xptr<char> ticket_key_path(Layout::relative_to(params->serverCertPathOnly, ticket_key_filename));
+  if (sslMultCertSettings.session_ticket_enabled != 0 && sslMultCertSettings.ticket_key_filename) {
+    ats_scoped_str ticket_key_path(Layout::relative_to(params->serverCertPathOnly, sslMultCertSettings.ticket_key_filename));
     ssl_context_enable_tickets(ctx, ticket_key_path);
   }
+
+#ifdef HAVE_OPENSSL_OCSP_STAPLING
+  if (SSLConfigParams::ssl_ocsp_enabled) {
+    Debug("ssl", "ssl ocsp stapling is enabled");
+    SSL_CTX_set_tlsext_status_cb(ctx, ssl_callback_ocsp_stapling);
+    if (!ssl_stapling_init_cert(ctx, (const char *)certpath)) {
+      Error("fail to configure SSL_CTX for OCSP Stapling info");
+    }
+  } else {
+    Debug("ssl", "ssl ocsp stapling is disabled");
+  }
+#else
+  if (SSLConfigParams::ssl_ocsp_enabled) {
+    Error("fail to enable ssl ocsp stapling, this openssl version does not support it");
+  }
+#endif /* HAVE_OPENSSL_OCSP_STAPLING */
 
   // Insert additional mappings. Note that this maps multiple keys to the same value, so when
   // this code is updated to reconfigure the SSL certificates, it will need some sort of
   // refcounting or alternate way of avoiding double frees.
+  Debug("ssl", "importing SNI names from %s", (const char *)certpath);
   ssl_index_certificate(lookup, ctx, certpath);
+
+  if (SSLConfigParams::init_ssl_ctx_cb) {
+    SSLConfigParams::init_ssl_ctx_cb(ctx, true);
+  }
 
   return true;
 }
@@ -730,12 +1424,8 @@ ssl_store_ssl_context(
 static bool
 ssl_extract_certificate(
     const matcher_line * line_info,
-    xptr<char>& addr,   // IPv[64] address to match
-    xptr<char>& cert,   // certificate
-    xptr<char>& ca,     // CA public certificate
-    xptr<char>& key,    // Private key
-    int&  session_ticket_enabled,  // session ticket enabled
-    xptr<char>& ticket_key_filename) // session key file. [key_name (16Byte) + HMAC_secret (16Byte) + AES_key (16Byte)]
+    ssl_user_config & sslMultCertSettings)
+
 {
   for (int i = 0; i < MATCHER_MAX_TOKENS; ++i) {
     const char * label;
@@ -749,33 +1439,42 @@ ssl_extract_certificate(
     }
 
     if (strcasecmp(label, SSL_IP_TAG) == 0) {
-      addr = ats_strdup(value);
+      sslMultCertSettings.addr = ats_strdup(value);
     }
 
     if (strcasecmp(label, SSL_CERT_TAG) == 0) {
-      cert = ats_strdup(value);
+      sslMultCertSettings.cert = ats_strdup(value);
     }
 
     if (strcasecmp(label, SSL_CA_TAG) == 0) {
-      ca = ats_strdup(value);
+      sslMultCertSettings.ca = ats_strdup(value);
     }
 
     if (strcasecmp(label, SSL_PRIVATE_KEY_TAG) == 0) {
-      key = ats_strdup(value);
+      sslMultCertSettings.key = ats_strdup(value);
     }
 
     if (strcasecmp(label, SSL_SESSION_TICKET_ENABLED) == 0) {
-      session_ticket_enabled = atoi(value);
+      sslMultCertSettings.session_ticket_enabled = atoi(value);
     }
 
     if (strcasecmp(label, SSL_SESSION_TICKET_KEY_FILE_TAG) == 0) {
-      ticket_key_filename = ats_strdup(value);
+      sslMultCertSettings.ticket_key_filename = ats_strdup(value);
+    }
+
+    if (strcasecmp(label, SSL_KEY_DIALOG) == 0) {
+      sslMultCertSettings.dialog = ats_strdup(value);
     }
   }
-
-  if (!cert) {
+  if (!sslMultCertSettings.cert) {
     Error("missing %s tag", SSL_CERT_TAG);
     return false;
+  }
+
+  SimpleTokenizer cert_tok(sslMultCertSettings.cert, SSL_CERT_SEPARATE_DELIM);
+  const char * first_cert = cert_tok.getNext();
+  if (first_cert) {
+      sslMultCertSettings.first_cert = ats_strdup(first_cert);
   }
 
   return true;
@@ -788,12 +1487,9 @@ SSLParseCertificateConfiguration(
 {
   char *      tok_state = NULL;
   char *      line = NULL;
-  xptr<char>  file_buf;
+  ats_scoped_str  file_buf;
   unsigned    line_num = 0;
   matcher_line line_info;
-
-  bool alarmAlready = false;
-  char errBuf[1024];
 
   const matcher_tags sslCertTags = {
     NULL, NULL, NULL, NULL, NULL, NULL, false
@@ -810,6 +1506,11 @@ SSLParseCertificateConfiguration(
     return false;
   }
 
+  // elevate/allow file access to root read only files/certs
+  uint32_t elevate_setting = 0;
+  REC_ReadConfigInteger(elevate_setting, "proxy.config.ssl.cert.load_elevated");
+  ElevateAccess elevate_access(elevate_setting != 0); // destructor will demote for us
+
   line = tokLine(file_buf, &tok_state);
   while (line != NULL) {
 
@@ -821,30 +1522,23 @@ SSLParseCertificateConfiguration(
     }
 
     if (*line != '\0' && *line != '#') {
-      xptr<char> addr;
-      xptr<char> cert;
-      xptr<char> ca;
-      xptr<char> key;
-      int session_ticket_enabled = -1;
-      xptr<char> ticket_key_filename;
+      ssl_user_config sslMultiCertSettings;
       const char * errPtr;
 
       errPtr = parseConfigLine(line, &line_info, &sslCertTags);
 
       if (errPtr != NULL) {
-        snprintf(errBuf, sizeof(errBuf), "%s: discarding %s entry at line %d: %s",
+        RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "%s: discarding %s entry at line %d: %s",
                      __func__, params->configFilePath, line_num, errPtr);
-        REC_SignalError(errBuf, alarmAlready);
       } else {
-        if (ssl_extract_certificate(&line_info, addr, cert, ca, key, session_ticket_enabled, ticket_key_filename)) {
-          if (!ssl_store_ssl_context(params, lookup, addr, cert, ca, key, session_ticket_enabled, ticket_key_filename)) {
+        if (ssl_extract_certificate(&line_info, sslMultiCertSettings)) {
+          if (!ssl_store_ssl_context(params, lookup, sslMultiCertSettings)) {
             Error("failed to load SSL certificate specification from %s line %u",
                 params->configFilePath, line_num);
           }
         } else {
-          snprintf(errBuf, sizeof(errBuf), "%s: discarding invalid %s entry at line %u",
+          RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "%s: discarding invalid %s entry at line %u",
                        __func__, params->configFilePath, line_num);
-          REC_SignalError(errBuf, alarmAlready);
         }
       }
 
@@ -857,14 +1551,24 @@ SSLParseCertificateConfiguration(
   // bootstrap the SSL handshake so that we can subsequently do the SNI lookup to switch to the real
   // context.
   if (lookup->ssl_default == NULL) {
-    lookup->ssl_default = ssl_context_enable_sni(SSLDefaultServerContext(), lookup);
-    lookup->insert(lookup->ssl_default, "*");
+    ssl_user_config sslMultiCertSettings;
+    sslMultiCertSettings.addr = ats_strdup("*");
+    ssl_store_ssl_context(params, lookup, sslMultiCertSettings);
   }
 
   return true;
 }
 
-#if TS_USE_TLS_TICKETS
+#if HAVE_OPENSSL_SESSION_TICKETS
+
+static void
+session_ticket_free(void * /*parent*/, void * ptr, CRYPTO_EX_DATA * /*ad*/,
+    int /*idx*/, long /*argl*/, void * /*argp*/)
+{
+  ssl_ticket_key_t * key = (ssl_ticket_key_t *)ptr;
+  delete key;
+}
+
 /*
  * RFC 5077. Create session ticket to resume SSL session without requiring session-specific state at the TLS server.
  * Specifically, it distributes the encrypted session-state information to the client in the form of a ticket and
@@ -891,35 +1595,31 @@ ssl_callback_session_ticket(
     RAND_pseudo_bytes(iv, EVP_MAX_IV_LENGTH);
     EVP_EncryptInit_ex(cipher_ctx, EVP_aes_128_cbc(), NULL, ssl_ticket_key->aes_key, iv);
     HMAC_Init_ex(hctx, ssl_ticket_key->hmac_secret, 16, evp_md_func, NULL);
-    Note("create ticket for a new session");
 
+    Debug("ssl", "create ticket for a new session.");
+    SSL_INCREMENT_DYN_STAT(ssl_total_tickets_created_stat);
     return 0;
   } else if (enc == 0) {
     if (memcmp(keyname, ssl_ticket_key->key_name, 16)) {
-      Error("keyname is not consistent.");
+      Debug("ssl", "keyname is not consistent.");
+      SSL_INCREMENT_DYN_STAT(ssl_total_tickets_not_found_stat);
       return 0;
     }
 
     EVP_DecryptInit_ex(cipher_ctx, EVP_aes_128_cbc(), NULL, ssl_ticket_key->aes_key, iv);
     HMAC_Init_ex(hctx, ssl_ticket_key->hmac_secret, 16, evp_md_func, NULL);
 
-    Note("verify the ticket for an existing session." );
+    Debug("ssl", "verify the ticket for an existing session.");
+    SSL_INCREMENT_DYN_STAT(ssl_total_tickets_verified_stat);
     return 1;
   }
 
   return -1;
 }
-#endif /* TS_USE_TLS_TICKETS */
+#endif /* HAVE_OPENSSL_SESSION_TICKETS */
 
 void
 SSLReleaseContext(SSL_CTX * ctx)
 {
-  ssl_ticket_key_t * ssl_ticket_key = (ssl_ticket_key_t *)SSL_CTX_get_ex_data(ctx, ssl_session_ticket_index);
-
-  // Free the ticket if this is the last reference.
-  if (ctx->references == 1 && ssl_ticket_key) {
-     delete ssl_ticket_key;
-  }
-
   SSL_CTX_free(ctx);
 }

@@ -110,32 +110,6 @@ class LogConfig : public ConfigInfo
 
 public:
 
-  enum CollationMode
-  {
-    NO_COLLATION = 0,
-    COLLATION_HOST,
-    SEND_STD_FMTS,
-    SEND_NON_XML_CUSTOM_FMTS,
-    SEND_STD_AND_NON_XML_CUSTOM_FMTS,
-    N_COLLATION_MODES
-  };
-
-  enum RollingEnabledValues
-  {
-    NO_ROLLING = 0,
-    ROLL_ON_TIME_ONLY,
-    ROLL_ON_SIZE_ONLY,
-    ROLL_ON_TIME_OR_SIZE,
-    ROLL_ON_TIME_AND_SIZE,
-    INVALID_ROLLING_VALUE
-  };
-
-  enum
-  {
-    // 5 minute minimum rolling interval
-    MIN_ROLLING_INTERVAL_SEC = 300
-  };
-
   LogConfig();
   ~LogConfig();
 
@@ -152,7 +126,7 @@ public:
 
   bool space_to_write(int64_t bytes_to_write);
 
-  bool am_collation_host() const { return collation_mode == COLLATION_HOST; }
+  bool am_collation_host() const { return collation_mode == Log::COLLATION_HOST; }
   bool space_is_short() { return !space_to_write(max_space_mb_headroom * LOG_MEGABYTE); };
 
   void increment_space_used(int bytes) {
@@ -195,7 +169,6 @@ public:
   int max_space_mb_headroom;
   int logfile_perm;
   bool squid_log_enabled;
-  bool xuid_logging_enabled;
   bool squid_log_is_ascii;
   bool common_log_enabled;
   bool common_log_is_ascii;
@@ -211,7 +184,7 @@ public:
   int collation_preproc_threads;
   int collation_retry_sec;
   int collation_max_send_buffers;
-  int rolling_enabled;
+  Log::RollingEnabledValues rolling_enabled;
   int rolling_interval_sec;
   int rolling_offset_hr;
   int rolling_size_mb;

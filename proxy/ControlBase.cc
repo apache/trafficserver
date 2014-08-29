@@ -350,7 +350,7 @@ struct TextMod : public ControlBase::Modifier {
 
 };
 
-TextMod::TextMod() : text(0) {}
+TextMod::TextMod() : text() {}
 TextMod::~TextMod() {
   free(text.data());
 }
@@ -390,7 +390,7 @@ void MultiTextMod::set(char * value) {
   Tokenizer rangeTok(",");
   int num_tok = rangeTok.Initialize(value, SHARE_TOKS);
   for(int i = 0; i < num_tok; i++){
-    ts::Buffer text(0);
+    ts::Buffer text;
     text.set(ats_strdup(rangeTok[i]), strlen(rangeTok[i]));
     this->text_vec.push_back(text);
   }
@@ -647,6 +647,8 @@ ControlBase::ProcessModifiers(matcher_line * line_info) {
     if (ME_UNKNOWN == err) {
       _mods.push_back(mod);
       --n_elts;
+    } else {
+      delete mod; // we still need to clean up because we didn't transfer ownership.
     }
   }
 

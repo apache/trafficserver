@@ -289,7 +289,7 @@ struct OpenDir: public Continuation
 
   int open_write(CacheVC *c, int allow_if_writers, int max_writers);
   int close_write(CacheVC *c);
-  OpenDirEntry *open_read(INK_MD5 *key);
+  OpenDirEntry *open_read(CryptoHash *key);
   int signal_readers(int event, Event *e);
 
   OpenDir();
@@ -347,7 +347,7 @@ extern Dir empty_dir;
 TS_INLINE bool
 dir_compare_tag(Dir *e, CacheKey *key)
 {
-  return (dir_tag(e) == DIR_MASK_TAG(key->word(2)));
+  return (dir_tag(e) == DIR_MASK_TAG(key->slice32(2)));
 }
 
 TS_INLINE Dir *

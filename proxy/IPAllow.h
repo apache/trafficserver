@@ -37,6 +37,9 @@
 #include "ts/Vec.h"
 #include "ProxyConfig.h"
 
+#include <string>
+#include <set>
+
 // forward declare in name only so it can be a friend.
 struct IpAllowUpdate;
 
@@ -51,14 +54,41 @@ static uint64_t const IP_ALLOW_TIMEOUT = HRTIME_HOUR;
     It has the methods permitted and the source line.
 */
 struct AclRecord {
-  int _method_mask;
+  uint32_t _method_mask;
   int _src_line;
+  typedef std::set<std::string> MethodSet;
+  MethodSet _nonstandard_methods;
+  bool _deny_nonstandard_methods;
+  static const uint32_t ALL_METHOD_MASK = ~0; // Mask for all methods.
 
   /// Default constructor.
   /// Present only to make Vec<> happy, do not use.
-  AclRecord() : _method_mask(0), _src_line(0) { }
+  AclRecord() : _method_mask(0), _src_line(0), _deny_nonstandard_methods(false) { }
 
-  AclRecord(uint32_t method_mask, int ln) : _method_mask(method_mask), _src_line(ln) { }
+  AclRecord(uint32_t method_mask) : _method_mask(method_mask), _src_line(0),
+                                    _deny_nonstandard_methods(false) { }
+
+  AclRecord(uint32_t method_mask, int ln, const MethodSet &nonstandard_methods, bool deny_nonstandard_methods)
+    : _method_mask(method_mask), _src_line(ln), _nonstandard_methods(nonstandard_methods),
+      _deny_nonstandard_methods(deny_nonstandard_methods) { }
+
+  static uint32_t MethodIdxToMask(int wksidx) { return 1 << (wksidx - HTTP_WKSIDX_CONNECT); }
+
+  bool isEmpty() const {
+    return (_method_mask == 0) && _nonstandard_methods.empty();
+  }
+
+  bool isMethodAllowed(int method_wksidx) const {
+    return _method_mask & MethodIdxToMask(method_wksidx);
+  }
+  
+  bool isNonstandardMethodAllowed(const std::string &method_str) const {
+    if (_method_mask == ALL_METHOD_MASK) {
+      return true;
+    }
+    bool method_in_set = _nonstandard_methods.count(method_str);
+    return _deny_nonstandard_methods ? !method_in_set : method_in_set;
+  }
 };
 
 /** Singleton class for access controls.
@@ -74,8 +104,8 @@ public:
   IpAllow(const char *config_var, const char *name, const char *action_val);
    ~IpAllow();
   void Print();
-  uint32_t match(IpEndpoint const* ip) const;
-  uint32_t match(sockaddr const* ip) const;
+  AclRecord *match(IpEndpoint const* ip) const;
+  AclRecord *match(sockaddr const* ip) const;
 
   static void startup();
   static void reconfigure();
@@ -83,18 +113,16 @@ public:
   static IpAllow * acquire();
   static void release(IpAllow * params);
 
-  static bool CheckMask(uint32_t, int);
   /// @return A mask that permits all methods.
-  static uint32_t AllMethodMask() {
-    return ALL_METHOD_MASK;
+  static const AclRecord *AllMethodAcl() {
+    return &ALL_METHOD_ACL;
   }
 
   typedef ConfigProcessor::scoped_config<IpAllow, IpAllow> scoped_config;
 
 private:
-  static uint32_t MethodIdxToMask(int);
-  static uint32_t ALL_METHOD_MASK;
   static int configid;
+  static const AclRecord ALL_METHOD_ACL;
 
   int BuildTable();
 
@@ -105,29 +133,18 @@ private:
   Vec<AclRecord> _acls;
 };
 
-inline uint32_t IpAllow::MethodIdxToMask(int idx) { return 1 << (idx - HTTP_WKSIDX_CONNECT); }
-
-inline uint32_t
+inline AclRecord *
 IpAllow::match(IpEndpoint const* ip) const {
   return this->match(&ip->sa);
 }
 
-inline uint32_t
+inline AclRecord *
 IpAllow::match(sockaddr const* ip) const {
-  uint32_t zret = 0;
-  void* raw;
+  void *raw;
   if (_map.contains(ip, &raw)) {
-    AclRecord* acl = static_cast<AclRecord*>(raw);
-    if (acl) {
-      zret = acl->_method_mask;
-    }
+    return static_cast<AclRecord*>(raw);
   }
-  return zret;
-}
-
-inline bool
-IpAllow::CheckMask(uint32_t mask, int method_idx) {
-  return ((mask & MethodIdxToMask(method_idx)) != 0);
+  return NULL;
 }
 
 #endif
