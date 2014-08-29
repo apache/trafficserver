@@ -173,7 +173,7 @@ REGRESSION_TEST(MessageReadWriteA)(RegressionTest * t, int /* atype ATS_UNUSED *
   mlong = (MgmtMarshallLong)(&listenfd);
 
   // Check invalid Fd write
-  CHECK_EQ(mgmt_message_write(5000, ifields, countof(ifields), &mint, &mlong), -1);
+  CHECK_EQ(mgmt_message_write(FD_SETSIZE - 1, ifields, countof(ifields), &mint, &mlong), -1);
 
   CHECK_EQ(mgmt_message_write(clientfd, ifields, countof(ifields), &mint, &mlong), 12);
 
