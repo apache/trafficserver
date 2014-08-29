@@ -31,6 +31,16 @@ Description
 The Apache Traffic Server API provides large number of types. Many of them are specific to a particular API function or
 function group, but others are used more widely. Those are described on this page.
 
+.. type:: ink_hrtime
+
+.. type:: TSAction
+
+.. type:: TSCacheKey
+
+.. type:: TSConfig
+
+.. type:: TSConfigDestroyFunc
+
 .. type:: TSCont
 
    An opaque type that represents a Traffic Server :term:`continuation`.
@@ -45,6 +55,8 @@ function group, but others are used more widely. Those are described on this pag
    receives, the handler function can decide what to do.
 
 .. type:: TSEventFunc
+
+.. type:: TSFile
 
 .. type:: TSHostLookupResult
 
@@ -64,11 +76,35 @@ function group, but others are used more widely. Those are described on this pag
 
    An opaque type that represents a Traffic Server :term:`session`.
 
+.. type:: TSHttpStatus
+
+   This set of enums represents possible return values from
+   :func:`TSHttpHdrStatusGet`, which retrieves the status code from an
+   HTTP response header (:func:`TSHttpHdrStatusGet` retrieves status
+   codes only from headers of type :data:`TS_HTTP_TYPE_RESPONSE`).
+
+   You can also set the :type:`TSHttpStatus` of a response header using
+   :func:`TSHttpHdrStatusSet`.
+
 .. type:: TSHttpTxn
 
    An opaque type that represents a Traffic Server HTTP :term:`transaction`.
 
+.. type:: TSHttpType
+
+   This set of enums represents the possible HTTP types that can be
+   assigned to an HTTP header.
+
+   When a header is created with :func:`TSHttpHdrCreate`, it is
+   automatically assigned a type of :data:`TS_HTTP_TYPE_UNKNOWN`.  You
+   can modify the HTTP type ONCE after it the header is created, using
+   :func:`TSHttpHdrTypeSet`.  After setting the HTTP type once, you
+   cannot set it again.  Use :func:`TSHttpHdrTypeGet` to obtain the
+   :type:`TSHttpType` of an HTTP header.
+
 .. type:: TSIOBuffer
+
+.. type:: TSIOBufferBlock
 
 .. type:: TSIOBufferReader
 
@@ -80,6 +116,8 @@ function group, but others are used more widely. Those are described on this pag
 
 .. type:: TSMBuffer
 
+.. type:: TSMgmtCounter
+
 .. type:: TSMgmtFloat
 
    The type used internally for a floating point value. This corresponds to the value :const:`TS_RECORDDATATYPE_FLOAT` for
@@ -89,6 +127,10 @@ function group, but others are used more widely. Those are described on this pag
 
    The type used internally for an integer. This corresponds to the value :const:`TS_RECORDDATATYPE_INT` for
    :type:`TSRecordDataType`.
+
+.. type:: TSMgmtString
+
+.. type:: TSMimeParser
 
 .. type:: TSMLoc
 
@@ -133,6 +175,12 @@ function group, but others are used more widely. Those are described on this pag
 
    Your plugin writes entries into this log file using
    :func:`TSTextLogObjectWrite`.
+
+.. type:: TSThread
+
+.. type:: TSThreadFunc
+
+.. type:: TSThreadPool
 
 .. type:: TSVConn
 
