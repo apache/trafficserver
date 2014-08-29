@@ -51,6 +51,7 @@ cmd/traffic_shell/traffic_shell
 cmd/traffic_cop/traffic_cop
 cmd/traffic_top/traffic_top
 cmd/traffic_manager/traffic_manager
+cmd/traffic_layout/traffic_layout
 
 lib/ts/ink_autoconf.h
 lib/ts/ink_config.h
