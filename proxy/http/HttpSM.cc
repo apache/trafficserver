@@ -68,9 +68,10 @@
 #ifdef TS_USE_UUID
 	#define UUID_FMT "[%s] "
 	#define UUID_VAL id.c_str()
+    RecInt HttpSM::use_uuid = -1;
 #else
-	#define UUID_FMT 
-	#define UUID_VAL 
+	#define UUID_FMT
+	#define UUID_VAL
 #endif
 
 // We have a debugging list that can use to find stuck
@@ -344,12 +345,12 @@ HttpSM::HttpSM()
   memset(&vc_table, 0, sizeof(vc_table));
   memset(&http_parser, 0, sizeof(http_parser));
 
-#ifdef TS_USE_UUID
-  // Lazy init: Trying to register and read the config here won't work,
-  // so we postpone it until the instance is to be used. This does have
-  // the side effect that the config is read once per request, though.
-  use_uuid = -1;
-#endif
+  #ifdef TS_USE_OSSP_UUID
+  if ( uuid_create(&_uuid) != UUID_RC_OK ) {
+    DebugSM("http", "Could not generate UUID generator. UUID generation being disabled.");
+	use_uuid = 0;
+  }
+  #endif
 
   if (!scatter_init) {
     _make_scatter_list(this);
@@ -446,6 +447,11 @@ HttpSM::init()
 #endif
 
 #ifdef TS_USE_UUID
+  // Lazy init: Trying to register and read the config on the constructor won't work,
+  // so we've postponed it until now, when the instance is to be used for the first time.
+  // As use_uuid is static, this will happen only once (this variable has been set on the
+  // preamble of this file.) Also, if we're using OSSP and a generator could not be
+  // initialized on the constructor, then this block won't be used.
   if ( use_uuid == -1 ) {
     // Init UUID configs
     RecRegisterConfigInt(RECT_CONFIG, "proxy.config.http.use_uuid", 0, RECU_DYNAMIC, RECC_NULL, NULL);
@@ -455,12 +461,6 @@ HttpSM::init()
     } else {
       DebugSM("http", UUID_FMT "Read [proxy.config.http.use_uuid] == [%d].", UUID_VAL, (int) use_uuid);
     }
-
-    #ifdef TS_USE_OSSP_UUID
-    if ( use_uuid == 1 ) {
-      uuid_create(&_uuid);
-    }
-    #endif
   }
 
   if ( use_uuid == 1 ) {
@@ -487,13 +487,19 @@ HttpSM::init()
 	char *vp = NULL;
 	size_t n;
 
-    uuid_make(_uuid, UUID_MAKE_V4);
-    uuid_export(_uuid, UUID_FMT_STR, &vp, &n);
-    id = std::string(vp);
-    free(vp);
+	if ( _uuid != NULL ) {
+      if ( uuid_make(_uuid, UUID_MAKE_V4) == UUID_RC_OK ) {
+        uuid_export(_uuid, UUID_FMT_STR, &vp, &n);
+        id = std::string(vp);
+        free(vp);
+      } else {
+        DebugSM("http", "Could not generate UUID.");
+      }
+	}
   #endif
 
-    DebugSM("http", UUID_FMT "UUID [%s] generated.", UUID_VAL, id.c_str());
+    if ( id.size() > 0 )
+	  DebugSM("http", UUID_FMT "UUID [%s] generated.", UUID_VAL, id.c_str());
   }
 #endif
 }

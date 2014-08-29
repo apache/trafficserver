@@ -551,8 +551,8 @@ public:
   const char *get_uuid(void) const;
 
 protected:
-  RecInt      use_uuid;
-  std::string id;
+  static RecInt use_uuid;
+  std::string   id;
 
   #ifdef TS_USE_BOOST_UUID
     boost::uuids::basic_random_generator<boost::mt19937> gen;
