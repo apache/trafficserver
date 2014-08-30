@@ -1,5 +1,4 @@
 # Doxyfile 1.5.2
-# @configure_input@
 
 # This file describes the settings to be used by the documentation system
 # doxygen (www.doxygen.org) for a project
@@ -26,20 +25,20 @@ DOXYFILE_ENCODING      = UTF-8
 # The PROJECT_NAME tag is a single word (or a sequence of words surrounded 
 # by quotes) that should identify the project.
 
-PROJECT_NAME           = @PACKAGE_NAME@
+PROJECT_NAME           = Apache Traffic Server
 
 # The PROJECT_NUMBER tag can be used to enter a project or revision number. 
 # This could be handy for archiving the generated documentation or 
 # if some version control system is used.
 
-PROJECT_NUMBER         = @PACKAGE_VERSION@
+PROJECT_NUMBER         =
 
 # The OUTPUT_DIRECTORY tag is used to specify the (relative or absolute) 
 # base path where the generated documentation will be put. 
 # If a relative path is entered, it will be relative to the location 
 # where doxygen was started. If left blank the current directory will be used.
 
-OUTPUT_DIRECTORY       = @abs_top_builddir@/doc
+OUTPUT_DIRECTORY       =
 
 # If the CREATE_SUBDIRS tag is set to YES, then doxygen will create 
 # 4096 sub-directories (in 2 levels) under the output directory of each output 
@@ -473,13 +472,13 @@ WARN_LOGFILE           = warn.log
 # directories like "/usr/src/myproject". Separate the files or directories 
 # with spaces.
 
-INPUT                  = @abs_top_srcdir@/doc/mainpage.doc \
-                         @abs_top_srcdir@/iocore \
-                         @abs_top_srcdir@/lib/ts \
-                         @abs_top_srcdir@/lib/tsconfig \
-                         @abs_top_srcdir@/lib/records \
-			 @abs_top_srcdir@/lib/atscppapi/src/include/atscppapi \
-                         @abs_top_srcdir@/proxy
+INPUT                  = mainpage.doc \
+                         ../iocore \
+                         ../lib/atscppapi/src/include/atscppapi \
+                         ../lib/records \
+                         ../lib/ts \
+                         ../lib/tsconfig \
+                         ../proxy
 
 # This tag can be used to specify the character encoding of the source files that 
 # doxygen parses. Internally doxygen uses the UTF-8 encoding, which is also the default 
@@ -592,7 +591,7 @@ FILTER_SOURCE_FILES    = NO
 # Note: To get rid of all source code in the generated output, make sure also 
 # VERBATIM_HEADERS is set to NO.
 
-SOURCE_BROWSER         = NO
+SOURCE_BROWSER         = YES
 
 # Setting the INLINE_SOURCES tag to YES will include the body 
 # of functions and classes directly in the documentation.
@@ -603,7 +602,7 @@ INLINE_SOURCES         = NO
 # doxygen to hide any special comment blocks from generated source code 
 # fragments. Normal C and C++ comments will always remain visible.
 
-STRIP_CODE_COMMENTS    = YES
+STRIP_CODE_COMMENTS    = NO
 
 # If the REFERENCED_BY_RELATION tag is set to YES (the default) 
 # then for each documented function all documented 
@@ -1113,7 +1112,7 @@ EXTERNAL_GROUPS        = YES
 # The PERL_PATH should be the absolute path and name of the perl script 
 # interpreter (i.e. the result of `which perl').
 
-PERL_PATH              = @PERL@
+PERL_PATH              = /usr/bin/perl
 
 #---------------------------------------------------------------------------
 # Configuration options related to the dot tool   
@@ -1236,7 +1235,7 @@ DOT_PATH               =
 # contain dot files that are included in the documentation (see the 
 # \dotfile command).
 
-DOTFILE_DIRS           = @abs_top_srcdir@/doc/dot
+DOTFILE_DIRS           = dot
 
 # The MAX_DOT_GRAPH_MAX_NODES tag can be used to set the maximum number of 
 # nodes that will be shown in the graph. If the number of nodes in a graph 

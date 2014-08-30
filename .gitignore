@@ -18,8 +18,6 @@
 .project
 .cproject
 
-!doc/Doxyfile.in
-
 /aclocal.m4
 /autom4te.cache
 /build-aux
@@ -38,7 +36,6 @@ Makefile-pl
 config.status
 config.nice
 config.h
-doc/Doxyfile
 doc/html/
 doc/docbuild/
 doc/locale/pot

@@ -25,7 +25,7 @@ stamp-h1
 .gitmodules
 .indent.pro
 .vimrc
-Doxyfile.*
+Doxyfile
 CHANGES
 LAYOUT
 README.*$

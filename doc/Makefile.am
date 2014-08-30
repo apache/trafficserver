@@ -65,7 +65,6 @@ all-am: $(man1_MANS) $(man3_MANS) $(man5_MANS) $(man8_MANS)
 endif
 
 EXTRA_DIST = \
-  Doxyfile.in \
   $(dist_trafficshell_DATA)
 
 clean-local:
