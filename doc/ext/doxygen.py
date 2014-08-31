@@ -77,9 +77,10 @@ def doctree_resolved(app, doctree, docname):
       # file and line number from Doxygen and use them to construct the
       # link.
       location = memberdef.find('location')
-
       filename = path.basename(location.get('file'))
-      line = location.get('bodystart')
+
+      # Declarations have no bodystart
+      line = location.get('bodystart') or location.get('line')
 
       emphasis = nodes.emphasis('', ' ' + filename + ' line ' + line)
 
