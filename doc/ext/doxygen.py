@@ -39,7 +39,7 @@ if etree and path.isfile('xml/index.xml'):
 
 # Partial reimplementation in Python of Doxygen escapeCharsInString()
 def escape(name):
-  return name.replace(':', '_1').replace('/', '_2').replace('<', '_3').replace('>', '_4').replace('*', '_5').replace('&', '_6').replace('|', '_7').replace('.', '_8').replace('!', '_9').replace(',', '_00').replace(' ', '_01').replace('{', '_02').replace('}', '_03').replace('?', '_04').replace('^', '_05').replace('%', '_06').replace('(', '_07').replace(')', '_08').replace('+', '_09').replace('=', '_0A').replace('$', '_0B').replace('\\', '_0C')
+  return name.replace('_', '__').replace(':', '_1').replace('/', '_2').replace('<', '_3').replace('>', '_4').replace('*', '_5').replace('&', '_6').replace('|', '_7').replace('.', '_8').replace('!', '_9').replace(',', '_00').replace(' ', '_01').replace('{', '_02').replace('}', '_03').replace('?', '_04').replace('^', '_05').replace('%', '_06').replace('(', '_07').replace(')', '_08').replace('+', '_09').replace('=', '_0A').replace('$', '_0B').replace('\\', '_0C')
 
 def doctree_resolved(app, doctree, docname):
   """
