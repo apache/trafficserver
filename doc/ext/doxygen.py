@@ -37,11 +37,15 @@ if etree and path.isfile('xml/index.xml'):
   # Doxygen index
   index = etree.parse('xml/index.xml')
 
+# Partial reimplementation in Python of Doxygen escapeCharsInString()
+def escape(name):
+  return name.replace(':', '_1').replace('/', '_2').replace('<', '_3').replace('>', '_4').replace('*', '_5').replace('&', '_6').replace('|', '_7').replace('.', '_8').replace('!', '_9').replace(',', '_00').replace(' ', '_01').replace('{', '_02').replace('}', '_03').replace('?', '_04').replace('^', '_05').replace('%', '_06').replace('(', '_07').replace(')', '_08').replace('+', '_09').replace('=', '_0A').replace('$', '_0B').replace('\\', '_0C')
+
 def doctree_resolved(app, doctree, docname):
   """
-  Add links from an API description to the code for that object.
-  Doxygen knows where in the code objects are located.  Based on the
-  sphinx.ext.viewcode and sphinx.ext.linkcode extensions.
+  Add links from an API description to the source code for that object.
+  Doxygen knows where in the source code objects are located.  Based on
+  the sphinx.ext.viewcode and sphinx.ext.linkcode extensions.
   """
 
   traverse = doctree.traverse(addnodes.desc_signature)
@@ -74,18 +78,23 @@ def doctree_resolved(app, doctree, docname):
       # link.
       location = memberdef.find('location')
 
-      emphasis = nodes.emphasis('', ' ' + path.basename(location.get('file')) + ' line ' + location.get('line'))
+      filename = path.basename(location.get('file'))
+      line = location.get('bodystart')
+
+      emphasis = nodes.emphasis('', ' ' + filename + ' line ' + line)
 
       # Use a relative link if the output is HTML, otherwise fall back
-      # on an absolute link to Read the Docs
-      refuri = 'api/' + compound.get('refid') + '_source.html#l' + location.get('line').rjust(5, '0')
+      # on an absolute link to Read the Docs.  I can't figure out how to
+      # get the highlighted source file for e.g. a struct from Doxygen
+      # so ape Doxygen escapeCharsInString() instead.
+      refuri = 'api/' + escape(filename) + '_source.html#l' + line.rjust(5, '0')
       if app.builder.name == 'html':
         refuri = osutil.relative_uri(app.builder.get_target_uri(docname), refuri)
 
       else:
         refuri = 'http://docs.trafficserver.apache.org/en/latest/' + refuri
 
-      reference = nodes.reference('', '', emphasis, classes=['viewcode-link'], reftitle='Code', refuri=refuri)
+      reference = nodes.reference('', '', emphasis, classes=['viewcode-link'], reftitle='Source code', refuri=refuri)
       signode += reference
 
     # Style the links
@@ -99,12 +108,12 @@ def setup(app):
   else:
     if not etree:
       app.warn('''Python lxml library not found
-  The library is used to add links from an API description to the code
-  for that object.
+  The library is used to add links from an API description to the source
+  code for that object.
   Depending on your system, try installing the python-lxml package.''')
 
     if not path.isfile('xml/index.xml'):
       app.warn('''Doxygen files not found: xml/index.xml
-  The files are used to add links from an API description to the code
-  for that object.
+  The files are used to add links from an API description to the source
+  code for that object.
   Run "$ make doxygen" to generate these XML files.''')

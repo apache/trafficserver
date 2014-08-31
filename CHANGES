@@ -1,8 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.2.0
 
-  *) [TS-2832] docs: Add links from an API description to the code for
-   that object
+  *) [TS-2832] docs: Add links from an API description to the source
+   code for that object
 
   *) [TS-3020] Blind Tunnel fake request URL is IPv4 only.
    Author: Patrick McGleenon <Patrick.McGleenon@openwave.com>
