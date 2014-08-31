@@ -1,8 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.2.0
 
-  *) [TS-2832] Add links from an API description to the code for that
-   object
+  *) [TS-2832] docs: Add links from an API description to the code for
+   that object
 
   *) [TS-3020] Blind Tunnel fake request URL is IPv4 only.
    Author: Patrick McGleenon <Patrick.McGleenon@openwave.com>
@@ -400,7 +400,8 @@ Changes with Apache Traffic Server 5.0.0
    accommodate bit-masks. Also changed TSRecordType enums to hexidecimal, as
    this is easier to read for bit arguments.
 
-  *) [TS-2797] Build all manual pages in the doc/reference/api directory.
+  *) [TS-2797] docs: Build all manual pages in the doc/reference/api
+   directory.
 
   *) [TS-2733] Do not build the old SPDY plugin.
 
@@ -731,8 +732,8 @@ Changes with Apache Traffic Server 5.0.0
 
   *) [TS-2556] Fix ink_hrtime_diff_msec.
 
-  *) [TS-2553] Fix a segfault in the Metalink plugin reported by Faysal Banna
-   and preserve the Content-Length header
+  *) [TS-2553] Metalink: Fix a segfault reported by Faysal Banna and
+   preserve the Content-Length header
    Author: Jack Bates <jack@nottheoilrig.com>
 
   *) [TS-2195] Remove the (deprecated) TSHttpTxnCacheLookupSkip API.
@@ -1605,7 +1606,7 @@ Changes with Apache Traffic Server 3.3.3 (never released)
 
   *) [TS-1925] Remove obsolete MMH hash API.
 
-  *) [TS-1924] Add Metalink plugin documentation.
+  *) [TS-1924] Metalink: Add plugin documentation.
     Author: Jack Bates <jack@nottheoilrig.com>
 
   *) [TS-1913] Fix memory issue caused by resolve_logfield_string()
