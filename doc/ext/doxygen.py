@@ -29,13 +29,13 @@ except ImportError:
 if os.environ.get('READTHEDOCS'):
   subprocess.call('doxygen')
 
-if etree and path.isfile('source/doxygen_xml_api/index.xml'):
+if etree and path.isfile('xml/index.xml'):
 
   # Doxygen files that have already been parsed
   cache = {}
 
   # Doxygen index
-  index = etree.parse('source/doxygen_xml_api/index.xml')
+  index = etree.parse('xml/index.xml')
 
 def doctree_resolved(app, doctree, docname):
   """
@@ -64,7 +64,7 @@ def doctree_resolved(app, doctree, docname):
 
       filename = compound.get('refid') + '.xml'
       if filename not in cache:
-        cache[filename] = etree.parse('source/doxygen_xml_api/' + filename)
+        cache[filename] = etree.parse('xml/' + filename)
 
       # An enumvalue has no location
       memberdef, = cache[filename].xpath('descendant::compounddef[compoundname[text() = $name]]', name=name) or cache[filename].xpath('descendant::memberdef[name[text() = $name] | enumvalue[name[text() = $name]]]', name=name)
@@ -93,7 +93,7 @@ def doctree_resolved(app, doctree, docname):
     doctree.insert(0, raw)
 
 def setup(app):
-  if etree and path.isfile('source/doxygen_xml_api/index.xml'):
+  if etree and path.isfile('xml/index.xml'):
     app.connect('doctree-resolved', doctree_resolved)
 
   else:
@@ -103,8 +103,8 @@ def setup(app):
   for that object.
   Depending on your system, try installing the python-lxml package.''')
 
-    if not path.isfile('source/doxygen_xml_api/index.xml'):
-      app.warn('''Doxygen files not found: source/doxygen_xml_api/index.xml
+    if not path.isfile('xml/index.xml'):
+      app.warn('''Doxygen files not found: xml/index.xml
   The files are used to add links from an API description to the code
   for that object.
   Run "$ make doxygen" to generate these XML files.''')

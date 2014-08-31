@@ -939,7 +939,7 @@ GENERATE_XML           = YES
 # If a relative path is entered the value of OUTPUT_DIRECTORY will be 
 # put in front of it. If left blank `xml' will be used as the default path.
 
-XML_OUTPUT             = source/doxygen_xml_api
+XML_OUTPUT             = xml
 
 # The XML_SCHEMA tag can be used to specify an XML schema, 
 # which can be used by a validating XML parser to check the 
