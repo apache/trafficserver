@@ -68,8 +68,7 @@ EXTRA_DIST = \
   $(dist_trafficshell_DATA)
 
 clean-local:
-	-rm -rf html warn.log
-	-rm -rf $(BUILDDIR)/doctrees $(BUILDDIR)/html $(BUILDDIR)/dirhtml $(BUILDDIR)/singlehtml $(BUILDDIR)/epub $(BUILDDIR)/latex $(BUILDDIR)/man
+	-rm -rf $(BUILDDIR)/* _build/html/* xml
 
 doxygen: Doxyfile
 	$(DOXYGEN)

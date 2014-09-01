@@ -28,7 +28,11 @@ package {[
 # Development extras.
 package {[
     'gdb', 'valgrind', 'git', 'ack-grep', 'curl', 'tmux', 'screen',
-    'ccache', 'python-sphinx', 'doxygen', 'python-lxml'
+    'ccache', 'python-sphinx', 'doxygen',
+
+    # For parsing Doxygen XML output, to add links from API descriptions
+    # to the source code for that object
+    'python-lxml'
   ]:
   ensure => latest
 }

@@ -37,8 +37,11 @@ if etree and path.isfile('xml/index.xml'):
   # Doxygen index
   index = etree.parse('xml/index.xml')
 
-# Partial reimplementation in Python of Doxygen escapeCharsInString()
 def escape(name):
+  """
+  Partial reimplementation in Python of Doxygen escapeCharsInString()
+  """
+
   return name.replace('_', '__').replace(':', '_1').replace('/', '_2').replace('<', '_3').replace('>', '_4').replace('*', '_5').replace('&', '_6').replace('|', '_7').replace('.', '_8').replace('!', '_9').replace(',', '_00').replace(' ', '_01').replace('{', '_02').replace('}', '_03').replace('?', '_04').replace('^', '_05').replace('%', '_06').replace('(', '_07').replace(')', '_08').replace('+', '_09').replace('=', '_0A').replace('$', '_0B').replace('\\', '_0C')
 
 def doctree_resolved(app, doctree, docname):
@@ -52,16 +55,23 @@ def doctree_resolved(app, doctree, docname):
   if traverse:
     for signode in traverse:
 
-      # Get the name of the object
+      # Get the name of the object.  The C++ domain splits names into
+      # owner and name.
+      owner = None
       for child in signode:
-        if isinstance(child, addnodes.desc_name):
+        if isinstance(child, addnodes.desc_addname):
+
+          # The owner ends with ::
+          owner = child.astext()[:-2]
+
+        elif isinstance(child, addnodes.desc_name):
           name = child.astext()
 
           break
 
       # Lookup the object in the Doxygen index
       try:
-        compound, = index.xpath('descendant::compound[descendant::name[text() = $name]][1]', name=name)
+        compound, = index.xpath('descendant::compound[(not($owner) or name[text() = $owner]) and descendant::name[text() = $name]][1]', owner=owner, name=name)
 
       except ValueError:
         continue
