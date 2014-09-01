@@ -65,10 +65,14 @@
 
 #define USE_NEW_EMPTY_MIOBUFFER
 
-#ifdef TS_USE_UUID
-	#define UUID_FMT "[%s] "
+#ifdef TS_HAS_UUID
+	#define UUID_FMT "[%s]: "
 	#define UUID_VAL id.c_str()
     RecInt HttpSM::use_uuid = -1;
+    RecInt HttpSM::add_to_request = false;
+    RecInt HttpSM::add_to_response = false;
+    std::string HttpSM::header_name;
+
 #else
 	#define UUID_FMT
 	#define UUID_VAL
@@ -345,7 +349,7 @@ HttpSM::HttpSM()
   memset(&vc_table, 0, sizeof(vc_table));
   memset(&http_parser, 0, sizeof(http_parser));
 
-  #ifdef TS_USE_OSSP_UUID
+  #ifdef HAS_OSSP_UUID
   if ( uuid_create(&_uuid) != UUID_RC_OK ) {
     DebugSM("http", "Could not generate UUID generator. UUID generation being disabled.");
 	use_uuid = 0;
@@ -387,6 +391,107 @@ HttpSM::destroy()
   cleanup();
   httpSMAllocator.free(this);
 }
+
+#ifdef TS_HAS_UUID
+void
+HttpSM::init_uuid_config()
+{
+  // Lazy init: Trying to register and read the config on the constructor won't work,
+  // so we've postponed it until now, when the instance is to be used for the first time.
+  // As use_uuid is static, this will happen only once (this variable has been set on the
+  // preamble of this file.) Also, if we're using OSSP and a generator could not be
+  // initialized on the constructor, then this block won't be used.
+  RecRegisterConfigInt(RECT_CONFIG,    "proxy.config.http.use_uuid",             0,            RECU_DYNAMIC, RECC_NULL, NULL);
+  RecRegisterConfigInt(RECT_CONFIG,    "proxy.config.http.add_uuid_to_request",  0,            RECU_DYNAMIC, RECC_NULL, NULL);
+  RecRegisterConfigInt(RECT_CONFIG,    "proxy.config.http.add_uuid_to_response", 0,            RECU_DYNAMIC, RECC_NULL, NULL);
+  RecRegisterConfigString(RECT_CONFIG, "proxy.config.http.uuid_header_name",     "x-ats-uuid", RECU_DYNAMIC, RECC_NULL, NULL);
+
+  if ( RecGetRecordInt("proxy.config.http.use_uuid", &use_uuid, false) != REC_ERR_OKAY ) {
+    DebugSM("http", "Could not read config [proxy.config.http.use_uuid].");
+  } else {
+    DebugSM("http", "Read [proxy.config.http.use_uuid] == [%d].", (int) use_uuid);
+
+    RecGetRecordInt("proxy.config.http.add_uuid_to_request", &add_to_request, false);
+    DebugSM("http", "Read [proxy.config.http.add_uuid_to_request] == [%d].", (int) add_to_request);
+
+    RecGetRecordInt("proxy.config.http.add_uuid_to_response", &add_to_response, false);
+    DebugSM("http", "Read [proxy.config.http.add_uuid_to_response] == [%d].", (int) add_to_response);
+
+    char tmp_header_name[128];
+
+    RecGetRecordString("proxy.config.http.uuid_header_name", tmp_header_name, sizeof(tmp_header_name), false);
+    DebugSM("http", "Read [proxy.config.http.uuid_header_name] == [%s].", tmp_header_name);
+
+    header_name = std::string(tmp_header_name);
+  }
+}
+
+void
+HttpSM::generate_uuid()
+{
+#ifdef HAS_BOOST_UUID
+  uuid           uuid = gen();
+  unsigned char *puuid = (unsigned char *) &uuid;
+  char          *ptr;
+  int            i;
+  char           str_uuid[37];
+
+  for (ptr=str_uuid, i=0; i < 16; ++i) {
+    sprintf(ptr, "%02x", *(puuid + i));
+    ptr += 2;
+
+    if ( i == 3 || i == 5 || i == 7 || i == 9 )
+	  *ptr++ = '-';
+
+    if ( i == 15 )
+	  *ptr = '\0';
+  }
+
+  id((char *) str_uuid);
+
+#else // HAS_OSSP_UUID
+  char *vp = NULL;
+  size_t n;
+
+  if ( _uuid != NULL ) {
+	if ( uuid_make(_uuid, UUID_MAKE_V4) == UUID_RC_OK ) {
+	  uuid_export(_uuid, UUID_FMT_STR, &vp, &n);
+	  id = std::string(vp);
+	  free(vp);
+	} else {
+	  DebugSM("http", "Could not generate UUID.");
+	}
+  }
+#endif
+
+  if ( id.size() > 0 )
+	DebugSM("http", UUID_FMT "UUID generated.", UUID_VAL);
+}
+
+bool
+HttpSM::should_add_uuid_to_request(void) const
+{
+  return ( HttpSM::add_to_request == 1 );
+}
+
+bool
+HttpSM::should_add_uuid_to_response(void) const
+{
+  return ( HttpSM::add_to_response == 1 );
+}
+
+void
+HttpSM::add_uuid_header(HTTPHdr *hdr) const
+{
+  const char *hdr_name = header_name.c_str();
+  const char *hdr_val  = id.c_str();
+
+  MIMEField *f = hdr->field_create(hdr_name, strlen(hdr_name));
+  hdr->field_attach(f);
+  hdr->value_set(hdr_name, strlen(hdr_name), hdr_val, strlen(hdr_val));
+}
+
+#endif // TS_HAS_UUID
 
 void
 HttpSM::init()
@@ -446,65 +551,18 @@ HttpSM::init()
   ink_mutex_release(&debug_sm_list_mutex);
 #endif
 
-#ifdef TS_USE_UUID
-  // Lazy init: Trying to register and read the config on the constructor won't work,
-  // so we've postponed it until now, when the instance is to be used for the first time.
-  // As use_uuid is static, this will happen only once (this variable has been set on the
-  // preamble of this file.) Also, if we're using OSSP and a generator could not be
-  // initialized on the constructor, then this block won't be used.
+#ifdef TS_HAS_UUID
   if ( use_uuid == -1 ) {
-    // Init UUID configs
-    RecRegisterConfigInt(RECT_CONFIG, "proxy.config.http.use_uuid", 0, RECU_DYNAMIC, RECC_NULL, NULL);
-
-    if ( RecGetRecordInt("proxy.config.http.use_uuid", &use_uuid, false) != REC_ERR_OKAY ) {
-      DebugSM("http", UUID_FMT "Could not read config [proxy.config.http.use_uuid].", UUID_VAL);
-    } else {
-      DebugSM("http", UUID_FMT "Read [proxy.config.http.use_uuid] == [%d].", UUID_VAL, (int) use_uuid);
-    }
+    init_uuid_config();
   }
 
   if ( use_uuid == 1 ) {
-  #ifdef TS_USE_BOOST_UUID
-	uuid           uuid = gen();
-	unsigned char *puuid = (unsigned char *) &uuid;
-	char          *ptr;
-	int            i;
-	char           str_uuid[37];
-
-    for (ptr=str_uuid, i=0; i < 16; ++i) {
-	  sprintf(ptr, "%02x", *(puuid + i));
-	  ptr += 2;
-
-	  if ( i == 3 || i == 5 || i == 7 || i == 9 )
-		*ptr++ = '-';
-
-	  if ( i == 15 )
-		*ptr = '\0';
-	}
-
-	id((char *) str_uuid);
-  #else // TS_USE_OSSP_UUID
-	char *vp = NULL;
-	size_t n;
-
-	if ( _uuid != NULL ) {
-      if ( uuid_make(_uuid, UUID_MAKE_V4) == UUID_RC_OK ) {
-        uuid_export(_uuid, UUID_FMT_STR, &vp, &n);
-        id = std::string(vp);
-        free(vp);
-      } else {
-        DebugSM("http", "Could not generate UUID.");
-      }
-	}
-  #endif
-
-    if ( id.size() > 0 )
-	  DebugSM("http", UUID_FMT "UUID [%s] generated.", UUID_VAL, id.c_str());
+    generate_uuid();
   }
 #endif
 }
 
-#ifdef TS_USE_UUID
+#ifdef TS_HAS_UUID
 const char *
 HttpSM::get_uuid(void) const
 {
@@ -578,7 +636,7 @@ HttpSM::state_remove_from_list(int event, void * /* data ATS_UNUSED */)
     HttpSMList[bucket].sm_list.remove(this);
   }
 
-  return this->kill_this_async_hook(EVENT_NONE, NULL);
+ return this->kill_this_async_hook(EVENT_NONE, NULL);
 }
 
 int
@@ -6265,6 +6323,13 @@ HttpSM::setup_server_transfer()
   if (action == TCA_CHUNK_CONTENT || action == TCA_PASSTHRU_CHUNKED_CONTENT) {  // remove Content-Length
     t_state.hdr_info.client_response.field_delete(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH);
   }
+
+#ifdef TS_HAS_UUID
+  if ( should_add_uuid_to_response() ) {
+	add_uuid_header(&t_state.hdr_info.client_response);
+  }
+#endif
+
   // Now dump the header into the buffer
   ink_assert(t_state.hdr_info.client_response.status_get() != HTTP_STATUS_NOT_MODIFIED);
   client_response_hdr_bytes = hdr_size = write_response_header_into_buffer(&t_state.hdr_info.client_response, buf);

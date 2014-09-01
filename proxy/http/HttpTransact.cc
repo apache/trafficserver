@@ -531,7 +531,7 @@ how_to_open_connection(HttpTransact::State* s)
         int port = url->port_get();
         if (port != url_canonicalize_port(URL_TYPE_HTTP, 0)) {
           char *buf = (char *)alloca(host_len + 15);
-          memcpy(buf, host, host_len); 
+          memcpy(buf, host, host_len);
           host_len += snprintf(buf + host_len, 15, ":%d", port);
           s->hdr_info.server_request.value_set(MIME_FIELD_HOST, MIME_LEN_HOST, buf, host_len);
         } else {
@@ -640,7 +640,7 @@ HttpTransact::HandleBlindTunnel(State* s)
     url_remap_success = true;
   } else if (url_remap_mode == URL_REMAP_DEFAULT || url_remap_mode == URL_REMAP_ALL) {
     // TODO: take a look at this
-    // This probably doesn't work properly, since request_url_remap() is broken.  
+    // This probably doesn't work properly, since request_url_remap() is broken.
     url_remap_success = request_url_remap(s, &s->hdr_info.client_request, &remap_redirect);
   }
   // We must have mapping or we will self loop since the this
@@ -756,7 +756,7 @@ HttpTransact::perform_accept_encoding_filtering(State* s)
 void
 HttpTransact::StartRemapRequest(State* s)
 {
-  
+
   if (s->api_skip_all_remapping) {
     Debug ("http_trans", "API request to skip remapping");
 
@@ -766,7 +766,7 @@ HttpTransact::StartRemapRequest(State* s)
 
     TRANSACT_RETURN(SM_ACTION_POST_REMAP_SKIP, HttpTransact::HandleRequest);
   }
-  
+
   DebugTxn("http_trans", "START HttpTransact::StartRemapRequest");
 
   /**
@@ -842,7 +842,7 @@ HttpTransact::EndRemapRequest(State* s)
   int host_len;
   const char *host = incoming_request->host_get(&host_len);
   DebugTxn("http_trans","EndRemapRequest host is %.*s", host_len,host);
-  
+
   ////////////////////////////////////////////////////////////////
   // if we got back a URL to redirect to, vector the user there //
   ////////////////////////////////////////////////////////////////
@@ -956,9 +956,9 @@ done:
   /*
     if s->reverse_proxy == false, we can assume remapping failed in some way
       -however-
-    If an API setup a tunnel to fake the origin or proxy's response we will 
+    If an API setup a tunnel to fake the origin or proxy's response we will
     continue to handle the request (as this was likely the plugin author's intent)
-    
+
     otherwise, 502/404 the request right now. /eric
   */
   if (!s->reverse_proxy && s->state_machine->plugin_tunnel_type == HTTP_NO_PLUGIN_TUNNEL) {
@@ -1355,7 +1355,7 @@ HttpTransact::HandleRequest(State* s)
     // origin server. Ignore the no_dns_just_forward_to_parent setting.
     // we need to see if the hostname is an
     //   ip address since the parent selection code result
-    //   could change as a result of this ip address    
+    //   could change as a result of this ip address
     IpEndpoint addr;
     ats_ip_pton(s->server_info.name, &addr);
     if (ats_is_ip(&addr)) {
@@ -1469,9 +1469,9 @@ HttpTransact::HandleApiErrorJump(State* s)
     s->hdr_info.client_response.fields_clear();
     s->source = SOURCE_INTERNAL;
   }
-  
-  /** 
-    The API indicated an error. Lets use a >=400 error from the state (if one's set) or fallback to a 
+
+  /**
+    The API indicated an error. Lets use a >=400 error from the state (if one's set) or fallback to a
     generic HTTP/1.X 500 INKApi Error
   **/
   if ( s->http_return_code && s->http_return_code >= HTTP_STATUS_BAD_REQUEST ) {
@@ -1482,7 +1482,7 @@ HttpTransact::HandleApiErrorJump(State* s)
   else {
     build_response(s, &s->hdr_info.client_response, s->client_info.http_version,
                    HTTP_STATUS_INTERNAL_SERVER_ERROR, "INKApi Error");
-  }  
+  }
 
   TRANSACT_RETURN(SM_ACTION_INTERNAL_CACHE_NOOP, NULL);
   return;
@@ -3118,9 +3118,9 @@ HttpTransact::HandleICPLookup(State* s)
     // TODO in this case we should go to the miss case
     // just a little shy about using goto's, that's all.
     ink_release_assert(
-        (s->icp_info.port != s->client_info.port) || 
+        (s->icp_info.port != s->client_info.port) ||
         (ats_ip_addr_cmp(&s->icp_info.addr.sa, &Machine::instance()->ip.sa) != 0)
-    );        
+    );
 
     // Since the ICPDNSLookup is not called, these two
     //   values are not initialized.
@@ -3696,7 +3696,7 @@ void
 HttpTransact::delete_server_rr_entry(State* s, int max_retries)
 {
   char addrbuf[INET6_ADDRSTRLEN];
-  
+
   DebugTxn("http_trans", "[%d] failed to connect to %s", s->current.attempts,
         ats_ip_ntop(&s->current.server->addr.sa, addrbuf, sizeof(addrbuf)));
   DebugTxn("http_trans", "[delete_server_rr_entry] marking rr entry " "down and finding next one");
@@ -7641,6 +7641,13 @@ HttpTransact::build_request(State* s, HTTPHdr* base_request, HTTPHdr* outgoing_r
   handle_request_keep_alive_headers(s, outgoing_version, outgoing_request);
   HttpTransactHeaders::handle_conditional_headers(&s->cache_info, outgoing_request);
 
+#ifdef TS_HAS_UUID
+  if ( s->state_machine->should_add_uuid_to_request() ) {
+    Debug("http_trans", "Adding UUID header to proxy's request.");
+    s->state_machine->add_uuid_header(outgoing_request);
+  }
+#endif
+
   if (s->next_hop_scheme < 0)
     s->next_hop_scheme = URL_WKSIDX_HTTP;
   if (s->orig_scheme < 0)
@@ -7777,7 +7784,7 @@ HttpTransact::build_response(State* s, HTTPHdr* base_response, HTTPHdr* outgoing
       //  before processing the keep_alive headers
       //
       handle_content_length_header(s, outgoing_response, base_response);
-    } else
+    } else {
       switch (status_code) {
       case HTTP_STATUS_NOT_MODIFIED:
         HttpTransactHeaders::build_base_response(outgoing_response, status_code, reason_phrase, strlen(reason_phrase),
@@ -7833,7 +7840,15 @@ HttpTransact::build_response(State* s, HTTPHdr* base_response, HTTPHdr* outgoing
         // ink_assert(!"unexpected status code in build_response()");
         break;
       }
+    }
   }
+
+#ifdef TS_HAS_UUID
+  if ( s->state_machine->should_add_uuid_to_response() ) {
+	Debug("http_hdrs", "Adding UUID header to response.");
+	s->state_machine->add_uuid_header(outgoing_response);
+  }
+#endif
 
   // the following is done whether base_response == NULL or not
 
@@ -8096,9 +8111,9 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
   if (s->http_config_param->errors_log_error_pages && status_code >= HTTP_STATUS_BAD_REQUEST) {
     char ip_string[INET6_ADDRSTRLEN];
 
-    Log::error("RESPONSE: sent %s status %d (%s) for '%s'", 
-        ats_ip_ntop(&s->client_info.addr.sa, ip_string, sizeof(ip_string)), 
-        status_code, 
+    Log::error("RESPONSE: sent %s status %d (%s) for '%s'",
+        ats_ip_ntop(&s->client_info.addr.sa, ip_string, sizeof(ip_string)),
+        status_code,
         reason_phrase,
         (url_string ? url_string : "<none>"));
   }
@@ -8163,7 +8178,7 @@ HttpTransact::build_redirect_response(State* s)
   s->internal_msg_buffer = body_factory->fabricate_with_old_api_build_va("redirect#moved_temporarily", s, 8192,
                                                                          &s->internal_msg_buffer_size,
                                                                          body_language, sizeof(body_language),
-                                                                         body_type, sizeof(body_type), 
+                                                                         body_type, sizeof(body_type),
                                                                          "%s <a href=\"%s\">%s</a>.  %s.",
                                                                          "The document you requested is now",
                                                                          new_url, new_url,
@@ -8462,7 +8477,7 @@ HttpTransact::client_result_stat(State* s, ink_hrtime total_time, ink_hrtime req
     default: break;
     }
   }
-  
+
   // Increment the completed connection count
   HTTP_INCREMENT_TRANS_STAT(http_completed_requests_stat);
 

@@ -1448,19 +1448,31 @@ fi
 # by the project, no new dependency.)
 # Otherwise we'll search for ossp_uuid. If found, add to ldflags.
 # This fallback is needed for old distros.
+
+
 if test "x${enable_uuid}" = "xyes"; then
+	has_boost_uuid=no
+	has_ossp_uuid=no
+
 	AC_LANG_PUSH([C++])
 	AC_CHECK_HEADERS([boost/uuid/uuid.hpp],
-		[AC_DEFINE([HAVE_BOOST_UUID], [1], [Define that we can use boost for UUID generation.])],
+		[has_boost_uuid=yes],
 		[PKG_CHECK_MODULES([OSSP_UUID], [ossp-uuid],
-			[HAVE_OSSP_UUID=yes],
+			[has_ossp_uuid=yes],
 			[AC_MSG_ERROR([UUID generation is on but neither a compatible boost nor lib ossp_uuid found.])]
                        )]
 	)
 	AC_LANG_POP([C++])
 
-	if test "x${HAVE_OSSP_UUID}" = "xyes"; then
-		AC_DEFINE([HAVE_OSSP_UUID], [1], [Define that we can use OSSP_UUID lib for UUID generation.])
+	if test "x${has_boost_uuid}" = "xyes"; then
+		AC_DEFINE([HAS_BOOST_UUID], [1], [Define that we can use boost for UUID generation.])
+	fi
+
+
+	if test "x${has_ossp_uuid}" = "xyes"; then
+		AC_CHECK_HEADERS([uuid.h],
+			[AC_DEFINE([HAS_OSSP_UUID], [1], [Define that we can use OSSP_UUID lib for UUID generation.])],
+			[AC_MSG_ERROR([OSSP header file uuid.h not found.])])
 		EXTRA_CXX_LDFLAGS+=" -lossp-uuid"
 	fi
 fi

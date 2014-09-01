@@ -18,7 +18,7 @@
   distributed under the License is distributed on an "AS IS" BASIS,
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
-  limitations under the License.
+  limitations under the License
  */
 
 /****************************************************************************
@@ -44,15 +44,15 @@
 #include "HdrUtils.h"
 //#include "AuthHttpAdapter.h"
 
-#ifdef TS_USE_UUID
-  #ifdef TS_USE_BOOST_UUID
+#ifdef TS_HAS_UUID
+  #ifdef HAS_BOOST_UUID
     #include <boost/uuid/uuid.hpp>
     #include <boost/uuid/uuid_generators.hpp>
     #include <boost/uuid/uuid_io.hpp>
 
     using namespace boost;
-    using namespace boost::uuid;
-  #else // TS_USE_OSSP_UUID
+    using namespace boost::uuids;
+  #else // HAS_OSSP_UUID
     #include <uuid.h>
   #endif
 #endif
@@ -547,16 +547,26 @@ public:
 public:
   bool set_server_session_private(bool private_session);
 
-#ifdef TS_USE_UUID
+#ifdef TS_HAS_UUID
   const char *get_uuid(void) const;
+  bool should_add_uuid_to_request(void) const;
+  bool should_add_uuid_to_response(void) const;
+  void add_uuid_header(HTTPHdr *hdr) const;
 
 protected:
-  static RecInt use_uuid;
   std::string   id;
 
-  #ifdef TS_USE_BOOST_UUID
+  static RecInt      use_uuid;
+  static std::string header_name;
+  static RecInt      add_to_request;
+  static RecInt      add_to_response;
+
+  void init_uuid_config();
+  void generate_uuid();
+
+  #ifdef HAS_BOOST_UUID
     boost::uuids::basic_random_generator<boost::mt19937> gen;
-  #else //TS_USE_OSSP_UUID
+  #else //HAS_OSSP_UUID
     uuid_t *_uuid;
   #endif
 #endif

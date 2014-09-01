@@ -63,16 +63,6 @@
 #define TS_HAS_SO_MARK                 @has_so_mark@
 #define TS_HAS_SPDY                    @has_spdy@
 #define TS_HAS_UUID                    @has_uuid@
-
-#if TS_HAS_UUID == 1
-	#define TS_USE_UUID
-	#ifdef HAVE_BOOST_UUID
-		#define TS_USE_BOOST_UUID
-	#elif HAVE_OSSP_UUID
-		#define TS_USE_OSSP_UUID
-	#endif
-#endif
-
 #define TS_HAS_IP_TOS                  @has_ip_tos@
 #define TS_USE_HWLOC                   @use_hwloc@
 #define TS_USE_FREELIST                @use_freelist@
