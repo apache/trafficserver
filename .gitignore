@@ -11,7 +11,7 @@
 *.trs
 .*.sw*
 
-.deps
+.deps/
 
 .dirstamp
 
@@ -36,9 +36,11 @@ Makefile-pl
 config.status
 config.nice
 config.h
-doc/html/
+
+doc/_build/html/api/
 doc/docbuild/
 doc/locale/pot
+doc/xml/
 
 MYMETA.*
 pm_to_blib
@@ -66,7 +68,6 @@ lib/ts/test_freelist
 lib/ts/test_Map
 lib/ts/test_Vec
 lib/perl/lib/Apache/TS.pm
-
 
 iocore/net/test_certlookup
 iocore/aio/test_AIO
@@ -106,15 +107,9 @@ rc/trafficserver.xml
 rc/trafficserver.conf
 rc/trafficserver.service
 
-proxy/api/include/ts
+.libs/
 
-*/.libs
-*/*/.libs
-*/*/*/.libs
-*/*/*/*/.libs
-
-.svn
-*/.svn/
+.svn/
 
 tsxs
 

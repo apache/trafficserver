@@ -44,76 +44,106 @@ def escape(name):
 
   return name.replace('_', '__').replace(':', '_1').replace('/', '_2').replace('<', '_3').replace('>', '_4').replace('*', '_5').replace('&', '_6').replace('|', '_7').replace('.', '_8').replace('!', '_9').replace(',', '_00').replace(' ', '_01').replace('{', '_02').replace('}', '_03').replace('?', '_04').replace('^', '_05').replace('%', '_06').replace('(', '_07').replace(')', '_08').replace('+', '_09').replace('=', '_0A').replace('$', '_0B').replace('\\', '_0C')
 
-def doctree_resolved(app, doctree, docname):
+class doctree_resolved:
   """
   Add links from an API description to the source code for that object.
-  Doxygen knows where in the source code objects are located.  Based on
-  the sphinx.ext.viewcode and sphinx.ext.linkcode extensions.
+  Doxygen knows where in the source code it's located.
+  Based on the sphinx.ext.viewcode and sphinx.ext.linkcode extensions.
   """
 
-  traverse = doctree.traverse(addnodes.desc_signature)
-  if traverse:
-    for signode in traverse:
+  has_link = None
 
-      # Get the name of the object.  The C++ domain splits names into
-      # owner and name.
-      owner = None
-      for child in signode:
-        if isinstance(child, addnodes.desc_addname):
+  def __init__(self, app, doctree, docname):
 
-          # The owner ends with ::
-          owner = child.astext()[:-2]
+    self.app = app
+    self.docname = docname
 
-        elif isinstance(child, addnodes.desc_name):
-          name = child.astext()
+    self.traverse(doctree, None)
+    if self.has_link:
 
-          break
+      # Style the links
+      raw = nodes.raw('', '<style> .rst-content dl dt .headerlink { display: inline-block } .rst-content dl dt .headerlink:after { visibility: hidden } .rst-content dl dt .viewcode-link { color: #2980b9; float: right; font-size: inherit; font-weight: normal } .rst-content dl dt:hover .headerlink:after { visibility: visible } </style>', format='html')
+      doctree.insert(0, raw)
 
-      # Lookup the object in the Doxygen index
-      try:
-        compound, = index.xpath('descendant::compound[(not($owner) or name[text() = $owner]) and descendant::name[text() = $name]][1]', owner=owner, name=name)
+  def traverse(self, node, owner):
+    """
+    If an API description is nested in another description,
+    lookup the child in the context of the parent
+    """
 
-      except ValueError:
-        continue
+    # nodes.Text iterates over characters, not children
+    for child in node.children:
+      if isinstance(child, addnodes.desc):
+        for desc_child in child.children:
+          if isinstance(desc_child, addnodes.desc_signature):
 
-      filename = compound.get('refid') + '.xml'
-      if filename not in cache:
-        cache[filename] = etree.parse('xml/' + filename)
+            # Get the name of the object.  An owner in the signature
+            # overrides an owner from a parent description.
+            signature_owner = None
+            for child in desc_child.children:
+              if isinstance(child, addnodes.desc_addname):
 
-      # An enumvalue has no location
-      memberdef, = cache[filename].xpath('descendant::compounddef[compoundname[text() = $name]]', name=name) or cache[filename].xpath('descendant::memberdef[name[text() = $name] | enumvalue[name[text() = $name]]]', name=name)
+                # An owner in the signature ends with ::
+                signature_owner = child.astext()[:-2]
 
-      # Append the link after the object's signature.  Get the source
-      # file and line number from Doxygen and use them to construct the
-      # link.
-      location = memberdef.find('location')
-      filename = path.basename(location.get('file'))
+              elif isinstance(child, addnodes.desc_name):
+                name = child.astext()
 
-      # Declarations have no bodystart
-      line = location.get('bodystart') or location.get('line')
+                break
 
-      emphasis = nodes.emphasis('', ' ' + filename + ' line ' + line)
+            # Lookup the object in the Doxygen index
+            try:
+              compound, = index.xpath('descendant::compound[(not($owner) or name[text() = $owner]) and descendant::name[text() = $name]][1]', owner=signature_owner or owner, name=name)
 
-      # Use a relative link if the output is HTML, otherwise fall back
-      # on an absolute link to Read the Docs.  I can't figure out how to
-      # get the highlighted source file for e.g. a struct from Doxygen
-      # so ape Doxygen escapeCharsInString() instead.
-      refuri = 'api/' + escape(filename) + '_source.html#l' + line.rjust(5, '0')
-      if app.builder.name == 'html':
-        refuri = osutil.relative_uri(app.builder.get_target_uri(docname), refuri)
+            except ValueError:
+              continue
+
+            filename = compound.get('refid') + '.xml'
+            if filename not in cache:
+              cache[filename] = etree.parse('xml/' + filename)
+
+            # An enumvalue has no location
+            memberdef, = cache[filename].xpath('descendant::compounddef[compoundname[text() = $name]]', name=name) or cache[filename].xpath('descendant::memberdef[name[text() = $name] | enumvalue[name[text() = $name]]]', name=name)
+
+            # Append the link after the object's signature.
+            # Get the source file and line number from Doxygen and use
+            # them to construct the link.
+            location = memberdef.find('location')
+            filename = path.basename(location.get('file'))
+
+            # Declarations have no bodystart
+            line = location.get('bodystart') or location.get('line')
+
+            emphasis = nodes.emphasis('', ' ' + filename + ' line ' + line)
+
+            # Use a relative link if the output is HTML, otherwise fall
+            # back on an absolute link to Read the Docs.  I haven't
+            # figured out how to get the page name for e.g. a struct
+            # from the XML files so ape Doxygen escapeCharsInString()
+            # instead.
+            refuri = 'api/' + escape(filename) + '_source.html#l' + line.rjust(5, '0')
+            if self.app.builder.name == 'html':
+              refuri = osutil.relative_uri(self.app.builder.get_target_uri(self.docname), refuri)
+
+            else:
+              refuri = 'http://docs.trafficserver.apache.org/en/latest/' + refuri
+
+            reference = nodes.reference('', '', emphasis, classes=['viewcode-link'], reftitle='Source code', refuri=refuri)
+            desc_child += reference
+
+            # Style the links
+            self.has_link = True
+
+          else:
+            self.traverse(desc_child, name)
 
       else:
-        refuri = 'http://docs.trafficserver.apache.org/en/latest/' + refuri
-
-      reference = nodes.reference('', '', emphasis, classes=['viewcode-link'], reftitle='Source code', refuri=refuri)
-      signode += reference
-
-    # Style the links
-    raw = nodes.raw('', '<style> .rst-content dl dt .headerlink { display: inline-block } .rst-content dl dt .headerlink:after { visibility: hidden } .rst-content dl dt .viewcode-link { color: #2980b9; float: right; font-size: inherit; font-weight: normal } .rst-content dl dt:hover .headerlink:after { visibility: visible } </style>', format='html')
-    doctree.insert(0, raw)
+        self.traverse(child, owner)
 
 def setup(app):
   if etree and path.isfile('xml/index.xml'):
+
+    # The doctree-read event hasn't got the docname argument
     app.connect('doctree-resolved', doctree_resolved)
 
   else:
