@@ -55,7 +55,8 @@ public:
     req_content_length = 0;
     resp_is_chunked = -1;
     resp_content_length = -1;
-    resp_recived_body_len = 0;
+    resp_received_body_len = 0;
+    resp_received_close = -1;
     cont_mutex.clear();
     req_buffer = new_MIOBuffer(HTTP_HEADER_BUFFER_SIZE_INDEX);
     req_reader = req_buffer->alloc_reader();
@@ -136,10 +137,13 @@ private:
   }
 
   int64_t getReqLen() const { return req_reader->read_avail(); }
+  /// Check if the comma supproting MIME field @a name has @a value in it.
+  bool check_for_field_value(char const* name, size_t name_len, char const* value, size_t value_len);
 
   bool has_body();
   bool check_body_done();
   bool check_chunked();
+  bool check_connection_close();
   int dechunk_body();
 
   int recursion;
@@ -165,12 +169,13 @@ private:
   bool is_internal_request;
   IpEndpoint _addr;
   int resp_is_chunked;
+  int resp_received_close;
   int fetch_flags;
   void *user_data;
   bool has_sent_header;
   int64_t req_content_length;
   int64_t resp_content_length;
-  int64_t resp_recived_body_len;
+  int64_t resp_received_body_len;
 };
 
 #endif
