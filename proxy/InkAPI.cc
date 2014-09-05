@@ -6901,6 +6901,14 @@ TSTextLogObjectRollingOffsetHrSet(TSTextLogObject the_object, int rolling_offset
   ((TextLogObject *) the_object)->set_rolling_offset_hr(rolling_offset_hr);
 }
 
+void
+TSTextLogObjectRollingSizeMbSet(TSTextLogObject the_object, int rolling_size_mb)
+{
+  sdk_assert(sdk_sanity_check_iocore_structure(the_object) == TS_SUCCESS);
+
+  ((TextLogObject *) the_object)->set_rolling_size_mb(rolling_size_mb);
+}
+
 TSReturnCode
 TSHttpSsnClientFdGet(TSHttpSsn ssnp, int *fdp)
 {
