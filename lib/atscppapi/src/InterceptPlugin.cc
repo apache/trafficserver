@@ -319,12 +319,15 @@ int handleEvents(TSCont cont, TSEvent event, void *edata) {
     state->timeout_action_ = TSContSchedule(cont, 1, TS_THREAD_POOL_DEFAULT);
     return 0;
   }
+  if (event == TS_EVENT_TIMEOUT) {
+    state->timeout_action_ = NULL;
+    event = state->saved_event_; // restore saved event
+    edata = state->saved_edata_;
+  }
   if (state->plugin_) {
-    if (event == TS_EVENT_TIMEOUT) { // restore original event
-      event = state->saved_event_;
-      edata = state->saved_edata_;
-    }
     utils::internal::dispatchInterceptEvent(state->plugin_, event, edata);
+  }
+  else if (state->timeout_action_) { // we had scheduled a timeout on ourselves; let's wait for it
   }
   else { // plugin was destroyed before intercept was completed; cleaning up here
     LOG_DEBUG("Cleaning up as intercept plugin is already destroyed");
@@ -339,10 +342,6 @@ void destroyCont(InterceptPlugin::State *state) {
     TSVConnShutdown(state->net_vc_, 1, 1);
     TSVConnClose(state->net_vc_);
     state->net_vc_ = NULL;
-  }
-  if (state->timeout_action_) {
-    TSActionCancel(state->timeout_action_);
-    state->timeout_action_ = NULL;
   }
   TSContDestroy(state->cont_);
 }
