@@ -134,6 +134,7 @@ The following configurations (from ``records.config``) are overridable: ::
     proxy.config.http.negative_revalidating_lifetime
     proxy.config.http.accept_encoding_filter_enabled
     proxy.config.http.cache.range.write
+    proxy.config.http.global_user_agent_header
 
 
 Examples
