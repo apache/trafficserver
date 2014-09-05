@@ -2126,6 +2126,13 @@ extern "C"
   tsapi void TSTextLogObjectRollingOffsetHrSet(TSTextLogObject the_object, int rolling_offset_hr);
 
   /**
+      Set the rolling size. rolling_size_mb specifies the size in MB when log rolling
+      should take place.
+
+   */
+  tsapi void TSTextLogObjectRollingSizeMbSet(TSTextLogObject the_object, int rolling_size_mb);
+
+  /**
       Async disk IO read
 
       @return TS_SUCCESS or TS_ERROR.

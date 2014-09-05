@@ -41,6 +41,9 @@ The logging API enables you to:
 -  Set the rolling offset for your custom text log: see
    :c:func:`TSTextLogObjectRollingOffsetHrSet`
 
+-  Set the rolling size for your custom text log: see
+   :c:func:`TSTextLogObjectRollingSizeMbSet`
+
 -  Write text entries to the custom text log: see
    :c:func:`TSTextLogObjectWrite`
 
