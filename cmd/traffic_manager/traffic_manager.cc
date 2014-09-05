@@ -595,17 +595,18 @@ main(int argc, char **argv)
     char sys_var[] = "proxy.config.syslog_facility";
     char *facility_str = NULL;
     int facility_int;
+
     facility_str = REC_readString(sys_var, &found);
     ink_assert(found);
 
     if (!found) {
-      mgmt_elog(0, "Could not read %s.  Defaulting to DAEMON\n", sys_var);
+      mgmt_elog(0, "Could not read %s.  Defaulting to LOG_DAEMON\n", sys_var);
       facility_int = LOG_DAEMON;
     } else {
       facility_int = facility_string_to_int(facility_str);
       ats_free(facility_str);
       if (facility_int < 0) {
-        mgmt_elog(0, "Bad syslog facility specified.  Defaulting to DAEMON\n");
+        mgmt_elog(0, "Bad syslog facility specified.  Defaulting to LOG_DAEMON\n");
         facility_int = LOG_DAEMON;
       }
     }

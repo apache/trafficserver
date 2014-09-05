@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.2.0
 
+  *) [TS-407] Cleanup the syslog facility setup for traffic_server.
+
   *) [TS-3049] - Enhance FetchSM to handle response with "Connection:Close" header
      and limit the response header/body duplication to non-streaming scenarios for backward
      compatibility with TSFetchUrl()
