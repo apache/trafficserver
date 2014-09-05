@@ -106,7 +106,7 @@ void inline invokePluginForEvent(Plugin *plugin, TSHttpTxn ats_txn_handle, TSEve
   case TS_EVENT_HTTP_POST_REMAP:
     plugin->handleReadRequestHeadersPostRemap(transaction);
 
-    // This is hear to force a refresh of the cached client request url
+    // This is here to force a refresh of the cached client request url
     TSMBuffer hdr_buf;
     TSMLoc hdr_loc;
     TSHttpTxnClientReqGet(static_cast<TSHttpTxn>(transaction.getAtsHandle()), &hdr_buf, &hdr_loc);
