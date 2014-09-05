@@ -311,6 +311,7 @@ int handleEvents(TSCont cont, TSEvent event, void *edata) {
   InterceptPlugin::State *state = static_cast<InterceptPlugin::State *>(TSContDataGet(cont));
   ScopedSharedMutexTryLock scopedTryLock(state->plugin_mutex_);
   if (!scopedTryLock.hasLock()) {
+    LOG_ERROR("Couldn't get plugin lock. Will retry");
     if (event != TS_EVENT_TIMEOUT) { // save only "non-retry" info
       state->saved_event_ = event;
       state->saved_edata_ = edata;
