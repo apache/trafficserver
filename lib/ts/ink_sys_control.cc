@@ -21,9 +21,9 @@
   limitations under the License.
  */
 
-#include "ink_sys_control.h"
-#include "ink_platform.h"
+#include "ink_defs.h"
 #include "ink_assert.h"
+#include "ink_sys_control.h"
 
 rlim_t
 ink_max_out_rlimit(int which, bool max_it, bool unlim_it)
@@ -62,4 +62,28 @@ ink_max_out_rlimit(int which, bool max_it, bool unlim_it)
 #endif
   ink_release_assert(getrlimit(MAGIC_CAST(which), &rl) >= 0);
   return rl.rlim_cur;
+}
+
+rlim_t
+ink_get_max_files()
+{
+  FILE *fd;
+  struct rlimit lim;
+
+  // Linux-only ...
+  if ((fd = fopen("/proc/sys/fs/file-max","r"))) {
+    uint64_t fmax;
+    if (fscanf(fd, "%" PRIu64 "", &fmax) == 1) {
+      fclose(fd);
+      return static_cast<rlim_t>(fmax);
+    }
+
+    fclose(fd);
+  }
+
+  if (getrlimit(RLIMIT_NOFILE, &lim) == 0) {
+    return lim.rlim_max;
+  }
+
+  return RLIM_INFINITY;
 }

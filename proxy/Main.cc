@@ -796,53 +796,54 @@ init_core_size()
 static void
 adjust_sys_settings(void)
 {
-#if defined(linux)
   struct rlimit lim;
-  int mmap_max = -1;
   int fds_throttle = -1;
-  float file_max_pct = 0.9;
-  FILE *fd;
+  rlim_t maxfiles;
 
   // TODO: I think we might be able to get rid of this?
+#if defined(ATS_MMAP_MAX)
+  int mmap_max = -1;
+
   REC_ReadConfigInteger(mmap_max, "proxy.config.system.mmap_max");
   if (mmap_max >= 0)
     ats_mallopt(ATS_MMAP_MAX, mmap_max);
+#endif
 
-  if ((fd = fopen("/proc/sys/fs/file-max","r"))) {
-    ATS_UNUSED_RETURN(fscanf(fd, "%" PRIu64 "", &lim.rlim_max));
-    fclose(fd);
+  maxfiles = ink_get_max_files();
+  if (maxfiles != RLIM_INFINITY) {
+    float file_max_pct = 0.9;
+
     REC_ReadConfigFloat(file_max_pct, "proxy.config.system.file_max_pct");
-    lim.rlim_cur = lim.rlim_max = static_cast<rlim_t>(lim.rlim_max * file_max_pct);
-    if (!setrlimit(RLIMIT_NOFILE, &lim) && !getrlimit(RLIMIT_NOFILE, &lim)) {
+    if (file_max_pct > 1.0) {
+      file_max_pct = 1.0;
+    }
+
+    lim.rlim_cur = lim.rlim_max = static_cast<rlim_t>(maxfiles * file_max_pct);
+    if (setrlimit(RLIMIT_NOFILE, &lim) == 0 && getrlimit(RLIMIT_NOFILE, &lim) == 0) {
       fds_limit = (int) lim.rlim_cur;
       syslog(LOG_NOTICE, "NOTE: RLIMIT_NOFILE(%d):cur(%d),max(%d)",RLIMIT_NOFILE, (int)lim.rlim_cur, (int)lim.rlim_max);
-    } else {
-      syslog(LOG_NOTICE, "NOTE: Unable to set RLIMIT_NOFILE(%d):cur(%d),max(%d)", RLIMIT_NOFILE, (int)lim.rlim_cur, (int)lim.rlim_max);
     }
-  } else {
-    syslog(LOG_NOTICE, "NOTE: Unable to open /proc/sys/fs/file-max");
   }
 
   REC_ReadConfigInteger(fds_throttle, "proxy.config.net.connections_throttle");
 
-  if (!getrlimit(RLIMIT_NOFILE, &lim)) {
+  if (getrlimit(RLIMIT_NOFILE, &lim) == 0) {
     if (fds_throttle > (int) (lim.rlim_cur + THROTTLE_FD_HEADROOM)) {
       lim.rlim_cur = (lim.rlim_max = (rlim_t) fds_throttle);
-      if (!setrlimit(RLIMIT_NOFILE, &lim) && !getrlimit(RLIMIT_NOFILE, &lim)) {
+      if (setrlimit(RLIMIT_NOFILE, &lim) == 0 && getrlimit(RLIMIT_NOFILE, &lim) == 0) {
         fds_limit = (int) lim.rlim_cur;
         syslog(LOG_NOTICE, "NOTE: RLIMIT_NOFILE(%d):cur(%d),max(%d)",RLIMIT_NOFILE, (int)lim.rlim_cur, (int)lim.rlim_max);
       }
     }
   }
 
-  ink_max_out_rlimit(RLIMIT_STACK,true,true);
-  ink_max_out_rlimit(RLIMIT_DATA,true,true);
+  ink_max_out_rlimit(RLIMIT_STACK, true, true);
+  ink_max_out_rlimit(RLIMIT_DATA, true, true);
   ink_max_out_rlimit(RLIMIT_FSIZE, true, false);
-#ifdef RLIMIT_RSS
-  ink_max_out_rlimit(RLIMIT_RSS,true,true);
-#endif
 
-#endif  // linux check
+#ifdef RLIMIT_RSS
+  ink_max_out_rlimit(RLIMIT_RSS, true, true);
+#endif
 }
 
 struct ShowStats: public Continuation
