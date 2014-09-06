@@ -750,7 +750,7 @@ handle_event_active(int fd, void * req, size_t reqlen)
   MgmtMarshallInt err;
   MgmtMarshallInt bval = 0;
 
-  err = recv_mgmt_request(req, reqlen, EVENT_ACTIVE, &optype);
+  err = recv_mgmt_request(req, reqlen, EVENT_ACTIVE, &optype, &name);
   if (err != TS_ERR_OKAY) {
     goto done;
   }
