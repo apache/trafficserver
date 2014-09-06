@@ -1655,14 +1655,14 @@ static void init_client(int sock) {
   poll_set(sock,NULL,write_request);
 }
 
-static unsigned int get_addr(char * host) {
+static unsigned int get_addr(const char * host) {
   unsigned int addr = inet_addr(host);
   struct hostent *host_info = NULL;
 
   if (!addr || (-1 == (int)addr)) {
     host_info = gethostbyname(host);
     if (!host_info) {
-      perror ("gethostbyname");
+      printf("gethostbyname(%s): %s\n", host, hstrerror(h_errno));
       return (unsigned int)-1;
     }
     addr = *((unsigned int*) host_info->h_addr);
