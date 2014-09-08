@@ -403,7 +403,6 @@ TSRemapDeleteInstance(void *ih)
 
   TSDebug(PLUGIN_NAME, "Deleting remap instance");
 
-  TSfree(prl);
   delete prl;
 }
 
