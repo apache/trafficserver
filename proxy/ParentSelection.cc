@@ -58,7 +58,8 @@ static const char *ParentResultStr[] = {
 static const char *ParentRRStr[] = {
   "false",
   "strict",
-  "true"
+  "true",
+  "consistent"
 };
 
 //
