@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.2.0
 
+  *) [TS-3069] Add mysql_remap to autoconf
+
   *) [TS-3066] Fix various build issues for OmniOS, broken since 5.0.x.
 
   *) [TS-407] Cleanup the syslog facility setup for traffic_server.
