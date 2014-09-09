@@ -52,6 +52,6 @@ all-local:
 	                     CFLAGS="$(LUA_CFLAGS)" LDFLAGS="@LUA_LDFLAGS@"
 
 clean-local:
-	test "$(top_srcdir)" != "$(top_builddir)" || (cd "$(top_builddir)/$(subdir)/luajit" && make clean)
+	test "$(top_srcdir)" != "$(top_builddir)" || (cd "$(top_builddir)/$(subdir)/luajit" && $(MAKE) clean)
 	test "$(top_srcdir)" = "$(top_builddir)" || rm -rf "$(top_builddir)/$(subdir)/luajit"
 endif

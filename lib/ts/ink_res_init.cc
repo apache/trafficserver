@@ -262,7 +262,7 @@ ink_res_setoptions(ink_res_state statp, const char *options, const char *source 
   }
 }
 
-static u_int
+static unsigned
 ink_res_randomid(void) {
   struct timeval now;
 

@@ -29,6 +29,7 @@
 #include "Error.h"
 #include "URL.h"
 #include "RemapPluginInfo.h"
+#include "ink_config.h"
 
 #ifdef HAVE_PCRE_PCRE_H
 #include <pcre/pcre.h>

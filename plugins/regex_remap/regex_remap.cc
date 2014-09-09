@@ -22,18 +22,11 @@
 */
 #include "ts/ts.h"
 #include "ts/remap.h"
-#include "ink_config.h"
 
 #include <sys/types.h>
 #include <stdio.h>
 #include <time.h>
 #include <string.h>
-
-#ifdef HAVE_PCRE_PCRE_H
-#include <pcre/pcre.h>
-#else
-#include <pcre.h>
-#endif
 
 #include <ctype.h>
 #include <unistd.h>
@@ -47,6 +40,12 @@
 #include "ink_platform.h"
 #include "ink_atomic.h"
 #include "ink_time.h"
+
+#ifdef HAVE_PCRE_PCRE_H
+#include <pcre/pcre.h>
+#else
+#include <pcre.h>
+#endif
 
 static const char* PLUGIN_NAME = "regex_remap";
 

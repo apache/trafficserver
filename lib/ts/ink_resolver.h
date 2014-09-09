@@ -200,8 +200,8 @@ parse_host_res_preference(
 #ifndef NS_GET16
 #define NS_GET16(s, cp) do { \
         const u_char *t_cp = (const u_char *)(cp); \
-        (s) = ((u_int16_t)t_cp[0] << 8) \
-            | ((u_int16_t)t_cp[1]) \
+        (s) = ((uint16_t)t_cp[0] << 8) \
+            | ((uint16_t)t_cp[1]) \
             ; \
         (cp) += NS_INT16SZ; \
 } while (0)
@@ -210,10 +210,10 @@ parse_host_res_preference(
 #ifndef NS_GET32
 #define NS_GET32(l, cp) do { \
         const u_char *t_cp = (const u_char *)(cp); \
-        (l) = ((u_int32_t)t_cp[0] << 24) \
-            | ((u_int32_t)t_cp[1] << 16) \
-            | ((u_int32_t)t_cp[2] << 8) \
-            | ((u_int32_t)t_cp[3]) \
+        (l) = ((uint32_t)t_cp[0] << 24) \
+            | ((uint32_t)t_cp[1] << 16) \
+            | ((uint32_t)t_cp[2] << 8) \
+            | ((uint32_t)t_cp[3]) \
             ; \
         (cp) += NS_INT32SZ; \
 } while (0)
@@ -221,7 +221,7 @@ parse_host_res_preference(
 
 #ifndef NS_PUT16
 #define NS_PUT16(s, cp) do { \
-        u_int16_t t_s = (u_int16_t)(s); \
+        uint16_t t_s = (uint16_t)(s); \
         u_char *t_cp = (u_char *)(cp); \
         *t_cp++ = t_s >> 8; \
         *t_cp   = t_s; \
@@ -231,7 +231,7 @@ parse_host_res_preference(
 
 #ifndef NS_PUT32
 #define NS_PUT32(l, cp) do { \
-        u_int32_t t_l = (u_int32_t)(l); \
+        uint32_t t_l = (uint32_t)(l); \
         u_char *t_cp = (u_char *)(cp); \
         *t_cp++ = t_l >> 24; \
         *t_cp++ = t_l >> 16; \
@@ -246,7 +246,7 @@ struct ts_imp_res_state {
   int     retrans;                /*%< retransmission time interval */
   int     retry;                  /*%< number of times to retransmit */
 #ifdef sun
-  u_int   options;                /*%< option flags - see below. */
+  unsigned   options;                /*%< option flags - see below. */
 #else
   u_long  options;                /*%< option flags - see below. */
 #endif
@@ -256,7 +256,7 @@ struct ts_imp_res_state {
   char    *dnsrch[MAXDNSRCH+1];   /*%< components of domain to search */
   char    defdname[256];          /*%< default domain (deprecated) */
 #ifdef sun
-  u_int   pfcode;                 /*%< RES_PRF_ flags - see below. */
+  unsigned   pfcode;                 /*%< RES_PRF_ flags - see below. */
 #else
   u_long  pfcode;                 /*%< RES_PRF_ flags - see below. */
 #endif
@@ -267,9 +267,9 @@ struct ts_imp_res_state {
   res_send_rhook rhook;           /*%< response hook */
   int     res_h_errno;            /*%< last one set for this context */
   int     _vcsock;                /*%< PRIVATE: for res_send VC i/o */
-  u_int   _flags;                 /*%< PRIVATE: see below */
-  u_int   _pad;                   /*%< make _u 64 bit aligned */
-  u_int16_t              _nstimes[INK_MAXNS]; /*%< ms. */
+  unsigned   _flags;                 /*%< PRIVATE: see below */
+  unsigned   _pad;                   /*%< make _u 64 bit aligned */
+  uint16_t              _nstimes[INK_MAXNS]; /*%< ms. */
 };
 typedef ts_imp_res_state *ink_res_state;
 

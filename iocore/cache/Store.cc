@@ -672,7 +672,7 @@ Span::init(char *filename, int64_t size)
 {
   int devnum = 0, arg = 0;
   int ret = 0, is_disk = 0;
-  u_int64_t heads, sectors, cylinders, adjusted_sec;
+  uint64_t heads, sectors, cylinders, adjusted_sec;
   ats_scoped_fd fd;
 
   /* Fetch file type */
@@ -734,9 +734,9 @@ Span::init(char *filename, int64_t size)
 #endif
 
   if (is_disk) {
-    u_int32_t ioctl_sectors = 0;
-    u_int64_t ioctl_bytes = 0;
-    u_int64_t physsectors = 0;
+    uint32_t ioctl_sectors = 0;
+    uint64_t ioctl_bytes = 0;
+    uint64_t physsectors = 0;
 
     /* Disks cannot be mmapped */
     is_mmapable_internal = false;

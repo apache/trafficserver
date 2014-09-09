@@ -308,7 +308,7 @@ ink_ns_name_ntop(const u_char *src, char *dst, size_t dstsiz)
 	const u_char *cp;
 	char *dn, *eom;
 	u_char c;
-	u_int n;
+	unsigned n;
 	int l;
 
 	cp = src;
@@ -415,7 +415,7 @@ ns_name_ntop(const u_char *src, char *dst, size_t dstsiz)
 	const u_char *cp;
 	char *dn, *eom;
 	u_char c;
-	u_int n;
+	unsigned n;
 	int l;
 
 	cp = src;

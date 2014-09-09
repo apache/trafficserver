@@ -423,7 +423,7 @@ TSRemapNewInstance(int argc, char* argv[], void** ih, char* /* errbuf ATS_UNUSED
     { const_cast<char *>("secret_key"), required_argument, NULL, 's' },
     { const_cast<char *>("version"), required_argument, NULL, 'v' },
     { const_cast<char *>("virtual_host"), no_argument, NULL, 'h' },
-    {NULL, no_argument, NULL, '\0' }
+    { NULL, no_argument, NULL, '\0' }
   };
 
   S3Config* s3 = new S3Config();

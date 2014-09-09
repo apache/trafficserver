@@ -596,8 +596,8 @@ TSPluginInit(int argc, const char* argv[])
 {
   TSPluginRegistrationInfo info;
   static const struct option longopt[] = {
-    { "log", required_argument, NULL, 'l' },
-    {NULL, no_argument, NULL, '\0' }
+    { const_cast<char *>("log"), required_argument, NULL, 'l' },
+    { NULL, no_argument, NULL, '\0' }
   };
 
   info.plugin_name = (char*)PLUGIN_NAME;

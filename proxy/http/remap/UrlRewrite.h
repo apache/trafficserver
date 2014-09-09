@@ -26,6 +26,7 @@
 
 #include "UrlMapping.h"
 #include "HttpTransact.h"
+#include "ink_config.h"
 
 #ifdef HAVE_PCRE_PCRE_H
 #include <pcre/pcre.h>

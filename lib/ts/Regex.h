@@ -24,6 +24,8 @@
 #ifndef __TS_REGEX_H__
 #define __TS_REGEX_H__
 
+#include "ink_config.h"
+
 #ifdef HAVE_PCRE_PCRE_H
 #include <pcre/pcre.h>
 #else
