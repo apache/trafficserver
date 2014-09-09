@@ -37,6 +37,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "libts.h"
+
 #ifdef HAVE_PCRE_PCRE_H
 #include <pcre/pcre.h>
 #else
@@ -47,7 +49,6 @@
 #include <ctype.h>
 #endif
 
-#include "libts.h"
 #include "HttpProxyAPIEnums.h"
 #include "ProxyConfig.h"
 

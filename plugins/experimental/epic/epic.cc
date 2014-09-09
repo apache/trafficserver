@@ -355,7 +355,7 @@ struct epic_sample_context
 {
   time_t sample_time;
   FILE *sample_fp;
-  char sample_host[MAXHOSTNAMELEN];     /* sysconf(_SC_HOST_NAME_MAX) */
+  char sample_host[TS_MAX_HOST_NAME_LEN];     /* sysconf(_SC_HOST_NAME_MAX) */
 };
 
 static void

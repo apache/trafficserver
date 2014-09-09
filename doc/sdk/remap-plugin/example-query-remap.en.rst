@@ -129,7 +129,7 @@ modify the request host:
             ++val;
             //the param key matched the configured param_name
             //hash the param value to pick a host
-            hostidx = hash_fnv32(val, strlen(val)) % (u_int32_t)qri->num_hosts;
+            hostidx = hash_fnv32(val, strlen(val)) % (uint32_t)qri->num_hosts;
             break;
           }
         }

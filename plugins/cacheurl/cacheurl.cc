@@ -25,19 +25,17 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "ink_config.h"
+#include "ts/ts.h"
+#include "ts/remap.h"
+#include "ink_defs.h"
+#include <string>
+#include <vector>
 
 #ifdef HAVE_PCRE_PCRE_H
 #include <pcre/pcre.h>
 #else
 #include <pcre.h>
 #endif
-
-#include "ts/ts.h"
-#include "ts/remap.h"
-#include "ink_defs.h"
-#include <string>
-#include <vector>
 
 #define TOKENCOUNT 10
 #define OVECOUNT 30

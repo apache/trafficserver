@@ -358,7 +358,7 @@ HdrTokenHashBucket hdrtoken_hash_table[HDRTOKEN_HASH_TABLE_SIZE];
 /**
   basic FNV hash
 **/
-#define TINY_MASK(x) (((u_int32_t)1<<(x))-1)
+#define TINY_MASK(x) (((uint32_t)1<<(x))-1)
 
 inline uint32_t
 hash_to_slot(uint32_t hash)
