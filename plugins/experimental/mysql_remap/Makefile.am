@@ -14,30 +14,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-SUBDIRS = \
- authproxy \
- background_fetch \
- balancer \
- buffer_upload \
- channel_stats \
- collapsed_connection \
- custom_redirect \
- mysql_remap \
- epic \
- escalate \
- esi \
- geoip_acl \
- healthchecks \
- hipes \
- metalink \
- regex_revalidate \
- remap_stats \
- s3_auth \
- sslheaders \
- stale_while_revalidate \
- url_sig \
- xdebug
+include $(top_srcdir)/build/plugins.mk
 
-if BUILD_LUAJIT
-  SUBDIRS += ts_lua
-endif
+pkglib_LTLIBRARIES = mysql_remap.la
+mysql_remap_la_SOURCES = mysql_remap.cc
+mysql_remap_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
