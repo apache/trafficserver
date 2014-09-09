@@ -266,7 +266,7 @@ Set standard log file format options by following the steps below:
 Using the Custom Format
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-The XML-based custom log format is more flexible then the standard log
+The XML-based custom log format is more flexible than the standard log
 file formats and gives you more control over the type of information
 recorded in log files. You should create a custom log format if you need
 data for analysis that's not available in the standard formats. You can
