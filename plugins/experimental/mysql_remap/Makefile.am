@@ -18,4 +18,4 @@ include $(top_srcdir)/build/plugins.mk
 
 pkglib_LTLIBRARIES = mysql_remap.la
 mysql_remap_la_SOURCES = mysql_remap.cc
-mysql_remap_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
+mysql_remap_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS) $(LIB_MYSQLCLIENT)

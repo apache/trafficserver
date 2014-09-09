@@ -1926,14 +1926,15 @@ AC_CONFIG_FILES([
   tools/tsxs
 ])
 
-AS_IF([test "x$enable_experimental_plugins" = xyes], [
-  TS_FLAG_HEADERS([mysql/mysql.h], [
-    AC_CONFIG_FILES([
-      plugins/experimental/mysql_remap/Makefile
-    ])
-  ], [])
-          
+
+TS_FLAG_HEADERS([mysql/mysql.h], [has_mysql=1],[has_mysql=0])
+AC_CHECK_LIB([mysqlclient],[mysql_info],[AC_SUBST([LIB_MYSQLCLIENT],["-lmysqlclient"])],[has_mysql=0])
+AC_SUBST(has_mysql)
+AM_CONDITIONAL([HAS_MYSQL], [ test "x${has_mysql}" = "x1" ])
+
+AS_IF([test "x$enable_experimental_plugins" = xyes], [  
   AC_CONFIG_FILES([
+    plugins/experimental/mysql_remap/Makefile
     plugins/experimental/Makefile
     plugins/experimental/authproxy/Makefile
     plugins/experimental/background_fetch/Makefile

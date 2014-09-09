@@ -22,7 +22,6 @@ SUBDIRS = \
  channel_stats \
  collapsed_connection \
  custom_redirect \
- mysql_remap \
  epic \
  escalate \
  esi \
@@ -37,6 +36,10 @@ SUBDIRS = \
  stale_while_revalidate \
  url_sig \
  xdebug
+
+if HAS_MYSQL
+  SUBDIRS += mysql_remap
+endif
 
 if BUILD_LUAJIT
   SUBDIRS += ts_lua
