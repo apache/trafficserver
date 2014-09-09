@@ -72,11 +72,6 @@
 # include "NumericType.h"
 # include "IntrusivePtr.h"
 
-# if USING_BOOST
-#   include <boost/function.hpp>
-#   include <boost/format/format_fwd.hpp>
-# endif
-
 namespace ts {
 
 /** Class to hold a stack of error messages (the "errata").
@@ -335,70 +330,6 @@ public:
       int shift, ///< Additional @a indent for nested @c Errata.
       char const* lead ///< Leading text for nested @c Errata.
     ) const;
-
-# if USING_BOOST
-    /// Functor type for sink.
-    typedef boost::function<void (Errata const&)> SinkFunctor;
-
-    // Wrapper class to support registering functions as sinks.
-    struct SinkFunctorWrapper : public Sink {
-        /// Constructor.
-        SinkFunctionWrapper(SinkHandlerFunctor f) : m_f(f) { }
-        /// Operator to invoke the function.
-        virtual void operator() (Errata const& e) const { m_f(e); }
-        SinkHandlerFunctor m_f; ///< Client supplied handler.
-    };
-
-    /// Register a sink function for abandonded erratum.
-    static void registerSink(SinkFunctor const& f) {
-        registerSink(Sink::Handle(new SinkFunctorWrapper(f)));
-    }
-
-    /// Generate formatted output.
-    /// For each message in the stack, invoke @c boost::format passing
-    /// @a fmt as the format string and the message ID and message text as
-    /// two values. It is not an error to elide either or both. @a glue is
-    /// sent to the stream @a s between every pair of messages.
-    /// @return The stream @a s.
-    std::ostream& format(
-        std::ostream& s,           ///< Output stream
-        boost::format const& fmt,  ///< Format string
-        std::string const& glue = DEFAULT_GLUE ///< Glue
-    ) const;
-
-    /// Generate formatted output.
-    /// A convenience overload so clients do not have to include the Boost.Format headers.
-    /// @return The formatted output.
-    /// @see std::ostream& format ( std::ostream& s, boost::format const& fmt, std::string const& glue ).
-    std::ostream& format(
-        std::ostream& s,           ///< Output stream
-        std::string const& fmt,    ///< Format string
-        std::string const& glue = DEFAULT_GLUE ///< Glue
-    ) const;
-
-    /// Generate formatted output.
-    /// For each message in the stack, invoke @c boost::format passing
-    /// @a fmt as the format string and the message ID and message text as
-    /// two values. It is not an error to elide either or both. @a glue is
-    /// added between every pair of messages.
-    /// @note This is identical to the stream variant except the output
-    /// is put in a string instead of a stream.
-    /// @return The formatted output.
-    /// @see std::ostream& format ( std::ostream& s, boost::format const& fmt, std::string const& glue ).
-    std::string format(
-        boost::format const& fmt,  ///< Format string
-        std::string const& glue = DEFAULT_GLUE ///< Glue
-    ) const;
-
-    /// Generate formatted output.
-    /// A convenience overload so clients do not have to include the Boost.Format headers.
-    /// @return The formatted output.
-    /// @see std::string format ( boost::format const& fmt, std::string const& glue ).
-    std::string format(
-        std::string const& fmt,  ///< Format string
-        std::string const& glue = DEFAULT_GLUE ///< Glue
-    ) const;
-# endif // USING_BOOST
 
 protected:
     /// Construct from implementation pointer.

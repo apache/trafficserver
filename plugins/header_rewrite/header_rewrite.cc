@@ -17,7 +17,6 @@
 */
 #include <fstream>
 #include <string>
-#include <boost/algorithm/string.hpp>
 
 #include "ts/ts.h"
 #include "ts/remap.h"
@@ -152,7 +151,14 @@ RulesConfig::parse_config(const std::string fname, TSHttpHookID default_hook)
     ++lineno; // ToDo: we should probably use this for error messages ...
     TSDebug(PLUGIN_NAME_DBG, "Reading line: %d: %s", lineno, line.c_str());
 
-    boost::trim(line);
+    while (std::isspace(line[0])) {
+      line.erase(0, 1);
+    }
+
+    while (std::isspace(line[line.length() - 1])) {
+      line.erase(line.length() - 1, 1);
+    }
+
     if (line.empty() || (line[0] == '#')) {
       continue;
     }

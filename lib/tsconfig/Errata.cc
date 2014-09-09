@@ -255,43 +255,5 @@ std::ostream& operator<< (std::ostream& os, Errata const& err) {
   return err.write(os, 0, 0, 2, "> ");
 }
 
-# if USING_BOOST
-
-std::ostream&
-errata::format(std::ostream& s, std::string const& fmt, std::string const& glue) const {
-  return this->format(s, boost::format(fmt), glue);
-}
-
-std::ostream&
-errata::format(std::ostream& s, boost::format const& fmt, std::string const& glue) const {
-  if (_data) {
-    bool inside = false;
-    boost::format f(fmt);
-    f.exceptions(boost::io::all_error_bits ^ boost::io::too_many_args_bit);
-    const_iterator spot(this->begin()), limit(this->end());
-    while (spot != limit) {
-      if (inside) s << glue;
-      s << ( f % spot->_id % spot->_text );
-      inside = true;
-      ++spot;
-    }
-  }
-  return s;
-}
-
-std::string
-errata::format(std::string const& fmt, std::string const& glue) const {
-  return this->format(boost::format(fmt), glue);
-}
-
-std::string
-errata::format(boost::format const& fmt, std::string const& glue) const {
-  std::ostringstream s;
-  this->format(s, fmt, glue);
-  return s.str();
-}
-
-# endif
-
 } // namespace ts
 

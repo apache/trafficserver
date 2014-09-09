@@ -20,16 +20,13 @@
 //
 //
 #include <utility>
-#include <boost/tokenizer.hpp>
+#include <iostream>
+#include <string>
+#include <sstream>
 
 #include "ts/ts.h"
 
 #include "parser.h"
-
-// Tokenizer separators
-static boost::escaped_list_separator<char> token_sep('\\', ' ', '\"');
-static boost::char_separator<char> comma_sep(",");
-
 
 // This is the core "parser", parsing rule sets
 void
@@ -80,8 +77,11 @@ Parser::preprocess(std::vector<std::string>& tokens)
       if (m[m.size() - 1] == ']') {
         m = m.substr(1, m.size() - 2);
         if (m.find_first_of(',') != std::string::npos) {
-          boost::tokenizer<boost::char_separator<char> > mods(m, comma_sep);
-          std::copy(mods.begin(), mods.end(), std::back_inserter(_mods));
+          std::istringstream iss(m);
+          std::string t;
+          while(getline(iss, t, ',')) {
+            _mods.push_back(t);
+          }
         } else {
           _mods.push_back(m);
         }
@@ -103,13 +103,37 @@ Parser::Parser(const std::string& line) :
   if (line[0] == '#') {
     _empty = true;
   } else {
-    boost::tokenizer<boost::escaped_list_separator<char> > elem(line, token_sep);
+    std::string tmp = line;
     std::vector<std::string> tokens;
+    bool in_quotes = false;
+    int t = 0;
 
-    for (boost::tokenizer<boost::escaped_list_separator<char> >::iterator it = elem.begin(); it != elem.end(); it++) {
-      // Skip "empty" tokens (tokenizer is a little brain dead IMO)
-      if ((*it) != "")
-        tokens.push_back(*it);
+    for (unsigned int i = 0; i < tmp.size(); i++) {
+      if (tmp[i] == '\\') {
+        tmp.erase(i,1);
+        i++;
+      }
+
+      if (tmp[i] == '\"') {
+        tmp.erase(i,1);
+
+        if (in_quotes) {
+          in_quotes = false;
+        } else {
+          in_quotes = true;
+        }
+      }
+
+      if ((tmp[i] == ' ' || i >= tmp.size() - 1) && !in_quotes) {
+        if (i == tmp.size() - 1) {
+          i++;
+        }
+        std::string s = tmp.substr(t, i - t);
+        t = i + 1;
+        if (s.size() > 0) {
+          tokens.push_back(s);
+        }
+      }
     }
 
     if (tokens.empty()) {

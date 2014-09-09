@@ -16,10 +16,6 @@
 
 include $(top_srcdir)/build/plugins.mk
 
-if BUILD_HAVE_BOOST
-
-AM_CPPFLAGS += $(BOOST_CPPFLAGS)
-
 pkglib_LTLIBRARIES = header_rewrite.la
 header_rewrite_la_SOURCES = \
   condition.cc \
@@ -37,6 +33,4 @@ header_rewrite_la_SOURCES = \
   ruleset.cc \
   statement.cc
 
-header_rewrite_la_LDFLAGS = $(BOOST_LDFLAGS) $(TS_PLUGIN_LDFLAGS)
-
-endif
+header_rewrite_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)

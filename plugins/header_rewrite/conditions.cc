@@ -22,6 +22,7 @@
 #include <sys/time.h>
 #include <unistd.h>
 #include <arpa/inet.h>
+#include <sstream>
 
 #include "ts/ts.h"
 
@@ -64,7 +65,9 @@ ConditionStatus::eval(const Resources& res)
 void
 ConditionStatus::append_value(std::string& s, const Resources& res)
 {
-  s += boost::lexical_cast<std::string>(res.resp_status);
+  std::ostringstream oss;
+  oss << res.resp_status;
+  s += oss.str();
   TSDebug(PLUGIN_NAME, "Appending STATUS(%d) to evaluation value -> %s", res.resp_status, s.c_str());
 }
 
@@ -99,7 +102,9 @@ ConditionRandom::eval(const Resources& /* res ATS_UNUSED */)
 void
 ConditionRandom::append_value(std::string& s, const Resources& /* res ATS_UNUSED */)
 {
-  s += boost::lexical_cast<std::string>(rand_r(&_seed) % _max);
+  std::ostringstream oss;
+  oss << rand_r(&_seed) % _max;
+  s += oss.str();
   TSDebug(PLUGIN_NAME, "Appending RANDOM(%d) to evaluation value -> %s", _max, s.c_str());
 }
 
