@@ -1927,6 +1927,12 @@ AC_CONFIG_FILES([
 ])
 
 AS_IF([test "x$enable_experimental_plugins" = xyes], [
+  TS_FLAG_HEADERS([mysql/mysql.h], [
+    AC_CONFIG_FILES([
+      plugins/experimental/mysql_remap/Makefile
+    ])
+  ], [])
+          
   AC_CONFIG_FILES([
     plugins/experimental/Makefile
     plugins/experimental/authproxy/Makefile
@@ -1943,7 +1949,6 @@ AS_IF([test "x$enable_experimental_plugins" = xyes], [
     plugins/experimental/healthchecks/Makefile
     plugins/experimental/hipes/Makefile
     plugins/experimental/metalink/Makefile
-    plugins/experimental/mysql_remap/Makefile
     plugins/experimental/regex_revalidate/Makefile
     plugins/experimental/remap_stats/Makefile
     plugins/experimental/s3_auth/Makefile
