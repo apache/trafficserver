@@ -75,7 +75,7 @@ extras() {
 autogen() {
   (
     cd "$SRCROOT"
-    [ configure -nt configure.ac -a Makefile -nt Makefile.am ] || autoreconf -fi
+    [ configure -nt configure.ac -a Makefile.in -nt Makefile.am ] || autoreconf -fi
   )
 }
 
@@ -91,7 +91,8 @@ configure() {
       --enable-experimental-plugins \
       $(extras) \
       CC="$CC" \
-      CXX="$CXX"
+      CXX="$CXX" \
+      "$@"
   )
 }
 
