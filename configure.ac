@@ -393,6 +393,20 @@ TS_ARG_ENABLE_VAR([has], [spdy])
 AC_SUBST(has_spdy)
 AM_CONDITIONAL([BUILD_SPDY], [test 0 -ne $has_spdy])
 
+
+#
+# Options for UUID
+#
+AC_MSG_CHECKING([whether to enable uuid generation.])
+AC_ARG_ENABLE([uuid],
+	[AS_HELP_STRING([--enable-uuid], [turn on uuid generation])],
+	[],
+	[enable_uuid="no"])
+AC_MSG_RESULT([$enable_uuid])
+TS_ARG_ENABLE_VAR([has], [uuid])
+AC_SUBST(has_uuid)
+AM_CONDITIONAL([BUILD_UUID], [test 0 -ne $has_uuid])
+
 #
 # Configure how many stats to allocate for plugins. Default is 512.
 #
@@ -1427,6 +1441,42 @@ AM_CONDITIONAL([BUILD_HTTP_LOAD], [test x"$ac_cv_func_epoll_ctl" = x"yes"])
 if test "x${enable_spdy}" = "xyes"; then
   PKG_CHECK_MODULES([SPDYLAY],[libspdylay])
 fi
+
+# UUID generation may either use boost or ossp-uuid.
+# We first try boost, if we have version 1.42 up will use it
+# (because it does not need an extra lib and it's already being used
+# by the project, no new dependency.)
+# Otherwise we'll search for ossp_uuid. If found, add to ldflags.
+# This fallback is needed for old distros.
+
+
+if test "x${enable_uuid}" = "xyes"; then
+	has_boost_uuid=no
+	has_ossp_uuid=no
+
+	AC_LANG_PUSH([C++])
+	AC_CHECK_HEADERS([boost/uuid/uuid.hpp],
+		[has_boost_uuid=yes],
+		[PKG_CHECK_MODULES([OSSP_UUID], [ossp-uuid],
+			[has_ossp_uuid=yes],
+			[AC_MSG_ERROR([UUID generation is on but neither a compatible boost nor lib ossp_uuid found.])]
+                       )]
+	)
+	AC_LANG_POP([C++])
+
+	if test "x${has_boost_uuid}" = "xyes"; then
+		AC_DEFINE([HAS_BOOST_UUID], [1], [Define that we can use boost for UUID generation.])
+	fi
+
+
+	if test "x${has_ossp_uuid}" = "xyes"; then
+		AC_CHECK_HEADERS([uuid.h],
+			[AC_DEFINE([HAS_OSSP_UUID], [1], [Define that we can use OSSP_UUID lib for UUID generation.])],
+			[AC_MSG_ERROR([OSSP header file uuid.h not found.])])
+		EXTRA_CXX_LDFLAGS+=" -lossp-uuid"
+	fi
+fi
+
 
 # -----------------------------------------------------------------------------
 # 5. CHECK FOR HEADER FILES

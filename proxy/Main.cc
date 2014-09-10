@@ -1535,6 +1535,7 @@ main(int /* argc ATS_UNUSED */, char **argv)
     extern int spdy_config_load ();
     spdy_config_load(); // must be before HttpProxyPort init.
 # endif
+
     // Load HTTP port data. getNumSSLThreads depends on this.
     if (!HttpProxyPort::loadValue(http_accept_port_descriptor))
       HttpProxyPort::loadConfig();

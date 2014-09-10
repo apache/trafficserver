@@ -18,7 +18,7 @@
   distributed under the License is distributed on an "AS IS" BASIS,
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
-  limitations under the License.
+  limitations under the License
  */
 
 /****************************************************************************
@@ -43,6 +43,20 @@
 #include "HttpClientSession.h"
 #include "HdrUtils.h"
 //#include "AuthHttpAdapter.h"
+
+#ifdef TS_HAS_UUID
+  #ifdef HAS_BOOST_UUID
+    #include <boost/uuid/uuid.hpp>
+    #include <boost/uuid/uuid_generators.hpp>
+    #include <boost/uuid/uuid_io.hpp>
+
+    using namespace boost;
+    using namespace boost::uuids;
+  #else // HAS_OSSP_UUID
+    #include <uuid.h>
+  #endif
+#endif
+
 
 /* Enable LAZY_BUF_ALLOC to delay allocation of buffers until they
  * are actually required.
@@ -218,11 +232,11 @@ public:
   // setup Range transfomration if so.
   // return true when the Range is unsatisfiable
   void do_range_setup_if_necessary();
-  
+
   void do_range_parse(MIMEField *range_field);
   void calculate_output_cl(int64_t, int64_t);
   void parse_range_and_compare(MIMEField*, int64_t);
-  
+
   // Called by transact to prevent reset problems
   //  failed PUSH requests
   void set_ua_half_close_flag();
@@ -532,6 +546,30 @@ public:
 
 public:
   bool set_server_session_private(bool private_session);
+
+#ifdef TS_HAS_UUID
+  const char *get_uuid(void) const;
+  bool should_add_uuid_to_request(void) const;
+  bool should_add_uuid_to_response(void) const;
+  void add_uuid_header(HTTPHdr *hdr) const;
+
+protected:
+  std::string   id;
+
+  static RecInt      use_uuid;
+  static std::string header_name;
+  static RecInt      add_to_request;
+  static RecInt      add_to_response;
+
+  void init_uuid_config();
+  void generate_uuid();
+
+  #ifdef HAS_BOOST_UUID
+    boost::uuids::basic_random_generator<boost::mt19937> gen;
+  #else //HAS_OSSP_UUID
+    uuid_t *_uuid;
+  #endif
+#endif
 };
 
 //Function to get the cache_sm object - YTS Team, yamsat

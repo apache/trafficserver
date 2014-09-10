@@ -576,6 +576,15 @@ Log::init_fields()
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "pfsc", field);
 
+#ifdef TS_HAS_UUID
+  field = new LogField("proxy_uuid", "uuid",
+                       LogField::STRING,
+                       &LogAccess::marshal_proxy_uuid,
+                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str);
+  global_field_list.add(field, false);
+  ink_hash_table_insert(field_symbol_hash, "uuid", field);
+#endif
+
   Ptr<LogFieldAliasTable> cache_code_map = make_ptr(new LogFieldAliasTable);
   cache_code_map->init(49,
                        SQUID_LOG_EMPTY, "UNDEFINED",

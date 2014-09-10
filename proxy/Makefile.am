@@ -189,7 +189,9 @@ if BUILD_TESTS
     RegressionSM.cc
 endif
 
-traffic_server_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
+
+
+traffic_server_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@ @OSSP_UUID_LIBS@
 traffic_server_LDADD = \
   http/libhttp.a \
   spdy/libspdy.a \

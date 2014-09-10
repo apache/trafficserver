@@ -62,6 +62,7 @@
 #define TS_USE_TPROXY                  @use_tproxy@
 #define TS_HAS_SO_MARK                 @has_so_mark@
 #define TS_HAS_SPDY                    @has_spdy@
+#define TS_HAS_UUID                    @has_uuid@
 #define TS_HAS_IP_TOS                  @has_ip_tos@
 #define TS_USE_HWLOC                   @use_hwloc@
 #define TS_USE_FREELIST                @use_freelist@

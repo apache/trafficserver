@@ -186,6 +186,23 @@ LogAccessICP::marshal_proxy_resp_content_type(char *buf)
   return len;
 }
 
+#ifdef TS_HAS_UUID
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
+LogAccessICP::marshal_proxy_uuid(char *buf)
+{
+  // On ICP messages we don't have an UUID, so leave the field blank.
+  if (buf) {
+    marshal_mem(buf, "-", 1, 2);
+  }
+  return 2;
+}
+#endif
+
+
+
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
