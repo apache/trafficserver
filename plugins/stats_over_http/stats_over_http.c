@@ -209,21 +209,21 @@ stats_origin(TSCont contp ATS_UNUSED, TSEvent event ATS_UNUSED, void *edata)
   TSEvent reenable = TS_EVENT_HTTP_CONTINUE;
 
   TSDebug("istats", "in the read stuff");
- 
+
   if (TSHttpTxnClientReqGet(txnp, &reqp, &hdr_loc) != TS_SUCCESS)
     goto cleanup;
-  
+
   if (TSHttpHdrUrlGet(reqp, hdr_loc, &url_loc) != TS_SUCCESS)
     goto cleanup;
-  
+
   int path_len = 0;
   const char* path = TSUrlPathGet(reqp,url_loc,&path_len);
   TSDebug("istats","Path: %.*s",path_len,path);
-  
+
   if (! (path_len != 0 && path_len == url_path_len  && !memcmp(path,url_path,url_path_len)) ) {
     goto notforme;
   }
-  
+
   TSSkipRemappingSet(txnp,1); //not strictly necessary, but speed is everything these days
 
   /* This is us -- register our intercept */
