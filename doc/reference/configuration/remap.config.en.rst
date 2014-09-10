@@ -386,6 +386,7 @@ Examples
 --------
 
 ::
+
     map http://foo.example.com/neverpost  http://foo.example.com/neverpost @action=deny @method=post
     map http://foo.example.com/onlypost  http://foo.example.com/onlypost @action=allow @method=post
 
