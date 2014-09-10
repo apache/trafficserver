@@ -122,6 +122,7 @@ LogAccessHttp::init()
       }
     }
   }
+
   if (hdr->server_request.valid()) {
     m_proxy_request = &(hdr->server_request);
   }
@@ -707,6 +708,22 @@ LogAccessHttp::marshal_cache_result_code(char *buf)
   }
   return INK_MIN_ALIGN;
 }
+
+#ifdef TS_HAS_UUID
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
+LogAccessHttp::marshal_proxy_uuid(char *buf)
+{
+  int len = 36 + 1;
+  if (buf) {
+    m_proxy_uuid_str = m_http_sm->get_uuid();
+    marshal_mem(buf, m_proxy_uuid_str, 36, len);
+  }
+  return len;
+}
+#endif
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
