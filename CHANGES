@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.2.0
 
+  *) [TS-3051] Fix libaio error handling.
+
   *) [TS-3071] Optionally emit JSON numbers in stats_over_http.
    Thanks to Saltuk Alakus <saltukalakus@gmail.com>
 

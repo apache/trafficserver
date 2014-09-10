@@ -564,29 +564,34 @@ Lagain:
     complete_list.enqueue(op);
     //op->handleEvent(event, e);
   }
-  if (ret == MAX_AIO_EVENTS)
+
+  if (ret == MAX_AIO_EVENTS) {
     goto Lagain;
-  if (ret < 0)
-    perror("io_getevents");
+  }
+
+  if (ret < 0) {
+    Debug("aio", "io_getevents failed: %s (%d)", strerror(-ret), -ret);
+  }
 
   ink_aiocb_t *cbs[MAX_AIO_EVENTS];
   int num = 0;
+
   for (; num < MAX_AIO_EVENTS && ((op = ready_list.dequeue()) != NULL); ++num) {
     cbs[num] = &op->aiocb;
     ink_assert(op->action.continuation);
   }
+
   if (num > 0) {
     int ret;
     do {
       ret = io_submit(ctx, num, cbs);
-    } while (ret < 0 && errno == EAGAIN);
+    } while (ret < 0 && ret == -EAGAIN);
 
     if (ret != num) {
-      if (ret < 0)
-        perror("io_submit error");
-      else {
-        fprintf(stderr, "could not sumbit IOs");
-        ink_assert(0);
+      if (ret < 0) {
+        Debug("aio", "io_submit failed: %s (%d)", strerror(-ret), -ret);
+      } else {
+        Fatal("could not sumbit IOs, io_submit(%p, %d, %p) returned %d", ctx, num, cbs, ret);
       }
     }
   }

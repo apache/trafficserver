@@ -145,7 +145,7 @@ struct DiskHandler: public Continuation
     memset(&ctx, 0, sizeof(ctx));
     int ret = io_setup(MAX_AIO_EVENTS, &ctx);
     if (ret < 0) {
-      perror("io_setup error");
+      Debug("aio", "io_setup error: %s (%d)", strerror(-ret), -ret);
     }
   }
 };
