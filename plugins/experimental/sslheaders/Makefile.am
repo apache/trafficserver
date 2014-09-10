@@ -31,6 +31,7 @@ sslheaders_la_LIBADD = libsslhdr.la
 test_sslheaders_SOURCES = test_sslheaders.cc sslheaders.h
 test_sslheaders_LDADD = \
   libsslhdr.la \
-  $(top_builddir)/lib/ts/libtsutil.la
+  $(top_builddir)/lib/ts/libtsutil.la \
+  @OPENSSL_LIBS@
 
 TESTS = $(check_PROGRAMS)
