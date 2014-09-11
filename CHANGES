@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.2.0
 
+  *) [TS-3071] Optionally emit JSON numbers in stats_over_http.
+   Thanks to Saltuk Alakus <saltukalakus@gmail.com>
+
   *) [TS-3069] Add mysql_remap to autoconf
 
   *) [TS-3066] Fix various build issues for OmniOS, broken since 5.0.x.

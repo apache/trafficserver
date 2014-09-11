@@ -35,10 +35,26 @@ default URL::
 
     http://host:port/_stats
 
+where host and port is the hostname/IP and port number of the server.
 
-where host and port is the hostname/IP and port number of the server. You can
-optionally modify the path to use, and this is highly recommended in a public
-facing server. For example::
+Plugin Options
+--------------
+
+.. option:: --integer-counters
+
+This option causes the plugin to emit floating point and integral
+metric values as JSON numbers, rather then JSON strings. This can
+cause interoperability problems since integer metrics have a 64-bit
+unsigned range.
+
+.. option:: --wrap-counters
+
+This option wraps 64-bit unsigned values to the 64-bit signed range.
+This aids interoperability with Java, since prior to the Java SE 8
+release, Java did not have a 64-bit unsigned type.
+
+You can optionally modify the path to use, and this is highly
+recommended in a public facing server. For example::
 
     stats_over_http.so 81c075bc0cca1435ea899ba4ad72766b
 

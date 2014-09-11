@@ -26,18 +26,24 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <ctype.h>
 #include <limits.h>
 #include <ts/ts.h>
 #include <string.h>
-
 #include <inttypes.h>
+#include <getopt.h>
 
 #include "ink_defs.h"
+
+#define PLUGIN_NAME "stats_over_http"
 
 /* global holding the path used for access to this JSON data */
 static const char* url_path = "_stats";
 static int url_path_len;
+
+static bool integer_counters = false;
+static bool wrap_counters = false;
 
 typedef struct stats_state_t
 {
@@ -102,7 +108,7 @@ stats_add_resp_header(stats_state * my_state)
 static void
 stats_process_read(TSCont contp, TSEvent event, stats_state * my_state)
 {
-  TSDebug("istats", "stats_process_read(%d)", event);
+  TSDebug(PLUGIN_NAME, "stats_process_read(%d)", event);
   if (event == TS_EVENT_VCONN_READ_READY) {
     my_state->output_bytes = stats_add_resp_header(my_state);
     TSVConnShutdown(my_state->net_vc, 1, 0);
@@ -126,6 +132,26 @@ stats_process_read(TSCont contp, TSEvent event, stats_state * my_state)
   if(snprintf(b, sizeof(b), "\"%s\": \"" fmt "\",\n", a, v) < sizeof(b)) \
     APPEND(b); \
 } while(0)
+#define APPEND_STAT_NUMERIC(a, fmt, v) do { \
+  char b[256]; \
+  if (integer_counters) { \
+    if (snprintf(b, sizeof(b), "\"%s\": " fmt ",\n", a, v) < sizeof(b)) { APPEND(b); } \
+  } else { \
+    if (snprintf(b, sizeof(b), "\"%s\": \"" fmt "\",\n", a, v) < sizeof(b)) { APPEND(b); } \
+  } \
+} while(0)
+
+// This wraps uint64_t values to the int64_t range to fit into a Java long. Java 8 has an unsigned long which
+// can interoperate with a full uint64_t, but it's unlikely that much of the ecosystem supports that yet.
+static uint64_t
+wrap_unsigned_counter(uint64_t value)
+{
+  if (wrap_counters) {
+    return (value > INT64_MAX) ? value % INT64_MAX : value;
+  } else {
+    return value;
+  }
+}
 
 static void
 json_out_stat(TSRecordType rec_type ATS_UNUSED, void *edata, int registered ATS_UNUSED,
@@ -135,15 +161,15 @@ json_out_stat(TSRecordType rec_type ATS_UNUSED, void *edata, int registered ATS_
 
   switch(data_type) {
   case TS_RECORDDATATYPE_COUNTER:
-    APPEND_STAT(name, "%" PRIu64, datum->rec_counter); break;
+    APPEND_STAT_NUMERIC(name, "%" PRIu64, wrap_unsigned_counter(datum->rec_counter)); break;
   case TS_RECORDDATATYPE_INT:
-    APPEND_STAT(name, "%" PRIu64, datum->rec_int); break;
+    APPEND_STAT_NUMERIC(name, "%" PRIu64, wrap_unsigned_counter(datum->rec_int)); break;
   case TS_RECORDDATATYPE_FLOAT:
-    APPEND_STAT(name, "%f", datum->rec_float); break;
+    APPEND_STAT_NUMERIC(name, "%f", datum->rec_float); break;
   case TS_RECORDDATATYPE_STRING:
     APPEND_STAT(name, "%s", datum->rec_string); break;
   default:
-    TSDebug("istats", "unknown type for %s: %d", name, data_type);
+    TSDebug(PLUGIN_NAME, "unknown type for %s: %d", name, data_type);
     break;
   }
 }
@@ -166,7 +192,7 @@ stats_process_write(TSCont contp, TSEvent event, stats_state * my_state)
 {
   if (event == TS_EVENT_VCONN_WRITE_READY) {
     if (my_state->body_written == 0) {
-      TSDebug("istats", "plugin adding response body");
+      TSDebug(PLUGIN_NAME, "plugin adding response body");
       my_state->body_written = 1;
       json_out_stats(my_state);
       TSVIONBytesSet(my_state->write_vio, my_state->output_bytes);
@@ -208,7 +234,7 @@ stats_origin(TSCont contp ATS_UNUSED, TSEvent event ATS_UNUSED, void *edata)
   TSMLoc hdr_loc = NULL, url_loc = NULL;
   TSEvent reenable = TS_EVENT_HTTP_CONTINUE;
 
-  TSDebug("istats", "in the read stuff");
+  TSDebug(PLUGIN_NAME, "in the read stuff");
 
   if (TSHttpTxnClientReqGet(txnp, &reqp, &hdr_loc) != TS_SUCCESS)
     goto cleanup;
@@ -218,7 +244,7 @@ stats_origin(TSCont contp ATS_UNUSED, TSEvent event ATS_UNUSED, void *edata)
 
   int path_len = 0;
   const char* path = TSUrlPathGet(reqp,url_loc,&path_len);
-  TSDebug("istats","Path: %.*s",path_len,path);
+  TSDebug(PLUGIN_NAME, "Path: %.*s", path_len,path);
 
   if (! (path_len != 0 && path_len == url_path_len  && !memcmp(path,url_path,url_path_len)) ) {
     goto notforme;
@@ -227,7 +253,7 @@ stats_origin(TSCont contp ATS_UNUSED, TSEvent event ATS_UNUSED, void *edata)
   TSSkipRemappingSet(txnp,1); //not strictly necessary, but speed is everything these days
 
   /* This is us -- register our intercept */
-  TSDebug("istats", "Intercepting request");
+  TSDebug(PLUGIN_NAME, "Intercepting request");
 
   icontp = TSContCreate(stats_dostuff, TSMutexCreate());
   my_state = (stats_state *) TSmalloc(sizeof(*my_state));
@@ -239,9 +265,6 @@ stats_origin(TSCont contp ATS_UNUSED, TSEvent event ATS_UNUSED, void *edata)
  notforme:
 
  cleanup:
-#if (TS_VERSION_NUMBER < 2001005)
-  if(path) TSHandleStringRelease(reqp, url_loc, path);
-#endif
   if(url_loc) TSHandleMLocRelease(reqp, hdr_loc, url_loc);
   if(hdr_loc) TSHandleMLocRelease(reqp, TS_NULL_MLOC, hdr_loc);
 
@@ -254,12 +277,40 @@ TSPluginInit(int argc, const char *argv[])
 {
   TSPluginRegistrationInfo info;
 
-  info.plugin_name = "stats";
+  static const char usage[] = PLUGIN_NAME ".so [--integer-counters] [PATH]";
+  static const struct option longopts[] = {
+    { (char *)("integer-counters"), required_argument, NULL, 'i' },
+    { (char *)("wrap-counters"), required_argument, NULL, 'w' },
+    { NULL, 0, NULL, 0 }
+  };
+
+  info.plugin_name = PLUGIN_NAME;
   info.vendor_name = "Apache Software Foundation";
   info.support_email = "dev@trafficserver.apache.org";
 
-  if (TSPluginRegister(TS_SDK_VERSION_2_0, &info) != TS_SUCCESS)
-    TSError("Plugin registration failed. \n");
+  if (TSPluginRegister(TS_SDK_VERSION_3_0, &info) != TS_SUCCESS) {
+    TSError("[%s] registration failed", PLUGIN_NAME);
+  }
+
+  optind = 0;
+  for (;;) {
+    switch (getopt_long(argc, (char * const *)argv, "i", longopts, NULL)) {
+    case 'i':
+      integer_counters = true;
+      break;
+    case 'i':
+      wrap_counters = true;
+      break;
+    case -1:
+        goto init;
+    default:
+        TSError("[%s] usage: %s", PLUGIN_NAME, usage);
+    }
+  }
+
+init:
+  argc -= optind;
+  argv += optind;
 
   if (argc > 1) {
     url_path = TSstrdup(argv[1] + ('/' == argv[1][0] ? 1 : 0)); /* Skip leading / */
@@ -269,5 +320,5 @@ TSPluginInit(int argc, const char *argv[])
   /* Create a continuation with a mutex as there is a shared global structure
      containing the headers to add */
   TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, TSContCreate(stats_origin, NULL));
-  TSDebug("istats", "stats module registered");
+  TSDebug(PLUGIN_NAME, "stats module registered");
 }
