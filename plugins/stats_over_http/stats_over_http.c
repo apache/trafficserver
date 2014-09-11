@@ -294,11 +294,11 @@ TSPluginInit(int argc, const char *argv[])
 
   optind = 0;
   for (;;) {
-    switch (getopt_long(argc, (char * const *)argv, "i", longopts, NULL)) {
+    switch (getopt_long(argc, (char * const *)argv, "iw", longopts, NULL)) {
     case 'i':
       integer_counters = true;
       break;
-    case 'i':
+    case 'w':
       wrap_counters = true;
       break;
     case -1:
