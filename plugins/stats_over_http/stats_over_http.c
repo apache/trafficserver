@@ -126,20 +126,29 @@ stats_process_read(TSCont contp, TSEvent event, stats_state * my_state)
   if(snprintf(b, sizeof(b), "\"%s\": \"" fmt "\",\n", a, v) < sizeof(b)) \
     APPEND(b); \
 } while(0)
+#define APPEND_STAT_NUMERIC(a, fmt, v) do { \
+  char b[256]; \
+  if(snprintf(b, sizeof(b), "\"%s\": " fmt ",\n", a, v) < sizeof(b)) \
+    APPEND(b); \
+} while(0)
 
 static void
 json_out_stat(TSRecordType rec_type ATS_UNUSED, void *edata, int registered ATS_UNUSED,
               const char *name, TSRecordDataType data_type,
               TSRecordData *datum) {
   stats_state *my_state = edata;
+  unsigned long long int value = 0;
 
   switch(data_type) {
   case TS_RECORDDATATYPE_COUNTER:
-    APPEND_STAT(name, "%" PRIu64, datum->rec_counter); break;
+    value = datum->rec_counter ;
+    APPEND_STAT_NUMERIC(name, "%llu", value); break;
   case TS_RECORDDATATYPE_INT:
-    APPEND_STAT(name, "%" PRIu64, datum->rec_int); break;
+    value = datum->rec_int;
+    if ( value > 9223372036854775807) value = 0 ;
+    APPEND_STAT_NUMERIC(name, "%llu", value); break;
   case TS_RECORDDATATYPE_FLOAT:
-    APPEND_STAT(name, "%f", datum->rec_float); break;
+    APPEND_STAT_NUMERIC(name, "%f", datum->rec_float); break;
   case TS_RECORDDATATYPE_STRING:
     APPEND_STAT(name, "%s", datum->rec_string); break;
   default:
