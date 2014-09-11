@@ -27,4 +27,4 @@ ${ATS_MAKE} rat | tee RAT.txt
 mv RAT.txt /home/jenkins/RAT/rat-${ATS_BRANCH}.txt.new
 mv /home/jenkins/RAT/rat-${ATS_BRANCH}.txt.new /home/jenkins/RAT/rat-${ATS_BRANCH}.txt
 
-grep 'Unknown Licenses' /home/jenkins/RAT/rat-${ATS_BRANCH}.txt #&& exit -1
+#grep 'Unknown Licenses' /home/jenkins/RAT/rat-${ATS_BRANCH}.txt

@@ -27,7 +27,8 @@ mkdir -p BUILDS && cd BUILDS
     --enable-werror \
     --enable-experimental-plugins \
     --enable-example-plugins \
-    --enable-test-tools
+    --enable-test-tools \
+    CORES=2
 
 ${ATS_MAKE} -j5 V=1
 ${ATS_MAKE} check

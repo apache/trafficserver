@@ -37,6 +37,15 @@ test "${JOB_NAME#*-5.0.x}" != "${JOB_NAME}" && ATS_BRANCH=5.0.x
 test "${JOB_NAME#*-5.1.x}" != "${JOB_NAME}" && ATS_BRANCH=5.1.x
 test "${JOB_NAME#*-5.2.x}" != "${JOB_NAME}" && ATS_BRANCH=5.2.x
 test "${JOB_NAME#*-5.3.x}" != "${JOB_NAME}" && ATS_BRANCH=5.3.x
+test "${JOB_NAME#*-6.0.x}" != "${JOB_NAME}" && ATS_BRANCH=6.0.x
+test "${JOB_NAME#*-6.1.x}" != "${JOB_NAME}" && ATS_BRANCH=6.1.x
+test "${JOB_NAME#*-6.2.x}" != "${JOB_NAME}" && ATS_BRANCH=6.2.x
+test "${JOB_NAME#*-6.3.x}" != "${JOB_NAME}" && ATS_BRANCH=6.3.x
+test "${JOB_NAME#*-7.0.x}" != "${JOB_NAME}" && ATS_BRANCH=7.0.x
+test "${JOB_NAME#*-7.1.x}" != "${JOB_NAME}" && ATS_BRANCH=7.1.x
+test "${JOB_NAME#*-7.2.x}" != "${JOB_NAME}" && ATS_BRANCH=7.2.x
+test "${JOB_NAME#*-7.3.x}" != "${JOB_NAME}" && ATS_BRANCH=7.3.x
+
 export ATS_BRANCH
 
 # Decide on compilers, gcc is the default
