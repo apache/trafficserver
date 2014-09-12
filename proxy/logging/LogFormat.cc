@@ -432,7 +432,7 @@ LogFormat::parse_symbol_string(const char *symbol_string, LogFieldList *field_li
   char *sym_str;
   int field_count = 0;
   LogField *f;
-  char *symbol, *name, *sym;
+  char *symbol, *name, *sym, *saveptr;
   LogField::Container container;
   LogField::Aggregate aggregate;
 
@@ -444,10 +444,10 @@ LogFormat::parse_symbol_string(const char *symbol_string, LogFieldList *field_li
   *contains_aggregates = false; // we'll change if it does
 
   //
-  // strtok will mangle the input string; we'll make a copy for that.
+  // strtok_r will mangle the input string; we'll make a copy for that.
   //
   sym_str = ats_strdup(symbol_string);
-  symbol = strtok(sym_str, ",");
+  symbol = strtok_r(sym_str, ",", &saveptr);
 
   while (symbol != NULL) {
     //
@@ -546,7 +546,7 @@ LogFormat::parse_symbol_string(const char *symbol_string, LogFieldList *field_li
     //
     // Get the next symbol
     //
-    symbol = strtok(NULL, ",");
+    symbol = strtok_r(NULL, ",", &saveptr);
   }
 
   ats_free(sym_str);
