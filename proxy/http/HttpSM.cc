@@ -6480,10 +6480,29 @@ HttpSM::kill_this()
     ink_release_assert(vc_table.is_table_clear() == true);
     ink_release_assert(tunnel.is_tunnel_active() == false);
 
+    HTTP_SM_SET_DEFAULT_HANDLER(NULL);
+
     if (t_state.http_config_param->enable_http_stats)
       update_stats();
 
-    HTTP_SM_SET_DEFAULT_HANDLER(NULL);
+    if (!t_state.cop_test_page || t_state.http_config_param->record_cop_page) {
+      //////////////
+      // Log Data //
+      //////////////
+      DebugSM("http_seq", "[HttpSM::update_stats] Logging transaction");
+      if (Log::transaction_logging_enabled() && t_state.api_info.logging_enabled) {
+        LogAccessHttp accessor(this);
+
+        int ret = Log::access(&accessor);
+
+        if (ret & Log::FULL) {
+          DebugSM("http", "[update_stats] Logging system indicates FULL.");
+        }
+        if (ret & Log::FAIL) {
+          Log::error("failed to log transaction for at least one log object");
+        }
+      }
+    }
 
     if (redirect_url != NULL) {
       ats_free((void*)redirect_url);
@@ -6511,23 +6530,6 @@ HttpSM::update_stats()
   if (t_state.cop_test_page && !t_state.http_config_param->record_cop_page) {
     DebugSM("http_seq", "Skipping cop heartbeat logging & stats due to config");
     return;
-  }
-
-  //////////////
-  // Log Data //
-  //////////////
-  DebugSM("http_seq", "[HttpSM::update_stats] Logging transaction");
-  if (Log::transaction_logging_enabled() && t_state.api_info.logging_enabled) {
-    LogAccessHttp accessor(this);
-
-    int ret = Log::access(&accessor);
-
-    if (ret & Log::FULL) {
-      DebugSM("http", "[update_stats] Logging system indicates FULL.");
-    }
-    if (ret & Log::FAIL) {
-      Log::error("failed to log transaction for at least one log object");
-    }
   }
 
   if (is_action_tag_set("bad_length_state_dump")) {
