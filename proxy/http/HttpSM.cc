@@ -7421,6 +7421,35 @@ HttpSM::redirect_request(const char *redirect_url, const int redirect_len)
     return;
   }
 
+  bool valid_origHost = true;
+  int origHost_len, origMethod_len;
+  char origHost[MAXDNAME];
+  char origMethod[255];
+  int origPort = 80;
+
+  if(t_state.hdr_info.server_request.valid()) {
+
+    origPort = t_state.hdr_info.server_request.port_get();
+
+    char* tmpOrigHost = (char *) t_state.hdr_info.server_request.value_get(MIME_FIELD_HOST, MIME_LEN_HOST, &origHost_len);
+    if (tmpOrigHost) {
+      memcpy(origHost, tmpOrigHost, origHost_len);
+      origHost[origHost_len] = '\0';
+    } else {
+      valid_origHost = false;
+    }
+
+    char *tmpOrigMethod = (char *) t_state.hdr_info.server_request.method_get(&origMethod_len);
+    if (tmpOrigMethod) {
+      memcpy(origMethod, tmpOrigMethod, origMethod_len);
+    } else {
+      valid_origHost = false;
+    }
+  } else {
+    DebugSM("http_redir_error", "t_state.hdr_info.server_request not valid");
+    valid_origHost = false;
+  }
+
   t_state.redirect_info.redirect_in_process = true;
 
   // set the passed in location url and parse it
@@ -7449,28 +7478,6 @@ HttpSM::redirect_request(const char *redirect_url, const int redirect_len)
     // XXX - doing a destroy() for now, we can do a fileds_clear() if we have performance issue
     t_state.hdr_info.client_response.destroy();
   }
-
-
-  bool valid_origHost = true;
-  int origHost_len, origMethod_len;
-  char* tmpOrigHost = (char *) t_state.hdr_info.server_request.value_get(MIME_FIELD_HOST, MIME_LEN_HOST, &origHost_len);
-  char origHost[origHost_len + 1];
-
-  if (tmpOrigHost)
-    memcpy(origHost, tmpOrigHost, origHost_len);
-  else
-    valid_origHost = false;
-
-  origHost[origHost_len] = '\0';
-  int origPort = t_state.hdr_info.server_request.port_get();
-
-  char *tmpOrigMethod = (char *) t_state.hdr_info.server_request.method_get(&origMethod_len);
-  char origMethod[origMethod_len + 1];
-
-  if (tmpOrigMethod)
-    memcpy(origMethod, tmpOrigMethod, origMethod_len);
-  else
-    valid_origHost = false;
 
   int scheme = t_state.next_hop_scheme;
   int scheme_len = hdrtoken_index_to_length(scheme);

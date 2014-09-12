@@ -2981,6 +2981,7 @@ HttpTransact::handle_cache_write_lock(State* s)
   }
 
   if (s->cache_info.write_lock_state == CACHE_WL_READ_RETRY) {
+    DebugTxn("http_error", "calling hdr_info.server_request.destroy");
     s->hdr_info.server_request.destroy();
     HandleCacheOpenReadHitFreshness(s);
   } else {
