@@ -23,6 +23,7 @@
 
 #include "libts.h"
 #include "ink_sys_control.h"
+#include "ink_cap.h"
 
 #include "MgmtUtils.h"
 #include "WebMgmtUtils.h"
