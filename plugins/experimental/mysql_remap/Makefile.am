@@ -17,5 +17,21 @@
 include $(top_srcdir)/build/plugins.mk
 
 pkglib_LTLIBRARIES = mysql_remap.la
-mysql_remap_la_SOURCES = mysql_remap.cc lib/dictionary.c lib/iniparser.c
-mysql_remap_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS) $(LIB_MYSQLCLIENT)
+noinst_LTLIBRARIES = libmysql_remap.la
+
+AM_CPPFLAGS += \
+  -I$(srcdir)/lib
+
+if BUILD_HAVE_LIBCXX
+AM_CXXFLAGS += -stdlib=libc++
+endif
+
+
+mysql_remap_la_SOURCES = mysql_remap.cc
+
+libmysql_remap_la_SOURCES = \
+  lib/dictionary.cc \
+  lib/iniparser.cc
+
+mysql_remap_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS) $(LIB_MYSQLCLIENT) -no-undefined
+mysql_remap_la_LIBADD = libmysql_remap.la
