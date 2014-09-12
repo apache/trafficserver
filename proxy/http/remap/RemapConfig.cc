@@ -922,7 +922,7 @@ remap_parse_config_bti(const char * path, BUILD_TABLE_INFO * bti)
 
     Debug("url_rewrite", "[BuildTable] Parsing: \"%s\"", cur_line);
 
-    tok_count = whiteTok.Initialize(cur_line, SHARE_TOKS);
+    tok_count = whiteTok.Initialize(cur_line, (SHARE_TOKS | ALLOW_SPACES));
 
     for (int j = 0; j < tok_count; j++) {
       if (((char *) whiteTok[j])[0] == '@') {

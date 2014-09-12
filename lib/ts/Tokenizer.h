@@ -107,6 +107,7 @@
 #define COPY_TOKS         1 << 0
 #define SHARE_TOKS        1 << 1
 #define ALLOW_EMPTY_TOKS  1 << 2
+#define ALLOW_SPACES      1 << 3
 
 #define TOK_NODE_ELEMENTS  16
 struct tok_node
@@ -154,6 +155,7 @@ private:
   int numValidTokens;
   int maxTokens;
   int options;
+  bool quoteFound;
 
   // State about where to add the next token
   tok_node *add_node;

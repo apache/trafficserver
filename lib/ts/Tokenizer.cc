@@ -55,6 +55,7 @@ Tokenizer::Tokenizer(const char *StrOfDelimiters)
 
   add_node = &start_node;
   add_index = 0;
+  quoteFound = false;
 }
 
 Tokenizer::~Tokenizer()
@@ -94,6 +95,14 @@ inline int
 Tokenizer::isDelimiter(char c)
 {
   int i = 0;
+
+  if ((options & ALLOW_SPACES) &&
+      ((c == 0x22) || (c == 0x27))) {
+    quoteFound = !quoteFound;
+  }
+
+  if (quoteFound)
+    return 0;
 
   while (strOfDelimit[i] != '\0') {
     if (c == strOfDelimit[i]) {
@@ -182,6 +191,8 @@ Tokenizer::Initialize(char *str, int opt)
     }
   }
 
+  quoteFound = false;
+
   // Check to see if we stoped due to a maxToken limit
   if (max_limit_hit == true) {
 
@@ -215,6 +226,8 @@ Tokenizer::Initialize(char *str, int opt)
       }
     }
   }
+
+  quoteFound = false;
   // Check to see if we got the last token.  We will
   //  only have gotten it if the string ended with a delimiter
   if (priorCharWasDelimit == 0) {
