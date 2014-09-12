@@ -275,6 +275,11 @@ OperatorSetRedirect::exec(const Resources& res) const
 
       _location.append_value(value, res);
 
+      if (_location.need_expansion()) {
+        VariableExpander ve(value);
+        value = ve.expand(res);
+      }
+
       // Replace %{PATH} to original path
       size_t pos_path = 0;
 
