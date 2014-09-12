@@ -243,22 +243,6 @@ initSignalHandlers()
   sigaction(SIGCHLD, &sigChldHandler, NULL);
 }
 
-#if defined(linux)
-#include <sys/prctl.h>
-#endif
-static int
-setup_coredump()
-{
-#if defined(linux)
-#ifndef PR_SET_DUMPABLE
-#define PR_SET_DUMPABLE 4       /* Ugly, but we cannot compile with 2.2.x otherwise.
-                                   Should be removed when we compile only on 2.4.x */
-#endif
-  prctl(PR_SET_DUMPABLE, 1, 0, 0, 0);
-#endif  // linux check
-  return 0;
-}
-
 static void
 init_dirs()
 {
@@ -542,7 +526,7 @@ main(int argc, char **argv)
 
   set_process_limits(fds_throttle); // as root
   runAsUser(userToRunAs);
-  setup_coredump();
+  EnableCoreFile(true);
   check_lockfile();
 
   url_init();

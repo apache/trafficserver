@@ -26,10 +26,13 @@
 # include "ink_cap.h"
 # include "ink_thread.h"
 
-# if TS_USE_POSIX_CAP
-#   include <sys/capability.h>
-#   include <sys/prctl.h>
-# endif
+#if HAVE_SYS_CAPABILITY_H
+#include <sys/capability.h>
+#endif
+
+#if HAVE_SYS_PRCTL_H
+#include <sys/prctl.h>
+#endif
 
 # if !TS_USE_POSIX_CAP
 ink_mutex ElevateAccess::lock = INK_MUTEX_INIT;
@@ -98,15 +101,17 @@ RestrictCapabilities() {
 int
 EnableCoreFile(bool flag) {
   int zret = 0;
-# if defined(linux)
-    int state = flag ? 1 : 0;
-    if (0 > (zret = prctl(PR_SET_DUMPABLE, state, 0, 0, 0))) {
-      Warning("Unable to set PR_DUMPABLE : %s", strerror(errno));
-    } else if (state != prctl(PR_GET_DUMPABLE)) {
-      zret = ENOSYS; // best guess
-      Warning("Call to set PR_DUMPABLE was ineffective");
-    }
+
+# if defined(PR_SET_DUMPABLE)
+  int state = flag ? 1 : 0;
+  if (0 > (zret = prctl(PR_SET_DUMPABLE, state, 0, 0, 0))) {
+    Warning("Unable to set PR_DUMPABLE : %s", strerror(errno));
+  } else if (state != prctl(PR_GET_DUMPABLE)) {
+    zret = ENOSYS; // best guess
+    Warning("Call to set PR_DUMPABLE was ineffective");
+  }
 # endif  // linux check
+
   Debug("proxy_priv", "[EnableCoreFile] zret : %d\n", zret);
   return zret;
 }
