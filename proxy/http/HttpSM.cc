@@ -1540,7 +1540,7 @@ HttpSM::handle_api_return()
       if (unlikely(t_state.did_upgrade_succeed)) {
        // We've sucessfully handled the upgrade, let's now setup
        // a blind tunnel.
-       if(t_state.is_websocket) {
+       if (t_state.is_websocket) {
          HTTP_INCREMENT_DYN_STAT(http_websocket_current_active_client_connections_stat);
        }
 
@@ -7427,11 +7427,12 @@ HttpSM::redirect_request(const char *redirect_url, const int redirect_len)
   char origMethod[255];
   int origPort = 80;
 
-  if(t_state.hdr_info.server_request.valid()) {
+  if (t_state.hdr_info.server_request.valid()) {
+    char* tmpOrigHost;
 
     origPort = t_state.hdr_info.server_request.port_get();
+    tmpOrigHost = (char *) t_state.hdr_info.server_request.value_get(MIME_FIELD_HOST, MIME_LEN_HOST, &origHost_len);
 
-    char* tmpOrigHost = (char *) t_state.hdr_info.server_request.value_get(MIME_FIELD_HOST, MIME_LEN_HOST, &origHost_len);
     if (tmpOrigHost) {
       memcpy(origHost, tmpOrigHost, origHost_len);
       origHost[origHost_len] = '\0';
