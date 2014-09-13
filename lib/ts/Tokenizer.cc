@@ -96,8 +96,7 @@ Tokenizer::isDelimiter(char c)
 {
   int i = 0;
 
-  if ((options & ALLOW_SPACES) &&
-      ((c == 0x22) || (c == 0x27))) {
+  if ((options & ALLOW_SPACES) && ((c == 0x22) || (c == 0x27))) {
     quoteFound = !quoteFound;
   }
 
