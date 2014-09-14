@@ -7546,9 +7546,11 @@ HttpSM::redirect_request(const char *redirect_url, const int redirect_len)
       // the client request didn't have a host, so use the current origin host
       if (valid_origHost)
       {
+        char * saveptr = NULL;
+
         // the client request didn't have a host, so use the current origin host
         DebugSM("http_redirect", "[HttpSM::redirect_request] keeping client request host %s://%s", next_hop_scheme, origHost);
-        char* origHost1 = strtok(origHost, ":");
+        char* origHost1 = strtok_r(origHost, ":", &saveptr);
         origHost_len = strlen(origHost1);
         int origHostPort_len = origHost_len;
         char buf[origHostPort_len + 7];

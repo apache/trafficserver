@@ -948,7 +948,9 @@ is_request_end(char *buf)
 int
 parse_request(char *request, char *server_name, char *file_name)
 {
-  char *saveptr, *temp = strtok_r(request, " ", &saveptr);
+  char *saveptr = NULL;
+  char *temp = strtok_r(request, " ", &saveptr);
+
   if (temp != NULL)
     TSstrlcpy(server_name, temp, MAX_SERVER_NAME_LENGTH + 1);
   else
