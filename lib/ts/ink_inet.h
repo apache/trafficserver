@@ -1302,7 +1302,8 @@ IpEndpoint::setToLoopback(int family) {
     sin.sin_len = sizeof(sockaddr_in);
 #endif
   } else if (AF_INET6 == family) {
-    sin6.sin6_addr = IN6ADDR_LOOPBACK_INIT;
+    static const struct in6_addr init = IN6ADDR_LOOPBACK_INIT;
+    sin6.sin6_addr = init;
 #if HAVE_STRUCT_SOCKADDR_IN6_SIN6_LEN
     sin6.sin6_len = sizeof(sockaddr_in6);
 #endif
