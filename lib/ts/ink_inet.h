@@ -27,10 +27,10 @@
 
 #include <netinet/in.h>
 #include <netdb.h>
-#include <ink_memory.h>
 #include <sys/socket.h>
-#include <ts/ink_apidefs.h>
-#include <ts/TsBuffer.h>
+#include "ink_memory.h"
+#include "ink_apidefs.h"
+#include "TsBuffer.h"
 
 #define INK_GETHOSTBYNAME_R_DATA_SIZE 1024
 #define INK_GETHOSTBYADDR_R_DATA_SIZE 1024

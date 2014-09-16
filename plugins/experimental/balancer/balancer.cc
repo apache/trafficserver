@@ -28,6 +28,9 @@
 #include <string.h>
 #include <iterator>
 
+// Using ink_inet API is cheating, but I was too lazy to write new IPv6 address parsing routines ;)
+#include "ink_inet.h"
+
 // The policy type is the first comma-separated token.
 static BalancerInstance *
 MakeBalancerInstance(const char * opt)
@@ -43,7 +46,46 @@ MakeBalancerInstance(const char * opt)
     TSError("balancer: invalid balancing policy '%.*s'", (int)len, opt);
     return NULL;
   }
+}
 
+static BalancerTarget
+MakeBalancerTarget(const char * strval)
+{
+  BalancerTarget target = BalancerTarget();
+
+  union {
+    struct sockaddr_storage storage;
+    struct sockaddr sa;
+  } address;
+
+  memset(&address, 0, sizeof(address));
+
+  // First, check whether we have an address literal.
+  if (ats_ip_pton(strval, &address.sa) == 0) {
+    char namebuf[INET6_ADDRSTRLEN];
+
+    target.port = ats_ip_port_host_order(&address.sa);
+    target.name =ats_ip_ntop(&address.sa, namebuf, sizeof(namebuf));
+  } else {
+    const char * colon = strrchr(strval, ':');
+
+    if (colon) {
+      size_t len = std::distance(strval, colon);
+
+      target.port = atoi(colon + 1);
+      target.name = std::string(strval, len);
+    } else {
+      target.port = 0;
+      target.name = strval;
+    }
+  }
+
+  if (target.port > INT16_MAX) {
+    TSError("balancer: ignoring invalid port number for target '%s'", strval);
+    target.port = 0;
+  }
+
+  return target;
 }
 
 TSReturnCode
@@ -100,7 +142,14 @@ TSRemapNewInstance(int argc, char * argv[], void ** instance, char * errbuf, int
 
   // Pick up the remaining options as balance targets.
   for (int i = optind; i < argc; ++i) {
-    balancer->push_target(argv[i]);
+    BalancerTarget target = MakeBalancerTarget(argv[i]);
+
+    balancer->push_target(target);
+    if (target.port) {
+      TSDebug("balancer", "added target -> %s:%u", target.name.c_str(), target.port);
+    } else {
+      TSDebug("balancer", "added target -> %s", target.name.c_str());
+    }
   }
 
   *instance = balancer;
@@ -117,18 +166,27 @@ TSRemapStatus
 TSRemapDoRemap(void * instance, TSHttpTxn txn, TSRemapRequestInfo * rri)
 {
   BalancerInstance * balancer = (BalancerInstance *)instance;
-  const char * target;
+  const BalancerTarget& target = balancer->balance(txn, rri);
 
-  target = balancer->balance(txn, rri);
   if (TSIsDebugTagSet("balancer")) {
     char * url;
     int len;
 
     url = TSHttpTxnEffectiveUrlStringGet(txn, &len);
-    TSDebug("balancer", "%s <- %.*s", target, len, url);
+    if (target.port) {
+      TSDebug("balancer", "%s:%u <- %.*s", target.name.c_str(), target.port, len, url);
+    } else {
+      TSDebug("balancer", "%s <- %.*s", target.name.c_str(), len, url);
+    }
+
     TSfree(url);
   }
 
-  TSUrlHostSet(rri->requestBufp, rri->requestUrl, target, -1);
+  TSUrlHostSet(rri->requestBufp, rri->requestUrl, target.name.data(), target.name.size());
+
+  if (target.port) {
+    TSUrlPortSet(rri->requestBufp, rri->requestUrl, target.port);
+  }
+
   return TSREMAP_DID_REMAP;
 }

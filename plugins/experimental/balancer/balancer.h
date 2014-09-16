@@ -26,6 +26,7 @@
 
 #include <ts/ts.h>
 #include <ts/remap.h>
+#include <string>
 
 // Return the length of a string literal.
 template <int N> unsigned
@@ -33,11 +34,17 @@ lengthof(const char (&)[N]) {
   return N - 1;
 }
 
+struct BalancerTarget
+{
+  std::string name;
+  unsigned    port;
+};
+
 struct BalancerInstance
 {
   virtual ~BalancerInstance() {}
-  virtual void push_target(const char *) = 0;
-  virtual const char * balance(TSHttpTxn, TSRemapRequestInfo *) = 0;
+  virtual void push_target(const BalancerTarget&) = 0;
+  virtual const BalancerTarget& balance(TSHttpTxn, TSRemapRequestInfo *) = 0;
 };
 
 BalancerInstance * MakeHashBalancer(const char *);

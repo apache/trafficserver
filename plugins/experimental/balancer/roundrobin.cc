@@ -35,15 +35,15 @@ struct RoundRobinBalancer : public BalancerInstance
   RoundRobinBalancer() : targets(), next(0) {
   }
 
-  void push_target(const char * target) {
+  void push_target(const BalancerTarget& target) {
     this->targets.push_back(target);
   }
 
-  const char * balance(TSHttpTxn, TSRemapRequestInfo *) {
-    return this->targets[++next % this->targets.size()].c_str();
+  const BalancerTarget& balance(TSHttpTxn, TSRemapRequestInfo *) {
+    return this->targets[++next % this->targets.size()];
   }
 
-  std::vector<std::string> targets;
+  std::vector<BalancerTarget> targets;
   unsigned next;
 };
 
