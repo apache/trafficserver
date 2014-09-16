@@ -184,7 +184,7 @@ char const* ats_ip_nptop(
   sockaddr const* addr,
   char* dst, size_t size
 ) {
-  char buff[INET6_ADDRSTRLEN];
+  char buff[INET6_ADDRPORTSTRLEN];
   snprintf(dst, size, "%s:%u",
     ats_ip_ntop(addr, buff, sizeof(buff)),
     ats_ip_port_host_order(addr)
