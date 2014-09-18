@@ -159,7 +159,9 @@ struct NetVCOptions {
 
   EventType etype;
 
-  char * sni_servername; // SSL SNI to origin
+  /** Server name to use for SNI data on an outbound connection.
+   */
+  ats_scoped_str sni_servername;
 
   /// Reset all values to defaults.
   void reset();
@@ -167,31 +169,35 @@ struct NetVCOptions {
   void set_sock_param(int _recv_bufsize, int _send_bufsize, unsigned long _opt_flags,
                       unsigned long _packet_mark = 0, unsigned long _packet_tos = 0);
 
-  NetVCOptions() : sni_servername(NULL) {
+  NetVCOptions() {
     reset();
   }
 
   ~NetVCOptions() {
-    ats_free(sni_servername);
   }
 
-  void set_sni_servername(const char * name, size_t len) {
+  /** Set the SNI server name.
+      A local copy is made of @a name.
+  */
+  self& set_sni_servername(const char * name, size_t len) {
     IpEndpoint ip;
 
-    ats_free(sni_servername);
-    sni_servername = NULL;
     // Literal IPv4 and IPv6 addresses are not permitted in "HostName".(rfc6066#section-3)
     if (ats_ip_pton(ts::ConstBuffer(name, len), &ip) != 0) {
       sni_servername = ats_strndup(name, len);
+    } else {
+      sni_servername = NULL;
     }
+    return *this;
   }
 
-  NetVCOptions & operator=(const NetVCOptions & opt) {
-    if (&opt != this) {
-      ats_free(this->sni_servername);
-      memcpy(this, &opt, sizeof(opt));
-      if (opt.sni_servername) {
-        this->sni_servername = ats_strdup(opt.sni_servername);
+  self& operator=(self const& that) {
+    if (&that != this) {
+      sni_servername = NULL; // release any current name.
+      memcpy(this, &that, sizeof(self));
+      if (that.sni_servername) {
+	sni_servername.release(); // otherwise we'll free the source string.
+        this->sni_servername = ats_strdup(that.sni_servername);
       }
     }
     return *this;

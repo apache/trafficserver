@@ -666,9 +666,9 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
 #if TS_USE_TLS_SNI
   if (options.sni_servername) {
     if (SSL_set_tlsext_host_name(ssl, options.sni_servername)) {
-      Debug("ssl", "using SNI name '%s' for client handshake", options.sni_servername);
+      Debug("ssl", "using SNI name '%s' for client handshake", options.sni_servername.get());
     } else {
-      Debug("ssl.error","failed to set SNI name '%s' for client handshake", options.sni_servername);
+      Debug("ssl.error","failed to set SNI name '%s' for client handshake", options.sni_servername.get());
       SSL_INCREMENT_DYN_STAT(ssl_sni_name_set_failure);
     }
   }

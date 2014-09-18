@@ -66,7 +66,6 @@ NetVCOptions::reset()
 
   etype = ET_NET;
 
-  ats_free(sni_servername);
   sni_servername = NULL;
 }
 
