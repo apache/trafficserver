@@ -180,7 +180,7 @@ public:
 
   void set_rolling_size_mb(int rolling_size_mb)
   {
-    m_rolling_size_mb = rolling_size_mb;
+    _setup_rolling(m_rolling_enabled, m_rolling_interval_sec, m_rolling_offset_hr, rolling_size_mb);
   }
 
   bool is_collation_client() const { return (m_logFile ? false : true); }
