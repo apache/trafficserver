@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.2.0
 
+  *) [TS-3081] FetchSM needs to notify body done, when no more read bytes in the buffer.
+
   *) [TS-2945] Add target port number support to the balancer plugin.
 
   *) [TS-3070] Make span configuration work consistently across platforms.
