@@ -26,6 +26,7 @@
 #include <stdio.h>
 #include <getopt.h>
 #include <string.h>
+#include <stdlib.h>
 #include <iterator>
 
 // Using ink_inet API is cheating, but I was too lazy to write new IPv6 address parsing routines ;)
@@ -72,7 +73,7 @@ MakeBalancerTarget(const char * strval)
     if (colon) {
       size_t len = std::distance(strval, colon);
 
-      target.port = atoi(colon + 1);
+      target.port = strtol(colon + 1, NULL, 10);
       target.name = std::string(strval, len);
     } else {
       target.port = 0;
