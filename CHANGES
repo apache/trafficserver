@@ -1,5 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.2.0
+
+  *) [TS-2095] Replace TS_FLAG_HEADERS wich AC_CHECK_HEADERS.
+
   *) [TS-2314] New config to allow unsatifiable Range: request to go straight to Origin
 
   *) [TS-3006] Add SSL extensions and examples.

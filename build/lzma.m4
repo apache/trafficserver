@@ -86,7 +86,7 @@ if test "$enable_lzma" != "no"; then
   fi
   AC_SEARCH_LIBS([lzma_code], [lzma], [lzma_have_libs=1])
   if test "$lzma_have_libs" != "0"; then
-    TS_FLAG_HEADERS(lzma.h, [lzma_have_headers=1])
+    AC_CHECK_HEADERS(lzma.h, [lzma_have_headers=1])
   fi
   if test "$lzma_have_headers" != "0"; then
     AC_SUBST(LIBLZMA, [-llzma])

@@ -513,22 +513,6 @@ done
 
 ])dnl
 
-dnl TS_FLAG_HEADERS(header-file, [action-if-found], [action-if-not-found], [includes])
-dnl
-AC_DEFUN([TS_FLAG_HEADERS], [
-AC_CHECK_HEADERS([$1], [$2], [$3], [$4])
-for tsc_i in $1
-do
-    ac_safe=`echo "$tsc_i" | sed 'y%./+-%__p_%'`
-    tsc_2=`echo "$tsc_i" | sed -e 's%/%_%g' -e 's/\.//g' -e 's/-//g'`
-    if eval "test \"`echo '$ac_cv_header_'$ac_safe`\" = yes"; then
-       eval "$tsc_2=1"
-    else
-       eval "$tsc_2=0"
-    fi
-done
-])
-
 dnl
 dnl Support macro for AC_ARG_ENABLE
 dnl Arguments:

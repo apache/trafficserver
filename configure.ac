@@ -585,7 +585,12 @@ if test "x${enable_cxx_11_support}" = "xyes" ; then
 fi
 
 # While we are in C++ mode, check for the GNU hash_map extension.
-TS_FLAG_HEADERS([unordered_map unordered_set])
+AC_CHECK_HEADERS([unordered_map unordered_set], [], [],
+[[#ifdef HAVE_UNORDERED_MAP
+#include <unordered_map>
+#endif
+]])
+
 AC_MSG_CHECKING([for <ext/hash_map>])
 AC_COMPILE_IFELSE([
   AC_LANG_PROGRAM([
@@ -604,7 +609,6 @@ if test "x${have_gnu_cxx_hash_map}" = "xyes" ; then
 fi
 
 # And check for std::shared_ptr vs std::tr1::shared_ptr
-TS_FLAG_HEADERS([unordered_map unordered_set])
 AC_MSG_CHECKING([for std::shared_ptr])
 AC_COMPILE_IFELSE([
   AC_LANG_PROGRAM([
@@ -1177,7 +1181,7 @@ AC_CHECK_FUNCS([clock_gettime kqueue epoll_ctl posix_memalign posix_fadvise posi
 AC_CHECK_FUNCS([lrand48_r srand48_r port_create strlcpy strlcat sysconf getpagesize])
 
 # Check for eventfd() and sys/eventfd.h (both must exist ...)
-TS_FLAG_HEADERS([sys/eventfd.h], [
+AC_CHECK_HEADERS([sys/eventfd.h], [
   AS_IF([test "x$enable_eventfd" = "xyes"], [
     AC_CHECK_FUNCS([eventfd])
   ]
@@ -1188,7 +1192,7 @@ AC_CHECK_FUNCS(eventfd)
 #
 # Check for mcheck_pedantic(3)
 #
-TS_FLAG_HEADERS(mcheck.h)
+AC_CHECK_HEADERS(mcheck.h)
 AC_CHECK_FUNCS(mcheck_pedantic)
 
 #
@@ -1201,7 +1205,7 @@ fi
 
 has_backtrace=0
 # Check for backtrace() support
-TS_FLAG_HEADERS([execinfo.h], [has_backtrace=1],[])
+AC_CHECK_HEADERS([execinfo.h], [has_backtrace=1],[])
 if test "${has_backtrace}" = "1"; then
   # FreeBSD requires '/usr/ports/devel/libexecinfo' for gdb style backtrace() support
   AC_SEARCH_LIBS([backtrace], [execinfo], [have_backtrace_lib=yes])
@@ -1382,7 +1386,7 @@ AC_SUBST(use_hwloc)
 enable_maxmind_geoip=no
 TS_SEARCH_LIBRARY([GeoIP_id_by_code], [GeoIP], [
   GEOIP_LIBS=$ts_cv_search_GeoIP_id_by_code
-  TS_FLAG_HEADERS([GeoIP.h], [ enable_maxmind_geoip=yes ])
+  AC_CHECK_HEADERS([GeoIP.h], [ enable_maxmind_geoip=yes ])
 ])
 
 AC_SUBST(GEOIP_LIBS)
@@ -1422,7 +1426,7 @@ fi
 # -----------------------------------------------------------------------------
 # 5. CHECK FOR HEADER FILES
 
-TS_FLAG_HEADERS([sys/types.h \
+AC_CHECK_HEADERS([sys/types.h \
                   sys/uio.h \
                   sys/mman.h \
                   sys/epoll.h \
@@ -1509,28 +1513,28 @@ AC_SUBST(net_ppp_defsh)
 AC_SUBST(ifaddrsh)
 AC_SUBST(readline_readlineh)
 
-TS_FLAG_HEADERS([sys/statfs.h sys/statvfs.h sys/disk.h sys/disklabel.h])
-TS_FLAG_HEADERS([linux/hdreg.h linux/fs.h linux/major.h])
+AC_CHECK_HEADERS([sys/statfs.h sys/statvfs.h sys/disk.h sys/disklabel.h])
+AC_CHECK_HEADERS([linux/hdreg.h linux/fs.h linux/major.h])
 
-TS_FLAG_HEADERS([sys/sysctl.h], [], [],
+AC_CHECK_HEADERS([sys/sysctl.h], [], [],
                  [[#ifdef HAVE_SYS_PARAM_H
                     #include <sys/param.h>
                    #endif
                  ]])
 
-TS_FLAG_HEADERS([sys/cpuset.h], [], [],
+AC_CHECK_HEADERS([sys/cpuset.h], [], [],
                  [[#ifdef HAVE_SYS_PARAM_H
                     #include <sys/param.h>
                    #endif
                  ]])
 
-TS_FLAG_HEADERS([sys/mount.h], [], [],
+AC_CHECK_HEADERS([sys/mount.h], [], [],
                  [[#ifdef HAVE_SYS_PARAM_H
                     #include <sys/param.h>
                    #endif
                  ]])
 
-TS_FLAG_HEADERS([arpa/inet.h], [], [],
+AC_CHECK_HEADERS([arpa/inet.h], [], [],
                  [[#ifdef HAVE_SYS_TYPES_H
                     #include <sys/types.h>
                    #endif
@@ -1539,7 +1543,7 @@ TS_FLAG_HEADERS([arpa/inet.h], [], [],
                    #endif
                  ]])
 
-TS_FLAG_HEADERS([netinet/ip.h], [], [],
+AC_CHECK_HEADERS([netinet/ip.h], [], [],
                  [[#ifdef HAVE_SYS_TYPES_H
                     #include <sys/types.h>
                    #endif
@@ -1551,7 +1555,7 @@ TS_FLAG_HEADERS([netinet/ip.h], [], [],
                    #endif
                  ]])
 
-TS_FLAG_HEADERS([netinet/ip_icmp.h], [], [],
+AC_CHECK_HEADERS([netinet/ip_icmp.h], [], [],
                  [[#ifdef HAVE_SYS_TYPES_H
                     #include <sys/types.h>
                    #endif
@@ -1653,7 +1657,7 @@ if test "x${ac_cv_member_struct_sockaddr_in6_sin6_len}" = xyes; then
 fi
 
 if test "x${with_profiler}" = "xyes"; then
-TS_FLAG_HEADERS([google/profiler.h \
+AC_CHECK_HEADERS([google/profiler.h \
                   ], [], [])
 fi
 
@@ -1914,8 +1918,7 @@ AC_CONFIG_FILES([
   tools/tsxs
 ])
 
-
-TS_FLAG_HEADERS([mysql/mysql.h], [has_mysql=1],[has_mysql=0])
+AC_CHECK_HEADERS([mysql/mysql.h], [has_mysql=1],[has_mysql=0])
 AC_CHECK_LIB([mysqlclient],[mysql_info],[AC_SUBST([LIB_MYSQLCLIENT],["-lmysqlclient"])],[has_mysql=0])
 AC_SUBST(has_mysql)
 AM_CONDITIONAL([HAS_MYSQL], [ test "x${has_mysql}" = "x1" ])

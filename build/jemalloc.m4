@@ -64,7 +64,7 @@ if test "$enable_jemalloc" != "no"; then
     [AC_SEARCH_LIBS([malloc_stats_print], [jemalloc], [jemalloc_have_libs=1])]
   )
   if test "$jemalloc_have_libs" != "0"; then
-    TS_FLAG_HEADERS(jemalloc/jemalloc.h, [jemalloc_have_headers=1])
+    AC_CHECK_HEADERS(jemalloc/jemalloc.h, [jemalloc_have_headers=1])
   fi
   if test "$jemalloc_have_headers" != "0"; then
     jemalloch=1

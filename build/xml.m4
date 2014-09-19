@@ -183,7 +183,7 @@ if test "$enable_expat" != "no"; then
   fi
   AC_SEARCH_LIBS([XML_SetUserData], [expat], [expat_have_libs=1])
   if test "$expat_have_libs" != "0"; then
-      TS_FLAG_HEADERS(expat.h, [expat_have_headers=1])
+      AC_CHECK_HEADERS(expat.h, [expat_have_headers=1])
   fi
   if test "$expat_have_headers" != "0"; then
     enable_xml=yes
