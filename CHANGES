@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.2.0
 
+  *) [TS-3059] Add the TSTextLogObjectRollingSizeMbSet API function.
+   Author: Brian Rectanus <brectanus@qualys.com>
+
   *) [TS-3081] FetchSM needs to notify body done, when no more read bytes in the buffer.
 
   *) [TS-2945] Add target port number support to the balancer plugin.
