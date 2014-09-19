@@ -259,9 +259,16 @@ FetchSM::InvokePluginExt(int fetch_event)
         resp_is_chunked > 0 ? chunked_handler.chunked_reader->read_avail() : resp_reader->read_avail());
 
   if (resp_is_chunked > 0) {
-    if (!chunked_handler.chunked_reader->read_avail())
+    if (!chunked_handler.chunked_reader->read_avail()) {
+      if (read_complete_event) {
+        contp->handleEvent(TS_FETCH_EVENT_EXT_BODY_DONE, this);
+      }
       goto out;
+    }
   } else if (!resp_reader->read_avail()) {
+      if (read_complete_event) {
+        contp->handleEvent(TS_FETCH_EVENT_EXT_BODY_DONE, this);
+      }
       goto out;
   }
 
