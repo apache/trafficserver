@@ -434,6 +434,17 @@ public:
   /** @return current inactivity_timeout value in nanosecs */
   virtual ink_hrtime get_inactivity_timeout() = 0;
 
+  /** Force an @a event if a write operation empties the write buffer.
+
+      This event will be sent to the VIO, the same place as other IO events.
+      Use an @a event value of 0 to cancel the trap.
+
+      The event is sent only the next time the write buffer is emptied, not
+      every future time. The event is sent only if otherwise no event would
+      be generated.
+   */
+  virtual void trapWriteBufferEmpty(int event = VC_EVENT_WRITE_READY);
+
   /** Returns local sockaddr storage. */
   sockaddr const* get_local_addr();
 
@@ -535,6 +546,8 @@ protected:
   bool is_internal_request;
   /// Set if this connection is transparent.
   bool is_transparent;
+  /// Set if the next write IO that empties the write buffer should generate an event.
+  int write_buffer_empty_event;
 };
 
 inline
@@ -545,10 +558,17 @@ NetVConnection::NetVConnection():
   got_local_addr(0),
   got_remote_addr(0),
   is_internal_request(false),
-  is_transparent(false)
+  is_transparent(false),
+  write_buffer_empty_event(0)
 {
   ink_zero(local_addr);
   ink_zero(remote_addr);
+}
+
+inline void
+NetVConnection::trapWriteBufferEmpty(int event)
+{
+  write_buffer_empty_event = event;
 }
 
 #endif

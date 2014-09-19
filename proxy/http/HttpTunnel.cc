@@ -1241,6 +1241,15 @@ HttpTunnel::consumer_reenable(HttpTunnelConsumer* c)
           srcp->read_vio->reenable();
           // Kick source producer to get flow ... well, flowing.
           this->producer_handler(VC_EVENT_READ_READY, srcp);
+        } else {
+          // We can stall for small thresholds on network sinks because this event happens
+          // before the actual socket write. So we trap for the buffer becoming empty to
+          // make sure we get an event to unthrottle after the write.
+          if (HT_HTTP_CLIENT == c->vc_type) {
+            NetVConnection* netvc = dynamic_cast<NetVConnection*>(c->write_vio->vc_server);
+            if (netvc) // really, this should always be true.
+              netvc->trapWriteBufferEmpty();
+          }
         }
       }
       p->read_vio->reenable();

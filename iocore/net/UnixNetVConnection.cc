@@ -474,6 +474,8 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
     write_signal_error(nh, vc, (int)-r);
     return;
   } else {
+    int wbe_event = vc->write_buffer_empty_event; // save so we can clear if needed.
+
     NET_SUM_DYN_STAT(net_write_bytes_stat, r);
 
     // Remove data from the buffer and signal continuation.
@@ -482,12 +484,22 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
     ink_assert(buf.reader()->read_avail() >= 0);
     s->vio.ndone += r;
 
+    // If the empty write buffer trap is set, clear it.
+    if (!(buf.reader()->is_read_avail_more_than(0)))
+      vc->write_buffer_empty_event = 0;
+
     net_activity(vc, thread);
     // If there are no more bytes to write, signal write complete,
     ink_assert(ntodo >= 0);
     if (s->vio.ntodo() <= 0) {
       write_signal_done(VC_EVENT_WRITE_COMPLETE, nh, vc);
       return;
+    } else if (signalled && (wbe_event != vc->write_buffer_empty_event)) {
+      // @a signalled means we won't send an event, and the event values differing means we
+      // had a write buffer trap and cleared it, so we need to send it now.
+      Debug("amc", "empty write buffer trap [%d]", wbe_event);
+      if (write_signal_and_update(wbe_event, vc) != EVENT_CONT)
+        return;
     } else if (!signalled) {
       if (write_signal_and_update(VC_EVENT_WRITE_READY, vc) != EVENT_CONT) {
         return;

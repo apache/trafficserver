@@ -249,6 +249,8 @@ public:
   virtual void set_remote_addr();
   virtual int set_tcp_init_cwnd(int init_cwnd);
   virtual void apply_options();
+
+  friend void write_to_net_io(NetHandler*, UnixNetVConnection*, EThread*);
 };
 
 extern ClassAllocator<UnixNetVConnection> netVCAllocator;
