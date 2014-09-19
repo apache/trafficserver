@@ -223,7 +223,6 @@ traffic_server_LDADD = \
   @OPENSSL_LIBS@ \
   @LIBTCL@ \
   @LIBEXPAT@ \
-  @LIBDEMANGLE@ \
   @LIBCAP@ \
   @LIBRESOLV@ \
   @LIBZ@ \
@@ -253,7 +252,7 @@ traffic_logcat_LDADD = \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/lib/ts/libtsutil.la \
   @LIBRESOLV@ @LIBPCRE@ @OPENSSL_LIBS@ @LIBTCL@ @HWLOC_LIBS@ \
-  @LIBEXPAT@ @LIBDEMANGLE@ @LIBPROFILER@ -lm
+  @LIBEXPAT@ @LIBPROFILER@ -lm
 
 traffic_logstats_SOURCES = logstats.cc
 traffic_logstats_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
@@ -268,7 +267,7 @@ traffic_logstats_LDADD = \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/lib/ts/libtsutil.la \
   @LIBRESOLV@ @LIBPCRE@ @OPENSSL_LIBS@ @LIBTCL@ @HWLOC_LIBS@ \
-  @LIBEXPAT@ @LIBDEMANGLE@ @LIBPROFILER@ -lm
+  @LIBEXPAT@ @LIBPROFILER@ -lm
 
 traffic_sac_SOURCES = \
   sac.cc \
@@ -326,7 +325,7 @@ traffic_sac_LDADD = \
   $(top_builddir)/lib/records/librecords_p.a \
   $(top_builddir)/lib/ts/libtsutil.la \
   @LIBRESOLV@ @LIBPCRE@ @OPENSSL_LIBS@ @LIBTCL@ @HWLOC_LIBS@ \
-  @LIBEXPAT@ @LIBDEMANGLE@ @LIBZ@ @LIBLZMA@ @LIBPROFILER@ @SPDYLAY_LIBS@ -lm
+  @LIBEXPAT@ @LIBZ@ @LIBLZMA@ @LIBPROFILER@ @SPDYLAY_LIBS@ -lm
 
 if BUILD_TESTS
   traffic_sac_SOURCES += RegressionSM.cc
