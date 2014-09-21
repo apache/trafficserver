@@ -1176,6 +1176,8 @@ struct IpAddr {
   self& invalidate() { _family = AF_UNSPEC; return *this; }
   /// Test for multicast
   bool isMulticast() const;
+  /// Test for loopback
+  bool isLoopback() const;
 
   uint16_t _family; ///< Protocol family.
   /// Address data.
@@ -1214,7 +1216,14 @@ IpAddr::isCompatibleWith(self const& that) {
 
 inline bool IpAddr::isIp4() const { return AF_INET == _family; }
 inline bool IpAddr::isIp6() const { return AF_INET6 == _family; }
-  /// Assign sockaddr storage.
+
+inline bool IpAddr::isLoopback() const {
+  return (AF_INET == _family && 0x7F == _addr._byte[0]) ||
+    (AF_INET6 == _family && IN6_IS_ADDR_LOOPBACK(&_addr._ip6))
+    ;
+}
+
+/// Assign sockaddr storage.
 inline IpAddr&
 IpAddr::assign(sockaddr const* addr) {
   if (addr) {

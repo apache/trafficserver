@@ -1611,6 +1611,23 @@ uses the same origin server for the same client, for as long as the origin serve
 set to :arg:`N` the IP address is rotated if more than :arg:`N` seconds have past since the first time the
 current address was used.
 
+.. ts:cv:: CONFIG proxy.config.hostdb.host_file.path STRING /etc/hosts
+
+   Set the file path for an external host file.
+
+If this is set (non-empty) then the file is presumed to be a hosts file in the standard `host file format <http://tools.ietf.org/html/rfc1123#page-13>`_. It is read and the entries there added to the HostDB. The file is periodically checked for a more recent modification date in which case it is reloaded. The interval is set by the value :ts:cv:`proxy.config.hostdb.host_file.interval`.
+
+While not technically reloadable, the value is read every time the file is to be checked so that if changed the new
+value will be used on the next check and the file will be treated as modified.
+
+.. ts:cv:: CONFIG proxy.config.hostdb.host_file.interval INT 86400
+   :metric: seconds
+   :reloadable:
+
+   Set the file changed check timer for :ts:cv:`proxy.config.hostdb.host_file.path`.
+
+The file is checked every this many seconds to see if it has changed. If so the HostDB is updated with the new values in the file.
+
 .. ts:cv:: CONFIG proxy.config.hostdb.ip_resolve STRING NULL
 
    Set the host resolution style.

@@ -416,17 +416,24 @@ struct HostDBMD5 {
   char const* host_name; ///< Host name.
   int host_len; ///< Length of @a _host_name
   IpAddr ip; ///< IP address.
-  int port; ///< IP port (host order).
+  in_port_t port; ///< IP port (host order).
   /// DNS server. Not strictly part of the MD5 data but
   /// it's both used by @c HostDBContinuation and provides access to
   /// MD5 data. It's just handier to store it here for both uses.
   DNSServer* dns_server;
+  SplitDNS* pSD; ///< Hold the container for @a dns_server.
   HostDBMark db_mark; ///< Mark / type of record.
 
   /// Default constructor.
   HostDBMD5();
+  /// Destructor.
+  ~HostDBMD5();
   /// Recompute and update the MD5 hash.
   void refresh();
+  /** Assign a hostname.
+      This updates the split DNS data as well.
+  */
+  self& set_host(char const* name, int len);
 };
 
 //
@@ -458,7 +465,7 @@ struct HostDBContinuation: public Continuation
   //  int namelen;
   char md5_host_name_store[MAXDNAME+1]; // used as backing store for @a md5
   char srv_target_name[MAXDNAME];
-  void *m_pDS;
+  //  void *m_pDS;
   Action *pending_action;
 
   unsigned int missing:1;

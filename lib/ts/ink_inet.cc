@@ -400,11 +400,8 @@ operator == (IpAddr const& lhs, sockaddr const* rhs) {
       - -1 if @a lhs is less than @a rhs.
       - 0 if @a lhs is identical to @a rhs.
       - 1 if @a lhs is greater than @a rhs.
-
-    @internal This looks like a lot of code for an inline but I think it
-    should compile down to something reasonable.
 */
-inline int
+int
 IpAddr::cmp(self const& that) const {
   int zret = 0;
   uint16_t rtype = that._family;
@@ -433,8 +430,7 @@ IpAddr::cmp(self const& that) const {
   } else if (AF_INET == rtype || AF_INET6 == rtype) {
     // ltype is non-IP so it's less than either IP type.
     zret = -1;
-  } else {
-    // Both types are non-IP so they're equal.
+  } else { // Both types are non-IP so they're equal.
     zret = 0;
   }
 

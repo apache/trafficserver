@@ -176,18 +176,17 @@ struct HostDBInfo
 
   int ip_time_remaining()
   {
-    return (int) ip_timeout_interval - (int) ((hostdb_current_interval - ip_timestamp) & 0x7FFFFFFF);
+    return static_cast<int>(ip_timeout_interval) - static_cast<int>(this->ip_interval());
   }
 
   bool is_ip_stale() {
-    if (ip_timeout_interval >= 2 * hostdb_ip_stale_interval)
-      return ip_interval() >= hostdb_ip_stale_interval;
-    else
-      return false;
+    return ip_timeout_interval >= 2 * hostdb_ip_stale_interval &&
+      ip_interval() >= hostdb_ip_stale_interval
+      ;
   }
 
   bool is_ip_timeout() {
-    return ip_interval() >= ip_timeout_interval;
+    return ip_timeout_interval && ip_interval() >= ip_timeout_interval;
   }
 
   bool is_ip_fail_timeout() {
@@ -228,8 +227,9 @@ struct HostDBInfo
   } data;
 
   unsigned int ip_timestamp;
-  // limited to 0x1FFFFF (24 days)
-  unsigned int ip_timeout_interval:31;
+  // limited to HOST_DB_MAX_TTL (0x1FFFFF, 24 days)
+  // if this is 0 then no timeout.
+  unsigned int ip_timeout_interval;
 
   unsigned int full:1;
   unsigned int backed:1;        // duplicated in lower level

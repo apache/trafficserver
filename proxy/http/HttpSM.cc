@@ -4016,6 +4016,7 @@ HttpSM::do_hostdb_lookup()
     }
 
     HostDBProcessor::Options opt;
+
     opt.flags = (t_state.cache_info.directives.does_client_permit_dns_storing)
       ? HostDBProcessor::HOSTDB_DO_NOT_FORCE_DNS
       : HostDBProcessor::HOSTDB_FORCE_DNS_RELOAD

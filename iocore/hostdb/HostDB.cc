@@ -27,6 +27,9 @@
 #include "I_Layout.h"
 #include "Show.h"
 
+#include <vector>
+#include <algorithm>
+
 // dxu: turn off all Diags.h 's function.
 //#define Debug
 //#define Warning
@@ -52,8 +55,12 @@ unsigned int hostdb_ip_stale_interval = HOST_DB_IP_STALE;
 unsigned int hostdb_ip_timeout_interval = HOST_DB_IP_TIMEOUT;
 unsigned int hostdb_ip_fail_timeout_interval = HOST_DB_IP_FAIL_TIMEOUT;
 unsigned int hostdb_serve_stale_but_revalidate = 0;
+unsigned int hostdb_hostfile_check_interval = 86400; // 1 day
+unsigned int hostdb_hostfile_update_timestamp = 0;
+unsigned int hostdb_hostfile_check_timestamp = 0;
 char hostdb_filename[PATH_NAME_MAX + 1] = DEFAULT_HOST_DB_FILENAME;
 int hostdb_size = DEFAULT_HOST_DB_SIZE;
+char hostdb_hostfile_path[PATH_NAME_MAX + 1] = "";
 int hostdb_sync_frequency = 120;
 int hostdb_srv_enabled = 0;
 int hostdb_disable_reverse_lookup = 0;
@@ -63,6 +70,8 @@ ClassAllocator<HostDBContinuation> hostDBContAllocator("hostDBContAllocator");
 // Static configuration information
 
 HostDBCache hostDB;
+
+void ParseHostFile(char const* path);
 
 static  Queue <HostDBContinuation > remoteHostDBQueue[MULTI_CACHE_PARTITIONS];
 
@@ -161,29 +170,66 @@ string_for(HostDBMark mark) {
 static Action *
 register_ShowHostDB(Continuation * c, HTTPHdr * h);
 
+HostDBMD5&
+HostDBMD5::set_host(char const* name, int len)
+{
+  host_name = name;
+  host_len = len;
+#ifdef SPLIT_DNS
+  if (host_name && SplitDNSConfig::isSplitDNSEnabled()) {
+    const char *scan;
+    // I think this is checking for a hostname that is just an address.
+    for (scan = host_name ; *scan != '\0' && (ParseRules::is_digit(*scan) || '.' == *scan || ':' == *scan); ++scan)
+      ;
+    if ('\0' != *scan) {
+      // config is released in the destructor, because we must make sure values we
+      // get out of it don't evaporate while @a this is still around.
+      if (!pSD) pSD = SplitDNSConfig::acquire();
+      if (pSD) {
+        dns_server = static_cast<DNSServer*>(pSD->getDNSRecord(host_name));
+      }
+    } else {
+      dns_server = 0;
+    }
+  }
+#endif // SPLIT_DNS
+  return *this;
+}
+
 void
 HostDBMD5::refresh() {
+  MD5Context ctx;
+
   if (host_name) {
     char const* server_line = dns_server ? dns_server->x_dns_ip_line : 0;
-    make_md5(hash, host_name, host_len, port, server_line, db_mark);
+    uint8_t m = static_cast<uint8_t>(db_mark); // be sure of the type.
+
+    ctx.update(host_name, host_len);
+    ctx.update(reinterpret_cast<uint8_t*>(&port), sizeof(port));
+    ctx.update(&m, sizeof(m));
+    if (server_line) ctx.update(server_line, strlen(server_line));
   } else {
     // INK_MD5 the ip, pad on both sizes with 0's
     // so that it does not intersect the string space
     //
-    uint8_t buff[TS_IP6_SIZE+4];
+    char buff[TS_IP6_SIZE+4];
     int n = ip.isIp6() ? sizeof(in6_addr) : sizeof(in_addr_t);
     memset(buff, 0, 2);
     memcpy(buff+2, ip._addr._byte, n);
     memset(buff + 2 + n , 0, 2);
-    MD5Context().hash_immediate(hash, buff, n+4);
-//    hash.encodeBuffer(buff, n+4);
+    ctx.update(buff, n+4);
   }
+  ctx.finalize(hash);
 }
 
 HostDBMD5::HostDBMD5()
   : host_name(0), host_len(0), port(0),
-    dns_server(0), db_mark(HOSTDB_MARK_GENERIC)
+    dns_server(0), pSD(0), db_mark(HOSTDB_MARK_GENERIC)
 {
+}
+
+HostDBMD5::~HostDBMD5() {
+  if (pSD) SplitDNSConfig::release(pSD);
 }
 
 HostDBCache::HostDBCache()
@@ -472,6 +518,7 @@ HostDBProcessor::start(int, size_t)
   REC_EstablishStaticConfigInt32U(hostdb_ip_fail_timeout_interval, "proxy.config.hostdb.fail.timeout");
   REC_EstablishStaticConfigInt32U(hostdb_serve_stale_but_revalidate, "proxy.config.hostdb.serve_stale_for");
   REC_EstablishStaticConfigInt32(hostdb_sync_frequency, "proxy.config.cache.hostdb.sync_frequency");
+  REC_EstablishStaticConfigInt32U(hostdb_hostfile_check_interval, "proxy.config.hostdb.host_file.interval");
 
   //
   // Set up hostdb_current_interval
@@ -528,22 +575,6 @@ HostDBContinuation::refresh_MD5() {
   // Some call sites modify this after calling @c init so need to check.
   if (old_bucket_mutex == mutex)
     mutex = hostDB.lock_for_bucket((int) (fold_md5(md5.hash) % hostDB.buckets));
-}
-
-void
-make_md5(INK_MD5 & md5, const char *hostname, int len, int port, char const* pDNSServers, HostDBMark mark)
-{
-  INK_DIGEST_CTX ctx;
-  ink_code_incr_md5_init(&ctx);
-  ink_code_incr_md5_update(&ctx, hostname, len);
-  unsigned short p = port;
-  p = htons(p);
-  ink_code_incr_md5_update(&ctx, (char *) &p, 2);
-  uint8_t m = static_cast<uint8_t>(mark);
-  ink_code_incr_md5_update(&ctx, (char *) &m, sizeof(m));     /* FIXME: check this */
-  if (pDNSServers)
-    ink_code_incr_md5_update(&ctx, pDNSServers, strlen(pDNSServers));
-  ink_code_incr_md5_final((char *) &md5, &ctx);
 }
 
 static bool
@@ -614,6 +645,11 @@ db_mark_for(HostResStyle style) {
 inline HostDBMark
 db_mark_for(sockaddr const* ip) {
   return ats_is_ip6(ip) ? HOSTDB_MARK_IPV6 : HOSTDB_MARK_IPV4;
+}
+
+inline HostDBMark
+db_mark_for(IpAddr const& ip) {
+  return ip.isIp6() ? HOSTDB_MARK_IPV6 : HOSTDB_MARK_IPV4;
 }
 
 HostDBInfo *
@@ -732,24 +768,10 @@ HostDBProcessor::getby(Continuation * cont,
   }
 
   // Load the MD5 data.
-  md5.host_name = hostname;
-  md5.host_len = hostname ? (len ? len : strlen(hostname)) : 0;
+  md5.set_host(hostname, hostname ? (len ? len : strlen(hostname)) : 0);
   md5.ip.assign(ip);
   md5.port = ip ? ats_ip_port_host_order(ip) : 0;
   md5.db_mark = db_mark_for(host_res_style);
-#ifdef SPLIT_DNS
-  if (hostname && SplitDNSConfig::isSplitDNSEnabled()) {
-    const char *scan = hostname;
-    // Is this a check for IPv4 address? Add check for IPv6?
-    for (; *scan != '\0' && (ParseRules::is_digit(*scan) || '.' == *scan); scan++);
-    if ('\0' != *scan) {
-      SplitDNS* pSD = SplitDNSConfig::acquire();
-      if (0 != pSD)
-        md5.dns_server = static_cast<DNSServer*>(pSD->getDNSRecord(hostname));
-      SplitDNSConfig::release(pSD);
-    }
-  }
-#endif // SPLIT_DNS
   md5.refresh();
 
   // Attempt to find the result in-line, for level 1 hits
@@ -782,7 +804,7 @@ HostDBProcessor::getby(Continuation * cont,
             reply_to_cont(cont, r);
             return ACTION_RESULT_DONE;
           }
-          md5.refresh();
+          md5.refresh(); // only on reloop, because we've changed the family.
         }
       }
     } while (loop);
@@ -938,22 +960,9 @@ HostDBProcessor::getbyname_imm(Continuation * cont, process_hostdb_info_pfn proc
     return ACTION_RESULT_DONE;
   }
 
-  md5.host_name = hostname;
-  md5.host_len = hostname ? (len ? len : strlen(hostname)) : 0;
+  md5.set_host(hostname, hostname ? (len ? len : strlen(hostname)) : 0);
   md5.port = opt.port;
   md5.db_mark = db_mark_for(opt.host_res_style);
-#ifdef SPLIT_DNS
-  if (SplitDNSConfig::isSplitDNSEnabled()) {
-    const char *scan = hostname;
-    for (; *scan != '\0' && (ParseRules::is_digit(*scan) || '.' == *scan); scan++);
-    if ('\0' != *scan) {
-      SplitDNS* pSD = SplitDNSConfig::acquire();
-      if (0 != pSD)
-        md5.dns_server = static_cast<DNSServer*>(pSD->getDNSRecord(md5.host_name));
-      SplitDNSConfig::release(pSD);
-    }
-  }
-#endif // SPLIT_DNS
   md5.refresh();
 
   // Attempt to find the result in-line, for level 1 hits
@@ -1036,7 +1045,6 @@ do_setby(HostDBInfo * r, HostDBApplicationInfo * app, const char *hostname, IpAd
   }
 }
 
-
 void
 HostDBProcessor::setby(const char *hostname, int len, sockaddr const* ip, HostDBApplicationInfo * app)
 {
@@ -1044,8 +1052,7 @@ HostDBProcessor::setby(const char *hostname, int len, sockaddr const* ip, HostDB
     return;
 
   HostDBMD5 md5;
-  md5.host_name = hostname;
-  md5.host_len = hostname ? (len ? len : strlen(hostname)) : 0;
+  md5.set_host(hostname, hostname ? (len ? len : strlen(hostname)) : 0);
   md5.ip.assign(ip);
   md5.port = ip ? ats_ip_port_host_order(ip) : 0;
   md5.db_mark = db_mark_for(ip);
@@ -1080,8 +1087,7 @@ HostDBProcessor::setby_srv(const char *hostname, int len, const char *target, Ho
       return;
 
   HostDBMD5 md5;
-  md5.host_name = hostname;
-  md5.host_len = len ? len : strlen(hostname);
+  md5.set_host(hostname, len ? len : strlen(hostname));
   md5.port = 0;
   md5.db_mark = HOSTDB_MARK_SRV;
   md5.refresh();
@@ -1156,21 +1162,10 @@ Action *
 HostDBProcessor::failed_connect_on_ip_for_name(Continuation * cont, sockaddr const* ip, const char *hostname, int len)
 {
   HostDBMD5 md5;
-  md5.host_name = hostname;
-  md5.host_len = hostname ? (len ? len : strlen(hostname)) : 0;
+  md5.set_host(hostname, hostname ? (len ? len : strlen(hostname)) : 0);
   md5.ip.assign(ip);
   md5.port = ip ? ats_ip_port_host_order(ip) : 0;
   md5.db_mark = db_mark_for(ip);
-#ifdef SPLIT_DNS
-  SplitDNS *pSD = 0;
-  if (hostname && SplitDNSConfig::isSplitDNSEnabled()) {
-    pSD = SplitDNSConfig::acquire();
-
-    if (0 != pSD)
-      md5.dns_server = static_cast<DNSServer*>(pSD->getDNSRecord(hostname));
-    SplitDNSConfig::release(pSD);
-  }
-#endif // SPLIT_DNS
   md5.refresh();
 
   ProxyMutex *mutex = hostDB.lock_for_bucket((int) (fold_md5(md5.hash) % hostDB.buckets));
@@ -1270,8 +1265,12 @@ HostDBContinuation::lookup_done(IpAddr const& ip, char const* aname, bool around
       break;
     }
     HOSTDB_SUM_DYN_STAT(hostdb_ttl_stat, ttl_seconds);
-    if (!ttl_seconds)
-      ttl_seconds = 1;          // www.barnsandnobel.com is lame
+
+    // Not sure about this - it seems wrong but I can't be sure. If we got a fail
+    // in the DNS event, 0 is passed in which we then change to 1 here. Do we need this
+    // to be non-zero to avoid an infinite timeout?
+    if (0 == ttl_seconds) ttl_seconds = 1;
+
     i = insert(ttl_seconds);
     if (is_byname()) {
       ip_text_buffer b;
@@ -1560,7 +1559,6 @@ HostDBContinuation::dnsEvent(int event, HostEnt * e)
             if (is_addr_valid(af, e->ent.h_addr_list[ii])) {
               HostDBInfo& item = rr_data->info[i];
               ip_addr_set(item.ip(), af, e->ent.h_addr_list[ii]);
-//              rr_data->info[i].ip() = *(unsigned int *) e->ent.h_addr_list[ii];
               item.full = 1;
               item.round_robin = 0;
               item.reverse_dns = 0;
@@ -1600,7 +1598,7 @@ HostDBContinuation::dnsEvent(int event, HostEnt * e)
     if (action.continuation) {
       // Check for IP family failover
       if (failed && check_for_retry(md5.db_mark, host_res_style)) {
-        this->refresh_MD5();
+        this->refresh_MD5(); // family changed if we're doing a retry.
         SET_CONTINUATION_HANDLER(this, (HostDBContHandler) & HostDBContinuation::probeEvent);
         thread->schedule_in(this, MUTEX_RETRY_DELAY);
         return EVENT_CONT;
@@ -2128,7 +2126,32 @@ put_hostinfo_ClusterFunction(ClusterHandler *ch, void *data, int /* len ATS_UNUS
 int
 HostDBContinuation::backgroundEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
-  hostdb_current_interval++;
+  ++hostdb_current_interval;
+
+  // hostdb_current_interval is bumped every HOST_DB_TIMEOUT_INTERVAL seconds
+  // so we need to scale that so the user config value is in seconds.
+  if (hostdb_hostfile_check_interval && // enabled
+      (hostdb_current_interval - hostdb_hostfile_check_timestamp) * (HOST_DB_TIMEOUT_INTERVAL / HRTIME_SECOND) > hostdb_hostfile_check_interval
+  ) {
+    struct stat info;
+    char path[sizeof(hostdb_hostfile_path)];
+
+    REC_ReadConfigString(path, "proxy.config.hostdb.host_file.path", PATH_NAME_MAX);
+    if (0 != strcasecmp(hostdb_hostfile_path, path)) {
+      Debug("amc", "Update host file '%s' <- '%s'", path, hostdb_hostfile_path);
+      // path to hostfile changed
+      hostdb_hostfile_update_timestamp = 0; // never updated from this file
+      memcpy(hostdb_hostfile_path, path, sizeof(hostdb_hostfile_path));
+    }
+    hostdb_hostfile_check_timestamp = hostdb_current_interval;
+    if (0 == stat(hostdb_hostfile_path, &info)) {
+      if (info.st_mtime > hostdb_hostfile_update_timestamp) {
+        ParseHostFile(hostdb_hostfile_path);
+      }
+    } else {
+      Debug("hostdb", "Failed to stat host file '%s'", hostdb_hostfile_path);
+    }
+  }
 
   return EVENT_CONT;
 }
@@ -2480,4 +2503,337 @@ ink_hostdb_init(ModuleVersion v)
                      "proxy.process.hostdb.bytes", RECD_INT, RECP_PERSISTENT, (int) hostdb_bytes_stat, RecRawStatSyncCount);
 
   ts_host_res_global_init();
+}
+
+
+/// Pair of IP address and host name from a host file.
+struct HostFilePair {
+  typedef HostFilePair self;
+  IpAddr ip;
+  char const* name;
+};
+
+struct HostDBFileContinuation : public Continuation {
+  typedef HostDBFileContinuation self;
+
+  int idx; ///< Working index.
+  char const* name; ///< Host name (just for debugging)
+  INK_MD5 md5; ///< Key for entry.
+  typedef std::vector<INK_MD5> Keys;
+  Keys* keys; ///< Entries from file.
+  ats_scoped_str path; ///< Used to keep the host file name around.
+
+  HostDBFileContinuation()
+    : Continuation(0)
+    {
+    }
+
+  int insertEvent(int event, void* data);
+  int removeEvent(int event, void* data);
+
+  /// Set the current entry in the HostDB.
+  HostDBInfo* setDBEntry();
+  /// Create and schedule an update continuation.
+  static void scheduleUpdate(
+    int idx, ///< Pair index to process.
+    Keys* keys = 0 ///< Key table if any.
+    );
+  /// Create and schedule a remove continuation.
+  static void scheduleRemove(
+    int idx, ///< Index of current new key to check against.
+    Keys* keys ///< new valid keys
+    );
+  /// Finish update
+  static void finish(
+    Keys* keys ///< Valid keys from update.
+    );
+  /// Clean up this instance.
+  void destroy();
+};
+
+ClassAllocator<HostDBFileContinuation> hostDBFileContAllocator("hostDBFileContAllocator");
+
+void HostDBFileContinuation::destroy() {
+  this->~HostDBFileContinuation();
+  hostDBFileContAllocator.free(this);
+}
+
+// Host file processing globals.
+
+// We can't allow more than one update to be
+// proceeding at a time in any case so we might as well make these
+// globals.
+int HostDBFileUpdateActive = 0;
+// Contents of the host file. We keep this around because other data
+// points in to it (to minimize allocations).
+ats_scoped_str HostFileText;
+// Accumulated pairs of <IP address, host>
+std::vector<HostFilePair> HostFilePairs;
+// Entries from last update.
+HostDBFileContinuation::Keys HostFileKeys;
+/// Ordering operator for HostFilePair.
+/// We want to group first by name and then by address family.
+bool CmpHostFilePair(HostFilePair const& lhs, HostFilePair const& rhs) {
+  int zret = strcasecmp(lhs.name, rhs.name);
+  return zret < 0 || (0 == zret && lhs.ip < rhs.ip);
+}
+// Actual ordering doesn't matter as long as it's consistent.
+bool CmpMD5(INK_MD5 const& lhs, INK_MD5 const& rhs) {
+  return lhs[0] < rhs[0] || 
+    (lhs[0] == rhs[0] && lhs[1] < rhs[1])
+    ;
+}
+
+/// Finish current update.
+void
+HostDBFileContinuation::finish(Keys* keys) {
+  HostFilePairs.clear();
+  HostFileKeys.clear();
+  if (keys) {
+    std::swap(*keys, HostFileKeys); // put the new keys in place and dump the previous.
+    delete keys;
+  }
+
+  HostFileText = 0;
+  HostDBFileUpdateActive = 0;
+}
+
+HostDBInfo*
+HostDBFileContinuation::setDBEntry() {
+  HostDBInfo* r;
+  uint64_t folded_md5 = fold_md5(md5);
+
+  // remove the old one to prevent buildup
+  if (0 != (r = hostDB.lookup_block(folded_md5, 3))) {
+    hostDB.delete_block(r);
+    Debug("hostdb", "Update host file entry %s - %" PRIx64 ".%" PRIx64,
+          name, md5[0], md5[1] );
+  } else {
+    Debug("hostdb", "Add host file entry %s - %" PRIx64 ".%" PRIx64,
+          name, md5[0],md5[1] );
+  }
+
+  r = hostDB.insert_block(folded_md5, NULL, 0);
+  r->md5_high = md5[1];
+  r->ip_timeout_interval = 0; // special value - no timeout.
+  r->ip_timestamp = hostdb_current_interval;
+  keys->push_back(md5);
+  return r;
+}
+
+int
+HostDBFileContinuation::insertEvent(int, void*) {
+  int n = HostFilePairs.size();
+  HostFilePair const& first = HostFilePairs[idx];
+  int last = idx + 1;
+  HostDBInfo* r = 0;
+
+  ink_assert(idx < n);
+
+  // Get the set of addresses for this name.
+  while (last < n && 0 == strcasecmp(first.name, HostFilePairs[last].name) && first.ip.family() == HostFilePairs[last].ip.family())
+    ++last;
+  // Address set is now (idx, last].
+
+  int k = last - idx; // # of addrs for this name
+  ink_assert(k > 0);
+
+  r = this->setDBEntry();
+  r->reverse_dns = false;
+  r->is_srv = false;
+  if (k > 1) {
+    // multiple entries, need round robin
+    int s = HostDBRoundRobin::size(k, false);
+    HostDBRoundRobin* rr_data = static_cast<HostDBRoundRobin*>(hostDB.alloc(&r->app.rr.offset, s));
+    if (rr_data) {
+      int dst = 0; // index of destination RR item.
+      for (int src = idx ; src < last ; ++src, ++dst ) {
+        HostDBInfo& item = rr_data->info[dst];
+        item.data.ip.assign(HostFilePairs[src].ip);
+        item.full = 1;
+        item.round_robin = false;
+        item.reverse_dns = false;
+        item.is_srv = false;
+        item.md5_high = r->md5_high;
+        item.md5_low = r->md5_low;
+        item.md5_low_low = r->md5_low_low;
+      }
+      r->round_robin = true;
+      rr_data->good = k;
+      rr_data->current = 0;
+    }
+  } else {
+    r->data.ip.assign(HostFilePairs[idx].ip);
+    r->round_robin = false;
+  }
+
+  if (last < n) { // more entries to process
+    // We create a new continuation rather than using this one to
+    // avoid mutex issues - it is critical that the continuation use
+    // the bucket mutex to guarantee a data lock for update. It's
+    // unclear if changing the mutex to this continuation will do that
+    // properly. Because we use a class allocator we should achieve
+    // efficient allocations quickly even for large host files.
+    this->scheduleUpdate(last, keys);
+  } else {
+    std::sort(keys->begin(), keys->end(), &CmpMD5);
+//    keys->qsort(&CmpMD5);
+    // Switch to removing dead entries.
+    this->scheduleRemove(keys->size() - 1, keys);
+  }
+  // This continuation is done.
+  this->destroy();
+  return EVENT_DONE;
+}
+
+int
+HostDBFileContinuation::removeEvent(int, void*) {
+  HostDBInfo* r;
+  uint64_t folded_md5 = fold_md5(md5);
+  Debug("hostdb", "Remove host file entry %" PRIx64 ".%" PRIx64, md5[0],md5[1] );
+  if (0 != (r = hostDB.lookup_block(folded_md5, 3)))
+    hostDB.delete_block(r);
+  this->scheduleRemove(idx, keys);
+  this->destroy();
+  return EVENT_DONE;
+}
+
+void
+HostDBFileContinuation::scheduleUpdate(int idx, Keys* keys) {
+  HostDBFileContinuation* c = hostDBFileContAllocator.alloc();
+  HostFilePair& pair = HostFilePairs[idx];
+  HostDBMD5 md5;
+
+  md5.set_host(pair.name, strlen(pair.name));
+  md5.db_mark = db_mark_for(pair.ip);
+  md5.refresh();
+
+  SET_CONTINUATION_HANDLER(c, &HostDBFileContinuation::insertEvent);
+  c->idx = idx;
+  c->name = pair.name;
+  c->keys = keys ? keys : new Keys;
+  c->md5 = md5.hash;
+  c->mutex = hostDB.lock_for_bucket(fold_md5(md5.hash) % hostDB.buckets);
+  eventProcessor.schedule_imm(c, ET_CALL, EVENT_IMMEDIATE, 0);
+
+}
+
+void
+HostDBFileContinuation::scheduleRemove(int idx, Keys* keys) {
+  bool targetp = false; // Have a valid target?
+  INK_MD5 md5;
+
+  // See if we have a target.
+  if (HostFileKeys.size() > 0) {
+    md5 = HostFileKeys.back();
+    HostFileKeys.pop_back();
+    targetp = true;
+    // Move backwards through the valid items and the previous
+    // keys, removing if we have a prev key that's bigger than
+    // the current valid key (which means it's not currently valid).
+    while (idx >= 0) {
+      if (CmpMD5((*keys)[idx], md5)) { // prev is not valid, remove
+        break;
+      } else if (CmpMD5(md5, (*keys)[idx])) {
+        --idx; // prev is smaller, skip current and keep checking
+      } else if (!HostFileKeys.empty()) {
+        md5 = HostFileKeys.back();
+        HostFileKeys.pop_back(); // match, move to next potential target
+        --idx;
+      } else { // ran out of things to remove.
+        targetp = false;
+        break;
+      }
+    }
+  }
+
+  if (targetp) {
+    HostDBFileContinuation* c = hostDBFileContAllocator.alloc();
+    SET_CONTINUATION_HANDLER(c, &HostDBFileContinuation::removeEvent);
+    c->md5 = md5;
+    c->idx = idx;
+    c->keys = keys;
+    c->mutex = hostDB.lock_for_bucket(fold_md5(c->md5) % hostDB.buckets);
+    eventProcessor.schedule_imm(c, ET_CALL, EVENT_IMMEDIATE, 0);
+  } else {
+    self::finish(keys);
+  }
+}
+
+void
+ParseHostLine(char* l) {
+  Tokenizer elts(" \t");
+  int n_elts = elts.Initialize(l, SHARE_TOKS);
+  // Elements should be the address then a list of host names.
+  // Don't use RecHttpLoadIp because the address *must* be literal.
+  HostFilePair item;
+  if (n_elts > 1 && 0 == item.ip.load(elts[0]) && !item.ip.isLoopback()) {
+    for ( int i = 1 ; i < n_elts ; ++i ) {
+      item.name = elts[i];
+      HostFilePairs.push_back(item);
+    }
+  }
+}
+
+
+void
+ParseHostFile(char const* path) {
+  bool success = false;
+  // Test and set for update in progress.
+  if (0 != ink_atomic_swap(&HostDBFileUpdateActive,1)) {
+    Debug("hostdb", "Skipped load of host file because update already in progress");
+    return;
+  }
+  Debug("hostdb", "Loading host file '%s'", path);
+
+  ats_scoped_fd fd(open(path, O_RDONLY));
+  if (fd >= 0) {
+    struct stat info;
+    if (0 == fstat(fd, &info)) {
+      // +1 in case no terminating newline
+      int64_t size = info.st_size+1;
+      HostFileText = static_cast<char*>(ats_malloc(size));
+      if (HostFileText) {
+        char* base = HostFileText;
+        char* limit;
+
+        size = read(fd, HostFileText, info.st_size);
+        limit = HostFileText + size;
+        *limit = 0;
+
+        // We need to get a list of all name/addr pairs so that we can
+        // group names for round robin records. Also note that the
+        // pairs have pointer back in to the text storage for the file
+        // so we need to keep that until we're done with @a pairs.
+        while (base < limit) {
+          char *spot = strchr(base, '\n');
+
+          // terminate the line.
+          if (0 == spot) spot = limit; // no trailing EOL, grab remaining
+          else *spot = 0;
+
+          while (base < spot && isspace(*base)) ++base; // skip leading ws
+          if (*base != '#' && base < spot) // non-empty non-comment line
+            ParseHostLine(base);
+          base = spot + 1;
+        }
+
+        hostdb_hostfile_update_timestamp = hostdb_current_interval;
+        success = true;
+        if (!HostFilePairs.empty()) {
+          // Need to sort by name so multiple address hosts are
+          // contiguous.
+          std::sort(HostFilePairs.begin(), HostFilePairs.end(), &CmpHostFilePair);
+          HostDBFileContinuation::scheduleUpdate(0);
+        } else if (!HostFileKeys.empty()) {
+          HostDBFileContinuation::scheduleRemove(-1, 0);
+        } else {
+          // Nothing in new data, nothing in old data, just clean up.
+          HostDBFileContinuation::finish(0);
+        }
+      }
+    }
+  }
+  if (!success)
+    HostDBFileUpdateActive = 0;
 }
