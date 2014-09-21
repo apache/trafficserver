@@ -670,7 +670,10 @@ HttpSM::state_read_client_request_header(int event, void *data)
     state = PARSE_ERROR;
   }
 
-  if (event == VC_EVENT_READ_READY &&
+  // We need to handle EOS as well as READ_READY because the client
+  // may have sent all of the data already followed by a fIN and that
+  // should be OK.
+  if ((event == VC_EVENT_READ_READY || event == VC_EVENT_EOS) &&
       state == PARSE_ERROR &&
       is_transparent_passthrough_allowed() &&
       ua_raw_buffer_reader != NULL) {
@@ -686,6 +689,12 @@ HttpSM::state_read_client_request_header(int event, void *data)
 
       /* establish blind tunnel */
       setup_blind_tunnel_port();
+
+      // Setting half close means we will send the FIN when we've written all of the data.
+      if (event == VC_EVENT_EOS) {
+        this->set_ua_half_close_flag();      
+        t_state.client_info.keep_alive = HTTP_NO_KEEPALIVE;
+      }
       return 0;
   }
 
@@ -3590,11 +3599,6 @@ HttpSM::tunnel_handler_ssl_consumer(int event, HttpTunnelConsumer * c)
     c->write_success = true;
     if (c->self_producer->alive == true) {
       c->vc->do_io_shutdown(IO_SHUTDOWN_WRITE);
-      if (!c->producer->alive) {
-        tunnel.close_vc(c);
-        tunnel.local_finish_all(c->self_producer);
-        break;
-      }
     } else {
       c->vc->do_io_close();
     }
@@ -6393,6 +6397,12 @@ HttpSM::setup_blind_tunnel(bool send_response_hdr)
   server_entry->in_tunnel = true;
 
   tunnel.tunnel_run();
+
+  // If we're half closed, we got a FIN from the client. Forward it on to the origin server
+  // now that we have the tunnel operational.
+  if (ua_session->get_half_close_flag()) {
+    p_ua->vc->do_io_shutdown(IO_SHUTDOWN_READ);
+  }
 }
 
 void

@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.2.0
 
+  *) [TS-3073] Fix FIN forwarding issue with transparent pass-through.
+
   *) [TS-3059] Add the TSTextLogObjectRollingSizeMbSet API function.
    Author: Brian Rectanus <brectanus@qualys.com>
 
