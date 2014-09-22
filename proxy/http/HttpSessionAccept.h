@@ -25,6 +25,7 @@
 #define _HttpSessionAccept_h_
 
 #include "libts.h"
+#include "records/I_RecHttp.h"
 #include "P_EventSystem.h"
 #include "HttpConfig.h"
 #include "HTTP.h"

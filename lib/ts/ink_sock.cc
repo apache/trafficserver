@@ -192,6 +192,16 @@ safe_getsockname(int s, struct sockaddr *name, int *namelen)
   return r;
 }
 
+int 
+safe_getpeername(int s, struct sockaddr *name, int *namelen) 
+{
+  int r;
+  do {
+    r = getpeername(s, name, (socklen_t*)namelen);
+  } while (r < 0 && (errno == EAGAIN || errno == EINTR));
+  return r;
+}
+
 char
 fd_read_char(int fd)
 {

@@ -255,6 +255,10 @@ extern "C"
 
       The two transform hooks can ONLY be added as transaction hooks.
 
+      TS_VCONN_PRE_ACCEPT_HOOK - Called before the SSL hand
+      shake starts.  No handshake data has been read or sent (from the 
+      proxy) at this point
+
       TS_HTTP_LAST_HOOK _must_ be the last element. Only right place
       to insert a new element is just before TS_HTTP_LAST_HOOK.
 
@@ -278,6 +282,12 @@ extern "C"
     TS_HTTP_PRE_REMAP_HOOK,
     TS_HTTP_POST_REMAP_HOOK,
     TS_HTTP_RESPONSE_CLIENT_HOOK,
+    // Putting the SSL hooks in the same enum space
+    // So both sets of hooks can be set by the same Hook function
+    TS_SSL_FIRST_HOOK,
+    TS_VCONN_PRE_ACCEPT_HOOK = TS_SSL_FIRST_HOOK,
+    TS_SSL_SNI_HOOK,
+    TS_SSL_LAST_HOOK = TS_SSL_SNI_HOOK,
     TS_HTTP_LAST_HOOK
   } TSHttpHookID;
   #define TS_HTTP_READ_REQUEST_PRE_REMAP_HOOK TS_HTTP_PRE_REMAP_HOOK  /* backwards compat */
@@ -437,6 +447,7 @@ extern "C"
     TS_EVENT_LIFECYCLE_CACHE_READY = 60020,
     TS_EVENT_LIFECYCLE_SERVER_SSL_CTX_INITIALIZED = 60021,
     TS_EVENT_LIFECYCLE_CLIENT_SSL_CTX_INITIALIZED = 60022,
+    TS_EVENT_VCONN_PRE_ACCEPT = 60023,
     TS_EVENT_MGMT_UPDATE = 60100,
 
     /* EVENTS 60200 - 60202 for internal use */
@@ -781,6 +792,13 @@ extern "C"
       TS_MILESTONE_LAST_ENTRY
     } TSMilestonesType;
 
+  /// Operation requested by asynchronous hooks during SSL processing
+ typedef enum {
+    TS_SSL_HOOK_OP_DEFAULT, ///< Null / initialization value. Do normal processing.
+    TS_SSL_HOOK_OP_TUNNEL, ///< Switch to blind tunnel
+    TS_SSL_HOOK_OP_TERMINATE, ///< Termination connection / transaction.
+    TS_SSL_HOOK_OP_LAST = TS_SSL_HOOK_OP_TERMINATE ///< End marker value.
+  } TSSslVConnOp;
 
   /* These typedefs are used with the corresponding TSMgmt*Get functions
      for storing the values retrieved by those functions. For example,
@@ -796,6 +814,7 @@ extern "C"
   typedef struct tsapi_mbuffer* TSMBuffer;
   typedef struct tsapi_httpssn* TSHttpSsn;
   typedef struct tsapi_httptxn* TSHttpTxn;
+  typedef struct tsapi_ssl_obj* TSSslConnection;
   typedef struct tsapi_httpaltinfo* TSHttpAltInfo;
   typedef struct tsapi_mimeparser* TSMimeParser;
   typedef struct tsapi_httpparser* TSHttpParser;
@@ -810,6 +829,7 @@ extern "C"
   typedef struct tsapi_config* TSConfig;
   typedef struct tsapi_cont* TSCont;
   typedef struct tsapi_cont* TSVConn; /* a VConn is really a specialized TSCont */
+  typedef struct tsapi_ssl_context* TSSslContext;
   typedef struct tsapi_action* TSAction;
   typedef struct tsapi_iobuffer* TSIOBuffer;
   typedef struct tsapi_iobufferdata* TSIOBufferData;

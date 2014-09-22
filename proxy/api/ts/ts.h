@@ -1223,6 +1223,21 @@ extern "C"
   tsapi int TSHttpSsnTransactionCount(TSHttpSsn ssnp);
 
   /* --------------------------------------------------------------------------
+     SSL connections */
+  /// Re-enable an SSL connection from a hook.
+  /// This must be called exactly once before the SSL connection will resume.
+  tsapi void TSVConnReenable(TSVConn sslvcp);
+  /// Set the connection to go into blind tunnel mode
+  tsapi TSReturnCode TSVConnTunnel(TSVConn sslp);
+  // Return the SSL object associated with the connection
+  tsapi TSSslConnection TSVConnSSLConnectionGet(TSVConn sslp);
+  // Fetch a SSL context from the global lookup table
+  tsapi TSSslContext TSSslContextFindByName(const char *name);
+  tsapi TSSslContext TSSslContextFindByAddr(struct sockaddr const*);
+  // Returns 1 if the sslp argument refers to a SSL connection
+  tsapi int TSVConnIsSsl(TSVConn sslp);
+
+  /* --------------------------------------------------------------------------
      HTTP transactions */
   tsapi void TSHttpTxnHookAdd(TSHttpTxn txnp, TSHttpHookID id, TSCont contp);
   tsapi TSHttpSsn TSHttpTxnSsnGet(TSHttpTxn txnp);

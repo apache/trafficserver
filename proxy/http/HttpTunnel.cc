@@ -906,7 +906,6 @@ HttpTunnel::producer_run(HttpTunnelProducer * p)
           }
         }
       }
-
       c->write_vio = c->vc->do_io_write(this, c_write, c->buffer_reader);
       ink_assert(c_write > 0);
     }
@@ -969,6 +968,7 @@ HttpTunnel::producer_run(HttpTunnelProducer * p)
     }
   }
 
+
   if (p->alive) {
     ink_assert(producer_n >= 0);
 
@@ -994,6 +994,7 @@ HttpTunnel::producer_run(HttpTunnelProducer * p)
   // that it doesn't act like a buffer guard
   p->read_buffer->dealloc_reader(p->buffer_start);
   p->buffer_start = NULL;
+
 }
 
 int

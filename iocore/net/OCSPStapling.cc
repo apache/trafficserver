@@ -363,20 +363,23 @@ ocsp_update()
   const unsigned ctxCount = certLookup->count();
 
   for (unsigned i = 0; i < ctxCount; i++) {
-    ctx = certLookup->get(i);
-    cinf = stapling_get_cert_info(ctx);
-    if (cinf) {
-      ink_mutex_acquire(&cinf->stapling_mutex);
-      current_time = time(NULL);
-      if (cinf->resp_derlen == 0 || cinf->is_expire || cinf->expire_time < current_time) {
-        ink_mutex_release(&cinf->stapling_mutex);
-        if (stapling_refresh_response(cinf, &resp)) {
-          Note("Success to refresh OCSP response for 1 certificate.");
-        } else {
-          Note("Fail to refresh OCSP response for 1 certificate.");
-        }
-      } else {
-        ink_mutex_release(&cinf->stapling_mutex);
+    SSLCertContext *cc = certLookup->get(i);
+    if (cc && cc->ctx) {
+      ctx = cc->ctx; 
+      cinf = stapling_get_cert_info(ctx);
+       if (cinf) {
+         ink_mutex_acquire(&cinf->stapling_mutex);
+         current_time = time(NULL);
+         if (cinf->resp_derlen == 0 || cinf->is_expire || cinf->expire_time < current_time) {
+           ink_mutex_release(&cinf->stapling_mutex);
+           if (stapling_refresh_response(cinf, &resp)) {
+             Note("Success to refresh OCSP response for 1 certificate.");
+           } else {
+             Note("Fail to refresh OCSP response for 1 certificate.");
+           }
+         } else {
+           ink_mutex_release(&cinf->stapling_mutex);
+         }
       }
     }
   }

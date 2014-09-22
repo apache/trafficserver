@@ -181,11 +181,12 @@ public:
 
   /// Type of transport on the connection.
   enum TransportType {
-    TRANSPORT_DEFAULT = 0, ///< Default (normal HTTP).
-    TRANSPORT_COMPRESSED, ///< Compressed HTTP.
+    TRANSPORT_NONE = 0,     ///< Unspecified / uninitialized
+    TRANSPORT_DEFAULT,      ///< Default (normal HTTP).
+    TRANSPORT_COMPRESSED,   ///< Compressed HTTP.
     TRANSPORT_BLIND_TUNNEL, ///< Blind tunnel (no processing).
-    TRANSPORT_SSL, ///< SSL connection.
-    TRANSPORT_PLUGIN /// < Protocol plugin connection
+    TRANSPORT_SSL,          ///< SSL connection.
+    TRANSPORT_PLUGIN        /// < Protocol plugin connection
   };
 
   int m_fd; ///< Pre-opened file descriptor if present.

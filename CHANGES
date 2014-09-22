@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.2.0
+  *) [TS-3006] Add SSL extensions and examples.
+     Author: Susan Hinrichs <shinrich@network-geographics.com>
 
   *) [TS-3054] Forward partial chunked data to client to be more transparent.
      Author: Susan Hinrichs <shinrich@network-geographics.com>

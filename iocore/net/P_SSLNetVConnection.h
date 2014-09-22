@@ -36,6 +36,7 @@
 #include "P_EventSystem.h"
 #include "P_UnixNetVConnection.h"
 #include "P_UnixNet.h"
+#include "apidefs.h"
 
 #include <openssl/ssl.h>
 #include <openssl/err.h>
@@ -52,6 +53,7 @@
 #endif
 
 class SSLNextProtocolSet;
+struct SSLCertLookup;
 
 //////////////////////////////////////////////////////////////////
 //
@@ -62,6 +64,7 @@ class SSLNextProtocolSet;
 //////////////////////////////////////////////////////////////////
 class SSLNetVConnection:public UnixNetVConnection
 {
+  typedef UnixNetVConnection super; ///< Parent type.
 public:
   virtual int sslStartHandShake(int event, int &err);
   virtual void free(EThread * t);
@@ -120,6 +123,36 @@ public:
     sslClientRenegotiationAbort = state;
   };
 
+  /// Reenable the VC after a pre-accept or SNI hook is called.
+  virtual void reenable(NetHandler* nh);
+  /// Set the SSL context.
+  /// @note This must be called after the SSL endpoint has been created.
+  virtual bool sslContextSet(void* ctx);
+
+  /// Set by asynchronous hooks to request a specific operation.
+  TSSslVConnOp hookOpRequested;
+
+  // Store the servername returned by SNI
+  char sniServername[TS_MAX_HOST_NAME_LEN];
+
+  int64_t read_raw_data();
+  void initialize_handshake_buffers() {
+    this->handShakeBuffer = new_MIOBuffer();
+    this->handShakeReader = this->handShakeBuffer->alloc_reader();
+    this->handShakeHolder = this->handShakeReader->clone();
+  }
+  void free_handshake_buffers() {
+    
+    this->handShakeReader->dealloc();
+    this->handShakeHolder->dealloc();
+    free_MIOBuffer(this->handShakeBuffer);
+    this->handShakeReader = NULL;
+    this->handShakeHolder = NULL;
+    this->handShakeBuffer = NULL;
+  }
+  // Returns true if all the hooks reenabled
+  bool callHooks(TSHttpHookID eventId);
+
 private:
   SSLNetVConnection(const SSLNetVConnection &);
   SSLNetVConnection & operator =(const SSLNetVConnection &);
@@ -127,6 +160,29 @@ private:
   bool sslHandShakeComplete;
   bool sslClientConnection;
   bool sslClientRenegotiationAbort;
+  MIOBuffer *handShakeBuffer;
+  IOBufferReader *handShakeHolder;
+  IOBufferReader *handShakeReader;
+
+  /// The current hook.
+  /// @note For @C SSL_HOOKS_INVOKE, this is the hook to invoke.
+  class APIHook* curHook;
+
+  enum {
+    SSL_HOOKS_INIT,   ///< Initial state, no hooks called yet.
+    SSL_HOOKS_INVOKE, ///< Waiting to invoke hook.
+    SSL_HOOKS_ACTIVE, ///< Hook invoked, waiting for it to complete.
+    SSL_HOOKS_CONTINUE, ///< All hooks have been called and completed
+    SSL_HOOKS_DONE    ///< All hooks have been called and completed
+  } sslPreAcceptHookState;
+
+  enum {
+    SNI_HOOKS_INIT,
+    SNI_HOOKS_ACTIVE,
+    SNI_HOOKS_DONE,
+    SNI_HOOKS_CONTINUE
+  } sslSNIHookState;
+
   const SSLNextProtocolSet * npnSet;
   Continuation * npnEndpoint;
 };

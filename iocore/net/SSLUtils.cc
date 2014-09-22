@@ -20,6 +20,7 @@
  */
 
 #include "ink_config.h"
+#include "records/I_RecHttp.h"
 #include "libts.h"
 #include "I_Layout.h"
 #include "P_Net.h"
@@ -57,6 +58,8 @@
 #define SSL_CERT_TAG          "ssl_cert_name"
 #define SSL_PRIVATE_KEY_TAG   "ssl_key_name"
 #define SSL_CA_TAG            "ssl_ca_name"
+#define SSL_ACTION_TAG        "action"
+#define SSL_ACTION_TUNNEL_TAG "tunnel"
 #define SSL_SESSION_TICKET_ENABLED "ssl_ticket_enabled"
 #define SSL_SESSION_TICKET_KEY_FILE_TAG "ticket_key_name"
 #define SSL_KEY_DIALOG        "ssl_key_dialog"
@@ -84,7 +87,7 @@ typedef SSL_METHOD * ink_ssl_method_t;
 // gather user provided settings from ssl_multicert.config in to a single struct
 struct ssl_user_config
 {
-  ssl_user_config () : session_ticket_enabled(1) {
+  ssl_user_config () : session_ticket_enabled(1), opt(SSLCertContext::OPT_NONE) {
   }
 
   int session_ticket_enabled;  // ssl_ticket_enabled - session ticket enabled
@@ -95,6 +98,7 @@ struct ssl_user_config
   ats_scoped_str key;    // ssl_key_name - Private key
   ats_scoped_str ticket_key_filename; // ticket_key_name - session key file. [key_name (16Byte) + HMAC_secret (16Byte) + AES_key (16Byte)]
   ats_scoped_str dialog; // ssl_key_dialog - Private key dialog
+  SSLCertContext::Option opt;
 };
 
 // Check if the ticket_key callback #define is available, and if so, enable session tickets.
@@ -173,27 +177,51 @@ SSL_CTX_add_extra_chain_cert_file(SSL_CTX * ctx, const char * chainfile)
 #if TS_USE_TLS_SNI
 
 static int
-ssl_servername_callback(SSL * ssl, int * ad, void * arg)
+ssl_servername_callback(SSL * ssl, int * ad, void * /*arg*/)
 {
   SSL_CTX *           ctx = NULL;
-  SSLCertLookup *     lookup = (SSLCertLookup *) arg;
+  SSLCertContext *    cc = NULL;
+  // Fetching the lookup via the callback arg allows for race
+  // condition with reconfigure
+  //SSLCertLookup *     lookup = (SSLCertLookup *) arg;
+  SSLCertLookup *lookup = SSLCertificateConfig::acquire();
   const char *        servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
   SSLNetVConnection * netvc = (SSLNetVConnection *)SSL_get_app_data(ssl);
+  bool found = true;
+  bool reenabled;
+  int retval = SSL_TLSEXT_ERR_OK;
 
-  Debug("ssl", "ssl_servername_callback ssl=%p ad=%d lookup=%p server=%s handshake_complete=%d", ssl, *ad, lookup, servername,
+  Debug("ssl", "ssl_servername_callback ssl=%p ad=%d server=%s handshake_complete=%d", ssl, *ad, servername,
     netvc->getSSLHandShakeComplete());
+  
+  if (servername != NULL) {
+    strncpy(netvc->sniServername, servername, TS_MAX_HOST_NAME_LEN);
+  }
 
   // catch the client renegotiation early on
   if (SSLConfigParams::ssl_allow_client_renegotiation == false && netvc->getSSLHandShakeComplete()) {
     Debug("ssl", "ssl_servername_callback trying to renegotiate from the client");
-    return SSL_TLSEXT_ERR_ALERT_FATAL;
+    retval = SSL_TLSEXT_ERR_ALERT_FATAL;
+    goto done;
   }
 
   // The incoming SSL_CTX is either the one mapped from the inbound IP address or the default one. If we
   // don't find a name-based match at this point, we *do not* want to mess with the context because we've
   // already made a best effort to find the best match.
   if (likely(servername)) {
-    ctx = lookup->findInfoInHash((char *)servername);
+    cc = lookup->find((char *)servername);
+    if (cc && cc->ctx) ctx = cc->ctx;
+    if (cc && SSLCertContext::OPT_TUNNEL == cc->opt && netvc->get_is_transparent()) {
+#ifdef SSL_TLSEXT_ERR_READ_AGAIN
+      netvc->attributes = HttpProxyPort::TRANSPORT_BLIND_TUNNEL;
+      netvc->setSSLHandShakeComplete(true);
+      retval = SSL_TLSEXT_ERR_READ_AGAIN;
+#else 
+      Error("Must have openssl patch to support OPT_TUNNEL from SNI callback");
+      retval = SSL_TLSEXT_ERR_ALERT_FATAL;
+#endif
+      goto done;
+    }
   }
 
   // If there's no match on the server name, try to match on the peer address.
@@ -202,36 +230,60 @@ ssl_servername_callback(SSL * ssl, int * ad, void * arg)
     int namelen = sizeof(ip);
 
     safe_getsockname(netvc->get_socket(), &ip.sa, &namelen);
-    ctx = lookup->findInfoInHash(ip);
+    cc = lookup->find(ip);
+    if (cc && cc->ctx) ctx = cc->ctx;
   }
 
   if (ctx != NULL) {
     SSL_set_SSL_CTX(ssl, ctx);
   }
-
-  ctx = SSL_get_SSL_CTX(ssl);
-  Debug("ssl", "ssl_servername_callback found SSL context %p for requested name '%s'", ctx, servername);
-
-  if (ctx == NULL) {
-    return SSL_TLSEXT_ERR_NOACK;
+  else {
+    found = false;
   }
 
+  ctx = SSL_get_SSL_CTX(ssl);
+  Debug("ssl", "ssl_servername_callback %s SSL context %p for requested name '%s'", found ? "found" : "using", ctx, servername);
+
+  if (ctx == NULL) {
+    retval = SSL_TLSEXT_ERR_NOACK;
+    goto done;
+  }
+
+  // Call the plugin SNI code
+  reenabled = netvc->callHooks(TS_SSL_SNI_HOOK);
+  // If it did not re-enable, return the code to 
+  // stop the accept processing
+  if (!reenabled){
+#ifdef SSL_TLSEXT_ERR_READ_AGAIN
+    retval = SSL_TLSEXT_ERR_READ_AGAIN;
+#else 
+    Error("Must have openssl patch to support OPT_TUNNEL from SNI callback");
+    retval = SSL_TLSEXT_ERR_ALERT_FATAL;
+#endif
+    goto done;
+  }
+
+done:
+  SSLCertificateConfig::release(lookup);
   // We need to return one of the SSL_TLSEXT_ERR constants. If we return an
   // error, we can fill in *ad with an alert code to propgate to the
   // client, see SSL_AD_*.
-  return SSL_TLSEXT_ERR_OK;
+  return retval;
 }
 
 #endif /* TS_USE_TLS_SNI */
 
 static SSL_CTX *
-ssl_context_enable_sni(SSL_CTX * ctx, SSLCertLookup * lookup)
+ssl_context_enable_sni(SSL_CTX * ctx, SSLCertLookup * /*lookup*/)
 {
 #if TS_USE_TLS_SNI
   if (ctx) {
     Debug("ssl", "setting SNI callbacks with for ctx %p", ctx);
     SSL_CTX_set_tlsext_servername_callback(ctx, ssl_servername_callback);
-    SSL_CTX_set_tlsext_servername_arg(ctx, lookup);
+    // Possible race conditions against reconfigure here
+    // Better to use the SSLCertificate.acquire function to access the
+    // lookup data structure safely
+    //SSL_CTX_set_tlsext_servername_arg(ctx, lookup);
   }
 #else
   (void)lookup;
@@ -487,12 +539,13 @@ SSLRecRawStatSyncCount(const char *name, RecDataT data_type, RecData *data, RecR
   if (certLookup) {
     const unsigned ctxCount = certLookup->count();
     for (size_t i = 0; i < ctxCount; i++) {
-      SSL_CTX * ctx = certLookup->get(i);
-
-      sessions += SSL_CTX_sess_accept_good(ctx);
-      hits += SSL_CTX_sess_hits(ctx);
-      misses += SSL_CTX_sess_misses(ctx);
-      timeouts += SSL_CTX_sess_timeouts(ctx);
+      SSLCertContext *cc = certLookup->get(i);
+      if (cc && cc->ctx) {
+        sessions += SSL_CTX_sess_accept_good(cc->ctx);
+        hits += SSL_CTX_sess_hits(cc->ctx);
+        misses += SSL_CTX_sess_misses(cc->ctx);
+        timeouts += SSL_CTX_sess_timeouts(cc->ctx);
+      }
     }
   }
 
@@ -1224,7 +1277,7 @@ asn1_strdup(ASN1_STRING * s)
 // table aliases for subject CN and subjectAltNames DNS without wildcard,
 // insert trie aliases for those with wildcard.
 static void
-ssl_index_certificate(SSLCertLookup * lookup, SSL_CTX * ctx, const char * certfile)
+ssl_index_certificate(SSLCertLookup * lookup, SSLCertContext const& cc, const char * certfile)
 {
   X509_NAME *   subject = NULL;
   X509 *        cert;
@@ -1250,7 +1303,7 @@ ssl_index_certificate(SSLCertLookup * lookup, SSL_CTX * ctx, const char * certfi
       ats_scoped_str name(asn1_strdup(cn));
 
       Debug("ssl", "mapping '%s' to certificate %s", (const char *) name, certfile);
-      lookup->insert(ctx, name);
+      lookup->insert(name, cc);
     }
   }
 
@@ -1266,7 +1319,7 @@ ssl_index_certificate(SSLCertLookup * lookup, SSL_CTX * ctx, const char * certfi
       if (name->type == GEN_DNS) {
         ats_scoped_str dns(asn1_strdup(name->d.dNSName));
         Debug("ssl", "mapping '%s' to certificate %s", (const char *) dns, certfile);
-        lookup->insert(ctx, dns);
+        lookup->insert(dns, cc);
       }
     }
 
@@ -1339,13 +1392,13 @@ ssl_store_ssl_context(
   if (sslMultCertSettings.addr) {
     if (strcmp(sslMultCertSettings.addr, "*") == 0) {
       lookup->ssl_default = ctx;
-      lookup->insert(ctx, sslMultCertSettings.addr);
+      lookup->insert(sslMultCertSettings.addr, SSLCertContext(ctx, sslMultCertSettings.opt));
     } else {
       IpEndpoint ep;
 
       if (ats_ip_pton(sslMultCertSettings.addr, &ep) == 0) {
         Debug("ssl", "mapping '%s' to certificate %s", (const char *)sslMultCertSettings.addr, (const char *)certpath);
-        lookup->insert(ctx, ep);
+        lookup->insert(ep, SSLCertContext(ctx, sslMultCertSettings.opt));
       } else {
         Error("'%s' is not a valid IPv4 or IPv6 address", (const char *)sslMultCertSettings.addr);
       }
@@ -1386,7 +1439,7 @@ ssl_store_ssl_context(
   // this code is updated to reconfigure the SSL certificates, it will need some sort of
   // refcounting or alternate way of avoiding double frees.
   Debug("ssl", "importing SNI names from %s", (const char *)certpath);
-  ssl_index_certificate(lookup, ctx, certpath);
+  ssl_index_certificate(lookup, SSLCertContext(ctx, sslMultCertSettings.opt), certpath);
 
   if (SSLConfigParams::init_ssl_ctx_cb) {
     SSLConfigParams::init_ssl_ctx_cb(ctx, true);
@@ -1438,6 +1491,15 @@ ssl_extract_certificate(
 
     if (strcasecmp(label, SSL_KEY_DIALOG) == 0) {
       sslMultCertSettings.dialog = ats_strdup(value);
+    }
+    if (strcasecmp(label, SSL_ACTION_TAG) == 0) {
+      if (strcasecmp(SSL_ACTION_TUNNEL_TAG, value) == 0) {
+        sslMultCertSettings.opt = SSLCertContext::OPT_TUNNEL;
+      }
+      else {
+        Error("Unrecognized action for " SSL_ACTION_TAG);
+        return false;
+      }
     }
   }
   if (!sslMultCertSettings.cert) {

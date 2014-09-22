@@ -363,6 +363,7 @@ tsapi int TS_HTTP_LEN_PUSH;
 tsapi const TSMLoc TS_NULL_MLOC = (TSMLoc)NULL;
 
 HttpAPIHooks *http_global_hooks = NULL;
+SslAPIHooks *ssl_hooks = NULL;
 LifecycleAPIHooks* lifecycle_hooks = NULL;
 ConfigUpdateCbTable *global_config_cbs = NULL;
 
@@ -639,6 +640,14 @@ TSReturnCode
 sdk_sanity_check_lifecycle_hook_id(TSLifecycleHookID id)
 {
   if (id<TS_LIFECYCLE_PORTS_INITIALIZED_HOOK || id> TS_LIFECYCLE_LAST_HOOK)
+    return TS_ERROR;
+  return TS_SUCCESS;
+}
+
+TSReturnCode
+sdk_sanity_check_ssl_hook_id(TSHttpHookID id)
+{
+  if (id<TS_SSL_FIRST_HOOK || id> TS_SSL_LAST_HOOK)
     return TS_ERROR;
   return TS_SUCCESS;
 }
@@ -1589,6 +1598,7 @@ api_init()
     TS_HTTP_LEN_S_MAXAGE = HTTP_LEN_S_MAXAGE;
 
     http_global_hooks = new HttpAPIHooks;
+    ssl_hooks = new SslAPIHooks;
     lifecycle_hooks = new LifecycleAPIHooks;
     global_config_cbs = new ConfigUpdateCbTable;
 
@@ -4378,10 +4388,19 @@ TSContMutexGet(TSCont contp)
 void
 TSHttpHookAdd(TSHttpHookID id, TSCont contp)
 {
+  INKContInternal *icontp;
   sdk_assert(sdk_sanity_check_continuation(contp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_hook_id(id) == TS_SUCCESS);
 
-  http_global_hooks->append(id, (INKContInternal *)contp);
+  icontp = reinterpret_cast<INKContInternal*>(contp);
+
+  if (id >= TS_SSL_FIRST_HOOK && id <= TS_SSL_LAST_HOOK) {
+    TSSslHookInternalID internalId = static_cast<TSSslHookInternalID>(id - TS_SSL_FIRST_HOOK);
+    ssl_hooks->append(internalId , icontp);
+  }
+  else { // Follow through the regular HTTP hook framework
+    http_global_hooks->append(id, icontp);
+  }
 }
 
 void
@@ -8632,3 +8651,111 @@ TSHttpEventNameLookup(TSEvent event)
 {
   return HttpDebugNames::get_event_name(static_cast<int>(event));
 }
+
+/// Re-enable SSL VC.
+class TSSslCallback : public Continuation
+{
+public:
+  TSSslCallback(SSLNetVConnection *vc)
+    : Continuation(vc->mutex), m_vc(vc)
+  {
+    SET_HANDLER(&TSSslCallback::event_handler);
+  }
+
+  int event_handler(int, void*)
+  {
+    m_vc->reenable(m_vc->nh);
+    delete this;
+    return 0;
+  }
+
+private:
+  SSLNetVConnection* m_vc;
+};
+
+
+/// SSL Hooks
+TSReturnCode
+TSVConnTunnel(TSVConn sslp)
+{
+  NetVConnection *vc = reinterpret_cast<NetVConnection*>(sslp);
+  SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection*>(vc);
+  TSReturnCode zret = TS_SUCCESS;
+  if (0 != ssl_vc) {
+    ssl_vc->hookOpRequested = TS_SSL_HOOK_OP_TUNNEL;
+  } else {
+    zret = TS_ERROR;
+  }
+  return zret;
+}
+
+TSSslConnection
+TSVConnSSLConnectionGet(TSVConn sslp) 
+{
+  TSSslConnection ssl = NULL;
+  NetVConnection *vc = reinterpret_cast<NetVConnection*>(sslp);
+  SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection*>(vc);
+  if (ssl_vc != NULL) {
+    ssl = reinterpret_cast<TSSslConnection>(ssl_vc->ssl);
+  } 
+  return ssl;
+}
+
+tsapi TSSslContext TSSslContextFindByName(const char *name) 
+{
+  TSSslContext ret = NULL;
+  SSLCertLookup *lookup = SSLCertificateConfig::acquire();
+  if (lookup != NULL) {
+    SSLCertContext *cc = lookup->find(name);
+    if (cc && cc->ctx) {
+      ret = reinterpret_cast<TSSslContext>(cc->ctx);
+    }
+    SSLCertificateConfig::release(lookup);
+  }
+  return ret;
+}
+tsapi TSSslContext TSSslContextFindByAddr(struct sockaddr const* addr)
+{
+  TSSslContext ret = NULL;
+  SSLCertLookup *lookup = SSLCertificateConfig::acquire();
+  if (lookup != NULL) {
+    IpEndpoint ip;
+    ip.assign(addr);
+    SSLCertContext *cc = lookup->find(ip);
+    if (cc && cc->ctx) {
+      ret = reinterpret_cast<TSSslContext>(cc->ctx);
+    }
+    SSLCertificateConfig::release(lookup);
+  }
+  return ret;
+}
+
+tsapi int TSVConnIsSsl(TSVConn sslp) 
+{
+  NetVConnection *vc = reinterpret_cast<NetVConnection*>(sslp);
+  SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection*>(vc);
+  return ssl_vc != NULL;
+}
+
+void
+TSVConnReenable(TSVConn vconn)
+{
+  NetVConnection *vc = reinterpret_cast<NetVConnection *>(vconn);
+  SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection*>(vc);
+  // We really only deal with a SSLNetVConnection at the moment
+  if (ssl_vc != NULL) {
+    EThread *eth = this_ethread();
+
+    // We use the VC mutex so we don't need to reschedule again if we
+    // can't get the lock. For this reason we need to execute the
+    // callback on the VC thread or it doesn't work (not sure why -
+    // deadlock or it ends up interacting with the wrong NetHandler).
+    MUTEX_TRY_LOCK(trylock, ssl_vc->mutex, eth);
+    if (!trylock) {
+      ssl_vc->thread->schedule_imm(new TSSslCallback(ssl_vc));
+    }   else {
+      ssl_vc->reenable(ssl_vc->nh);
+    }
+  }
+}
+

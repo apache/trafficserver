@@ -5,9 +5,9 @@
 # hostname or IP address. At load time, the certificate is parsed to
 # extract the subject CN and all the DNS subjectAltNames.  The
 # certificate will be presented for connections requesting any of the
-# hostnames found in the certificate. Wildcard names are supported,
-# but only of the form '*.domain.com', ie. where '*' is the leftmost
-# domain component.
+# hostnames found in the certificate. Wildcard names in the certificates
+# are supported, but only of the form '*.domain.com', ie. where '*' 
+# is the leftmost domain component.
 #
 # The certificate file path, CA path and key path specified in
 # records.config will be used for all certificates, CAs and keys
@@ -47,9 +47,17 @@
 #     exec: - Executes a program and uses the stdout output for the pass
 #       phrase.
 #
+# action=[tunnel]
+#   If the tunnel matches this line, traffic server will not participate
+#   in the handshake.  But rather it will blind tunnel the SSL connection.
+#   If the connection is identified by server name, an openSSL patch must
+#   be applied to enable this functionality.  See TS-3006 for details.
+#
 # Examples:
 #   ssl_cert_name=foo.pem
 #   dest_ip=*	ssl_cert_name=bar.pem ssl_key_name=barKey.pem
 #   dest_ip=209.131.48.79	ssl_cert_name=server.pem ssl_key_name=serverKey.pem
 #   dest_ip=10.0.0.1:99 ssl_cert_name=port99.pem
 #   ssl_cert_name=foo.pem ssl_key_dialog="exec:/usr/bin/mypass foo 'ba r'"
+#   ssl_cert_name=foo.pem action=tunnel
+#   ssl_cert_name=wildcardcert.pem ssl_key_name=privkey.pem

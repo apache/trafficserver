@@ -61,6 +61,7 @@ class Vec {
   void push_back(C a) { add(a); } // std::vector name
   bool add_exclusive(C a);
   C& add();
+  void drop();
   C pop();
   void reset();
   void clear();
@@ -209,6 +210,12 @@ Vec<C,A,S>::add() {
   else
     ret = &add_internal();
   return *ret;
+}
+
+template <class C, class A, int S> inline void
+Vec<C,A,S>::drop() {
+  if (n && 0 == --n)
+    clear();
 }
 
 template <class C, class A, int S> inline C

@@ -14,34 +14,13 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-SUBDIRS = \
- authproxy \
- background_fetch \
- balancer \
- buffer_upload \
- channel_stats \
- collapsed_connection \
- custom_redirect \
- epic \
- escalate \
- esi \
- geoip_acl \
- healthchecks \
- hipes \
- metalink \
- regex_revalidate \
- remap_stats \
- s3_auth \
- ssl_cert_loader \
- sslheaders \
- stale_while_revalidate \
- url_sig \
- xdebug
+include $(top_srcdir)/build/plugins.mk
 
-if HAS_MYSQL
-  SUBDIRS += mysql_remap
-endif
+AM_CPPFLAGS += -I$(top_srcdir)/lib -I$(top_srcdir)/lib/ts
 
-if BUILD_LUAJIT
-  SUBDIRS += ts_lua
-endif
+pkglib_LTLIBRARIES = ssl_cert_loader.la
+
+ssl_cert_loader_la_SOURCES = ssl-cert-loader.cc ip.cc IpMap.cc domain-tree.cc
+ssl_cert_loader_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS) -L$(top_srcdir)/lib/tsconfig/.libs -ltsconfig
+
+

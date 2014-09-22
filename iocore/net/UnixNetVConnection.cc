@@ -384,7 +384,9 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
       nh->read_ready_list.remove(vc);
       vc->write.triggered = 0;
       nh->write_ready_list.remove(vc);
-      if (!(ret == SSL_HANDSHAKE_WANT_READ || ret == SSL_HANDSHAKE_WANT_ACCEPT))
+      if (ret == SSL_HANDSHAKE_WANT_READ || ret == SSL_HANDSHAKE_WANT_ACCEPT)
+        read_reschedule(nh, vc);
+      else
         write_reschedule(nh, vc);
     } else if (ret == EVENT_DONE) {
       vc->write.triggered = 1;
@@ -497,7 +499,6 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
     } else if (signalled && (wbe_event != vc->write_buffer_empty_event)) {
       // @a signalled means we won't send an event, and the event values differing means we
       // had a write buffer trap and cleared it, so we need to send it now.
-      Debug("amc", "empty write buffer trap [%d]", wbe_event);
       if (write_signal_and_update(wbe_event, vc) != EVENT_CONT)
         return;
     } else if (!signalled) {
@@ -1187,6 +1188,7 @@ UnixNetVConnection::free(EThread *t)
   action_.mutex.clear();
   got_remote_addr = 0;
   got_local_addr = 0;
+  attributes = 0;
   read.vio.mutex.clear();
   write.vio.mutex.clear();
   flags = 0;
