@@ -123,7 +123,7 @@ public:
     sslClientRenegotiationAbort = state;
   };
 
-  // Copy up here so we overload bu don't overload
+  // Copy up here so we overload but don't override
   using super::reenable;
 
   /// Reenable the VC after a pre-accept or SNI hook is called.
