@@ -338,6 +338,15 @@ IpAddr::load(char const* text) {
   return zret;
 }
 
+int 
+IpAddr::load(ts::ConstBuffer const& text) 
+{
+  IpEndpoint ip;
+  int zret = ats_ip_pton(text, &ip.sa);
+  this->assign(&ip.sa);
+  return zret;
+}
+
 char*
 IpAddr::toString(char* dest, size_t len) const {
   IpEndpoint ip;
@@ -365,6 +374,61 @@ operator == (IpAddr const& lhs, sockaddr const* rhs) {
       zret = true;
     }
   } // else different families, not equal.
+  return zret;
+}
+
+/** Compare two IP addresses.
+    This is useful for IPv4, IPv6, and the unspecified address type.
+    If the addresses are of different types they are ordered
+
+    Non-IP < IPv4 < IPv6
+
+     - all non-IP addresses are the same ( including @c AF_UNSPEC )
+     - IPv4 addresses are compared numerically (host order)
+     - IPv6 addresses are compared byte wise in network order (MSB to LSB)
+
+    @return
+      - -1 if @a lhs is less than @a rhs.
+      - 0 if @a lhs is identical to @a rhs.
+      - 1 if @a lhs is greater than @a rhs.
+
+    @internal This looks like a lot of code for an inline but I think it
+    should compile down to something reasonable.
+*/
+inline int
+IpAddr::cmp(self const& that) const {
+  int zret = 0;
+  uint16_t rtype = that._family;
+  uint16_t ltype = _family;
+
+  // We lump all non-IP addresses into a single equivalence class
+  // that is less than an IP address. This includes AF_UNSPEC.
+  if (AF_INET == ltype) {
+    if (AF_INET == rtype) {
+      in_addr_t la = ntohl(_addr._ip4);
+      in_addr_t ra = ntohl(that._addr._ip4);
+      if (la < ra) zret = -1;
+      else if (la > ra) zret = 1;
+      else zret = 0;
+    } else if (AF_INET6 == rtype) { // IPv4 < IPv6
+      zret = -1;
+    } else { // IP > not IP
+      zret = 1;
+    }
+  } else if (AF_INET6 == ltype) {
+    if (AF_INET6 == rtype) {
+      zret = memcmp(&_addr._ip6, &that._addr._ip6, TS_IP6_SIZE);
+    } else {
+      zret = 1; // IPv6 greater than any other type.
+    }
+  } else if (AF_INET == rtype || AF_INET6 == rtype) {
+    // ltype is non-IP so it's less than either IP type.
+    zret = -1;
+  } else {
+    // Both types are non-IP so they're equal.
+    zret = 0;
+  }
+
   return zret;
 }
 

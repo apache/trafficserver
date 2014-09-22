@@ -1103,6 +1103,16 @@ struct IpAddr {
   int load(
     char const* str ///< Nul terminated input string.
   );
+
+  /** Load from string.
+      The address is copied to this object if the conversion is successful,
+      otherwise this object is invalidated.
+      @return 0 on success, non-zero on failure.
+  */
+  int load(
+    ts::ConstBuffer const& str ///< Text of IP address.
+  );
+  
   /** Output to a string.
       @return The string @a dest.
   */
@@ -1127,6 +1137,25 @@ struct IpAddr {
   bool operator!=(self const& that) {
     return ! (*this == that);
   }
+
+  /// Generic compare.
+  int cmp(self const& that) const;
+
+  /** Return a normalized hash value.
+      - Ipv4: the address in host order.
+      - Ipv6: folded 32 bit of the address.
+      - Else: 0.
+  */
+  uint32_t hash() const;
+
+  /** The hashing function embedded in a functor.
+      @see hash
+  */
+  struct Hasher {
+    uint32_t operator() (self const& ip) const {
+      return ip.hash();
+    }
+  };
 
   /// Test for same address family.
   /// @c return @c true if @a that is the same address family as @a this.
@@ -1153,6 +1182,8 @@ struct IpAddr {
     in_addr_t _ip4; ///< IPv4 address storage.
     in6_addr  _ip6; ///< IPv6 address storage.
     uint8_t   _byte[TS_IP6_SIZE]; ///< As raw bytes.
+    uint32_t  _u32[TS_IP6_SIZE/(sizeof(uint32_t)/sizeof(uint8_t))]; ///< As 32 bit chunks.
+    uint64_t  _u64[TS_IP6_SIZE/(sizeof(uint64_t)/sizeof(uint8_t))]; ///< As 64 bit chunks.
   } _addr;
 
   ///< Pre-constructed invalid instance.
@@ -1222,6 +1253,33 @@ inline bool operator != (IpAddr const& lhs, IpEndpoint const& rhs) {
 }
 inline bool operator != (IpEndpoint const& lhs, IpAddr const& rhs) {
   return ! (rhs == &lhs.sa);
+}
+
+inline bool operator < (IpAddr const& lhs, IpAddr const& rhs) {
+  return -1 == lhs.cmp(rhs);
+}
+
+inline bool operator >= (IpAddr const& lhs, IpAddr const& rhs) {
+  return lhs.cmp(rhs) >= 0;
+}
+
+inline bool operator > (IpAddr const& lhs, IpAddr const& rhs) {
+  return 1 == lhs.cmp(rhs);
+}
+
+inline bool operator <= (IpAddr const& lhs, IpAddr const& rhs) {
+  return  lhs.cmp(rhs) <= 0;
+}
+
+inline uint32_t
+IpAddr::hash() const {
+  uint32_t zret = 0;
+  if (this->isIp4()) {
+    zret = ntohl(_addr._ip4);
+  } else if (this->isIp6()) {
+    zret = _addr._u32[0] ^ _addr._u32[1] ^ _addr._u32[2] ^ _addr._u32[3];
+  }
+  return zret;
 }
 
 /// Write IP @a addr to storage @a dst.
