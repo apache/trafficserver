@@ -72,7 +72,7 @@ public:
   void new_transaction();
 
   void set_half_close_flag() { half_close = true; };
-  bool get_half_close_flag() { return half_close; };
+  bool get_half_close_flag() const { return half_close; };
   virtual void release(IOBufferReader * r);
   NetVConnection *get_netvc() const { return client_vc;  };
 
