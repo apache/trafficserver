@@ -327,7 +327,8 @@ HttpSM::HttpSM()
     pushed_response_hdr_bytes(0), pushed_response_body_bytes(0),
     plugin_tag(0), plugin_id(0),
     hooks_set(false), cur_hook_id(TS_HTTP_LAST_HOOK), cur_hook(NULL),
-    cur_hooks(0), callout_state(HTTP_API_NO_CALLOUT), terminate_sm(false), kill_this_async_done(false)
+    cur_hooks(0), callout_state(HTTP_API_NO_CALLOUT), terminate_sm(false),
+    kill_this_async_done(false), parse_range_done(false)
 {
   static int scatter_init = 0;
 
@@ -4114,6 +4115,12 @@ HttpSM::parse_range_and_compare(MIMEField *field, int64_t content_length)
     return;
   }
 
+  if (parse_range_done) {
+    Debug("http_range", "parse_range already done, t_state.range_setup %d", t_state.range_setup);
+    return;
+  }
+  parse_range_done = true;
+
   n_values = 0;
   value = csv.get_first(field, &value_len);
   while (value) {
@@ -4128,6 +4135,9 @@ HttpSM::parse_range_and_compare(MIMEField *field, int64_t content_length)
   ranges = new RangeRecord[n_values];
   value += 6; // skip leading 'bytes='
   value_len -= 6;
+
+  // assume range_in_cache
+  t_state.range_in_cache = true;
 
   for (; value; value = csv.get_next(&value_len)) {
     if (!(tmp = (const char *) memchr(value, '-', value_len))) {
@@ -4211,6 +4221,17 @@ HttpSM::parse_range_and_compare(MIMEField *field, int64_t content_length)
     ranges[nr]._start = start;
     ranges[nr]._end = end;
     ++nr;
+
+    if (!cache_sm.cache_read_vc->is_pread_capable() && cache_config_read_while_writer==2) {
+      // write in progress, check if request range not in cache yet
+      HTTPInfo::FragOffset* frag_offset_tbl = t_state.cache_info.object_read->get_frag_table();
+      int frag_offset_cnt = t_state.cache_info.object_read->get_frag_offset_count();
+
+      if (!frag_offset_tbl || (frag_offset_tbl[frag_offset_cnt - 1] < end)) {
+        Debug("http_range", "request range in cache, end %" PRId64 ", frg_offset_cnt %d, frag_size %" PRId64, end, frag_offset_cnt, frag_offset_tbl[frag_offset_cnt - 1]);
+        t_state.range_in_cache = false;
+      }
+    }
   }
 
   if (nr > 0) {
@@ -4224,6 +4245,7 @@ HttpSM::parse_range_and_compare(MIMEField *field, int64_t content_length)
     t_state.range_setup = HttpTransact::RANGE_NOT_SATISFIABLE;
 
 Lfaild:
+  t_state.range_in_cache = false;
   t_state.num_range_fields = -1;
   delete []ranges;
   return;
@@ -4295,26 +4317,32 @@ HttpSM::do_range_setup_if_necessary()
   if (t_state.method == HTTP_WKSIDX_GET && t_state.hdr_info.client_request.version_get() == HTTPVersion(1, 1)) {
     do_range_parse(field);
 
-    // if only one range entry and pread is capable, no need transform range
-    if (t_state.range_setup == HttpTransact::RANGE_REQUESTED &&
-        t_state.num_range_fields == 1 &&
-        cache_sm.cache_read_vc->is_pread_capable())
-      t_state.range_setup = HttpTransact::RANGE_NOT_TRANSFORM_REQUESTED;
+    if (t_state.range_setup == HttpTransact::RANGE_REQUESTED) {
 
-    if (t_state.range_setup == HttpTransact::RANGE_REQUESTED && 
-        api_hooks.get(TS_HTTP_RESPONSE_TRANSFORM_HOOK) == NULL) {
-      Debug("http_trans", "Unable to accelerate range request, fallback to transform");
-      content_type = t_state.cache_info.object_read->response_get()->value_get(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE, &field_content_type_len);
-      //create a Range: transform processor for requests of type Range: bytes=1-2,4-5,10-100 (eg. multiple ranges)
-      range_trans = transformProcessor.range_transform(mutex,
-          t_state.ranges,
-          t_state.num_range_fields,
-          &t_state.hdr_info.transform_response,
-          content_type,
-          field_content_type_len,
-          t_state.cache_info.object_read->object_size_get()
-          );
-      api_hooks.append(TS_HTTP_RESPONSE_TRANSFORM_HOOK, range_trans);
+      if (!t_state.range_in_cache) {
+        Debug("http_range", "range can't be satisifed from cache, force origin request");
+        t_state.cache_lookup_result = HttpTransact::CACHE_LOOKUP_MISS;
+        return;
+      }
+
+      // if only one range entry and pread is capable, no need transform range
+      if (t_state.num_range_fields == 1 &&
+         (cache_sm.cache_read_vc->is_pread_capable() || t_state.range_in_cache)) {
+        t_state.range_setup = HttpTransact::RANGE_NOT_TRANSFORM_REQUESTED;
+      } else if (api_hooks.get(TS_HTTP_RESPONSE_TRANSFORM_HOOK) == NULL) {
+        Debug("http_trans", "Unable to accelerate range request, fallback to transform");
+        content_type = t_state.cache_info.object_read->response_get()->value_get(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE, &field_content_type_len);
+        //create a Range: transform processor for requests of type Range: bytes=1-2,4-5,10-100 (eg. multiple ranges)
+        range_trans = transformProcessor.range_transform(mutex,
+            t_state.ranges,
+            t_state.num_range_fields,
+            &t_state.hdr_info.transform_response,
+            content_type,
+            field_content_type_len,
+            t_state.cache_info.object_read->object_size_get()
+            );
+        api_hooks.append(TS_HTTP_RESPONSE_TRANSFORM_HOOK, range_trans);
+      }
     }
   }
 }

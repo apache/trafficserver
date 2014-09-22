@@ -520,6 +520,7 @@ protected:
   //   when the flag is set
   bool terminate_sm;
   bool kill_this_async_done;
+  bool parse_range_done;
   virtual int kill_this_async_hook(int event, void *data);
   void kill_this();
   void update_stats();

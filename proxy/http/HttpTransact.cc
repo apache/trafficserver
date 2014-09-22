@@ -67,6 +67,7 @@ static char range_type[] = "multipart/byteranges; boundary=RANGE_SEPARATOR";
 
 extern HttpBodyFactory *body_factory;
 extern int cache_config_vary_on_user_agent;
+extern int cache_config_read_while_writer;
 
 static const char local_host_ip_str[] = "127.0.0.1";
 
@@ -2863,8 +2864,9 @@ HttpTransact::build_response_from_cache(State* s, HTTPWarningCode warning_code)
           s->cache_info.action = CACHE_DO_NO_ACTION;
           s->next_action = SM_ACTION_INTERNAL_CACHE_NOOP;
           break;
-        } else if (s->range_setup == RANGE_NOT_HANDLED) {
+        } else if ((s->range_setup == RANGE_NOT_HANDLED) || !s->range_in_cache) {
           // we switch to tunneling for Range requests if it is out of order.
+          // or if the range can't be satisfied from the cache
           // In that case we fetch the entire source so it's OK to switch
           // this late.
           DebugTxn("http_seq", "[HttpTransact::HandleCacheOpenReadHit] Out-of-order Range request - tunneling");

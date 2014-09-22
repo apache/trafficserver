@@ -1086,8 +1086,21 @@ Cache Control
 .. ts:cv:: CONFIG proxy.config.cache.enable_read_while_writer INT 1
    :reloadable:
 
-   Enables (``1``) or disables (``0``) ability to a read cached object while the another connection is completing the write to cache for
-   the same object. Several other configuration values need to be set for this to become active. See :ref:`reducing-origin-server-requests-avoiding-the-thundering-herd`
+   Specifies when to enable the ability to read a cached object while another
+   connection is completing the write to cache for that same object. The goal
+   here is to avoid multiple origin connections for the same cacheable object
+   upon a cache miss. The possible values of this config are:
+
+   -  ``0`` = never allow
+   -  ``1`` = always allowed
+   -  ``2`` = allowed, only if the ``Range`` requested can be satisfied from cache
+
+   The ``2`` option is useful to avoid delaying requests which can not easily
+   be satisfied by the partially written response.
+
+   Several other configuration values need to be set for this to be
+   usable. See :ref:`Reducing Origin Server Requests
+   <http-proxy-caching.en.html#reducing-origin-server-requests-avoiding-the-thundering-herd>`.
 
 .. ts:cv:: CONFIG proxy.config.cache.force_sector_size INT 0
    :reloadable:
