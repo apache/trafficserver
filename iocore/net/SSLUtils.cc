@@ -1001,6 +1001,10 @@ SSLInitServerContext(
   // disable selected protocols
   SSL_CTX_set_options(ctx, params->ssl_ctx_options);
 
+  if (params->ssl_session_cache_timeout) {
+        SSL_CTX_set_timeout(ctx, params->ssl_session_cache_timeout);
+  }
+
   switch (params->ssl_session_cache) {
   case SSLConfigParams::SSL_SESSION_CACHE_MODE_OFF:
     SSL_CTX_set_session_cache_mode(ctx, SSL_SESS_CACHE_OFF|SSL_SESS_CACHE_NO_INTERNAL);
@@ -1008,9 +1012,6 @@ SSLInitServerContext(
   case SSLConfigParams::SSL_SESSION_CACHE_MODE_SERVER:
     SSL_CTX_set_session_cache_mode(ctx, SSL_SESS_CACHE_SERVER);
     SSL_CTX_sess_set_cache_size(ctx, params->ssl_session_cache_size);
-    if (params->ssl_session_cache_timeout) {
-        SSL_CTX_set_timeout(ctx, params->ssl_session_cache_timeout);
-    }
     break;
   }
 
