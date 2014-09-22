@@ -75,7 +75,7 @@ ts::ConstBuffer text;
 }
 
 int
-CB_servername_whitelist(TSCont contp, TSEvent event, void *edata) {
+CB_servername_whitelist(TSCont /* contp */, TSEvent /* event */, void *edata) {
   TSVConn ssl_vc = reinterpret_cast<TSVConn>(edata);
   TSSslConnection sslobj = TSVConnSSLConnectionGet(ssl_vc);
   SSL *ssl = reinterpret_cast<SSL *>(sslobj);
