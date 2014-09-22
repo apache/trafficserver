@@ -304,7 +304,7 @@ SSLContextStorage::insert(const char* name, int idx)
   } else {
     InkHashTableValue value;
 
-    if (ink_hash_table_lookup(this->hostnames, name, &value) && (void *)idx != value) {
+    if (ink_hash_table_lookup(this->hostnames, name, &value) && reinterpret_cast<InkHashTableValue>(idx) != value) {
       Warning("previously indexed '%s' with SSL_CTX %p, cannot index it with SSL_CTX #%d now", name, value, idx);
     } else {
       inserted = true;

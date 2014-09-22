@@ -123,6 +123,9 @@ public:
     sslClientRenegotiationAbort = state;
   };
 
+  // Copy up here so we overload bu don't overload
+  using super::reenable;
+
   /// Reenable the VC after a pre-accept or SNI hook is called.
   virtual void reenable(NetHandler* nh);
   /// Set the SSL context.

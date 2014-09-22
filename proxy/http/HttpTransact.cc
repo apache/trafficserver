@@ -598,7 +598,7 @@ HttpTransact::HandleBlindTunnel(State* s)
 {
   bool inbound_transparent_p = s->state_machine->ua_session->get_netvc()->get_is_transparent();
   URL u;
-  IpEndpoint dest_addr;
+  //IpEndpoint dest_addr;
   //ip_text_buffer new_host;
 
   DebugTxn("http_trans", "[HttpTransact::HandleBlindTunnel]");
