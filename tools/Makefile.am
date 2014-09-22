@@ -19,6 +19,7 @@
 
 bin_SCRIPTS = tsxs tspush
 
+AM_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
 AM_CPPFLAGS = $(iocore_include_dirs) \
   -I$(top_srcdir)/lib -I$(top_builddir)/lib \
   -I$(top_srcdir)/lib/ts -I$(top_builddir)/lib/ts
@@ -30,7 +31,7 @@ noinst_PROGRAMS = jtest/jtest
 endif
 
 jtest_jtest_SOURCES = jtest/jtest.cc
-jtest_jtest_LDADD = $(top_builddir)/lib/ts/libtsutil.la
+jtest_jtest_LDADD = $(top_builddir)/lib/ts/libtsutil.la @OPENSSL_LIBS@
 
 if BUILD_HTTP_LOAD
 
