@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.2.0
+  *) [TS-2314] New config to allow unsatifiable Range: request to go straight to Origin
+
   *) [TS-3006] Add SSL extensions and examples.
      Author: Susan Hinrichs <shinrich@network-geographics.com>
 
