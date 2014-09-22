@@ -1,7 +1,11 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.2.0
 
+  *) [TS-3084] Fix FIN forwarding issue with POST.
+     Author: Susan Hinrichs <shinrich@network-geographics.com>
+
   *) [TS-3073] Fix FIN forwarding issue with transparent pass-through.
+     Author: Susan Hinrichs <shinrich@network-geographics.com>
 
   *) [TS-3059] Add the TSTextLogObjectRollingSizeMbSet API function.
    Author: Brian Rectanus <brectanus@qualys.com>

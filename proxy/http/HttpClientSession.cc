@@ -264,7 +264,7 @@ HttpClientSession::do_io_close(int alerrno)
     slave_ka_vio = NULL;
   }
 
-  if (half_close) {
+  if (half_close && this->current_reader) {
     read_state = HCS_HALF_CLOSED;
     SET_HANDLER(&HttpClientSession::state_wait_for_close);
     DebugHttpSsn("[%" PRId64 "] session half close", con_id);

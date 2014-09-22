@@ -896,9 +896,14 @@ HttpTunnel::producer_run(HttpTunnelProducer * p)
       // set the amount to read since we know it.  We will send the FIN
       // to the server on VC_EVENT_WRITE_COMPLETE.
       if (p->vc_type == HT_HTTP_CLIENT) {
-        if (static_cast<HttpClientSession *>(p->vc)->get_half_close_flag()) {
+        HttpClientSession* ua_vc = static_cast<HttpClientSession*>(p->vc);
+        if (ua_vc->get_half_close_flag() || producer_n == 0) {
+          // Force the half close to make sure we send the FIN immediately after we finish writing.
+          ua_vc->set_half_close_flag();
           c_write = c->buffer_reader->read_avail();
-          p->alive = false;
+          if (producer_n != 0) {
+            p->alive = false;
+          }
         }
       }
 

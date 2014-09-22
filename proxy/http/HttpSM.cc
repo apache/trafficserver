@@ -847,7 +847,14 @@ HttpSM::state_watch_for_client_abort(int event, void *data)
   ink_assert(ua_entry->vc == ua_session);
 
   switch (event) {
+  /* EOS means that the client has initiated the connection shut down.
+   * Only half close the client connection so ATS can read additional
+   * data that may still be sent from the server and send it to the
+   * client.
+   */
   case VC_EVENT_EOS:
+    static_cast<HttpClientSession*>(ua_entry->vc)->get_netvc()->do_io_shutdown(IO_SHUTDOWN_READ);
+    break;
   case VC_EVENT_ERROR:
   case VC_EVENT_ACTIVE_TIMEOUT:
   case VC_EVENT_INACTIVITY_TIMEOUT:
@@ -5358,6 +5365,12 @@ HttpSM::do_setup_post_tunnel(HttpVC_t to_vc_type)
     tunnel.set_producer_chunking_action(p, 0, TCA_PASSTHRU_CHUNKED_CONTENT);
 
   tunnel.tunnel_run(p);
+
+  // If we're half closed, we got a FIN from the client. Forward it on to the origin server
+  // now that we have the tunnel operational.
+  if (ua_session->get_half_close_flag()) {
+    p->vc->do_io_shutdown(IO_SHUTDOWN_READ);
+  }
 }
 
 // void HttpSM::perform_transform_cache_write_action()
