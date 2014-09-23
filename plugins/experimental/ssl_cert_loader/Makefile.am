@@ -21,6 +21,6 @@ AM_CPPFLAGS += -I$(top_srcdir)/lib -I$(top_srcdir)/lib/ts
 pkglib_LTLIBRARIES = ssl_cert_loader.la
 
 ssl_cert_loader_la_SOURCES = ssl-cert-loader.cc domain-tree.cc
-ssl_cert_loader_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS) -L$(top_srcdir)/lib/tsconfig/.libs -ltsconfig
+ssl_cert_loader_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS) -L$(top_builddir)/lib/tsconfig/.libs -ltsconfig
 
 
