@@ -4227,7 +4227,7 @@ HttpSM::parse_range_and_compare(MIMEField *field, int64_t content_length)
       HTTPInfo::FragOffset* frag_offset_tbl = t_state.cache_info.object_read->get_frag_table();
       int frag_offset_cnt = t_state.cache_info.object_read->get_frag_offset_count();
 
-      if (!frag_offset_tbl || (frag_offset_tbl[frag_offset_cnt - 1] < end)) {
+      if (!frag_offset_tbl || (frag_offset_tbl[frag_offset_cnt - 1] < (uint64_t)end)) {
         Debug("http_range", "request range in cache, end %" PRId64 ", frg_offset_cnt %d, frag_size %" PRId64, end, frag_offset_cnt, frag_offset_tbl[frag_offset_cnt - 1]);
         t_state.range_in_cache = false;
       }
