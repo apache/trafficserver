@@ -16,7 +16,7 @@
 
 include $(top_srcdir)/build/plugins.mk
 
-AM_CPPFLAGS += -I$(top_builddir)/lib -I$(top_builddir)/lib/ts
+AM_CPPFLAGS += -I$(top_srcdir)/lib -I$(top_srcdir)/lib/ts
 
 pkglib_LTLIBRARIES = ssl_cert_loader.la
 
