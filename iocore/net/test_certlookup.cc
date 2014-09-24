@@ -44,6 +44,11 @@ REGRESSION_TEST(SSLCertificateLookup)(RegressionTest* t, int /* atype ATS_UNUSED
   SSL_CTX * b_notwild = SSL_CTX_new(SSLv23_server_method());
   SSL_CTX * foo = SSL_CTX_new(SSLv23_server_method());
   SSL_CTX * all_com = SSL_CTX_new(SSLv23_server_method());
+  SSLCertContext wild_cc (wild);
+  SSLCertContext notwild_cc (notwild);
+  SSLCertContext b_notwild_cc (b_notwild);
+  SSLCertContext foo_cc (foo);
+  SSLCertContext all_com_cc (all_com);
 
   box = REGRESSION_TEST_PASSED;
 
@@ -53,34 +58,34 @@ REGRESSION_TEST(SSLCertificateLookup)(RegressionTest* t, int /* atype ATS_UNUSED
   assert(foo != NULL);
   assert(all_com != NULL);
 
-  box.check(lookup.insert(foo, "www.foo.com"), "insert host context");
-  box.check(lookup.insert(wild, "*.wild.com"), "insert wildcard context");
-  box.check(lookup.insert(notwild, "*.notwild.com"), "insert wildcard context");
-  box.check(lookup.insert(b_notwild, "*.b.notwild.com"), "insert wildcard context");
-  box.check(lookup.insert(all_com, "*.com"), "insert wildcard context");
+  box.check(lookup.insert("www.foo.com", foo_cc) >= 0, "insert host context");
+  box.check(lookup.insert("*.wild.com", wild_cc) >= 0, "insert wildcard context");
+  box.check(lookup.insert("*.notwild.com", notwild_cc) >= 0, "insert wildcard context");
+  box.check(lookup.insert("*.b.notwild.com", b_notwild_cc) >= 0, "insert wildcard context");
+  box.check(lookup.insert("*.com", all_com_cc) >= 0, "insert wildcard context");
 
   // To test name collisions, we need to shuffle the SSL_CTX's so that we try to
   // index the same name with a different SSL_CTX.
-  box.check(lookup.insert(wild, "*.com") == false, "insert host duplicate");
-  box.check(lookup.insert(foo, "*.wild.com") == false, "insert wildcard duplicate");
-  box.check(lookup.insert(b_notwild, "*.notwild.com") == false, "insert wildcard conext duplicate");
-  box.check(lookup.insert(notwild, "*.b.notwild.com") == false, "insert wildcard conext duplicate");
-  box.check(lookup.insert(all_com, "www.foo.com") == false, "insert wildcard conext duplicate");
+  box.check(lookup.insert("*.com", wild_cc) < 0, "insert host duplicate");
+  box.check(lookup.insert("*.wild.com", foo_cc) < 0, "insert wildcard duplicate");
+  box.check(lookup.insert("*.notwild.com", b_notwild_cc) < 0, "insert wildcard context duplicate");
+  box.check(lookup.insert("*.b.notwild.com", notwild_cc) < 0, "insert wildcard context duplicate");
+  box.check(lookup.insert("www.foo.com", all_com_cc) < 0, "insert wildcard context duplicate");
 
   // Basic wildcard cases.
-  box.check(lookup.findInfoInHash("a.wild.com") == wild, "wildcard lookup for a.wild.com");
-  box.check(lookup.findInfoInHash("b.wild.com") == wild, "wildcard lookup for b.wild.com");
-  box.check(lookup.insert(all_com, "www.foo.com") == false, "insert wildcard conext duplicate");
+  box.check(lookup.find("a.wild.com")->ctx == wild, "wildcard lookup for a.wild.com");
+  box.check(lookup.find("b.wild.com")->ctx == wild, "wildcard lookup for b.wild.com");
+  box.check(lookup.insert("www.foo.com", all_com_cc) < 0, "insert wildcard context duplicate");
 
   // Verify that wildcard does longest match.
-  box.check(lookup.findInfoInHash("a.notwild.com") == notwild, "wildcard lookup for a.notwild.com");
-  box.check(lookup.findInfoInHash("notwild.com") == all_com, "wildcard lookup for notwild.com");
-  box.check(lookup.findInfoInHash("c.b.notwild.com") == b_notwild, "wildcard lookup for c.b.notwild.com");
+  box.check(lookup.find("a.notwild.com")->ctx == notwild, "wildcard lookup for a.notwild.com");
+  box.check(lookup.find("notwild.com")->ctx == all_com, "wildcard lookup for notwild.com");
+  box.check(lookup.find("c.b.notwild.com")->ctx == b_notwild, "wildcard lookup for c.b.notwild.com");
 
   // Basic hostname cases.
-  box.check(lookup.findInfoInHash("www.foo.com") == foo, "host lookup for www.foo.com");
-  box.check(lookup.findInfoInHash("www.bar.com") == all_com, "host lookup for www.bar.com");
-  box.check(lookup.findInfoInHash("www.bar.net") == NULL, "host lookup for www.bar.net");
+  box.check(lookup.find("www.foo.com")->ctx == foo, "host lookup for www.foo.com");
+  box.check(lookup.find("www.bar.com")->ctx == all_com, "host lookup for www.bar.com");
+  box.check(lookup.find("www.bar.net") == NULL, "host lookup for www.bar.net");
 }
 
 REGRESSION_TEST(SSLAddressLookup)(RegressionTest* t, int /* atype ATS_UNUSED */, int * pstatus)
@@ -106,6 +111,10 @@ REGRESSION_TEST(SSLAddressLookup)(RegressionTest* t, int /* atype ATS_UNUSED */,
   context.ip6p = SSL_CTX_new(SSLv23_server_method());
   context.ip4 = SSL_CTX_new(SSLv23_server_method());
   context.ip4p = SSL_CTX_new(SSLv23_server_method());
+  SSLCertContext ip6_cc(context.ip6);
+  SSLCertContext ip6p_cc(context.ip6p);
+  SSLCertContext ip4_cc(context.ip4);
+  SSLCertContext ip4p_cc(context.ip4p);
 
   endpoint.ip6 = make_endpoint("fe80::7ed1:c3ff:fe90:2582");
   endpoint.ip6p = make_endpoint("[fe80::7ed1:c3ff:fe90:2582]:80");
@@ -117,21 +126,21 @@ REGRESSION_TEST(SSLAddressLookup)(RegressionTest* t, int /* atype ATS_UNUSED */,
   // For each combination of address with port and address without port, make sure that we find the
   // the most specific match (ie. find the context with the port if it is available) ...
 
-  box.check(lookup.insert(context.ip6, endpoint.ip6), "insert IPv6 address");
-  box.check(lookup.findInfoInHash(endpoint.ip6) == context.ip6, "IPv6 exact match lookup");
-  box.check(lookup.findInfoInHash(endpoint.ip6p) == context.ip6, "IPv6 exact match lookup w/ port");
+  box.check(lookup.insert(endpoint.ip6, ip6_cc) >= 0 , "insert IPv6 address");
+  box.check(lookup.find(endpoint.ip6)->ctx == context.ip6, "IPv6 exact match lookup");
+  box.check(lookup.find(endpoint.ip6p)->ctx == context.ip6, "IPv6 exact match lookup w/ port");
 
-  box.check(lookup.insert(context.ip6p, endpoint.ip6p), "insert IPv6 address w/ port");
-  box.check(lookup.findInfoInHash(endpoint.ip6) == context.ip6, "IPv6 longest match lookup");
-  box.check(lookup.findInfoInHash(endpoint.ip6p) == context.ip6p, "IPv6 longest match lookup w/ port");
+  box.check(lookup.insert(endpoint.ip6p, ip6p_cc) >= 0, "insert IPv6 address w/ port");
+  box.check(lookup.find(endpoint.ip6)->ctx == context.ip6, "IPv6 longest match lookup");
+  box.check(lookup.find(endpoint.ip6p)->ctx == context.ip6p, "IPv6 longest match lookup w/ port");
 
-  box.check(lookup.insert(context.ip4, endpoint.ip4), "insert IPv4 address");
-  box.check(lookup.findInfoInHash(endpoint.ip4) == context.ip4, "IPv4 exact match lookup");
-  box.check(lookup.findInfoInHash(endpoint.ip4p) == context.ip4, "IPv4 exact match lookup w/ port");
+  box.check(lookup.insert(endpoint.ip4, ip4_cc) >= 0, "insert IPv4 address");
+  box.check(lookup.find(endpoint.ip4)->ctx == context.ip4, "IPv4 exact match lookup");
+  box.check(lookup.find(endpoint.ip4p)->ctx == context.ip4, "IPv4 exact match lookup w/ port");
 
-  box.check(lookup.insert(context.ip4p, endpoint.ip4p), "insert IPv4 address w/ port");
-  box.check(lookup.findInfoInHash(endpoint.ip4) == context.ip4, "IPv4 longest match lookup");
-  box.check(lookup.findInfoInHash(endpoint.ip4p) == context.ip4p, "IPv4 longest match lookup w/ port");
+  box.check(lookup.insert(endpoint.ip4p, ip4p_cc) >= 0, "insert IPv4 address w/ port");
+  box.check(lookup.find(endpoint.ip4)->ctx == context.ip4, "IPv4 longest match lookup");
+  box.check(lookup.find(endpoint.ip4p)->ctx == context.ip4p, "IPv4 longest match lookup w/ port");
 }
 
 static unsigned
@@ -145,6 +154,7 @@ load_hostnames_csv(const char * fname, SSLCertLookup& lookup)
   // if we don't need a new context every time.
 
   SSL_CTX * ctx = SSL_CTX_new(SSLv23_server_method());
+  SSLCertContext ctx_cc(ctx);
 
   // The input should have 2 comma-separated fields; this is the format that you get when
   // you download the top 1M sites from alexa.
@@ -168,10 +178,10 @@ load_hostnames_csv(const char * fname, SSLCertLookup& lookup)
     pos = line.find_first_of(',');
     if (pos != std::string::npos) {
       std::string host(line.substr(pos + 1));
-      lookup.insert(ctx, host.c_str());
+      lookup.insert(host.c_str(), ctx_cc);
     } else {
       // No comma? Assume the whole line is the hostname
-      lookup.insert(ctx, line.c_str());
+      lookup.insert(line.c_str(), ctx_cc);
     }
 
     ++count;
