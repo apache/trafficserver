@@ -1175,11 +1175,15 @@ SSLNetVConnection::reenable(NetHandler* nh) {
 
 bool
 SSLNetVConnection::sslContextSet(void* ctx) {
+#if TS_USE_TLS_SNI
   bool zret = true;
   if (ssl)
     SSL_set_SSL_CTX(ssl, static_cast<SSL_CTX*>(ctx));
   else
     zret = false;
+#else
+  bool zret = false;
+#endif
   return zret;
 }
 

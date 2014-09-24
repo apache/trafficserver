@@ -117,7 +117,9 @@ struct ssl_ticket_key_t
   unsigned char aes_key[16];
 };
 
+#if HAVE_OPENSSL_SESSION_TICKETS
 static int ssl_session_ticket_index = -1;
+#endif
 static pthread_mutex_t *mutex_buf = NULL;
 static bool open_ssl_initialized = false;
 
@@ -285,10 +287,8 @@ ssl_context_enable_sni(SSL_CTX * ctx, SSLCertLookup * /*lookup*/)
     // lookup data structure safely
     //SSL_CTX_set_tlsext_servername_arg(ctx, lookup);
   }
-#else
-  (void)lookup;
-#endif /* TS_USE_TLS_SNI */
 
+#endif /* TS_USE_TLS_SNI */
   return ctx;
 }
 
