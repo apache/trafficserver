@@ -447,7 +447,7 @@ ink_file_get_geometry(int fd ATS_UNUSED, ink_device_geometry& geometry)
 
 #if defined(DIOCGSECTORSIZE)
   if (ioctl(fd, DIOCGSECTORSIZE, &arg.u32) == 0) {
-    geometry.blocksz = sector_size;
+    geometry.blocksz = arg.u32;
   }
 #endif
 
