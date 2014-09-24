@@ -98,7 +98,7 @@ extern RecRawStatBlock *ssl_rsb;
   do { \
     RecSetRawStatSum(ssl_rsb, (x), 0); \
     RecSetRawStatCount(ssl_rsb, (x), 0); \
-  } while (0);
+  } while (0)
 
 // Create a default SSL server context.
 SSL_CTX * SSLDefaultServerContext();
@@ -116,8 +116,8 @@ void SSLInitializeStatistics();
 void SSLReleaseContext(SSL_CTX* ctx);
 
 // Wrapper functions to SSL I/O routines
-ssl_error_t SSLWriteBuffer(SSL * ssl, const void * buf, size_t nbytes, size_t& nwritten);
-ssl_error_t SSLReadBuffer(SSL * ssl, void * buf, size_t nbytes, size_t& nread);
+ssl_error_t SSLWriteBuffer(SSL * ssl, const void * buf, int64_t nbytes, int64_t& nwritten);
+ssl_error_t SSLReadBuffer(SSL * ssl, void * buf, int64_t nbytes, int64_t& nread);
 ssl_error_t SSLAccept(SSL *ssl);
 ssl_error_t SSLConnect(SSL * ssl);
 
@@ -129,8 +129,10 @@ ssl_error_t SSLConnect(SSL * ssl);
 #define SSLDebugVC(vc,fmt, ...) SSLDiagnostic(DiagsMakeLocation(), true, vc, fmt, ##__VA_ARGS__)
 
 #define SSL_CLR_ERR_INCR_DYN_STAT(x, fmt, ...) \
-  SSLDiagnostic(DiagsMakeLocation(), true, NULL, fmt, ##__VA_ARGS__); \
-  RecIncrRawStat(ssl_rsb, NULL, (int) x, 1);
+  do { \
+    SSLDiagnostic(DiagsMakeLocation(), true, NULL, fmt, ##__VA_ARGS__); \
+    RecIncrRawStat(ssl_rsb, NULL, (int) x, 1); \
+  } while (0)
 
 void SSLDiagnostic(const SrcLoc& loc, bool debug, SSLNetVConnection * vc, const char * fmt, ...) TS_PRINTFLIKE(4, 5);
 

@@ -1663,7 +1663,7 @@ SSLReleaseContext(SSL_CTX * ctx)
 
 
 ssl_error_t
-SSLWriteBuffer(SSL * ssl, const void * buf, size_t nbytes, size_t& nwritten)
+SSLWriteBuffer(SSL * ssl, const void * buf, int64_t nbytes, int64_t& nwritten)
 {
   nwritten = 0;
 
@@ -1681,7 +1681,7 @@ SSLWriteBuffer(SSL * ssl, const void * buf, size_t nbytes, size_t& nwritten)
 }
 
 ssl_error_t
-SSLReadBuffer(SSL * ssl, void * buf, size_t nbytes, size_t& nread)
+SSLReadBuffer(SSL * ssl, void * buf, int64_t nbytes, int64_t& nread)
 {
   nread = 0;
 

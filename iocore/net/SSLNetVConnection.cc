@@ -182,7 +182,7 @@ ssl_read_from_net(SSLNetVConnection * sslvc, EThread * lthread, int64_t &ret)
   int64_t bytes_read;
   int64_t block_write_avail;
   ssl_error_t sslErr = SSL_ERROR_NONE;
-  int nread = 0;
+  int64_t nread = 0;
 
   for (bytes_read = 0; (b != 0) && (sslErr == SSL_ERROR_NONE); b = b->next) {
     block_write_avail = b->write_avail();
@@ -192,7 +192,7 @@ ssl_read_from_net(SSLNetVConnection * sslvc, EThread * lthread, int64_t &ret)
     int64_t offset = 0;
     // while can be replaced with if - need to test what works faster with openssl
     while (block_write_avail > 0) {
-      sslErr = SSLReadBuffer (sslvc->ssl, b->end() + offset, (size_t)block_write_avail, (size_t&)nread);
+      sslErr = SSLReadBuffer (sslvc->ssl, b->end() + offset, block_write_avail, nread);
 
       Debug("ssl", "[SSL_NetVConnection::ssl_read_from_net] nread=%d", (int)nread);
 
@@ -659,7 +659,7 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, i
     total_wrote += l;
     Debug("ssl", "SSLNetVConnection::loadBufferAndCallWrite, before SSLWriteBuffer, l=%" PRId64", towrite=%" PRId64", b=%p",
           l, towrite, b);
-    err = SSLWriteBuffer(ssl, b->start() + offset, (size_t)l, (size_t&)r);
+    err = SSLWriteBuffer(ssl, b->start() + offset, l, r);
     if (r == l) {
       wattempted = total_wrote;
     }
