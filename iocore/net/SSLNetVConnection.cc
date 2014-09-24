@@ -172,24 +172,6 @@ debug_certificate_name(const char * msg, X509_NAME * name)
   BIO_free(bio);
 }
 
-static inline int
-do_SSL_write(SSL * ssl, void *buf, int size)
-{
-  int r = 0;
-  do {
-    // need to check into SSL error handling
-    // to see if this is good enough.
-    r = SSL_write(ssl, (const char *) buf, size);
-    if (r >= 0)
-      return r;
-    else
-      r = -errno;
-  } while (r == -EINTR || r == -ENOBUFS || r == -ENOMEM);
-
-  return r;
-}
-
-
 static int
 ssl_read_from_net(SSLNetVConnection * sslvc, EThread * lthread, int64_t &ret)
 {
@@ -199,7 +181,8 @@ ssl_read_from_net(SSLNetVConnection * sslvc, EThread * lthread, int64_t &ret)
   int event = SSL_READ_ERROR_NONE;
   int64_t bytes_read;
   int64_t block_write_avail;
-  int sslErr = SSL_ERROR_NONE;
+  ssl_error_t sslErr = SSL_ERROR_NONE;
+  int nread = 0;
 
   for (bytes_read = 0; (b != 0) && (sslErr == SSL_ERROR_NONE); b = b->next) {
     block_write_avail = b->write_avail();
@@ -209,23 +192,22 @@ ssl_read_from_net(SSLNetVConnection * sslvc, EThread * lthread, int64_t &ret)
     int64_t offset = 0;
     // while can be replaced with if - need to test what works faster with openssl
     while (block_write_avail > 0) {
-      int rres = SSL_read(sslvc->ssl, b->end() + offset, (int)block_write_avail);
+      sslErr = SSLReadBuffer (sslvc->ssl, b->end() + offset, (size_t)block_write_avail, (size_t&)nread);
 
-      Debug("ssl", "[SSL_NetVConnection::ssl_read_from_net] rres=%d", rres);
+      Debug("ssl", "[SSL_NetVConnection::ssl_read_from_net] nread=%d", (int)nread);
 
-      sslErr = SSL_get_error(sslvc->ssl, rres);
       switch (sslErr) {
       case SSL_ERROR_NONE:
 
 #if DEBUG
-        SSLDebugBufferPrint("ssl_buff", b->end() + offset, rres, "SSL Read");
+        SSLDebugBufferPrint("ssl_buff", b->end() + offset, nread, "SSL Read");
 #endif
 
-        ink_assert(rres);
+        ink_assert(nread);
 
-        bytes_read += rres;
-        offset += rres;
-        block_write_avail -= rres;
+        bytes_read += nread;
+        offset += nread;
+        block_write_avail -= nread;
         ink_assert(block_write_avail >= 0);
 
         continue;
@@ -247,7 +229,7 @@ ssl_read_from_net(SSLNetVConnection * sslvc, EThread * lthread, int64_t &ret)
         break;
       case SSL_ERROR_SYSCALL:
         SSL_INCREMENT_DYN_STAT(ssl_error_syscall);
-        if (rres != 0) {
+        if (nread != 0) {
           // not EOF
           event = SSL_READ_ERROR;
           ret = errno;
@@ -267,8 +249,7 @@ ssl_read_from_net(SSLNetVConnection * sslvc, EThread * lthread, int64_t &ret)
       default:
         event = SSL_READ_ERROR;
         ret = errno;
-        SSL_INCREMENT_DYN_STAT(ssl_error_ssl);
-        Debug("ssl.error", "[SSL_NetVConnection::ssl_read_from_net]");
+        SSL_CLR_ERR_INCR_DYN_STAT(ssl_error_ssl, "[SSL_NetVConnection::ssl_read_from_net]: errno=%d", errno);
         break;
       }                         // switch
       break;
@@ -636,6 +617,7 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, i
   ProxyMutex *mutex = this_ethread()->mutex;
   int64_t r = 0;
   int64_t l = 0;
+  ssl_error_t err = SSL_ERROR_NONE;
 
   // XXX Rather than dealing with the block directly, we should use the IOBufferReader API.
   int64_t offset = buf.reader()->start_offset;
@@ -675,9 +657,9 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, i
 
     wattempted = l;
     total_wrote += l;
-    Debug("ssl", "SSLNetVConnection::loadBufferAndCallWrite, before do_SSL_write, l=%" PRId64", towrite=%" PRId64", b=%p",
+    Debug("ssl", "SSLNetVConnection::loadBufferAndCallWrite, before SSLWriteBuffer, l=%" PRId64", towrite=%" PRId64", b=%p",
           l, towrite, b);
-    r = do_SSL_write(ssl, b->start() + offset, (int)l);
+    err = SSLWriteBuffer(ssl, b->start() + offset, (size_t)l, (size_t&)r);
     if (r == l) {
       wattempted = total_wrote;
     }
@@ -704,8 +686,6 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, i
       return (total_wrote);
     }
   } else {
-    int err = SSL_get_error(ssl, (int)r);
-
     switch (err) {
     case SSL_ERROR_NONE:
       Debug("ssl", "SSL_write-SSL_ERROR_NONE");
@@ -742,8 +722,7 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, i
     case SSL_ERROR_SSL:
     default:
       r = -errno;
-      SSL_INCREMENT_DYN_STAT(ssl_error_ssl);
-      Debug("ssl.error", "SSL_write-SSL_ERROR_SSL");
+      SSL_CLR_ERR_INCR_DYN_STAT(ssl_error_ssl, "SSL_write-SSL_ERROR_SSL errno=%d", errno);
       break;
     }
     return (r);
@@ -880,8 +859,6 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
 int
 SSLNetVConnection::sslServerHandShakeEvent(int &err)
 {
-  int ret;
-
   if (SSL_HOOKS_DONE != sslPreAcceptHookState) {
     // Get the first hook if we haven't started invoking yet.
     if (SSL_HOOKS_INIT == sslPreAcceptHookState) {
@@ -939,8 +916,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
     }
   }
 
-  ret = SSL_accept(ssl);
-  int ssl_error = SSL_get_error(ssl, ret);
+  ssl_error_t ssl_error = SSLAccept(ssl);
 
   if (ssl_error != SSL_ERROR_NONE) {
     err = errno;
@@ -1039,9 +1015,11 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
   case SSL_ERROR_WANT_X509_LOOKUP:
     return EVENT_CONT;
 
+  case SSL_ERROR_SSL:
+    SSL_CLR_ERR_INCR_DYN_STAT(ssl_error_ssl, "SSLNetVConnection::sslServerHandShakeEvent, SSL_ERROR_SSL errno=%d", errno);
+    // fall through
   case SSL_ERROR_ZERO_RETURN:
   case SSL_ERROR_SYSCALL:
-  case SSL_ERROR_SSL:
   default:
     return EVENT_ERROR;
   }
@@ -1052,8 +1030,6 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
 int
 SSLNetVConnection::sslClientHandShakeEvent(int &err)
 {
-  int ret;
-
 #if TS_USE_TLS_SNI
   if (options.sni_servername) {
     if (SSL_set_tlsext_host_name(ssl, options.sni_servername)) {
@@ -1065,8 +1041,8 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
   }
 #endif
   
-  ret = SSL_connect(ssl);
-  switch (SSL_get_error(ssl, ret)) {
+  ssl_error_t ssl_error = SSLConnect(ssl);
+  switch (ssl_error) {
   case SSL_ERROR_NONE:
     if (is_debug_tag_set("ssl")) {
       X509 * cert = SSL_get_peer_certificate(ssl);
@@ -1122,8 +1098,7 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
   case SSL_ERROR_SSL:
   default:
     err = errno;
-    SSL_INCREMENT_DYN_STAT(ssl_error_ssl);
-    Debug("ssl.error", "SSLNetVConnection::sslClientHandShakeEvent, SSL_ERROR_SSL");
+    SSL_CLR_ERR_INCR_DYN_STAT(ssl_error_ssl, "SSLNetVConnection::sslClientHandShakeEvent, SSL_ERROR_SSL errno=%d", errno);
     return EVENT_ERROR;
     break;
 

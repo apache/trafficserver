@@ -1660,3 +1660,62 @@ SSLReleaseContext(SSL_CTX * ctx)
 {
   SSL_CTX_free(ctx);
 }
+
+
+ssl_error_t
+SSLWriteBuffer(SSL * ssl, const void * buf, size_t nbytes, size_t& nwritten)
+{
+  nwritten = 0;
+
+  if (unlikely(nbytes == 0)) {
+    return SSL_ERROR_NONE;
+  }
+
+  int ret = SSL_write(ssl, buf, (int)nbytes);
+  if (ret > 0) {
+    nwritten = ret;
+    return SSL_ERROR_NONE;
+  }
+
+  return SSL_get_error(ssl, ret);
+}
+
+ssl_error_t
+SSLReadBuffer(SSL * ssl, void * buf, size_t nbytes, size_t& nread)
+{
+  nread = 0;
+
+  if (unlikely(nbytes == 0)) {
+    return SSL_ERROR_NONE;
+  }
+
+  int ret = SSL_read(ssl, buf, (int)nbytes);
+  if (ret > 0) {
+    nread = ret;
+    return SSL_ERROR_NONE;
+  }
+
+  return SSL_get_error(ssl, ret);
+}
+
+ssl_error_t
+SSLAccept(SSL * ssl)
+{
+  int ret = SSL_accept(ssl);
+  if (ret > 0) {
+    return SSL_ERROR_NONE;
+  }
+
+  return SSL_get_error(ssl, ret);
+}
+
+ssl_error_t
+SSLConnect(SSL * ssl)
+{
+  int ret = SSL_connect(ssl);
+  if (ret > 0) {
+    return SSL_ERROR_NONE;
+  }
+
+  return SSL_get_error(ssl, ret);
+}

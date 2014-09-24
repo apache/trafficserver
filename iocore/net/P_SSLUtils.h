@@ -38,6 +38,8 @@ struct SSLCertLookup;
 class SSLNetVConnection;
 struct RecRawStatBlock;
 
+typedef int ssl_error_t;
+
 enum SSL_Stats
 {
   ssl_origin_server_expired_cert_stat,
@@ -113,12 +115,22 @@ void SSLInitializeStatistics();
 // Release SSL_CTX and the associated data
 void SSLReleaseContext(SSL_CTX* ctx);
 
+// Wrapper functions to SSL I/O routines
+ssl_error_t SSLWriteBuffer(SSL * ssl, const void * buf, size_t nbytes, size_t& nwritten);
+ssl_error_t SSLReadBuffer(SSL * ssl, void * buf, size_t nbytes, size_t& nread);
+ssl_error_t SSLAccept(SSL *ssl);
+ssl_error_t SSLConnect(SSL * ssl);
+
 // Log an SSL error.
 #define SSLError(fmt, ...) SSLDiagnostic(DiagsMakeLocation(), false, NULL, fmt, ##__VA_ARGS__)
 #define SSLErrorVC(vc,fmt, ...) SSLDiagnostic(DiagsMakeLocation(), false, vc, fmt, ##__VA_ARGS__)
 // Log a SSL diagnostic using the "ssl" diagnostic tag.
 #define SSLDebug(fmt, ...) SSLDiagnostic(DiagsMakeLocation(), true, NULL, fmt, ##__VA_ARGS__)
 #define SSLDebugVC(vc,fmt, ...) SSLDiagnostic(DiagsMakeLocation(), true, vc, fmt, ##__VA_ARGS__)
+
+#define SSL_CLR_ERR_INCR_DYN_STAT(x, fmt, ...) \
+  SSLDiagnostic(DiagsMakeLocation(), true, NULL, fmt, ##__VA_ARGS__); \
+  RecIncrRawStat(ssl_rsb, NULL, (int) x, 1);
 
 void SSLDiagnostic(const SrcLoc& loc, bool debug, SSLNetVConnection * vc, const char * fmt, ...) TS_PRINTFLIKE(4, 5);
 
