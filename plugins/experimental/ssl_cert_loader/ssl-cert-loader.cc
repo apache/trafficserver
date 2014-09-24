@@ -174,8 +174,7 @@ Load_Configuration() {
 
 SSL_CTX *
 Load_Certificate(SslEntry const *entry, std::deque<std::string> &names) {
-  const SSL_METHOD *meth = SSLv23_client_method();
-  SSL_CTX *retval = SSL_CTX_new(meth);
+  SSL_CTX *retval = SSL_CTX_new(SSLv23_client_method());
   X509* cert = NULL;
   if (entry->certFileName.length() > 0) {
     // Must load the cert file to fetch the names out later
