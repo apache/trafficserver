@@ -783,17 +783,12 @@ AS_IF([test -n "$LEX"],
       ]
 )
 
-AS_IF([test "x$enable_wccp" = "xyes"],
-  [
-    AS_IF([test -z "$LEX"  ],
-       AC_MSG_ERROR([Need flex version $FLEX_MAJOR.$FLEX_MINOR.$FLEX_POINT or better to enable WCCP (found $flex_version_check)])
-    )
+AS_IF([test -z "$LEX"  ],
+    AC_MSG_ERROR([Need flex version $FLEX_MAJOR.$FLEX_MINOR.$FLEX_POINT or better to enable WCCP (found $flex_version_check)])
+)
 
-    AS_IF([test -z "$YACC" ],
-        AC_MSG_ERROR([Need bison version $BISON_MAJOR.$BISON_MINOR.$BISON_POINT or better to enable WCCP (found $bison_version_check)])
-    )
-
-  ]
+AS_IF([test -z "$YACC" ],
+    AC_MSG_ERROR([Need bison version $BISON_MAJOR.$BISON_MINOR.$BISON_POINT or better to enable WCCP (found $bison_version_check)])
 )
 
 # Check for Perl and Doxygen

@@ -8,7 +8,6 @@
 # include <inttypes.h>
 # include <ts/ts.h>
 # include <tsconfig/TsValue.h>
-# include <alloca.h>
 # include <openssl/ssl.h>
 # include <openssl/x509.h>
 # include <openssl/x509v3.h>
