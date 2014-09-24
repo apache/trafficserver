@@ -4383,11 +4383,11 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State* s)
           resp->set_expires(exp_time);
         }
       } else if (is_request_conditional(&s->hdr_info.client_request) && server_response_code == HTTP_STATUS_OK) {
-        DebugTxn("http_trans", "[hcoofsr] conditional request, 200 " "response, send back 304 if possible");
         client_response_code =
           HttpTransactCache::match_response_to_request_conditionals(&s->hdr_info.client_request,
                                                                     &s->hdr_info.server_response);
 
+        DebugTxn("http_trans", "[hcoofsr] conditional request, 200 " "response, send back 304 if possible [crc=%d]", client_response_code);
         if ((client_response_code == HTTP_STATUS_NOT_MODIFIED) || (client_response_code == HTTP_STATUS_PRECONDITION_FAILED)) {
           switch (s->cache_info.action) {
           case CACHE_DO_WRITE:
