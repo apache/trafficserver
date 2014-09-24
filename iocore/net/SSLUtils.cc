@@ -285,10 +285,8 @@ ssl_context_enable_sni(SSL_CTX * ctx, SSLCertLookup * /*lookup*/)
     // lookup data structure safely
     //SSL_CTX_set_tlsext_servername_arg(ctx, lookup);
   }
-#else
-  (void)lookup;
-#endif /* TS_USE_TLS_SNI */
 
+#endif /* TS_USE_TLS_SNI */
   return ctx;
 }
 
