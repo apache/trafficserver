@@ -783,13 +783,9 @@ AS_IF([test -n "$LEX"],
       ]
 )
 
-AS_IF([test -z "$LEX"  ],
-    AC_MSG_ERROR([Need flex version $FLEX_MAJOR.$FLEX_MINOR.$FLEX_POINT or better to enable WCCP (found $flex_version_check)])
-)
-
-AS_IF([test -z "$YACC" ],
-    AC_MSG_ERROR([Need bison version $BISON_MAJOR.$BISON_MINOR.$BISON_POINT or better to enable WCCP (found $bison_version_check)])
-)
+# Generated files checked in, only build them if the local OS has the necessary support.
+# Otherwise just use the checked in version.
+AM_CONDITIONAL([BUILD_TSCONFIG_GRAMMAR], [ test -n "$LEX" && test -n "$YACC" ])
 
 # Check for Perl and Doxygen
 AC_PATH_PROG([DOXYGEN], [doxygen]) # needed for Doxygen

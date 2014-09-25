@@ -27,8 +27,7 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/lib 
 
 BUILT_SOURCES = \
-  TsConfigGrammar.c TsConfigGrammar.h TsConfigGrammar.hpp \
-  TsConfigSyntax.c 
+  TsConfigGrammar.hpp
 
 CLEANFILES = $(BUILT_SOURCES)
 
@@ -39,15 +38,21 @@ libtsconfig_la_SOURCES = \
   NumericType.h \
   TsBuilder.cc \
   TsBuilder.h \
-  TsConfigGrammar.y \
+  TsConfigGrammar.hpp \
   TsConfigLexer.h \
   TsConfigParseEvents.h \
-  TsConfigSyntax.l \
   TsConfigTypes.h \
   TsErrataUtil.cc \
   TsErrataUtil.h \
   TsValue.cc \
   TsValue.h
+
+# Depend on the original grammar files only if we can build them.
+if BUILD_TSCONFIG_GRAMMAR
+  libtsconfig_la_SOURCES += TsConfigGrammar.y TsConfigSyntax.l
+else
+  libtsconfig_la_SOURCES += TsConfigGrammar.c TsConfigGrammar.h TsConfigSyntax.c
+endif
 
 test_tsconfig_SOURCES = test-tsconfig.cc
 
