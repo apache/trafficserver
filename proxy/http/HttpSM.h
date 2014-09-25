@@ -532,6 +532,16 @@ public:
 
 public:
   bool set_server_session_private(bool private_session);
+
+#ifdef HAVE_RTT
+public:
+  unsigned client_rtt;
+  unsigned server_rtt;
+
+protected:
+  void setup_client_rtt(HttpClientSession * cs);
+  void setup_server_rtt(HttpServerSession * cs);
+#endif  
 };
 
 //Function to get the cache_sm object - YTS Team, yamsat

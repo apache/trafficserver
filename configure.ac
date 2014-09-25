@@ -397,6 +397,16 @@ AC_SUBST(has_spdy)
 AM_CONDITIONAL([BUILD_SPDY], [test 0 -ne $has_spdy])
 
 #
+# Options for TCP Info
+#
+AC_MSG_CHECKING([whether to enable Round Trip Time info])
+AC_ARG_ENABLE([rtt],
+[AS_HELP_STRING([--enable-rtt], [turn on Round Trip Time (RTT) info gathering])],
+[],
+[enable_rtt="no"])
+AC_MSG_RESULT([$enable_rtt])
+
+#
 # Configure how many stats to allocate for plugins. Default is 512.
 #
 AC_ARG_WITH([max-api-stats],
@@ -1806,6 +1816,14 @@ AC_CHECK_TYPE([struct tcp_info],
    #include <netinet/tcp.h>
   ]]
 )
+
+# Check if TCP info is enabled for this platform.
+if test x"${enable_rtt}" = xyes; then
+  if test x"${have_struct_tcp_info}" = xno; then
+    AC_MSG_ERROR([TCP Info is not available for this platform. Cannot activate RTT support.])
+  fi
+  AC_DEFINE(HAVE_RTT, 1, [whether round trip time is enabled])
+fi
 
 # See if we can build the remap_stats plugin
 AS_IF([test "x$enable_experimental_plugins" = xyes],
