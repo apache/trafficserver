@@ -6,7 +6,6 @@
 # include <stdio.h>
 # include <memory.h>
 # include <inttypes.h>
-# include <alloca.h>
 # include "domain-tree.h"
 
 // return true if comparable.  Return type of compare in relative parameter
