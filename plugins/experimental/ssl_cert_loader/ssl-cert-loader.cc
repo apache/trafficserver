@@ -548,4 +548,3 @@ TSPluginInit(int, const char *[]) {
 }
 
 # endif // TS_USE_TLS_SNI
-
