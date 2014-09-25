@@ -267,6 +267,20 @@ public:
 
   bool computeSSLTrace();
 
+  const char * getSSLProtocol(void) const
+  {
+    if ( ssl == NULL )
+      return NULL;
+    return SSL_get_version(ssl);
+  };
+
+  const char * getSSLCipherSuite(void) const
+  {
+    if ( ssl == NULL )
+      return NULL;
+    return SSL_get_cipher_name(ssl);    
+  }
+
 private:
   SSLNetVConnection(const SSLNetVConnection &);
   SSLNetVConnection &operator=(const SSLNetVConnection &);
