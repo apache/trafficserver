@@ -195,7 +195,7 @@ ssl_servername_callback(SSL * ssl, int * ad, void * /*arg*/)
 
   Debug("ssl", "ssl_servername_callback ssl=%p ad=%d server=%s handshake_complete=%d", ssl, *ad, servername,
     netvc->getSSLHandShakeComplete());
-  
+
   if (servername != NULL) {
     strncpy(netvc->sniServername, servername, TS_MAX_HOST_NAME_LEN);
   }
@@ -218,7 +218,7 @@ ssl_servername_callback(SSL * ssl, int * ad, void * /*arg*/)
       netvc->attributes = HttpProxyPort::TRANSPORT_BLIND_TUNNEL;
       netvc->setSSLHandShakeComplete(true);
       retval = SSL_TLSEXT_ERR_READ_AGAIN;
-#else 
+#else
       Error("Must have openssl patch to support OPT_TUNNEL from SNI callback");
       retval = SSL_TLSEXT_ERR_ALERT_FATAL;
 #endif
@@ -253,12 +253,12 @@ ssl_servername_callback(SSL * ssl, int * ad, void * /*arg*/)
 
   // Call the plugin SNI code
   reenabled = netvc->callHooks(TS_SSL_SNI_HOOK);
-  // If it did not re-enable, return the code to 
+  // If it did not re-enable, return the code to
   // stop the accept processing
   if (!reenabled){
 #ifdef SSL_TLSEXT_ERR_READ_AGAIN
     retval = SSL_TLSEXT_ERR_READ_AGAIN;
-#else 
+#else
     Error("Must have openssl patch to support OPT_TUNNEL from SNI callback");
     retval = SSL_TLSEXT_ERR_ALERT_FATAL;
 #endif
@@ -695,7 +695,6 @@ SSLInitializeStatistics()
                      RECD_INT, RECP_PERSISTENT, (int) ssl_total_tickets_renewed_stat,
                      RecRawStatSyncCount);
 
-
   /* error stats */
   RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_error_want_write",
                      RECD_INT, RECP_PERSISTENT, (int) ssl_error_want_write,
@@ -721,7 +720,6 @@ SSLInitializeStatistics()
   RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_sni_name_set_failure",
                        RECD_INT, RECP_PERSISTENT, (int) ssl_sni_name_set_failure,
                        RecRawStatSyncCount);
-
 
   // Get and register the SSL cipher stats. Note that we are using the default SSL context to obtain
   // the cipher list. This means that the set of ciphers is fixed by the build configuration and not
@@ -1660,7 +1658,6 @@ SSLReleaseContext(SSL_CTX * ctx)
 {
   SSL_CTX_free(ctx);
 }
-
 
 ssl_error_t
 SSLWriteBuffer(SSL * ssl, const void * buf, int64_t nbytes, int64_t& nwritten)
