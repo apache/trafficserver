@@ -151,7 +151,8 @@ In all cases, Traffic Server attempts to select the most specific
 match. An address specification that contains a port number will
 take precedence over a specification that does not contain a port
 number. A specific certificate subject will take precedence over a
-wildcard certificate.
+wildcard certificate. In the case of multiple matching certificates
+the first match will be returned to non-SNI capable clients.
 
 Examples
 ========
