@@ -11,7 +11,6 @@
 # include <inttypes.h>
 # include <ts/ts.h>
 # include <tsconfig/TsValue.h>
-# include <alloca.h>
 # include <ts/ink_inet.h>
 
 using ts::config::Configuration;

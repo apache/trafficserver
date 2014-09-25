@@ -912,7 +912,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
     // raw handshake data before calling the ssl accept calls.
     int64_t data_read;
     if ((data_read = this->read_raw_data()) > 0) {
-      data_to_read = BIO_get_mem_data(SSL_get_rbio(this->ssl), &data_ptr);
+      BIO_get_mem_data(SSL_get_rbio(this->ssl), &data_ptr);
     }
   }
 

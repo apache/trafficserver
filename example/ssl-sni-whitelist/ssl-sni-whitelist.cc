@@ -8,8 +8,8 @@
 # include <memory.h>
 # include <inttypes.h>
 # include <ts/ts.h>
+# include <ink_config.h>
 # include <tsconfig/TsValue.h>
-# include <alloca.h>
 # include <openssl/ssl.h>
 
 using ts::config::Configuration;
@@ -17,6 +17,8 @@ using ts::config::Value;
 
 # define PN "ssl-sni-whitelist"
 # define PCP "[" PN " Plugin] "
+
+# if TS_USE_TLS_SNI
 
 namespace {
 
@@ -139,3 +141,11 @@ TSPluginInit(int argc, const char *argv[]) {
   return;
 }
 
+# else // ! TS_USE_TLS_SNI
+
+void
+TSPluginInit(int, const char *[]) {
+    TSError(PCP "requires TLS SNI which is not available.");
+}
+
+# endif // TS_USE_TLS_SNI
