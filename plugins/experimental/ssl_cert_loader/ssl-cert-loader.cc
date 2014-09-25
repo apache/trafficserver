@@ -7,7 +7,7 @@
 # include <memory.h>
 # include <inttypes.h>
 # include <ts/ts.h>
-# include <ts/ink_config.h>
+# include <ink_config.h>
 # include <tsconfig/TsValue.h>
 # include <openssl/ssl.h>
 # include <openssl/x509.h>
