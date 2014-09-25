@@ -546,6 +546,12 @@ LogAccess::marshal_http_header_field_escapify(LogField::Container /* container A
   DEFAULT_STR_FIELD;
 }
 
+int
+LogAccess::marshal_proxy_host_port(char *buf)
+{
+  DEFAULT_INT_FIELD;
+}
+
 /*-------------------------------------------------------------------------
 
   The following functions have a non-virtual base-class implementation.
