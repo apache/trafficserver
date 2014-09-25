@@ -293,19 +293,19 @@ SSLContextStorage::insert(const char* name, int idx)
       // We fail to insert, so the longest wildcard match search should return the full match value.
       found = this->wildcards.Search(reversed);
       // Fail even if we are reinserting the exact same value
-      // Otherwise we cannot detect and recover from a doupble insert
+      // Otherwise we cannot detect and recover from a double insert
       // into the references array
-      //if (found != NULL && found->idx != idx) {
       if (found != NULL) {
         Warning("previously indexed wildcard certificate for '%s' as '%s', cannot index it with SSL_CTX #%d now",
             name, reversed, idx);
       }
       idx = -1;
+    } else {
+      ref.release(); // it's the hands of the Trie now, forget it and move on.
     }
 
     Debug("ssl", "%s wildcard certificate for '%s' as '%s' with SSL_CTX %p [%d]",
       idx >= 0 ? "index" : "failed to index", name, reversed, this->ctx_store[(*ref).idx].ctx, (*ref).idx);
-    ref.release();
   } else {
     InkHashTableValue value;
 
