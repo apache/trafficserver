@@ -235,6 +235,26 @@ LogAccess::marshal_client_finish_status_code(char *buf)
 }
 
 /*-------------------------------------------------------------------------
+-------------------------------------------------------------------------*/
+int
+LogAccess::marshal_client_security_protocol(char *buf)
+{
+  DEFAULT_STR_FIELD;
+}
+
+int
+LogAccess::marshal_client_security_cipher_suite(char *buf)
+{
+  DEFAULT_STR_FIELD;
+}
+
+int
+LogAccess::marshal_client_security_session_reused(char *buf)
+{
+  DEFAULT_STR_FIELD;
+}
+
+/*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
 int

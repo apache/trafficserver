@@ -877,6 +877,27 @@ Log::init_fields()
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "etype", field);
 
+  field = new LogField("client_sec_protocol", "csp",
+                       LogField::STRING,
+                       &LogAccess::marshal_client_security_protocol,
+                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str);
+  global_field_list.add(field, false);
+  ink_hash_table_insert(field_symbol_hash, "csp", field);
+
+  field = new LogField("client_sec_cipher_suite", "csc",
+                       LogField::STRING,
+                       &LogAccess::marshal_client_security_cipher_suite,
+                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str);
+  global_field_list.add(field, false);
+  ink_hash_table_insert(field_symbol_hash, "csc", field);
+
+  field = new LogField("client_sec_session_reused", "cssr",
+                       LogField::STRING,
+                       &LogAccess::marshal_client_security_session_reused,
+                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str);
+  global_field_list.add(field, false);
+  ink_hash_table_insert(field_symbol_hash, "cssr", field);
+
   init_status |= FIELDS_INITIALIZED;
 }
 

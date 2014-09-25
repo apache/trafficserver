@@ -327,7 +327,8 @@ HttpSM::HttpSM()
     pushed_response_hdr_bytes(0), pushed_response_body_bytes(0),
     plugin_tag(0), plugin_id(0),
     hooks_set(false), cur_hook_id(TS_HTTP_LAST_HOOK), cur_hook(NULL),
-    cur_hooks(0), callout_state(HTTP_API_NO_CALLOUT), terminate_sm(false), kill_this_async_done(false)
+    cur_hooks(0), callout_state(HTTP_API_NO_CALLOUT), terminate_sm(false), kill_this_async_done(false),
+    sec_protocol("-"), sec_cipher_suite("-"), sec_session_reused(false)
 {
   static int scatter_init = 0;
 
@@ -428,7 +429,6 @@ HttpSM::init()
   debug_sm_list.push(this, this->debug_link);
   ink_mutex_release(&debug_sm_list_mutex);
 #endif
-
 }
 
 void
@@ -588,6 +588,8 @@ HttpSM::attach_client_session(HttpClientSession * client_vc, IOBufferReader * bu
     --reentrancy_count;
     ink_assert(reentrancy_count >= 0);
   }
+
+  setup_security_properties();
 }
 
 
@@ -7672,4 +7674,37 @@ HttpSM::is_redirect_required()
     }
   }
   return redirect_required;
+}
+
+inline void
+HttpSM::setup_security_properties(void)
+{
+  ink_assert(ua_session != NULL);
+
+  SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(ua_session->get_netvc());
+
+  if (ssl_vc != NULL) {
+    sec_protocol       = ssl_vc->get_ssl_protocol();
+    sec_cipher_suite   = ssl_vc->get_ssl_cipher_suite();
+    sec_session_reused = ssl_vc->get_ssl_session_reused();
+  } 
+}
+
+const char *
+HttpSM::get_security_protocol(void)
+{
+  return sec_protocol;
+}
+
+
+const char *
+HttpSM::get_security_cipher_suite(void)
+{
+  return sec_cipher_suite;
+}
+
+bool
+HttpSM::get_security_session_reused(void)
+{
+  return sec_session_reused;
 }
