@@ -67,7 +67,6 @@ static char range_type[] = "multipart/byteranges; boundary=RANGE_SEPARATOR";
 
 extern HttpBodyFactory *body_factory;
 extern int cache_config_vary_on_user_agent;
-extern int cache_config_read_while_writer;
 
 static const char local_host_ip_str[] = "127.0.0.1";
 

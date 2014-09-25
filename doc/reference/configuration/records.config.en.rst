@@ -1091,9 +1091,9 @@ Cache Control
    here is to avoid multiple origin connections for the same cacheable object
    upon a cache miss. The possible values of this config are:
 
-   -  ``0`` = never allow
-   -  ``1`` = always allowed
-   -  ``2`` = allowed, only if the ``Range`` requested can be satisfied from cache
+   -  ``0`` = never read while writing
+   -  ``1`` = always read while writing
+   -  ``2`` = always read while writing, but allow non-cached Range requests through to the origin
 
    The ``2`` option is useful to avoid delaying requests which can not easily
    be satisfied by the partially written response.
