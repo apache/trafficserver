@@ -76,6 +76,8 @@ public:
   virtual int marshal_client_req_is_ssl(char *);             // INT
   virtual int marshal_client_req_ssl_reused(char *);         // INT
   virtual int marshal_client_finish_status_code(char *);     // INT
+  virtual int marshal_client_security_protocol(char *);      // STR
+  virtual int marshal_client_security_cipher_suite(char *);  // STR
 
   //
   // proxy -> client fields

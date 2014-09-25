@@ -274,6 +274,20 @@ LogAccess::marshal_client_req_ssl_reused(char *buf)
 }
 
 /*-------------------------------------------------------------------------
+-------------------------------------------------------------------------*/
+int
+LogAccess::marshal_client_security_protocol(char *buf)
+{
+  DEFAULT_STR_FIELD;
+}
+
+int
+LogAccess::marshal_client_security_cipher_suite(char *buf)
+{
+  DEFAULT_STR_FIELD;
+}
+
+/*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
 int
