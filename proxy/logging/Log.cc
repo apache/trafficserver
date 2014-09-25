@@ -769,6 +769,13 @@ Log::init_fields()
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "sshv", field);
 
+  field = new LogField("server_resp_time", "srt",
+                       LogField::sINT,
+                       &LogAccess::marshal_server_resp_time,
+                       &LogAccess::unmarshal_int_to_str);
+  global_field_list.add(field, false);
+  ink_hash_table_insert(field_symbol_hash, "srt", field);
+
   field = new LogField("cached_resp_status_code", "csssc",
                        LogField::sINT,
                        &LogAccess::marshal_cache_resp_status_code,

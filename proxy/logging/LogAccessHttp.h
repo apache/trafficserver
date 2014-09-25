@@ -101,6 +101,7 @@ public:
   virtual int marshal_server_resp_content_len(char *);  // INT
   virtual int marshal_server_resp_header_len(char *);   // INT
   virtual int marshal_server_resp_http_version(char *); // INT
+  virtual int marshal_server_resp_time(char *);         // INT  
 
   //
   // cache -> client fields

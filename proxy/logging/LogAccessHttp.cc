@@ -888,6 +888,20 @@ LogAccessHttp::marshal_server_resp_http_version(char *buf)
 }
 
 /*-------------------------------------------------------------------------
+-------------------------------------------------------------------------*/
+int
+LogAccessHttp::marshal_server_resp_time(char *buf)
+{
+  if (buf) {
+    double end = m_http_sm->milestones.server_close;
+    double start = m_http_sm->milestones.server_connect;
+    int t = (int) ((end == 0) ? 0 : (double) (end - start) / 1000000);
+    marshal_int(buf, t);
+  }
+  return INK_MIN_ALIGN;
+}
+
+/*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
 int
