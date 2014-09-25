@@ -7,6 +7,7 @@
 # include <memory.h>
 # include <inttypes.h>
 # include <ts/ts.h>
+# include <ts/ink_config.h>
 # include <tsconfig/TsValue.h>
 # include <openssl/ssl.h>
 # include <openssl/x509.h>
@@ -20,6 +21,8 @@ using ts::config::Value;
 
 # define PN "ssl-cert-loader"
 # define PCP "[" PN " Plugin] "
+
+# if TS_USE_TLS_SNI
 
 namespace {
 
@@ -536,4 +539,13 @@ TSPluginInit(int argc, const char *argv[]) {
 
   return;
 }
+
+# else // ! TS_USE_TLS_SNI
+
+void
+TSPluginInit(int, const char *[]) {
+    TSError(PCP "requires TLS SNI which is not available.");
+}
+
+# endif // TS_USE_TLS_SNI
 
