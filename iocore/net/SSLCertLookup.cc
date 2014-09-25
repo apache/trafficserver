@@ -77,6 +77,7 @@ public:
   /// Add a cert context to storage
   /// @return The @a host_store index or -1 on error.
   int insert(const char * name, SSLCertContext const& cc);
+
   /// Add a cert context to storage.
   /// @a idx must be a value returned by a previous call to insert.
   /// This creates an alias, a different @a name referring to the same
@@ -88,11 +89,11 @@ public:
   SSLCertContext* get(unsigned i) const { return &this->ctx_store[i]; }
 
 private:
-  /** A struct that can stored a @c Trie.
+  /** A struct that can be stored a @c Trie.
       It contains the index of the real certificate and the
       linkage required by @c Trie.
   */
-  struct ContextRef 
+  struct ContextRef
   {
     ContextRef(): idx(-1) {}
     explicit ContextRef(int n) : idx(n) {}
@@ -103,7 +104,7 @@ private:
 
   /// Items tored by wildcard name
   Trie<ContextRef>  wildcards;
-  /// Contexts store by IP address or FQDN
+  /// Contexts stored by IP address or FQDN
   InkHashTable *  hostnames;
   /// List for cleanup.
   /// Exactly one pointer to each SSL context is stored here.
@@ -265,8 +266,8 @@ SSLContextStorage::insert(const char* name, SSLCertContext const& cc)
   return idx;
 }
 
-int 
-SSLContextStorage::insert(const char* name, int idx) 
+int
+SSLContextStorage::insert(const char* name, int idx)
 {
   ats_wildcard_matcher wildcard;
   bool inserted = false;
@@ -302,7 +303,7 @@ SSLContextStorage::insert(const char* name, int idx)
       idx = -1;
     }
 
-    Debug("ssl", "%s wildcard certificate for '%s' as '%s' with SSL_CTX %p [%d]", 
+    Debug("ssl", "%s wildcard certificate for '%s' as '%s' with SSL_CTX %p [%d]",
       idx >= 0 ? "index" : "failed to index", name, reversed, this->ctx_store[(*ref).idx].ctx, (*ref).idx);
     ref.release();
   } else {
@@ -314,7 +315,7 @@ SSLContextStorage::insert(const char* name, int idx)
     } else {
       inserted = true;
       ink_hash_table_insert(this->hostnames, name, reinterpret_cast<void*>(static_cast<intptr_t>(idx)));
-      Debug("ssl", "indexed '%s' with SSL_CTX %p [%d]", 
+      Debug("ssl", "indexed '%s' with SSL_CTX %p [%d]",
         name, this->ctx_store[idx].ctx, idx);
     }
   }
