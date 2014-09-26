@@ -113,8 +113,6 @@ private:
   /// Add a context to the clean up list.
   /// @return The index of the added context.
   int store(SSLCertContext const& cc);
-  /// Remove last added context
-  void unstore();
 
 };
 
@@ -234,10 +232,25 @@ SSLContextStorage::SSLContextStorage()
 {
 }
 
+bool
+SSLCtxCompare(SSLCertContext const & cc1, SSLCertContext const & cc2)
+{
+  // Either they are both real ctx pointers and cc1 has the smaller pointer
+  // Or only cc2 has a non-null pointer
+  return cc1.ctx < cc2.ctx;
+}
+
 SSLContextStorage::~SSLContextStorage()
 {
+  // First sort the array so we can efficiently detect duplicates
+  // and avoid the double free
+  this->ctx_store.qsort(SSLCtxCompare);
+  SSL_CTX *last_ctx = NULL;
   for (unsigned i = 0; i < this->ctx_store.length(); ++i) {
-    SSLReleaseContext(this->ctx_store[i].ctx);
+    if (this->ctx_store[i].ctx != last_ctx) { 
+      last_ctx = this->ctx_store[i].ctx;
+      SSLReleaseContext(this->ctx_store[i].ctx);
+    }
   }
 
   ink_hash_table_destroy(this->hostnames);
@@ -251,18 +264,12 @@ SSLContextStorage::store(SSLCertContext const& cc)
   return idx;
 }
 
-void
-SSLContextStorage::unstore()
-{
-  this->ctx_store.drop();
-}
-
 int
 SSLContextStorage::insert(const char* name, SSLCertContext const& cc)
 {
   int idx = this->store(cc);
   idx = this->insert(name, idx);
-  if (idx < 0) this->unstore();
+  if (idx < 0) this->ctx_store.drop();
   return idx;
 }
 
@@ -286,6 +293,7 @@ SSLContextStorage::insert(const char* name, int idx)
     }
 
     ref = new ContextRef(idx);
+    int ref_idx = (*ref).idx;
     inserted = this->wildcards.Insert(reversed, ref, 0 /* rank */, -1 /* keylen */);
     if (!inserted) {
       ContextRef * found;
@@ -305,7 +313,7 @@ SSLContextStorage::insert(const char* name, int idx)
     }
 
     Debug("ssl", "%s wildcard certificate for '%s' as '%s' with SSL_CTX %p [%d]",
-      idx >= 0 ? "index" : "failed to index", name, reversed, this->ctx_store[(*ref).idx].ctx, (*ref).idx);
+      idx >= 0 ? "index" : "failed to index", name, reversed, this->ctx_store[ref_idx].ctx, ref_idx);
   } else {
     InkHashTableValue value;
 
