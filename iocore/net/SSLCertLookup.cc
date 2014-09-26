@@ -301,6 +301,7 @@ SSLContextStorage::insert(const char* name, int idx)
     }
 
     ref = new ContextRef(idx);
+    int ref_idx = (*ref).idx;
     inserted = this->wildcards.Insert(reversed, ref, 0 /* rank */, -1 /* keylen */);
     if (!inserted) {
       ContextRef * found;
@@ -320,7 +321,7 @@ SSLContextStorage::insert(const char* name, int idx)
     }
 
     Debug("ssl", "%s wildcard certificate for '%s' as '%s' with SSL_CTX %p [%d]",
-      idx >= 0 ? "index" : "failed to index", name, reversed, this->ctx_store[(*ref).idx].ctx, (*ref).idx);
+      idx >= 0 ? "index" : "failed to index", name, reversed, this->ctx_store[ref_idx].ctx, ref_idx);
   } else {
     InkHashTableValue value;
 
