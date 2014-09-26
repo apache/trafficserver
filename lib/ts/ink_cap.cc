@@ -130,7 +130,7 @@ EnableCoreFile(bool flag) {
     current enable this feature so it's not actually called. Still,
     best to program defensively and have it available.
  */
-bool
+static bool
 elevateFileAccess(bool state)
 {
   Debug("proxy_priv", "[elevateFileAccess] state : %d\n", state);
@@ -152,7 +152,7 @@ elevateFileAccess(bool state)
 //
 //    - Returns true on success
 //      and false on failure
-bool
+static bool
 removeRootPriv(uid_t euid)
 {
   if (seteuid(euid) < 0) {
@@ -168,7 +168,7 @@ removeRootPriv(uid_t euid)
 //
 //    - Returns true on success
 //      and false on failure
-bool
+static bool
 restoreRootPriv(uid_t *old_euid)
 {
   if (old_euid)
@@ -183,3 +183,44 @@ restoreRootPriv(uid_t *old_euid)
   return true;
 }
 #endif
+
+ElevateAccess::ElevateAccess(const bool state)
+  : elevated(false), saved_uid(0)
+{
+  if (state == true) {
+    elevate();
+  }
+}
+
+ElevateAccess::~ElevateAccess()
+{
+  if (elevated == true) {
+    demote();
+  }
+}
+
+void
+ElevateAccess::elevate()
+{
+#if TS_USE_POSIX_CAP
+  ink_release_assert(elevateFileAccess(true));
+#else
+  // Since we are setting a process-wide credential, we have to block any other thread
+  // attempting to elevate until this one demotes.
+  ink_mutex_acquire(&lock);
+  restoreRootPriv(&saved_uid);
+#endif
+  elevated = true;
+}
+
+void
+ElevateAccess::demote()
+{
+#if TS_USE_POSIX_CAP
+  ink_release_assert(elevateFileAccess(false));
+#else
+  removeRootPriv(saved_uid);
+  ink_mutex_release(&lock);
+#endif
+  elevated = false;
+}

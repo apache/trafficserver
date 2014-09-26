@@ -46,49 +46,13 @@ extern int EnableCoreFile(
 
 
 
-#if TS_USE_POSIX_CAP
-bool elevateFileAccess(bool);
-#else
-bool restoreRootPriv(uid_t *old_euid = NULL);
-bool removeRootPriv(uid_t euid);
-#endif
-
-
 class ElevateAccess {
 public:
-  ElevateAccess(const bool state): elevated(false), saved_uid(0) {
-    if (state == true) {
-      elevate();
-    }
-  }
+  ElevateAccess(const bool state);
+  ~ElevateAccess();
 
-  void elevate() {
-#if TS_USE_POSIX_CAP
-    elevateFileAccess(true);
-#else
-    // Since we are setting a process-wide credential, we have to block any other thread
-    // attempting to elevate until this one demotes.
-    restoreRootPriv(&saved_uid);
-    ink_mutex_acquire(&lock);
-#endif
-    elevated = true;
-  }
-
-  void demote() {
-#if TS_USE_POSIX_CAP
-    elevateFileAccess(false);
-#else
-    removeRootPriv(saved_uid);
-    ink_mutex_release(&lock);
-#endif
-    elevated = false;
-  }
-
-  ~ElevateAccess() {
-    if (elevated == true) {
-      demote();
-    }
-  }
+  void elevate();
+  void demote();
 
 private:
   bool elevated;
