@@ -224,10 +224,8 @@ char *
 Rollback::createPathStr(version_t version)
 {
 
-  char *buffer;
   int bufSize = strlen(Layout::get()->sysconfdir) + fileNameLen + MAX_VERSION_DIGITS + 1;
-
-  buffer = new char[bufSize];
+  char * buffer = (char *)ats_malloc(bufSize);
 
   Layout::get()->relative_to(buffer, bufSize, Layout::get()->sysconfdir, fileName);
 
@@ -248,44 +246,17 @@ Rollback::createPathStr(version_t version)
 int
 Rollback::statFile(version_t version, struct stat *buf)
 {
-  char *filePath;
   int statResult;
-#if !TS_USE_POSIX_CAP
-  uid_t saved_euid = 0;
-#endif
 
   if (version == this->currentVersion) {
     version = ACTIVE_VERSION;
   }
-  filePath = createPathStr(version);
 
-  if (root_access_needed) {
-    if (
-#if TS_USE_POSIX_CAP
-      elevateFileAccess(true)
-#else
-      restoreRootPriv(&saved_euid)
-#endif
-	!= true) {
-      mgmt_log(stderr, "[Rollback] Unable to acquire root privileges.\n");
-    }
-  }
+  ats_scoped_str filePath(createPathStr(version));
+  ElevateAccess access(root_access_needed);
 
   statResult = stat(filePath, buf);
 
-  if (root_access_needed) {
-    if (
-#if TS_USE_POSIX_CAP
-      elevateFileAccess(false)
-#else
-      removeRootPriv(saved_euid)
-#endif
-      != true) {
-      mgmt_log(stderr, "[Rollback] Unable to restore non-root privileges.\n");
-    }
-  }
-
-  delete[]filePath;
   return statResult;
 }
 
@@ -297,53 +268,24 @@ Rollback::statFile(version_t version, struct stat *buf)
 int
 Rollback::openFile(version_t version, int oflags, int *errnoPtr)
 {
-  char *filePath;
   int fd;
-#if !TS_USE_POSIX_CAP
-  uid_t saved_euid = 0;
-#endif
 
-  filePath = createPathStr(version);
-
-  if (root_access_needed) {
-    if (
-#if TS_USE_POSIX_CAP
-      elevateFileAccess(true)
-#else
-      restoreRootPriv(&saved_euid)
-#endif
-      != true) {
-      mgmt_log(stderr, "[Rollback] Unable to acquire root privileges.\n");
-    }
-  }
+  ats_scoped_str filePath(createPathStr(version));
+  ElevateAccess access(root_access_needed);
 
   // TODO: Use the original permissions
   //       Anyhow the _1 files should not be created inside Syconfdir.
   //
   fd = mgmt_open_mode(filePath, oflags, 0644);
-  if (root_access_needed) {
-    if (
-#if TS_USE_POSIX_CAP
-      elevateFileAccess(false)
-#else
-      removeRootPriv(saved_euid)
-#endif
-      != true) {
-      mgmt_log(stderr, "[Rollback] Unable to restore non-root privileges.\n");
-    }
-  }
 
   if (fd < 0) {
     if (errnoPtr != NULL) {
       *errnoPtr = errno;
     }
     mgmt_log(stderr, "[Rollback::openFile] Open of %s failed: %s\n", fileName, strerror(errno));
-  }
-  else {
+  } else {
     fcntl(fd, F_SETFD, 1);
   }
-
-  delete[]filePath;
 
   return fd;
 }

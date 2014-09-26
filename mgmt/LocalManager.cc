@@ -1076,21 +1076,7 @@ LocalManager::bindProxyPort(HttpProxyPort& port)
 {
   int one = 1;
 
-#if !TS_USE_POSIX_CAP
-  bool privBoost = false;
-  uid_t euid = geteuid();
-  uid_t saved_euid = 0;
-
-  if (port.m_port < 1024 && euid != 0) {
-    if (restoreRootPriv(&saved_euid) == false) {
-      mgmt_elog(stderr, 0, "[bindProxyPort] Unable to get root priviledges to bind port %d. euid is %d.  Exiting\n",
-                port.m_port, euid);
-      _exit(0);
-    } else {
-      privBoost = true;
-    }
-  }
-#endif
+  ElevateAccess access(port.m_port < 1024 && geteuid() != 0);
 
   /* Setup reliable connection, for large config changes */
   if ((port.m_fd = socket(port.m_family, SOCK_STREAM, 0)) < 0) {
@@ -1152,16 +1138,6 @@ LocalManager::bindProxyPort(HttpProxyPort& port)
 
   Debug("lm", "[bindProxyPort] Successfully bound proxy port %d\n", port.m_port);
 
-#if !TS_USE_POSIX_CAP
-  if (port.m_port < 1024 && euid != 0) {
-    if (privBoost == true) {
-      if (removeRootPriv(saved_euid) == false) {
-        mgmt_elog(stderr, 0, "[bindProxyPort] Unable to reset permissions to euid %d.  Exiting...\n", getuid());
-        _exit(1);
-      }
-    }
-  }
-#endif
 }
 
 void
