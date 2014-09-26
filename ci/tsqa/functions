@@ -245,6 +245,7 @@ bootstrap() {
   local prefix=$(tsxs -q PREFIX)
   local sysconfdir=$(tsxs -q SYSCONFDIR | sed -es+$prefix/++)
   local dir
+  local userid=${SUDO_USER:-$(whoami)}
 
   # Create runtime directories in the test root.
   for dir in SYSCONFDIR LOCALSTATEDIR RUNTIMEDIR LOGDIR ; do
@@ -271,7 +272,7 @@ CONFIG proxy.config.bin_path STRING $(tsxs -q BINDIR)
 CONFIG proxy.config.plugin.plugin_dir STRING $(tsxs -q LIBEXECDIR)
 CONFIG proxy.config.body_factory.template_sets_dir STRING $(tsxs -q SYSCONFDIR)/body_factory
 
-CONFIG proxy.config.admin.user_id STRING $(whoami)
+CONFIG proxy.config.admin.user_id STRING $userid
 CONFIG proxy.config.http.server_ports STRING $PORT
 
 # Flush config updates every 0.5s so that we don't have to sleep so long making config changes.
@@ -292,6 +293,8 @@ CONFIG proxy.config.diags.debug.enabled INT 1
 CONFIG proxy.config.diags.debug.tags STRING NULL
 CONFIG proxy.config.diags.show_location INT 1
 EOF
+
+  chown -R "$userid" $TSQA_ROOT
 
   msg bootstrapped Traffic Server into $TSQA_ROOT
   tsexec traffic_layout
