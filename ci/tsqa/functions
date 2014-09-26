@@ -264,7 +264,7 @@ bootstrap() {
     -e/proxy.config.diags/d \
     -e/proxy.config.http.server_ports/d \
     -e/proxy.config.config_update_interval_ms/d \
-    $TSQA_ROOT/$sysconfdir/records.config
+    $TSQA_ROOT/$sysconfdir/records.config || fatal failed to initialize records.config
 
   cat >> $TSQA_ROOT/$sysconfdir/records.config <<EOF
 CONFIG proxy.config.bin_path STRING $(tsxs -q BINDIR)
