@@ -233,19 +233,11 @@ SSLContextStorage::SSLContextStorage()
 }
 
 bool
-SSLCtxCompare(SSLCertContext cc1, SSLCertContext cc2)
+SSLCtxCompare(SSLCertContext const & cc1, SSLCertContext const & cc2)
 {
-  bool retval = false;
-  if (cc1.ctx) {
-    if (cc2.ctx) {
-      if (cc1.ctx < cc2.ctx) {
-        retval = true;
-      }
-    }
-  } else if (cc2.ctx) {
-    retval = true;
-  }
-  return retval;
+  // Either they are both real ctx pointers and cc1 has the smaller pointer
+  // Or only cc2 has a non-null pointer
+  return (cc1.ctx && cc2.ctx && cc1.ctx < cc2.ctx);
 }
 
 SSLContextStorage::~SSLContextStorage()

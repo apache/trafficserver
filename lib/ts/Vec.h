@@ -112,6 +112,7 @@ class Vec {
   int write(int fd);
   int read(int fd);
   void qsort(bool (*lt)(C,C));
+  void qsort(bool (*lt)(const C &, const C &));
   
 private:
   void move_internal(Vec<C,A,S> &v);
@@ -794,7 +795,7 @@ inline void qsort_Vec(C *left, C *right, bool (*lt)(C,C)) {
 }
 
 template <class C> 
-inline void qsort_VecRef(C *left, C *right, bool (*lt)(C&,C&)) {
+inline void qsort_VecRef(C *left, C *right, bool (*lt)(const C &, const C &)) {
  Lagain:
   if (right - left < 5) {
     for (C *y = right - 1; y > left; y--) {
@@ -835,6 +836,11 @@ inline void Vec<C,A,S>::qsort(bool (*lt)(C,C)) {
     qsort_Vec<C>(&v[0], end(), lt);
 }
 
+template <class C, class A, int S> 
+inline void Vec<C,A,S>::qsort(bool (*lt)(const C &, const C &)) {
+  if (n)
+    qsort_VecRef<C>(&v[0], end(), lt);
+}
 void test_vec();
 
 #endif
