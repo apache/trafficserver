@@ -1562,6 +1562,7 @@ HttpConfig::reconfigure()
 //  params->oride.share_server_sessions = m_master.oride.share_server_sessions;
   params->oride.server_session_sharing_pool = m_master.oride.server_session_sharing_pool;
   params->oride.server_session_sharing_match = m_master.oride.server_session_sharing_match;
+  params->oride.keep_alive_post_out = m_master.oride.keep_alive_post_out;
 
   params->oride.keep_alive_no_activity_timeout_in = m_master.oride.keep_alive_no_activity_timeout_in;
   params->oride.keep_alive_no_activity_timeout_out = m_master.oride.keep_alive_no_activity_timeout_out;
