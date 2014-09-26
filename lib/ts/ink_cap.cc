@@ -38,37 +38,63 @@
 ink_mutex ElevateAccess::lock = INK_MUTEX_INIT;
 #endif
 
-void
-DebugCapabilities(char const* tag) {
-  if (is_debug_tag_set(tag)) {
-#   if TS_USE_POSIX_CAP
-      cap_t caps = cap_get_proc();
-      char* caps_text = cap_to_text(caps, 0);
-#   endif
+static const char *
+is_dumpable()
+{
+#if defined(PR_GET_DUMPABLE)
+  return (prctl(PR_GET_DUMPABLE) != 1) ? "disabled" : "enabled";
+#else
+  return "unknown";
+#endif
+}
 
-#     if TS_USE_POSIX_CAP
-    Debug(tag, "uid=%u, gid=%u, euid=%u, egid=%u, caps %s core=%s thread=0x%llx",
-	  static_cast<unsigned int>(getuid()),
-	  static_cast<unsigned int>(getgid()),
-	  static_cast<unsigned int>(geteuid()),
-	  static_cast<unsigned int>(getegid()),
-	  caps_text,
-	  prctl(PR_GET_DUMPABLE) != 1 ? "disabled" : "enabled",
-	  (unsigned long long)pthread_self() );
+static int
+death_signal()
+{
+  int signum = -1;
+
+#if defined(PR_GET_PDEATHSIG)
+  prctl(PR_GET_PDEATHSIG, &signum, 0, 0, 0);
+#endif
+
+  return signum;
+}
+
+void
+DebugCapabilities(char const* tag)
+{
+  if (is_debug_tag_set(tag)) {
+#if TS_USE_POSIX_CAP
+    cap_t caps = cap_get_proc();
+    char* caps_text = cap_to_text(caps, 0);
+
+    Debug(tag, "uid=%u, gid=%u, euid=%u, egid=%u, caps=%s, core=%s, death signal=%d, thread=0x%llx",
+        static_cast<unsigned int>(getuid()),
+        static_cast<unsigned int>(getgid()),
+        static_cast<unsigned int>(geteuid()),
+        static_cast<unsigned int>(getegid()),
+        caps_text,
+        is_dumpable(),
+        death_signal(),
+        (unsigned long long)pthread_self() );
     cap_free(caps_text);
     cap_free(caps);
 #else
-    Debug(tag, "uid=%u, gid=%u, euid=%u, egid=%u",
-	  static_cast<unsigned int>(getuid()),
-	  static_cast<unsigned int>(getgid()),
-	  static_cast<unsigned int>(geteuid()),
-	  static_cast<unsigned int>(getegid()) );
+    Debug(tag, "uid=%u, gid=%u, euid=%u, egid=%u, core=%s, death signal=%d, thread=0x%llx",
+        static_cast<unsigned int>(getuid()),
+        static_cast<unsigned int>(getgid()),
+        static_cast<unsigned int>(geteuid()),
+        static_cast<unsigned int>(getegid()),
+        is_dumpable(),
+        death_signal(),
+        (unsigned long long)pthread_self() );
 #endif
   }
 }
 
 int
-PreserveCapabilities() {
+PreserveCapabilities()
+{
   int zret = 0;
 # if TS_USE_POSIX_CAP
     zret = prctl(PR_SET_KEEPCAPS, 1);
@@ -79,7 +105,8 @@ PreserveCapabilities() {
 
 // Adjust the capabilities to only those needed.
 int
-RestrictCapabilities() {
+RestrictCapabilities()
+{
   int zret = 0; // return value.
 # if TS_USE_POSIX_CAP
     cap_t caps = cap_init(); // start with nothing.
@@ -99,7 +126,8 @@ RestrictCapabilities() {
 }
 
 int
-EnableCoreFile(bool flag) {
+EnableCoreFile(bool flag)
+{
   int zret = 0;
 
 # if defined(PR_SET_DUMPABLE)
