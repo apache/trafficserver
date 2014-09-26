@@ -59,6 +59,10 @@ REGRESSION_TEST(SSLCertificateLookup)(RegressionTest* t, int /* atype ATS_UNUSED
   assert(all_com != NULL);
 
   box.check(lookup.insert("www.foo.com", foo_cc) >= 0, "insert host context");
+  // Insert the same SSL_CTX instance under another name too
+  // Should be ok, but also need to make sure that the cleanup does not
+  // double free the SSL_CTX
+  box.check(lookup.insert("www.foo2.com", foo_cc) >= 0, "insert host context");
   box.check(lookup.insert("*.wild.com", wild_cc) >= 0, "insert wildcard context");
   box.check(lookup.insert("*.notwild.com", notwild_cc) >= 0, "insert wildcard context");
   box.check(lookup.insert("*.b.notwild.com", b_notwild_cc) >= 0, "insert wildcard context");

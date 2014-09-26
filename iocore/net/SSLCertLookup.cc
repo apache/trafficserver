@@ -113,8 +113,6 @@ private:
   /// Add a context to the clean up list.
   /// @return The index of the added context.
   int store(SSLCertContext const& cc);
-  /// Remove last added context
-  void unstore();
 
 };
 
@@ -234,10 +232,33 @@ SSLContextStorage::SSLContextStorage()
 {
 }
 
+bool
+SSLCtxCompare(SSLCertContext cc1, SSLCertContext cc2)
+{
+  bool retval = false;
+  if (cc1.ctx) {
+    if (cc2.ctx) {
+      if (cc1.ctx < cc2.ctx) {
+        retval = true;
+      }
+    }
+  } else if (cc2.ctx) {
+    retval = true;
+  }
+  return retval;
+}
+
 SSLContextStorage::~SSLContextStorage()
 {
+  // First sort the array so we can efficiently detect duplicates
+  // and avoid the double free
+  this->ctx_store.qsort(SSLCtxCompare);
+  SSL_CTX *last_ctx = NULL;
   for (unsigned i = 0; i < this->ctx_store.length(); ++i) {
-    SSLReleaseContext(this->ctx_store[i].ctx);
+    if (this->ctx_store[i].ctx != last_ctx) { 
+      last_ctx = this->ctx_store[i].ctx;
+      SSLReleaseContext(this->ctx_store[i].ctx);
+    }
   }
 
   ink_hash_table_destroy(this->hostnames);
@@ -251,18 +272,12 @@ SSLContextStorage::store(SSLCertContext const& cc)
   return idx;
 }
 
-void
-SSLContextStorage::unstore()
-{
-  this->ctx_store.drop();
-}
-
 int
 SSLContextStorage::insert(const char* name, SSLCertContext const& cc)
 {
   int idx = this->store(cc);
   idx = this->insert(name, idx);
-  if (idx < 0) this->unstore();
+  if (idx < 0) this->ctx_store.drop();
   return idx;
 }
 
