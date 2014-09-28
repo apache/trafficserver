@@ -84,7 +84,7 @@ public:
     typedef DList(HttpServerSession, host_hash_link) ListHead;
 
     static ID hash(Key key) { return key.fold(); }
-    static Key key(Value const* value) { return value->hostname_hash; } 
+    static Key key(Value const* value) { return value->hostname_hash; }
     static bool equal(Key lhs, Key rhs) { return lhs == rhs; }
   };
 

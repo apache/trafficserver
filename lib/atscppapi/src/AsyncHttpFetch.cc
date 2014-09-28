@@ -74,10 +74,11 @@ static int handleFetchEvents(TSCont cont, TSEvent event, void *edata) {
     TSHttpTxn txn = static_cast<TSHttpTxn>(edata);
     int data_len;
     const char *data_start = TSFetchRespGet(txn, &data_len);
+
     if (data_start && (data_len > 0)) {
       const char *data_end = data_start + data_len;
-      
       TSHttpParser parser = TSHttpParserCreate();
+
       state->hdr_buf_ = TSMBufferCreate();
       state->hdr_loc_ = TSHttpHdrCreate(state->hdr_buf_);
       TSHttpHdrTypeSet(state->hdr_buf_, state->hdr_loc_, TS_HTTP_TYPE_RESPONSE);

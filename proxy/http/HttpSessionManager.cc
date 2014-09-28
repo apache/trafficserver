@@ -55,7 +55,7 @@ ServerSessionPool::ServerSessionPool()
 
 void
 ServerSessionPool::purge()
-{ 
+{
   for ( IPHashTable::iterator last = m_ip_pool.end(), spot = m_ip_pool.begin() ; spot != last ; ++spot ) {
     spot->do_io_close();
   }
@@ -287,7 +287,7 @@ HttpSessionManager::release_session(HttpServerSession *to_release)
   EThread *ethread = this_ethread();
   ServerSessionPool* pool = TS_SERVER_SESSION_SHARING_POOL_THREAD == to_release->sharing_pool ? ethread->server_session_pool : m_g_pool;
   bool released_p = true;
-  
+
   // The per thread lock looks like it should not be needed but if it's not locked the close checking I/O op will crash.
   MUTEX_TRY_LOCK(lock, pool->mutex, ethread);
   if (lock) {

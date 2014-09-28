@@ -776,8 +776,8 @@ CacheProcessor::start_internal(int flags)
       else
         Warning("cache unable to open '%s': %s", path, strerror(errno));
     }
-    if(fd > 0) {
-    	close(fd);
+    if (fd > 0) {
+      close(fd);
     }
   }
 
@@ -2423,7 +2423,7 @@ static bool upgrade_doc_version(Ptr<IOBufferData>& buf) {
         dst = d_buf->data();
         memcpy(dst, src, sizeofDoc);
         src += sizeofDoc + doc->_flen; dst += sizeofDoc; n -= sizeofDoc;
-        
+
         // We copy the fragment table iff there is a fragment table and there is only one alternate.
         if (frag_count > 0 && cache_bc::HTTPInfo_v21::marshalled_length(src) > doc->hlen)
           frag_count = 0; // inhibit fragment table insertion.
@@ -2504,7 +2504,7 @@ CacheVC::handleReadDone(int event, Event *e)
 
     if (doc->doc_type == CACHE_FRAG_TYPE_HTTP_V23) {
       if (upgrade_doc_version(buf)) {
-        doc = reinterpret_cast<Doc*>(buf->data()); // buf may be a new copy 
+        doc = reinterpret_cast<Doc*>(buf->data()); // buf may be a new copy
       } else {
         Debug("cache_bc", "Upgrade of fragment failed - disk %s - doc id = %" PRIx64 ":%" PRIx64 "\n"
               , vol->hash_text.get(), read_key->slice64(0), read_key->slice64(1));
@@ -3204,8 +3204,8 @@ cplist_reconfigure()
         new_cp->disk_vols = (DiskVol **)ats_malloc(gndisks * sizeof(DiskVol *));
         memset(new_cp->disk_vols, 0, gndisks * sizeof(DiskVol *));
         if (create_volume(config_vol->number, size_in_blocks, config_vol->scheme, new_cp)) {
-        	delete new_cp;
-        	return -1;
+          delete new_cp;
+          return -1;
         }
         cp_list.enqueue(new_cp);
         cp_list_len++;
@@ -3760,7 +3760,7 @@ namespace cache_bc {
     length -= hdr_size;
 
     src = reinterpret_cast<char*>(s_hdr) + hdr_size;
-  
+
     return true;
   }
 

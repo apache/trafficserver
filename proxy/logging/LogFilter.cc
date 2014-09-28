@@ -313,7 +313,7 @@ bool LogFilterString::toss_this_entry(LogAccess * lad)
         big_buf_upper = (char *)ats_malloc((unsigned int) marsh_len);
         buf_upper = big_buf_upper;
       } else {
-    	  buf = small_buf; // make clang happy
+        buf = small_buf; // make clang happy
       }
       for (size_t i = 0; i < marsh_len; i++) {
         buf_upper[i] = ParseRules::ink_toupper(buf[i]);
@@ -639,7 +639,7 @@ LogFilterIP::LogFilterIP(const char *name, LogField * field,
   m_map.mark(value,value);
   this->init();
 }
- 
+
 LogFilterIP::LogFilterIP(const char *name, LogField * field,
                            LogFilter::Action action, LogFilter::Operator oper, size_t num_values, IpAddr* value)
   : LogFilter(name, field, action, oper)
@@ -712,8 +712,8 @@ LogFilterIP::init()
 
 LogFilterIP::~LogFilterIP()
 {
-}   
-    
+}
+
 /*-------------------------------------------------------------------------
   LogFilterIP::operator==
 
@@ -732,7 +732,7 @@ LogFilterIP::operator==(LogFilterIP & rhs)
       m_action == rhs.m_action &&
       m_operator == rhs.m_operator &&
       m_num_values == rhs.m_num_values) {
-    
+
     IpMap::iterator left_spot(m_map.begin());
     IpMap::iterator left_limit(m_map.end());
     IpMap::iterator right_spot(rhs.m_map.begin());
@@ -771,7 +771,7 @@ LogFilterIP::is_match(LogAccess* lad)
   return zret;
 }
 
-bool 
+bool
 LogFilterIP::toss_this_entry(LogAccess* lad)
 {
   bool cond_satisfied = this->is_match(lad);
@@ -836,19 +836,19 @@ LogFilterIP::display(FILE* fd)
   }
 }
 
- 
-void 
+
+void
 LogFilterIP::display_as_XML(FILE * fd)
-{  
+{
   ink_assert(fd != NULL);
   fprintf(fd,
           "<LogFilter>\n"
-          "  <Name      = \"%s\"/>\n" 
+          "  <Name      = \"%s\"/>\n"
           "  <Action    = \"%s\"/>\n"
           "  <Condition = \"%s %s ", m_name, ACTION_NAME[m_action], m_field->symbol(), OPERATOR_NAME[m_operator]);
 
   if (m_map.getCount() == 0) {
-    fprintf(fd, "<no values>");  
+    fprintf(fd, "<no values>");
   } else {
     this->displayRanges(fd);
   }
@@ -949,7 +949,7 @@ LogFilterList::add(LogFilter * filter, bool copy)
     if (filter->type() == LogFilter::INT_FILTER) {
       LogFilterInt *f = new LogFilterInt(*((LogFilterInt *) filter));
       m_filter_list.enqueue(f);
-    } else if (filter->type() == LogFilter::IP_FILTER) {   
+    } else if (filter->type() == LogFilter::IP_FILTER) {
       LogFilterIP *f = new LogFilterIP(*((LogFilterIP *) filter));
       m_filter_list.enqueue(f);
     } else {

@@ -532,17 +532,17 @@ TS_INLINE int EventIO::modify(int e) {
     if (((-e) & events)) {
       ne = ~(-e) & events;
       if ((-e) & EVENTIO_READ)
-	n++;
+        n++;
       if ((-e) & EVENTIO_WRITE)
-	n++;
+        n++;
     }
   } else {
     if (!(e & events)) {
       ne = events | e;
       if (e & EVENTIO_READ)
-	n++;
+        n++;
       if (e & EVENTIO_WRITE)
-	n++;
+        n++;
     }
   }
   if (n && ne && event_loop) {

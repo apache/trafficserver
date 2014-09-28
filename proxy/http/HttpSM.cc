@@ -695,7 +695,7 @@ HttpSM::state_read_client_request_header(int event, void *data)
 
       // Setting half close means we will send the FIN when we've written all of the data.
       if (event == VC_EVENT_EOS) {
-        this->set_ua_half_close_flag();      
+        this->set_ua_half_close_flag();
         t_state.client_info.keep_alive = HTTP_NO_KEEPALIVE;
       }
       return 0;
@@ -1628,7 +1628,7 @@ HttpSM::state_http_server_open(int event, void *data)
 
   switch (event) {
   case NET_EVENT_OPEN:
-    session = (TS_SERVER_SESSION_SHARING_POOL_THREAD == t_state.txn_conf->server_session_sharing_pool) ? 
+    session = (TS_SERVER_SESSION_SHARING_POOL_THREAD == t_state.txn_conf->server_session_sharing_pool) ?
       THREAD_ALLOC_INIT(httpServerSessionAllocator, mutex->thread_holding) :
       httpServerSessionAllocator.alloc();
     session->sharing_pool = static_cast<TSServerSessionSharingPoolType>(t_state.txn_conf->server_session_sharing_pool);
@@ -2042,13 +2042,13 @@ HttpSM::process_hostdb_info(HostDBInfo * r)
       // if use_client_target_addr is set, make sure the client
       // addr sits in the pool
       if (t_state.http_config_param->use_client_target_addr == 1
-        && t_state.client_info.is_transparent
-        && t_state.dns_info.os_addr_style == HttpTransact::DNSLookupInfo::OS_ADDR_TRY_DEFAULT) {
-      
+          && t_state.client_info.is_transparent
+          && t_state.dns_info.os_addr_style == HttpTransact::DNSLookupInfo::OS_ADDR_TRY_DEFAULT) {
         HostDBRoundRobin *rr = r->rr();
         sockaddr const* addr = t_state.state_machine->ua_session->get_netvc()->get_local_addr();
+
         if (rr && rr->find_ip(addr) == NULL) {
-          // The client specified server address does not appear 
+          // The client specified server address does not appear
           // in the DNS pool
           DebugSM("http", "use_client_target_addr == 1. Client specified address is not in the pool. Client address is not validated.");
           t_state.dns_info.lookup_validated = false;
@@ -2085,14 +2085,14 @@ HttpSM::process_hostdb_info(HostDBInfo * r)
       }
     } else {
       if (t_state.http_config_param->use_client_target_addr == 1
-        && t_state.client_info.is_transparent 
-        && t_state.dns_info.os_addr_style == HttpTransact::DNSLookupInfo::OS_ADDR_TRY_DEFAULT) {
+          && t_state.client_info.is_transparent
+          && t_state.dns_info.os_addr_style == HttpTransact::DNSLookupInfo::OS_ADDR_TRY_DEFAULT) {
         // Compare the client specified address against the looked up address
         sockaddr const* addr = t_state.state_machine->ua_session->get_netvc()->get_local_addr();
         if (!ats_ip_addr_eq(addr, &r->data.ip.sa)) {
           DebugSM("http", "use_client_target_addr == 1.  Comparing single addresses failed. Client address is not validated.");
           t_state.dns_info.lookup_validated = false;
-        } 
+        }
         // Regardless of whether the client address matches the DNS
         // record or not, we want to use that address.  Therefore,
         // we copy over the client address info and skip the assignment
@@ -2406,7 +2406,7 @@ HttpSM::state_cache_open_write(int event, void *data)
     t_state.cache_info.write_lock_state = HttpTransact::CACHE_WL_SUCCESS;
     break;
 
-  case CACHE_EVENT_OPEN_WRITE_FAILED: 
+  case CACHE_EVENT_OPEN_WRITE_FAILED:
     // Failed on the write lock and retrying the vector
     //  for reading
     t_state.cache_info.write_lock_state = HttpTransact::CACHE_WL_FAIL;
@@ -2800,11 +2800,11 @@ HttpSM::is_http_server_eos_truncation(HttpTunnelProducer * p)
   if ((p->do_dechunking || p->do_chunked_passthru) && p->chunked_handler.truncation) {
     // TS-3054 - In the chunked cases, chunked data that is incomplete
     // should not be cached, but it should be passed onto the client
-    // This makes ATS more transparent in the case of non-standard 
+    // This makes ATS more transparent in the case of non-standard
     // servers.  The cache aborts are dealt with in other checks
-    // on the truncation flag elsewhere in the code.  This return value 
-    // invalidates the current data being passed over to the client.  
-    // So changing it from return true to return false, so the partial data 
+    // on the truncation flag elsewhere in the code.  This return value
+    // invalidates the current data being passed over to the client.
+    // So changing it from return true to return false, so the partial data
     // is passed onto the client.
     return false;	
   }
@@ -4281,18 +4281,15 @@ HttpSM::calculate_output_cl(int64_t content_length, int64_t num_chars)
 void
 HttpSM::do_range_parse(MIMEField *range_field)
 {
-
-  //bool res = false;
-  
   int64_t content_length   = t_state.cache_info.object_read->object_size_get();
   int64_t num_chars_for_cl = num_chars_for_int(content_length);
-  
+
   parse_range_and_compare(range_field, content_length);
   calculate_output_cl(content_length, num_chars_for_cl);
 }
 
 // this function looks for any Range: headers, parses them and either
-// sets up a transform processor to handle the request OR defers to the 
+// sets up a transform processor to handle the request OR defers to the
 // HttpTunnel
 void
 HttpSM::do_range_setup_if_necessary()
@@ -4301,12 +4298,12 @@ HttpSM::do_range_setup_if_necessary()
   INKVConnInternal *range_trans;
   int field_content_type_len = -1;
   const char * content_type;
-  
+
   ink_assert(t_state.cache_info.object_read != NULL);
-  
+
   field = t_state.hdr_info.client_request.field_find(MIME_FIELD_RANGE, MIME_LEN_RANGE);
   ink_assert(field != NULL);
-  
+
   t_state.range_setup = HttpTransact::RANGE_NONE;
 
   if (t_state.method == HTTP_WKSIDX_GET && t_state.hdr_info.client_request.version_get() == HTTPVersion(1, 1)) {
@@ -4534,7 +4531,7 @@ HttpSM::do_http_server_open(bool raw)
 
   char addrbuf[INET6_ADDRPORTSTRLEN];
   DebugSM("http", "[%" PRId64 "] open connection to %s: %s",
-        sm_id, t_state.current.server->name, 
+        sm_id, t_state.current.server->name,
         ats_ip_nptop(&t_state.current.server->addr.sa, addrbuf, sizeof(addrbuf)));
 
   if (plugin_tunnel) {
@@ -7250,7 +7247,7 @@ HttpSM::set_next_state()
 
       ink_assert(t_state.dns_info.looking_up == HttpTransact::ORIGIN_SERVER);
 
-      // TODO: This might not be optimal (or perhaps even correct), but it will 
+      // TODO: This might not be optimal (or perhaps even correct), but it will
       // effectively mark the host as down. What's odd is that state_mark_os_down
       // above isn't triggering.
       HttpSM::do_hostdb_update_if_necessary();
