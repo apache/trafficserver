@@ -1109,6 +1109,7 @@ extern "C"
 
   tsapi const char* TSHttpHdrMethodGet(TSMBuffer bufp, TSMLoc offset, int* length);
   tsapi TSReturnCode TSHttpHdrMethodSet(TSMBuffer bufp, TSMLoc offset, const char* value, int length);
+  tsapi const char* TSHttpHdrHostGet(TSMBuffer bufp, TSMLoc offset, int* length);
   tsapi TSReturnCode TSHttpHdrUrlGet(TSMBuffer bufp, TSMLoc offset, TSMLoc* locp);
   tsapi TSReturnCode TSHttpHdrUrlSet(TSMBuffer bufp, TSMLoc offset, TSMLoc url);
 
