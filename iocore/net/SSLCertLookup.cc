@@ -321,7 +321,6 @@ SSLContextStorage::insert(const char* name, int idx)
       Warning("previously indexed '%s' with SSL_CTX %p, cannot index it with SSL_CTX #%d now", name, value, idx);
       idx = -1;
     } else {
-      inserted = true;
       ink_hash_table_insert(this->hostnames, name, reinterpret_cast<void*>(static_cast<intptr_t>(idx)));
       Debug("ssl", "indexed '%s' with SSL_CTX %p [%d]",
         name, this->ctx_store[idx].ctx, idx);

@@ -24,6 +24,7 @@
 }
 
 %code top {
+# if ! defined(__clang_analyzer__)
 # include "TsConfigTypes.h"
 # include <stdlib.h>
 
@@ -119,3 +120,5 @@ path_item: path_tag | path_item PATH_SEPARATOR path_tag ;
 path_tag: IDENT { HANDLE_EVENT(PathTag, $1); } | INTEGER { HANDLE_EVENT(PathIndex, $1); };
 
 %%
+
+# endif // __clang_analyzer__

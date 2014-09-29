@@ -22,6 +22,8 @@
     See the License for the specific language governing permissions and
     limitations under the License.
  */
+ 
+# if ! defined(__clang_analyzer__)
 
 # include "TsConfigParseEvents.h"
 # include "TsConfigGrammar.h"
@@ -122,3 +124,5 @@ int tsconfig_parse_buffer(
 
   return zret;
 }
+
+# endif // __clang_analyzer__

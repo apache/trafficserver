@@ -62,6 +62,7 @@
 /* Line 349 of yacc.c  */
 #line 26 "TsConfigGrammar.y"
 
+# if ! defined(__clang_analyzer__)
 # include "TsConfigTypes.h"
 # include <stdlib.h>
 
@@ -79,7 +80,7 @@ extern int tsconfiglex(YYSTYPE* yylval, yyscan_t lexer);
 
 
 /* Line 349 of yacc.c  */
-#line 83 "TsConfigGrammar.c"
+#line 84 "TsConfigGrammar.c"
 
 /* Substitute the variable and function names.  */
 #define yyparse         tsconfigparse
@@ -93,7 +94,7 @@ extern int tsconfiglex(YYSTYPE* yylval, yyscan_t lexer);
 /* Copy the first part of user declarations.  */
 
 /* Line 371 of yacc.c  */
-#line 97 "TsConfigGrammar.c"
+#line 98 "TsConfigGrammar.c"
 
 # ifndef YY_NULL
 #  if defined __cplusplus && 201103L <= __cplusplus
@@ -151,7 +152,7 @@ extern int tsconfigdebug;
 
 
 /* Line 387 of yacc.c  */
-#line 155 "TsConfigGrammar.c"
+#line 156 "TsConfigGrammar.c"
 
 /* Tokens.  */
 #ifndef YYTOKENTYPE
@@ -216,10 +217,10 @@ int tsconfigparse ();
 /* Copy the second part of user declarations.  */
 
 /* Line 390 of yacc.c  */
-#line 220 "TsConfigGrammar.c"
+#line 221 "TsConfigGrammar.c"
 /* Unqualified %code blocks.  */
 /* Line 391 of yacc.c  */
-#line 43 "TsConfigGrammar.y"
+#line 44 "TsConfigGrammar.y"
 
 
 # define HANDLE_EVENT(x,y)                                                   \
@@ -242,7 +243,7 @@ int tsconfigerror(
 
 
 /* Line 391 of yacc.c  */
-#line 246 "TsConfigGrammar.c"
+#line 247 "TsConfigGrammar.c"
 
 #ifdef short
 # undef short
@@ -539,10 +540,10 @@ static const yytype_int8 yyrhs[] =
 /* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,    85,    85,    87,    89,    91,    93,    93,    93,    95,
-      95,    97,    99,   101,   103,   103,   103,   105,   105,   105,
-     105,   107,   107,   107,   109,   109,   111,   113,   115,   117,
-     117,   119,   119
+       0,    86,    86,    88,    90,    92,    94,    94,    94,    96,
+      96,    98,   100,   102,   104,   104,   104,   106,   106,   106,
+     106,   108,   108,   108,   110,   110,   112,   114,   116,   118,
+     118,   120,   120
 };
 #endif
 
@@ -1489,67 +1490,67 @@ yyreduce:
     {
         case 4:
 /* Line 1792 of yacc.c  */
-#line 89 "TsConfigGrammar.y"
+#line 90 "TsConfigGrammar.y"
     { HANDLE_EVENT(GroupOpen, (yyvsp[(1) - (1)])); }
     break;
 
   case 5:
 /* Line 1792 of yacc.c  */
-#line 91 "TsConfigGrammar.y"
+#line 92 "TsConfigGrammar.y"
     { HANDLE_EVENT(GroupClose, (yyvsp[(1) - (1)])); }
     break;
 
   case 9:
 /* Line 1792 of yacc.c  */
-#line 95 "TsConfigGrammar.y"
+#line 96 "TsConfigGrammar.y"
     { HANDLE_EVENT(GroupName, (yyvsp[(1) - (2)])); }
     break;
 
   case 12:
 /* Line 1792 of yacc.c  */
-#line 99 "TsConfigGrammar.y"
+#line 100 "TsConfigGrammar.y"
     { HANDLE_EVENT(ListOpen, (yyvsp[(1) - (1)])); }
     break;
 
   case 13:
 /* Line 1792 of yacc.c  */
-#line 101 "TsConfigGrammar.y"
+#line 102 "TsConfigGrammar.y"
     { HANDLE_EVENT(ListClose, (yyvsp[(1) - (1)])); }
     break;
 
   case 17:
 /* Line 1792 of yacc.c  */
-#line 105 "TsConfigGrammar.y"
+#line 106 "TsConfigGrammar.y"
     { HANDLE_EVENT(LiteralValue, (yyvsp[(1) - (1)])); }
     break;
 
   case 27:
 /* Line 1792 of yacc.c  */
-#line 113 "TsConfigGrammar.y"
+#line 114 "TsConfigGrammar.y"
     { HANDLE_EVENT(PathOpen, (yyvsp[(1) - (1)])); }
     break;
 
   case 28:
 /* Line 1792 of yacc.c  */
-#line 115 "TsConfigGrammar.y"
+#line 116 "TsConfigGrammar.y"
     { HANDLE_EVENT(PathClose, (yyvsp[(1) - (1)])); }
     break;
 
   case 31:
 /* Line 1792 of yacc.c  */
-#line 119 "TsConfigGrammar.y"
+#line 120 "TsConfigGrammar.y"
     { HANDLE_EVENT(PathTag, (yyvsp[(1) - (1)])); }
     break;
 
   case 32:
 /* Line 1792 of yacc.c  */
-#line 119 "TsConfigGrammar.y"
+#line 120 "TsConfigGrammar.y"
     { HANDLE_EVENT(PathIndex, (yyvsp[(1) - (1)])); }
     break;
 
 
 /* Line 1792 of yacc.c  */
-#line 1553 "TsConfigGrammar.c"
+#line 1554 "TsConfigGrammar.c"
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -1781,5 +1782,7 @@ yyreturn:
 
 
 /* Line 2055 of yacc.c  */
-#line 121 "TsConfigGrammar.y"
+#line 122 "TsConfigGrammar.y"
 
+
+# endif // __clang_analyzer__

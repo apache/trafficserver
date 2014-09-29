@@ -484,6 +484,8 @@ static yyconst flex_int16_t yy_chk[89] =
     See the License for the specific language governing permissions and
     limitations under the License.
  */
+ 
+# if ! defined(__clang_analyzer__)
 
 # include "TsConfigParseEvents.h"
 # include "TsConfigGrammar.h"
@@ -510,7 +512,7 @@ struct Location TsConfig_Lex_Location = { 0, 1 };
 
 #define YY_NO_INPUT 1
 
-#line 514 "TsConfigSyntax.c"
+#line 516 "TsConfigSyntax.c"
 
 #define INITIAL 0
 #define bad 1
@@ -747,10 +749,10 @@ YY_DECL
 	register int yy_act;
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 
-#line 64 "TsConfigSyntax.l"
+#line 66 "TsConfigSyntax.l"
 
 
-#line 754 "TsConfigSyntax.c"
+#line 756 "TsConfigSyntax.c"
 
     yylval = yylval_param;
 
@@ -835,7 +837,7 @@ do_action:	/* This label is used only to access EOF actions. */
 case 1:
 /* rule 1 can match eol */
 YY_RULE_SETUP
-#line 66 "TsConfigSyntax.l"
+#line 68 "TsConfigSyntax.l"
 {
                   ++(TsConfig_Lex_Location._line);
                   TsConfig_Lex_Location._col = 0;
@@ -844,12 +846,12 @@ YY_RULE_SETUP
 case 2:
 /* rule 2 can match eol */
 YY_RULE_SETUP
-#line 71 "TsConfigSyntax.l"
+#line 73 "TsConfigSyntax.l"
 ZRET(STRING); /* Quote string overrides comments */
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 73 "TsConfigSyntax.l"
+#line 75 "TsConfigSyntax.l"
 /* Ignore all white space. */
 	YY_BREAK
 case 4:
@@ -858,7 +860,7 @@ case 4:
 yyg->yy_c_buf_p = yy_cp -= 1;
 YY_DO_BEFORE_ACTION; /* set up yytext again */
 YY_RULE_SETUP
-#line 74 "TsConfigSyntax.l"
+#line 76 "TsConfigSyntax.l"
 /* Leading '#' is a comment. */
 	YY_BREAK
 case 5:
@@ -866,73 +868,73 @@ case 5:
 yyg->yy_c_buf_p = yy_cp -= 1;
 YY_DO_BEFORE_ACTION; /* set up yytext again */
 YY_RULE_SETUP
-#line 75 "TsConfigSyntax.l"
+#line 77 "TsConfigSyntax.l"
 /* Trailing '//' is a comment. */
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 77 "TsConfigSyntax.l"
+#line 79 "TsConfigSyntax.l"
 ZRET(IDENT);
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 78 "TsConfigSyntax.l"
+#line 80 "TsConfigSyntax.l"
 ZRET(INTEGER);
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 79 "TsConfigSyntax.l"
+#line 81 "TsConfigSyntax.l"
 ZRET(GROUP_OPEN);
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 80 "TsConfigSyntax.l"
+#line 82 "TsConfigSyntax.l"
 ZRET(GROUP_CLOSE);
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 81 "TsConfigSyntax.l"
+#line 83 "TsConfigSyntax.l"
 ZRET(LIST_OPEN);
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 82 "TsConfigSyntax.l"
+#line 84 "TsConfigSyntax.l"
 ZRET(LIST_CLOSE);
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 83 "TsConfigSyntax.l"
+#line 85 "TsConfigSyntax.l"
 ZRET(PATH_OPEN);
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 84 "TsConfigSyntax.l"
+#line 86 "TsConfigSyntax.l"
 ZRET(PATH_CLOSE);
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 85 "TsConfigSyntax.l"
+#line 87 "TsConfigSyntax.l"
 ZRET(PATH_SEPARATOR);
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 86 "TsConfigSyntax.l"
+#line 88 "TsConfigSyntax.l"
 ZRET(ASSIGN);
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 87 "TsConfigSyntax.l"
+#line 89 "TsConfigSyntax.l"
 ZRET(SEPARATOR);
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 89 "TsConfigSyntax.l"
+#line 91 "TsConfigSyntax.l"
 BEGIN(bad); FILL;
 	YY_BREAK
 case 18:
 /* rule 18 can match eol */
 YY_RULE_SETUP
-#line 90 "TsConfigSyntax.l"
+#line 92 "TsConfigSyntax.l"
 {
               BEGIN(0); // Terminate bad token mode.
               ++(TsConfig_Lex_Location._line); // Must bump line count.
@@ -942,20 +944,20 @@ YY_RULE_SETUP
 case 19:
 /* rule 19 can match eol */
 YY_RULE_SETUP
-#line 95 "TsConfigSyntax.l"
+#line 97 "TsConfigSyntax.l"
 BEGIN(0); HANDLE_EVENT(InvalidToken);
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 96 "TsConfigSyntax.l"
+#line 98 "TsConfigSyntax.l"
 ++(yylval->_n);
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 97 "TsConfigSyntax.l"
+#line 99 "TsConfigSyntax.l"
 ECHO;
 	YY_BREAK
-#line 959 "TsConfigSyntax.c"
+#line 961 "TsConfigSyntax.c"
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(bad):
 	yyterminate();
@@ -2086,7 +2088,7 @@ void tsconfigfree (void * ptr , yyscan_t yyscanner)
 
 #define YYTABLES_NAME "yytables"
 
-#line 97 "TsConfigSyntax.l"
+#line 99 "TsConfigSyntax.l"
 
 
 
@@ -2116,4 +2118,6 @@ int tsconfig_parse_buffer(
 
   return zret;
 }
+
+# endif // __clang_analyzer__
 
