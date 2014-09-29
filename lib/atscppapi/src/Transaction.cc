@@ -26,6 +26,7 @@
 #include <map>
 #include <string>
 #include <ts/ts.h>
+#include <ink_memory.h>
 #include "atscppapi/shared_ptr.h"
 #include "logging_internal.h"
 #include "utils_internal.h"
@@ -178,8 +179,8 @@ string Transaction::getEffectiveUrl() {
 }
 
 bool Transaction::setCacheUrl(const string &cache_url) {
-	TSReturnCode res = TSCacheUrlSet(state_->txn_, cache_url.c_str(), cache_url.length());
-    return (res == TS_SUCCESS);
+  TSReturnCode res = TSCacheUrlSet(state_->txn_, cache_url.c_str(), cache_url.length());
+  return (res == TS_SUCCESS);
 }
 
 const sockaddr *Transaction::getIncomingAddress() const {
@@ -248,10 +249,16 @@ void Transaction::setTimeout(Transaction::TimeoutType type, int time_ms) {
   }
 }
 
+void Transaction::redirectTo(std::string const& url) {
+  char* s = ats_strdup(url.c_str());
+  // Must re-alloc the string locally because ownership is transferred to the transaction.
+  TSHttpTxnRedirectUrlSet(state_->txn_, s, url.length());
+}
+
 namespace {
 
 /**
- * initializeHandles is a convinience functor that takes a pointer to a TS Function that
+ * initializeHandles is a convenience functor that takes a pointer to a TS Function that
  * will return the TSMBuffer and TSMLoc for a given server request/response or client/request response
  *
  * @param constructor takes a function pointer of type GetterFunction

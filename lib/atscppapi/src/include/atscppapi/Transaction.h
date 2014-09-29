@@ -298,6 +298,11 @@ public:
    * @return client response header size */
   size_t getClientResponseHeaderSize();
 
+  /**
+   * Redirect the transaction a different @a url.
+   */
+  void redirectTo(std::string const& url);
+
 private:
   TransactionState *state_; //!< The internal TransactionState object tied to the current Transaction
   friend class TransactionPlugin; //!< TransactionPlugin is a friend so it can call addPlugin()
