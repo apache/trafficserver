@@ -197,7 +197,7 @@ ssl_servername_callback(SSL * ssl, int * ad, void * /*arg*/)
     netvc->getSSLHandShakeComplete());
 
   if (servername != NULL) {
-    strncpy(netvc->sniServername, servername, TS_MAX_HOST_NAME_LEN);
+    ink_strlcpy(netvc->sniServername, servername, TS_MAX_HOST_NAME_LEN);
   }
 
   // catch the client renegotiation early on

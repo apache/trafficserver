@@ -231,7 +231,7 @@ ink_strlcpy(char *dst, const char *src, size_t siz)
   /* Not enough room in dst, add NUL and traverse rest of src */
   if (n == 0) {
     if (siz != 0)
-                            *d = '\0';      /* NUL-terminate dst */
+      *d = '\0';      /* NUL-terminate dst */
     while (*s++)
       ;
   }
