@@ -107,9 +107,9 @@ Load_Config_File()
     char error_buffer[1024];
 
     cv._errata.write(error_buffer, sizeof(error_buffer), 0, 0, 0, "");
-    TSDebug("skh-cert","Failed to parse %s as TSConfig format", ConfigPath.c_str());
+    TSDebug(PN,"Failed to parse %s as TSConfig format", ConfigPath.c_str());
     TSError(PCP "Failed to parse %s as TSConfig format", ConfigPath.c_str());
-    TSDebug("skh-cert", "Errors: %s", error_buffer);
+    TSDebug(PN, "Errors: %s", error_buffer);
     return -1;
   }
   Config = cv;
@@ -157,7 +157,7 @@ Load_Configuration_Args(int argc, const char *argv[])
     ConfigPath = config_path;
   }
 
-  TSDebug("skh-cert", "Load from %s", ConfigPath.c_str());
+  TSDebug(PN, "Load from %s", ConfigPath.c_str());
   // free up the path
   TSfree(config_path);
 
@@ -200,14 +200,14 @@ Load_Certificate(SslEntry const *entry, std::deque<std::string> &names)
     BIO_free(cert_bio);
 
     if (SSL_CTX_use_certificate(retval, cert) < 1) {
-      TSDebug("skh-cert", "Failed to load cert file %s", entry->certFileName.c_str());
+      TSDebug(PN, "Failed to load cert file %s", entry->certFileName.c_str());
       SSL_CTX_free(retval);
       return NULL;
     }
   }
   if (entry->keyFileName.length() > 0) {
     if (!SSL_CTX_use_PrivateKey_file(retval, entry->keyFileName.c_str(), SSL_FILETYPE_PEM)) {
-      TSDebug("skh-cert", "Failed to load priv key file %s", entry->keyFileName.c_str());
+      TSDebug(PN, "Failed to load priv key file %s", entry->keyFileName.c_str());
       SSL_CTX_free(retval);
       return NULL;
     }
@@ -324,7 +324,7 @@ Parse_Config(Value &parent, ParsedSslValues &orig_values)
   if (val) {
     Parse_Config_Rules(val, cur_values); 
   } else { // We are terminal, enter a match case
-    TSDebug("skh-cert", "Terminal SSL Config: server_priv_key_file=%s server_name=%s server_cert_name=%s action=%s", 
+    TSDebug(PN, "Terminal SSL Config: server_priv_key_file=%s server_name=%s server_cert_name=%s action=%s", 
       cur_values.server_priv_key_file.c_str(), 
       cur_values.server_name.c_str(), 
       cur_values.server_cert_name.c_str(), 
@@ -339,8 +339,7 @@ Parse_Config(Value &parent, ParsedSslValues &orig_values)
       Lookup.tree.insert(cur_values.server_name, entry, Parse_order++); 
     }
     if (cur_values.server_ips.size() > 0) {
-      size_t i;
-      for (i = 0; i < cur_values.server_ips.size(); i++) {
+      for (size_t i = 0; i < cur_values.server_ips.size(); i++) {
         IpEndpoint first, second;
         first.assign(cur_values.server_ips[i].first);
         second.assign(cur_values.server_ips[i].second);
@@ -351,8 +350,7 @@ Parse_Config(Value &parent, ParsedSslValues &orig_values)
       }
     }
     if (entry != NULL) {
-      size_t i;
-      for (i = 0; i < cert_names.size(); i++) {
+      for (size_t i = 0; i < cert_names.size(); i++) {
         Lookup.tree.insert(cert_names[i], entry, Parse_order++);
       }
     }
@@ -362,9 +360,7 @@ Parse_Config(Value &parent, ParsedSslValues &orig_values)
 void
 Parse_Config_Rules(Value &parent, ParsedSslValues &orig_values)
 {
-  size_t i;
-
-  for (i = 0; i < parent.childCount(); i++) {
+  for (size_t i = 0; i < parent.childCount(); i++) {
     Value child = parent[i];
     Parse_Config(child, orig_values);
   }
@@ -419,11 +415,11 @@ CB_Pre_Accept(TSCont /*contp*/, TSEvent event, void *edata)
   IpAddr ip_client(TSNetVConnRemoteAddrGet(ssl_vc));
   char buff2[INET6_ADDRSTRLEN];
 
-  TSDebug("skh-cert", "Pre accept callback %p - event is %s, target address %s, client address %s"
-          , ssl_vc
-          , event == TS_EVENT_VCONN_PRE_ACCEPT ? "good" : "bad"
-          , ip.toString(buff, sizeof(buff))
-          , ip_client.toString(buff2, sizeof(buff2))
+  TSDebug(PN, "Pre accept callback %p - event is %s, target address %s, client address %s",
+          ssl_vc,
+          event == TS_EVENT_VCONN_PRE_ACCEPT ? "good" : "bad",
+          ip.toString(buff, sizeof(buff)),
+          ip_client.toString(buff2, sizeof(buff2))
     );
 
   // Is there a cert already defined for this IP?
@@ -459,7 +455,7 @@ CB_Pre_Accept(TSCont /*contp*/, TSEvent event, void *edata)
         return TS_SUCCESS;
       } else { // if (entry->ctx != NULL) {
         SSL_set_SSL_CTX(ssl, entry->ctx); 
-        TSDebug("skh-cert", "Replace cert based on IP");
+        TSDebug(PN, "Replace cert based on IP");
         TSMutexUnlock(entry->mutex);
       }
     }
@@ -509,7 +505,7 @@ CB_servername(TSCont /*contp*/, TSEvent /*event*/, void *edata)
         return TS_SUCCESS;
       } else { //if (entry->ctx != NULL) {
         SSL_set_SSL_CTX(ssl, entry->ctx); 
-        TSDebug("skh-cert", "Replace cert based on name %s", servername);
+        TSDebug(PN, "Replace cert based on name %s", servername);
       }
       TSMutexUnlock(entry->mutex);
     }
