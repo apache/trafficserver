@@ -24,7 +24,7 @@
 }
 
 %code top {
-# if ! defined(__clang_analyzer__)
+# if ! (defined(__clang_analyzer__) || defined(__COVERITY__))
 # include "TsConfigTypes.h"
 # include <stdlib.h>
 

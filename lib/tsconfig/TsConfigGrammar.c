@@ -62,7 +62,7 @@
 /* Line 349 of yacc.c  */
 #line 26 "TsConfigGrammar.y"
 
-# if ! defined(__clang_analyzer__)
+# if ! (defined(__clang_analyzer__) || defined(__COVERITY__))
 # include "TsConfigTypes.h"
 # include <stdlib.h>
 

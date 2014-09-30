@@ -62,6 +62,7 @@ Builder::init() {
 
   // Zero everything first, just to be safe.
   memset(_dispatch, 0, sizeof(_dispatch));
+  memset(&_loc, 0, sizeof(_loc));
 
   for ( size_t i = 0 ; i < TS_CONFIG_N_EVENT_TYPES ; ++i) {
     _dispatch[i]._ptr = this;

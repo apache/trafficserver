@@ -98,7 +98,9 @@ logf(
 ) {
   va_list rest;
   va_start(rest, format);
-  return vlogf(err, id, code, format, rest);
+  vlogf(err, id, code, format, rest);
+  va_end(rest);
+  return err;
 }
 
 Errata
@@ -106,21 +108,27 @@ logf(Errata::Code code, char const* format, ...) {
   Errata err;
   va_list rest;
   va_start(rest, format);
-  return vlogf(err, Errata::Id(0), code, format, rest);
+  vlogf(err, Errata::Id(0), code, format, rest);
+  va_end(rest);
+  return err;
 }
 
 Errata&
 logf(Errata& err, Errata::Code code, char const* format, ...) {
   va_list rest;
   va_start(rest, format);
-  return vlogf(err, Errata::Id(0), code, format, rest);
+  vlogf(err, Errata::Id(0), code, format, rest);
+  va_end(rest);
+  return err;
 }
 
 Errata&
 logf(RvBase& base, Errata::Code code, char const* format, ...) {
-    va_list rest;
-    va_start(rest, format);
-    return vlogf(base._errata, Errata::Id(0), code, format, rest);
+  va_list rest;
+  va_start(rest, format);
+  vlogf(base._errata, Errata::Id(0), code, format, rest);
+  va_end(rest);
+  return base._errata;
 }
 
 Errata
@@ -154,21 +162,29 @@ logf_errno(Errata::Code code, char const* format, ...) {
   Errata zret;
   va_list rest;
   va_start(rest, format);
-  return vlogf_errno(zret, 0, code, format, rest);
+  zret = vlogf_errno(zret, 0, code, format, rest);
+  va_end(rest);
+  return zret;
 }
 
 Errata
 logf_errno(Errata& errata, Errata::Code code, char const* format, ...) {
+  Errata zret;
   va_list rest;
   va_start(rest, format);
-  return vlogf_errno(errata, 0, code, format, rest);
+  zret = vlogf_errno(errata, 0, code, format, rest);
+  va_end(rest);
+  return zret;
 }
 
 Errata
 logf_errno(RvBase& rv, Errata::Code code, char const* format, ...) {
-    va_list rest;
-    va_start(rest, format);
-    return vlogf_errno(rv._errata, 0, code, format, rest);
+  Errata zret;
+  va_list rest;
+  va_start(rest, format);
+  zret = vlogf_errno(rv._errata, 0, code, format, rest);
+  va_end(rest);
+  return zret;
 }
 // ------------------------------------------------------
 }} // namespace ts::msg

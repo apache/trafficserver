@@ -485,7 +485,7 @@ static yyconst flex_int16_t yy_chk[89] =
     limitations under the License.
  */
  
-# if ! defined(__clang_analyzer__)
+# if ! (defined(__clang_analyzer__) || defined(__COVERITY__))
 
 # include "TsConfigParseEvents.h"
 # include "TsConfigGrammar.h"

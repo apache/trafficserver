@@ -905,7 +905,7 @@ inline bool RvBase::isOK() const { return _errata; }
 inline void RvBase::clear() { _errata.clear(); }
 inline void RvBase::doNotLog() { _errata.doNotLog(); }
 
-template < typename T > Rv<T>::Rv() { }
+template < typename T > Rv<T>::Rv() : _result()  { }
 template < typename T > Rv<T>::Rv(Result const& r) : _result(r) { }
 template < typename T > Rv<T>::Rv(Result const& r, Errata const& errata)
   : super(errata)

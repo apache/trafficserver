@@ -40,8 +40,8 @@ namespace ts { namespace config {
     be the caller's responsibility?
  */
 struct Location {
-    int _col; ///< Column.
-    int _line; ///< Line.
+  int _col; ///< Column.
+  int _line; ///< Line.
 };
 
 /** A token from the source stream.

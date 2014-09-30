@@ -149,6 +149,7 @@ public:
     self operator --(int);
 
 private:
+    // coverity[uninit_member]
     raw_type   _t;
 };
 
