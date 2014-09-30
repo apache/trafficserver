@@ -1,5 +1,6 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.2.0
+  *) [TS-3106] Keep Alive not correctly applied to errored pages
 
   *) [TS-3109] Fix traffic_layout libhwloc linking on Ubuntu.
 
