@@ -966,8 +966,6 @@ done:
     otherwise, 502/404 the request right now. /eric
   */
   if (!s->reverse_proxy && s->state_machine->plugin_tunnel_type == HTTP_NO_PLUGIN_TUNNEL) {
-    // TS-2879: Let's initialize the state variables so the connection can be kept alive.
-    initialize_state_variables_from_request(s, &s->hdr_info.client_request);
     DebugTxn("http_trans", "END HttpTransact::EndRemapRequest");
     HTTP_INCREMENT_TRANS_STAT(http_invalid_client_requests_stat);
     TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, NULL);
@@ -7972,14 +7970,16 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
     url_string = NULL;
   }
 
+  // Make sure that if this error occured before we initailzied the state variables that we do now.
+  initialize_state_variables_from_request(s, &s->hdr_info.client_request);
+
   //////////////////////////////////////////////////////
   //  If there is a request body, we must disable     //
   //  keep-alive to prevent the body being read as    //
   //  the next header (unless we've already drained   //
   //  which we do for NTLM auth)                      //
   //////////////////////////////////////////////////////
-  if (s->hdr_info.request_content_length != 0 &&
-      s->state_machine->client_request_body_bytes < s->hdr_info.request_content_length) {
+  if (s->hdr_info.client_request.get_content_length() != 0 || s->client_info.transfer_encoding == HttpTransact::CHUNKED_ENCODING) {
     s->client_info.keep_alive = HTTP_NO_KEEPALIVE;
   } else {
     // We don't have a request body.  Since we are
