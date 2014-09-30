@@ -966,6 +966,8 @@ done:
     otherwise, 502/404 the request right now. /eric
   */
   if (!s->reverse_proxy && s->state_machine->plugin_tunnel_type == HTTP_NO_PLUGIN_TUNNEL) {
+    // TS-2879: Let's initialize the state variables so the connection can be kept alive.
+    initialize_state_variables_from_request(s, &s->hdr_info.client_request);
     DebugTxn("http_trans", "END HttpTransact::EndRemapRequest");
     HTTP_INCREMENT_TRANS_STAT(http_invalid_client_requests_stat);
     TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, NULL);
@@ -1140,9 +1142,6 @@ HttpTransact::ModifyRequest(State* s)
   // Initialize the state vars necessary to sending error responses
   bootstrap_state_variables_from_request(s, &request);
 
-  // TS-2879: Let's initialize the state variables so the connection can be kept alive.
-  initialize_state_variables_from_request(s, &s->hdr_info.client_request);
-
   ////////////////////////////////////////////////
   // If there is no scheme default to http      //
   ////////////////////////////////////////////////
@@ -1304,6 +1303,11 @@ HttpTransact::HandleRequest(State* s)
   if (is_debug_tag_set("http_chdr_describe")) {
     obj_describe(s->hdr_info.client_request.m_http, 1);
   }
+
+  // at this point we are guaranteed that the request is good and acceptable.
+  // initialize some state variables from the request (client version,
+  // client keep-alive, cache action, etc.
+  initialize_state_variables_from_request(s, &s->hdr_info.client_request);
 
   // Cache lookup or not will be decided later at DecideCacheLookup().
   // Before it's decided to do a cache lookup,
@@ -7974,8 +7978,8 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
   //  the next header (unless we've already drained   //
   //  which we do for NTLM auth)                      //
   //////////////////////////////////////////////////////
-  if (s->hdr_info.client_request.get_content_length() != 0 || s->client_info.transfer_encoding == HttpTransact::CHUNKED_ENCODING) {
-    Debug("http", "Disabling KA because request had a body on error response.");
+  if (s->hdr_info.request_content_length != 0 &&
+      s->state_machine->client_request_body_bytes < s->hdr_info.request_content_length) {
     s->client_info.keep_alive = HTTP_NO_KEEPALIVE;
   } else {
     // We don't have a request body.  Since we are
