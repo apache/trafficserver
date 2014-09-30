@@ -26,6 +26,8 @@
 # include "ink_cap.h"
 # include "ink_thread.h"
 
+#include <grp.h>
+
 #if HAVE_SYS_CAPABILITY_H
 #include <sys/capability.h>
 #endif
@@ -34,9 +36,91 @@
 #include <sys/prctl.h>
 #endif
 
+// NOTE: Failing to acquire or release privileges is a fatal error. This is because that should never happen
+// and if it does, it is likely that some fundamental security assumption has been violated. In that case
+// it is dangerous to continue.
+
 # if !TS_USE_POSIX_CAP
 ink_mutex ElevateAccess::lock = INK_MUTEX_INIT;
 #endif
+
+#define DEBUG_CREDENTIALS(tag)  do { \
+  if (is_debug_tag_set(tag)) { \
+    uid_t uid = -1, euid = -1, suid = -1; \
+    gid_t gid = -1, egid = -1, sgid = -1; \
+    getresuid(&uid, &euid, &suid); \
+    getresgid(&gid, &egid, &sgid); \
+    Debug(tag, "uid=%ld, gid=%ld, euid=%ld, egid=%ld, suid=%ld, sgid=%ld", \
+        static_cast<long>(uid), \
+        static_cast<long>(gid), \
+        static_cast<long>(euid), \
+        static_cast<long>(egid), \
+        static_cast<long>(suid), \
+        static_cast<long>(sgid) ); \
+  } \
+} while (0)
+
+#if TS_USE_POSIX_CAP
+
+#define DEBUG_PRIVILEGES(tag)  do { \
+  if (is_debug_tag_set(tag)) { \
+    cap_t caps = cap_get_proc(); \
+    char* caps_text = cap_to_text(caps, NULL); \
+    Debug(tag, "caps='%s', core=%s, death signal=%d, thread=0x%llx", \
+        caps_text, \
+        is_dumpable(), \
+        death_signal(), \
+        (unsigned long long)pthread_self() ); \
+    cap_free(caps_text); \
+    cap_free(caps); \
+  } \
+} while (0)
+
+#else /* TS_USE_POSIX_CAP */
+
+#define DEBUG_PRIVILEGES(tag)  do { \
+  if (is_debug_tag_set(tag)) { \
+    Debug(tag, "caps='', core=%s, death signal=%d, thread=0x%llx", \
+        is_dumpable(), \
+        death_signal(), \
+        (unsigned long long)pthread_self() ); \
+  } \
+} while(0)
+
+#endif /* TS_USE_POSIX_CAP */
+
+#if !HAVE_GETRESUID
+static int
+getresuid(uid_t * uid, uid_t * euid, uid_t * suid)
+{
+  *uid = getuid();
+  *euid = geteuid();
+  return 0;
+}
+#endif /* !HAVE_GETRESUID */
+
+#if !HAVE_GETRESGID
+static int
+getresgid(gid_t * gid, gid_t * egid, gid_t * sgid)
+{
+  *gid = getgid();
+  *egid = getegid();
+  return 0;
+}
+#endif /* !HAVE_GETRESGID */
+
+static unsigned
+max_passwd_size()
+{
+#if defined(_SC_GETPW_R_SIZE_MAX)
+  long val = sysconf(_SC_GETPW_R_SIZE_MAX);
+  if (val > 0) {
+    return (unsigned)val;
+  }
+#endif
+
+  return 4096;
+}
 
 static const char *
 is_dumpable()
@@ -63,48 +147,120 @@ death_signal()
 void
 DebugCapabilities(char const* tag)
 {
-  if (is_debug_tag_set(tag)) {
-#if TS_USE_POSIX_CAP
-    cap_t caps = cap_get_proc();
-    char* caps_text = cap_to_text(caps, 0);
-
-    Debug(tag, "uid=%u, gid=%u, euid=%u, egid=%u, caps=%s, core=%s, death signal=%d, thread=0x%llx",
-        static_cast<unsigned int>(getuid()),
-        static_cast<unsigned int>(getgid()),
-        static_cast<unsigned int>(geteuid()),
-        static_cast<unsigned int>(getegid()),
-        caps_text,
-        is_dumpable(),
-        death_signal(),
-        (unsigned long long)pthread_self() );
-    cap_free(caps_text);
-    cap_free(caps);
-#else
-    Debug(tag, "uid=%u, gid=%u, euid=%u, egid=%u, core=%s, death signal=%d, thread=0x%llx",
-        static_cast<unsigned int>(getuid()),
-        static_cast<unsigned int>(getgid()),
-        static_cast<unsigned int>(geteuid()),
-        static_cast<unsigned int>(getegid()),
-        is_dumpable(),
-        death_signal(),
-        (unsigned long long)pthread_self() );
-#endif
-  }
+  DEBUG_CREDENTIALS(tag);
+  DEBUG_PRIVILEGES(tag);
 }
 
-int
+static void
+impersonate(const struct passwd * pwd, ImpersonationLevel level)
+{
+  int deathsig = death_signal();
+  bool dumpable = false;
+
+  DEBUG_CREDENTIALS("privileges");
+  DEBUG_PRIVILEGES("privileges");
+
+#if defined(PR_GET_DUMPABLE)
+  dumpable = (prctl(PR_GET_DUMPABLE) == 1);
+#endif
+
+  // Always repopulate the supplementary group list for the new user.
+  initgroups(pwd->pw_name, pwd->pw_gid);
+
+  switch (level) {
+  case IMPERSONATE_PERMANENT:
+    if (setregid(pwd->pw_gid, pwd->pw_gid) != 0) {
+      Fatal("switching to user %s, failed to set group ID %ld", pwd->pw_name, (long)pwd->pw_gid);
+    }
+
+    if (setreuid(pwd->pw_uid, pwd->pw_uid) != 0) {
+      Fatal("switching to user %s, failed to set user ID %ld", pwd->pw_name, (long)pwd->pw_uid);
+    }
+    break;
+
+  case IMPERSONATE_EFFECTIVE:
+    if (setegid(pwd->pw_gid) != 0) {
+      Fatal("switching to user %s, failed to set group ID %ld", pwd->pw_name, (long)pwd->pw_gid);
+    }
+
+    if (seteuid(pwd->pw_uid) != 0) {
+      Fatal("switching to user %s, failed to set effective user ID %ld", pwd->pw_name, (long)pwd->pw_gid);
+    }
+    break;
+  }
+
+  // Reset process flags if necessary. Elevating privilege using capabilities does not reset process
+  // flags, so we don't have to bother with this in elevateFileAccess().
+
+  EnableCoreFile(dumpable);
+
+  if (deathsig > 0) {
+    EnableDeathSignal(deathsig);
+  }
+
+  DEBUG_CREDENTIALS("privileges");
+  DEBUG_PRIVILEGES("privileges");
+}
+
+void
+ImpersonateUserID(uid_t uid, ImpersonationLevel level)
+{
+  struct passwd * pwd;
+  struct passwd   pbuf;
+  char            buf[max_passwd_size()];
+
+  if (getpwuid_r(uid, &pbuf, buf, sizeof(buf), &pwd) != 0) {
+    Fatal("missing password database entry for UID %ld: %s", (long)uid, strerror(errno));
+  }
+
+  if (pwd == NULL) {
+    // Password entry not found ...
+    Fatal("missing password database entry for UID %ld", (long)uid);
+  }
+
+  impersonate(pwd, level);
+}
+
+void
+ImpersonateUser(const char * user, ImpersonationLevel level)
+{
+  struct passwd * pwd;
+  struct passwd   pbuf;
+  char            buf[max_passwd_size()];
+
+  if (*user == '#') {
+    // Numeric user notation.
+    uid_t uid = (uid_t)atoi(&user[1]);
+    if (getpwuid_r(uid, &pbuf, buf, sizeof(buf), &pwd) != 0) {
+      Fatal("missing password database entry for UID %ld: %s", (long)uid, strerror(errno));
+    }
+  } else {
+    if (getpwnam_r(user, &pbuf, buf, sizeof(buf), &pwd) != 0) {
+      Fatal("missing password database entry for username '%s': %s", user, strerror(errno));
+    }
+  }
+
+  if (pwd == NULL) {
+    // Password entry not found ...
+    Fatal("missing password database entry for '%s'", user);
+  }
+
+  impersonate(pwd, level);
+}
+
+bool
 PreserveCapabilities()
 {
   int zret = 0;
 # if TS_USE_POSIX_CAP
-    zret = prctl(PR_SET_KEEPCAPS, 1);
+  zret = prctl(PR_SET_KEEPCAPS, 1);
 # endif
-  Debug("proxy_priv", "[PreserveCapabilities] zret : %d\n", zret);
-  return zret;
+  Debug("privileges", "[PreserveCapabilities] zret : %d\n", zret);
+  return zret == 0;
 }
 
 // Adjust the capabilities to only those needed.
-int
+bool
 RestrictCapabilities()
 {
   int zret = 0; // return value.
@@ -121,11 +277,11 @@ RestrictCapabilities()
     zret = cap_set_proc(caps);
     cap_free(caps);
 #  endif
-  Debug("proxy_priv", "[RestrictCapabilities] zret : %d\n", zret);
-  return zret;
+  Debug("privileges", "[RestrictCapabilities] zret : %d\n", zret);
+  return zret == 0;
 }
 
-int
+bool
 EnableCoreFile(bool flag)
 {
   int zret = 0;
@@ -140,8 +296,20 @@ EnableCoreFile(bool flag)
   }
 # endif  // linux check
 
-  Debug("proxy_priv", "[EnableCoreFile] zret : %d\n", zret);
-  return zret;
+  Debug("privileges", "[EnableCoreFile] zret : %d\n", zret);
+  return zret == 0;
+}
+
+void
+EnableDeathSignal(int signum)
+{
+  (void)signum;
+
+#if defined(PR_SET_PDEATHSIG)
+  if (prctl(PR_SET_PDEATHSIG, signum, 0, 0, 0) != 0) {
+    Debug("privileges", "prctl(PR_SET_PDEATHSIG) failed: %s", strerror(errno));
+  }
+#endif
 }
 
 #if TS_USE_POSIX_CAP
@@ -158,65 +326,34 @@ EnableCoreFile(bool flag)
     current enable this feature so it's not actually called. Still,
     best to program defensively and have it available.
  */
-static bool
+static void
 elevateFileAccess(bool state)
 {
-  Debug("proxy_priv", "[elevateFileAccess] state : %d\n", state);
+  Debug("privileges", "[elevateFileAccess] state : %d\n", state);
 
-  bool zret = false; // return value.
   cap_t cap_state = cap_get_proc(); // current capabilities
   // Make a list of the capabilities we changed.
   cap_value_t cap_list[] = { CAP_DAC_OVERRIDE };
   static int const CAP_COUNT = sizeof(cap_list)/sizeof(*cap_list);
 
   cap_set_flag(cap_state, CAP_EFFECTIVE, CAP_COUNT, cap_list, state ? CAP_SET : CAP_CLEAR);
-  zret = (0 == cap_set_proc(cap_state));
+  if (cap_set_proc(cap_state) != 0) {
+    Fatal("failed to %s privileged capabilities: %s", state ? "acquire" : "release", strerror(errno));
+  }
+
   cap_free(cap_state);
-  Debug("proxy_priv", "[elevateFileAccess] zret : %d\n", zret);
-  return zret;
-}
-#else
-//  bool removeRootPriv()
-//
-//    - Returns true on success
-//      and false on failure
-static bool
-removeRootPriv(uid_t euid)
-{
-  if (seteuid(euid) < 0) {
-    Debug("proxy_priv", "[removeRootPriv] seteuid failed : %s\n", strerror(errno));
-    return false;
-  }
-
-  Debug("proxy_priv", "[removeRootPriv] removed root privileges.  Euid is %d\n", euid);
-  return true;
-}
-
-//  bool restoreRootPriv()
-//
-//    - Returns true on success
-//      and false on failure
-static bool
-restoreRootPriv(uid_t *old_euid)
-{
-  if (old_euid)
-    *old_euid = geteuid();
-  if (seteuid(0) < 0) {
-    Debug("proxy_priv", "[restoreRootPriv] seteuid root failed : %s\n", strerror(errno));
-    return false;
-  }
-
-  Debug("proxy_priv", "[restoreRootPriv] restored root privileges.  Euid is %d\n", 0);
-
-  return true;
 }
 #endif
 
 ElevateAccess::ElevateAccess(const bool state)
-  : elevated(false), saved_uid(0)
+  : elevated(false), saved_uid(geteuid())
 {
   if (state == true) {
     elevate();
+#if !TS_USE_POSIX_CAP
+    DEBUG_CREDENTIALS("privileges");
+#endif
+    DEBUG_PRIVILEGES("privileges");
   }
 }
 
@@ -224,6 +361,10 @@ ElevateAccess::~ElevateAccess()
 {
   if (elevated == true) {
     demote();
+#if !TS_USE_POSIX_CAP
+    DEBUG_CREDENTIALS("privileges");
+#endif
+    DEBUG_PRIVILEGES("privileges");
   }
 }
 
@@ -231,12 +372,12 @@ void
 ElevateAccess::elevate()
 {
 #if TS_USE_POSIX_CAP
-  ink_release_assert(elevateFileAccess(true));
+  elevateFileAccess(true);
 #else
   // Since we are setting a process-wide credential, we have to block any other thread
   // attempting to elevate until this one demotes.
   ink_mutex_acquire(&lock);
-  restoreRootPriv(&saved_uid);
+  ImpersonateUserID(0, IMPERSONATE_EFFECTIVE);
 #endif
   elevated = true;
 }
@@ -245,9 +386,9 @@ void
 ElevateAccess::demote()
 {
 #if TS_USE_POSIX_CAP
-  ink_release_assert(elevateFileAccess(false));
+  elevateFileAccess(false);
 #else
-  removeRootPriv(saved_uid);
+  ImpersonateUserID(saved_uid, IMPERSONATE_EFFECTIVE);
   ink_mutex_release(&lock);
 #endif
   elevated = false;

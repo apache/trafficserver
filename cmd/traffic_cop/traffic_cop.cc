@@ -27,6 +27,7 @@
 #include "I_RecCore.h"
 #include "mgmtapi.h"
 #include "ClusterCom.h"
+#include "ink_cap.h"
 
 #include <string>
 #include <map>
@@ -731,6 +732,8 @@ spawn_manager()
       dup2(log_fd, STDERR_FILENO);
       close(log_fd);
     }
+
+    EnableDeathSignal(SIGTERM);
 
     err = execv(prog, options);
     cop_log_trace("Somehow execv(%s, options, NULL) failed (%d)!\n", prog, err);

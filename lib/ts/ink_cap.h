@@ -30,21 +30,29 @@ extern void DebugCapabilities(
   char const* tag ///< Debug message tag.
 );
 /// Set capabilities to persist across change of user id.
-/// @return 0 on success, non-zero otherwise.
-extern int PreserveCapabilities();
+/// @return true on success
+extern bool PreserveCapabilities();
 /// Initialize and restrict the capabilities of a thread.
-/// @return 0 on success, non-zero otherwise.
-extern int RestrictCapabilities();
+/// @return true on success
+extern bool RestrictCapabilities();
 
 /** Control generate of core file on crash.
     @a flag sets whether core files are enabled on crash.
-    @return 0 on success, @c errno on failre.
+    @return true on success
  */
-extern int EnableCoreFile(
+extern bool EnableCoreFile(
   bool flag ///< New enable state.
 );
 
+void EnableDeathSignal(int signum);
 
+enum ImpersonationLevel {
+  IMPERSONATE_EFFECTIVE,  // Set the effective credential set.
+  IMPERSONATE_PERMANENT   // Set the real credential (permanently).
+};
+
+void ImpersonateUser(const char * user, ImpersonationLevel level);
+void ImpersonateUserID(uid_t user, ImpersonationLevel level);
 
 class ElevateAccess {
 public:

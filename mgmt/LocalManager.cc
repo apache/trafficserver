@@ -1014,6 +1014,8 @@ LocalManager::startProxy()
       mgmt_fatal(stderr, 0, "[LocalManager::startProxy] ts options must contain -M");
     }
 
+    EnableDeathSignal(SIGTERM);
+
     res = execv(absolute_proxy_binary, options);
     mgmt_elog(stderr, errno, "[LocalManager::startProxy] Exec of %s failed\n", absolute_proxy_binary);
     _exit(res);

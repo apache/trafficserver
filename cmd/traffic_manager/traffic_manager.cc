@@ -60,7 +60,7 @@ LocalManager *lmgmt = NULL;
 FileManager *configFiles;
 
 static void fileUpdated(char *fname, bool incVersion);
-static void runAsUser(char *userName);
+static void runAsUser(const char *userName);
 static void printUsage(void);
 
 #if defined(freebsd)
@@ -1056,69 +1056,10 @@ restoreCapabilities() {
 //  If we are not root, do nothing
 //
 void
-runAsUser(char *userName)
+runAsUser(const char * userName)
 {
-  uid_t uid, euid;
-  struct passwd *result;
-  const int bufSize = 1024;
-  char buf[bufSize];
-
-  uid = getuid();
-  euid = geteuid();
-
-  if (uid == 0 || euid == 0) {
-
-    /* Figure out what user we should run as */
-
-    Debug("lm", "[runAsUser] Attempting to run as user '%s'\n", userName);
-
-    if (userName == NULL || userName[0] == '\0') {
-      mgmt_elog(stderr, 0, "[runAsUser] Fatal Error: proxy.config.admin.user_id is not set\n");
-      _exit(1);
-    }
-
-    struct passwd passwdInfo;
-    struct passwd *ppasswd = NULL;
-    result = NULL;
-    int res;
-    if (*userName == '#') {
-      int uuid = atoi(userName + 1);
-      if (uuid == -1)
-        uuid = (int)uid;
-      res = getpwuid_r((uid_t)uuid, &passwdInfo, buf, bufSize, &ppasswd);
-    }
-    else {
-      res = getpwnam_r(&userName[0], &passwdInfo, buf, bufSize, &ppasswd);
-    }
-
-    if (!res && ppasswd) {
-      result = ppasswd;
-    }
-
-    if (result == NULL) {
-      mgmt_elog(stderr, 0, "[runAsUser] Fatal Error: Unable to get info about user %s : %s\n", userName, strerror(errno));
-      _exit(1);
-    }
-
-    if (setegid(result->pw_gid) != 0 || seteuid(result->pw_uid) != 0) {
-      mgmt_elog(stderr, 0, "[runAsUser] Fatal Error: Unable to switch to user %s : %s\n", userName, strerror(errno));
-      _exit(1);
-    }
-
-    uid = getuid();
-    euid = geteuid();
-
-    Debug("lm", "[runAsUser] Running with uid: '%d' euid: '%d'\n", uid, euid);
-
-    if (uid != result->pw_uid && euid != result->pw_uid) {
-      mgmt_elog(stderr, 0, "[runAsUser] Fatal Error: Failed to switch to user %s\n", userName);
-      _exit(1);
-    }
-
-    // setup supplementary groups if it is not set.
-    if (0 == getgroups(0, NULL)) {
-      initgroups(&userName[0],result->pw_gid);
-    }
+  if (getuid() == 0 || geteuid() == 0) {
+    ImpersonateUser(userName, IMPERSONATE_EFFECTIVE);
 
 #if TS_USE_POSIX_CAP
     if (0 != restoreCapabilities()) {

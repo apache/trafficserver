@@ -1984,9 +1984,10 @@ Diagnostic Logging Configuration
 ============  =====================================================
 Tag           Subsytem usage
 ============  =====================================================
-ssl           TLS termination and certificate processing
 dns           DNS query resolution
 http_hdrs     Logs the headers for HTTP requests and responses
+privileges    Privilege elevation
+ssl           TLS termination and certificate processing
 ============  =====================================================
 
   Traffic Server plugins will typically log debug messages using
@@ -2196,6 +2197,9 @@ SSL Termination
   privileges during loading of SSL certificates.  By enabling this, SSL
   certificate files' access rights can be restricted to help reduce the
   vulnerability of certificates.
+
+  This feature requires Traffic Server to be built with POSIX
+  capabilities enabled.
 
 Client-Related Configuration
 ----------------------------
