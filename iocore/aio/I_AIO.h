@@ -43,10 +43,8 @@
 
 #define AIO_EVENT_DONE           (AIO_EVENT_EVENTS_START+0)
 
-#define AIO_MODE_AIO             0
-#define AIO_MODE_SYNC            1
-#define AIO_MODE_THREAD          2
-#define AIO_MODE_NATIVE          3
+#define AIO_MODE_THREAD          0
+#define AIO_MODE_NATIVE          1
 
 #if TS_USE_LINUX_NATIVE_AIO
 #define AIO_MODE                 AIO_MODE_NATIVE

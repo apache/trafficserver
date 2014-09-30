@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.2.0
 
+  *) [TS-2289] Removed old unused AIO modes.
+
   *) [TS-3098] Fix the ability to configure keep-alive on post to the origin
 
   *) [TS-3085] Large POSTs over (relatively) slower connections failing

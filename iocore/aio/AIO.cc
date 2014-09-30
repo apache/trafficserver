@@ -428,21 +428,7 @@ int
 ink_aio_read(AIOCallback *op, int fromAPI)
 {
   op->aiocb.aio_lio_opcode = LIO_READ;
-
-#if (AIO_MODE == AIO_MODE_AIO)
-  ink_assert(this_ethread() == op->thread);
-  op->thread->aio_ops.enqueue(op);
-  if (aio_read(&op->aiocb) < 0) {
-    Warning("failed aio_read: %s\n", strerror(errno));
-    op->thread->aio_ops.remove(op);
-    return -1;
-  }
-#elif (AIO_MODE == AIO_MODE_SYNC)
-  cache_op((AIOCallbackInternal *) op);
-  op->action.continuation->handleEvent(AIO_EVENT_DONE, op);
-#elif (AIO_MODE == AIO_MODE_THREAD)
   aio_queue_req((AIOCallbackInternal *) op, fromAPI);
-#endif
 
   return 1;
 }
@@ -451,21 +437,7 @@ int
 ink_aio_write(AIOCallback *op, int fromAPI)
 {
   op->aiocb.aio_lio_opcode = LIO_WRITE;
-
-#if (AIO_MODE == AIO_MODE_AIO)
-  ink_assert(this_ethread() == op->thread);
-  op->thread->aio_ops.enqueue(op);
-  if (aio_write(&op->aiocb) < 0) {
-    Warning("failed aio_write: %s\n", strerror(errno));
-    op->thread->aio_ops.remove(op);
-    return -1;
-  }
-#elif (AIO_MODE == AIO_MODE_SYNC)
-  cache_op((AIOCallbackInternal *) op);
-  op->action.continuation->handleEvent(AIO_EVENT_DONE, op);
-#elif (AIO_MODE == AIO_MODE_THREAD)
   aio_queue_req((AIOCallbackInternal *) op, fromAPI);
-#endif
 
   return 1;
 }
