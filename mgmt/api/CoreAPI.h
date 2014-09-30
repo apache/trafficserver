@@ -45,6 +45,7 @@ void Diags(TSDiagsT mode, const char * fmt, va_list ap);
  ***************************************************************************/
 TSProxyStateT ProxyStateGet();
 TSMgmtError ProxyStateSet(TSProxyStateT state, TSCacheClearT clear);
+TSMgmtError ServerBacktrace(unsigned options, char ** trace);
 
 TSMgmtError Reconfigure();         // TS reread config files
 TSMgmtError Restart(bool cluster); //restart TM

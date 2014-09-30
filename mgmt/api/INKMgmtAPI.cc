@@ -1756,6 +1756,20 @@ TSProxyStateSet(TSProxyStateT proxy_state, TSCacheClearT clear)
   return ProxyStateSet(proxy_state, clear);
 }
 
+tsapi TSMgmtError
+TSProxyBacktraceGet(unsigned options, TSString * trace)
+{
+  if (options != 0) {
+    return TS_ERR_PARAMS;
+  }
+
+  if (trace == NULL) {
+    return TS_ERR_PARAMS;
+  }
+
+  return ServerBacktrace(options, trace);
+}
+
 /* TSReconfigure: tell traffic_server to re-read its configuration files
  * Input:  <none>
  * Output: TSMgmtError
@@ -1880,6 +1894,9 @@ TSGetErrorMessage(TSMgmtError err_id)
     break;
   case TS_ERR_FAIL:
     snprintf(msg, sizeof(msg), "[%d] Generic Fail message (ie. CoreAPI call).", err_id);
+    break;
+  case TS_ERR_NOT_SUPPORTED:
+    snprintf(msg, sizeof(msg), "[%d] Operation not supported on this platform.", err_id);
     break;
 
   default:

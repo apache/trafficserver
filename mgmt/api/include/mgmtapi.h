@@ -71,6 +71,8 @@ extern "C"
     TS_ERR_SYS_CALL,           /* Error in basic system call, eg. malloc */
     TS_ERR_PARAMS,             /* Invalid parameters for a fn */
 
+    TS_ERR_NOT_SUPPORTED,      /* Operation not supported */
+
     TS_ERR_FAIL
   } TSMgmtError;
 
@@ -960,6 +962,13 @@ extern "C"
  * Output: TSMgmtError
  */
   tsapi TSMgmtError TSProxyStateSet(TSProxyStateT proxy_state, TSCacheClearT clear);
+
+/* TSProxyBacktraceGet: get a backtrace of the proxy
+ * Input:  unsigned options - stack trace options
+ * Output: formatted backtrace of the proxy
+ * 	the caller must free this with TSfree
+ */
+  tsapi TSMgmtError TSProxyBacktraceGet(unsigned, TSString *);
 
 /* TSReconfigure: tell traffic_server to re-read its configuration files
  * Input:  <none>

@@ -348,6 +348,47 @@ ProxyStateSet(TSProxyStateT state, TSCacheClearT clear)
 }
 
 TSMgmtError
+ServerBacktrace(unsigned options, char ** trace)
+{
+  ink_release_assert(trace != NULL);
+  TSMgmtError ret;
+  MgmtMarshallInt optype = SERVER_BACKTRACE;
+  MgmtMarshallInt err;
+  MgmtMarshallInt flags = options;
+  MgmtMarshallData reply = { NULL, 0 };
+  MgmtMarshallString strval = NULL;
+
+  ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, SERVER_BACKTRACE, &optype, &flags);
+  if (ret != TS_ERR_OKAY) {
+    goto fail;
+  }
+
+  ret = recv_mgmt_message(main_socket_fd, reply);
+  if (ret != TS_ERR_OKAY) {
+    goto fail;
+  }
+
+  ret = recv_mgmt_response(reply.ptr, reply.len, SERVER_BACKTRACE, &err, &strval);
+  if (ret != TS_ERR_OKAY) {
+    goto fail;
+  }
+
+  if (err != TS_ERR_OKAY) {
+    ret = (TSMgmtError)err;
+    goto fail;
+  }
+
+  ats_free(reply.ptr);
+  *trace = strval;
+  return TS_ERR_OKAY;
+
+fail:
+  ats_free(reply.ptr);
+  ats_free(strval);
+  return ret;
+}
+
+TSMgmtError
 Reconfigure()
 {
   TSMgmtError ret;
@@ -942,3 +983,4 @@ StatsReset(bool cluster, const char * stat_name)
   ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, op, &optype, &name);
   return (ret == TS_ERR_OKAY) ? parse_generic_response(op, main_socket_fd) : ret;
 }
+

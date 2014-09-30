@@ -118,4 +118,16 @@ struct ink_device_geometry
 
 bool ink_file_get_geometry(int fd, ink_device_geometry& geometry);
 
+// Is the given path "."?
+static inline bool
+isdot(const char * path) {
+  return path[0] == '.' && path[1] == '\0';
+}
+
+// Is the given path ".."?
+static inline bool
+isdotdot(const char * path) {
+  return path[0] == '.' && path[1] == '.' && path[2] == '\0';
+}
+
 #endif // _ink_file_h_

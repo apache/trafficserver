@@ -59,6 +59,7 @@ typedef enum
   STORAGE_DEVICE_CMD_OFFLINE,
   RECORD_MATCH_GET,
   API_PING,
+  SERVER_BACKTRACE,
   UNDEFINED_OP /* This must be last */
 } OpType;
 

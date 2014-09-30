@@ -1200,6 +1200,18 @@ fi
 AC_SUBST(execinfoh)
 AC_SUBST(has_backtrace)
 
+# Remote process unwinding is only implemented on Linux because it depends on various Linux-specific
+# features such as /proc filesystem nodes, ptrace(2) and waitpid(2) extensions.
+AS_IF([test "$host_os_def" = "linux"], [
+  PKG_CHECK_MODULES([LIBUNWIND], [libunwind-ptrace], [
+    enable_remote_unwinding=yes
+  ], [
+    dnl no remote unwind support
+  ])
+])
+TS_ARG_ENABLE_VAR([use], [remote_unwinding])
+AC_SUBST(use_remote_unwinding)
+
 use_epoll=0
 use_kqueue=0
 use_port=0

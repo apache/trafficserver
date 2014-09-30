@@ -52,6 +52,7 @@ static char ZeroNode[1024];
 static char StorageCmdOffline[1024];
 static int ShowAlarms;
 static int ShowStatus;
+static int ShowBacktrace;
 static char ClearAlarms[1024];
 static int VersionFlag;
 static char viaHeader[1024];
@@ -389,6 +390,17 @@ handleArgInvocation()
       break;
     }
     return TS_ERR_OKAY;
+  } else if (ShowBacktrace == 1) {
+    TSString trace = NULL;
+    TSMgmtError err;
+
+    err = TSProxyBacktraceGet(0, &trace);
+    if (err == TS_ERR_OKAY) {
+      printf("%s\n", trace);
+      TSfree(trace);
+    }
+
+    return err;
   } else if (*ReadVar != '\0') {        // Handle a value read
     if (*SetVar != '\0' || *VarValue != '\0') {
       fprintf(stderr, "%s: Invalid Argument Combination: Can not read and set values at the same time\n", programName);
@@ -566,6 +578,7 @@ main(int /* argc ATS_UNUSED */, char **argv)
     {"alarms", '-', "Show all alarms", "F", &ShowAlarms, NULL, NULL},
     {"clear_alarms", '-', "Clear specified, or all,  alarms", "S1024", &ClearAlarms, NULL, NULL},
     {"status", '-', "Show proxy server status", "F", &ShowStatus, NULL, NULL},
+    {"backtrace", '-', "Show proxy stack backtrace", "F", &ShowBacktrace, NULL, NULL},
     {"version", 'V', "Print Version Id", "T", &VersionFlag, NULL, NULL},
     {"decode_via", '-', "Decode Via Header", "S1024", &viaHeader, NULL, NULL},
   };

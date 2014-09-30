@@ -360,6 +360,10 @@ elevateFileAccess(unsigned level, bool state)
 ElevateAccess::ElevateAccess(const bool state, unsigned lvl)
   : elevated(false), saved_uid(geteuid()), level(lvl)
 {
+  // XXX Squash a clang [-Wunused-private-field] warning. The right solution is probably to extract
+  // the capabilities into a policy class.
+  (void)level;
+
   if (state == true) {
     elevate();
 #if !TS_USE_POSIX_CAP

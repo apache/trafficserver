@@ -74,6 +74,7 @@
 #define TS_USE_LINUX_NATIVE_AIO        @use_linux_native_aio@
 #define TS_USE_INTERIM_CACHE           @has_interim_cache@
 
+#define TS_USE_REMOTE_UNWINDING	       @use_remote_unwinding@
 
 /* OS API definitions */
 #define GETHOSTBYNAME_R_GLIBC2         @gethostbyname_r_glibc2@

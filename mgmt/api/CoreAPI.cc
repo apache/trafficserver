@@ -46,6 +46,7 @@
 #include "CfgContextUtils.h"
 #include "EventCallback.h"
 #include "I_Layout.h"
+#include "ink_cap.h"
 
 // global variable
 CallbackTable *local_event_callbacks;
@@ -86,7 +87,6 @@ Terminate()
 
   return TS_ERR_OKAY;
 }
-
 
 /*-------------------------------------------------------------------------
  * Diags
@@ -136,7 +136,6 @@ Diags(TSDiagsT mode, const char *fmt, va_list ap)
     va_end(ap);
   }
 }
-
 
 /***************************************************************************
  * Control Operations
@@ -227,6 +226,181 @@ ProxyStateSet(TSProxyStateT state, TSCacheClearT clear)
 Lerror:
   return TS_ERR_FAIL;          /* failed to set proxy  state */
 }
+
+#if TS_USE_REMOTE_UNWINDING
+
+#include <libunwind.h>
+#include <libunwind-ptrace.h>
+#include <sys/ptrace.h>
+#include <cxxabi.h>
+
+typedef Vec<pid_t> threadlist;
+
+static threadlist
+threads_for_process(pid_t proc)
+{
+  DIR * dir = NULL;
+  struct dirent * entry = NULL;
+
+  char path[64];
+  threadlist threads;
+
+  if (snprintf(path, sizeof(path), "/proc/%ld/task", (long)proc) >= (int)sizeof(path)) {
+    goto done;
+  }
+
+  dir = opendir(path);
+  if (dir == NULL) {
+    goto done;
+  }
+
+  while ((entry = readdir(dir))) {
+    pid_t threadid;
+
+    if (isdot(entry->d_name) || isdotdot(entry->d_name)) {
+      continue;
+    }
+
+    threadid = strtol(entry->d_name, NULL, 10);
+    if (threadid > 0) {
+      threads.push_back(threadid);
+      Debug("backtrace", "found thread %ld", (long)threadid);
+    }
+  }
+
+
+done:
+  if (dir) {
+    closedir(dir);
+  }
+
+  return threads;
+}
+
+static void
+backtrace_for_thread(pid_t threadid, textBuffer& text)
+{
+  int status;
+  unw_addr_space_t addr_space = NULL;
+  unw_cursor_t cursor;
+  void * ap = NULL;
+  pid_t target = -1;
+  unsigned level = 0;
+
+  // First, attach to the child, causing it to stop.
+  status = ptrace(PTRACE_ATTACH, threadid, 0, 0);
+  if (status < 0) {
+    Debug("backtrace", "ptrace(ATTACH, %ld) -> %s (%d)", (long)threadid, strerror(errno), errno);
+    return;
+  }
+
+  // Wait for it to stop (XXX should be a timed wait ...)
+  target = waitpid(threadid, &status, __WALL | WUNTRACED);
+  Debug("backtrace", "waited for target %ld, found PID %ld, %s",  (long)threadid, (long)target,
+      WIFSTOPPED(status) ? "STOPPED" : "???");
+  if (target < 0) {
+    goto done;
+  }
+
+  ap = _UPT_create(threadid);
+  Debug("backtrace", "created UPT %p", ap);
+  if (ap == NULL) {
+    goto done;
+  }
+
+  addr_space = unw_create_addr_space(&_UPT_accessors, 0 /* byteorder */);
+  Debug("backtrace", "created address space %p", addr_space);
+  if (addr_space == NULL) {
+    goto done;
+  }
+
+  status = unw_init_remote(&cursor, addr_space, ap);
+  Debug("backtrace", "unw_init_remote(...) -> %d", status);
+  if (status != 0) {
+    goto done;
+  }
+
+  while (unw_step(&cursor) > 0) {
+    unw_word_t ip;
+    unw_word_t offset;
+    char buf[256];
+
+    unw_get_reg(&cursor, UNW_REG_IP, &ip);
+
+    if (unw_get_proc_name(&cursor, buf, sizeof(buf), &offset) == 0) {
+      int status;
+      char * name = abi::__cxa_demangle(buf, NULL, NULL, &status);
+      text.format("%-4u 0x%016llx %s + %p\n", level, (unsigned long long)ip, name ? name : buf, (void *)offset);
+      free(name);
+    } else {
+      text.format("%-4u 0x%016llx 0x0 + %p\n", level, (unsigned long long)ip, (void *)offset);
+    }
+
+    ++level;
+  }
+
+done:
+  if (addr_space) {
+    unw_destroy_addr_space(addr_space);
+  }
+
+  if (ap) {
+    _UPT_destroy(ap);
+  }
+
+  status = ptrace(PTRACE_DETACH, target, NULL, NULL);
+  Debug("backtrace", "ptrace(DETACH, %ld) -> %d (errno %d)", (long)target, status, errno);
+}
+
+TSMgmtError
+ServerBacktrace(unsigned /* options */, char ** trace)
+{
+  *trace = NULL;
+
+  // Unfortunately, we need to be privileged here. We either need to be root or to be holding
+  // the CAP_SYS_PTRACE capability. Even though we are the parent traffic_manager, it is not
+  // traceable without privilege because the process credentials do not match.
+  ElevateAccess access(true, ElevateAccess::TRACE_PRIVILEGE);
+  threadlist    threads(threads_for_process(lmgmt->watched_process_pid));
+  textBuffer    text(0);
+
+  Debug("backtrace", "tracing %zd threads for traffic_server PID %ld", threads.count(), (long)lmgmt->watched_process_pid);
+  for_Vec(pid_t, threadid, threads) {
+    Debug("backtrace", "tracing thread %zd", (long)threadid);
+    // Get the thread name using /proc/PID/comm
+    ats_scoped_fd fd;
+    char threadname[128];
+
+    snprintf(threadname, sizeof(threadname), "/proc/%ld/comm", (long)threadid);
+    fd = open(threadname, O_RDONLY);
+    if (fd) {
+      text.format("Thread %ld, ", (long)threadid);
+      text.readFromFD(fd);
+      text.chomp();
+    } else {
+      text.format("Thread %ld", (long)threadid);
+    }
+
+    text.format(":\n");
+
+    backtrace_for_thread(threadid, text);
+    text.format("\n");
+  }
+
+  *trace = text.release();
+  return TS_ERR_OKAY;
+}
+
+#else /* TS_USE_REMOTE_UNWINDING */
+
+TSMgmtError
+ServerBacktrace(unsigned /* options */, char ** trace)
+{
+  *trace = NULL;
+  return TS_ERR_NOT_SUPPORTED;
+}
+
+#endif
 
 /*-------------------------------------------------------------------------
  * Reconfigure
@@ -350,7 +524,6 @@ MgmtRecordGet(const char *rec_name, TSRecordEle * rec_ele)
     if (!varStrFromName(rec_name, rec_val, MAX_BUF_SIZE))
       return TS_ERR_FAIL;
 
-
     if (rec_val[0] != '\0') {   // non-NULL string value
       // allocate memory & duplicate string value
       str_val = ats_strdup(rec_val);
@@ -414,7 +587,6 @@ determine_action_need(const char *rec_name)
   return TS_ACTION_UNDEFINED;  // ERROR
 }
 
-
 /*-------------------------------------------------------------------------
  * MgmtRecordSet
  *-------------------------------------------------------------------------
@@ -445,7 +617,6 @@ MgmtRecordSet(const char *rec_name, const char *val, TSActionNeedT * action_need
   return TS_ERR_FAIL;
 }
 
-
 /*-------------------------------------------------------------------------
  * MgmtRecordSetInt
  *-------------------------------------------------------------------------
@@ -468,7 +639,6 @@ MgmtRecordSetInt(const char *rec_name, MgmtInt int_val, TSActionNeedT * action_n
   return MgmtRecordSet(rec_name, str_val, action_need);
 }
 
-
 /*-------------------------------------------------------------------------
  * MgmtRecordSetCounter
  *-------------------------------------------------------------------------
@@ -488,7 +658,6 @@ MgmtRecordSetCounter(const char *rec_name, MgmtIntCounter counter_val, TSActionN
 
   return MgmtRecordSet(rec_name, str_val, action_need);
 }
-
 
 /*-------------------------------------------------------------------------
  * MgmtRecordSetFloat
@@ -511,7 +680,6 @@ MgmtRecordSetFloat(const char *rec_name, MgmtFloat float_val, TSActionNeedT * ac
   return MgmtRecordSet(rec_name, str_val, action_need);
 }
 
-
 /*-------------------------------------------------------------------------
  * MgmtRecordSetString
  *-------------------------------------------------------------------------
@@ -522,7 +690,6 @@ MgmtRecordSetString(const char *rec_name, const char *string_val, TSActionNeedT 
 {
   return MgmtRecordSet(rec_name, string_val, action_need);
 }
-
 
 /**************************************************************************
  * FILE OPERATIONS
@@ -549,7 +716,6 @@ ReadFile(TSFileNameT file, char **text, int *size, int *version)
   version_t ver;
 
   Debug("FileOp", "[get_lines_from_file] START\n");
-
 
   fname = filename_to_string(file);
   if (!fname)
@@ -596,7 +762,6 @@ WriteFile(TSFileNameT file, const char *text, int size, int version)
   textBuffer *file_content;
   int ret;
   version_t ver;
-
 
   fname = filename_to_string(file);
   if (!fname)

@@ -64,6 +64,7 @@ static const struct NetCmdOperation requests[] = {
   /* STORAGE_DEVICE_CMD_OFFLINE */ { 2, { MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING } },
   /* RECORD_MATCH_GET           */ { 2, { MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING } },
   /* API_PING                   */ { 2, { MGMT_MARSHALL_INT, MGMT_MARSHALL_INT } },
+  /* SERVER_BACKTRACE           */ { 2, { MGMT_MARSHALL_INT, MGMT_MARSHALL_INT } },
 };
 
 // Responses always begin with a TSMgmtError code, followed by additional fields.
@@ -93,6 +94,7 @@ static const struct NetCmdOperation responses[] = {
   /* STORAGE_DEVICE_CMD_OFFLINE */ { 1, { MGMT_MARSHALL_INT } },
   /* RECORD_MATCH_GET           */ { 4, { MGMT_MARSHALL_INT, MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING, MGMT_MARSHALL_DATA } },
   /* API_PING                   */ { 0, {} }, // no reply
+  /* SERVER_BACKTRACE           */ { 2, { MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING } },
 };
 
 #define GETCMD(ops, optype, cmd) do { \

@@ -967,6 +967,25 @@ handle_api_ping(int /* fd */, void * req, size_t reqlen)
   return recv_mgmt_request(req, reqlen, API_PING, &optype, &stamp);
 }
 
+static TSMgmtError
+handle_server_backtrace(int fd, void * req, size_t reqlen)
+{
+  MgmtMarshallInt optype;
+  MgmtMarshallInt options;
+  MgmtMarshallString trace = NULL;
+  MgmtMarshallInt err;
+
+  err = recv_mgmt_request(req, reqlen, SERVER_BACKTRACE, &optype, &options);
+  if (err == TS_ERR_OKAY) {
+    err = ServerBacktrace(options, &trace);
+  }
+
+  err = send_mgmt_response(fd, SERVER_BACKTRACE, &err, &trace);
+  ats_free(trace);
+
+  return (TSMgmtError)err;
+}
+
 typedef TSMgmtError (*control_message_handler)(int, void *, size_t);
 
 static const control_message_handler handlers[] = {
@@ -994,7 +1013,8 @@ static const control_message_handler handlers[] = {
   handle_stats_reset,                 // STATS_RESET_CLUSTER
   handle_storage_device_cmd_offline,  // STORAGE_DEVICE_CMD_OFFLINE
   handle_record_match,                // RECORD_MATCH_GET
-  handle_api_ping                     // API_PING
+  handle_api_ping,                    // API_PING
+  handle_server_backtrace             // SERVER_BACKTRACE
 };
 
 static TSMgmtError
