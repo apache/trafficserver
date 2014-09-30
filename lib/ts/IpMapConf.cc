@@ -76,7 +76,10 @@ char *
 Load_IpMap_From_File(IpMap* map, int fd, const char *key_str)
 {
   char* zret = 0;
-  FILE* f = fdopen(dup(fd), "r"); // dup so we don't close the original fd.
+  int fd2 = dup(fd); // dup to avoid closing the original file.
+  FILE* f = NULL;
+
+  if (fd2 >= 0) f = fdopen(fd2, "r");
 
   if (f != NULL) {
     zret = Load_IpMap_From_File(map, f, key_str);
