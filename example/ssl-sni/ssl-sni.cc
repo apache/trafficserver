@@ -1,10 +1,30 @@
-/** @file 
-    SSL Preaccept test plugin
-    Implements blind tunneling based on the client IP address
-    The client ip addresses are specified in the plugin's  
-    config file as an array of IP addresses or IP address ranges under the
-    key "client-blind-tunnel"
-*/
+/** 
+  @file 
+  SSL Preaccept test plugin
+  Implements blind tunneling based on the client IP address
+  The client ip addresses are specified in the plugin's  
+  config file as an array of IP addresses or IP address ranges under the
+  key "client-blind-tunnel"
+
+  @section license License
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+ */
+
 
 # include <stdio.h>
 # include <memory.h>
@@ -13,6 +33,7 @@
 # include <ink_config.h>
 # include <tsconfig/TsValue.h>
 # include <openssl/ssl.h>
+# include <getopt.h>
 
 using ts::config::Configuration;
 using ts::config::Value;
@@ -29,7 +50,8 @@ std::string ConfigPath;
 Configuration Config;	// global configuration
 
 int
-Load_Config_File() {
+Load_Config_File() 
+{
   ts::Rv<Configuration> cv = Configuration::loadFromPath(ConfigPath.c_str());
   if (!cv.isOK()) {
     TSError(PCP "Failed to parse %s as TSConfig format", ConfigPath.c_str());
@@ -40,36 +62,8 @@ Load_Config_File() {
 }
 
 int
-Load_Configuration(int argc, const char *argv[]) {
-ts::ConstBuffer text;
-  std::string s; // temp holder.
-  TSMgmtString config_path = NULL;
-
-  // get the path to the config file if one was specified
-  static char const * const CONFIG_ARG = "--config=";
-  int arg_idx;
-  for (arg_idx = 0; arg_idx < argc; arg_idx++) {
-    if (0 == memcmp(argv[arg_idx], CONFIG_ARG, strlen(CONFIG_ARG))) {
-       config_path = TSstrdup(argv[arg_idx] + strlen(CONFIG_ARG));
-       TSDebug(PN, "Found config path %s", config_path);
-    }
-  }
-  if (NULL == config_path) {
-    static char const * const DEFAULT_CONFIG_PATH = "ssl_sni.config";
-    config_path = TSstrdup(DEFAULT_CONFIG_PATH);
-    TSDebug(PN, "No config path set in arguments, using default: %s", DEFAULT_CONFIG_PATH);
-  }
-
-  // translate relative paths to absolute
-  if (config_path[0] != '/') {
-    ConfigPath = std::string(TSConfigDirGet()) + '/' + std::string(config_path);
-  } else {
-    ConfigPath = config_path;
-  }
-
-  // free up the path
-  TSfree(config_path);
-
+Load_Configuration() 
+{
   int ret = Load_Config_File();
   if (ret != 0) {
     TSError(PCP "Failed to load the config file, check debug output for errata");
@@ -88,7 +82,8 @@ ts::ConstBuffer text;
    this connection.
  */
 int
-CB_servername(TSCont /* contp */, TSEvent /* event */, void *edata) {
+CB_servername(TSCont /* contp */, TSEvent /* event */, void *edata) 
+{
   TSVConn ssl_vc = reinterpret_cast<TSVConn>(edata);
   TSSslConnection sslobj = TSVConnSSLConnectionGet(ssl_vc);
   SSL *ssl = reinterpret_cast<SSL *>(sslobj);
@@ -131,20 +126,41 @@ CB_servername(TSCont /* contp */, TSEvent /* event */, void *edata) {
 
 // Called by ATS as our initialization point
 void
-TSPluginInit(int argc, const char *argv[]) {
+TSPluginInit(int argc, const char *argv[]) 
+{
   bool success = false;
   TSPluginRegistrationInfo info;
   TSCont cb_sni = 0; // sni callback continuation
+  static const struct option longopt[] = {
+    { const_cast<char *>("config"), required_argument, NULL, 'c' },
+    { NULL, no_argument, NULL, '\0' }
+  };
 
   info.plugin_name = const_cast<char*>("SSL SNI callback test");
   info.vendor_name = const_cast<char*>("Network Geographics");
   info.support_email = const_cast<char*>("shinrich@network-geographics.com");
 
+  int opt = 0;
+  while (opt >= 0) {
+    opt = getopt_long(argc, (char * const *)argv, "c:", longopt, NULL);
+    switch (opt) {
+    case 'c':
+      ConfigPath = optarg;
+      ConfigPath = std::string(TSConfigDirGet()) + '/' + std::string(optarg);
+      break;
+    }
+  } 
+  if (ConfigPath.length() == 0) {
+    static char const * const DEFAULT_CONFIG_PATH = "ssl_sni.config";
+    ConfigPath = std::string(TSConfigDirGet()) + '/' + std::string(DEFAULT_CONFIG_PATH);
+    TSDebug(PN, "No config path set in arguments, using default: %s", DEFAULT_CONFIG_PATH);
+  }
+
   if (TS_SUCCESS != TSPluginRegister(TS_SDK_VERSION_2_0, &info)) {
     TSError(PCP "registration failed.");
   } else if (TSTrafficServerVersionGetMajor() < 2) {
     TSError(PCP "requires Traffic Server 2.0 or later.");
-  } else if (0 > Load_Configuration(argc, argv)) {
+  } else if (0 > Load_Configuration()) {
     TSError(PCP "Failed to load config file.");
   } else if (0 == (cb_sni = TSContCreate(&CB_servername, TSMutexCreate()))) {
     TSError(PCP "Failed to create SNI callback.");
@@ -165,7 +181,8 @@ TSPluginInit(int argc, const char *argv[]) {
 # else // ! TS_USE_TLS_SNI
 
 void
-TSPluginInit(int, const char *[]) {
+TSPluginInit(int, const char *[]) 
+{
     TSError(PCP "requires TLS SNI which is not available.");
 }
 
