@@ -32,6 +32,7 @@
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
 #include <ts/ink_inet.h>
+#include <getopt.h>
 #include <ts/IpMap.h>
 #include "domain-tree.h"
 
@@ -127,42 +128,6 @@ struct ParsedSslValues {
 
 
 void Parse_Config_Rules(Value &parent, ParsedSslValues &orig_values);
-
-int
-Load_Configuration_Args(int argc, const char *argv[])
-{
-  ts::ConstBuffer text;
-  std::string s; // temp holder.
-  TSMgmtString config_path = NULL;
-  // get the path to the config file if one was specified
-  static char const * const CONFIG_ARG = "--config=";
-
-  for (int arg_idx = 0; arg_idx < argc; arg_idx++) {
-    if (0 == memcmp(argv[arg_idx], CONFIG_ARG, strlen(CONFIG_ARG))) {
-       config_path = TSstrdup(argv[arg_idx] + strlen(CONFIG_ARG));
-       TSDebug(PN, "Found config path %s", config_path);
-    }
-  }
-  if (NULL == config_path) {
-    static char const * const DEFAULT_CONFIG_PATH = "ssl_start.cfg";
-
-    config_path = TSstrdup(DEFAULT_CONFIG_PATH);
-    TSDebug(PN, "No config path set in arguments, using default: %s", DEFAULT_CONFIG_PATH);
-  }
-
-  // translate relative paths to absolute
-  if (config_path[0] != '/') {
-    ConfigPath = std::string(TSConfigDirGet()) + '/' + std::string(config_path);
-  } else {
-    ConfigPath = config_path;
-  }
-
-  TSDebug("skh-cert", "Load from %s", ConfigPath.c_str());
-  // free up the path
-  TSfree(config_path);
-
-  return 0;
-}
 
 int
 Load_Configuration()
@@ -531,17 +496,36 @@ TSPluginInit(int argc, const char *argv[])
   TSCont cb_pa = 0; // pre-accept callback continuation
   TSCont cb_lc = 0; // life cycle callback continuuation
   TSCont cb_sni = 0; // SNI callback continuuation
+  static const struct option longopt[] = {
+    { const_cast<char *>("config"), required_argument, NULL, 'c' },
+    { NULL, no_argument, NULL, '\0' }
+  };
+
 
   info.plugin_name = const_cast<char*>("SSL Certificate Loader");
   info.vendor_name = const_cast<char*>("Network Geographics");
   info.support_email = const_cast<char*>("shinrich@network-geographics.com");
 
+  int opt = 0;
+  while (opt >= 0) {
+    opt = getopt_long(argc, (char * const *)argv, "c:", longopt, NULL);
+    switch (opt) {
+    case 'c':
+      ConfigPath = optarg;
+      ConfigPath = std::string(TSConfigDirGet()) + '/' + std::string(optarg);
+      break;
+    }
+  } 
+  if (ConfigPath.length() == 0) {
+    static char const * const DEFAULT_CONFIG_PATH = "ssl_start.cfg";
+    ConfigPath = std::string(TSConfigDirGet()) + '/' + std::string(DEFAULT_CONFIG_PATH);
+    TSDebug(PN, "No config path set in arguments, using default: %s", DEFAULT_CONFIG_PATH);
+  }
+
   if (TS_SUCCESS != TSPluginRegister(TS_SDK_VERSION_2_0, &info)) {
     TSError(PCP "registration failed.");
-  } else if (TSTrafficServerVersionGetMajor() < 2) {
-    TSError(PCP "requires Traffic Server 2.0 or later.");
-  } else if (0 > Load_Configuration_Args(argc, argv)) {
-    TSError(PCP "Failed to load config file.");
+  } else if (TSTrafficServerVersionGetMajor() < 5) {
+    TSError(PCP "requires Traffic Server 5.0 or later.");
   } else if (0 == (cb_pa = TSContCreate(&CB_Pre_Accept, TSMutexCreate()))) {
     TSError(PCP "Failed to pre-accept callback.");
   } else if (0 == (cb_lc = TSContCreate(&CB_Life_Cycle, TSMutexCreate()))) {
