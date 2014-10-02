@@ -28,7 +28,7 @@
 #include "P_AIO.h"
 
 #if AIO_MODE == AIO_MODE_NATIVE
-#define AIO_PERIOD                                -HRTIME_MSECONDS(4)
+#define AIO_PERIOD                                -HRTIME_MSECONDS(10)
 #else
 
 #define MAX_DISKS_POSSIBLE 100
@@ -528,13 +528,11 @@ DiskHandler::mainAIOEvent(int event, Event *e) {
   AIOCallback *op = NULL;
 Lagain:
   int ret = io_getevents(ctx, 0, MAX_AIO_EVENTS, events, NULL);
-  //printf("%d\n", ret);
   for (int i = 0; i < ret; i++) {
     op = (AIOCallback *) events[i].data;
     op->aio_result = events[i].res;
     ink_assert(op->action.continuation);
     complete_list.enqueue(op);
-    //op->handleEvent(event, e);
   }
 
   if (ret == MAX_AIO_EVENTS) {
@@ -542,7 +540,10 @@ Lagain:
   }
 
   if (ret < 0) {
-    Debug("aio", "io_getevents failed: %s (%d)", strerror(-ret), -ret);
+    if (errno == EINTR)
+      goto Lagain;
+    if (errno == EFAULT || errno == ENOSYS)
+      Debug("aio", "io_getevents failed: %s (%d)", strerror(-ret), -ret);
   }
 
   ink_aiocb_t *cbs[MAX_AIO_EVENTS];
@@ -579,7 +580,11 @@ ink_aio_read(AIOCallback *op, int /* fromAPI ATS_UNUSED */) {
   op->aiocb.aio_reqprio = AIO_DEFAULT_PRIORITY;
   op->aiocb.aio_lio_opcode = IO_CMD_PREAD;
   op->aiocb.data = op;
-  this_ethread()->diskHandler->ready_list.enqueue(op);
+  EThread *t = this_ethread();
+#ifdef HAVE_EVENTFD
+  io_set_eventfd(&op->aiocb, t->evfd);
+#endif
+  t->diskHandler->ready_list.enqueue(op);
 
   return 1;
 }
@@ -589,14 +594,19 @@ ink_aio_write(AIOCallback *op, int /* fromAPI ATS_UNUSED */) {
   op->aiocb.aio_reqprio = AIO_DEFAULT_PRIORITY;
   op->aiocb.aio_lio_opcode = IO_CMD_PWRITE;
   op->aiocb.data = op;
-  this_ethread()->diskHandler->ready_list.enqueue(op);
+  EThread *t = this_ethread();
+#ifdef HAVE_EVENTFD
+  io_set_eventfd(&op->aiocb, t->evfd);
+#endif
+  t->diskHandler->ready_list.enqueue(op);
 
   return 1;
 }
 
 int
 ink_aio_readv(AIOCallback *op, int /* fromAPI ATS_UNUSED */) {
-  DiskHandler *dh = this_ethread()->diskHandler;
+  EThread *t = this_ethread();
+  DiskHandler *dh = t->diskHandler;
   AIOCallback *io = op;
   int sz = 0;
 
@@ -604,6 +614,9 @@ ink_aio_readv(AIOCallback *op, int /* fromAPI ATS_UNUSED */) {
     io->aiocb.aio_reqprio = AIO_DEFAULT_PRIORITY;
     io->aiocb.aio_lio_opcode = IO_CMD_PREAD;
     io->aiocb.data = io;
+#ifdef HAVE_EVENTFD
+    io_set_eventfd(&op->aiocb, t->evfd);
+#endif
     dh->ready_list.enqueue(io);
     ++sz;
     io = io->then;
@@ -622,7 +635,8 @@ ink_aio_readv(AIOCallback *op, int /* fromAPI ATS_UNUSED */) {
 
 int
 ink_aio_writev(AIOCallback *op, int /* fromAPI ATS_UNUSED */) {
-  DiskHandler *dh = this_ethread()->diskHandler;
+  EThread *t = this_ethread();
+  DiskHandler *dh = t->diskHandler;
   AIOCallback *io = op;
   int sz = 0;
 
@@ -630,6 +644,9 @@ ink_aio_writev(AIOCallback *op, int /* fromAPI ATS_UNUSED */) {
     io->aiocb.aio_reqprio = AIO_DEFAULT_PRIORITY;
     io->aiocb.aio_lio_opcode = IO_CMD_PWRITE;
     io->aiocb.data = io;
+#ifdef HAVE_EVENTFD
+    io_set_eventfd(&op->aiocb, t->evfd);
+#endif
     dh->ready_list.enqueue(io);
     ++sz;
     io = io->then;

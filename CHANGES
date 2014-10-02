@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.2.0
 
+  *) [TS-3044] Use eventfd in AIO_MODE_NATIVE if available.
+
   *) [TS-3108] Add port matching condition to header_rewrite.
 
   *) [TS-3068] Remove usage of Boost.
