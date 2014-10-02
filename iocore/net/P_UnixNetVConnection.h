@@ -239,6 +239,11 @@ public:
   ink_hrtime submit_time;
   OOB_callback *oob_ptr;
   bool from_accept_thread;
+  
+  // es - origin_trace associated connections
+  bool origin_trace;
+  const sockaddr *origin_trace_addr;
+  int origin_trace_port;
 
   int startEvent(int event, Event *e);
   int acceptEvent(int event, Event *e);
@@ -255,6 +260,21 @@ public:
   virtual void apply_options();
 
   friend void write_to_net_io(NetHandler*, UnixNetVConnection*, EThread*);
+  
+  void setOriginTrace(bool t)
+  {
+    origin_trace = t;
+  }
+
+  void setOriginTraceAddr(const sockaddr *addr)
+  {
+    origin_trace_addr = addr;
+  }
+
+  void setOriginTracePort(int port)
+  {
+    origin_trace_port = port;
+  }
 };
 
 extern ClassAllocator<UnixNetVConnection> netVCAllocator;

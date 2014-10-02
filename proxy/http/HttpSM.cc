@@ -38,6 +38,7 @@
 #include "ReverseProxy.h"
 #include "RemapProcessor.h"
 #include "Transform.h"
+#include "P_SSLConfig.h"
 
 #include "HttpPages.h"
 
@@ -5430,9 +5431,8 @@ HttpSM::do_setup_post_tunnel(HttpVC_t to_vc_type)
 
     // Next order of business if copy the remaining data from the
     //  header buffer into new buffer
-    //
-
     client_request_body_bytes = post_buffer->write(ua_buffer_reader, chunked ? ua_buffer_reader->read_avail() : post_bytes);
+   
     ua_buffer_reader->consume(client_request_body_bytes);
     p = tunnel.add_producer(ua_entry->vc, post_bytes - transfered_bytes, buf_start,
                             &HttpSM::tunnel_handler_post_ua, HT_HTTP_CLIENT, "user agent post");
@@ -5663,6 +5663,31 @@ HttpSM::attach_server_session(HttpServerSession * s)
   server_entry->vc = server_session;
   server_entry->vc_type = HTTP_SERVER_VC;
   server_entry->vc_handler = &HttpSM::state_send_server_request_header;
+ 
+  // es - is this a concern here in HttpSM?  Does it belong somewhere else?
+  // Get server and client connections
+  UnixNetVConnection *server_vc = (UnixNetVConnection *)(server_session->get_netvc());
+  UnixNetVConnection *client_vc = (UnixNetVConnection *)(ua_session->get_netvc());
+  SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(client_vc);
+  if(ssl_vc != NULL) { //if incoming connection is SSL
+    bool client_trace = ssl_vc->getSSLTrace();
+    if(client_trace) {
+      // get remote address and port to mark corresponding traces
+      const sockaddr *remote_addr = ssl_vc->get_remote_addr();
+      uint16_t remote_port = ssl_vc->get_remote_port();
+      server_vc->setOriginTrace(true);
+      server_vc->setOriginTraceAddr(remote_addr);
+      server_vc->setOriginTracePort(remote_port);
+    } else {
+      server_vc->setOriginTrace(false);
+      server_vc->setOriginTraceAddr(NULL);
+      server_vc->setOriginTracePort(0);
+    }
+  } else {
+    server_vc->setOriginTrace(false);
+    server_vc->setOriginTraceAddr(NULL);
+    server_vc->setOriginTracePort(0);
+  }
 
   // Initiate a read on the session so that the SM and not
   //  session manager will get called back if the timeout occurs

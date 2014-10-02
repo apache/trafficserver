@@ -189,6 +189,16 @@ public:
     return (this->sslHandshakeHookState != HANDSHAKE_HOOKS_PRE);
   }
 
+  bool getSSLTrace() const {
+    return sslTrace || super::origin_trace;
+  };
+
+  void setSSLTrace(bool state){
+    sslTrace = state;
+  };
+
+  bool computeSSLTrace(); 
+
 private:
   SSLNetVConnection(const SSLNetVConnection &);
   SSLNetVConnection & operator =(const SSLNetVConnection &);
@@ -224,6 +234,8 @@ private:
 
   const SSLNextProtocolSet * npnSet;
   Continuation * npnEndpoint;
+
+  bool sslTrace;
 };
 
 typedef int (SSLNetVConnection::*SSLNetVConnHandler) (int, void *);

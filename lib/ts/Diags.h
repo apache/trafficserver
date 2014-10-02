@@ -225,7 +225,7 @@ public:
     error_va(level, file, func, line, format_string, ap);
     va_end(ap);
   }
-
+  
   void dump(FILE * fp = stdout) const;
 
   void activate_taglist(const char *taglist, DiagsTagType mode = DiagsTagType_Debug);
@@ -301,7 +301,7 @@ dummy_debug(const char *tag, const char *fmt, ...)
 #define DiagSpecific(flag, tag, ...)  if (unlikely(diags->on())) flag ? diags->print(tag, DTA(DL_Diag), __VA_ARGS__) : \
                                                                    diags->log(tag, DTA(DL_Diag), __VA_ARGS__)
 #define DebugSpecific(flag, tag, ...)  if (unlikely(diags->on())) flag ? diags->print(tag, DTA(DL_Debug), __VA_ARGS__) : \
-                                                                    diags->log(tag, DTA(DL_Debug), __VA_ARGS__)
+                                                                   diags->log(tag, DTA(DL_Debug), __VA_ARGS__)
 
 #define is_debug_tag_set(_t)     unlikely(diags->on(_t,DiagsTagType_Debug))
 #define is_action_tag_set(_t)    unlikely(diags->on(_t,DiagsTagType_Action))
