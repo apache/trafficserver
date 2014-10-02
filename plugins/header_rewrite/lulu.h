@@ -30,7 +30,7 @@
 
 std::string getIP(sockaddr const* s_sockaddr);
 char* getIP(sockaddr const* s_sockaddr, char res[INET6_ADDRSTRLEN]);
-
+uint16_t getPort(sockaddr const* s_sockaddr);
 
 // Memory barriers
 #if defined(__i386__)

@@ -113,6 +113,8 @@ condition_factory(const std::string& cond)
     c = new ConditionInternalTransaction();
   } else if (c_name == "CLIENT-IP") {
     c = new ConditionClientIp();
+  } else if (c_name == "INCOMING-PORT") {
+    c = new ConditionIncomingPort();
   } else {
     TSError("%s: unknown condition: %s", PLUGIN_NAME, c_name.c_str());
     return NULL;

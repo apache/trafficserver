@@ -491,3 +491,32 @@ ConditionClientIp::append_value(std::string &s, const Resources &res)
     s.append(ip);
   }
 }
+
+void
+ConditionIncomingPort::initialize(Parser &p)
+{
+  Condition::initialize(p);
+
+  Matchers<uint16_t>* match = new Matchers<uint16_t>(_cond_op);
+  match->set(static_cast<uint16_t>(strtoul(p.get_arg().c_str(), NULL, 10)));
+  _matcher = match;
+}
+
+bool
+ConditionIncomingPort::eval(const Resources &res)
+{
+  uint16_t port = getPort(TSHttpTxnIncomingAddrGet(res.txnp));
+  bool rval = static_cast<const Matchers<uint16_t>*>(_matcher)->test(port);
+  TSDebug(PLUGIN_NAME, "Evaluating INCOMING-PORT(): %d: rval: %d", port, rval);
+  return rval;
+}
+
+void
+ConditionIncomingPort::append_value(std::string &s, const Resources &res)
+{
+  std::ostringstream oss;
+  uint16_t port = getPort(TSHttpTxnIncomingAddrGet(res.txnp));
+  oss << port;
+  s += oss.str();
+  TSDebug(PLUGIN_NAME, "Appending %d to evaluation value -> %s", port, s.c_str());
+}

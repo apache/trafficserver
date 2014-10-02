@@ -1,7 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.2.0
 
-  *) [TS=3068] Remove usage of Boost.
+  *) [TS-3108] Add port matching condition to header_rewrite.
+
+  *) [TS-3068] Remove usage of Boost.
 
   *) [TS-2289] Removed old unused AIO modes.
 

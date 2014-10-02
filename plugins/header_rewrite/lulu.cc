@@ -61,3 +61,26 @@ getIP(sockaddr const* s_sockaddr)
 
   return "";
 }
+
+// Returns the port of a sockaddr
+uint16_t
+getPort(sockaddr const* s_sockaddr)
+{
+  switch (s_sockaddr->sa_family) {
+  case AF_INET:
+    {
+      const struct sockaddr_in *s_sockaddr_in = reinterpret_cast<const struct sockaddr_in *>(s_sockaddr);
+      return ntohs(s_sockaddr_in->sin_port);
+    }
+    break;
+  case AF_INET6:
+    {
+      const struct sockaddr_in6 *s_sockaddr_in6 = reinterpret_cast<const struct sockaddr_in6 *>(s_sockaddr);
+      return ntohs(s_sockaddr_in6->sin6_port);
+    }
+    break;
+  default:
+    return 0;
+    break;
+  }
+}
