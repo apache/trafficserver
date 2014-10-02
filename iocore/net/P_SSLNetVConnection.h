@@ -253,6 +253,16 @@ public:
     return eosRcvd;
   }
 
+  bool getSSLTrace() const {
+    return sslTrace || super::origin_trace;
+  };
+
+  void setSSLTrace(bool state){
+    sslTrace = state;
+  };
+
+  bool computeSSLTrace(); 
+
 private:
   SSLNetVConnection(const SSLNetVConnection &);
   SSLNetVConnection &operator=(const SSLNetVConnection &);
@@ -294,6 +304,7 @@ private:
   MIOBuffer *iobuf;
   IOBufferReader *reader;
   bool eosRcvd;
+  bool sslTrace;
 };
 
 typedef int (SSLNetVConnection::*SSLNetVConnHandler)(int, void *);
