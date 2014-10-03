@@ -5529,8 +5529,6 @@ HttpTransact::initialize_state_variables_from_request(State* s, HTTPHdr* obsolet
   if (!s->server_info.name || s->redirect_info.redirect_in_process) {
     s->server_info.name = s->arena.str_store(host_name, host_len);
     s->server_info.port = incoming_request->port_get();
-  } else {
-    ink_assert(s->server_info.port != 0);
   }
 
   s->next_hop_scheme = s->scheme = incoming_request->url_get()->scheme_get_wksidx();
