@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.2.0
 
+  *) [TS-3109] Fix traffic_layout libhwloc linking on Ubuntu.
+
   *) [TS-2314] - remove possible invalid array index access from debug log
 
   *) [TS-3112] - Add null pointer check for contp 
