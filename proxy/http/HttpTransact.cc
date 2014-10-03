@@ -7977,7 +7977,9 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
   //  the next header (unless we've already drained   //
   //  which we do for NTLM auth)                      //
   //////////////////////////////////////////////////////
-  if (s->hdr_info.client_request.get_content_length() != 0 || s->client_info.transfer_encoding == HttpTransact::CHUNKED_ENCODING) {
+  if (status_code == HTTP_STATUS_REQUEST_TIMEOUT ||
+      s->hdr_info.client_request.get_content_length() != 0 ||
+      s->client_info.transfer_encoding == HttpTransact::CHUNKED_ENCODING) {
     s->client_info.keep_alive = HTTP_NO_KEEPALIVE;
   } else {
     // We don't have a request body.  Since we are
