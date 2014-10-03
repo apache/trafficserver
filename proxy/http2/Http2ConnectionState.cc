@@ -30,6 +30,22 @@
 
 typedef Http2ErrorCode (*http2_frame_dispatch)(Http2ClientSession&, Http2ConnectionState&, const Http2Frame&);
 
+static const int buffer_size_index[HTTP2_FRAME_TYPE_MAX] =
+{
+  -1,   // HTTP2_FRAME_TYPE_DATA
+  -1,   // HTTP2_FRAME_TYPE_HEADERS
+  -1,   // HTTP2_FRAME_TYPE_PRIORITY
+  -1,   // HTTP2_FRAME_TYPE_RST_STREAM
+  BUFFER_SIZE_INDEX_128,   // HTTP2_FRAME_TYPE_SETTINGS
+  -1,   // HTTP2_FRAME_TYPE_PUSH_PROMISE
+  -1,   // HTTP2_FRAME_TYPE_PING
+  BUFFER_SIZE_INDEX_128,   // HTTP2_FRAME_TYPE_GOAWAY
+  -1,   // HTTP2_FRAME_TYPE_WINDOW_UPDATE
+  -1,   // HTTP2_FRAME_TYPE_CONTINUATION
+  -1,   // HTTP2_FRAME_TYPE_ALTSVC
+  -1,   // HTTP2_FRAME_TYPE_BLOCKED
+};
+
 static Http2ErrorCode
 rcv_settings_frame(Http2ClientSession& cs, Http2ConnectionState& cstate, const Http2Frame& frame)
 {
@@ -69,24 +85,13 @@ rcv_settings_frame(Http2ClientSession& cs, Http2ConnectionState& cstate, const H
     cstate.client_settings.set((Http2SettingsIdentifier)param.id, param.value);
   }
 
+  // 6.5 Once all values have been applied, the recipient MUST immediately emit a
+  // SETTINGS frame with the ACK flag set.
+  Http2Frame ackFrame(HTTP2_FRAME_TYPE_SETTINGS, 0, HTTP2_FLAGS_SETTINGS_ACK);
+  cstate.ua_session->handleEvent(HTTP2_SESSION_EVENT_XMIT, &ackFrame);
+
   return HTTP2_ERROR_NO_ERROR;
 }
-
-static const int buffer_size_index[HTTP2_FRAME_TYPE_MAX] =
-{
-  -1,   // HTTP2_FRAME_TYPE_DATA
-  -1,   // HTTP2_FRAME_TYPE_HEADERS
-  -1,   // HTTP2_FRAME_TYPE_PRIORITY
-  -1,   // HTTP2_FRAME_TYPE_RST_STREAM
-  -1,   // HTTP2_FRAME_TYPE_SETTINGS
-  -1,   // HTTP2_FRAME_TYPE_PUSH_PROMISE
-  -1,   // HTTP2_FRAME_TYPE_PING
-  BUFFER_SIZE_INDEX_128,   // HTTP2_FRAME_TYPE_GOAWAY
-  -1,   // HTTP2_FRAME_TYPE_WINDOW_UPDATE
-  -1,   // HTTP2_FRAME_TYPE_CONTINUATION
-  -1,   // HTTP2_FRAME_TYPE_ALTSVC
-  -1,   // HTTP2_FRAME_TYPE_BLOCKED
-};
 
 static const http2_frame_dispatch frame_handlers[HTTP2_FRAME_TYPE_MAX] =
 {

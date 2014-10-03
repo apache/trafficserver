@@ -52,6 +52,8 @@ write_and_advance(byte_pointer& dst, uint32_t src)
   dst.u8 += sizeof(pval.bytes);
 }
 
+// Avoid a [-Werror,-Wunused-function] error until we need this overload ...
+#if 0
 static void
 write_and_advance(byte_pointer& dst, uint16_t src)
 {
@@ -61,6 +63,7 @@ write_and_advance(byte_pointer& dst, uint16_t src)
   memcpy(dst.u8, pval.bytes, sizeof(pval.bytes));
   dst.u8 += sizeof(pval.bytes);
 }
+#endif
 
 static void
 write_and_advance(byte_pointer& dst, uint8_t src)
@@ -127,13 +130,14 @@ bool
 http2_settings_parameter_is_valid(const Http2SettingsParameter& param)
 {
   // Static maximum values for Settings parameters.
-  static const unsigned settings_max[HTTP2_SETTINGS_MAX] = {
+  static const uint32_t settings_max[HTTP2_SETTINGS_MAX] = {
     0,
     UINT_MAX, // HTTP2_SETTINGS_HEADER_TABLE_SIZE
     1,        // HTTP2_SETTINGS_ENABLE_PUSH
     UINT_MAX, // HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS
     HTTP2_MAX_WINDOW_SIZE, // HTTP2_SETTINGS_INITIAL_WINDOW_SIZE
-    1,        // HTTP2_SETTINGS_COMPRESS_DATA
+    16777215, // HTTP2_SETTINGS_MAX_FRAME_SIZE
+    UINT_MAX, // HTTP2_SETTINGS_MAX_HEADER_LIST_SIZE
   };
 
   if (param.id == 0 || param.id >= HTTP2_SETTINGS_MAX) {
@@ -149,13 +153,15 @@ http2_settings_parameter_is_valid(const Http2SettingsParameter& param)
 
 // 4.1.  Frame Format
 //
-// 0                   1                   2                   3
-// 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+//  0                   1                   2                   3
+//  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-// | R |     Length (14)           |   Type (8)    |   Flags (8)   |
+// |                 Length (24)                   |
+// +---------------+---------------+---------------+
+// |   Type (8)    |   Flags (8)   |
 // +-+-+-----------+---------------+-------------------------------+
 // |R|                 Stream Identifier (31)                      |
-// +-+-------------------------------------------------------------+
+// +=+=============================================================+
 // |                   Frame Payload (0...)                      ...
 // +---------------------------------------------------------------+
 
@@ -163,21 +169,20 @@ bool
 http2_parse_frame_header(IOVec iov, Http2FrameHeader& hdr)
 {
   byte_pointer ptr(iov.iov_base);
-  byte_addressable_value<uint16_t> length;
+  byte_addressable_value<uint32_t> length_and_type;
   byte_addressable_value<uint32_t> streamid;
 
   if (unlikely(iov.iov_len < HTTP2_FRAME_HEADER_LEN)) {
     return false;
   }
 
-  memcpy_and_advance(length.bytes, ptr);
-  memcpy_and_advance(hdr.type, ptr);
+  memcpy_and_advance(length_and_type.bytes, ptr);
   memcpy_and_advance(hdr.flags, ptr);
   memcpy_and_advance(streamid.bytes, ptr);
 
-  length.bytes[0] &= 0x3F;  // Clear the 2 reserved high bits
+  hdr.length = ntohl(length_and_type.value) >> 8;
+  hdr.type = ntohl(length_and_type.value) & 0xff;
   streamid.bytes[0] &= 0x7f;// Clear the high reserved bit
-  hdr.length = ntohs(length.value);
   hdr.streamid = ntohl(streamid.value);
 
   return true;
@@ -192,7 +197,13 @@ http2_write_frame_header(const Http2FrameHeader& hdr, IOVec iov)
     return false;
   }
 
-  write_and_advance(ptr, hdr.length);
+  byte_addressable_value<uint32_t> length;
+  length.value = htonl(hdr.length);
+  // MSB length.bytes[0] is unused.
+  write_and_advance(ptr, length.bytes[1]);
+  write_and_advance(ptr, length.bytes[2]);
+  write_and_advance(ptr, length.bytes[3]);
+
   write_and_advance(ptr, hdr.type);
   write_and_advance(ptr, hdr.flags);
   write_and_advance(ptr, hdr.streamid);
@@ -232,24 +243,26 @@ http2_write_goaway(const Http2Goaway& goaway, IOVec iov)
 // 0                   1                   2                   3
 // 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-// | Identifier (8)|        Value (32)                             |
-// +---------------+-----------------------------------------------+
-// |               |
-// +---------------+
+// |       Identifier (16)         |
+// +-------------------------------+-------------------------------+
+// |                        Value (32)                             |
+// +---------------------------------------------------------------+
 
 bool
 http2_parse_settings_parameter(IOVec iov, Http2SettingsParameter& param)
 {
   byte_pointer ptr(iov.iov_base);
+  byte_addressable_value<uint16_t> pid;
   byte_addressable_value<uint32_t> pval;
 
   if (unlikely(iov.iov_len < HTTP2_SETTINGS_PARAMETER_LEN)) {
     return false;
   }
 
-  memcpy_and_advance(param.id, ptr);
+  memcpy_and_advance(pid.bytes, ptr);
   memcpy_and_advance(pval.bytes, ptr);
 
+  param.id = ntohs(pid.value);
   param.value = ntohl(pval.value);
 
   return true;
