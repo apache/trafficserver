@@ -116,6 +116,13 @@ Http2ConnectionState::main_event_handler(int event, void * edata)
     ink_assert(this->ua_session == NULL);
     this->ua_session = (Http2ClientSession *)edata;
 
+    // 3.5 HTTP/2 Connection Preface. Upon establishment of a TCP connection and
+    // determination that HTTP/2 will be used by both peers, each endpoint MUST
+    // send a connection preface as a final confirmation ... The server connection
+    // preface consists of a potentially empty SETTINGS frame.
+    Http2Frame settings(HTTP2_FRAME_TYPE_SETTINGS, 0, 0);
+    this->ua_session->handleEvent(HTTP2_SESSION_EVENT_XMIT, &settings);
+
     return 0;
   }
 

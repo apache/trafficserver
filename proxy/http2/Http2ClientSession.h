@@ -49,7 +49,7 @@ public:
     this->ioreader = r;
   }
 
-  Http2Frame(Http2FrameType type, Http2StreamId streamid, uint8_t flags = 0) {
+  Http2Frame(Http2FrameType type, Http2StreamId streamid, uint8_t flags) {
     Http2FrameHeader hdr = { 0, (uint8_t)type, flags, streamid };
     http2_write_frame_header(hdr, make_iovec(this->hdr.raw));
   }
