@@ -864,12 +864,10 @@ SSLDiagnostic(const SrcLoc& loc, bool debug, SSLNetVConnection * vc, const char 
   int line, flags;
   unsigned long es;
   va_list ap;
+  ip_text_buffer ip_buf =  { '\0' };
 
-  ip_text_buffer ip_buf;
-  bool ip_buf_flag = false;
   if (vc) {
     ats_ip_ntop(vc->get_remote_addr(), ip_buf, sizeof(ip_buf));
-    ip_buf_flag = true;
   }
 
   es = CRYPTO_thread_id();
@@ -879,13 +877,13 @@ SSLDiagnostic(const SrcLoc& loc, bool debug, SSLNetVConnection * vc, const char 
         diags->log("ssl", DL_Debug, loc.file, loc.func, loc.line,
             "SSL::%lu:%s:%s:%d%s%s%s%s", es, ERR_error_string(l, buf), file, line,
           (flags & ERR_TXT_STRING) ? ":" : "", (flags & ERR_TXT_STRING) ? data : "",
-          ip_buf_flag? ": peer address is " : "", ip_buf);
+          vc ? ": peer address is " : "", ip_buf);
       }
     } else {
       diags->error(DL_Error, loc.file, loc.func, loc.line,
           "SSL::%lu:%s:%s:%d%s%s%s%s", es, ERR_error_string(l, buf), file, line,
           (flags & ERR_TXT_STRING) ? ":" : "", (flags & ERR_TXT_STRING) ? data : "",
-          ip_buf_flag? ": peer address is " : "", ip_buf);
+          vc ? ": peer address is " : "", ip_buf);
     }
 
     // Tally desired stats (only client/server connection stats, not init
