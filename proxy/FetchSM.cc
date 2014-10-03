@@ -249,6 +249,9 @@ FetchSM::InvokePluginExt(int fetch_event)
     has_sent_header = true;
   }
 
+  if (!contp)
+    goto out;
+
   if (!has_body()) {
     contp->handleEvent(TS_FETCH_EVENT_EXT_BODY_DONE, this);
     goto out;
