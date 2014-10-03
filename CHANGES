@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.2.0
 
+  *) [TS-3112] - Add null pointer check for contp 
+
   *) [TS-3103] Improve privilege elevation.
 
   *) [TS-3044] Use eventfd in AIO_MODE_NATIVE if available.
