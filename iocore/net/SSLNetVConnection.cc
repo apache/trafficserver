@@ -744,7 +744,6 @@ SSLNetVConnection::SSLNetVConnection():
   npnSet(NULL),
   npnEndpoint(NULL)
 {
-  sniServername[0] = '\0';
 }
 
 void

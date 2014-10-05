@@ -196,10 +196,6 @@ ssl_servername_callback(SSL * ssl, int * ad, void * /*arg*/)
   Debug("ssl", "ssl_servername_callback ssl=%p ad=%d server=%s handshake_complete=%d", ssl, *ad, servername,
     netvc->getSSLHandShakeComplete());
 
-  if (servername != NULL) {
-    ink_strlcpy(netvc->sniServername, servername, TS_MAX_HOST_NAME_LEN);
-  }
-
   // catch the client renegotiation early on
   if (SSLConfigParams::ssl_allow_client_renegotiation == false && netvc->getSSLHandShakeComplete()) {
     Debug("ssl", "ssl_servername_callback trying to renegotiate from the client");
