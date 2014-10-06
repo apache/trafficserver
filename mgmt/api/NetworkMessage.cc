@@ -72,7 +72,7 @@ static const struct NetCmdOperation responses[] = {
   /* FILE_WRITE                 */ { 1, { MGMT_MARSHALL_INT } },
   /* RECORD_SET                 */ { 2, { MGMT_MARSHALL_INT, MGMT_MARSHALL_INT } },
   /* RECORD_GET                 */ { 4, { MGMT_MARSHALL_INT, MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING, MGMT_MARSHALL_DATA } },
-  /* PROXY_STATE_GET            */ { 1, { MGMT_MARSHALL_INT } },
+  /* PROXY_STATE_GET            */ { 2, { MGMT_MARSHALL_INT, MGMT_MARSHALL_INT } },
   /* PROXY_STATE_SET            */ { 1, { MGMT_MARSHALL_INT } },
   /* RECONFIGURE                */ { 1, { MGMT_MARSHALL_INT } },
   /* RESTART                    */ { 1, { MGMT_MARSHALL_INT } },
