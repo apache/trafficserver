@@ -177,9 +177,7 @@ libtsutil_la_SOURCES = \
   ink_time.h \
   libts.h \
   llqueue.cc \
-  lockfile.cc \
-  RbTree.cc \
-  RbTree.h
+  lockfile.cc
 
 
 #test_UNUSED_SOURCES = \
