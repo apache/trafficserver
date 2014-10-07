@@ -142,7 +142,6 @@ public:
   ProxyAllocator ioDataAllocator;
   ProxyAllocator ioAllocator;
   ProxyAllocator ioBlockAllocator;
-  ProxyAllocator ioBufAllocator[DEFAULT_BUFFER_SIZES];
 
 private:
   // prevent unauthorized copies (Not implemented)
