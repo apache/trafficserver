@@ -327,16 +327,28 @@ EnableDeathSignal(int signum)
     best to program defensively and have it available.
  */
 static void
-elevateFileAccess(bool state)
+elevateFileAccess(unsigned level, bool state)
 {
   Debug("privileges", "[elevateFileAccess] state : %d\n", state);
 
   cap_t cap_state = cap_get_proc(); // current capabilities
-  // Make a list of the capabilities we changed.
-  cap_value_t cap_list[] = { CAP_DAC_OVERRIDE };
-  static int const CAP_COUNT = sizeof(cap_list)/sizeof(*cap_list);
 
-  cap_set_flag(cap_state, CAP_EFFECTIVE, CAP_COUNT, cap_list, state ? CAP_SET : CAP_CLEAR);
+  unsigned cap_count = 0;
+  cap_value_t cap_list[2];
+
+  if (level & ElevateAccess::FILE_PRIVILEGE) {
+    cap_list[cap_count] = CAP_DAC_OVERRIDE;
+    ++cap_count;
+  }
+
+  if (level & ElevateAccess::TRACE_PRIVILEGE) {
+    cap_list[cap_count] = CAP_SYS_PTRACE;
+    ++cap_count;
+  }
+
+  ink_release_assert(cap_count <= sizeof(cap_list));
+
+  cap_set_flag(cap_state, CAP_EFFECTIVE, cap_count, cap_list, state ? CAP_SET : CAP_CLEAR);
   if (cap_set_proc(cap_state) != 0) {
     Fatal("failed to %s privileged capabilities: %s", state ? "acquire" : "release", strerror(errno));
   }
@@ -345,8 +357,8 @@ elevateFileAccess(bool state)
 }
 #endif
 
-ElevateAccess::ElevateAccess(const bool state)
-  : elevated(false), saved_uid(geteuid())
+ElevateAccess::ElevateAccess(const bool state, unsigned lvl)
+  : elevated(false), saved_uid(geteuid()), level(lvl)
 {
   if (state == true) {
     elevate();
@@ -372,7 +384,7 @@ void
 ElevateAccess::elevate()
 {
 #if TS_USE_POSIX_CAP
-  elevateFileAccess(true);
+  elevateFileAccess(level, true);
 #else
   // Since we are setting a process-wide credential, we have to block any other thread
   // attempting to elevate until this one demotes.
@@ -386,7 +398,7 @@ void
 ElevateAccess::demote()
 {
 #if TS_USE_POSIX_CAP
-  elevateFileAccess(false);
+  elevateFileAccess(level, false);
 #else
   ImpersonateUserID(saved_uid, IMPERSONATE_EFFECTIVE);
   ink_mutex_release(&lock);

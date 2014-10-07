@@ -56,7 +56,13 @@ void ImpersonateUserID(uid_t user, ImpersonationLevel level);
 
 class ElevateAccess {
 public:
-  ElevateAccess(const bool state);
+
+  typedef enum {
+    FILE_PRIVILEGE  = 0x1u, // Access filesystem objects with privilege
+    TRACE_PRIVILEGE = 0x2u  // Trace other processes with privilege
+  } privilege_level;
+
+  ElevateAccess(const bool state, unsigned level = FILE_PRIVILEGE);
   ~ElevateAccess();
 
   void elevate();
@@ -65,6 +71,8 @@ public:
 private:
   bool elevated;
   uid_t saved_uid;
+  unsigned level;
+
 #if !TS_USE_POSIX_CAP
   static ink_mutex lock; // only one thread at a time can elevate
 #endif
