@@ -71,6 +71,7 @@ public:
       sigusr1_received = 0;
       // TODO: TS-567 Integrate with debugging allocators "dump" features?
       ink_freelists_dump(stderr);
+      ResourceTracker::dump(stderr);
       if (!end)
         end = (char *) sbrk(0);
       if (!snap)
@@ -124,6 +125,7 @@ public:
     } else {
       // TODO: TS-567 Integrate with debugging allocators "dump" features?
       ink_freelists_dump(stderr);
+      ResourceTracker::dump(stderr);
     }
     if (!baseline_taken && use_baseline) {
       ink_freelists_snap_baseline();
