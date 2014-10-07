@@ -92,10 +92,10 @@ ResourceTracker::dump(FILE *fd) {
     for (std::map<const char*, Resource*>::const_iterator it = _resourceMap.begin();
         it != _resourceMap.end(); ++it) {
       const Resource &resource = *it->second;
-      fprintf(fd, "%50s | %20lld\n", it->first, resource.getValue());
+      fprintf(fd, "%50s | %20" PRId64 "\n", it->first, resource.getValue());
       total += resource.getValue();
     }
   }
   ink_mutex_release(&resourceLock);
-  fprintf(fd, "%50s | %20lld\n", "TOTAL", total);
+  fprintf(fd, "%50s | %20" PRId64 "\n", "TOTAL", total);
 }
