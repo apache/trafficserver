@@ -39,21 +39,27 @@ class textBuffer
 {
 public:
   inkcoreapi textBuffer(int size);
-    inkcoreapi ~ textBuffer();
+  inkcoreapi ~ textBuffer();
   int rawReadFromFile(int fd);
   int readFromFD(int fd);
-  inkcoreapi int copyFrom(const void *, int num_bytes);
+  inkcoreapi int copyFrom(const void *, unsigned num_bytes);
   void reUse();
   inkcoreapi char *bufPtr();
-  int spaceUsed()
-  {
-    return (int) (nextAdd - bufferStart);
+
+  size_t spaceUsed() const {
+    return (size_t) (nextAdd - bufferStart);
   };
+
+  void chomp();
+  void format(const char * fmt, ...) TS_PRINTFLIKE(2, 3);
+
+  char * release();
+
 private:
   textBuffer(const textBuffer &);
-  int enlargeBuffer(int N);
-  int currentSize;
-  int spaceLeft;
+  int enlargeBuffer(unsigned N);
+  size_t currentSize;
+  size_t spaceLeft;
   char *bufferStart;
   char *nextAdd;
 };

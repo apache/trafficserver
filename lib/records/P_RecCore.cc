@@ -1001,7 +1001,7 @@ int RecWriteConfigFile(textBuffer *tb)
       break;
     }
 
-    if (nbytes != tb->spaceUsed()) {
+    if (nbytes != (int)tb->spaceUsed()) {
       RecLog(DL_Warning, "write to file: %s fail, disk maybe full", tmp_filename);
       result = REC_ERR_FAIL;
       break;

@@ -367,7 +367,7 @@ Rollback::internalUpdate(textBuffer * buf, version_t newVersion, bool notifyChan
   char *activeVersion;
   char *currentVersion_local;
   char *nextVersion;
-  int writeBytes;
+  ssize_t writeBytes;
   int diskFD;
   int ret;
   versionInfo *toRemove;
@@ -414,7 +414,7 @@ Rollback::internalUpdate(textBuffer * buf, version_t newVersion, bool notifyChan
   // Write the buffer into the new configuration file
   writeBytes = write(diskFD, buf->bufPtr(), buf->spaceUsed());
   ret = closeFile(diskFD, true);
-  if ((ret < 0) || (writeBytes != buf->spaceUsed())) {
+  if ((ret < 0) || ((size_t)writeBytes != buf->spaceUsed())) {
     mgmt_log(stderr, "[Rollback::internalUpdate] Unable to write new version of %s : %s\n", fileName, strerror(errno));
     returnCode = SYS_CALL_ERROR_ROLLBACK;
     goto UPDATE_CLEANUP;
@@ -564,7 +564,7 @@ Rollback::getVersion_ml(version_t version, textBuffer ** buffer)
     }
   } while (readResult > 0);
 
-  if (newBuffer->spaceUsed() != fileInfo.st_size) {
+  if ((off_t)newBuffer->spaceUsed() != fileInfo.st_size) {
     mgmt_log(stderr,
              "[Rollback::getVersion] Incorrect amount of data retrieved from %s version %d.  Expected: %d   Got: %d\n",
              fileName, version, fileInfo.st_size, newBuffer->spaceUsed());
