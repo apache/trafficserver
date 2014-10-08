@@ -83,11 +83,14 @@ public:
   SpdyNV(TSFetchSM fetch_sm);
   ~SpdyNV();
 
+  bool is_valid_response();
+
 public:
   const char **nv;
 
 private:
   SpdyNV();
+  bool valid_response;
   void *mime_hdr;
   char status[64];
   char version[64];

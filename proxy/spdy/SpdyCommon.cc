@@ -95,8 +95,11 @@ SpdyNV::SpdyNV(TSFetchSM fetch_sm)
 
   nr_fields = TSMimeHdrFieldsCount(bufp, loc);
 
+  valid_response = true;
+
   if (nr_fields <= 0) {
     Debug("spdy_error", "invalid fetchsm %p, nr_fields %d, hdr_len %d", fetch_sm, nr_fields, hdr_len);
+    valid_response = false;
   }
 
   nv = (const char **)malloc((2*nr_fields + 5) * sizeof(char *));
