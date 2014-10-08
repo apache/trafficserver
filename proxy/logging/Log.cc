@@ -769,12 +769,33 @@ Log::init_fields()
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "sshv", field);
 
-  field = new LogField("server_resp_time", "srt",
+  field = new LogField("server_resp_time", "stms",
                        LogField::sINT,
-                       &LogAccess::marshal_server_resp_time,
+                       &LogAccess::marshal_server_resp_time_ms,
                        &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
-  ink_hash_table_insert(field_symbol_hash, "srt", field);
+  ink_hash_table_insert(field_symbol_hash, "stms", field);
+
+  field = new LogField("server_resp_time_hex", "stmsh",
+                       LogField::sINT,
+                       &LogAccess::marshal_server_resp_time_ms,
+                       &LogAccess::unmarshal_int_to_str_hex);
+  global_field_list.add(field, false);
+  ink_hash_table_insert(field_symbol_hash, "stmsh", field);
+
+  field = new LogField("server_resp_time_fractional", "stmsf",
+                       LogField::sINT,
+                       &LogAccess::marshal_server_resp_time_ms,
+                       &LogAccess::unmarshal_ttmsf);
+  global_field_list.add(field, false);
+  ink_hash_table_insert(field_symbol_hash, "stmsf", field);
+
+  field = new LogField("server_resp_time_sec", "sts",
+                       LogField::sINT,
+                       &LogAccess::marshal_server_resp_time_s,
+                       &LogAccess::unmarshal_int_to_str);
+  global_field_list.add(field, false);
+  ink_hash_table_insert(field_symbol_hash, "sts", field);
 
   field = new LogField("cached_resp_status_code", "csssc",
                        LogField::sINT,

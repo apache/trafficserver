@@ -450,10 +450,17 @@ LogAccess::marshal_server_resp_http_version(char *buf)
 /*-------------------------------------------------------------------------
 -------------------------------------------------------------------------*/
 int
-LogAccess::marshal_server_resp_time(char *buf)
+LogAccess::marshal_server_resp_time_ms(char *buf)
 {
   DEFAULT_INT_FIELD;
 }
+
+int
+LogAccess::marshal_server_resp_time_s(char *buf)
+{
+  DEFAULT_INT_FIELD;
+}
+
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/

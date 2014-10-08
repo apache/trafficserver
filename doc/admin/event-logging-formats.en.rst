@@ -291,6 +291,26 @@ The following list describes Traffic Server custom logging fields.
 ``sssc``
     The HTTP response status code from origin server to Traffic Server.
 
+``stms``
+    The time spent accessing the origin (in milliseconds); the time is
+    measured from the time the connection with the origin is established
+    to the time the connection is closed.
+
+``stmsh``
+    Same as ``stms`` but in hexadecimal.
+
+``stmsf``
+    The time Traffic Server spends accessing the origin as a fractional
+    number of seconds. That is, the time is formated as a floating-point
+    number, instead of an integer as in ``stms``.
+
+    For example: if the time is 1500 milliseconds, then this field
+    displays 1.5 while the ``stms`` field displays 1500 and the ``sts``
+    field displays 1.
+
+``sts``
+    The time Traffic Server spends accessing the origin, in seconds. 
+
 ``ttms``
     The time Traffic Server spends processing the client request; the
     number of milliseconds between the time the client establishes the
