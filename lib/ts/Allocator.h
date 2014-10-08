@@ -175,10 +175,10 @@ public:
 
 /**
   Allocator for space class, a class with a lot of uninitialized
-  space/members. It uses an instantiate fucntion do initialization
-  of objects. This is particulary useful if most of the space in
-  the objects does not need to be intialized. The inifunction passed
-  can be used to intialize a few fields selectively. Using
+  space/members. It uses an instantiate function do initialization
+  of objects. This is particularly useful if most of the space in
+  the objects does not need to be initialized. The initialization function passed
+  can be used to initialize a few fields selectively. Using
   ClassAllocator for space objects would unnecessarily initialized
   all of the members.
 
