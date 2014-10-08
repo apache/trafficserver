@@ -2164,12 +2164,48 @@ SSL Termination
   buffering at the SSL layer. The default of ``0`` means to always
   write all available data into a single SSL record.
 
+.. ts:cv:: CONFIG proxy.config.ssl.session_cache INT 2
+
+	Enables the SSL Session Cache:
+	
+	- ``0`` = Disables the session cache entirely
+	
+	- ``1`` = Enables the session cache using OpenSSLs implementation.
+	
+	- ``2`` = (default) Enables the session cache using Traffic Server's implementation.
+			This implentation should perform much better than the OpenSSL
+			implementation.
+			
+
 .. ts:cv:: CONFIG proxy.config.ssl.session_cache.timeout INT 0
 
   This configuration specifies the lifetime of SSL session cache
   entries in seconds. If it is ``0``, then the SSL library will use
-  a default value, typically 300 seconds.
+  a default value, typically 300 seconds. Note: This option has no affect
+  when using the Traffic Server session cache (option ``2`` in 
+  ``proxy.config.ssl.session_cache``)
+  
+.. ts:cv:: CONFIG proxy.config.ssl.session_cache.size INT 102400
 
+  This configuration specifies the maximum number of entries
+  the SSL session cache may contain.
+  
+.. ts:cv:: CONFIG proxy.config.ssl.session_cache.num_buckets INT 1024
+
+  This configuration specifies the number of buckets to use with the
+  Traffic Server SSL session cache implementation. The TS implementation
+  is a fixed size hash map where each bucket is protected by a mutex.
+
+.. ts:cv:: CONFIG proxy.config.ssl.session_cache.skip_cache_on_bucket_contention INT 0
+
+	This configuration specifies the behavior of the Traffic Server SSL session
+	cache implementation during lock contention on each bucket:
+	
+	- ``0`` = (default) Don't skip session caching when bucket lock is contented.
+	
+	- ``1`` = Don't use the SSL session cache for this connection during lock contention.
+
+	
 .. ts:cv:: CONFIG proxy.config.ssl.hsts_max_age INT -1
 
   This configuration specifies the max-age value that will be used
