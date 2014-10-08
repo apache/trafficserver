@@ -83,9 +83,9 @@ public:
   SpdyNV(TSFetchSM fetch_sm);
   ~SpdyNV();
 
-  bool 
+  bool
   is_valid_response() {
-    return valid_response; 
+    return valid_response;
   }
 
 public:
