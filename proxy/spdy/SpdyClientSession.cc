@@ -364,7 +364,7 @@ spdy_process_fetch_header(TSEvent /*event*/, SpdyClientSession *sm, TSFetchSM fe
 
   SpdyNV spdy_nv(fetch_sm);
  
-  if (spdy_nv.is_valid_response()) {
+  if (!spdy_nv.is_valid_response()) {
     Debug("spdy_error", "----spdy_process_fetch_header, invalid http response");
     return -1;
   }
