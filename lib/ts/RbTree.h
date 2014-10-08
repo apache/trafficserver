@@ -66,6 +66,14 @@ struct RBNode {
   /// @return The color of the node.
   Color getColor() const { return _color; }
 
+  self* leftmostDescendant() const {
+      const self* n = this;
+      while (n->_left)
+          n = n->_left;
+
+      return const_cast<self*>(n);
+  }
+
   /** Reverse a direction
       @return @c LEFT if @a d is @c RIGHT, @c RIGHT if @a d is @c LEFT,
       @c NONE otherwise.

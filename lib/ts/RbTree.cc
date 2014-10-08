@@ -36,7 +36,7 @@ inline bool operator == ( RBNode::Color c, RBNode* n ) {
   return n == c;
 }
 
-inline RBNode*
+RBNode*
 RBNode::getChild(Direction d) const {
   return d == RIGHT ? _right
     : d == LEFT ? _left
@@ -181,7 +181,7 @@ RBNode::remove() {
       Because of the initial special case checks, we know
       that remove_node is @b not the root node.
   */
-  self* remove_node(_left && _right ? _next : this);
+  self* remove_node(_left && _right ? _right->leftmostDescendant() : this);
 
   // This is the color of the node physically removed from the tree.
   // Normally this is the color of @a remove_node
