@@ -40,6 +40,7 @@ CONFIG proxy.config.http.parent_proxy_routing_enable INT 0
 CONFIG proxy.config.http.parent_proxy.retry_time INT 300
 CONFIG proxy.config.http.parent_proxy.connect_attempts_timeout INT 30
 CONFIG proxy.config.http.forward.proxy_auth_to_parent INT 0
+CONFIG proxy.config.http.uncacheable_requests_bypass_parent INT 1
 
 ##############################################################################
 # HTTP connection timeouts (secs). Docs:
