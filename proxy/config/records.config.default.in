@@ -156,6 +156,8 @@ CONFIG proxy.config.log.auto_delete_rolled_files INT 1
 CONFIG proxy.config.url_remap.remap_required INT 1
     # https://docs.trafficserver.apache.org/records.config#proxy-config-url-remap-pristine-host-hdr
 CONFIG proxy.config.url_remap.pristine_host_hdr INT 0
+    # https://docs.trafficserver.apache.org/records.config#reverse-proxy
+CONFIG proxy.config.reverse_proxy.enabled INT 1
 
 ##############################################################################
 # SSL Termination. Docs:
