@@ -83,7 +83,10 @@ public:
   SpdyNV(TSFetchSM fetch_sm);
   ~SpdyNV();
 
-  bool is_valid_response();
+  bool 
+  is_valid_response() {
+    return valid_response; 
+  }
 
 public:
   const char **nv;
