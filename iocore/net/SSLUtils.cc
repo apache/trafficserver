@@ -26,6 +26,7 @@
 #include "P_Net.h"
 #include "ink_cap.h"
 #include "P_OCSPStapling.h"
+#include "SSLSessionCache.h"
 
 #include <string>
 #include <openssl/err.h>
@@ -106,6 +107,7 @@ struct ssl_user_config
 
 #define HAVE_OPENSSL_SESSION_TICKETS 1
 
+SSLSessionCache *session_cache; // declared extern in P_SSLConfig.h
 static void session_ticket_free(void *, void *, CRYPTO_EX_DATA *, int, long, void *);
 static int ssl_callback_session_ticket(SSL *, unsigned char *, unsigned char *, EVP_CIPHER_CTX *, HMAC_CTX *, int);
 #endif /* SSL_CTX_set_tlsext_ticket_key_cb */
@@ -175,6 +177,61 @@ SSL_CTX_add_extra_chain_cert_file(SSL_CTX * ctx, const char * chainfile)
 
   return true;
 }
+
+
+static SSL_SESSION* ssl_get_cached_session(SSL *ssl, unsigned char *id, int len, int *copy) {
+  const char *servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
+  *copy = 0;
+
+  SSLSessionID sid(id, len);
+  if (diags->tag_activated("ssl.session_cache")) {
+    char printable_buf[(len * 2) + 1];
+    sid.toString(printable_buf, sizeof(printable_buf));
+    Debug("ssl.session_cache.get", "ssl_get_cached_session cached session '%s' on name '%s'", printable_buf, servername);
+  }
+
+  SSL_SESSION *session = NULL;
+  if(session_cache->getSession(sid, servername, &session))
+    return session;
+  else
+    return NULL;
+
+}
+
+static int ssl_new_cached_session(SSL *ssl, SSL_SESSION *sess) {
+  unsigned int len = 0;
+  const unsigned char *id = SSL_SESSION_get_id(sess, &len);
+  const char *servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
+
+  SSLSessionID sid(id, len);
+  if (diags->tag_activated("ssl.session_cache")) {
+    char printable_buf[(len * 2) + 1];
+    sid.toString(printable_buf, sizeof(printable_buf));
+    Debug("ssl.session_cache.insert", "ssl_new_cached_session session '%s' on name '%s'", printable_buf, servername);
+  }
+
+  session_cache->insertSession(sid, servername, sess);
+
+  return 0;
+}
+
+static void ssl_rm_cached_session(SSL_CTX *ctx, SSL_SESSION *sess) {
+  SSL_CTX_remove_session(ctx, sess);
+
+  unsigned int len = 0;
+  const unsigned char *id = SSL_SESSION_get_id(sess, &len);
+
+  SSLSessionID sid(id, len);
+  if (diags->tag_activated("ssl.session_cache")) {
+    char printable_buf[(len * 2) + 1];
+    sid.toString(printable_buf, sizeof(printable_buf));
+    Debug("ssl.session_cache.remove", "ssl_rm_cached_session cached session '%s'", printable_buf);
+  }
+
+  session_cache->removeSession(sid);
+}
+
+
 
 #if TS_USE_TLS_SNI
 
@@ -691,6 +748,22 @@ SSLInitializeStatistics()
                      RECD_INT, RECP_PERSISTENT, (int) ssl_total_tickets_renewed_stat,
                      RecRawStatSyncCount);
 
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_session_cache_hit",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_session_cache_hit,
+                     RecRawStatSyncCount);
+
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_session_cache_miss",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_session_cache_miss,
+                     RecRawStatSyncCount);
+
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_session_cache_eviction",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_session_cache_eviction,
+                     RecRawStatSyncCount);
+
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_session_cache_lock_contention",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_session_cache_lock_contention,
+                     RecRawStatSyncCount);
+
   /* error stats */
   RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_error_want_write",
                      RECD_INT, RECP_PERSISTENT, (int) ssl_error_want_write,
@@ -993,18 +1066,37 @@ SSLInitServerContext(
   // disable selected protocols
   SSL_CTX_set_options(ctx, params->ssl_ctx_options);
 
+  Debug("ssl.session_cache", "ssl context=%p: using session cache options, enabled=%d, size=%d, num_buckets=%d, skip_on_contention=%d, timeout=%d",
+		  ctx, params->ssl_session_cache, params->ssl_session_cache_size, params->ssl_session_cache_num_buckets,
+		  params->ssl_session_cache_skip_on_contention, params->ssl_session_cache_timeout);
+
   if (params->ssl_session_cache_timeout) {
-        SSL_CTX_set_timeout(ctx, params->ssl_session_cache_timeout);
+    SSL_CTX_set_timeout(ctx, params->ssl_session_cache_timeout);
   }
 
   switch (params->ssl_session_cache) {
   case SSLConfigParams::SSL_SESSION_CACHE_MODE_OFF:
-    SSL_CTX_set_session_cache_mode(ctx, SSL_SESS_CACHE_OFF|SSL_SESS_CACHE_NO_INTERNAL);
+    Debug("ssl.session_cache", "disabling SSL session cache");
+
+    SSL_CTX_set_session_cache_mode(ctx, SSL_SESS_CACHE_OFF | SSL_SESS_CACHE_NO_INTERNAL);
     break;
-  case SSLConfigParams::SSL_SESSION_CACHE_MODE_SERVER:
+  case SSLConfigParams::SSL_SESSION_CACHE_MODE_SERVER_OPENSSL_IMPL:
+	Debug("ssl.session_cache", "enabling SSL session cache with OpenSSL implementation");
+
     SSL_CTX_set_session_cache_mode(ctx, SSL_SESS_CACHE_SERVER);
     SSL_CTX_sess_set_cache_size(ctx, params->ssl_session_cache_size);
     break;
+  case SSLConfigParams::SSL_SESSION_CACHE_MODE_SERVER_ATS_IMPL: {
+    Debug("ssl.session_cache", "enabling SSL session cache with ATS implementation");
+    /* Add all the OpenSSL callbacks */
+    SSL_CTX_sess_set_new_cb(ctx, ssl_new_cached_session);
+    SSL_CTX_sess_set_remove_cb(ctx, ssl_rm_cached_session);
+    SSL_CTX_sess_set_get_cb(ctx, ssl_get_cached_session);
+
+    SSL_CTX_set_session_cache_mode(ctx, SSL_SESS_CACHE_SERVER | SSL_SESS_CACHE_NO_INTERNAL);
+
+    break;
+    }
   }
 
 #ifdef SSL_MODE_RELEASE_BUFFERS

@@ -127,4 +127,33 @@ private:
   ink_mutex& mtx;
 };
 
+struct ink_scoped_try_mutex
+{
+  explicit ink_scoped_try_mutex(ink_mutex& m) : mtx(m), has_lock(false) {
+    if(ink_mutex_try_acquire(&mtx)) {
+      has_lock = true;
+    }
+  }
+
+  void lock() {
+    if (!has_lock)
+      ink_mutex_acquire(&mtx);
+    has_lock = true;
+  }
+
+  bool hasLock() const {
+    return has_lock;
+  }
+
+  ~ink_scoped_try_mutex() {
+    if (has_lock)
+      ink_mutex_release(&mtx);
+  }
+
+private:
+  ink_mutex& mtx;
+  bool has_lock;
+};
+
+
 #endif /* _ink_mutex_h_ */

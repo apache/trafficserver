@@ -88,6 +88,7 @@ libinknet_a_SOURCES = \
   P_UnixUDPConnection.h \
   Socks.cc \
   SSLCertLookup.cc \
+  SSLSessionCache.cc \
   SSLConfig.cc \
   SSLNetAccept.cc \
   SSLNetProcessor.cc \

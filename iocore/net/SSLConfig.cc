@@ -37,6 +37,7 @@
 #include "P_SSLConfig.h"
 #include "P_SSLUtils.h"
 #include "P_SSLCertLookup.h"
+#include "SSLSessionCache.h"
 #include <records/I_RecHttp.h>
 
 int SSLConfig::configid = 0;
@@ -47,6 +48,10 @@ bool SSLConfigParams::ssl_ocsp_enabled = false;
 int SSLConfigParams::ssl_ocsp_cache_timeout = 3600;
 int SSLConfigParams::ssl_ocsp_request_timeout = 10;
 int SSLConfigParams::ssl_ocsp_update_period = 60;
+size_t SSLConfigParams::session_cache_number_buckets = 1024;
+bool SSLConfigParams::session_cache_skip_on_lock_contention = false;
+size_t SSLConfigParams::session_cache_max_bucket_size = 100;
+
 init_ssl_ctx_func SSLConfigParams::init_ssl_ctx_cb = NULL;
 
 static ConfigUpdateHandler<SSLCertificateConfig> * sslCertUpdate;
@@ -70,8 +75,10 @@ SSLConfigParams::SSLConfigParams()
 
   ssl_ctx_options = 0;
   ssl_client_ctx_protocols = 0;
-  ssl_session_cache = SSL_SESSION_CACHE_MODE_SERVER;
-  ssl_session_cache_size = 1024*20;
+  ssl_session_cache = SSL_SESSION_CACHE_MODE_SERVER_ATS_IMPL;
+  ssl_session_cache_size = 1024*100;
+  ssl_session_cache_num_buckets = 1024; // Sessions per bucket is ceil(ssl_session_cache_size / ssl_session_cache_num_buckets)
+  ssl_session_cache_skip_on_contention = 0;
   ssl_session_cache_timeout = 0;
 }
 
@@ -248,7 +255,15 @@ SSLConfigParams::initialize()
   // SSL session cache configurations
   REC_ReadConfigInteger(ssl_session_cache, "proxy.config.ssl.session_cache");
   REC_ReadConfigInteger(ssl_session_cache_size, "proxy.config.ssl.session_cache.size");
+  REC_ReadConfigInteger(ssl_session_cache_num_buckets, "proxy.config.ssl.session_cache.num_buckets");
+  REC_ReadConfigInteger(ssl_session_cache_skip_on_contention, "proxy.config.ssl.session_cache.skip_cache_on_bucket_contention");
   REC_ReadConfigInteger(ssl_session_cache_timeout, "proxy.config.ssl.session_cache.timeout");
+
+  SSLConfigParams::session_cache_max_bucket_size = ceil(ssl_session_cache_size/ssl_session_cache_num_buckets );
+  SSLConfigParams::session_cache_skip_on_lock_contention = ssl_session_cache_skip_on_contention;
+  SSLConfigParams::session_cache_number_buckets = ssl_session_cache_num_buckets;
+
+  session_cache = new SSLSessionCache();
 
   // SSL record size
   REC_EstablishStaticConfigInt32(ssl_maxrecord, "proxy.config.ssl.max_record_size");

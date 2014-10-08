@@ -70,6 +70,10 @@ enum SSL_Stats
   ssl_total_tickets_verified_stat,
   ssl_total_tickets_not_found_stat,
   ssl_total_tickets_renewed_stat,
+  ssl_session_cache_hit,
+  ssl_session_cache_miss,
+  ssl_session_cache_eviction,
+  ssl_session_cache_lock_contention,
 
   /* error stats */
   ssl_error_want_write,
