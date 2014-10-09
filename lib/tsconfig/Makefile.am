@@ -52,6 +52,12 @@ if BUILD_TSCONFIG_GRAMMAR
   libtsconfig_la_SOURCES += TsConfigGrammar.y TsConfigSyntax.l
 else
   libtsconfig_la_SOURCES += TsConfigGrammar.c TsConfigGrammar.h TsConfigSyntax.c
+
+# Prevent automatic rules from firing if invalid.
+TsConfigSyntax.c: ;
+TsConfigGrammar.h: ;
+TsConfigGrammar.c: ;
+
 endif
 
 test_tsconfig_SOURCES = test-tsconfig.cc
