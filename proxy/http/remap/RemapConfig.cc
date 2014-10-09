@@ -984,7 +984,7 @@ remap_parse_config_bti(const char * path, BUILD_TABLE_INFO * bti)
       goto MAP_ERROR;
     }
 
-    new_mapping = new url_mapping(cln);  // use line # for rank for now
+    new_mapping = new url_mapping();
 
     // apply filter rules if we have to
     if ((errStr = process_filter_opt(new_mapping, bti, errStrBuf, sizeof(errStrBuf))) != NULL) {

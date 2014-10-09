@@ -117,6 +117,7 @@ public:
   LINK(url_mapping, link); // For use with the main Queue linked list holding all the mapping
 
   int getRank() const { return _rank; };
+  void setRank(int rank) { _rank = rank; };
 
 private:
   remap_plugin_info* _plugin_list[MAX_REMAP_PLUGIN_CHAIN];
