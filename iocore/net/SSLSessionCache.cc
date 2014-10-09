@@ -103,7 +103,7 @@ void SSLSessionBucket::insertSession(const SSLSessionID &id, const char *sni_nam
   size_t len = i2d_SSL_SESSION(sess, NULL); // make sure we're not going to need more than SSL_MAX_SESSION_SIZE bytes
   /* do not cache a session that's too big. */
   if (len > (size_t) SSL_MAX_SESSION_SIZE) {
-      Debug("ssl.session_cache", "Unable to save SSL session because size of %" PRId64 " exceeds the max of %d", len, SSL_MAX_SESSION_SIZE);
+      Debug("ssl.session_cache", "Unable to save SSL session because size of %zd exceeds the max of %d", len, SSL_MAX_SESSION_SIZE);
       return;
   }
 
@@ -194,7 +194,7 @@ void inline SSLSessionBucket::print(const char *ref_str) const {
   }
 
   fprintf(stderr, "-------------- BUCKET %p (%s) ----------------\n", this, ref_str);
-  fprintf(stderr, "Current Size: %d, Max Size: %" PRId64 "\n", queue.size, SSLConfigParams::session_cache_max_bucket_size);
+  fprintf(stderr, "Current Size: %d, Max Size: %zd\n", queue.size, SSLConfigParams::session_cache_max_bucket_size);
   fprintf(stderr, "Queue: \n");
 
   SSLSession *node = queue.head;
@@ -213,7 +213,7 @@ void inline SSLSessionBucket::removeOldestSession() {
     if (is_debug_tag_set("ssl.session_cache")) {
       char buf[old_head->session_id.len * 2 + 1];
       old_head->session_id.toString(buf, sizeof(buf));
-      Debug("ssl.session_cache", "Removing session '%s' from bucket %p because the bucket has size %d and max %" PRId64, buf, this, (queue.size + 1), SSLConfigParams::session_cache_max_bucket_size);
+      Debug("ssl.session_cache", "Removing session '%s' from bucket %p because the bucket has size %d and max %zd", buf, this, (queue.size + 1), SSLConfigParams::session_cache_max_bucket_size);
     }
     delete old_head;
   }
@@ -234,7 +234,8 @@ void SSLSessionBucket::removeSession(const SSLSessionID &id) {
 }
 
 /* Session Bucket */
-SSLSessionBucket::SSLSessionBucket() : root(NULL) {
+SSLSessionBucket::SSLSessionBucket()
+{
   Debug("ssl.session_cache", "Created new bucket %p with max size %ld", this, SSLConfigParams::session_cache_max_bucket_size);
 	ink_mutex_init(&mutex, "session_bucket");
 }

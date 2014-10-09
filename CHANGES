@@ -1,8 +1,11 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.2.0
-  
+
+  *) [TS-3120] Overlapping remap rank when using .include directives.
+   Author: Feifei Cai <ffcai@yahoo-inc.com>
+
   *) [TS-3080] Optimized SSL session caching
- 
+
   *) [TS-3121] Prevent sending garbage HTTP/0.8 responses from SPDY
 
   *) [TS-3116] Add support for tracking the use of the ioBuffers

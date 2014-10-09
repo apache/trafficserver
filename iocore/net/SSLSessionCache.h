@@ -19,8 +19,9 @@
   limitations under the License.
  */
 
-#ifndef SSL_SESSION_CACHE_
-#define SSL_SESSION_CACHE_
+#ifndef __SSLSESSIONCACHE_H__
+#define __SSLSESSIONCACHE_H__
+
 #include "Map.h"
 #include "List.h"
 #include "ink_mutex.h"
@@ -129,7 +130,6 @@ private:
 
   mutable ink_mutex mutex;
   CountQueue<SSLSession> queue;
-  SSLSession *root;
 };
 
 class SSLSessionCache {
@@ -144,6 +144,4 @@ public:
     SSLSessionBucket *session_bucket;
 };
 
-#endif
-
-
+#endif /* __SSLSESSIONCACHE_H__ */
