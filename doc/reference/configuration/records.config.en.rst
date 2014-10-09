@@ -2181,9 +2181,7 @@ SSL Termination
 
   This configuration specifies the lifetime of SSL session cache
   entries in seconds. If it is ``0``, then the SSL library will use
-  a default value, typically 300 seconds. Note: This option has no affect
-  when using the Traffic Server session cache (option ``2`` in 
-  ``proxy.config.ssl.session_cache``)
+  a default value, typically 300 seconds.
   
 .. ts:cv:: CONFIG proxy.config.ssl.session_cache.size INT 102400
 
