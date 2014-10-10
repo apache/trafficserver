@@ -2649,6 +2649,7 @@ HttpSM::tunnel_handler_post(int event, void *data)
 {
   STATE_ENTER(&HttpSM::tunnel_handler_post, event);
 
+  HttpTunnelProducer *p = tunnel.get_producer(ua_session);
   if (event != HTTP_TUNNEL_EVENT_DONE) {
     if (t_state.http_config_param->send_408_request_timeout_response) {
       Debug("http_tunnel", "cleanup tunnel in tunnel_handler_post");
@@ -2667,7 +2668,6 @@ HttpSM::tunnel_handler_post(int event, void *data)
   ink_assert(data == &tunnel);
   // The tunnel calls this when it is done
 
-  HttpTunnelProducer *p = tunnel.get_producer(ua_session);
   int p_handler_state = p->handler_state;
   tunnel_handler_post_or_put(p);
 
