@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.2.0
 
+  *) [TS-3125] SSL ctx is set to a constant allowing for potential inappropriate session reuse
+  
   *) [TS-3060] Enhance POST timeout scenario to send HTTP status response
 
   *) [TS-3120] Overlapping remap rank when using .include directives.
