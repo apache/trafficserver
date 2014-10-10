@@ -2186,6 +2186,11 @@ SSL Termination
   This configuration specifies the lifetime of SSL session cache
   entries in seconds. If it is ``0``, then the SSL library will use
   a default value, typically 300 seconds.
+
+.. ts:cv:: CONFIG proxy.config.ssl.session_cache.auto_clear INT 1
+
+  This will set the OpenSSL auto clear flag. Auto clear is enabled by
+  default with ``1`` it can be disabled by changing this setting to ``0``.
   
 .. ts:cv:: CONFIG proxy.config.ssl.session_cache.size INT 102400
 
