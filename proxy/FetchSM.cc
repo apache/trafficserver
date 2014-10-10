@@ -245,8 +245,13 @@ FetchSM::InvokePluginExt(int fetch_event)
   }
 
   if (!has_sent_header) {
-    contp->handleEvent(TS_FETCH_EVENT_EXT_HEAD_DONE, this);
-    has_sent_header = true;
+    if (fetch_event != TS_EVENT_VCONN_EOS) {
+      contp->handleEvent(TS_FETCH_EVENT_EXT_HEAD_DONE, this);
+      has_sent_header = true;
+    } else {
+      contp->handleEvent(fetch_event, this);
+      goto out;
+    }
   }
 
   // TS-3112: always check 'contp' after handleEvent() 
