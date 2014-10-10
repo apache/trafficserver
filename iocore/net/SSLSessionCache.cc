@@ -48,7 +48,7 @@ SSLSessionCache::~SSLSessionCache() {
   delete []session_bucket;
 }
 
-bool SSLSessionCache::getSession(const SSLSessionID &sid, const char *sni_name, SSL_SESSION **sess) {
+bool SSLSessionCache::getSession(const SSLSessionID &sid, SSL_SESSION **sess) const {
   uint64_t hash = sid.hash();
   uint64_t target_bucket = hash % SSLConfigParams::session_cache_number_buckets;
   SSLSessionBucket *bucket = &session_bucket[target_bucket];
@@ -60,7 +60,7 @@ bool SSLSessionCache::getSession(const SSLSessionID &sid, const char *sni_name, 
      Debug("ssl.session_cache.get", "SessionCache looking in bucket %" PRId64 " (%p) for session '%s' (hash: %" PRIX64 ").", target_bucket, bucket, buf, hash);
    }
 
-  ret = bucket->getSession(sid, sni_name, sess);
+  ret = bucket->getSession(sid, sess);
 
   if (ret)
     SSL_INCREMENT_DYN_STAT(ssl_session_cache_hit);
@@ -85,7 +85,7 @@ void SSLSessionCache::removeSession(const SSLSessionID &sid) {
   bucket->removeSession(sid);
 }
 
-void SSLSessionCache::insertSession(const SSLSessionID &sid, const char *sni_name, SSL_SESSION *sess) {
+void SSLSessionCache::insertSession(const SSLSessionID &sid, SSL_SESSION *sess) {
   uint64_t hash = sid.hash();
   uint64_t target_bucket = hash % SSLConfigParams::session_cache_number_buckets;
   SSLSessionBucket *bucket = &session_bucket[target_bucket];
@@ -96,10 +96,10 @@ void SSLSessionCache::insertSession(const SSLSessionID &sid, const char *sni_nam
      Debug("ssl.session_cache.insert", "SessionCache using bucket %" PRId64 " (%p): Inserting session '%s' (hash: %" PRIX64 ").", target_bucket, bucket, buf, hash);
    }
 
-  bucket->insertSession(sid, sni_name, sess);
+  bucket->insertSession(sid, sess);
 }
 
-void SSLSessionBucket::insertSession(const SSLSessionID &id, const char *sni_name, SSL_SESSION *sess) {
+void SSLSessionBucket::insertSession(const SSLSessionID &id, SSL_SESSION *sess) {
   size_t len = i2d_SSL_SESSION(sess, NULL); // make sure we're not going to need more than SSL_MAX_SESSION_SIZE bytes
   /* do not cache a session that's too big. */
   if (len > (size_t) SSL_MAX_SESSION_SIZE) {
@@ -110,7 +110,7 @@ void SSLSessionBucket::insertSession(const SSLSessionID &id, const char *sni_nam
   if (is_debug_tag_set("ssl.session_cache")) {
     char buf[id.len * 2 + 1];
     id.toString(buf, sizeof(buf));
-    Debug("ssl.session_cache", "Inserting session '%s' to bucket %p with sni name '%s'", buf, this, sni_name);
+    Debug("ssl.session_cache", "Inserting session '%s' to bucket %p.", buf, this);
   }
 
   Ptr<IOBufferData> buf;
@@ -119,7 +119,7 @@ void SSLSessionBucket::insertSession(const SSLSessionID &id, const char *sni_nam
   unsigned char *loc = reinterpret_cast<unsigned char *>(buf->data());
   i2d_SSL_SESSION(sess, &loc);
 
-  SSLSession *ssl_session = new SSLSession(id, sni_name, buf, len);
+  SSLSession *ssl_session = new SSLSession(id, buf, len);
 
   ink_scoped_try_mutex scoped_mutex(mutex);
   if (!scoped_mutex.hasLock()) {
@@ -141,15 +141,14 @@ void SSLSessionBucket::insertSession(const SSLSessionID &id, const char *sni_nam
   PRINT_BUCKET("insertSession after")
 }
 
-
-
-bool SSLSessionBucket::getSession(const SSLSessionID &id, const char *sni_name, SSL_SESSION **sess) {
+bool SSLSessionBucket::getSession(const SSLSessionID &id, SSL_SESSION **sess) const {
   char buf[id.len * 2 + 1];
+  buf[0] = '\0'; // just to be safe.
   if (is_debug_tag_set("ssl.session_cache")) {
    id.toString(buf, sizeof(buf));
   }
 
-  Debug("ssl.session_cache", "Looking for session with id '%s' in bucket %p with sni name '%s'", buf, this, sni_name);
+  Debug("ssl.session_cache", "Looking for session with id '%s' in bucket %p", buf, this);
 
   ink_scoped_try_mutex scoped_mutex(mutex);
   if (!scoped_mutex.hasLock()) {
@@ -166,20 +165,11 @@ bool SSLSessionBucket::getSession(const SSLSessionID &id, const char *sni_name, 
   while (node) {
     if (node->session_id == id)
     {
-      if ((node->sni_name == NULL && sni_name == NULL) /* this session doesn't have an associated SNI name */||
-         (node->sni_name && sni_name && strcmp(node->sni_name, sni_name) == 0)) { /* the session does have an associated SNI name */
-       Debug("ssl.session_cache", "Found session with id '%s' in bucket %p with sni name '%s'.", buf, this, sni_name);
-
        const unsigned char *loc = reinterpret_cast<const unsigned char *>(node->asn1_data->data());
        *sess = d2i_SSL_SESSION(NULL, &loc, node->len_asn1_data);
 
        return true;
-      } else {
-       Debug("ssl.session_cache", "Found session with id '%s' in bucket %p but sni names didn't match! '%s' != '%s'.", buf, this, node->sni_name, sni_name);
-       return false;
-      }
     }
-
     node = node->link.prev;
   }
 
@@ -236,7 +226,6 @@ void SSLSessionBucket::removeSession(const SSLSessionID &id) {
 /* Session Bucket */
 SSLSessionBucket::SSLSessionBucket()
 {
-  Debug("ssl.session_cache", "Created new bucket %p with max size %ld", this, SSLConfigParams::session_cache_max_bucket_size);
 	ink_mutex_init(&mutex, "session_bucket");
 }
 

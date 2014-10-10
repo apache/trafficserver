@@ -180,19 +180,19 @@ SSL_CTX_add_extra_chain_cert_file(SSL_CTX * ctx, const char * chainfile)
 
 
 static SSL_SESSION* ssl_get_cached_session(SSL *ssl, unsigned char *id, int len, int *copy) {
-  const char *servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
   *copy = 0;
 
   SSLSessionID sid(id, len);
   if (diags->tag_activated("ssl.session_cache")) {
     char printable_buf[(len * 2) + 1];
     sid.toString(printable_buf, sizeof(printable_buf));
-    Debug("ssl.session_cache.get", "ssl_get_cached_session cached session '%s' on name '%s'", printable_buf, servername);
+    Debug("ssl.session_cache.get", "ssl_get_cached_session cached session '%s' context %p", printable_buf, SSL_get_SSL_CTX(ssl));
   }
 
   SSL_SESSION *session = NULL;
-  if(session_cache->getSession(sid, servername, &session))
+  if(session_cache->getSession(sid, &session)) {
     return session;
+  }
   else
     return NULL;
 
@@ -201,16 +201,15 @@ static SSL_SESSION* ssl_get_cached_session(SSL *ssl, unsigned char *id, int len,
 static int ssl_new_cached_session(SSL *ssl, SSL_SESSION *sess) {
   unsigned int len = 0;
   const unsigned char *id = SSL_SESSION_get_id(sess, &len);
-  const char *servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
 
   SSLSessionID sid(id, len);
   if (diags->tag_activated("ssl.session_cache")) {
     char printable_buf[(len * 2) + 1];
     sid.toString(printable_buf, sizeof(printable_buf));
-    Debug("ssl.session_cache.insert", "ssl_new_cached_session session '%s' on name '%s'", printable_buf, servername);
+    Debug("ssl.session_cache.insert", "ssl_new_cached_session session '%s' and context %p", printable_buf, SSL_get_SSL_CTX(ssl));
   }
 
-  session_cache->insertSession(sid, servername, sess);
+  session_cache->insertSession(sid, sess);
 
   return 0;
 }
@@ -1067,8 +1066,8 @@ SSLInitServerContext(
   SSL_CTX_set_options(ctx, params->ssl_ctx_options);
 
   Debug("ssl.session_cache", "ssl context=%p: using session cache options, enabled=%d, size=%d, num_buckets=%d, skip_on_contention=%d, timeout=%d",
-		  ctx, params->ssl_session_cache, params->ssl_session_cache_size, params->ssl_session_cache_num_buckets,
-		  params->ssl_session_cache_skip_on_contention, params->ssl_session_cache_timeout);
+        ctx, params->ssl_session_cache, params->ssl_session_cache_size, params->ssl_session_cache_num_buckets,
+        params->ssl_session_cache_skip_on_contention, params->ssl_session_cache_timeout);
 
   if (params->ssl_session_cache_timeout) {
     SSL_CTX_set_timeout(ctx, params->ssl_session_cache_timeout);
@@ -1081,7 +1080,7 @@ SSLInitServerContext(
     SSL_CTX_set_session_cache_mode(ctx, SSL_SESS_CACHE_OFF | SSL_SESS_CACHE_NO_INTERNAL);
     break;
   case SSLConfigParams::SSL_SESSION_CACHE_MODE_SERVER_OPENSSL_IMPL:
-	Debug("ssl.session_cache", "enabling SSL session cache with OpenSSL implementation");
+    Debug("ssl.session_cache", "enabling SSL session cache with OpenSSL implementation");
 
     SSL_CTX_set_session_cache_mode(ctx, SSL_SESS_CACHE_SERVER);
     SSL_CTX_sess_set_cache_size(ctx, params->ssl_session_cache_size);
