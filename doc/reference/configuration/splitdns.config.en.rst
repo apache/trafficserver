@@ -76,9 +76,9 @@ The following list describes each field.
     A valid URL regular expression. This specifies that DNS server
     selection will be based on a regular expression.
 
-.. _splitdns-config-format-dns-server:
+.. _splitdns-config-format-named:
 
-``dns_server``
+``named``
     This is a required directive. It identifies the DNS server that
     Traffic Server should use with the given destination specifier. You
     can specify a port using a colon (``:``). If you do not specify a
