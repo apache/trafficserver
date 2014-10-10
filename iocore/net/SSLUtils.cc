@@ -1057,10 +1057,13 @@ SSLInitServerContext(
     const SSLConfigParams * params,
     const ssl_user_config & sslMultCertSettings)
 {
-  int         session_id_context;
   int         server_verify_client;
   ats_scoped_str  completeServerCertPath;
   SSL_CTX *   ctx = SSLDefaultServerContext();
+  EVP_MD_CTX digest;
+  STACK_OF(X509_NAME) *ca_list;
+  unsigned char hash_buf[EVP_MAX_MD_SIZE];
+  unsigned int hash_len = 0;
 
   // disable selected protocols
   SSL_CTX_set_options(ctx, params->ssl_ctx_options);
@@ -1224,16 +1227,48 @@ SSLInitServerContext(
       server_verify_client = SSL_VERIFY_NONE;
       Error("illegal client certification level %d in records.config", server_verify_client);
     }
-
-    // XXX I really don't think that this is a good idea. We should be setting this a some finer granularity,
-    // possibly per SSL CTX. httpd uses md5(host:port), which seems reasonable.
-    session_id_context = 1;
-    SSL_CTX_set_session_id_context(ctx, (const unsigned char *) &session_id_context, sizeof(session_id_context));
-
     SSL_CTX_set_verify(ctx, server_verify_client, NULL);
     SSL_CTX_set_verify_depth(ctx, params->verify_depth); // might want to make configurable at some point.
+  }
 
-    SSL_CTX_set_client_CA_list(ctx, SSL_load_client_CA_file(params->serverCACertFilename));
+  ca_list = SSL_load_client_CA_file(params->serverCACertFilename);
+  SSL_CTX_set_client_CA_list(ctx, ca_list);
+  EVP_MD_CTX_init(&digest);
+
+  if (EVP_DigestInit_ex(&digest, evp_md_func, NULL) == 0) {
+   SSLError("EVP_DigestInit_ex failed");
+   goto fail;
+  }
+
+  Debug("ssl", "Using '%s' in hash for session id context", sslMultCertSettings.cert.get());
+
+  if (EVP_DigestUpdate(&digest, sslMultCertSettings.cert, strlen(sslMultCertSettings.cert.get())) == 0) {
+   SSLError("EVP_DigestUpdate failed");
+   goto fail;
+  }
+
+  if (ca_list != NULL) {
+   size_t num_certs = sk_X509_NAME_num(ca_list);
+
+   for (size_t i = 0; i < num_certs; i++) {
+     X509_NAME *name = sk_X509_NAME_value(ca_list, i);
+     if (X509_NAME_digest(name, evp_md_func, hash_buf /* borrow our final hash buffer. */, &hash_len) == 0 ||
+         EVP_DigestUpdate(&digest, hash_buf, hash_len) == 0) {
+       SSLError("Adding X509 name to digest failed");
+       goto fail;
+     }
+   }
+  }
+
+  if (EVP_DigestFinal_ex(&digest, hash_buf, &hash_len) == 0) {
+   SSLError("EVP_DigestFinal_ex failed");
+   goto fail;
+  }
+
+  EVP_MD_CTX_cleanup(&digest);
+  if (SSL_CTX_set_session_id_context(ctx, hash_buf, hash_len) == 0) {
+   SSLError("SSL_CTX_set_session_id_context failed");
+   goto fail;
   }
 
   if (params->cipherSuite != NULL) {
