@@ -784,6 +784,7 @@ public:
   MgmtByte ignore_accept_charset_mismatch;
 
   MgmtByte send_100_continue_response;
+  MgmtByte send_408_post_timeout_response;
 
   OverridableHttpConfigParams oride;
 
@@ -938,6 +939,7 @@ HttpConfigParams::HttpConfigParams()
     ignore_accept_encoding_mismatch(0),
     ignore_accept_charset_mismatch(0),
     send_100_continue_response(0),
+    send_408_post_timeout_response(0),
     autoconf_port(0),
     autoconf_localhost_only(0)
 {

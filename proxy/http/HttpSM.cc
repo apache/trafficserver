@@ -96,6 +96,9 @@ static const int boundary_size = 2 + sizeof("RANGE_SEPARATOR") - 1 + 2;
 static const char *str_100_continue_response = "HTTP/1.1 100 Continue\r\n\r\n";
 static const int len_100_continue_response = strlen(str_100_continue_response);
 
+static const char *str_408_request_timeout_response = "HTTP/1.1 408 Request Timeout\r\n\r\n";
+static const int  len_408_request_timeout_response = strlen(str_408_request_timeout_response);
+
 /**
  * Takes two milestones and returns the difference.
  * @param start The start time
@@ -2646,6 +2649,20 @@ HttpSM::tunnel_handler_post(int event, void *data)
 {
   STATE_ENTER(&HttpSM::tunnel_handler_post, event);
 
+  if (event != HTTP_TUNNEL_EVENT_DONE) {
+    if (t_state.http_config_param->send_408_request_timeout_response) {
+      Debug("http_tunnel", "cleanup tunnel in tunnel_handler_post");
+      ink_assert((event == VC_EVENT_WRITE_COMPLETE) || (event == VC_EVENT_EOS));
+      free_MIOBuffer(ua_entry->write_buffer);
+      tunnel.chain_abort_all(p);
+      p->read_vio = NULL;
+      p->vc->do_io_close(EHTTP_ERROR);
+      set_ua_abort(HttpTransact::ABORTED, event);
+      hsm_release_assert(ua_entry->in_tunnel == true);
+      return 0;
+    }
+  }
+
   ink_assert(event == HTTP_TUNNEL_EVENT_DONE);
   ink_assert(data == &tunnel);
   // The tunnel calls this when it is done
@@ -3327,6 +3344,8 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer * p)
 {
   STATE_ENTER(&HttpSM::tunnel_handler_post_ua, event);
   client_request_body_bytes = p->init_bytes_done + p->bytes_read;
+  int64_t alloc_index, nbytes;
+  IOBufferReader* buf_start;
 
   switch (event) {
   case VC_EVENT_EOS:
@@ -3338,6 +3357,37 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer * p)
     //  Did not complete post tunnling.  Abort the
     //   server and close the ua
     p->handler_state = HTTP_SM_POST_UA_FAIL;
+
+    if (t_state.http_config_param->send_408_request_timeout_response && client_response_hdr_bytes == 0) {
+      switch (event) {
+        case VC_EVENT_ERROR:
+          HttpTransact::build_error_response(&t_state, HTTP_STATUS_INTERNAL_SERVER_ERROR, "POST Error", "default", NULL);
+          break;
+        case VC_EVENT_INACTIVITY_TIMEOUT:
+          HttpTransact::build_error_response(&t_state, HTTP_STATUS_REQUEST_TIMEOUT, "POST Request timeout", "timeout#inactivity", NULL);
+          break;
+        case VC_EVENT_ACTIVE_TIMEOUT:
+          HttpTransact::build_error_response(&t_state, HTTP_STATUS_REQUEST_TIMEOUT, "POST Request timeout", "timeout#activity", NULL);
+          break;
+      }
+
+      // send back 408 request timeout
+      alloc_index = buffer_size_to_index (len_408_request_timeout_response + t_state.internal_msg_buffer_size);
+      ua_entry->write_buffer = new_MIOBuffer(alloc_index);
+      buf_start = ua_entry->write_buffer->alloc_reader();
+
+      DebugSM("http_tunnel", "send 408 response to client to vc %p, tunnel vc %p", ua_session->get_netvc(), p->vc);
+
+      nbytes = ua_entry->write_buffer->write(str_408_request_timeout_response, len_408_request_timeout_response);
+      nbytes += ua_entry->write_buffer->write(t_state.internal_msg_buffer, t_state.internal_msg_buffer_size);
+
+      p->vc->do_io_write(this, nbytes, buf_start);
+
+      set_ua_half_close_flag();
+      p->vc->do_io_shutdown(IO_SHUTDOWN_READ);
+      return 0;
+    }
+
     tunnel.chain_abort_all(p);
     p->read_vio = NULL;
     p->vc->do_io_close(EHTTP_ERROR);
