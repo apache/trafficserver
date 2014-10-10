@@ -1068,13 +1068,16 @@ SSLInitServerContext(
   // disable selected protocols
   SSL_CTX_set_options(ctx, params->ssl_ctx_options);
 
-  Debug("ssl.session_cache", "ssl context=%p: using session cache options, enabled=%d, size=%d, num_buckets=%d, skip_on_contention=%d, timeout=%d",
+  Debug("ssl.session_cache", "ssl context=%p: using session cache options, enabled=%d, size=%d, num_buckets=%d, skip_on_contention=%d, timeout=%d, auto_clear=%d",
         ctx, params->ssl_session_cache, params->ssl_session_cache_size, params->ssl_session_cache_num_buckets,
-        params->ssl_session_cache_skip_on_contention, params->ssl_session_cache_timeout);
+        params->ssl_session_cache_skip_on_contention, params->ssl_session_cache_timeout, params->ssl_session_cache_auto_clear);
 
   if (params->ssl_session_cache_timeout) {
     SSL_CTX_set_timeout(ctx, params->ssl_session_cache_timeout);
   }
+
+  int additional_cache_flags = 0;
+  additional_cache_flags |= (params->ssl_session_cache_auto_clear == 0) ? SSL_SESS_CACHE_NO_AUTO_CLEAR : 0;
 
   switch (params->ssl_session_cache) {
   case SSLConfigParams::SSL_SESSION_CACHE_MODE_OFF:
@@ -1085,7 +1088,7 @@ SSLInitServerContext(
   case SSLConfigParams::SSL_SESSION_CACHE_MODE_SERVER_OPENSSL_IMPL:
     Debug("ssl.session_cache", "enabling SSL session cache with OpenSSL implementation");
 
-    SSL_CTX_set_session_cache_mode(ctx, SSL_SESS_CACHE_SERVER);
+    SSL_CTX_set_session_cache_mode(ctx, SSL_SESS_CACHE_SERVER | additional_cache_flags);
     SSL_CTX_sess_set_cache_size(ctx, params->ssl_session_cache_size);
     break;
   case SSLConfigParams::SSL_SESSION_CACHE_MODE_SERVER_ATS_IMPL: {
@@ -1095,7 +1098,7 @@ SSLInitServerContext(
     SSL_CTX_sess_set_remove_cb(ctx, ssl_rm_cached_session);
     SSL_CTX_sess_set_get_cb(ctx, ssl_get_cached_session);
 
-    SSL_CTX_set_session_cache_mode(ctx, SSL_SESS_CACHE_SERVER | SSL_SESS_CACHE_NO_INTERNAL);
+    SSL_CTX_set_session_cache_mode(ctx, SSL_SESS_CACHE_SERVER | SSL_SESS_CACHE_NO_INTERNAL | additional_cache_flags);
 
     break;
     }

@@ -80,6 +80,7 @@ SSLConfigParams::SSLConfigParams()
   ssl_session_cache_num_buckets = 1024; // Sessions per bucket is ceil(ssl_session_cache_size / ssl_session_cache_num_buckets)
   ssl_session_cache_skip_on_contention = 0;
   ssl_session_cache_timeout = 0;
+  ssl_session_cache_auto_clear = 1;
 }
 
 SSLConfigParams::~SSLConfigParams()
@@ -258,6 +259,7 @@ SSLConfigParams::initialize()
   REC_ReadConfigInteger(ssl_session_cache_num_buckets, "proxy.config.ssl.session_cache.num_buckets");
   REC_ReadConfigInteger(ssl_session_cache_skip_on_contention, "proxy.config.ssl.session_cache.skip_cache_on_bucket_contention");
   REC_ReadConfigInteger(ssl_session_cache_timeout, "proxy.config.ssl.session_cache.timeout");
+  REC_ReadConfigInteger(ssl_session_cache_auto_clear, "proxy.config.ssl.session_cache.auto_clear");
 
   SSLConfigParams::session_cache_max_bucket_size = ceil(ssl_session_cache_size/ssl_session_cache_num_buckets );
   SSLConfigParams::session_cache_skip_on_lock_contention = ssl_session_cache_skip_on_contention;

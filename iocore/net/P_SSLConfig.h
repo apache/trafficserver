@@ -74,6 +74,7 @@ struct SSLConfigParams : public ConfigInfo
   int     ssl_session_cache_num_buckets;
   int     ssl_session_cache_skip_on_contention;
   int     ssl_session_cache_timeout;
+  int     ssl_session_cache_auto_clear;
 
   char *  clientCertPath;
   char *  clientKeyPath;
