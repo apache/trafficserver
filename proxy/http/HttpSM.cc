@@ -96,7 +96,7 @@ static const int boundary_size = 2 + sizeof("RANGE_SEPARATOR") - 1 + 2;
 static const char *str_100_continue_response = "HTTP/1.1 100 Continue\r\n\r\n";
 static const int len_100_continue_response = strlen(str_100_continue_response);
 
-static const char *str_408_request_timeout_response = "HTTP/1.1 408 Request Timeout\r\n\r\n";
+static const char *str_408_request_timeout_response = "HTTP/1.1 408 Request Timeout\r\nConnection: close\r\n\r\n";
 static const int  len_408_request_timeout_response = strlen(str_408_request_timeout_response);
 
 /**
@@ -2651,7 +2651,7 @@ HttpSM::tunnel_handler_post(int event, void *data)
 
   HttpTunnelProducer *p = tunnel.get_producer(ua_session);
   if (event != HTTP_TUNNEL_EVENT_DONE) {
-    if (t_state.http_config_param->send_408_request_timeout_response) {
+    if (t_state.http_config_param->send_408_post_timeout_response) {
       Debug("http_tunnel", "cleanup tunnel in tunnel_handler_post");
       ink_assert((event == VC_EVENT_WRITE_COMPLETE) || (event == VC_EVENT_EOS));
       free_MIOBuffer(ua_entry->write_buffer);
@@ -3358,7 +3358,7 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer * p)
     //   server and close the ua
     p->handler_state = HTTP_SM_POST_UA_FAIL;
 
-    if (t_state.http_config_param->send_408_request_timeout_response && client_response_hdr_bytes == 0) {
+    if (t_state.http_config_param->send_408_post_timeout_response && client_response_hdr_bytes == 0) {
       switch (event) {
         case VC_EVENT_ERROR:
           HttpTransact::build_error_response(&t_state, HTTP_STATUS_INTERNAL_SERVER_ERROR, "POST Error", "default", NULL);

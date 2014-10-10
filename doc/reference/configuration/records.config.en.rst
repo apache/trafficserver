@@ -776,6 +776,10 @@ specific domains.
    Controls wether new POST requests re-use keep-alive sessions (``1``) or
    create new connections per request (``0``).
 
+.. ts:cv:: CONFIG proxy.config.http.send_408_post_timeout_response INT 0
+
+   Controls wether POST timeout sends a HTTP status 408 response (``1``)
+
 
 Parent Proxy Configuration
 ==========================
