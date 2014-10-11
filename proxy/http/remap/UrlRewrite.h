@@ -189,6 +189,6 @@ private:
                           bool is_cur_mapping_regex, int &count);
 };
 
-void url_rewrite_remap_request(const UrlMappingContainer& mapping_container, URL * request_url);
+void url_rewrite_remap_request(const UrlMappingContainer& mapping_container, URL* request_url, int scheme = -1);
 
 #endif

@@ -284,78 +284,82 @@ UrlRewrite::_tableLookup(InkHashTable *h_table, URL *request_url,
 // This is only used for redirects and reverse rules, and the homepageredirect flag
 // can never be set. The end result is that request_url is modified per remap container.
 void
-url_rewrite_remap_request(const UrlMappingContainer& mapping_container, URL *request_url)
+url_rewrite_remap_request(const UrlMappingContainer& mapping_container, URL *request_url, int method)
 {
-  const char *requestPath;
-  int requestPathLen = 0;
-  int fromPathLen = 0;
-
   URL *map_to = mapping_container.getToURL();
   URL *map_from = mapping_container.getFromURL();
   const char *toHost;
-  const char *toPath;
-  const char *toScheme;
-  int toPathLen;
   int toHostLen;
-  int toSchemeLen;
-
-  map_from->path_get(&fromPathLen);
 
   toHost = map_to->host_get(&toHostLen);
-  toPath = map_to->path_get(&toPathLen);
-  toScheme = map_to->scheme_get(&toSchemeLen);
 
   Debug("url_rewrite", "%s: Remapping rule id: %d matched", __func__, mapping_container.getMapping()->map_id);
 
   request_url->host_set(toHost, toHostLen);
   request_url->port_set(map_to->port_get_raw());
-  request_url->scheme_set(toScheme, toSchemeLen);
 
-  requestPath = request_url->path_get(&requestPathLen);
+  // With the CONNECT method, we have to avoid messing with the scheme and path, because it's not part of
+  // the CONNECT request (only host and port is).
+  if (HTTP_WKSIDX_CONNECT != method) {
+    const char *toScheme;
+    int toSchemeLen;
+    const char *requestPath;
+    int requestPathLen = 0;
+    int fromPathLen = 0;
+    const char *toPath;
+    int toPathLen;
 
-  // Should be +3, little extra padding won't hurt. Use the stack allocation
-  // for better performance (bummer that arrays of variable length is not supported
-  // on Solaris CC.
-  char *newPath = static_cast<char*>(alloca(sizeof(char*)*((requestPathLen - fromPathLen) + toPathLen + 8)));
-  int newPathLen = 0;
+    toScheme = map_to->scheme_get(&toSchemeLen);
+    request_url->scheme_set(toScheme, toSchemeLen);
 
-  *newPath = 0;
-  if (toPath) {
-    memcpy(newPath, toPath, toPathLen);
-    newPathLen += toPathLen;
-  }
+    map_from->path_get(&fromPathLen);
+    toPath = map_to->path_get(&toPathLen);
+    requestPath = request_url->path_get(&requestPathLen);
 
-  // We might need to insert a trailing slash in the new portion of the path
-  // if more will be added and none is present and one will be needed.
-  if (!fromPathLen && requestPathLen && newPathLen && toPathLen && *(newPath + newPathLen - 1) != '/') {
-    *(newPath + newPathLen) = '/';
-    newPathLen++;
-  }
+    // Should be +3, little extra padding won't hurt. Use the stack allocation
+    // for better performance (bummer that arrays of variable length is not supported
+    // on Solaris CC.
+    char *newPath = static_cast<char*>(alloca(sizeof(char*)*((requestPathLen - fromPathLen) + toPathLen + 8)));
+    int newPathLen = 0;
 
-  if (requestPath) {
-    //avoid adding another trailing slash if the requestPath already had one and so does the toPath
-    if (requestPathLen < fromPathLen) {
-      if (toPathLen && requestPath[requestPathLen - 1] == '/' && toPath[toPathLen - 1] == '/') {
-        fromPathLen++;
+    *newPath = 0;
+    if (toPath) {
+      memcpy(newPath, toPath, toPathLen);
+      newPathLen += toPathLen;
+    }
+
+    // We might need to insert a trailing slash in the new portion of the path
+    // if more will be added and none is present and one will be needed.
+    if (!fromPathLen && requestPathLen && newPathLen && toPathLen && *(newPath + newPathLen - 1) != '/') {
+      *(newPath + newPathLen) = '/';
+      newPathLen++;
+    }
+
+    if (requestPath) {
+      //avoid adding another trailing slash if the requestPath already had one and so does the toPath
+      if (requestPathLen < fromPathLen) {
+        if (toPathLen && requestPath[requestPathLen - 1] == '/' && toPath[toPathLen - 1] == '/') {
+          fromPathLen++;
+        }
+      } else {
+        if (toPathLen && requestPath[fromPathLen] == '/' && toPath[toPathLen - 1] == '/') {
+          fromPathLen++;
+        }
       }
+
+      // copy the end of the path past what has been mapped
+      if ((requestPathLen - fromPathLen) > 0) {
+        memcpy(newPath + newPathLen, requestPath + fromPathLen, requestPathLen - fromPathLen);
+        newPathLen += (requestPathLen - fromPathLen);
+      }
+    }
+
+    // Skip any leading / in the path when setting the new URL path
+    if (*newPath == '/') {
+      request_url->path_set(newPath + 1, newPathLen - 1);
     } else {
-      if (toPathLen && requestPath[fromPathLen] == '/' && toPath[toPathLen - 1] == '/') {
-        fromPathLen++;
-      }
+      request_url->path_set(newPath, newPathLen);
     }
-
-    // copy the end of the path past what has been mapped
-    if ((requestPathLen - fromPathLen) > 0) {
-      memcpy(newPath + newPathLen, requestPath + fromPathLen, requestPathLen - fromPathLen);
-      newPathLen += (requestPathLen - fromPathLen);
-    }
-  }
-
-  // Skip any leading / in the path when setting the new URL path
-  if (*newPath == '/') {
-    request_url->path_set(newPath + 1, newPathLen - 1);
-  } else {
-    request_url->path_set(newPath, newPathLen);
   }
 }
 
