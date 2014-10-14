@@ -209,6 +209,7 @@ static int ssl_new_cached_session(SSL *ssl, SSL_SESSION *sess) {
     Debug("ssl.session_cache.insert", "ssl_new_cached_session session '%s' and context %p", printable_buf, SSL_get_SSL_CTX(ssl));
   }
 
+  SSL_INCREMENT_DYN_STAT(ssl_session_cache_new_session);
   session_cache->insertSession(sid, sess);
 
   return 0;
@@ -750,6 +751,10 @@ SSLInitializeStatistics()
   RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_session_cache_hit",
                      RECD_INT, RECP_PERSISTENT, (int) ssl_session_cache_hit,
                      RecRawStatSyncCount);
+
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_session_cache_new_session",
+                       RECD_INT, RECP_PERSISTENT, (int) ssl_session_cache_new_session,
+                       RecRawStatSyncCount);
 
   RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_session_cache_miss",
                      RECD_INT, RECP_PERSISTENT, (int) ssl_session_cache_miss,

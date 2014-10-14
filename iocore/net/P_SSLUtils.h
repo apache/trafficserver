@@ -74,6 +74,7 @@ enum SSL_Stats
   ssl_session_cache_miss,
   ssl_session_cache_eviction,
   ssl_session_cache_lock_contention,
+  ssl_session_cache_new_session,
 
   /* error stats */
   ssl_error_want_write,
