@@ -1251,9 +1251,11 @@ SSLInitServerContext(
 
   Debug("ssl", "Using '%s' in hash for session id context", sslMultCertSettings.cert.get());
 
-  if (NULL == setting_cert || EVP_DigestUpdate(&digest, sslMultCertSettings.cert, strlen(setting_cert)) == 0) {
-   SSLError("EVP_DigestUpdate failed");
-   goto fail;
+  if (NULL != setting_cert) {
+    if (EVP_DigestUpdate(&digest, sslMultCertSettings.cert, strlen(setting_cert)) == 0) {
+     SSLError("EVP_DigestUpdate failed");
+     goto fail;
+    }
   }
 
   if (ca_list != NULL) {
