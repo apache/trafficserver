@@ -888,6 +888,32 @@ LogAccessHttp::marshal_server_resp_http_version(char *buf)
 }
 
 /*-------------------------------------------------------------------------
+-------------------------------------------------------------------------*/
+int
+LogAccessHttp::marshal_server_resp_time_ms(char *buf)
+{
+  if (buf) {
+    ink_hrtime elapsed = m_http_sm->milestones.server_close - m_http_sm->milestones.server_connect;
+    elapsed /= HRTIME_MSECOND;
+    int64_t val = (int64_t) elapsed;
+    marshal_int(buf, val);
+  }
+  return INK_MIN_ALIGN;
+}
+
+int
+LogAccessHttp::marshal_server_resp_time_s(char *buf)
+{
+  if (buf) {
+    ink_hrtime elapsed = m_http_sm->milestones.server_close - m_http_sm->milestones.server_connect;
+    elapsed /= HRTIME_SECOND;
+    int64_t val = (int64_t) elapsed;
+    marshal_int(buf, val);
+  }
+  return INK_MIN_ALIGN;
+}
+
+/*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
 int
