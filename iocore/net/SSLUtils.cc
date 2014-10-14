@@ -1141,7 +1141,7 @@ SSLInitServerContext(
     SSL_CTX_set_default_passwd_cb_userdata(ctx, &ud);
   }
 
-  if (!params->serverCertChainFilename && !sslMultCertSettings.ca && sslMultCertSettings.cert) {
+  if (sslMultCertSettings.cert) {
     SimpleTokenizer cert_tok((const char *)sslMultCertSettings.cert, SSL_CERT_SEPARATE_DELIM);
     SimpleTokenizer key_tok((sslMultCertSettings.key ? (const char *)sslMultCertSettings.key : ""), SSL_CERT_SEPARATE_DELIM);
 
@@ -1162,12 +1162,6 @@ SSLInitServerContext(
         goto fail;
       }
     }
-  } else if (sslMultCertSettings.first_cert) { // For backward compatible
-      completeServerCertPath = Layout::relative_to(params->serverCertPathOnly, sslMultCertSettings.first_cert);
-      if (!SSL_CTX_use_certificate_chain_file(ctx, completeServerCertPath)) {
-          SSLError("failed to load certificate from %s", (const char *) completeServerCertPath);
-          goto fail;
-      }
 
     // First, load any CA chains from the global chain file.
     if (params->serverCertChainFilename) {
@@ -1185,10 +1179,6 @@ SSLInitServerContext(
         SSLError("failed to load certificate chain from %s", (const char *) completeServerCertChainPath);
         goto fail;
       }
-    }
-
-    if (!SSLPrivateKeyHandler(ctx, params, completeServerCertPath, sslMultCertSettings.key)) {
-      goto fail;
     }
   }
 

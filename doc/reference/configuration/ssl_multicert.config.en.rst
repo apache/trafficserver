@@ -65,6 +65,9 @@ ssl_cert_name=FILENAME[,FILENAME ...]
   subjects and alternate names. The first certificate is used to
   to match the client's SNI request.
 
+  You can also configure multiple leaf certificates in a same chain
+  with OpenSSL 1.0.1.
+
   This is the only field that is required to be present.
 
 dest_ip=ADDRESS (optional)
