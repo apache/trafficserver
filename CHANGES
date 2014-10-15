@@ -3,6 +3,9 @@ Changes with Apache Traffic Server 5.1.1
 
   *) [TS-2677] Fix potential open relay problem with CONNECT and remap.
 
+  *) [TS-3135] Disable SSLv3 by default. This can be enabled again by adding a
+   line to records.config for proxy.config.ssl.SSLv3.
+
 Changes with Apache Traffic Server 5.1.0
 
   *) [TS-3066] Fix various build issues for OmniOS, broken since 5.0.x.
