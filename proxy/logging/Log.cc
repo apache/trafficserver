@@ -724,6 +724,13 @@ Log::init_fields()
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "phi", field);
 
+  field = new LogField("proxy_host_port", "php",
+                       LogField::sINT,
+                       &LogAccess::marshal_proxy_host_port,
+                       &LogAccess::unmarshal_int_to_str);
+                       global_field_list.add(field, false);
+  ink_hash_table_insert(field_symbol_hash, "php", field);  
+
   // server -> proxy fields
 
   field = new LogField("server_host_ip", "shi",
