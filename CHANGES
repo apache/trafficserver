@@ -1,6 +1,10 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.2.0
 
+  *) [TS-3139] New script, traffic_primer, which will fetch a URL from origin
+   (or another proxy) and PUSH the same object to a given set of
+   caches. Useful for priming a pool of servers with the same object.
+
   *) [TS-3135] Disable SSLv3 by default. This can be enabled again by adding a
    line to records.config for proxy.config.ssl.SSLv3.
 
