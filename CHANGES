@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.2.0
 
+  *) [TS-3135] Disable SSLv3 by default. This can be enabled again by adding a
+   line to records.config for proxy.config.ssl.SSLv3.
+
   *) [TS-3129] Parent proxy configuration does not work for incoming HTTPS requests
 
   *) [TS-3127] Add config for OpenSSL session cache auto clear
