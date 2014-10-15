@@ -283,7 +283,6 @@ is_negative_caching_appropriate(HttpTransact::State* s)
 inline static HttpTransact::LookingUp_t
 find_server_and_update_current_info(HttpTransact::State* s)
 {
-  URL *url = s->hdr_info.client_request.url_get();
   int host_len;
   const char *host = s->hdr_info.client_request.host_get(&host_len);
 
@@ -291,9 +290,6 @@ find_server_and_update_current_info(HttpTransact::State* s)
     // Do not forward requests to local_host onto a parent.
     // I just wanted to do this for cop heartbeats, someone else
     // wanted it for all requests to local_host.
-    s->parent_result.r = PARENT_DIRECT;
-  } else if (url->scheme_get_wksidx() == URL_WKSIDX_HTTPS) {
-    // Do not forward HTTPS requests onto a parent.
     s->parent_result.r = PARENT_DIRECT;
   } else if (s->method == HTTP_WKSIDX_CONNECT && s->http_config_param->disable_ssl_parenting) {
     s->parent_result.r = PARENT_DIRECT;
