@@ -56,7 +56,7 @@ class Vec {
 
   C &operator[](int i) const { return v[i]; }
 
-  C get(size_t i);
+  C get(size_t i) const;
   void add(C a);  
   void push_back(C a) { add(a); } // std::vector name
   bool add_exclusive(C a);
@@ -184,7 +184,7 @@ Vec<C,A,S>::Vec(C c) {
 }
 
 template <class C, class A, int S> inline C
-Vec<C,A,S>::get(size_t i) {
+Vec<C,A,S>::get(size_t i) const {
   if (i < n && i >= 0)
     return v[i];
   else

@@ -1701,7 +1701,7 @@ mime_field_destroy(MIMEHdrImpl */* mh ATS_UNUSED */, MIMEField *field)
 }
 
 const char *
-mime_field_name_get(MIMEField *field, int *length)
+mime_field_name_get(const MIMEField *field, int *length)
 {
   *length = field->m_len_name;
   if (field->m_wks_idx >= 0)
@@ -1725,14 +1725,14 @@ mime_field_name_set(HdrHeap *heap, MIMEHdrImpl */* mh ATS_UNUSED */, MIMEField *
 }
 
 const char *
-mime_field_value_get(MIMEField *field, int *length)
+mime_field_value_get(const MIMEField *field, int *length)
 {
   *length = field->m_len_value;
   return field->m_ptr_value;
 }
 
 int32_t
-mime_field_value_get_int(MIMEField *field)
+mime_field_value_get_int(const MIMEField *field)
 {
   int length;
   const char *str = mime_field_value_get(field, &length);
@@ -1741,7 +1741,7 @@ mime_field_value_get_int(MIMEField *field)
 }
 
 uint32_t
-mime_field_value_get_uint(MIMEField *field)
+mime_field_value_get_uint(const MIMEField *field)
 {
   int length;
   const char *str = mime_field_value_get(field, &length);
@@ -1749,7 +1749,7 @@ mime_field_value_get_uint(MIMEField *field)
 }
 
 int64_t
-mime_field_value_get_int64(MIMEField *field)
+mime_field_value_get_int64(const MIMEField *field)
 {
   int length;
   const char *str = mime_field_value_get(field, &length);
@@ -1758,7 +1758,7 @@ mime_field_value_get_int64(MIMEField *field)
 }
 
 time_t
-mime_field_value_get_date(MIMEField *field)
+mime_field_value_get_date(const MIMEField *field)
 {
   int length;
   const char *str = mime_field_value_get(field, &length);
@@ -1766,7 +1766,7 @@ mime_field_value_get_date(MIMEField *field)
 }
 
 const char *
-mime_field_value_get_comma_val(MIMEField *field, int *length, int idx)
+mime_field_value_get_comma_val(const MIMEField *field, int *length, int idx)
 {
   // some fields (like Date) contain commas but should not be ripped apart
   if (!field->supports_commas()) {
@@ -1791,7 +1791,7 @@ mime_field_value_get_comma_val(MIMEField *field, int *length, int idx)
 }
 
 int
-mime_field_value_get_comma_val_count(MIMEField *field)
+mime_field_value_get_comma_val_count(const MIMEField *field)
 {
   // some fields (like Date) contain commas but should not be ripped apart
   if (!field->supports_commas()) {
@@ -1804,7 +1804,7 @@ mime_field_value_get_comma_val_count(MIMEField *field)
 }
 
 int
-mime_field_value_get_comma_list(MIMEField *field, StrList *list)
+mime_field_value_get_comma_list(const MIMEField *field, StrList *list)
 {
   const char *str;
   int len;

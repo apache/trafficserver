@@ -133,14 +133,14 @@ struct MIMEField
       return true;               // by default, assume supports commas
   }
 
-  const char *name_get(int *length);
+  const char *name_get(int *length) const;
 
-  const char *value_get(int *length);
-  int32_t value_get_int();
-  uint32_t value_get_uint();
-  int64_t value_get_int64();
-  time_t value_get_date();
-  int value_get_comma_list(StrList * list);
+  const char *value_get(int *length) const;
+  int32_t value_get_int() const;
+  uint32_t value_get_uint() const;
+  int64_t value_get_int64() const;
+  time_t value_get_date() const;
+  int value_get_comma_list(StrList * list) const;
 
   void name_set(HdrHeap * heap, MIMEHdrImpl * mh, const char *name, int length);
 
@@ -637,18 +637,18 @@ inkcoreapi MIMEField *mime_hdr_prepare_for_value_set(HdrHeap * heap, MIMEHdrImpl
 
 void mime_field_destroy(MIMEHdrImpl * mh, MIMEField * field);
 
-const char *mime_field_name_get(MIMEField * field, int *length);
+const char *mime_field_name_get(const MIMEField * field, int *length);
 void mime_field_name_set(HdrHeap * heap, MIMEHdrImpl * mh, MIMEField * field,
                          int16_t name_wks_idx_or_neg1, const char *name, int length, bool must_copy_string);
 
-inkcoreapi const char *mime_field_value_get(MIMEField * field, int *length);
-int32_t mime_field_value_get_int(MIMEField * field);
-uint32_t mime_field_value_get_uint(MIMEField * field);
-int64_t mime_field_value_get_int64(MIMEField * field);
-time_t mime_field_value_get_date(MIMEField * field);
-const char *mime_field_value_get_comma_val(MIMEField * field, int *length, int idx);
-int mime_field_value_get_comma_val_count(MIMEField * field);
-int mime_field_value_get_comma_list(MIMEField * field, StrList * list);
+inkcoreapi const char *mime_field_value_get(const MIMEField * field, int *length);
+int32_t mime_field_value_get_int(const MIMEField * field);
+uint32_t mime_field_value_get_uint(const MIMEField * field);
+int64_t mime_field_value_get_int64(const MIMEField * field);
+time_t mime_field_value_get_date(const MIMEField * field);
+const char *mime_field_value_get_comma_val(const MIMEField * field, int *length, int idx);
+int mime_field_value_get_comma_val_count(const MIMEField * field);
+int mime_field_value_get_comma_list(const MIMEField * field, StrList * list);
 
 void mime_field_value_set_comma_val(HdrHeap * heap, MIMEHdrImpl * mh, MIMEField * field, int idx,
                                     const char *new_piece_str, int new_piece_len);
@@ -729,7 +729,7 @@ int mime_parse_integer(const char *&buf, const char *end, int *integer);
   -------------------------------------------------------------------------*/
 
 inline const char *
-MIMEField::name_get(int *length)
+MIMEField::name_get(int *length) const
 {
   return (mime_field_name_get(this, length));
 }
@@ -756,37 +756,37 @@ MIMEField::name_set(HdrHeap * heap, MIMEHdrImpl * mh, const char *name, int leng
   -------------------------------------------------------------------------*/
 
 inline const char *
-MIMEField::value_get(int *length)
+MIMEField::value_get(int *length) const
 {
   return (mime_field_value_get(this, length));
 }
 
 inline int32_t
-MIMEField::value_get_int()
+MIMEField::value_get_int() const
 {
   return (mime_field_value_get_int(this));
 }
 
 inline uint32_t
-MIMEField::value_get_uint()
+MIMEField::value_get_uint() const
 {
   return (mime_field_value_get_uint(this));
 }
 
 inline int64_t
-MIMEField::value_get_int64()
+MIMEField::value_get_int64() const
 {
   return (mime_field_value_get_int64(this));
 }
 
 inline time_t
-MIMEField::value_get_date()
+MIMEField::value_get_date() const
 {
   return (mime_field_value_get_date(this));
 }
 
 inline int
-MIMEField::value_get_comma_list(StrList * list)
+MIMEField::value_get_comma_list(StrList * list) const
 {
   return (mime_field_value_get_comma_list(this, list));
 }
