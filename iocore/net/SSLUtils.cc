@@ -1794,6 +1794,10 @@ SSLWriteBuffer(SSL * ssl, const void * buf, int64_t nbytes, int64_t& nwritten)
   int ret = SSL_write(ssl, buf, (int)nbytes);
   if (ret > 0) {
     nwritten = ret;
+    BIO *bio = SSL_get_wbio(ssl);
+    if (bio != NULL) {
+      BIO_flush(bio);
+    }
     return SSL_ERROR_NONE;
   }
 

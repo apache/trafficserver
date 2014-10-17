@@ -2168,6 +2168,13 @@ SSL Termination
   buffering at the SSL layer. The default of ``0`` means to always
   write all available data into a single SSL record.
 
+  A value of ``-1`` means TLS record size is dynamically determined. The
+  strategy employed is to use small TLS records that fit into a single
+  TCP segment for the first ~1 MB of data, but, increase the record size to
+  16 KB after that to optimize throughput. The record size is reset back to
+  a single segment after ~1 second of inactivity and the record size ramping
+  mechanism is repeated again.
+
 .. ts:cv:: CONFIG proxy.config.ssl.session_cache INT 2
 
 	Enables the SSL Session Cache:

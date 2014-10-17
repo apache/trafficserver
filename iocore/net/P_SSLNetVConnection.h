@@ -52,6 +52,17 @@
 #define SSL_TLSEXT_ERR_NOACK 3
 #endif
 
+// TS-2503: dynamic TLS record sizing
+// For smaller records, we should also reserve space for various TCP options
+// (timestamps, SACKs.. up to 40 bytes [1]), and account for TLS record overhead
+// (another 20-60 bytes on average, depending on the negotiated ciphersuite [2]).
+// All in all: 1500 - 40 (IP) - 20 (TCP) - 40 (TCP options) - TLS overhead (60-100)
+// For larger records, the size is determined by TLS protocol record size
+#define SSL_DEF_TLS_RECORD_SIZE               1300 // 1500 - 40 (IP) - 20 (TCP) - 40 (TCP options) - TLS overhead (60-100)
+#define SSL_MAX_TLS_RECORD_SIZE              16383 // 2^14 - 1
+#define SSL_DEF_TLS_RECORD_BYTE_THRESHOLD  1000000
+#define SSL_DEF_TLS_RECORD_MSEC_THRESHOLD     1000
+
 class SSLNextProtocolSet;
 struct SSLCertLookup;
 
@@ -105,6 +116,8 @@ public:
 
   SSL *ssl;
   ink_hrtime sslHandshakeBeginTime;
+  ink_hrtime sslLastWriteTime;
+  int64_t    sslTotalBytesSent;
 
   static int advertise_next_protocol(SSL * ssl, const unsigned char ** out, unsigned * outlen, void *);
   static int select_next_protocol(SSL * ssl, const unsigned char ** out, unsigned char * outlen, const unsigned char * in, unsigned inlen, void *);
