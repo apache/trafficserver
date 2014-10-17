@@ -38,6 +38,8 @@
 #include "P_CacheBC.h"
 #endif
 
+#include "hugepages.h"
+
 // Compilation Options
 #define USELESS_REENABLES // allow them for now
 // #define VERIFY_JTEST_DATA
@@ -1495,7 +1497,13 @@ Vol::init(char *s, off_t blocks, off_t dir_skip, bool clear)
 
   Debug("cache_init", "allocating %zu directory bytes for a %lld byte volume (%lf%%)", vol_dirlen(this), (long long)this->len,
         (double)vol_dirlen(this) / (double)this->len * 100.0);
-  raw_dir = (char *)ats_memalign(ats_pagesize(), vol_dirlen(this));
+
+  raw_dir = NULL;
+  if (ats_hugepage_enabled())
+    raw_dir = (char *)ats_alloc_hugepage(vol_dirlen(this));
+  if (raw_dir == NULL)
+    raw_dir = (char *)ats_memalign(ats_pagesize(), vol_dirlen(this));
+
   dir = (Dir *)(raw_dir + vol_headerlen(this));
   header = (VolHeaderFooter *)raw_dir;
   footer = (VolHeaderFooter *)(raw_dir + vol_dirlen(this) - ROUND_TO_STORE_BLOCK(sizeof(VolHeaderFooter)));

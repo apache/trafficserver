@@ -1458,6 +1458,13 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   // Restart syslog now that we have configuration info
   syslog_log_configure();
 
+  // init huge pages
+  int enabled;
+  REC_ReadConfigInteger(enabled, "proxy.config.allocator.hugepages");
+  ats_hugepage_init(enabled);
+  Debug("hugepages", "ats_pagesize reporting %zu", ats_pagesize());
+  Debug("hugepages", "ats_hugepage_size reporting %zu", ats_hugepage_size());
+
   if (!num_accept_threads)
     REC_ReadConfigInteger(num_accept_threads, "proxy.config.accept_threads");
 

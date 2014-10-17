@@ -295,6 +295,7 @@ struct CacheSync : public Continuation {
   int vol_idx;
   char *buf;
   size_t buflen;
+  bool buf_huge;
   off_t writepos;
   AIOCallbackInternal io;
   Event *trigger;
@@ -302,7 +303,8 @@ struct CacheSync : public Continuation {
   int mainEvent(int event, Event *e);
   void aio_write(int fd, char *b, int n, off_t o);
 
-  CacheSync() : Continuation(new_ProxyMutex()), vol_idx(0), buf(0), buflen(0), writepos(0), trigger(0), start_time(0)
+  CacheSync()
+    : Continuation(new_ProxyMutex()), vol_idx(0), buf(0), buflen(0), buf_huge(false), writepos(0), trigger(0), start_time(0)
   {
     SET_HANDLER(&CacheSync::mainEvent);
   }

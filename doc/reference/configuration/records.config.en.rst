@@ -2849,6 +2849,18 @@ Sockets
    Sets the minimum number of items a ProxyAllocator (per-thread) will guarantee to be
    holding at any one time.
 
+.. ts:cv:: CONFIG proxy.config.allocator.hugepages INT 0
+
+   Enable (1) the use of huge pages on supported platforms. (Currently only Linux)
+
+   You must also enable hugepages at the OS level. In a modern linux Kernel
+   this can be done by setting ``/proc/sys/vm/nr_overcommit_hugepages`` to a
+   sufficiently large value. It is reasonable to use (system
+   memory/hugepage size) because these pages are only created on demand.
+
+   For more information on the implications of enabling huge pages, see
+   `Wikipedia <http://en.wikipedia.org/wiki/Page_%28computer_memory%29#Page_size_trade-off>_`.
+
 .. ts:cv:: CONFIG proxy.config.http.enabled INT 1
 
    Turn on or off support for HTTP proxying. This is rarely used, the one
