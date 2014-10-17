@@ -628,7 +628,7 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, i
   ink_hrtime now = 0;
   if (SSLConfigParams::ssl_maxrecord == -1) {
     now = ink_get_hrtime_internal();
-    int msec_since_last_write = ink_hrtime_to_msec(now - sslLastWriteTime);
+    int msec_since_last_write = ink_hrtime_diff_msec(now, sslLastWriteTime);
 
     if (msec_since_last_write > SSL_DEF_TLS_RECORD_MSEC_THRESHOLD) {
       // reset sslTotalBytesSent upon inactivity for SSL_DEF_TLS_RECORD_MSEC_THRESHOLD
@@ -663,13 +663,6 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, i
     int64_t orig_l = l;
     if (SSLConfigParams::ssl_maxrecord > 0 && l > SSLConfigParams::ssl_maxrecord) {
       l = SSLConfigParams::ssl_maxrecord;
-
-      // if ssl_maxrecord is configured higher than SSL_MAX_TLS_RECORD_SIZE
-      // round off the SSL_write at multiples of SSL_MAX_TLS_RECORD_SIZE to
-      // ensure openSSL can flush at TLS record boundary
-      if (l > SSL_MAX_TLS_RECORD_SIZE) {
-         l -= (l % SSL_MAX_TLS_RECORD_SIZE);
-      }
     } else if (SSLConfigParams::ssl_maxrecord == -1) {
       if (sslTotalBytesSent < SSL_DEF_TLS_RECORD_BYTE_THRESHOLD) {
         dynamic_tls_record_size = SSL_DEF_TLS_RECORD_SIZE;
@@ -777,10 +770,10 @@ SSLNetVConnection::SSLNetVConnection():
   sslPreAcceptHookState(SSL_HOOKS_INIT),
   sslSNIHookState(SNI_HOOKS_INIT),
   npnSet(NULL),
-  npnEndpoint(NULL)
+  npnEndpoint(NULL),
+  sslLastWriteTime(0),
+  sslTotalBytesSent(0)
 {
-  sslLastWriteTime = 0;
-  sslTotalBytesSent = 0;
 }
 
 void
@@ -807,6 +800,8 @@ SSLNetVConnection::free(EThread * t) {
   }
   sslHandShakeComplete = false;
   sslClientConnection = false;
+  sslLastWriteTime = 0;
+  sslTotalBytesSent = 0;
   sslClientRenegotiationAbort = false;
   if (SSL_HOOKS_ACTIVE == sslPreAcceptHookState) {
     Error("SSLNetVconnection freed with outstanding hook");
@@ -973,8 +968,6 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
     }
 
     sslHandShakeComplete = true;
-    sslLastWriteTime = 0;
-    sslTotalBytesSent = 0;
 
     if (sslHandshakeBeginTime) {
       const ink_hrtime ssl_handshake_time = ink_get_hrtime() - sslHandshakeBeginTime;
@@ -1097,8 +1090,6 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
     }
 
     sslHandShakeComplete = true;
-    sslLastWriteTime = 0;
-    sslTotalBytesSent = 0;
     return EVENT_DONE;
 
   case SSL_ERROR_WANT_WRITE:
