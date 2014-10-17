@@ -107,6 +107,8 @@ libtsutil_la_SOURCES = \
   defalloc.h \
   fastlz.c \
   fastlz.h \
+  hugepages.cc \
+  hugepages.h \
   ink_aiocb.h \
   ink_align.h \
   ink_apidefs.h \

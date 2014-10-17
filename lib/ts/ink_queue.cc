@@ -50,6 +50,7 @@
 #include "ink_assert.h"
 #include "ink_queue_ext.h"
 #include "ink_align.h"
+#include "hugepages.h"
 
 inkcoreapi volatile int64_t fastalloc_mem_in_use = 0;
 inkcoreapi volatile int64_t fastalloc_mem_total = 0;
@@ -100,9 +101,13 @@ ink_freelist_init(InkFreeList **fl, const char *name, uint32_t type_size, uint32
   /* quick test for power of 2 */
   ink_assert(!(alignment & (alignment - 1)));
   f->alignment = alignment;
-  f->chunk_size = chunk_size;
   // Make sure we align *all* the objects in the allocation, not just the first one
   f->type_size = INK_ALIGN(type_size, alignment);
+  if (ats_hugepage_enabled()) {
+    f->chunk_size = INK_ALIGN(chunk_size * f->type_size, ats_hugepage_size()) / f->type_size;
+  } else {
+    f->chunk_size = chunk_size;
+  }
   SET_FREELIST_POINTER_VERSION(f->head, FROM_PTR(0), 0);
 
   f->used = 0;
@@ -171,12 +176,16 @@ ink_freelist_new(InkFreeList *f)
 #ifdef DEBUG
       char *oldsbrk = (char *)sbrk(0), *newsbrk = NULL;
 #endif
-      if (f->alignment)
-        newp = ats_memalign(f->alignment, f->chunk_size * type_size);
-      else
-        newp = ats_malloc(f->chunk_size * type_size);
-      ats_madvise((caddr_t)newp, f->chunk_size * type_size, f->advice);
+      if (ats_hugepage_enabled())
+        newp = ats_alloc_hugepage(f->chunk_size * type_size);
 
+      if (newp == NULL) {
+        if (f->alignment)
+          newp = ats_memalign(f->alignment, f->chunk_size * type_size);
+        else
+          newp = ats_malloc(f->chunk_size * type_size);
+      }
+      ats_madvise((caddr_t)newp, f->chunk_size * type_size, f->advice);
       fl_memadd(f->chunk_size * type_size);
 #ifdef DEBUG
       newsbrk = (char *)sbrk(0);
