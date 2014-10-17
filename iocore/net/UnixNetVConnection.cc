@@ -440,16 +440,16 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
     return;
   }
 
-  int64_t total_wrote = 0, wattempted = 0;
+  int64_t total_written = 0, wattempted = 0;
   int needs = 0;
-  int64_t r = vc->load_buffer_and_write(towrite, wattempted, total_wrote, buf, needs);
+  int64_t r = vc->load_buffer_and_write(towrite, wattempted, total_written, buf, needs);
 
   // if we have already moved some bytes successfully, summarize in r
-  if (total_wrote != wattempted) {
+  if (total_written != wattempted) {
     if (r <= 0)
-      r = total_wrote - wattempted;
+      r = total_written - wattempted;
     else
-      r = total_wrote - wattempted + r;
+      r = total_written - wattempted + r;
   }
   // check for errors
   if (r <= 0) {                 // if the socket was not ready,add to WaitList
@@ -851,7 +851,7 @@ UnixNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
 // (SSL read does not support overlapped i/o)
 // without duplicating all the code in write_to_net.
 int64_t
-UnixNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, int64_t &total_wrote, MIOBufferAccessor & buf, int &needs)
+UnixNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, int64_t &total_written, MIOBufferAccessor & buf, int &needs)
 {
   int64_t r = 0;
 
@@ -862,7 +862,7 @@ UnixNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, 
   do {
     IOVec tiovec[NET_MAX_IOV];
     int niov = 0;
-    int64_t total_wrote_last = total_wrote;
+    int64_t total_written_last = total_written;
     while (b && niov < NET_MAX_IOV) {
       // check if we have done this block
       int64_t l = b->read_avail();
@@ -873,12 +873,12 @@ UnixNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, 
         continue;
       }
       // check if to amount to write exceeds that in this buffer
-      int64_t wavail = towrite - total_wrote;
+      int64_t wavail = towrite - total_written;
       if (l > wavail)
         l = wavail;
       if (!l)
         break;
-      total_wrote += l;
+      total_written += l;
       // build an iov entry
       tiovec[niov].iov_len = l;
       tiovec[niov].iov_base = b->start() + offset;
@@ -887,14 +887,14 @@ UnixNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, 
       offset = 0;
       b = b->next;
     }
-    wattempted = total_wrote - total_wrote_last;
+    wattempted = total_written - total_written_last;
     if (niov == 1)
       r = socketManager.write(con.fd, tiovec[0].iov_base, tiovec[0].iov_len);
     else
       r = socketManager.writev(con.fd, &tiovec[0], niov);
     ProxyMutex *mutex = thread->mutex;
     NET_DEBUG_COUNT_DYN_STAT(net_calls_to_write_stat, 1);
-  } while (r == wattempted && total_wrote < towrite);
+  } while (r == wattempted && total_written < towrite);
 
   needs |= EVENTIO_WRITE;
 
