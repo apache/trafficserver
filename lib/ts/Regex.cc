@@ -24,16 +24,106 @@
 #include "libts.h"
 #include "Regex.h"
 
+#ifdef PCRE_CONFIG_JIT
+struct RegexThreadKey
+{
+  RegexThreadKey() {
+    pthread_key_create(&this->key, (void (*)(void *)) &pcre_jit_stack_free);
+  }
+
+  pthread_key_t key;
+};
+
+static RegexThreadKey k;
+
+static pcre_jit_stack *
+get_jit_stack(void *data ATS_UNUSED)
+{
+  pcre_jit_stack *jit_stack;
+
+  if ((jit_stack = (pcre_jit_stack *) pthread_getspecific(k.key)) == NULL) {
+    jit_stack = pcre_jit_stack_alloc(ats_pagesize(), 1024 * 1024); // 1 page min and 1MB max
+    pthread_setspecific(k.key, (void *)jit_stack);
+  }
+
+  return jit_stack;
+}
+#endif
+
+bool
+Regex::compile(const char *pattern, unsigned flags)
+{
+  const char *error;
+  int erroffset;
+  int options = 0;
+  int study_opts = 0;
+
+  if (regex)
+    return false;
+
+  if (flags & RE_CASE_INSENSITIVE) {
+    options |= PCRE_CASELESS;
+  }
+
+  if (flags & RE_ANCHORED) {
+    options |= PCRE_ANCHORED;
+  }
+
+  regex = pcre_compile(pattern, options, &error, &erroffset, NULL);
+  if (error) {
+    regex = NULL;
+    return false;
+  }
+
+#ifdef PCRE_CONFIG_JIT
+  study_opts |= PCRE_STUDY_JIT_COMPILE;
+#endif
+
+  regex_extra = pcre_study(regex, study_opts, &error);
+
+#ifdef PCRE_CONFIG_JIT
+    if (regex_extra)
+      pcre_assign_jit_stack(regex_extra, &get_jit_stack, NULL);
+#endif
+
+  return true;
+}
+
+bool
+Regex::exec(const char *str)
+{
+  return exec(str, strlen(str));
+}
+
+bool
+Regex::exec(const char *str, int length)
+{
+  int ovector[30], rv;
+
+  rv = pcre_exec(regex, regex_extra, str, length , 0, 0, ovector, countof(ovector));
+  return rv > 0 ? true : false;
+}
+
+Regex::~Regex()
+{
+  if (regex_extra)
+#ifdef PCRE_CONFIG_JIT
+    pcre_free_study(regex_extra);
+#else
+    pcre_free(regex_extra);
+#endif
+  if (regex)
+    pcre_free(regex);
+}
+
 DFA::~DFA()
 {
   dfa_pattern * p = _my_patterns;
   dfa_pattern * t;
 
   while(p) {
-    if (p->_pe)
-      pcre_free(p->_pe);
     if (p->_re)
-      pcre_free(p->_re);
+      delete p->_re;
     if(p->_p)
       ats_free(p->_p);
     t = p->_next;
@@ -45,31 +135,20 @@ DFA::~DFA()
 dfa_pattern *
 DFA::build(const char *pattern, unsigned flags)
 {
-  const char *error;
-  int erroffset;
   dfa_pattern* ret;
-  int options = PCRE_ANCHORED;
+  int rv;
+
+  if (!(flags & RE_UNANCHORED)) {
+    flags |= RE_ANCHORED;
+  }
 
   ret = (dfa_pattern*)ats_malloc(sizeof(dfa_pattern));
   ret->_p = NULL;
 
-  if (flags & RE_CASE_INSENSITIVE) {
-    options |= PCRE_CASELESS;
-  }
-
-  if (flags & RE_UNANCHORED) {
-    options &= ~PCRE_ANCHORED;
-  }
-
-  ret->_re = pcre_compile(pattern, options, &error, &erroffset, NULL);
-  if (error) {
-    ats_free(ret);
-    return NULL;
-  }
-
-  ret->_pe = pcre_study(ret->_re, 0, &error);
-
-  if (error) {
+  ret->_re = new Regex();
+  rv = ret->_re->compile(pattern, flags);
+  if (rv == -1) {
+    delete ret->_re;
     ats_free(ret);
     return NULL;
   }
@@ -96,11 +175,9 @@ DFA::compile(const char **patterns, int npatterns, unsigned flags)
   dfa_pattern *ret = NULL;
   dfa_pattern *end = NULL;
   int i;
-  //char buf[128];
 
   for (i = 0; i < npatterns; i++) {
     pattern = patterns[i];
-    //snprintf(buf,128,"%s",pattern);
     ret = build(pattern,flags);
     if (!ret) {
       continue;
@@ -135,12 +212,10 @@ int
 DFA::match(const char *str, int length) const
 {
   int rc;
-  int ovector[30];
-  //int wspace[20];
   dfa_pattern * p = _my_patterns;
 
   while(p) {
-    rc = pcre_exec(p->_re, p->_pe, str, length , 0, 0, ovector, 30/*,wspace,20*/);
+    rc = p->_re->exec(str, length);
     if (rc > 0) {
       return p->_idx;
     }
