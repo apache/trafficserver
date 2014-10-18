@@ -1,0 +1,80 @@
+{
+    "test": {
+        "iterations": 1,
+        "concurrency": 1
+    },
+    "servers": {
+        "ats1": {
+            "type": "ats",
+            "root": "ats1",
+            "interfaces": {
+                "http": {
+                    "type": "http",
+                    "hostname": "localhost",
+                    "port": 8080
+                }
+            }
+        },
+        "ats2": {
+            "type": "ats",
+            "root": "ats2",
+            "interfaces": {
+                "http": {
+                    "type": "http",
+                    "hostname": "localhost",
+                    "port": 8081
+                }
+            },
+            "args": [
+                "-n", 2,
+                "-a", 1
+            ]
+        },
+        "origin1": {
+            "type": "origin",
+            "interfaces": {
+                "http": {
+                    "type": "http",
+                    "hostname": "localhost",
+                    "port": 8082
+                }
+            },
+            "actions": {
+                "GET": {
+                    "/foo/bar": {
+                        "status_code": 200,
+                        "headers": {
+                        },
+                        "delay_first_chunk_millis": 0,
+                        "chunk_size_bytes": 1024,
+                        "num_chunks": 10,
+                        "delay_between_chunk_millis": 0,
+                        "chunk_byte_value": 99
+                    }
+                }
+            }
+        },
+        "disabled1": {
+            "type": "node",
+            "spawn": false,
+            "script": "origin.js",
+            "args": [
+                "origin8082.json"
+            ],
+            "interfaces": {
+                "http": {
+                    "type": "http",
+                    "port": 8082
+                }
+            }
+        },
+        "disabled2": {
+            "type": "other",
+            "spawn": false,
+            "executable": "ls",
+            "args": [
+                "test.js"
+            ]
+        }
+    }
+}
