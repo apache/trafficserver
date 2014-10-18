@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.2.0
 
+  *) [TS-3145] Add traffic_line --backtrace option.
+
   *) [TS-2503]: Dynamic TLS Record Sizing for better page load latencies
 
   *) [TS-3139] New script, traffic_primer, which will fetch a URL from origin
@@ -13,9 +15,9 @@ Changes with Apache Traffic Server 5.2.0
   *) [TS-3129] Parent proxy configuration does not work for incoming HTTPS requests
 
   *) [TS-3127] Add config for OpenSSL session cache auto clear
-  
+
   *) [TS-3125] SSL ctx is set to a constant allowing for potential inappropriate session reuse
-  
+
   *) [TS-3060] Enhance POST timeout scenario to send HTTP status response
 
   *) [TS-3120] Overlapping remap rank when using .include directives.
@@ -33,7 +35,7 @@ Changes with Apache Traffic Server 5.2.0
 
   *) [TS-2314] - remove possible invalid array index access from debug log
 
-  *) [TS-3112] - Add null pointer check for contp 
+  *) [TS-3112] - Add null pointer check for contp
 
   *) [TS-3103] Improve privilege elevation.
 
@@ -300,7 +302,7 @@ Changes with Apache Traffic Server 5.1.0
 Changes with Apache Traffic Server 5.0.0
 
   *) [TS-2885] Change LuaJIT to build statically, add --disable-luajit. This
-  is an option that will eventually be removed as we make LuaJIT mandatory. 
+  is an option that will eventually be removed as we make LuaJIT mandatory.
 
   *) [TS-2886] Fix regression where body factory is not used.
 
@@ -541,7 +543,7 @@ Changes with Apache Traffic Server 5.0.0
   *) [TS-2757] Fix logging crashes on reconfiguration.
 
   *) [TS-2770] Allow proxy.config.log.rolling_interval_sec to be as low as 60sec.
-  
+
   *) [TS-2772] Clean up mgmt/preparse code.
 
   *) [TS-2763] Remove the unused proxy.config.log.xuid_logging_enabled config
@@ -592,7 +594,7 @@ Changes with Apache Traffic Server 5.0.0
   *) [TS-2704] Core dump in state_raw_http_server_open getting EVENT_INTERVAL
    event.
 
-  *) [TS-2720] Fix bug with request transformations in C++ api 
+  *) [TS-2720] Fix bug with request transformations in C++ api
 
   *) [TS-2714] Promote the tcp_info plugin to stable as 'tcpinfo'.
 
@@ -655,7 +657,7 @@ Changes with Apache Traffic Server 5.0.0
    content. Author: Jack Bates <jack@nottheoilrig.com>
 
   *) [TS-2687] Support for MIPS paltform.
-   Author: Dejan Latinovic <Dejan.Latinovic@rt-rk.com> 
+   Author: Dejan Latinovic <Dejan.Latinovic@rt-rk.com>
 
   *) [TS-2688] atscppapi: new example plugin Boom.
    Author: Omer Shapira <oshapira@linkedin.com>
@@ -672,7 +674,7 @@ Changes with Apache Traffic Server 5.0.0
   *) [TS-2674] Remove debug printf() from traffic_top.
 
   *) [TS-2652] atscppapi: Providing a cancel() in asyncproviders .
-  
+
   *) [TS-2667] atscppapi: Allow intercept plugins to access request headers
    object.
 
@@ -760,7 +762,7 @@ Changes with Apache Traffic Server 5.0.0
 
   *) [TS-2607] Fix TS_USE_HWLOC #define in build process
 
-  *) [TS-2595] DNS lookup failed with multiple search domains. 
+  *) [TS-2595] DNS lookup failed with multiple search domains.
    Author: Thach Tran <tranngocthachs@gmail.com>
 
   *) [TS-2019] Fix the "vector inconsistency" errors.
@@ -846,7 +848,6 @@ Changes with Apache Traffic Server 5.0.0
 
   *) [TS-2088] Change TSRecordType enum values to powers of two
 
-
 Changes with Apache Traffic Server 4.2.0
 
   *) [TS-2552] configure fails to detect missing the #define for
@@ -904,7 +905,7 @@ Changes with Apache Traffic Server 4.2.0
 
   *) [TS-2519] Make build version metrics non-persistent.
 
-  *) [TS-1606] Log buffers are not flushed periodically when TS is launched 
+  *) [TS-1606] Log buffers are not flushed periodically when TS is launched
    with NO_REMOTE_MANAGEMENT flag
 
   *) [TS-2481] Incorrect origin server port used sometimes (with keep-alive).
@@ -954,7 +955,7 @@ Changes with Apache Traffic Server 4.2.0
 
   *) [TS-2491] stop other esi plugin unit test programs after error.
    Author: Yu Qing <zhuangyuan@taobao.com>
- 
+
   *) [TS-1821] make the AIO test pass when build with native aio.
 
   *) [TS-2412] fix the bug of restarting ATS causes complete cache data
@@ -964,7 +965,7 @@ Changes with Apache Traffic Server 4.2.0
    follow esi starting tags.
    Author: Yu Qing <zhuangyuan@taobao.com>
 
-  *) [TS-2489] Fix esi plugin problem with contents in comments output 
+  *) [TS-2489] Fix esi plugin problem with contents in comments output
    twice when the node list is cached.
    Author: Yu Qing <zhuangyuan@taobao.com>
 
@@ -1184,7 +1185,6 @@ Changes with Apache Traffic Server 4.2.0
 
   *) [TS-2309] Allow mod_generator plugin for lighttpd to accept "SI" postfixes.
 
-
 Changes with Apache Traffic Server 4.1.0
 
   *) [TS-2252] Fix bison version check on Ubuntu.
@@ -1299,7 +1299,7 @@ Changes with Apache Traffic Server 4.1.0
   *) [TS-2270] ESI Plugin can have infinite loop while doing gunzip on
    responses. Author: Kit Chan
 
-  *) [TS-2268] Add support for opening protocol traffic sockets through the 
+  *) [TS-2268] Add support for opening protocol traffic sockets through the
    traffic_manager. Added TSPluginDescriptorAccept into expiremental API.
 
   *) [TS-2266] Add a "make rat" Makefile target, to create a RAT report. This
@@ -1429,7 +1429,6 @@ Changes with Apache Traffic Server 4.1.0
 
   *) [TS-2123] Remove useless max_entries_per_buffer option.
 
-
 Changes with Apache Traffic Server 4.0.1
 
   *) [TS-2161] TSHttpTxnHookAdd memory Leak.
@@ -1461,9 +1460,7 @@ Changes with Apache Traffic Server 4.0.1
   *) [TS-2111] configure check in boost falsely requires 1.50. Reducing it to
    v1.33, which is what RHEL5 ships with.
 
-
 Changes with Apache Traffic Server 3.3.5
-
 
   *) [TS-2051] Fix SSL crash due to excess READ_COMPLETE events.
 
@@ -1630,7 +1627,7 @@ Changes with Apache Traffic Server 3.3.5
    necessary for e.g. logging.
 
   *) [TS-745] support interim caching in storage to enable, use
-   '--enable-interim-cache' configure option. 
+   '--enable-interim-cache' configure option.
 
   *) [TS-1968] Promote header_rewrite plugin from experimental
 
@@ -1653,7 +1650,6 @@ Changes with Apache Traffic Server 3.3.5
   *) [TS-1962] Don't add POST server connections to the shared pool unless POST
    keep-alive option is on
 
-
 Changes with Apache Traffic Server 3.3.4
 
   *) [TS-1940] HostDB gets reinitialized on startup.
@@ -1662,7 +1658,6 @@ Changes with Apache Traffic Server 3.3.4
 
   *) [TS-1938] Remove unnecessary thread_id() wrapper in reclaimable freelist.
     Author: Yunkai Zhang <qiushu.zyk@taobao.com>
-
 
 Changes with Apache Traffic Server 3.3.3 (never released)
 
@@ -1856,7 +1851,6 @@ Changes with Apache Traffic Server 3.3.3 (never released)
 
   *) [TS-1826] Remove DumpStats/http_dump dead code.
 
-
 Changes with Apache Traffic Server 3.3.2
 
   *) [TS-621] Allow caching of empty docs (currently only if a header
@@ -1964,7 +1958,6 @@ Changes with Apache Traffic Server 3.3.2
   *) [TS-1742] Freelists to use 64bit version w/ Double Word Compare and Swap.
 
   *) [TS-1356] Ability to set thread affinity with multiple modes.
-
 
 Changes with Apache Traffic Server 3.3.1
 
@@ -2260,13 +2253,12 @@ Changes with Apache Traffic Server 3.3.1
 
   *) [TS-1414] gzip plugin enhancements.
 
-
 Changes with Apache Traffic Server 3.3.0
 
   *) [TS-1427] PluginVCs now use a method similar to actual socket VCs
    for firing inactivity timeout events.
 
-  *) [TS-1426] protection from NULL deref when using 
+  *) [TS-1426] protection from NULL deref when using
    TSHttpTxnOutgoingTransparencySet after a user agent has disconnected.
 
   *) [TS-1425] clean up the lingering read before deallocating its buffers
@@ -2323,7 +2315,7 @@ Changes with Apache Traffic Server 3.3.0
   *) [TS-1331] Wrong regex for ip in records config. Authors:
    Yakov Kopel and Uri Shachar.
 
-  *) [TS-1348] Remove the active timeout when releasing or 
+  *) [TS-1348] Remove the active timeout when releasing or
   binding server_session.
 
   *) [TS-1350] Detect and prefer LuaJIT.
@@ -2401,11 +2393,9 @@ Changes with Apache Traffic Server 3.3.0
 
   *) [TS-1296] Do not link all binaries and plugins with libreadline.
 
-
 Changes with Apache Traffic Server 3.2.0
 
   *) [TS-1286] Cleanup some code around freelists and allocators.
-
 
 Changes with Apache Traffic Server 3.1.4
 
@@ -2422,7 +2412,7 @@ Changes with Apache Traffic Server 3.1.4
   *) [TS-1275] Fix startup problem where /var is on a volatile disk.
    Author: Eric Connell.
 
-  *) [TS-1274] Transformation plugins can send content-length with 
+  *) [TS-1274] Transformation plugins can send content-length with
    non-identity transfer encoding. Author: Otto van der Schaff.
 
   *) [TS-1272] workaround for - FATAL: HttpSM.cc:890: failed assert `0`
@@ -2596,7 +2586,6 @@ Changes with Apache Traffic Server 3.1.4
 
   *) [TS-1149] Pretty up automake output.
 
-
 Changes with Apache Traffic Server 3.1.3
 
   *) [TS-1145] Additional clang build fixes. Author: Darrin Jewell.
@@ -2639,10 +2628,9 @@ Changes with Apache Traffic Server 3.1.3
 
   *) [TS-841] support TLS NextProtocol negotiation
 
-
 Changes with Apache Traffic Server 3.1.2
 
-  *) [TS-1110] logstats incorrectly bucketizes all status codes greater 
+  *) [TS-1110] logstats incorrectly bucketizes all status codes greater
   than 599 as 5xx. Author: Manjesh Nilange
 
   *) [TS-1094] Fixed MIME parser so certain sequences of requests on
@@ -2764,7 +2752,6 @@ Changes with Apache Traffic Server 3.1.2
   *) [TS-1021] Remove extra newline from binary logs.
 
   *) [TS-1022] Use size specific types for serialized data in binary logs.
-
 
 Changes with Apache Traffic Server 3.1.1
 
@@ -2915,7 +2902,6 @@ Changes with Apache Traffic Server 3.1.1
   *) [TS-930] Fixed TSNetConnect to use network order for port.
 
   *) [TS-1008] Add API to get TCP connection from SSN.
-
 
 Changes with Apache Traffic Server 3.1.0
 
@@ -3094,7 +3080,6 @@ Changes with Apache Traffic Server 3.1.0
   *) [TS-815] make sure that a missing yacc/bison|flex/lex is *fatal* when
    building with wccp. Author: Arno Toll.
 
-
 Changes with Apache Traffic Server 3.0.0
 
   *) [TS-827] TSMimeHdrFieldValueStringInsert() can use freed memory to
@@ -3114,7 +3099,6 @@ Changes with Apache Traffic Server 3.0.0
 
   *) [TS-798] We add broken remap rules when we encounter parse errors of
    remap.config.
-
 
 Changes with Apache Traffic Server 2.1.9
 
@@ -3211,7 +3195,6 @@ Changes with Apache Traffic Server 2.1.9
 
   *) [TS-759] Makefile in proxy/config handles $DESTDIR incorrectly.
    Author: Arno Toell
-
 
 Changes with Apache Traffic Server 2.1.8
 
@@ -3322,7 +3305,6 @@ Changes with Apache Traffic Server 2.1.8
   *) [TS-545] parent.config (and perhaps other configs) have an unused
    concept of "tags" for MIXT media. Cleanup remaining MIXT junk.
 
-
 Changes with Apache Traffic Server 2.1.7
 
   *) [TS-711] Don't schedule remap.config reloads on a network threads.
@@ -3379,7 +3361,6 @@ Changes with Apache Traffic Server 2.1.7
   *) [TS-684] config.layout for gentoo linux, may also be used on Fedora
 
   *) [TS-675] Make redirect and reverse maps work again.
-
 
 Changes with Apache Traffic Server 2.1.6
 
@@ -3503,7 +3484,6 @@ Changes with Apache Traffic Server 2.1.6
   *) [TS-627] Fixes for "make check" to succeed (author: Arno Toell).
 
   *) [TS-632] Fixes for bad cast and cleanup for Intel CC.
-
 
 Changes with Apache Traffic Server 2.1.5
 
@@ -3746,7 +3726,6 @@ Changes with Apache Traffic Server 2.1.5
 
   Various other cleanup related to the APIs was also done [TS-522].
 
-
 Changes with Apache Traffic Server 2.1.4
 
   *) Fixes to clustering, that caused an assert to trigger after the stats
@@ -3819,7 +3798,6 @@ Changes with Apache Traffic Server 2.1.4
 
   *) Cleanup / optimize Via: string generation [TS-460]. Also make the
    default for Via: on responses to be disabled (it can leak info).
-
 
 Changes with Apache Traffic Server 2.1.3
 
@@ -3898,7 +3876,6 @@ Changes with Apache Traffic Server 2.1.3
   *) Duplication of RAM cache hits and miss statistics (reading 2x) (author:
    John Plevyak) [TS-453].
 
-
 Changes with Apache Traffic Server 2.1.2
 
   *) Improvements in resilience against DNS poisoning and forging of
@@ -3971,7 +3948,6 @@ Changes with Apache Traffic Server 2.1.2
 
   *) Solaris 10 port work.
 
-
 Changes with Apache Traffic Server 2.1.1
 
   *) Allow SI decimal multipliers for numeric configuration parameters
@@ -3992,7 +3968,6 @@ Changes with Apache Traffic Server 2.1.1
 
   *) Performance improvements on cache for larger(ish) objects.
 
-
 Changes with Apache Traffic Server 2.1.0
 
   *) Support for many more platforms, including FreeBSD, MacOSX and Solaris.
@@ -4011,7 +3986,6 @@ Changes with Apache Traffic Server 2.1.0
 
   *) The cache is now 64-bit "clean".
 
-
 Changes with Apache Traffic Server 2.0.1
 
   *) Port of CVE-2010-2952 for 2.0.x [TS-425].
@@ -4021,7 +3995,6 @@ Changes with Apache Traffic Server 2.0.1
 
   *) Backport TS-336 to 2.0.x. Problems with make install DESTDIR=...
 
-
 Changes with Apache Traffic Server 2.0.0
 
   *) Change SDK versioning schemes to 2.0 [TS-249).
@@ -4029,7 +4002,6 @@ Changes with Apache Traffic Server 2.0.0
   *) Minor additions to the SDK (see the docs for details).
 
   *) Support regexe_map rules in remap.config [TS-80]
-
 
 Changes with Apache Traffic Server 2.0.0-alpha
 

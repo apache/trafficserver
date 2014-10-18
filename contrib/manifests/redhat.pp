@@ -35,7 +35,7 @@ package {'epel-release':
 package {[
     'gcc', 'gcc-c++', 'automake', 'autoconf', 'libtool', 'pkgconfig',
     'openssl-devel', 'tcl-devel', 'expat-devel', 'pcre-devel',
-    'ncurses-devel', 'libaio-devel',
+    'ncurses-devel', 'libaio-devel', 'libunwind-devel',
     'hwloc-devel', 'libcap-devel', 'bison', 'flex', 'make',
   ]:
   ensure => latest
