@@ -49,8 +49,8 @@ push() {
     # First make sure the "source" proxy is alive
     nc -z $HOST $PORT > /dev/null
     if [ $? -gt 0 ]; then
-	echo "	Error: source ${HOST}:${PORT} is down"
-	return
+        echo "  Error: source ${HOST}:${PORT} is down"
+        return
     fi
 
     f=$(mktemp /tmp/pusher-XXXXXX)
@@ -58,47 +58,47 @@ push() {
 
     # Fetch the "source" object first
     # [ $FORCE -gt 0 ] && curl -x ${HOST}:${PORT} -s -o /dev/null -X PURGE $u
-    echo -n "	Fetching source body ..."
+    echo -n "   Fetching source body ..."
     curl -x ${HOST}:${PORT} -s -D ${f}.hdrs -o ${f}.body $u
     s_md5=$(cat ${f}.body | md5sum)
     echo "done"
-    echo "	Source MD5=${s_md5}"
+    echo "      Source MD5=${s_md5}"
 
     cat ${f}.hdrs ${f}.body > ${f}
 
     for h in $*; do
-	# Make sure the destination host:port is up
-	nc -z $h $PORT > /dev/null
-	if [ $? -gt 0 ]; then
-	    echo "	Error: ${h}:${PORT} is down"
-	else
-	    echo -n "	Procesing ${h}:${PORT}..."
-	    # PURGE the object first if we -f (force) it
-	    if [ $FORCE -gt 0 ]; then
-		echo -n " purged ..."
-		curl -x ${h}:${PORT} -s -o /dev/null -X PURGE $u
-	    fi
+        # Make sure the destination host:port is up
+        nc -z $h $PORT > /dev/null
+        if [ $? -gt 0 ]; then
+            echo "      Error: ${h}:${PORT} is down"
+        else
+            echo -n "   Procesing ${h}:${PORT}..."
+            # PURGE the object first if we -f (force) it
+            if [ $FORCE -gt 0 ]; then
+                echo -n " purged ..."
+                curl -x ${h}:${PORT} -s -o /dev/null -X PURGE $u
+            fi
 
-	    # If it's not in cache now, PUSH it
-	    curl -f -I -x ${h}:${PORT} -s -o /dev/null -H "Cache-Control: only-if-cached" $u
-	    if [ $? -gt 0 ]; then
-		echo -n " pushing ..."
-		curl -x ${h}:${PORT} -s -o /dev/null -X PUSH --data-binary @${f} $u
-	    fi
-	    echo " done."
+            # If it's not in cache now, PUSH it
+            curl -f -I -x ${h}:${PORT} -s -o /dev/null -H "Cache-Control: only-if-cached" $u
+            if [ $? -gt 0 ]; then
+                echo -n " pushing ..."
+                curl -x ${h}:${PORT} -s -o /dev/null -X PUSH --data-binary @${f} $u
+            fi
+            echo " done."
 
-	    # Now, verify the content MD5 if enabled
-	    if [ $MD5 -gt 0 ]; then
-		n_md5=$(curl -x ${h}:${PORT} -s $u | md5sum)
-		if [ "$n_md5" != "$s_md5" ]; then
-		    # This is bad, MD5's don't match, error and PURGE it
-		    echo -n "		Error! MD5 incorrect! Purging the object."
-		    curl -x ${h}:${PORT} -s -o /dev/null -X PURGE $u
-		else
-		    echo "		MD5 checksum is good."
-		fi
-	    fi
-	fi
+            # Now, verify the content MD5 if enabled
+            if [ $MD5 -gt 0 ]; then
+                n_md5=$(curl -x ${h}:${PORT} -s $u | md5sum)
+                if [ "$n_md5" != "$s_md5" ]; then
+                    # This is bad, MD5's don't match, error and PURGE it
+                    echo -n "           Error! MD5 incorrect! Purging the object."
+                    curl -x ${h}:${PORT} -s -o /dev/null -X PURGE $u
+                else
+                    echo "              MD5 checksum is good."
+                fi
+            fi
+        fi
     done
 
     rm -f ${f} ${f}.hdrs ${f}.body
@@ -114,14 +114,14 @@ urlfile=""
 set -- $PARGS
 while true; do
     case "$1" in
-	-c)
-	    MD5=1
-	    shift ;;
-	-d)
-	    DEBUG=1
-	    shift ;;
-	-f) FORCE=1
-	    shift ;;
+        -c)
+            MD5=1
+            shift ;;
+        -d)
+            DEBUG=1
+            shift ;;
+        -f) FORCE=1
+            shift ;;
         -u)
             url="$2"
             shift 2 ;;
@@ -149,8 +149,8 @@ done
 #
 if [ "" != "$urlfile" ]; then
     while read line; do
-	push $line $@
-	echo
+        push $line $@
+        echo
     done < $urlfile
 elif ["" != "$url" ]; then
     push $url $@
