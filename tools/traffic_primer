@@ -21,32 +21,118 @@
 # the URL, but can be overriden with -h/-p.
 
 
+# Default values for command line options
+HOST="localhost"
+PORT="80"
+
+DEBUG=0
+FORCE=0
+MD5=0
+
+#
 # Print some help text
+#
 usage() {
-    echo 'Usage: traffic_primer -u <url> [-h Host] [-p port] host1 host2 ...'
+    echo 'Usage: traffic_primer [-cfd] [-u <url>] [-U <filename with URLs>] [-h Host] [-p port] host1 host2 ...'
     exit 2
 }
 
-# Default values for command line options
-url=""
-host="localhost"
-port="80"
+
+#
+# push(url, host ...)
+#   fetch the URL storing header + body in a tmp file, and then replay it to the hosts
+#
+push() {
+    u=$1; shift
+
+    echo "---> ${u}"
+    # First make sure the "source" proxy is alive
+    nc -z $HOST $PORT > /dev/null
+    if [ $? -gt 0 ]; then
+	echo "	Error: source ${HOST}:${PORT} is down"
+	return
+    fi
+
+    f=$(mktemp /tmp/pusher-XXXXXX)
+    trap "rm -f ${f} ${f}.hdrs ${f}.body; exit 0" 0 1 2 3 15 # Just in case we left it around
+
+    # Fetch the "source" object first
+    # [ $FORCE -gt 0 ] && curl -x ${HOST}:${PORT} -s -o /dev/null -X PURGE $u
+    echo -n "	Fetching source body ..."
+    curl -x ${HOST}:${PORT} -s -D ${f}.hdrs -o ${f}.body $u
+    s_md5=$(cat ${f}.body | md5sum)
+    echo "done"
+    echo "	Source MD5=${s_md5}"
+
+    cat ${f}.hdrs ${f}.body > ${f}
+
+    for h in $*; do
+	# Make sure the destination host:port is up
+	nc -z $h $PORT > /dev/null
+	if [ $? -gt 0 ]; then
+	    echo "	Error: ${h}:${PORT} is down"
+	else
+	    echo -n "	Procesing ${h}:${PORT}..."
+	    # PURGE the object first if we -f (force) it
+	    if [ $FORCE -gt 0 ]; then
+		echo -n " purged ..."
+		curl -x ${h}:${PORT} -s -o /dev/null -X PURGE $u
+	    fi
+
+	    # If it's not in cache now, PUSH it
+	    curl -f -I -x ${h}:${PORT} -s -o /dev/null -H "Cache-Control: only-if-cached" $u
+	    if [ $? -gt 0 ]; then
+		echo -n " pushing ..."
+		curl -x ${h}:${PORT} -s -o /dev/null -X PUSH --data-binary @${f} $u
+	    fi
+	    echo " done."
+
+	    # Now, verify the content MD5 if enabled
+	    if [ $MD5 -gt 0 ]; then
+		n_md5=$(curl -x ${h}:${PORT} -s $u | md5sum)
+		if [ "$n_md5" != "$s_md5" ]; then
+		    # This is bad, MD5's don't match, error and PURGE it
+		    echo -n "		Error! MD5 incorrect! Purging the object."
+		    curl -x ${h}:${PORT} -s -o /dev/null -X PURGE $u
+		else
+		    echo "		MD5 checksum is good."
+		fi
+	    fi
+	fi
+    done
+
+    rm -f ${f} ${f}.hdrs ${f}.body
+}
+
 
 # Parse command line arguments
-PARGS=$(getopt u:h:p: $@)
+PARGS=$(getopt u:U:h:p:dfc $@)
 [ $? != 0 ] && usage
 
+url=""
+urlfile=""
 set -- $PARGS
 while true; do
     case "$1" in
+	-c)
+	    MD5=1
+	    shift ;;
+	-d)
+	    DEBUG=1
+	    shift ;;
+	-f) FORCE=1
+	    shift ;;
         -u)
             url="$2"
             shift 2 ;;
+        -U)
+            urlfile="$2"
+            shift 2 ;;
         -h)
-            host="$2"
+            HOST="$2"
             shift 2 ;;
         -p)
-            port="$2"
+            PORT="$2"
             shift 2 ;;
         --)
             shift
@@ -58,22 +144,16 @@ while true; do
     esac
 done
 
-[ "" == "$url" ] && usage
-
-tmpfile=$(mktemp /tmp/pusher-XXXXXX)
-
-# CLeanup just in case
-trap "rm -f $tmpfile; exit 0" 0 1 2 3 15
-
-# Fetch the URL through the proxy on localhost, and create the file for PUSH
-curl -x ${host}:${port} -s -i -o ${tmpfile} $url
-
-for h in $@; do
-    curl -f -I -x ${h}:${port} -s -o /dev/null -H "Cache-Control: only-if-cached" $url > /dev/null
-    if [ $? -gt 0 ]; then
-        echo "PUSHing to $h..."
-        curl -x ${h}:80 -s -o /dev/null -X PUSH --data-binary @${tmpfile} $url
-    fi
-done
-
-rm -f ${tmpfile}
+#
+# Now process the URL or URL file list
+#
+if [ "" != "$urlfile" ]; then
+    while read line; do
+	push $line $@
+	echo
+    done < $urlfile
+elif ["" != "$url" ]; then
+    push $url $@
+else
+    usage
+fi
