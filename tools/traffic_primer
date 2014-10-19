@@ -58,11 +58,11 @@ push() {
 
     # Fetch the "source" object first
     # [ $FORCE -gt 0 ] && curl -x ${HOST}:${PORT} -s -o /dev/null -X PURGE $u
-    echo -n "   Fetching source body ..."
+    echo -en "\tFetching source body ..."
     curl -x ${HOST}:${PORT} -s -D ${f}.hdrs -o ${f}.body $u
     s_md5=$(cat ${f}.body | md5sum)
     echo "done"
-    echo "      Source MD5=${s_md5}"
+    echo -e "\tSource MD5=${s_md5}"
 
     cat ${f}.hdrs ${f}.body > ${f}
 
@@ -70,19 +70,19 @@ push() {
         # Make sure the destination host:port is up
         nc -z $h $PORT > /dev/null
         if [ $? -gt 0 ]; then
-            echo "      Error: ${h}:${PORT} is down"
+            echo -e "\tError: ${h}:${PORT} is down"
         else
-            echo -n "   Procesing ${h}:${PORT}..."
+            echo -en "\tProcesing ${h}:${PORT}..."
             # PURGE the object first if we -f (force) it
             if [ $FORCE -gt 0 ]; then
-                echo -n " purged ..."
+                echo -n " purged..."
                 curl -x ${h}:${PORT} -s -o /dev/null -X PURGE $u
             fi
 
             # If it's not in cache now, PUSH it
             curl -f -I -x ${h}:${PORT} -s -o /dev/null -H "Cache-Control: only-if-cached" $u
             if [ $? -gt 0 ]; then
-                echo -n " pushing ..."
+                echo -n " pushing..."
                 curl -x ${h}:${PORT} -s -o /dev/null -X PUSH --data-binary @${f} $u
             fi
             echo " done."
@@ -92,10 +92,10 @@ push() {
                 n_md5=$(curl -x ${h}:${PORT} -s $u | md5sum)
                 if [ "$n_md5" != "$s_md5" ]; then
                     # This is bad, MD5's don't match, error and PURGE it
-                    echo -n "           Error! MD5 incorrect! Purging the object."
+                    echo -en "\t\t Error! MD5 incorrect! Purging the object."
                     curl -x ${h}:${PORT} -s -o /dev/null -X PURGE $u
                 else
-                    echo "              MD5 checksum is good."
+                    echo -e "\t\tMD5 checksum is good."
                 fi
             fi
         fi
