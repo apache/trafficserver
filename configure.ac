@@ -1856,6 +1856,7 @@ AC_CONFIG_FILES([
   cmd/traffic_line/Makefile
   cmd/traffic_manager/Makefile
   cmd/traffic_top/Makefile
+  cmd/traffic_via/Makefile
   doc/Makefile
   example/Makefile
   iocore/Makefile
