@@ -15,25 +15,16 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-SUBDIRS = \
-	helloworld \
-	globalhook \
-	transactionhook \
-	multiple_transaction_hooks \
-	clientrequest \
-	serverresponse \
-	clientredirect \
-	customresponse \
-	null_transformation_plugin \
-	post_buffer \
-	logger_example \
-	boom \
-	stat_example \
-	remap_plugin \
-	async_http_fetch \
-	gzip_transformation \
-	timeout_example \
-	internal_transaction_handling \
-	async_timer \
-	intercept \
-        async_http_fetch_streaming
+AM_CPPFLAGS = -I$(top_srcdir)/lib/atscppapi/src/include -Wno-unused-variable
+
+target=AsyncHttpFetchStreaming.so
+pkglibdir = ${pkglibexecdir}
+pkglib_LTLIBRARIES = AsyncHttpFetchStreaming.la
+AsyncHttpFetchStreaming_la_SOURCES = AsyncHttpFetchStreaming.cc
+AsyncHttpFetchStreaming_la_LDFLAGS = -module -avoid-version -shared -L$(top_srcdir)/lib/atscppapi/src/ -latscppapi
+
+all:
+	ln -sf .libs/$(target)
+
+clean-local:
+	rm -f $(target)

@@ -41,13 +41,25 @@ namespace utils { class internal; }
  * makes HTTP requests asynchronously. This provider automatically
  * self-destructs after the completion of the request.
  *
- * See example async_http_fetch for sample usage.
+ * See example async_http_fetch{,_streaming} for sample usage.
  */
 class AsyncHttpFetch : public AsyncProvider {
 public:
+  /** Deprecated. Use variant with streaming flag argument */
   AsyncHttpFetch(const std::string &url_str, HttpMethod http_method = HTTP_METHOD_GET);
 
-  AsyncHttpFetch(const std::string &url_str,  const std::string &request_body);
+  /** Deprecated. Use variant with streaming flag argument */
+  AsyncHttpFetch(const std::string &url_str, const std::string &request_body);
+
+  enum StreamingFlag {
+    STREAMING_DISABLED = 0,
+    STREAMING_ENABLED = 0x1
+  };
+
+  AsyncHttpFetch(const std::string &url_str, StreamingFlag streaming_flag,
+                 HttpMethod http_method = HTTP_METHOD_GET);
+
+  AsyncHttpFetch(const std::string &url_str, StreamingFlag streaming_flag, const std::string &request_body);
 
   /**
    * Used to manipulate the headers of the request to be made.
@@ -56,10 +68,14 @@ public:
    */
   Headers &getRequestHeaders();
 
-  enum Result { RESULT_SUCCESS = 10000, RESULT_TIMEOUT, RESULT_FAILURE };
+  enum Result { RESULT_SUCCESS = 10000, RESULT_TIMEOUT, RESULT_FAILURE, RESULT_HEADER_COMPLETE,
+                RESULT_PARTIAL_BODY, RESULT_BODY_COMPLETE };
 
   /**
-   * Used to extract the response after request completion. 
+   * Used to extract the response after request completion. Without
+   * streaming, this can result success, failure or timeout. With
+   * streaming, this can result failure, timeout, header complete,
+   * partial body or body complete.
    *
    * @return Result of the operation
    */
@@ -76,7 +92,8 @@ public:
   const std::string &getRequestBody() const;
 
   /**
-   * Used to extract the response after request completion. 
+   * Used to extract the response after request completion (after
+   * RESULT_HEADER_COMPLETE in case of streaming).
    *
    * @return Non-mutable reference to the response.
    */
@@ -86,22 +103,25 @@ public:
    * Used to extract the body of the response after request completion. On
    * unsuccessful completion, values (NULL, 0) are set.
    *
+   * When streaming is enabled, this can be called on either body result.
+   *
    * @param body Output argument; will point to the body
-   * @param body_size Output argument; will contain the size of the body 
-   * 
+   * @param body_size Output argument; will contain the size of the body
+   *
    */
   void getResponseBody(const void *&body, size_t &body_size) const;
 
   /**
    * Starts a HTTP fetch of the Request contained.
-   */  
+   */
   virtual void run();
 protected:
   virtual ~AsyncHttpFetch();
 
 private:
   AsyncHttpFetchState *state_;
-  void init(const std::string &url_str, HttpMethod http_method, const std::string &request_body);
+  void init(const std::string &url_str, HttpMethod http_method, const std::string &request_body,
+            StreamingFlag streaming_flag);
   friend class utils::internal;
 };
 

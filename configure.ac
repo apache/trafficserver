@@ -1973,6 +1973,7 @@ AS_IF([test "x$enable_cppapi" = xyes], [
   lib/atscppapi/examples/stat_example/Makefile
   lib/atscppapi/examples/timeout_example/Makefile
   lib/atscppapi/examples/transactionhook/Makefile
+  lib/atscppapi/examples/async_http_fetch_streaming/Makefile
   lib/atscppapi/src/Makefile
 ])])
 
