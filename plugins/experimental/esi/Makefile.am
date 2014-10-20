@@ -33,6 +33,7 @@ libesicore_la_SOURCES = \
 	lib/DocNode.cc \
 	lib/EsiParser.cc \
 	lib/EsiGzip.cc \
+	lib/EsiGunzip.cc \
 	lib/EsiProcessor.cc \
 	lib/Expression.cc \
 	lib/FailureInfo.cc \
@@ -51,6 +52,7 @@ libtest_la_SOURCES = \
 	lib/DocNode.cc \
 	lib/EsiParser.cc \
 	lib/EsiGzip.cc \
+	lib/EsiGunzip.cc \
 	lib/EsiProcessor.cc \
 	lib/Expression.cc \
 	lib/FailureInfo.cc \

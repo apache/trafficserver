@@ -392,10 +392,6 @@ EsiProcessor::flush(string &data, int &overall_len) {
     data.assign("");
     return SUCCESS;
   }
-  if (_curr_state != WAITING_TO_PROCESS) {
-    _errorLog("[%s] Processor has to finish parsing via completeParse() before process() call", __FUNCTION__);
-    return FAILURE;
-  }
   DocNodeList::iterator node_iter,iter;
   bool attempt_succeeded;
   bool attempt_pending;
@@ -478,6 +474,7 @@ EsiProcessor::flush(string &data, int &overall_len) {
     }
     if (attempt_succeeded) {
       _debugLog(_debug_tag, "[%s] attempt section succeded; using attempt section", __FUNCTION__);
+      _n_prescanned_nodes = _n_prescanned_nodes + try_iter->attempt_nodes.size();
       _node_list.splice(try_iter->pos, try_iter->attempt_nodes);
     } else {
       _debugLog(_debug_tag, "[%s] attempt section errored; trying except section", __FUNCTION__); 
@@ -485,6 +482,7 @@ EsiProcessor::flush(string &data, int &overall_len) {
       if (!_preprocess(try_iter->except_nodes, n_prescanned_nodes)) {
         _errorLog("[%s] Failed to preprocess except nodes", __FUNCTION__);
       }
+      _n_prescanned_nodes = _n_prescanned_nodes + try_iter->except_nodes.size();
       _node_list.splice(try_iter->pos, try_iter->except_nodes);
       if (_fetcher.getNumPendingRequests()) { 
         _debugLog(_debug_tag, "[%s] New fetch requests were triggered by except block; "
@@ -531,7 +529,7 @@ EsiProcessor::flush(string &data, int &overall_len) {
     }
   }
 
-  if(!node_pending) {
+  if(!node_pending && (_curr_state == WAITING_TO_PROCESS)) {
     _curr_state = PROCESSED;
     _addFooterData();
   }

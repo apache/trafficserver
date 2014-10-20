@@ -40,6 +40,7 @@
 #include "lib/Utils.h"
 #include "lib/gzip.h"
 #include "EsiGzip.h"
+#include "EsiGunzip.h"
 #include "EsiProcessor.h"
 #include "HttpDataFetcher.h"
 #include "HandlerManager.h"
@@ -65,6 +66,7 @@ static HandlerManager *gHandlerManager = NULL;
 #define DEBUG_TAG "plugin_esi"
 #define PROCESSOR_DEBUG_TAG "plugin_esi_processor"
 #define GZIP_DEBUG_TAG "plugin_esi_gzip"
+#define GUNZIP_DEBUG_TAG "plugin_esi_gunzip"
 #define PARSER_DEBUG_TAG "plugin_esi_parser"
 #define FETCHER_DEBUG_TAG "plugin_esi_fetcher"
 #define VARS_DEBUG_TAG "plugin_esi_vars"
@@ -100,6 +102,7 @@ struct ContData
   HttpDataFetcherImpl *data_fetcher;
   EsiProcessor *esi_proc;
   EsiGzip *esi_gzip;
+  EsiGunzip *esi_gunzip;
   TSCont contp;
   TSHttpTxn txnp;
   const struct OptionInfo *option_info;
@@ -122,7 +125,7 @@ struct ContData
   ContData(TSCont contptr, TSHttpTxn tx)
     : curr_state(READING_ESI_DOC), input_vio(NULL), output_vio(NULL),
       output_buffer(NULL), output_reader(NULL),
-      esi_vars(NULL), data_fetcher(NULL), esi_proc(NULL), esi_gzip(NULL), 
+      esi_vars(NULL), data_fetcher(NULL), esi_proc(NULL), esi_gzip(NULL), esi_gunzip(NULL),  
       contp(contptr), txnp(tx), request_url(NULL),
       input_type(DATA_TYPE_RAW_ESI), packed_node_list(""),
       gzipped_data(""), gzip_output(false),
@@ -229,7 +232,7 @@ ContData::init()
     // we don't know how much data we are going to write, so INT_MAX
     output_vio = TSVConnWrite(output_conn, contp, output_reader, INT64_MAX);
 
-    string fetcher_tag, vars_tag, expr_tag, proc_tag, gzip_tag;
+    string fetcher_tag, vars_tag, expr_tag, proc_tag, gzip_tag, gunzip_tag;
     if (!data_fetcher) {
       data_fetcher = new HttpDataFetcherImpl(contp, client_addr,
                                              createDebugTag(FETCHER_DEBUG_TAG, contp, fetcher_tag));
@@ -244,6 +247,7 @@ ContData::init()
                                 &TSDebug, &TSError, *data_fetcher, *esi_vars, *gHandlerManager);
     
     esi_gzip = new EsiGzip(createDebugTag(GZIP_DEBUG_TAG, contp, gzip_tag), &TSDebug, &TSError);
+    esi_gunzip = new EsiGunzip(createDebugTag(GUNZIP_DEBUG_TAG, contp, gunzip_tag), &TSDebug, &TSError);
 
     TSDebug(debug_tag, "[%s] Set input data type to [%s]", __FUNCTION__,
              DATA_TYPE_NAMES_[input_type]);
@@ -491,6 +495,9 @@ ContData::~ContData()
   if(esi_gzip) {
     delete esi_gzip;
   }
+  if(esi_gunzip) {
+    delete esi_gunzip;
+  }
 }
 
 static int removeCacheHandler(TSCont contp, TSEvent /* event ATS_UNUSED */, void * /* edata ATS_UNUSED */) {
@@ -664,7 +671,9 @@ transformData(TSCont contp)
           if (cont_data->input_type == DATA_TYPE_RAW_ESI) {
             cont_data->esi_proc->addParseData(data, data_len);
           } else if (cont_data->input_type == DATA_TYPE_GZIPPED_ESI) {
-            cont_data->gzipped_data.append(data, data_len);
+            string udata = "";
+            cont_data->esi_gunzip->stream_decode(data, data_len, udata);
+            cont_data->esi_proc->addParseData(udata.data(), udata.size());
           } else {
             cont_data->packed_node_list.append(data, data_len);
           }
@@ -710,17 +719,11 @@ transformData(TSCont contp)
     }
 
     if (cont_data->input_type != DATA_TYPE_PACKED_ESI) {
+      bool gunzip_complete = true;
       if (cont_data->input_type == DATA_TYPE_GZIPPED_ESI) {
-        BufferList buf_list;
-        if (gunzip(cont_data->gzipped_data.data(), cont_data->gzipped_data.size(), buf_list)) {
-          for (BufferList::iterator iter = buf_list.begin(); iter != buf_list.end(); ++iter) {
-            cont_data->esi_proc->addParseData(iter->data(), iter->size());
-          }
-        } else {
-          TSError("[%s] Error while gunzipping data", __FUNCTION__);
-        }
+        gunzip_complete = cont_data->esi_gunzip->stream_finish(); 
       }
-      if (cont_data->esi_proc->completeParse()) {
+      if (cont_data->esi_proc->completeParse() && gunzip_complete) {
         if (cont_data->option_info->packed_node_support && cont_data->os_response_cacheable
             && !cont_data->cache_txn && !cont_data->head_only)
         {
@@ -803,7 +806,7 @@ transformData(TSCont contp)
     }
   }
 
-  if ((cont_data->curr_state == ContData::FETCHING_DATA) &&
+  if (((cont_data->curr_state == ContData::FETCHING_DATA)||(cont_data->curr_state == ContData::READING_ESI_DOC)) &&
       (cont_data->option_info->first_byte_flush)) { // retest as state may have changed in previous block
     TSDebug(cont_data->debug_tag, "[%s] trying to process doc", __FUNCTION__);
     string out_data;
@@ -811,7 +814,7 @@ transformData(TSCont contp)
     int overall_len;
     EsiProcessor::ReturnCode retval = cont_data->esi_proc->flush(out_data, overall_len);
 
-    if (cont_data->data_fetcher->isFetchComplete()) {
+    if ((cont_data->curr_state == ContData::FETCHING_DATA) && cont_data->data_fetcher->isFetchComplete()) {
       TSDebug(cont_data->debug_tag, "[%s] data ready; last process() will have finished the entire processing", __FUNCTION__);
       cont_data->curr_state = ContData::PROCESSING_COMPLETE;
     }
@@ -863,6 +866,10 @@ transformData(TSCont contp)
             TSError("[%s] Error while finishing gzip", __FUNCTION__);
             return 0;  
           } else {   
+            if(TSVIOBufferGet(cont_data->output_vio) == NULL) {
+              TSError("[%s] Error while writing bytes to downstream VC", __FUNCTION__);
+              return 0;
+            }
             if (TSIOBufferWrite(TSVIOBufferGet(cont_data->output_vio), cdata.data(), cdata.size()) == TS_ERROR) {
               TSError("[%s] Error while writing bytes to downstream VC", __FUNCTION__);
               return 0;
@@ -985,7 +992,8 @@ transformHandler(TSCont contp, TSEvent event, void *edata)
       if (is_fetch_event) {
         TSDebug(cont_debug_tag, "[%s] Handling fetch event %d...", __FUNCTION__, event);
         if (cont_data->data_fetcher->handleFetchEvent(event, edata)) {
-          if (cont_data->curr_state == ContData::FETCHING_DATA) {
+          if ((cont_data->curr_state == ContData::FETCHING_DATA) ||
+              (cont_data->curr_state == ContData::READING_ESI_DOC)){
             // there's a small chance that fetcher is ready even before
             // parsing is complete; hence we need to check the state too
             if(cont_data->option_info->first_byte_flush ||
@@ -1147,10 +1155,6 @@ modifyResponseHeader(TSCont contp, TSEvent event, void *edata) {
           TS_MIME_LEN_CONTENT_ENCODING, TS_HTTP_VALUE_GZIP, TS_HTTP_LEN_GZIP);
     }
 
-    if (!have_content_length) {
-      TSError("[%s] no Content-Length!", __FUNCTION__);
-    }
-
     if (mod_data->option_info->packed_node_support && mod_data->cache_txn) {
       addMimeHeaderField(bufp, hdr_loc, TS_MIME_FIELD_VARY,
           TS_MIME_LEN_VARY, TS_MIME_FIELD_ACCEPT_ENCODING,
@@ -1284,7 +1288,6 @@ isTxnTransformable(TSHttpTxn txnp, bool is_cache_txn, bool * intercept_header, b
 
   TSMBuffer bufp;
   TSMLoc hdr_loc;
-  TSHttpStatus resp_status;
   TSReturnCode header_obtained;
   bool retval = false;
 
@@ -1334,22 +1337,14 @@ isTxnTransformable(TSHttpTxn txnp, bool is_cache_txn, bool * intercept_header, b
       break; // found internal header; no other detection required
     }
 
-    // allow response with valid status code to be transformable
-    resp_status = TSHttpHdrStatusGet(bufp, hdr_loc);
-    if (static_cast<int>(resp_status) == static_cast<int>(TS_ERROR)) {
-      TSError("[%s] Error while getting http status", __FUNCTION__);
-      break;
-    }
-    if (resp_status != TS_HTTP_STATUS_OK) {
-      TSDebug(DEBUG_TAG, "[%s] non-OK response status %d", __FUNCTION__, resp_status);
-    }
-
     if ((!checkHeaderValue(bufp, hdr_loc, TS_MIME_FIELD_CONTENT_TYPE, TS_MIME_LEN_CONTENT_TYPE,
           "text/", 5, true)) &&
         (!checkHeaderValue(bufp, hdr_loc, TS_MIME_FIELD_CONTENT_TYPE, TS_MIME_LEN_CONTENT_TYPE,
           "application/javascript", 22, true)) &&
         (!checkHeaderValue(bufp, hdr_loc, TS_MIME_FIELD_CONTENT_TYPE, TS_MIME_LEN_CONTENT_TYPE,
           "application/x-javascript", 24, true)) &&
+        (!checkHeaderValue(bufp, hdr_loc, TS_MIME_FIELD_CONTENT_TYPE, TS_MIME_LEN_CONTENT_TYPE,
+          "application/json", 16, true)) &&
         (!checkHeaderValue(bufp, hdr_loc, TS_MIME_FIELD_CONTENT_TYPE, TS_MIME_LEN_CONTENT_TYPE,
           "multipart/mixed", 15, true))) {
       TSDebug(DEBUG_TAG, "[%s] Not text content", __FUNCTION__);
@@ -1374,7 +1369,7 @@ isCacheObjTransformable(TSHttpTxn txnp, bool * intercept_header, bool * head_onl
     TSError("[%s] Couldn't get cache status of object", __FUNCTION__);
     return false;
   }
-  if ((obj_status == TS_CACHE_LOOKUP_HIT_FRESH) || (obj_status == TS_CACHE_LOOKUP_HIT_STALE)) {
+  if (obj_status == TS_CACHE_LOOKUP_HIT_FRESH) {
     /*
     time_t respTime;
     if (TSHttpTxnCachedRespTimeGet(txnp, &respTime) == TS_SUCCESS) {
