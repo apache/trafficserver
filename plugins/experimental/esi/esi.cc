@@ -1085,7 +1085,6 @@ modifyResponseHeader(TSCont contp, TSEvent event, void *edata) {
     TSMLoc field_loc;
     const char *name, *value;
     int name_len, value_len;
-    bool have_content_length = false;
     for (int i = 0; i < n_mime_headers; ++i) {
       field_loc = TSMimeHdrFieldGet(bufp, hdr_loc, i);
       if (!field_loc) {
@@ -1115,7 +1114,6 @@ modifyResponseHeader(TSCont contp, TSEvent event, void *edata) {
         } else if (Utils::areEqual(name, name_len, TS_MIME_FIELD_CONTENT_LENGTH,
               TS_MIME_LEN_CONTENT_LENGTH))
         {
-          have_content_length = true;
           if (mod_data->head_only) {
             destroy_header = true;
             TSError("[%s] remove Content-Length", __FUNCTION__);
