@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.2.0
 
+  *) [TS-3147] Improvements fo ESI plugin.
+
   *) [TS-3145] Add traffic_line --backtrace option.
 
   *) [TS-2503]: Dynamic TLS Record Sizing for better page load latencies
