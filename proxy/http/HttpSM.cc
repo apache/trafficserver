@@ -2651,15 +2651,18 @@ HttpSM::tunnel_handler_post(int event, void *data)
 
   HttpTunnelProducer *p = tunnel.get_producer(ua_session);
   if (event != HTTP_TUNNEL_EVENT_DONE) {
-    if (t_state.http_config_param->send_408_post_timeout_response) {
+    if (t_state.http_config_param->send_408_post_timeout_response && p->handler_state == HTTP_SM_POST_UA_FAIL) {
       Debug("http_tunnel", "cleanup tunnel in tunnel_handler_post");
+      hsm_release_assert(ua_entry->in_tunnel == true);
       ink_assert((event == VC_EVENT_WRITE_COMPLETE) || (event == VC_EVENT_EOS));
       free_MIOBuffer(ua_entry->write_buffer);
+      ua_entry->write_buffer = NULL;
+      vc_table.cleanup_all();
       tunnel.chain_abort_all(p);
       p->read_vio = NULL;
       p->vc->do_io_close(EHTTP_ERROR);
-      set_ua_abort(HttpTransact::ABORTED, event);
-      hsm_release_assert(ua_entry->in_tunnel == true);
+      tunnel_handler_post_or_put(p);
+      tunnel.kill_tunnel();
       return 0;
     }
   }
@@ -3357,6 +3360,7 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer * p)
     //  Did not complete post tunnling.  Abort the
     //   server and close the ua
     p->handler_state = HTTP_SM_POST_UA_FAIL;
+    set_ua_abort(HttpTransact::ABORTED, event);
 
     if (t_state.http_config_param->send_408_post_timeout_response && client_response_hdr_bytes == 0) {
       switch (event) {
@@ -3382,8 +3386,6 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer * p)
       nbytes += ua_entry->write_buffer->write(t_state.internal_msg_buffer, t_state.internal_msg_buffer_size);
 
       p->vc->do_io_write(this, nbytes, buf_start);
-
-      set_ua_half_close_flag();
       p->vc->do_io_shutdown(IO_SHUTDOWN_READ);
       return 0;
     }
@@ -3391,7 +3393,6 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer * p)
     tunnel.chain_abort_all(p);
     p->read_vio = NULL;
     p->vc->do_io_close(EHTTP_ERROR);
-    set_ua_abort(HttpTransact::ABORTED, event);
 
     // the in_tunnel status on both the ua & and
     //   it's consumer must already be set to true.  Previously
