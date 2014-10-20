@@ -51,7 +51,6 @@ private:
   int _downstream_length;
   int _total_data_length;
   z_stream _zstrm;
-  uLong _crc;
 
   bool _init;  
   bool _success;
