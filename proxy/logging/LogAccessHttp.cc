@@ -1289,3 +1289,19 @@ LogAccessHttp::marshal_http_header_field_escapify(LogField::Container container,
 
   return (padded_len);
 }
+
+int
+LogAccessHttp::marshal_cache_hit_medium(char *buf)
+{
+  const char *str = NULL;
+  int len = INK_MIN_ALIGN;
+   if (m_http_sm->t_state.cache_info.is_ram_cache_hit) {
+    str = "ram";
+    len = LogAccess::strlen(str);
+  }
+
+  if (buf) {
+    marshal_str(buf, str, len);
+  }
+  return len;
+}

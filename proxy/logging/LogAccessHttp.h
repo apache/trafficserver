@@ -129,6 +129,7 @@ public:
   virtual int marshal_file_size(char *); // INT
   virtual int marshal_plugin_identity_id(char *);    // INT
   virtual int marshal_plugin_identity_tag(char *);    // STR
+  virtual int marshal_cache_hit_medium(char *); // STR
 
   //
   // named fields from within a http header

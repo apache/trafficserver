@@ -252,6 +252,7 @@ public:
   inkcoreapi virtual int marshal_file_size(char *);     // INT
   inkcoreapi virtual int marshal_plugin_identity_id(char *); // INT
   inkcoreapi virtual int marshal_plugin_identity_tag(char *); // STR
+  inkcoreapi virtual int marshal_cache_hit_medium(char *);    // STR
   int marshal_entry_type(char *);       // INT
 
 
