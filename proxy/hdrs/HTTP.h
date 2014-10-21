@@ -24,12 +24,12 @@
 #ifndef __HTTP_H__
 #define __HTTP_H__
 
-
 #include <assert.h>
 #include "Arena.h"
 #include "INK_MD5.h"
 #include "MIME.h"
 #include "URL.h"
+#include "HPACK.h"
 
 #include "ink_apidefs.h"
 
@@ -37,6 +37,7 @@
 #define HTTP_MINOR(v)      ((v) & 0xFFFF)
 #define HTTP_MAJOR(v)      (((v) >> 16) & 0xFFFF)
 
+class Http2HeaderTable;
 
 enum HTTPStatus
 {
@@ -470,6 +471,9 @@ MIMEParseResult http_parser_parse_req(HTTPParser *parser, HdrHeap *heap,
 MIMEParseResult http_parser_parse_resp(HTTPParser *parser, HdrHeap *heap,
                                        HTTPHdrImpl *hh, const char **start,
                                        const char *end, bool must_copy_strings, bool eof);
+
+MIMEParseResult http2_parse_req(HdrHeap *heap, HTTPHdrImpl *hh, uint8_t* buf_start, uint8_t* buf_end, bool eof, Http2HeaderTable& header_table);
+
 HTTPStatus http_parse_status(const char *start, const char *end);
 int32_t http_parse_version(const char *start, const char *end);
 
@@ -654,6 +658,8 @@ public:
 
   MIMEParseResult parse_req(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool eof);
   MIMEParseResult parse_resp(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool eof);
+
+  MIMEParseResult hpack_parse_req(uint8_t* start, uint8_t* end, bool eof, Http2HeaderTable& header_table);
 
 public:
   // Utility routines
@@ -1220,6 +1226,21 @@ HTTPHdr::parse_req(HTTPParser *parser, const char **start, const char *end, bool
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
+/*
+ * Parse HTTP/2 headers encoded by HPACK and convert to HTTPHdr object
+ */
+inline MIMEParseResult
+HTTPHdr::hpack_parse_req(uint8_t* start, uint8_t* end, bool eof, Http2HeaderTable& header_table)
+{
+  ink_assert(valid());
+  ink_assert(m_http->m_polarity == HTTP_TYPE_REQUEST);
+
+  return http2_parse_req(m_heap, m_http, start, end, eof, header_table);
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
 inline MIMEParseResult
 HTTPHdr::parse_resp(HTTPParser *parser, const char **start, const char *end, bool eof)
 {
@@ -1521,5 +1542,11 @@ HTTPInfo::get_frag_offset_count() {
   return m_alt ? m_alt->m_frag_offset_count : 0;
 }
 
+
+MIMEParseResult
+convert_from_2_to_1_1_header(HTTPHdr* header);
+
+int64_t
+convert_from_1_1_to_2_header(HTTPHdr* in, uint8_t* out, uint64_t out_len, Http2HeaderTable& header_table);
 
 #endif /* __HTTP_H__ */
