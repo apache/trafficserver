@@ -124,6 +124,204 @@ How do I interpret the Via: header code?
 
 The ``Via`` header string can be decoded with the `Via Decoder Ring <http://trafficserver.apache.org/tools/via>`_.
 
+The Via header is an optional HTTP header added by Traffic Server and other HTTP proxies. If a request goes through multiple proxies, each one appends its Via header content to the end of the existing Via header. Via header content is for general information and diagnostic use only and should not be used as a programmatic interface to Traffic Server.
+
+The form of the Via header is
+
+Via: <protocol> <proxyname> (<product/version> [<via-codes>])
+
+================= ==========================
+Value             Meaning
+================= ==========================
+<protocol>        the scheme and version of the HTTP request
+<proxyname>       the configured name of the proxy server
+<product/version> the Traffic Server product name and version
+<via-codes>       a string of alphabetic codes presenting status information about the proxy handling of the HTTP request
+================= ==========================
+
+For example:
+Via: HTTP/1.0 storm (Traffic-Server/4.0.0   [cMs f ])
+
+- [u lH o  f  pS eN]     cache hit
+- [u lM oS fF pS eN]     cache miss
+- [uN l oS f  pS eN]     no-cache origin server fetch
+
+The short status code shows the cache-lookup, server-info and cache-fill information as listed in the full status code description below. The long status code list provided in older, commercial versions of Traffic Server can be restored by setting the verbose_via_str config variable.
+The character strings in the via-code show [<request results>:<proxy op>] where <request results> represents status information about the results of the client request and <proxy op> represent some information about the proxy operations performed during request processing. The full via-code status format is
+
+[u<client-info> c<cache-lookup> s<server-info> f<cache-fill> p<proxy-info> e<error-codes> : t<tunnel-info>c<cache-type><cache-lookup-result> i<icp-conn-info> p<parent-proxy> s<server-conn-info>]
+
+
+u client-info
+^^^^^^^^^^^^^^^^^^^^^
+
+Request headers received from client. Value is one of:
+
+===== ==========================
+Value             Meaning
+===== ==========================
+C     cookie
+E     error in request
+I     If Modified Since (IMS)
+N     no-cache
+S     simple request (not conditional)
+===== ==========================
+
+c cache-lookup
+^^^^^^^^^^^^^^^^^^^^^
+Result of Traffic Server cache lookup for URL. Value is one of:
+
+===== ==========================
+Value             Meaning
+===== ==========================
+A     in cache, not acceptable (a cache "MISS")
+H     in cache, fresh (a cache "HIT")
+M     miss (a cache "MISS")
+S     in cache, stale (a cache "MISS")
+blank no cache lookup performed
+===== ==========================
+
+s server-info
+^^^^^^^^^^^^^^^^^^^^^
+Response information received from origin server. Value is one of:
+
+===== ==========================
+Value             Meaning
+===== ==========================
+E     error in response
+N     not-modified
+S     served
+blank no server connection needed
+===== ==========================
+
+f cache-fill
+^^^^^^^^^^^^^^^^^^^^^
+Result of document write to cache. Value is one of:
+
+===== ==========================
+Value             Meaning
+===== ==========================
+D     cached copy deleted
+U     updated old cache copy
+W     written into cache (new copy)
+blank no cache write performed
+===== ==========================
+
+p proxy-info
+^^^^^^^^^^^^^^^^^^^^^
+Proxy operation result. Value is one of:
+
+===== ==========================
+Value             Meaning
+===== ==========================
+N     not-modified
+R     origin server revalidated
+S     served
+===== ==========================
+
+e error-codes
+^^^^^^^^^^^^^^^^^^^^^
+
+Value is one of:
+
+===== ==========================
+Value             Meaning
+===== ==========================
+A     authorization failure
+C     connection to server failed
+D     dns failure
+F     request forbidden
+H     header syntax unacceptable
+N     no error
+S     server related error
+T     connection timed out
+===== ==========================
+
+: = Separates proxy request result information from operation detail codes
+
+t tunnel-info
+^^^^^^^^^^^^^^^^^^^^^
+Proxy-only service operation. Value is one of:
+
+===== ==========================
+Value             Meaning
+===== ==========================
+F     tunneling due to a header field (such as presence of If-Range header)
+M     tunneling due to a method (e.g. CONNECT)
+O     tunneling because cache is turned off
+U     tunneling because of url (url suggests dynamic content)
+blank no tunneling
+===== ==========================
+
+c cache-type and cache-lookup
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+cache result values (2 characters)
+
+cache-type character value is one of
+
+===== ==========================
+Value             Meaning
+===== ==========================
+C     cache
+I     icp
+blank cache miss or no cache lookup
+===== ==========================
+
+cache-lookup-result character value is one of:
+
+===== ==========================
+Value             Meaning
+===== ==========================
+C     cache hit, but config forces revalidate
+D     cache hit, but method forces revalidated (e.g. ftp, not anonymous)
+H     cache hit
+I     conditional miss (client sent conditional, fresh in cache, returned 412)
+M     cache miss (url not in cache)
+N     conditional hit (client sent conditional, doc fresh in cache, returned 304)
+S     cache hit, but expired
+U     cache hit, but client forces revalidate (e.g. Pragma: no-cache)
+blank no cache lookup
+===== ==========================
+
+i icp-conn-info
+^^^^^^^^^^^^^^^^^^^^^
+
+ICP status
+
+===== ==========================
+Value             Meaning
+===== ==========================
+F     connection open failed
+S     connection opened successfully
+blank no icp
+===== ==========================
+
+p parent-proxy
+^^^^^^^^^^^^^^^^^^^^^
+parent proxy connection status
+
+===== ==========================
+Value             Meaning
+===== ==========================
+F     connection open failed
+S     connection opened successfully
+blank no parent proxy
+===== ==========================
+
+s server-conn-info
+^^^^^^^^^^^^^^^^^^^^^
+origin server connection status
+
+===== ==========================
+Value             Meaning
+===== ==========================
+F     connection open failed
+S     connection opened successfully
+blank no server connection
+===== ==========================
+
+
+
 Support for HTTP Expect: Header
 -------------------------------
 
