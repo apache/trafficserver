@@ -20,4 +20,5 @@ SUBDIRS = \
   traffic_layout \
   traffic_line \
   traffic_manager \
-  traffic_top
+  traffic_top \
+  traffic_via
