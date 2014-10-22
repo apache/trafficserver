@@ -49,7 +49,7 @@ the previous release page as a template. Point releases should get a section at 
 page.
 
 Write an announcement for the release. This will contain much of the same information that is on the Wiki page but more
-concisely. Check the mailing list archives for examples to use as a base.
+concisely. Check the `mailing list archives <http://mail-archives.apache.org/mod_mbox/trafficserver-dev/>`_ for examples to use as a base.
 
 Build
 -----
@@ -61,6 +61,7 @@ Go to the top level source directory.
 * Check the variable ``RC`` in the top level ``Makefile.am``. This should be the point release value. This needs to be changed for every release candidate. The first release candidate is 0 (zero).
 
 Execute the following commands to make the distribution files. ::
+
    autoreconf -i
    ./configure
    make rel-candidate
@@ -68,8 +69,8 @@ Execute the following commands to make the distribution files. ::
 This will create the distribution files and sign them using your key. Expect to be prompted twice for your passphrase
 unless you use an ssh key agent. If you have multiple keys you will need to set the default appropriately beforehand, as
 no option will be provided to select the signing key. The files should have names that start
-with``trafficserver-X.Y.Z-rcA.tar.bz2`` where ``X.Y.Z`` is the version and ``A`` is the release candidate counter. There
-should be four such files, one with no extension and three others with the extensions ``asc``, ``md5``, and ``sha1``. This will also create a signed git tag of the form "X.Y.Z-rcA".
+with ``trafficserver-X.Y.Z-rcA.tar.bz2`` where ``X.Y.Z`` is the version and ``A`` is the release candidate counter. There
+should be four such files, one with no extension and three others with the extensions ``asc``, ``md5``, and ``sha1``. This will also create a signed git tag of the form ``X.Y.Z-rcA``.
 
 Distribute
 ----------
@@ -81,7 +82,7 @@ Send the release candiate announcement to the ``users`` and ``dev`` mailinging l
 *candidate* and providing a link to the distribution files you uploaded. This announcement should also call for a vote
 on the candidate, generally with a 72 hours time limit.
 
-If the voting was successful (at least three "+1" votes and not "-1" votes) proceed to :ref:`release-management-official-release`. Otherwise repeat the :ref:`release-management-release-candidate` process.
+If the voting was successful (at least three "+1" votes and no "-1" votes) proceed to :ref:`release-management-official-release`. Otherwise repeat the :ref:`release-management-release-candidate` process.
 
 .. _release-management-official-release:
 
@@ -129,3 +130,10 @@ on the ``people.apache.org`` host.
 If needed, update the Wiki page for the release to point at the release distribution files.
 
 Update the announcement if needed to refer to the release distribution files and remove the comments concerning the release candidate. This announcement should be sent to the ``users`` and ``dev`` mailing lists. It should also be sent to the ASF announcement list, which must be done using an ``apache.org`` email address.
+
+Finally, update various files after the release.
+
+   * The ``STATUS`` file for master and for the release branch to include this version.
+   * The ``CHANGES`` file to have a header for the next version.
+   * ``configure.ac`` to be set to the next version.
+   * In the top level ``Makefile.am`` change ``RC`` to have the value ``0``.
