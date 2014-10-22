@@ -1,4 +1,3 @@
-
 .. _reverse-proxy-and-http-redirects:
 
 Reverse Proxy and HTTP Redirects
@@ -6,21 +5,20 @@ Reverse Proxy and HTTP Redirects
 
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
-  distributed with this work for additional information
-  regarding copyright ownership.  The ASF licenses this file
-  to you under the Apache License, Version 2.0 (the
-  "License"); you may not use this file except in compliance
-  with the License.  You may obtain a copy of the License at
- 
-   http://www.apache.org/licenses/LICENSE-2.0
- 
-  Unless required by applicable law or agreed to in writing,
-  software distributed under the License is distributed on an
-  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-  KIND, either express or implied.  See the License for the
-  specific language governing permissions and limitations
-  under the License.
+   distributed with this work for additional information
+   regarding copyright ownership.  The ASF licenses this file
+   to you under the Apache License, Version 2.0 (the
+   "License"); you may not use this file except in compliance
+   with the License.  You may obtain a copy of the License at
 
+   http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing,
+   software distributed under the License is distributed on an
+   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+   KIND, either express or implied.  See the License for the
+   specific language governing permissions and limitations
+   under the License.
 
 Reverse Proxy and HTTP Redirects
 ================================
@@ -32,19 +30,17 @@ appears to clients like a normal origin server.
 .. toctree::
    :maxdepth: 2
 
-
 Understanding Reverse Proxy Caching
 ===================================
 
-With **forward proxy caching**, Traffic Server handles web requests to
-distant origin servers on behalf of the clients requesting the content.
-**Reverse proxy caching** (also known as **server acceleration** or
-**virtual web hosting**) is different because Traffic Server acts as a
-proxy cache on behalf of the origin servers that store the content.
-Traffic Server is configured to be *the* origin server which the client
-is trying to connect to. In a typical scenario the advertised hostname
-of the origin server resolves to Traffic Server, which acts as the real
-origin server.
+With *forward proxy caching*, Traffic Server handles web requests to origin
+servers on behalf of the clients requesting the content. *Reverse proxy
+caching* (also known as *server acceleration*) is different because Traffic
+Server acts as a proxy cache on behalf of the origin servers that store the
+content. Traffic Server is configured to behave outwardly as origin server
+which the client is trying to connect to. In a typical scenario the advertised
+hostname of the origin server resolves to Traffic Server, which serves client
+requests directly, fetching content from the true origin server when necessary.
 
 Reverse Proxy Solutions
 -----------------------
@@ -52,20 +48,19 @@ Reverse Proxy Solutions
 There are many ways to use Traffic Server as a reverse proxy. Below are
 a few example scenarios.
 
-You can use Traffic Server in reverse proxy mode to:
+-  Offload heavily-used origin servers.
 
--  Offload heavily-used origin servers
--  Deliver content efficiently in geographically distant areas
--  Provide security for origin servers that contain sensitive
-   information
+-  Deliver content efficiently in geographically distant areas.
+
+-  Provide security for origin servers that contain sensitive information.
 
 Offloading Heavily-Used Origin Servers
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Traffic Server can absorb requests to the main origin server and improve
-the speed & quality of web serving by reducing load and hot spots on
+Traffic Server can accept requests on behalf of the origin server and improve
+the speed and quality of web serving by reducing load and hot spots on
 backup origin servers. For example, a web hoster can maintain a scalable
-Traffic Server serving engine with a set of low-cost, low-performance,
+Traffic Server system with a set of low-cost, low-performance,
 less-reliable PC origin servers as backup servers. In fact, a single
 Traffic Server can act as the virtual origin server for multiple backup
 origin servers, as shown in the figure below.
@@ -85,8 +80,8 @@ geographical proximity. Caches are typically easier to manage and are
 more cost-effective than replicating data. For example, Traffic Server
 can be used as a mirror site on the far side of a trans-Atlantic link to
 serve users without having to fetch the request and content across
-expensive international connections. Unlike replication, for which
-hardware must be configured to replicate all data and to handle peak
+expensive, or higher latency, international connections. Unlike replication,
+for which hardware must be configured to replicate all data and to handle peak
 capacity, Traffic Server dynamically adjusts to optimally use the
 serving and storing capacity of the hardware. Traffic Server is also
 designed to keep content fresh automatically, thereby eliminating the
@@ -100,7 +95,7 @@ an origin server. If an origin server contains sensitive information
 that you want to keep secure inside your firewall, then you can use a
 Traffic Server outside the firewall as a reverse proxy for that origin
 server. When outside clients try to access the origin server, the
-requests instead go to Traffic Server. If the desired content is *not*
+requests instead go to Traffic Server. If the desired content is not
 sensitive, then it can be served from the cache. If the content is
 sensitive and not cacheable, then Traffic Server obtains the content
 from the origin server (the firewall allows only Traffic Server access
@@ -114,12 +109,15 @@ When a browser makes a request, it normally sends that request directly
 to the origin server. When Traffic Server is in reverse proxy mode, it
 intercepts the request before it reaches the origin server. Typically,
 this is done by setting up the DNS entry for the origin server (i.e.,
-the origin server's 'advertised' hostname) so it resolves to the Traffic
+the origin server's advertised hostname) so it resolves to the Traffic
 Server IP address. When Traffic Server is configured as the origin
 server, the browser connects to Traffic Server rather than the origin
 server. For additional information, see `HTTP Reverse Proxy`_.
 
-.. note:: To avoid a DNS conflict, the origin server’s hostname and its advertised hostname must not be the same.
+.. note::
+
+    To avoid a DNS conflict, the origin server’s hostname and its advertised
+    hostname must not be the same.
 
 HTTP Reverse Proxy
 ==================
@@ -136,25 +134,39 @@ proxy mode serves an HTTP request from a client browser.
 
 The figure above demonstrates the following steps:
 
+.. List below should remain manually numbered, as the entries correspond to numbers in the figure above.
+
 1. A client browser sends an HTTP request addressed to a host called
    ``www.host.com`` on port 80. Traffic Server receives the request
    because it is acting as the origin server (the origin server’s
    advertised hostname resolves to Traffic Server).
-2. Traffic Server locates a map rule in the ``remap.config`` file and
+
+2. Traffic Server locates a map rule in the :file:`remap.config` file and
    remaps the request to the specified origin server (``realhost.com``).
-3. Traffic Server opens an HTTP connection to the origin server. (If the request is not able to be served from cache)
-4. If the request is a cache hit and the content is fresh, then Traffic
-   Server sends the requested object to the client from the cache.
-   Otherwise, Traffic Server obtains the requested object from the
-   origin server, sends the object to the client, and saves a copy in
-   its cache.
+
+3. If the request cannot be served from cache, Traffic Server opens a
+   connection to the origin server (or more likely, uses an existing
+   connection it has pre-established), retrieves the content, and optionally
+   caches it for future use.
+
+4. If the request was a cache hit and the content is still fresh in the cache,
+   or the content is now available through Traffic Server because of step 3,
+   Traffic Server sends the requested object to the client from the cache
+   directly.
+
+.. note::
+
+    Traffic Server, when updating its own cache from the origin server, will
+    simultaneously deliver that content to the client while updating its
+    cache database. The response to the client containing the requested object
+    will begin as soon as Traffic Server has received and processed the full
+    response headers from the origin server.
 
 To configure HTTP reverse proxy, you must perform the following tasks:
 
 -  Create mapping rules in the :file:`remap.config` file (refer to `Creating
    Mapping Rules for HTTP Requests`_). ::
 
-      # remap.config
       map http://www.host.com http://realhost.com
 
 -  Enable the reverse proxy option (refer to `Enabling HTTP Reverse Proxy`_).
@@ -167,10 +179,10 @@ Handling Origin Server Redirect Responses
 Origin servers often send redirect responses back to browsers
 redirecting them to different pages. For example, if an origin server is
 overloaded, then it might redirect browsers to a less loaded server.
-Origin servers also redirect when web pages that have moved to different
+Origin servers also redirect when web pages have moved to different
 locations. When Traffic Server is configured as a reverse proxy, it must
 readdress redirects from origin servers so that browsers are redirected
-to Traffic Server and *not* to another origin server.
+to Traffic Server and not to another origin server.
 
 To readdress redirects, Traffic Server uses reverse-map rules. Unless
 you have :ts:cv:`proxy.config.url_remap.pristine_host_hdr` enabled
@@ -186,23 +198,25 @@ Traffic Server uses two types of mapping rules for HTTP reverse proxy.
 map rule
 ~~~~~~~~
 
-A **map rule** translates the URL in client requests into the URL where
+A *map rule* translates the URL in client requests into the URL where
 the content is located. When Traffic Server is in reverse proxy mode and
 receives an HTTP client request, it first constructs a complete request
 URL from the relative URL and its headers. Traffic Server then looks for
 a match by comparing the complete request URL with its list of target
-URLs in the :file:`remap.config` file.
-For the request URL to match a target URL, the following
-conditions must be true:
+URLs in :file:`remap.config`. For the request URL to match a target URL, the
+following conditions must be true:
 
--  The scheme of both URLs must be the same
+-  The scheme of both URLs must be the same.
+
 -  The host in both URLs must be the same. If the request URL contains
    an unqualified hostname, then it will never match a target URL with a
    fully-qualified hostname.
+
 -  The ports in both URLs must be the same. If no port is specified in a
    URL, then the default port for the scheme of the URL is used.
+
 -  The path portion of the target URL must match a prefix of the request
-   URL path
+   URL path.
 
 If Traffic Server finds a match, then it translates the request URL into
 the replacement URL listed in the map rule: it sets the host and path of
@@ -210,18 +224,18 @@ the request URL to match the replacement URL. If the URL contains path
 prefixes, then Traffic Server removes the prefix of the path that
 matches the target URL path and substitutes it with the path from the
 replacement URL. If two mappings match a request URL, then Traffic
-Server applies the first mapping listed in the :file:`remap.config` file.
+Server applies the first mapping listed in :file:`remap.config`.
 
 reverse-map rule
 ~~~~~~~~~~~~~~~~
 
-A **reverse-map rule** translates the URL in origin server redirect
-responses to point to Traffic Server so that clients are **redirected**
+A *reverse-map rule* translates the URL in origin server redirect
+responses to point to Traffic Server so that clients are redirected
 to Traffic Server instead of accessing an origin server directly. For
 example, if there is a directory ``/pub`` on an origin server at
 ``www.molasses.com`` and a client sends a request to that origin server
 for ``/pub``, then the origin server might reply with a redirect by
-sending the Header ``Location: http://www.test.com/pub/`` to let the
+sending the Header ``Location: http://realhost.com/pub/`` to let the
 client know that it was a directory it had requested, not a document (a
 common use of redirects is to normalize URLs so that clients can
 bookmark documents properly).
@@ -233,35 +247,33 @@ hitting a wall because ``realhost.com`` actually does not resolve for
 the client. (E.g.: Because it's running on a port shielded by a
 firewall, or because it's running on a non-routable LAN IP)
 
-Both map and reverse-map rules consist of a **target** (origin) URL and
-a **replacement** (destination) URL. In a **map rule**, the target URL
+Both map and reverse-map rules consist of a *target* (origin) URL and
+a *replacement* (destination) URL. In a *map rule*, the target URL
 points to Traffic Server and the replacement URL specifies where the
-original content is located. In a **reverse-map rule**, the target URL
+original content is located. In a *reverse-map rule*, the target URL
 specifies where the original content is located and the replacement URL
-points to Traffic Server. Traffic Server stores mapping rules in the
-``remap.config`` file located in the Traffic Server ``config``
-directory.
+points to Traffic Server. Traffic Server stores mapping rules in
+:file:`remap.config` located in the Traffic Server ``config`` directory.
 
 Creating Mapping Rules for HTTP Requests
 ----------------------------------------
 
-To create mapping rules
+To create mapping rules:
 
-1. Enter the map and reverse-map rules into the :file:`remap.config` file
-2. Run the command :option:`traffic_line -x` to apply the configuration
-   changes.
+#. Enter the map and reverse-map rules into :file:`remap.config`.
+
+#. Run the command :option:`traffic_line -x` to apply the configuration changes.
 
 Enabling HTTP Reverse Proxy
 ---------------------------
 
-To enable HTTP reverse proxy, follow the steps below.
+To enable HTTP reverse proxy:
 
-1. Edit the following variable in :file:`records.config`
+#. Edit :ts:cv:`proxy.config.reverse_proxy.enabled` in :file:`records.config`. ::
 
-   -  :ts:cv:`proxy.config.reverse_proxy.enabled`
+    CONFIG proxy.config.reverse_proxy.enabled INT 1
 
-2. Run the command :option:`traffic_line -x` to apply the configuration
-   changes.
+#. Run the command :option:`traffic_line -x` to apply the configuration changes.
 
 Setting Optional HTTP Reverse Proxy Options
 -------------------------------------------
@@ -270,17 +282,20 @@ Traffic Server provides several reverse proxy configuration options in
 :file:`records.config` that enable you to:
 
 -  Configure Traffic Server to retain the client host header information
-   in a request during translation (:ts:cv:`proxy.config.url_remap.pristine_host_hdr`)
+   in a request during translation.
+   See :ts:cv:`proxy.config.url_remap.pristine_host_hdr`.
 
 -  Configure Traffic Server to serve requests only to the origin servers
    listed in the mapping rules. As a result, requests to origin servers
-   not listed in the mapping rules are not served. (:ts:cv:`proxy.config.url_remap.remap_required`)
--  Specify an alternate URL to which incoming requests from older
-   clients (i.e., ones that do not provide ``Host`` headers) are
-   directed (:ts:cv:`proxy.config.header.parse.no_host_url_redirect`)
+   not listed in the mapping rules are not served.
+   See :ts:cv:`proxy.config.url_remap.remap_required`.
 
-Don't forget to run the command :option:`traffic_line -x` to apply the
-configuration changes.
+-  Specify an alternate URL to which incoming requests from older clients ,such
+   as ones that do not provide ``Host`` headers, are directed.
+   See :ts:cv:`proxy.config.header.parse.no_host_url_redirect`.
+
+Run the command :option:`traffic_line -x` to apply any of these configuration
+changes.
 
 Redirecting HTTP Requests
 =========================
@@ -293,18 +308,17 @@ requests for ``www.ultraseek.com`` go directly to
 ``www.server1.com/products/portal/search``.
 
 You can configure Traffic Server to perform permanent or temporary
-redirects. **Permanent redirects** notify the browser of the URL change
-(by returning the HTTP status code **``301``**) so that the browser can
-update bookmarks. **Temporary redirects** notify the browser of the URL
+redirects. *Permanent redirects* notify the browser of the URL change
+(by returning the HTTP status code ``301``) so that the browser can
+update bookmarks. *Temporary redirects* notify the browser of the URL
 change for the current request only (by returning the HTTP status code
-**``307``** ).
+``307`` ).
 
-To set redirect rules
+To set redirect rules:
 
-1. For each redirect you want to set enter a mapping rule in the
-   :file:`remap.config` file
-2. Run the command :option:`traffic_line -x` to apply the configuration
-   changes.
+#. For each redirect you want to set enter a mapping rule in :file:`remap.config`.
+
+#. Run the command :option:`traffic_line -x` to apply the configuration changes.
 
 Example
 -------

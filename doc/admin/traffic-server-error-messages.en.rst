@@ -34,7 +34,7 @@ Traffic Server Process Fatal
 ============================
 
 ``Accept port is not between 1 and 65535. Please check configuration``
-   The port specified in the :file:`records.config` file that accepts
+   The port specified in :file:`records.config` that accepts
    incoming HTTP requests is not valid.
 
 ``Self loop is detected in parent proxy configuration``
@@ -66,7 +66,7 @@ Traffic Server Warnings
 
 ``Log format symbol <symbol name> not found``
    Custom log format references a field symbol that does not exist.
-   Refer to :ref:`event-logging-formats`.
+   Refer to :ref:`admin-event-logging-formats`.
 
 ``Missing field for field marker``
    Error reading a log buffer.
@@ -84,7 +84,7 @@ Traffic Server Warnings
    replaced.
 
 ``No cache disks specified in storage.config file: cache disabled``
-   The Traffic Server ``storage.config`` file does not list any cache
+   The Traffic Server :file:`storage.config` file does not list any cache
    disks; Traffic Server is running in proxy-only mode. You must add
    the disks you want to use for the cache to :file:`storage.config`.
 
@@ -143,9 +143,9 @@ Traffic Server returns detailed error messages to browser clients when
 there are problems with the HTTP transactions requested by the browser.
 These Traffic Server response messages correspond to standard HTTP
 response codes, but provide more information. A list of the more
-frequently-encountered HTTP response codes is provided in :ref:`standard-http-response-messages`.
-You can customize the Traffic Server response messages (typically in 
-proxy/config/body_factory/default/, but set by 
+frequently encountered HTTP response codes is provided in :ref:`standard-http-response-messages`.
+You can customize the Traffic Server response messages (typically in
+``proxy/config/body_factory/default/``, but set by
 :ts:cv:`proxy.config.body_factory.template_sets_dir`).
 
 The following table lists the hard-coded Traffic Server HTTP messages,
@@ -311,63 +311,30 @@ Standard HTTP Response Messages
 The following standard HTTP response messages are provided for your
 information.
 
-``200``
-   OK
+======== ===================================
+Code     Description
+======== ===================================
+``200``  OK
+``202``  Accepted
+``204``  No Content
+``206``  Partial Content
+``300``  Multiple Choices
+``301``  Moved Permanently
+``302``  Found
+``303``  See Other
+``304``  Not Modified
+``400``  Bad Request
+``401``  Unauthorized; retry
+``403``  Forbidden
+``404``  Not Found
+``405``  Method Not Allowed
+``406``  Not Acceptable
+``408``  Request Timeout
+``500``  Internal Server Error
+``501``  Not Implemented
+``502``  Bad Gateway
+``504``  Gateway Timeout
+======== ===================================
 
-``202``
-   Accepted
-
-``204``
-   No Content
-
-``206``
-   Partial Content
-
-``300``
-   Multiple Choices
-
-``301``
-   Moved Permanently
-
-``302``
-   Found
-
-``303``
-   See Other
-
-``304``
-   Not Modified
-
-``400``
-   Bad Request
-
-``401``
-   Unauthorized; retry
-
-``403``
-   Forbidden
-
-``404``
-   Not Found
-
-``405``
-   Method Not Allowed
-
-``406``
-   Not acceptable
-
-``408``
-   Request Timeout
-
-``500``
-   Internal server error
-
-``501``
-   Not Implemented
-
-``502``
-   Bad Gateway
-
-``504``
-   Gateway Timeout
-    
+More detail can be found in `RFC2616 <http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html>`_
+which defines the full range of standardized HTTP/1.1 response codes.
