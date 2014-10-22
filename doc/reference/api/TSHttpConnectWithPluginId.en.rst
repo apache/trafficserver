@@ -54,7 +54,7 @@ The combination of tag and id is intended to enable correlation in log post proc
    The SPDY implementation uses this to correlate client sessions with SPDY streams. Each client connection is assigned a distinct numeric identifier. This is passed as the :arg:`id` to :c:func:`TSHttpConnectWithPluginId`. The :arg:`tag` is selected to be the NPN string for the client session protocol, e.g. "spdy/3" or "spdy/3.1". Log post processing can then count the number of connections for the various supported protocols and the number of SPDY virtual streams for each real client connection to Traffic Server.
 
 See also
-========
+--------
 :manpage:`TSHttpConnect(3ts)`,
 :manpage:`TSNetConnect(3ts)`,
 :manpage:`TSAPI(3ts)`
