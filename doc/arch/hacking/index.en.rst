@@ -28,3 +28,4 @@ and run unit or regression tests or how to inspect the state of the core with a 
    :maxdepth: 2
 
    config-var-impl.en
+   release-process.en
