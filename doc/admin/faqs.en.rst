@@ -1,4 +1,4 @@
-.. _admin-faqs:
+.. _faqs:
 
 FAQ and Troubleshooting Tips
 ****************************
@@ -59,9 +59,9 @@ Can Traffic Server cache Java applets, JavaScript programs, or other application
 Yes, Traffic Server can store and serve Java applets, JavaScript
 programs, VBScripts, and other executable objects from its cache
 according to the freshness and cacheability rules for HTTP objects.
-Traffic Server does not execute the applets, scripts, or programs,
-however - these objects run only when the client system (ie, the one
-that sent the request) loads them.
+Traffic Server does not execute the applets, scripts, or programs.
+These objects run entirely client-side (the system which originated
+the request for the objects), and do not execute on the server.
 
 In Squid- and Netscape-format log files, what do the cache result codes mean?
 -----------------------------------------------------------------------------
@@ -71,9 +71,9 @@ This is described in detail in the :ref:`log-formats-squid-format` documentation
 What is recorded by the ``cqtx`` field in a custom log file?
 ------------------------------------------------------------
 
--  In **forward proxy mode**, the cqtx field records the complete client
+-  In *forward proxy mode*, the ``cqtx`` field records the complete client
    request in the log file (for example, ``GET http://www.company.com HTTP/1.0``).
--  In **reverse proxy mode**, the cqtx field records the hostname or IP
+-  In *reverse proxy mode*, the ``cqtx`` field records the hostname or IP
    address of the origin server because Traffic Server first remaps the
    request as per map rules in the :file:`remap.config` file.
 
@@ -88,7 +88,7 @@ to compare the ``ttl`` value set by the name server with the ``ttl``
 value set by Traffic Server, and then use either the lower or the higher
 value.
 
-see :ts:cv:`proxy.config.hostdb.ttl_mode` for more info
+Refer to :ts:cv:`proxy.config.hostdb.ttl_mode` for more info.
 
 Can you improve the look of your custom response pages by using images, animated .gifs, and Java applets?
 ---------------------------------------------------------------------------------------------------------
@@ -105,14 +105,14 @@ Can Traffic Server run in forward proxy and reverse proxy modes at the same time
 ---------------------------------------------------------------------------------
 
 Yes. When you enable reverse proxy mode, Traffic Server remaps incoming
-requests according to the map rules in the :file:`remap.config` file. All
-other requests that do not match a map rule are simply served in forward
+requests according to the map rules in :file:`remap.config`. All
+other requests that do not match a map rule are served in forward
 proxy mode.
 
 If you want to run in reverse proxy only mode (wherein Traffic Server
-does *not* serve requests that fail to match a map rule), then you must
+does not serve requests that fail to match a map rule), then you must
 set the configuration variable :ts:cv:`proxy.config.url_remap.remap_required`
-to ``1`` in the :file:`records.config` file.
+to ``1`` in :file:`records.config`.
 
 How do I enable forward proxy mode
 ----------------------------------
@@ -124,27 +124,224 @@ How do I interpret the Via: header code?
 
 The ``Via`` header string can be decoded with the `Via Decoder Ring <http://trafficserver.apache.org/tools/via>`_.
 
+The Via header is an optional HTTP header added by Traffic Server and other HTTP proxies. If a request goes through multiple proxies, each one appends its Via header content to the end of the existing Via header. Via header content is for general information and diagnostic use only and should not be used as a programmatic interface to Traffic Server.
+
+The form of the Via header is
+
+Via: <protocol> <proxyname> (<product/version> [<via-codes>])
+
+================= ==========================
+Value             Meaning
+================= ==========================
+<protocol>        the scheme and version of the HTTP request
+<proxyname>       the configured name of the proxy server
+<product/version> the Traffic Server product name and version
+<via-codes>       a string of alphabetic codes presenting status information about the proxy handling of the HTTP request
+================= ==========================
+
+For example:
+Via: HTTP/1.0 storm (Traffic-Server/4.0.0   [cMs f ])
+
+- [u lH o  f  pS eN]     cache hit
+- [u lM oS fF pS eN]     cache miss
+- [uN l oS f  pS eN]     no-cache origin server fetch
+
+The short status code shows the cache-lookup, server-info and cache-fill information as listed in the full status code description below. The long status code list provided in older, commercial versions of Traffic Server can be restored by setting the verbose_via_str config variable.
+The character strings in the via-code show [<request results>:<proxy op>] where <request results> represents status information about the results of the client request and <proxy op> represent some information about the proxy operations performed during request processing. The full via-code status format is
+
+[u<client-info> c<cache-lookup> s<server-info> f<cache-fill> p<proxy-info> e<error-codes> : t<tunnel-info>c<cache-type><cache-lookup-result> i<icp-conn-info> p<parent-proxy> s<server-conn-info>]
+
+
+u client-info
+^^^^^^^^^^^^^^^^^^^^^
+
+Request headers received from client. Value is one of:
+
+===== ==========================
+Value             Meaning
+===== ==========================
+C     cookie
+E     error in request
+I     If Modified Since (IMS)
+N     no-cache
+S     simple request (not conditional)
+===== ==========================
+
+c cache-lookup
+^^^^^^^^^^^^^^^^^^^^^
+Result of Traffic Server cache lookup for URL. Value is one of:
+
+===== ==========================
+Value             Meaning
+===== ==========================
+A     in cache, not acceptable (a cache "MISS")
+H     in cache, fresh (a cache "HIT")
+M     miss (a cache "MISS")
+S     in cache, stale (a cache "MISS")
+blank no cache lookup performed
+===== ==========================
+
+s server-info
+^^^^^^^^^^^^^^^^^^^^^
+Response information received from origin server. Value is one of:
+
+===== ==========================
+Value             Meaning
+===== ==========================
+E     error in response
+N     not-modified
+S     served
+blank no server connection needed
+===== ==========================
+
+f cache-fill
+^^^^^^^^^^^^^^^^^^^^^
+Result of document write to cache. Value is one of:
+
+===== ==========================
+Value             Meaning
+===== ==========================
+D     cached copy deleted
+U     updated old cache copy
+W     written into cache (new copy)
+blank no cache write performed
+===== ==========================
+
+p proxy-info
+^^^^^^^^^^^^^^^^^^^^^
+Proxy operation result. Value is one of:
+
+===== ==========================
+Value             Meaning
+===== ==========================
+N     not-modified
+R     origin server revalidated
+S     served
+===== ==========================
+
+e error-codes
+^^^^^^^^^^^^^^^^^^^^^
+
+Value is one of:
+
+===== ==========================
+Value             Meaning
+===== ==========================
+A     authorization failure
+C     connection to server failed
+D     dns failure
+F     request forbidden
+H     header syntax unacceptable
+N     no error
+S     server related error
+T     connection timed out
+===== ==========================
+
+: = Separates proxy request result information from operation detail codes
+
+t tunnel-info
+^^^^^^^^^^^^^^^^^^^^^
+Proxy-only service operation. Value is one of:
+
+===== ==========================
+Value             Meaning
+===== ==========================
+F     tunneling due to a header field (such as presence of If-Range header)
+M     tunneling due to a method (e.g. CONNECT)
+O     tunneling because cache is turned off
+U     tunneling because of url (url suggests dynamic content)
+blank no tunneling
+===== ==========================
+
+c cache-type and cache-lookup
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+cache result values (2 characters)
+
+cache-type character value is one of
+
+===== ==========================
+Value             Meaning
+===== ==========================
+C     cache
+I     icp
+blank cache miss or no cache lookup
+===== ==========================
+
+cache-lookup-result character value is one of:
+
+===== ==========================
+Value             Meaning
+===== ==========================
+C     cache hit, but config forces revalidate
+D     cache hit, but method forces revalidated (e.g. ftp, not anonymous)
+H     cache hit
+I     conditional miss (client sent conditional, fresh in cache, returned 412)
+M     cache miss (url not in cache)
+N     conditional hit (client sent conditional, doc fresh in cache, returned 304)
+S     cache hit, but expired
+U     cache hit, but client forces revalidate (e.g. Pragma: no-cache)
+blank no cache lookup
+===== ==========================
+
+i icp-conn-info
+^^^^^^^^^^^^^^^^^^^^^
+
+ICP status
+
+===== ==========================
+Value             Meaning
+===== ==========================
+F     connection open failed
+S     connection opened successfully
+blank no icp
+===== ==========================
+
+p parent-proxy
+^^^^^^^^^^^^^^^^^^^^^
+parent proxy connection status
+
+===== ==========================
+Value             Meaning
+===== ==========================
+F     connection open failed
+S     connection opened successfully
+blank no parent proxy
+===== ==========================
+
+s server-conn-info
+^^^^^^^^^^^^^^^^^^^^^
+origin server connection status
+
+===== ==========================
+Value             Meaning
+===== ==========================
+F     connection open failed
+S     connection opened successfully
+blank no server connection
+===== ==========================
+
+
+
 Support for HTTP Expect: Header
 -------------------------------
 
-Traffic Server currently does not handle request Expect: headers
+Traffic Server currently does not handle Expect: request headers
 according to the HTTP/1.1 spec.
 
-Note that clients such as cURL automatically send Expect: for POST
+Clients such as cURL automatically send Expect: for POST
 requests with large POST bodies, with a 1 second timeout if a 100
 Continue response is not received. To avoid the timeout when using cURL
-as a client to Traffic Server, you can turn off the Expect: header as
-follows::
+as a client to Traffic Server, you can turn off the Expect: header::
 
    curl -H"Expect:" http://www.example.com/
 
-C (libcurl)::
+Or with the C (libcurl) library from within your own applications::
 
    struct curl_slist *header_list=NULL;
    header_list = curl_slist_append(header_list, "Expect:");
    curl_easy_setopt(my_curlp, CURLOPT_HTTPHEADER, header_list);
 
-php::
+Or with the PHP cURL library::
 
    curl_setopt($ch, CURLOPT_HTTPHEADER, array('Expect:'));
 
@@ -166,28 +363,31 @@ You are unable to execute Traffic Line commands
 
 Traffic Line commands do not execute under the following conditions:
 
-- **When the traffic_manager process is not running** Check to see
-  if the :program:`traffic_manager` process is running by entering the
-  following command: ``pgrep -l traffic_manager``
+**When the traffic_manager process is not running**
+    Check to see if the :program:`traffic_manager` process is running by entering the
+    following command::
 
-  If the :program:`traffic_manager` process is not running, then enter the
-  following command from the Traffic Server ``bin`` directory to start it:
-  ``./traffic_manager``
+        pgrep -l traffic_manager
 
-  .. this is wrong
+    If the :program:`traffic_manager` process is not running, then enter the
+    following command from the Traffic Server ``bin`` directory to start it::
 
-  You should always start and stop Traffic Server with the
-  :program:`trafficserver start`` and :program:`trafficserver stop` commands to ensure
-  that all the processes start and stop correctly. For more information,
-  refer to :ref:`getting-started`.
+        ./traffic_manager
 
-- **When you are not executing the command from $TSHome/bin** If the Traffic Server
-  ``bin`` directory is not in your path, then prepend the Traffic Line
-  commands with ``./`` (for example, ``./traffic_line -h``). 
+.. XXX: this is wrong
 
-- **When multiple Traffic Server installations are present and you are not
-  executing the Traffic Line command from the active Traffic Server path
-  specified in ``/etc/trafficserver``**
+    You should always start and stop Traffic Server with the
+    :program:`trafficserver start`` and :program:`trafficserver stop` commands to ensure
+    that all the processes start and stop correctly. For more information,
+    refer to :ref:`getting-started`.
+
+**When you are not executing the command from $TSHome/bin**
+    If the Traffic Server ``bin`` directory is not in your path, then prepend the
+    Traffic Line commands with ``./`` (for example, ``./traffic_line -h``).
+
+**When multiple Traffic Server installations are present and you are not
+executing the Traffic Line command from the active Traffic Server path
+specified in ``/etc/trafficserver``**
 
 
 You observe inconsistent behavior when one node obtains an object from another node in the cluster
@@ -199,7 +399,7 @@ problems, but differences of more than a few minutes can affect Traffic
 Server operation.
 
 You should run a clock synchronization daemon such as xntpd. To obtain
-the latest version of xntpd, go to ``http://www.eecis.udel.edu/~ntp/``
+the latest version of xntpd, go to `<http://www.eecis.udel.edu/~ntp/>`_.
 
 Web browsers display an error document with a 'data missing' message
 --------------------------------------------------------------------
@@ -213,7 +413,7 @@ A message similar to the following might display in web browsers: ::
 This is a Web browser issue and not a problem specific to (or caused by)
 Traffic Server. Because Web browsers maintain a separate local cache in
 memory and/or disk on the client system, messages about documents that
-have expired from cache refer to the browser's local cache and *not*
+have expired from cache refer to the browser's local cache and not
 to the Traffic Server cache. There is no Traffic Server message or
 condition that can cause such messages to appear in a web browser.
 
@@ -239,8 +439,8 @@ read the name resolution file:
    then you must add a name server entry for ``127.0.0.1`` or
    ``0.0.0.0`` in the :manpage:`resolv.conf(5)` file.
 -  Check that the Traffic Server user account has permission to read the
-   /etc/resolv.conf file. If it does not, then change the file
-   permissions to ``rw-r--r--`` (``644``)
+   :manpage:`resolv.conf(5)` file. If it does not, then change the file
+   permissions to ``rw-r--r--`` (``644``).
 
 'Maximum document size exceeded' message in the system log file
 ---------------------------------------------------------------
@@ -267,11 +467,11 @@ The following messages may appear in the system log file: ::
      Feb 20 23:53:58 louis traffic_manager[4414]: ERROR ==> [drainIncomingChannel] Unknown message: 'GET http://www.ip.pt/ HTTP/1.0'
 
 These error messages indicate that a browser is sending HTTP requests to
-one of the Traffic Server cluster ports - either ``rsport`` (default
+one of the Traffic Server cluster ports, either ``rsport`` (default
 port 8088) or ``mcport`` (default port 8089). Traffic Server discards
-the request; this error does not cause any Traffic Server problems. The
+these requests. This error does not cause any Traffic Server problems. The
 misconfigured browser must be reconfigured to use the correct proxy
-port. Traffic Server clusters work best when configured to use a
+port. Traffic Server clusters should ideally be configured to use a
 separate network interface and cluster on a private subnet, so that
 client machines have no access to the cluster ports.
 
@@ -289,77 +489,84 @@ starting :program:`traffic_manager` or performing any health checks. The
 it has been stopped with the option:`trafficserver stop` command. Without
 this static control, Traffic Server would restart automatically upon
 system reboot. The ``no_cop`` control keeps Traffic Server off until it
-is explicitly restarted with the ::
+is explicitly restarted with: ::
 
    trafficserver start
-
-command.
-
 
 Warning in the system log file when manually editing vaddrs.config
 ------------------------------------------------------------------
 
-If you manually edit the vaddrs.config file as a non-root user, then
+If you manually edit :file:`vaddrs.config` as a non-root user, then
 Traffic Server issues a warning message in the system log file similar
 to the following::
 
    WARNING: interface is ignored: Operation not permitted
 
-You can safely ignore this message; Traffic Server *does* apply your
+You can safely ignore this message as Traffic Server will still apply your
 configuration edits.
 
 Traffic Server is running but no log files are created
 ------------------------------------------------------
 
 Traffic Server only writes event log files when there is information to
-record. If Traffic Server is idle, then it's possible/probable that no
-log files exist. In addition:
+record. If Traffic Server is idle, then it's possible that no log files
+exist.
 
-Make sure you're looking in the correct directory. By default, Traffic
-Server creates log files in the logs directory. Check the location of
-log files by checking the value of the variable
-proxy.config.log.logfile_dir in the records.config file. Check that the
-log directory has read/write permissions for the Traffic Server user
-account. If the log directory does not have the correct permissions,
-then the traffic_server process is unable to open or create log files.
-Check that logging is enabled by checking the value of the
-proxy.config.log.logging_enabled variable in the records.config file.
-Check that a log format is enabled. In the records.config file, select
-the standard or custom format by editing variables in the Logging Config
-section.
+If Traffic Server is not idle, and you still do not see log files being
+generated, verify the following:
+
+- Make sure you're looking in the correct directory. By default, Traffic
+  Server creates log files in the ``logs`` directory. This can be modified
+  by changing :ts:cv:`proxy.config.log.logfile_dir` in :file:`records.config`.
+
+- Check that the log directory has read/write permissions for the Traffic
+  Server user account. If the log directory does not have the correct
+  permissions, then the :program:`traffic_server` process will be unable to
+  open or create log files.
+
+- Check that logging is enabled by checking the value of the
+  :ts:cv:`proxy.config.log.logging_enabled` variable in :file:`records.config`.
+
+- Check that a log format is enabled. In :file:`records.config`, select
+  the standard or custom format by editing variables in the Logging Config
+  section.
 
 Traffic Server shows an error indicating too many network connections
 ---------------------------------------------------------------------
 
-By default, Traffic Server supports 8000 network connections: half of
+By default, Traffic Server supports 8000 network connections. Half of
 this number is allocated for client connections and the remaining half
-is for origin server connections. A **connection throttle event** occurs
-when client or origin server connections reach 90% of half the
-configured limit (3600 by default). When a connection throttle event
+is for origin server connections. A *connection throttle event* occurs
+when either client or origin server connections reach 90% of half the
+configured total limit (3600 by default). When a connection throttle event
 occurs, Traffic Server continues processing all existing connections but
 will not accept new client connection requests until the connection
 count falls below the limit.
 
 Connection throttle events can occur under the following conditions:
 
--  If there is a **connection spike** (e.g., if thousands of client
-   requests all reach Traffic Server at the same time). Such events are
-   typically transient and require no corrective action.
--  If there is a **service overload** (e.g., if client requests
-   continuously arrive faster than Traffic Server can service them).
-   Service overloads often indicate network problems between Traffic
-   Server and origin servers. Conversely, it may indicate that Traffic
-   Server needs more memory, CPU, cache disks, or other resources to
-   handle the client load.
+Connection Spike
+    Too many client requests (enough to exceed your configured maximum connections)
+    all reach Traffic Server at the same time. Such events are typically transient
+    and require no corrective action if your connection limits are already
+    configured appropriately for your Traffic Server and origin resources.
 
-If necessary, you can reset the maximum number of connections supported
-by Traffic Server by editing the value of the
-:ts:cv:`proxy.config.net.connections_throttle` configuration variable in
-the records.config file. Do not increase the connection throttle limit
-unless the system has adequate memory to handle the client connections
-required. A system with limited RAM might need a throttle limit lower
-than the default value. Do not set this variable below the minimum value
-of 100.
+Service Overload
+    Client requests are arriving at a rate faster than that which Traffic
+    Server can service them. This may indicate network problems between Traffic
+    Server and origin servers or that Traffic Server may require more memory, CPU,
+    cache disks, or other resources to handle the client load.
+
+If necessary, you can adjust the maximum number of connections supported
+by Traffic Server by editing :ts:cv:`proxy.config.net.connections_throttle` in
+:file:`records.config`.
+
+.. note::
+
+    Do not increase the connection throttle limit unless the system has adequate
+    memory to handle the client connections required. A system with limited RAM
+    might need a throttle limit lower than the default value. Do not set this
+    variable below the minimum value of ``100``.
 
 Low memory symptoms
 -------------------
@@ -384,9 +591,9 @@ load on Traffic Server.
 Connection timeouts with the origin server
 ------------------------------------------
 
-Certain origin servers take longer than 30 seconds to post HTTP
-requests, which results in connection timeouts with Traffic Server. To
-prevent such connection timeouts, you must change the value of the
-configuration variable proxy.config.http.connect_attempts_timeout in
-the records.config file to 60 seconds or more.
+By default, Traffic Server will timeout after 30 seconds when contacting
+origin servers. If you cannot avoid such timeouts by otherwise addressing the
+performance on your origin servers, you may adjust the origin connection timeout
+in Traffic Server by changing :ts:cv:`proxy.config.http.connect_attempts_timeout`
+in :file:`records.config` to a larger value.
 

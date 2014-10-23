@@ -5,20 +5,20 @@ Event Logging Formats
 
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
-  distributed with this work for additional information
-  regarding copyright ownership.  The ASF licenses this file
-  to you under the Apache License, Version 2.0 (the
-  "License"); you may not use this file except in compliance
-  with the License.  You may obtain a copy of the License at
- 
+   distributed with this work for additional information
+   regarding copyright ownership.  The ASF licenses this file
+   to you under the Apache License, Version 2.0 (the
+   "License"); you may not use this file except in compliance
+   with the License.  You may obtain a copy of the License at
+
    http://www.apache.org/licenses/LICENSE-2.0
- 
-  Unless required by applicable law or agreed to in writing,
-  software distributed under the License is distributed on an
-  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-  KIND, either express or implied.  See the License for the
-  specific language governing permissions and limitations
-  under the License.
+
+   Unless required by applicable law or agreed to in writing,
+   software distributed under the License is distributed on an
+   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+   KIND, either express or implied.  See the License for the
+   specific language governing permissions and limitations
+   under the License.
 
 This document provides a reference for all the different logging formats
 Traffic Server supports.
@@ -37,79 +37,117 @@ Custom Logging Fields
 
 The following list describes Traffic Server custom logging fields.
 
+.. _cqh:
+
 ``{HTTP header field name}cqh``
     Logs the information in the requested field of the client request
     HTTP header. For example, ``%<{Accept-Language}cqh>`` logs the
     ``Accept-Language:`` field in client request headers.
+
+.. _pqh:
 
 ``{HTTP header field name}pqh``
     Logs the information in the requested field of the proxy request
     HTTP header. For example, ``%<{Authorization}pqh>`` logs
     the ``Authorization:`` field in proxy request headers.
 
+.. _psh:
+
 ``{HTTP header field name}psh``
     Logs the information in the requested field of the proxy response
     HTTP header. For example, ``%<{Retry-After}psh>`` logs the
     ``Retry-After:`` field in proxy response headers.
+
+.. _ssh:
 
 ``{HTTP header field name}ssh``
     Logs the information in the requested field of the server response
     HTTP header. For example, ``%<{Age}ssh>`` logs the ``Age:`` field in
     server response headers.
 
+.. _caun:
+
 ``caun``
     The client authenticated username; result of the RFC931/ident lookup
     of the client username.
+
+.. _cfsc:
 
 ``cfsc``
     The client finish status code; specifies whether the client request
     to Traffic Server was successfully completed (``FIN``) or
     interrupted (``INTR``).
 
+.. _chi:
+
 ``chi``
     The IP address of the client's host machine.
+
+.. _chih:
 
 ``chih``
     The IP address of the client's host machine in hexadecimal.
 
+.. _chp:
+
 ``chp``
     The port number of the client's host machine.
+
+.. _cps:
 
 ``cps``
     Client Protocol Stack, the output would be the conjunction of
     protocol names in the stack spliced with '+', such as "TLS+SPDY".
 
+.. _cqbl:
+
 ``cqbl``
     The client request transfer length; the body length in the client
     request to Traffic Server (in bytes).
+
+.. _cqhl:
 
 ``cqhl``
     The client request header length; the header length in the client
     request to Traffic Server.
 
+.. _cqhm:
+
 ``cqhm``
     The HTTP method in the client request to Traffic Server: ``GET``,
     ``POST``, and so on (subset of ``cqtx``).
 
+.. _cqhv:
+
 ``cqhv``
     The client request HTTP version.
+
+.. _cqtd:
 
 ``cqtd``
     The client request timestamp. Specifies the date of the client
     request in the format yyyy-mm-dd, where yyyy is the 4-digit year, mm
     is the 2-digit month, and dd is the 2-digit day.
 
+.. _cqtn:
+
 ``cqtn``
     The client request timestamp; date and time of the client's request
     (in the Netscape timestamp format).
 
+.. _cqtq:
+
 ``cqtq``
     The client request timestamp, with millisecond resolution.
+
+.. _cqts:
 
 ``cqts``
     The client-request timestamp in Squid format; the time of the client
     request since January 1, 1970 UTC. Time is expressed in seconds,
     with millisecond resolution.
+
+.. _cqtt:
 
 ``cqtt``
     The client request timestamp. The time of the client request in the
@@ -117,23 +155,28 @@ The following list describes Traffic Server custom logging fields.
     mm is the two-digit minutes value, and ss is the 2-digit seconds
     value (for example, 16:01:19).
 
+.. _cqtx:
+
 ``cqtx``
     The full HTTP client request text, minus headers; for example, ::
 
          GET http://www.company.com HTTP/1.0
 
     In reverse proxy mode, Traffic Server logs the rewritten/mapped URL
-    (according to the rules in the
-    :file:`remap.config` file), _not_ the pristine/unmapped URL.
+    (according to the rules in :file:`remap.config`), _not_ the
+    pristine/unmapped URL.
+
+.. _cqu:
 
 ``cqu``
     The universal resource identifier (URI) of the request from client
     to Traffic Server (subset of ``cqtx`` ).
 
     In reverse proxy mode, Traffic Server logs the rewritten/mapped URL
-    (according to the rules in the
-    :file:`remap.config` file),
-    _not_ the pristine/unmapped URL.
+    (according to the rules in :file:`remap.config`), _not_ the
+    pristine/unmapped URL.
+
+.. _cquc:
 
 ``cquc``
     The client request canonical URL. This differs from ``cqu`` in that
@@ -144,6 +187,8 @@ The following list describes Traffic Server custom logging fields.
 
     See `cquuc`_.
 
+.. _cqup:
+
 ``cqup``
     The client request URL path; specifies the argument portion of the
     URL (everything after the host). For example, if the URL is
@@ -151,6 +196,8 @@ The following list describes Traffic Server custom logging fields.
     ``/images/x.gif``
 
     See `cquup`_.
+
+.. _cqus:
 
 ``cqus``
     The client request URL scheme.
@@ -173,49 +220,75 @@ The following list describes Traffic Server custom logging fields.
     The client request unmapped URL host. This field records a URL's
     host before it is remapped (reverse proxy mode).
 
+.. _crat:
+
 ``crat``
     The Retry-After time in seconds, if specified by the origin server.
+
+.. _crc:
 
 ``crc``
     The cache result code; specifies how the cache responded to the
     request (``HIT``, ``MISS``, and so on).
 
+.. _csscl:
+
 ``csscl``
     The cached response length (in bytes) from origin server to Traffic
     Server.
+
+.. _csshl:
 
 ``csshl``
     The cached header length in the origin server response to Traffic
     Server (in bytes).
 
+.. _csshv:
+
 ``csshv``
     The cached server response HTTP version (1.0, 1.1, etc.).
+
+.. _csssc:
 
 ``csssc``
     The cached HTTP response status code from origin server to Traffic
     Server.
 
+.. _cwr:
+
 ``cwr``
     The cache write result (``-``, ``WL_MISS``, ``INTR```, ``ERR`` or ``FIN``)
+
+.. _cwtr:
 
 ``cwtr``
     The cache write transform result
 
+.. _fsiz:
+
 ``fsiz``
     The size of the file (*n* bytes) as seen by the origin server.
+
+.. _pfsc:
 
 ``pfsc``
     The proxy finish status code; specifies whether the Traffic Server
     request to the origin server was successfully completed (``FIN``),
     interrupted (``INTR``) or timed out (``TIMEOUT``).
 
+.. _phn:
+
 ``phn``
     The hostname of the Traffic Server that generated the log entry in
     collated log files.
 
+.. _phi:
+
 ``phi``
     The IP of the Traffic Server that generated the log entry in
     collated log files.
+
+.. _phr:
 
 ``phr``
     The proxy hierarchy route; the route Traffic Server used to retrieve
@@ -231,38 +304,58 @@ The following list describes Traffic Server custom logging fields.
 ``pitag``
    The plugin tag for the transaction. This is set for plugin driven transactions via :c:func:`TSHttpConnectWithPluginId`.
 
+.. _pqbl:
+
 ``pqbl``
     The proxy request transfer length; the body length in Traffic
     Server's request to the origin server.
+
+.. _pqhl:
 
 ``pqhl``
     The proxy request header length; the header length in Traffic
     Server's request to the origin server.
 
+.. _pqsi:
+
 ``pqsi``
     The proxy request server IP address (0 on cache hits and parent-ip
     for requests to parent proxies).
+
+.. _pqsn:
 
 ``pqsn``
     The proxy request server name; the name of the server that fulfilled
     the request.
 
+.. _pscl:
+
 ``pscl``
     The length of the Traffic Server response to the client (in bytes).
+
+.. _psct:
 
 ``psct``
     The content type of the document from server response header: (for
     example, ``img/gif`` ).
 
+.. _pshl:
+
 ``pshl``
     The header length in Traffic Server's response to the client.
+
+.. _psql:
 
 ``psql``
     The proxy response transfer length in Squid format (includes header
     and content length).
 
+.. _pssc:
+
 ``pssc``
     The HTTP response status code from Traffic Server to the client.
+
+.. _shi:
 
 ``shi``
     The IP address resolved from the DNS name lookup of the host in the
@@ -270,26 +363,37 @@ The following list describes Traffic Server custom logging fields.
     the IP address resolved from that particular DNS lookup.
 
     This can be misleading for cached documents. For example: if the
-    first request was a cache miss and came from **``IP1``** for server
-    **``S``** and the second request for server **``S``** resolved to
-    **``IP2``** but came from the cache, then the log entry for the
-    second request will show **``IP2``**.
+    first request was a cache miss and came from *IP1* for server
+    *S* and the second request for server *S* resolved to
+    *IP2* but came from the cache, then the log entry for the
+    second request will show *IP2*.
+
+.. _shn:
 
 ``shn``
     The hostname of the origin server.
 
+.. _sscl:
+
 ``sscl``
     The response length (in bytes) from origin server to Traffic Server.
 
+.. _sshl:
+
 ``sshl``
-    The header length in the origin server response to Traffic Server
-    (in bytes).
+    The header length (in bytes) in the origin server response to Traffic Server.
+
+.. _sshv:
 
 ``sshv``
     The server response HTTP version (1.0, 1.1, etc.).
 
+.. _sssc:
+
 ``sssc``
     The HTTP response status code from origin server to Traffic Server.
+
+.. _ttms:
 
 ``ttms``
     The time Traffic Server spends processing the client request; the
@@ -297,8 +401,12 @@ The following list describes Traffic Server custom logging fields.
     connection with Traffic Server and the time Traffic Server sends the
     last byte of the response back to the client.
 
+.. _ttmsh:
+
 ``ttmsh``
     Same as ``ttms`` but in hexadecimal.
+
+.. _ttmsf:
 
 ``ttmsf``
     The time Traffic Server spends processing the client request as a
@@ -310,6 +418,8 @@ The following list describes Traffic Server custom logging fields.
     For example: if the time is 1500 milliseconds, then this field
     displays 1.5 while the ``ttms`` field displays 1500 and the ``tts``
     field displays 1.
+
+.. _tts:
 
 ``tts``
     The time Traffic Server spends processing the client request; the
@@ -333,20 +443,20 @@ Squid Logging Formats
 The following is a list of the Squid logging fields and the
 corresponding logging field symbols.
 
-================== =============
-Squid              Field Symbols
-================== =============
-``time``           ``cqts``
-``elapsed``        ``ttms``
-``client``         ``chi``
-``action/code``    ``crc/pssc``
-``size``           ``psql``
-``method``         ``cqhm``
-``url``            ``cquc``
-``ident``          ``caun``
-``hierarchy/from`` ``phr/pqsn``
-``content``        ``psct``
-================== =============
+============== =============
+Squid          Field Symbols
+============== =============
+time           `cqts`_
+elapsed        `ttms`_
+client         `chi`_
+action/code    `crc`_/`pssc`_
+size           `psql`_
+method         `cqhm`_
+url            `cquc`_
+ident          `caun`_
+hierarchy/from `phr`_/`pqsn`_
+content        `psct`_
+============== =============
 
 Netscape Common Logging Formats
 -------------------------------
@@ -357,12 +467,12 @@ corresponding Traffic Server logging field symbols.
 =============== =============
 Netscape Common Field Symbols
 =============== =============
-``host``        ``chi``
-``usr``         ``caun``
-``[time]``      ``[cqtn]``
-``"req"``       ``"cqtx"``
-``s1``          ``pssc``
-``c1``          ``pscl``
+host            `chi`_
+usr             `caun`_
+[time]          [`cqtn`_]
+"req"           "`cqtx`_"
+s1              `pssc`_
+c1              `pscl`_
 =============== =============
 
 Netscape Extended Logging Formats
@@ -374,21 +484,21 @@ corresponding Traffic Server logging field symbols.
 ================= =============
 Netscape Extended Field Symbols
 ================= =============
-``host``          ``chi``
-``usr``           ``caun``
-``[time]``        ``[cqtn]``
-``"req"``         ``"cqtx"``
-``s1``            ``pssc``
-``c1``            ``pscl``
-``s2``            ``sssc``
-``c2``            ``sscl``
-``b1``            ``cqbl``
-``b2``            ``pqbl``
-``h1``            ``cqhl``
-``h2``            ``pshl``
-``h3``            ``pqhl``
-``h4``            ``sshl``
-``xt``            ``tts``
+host              `chi`_
+usr               `caun`_
+[time]            [`cqtn`_]
+"req"             "`cqtx`_"
+s1                `pssc`_
+c1                `pscl`_
+s2                `sssc`_
+c2                `sscl`_
+b1                `cqbl`_
+b2                `pqbl`_
+h1                `cqhl`_
+h2                `pshl`_
+h3                `pqhl`_
+h4                `sshl`_
+xt                `tts`_
 ================= =============
 
 Netscape Extended-2 Logging Formats

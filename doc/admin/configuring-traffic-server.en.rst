@@ -1,4 +1,3 @@
-
 .. _configuring-traffic-server:
 
 Configuring Traffic Server
@@ -41,7 +40,7 @@ To view a configuration setting, enter the following command::
 
     traffic_line -r var
 
-where ``var`` is the variable associated with the configuration
+where *var* is the variable associated with the configuration
 option. For a list of variables, refer to :ref:`configuration-variables`.
 
 Change Configuration Options in Traffic Line
@@ -52,8 +51,8 @@ command::
 
     traffic_line -s var -v value
 
-where ``var`` is the variable associated with the configuration option
-and ``value`` is the value you want to use. For a list of the
+where *var* is the variable associated with the configuration option
+and *value* is the value you want to use. For a list of the
 variables, see :ref:`configuration-variables`.
 
 Configure Traffic Server Using Configuration Files
@@ -61,14 +60,13 @@ Configure Traffic Server Using Configuration Files
 
 As an alternative to using Traffic Line or Traffic Shell, you can change
 Traffic Server configuration options by manually editing specific
-variables in the :file:`records.config` file.
-After modifying the :file:`records.config`  file,
-Traffic Server must reread the configuration files: enter the Traffic
-Line command :option:`traffic_line -x`. You may need to restart Traffic Server
-to apply some of the configuration changes.
+variables in :file:`records.config`.
 
-The following is a sample portion of the
-:file:`records.config` file:
+Traffic Server must reread the configuration files for any changes to take effect.
+This is done with :option:`traffic_line -x`. Some configuration changes require a
+full restart of Traffic Server.
+
+The following is a sample portion of :file:`records.config`:
 
 .. figure:: ../static/images/admin/records.jpg
    :align: center
@@ -76,7 +74,7 @@ The following is a sample portion of the
 
    Sample records.config file
 
-In addition to the :file:`records.config` file,
+In addition to :file:`records.config`,
 Traffic Server provides other configuration files that are used to
 configure specific features. You can manually edit all configuration
 files as described in :ref:`configuration-file-reference`.

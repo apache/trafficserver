@@ -5,28 +5,25 @@ Administrators' Guide
 
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
-  distributed with this work for additional information
-  regarding copyright ownership.  The ASF licenses this file
-  to you under the Apache License, Version 2.0 (the
-  "License"); you may not use this file except in compliance
-  with the License.  You may obtain a copy of the License at
- 
-   http://www.apache.org/licenses/LICENSE-2.0
- 
-  Unless required by applicable law or agreed to in writing,
-  software distributed under the License is distributed on an
-  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-  KIND, either express or implied.  See the License for the
-  specific language governing permissions and limitations
-  under the License.
+   distributed with this work for additional information
+   regarding copyright ownership.  The ASF licenses this file
+   to you under the Apache License, Version 2.0 (the
+   "License"); you may not use this file except in compliance
+   with the License.  You may obtain a copy of the License at
 
+    http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing,
+   software distributed under the License is distributed on an
+   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+   KIND, either express or implied.  See the License for the
+   specific language governing permissions and limitations
+   under the License.
 
 Apache Traffic Server™ speeds Internet access, enhances website
 performance, and delivers unprecedented web hosting capabilities.
 
-This chapter discusses how:
-
-Contents:
+Table of Contents:
 
 .. toctree::
    :maxdepth: 2
@@ -50,12 +47,11 @@ Contents:
    performance-tuning.en
    faqs.en
 
-
 What Is Apache Traffic Server?
 ==============================
 
 Global data networking has become part of everyday life: Internet users
-request billions of documents and terabytes of data, on a daily basis,
+request billions of documents and petabytes of data, on a daily basis,
 to and from all parts of the world. Information is free, abundant, and
 accessible. Unfortunately, global data networking can also be a
 nightmare for IT professionals as they struggle with overloaded servers
@@ -80,9 +76,8 @@ To best suit your needs, Traffic Server can be deployed in several ways:
 -  In a cache hierarchy
 
 The following sections provide a summary of these Traffic Server
-deployment options. Please keep in mind that with every of these options
-Traffic Server can be run as a *single instance*, or as a *multi-node
-cluster*.
+deployment options. Please keep in mind that with every one of these options
+Traffic Server can be run as a *single instance*, or as a *multi-node cluster*.
 
 Traffic Server as a Web Proxy Cache
 -----------------------------------
@@ -100,6 +95,10 @@ client software must be configured to send requests directly to Traffic
 Server. Explicit proxy caching is described in the :ref:`explicit-proxy-caching`
 chapter.
 
+Traffic Server can also be employed as a transparent caching proxy server, in
+which the client software needs no special configuration or even knowledge of
+the proxy's existence. This setup is described in the :ref:`transparent-proxy`
+section.
 
 Traffic Server as a Reverse Proxy
 ---------------------------------
@@ -108,7 +107,8 @@ As a reverse proxy, Traffic Server is configured to be the origin server
 to which the user is trying to connect (typically, the origin server’s
 advertised hostname resolves to Traffic Server, which acts as the real
 origin server). The reverse proxy feature is also called server
-acceleration. Reverse proxy is described in more detail in :ref:`reverse-proxy-and-http-redirects`.
+acceleration. Reverse proxy is described in more detail in
+:ref:`reverse-proxy-and-http-redirects`.
 
 Traffic Server in a Cache Hierarchy
 -----------------------------------
@@ -121,29 +121,31 @@ as a parent or a child cache to other Traffic Server systems or to
 similar caching products.
 
 Traffic Server supports ICP (Internet Cache Protocol) peering.
-Hierarchical caching is described in more detail in :ref:`hierarchical-caching`.
+Hierarchical caching is described in more detail in :ref:`admin-hierarchical-caching`.
 
 Deployment Limitations
 ----------------------
 
-There's a number of deployment options that Traffic Server does not support right out
-of the box. Such funcionality may be implemented in a plugin, but in some cases
-Traffic Server's internal APIs or architectural restrictions won't make it easy:
+There are a number of deployment options that Traffic Server does not support
+right out of the box. Such functionality may be implemented in a plugin, but
+in some cases Traffic Server's internal APIs or architectural restrictions
+won't make it easy:
 
 * Load Balancing - note that there is an experimental plugin for this: :ref:`balancer-plugin`.
+
+.. XXX needs re-work: the leadin states there's "a number" of scenarios, and then only lists one -- one's a number, but not much of a list
 
 Traffic Server Components
 =========================
 
 Traffic Server consists of several components that work together to form
-a web proxy cache you can easily monitor and configure. These main
-components are described below.
+a web proxy cache you can easily monitor and configure.
 
 The Traffic Server Cache
 ------------------------
 
 The Traffic Server cache consists of a high-speed object database called
-the object store. The object store indexes objects according to URLs and
+the *object store*. The object store indexes objects according to URLs and
 associated headers. Using sophisticated object management, the object
 store can cache alternate versions of the same object (perhaps in a
 different language or encoding type). It can also efficiently store very
@@ -157,7 +159,7 @@ entire disk as corrupt and continues to use remaining disks. If all of
 the cache disks fail, then Traffic Server switches to proxy-only mode.
 You can partition the cache to reserve a certain amount of disk space
 for storing data for specific protocols and origin servers. For more
-information about the cache, see :ref:`configuring-the-cache`.
+information about the cache, see :ref:`admin-configuring-the-cache`.
 
 The RAM Cache
 -------------
@@ -165,8 +167,8 @@ The RAM Cache
 Traffic Server maintains a small RAM cache that contains extremely
 popular objects. This RAM cache serves the most popular objects as fast
 as possible and reduces load on disks, especially during temporary
-traffic peaks. You can configure the RAM cache size to suit your needs;
-for detailed information, refer to :ref:`changing-the-size-of-the-ram-cache`.
+traffic peaks. You can configure the RAM cache size to suit your needs.
+For detailed information, refer to :ref:`changing-the-size-of-the-ram-cache`.
 
 The Host Database
 -----------------
@@ -177,11 +179,13 @@ user requests. This information is used to adapt future protocol
 interactions and optimize performance. Along with other information, the
 host database tracks:
 
--  DNS information (for fast conversion of hostnames to IP addresses)
+-  DNS information (for fast conversion of hostnames to IP addresses).
+
 -  The HTTP version of each host (so advanced protocol features can be
-   used with hosts running modern servers)
+   used with hosts running modern servers).
+
 -  Host reliability and availability information (so users will not wait
-   for servers that are not running)
+   for servers that are not running).
 
 The DNS Resolver
 ----------------
@@ -197,8 +201,7 @@ Traffic Server Processes
 ------------------------
 
 Traffic Server contains three processes that work together to serve
-requests and manage/control/monitor the health of the system. The three
-processes are described below:
+requests and manage, control, and monitor the health of the system.
 
 -  The :program:`traffic_server` process is the transaction processing engine
    of Traffic Server. It is responsible for accepting connections,
@@ -223,9 +226,9 @@ processes are described below:
 -  The :program:`traffic_cop` process monitors the health of both the
    :program:`traffic_server` and :program:`traffic_manager` processes. The
    :program:`traffic_cop` process periodically (several times each minute)
-   queries the :program:`traffic_server` and :program:`traffic_manager` process by
-   issuing heartbeat requests to fetch synthetic web pages. In the event
-   of failure (if no response is received within a timeout interval or
+   queries the :program:`traffic_server` and :program:`traffic_manager`
+   processes by issuing heartbeat requests to fetch synthetic web pages. In the
+   event of failure (if no response is received within a timeout interval or
    if an incorrect response is received), :program:`traffic_cop` restarts the
    :program:`traffic_manager` and :program:`traffic_server` processes.
 
@@ -242,19 +245,22 @@ Administration Tools
 
 Traffic Server offers the following administration options:
 
--  The Traffic Line command-line interface is a text-based interface
-   from which you can monitor Traffic Server performance and network
-   traffic, as well as configure the Traffic Server system. From Traffic
-   Line, you can execute individual commands or script a series of
+-  The Traffic Line (:program:`traffic_line`) command-line interface is a
+   text-based interface from which you can monitor Traffic Server performance
+   and network traffic, as well as configure the Traffic Server system. From
+   Traffic Line, you can execute individual commands or script a series of
    commands in a shell.
--  The Traffic Shell command-line interface is an additional
-   command-line tool that enables you to execute individual commands
+
+-  The Traffic Shell (:program:`traffic_shell`) command-line interface is an
+   additional command-line tool that enables you to execute individual commands
    that monitor and configure the Traffic Server system.
+
 -  Various configuration files enable you to configure Traffic Server
    through a simple file-editing and signal-handling interface. Any
    changes you make through Traffic Line or Traffic Shell are
    automatically made to the configuration files as well.
--  Finally there is a clean C API which can be put to good use from a
+
+-  Finally, there is a clean C API which can be put to good use from a
    multitude of languages. The Traffic Server Admin Client demonstrates
    this for Perl.
 
@@ -273,7 +279,7 @@ monitoring:
    clients used the Traffic Server cache, how much information each of
    them requested, and what pages were most popular. You can also see
    why a particular transaction was in error and what state the Traffic
-   Server was in at a particular time; for example, you can see that
+   Server was in at a particular time. For example, you can see that
    Traffic Server was restarted or that cluster communication timed out.
 
    Traffic Server supports several standard log file formats, such as
@@ -295,17 +301,21 @@ computers on the network. Using the security options, you can do the
 following:
 
 -  Control client access to the Traffic Server proxy cache.
+
 -  Configure Traffic Server to use multiple DNS servers to match your
    site's security configuration. For example, Traffic Server can use
    different DNS servers, depending on whether it needs to resolve
    hostnames located inside or outside a firewall. This enables you to
    keep your internal network configuration secure while continuing to
    provide transparent access to external sites on the Internet.
+
 -  Configure Traffic Server to verify that clients are authenticated
    before they can access content from the Traffic Server cache.
+
 -  Secure connections in reverse proxy mode between a client and Traffic
    Server, and Traffic Server and the origin server, using the SSL
    termination option.
+
 -  Control access via SSL (Secure Sockets Layer).
 
 Traffic Server security options are described in more detail in
@@ -314,6 +324,6 @@ Traffic Server security options are described in more detail in
 Tuning Traffic Server
 =====================
 
-Finally this last chapter on :ref:`performance-tuning` discusses the vast
-number of options that allow to optimally tune Apache Traffic Server for
-maximum performance.
+Finally, this last chapter on :ref:`performance-tuning` discusses the vast
+number of options that allow administrators to optimally tune Apache Traffic
+Server for maximum performance.

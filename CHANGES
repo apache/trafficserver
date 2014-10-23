@@ -145,6 +145,8 @@ Changes with Apache Traffic Server 5.2.0
   *) [TS-2970] Fix assertions with transparent pass through.
    Author: Susan Hinrichs <shinrich@network-geographics.com>
 
+  *) [TS-3150] atscppapi should support streaming HTTP fetch
+
 Changes with Apache Traffic Server 5.1.0
 
   *) [TS-2993] Update ats_pagespeed towards PSOL 1.8.31.4-stable.

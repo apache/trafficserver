@@ -103,10 +103,10 @@ The following list shows ``LogFormat`` specifications.
     -  FIRST
     -  LAST
 
-.. _LogFilters:
+.. _LogFilter:
 
-LogFilters
-==========
+LogFilter
+=========
 
 The following list shows the ``LogFilter`` specifications.
 
