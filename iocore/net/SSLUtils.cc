@@ -102,12 +102,13 @@ struct ssl_user_config
   SSLCertContext::Option opt;
 };
 
+SSLSessionCache *session_cache; // declared extern in P_SSLConfig.h
+
 // Check if the ticket_key callback #define is available, and if so, enable session tickets.
 #ifdef SSL_CTX_set_tlsext_ticket_key_cb
 
 #define HAVE_OPENSSL_SESSION_TICKETS 1
 
-SSLSessionCache *session_cache; // declared extern in P_SSLConfig.h
 static void session_ticket_free(void *, void *, CRYPTO_EX_DATA *, int, long, void *);
 static int ssl_callback_session_ticket(SSL *, unsigned char *, unsigned char *, EVP_CIPHER_CTX *, HMAC_CTX *, int);
 #endif /* SSL_CTX_set_tlsext_ticket_key_cb */
