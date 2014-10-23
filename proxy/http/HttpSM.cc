@@ -3351,22 +3351,13 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer * p)
   IOBufferReader* buf_start;
 
   switch (event) {
-  case VC_EVENT_EOS:
-    // My reading of spec says that user agents can not terminate
-    //  posts with a half close so this is an error
-  case VC_EVENT_ERROR:
   case VC_EVENT_INACTIVITY_TIMEOUT:
   case VC_EVENT_ACTIVE_TIMEOUT:
-    //  Did not complete post tunnling.  Abort the
-    //   server and close the ua
-    p->handler_state = HTTP_SM_POST_UA_FAIL;
-    set_ua_abort(HttpTransact::ABORTED, event);
-
     if (t_state.http_config_param->send_408_post_timeout_response && client_response_hdr_bytes == 0) {
+      p->handler_state = HTTP_SM_POST_UA_FAIL;
+      set_ua_abort(HttpTransact::ABORTED, event);
+
       switch (event) {
-        case VC_EVENT_ERROR:
-          HttpTransact::build_error_response(&t_state, HTTP_STATUS_INTERNAL_SERVER_ERROR, "POST Error", "default", NULL);
-          break;
         case VC_EVENT_INACTIVITY_TIMEOUT:
           HttpTransact::build_error_response(&t_state, HTTP_STATUS_REQUEST_TIMEOUT, "POST Request timeout", "timeout#inactivity", NULL);
           break;
@@ -3377,6 +3368,10 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer * p)
 
       // send back 408 request timeout
       alloc_index = buffer_size_to_index (len_408_request_timeout_response + t_state.internal_msg_buffer_size);
+      if (ua_entry->write_buffer) {
+        free_MIOBuffer(ua_entry->write_buffer);
+        ua_entry->write_buffer = NULL;
+      }
       ua_entry->write_buffer = new_MIOBuffer(alloc_index);
       buf_start = ua_entry->write_buffer->alloc_reader();
 
@@ -3389,6 +3384,15 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer * p)
       p->vc->do_io_shutdown(IO_SHUTDOWN_READ);
       return 0;
     }
+    // fall through
+  case VC_EVENT_EOS:
+    // My reading of spec says that user agents can not terminate
+    //  posts with a half close so this is an error
+  case VC_EVENT_ERROR:
+    //  Did not complete post tunnling.  Abort the
+    //   server and close the ua
+    p->handler_state = HTTP_SM_POST_UA_FAIL;
+    set_ua_abort(HttpTransact::ABORTED, event);
 
     tunnel.chain_abort_all(p);
     p->read_vio = NULL;
