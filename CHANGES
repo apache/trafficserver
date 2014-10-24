@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.2.0
 
+  *) [TS-3152] stop offerring HTTP/2 over TLS by default.
+
   *) [TS-3060] Fix memory leak in cleaning up tunnel resources
 
   *) [TS-3147] Improvements fo ESI plugin.

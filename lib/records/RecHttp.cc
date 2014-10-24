@@ -596,6 +596,9 @@ ts_session_protocol_well_known_name_indices_init()
   SPDY_PROTOCOL_SET.markIn(TS_NPN_PROTOCOL_INDEX_SPDY_3_1);
 
   DEFAULT_TLS_SESSION_PROTOCOL_SET.markAllIn();
+  // Don't enable HTTP/2 by default until it is stable.
+  DEFAULT_TLS_SESSION_PROTOCOL_SET.markOut(HTTP2_PROTOCOL_SET);
+
   DEFAULT_NON_TLS_SESSION_PROTOCOL_SET = HTTP_PROTOCOL_SET;
 }
 
