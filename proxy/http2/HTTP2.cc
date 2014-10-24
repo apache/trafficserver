@@ -367,7 +367,7 @@ convert_from_1_1_to_2_header(HTTPHdr* in, uint8_t* out, uint64_t out_len, Http2H
   for (field = in->iter_get_first(&field_iter); field != NULL; field = in->iter_get_next(&field_iter)) {
     do {
       MIMEFieldWrapper header(field, in->m_heap, in->m_http->m_fields_impl);
-      if ((len = encode_literal_header_field(p, end, header, INC_INDEXING)) == -1) {
+      if ((len = encode_literal_header_field(p, end, header, HPACK_FIELD_INDEXED_LITERAL)) == -1) {
         return -1;
       }
       p += len;
@@ -397,16 +397,26 @@ http2_parse_header_fragment(HTTPHdr * hdr, IOVec iov, Http2HeaderTable& header_t
     // decode a header field encoded by HPACK
     MIMEField *field = mime_field_create(heap, hh->m_fields_impl);
     MIMEFieldWrapper header(field, heap, hh->m_fields_impl);
-    if (*cursor & 0x80) {
+    HpackFieldType ftype = hpack_parse_field_type(*cursor);
+
+    switch (ftype) {
+    case HPACK_FIELD_INDEX:
       if ((read_bytes = decode_indexed_header_field(header, cursor, buf_end, header_table)) == -1) {
         return PARSE_ERROR;
       }
       cursor += read_bytes;
-    } else {
+      break;
+    case HPACK_FIELD_INDEXED_LITERAL:
+    case HPACK_FIELD_NOINDEX_LITERAL:
+    case HPACK_FIELD_NEVERINDEX_LITERAL:
       if ((read_bytes = decode_literal_header_field(header, cursor, buf_end, header_table)) == -1) {
         return PARSE_ERROR;
       }
       cursor += read_bytes;
+      break;
+    case HPACK_FIELD_TABLESIZE_UPDATE:
+      // XXX not supported yet
+      return PARSE_ERROR;
     }
 
     // Store to HdrHeap
@@ -472,19 +482,19 @@ const static struct {
   char* raw_name;
   char* raw_value;
   int index;
-  HEADER_INDEXING_TYPE type;
+  HpackFieldType type;
   uint8_t* encoded_field;
   int encoded_field_len;
 } literal_test_case[] = {
-  { (char*)"custom-key", (char*)"custom-header", 0, INC_INDEXING, (uint8_t*)"\x40\x0a" "custom-key\x0d" "custom-header", 26 },
-  { (char*)"custom-key", (char*)"custom-header", 0, WITHOUT_INDEXING, (uint8_t*)"\x00\x0a" "custom-key\x0d" "custom-header", 26 },
-  { (char*)"custom-key", (char*)"custom-header", 0, NEVER_INDEXED, (uint8_t*)"\x10\x0a" "custom-key\x0d" "custom-header", 26 },
-  { (char*)":path", (char*)"/sample/path", 4, INC_INDEXING, (uint8_t*)"\x44\x0c" "/sample/path", 14 },
-  { (char*)":path", (char*)"/sample/path", 4, WITHOUT_INDEXING, (uint8_t*)"\x04\x0c" "/sample/path", 14 },
-  { (char*)":path", (char*)"/sample/path", 4, NEVER_INDEXED, (uint8_t*)"\x14\x0c" "/sample/path", 14 },
-  { (char*)"password", (char*)"secret", 0, INC_INDEXING, (uint8_t*)"\x40\x08" "password\x06" "secret", 17 },
-  { (char*)"password", (char*)"secret", 0, WITHOUT_INDEXING, (uint8_t*)"\x00\x08" "password\x06" "secret", 17 },
-  { (char*)"password", (char*)"secret", 0, NEVER_INDEXED, (uint8_t*)"\x10\x08" "password\x06" "secret", 17 }
+  { (char*)"custom-key", (char*)"custom-header", 0, HPACK_FIELD_INDEXED_LITERAL, (uint8_t*)"\x40\x0a" "custom-key\x0d" "custom-header", 26 },
+  { (char*)"custom-key", (char*)"custom-header", 0, HPACK_FIELD_NOINDEX_LITERAL, (uint8_t*)"\x00\x0a" "custom-key\x0d" "custom-header", 26 },
+  { (char*)"custom-key", (char*)"custom-header", 0, HPACK_FIELD_NEVERINDEX_LITERAL, (uint8_t*)"\x10\x0a" "custom-key\x0d" "custom-header", 26 },
+  { (char*)":path", (char*)"/sample/path", 4, HPACK_FIELD_INDEXED_LITERAL, (uint8_t*)"\x44\x0c" "/sample/path", 14 },
+  { (char*)":path", (char*)"/sample/path", 4, HPACK_FIELD_NOINDEX_LITERAL, (uint8_t*)"\x04\x0c" "/sample/path", 14 },
+  { (char*)":path", (char*)"/sample/path", 4, HPACK_FIELD_NEVERINDEX_LITERAL, (uint8_t*)"\x14\x0c" "/sample/path", 14 },
+  { (char*)"password", (char*)"secret", 0, HPACK_FIELD_INDEXED_LITERAL, (uint8_t*)"\x40\x08" "password\x06" "secret", 17 },
+  { (char*)"password", (char*)"secret", 0, HPACK_FIELD_NOINDEX_LITERAL, (uint8_t*)"\x00\x08" "password\x06" "secret", 17 },
+  { (char*)"password", (char*)"secret", 0, HPACK_FIELD_NEVERINDEX_LITERAL, (uint8_t*)"\x10\x08" "password\x06" "secret", 17 }
 };
 
 // D.3.  Request Examples without Huffman Coding - D.3.1.  First Request

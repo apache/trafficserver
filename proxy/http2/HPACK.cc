@@ -264,6 +264,32 @@ Http2HeaderTable::add_header_field(const MIMEField * field)
   }
 }
 
+// The first byte of an HPACK field unambiguously tells us what
+// kind of field it is. Field types are specified in the high 4 bits
+// and all bits are defined, so there's no way to get an invalid field type.
+HpackFieldType
+hpack_parse_field_type(uint8_t ftype)
+{
+  if (ftype & 0x80) {
+    return HPACK_FIELD_INDEX;
+  }
+
+  if (ftype & 0x40) {
+    return HPACK_FIELD_INDEXED_LITERAL;
+  }
+
+  if (ftype & 0x20) {
+    return HPACK_FIELD_TABLESIZE_UPDATE;
+  }
+
+  if (ftype & 0x10) {
+    return HPACK_FIELD_NEVERINDEX_LITERAL;
+  }
+
+  ink_assert((ftype & 0xf0) == 0x0);
+  return HPACK_FIELD_NOINDEX_LITERAL;
+}
+
 /*
  * Pseudo code
  *
@@ -335,29 +361,32 @@ encode_indexed_header_field(uint8_t *buf_start, const uint8_t *buf_end, uint32_t
   if (p+1 >= buf_end) {
     return -1;
   }
-  *p |= '\x80';
+
+  *p |= 0x80;
   p += len;
 
   return p - buf_start;
 }
 
 int64_t
-encode_literal_header_field(uint8_t *buf_start, const uint8_t *buf_end, const MIMEFieldWrapper& header, uint32_t index, HEADER_INDEXING_TYPE type)
+encode_literal_header_field(uint8_t *buf_start, const uint8_t *buf_end, const MIMEFieldWrapper& header, uint32_t index, HpackFieldType type)
 {
   uint8_t *p = buf_start;
   int64_t len;
   uint8_t prefix = 0, flag = 0;
 
+  ink_assert(hpack_field_is_literal(type));
+
   switch (type) {
-  case INC_INDEXING:
+  case HPACK_FIELD_INDEXED_LITERAL:
     prefix = 6;
     flag = 0x40;
     break;
-  case WITHOUT_INDEXING:
+  case HPACK_FIELD_NOINDEX_LITERAL:
     prefix = 4;
     flag = 0x00;
     break;
-  case NEVER_INDEXED:
+  case HPACK_FIELD_NEVERINDEX_LITERAL:
     prefix = 4;
     flag = 0x10;
     break;
@@ -387,21 +416,22 @@ encode_literal_header_field(uint8_t *buf_start, const uint8_t *buf_end, const MI
 }
 
 int64_t
-encode_literal_header_field(uint8_t *buf_start, const uint8_t *buf_end, const MIMEFieldWrapper& header, HEADER_INDEXING_TYPE type)
+encode_literal_header_field(uint8_t *buf_start, const uint8_t *buf_end, const MIMEFieldWrapper& header, HpackFieldType type)
 {
   uint8_t *p = buf_start;
   int64_t len;
   uint8_t flag = 0;
 
-  ink_assert(type >= INC_INDEXING && type <= NEVER_INDEXED);
+  ink_assert(hpack_field_is_literal(type));
+
   switch (type) {
-  case INC_INDEXING:
+  case HPACK_FIELD_INDEXED_LITERAL:
     flag = 0x40;
     break;
-  case WITHOUT_INDEXING:
+  case HPACK_FIELD_NOINDEX_LITERAL:
     flag = 0x00;
     break;
-  case NEVER_INDEXED:
+  case HPACK_FIELD_NEVERINDEX_LITERAL:
     flag = 0x10;
     break;
   default:
@@ -534,21 +564,25 @@ decode_literal_header_field(MIMEFieldWrapper& header, const uint8_t *buf_start, 
   bool isIncremental = false;
   uint32_t index = 0;
   int64_t len = 0;
+  HpackFieldType ftype = hpack_parse_field_type(*p);
 
-  if (*p & 0x40) {
+  if (ftype == HPACK_FIELD_INDEXED_LITERAL) {
     // 7.2.1. index extraction based on Literal Header Field with Incremental Indexing
     len = decode_integer(index, p, buf_end, 6);
-    if (len == -1) return -1;
     isIncremental = true;
-  } else if (*p & 0x10) {
+  } else if (ftype == HPACK_FIELD_NEVERINDEX_LITERAL) {
     // 7.2.3. index extraction Literal Header Field Never Indexed
     len = decode_integer(index, p, buf_end, 4);
-    if (len == -1) return -1;
   } else {
     // 7.2.2. index extraction Literal Header Field without Indexing
+    ink_assert(ftype == HPACK_FIELD_NOINDEX_LITERAL);
     len = decode_integer(index, p, buf_end, 4);
-    if (len == -1) return -1;
   }
+
+  if (len == -1) {
+    return -1;
+  }
+
   p += len;
 
   if (index) {
