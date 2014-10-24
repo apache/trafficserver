@@ -27,6 +27,19 @@
 #include "libts.h"
 #include "HTTP.h"
 
+// Constant strings for pseudo headers of HPACK
+extern const char * HPACK_VALUE_SCHEME;
+extern const char * HPACK_VALUE_METHOD;
+extern const char * HPACK_VALUE_AUTHORITY;
+extern const char * HPACK_VALUE_PATH;
+extern const char * HPACK_VALUE_STATUS;
+
+extern const unsigned HPACK_LEN_SCHEME;
+extern const unsigned HPACK_LEN_METHOD;
+extern const unsigned HPACK_LEN_AUTHORITY;
+extern const unsigned HPACK_LEN_PATH;
+extern const unsigned HPACK_LEN_STATUS;
+
 enum HEADER_INDEXING_TYPE {
   INC_INDEXING,
   WITHOUT_INDEXING,
@@ -102,6 +115,15 @@ private:
   MIMEHdr *         _mhdr;
   Vec<MIMEField *>  _headers;
 };
+
+int64_t
+encode_integer(uint8_t *buf_start, const uint8_t *buf_end, uint32_t value, uint8_t n);
+int64_t
+decode_integer(uint32_t& dst, const uint8_t *buf_start, const uint8_t *buf_end, uint8_t n);
+int64_t
+encode_string(uint8_t *buf_start, const uint8_t *buf_end, const char* value, size_t value_len);
+int64_t
+decode_string(char **c_str, uint32_t& c_str_length, const uint8_t *buf_start, const uint8_t *buf_end);
 
 int64_t
 encode_indexed_header_field(uint8_t *buf_start, const uint8_t *buf_end, uint32_t index);

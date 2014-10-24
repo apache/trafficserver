@@ -22,6 +22,8 @@
  */
 
 #include "HTTP2.h"
+#include "HPACK.h"
+#include "HuffmanCodec.h"
 #include "ink_assert.h"
 
 const char * const HTTP2_CONNECTION_PREFACE = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n";
@@ -267,3 +269,506 @@ http2_parse_settings_parameter(IOVec iov, Http2SettingsParameter& param)
 
   return true;
 }
+
+MIMEParseResult
+convert_from_2_to_1_1_header(HTTPHdr* headers)
+{
+  MIMEField* field;
+
+  ink_assert(http_hdr_type_get(headers->m_http) != HTTP_TYPE_UNKNOWN);
+
+  if (http_hdr_type_get(headers->m_http) == HTTP_TYPE_REQUEST) {
+    const char *scheme, *authority, *path, *method;
+    int scheme_len, authority_len, path_len, method_len;
+
+    // Get values of :scheme, :authority and :path to assemble requested URL
+    if ((field = headers->field_find(HPACK_VALUE_SCHEME, HPACK_LEN_SCHEME)) != NULL) {
+      scheme = field->value_get(&scheme_len);
+    } else {
+      return PARSE_ERROR;
+    }
+
+    if ((field = headers->field_find(HPACK_VALUE_AUTHORITY, HPACK_LEN_AUTHORITY)) != NULL) {
+      authority = field->value_get(&authority_len);
+    } else {
+      return PARSE_ERROR;
+    }
+
+    if ((field = headers->field_find(HPACK_VALUE_PATH, HPACK_LEN_PATH)) != NULL) {
+      path = field->value_get(&path_len);
+    } else {
+      return PARSE_ERROR;
+    }
+
+    // Parse URL
+    Arena arena;
+    size_t url_length = scheme_len + 3 + authority_len + path_len;
+    char* url = arena.str_alloc(url_length);
+    const char* url_start = url;
+    strncpy(url, scheme, scheme_len);
+    strncpy(url+scheme_len, "://", 3);
+    strncpy(url+scheme_len+3, authority, authority_len);
+    strncpy(url+scheme_len+3+authority_len, path, path_len);
+    url_parse(headers->m_heap, headers->m_http->u.req.m_url_impl, &url_start, url + url_length, 1);
+    arena.str_free(url);
+
+    // Get value of :method
+    if ((field = headers->field_find(HPACK_VALUE_METHOD, HPACK_LEN_METHOD)) != NULL) {
+      method = field->value_get(&method_len);
+
+      int method_wks_idx = hdrtoken_tokenize(method, method_len);
+      http_hdr_method_set(headers->m_heap, headers->m_http,
+                          method, method_wks_idx, method_len, 0);
+    } else {
+      return PARSE_ERROR;
+    }
+
+    // Convert HTTP version to 1.1
+    int32_t version = HTTP_VERSION(1, 1);
+    http_hdr_version_set(headers->m_http, version);
+
+    // Remove HTTP/2 style headers
+    headers->field_delete(HPACK_VALUE_SCHEME, HPACK_LEN_SCHEME);
+    headers->field_delete(HPACK_VALUE_METHOD, HPACK_LEN_METHOD);
+    headers->field_delete(HPACK_VALUE_AUTHORITY, HPACK_LEN_AUTHORITY);
+    headers->field_delete(HPACK_VALUE_PATH, HPACK_LEN_PATH);
+  } else {
+    int status_len;
+    const char* status;
+
+    if ((field = headers->field_find(HPACK_VALUE_STATUS, HPACK_LEN_STATUS)) != NULL) {
+      status = field->value_get(&status_len);
+      headers->status_set(http_parse_status(status, status + status_len));
+    } else {
+      return PARSE_ERROR;
+    }
+
+    // Remove HTTP/2 style headers
+    headers->field_delete(HPACK_VALUE_STATUS, HPACK_LEN_STATUS);
+  }
+
+  return PARSE_DONE;
+}
+
+int64_t
+convert_from_1_1_to_2_header(HTTPHdr* in, uint8_t* out, uint64_t out_len, Http2HeaderTable& /* header_table */)
+{
+  uint8_t *p = out;
+  uint8_t *end = out + out_len;
+  int64_t len;
+
+  ink_assert(http_hdr_type_get(in->m_http) != HTTP_TYPE_UNKNOWN);
+
+  // TODO Get a index value from the tables for the header field, and then choose a representation type.
+  // TODO Each indexing types per field should be passed by a caller, HTTP/2 implementation.
+
+  MIMEField* field;
+  MIMEFieldIter field_iter;
+  for (field = in->iter_get_first(&field_iter); field != NULL; field = in->iter_get_next(&field_iter)) {
+    do {
+      MIMEFieldWrapper header(field, in->m_heap, in->m_http->m_fields_impl);
+      if ((len = encode_literal_header_field(p, end, header, INC_INDEXING)) == -1) {
+        return -1;
+      }
+      p += len;
+    } while (field->has_dups() && (field = field->m_next_dup) != NULL);
+  }
+
+  return p - out;
+}
+
+MIMEParseResult
+http2_parse_header_fragment(HTTPHdr * hdr, IOVec iov, Http2HeaderTable& header_table)
+{
+  uint8_t * buf_start = (uint8_t *)iov.iov_base;
+  uint8_t * buf_end = (uint8_t *)iov.iov_base + iov.iov_len;
+
+  uint8_t * cursor = buf_start;
+  HdrHeap * heap = hdr->m_heap;
+  HTTPHdrImpl * hh = hdr->m_http;
+
+  do {
+    int64_t read_bytes = 0;
+
+    if ((read_bytes = update_header_table_size(cursor, buf_end, header_table)) == -1) {
+      return PARSE_ERROR;
+    }
+
+    // decode a header field encoded by HPACK
+    MIMEField *field = mime_field_create(heap, hh->m_fields_impl);
+    MIMEFieldWrapper header(field, heap, hh->m_fields_impl);
+    if (*cursor & 0x80) {
+      if ((read_bytes = decode_indexed_header_field(header, cursor, buf_end, header_table)) == -1) {
+        return PARSE_ERROR;
+      }
+      cursor += read_bytes;
+    } else {
+      if ((read_bytes = decode_literal_header_field(header, cursor, buf_end, header_table)) == -1) {
+        return PARSE_ERROR;
+      }
+      cursor += read_bytes;
+    }
+
+    // Store to HdrHeap
+    mime_hdr_field_attach(hh->m_fields_impl, field, 1, NULL);
+  } while (cursor < buf_end);
+
+  return PARSE_DONE;
+}
+
+#if TS_HAS_TESTS
+
+#include "TestBox.h"
+
+// Constants for regression test
+const static int BUFSIZE_FOR_REGRESSION_TEST = 128;
+const static int MAX_TEST_FIELD_NUM = 8;
+
+/***********************************************************************************
+ *                                                                                 *
+ *                   Test cases for regression test                                *
+ *                                                                                 *
+ * Some test cases are based on examples of specification.                         *
+ * http://tools.ietf.org/html/draft-ietf-httpbis-header-compression-09#appendix-D  *
+ *                                                                                 *
+ ***********************************************************************************/
+
+// D.1.  Integer Representation Examples
+const static struct {
+  uint32_t raw_integer;
+  uint8_t* encoded_field;
+  int encoded_field_len;
+  int prefix;
+} integer_test_case[] = {
+  { 10, (uint8_t*)"\x0A", 1, 5 },
+  { 1337, (uint8_t*)"\x1F\x9A\x0A", 3, 5 },
+  { 42, (uint8_t*)"\x2A", 1, 8 }
+};
+
+// Example: custom-key: custom-header
+const static struct {
+  char* raw_string;
+  uint32_t raw_string_len;
+  uint8_t* encoded_field;
+  int encoded_field_len;
+} string_test_case[] = {
+  { (char*)"custom-key", 10, (uint8_t*)"\xA" "custom-key", 11 },
+  { (char*)"custom-key", 10, (uint8_t*)"\x88" "\x25\xa8\x49\xe9\x5b\xa9\x7d\x7f", 9 }
+};
+
+// D.2.4.  Indexed Header Field
+const static struct {
+  int index;
+  char* raw_name;
+  char* raw_value;
+  uint8_t* encoded_field;
+  int encoded_field_len;
+} indexed_test_case[] = {
+  { 2, (char*)":method", (char*)"GET", (uint8_t*)"\x82", 1 }
+};
+
+// D.2.  Header Field Representation Examples
+const static struct {
+  char* raw_name;
+  char* raw_value;
+  int index;
+  HEADER_INDEXING_TYPE type;
+  uint8_t* encoded_field;
+  int encoded_field_len;
+} literal_test_case[] = {
+  { (char*)"custom-key", (char*)"custom-header", 0, INC_INDEXING, (uint8_t*)"\x40\x0a" "custom-key\x0d" "custom-header", 26 },
+  { (char*)"custom-key", (char*)"custom-header", 0, WITHOUT_INDEXING, (uint8_t*)"\x00\x0a" "custom-key\x0d" "custom-header", 26 },
+  { (char*)"custom-key", (char*)"custom-header", 0, NEVER_INDEXED, (uint8_t*)"\x10\x0a" "custom-key\x0d" "custom-header", 26 },
+  { (char*)":path", (char*)"/sample/path", 4, INC_INDEXING, (uint8_t*)"\x44\x0c" "/sample/path", 14 },
+  { (char*)":path", (char*)"/sample/path", 4, WITHOUT_INDEXING, (uint8_t*)"\x04\x0c" "/sample/path", 14 },
+  { (char*)":path", (char*)"/sample/path", 4, NEVER_INDEXED, (uint8_t*)"\x14\x0c" "/sample/path", 14 },
+  { (char*)"password", (char*)"secret", 0, INC_INDEXING, (uint8_t*)"\x40\x08" "password\x06" "secret", 17 },
+  { (char*)"password", (char*)"secret", 0, WITHOUT_INDEXING, (uint8_t*)"\x00\x08" "password\x06" "secret", 17 },
+  { (char*)"password", (char*)"secret", 0, NEVER_INDEXED, (uint8_t*)"\x10\x08" "password\x06" "secret", 17 }
+};
+
+// D.3.  Request Examples without Huffman Coding - D.3.1.  First Request
+const static struct {
+  char* raw_name;
+  char* raw_value;
+} raw_field_test_case[][MAX_TEST_FIELD_NUM] = {
+  {
+    { (char*)":method",    (char*)"GET" },
+    { (char*)":scheme",    (char*)"http" },
+    { (char*)":path",      (char*)"/" },
+    { (char*)":authority", (char*)"www.example.com" },
+    { (char*)"", (char*)"" } // End of this test case
+  }
+};
+const static struct {
+  uint8_t* encoded_field;
+  int encoded_field_len;
+} encoded_field_test_case[] = {
+  {
+    (uint8_t*)"\x40" "\x7:method"    "\x3GET"
+              "\x40" "\x7:scheme"    "\x4http"
+              "\x40" "\x5:path"      "\x1/"
+              "\x40" "\xa:authority" "\xfwww.example.com",
+    64
+  }
+};
+
+/***********************************************************************************
+ *                                                                                 *
+ *                                Regression test codes                            *
+ *                                                                                 *
+ ***********************************************************************************/
+
+REGRESSION_TEST(HPACK_EncodeInteger)(RegressionTest * t, int, int *pstatus)
+{
+  TestBox box(t, pstatus);
+  box = REGRESSION_TEST_PASSED;
+  uint8_t buf[BUFSIZE_FOR_REGRESSION_TEST];
+
+  for (unsigned int i=0; i<sizeof(integer_test_case)/sizeof(integer_test_case[0]); i++) {
+    memset(buf, 0, BUFSIZE_FOR_REGRESSION_TEST);
+
+    int len = encode_integer(buf, buf+BUFSIZE_FOR_REGRESSION_TEST, integer_test_case[i].raw_integer, integer_test_case[i].prefix);
+
+    box.check(len == integer_test_case[i].encoded_field_len, "encoded length was %d, expecting %d",
+        len, integer_test_case[i].encoded_field_len);
+    box.check(memcmp(buf, integer_test_case[i].encoded_field, len) == 0, "encoded value was invalid");
+  }
+}
+
+REGRESSION_TEST(HPACK_EncodeString)(RegressionTest * t, int, int *pstatus)
+{
+  TestBox box(t, pstatus);
+  box = REGRESSION_TEST_PASSED;
+
+  uint8_t buf[BUFSIZE_FOR_REGRESSION_TEST];
+  int len;
+
+  // FIXME Current encoder don't support huffman conding.
+  for (unsigned int i=0; i<1; i++) {
+    memset(buf, 0, BUFSIZE_FOR_REGRESSION_TEST);
+
+    len = encode_string(buf, buf+BUFSIZE_FOR_REGRESSION_TEST, string_test_case[i].raw_string, string_test_case[i].raw_string_len);
+
+    box.check(len == string_test_case[i].encoded_field_len, "encoded length was %d, expecting %d",
+        len, integer_test_case[i].encoded_field_len);
+    box.check(memcmp(buf, string_test_case[i].encoded_field, len) == 0, "encoded string was invalid");
+  }
+}
+
+REGRESSION_TEST(HPACK_EncodeIndexedHeaderField)(RegressionTest * t, int, int *pstatus)
+{
+  TestBox box(t, pstatus);
+  box = REGRESSION_TEST_PASSED;
+
+  uint8_t buf[BUFSIZE_FOR_REGRESSION_TEST];
+
+  for (unsigned int i=0; i<sizeof(indexed_test_case)/sizeof(indexed_test_case[0]); i++) {
+    memset(buf, 0, BUFSIZE_FOR_REGRESSION_TEST);
+
+    int len = encode_indexed_header_field(buf, buf+BUFSIZE_FOR_REGRESSION_TEST, indexed_test_case[i].index);
+
+    box.check(len == indexed_test_case[i].encoded_field_len, "encoded length was %d, expecting %d",
+        len, indexed_test_case[i].encoded_field_len);
+    box.check(memcmp(buf, indexed_test_case[i].encoded_field, len) == 0, "encoded value was invalid");
+  }
+}
+
+REGRESSION_TEST(HPACK_EncodeLiteralHeaderField)(RegressionTest * t, int, int *pstatus)
+{
+  TestBox box(t, pstatus);
+  box = REGRESSION_TEST_PASSED;
+
+  uint8_t buf[BUFSIZE_FOR_REGRESSION_TEST];
+  int len;
+
+  for (unsigned int i=0; i<sizeof(literal_test_case)/sizeof(literal_test_case[0]); i++) {
+    memset(buf, 0, BUFSIZE_FOR_REGRESSION_TEST);
+
+    HTTPHdr* headers = new HTTPHdr();
+    headers->create(HTTP_TYPE_RESPONSE);
+    MIMEField *field = mime_field_create(headers->m_heap, headers->m_http->m_fields_impl);
+    MIMEFieldWrapper header(field, headers->m_heap, headers->m_http->m_fields_impl);
+
+    header.value_set(literal_test_case[i].raw_value, strlen(literal_test_case[i].raw_value));
+    if (literal_test_case[i].index > 0) {
+      len = encode_literal_header_field(buf, buf+BUFSIZE_FOR_REGRESSION_TEST, header, literal_test_case[i].index, literal_test_case[i].type);
+    } else {
+      header.name_set(literal_test_case[i].raw_name, strlen(literal_test_case[i].raw_name));
+      len = encode_literal_header_field(buf, buf+BUFSIZE_FOR_REGRESSION_TEST, header, literal_test_case[i].type);
+    }
+
+    box.check(len == literal_test_case[i].encoded_field_len, "encoded length was %d, expecting %d", len, literal_test_case[i].encoded_field_len);
+    box.check(memcmp(buf, literal_test_case[i].encoded_field, len) == 0, "encoded value was invalid");
+  }
+
+}
+
+REGRESSION_TEST(HPACK_Encode)(RegressionTest * t, int, int *pstatus)
+{
+  TestBox box(t, pstatus);
+  box = REGRESSION_TEST_PASSED;
+
+  uint8_t buf[BUFSIZE_FOR_REGRESSION_TEST];
+  Http2HeaderTable header_table;
+
+  // FIXME Current encoder don't support indexing.
+  for (unsigned int i=0; i<sizeof(encoded_field_test_case)/sizeof(encoded_field_test_case[0]); i++) {
+    HTTPHdr* headers = new HTTPHdr();
+    headers->create(HTTP_TYPE_REQUEST);
+
+    for (unsigned int j=0; j<sizeof(raw_field_test_case[i])/sizeof(raw_field_test_case[i][0]); j++) {
+      const char* expected_name  = raw_field_test_case[i][j].raw_name;
+      const char* expected_value = raw_field_test_case[i][j].raw_value;
+      if (strlen(expected_name) == 0) break;
+
+      MIMEField* field = mime_field_create(headers->m_heap, headers->m_http->m_fields_impl);
+      mime_field_name_value_set(headers->m_heap, headers->m_http->m_fields_impl, field, -1,
+          expected_name,  strlen(expected_name), expected_value, strlen(expected_value),
+          true, strlen(expected_name) + strlen(expected_value), 1);
+      mime_hdr_field_attach(headers->m_http->m_fields_impl, field, 1, NULL);
+    }
+
+    memset(buf, 0, BUFSIZE_FOR_REGRESSION_TEST);
+    int len = convert_from_1_1_to_2_header(headers, buf, BUFSIZE_FOR_REGRESSION_TEST, header_table);
+
+    box.check(len == encoded_field_test_case[i].encoded_field_len, "encoded length was %d, expecting %d",
+        len, encoded_field_test_case[i].encoded_field_len);
+    box.check(memcmp(buf, encoded_field_test_case[i].encoded_field, len) == 0, "encoded value was invalid");
+  }
+}
+
+REGRESSION_TEST(HPACK_DecodeInteger)(RegressionTest * t, int, int *pstatus)
+{
+  TestBox box(t, pstatus);
+  box = REGRESSION_TEST_PASSED;
+
+  uint32_t actual;
+
+  for (unsigned int i=0; i<sizeof(integer_test_case)/sizeof(integer_test_case[0]); i++) {
+    int len = decode_integer(actual, integer_test_case[i].encoded_field,
+        integer_test_case[i].encoded_field + integer_test_case[i].encoded_field_len,
+        integer_test_case[i].prefix);
+
+    box.check(len == integer_test_case[i].encoded_field_len, "decoded length was %d, expecting %d",
+        len, integer_test_case[i].encoded_field_len);
+    box.check(actual == integer_test_case[i].raw_integer, "decoded value was %d, expected %d",
+        actual, integer_test_case[i].raw_integer);
+  }
+}
+
+REGRESSION_TEST(HPACK_DecodeString)(RegressionTest * t, int, int *pstatus)
+{
+  TestBox box(t, pstatus);
+  box = REGRESSION_TEST_PASSED;
+
+  char* actual;
+  uint32_t actual_len;
+
+  hpack_huffman_init();
+
+  for (unsigned int i=0; i<sizeof(string_test_case)/sizeof(string_test_case[0]); i++) {
+    int len = decode_string(&actual, actual_len, string_test_case[i].encoded_field,
+        string_test_case[i].encoded_field + string_test_case[i].encoded_field_len);
+
+    box.check(len == string_test_case[i].encoded_field_len, "decoded length was %d, expecting %d",
+        len, string_test_case[i].encoded_field_len);
+    box.check(actual_len == string_test_case[i].raw_string_len, "length of decoded string was %d, expecting %d",
+        actual_len, string_test_case[i].raw_string_len);
+    box.check(memcmp(actual, string_test_case[i].raw_string, actual_len) == 0, "decoded string was invalid");
+
+    ats_free(actual);
+  }
+}
+
+REGRESSION_TEST(HPACK_DecodeIndexedHeaderField)(RegressionTest * t, int, int *pstatus)
+{
+  TestBox box(t, pstatus);
+  box = REGRESSION_TEST_PASSED;
+
+  Http2HeaderTable header_table;
+
+  for (unsigned int i=0; i<sizeof(indexed_test_case)/sizeof(indexed_test_case[0]); i++) {
+    HTTPHdr* headers = new HTTPHdr();
+    headers->create(HTTP_TYPE_REQUEST);
+    MIMEField *field = mime_field_create(headers->m_heap, headers->m_http->m_fields_impl);
+    MIMEFieldWrapper header(field, headers->m_heap, headers->m_http->m_fields_impl);
+
+    int len = decode_indexed_header_field(header, indexed_test_case[i].encoded_field,
+        indexed_test_case[i].encoded_field+indexed_test_case[i].encoded_field_len, header_table);
+
+    box.check(len == indexed_test_case[i].encoded_field_len, "decoded length was %d, expecting %d",
+        len, indexed_test_case[i].encoded_field_len);
+
+    int name_len;
+    const char* name = header.name_get(&name_len);
+    box.check(memcmp(name, indexed_test_case[i].raw_name, name_len) == 0,
+      "decoded header name was invalid");
+
+    int actual_value_len;
+    const char* actual_value = header.value_get(&actual_value_len);
+    box.check(memcmp(actual_value, indexed_test_case[i].raw_value, actual_value_len) == 0,
+      "decoded header value was invalid");
+  }
+}
+
+REGRESSION_TEST(HPACK_DecodeLiteralHeaderField)(RegressionTest * t, int, int *pstatus)
+{
+  TestBox box(t, pstatus);
+  box = REGRESSION_TEST_PASSED;
+
+  Http2HeaderTable header_table;
+
+  for (unsigned int i=0; i<sizeof(literal_test_case)/sizeof(literal_test_case[0]); i++) {
+    HTTPHdr* headers = new HTTPHdr();
+    headers->create(HTTP_TYPE_REQUEST);
+    MIMEField *field = mime_field_create(headers->m_heap, headers->m_http->m_fields_impl);
+    MIMEFieldWrapper header(field, headers->m_heap, headers->m_http->m_fields_impl);
+
+    int len = decode_literal_header_field(header, literal_test_case[i].encoded_field,
+        literal_test_case[i].encoded_field+literal_test_case[i].encoded_field_len, header_table);
+
+    box.check(len == literal_test_case[i].encoded_field_len, "decoded length was %d, expecting %d",
+        len, literal_test_case[i].encoded_field_len);
+
+    int name_len;
+    const char* name = header.name_get(&name_len);
+    box.check(memcmp(name, literal_test_case[i].raw_name, name_len) == 0,
+      "decoded header name was invalid");
+
+    int actual_value_len;
+    const char* actual_value = header.value_get(&actual_value_len);
+    box.check(memcmp(actual_value, literal_test_case[i].raw_value, actual_value_len) == 0,
+      "decoded header value was invalid");
+  }
+}
+
+REGRESSION_TEST(HPACK_Decode)(RegressionTest * t, int, int *pstatus)
+{
+  TestBox box(t, pstatus);
+  box = REGRESSION_TEST_PASSED;
+
+  Http2HeaderTable header_table;
+
+  for (unsigned int i=0; i<sizeof(encoded_field_test_case)/sizeof(encoded_field_test_case[0]); i++) {
+    HTTPHdr* headers = new HTTPHdr();
+    headers->create(HTTP_TYPE_REQUEST);
+
+    http2_parse_header_fragment(headers, make_iovec(encoded_field_test_case[i].encoded_field, encoded_field_test_case[i].encoded_field_len), header_table);
+
+    for (unsigned int j=0; j<sizeof(raw_field_test_case[i])/sizeof(raw_field_test_case[i][0]); j++) {
+      const char* expected_name  = raw_field_test_case[i][j].raw_name;
+      const char* expected_value = raw_field_test_case[i][j].raw_value;
+      if (strlen(expected_name) == 0) break;
+
+      MIMEField* field = headers->field_find(expected_name, strlen(expected_name));
+      box.check(field != NULL, "A MIMEField that has \"%s\" as name doesn't exist", expected_name);
+
+      int actual_value_len;
+      const char* actual_value = field->value_get(&actual_value_len);
+      box.check(strncmp(expected_value, actual_value, actual_value_len) == 0, "A MIMEField that has \"%s\" as value doesn't exist", expected_value);
+    }
+  }
+}
+
+#endif /* TS_HAS_TESTS */

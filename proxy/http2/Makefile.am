@@ -34,7 +34,15 @@ AM_CPPFLAGS = \
 noinst_LIBRARIES = libhttp2.a
 
 libhttp2_a_SOURCES = \
+  HPACK.cc \
+  HPACK.h \
   HTTP2.cc \
+  HTTP2.h \
   Http2ClientSession.cc \
+  Http2ClientSession.h \
   Http2ConnectionState.cc \
-  Http2SessionAccept.cc
+  Http2ConnectionState.h \
+  Http2SessionAccept.cc \
+  Http2SessionAccept.h \
+  HuffmanCodec.cc \
+  HuffmanCodec.h

@@ -41,9 +41,7 @@ libhdrs_a_SOURCES = \
   MIME.cc \
   MIME.h \
   URL.cc \
-  URL.h \
-  HPACKHuffman.cc \
-  HPACK.cc
+  URL.h
 
 if BUILD_TESTS
   libhdrs_a_SOURCES += \

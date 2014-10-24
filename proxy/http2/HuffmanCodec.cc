@@ -21,15 +21,16 @@
   limitations under the License.
  */
 
-#include "HPACKHuffman.h"
+#include "HuffmanCodec.h"
 #include "libts.h"
 
-const size_t HUFFMAN_TABLE_ENTRY_NUM = 257;
-
-const static struct {
+struct huffman_entry
+{
   uint32_t code_as_hex;
   uint32_t bit_len;
-} huffman_table[] = {
+};
+
+static const huffman_entry huffman_table[] = {
   {0x1ff8, 13},
   {0x7fffd8, 23},
   {0xfffffe2, 28},
@@ -313,7 +314,7 @@ make_huffman_tree()
   Node* current;
   uint32_t bit_len;
   // insert leafs for each ascii code
-  for (unsigned i = 0; i < HUFFMAN_TABLE_ENTRY_NUM; i++){
+  for (unsigned i = 0; i < countof(huffman_table); i++){
     bit_len = huffman_table[i].bit_len;
     current = root;
     while (bit_len > 0){

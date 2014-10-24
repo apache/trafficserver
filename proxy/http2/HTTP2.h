@@ -26,6 +26,10 @@
 
 #include "ink_defs.h"
 #include "ink_memory.h"
+#include "HPACK.h"
+#include "MIME.h"
+
+class HTTPHdr;
 
 typedef unsigned Http2StreamId;
 
@@ -249,5 +253,14 @@ http2_settings_parameter_is_valid(const Http2SettingsParameter&);
 
 bool
 http2_parse_settings_parameter(IOVec, Http2SettingsParameter&);
+
+MIMEParseResult
+http2_parse_header_fragment(HTTPHdr *, IOVec, Http2HeaderTable&);
+
+MIMEParseResult
+convert_from_2_to_1_1_header(HTTPHdr * header);
+
+int64_t
+convert_from_1_1_to_2_header(HTTPHdr * in, uint8_t * out, uint64_t out_len, Http2HeaderTable& header_table);
 
 #endif /* __HTTP2_H__ */
