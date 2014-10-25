@@ -28,10 +28,9 @@
 #include "I_RecProcess.h"
 #include "RecordsConfig.h"
 
-int VersionFlag;
-
 const ArgumentDescription argument_descriptions[] = {
-{"version", 'V', "Print version Id", "T", &VersionFlag, NULL, NULL},
+  HELP_ARGUMENT_DESCRIPTION(),
+  VERSION_ARGUMENT_DESCRIPTION()
 };
 
 static void
@@ -57,13 +56,7 @@ main(int /* argc ATS_UNUSED */, char **argv)
           __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
 
   // Process command line arguments and dump into variables
-  process_args(argument_descriptions, countof(argument_descriptions), argv);
-
-  // check for the version number request
-  if (VersionFlag) {
-    ink_fputln(stderr, appVersionInfo.FullVersionInfoStr);
-    exit(0);
-  }
+  process_args(&appVersionInfo, argument_descriptions, countof(argument_descriptions), argv);
 
   Layout::create();
   RecProcessInit(RECM_STAND_ALONE, NULL /* diags */);

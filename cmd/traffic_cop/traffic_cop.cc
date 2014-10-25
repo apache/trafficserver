@@ -80,7 +80,6 @@ static int coresig = 0;
 
 static int debug_flag = false;
 static int stdout_flag = false;
-static int version_flag = false;
 static int stop_flag = false;
 
 static char* admin_user;
@@ -1765,7 +1764,8 @@ static const ArgumentDescription argument_descriptions[] = {
   { "debug", 'd', "Enable debug logging", "F", &debug_flag, NULL, NULL },
   { "stdout", 'o', "Print log messages to standard output", "F", &stdout_flag, NULL, NULL },
   { "stop", 's', "Send child processes SIGSTOP instead of SIGKILL", "F", &stop_flag, NULL, NULL },
-  { "version", 'V', "Print Version String", "T", &version_flag, NULL, NULL},
+  HELP_ARGUMENT_DESCRIPTION(),
+  VERSION_ARGUMENT_DESCRIPTION()
 };
 
 int
@@ -1777,13 +1777,7 @@ main(int /* argc */, char *argv[])
   // Before accessing file system initialize Layout engine
   Layout::create();
 
-  process_args(argument_descriptions, countof(argument_descriptions), argv);
-
-  // Check for version number request
-  if (version_flag) {
-    fprintf(stderr, "%s\n", appVersionInfo.FullVersionInfoStr);
-    exit(0);
-  }
+  process_args(&appVersionInfo, argument_descriptions, countof(argument_descriptions), argv);
 
   if (stop_flag) {
     cop_log_trace("Cool! I think I'll be a STOP cop!");

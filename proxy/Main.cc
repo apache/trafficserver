@@ -102,7 +102,6 @@ extern "C" int plock(int);
 #define DEFAULT_COMMAND_FLAG              0
 
 #define DEFAULT_VERBOSE_FLAG              0
-#define DEFAULT_VERSION_FLAG              0
 #define DEFAULT_STACK_TRACE_FLAG          0
 
 #if DEFAULT_COMMAND_FLAG
@@ -119,8 +118,6 @@ static const long MAX_LOGIN =  sysconf(_SC_LOGIN_NAME_MAX) <= 0 ? _POSIX_LOGIN_N
 static void * mgmt_restart_shutdown_callback(void *, char *, int data_len);
 static void*  mgmt_storage_device_cmd_callback(void* x, char* data, int len);
 static void init_ssl_ctx_callback(void *ctx, bool server);
-
-static int version_flag = DEFAULT_VERSION_FLAG;
 
 static int num_of_net_threads = ink_number_of_processors();
 static int num_of_udp_threads = 0;
@@ -174,7 +171,6 @@ static const ArgumentDescription argument_descriptions[] = {
    "PROXY_HTTP_ACCEPT_PORT", NULL},
   {"cluster_port", 'P', "Cluster Port Number", "I", &cluster_port_number, "PROXY_CLUSTER_PORT", NULL},
   {"dprintf_level", 'o', "Debug output level", "I", &cmd_line_dprintf_level, "PROXY_DPRINTF_LEVEL", NULL},
-  {"version", 'V', "Print Version String", "T", &version_flag, NULL, NULL},
 
 #if TS_HAS_TESTS
   {"regression", 'R',
@@ -210,7 +206,8 @@ static const ArgumentDescription argument_descriptions[] = {
 
   {"accept_mss", ' ', "MSS for client connections", "I", &accept_mss, NULL, NULL},
   {"poll_timeout", 't', "poll timeout in milliseconds", "I", &poll_timeout, NULL, NULL},
-  {"help", 'h', "HELP!", NULL, NULL, NULL, usage},
+  HELP_ARGUMENT_DESCRIPTION(),
+  VERSION_ARGUMENT_DESCRIPTION()
 };
 
 //
@@ -1243,13 +1240,7 @@ main(int /* argc ATS_UNUSED */, char **argv)
   Layout::create();
   chdir_root(); // change directory to the install root of traffic server.
 
-  process_args(argument_descriptions, countof(argument_descriptions), argv);
-
-  // Check for version number request
-  if (version_flag) {
-    fprintf(stderr, "%s\n", appVersionInfo.FullVersionInfoStr);
-    _exit(0);
-  }
+  process_args(&appVersionInfo, argument_descriptions, countof(argument_descriptions), argv);
 
   // Set stdout/stdin to be unbuffered
   setbuf(stdout, NULL);

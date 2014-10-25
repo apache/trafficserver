@@ -34,6 +34,7 @@ Process arguments
 #define MAX_FILE_ARGUMENTS 100
 
 struct ArgumentDescription;
+class AppVersionInfo;
 
 typedef void ArgumentFunction(const ArgumentDescription * argument_descriptions, unsigned n_argument_descriptions, const char *arg);
 
@@ -59,6 +60,9 @@ struct ArgumentDescription
   ArgumentFunction *pfn;
 };
 
+#define VERSION_ARGUMENT_DESCRIPTION() {"version", 'V', "Print version string", NULL, NULL, NULL, NULL}
+#define HELP_ARGUMENT_DESCRIPTION() {"help", 'h', "Print usage information", NULL, NULL, NULL, usage}
+
 /* Global Data
 */
 extern const char *file_arguments[];  // exported by process_args()
@@ -73,7 +77,7 @@ void usage(const ArgumentDescription * argument_descriptions, unsigned n_argumen
 
 /* Process all arguments
 */
-void process_args(const ArgumentDescription * argument_descriptions,
+void process_args(const AppVersionInfo * appinfo, const ArgumentDescription * argument_descriptions,
                   unsigned n_argument_descriptions, char **argv, const char *usage_string = 0);
 
 #endif /*_INK_ARGS_H*/

@@ -637,12 +637,10 @@ struct CommandLineArgs
   int urls;			// Produce JSON output of URL stats, arg is LRU size
   int show_urls;		// Max URLs to show
   int as_object;		// Show the URL stats as a single JSON object (not array)
-  int version;
-  int help;
 
   CommandLineArgs()
     : max_origins(0), min_hits(0), max_age(0), line_len(DEFAULT_LINE_LEN), incremental(0),
-      tail(0), summary(0), json(0), cgi(0), urls(0), show_urls(0), as_object(0), version(0), help(0)
+      tail(0), summary(0), json(0), cgi(0), urls(0), show_urls(0), as_object(0)
   {
     log_file[0] = '\0';
     origin_file[0] = '\0';
@@ -656,7 +654,6 @@ struct CommandLineArgs
 static CommandLineArgs cl;
 
 static ArgumentDescription argument_descriptions[] = {
-  {"help", 'h', "Give this help", "T", &cl.help, NULL, NULL},
   {"log_file", 'f', "Specific logfile to parse", "S1023", cl.log_file, NULL, NULL},
   {"origin_list", 'o', "Only show stats for listed Origins", "S4095", cl.origin_list, NULL, NULL},
   {"origin_file", 'O', "File listing Origins to show", "S1023", cl.origin_file, NULL, NULL},
@@ -674,7 +671,8 @@ static ArgumentDescription argument_descriptions[] = {
   {"max_age", 'a', "Max age for log entries to be considered", "I", &cl.max_age, NULL, NULL},
   {"line_len", 'l', "Output line length", "I", &cl.line_len, NULL, NULL},
   {"debug_tags", 'T', "Colon-Separated Debug Tags", "S1023", &error_tags, NULL, NULL},
-  {"version", 'V', "Print Version Id", "T", &cl.version, NULL, NULL},
+  HELP_ARGUMENT_DESCRIPTION(),
+  VERSION_ARGUMENT_DESCRIPTION()
 };
 
 static const char *USAGE_LINE =
@@ -684,7 +682,7 @@ void
 CommandLineArgs::parse_arguments(char** argv)
 {
   // process command-line arguments
-  process_args(argument_descriptions, countof(argument_descriptions), argv, USAGE_LINE);
+  process_args(&appVersionInfo, argument_descriptions, countof(argument_descriptions), argv, USAGE_LINE);
 
   // Process as "CGI" ?
   if (strstr(argv[0], ".cgi") || cgi) {
@@ -727,18 +725,6 @@ CommandLineArgs::parse_arguments(char** argv)
         tok = strtok_r(NULL, "&", &sep_ptr);
       }
     }
-  }
-
-  // check for the version number request
-  if (version) {
-    std::cerr << appVersionInfo.FullVersionInfoStr << std::endl;
-    _exit(0);
-  }
-
-  // check for help request
-  if (help) {
-    usage(argument_descriptions, countof(argument_descriptions), USAGE_LINE);
-    _exit(0);
   }
 }
 
@@ -2292,7 +2278,7 @@ main(int /* argc ATS_UNUSED */, char *argv[])
   struct flock lck;
 
   // build the application information structure
-  appVersionInfo.setup(PACKAGE_NAME,PROGRAM_NAME, PACKAGE_VERSION, __DATE__, __TIME__,
+  appVersionInfo.setup(PACKAGE_NAME, PROGRAM_NAME, PACKAGE_VERSION, __DATE__, __TIME__,
                        BUILD_MACHINE, BUILD_PERSON, "");
 
   // Before accessing file system initialize Layout engine

@@ -57,6 +57,7 @@
 #include "ParseRules.h"
 #include "ink_time.h"
 #include "ink_args.h"
+#include "I_Version.h"
 
 /*
  FTP - Traffic Server Template
@@ -86,16 +87,6 @@
 #define CLIENT_BUFSIZE             2048
 #define MAX_BUFSIZE                (65536 + 4096)
 
-//#define RETRY_CLIENT_WRITE_ERRORS
-#define VERSION_NUM "$Revision: 1.94 $"
-#if defined(BUILD_PERSON) && defined(BUILD_MACHINE)
-#define JTEST_VERSION ("JTest Version %s - " __DATE__ " " __TIME__ \
-                 " (" BUILD_PERSON "@" BUILD_MACHINE ")\n" )
-#else
-#define JTEST_VERSION ("JTest Version %s - " __DATE__ " " __TIME__ "\n")
-#endif
-// #define PRINT_LOCAL_PORT
-
 //
 // Contants
 //
@@ -109,6 +100,8 @@
 #define MAX_DEFERED_URLS      10000
 #define DEFERED_URLS_BLOCK    2000
 
+static AppVersionInfo appVersionInfo;
+
 static const char * hexdigits = "0123456789ABCDEFabcdef";
 static const char * dontunescapify = "#;/?+=&:@%";
 static const char * dontescapify = "#;/?+=&:@~.-_%";
@@ -121,9 +114,6 @@ enum FTP_MODE {
 
 typedef int (*accept_fn_t)(int);
 typedef int (*poll_cb)(int);
-
-static void jtest_usage(const ArgumentDescription * argument_descriptions,
-                        unsigned n_argument_descriptions, const char * arg);
 
 static int read_request(int sock);
 static int write_request(int sock);
@@ -193,7 +183,6 @@ static int fullpage = 0;
 static int show_before = 0;
 static int show_headers = 0;
 static int server_keepalive = 4;
-static int version = 0;
 static int urls_mode = 0;
 static int pipeline = 1;
 static int hostrequest = 0;
@@ -315,7 +304,6 @@ static const ArgumentDescription argument_descriptions[] = {
    "JTEST_BANDWIDTH_TEST",NULL},
   {"drop_after_CL",'T',"Drop after Content-Length","F",
    &drop_after_CL, "JTEST_DROP",NULL},
-  {"version",'V',"Version","F",&version,"JTEST_VERSION",NULL},
   {"verbose",'v',"Verbose Flag","F",&verbose,"JTEST_VERBOSE",NULL},
   {"verbose_errors",'E',"Verbose Errors Flag","f",&verbose_errors,
    "JTEST_VERBOSE_ERRORS",NULL},
@@ -355,7 +343,8 @@ static const ArgumentDescription argument_descriptions[] = {
   {"evo_rate",'9',"Evolving Hotset Rate (evolutions/hour)","D",
    &evo_rate,"JTEST_EVOLVING_HOTSET_RATE",NULL},
   {"debug",'d',"Debug Flag","F",&debug,"JTEST_DEBUG",NULL},
-  {"help",'h',"Help",NULL,NULL,NULL,jtest_usage}
+  HELP_ARGUMENT_DESCRIPTION(),
+  VERSION_ARGUMENT_DESCRIPTION()
 };
 int n_argument_descriptions = countof(argument_descriptions);
 
@@ -537,21 +526,6 @@ static inline void append_string(char *dest, const char *src, int *offset_ptr,
 }
 
 // End Library functions
-
-static void show_version() {
-  char b[] = VERSION_NUM;
-  char * v = strchr(b,':');
-  v += 2;
-  *strchr(v,'$') = 0;
-  printf(JTEST_VERSION, v);
-}
-
-static void jtest_usage(const ArgumentDescription * argument_descriptions,
-                 unsigned n_argument_descriptions, const char * arg)
-{
-  show_version();
-  usage(argument_descriptions, n_argument_descriptions, arg);
-}
 
 static void panic(const char * s) {
   fputs(s, stderr);
@@ -2861,7 +2835,10 @@ static FILE * get_defered_urls(FILE * fp) {
   return fp;
 }
 
-int main(int argc __attribute__((unused)), char *argv[]) {
+int main(int argc __attribute__((unused)), char *argv[])
+{
+  appVersionInfo.setup(PACKAGE_NAME, "jtest", PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
+
   /* for QA -- we want to be able to tail an output file
    * during execution "nohup jtest -P pxy -p prt &"
    */
@@ -2869,11 +2846,8 @@ int main(int argc __attribute__((unused)), char *argv[]) {
 
   fd = (FD*)malloc(MAXFDS * sizeof(FD));
   memset(fd,0,MAXFDS*sizeof(FD));
-  process_args(argument_descriptions, n_argument_descriptions, argv);
-  if (version) {
-    show_version();
-    exit(0);
-  }
+  process_args(&appVersionInfo, argument_descriptions, n_argument_descriptions, argv);
+
   if (!drand_seed)
     srand48((long)time(NULL));
   else

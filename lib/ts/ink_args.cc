@@ -56,11 +56,23 @@ static const char *argument_types_descriptions[] = {
 // Functions
 //
 
+static bool
+arg_is_version_flag(const ArgumentDescription * arg)
+{
+  return strcmp(arg->name, "version") == 0 && arg->key == 'V';
+}
+
 static void
-process_arg(const ArgumentDescription * argument_descriptions,
+process_arg(const AppVersionInfo * appinfo, const ArgumentDescription * argument_descriptions,
             unsigned n_argument_descriptions, int i, char ***argv, const char *usage_string)
 {
   char *arg = NULL;
+
+  if (arg_is_version_flag(&argument_descriptions[i])) {
+    ink_fputln(stdout, appinfo->FullVersionInfoStr);
+    exit(0);
+  }
+
   if (argument_descriptions[i].type) {
     char type = argument_descriptions[i].type[0];
     if (type == 'F' || type == 'f')
@@ -136,7 +148,7 @@ show_argument_configuration(const ArgumentDescription * argument_descriptions, u
 }
 
 void
-process_args(const ArgumentDescription * argument_descriptions, unsigned n_argument_descriptions, char **argv, const char *usage_string)
+process_args(const AppVersionInfo * appinfo, const ArgumentDescription * argument_descriptions, unsigned n_argument_descriptions, char **argv, const char *usage_string)
 {
   unsigned i = 0;
   //
@@ -168,14 +180,14 @@ process_args(const ArgumentDescription * argument_descriptions, unsigned n_argum
   //
   // Grab Command Line Arguments
   //
-  program_name = argv[0];
+  program_name = appinfo->AppStr;
   while (*++argv) {
     if (**argv == '-') {
       if ((*argv)[1] == '-') {
         for (i = 0; i < n_argument_descriptions; i++)
           if (!strcmp(argument_descriptions[i].name, (*argv) + 2)) {
             *argv += strlen(*argv) - 1;
-            process_arg(argument_descriptions, n_argument_descriptions, i, &argv, usage_string);
+            process_arg(appinfo, argument_descriptions, n_argument_descriptions, i, &argv, usage_string);
             break;
           }
         if (i >= n_argument_descriptions)
@@ -184,11 +196,12 @@ process_args(const ArgumentDescription * argument_descriptions, unsigned n_argum
         while (*++(*argv))
           for (i = 0; i < n_argument_descriptions; i++)
             if (argument_descriptions[i].key == **argv) {
-              process_arg(argument_descriptions, n_argument_descriptions, i, &argv, usage_string);
+              process_arg(appinfo, argument_descriptions, n_argument_descriptions, i, &argv, usage_string);
               break;
             }
-        if (i >= n_argument_descriptions)
+        if (i >= n_argument_descriptions) {
           usage(argument_descriptions, n_argument_descriptions, usage_string);
+        }
       }
     } else {
       if (n_file_arguments >= countof(file_arguments)) {
@@ -234,17 +247,25 @@ usage(const ArgumentDescription * argument_descriptions, unsigned n_argument_des
     case 'L':
       fprintf(stderr, " %-9" PRId64 "", *(int64_t *) argument_descriptions[i].location);
       break;
-    case 'S':
-      if (*(char *) argument_descriptions[i].location) {
-        if (strlen((char *) argument_descriptions[i].location) < 10)
-          fprintf(stderr, " %-9s", (char *) argument_descriptions[i].location);
-        else {
-          ((char *) argument_descriptions[i].location)[7] = 0;
-          fprintf(stderr, " %-7s..", (char *) argument_descriptions[i].location);
+    case 'S': {
+      char * location;
+      if (argument_descriptions[i].type[1] == '*') {
+        location = *(char **)argument_descriptions[i].location;
+      } else {
+        location = (char *)argument_descriptions[i].location;
+      }
+
+      if (location) {
+        if (strlen(location) < 10) {
+          fprintf(stderr, " %-9s", location);
+        } else {
+          fprintf(stderr, " %-7.7s..", location);
         }
-      } else
+      } else {
         fprintf(stderr, " (null)   ");
+      }
       break;
+    }
     case 'D':
       fprintf(stderr, " %-9.3f", *(double *) argument_descriptions[i].location);
       break;
@@ -254,7 +275,11 @@ usage(const ArgumentDescription * argument_descriptions, unsigned n_argument_des
     case 'T':
     case 'f':
     case 'F':
-      fprintf(stderr, " %-9s", *(int *) argument_descriptions[i].location ? "true " : "false");
+      if (argument_descriptions[i].location) {
+        fprintf(stderr, " %-9s", *(int *) argument_descriptions[i].location ? "true " : "false");
+      } else {
+        fprintf(stderr, " %-9s", "false");
+      }
       break;
     }
     fprintf(stderr, " %s\n", argument_descriptions[i].description);

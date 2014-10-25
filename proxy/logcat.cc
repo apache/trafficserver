@@ -46,8 +46,6 @@
 #include "Log.h"
 
 // logcat-specific command-line flags
-static int version_flag = 0;
-static int help = 0;
 static int squid_flag = 0;
 static int follow_flag = 0;
 static int clf_flag = 0;
@@ -61,28 +59,17 @@ int auto_clear_cache_flag = 0;
 static const ArgumentDescription argument_descriptions[] = {
 
   {"output_file", 'o', "Specify output file", "S1023", &output_file, NULL, NULL},
-  {"auto_filenames", 'a', "Automatically generate output names",
-   "T", &auto_filenames, NULL, NULL},
+  {"auto_filenames", 'a', "Automatically generate output names", "T", &auto_filenames, NULL, NULL},
   {"follow", 'f', "Follow the log file as it grows", "T", &follow_flag, NULL, NULL},
   {"clf", 'C', "Convert to Common Logging Format", "T", &clf_flag, NULL, NULL},
   {"elf", 'E', "Convert to Extended Logging Format", "T", &elf_flag, NULL, NULL},
-  {"help", 'h', "Give this help", "T", &help, NULL, NULL},
   {"squid", 'S', "Convert to Squid Logging Format", "T", &squid_flag, NULL, NULL},
   {"debug_tags", 'T', "Colon-Separated Debug Tags", "S1023", error_tags, NULL, NULL},
-  {"version", 'V', "Print Version Id", "T", &version_flag, NULL, NULL},
-  {"overwrite_output", 'w', "Overwrite existing output file(s)", "T",
-   &overwrite_existing_file, NULL, NULL},
-  {"elf2", '2', "Convert to Extended2 Logging Format", "T", &elf2_flag, NULL,
-   NULL}
+  {"overwrite_output", 'w', "Overwrite existing output file(s)", "T", &overwrite_existing_file, NULL, NULL},
+  {"elf2", '2', "Convert to Extended2 Logging Format", "T", &elf2_flag, NULL, NULL},
+  HELP_ARGUMENT_DESCRIPTION(),
+  VERSION_ARGUMENT_DESCRIPTION()
 };
-
-static const char *USAGE_LINE = "Usage: " PROGRAM_NAME " [-o output-file | -a] [-CEhS"
-#ifdef DEBUG
-  "T"
-#endif
-  "Vw2] [input-file ...]";
-
-
 
 static int
 process_file(int in_fd, int out_fd)
@@ -238,20 +225,8 @@ main(int /* argc ATS_UNUSED */, char *argv[])
   // process command-line arguments
   //
   output_file[0] = 0;
-  process_args(argument_descriptions, countof(argument_descriptions), argv, USAGE_LINE);
+  process_args(&appVersionInfo, argument_descriptions, countof(argument_descriptions), argv);
 
-  // check for the version number request
-  //
-  if (version_flag) {
-    fprintf(stderr, "%s\n", appVersionInfo.FullVersionInfoStr);
-    _exit(NO_ERROR);
-  }
-  // check for help request
-  //
-  if (help) {
-    usage(argument_descriptions, countof(argument_descriptions), USAGE_LINE);
-    _exit(NO_ERROR);
-  }
   // check that only one of the -o and -a options was specified
   //
   if (output_file[0] != 0 && auto_filenames) {
