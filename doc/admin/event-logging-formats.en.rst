@@ -294,6 +294,11 @@ The following list describes Traffic Server custom logging fields.
     The proxy hierarchy route; the route Traffic Server used to retrieve
     the object.
 
+.. _php:
+
+``php``
+    The TCP port number that Traffic Server served this request from.
+
 .. _piid:
 
 ``piid``

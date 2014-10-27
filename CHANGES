@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.2.0
 
+  *) [TS-3154] Add proxy port access log tag as 'php'.
+   Author: Acácio Centeno <acaciocenteno@gmail.com>
+
   *) [TS-3152] stop offerring HTTP/2 over TLS by default.
 
   *) [TS-3060] Fix memory leak in cleaning up tunnel resources

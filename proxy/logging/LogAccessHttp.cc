@@ -696,6 +696,18 @@ LogAccessHttp::marshal_proxy_finish_status_code(char *buf)
 }
 
 /*-------------------------------------------------------------------------
+-------------------------------------------------------------------------*/
+int
+LogAccessHttp::marshal_proxy_host_port(char *buf)
+{
+  if (buf) {
+    uint16_t port = m_http_sm->t_state.request_data.incoming_port;
+    marshal_int(buf, port);
+  }
+  return INK_MIN_ALIGN;
+}
+
+/*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
 int
