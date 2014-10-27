@@ -62,7 +62,6 @@ FileManager *configFiles;
 
 static void fileUpdated(char *fname, bool incVersion);
 static void runAsUser(const char *userName);
-static void printUsage(void);
 
 #if defined(freebsd)
 extern "C" int getpwnam_r(const char *name, struct passwd *result, char *buffer, size_t buflen, struct passwd **resptr);
@@ -74,9 +73,9 @@ static AppVersionInfo appVersionInfo; // Build info for this application
 static inkcoreapi DiagsConfig *diagsConfig;
 static char debug_tags[1024] = "";
 static char action_tags[1024] = "";
-static bool proxy_on = true;
+static bool proxy_off = false;
 
-static char mgmt_path[PATH_NAME_MAX];
+static const char * mgmt_path = NULL;
 
 // By default, set the current directory as base
 static const char *recs_conf = "records.config";
@@ -293,7 +292,7 @@ chdir_root()
 }
 
 static void
-set_process_limits(int fds_throttle)
+set_process_limits(RecInt fds_throttle)
 {
   struct rlimit lim;
   rlim_t maxfiles;
@@ -375,13 +374,54 @@ millisleep(int ms)
 }
 
 int
-main(int argc, char **argv)
+main(int argc, const char **argv)
 {
   const long MAX_LOGIN = ink_login_name_max();
 
   // Before accessing file system initialize Layout engine
   Layout::create();
-  ink_strlcpy(mgmt_path, Layout::get()->sysconfdir, sizeof(mgmt_path));
+  mgmt_path =  Layout::get()->sysconfdir;
+
+  // Set up the application version info
+  appVersionInfo.setup(PACKAGE_NAME,"traffic_manager", PACKAGE_VERSION,
+                       __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
+
+  bool found = false;
+  int just_started = 0;
+  int cluster_mcport = -1, cluster_rsport = -1;
+  // TODO: This seems completely incomplete, disabled for now
+  //  int dump_config = 0, dump_process = 0, dump_node = 0, dump_cluster = 0, dump_local = 0;
+  char *proxy_port = 0;
+  int proxy_backdoor = -1;
+  char *group_addr = NULL, *tsArgs = NULL;
+  bool disable_syslog = false;
+  char userToRunAs[MAX_LOGIN + 1];
+  RecInt fds_throttle = -1;
+  time_t ticker;
+  ink_thread webThrId;
+
+  ArgumentDescription argument_descriptions[] = {
+    { "proxyOff", '-', "Disable proxy", "F", &proxy_off, NULL, NULL },
+    { "aconfPort", '-', "Autoconf port", "I", &aconf_port_arg, "MGMT_ACONF_PORT", NULL },
+    { "clusterMCPort", '-', "Cluster multicast port", "I", &cluster_mcport , "MGMT_CLUSTER_MC_PORT", NULL },
+    { "clusterRSPort", '-', "Cluster reliable service port", "I", &cluster_rsport , "MGMT_CLUSTER_RS_PORT", NULL },
+    { "groupAddr", '-', "Multicast group address", "S*", &group_addr, "MGMT_GROUP_ADDR", NULL },
+    { "path", '-', "Path to the management socket", "S*", &mgmt_path, NULL, NULL },
+    { "recordsConf", '-', "Path to records.config", "S*", &recs_conf, NULL, NULL },
+    { "tsArgs", '-', "Additional arguments for traffic_server", "S*", &tsArgs, NULL, NULL },
+    { "proxyPort", '-', "HTTP port descriptor", "S*", &proxy_port, NULL, NULL },
+    { "proxyBackDoor", '-', "Management port", "I", &proxy_backdoor, NULL, NULL },
+#if TS_USE_DIAGS
+    { "debug", 'T', "Vertical-bar-separated Debug Tags", "S1023", debug_tags, NULL, NULL},
+    { "action", 'B', "Vertical-bar-separated Behavior Tags", "S1023", action_tags, NULL, NULL},
+#endif
+    { "nosyslog", '-', "Do not log to syslog", "F", &disable_syslog, NULL, NULL },
+    HELP_ARGUMENT_DESCRIPTION(),
+    VERSION_ARGUMENT_DESCRIPTION()
+  };
+
+  // Process command line arguments and dump into variables
+  process_args(&appVersionInfo, argument_descriptions, countof(argument_descriptions), argv);
 
   // change the directory to the "root" directory
   chdir_root();
@@ -395,145 +435,10 @@ main(int argc, char **argv)
   if (status != 0)
     perror("WARNING: can't line buffer stderr");
 
-  bool found = false;
-  int just_started = 0;
-  int cluster_mcport = -1, cluster_rsport = -1;
-  // TODO: This seems completely incomplete, disabled for now
-  //  int dump_config = 0, dump_process = 0, dump_node = 0, dump_cluster = 0, dump_local = 0;
-  char *proxy_port = 0;
-  int proxy_backdoor = -1;
-  char *envVar = NULL, *group_addr = NULL, *tsArgs = NULL;
-  bool log_to_syslog = true;
-  char userToRunAs[MAX_LOGIN + 1];
-  RecInt fds_throttle = -1;
-  time_t ticker;
-  ink_thread webThrId;
-
-  // Set up the application version info
-  appVersionInfo.setup(PACKAGE_NAME, "traffic_manager", PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
   initSignalHandlers();
 
-  // Process Environment Variables
-  if ((envVar = getenv("MGMT_ACONF_PORT")) != NULL) {
-    aconf_port_arg = atoi(envVar);
-  }
-
-  if ((envVar = getenv("MGMT_CLUSTER_MC_PORT")) != NULL) {
-    cluster_mcport = atoi(envVar);
-  }
-
-  if ((envVar = getenv("MGMT_CLUSTER_RS_PORT")) != NULL) {
-    cluster_rsport = atoi(envVar);
-  }
-
-  if ((envVar = getenv("MGMT_GROUP_ADDR")) != NULL) {
-    group_addr = envVar;
-  }
-
-  for (int i = 1; i < argc; i++) { /* Process command line args */
-
-    if (argv[i][0] == '-') {
-      if ((strcmp(argv[i], "-version") == 0) || (strcmp(argv[i], "-V") == 0)) {
-        fprintf(stderr, "%s\n", appVersionInfo.FullVersionInfoStr);
-        exit(0);
-      } else if (strcmp(argv[i], "-proxyOff") == 0) {
-        proxy_on = false;
-      } else if (strcmp(argv[i], "-nosyslog") == 0) {
-        log_to_syslog = false;
-      } else {
-        // The rest of the options require an argument in the form of -<Flag> <val>
-        if ((i + 1) < argc) {
-          if (strcmp(argv[i], "-aconfPort") == 0) {
-            ++i;
-            aconf_port_arg = atoi(argv[i]);
-          } else if (strcmp(argv[i], "-clusterMCPort") == 0) {
-            ++i;
-            cluster_mcport = atoi(argv[i]);
-          } else if (strcmp(argv[i], "-groupAddr") == 0) {
-            ++i;
-            group_addr = argv[i];
-          } else if (strcmp(argv[i], "-clusterRSPort") == 0) {
-            ++i;
-            cluster_rsport = atoi(argv[i]);
-#if TS_USE_DIAGS
-          } else if (strcmp(argv[i], "-debug") == 0) {
-            ++i;
-            ink_strlcpy(debug_tags, argv[i], sizeof(debug_tags));
-          } else if (strcmp(argv[i], "-action") == 0) {
-            ++i;
-            ink_strlcpy(action_tags, argv[i], sizeof(debug_tags));
-#endif
-          } else if (strcmp(argv[i], "-path") == 0) {
-            ++i;
-            // bugfixed by YTS Team, yamsat(id-59703)
-            if ((strlen(argv[i]) > PATH_NAME_MAX)) {
-              fprintf(stderr, "\n   Path exceeded the maximum allowed characters.\n");
-              exit(1);
-            }
-
-            ink_strlcpy(mgmt_path, argv[i], sizeof(mgmt_path));
-            /*
-               } else if(strcmp(argv[i], "-lmConf") == 0) {
-               ++i;
-               lm_conf = argv[i];
-             */
-          } else if (strcmp(argv[i], "-recordsConf") == 0) {
-            ++i;
-            recs_conf = argv[i];
-// TODO: This seems completely incomplete, disabled for now
-#if 0
-          } else if (strcmp(argv[i], "-printRecords") == 0) {
-            ++i;
-            while (i < argc && argv[i][0] != '-') {
-              if (strcasecmp(argv[i], "config") == 0) {
-                dump_config = 1;
-              } else if (strcasecmp(argv[i], "process") == 0) {
-                dump_process = 1;
-              } else if (strcasecmp(argv[i], "node") == 0) {
-                dump_node = 1;
-              } else if (strcasecmp(argv[i], "cluster") == 0) {
-                dump_cluster = 1;
-              } else if (strcasecmp(argv[i], "local") == 0) {
-                dump_local = 1;
-              } else if (strcasecmp(argv[i], "all") == 0) {
-                dump_config = dump_node = dump_process = dump_cluster = dump_local = 1;
-              }
-              ++i;
-            }
-            --i;
-#endif
-          } else if (strcmp(argv[i], "-tsArgs") == 0) {
-            int size_of_args = 0, j = (++i);
-            while (j < argc) {
-              size_of_args += 1;
-              size_of_args += strlen((argv[j++]));
-            }
-            tsArgs = (char *)ats_malloc(size_of_args + 1);
-
-            j = 0;
-            while (i < argc) {
-              snprintf(&tsArgs[j], ((size_of_args + 1) - j), " %s", argv[i]);
-              j += strlen(argv[i]) + 1;
-              ++i;
-            }
-          } else if (strcmp(argv[i], "-proxyPort") == 0) {
-            ++i;
-            proxy_port = argv[i];
-          } else if (strcmp(argv[i], "-proxyBackDoor") == 0) {
-            ++i;
-            proxy_backdoor = atoi(argv[i]);
-          } else {
-            printUsage();
-          }
-        } else {
-          printUsage();
-        }
-      }
-    }
-  }
-
   // Bootstrap with LOG_DAEMON until we've read our configuration
-  if (log_to_syslog) {
+  if (!disable_syslog) {
     openlog("traffic_manager", LOG_PID | LOG_NDELAY | LOG_NOWAIT, LOG_DAEMON);
     mgmt_use_syslog();
     syslog(LOG_NOTICE, "NOTE: --- Manager Starting ---");
@@ -577,7 +482,7 @@ main(int argc, char **argv)
 #endif
   ts_host_res_global_init();
   ts_session_protocol_well_known_name_indices_init();
-  lmgmt = new LocalManager(proxy_on);
+  lmgmt = new LocalManager(proxy_off == false);
   RecLocalInitMessage();
   lmgmt->initAlarm();
 
@@ -611,7 +516,7 @@ main(int argc, char **argv)
   //    RecSetRecordString("proxy.node.version.manager.build_compile_flags",
   //                       appVersionInfo.BldCompileFlagsStr);
 
-  if (log_to_syslog) {
+  if (!disable_syslog) {
     char sys_var[] = "proxy.config.syslog_facility";
     char *facility_str = NULL;
     int facility_int;
@@ -956,48 +861,6 @@ static void
 SigChldHandler(int /* sig ATS_UNUSED */)
 {
 }
-
-void
-printUsage()
-{
-  fprintf(stderr, "----------------------------------------------------------------------------\n");
-  fprintf(stderr, " Traffic Manager Usage: (all args are optional)\n");
-  fprintf(stderr, "\n");
-  fprintf(stderr, "   traffic_manager [options]\n");
-  fprintf(stderr, "     -proxyPort     <port>  Port to have proxy listen on, overrides records.config.\n");
-  /* Function is currently #ifdef'ed out so no reason to advertise
-     fprintf(stderr,
-     "     -proxyBackdoor <port>  Port to put proxy mgmt port on.\n");
-   */
-  /* Commented out because this option is used for debugging only.
-     fprintf(stderr,
-     "     -noProxy               Do not launch the proxy process.\n");
-   */
-  fprintf(stderr, "     -tsArgs        [...]   Args to proxy, everything till eol is passed.\n");
-  fprintf(stderr, "     -webPort       <port>  Port for web interface.\n");
-  /*
-     fprintf(stderr,
-     "     -graphPort     <port>  Port for dynamic graphs.\n");
-   */
-  fprintf(stderr, "     -clusterPort   <port>  Cluster Multicast port\n");
-  fprintf(stderr, "     -groupAddr     <addr>  Cluster Multicast group, example: \"225.0.0.37\".\n");
-  fprintf(stderr, "     -clusterRSPort <port>  Cluster Multicast port.\n");
-  fprintf(stderr, "     -path          <path>  Root path for config files.\n");
-  /*
-     fprintf(stderr,
-     "     -lmConf        <fname> Local Management config file.\n");
-   */
-  fprintf(stderr, "     -recordsConf   <fname> General config file.\n");
-  // TODO: This seems completely incomplete, disabled for now
-  // fprintf(stderr, "     -printRecords  [...]   Print flags, default all are off.\n");
-  fprintf(stderr, "     -debug         <tags>  Enable the given debug tags\n");
-  fprintf(stderr, "     -action        <tags>  Enable the given action tags.\n");
-  fprintf(stderr, "     -version or -V         Print version id and exit.\n");
-  fprintf(stderr, "\n");
-  fprintf(stderr, "   [...] can be one+ of: [config process node cluster local all]\n");
-  fprintf(stderr, "----------------------------------------------------------------------------\n");
-  exit(0);
-} /* End printUsage */
 
 void
 fileUpdated(char *fname, bool incVersion)

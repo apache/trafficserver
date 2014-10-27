@@ -26,20 +26,21 @@ traffic_manager
 Description
 ===========
 
-.. option:: proxyOff
-.. option:: -nosyslog
-.. option:: -aconfPort PORT
-.. option:: -clusterMCPort PORT
-.. option:: -groupAddr ADDRESS
-.. option:: -clusterRSPort PORT
-.. option:: -debug TAGS
-.. option:: -action TAGS
-.. option:: -path FILE
-.. option:: -recordsConf FILE
-.. option:: -tsArgs ARGUMENTS
-.. option:: -proxyPort PORT
-.. option:: -proxyBackDoor PORT
-.. option:: -version
+.. option:: --aconfPort PORT
+.. option:: --action TAGS
+.. option:: --clusterMCPort PORT
+.. option:: --clusterRSPort PORT
+.. option:: --debug TAGS
+.. option:: --groupAddr ADDRESS
+.. option:: --help
+.. option:: --nosyslog
+.. option:: --path FILE
+.. option:: --proxyBackDoor PORT
+.. option:: --proxyOff
+.. option:: --proxyPort PORT
+.. option:: --recordsConf FILE
+.. option:: --tsArgs ARGUMENTS
+.. option:: --version
 
 Environment
 ===========
