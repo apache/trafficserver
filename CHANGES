@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-3158] Convert traffic_manager to use standard argument processing.
+
   *) [TS-3655] Forget to close netvc in regression test.
 
   *) [TS-3632] Add OPENSSL_INCLUDE and OPENSSL_LIBS in Makefile.am.
@@ -11,13 +13,13 @@ Changes with Apache Traffic Server 6.0.0
    Author: Gancho Tenev <gttenev@gmail.com>
 
   *) [TS-3560] Make proxy.config.http.slow.log.threshold overridable.
-  
+
   *) [TS-3635] Fix some ASAN memory issues.
 
   *) [TS-3642] Fix reading of proxy.config.http.share_server_sessions.
 
   *) [TS-3631] Add config option to limit post size.
- 
+
   *) [TS-3628] Unable to use disks larger than 16T.
 
   *) [TS-2080] Remove arbitrary 1 year max age limit on the cache, use
