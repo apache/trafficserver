@@ -190,14 +190,14 @@ handle_txn_close(TSCont cont, TSEvent event ATS_UNUSED, void *edata)
       in_bytes = TSHttpTxnClientReqHdrBytesGet(txn);
       in_bytes += TSHttpTxnClientReqBodyBytesGet(txn);
 
-      CREATE_STAT_NAME(stat_name, remap, "in_bytes")
-        stat_add(stat_name, (TSMgmtInt) in_bytes, config->persist_type, config->stat_creation_mutex);
+      CREATE_STAT_NAME(stat_name, remap, "in_bytes");
+      stat_add(stat_name, (TSMgmtInt) in_bytes, config->persist_type, config->stat_creation_mutex);
 
       out_bytes = TSHttpTxnClientRespHdrBytesGet(txn);
       out_bytes += TSHttpTxnClientRespBodyBytesGet(txn);
 
-      CREATE_STAT_NAME(stat_name, remap, "out_bytes")
-        stat_add(stat_name, (TSMgmtInt) out_bytes, config->persist_type, config->stat_creation_mutex);
+      CREATE_STAT_NAME(stat_name, remap, "out_bytes");
+      stat_add(stat_name, (TSMgmtInt) out_bytes, config->persist_type, config->stat_creation_mutex);
 
       if (TSHttpTxnClientRespGet(txn, &buf, &hdr_loc) == TS_SUCCESS) {
         status_code = (int) TSHttpHdrStatusGet(buf, hdr_loc);
@@ -218,8 +218,8 @@ handle_txn_close(TSCont cont, TSEvent event ATS_UNUSED, void *edata)
 
         stat_add(stat_name, 1, config->persist_type, config->stat_creation_mutex);
       } else {
-        CREATE_STAT_NAME(stat_name, remap, "status_unknown")
-          stat_add(stat_name, 1, config->persist_type, config->stat_creation_mutex);
+        CREATE_STAT_NAME(stat_name, remap, "status_unknown");
+        stat_add(stat_name, 1, config->persist_type, config->stat_creation_mutex);
       }
 
       if (remap != unknown)
