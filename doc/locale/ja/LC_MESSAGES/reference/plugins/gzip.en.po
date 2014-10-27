@@ -80,7 +80,7 @@ msgstr "もしくは、設定を指定することも可能です。"
 
 #: ../../reference/plugins/gzip.en.rst:51
 msgid ""
-"After modifying plugin.cofnig, restart traffic server (sudo traffic_line -"
+"After modifying plugin.config, restart traffic server (sudo traffic_line -"
 "L) the configuration is re-read when a management update is given (sudo "
 "traffic_line -x)"
 msgstr ""

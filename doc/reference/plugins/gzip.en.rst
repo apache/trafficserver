@@ -48,7 +48,7 @@ Alternatively, a configuration can also be specified::
 
     gzip.so <path-to-plugin>/sample.gzip.config
 
-After modifying plugin.cofnig, restart traffic server (sudo
+After modifying plugin.config, restart traffic server (sudo
 traffic_line -L) the configuration is re-read when a management update
 is given (sudo traffic_line -x)
 
