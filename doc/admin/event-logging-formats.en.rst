@@ -26,7 +26,6 @@ Rather than just reading about those formats, you may also want to try our
 `online event log builder <http://trafficserver.apache.org/logbuilder/>`_ for an interactive way of
 building and understanding log formats.
 
-
 .. toctree::
    :maxdepth: 2
 
@@ -398,6 +397,34 @@ The following list describes Traffic Server custom logging fields.
 ``sssc``
     The HTTP response status code from origin server to Traffic Server.
 
+.. _stms:
+
+``stms``
+    The time spent accessing the origin (in milliseconds); the time is
+    measured from the time the connection with the origin is established
+    to the time the connection is closed.
+
+.. _stmsh:
+
+``stmsh``
+    Same as ``stms`` but in hexadecimal.
+
+.. _stmsf:
+
+``stmsf``
+    The time Traffic Server spends accessing the origin as a fractional
+    number of seconds. That is, the time is formated as a floating-point
+    number, instead of an integer as in ``stms``.
+
+    For example: if the time is 1500 milliseconds, then this field
+    displays 1.5 while the ``stms`` field displays 1500 and the ``sts``
+    field displays 1.
+
+.. _sts:
+
+``sts``
+    The time Traffic Server spends accessing the origin, in seconds.
+
 .. _ttms:
 
 ``ttms``
@@ -431,7 +458,6 @@ The following list describes Traffic Server custom logging fields.
     number of seconds between the time at which the client establishes
     the connection with Traffic Server and the time at which Traffic
     Server sends the last byte of the response back to the client.
-
 
 .. _logging-format-cross-reference:
 
@@ -529,10 +555,9 @@ Netscape Extended-2 Field Symbols
 ``h2``              ``pshl``
 ``h3``              ``pqhl``
 ``h4``              ``sshl``
-``xt``              ``tts`` 
+``xt``              ``tts``
 ``route``           ``phr``
 ``pfs``             ``cfsc``
 ``ss``              ``pfsc``
 ``crc``             ``crc``
 =================== =============
-

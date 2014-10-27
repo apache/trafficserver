@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.2.0
 
+  *) [TS-3115] Add server response time logging fields.
+   Author: Acácio Centeno <acaciocenteno@gmail.com>
+
   *) [TS-3154] Add proxy port access log tag as 'php'.
    Author: Acácio Centeno <acaciocenteno@gmail.com>
 
