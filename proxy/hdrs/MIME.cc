@@ -1281,8 +1281,8 @@ _mime_hdr_field_list_search_by_slotnum(MIMEHdrImpl *mh, int slotnum)
 MIMEField *
 mime_hdr_field_find(MIMEHdrImpl *mh, const char *field_name_str, int field_name_len)
 {
-  int is_wks;
   HdrTokenHeapPrefix *token_info;
+  const bool is_wks = hdrtoken_is_wks(field_name_str);
 
   ink_assert(field_name_len >= 0);
 
@@ -1290,7 +1290,6 @@ mime_hdr_field_find(MIMEHdrImpl *mh, const char *field_name_str, int field_name_
   // do presence check and slot accelerator //
   ////////////////////////////////////////////
 
-  is_wks = hdrtoken_is_wks(field_name_str);
 #if TRACK_FIELD_FIND_CALLS
   Debug("http", "mime_hdr_field_find(hdr 0x%X, field %.*s): is_wks = %d\n", mh, field_name_len, field_name_str, is_wks);
 #endif
@@ -1325,12 +1324,11 @@ mime_hdr_field_find(MIMEHdrImpl *mh, const char *field_name_str, int field_name_
 #endif
       }
     }
-  }
-  ///////////////////////////////////////////////////////////////////////////
-  // search by well-known string index or by case-insensitive string match //
-  ///////////////////////////////////////////////////////////////////////////
 
-  if (is_wks) {
+    ///////////////////////////////////////////////////////////////////////////
+    // search by well-known string index or by case-insensitive string match //
+    ///////////////////////////////////////////////////////////////////////////
+
     MIMEField *f = _mime_hdr_field_list_search_by_wks(mh, token_info->wks_idx);
     ink_assert((f == NULL) || f->is_live());
 #if TRACK_FIELD_FIND_CALLS
