@@ -209,7 +209,6 @@ struct DNSHandler: public Continuation
   int ifd[MAX_NAMED];
   int n_con;
   DNSConnection con[MAX_NAMED];
-  int options;
   Queue<DNSEntry> entries;
   Queue<DNSConnection> triggered;
   int in_flight;
@@ -322,7 +321,7 @@ struct DNSServer
 
 
 TS_INLINE DNSHandler::DNSHandler()
- : Continuation(NULL), n_con(0), options(0), in_flight(0), name_server(0), in_write_dns(0),
+ : Continuation(NULL), n_con(0), in_flight(0), name_server(0), in_write_dns(0),
   hostent_cache(0), last_primary_retry(0), last_primary_reopen(0),
   m_res(0), txn_lookup_timeout(0), generator((uint32_t)((uintptr_t)time(NULL) ^ (uintptr_t)this))
 {

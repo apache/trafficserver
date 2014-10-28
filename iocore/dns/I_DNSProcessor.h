@@ -122,7 +122,7 @@ struct DNSProcessor: public Processor
 
   // Open/close a link to a 'named' (done in start())
   //
-  void open(sockaddr const* ns = 0, int options = _res.options);
+  void open(sockaddr const* ns = 0);
 
   DNSProcessor();
 

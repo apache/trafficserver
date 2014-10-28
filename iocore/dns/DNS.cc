@@ -207,11 +207,10 @@ DNSProcessor::start(int, size_t stacksize) {
 }
 
 void
-DNSProcessor::open(sockaddr const* target, int aoptions)
+DNSProcessor::open(sockaddr const* target)
 {
   DNSHandler *h = new DNSHandler;
 
-  h->options = aoptions;
   h->mutex = thread->mutex;
   h->m_res = &l_res;
   ats_ip_copy(&h->local_ipv4.sa, &local_ipv4.sa);

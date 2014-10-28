@@ -526,7 +526,6 @@ SplitDNSRecord::Init(matcher_line * line_info)
 
   dnsH->m_res = res;
   dnsH->mutex = SplitDNSConfig::dnsHandler_mutex;
-  dnsH->options = res->options;
   ats_ip_invalidate(&dnsH->ip.sa); // Mark to use default DNS.
 
   m_servers.x_dnsH = dnsH;
