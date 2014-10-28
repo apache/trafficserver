@@ -279,8 +279,8 @@ case "$1" in
             rc_status -v
         elif [ "$DISTRIB_ID" = "Darwin" ]; then
             echo "Starting ${TS_PACKAGE_NAME}"
-            launchctl list $TC_NAME > /dev/null 2>&1 && exit 0
-            launchctl submit -l $TC_NAME -p $TC_DAEMON -o $STDOUTLOG -e $STDERRLOG -- $TC_DAEMON_ARGS
+            launchctl bsexec / list $TC_NAME > /dev/null 2>&1 && exit 0
+            launchctl bsexec / submit -l $TC_NAME -p $TC_DAEMON -o $STDOUTLOG -e $STDERRLOG -- $TC_DAEMON_ARGS
         elif [ "$DISTRIB_ID" = "FreeBSD" ]; then
             echo "Starting ${TS_PACKAGE_NAME}"
             name="$TC_NAME"
@@ -317,9 +317,9 @@ case "$1" in
             rc_status -v
         elif [ "$DISTRIB_ID" = "Darwin" ]; then
             echo "Stopping ${TS_PACKAGE_NAME}"
-            launchctl list $TC_NAME > /dev/null 2>&1 || exit 0
+            launchctl bsexec / list $TC_NAME > /dev/null 2>&1 || exit 0
             echo "Stopping ${TC_NAME}"
-            launchctl remove ${TC_NAME}
+            launchctl bsexec / remove ${TC_NAME}
             rm -f ${TC_PIDFILE}
             echo "Stopping ${TM_NAME}"
             kill $(cat $TM_PIDFILE)
@@ -408,7 +408,7 @@ case "$1" in
             rc_status -v
         elif [ "$DISTRIB_ID" = "Darwin" ]; then
             /bin/echo -n "${TS_PACKAGE_NAME} is "
-            launchctl list $TC_NAME > /dev/null 2>&1
+            launchctl bsexec / list $TC_NAME > /dev/null 2>&1
             status=$?
             [ $status -eq 0 ] || /bin/echo -n "not "
             echo "running."
