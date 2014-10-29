@@ -120,14 +120,14 @@ public:
   ~SSLSessionBucket();
   void removeOldestSession();
   void insertSession(const SSLSessionID &, SSL_SESSION *ctx);
-  bool getSession(const SSLSessionID &, SSL_SESSION **ctx) const;
+  bool getSession(const SSLSessionID &, SSL_SESSION **ctx);
   void removeSession(const SSLSessionID &);
 
 private:
   /* these method must be used while hold the lock */
   void print(const char *) const;
 
-  mutable ink_mutex mutex;
+  ProxyMutex mutex;
   CountQueue<SSLSession> queue;
 };
 

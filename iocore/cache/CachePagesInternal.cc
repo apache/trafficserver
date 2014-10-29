@@ -209,7 +209,7 @@ ShowCacheInternal::showVolEvacuations(int event, Event * e)
 {
   Vol *p = gvol[vol_index];
   CACHE_TRY_LOCK(lock, p->mutex, mutex->thread_holding);
-  if (!lock)
+  if (!lock.is_locked())
     CONT_SCHED_LOCK_RETRY_RET(this);
 
   EvacuationBlock *b;
@@ -260,7 +260,7 @@ ShowCacheInternal::showVolVolumes(int event, Event * e)
 {
   Vol *p = gvol[vol_index];
   CACHE_TRY_LOCK(lock, p->mutex, mutex->thread_holding);
-  if (!lock)
+  if (!lock.is_locked())
     CONT_SCHED_LOCK_RETRY_RET(this);
 
   char ctime[256];
@@ -314,7 +314,7 @@ ShowCacheInternal::showSegSegment(int event, Event * e)
 {
   Vol *p = gvol[vol_index];
   CACHE_TRY_LOCK(lock, p->mutex, mutex->thread_holding);
-  if (!lock)
+  if (!lock.is_locked())
     CONT_SCHED_LOCK_RETRY_RET(this);
   int free = 0, used = 0, empty = 0, valid = 0, agg_valid = 0, avg_size = 0;
   dir_segment_accounted(seg_index, p, 0, &free, &used, &empty, &valid, &agg_valid, &avg_size);

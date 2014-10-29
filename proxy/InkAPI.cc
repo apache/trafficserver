@@ -4497,7 +4497,7 @@ TSHttpSsnReenable(TSHttpSsn ssnp, TSEvent event)
     eventProcessor.schedule_imm(new TSHttpSsnCallback(cs, event), ET_NET);
   } else {
     MUTEX_TRY_LOCK(trylock, cs->mutex, eth);
-    if (!trylock) {
+    if (!trylock.is_locked()) {
       eventProcessor.schedule_imm(new TSHttpSsnCallback(cs, event), ET_NET);
     } else {
       cs->handleEvent((int) event, 0);
@@ -5564,7 +5564,7 @@ TSHttpTxnReenable(TSHttpTxn txnp, TSEvent event)
     eventProcessor.schedule_imm(new TSHttpSMCallback(sm, event), ET_NET);
   } else {
     MUTEX_TRY_LOCK(trylock, sm->mutex, eth);
-    if (!trylock) {
+    if (!trylock.is_locked()) {
       eventProcessor.schedule_imm(new TSHttpSMCallback(sm, event), ET_NET);
     } else {
       sm->state_api_callback((int) event, 0);
@@ -8764,7 +8764,7 @@ TSVConnReenable(TSVConn vconn)
     // callback on the VC thread or it doesn't work (not sure why -
     // deadlock or it ends up interacting with the wrong NetHandler).
     MUTEX_TRY_LOCK(trylock, ssl_vc->mutex, eth);
-    if (!trylock) {
+    if (!trylock.is_locked()) {
       ssl_vc->thread->schedule_imm(new TSSslCallback(ssl_vc));
     }   else {
       ssl_vc->reenable(ssl_vc->nh);

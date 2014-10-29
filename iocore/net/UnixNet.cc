@@ -57,7 +57,7 @@ public:
     while (UnixNetVConnection *vc = nh->cop_list.pop()) {
       // If we cannot get the lock don't stop just keep cleaning
       MUTEX_TRY_LOCK(lock, vc->mutex, this_ethread());
-      if (!lock.lock_acquired) {
+      if (!lock.is_locked()) {
        NET_INCREMENT_DYN_STAT(inactivity_cop_lock_acquire_failure_stat);
        continue;
       }

@@ -1403,7 +1403,7 @@ ClusterHandler::finish_delayed_reads()
   DLL<ClusterVConnectionBase> l;
   while ((vc = (ClusterVConnection *) delayed_reads.pop())) {
     MUTEX_TRY_LOCK_SPIN(lock, vc->read.vio.mutex, thread, READ_LOCK_SPIN_COUNT);
-    if (lock) {
+    if (lock.is_locked()) {
       if (vc_ok_read(vc)) {
         ink_assert(!vc->read.queue);
         ByteBankDescriptor *d;
@@ -3075,7 +3075,7 @@ ClusterHandler::do_open_local_requests()
 
     while ((cvc = local_incoming_open_local.pop())) {
       MUTEX_TRY_LOCK(lock, cvc->action_.mutex, tt);
-      if (lock) {
+      if (lock.is_locked()) {
         if (cvc->start(tt) < 0) {
           cvc->token.clear();
           if (cvc->action_.continuation) {

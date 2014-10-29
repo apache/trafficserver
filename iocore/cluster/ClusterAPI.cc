@@ -131,7 +131,7 @@ MachineStatusSM::MachineStatusSMEvent(Event * /* e ATS_UNUSED */, void * /* d AT
       if (status_callouts[n].func && (status_callouts[n].state == NE_STATE_INITIALIZED)) {
 
         MUTEX_TRY_LOCK(lock, status_callouts[n].mutex, et);
-        if (lock) {
+        if (lock.is_locked()) {
           status_callouts[n].func(&_node_handle, _node_status);
           Debug("cluster_api", "callout: n %d ([%u.%u.%u.%u], %d)", n, DOT_SEPARATED(_node_handle), _node_status);
         } else {
@@ -149,7 +149,7 @@ MachineStatusSM::MachineStatusSMEvent(Event * /* e ATS_UNUSED */, void * /* d AT
       n = CLUSTER_STATUS_HANDLE_TO_INDEX(_status_handle);
       if (status_callouts[n].func) {
         MUTEX_TRY_LOCK(lock, status_callouts[n].mutex, et);
-        if (lock) {
+        if (lock.is_locked()) {
           int mi;
           unsigned int my_ipaddr = (this_cluster_machine())->ip;
           ClusterConfiguration *cc;
@@ -183,7 +183,7 @@ MachineStatusSM::MachineStatusSMEvent(Event * /* e ATS_UNUSED */, void * /* d AT
       n = CLUSTER_STATUS_HANDLE_TO_INDEX(_status_handle);
       if (status_callouts[n].func) {
         MUTEX_TRY_LOCK(lock, status_callouts[n].mutex, et);
-        if (lock) {
+        if (lock.is_locked()) {
           status_callouts[n].func(&_node_handle, _node_status);
 
           Debug("cluster_api",
@@ -281,7 +281,7 @@ clusterAPI_init()
                       "cluster API status_callout_q", (char *) &mssmp->link.next - (char *) mssmp);
   ClusterAPI_mutex = new_ProxyMutex();
   MUTEX_TRY_LOCK(lock, ClusterAPI_mutex, this_ethread());
-  ink_release_assert(lock);     // Should never fail
+  ink_release_assert(lock.is_locked());     // Should never fail
   periodicSM = new ClusterAPIPeriodicSM(ClusterAPI_mutex);
 
   // TODO: Should we do something with this return value?

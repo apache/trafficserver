@@ -88,7 +88,7 @@ Cache::deref(Continuation * cont, CacheKey * key, CacheFragType type, char *host
   CacheVC *c = NULL;
   {
     MUTEX_TRY_LOCK(lock, vol->mutex, cont->mutex->thread_holding);
-    if (lock) {
+    if (lock.is_locked()) {
       if (!dir_probe(key, vol, &result, &last_collision)) {
         cont->handleEvent(CACHE_EVENT_DEREF_FAILED, (void *) -ECACHE_NO_DOC);
         return ACTION_RESULT_DONE;
@@ -101,7 +101,7 @@ Cache::deref(Continuation * cont, CacheKey * key, CacheFragType type, char *host
     c->dir = result;
     c->last_collision = last_collision;
 
-    if (!lock) {
+    if (!lock.is_locked()) {
       c->mutex->thread_holding->schedule_in_local(c, HRTIME_MSECONDS(cache_config_mutex_retry_delay));
       return &c->_action;
     }
@@ -147,7 +147,7 @@ CacheVC::derefRead(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 
 Lcollision:{
     CACHE_TRY_LOCK(lock, vol->mutex, mutex->thread_holding);
-    if (!lock) {
+    if (!lock.is_locked()) {
       mutex->thread_holding->schedule_in_local(this, HRTIME_MSECONDS(cache_config_mutex_retry_delay));
       return EVENT_CONT;
     }

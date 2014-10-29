@@ -30,6 +30,131 @@
 #define MAX_LOCK_TIME	HRTIME_MSECONDS(200)
 #define THREAD_MUTEX_THREAD_HOLDING	(-1024*1024)
 
+/*------------------------------------------------------*\
+|  Macros                                                |
+\*------------------------------------------------------*/
+
+/**
+  Blocks until the lock to the ProxyMutex is acquired.
+
+  This macro performs a blocking call until the lock to the ProxyMutex
+  is acquired. This call allocates a special object that holds the
+  lock to the ProxyMutex only for the scope of the function or
+  region. It is a good practice to delimit such scope explicitly
+  with '&#123;' and '&#125;'.
+
+  @param _l Arbitrary name for the lock to use in this call
+  @param _m A pointer to (or address of) a ProxyMutex object
+  @param _t The current EThread executing your code.
+
+*/
+#  ifdef DEBUG
+#    define MUTEX_LOCK(_l,_m,_t) MutexLock _l(__FILE__,__LINE__,NULL,_m,_t)
+#  else
+#    define MUTEX_LOCK(_l,_m,_t) MutexLock _l(_m,_t)
+#  endif //DEBUG
+
+#  ifdef DEBUG
+/**
+  Attempts to acquire the lock to the ProxyMutex.
+
+  This macro attempts to acquire the lock to the specified ProxyMutex
+  object in a non-blocking manner. After using the macro you can
+  see if it was successful by comparing the lock variable with true
+  or false (the variable name passed in the _l parameter).
+
+  @param _l Arbitrary name for the lock to use in this call (lock variable)
+  @param _m A pointer to (or address of) a ProxyMutex object
+  @param _t The current EThread executing your code.
+
+*/
+#    define MUTEX_TRY_LOCK(_l,_m,_t) \
+MutexTryLock _l(__FILE__,__LINE__,(char*)NULL,_m,_t)
+
+/**
+  Attempts to acquire the lock to the ProxyMutex.
+
+  This macro performs up to the specified number of attempts to
+  acquire the lock on the ProxyMutex object. It does so by running
+  a busy loop (busy wait) '_sc' times. You should use it with care
+  since it blocks the thread during that time and wastes CPU time.
+
+  @param _l Arbitrary name for the lock to use in this call (lock variable)
+  @param _m A pointer to (or address of) a ProxyMutex object
+  @param _t The current EThread executing your code.
+  @param _sc The number of attempts or spin count. It must be a positive value.
+
+*/
+#    define MUTEX_TRY_LOCK_SPIN(_l,_m,_t,_sc) \
+MutexTryLock _l(__FILE__,__LINE__,(char*)NULL,_m,_t,_sc)
+
+/**
+  Attempts to acquire the lock to the ProxyMutex.
+
+  This macro attempts to acquire the lock to the specified ProxyMutex
+  object in a non-blocking manner. After using the macro you can
+  see if it was successful by comparing the lock variable with true
+  or false (the variable name passed in the _l parameter).
+
+  @param _l Arbitrary name for the lock to use in this call (lock variable)
+  @param _m A pointer to (or address of) a ProxyMutex object
+  @param _t The current EThread executing your code.
+  @param _c Continuation whose mutex will be attempted to lock.
+
+*/
+
+#    define MUTEX_TRY_LOCK_FOR(_l,_m,_t,_c) \
+MutexTryLock _l(__FILE__,__LINE__,NULL,_m,_t)
+#  else //DEBUG
+#    define MUTEX_TRY_LOCK(_l,_m,_t) MutexTryLock _l(_m,_t)
+#    define MUTEX_TRY_LOCK_SPIN(_l,_m,_t,_sc) MutexTryLock _l(_m,_t,_sc)
+#    define MUTEX_TRY_LOCK_FOR(_l,_m,_t,_c) MutexTryLock _l(_m,_t)
+#  endif //DEBUG
+
+/**
+  Releases the lock on a ProxyMutex.
+
+  This macro releases the lock on the ProxyMutex, provided it is
+  currently held. The lock must have been successfully acquired
+  with one of the MUTEX macros.
+
+  @param _l Arbitrary name for the lock to use in this call (lock
+    variable) It must be the same name as the one used to acquire the
+    lock.
+
+*/
+#  define MUTEX_RELEASE(_l) (_l).release()
+
+/////////////////////////////////////
+// DEPRECATED DEPRECATED DEPRECATED
+#ifdef DEBUG
+#  define MUTEX_TAKE_TRY_LOCK(_m,_t) \
+Mutex_trylock(__FILE__,__LINE__,(char*)NULL,_m,_t)
+#  define MUTEX_TAKE_TRY_LOCK_FOR(_m,_t,_c) \
+Mutex_trylock(__FILE__,__LINE__,(char*)NULL,_m,_t)
+#  define MUTEX_TAKE_TRY_LOCK_FOR_SPIN(_m,_t,_c,_sc) \
+Mutex_trylock_spin(__FILE__,__LINE__,NULL,_m,_t,_sc)
+#else
+#  define MUTEX_TAKE_TRY_LOCK(_m,_t) Mutex_trylock(_m,_t)
+#  define MUTEX_TAKE_TRY_LOCK_FOR(_m,_t,_c) Mutex_trylock(_m,_t)
+#  define MUTEX_TAKE_TRY_LOCK_FOR_SPIN(_m,_t,_c,_sc) \
+Mutex_trylock_spin(_m,_t,_sc)
+#endif
+
+#ifdef DEBUG
+#  define MUTEX_TAKE_LOCK(_m,_t)\
+Mutex_lock(__FILE__,__LINE__,(char*)NULL,_m,_t)
+#  define MUTEX_TAKE_LOCK_FOR(_m,_t,_c) \
+Mutex_lock(__FILE__,__LINE__,NULL,_m,_t)
+#else
+#  define MUTEX_TAKE_LOCK(_m,_t) Mutex_lock(_m,_t)
+#  define MUTEX_TAKE_LOCK_FOR(_m,_t,_c) Mutex_lock(_m,_t)
+#endif //DEBUG
+
+#define MUTEX_UNTAKE_LOCK(_m,_t) Mutex_unlock(_m,_t)
+// DEPRECATED DEPRECATED DEPRECATED
+/////////////////////////////////////
+
 class EThread;
 typedef EThread *EThreadPtr;
 typedef volatile EThreadPtr VolatileEThreadPtr;
@@ -85,7 +210,7 @@ public:
 
   */
   volatile EThreadPtr thread_holding;
-  
+
   int nthread_holding;
 
 #ifdef DEBUG
@@ -313,65 +438,42 @@ Mutex_unlock(ProxyMutex * m, EThread * t)
   }
 }
 
-struct MutexLock
+/** Scoped lock class for ProxyMutex
+ */
+class MutexLock
 {
+private:
   Ptr<ProxyMutex> m;
 
-  MutexLock():m(NULL)
-  {
-  };
-
+public:
   MutexLock(
 #ifdef DEBUG
              const char *afile, int aline, const char *ahandler,
 #endif                          //DEBUG
              ProxyMutex * am, EThread * t):m(am)
   {
-
     Mutex_lock(
 #ifdef DEBUG
                 afile, aline, ahandler,
 #endif //DEBUG
                 m, t);
-  }
-
-  void set_and_take(
-#ifdef DEBUG
-                     const char *afile, int aline, const char *ahandler,
-#endif                          //DEBUG
-                     ProxyMutex * am, EThread * t)
-  {
-
-    m = am;
-    Mutex_lock(
-#ifdef DEBUG
-                afile, aline, ahandler,
-#endif //DEBUG
-                m, t);
-  }
-
-  void release()
-  {
-    if (m)
-      Mutex_unlock(m, m->thread_holding);
-    m.clear();
   }
 
   ~MutexLock()
   {
-    if (m)
-      Mutex_unlock(m, m->thread_holding);
+    Mutex_unlock(m, m->thread_holding);
   }
-
-  int operator!() const { return false; }
-  operator bool() { return true; }
 };
 
-struct MutexTryLock
+/** Scoped try lock class for ProxyMutex
+ */
+class MutexTryLock
 {
+private:
   Ptr<ProxyMutex> m;
   volatile bool lock_acquired;
 
+public:
   MutexTryLock(
 #ifdef DEBUG
                   const char *afile, int aline, const char *ahandler,
@@ -408,8 +510,17 @@ struct MutexTryLock
       Mutex_unlock(m.m_ptr, m.m_ptr->thread_holding);
   }
 
+  /** Spin till lock is acquired
+   */
+  void acquire(EThread * t)
+  {
+    MUTEX_TAKE_LOCK(m.m_ptr, t);
+    lock_acquired = true;
+  }
+
   void release()
   {
+    ink_assert(m.m_ptr);
     if (m.m_ptr) {
       Mutex_unlock(m.m_ptr, m.m_ptr->thread_holding);
       m.clear();
@@ -417,8 +528,8 @@ struct MutexTryLock
     lock_acquired = false;
   }
 
-  int operator!() const { return !lock_acquired; }
-  operator bool() const { return lock_acquired; }
+  bool is_locked() const { return lock_acquired; }
+  const ProxyMutex* get_mutex() { return m.m_ptr; }
 };
 
 inline void
@@ -452,134 +563,5 @@ new_ProxyMutex()
   m->init();
   return m;
 }
-
-/*------------------------------------------------------*\
-|  Macros                                                |
-\*------------------------------------------------------*/
-
-/**
-  Blocks until the lock to the ProxyMutex is acquired.
-
-  This macro performs a blocking call until the lock to the ProxyMutex
-  is acquired. This call allocates a special object that holds the
-  lock to the ProxyMutex only for the scope of the function or
-  region. It is a good practice to delimit such scope explicitly
-  with '&#123;' and '&#125;'.
-
-  @param _l Arbitrary name for the lock to use in this call
-  @param _m A pointer to (or address of) a ProxyMutex object
-  @param _t The current EThread executing your code.
-
-*/
-#  ifdef DEBUG
-#    define MUTEX_LOCK(_l,_m,_t) MutexLock _l(__FILE__,__LINE__,NULL,_m,_t)
-#  else
-#    define MUTEX_LOCK(_l,_m,_t) MutexLock _l(_m,_t)
-#  endif //DEBUG
-
-#  ifdef DEBUG
-/**
-  Attempts to acquire the lock to the ProxyMutex.
-
-  This macro attempts to acquire the lock to the specified ProxyMutex
-  object in a non-blocking manner. After using the macro you can
-  see if it was successful by comparing the lock variable with true
-  or false (the variable name passed in the _l parameter).
-
-  @param _l Arbitrary name for the lock to use in this call (lock variable)
-  @param _m A pointer to (or address of) a ProxyMutex object
-  @param _t The current EThread executing your code.
-
-*/
-#    define MUTEX_TRY_LOCK(_l,_m,_t) \
-MutexTryLock _l(__FILE__,__LINE__,(char*)NULL,_m,_t)
-
-/**
-  Attempts to acquire the lock to the ProxyMutex.
-
-  This macro performs up to the specified number of attempts to
-  acquire the lock on the ProxyMutex object. It does so by running
-  a busy loop (busy wait) '_sc' times. You should use it with care
-  since it blocks the thread during that time and wastes CPU time.
-
-  @param _l Arbitrary name for the lock to use in this call (lock variable)
-  @param _m A pointer to (or address of) a ProxyMutex object
-  @param _t The current EThread executing your code.
-  @param _sc The number of attempts or spin count. It must be a positive value.
-
-*/
-#    define MUTEX_TRY_LOCK_SPIN(_l,_m,_t,_sc) \
-MutexTryLock _l(__FILE__,__LINE__,(char*)NULL,_m,_t,_sc)
-
-
-/**
-  Attempts to acquire the lock to the ProxyMutex.
-
-  This macro attempts to acquire the lock to the specified ProxyMutex
-  object in a non-blocking manner. After using the macro you can
-  see if it was successful by comparing the lock variable with true
-  or false (the variable name passed in the _l parameter).
-
-  @param _l Arbitrary name for the lock to use in this call (lock variable)
-  @param _m A pointer to (or address of) a ProxyMutex object
-  @param _t The current EThread executing your code.
-  @param _c Continuation whose mutex will be attempted to lock.
-
-*/
-
-#    define MUTEX_TRY_LOCK_FOR(_l,_m,_t,_c) \
-MutexTryLock _l(__FILE__,__LINE__,NULL,_m,_t)
-#  else //DEBUG
-#    define MUTEX_TRY_LOCK(_l,_m,_t) MutexTryLock _l(_m,_t)
-#    define MUTEX_TRY_LOCK_SPIN(_l,_m,_t,_sc) MutexTryLock _l(_m,_t,_sc)
-#    define MUTEX_TRY_LOCK_FOR(_l,_m,_t,_c) MutexTryLock _l(_m,_t)
-#  endif //DEBUG
-
-/**
-  Releases the lock on a ProxyMutex.
-
-  This macro releases the lock on the ProxyMutex, provided it is
-  currently held. The lock must have been successfully acquired
-  with one of the MUTEX macros.
-
-  @param _l Arbitrary name for the lock to use in this call (lock
-    variable) It must be the same name as the one used to acquire the
-    lock.
-
-*/
-#  define MUTEX_RELEASE(_l) (_l).release()
-
-/////////////////////////////////////
-// DEPRECATED DEPRECATED DEPRECATED
-#ifdef DEBUG
-#  define MUTEX_TAKE_TRY_LOCK(_m,_t) \
-Mutex_trylock(__FILE__,__LINE__,(char*)NULL,_m,_t)
-#  define MUTEX_TAKE_TRY_LOCK_FOR(_m,_t,_c) \
-Mutex_trylock(__FILE__,__LINE__,(char*)NULL,_m,_t)
-#  define MUTEX_TAKE_TRY_LOCK_FOR_SPIN(_m,_t,_c,_sc) \
-Mutex_trylock_spin(__FILE__,__LINE__,NULL,_m,_t,_sc)
-#else
-#  define MUTEX_TAKE_TRY_LOCK(_m,_t) Mutex_trylock(_m,_t)
-#  define MUTEX_TAKE_TRY_LOCK_FOR(_m,_t,_c) Mutex_trylock(_m,_t)
-#  define MUTEX_TAKE_TRY_LOCK_FOR_SPIN(_m,_t,_c,_sc) \
-Mutex_trylock_spin(_m,_t,_sc)
-#endif
-
-#ifdef DEBUG
-#  define MUTEX_TAKE_LOCK(_m,_t)\
-Mutex_lock(__FILE__,__LINE__,(char*)NULL,_m,_t)
-#  define MUTEX_SET_AND_TAKE_LOCK(_s,_m,_t)\
-_s.set_and_take(__FILE__,__LINE__,(char*)NULL,_m,_t)
-#  define MUTEX_TAKE_LOCK_FOR(_m,_t,_c) \
-Mutex_lock(__FILE__,__LINE__,NULL,_m,_t)
-#else
-#  define MUTEX_TAKE_LOCK(_m,_t) Mutex_lock(_m,_t)
-#  define MUTEX_SET_AND_TAKE_LOCK(_s,_m,_t)_s.set_and_take(_m,_t)
-#  define MUTEX_TAKE_LOCK_FOR(_m,_t,_c) Mutex_lock(_m,_t)
-#endif //DEBUG
-
-#define MUTEX_UNTAKE_LOCK(_m,_t) Mutex_unlock(_m,_t)
-// DEPRECATED DEPRECATED DEPRECATED
-/////////////////////////////////////
 
 #endif // _Lock_h_

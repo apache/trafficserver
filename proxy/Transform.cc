@@ -176,12 +176,12 @@ TransformTerminus::handle_event(int event, void * /* edata ATS_UNUSED */)
       int64_t towrite;
 
       MUTEX_TRY_LOCK(trylock1, m_write_vio.mutex, this_ethread());
-      if (!trylock1) {
+      if (!trylock1.is_locked()) {
         RETRY();
       }
 
       MUTEX_TRY_LOCK(trylock2, m_read_vio.mutex, this_ethread());
-      if (!trylock2) {
+      if (!trylock2.is_locked()) {
         RETRY();
       }
 
@@ -236,7 +236,7 @@ TransformTerminus::handle_event(int event, void * /* edata ATS_UNUSED */)
     }
   } else {
     MUTEX_TRY_LOCK(trylock2, m_read_vio.mutex, this_ethread());
-    if (!trylock2) {
+    if (!trylock2.is_locked()) {
       RETRY();
     }
 
@@ -656,7 +656,7 @@ NullTransform::handle_event(int event, void *edata)
         }
 
         MUTEX_TRY_LOCK(trylock, m_write_vio.mutex, this_ethread());
-        if (!trylock) {
+        if (!trylock.is_locked()) {
           retry(10);
           return 0;
         }
@@ -805,7 +805,7 @@ RangeTransform::handle_event(int event, void *edata)
       }
 
       MUTEX_TRY_LOCK(trylock, m_write_vio.mutex, this_ethread());
-      if (!trylock) {
+      if (!trylock.is_locked()) {
         retry(10);
         return 0;
       }

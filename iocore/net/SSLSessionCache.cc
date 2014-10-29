@@ -121,13 +121,13 @@ void SSLSessionBucket::insertSession(const SSLSessionID &id, SSL_SESSION *sess) 
 
   SSLSession *ssl_session = new SSLSession(id, buf, len);
 
-  ink_scoped_try_mutex scoped_mutex(mutex);
-  if (!scoped_mutex.hasLock()) {
+  MUTEX_TRY_LOCK(lock, &mutex, this_ethread());
+  if (!lock.is_locked()) {
     SSL_INCREMENT_DYN_STAT(ssl_session_cache_lock_contention);
     if (SSLConfigParams::session_cache_skip_on_lock_contention)
       return;
 
-    scoped_mutex.lock();
+    lock.acquire(this_ethread());
   }
 
   PRINT_BUCKET("insertSession before")
@@ -141,7 +141,8 @@ void SSLSessionBucket::insertSession(const SSLSessionID &id, SSL_SESSION *sess) 
   PRINT_BUCKET("insertSession after")
 }
 
-bool SSLSessionBucket::getSession(const SSLSessionID &id, SSL_SESSION **sess) const {
+bool SSLSessionBucket::getSession(const SSLSessionID &id,
+                                  SSL_SESSION **sess) {
   char buf[id.len * 2 + 1];
   buf[0] = '\0'; // just to be safe.
   if (is_debug_tag_set("ssl.session_cache")) {
@@ -150,12 +151,13 @@ bool SSLSessionBucket::getSession(const SSLSessionID &id, SSL_SESSION **sess) co
 
   Debug("ssl.session_cache", "Looking for session with id '%s' in bucket %p", buf, this);
 
-  ink_scoped_try_mutex scoped_mutex(mutex);
-  if (!scoped_mutex.hasLock()) {
+  MUTEX_TRY_LOCK(lock, &mutex, this_ethread());
+  if (!lock.is_locked()) {
    SSL_INCREMENT_DYN_STAT(ssl_session_cache_lock_contention);
    if (SSLConfigParams::session_cache_skip_on_lock_contention)
      return false;
-   scoped_mutex.lock();
+
+   lock.acquire(this_ethread());
   }
 
   PRINT_BUCKET("getSession")
@@ -211,7 +213,7 @@ void inline SSLSessionBucket::removeOldestSession() {
 }
 
 void SSLSessionBucket::removeSession(const SSLSessionID &id) {
-  ink_scoped_mutex scoped_mutex(mutex); // We can't bail on contention here because this session MUST be removed.
+  MUTEX_LOCK(lock, &mutex, this_ethread()); // We can't bail on contention here because this session MUST be removed.
   SSLSession *node = queue.head;
   while (node) {
     if (node->session_id == id)
@@ -226,11 +228,11 @@ void SSLSessionBucket::removeSession(const SSLSessionID &id) {
 /* Session Bucket */
 SSLSessionBucket::SSLSessionBucket()
 {
-	ink_mutex_init(&mutex, "session_bucket");
+  mutex.init("session_bucket");
 }
 
 SSLSessionBucket::~SSLSessionBucket() {
-	ink_mutex_destroy(&mutex);
+
 }
 
 

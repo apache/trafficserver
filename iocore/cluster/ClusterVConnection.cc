@@ -346,7 +346,7 @@ ClusterVConnection::start(EThread * t)
 
     // Establish the local side of the VC connection
     MUTEX_TRY_LOCK(lock, m, t);
-    if (!lock) {
+    if (!lock.is_locked()) {
       t->schedule_in(this, CLUSTER_CONNECT_RETRY);
       return EVENT_DONE;
     }

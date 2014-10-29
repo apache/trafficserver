@@ -133,18 +133,16 @@ static ink_mutex big_mux;
 #define UNLOCK_MONGO_MUTEX ink_mutex_release (&big_mux)
 #endif
 
-#define FORCE_PLUGIN_MUTEX(_c) \
-  MutexLock ml; \
-  LOCK_MONGO_MUTEX; \
-  if (( (INKContInternal*)_c)->mutex == NULL) { \
-      ( (INKContInternal*)_c)->mutex = new_ProxyMutex(); \
-      UNLOCK_MONGO_MUTEX; \
-      MUX_WARNING(_c); \
-      MUTEX_SET_AND_TAKE_LOCK(ml, ((INKContInternal*)_c)->mutex, this_ethread()); \
-  } else { \
-      UNLOCK_MONGO_MUTEX; \
-      MUTEX_SET_AND_TAKE_LOCK(ml, ((INKContInternal*)_c)->mutex, this_ethread()); \
-  }
+#define FORCE_PLUGIN_MUTEX(_c)                                          \
+  bool do_warn = false;                                                 \
+  LOCK_MONGO_MUTEX;                                                     \
+  if (( (INKContInternal*)_c)->mutex == NULL) {                         \
+    ( (INKContInternal*)_c)->mutex = new_ProxyMutex();                  \
+    do_warn = true;                                                     \
+  }                                                                     \
+  UNLOCK_MONGO_MUTEX;                                                   \
+  if (do_warn) MUX_WARNING(_c);                                         \
+  MUTEX_LOCK(ml, ((INKContInternal*)_c)->mutex, this_ethread());
 
 #ifdef __cplusplus
 extern "C"

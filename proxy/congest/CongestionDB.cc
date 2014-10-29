@@ -177,7 +177,7 @@ CongestionDB::addRecord(uint64_t key, CongestionEntry * pEntry)
   pEntry->get();
   ProxyMutex *bucket_mutex = lock_for_key(key);
   MUTEX_TRY_LOCK(lock, bucket_mutex, this_ethread());
-  if (lock) {
+  if (lock.is_locked()) {
     RunTodoList(part_num(key));
     CongestionEntry *tmp = insert_entry(key, pEntry);
     if (tmp)
@@ -199,7 +199,7 @@ CongestionDB::removeAllRecords()
   for (int part = 0; part < MT_HASHTABLE_PARTITIONS; part++) {
     ProxyMutex *bucket_mutex = lock_for_key(part);
     MUTEX_TRY_LOCK(lock, bucket_mutex, this_ethread());
-    if (lock) {
+    if (lock.is_locked()) {
       RunTodoList(part);
       tmp = first_entry(part, &it);
       while (tmp) {
@@ -222,7 +222,7 @@ CongestionDB::removeRecord(uint64_t key)
   CongestionEntry *tmp;
   ProxyMutex *bucket_mutex = lock_for_key(key);
   MUTEX_TRY_LOCK(lock, bucket_mutex, this_ethread());
-  if (lock) {
+  if (lock.is_locked()) {
     RunTodoList(part_num(key));
     tmp = remove_entry(key);
     if (tmp)
@@ -325,7 +325,7 @@ CongestionDBCont::GC(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
       ProxyMutex *bucket_mutex = theCongestionDB->lock_for_key(CDBC_pid);
       {
         MUTEX_TRY_LOCK(lock, bucket_mutex, this_ethread());
-        if (lock) {
+        if (lock.is_locked()) {
           ink_hrtime now = ink_get_hrtime();
           now = ink_hrtime_to_sec(now);
           theCongestionDB->RunTodoList(CDBC_pid);
@@ -361,7 +361,7 @@ CongestionDBCont::get_congest_list(int /* event ATS_UNUSED */, Event * e)
     ProxyMutex *bucket_mutex = theCongestionDB->lock_for_key(CDBC_pid);
     {
       MUTEX_TRY_LOCK(lock_bucket, bucket_mutex, this_ethread());
-      if (!lock_bucket) {
+      if (!lock_bucket.is_locked()) {
         e->schedule_in(SCHEDULE_CONGEST_CONT_INTERVAL);
         return EVENT_CONT;
       } else {
@@ -400,7 +400,7 @@ CongestionDBCont::get_congest_entry(int /* event ATS_UNUSED */, Event * e)
   }
   ProxyMutex *bucket_mutex = theCongestionDB->lock_for_key(CDBC_key);
   MUTEX_TRY_LOCK(lock_bucket, bucket_mutex, this_ethread());
-  if (lock_bucket) {
+  if (lock_bucket.is_locked()) {
     theCongestionDB->RunTodoList(theCongestionDB->part_num(CDBC_key));
     *CDBC_ppE = theCongestionDB->lookup_entry(CDBC_key);
     if (*CDBC_ppE != NULL) {
@@ -451,7 +451,7 @@ revalidateCongestionDB()
     bucket_mutex = theCongestionDB->lock_for_key(i);
     {
       MUTEX_TRY_LOCK(lock_bucket, bucket_mutex, this_ethread());
-      if (lock_bucket) {
+      if (lock_bucket.is_locked()) {
         theCongestionDB->RunTodoList(i);
         theCongestionDB->revalidateBucket(i);
       } else {
@@ -484,7 +484,7 @@ get_congest_entry(Continuation * cont, HttpRequestData * data, CongestionEntry *
 
   ProxyMutex *bucket_mutex = theCongestionDB->lock_for_key(key);
   MUTEX_TRY_LOCK(lock_bucket, bucket_mutex, this_ethread());
-  if (lock_bucket) {
+  if (lock_bucket.is_locked()) {
     theCongestionDB->RunTodoList(theCongestionDB->part_num(key));
     *ppEntry = theCongestionDB->lookup_entry(key);
     if (*ppEntry != NULL) {
@@ -526,7 +526,7 @@ get_congest_list(Continuation * cont, MIOBuffer * buffer, int format)
     ProxyMutex *bucket_mutex = theCongestionDB->lock_for_key(i);
     {
       MUTEX_TRY_LOCK(lock_bucket, bucket_mutex, this_ethread());
-      if (lock_bucket) {
+      if (lock_bucket.is_locked()) {
         theCongestionDB->RunTodoList(i);
         char buf[1024];
         Iter it;

@@ -328,7 +328,7 @@ NetAccept::acceptEvent(int event, void *ep)
   else
     m = mutex;
   MUTEX_TRY_LOCK(lock, m, e->ethread);
-  if (lock) {
+  if (lock.is_locked()) {
     if (action_->cancelled) {
       e->cancel();
       NET_DECREMENT_DYN_STAT(net_accepts_currently_open_stat);

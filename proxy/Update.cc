@@ -795,7 +795,7 @@ int
 UpdateConfigManager::GetConfigParams(Ptr<UpdateConfigParams> *P)
 {
   MUTEX_TRY_LOCK(lock, mutex, this_ethread());
-  if (!lock) {
+  if (!lock.is_locked()) {
     return 0;                   // Try again later
   } else {
     *P = _CP;
@@ -807,7 +807,7 @@ int
 UpdateConfigManager::GetConfigList(Ptr<UpdateConfigList> *L)
 {
   MUTEX_TRY_LOCK(lock, mutex, this_ethread());
-  if (!lock) {
+  if (!lock.is_locked()) {
     return 0;                   // Try again later
   } else {
     *L = _CL;
@@ -1318,7 +1318,7 @@ UpdateScheduler::ChildExitEventHandler(int event, Event * /* e ATS_UNUSED */)
   case EVENT_INTERVAL:
     {
       MUTEX_TRY_LOCK(lock, _parent_US->mutex, this_ethread());
-      if (lock) {
+      if (lock.is_locked()) {
         Debug("update", "Child UpdateScheduler exit id: %d", _base_EN->_id);
         _parent_US->handleEvent(EVENT_IMMEDIATE, _base_EN);
         delete this;
@@ -1493,7 +1493,7 @@ UpdateSM::HandleSMEvent(int event, Event * /* e ATS_UNUSED */)
 
         } else {
           MUTEX_TRY_LOCK(lock, _US->mutex, this_ethread());
-          if (lock) {
+          if (lock.is_locked()) {
             _US->handleEvent(EVENT_IMMEDIATE, (void *) _EN);
             delete this;
             return EVENT_DONE;
@@ -1770,7 +1770,7 @@ RecursiveHttpGet::ExitEventHandler(int event, Event * /* e ATS_UNUSED */)
   case EVENT_INTERVAL:
     {
       MUTEX_TRY_LOCK(lock, _caller_cont->mutex, this_ethread());
-      if (lock) {
+      if (lock.is_locked()) {
         Debug("update", "Exiting recursive read rid: %d [%s]", _id, html_parser._url);
         _caller_cont->handleEvent(UPDATE_EVENT_SUCCESS, 0);
         delete this;
@@ -2550,7 +2550,7 @@ ObjectReloadCont::ObjectReloadEvent(int event, void *d)
       Debug("update-reload", "Connect start id=%d", _request_id);
       _state = ObjectReloadCont::ATTEMPT_CONNECT;
       MUTEX_TRY_LOCK(lock, this->mutex, this_ethread());
-      ink_release_assert(lock);
+      ink_release_assert(lock.is_locked());
       target.setToLoopback(AF_INET);
       target.port() = htons(HttpProxyPort::findHttp(AF_INET)->m_port);
       _cur_action = netProcessor.connect_re(this, &target.sa);

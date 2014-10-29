@@ -148,7 +148,7 @@ HttpClientSession::new_connection(NetVConnection * new_vc, MIOBuffer * iobuf, IO
   magic = HTTP_CS_MAGIC_ALIVE;
   mutex = new_vc->mutex;
   MUTEX_TRY_LOCK(lock, mutex, this_ethread());
-  ink_assert(!!lock);
+  ink_assert(lock.is_locked());
 
   // Disable hooks for backdoor connections.
   this->hooks_on = !backdoor;

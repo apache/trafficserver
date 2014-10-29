@@ -136,7 +136,7 @@ void
 SocksEntry::free()
 {
   MUTEX_TRY_LOCK(lock, action_.mutex, this_ethread());
-  if (!lock) {
+  if (lock.is_locked()) {
     // Socks continuation share the user's lock
     // so acquiring a lock shouldn't fail
     ink_assert(0);

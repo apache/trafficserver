@@ -78,7 +78,7 @@ namespace {
       EThread* eth = this_ethread();
 
       MUTEX_TRY_LOCK(lock, _target->mutex, eth);
-      if (lock) { // got the target lock, we can proceed.
+      if (lock.is_locked()) { // got the target lock, we can proceed.
         _target->handleEvent(_eventId, _edata);
         delete this;
       } else { // can't get both locks, try again.
@@ -105,7 +105,7 @@ namespace {
       ) {
       EThread* eth = this_ethread();
       MUTEX_TRY_LOCK(lock, target->mutex, eth);
-      if (lock) {
+      if (lock.is_locked()) {
         target->handleEvent(eventId, edata);
       } else {
         eventProcessor.schedule_imm(new ContWrapper(mutex, target, eventId, edata), ET_NET);
@@ -399,7 +399,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
   }
 
   MUTEX_TRY_LOCK_FOR(lock, s->vio.mutex, lthread, s->vio._cont);
-  if (!lock) {
+  if (!lock.is_locked()) {
     readReschedule(nh);
     return;
   }
@@ -564,7 +564,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
     break;
   case SSL_WRITE_WOULD_BLOCK:
   case SSL_READ_WOULD_BLOCK:
-    if (lock.m.m_ptr != s->vio.mutex.m_ptr) {
+    if (lock.get_mutex() != s->vio.mutex.m_ptr) {
       Debug("ssl", "ssl_read_from_net, mutex switched");
       if (ret == SSL_READ_WOULD_BLOCK)
         readReschedule(nh);

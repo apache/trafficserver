@@ -46,7 +46,7 @@ Cache::open_read(Continuation * cont, CacheKey * key, CacheFragType type, char *
   CacheVC *c = NULL;
   {
     CACHE_TRY_LOCK(lock, vol->mutex, mutex->thread_holding);
-    if (!lock || (od = vol->open_read(key)) || dir_probe(key, vol, &result, &last_collision)) {
+    if (!lock.is_locked() || (od = vol->open_read(key)) || dir_probe(key, vol, &result, &last_collision)) {
       c = new_CacheVC(cont);
       SET_CONTINUATION_HANDLER(c, &CacheVC::openReadStartHead);
       c->vio.op = VIO::READ;
@@ -59,7 +59,7 @@ Cache::open_read(Continuation * cont, CacheKey * key, CacheFragType type, char *
     }
     if (!c)
       goto Lmiss;
-    if (!lock) {
+    if (!lock.is_locked()) {
       CONT_SCHED_LOCK_RETRY(c);
       return &c->_action;
     }
@@ -108,7 +108,7 @@ Cache::open_read(Continuation * cont, CacheKey * key, CacheHTTPHdr * request,
 
   {
     CACHE_TRY_LOCK(lock, vol->mutex, mutex->thread_holding);
-    if (!lock || (od = vol->open_read(key)) || dir_probe(key, vol, &result, &last_collision)) {
+    if (!lock.is_locked() || (od = vol->open_read(key)) || dir_probe(key, vol, &result, &last_collision)) {
       c = new_CacheVC(cont);
       c->first_key = c->key = c->earliest_key = *key;
       c->vol = vol;
@@ -120,7 +120,7 @@ Cache::open_read(Continuation * cont, CacheKey * key, CacheHTTPHdr * request,
       c->params = params;
       c->od = od;
     }
-    if (!lock) {
+    if (!lock.is_locked()) {
       SET_CONTINUATION_HANDLER(c, &CacheVC::openReadStartHead);
       CONT_SCHED_LOCK_RETRY(c);
       return &c->_action;
@@ -312,7 +312,7 @@ CacheVC::openReadFromWriter(int event, Event * e)
     return free_CacheVC(this);
   }
   CACHE_TRY_LOCK(lock, vol->mutex, mutex->thread_holding);
-  if (!lock)
+  if (!lock.is_locked())
     VC_SCHED_LOCK_RETRY();
   od = vol->open_read(&first_key); // recheck in case the lock failed
   if (!od) {
@@ -374,7 +374,7 @@ CacheVC::openReadFromWriter(int event, Event * e)
   }
 
   CACHE_TRY_LOCK(writer_lock, write_vc->mutex, mutex->thread_holding);
-  if (!writer_lock) {
+  if (!writer_lock.is_locked()) {
     DDebug("cache_read_agg", "%p: key: %X lock miss", this, first_key.slice32(1));
     VC_SCHED_LOCK_RETRY();
   }
@@ -522,7 +522,7 @@ CacheVC::openReadClose(int event, Event * /* e ATS_UNUSED */)
     set_io_not_in_progress();
   }
   CACHE_TRY_LOCK(lock, vol->mutex, mutex->thread_holding);
-  if (!lock)
+  if (!lock.is_locked())
     VC_SCHED_LOCK_RETRY();
   if (f.hit_evacuate && dir_valid(vol, &first_dir) && closed > 0) {
     if (f.single_fragment)
@@ -547,7 +547,7 @@ CacheVC::openReadReadDone(int event, Event * e)
   set_io_not_in_progress();
   {
     CACHE_TRY_LOCK(lock, vol->mutex, mutex->thread_holding);
-    if (!lock)
+    if (!lock.is_locked())
       VC_SCHED_LOCK_RETRY();
     if (event == AIO_EVENT_DONE && !io.ok()) {
       dir_delete(&earliest_key, vol, &earliest_dir);
@@ -752,7 +752,7 @@ Lread: {
     // a new EVENT_INTERVAL event.
     cancel_trigger();
     CACHE_TRY_LOCK(lock, vol->mutex, mutex->thread_holding);
-    if (!lock) {
+    if (!lock.is_locked()) {
       SET_HANDLER(&CacheVC::openReadMain);
       VC_SCHED_LOCK_RETRY();
     }
@@ -810,7 +810,7 @@ CacheVC::openReadStartEarliest(int /* event ATS_UNUSED */, Event * /* e ATS_UNUS
     return free_CacheVC(this);
   {
     CACHE_TRY_LOCK(lock, vol->mutex, mutex->thread_holding);
-    if (!lock)
+    if (!lock.is_locked())
       VC_SCHED_LOCK_RETRY();
     if (!buf)
       goto Lread;
@@ -968,7 +968,7 @@ CacheVC::openReadVecWrite(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */
     return openWriteCloseDir(EVENT_IMMEDIATE, 0);
   {
     CACHE_TRY_LOCK(lock, vol->mutex, mutex->thread_holding);
-    if (!lock)
+    if (!lock.is_locked())
       VC_SCHED_LOCK_RETRY();
     if (io.ok()) {
       ink_assert(f.evac_vector);
@@ -1020,7 +1020,7 @@ CacheVC::openReadStartHead(int event, Event * e)
     return free_CacheVC(this);
   {
     CACHE_TRY_LOCK(lock, vol->mutex, mutex->thread_holding);
-    if (!lock)
+    if (!lock.is_locked())
       VC_SCHED_LOCK_RETRY();
     if (!buf)
       goto Lread;

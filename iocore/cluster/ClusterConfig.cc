@@ -66,7 +66,7 @@ void
 ClusterAccept::ShutdownDelete()
 {
   MUTEX_TRY_LOCK(lock, this->mutex, this_ethread());
-  if (!lock) {
+  if (!lock.is_locked()) {
     eventProcessor.schedule_imm(this, ET_CALL);
     return;
   }

@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.2.0
 
+  *) [TS-3156] Remove MutexLock bool operators.
+   Author: Powell Molleti <powellm@yahoo-inc.com>
+
   *) [TS-2682] Add per remap support for background fetch plugin
 
   *) [TS-2683]: Enhance the bg fetch plugin to support specifyng various 

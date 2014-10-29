@@ -155,7 +155,7 @@ UDPNetProcessorInternal::udp_callback(UDPNetHandler * nh, UDPConnection * xuc, E
 
   if (uc->continuation && uc->mutex) {
     MUTEX_TRY_LOCK_FOR(lock, uc->mutex, thread, uc->continuation);
-    if (!lock) {
+    if (!lock.is_locked()) {
       return 1;
     }
     uc->AddRef();

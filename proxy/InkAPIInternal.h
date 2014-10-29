@@ -319,7 +319,7 @@ public:
   {
     if (m_cont->mutex != NULL) {
       MUTEX_TRY_LOCK(trylock, m_cont->mutex, this_ethread());
-      if (!trylock) {
+      if (!trylock.is_locked()) {
         eventProcessor.schedule_in(this, HRTIME_MSECONDS(10), ET_TASK);
       } else {
         m_cont->handleEvent(TS_EVENT_MGMT_UPDATE, NULL);

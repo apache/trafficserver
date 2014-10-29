@@ -725,7 +725,7 @@ HostDBProcessor::getby(Continuation * cont,
 
   if ((!hostdb_enable || (hostname && !*hostname)) || (hostdb_disable_reverse_lookup && ip)) {
     MUTEX_TRY_LOCK(lock, cont->mutex, thread);
-    if (!lock)
+    if (!lock.is_locked())
       goto Lretry;
     cont->handleEvent(EVENT_HOST_DB_LOOKUP, NULL);
     return ACTION_RESULT_DONE;
@@ -765,7 +765,7 @@ HostDBProcessor::getby(Continuation * cont,
       MUTEX_TRY_LOCK(lock, bmutex, thread);
       MUTEX_TRY_LOCK(lock2, cont->mutex, thread);
 
-      if (lock && lock2) {
+      if (lock.is_locked() && lock2.is_locked()) {
         // If we can get the lock and a level 1 probe succeeds, return
         HostDBInfo *r = probe(bmutex, md5, aforce_dns);
         if (r) {
@@ -878,7 +878,7 @@ HostDBProcessor::getSRVbyname_imm(Continuation * cont, process_srv_info_pfn proc
     MUTEX_TRY_LOCK(lock, bucket_mutex, thread);
 
     // If we can get the lock and a level 1 probe succeeds, return
-    if (lock) {
+    if (lock.is_locked()) {
       HostDBInfo *r = probe(bucket_mutex, md5, false);
       if (r) {
         Debug("hostdb", "immediate SRV answer for %s from hostdb", hostname);
@@ -964,22 +964,19 @@ HostDBProcessor::getbyname_imm(Continuation * cont, process_hostdb_info_pfn proc
       // find the partition lock
       ProxyMutex *bucket_mutex = hostDB.lock_for_bucket((int) (fold_md5(md5.hash) % hostDB.buckets));
       MUTEX_LOCK(lock, bucket_mutex, thread);
-
-      if (lock) {
-        // If we can get the lock do a level 1 probe for immediate result.
-        HostDBInfo *r = probe(bucket_mutex, md5, false);
-        if (r) {
-          if (r->failed()) // fail, see if we should retry with alternate
-            loop = check_for_retry(md5.db_mark, opt.host_res_style);
-          if (!loop) {
-            // No retry -> final result. Return it.
-            Debug("hostdb", "immediate answer for %.*s", md5.host_len, md5.host_name);
-            HOSTDB_INCREMENT_DYN_STAT(hostdb_total_hits_stat);
-            (cont->*process_hostdb_info) (r);
-            return ACTION_RESULT_DONE;
-          }
-          md5.refresh(); // Update for retry.
+      // do a level 1 probe for immediate result.
+      HostDBInfo *r = probe(bucket_mutex, md5, false);
+      if (r) {
+        if (r->failed()) // fail, see if we should retry with alternate
+          loop = check_for_retry(md5.db_mark, opt.host_res_style);
+        if (!loop) {
+          // No retry -> final result. Return it.
+          Debug("hostdb", "immediate answer for %.*s", md5.host_len, md5.host_name);
+          HOSTDB_INCREMENT_DYN_STAT(hostdb_total_hits_stat);
+          (cont->*process_hostdb_info) (r);
+          return ACTION_RESULT_DONE;
         }
+        md5.refresh(); // Update for retry.
       }
     } while (loop);
   }
@@ -1060,7 +1057,7 @@ HostDBProcessor::setby(const char *hostname, int len, sockaddr const* ip, HostDB
   EThread *thread = this_ethread();
   MUTEX_TRY_LOCK(lock, mutex, thread);
 
-  if (lock) {
+  if (lock.is_locked()) {
     HostDBInfo *r = probe(mutex, md5, false);
     if (r)
       do_setby(r, app, hostname, md5.ip);
@@ -1207,7 +1204,7 @@ HostDBContinuation::removeEvent(int /* event ATS_UNUSED */, Event * e)
   Continuation *cont = action.continuation;
 
   MUTEX_TRY_LOCK(lock, cont ? (ProxyMutex *) cont->mutex : (ProxyMutex *) NULL, e->ethread);
-  if (!lock) {
+  if (!lock.is_locked()) {
     e->schedule_in(HOST_DB_RETRY_PERIOD);
     return EVENT_CONT;
   }
@@ -1333,7 +1330,7 @@ HostDBContinuation::dnsPendingEvent(int event, Event * e)
   if (event == EVENT_INTERVAL) {
     // we timed out, return a failure to the user
     MUTEX_TRY_LOCK_FOR(lock, action.mutex, ((Event *) e)->ethread, action.continuation);
-    if (!lock) {
+    if (!lock.is_locked()) {
       timeout = eventProcessor.schedule_in(this, HOST_DB_RETRY_PERIOD);
       return EVENT_CONT;
     }
@@ -1385,7 +1382,7 @@ HostDBContinuation::dnsEvent(int event, HostEnt * e)
       return EVENT_DONE;
     }
     MUTEX_TRY_LOCK_FOR(lock, action.mutex, thread, action.continuation);
-    if (!lock) {
+    if (!lock.is_locked()) {
       timeout = thread->schedule_in(this, HOST_DB_RETRY_PERIOD);
       return EVENT_CONT;
     }
@@ -1610,7 +1607,7 @@ HostDBContinuation::dnsEvent(int event, HostEnt * e)
       }
 
       MUTEX_TRY_LOCK_FOR(lock, action.mutex, thread, action.continuation);
-      if (!lock) {
+      if (!lock.is_locked()) {
         remove_trigger_pending_dns();
         SET_HANDLER((HostDBContHandler) & HostDBContinuation::probeEvent);
         thread->schedule_in(this, HOST_DB_RETRY_PERIOD);
@@ -1793,7 +1790,7 @@ HostDBContinuation::probeEvent(int /* event ATS_UNUSED */, Event * e)
   EThread *t = e ? e->ethread : this_ethread();
 
   MUTEX_TRY_LOCK_FOR(lock, action.mutex, t, action.continuation);
-  if (!lock) {
+  if (!lock.is_locked()) {
     mutex->thread_holding->schedule_in(this, HOST_DB_RETRY_PERIOD);
     return EVENT_CONT;
   }
@@ -1951,7 +1948,7 @@ HostDBContinuation::clusterResponseEvent(int/*  event ATS_UNUSED */, Event * e)
       from_cont = 0;
       MUTEX_TRY_LOCK(lock, c->mutex, e->ethread);
       MUTEX_TRY_LOCK(lock2, c->action.mutex, e->ethread);
-      if (!lock || !lock2) {
+      if (!lock.is_locked() || !lock2.is_locked()) {
         e->schedule_in(HOST_DB_RETRY_PERIOD);
         return EVENT_CONT;
       }
@@ -2021,7 +2018,7 @@ HostDBContinuation::clusterEvent(int event, Event * e)
     //
   case EVENT_INTERVAL:{
       MUTEX_TRY_LOCK_FOR(lock, action.mutex, e->ethread, action.continuation);
-      if (!lock) {
+      if (!lock.is_locked()) {
         e->schedule_in(HOST_DB_RETRY_PERIOD);
         return EVENT_CONT;
       }

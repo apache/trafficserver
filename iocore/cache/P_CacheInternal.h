@@ -757,7 +757,7 @@ CacheVC::handleWriteLock(int /* event ATS_UNUSED */, Event *e)
   int ret = 0;
   {
     CACHE_TRY_LOCK(lock, vol->mutex, mutex->thread_holding);
-    if (!lock) {
+    if (!lock.is_locked()) {
       set_agg_write_in_progress();
       trigger = mutex->thread_holding->schedule_in_local(this, HRTIME_MSECONDS(cache_config_mutex_retry_delay));
       return EVENT_CONT;
@@ -850,7 +850,7 @@ Vol::close_write_lock(CacheVC *cont)
 {
   EThread *t = cont->mutex->thread_holding;
   CACHE_TRY_LOCK(lock, mutex, t);
-  if (!lock)
+  if (!lock.is_locked())
     return -1;
   return close_write(cont);
 }
@@ -860,7 +860,7 @@ Vol::open_write_lock(CacheVC *cont, int allow_if_writers, int max_writers)
 {
   EThread *t = cont->mutex->thread_holding;
   CACHE_TRY_LOCK(lock, mutex, t);
-  if (!lock)
+  if (!lock.is_locked())
     return -1;
   return open_write(cont, allow_if_writers, max_writers);
 }
@@ -869,7 +869,7 @@ TS_INLINE OpenDirEntry *
 Vol::open_read_lock(INK_MD5 *key, EThread *t)
 {
   CACHE_TRY_LOCK(lock, mutex, t);
-  if (!lock)
+  if (!lock.is_locked())
     return NULL;
   return open_dir.open_read(key);
 }
@@ -885,7 +885,7 @@ Vol::begin_read_lock(CacheVC *cont)
   // VC is enqueued in stat_cache_vcs in the begin_read call
   EThread *t = cont->mutex->thread_holding;
   CACHE_TRY_LOCK(lock, mutex, t);
-  if (!lock)
+  if (!lock.is_locked())
     return -1;
   return begin_read(cont);
 }
@@ -895,7 +895,7 @@ Vol::close_read_lock(CacheVC *cont)
 {
   EThread *t = cont->mutex->thread_holding;
   CACHE_TRY_LOCK(lock, mutex, t);
-  if (!lock)
+  if (!lock.is_locked())
     return -1;
   return close_read(cont);
 }
@@ -905,7 +905,7 @@ dir_delete_lock(CacheKey *key, Vol *d, ProxyMutex *m, Dir *del)
 {
   EThread *thread = m->thread_holding;
   CACHE_TRY_LOCK(lock, d->mutex, thread);
-  if (!lock)
+  if (!lock.is_locked())
     return -1;
   return dir_delete(key, d, del);
 }
@@ -915,7 +915,7 @@ dir_insert_lock(CacheKey *key, Vol *d, Dir *to_part, ProxyMutex *m)
 {
   EThread *thread = m->thread_holding;
   CACHE_TRY_LOCK(lock, d->mutex, thread);
-  if (!lock)
+  if (!lock.is_locked())
     return -1;
   return dir_insert(key, d, to_part);
 }
@@ -925,7 +925,7 @@ dir_overwrite_lock(CacheKey *key, Vol *d, Dir *to_part, ProxyMutex *m, Dir *over
 {
   EThread *thread = m->thread_holding;
   CACHE_TRY_LOCK(lock, d->mutex, thread);
-  if (!lock)
+  if (!lock.is_locked())
     return -1;
   return dir_overwrite(key, d, to_part, overwrite, must_overwrite);
 }

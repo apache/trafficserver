@@ -133,7 +133,7 @@ ClusterProcessor::internal_invoke_remote(ClusterHandler *ch, int cluster_fn,
       ink_atomiclist_push(&ch->outgoing_control_al[q], (void *) c);
 
       MUTEX_TRY_LOCK(lock, ch->mutex, tt);
-      if (!lock) {
+      if (!lock.is_locked()) {
 		if(ch->thread && ch->thread->signal_hook)
 		  ch->thread->signal_hook(ch->thread);
 		return 1;
@@ -258,7 +258,7 @@ ClusterProcessor::open_local(Continuation * cont, ClusterMachine */* m ATS_UNUSE
   CLUSTER_INCREMENT_DYN_STAT(CLUSTER_CONNECTIONS_OPENNED_STAT);
   CLUSTER_INCREMENT_DYN_STAT(CLUSTER_CONNECTIONS_OPEN_STAT);
   MUTEX_TRY_LOCK(lock, ch->mutex, thread);
-  if (!lock) {
+  if (!lock.is_locked()) {
 #endif
     if (immediate) {
       clusterVCAllocator_free(vc);
@@ -327,7 +327,7 @@ ClusterProcessor::connect_local(Continuation * cont, ClusterVCToken * token, int
   CLUSTER_INCREMENT_DYN_STAT(CLUSTER_CONNECTIONS_OPENNED_STAT);
   CLUSTER_INCREMENT_DYN_STAT(CLUSTER_CONNECTIONS_OPEN_STAT);
   MUTEX_TRY_LOCK(lock, ch->mutex, thread);
-  if (!lock) {
+  if (!lock.is_locked()) {
 #endif
     if (immediate) {
       clusterVCAllocator_free(vc);

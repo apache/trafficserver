@@ -707,7 +707,7 @@ CongestionEntry::failed_at(ink_hrtime t)
   long time = t;
   Debug("congestion_control", "failed_at: %ld", time);
   MUTEX_TRY_LOCK(lock, m_hist_lock, this_ethread());
-  if (lock) {
+  if (lock.is_locked()) {
     m_history.regist_event(time);
     if (!m_congested) {
       int32_t new_congested = compCongested();

@@ -214,7 +214,7 @@ HttpUpdateSM::kill_this_async_hook(int event, void * /* data ATS_UNUSED */)
 
   MUTEX_TRY_LOCK(lock, cb_action.mutex, this_ethread());
 
-  if (!lock) {
+  if (!lock.is_locked()) {
     default_handler = (HttpSMHandler) & HttpUpdateSM::kill_this_async_hook;
     eventProcessor.schedule_in(this, HRTIME_MSECONDS(10), ET_CALL);
     return EVENT_DONE;

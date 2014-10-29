@@ -359,7 +359,7 @@ ClusterState::doIO()
   ink_release_assert(io_complete);
 #if !defined(CLUSTER_IMMEDIATE_NETIO)
   MUTEX_TRY_LOCK(lock, this->mutex, this_ethread());
-  if (!lock) {
+  if (!lock.is_locked()) {
     return 0;                   // unable to initiate operation
   }
 #endif
@@ -558,7 +558,7 @@ ClusterState::IOComplete()
 
   if (do_iodone_event && !ch->mutex->thread_holding) {
     MUTEX_TRY_LOCK(lock, ch->mutex, this_ethread());
-    if (lock) {
+    if (lock.is_locked()) {
       ch->handleEvent(EVENT_IMMEDIATE, (void *) 0);
     } else {
       eventProcessor.schedule_imm_signal(ch, ET_CLUSTER);
@@ -1023,7 +1023,7 @@ ClusterHandler::startClusterEvent(int event, Event * e)
         UnixNetVConnection *vc = (UnixNetVConnection *)net_vc; 
         MUTEX_TRY_LOCK(lock, vc->nh->mutex, e->ethread);
         MUTEX_TRY_LOCK(lock1, vc->mutex, e->ethread);
-        if (lock && lock1) {
+        if (lock.is_locked() && lock1.is_locked()) {
           vc->ep.stop();
           vc->nh->open_list.remove(vc);
           vc->thread = NULL;
@@ -1054,7 +1054,7 @@ ClusterHandler::startClusterEvent(int event, Event * e)
         UnixNetVConnection *vc = (UnixNetVConnection *)net_vc; 
         MUTEX_TRY_LOCK(lock, nh->mutex, e->ethread);
         MUTEX_TRY_LOCK(lock1, vc->mutex, e->ethread);
-        if (lock && lock1) {
+        if (lock.is_locked() && lock1.is_locked()) {
           if (vc->read.in_enabled_list)
             nh->read_enable_list.push(vc);
           if (vc->write.in_enabled_list)
@@ -1275,7 +1275,7 @@ ClusterHandler::protoZombieEvent(int /* event ATS_UNUSED */, Event * e)
     if (VALID_CHANNEL(vc)) {
       if (!vc->closed && vc->read.vio.op == VIO::READ) {
         MUTEX_TRY_LOCK(lock, vc->read.vio.mutex, t);
-        if (lock) {
+        if (lock.is_locked()) {
           cluster_signal_error_and_update(vc, &vc->read, 0);
         } else {
           failed = true;
@@ -1285,7 +1285,7 @@ ClusterHandler::protoZombieEvent(int /* event ATS_UNUSED */, Event * e)
       if (VALID_CHANNEL(vc)
           && !vc->closed && vc->write.vio.op == VIO::WRITE) {
         MUTEX_TRY_LOCK(lock, vc->write.vio.mutex, t);
-        if (lock) {
+        if (lock.is_locked()) {
           cluster_signal_error_and_update(vc, &vc->write, 0);
         } else {
           failed = true;
@@ -1316,7 +1316,7 @@ ClusterHandler::protoZombieEvent(int /* event ATS_UNUSED */, Event * e)
     for (int n = 0; n < MAX_COMPLETION_CALLBACK_EVENTS; ++n) {
       if (callout_cont[n]) {
         MUTEX_TRY_LOCK(lock, callout_cont[n]->mutex, t);
-        if (lock) {
+        if (lock.is_locked()) {
           callout_events[n]->cancel(callout_cont[n]);
           callout_events[n] = 0;
           delete callout_cont[n];

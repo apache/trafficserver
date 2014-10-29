@@ -260,7 +260,7 @@ ClusterVConnectionCache::insert(INK_MD5 * key, ClusterVConnection * vc)
   ProxyMutex *mutex = thread->mutex;
 
   MUTEX_TRY_LOCK(lock, hash_lock[index], thread);
-  if (!lock) {
+  if (!lock.is_locked()) {
     CLUSTER_INCREMENT_DYN_STAT(CLUSTER_VC_CACHE_INSERT_LOCK_MISSES_STAT);
     return 0;                   // lock miss, retry later
 
@@ -286,7 +286,7 @@ ClusterVConnectionCache::lookup(INK_MD5 * key)
   ProxyMutex *mutex = thread->mutex;
 
   MUTEX_TRY_LOCK(lock, hash_lock[index], thread);
-  if (!lock) {
+  if (!lock.is_locked()) {
     CLUSTER_INCREMENT_DYN_STAT(CLUSTER_VC_CACHE_LOOKUP_LOCK_MISSES_STAT);
     return vc;                  // lock miss, retry later
 
@@ -314,7 +314,7 @@ ClusterVConnectionCacheEvent::eventHandler(int /* event ATS_UNUSED */, Event * e
 {
   CLUSTER_INCREMENT_DYN_STAT(CLUSTER_VC_CACHE_SCANS_STAT);
   MUTEX_TRY_LOCK(lock, cache->hash_lock[hash_index], this_ethread());
-  if (!lock) {
+  if (!lock.is_locked()) {
     CLUSTER_INCREMENT_DYN_STAT(CLUSTER_VC_CACHE_SCAN_LOCK_MISSES_STAT);
     e->schedule_in(HRTIME_MSECONDS(10));
     return EVENT_DONE;
@@ -423,7 +423,7 @@ CacheContinuation::do_op(Continuation * c, ClusterMachine * mp, void *args,
 
     unsigned int hash = FOLDHASH(cc->target_ip, cc->seq_number);
     MUTEX_TRY_LOCK(queuelock, remoteCacheContQueueMutex[hash], this_ethread());
-    if (!queuelock) {
+    if (!queuelock.is_locked()) {
 
       // failed to acquire lock: no problem, retry later
       cc->timeout = eventProcessor.schedule_in(cc, CACHE_RETRY_PERIOD, ET_CACHE_CONT_SM);
@@ -797,7 +797,7 @@ CacheContinuation::remove_and_delete(int /* event ATS_UNUSED */, Event * e)
 {
   unsigned int hash = FOLDHASH(target_ip, seq_number);
   MUTEX_TRY_LOCK(queuelock, remoteCacheContQueueMutex[hash], this_ethread());
-  if (queuelock) {
+  if (queuelock.is_locked()) {
     if (remoteCacheContQueue[hash].in(this)) {
       remoteCacheContQueue[hash].remove(this);
     }
@@ -831,7 +831,7 @@ CacheContinuation::localVCsetupEvent(int event, ClusterVConnection * vc)
     unsigned int hash = FOLDHASH(target_ip, seq_number);
 
     MUTEX_TRY_LOCK(queuelock, remoteCacheContQueueMutex[hash], e->ethread);
-    if (!queuelock) {
+    if (!queuelock.is_locked()) {
       e->schedule_in(CACHE_RETRY_PERIOD);
       return EVENT_CONT;
     }
@@ -1940,7 +1940,7 @@ CacheContinuation::handleDisposeEvent(int /* event ATS_UNUSED */, CacheContinuat
 {
   ink_assert(cc->magicno == (int) MagicNo);
   MUTEX_TRY_LOCK(lock, cc->tunnel_mutex, this_ethread());
-  if (lock) {
+  if (lock.is_locked()) {
     // Write of initial object data is complete.
 
     if (!cc->tunnel_closed) {
@@ -2071,7 +2071,7 @@ cache_op_result_ClusterFunction(ClusterHandler *ch, void *d, int l)
 
     // Failed to acquire lock, defer
 
-    if (!lock) {
+    if (!lock.is_locked()) {
       MUTEX_UNTAKE_LOCK(remoteCacheContQueueMutex[hash], thread);
       goto Lretry;
     }
@@ -2143,7 +2143,7 @@ CacheContinuation::handleReplyEvent(int event, Event * e)
     // Acquire the lock to the continuation mutex
 
     MUTEX_TRY_LOCK(lock, c->mutex, e->ethread);
-    if (!lock) {
+    if (!lock.is_locked()) {
 
       // If we fail to acquire the lock, reschedule
 
@@ -2230,7 +2230,7 @@ retry:
       unsigned int hash = FOLDHASH(target_ip, seq_number);
 
       MUTEX_TRY_LOCK(queuelock, remoteCacheContQueueMutex[hash], e->ethread);
-      if (!queuelock) {
+      if (!queuelock.is_locked()) {
         e->schedule_in(CACHE_RETRY_PERIOD);
         return EVENT_CONT;
       }
@@ -2581,7 +2581,7 @@ CacheContinuation::do_remote_lookup(Continuation * cont, CacheKey * key,
 
   unsigned int hash = FOLDHASH(c->target_ip, c->seq_number);
   MUTEX_TRY_LOCK(queuelock, remoteCacheContQueueMutex[hash], this_ethread());
-  if (!queuelock) {
+  if (!queuelock.is_locked()) {
     // failed to acquire lock: no problem, retry later
     c->timeout = eventProcessor.schedule_in(c, CACHE_RETRY_PERIOD, ET_CACHE_CONT_SM);
   } else {
@@ -2803,7 +2803,7 @@ CacheContinuation::callback_user(int res, void *e)
 
   if (!is_ClusterThread(et)) {
     MUTEX_TRY_LOCK(lock, mutex, et);
-    if (lock) {
+    if (lock.is_locked()) {
       if (!action.cancelled) {
         action.continuation->handleEvent(res, e);
       }

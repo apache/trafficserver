@@ -212,7 +212,7 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
 
   MUTEX_TRY_LOCK_FOR(lock, s->vio.mutex, thread, s->vio._cont);
 
-  if (!lock || lock.m.m_ptr != s->vio.mutex.m_ptr) {
+  if (!lock.is_locked() || lock.get_mutex() != s->vio.mutex.m_ptr) {
     read_reschedule(nh, vc);
     return;
   }
@@ -320,7 +320,7 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
       if (read_signal_and_update(VC_EVENT_READ_READY, vc) != EVENT_CONT)
         return;
       // change of lock... don't look at shared variables!
-      if (lock.m.m_ptr != s->vio.mutex.m_ptr) {
+      if (lock.get_mutex() != s->vio.mutex.m_ptr) {
         read_reschedule(nh, vc);
         return;
       }
@@ -360,7 +360,7 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
 
   MUTEX_TRY_LOCK_FOR(lock, s->vio.mutex, thread, s->vio._cont);
 
-  if (!lock || lock.m.m_ptr != s->vio.mutex.m_ptr) {
+  if (!lock.is_locked() || lock.get_mutex() != s->vio.mutex.m_ptr) {
     write_reschedule(nh, vc);
     return;
   }
@@ -506,7 +506,7 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
         return;
       }
       // change of lock... don't look at shared variables!
-      if (lock.m.m_ptr != s->vio.mutex.m_ptr) {
+      if (lock.get_mutex() != s->vio.mutex.m_ptr) {
         write_reschedule(nh, vc);
         return;
       }
@@ -740,7 +740,7 @@ UnixNetVConnection::reenable(VIO *vio)
     }
   } else {
     MUTEX_TRY_LOCK(lock, nh->mutex, t);
-    if (!lock) {
+    if (!lock.is_locked()) {
       if (vio == &read.vio) {
         if (!read.in_enabled_list) {
           read.in_enabled_list = 1;
@@ -951,7 +951,7 @@ int
 UnixNetVConnection::startEvent(int /* event ATS_UNUSED */, Event *e)
 {
   MUTEX_TRY_LOCK(lock, get_NetHandler(e->ethread)->mutex, e->ethread);
-  if (!lock) {
+  if (!lock.is_locked()) {
     e->schedule_in(NET_RETRY_DELAY);
     return EVENT_CONT;
   }
@@ -968,7 +968,7 @@ UnixNetVConnection::acceptEvent(int event, Event *e)
   thread = e->ethread;
 
   MUTEX_TRY_LOCK(lock, get_NetHandler(thread)->mutex, e->ethread);
-  if (!lock) {
+  if (!lock.is_locked()) {
     if (event == EVENT_NONE) {
       thread->schedule_in(this, NET_RETRY_DELAY);
       return EVENT_DONE;
@@ -1022,9 +1022,9 @@ UnixNetVConnection::mainEvent(int event, Event *e)
   MUTEX_TRY_LOCK(rlock, read.vio.mutex ? (ProxyMutex *) read.vio.mutex : (ProxyMutex *) e->ethread->mutex, e->ethread);
   MUTEX_TRY_LOCK(wlock, write.vio.mutex ? (ProxyMutex *) write.vio.mutex :
                  (ProxyMutex *) e->ethread->mutex, e->ethread);
-  if (!hlock || !rlock || !wlock ||
-      (read.vio.mutex.m_ptr && rlock.m.m_ptr != read.vio.mutex.m_ptr) ||
-      (write.vio.mutex.m_ptr && wlock.m.m_ptr != write.vio.mutex.m_ptr)) {
+  if (!hlock.is_locked() || !rlock.is_locked() || !wlock.is_locked() ||
+      (read.vio.mutex.m_ptr && rlock.get_mutex() != read.vio.mutex.m_ptr) ||
+      (write.vio.mutex.m_ptr && wlock.get_mutex() != write.vio.mutex.m_ptr)) {
 #ifndef INACTIVITY_TIMEOUT
     if (e == active_timeout)
 #endif

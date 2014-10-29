@@ -170,7 +170,7 @@ void RegressionSM::run()
   // TODO: Why introduce another scope here?
   {
     MUTEX_TRY_LOCK(l, mutex, this_ethread());
-    if (!l || nwaiting > 1)
+    if (!l.is_locked() || nwaiting > 1)
       goto Lretry;
     RegressionSM *x = 0;
     while (ichild < n) {

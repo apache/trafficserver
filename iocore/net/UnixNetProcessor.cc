@@ -246,9 +246,9 @@ UnixNetProcessor::connect_re_internal(
 
   if (t->is_event_type(opt->etype)) {
     MUTEX_TRY_LOCK(lock, cont->mutex, t);
-    if (lock) {
+    if (lock.is_locked()) {
       MUTEX_TRY_LOCK(lock2, get_NetHandler(t)->mutex, t);
-      if (lock2) {
+      if (lock2.is_locked()) {
         int ret;
         ret = vc->connectUp(t, NO_FD);
         if ((using_socks) && (ret == CONNECT_SUCCESS))

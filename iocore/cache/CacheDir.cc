@@ -109,7 +109,7 @@ OpenDir::signal_readers(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   CacheVC *c = NULL;
   while ((c = delayed_readers.dequeue())) {
     CACHE_TRY_LOCK(lock, c->mutex, t);
-    if (lock) {
+    if (lock.is_locked()) {
       c->f.open_read_timeout = 0;
       c->handleEvent(EVENT_IMMEDIATE, 0);
       continue;
@@ -1140,7 +1140,7 @@ Lrestart:
   }
   {
     CACHE_TRY_LOCK(lock, gvol[vol]->mutex, mutex->thread_holding);
-    if (!lock) {
+    if (!lock.is_locked()) {
       trigger = eventProcessor.schedule_in(this, HRTIME_MSECONDS(cache_config_mutex_retry_delay));
       return EVENT_CONT;
     }
@@ -1430,7 +1430,7 @@ EXCLUSIVE_REGRESSION_TEST(Cache_dir) (RegressionTest *t, int /* atype ATS_UNUSED
   Vol *d = gvol[0];
   EThread *thread = this_ethread();
   MUTEX_TRY_LOCK(lock, d->mutex, thread);
-  ink_release_assert(lock);
+  ink_release_assert(lock.is_locked());
   rprintf(t, "clearing vol 0\n", free);
   vol_dir_clear(d);
 

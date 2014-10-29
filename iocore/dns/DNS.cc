@@ -1098,7 +1098,7 @@ DNSProcessor::getby(const char *x, int len, int type, Continuation *cont, Option
   e->retries = dns_retries;
   e->init(x, len, type, cont, opt);
   MUTEX_TRY_LOCK(lock, e->mutex, this_ethread());
-  if (!lock)
+  if (!lock.is_locked())
     thread->schedule_imm(e);
   else
     e->handleEvent(EVENT_IMMEDIATE, 0);
@@ -1210,7 +1210,7 @@ dns_result(DNSHandler *h, DNSEntry *e, HostEnt *ent, bool retry) {
 
   if (h->mutex->thread_holding == e->submit_thread) {
     MUTEX_TRY_LOCK(lock, e->action.mutex, h->mutex->thread_holding);
-    if (!lock) {
+    if (!lock.is_locked()) {
       Debug("dns", "failed lock for result %s", e->qname);
       goto Lretry;
     }
@@ -1249,7 +1249,7 @@ DNSEntry::post(DNSHandler *h, HostEnt *ent)
   result_ent = ent;
   if (h->mutex->thread_holding == submit_thread) {
     MUTEX_TRY_LOCK(lock, action.mutex, h->mutex->thread_holding);
-    if (!lock) {
+    if (!lock.is_locked()) {
       Debug("dns", "failed lock for result %s", qname);
       return 1;
     }

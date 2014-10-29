@@ -325,7 +325,7 @@ PluginVC::reenable_re(VIO * vio)
   Debug("pvc", "[%u] %s: reenable_re %s", core_obj->id, PVC_TYPE, (vio->op == VIO::WRITE) ? "Write" : "Read");
 
   MUTEX_TRY_LOCK(lock, this->mutex, this_ethread());
-  if (!lock) {
+  if (!lock.is_locked()) {
     if (vio->op == VIO::WRITE) {
       need_write_process = true;
     } else {
@@ -376,7 +376,7 @@ PluginVC::do_io_close(int /* flag ATS_UNUSED */)
 
   MUTEX_TRY_LOCK(lock, mutex, this_ethread());
 
-  if (!lock) {
+  if (!lock.is_locked()) {
     setup_event_cb(PVC_LOCK_RETRY_TIME, &sm_lock_retry_event);
     closed = true;
     return;
@@ -491,7 +491,7 @@ PluginVC::process_write_side(bool other_side_call)
   EThread *my_ethread = mutex->thread_holding;
   ink_assert(my_ethread != NULL);
   MUTEX_TRY_LOCK(lock, write_state.vio.mutex, my_ethread);
-  if (!lock) {
+  if (!lock.is_locked()) {
     Debug("pvc_event", "[%u] %s: process_write_side lock miss, retrying", core_obj->id, PVC_TYPE);
 
     need_write_process = true;
@@ -608,7 +608,7 @@ PluginVC::process_read_side(bool other_side_call)
   EThread *my_ethread = mutex->thread_holding;
   ink_assert(my_ethread != NULL);
   MUTEX_TRY_LOCK(lock, read_state.vio.mutex, my_ethread);
-  if (!lock) {
+  if (!lock.is_locked()) {
     Debug("pvc_event", "[%u] %s: process_read_side lock miss, retrying", core_obj->id, PVC_TYPE);
 
     need_read_process = true;
@@ -753,7 +753,7 @@ PluginVC::process_timeout(Event * e, int event_to_send, Event ** our_eptr)
 
   if (read_state.vio.op == VIO::READ && !read_state.shutdown && read_state.vio.ntodo() > 0) {
     MUTEX_TRY_LOCK(lock, read_state.vio.mutex, e->ethread);
-    if (!lock) {
+    if (!lock.is_locked()) {
       e->schedule_in(PVC_LOCK_RETRY_TIME);
       return;
     }
@@ -761,7 +761,7 @@ PluginVC::process_timeout(Event * e, int event_to_send, Event ** our_eptr)
     read_state.vio._cont->handleEvent(event_to_send, &read_state.vio);
   } else if (write_state.vio.op == VIO::WRITE && !write_state.shutdown && write_state.vio.ntodo() > 0) {
     MUTEX_TRY_LOCK(lock, write_state.vio.mutex, e->ethread);
-    if (!lock) {
+    if (!lock.is_locked()) {
       e->schedule_in(PVC_LOCK_RETRY_TIME);
       return;
     }
@@ -1098,7 +1098,7 @@ PluginVCCore::state_send_accept_failed(int /* event ATS_UNUSED */, void * /* dat
 {
   MUTEX_TRY_LOCK(lock, connect_to->mutex, this_ethread());
 
-  if (lock) {
+  if (lock.is_locked()) {
     connect_to->handleEvent(NET_EVENT_ACCEPT_FAILED, NULL);
     destroy();
   } else {
@@ -1115,7 +1115,7 @@ PluginVCCore::state_send_accept(int /* event ATS_UNUSED */, void * /* data ATS_U
 {
   MUTEX_TRY_LOCK(lock, connect_to->mutex, this_ethread());
 
-  if (lock) {
+  if (lock.is_locked()) {
     connect_to->handleEvent(NET_EVENT_ACCEPT, &passive_vc);
   } else {
     SET_HANDLER(&PluginVCCore::state_send_accept);

@@ -606,7 +606,7 @@ FetchSM::ext_read_data(char *buf, size_t len)
 
   if (fetch_flags & TS_FETCH_FLAGS_NEWLOCK) {
     MUTEX_TRY_LOCK(lock, mutex, this_ethread());
-    if (!lock)
+    if (!lock.is_locked())
       return 0;
   }
 
@@ -656,7 +656,7 @@ FetchSM::ext_destroy()
 
   if (fetch_flags & TS_FETCH_FLAGS_NEWLOCK) {
     MUTEX_TRY_LOCK(lock, mutex, this_ethread());
-    if (!lock) {
+    if (!lock.is_locked()) {
       eventProcessor.schedule_in(this, FETCH_LOCK_RETRY_TIME);
       return;
     }

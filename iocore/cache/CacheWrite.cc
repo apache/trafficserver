@@ -64,7 +64,7 @@ CacheVC::updateVector(int /* event ATS_UNUSED */, Event */* e ATS_UNUSED */)
   int ret = 0;
   {
     CACHE_TRY_LOCK(lock, vol->mutex, mutex->thread_holding);
-    if (!lock || od->writing_vec)
+    if (!lock.is_locked() || od->writing_vec)
       VC_SCHED_LOCK_RETRY();
 
     int vec = alternate.valid();
@@ -310,7 +310,7 @@ Vol::aggWriteDone(int event, Event *e)
   // ensure we have the cacheDirSync lock if we intend to call it later
   // retaking the current mutex recursively is a NOOP
   CACHE_TRY_LOCK(lock, dir_sync_waiting ? cacheDirSync->mutex : mutex, mutex->thread_holding);
-  if (!lock) {
+  if (!lock.is_locked()) {
     eventProcessor.schedule_in(this, HRTIME_MSECONDS(cache_config_mutex_retry_delay));
     return EVENT_CONT;
   }
@@ -1085,7 +1085,7 @@ CacheVC::openWriteCloseDir(int /* event ATS_UNUSED */, Event */* e ATS_UNUSED */
   cancel_trigger();
   {
     CACHE_TRY_LOCK(lock, vol->mutex, mutex->thread_holding);
-    if (!lock) {
+    if (!lock.is_locked()) {
       SET_HANDLER(&CacheVC::openWriteCloseDir);
       ink_assert(!is_io_in_progress());
       VC_SCHED_LOCK_RETRY();
@@ -1144,7 +1144,7 @@ CacheVC::openWriteCloseHeadDone(int event, Event *e)
     return EVENT_CONT;
   {
     CACHE_TRY_LOCK(lock, vol->mutex, mutex->thread_holding);
-    if (!lock)
+    if (!lock.is_locked())
       VC_LOCK_RETRY_EVENT();
     od->writing_vec = 0;
     if (!io.ok())
@@ -1220,7 +1220,7 @@ CacheVC::openWriteCloseDataDone(int event, Event *e)
     return openWriteCloseDir(event, e);
   {
     CACHE_TRY_LOCK(lock, vol->mutex, this_ethread());
-    if (!lock)
+    if (!lock.is_locked())
       VC_LOCK_RETRY_EVENT();
     if (!fragment) {
       ink_assert(key == earliest_key);
@@ -1315,7 +1315,7 @@ CacheVC::openWriteWriteDone(int event, Event *e)
   }
   {
     CACHE_TRY_LOCK(lock, vol->mutex, mutex->thread_holding);
-    if (!lock)
+    if (!lock.is_locked())
       VC_LOCK_RETRY_EVENT();
     // store the earliest directory. Need to remove the earliest dir
     // in case the writer aborts.
@@ -1441,7 +1441,7 @@ CacheVC::openWriteOverwrite(int event, Event *e)
 Lcollision:
   {
     CACHE_TRY_LOCK(lock, vol->mutex, this_ethread());
-    if (!lock)
+    if (!lock.is_locked())
       VC_LOCK_RETRY_EVENT();
     int res = dir_probe(&first_key, vol, &dir, &last_collision);
     if (res > 0) {
@@ -1472,7 +1472,7 @@ CacheVC::openWriteStartDone(int event, Event *e)
   }
   {
     CACHE_TRY_LOCK(lock, vol->mutex, mutex->thread_holding);
-    if (!lock)
+    if (!lock.is_locked())
       VC_LOCK_RETRY_EVENT();
 
     if (_action.cancelled && (!od || !od->has_multiple_writers()))
@@ -1758,7 +1758,7 @@ Cache::open_write(Continuation *cont, CacheKey *key, CacheHTTPInfo *info, time_t
 
   {
     CACHE_TRY_LOCK(lock, c->vol->mutex, cont->mutex->thread_holding);
-    if (lock) {
+    if (lock.is_locked()) {
       if ((err = c->vol->open_write(c, if_writers,
                                      cache_config_http_max_alts > 1 ? cache_config_http_max_alts : 0)) > 0)
         goto Lfailure;

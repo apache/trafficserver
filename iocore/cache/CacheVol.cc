@@ -168,7 +168,7 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     return free_CacheVC(this);
 
   CACHE_TRY_LOCK(lock, vol->mutex, mutex->thread_holding);
-  if (!lock) {
+  if (!lock.is_locked()) {
     Debug("cache_scan_truss", "delay %p:scanObject", this);
     mutex->thread_holding->schedule_in_local(this, HRTIME_MSECONDS(cache_config_mutex_retry_delay));
     return EVENT_CONT;
@@ -404,7 +404,7 @@ CacheVC::scanOpenWrite(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   int ret = 0;
   {
     CACHE_TRY_LOCK(lock, vol->mutex, mutex->thread_holding);
-    if (!lock) {
+    if (!lock.is_locked()) {
       Debug("cache_scan", "vol->mutex %p:scanOpenWrite", this);
       VC_SCHED_LOCK_RETRY();
     }
@@ -477,7 +477,7 @@ CacheVC::scanUpdateDone(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   cancel_trigger();
   // get volume lock
   CACHE_TRY_LOCK(lock, vol->mutex, mutex->thread_holding);
-  if (lock) {
+  if (lock.is_locked()) {
     // insert a directory entry for the previous fragment
     dir_overwrite(&first_key, vol, &dir, &od->first_dir, false);
     if (od->move_resident_alt) {

@@ -311,7 +311,7 @@ HttpPagesHandler::handle_smdetails(int event, void * /* data ATS_UNUSED */)
   for (; list_bucket < HTTP_LIST_BUCKETS; list_bucket++) {
     MUTEX_TRY_LOCK(lock, HttpSMList[list_bucket].mutex, ethread);
 
-    if (!lock) {
+    if (!lock.is_locked()) {
       eventProcessor.schedule_in(this, HTTP_LIST_RETRY, ET_CALL);
       return EVENT_DONE;
     }
@@ -324,7 +324,7 @@ HttpPagesHandler::handle_smdetails(int event, void * /* data ATS_UNUSED */)
         //   state machine
         {
           MUTEX_TRY_LOCK(sm_lock, sm->mutex, ethread);
-          if (sm_lock) {
+          if (sm_lock.is_locked()) {
             dump_sm(sm);
             resp_end();
             return handle_callback(EVENT_NONE, NULL);
@@ -371,7 +371,7 @@ HttpPagesHandler::handle_smlist(int event, void */* data ATS_UNUSED */)
   for (; list_bucket < HTTP_LIST_BUCKETS; list_bucket++) {
     MUTEX_TRY_LOCK(lock, HttpSMList[list_bucket].mutex, ethread);
 
-    if (!lock) {
+    if (!lock.is_locked()) {
       eventProcessor.schedule_in(this, HTTP_LIST_RETRY, ET_CALL);
       return EVENT_DONE;
     }
@@ -389,7 +389,7 @@ HttpPagesHandler::handle_smlist(int event, void */* data ATS_UNUSED */)
       //   state machine
       {
         MUTEX_TRY_LOCK(sm_lock, sm->mutex, ethread);
-        if (sm_lock) {
+        if (sm_lock.is_locked()) {
           if (sm->t_state.hdr_info.client_request.valid()) {
             sm_state = HttpDebugNames::get_action_name(sm->t_state.next_action);
 
@@ -431,7 +431,7 @@ int
 HttpPagesHandler::handle_callback(int /* event ATS_UNUSED */, void * /* edata ATS_UNUSED */)
 {
   MUTEX_TRY_LOCK(trylock, action.mutex, this_ethread());
-  if (!trylock) {
+  if (!trylock.is_locked()) {
     SET_HANDLER(&HttpPagesHandler::handle_callback);
     eventProcessor.schedule_in(this, HTTP_LIST_RETRY, ET_CALL);
     return EVENT_DONE;
