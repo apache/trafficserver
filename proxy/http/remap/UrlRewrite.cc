@@ -582,11 +582,12 @@ UrlRewrite::_addToStore(MappingsStore &store, url_mapping *new_mapping, RegexMap
                         const char * src_host, bool is_cur_mapping_regex, int &count)
 {
   bool retval;
+
+  new_mapping->setRank(count); // Use the mapping rules number count for rank
   if (is_cur_mapping_regex) {
     store.regex_list.enqueue(reg_map);
     retval = true;
   } else {
-    new_mapping->setRank(count); // Use the mapping rules number count for rank
     retval = TableInsert(store.hash_lookup, new_mapping, src_host);
   }
   if (retval) {
