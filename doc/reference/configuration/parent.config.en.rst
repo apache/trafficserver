@@ -133,6 +133,7 @@ The following list shows the possible actions and their allowed values.
        turn. For example: machine ``proxy1`` serves the first request,
        ``proxy2`` serves the second request, and so on.
     -  ``false`` - Round robin selection does not occur.
+    -  ``consistent_hash`` - consistent hash.
 
 .. _parent-config-format-go-direct:
 
@@ -154,6 +155,8 @@ fashion::
 
     round_robin=true
     dest_domain=. method=get parent="p1.x.com:8080; p2.y.com:8080" round_robin=true
+    round_robin=consistent_hash
+    dest_domain=. method=get parent="p1.x.com:8080|1.0; p2.y.com:8080|2.0" round_robin=consistent_hash
 
 The following rule configures Traffic Server to route all requests
 containing the regular expression ``politics`` and the path
