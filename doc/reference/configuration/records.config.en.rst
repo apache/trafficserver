@@ -21,7 +21,7 @@ records.config
 
 .. configfile:: records.config
 
-The :file:`records.config` file (by default, located in 
+The :file:`records.config` file (by default, located in
 ``/opt/trafficserver/etc/trafficserver/``) is a list of configurable variables used by
 the Traffic Server software. Many of the variables in the
 :file:`records.config` file are set automatically when you set configuration
@@ -96,7 +96,6 @@ The last examples configures a 64GB RAM cache, using a human readable
 prefix. ::
 
    CONFIG proxy.config.cache.ram_cache.size INT 64G
-
 
 Environment Overrides
 =====================
@@ -188,15 +187,15 @@ A value of ``0`` means no signal will be sent.
 .. ts:cv:: CONFIG proxy.config.cop.linux_min_memfree_kb INT 0
 
    The minimum amount of free memory space allowed before Traffic Server stops
-   the :program:`traffic_server` and :program:`traffic_manager` processes to 
+   the :program:`traffic_server` and :program:`traffic_manager` processes to
    prevent the system from hanging.
 
 .. ts:cv:: CONFIG proxy.config.cop.linux_min_swapfree_kb INT 0
 
    The minimum amount of free swap space allowed before Traffic Server stops
-   the :program:`traffic_server` and :program:`traffic_manager` processes to 
+   the :program:`traffic_server` and :program:`traffic_manager` processes to
    prevent the system from hanging. This configuration variable applies if
-   swap is enabled in Linux 2.2 only. 
+   swap is enabled in Linux 2.2 only.
 
 .. ts:cv:: CONFIG proxy.config.output.logfile  STRING traffic.out
 
@@ -362,7 +361,6 @@ this be local"
    almost never what you want; instead, you want to use this either via
    e.g. ``conf_remap.so`` overrides for a certain remap rule, or through a
    custom plugin using the appropriate APIs.
-
 
 Local Manager
 =============
@@ -712,14 +710,14 @@ is done for the connection.
 
 There are three valid values.
 *  0 - Disables the feature.
-*  1 - Enables the feature with address verification.  The Proxy does the 
-regular DNS processing.  If the client-specified origin address is not in the 
+*  1 - Enables the feature with address verification.  The Proxy does the
+regular DNS processing.  If the client-specified origin address is not in the
 set of addresses found by the Proxy, the request continues to the client
 specified address, but the result is not cached.
 *  2 - Enables the feature with no address verification.  No DNS processing
 is performed.  The result is cached (if allowed otherwise).  This option is
 vulnerable to cache poisoning if an incorrect Host header is specified, so
-this option should be used with extreme caution.  See bug TS-2954 for 
+this option should be used with extreme caution.  See bug TS-2954 for
 details.
 
 If all of these conditions are met, then the origin server IP
@@ -780,7 +778,6 @@ specific domains.
 
    Controls wether POST timeout sends a HTTP status 408 response (``1``)
 
-
 Parent Proxy Configuration
 ==========================
 
@@ -824,9 +821,6 @@ Parent Proxy Configuration
    :reloadable:
 
    Don't try to resolve DNS, forward all DNS requests to the parent. This is off (``0``) by default.
-
-
-
 
 HTTP Connection Timeouts
 ========================
@@ -1068,7 +1062,6 @@ Proxy User Variables
    This is useful for minimizing cached alternates of documents (e.g. ``gzip, deflate`` vs. ``deflate, gzip``). Enabling this option is
    recommended if your origin servers use no encodings other than ``gzip``.
 
-
 Security
 ========
 
@@ -1223,7 +1216,6 @@ Cache Control
       ``Vary: Accept`` or doesn't respond with ``406 (Not Acceptable)``,
       you can also enable this configuration with a ``1``.
 
-
 .. ts:cv:: CONFIG proxy.config.http.cache.ignore_accept_language_mismatch INT 2
    :reloadable:
 
@@ -1239,7 +1231,6 @@ Cache Control
       header. Alternatively, if the origin is incorrectly setting
       ``Vary: Accept-Language`` or doesn't respond with ``406 (Not Acceptable)``,
       you can also enable this configuration with a ``1``.
-
 
 .. ts:cv:: CONFIG proxy.config.http.cache.ignore_accept_encoding_mismatch INT 2
    :reloadable:
@@ -1257,7 +1248,6 @@ Cache Control
       ``Vary: Accept-Encoding`` or doesn't respond with ``406 (Not Acceptable)``
       you can also enable this configuration with a ``1``.
 
-
 .. ts:cv:: CONFIG proxy.config.http.cache.ignore_accept_charset_mismatch INT 2
    :reloadable:
 
@@ -1273,7 +1263,6 @@ Cache Control
       header. Alternatively, if the origin is incorrectly setting
       ``Vary: Accept-Charset`` or doesn't respond with ``406 (Not Acceptable)``,
       you can also enable this configuration with a ``1``.
-
 
 .. ts:cv:: CONFIG proxy.config.http.cache.ignore_client_cc_max_age INT 1
    :reloadable:
@@ -1365,7 +1354,6 @@ RAM Cache
    .. note::
 
       Compression runs on task threads.  To use more cores for RAM cache compression, increase :ts:cv:`proxy.config.task_threads`.
-
 
 Heuristic Expiration
 ====================
@@ -1742,7 +1730,7 @@ Logging Configuration
    :reloadable:
 
    Enables (``1``) or disables (``0``) the `squid log file format
-   <../working-log-files/log-formats#SquidFormat>`_. 
+   <../working-log-files/log-formats#SquidFormat>`_.
 
 .. ts:cv:: CONFIG proxy.config.log.squid_log_is_ascii INT 0
    :reloadable:
@@ -1788,7 +1776,7 @@ Logging Configuration
    :reloadable:
 
    Enables (``1``) or disables (``0``) the `Netscape extended log file format
-   <../working-log-files/log-formats#NetscapeFormats>`_. 
+   <../working-log-files/log-formats#NetscapeFormats>`_.
 
 .. ts:cv:: CONFIG proxy.config.log.extended_log_is_ascii INT 0
 
@@ -1810,7 +1798,7 @@ Logging Configuration
    :reloadable:
 
    Enables (``1``) or disables (``0``) the `Netscape Extended-2 log file
-   format <../working-log-files/log-formats#NetscapeFormats>`_. 
+   format <../working-log-files/log-formats#NetscapeFormats>`_.
 
 .. ts:cv:: CONFIG proxy.config.log.extended2_log_is_ascii INT 1
    :reloadable:
@@ -2023,9 +2011,9 @@ URL Remap Rules
    :reloadable:
 
    Enables (``1``) or disables (``0``) requests for a PAC file on the proxy
-   service port (8080 by default) to be redirected to the PAC 
+   service port (8080 by default) to be redirected to the PAC
    port. For this type of redirection to work, the variable
-   `proxy.config.reverse_proxy.enabled`_ must be set to ``1``. 
+   `proxy.config.reverse_proxy.enabled`_ must be set to ``1``.
 
 .. ts:cv:: CONFIG proxy.config.url_remap.default_to_server_pac_port INT -1
    :reloadable:
@@ -2103,14 +2091,14 @@ SSL Termination
 .. ts:cv:: CONFIG proxy.config.ssl.number.threads INT 0
 
    Sets the number of SSL threads to use, this defaults to 0 (autoconfigure).
-    
+
    -  ``0`` = autoconfigure, this will allow Traffic Server to determine
       the appropriate number of threads
-   
+
    -  ``-1`` = disable, this makes ET_NET threads behave like ET_SSL threads
       Note: this does not disable SSL, it simply allows another thread pool
       to assist in SSL tasks without dedicated SSL threads.
-   
+
    -  ``>0`` = Use a non-zero number of SSL threads
 
 .. ts:cv:: CONFIG proxy.config.ssl.server.multicert.filename STRING ssl_multicert.config
@@ -2166,9 +2154,9 @@ SSL Termination
   into a SSL record when replying over a SSL session. In some
   circumstances this setting can improve response latency by reducing
   buffering at the SSL layer. This setting can have a value between 0
-  and 16383 (max TLS record size). 
-  
-  The default of ``0`` means to always write all available data into 
+  and 16383 (max TLS record size).
+
+  The default of ``0`` means to always write all available data into
   a single SSL record.
 
   A value of ``-1`` means TLS record size is dynamically determined. The
@@ -2181,15 +2169,14 @@ SSL Termination
 .. ts:cv:: CONFIG proxy.config.ssl.session_cache INT 2
 
 	Enables the SSL Session Cache:
-	
+
 	- ``0`` = Disables the session cache entirely
-	
+
 	- ``1`` = Enables the session cache using OpenSSLs implementation.
-	
+
 	- ``2`` = (default) Enables the session cache using Traffic Server's implementation.
 			This implentation should perform much better than the OpenSSL
 			implementation.
-			
 
 .. ts:cv:: CONFIG proxy.config.ssl.session_cache.timeout INT 0
 
@@ -2201,12 +2188,12 @@ SSL Termination
 
   This will set the OpenSSL auto clear flag. Auto clear is enabled by
   default with ``1`` it can be disabled by changing this setting to ``0``.
-  
+
 .. ts:cv:: CONFIG proxy.config.ssl.session_cache.size INT 102400
 
   This configuration specifies the maximum number of entries
   the SSL session cache may contain.
-  
+
 .. ts:cv:: CONFIG proxy.config.ssl.session_cache.num_buckets INT 1024
 
   This configuration specifies the number of buckets to use with the
@@ -2217,12 +2204,11 @@ SSL Termination
 
 	This configuration specifies the behavior of the Traffic Server SSL session
 	cache implementation during lock contention on each bucket:
-	
+
 	- ``0`` = (default) Don't skip session caching when bucket lock is contented.
-	
+
 	- ``1`` = Don't use the SSL session cache for this connection during lock contention.
 
-	
 .. ts:cv:: CONFIG proxy.config.ssl.hsts_max_age INT -1
 
   This configuration specifies the max-age value that will be used
@@ -2514,12 +2500,10 @@ Sockets
        CONFIG proxy.config.accept_threads INT 1
        CONFIG proxy.config.cache.threads_per_disk INT 8
 
-
 .. ts:cv:: CONFIG proxy.config.task_threads INT 2
 
    Specifies the number of task threads to run. These threads are used for
    various tasks that should be off-loaded from the normal network threads.
-
 
 .. ts:cv:: CONFIG proxy.config.http.enabled INT 1
 
