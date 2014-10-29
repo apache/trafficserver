@@ -152,10 +152,8 @@ RecPipeCreate(const char *base_path, const char *name)
   sigaction(SIGPIPE, &act, &oact);
 
   // construct a path/filename for the pipe
-#define SEPERATOR "/"
   char path[PATH_NAME_MAX];
-  snprintf(path, sizeof(path), "%s%s%s", base_path, SEPERATOR, name);
-#undef SEPERATOR
+  snprintf(path, sizeof(path), "%s/%s", base_path, name);
   if (strlen(path) > (sizeof(servaddr.sun_path) - 1)) {
     RecLog(DL_Warning, "[RecPipeCreate] Path name too long; exiting\n");
     return REC_HANDLE_INVALID;
@@ -221,10 +219,8 @@ RecPipeConnect(const char *base_path, const char *name)
   int servaddr_len;
 
   // construct a path/filename for the pipe
-#define SEPERATOR "/"
   char path[PATH_NAME_MAX];
-  snprintf(path, sizeof(path), "%s%s%s", base_path, SEPERATOR, name);
-#undef SEPERATOR
+  snprintf(path, sizeof(path), "%s/%s", base_path, name);
   if (strlen(path) > (sizeof(servaddr.sun_path) - 1)) {
     RecLog(DL_Warning, "[RecPipeConnect] Path name too long\n");
     return REC_HANDLE_INVALID;
