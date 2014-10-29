@@ -52,220 +52,6 @@ static int ShowAlarms;
 static int ShowStatus;
 static int ShowBacktrace;
 static char ClearAlarms[1024];
-static char viaHeader[1024];
-
-struct VIA
-{
-  VIA() : title(NULL), next(NULL) { }
-  VIA(const char * t) : title(t), next(NULL) { }
-
-  ~VIA() {
-    delete next;
-  }
-
-  const char * title;
-  const char * viaData[128];
-  VIA * next;
-};
-
-//Function to get via header table for every field/category in the via header
-static VIA *
-detailViaLookup(char flag)
-{
-  VIA * viaTable = NULL;
-
-  //Detailed via codes after ":"
-  switch (flag) {
-  case 't':
-    viaTable = new VIA("Tunnel info");
-    viaTable->viaData[(unsigned char) ' '] = "no tunneling";
-    viaTable->viaData[(unsigned char) 'U'] = "tunneling because of url (url suggests dynamic content)";
-    viaTable->viaData[(unsigned char) 'M'] = "tunneling due to a method (e.g. CONNECT)";
-    viaTable->viaData[(unsigned char) 'O'] = "tunneling because cache is turned off";
-    viaTable->viaData[(unsigned char) 'F'] = "tunneling due to a header field (such as presence of If-Range header)";
-    break;
-  case 'c':
-    //Cache type
-    viaTable = new VIA( "Cache Type");
-    viaTable->viaData[(unsigned char) 'C'] = "cache";
-    viaTable->viaData[(unsigned char) 'L'] = "cluster, (not used)";
-    viaTable->viaData[(unsigned char) 'I'] = "icp";
-    viaTable->viaData[(unsigned char) ' '] = "unknown";
-
-    //Cache Lookup Result
-    viaTable->next = new VIA("Cache Lookup Result");
-    viaTable->next->viaData[(unsigned char) 'C'] = "cache hit but config forces revalidate";
-    viaTable->next->viaData[(unsigned char) 'I'] = "conditional miss (client sent conditional, fresh in cache, returned 412)";
-    viaTable->next->viaData[(unsigned char) ' '] = "cache miss or no cache lookup";
-    viaTable->next->viaData[(unsigned char) 'U'] = "cache hit, but client forces revalidate (e.g. Pragma: no-cache)";
-    viaTable->next->viaData[(unsigned char) 'D'] = "cache hit, but method forces revalidated (e.g. ftp, not anonymous)";
-    viaTable->next->viaData[(unsigned char) 'M'] = "cache miss (url not in cache)";
-    viaTable->next->viaData[(unsigned char) 'N'] = "conditional hit (client sent conditional, doc fresh in cache, returned 304)";
-    viaTable->next->viaData[(unsigned char) 'H'] = "cache hit";
-    viaTable->next->viaData[(unsigned char) 'S'] = "cache hit, but expired";
-    break;
-  case 'i':
-    viaTable = new VIA("ICP status");
-    viaTable->viaData[(unsigned char) ' '] = "no icp";
-    viaTable->viaData[(unsigned char) 'S'] = "connection opened successfully";
-    viaTable->viaData[(unsigned char) 'F'] = "connection open failed";
-    break;
-  case 'p':
-    viaTable = new VIA("Parent proxy connection status");
-    viaTable->viaData[(unsigned char) ' '] = "no parent proxy or unknown";
-    viaTable->viaData[(unsigned char) 'S'] = "connection opened successfully";
-    viaTable->viaData[(unsigned char) 'F'] = "connection open failed";
-    break;
-  case 's':
-    viaTable = new VIA("Origin server connection status");
-    viaTable->viaData[(unsigned char) ' '] = "no server connection needed";
-    viaTable->viaData[(unsigned char) 'S'] = "connection opened successfully";
-    viaTable->viaData[(unsigned char) 'F'] = "connection open failed";
-    break;
-  default:
-    fprintf(stderr, "%s: %s: %c\n", program_name, "Invalid VIA header character",flag);
-    break;
-  }
-  return viaTable;
-}
-
-//Function to get via header table for every field/category in the via header
-static VIA *
-standardViaLookup(char flag)
-{
-  VIA * viaTable;
-
-  //Via codes before ":"
-  switch (flag) {
-    case 'u':
-      viaTable = new VIA("Request headers received from client");
-      viaTable->viaData[(unsigned char) 'C'] = "cookie";
-      viaTable->viaData[(unsigned char) 'E'] = "error in request";
-      viaTable->viaData[(unsigned char) 'S'] = "simple request (not conditional)";
-      viaTable->viaData[(unsigned char) 'N'] = "no-cache";
-      viaTable->viaData[(unsigned char) 'I'] = "IMS";
-      viaTable->viaData[(unsigned char) ' '] = "unknown";
-      break;
-    case 'c':
-      viaTable = new VIA( "Result of Traffic Server cache lookup for URL");
-      viaTable->viaData[(unsigned char) 'A'] = "in cache, not acceptable (a cache \"MISS\")";
-      viaTable->viaData[(unsigned char) 'H'] = "in cache, fresh (a cache \"HIT\")";
-      viaTable->viaData[(unsigned char) 'S'] = "in cache, stale (a cache \"MISS\")";
-      viaTable->viaData[(unsigned char) 'R'] = "in cache, fresh Ram hit (a cache \"HIT\")";
-      viaTable->viaData[(unsigned char) 'M'] = "miss (a cache \"MISS\")";
-      viaTable->viaData[(unsigned char) ' '] = "no cache lookup";
-      break;
-    case 's':
-      viaTable = new VIA("Response information received from origin server");
-      viaTable->viaData[(unsigned char) 'E'] = "error in response";
-      viaTable->viaData[(unsigned char) 'S'] = "connection opened successfully";
-      viaTable->viaData[(unsigned char) 'N'] = "not-modified";
-      viaTable->viaData[(unsigned char) ' '] = "no server connection needed";
-      break;
-    case 'f':
-      viaTable = new VIA("Result of document write-to-cache:");
-      viaTable->viaData[(unsigned char) 'U'] = "updated old cache copy";
-      viaTable->viaData[(unsigned char) 'D'] = "cached copy deleted";
-      viaTable->viaData[(unsigned char) 'W'] = "written into cache (new copy)";
-      viaTable->viaData[(unsigned char) ' '] = "no cache write performed";
-      break;
-    case 'p':
-      viaTable = new VIA("Proxy operation result");
-      viaTable->viaData[(unsigned char) 'R'] = "origin server revalidated";
-      viaTable->viaData[(unsigned char) ' '] = "unknown";
-      viaTable->viaData[(unsigned char) 'S'] = "served or connection opened successfully";
-      viaTable->viaData[(unsigned char) 'N'] = "not-modified";
-      break;
-    case 'e':
-      viaTable = new VIA("Error codes (if any)");
-      viaTable->viaData[(unsigned char) 'A'] = "authorization failure";
-      viaTable->viaData[(unsigned char) 'H'] = "header syntax unacceptable";
-      viaTable->viaData[(unsigned char) 'C'] = "connection to server failed";
-      viaTable->viaData[(unsigned char) 'T'] = "connection timed out";
-      viaTable->viaData[(unsigned char) 'S'] = "server related error";
-      viaTable->viaData[(unsigned char) 'D'] = "dns failure";
-      viaTable->viaData[(unsigned char) 'N'] = "no error";
-      viaTable->viaData[(unsigned char) 'F'] = "request forbidden";
-      viaTable->viaData[(unsigned char) ' '] = "unknown";
-      break;
-    default:
-      viaTable = new VIA();
-      fprintf(stderr, "%s: %s: %c\n", program_name, "Invalid VIA header character",flag);
-      break;
-  }
-  return viaTable;
-}
-
-//Function to print via header
-static void
-printViaHeader(const char * header)
-{
-  VIA * viaTable = NULL;
-  VIA * viaEntry = NULL;
-  bool isDetail = false;
-
-  printf("Via Header Details:\n");
-
-  //Loop through input via header flags
-  for (const char * c = header; *c; ++c) {
-
-    if (*c == ':') {
-      isDetail = true;
-      continue;
-    }
-
-    if (islower(*c)) {
-      //Get the via header table
-      delete viaTable;
-      viaEntry = viaTable = isDetail ? detailViaLookup(*c) : standardViaLookup(*c);
-    } else {
-      // This is a one of the sequence of (uppercase) VIA codes.
-      if (viaEntry) {
-        printf("%-55s:", viaEntry->title);
-        printf("%s\n", viaEntry->viaData[(unsigned char)*c]);
-        viaEntry = viaEntry->next;
-      }
-    }
-  }
-
-  delete viaTable;
-}
-
-//Check validity of via header and then decode it
-static TSMgmtError
-decodeViaHeader(char * Via)
-{
-  size_t viaHdrLength = strlen(Via);
-
-#ifdef DEBUG
-  printf("Via header is %s, Length is %zu\n",Via, viaHdrLength);
-#endif
-
-  // Via header inside square brackets ...
-  if (viaHdrLength > 2 && Via[0] == '[' && Via[viaHdrLength - 1] == ']') {
-    viaHdrLength = viaHdrLength - 2;
-    Via++;
-    Via[viaHdrLength] = '\0'; //null terminate the string after trimming
-  }
-
-  if (viaHdrLength == 24 || viaHdrLength == 6) {
-    //Decode via header
-    printViaHeader(Via);
-    return TS_ERR_OKAY;
-  }
-
-  // Be kind to people who did not quote the via argument correctly
-  // by appending one space character before decoding via header.
-  if (viaHdrLength == 23 || viaHdrLength == 5) {
-    Via = strcat(Via, " ");
-    printViaHeader(Via);
-    return TS_ERR_OKAY;
-  }
-
-  printf("\nInvalid VIA header. VIA header length should be 6 or 24 characters\n");
-  printf("Valid via header format is [u<client-stuff>c<cache-lookup-stuff>s<server-stuff>f<cache-fill-stuff>p<proxy-stuff>]e<error-codes>:t<tunneling-info>c<cache type><cache-lookup-result>i<icp-conn-info>p<parent-proxy-conn-info>s<server-conn-info>]");
-  return TS_ERR_FAIL;
-}
 
 static TSMgmtError
 handleArgInvocation()
@@ -507,10 +293,6 @@ handleArgInvocation()
   } else if (*VarValue != '\0') {       // We have a value but no variable to set
     fprintf(stderr, "%s: Must specify variable to set with -s when using -v\n", program_name);
     return TS_ERR_FAIL;
-  } else if (*viaHeader != '\0') {        // Read via header and decode
-    TSMgmtError rc;
-    rc = decodeViaHeader(viaHeader);
-    return rc;
   }
 
   fprintf(stderr, "%s: No arguments specified\n", program_name);
@@ -548,7 +330,6 @@ main(int /* argc ATS_UNUSED */, char **argv)
   ShowAlarms = 0;
   ShowStatus = 0;
   ClearAlarms[0] = '\0';
-  viaHeader[0] = '\0';
 
 /* Argument description table used to describe how to parse command line args, */
 /* see 'ink_args.h' for meanings of the various fields */
@@ -574,7 +355,6 @@ main(int /* argc ATS_UNUSED */, char **argv)
     {"clear_alarms", '-', "Clear specified, or all,  alarms", "S1024", &ClearAlarms, NULL, NULL},
     {"status", '-', "Show proxy server status", "F", &ShowStatus, NULL, NULL},
     {"backtrace", '-', "Show proxy stack backtrace", "F", &ShowBacktrace, NULL, NULL},
-    {"decode_via", '-', "Decode Via Header", "S1024", &viaHeader, NULL, NULL},
     HELP_ARGUMENT_DESCRIPTION(),
     VERSION_ARGUMENT_DESCRIPTION()
   };

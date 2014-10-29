@@ -63,6 +63,16 @@ arg_is_version_flag(const ArgumentDescription * arg)
 }
 
 static void
+append_file_argument(const char * arg)
+{
+    if (n_file_arguments >= countof(file_arguments)) {
+      ink_fatal(1, "too many files");
+    }
+    file_arguments[n_file_arguments++] = arg;
+    file_arguments[n_file_arguments] = NULL;
+}
+
+static void
 process_arg(const AppVersionInfo * appinfo, const ArgumentDescription * argument_descriptions,
             unsigned n_argument_descriptions, int i, char ***argv, const char *usage_string)
 {
@@ -193,22 +203,27 @@ process_args(const AppVersionInfo * appinfo, const ArgumentDescription * argumen
         if (i >= n_argument_descriptions)
           usage(argument_descriptions, n_argument_descriptions, usage_string);
       } else {
-        while (*++(*argv))
-          for (i = 0; i < n_argument_descriptions; i++)
+        // Hack for supporting '-' as a file argument.
+        if (strcmp(*argv, "-") == 0) {
+          append_file_argument(*argv);
+        }
+
+        while (*++(*argv)) {
+          for (i = 0; i < n_argument_descriptions; i++) {
+            printf("i=%d **argv=%c\n", i, **argv);
             if (argument_descriptions[i].key == **argv) {
               process_arg(appinfo, argument_descriptions, n_argument_descriptions, i, &argv, usage_string);
               break;
             }
-        if (i >= n_argument_descriptions) {
-          usage(argument_descriptions, n_argument_descriptions, usage_string);
+          }
+
+          if (i >= n_argument_descriptions) {
+            usage(argument_descriptions, n_argument_descriptions, usage_string);
+          }
         }
       }
     } else {
-      if (n_file_arguments >= countof(file_arguments)) {
-        ink_fatal(1, "too many files");
-      }
-      file_arguments[n_file_arguments++] = *argv;
-      file_arguments[n_file_arguments] = NULL;
+      append_file_argument(*argv);
     }
   }
 }

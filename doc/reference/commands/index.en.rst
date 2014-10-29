@@ -28,5 +28,6 @@ Command Reference
    traffic_manager.en
    traffic_server.en
    traffic_top.en
+   traffic_via.en
    tspush.en
    tsxs.en

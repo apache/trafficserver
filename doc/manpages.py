@@ -31,6 +31,7 @@ man_pages = [
   ('reference/commands/tspush.en', 'tspush', u'Push objects into the Traffic Server cache', None, '1'),
   ('reference/commands/traffic_top.en','traffic_top', u'Display Traffic Server statistics', None, '1'),
   ('reference/commands/tsxs.en', 'tsxs', u'Traffic Server plugin tool', None, '1'),
+  ('reference/commands/traffic_via.en', 'traffic_via', u'Traffic Server Via header decoder', None, '1'),
 
   ('reference/configuration/cache.config.en', 'cache.config', u'Traffic Server cache configuration file', None, '5'),
   ('reference/configuration/congestion.config.en', 'congestion.config', u'Traffic Server congestion control configuration file', None, '5'),
