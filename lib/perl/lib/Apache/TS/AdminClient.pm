@@ -709,7 +709,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.ssl.server.multicert.filename
  proxy.config.ssl.server_port
  proxy.config.ssl.server.private_key.path
- proxy.config.stack_dump_enabled
  proxy.config.stat_collector.interval
  proxy.config.stat_collector.port
  proxy.config.stats.config_file

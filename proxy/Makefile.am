@@ -202,7 +202,6 @@ traffic_server_LDADD = \
   hdrs/libhdrs.a  \
   shared/liberror.a  \
   shared/libdiagsconfig.a  \
-  shared/libsignals.a \
   shared/libxml.a \
   $(top_builddir)/mgmt/libmgmt_p.la \
   $(top_builddir)/iocore/utils/libinkutils.a \
@@ -245,7 +244,6 @@ traffic_logcat_LDADD = \
   logging/liblogging.a \
   shared/libdiagsconfig.a \
   shared/libUglyLogStubs.a \
-  shared/libsignals.a \
   shared/libxml.a \
   $(top_builddir)/mgmt/libmgmt_p.la \
   $(top_builddir)/lib/records/librecords_p.a \
@@ -260,7 +258,6 @@ traffic_logstats_LDADD = \
   logging/liblogging.a \
   shared/libdiagsconfig.a \
   shared/libUglyLogStubs.a \
-  shared/libsignals.a \
   shared/libxml.a \
   $(top_builddir)/mgmt/libmgmt_p.la \
   $(top_builddir)/lib/records/librecords_p.a \
@@ -310,7 +307,6 @@ traffic_sac_LDADD = \
   logging/liblogcollation.a \
   hdrs/libhdrs.a \
   shared/liberror.a \
-  shared/libsignals.a \
   shared/libxml.a \
   $(top_builddir)/mgmt/libmgmt_p.la \
   $(top_builddir)/iocore/cluster/libinkcluster.a \
@@ -338,7 +334,6 @@ test_xml_parser_LDADD = \
   $(top_builddir)/lib/records/librecords_p.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/lib/ts/libtsutil.la \
-  shared/libsignals.a \
   shared/libxml.a \
   @LIBTCL@
 

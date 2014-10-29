@@ -29,16 +29,6 @@ the core files in the :file:`records.config` file to -1 as follows:
 
 This is the equivalent of setting ``ulimit -c unlimited``
 
-Also, if you want to generate a core dump, you must set the variable:
-
-::
-
-    CONFIG :ts:cv:`proxy.config.stack_dump_enabled` INT 0
-
-If this variable is set to 1, ATS will handle the SIGSEGV signal and
-print the backtrace to traffic.out, preventing the core file from being
-generated.
-
 Debugging Tips:
 ~~~~~~~~~~~~~~~
 

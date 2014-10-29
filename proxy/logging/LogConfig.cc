@@ -163,7 +163,7 @@ void *
 LogConfig::reconfigure_mgmt_variables(void * /* token ATS_UNUSED */, char * /* data_raw ATS_UNUSED */,
                                       int /* data_len ATS_UNUSED */)
 {
-  Note("[TrafficServer:LogConfig] : Roll_Log_Files event received. rolling now");
+  Note("received log reconfiguration event, rolling now");
   Log::config->roll_log_files_now = true;
   return NULL;
 }

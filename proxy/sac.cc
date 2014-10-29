@@ -65,6 +65,17 @@ ArgumentDescription argument_descriptions[] = {
   main
   -------------------------------------------------------------------------*/
 
+static void
+sac_signal_handler(int signo, siginfo_t * info, void *)
+{
+  if (signo == SIGHUP) {
+    return;
+  }
+
+  signal_format_siginfo(signo, info, appVersionInfo.AppStr);
+  _exit(signo);
+}
+
 int
 main(int /* argc ATS_UNUSED */, char *argv[])
 {
@@ -87,6 +98,8 @@ main(int /* argc ATS_UNUSED */, char *argv[])
   //
   bool one_copy = true;
   init_log_standalone(PROGRAM_NAME, one_copy);
+
+  signal_register_default_handler(sac_signal_handler);
 
   // set up IO Buffers
   //

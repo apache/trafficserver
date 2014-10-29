@@ -62,6 +62,8 @@ extern "C"
 {
 #endif                          /* __cplusplus */
 
+  extern int fastmemtotal;
+
   void ink_queue_load_64(void *dst, void *src);
 
 #ifdef __x86_64__

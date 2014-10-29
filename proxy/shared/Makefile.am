@@ -21,7 +21,6 @@ noinst_LIBRARIES = \
   liberror.a \
   libdiagsconfig.a \
   libUglyLogStubs.a \
-  libsignals.a \
   libxml.a
 
 AM_CPPFLAGS = \
@@ -53,7 +52,3 @@ libUglyLogStubs_a_SOURCES = \
 libxml_a_SOURCES = \
   InkXml.cc \
   InkXml.h
-
-libsignals_a_SOURCES = \
-  signals.cc \
-  signals.h

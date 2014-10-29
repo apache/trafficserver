@@ -46,9 +46,9 @@ libtsutil_la_SOURCES = \
   Bitops.cc \
   Bitops.h \
   Compatability.h \
-  Cryptohash.h \
   ConsistentHash.cc \
   ConsistentHash.h \
+  Cryptohash.h \
   Diags.cc \
   Diags.h \
   DynArray.h \
@@ -76,18 +76,20 @@ libtsutil_la_SOURCES = \
   IpMapConf.h \
   Layout.cc \
   List.h \
+  MMH.cc \
+  MMH.h \
   Map.h \
   MatcherUtils.cc \
   MatcherUtils.h \
   MimeTable.cc \
   MimeTable.h \
-  MMH.h \
-  MMH.cc \
   ParseRules.cc \
   ParseRules.h \
   Ptr.h \
   RawHashTable.cc \
   RawHashTable.h \
+  RbTree.cc \
+  RbTree.h \
   Regex.cc \
   Regex.h \
   Regression.cc \
@@ -178,9 +180,8 @@ libtsutil_la_SOURCES = \
   libts.h \
   llqueue.cc \
   lockfile.cc \
-  RbTree.cc \
-  RbTree.h
-
+  signals.cc \
+  signals.h
 
 #test_UNUSED_SOURCES = \
 #  load_http_hdr.cc \
