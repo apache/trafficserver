@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.2.0
 
+  *) [TS-3151] Added an extra check for background fills to avoid crash.
+
   *) [TS-3119] Add SO_LINGER socket option support.
    Author: Kang Li <kangli@yahoo-inc.com>
 

@@ -3056,7 +3056,7 @@ HttpSM::is_bg_fill_necessary(HttpTunnelConsumer * c)
   ink_assert(c->vc_type == HT_HTTP_CLIENT);
 
   if (c->producer->alive && // something there to read
-      server_entry && server_entry->vc && // from an origin server
+      server_entry && server_entry->vc && server_session->get_netvc() && // from an origin server
       c->producer->num_consumers > 1  // with someone else reading it
     ) {
 
