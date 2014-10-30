@@ -2410,8 +2410,9 @@ Sockets
 
    Turns different options "on" for the socket handling client connections:::
 
-        TCP_NODELAY (1)
+        TCP_NODELAY  (1)
         SO_KEEPALIVE (2)
+        SO_LINGER    (4)
 
    .. note::
 
@@ -2432,14 +2433,21 @@ Sockets
 
    Turns different options "on" for the origin server socket:::
 
-        TCP_NODELAY (1)
+        TCP_NODELAY  (1)
         SO_KEEPALIVE (2)
+        SO_LINGER    (4)
 
    .. note::
 
-        This is a flag and you look at the bits set. Therefore,
-        you must set the value to ``3`` if you want to enable both options
-        above.
+        This is a flag and you look at the bits set. Therefore, you
+        must set the value to ``3`` if you want to enable both
+        options above.
+
+        When SO_LINGER is enabled, the linger timeout time is set
+        to 0. This is useful when ATS and origin server were installed
+        This is useful when Traffic Server and the origin server
+        are co-located and large numbers of sockets are retained
+        in the TIME_WAIT state.
 
 .. ts:cv:: CONFIG proxy.config.net.sock_mss_in INT 0
 

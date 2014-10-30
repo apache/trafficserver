@@ -153,6 +153,8 @@ struct NetVCOptions {
   static uint32_t const SOCK_OPT_NO_DELAY = 1;
   /// Value for keep alive for @c sockopt_flags.
   static uint32_t const SOCK_OPT_KEEP_ALIVE = 2;
+  /// Value for linger on for @c sockopt_flags
+  static uint32_t const SOCK_OPT_LINGER_ON = 4;
 
   uint32_t packet_mark;
   uint32_t packet_tos;

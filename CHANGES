@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.2.0
 
+  *) [TS-3119] Add SO_LINGER socket option support.
+   Author: Kang Li <kangli@yahoo-inc.com>
+
   *) [TS-3157] Standardize --help and --version arguments across tools.
 
   *) [TS-3143] Create new Regex class that uses PCRE JIT.

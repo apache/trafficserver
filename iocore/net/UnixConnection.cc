@@ -370,6 +370,13 @@ Connection::apply_options(NetVCOptions const& opt)
       safe_setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, SOCKOPT_ON, sizeof(int));
       Debug("socket", "::open: setsockopt() SO_KEEPALIVE on socket");
     }
+    if (opt.sockopt_flags & NetVCOptions::SOCK_OPT_LINGER_ON) {
+      struct linger l;
+      l.l_onoff  = 1;
+      l.l_linger = 0;
+      safe_setsockopt(fd, SOL_SOCKET, SO_LINGER, (char *)&l, sizeof(l));
+      Debug("socket", "::open:: setsockopt() turn on SO_LINGER on socket");
+    }
   }
 
 #if TS_HAS_SO_MARK
