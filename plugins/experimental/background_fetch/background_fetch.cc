@@ -51,12 +51,19 @@ const char PLUGIN_NAME[] = "background_fetch";
 
 typedef std::set<std::string> stringSet;
 
+static int g_background_fetch_ArgIndex = 0;
 static  stringSet contentTypeSet;
 static  stringSet userAgentSet;
 static  stringSet clientIpSet;
 
+typedef struct {
+  stringSet contentTypeSet;
+  stringSet userAgentSet;
+  stringSet clientIpSet;
+} RemapInstance;
+
 static
-bool read_config(char* config_file) {
+bool read_config(char* config_file, RemapInstance* ri=NULL) {
   char file_path[1024];
   TSFile file;
   if (config_file == NULL) {
@@ -71,6 +78,17 @@ bool read_config(char* config_file) {
   if (file == NULL) {
     TSError("Failed to open config file %s", config_file);
     return 0;
+  }
+
+  stringSet* contentTypeSetP = &contentTypeSet;
+  stringSet* userAgentSetP = &userAgentSet;
+  stringSet* clientIpSetP = &clientIpSet;
+
+  if (ri) {
+    TSDebug(PLUGIN_NAME, "setting per-remap filters");
+    contentTypeSetP = &(ri->contentTypeSet);
+    userAgentSetP = &(ri->userAgentSet);
+    clientIpSetP = &(ri->clientIpSet);
   }
 
   char buffer[1024];
@@ -103,13 +121,13 @@ bool read_config(char* config_file) {
         if (cfg_type && cfg_value) {
           if (!strcmp(cfg_type, "Content-Type")) {
             TSDebug(PLUGIN_NAME, "adding content-type %s", cfg_value);
-            contentTypeSet.insert(cfg_value);
+            contentTypeSetP->insert(cfg_value);
           } else if (!strcmp(cfg_type, "User-Agent")) {
             TSDebug(PLUGIN_NAME, "adding user-agent %s", cfg_value);
-            userAgentSet.insert(cfg_value);
+            userAgentSetP->insert(cfg_value);
           } else if (!strcmp(cfg_type, "Client-Ip")) {
             TSDebug(PLUGIN_NAME, "adding client-ip %s", cfg_value);
-            clientIpSet.insert(cfg_value);
+            clientIpSetP->insert(cfg_value);
           }
         }
 
@@ -649,12 +667,23 @@ check_hdr_configured(TSMBuffer hdr_bufp, TSMLoc req_hdrs, const char* field_type
 }
 
 static bool
-is_background_fetch_allowed(TSHttpTxn txnp)
+is_background_fetch_allowed(TSHttpTxn txnp, RemapInstance* ri=NULL)
 {
   bool allow_bg_fetch = true;
   TSDebug(PLUGIN_NAME, "Testing: request is internal?");
   if (TSHttpIsInternalRequest(txnp) == TS_SUCCESS) {
     return false;
+  }
+
+  stringSet* contentTypeSetP = &contentTypeSet;
+  stringSet* userAgentSetP = &userAgentSet;
+  stringSet* clientIpSetP = &clientIpSet;
+
+  if (ri) {
+    TSDebug(PLUGIN_NAME, "setting per-remap filters");
+    contentTypeSetP = &(ri->contentTypeSet);
+    userAgentSetP = &(ri->userAgentSet);
+    clientIpSetP = &(ri->clientIpSet);
   }
 
   const sockaddr* client_ip = TSHttpTxnClientAddrGet(txnp);
@@ -670,8 +699,8 @@ is_background_fetch_allowed(TSHttpTxn txnp)
 
   if (ip_buf) {
     TSDebug(PLUGIN_NAME,"client_ip %s", ip_buf);
-    stringSet::iterator it = clientIpSet.begin();
-    while(it!=clientIpSet.end()) {
+    stringSet::iterator it = clientIpSetP->begin();
+    while(it!=clientIpSetP->end()) {
       if (NULL != strstr(ip_buf, (*it).c_str())) {
         TSDebug(PLUGIN_NAME,"excluding bg fetch for ip %s, configured ip %s", ip_buf, (*it).c_str());
         allow_bg_fetch = false;
@@ -691,12 +720,12 @@ is_background_fetch_allowed(TSHttpTxn txnp)
   TSMLoc req_hdrs;
 
   if (TSHttpTxnClientReqGet(txnp, &hdr_bufp, &req_hdrs) == TS_SUCCESS) {
-    if (check_hdr_configured (hdr_bufp, req_hdrs, TS_MIME_FIELD_CONTENT_TYPE, TS_MIME_LEN_CONTENT_TYPE, &contentTypeSet)) {
+    if (check_hdr_configured (hdr_bufp, req_hdrs, TS_MIME_FIELD_CONTENT_TYPE, TS_MIME_LEN_CONTENT_TYPE, contentTypeSetP)) {
       TSDebug(PLUGIN_NAME, "found content-type match");
       allow_bg_fetch = false;
       goto done;
     }
-    if (check_hdr_configured (hdr_bufp, req_hdrs, TS_MIME_FIELD_USER_AGENT, TS_MIME_LEN_USER_AGENT, &userAgentSet)) {
+    if (check_hdr_configured (hdr_bufp, req_hdrs, TS_MIME_FIELD_USER_AGENT, TS_MIME_LEN_USER_AGENT, userAgentSetP)) {
       TSDebug(PLUGIN_NAME, "found user-agent match");
       allow_bg_fetch = false;
       goto done;
@@ -728,8 +757,9 @@ cont_handle_response(TSCont /* contp ATS_UNUSED */, TSEvent /* event ATS_UNUSED 
 {
   // ToDo: If we want to support per-remap configurations, we have to pass along the data here
   TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
+  RemapInstance *ri = static_cast<RemapInstance *> (TSHttpTxnArgGet(txnp, g_background_fetch_ArgIndex));
 
-  if (is_background_fetch_allowed(txnp)) {
+  if (is_background_fetch_allowed(txnp, ri)) {
     TSMBuffer response;
     TSMLoc resp_hdr;
 
@@ -799,4 +829,78 @@ TSPluginInit(int argc, const char* argv[])
 
   TSDebug(PLUGIN_NAME, "Initialized");
   TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, TSContCreate(cont_handle_response, NULL));
+}
+
+///////////////////////////////////////////////////////////////////////////
+// Setup Remap mode
+///////////////////////////////////////////////////////////////////////////////
+// Initialize the plugin.
+//
+TSReturnCode
+TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
+{
+  TSDebug(PLUGIN_NAME, "background fetch remap init");
+  if (!api_info) {
+    strncpy(errbuf, "[tsremap_init] - Invalid TSRemapInterface argument", errbuf_size - 1);
+    return TS_ERROR;
+  }
+
+  if (api_info->tsremap_version < TSREMAP_VERSION) {
+    snprintf(errbuf, errbuf_size - 1, "[TSRemapInit] - Incorrect API version %ld.%ld",
+             api_info->tsremap_version >> 16, (api_info->tsremap_version & 0xffff));
+    return TS_ERROR;
+  }
+
+  TSDebug(PLUGIN_NAME, "background fetch remap is successfully initialized");
+  return TS_SUCCESS;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// We don't have any specific "instances" here, at least not yet.
+//
+TSReturnCode
+TSRemapNewInstance(int argc, char* argv[], void** ih, char* errbuf, int errbuf_size)
+{
+  RemapInstance *ri = new RemapInstance();
+  if (ri == NULL) {
+    TSError("Unable to create remap instance");
+    return TS_ERROR;
+  }
+
+  char* fileName = NULL;
+  if (0 != access(argv[1], R_OK)) {
+    fileName = argv[2];
+    TSDebug(PLUGIN_NAME, "config file %s", fileName);
+  }
+
+
+  read_config(fileName, ri);
+
+  *ih = (void*)ri;
+
+  return TS_SUCCESS;
+}
+
+void
+TSRemapDeleteInstance(void* ih)
+{
+  RemapInstance* ri = static_cast<RemapInstance*>(ih);
+  delete ri;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//// This is the main "entry" point for the plugin, called for every request.
+////
+TSRemapStatus
+TSRemapDoRemap(void* ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
+{
+  if (NULL == ih) {
+    return TSREMAP_NO_REMAP;
+  }
+
+  TSDebug(PLUGIN_NAME, "background fetch TSRemapDoRemap...");
+  TSHttpTxnArgSet(txnp, g_background_fetch_ArgIndex, static_cast<void *> (ih));
+  TSHttpTxnHookAdd(txnp, TS_HTTP_READ_RESPONSE_HDR_HOOK, TSContCreate(cont_handle_response, NULL));
+
+  return TSREMAP_NO_REMAP;
 }
