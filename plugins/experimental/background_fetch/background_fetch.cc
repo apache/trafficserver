@@ -67,7 +67,7 @@ bool read_config(char* config_file, RemapInstance* ri=NULL) {
   char file_path[1024];
   TSFile file;
   if (config_file == NULL) {
-    TSError("invalid config file");
+    TSError("%s: invalid config file", PLUGIN_NAME);
     return false;
   }
   snprintf(file_path, sizeof(file_path), "%s/%s", TSInstallDirGet(), config_file);
@@ -76,8 +76,8 @@ bool read_config(char* config_file, RemapInstance* ri=NULL) {
 
   file = TSfopen(file_path, "r");
   if (file == NULL) {
-    TSError("Failed to open config file %s", config_file);
-    return 0;
+    TSError("%s: Failed to open config file %s", PLUGIN_NAME, config_file);
+    return false;
   }
 
   stringSet* contentTypeSetP = &contentTypeSet;
@@ -97,7 +97,7 @@ bool read_config(char* config_file, RemapInstance* ri=NULL) {
     char *eol = 0;
     // make sure line was not bigger than buffer
     if ((eol = strchr(buffer, '\n')) == NULL && (eol = strstr(buffer, "\r\n")) == NULL) {
-      TSError("sni_proto_nego line too long, did not get a good line in cfg, skipping, line: %s", buffer);
+      TSError("%s: sni_proto_nego line too long, did not get a good line in cfg, skipping, line: %s", PLUGIN_NAME, buffer);
       memset(buffer, 0, sizeof(buffer));
       continue;
     }
@@ -106,16 +106,18 @@ bool read_config(char* config_file, RemapInstance* ri=NULL) {
       memset(buffer, 0, sizeof(buffer));
       continue;
     }
-    char* cfg = strtok(buffer, "\n\r\n");
+    char *savePtr = NULL;
+
+    char* cfg = strtok_r(buffer, "\n\r\n", &savePtr);
 
     if (cfg != NULL) {
         TSDebug(PLUGIN_NAME, "setting background_fetch exclusion criterion based on string: %s", cfg);
 
-        char* cfg_type = strtok(buffer, " ");
+        char* cfg_type = strtok_r(buffer, " ", &savePtr);
 
         char* cfg_value = NULL;
         if (cfg_type) {
-          cfg_value = strtok(NULL, " ");
+          cfg_value = strtok_r(NULL, " ", &savePtr);
         }
 
         if (cfg_type && cfg_value) {
@@ -139,7 +141,7 @@ bool read_config(char* config_file, RemapInstance* ri=NULL) {
 
   TSDebug(PLUGIN_NAME, "Done parsing config");
 
-  return 1;
+  return true;
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -687,33 +689,27 @@ is_background_fetch_allowed(TSHttpTxn txnp, RemapInstance* ri=NULL)
   }
 
   const sockaddr* client_ip = TSHttpTxnClientAddrGet(txnp);
-  char* ip_buf = NULL;
+  char ip_buf[INET6_ADDRSTRLEN];
 
   if(AF_INET == client_ip->sa_family) {
-    ip_buf = (char *) TSmalloc(INET_ADDRSTRLEN);
     inet_ntop(AF_INET, &(reinterpret_cast<const sockaddr_in*>(client_ip)->sin_addr), ip_buf, INET_ADDRSTRLEN);
   } else if(AF_INET6 == client_ip->sa_family) {
-    ip_buf = (char *) TSmalloc(INET6_ADDRSTRLEN);
     inet_ntop(AF_INET6, &(reinterpret_cast<const sockaddr_in6*>(client_ip)->sin6_addr), ip_buf, INET6_ADDRSTRLEN);
   }
 
-  if (ip_buf) {
-    TSDebug(PLUGIN_NAME,"client_ip %s", ip_buf);
-    stringSet::iterator it = clientIpSetP->begin();
-    while(it!=clientIpSetP->end()) {
-      if (NULL != strstr(ip_buf, (*it).c_str())) {
-        TSDebug(PLUGIN_NAME,"excluding bg fetch for ip %s, configured ip %s", ip_buf, (*it).c_str());
-        allow_bg_fetch = false;
-        break;
-      }
-      it++;
+  TSDebug(PLUGIN_NAME,"client_ip %s", ip_buf);
+  stringSet::iterator it = clientIpSetP->begin();
+  while(it!=clientIpSetP->end()) {
+    if (NULL != strstr((*it).c_str(), ip_buf)) {
+      TSDebug(PLUGIN_NAME,"excluding bg fetch for ip %s, configured ip %s", ip_buf, (*it).c_str());
+      allow_bg_fetch = false;
+      break;
     }
-    TSfree(ip_buf);
-    if (!allow_bg_fetch) {
-      return false;
-    }
-  } else {
-    TSError ("invalid client ip");
+    it++;
+  }
+
+  if (!allow_bg_fetch) {
+    return false;
   }
 
   TSMBuffer hdr_bufp;
@@ -732,7 +728,7 @@ is_background_fetch_allowed(TSHttpTxn txnp, RemapInstance* ri=NULL)
     }
   } else {
     // something wrong..
-    TSError ("Failed to get req headers");
+    TSError ("%s: Failed to get req headers", PLUGIN_NAME);
     return false;
   }
 
@@ -863,7 +859,7 @@ TSRemapNewInstance(int argc, char* argv[], void** ih, char* errbuf, int errbuf_s
 {
   RemapInstance *ri = new RemapInstance();
   if (ri == NULL) {
-    TSError("Unable to create remap instance");
+    TSError("%s:Unable to create remap instance", PLUGIN_NAME);
     return TS_ERROR;
   }
 
