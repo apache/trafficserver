@@ -58,6 +58,21 @@ original client request, which continues as normal.
 Only one background fetch per URL is ever performed, making sure we do not
 accidentally put pressure on the origin servers.
 
+The plugin now supports a config file that can specify exclusion of background
+fetch based on the below criteria:
+1. Client-Ip
+2. Content-Type
+3. User-Agent
+
+To specify the exclusion criteria, the plugin needs to be activated as below:
+
+background_fetch.so --config <relative-path-to-install-dir/config-file>
+
+The contents of the config-file could be as below:
+
+Client-Ip 127.0.0.1
+User-Agent ABCDEF
+Content-Type text
 
 
 Future additions
@@ -66,7 +81,6 @@ Future additions
 The infrastructure is in place for providing global and per-remap
 configurations. This could include:
 
-- Limiting the background fetches to certain Content-Types
 - Limiting the background fetches to content of certain sizes
 
 

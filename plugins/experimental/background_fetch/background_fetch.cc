@@ -34,6 +34,7 @@
 #include "ts/ts.h"
 #include "ts/remap.h"
 #include "ink_defs.h"
+#include <set>
 
 
 // Some wonkiness around compiler version and the unordered map (hash)
@@ -48,6 +49,80 @@
 // Constants
 const char PLUGIN_NAME[] = "background_fetch";
 
+typedef std::set<std::string> stringSet;
+
+static  stringSet contentTypeSet;
+static  stringSet userAgentSet;
+static  stringSet clientIpSet;
+
+static
+bool read_config(char* config_file) {
+  char file_path[1024];
+  TSFile file;
+  if (config_file == NULL) {
+    TSError("invalid config file");
+    return false;
+  }
+  snprintf(file_path, sizeof(file_path), "%s/%s", TSInstallDirGet(), config_file);
+
+  TSDebug(PLUGIN_NAME, "trying to open config file in this path: %s", file_path);
+
+  file = TSfopen(file_path, "r");
+  if (file == NULL) {
+    TSError("Failed to open config file %s", config_file);
+    return 0;
+  }
+
+  char buffer[1024];
+  memset(buffer, 0, sizeof(buffer));
+  while (TSfgets(file, buffer, sizeof(buffer) - 1) != NULL) {
+    char *eol = 0;
+    // make sure line was not bigger than buffer
+    if ((eol = strchr(buffer, '\n')) == NULL && (eol = strstr(buffer, "\r\n")) == NULL) {
+      TSError("sni_proto_nego line too long, did not get a good line in cfg, skipping, line: %s", buffer);
+      memset(buffer, 0, sizeof(buffer));
+      continue;
+    }
+    // make sure line has something useful on it
+    if (eol - buffer < 2 || buffer[0] == '#') {
+      memset(buffer, 0, sizeof(buffer));
+      continue;
+    }
+    char* cfg = strtok(buffer, "\n\r\n");
+
+    if (cfg != NULL) {
+        TSDebug(PLUGIN_NAME, "setting background_fetch exclusion criterion based on string: %s", cfg);
+
+        char* cfg_type = strtok(buffer, " ");
+
+        char* cfg_value = NULL;
+        if (cfg_type) {
+          cfg_value = strtok(NULL, " ");
+        }
+
+        if (cfg_type && cfg_value) {
+          if (!strcmp(cfg_type, "Content-Type")) {
+            TSDebug(PLUGIN_NAME, "adding content-type %s", cfg_value);
+            contentTypeSet.insert(cfg_value);
+          } else if (!strcmp(cfg_type, "User-Agent")) {
+            TSDebug(PLUGIN_NAME, "adding user-agent %s", cfg_value);
+            userAgentSet.insert(cfg_value);
+          } else if (!strcmp(cfg_type, "Client-Ip")) {
+            TSDebug(PLUGIN_NAME, "adding client-ip %s", cfg_value);
+            clientIpSet.insert(cfg_value);
+          }
+        }
+
+        memset(buffer, 0, sizeof(buffer));
+    }
+  }
+
+  TSfclose(file);
+
+  TSDebug(PLUGIN_NAME, "Done parsing config");
+
+  return 1;
+}
 
 ///////////////////////////////////////////////////////////////////////////
 // Remove a header (fully) from an TSMLoc / TSMBuffer. Return the number
@@ -542,12 +617,106 @@ cont_check_cacheable(TSCont contp, TSEvent /* event ATS_UNUSED */, void* edata)
   return 0;
 }
 
+static bool
+check_hdr_configured(TSMBuffer hdr_bufp, TSMLoc req_hdrs, const char* field_type, int field_len, stringSet* cfg_set)
+{
+  bool hdr_found = false;
+
+  TSMLoc loc = TSMimeHdrFieldFind(hdr_bufp, req_hdrs, field_type, field_len);
+
+  if (TS_NULL_MLOC != loc) {
+    int val_len = 0;
+    const char *val_str = TSMimeHdrFieldValueStringGet(hdr_bufp, req_hdrs, loc, 0, &val_len);
+    if (!val_str || val_len <= 0) {
+      TSDebug(PLUGIN_NAME,"invalid content type");
+    } else {
+      stringSet::iterator it = cfg_set->begin();
+      while(it!=cfg_set->end()) {
+        TSDebug(PLUGIN_NAME, "comparing with %s", (*it).c_str());
+        if (NULL != strstr(val_str, (*it).c_str())) {
+          TSDebug(PLUGIN_NAME,"excluding bg fetch for configured field %s", (*it).c_str());
+          hdr_found = true;
+          break;
+        }
+        it++;
+      }
+      TSHandleMLocRelease(hdr_bufp, req_hdrs, loc);
+    }
+  } else {
+    TSDebug(PLUGIN_NAME, "no field %s in request header", field_type);
+  }
+  return hdr_found;
+}
+
+static bool
+is_background_fetch_allowed(TSHttpTxn txnp)
+{
+  bool allow_bg_fetch = true;
+  TSDebug(PLUGIN_NAME, "Testing: request is internal?");
+  if (TSHttpIsInternalRequest(txnp) == TS_SUCCESS) {
+    return false;
+  }
+
+  const sockaddr* client_ip = TSHttpTxnClientAddrGet(txnp);
+  char* ip_buf = NULL;
+
+  if(AF_INET == client_ip->sa_family) {
+    ip_buf = (char *) TSmalloc(INET_ADDRSTRLEN);
+    inet_ntop(AF_INET, &(reinterpret_cast<const sockaddr_in*>(client_ip)->sin_addr), ip_buf, INET_ADDRSTRLEN);
+  } else if(AF_INET6 == client_ip->sa_family) {
+    ip_buf = (char *) TSmalloc(INET6_ADDRSTRLEN);
+    inet_ntop(AF_INET6, &(reinterpret_cast<const sockaddr_in6*>(client_ip)->sin6_addr), ip_buf, INET6_ADDRSTRLEN);
+  }
+
+  if (ip_buf) {
+    TSDebug(PLUGIN_NAME,"client_ip %s", ip_buf);
+    stringSet::iterator it = clientIpSet.begin();
+    while(it!=clientIpSet.end()) {
+      if (NULL != strstr(ip_buf, (*it).c_str())) {
+        TSDebug(PLUGIN_NAME,"excluding bg fetch for ip %s, configured ip %s", ip_buf, (*it).c_str());
+        allow_bg_fetch = false;
+        break;
+      }
+      it++;
+    }
+    TSfree(ip_buf);
+    if (!allow_bg_fetch) {
+      return false;
+    }
+  } else {
+    TSError ("invalid client ip");
+  }
+
+  TSMBuffer hdr_bufp;
+  TSMLoc req_hdrs;
+
+  if (TSHttpTxnClientReqGet(txnp, &hdr_bufp, &req_hdrs) == TS_SUCCESS) {
+    if (check_hdr_configured (hdr_bufp, req_hdrs, TS_MIME_FIELD_CONTENT_TYPE, TS_MIME_LEN_CONTENT_TYPE, &contentTypeSet)) {
+      TSDebug(PLUGIN_NAME, "found content-type match");
+      allow_bg_fetch = false;
+      goto done;
+    }
+    if (check_hdr_configured (hdr_bufp, req_hdrs, TS_MIME_FIELD_USER_AGENT, TS_MIME_LEN_USER_AGENT, &userAgentSet)) {
+      TSDebug(PLUGIN_NAME, "found user-agent match");
+      allow_bg_fetch = false;
+      goto done;
+    }
+  } else {
+    // something wrong..
+    TSError ("Failed to get req headers");
+    return false;
+  }
+
+  done:
+  TSHandleMLocRelease(hdr_bufp, TS_NULL_MLOC, req_hdrs);
+  return allow_bg_fetch;
+}
 
 //////////////////////////////////////////////////////////////////////////////
 // Main "plugin", which is a global READ_RESPONSE_HDR hook. Before
 // initiating a background fetch, this checks:
 //
-//     1. Is this an internal request? This avoid infinite loops...
+//     1. Check if a background fetch is allowed for this request
 // and
 //     2. Is the response from origin a 206 (Partial)?
 //
@@ -560,9 +729,7 @@ cont_handle_response(TSCont /* contp ATS_UNUSED */, TSEvent /* event ATS_UNUSED 
   // ToDo: If we want to support per-remap configurations, we have to pass along the data here
   TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
 
-  // 1. Make sure it's not an internal request first.
-  TSDebug(PLUGIN_NAME, "Testing: request is internal?");
-  if (TSHttpIsInternalRequest(txnp) != TS_SUCCESS) {
+  if (is_background_fetch_allowed(txnp)) {
     TSMBuffer response;
     TSMLoc resp_hdr;
 
@@ -597,6 +764,7 @@ TSPluginInit(int argc, const char* argv[])
   TSPluginRegistrationInfo info;
   static const struct option longopt[] = {
     { const_cast<char *>("log"), required_argument, NULL, 'l' },
+    { const_cast<char *>("config"), required_argument, NULL, 'c' },
     { NULL, no_argument, NULL, '\0' }
   };
 
@@ -612,11 +780,15 @@ TSPluginInit(int argc, const char* argv[])
   optind = 1;
 
   while (true) {
-    int opt = getopt_long(argc, (char * const *)argv, "l", longopt, NULL);
+    int opt = getopt_long(argc, (char * const *)argv, "lc", longopt, NULL);
 
     switch (opt) {
     case 'l':
       gConfig->create_log(optarg);
+      break;
+    case 'c':
+      TSDebug(PLUGIN_NAME, "config file %s..", optarg);
+      read_config(optarg);
       break;
     }
 
@@ -624,7 +796,6 @@ TSPluginInit(int argc, const char* argv[])
       break;
     }
   }
-
 
   TSDebug(PLUGIN_NAME, "Initialized");
   TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, TSContCreate(cont_handle_response, NULL));
