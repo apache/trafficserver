@@ -74,14 +74,13 @@ Client-Ip 127.0.0.1
 User-Agent ABCDEF
 Content-Type text
 
+The plugin also now supports per remap activation. To activate the plugin for
+a given remap, add the below on the remap line:
+
+@plugin=background_fetch.so @pparam=<relative-path-to-install-dir/config-file>
 
 Future additions
 ----------------
 
-The infrastructure is in place for providing global and per-remap
-configurations. This could include:
-
 - Limiting the background fetches to content of certain sizes
 
-
-None of this is currently not implemented.
