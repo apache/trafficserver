@@ -210,7 +210,6 @@ process_args(const AppVersionInfo * appinfo, const ArgumentDescription * argumen
 
         while (*++(*argv)) {
           for (i = 0; i < n_argument_descriptions; i++) {
-            printf("i=%d **argv=%c\n", i, **argv);
             if (argument_descriptions[i].key == **argv) {
               process_arg(appinfo, argument_descriptions, n_argument_descriptions, i, &argv, usage_string);
               break;
