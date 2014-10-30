@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.2.0
 
+  *) [TS-2683]: Enhance the bg fetch plugin to support specifyng various 
+     exclusion criteria
+
   *) [TS-3149] Move Via decode out of traffic_line and make a separate tool.
    Author: Meera Mosale Nataraja <mechins@gmail.com>
 
