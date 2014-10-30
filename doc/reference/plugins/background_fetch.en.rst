@@ -31,8 +31,8 @@ Using the plugin
 ----------------
 
 This plugin functions as either a global or per remap plugin, and 
-it takes an argument for specifying a config file with exclusion 
-criteria. 
+it takes an optional argument for specifying a config file with exclusion 
+criteria.
 
 To activate the plugin in global mode, in :file:`plugin.config`, simply add::
 
@@ -42,6 +42,8 @@ To activate the plugin in per remap mode, in :file:`remap.config`, simply append
 below to the specific remap line::
 
   @plugin=background_fetch.so @pparam=<relative-path-to-install-dir/config-file>
+
+Note that the config file argument with exclusion is optional
 
 Functionality
 -------------
