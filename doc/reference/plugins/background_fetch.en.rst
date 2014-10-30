@@ -30,11 +30,18 @@ is not able to cache request / responses with byte ranges.
 Using the plugin
 ----------------
 
-This plugin currently only functions as a global plugin, and it takes not
-arguments or parameters. In :file:`plugin.config`, simply add::
+This plugin functions as either a global or per remap plugin, and 
+it takes an argument for specifying a config file with exclusion 
+criteria. 
 
-  background_fetch.so
+To activate the plugin in global mode, in :file:`plugin.config`, simply add::
 
+  background_fetch.so --config <relative-path-to-install-dir/config-file>
+
+To activate the plugin in per remap mode, in :file:`remap.config`, simply append the
+below to the specific remap line::
+
+  @plugin=background_fetch.so @pparam=<relative-path-to-install-dir/config-file>
 
 Functionality
 -------------
