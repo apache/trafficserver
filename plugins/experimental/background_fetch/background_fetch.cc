@@ -802,6 +802,12 @@ TSPluginInit(int argc, const char* argv[])
     TSError("%s: plugin registration failed.\n", PLUGIN_NAME);
   }
 
+  if (TSHttpArgIndexReserve("background_fetch", "exclustion criteria index", &g_background_fetch_ArgIndex) != TS_SUCCESS) {
+    TSError("%s: Failed to reserve an argument index", PLUGIN_NAME);
+    TSAssert(0);
+    return;
+  }
+
   gConfig = new BGFetchConfig();
   optind = 1;
 
@@ -855,7 +861,7 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 // We don't have any specific "instances" here, at least not yet.
 //
 TSReturnCode
-TSRemapNewInstance(int argc, char* argv[], void** ih, char* errbuf, int errbuf_size)
+TSRemapNewInstance(int  argc, char* argv[], void** ih, char* /* errbuf */, int /* errbuf_size */)
 {
   RemapInstance *ri = new RemapInstance();
   if (ri == NULL) {
@@ -864,11 +870,10 @@ TSRemapNewInstance(int argc, char* argv[], void** ih, char* errbuf, int errbuf_s
   }
 
   char* fileName = NULL;
-  if (0 != access(argv[1], R_OK)) {
+  if (argc > 2 && 0 != access(argv[2], R_OK)) {
     fileName = argv[2];
     TSDebug(PLUGIN_NAME, "config file %s", fileName);
   }
-
 
   read_config(fileName, ri);
 
@@ -888,7 +893,7 @@ TSRemapDeleteInstance(void* ih)
 //// This is the main "entry" point for the plugin, called for every request.
 ////
 TSRemapStatus
-TSRemapDoRemap(void* ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
+TSRemapDoRemap(void* ih, TSHttpTxn txnp, TSRemapRequestInfo * /* rri */)
 {
   if (NULL == ih) {
     return TSREMAP_NO_REMAP;
