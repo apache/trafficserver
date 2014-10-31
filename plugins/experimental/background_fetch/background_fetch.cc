@@ -52,44 +52,40 @@ const char PLUGIN_NAME[] = "background_fetch";
 typedef std::set<std::string> stringSet;
 
 static int g_background_fetch_ArgIndex = 0;
-static  stringSet contentTypeSet;
-static  stringSet userAgentSet;
-static  stringSet clientIpSet;
 
 typedef struct {
   stringSet contentTypeSet;
   stringSet userAgentSet;
   stringSet clientIpSet;
-} RemapInstance;
+} exclusionSet;
+
+static exclusionSet gExclusionSet;
 
 static
-bool read_config(char* config_file, RemapInstance* ri=NULL) {
+bool read_config(char* config_file, exclusionSet* ri) {
   char file_path[1024];
   TSFile file;
   if (config_file == NULL) {
     TSError("%s: invalid config file", PLUGIN_NAME);
     return false;
   }
-  snprintf(file_path, sizeof(file_path), "%s/%s", TSInstallDirGet(), config_file);
 
-  TSDebug(PLUGIN_NAME, "trying to open config file in this path: %s", file_path);
+  TSDebug(PLUGIN_NAME, "trying to open config file in this path: %s", config_file);
 
-  file = TSfopen(file_path, "r");
+  file = TSfopen(config_file, "r");
   if (file == NULL) {
-    TSError("%s: Failed to open config file %s", PLUGIN_NAME, config_file);
-    return false;
+    TSDebug(PLUGIN_NAME, "Failed to open config file %s, trying rel path", config_file);
+    snprintf(file_path, sizeof(file_path), "%s/%s", TSInstallDirGet(), config_file);
+    file = TSfopen(file_path, "r");
+    if (file == NULL) {
+      TSError("%s: invalid config file", PLUGIN_NAME);
+      return false;
+    }
   }
 
-  stringSet* contentTypeSetP = &contentTypeSet;
-  stringSet* userAgentSetP = &userAgentSet;
-  stringSet* clientIpSetP = &clientIpSet;
-
-  if (ri) {
-    TSDebug(PLUGIN_NAME, "setting per-remap filters");
-    contentTypeSetP = &(ri->contentTypeSet);
-    userAgentSetP = &(ri->userAgentSet);
-    clientIpSetP = &(ri->clientIpSet);
-  }
+  stringSet* contentTypeSetP = &(ri->contentTypeSet);
+  stringSet* userAgentSetP = &(ri->userAgentSet);
+  stringSet* clientIpSetP = &(ri->clientIpSet);
 
   char buffer[1024];
   memset(buffer, 0, sizeof(buffer));
@@ -127,7 +123,7 @@ bool read_config(char* config_file, RemapInstance* ri=NULL) {
           } else if (!strcmp(cfg_type, "User-Agent")) {
             TSDebug(PLUGIN_NAME, "adding user-agent %s", cfg_value);
             userAgentSetP->insert(cfg_value);
-          } else if (!strcmp(cfg_type, "Client-Ip")) {
+          } else if (!strcmp(cfg_type, "Client-IP")) {
             TSDebug(PLUGIN_NAME, "adding client-ip %s", cfg_value);
             clientIpSetP->insert(cfg_value);
           }
@@ -669,7 +665,7 @@ check_hdr_configured(TSMBuffer hdr_bufp, TSMLoc req_hdrs, const char* field_type
 }
 
 static bool
-is_background_fetch_allowed(TSHttpTxn txnp, RemapInstance* ri=NULL)
+is_background_fetch_allowed(TSHttpTxn txnp, exclusionSet* ri)
 {
   bool allow_bg_fetch = true;
   TSDebug(PLUGIN_NAME, "Testing: request is internal?");
@@ -677,16 +673,9 @@ is_background_fetch_allowed(TSHttpTxn txnp, RemapInstance* ri=NULL)
     return false;
   }
 
-  stringSet* contentTypeSetP = &contentTypeSet;
-  stringSet* userAgentSetP = &userAgentSet;
-  stringSet* clientIpSetP = &clientIpSet;
-
-  if (ri) {
-    TSDebug(PLUGIN_NAME, "setting per-remap filters");
-    contentTypeSetP = &(ri->contentTypeSet);
-    userAgentSetP = &(ri->userAgentSet);
-    clientIpSetP = &(ri->clientIpSet);
-  }
+  stringSet* contentTypeSetP = &(ri->contentTypeSet);
+  stringSet* userAgentSetP = &(ri->userAgentSet);
+  stringSet* clientIpSetP = &(ri->clientIpSet);
 
   const sockaddr* client_ip = TSHttpTxnClientAddrGet(txnp);
   char ip_buf[INET6_ADDRSTRLEN];
@@ -695,13 +684,16 @@ is_background_fetch_allowed(TSHttpTxn txnp, RemapInstance* ri=NULL)
     inet_ntop(AF_INET, &(reinterpret_cast<const sockaddr_in*>(client_ip)->sin_addr), ip_buf, INET_ADDRSTRLEN);
   } else if(AF_INET6 == client_ip->sa_family) {
     inet_ntop(AF_INET6, &(reinterpret_cast<const sockaddr_in6*>(client_ip)->sin6_addr), ip_buf, INET6_ADDRSTRLEN);
+  } else {
+    TSError("%s: unknown family %d", PLUGIN_NAME, client_ip->sa_family);
   }
 
   TSDebug(PLUGIN_NAME,"client_ip %s", ip_buf);
   stringSet::iterator it = clientIpSetP->begin();
   while(it!=clientIpSetP->end()) {
-    if (NULL != strstr((*it).c_str(), ip_buf)) {
-      TSDebug(PLUGIN_NAME,"excluding bg fetch for ip %s, configured ip %s", ip_buf, (*it).c_str());
+    const char* cfg_ip = (*it).c_str();
+    if ((strlen(cfg_ip) == strlen(ip_buf)) && !strcmp(cfg_ip, ip_buf)) {
+      TSDebug(PLUGIN_NAME,"excluding bg fetch for ip %s, configured ip %s", ip_buf, cfg_ip);
       allow_bg_fetch = false;
       break;
     }
@@ -753,7 +745,11 @@ cont_handle_response(TSCont /* contp ATS_UNUSED */, TSEvent /* event ATS_UNUSED 
 {
   // ToDo: If we want to support per-remap configurations, we have to pass along the data here
   TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
-  RemapInstance *ri = static_cast<RemapInstance *> (TSHttpTxnArgGet(txnp, g_background_fetch_ArgIndex));
+  exclusionSet *ri = static_cast<exclusionSet *> (TSHttpTxnArgGet(txnp, g_background_fetch_ArgIndex));
+
+  if (ri == NULL) {
+    ri = &gExclusionSet;
+  }
 
   if (is_background_fetch_allowed(txnp, ri)) {
     TSMBuffer response;
@@ -790,7 +786,7 @@ TSPluginInit(int argc, const char* argv[])
   TSPluginRegistrationInfo info;
   static const struct option longopt[] = {
     { const_cast<char *>("log"), required_argument, NULL, 'l' },
-    { const_cast<char *>("config"), required_argument, NULL, 'c' },
+    { const_cast<char *>("exclude"), required_argument, NULL, 'e' },
     { NULL, no_argument, NULL, '\0' }
   };
 
@@ -812,15 +808,15 @@ TSPluginInit(int argc, const char* argv[])
   optind = 1;
 
   while (true) {
-    int opt = getopt_long(argc, (char * const *)argv, "lc", longopt, NULL);
+    int opt = getopt_long(argc, (char * const *)argv, "le", longopt, NULL);
 
     switch (opt) {
     case 'l':
       gConfig->create_log(optarg);
       break;
-    case 'c':
+    case 'e':
       TSDebug(PLUGIN_NAME, "config file %s..", optarg);
-      read_config(optarg);
+      read_config(optarg, &gExclusionSet);
       break;
     }
 
@@ -863,14 +859,14 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 TSReturnCode
 TSRemapNewInstance(int  argc, char* argv[], void** ih, char* /* errbuf */, int /* errbuf_size */)
 {
-  RemapInstance *ri = new RemapInstance();
+  exclusionSet *ri = new exclusionSet();
   if (ri == NULL) {
     TSError("%s:Unable to create remap instance", PLUGIN_NAME);
     return TS_ERROR;
   }
 
   char* fileName = NULL;
-  if (argc > 2 && 0 != access(argv[2], R_OK)) {
+  if (argc > 2) {
     fileName = argv[2];
     TSDebug(PLUGIN_NAME, "config file %s", fileName);
   }
@@ -885,7 +881,7 @@ TSRemapNewInstance(int  argc, char* argv[], void** ih, char* /* errbuf */, int /
 void
 TSRemapDeleteInstance(void* ih)
 {
-  RemapInstance* ri = static_cast<RemapInstance*>(ih);
+  exclusionSet* ri = static_cast<exclusionSet*>(ih);
   delete ri;
 }
 
