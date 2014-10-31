@@ -7512,16 +7512,6 @@ REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS) (RegressionTest * test, int /* atyp
     *pstatus = REGRESSION_TEST_FAILED;
   }
 
-  Tokenizer whiteTok(" \t");
-
-  char cur_line[] = "map https://abc.com https://abc.com @plugin=conf_remap.so @pparam=proxy.config.abc='ABC DEF'";
-
-  int tok_count = whiteTok.Initialize((char*)cur_line, (SHARE_TOKS | ALLOW_SPACES));
-
-  for (int i=0; i<tok_count; i++) {
-    SDK_RPRINT(test, "Tokenizer::Initialize", "TokenizerTest", TC_PASS, "Token %d : %s\n", i, whiteTok[i]);
-  }
-
   return;
 }
 

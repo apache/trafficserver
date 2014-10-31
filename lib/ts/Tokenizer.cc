@@ -50,7 +50,7 @@ Tokenizer::Tokenizer(const char *StrOfDelimiters)
   memset(&start_node, 0, sizeof(tok_node));
 
   numValidTokens = 0;
-  maxTokens = -1;
+  maxTokens = UINT_MAX;
   options = 0;
 
   add_node = &start_node;
@@ -85,7 +85,7 @@ Tokenizer::~Tokenizer()
   }
 }
 
-int
+unsigned
 Tokenizer::Initialize(const char *str)
 {
   return Initialize((char *) str, COPY_TOKS);
@@ -113,13 +113,13 @@ Tokenizer::isDelimiter(char c)
   return 0;
 }
 
-int
-Tokenizer::Initialize(char *str, int opt)
+unsigned
+Tokenizer::Initialize(char *str, unsigned opt)
 {
   char *strStart;
   int priorCharWasDelimit = 1;
   char *tokStart = NULL;
-  int tok_count = 0;
+  unsigned tok_count = 0;
   bool max_limit_hit = false;
 
   // We can't depend on ReUse() being called so just do it
@@ -137,7 +137,6 @@ Tokenizer::Initialize(char *str, int opt)
 
   // Make sure that both options are not set
   ink_assert(!((opt & COPY_TOKS) && (opt & SHARE_TOKS)));
-
 
   str = strStart;
   priorCharWasDelimit = 1;
@@ -273,12 +272,11 @@ Tokenizer::addToken(char *startAddr, int length)
 
 
 const char *
-Tokenizer::operator[] (int index)
+Tokenizer::operator[] (unsigned index) const
 {
-  tok_node *
-    cur_node = &start_node;
-  int
-    cur_start = 0;
+  const tok_node * cur_node = &start_node;
+  unsigned cur_start = 0;
+
   if (index >= numValidTokens) {
     return NULL;
   } else {
@@ -291,8 +289,8 @@ Tokenizer::operator[] (int index)
   }
 }
 
-int
-Tokenizer::getNumber()
+unsigned
+Tokenizer::count() const
 {
   return numValidTokens;
 }
@@ -374,3 +372,35 @@ Tokenizer::ReUse()
   add_node = &start_node;
   add_index = 0;
 }
+
+#if TS_HAS_TESTS
+#include "TestBox.h"
+
+REGRESSION_TEST(libts_Tokenizer) (RegressionTest * test, int /* atype ATS_UNUSED */, int *pstatus)
+{
+  TestBox box(test, pstatus);
+  box = REGRESSION_TEST_PASSED;
+
+  Tokenizer remap(" \t");
+
+  const char * line = "map https://abc.com https://abc.com @plugin=conf_remap.so @pparam=proxy.config.abc='ABC DEF'";
+
+  const char * toks[] = {
+    "map",
+    "https://abc.com",
+    "https://abc.com",
+    "@plugin=conf_remap.so",
+    "@pparam=proxy.config.abc='ABC DEF'"
+  };
+
+  unsigned count = remap.Initialize(const_cast<char *>(line), (COPY_TOKS | ALLOW_SPACES));
+
+  box.check(count == 5, "check that we parsed 5 tokens");
+  box.check(count == remap.count(), "parsed %u tokens, but now we have %u tokens", count, remap.count());
+
+  for (unsigned i = 0; i < count; ++i) {
+    box.check(strcmp(remap[i], toks[i]) == 0, "expected token %u to be '%s' but found '%s'",
+        count, toks[i], remap[i]);
+  }
+}
+#endif

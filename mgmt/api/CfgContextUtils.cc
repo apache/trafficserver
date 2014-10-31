@@ -63,12 +63,12 @@ string_to_ip_addr_ele(const char *str)
 
   // determine if range or single type
   range_tokens.Initialize(buf, COPY_TOKS);
-  numTokens = range_tokens.getNumber();
+  numTokens = range_tokens.count();
   if (numTokens == 1) {         // SINGLE TYPE
     ele->type = TS_IP_SINGLE;
     // determine if cidr type
     cidr_tokens.Initialize(buf, COPY_TOKS);
-    numTokens = cidr_tokens.getNumber();
+    numTokens = cidr_tokens.count();
     if (numTokens == 1) {       // Single, NON-CIDR TYPE
       ele->ip_a = string_to_ip_addr(str);
     } else {                    // Single, CIDR TYPE
@@ -88,7 +88,7 @@ string_to_ip_addr_ele(const char *str)
 
     // determine if ip's are cidr type; only test if ip_a is cidr, assume both are same
     cidr_tokens.Initialize(ip_a, COPY_TOKS);
-    numTokens = cidr_tokens.getNumber();
+    numTokens = cidr_tokens.count();
     if (numTokens == 1) {       // Range, NON-CIDR TYPE
       ele->ip_a = string_to_ip_addr(ip_a);
       ele->ip_b = string_to_ip_addr(ip_b);
@@ -287,7 +287,7 @@ string_to_ip_addr_list(const char *str_list, const char *delimiter)
     return TS_INVALID_LIST;
 
   tokens.Initialize(str_list);
-  numToks = tokens.getNumber();
+  numToks = tokens.count();
 
   ip_list = TSIpAddrListCreate();
 
@@ -386,7 +386,7 @@ string_to_port_list(const char *str_list, const char *delimiter)
 
   tokens.Initialize(str_list);
 
-  numToks = tokens.getNumber();
+  numToks = tokens.count();
 
   port_list = TSPortListCreate();
 
@@ -454,7 +454,7 @@ string_to_port_ele(const char *str)
   ele = TSPortEleCreate();
   if (tokens.Initialize(copy, COPY_TOKS) > 2)
     goto Lerror;
-  if (tokens.getNumber() == 1) {        // Not a Range of ports
+  if (tokens.count() == 1) {        // Not a Range of ports
     if (!isNumber(str))
       goto Lerror;
     ele->port_a = ink_atoi(str);
@@ -534,7 +534,7 @@ string_to_string_list(const char *str, const char *delimiter)
     return TS_INVALID_LIST;
 
   TSStringList str_list = TSStringListCreate();
-  for (int i = 0; i < tokens.getNumber(); i++) {
+  for (unsigned i = 0; i < tokens.count(); i++) {
     TSStringListEnqueue(str_list, ats_strdup(tokens[i]));
   }
 
@@ -601,7 +601,7 @@ string_to_int_list(const char *str_list, const char *delimiter)
 
   tokens.Initialize(str_list);
 
-  numToks = tokens.getNumber();
+  numToks = tokens.count();
   list = TSIntListCreate();
 
   for (i = 0; i < numToks; i++) {
@@ -640,7 +640,7 @@ string_to_domain_list(const char *str_list, const char *delimiter)
 
   tokens.Initialize(str_list);
 
-  numToks = tokens.getNumber();
+  numToks = tokens.count();
 
   list = TSDomainListCreate();
 

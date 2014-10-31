@@ -89,14 +89,14 @@
  *      Using iterFirst, iterNext the running time is O(n), so use
  *      the iteration where possible
  *
- *  getNumber() - returns the number of tokens
+ *  count() - returns the number of tokens
  *
  *  setMaxTokens() - sets the maximum number of tokens.  Once maxTokens
  *                     is reached, delimiters are ignored and the
  *                     last token is rest of the string.  Negative numbers
  *                     mean no limit on the number of tokens
  *
- *  getMaxTokens() - returns maxTokens.  Negative number mean no limit
+ *  getMaxTokens() - returns maxTokens.  UINT_MAX means no limit
  *
  *  Print() - Debugging method to print out the tokens
  *
@@ -104,12 +104,13 @@
 
 #include "ink_apidefs.h"
 
-#define COPY_TOKS         1 << 0
-#define SHARE_TOKS        1 << 1
-#define ALLOW_EMPTY_TOKS  1 << 2
-#define ALLOW_SPACES      1 << 3
+#define COPY_TOKS         (1u << 0)
+#define SHARE_TOKS        (1u << 1)
+#define ALLOW_EMPTY_TOKS  (1u << 2)
+#define ALLOW_SPACES      (1u << 3)
 
 #define TOK_NODE_ELEMENTS  16
+
 struct tok_node
 {
   char *el[TOK_NODE_ELEMENTS];
@@ -122,28 +123,30 @@ struct tok_iter_state
   int index;
 };
 
-
-
 class Tokenizer
 {
 public:
   inkcoreapi Tokenizer(const char *StrOfDelimiters);
-    inkcoreapi ~ Tokenizer();
-  int Initialize(char *str, int opt);
-  inkcoreapi int Initialize(const char *str);   // Automatically sets option to copy
-  const char *operator [] (int index);
-  void setMaxTokens(int max)
-  {
+  inkcoreapi ~Tokenizer();
+
+  unsigned Initialize(char *str, unsigned options);
+  inkcoreapi unsigned Initialize(const char *str);   // Automatically sets option to copy
+  const char * operator[] (unsigned index) const;
+
+  void setMaxTokens(unsigned max) {
     maxTokens = max;
   };
-  int getMaxTokens()
-  {
+
+  unsigned getMaxTokens() const {
     return maxTokens;
   };
-  int getNumber();
+
+  unsigned count() const;
   void Print();                 // Debugging print out
+
   inkcoreapi const char *iterFirst(tok_iter_state * state);
   inkcoreapi const char *iterNext(tok_iter_state * state);
+
 private:
   Tokenizer & operator=(const Tokenizer &);
   Tokenizer(const Tokenizer &);
@@ -152,8 +155,8 @@ private:
   void ReUse();
   char *strOfDelimit;
   tok_node start_node;
-  int numValidTokens;
-  int maxTokens;
+  unsigned numValidTokens;
+  unsigned maxTokens;
   int options;
   bool quoteFound;
 
