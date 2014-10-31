@@ -93,7 +93,7 @@ bool read_config(char* config_file, exclusionSet* ri) {
     char *eol = 0;
     // make sure line was not bigger than buffer
     if ((eol = strchr(buffer, '\n')) == NULL && (eol = strstr(buffer, "\r\n")) == NULL) {
-      TSError("%s: sni_proto_nego line too long, did not get a good line in cfg, skipping, line: %s", PLUGIN_NAME, buffer);
+      TSError("%s: exclusion line too long, did not get a good line in cfg, skipping, line: %s", PLUGIN_NAME, buffer);
       memset(buffer, 0, sizeof(buffer));
       continue;
     }
