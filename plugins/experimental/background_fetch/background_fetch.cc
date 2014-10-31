@@ -35,14 +35,13 @@
 #include "ts/remap.h"
 #include "ink_defs.h"
 #include <set>
-
+#include <map>
 
 // Some wonkiness around compiler version and the unordered map (hash)
 #if HAVE_UNORDERED_MAP
 #  include <unordered_map>
    typedef std::unordered_map<std::string, bool> OutstandingRequests;
 #else
-#  include <map>
    typedef std::map<std::string, bool> OutstandingRequests;
 #endif
 
