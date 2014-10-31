@@ -37,7 +37,7 @@ via a relative path to the install dir
 
 To activate the plugin in global mode, in :file:`plugin.config`, simply add::
 
-  background_fetch.so --config <config-file>
+  background_fetch.so --exclude <config-file>
 
 To activate the plugin in per remap mode, in :file:`remap.config`, simply append the
 below to the specific remap line::
