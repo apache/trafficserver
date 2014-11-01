@@ -681,6 +681,10 @@ check_field_configured(TSHttpTxn txnp, const char* field_name, const char* cfg_v
 {
   // check for client-ip first
   if (!strcmp(field_name, "Client-IP")) {
+    if (!strcmp(cfg_val, "*")) {
+      TSDebug(PLUGIN_NAME, "Found client_ip wild card");
+      return true;
+    }
     if (check_client_ip_configured(txnp, cfg_val)) {
       TSDebug(PLUGIN_NAME, "Found client_ip match");
       return true;
@@ -703,6 +707,12 @@ check_field_configured(TSHttpTxn txnp, const char* field_name, const char* cfg_v
   TSMLoc loc = TSMimeHdrFieldFind(hdr_bufp, req_hdrs, field_name, -1);
 
   if (TS_NULL_MLOC != loc) {
+    if (!strcmp(cfg_val, "*")) {
+      TSDebug(PLUGIN_NAME, "Found %s wild card", field_name);
+      TSHandleMLocRelease(hdr_bufp, req_hdrs, loc);
+      TSHandleMLocRelease(hdr_bufp, TS_NULL_MLOC, req_hdrs);
+      return true;
+    }
     int val_len = 0;
     const char *val_str = TSMimeHdrFieldValueStringGet(hdr_bufp, req_hdrs, loc, 0, &val_len);
 

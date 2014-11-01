@@ -66,24 +66,21 @@ original client request, which continues as normal.
 Only one background fetch per URL is ever performed, making sure we do not
 accidentally put pressure on the origin servers.
 
-The plugin now supports a config file that can specify exclusion of background
-fetch based on a header or client-ip.
+The plugin now supports a config file that can specify exclusion or inclusion of 
+background fetch based on any arbitrary header or client-ip::
 
-To specify the exclusion criteria, the plugin needs to be activated as below:
+  background_fetch.so --config <config-file>
 
-background_fetch.so --config <config-file>
+The contents of the config-file could be as below::
 
-The contents of the config-file could be as below:
-
-exclude Client-IP 127.0.0.1
-include User-Agent ABCDEF
-exclude Content-Type text
-exclude X-Foo-Bar text
+  include User-Agent ABCDEF
+  exclude Content-Type text
+  exclude X-Foo-Bar text
 
 The plugin also now supports per remap activation. To activate the plugin for
-a given remap, add the below on the remap line:
+a given remap, add the below on the remap line::
 
-@plugin=background_fetch.so @pparam=<config-file>
+  @plugin=background_fetch.so @pparam=<config-file>
 
 Future additions
 ----------------
