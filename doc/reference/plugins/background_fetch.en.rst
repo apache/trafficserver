@@ -74,8 +74,10 @@ background fetch based on any arbitrary header or client-ip::
 The contents of the config-file could be as below::
 
   include User-Agent ABCDEF
+  exclude User-Agent *
   exclude Content-Type text
   exclude X-Foo-Bar text
+  exclude Content-Length <1000
 
 The plugin also now supports per remap activation. To activate the plugin for
 a given remap, add the below on the remap line::

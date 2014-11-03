@@ -129,7 +129,14 @@ read_config(char* config_file, BgFetchRuleMap* ri)
         if (cfg_name) {
           cfg_value = strtok_r(NULL, " ", &savePtr);
           if (cfg_value) {
-            TSDebug(PLUGIN_NAME, "adding background_fetch exclusion rule %d for %s:%s", exclude, cfg_name, cfg_value);
+            if (!strcmp(cfg_name, "Content-Length")) {
+              if ((cfg_value[0] != '<') && (cfg_value[0] != '>')) {
+                TSError("%s: invalid content-len condition %s, skipping config value", PLUGIN_NAME, cfg_value);
+                memset(buffer, 0, sizeof(buffer));
+                continue;
+              }
+            }
+            TSDebug(PLUGIN_NAME, "adding background_fetch exclusion rule %d for %s: %s", exclude, cfg_name, cfg_value);
             BgFetchRuleStruct ruleS = {exclude, cfg_name, cfg_value};
             bgFetchRuleMapP->insert(std::make_pair(index++, ruleS));
           } else {
@@ -672,6 +679,20 @@ check_client_ip_configured(TSHttpTxn txnp, const char* cfg_ip)
   return false;
 }
 
+static bool
+check_content_length(const uint32_t len, const char* cfg_val)
+{
+  uint32_t cfg_cont_len = atoi(&cfg_val[1]);
+
+  if (cfg_val[0] == '<') {
+    return (len <= cfg_cont_len);
+  } else if (cfg_val[0] == '>') {
+    return (len >= cfg_cont_len);
+  } else {
+    TSError("%s: invalid content length condition %c", PLUGIN_NAME, cfg_val[0]);
+    return false;
+  }
+}
 
 ///////////////////////////////////////////////////////////////////////////
 // Check if a header excludes us from running the background fetch
@@ -694,8 +715,29 @@ check_field_configured(TSHttpTxn txnp, const char* field_name, const char* cfg_v
   bool hdr_found = false;
 
   TSMBuffer hdr_bufp;
-  TSMLoc req_hdrs;
+  TSMLoc resp_hdrs;
 
+  if (!strcmp(field_name, "Content-Length")) {
+    if (TS_SUCCESS == TSHttpTxnServerRespGet(txnp, &hdr_bufp, &resp_hdrs)) {
+      TSMLoc loc = TSMimeHdrFieldFind(hdr_bufp, resp_hdrs, field_name, -1);
+      if (TS_NULL_MLOC != loc) {
+        uint32_t content_len = TSMimeHdrFieldValueUintGet(hdr_bufp, resp_hdrs, loc, 0 /* index */ );
+        if (check_content_length(content_len, cfg_val)) {
+          TSDebug(PLUGIN_NAME, "Found content-length match");
+          hdr_found = true;
+        }
+        TSHandleMLocRelease(hdr_bufp, resp_hdrs, loc);
+      } else {
+        TSDebug(PLUGIN_NAME, "No content-length field in resp");
+      }
+    } else {
+      TSError ("%s: Failed to get resp headers", PLUGIN_NAME);
+    }
+    TSHandleMLocRelease(hdr_bufp, TS_NULL_MLOC, resp_hdrs);
+    return hdr_found;
+  }
+
+  TSMLoc req_hdrs;
   TSReturnCode ret = TSHttpTxnClientReqGet(txnp, &hdr_bufp, &req_hdrs);
 
   if (ret != TS_SUCCESS) {
@@ -709,19 +751,18 @@ check_field_configured(TSHttpTxn txnp, const char* field_name, const char* cfg_v
   if (TS_NULL_MLOC != loc) {
     if (!strcmp(cfg_val, "*")) {
       TSDebug(PLUGIN_NAME, "Found %s wild card", field_name);
-      TSHandleMLocRelease(hdr_bufp, req_hdrs, loc);
-      TSHandleMLocRelease(hdr_bufp, TS_NULL_MLOC, req_hdrs);
-      return true;
-    }
-    int val_len = 0;
-    const char *val_str = TSMimeHdrFieldValueStringGet(hdr_bufp, req_hdrs, loc, 0, &val_len);
-
-    if (!val_str || val_len <= 0) {
-      TSDebug(PLUGIN_NAME,"invalid field");
+      hdr_found = true;
     } else {
-      TSDebug(PLUGIN_NAME, "comparing with %s", cfg_val);
-      if (NULL != strstr(val_str, cfg_val)) {
-        hdr_found = true;
+      int val_len = 0;
+      const char *val_str = TSMimeHdrFieldValueStringGet(hdr_bufp, req_hdrs, loc, 0, &val_len);
+
+      if (!val_str || val_len <= 0) {
+        TSDebug(PLUGIN_NAME,"invalid field");
+      } else {
+        TSDebug(PLUGIN_NAME, "comparing with %s", cfg_val);
+        if (NULL != strstr(val_str, cfg_val)) {
+          hdr_found = true;
+        }
       }
     }
     TSHandleMLocRelease(hdr_bufp, req_hdrs, loc);
