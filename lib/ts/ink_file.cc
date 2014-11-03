@@ -22,6 +22,8 @@
  */
 
 #include "libts.h"
+#include <unistd.h>
+#include <limits.h>
 
 #if HAVE_SYS_STAT_H
 #include <sys/stat.h>
@@ -501,4 +503,19 @@ ink_file_get_geometry(int fd ATS_UNUSED, ink_device_geometry& geometry)
   }
 
   return true;
+}
+
+size_t
+ink_file_namemax(const char * path)
+{
+  long namemax = pathconf(path, _PC_NAME_MAX);
+  if (namemax > 0) {
+    return namemax;
+  }
+
+#if defined(NAME_MAX)
+  return NAME_MAX;
+#else
+  return 255;
+#endif
 }

@@ -118,6 +118,9 @@ struct ink_device_geometry
 
 bool ink_file_get_geometry(int fd, ink_device_geometry& geometry);
 
+// Return the value of pathconf(path, _PC_NAME_MAX), or the closest approximation.
+size_t ink_file_namemax(const char * path);
+
 // Is the given path "."?
 static inline bool
 isdot(const char * path) {

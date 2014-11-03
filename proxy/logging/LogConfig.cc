@@ -1367,12 +1367,7 @@ LogConfig::update_space_used()
   }
 
   if (!m_dir_entry) {
-    long name_max = pathconf(logfile_dir, _PC_NAME_MAX);
-
-    // pathconf should not fail after access and opendir have succeeded
-    //
-    ink_release_assert(name_max > 0);
-
+    size_t name_max = ink_file_namemax(logfile_dir);
     m_dir_entry = (struct dirent *)ats_malloc(sizeof(struct dirent) + name_max + 1);
   }
 

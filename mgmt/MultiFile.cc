@@ -113,7 +113,7 @@ MultiFile::WalkFiles(ExpandingArray * fileList)
   // The fun of Solaris - readdir_r requires a buffer passed into it
   //   The man page says this obscene expression gives us the proper
   //     size
-  dirEntry = (struct dirent *)ats_malloc(sizeof(struct dirent) + pathconf(".", _PC_NAME_MAX) + 1);
+  dirEntry = (struct dirent *)ats_malloc(sizeof(struct dirent) + ink_file_namemax(".") + 1);
 
   struct dirent *result;
   while (readdir_r(dir, dirEntry, &result) == 0) {

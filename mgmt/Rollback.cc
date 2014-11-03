@@ -668,7 +668,7 @@ Rollback::findVersions_ml(ExpandingArray * listNames)
   // The fun of Solaris - readdir_r requires a buffer passed into it
   //   The man page says this obscene expression gives us the proper
   //     size
-  dirEntrySpace = (struct dirent *)ats_malloc(sizeof(struct dirent) + pathconf(".", _PC_NAME_MAX) + 1);
+  dirEntrySpace = (struct dirent *)ats_malloc(sizeof(struct dirent) + ink_file_namemax(".") + 1);
 
   while (readdir_r(dir, dirEntrySpace, &entryPtr) == 0) {
     if (!entryPtr)
