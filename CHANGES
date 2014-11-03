@@ -6,8 +6,9 @@ Changes with Apache Traffic Server 5.2.0
 
   *) [TS-2682] Add per remap support for background fetch plugin
 
-  *) [TS-2683]: Enhance the bg fetch plugin to support specifyng various 
-     exclusion criteria
+  *) [TS-2683]: Enhance the bg fetch plugin to support configuration
+     control with inclusion/exclusion criteria based on client-ip
+     or any header
 
   *) [TS-3149] Move Via decode out of traffic_line and make a separate tool.
    Author: Meera Mosale Nataraja <mechins@gmail.com>
