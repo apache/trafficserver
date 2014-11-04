@@ -24,18 +24,17 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-#include <string>
 #include <stdarg.h>
 #include <getopt.h>
-
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
 #include "ts/ts.h"
 #include "ts/remap.h"
 #include "ink_defs.h"
+
+#include <string>
 #include <set>
 #include <map>
 
