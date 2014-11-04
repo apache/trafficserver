@@ -1367,6 +1367,7 @@ main(int /* argc ATS_UNUSED */, char **argv)
   chdir_root(); // change directory to the install root of traffic server.
 
   process_args(&appVersionInfo, argument_descriptions, countof(argument_descriptions), argv);
+  command_flag = command_flag || *command_string;
 
   // Set stdout/stdin to be unbuffered
   setbuf(stdout, NULL);
@@ -1416,6 +1417,14 @@ main(int /* argc ATS_UNUSED */, char **argv)
 
   if (!num_task_threads)
     REC_ReadConfigInteger(num_task_threads, "proxy.config.task_threads");
+
+  // Set up crash logging. We need to do this while we are still privileged so that the crash
+  // logging helper runs as root. Don't bother setting up a crash logger if we are going into
+  // command mode since that's not going to daemonize or run for a long time unattended.
+  if (!command_flag) {
+    crash_logger_init();
+    signal_register_crash_handler(crash_logger_invoke);
+  }
 
   ats_scoped_str user(MAX_LOGIN + 1);
 
@@ -1509,7 +1518,6 @@ main(int /* argc ATS_UNUSED */, char **argv)
 
   // Sanity checks
   check_fd_limit();
-  command_flag = command_flag || *command_string;
 
   // Alter the frequecies at which the update threads will trigger
 #define SET_INTERVAL(scope, name, var) do { \

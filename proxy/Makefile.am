@@ -135,6 +135,7 @@ traffic_server_SOURCES = \
   ControlMatcher.h \
   CoreUtils.cc \
   CoreUtils.h \
+  Crash.cc \
   DynamicStats.h \
   EventName.cc \
   FetchSM.cc \

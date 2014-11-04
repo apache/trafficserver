@@ -185,6 +185,17 @@ textBuffer::rawReadFromFile(int fd)
   }
 }
 
+// Read the entire contents of the given file descriptor.
+void
+textBuffer::slurp(int fd)
+{
+  int nbytes;
+
+  do {
+    nbytes = readFromFD(fd);
+  } while (nbytes > 0);
+}
+
 // int textBuffer::readFromFD(int fd)
 //
 // Issues a single read command on the file
@@ -257,11 +268,9 @@ textBuffer::format(const char * fmt, ...)
 void
 textBuffer::chomp()
 {
-  if (nextAdd > bufferStart) {
-    if (nextAdd[-1] == '\n') {
-      --nextAdd;
-      ++spaceLeft;
-      *nextAdd = '\0';
-    }
+  while ((nextAdd > bufferStart) && (nextAdd[-1] == '\n')) {
+    --nextAdd;
+    ++spaceLeft;
+    *nextAdd = '\0';
   }
 }

@@ -26,6 +26,12 @@
 #include "RecordsConfig.h"
 #include "ParseRules.h"
 
+#if TS_USE_REMOTE_UNWINDING
+#define MGMT_CRASHLOG_HELPER "traffic_crashlog"
+#else
+#define MGMT_CRASHLOG_HELPER NULL
+#endif
+
 //-------------------------------------------------------------------------
 // RecordsConfig
 //-------------------------------------------------------------------------
@@ -65,6 +71,8 @@ RecordElement RecordsConfig[] = {
   ,
   //# Negative core limit means max out limit
   {RECT_CONFIG, "proxy.config.core_limit", RECD_INT, "-1", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.crash_log_helper", RECD_STRING, MGMT_CRASHLOG_HELPER, RECU_RESTART_TS, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   // 0 - Disabled, 1 - enabled for important pages (e.g. cache directory), 2 - enabled for all pages
   {RECT_CONFIG, "proxy.config.mlock_enabled", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
