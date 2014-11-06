@@ -1129,6 +1129,7 @@ extern "C"
   /* --------------------------------------------------------------------------
      Mutexes */
   tsapi TSMutex TSMutexCreate(void);
+  tsapi void TSMutexDestroy(TSMutex mutexp);
   tsapi void TSMutexLock(TSMutex mutexp);
   tsapi TSReturnCode TSMutexLockTry(TSMutex mutexp);
 

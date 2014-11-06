@@ -189,6 +189,14 @@ TSMutexCreate()
   return (TSMutex)mutexp;
 }
 
+void
+TSMutexDestroy(TSMutex m) {
+  sdk_assert(sdk_sanity_check_mutex(m) == TS_SUCCESS);
+  ink_release_assert(((ProxyMutex*)m)->refcount() == 0);
+
+  ((ProxyMutex*)m)->free();
+}
+
 /* The following two APIs are for Into work, actually, APIs of Mutex
    should allow plugins to manually increase or decrease the refcount
    of the mutex pointer, plugins may want more control of the creation
