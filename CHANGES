@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.2.0
 
+  *) [TS-1432] Adding TSMutexDestroy API
+
   *) [TS-3171] Minor style updates to Tokenizer interface.
 
   *) [TS-3156] Remove MutexLock bool operators.
