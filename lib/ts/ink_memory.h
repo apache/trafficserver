@@ -227,6 +227,9 @@ ink_zero(T& t) {
     require that). We can only hope the compiler is smart enough to optimize out functions returning
     constants.
 
+    @internal For subclasses, you need to override the default constructor, value constructor, and
+    assignment operator. This will be easier with C++ eleventy.
+
 */
 
 template <
@@ -282,8 +285,11 @@ public:
     return zret;
   }
 
-  /** Place a new resource in the container.
+  /** Place a new resource @a rt in the container.
       Any resource currently contained is destroyed.
+      This object becomes the owner of @a rt.
+
+      @internal This is usually overridden in subclasses to get the return type adjusted.
   */
   self& operator = (value_type rt) {
     if (Traits::isValid(_r)) Traits::destroy(_r);
@@ -291,12 +297,19 @@ public:
     return *this;
   }
 
+  /// Equality.
   bool operator == (value_type rt) const {
     return _r == rt;
   }
 
+  /// Inequality.
   bool operator != (value_type rt) const {
     return _r != rt;
+  }
+
+  /// Test if the contained resource is valid.
+  bool isValid() const {
+    return Traits::isValid(_r);
   }
 
 protected:
@@ -319,40 +332,28 @@ namespace detail {
   };
 }
 /** File descriptor as a scoped resource.
-
-    @internal This needs to be a class and not just a @c typedef because the
-    pseudo-bool operator is required to avoid ambiguity for non-pointer
-    resources, but creates ambiguity for pointer resources.
  */
 class ats_scoped_fd : public ats_scoped_resource<detail::SCOPED_FD_TRAITS>
 {
 public:
   typedef ats_scoped_resource<detail::SCOPED_FD_TRAITS> super; ///< Super type.
   typedef ats_scoped_fd self; ///< Self reference type.
-  typedef bool (self::*pseudo_bool)() const; ///< Bool operator type.
 
-  /// Default constructor (invalid file descriptor).
-  ats_scoped_fd()
-  { }
-  /// Construct with file descriptor.
-  explicit ats_scoped_fd(value_type v) : super(v)
-  { }
+  /// Default constructor - an empty container.
+  ats_scoped_fd() : super() {}
 
-  /// Assign a file descriptor @a fd.
-  self& operator = (value_type fd) {
-    super::operator=(fd);
+  /// Construct with contained resource.
+  explicit ats_scoped_fd(value_type rt) : super(rt) {}
+
+  /** Place a new resource @a rt in the container.
+      Any resource currently contained is destroyed.
+      This object becomes the owner of @a rt.
+  */
+  self& operator = (value_type rt) {
+    super::operator=(rt);
     return *this;
   }
 
-  /// Enable direct validity check in an @c if statement w/o ambiguity with @c int conversion.
-  operator pseudo_bool () const {
-    return Traits::isValid(_r) ?  &self::operator! : 0;
-  }
-
-  /// Not valid check.
-  bool operator ! () const {
-    return ! Traits::isValid(_r);
-  }
 };
 
 namespace detail {

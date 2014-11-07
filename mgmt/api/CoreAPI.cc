@@ -373,7 +373,7 @@ ServerBacktrace(unsigned /* options */, char ** trace)
 
     snprintf(threadname, sizeof(threadname), "/proc/%ld/comm", (long)threadid);
     fd = open(threadname, O_RDONLY);
-    if (fd) {
+    if (fd >= 0) {
       text.format("Thread %ld, ", (long)threadid);
       text.readFromFD(fd);
       text.chomp();
