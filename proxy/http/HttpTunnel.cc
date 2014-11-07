@@ -740,12 +740,6 @@ HttpTunnel::tunnel_run(HttpTunnelProducer * p_arg)
   //   back to say we are done
   if (!is_tunnel_alive()) {
     active = false;
-    for  (int i =0; i < num_producers; i++) {
-       if (producers[i].handler_state == 0) {
-         Warning("Calling from tunnel_run, handler_state is 0");
-         break;
-       }
-    } 
     sm->handleEvent(HTTP_TUNNEL_EVENT_DONE, this);
   }
 }
@@ -867,11 +861,6 @@ HttpTunnel::producer_run(HttpTunnelProducer * p)
     } else if (action == TCA_DECHUNK_CONTENT) {
       c->buffer_reader = p->chunked_handler.dechunked_buffer->clone_reader(dechunked_buffer_start);
     } else {
-      if (p->vc_type == HT_STATIC) {
-        if (p->buffer_start == NULL) {
-          Warning("Buffer start is null for static producer");
-        }
-      }
       c->buffer_reader = p->read_buffer->clone_reader(p->buffer_start);
     }
 
@@ -1223,7 +1212,7 @@ bool HttpTunnel::producer_handler(int event, HttpTunnelProducer * p)
     // Interesting tunnel event, call SM
     jump_point = p->vc_handler;
     (sm->*jump_point) (event, p);
-    // SKH a failure case anyway
+    // failure case anyway
     if (p->handler_state  == 0) {
       p->handler_state = HTTP_SM_POST_UA_FAIL;
     }
@@ -1336,7 +1325,8 @@ bool HttpTunnel::consumer_handler(int event, HttpTunnelConsumer * c)
     // Interesting tunnel event, call SM
     jump_point = c->vc_handler;
     (sm->*jump_point) (event, c);
-    // SKH if there is no handler state set, not ready to terminate
+    // Make sure the handler_state is set
+    // Necessary for post tunnel end processing
     if (c->producer && c->producer->handler_state == 0) {
       if (event == VC_EVENT_WRITE_COMPLETE) 
         c->producer->handler_state = HTTP_SM_POST_SUCCESS;

@@ -3106,7 +3106,7 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer * c)
   }
   ink_assert(c->vc == ua_session);
   if (c->vc != ua_session)
-    Warning("tunnel_handler_ua c->vc %p ua_session %p", c->vc, ua_session);
+    Warning("tunnel_handler_ua c->vc(%p) != ua_session(%p)", c->vc, ua_session);
 
   milestones.ua_close = ink_get_hrtime();
 
@@ -5669,7 +5669,7 @@ HttpSM::attach_server_session(HttpServerSession * s)
   // methods that send data after the request, two tunnels are created in
   // series, and with a full read set up at this point, the EOS from the
   // first tunnel was sometimes behind handled by the consumer of the
-  // first tunnel instead of the producers of the second tunnel.
+  // first tunnel instead of the producer of the second tunnel.
   // The real read is setup in setup_server_read_response_header()
   //
   server_entry->read_vio = server_session->do_io_read(this, 0, NULL);
