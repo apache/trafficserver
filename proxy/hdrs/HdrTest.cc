@@ -537,6 +537,7 @@ HdrTest::test_mime()
       "ACCEPT\r\n"
       "foo: bar\r\n"
       "foo: argh\r\n"
+      "foo: three, four\r\n"
       "word word: word \r\n"
       "accept: \"fazzle, dazzle\"\r\n"
       "accept: 1, 2, 3, 4, 5, 6, 7, 8\r\n"
@@ -610,10 +611,32 @@ HdrTest::test_mime()
   // TODO: Do we need to check the "count" returned?
   cc_field->value_get_comma_list(&slist); // FIX: correct usage?
 
+  if (cc_field->value_get_index("Private", 7) < 0) {
+    printf("Failed: value_get_index of Cache-Control did not find private");
+    return (failures_to_status("test_mime", 1));
+  }
+  if (cc_field->value_get_index("Bogus", 5) >= 0) {
+    printf("Failed: value_get_index of Cache-Control incorrectly found bogus");
+    return (failures_to_status("test_mime", 1));
+  }
+  if (hdr.value_get_index("foo", 3, "three", 5) < 0) {
+    printf("Failed: value_get_index of foo did not find three");
+    return (failures_to_status("test_mime", 1));
+  }
+  if (hdr.value_get_index("foo", 3, "bar", 3) < 0) {
+    printf("Failed: value_get_index of foo did not find bar");
+    return (failures_to_status("test_mime", 1));
+  }
+  if (hdr.value_get_index("foo", 3, "Bogus", 5) >= 0) {
+    printf("Failed: value_get_index of foo incorrectly found bogus");
+    return (failures_to_status("test_mime", 1));
+  }
+
   mime_parser_clear(&parser);
 
   hdr.print(NULL, 0, NULL, NULL);
   printf("\n");
+
 
   obj_describe((HdrHeapObjImpl *) (hdr.m_mime), true);
 

@@ -135,6 +135,20 @@ struct MIMEField
 
   const char *name_get(int *length) const;
 
+  /** Find the index of the value in the multi-value field.
+
+     If @a value is one of the values in this field return the
+     0 based index of it in the list of values. If the field is
+     not multivalued the index will always be zero if found.
+     Otherwise return -1 if the @a value is not found.
+
+     @note The most common use of this is to check for the presence of a specific
+     value in a comma enabled field.
+
+     @return The index of @a value.
+  */
+  int value_get_index(char const *value, int length) const;
+
   const char *value_get(int *length) const;
   int32_t value_get_int() const;
   uint32_t value_get_uint() const;
@@ -154,7 +168,7 @@ struct MIMEField
   // Other separators (e.g. ';' in Set-cookie/Cookie) are also possible
   void value_append(HdrHeap * heap, MIMEHdrImpl * mh, const char *value,
                     int length, bool prepend_comma = false, const char separator = ',');
-  int has_dups();
+  int has_dups() const;
 };
 
 struct MIMEFieldBlockImpl:public HdrHeapObjImpl
@@ -844,7 +858,7 @@ MIMEField::value_append(HdrHeap * heap, MIMEHdrImpl * mh, const char *value,
 }
 
 inline int
-MIMEField::has_dups()
+MIMEField::has_dups() const
 {
   return (m_next_dup != NULL);
 }
@@ -905,6 +919,7 @@ public:
 
   int parse(MIMEParser * parser, const char **start, const char *end, bool must_copy_strs, bool eof);
 
+  int value_get_index(const char *name, int name_length, const char *value, int value_length);
   const char *value_get(const char *name, int name_length, int *value_length);
   int32_t value_get_int(const char *name, int name_length);
   uint32_t value_get_uint(const char *name, int name_length);
@@ -1185,6 +1200,18 @@ MIMEHdr::parse(MIMEParser * parser, const char **start, const char *end, bool mu
     m_mime = mime_hdr_create(m_heap);
 
   return mime_parser_parse(parser, m_heap, m_mime, start, end, must_copy_strs, eof);
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+inline int
+MIMEHdr::value_get_index(const char *name, int name_length, const char *value, int value_length)
+{
+  MIMEField *field = field_find(name, name_length);
+  if (field)
+    return field->value_get_index(value, value_length);
+  else
+    return -1;
 }
 
 /*-------------------------------------------------------------------------

@@ -636,14 +636,14 @@ mime_init()
 
   if (init) {
     init = 0;
-    
+
     hdrtoken_init();
     day_names_dfa = new DFA;
     day_names_dfa->compile(day_names, SIZEOF(day_names), RE_CASE_INSENSITIVE);
-    
+
     month_names_dfa = new DFA;
     month_names_dfa->compile(month_names, SIZEOF(month_names), RE_CASE_INSENSITIVE);
-    
+
     MIME_FIELD_ACCEPT = hdrtoken_string_to_wks("Accept");
     MIME_FIELD_ACCEPT_CHARSET = hdrtoken_string_to_wks("Accept-Charset");
     MIME_FIELD_ACCEPT_ENCODING = hdrtoken_string_to_wks("Accept-Encoding");
@@ -1722,6 +1722,33 @@ mime_field_name_set(HdrHeap *heap, MIMEHdrImpl */* mh ATS_UNUSED */, MIMEField *
   }
 }
 
+int
+MIMEField::value_get_index(char const *value, int length)  const {
+  int retval = -1;
+
+  // if field doesn't support commas and there is just one instance, just compare the value
+  if (!this->supports_commas() && !this->has_dups()) {
+    if (this->m_len_value == length &&
+        strncasecmp(value, this->m_ptr_value, length) == 0)
+      retval = 0;
+  } else {
+    HdrCsvIter iter;
+    int tok_len;
+    const char *tok = iter.get_first(this, &tok_len);
+    int index = 0;
+    while (tok) {
+      if (tok_len == length && strncasecmp(tok, value, length) == 0) {
+        retval = index;
+        break;
+      } else {
+        index++;
+      }
+      tok = iter.get_next(&tok_len);
+    }
+  }
+  return retval;
+}
+
 const char *
 mime_field_value_get(const MIMEField *field, int *length)
 {
@@ -2204,7 +2231,7 @@ MIMEField* MIMEHdr::get_host_port_values(
           host = b;
         }
       }
-      
+
       if (host) {
         if (host_ptr) *host_ptr = host._ptr;
         if (host_len) *host_len = static_cast<int>(host._size);
@@ -2399,7 +2426,7 @@ mime_scanner_get(MIMEScanner *S,
       mime_scanner_append(S, *raw_input_s, data_size);
       data_size = 0; // Don't append again.
     }
-  } 
+  }
 
   if (data_size && S->m_line_length) {
     // If we're already accumulating, continue to do so if we have data.
@@ -2419,7 +2446,7 @@ mime_scanner_get(MIMEScanner *S,
       *output_shares_raw_input = true;
     }
   }
-  
+
   *raw_input_s = raw_input_c; // mark input consumed.
   return zret;
 }
