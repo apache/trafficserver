@@ -90,6 +90,7 @@ libinknet_a_SOURCES = \
   SSLCertLookup.cc \
   SSLSessionCache.cc \
   SSLConfig.cc \
+  SSLInternal.cc \
   SSLNetAccept.cc \
   SSLNetProcessor.cc \
   SSLNetVConnection.cc \

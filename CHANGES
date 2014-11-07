@@ -1,7 +1,10 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.2.0
 
-  *) [TS-1175]: Replace LogBuffer's new/delete buffer alloc with ioBufAllocator
+  *) [TS-3024] Build with OPENSSL_NO_SSL_INTERN
+   Author: Susan Hinrichs <shinrich@network-geographics.com>
+
+  *) [TS-1175] Replace LogBuffer's new/delete buffer alloc with ioBufAllocator
 
   *) [TS-1432] Adding TSMutexDestroy API
 
