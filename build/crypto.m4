@@ -34,6 +34,7 @@ AC_DEFUN([TS_CHECK_CRYPTO], [
   if test "x${enable_crypto}" = "xyes"; then
     TS_ADDTO(LDFLAGS, [$OPENSSL_LDFLAGS])
     TS_ADDTO(CPPFLAGS, [$OPENSSL_INCLUDES])
+    TS_ADDTO(CPPFLAGS, [-DOPENSSL_NO_SSL_INTERN])
   fi
 
   dnl add checks for other varieties of ssl here

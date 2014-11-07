@@ -27,6 +27,10 @@
 #include "P_SSLUtils.h"
 #include "InkAPIInternal.h"	// Added to include the ssl_hook definitions
 
+// Defined in SSLInternal.c, should probably make a separate include
+// file for this at some point
+void SSL_set_rbio(SSLNetVConnection *sslvc, BIO *rbio);
+
 #define SSL_READ_ERROR_NONE	  0
 #define SSL_READ_ERROR		  1
 #define SSL_READ_READY		  2
@@ -369,7 +373,7 @@ SSLNetVConnection::read_raw_data()
   // inserted buffer bios to be freed and then reinserted.
   //BIO *wbio = SSL_get_wbio(this->ssl);
   //SSL_set_bio(this->ssl, rbio, wbio);
-  this->ssl->rbio = rbio;
+  SSL_set_rbio(this, rbio);
  
   return r;
 }
@@ -529,7 +533,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
         // assigns the read bio.  Originally I was getting and
         // resetting the same write bio, but that caused the 
         // inserted buffer bios to be freed and then reinserted.
-        this->ssl->rbio = rbio;
+        SSL_set_rbio(this, rbio);
         //BIO *wbio = SSL_get_wbio(this->ssl);
         //SSL_set_bio(this->ssl, rbio, wbio);
       }
