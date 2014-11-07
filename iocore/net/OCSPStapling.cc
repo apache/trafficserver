@@ -392,8 +392,9 @@ ssl_callback_ocsp_stapling(SSL *ssl)
   certinfo *cinf = NULL;
   time_t current_time;
 
-  // SKH I assum SSL_get_SSL_CTX is the same as reaching into the ssl structure
-  //cinf = stapling_get_cert_info(ssl->ctx);
+  // Assume SSL_get_SSL_CTX() is the same as reaching into the ssl structure
+  // Using the official call, to avoid leaking internal openssl knowledge
+  // originally was, cinf = stapling_get_cert_info(ssl->ctx);
   cinf = stapling_get_cert_info(SSL_get_SSL_CTX(ssl));
   if (cinf == NULL) {
     Debug("ssl", "ssl_callback_ocsp_stapling: fail to get certificate information");
