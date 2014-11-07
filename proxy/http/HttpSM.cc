@@ -534,6 +534,7 @@ HttpSM::attach_client_session(HttpClientSession * client_vc, IOBufferReader * bu
   ink_assert(client_vc != NULL);
 
   ua_session = client_vc;
+  ink_release_assert(ua_session->get_half_close_flag() == false);
   mutex = client_vc->mutex;
   if (ua_session->debug()) debug_on = true;
 
@@ -574,7 +575,7 @@ HttpSM::attach_client_session(HttpClientSession * client_vc, IOBufferReader * bu
   //  this hook maybe asynchronous, we need to disable IO on
   //  client but set the continuation to be the state machine
   //  so if we get an timeout events the sm handles them
-  ua_entry->read_vio = client_vc->do_io_read(this, 0, buffer_reader->mbuf);
+  ua_entry->read_vio = client_vc->do_io_read(this, 0, NULL);
 
   /////////////////////////
   // set up timeouts     //
@@ -859,7 +860,9 @@ HttpSM::state_watch_for_client_abort(int event, void *data)
    * client.
    */
   case VC_EVENT_EOS:
-    static_cast<HttpClientSession*>(ua_entry->vc)->get_netvc()->do_io_shutdown(IO_SHUTDOWN_READ);
+    if (t_state.client_info.keep_alive != HTTP_KEEPALIVE) {
+      static_cast<HttpClientSession*>(ua_entry->vc)->get_netvc()->do_io_shutdown(IO_SHUTDOWN_READ);
+    }
     break;
   case VC_EVENT_ERROR:
   case VC_EVENT_ACTIVE_TIMEOUT:
@@ -1567,17 +1570,17 @@ HttpSM::handle_api_return()
        }
 
        setup_blind_tunnel(true);
-      } else {
-       setup_server_transfer();
+     } else {
+       HttpTunnelProducer *p = setup_server_transfer();
        perform_cache_write_action();
-       tunnel.tunnel_run();
+       tunnel.tunnel_run(p);
       }
       break;
     }
   case HttpTransact::SM_ACTION_SERVE_FROM_CACHE:
     {
-      setup_cache_read_transfer();
-      tunnel.tunnel_run();
+      HttpTunnelProducer *p = setup_cache_read_transfer();
+      tunnel.tunnel_run(p);
       break;
     }
 
@@ -2635,6 +2638,7 @@ HttpSM::tunnel_handler_post_or_put(HttpTunnelProducer * p)
 
     break;
   default:
+    Warning("post or put handler_state is %d", p->handler_state);
     ink_release_assert(0);
   }
 }
@@ -3096,7 +3100,14 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer * c)
   HttpTunnelConsumer *selfc = NULL;
 
   STATE_ENTER(&HttpSM::tunnel_handler_ua, event);
+  if (ua_session == NULL) {
+    Warning("tunnel_handler_ua c->vc %p %s ua_session is already null, run away!", c->vc, c->name);
+    return 0;
+  }
   ink_assert(c->vc == ua_session);
+  if (c->vc != ua_session)
+    Warning("tunnel_handler_ua c->vc %p ua_session %p", c->vc, ua_session);
+
   milestones.ua_close = ink_get_hrtime();
 
   switch (event) {
@@ -3197,8 +3208,10 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer * c)
   if (close_connection) {
     // If the client could be pipelining or is doing a POST, we need to
     //   set the ua_session into half close mode
-    if ((t_state.method == HTTP_WKSIDX_POST || t_state.client_info.pipeline_possible == true)
-        && event == VC_EVENT_WRITE_COMPLETE) {
+    if ((t_state.method == HTTP_WKSIDX_POST || 
+         t_state.client_info.pipeline_possible == true) && 
+        c->producer->vc_type != HT_STATIC &&
+        event == VC_EVENT_WRITE_COMPLETE) {
       ua_session->set_half_close_flag();
     }
 
@@ -3405,7 +3418,7 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer * p)
     hsm_release_assert(ua_entry->in_tunnel == true);
     if (p->consumer_list.head->vc_type == HT_TRANSFORM) {
       hsm_release_assert(post_transform_info.entry->in_tunnel == true);
-    } else {
+    } else if (server_entry != NULL) {
       hsm_release_assert(server_entry->in_tunnel == true);
     }
     break;
@@ -5198,7 +5211,7 @@ HttpSM::handle_server_setup_error(int event, void *data)
   // If there is POST or PUT tunnel wait for the tunnel
   //  to figure out that things have gone to hell
 
-  if (tunnel.is_tunnel_active()) {
+  if (tunnel.is_tunnel_alive()) {
     ink_assert(server_entry->read_vio == data);
     DebugSM("http", "[%" PRId64 "] [handle_server_setup_error] "
           "forwarding event %s to post tunnel", sm_id, HttpDebugNames::get_event_name(event));
@@ -5216,7 +5229,10 @@ HttpSM::handle_server_setup_error(int event, void *data)
 
       ua_entry->vc_handler = &HttpSM::state_watch_for_client_abort;
       ua_entry->read_vio = ua_producer->vc->do_io_read(this, INT64_MAX, c->producer->read_buffer);
-      ua_producer->vc->do_io_shutdown(IO_SHUTDOWN_READ);
+      
+      if (t_state.client_info.keep_alive != HTTP_KEEPALIVE) {
+        ua_producer->vc->do_io_shutdown(IO_SHUTDOWN_READ);
+      }
 
       ua_producer->alive = false;
       ua_producer->handler_state = HTTP_SM_POST_SERVER_FAIL;
@@ -5450,7 +5466,7 @@ HttpSM::do_setup_post_tunnel(HttpVC_t to_vc_type)
 
   // If we're half closed, we got a FIN from the client. Forward it on to the origin server
   // now that we have the tunnel operational.
-  if (ua_session->get_half_close_flag()) {
+  if (ua_session->get_half_close_flag() && t_state.client_info.keep_alive != HTTP_KEEPALIVE) {
     p->vc->do_io_shutdown(IO_SHUTDOWN_READ);
   }
 }
@@ -5644,18 +5660,19 @@ HttpSM::attach_server_session(HttpServerSession * s)
   //  do the read with a buffer and a size so preallocate the
   //  buffer
   server_buffer_reader = server_session->get_reader();
-  server_entry->read_vio = server_session->do_io_read(this, INT64_MAX, server_session->read_buffer);
-
-  // This call cannot be canceled or disabled on Windows at a different
-  // time (callstack). After this function, all transactions will send
-  // a request to the origin server. It is possible that read events
-  // for the response come in before the write events for sending the
-  // request itself. In state_send_server_request(), we try to disable
-  // reading until writing the request completed. That turned out to be
-  // for the second do_io_read(), the way to reenable() reading once
-  // disabled, but still the result of this do_io_read came in. For this
-  // read holds: server_entry->read_vio == INT64_MAX
-  // This block of read events gets undone in setup_server_read_response()
+  // ts-3105 We are only setting up an empty read at this point.  This
+  // is suffient to have the timeout errors directed to the appropriate
+  // SM handler, but we don't want to read any data until the tunnel has
+  // been set up.  This isn't such a big deal with GET results, since
+  // if no tunnels are set up, there is no danger of data being delivered
+  // to the wrong tunnel's consumer handler.  But for post and other
+  // methods that send data after the request, two tunnels are created in
+  // series, and with a full read set up at this point, the EOS from the
+  // first tunnel was sometimes behind handled by the consumer of the
+  // first tunnel instead of the producers of the second tunnel.
+  // The real read is setup in setup_server_read_response_header()
+  //
+  server_entry->read_vio = server_session->do_io_read(this, 0, NULL);
 
   // Transfer control of the write side as well
   server_session->do_io_write(this, 0, NULL);
@@ -5783,6 +5800,9 @@ HttpSM::setup_server_read_response_header()
   //   read the request header
   ink_assert(server_entry->read_vio);
 
+  // The tunnel from OS to UA is now setup.  Ready to read the response
+  server_entry->read_vio = server_session->do_io_read(this, INT64_MAX, server_session->read_buffer);
+
   // If there is anything in the buffer call the parsing routines
   //  since if the response is finished, we won't get any
   //  additional callbacks
@@ -5820,7 +5840,7 @@ HttpSM::setup_server_read_response_header()
   }
 }
 
-void
+HttpTunnelProducer *
 HttpSM::setup_cache_read_transfer()
 {
   int64_t alloc_index, hdr_size;
@@ -5866,6 +5886,7 @@ HttpSM::setup_cache_read_transfer()
   }
   ua_entry->in_tunnel = true;
   cache_sm.cache_read_vc = NULL;
+  return p;
 }
 
 HttpTunnelProducer *
@@ -5938,15 +5959,17 @@ HttpSM::setup_100_continue_transfer()
   HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::tunnel_handler_100_continue);
 
   // Setup the tunnel to the client
-  tunnel.add_producer(HTTP_TUNNEL_STATIC_PRODUCER,
+  HttpTunnelProducer *p = tunnel.add_producer(HTTP_TUNNEL_STATIC_PRODUCER,
                       client_response_hdr_bytes,
                       buf_start, (HttpProducerHandler) NULL, HT_STATIC, "internal msg - 100 continue");
   tunnel.add_consumer(ua_entry->vc,
                       HTTP_TUNNEL_STATIC_PRODUCER,
                       &HttpSM::tunnel_handler_100_continue_ua, HT_HTTP_CLIENT, "user agent");
 
+  // Clear the half close flag if it was set
+  ua_session->clear_half_close_flag();
   ua_entry->in_tunnel = true;
-  tunnel.tunnel_run();
+  tunnel.tunnel_run(p);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -6065,14 +6088,20 @@ HttpSM::setup_internal_transfer(HttpSMHandler handler_arg)
 
   HTTP_SM_SET_DEFAULT_HANDLER(handler_arg);
 
+  /*if (tunnel.get_producer(HTTP_TUNNEL_STATIC_PRODUCER) != NULL) {
+    Warning("Adding another producer");
+  }*/
+  // Clear the decks before we setup the new producers
+  tunnel.kill_tunnel();
+
   // Setup the tunnel to the client
-  tunnel.add_producer(HTTP_TUNNEL_STATIC_PRODUCER,
+  HttpTunnelProducer * p = tunnel.add_producer(HTTP_TUNNEL_STATIC_PRODUCER,
                       nbytes, buf_start, (HttpProducerHandler) NULL, HT_STATIC, "internal msg");
   tunnel.add_consumer(ua_entry->vc,
                       HTTP_TUNNEL_STATIC_PRODUCER, &HttpSM::tunnel_handler_ua, HT_HTTP_CLIENT, "user agent");
 
   ua_entry->in_tunnel = true;
-  tunnel.tunnel_run();
+  tunnel.tunnel_run(p);
 }
 
 // int HttpSM::find_http_resp_buffer_size(int cl)
@@ -6311,7 +6340,7 @@ HttpSM::setup_server_transfer_to_cache_only()
   server_entry->in_tunnel = true;
 }
 
-void
+HttpTunnelProducer *
 HttpSM::setup_server_transfer()
 {
   DebugSM("http", "Setup Server Transfer");
@@ -6400,9 +6429,10 @@ HttpSM::setup_server_transfer()
    */
   tunnel.set_producer_chunking_action(p, client_response_hdr_bytes, action);
   tunnel.set_producer_chunking_size(p, t_state.txn_conf->http_chunking_size);
+  return p;
 }
 
-void
+HttpTunnelProducer *
 HttpSM::setup_push_transfer_to_cache()
 {
   int64_t nbytes, alloc_index;
@@ -6425,7 +6455,7 @@ HttpSM::setup_push_transfer_to_cache()
       // Client failed to send the body, it's gone.  Kill the
       // state machine
       terminate_sm = true;
-      return;
+      return NULL;
     }
   }
   // Next order of business is copy the remaining data from the
@@ -6437,11 +6467,12 @@ HttpSM::setup_push_transfer_to_cache()
   HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::tunnel_handler_push);
 
   // TODO: Should we do something with the HttpTunnelProducer* returned?
-  tunnel.add_producer(ua_entry->vc, nbytes, buf_start, &HttpSM::tunnel_handler_ua_push,
+  HttpTunnelProducer *p = tunnel.add_producer(ua_entry->vc, nbytes, buf_start, &HttpSM::tunnel_handler_ua_push,
                       HT_HTTP_CLIENT, "user_agent");
   setup_cache_write_transfer(&cache_sm, ua_entry->vc, &t_state.cache_info.object_store, 0, "cache write");
 
   ua_entry->in_tunnel = true;
+  return p;
 }
 
 void
@@ -6502,7 +6533,7 @@ HttpSM::setup_blind_tunnel(bool send_response_hdr)
 
   // If we're half closed, we got a FIN from the client. Forward it on to the origin server
   // now that we have the tunnel operational.
-  if (ua_session->get_half_close_flag()) {
+  if (ua_session->get_half_close_flag() && t_state.client_info.keep_alive != HTTP_KEEPALIVE) {
     p_ua->vc->do_io_shutdown(IO_SHUTDOWN_READ);
   }
 }
@@ -6586,7 +6617,9 @@ HttpSM::kill_this()
       second_cache_sm->end_both();
     transform_cache_sm.end_both();
     vc_table.cleanup_all();
-    tunnel.deallocate_buffers();
+    //tunnel.deallocate_buffers();
+    // Why don't we just kill the tunnel?
+    tunnel.kill_tunnel();
 
     // It possible that a plugin added transform hook
     //   but the hook never executed due to a client abort
@@ -7373,8 +7406,8 @@ HttpSM::set_next_state()
 
   case HttpTransact::SM_ACTION_STORE_PUSH_BODY:
     {
-      setup_push_transfer_to_cache();
-      tunnel.tunnel_run();
+      HttpTunnelProducer *p = setup_push_transfer_to_cache();
+      tunnel.tunnel_run(p);
       break;
     }
 

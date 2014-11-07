@@ -728,7 +728,7 @@ HttpTunnel::tunnel_run(HttpTunnelProducer * p_arg)
 
     for (int i = 0 ; i < MAX_PRODUCERS ; ++i) {
       p = producers + i;
-      if (p->vc != NULL) {
+      if (p->vc != NULL && (p->alive || (p->vc_type == HT_STATIC && p->buffer_start != NULL))) {
         producer_run(p);
       }
     }
@@ -740,6 +740,12 @@ HttpTunnel::tunnel_run(HttpTunnelProducer * p_arg)
   //   back to say we are done
   if (!is_tunnel_alive()) {
     active = false;
+    for  (int i =0; i < num_producers; i++) {
+       if (producers[i].handler_state == 0) {
+         Warning("Calling from tunnel_run, handler_state is 0");
+         break;
+       }
+    } 
     sm->handleEvent(HTTP_TUNNEL_EVENT_DONE, this);
   }
 }
@@ -861,6 +867,11 @@ HttpTunnel::producer_run(HttpTunnelProducer * p)
     } else if (action == TCA_DECHUNK_CONTENT) {
       c->buffer_reader = p->chunked_handler.dechunked_buffer->clone_reader(dechunked_buffer_start);
     } else {
+      if (p->vc_type == HT_STATIC) {
+        if (p->buffer_start == NULL) {
+          Warning("Buffer start is null for static producer");
+        }
+      }
       c->buffer_reader = p->read_buffer->clone_reader(p->buffer_start);
     }
 
@@ -897,13 +908,10 @@ HttpTunnel::producer_run(HttpTunnelProducer * p)
       // to the server on VC_EVENT_WRITE_COMPLETE.
       if (p->vc_type == HT_HTTP_CLIENT) {
         HttpClientSession* ua_vc = static_cast<HttpClientSession*>(p->vc);
-        if (ua_vc->get_half_close_flag() || producer_n == 0) {
-          // Force the half close to make sure we send the FIN immediately after we finish writing.
-          ua_vc->set_half_close_flag();
+        if (ua_vc->get_half_close_flag()) {
           c_write = c->buffer_reader->read_avail();
-          if (producer_n != 0) {
-            p->alive = false;
-          }
+          p->alive = false;
+          p->handler_state = HTTP_SM_POST_SUCCESS;
         }
       }
       c->write_vio = c->vc->do_io_write(this, c_write, c->buffer_reader);
@@ -978,6 +986,7 @@ HttpTunnel::producer_run(HttpTunnelProducer * p)
       // done but we didn't do anything
       p->alive = false;
       p->read_success = true;
+      p->handler_state = HTTP_SM_POST_SUCCESS;
       Debug("http_tunnel", "[%" PRId64 "] [tunnel_run] producer already done", sm->sm_id);
       producer_handler(HTTP_TUNNEL_EVENT_PRECOMPLETE, p);
     } else {
@@ -1161,6 +1170,9 @@ bool HttpTunnel::producer_handler(int event, HttpTunnelProducer * p)
     jump_point = p->vc_handler;
     (sm->*jump_point) (event, p);
     sm_callback = true;
+    if (p->handler_state  == 0) {
+      p->handler_state = HTTP_SM_POST_SUCCESS;
+    }
     break;
 
   case VC_EVENT_READ_COMPLETE:
@@ -1188,6 +1200,9 @@ bool HttpTunnel::producer_handler(int event, HttpTunnelProducer * p)
     jump_point = p->vc_handler;
     (sm->*jump_point) (event, p);
     sm_callback = true;
+    if (p->handler_state  == 0) {
+      p->handler_state = HTTP_SM_POST_SUCCESS;
+    }
 
     // Data read from producer, reenable consumers
     for (c = p->consumer_list.head; c; c = c->link.next) {
@@ -1202,10 +1217,16 @@ bool HttpTunnel::producer_handler(int event, HttpTunnelProducer * p)
   case VC_EVENT_INACTIVITY_TIMEOUT:
   case HTTP_TUNNEL_EVENT_CONSUMER_DETACH:
     p->alive = false;
-    p->bytes_read = p->read_vio->ndone;
+    if (p->read_vio) {
+      p->bytes_read = p->read_vio->ndone;
+    }
     // Interesting tunnel event, call SM
     jump_point = p->vc_handler;
     (sm->*jump_point) (event, p);
+    // SKH a failure case anyway
+    if (p->handler_state  == 0) {
+      p->handler_state = HTTP_SM_POST_UA_FAIL;
+    }
     sm_callback = true;
     break;
 
@@ -1315,13 +1336,24 @@ bool HttpTunnel::consumer_handler(int event, HttpTunnelConsumer * c)
     // Interesting tunnel event, call SM
     jump_point = c->vc_handler;
     (sm->*jump_point) (event, c);
+    // SKH if there is no handler state set, not ready to terminate
+    if (c->producer && c->producer->handler_state == 0) {
+      if (event == VC_EVENT_WRITE_COMPLETE) 
+        c->producer->handler_state = HTTP_SM_POST_SUCCESS;
+      else if (c->vc_type == HT_HTTP_SERVER) 
+        c->producer->handler_state = HTTP_SM_POST_UA_FAIL;
+      else if (c->vc_type == HT_HTTP_CLIENT) 
+        c->producer->handler_state = HTTP_SM_POST_SERVER_FAIL;
+    }
     sm_callback = true;
 
     // Deallocate the reader after calling back the sm
     //  because buffer problems are easier to debug
     //  in the sm when the reader is still valid
-    c->buffer_reader->mbuf->dealloc_reader(c->buffer_reader);
-    c->buffer_reader = NULL;
+    if (c->buffer_reader) {
+      c->buffer_reader->mbuf->dealloc_reader(c->buffer_reader);
+      c->buffer_reader = NULL;
+    }
 
     // Since we removed a consumer, it may now be
     //   possbile to put more stuff in the buffer
@@ -1376,7 +1408,11 @@ HttpTunnel::chain_abort_all(HttpTunnelProducer * p)
     }
 
     if (c->self_producer) {
-      chain_abort_all(c->self_producer);
+      // Must snip the link before recursively freeing
+      // to avoid the loops introduced by blind tunneling
+      HttpTunnelProducer *selfp = c->self_producer;
+      c->self_producer = NULL;
+      chain_abort_all(selfp);
     }
 
     c = c->link.next;
