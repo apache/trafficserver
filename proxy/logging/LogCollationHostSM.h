@@ -84,6 +84,7 @@ private:
   int read_body(int event, VIO * vio);
   int read_done(int event, void *data);
   int read_start();
+  void freeReadBuffer();
   ReadState m_read_state;
 
   // helper for read states
@@ -101,6 +102,7 @@ private:
   char *m_read_buffer;
   int64_t m_read_bytes_wanted;
   int64_t m_read_bytes_received;
+  int64_t m_read_buffer_fast_allocator_size;
 
   // client info
   int m_client_ip;

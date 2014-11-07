@@ -67,7 +67,7 @@ m_client_vio(NULL),
 m_client_buffer(NULL),
 m_client_reader(NULL),
 m_pending_event(NULL),
-m_read_buffer(NULL), m_read_bytes_wanted(0), m_read_bytes_received(0), m_client_ip(0), m_client_port(0), m_id(ID++)
+m_read_buffer(NULL), m_read_bytes_wanted(0), m_read_bytes_received(0), m_read_buffer_fast_allocator_size(-1), m_client_ip(0), m_client_port(0), m_id(ID++)
 {
 
   Debug("log-coll", "[%d]host::constructor", m_id);
@@ -85,6 +85,19 @@ m_read_buffer(NULL), m_read_bytes_wanted(0), m_read_bytes_received(0), m_client_
   SET_HANDLER((LogCollationHostSMHandler) & LogCollationHostSM::host_handler);
   host_init(LOG_COLL_EVENT_SWITCH, NULL);
 
+}
+
+void
+LogCollationHostSM::freeReadBuffer()
+{
+  if (m_read_buffer) {
+    if (m_read_buffer_fast_allocator_size >= 0) {
+      ioBufAllocator[m_read_buffer_fast_allocator_size].free_void(m_read_buffer);
+    } else{
+      ats_free(m_read_buffer);
+    }
+    m_read_buffer = 0;
+  }
 }
 
 //-------------------------------------------------------------------------
@@ -171,8 +184,7 @@ LogCollationHostSM::host_auth(int event, void * /* data ATS_UNUSED */)
       ink_assert(m_read_buffer != NULL);
       int diff = strncmp(m_read_buffer, Log::config->collation_secret,
                          m_read_bytes_received);
-      delete[]m_read_buffer;
-      m_read_buffer = 0;
+      freeReadBuffer();
       if (!diff) {
         Debug("log-coll", "[%d]host::host_auth - authenticated!", m_id);
         return host_recv(LOG_COLL_EVENT_SWITCH, NULL);
@@ -304,7 +316,7 @@ LogCollationHostSM::host_recv(int event, void * /* data ATS_UNUSED */)
       if (version != LOG_SEGMENT_VERSION) {
         Note("[log-coll] invalid LogBuffer received; invalid version - "
              "buffer = %u, current = %u", version, LOG_SEGMENT_VERSION);
-        delete[]m_read_buffer;
+        freeReadBuffer();
 
       } else {
         log_object = Log::match_logobject(log_buffer_header);
@@ -455,7 +467,13 @@ LogCollationHostSM::read_body(int event, VIO * vio)
     m_read_bytes_wanted = m_net_msg_header.msg_bytes;
     ink_assert(m_read_bytes_wanted > 0);
     m_read_bytes_received = 0;
-    m_read_buffer = new char[m_read_bytes_wanted];
+    if (m_read_bytes_wanted <= max_iobuffer_size) {
+      m_read_buffer_fast_allocator_size = buffer_size_to_index(m_read_bytes_wanted);
+      m_read_buffer = (char *) ioBufAllocator[m_read_buffer_fast_allocator_size].alloc_void();
+    } else {
+      m_read_buffer_fast_allocator_size = -1; 
+      m_read_buffer = (char *)ats_malloc(m_read_bytes_wanted);
+    }
     ink_assert(m_read_buffer != NULL);
     ink_assert(m_client_vc != NULL);
     Debug("log-coll", "[%d]host:read_body - do_io_read(%" PRId64")", m_id, m_read_bytes_wanted);

@@ -207,6 +207,7 @@ private:
   size_t m_size;                // the buffer size
   size_t m_buf_align;           // the buffer alignment
   size_t m_write_align;         // the write alignment mask
+  int    m_buffer_fast_allocator_size; // indicates whether the logbuffer is allocated from ioBuf
 
   long m_expiration_time;       // buffer expiration time
 
@@ -222,6 +223,7 @@ private:
   // private functions
   size_t _add_buffer_header();
   unsigned add_header_str(const char *str, char *buf_ptr, unsigned buf_len);
+  void freeLogBuffer();
 
   // -- member functions that are not allowed --
   LogBuffer();
