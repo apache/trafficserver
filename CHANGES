@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.2.0
- 
+
+  *) [TS-3194] Remove unused proxy.config.plugin.plugin_mgmt_dir configuration.
+
   *) [TS-3185] Increase the default spdy initial_window_size_in setting to 1 mb
 
   *) [TS-3178] ProxyAllocators Improvements

@@ -644,7 +644,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.ping.npacks_to_trans
  proxy.config.ping.timeout_sec
  proxy.config.plugin.plugin_dir
- proxy.config.plugin.plugin_mgmt_dir
  proxy.config.prefetch.child_port
  proxy.config.prefetch.config_file
  proxy.config.prefetch.default_data_proto

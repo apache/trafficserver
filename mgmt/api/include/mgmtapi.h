@@ -926,16 +926,6 @@ extern "C"
  * Input:  argc - argument count
  *         argv - argument array
  * Output: <none>
- * Note: To implement a program as a plugin, need to implement the TSPluginInit
- *       function and then add the plugin's name (eg. test-plugin.so) and argument
- *       list (if any) to the list in the plugin_mgmt.config file. The location of the
- *       mgmt plugins should be specified in the records.config variable
- *       "proxy.config.plugin.plugin_mgmt_dir" (if this directory is a relative
- *       pathname then, it is assumed that it is relative to the root directory
- *       defined in TS_ROOT). The default value is "etc/trafficserver/plugins_mgmt",
- *       which tells Traffic Manager to use the directory plugins_mgmt located in the
- *       same directory as records.config. You should place your shared library (*.so)
- *       into the directory you have specified.
  */
   inkexp extern void TSPluginInit(int argc, const char *argv[]);
 
