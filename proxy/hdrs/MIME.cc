@@ -1729,7 +1729,7 @@ MIMEField::value_get_index(char const *value, int length)  const {
   // if field doesn't support commas and there is just one instance, just compare the value
   if (!this->supports_commas() && !this->has_dups()) {
     if (this->m_len_value == length &&
-        !strncasecmp(value, this->m_ptr_value, length)) 
+        strncasecmp(value, this->m_ptr_value, length) == 0) 
       retval = 0;
   } else {
     HdrCsvIter iter;
@@ -1737,7 +1737,7 @@ MIMEField::value_get_index(char const *value, int length)  const {
     const char *tok = iter.get_first(this, &tok_len);
     int index = 0;
     while (tok) {
-      if (tok_len == length && !strncasecmp(tok, value, length)) {
+      if (tok_len == length && strncasecmp(tok, value, length) == 0) {
         retval = index;
         break;
       } else {  
