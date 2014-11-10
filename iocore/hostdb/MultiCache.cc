@@ -82,12 +82,12 @@ bytes_to_blocks(int64_t b)
 }
 
 inline int
-MultiCacheBase::blocks_in_level(int level)
+MultiCacheBase::blocks_in_level(unsigned int level)
 {
   int64_t sumbytes = 0;
   int prevblocks = 0;
   int b = 0;
-  for (int i = 0; i <= level; i++) {
+  for (unsigned int i = 0; i <= level; i++) {
     sumbytes += buckets * ((int64_t) bucketsize[i]);
     int sumblocks = bytes_to_blocks(sumbytes);
     b = sumblocks - prevblocks;
@@ -103,14 +103,18 @@ MultiCacheBase::blocks_in_level(int level)
 //
 int
 MultiCacheBase::initialize(Store *astore, char *afilename,
-                           int aelements, int abuckets, int alevels,
+                           int aelements, int abuckets, unsigned int alevels,
                            int level0_elements_per_bucket,
                            int level1_elements_per_bucket, int level2_elements_per_bucket)
 {
   int64_t size = 0;
 
   Debug("multicache", "initializing %s with %d elements, %d buckets and %d levels", afilename, aelements, abuckets, alevels);
-  ink_assert(alevels < 4);
+  ink_assert(alevels <= MULTI_CACHE_MAX_LEVELS);
+  if (alevels > MULTI_CACHE_MAX_LEVELS) {
+    Warning("Alevels too large %d, cannot initialize MultiCache", MULTI_CACHE_MAX_LEVELS);
+    return -1;
+  }
   levels = alevels;
   elementsize = get_elementsize();
   totalelements = 0;
