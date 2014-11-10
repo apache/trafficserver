@@ -441,13 +441,13 @@ protected:
   void setup_cache_lookup_complete_api();
   void setup_server_send_request();
   void setup_server_send_request_api();
-  void setup_server_transfer();
+  HttpTunnelProducer *setup_server_transfer();
   void setup_server_transfer_to_cache_only();
-  void setup_cache_read_transfer();
+  HttpTunnelProducer *setup_cache_read_transfer();
   void setup_internal_transfer(HttpSMHandler handler);
   void setup_error_transfer();
   void setup_100_continue_transfer();
-  void setup_push_transfer_to_cache();
+  HttpTunnelProducer *setup_push_transfer_to_cache();
   void setup_transform_to_server_transfer();
   void setup_cache_write_transfer(HttpCacheSM * c_sm,
                                   VConnection * source_vc, HTTPInfo * store_info, int64_t skip_bytes, const char *name);
