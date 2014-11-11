@@ -296,6 +296,68 @@ ink_freelist_free(InkFreeList * f, void *item)
 }
 
 void
+ink_freelist_free_bulk(InkFreeList *f, void *head, void *tail, size_t num_item)
+{
+
+#if TS_USE_FREELIST
+  volatile_void_p *adr_of_next = (volatile_void_p *) ADDRESS_OF_NEXT(tail, 0);
+  head_p h;
+  head_p item_pair;
+  int result = 0;
+
+  // ink_assert(!((long)item&(f->alignment-1))); XXX - why is this no longer working? -bcall
+
+#ifdef DEADBEEF
+  {
+    static const char str[4] = { (char) 0xde, (char) 0xad, (char) 0xbe, (char) 0xef };
+
+    // set the entire item to DEADBEEF;
+    void * temp = head;
+    for(size_t i = 0; i<num_item; i++){
+      for (int j = 0; j < (int)f->type_size; j++)
+        ((char*)temp)[j] = str[j % 4];
+      temp = *(void **) temp;
+    }
+  }
+#endif
+
+  while (!result) {
+    INK_QUEUE_LD(h, f->head);
+#ifdef SANITY
+    if (TO_PTR(FREELIST_POINTER(h)) == head)
+      ink_fatal(1, "ink_freelist_free: trying to free item twice");
+    if (((uintptr_t) (TO_PTR(FREELIST_POINTER(h)))) & 3)
+      ink_fatal(1, "ink_freelist_free: bad list");
+    if (TO_PTR(FREELIST_POINTER(h)))
+      fake_global_for_ink_queue = *(int *) TO_PTR(FREELIST_POINTER(h));
+#endif
+    *adr_of_next = FREELIST_POINTER(h);
+    SET_FREELIST_POINTER_VERSION(item_pair, FROM_PTR(head), FREELIST_VERSION(h));
+    INK_MEMORY_BARRIER;
+#if TS_HAS_128BIT_CAS
+       result = ink_atomic_cas((__int128_t*) & f->head, h.data, item_pair.data);
+#else
+       result = ink_atomic_cas((int64_t *) & f->head, h.data, item_pair.data);
+#endif
+  }
+
+  ink_atomic_increment((int *) &f->used, -1 * num_item);
+  ink_atomic_increment(&fastalloc_mem_in_use, -(int64_t) f->type_size * num_item);
+#else
+  void * item = head;
+  if (f->alignment) {
+    for (size_t i = 0; i < num_item && item; ++i, item = *(void **)item) {
+      ats_memalign_free(item);
+    }
+  } else {
+    for (size_t i = 0; i < num_item && item; ++i, item = *(void **)item) {
+      ats_free(item);
+    }
+  }
+#endif
+}
+
+void
 ink_freelists_snap_baseline()
 {
 #if TS_USE_FREELIST

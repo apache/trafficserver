@@ -68,6 +68,13 @@ public:
     ink_freelist_free(this->fl, ptr);
   }
 
+  /** Deallocate blocks of memory allocated by the Allocator. */
+  void
+  free_void_bulk(void *head, void *tail, size_t num_item)
+  {
+    ink_freelist_free_bulk(this->fl, head, tail, num_item);
+  }
+
   Allocator()
   {
     fl = NULL;
@@ -132,6 +139,19 @@ public:
   }
 
   /**
+     Deallocates objects of the templated type.
+
+     @param head pointer to be freed.
+     @param tail pointer to be freed.
+     @param count of blocks to be freed.
+   */
+  void
+  free_bulk(C *head, C *tail, size_t num_item)
+  {
+    ink_freelist_free_bulk(this->fl, head, tail, num_item);
+  }
+
+  /**
     Allocate objects of the templated type via the inherited interface
     using void pointers.
   */
@@ -151,6 +171,20 @@ public:
   free_void(void *ptr)
   {
     free((C *) ptr);
+  }
+
+  /**
+      Deallocate objects of the templated type via the inherited
+      interface using void pointers.
+
+      @param head pointer to be freed.
+      @param tail pointer to be freed.
+      @param count of blocks
+    */
+  void
+  free_void_bulk(void *head, void *tail, size_t num_item)
+  {
+    free_bulk((C *) head, (C *) tail, num_item);
   }
 
   /**
