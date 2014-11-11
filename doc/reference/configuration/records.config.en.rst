@@ -2518,7 +2518,7 @@ Sockets
    Sets the maximum number of elements that can be contained in a ProxyAllocator (per-thread)
    before returning the objects to the global pool
 
-.. ts:cv:: CONFIG proxy.config.allocator.thread_freelist_low_watermark INT 256 
+.. ts:cv:: CONFIG proxy.config.allocator.thread_freelist_low_watermark INT 32 
 
    Sets the minimum number of items a ProxyAllocator (per-thread) will guarantee to be
    holding at any one time.
