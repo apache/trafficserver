@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.2.0
 
+  *) [TS-2812] Initial version of header_normalize plugin
+
   *) [TS-2959] Fix compiler issue for MultiCache.
 
   *) [TS-3155] Added value_get_index to MimeField.
