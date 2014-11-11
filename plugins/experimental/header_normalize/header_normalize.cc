@@ -5,6 +5,10 @@
 // interworking issues with legacy origins not supporting lower case headers
 // required by protocols such as spdy/http2 etc.
 //
+// Note that the plugin currently uses READ_REQUEST_HDR_HOOK to camel-case
+// the headers. As an optimization, it can be changed to SEND_REQUEST_HDR_HOOK 
+// so that it only converts, if/when the request is being sent to the origin
+//
 // To use this plugin, configure a remap.config rule like
 //
 //   map http://foo.com http://bar.com @plugin=header_normalize.so
