@@ -373,6 +373,21 @@ spdy_on_data_chunk_recv_callback(spdylay_session * /*session*/, uint8_t /*flags*
   return;
 }
 
+unsigned
+spdy_session_delta_window_size(SpdyClientSession *sm)
+{
+  unsigned sess_delta_window_size = 0;
+  map<int, SpdyRequest*>::iterator iter = sm->req_map.begin();
+  map<int, SpdyRequest*>::iterator endIter = sm->req_map.end();
+  for (; iter != endIter; ++iter) {
+    SpdyRequest* req = iter->second;
+    sess_delta_window_size += req->delta_window_size;
+  }
+  Debug("spdy", "----sm_id:%" PRId64 ", session delta_window_size:%u",
+        sess_delta_window_size);
+  return sess_delta_window_size;
+}
+
 void
 spdy_on_data_recv_callback(spdylay_session *session, uint8_t flags,
                            int32_t stream_id, int32_t length, void *user_data)
@@ -397,7 +412,7 @@ spdy_on_data_recv_callback(spdylay_session *session, uint8_t flags,
   Debug("spdy", "----sm_id:%" PRId64 ", stream_id:%d, delta_window_size:%u",
         sm->sm_id, stream_id, req->delta_window_size);
 
-  if (req->delta_window_size >= spdy_initial_window_size/2) {
+  if (spdy_session_delta_window_size(sm) >= spdy_initial_window_size/2) {
     Debug("spdy", "----Reenable write_vio for WINDOW_UPDATE frame, delta_window_size:%u",
           req->delta_window_size);
 
