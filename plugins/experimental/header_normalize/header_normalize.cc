@@ -3,7 +3,7 @@
 //
 // ATS plugin to convert headers into camel-case. It may be useful to solve
 // interworking issues with legacy origins not supporting lower case headers
-// required by protocols such as spdy/http2 etc. 
+// required by protocols such as spdy/http2 etc.
 //
 // To use this plugin, configure a remap.config rule like
 //
@@ -182,7 +182,7 @@ read_request_hook(TSCont /* contp */, TSEvent /* event */, void *edata)
       int old_hdr_len;
       const char* old_hdr_name = TSMimeHdrFieldNameGet(hdr_bufp, req_hdrs, hdr, &old_hdr_len);
 
-      // TSMimeHdrFieldNameGet returns the MIME_FIELD_NAME 
+      // TSMimeHdrFieldNameGet returns the MIME_FIELD_NAME
       // for all MIME hdrs, which is always in Camel Case
       if (islower(old_hdr_name[0])) {
          TSDebug(PLUGIN_NAME, "*** non MIME Hdr %s, leaving it for now", old_hdr_name);
@@ -198,8 +198,7 @@ read_request_hook(TSCont /* contp */, TSEvent /* event */, void *edata)
       // hdr returned by TSMimeHdrFieldNameGet is already
       // in camel case, just destroy the lowercase spdy header
       // and replace it with TSMimeHdrFieldNameGet
-      char* new_hdr_name = (char*)old_hdr_name; 
-    
+      char* new_hdr_name = (char*)old_hdr_name;
       if (new_hdr_name) {
         TSMLoc new_hdr_loc;
         TSReturnCode rval = TSMimeHdrFieldCreateNamed(hdr_bufp, req_hdrs, new_hdr_name, old_hdr_len, &new_hdr_loc);
