@@ -2035,7 +2035,7 @@ RecordElement RecordsConfig[] = {
   //############
   {RECT_CONFIG, "proxy.config.allocator.thread_freelist_high_watermark", RECD_INT, "512", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.allocator.thread_freelist_low_watermark", RECD_INT, "256", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  {RECT_CONFIG, "proxy.config.allocator.thread_freelist_low_watermark", RECD_INT, "32", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
 
   //############
