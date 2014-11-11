@@ -36,10 +36,9 @@ ink_event_system_init(ModuleVersion v)
   ink_release_assert(!checkModuleVersion(v, EVENT_SYSTEM_MODULE_VERSION));
   int config_max_iobuffer_size = DEFAULT_MAX_BUFFER_SIZE;
 
-  REC_EstablishStaticConfigInt32(thread_freelist_high_watermark, "proxy.config.allocator.thread_freelist_high_watermark");
-
   // For backwards compatability make sure to allow thread_freelist_size
-  REC_EstablishStaticConfigInt32(thread_freelist_low_watermark, "proxy.config.allocator.thread_freelist_size");
+  REC_EstablishStaticConfigInt32(thread_freelist_high_watermark, "proxy.config.allocator.thread_freelist_size");
+  REC_EstablishStaticConfigInt32(thread_freelist_high_watermark, "proxy.config.allocator.thread_freelist_high_watermark");
   REC_EstablishStaticConfigInt32(thread_freelist_low_watermark, "proxy.config.allocator.thread_freelist_low_watermark");
 
   REC_ReadConfigInteger(config_max_iobuffer_size, "proxy.config.io.max_buffer_size");
