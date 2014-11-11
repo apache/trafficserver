@@ -575,7 +575,7 @@ HttpSM::attach_client_session(HttpClientSession * client_vc, IOBufferReader * bu
   //  this hook maybe asynchronous, we need to disable IO on
   //  client but set the continuation to be the state machine
   //  so if we get an timeout events the sm handles them
-  ua_entry->read_vio = client_vc->do_io_read(this, 0, buffer_reader->mbuf);
+  ua_entry->read_vio = client_vc->do_io_read(this, 0, NULL);
 
   /////////////////////////
   // set up timeouts     //
@@ -5645,18 +5645,19 @@ HttpSM::attach_server_session(HttpServerSession * s)
   //  do the read with a buffer and a size so preallocate the
   //  buffer
   server_buffer_reader = server_session->get_reader();
-  server_entry->read_vio = server_session->do_io_read(this, INT64_MAX, server_session->read_buffer);
-
-  // This call cannot be canceled or disabled on Windows at a different
-  // time (callstack). After this function, all transactions will send
-  // a request to the origin server. It is possible that read events
-  // for the response come in before the write events for sending the
-  // request itself. In state_send_server_request(), we try to disable
-  // reading until writing the request completed. That turned out to be
-  // for the second do_io_read(), the way to reenable() reading once
-  // disabled, but still the result of this do_io_read came in. For this
-  // read holds: server_entry->read_vio == INT64_MAX
-  // This block of read events gets undone in setup_server_read_response()
+  // ts-3189 We are only setting up an empty read at this point.  This
+  // is suffient to have the timeout errors directed to the appropriate
+  // SM handler, but we don't want to read any data until the tunnel has
+  // been set up.  This isn't such a big deal with GET results, since
+  // if no tunnels are set up, there is no danger of data being delivered
+  // to the wrong tunnel's consumer handler.  But for post and other
+  // methods that send data after the request, two tunnels are created in
+  // series, and with a full read set up at this point, the EOS from the
+  // first tunnel was sometimes behind handled by the consumer of the
+  // first tunnel instead of the producer of the second tunnel.
+  // The real read is setup in setup_server_read_response_header()
+  //
+  server_entry->read_vio = server_session->do_io_read(this, 0, NULL);
 
   // Transfer control of the write side as well
   server_session->do_io_write(this, 0, NULL);
@@ -5784,40 +5785,17 @@ HttpSM::setup_server_read_response_header()
   //   read the request header
   ink_assert(server_entry->read_vio);
 
+  // The tunnel from OS to UA is now setup.  Ready to read the response
+  server_entry->read_vio = server_session->do_io_read(this, INT64_MAX, server_buffer_reader->mbuf);
+
   // If there is anything in the buffer call the parsing routines
   //  since if the response is finished, we won't get any
   //  additional callbacks
 
-  //UnixNetVConnection * vc = (UnixNetVConnection*)(ua_session->client_vc);
-  //UnixNetVConnection * my_server_vc = (UnixNetVConnection*)(server_session->get_netvc());
   if (server_buffer_reader->read_avail() > 0) {
-    if (server_entry->eos) {
-      /*printf("data already in the buffer, calling state_read_server_response_header with VC_EVENT_EOS client fd: %d and server fd : %d\n",
-         vc->con.fd,my_server_vc->con.fd); */
-      state_read_server_response_header(VC_EVENT_EOS, server_entry->read_vio);
-    } else {
-      /*printf("data alreadyclient_vc in the buffer, calling state_read_server_response_header with VC_EVENT_READ_READY fd: %d and server fd : %d\n",
-         vc->con.fd,my_server_vc->con.fd); */
-      state_read_server_response_header(VC_EVENT_READ_READY, server_entry->read_vio);
-    }
-  }
-  // It is possible the header was already in the buffer and the
-  //   IO on for read disabled.  This would happen if 1) the response
-  //   header was received before the 'request sent' callback happened
-  //   (or before a post body was sent) OR  2) we were parsing a 100
-  //   continue response and are now parsing next response header
-  //   If only part of the header was in the buffer we need to do more IO
-  //   to get the rest of it.  If the whole header is in the buffer then we don't
-  //   want additional IO since we'll be issuing another read for body tunnel
-  //   and can't switch buffers at that point since we won't be on the read
-  //   callback
-  if (server_entry != NULL) {
-    if (t_state.current.server->state == HttpTransact::STATE_UNDEFINED &&
-        server_entry->read_vio->nbytes == server_entry->read_vio->ndone &&
-        milestones.server_read_header_done == 0) {
-      ink_assert(server_entry->eos == false);
-      server_entry->read_vio = server_session->do_io_read(this, INT64_MAX, server_buffer_reader->mbuf);
-    }
+    state_read_server_response_header(
+      (server_entry->eos) ? VC_EVENT_EOS : VC_EVENT_READ_READY, 
+      server_entry->read_vio);
   }
 }
 
