@@ -88,44 +88,10 @@ is_header_keep_alive(const HTTPVersion & http_version, const HTTPVersion & reque
   //    *unknown_tokens = false;
 
   if (con_hdr) {
-    int val_len;
-    const char *val;
-
-    if (!con_hdr->has_dups()) { // try fastpath first
-      val = con_hdr->value_get(&val_len);
-      if (ptr_len_casecmp(val, val_len, "keep-alive", 10) == 0) {
-        con_token = CON_TOKEN_KEEP_ALIVE;
-      } else if (ptr_len_casecmp(val, val_len, "close", 5) == 0) {
-        con_token = CON_TOKEN_CLOSE;
-      }
-    }
-
-    if (con_token == CON_TOKEN_NONE) {
-      HdrCsvIter iter;
-
-      val = iter.get_first(con_hdr, &val_len);
-
-      while (val) {
-        if (ptr_len_casecmp(val, val_len, "keep-alive", 10) == 0) {
-          con_token = CON_TOKEN_KEEP_ALIVE;
-          /*
-             if (!*unknown_tokens) {
-             *unknown_tokens = (iter->get_next(&val_len) == NULL);
-             } */
-          break;
-        } else if (ptr_len_casecmp(val, val_len, "close", 5) == 0) {
-          con_token = CON_TOKEN_CLOSE;
-          /*
-             if (!*unknown_tokens) {
-             *unknown_tokens = (iter->get_next(&val_len) == NULL);
-             } */
-          break;
-        } else {
-          //      *unknown_tokens = true;
-        }
-        val = iter.get_next(&val_len);
-      }
-    }
+    if (con_hdr->value_get_index("keep-alive", 10) >= 0)
+      con_token = CON_TOKEN_KEEP_ALIVE;
+    else if (con_hdr->value_get_index("close", 5) >= 0) 
+      con_token = CON_TOKEN_CLOSE;
   }
 
   if (HTTPVersion(1, 0) == http_version) {

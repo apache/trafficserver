@@ -1722,6 +1722,33 @@ mime_field_name_set(HdrHeap *heap, MIMEHdrImpl */* mh ATS_UNUSED */, MIMEField *
   }
 }
 
+int 
+MIMEField::value_get_index(char const *value, int length)  const {
+  int retval = -1;
+  
+  // if field doesn't support commas and there is just one instance, just compare the value
+  if (!this->supports_commas() && !this->has_dups()) {
+    if (this->m_len_value == length &&
+        strncasecmp(value, this->m_ptr_value, length) == 0) 
+      retval = 0;
+  } else {
+    HdrCsvIter iter;
+    int tok_len;
+    const char *tok = iter.get_first(this, &tok_len);
+    int index = 0;
+    while (tok) {
+      if (tok_len == length && strncasecmp(tok, value, length) == 0) {
+        retval = index;
+        break;
+      } else {  
+        index++;
+      }
+      tok = iter.get_next(&tok_len);
+    }
+  }
+  return retval;
+}
+
 const char *
 mime_field_value_get(const MIMEField *field, int *length)
 {

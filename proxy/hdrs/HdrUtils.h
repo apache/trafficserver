@@ -47,7 +47,7 @@ HdrCsvIter(const char s = ','):m_value_start(NULL),
     m_value_len(0), m_bytes_consumed(0), m_follow_dups(false),
     m_csv_start(NULL), m_csv_len(0), m_csv_end(NULL), m_csv_index(0), m_cur_field(NULL), m_separator(s) {
   }
-  const char *get_first(MIMEField * m, int *len, bool follow_dups = true);
+  const char *get_first(const MIMEField * m, int *len, bool follow_dups = true);
   const char *get_next(int *len);
   const char *get_current(int *len);
 
@@ -83,16 +83,16 @@ private:
   int m_csv_len;
   const char *m_csv_end;
   int m_csv_index;
-  MIMEField *m_cur_field;
+  const MIMEField *m_cur_field;
 
   // for the Cookie/Set-cookie headers, the separator is ';'
   const char m_separator;
 
-  void field_init(MIMEField * m);
+  void field_init(const MIMEField * m);
 };
 
 inline void
-HdrCsvIter::field_init(MIMEField * m)
+HdrCsvIter::field_init(const MIMEField * m)
 {
   m_cur_field = m;
   m_value_start = m->m_ptr_value;
@@ -101,7 +101,7 @@ HdrCsvIter::field_init(MIMEField * m)
 }
 
 inline const char *
-HdrCsvIter::get_first(MIMEField * m, int *len, bool follow_dups)
+HdrCsvIter::get_first(const MIMEField * m, int *len, bool follow_dups)
 {
 
   field_init(m);
