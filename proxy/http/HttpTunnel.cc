@@ -897,13 +897,10 @@ HttpTunnel::producer_run(HttpTunnelProducer * p)
       // to the server on VC_EVENT_WRITE_COMPLETE.
       if (p->vc_type == HT_HTTP_CLIENT) {
         HttpClientSession* ua_vc = static_cast<HttpClientSession*>(p->vc);
-        if (ua_vc->get_half_close_flag() || producer_n == 0) {
-          // Force the half close to make sure we send the FIN immediately after we finish writing.
-          ua_vc->set_half_close_flag();
+        if (ua_vc->get_half_close_flag()) {
           c_write = c->buffer_reader->read_avail();
-          if (producer_n != 0) {
-            p->alive = false;
-          }
+          p->alive = false;
+          p->handler_state = HTTP_SM_POST_SUCCESS;
         }
       }
       c->write_vio = c->vc->do_io_write(this, c_write, c->buffer_reader);
@@ -978,6 +975,7 @@ HttpTunnel::producer_run(HttpTunnelProducer * p)
       // done but we didn't do anything
       p->alive = false;
       p->read_success = true;
+      p->handler_state = HTTP_SM_POST_SUCCESS;
       Debug("http_tunnel", "[%" PRId64 "] [tunnel_run] producer already done", sm->sm_id);
       producer_handler(HTTP_TUNNEL_EVENT_PRECOMPLETE, p);
     } else {
@@ -1161,6 +1159,7 @@ bool HttpTunnel::producer_handler(int event, HttpTunnelProducer * p)
     jump_point = p->vc_handler;
     (sm->*jump_point) (event, p);
     sm_callback = true;
+    p->update_state_if_not_set(HTTP_SM_POST_SUCCESS);
     break;
 
   case VC_EVENT_READ_COMPLETE:
@@ -1188,6 +1187,7 @@ bool HttpTunnel::producer_handler(int event, HttpTunnelProducer * p)
     jump_point = p->vc_handler;
     (sm->*jump_point) (event, p);
     sm_callback = true;
+    p->update_state_if_not_set(HTTP_SM_POST_SUCCESS);
 
     // Data read from producer, reenable consumers
     for (c = p->consumer_list.head; c; c = c->link.next) {
@@ -1207,6 +1207,8 @@ bool HttpTunnel::producer_handler(int event, HttpTunnelProducer * p)
     jump_point = p->vc_handler;
     (sm->*jump_point) (event, p);
     sm_callback = true;
+    // Failure case anyway
+    p->update_state_if_not_set(HTTP_SM_POST_UA_FAIL);
     break;
 
   case VC_EVENT_WRITE_READY:
@@ -1315,6 +1317,16 @@ bool HttpTunnel::consumer_handler(int event, HttpTunnelConsumer * c)
     // Interesting tunnel event, call SM
     jump_point = c->vc_handler;
     (sm->*jump_point) (event, c);
+    // Make sure the handler_state is set
+    // Necessary for post tunnel end processing
+    if (c->producer && c->producer->handler_state == 0) {
+      if (event == VC_EVENT_WRITE_COMPLETE) 
+        c->producer->handler_state = HTTP_SM_POST_SUCCESS;
+      else if (c->vc_type == HT_HTTP_SERVER) 
+        c->producer->handler_state = HTTP_SM_POST_UA_FAIL;
+      else if (c->vc_type == HT_HTTP_CLIENT) 
+        c->producer->handler_state = HTTP_SM_POST_SERVER_FAIL;
+    }
     sm_callback = true;
 
     // Deallocate the reader after calling back the sm

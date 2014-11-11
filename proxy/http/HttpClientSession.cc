@@ -124,6 +124,10 @@ HttpClientSession::new_transaction()
   ink_assert(current_reader == NULL);
   PluginIdentity* pi = dynamic_cast<PluginIdentity*>(client_vc);
 
+  // Defensive programming, make sure nothing persists across
+  // connection re-use
+  half_close = false;
+
   read_state = HCS_ACTIVE_READER;
   current_reader = HttpSM::allocate();
   current_reader->init();

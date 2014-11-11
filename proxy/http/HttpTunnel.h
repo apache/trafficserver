@@ -250,6 +250,9 @@ struct HttpTunnelProducer
   /// Check throttled state.
   bool is_throttled() const;
 
+  /// Update the handler_state member if it is still 0
+  void  update_state_if_not_set(int new_handler_state);
+
   /** Set the flow control source producer for the flow.
       This sets the value for this producer and all downstream producers.
       @note This is the implementation for @c throttle and @c unthrottle.
@@ -545,6 +548,14 @@ HttpTunnelProducer::is_source() const
   // If a producer is marked as a client, then it's part of a bidirectional tunnel
   // and so is an actual source of data.
   return HT_HTTP_SERVER == vc_type || HT_CACHE_READ == vc_type || HT_HTTP_CLIENT == vc_type;
+}
+
+inline void
+HttpTunnelProducer::update_state_if_not_set(int new_handler_state)
+{
+  if (this->handler_state == 0) {
+    this->handler_state = new_handler_state;
+  }
 }
 
 inline bool
