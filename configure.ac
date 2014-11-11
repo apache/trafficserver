@@ -1936,6 +1936,7 @@ AS_IF([test "x$enable_experimental_plugins" = xyes], [
     plugins/experimental/escalate/Makefile
     plugins/experimental/esi/Makefile
     plugins/experimental/geoip_acl/Makefile
+    plugins/experimental/header_normalize/Makefile
     plugins/experimental/healthchecks/Makefile
     plugins/experimental/hipes/Makefile
     plugins/experimental/metalink/Makefile
