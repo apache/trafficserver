@@ -45,6 +45,10 @@ typedef void (*RecConfigEntryCallback)(RecT rec_type, RecDataT data_type, const 
 void RecConfigFileInit(void);
 int RecConfigFileParse(const char * path, RecConfigEntryCallback handler, bool inc_version);
 
+// Return a copy of the system's configuration directory, taking proxy.config.config_dir into account. The
+// caller MUST release the result with ats_free().
+char * RecConfigReadConfigDir();
+
 // Return a copy of the system's local state directory, taking proxy.config.local_state_dir into account. The
 // caller MUST release the result with ats_free().
 char * RecConfigReadRuntimeDir();

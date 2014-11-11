@@ -68,9 +68,6 @@ startProcessManager(void *arg)
 ProcessManager::ProcessManager(bool rlm):
 BaseManager(), require_lm(rlm), mgmt_sync_key(0), local_manager_sockfd(0), cbtable(NULL)
 {
-  ats_scoped_str rundir(RecConfigReadRuntimeDir());
-
-  ink_strlcpy(pserver_path, rundir, sizeof(pserver_path));
   mgmt_signal_queue = create_queue();
 
   // Set temp. process/manager timeout. Will be reconfigure later.
@@ -167,7 +164,8 @@ ProcessManager::processSignalQueue()
 void
 ProcessManager::initLMConnection()
 {
-  char message[1024];
+  ats_scoped_str rundir(RecConfigReadRuntimeDir());
+  ats_scoped_str sockpath(Layout::relative_to(rundir, LM_CONNECTION_SERVER));
 
   MgmtMessageHdr mh_hdr;
   MgmtMessageHdr *mh_full;
@@ -181,8 +179,7 @@ ProcessManager::initLMConnection()
   memset((char *) &serv_addr, 0, sizeof(serv_addr));
   serv_addr.sun_family = AF_UNIX;
 
-  snprintf(message, sizeof(message), "%s/%s", pserver_path, LM_CONNECTION_SERVER);
-  ink_strlcpy(serv_addr.sun_path, message, sizeof(serv_addr.sun_path));
+  ink_strlcpy(serv_addr.sun_path, sockpath, sizeof(serv_addr.sun_path));
 #if defined(darwin) || defined(freebsd)
   servlen = sizeof(sockaddr_un);
 #else
@@ -197,7 +194,7 @@ ProcessManager::initLMConnection()
   }
 
   if ((connect(local_manager_sockfd, (struct sockaddr *) &serv_addr, servlen)) < 0) {
-    mgmt_fatal(stderr, errno, "[ProcessManager::initLMConnection] Connect failed\n");
+    mgmt_fatal(stderr, errno, "[ProcessManager::initLMConnection] failed to connect management socket '%s'\n", (const char *)sockpath);
   }
 
   data_len = sizeof(pid_t);

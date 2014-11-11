@@ -113,7 +113,6 @@ main(int /* argc ATS_UNUSED */, char **argv)
   Layout::create();
   RecProcessInit(RECM_STAND_ALONE, NULL /* diags */);
   LibRecordsConfigInit();
-  RecordsConfigOverrideFromEnvironment();
 
   if (syslog_mode) {
     RecString name;

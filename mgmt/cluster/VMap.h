@@ -70,7 +70,7 @@ public:
   void rl_downAddrs();
   void removeAddressMapping(int i);
   void lt_runGambit();
-  void lt_readAListFile(char *data);
+  void lt_readAListFile(const char *data);
   void lt_constructVMapMessage(char *ip, char *message, int max);
 
   bool rl_remote_map(char *virt_ip, char *real_ip);

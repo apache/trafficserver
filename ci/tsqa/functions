@@ -254,7 +254,7 @@ bootstrap() {
   done
 
   # Copy config across
-  cp -r $(tsxs -q SYSCONFDIR)/*.config $TSQA_ROOT/$sysconfdir
+  cp -r $(tsxs -q SYSCONFDIR)/*.{config,xml} $TSQA_ROOT/$sysconfdir
 
   # Delete any config variables we are about to set.
   sed -i.orig \

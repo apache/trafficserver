@@ -422,7 +422,7 @@ RecDataSetFromString(RecDataT data_type, RecData * data_dst, const char *data_st
     data_src.rec_float = atof(data_string);
     break;
   case RECD_STRING:
-    if (strcmp((data_string), "NULL") == 0) {
+    if (data_string && strcmp((data_string), "NULL") == 0) {
       data_src.rec_string = NULL;
     } else {
       // It's OK to cast away the const here, because RecDataSet will copy the string.

@@ -463,8 +463,7 @@ void
 loadSocksConfiguration(socks_conf_struct * socks_conf_stuff)
 {
   int socks_config_fd = -1;
-  char config_pathname[PATH_NAME_MAX + 1];
-  char *socks_config_file = NULL;
+  ats_scoped_str config_pathname;
 #ifdef SOCKS_WITH_TS
   char *tmp;
 #endif
@@ -504,22 +503,18 @@ loadSocksConfiguration(socks_conf_struct * socks_conf_stuff)
   SocksServerConfig::startup();
 #endif
 
-  socks_config_file = REC_ConfigReadString("proxy.config.socks.socks_config_file");
+  config_pathname = RecConfigReadConfigPath("proxy.config.socks.socks_config_file");
+  Debug("Socks", "Socks Config File: %s", (const char *)config_pathname);
 
-  if (!socks_config_file) {
+  if (!config_pathname) {
     Error("SOCKS Config: could not read config file name. SOCKS Turned off");
     goto error;
   }
 
-  Layout::relative_to(config_pathname, sizeof(config_pathname),
-                      Layout::get()->sysconfdir, socks_config_file);
-  ats_free(socks_config_file);
-  Debug("Socks", "Socks Config File: %s", config_pathname);
-
   socks_config_fd =::open(config_pathname, O_RDONLY);
 
   if (socks_config_fd < 0) {
-    Error("SOCKS Config: could not open config file '%s'. SOCKS Turned off", config_pathname);
+    Error("SOCKS Config: could not open config file '%s'. SOCKS Turned off", (const char *)config_pathname);
     goto error;
   }
 #ifdef SOCKS_WITH_TS

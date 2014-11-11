@@ -120,9 +120,9 @@ set_paths_helper(const char *path, const char *filename, char **final_path, char
 {
   if (final_path) {
     if (path && path[0] != '/') {
-      *final_path = Layout::get()->relative_to(Layout::get()->prefix, path);
+      *final_path = RecConfigReadPrefixPath(NULL, path);
     } else if (!path || path[0] == '\0'){
-      *final_path = ats_strdup(Layout::get()->sysconfdir);
+      *final_path = RecConfigReadConfigDir();
     } else {
       *final_path = ats_strdup(path);
     }
@@ -145,7 +145,6 @@ SSLConfigParams::initialize()
   char *ssl_client_private_key_filename = NULL;
   char *ssl_client_private_key_path = NULL;
   char *clientCACertRelativePath = NULL;
-  char *multicert_config_file = NULL;
   char *ssl_server_ca_cert_filename = NULL;
   char *ssl_client_ca_cert_filename = NULL;
 
@@ -239,9 +238,7 @@ SSLConfigParams::initialize()
   set_paths_helper(serverCertRelativePath, NULL, &serverCertPathOnly, NULL);
   ats_free(serverCertRelativePath);
 
-  REC_ReadConfigStringAlloc(multicert_config_file, "proxy.config.ssl.server.multicert.filename");
-  set_paths_helper(Layout::get()->sysconfdir, multicert_config_file, NULL, &configFilePath);
-  ats_free(multicert_config_file);
+  configFilePath = RecConfigReadConfigPath("proxy.config.ssl.server.multicert.filename");
 
   REC_ReadConfigStringAlloc(ssl_server_private_key_path, "proxy.config.ssl.server.private_key.path");
   set_paths_helper(ssl_server_private_key_path, NULL, &serverKeyPathOnly, NULL);

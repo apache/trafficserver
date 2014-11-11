@@ -40,17 +40,10 @@ printvar(const char * name, char * val)
   ats_free(val);
 }
 
-static void
-printl(const char * name, char * val)
-{
-  printf("%s: %s\n", name, val);
-}
-
 int
 main(int /* argc ATS_UNUSED */, char **argv)
 {
   AppVersionInfo appVersionInfo;
-  char path[PATH_NAME_MAX + 1];
 
   appVersionInfo.setup(PACKAGE_NAME, "traffic_layout", PACKAGE_VERSION,
           __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
@@ -61,11 +54,10 @@ main(int /* argc ATS_UNUSED */, char **argv)
   Layout::create();
   RecProcessInit(RECM_STAND_ALONE, NULL /* diags */);
   LibRecordsConfigInit();
-  RecordsConfigOverrideFromEnvironment();
 
-  printl("PREFIX", Layout::get()->prefix);
+  printf("%s: %s\n", "PREFIX", Layout::get()->prefix);
   printvar("BINDIR", RecConfigReadBinDir());
-  printl("SYSCONFDIR", Layout::get()->sysconfdir);
+  printvar("SYSCONFDIR", RecConfigReadConfigDir());
   printvar("LIBDIR", Layout::get()->libdir);
   printvar("LOGDIR", RecConfigReadLogDir());
   printvar("RUNTIMEDIR", RecConfigReadRuntimeDir());
@@ -73,14 +65,9 @@ main(int /* argc ATS_UNUSED */, char **argv)
   printvar("INCLUDEDIR", Layout::get()->includedir);
   printvar("SNAPSHOTDIR", RecConfigReadSnapshotDir());
 
-  Layout::get()->relative_to(path, sizeof(path), Layout::get()->sysconfdir, "records.config");
-  printl("records.config", path);
-
+  printvar("records.config", RecConfigReadConfigPath(NULL, REC_CONFIG_FILE));
   printvar("remap.config", RecConfigReadConfigPath("proxy.config.url_remap.filename"));
-
-  Layout::get()->relative_to(path, sizeof(path), Layout::get()->sysconfdir, "plugin.config");
-  printl("plugin.config", path);
-
+  printvar("plugin.config", RecConfigReadConfigPath(NULL, "plugin.config"));
   printvar("ssl_multicert.config", RecConfigReadConfigPath("proxy.config.ssl.server.multicert.filename"));
   printvar("storage.config", RecConfigReadConfigPath("proxy.config.cache.storage_filename"));
   printvar("hosting.config", RecConfigReadConfigPath("proxy.config.cache.hosting_filename"));

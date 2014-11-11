@@ -220,8 +220,6 @@ public:
   char *extended2_log_header;
   char *collation_host;
   char *collation_secret;
-  char *xml_config_file;
-  char *hosts_config_file;
 
 private:
 

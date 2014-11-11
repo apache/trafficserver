@@ -58,18 +58,16 @@ UrlRewrite::UrlRewrite()
    http_default_redirect_url(NULL), num_rules_forward(0), num_rules_reverse(0), num_rules_redirect_permanent(0),
    num_rules_redirect_temporary(0), num_rules_forward_with_recv_port(0), _valid(false)
 {
+  ats_scoped_str config_file_path;
 
   forward_mappings.hash_lookup = reverse_mappings.hash_lookup =
     permanent_redirects.hash_lookup = temporary_redirects.hash_lookup =
     forward_mappings_with_recv_port.hash_lookup = NULL;
 
-  char * config_file = NULL;
-  char * config_file_path = NULL;
-
-  REC_ReadConfigStringAlloc(config_file, "proxy.config.url_remap.filename");
-  if (config_file == NULL) {
+  config_file_path = RecConfigReadConfigPath("proxy.config.url_remap.filename", "remap.config");
+  if (!config_file_path) {
     pmgmt->signalManager(MGMT_SIGNAL_CONFIG_ERROR, "Unable to find proxy.config.url_remap.filename");
-    Warning("%s Unable to locate remap.config.  No remappings in effect", modulePrefix);
+    Warning("%s Unable to locate remap.config. No remappings in effect", modulePrefix);
     return;
   }
 
@@ -96,8 +94,6 @@ UrlRewrite::UrlRewrite()
   REC_ReadConfigInteger(url_remap_mode, "proxy.config.url_remap.url_remap_mode");
   REC_ReadConfigInteger(backdoor_enabled, "proxy.config.url_remap.handle_backdoor_urls");
 
-  config_file_path = Layout::relative_to(Layout::get()->sysconfdir, config_file);
-
   if (0 == this->BuildTable(config_file_path)) {
     _valid = true;
     if (is_debug_tag_set("url_rewrite")) {
@@ -106,9 +102,6 @@ UrlRewrite::UrlRewrite()
   } else {
     Warning("something failed during BuildTable() -- check your remap plugins!");
   }
-
-  ats_free(config_file_path);
-  ats_free(config_file);
 }
 
 UrlRewrite::~UrlRewrite()

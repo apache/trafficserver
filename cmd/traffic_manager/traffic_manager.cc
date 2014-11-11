@@ -67,8 +67,6 @@ static void printUsage(void);
 extern "C" int getpwnam_r(const char *name, struct passwd *result, char *buffer, size_t buflen, struct passwd **resptr);
 #endif
 
-static void extractConfigInfo(char *mgmt_path, const char *recs_conf, char *userName, int *fds_throttle);
-
 static StatProcessor *statProcessor;   // Statistics Processors
 static AppVersionInfo appVersionInfo;  // Build info for this application
 
@@ -248,15 +246,16 @@ static void
 init_dirs()
 {
   ats_scoped_str rundir(RecConfigReadRuntimeDir());
+  ats_scoped_str sysconfdir(RecConfigReadConfigDir());
 
-  if (access(Layout::get()->sysconfdir, R_OK) == -1) {
-    mgmt_elog(0, "unable to access() config dir '%s': %d, %s\n", Layout::get()->sysconfdir, errno, strerror(errno));
+  if (access(sysconfdir, R_OK) == -1) {
+    mgmt_elog(0, "unable to access() config directory '%s': %d, %s\n", (const char *)sysconfdir, errno, strerror(errno));
     mgmt_elog(0, "please set the 'TS_ROOT' environment variable\n");
     _exit(1);
   }
 
   if (access(rundir, R_OK) == -1) {
-    mgmt_elog(0, "unable to access() local state dir '%s': %d, %s\n", (const char *)rundir, errno, strerror(errno));
+    mgmt_elog(0, "unable to access() local state directory '%s': %d, %s\n", (const char *)rundir, errno, strerror(errno));
     mgmt_elog(0, "please set 'proxy.config.local_state_dir'\n");
     _exit(1);
   }
@@ -373,7 +372,7 @@ main(int argc, char **argv)
   char *envVar = NULL, *group_addr = NULL, *tsArgs = NULL;
   bool log_to_syslog = true;
   char userToRunAs[80];
-  int  fds_throttle = -1;
+  RecInt fds_throttle = -1;
   time_t ticker;
   ink_thread webThrId;
 
@@ -518,12 +517,14 @@ main(int argc, char **argv)
 
   RecLocalInit();
   LibRecordsConfigInit();
-  RecordsConfigOverrideFromEnvironment();
 
   init_dirs();// setup critical directories, needs LibRecords
 
-  // Get the config info we need while we are still root
-  extractConfigInfo(mgmt_path, recs_conf, userToRunAs, &fds_throttle);
+  if (RecGetRecordString("proxy.config.admin.user_id", userToRunAs, sizeof(userToRunAs)) != TS_ERR_OKAY || strlen(userToRunAs) == 0) {
+    mgmt_fatal(stderr, 0, "proxy.config.admin.user_id is not set\n");
+  }
+
+  RecGetRecordInt("proxy.config.net.connections_throttle", &fds_throttle);
 
   set_process_limits(fds_throttle); // as root
   runAsUser(userToRunAs);
@@ -1069,58 +1070,3 @@ runAsUser(const char * userName)
 
   }
 }                               /* End runAsUser() */
-
-//  void extractConfigInfo(...)
-//
-//  We need to get certain records.config values while we are
-//   root.  We can not use LMRecords to get them because the constructor
-//   for LMRecords creates the mgmt DBM and we do not want that to
-//   be owned as root.  This function extracts that info from
-//   records.config
-//
-//
-void
-extractConfigInfo(char *mgmt_path, const char *recs_conf, char *userName, int *fds_throttle)
-{
-  char file[1024];
-  bool useridFound = false;
-  bool throttleFound = false;
-
-  /* Figure out what user we should run as */
-  if (mgmt_path && recs_conf) {
-    FILE *fin;
-    snprintf(file, sizeof(file), "%s/%s.shadow", mgmt_path, recs_conf);
-    if (!(fin = fopen(file, "r"))) {
-      ink_filepath_make(file, sizeof(file), mgmt_path, recs_conf);
-      if (!(fin = fopen(file, "r"))) {
-        mgmt_elog(stderr, errno, "[extractConfigInfo] Unable to open config file(%s)\n", file);
-        _exit(1);
-      }
-    }
-    // Get 'user id' and 'network connections throttle limit'
-    while (((!useridFound) || (!throttleFound)) && fgets(file, 1024, fin)) {
-      if (strstr(file, "CONFIG proxy.config.admin.user_id STRING")) {
-        //coverity[secure_coding]
-        if ((sscanf(file, "CONFIG proxy.config.admin.user_id STRING %1023s\n", userName) == 1) &&
-            strcmp(userName, "NULL") != 0) {
-          useridFound = true;
-        }
-      } else if (strstr(file, "CONFIG proxy.config.net.connections_throttle INT")) {
-        if ((sscanf(file, "CONFIG proxy.config.net.connections_throttle INT %d\n", fds_throttle) == 1)) {
-          throttleFound = true;
-        }
-      }
-
-    }
-    fclose(fin);
-  } else {
-    mgmt_elog(stderr, 0, "[extractConfigInfo] Fatal Error: unable to access records file\n");
-    _exit(1);
-  }
-
-  if (useridFound == false) {
-    mgmt_elog(stderr, 0, "[extractConfigInfo] Fatal Error: proxy.config.admin.user_id is not set\n");
-    _exit(1);
-  }
-
-}                               /* End extractConfigInfo() */

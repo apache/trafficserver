@@ -208,13 +208,13 @@ free_MachineList(MachineList * l)
 }
 
 MachineList *
-read_MachineList(char *filename, int afd)
+read_MachineList(const char *filename, int afd)
 {
   char line[256];
   int n = -1, i = 0, ln = 0;
   MachineList *l = NULL;
   ink_assert(filename || (afd != -1));
-  ats_scoped_str path(Layout::get()->relative_to(Layout::get()->sysconfdir, filename));
+  ats_scoped_str path(RecConfigReadConfigPath(NULL, filename));
 
   int fd = ((afd != -1) ? afd : open(path, O_RDONLY));
   if (fd >= 0) {

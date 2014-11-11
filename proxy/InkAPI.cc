@@ -1730,7 +1730,14 @@ TSInstallDirGet(void)
 const char *
 TSConfigDirGet(void)
 {
-  return Layout::get()->sysconfdir;
+  static char * sysconfdir = NULL;
+
+  // This is not great, bit it's no worse than TSPluginDirGet :-/
+  if (sysconfdir == NULL) {
+    sysconfdir = RecConfigReadConfigDir();
+  }
+
+  return sysconfdir;
 }
 
 const char *

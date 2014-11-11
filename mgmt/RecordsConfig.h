@@ -26,8 +26,7 @@
 #if !defined (_RECORDS_CONFIG_H_)
 #define _RECORDS_CONFIG_H_
 
-#include "MgmtDefs.h"
-#include "MgmtHashTable.h"
+//#include "MgmtDefs.h"
 #include "P_RecCore.h"
 
 enum RecordRequiredType {
@@ -48,6 +47,9 @@ struct RecordElement
   const char *regex;
   RecAccessT access;            // access level of the record
 };
+
+typedef void (*RecordElementCallback)(const RecordElement *, void *);
+void RecordsConfigIterate(RecordElementCallback, void *);
 
 void LibRecordsConfigInit();                  // initializes RecordsConfigIndex
 void RecordsConfigOverrideFromEnvironment();  // Override records from the environment

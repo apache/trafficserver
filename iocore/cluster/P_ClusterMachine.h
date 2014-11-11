@@ -105,7 +105,7 @@ struct MachineList
   }
 };
 
-MachineList *read_MachineList(char *filename, int test_fd = -1);
+MachineList *read_MachineList(const char *filename, int test_fd = -1);
 void free_MachineList(MachineList * l);
 
 struct clusterConfigFile

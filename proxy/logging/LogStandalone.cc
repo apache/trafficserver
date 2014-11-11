@@ -109,13 +109,8 @@ initialize_process_manager()
   ink_assert(diags);
 
   RecProcessInit(remote_management_flag ? RECM_CLIENT : RECM_STAND_ALONE, diags);
+  LibRecordsConfigInit();
 
-  if (!remote_management_flag) {
-    LibRecordsConfigInit();
-    RecordsConfigOverrideFromEnvironment();
-  }
-
-  //
   // Start up manager
   pmgmt = new ProcessManager(remote_management_flag);
 

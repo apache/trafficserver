@@ -186,7 +186,7 @@ not_found:
 void
 plugin_init(void)
 {
-  char path[PATH_NAME_MAX + 1];
+  ats_scoped_str path;
   char line[1024], *p;
   char *argv[64];
   char *vars[64];
@@ -197,14 +197,15 @@ plugin_init(void)
 
   if (INIT_ONCE) {
     api_init();
+    TSConfigDirGet();
     plugin_dir = TSPluginDirGet();
     INIT_ONCE = false;
   }
 
-  Layout::get()->relative_to(path, sizeof(path), Layout::get()->sysconfdir, "plugin.config");
+  path = RecConfigReadConfigPath(NULL, "plugin.config");
   fd = open(path, O_RDONLY);
   if (fd < 0) {
-    Warning("unable to open plugin config file '%s': %d, %s", path, errno, strerror(errno));
+    Warning("unable to open plugin config file '%s': %d, %s", (const char *)path, errno, strerror(errno));
     return;
   }
 

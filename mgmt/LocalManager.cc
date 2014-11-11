@@ -204,6 +204,7 @@ LocalManager::LocalManager(bool proxy_on)
   bool found;
   ats_scoped_str rundir(RecConfigReadRuntimeDir());
   ats_scoped_str bindir(RecConfigReadBinDir());
+  ats_scoped_str sysconfdir(RecConfigReadConfigDir());
 
   syslog_facility = 0;
 
@@ -233,9 +234,8 @@ LocalManager::LocalManager(bool proxy_on)
   // Get the default IP binding values.
   RecHttpLoadIp("proxy.local.incoming_ip_to_bind", m_inbound_ip4, m_inbound_ip6);
 
-  if (access(Layout::get()->sysconfdir, R_OK) == -1) {
-    mgmt_elog(0, "[LocalManager::LocalManager] unable to access() directory '%s': %d, %s\n",
-	Layout::get()->sysconfdir, errno, strerror(errno));
+  if (access(sysconfdir, R_OK) == -1) {
+    mgmt_elog(0, "[LocalManager::LocalManager] unable to access() directory '%s': %d, %s\n", (const char *)sysconfdir, errno, strerror(errno));
     mgmt_fatal(0, "[LocalManager::LocalManager] please set the 'TS_ROOT' environment variable\n");
   }
 
@@ -247,15 +247,13 @@ LocalManager::LocalManager(bool proxy_on)
     mgmt_log("[LocalManager::LocalManager] WCCP identifying address set to %s.\n", static_cast<char*>(wccp_addr_str));
   }
 
-  ats_scoped_str wccp_config_str(REC_readString("proxy.config.wccp.services", &found));
-  if (found && wccp_config_str && *wccp_config_str) {
+  ats_scoped_str wccp_config_str(RecConfigReadConfigPath("proxy.config.wccp.services"));
+  if (wccp_config_str && strlen(wccp_config_str) > 0) {
     bool located = true;
-    if (access(wccp_config_str, R_OK) == -1) {
-      wccp_config_str = Layout::relative_to(Layout::get()->sysconfdir, wccp_config_str);
-      if (access(wccp_config_str, R_OK) == -1 ) {
-        located = false;
-      }
+    if (access(wccp_config_str, R_OK) == -1 ) {
+      located = false;
     }
+
     if (located) {
       wccp_cache.loadServicesFromFile(wccp_config_str);
     } else { // not located

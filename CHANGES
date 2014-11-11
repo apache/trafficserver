@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.2.0
 
+  *) [TS-3192] Implement proxy.config.config_dir.
+
   *) [TS-3195] Improved crash logging.
 
   *) [TS-3194] Remove unused proxy.config.plugin.plugin_mgmt_dir configuration.

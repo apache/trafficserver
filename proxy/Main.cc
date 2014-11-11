@@ -403,10 +403,10 @@ static void
 check_config_directories(void)
 {
   ats_scoped_str rundir(RecConfigReadRuntimeDir());
+  ats_scoped_str sysconfdir(RecConfigReadConfigDir());
 
-  if (access(Layout::get()->sysconfdir, R_OK) == -1) {
-    fprintf(stderr,"unable to access() config dir '%s': %d, %s\n",
-            Layout::get()->sysconfdir, errno, strerror(errno));
+  if (access(sysconfdir, R_OK) == -1) {
+    fprintf(stderr,"unable to access() config dir '%s': %d, %s\n", (const char *)sysconfdir, errno, strerror(errno));
     fprintf(stderr, "please set the 'TS_ROOT' environment variable\n");
     _exit(1);
   }
@@ -439,11 +439,7 @@ initialize_process_manager()
   }
 
   RecProcessInit(remote_management_flag ? RECM_CLIENT : RECM_STAND_ALONE, diags);
-
-  if (!remote_management_flag) {
-    LibRecordsConfigInit();
-    RecordsConfigOverrideFromEnvironment();
-  }
+  LibRecordsConfigInit();
 
   // Start up manager
   pmgmt = new ProcessManager(remote_management_flag);

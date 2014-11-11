@@ -303,14 +303,14 @@ VMap::lt_runGambit()
  * vaddr file.
  */
 void
-VMap::lt_readAListFile(char * data)
+VMap::lt_readAListFile(const char * fname)
 {
   int tmp_num_addrs = 0;
   char buf[1024];
   char tmp_addr[1024], tmp_interface[1024];
   FILE *fin;
   char tmp_id[1024];
-  ats_scoped_str vaddr_path(Layout::get()->relative_to(Layout::get()->sysconfdir, data));
+  ats_scoped_str vaddr_path(RecConfigReadConfigPath(NULL, fname));
 
   if (!(fin = fopen(vaddr_path, "r"))) {
     mgmt_log(stderr, "[VMap::lt_readAListFile] Unable to open file: %s, addr list unchanged\n", (const char *)vaddr_path);

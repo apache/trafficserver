@@ -187,14 +187,6 @@ CONFIG proxy.config.dump_mem_info_frequency INT 0
 CONFIG proxy.config.http.slow.log.threshold INT 0
 
 ##############################################################################
-# These are necessary (for now) to keep traffic_manager/_cop happy.
-##############################################################################
-CONFIG proxy.config.proxy_name STRING @build_machine@
-CONFIG proxy.config.admin.user_id STRING @pkgsysuser@
-CONFIG proxy.config.log.logfile_dir STRING @rel_logdir@
-CONFIG proxy.config.output.logfile STRING traffic.out
-
-##############################################################################
 # Cluster Subsystem. Docs:
 #    https://docs.trafficserver.apache.org/records.config#cluster
 ##############################################################################

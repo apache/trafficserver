@@ -72,11 +72,9 @@ Rollback::Rollback(const char *baseFileName, bool root_access_needed_)
   // TODO: Use the runtime directory for storing mutable data
   // XXX: Sysconfdir should be imutable!!!
 
-  if (access(Layout::get()->sysconfdir, F_OK) < 0) {
-    mgmt_elog(0, "[Rollback::Rollback] unable to access() directory '%s': %d, %s\n",
-              Layout::get()->sysconfdir, errno, strerror(errno));
-    mgmt_elog(0, "[Rollback::Rollback] please set the 'TS_ROOT' environment variable\n");
-    _exit(1);
+  ats_scoped_str sysconfdir(RecConfigReadConfigDir());
+  if (access(sysconfdir, F_OK) < 0) {
+    mgmt_fatal(0, "[Rollback::Rollback] unable to access() directory '%s': %d, %s\n", (const char *)sysconfdir, errno, strerror(errno));
   }
 
   if (varIntFromName("proxy.config.admin.number_config_bak", &numBak) == true) {
@@ -223,11 +221,11 @@ Rollback::~Rollback()
 char *
 Rollback::createPathStr(version_t version)
 {
-
-  int bufSize = strlen(Layout::get()->sysconfdir) + fileNameLen + MAX_VERSION_DIGITS + 1;
+  ats_scoped_str sysconfdir(RecConfigReadConfigDir());
+  int bufSize = strlen(sysconfdir) + fileNameLen + MAX_VERSION_DIGITS + 1;
   char * buffer = (char *)ats_malloc(bufSize);
 
-  Layout::get()->relative_to(buffer, bufSize, Layout::get()->sysconfdir, fileName);
+  Layout::get()->relative_to(buffer, bufSize, sysconfdir, fileName);
 
   if (version != ACTIVE_VERSION) {
     size_t pos = strlen(buffer);
@@ -654,16 +652,16 @@ Rollback::findVersions_ml(ExpandingArray * listNames)
 
   int count = 0;
   version_t highestSeen = 0, version = 0;
+  ats_scoped_str sysconfdir(RecConfigReadConfigDir());
 
   DIR *dir;
   struct dirent *dirEntrySpace;
   struct dirent *entryPtr;
 
-  dir = opendir(Layout::get()->sysconfdir);
+  dir = opendir(sysconfdir);
 
   if (dir == NULL) {
-    mgmt_log(stderr, "[Rollback::findVersions] Unable to open configuration directory: %s: %s\n",
-             Layout::get()->sysconfdir, strerror(errno));
+    mgmt_log(stderr, "[Rollback::findVersions] Unable to open configuration directory: %s: %s\n", (const char *)sysconfdir, strerror(errno));
     return INVALID_VERSION;
   }
   // The fun of Solaris - readdir_r requires a buffer passed into it

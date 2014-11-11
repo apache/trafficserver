@@ -19,7 +19,11 @@
 
 SUBDIRS = cluster utils web2 api
 
-noinst_LTLIBRARIES = libmgmt_p.la libmgmt_lm.la
+# Decoder ring:
+# 	libmgmt_c.la 	Configuration records (defaults).
+# 	libmgmt_lm.la	libmgmt for Local Manager applications (traffic_manager)
+# 	libmgmt_p.la	libmgmt for Process Manager applications (everything else)
+noinst_LTLIBRARIES = libmgmt_c.la libmgmt_p.la libmgmt_lm.la
 
 AM_CPPFLAGS = \
   $(iocore_include_dirs) \
@@ -35,12 +39,15 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/lib \
   -I$(top_builddir)/lib
 
+libmgmt_c_la_SOURCES = \
+  RecordsConfig.cc \
+  RecordsConfig.h
+
 libmgmt_COMMON = \
   BaseManager.cc \
   BaseManager.h \
   MgmtDefs.h \
-  RecordsConfig.cc \
-  RecordsConfig.h
+  RecordsConfigUtils.cc
 
 libmgmt_p_la_SOURCES = \
   $(libmgmt_COMMON) \
@@ -65,8 +72,10 @@ libmgmt_lm_la_SOURCES = \
   WebMgmtUtils.h
 
 libmgmt_lm_la_LIBADD = \
+  libmgmt_c.la \
   cluster/libcluster.la \
   utils/libutils_lm.la
 
 libmgmt_p_la_LIBADD = \
+  libmgmt_c.la \
   utils/libutils_p.la

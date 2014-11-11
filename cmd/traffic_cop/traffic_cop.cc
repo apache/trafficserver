@@ -26,6 +26,7 @@
 #include "I_Version.h"
 #include "I_RecCore.h"
 #include "mgmtapi.h"
+#include "RecordsConfig.h"
 #include "ClusterCom.h"
 #include "ink_cap.h"
 
@@ -91,7 +92,6 @@ static char server_binary[PATH_NAME_MAX] = "traffic_server";
 static char manager_options[OPTIONS_LEN_MAX] = "";
 
 static char log_file[PATH_NAME_MAX] = "traffic.out";
-static char bin_path[PATH_NAME_MAX] = "bin";
 
 static int autoconf_port = 8083;
 static int rs_port = 8088;
@@ -142,9 +142,13 @@ static void get_admin_user(void);
 
 struct ConfigValue
 {
+  ConfigValue()
+    : config_type(RECT_NULL), data_type(RECD_NULL) {
+  }
+
   ConfigValue(RecT _t, RecDataT _d, const std::string& _v)
     : config_type(_t), data_type(_d), data_value(_v) {
-    }
+  }
 
   RecT        config_type;
   RecDataT    data_type;
@@ -465,7 +469,16 @@ transient_error(int error, int wait_ms)
 static void
 config_register_variable(RecT rec_type, RecDataT data_type, const char * name, const char * value, bool /* inc_version */)
 {
-  configTable.insert(std::make_pair(std::string(name), ConfigValue(rec_type, data_type, value)));
+  configTable[std::string(name)] = ConfigValue(rec_type, data_type, value);
+}
+
+static void
+config_register_default(const RecordElement * record, void *)
+{
+  if (record->type == RECT_CONFIG || record->type == RECT_LOCAL) {
+    const char * value = record->value ? record->value : ""; // splooch NULL values so std::string can swallow them
+    configTable[std::string(record->name)] = ConfigValue(record->type, record->value_type, value);
+  }
 }
 
 static void
@@ -518,7 +531,7 @@ ConfigIntFatalError:
   exit(1);
 }
 
-static const char *
+static char *
 config_read_runtime_dir()
 {
   char state_dir[PATH_NAME_MAX + 1];
@@ -532,14 +545,59 @@ config_read_runtime_dir()
   }
 }
 
+static char *
+config_read_sysconfig_dir()
+{
+  char sysconfig_dir[PATH_NAME_MAX + 1];
+
+  sysconfig_dir[0] = '\0';
+  config_read_string("proxy.config.config_dir", sysconfig_dir, sizeof(sysconfig_dir), true);
+  if (strlen(sysconfig_dir) > 0) {
+    return Layout::get()->relative(sysconfig_dir);
+  } else {
+    return ats_strdup(Layout::get()->sysconfdir);
+  }
+}
+
+static char *
+config_read_bin_dir()
+{
+  char bindir[PATH_NAME_MAX + 1];
+
+  bindir[0] = '\0';
+  config_read_string("proxy.config.bin_path", bindir, sizeof(bindir), true);
+  cop_log(COP_DEBUG, "binpath is %s\n", bindir);
+  if (strlen(bindir) > 0) {
+    return Layout::get()->relative(bindir);
+  } else {
+    return ats_strdup(Layout::get()->bindir);
+  }
+}
+
+static char *
+config_read_log_dir()
+{
+  char logdir[PATH_NAME_MAX + 1];
+
+  logdir[0] = '\0';
+  config_read_string("proxy.config.log.logfile_dir", logdir, sizeof(logdir), true);
+  if (strlen(logdir) > 0) {
+    return Layout::get()->relative(logdir);
+  } else {
+    return ats_strdup(Layout::get()->logdir);
+  }
+}
+
 static void
 config_reload_records()
 {
   struct stat stat_buf;
   static time_t last_mod = 0;
-  char log_dir[PATH_NAME_MAX];
   char log_filename[PATH_NAME_MAX];
   int tmp_int;
+
+  ats_scoped_str bindir;
+  ats_scoped_str logdir;
 
   cop_log_trace("Entering %s()\n", __func__);
   // coverity[fs_check_call]
@@ -555,6 +613,7 @@ config_reload_records()
   }
 
   configTable.clear();
+  RecordsConfigIterate(config_register_default, NULL);
 
   if (RecConfigFileParse(config_file, config_register_variable, false) != REC_ERR_OKAY) {
     cop_log(COP_FATAL, "could not parse \"%s\"\n", config_file);
@@ -565,28 +624,23 @@ config_reload_records()
   config_read_string("proxy.config.proxy_binary", server_binary, sizeof(server_binary), true);
   get_admin_user();
 
-  config_read_string("proxy.config.bin_path", bin_path, sizeof(bin_path), true);
-  Layout::get()->relative(bin_path, sizeof(bin_path), bin_path);
-  if (access(bin_path, R_OK) == -1) {
-    ink_strlcpy(bin_path, Layout::get()->bindir, sizeof(bin_path));
-    if (access(bin_path, R_OK) == -1) {
-      cop_log(COP_FATAL, "could not access() \"%s\"\n", bin_path);
-      cop_log(COP_FATAL, "please set 'proxy.config.bin_path' \n");
-      exit(1);
-    }
+  bindir = config_read_bin_dir();
+  if (access(bindir, R_OK) == -1) {
+    cop_log(COP_FATAL, "could not access() \"%s\"\n", (const char *)bindir);
+    cop_log(COP_FATAL, "please set 'proxy.config.bin_path' \n");
+    exit(1);
   }
-  config_read_string("proxy.config.log.logfile_dir", log_dir, sizeof(log_dir));
-  Layout::get()->relative(log_dir, sizeof(log_dir), log_dir);
-  if (access(log_dir, W_OK) == -1) {
-    ink_strlcpy(log_dir, Layout::get()->logdir, sizeof(log_dir));
-    if (access(log_dir, W_OK) == -1) {
-      cop_log(COP_FATAL, "could not access() \"%s\"\n", log_dir);
-      cop_log(COP_FATAL, "please set 'proxy.config.log.logfile_dir' \n");
-      exit(1);
-    }
+
+  logdir = config_read_log_dir();
+  if (access(logdir, W_OK) == -1) {
+    cop_log(COP_FATAL, "could not access() \"%s\"\n", (const char *)logdir);
+    cop_log(COP_FATAL, "please set 'proxy.config.log.logfile_dir' \n");
+    exit(1);
   }
+
   config_read_string("proxy.config.output.logfile", log_filename, sizeof(log_filename));
-  Layout::relative_to(log_file, sizeof(log_file), log_dir, log_filename);
+  Layout::relative_to(log_file, sizeof(log_file), logdir, log_filename);
+
   config_read_int("proxy.config.process_manager.mgmt_port", &http_backdoor_port, true);
   config_read_int("proxy.config.admin.autoconf_port", &autoconf_port, true);
   config_read_int("proxy.config.cluster.rsport", &rs_port, true);
@@ -664,6 +718,8 @@ spawn_manager()
   int err;
   int key;
 
+  ats_scoped_str bindir(config_read_bin_dir());
+
   cop_log_trace("Entering spawn_manager()\n");
   // Clean up shared memory segments.
   if (sem_id > 0) {
@@ -688,7 +744,7 @@ spawn_manager()
     }
   }
 
-  Layout::relative_to(prog, sizeof(prog), bin_path, manager_binary);
+  Layout::relative_to(prog, sizeof(prog), bindir, manager_binary);
   if (access(prog, R_OK | X_OK) == -1) {
     cop_log(COP_FATAL, "unable to access() manager binary \"%s\" [%d '%s']\n", prog, errno, strerror(errno));
     exit(1);
@@ -1590,7 +1646,8 @@ check(void *arg)
 
     // We do this after the first round of checks, since the first "check" will spawn traffic_manager
     if (!mgmt_init) {
-      TSInit(Layout::get()->runtimedir, static_cast<TSInitOptionT>(TS_MGMT_OPT_NO_EVENTS));
+      ats_scoped_str runtimedir(config_read_runtime_dir());
+      TSInit(runtimedir, static_cast<TSInitOptionT>(TS_MGMT_OPT_NO_EVENTS));
       mgmt_init = true;
     }
   }
@@ -1710,13 +1767,13 @@ static void
 init_config_file()
 {
   struct stat info;
-  const char * config_dir;
+  ats_scoped_str config_dir;
 
   cop_log_trace("Entering init_config_file()\n");
 
-  config_dir = Layout::get()->sysconfdir;
+  config_dir = config_read_sysconfig_dir();
   if (stat(config_dir, &info) < 0) {
-    cop_log(COP_FATAL, "unable to locate config directory '%s'\n",config_dir);
+    cop_log(COP_FATAL, "unable to locate config directory '%s'\n", (const char *)config_dir);
     cop_log(COP_FATAL, " please try setting correct root path in env variable TS_ROOT \n");
     exit(1);
   }
@@ -1725,7 +1782,8 @@ init_config_file()
   if (stat(config_file, &info) < 0) {
     Layout::relative_to(config_file, sizeof(config_file), config_dir, "records.config");
     if (stat(config_file, &info) < 0) {
-      cop_log(COP_FATAL, "unable to locate \"%s/records.config\" or \"%s/records.config.shadow\"\n", config_dir, config_dir);
+      cop_log(COP_FATAL, "unable to locate \"%s/records.config\" or \"%s/records.config.shadow\"\n",
+          (const char *)config_dir, (const char *)config_dir);
       exit(1);
     }
   }
@@ -1739,7 +1797,9 @@ init()
 
   cop_log_trace("Entering init()\n");
 
+  // Start up the records store and load the defaults so that we can locate our configuration.
   RecConfigFileInit();
+  RecordsConfigIterate(config_register_default, NULL);
 
   init_signals();
   init_syslog();

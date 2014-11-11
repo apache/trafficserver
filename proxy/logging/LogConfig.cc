@@ -124,8 +124,6 @@ LogConfig::setup_default_values()
   roll_log_files_now = false;
 
   custom_logs_enabled = false;
-  xml_config_file = ats_strdup("logs_xml.config");
-  hosts_config_file = ats_strdup("log_hosts.config");
 
 /* The default values for the search log                         */
 
@@ -420,18 +418,6 @@ LogConfig::read_configuration_variables()
   val = (int) REC_ConfigReadInteger("proxy.config.log.custom_logs_enabled");
   custom_logs_enabled = (val > 0);
 
-  ptr = REC_ConfigReadString("proxy.config.log.xml_config_file");
-  if (ptr != NULL) {
-    ats_free(xml_config_file);
-    xml_config_file = ptr;
-  }
-
-  ptr = REC_ConfigReadString("proxy.config.log.hosts_config_file");
-  if (ptr != NULL) {
-    ats_free(hosts_config_file);
-    hosts_config_file = ptr;
-  }
-
   // PERFORMANCE
   val = (int) REC_ConfigReadInteger("proxy.config.log.sampling_frequency");
   if (val > 0) {
@@ -567,8 +553,6 @@ LogConfig::~LogConfig()
   ats_free(extended2_log_header);
   ats_free(collation_host);
   ats_free(collation_secret);
-  ats_free(xml_config_file);
-  ats_free(hosts_config_file);
   ats_free(search_log_file_one);
   ats_free(search_log_file_two);
   ats_free(m_dir_entry);
@@ -717,8 +701,6 @@ LogConfig::display(FILE * fd)
   fprintf(fd, "   hostname = %s\n", hostname);
   fprintf(fd, "   logfile_dir = %s\n", logfile_dir);
   fprintf(fd, "   logfile_perm = 0%o\n", logfile_perm);
-  fprintf(fd, "   xml_config_file = %s\n", xml_config_file);
-  fprintf(fd, "   hosts_config_file = %s\n", hosts_config_file);
   fprintf(fd, "   squid_log_enabled = %d\n", squid_log_enabled);
   fprintf(fd, "   squid_log_is_ascii = %d\n", squid_log_is_ascii);
   fprintf(fd, "   squid_log_name = %s\n", squid_log_name);
@@ -1619,12 +1601,7 @@ LogConfig::read_xml_log_config(int from_memory)
   ats_scoped_str config_path;
 
   if (!from_memory) {
-    if (xml_config_file == NULL) {
-      Note("No log config file to read");
-      return;
-    }
-
-    config_path = Layout::get()->relative_to(Layout::get()->sysconfdir, xml_config_file);
+    config_path = RecConfigReadConfigPath("proxy.config.log.xml_config_file", "logs_xml.config");
   }
 
   InkXmlConfigFile log_config(config_path ? (const char *)config_path : "memory://builtin");
@@ -2225,7 +2202,7 @@ LogConfig::read_xml_log_config(int from_memory)
 char **
 LogConfig::read_log_hosts_file(size_t * num_hosts)
 {
-  ats_scoped_str config_path(Layout::get()->relative_to(Layout::get()->sysconfdir, hosts_config_file));
+  ats_scoped_str config_path(RecConfigReadConfigPath("proxy.config.log.hosts_config_file", "log_hosts.config"));
   char line[LOG_MAX_FORMAT_LINE];
   char **hosts = NULL;
 

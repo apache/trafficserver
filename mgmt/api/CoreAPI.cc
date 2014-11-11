@@ -949,23 +949,14 @@ EventSignalCbUnregister(const char *event_name, TSEventSignalFunc func)
 TSMgmtError
 SnapshotTake(const char * snapshot_name)
 {
-  char *snapDirFromRecordsConf;
-  bool found;
-  char snapDir[PATH_NAME_MAX + 1];
+  ats_scoped_str snapdir;
 
   if (!snapshot_name)
     return TS_ERR_PARAMS;
 
-  int rec_err = RecGetRecordString_Xmalloc("proxy.config.snapshot_dir", &snapDirFromRecordsConf);
-  found = (rec_err == REC_ERR_OKAY);
-  ink_release_assert(found);
-  // XXX: Why was that offset to config dir?
-  //      Any path should be prefix relative thought
-  //
-  Layout::relative_to(snapDir, sizeof(snapDir), Layout::get()->sysconfdir, snapDirFromRecordsConf);
-  ats_free(snapDirFromRecordsConf);
+  snapdir = RecConfigReadSnapshotDir();
 
-  SnapResult result = configFiles->takeSnap(snapshot_name, snapDir);
+  SnapResult result = configFiles->takeSnap(snapshot_name, snapdir);
   if (result != SNAP_OK)
     return TS_ERR_FAIL;
   else
@@ -975,23 +966,14 @@ SnapshotTake(const char * snapshot_name)
 TSMgmtError
 SnapshotRestore(const char * snapshot_name)
 {
-  char *snapDirFromRecordsConf;
-  bool found;
-  char snapDir[PATH_NAME_MAX + 1];
+  ats_scoped_str snapdir;
 
   if (!snapshot_name)
     return TS_ERR_PARAMS;
 
-  int rec_err = RecGetRecordString_Xmalloc("proxy.config.snapshot_dir", &snapDirFromRecordsConf);
-  found = (rec_err == REC_ERR_OKAY);
-  ink_release_assert(found);
-  // XXX: Why was that offset to config dir?
-  //      Any path should be prefix relative thought
-  //
-  Layout::relative_to(snapDir, sizeof(snapDir), Layout::get()->sysconfdir, snapDirFromRecordsConf);
-  ats_free(snapDirFromRecordsConf);
+  snapdir = RecConfigReadSnapshotDir();
 
-  SnapResult result = configFiles->restoreSnap(snapshot_name, snapDir);
+  SnapResult result = configFiles->restoreSnap(snapshot_name, snapdir);
   if (result != SNAP_OK)
     return TS_ERR_FAIL;
   else
@@ -1001,23 +983,14 @@ SnapshotRestore(const char * snapshot_name)
 TSMgmtError
 SnapshotRemove(const char * snapshot_name)
 {
-  char *snapDirFromRecordsConf;
-  bool found;
-  char snapDir[PATH_NAME_MAX + 1];
+  ats_scoped_str snapdir;
 
   if (!snapshot_name)
     return TS_ERR_PARAMS;
 
-  int rec_err = RecGetRecordString_Xmalloc("proxy.config.snapshot_dir", &snapDirFromRecordsConf);
-  found = (rec_err == REC_ERR_OKAY);
-  ink_release_assert(found);
-  // XXX: Why was that offset to config dir?
-  //      Any path should be prefix relative thought
-  //
-  Layout::relative_to(snapDir, sizeof(snapDir), Layout::get()->sysconfdir, snapDirFromRecordsConf);
-  ats_free(snapDirFromRecordsConf);
+  snapdir = RecConfigReadSnapshotDir();
 
-  SnapResult result = configFiles->removeSnap(snapshot_name, snapDir);
+  SnapResult result = configFiles->removeSnap(snapshot_name, snapdir);
   if (result != SNAP_OK)
     return TS_ERR_FAIL;
   else

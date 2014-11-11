@@ -393,7 +393,7 @@ webIntr_main(void *)
 
     if ((err = stat(autoconfContext.docRoot, &s)) < 0) {
       ats_free(autoconfContext.docRoot);
-      autoconfContext.docRoot = ats_strdup(Layout::get()->sysconfdir);
+      autoconfContext.docRoot = RecConfigReadConfigDir();
       if ((err = stat(autoconfContext.docRoot, &s)) < 0) {
         mgmt_elog(0, "[WebIntrMain] unable to stat() directory '%s': %d %d, %s\n",
                 autoconfContext.docRoot, err, errno, strerror(errno));

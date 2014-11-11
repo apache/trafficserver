@@ -878,7 +878,7 @@ UpdateConfigManager::BuildUpdateList()
   ats_scoped_str config_path;
 
   if (_filename) {
-    config_path = Layout::get()->relative_to(Layout::get()->sysconfdir, _filename);
+    config_path = RecConfigReadConfigPath(NULL, _filename);
   } else {
     return (UpdateConfigList *) NULL;
   }

@@ -88,7 +88,6 @@ public:
 
   bool require_lm;
   time_t timeout;
-  char pserver_path[1024];
   int mgmt_sync_key;
 
   LLQ *mgmt_signal_queue;

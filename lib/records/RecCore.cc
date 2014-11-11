@@ -188,10 +188,10 @@ RecCoreInit(RecModeT mode_type, Diags *_diags)
     // ./etc/trafficserver/records.config
     // ./records.config
     bool file_exists = true;
-    g_rec_config_fpath = Layout::relative_to(Layout::get()->sysconfdir, REC_CONFIG_FILE REC_SHADOW_EXT);
+    g_rec_config_fpath = RecConfigReadConfigPath(NULL, REC_CONFIG_FILE REC_SHADOW_EXT);
     if (RecFileExists(g_rec_config_fpath) == REC_ERR_FAIL) {
       ats_free((char *)g_rec_config_fpath);
-      g_rec_config_fpath = Layout::relative_to(Layout::get()->sysconfdir, REC_CONFIG_FILE);
+      g_rec_config_fpath = RecConfigReadConfigPath(NULL, REC_CONFIG_FILE);
       if (RecFileExists(g_rec_config_fpath) == REC_ERR_FAIL) {
         RecLog(DL_Warning, "Could not find '%s', system will run with defaults\n", REC_CONFIG_FILE);
         file_exists = false;
@@ -1092,6 +1092,23 @@ REC_readString(const char *name, bool * found, bool lock)
 }
 
 //-------------------------------------------------------------------------
+// RecConfigReadConfigDir
+//-------------------------------------------------------------------------
+char *
+RecConfigReadConfigDir()
+{
+  char buf[PATH_NAME_MAX + 1];
+
+  buf[0] = '\0';
+  RecGetRecordString("proxy.config.config_dir", buf, PATH_NAME_MAX);
+  if (strlen(buf) > 0) {
+    return Layout::get()->relative(buf);
+  } else {
+    return ats_strdup(Layout::get()->sysconfdir);
+  }
+}
+
+//-------------------------------------------------------------------------
 // RecConfigReadRuntimeDir
 //-------------------------------------------------------------------------
 char *
@@ -1148,15 +1165,7 @@ RecConfigReadBinDir()
 char *
 RecConfigReadSnapshotDir()
 {
-  char buf[PATH_NAME_MAX + 1];
-
-  buf[0] = '\0';
-  RecGetRecordString("proxy.config.snapshot_dir", buf, PATH_NAME_MAX);
-  if (strlen(buf) > 0) {
-    return Layout::get()->relative_to(Layout::get()->sysconfdir, buf);
-  } else {
-    return Layout::get()->relative_to(Layout::get()->sysconfdir, "snapshots");
-  }
+  return RecConfigReadConfigPath("proxy.config.snapshot_dir", "snapshots");
 }
 
 //-------------------------------------------------------------------------
@@ -1165,16 +1174,22 @@ RecConfigReadSnapshotDir()
 char *
 RecConfigReadConfigPath(const char * file_variable, const char * default_value)
 {
-  char buf[PATH_NAME_MAX + 1];
+  ats_scoped_str sysconfdir(RecConfigReadConfigDir());
 
-  buf[0] = '\0';
-  RecGetRecordString(file_variable, buf, PATH_NAME_MAX);
-  if (strlen(buf) > 0) {
-    return Layout::get()->relative_to(Layout::get()->sysconfdir, buf);
+  // If the file name is in a configuration variable, look it up first ...
+  if (file_variable) {
+    char buf[PATH_NAME_MAX + 1];
+
+    buf[0] = '\0';
+    RecGetRecordString(file_variable, buf, PATH_NAME_MAX);
+    if (strlen(buf) > 0) {
+      return Layout::get()->relative_to(sysconfdir, buf);
+    }
   }
 
+  // Otherwise take the default ...
   if (default_value) {
-    return Layout::get()->relative_to(Layout::get()->sysconfdir, default_value);
+    return Layout::get()->relative_to(sysconfdir, default_value);
   }
 
   return NULL;
@@ -1188,12 +1203,16 @@ RecConfigReadPrefixPath(const char * file_variable, const char * default_value)
 {
   char buf[PATH_NAME_MAX + 1];
 
-  buf[0] = '\0';
-  RecGetRecordString(file_variable, buf, PATH_NAME_MAX);
-  if (strlen(buf) > 0) {
-    return Layout::get()->relative_to(Layout::get()->prefix, buf);
+  // If the file name is in a configuration variable, look it up first ...
+  if (file_variable) {
+    buf[0] = '\0';
+    RecGetRecordString(file_variable, buf, PATH_NAME_MAX);
+    if (strlen(buf) > 0) {
+      return Layout::get()->relative_to(Layout::get()->prefix, buf);
+    }
   }
 
+  // Otherwise take the default ...
   if (default_value) {
     return Layout::get()->relative_to(Layout::get()->prefix, default_value);
   }

@@ -248,11 +248,11 @@ parse_include_directive(const char * directive, BUILD_TABLE_INFO * bti, char * e
     // to keep the ACL rules from the parent because ACLs must be global across the full set of config
     // files.
     BUILD_TABLE_INFO  nbti;
-    ats_scoped_str        path;
+    ats_scoped_str    path;
     bool              success;
 
     // The included path is relative to SYSCONFDIR, just like remap.config is.
-    path = Layout::relative_to(Layout::get()->sysconfdir, bti->paramv[i]);
+    path = RecConfigReadConfigPath(NULL, bti->paramv[i]);
 
     // XXX including directories is not supported (yet!).
     if (ink_file_is_directory(path)) {
