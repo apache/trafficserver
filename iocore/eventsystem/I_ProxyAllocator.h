@@ -93,21 +93,23 @@ thread_free(Allocator &a, void *p)
 template<class C> inline void
 thread_freeup(ClassAllocator<C> &a, ProxyAllocator & l)
 {
+#if !TS_USE_RECLAIMABLE_FREELIST
   C *head = (C *) l.freelist;
+#endif
   C *tail = (C *) l.freelist;
   size_t count = 0;
-  while(l.freelist && l.allocated > thread_freelist_low_watermark){
+  while(l.freelist && l.allocated > thread_freelist_low_watermark) {
 	  tail = (C *) l.freelist;
 	  l.freelist = *(C **) l.freelist;
 	  --(l.allocated);
 	  ++count;
-#ifdef TS_USE_RECLAIMABLE_FREELIST
+#if TS_USE_RECLAIMABLE_FREELIST
 	  a.free(tail);
 #endif
   }
-#if !defined(TS_USE_RECLAIMABLE_FREELIST)
+#if !TS_USE_RECLAIMABLE_FREELIST
   if (unlikely(count == 1)) {
-    a.free(head);
+    a.free(tail);
   } else if (count > 0) {
     a.free_bulk(head, tail, count);
   }
