@@ -141,6 +141,7 @@ public:
 
  private:
     SSLSessionBucket *session_bucket;
+    size_t nbuckets;
 };
 
 #endif /* __SSLSESSIONCACHE_H__ */

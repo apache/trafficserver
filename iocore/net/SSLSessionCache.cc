@@ -38,10 +38,12 @@ using ts::detail::RBNode;
 
 /* Session Cache */
 SSLSessionCache::SSLSessionCache()
-  : session_bucket(NULL) {
-  Debug("ssl.session_cache", "Created new ssl session cache %p with %ld buckets each with size max size %ld", this, SSLConfigParams::session_cache_number_buckets, SSLConfigParams::session_cache_max_bucket_size);
+  : session_bucket(NULL), nbuckets(SSLConfigParams::session_cache_number_buckets)
+{
+  Debug("ssl.session_cache", "Created new ssl session cache %p with %ld buckets each with size max size %ld",
+    this, nbuckets, SSLConfigParams::session_cache_max_bucket_size);
 
-  session_bucket = new SSLSessionBucket[SSLConfigParams::session_cache_number_buckets];
+  session_bucket = new SSLSessionBucket[nbuckets];
 }
 
 SSLSessionCache::~SSLSessionCache() {
@@ -50,7 +52,7 @@ SSLSessionCache::~SSLSessionCache() {
 
 bool SSLSessionCache::getSession(const SSLSessionID &sid, SSL_SESSION **sess) const {
   uint64_t hash = sid.hash();
-  uint64_t target_bucket = hash % SSLConfigParams::session_cache_number_buckets;
+  uint64_t target_bucket = hash % nbuckets;
   SSLSessionBucket *bucket = &session_bucket[target_bucket];
   bool ret = false;
 
@@ -72,7 +74,7 @@ bool SSLSessionCache::getSession(const SSLSessionID &sid, SSL_SESSION **sess) co
 
 void SSLSessionCache::removeSession(const SSLSessionID &sid) {
   uint64_t hash = sid.hash();
-  uint64_t target_bucket = hash % SSLConfigParams::session_cache_number_buckets;
+  uint64_t target_bucket = hash % nbuckets;
   SSLSessionBucket *bucket = &session_bucket[target_bucket];
 
   if (is_debug_tag_set("ssl.session_cache")) {
@@ -87,7 +89,7 @@ void SSLSessionCache::removeSession(const SSLSessionID &sid) {
 
 void SSLSessionCache::insertSession(const SSLSessionID &sid, SSL_SESSION *sess) {
   uint64_t hash = sid.hash();
-  uint64_t target_bucket = hash % SSLConfigParams::session_cache_number_buckets;
+  uint64_t target_bucket = hash % nbuckets;
   SSLSessionBucket *bucket = &session_bucket[target_bucket];
 
   if (is_debug_tag_set("ssl.session_cache")) {
