@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.2.0
+ 
+  *) [TS-3178] ProxyAllocators Improvements
 
   *) [TS-2812] Initial version of header_normalize plugin
 
