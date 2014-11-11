@@ -30,6 +30,7 @@
 #include "P_SSLNetVConnection.h"
 
 void
-SSL_set_rbio(SSLNetVConnection *sslvc, BIO *rbio) {
+SSL_set_rbio(SSLNetVConnection *sslvc, BIO *rbio)
+{
   sslvc->ssl->rbio = rbio;
 }

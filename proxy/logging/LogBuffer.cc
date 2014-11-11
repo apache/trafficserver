@@ -134,7 +134,8 @@ LogBuffer::LogBuffer(LogObject * owner, size_t size, size_t buf_align, size_t wr
 
   // create the buffer
   //
-  int64_t alloc_size = size + buf_align; 
+  int64_t alloc_size = size + buf_align;
+
   if (alloc_size <= max_iobuffer_size) {
     m_buffer_fast_allocator_size = buffer_size_to_index(alloc_size);
     m_unaligned_buffer = (char *) ioBufAllocator[m_buffer_fast_allocator_size].alloc_void();
@@ -184,14 +185,14 @@ void
 LogBuffer::freeLogBuffer()
 {
   char *log_buffer = NULL;
+
   if (m_unaligned_buffer) {
     log_buffer = m_unaligned_buffer;
   } else {
     log_buffer = m_buffer;
   }
   if (log_buffer) {
-    Debug("log-logbuffer", "[%p] Deleting buffer %u at address %p",
-          this_ethread(), m_id, log_buffer);
+    Debug("log-logbuffer", "[%p] Deleting buffer %u at address %p", this_ethread(), m_id, log_buffer);
     if (m_buffer_fast_allocator_size >= 0) {
       ioBufAllocator[m_buffer_fast_allocator_size].free_void(log_buffer);
     } else{
