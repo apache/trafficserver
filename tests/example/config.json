@@ -1,0 +1,118 @@
+{
+    "processes": {
+        "ats1": {
+            "type": "ats",
+            "root": "ats1",
+            "interfaces": {
+                "http": {
+                    "type": "http",
+                    "hostname": "localhost",
+                    "port": 8080
+                }
+            },
+            "config": {
+                "records.config": [
+                    {
+                        "match": "^CONFIG proxy.config.diags.debug.enabled",
+                        "substitute": "CONFIG proxy.config.diags.debug.enabled INT 0"
+                    }
+                ],
+                "remap.config": [
+                    {
+                        "append": "map /foo/bar http://localhost:8082/foo/bar"
+                    }
+                ]
+            }
+        },
+        "origin1": {
+            "type": "origin",
+            "interfaces": {
+                "http": {
+                    "type": "http",
+                    "hostname": "localhost",
+                    "port": 8082
+                }
+            },
+            "actions": {
+                "GET": {
+                    "/foo/bar": {
+                        "type": "chunkedresponse",
+                        "status_code": 200,
+                        "headers": {
+                            "content-type": "text/plain"
+                        },
+                        "delay_first_chunk_sec": 1,
+                        "chunk_size_bytes": 1024,
+                        "num_chunks": 10,
+                        "delay_between_chunk_sec": 0,
+                        "chunk_byte_value": 99
+                    }
+                }
+            }
+        },
+        "python1": {
+            "type": "python",
+            "spawn": false,
+            "script": "../framework/origin.py",
+            "args": [
+                "python1",
+                "config.json"
+            ],
+            "interfaces": {
+                "http": {
+                    "type": "http",
+                    "hostname": "localhost",
+                    "port": 8082
+                }
+            },
+            "actions": {
+                "GET": {
+                    "/foo/bar": {
+                        "type": "chunkedresponse",
+                        "status_code": 200,
+                        "headers": {
+                            "content-type": "text/plain"
+                        },
+                        "delay_first_chunk_sec": 1,
+                        "chunk_size_bytes": 1024,
+                        "num_chunks": 10,
+                        "delay_between_chunk_sec": 0,
+                        "chunk_byte_value": 99
+                    }
+                }
+            }
+        },
+        "other1": {
+            "type": "other",
+            "spawn": false,
+            "executable": "../framework/origin.py",
+            "args": [
+                "python1",
+                "config.json"
+            ],
+            "interfaces": {
+                "http": {
+                    "type": "http",
+                    "hostname": "localhost",
+                    "port": 8082
+                }
+            },
+            "actions": {
+                "GET": {
+                    "/foo/bar": {
+                        "type": "chunkedresponse",
+                        "status_code": 200,
+                        "headers": {
+                            "content-type": "text/plain"
+                        },
+                        "delay_first_chunk_sec": 1,
+                        "chunk_size_bytes": 1024,
+                        "num_chunks": 10,
+                        "delay_between_chunk_sec": 0,
+                        "chunk_byte_value": 99
+                    }
+                }
+            }
+        }
+    }
+}
