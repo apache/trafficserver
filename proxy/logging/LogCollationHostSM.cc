@@ -60,16 +60,11 @@ int
 // LogCollationHostSM::LogCollationHostSM
 //-------------------------------------------------------------------------
 
-LogCollationHostSM::LogCollationHostSM(NetVConnection * client_vc):
-Continuation(new_ProxyMutex()),
-m_client_vc(client_vc),
-m_client_vio(NULL),
-m_client_buffer(NULL),
-m_client_reader(NULL),
-m_pending_event(NULL),
-m_read_buffer(NULL), m_read_bytes_wanted(0), m_read_bytes_received(0), m_read_buffer_fast_allocator_size(-1), m_client_ip(0), m_client_port(0), m_id(ID++)
+LogCollationHostSM::LogCollationHostSM(NetVConnection * client_vc)
+  : Continuation(new_ProxyMutex()), m_client_vc(client_vc), m_client_vio(NULL), m_client_buffer(NULL),
+    m_client_reader(NULL), m_pending_event(NULL), m_read_buffer(NULL), m_read_bytes_wanted(0),
+    m_read_bytes_received(0), m_read_buffer_fast_allocator_size(-1), m_client_ip(0), m_client_port(0), m_id(ID++)
 {
-
   Debug("log-coll", "[%d]host::constructor", m_id);
 
   ink_assert(m_client_vc != NULL);
@@ -84,7 +79,6 @@ m_read_buffer(NULL), m_read_bytes_wanted(0), m_read_bytes_received(0), m_read_bu
 
   SET_HANDLER((LogCollationHostSMHandler) & LogCollationHostSM::host_handler);
   host_init(LOG_COLL_EVENT_SWITCH, NULL);
-
 }
 
 void
@@ -471,7 +465,7 @@ LogCollationHostSM::read_body(int event, VIO * vio)
       m_read_buffer_fast_allocator_size = buffer_size_to_index(m_read_bytes_wanted);
       m_read_buffer = (char *) ioBufAllocator[m_read_buffer_fast_allocator_size].alloc_void();
     } else {
-      m_read_buffer_fast_allocator_size = -1; 
+      m_read_buffer_fast_allocator_size = -1;
       m_read_buffer = (char *)ats_malloc(m_read_bytes_wanted);
     }
     ink_assert(m_read_buffer != NULL);

@@ -118,7 +118,7 @@ is_request_conditional(HTTPHdr* header)
                  MIME_PRESENCE_IF_MODIFIED_SINCE | MIME_PRESENCE_IF_RANGE |
                  MIME_PRESENCE_IF_MATCH | MIME_PRESENCE_IF_NONE_MATCH);
   return (header->presence(mask) && (header->method_get_wksidx() == HTTP_WKSIDX_GET ||
-			  header->method_get_wksidx() == HTTP_WKSIDX_HEAD));
+                                     header->method_get_wksidx() == HTTP_WKSIDX_HEAD));
 }
 
 static inline bool
@@ -722,7 +722,6 @@ HttpTransact::perform_accept_encoding_filtering(State* s)
 void
 HttpTransact::StartRemapRequest(State* s)
 {
-
   if (s->api_skip_all_remapping) {
     Debug ("http_trans", "API request to skip remapping");
 
@@ -736,11 +735,11 @@ HttpTransact::StartRemapRequest(State* s)
   DebugTxn("http_trans", "START HttpTransact::StartRemapRequest");
 
   /**
-	 * Check for URL remappings before checking request
-	 * validity or initializing state variables since
-	 * the remappings can insert or change the destination
-	 * host, port and protocol.
-	**/
+   * Check for URL remappings before checking request
+   * validity or initializing state variables since
+   * the remappings can insert or change the destination
+   * host, port and protocol.
+   **/
 
   HTTPHdr *incoming_request = &s->hdr_info.client_request;
   URL *url = incoming_request->url_get();
@@ -2286,7 +2285,7 @@ HttpTransact::issue_revalidate(State* s)
     //    cache on like DELETE)
     if (c_resp->get_last_modified() > 0 &&
         (s->hdr_info.server_request.method_get_wksidx() == HTTP_WKSIDX_GET ||
-		s->hdr_info.server_request.method_get_wksidx() == HTTP_WKSIDX_HEAD) && s->range_setup == RANGE_NONE) {
+         s->hdr_info.server_request.method_get_wksidx() == HTTP_WKSIDX_HEAD) && s->range_setup == RANGE_NONE) {
       // make this a conditional request
       int length;
       const char *str = c_resp->value_get(MIME_FIELD_LAST_MODIFIED, MIME_LEN_LAST_MODIFIED, &length);
@@ -2297,8 +2296,8 @@ HttpTransact::issue_revalidate(State* s)
     }
     // if Etag exists, also add if-non-match header
     if (c_resp->presence(MIME_PRESENCE_ETAG) &&
-			(s->hdr_info.server_request.method_get_wksidx() == HTTP_WKSIDX_GET ||
-			 s->hdr_info.server_request.method_get_wksidx() == HTTP_WKSIDX_HEAD)) {
+        (s->hdr_info.server_request.method_get_wksidx() == HTTP_WKSIDX_GET ||
+         s->hdr_info.server_request.method_get_wksidx() == HTTP_WKSIDX_HEAD)) {
       int length;
       const char *etag = c_resp->value_get(MIME_FIELD_ETAG, MIME_LEN_ETAG, &length);
       if ((length >= 2) && (etag[0] == 'W') && (etag[1] == '/')) {
@@ -6186,13 +6185,13 @@ HttpTransact::is_response_cacheable(State* s, HTTPHdr* request, HTTPHdr* respons
 //             ! (response->is_cache_control_set(HTTP_VALUE_PROXY_REVALIDATE)) &&
 //             ! (response->is_cache_control_set(HTTP_VALUE_PUBLIC))) {
 
-	    DebugTxn("http_trans", "[is_response_cacheable] request has AUTHORIZATION - not cacheable");
+            DebugTxn("http_trans", "[is_response_cacheable] request has AUTHORIZATION - not cacheable");
             return(false);
 //         }
-// 	else {
-// 	    DebugTxn("http_trans","[is_response_cacheable] request has AUTHORIZATION, "
-// 		  "but response has a cache-control that allows caching");
-// 	}
+//      else {
+//          DebugTxn("http_trans","[is_response_cacheable] request has AUTHORIZATION, "
+//                "but response has a cache-control that allows caching");
+//      }
     }
 */
 }
