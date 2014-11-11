@@ -35,7 +35,8 @@
 
 class EThread;
 
-extern int thread_freelist_size;
+extern int thread_freelist_high_watermark;
+extern int thread_freelist_low_watermark;
 
 struct ProxyAllocator
 {
@@ -51,7 +52,7 @@ template<class C> inline C * thread_alloc(ClassAllocator<C> &a, ProxyAllocator &
   if (l.freelist) {
     C *v = (C *) l.freelist;
     l.freelist = *(C **) l.freelist;
-    l.allocated--;
+    --(l.allocated);
     *(void **) v = *(void **) &a.proto.typeObject;
     return v;
   }
@@ -67,7 +68,7 @@ template<class C> inline C * thread_alloc_init(ClassAllocator<C> &a, ProxyAlloca
   if (l.freelist) {
     C *v = (C *) l.freelist;
     l.freelist = *(C **) l.freelist;
-    l.allocated--;
+    --(l.allocated);
     memcpy((void *) v, (void *) &a.proto.typeObject, sizeof(C));
     return v;
   }
@@ -92,13 +93,27 @@ thread_free(Allocator &a, void *p)
 template<class C> inline void
 thread_freeup(ClassAllocator<C> &a, ProxyAllocator & l)
 {
-  while (l.freelist) {
-    C *v = (C *) l.freelist;
-    l.freelist = *(C **) l.freelist;
-    l.allocated--;
-    a.free(v);                  // we could use a bulk free here
+  C *head = (C *) l.freelist;
+  C *tail = (C *) l.freelist;
+  size_t count = 0;
+  while(l.freelist && l.allocated > thread_freelist_low_watermark){
+	  tail = (C *) l.freelist;
+	  l.freelist = *(C **) l.freelist;
+	  --(l.allocated);
+	  ++count;
+#ifdef TS_USE_RECLAIMABLE_FREELIST
+	  a.free(tail);
+#endif
   }
-  ink_assert(!l.allocated);
+#if !defined(TS_USE_RECLAIMABLE_FREELIST)
+  if (unlikely(count == 1)) {
+    a.free(head);
+  } else if (count > 0) {
+    a.free_bulk(head, tail, count);
+  }
+
+  ink_assert(l.allocated >= thread_freelist_low_watermark);
+#endif
 }
 
 void* thread_alloc(Allocator &a, ProxyAllocator &l);
@@ -111,7 +126,7 @@ void thread_freeup(Allocator &a, ProxyAllocator &l);
   *(char **)_p = (char*)_t->_a.freelist;        \
   _t->_a.freelist = _p;                         \
   _t->_a.allocated++;                           \
-  if (_t->_a.allocated > thread_freelist_size)  \
+  if (_t->_a.allocated > thread_freelist_high_watermark)  \
     thread_freeup(::_a, _t->_a);                \
 } while (0)
 #else /* !TS_USE_FREELIST || TS_USE_RECLAIMABLE_FREELIST */
