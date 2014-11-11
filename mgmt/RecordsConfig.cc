@@ -1972,7 +1972,7 @@ RecordElement RecordsConfig[] = {
   ,
   {RECT_CONFIG, "proxy.config.spdy.no_activity_timeout_in", RECD_INT, "115", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.spdy.initial_window_size_in", RECD_INT, "65536", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.spdy.initial_window_size_in", RECD_INT, "1048576", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.spdy.accept_no_activity_timeout", RECD_INT, "120", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
   ,
