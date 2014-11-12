@@ -2513,7 +2513,7 @@ Sockets
    Specifies the number of task threads to run. These threads are used for
    various tasks that should be off-loaded from the normal network threads.
 
-.. ts:cv:: CONFIG proxy.config.allocator.thread_freelist_high_watermark INT 512
+.. ts:cv:: CONFIG proxy.config.allocator.thread_freelist_size INT 512
 
    Sets the maximum number of elements that can be contained in a ProxyAllocator (per-thread)
    before returning the objects to the global pool
