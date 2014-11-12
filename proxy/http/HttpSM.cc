@@ -1569,16 +1569,16 @@ HttpSM::handle_api_return()
 
        setup_blind_tunnel(true);
       } else {
-       setup_server_transfer();
+       HttpTunnelProducer *p = setup_server_transfer();
        perform_cache_write_action();
-       tunnel.tunnel_run();
+       tunnel.tunnel_run(p);
       }
       break;
     }
   case HttpTransact::SM_ACTION_SERVE_FROM_CACHE:
     {
-      setup_cache_read_transfer();
-      tunnel.tunnel_run();
+      HttpTunnelProducer *p = setup_cache_read_transfer();
+      tunnel.tunnel_run(p);
       break;
     }
 
@@ -5799,7 +5799,7 @@ HttpSM::setup_server_read_response_header()
   }
 }
 
-void
+HttpTunnelProducer *
 HttpSM::setup_cache_read_transfer()
 {
   int64_t alloc_index, hdr_size;
@@ -5845,6 +5845,7 @@ HttpSM::setup_cache_read_transfer()
   }
   ua_entry->in_tunnel = true;
   cache_sm.cache_read_vc = NULL;
+  return p;
 }
 
 HttpTunnelProducer *
@@ -5917,15 +5918,17 @@ HttpSM::setup_100_continue_transfer()
   HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::tunnel_handler_100_continue);
 
   // Setup the tunnel to the client
-  tunnel.add_producer(HTTP_TUNNEL_STATIC_PRODUCER,
+  HttpTunnelProducer *p = tunnel.add_producer(HTTP_TUNNEL_STATIC_PRODUCER,
                       client_response_hdr_bytes,
                       buf_start, (HttpProducerHandler) NULL, HT_STATIC, "internal msg - 100 continue");
   tunnel.add_consumer(ua_entry->vc,
                       HTTP_TUNNEL_STATIC_PRODUCER,
                       &HttpSM::tunnel_handler_100_continue_ua, HT_HTTP_CLIENT, "user agent");
 
+  // Make sure the half_close is not set.
+  ua_session->clear_half_close_flag();
   ua_entry->in_tunnel = true;
-  tunnel.tunnel_run();
+  tunnel.tunnel_run(p);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -6041,17 +6044,16 @@ HttpSM::setup_internal_transfer(HttpSMHandler handler_arg)
     t_state.internal_msg_buffer_size = 0;
   }
 
-
   HTTP_SM_SET_DEFAULT_HANDLER(handler_arg);
 
   // Setup the tunnel to the client
-  tunnel.add_producer(HTTP_TUNNEL_STATIC_PRODUCER,
+  HttpTunnelProducer *p = tunnel.add_producer(HTTP_TUNNEL_STATIC_PRODUCER,
                       nbytes, buf_start, (HttpProducerHandler) NULL, HT_STATIC, "internal msg");
   tunnel.add_consumer(ua_entry->vc,
                       HTTP_TUNNEL_STATIC_PRODUCER, &HttpSM::tunnel_handler_ua, HT_HTTP_CLIENT, "user agent");
 
   ua_entry->in_tunnel = true;
-  tunnel.tunnel_run();
+  tunnel.tunnel_run(p);
 }
 
 // int HttpSM::find_http_resp_buffer_size(int cl)
@@ -6290,7 +6292,7 @@ HttpSM::setup_server_transfer_to_cache_only()
   server_entry->in_tunnel = true;
 }
 
-void
+HttpTunnelProducer *
 HttpSM::setup_server_transfer()
 {
   DebugSM("http", "Setup Server Transfer");
@@ -6379,9 +6381,10 @@ HttpSM::setup_server_transfer()
    */
   tunnel.set_producer_chunking_action(p, client_response_hdr_bytes, action);
   tunnel.set_producer_chunking_size(p, t_state.txn_conf->http_chunking_size);
+  return p;
 }
 
-void
+HttpTunnelProducer *
 HttpSM::setup_push_transfer_to_cache()
 {
   int64_t nbytes, alloc_index;
@@ -6404,7 +6407,7 @@ HttpSM::setup_push_transfer_to_cache()
       // Client failed to send the body, it's gone.  Kill the
       // state machine
       terminate_sm = true;
-      return;
+      return NULL;
     }
   }
   // Next order of business is copy the remaining data from the
@@ -6415,12 +6418,12 @@ HttpSM::setup_push_transfer_to_cache()
 
   HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::tunnel_handler_push);
 
-  // TODO: Should we do something with the HttpTunnelProducer* returned?
-  tunnel.add_producer(ua_entry->vc, nbytes, buf_start, &HttpSM::tunnel_handler_ua_push,
+  HttpTunnelProducer *p = tunnel.add_producer(ua_entry->vc, nbytes, buf_start, &HttpSM::tunnel_handler_ua_push,
                       HT_HTTP_CLIENT, "user_agent");
   setup_cache_write_transfer(&cache_sm, ua_entry->vc, &t_state.cache_info.object_store, 0, "cache write");
 
   ua_entry->in_tunnel = true;
+  return p;
 }
 
 void
@@ -7352,8 +7355,10 @@ HttpSM::set_next_state()
 
   case HttpTransact::SM_ACTION_STORE_PUSH_BODY:
     {
-      setup_push_transfer_to_cache();
-      tunnel.tunnel_run();
+      // This can return NULL - do we really want to run the tunnel in that case?
+      // But that's how it was before this change.
+      HttpTunnelProducer *p = setup_push_transfer_to_cache();
+      tunnel.tunnel_run(p);
       break;
     }
 
