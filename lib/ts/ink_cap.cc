@@ -160,6 +160,8 @@ impersonate(const struct passwd * pwd, ImpersonationLevel level)
   DEBUG_CREDENTIALS("privileges");
   DEBUG_PRIVILEGES("privileges");
 
+  ink_release_assert(pwd != NULL);
+
 #if defined(PR_GET_DUMPABLE)
   dumpable = (prctl(PR_GET_DUMPABLE) == 1);
 #endif
