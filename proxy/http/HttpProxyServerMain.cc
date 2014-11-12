@@ -43,12 +43,12 @@ HttpSessionAccept *plugin_http_accept = NULL;
 HttpSessionAccept *plugin_http_transparent_accept = 0;
 
 static SLL<SSLNextProtocolAccept> ssl_plugin_acceptors;
-static ProxyMutex ssl_plugin_mutex;
+static Ptr<ProxyMutex> ssl_plugin_mutex;
 
 bool
 ssl_register_protocol(const char * protocol, Continuation * contp)
 {
-  MUTEX_LOCK(lock, &ssl_plugin_mutex, this_ethread());
+  MUTEX_LOCK(lock, ssl_plugin_mutex, this_ethread());
 
   for (SSLNextProtocolAccept * ssl = ssl_plugin_acceptors.head;
         ssl; ssl = ssl_plugin_acceptors.next(ssl)) {
@@ -63,7 +63,7 @@ ssl_register_protocol(const char * protocol, Continuation * contp)
 bool
 ssl_unregister_protocol(const char * protocol, Continuation * contp)
 {
-  MUTEX_LOCK(lock, &ssl_plugin_mutex, this_ethread());
+  MUTEX_LOCK(lock, ssl_plugin_mutex, this_ethread());
 
   for (SSLNextProtocolAccept * ssl = ssl_plugin_acceptors.head;
         ssl; ssl = ssl_plugin_acceptors.next(ssl)) {
@@ -224,7 +224,7 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor& acceptor, HttpProxyPort& port, unsigned
     }
 #endif
 
-    MUTEX_LOCK(lock, &ssl_plugin_mutex, this_ethread());
+    MUTEX_LOCK(lock, ssl_plugin_mutex, this_ethread());
     ssl_plugin_acceptors.push(ssl);
 
     acceptor._accept = ssl;
@@ -263,7 +263,10 @@ init_HttpProxyServer(int n_accept_threads)
     plugin_http_transparent_accept = new HttpSessionAccept(ha_opt);
     plugin_http_transparent_accept->mutex = new_ProxyMutex();
   }
-  ssl_plugin_mutex.init("SSL Acceptor List");
+  if (ssl_plugin_mutex == NULL) {
+    ssl_plugin_mutex = new ProxyMutex();
+    ssl_plugin_mutex->init("SSL Acceptor List");
+  }
 
   // Do the configuration defined ports.
   for ( int i = 0 , n = proxy_ports.length() ; i < n ; ++i ) {

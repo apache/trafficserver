@@ -127,7 +127,7 @@ private:
   /* these method must be used while hold the lock */
   void print(const char *) const;
 
-  ProxyMutex mutex;
+  Ptr<ProxyMutex> mutex;
   CountQueue<SSLSession> queue;
 };
 
