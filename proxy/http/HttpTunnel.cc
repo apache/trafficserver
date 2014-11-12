@@ -728,7 +728,8 @@ HttpTunnel::tunnel_run(HttpTunnelProducer * p_arg)
 
     for (int i = 0 ; i < MAX_PRODUCERS ; ++i) {
       p = producers + i;
-      if (p->vc != NULL) {
+      if (p->vc != NULL &&
+          (p->alive || (p->vc_type == HT_STATIC && p->buffer_start != NULL))) {
         producer_run(p);
       }
     }
@@ -1388,7 +1389,12 @@ HttpTunnel::chain_abort_all(HttpTunnelProducer * p)
     }
 
     if (c->self_producer) {
-      chain_abort_all(c->self_producer);
+      // Must snip the link before recursively
+      // freeing to avoid looks introduced by 
+      // blind tunneling
+      HttpTunnelProducer *selfp = c->self_producer;
+      c->self_producer = NULL;
+      chain_abort_all(selfp);
     }
 
     c = c->link.next;

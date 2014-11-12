@@ -3,6 +3,8 @@ Changes with Apache Traffic Server 5.2.0
 
   *) [TS-3074] Fix FreeBSD regression.
 
+  *) [TS-3191] Reduce confusion with HTTP_TUNNEL_STATIC_PRODUCER.
+
   *) [TS-3065] Remove"Transfer-Encoding" header when the error body was set by
    ATS (e.g. plugin). Author: portl4t <portl4t.cn@gmail.com>
 
