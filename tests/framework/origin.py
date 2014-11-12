@@ -68,9 +68,9 @@ class ChunkedResponseResource(Resource):
 
 
     def render(self, request):
-        if self.__method != request.method:
+        """if self.__method != request.method:
             request.setResponseCode(405)
-            return ""
+            return "" """
 
         chunks_left = self.__chunks_to_send
 
@@ -130,7 +130,7 @@ def build_resource_tree(actions):
             length = len(abs_path)
 
             for i in range(1, length - 1):
-                child = parent.getChild(abs_path[i], None)
+                child = parent.getStaticEntity(abs_path[i])
 
                 if not child or isinstance(child, NoResource):
                     child = Resource()

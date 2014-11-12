@@ -7,8 +7,9 @@ sys.path = ['../framework'] + sys.path
 import atstf
 
 from twisted_test import ExampleTwistedTest
+from httplib_test import ExampleHttpClientTest
 
-test_cases = [ExampleTwistedTest]
+test_cases = [ExampleTwistedTest, ExampleHttpClientTest]
 
 if __name__ == '__main__':
     # Spawn ATS and origin processes

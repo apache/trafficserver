@@ -1,73 +1,89 @@
 import sys
-import unittest
 
+from twisted.trial import unittest
 from twisted.internet import reactor
 from twisted.internet.defer import Deferred
 from twisted.internet.protocol import Protocol
 from twisted.web.client import Agent
 from twisted.web.http_headers import Headers
+from twisted.python import log
+from twisted.internet.defer import succeed
+from twisted.web.iweb import IBodyProducer
+from zope.interface import implements
 
 sys.path = ['../framework'] + sys.path
 import atstf
 
 class ExampleTwistedTest(unittest.TestCase):
-    def test_ats1(self):
+    def setUp(self):
+        log.startLogging(sys.stdout)
+
+    def test_get(self):
         #
         # Read test case configuration from the same config file used to start ATS and origin processes.
         #
 
         conf = atstf.parse_config()
 
-        ats1_conf = conf['processes']['ats1']
-
-        hostname = ats1_conf['interfaces']['http']['hostname']
-        port = ats1_conf['interfaces']['http']['port']
-
-        origin_conf = conf['processes']['origin1']
-
-        expected_status_code = origin_conf['actions']['GET']['/foo/bar']['status_code']
-        chunk_size_bytes = origin_conf['actions']['GET']['/foo/bar']['chunk_size_bytes']
-        num_chunks = origin_conf['actions']['GET']['/foo/bar']['num_chunks']
-        expected_bytes_received = chunk_size_bytes * num_chunks
-
-        #
-        # Create a twisted HTTP client that will interact with ATS and save all details of the interaction.   We'll
-        # later assert that the saved details are correct.   Ideally we'd just throw assertions into the client itself,
-        # but sadly assertions are implemented with exceptions and twisted eats any exception raised by our callbacks.
-        #
-        # See https://twistedmatrix.com/documents/current/web/howto/client.html for details on writing HTTP clients
-        #
+        method = 'GET'
+        hostname = conf['processes']['ats1']['interfaces']['http']['hostname']
+        port = conf['processes']['ats1']['interfaces']['http']['port']
+        abs_path = '/chunked/down'
+        headers = Headers({'User-Agent': ['ExampleTwistedTest']})
+        body_producer = None
 
         agent = Agent(reactor)
 
-        request = agent.request('GET',  "http://%s:%d/foo/bar" % (hostname.encode("utf-8"), port),
-                                Headers({'User-Agent': ['ExampleTwistedTest']}), None)
+        request = agent.request(method,  "http://%s:%d%s" % (hostname.encode("utf-8"), port, abs_path), headers,
+                                body_producer)
 
-        response_handler = ResponseHandler(reactor)
+        done = Deferred()
+
+        response_handler = ResponseHandler(self, done, conf['processes']['origin1']['actions'][method][abs_path])
 
         request.addCallback(response_handler.handle_response)
-        request.addCallback(response_handler.handle_completion)
         request.addErrback(response_handler.handle_error)
 
-        reactor.run()
+        return done # This is a deferred.  The test case will not complete until this completes
 
+    def test_post(self):
         #
-        # Now assert
+        # Read test case configuration from the same config file used to start ATS and origin processes.
         #
 
-        self.assertEqual(expected_status_code, response_handler.get_status_code())
-        self.assertEqual(expected_bytes_received, response_handler.get_body_handler().get_bytes_received())
-        self.assertEqual("Response body fully received", \
-                         response_handler.get_body_handler().get_reason().getErrorMessage())
+        conf = atstf.parse_config()
+
+        method = 'POST'
+        hostname = conf['processes']['ats1']['interfaces']['http']['hostname']
+        port = conf['processes']['ats1']['interfaces']['http']['port']
+        abs_path = '/nonchunked/up'
+        headers = Headers({'User-Agent': ['ExampleTwistedTest'], "Content-Type": ["text/plain"]})
+        body_producer = NonChunkedBodyProducer(chr(42) * 1024)
+
+        agent = Agent(reactor)
+
+        request = agent.request(method,  "http://%s:%d%s" % (hostname.encode("utf-8"), port, abs_path), headers,
+                                body_producer)
+
+        done = Deferred()
+
+        response_handler = ResponseHandler(self, done, conf['processes']['origin1']['actions'][method][abs_path])
+
+        request.addCallback(response_handler.handle_response)
+        request.addErrback(response_handler.handle_error)
+
+        return done # This is a deferred.  The test case will not complete until this completes
 
 class ResponseBodyHandler(Protocol):
-    def __init__(self, deferred):
-        self.__deferred = deferred
+    def __init__(self, test_case, done, expected_bytes_received):
+        self.__test_case = test_case
+        self.__done = done
+        self.__expected_bytes_received = expected_bytes_received
         self.__bytes_received = 0
-        self.__reason = None
 
     def dataReceived(self, data):
         self.__bytes_received += len(data)
+        return self.__done
 
     def connectionLost(self, reason):
         #
@@ -82,40 +98,46 @@ class ResponseBodyHandler(Protocol):
         # exception to be of another type, indicating guaranteed data loss for some reason (a lost connection, a memory
         # error, etc).
         #
-        self.__reason = reason
-        self.__deferred.callback(None)
-
-    def get_bytes_received(self):
-        return self.__bytes_received
-
-    def get_reason(self):
-        return self.__reason
+        try:
+            self.__test_case.assertEqual(self.__expected_bytes_received, self.__bytes_received)
+            self.__test_case.assertEqual("Response body fully received", reason.getErrorMessage())
+            self.__done.callback(None)
+        except Exception, e:
+            self.__done.errback(e)
+            raise e
 
 class ResponseHandler:
-    def __init__(self, reactor):
-        self.__reactor = reactor
-        self.__deferred = Deferred()
-        self.__body_handler = ResponseBodyHandler(self.__deferred)
-        self.__error = None
-        self.__status_code = None
+    def __init__(self, test_case, done, action_conf):
+        self.__test_case = test_case
+        self.__done = done
+        self.__expected_status_code = action_conf['status_code']
+        self.__expected_bytes_received = action_conf['chunk_size_bytes'] * action_conf['num_chunks']
 
     def handle_response(self, response):
-        self.__status_code = response.code
-        response.deliverBody(self.__body_handler)
-        return self.__deferred
-
-    def handle_completion(self):
-        self.__reactor.stop()
+        try:
+            self.__test_case.assertEqual(self.__expected_status_code, response.code)
+            response.deliverBody(ResponseBodyHandler(self.__test_case, self.__done, self.__expected_bytes_received))
+            return self.__done
+        except Exception, e:
+            self.__done.errback(e)
+            raise e
 
     def handle_error(self, error):
-        self.__error = error
-        self.__reactor.stop()
+        self.__test_case.fail("Error processing response: %s" % error)
 
-    def get_body_handler(self):
-        return self.__body_handler
+class NonChunkedBodyProducer(object):
+    implements(IBodyProducer)
 
-    def get_error(self):
-        return self.__error
+    def __init__(self, body):
+        self.body = body
+        self.length = len(body)
 
-    def get_status_code(self):
-        return self.__status_code
+    def startProducing(self, consumer):
+        consumer.write(self.body)
+        return succeed(None)
+
+    def pauseProducing(self):
+        pass
+
+    def stopProducing(self):
+        pass
