@@ -3199,6 +3199,7 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer * c)
     // If the client could be pipelining or is doing a POST, we need to
     //   set the ua_session into half close mode
     if ((t_state.method == HTTP_WKSIDX_POST || t_state.client_info.pipeline_possible == true)
+        && c->producer->vc_type != HT_STATIC
         && event == VC_EVENT_WRITE_COMPLETE) {
       ua_session->set_half_close_flag();
     }
@@ -3406,7 +3407,7 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer * p)
     hsm_release_assert(ua_entry->in_tunnel == true);
     if (p->consumer_list.head->vc_type == HT_TRANSFORM) {
       hsm_release_assert(post_transform_info.entry->in_tunnel == true);
-    } else {
+    } else if (server_entry != NULL) {
       hsm_release_assert(server_entry->in_tunnel == true);
     }
     break;
@@ -6048,6 +6049,11 @@ HttpSM::setup_internal_transfer(HttpSMHandler handler_arg)
 
   HTTP_SM_SET_DEFAULT_HANDLER(handler_arg);
 
+  // Clear the decks before we setup the new producers
+  // As things stand, we cannot have two static producers operating at
+  // once
+  tunnel.kill_tunnel();
+
   // Setup the tunnel to the client
   HttpTunnelProducer *p = tunnel.add_producer(HTTP_TUNNEL_STATIC_PRODUCER,
                       nbytes, buf_start, (HttpProducerHandler) NULL, HT_STATIC, "internal msg");
@@ -6570,7 +6576,12 @@ HttpSM::kill_this()
       second_cache_sm->end_both();
     transform_cache_sm.end_both();
     vc_table.cleanup_all();
-    tunnel.deallocate_buffers();
+
+    // Why don't we just kill the tunnel?
+    // That will deallocate buffers and do
+    // other cleanup as well
+    // tunnel.deallocate_buffers();
+    tunnel.kill_tunnel();
 
     // It possible that a plugin added transform hook
     //   but the hook never executed due to a client abort
