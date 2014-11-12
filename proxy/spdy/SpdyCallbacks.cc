@@ -384,7 +384,7 @@ spdy_session_delta_window_size(SpdyClientSession *sm)
     sess_delta_window_size += req->delta_window_size;
   }
   Debug("spdy", "----sm_id:%" PRId64 ", session delta_window_size:%u",
-        sess_delta_window_size);
+        sm->sm_id, sess_delta_window_size);
   return sess_delta_window_size;
 }
 
