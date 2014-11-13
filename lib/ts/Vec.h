@@ -185,10 +185,11 @@ Vec<C,A,S>::Vec(C c) {
 
 template <class C, class A, int S> inline C
 Vec<C,A,S>::get(size_t i) const {
-  if (i < n && i >= 0)
+  if (i < n) {
     return v[i];
-  else
+  } else {
     return C();
+  }
 }
 
 template <class C, class A, int S> inline void 
