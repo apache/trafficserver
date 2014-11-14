@@ -1159,9 +1159,7 @@ bool HttpTunnel::producer_handler(int event, HttpTunnelProducer * p)
     jump_point = p->vc_handler;
     (sm->*jump_point) (event, p);
     sm_callback = true;
-    if (p->handler_state == 0) {
-      p->handler_state = HTTP_SM_POST_SUCCESS;
-    }
+    p->update_state_if_not_set(HTTP_SM_POST_SUCCESS);
     break;
 
   case VC_EVENT_READ_COMPLETE:
@@ -1189,9 +1187,7 @@ bool HttpTunnel::producer_handler(int event, HttpTunnelProducer * p)
     jump_point = p->vc_handler;
     (sm->*jump_point) (event, p);
     sm_callback = true;
-    if (p->handler_state == 0) {
-      p->handler_state = HTTP_SM_POST_SUCCESS;
-    }
+    p->update_state_if_not_set(HTTP_SM_POST_SUCCESS);
 
     // Data read from producer, reenable consumers
     for (c = p->consumer_list.head; c; c = c->link.next) {
@@ -1212,9 +1208,7 @@ bool HttpTunnel::producer_handler(int event, HttpTunnelProducer * p)
     (sm->*jump_point) (event, p);
     sm_callback = true;
     // Failure case anyway
-    if (p->handler_state == 0) {
-      p->handler_state = HTTP_SM_POST_UA_FAIL;
-    }
+    p->update_state_if_not_set(HTTP_SM_POST_UA_FAIL);
     break;
 
   case VC_EVENT_WRITE_READY:
