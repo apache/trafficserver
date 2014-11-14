@@ -78,7 +78,7 @@ crashlog_open(const char * path)
 {
   int fd;
 
-  fd = open(path, O_WRONLY | O_TRUNC, 0400);
+  fd = open(path, O_WRONLY | O_TRUNC | O_CREAT, 0400);
   return (fd == -1) ? NULL : fdopen(fd, "w");
 }
 
