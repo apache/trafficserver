@@ -111,7 +111,7 @@ struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessio
       key = PROTO_HTTP;
     }
 
-    netvc->do_io_read(this, 0, NULL); // Disable the read IO that we started.
+    netvc->do_io_read(NULL, 0, NULL); // Disable the read IO that we started.
 
     if (probeParent->endpoint[key] == NULL) {
       Warning("Unregistered protocol type %d", key);
