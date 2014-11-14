@@ -32,13 +32,13 @@ using namespace EsiLib;
 EsiGunzip::EsiGunzip(const char *debug_tag,
                            ComponentBase::Debug debug_func, ComponentBase::Error error_func)
   : ComponentBase(debug_tag, debug_func, error_func),
-    _downstream_length(0), 
+    _downstream_length(0),
     _total_data_length(0) {
     _init = false;
     _success = true;
 }
 
-bool 
+bool
 EsiGunzip::stream_finish() {
   if(_init) {
     if (inflateEnd(&_zstrm) != Z_OK) {
@@ -58,7 +58,7 @@ EsiGunzip::stream_decode(const char *data, int data_len, std::string &udata) {
   BufferList buf_list;
 
   if(!_init) {
- 
+
     _zstrm.zalloc = Z_NULL;
     _zstrm.zfree = Z_NULL;
     _zstrm.opaque = Z_NULL;
@@ -105,13 +105,13 @@ EsiGunzip::stream_decode(const char *data, int data_len, std::string &udata) {
       // avoid data copy for temporary
       buf_list.push_back(string());
       string &curr_buf = buf_list.back();
-      curr_buf.assign(raw_buf, curr_buf_size); 
+      curr_buf.assign(raw_buf, curr_buf_size);
 
       if (inflate_result == Z_STREAM_END) {
         break;
       }
     } while (_zstrm.avail_in > 0);
-  
+
     _total_data_length += data_len;
   }
 

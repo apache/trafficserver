@@ -463,7 +463,7 @@ UrlRewrite::PerformACLFiltering(HttpTransact::State *s, url_mapping *map)
           client_enabled_flag = rp->allow_flag ? false : true;
         }
       }
-      
+
     }                         /* end of for(rp = map->filter;rp;rp = rp->next) */
     s->client_connection_enabled = client_enabled_flag;
   }

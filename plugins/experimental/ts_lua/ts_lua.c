@@ -8,7 +8,7 @@
   with the License.  You may obtain a copy of the License at
 
   http://www.apache.org/licenses/LICENSE-2.0
- 
+
   Unless required by applicable law or agreed to in writing, software
   distributed under the License is distributed on an "AS IS" BASIS,
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -169,9 +169,9 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo * rri)
   if(http_ctx->has_hook) {
     TSDebug(TS_LUA_DEBUG_TAG, "[%s] has txn hook -> adding txn close hook handler to release resources", __FUNCTION__);
     TSHttpTxnHookAdd(rh, TS_HTTP_TXN_CLOSE_HOOK, contp);
-  } else {    
+  } else {
     TSDebug(TS_LUA_DEBUG_TAG, "[%s] no txn hook -> release resources now", __FUNCTION__);
-    ts_lua_destroy_http_ctx(http_ctx); 
+    ts_lua_destroy_http_ctx(http_ctx);
     TSContDestroy(contp);
   }
 

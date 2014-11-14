@@ -56,7 +56,7 @@ namespace net_instaweb {
   message_handler_->Message(kInfo,"server ctx default options:\r\n[%s]",server_context_->global_options()->OptionsToString().c_str());
   std::vector<SystemServerContext*> server_contexts;
   server_contexts.push_back(server_context_);
-  
+
   //Statistics* statistics =
   //    driver_factory_->MakeGlobalSharedMemStatistics(*(SystemRewriteOptions*)server_context_->global_options());
   GoogleString error_message;
@@ -70,9 +70,9 @@ namespace net_instaweb {
      //return NGX_ERROR;
      CHECK(false);
   }
-  
+
   AtsRewriteDriverFactory::InitStats(global_statistics);
-    
+
   driver_factory()->RootInit();
   driver_factory()->ChildInit();
 

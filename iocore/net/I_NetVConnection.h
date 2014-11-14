@@ -453,7 +453,7 @@ public:
   /** Returns local ip.
       @deprecated get_local_addr() should be used instead for AF_INET6 compatibility.
   */
-  
+
   in_addr_t get_local_ip();
 
   /** Returns local port. */
@@ -462,7 +462,7 @@ public:
   /** Returns remote sockaddr storage. */
   sockaddr const* get_remote_addr();
 
-  /** Returns remote ip. 
+  /** Returns remote ip.
       @deprecated get_remote_addr() should be used instead for AF_INET6 compatibility.
   */
   in_addr_t get_remote_ip();

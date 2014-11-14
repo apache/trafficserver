@@ -98,12 +98,12 @@ private:
 
     /* Keep track of the number of windows filled prev*/
     size_t _windowsPassed;
-    
+
     /*Used as a deciding factor between attempt/except
      * incase prob is complete truth
      */
     double _avgOverWindow;
-    
+
 public:
     /*Was a reqeust made*/
     bool _requestMade;

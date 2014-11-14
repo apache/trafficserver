@@ -82,7 +82,7 @@ public:
     AsyncHttpFetch *post_request = new AsyncHttpFetch("http://127.0.0.1/post", "data");
 
     (void)post_request;
-    
+
     Async::execute<AsyncHttpFetch>(this, new AsyncHttpFetch("http://127.0.0.1/post", "data"),
                                    getMutex());
     ++num_fetches_pending_;
@@ -141,7 +141,7 @@ private:
     const Response &response = async_http_fetch.getResponse();
     if (async_http_fetch.getResult() == AsyncHttpFetch::RESULT_SUCCESS) {
       TS_DEBUG(TAG, "Response version is [%s], status code %d, reason phrase [%s]",
-               HTTP_VERSION_STRINGS[response.getVersion()].c_str(), response.getStatusCode(), 
+               HTTP_VERSION_STRINGS[response.getVersion()].c_str(), response.getStatusCode(),
                response.getReasonPhrase().c_str());
 
       TS_DEBUG(TAG, "Reponse Headers: \n%s\n", response.getHeaders().str().c_str());

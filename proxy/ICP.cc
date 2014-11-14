@@ -1889,7 +1889,7 @@ ICPProcessor::ICPQuery(Continuation * c, URL * url)
   ICPRequestCont *rc = new(ICPRequestCont_allocator.alloc()) ICPRequestCont(this, c, url);
 
   ICP_INCREMENT_DYN_STAT(icp_query_requests_stat);
-  
+
   rc->SetRequestStartTime();
   SET_CONTINUATION_HANDLER(rc, (ICPRequestContHandler) & ICPRequestCont::ICPRequestEvent);
   eventProcessor.schedule_imm(rc, ET_ICP);

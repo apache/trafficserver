@@ -94,7 +94,7 @@ struct DNSConnection {
   static Options const DEFAULT_OPTIONS;
 };
 
-inline DNSConnection::Options::Options() 
+inline DNSConnection::Options::Options()
   : _non_blocking_connect(true)
   , _non_blocking_io(true)
   , _use_tcp(false)

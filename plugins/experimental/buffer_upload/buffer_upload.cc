@@ -24,7 +24,7 @@
 /*   buffer_upload.c - plugin for buffering POST data on proxy server
  *   before connecting to origin server. It supports two types of buffering:
  *   memory-only buffering and disk buffering
- * 
+ *
  */
 
 #include <stdio.h>
@@ -45,7 +45,7 @@
 #define DEBUG_TAG "buffer_upload-dbg"
 
 /**************************************************
-   Log macros for error code return verification 
+   Log macros for error code return verification
 **************************************************/
 #define PLUGIN_NAME "buffer_upload"
 //#define LOG_SET_FUNCTION_NAME(NAME) const char * FUNCTION_NAME = NAME
@@ -275,7 +275,7 @@ pvc_process_accept(TSCont contp, int event, void *edata, pvc_state * my_state)
     my_state->req_reader = TSIOBufferReaderAlloc(my_state->req_buffer);
     // set the maximum memory buffer size for request (both request header and post data), default is 32K
     // only apply to memory buffer mode
-    if (uconfig->use_disk_buffer == 0) { 
+    if (uconfig->use_disk_buffer == 0) {
       TSIOBufferWaterMarkSet(my_state->req_buffer, uconfig->mem_buffer_size);
     }
     my_state->resp_buffer = TSIOBufferCreate();
@@ -951,7 +951,7 @@ create_directory()
       }
     }
     dir = opendir(".");
-    if (dir == NULL) 
+    if (dir == NULL)
       goto error_out;
     while ((d = readdir(dir))) {
       remove(d->d_name);

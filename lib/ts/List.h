@@ -468,7 +468,7 @@ List<C,A>::reverse() {
 
 //
 // Atomic lists
-// 
+//
 
 template<class C, class L = typename C::Link_link> struct AtomicSLL
 {

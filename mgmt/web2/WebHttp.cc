@@ -625,6 +625,6 @@ WebHttpAddDocRoot_Xmalloc(WebHttpContext * whc, const char *file, int file_len)
   *(doc_root_file + whc->doc_root_len + file_len) = '\0';
 
   Debug("web2", "DocRoot request file: %s", doc_root_file);
-  
+
   return doc_root_file;
 }

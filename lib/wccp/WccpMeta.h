@@ -158,7 +158,7 @@ predicate(V (T::*m)() const, V const& v) {
 # if 0
 
 /// Accumulate a minimum value when called repeated on different objects.
-template < 
+template <
   typename V, ///< Value type.
   typename T, ///< Object type
   typename F ///< Extractor type.

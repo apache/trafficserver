@@ -28,7 +28,7 @@
 
 extern "C" {
 
-/** 
+/**
  * Invoked for "general" plugins - listed in plugin.config. The arguments in the
  * plugin.config line are provided in this invocation.
  *
@@ -39,7 +39,7 @@ void TSPluginInit(int argc, const char *argv[]);
 
 enum TsReturnCode { TS_ERROR = -1, TS_SUCCESS = 0 };
 
-/** 
+/**
  * Invoked for remap plugins - listed in remap.config. The arguments provided as @pparam
  * in the remap.config line are provided in this invocation.
  *

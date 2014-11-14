@@ -79,7 +79,7 @@ public:
       enable_origin_connection_limiting(false),
       connection_count(NULL), read_buffer(NULL),
       server_vc(NULL), magic(HTTP_SS_MAGIC_DEAD), buf_reader(NULL)
-    { 
+    {
       ink_zero(server_ip);
     }
 

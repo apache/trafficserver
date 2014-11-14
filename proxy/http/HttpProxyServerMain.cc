@@ -101,7 +101,7 @@ struct HttpProxyAcceptor {
 };
 
 /** Global acceptors.
-    
+
     This is parallel to @c HttpProxyPort::global(), each generated
     from the corresponding port descriptor.
 
@@ -272,7 +272,7 @@ init_HttpProxyServer(int n_accept_threads)
   for ( int i = 0 , n = proxy_ports.length() ; i < n ; ++i ) {
     MakeHttpProxyAcceptor(HttpProxyAcceptors.add(), proxy_ports[i], n_accept_threads);
   }
-  
+
 }
 
 void

@@ -335,7 +335,7 @@ Connection::connect(sockaddr const* target, NetVCOptions const& opt) {
   // (Is EWOULDBLOCK ok? Does that start the connect?)
   // We also want to handle the cases where the connect blocking
   // and IO blocking differ, by turning it on or off as needed.
-  if (-1 == res 
+  if (-1 == res
       && (opt.f_blocking_connect
           || ! (EINPROGRESS == errno || EWOULDBLOCK == errno))) {
     return -errno;

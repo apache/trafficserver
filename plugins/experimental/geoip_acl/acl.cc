@@ -95,7 +95,7 @@ RegexAcl::compile(const std::string& str, const char* filename, int lineno)
 {
   const char* error;
   int erroffset;
-  
+
   _regex_s = str;
   _rex = pcre_compile(_regex_s.c_str(), 0, &error, &erroffset, NULL);
 
@@ -224,7 +224,7 @@ CountryAcl::eval(TSRemapRequestInfo *rri, TSHttpTxn txnp) const
 
   if ((iso <= 0) || (!_iso_country_codes[iso]))
     return !_allow;
-    
+
   return _allow;
 }
 

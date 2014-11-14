@@ -48,7 +48,7 @@ class Vec {
   size_t        i;      // size index for sets, reserve for vectors
   C             *v;
   C             e[VEC_INTEGRAL_SIZE];
-  
+
   Vec();
   Vec<C,A,S>(const Vec<C,A,S> &vv);
   Vec<C,A,S>(const C c);
@@ -57,7 +57,7 @@ class Vec {
   C &operator[](int i) const { return v[i]; }
 
   C get(size_t i) const;
-  void add(C a);  
+  void add(C a);
   void push_back(C a) { add(a); } // std::vector name
   bool add_exclusive(C a);
   C& add();
@@ -113,7 +113,7 @@ class Vec {
   int read(int fd);
   void qsort(bool (*lt)(C,C));
   void qsort(bool (*lt)(const C &, const C &));
-  
+
 private:
   void move_internal(Vec<C,A,S> &v);
   void copy_internal(const Vec<C,A,S> &v);
@@ -153,7 +153,7 @@ class Intervals : public Vec<int> {
 class UnionFind : public Vec<int> {
  public:
   // set number of elements, initialized to singletons, may be called repeatedly to increase size
-  void size(int n); 
+  void size(int n);
   // return representitive element
   int find(int n);
   // unify the sets containing the two elements
@@ -192,7 +192,7 @@ Vec<C,A,S>::get(size_t i) const {
   }
 }
 
-template <class C, class A, int S> inline void 
+template <class C, class A, int S> inline void
 Vec<C,A,S>::add(C a) {
   if (n & (VEC_INTEGRAL_SIZE-1))
     v[n++] = a;
@@ -286,7 +286,7 @@ Vec<C,A,S>::add_exclusive(C a) {
   if (!in(a)) {
     add(a);
     return true;
-  } else 
+  } else
     return false;
 }
 
@@ -315,40 +315,40 @@ Vec<C,A,S>::index(C a) const {
   return -1;
 }
 
-template <class C, class A, int S> inline void 
+template <class C, class A, int S> inline void
 Vec<C,A,S>::move_internal(Vec<C,A,S> &vv)  {
   n = vv.n;
   i = vv.i;
-  if (vv.v == &vv.e[0]) { 
+  if (vv.v == &vv.e[0]) {
     memcpy(e, &vv.e[0], sizeof(e));
     v = e;
   } else
     v = vv.v;
 }
 
-template <class C, class A, int S> inline void 
+template <class C, class A, int S> inline void
 Vec<C,A,S>::move(Vec<C,A,S> &vv)  {
-  move_internal(vv); 
+  move_internal(vv);
   vv.v = 0;
   vv.clear();
 }
 
-template <class C, class A, int S> inline void 
+template <class C, class A, int S> inline void
 Vec<C,A,S>::copy(const Vec<C,A,S> &vv)  {
   n = vv.n;
   i = vv.i;
-  if (vv.v == &vv.e[0]) { 
+  if (vv.v == &vv.e[0]) {
     memcpy(e, &vv.e[0], sizeof(e));
     v = e;
   } else {
-    if (vv.v) 
+    if (vv.v)
       copy_internal(vv);
     else
       v = 0;
   }
 }
 
-template <class C, class A, int S> inline void 
+template <class C, class A, int S> inline void
 Vec<C,A,S>::fill(size_t nn)  {
   for (size_t i = n; i < nn; i++)
     add() = 0;
@@ -382,7 +382,7 @@ Vec<C,A,S>::prepend(const Vec<C> &vv)  {
   }
 }
 
-template <class C, class A, int S> void 
+template <class C, class A, int S> void
 Vec<C,A,S>::add_internal(C a) {
   addx();
   v[n++] = a;
@@ -445,7 +445,7 @@ Vec<C,A,S>::set_union(Vec<C,A,S> &vv) {
     }
   }
   return changed;
-} 
+}
 
 template <class C, class A, int S> int
 Vec<C,A,S>::set_intersection(Vec<C,A,S> &vv) {
@@ -460,7 +460,7 @@ Vec<C,A,S>::set_intersection(Vec<C,A,S> &vv) {
         changed = 1;
     }
   return changed;
-} 
+}
 
 template <class C, class A, int S> int
 Vec<C,A,S>::some_intersection(Vec<C,A,S> &vv) {
@@ -469,7 +469,7 @@ Vec<C,A,S>::some_intersection(Vec<C,A,S> &vv) {
       if (vv.set_in(v[i]))
         return 1;
   return 0;
-} 
+}
 
 template <class C, class A, int S> int
 Vec<C,A,S>::some_disjunction(Vec<C,A,S> &vv) {
@@ -482,7 +482,7 @@ Vec<C,A,S>::some_disjunction(Vec<C,A,S> &vv) {
       if (!set_in(vv.v[i]))
         return 1;
   return 0;
-} 
+}
 
 template <class C, class A, int S> void
 Vec<C,A,S>::set_intersection(Vec<C,A,S> &vv, Vec<C,A,S> &result) {
@@ -490,7 +490,7 @@ Vec<C,A,S>::set_intersection(Vec<C,A,S> &vv, Vec<C,A,S> &result) {
     if (v[i])
       if (vv.set_in(v[i]))
         result.set_add(v[i]);
-} 
+}
 
 template <class C, class A, int S> void
 Vec<C,A,S>::set_disjunction(Vec<C,A,S> &vv, Vec<C,A,S> &result) {
@@ -502,7 +502,7 @@ Vec<C,A,S>::set_disjunction(Vec<C,A,S> &vv, Vec<C,A,S> &result) {
     if (vv.v[i])
       if (!set_in(vv.v[i]))
         result.set_add(vv.v[i]);
-} 
+}
 
 template <class C, class A, int S> void
 Vec<C,A,S>::set_difference(Vec<C,A,S> &vv, Vec<C,A,S> &result) {
@@ -510,7 +510,7 @@ Vec<C,A,S>::set_difference(Vec<C,A,S> &vv, Vec<C,A,S> &result) {
     if (v[i])
       if (!vv.set_in(v[i]))
         result.set_add(v[i]);
-} 
+}
 
 template <class C, class A, int S> int
 Vec<C,A,S>::some_difference(Vec<C,A,S> &vv) {
@@ -519,7 +519,7 @@ Vec<C,A,S>::some_difference(Vec<C,A,S> &vv) {
       if (!vv.set_in(v[i]))
         return 1;
   return 0;
-} 
+}
 
 template <class C, class A, int S> size_t
 Vec<C,A,S>::set_count() const {
@@ -530,7 +530,7 @@ Vec<C,A,S>::set_count() const {
     }
   }
   return x;
-} 
+}
 
 template <class C, class A, int S> void
 Vec<C,A,S>::set_to_vec() {
@@ -561,7 +561,7 @@ Vec<C,A,S>::vec_to_set() {
     set_add(*c);
 }
 
-template <class C, class A, int S> void 
+template <class C, class A, int S> void
 Vec<C,A,S>::remove_index(int index) {
   if (n > 1)
     memmove(&v[index], &v[index+1], (n - 1 - index) * sizeof(v[0]));
@@ -593,7 +593,7 @@ Vec<C,A,S>::insert(size_t index) {
   return v[index];
 }
 
-template <class C, class A, int S> void 
+template <class C, class A, int S> void
 Vec<C,A,S>::reverse() {
   for (int i = 0; i < n/2; i++) {
     C *s = &v[i], *e = &v[n - 1 - i];
@@ -612,7 +612,7 @@ Vec<C,A,S>::copy_internal(const Vec<C,A,S> &vv) {
   nl = 1 << nl;
   v = (C*)A::alloc(nl * sizeof(C));
   memcpy(v, vv.v, n * sizeof(C));
-  memset(v + n, 0, (nl - n) * sizeof(C)); 
+  memset(v + n, 0, (nl - n) * sizeof(C));
   if (i > n)  // reset reserve
     i = 0;
 }
@@ -628,7 +628,7 @@ Vec<C,A,S>::set_expand() {
   memset(v, 0, n * sizeof(C));
 }
 
-template <class C, class A, int S> inline void 
+template <class C, class A, int S> inline void
 Vec<C,A,S>::reserve(size_t x) {
   if (x <= n)
     return;
@@ -644,7 +644,7 @@ Vec<C,A,S>::reserve(size_t x) {
     A::free(vv);
 }
 
-template <class C, class A, int S> inline void 
+template <class C, class A, int S> inline void
 Vec<C,A,S>::addx() {
   if (!v) {
     v = e;
@@ -703,12 +703,12 @@ Vec<C,A,S>::delete_and_clear() {
   clear();
 }
 
-template <class C, class A, int S> 
-inline Vec<C,A,S>::~Vec() { 
-  if (v && v != e) A::free(v); 
+template <class C, class A, int S>
+inline Vec<C,A,S>::~Vec() {
+  if (v && v != e) A::free(v);
 }
 
-template <class C, class A, int S> 
+template <class C, class A, int S>
 inline int marshal_size(Vec<C,A,S> &v) {
   int l = sizeof(int) * 2;
   for (int x = 0; x < v.n; x++)
@@ -716,7 +716,7 @@ inline int marshal_size(Vec<C,A,S> &v) {
   return l;
 }
 
-template <class C, class A, int S> 
+template <class C, class A, int S>
 inline int marshal(Vec<C,A,S> &v, char *buf) {
   char *x = buf;
   *(int*)x = v.n; x += sizeof(int);
@@ -726,7 +726,7 @@ inline int marshal(Vec<C,A,S> &v, char *buf) {
   return x - buf;
 }
 
-template <class C, class A, int S> 
+template <class C, class A, int S>
 inline int unmarshal(Vec<C,A,S> &v, char *buf) {
   char *x = buf;
   v.n = *(int*)x; x += sizeof(int);
@@ -741,7 +741,7 @@ inline int unmarshal(Vec<C,A,S> &v, char *buf) {
   return x - buf;
 }
 
-template <class C, class A, int S> 
+template <class C, class A, int S>
 inline int Vec<C,A,S>::write(int fd) {
   int r = 0, t = 0;
   if ((r = ::write(fd, this, sizeof(*this))) < 0) return r; t += r;
@@ -749,7 +749,7 @@ inline int Vec<C,A,S>::write(int fd) {
   return t;
 }
 
-template <class C, class A, int S> 
+template <class C, class A, int S>
 inline int Vec<C,A,S>::read(int fd) {
   int r = 0, t = 0;
   if ((r = ::read(fd, this, sizeof(*this))) < 0) return r; t += r;
@@ -759,7 +759,7 @@ inline int Vec<C,A,S>::read(int fd) {
   return t;
 }
 
-template <class C> 
+template <class C>
 inline void qsort_Vec(C *left, C *right, bool (*lt)(C,C)) {
  Lagain:
   if (right - left < 5) {
@@ -795,7 +795,7 @@ inline void qsort_Vec(C *left, C *right, bool (*lt)(C,C)) {
   }
 }
 
-template <class C> 
+template <class C>
 inline void qsort_VecRef(C *left, C *right, bool (*lt)(const C &, const C &)) {
  Lagain:
   if (right - left < 5) {
@@ -831,13 +831,13 @@ inline void qsort_VecRef(C *left, C *right, bool (*lt)(const C &, const C &)) {
   }
 }
 
-template <class C, class A, int S> 
+template <class C, class A, int S>
 inline void Vec<C,A,S>::qsort(bool (*lt)(C,C)) {
   if (n)
     qsort_Vec<C>(&v[0], end(), lt);
 }
 
-template <class C, class A, int S> 
+template <class C, class A, int S>
 inline void Vec<C,A,S>::qsort(bool (*lt)(const C &, const C &)) {
   if (n)
     qsort_VecRef<C>(&v[0], end(), lt);

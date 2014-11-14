@@ -144,11 +144,11 @@ void checkNodeList2(const DocNodeList &node_list) {
 
 pthread_key_t threadKey;
 
-int main() 
+int main()
 {
   pthread_key_create(&threadKey, NULL);
   Utils::init(&Debug, &Error);
-  
+
   {
     cout << endl << "==================== Test 1" << endl;
     EsiParser parser("parser_test", &Debug, &Error);
@@ -173,14 +173,14 @@ int main()
     assert(node_list3.unpack(packed) == true);
     assert(node_list3.size() == 0);
     *(reinterpret_cast<int *>(&packed[0])) = 3;
-    
+
     DocNodeList node_list4;
     assert(node_list4.unpack(packed) == true);
     assert(node_list4.size() == 3);
     checkNodeList1(node_list4);
   }
 
-  { 
+  {
     cout << endl << "==================== Test 2" << endl;
     EsiParser parser("parser_test", &Debug, &Error);
     string input_data("<esi:choose>"
@@ -217,7 +217,7 @@ int main()
                       "</esi:try>"
                       "</esi:otherwise>"
                       "</esi:choose>");
-    
+
     DocNodeList node_list;
     assert(parser.completeParse(node_list, input_data) == true);
     checkNodeList2(node_list);
@@ -242,7 +242,7 @@ int main()
     assert(node_list2.unpack(packed3.data() + 5, packed3.size() - 5) == true);
     checkNodeList2(node_list2);
   }
-  
+
   cout << "All tests passed" << endl;
   return 0;
 }

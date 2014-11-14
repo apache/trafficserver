@@ -246,7 +246,7 @@ usage(const ArgumentDescription * argument_descriptions, unsigned n_argument_des
 
     if ('-' == argument_descriptions[i].key) fprintf(stderr, "   ");
     else fprintf(stderr, "-%c,", argument_descriptions[i].key);
-                                               
+
     fprintf(stderr, " --%-17s %s",
             argument_descriptions[i].name,
             argument_types_descriptions[argument_descriptions[i].type ?

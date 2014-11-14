@@ -142,29 +142,29 @@ url_init()
     URL_SCHEME_MMS = hdrtoken_string_to_wks("mms");
     URL_SCHEME_MMSU = hdrtoken_string_to_wks("mmsu");
     URL_SCHEME_MMST = hdrtoken_string_to_wks("mmst");
-    
-    ink_assert(URL_SCHEME_FILE && 
+
+    ink_assert(URL_SCHEME_FILE &&
       URL_SCHEME_FTP &&
-      URL_SCHEME_GOPHER && 
-      URL_SCHEME_HTTP && 
-      URL_SCHEME_HTTPS && 
+      URL_SCHEME_GOPHER &&
+      URL_SCHEME_HTTP &&
+      URL_SCHEME_HTTPS &&
       URL_SCHEME_WS &&
       URL_SCHEME_WSS &&
-      URL_SCHEME_MAILTO && 
-      URL_SCHEME_NEWS && 
-      URL_SCHEME_NNTP && 
-      URL_SCHEME_PROSPERO && 
+      URL_SCHEME_MAILTO &&
+      URL_SCHEME_NEWS &&
+      URL_SCHEME_NNTP &&
+      URL_SCHEME_PROSPERO &&
       URL_SCHEME_TELNET &&
       URL_SCHEME_TUNNEL &&
       URL_SCHEME_WAIS &&
       URL_SCHEME_PNM &&
-      URL_SCHEME_RTSP && 
-      URL_SCHEME_RTSPU && 
+      URL_SCHEME_RTSP &&
+      URL_SCHEME_RTSPU &&
       URL_SCHEME_MMS &&
-      URL_SCHEME_MMSU && 
+      URL_SCHEME_MMSU &&
       URL_SCHEME_MMST
     );
-    
+
     URL_WKSIDX_FILE = hdrtoken_wks_to_index(URL_SCHEME_FILE);
     URL_WKSIDX_FTP = hdrtoken_wks_to_index(URL_SCHEME_FTP);
     URL_WKSIDX_GOPHER = hdrtoken_wks_to_index(URL_SCHEME_GOPHER);
@@ -1130,7 +1130,7 @@ url_parse_scheme(HdrHeap * heap, URLImpl * url, const char **start, const char *
         ;
       if (cur < end) { // found a colon
         scheme_wks_idx = hdrtoken_tokenize(scheme_start, cur - scheme_start, &scheme_wks);
-    
+
         /*  Distinguish between a scheme only and a username by looking past the colon. If it is missing
             or it's a slash, presume scheme. Otherwise it's a username with a password.
         */
@@ -1284,7 +1284,7 @@ url_parse_internet(HdrHeap* heap, URLImpl* url,
   }
   if (host._size)
     url_host_set(heap, url, host._ptr, host._size, copy_strings_p);
-  
+
   if (last_colon) {
     ink_assert(n_colon);
     port.set(last_colon+1, cur);

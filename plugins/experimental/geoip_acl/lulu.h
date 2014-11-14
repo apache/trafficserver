@@ -18,7 +18,7 @@
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////
-// 
+//
 // Implement the classes for the various types of hash keys we support.
 //
 #ifndef __LULU_H__
@@ -35,7 +35,7 @@ static const char* PLUGIN_NAME = "geoip_acl";
 #endif // __LULU_H__
 
 
-
+
 /*
   local variables:
   mode: C++

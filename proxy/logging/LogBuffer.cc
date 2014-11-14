@@ -354,7 +354,7 @@ unsigned
 LogBuffer::add_header_str(const char *str, char *buf_ptr, unsigned buf_len)
 {
   unsigned len = 0;
-  // This was ambiguous - should it be the real strlen or the 
+  // This was ambiguous - should it be the real strlen or the
   // rounded up value? Given the +1, presumably it's the real length
   // plus the terminating nul.
   if (likely(str && (len = (unsigned) (::strlen(str) + 1)) < buf_len)) {

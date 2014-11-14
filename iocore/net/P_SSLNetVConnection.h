@@ -155,7 +155,7 @@ public:
     this->handShakeHolder = this->handShakeReader->clone();
   }
   void free_handshake_buffers() {
-    
+
     this->handShakeReader->dealloc();
     this->handShakeHolder->dealloc();
     free_MIOBuffer(this->handShakeBuffer);

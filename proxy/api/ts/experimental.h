@@ -21,7 +21,7 @@
     limitations under the License.
 */
 
-/* 
+/*
  *   Interfaces in this header file are experimental, undocumented and
  *   are subject to change even across minor releases of Traffic Server.
  *   None of the interfaces in this file are committed to be stable
@@ -56,7 +56,7 @@ extern "C"
 
   typedef struct tsapi_fetchsm* TSFetchSM;
 
-  /* Forward declaration of in_addr, any user of these APIs should probably 
+  /* Forward declaration of in_addr, any user of these APIs should probably
      include net/netinet.h or whatever is appropriate on the platform. */
   struct in_addr;
 

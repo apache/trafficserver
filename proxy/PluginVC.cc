@@ -806,8 +806,8 @@ PluginVC::setup_event_cb(ink_hrtime in, Event ** e_ptr)
       {
          *e_ptr = eventProcessor.schedule_imm(this);
       }
-    } 
-    else 
+    }
+    else
     {
       if(this_ethread()->tt == REGULAR) {
         *e_ptr = this_ethread()->schedule_in_local(this,in);

@@ -64,7 +64,7 @@ class AtsConfig {
 public:
   explicit AtsConfig(AtsThreadSystem* thread_system);
   virtual ~AtsConfig();
-  
+
   // TODO(oschaaf): destructor??
   bool Parse(const char * path);
   AtsHostConfig * Find(const char * host, int host_length);

@@ -68,7 +68,7 @@ int handleTransactionEvents(TSCont cont, TSEvent event, void *edata) {
     utils::internal::initTransactionClientResponse(transaction);
     break;
   case TS_EVENT_HTTP_TXN_CLOSE:
-    { // opening scope to declare plugins variable below 
+    { // opening scope to declare plugins variable below
       const std::list<TransactionPlugin *> &plugins = utils::internal::getTransactionPlugins(transaction);
       for (std::list<TransactionPlugin *>::const_iterator iter = plugins.begin(), end = plugins.end();
            iter != end; ++iter) {
@@ -85,7 +85,7 @@ int handleTransactionEvents(TSCont cont, TSEvent event, void *edata) {
   default:
     assert(false); /* we should never get here */
     break;
-  }    
+  }
   TSHttpTxnReenable(ats_txn_handle, TS_EVENT_HTTP_CONTINUE);
   return 0;
 }

@@ -141,7 +141,7 @@ ClusterControl::free_data()
       ink_release_assert(*(((uint8_t *) data) - DATA_HDR + 1) == (uint8_t) ALLOC_DATA_MAGIC);
       *(((uint8_t *) data) - DATA_HDR + 1) = (uint8_t) ~ ALLOC_DATA_MAGIC;
 
-      ink_release_assert(*(((char *) data) - DATA_HDR) == size_index);         
+      ink_release_assert(*(((char *) data) - DATA_HDR) == size_index);
     } else {
       // malloc'ed memory, not alloced via real_alloc_data().
       // Data will be ats_free()'ed when IOBufferBlock is freed
@@ -1013,14 +1013,14 @@ ClusterHandler::startClusterEvent(int event, Event * e)
         if (net_vc->thread == thread) {
           cluster_connect_state = CLCON_CONN_BIND_OK;
           break;
-        } else { 
+        } else {
           cluster_connect_state = ClusterHandler::CLCON_CONN_BIND_CLEAR;
         }
       }
 
     case ClusterHandler::CLCON_CONN_BIND_CLEAR:
       {
-        UnixNetVConnection *vc = (UnixNetVConnection *)net_vc; 
+        UnixNetVConnection *vc = (UnixNetVConnection *)net_vc;
         MUTEX_TRY_LOCK(lock, vc->nh->mutex, e->ethread);
         MUTEX_TRY_LOCK(lock1, vc->mutex, e->ethread);
         if (lock.is_locked() && lock1.is_locked()) {
@@ -1049,9 +1049,9 @@ ClusterHandler::startClusterEvent(int event, Event * e)
 
     case ClusterHandler::CLCON_CONN_BIND:
       {
-        // 
+        //
         NetHandler *nh = get_NetHandler(e->ethread);
-        UnixNetVConnection *vc = (UnixNetVConnection *)net_vc; 
+        UnixNetVConnection *vc = (UnixNetVConnection *)net_vc;
         MUTEX_TRY_LOCK(lock, nh->mutex, e->ethread);
         MUTEX_TRY_LOCK(lock1, vc->mutex, e->ethread);
         if (lock.is_locked() && lock1.is_locked()) {
@@ -1086,7 +1086,7 @@ ClusterHandler::startClusterEvent(int event, Event * e)
         if (cc && cc->find(ip, port)) {
           ClusterConfiguration *c = this_cluster()->current_configuration();
           ClusterMachine *m = c->find(ip, port);
-          
+
           if (!m) { // this first connection
             ClusterConfiguration *cconf = configuration_add_machine(c, machine);
             CLUSTER_INCREMENT_DYN_STAT(CLUSTER_NODES_STAT);

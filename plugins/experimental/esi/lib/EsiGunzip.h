@@ -52,7 +52,7 @@ private:
   int _total_data_length;
   z_stream _zstrm;
 
-  bool _init;  
+  bool _init;
   bool _success;
 };
 

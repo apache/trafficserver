@@ -30,11 +30,11 @@
 
 class TestHttpDataFetcher : public HttpDataFetcher
 {
-  
+
 public:
-  
+
   TestHttpDataFetcher() :  _n_pending_requests(0), _return_data(true) { }
-  
+
   bool addFetchRequest(const std::string &url, FetchedDataProcessor *callback_obj = 0) {
     ++_n_pending_requests;
     return true;
@@ -73,7 +73,7 @@ private:
   int _n_pending_requests;
   std::string _data;
   bool _return_data;
-  
+
 };
 
 #endif

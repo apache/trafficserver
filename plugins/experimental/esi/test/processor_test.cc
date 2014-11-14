@@ -41,7 +41,7 @@ pthread_key_t threadKey;
 
 static const int FETCHER_STATIC_DATA_SIZE = 30;
 
-int main() 
+int main()
 {
   Variables esi_vars("vars", &Debug, &Error);
   HandlerManager handler_mgr("handler_mgr", &Debug, &Error);
@@ -107,7 +107,7 @@ int main()
     EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars,
                           handler_mgr);
     string input_data("foo<esi:blah/>bar");
-    
+
     const char *output_data;
     int output_data_len = 10;
 
@@ -122,7 +122,7 @@ int main()
     EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars,
                           handler_mgr);
     string input_data("foo<esi:comment text=\"bleh\"/>bar");
-    
+
     const char *output_data;
     int output_data_len=0;
 
@@ -139,7 +139,7 @@ int main()
     EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars,
                           handler_mgr);
     string input_data("<esi:comment text=\"bleh\"/>bar");
-    
+
     const char *output_data;
     int output_data_len=0;
 
@@ -156,7 +156,7 @@ int main()
     EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars,
                           handler_mgr);
     string input_data("foo<esi:comment text=\"bleh\"/>");
-    
+
     const char *output_data;
     int output_data_len=0;
 
@@ -173,7 +173,7 @@ int main()
     EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars,
                           handler_mgr);
     string input_data("foo\n<esi:comment text=\"\nbleh\"/>\nbar");
-    
+
     const char *output_data;
     int output_data_len=0;
 
@@ -190,7 +190,7 @@ int main()
     EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars,
                           handler_mgr);
     string input_data("foo\n<esi:remove><img src=\"http://www.example.com\"></esi:remove>\nbar");
-    
+
     const char *output_data;
     int output_data_len=0;
 
@@ -208,7 +208,7 @@ int main()
                           handler_mgr);
     string input_data("foo\n<esi:remove><img src=\"http://www.example.com\"></esi:remove>\nbar"
                       "foo2\n<esi:comment text=\"bleh\"/>\nbar2");
-    
+
     const char *output_data;
     int output_data_len=0;
 
@@ -237,7 +237,7 @@ int main()
     assert(esi_proc.completeParse() == true);
     assert(esi_proc.process(output_data, output_data_len) == EsiProcessor::SUCCESS);
     assert(output_data_len == 54);
-    assert(strncmp(output_data, "foo1bar1\nfoo1bar1\nfoo2bar2\nfoo2bar2\nfoo3bar3\nfoo3bar3\n", 
+    assert(strncmp(output_data, "foo1bar1\nfoo1bar1\nfoo2bar2\nfoo2bar2\nfoo3bar3\nfoo3bar3\n",
                    output_data_len) == 0);
   }
 
@@ -247,7 +247,7 @@ int main()
     EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars,
                           handler_mgr);
     string input_data("foo <esi:include src=url1/> bar");
-    
+
     const char *output_data;
     int output_data_len=0;
 
@@ -257,7 +257,7 @@ int main()
     assert(output_data_len == 8 + 4 + FETCHER_STATIC_DATA_SIZE);
     assert(strncmp(output_data, "foo >>>>> Content for URL [url1] <<<<< bar", output_data_len) == 0);
   }
-  
+
   {
     cout << endl << "===================== Test 11) include tag with no URL" << endl;
     TestHttpDataFetcher data_fetcher;
@@ -284,7 +284,7 @@ int main()
     string input_data("foo1 <esi:include src=url1/> bar1\n"
                       "foo2 <esi:include src=url2/> bar2\n"
                       "<esi:include src=\"blah bleh\"/>");
-    
+
     const char *output_data;
     int output_data_len=0;
 
@@ -293,12 +293,12 @@ int main()
     assert(esi_proc.process(output_data, output_data_len) == EsiProcessor::SUCCESS);
     assert(output_data_len == 11 + 4 + FETCHER_STATIC_DATA_SIZE + 11 + 4 + FETCHER_STATIC_DATA_SIZE +
            9 + FETCHER_STATIC_DATA_SIZE);
-    assert(strncmp(output_data, 
+    assert(strncmp(output_data,
                    "foo1 >>>>> Content for URL [url1] <<<<< bar1\n"
                    "foo2 >>>>> Content for URL [url2] <<<<< bar2\n"
                    ">>>>> Content for URL [blah bleh] <<<<<", output_data_len) == 0);
   }
-  
+
   {
     cout << endl << "===================== Test 14) remove, comment and include tags" << endl;
     TestHttpDataFetcher data_fetcher;
@@ -309,7 +309,7 @@ int main()
                       "<esi:include src=\"blah bleh\"/>"
                       "<esi:comment text=\"bleh\"/>"
                       "<esi:remove> <a href=> </esi:remove>");
-    
+
     const char *output_data;
     int output_data_len=0;
 
@@ -318,7 +318,7 @@ int main()
     assert(esi_proc.process(output_data, output_data_len) == EsiProcessor::SUCCESS);
     assert(output_data_len == 11 + 4 + FETCHER_STATIC_DATA_SIZE + 11 + 4 + FETCHER_STATIC_DATA_SIZE +
            9 + FETCHER_STATIC_DATA_SIZE);
-    assert(strncmp(output_data, 
+    assert(strncmp(output_data,
                    "foo1 >>>>> Content for URL [url1] <<<<< bar1\n"
                    "foo2 >>>>> Content for URL [url2] <<<<< bar2\n"
                    ">>>>> Content for URL [blah bleh] <<<<<", output_data_len) == 0);
@@ -335,7 +335,7 @@ int main()
     char line4[] = "<esi:comment text=\"bleh\"/>";
     char line5[] = "<esi:remove> <a href=>";
     char line6[] = "</esi:remove>";
-    
+
     const char *output_data;
     int output_data_len=0;
 
@@ -349,12 +349,12 @@ int main()
     assert(esi_proc.process(output_data, output_data_len) == EsiProcessor::SUCCESS);
     assert(output_data_len == 11 + 4 + FETCHER_STATIC_DATA_SIZE + 11 + 4 + FETCHER_STATIC_DATA_SIZE +
            9 + FETCHER_STATIC_DATA_SIZE);
-    assert(strncmp(output_data, 
+    assert(strncmp(output_data,
                    "foo1 >>>>> Content for URL [url1] <<<<< bar1\n"
                    "foo2 >>>>> Content for URL [url2] <<<<< bar2\n"
                    ">>>>> Content for URL [blah bleh] <<<<<", output_data_len) == 0);
   }
-  
+
   {
     cout << endl << "===================== Test 16) one-shot parse" << endl;
     TestHttpDataFetcher data_fetcher;
@@ -365,7 +365,7 @@ int main()
                       "<esi:include src=\"blah bleh\"/>"
                       "<esi:comment text=\"bleh\"/>"
                       "<esi:remove> <a href=> </esi:remove>");
-    
+
     const char *output_data;
     int output_data_len=0;
 
@@ -373,7 +373,7 @@ int main()
     assert(esi_proc.process(output_data, output_data_len) == EsiProcessor::SUCCESS);
     assert(output_data_len == 11 + 4 + FETCHER_STATIC_DATA_SIZE + 11 + 4 + FETCHER_STATIC_DATA_SIZE +
            9 + FETCHER_STATIC_DATA_SIZE);
-    assert(strncmp(output_data, 
+    assert(strncmp(output_data,
                    "foo1 >>>>> Content for URL [url1] <<<<< bar1\n"
                    "foo2 >>>>> Content for URL [url2] <<<<< bar2\n"
                    ">>>>> Content for URL [blah bleh] <<<<<", output_data_len) == 0);
@@ -390,7 +390,7 @@ int main()
     char line4[] = "<esi:comment text=\"bleh\"/>";
     char line5[] = "<esi:remove> <a href=>";
     char line6[] = "</esi:remove>";
-    
+
     const char *output_data;
     int output_data_len=0;
 
@@ -403,7 +403,7 @@ int main()
     assert(esi_proc.process(output_data, output_data_len) == EsiProcessor::SUCCESS);
     assert(output_data_len == 11 + 4 + FETCHER_STATIC_DATA_SIZE + 11 + 4 + FETCHER_STATIC_DATA_SIZE +
            9 + FETCHER_STATIC_DATA_SIZE);
-    assert(strncmp(output_data, 
+    assert(strncmp(output_data,
                    "foo1 >>>>> Content for URL [url1] <<<<< bar1\n"
                    "foo2 >>>>> Content for URL [url2] <<<<< bar2\n"
                    ">>>>> Content for URL [blah bleh] <<<<<", output_data_len) == 0);
@@ -415,7 +415,7 @@ int main()
     EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars,
                           handler_mgr);
     string input_data("foo <esi:include src=url1/> bar");
-    
+
     const char *output_data;
     int output_data_len=0;
 
@@ -432,7 +432,7 @@ int main()
     EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars,
                           handler_mgr);
     string input_data("foo <esi:include src=url1/> bar");
-    
+
     const char *output_data;
     int output_data_len=0;
 
@@ -453,7 +453,7 @@ int main()
                       "<esi:include src=\"blah bleh\"/>"
                       "<esi:comment text=bleh />"
                       "<esi:remove> <a href=> </esi:remove>");
-    
+
     const char *output_data;
     int output_data_len=0;
 
@@ -461,7 +461,7 @@ int main()
     assert(esi_proc.process(output_data, output_data_len) == EsiProcessor::SUCCESS);
     assert(output_data_len == 11 + 4 + FETCHER_STATIC_DATA_SIZE + 11 + 4 + FETCHER_STATIC_DATA_SIZE +
            9 + FETCHER_STATIC_DATA_SIZE);
-    assert(strncmp(output_data, 
+    assert(strncmp(output_data,
                    "foo1 >>>>> Content for URL [url1] <<<<< bar1\n"
                    "foo2 >>>>> Content for URL [url2] <<<<< bar2\n"
                    ">>>>> Content for URL [blah bleh] <<<<<", output_data_len) == 0);
@@ -473,7 +473,7 @@ int main()
     EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars,
                           handler_mgr);
     string input_data("foo <esi:include src=$(HTTP_HOST) /> bar");
-    
+
     const char *output_data;
     int output_data_len=0;
 
@@ -489,7 +489,7 @@ int main()
     EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars,
                           handler_mgr);
     string input_data("foo <esi:vars>HTTP_HOST</esi:vars> bar");
-    
+
     const char *output_data;
     int output_data_len=0;
 
@@ -506,7 +506,7 @@ int main()
     EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars,
                           handler_mgr);
     string input_data("foo <esi:vars>$(HTTP_HOST)</esi:vars> bar");
-    
+
     const char *output_data;
     int output_data_len=0;
 
@@ -523,7 +523,7 @@ int main()
     EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars,
                           handler_mgr);
     string input_data("foo <esi:vars>$(HTTP_HOST</esi:vars> bar");
-    
+
     const char *output_data;
     int output_data_len=0;
 
@@ -533,7 +533,7 @@ int main()
     assert(output_data_len == 8);
     assert(strncmp(output_data, "foo  bar", output_data_len) == 0);
   }
- 
+
   {
     cout << endl << "===================== Test 25) choose-when" << endl;
     TestHttpDataFetcher data_fetcher;
@@ -552,7 +552,7 @@ int main()
                       "</esi:choose>");
     const char *output_data;
     int output_data_len=0;
-    
+
     assert(esi_proc.completeParse(input_data) == true);
     assert(esi_proc.process(output_data, output_data_len) == EsiProcessor::SUCCESS);
     assert(output_data_len == FETCHER_STATIC_DATA_SIZE + 3);
@@ -571,7 +571,7 @@ int main()
                       "</esi:choose>");
     const char *output_data;
     int output_data_len=0;
-    
+
     assert(esi_proc.completeParse(input_data) == true);
     assert(esi_proc.process(output_data, output_data_len) == EsiProcessor::SUCCESS);
     assert(output_data_len == FETCHER_STATIC_DATA_SIZE + 9);
@@ -754,7 +754,7 @@ int main()
                       "</esi:choose>");
     const char *output_data;
     int output_data_len=0;
-    
+
     assert(esi_proc.completeParse(input_data) == true);
     assert(esi_proc.process(output_data, output_data_len) == EsiProcessor::SUCCESS);
     assert(output_data_len == 1 + FETCHER_STATIC_DATA_SIZE + 3);
@@ -940,7 +940,7 @@ int main()
 
      // this is to make the StubHandler return failure
     data_fetcher.setReturnData(false);
-    
+
      // this is to decrement HttpDataFetcher's pending request count - argument content doesn't matter
     data_fetcher.getContent("blah", output_data, output_data_len);
 
@@ -956,7 +956,7 @@ int main()
     EsiProcessor esi_proc("processor", "parser", "expression", &Debug, &Error, data_fetcher, esi_vars,
                           handler_mgr);
     string input_data("<esi:comment text=\"bleh\"/>");
-    
+
     const char *output_data;
     int output_data_len=0;
 
@@ -998,7 +998,7 @@ int main()
 
     esi_proc.stop();
     node_list.clear();
-    input_data = 
+    input_data =
       "<esi:choose>\n\t"
       "<esi:when test=foo>"
       "\t<esi:include src=foo />"
@@ -1039,7 +1039,7 @@ int main()
 
     string packedNodeList = node_list.pack();
 
-    
+
     const char *output_data;
     int output_data_len=0;
 

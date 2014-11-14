@@ -48,7 +48,7 @@ struct InterceptCtx
   GoogleString* response;
   TransformCtx* request_ctx;
   RequestHeaders* request_headers;
-  
+
   InterceptCtx()
       : vconn(NULL)
       , req_buffer(NULL)

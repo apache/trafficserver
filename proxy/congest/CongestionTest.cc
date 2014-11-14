@@ -470,7 +470,7 @@ CCCongestionDBTestCont::mainEvent(int /* event ATS_UNUSED */, Event * /* e ATS_U
 
     IpEndpoint ip;
     ats_ip4_set(&ip, i + 255);
-    
+
     CongestionEntry *tmp = gen_CongestionEntry(&ip.sa);
     db->addRecord(tmp->m_key, tmp);
   }
@@ -508,7 +508,7 @@ CCCongestionDBTestCont::mainEvent(int /* event ATS_UNUSED */, Event * /* e ATS_U
 
     IpEndpoint ip;
     ats_ip4_set(&ip, i + 255);
-    
+
     CongestionEntry *tmp = gen_CongestionEntry(&ip.sa, 1);
     db->addRecord(tmp->m_key, tmp);
   }

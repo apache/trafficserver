@@ -41,11 +41,11 @@ public:
   HttpDataFetcherImpl(TSCont contp, sockaddr const* client_addr, const char *debug_tag);
 
   void useHeader(const EsiLib::HttpHeader &header);
-  
+
   void useHeaders(const EsiLib::HttpHeaderList &headers);
 
   bool addFetchRequest(const std::string &url, FetchedDataProcessor *callback_obj = 0);
-  
+
   bool handleFetchEvent(TSEvent event, void *edata);
 
   bool isFetchEvent(TSEvent event) const {
@@ -88,12 +88,12 @@ public:
   ~HttpDataFetcherImpl();
 
 private:
-  
+
   TSCont _contp;
   char _debug_tag[64];
 
   typedef std::list<FetchedDataProcessor *> CallbackObjectList;
- 
+
   // used to track a request that was made
   struct RequestData {
     std::string response;
@@ -130,7 +130,7 @@ private:
 
 
   std::string _headers_str;
-  
+
   inline void _release(RequestData &req_data);
 
   sockaddr const* _client_addr;

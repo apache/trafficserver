@@ -44,7 +44,7 @@ public:
   /**
    * Constructed with an initial URL.
    */
-  Request(const std::string &url, HttpMethod method = HTTP_METHOD_GET, HttpVersion version = HTTP_VERSION_1_1); 
+  Request(const std::string &url, HttpMethod method = HTTP_METHOD_GET, HttpVersion version = HTTP_VERSION_1_1);
 
   /** @return HTTP method of the request */
   HttpMethod getMethod() const;

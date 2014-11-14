@@ -63,7 +63,7 @@ public:
                                           HttpTransact::SquidLogInfo * squid_codes);
 
   // Removing handle_conditional_headers.  Functionality appears to be elsewhere (issue_revalidate)
-  // and the only condition when it does anything causes an assert to go 
+  // and the only condition when it does anything causes an assert to go
   // off
   // static void handle_conditional_headers(HttpTransact::CacheLookupInfo * cache_info, HTTPHdr * header);
   static void insert_warning_header(HttpConfigParams *http_config_param,

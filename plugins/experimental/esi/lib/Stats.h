@@ -60,6 +60,6 @@ void increment(STAT st, int step = 1);
 };
 
 };
-              
+
 
 #endif

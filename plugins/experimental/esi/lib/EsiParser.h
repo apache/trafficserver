@@ -52,14 +52,14 @@ public:
   };
 
   /** completes the parse including data from previous chunk(s);
-   * adds newly found nodes to list. optionally a final or the 
+   * adds newly found nodes to list. optionally a final or the
    * only chunk can be provided.
    *
    * Output nodes contain pointers to internal data; use with care. */
   bool completeParse(EsiLib::DocNodeList &node_list, const char *data = 0, int data_len = -1) {
     return _completeParse(_data, _parse_start_pos, _orig_output_list_size, node_list, data, data_len);
   }
-  
+
   /** convenient alternative to method above */
   bool completeParse(EsiLib::DocNodeList &node_list, const std::string &data) {
     return completeParse(node_list, data.data(), data.size());
@@ -78,24 +78,24 @@ public:
 
 private:
 
-  struct EsiNodeInfo 
+  struct EsiNodeInfo
   {
     EsiLib::DocNode::TYPE type;
     const char *tag_suffix;
     int tag_suffix_len;
     const char *closing_tag;
-    int closing_tag_len; 
+    int closing_tag_len;
     EsiNodeInfo(EsiLib::DocNode::TYPE t, const char *s, int s_len, const char *ct, int ct_len)
       : type(t), tag_suffix(s), tag_suffix_len(s_len), closing_tag(ct), closing_tag_len(ct_len) { };
   };
-  
+
   std::string _data;
   int _parse_start_pos;
   size_t _orig_output_list_size;
 
   static const EsiNodeInfo ESI_NODES[];
   static const EsiNodeInfo HTML_COMMENT_NODE_INFO;
-  
+
   static const char *ESI_TAG_PREFIX;
   static const int ESI_TAG_PREFIX_LEN;
 
@@ -106,18 +106,18 @@ private:
   static const unsigned int MAX_DOC_SIZE;
 
   enum MATCH_TYPE { NO_MATCH, COMPLETE_MATCH, PARTIAL_MATCH };
-  
+
   MATCH_TYPE _searchData(const std::string &data, size_t start_pos, const char *str, int str_len,
                          size_t &pos) const;
 
   MATCH_TYPE _compareData(const std::string &data, size_t pos, const char *str, int str_len) const;
-  
+
   MATCH_TYPE _findOpeningTag(const std::string &data, size_t start_pos,
                              size_t &opening_tag_pos, bool &is_html_comment_node) const;
 
   bool _parse(const std::string &data, int &parse_start_pos, EsiLib::DocNodeList &node_list,
               bool last_chunk = false) const;
-  
+
   bool _processIncludeTag(const std::string &data, size_t curr_pos, size_t end_pos,
                           EsiLib::DocNodeList &node_list) const;
 

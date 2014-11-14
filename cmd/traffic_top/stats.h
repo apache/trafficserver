@@ -254,7 +254,7 @@ public:
             (*_stats)[key] = foo;
           }
         }
-      } 
+      }
       _old_time = _now;
       _now = now;
       _time_diff = _now - _old_time;
@@ -295,7 +295,7 @@ public:
           abort();
         }
 
-        /* always cleanup */ 
+        /* always cleanup */
         curl_easy_cleanup(curl);
       }
     }
@@ -320,7 +320,7 @@ public:
     map<string, LookupItem>::const_iterator lookup_it = lookup_table.find(key);
     assert(lookup_it != lookup_table.end());
     const LookupItem &item = lookup_it->second;
-    
+
     map<string, string>::const_iterator stats_it = _stats->find(item.name);
     if (stats_it == _stats->end())
       value = "";
@@ -411,7 +411,7 @@ public:
       size_t start = response.find(constant::start, pos);
       size_t seperator = response.find(constant::seperator, pos);
       size_t end = response.find(constant::end, pos);
-  
+
       if (start == string::npos || seperator == string::npos || end == string::npos)
         return;
 

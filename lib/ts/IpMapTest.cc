@@ -158,7 +158,7 @@ REGRESSION_TEST(IpMap_Fill)(RegressionTest* t, int /* atype ATS_UNUSED */, int* 
   IpMap map;
   ip_text_buffer ipb1, ipb2;
   void* const allow = reinterpret_cast<void*>(0);
-  void* const deny = reinterpret_cast<void*>(~0); 
+  void* const deny = reinterpret_cast<void*>(~0);
   void* const markA = reinterpret_cast<void*>(1);
   void* const markB = reinterpret_cast<void*>(2);
   void* const markC = reinterpret_cast<void*>(3);
@@ -265,7 +265,7 @@ REGRESSION_TEST(IpMap_Fill)(RegressionTest* t, int /* atype ATS_UNUSED */, int* 
            "IpMap Fill[v6]: 9d9b address has bad mark.");
   tb.check(map.contains(&a_0000_0001, &mark) && mark == markA,
            "IpMap Fill[v6]: ::1 has bad mark.");
-  
+
   tb.check(map.getCount() == 10, "IpMap Fill[pre-refill]: Bad range count.");
   // These should be ignored by the map as it is completely covered for IPv6.
   map.fill(&a_fe80_9d90, &a_fe80_9d9d, markA);
@@ -291,5 +291,5 @@ REGRESSION_TEST(IpMap_Fill)(RegressionTest* t, int /* atype ATS_UNUSED */, int* 
            "IpMap Fill[v6-2]: 9d9b address has bad mark.");
   tb.check(map.contains(&a_0000_0001, &mark) && mark == markC,
            "IpMap Fill[v6-2]: ::1 has bad mark.");
- 
+
 }

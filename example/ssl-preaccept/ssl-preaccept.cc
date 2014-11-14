@@ -2,7 +2,7 @@
 
   SSL Preaccept test plugin
   Implements blind tunneling based on the client IP address
-  The client ip addresses are specified in the plugin's  
+  The client ip addresses are specified in the plugin's
   config file as an array of IP addresses or IP address ranges under the
   key "client-blind-tunnel"
 
@@ -49,7 +49,7 @@ IpRangeQueue ClientBlindTunnelIp;
 Configuration Config;	// global configuration
 
 void
-Parse_Addr_String(ts::ConstBuffer const &text, IpRange &range) 
+Parse_Addr_String(ts::ConstBuffer const &text, IpRange &range)
 {
   IpAddr newAddr;
   std::string textstr(text._ptr, text._size);
@@ -64,12 +64,12 @@ Parse_Addr_String(ts::ConstBuffer const &text, IpRange &range)
   else { // Assume it is a single address
     newAddr.load(text);
     range.first = newAddr;
-    range.second = newAddr; 
+    range.second = newAddr;
   }
 }
 
 /// Get a string value from a config node.
-void Load_Config_Value(Value const& parent, char const* name, IpRangeQueue &addrs) 
+void Load_Config_Value(Value const& parent, char const* name, IpRangeQueue &addrs)
 {
   Value v = parent[name];
   std::string zret;
@@ -89,7 +89,7 @@ void Load_Config_Value(Value const& parent, char const* name, IpRangeQueue &addr
 
 
 int
-Load_Config_File() 
+Load_Config_File()
 {
   ts::Rv<Configuration> cv = Configuration::loadFromPath(ConfigPath.c_str());
   if (!cv.isOK()) {
@@ -101,7 +101,7 @@ Load_Config_File()
 }
 
 int
-Load_Configuration() 
+Load_Configuration()
 {
   int ret = Load_Config_File();
   if (ret != 0) {
@@ -116,7 +116,7 @@ Load_Configuration()
 }
 
 int
-CB_Pre_Accept(TSCont, TSEvent event, void *edata) 
+CB_Pre_Accept(TSCont, TSEvent event, void *edata)
 {
   TSVConn ssl_vc = reinterpret_cast<TSVConn>(edata);
   IpAddr ip(TSNetVConnLocalAddrGet(ssl_vc));
@@ -132,7 +132,7 @@ CB_Pre_Accept(TSCont, TSEvent event, void *edata)
     );
 
   // Not the worlds most efficient address comparison.  For short lists
-  // shouldn't be too bad.  If the client IP is in any of the ranges, 
+  // shouldn't be too bad.  If the client IP is in any of the ranges,
   // flip the tunnel to be blind tunneled instead of decrypted and proxied
   bool proxy_tunnel = true;
   IpRangeQueue::iterator iter;
@@ -158,7 +158,7 @@ CB_Pre_Accept(TSCont, TSEvent event, void *edata)
 
 // Called by ATS as our initialization point
 void
-TSPluginInit(int argc, const char *argv[]) 
+TSPluginInit(int argc, const char *argv[])
 {
   bool success = false;
   TSPluginRegistrationInfo info;
@@ -181,7 +181,7 @@ TSPluginInit(int argc, const char *argv[])
       ConfigPath = std::string(TSConfigDirGet()) + '/' + std::string(optarg);
       break;
     }
-  } 
+  }
   if (ConfigPath.length() == 0) {
     static char const * const DEFAULT_CONFIG_PATH = "ssl_preaccept.config";
     ConfigPath = std::string(TSConfigDirGet()) + '/' + std::string(DEFAULT_CONFIG_PATH);
@@ -200,7 +200,7 @@ TSPluginInit(int argc, const char *argv[])
     TSHttpHookAdd(TS_VCONN_PRE_ACCEPT_HOOK, cb_pa);
     success = true;
   }
- 
+
   if (!success) {
     if (cb_pa) TSContDestroy(cb_pa);
     TSError(PCP "not initialized");

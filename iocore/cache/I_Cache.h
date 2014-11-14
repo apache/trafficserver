@@ -186,7 +186,7 @@ struct CacheProcessor:public Processor
   static int fix;
   static int start_internal_flags;
   static int auto_clear_flag;
-  
+
   VersionNumber min_stripe_version;
   VersionNumber max_stripe_version;
 
@@ -228,7 +228,7 @@ struct CacheVConnection:public VConnection
   virtual bool set_pin_in_cache(time_t t) = 0;
   virtual time_t get_pin_in_cache() = 0;
   virtual int64_t get_object_size() = 0;
-  
+
   /** Test if the VC can support pread.
       @return @c true if @c do_io_pread will work, @c false if not.
   */

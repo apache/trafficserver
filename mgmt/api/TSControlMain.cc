@@ -879,7 +879,7 @@ handle_diags(int /* fd */, void * req, size_t reqlen)
   TSMgmtError ret;
   DiagsLevel level;
 
-  MgmtMarshallInt optype; 
+  MgmtMarshallInt optype;
   MgmtMarshallInt mode;
   MgmtMarshallString msg = NULL;
 
@@ -938,7 +938,7 @@ handle_diags(int /* fd */, void * req, size_t reqlen)
 static TSMgmtError
 handle_stats_reset(int fd, void * req, size_t reqlen)
 {
-  MgmtMarshallInt optype; 
+  MgmtMarshallInt optype;
   MgmtMarshallString name = NULL;
   MgmtMarshallInt err;
 

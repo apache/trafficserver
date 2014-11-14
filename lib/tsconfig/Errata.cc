@@ -58,7 +58,7 @@ Errata::Data::top() const {
   return m_items.size() ? m_items.back() : NIL_MESSAGE ;
 }
 
-inline Errata::Errata(ImpPtr const& ptr) 
+inline Errata::Errata(ImpPtr const& ptr)
   : m_data(ptr) {
 }
 

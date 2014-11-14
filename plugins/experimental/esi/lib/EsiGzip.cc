@@ -32,7 +32,7 @@ using namespace EsiLib;
 EsiGzip::EsiGzip(const char *debug_tag,
                            ComponentBase::Debug debug_func, ComponentBase::Error error_func)
   : ComponentBase(debug_tag, debug_func, error_func),
-    _downstream_length(0), 
+    _downstream_length(0),
     _total_data_length(0) {
 }
 
@@ -83,7 +83,7 @@ EsiGzip::stream_encode(const char *data, int data_len, std::string &cdata) {
 
     _crc = crc32(0, Z_NULL, 0);
   }
-  
+
     _zstrm.zalloc = Z_NULL;
     _zstrm.zfree = Z_NULL;
     _zstrm.opaque = Z_NULL;
@@ -110,7 +110,7 @@ EsiGzip::stream_encode(const char *data, int data_len, std::string &cdata) {
     _total_data_length += data_len;
   }
 
-    deflateEnd(&_zstrm);    
+    deflateEnd(&_zstrm);
 
   return true;
 }
@@ -128,7 +128,7 @@ bool EsiGzip::stream_finish(std::string &cdata, int&downstream_length) {
     }
 
   _zstrm.next_in = reinterpret_cast<Bytef *>(buf);
-  _zstrm.avail_in = 0; 
+  _zstrm.avail_in = 0;
   // required for the "finish" loop as no data has been given so far
   int deflate_result = runDeflateLoop(_zstrm, Z_FINISH, cdata);
   deflateEnd(&_zstrm);

@@ -844,12 +844,12 @@ CoreUtils::process_NetVC(UnixNetVConnection * nvc_test)
 
   if (read_from_core((intptr_t) nvc_test, sizeof(UnixNetVConnection), buf) != -1) {
     UnixNetVConnection *loaded_nvc = (UnixNetVConnection *) buf;
-    
+
     // Probably not 64-bit safe. /leif
     char addrbuf[INET6_ADDRSTRLEN];
     printf("----------- UnixNetVConnection @ 0x%p ----------\n", nvc_test);
     printf("     ip: %s    port: %d\n",
-        ats_ip_ntop(&loaded_nvc->server_addr.sa, addrbuf, sizeof(addrbuf)), 
+        ats_ip_ntop(&loaded_nvc->server_addr.sa, addrbuf, sizeof(addrbuf)),
         ats_ip_port_host_order(&loaded_nvc->server_addr));
     printf("     closed: %d\n\n", loaded_nvc->closed);
     printf("     read state: \n");

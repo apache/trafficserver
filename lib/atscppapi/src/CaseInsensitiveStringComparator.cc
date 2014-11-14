@@ -47,11 +47,11 @@ int CaseInsensitiveStringComparator::compare(const string &lhs, const string &rh
   }
   size_t lhs_size = lhs.size();
   size_t rhs_size = rhs.size();
-  if ((lhs_size > 0) && (rhs_size > 0)) { 
+  if ((lhs_size > 0) && (rhs_size > 0)) {
     size_t num_chars_to_compare = (lhs_size < rhs_size) ? lhs_size : rhs_size;
     for (size_t i = 0; i < num_chars_to_compare; ++i) {
-      unsigned char normalized_lhs_char = NORMALIZED_CHARACTERS[static_cast<const unsigned char>(lhs[i])]; 
-      unsigned char normalized_rhs_char = NORMALIZED_CHARACTERS[static_cast<const unsigned char>(rhs[i])]; 
+      unsigned char normalized_lhs_char = NORMALIZED_CHARACTERS[static_cast<const unsigned char>(lhs[i])];
+      unsigned char normalized_rhs_char = NORMALIZED_CHARACTERS[static_cast<const unsigned char>(rhs[i])];
       if (normalized_lhs_char < normalized_rhs_char) {
         return -1;
       }

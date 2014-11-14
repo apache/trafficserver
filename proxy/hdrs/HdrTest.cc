@@ -1628,15 +1628,15 @@ HdrTest::test_regex()
 {
   DFA dfa;
   int status = 1;
-  
+
   const char *test_harness[] = {
     "foo",
     "(.*\\.apache\\.org)",
     "(.*\\.example\\.com)"
   };
-  
+
   bri_box("test_regex");
-  
+
   dfa.compile(test_harness,SIZEOF(test_harness));
   status = status & (dfa.match("trafficserver.apache.org") == 1);
   status = status & (dfa.match("www.example.com") == 2);

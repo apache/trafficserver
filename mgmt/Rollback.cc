@@ -1,6 +1,6 @@
 /** @file
 
-  This file contains code for class to allow rollback of configuration files 
+  This file contains code for class to allow rollback of configuration files
 
   @section license License
 

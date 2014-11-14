@@ -107,7 +107,7 @@ template <
   typename N ///< Node type.
 > struct IpMapBase {
   friend class ::IpMap;
-  
+
   typedef IpMapBase self; ///< Self reference type.
   typedef typename N::ArgType ArgType; ///< Import type.
   typedef typename N::Metric Metric;   ///< Import type.g482
@@ -218,7 +218,7 @@ template <
   /// Print all spans.
   /// @return This map.
   self& print();
-  
+
   // Helper methods.
   N* prev(RBNode* n) const { return static_cast<N*>(n->_prev); }
   N* next(RBNode* n) const { return static_cast<N*>(n->_next); }
@@ -673,7 +673,7 @@ public:
     return *this;
   }
 protected:
-  
+
   /// Set the minimum value of the interval.
   /// @return This interval.
   self& setMin(
@@ -683,7 +683,7 @@ protected:
     _sa._min.sin_addr.s_addr = htonl(min);
     return *this;
   }
-  
+
   /// Set the maximum value of the interval.
   /// @return This interval.
   self& setMax(
@@ -693,7 +693,7 @@ protected:
     _sa._max.sin_addr.s_addr = htonl(max);
     return *this;
   }
-  
+
   /** Set the maximum value to one less than @a max.
       @return This object.
   */
@@ -731,14 +731,14 @@ protected:
   ) {
     ++m;
   }
-  
+
   /// Decrement a metric.
   static void dec(
     Metric& m ///< Decremented in place.
   ) {
     --m;
   }
-  
+
   /// @return Dereferenced @a addr.
   static Metric deref(
     ArgType addr ///< Argument to dereference.
@@ -752,7 +752,7 @@ protected:
   ) {
     return metric;
   }
-  
+
   struct {
     sockaddr_in _min;
     sockaddr_in _max;
@@ -807,7 +807,7 @@ public:
     return *this;
   }
 protected:
-  
+
   /// Set the minimum value of the interval.
   /// @return This interval.
   self& setMin(
@@ -816,7 +816,7 @@ protected:
     ats_ip_copy(ats_ip_sa_cast(&_min), ats_ip_sa_cast(min));
     return *this;
   }
-  
+
   /// Set the minimum value of the interval.
   /// @note Convenience overload.
   /// @return This interval.
@@ -825,7 +825,7 @@ protected:
   ) {
     return this->setMin(&min);
   }
-  
+
   /// Set the maximum value of the interval.
   /// @return This interval.
   self& setMax(
@@ -870,7 +870,7 @@ protected:
       @return This object.
   */
   self& incrementMin() { inc(_min); return *this; }
-  
+
   /// Increment a metric.
   static void inc(
     Metric& m ///< Incremented in place.
@@ -883,7 +883,7 @@ protected:
       ++*--b;
     } while (b > addr && 0 == *b);
   }
-  
+
   /// Decrement a metric.
   static void dec(
     Metric& m ///< Decremented in place.
@@ -902,14 +902,14 @@ protected:
   ) {
     return *addr;
   }
-  
+
   /// @return The argument type for the @a metric.
   static ArgType argue(
     Metric const& metric
   ) {
     return &metric;
   }
-  
+
 };
 
 // We declare this after the helper operators and inside this namespace

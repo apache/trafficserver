@@ -51,10 +51,10 @@
 //  heaps are hand unrolled in the code.  Chaning
 //  this value requires a full pass through HdrBuf.cc
 //  to fix the unrolled operations
-#define HDR_BUF_RONLY_HEAPS   3 
+#define HDR_BUF_RONLY_HEAPS   3
 
 #define HDR_HEAP_DEFAULT_SIZE   2048
-#define HDR_STR_HEAP_DEFAULT_SIZE  2048 
+#define HDR_STR_HEAP_DEFAULT_SIZE  2048
 
 #define HDR_MAX_ALLOC_SIZE (HDR_HEAP_DEFAULT_SIZE - sizeof(HdrHeap))
 #define HDR_HEAP_HDR_SIZE ROUND(sizeof(HdrHeap), HDR_PTR_SIZE)

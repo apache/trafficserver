@@ -36,7 +36,7 @@ static const int LS_PROTOCOL = 0;
   The constructor establishes the connection table (ct) and initializes the
   first entry of the table (index 0) to be the port on which new
   connections are accepted.
-*/ 
+*/
 LogSock::LogSock(int max_connects)
   :
 ct((ConnectTable *) NULL),
@@ -61,7 +61,7 @@ m_max_connections(max_connects + 1)
   LogSock::~LogSock
 
   Shut down all connections and delete memory for the tables.
-*/ 
+*/
 LogSock::~LogSock()
 {
   Debug("log-sock", "shutting down LogSocket on [%s:%d]", ct[0].host, ct[0].port);
@@ -225,7 +225,7 @@ LogSock::accept()
 
   Establish a new connection to another machine [host:port], and place this
   information into the connection and poll tables.
-*/  
+*/
 int
 LogSock::connect(sockaddr const* ip)
 {
@@ -286,7 +286,7 @@ LogSock::connect(sockaddr const* ip)
   descriptors.
   @return Returns true if there is something incoming, with *cid
   set to the index corresponding to the incoming socket.
-*/ 
+*/
 bool LogSock::pending_data(int *cid, int timeout_msec, bool include_connects)
 {
   int

@@ -978,7 +978,7 @@ struct CompWithHeader : public ComponentBase {
       This requires the (subclass) client to
       - Do a size check to verify enough space for the component header.
       - Set @a m_base
-      
+
       This method
       - Checks the component type against the expected type (@a ect)
       - Checks stored component length against the buffer size.
@@ -1604,7 +1604,7 @@ public:
 
   /// Component type ID for this component.
   static CompType const COMP_TYPE = CAPABILITY_INFO;
-  
+
   // Not even a stub for this component, just an array of elements.
 
   /// Default constructor.
@@ -1799,7 +1799,7 @@ class AltMaskAssignComp
 public:
   typedef AltMaskAssignComp self; ///< Self reference type.
   typedef AltAssignComp super; ///< Parent type.
-  
+
   /// Force virtual desctructor.
   virtual ~AltMaskAssignComp() {}
 
@@ -2068,7 +2068,7 @@ namespace detail {
           store one received from an extern source.
       */
       detail::Assignment m_assign_info;
-      
+
       /// Default constructor.
       GroupData();
       /// Use @a key instead of global default.
@@ -2286,7 +2286,7 @@ public:
   /// Default constructor.
   Impl();
   /** Set the local address used for this endpoint.
-      If not set, an arbitrary local address will be 
+      If not set, an arbitrary local address will be
       @note This can only be called once, and must be called before
       @c open.
   */

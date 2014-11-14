@@ -103,7 +103,7 @@ public:
   IntrusivePtrCounter(
     IntrusivePtrCounter const& ///< Source object.
   );
-  
+
   /** Assignment operator.
 
       @internal We need this for the same reason as the copy
@@ -217,7 +217,7 @@ public:
   > IntrusivePtr(
     IntrusivePtr<X> const& that ///< Foreign pointer.
   );
-  
+
   /** Cross type assignment.
       This succeeds if an @a X* can be implicitily converted to a @a T*.
   */
@@ -232,7 +232,7 @@ public:
   /// @c false otherwise.
   bool isShared() const;
   /// Check for a single reference (@c shared_ptr compatibility)
-  /// @return @c true if this object is not shared. 
+  /// @return @c true if this object is not shared.
   bool unique() const;
   /// Reference count.
   /// @return Number of references.
@@ -353,7 +353,7 @@ public:
     bool operator() (
       IntrusivePtr<T> const& lhs, ///< Left hand operand.
       IntrusivePtr<T> const& rhs ///< Right hand operand.
-    ) const; 
+    ) const;
   };
 };
 
@@ -425,7 +425,7 @@ IntrusivePtr<T>::IntrusivePtr(
   IntrusivePtr<X> const& that ///< Foreign pointer.
 ) : super(that.get()) {
 }
-  
+
 template < typename T > IntrusivePtr<T>&
 IntrusivePtr<T>::operator = (const self& that) {
   this->reset(that.m_obj);
@@ -437,7 +437,7 @@ template < typename X >
 IntrusivePtr<T>&
 IntrusivePtr<T>::operator = (
   IntrusivePtr<X> const& that ///< Foreign pointer.
-) { 
+) {
   this->reset(that.get());
   return *this;
 }

@@ -81,7 +81,7 @@ struct AclRecord {
   bool isMethodAllowed(int method_wksidx) const {
     return _method_mask & MethodIdxToMask(method_wksidx);
   }
-  
+
   bool isNonstandardMethodAllowed(const std::string &method_str) const {
     if (_method_mask == ALL_METHOD_MASK) {
       return true;

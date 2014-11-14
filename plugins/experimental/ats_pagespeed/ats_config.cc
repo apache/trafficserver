@@ -167,7 +167,7 @@ bool AtsConfig::Parse(const char * path ) {
     if (line[0] == '#') {
       continue;
     }
-    
+
     vector<string> v = tokenize( line, isspace );
     if (v.size() == 0)
       continue;

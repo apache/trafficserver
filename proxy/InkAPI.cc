@@ -3939,7 +3939,7 @@ TSCacheKeyDigestSet(TSCacheKey key, const char *input, int length)
   sdk_assert(sdk_sanity_check_iocore_structure((void*) input) == TS_SUCCESS);
   sdk_assert(length > 0);
   CacheInfo* ci = reinterpret_cast<CacheInfo*>(key);
-  
+
   if (ci->magic != CACHE_INFO_MAGIC_ALIVE)
     return TS_ERROR;
 
@@ -8710,18 +8710,18 @@ TSVConnTunnel(TSVConn sslp)
 }
 
 TSSslConnection
-TSVConnSSLConnectionGet(TSVConn sslp) 
+TSVConnSSLConnectionGet(TSVConn sslp)
 {
   TSSslConnection ssl = NULL;
   NetVConnection *vc = reinterpret_cast<NetVConnection*>(sslp);
   SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection*>(vc);
   if (ssl_vc != NULL) {
     ssl = reinterpret_cast<TSSslConnection>(ssl_vc->ssl);
-  } 
+  }
   return ssl;
 }
 
-tsapi TSSslContext TSSslContextFindByName(const char *name) 
+tsapi TSSslContext TSSslContextFindByName(const char *name)
 {
   TSSslContext ret = NULL;
   SSLCertLookup *lookup = SSLCertificateConfig::acquire();
@@ -8750,7 +8750,7 @@ tsapi TSSslContext TSSslContextFindByAddr(struct sockaddr const* addr)
   return ret;
 }
 
-tsapi int TSVConnIsSsl(TSVConn sslp) 
+tsapi int TSVConnIsSsl(TSVConn sslp)
 {
   NetVConnection *vc = reinterpret_cast<NetVConnection*>(sslp);
   SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection*>(vc);

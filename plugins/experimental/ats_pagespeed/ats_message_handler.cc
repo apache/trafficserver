@@ -33,7 +33,7 @@
 #include "net/instaweb/public/version.h"
 #include "pagespeed/kernel/base/posix_timer.h"
 #include "pagespeed/kernel/base/time_util.h"
-   
+
 
 namespace {
 
@@ -67,10 +67,10 @@ void AtsMessageHandler::set_buffer(SharedCircularBuffer* buff) {
 void AtsMessageHandler::MessageVImpl(MessageType type, const char* msg,
                                      va_list args) {
   GoogleString formatted_message = Format(msg, args);
-  
+
   TSDebug("ats-speed", "[%s %s] %s", kModuleName, kModPagespeedVersion,
           formatted_message.c_str());
- 
+
   // Prepare a log message for the SharedCircularBuffer only.
   // Prepend time and severity to message.
   // Format is [time] [severity] [pid] message.
@@ -80,7 +80,7 @@ void AtsMessageHandler::MessageVImpl(MessageType type, const char* msg,
   if (!ConvertTimeToString(timer.NowMs(), &time)) {
     time = "?";
   }
-  
+
   StrAppend(&message, "[", time, "] ",
             "[", MessageTypeToString(type), "] ");
   StrAppend(&message, pid_string_, " ", formatted_message, "\n");

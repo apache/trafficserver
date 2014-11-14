@@ -73,7 +73,7 @@ Request::Request(const string &url_str, HttpMethod method, HttpVersion version) 
   }
   else {
     state_->url_loc_ = NULL;
-    LOG_ERROR("Could not create URL field; hdr_buf %p", state_->hdr_buf_); 
+    LOG_ERROR("Could not create URL field; hdr_buf %p", state_->hdr_buf_);
   }
 }
 
@@ -153,7 +153,7 @@ atscppapi::Headers &Request::getHeaders() const {
 Request::~Request() {
   if (state_->url_loc_) {
     if (state_->destroy_buf_) {
-      // usually, hdr_loc is the parent of url_loc, but we created this url_loc "directly" in hdr_buf, 
+      // usually, hdr_loc is the parent of url_loc, but we created this url_loc "directly" in hdr_buf,
       // so we use null as parent loc in this case
       TSMLoc null_parent_loc = NULL;
       TSHandleMLocRelease(state_->hdr_buf_, null_parent_loc, state_->url_loc_);

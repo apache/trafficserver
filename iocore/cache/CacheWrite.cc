@@ -1390,7 +1390,7 @@ Lagain:
     total_len += avail;
   }
   length = (uint64_t)towrite;
-  if (length > target_fragment_size() && 
+  if (length > target_fragment_size() &&
       (length < target_fragment_size() + target_fragment_size() / 4))
     write_len = target_fragment_size();
   else

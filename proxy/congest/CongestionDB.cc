@@ -616,7 +616,7 @@ remove_congested_entry(char *buf, MIOBuffer * out_buffer)
   } else if (strncasecmp(buf, "ip=", 3) == 0) {
     IpEndpoint ip;
     memset(&ip, 0, sizeof(ip));
-    
+
     char *p = buf + 3;
     char *prefix = strchr(p, '/');
     int prelen = 0;

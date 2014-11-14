@@ -36,7 +36,7 @@ EsiLib::SpecialIncludeHandler *createSpecialIncludeHandler(EsiLib::Variables &es
                                                            EsiLib::Expression &esi_expr,
                                                            HttpDataFetcher &fetcher,
                                                            const std::string &id);
-  
+
 #ifdef __cplusplus
 }
 #endif

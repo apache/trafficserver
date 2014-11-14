@@ -365,7 +365,7 @@ ocsp_update()
   for (unsigned i = 0; i < ctxCount; i++) {
     SSLCertContext *cc = certLookup->get(i);
     if (cc && cc->ctx) {
-      ctx = cc->ctx; 
+      ctx = cc->ctx;
       cinf = stapling_get_cert_info(ctx);
        if (cinf) {
          ink_mutex_acquire(&cinf->stapling_mutex);

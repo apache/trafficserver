@@ -62,9 +62,9 @@ typedef struct {
   PLUGIN_DATA;
 
   buffer *match_buf;
-  
+
   plugin_config **config_storage;
-  
+
   plugin_config conf;
 
 } plugin_data;
@@ -229,7 +229,7 @@ URIHANDLER_FUNC(mod_generator_subrequest_handler) {
   //plugin_data *p = p_d;
   buffer *b;
   b = chunkqueue_get_append_buffer(con->write_queue);
-  
+
 
   // get the url information
   //int length = strlen(con->uri.path->ptr);
@@ -302,7 +302,7 @@ URIHANDLER_FUNC(mod_generator_subrequest_handler) {
     log_error_write(srv, __FILE__, __LINE__,  "s", "didn't see cache or no_cache in the url");
     return HANDLER_GO_ON;
   }
-  
+
   // print the body of the message
   uint64_t to_write = 0;
   --bytes;              // leave a char left over for \n
@@ -317,7 +317,7 @@ URIHANDLER_FUNC(mod_generator_subrequest_handler) {
     buffer_append_string_len(b, static_data, to_write);
     bytes -= to_write;
   }
-  
+
   if (bytes == 0) {
     buffer_append_string_len(b, "\n", 1); // add a \n to the end of the body
   }
@@ -329,7 +329,7 @@ URIHANDLER_FUNC(mod_generator_subrequest_handler) {
     response_header_insert(srv, con, CONST_STR_LEN("Last-Modified"), CONST_STR_LEN("Thu, 12 Feb 2009 23:00:00 GMT"));
     response_header_insert(srv, con, CONST_STR_LEN("Cache-Control"), CONST_STR_LEN("max-age=86400, public"));
   }
-  
+
   con->http_status = 200;
   con->file_finished = 1;
   return HANDLER_FINISHED;
@@ -338,7 +338,7 @@ URIHANDLER_FUNC(mod_generator_subrequest_handler) {
 /* this function is called at dlopen() time and inits the callbacks */
 
 int mod_generator_plugin_init(plugin *p) {
-      
+
   p->version     = LIGHTTPD_VERSION_ID;
   p->name        = buffer_init_string("generator");
 

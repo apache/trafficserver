@@ -463,11 +463,11 @@ CacheVC::set_http_info(CacheHTTPInfo *ainfo)
   }
   if (enable_cache_empty_http_doc) {
     MIMEField *field = ainfo->m_alt->m_response_hdr.field_find(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH);
-    if (field && !field->value_get_int64()) 
+    if (field && !field->value_get_int64())
       f.allow_empty_doc = 1;
     else
       f.allow_empty_doc = 0;
-  } else 
+  } else
     f.allow_empty_doc = 0;
   alternate.copy_shallow(ainfo);
   ainfo->clear();

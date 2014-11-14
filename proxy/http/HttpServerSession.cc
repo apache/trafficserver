@@ -79,8 +79,8 @@ HttpServerSession::new_connection(NetVConnection *new_vc)
       connection_count = ConnectionCount::getInstance();
     connection_count->incrementCount(server_ip);
     char addrbuf[INET6_ADDRSTRLEN];
-    Debug("http_ss", "[%" PRId64 "] new connection, ip: %s, count: %u", 
-        con_id, 
+    Debug("http_ss", "[%" PRId64 "] new connection, ip: %s, count: %u",
+        con_id,
         ats_ip_ntop(&server_ip.sa, addrbuf, sizeof(addrbuf)), connection_count->getCount(server_ip));
   }
 #ifdef LAZY_BUF_ALLOC
@@ -134,8 +134,8 @@ HttpServerSession::do_io_close(int alerrno)
       connection_count->incrementCount(server_ip, -1);
       char addrbuf[INET6_ADDRSTRLEN];
       Debug("http_ss", "[%" PRId64 "] connection closed, ip: %s, count: %u",
-            con_id, 
-            ats_ip_ntop(&server_ip.sa, addrbuf, sizeof(addrbuf)), 
+            con_id,
+            ats_ip_ntop(&server_ip.sa, addrbuf, sizeof(addrbuf)),
             connection_count->getCount(server_ip));
     } else {
       Error("[%" PRId64 "] number of connections should be greater than zero: %u",
@@ -173,7 +173,7 @@ HttpServerSession::release()
   }
 
   HSMresult_t r = httpSessionManager.release_session(this);
-  
+
 
   if (r == HSM_RETRY) {
     // Session could not be put in the session manager

@@ -1,8 +1,8 @@
-/** 
-  @file 
+/**
+  @file
   SSL Preaccept test plugin
   Implements blind tunneling based on the client IP address
-  The client ip addresses are specified in the plugin's  
+  The client ip addresses are specified in the plugin's
   config file as an array of IP addresses or IP address ranges under the
   key "client-blind-tunnel"
 
@@ -50,7 +50,7 @@ std::string ConfigPath;
 Configuration Config;	// global configuration
 
 int
-Load_Config_File() 
+Load_Config_File()
 {
   ts::Rv<Configuration> cv = Configuration::loadFromPath(ConfigPath.c_str());
   if (!cv.isOK()) {
@@ -62,7 +62,7 @@ Load_Config_File()
 }
 
 int
-Load_Configuration() 
+Load_Configuration()
 {
   int ret = Load_Config_File();
   if (ret != 0) {
@@ -82,7 +82,7 @@ Load_Configuration()
    this connection.
  */
 int
-CB_servername(TSCont /* contp */, TSEvent /* event */, void *edata) 
+CB_servername(TSCont /* contp */, TSEvent /* event */, void *edata)
 {
   TSVConn ssl_vc = reinterpret_cast<TSVConn>(edata);
   TSSslConnection sslobj = TSVConnSSLConnectionGet(ssl_vc);
@@ -109,12 +109,12 @@ CB_servername(TSCont /* contp */, TSEvent /* event */, void *edata)
         if (ctxobj != NULL) {
           TSDebug("skh", "Found cert for safelyfiled");
           SSL_CTX *ctx = reinterpret_cast<SSL_CTX *>(ctxobj);
-          SSL_set_SSL_CTX(ssl, ctx); 
+          SSL_set_SSL_CTX(ssl, ctx);
           TSDebug("skh", "SNI plugin cb: replace SSL CTX");
         }
       }
     }
-  } 
+  }
 
 
   // All done, reactivate things
@@ -126,7 +126,7 @@ CB_servername(TSCont /* contp */, TSEvent /* event */, void *edata)
 
 // Called by ATS as our initialization point
 void
-TSPluginInit(int argc, const char *argv[]) 
+TSPluginInit(int argc, const char *argv[])
 {
   bool success = false;
   TSPluginRegistrationInfo info;
@@ -149,7 +149,7 @@ TSPluginInit(int argc, const char *argv[])
       ConfigPath = std::string(TSConfigDirGet()) + '/' + std::string(optarg);
       break;
     }
-  } 
+  }
   if (ConfigPath.length() == 0) {
     static char const * const DEFAULT_CONFIG_PATH = "ssl_sni.config";
     ConfigPath = std::string(TSConfigDirGet()) + '/' + std::string(DEFAULT_CONFIG_PATH);
@@ -168,7 +168,7 @@ TSPluginInit(int argc, const char *argv[])
     TSHttpHookAdd(TS_SSL_SNI_HOOK, cb_sni);
     success = true;
   }
- 
+
   if (!success) {
     if (cb_sni) TSContDestroy(cb_sni);
     TSError(PCP "not initialized");
@@ -181,7 +181,7 @@ TSPluginInit(int argc, const char *argv[])
 # else // ! TS_USE_TLS_SNI
 
 void
-TSPluginInit(int, const char *[]) 
+TSPluginInit(int, const char *[])
 {
     TSError(PCP "requires TLS SNI which is not available.");
 }

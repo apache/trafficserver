@@ -506,7 +506,7 @@ initialize_all_global_stats()
     }
   }
 
-  // TODO: HMMMM, wtf does this do? The following is that this 
+  // TODO: HMMMM, wtf does this do? The following is that this
   // function does:
   // ink_atomic_swap(&this->f_update_lock, (void *) func)
   //

@@ -192,7 +192,7 @@ FetchSM::check_connection_close()
 {
   static char const CLOSE_TEXT[] = "close";
   static size_t const CLOSE_LEN = sizeof(CLOSE_TEXT) - 1;
- 
+
   if (resp_received_close < 0) {
     resp_received_close = static_cast<int>(this->check_for_field_value(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION, CLOSE_TEXT, CLOSE_LEN));
   }
@@ -254,12 +254,12 @@ FetchSM::InvokePluginExt(int fetch_event)
     }
   }
 
-  // TS-3112: always check 'contp' after handleEvent() 
+  // TS-3112: always check 'contp' after handleEvent()
   // since handleEvent effectively calls the plugin (or SPDY layer)
-  // which may call TSFetchDestroy in error conditions. 
-  // TSFetchDestroy sets contp to NULL, but, doesn't destroy FetchSM yet, 
-  // since, it¹s in a tight loop protected by 'recursion' counter. 
-  // When handleEvent returns, 'recursion' is decremented and contp is 
+  // which may call TSFetchDestroy in error conditions.
+  // TSFetchDestroy sets contp to NULL, but, doesn't destroy FetchSM yet,
+  // since, it¹s in a tight loop protected by 'recursion' counter.
+  // When handleEvent returns, 'recursion' is decremented and contp is
   // already null, so, FetchSM gets destroyed.
   if (!contp)
     goto out;

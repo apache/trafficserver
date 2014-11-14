@@ -29,7 +29,7 @@
 #include <vector>
 #include "debug_macros.h"
 
-namespace Gzip  { 
+namespace Gzip  {
   class HostConfiguration {
   public: //todo -> only configuration should be able to construct hostconfig
     explicit HostConfiguration(const std::string & host)
@@ -40,11 +40,11 @@ namespace Gzip  {
     {}
 
     inline bool enabled() { return enabled_; }
-    inline void set_enabled(bool x) { enabled_ = x; } 
+    inline void set_enabled(bool x) { enabled_ = x; }
     inline bool cache() { return cache_; }
-    inline void set_cache(bool x) { cache_ = x; } 
+    inline void set_cache(bool x) { cache_ = x; }
     inline bool remove_accept_encoding() { return remove_accept_encoding_; }
-    inline void set_remove_accept_encoding(bool x) { remove_accept_encoding_ = x; } 
+    inline void set_remove_accept_encoding(bool x) { remove_accept_encoding_ = x; }
     inline std::string host() { return host_; }
     void add_disallow(const std::string & disallow);
     void add_compressible_content_type(const std::string & content_type);
@@ -65,7 +65,7 @@ namespace Gzip  {
     friend class HostConfiguration;
   public:
     static Configuration * Parse(const char * path);
-    HostConfiguration * Find(const char * host, int host_length); 
+    HostConfiguration * Find(const char * host, int host_length);
     inline HostConfiguration * GlobalConfiguration() {
       return host_configurations_[0];
     }

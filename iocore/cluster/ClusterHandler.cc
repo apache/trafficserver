@@ -2131,7 +2131,7 @@ retry:
   if (vc->was_closed()) {
     if (!vc->write_bytes_in_transit && !vc->schedule_write()) {
       close_ClusterVConnection(vc);
-    } 
+    }
     return 0;
   }
 

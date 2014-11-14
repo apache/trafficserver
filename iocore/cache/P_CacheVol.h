@@ -560,7 +560,7 @@ struct Vol: public Continuation
   {
     io.aiocb.aio_fildes = AIO_NOT_IN_PROGRESS;
   }
-  
+
   int aggWriteDone(int event, Event *e);
   int aggWrite(int event, void *e);
   void agg_wrap();
@@ -667,7 +667,7 @@ vol_headerlen(Vol *d) {
 TS_INLINE size_t
 vol_dirlen(Vol *d)
 {
-  return vol_headerlen(d) + 
+  return vol_headerlen(d) +
     ROUND_TO_STORE_BLOCK(((size_t)d->buckets) * DIR_DEPTH * d->segments * SIZEOF_DIR) +
     ROUND_TO_STORE_BLOCK(sizeof(VolHeaderFooter));
 }

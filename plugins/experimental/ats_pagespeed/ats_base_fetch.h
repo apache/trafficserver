@@ -53,7 +53,7 @@ public:
                TSVIO downstream_vio,
                TSIOBuffer downstream_buffer,
                bool is_resource_fetch);
-  
+
   virtual ~AtsBaseFetch();
   void Release();
   void set_handle_error(bool x) { handle_error_ = x; }

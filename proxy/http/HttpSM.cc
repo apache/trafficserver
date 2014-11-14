@@ -2826,7 +2826,7 @@ HttpSM::is_http_server_eos_truncation(HttpTunnelProducer * p)
     // invalidates the current data being passed over to the client.
     // So changing it from return true to return false, so the partial data
     // is passed onto the client.
-    return false;	
+    return false;
   }
 
   //////////////////////////////////////////////////////////////

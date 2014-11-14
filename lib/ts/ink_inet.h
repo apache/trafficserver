@@ -626,7 +626,7 @@ inline bool ats_is_ip_any(sockaddr const* ip) {
     (ats_is_ip6(ip) && IN6_IS_ADDR_UNSPECIFIED(&ats_ip6_addr_cast(ip)))
     ;
 }
-  
+
 /// @name Address operators
 //@{
 
@@ -1029,7 +1029,7 @@ ats_ip_getbestaddrinfo(
 );
 
 /** Generic IP address hash function.
-*/    
+*/
 uint32_t ats_ip_hash(sockaddr const* addr);
 
 /** Convert address to string as a hexidecimal value.
@@ -1112,7 +1112,7 @@ struct IpAddr {
   int load(
     ts::ConstBuffer const& str ///< Text of IP address.
   );
-  
+
   /** Output to a string.
       @return The string @a dest.
   */
@@ -1303,7 +1303,7 @@ inline int ats_ip_pton(
 
 inline IpEndpoint&
 IpEndpoint::assign(IpAddr const& addr, in_port_t port) {
-  ats_ip_set(&sa, addr, port); 
+  ats_ip_set(&sa, addr, port);
   return *this;
 }
 

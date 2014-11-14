@@ -247,7 +247,7 @@ sig_term(int signum)
   // safely^W commit suicide.
   cop_log_trace("Sending signal %d to entire group\n", signum);
   killpg(0, signum);
-  
+
   cop_log_trace("Waiting for children to exit.");
 
   for (;;) {

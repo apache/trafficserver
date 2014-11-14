@@ -112,7 +112,7 @@ resource_intercept(TSCont cont, TSEvent event, void *edata)
       // response will already have a size for internal pages at this point.
       // resources, however, will have to be fetched.
       // TODO(oschaaf): this is extremely ugly.
-      if (intercept_ctx->response->size() == 0) { 
+      if (intercept_ctx->response->size() == 0) {
         // TODO(oschaaf): unused - must we close / clean this up?
         TSVIO downstream_vio = TSVConnWrite(
             intercept_ctx->vconn, cont, intercept_ctx->resp_reader, 0x7fffffff);
@@ -120,7 +120,7 @@ resource_intercept(TSCont cont, TSEvent event, void *edata)
         AtsServerContext* server_context = intercept_ctx->request_ctx->server_context;
 
         // TODO:(oschaaf) host/port
-        SystemRequestContext* system_request_context = 
+        SystemRequestContext* system_request_context =
             new SystemRequestContext(server_context->thread_system()->NewMutex(),
                                      server_context->timer(),
 				     "www.foo.com",// TODO(oschaaf): compute these
@@ -140,7 +140,7 @@ resource_intercept(TSCont cont, TSEvent event, void *edata)
         if (host != NULL && strlen(host) > 0) {
           intercept_ctx->request_ctx->options = get_host_options(host);
         }
-        
+
         // TODO(oschaaf): directory options should be coming from configuration!
         bool ok = ps_determine_options(server_context,
                                        intercept_ctx->request_ctx->options,
@@ -148,10 +148,10 @@ resource_intercept(TSCont cont, TSEvent event, void *edata)
                                        intercept_ctx->request_ctx->base_fetch->response_headers(),
                                        &options,
                                        intercept_ctx->request_ctx->gurl);
-        
+
         // Take ownership of custom_options.
         scoped_ptr<RewriteOptions> custom_options(options);
-        
+
         if (!ok) {
           TSError("Failure while determining request options for psol resource");
           // options = server_context->global_options();
@@ -173,7 +173,7 @@ resource_intercept(TSCont cont, TSEvent event, void *edata)
 	TSDebug("ats-speed", "resource intercept writing out a %d bytes response", (int)numBytesToWrite);
         numBytesWritten = TSIOBufferWrite(intercept_ctx->resp_buffer,
                                           intercept_ctx->response->c_str(), numBytesToWrite);
-        
+
         if (numBytesWritten == numBytesToWrite) {
           TSVConnWrite(intercept_ctx->vconn, cont, intercept_ctx->resp_reader, numBytesToWrite);
         } else {
@@ -227,7 +227,7 @@ read_cache_header_callback(TSCont cont, TSEvent event, void *edata)
   if (ctx == NULL) {
     TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
     return 0;
-  } else if (ctx->in_place && !cache_hit(txn) && !ctx->resource_request) { 
+  } else if (ctx->in_place && !cache_hit(txn) && !ctx->resource_request) {
     ctx->base_fetch->set_ctx(ctx);
     ctx->base_fetch->set_ipro_callback((void*)resource_intercept);
     ctx->driver->FetchInPlaceResource(
@@ -237,7 +237,7 @@ read_cache_header_callback(TSCont cont, TSEvent event, void *edata)
     return 0;
   } else if (!ctx->resource_request) {
     TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
-    return 0;    
+    return 0;
   }
   // TODO(oschaaf): FIXME: Ownership of ctx has become too mucky.
   // This is because I realised too late that the intercepts
@@ -248,7 +248,7 @@ read_cache_header_callback(TSCont cont, TSEvent event, void *edata)
     TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
     return 0;
   }
-  
+
   if (cache_hit(txn)) {
     ats_ctx_destroy(ctx);
     TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
@@ -263,8 +263,8 @@ read_cache_header_callback(TSCont cont, TSEvent event, void *edata)
   ContentType content_type = kContentTypeHtml;
   StringPiece cache_control = HttpAttributes::kNoCache;
   const char* error_message = NULL;
-  StringPiece request_uri_path = ctx->gurl->PathAndLeaf();  
-  
+  StringPiece request_uri_path = ctx->gurl->PathAndLeaf();
+
   if (false && ctx->gurl->PathSansQuery() == "/robots.txt") {
     content_type = kContentTypeText;
     writer.Write("User-agent: *\n", server_context->message_handler());
@@ -280,7 +280,7 @@ read_cache_header_callback(TSCont cont, TSEvent event, void *edata)
     }
 
   // TODO(oschaaf): /pagespeed_admin handling
-  } else { 
+  } else {
     // Optimized resource are highly cacheable (1 year expiry)
     // TODO(oschaaf): configuration
     TSHttpTxnRespCacheableSet(txn, 1);
@@ -293,7 +293,7 @@ read_cache_header_callback(TSCont cont, TSEvent event, void *edata)
       TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
       return 0;
     }
-    
+
     TSCont interceptCont = TSContCreate(resource_intercept, TSMutexCreate());
     InterceptCtx *intercept_ctx = new InterceptCtx();
     intercept_ctx->request_ctx = ctx;
@@ -301,12 +301,12 @@ read_cache_header_callback(TSCont cont, TSEvent event, void *edata)
     copy_request_headers_to_psol(reqp, req_hdr_loc, intercept_ctx->request_headers);
     TSHandleMLocRelease(reqp, TS_NULL_MLOC, req_hdr_loc);
 
-    
+
     TSContDataSet(interceptCont, intercept_ctx);
     TSHttpTxnServerIntercept(interceptCont, txn);
     TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
     return 0;
-  } 
+  }
 
   if (error_message != NULL) {
     status = HttpStatus::kNotFound;
@@ -334,9 +334,9 @@ read_cache_header_callback(TSCont cont, TSEvent event, void *edata)
   GoogleString header;
   StringWriter header_writer(&header);
   response_headers.WriteAsHttp(&header_writer, server_context->message_handler());
-  
+
   TSCont interceptCont = TSContCreate(resource_intercept, TSMutexCreate());
-  InterceptCtx *intercept_ctx = new InterceptCtx(); 
+  InterceptCtx *intercept_ctx = new InterceptCtx();
   intercept_ctx->request_ctx = ctx;
   header.append(output);
   TSHttpTxnRespCacheableSet(txn, 0);
@@ -344,7 +344,7 @@ read_cache_header_callback(TSCont cont, TSEvent event, void *edata)
   TSContDataSet(interceptCont, intercept_ctx);
   TSHttpTxnServerIntercept(interceptCont, txn);
   intercept_ctx->response->append(header);
-  
+
   TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
   return 0;
 }

@@ -338,8 +338,8 @@ IpAddr::load(char const* text) {
   return zret;
 }
 
-int 
-IpAddr::load(ts::ConstBuffer const& text) 
+int
+IpAddr::load(ts::ConstBuffer const& text)
 {
   IpEndpoint ip;
   int zret = ats_ip_pton(text, &ip.sa);
@@ -459,7 +459,7 @@ ats_ip_getbestaddrinfo(char const* host,
     ai_hints.ai_family = AF_UNSPEC;
     ai_hints.ai_flags = AI_ADDRCONFIG;
     zret = getaddrinfo(addr_text.data(), 0, &ai_hints, &ai_result);
-  
+
     if (0 == zret) {
       // Walk the returned addresses and pick the "best".
       enum {
@@ -484,7 +484,7 @@ ats_ip_getbestaddrinfo(char const* host,
         else if (ats_is_ip_private(ai_ip)) spot_type = PR;
         else if (ats_is_ip_multicast(ai_ip)) spot_type = MC;
         else spot_type = GL;
-        
+
         if (spot_type == NA) continue; // Next!
 
         if (ats_is_ip4(ai_ip)) {

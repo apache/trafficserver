@@ -82,7 +82,7 @@ vlogf(
 ) {
   static size_t const SIZE = 8192;
   char buffer[SIZE];
-  
+
   vsnprintf(buffer, SIZE, format, rest);
   err.push(id, code, buffer);
   return err;
@@ -147,7 +147,7 @@ vlogf_errno(Errata& errata, Errata::Id id, Errata::Code code, char const* format
   char e_buffer[E_SIZE];
   static int const T_SIZE = 8192;
   char t_buffer[T_SIZE];
-  
+
   n = vsnprintf(t_buffer, T_SIZE, format, rest);
   if (0 <= n && n < T_SIZE) { // still have room.
     ATS_UNUSED_RETURN(strerror_r(e, e_buffer, E_SIZE));

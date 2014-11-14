@@ -52,7 +52,7 @@ private:
     UrlMappingTrieKey(int idx, int p)
       : scheme_wks_idx(idx), port(p)
     { }
-    
+
     bool operator <(const UrlMappingTrieKey &rhs) const {
       if (scheme_wks_idx == rhs.scheme_wks_idx) {
         return (port < rhs.port);

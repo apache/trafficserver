@@ -8,7 +8,7 @@
   with the License.  You may obtain a copy of the License at
 
   http://www.apache.org/licenses/LICENSE-2.0
- 
+
   Unless required by applicable law or agreed to in writing, software
   distributed under the License is distributed on an "AS IS" BASIS,
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -132,7 +132,7 @@ ts_lua_add_module(ts_lua_instance_conf * conf, ts_lua_main_ctx * arr, int n, int
         return -1;
       }
 
-    } else if (conf->script) { 
+    } else if (conf->script) {
       if (luaL_loadfile(L, conf->script)) {
         TSError("[%s] luaL_loadfile %s failed: %s", __FUNCTION__, conf->script, lua_tostring(L, -1));
         lua_pop(L, 1);
@@ -639,7 +639,7 @@ ts_lua_http_cont_handler(TSCont contp, TSEvent event, void *edata)
       if (lua_pcall(l, 0, 1, 0)) {
         TSError("lua_pcall failed: %s", lua_tostring(l, -1));
       }
-    
+
       ret = lua_tointeger(l, -1);
     }
 

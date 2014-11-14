@@ -403,12 +403,12 @@ void
 SessionProtocolNameRegistry::markIn(char const* value, SessionProtocolSet& sp_set) {
   int n; // # of tokens
   Tokenizer tokens(" ;|,:");
- 
+
   n = tokens.Initialize(value);
 
   for ( int i = 0 ; i < n ; ++i ) {
     char const* elt = tokens[i];
-    
+
     /// Check special cases
     if (0 == strcasecmp(elt, TS_NPN_PROTOCOL_GROUP_HTTP)) {
       sp_set.markIn(HTTP_PROTOCOL_SET);
@@ -525,7 +525,7 @@ HttpProxyPort::print(char* out, size_t n) {
     need_colon_p = false;
   }
   if (sp_set.contains(SPDY_PROTOCOL_SET)) {
-    if (need_colon_p) 
+    if (need_colon_p)
       zret += snprintf(out+zret, n-zret, ":%s=", OPT_PROTO_PREFIX);
     else
       out[zret++] = ';';

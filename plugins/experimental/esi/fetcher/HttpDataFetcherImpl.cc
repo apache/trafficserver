@@ -55,16 +55,16 @@ HttpDataFetcherImpl::HttpDataFetcherImpl(TSCont contp,sockaddr const* client_add
 }
 
 HttpDataFetcherImpl::~HttpDataFetcherImpl()
-{ 
-  clear(); 
-  TSHttpParserDestroy(_http_parser); 
+{
+  clear();
+  TSHttpParserDestroy(_http_parser);
 }
 
 bool
 HttpDataFetcherImpl::addFetchRequest(const string &url, FetchedDataProcessor *callback_obj /* = 0 */)
 {
   // do we already have a request for this?
-  std::pair<UrlToContentMap::iterator, bool> insert_result = 
+  std::pair<UrlToContentMap::iterator, bool> insert_result =
     _pages.insert(UrlToContentMap::value_type(url, RequestData()));
   if (callback_obj) {
     ((insert_result.first)->second).callback_objects.push_back(callback_obj);
@@ -75,7 +75,7 @@ HttpDataFetcherImpl::addFetchRequest(const string &url, FetchedDataProcessor *ca
     return true;
   }
 
-  char buff[1024]; 
+  char buff[1024];
   char *http_req;
   int length;
 
@@ -102,7 +102,7 @@ HttpDataFetcherImpl::addFetchRequest(const string &url, FetchedDataProcessor *ca
   if (http_req != buff) {
     free(http_req);
   }
-  
+
   TSDebug(_debug_tag, "[%s] Successfully added fetch request for URL [%s]", __FUNCTION__, url.data());
   _page_entry_lookup.push_back(insert_result.first);
   ++_n_pending_requests;
@@ -160,7 +160,7 @@ HttpDataFetcherImpl::handleFetchEvent(TSEvent event, void *edata)
   req_data.hdr_loc = TSHttpHdrCreate(req_data.bufp);
   TSHttpHdrTypeSet(req_data.bufp, req_data.hdr_loc, TS_HTTP_TYPE_RESPONSE);
   TSHttpParserClear(_http_parser);
-  
+
   if (TSHttpHdrParseResp(_http_parser, req_data.bufp, req_data.hdr_loc, &startptr, endptr) == TS_PARSE_DONE) {
     req_data.resp_status = TSHttpHdrStatusGet(req_data.bufp, req_data.hdr_loc);
     valid_data_received = true;

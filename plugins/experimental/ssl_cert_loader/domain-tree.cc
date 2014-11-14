@@ -1,4 +1,4 @@
-/** @file 
+/** @file
     SSL dynamic certificate loader
     Loads certificates into a hash table as they are requested
 
@@ -27,7 +27,7 @@
 
 // return true if comparable.  Return type of compare in relative parameter
 // 0 if eq.  < 0 if node key is broader.  > 0 if parameter key is broader
-bool 
+bool
 DomainNameTree::DomainNameNode::compare(std::string key, int &relative)
 {
   size_t star_loc = key.find("*");
@@ -42,14 +42,14 @@ DomainNameTree::DomainNameNode::compare(std::string key, int &relative)
   return this->prunedCompare(key, relative, is_wild);
 }
 
-bool 
+bool
 DomainNameTree::DomainNameNode::prunedCompare(std::string key, int &relative, bool is_wild)
 {
   if (key == this->key) {
     relative = 0;
     return true;
   } else {
-    if (this->is_wild) { 
+    if (this->is_wild) {
       size_t loc = key.find(this->key);
 
       if (this->key == "") { // Match all
@@ -75,7 +75,7 @@ DomainNameTree::DomainNameNode::prunedCompare(std::string key, int &relative, bo
           if ((this->key.length() - key.length()) == loc) {
             relative = 1;
             return true;
-          } 
+          }
         }
       }
     }
@@ -95,7 +95,7 @@ DomainNameTree::DomainNameNode *DomainNameTree::find(std::string key, bool best_
     key = key.substr(star_loc+1);
     is_wild = true;
   }
-  
+
   bool set_iter = false;
   std::deque<DomainNameNode *>::iterator sibPtr;
   DomainNameNode *current_node = root;
@@ -169,7 +169,7 @@ DomainNameTree::insert(std::string key, void *payload, int order)
       new_node->parent = node->parent;
       new_node->children.push_back(node);
 
-      // Replace the node with new_node in the child list of the parent; 
+      // Replace the node with new_node in the child list of the parent;
       for (std::deque<DomainNameNode *>::iterator iter = node->parent->children.begin();
            iter != node->parent->children.end(); ++iter) {
         if (*(iter) == node) {

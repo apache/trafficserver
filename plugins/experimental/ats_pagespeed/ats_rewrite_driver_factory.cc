@@ -64,7 +64,7 @@ namespace net_instaweb {
 						   const ProcessContext& process_context,
 						   AtsThreadSystem* thread_system,
 						   StringPiece hostname, int port)
-    : SystemRewriteDriverFactory(process_context, 
+    : SystemRewriteDriverFactory(process_context,
 				 thread_system, NULL /*default shared mem runtime*/,
 				 "" /*hostname, not used*/, -1/*port, not used*/)
       , ats_message_handler_(new AtsMessageHandler(thread_system->NewMutex()))
@@ -76,7 +76,7 @@ namespace net_instaweb {
     default_options()->set_beacon_url("/ats_pagespeed_beacon");
     default_options()->set_enabled(RewriteOptions::kEnabledOn);
     default_options()->SetRewriteLevel(RewriteOptions::kCoreFilters);
-    
+
     SystemRewriteOptions* system_options = dynamic_cast<SystemRewriteOptions*>(
 									       default_options());
     system_options->set_log_dir("/tmp/ps_log/");
@@ -90,7 +90,7 @@ namespace net_instaweb {
     system_options->set_lru_cache_kb_per_process(1024*500);//500 MB
 
     system_options->set_flush_html(true);
-    
+
     AtsRewriteOptions* ats_options = (AtsRewriteOptions*)system_options;
     std::vector<std::string> args;
     args.push_back("RateLimitBackgroundFetches");
@@ -98,7 +98,7 @@ namespace net_instaweb {
     global_settings settings;
     const char* msg = ats_options->ParseAndSetOptions(args, ats_message_handler_, settings);
     CHECK(!msg);
-    
+
     set_message_buffer_size(1024*128);
     set_message_handler(ats_message_handler_);
     set_html_parse_message_handler(ats_html_parse_message_handler_);

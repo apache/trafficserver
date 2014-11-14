@@ -31,17 +31,17 @@
 #include "Regex.h"
 #include "URL.h"
 
-/* 
+/*
  You SHOULD add to _hdrtoken_commonly_tokenized_strs, with the same ordering
  ** important, ordering matters **
- 
+
  You want a regexp like 'Accept' after "greedier" choices so it doesn't match 'Accept-Ranges' earlier than
- it should. The regexp are anchored (^Accept), but I dont see a way with the current system to 
+ it should. The regexp are anchored (^Accept), but I dont see a way with the current system to
  match the word ONLY without making _hdrtoken_strs a real PCRE, but then that breaks the hashing
  hdrtoken_hash("^Accept$") != hdrtoken_hash("Accept")
- 
+
  So, the current hack is to have "Accept" follow "Accept-.*", lame, I know
- 
+
   /ericb
 */
 
@@ -118,13 +118,13 @@ static const char *_hdrtoken_strs[] = {
   "Www-Authenticate",
   "Xref",                       // NNTP
   "@DataInfo",                  // Internal Hack
-  
+
   // Accept-Encoding
   "compress",
   "deflate",
   "gzip",
   "identity",
-  
+
   // Cache-Control flags
   "max-age",
   "max-stale",
@@ -138,12 +138,12 @@ static const char *_hdrtoken_strs[] = {
   "proxy-revalidate",
   "s-maxage",
   "need-revalidate-once",
-  
+
   // HTTP miscellaneous
   "none",
   "chunked",
   "close",
-  
+
   // WS
   "websocket",
   "Sec-WebSocket-Key",
@@ -170,7 +170,7 @@ static const char *_hdrtoken_strs[] = {
   "mms",
   "wss",
   "ws",
-  
+
   // HTTP methods
   "CONNECT",
   "DELETE",
@@ -183,7 +183,7 @@ static const char *_hdrtoken_strs[] = {
   "PUT",
   "TRACE",
   "PUSH",
-  
+
   // Header extensions
   "X-ID",
   "X-Forwarded-For",
@@ -375,8 +375,8 @@ hdrtoken_hash(const unsigned char *string, unsigned int length)
   uint32_t hash = InitialFNV;
 
   for (size_t i = 0; i < length; i++)  {
-      hash = hash ^ (toupper(string[i])); 
-      hash = hash * FNVMultiple;          
+      hash = hash ^ (toupper(string[i]));
+      hash = hash * FNVMultiple;
   }
 
   return hash;
@@ -458,13 +458,13 @@ static const char *_hdrtoken_commonly_tokenized_strs[] = {
   "Www-Authenticate",
   "Xref",                       // NNTP
   "@DataInfo",                  // Internal Hack
-  
+
   // Accept-Encoding
   "compress",
   "deflate",
   "gzip",
   "identity",
-  
+
   // Cache-Control flags
   "max-age",
   "max-stale",
@@ -478,12 +478,12 @@ static const char *_hdrtoken_commonly_tokenized_strs[] = {
   "proxy-revalidate",
   "s-maxage",
   "need-revalidate-once",
-  
+
   // HTTP miscellaneous
   "none",
   "chunked",
   "close",
-  
+
   // WS
   "websocket",
   "Sec-WebSocket-Key",
@@ -510,7 +510,7 @@ static const char *_hdrtoken_commonly_tokenized_strs[] = {
   "mms",
   "wss",
   "ws",
-  
+
   // HTTP methods
   "CONNECT",
   "DELETE",
@@ -523,7 +523,7 @@ static const char *_hdrtoken_commonly_tokenized_strs[] = {
   "PUT",
   "TRACE",
   "PUSH",
-  
+
   // Header extensions
   "X-ID",
   "X-Forwarded-For",
@@ -693,7 +693,7 @@ int
 hdrtoken_tokenize_dfa(const char *string, int string_len, const char **wks_string_out)
 {
   int wks_idx;
-  
+
   wks_idx = hdrtoken_strs_dfa->match(string, string_len);
 
   if (wks_idx < 0)

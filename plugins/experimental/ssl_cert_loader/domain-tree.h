@@ -27,15 +27,15 @@
 
 class DomainNameTree {
 public:
-  
+
   class DomainNameNode {
   public:
     DomainNameNode()
-      : order(-1), payload(NULL), parent(NULL), is_wild(false) 
+      : order(-1), payload(NULL), parent(NULL), is_wild(false)
     { }
 
     DomainNameNode(std::string key, void *payload, int order, bool is_wild)
-      : key(key), order(order), payload(payload), parent(NULL), is_wild(is_wild)  
+      : key(key), order(order), payload(payload), parent(NULL), is_wild(is_wild)
     { }
 
     DomainNameNode *match(std::string value);
@@ -68,7 +68,7 @@ public:
     root->key = "";
     root->order = 0x7FFFFFFF;
     root->is_wild = true;
-    tree_mutex = TSMutexCreate(); 
+    tree_mutex = TSMutexCreate();
   }
 
   ~DomainNameTree()
@@ -82,7 +82,7 @@ public:
     DomainNameNode *retval = this->find(key, true);
     TSMutexUnlock(this->tree_mutex);
     return retval;
-  } 
+  }
 
   DomainNameNode *findFirstMatch(std::string key)
   {

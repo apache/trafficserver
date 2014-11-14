@@ -23,7 +23,7 @@
 
 #ifndef _GZIP_H
 
-#define _GZIP_H 
+#define _GZIP_H
 
 #include <string>
 #include <list>

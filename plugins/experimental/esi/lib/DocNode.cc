@@ -43,7 +43,7 @@ const char *DocNode::type_names_[] = { "UNKNOWN",
                                        "SPECIAL_INCLUDE"
 };
 
-// helper functions 
+// helper functions
 
 inline void
 packString(const char *str, int32_t str_len, string &buffer) {

@@ -41,16 +41,16 @@ public:
   typedef void (*Error)(const char *, ...);
 
 protected:
-  
-  ComponentBase(const char *debug_tag, Debug debug_func, Error error_func) 
+
+  ComponentBase(const char *debug_tag, Debug debug_func, Error error_func)
     : _debugLog(debug_func), _errorLog(error_func) {
       snprintf(_debug_tag, sizeof(_debug_tag), "%s", debug_tag);
   };
-  
+
   char _debug_tag[DEBUG_TAG_MAX_SIZE];
   Debug _debugLog;
   Error _errorLog;
-  
+
   virtual ~ComponentBase() { };
 
 };

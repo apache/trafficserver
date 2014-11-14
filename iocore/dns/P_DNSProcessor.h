@@ -335,7 +335,7 @@ TS_INLINE DNSHandler::DNSHandler()
     ns_down[i] = 1;
     con[i].handler = this;
   }
-  memset(&qid_in_flight, 0, sizeof(qid_in_flight));  
+  memset(&qid_in_flight, 0, sizeof(qid_in_flight));
   SET_HANDLER(&DNSHandler::startEvent);
   Debug("net_epoll", "inline DNSHandler::DNSHandler()");
 }

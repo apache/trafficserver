@@ -674,7 +674,7 @@ check_client_ip_configured(TSHttpTxn txnp, const char* cfg_ip)
 
   if ((strlen(cfg_ip) == strlen(ip_buf)) && !strcmp(cfg_ip, ip_buf)) {
     TSDebug(PLUGIN_NAME,"bg fetch for ip %s, configured ip %s", ip_buf, cfg_ip);
-    return true; 
+    return true;
   }
 
   return false;
@@ -819,7 +819,7 @@ cont_handle_response(TSCont contp, TSEvent /* event ATS_UNUSED */, void* edata)
 {
   // ToDo: If we want to support per-remap configurations, we have to pass along the data here
   TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
-  BgFetchRuleMap *ri = static_cast<BgFetchRuleMap*>(TSContDataGet(contp)); 
+  BgFetchRuleMap *ri = static_cast<BgFetchRuleMap*>(TSContDataGet(contp));
 
   if (ri == NULL) {
     // something wrong..
@@ -939,7 +939,7 @@ TSRemapNewInstance(int  argc, char* argv[], void** ih, char* /* errbuf */, int /
     TSError("%s:Unable to create remap instance", PLUGIN_NAME);
     return TS_ERROR;
   }
-  
+
   if (gConfig == NULL) {
     TSDebug(PLUGIN_NAME, "creating gConfig");
     gConfig = new BGFetchConfig();

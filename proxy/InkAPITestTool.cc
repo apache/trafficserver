@@ -427,7 +427,7 @@ static ClientTxn *
 synclient_txn_create(void)
 {
   HttpProxyPort* proxy_port;
-  
+
   ClientTxn *txn = (ClientTxn *) TSmalloc(sizeof(ClientTxn));
   if (0 == (proxy_port = HttpProxyPort::findHttp(AF_INET)))
     txn->connect_port = PROXY_HTTP_DEFAULT_PORT;
@@ -499,7 +499,7 @@ synclient_txn_send_request(ClientTxn * txn, char *request)
 
   cont = TSContCreate(synclient_txn_main_handler, TSMutexCreate());
   TSContDataSet(cont, txn);
-  
+
   ats_ip4_set(&addr, txn->connect_ip, htons(txn->connect_port));
   TSNetConnect(cont, ats_ip_sa_cast(&addr));
   return 1;

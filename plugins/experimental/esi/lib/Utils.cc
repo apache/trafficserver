@@ -183,7 +183,7 @@ Utils::parseAttributes(const char *data, int data_len, AttributeList &attr_list,
       attr.value = 0;
       inside_quotes = false;
     } else if (data[i] == '"') {
-      if (!escape_on) { 
+      if (!escape_on) {
         inside_quotes = !inside_quotes;
       }
     } else if ((data[i] == '=') && !attr.value && !inside_quotes) {

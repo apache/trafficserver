@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _ESI_UTILS_H 
+#ifndef _ESI_UTILS_H
 
 #define _ESI_UTILS_H
 
@@ -49,7 +49,7 @@ namespace Utils {
   // to data inside data string
   bool getAttribute(const std::string &data, const std::string &attr, size_t curr_pos, size_t end_pos,
                     Attribute &attr_info, size_t *term_pos = 0, char terminator = 0);
-  
+
   // less specialized version of method above
   inline bool getAttribute(const std::string &data, const char *attr, Attribute &attr_info) {
     return getAttribute(data, std::string(attr), 0, data.size(), attr_info);
@@ -98,10 +98,10 @@ namespace Utils {
   // parses given lines (assumes <key><whitespace><value> format) and
   // stores them in supplied map; Lines beginning with '#' are ignored
   void parseKeyValueConfig(const std::list<std::string> &lines, KeyValueMap &kvMap);
-  
+
   inline std::string unescape(const char *str, int len = -1) {
     std::string retval("");
-    if (str) { 
+    if (str) {
       for (int i = 0; (((len == -1) && (str[i] != '\0')) || (i < len)); ++i) {
         if (str[i] != '\\') {
           retval += str[i];

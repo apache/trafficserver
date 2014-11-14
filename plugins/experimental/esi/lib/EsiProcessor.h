@@ -48,48 +48,48 @@ public:
                EsiLib::ComponentBase::Debug debug_func, EsiLib::ComponentBase::Error error_func,
                HttpDataFetcher &fetcher, EsiLib::Variables &variables,
                const EsiLib::HandlerManager &handler_mgr);
-  
+
   /** Initializes the processor with the context of the request to be processed */
   bool start();
 
   /** Adds data to be parsed */
   bool addParseData(const char *data, int data_len = -1);
 
-  /** convenient alternative to method above */ 
+  /** convenient alternative to method above */
   bool addParseData(const std::string &data) {
     return addParseData(data.data(), data.size());
   }
-  
+
   /** Tells processor to wrap-up parsing; a final or the only piece of
    * data can be optionally provided */
   bool completeParse(const char *data = 0, int data_len = -1);
-  
-  /** convenient alternative to method above */ 
+
+  /** convenient alternative to method above */
   bool completeParse(const std::string &data) {
     return completeParse(data.data(), data.size());
   }
-  
+
   enum ReturnCode { FAILURE, SUCCESS, NEED_MORE_DATA };
-  
-  /** Processes the currently parsed ESI document and returns processed 
-   * data in supplied out-parameters. Should be called when fetcher has 
-   * finished pulling in all data. 
-   * 
+
+  /** Processes the currently parsed ESI document and returns processed
+   * data in supplied out-parameters. Should be called when fetcher has
+   * finished pulling in all data.
+   *
    * try/attempt/except construct can generate new fetch requests
    * during processing. Only in such cases is NEED_MORE_DATA returned;
    * else FAILURE/SUCCESS is returned. */
   ReturnCode process(const char *&data, int &data_len);
 
-  /** Process the ESI document and flush processed data as much as 
-   * possible. Can be called when fetcher hasn't finished pulling 
+  /** Process the ESI document and flush processed data as much as
+   * possible. Can be called when fetcher hasn't finished pulling
    * in all data. */
   ReturnCode flush(std:: string &data, int &overall_len);
- 
+
   /** returns packed version of document currently being processed */
   void packNodeList(std::string &buffer, bool retain_buffer_data) {
     return _node_list.pack(buffer, retain_buffer_data);
   }
-  
+
   /** Unpacks previously parsed and packed ESI node list from given
    * buffer and preps for process(); Unpacked document will point to
    * data in argument (i.e., caller space) */
@@ -101,12 +101,12 @@ public:
   }
 
   /** Clears state from current request */
-  void stop(); 
+  void stop();
 
   virtual ~EsiProcessor();
 
 private:
-  
+
   enum EXEC_STATE { STOPPED, PARSING, WAITING_TO_PROCESS, PROCESSED, ERRORED };
   EXEC_STATE _curr_state;
 
@@ -124,7 +124,7 @@ private:
 
   bool _reqAdded;
   bool _usePackedNodeList;
-  
+
   bool _processEsiNode(const EsiLib::DocNodeList::iterator &iter);
   bool _handleParseComplete();
   bool _getIncludeData(const EsiLib::DocNode &node, const char **content_ptr = 0, int *content_len_ptr = 0);
@@ -144,7 +144,7 @@ private:
     EsiLib::DocNodeList &attempt_nodes;
     EsiLib::DocNodeList &except_nodes;
     EsiLib::DocNodeList::iterator pos;
-    TryBlock(EsiLib::DocNodeList &att, EsiLib::DocNodeList &exc, EsiLib::DocNodeList::iterator p) 
+    TryBlock(EsiLib::DocNodeList &att, EsiLib::DocNodeList &exc, EsiLib::DocNodeList::iterator p)
       : attempt_nodes(att), except_nodes(exc), pos(p) { };
   };
   typedef std::list<TryBlock> TryBlockList;
@@ -153,7 +153,7 @@ private:
 
   const EsiLib::HandlerManager &_handler_manager;
 
-  static const char *INCLUDE_DATA_ID_ATTR; 
+  static const char *INCLUDE_DATA_ID_ATTR;
 
   typedef std::map<std::string, EsiLib::SpecialIncludeHandler *> IncludeHandlerMap;
   IncludeHandlerMap _include_handlers;

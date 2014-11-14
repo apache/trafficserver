@@ -18,7 +18,7 @@
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////
-// 
+//
 // Main entry points for the plugin hooks etc.
 //
 #include <ts/ts.h>
@@ -110,7 +110,7 @@ TSRemapDoRemap(void* ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
   return TSREMAP_NO_REMAP;
 }
 
-
+
 /*
   local variables:
   mode: C++

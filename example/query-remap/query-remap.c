@@ -126,7 +126,7 @@ TSRemapDoRemap(void* ih, TSHttpTxn rh ATS_UNUSED, TSRemapRequestInfo *rri)
 
   int req_query_len;
   const char* req_query = TSUrlHttpQueryGet(rri->requestBufp, rri->requestUrl, &req_query_len);
-  
+
   if (req_query && req_query_len > 0) {
     char *q, *key;
     char *s = NULL;

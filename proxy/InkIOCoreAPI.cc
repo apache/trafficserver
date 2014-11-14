@@ -362,14 +362,14 @@ INKBasedTimeGet()
 
 TSAction
 INKUDPBind(TSCont contp, unsigned int ip, int port)
-{  
+{
   sdk_assert(sdk_sanity_check_continuation(contp) == TS_SUCCESS);
-    
+
   FORCE_PLUGIN_MUTEX(contp);
 
   struct sockaddr_in addr;
   ats_ip4_set(&addr, ip, htons(port));
-  
+
   return reinterpret_cast<TSAction>(udpNet.UDPBind((Continuation *)contp, ats_ip_sa_cast(&addr), INK_ETHERNET_MTU_SIZE, INK_ETHERNET_MTU_SIZE));
 }
 
@@ -485,7 +485,7 @@ INKUDPPacketGet(INKUDPacketQueue queuep)
 
     packet = qp->pop();
     return (packet);
-  } 
+  }
 
   return NULL;
 }

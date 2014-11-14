@@ -67,12 +67,12 @@ namespace std {
         Elt* _prev;
       };
     @endcode
-  
+
     The list is declared as
     @code
       typedef IntrusiveDList<Elt, &Elt::_next, &Elt::_prev> EltList;
     @endcode
-  
+
     An element can be in multiple types of lists simultaneously as
     long as each list type uses distinct members. It is not possible
     for an element to be in more than one list of the same type

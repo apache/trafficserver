@@ -44,7 +44,7 @@ public:
     while (std::getline(iss, query_param_raw, '&')) {
       size_t equals_pos = query_param_raw.find('=');
       if (equals_pos && (equals_pos < (query_param_raw.size() - 1))) {
-        query_params[string(query_param_raw, 0, equals_pos)] = 
+        query_params[string(query_param_raw, 0, equals_pos)] =
           string(query_param_raw, equals_pos + 1, query_param_raw.size() - equals_pos - 1);
       }
     }

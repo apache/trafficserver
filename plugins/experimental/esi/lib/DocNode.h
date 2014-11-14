@@ -50,9 +50,9 @@ public:
     pack(buffer);
     return buffer;
   }
-  
+
   bool unpack(const char *data, int data_len);
-  
+
   inline bool unpack(const std::string &data) {
     return unpack(data.data(), data.size());
   }
@@ -60,7 +60,7 @@ public:
 private:
 
   void packToBuffer(std::string &buffer) const;
-  
+
   friend class DocNode; // to use the method above
 
 };
@@ -68,7 +68,7 @@ private:
 
 class DocNode
 {
-  
+
 public:
   enum TYPE {
     TYPE_UNKNOWN = 0,
@@ -87,7 +87,7 @@ public:
     TYPE_SPECIAL_INCLUDE = 13,
   };
 
-  // Use with care - only types defined above will have valid names 
+  // Use with care - only types defined above will have valid names
   static const char *type_names_[];
 
   TYPE type;
@@ -98,7 +98,7 @@ public:
 
   DocNodeList child_nodes;
 
-  DocNode(TYPE _type = TYPE_UNKNOWN, const char *_data = 0, int32_t _data_len = 0) 
+  DocNode(TYPE _type = TYPE_UNKNOWN, const char *_data = 0, int32_t _data_len = 0)
     : type(_type), data(_data), data_len(_data_len) { };
 
   void pack(std::string &buffer) const;

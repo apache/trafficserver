@@ -78,7 +78,7 @@ EsiProcessor::addParseData(const char *data, int data_len) {
     _debugLog(_debug_tag, "[%s] Can only parse in parse stage", __FUNCTION__);
     return false;
   }
-  
+
   if (!_parser.parseChunk(data, _node_list, data_len)) {
     _errorLog("[%s] Failed to parse chunk; Stopping processor...", __FUNCTION__);
     error();
@@ -149,7 +149,7 @@ EsiProcessor::_handleParseComplete() {
 
   _debugLog(_debug_tag, "[%s] Parsed ESI document with %d nodes", __FUNCTION__, _node_list.size());
   _curr_state = WAITING_TO_PROCESS;
-  
+
   return true;
 }
 
@@ -172,7 +172,7 @@ EsiProcessor::_getIncludeStatus(const DocNode &node) {
     }
     const string &processed_url = iter->second;
     DataStatus status = _fetcher.getRequestStatus(processed_url);
-    _debugLog(_debug_tag, "[%s] Got status %d successfully for URL [%.*s]", __FUNCTION__, status, 
+    _debugLog(_debug_tag, "[%s] Got status %d successfully for URL [%.*s]", __FUNCTION__, status,
               processed_url.size(), processed_url.data());
     return status;
   } else if (node.type == DocNode::TYPE_SPECIAL_INCLUDE) {
@@ -183,7 +183,7 @@ EsiProcessor::_getIncludeStatus(const DocNode &node) {
       }
     }
     int include_data_id = attr_iter->value_len;
-    SpecialIncludeHandler *handler = 
+    SpecialIncludeHandler *handler =
       reinterpret_cast<SpecialIncludeHandler *>(const_cast<char *>(attr_iter->value));
     DataStatus status = handler->getIncludeStatus(include_data_id);
     _debugLog(_debug_tag, "[%s] Successfully got status for special include with id %d",
@@ -228,12 +228,12 @@ EsiProcessor::_getIncludeData(const DocNode &node, const char **content_ptr /* =
       result = (_fetcher.getRequestStatus(processed_url) == STATUS_DATA_AVAILABLE);
     }
     if (!result) {
-      _errorLog("[%s] Couldn't get content for URL [%.*s]", 
+      _errorLog("[%s] Couldn't get content for URL [%.*s]",
                 __FUNCTION__, processed_url.size(), processed_url.data());
       Stats::increment(Stats::N_INCLUDE_ERRS);
       return false;
     }
-    _debugLog(_debug_tag, "[%s] Got content successfully for URL [%.*s]", __FUNCTION__, 
+    _debugLog(_debug_tag, "[%s] Got content successfully for URL [%.*s]", __FUNCTION__,
               processed_url.size(), processed_url.data());
     return true;
   } else if (node.type == DocNode::TYPE_SPECIAL_INCLUDE) {
@@ -244,7 +244,7 @@ EsiProcessor::_getIncludeData(const DocNode &node, const char **content_ptr /* =
       }
     }
     int include_data_id = attr_iter->value_len;
-    SpecialIncludeHandler *handler = 
+    SpecialIncludeHandler *handler =
       reinterpret_cast<SpecialIncludeHandler *>(const_cast<char *>(attr_iter->value));
     bool result;
     if (content_ptr && content_len_ptr) {
@@ -287,7 +287,7 @@ EsiProcessor::process(const char *&data, int &data_len) {
     for (node_iter = try_iter->attempt_nodes.begin(); node_iter != try_iter->attempt_nodes.end(); ++node_iter) {
       if ((node_iter->type == DocNode::TYPE_INCLUDE) ||
           (node_iter->type == DocNode::TYPE_SPECIAL_INCLUDE)) {
-          const Attribute &url = (*node_iter).attr_list.front();              
+          const Attribute &url = (*node_iter).attr_list.front();
           string raw_url(url.value, url.value_len);
           attemptUrls.push_back(_expression.expand(raw_url));
         if (!_getIncludeData(*node_iter)) {
@@ -297,27 +297,27 @@ EsiProcessor::process(const char *&data, int &data_len) {
         }
       }
     }
-          
+
     /* FAILURE CACHE */
     FailureData* data=static_cast<FailureData*>(pthread_getspecific(threadKey));
     _debugLog("plugin_esi_failureInfo","[%s]Fetched data related to thread specfic %p",__FUNCTION__,data);
-    
+
     for (iter=try_iter->attempt_nodes.begin(); iter != try_iter->attempt_nodes.end(); ++iter) {
       if ((iter->type == DocNode::TYPE_INCLUDE) || iter->type == DocNode::TYPE_SPECIAL_INCLUDE)
       {
           if(!attempt_succeeded && iter==node_iter)
               continue;
-          const Attribute &url = (*iter).attr_list.front();              
+          const Attribute &url = (*iter).attr_list.front();
           string raw_url(url.value, url.value_len);
           attemptUrls.push_back(_expression.expand(raw_url));
       }
     }
-   
+
     if(attemptUrls.size()>0 && data)
-    { 
+    {
         FailureData::iterator it =data->find(attemptUrls[0]);
         FailureInfo* info;
-    
+
         if(it == data->end())
         {
             _debugLog("plugin_esi_failureInfo","[%s]Inserting object for the attempt URLS",__FUNCTION__);
@@ -327,7 +327,7 @@ EsiProcessor::process(const char *&data, int &data_len) {
                 _debugLog("plugin_esi_failureInfo", "[%s] Urls [%.*s]",__FUNCTION__,attemptUrls[i].size(),attemptUrls[i].data());
                 (*data)[attemptUrls[i]]=info;
             }
-    
+
             info->registerSuccFail(attempt_succeeded);
 
         } else {
@@ -335,15 +335,15 @@ EsiProcessor::process(const char *&data, int &data_len) {
             //Should be registered only if attemp was made
             //and it failed
             if(_reqAdded)
-                info->registerSuccFail(attempt_succeeded);   
-    
+                info->registerSuccFail(attempt_succeeded);
+
         }
     }
     if (attempt_succeeded) {
       _debugLog(_debug_tag, "[%s] attempt section succeded; using attempt section", __FUNCTION__);
       _node_list.splice(try_iter->pos, try_iter->attempt_nodes);
     } else {
-      _debugLog(_debug_tag, "[%s] attempt section errored; trying except section", __FUNCTION__); 
+      _debugLog(_debug_tag, "[%s] attempt section errored; trying except section", __FUNCTION__);
       int n_prescanned_nodes = 0;
       if (!_preprocess(try_iter->except_nodes, n_prescanned_nodes)) {
         _errorLog("[%s] Failed to preprocess except nodes", __FUNCTION__);
@@ -351,7 +351,7 @@ EsiProcessor::process(const char *&data, int &data_len) {
         return FAILURE;
       }
       _node_list.splice(try_iter->pos, try_iter->except_nodes);
-      if (_fetcher.getNumPendingRequests()) { 
+      if (_fetcher.getNumPendingRequests()) {
         _debugLog(_debug_tag, "[%s] New fetch requests were triggered by except block; "
                   "Returning NEED_MORE_DATA...", __FUNCTION__);
         return NEED_MORE_DATA;
@@ -414,13 +414,13 @@ EsiProcessor::flush(string &data, int &overall_len) {
     if(attempt_pending) {
       break;
     }
-  
+
     ++_n_try_blocks_processed;
     attempt_succeeded = true;
     for (node_iter = try_iter->attempt_nodes.begin(); node_iter != try_iter->attempt_nodes.end(); ++node_iter) {
       if ((node_iter->type == DocNode::TYPE_INCLUDE) ||
           (node_iter->type == DocNode::TYPE_SPECIAL_INCLUDE)) {
-          const Attribute &url = (*node_iter).attr_list.front();              
+          const Attribute &url = (*node_iter).attr_list.front();
           string raw_url(url.value, url.value_len);
           attemptUrls.push_back(_expression.expand(raw_url));
         if (_getIncludeStatus(*node_iter) != STATUS_DATA_AVAILABLE) {
@@ -430,27 +430,27 @@ EsiProcessor::flush(string &data, int &overall_len) {
         }
       }
     }
-          
+
     /* FAILURE CACHE */
     FailureData* fdata=static_cast<FailureData*>(pthread_getspecific(threadKey));
     _debugLog("plugin_esi_failureInfo","[%s]Fetched data related to thread specfic %p",__FUNCTION__,fdata);
-    
+
     for (iter=try_iter->attempt_nodes.begin(); iter != try_iter->attempt_nodes.end(); ++iter) {
       if ((iter->type == DocNode::TYPE_INCLUDE) || iter->type == DocNode::TYPE_SPECIAL_INCLUDE)
       {
           if(!attempt_succeeded && iter==node_iter)
               continue;
-          const Attribute &url = (*iter).attr_list.front();              
+          const Attribute &url = (*iter).attr_list.front();
           string raw_url(url.value, url.value_len);
           attemptUrls.push_back(_expression.expand(raw_url));
       }
     }
-   
+
     if(attemptUrls.size()>0 && fdata)
-    { 
+    {
         FailureData::iterator it =fdata->find(attemptUrls[0]);
         FailureInfo* info;
-    
+
         if(it == fdata->end())
         {
             _debugLog("plugin_esi_failureInfo","[%s]Inserting object for the attempt URLS",__FUNCTION__);
@@ -460,7 +460,7 @@ EsiProcessor::flush(string &data, int &overall_len) {
                 _debugLog("plugin_esi_failureInfo", "[%s] Urls [%.*s]",__FUNCTION__,attemptUrls[i].size(),attemptUrls[i].data());
                 (*fdata)[attemptUrls[i]]=info;
             }
-    
+
             info->registerSuccFail(attempt_succeeded);
 
         } else {
@@ -468,8 +468,8 @@ EsiProcessor::flush(string &data, int &overall_len) {
             //Should be registered only if attemp was made
             //and it failed
             if(_reqAdded)
-                info->registerSuccFail(attempt_succeeded);   
-    
+                info->registerSuccFail(attempt_succeeded);
+
         }
     }
     if (attempt_succeeded) {
@@ -477,14 +477,14 @@ EsiProcessor::flush(string &data, int &overall_len) {
       _n_prescanned_nodes = _n_prescanned_nodes + try_iter->attempt_nodes.size();
       _node_list.splice(try_iter->pos, try_iter->attempt_nodes);
     } else {
-      _debugLog(_debug_tag, "[%s] attempt section errored; trying except section", __FUNCTION__); 
+      _debugLog(_debug_tag, "[%s] attempt section errored; trying except section", __FUNCTION__);
       int n_prescanned_nodes = 0;
       if (!_preprocess(try_iter->except_nodes, n_prescanned_nodes)) {
         _errorLog("[%s] Failed to preprocess except nodes", __FUNCTION__);
       }
       _n_prescanned_nodes = _n_prescanned_nodes + try_iter->except_nodes.size();
       _node_list.splice(try_iter->pos, try_iter->except_nodes);
-      if (_fetcher.getNumPendingRequests()) { 
+      if (_fetcher.getNumPendingRequests()) {
         _debugLog(_debug_tag, "[%s] New fetch requests were triggered by except block; "
                   "Returning NEED_MORE_DATA...", __FUNCTION__);
       }
@@ -514,7 +514,7 @@ EsiProcessor::flush(string &data, int &overall_len) {
         ++_n_processed_try_nodes;
       }
     }
-   
+
     _debugLog(_debug_tag, "[%s] really Processing ESI node [%s] with data of size %d starting with [%.10s...]", __FUNCTION__, DocNode::type_names_[doc_node.type], doc_node.data_len, (doc_node.data_len ? doc_node.data: "(null)"));
 
     if (doc_node.type == DocNode::TYPE_PRE) {
@@ -697,10 +697,10 @@ EsiProcessor::_preprocess(DocNodeList &node_list, int &n_prescanned_nodes) {
   DocNodeList::iterator list_iter = node_list.begin();
   StringHash::iterator hash_iter;
   string raw_url;
-  
+
   // skip previously examined nodes
   for (int i = 0; i < n_prescanned_nodes; ++i, ++list_iter);
-  
+
   for (; list_iter != node_list.end(); ++list_iter, ++n_prescanned_nodes) {
     switch (list_iter->type) {
       case DocNode::TYPE_CHOOSE:
@@ -773,7 +773,7 @@ EsiProcessor::_preprocess(DocNodeList &node_list, int &n_prescanned_nodes) {
             FailureInfo* info;
 
             if(it != threadData->end()) {
-              info=it->second; 
+              info=it->second;
               fetch=_reqAdded=info->isAttemptReq();
               _debugLog(_debug_tag,"[%s] Fetch result is %d",__FUNCTION__,fetch);
             }

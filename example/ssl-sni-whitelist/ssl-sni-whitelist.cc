@@ -1,5 +1,5 @@
-/** @file 
- 
+/** @file
+
   SSL SNI white list plugin
   If the server name and IP address are not in the ssl_multicert.config
   go head and blind tunnel it.
@@ -47,7 +47,7 @@ std::string ConfigPath;
 Configuration Config;	// global configuration
 
 int
-Load_Config_File() 
+Load_Config_File()
 {
   ts::Rv<Configuration> cv = Configuration::loadFromPath(ConfigPath.c_str());
   if (!cv.isOK()) {
@@ -70,7 +70,7 @@ Load_Configuration()
 }
 
 int
-CB_servername_whitelist(TSCont /* contp */, TSEvent /* event */, void *edata) 
+CB_servername_whitelist(TSCont /* contp */, TSEvent /* event */, void *edata)
 {
   TSVConn ssl_vc = reinterpret_cast<TSVConn>(edata);
   TSSslConnection sslobj = TSVConnSSLConnectionGet(ssl_vc);
@@ -94,16 +94,16 @@ CB_servername_whitelist(TSCont /* contp */, TSEvent /* event */, void *edata)
     TSDebug("skh", "SNI callback: do blind tunnel for %s", servername);
     TSVConnTunnel(ssl_vc);
     return TS_SUCCESS; // Don't re-enable so we interrupt processing
-  }  
+  }
   TSVConnReenable(ssl_vc);
   return TS_SUCCESS;
-}        
+}
 
 } // Anon namespace
 
 // Called by ATS as our initialization point
 void
-TSPluginInit(int argc, const char *argv[]) 
+TSPluginInit(int argc, const char *argv[])
 {
   bool success = false;
   TSPluginRegistrationInfo info;
@@ -126,7 +126,7 @@ TSPluginInit(int argc, const char *argv[])
       ConfigPath = std::string(TSConfigDirGet()) + '/' + std::string(optarg);
       break;
     }
-  } 
+  }
   if (ConfigPath.length() == 0) {
     static char const * const DEFAULT_CONFIG_PATH = "ssl_sni_whitelist.config";
     ConfigPath = std::string(TSConfigDirGet()) + '/' + std::string(DEFAULT_CONFIG_PATH);
@@ -145,7 +145,7 @@ TSPluginInit(int argc, const char *argv[])
     TSHttpHookAdd(TS_SSL_SNI_HOOK, cb_sni);
     success = true;
   }
- 
+
   if (!success) {
     if (cb_sni) TSContDestroy(cb_sni);
     TSError(PCP "not initialized");
@@ -158,7 +158,7 @@ TSPluginInit(int argc, const char *argv[])
 # else // ! TS_USE_TLS_SNI
 
 void
-TSPluginInit(int, const char *[]) 
+TSPluginInit(int, const char *[])
 {
     TSError(PCP "requires TLS SNI which is not available.");
 }

@@ -192,8 +192,8 @@ safe_getsockname(int s, struct sockaddr *name, int *namelen)
   return r;
 }
 
-int 
-safe_getpeername(int s, struct sockaddr *name, int *namelen) 
+int
+safe_getpeername(int s, struct sockaddr *name, int *namelen)
 {
   int r;
   do {

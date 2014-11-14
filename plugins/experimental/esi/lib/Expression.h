@@ -31,7 +31,7 @@
 #include "ComponentBase.h"
 #include "Variables.h"
 
-namespace EsiLib { 
+namespace EsiLib {
 
 class Expression : private ComponentBase {
 
@@ -39,7 +39,7 @@ public:
 
   Expression(const char *debug_tag, ComponentBase::Debug debug_func, ComponentBase::Error error_func,
              Variables &variables);
-  
+
   /** substitutes variables (if any) in given expression */
   const std::string &expand(const char *expr, int expr_len = -1);
 
@@ -66,7 +66,7 @@ private:
   Variables &_variables;
   std::string _value;
 
-  // these are arranged in parse priority format indices correspond to op strings array 
+  // these are arranged in parse priority format indices correspond to op strings array
   enum Operator { OP_EQ, OP_NEQ, OP_LTEQ, OP_GTEQ, OP_LT, OP_GT, OP_NOT, OP_OR, OP_AND, N_OPERATORS };
 
   struct OperatorString {
@@ -74,15 +74,15 @@ private:
     int str_len;
     OperatorString(const char *s = 0, int s_len = -1) : str(s), str_len(s_len) { };
   };
-  
+
   static const OperatorString OPERATOR_STRINGS[N_OPERATORS];
 
   inline void _trimWhiteSpace(const char *&expr, int &expr_len) const;
-  
+
   inline bool _stripQuotes(const char *&expr, int &expr_len) const;
-  
+
   inline int _findOperator(const char *expr, int expr_len, Operator &op) const;
-  
+
   inline bool _isBinaryOperator(Operator &op) const {
     return ((op == OP_EQ) || (op == OP_NEQ) || (op == OP_LT) || (op == OP_GT) ||
             (op == OP_LTEQ) || (op == OP_GTEQ) || (op == OP_OR) || (op == OP_AND));

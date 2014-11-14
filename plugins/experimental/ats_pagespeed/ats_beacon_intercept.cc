@@ -68,7 +68,7 @@ struct InterceptCtx {
   bool req_hdr_parsed;
   bool initialized;
   TransformCtx* request_context;
-  InterceptCtx(TSCont cont) 
+  InterceptCtx(TSCont cont)
     : net_vc(0), contp(cont), input(), output(), body(""), req_content_len(0), req_hdr_bufp(0), req_hdr_loc(0),
       req_hdr_parsed(false), initialized(false) {
     http_parser = TSHttpParserCreate();
@@ -80,7 +80,7 @@ struct InterceptCtx {
 
   ~InterceptCtx() {
     TSDebug(DEBUG_TAG, "[%s] Destroying continuation data", __FUNCTION__);
-    TSHttpParserDestroy(http_parser); 
+    TSHttpParserDestroy(http_parser);
     if (req_hdr_loc) {
       TSHandleMLocRelease(req_hdr_bufp, TS_NULL_MLOC, req_hdr_loc);
     }
@@ -101,7 +101,7 @@ InterceptCtx::init(TSVConn vconn)
     TSError("[%s] InterceptCtx already initialized!", __FUNCTION__);
     return false;
   }
-  
+
   net_vc = vconn;
 
   input.buffer = TSIOBufferCreate();
@@ -143,7 +143,7 @@ handleRead(InterceptCtx *cont_data, bool &read_complete) {
     TSError("[%s] Error while getting number of bytes available", __FUNCTION__);
     return false;
   }
-  
+
   TSDebug(DEBUG_TAG, "[%s] Parsed header, avail: %d", __FUNCTION__, avail);
 
   int consumed = 0;
@@ -160,7 +160,7 @@ handleRead(InterceptCtx *cont_data, bool &read_complete) {
           TSDebug(DEBUG_TAG, "[%s] Parsed header", __FUNCTION__);
           TSMLoc content_len_loc = TSMimeHdrFieldFind(cont_data->req_hdr_bufp, cont_data->req_hdr_loc,
                                                         TS_MIME_FIELD_CONTENT_LENGTH, -1);
-          
+
           /*if (!content_len_loc) {
             TSError("[%s] Error while searching content length header [%s]",
                      __FUNCTION__, TS_MIME_FIELD_CONTENT_LENGTH);
@@ -197,11 +197,11 @@ handleRead(InterceptCtx *cont_data, bool &read_complete) {
       block = TSIOBufferBlockNext(block);
     }
   }
-  
+
   TSIOBufferReaderConsume(cont_data->input.reader, consumed);
 
   TSDebug(DEBUG_TAG, "[%s] Consumed %d bytes from input vio, avail: %d", __FUNCTION__, consumed, avail);
-  
+
   // Modify the input VIO to reflect how much data we've completed.
   TSVIONDoneSet(cont_data->input.vio, TSVIONDoneGet(cont_data->input.vio) + consumed);
 
@@ -221,7 +221,7 @@ static bool
 processRequest(InterceptCtx *cont_data) {
   // OS: Looks like on 5.x we sometimes receive read complete / EOS events twice,
   // which needs looking into. Probably this intercept is doing something it shouldn't
-  if (cont_data->output.buffer) { 
+  if (cont_data->output.buffer) {
     TSDebug("ats_pagespeed", "Received read complete / EOS twice?!");
     return true;
   }
@@ -241,19 +241,19 @@ processRequest(InterceptCtx *cont_data) {
 
   StringPiece query_param_beacon_data;
   ps_query_params_handler(cont_data->request_context->url_string->c_str(), &query_param_beacon_data);
-  
+
   GoogleString beacon_data = net_instaweb::StrCat(
       query_param_beacon_data, "&", cont_data->body);
   ServerContext* server_context = cont_data->request_context->server_context;
-  
-  SystemRequestContext* system_request_context = 
+
+  SystemRequestContext* system_request_context =
       new SystemRequestContext(server_context->thread_system()->NewMutex(),
                                server_context->timer(),
 			       // TODO(oschaaf): determine these for real.
 			       "www.foo.com",
                                80,
                                "127.0.0.1");
-  
+
   if (!server_context->HandleBeacon(
           beacon_data,
             cont_data->request_context->user_agent->c_str(),
@@ -262,7 +262,7 @@ processRequest(InterceptCtx *cont_data) {
   } else {
     TSDebug(DEBUG_TAG,  "Beacon post data processed OK: [%s]", beacon_data.c_str());
   }
-  
+
   cont_data->setupWrite();
   if (TSIOBufferWrite(cont_data->output.buffer, reply_header.data(), reply_header.size()) == TS_ERROR) {
     TSError("[%s] Error while writing reply header", __FUNCTION__);
@@ -276,7 +276,7 @@ processRequest(InterceptCtx *cont_data) {
   int total_bytes_written = reply_header.size() + body_size;
   TSDebug(DEBUG_TAG, "[%s] Wrote reply of size %d", __FUNCTION__, total_bytes_written);
   TSVIONBytesSet(cont_data->output.vio, total_bytes_written);
-  
+
   TSVIOReenable(cont_data->output.vio);
   return true;
 }
@@ -320,7 +320,7 @@ txn_intercept(TSCont contp, TSEvent event, void *edata) {
     break;
   case TS_EVENT_ERROR:
     // todo: do some error handling here
-    TSDebug(DEBUG_TAG, "[%s] Received error event; going to shutdown, event: %d", __FUNCTION__, event);    
+    TSDebug(DEBUG_TAG, "[%s] Received error event; going to shutdown, event: %d", __FUNCTION__, event);
     TSError("[%s] Received error event; going to shutdown, event: %d", __FUNCTION__, event);
     shutdown = true;
     break;
@@ -343,7 +343,7 @@ txn_intercept(TSCont contp, TSEvent event, void *edata) {
     }
     delete cont_data;
     TSContDestroy(contp);
-  } 
+  }
 
   return 1;
 }

@@ -48,8 +48,8 @@ normalize_accept_encoding(TSHttpTxn /* txnp ATS_UNUSED */, TSMBuffer reqp, TSMLo
   int deflate = 0;
   int gzip = 0;
 
-  //remove the accept encoding field(s), 
-  //while finding out if gzip or deflate is supported.    
+  //remove the accept encoding field(s),
+  //while finding out if gzip or deflate is supported.
   while (field) {
     TSMLoc tmp;
 

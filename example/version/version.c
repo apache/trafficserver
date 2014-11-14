@@ -56,7 +56,7 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
   // partial compilation
 #if (TS_VERSION_NUMBER < 3000000)
   if (TSPluginRegister(TS_SDK_VERSION_2_0, &info) != TS_SUCCESS) {
-#else 
+#else
   if (TSPluginRegister(TS_SDK_VERSION_3_0, &info) != TS_SUCCESS) {
 #endif
     TSError("Plugin registration failed. \n");

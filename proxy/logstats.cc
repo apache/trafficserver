@@ -306,7 +306,7 @@ struct UrlStats
   const char *url;
   StatsCounter req;
   ElapsedStats time;
-  int64_t c_000; 
+  int64_t c_000;
   int64_t c_2xx;
   int64_t c_3xx;
   int64_t c_4xx;
@@ -418,7 +418,7 @@ public:
       _dump_url(u, as_object);
     if (as_object)
       std::cout << "  \"_timestamp\" : \"" << static_cast<int>(ink_time_wall_seconds()) << "\"" << std::endl;
-    else 
+    else
       std::cout << "  { \"_timestamp\" : \"" << static_cast<int>(ink_time_wall_seconds()) << "\" }" << std::endl;
   }
 
@@ -582,8 +582,8 @@ private:
       std::cout << "  { \"" << u->url << "\" : { ";
     // Requests
     std::cout << "\"req\" : { \"total\" : \"" << u->req.count <<
-      "\", \"hits\" : \"" <<  u->hits << 
-      "\", \"misses\" : \"" <<  u->misses << 
+      "\", \"hits\" : \"" <<  u->hits <<
+      "\", \"misses\" : \"" <<  u->misses <<
       "\", \"errors\" : \"" <<  u->errors <<
       "\", \"000\" : \"" <<  u->c_000 <<
       "\", \"2xx\" : \"" <<  u->c_2xx <<

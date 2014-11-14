@@ -37,7 +37,7 @@ void FailureInfo::registerSuccFail(bool isSuccess)
     {
         ++_windowMarker;
         _windowMarker%=_totalSlots;
-      
+
         if(_windowMarker==_totalSlots-1)
         {
             ++_windowsPassed;
@@ -52,7 +52,7 @@ void FailureInfo::registerSuccFail(bool isSuccess)
             _avgOverWindow+=avg/_windowsPassed;
             _debugLog(_debug_tag,"[%s] current average over window is %lf",__FUNCTION__,_avgOverWindow);
         }
-    
+
         gettimeofday(&_start,NULL);
     }
 
@@ -60,13 +60,13 @@ void FailureInfo::registerSuccFail(bool isSuccess)
    {
        _statistics[_windowMarker].second++;
    }
-   
+
    else
    {
        _statistics[_windowMarker].first++;
    }
 }
-    
+
 bool FailureInfo::isAttemptReq()
 {
     double avg=0;
@@ -75,11 +75,11 @@ bool FailureInfo::isAttemptReq()
         if(_statistics[i].first >0)
         {
             avg+=_statistics[i].first/(_statistics[i].first+_statistics[i].second);
-            
+
         }
     }
-    
-    if(avg) { 
+
+    if(avg) {
         //Average it out for time being
         avg=avg/_totalSlots;
         double prob;
@@ -91,10 +91,10 @@ bool FailureInfo::isAttemptReq()
             double mapFactor=( ( (avg*1000-LOWER_CUT_OFF)*(avg*1000-LOWER_CUT_OFF) ) / (HIGHER_CUT_OFF-LOWER_CUT_OFF ) )+LOWER_CUT_OFF;
             prob=mapFactor/1000;
         }
-        
+
         if(static_cast<int>(prob))
             prob=_avgOverWindow;
-        
+
         _debugLog(_debug_tag,"[%s] Calculated probability is %lf",__FUNCTION__,prob);
         int decision=rand()%100;
 
@@ -103,7 +103,7 @@ bool FailureInfo::isAttemptReq()
             return (_requestMade=false);
         }
     }
-        
+
     _debugLog(_debug_tag,"[%s] fetch request will be added for an attempt request",__FUNCTION__);
     return true;
 }

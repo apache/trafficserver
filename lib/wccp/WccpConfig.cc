@@ -165,7 +165,7 @@ ts::Errata::Message Service_Type_Defaulted(wccp::ServiceGroup::Type type, int li
 
 ts::Errata::Message Service_Type_Invalid(ts::ConstBuffer const& text, int line) {
   std::ostringstream out;
-  out << "Service type '" << text 
+  out << "Service type '" << text
       << "' at line " << line
       << " invalid. Must be \"STANDARD\" or \"DYNAMIC\""
     ;
@@ -249,7 +249,7 @@ ts::Errata::Message Svc_Flags_Ignored(int line) {
 ts::Errata::Message Svc_Ports_Too_Many(int line, int n) {
   std::ostringstream out;
   out << "Excess ports ignored at line " << line
-      << ". " << n << " ports specified, only" 
+      << ". " << n << " ports specified, only"
       << wccp::ServiceGroup::N_PORTS << " supported."
     ;
   return ts::Errata::Message(14, LVL_INFO, out.str());
@@ -743,7 +743,7 @@ CacheImpl::loadServicesFromFile(char const* path) {
       bool gre = FORWARD_OPTS[0].m_found;
       bool l2 = FORWARD_OPTS[1].m_found;
       if (gre || l2) {
-        svc.m_packet_forward = 
+        svc.m_packet_forward =
           gre
             ? l2 ? ServiceGroup::GRE_OR_L2 : ServiceGroup::GRE
             : ServiceGroup::L2

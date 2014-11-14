@@ -431,7 +431,7 @@ ink_res_init(
     if (pHostListSize > INK_MAXNS) pHostListSize = INK_MAXNS;
     for (
         ; nserv < pHostListSize
-          && ats_is_ip(&pHostList[nserv].sa) 
+          && ats_is_ip(&pHostList[nserv].sa)
         ; ++nserv
     ) {
       ats_ip_copy(&statp->nsaddr_list[nserv].sa, &pHostList[nserv].sa);
@@ -624,7 +624,7 @@ parse_host_res_preference(char const* value, HostResPreferenceOrder order) {
     if (np < N_HOST_RES_PREFERENCE_ORDER) // was N_HOST_RES_PREFERENCE)
       order[np] = HOST_RES_PREFER_NONE;
   }
-}      
+}
 
 int
 ts_host_res_order_to_string(HostResPreferenceOrder const& order, char* out, int size)

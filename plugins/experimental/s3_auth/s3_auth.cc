@@ -258,7 +258,7 @@ S3Request::set_header(const char* header, int header_len, const char* val, int v
 //    Date + "\n" +
 //    CanonicalizedAmzHeaders +
 //    CanonicalizedResource;
-// 
+//
 // ToDo:
 // -----
 //     1) UTF8
@@ -511,7 +511,7 @@ TSRemapDoRemap(void* ih, TSHttpTxn txnp, TSRemapRequestInfo */* rri */)
 }
 
 
-
+
 /*
   local variables:
   mode: C++

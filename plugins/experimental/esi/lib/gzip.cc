@@ -173,7 +173,7 @@ EsiLib::gunzip(const char *data, int data_len, BufferList &buf_list) {
     // avoid data copy for temporary
     buf_list.push_back(string());
     string &curr_buf = buf_list.back();
-    curr_buf.assign(raw_buf, curr_buf_size); 
+    curr_buf.assign(raw_buf, curr_buf_size);
 
     if (inflate_result == Z_STREAM_END) {
       break;

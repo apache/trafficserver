@@ -41,13 +41,13 @@ escapify_url(const char *src, int src_len, char* dst, int dst_len)
 {
   // This bitmap is generated using the gen_escape.c prog.
   static unsigned char codes_to_escape[32] = {
-    0xFF, 0xFF, 0xFF, 0xFF, 
-    0xFF, 0xF9, 0x00, 0x3F, 
-    0x80, 0x00, 0x00, 0x1E, 
-    0x80, 0x00, 0x00, 0x1F, 
-    0xFF, 0xFF, 0xFF, 0xFF, 
-    0xFF, 0xFF, 0xFF, 0xFF, 
-    0xFF, 0xFF, 0xFF, 0xFF, 
+    0xFF, 0xFF, 0xFF, 0xFF,
+    0xFF, 0xF9, 0x00, 0x3F,
+    0x80, 0x00, 0x00, 0x1E,
+    0x80, 0x00, 0x00, 0x1F,
+    0xFF, 0xFF, 0xFF, 0xFF,
+    0xFF, 0xFF, 0xFF, 0xFF,
+    0xFF, 0xFF, 0xFF, 0xFF,
     0xFF, 0xFF, 0xFF, 0xFF
   };
 
@@ -306,11 +306,11 @@ TSRemapDoRemap(void* ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
       len = 8 + h_conf->hipes_server.size() + strlen(port) + (param_len - (slash - param) - 1);
     } else {
       len = 8 + h_conf->hipes_server.size() + (param_len - (slash - param) - 1);
-    } 
+    }
     if (len > MAX_PATH_SIZE) {
       TSHttpTxnSetHttpRetStatus(rh, TS_HTTP_STATUS_REQUEST_URI_TOO_LONG);
       return TSREMAP_NO_REMAP;
-    }  
+    }
     if(h_conf->hipes_port != 80) {
       snprintf(svc_url, MAX_PATH_SIZE, "http://%s%s/%.*s", h_conf->hipes_server.c_str(), port, len, slash + 1);
     } else {
@@ -320,7 +320,7 @@ TSRemapDoRemap(void* ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 
     len = escapify_url(svc_url, len, svc_url_esc, MAX_PATH_SIZE);
     if (len < 0) {
-      TSHttpTxnSetHttpRetStatus(rh, TS_HTTP_STATUS_BAD_REQUEST); 
+      TSHttpTxnSetHttpRetStatus(rh, TS_HTTP_STATUS_BAD_REQUEST);
       return TSREMAP_NO_REMAP;
     }
     TSDebug(PLUGIN_NAME, "Escaped service URL is %s(%d)", svc_url_esc, len);
@@ -435,7 +435,7 @@ TSRemapDoRemap(void* ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 
   // If we redirect, just generate a 302 URL, otherwise update the RRI struct properly.
   if (do_redirect) {
-    int len; 
+    int len;
 
     if (h_conf->ssl) {
       // https://<host>:<port>/<path>?<query?\0
@@ -493,10 +493,10 @@ TSRemapDoRemap(void* ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 
       redirect_url_size = pos - redirect_url + 1;
       TSDebug(PLUGIN_NAME, "Redirecting to %.*s", redirect_url_size, redirect_url);
-      const char *start = redirect_url; 
+      const char *start = redirect_url;
       const char *end = start + redirect_url_size;
       rri->redirect = 1;
-      TSUrlParse(rri->requestBufp, rri->requestUrl, &start, end);  
+      TSUrlParse(rri->requestBufp, rri->requestUrl, &start, end);
       TSHttpTxnSetHttpRetStatus(rh, TS_HTTP_STATUS_MOVED_TEMPORARILY);
     }
   } else { // Not a redirect, so proceed normally
@@ -519,7 +519,7 @@ TSRemapDoRemap(void* ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
     }
 
     // Set server ...
-    TSUrlHostSet(rri->requestBufp, rri->requestUrl, h_conf->svc_server.c_str(), h_conf->svc_server.size()); 
+    TSUrlHostSet(rri->requestBufp, rri->requestUrl, h_conf->svc_server.c_str(), h_conf->svc_server.size());
     TSDebug(PLUGIN_NAME, "New server is %.*s", (int) h_conf->svc_server.size(), h_conf->svc_server.c_str());
 
     // ... and port
@@ -546,7 +546,7 @@ TSRemapDoRemap(void* ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 }
 
 
-
+
 /*
   local variables:
   mode: C++

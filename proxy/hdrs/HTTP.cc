@@ -1578,7 +1578,7 @@ class UrlPrintHack {
   bool is_valid() const {
     return 0 != m_hdr;
   }
-   
+
   /// Saved values.
   ///@{
   bool m_host_modified_p;

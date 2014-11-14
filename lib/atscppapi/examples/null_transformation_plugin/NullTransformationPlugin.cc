@@ -34,7 +34,7 @@ class NullTransformationPlugin : public TransformationPlugin {
 public:
   NullTransformationPlugin(Transaction &transaction, TransformationPlugin::Type xformType)
     : TransformationPlugin(transaction, xformType) {
-    registerHook((xformType == TransformationPlugin::REQUEST_TRANSFORMATION) ? 
+    registerHook((xformType == TransformationPlugin::REQUEST_TRANSFORMATION) ?
                  HOOK_SEND_REQUEST_HEADERS : HOOK_SEND_RESPONSE_HEADERS);
   }
 

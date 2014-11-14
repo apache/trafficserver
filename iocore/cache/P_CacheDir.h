@@ -127,7 +127,7 @@ typedef uint32_t DirInfo;
 struct Dir
 {
 #if DO_NOT_REMOVE_THIS
-  // THE BIT-FIELD INTERPRETATION OF THIS STRUCT WHICH HAS TO 
+  // THE BIT-FIELD INTERPRETATION OF THIS STRUCT WHICH HAS TO
   // USE MACROS TO PREVENT UNALIGNED LOADS
   // bits are numbered from lowest in u16 to highest
   // always index as u16 to avoid byte order issues
@@ -152,7 +152,7 @@ struct Dir
 struct FreeDir
 {
 #if DO_NOT_REMOVE_THIS
-  // THE BIT-FIELD INTERPRETATION OF THIS STRUCT WHICH HAS TO 
+  // THE BIT-FIELD INTERPRETATION OF THIS STRUCT WHICH HAS TO
   // USE MACROS TO PREVENT UNALIGNED LOADS
   unsigned int offset:24;       // 0: empty
   unsigned int reserved:8;

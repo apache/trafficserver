@@ -112,7 +112,7 @@ public:
   //@}
   /// Service IDs of this value or less are reserved.
   static uint8_t const RESERVED = 50;
-  
+
   /// Number of ports in component (defined by protocol).
   static size_t const N_PORTS = 8;
 
@@ -227,7 +227,7 @@ public:
   bool isConfigured() const;
 
   /** Open a socket for communications.
-      
+
       If @a addr is @c INADDR_ANY then the identifying address is used.
       If that is not set this method will attempt to find an arbitrary
       local address and use that as the identifying address.
@@ -379,8 +379,8 @@ public:
   self& setCacheAssignment(
     CacheAssignmentStyle style ///< Style to use.
   );
-  
-  
+
+
 private:
   Service(Cache const& cache, detail::cache::GroupData& group);
   Cache m_cache; ///< Parent cache.

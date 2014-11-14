@@ -51,17 +51,17 @@ public:
         _windowPassed=0;
     };
 
-    ~FailureInfo() 
+    ~FailureInfo()
     {
     }
-    
+
     //Whenever the window time expires u start filling the count
     //by taking a mod
     //so what u get is over a window of 200 ms and 10 rounds
     //the no of failures
     //Introduce a variable which will be a function of
-    //failure and which will lead to points in graph 
-    //according to which the probability of serving the 
+    //failure and which will lead to points in graph
+    //according to which the probability of serving the
     // data from cache or contacting the origin server
     // will be decided
     std::vector <std::pair < double,double > > _passFail;
@@ -69,7 +69,7 @@ public:
     int _marker;
 
     int _totalSlot;
-    
+
     struct timeval _start;
 
     double _avgOverWindow;
@@ -89,12 +89,12 @@ void registerSuccFail(string URL,FailureData& data,bool isSuccess)
     it=data.find(URL);
     vector < pair < double , double > > & passFail=it->second->_passFail;
     marker=it->second->_marker;
- 
- 
-    startTime=it->second->_start;  
-     
+
+
+    startTime=it->second->_start;
+
     gettimeofday(&currTime,NULL);
-    
+
     timersub(&currTime,&startTime,&result);
 
 
@@ -118,20 +118,20 @@ void registerSuccFail(string URL,FailureData& data,bool isSuccess)
         it->second->_marker=marker;
         gettimeofday(&it->second->_start,NULL);
     }
-    
+
 
    if(isSuccess)
    {
        passFail[marker].second++;
    }
-   
+
    else
    {
        passFail[marker].first++;
    }
 }
 
-    
+
 bool isAttemptReq(string URL,FailureData& data)
 {
     FailureData::iterator it;
@@ -150,19 +150,19 @@ bool isAttemptReq(string URL,FailureData& data)
                 //cout<<"Prob of faillure:"<<passFail[i].first/(passFail[i].first+passFail[i].second)<<endl;
             }
         }
- 
+
        if(avg)
-       { 
+       {
            avg=avg/it->second->_totalSlot;
            double prob;
 
-        
+
            if(avg*1000<lowerCutOff)
            {
                prob=avg;
            }
- 
-        
+
+
            else
            {
                double mapFactor=( ( (avg*1000-lowerCutOff)*(avg*1000-lowerCutOff) ) / ( higherCutOff-lowerCutOff ) )+lowerCutOff;
@@ -175,13 +175,13 @@ bool isAttemptReq(string URL,FailureData& data)
                prob=it->second->_avgOverWindow;
                cout<<"Average"<<prob<<endl;
            }
-        
+
            int decision=rand()%100;
 
-      
+
            if(decision<prob*100)
                return false;
-        
+
            return true;
        }
        return true;
@@ -203,7 +203,7 @@ int main(int argc,char**argv)
     FailureData data;
     int noOfAttempt=0,noOfExcept=0;
 
-    int count=atoi(argv[1]); 
+    int count=atoi(argv[1]);
     while(count--)
     {
         int decision=rand()%100;
@@ -213,16 +213,16 @@ int main(int argc,char**argv)
             noOfAttempt++;
             if(decision>=atoi(argv[2]) && 0)
                 registerSuccFail(fetchURL,data,true);
-    
+
             else
                 registerSuccFail(fetchURL,data,false);
         }
         else
             noOfExcept++;
-   
+
     }
 
     cout<<" SERVED FROM ATTEMPT "<<noOfAttempt<<" TOTAL "<<atoi(argv[1])<<endl;
     cout<<" SERVED FROM EXCEPT "<<noOfExcept<<" TOTAL "<<atoi(argv[1])<<endl;
-       
+
 }

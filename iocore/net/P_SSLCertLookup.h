@@ -55,7 +55,7 @@ struct SSLCertContext
   SSLCertContext() : ctx(0), opt(OPT_NONE) {}
   explicit SSLCertContext(SSL_CTX* c) : ctx(c), opt(OPT_NONE) {}
   SSLCertContext(SSL_CTX* c, Option o) : ctx(c), opt(o) {}
-  
+
   SSL_CTX* ctx; ///< openSSL context.
   Option opt; ///< Special handling option.
 };

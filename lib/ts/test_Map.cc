@@ -55,7 +55,7 @@ void test_TSHashTable() {
   Table t;
   Item* item;
   Table::Location loc;
-  
+
   item = new Item(1);
   t.insert(item);
   for ( uint32_t i = 2 ; i <= N ; ++i ) {
@@ -80,7 +80,7 @@ void test_TSHashTable() {
     ; // compiler check.
 
   ink_assert(!(t.find(N/2 | 1).isValid()));
-  
+
   for ( uint32_t i = 1 ; i <= N ; i += 2) {
     t.remove(i);
   }
@@ -184,7 +184,7 @@ int main(int /* argc ATS_UNUSED */, char **/*argv ATS_UNUSED */) {
   ink_assert(ssh.get("ac") == 7);
   ssh.del(ho);
   ink_assert(ssh.get(ho) == 0);
-  
+
   Vec<int> ints;
   ssh.get_values(ints);
   ink_assert(ints.n == 8);

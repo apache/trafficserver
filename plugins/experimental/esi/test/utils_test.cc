@@ -48,7 +48,7 @@ void checkAttributes(const char *check_id, const AttributeList &attr_list, const
 
 pthread_key_t threadKey;
 
-int main() 
+int main()
 {
   pthread_key_create(&threadKey, NULL);
   Utils::init(&Debug, &Error);
@@ -89,7 +89,7 @@ int main()
   Utils::parseAttributes(str7, attr_list, "&");
   const char *expected_strs7[] = { "key1", "val1", 0 };
   checkAttributes("test7", attr_list, expected_strs7);
-  
+
   const char *escaped_sequence = "{\\\"site-attribute\\\":\\\"content=no_expandable; ajax_cert_expandable\\\"}";
   string str8("pos=\"FPM1\" spaceid=96584352 extra_mime=\"");
   str8.append(escaped_sequence);
@@ -116,4 +116,4 @@ int main()
   cout << endl << "All tests passed!" << endl;
   return 0;
 }
-  
+

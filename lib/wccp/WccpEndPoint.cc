@@ -38,7 +38,7 @@ namespace wccp {
 # define dstaddr(x) (&(((struct in_pktinfo *)(CMSG_DATA(x)))->ipi_addr))
 #else
 # error "can't determine socket option"
-#endif 
+#endif
 
 // ------------------------------------------------------
 Impl::GroupData::GroupData()
@@ -199,7 +199,7 @@ Impl::handleMessage() {
   recv_hdr.msg_iovlen = 1;
   recv_hdr.msg_control = anc_buffer;
   recv_hdr.msg_controllen = ANC_BUFFER_SIZE;
-  
+
   n = recvmsg(m_fd, &recv_hdr, MSG_TRUNC);
   if (n > BUFFER_SIZE) return -EMSGSIZE;
   else if (n < 0) return -errno;
@@ -269,9 +269,9 @@ CacheImpl::GroupData::seedRouter(uint32_t addr) {
 time_t
 CacheImpl::GroupData::removeSeedRouter(uint32_t addr) {
   time_t zret = 0;
-  std::vector<SeedRouter>::iterator begin = m_seed_routers.begin(); 
+  std::vector<SeedRouter>::iterator begin = m_seed_routers.begin();
   std::vector<SeedRouter>::iterator end = m_seed_routers.end();
-  std::vector<SeedRouter>::iterator spot = 
+  std::vector<SeedRouter>::iterator spot =
     std::find_if(begin, end, ts::predicate(&SeedRouter::m_addr, addr));
 
   if (end != spot) {
@@ -316,7 +316,7 @@ CacheImpl::GroupData::resizeCacheSources() {
   }
 }
 
-inline CacheImpl::RouterData::RouterData() 
+inline CacheImpl::RouterData::RouterData()
   : m_addr(0)
   , m_generation(0)
   , m_rapid(0)
@@ -648,7 +648,7 @@ CacheImpl::housekeeping() {
       here_i_am.setBuffer(msg_buffer);
       // Is the router due for a ping?
       if (sspot->m_xmit + TIME_UNIT > now) continue; // no
-      
+
       this->generateHereIAm(here_i_am, group);
 
       dst_addr.sin_addr.s_addr = sspot->m_addr;
@@ -943,7 +943,7 @@ RouterImpl::handleHereIAm(IpHeader const& ip_hdr, ts::Buffer const& chunk) {
   time_t now = time(0); // don't call this over and over.
   int parse = msg.parse(chunk);
 
-  if (PARSE_SUCCESS != parse) 
+  if (PARSE_SUCCESS != parse)
     return log(LVL_INFO, "Ignored malformed WCCP2_HERE_I_AM message.\n");
 
   if (!this->validateSecurity(msg, nil_group))

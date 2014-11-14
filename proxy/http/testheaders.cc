@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "ink_string.h"    
+#include "ink_string.h"
 #include "HttpTransact.h"
 #include "HttpTransactHeaders.h"
 

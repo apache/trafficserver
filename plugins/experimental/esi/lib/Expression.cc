@@ -29,7 +29,7 @@ using namespace EsiLib;
 
 const string Expression::EMPTY_STRING("");
 const string Expression::TRUE_STRING("true");
-const Expression::OperatorString Expression::OPERATOR_STRINGS[N_OPERATORS] = { 
+const Expression::OperatorString Expression::OPERATOR_STRINGS[N_OPERATORS] = {
   Expression::OperatorString("==", 2),
   Expression::OperatorString("!=", 2),
   Expression::OperatorString("<=", 2),
@@ -38,14 +38,14 @@ const Expression::OperatorString Expression::OPERATOR_STRINGS[N_OPERATORS] = {
   Expression::OperatorString(">", 1),
   Expression::OperatorString("!", 1),
   Expression::OperatorString("|", 1),
-  Expression::OperatorString("&", 1) 
+  Expression::OperatorString("&", 1)
 };
 
-Expression::Expression(const char *debug_tag, ComponentBase::Debug debug_func, 
-                             ComponentBase::Error error_func, Variables &variables) 
+Expression::Expression(const char *debug_tag, ComponentBase::Debug debug_func,
+                             ComponentBase::Error error_func, Variables &variables)
   : ComponentBase(debug_tag, debug_func, error_func), _variables(variables), _value("") {
 }
-  
+
 inline bool
 Expression::_stripQuotes(const char *&expr, int &expr_len) const {
   char quote_char = 0;

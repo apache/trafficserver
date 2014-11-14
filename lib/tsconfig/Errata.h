@@ -109,7 +109,7 @@ public:
 //    typedef Container::iterator reverse_iterator;
     /// Reverse constant message iteration.
 //    typedef Container::const_iterator const_reverse_iterator;
-    
+
     /// Default constructor - empty errata, very fast.
     Errata();
     /// Copy constructor, very fast.
@@ -311,7 +311,7 @@ public:
         NULL the indentation is overwritten by @a lead if @a indent is
         non-zero. It acts as a "continuation" marker for nested
         @c Errata.
-        
+
      */
     std::ostream& write(
       std::ostream& out, ///< Output stream.

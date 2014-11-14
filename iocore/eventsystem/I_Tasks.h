@@ -31,7 +31,7 @@ extern EventType ET_TASK;
 
 class TasksProcessor: public Processor
 {
- public: 
+ public:
   int start(int task_threads, size_t stacksize=DEFAULT_STACKSIZE);
 };
 

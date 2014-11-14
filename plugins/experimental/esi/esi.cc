@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "ink_defs.h"   
+#include "ink_defs.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -125,7 +125,7 @@ struct ContData
   ContData(TSCont contptr, TSHttpTxn tx)
     : curr_state(READING_ESI_DOC), input_vio(NULL), output_vio(NULL),
       output_buffer(NULL), output_reader(NULL),
-      esi_vars(NULL), data_fetcher(NULL), esi_proc(NULL), esi_gzip(NULL), esi_gunzip(NULL),  
+      esi_vars(NULL), data_fetcher(NULL), esi_proc(NULL), esi_gzip(NULL), esi_gunzip(NULL),
       contp(contptr), txnp(tx), request_url(NULL),
       input_type(DATA_TYPE_RAW_ESI), packed_node_list(""),
       gzipped_data(""), gzip_output(false),
@@ -245,7 +245,7 @@ ContData::init()
                                 createDebugTag(PARSER_DEBUG_TAG, contp, fetcher_tag),
                                 createDebugTag(EXPR_DEBUG_TAG, contp, expr_tag),
                                 &TSDebug, &TSError, *data_fetcher, *esi_vars, *gHandlerManager);
-    
+
     esi_gzip = new EsiGzip(createDebugTag(GZIP_DEBUG_TAG, contp, gzip_tag), &TSDebug, &TSError);
     esi_gunzip = new EsiGunzip(createDebugTag(GUNZIP_DEBUG_TAG, contp, gunzip_tag), &TSDebug, &TSError);
 
@@ -721,7 +721,7 @@ transformData(TSCont contp)
     if (cont_data->input_type != DATA_TYPE_PACKED_ESI) {
       bool gunzip_complete = true;
       if (cont_data->input_type == DATA_TYPE_GZIPPED_ESI) {
-        gunzip_complete = cont_data->esi_gunzip->stream_finish(); 
+        gunzip_complete = cont_data->esi_gunzip->stream_finish();
       }
       if (cont_data->esi_proc->completeParse() && gunzip_complete) {
         if (cont_data->option_info->packed_node_support && cont_data->os_response_cacheable
@@ -826,7 +826,7 @@ transformData(TSCont contp)
     } else {
       TSError("[%s] ESI processor failed to process document; will return empty document", __FUNCTION__);
       out_data.assign("");
-        
+
       if(!cont_data->xform_closed) {
         TSVIONBytesSet(cont_data->output_vio, 0);
         TSVIOReenable(cont_data->output_vio);
@@ -856,7 +856,7 @@ transformData(TSCont contp)
         }
       }
     }
-    if(!cont_data->xform_closed) {     
+    if(!cont_data->xform_closed) {
       // should not set any fixed length
       if(cont_data->curr_state == ContData::PROCESSING_COMPLETE) {
         if(cont_data->gzip_output) {
@@ -864,8 +864,8 @@ transformData(TSCont contp)
           int downstream_length;
           if(!cont_data->esi_gzip->stream_finish(cdata, downstream_length)) {
             TSError("[%s] Error while finishing gzip", __FUNCTION__);
-            return 0;  
-          } else {   
+            return 0;
+          } else {
             if(TSVIOBufferGet(cont_data->output_vio) == NULL) {
               TSError("[%s] Error while writing bytes to downstream VC", __FUNCTION__);
               return 0;
@@ -877,7 +877,7 @@ transformData(TSCont contp)
             TSDebug(cont_data->debug_tag,
                  "[%s] ESI processed overall/gzip: %d",
                  __FUNCTION__, downstream_length );
-            TSVIONBytesSet(cont_data->output_vio, downstream_length);          
+            TSVIONBytesSet(cont_data->output_vio, downstream_length);
           }
         } else {
           TSDebug(cont_data->debug_tag,
@@ -885,8 +885,8 @@ transformData(TSCont contp)
                  __FUNCTION__, overall_len );
           TSVIONBytesSet(cont_data->output_vio, overall_len);
         }
-      } 
-   
+      }
+
       // Reenable the output connection so it can read the data we've produced.
       TSVIOReenable(cont_data->output_vio);
     }

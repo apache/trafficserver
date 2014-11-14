@@ -74,7 +74,7 @@ public:
     ConnAddr(const IpEndpoint& addr) : _addr(addr) { }
     operator bool() { return ats_is_ip(&_addr); }
   };
-  
+
   class ConnAddrHashFns {
   public:
       static uintptr_t hash(ConnAddr& addr) { return (uintptr_t) ats_ip_hash(&addr._addr.sa); }

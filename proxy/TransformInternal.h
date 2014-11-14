@@ -135,8 +135,8 @@ public:
 public:
   MIOBuffer * m_output_buf;
   IOBufferReader *m_output_reader;
-  
-  
+
+
   // MIMEField *m_range_field;
   HTTPHdr *m_transform_resp;
   VIO *m_output_vio;
@@ -149,7 +149,7 @@ public:
   RangeRecord *m_ranges;
   int64_t m_output_cl;
   int64_t m_done;
-  
+
 };
 
 #define PREFETCH

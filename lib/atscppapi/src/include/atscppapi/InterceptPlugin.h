@@ -88,7 +88,7 @@ protected:
 
 private:
   State *state_;
-  
+
   bool doRead();
   void handleEvent(int, void *);
 

@@ -1104,7 +1104,7 @@ UnixNetVConnection::connectUp(EThread *t, int fd)
 
   // Force family to agree with remote (server) address.
   options.ip_family = server_addr.sa.sa_family;
-  
+
   //
   // Initialize this UnixNetVConnection
   //
@@ -1208,7 +1208,7 @@ UnixNetVConnection::free(EThread *t)
   ink_assert(t == this_ethread());
 
   if (from_accept_thread) {
-    netVCAllocator.free(this);  
+    netVCAllocator.free(this);
   } else {
     THREAD_FREE(this, netVCAllocator, t);
   }

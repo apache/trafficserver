@@ -272,7 +272,7 @@ namespace ts {
     */
     self splitOn(char c);
     /** Get a trailing segment of the buffer.
-    
+
         @return A buffer that contains all data after @a p.
     */
     self after(char const* p) const;
@@ -371,7 +371,7 @@ namespace ts {
     }
     return zret;
   }
-    
+
   inline char const* ConstBuffer::find(char c) const {
     return static_cast<char const*>(memchr(_ptr, c, _size));
   }

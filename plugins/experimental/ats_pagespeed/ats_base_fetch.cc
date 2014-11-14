@@ -104,7 +104,7 @@ void AtsBaseFetch::HandleHeadersComplete() {
 }
 
 void AtsBaseFetch::ForwardData(const StringPiece& sp, bool reenable, bool last) {
-  if (is_ipro_) { 
+  if (is_ipro_) {
     TSDebug("ats-speed", "ipro forwarddata: %.*s", (int)sp.size(), sp.data());
     buffer_.append(sp.data(), sp.size());
     return;
@@ -129,34 +129,34 @@ void AtsBaseFetch::ForwardData(const StringPiece& sp, bool reenable, bool last) 
     if (last) {
       TSVIONBytesSet(downstream_vio_, downstream_length_);
     }
-    if (reenable) { 
+    if (reenable) {
       TSVIOReenable(downstream_vio_);
     }
   }
   Unlock();
 }
 
-void AtsBaseFetch::HandleDone(bool success) {  
+void AtsBaseFetch::HandleDone(bool success) {
   // When this is an IPRO lookup:
   // if we've got a 200 result, store the data and setup an intercept
-  // to write it out. 
+  // to write it out.
   // Regardless, re-enable the transaction at this point.
 
   //TODO(oschaaf): what about no success?
-  if (is_ipro_) { 
+  if (is_ipro_) {
     TSDebug("ats-speed", "ipro lookup base fetch done()");
     done_called_ = true;
 
     int status_code = response_headers()->status_code();
     bool status_ok = (status_code != 0) && (status_code < 400);
-    if (status_code == CacheUrlAsyncFetcher::kNotInCacheStatus) { 
+    if (status_code == CacheUrlAsyncFetcher::kNotInCacheStatus) {
       TSDebug("ats-speed", "ipro lookup base fetch -> not found in cache");
       ctx_->record_in_place = true;
       TSHttpTxnReenable(ctx_->txn, TS_EVENT_HTTP_CONTINUE);
       ctx_ = NULL;
       DecrefAndDeleteIfUnreferenced();
       return;
-    } else if (!status_ok) { 
+    } else if (!status_ok) {
       TSDebug("ats-speed", "ipro lookup base fetch -> ipro cache entry says not applicable");
       TSHttpTxnReenable(ctx_->txn, TS_EVENT_HTTP_CONTINUE);
       ctx_ = NULL;
@@ -178,7 +178,7 @@ void AtsBaseFetch::HandleDone(bool success) {
       TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
       return;
     }
-    
+
     TSCont interceptCont = TSContCreate((int (*)(tsapi_cont*, TSEvent, void*))ipro_callback_, TSMutexCreate());
     InterceptCtx *intercept_ctx = new InterceptCtx();
     intercept_ctx->request_ctx = ctx;
@@ -187,7 +187,7 @@ void AtsBaseFetch::HandleDone(bool success) {
     copy_request_headers_to_psol(reqp, req_hdr_loc, intercept_ctx->request_headers);
     TSHandleMLocRelease(reqp, TS_NULL_MLOC, req_hdr_loc);
 
-    
+
     TSContDataSet(interceptCont, intercept_ctx);
     // TODO(oschaaf): when we serve an IPRO optimized asset, that will be handled
     // by the resource intercept. Which means we should set TXN_INDEX_OWNED_ARG to
@@ -209,7 +209,7 @@ void AtsBaseFetch::HandleDone(bool success) {
   Lock();
   done_called_ = true;
   ForwardData("", true, true);
-  
+
   DecrefAndDeleteIfUnreferenced();
   // TODO(oschaaf): we aren't safe to touch the associated mutex,
   // right? FIX.

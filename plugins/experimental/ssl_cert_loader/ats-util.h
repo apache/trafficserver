@@ -51,7 +51,7 @@
     foo *bar[ZOMG]; // array of pointers.
     ink_zero(bar); // zero all pointers in the array.
     @endcode
-    
+
  */
 template <typename T> inline void
 ink_zero(

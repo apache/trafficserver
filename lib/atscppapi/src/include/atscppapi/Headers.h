@@ -233,7 +233,7 @@ class HeaderField {
 private:
   header_field_iterator iter_;
   HeaderField(header_field_iterator iter) : iter_(iter) { }
-  
+
 public:
   typedef unsigned int size_type;
   typedef header_field_value_iterator iterator;
@@ -527,7 +527,7 @@ public:
   /**
     * Returns the value at given position of header with given name
     * @param name of header
-    * @param position of value 
+    * @param position of value
     * @return value
     */
   std::string value(const std::string key, size_type index = 0);

@@ -103,7 +103,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo* rri)
   MD5_Init(&ctx);
   MD5_Update(&ctx, sli->secret, strlen(sli->secret));
   MD5_Update(&ctx, ip, strlen(ip));
-  if (path) 
+  if (path)
     MD5_Update(&ctx, path, strlen(path));
   if (expire)
     MD5_Update(&ctx, expire, strlen(expire));

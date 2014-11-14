@@ -40,7 +40,7 @@ struct AsyncTimerState;
  * acts as a timer. It sends events at the set frequency. Calling the
  * destructor will stop the events. A one-off timer just sends one
  * event. Calling the destructor before this event will cancel the timer.
- * 
+ *
  * For either type, user must delete the timer.
  *
  * See example async_timer for sample usage.
@@ -52,7 +52,7 @@ public:
 
   /**
    * Constructor.
-   * 
+   *
    * @param type A one-off timer fires only once and a periodic timer fires periodically.
    * @param period_in_ms The receiver will receive an event every this many milliseconds.
    * @param initial_period_in_ms The first event will arrive after this many milliseconds. Subsequent
@@ -66,7 +66,7 @@ public:
 
   /**
    * Starts the timer.
-   */  
+   */
   void run();
 
   void cancel();

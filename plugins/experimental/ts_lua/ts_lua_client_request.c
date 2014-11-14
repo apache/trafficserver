@@ -8,7 +8,7 @@
   with the License.  You may obtain a copy of the License at
 
   http://www.apache.org/licenses/LICENSE-2.0
- 
+
   Unless required by applicable law or agreed to in writing, software
   distributed under the License is distributed on an "AS IS" BASIS,
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -373,7 +373,7 @@ ts_lua_client_request_get_url_host(lua_State * L)
     char *key = "Host";
     char *l_key = "host";
     int key_len = 4;
-    
+
 
     TSMLoc field_loc;
 
@@ -388,7 +388,7 @@ ts_lua_client_request_get_url_host(lua_State * L)
       field_loc = TSMimeHdrFieldFind(http_ctx->client_request_bufp, http_ctx->client_request_hdrp, l_key, key_len);
       if(field_loc) {
         host =
-          TSMimeHdrFieldValueStringGet(http_ctx->client_request_bufp, http_ctx->client_request_hdrp, field_loc, 
+          TSMimeHdrFieldValueStringGet(http_ctx->client_request_bufp, http_ctx->client_request_hdrp, field_loc,
                                        -1, &len);
         TSHandleMLocRelease(http_ctx->client_request_bufp, http_ctx->client_request_hdrp, field_loc);
       }

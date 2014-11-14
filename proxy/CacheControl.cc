@@ -193,12 +193,12 @@ getCacheControl(CacheControlResult *result, HttpRequestData *rdata, OverridableH
   }
 }
 
-bool 
+bool
 getClusterCacheLocal(URL *url, char * /* hostname ATS_UNUSED */)
 {
   HttpRequestData rdata;
   CacheControlResult result;
-  HTTPHdr req_hdr;  
+  HTTPHdr req_hdr;
 
   req_hdr.create(HTTP_TYPE_REQUEST, NULL);
   req_hdr.url_set(url);
@@ -495,7 +495,7 @@ CacheControlRecord::UpdateMatch(CacheControlResult * result, RequestData * rdata
                result->cache_responses_to_cookies);
     else
       crtc_debug[0] = 0;
-      
+
     Debug("cache_control", "Matched with for %s at line %d%s", CC_directive_str[this->directive],
           this->line_num, crtc_debug);
   }

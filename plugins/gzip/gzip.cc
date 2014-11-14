@@ -43,9 +43,9 @@ using namespace Gzip;
 
 // from mod_deflate:
 // ZLIB's compression algorithm uses a
-// 0-9 based scale that GZIP does where '1' is 'Best speed' 
-// and '9' is 'Best compression'. Testing has proved level '6' 
-// to be about the best level to use in an HTTP Server. 
+// 0-9 based scale that GZIP does where '1' is 'Best speed'
+// and '9' is 'Best compression'. Testing has proved level '6'
+// to be about the best level to use in an HTTP Server.
 
 const int ZLIB_COMPRESSION_LEVEL = 6;
 
@@ -152,7 +152,7 @@ gzip_vary_header(TSMBuffer bufp, TSMLoc hdr_loc)
 
   ce_loc = TSMimeHdrFieldFind(bufp, hdr_loc, "Vary", sizeof("Vary") - 1);
   if (ce_loc) {
-    int idx, count, len; 
+    int idx, count, len;
     const char *value;
 
     count = TSMimeHdrFieldValuesCount(bufp, hdr_loc, ce_loc);
@@ -558,7 +558,7 @@ gzip_transformable(TSHttpTxn txnp, int server, HostConfiguration * host_configur
   value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, -1, &len);
 
   int rv = host_configuration->ContentTypeIsCompressible(value, len);
-  if (!rv) { 
+  if (!rv) {
     info("content-type [%.*s] not compressible", len, value);
   }
   TSHandleMLocRelease(bufp, hdr_loc, field_loc);
@@ -584,7 +584,7 @@ gzip_transform_add(TSHttpTxn txnp, int /* server ATS_UNUSED */, HostConfiguratio
 
   if (!hc->cache()) {
     TSHttpTxnTransformedRespCache(txnp, 0);
-  } else { 
+  } else {
     TSHttpTxnTransformedRespCache(txnp, 1);
   }
 
@@ -620,7 +620,7 @@ cache_transformable(TSHttpTxn txnp)
   return 0;
 }
 
-HostConfiguration * 
+HostConfiguration *
 find_host_configuration(TSHttpTxn /* txnp ATS_UNUSED */, TSMBuffer bufp, TSMLoc locp)
 {
   TSMLoc fieldp = TSMimeHdrFieldFind(bufp, locp, TS_MIME_FIELD_HOST, TS_MIME_LEN_HOST);
@@ -630,7 +630,7 @@ find_host_configuration(TSHttpTxn /* txnp ATS_UNUSED */, TSMBuffer bufp, TSMLoc 
     const char *strv = TSMimeHdrFieldValueStringGet(bufp, locp, fieldp, -1, &strl);
     TSHandleMLocRelease(bufp, locp, fieldp);
 
-    HostConfiguration * host_configuration = config->Find(strv, strl);   
+    HostConfiguration * host_configuration = config->Find(strv, strl);
     return host_configuration;
   }
 
@@ -661,7 +661,7 @@ transform_plugin(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
             TSHttpTxnArgSet(txnp, arg_idx_url_disallowed, (void *) &GZIP_ONE);
             info("url [%.*s] not allowed", url_len, url);
           } else {
-            normalize_accept_encoding(txnp, req_buf, req_loc);	
+            normalize_accept_encoding(txnp, req_buf, req_loc);
           }
           TSfree(url);
           TSHandleMLocRelease(req_buf, TS_NULL_MLOC, req_loc);
@@ -675,7 +675,7 @@ transform_plugin(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
         //os: the accept encoding header needs to be restored..
         //otherwise the next request won't get a cache hit on this
         HostConfiguration * hc = (HostConfiguration*)TSHttpTxnArgGet(txnp, arg_idx_host_configuration);
-        if (hc != NULL) { 
+        if (hc != NULL) {
           if (hc->remove_accept_encoding()) {
             TSMBuffer req_buf;
             TSMLoc req_loc;
@@ -715,7 +715,7 @@ transform_plugin(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
       {
         int allowed = !TSHttpTxnArgGet(txnp, arg_idx_url_disallowed);
         HostConfiguration * hc = (HostConfiguration*)TSHttpTxnArgGet(txnp, arg_idx_host_configuration);
-        if ( hc != NULL ) { 
+        if ( hc != NULL ) {
           if (allowed && cache_transformable(txnp) && gzip_transformable(txnp, 0, hc, &compress_type)) {
             gzip_transform_add(txnp, 0, hc, compress_type);
           }
@@ -764,7 +764,7 @@ TSPluginInit(int argc, const char *argv[])
 
   if (argc > 2)  {
     fatal("the gzip plugin does not accept more than 1 plugin argument");
-  } else if (argc == 2) { 
+  } else if (argc == 2) {
     config_path = std::string(argv[1]);
   }
 

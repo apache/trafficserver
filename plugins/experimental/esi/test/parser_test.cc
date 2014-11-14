@@ -46,11 +46,11 @@ void check_node_attr(const Attribute &attr, const char *name, const char *value)
 
 pthread_key_t threadKey;
 
-int main() 
+int main()
 {
   pthread_key_create(&threadKey, NULL);
   Utils::init(&Debug, &Error);
-  
+
   {
     cout << endl << "==================== Test 1: No src attr test " << endl;
     EsiParser parser("parser_test", &Debug, &Error);
@@ -72,7 +72,7 @@ int main()
     assert(parser.completeParse(node_list) == false);
     assert(node_list.size() == 0);
   }
-  
+
   {
     cout << endl << "==================== Test 3: Valid src test " << endl;
     EsiParser parser("parser_test", &Debug, &Error);
@@ -631,7 +631,7 @@ int main()
   {
     cout << endl << "==================== Test 30: choose tag " << endl;
     EsiParser parser("parser_test", &Debug, &Error);
-    string input_data = 
+    string input_data =
       "<esi:choose>"
       "<esi:when test=blah><esi:include src=url /></esi:when>"
       "</esi:choose>";
@@ -663,7 +663,7 @@ int main()
     cout << endl << "==================== Test 31: when tag " << endl;
     EsiParser parser("parser_test", &Debug, &Error);
     string input_data = "<esi:when test=blah><esi:include src=url /></esi:when>";
-    
+
     DocNodeList node_list;
     assert(parser.parseChunk(input_data, node_list) == true);
     assert(parser.completeParse(node_list) == true);
@@ -680,7 +680,7 @@ int main()
     cout << endl << "==================== Test 32: otherwise tag " << endl;
     EsiParser parser("parser_test", &Debug, &Error);
     string input_data = "<esi:otherwise><esi:include src=url /></esi:otherwise>";
-    
+
     DocNodeList node_list;
     assert(parser.parseChunk(input_data, node_list) == true);
     assert(parser.completeParse(node_list) == true);
@@ -695,12 +695,12 @@ int main()
   {
     cout << endl << "==================== Test 33: try tag " << endl;
     EsiParser parser("parser_test", &Debug, &Error);
-    string input_data = 
+    string input_data =
       "<esi:try>"
       "<esi:attempt><esi:include src=url1 /></esi:attempt>"
       "<esi:except><esi:include src=url2 /></esi:except>"
       "</esi:try>";
-    
+
     DocNodeList node_list;
     assert(parser.parseChunk(input_data, node_list) == true);
     assert(parser.completeParse(node_list) == true);
@@ -742,7 +742,7 @@ int main()
     string input_data =
       "<esi:attempt><esi:include src=url1 /></esi:attempt>"
       "<esi:except><esi:include src=url2 /></esi:except>";
-    
+
     DocNodeList node_list;
     assert(parser.parseChunk(input_data, node_list) == true);
     assert(parser.completeParse(node_list) == true);
@@ -823,7 +823,7 @@ int main()
     assert(list_iter->type == DocNode::TYPE_PRE);
     assert(list_iter->data_len == static_cast<int>(strlen("foo")));
     assert(strncmp(list_iter->data, "foo", list_iter->data_len) == 0);
-    
+
     ++list_iter;
     assert(list_iter->type == DocNode::TYPE_TRY);
     DocNodeList &child_nodes = list_iter->child_nodes;
@@ -849,10 +849,10 @@ int main()
   {
     cout << endl << "==================== Test 37: html comment tag " << endl;
     EsiParser parser("parser_test", &Debug, &Error);
-    string input_data = 
-      "foo <esi:comment text=\"blah\"/><!--esi <p><esi:vars>Hello, $(HTTP_COOKIE{name})!</esi:vars></p>-->" 
+    string input_data =
+      "foo <esi:comment text=\"blah\"/><!--esi <p><esi:vars>Hello, $(HTTP_COOKIE{name})!</esi:vars></p>-->"
       "<esi:include src=url /> bar";
-    
+
     DocNodeList node_list;
     assert(parser.parseChunk(input_data, node_list) == true);
     assert(parser.completeParse(node_list) == true);
@@ -898,9 +898,9 @@ int main()
       "<!--esi blah--><esi:com",
       "ment text=\"bleh\" /> <esi:remove> </esi:remove><!--esi bleh -->",
       "<!--esi blooh--><esi:include src=url3/>",
-      0 
+      0
     };
-    
+
     DocNodeList node_list;
     for (int i = 0; lines[i]; ++i) {
       assert(parser.parseChunk(lines[i], node_list) == true);
@@ -1059,7 +1059,7 @@ int main()
     assert(parser.completeParse(node_list) == false);
     assert(node_list.size() == 0);
   }
-  
+
   {
     cout << endl << "==================== Test 42: Valid special include " << endl;
     EsiParser parser("parser_test", &Debug, &Error);
@@ -1080,7 +1080,7 @@ int main()
   {
     cout << endl << "===================== Test 43) choose-when" << endl;
     EsiParser parser("parser_test", &Debug, &Error);
-    string 
+    string
       input_data1("<esi:choose>"
                   "<esi:when test=cond1>"
                   "<esi:include src=foo />"
@@ -1166,7 +1166,7 @@ int main()
                       "<esi:include src=otherwise />"
                       "</esi:otherwise>"
                       "</esi:choose>");
-    
+
     DocNodeList node_list;
     assert(parser.parseChunk(input_data, node_list) == false);
     assert(parser.completeParse(node_list) == false);
@@ -1334,7 +1334,7 @@ int main()
     assert(list_iter->child_nodes.size() == 0);
     assert(list_iter->attr_list.size() == 1);
     check_node_attr(list_iter->attr_list.front(), "src", "pre");
-    
+
     ++list_iter;
     assert(list_iter->type == DocNode::TYPE_PRE);
     assert(list_iter->child_nodes.size() == 0);
@@ -1353,34 +1353,34 @@ int main()
     assert(list_iter2->child_nodes.size() == 2);
     assert(list_iter2->attr_list.size() == 0);
     assert(list_iter2->data_len == 0);
-    
+
     list_iter3 = list_iter2->child_nodes.begin();
     assert(list_iter3->type == DocNode::TYPE_PRE);
     assert(list_iter3->child_nodes.size() == 0);
     assert(list_iter3->attr_list.size() == 0);
     assert(list_iter3->data_len == static_cast<int>(strlen("bar")));
     assert(strncmp(list_iter3->data, "bar", list_iter3->data_len) == 0);
-    
+
     ++list_iter3;
     assert(list_iter3->type == DocNode::TYPE_INCLUDE);
     assert(list_iter3->child_nodes.size() == 0);
     assert(list_iter3->attr_list.size() == 1);
     assert(list_iter3->data_len == 0);
     check_node_attr(list_iter3->attr_list.front(), "src", "attempt");
-    
+
     ++list_iter2;
     assert(list_iter2->type == DocNode::TYPE_EXCEPT);
     assert(list_iter2->child_nodes.size() == 1);
     assert(list_iter2->attr_list.size() == 0);
     assert(list_iter2->data_len == 0);
-    
+
     list_iter3 = list_iter2->child_nodes.begin();
     assert(list_iter3->type == DocNode::TYPE_INCLUDE);
     assert(list_iter3->child_nodes.size() == 0);
     assert(list_iter3->attr_list.size() == 1);
     assert(list_iter3->data_len == 0);
     check_node_attr(list_iter3->attr_list.front(), "src", "except");
-    
+
     ++list_iter;
     assert(list_iter->type == DocNode::TYPE_PRE);
     assert(list_iter->child_nodes.size() == 0);
@@ -1442,7 +1442,7 @@ int main()
     assert(parser.completeParse(node_list) == false);
     assert(node_list.size() == 0);
   }
-  
+
   {
     cout << endl << "===================== Test 57) choose/try combo" << endl;
     EsiParser parser("parser_test", &Debug, &Error);
@@ -1585,7 +1585,7 @@ int main()
     assert(attr_iter->value_len == 6);
     assert(strncmp(attr_iter->value, "c >= d", attr_iter->value_len) == 0);
   }
-  
+
   cout << endl << "All tests passed!" << endl;
   return 0;
 }

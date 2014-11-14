@@ -94,7 +94,7 @@ public:
   typedef IpMap self; ///< Self reference type.
 
   class iterator; // forward declare.
-  
+
   /** Public API for intervals in the map.
   */
   class Node : protected ts::detail::RBNode {
@@ -360,10 +360,10 @@ protected:
   /// Force the IPv6 map to exist.
   /// @return The IPv6 map.
   ts::detail::Ip6Map* force6();
-  
+
   ts::detail::Ip4Map* _m4; ///< Map of IPv4 addresses.
   ts::detail::Ip6Map* _m6; ///< Map of IPv6 addresses.
-  
+
 };
 
 inline IpMap& IpMap::mark(in_addr_t addr, void* data) {

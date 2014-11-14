@@ -354,7 +354,7 @@ InterceptInterceptionHook(TSCont contp, TSEvent event, void * edata)
 
     return TS_EVENT_NONE;
   }
-  
+
   case TS_EVENT_NET_ACCEPT_FAILED: {
     // TS_EVENT_NET_ACCEPT_FAILED will be delivered if the
     // transaction is cancelled before we start tunnelling

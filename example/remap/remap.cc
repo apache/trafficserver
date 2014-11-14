@@ -23,7 +23,7 @@
   @section description
   Build this sample remap plugin using tsxs:
 
-    $ tsxs -v -o remap.so remap.cc 
+    $ tsxs -v -o remap.so remap.cc
 
   To install it:
     # tsxs -i -o remap.so
@@ -316,7 +316,7 @@ TSRemapDoRemap(void* ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
     size_t len = snprintf(tmp, 255,
                           "This is very small example of TS API usage!\nIteration %d!\nHTTP return code %d\n",
                           my_local_counter, TS_HTTP_STATUS_CONTINUE + my_local_counter);
-    TSHttpTxnSetHttpRetStatus((TSHttpTxn) rh, (TSHttpStatus) ((int) TS_HTTP_STATUS_CONTINUE + my_local_counter)); 
+    TSHttpTxnSetHttpRetStatus((TSHttpTxn) rh, (TSHttpStatus) ((int) TS_HTTP_STATUS_CONTINUE + my_local_counter));
     TSHttpTxnErrorBodySet((TSHttpTxn) rh, tmp, len, NULL); // Defaults to text/html
     my_local_counter++;
   }

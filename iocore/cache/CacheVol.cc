@@ -216,7 +216,7 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
       Debug("cache_scan_truss", "blockskip %p:scanObject", this);
       continue;
     }
-      
+
     if (doc->doc_type != CACHE_FRAG_TYPE_HTTP || !doc->hlen)
       goto Lskip;
 

@@ -67,11 +67,11 @@ Variables::_toUpperCase(string &str) const {
   return str;
 }
 
-inline int 
+inline int
 Variables::_searchHeaders(const string headers[], const char *name, int name_len) const {
   int curr_header_size;
   for (int i = 0; (curr_header_size = static_cast<int>(headers[i].size())); ++i) {
-    if ((name_len == curr_header_size) && 
+    if ((name_len == curr_header_size) &&
         (strncasecmp(headers[i].data(), name, curr_header_size) == 0)) {
       return i;
     }
@@ -221,7 +221,7 @@ Variables::getValue(const string &name) const {
   _toUpperCase(search_key);
   StringHash::const_iterator iter = _simple_data.find(search_key);
   if (iter != _simple_data.end()) {
-    _debugLog(_debug_tag, "[%s] Found value [%.*s] for variable [%.*s] in simple data", 
+    _debugLog(_debug_tag, "[%s] Found value [%.*s] for variable [%.*s] in simple data",
               __FUNCTION__, iter->second.size(), iter->second.data(), name.size(), name.data());
     return iter->second;
   }
@@ -251,21 +251,21 @@ Variables::getValue(const string &name) const {
               __FUNCTION__, search_key.size(), search_key.data());
     return (iter == _dict_data[dict_index].end()) ? EMPTY_STRING : TRUE_STRING;
   }
-  
+
   if (iter != _dict_data[dict_index].end()) {
     _debugLog(_debug_tag, "[%s] Found variable [%.*s] in %s dictionary with value [%.*s]",
-              __FUNCTION__, search_key.size(), search_key.data(), NORM_SPECIAL_HEADERS[dict_index].c_str(), 
+              __FUNCTION__, search_key.size(), search_key.data(), NORM_SPECIAL_HEADERS[dict_index].c_str(),
               iter->second.size(), iter->second.data());
     return iter->second;
   }
 
   size_t cookie_part_divider = (dict_index == HTTP_COOKIE) ? search_key.find(';') : search_key.size();
   if (cookie_part_divider && (cookie_part_divider < (search_key.size() - 1))) {
-    _debugLog(_debug_tag, "[%s] Cookie variable [%s] refers to sub cookie", 
+    _debugLog(_debug_tag, "[%s] Cookie variable [%s] refers to sub cookie",
               __FUNCTION__, search_key.c_str());
     return _getSubCookieValue(search_key, cookie_part_divider);
   }
-  
+
   _debugLog(_debug_tag, "[%s] Found no value for dict variable [%s]", __FUNCTION__, name.c_str());
   return EMPTY_STRING;
 }
@@ -309,14 +309,14 @@ Variables::_getSubCookieValue(const string &cookie_str, size_t cookie_part_divid
   // that; hence this shortcut
   string &non_const_cookie_str = const_cast<string &>(cookie_str);
   StringHash::const_iterator it_part;
-    
+
   non_const_cookie_str[cookie_part_divider] = '\0'; // make sure cookie name is NULL terminated
   const char *cookie_name = non_const_cookie_str.data(); /* above NULL will take effect */
   const char *part_name = non_const_cookie_str.c_str() + cookie_part_divider + 1;
 
   StringKeyHash<StringHash>::const_iterator it_cookie = _sub_cookies.find(cookie_name);
   if (it_cookie == _sub_cookies.end()) {
-      _debugLog(_debug_tag, "[%s] Could not find value for cookie [%s]", 
+      _debugLog(_debug_tag, "[%s] Could not find value for cookie [%s]",
               __FUNCTION__, cookie_name);
       goto fail;
   }

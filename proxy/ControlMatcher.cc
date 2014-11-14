@@ -311,7 +311,7 @@ template<class Data, class Result> char *UrlMatcher<Data, Result>::NewEntry(matc
                  matcher_name, line_info->line_num);
     return errBuf;
   }
-  
+
   // Remove our consumed label from the parsed line
   line_info->line[0][line_info->dest_entry] = 0;
   line_info->num_el--;
@@ -339,7 +339,7 @@ template<class Data, class Result> void UrlMatcher<Data, Result>::Match(RequestD
 {
   char *url_str;
   int *value;
-  
+
   // Check to see there is any work to before we copy the
   //   URL
   if (num_el <= 0) {
@@ -354,7 +354,7 @@ template<class Data, class Result> void UrlMatcher<Data, Result>::Match(RequestD
     url_str = ats_strdup("");
   }
 
-  if (ink_hash_table_lookup(url_ht, url_str, (void **)&value)) { 
+  if (ink_hash_table_lookup(url_ht, url_str, (void **)&value)) {
     Debug("matcher", "%s Matched %s with url at line %d", matcher_name, url_str, data_array[*value].line_num);
     data_array[*value].UpdateMatch(result, rdata);
   }

@@ -27,7 +27,7 @@ struct HttpProxyPort;
  */
 void init_HttpProxyServer(int n_accept_threads = 0);
 
-/** Start the proxy server. 
+/** Start the proxy server.
     The port data should have been created by @c init_HttpProxyServer().
 */
 void start_HttpProxyServer();

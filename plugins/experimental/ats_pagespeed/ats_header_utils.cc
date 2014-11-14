@@ -79,7 +79,7 @@ void set_header(TSMBuffer bufp, TSMLoc hdr_loc, const char * header_name, const 
 
   if (field_loc) {
     TSMimeHdrFieldValueStringSet(bufp, hdr_loc, field_loc, -1, header_value, -1);
-  } else {    
+  } else {
     if ( TSMimeHdrFieldCreate(bufp, hdr_loc, &field_loc) == TS_SUCCESS ) {
       TSMimeHdrFieldNameSet(bufp, hdr_loc, field_loc, header_name, -1);
       TSMimeHdrFieldAppend(bufp, hdr_loc, field_loc);

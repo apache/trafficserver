@@ -179,7 +179,7 @@ RemapConfigs::parse_file(const char* filename)
       TSError("%s: file %s, line %d: no records.config name given", PLUGIN_NAME, path.c_str(), line_num);
       continue;
     }
-    
+
     // Find the type (INT or STRING only)
     tok = strtok_r(NULL, " \t", &ln);
     if (TS_RECORDDATATYPE_NULL == (type = str_to_datatype(tok))) {
@@ -273,7 +273,7 @@ TSRemapNewInstance(int argc, char* argv[], void** ih, char* /* errbuf ATS_UNUSED
     TSError("Unable to create remap instance, need configuration file");
     return TS_ERROR;
   }
-  
+
   RemapConfigs* conf = new(RemapConfigs);
 
   for (int i = 2; i < argc; ++i) {
@@ -342,7 +342,7 @@ TSRemapDoRemap(void* ih, TSHttpTxn rh, TSRemapRequestInfo* /* rri ATS_UNUSED */)
 }
 
 
-
+
 /*
   local variables:
   mode: C++

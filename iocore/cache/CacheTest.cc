@@ -382,9 +382,9 @@ EXCLUSIVE_REGRESSION_TEST(cache)(RegressionTest *t, int /* atype ATS_UNUSED */, 
   large_write_test.nbytes = 10000000;
   rand_CacheKey(&large_write_test.key, thread->mutex);
 
-  CACHE_SM(t, pread_test, { 
-      cacheProcessor.open_read(this, &key, false); 
-    } 
+  CACHE_SM(t, pread_test, {
+      cacheProcessor.open_read(this, &key, false);
+    }
     int open_read_callout() {
       cvio = cache_vc->do_io_pread(this, nbytes, buffer, 7000000);
       return 1;

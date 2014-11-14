@@ -69,7 +69,7 @@ struct SContData {
   bool req_hdr_parsed;
   bool initialized;
 
-  SContData(TSCont cont) 
+  SContData(TSCont cont)
     : net_vc(0), contp(cont), input(), output(), body(""), req_content_len(0), req_hdr_bufp(0), req_hdr_loc(0),
       req_hdr_parsed(false), initialized(false) {
     http_parser = TSHttpParserCreate();
@@ -81,7 +81,7 @@ struct SContData {
 
   ~SContData() {
     TSDebug(DEBUG_TAG, "[%s] Destroying continuation data", __FUNCTION__);
-    TSHttpParserDestroy(http_parser); 
+    TSHttpParserDestroy(http_parser);
     if (req_hdr_loc) {
       TSHandleMLocRelease(req_hdr_bufp, TS_NULL_MLOC, req_hdr_loc);
     }
@@ -98,7 +98,7 @@ SContData::init(TSVConn vconn)
     TSError("[%s] SContData already initialized!", __FUNCTION__);
     return false;
   }
-  
+
   net_vc = vconn;
 
   input.buffer = TSIOBufferCreate();
@@ -129,7 +129,7 @@ handleRead(SContData *cont_data, bool &read_complete) {
     TSError("[%s] Error while getting number of bytes available", __FUNCTION__);
     return false;
   }
-  
+
           TSDebug(DEBUG_TAG, "[%s] Parsed header, avail: %d", __FUNCTION__, avail);
 
   int consumed = 0;
@@ -178,11 +178,11 @@ handleRead(SContData *cont_data, bool &read_complete) {
       block = TSIOBufferBlockNext(block);
     }
   }
-  
+
   TSIOBufferReaderConsume(cont_data->input.reader, consumed);
 
   TSDebug(DEBUG_TAG, "[%s] Consumed %d bytes from input vio, avail: %d", __FUNCTION__, consumed, avail);
-  
+
   // Modify the input VIO to reflect how much data we've completed.
   TSVIONDoneSet(cont_data->input.vio, TSVIONDoneGet(cont_data->input.vio) + consumed);
 
@@ -201,7 +201,7 @@ handleRead(SContData *cont_data, bool &read_complete) {
 static bool
 processRequest(SContData *cont_data) {
   string reply_header("HTTP/1.1 200 OK\r\n");
-  
+
   TSMLoc field_loc = TSMimeHdrFieldGet(cont_data->req_hdr_bufp, cont_data->req_hdr_loc, 0);
   while (field_loc) {
     TSMLoc next_field_loc;
@@ -245,7 +245,7 @@ processRequest(SContData *cont_data) {
     TSHandleMLocRelease(cont_data->req_hdr_bufp, cont_data->req_hdr_loc, field_loc);
     field_loc = next_field_loc;
   }
-  
+
   int body_size = static_cast<int>(cont_data->body.size());
   if (cont_data->req_content_len != body_size) {
     TSError("[%s] Read only %d bytes of body; expecting %d bytes", __FUNCTION__, body_size,
@@ -270,7 +270,7 @@ processRequest(SContData *cont_data) {
   int total_bytes_written = reply_header.size() + body_size;
   TSDebug(DEBUG_TAG, "[%s] Wrote reply of size %d", __FUNCTION__, total_bytes_written);
   TSVIONBytesSet(cont_data->output.vio, total_bytes_written);
-  
+
   TSVIOReenable(cont_data->output.vio);
   return true;
 }

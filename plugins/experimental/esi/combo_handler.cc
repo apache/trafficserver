@@ -279,7 +279,7 @@ handleReadRequestHeader(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edat
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     return 0;
   }
-  
+
   LOG_DEBUG("combo is enabled for this channel");
   LOG_DEBUG("handling TS_EVENT_HTTP_OS_DNS event...");
 

@@ -119,7 +119,7 @@ ConfigEnumPair<TSServerSessionSharingMatchType> SessionSharingMatchStrings[] =
   { TS_SERVER_SESSION_SHARING_MATCH_HOST, "host" },
   { TS_SERVER_SESSION_SHARING_MATCH_BOTH, "both" }
 };
-  
+
 static
 ConfigEnumPair<TSServerSessionSharingPoolType> SessionSharingPoolStrings[] =
 {
@@ -194,7 +194,7 @@ static void
 http_config_share_server_sessions_read_bc(HttpConfigParams* c)
 {
   MgmtByte v;
-  if (REC_ERR_OKAY == RecGetRecordByte("proxy.config.http.share_server_sessions", &v)) 
+  if (REC_ERR_OKAY == RecGetRecordByte("proxy.config.http.share_server_sessions", &v))
     http_config_share_server_sessions_bc(c, v);
 }
 
@@ -232,7 +232,7 @@ http_server_session_sharing_cb(char const* name, RecDataT dtype, RecData data, v
   }
 
   // Signal an update if valid value arrived.
-  if (valid_p) 
+  if (valid_p)
     http_config_cb(name, dtype, data, cookie);
 
  return REC_ERR_OKAY;

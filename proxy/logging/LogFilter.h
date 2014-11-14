@@ -196,7 +196,7 @@ private:
 
 /*-------------------------------------------------------------------------
   LogFilterIP
-  
+
   Filter for IP fields using IpAddr.
   -------------------------------------------------------------------------*/
 class LogFilterIP:public LogFilter
@@ -226,7 +226,7 @@ private:
 
   // Checks for a match on this filter.
   bool is_match(LogAccess* lad);
-  
+
   // -- member functions that are not allowed --
   LogFilterIP();
   LogFilterIP & operator=(LogFilterIP & rhs);

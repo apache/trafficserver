@@ -53,7 +53,7 @@ NetVCOptions::reset()
   f_blocking_connect = false;
   socks_support = NORMAL_SOCKS;
   socks_version = SOCKS_DEFAULT_VERSION;
-  socket_recv_bufsize = 
+  socket_recv_bufsize =
 #if defined(RECV_BUF_SIZE)
     RECV_BUF_SIZE;
 #else

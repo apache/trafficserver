@@ -88,9 +88,9 @@ struct InterceptPlugin::State {
     plugin_mutex_ = plugin->getMutex();
     http_parser_ = TSHttpParserCreate();
   }
-  
+
   ~State() {
-    TSHttpParserDestroy(http_parser_); 
+    TSHttpParserDestroy(http_parser_);
     if (hdr_loc_) {
       TSHandleMLocRelease(hdr_buf_, TS_NULL_MLOC, hdr_loc_);
     }
@@ -180,7 +180,7 @@ bool InterceptPlugin::doRead() {
     LOG_ERROR("Error while getting number of bytes available");
     return false;
   }
-  
+
   int consumed = 0; // consumed is used to update the input buffers
   if (avail > 0) {
     int64_t num_body_bytes_in_block;
@@ -233,7 +233,7 @@ bool InterceptPlugin::doRead() {
   }
   LOG_DEBUG("Consumed %d bytes from input vio", consumed);
   TSIOBufferReaderConsume(state_->input_.reader_, consumed);
-  
+
   // Modify the input VIO to reflect how much data we've completed.
   TSVIONDoneSet(state_->input_.vio_, TSVIONDoneGet(state_->input_.vio_) + consumed);
 
@@ -274,11 +274,11 @@ void InterceptPlugin::handleEvent(int abstract_event, void *edata) {
     break;
 
   case TS_EVENT_VCONN_WRITE_READY: // nothing to do
-    LOG_DEBUG("Got write ready"); 
+    LOG_DEBUG("Got write ready");
     break;
 
   case TS_EVENT_VCONN_READ_READY:
-    LOG_DEBUG("Handling read ready");  
+    LOG_DEBUG("Handling read ready");
     if (doRead()) {
       break;
     }

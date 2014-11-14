@@ -53,9 +53,9 @@ struct HostEnt : RefCountObj {
 
   virtual void free();
 
-  HostEnt() { 
+  HostEnt() {
     size_t base = sizeof(force_VFPT_to_top);  // preserve VFPT
-    memset(((char*)this) + base, 0, sizeof(*this) - base); 
+    memset(((char*)this) + base, 0, sizeof(*this) - base);
   }
 };
 

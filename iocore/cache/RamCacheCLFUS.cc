@@ -106,8 +106,8 @@ public:
 
   RamCacheCLFUSCompressor(RamCacheCLFUS *arc)
     : rc(arc)
-  { 
-    SET_HANDLER(&RamCacheCLFUSCompressor::mainEvent); 
+  {
+    SET_HANDLER(&RamCacheCLFUSCompressor::mainEvent);
   }
 };
 
@@ -117,7 +117,7 @@ RamCacheCLFUSCompressor::mainEvent(int /* event ATS_UNUSED */, Event *e)
   switch (cache_config_ram_cache_compress) {
     default:
       Warning("unknown RAM cache compression type: %d", cache_config_ram_cache_compress);
-    case CACHE_COMPRESSION_NONE: 
+    case CACHE_COMPRESSION_NONE:
     case CACHE_COMPRESSION_FASTLZ:
       break;
     case CACHE_COMPRESSION_LIBZ:

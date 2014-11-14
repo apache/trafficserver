@@ -1,4 +1,4 @@
-/** 
+/**
     Licensed to the Apache Software Foundation (ASF) under one
     or more contributor license agreements.  See the NOTICE file
     distributed with this work for additional information
@@ -27,7 +27,7 @@ typedef struct real_pcre pcre;
 typedef struct pcre_extra {
 } pcre_extra;
 
-int 
+int
 pcre_exec(const pcre *argument_re, const pcre_extra *extra_data,
           PCRE_SPTR subject, int length, int start_offset, int options, int *offsets,
           int offsetcount)
