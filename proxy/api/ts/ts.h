@@ -2252,7 +2252,7 @@ extern "C"
      make sure it is heap allocated, and that you do not free it.
 
      Calling this API implicitly also enables the "Follow Redirect" feature, so
-     there is no rason to call TSHttpTxnFollowRedirect() as well.
+     there is no reason to call TSHttpTxnFollowRedirect() as well.
 
      @param txnp the transaction pointer
      @param url  a heap allocated string with the URL
