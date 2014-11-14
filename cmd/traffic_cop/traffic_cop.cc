@@ -1823,9 +1823,9 @@ main(int /* argc */, char *argv[])
       fcntl(fd, F_DUPFD, STDOUT_FILENO);
       fcntl(fd, F_DUPFD, STDERR_FILENO);
 
-      if (fd != STDIN_FILENO && fd != STDOUT_FILENO && fd != STDERR_FILENO) {
-        close(fd);
-      }
+	  if (fd != STDIN_FILENO && fd != STDOUT_FILENO && fd != STDERR_FILENO){
+		close(fd);
+	  }
     } else {
       ink_fputln(stderr, "Unable to open /dev/null");
       return 0;
