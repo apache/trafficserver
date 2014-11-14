@@ -134,7 +134,9 @@ static inline int
 read_signal_and_update(int event, UnixNetVConnection *vc)
 {
   vc->recursion++;
-  vc->read.vio._cont->handleEvent(event, &vc->read.vio);
+  if (vc->read.vio._cont) {
+    vc->read.vio._cont->handleEvent(event, &vc->read.vio);
+  }
   if (!--vc->recursion && vc->closed) {
     /* BZ  31932 */
     ink_assert(vc->thread == this_ethread());
@@ -552,8 +554,9 @@ VIO *
 UnixNetVConnection::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
 {
   ink_assert(!closed);
+  ink_assert(c || 0 == nbytes);
   read.vio.op = VIO::READ;
-  read.vio.mutex = c->mutex;
+  read.vio.mutex = c ? c->mutex : this->mutex;
   read.vio._cont = c;
   read.vio.nbytes = nbytes;
   read.vio.ndone = 0;
