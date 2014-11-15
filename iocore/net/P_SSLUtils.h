@@ -130,14 +130,14 @@ ssl_error_t SSLConnect(SSL * ssl);
 
 // Log an SSL error.
 #define SSLError(fmt, ...) SSLDiagnostic(DiagsMakeLocation(), false, NULL, fmt, ##__VA_ARGS__)
-#define SSLErrorVC(vc,fmt, ...) SSLDiagnostic(DiagsMakeLocation(), false, vc, fmt, ##__VA_ARGS__)
+#define SSLErrorVC(vc,fmt, ...) SSLDiagnostic(DiagsMakeLocation(), false, (vc), fmt, ##__VA_ARGS__)
 // Log a SSL diagnostic using the "ssl" diagnostic tag.
 #define SSLDebug(fmt, ...) SSLDiagnostic(DiagsMakeLocation(), true, NULL, fmt, ##__VA_ARGS__)
-#define SSLDebugVC(vc,fmt, ...) SSLDiagnostic(DiagsMakeLocation(), true, vc, fmt, ##__VA_ARGS__)
+#define SSLDebugVC(vc, fmt, ...) SSLDiagnostic(DiagsMakeLocation(), true, (vc), fmt, ##__VA_ARGS__)
 
-#define SSL_CLR_ERR_INCR_DYN_STAT(x, fmt, ...) \
+#define SSL_CLR_ERR_INCR_DYN_STAT(vc, x, fmt, ...) \
   do { \
-    SSLDiagnostic(DiagsMakeLocation(), true, NULL, fmt, ##__VA_ARGS__); \
+    SSLDebugVC((vc), fmt, ##__VA_ARGS__); \
     RecIncrRawStat(ssl_rsb, NULL, (int) x, 1); \
   } while (0)
 

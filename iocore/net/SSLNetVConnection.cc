@@ -253,7 +253,7 @@ ssl_read_from_net(SSLNetVConnection * sslvc, EThread * lthread, int64_t &ret)
       default:
         event = SSL_READ_ERROR;
         ret = errno;
-        SSL_CLR_ERR_INCR_DYN_STAT(ssl_error_ssl, "[SSL_NetVConnection::ssl_read_from_net]: errno=%d", errno);
+        SSL_CLR_ERR_INCR_DYN_STAT(sslvc, ssl_error_ssl, "[SSL_NetVConnection::ssl_read_from_net]: errno=%d", errno);
         break;
       }                         // switch
       break;
@@ -754,7 +754,7 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, i
     case SSL_ERROR_SSL:
     default:
       r = -errno;
-      SSL_CLR_ERR_INCR_DYN_STAT(ssl_error_ssl, "SSL_write-SSL_ERROR_SSL errno=%d", errno);
+      SSL_CLR_ERR_INCR_DYN_STAT(this, ssl_error_ssl, "SSL_write-SSL_ERROR_SSL errno=%d", errno);
       break;
     }
     return (r);
@@ -1051,7 +1051,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
     return EVENT_CONT;
 
   case SSL_ERROR_SSL:
-    SSL_CLR_ERR_INCR_DYN_STAT(ssl_error_ssl, "SSLNetVConnection::sslServerHandShakeEvent, SSL_ERROR_SSL errno=%d", errno);
+    SSL_CLR_ERR_INCR_DYN_STAT(this, ssl_error_ssl, "SSLNetVConnection::sslServerHandShakeEvent, SSL_ERROR_SSL errno=%d", errno);
     // fall through
   case SSL_ERROR_ZERO_RETURN:
   case SSL_ERROR_SYSCALL:
@@ -1133,7 +1133,7 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
   case SSL_ERROR_SSL:
   default:
     err = errno;
-    SSL_CLR_ERR_INCR_DYN_STAT(ssl_error_ssl, "SSLNetVConnection::sslClientHandShakeEvent, SSL_ERROR_SSL errno=%d", errno);
+    SSL_CLR_ERR_INCR_DYN_STAT(this, ssl_error_ssl, "SSLNetVConnection::sslClientHandShakeEvent, SSL_ERROR_SSL errno=%d", errno);
     return EVENT_ERROR;
     break;
 
