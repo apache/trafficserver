@@ -105,6 +105,8 @@ FetchSM::has_body()
   if (!header_done)
     return false;
 
+  if (is_method_head)
+    return false;
   //
   // The following code comply with HTTP/1.1:
   // http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.4
@@ -550,12 +552,17 @@ FetchSM::ext_init(Continuation *cont, const char *method,
   memset(&callback_options, 0, sizeof(callback_options));
   memset(&callback_events, 0, sizeof(callback_events));
 
-  req_buffer->write(method, strlen(method));
+  int method_len = strlen(method);
+  req_buffer->write(method, method_len);
   req_buffer->write(" ", 1);
   req_buffer->write(url, strlen(url));
   req_buffer->write(" ", 1);
   req_buffer->write(version, strlen(version));
   req_buffer->write("\r\n", 2);
+
+  if ((method_len == strlen("HEAD")) && !memcmp(method, "HEAD", method_len)) {
+    is_method_head = true;
+  }
 }
 
 void

@@ -339,18 +339,15 @@ spdy_process_fetch(TSEvent event, SpdyClientSession *sm, void *edata)
     if (req->fetch_body_completed)
       ret = 0; // Ignore fetch errors after FETCH BODY DONE
     else {
-      Error("spdy_process_fetch fetch error, fetch_sm %p, ret %d for sm_id %" PRId64 ", stream_id %u, req time %" PRId64 ", url %s", req->fetch_sm, ret, sm->sm_id, req->stream_id, req->start_time, req->url.c_str());
+      Debug("spdy_error", "spdy_process_fetch fetch error, fetch_sm %p, ret %d for sm_id %" PRId64 ", stream_id %u, req time %" PRId64 ", url %s", req->fetch_sm, ret, sm->sm_id, req->stream_id, req->start_time, req->url.c_str());
       req->fetch_sm = NULL;
     }
     break;
   }
 
   if (ret) {
-    Error("spdy_process_fetch sending STATUS_500, fetch_sm %p, ret %d for sm_id %" PRId64 ", stream_id %u, req time %" PRId64 ", url %s", req->fetch_sm, ret, sm->sm_id, req->stream_id, req->start_time, req->url.c_str());
+    Debug("spdy_error", "spdy_process_fetch sending STATUS_500, fetch_sm %p, ret %d for sm_id %" PRId64 ", stream_id %u, req time %" PRId64 ", url %s", req->fetch_sm, ret, sm->sm_id, req->stream_id, req->start_time, req->url.c_str());
     spdy_prepare_status_response_and_clean_request(sm, req->stream_id, STATUS_500);
-    // It is better to send back a 500 response on the stream and have the client connection remain open.  However, we
-    // have seen a core around this.  We have a local patch to close the client connection (return -1) this is related
-    // to TS-2883.  TS-2883 still needs to be fixed.
   }
 
   return 0;

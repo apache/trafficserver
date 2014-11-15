@@ -48,7 +48,7 @@ public:
     is_internal_request = true;
     recursion = 0;
     req_finished = 0;
-    resp_finished = 0;
+    is_method_head = 0;
     header_done = 0;
     user_data = NULL;
     has_sent_header = false;
@@ -165,7 +165,7 @@ private:
   TSFetchWakeUpOptions callback_options;
   bool req_finished;
   bool header_done;
-  bool resp_finished;
+  bool is_method_head;
   bool is_internal_request;
   IpEndpoint _addr;
   int resp_is_chunked;
