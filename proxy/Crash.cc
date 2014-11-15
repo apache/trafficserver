@@ -27,6 +27,12 @@
 #include "signals.h"
 #include "ink_cap.h"
 
+// ucontext.h is deprecated on Darwin, and we really only need it on Linux, so only
+// include it if we are planning to use it.
+#if defined(__linux__)
+#include <ucontext.h>
+#endif
+
 static pid_t  crash_logger_pid = -1;
 static int    crash_logger_fd = NO_FD;
 
@@ -130,20 +136,23 @@ crash_logger_init()
 void
 crash_logger_invoke(int signo, siginfo_t * info, void * ctx)
 {
-  int status;
-  ucontext_t * uctx = (ucontext_t *)ctx;
 
   if (crash_logger_pid != -1) {
+    int status;
+
     // Let the crash logger free ...
     kill(crash_logger_pid, SIGCONT);
 
+#if defined(__linux__)
     // Write the crashing thread information to the crash logger. While the siginfo_t is blesses by POSIX, the
     // ucontext_t can contain pointers, so it's highly platform dependent. On Linux with glibc, however, it is
     // a single memory block that we can just puke out.
-    write(crash_logger_fd, info, sizeof(siginfo_t));
-    write(crash_logger_fd, uctx, sizeof(ucontext_t));
+    ATS_UNUSED_RETURN(write(crash_logger_fd, info, sizeof(siginfo_t)));
+    ATS_UNUSED_RETURN(write(crash_logger_fd, (ucontext_t *)ctx, sizeof(ucontext_t)));
+#endif
 
     close(crash_logger_fd);
+    crash_logger_fd = NO_FD;
 
     // Wait for the logger to finish ...
     waitpid(crash_logger_pid, &status, 0);

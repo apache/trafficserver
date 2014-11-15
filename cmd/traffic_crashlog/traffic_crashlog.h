@@ -27,11 +27,25 @@
 #include "libts.h"
 #include "mgmtapi.h"
 
+// ucontext.h is deprecated on Darwin, and we really only need it on Linux, so only
+// include it if we are planning to use it.
+#if defined(__linux__)
+#include <ucontext.h>
+#endif
+
 // Printf format for crash log field labels.
 #define LABELFMT "%-20s"
 
 // Printf format for memory addresses.
-#define ADDRFMT "0x%016llx"
+#if SIZEOF_VOID_POINTER == 8
+#define ADDRFMT "0x%016" PRIx64
+#define ADDRCAST(x) ((uint64_t)(x))
+#elif SIZEOF_VOID_POINTER == 4
+#define ADDRFMT "0x%08" PRIx32
+#define ADDRCAST(x) ((uint32_t)(x))
+#else
+#error unsupported pointer size
+#endif
 
 #define CRASHLOG_HAVE_THREADINFO 0x1u
 
@@ -39,7 +53,11 @@ struct crashlog_target
 {
   pid_t       pid;
   siginfo_t   siginfo;
+#if defined(__linux__)
   ucontext_t  ucontext;
+#else
+  char        ucontext; // just a placeholder ...
+#endif
   struct tm   timestamp;
   unsigned    flags;
 };

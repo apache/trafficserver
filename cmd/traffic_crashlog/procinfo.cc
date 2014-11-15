@@ -24,12 +24,6 @@
 #include "traffic_crashlog.h"
 #include <sys/utsname.h>
 
-// ucontext.h is deprecated on Darwin, and we really only need it on Linux, so only
-// include it if we are planning to use it.
-#if defined(__linux__)
-#include <ucontext.h>
-#endif
-
 static int
 procfd_open(pid_t pid, const char * fname)
 {
@@ -240,7 +234,7 @@ crashlog_write_siginfo(FILE * fp, const crashlog_target& target)
 
   snprintf(tmp, sizeof(tmp), "0x%x (%d)", target.siginfo.si_code, target.siginfo.si_code);
   fprintf(fp, LABELFMT LABELFMT, "siginfo.si_code:", tmp);
-  fprintf(fp, LABELFMT ADDRFMT, "siginfo.si_addr:", (long long)target.siginfo.si_addr);
+  fprintf(fp, LABELFMT ADDRFMT, "siginfo.si_addr:", ADDRCAST(target.siginfo.si_addr));
   fprintf(fp, "\n");
 
   if (target.siginfo.si_code == SI_USER) {
@@ -257,7 +251,7 @@ crashlog_write_siginfo(FILE * fp, const crashlog_target& target)
     case SEGV_ACCERR: msg = "Invalid permissions for mapped object"; break;
     }
 
-    fprintf(fp, "%s at address " ADDRFMT "\n", msg, (long long)target.siginfo.si_addr);
+    fprintf(fp, "%s at address " ADDRFMT "\n", msg, ADDRCAST(target.siginfo.si_addr));
     return true;
   }
 
@@ -270,7 +264,7 @@ crashlog_write_siginfo(FILE * fp, const crashlog_target& target)
     case BUS_OBJERR: msg = "Object-specific hardware error"; break;
     }
 
-    fprintf(fp, "%s at address " ADDRFMT "\n", msg, (long long)target.siginfo.si_addr);
+    fprintf(fp, "%s at address " ADDRFMT "\n", msg, ADDRCAST(target.siginfo.si_addr));
     return true;
   }
 
@@ -289,7 +283,8 @@ crashlog_write_registers(FILE * fp, const crashlog_target& target)
 
   // x86 register names as per ucontext.h.
 #if defined(__i386__)
-#define REGFMT "0x%08x"
+#define REGFMT "0x%08" PRIx32
+#define ADDRCAST(x) ((uint32_t)(x))
   static const char * names[NGREG] = {
     "GS", "FS", "ES", "DS", "EDI", "ESI", "EBP", "ESP",
     "EBX", "EDX", "ECX", "EAX", "TRAPNO", "ERR", "EIP", "CS",
@@ -298,7 +293,8 @@ crashlog_write_registers(FILE * fp, const crashlog_target& target)
 #endif
 
 #if defined(__x86_64__)
-#define REGFMT "0x%016llx"
+#define REGFMT "0x%016" PRIx64
+#define REGCAST(x) ((uint64_t)(x))
   static const char * names[NGREG] = {
     "R8", "R9", "R10", "R11", "R12", "R13", "R14", "R15",
     "RDI", "RSI", "RBP", "RBX", "RDX", "RAX", "RCX", "RSP",
@@ -309,7 +305,7 @@ crashlog_write_registers(FILE * fp, const crashlog_target& target)
   fprintf(fp, "CPU Registers:\n");
   for (unsigned i = 0; i < countof(names); ++i) {
     const char * trailer = ((i % 4) == 3) ? "\n" : " ";
-    fprintf(fp, "%-3s:" REGFMT "%s", names[i], target.ucontext.uc_mcontext.gregs[i], trailer);
+    fprintf(fp, "%-3s:" REGFMT "%s", names[i], REGCAST(target.ucontext.uc_mcontext.gregs[i]), trailer);
   }
 
   fprintf(fp, "\n");
