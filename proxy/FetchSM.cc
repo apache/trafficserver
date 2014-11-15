@@ -560,7 +560,7 @@ FetchSM::ext_init(Continuation *cont, const char *method,
   req_buffer->write(version, strlen(version));
   req_buffer->write("\r\n", 2);
 
-  if ((method_len == strlen("HEAD")) && !memcmp(method, "HEAD", method_len)) {
+  if ((method_len == HTTP_LEN_HEAD) && !memcmp(method, HTTP_METHOD_HEAD, HTTP_LEN_HEAD)) {
     is_method_head = true;
   }
 }
