@@ -102,7 +102,6 @@ initialize_record(const RecordElement * record, void *)
       break;
 
     case RECD_COUNTER:
-      tempCounter = (RecCounter) ink_atoi64(record->value);
       RecRegisterConfigCounter(type, record->name, data.rec_counter, update, check, record->regex, access);
       break;
 
