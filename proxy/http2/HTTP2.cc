@@ -774,9 +774,11 @@ REGRESSION_TEST(HPACK_Decode)(RegressionTest * t, int, int *pstatus)
       MIMEField* field = headers->field_find(expected_name, strlen(expected_name));
       box.check(field != NULL, "A MIMEField that has \"%s\" as name doesn't exist", expected_name);
 
-      int actual_value_len;
-      const char* actual_value = field->value_get(&actual_value_len);
-      box.check(strncmp(expected_value, actual_value, actual_value_len) == 0, "A MIMEField that has \"%s\" as value doesn't exist", expected_value);
+      if (field) {
+        int actual_value_len;
+        const char* actual_value = field->value_get(&actual_value_len);
+        box.check(strncmp(expected_value, actual_value, actual_value_len) == 0, "A MIMEField that has \"%s\" as value doesn't exist", expected_value);
+      }
     }
   }
 }
