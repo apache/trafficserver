@@ -107,7 +107,7 @@ main(int /* argc ATS_UNUSED */, char **argv)
   // privileged, but won't be able to open files in /proc or ptrace the target. This really should be fixed
   // in traffic_manager.
   if (getuid() == 0) {
-    seteuid(0);
+    ATS_UNUSED_RETURN(seteuid(0));
   }
 
   Layout::create();
