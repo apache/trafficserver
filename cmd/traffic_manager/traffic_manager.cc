@@ -685,6 +685,8 @@ main(int argc, char **argv)
 
   statProcessor = new StatProcessor(configFiles);
 
+  RecRegisterStatInt(RECT_NODE, "proxy.node.config.reconfigure_time", time(NULL), RECP_NON_PERSISTENT);
+
   for (;;) {
     lmgmt->processEventQueue();
     lmgmt->pollMgmtProcessServer();

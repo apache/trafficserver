@@ -38,12 +38,6 @@
 #include <sys/capability.h>
 #endif
 
-bool
-LocalManager::SetForDup(void * /* hIOCPort ATS_UNUSED */, long /* lTProcId ATS_UNUSED */, void * /* hTh ATS_UNUSED */)
-{
-  return true;
-}
-
 void
 LocalManager::mgmtCleanup()
 {

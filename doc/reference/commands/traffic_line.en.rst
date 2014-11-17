@@ -110,6 +110,10 @@ Options
     command to update the running configuration after any configuration
     file modification.
 
+    The timestamp of the last reconfiguration event (in seconds
+    since epoch) is published in the `proxy.node.config.reconfigure_time`
+    metric.
+
 .. option:: -Z, --zero_cluster
 
     Reset performance statistics to zero across the cluster.

@@ -81,7 +81,6 @@ public:
 
   bool processRunning();
   bool clusterOk();
-  bool SetForDup(void *hIOCPort, long lTProcId, void *hTh);
 
   void tick()
   {
