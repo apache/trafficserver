@@ -82,7 +82,7 @@ FileManager::~FileManager()
 {
 
   callbackListable *cb;
-  fileBinding *bind;
+  Rollback *rb;
   InkHashTableEntry *entry;
   InkHashTableIteratorState iterator_state;
 
@@ -100,10 +100,9 @@ FileManager::~FileManager()
   for (entry = ink_hash_table_iterator_first(bindings, &iterator_state);
        entry != NULL; entry = ink_hash_table_iterator_next(bindings, &iterator_state)) {
 
-    bind = (fileBinding *) ink_hash_table_entry_value(bindings, entry);
+    rb = (Rollback *) ink_hash_table_entry_value(bindings, entry);
 
-    delete bind->rb;
-    delete bind;
+    delete rb;
   }
 
   ink_hash_table_destroy(bindings);
@@ -147,15 +146,13 @@ FileManager::registerCallback(FileCallbackFunc func)
 void
 FileManager::addFile(const char *baseFileName, bool root_access_needed)
 {
-
   ink_assert(baseFileName != NULL);
-  fileBinding *newBind = new fileBinding;
 
-  newBind->rb = new Rollback(baseFileName, root_access_needed);
-  newBind->rb->configFiles = this;
+  Rollback *rb = new Rollback(baseFileName, root_access_needed);
+  rb->configFiles = this;
 
   ink_mutex_acquire(&accessLock);
-  ink_hash_table_insert(bindings, baseFileName, newBind);
+  ink_hash_table_insert(bindings, baseFileName, rb);
   ink_mutex_release(&accessLock);
 }
 
@@ -169,22 +166,15 @@ FileManager::addFile(const char *baseFileName, bool root_access_needed)
 bool
 FileManager::getRollbackObj(const char *baseFileName, Rollback ** rbPtr)
 {
-
-  InkHashTableValue lookup;
-  fileBinding *bind;
+  InkHashTableValue lookup = NULL;
   int found;
 
   ink_mutex_acquire(&accessLock);
   found = ink_hash_table_lookup(bindings, baseFileName, &lookup);
   ink_mutex_release(&accessLock);
 
-  bind = (fileBinding *) lookup;
-  if (found == 0) {
-    return false;
-  } else {
-    *rbPtr = bind->rb;
-    return true;
-  }
+  *rbPtr = (Rollback *) lookup;
+  return (found == 0) ? false : true;
 }
 
 // bool FileManager::fileChanged(const char* baseFileName)
@@ -226,7 +216,7 @@ FileManager::filesManaged()
   textBuffer *result = new textBuffer(1024);
   const char *currentName;
   const char separator[] = "\n";
-  fileBinding *bind;
+  Rollback *rb;
   InkHashTableEntry *entry;
   InkHashTableIteratorState iterator_state;
 
@@ -237,8 +227,8 @@ FileManager::filesManaged()
   for (entry = ink_hash_table_iterator_first(bindings, &iterator_state);
        entry != NULL; entry = ink_hash_table_iterator_next(bindings, &iterator_state)) {
 
-    bind = (fileBinding *) ink_hash_table_entry_value(bindings, entry);
-    currentName = bind->rb->getBaseName();
+    rb = (Rollback *) ink_hash_table_entry_value(bindings, entry);
+    currentName = rb->getBaseName();
     ink_assert(currentName);
 
     result->copyFrom(currentName, strlen(currentName));
@@ -260,21 +250,21 @@ void
 FileManager::doRollbackLocks(lockAction_t action)
 {
 
-  fileBinding *bind;
+  Rollback *rb;
   InkHashTableEntry *entry;
   InkHashTableIteratorState iterator_state;
 
   for (entry = ink_hash_table_iterator_first(bindings, &iterator_state);
        entry != NULL; entry = ink_hash_table_iterator_next(bindings, &iterator_state)) {
 
-    bind = (fileBinding *) ink_hash_table_entry_value(bindings, entry);
+    rb = (Rollback *) ink_hash_table_entry_value(bindings, entry);
 
     switch (action) {
     case ACQUIRE_LOCK:
-      bind->rb->acquireLock();
+      rb->acquireLock();
       break;
     case RELEASE_LOCK:
-      bind->rb->releaseLock();
+      rb->releaseLock();
       break;
     default:
       ink_assert(0);
@@ -301,7 +291,7 @@ void
 FileManager::abortRestore(const char *abortTo)
 {
 
-  fileBinding *bind;
+  Rollback *rb;
   InkHashTableEntry *entry;
   InkHashTableIteratorState iterator_state;
   version_t currentVersion;
@@ -311,15 +301,15 @@ FileManager::abortRestore(const char *abortTo)
   for (entry = ink_hash_table_iterator_first(bindings, &iterator_state);
        entry != NULL; entry = ink_hash_table_iterator_next(bindings, &iterator_state)) {
 
-    bind = (fileBinding *) ink_hash_table_entry_value(bindings, entry);
+    rb = (Rollback *) ink_hash_table_entry_value(bindings, entry);
 
     // We are done
-    if (strcmp(abortTo, bind->rb->getBaseName()) == 0) {
+    if (strcmp(abortTo, rb->getBaseName()) == 0) {
       return;
     }
 
-    currentVersion = bind->rb->getCurrentVersion();
-    if (bind->rb->revertToVersion_ml(currentVersion - 1) != OK_ROLLBACK) {
+    currentVersion = rb->getCurrentVersion();
+    if (rb->revertToVersion_ml(currentVersion - 1) != OK_ROLLBACK) {
       mgmt_fatal(stderr, 0,
                  "[FileManager::abortRestore] Unable to abort a failed snapshot restore.  Configuration files have been left in a inconsistent state\n");
     }
@@ -337,7 +327,7 @@ FileManager::abortRestore(const char *abortTo)
 SnapResult
 FileManager::restoreSnap(const char *snapName, const char *snapDir)
 {
-  fileBinding *bind;
+  Rollback *rb;
   InkHashTableEntry *entry;
   InkHashTableIteratorState iterator_state;
   SnapResult result = SNAP_OK;
@@ -348,8 +338,6 @@ FileManager::restoreSnap(const char *snapName, const char *snapDir)
   snapPath = newPathString(snapDir, snapName);
 
   ink_mutex_acquire(&accessLock);
-
-
 
   if (access(snapPath, F_OK) == -1) {
     delete[]snapPath;
@@ -368,16 +356,16 @@ FileManager::restoreSnap(const char *snapName, const char *snapDir)
   for (entry = ink_hash_table_iterator_first(bindings, &iterator_state);
        entry != NULL; entry = ink_hash_table_iterator_next(bindings, &iterator_state)) {
 
-    bind = (fileBinding *) ink_hash_table_entry_value(bindings, entry);
-    filePath = newPathString(snapPath, bind->rb->getBaseName());
+    rb = (Rollback *) ink_hash_table_entry_value(bindings, entry);
+    filePath = newPathString(snapPath, rb->getBaseName());
     if (readFile(filePath, &storage) != SNAP_OK) {
-      abortRestore(bind->rb->getBaseName());
+      abortRestore(rb->getBaseName());
       result = SNAP_FILE_ACCESS_FAILED;
       break;
     }
 
-    if (bind->rb->forceUpdate_ml(&storage) != OK_ROLLBACK) {
-      abortRestore(bind->rb->getBaseName());
+    if (rb->forceUpdate_ml(&storage) != OK_ROLLBACK) {
+      abortRestore(rb->getBaseName());
       result = SNAP_FILE_ACCESS_FAILED;
       break;
     }
@@ -481,7 +469,7 @@ SnapResult
 FileManager::takeSnap(const char *snapName, const char *snapDir)
 {
 
-  fileBinding *bind;
+  Rollback *rb;
   InkHashTableEntry *entry;
   InkHashTableIteratorState iterator_state;
   char *snapPath;
@@ -530,8 +518,8 @@ FileManager::takeSnap(const char *snapName, const char *snapDir)
   for (entry = ink_hash_table_iterator_first(bindings, &iterator_state);
        entry != NULL; entry = ink_hash_table_iterator_next(bindings, &iterator_state)) {
 
-    bind = (fileBinding *) ink_hash_table_entry_value(bindings, entry);
-    callResult = this->copyFile(bind->rb, snapPath);
+    rb = (Rollback *) ink_hash_table_entry_value(bindings, entry);
+    callResult = this->copyFile(rb, snapPath);
     if (callResult != SNAP_OK) {
       // Remove the failed napshot so that we do not have a partial
       //   one hanging around
@@ -687,7 +675,7 @@ FileManager::WalkSnaps(ExpandingArray * snapList)
 void
 FileManager::rereadConfig()
 {
-  fileBinding *bind;
+  Rollback *rb;
   InkHashTableEntry *entry;
   InkHashTableIteratorState iterator_state;
 
@@ -695,8 +683,8 @@ FileManager::rereadConfig()
   for (entry = ink_hash_table_iterator_first(bindings, &iterator_state);
        entry != NULL; entry = ink_hash_table_iterator_next(bindings, &iterator_state)) {
 
-    bind = (fileBinding *) ink_hash_table_entry_value(bindings, entry);
-    bind->rb->checkForUserUpdate();
+    rb = (Rollback *) ink_hash_table_entry_value(bindings, entry);
+    rb->checkForUserUpdate();
   }
   ink_mutex_release(&accessLock);
 

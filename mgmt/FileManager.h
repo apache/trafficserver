@@ -49,11 +49,6 @@ public:
   LINK(callbackListable, link);
 };
 
-struct fileBinding
-{
-  Rollback *rb;
-};
-
 // MUST match the ordering MFresult so that we can cast
 //   MFresult to SnapResult
 enum SnapResult
