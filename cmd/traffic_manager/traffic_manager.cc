@@ -94,7 +94,6 @@ static void SignalAlrmHandler(int sig);
 #endif
 
 static volatile int sigHupNotifier = 0;
-static volatile int sigUsr2Notifier = 0;
 static void SigChldHandler(int sig);
 
 static void
@@ -697,11 +696,6 @@ main(int argc, char **argv)
       sigHupNotifier = 0;
       mgmt_log(stderr, "[main] Reading Configuration Files Reread\n");
     }
-    // Check for SIGUSR2
-    if (sigUsr2Notifier != 0) {
-      ink_stack_trace_dump();
-      sigUsr2Notifier = 0;
-    }
 
     lmgmt->ccom->generateClusterDelta();
 
@@ -834,10 +828,6 @@ SignalHandler(int sig)
     return;
   }
 
-  if (sig == SIGUSR2) {
-    sigUsr2Notifier = 1;
-    return;
-  }
   fprintf(stderr, "[TrafficManager] ==> Cleaning up and reissuing signal #%d\n", sig);
   mgmt_elog(stderr, 0, "[TrafficManager] ==> Cleaning up and reissuing signal #%d\n", sig);
 
