@@ -581,7 +581,7 @@ FetchSM::ext_add_header(const char *name, int name_len,
 }
 
 void
-FetchSM::ext_lanuch()
+FetchSM::ext_launch()
 {
   req_buffer->write("\r\n", 2);
   httpConnect();

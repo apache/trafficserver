@@ -115,7 +115,7 @@ public:
                 const sockaddr *client_addr, int flags);
   void ext_add_header(const char *name, int name_len,
                       const char *value, int value_len);
-  void ext_lanuch();
+  void ext_launch();
   void ext_destroy();
   ssize_t ext_read_data(char *buf, size_t len);
   void ext_write_data(const void *data, size_t len);
