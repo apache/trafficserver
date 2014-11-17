@@ -42,7 +42,7 @@ msgstr "Traffic Line を使用して Traffic Server を設定する"
 #: ../../admin/configuring-traffic-server.en.rst:34
 msgid ""
 "Traffic Line enables you to quickly and easily change your Traffic Server "
-"configuration via command-line interface.
+"configuration via command-line interface."
 msgstr ""
 "Traffic Line はコマンドラインインターフェースで手早く簡単に Traffic Server "
 "の設定を変更することを可能にします。あるいは Traffic Server を設定するため"

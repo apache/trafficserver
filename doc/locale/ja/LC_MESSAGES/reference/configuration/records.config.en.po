@@ -1079,7 +1079,8 @@ msgstr ""
 
 #: ../../reference/configuration/records.config.en.rst:669
 msgid ""
-"Enables (``1``) or disables (``0``) :program:`traffic_cop` heartbeat logging."
+"Enables (``1``) or disables (``0``) :program:`traffic_cop` heartbeat "
+"logging."
 msgstr ""
 
 #: ../../reference/configuration/records.config.en.rst:673
