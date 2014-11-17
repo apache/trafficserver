@@ -39,6 +39,7 @@
 #include "URL.h"
 #include "MIME.h"
 #include "HTTP.h"
+#include "CoreAPI.h"
 
 // Needs LibRecordsConfigInit()
 #include "RecordsConfig.h"
@@ -692,8 +693,7 @@ main(int argc, char **argv)
     // Check for a SIGHUP
     if (sigHupNotifier != 0) {
       mgmt_log(stderr, "[main] Reading Configuration Files due to SIGHUP\n");
-      configFiles->rereadConfig();
-      lmgmt->signalEvent(MGMT_EVENT_PLUGIN_CONFIG_UPDATE, "*");
+      Reconfigure();
       sigHupNotifier = 0;
       mgmt_log(stderr, "[main] Reading Configuration Files Reread\n");
     }

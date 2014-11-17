@@ -796,7 +796,7 @@ RecSyncConfigToTB(textBuffer * tb, bool *inc_version)
 
 
 //-------------------------------------------------------------------------
-// RecExecConifgUpdateCbs
+// RecExecConfigUpdateCbs
 //-------------------------------------------------------------------------
 int
 RecExecConfigUpdateCbs(unsigned int update_required_type)

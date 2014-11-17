@@ -38,7 +38,7 @@
 TSMgmtError Init(const char *socket_path = NULL, TSInitOptionT options = TS_MGMT_OPT_DEFAULTS);
 TSMgmtError Terminate();
 
-void Diags(TSDiagsT mode, const char * fmt, va_list ap);
+void DiagnosticMessage(TSDiagsT mode, const char * fmt, va_list ap);
 
 /***************************************************************************
  * Control Operations

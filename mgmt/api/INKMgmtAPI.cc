@@ -1842,7 +1842,7 @@ TSDiags(TSDiagsT mode, const char *fmt, ...)
   va_list ap;
 
   va_start(ap, fmt);            // initialize the argument pointer ap
-  Diags(mode, fmt, ap);
+  DiagnosticMessage(mode, fmt, ap);
   va_end(ap);
 
   return;

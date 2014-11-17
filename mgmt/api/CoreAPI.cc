@@ -94,7 +94,7 @@ Terminate()
  * Uses the Traffic Manager diags object to display the diags output.
  */
 void
-Diags(TSDiagsT mode, const char *fmt, va_list ap)
+DiagnosticMessage(TSDiagsT mode, const char *fmt, va_list ap)
 {
   // Mapping TSDiagsT to Diags.h:DiagsLevel
   // Simple casting would work, but not inflexible

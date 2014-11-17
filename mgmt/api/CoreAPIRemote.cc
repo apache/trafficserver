@@ -289,7 +289,7 @@ Terminate()
 // diagnostics, the diagnostics will be outputted to the machine
 // the remote client is logged into (the one TM is running on)
 void
-Diags(TSDiagsT mode, const char *fmt, va_list ap)
+DiagnosticMessage(TSDiagsT mode, const char *fmt, va_list ap)
 {
   char diag_msg[MAX_BUF_SIZE];
 
