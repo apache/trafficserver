@@ -27,6 +27,8 @@
 #include "P_SSLUtils.h"
 #include "InkAPIInternal.h"	// Added to include the ssl_hook definitions
 
+extern unsigned char * append_protocol(const char * proto, unsigned char * buf);
+
 // Defined in SSLInternal.c, should probably make a separate include
 // file for this at some point
 void SSL_set_rbio(SSLNetVConnection *sslvc, BIO *rbio);
@@ -776,7 +778,10 @@ SSLNetVConnection::SSLNetVConnection():
   sslPreAcceptHookState(SSL_HOOKS_INIT),
   sslSNIHookState(SNI_HOOKS_INIT),
   npnSet(NULL),
-  npnEndpoint(NULL)
+  npnEndpoint(NULL),
+  npnAdvertised(NULL),
+  npnszAdvertised(0),
+  npnAdvertisedBufIndex(-1)
 {
 }
 
@@ -815,6 +820,9 @@ SSLNetVConnection::free(EThread * t) {
   hookOpRequested = TS_SSL_HOOK_OP_DEFAULT;
   npnSet = NULL;
   npnEndpoint= NULL;
+  npnAdvertised = NULL;
+  npnszAdvertised = 0;
+  npnAdvertisedBufIndex = -1;
 
   if (from_accept_thread) {
     sslNetVCAllocator.free(this);
@@ -1160,12 +1168,84 @@ SSLNetVConnection::advertise_next_protocol(SSL *ssl, const unsigned char **out, 
 
   ink_release_assert(netvc != NULL);
 
+  // check if there's a SNI based customized advertisement
+  if (netvc->npnAdvertised && netvc->npnszAdvertised) {
+    *out = netvc->npnAdvertised;
+    *outlen = netvc->npnszAdvertised;
+    return SSL_TLSEXT_ERR_OK;
+  }
+
+  // use default endPoint advertisement
   if (netvc->npnSet && netvc->npnSet->advertiseProtocols(out, outlen)) {
     // Successful return tells OpenSSL to advertise.
     return SSL_TLSEXT_ERR_OK;
   }
 
   return SSL_TLSEXT_ERR_NOACK;
+}
+
+bool
+SSLNetVConnection::modify_npn_advertisement(const unsigned char ** list, unsigned cnt)
+{
+  unsigned char* advertised = npnAdvertised;
+
+  for (unsigned int i=0; i<cnt; i++) {
+    const char* proto = (const char*) list[i];
+    Debug("ssl", "advertising protocol %s", proto);
+    advertised = append_protocol(proto, advertised);
+  }
+
+  return true;
+}
+
+bool
+SSLNetVConnection::setAdvertiseProtocols(const unsigned char ** list, unsigned cnt)
+{
+  size_t total_len = 0;
+
+  if (cnt == 0) {
+    // set default list based on server_ports config
+    if (npnAdvertised) {
+      ink_assert (npnAdvertisedBufIndex >= 0);
+      ioBufAllocator[npnAdvertisedBufIndex].free_void(npnAdvertised);
+      npnAdvertised = NULL;
+      npnszAdvertised = 0;
+      npnAdvertisedBufIndex = -1;
+    }
+    return true;
+  }
+
+  // validate the modified npn list
+  for (unsigned int i=0; i<cnt; i++) {
+    const char* proto = (const char*) list[i];
+    size_t len = strlen(proto);
+
+    // Both ALPN and NPN only allow 255 bytes of protocol name.
+    if (len > 255) {
+      return false;
+    }
+
+    if (!npnSet->findEndpoint((const unsigned char *)proto, len)) {
+      return false;
+    }
+    total_len += (len + 1);
+  }
+
+  if (npnAdvertised) {
+    ink_assert (npnAdvertisedBufIndex >= 0);
+    ioBufAllocator[npnAdvertisedBufIndex].free_void(npnAdvertised);
+  }
+
+  npnszAdvertised = total_len;
+  npnAdvertisedBufIndex = buffer_size_to_index(npnszAdvertised);
+  npnAdvertised = (unsigned char *)ioBufAllocator[npnAdvertisedBufIndex].alloc_void();
+  if (npnAdvertised == NULL) {
+    npnszAdvertised = 0;
+    npnAdvertisedBufIndex = -1;
+    return false;
+  }
+
+  return modify_npn_advertisement(list, cnt);
 }
 
 // ALPN TLS extension callback. Given the client's set of offered

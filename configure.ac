@@ -1945,6 +1945,7 @@ AS_IF([test "x$enable_experimental_plugins" = xyes], [
     plugins/experimental/regex_revalidate/Makefile
     plugins/experimental/remap_stats/Makefile
     plugins/experimental/s3_auth/Makefile
+    plugins/experimental/sni_proto_nego/Makefile
     plugins/experimental/sslheaders/Makefile
     plugins/experimental/ssl_cert_loader/Makefile
     plugins/experimental/stale_while_revalidate/Makefile
