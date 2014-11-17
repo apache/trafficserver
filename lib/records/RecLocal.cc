@@ -93,7 +93,13 @@ sync_thr(void * data)
           rb->setLastModifiedTime();
         }
       }
+    } else {
+      // If we didn't sync to disk, check whether we need to update ....
+      if (configFiles->isConfigStale()) {
+        RecSetRecordInt("proxy.node.config.reconfigure_required", 1);
+      }
     }
+
     usleep(REC_REMOTE_SYNC_INTERVAL_MS * 1000);
   }
   return NULL;

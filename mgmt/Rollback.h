@@ -59,6 +59,12 @@ enum RollBackCodes
   INVALID_VERSION_ROLLBACK
 };
 
+enum RollBackCheckType
+{
+  ROLLBACK_CHECK_AND_UPDATE,
+  ROLLBACK_CHECK_ONLY
+};
+
 class ExpandingArray;
 
 // Stores info about a backup version
@@ -174,7 +180,7 @@ public:
   version_t extractVersionInfo(ExpandingArray * listNames, const char *testFileName);
 
   // Automatically take out lock
-  bool checkForUserUpdate();
+  bool checkForUserUpdate(RollBackCheckType);
   RollBackCodes removeVersion(version_t version);
   RollBackCodes revertToVersion(version_t version);
   RollBackCodes getVersion(version_t version, textBuffer ** buffer);

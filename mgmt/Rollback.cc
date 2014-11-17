@@ -909,7 +909,7 @@ Rollback::setLastModifiedTime()
 //    of creating a new timestamp
 //
 bool
-Rollback::checkForUserUpdate()
+Rollback::checkForUserUpdate(RollBackCheckType how)
 {
 
   struct stat fileInfo;
@@ -929,19 +929,21 @@ Rollback::checkForUserUpdate()
 
   if (fileLastModified < TS_ARCHIVE_STAT_MTIME(fileInfo)) {
 
-    // We've been modified, Roll a new version
-    currentVersion_local = this->getCurrentVersion();
-    r = this->getVersion_ml(currentVersion_local, &buf);
-    if (r == OK_ROLLBACK) {
-      r = this->updateVersion_ml(buf, currentVersion_local);
-      delete buf;
-    }
-    if (r != OK_ROLLBACK) {
-      mgmt_log(stderr, "[Rollback::checkForUserUpdate] Failed to roll changed user file %s: %s",
-               fileName, RollbackStrings[r]);
-    }
+    if (how == ROLLBACK_CHECK_AND_UPDATE) {
+      // We've been modified, Roll a new version
+      currentVersion_local = this->getCurrentVersion();
+      r = this->getVersion_ml(currentVersion_local, &buf);
+      if (r == OK_ROLLBACK) {
+        r = this->updateVersion_ml(buf, currentVersion_local);
+        delete buf;
+      }
+      if (r != OK_ROLLBACK) {
+        mgmt_log(stderr, "[Rollback::checkForUserUpdate] Failed to roll changed user file %s: %s",
+                 fileName, RollbackStrings[r]);
+      }
 
-    mgmt_log(stderr, "User has changed config file %s\n", fileName);
+      mgmt_log(stderr, "User has changed config file %s\n", fileName);
+    }
 
     result = true;
   } else {

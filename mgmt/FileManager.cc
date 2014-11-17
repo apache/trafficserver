@@ -684,7 +684,7 @@ FileManager::rereadConfig()
        entry != NULL; entry = ink_hash_table_iterator_next(bindings, &iterator_state)) {
 
     rb = (Rollback *) ink_hash_table_entry_value(bindings, entry);
-    rb->checkForUserUpdate();
+    rb->checkForUserUpdate(ROLLBACK_CHECK_AND_UPDATE);
   }
   ink_mutex_release(&accessLock);
 
@@ -696,6 +696,29 @@ FileManager::rereadConfig()
   if (found && enabled) {
     fileChanged("proxy.config.body_factory.template_sets_dir", true);
   }
+}
+
+bool
+FileManager::isConfigStale()
+{
+  Rollback *rb;
+  InkHashTableEntry *entry;
+  InkHashTableIteratorState iterator_state;
+  bool stale = false;
+
+  ink_mutex_acquire(&accessLock);
+  for (entry = ink_hash_table_iterator_first(bindings, &iterator_state);
+       entry != NULL; entry = ink_hash_table_iterator_next(bindings, &iterator_state)) {
+
+    rb = (Rollback *) ink_hash_table_entry_value(bindings, entry);
+    if (rb->checkForUserUpdate(ROLLBACK_CHECK_ONLY)) {
+      stale = true;
+      break;
+    }
+  }
+
+  ink_mutex_release(&accessLock);
+  return stale;
 }
 
 // void FileManager::displaySnapPage(textBuffer* output, httpResponse& answerHdr)

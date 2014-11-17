@@ -413,6 +413,7 @@ Reconfigure()
   configFiles->rereadConfig();  // TM rereads
   lmgmt->signalEvent(MGMT_EVENT_PLUGIN_CONFIG_UPDATE, "*");     // TS rereads
   RecSetRecordInt("proxy.node.config.reconfigure_time", time(NULL));
+  RecSetRecordInt("proxy.node.config.reconfigure_required", 0);
 
   return TS_ERR_OKAY;
 }

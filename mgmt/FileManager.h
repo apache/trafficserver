@@ -92,6 +92,9 @@ class ExpandingArray;
 //       list of call files being managed by the FileManager.  CALLEE
 //       is responsible for deleting the returned object
 //
+//  isConfigStale() - returns whether the in-memory files might be stale
+//       compared to what is on disk.
+//
 //  takeSnap(const char* snapName) - creates a new snapshot with
 //       passed in name
 //
@@ -112,6 +115,7 @@ public:
   void fileChanged(const char *baseFileName, bool incVersion);
   textBuffer *filesManaged();
   void rereadConfig();
+  bool isConfigStale();
   //SnapResult takeSnap(const char* snapName);
   SnapResult takeSnap(const char *snapName, const char *snapDir);
   //SnapResult restoreSnap(const char* snapName);
