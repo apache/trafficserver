@@ -976,12 +976,18 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
       GETNEXT(done);
       goto parse_method1;
     }
+    if (!ParseRules::is_token(*cur)) {
+      goto done;
+    }
     method_start = cur;
     GETNEXT(done);
   parse_method2:
     if (ParseRules::is_ws(*cur)) {
       method_end = cur;
       goto parse_version1;
+    }
+    if (!ParseRules::is_token(*cur)) {
+      goto done;
     }
     GETNEXT(done);
     goto parse_method2;
