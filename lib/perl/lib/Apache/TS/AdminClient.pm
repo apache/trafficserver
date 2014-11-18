@@ -701,6 +701,7 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.ssl.server.cert.path
  proxy.config.ssl.server.cipher_suite
  proxy.config.ssl.server.honor_cipher_order
+ proxy.config.ssl.server.dhparams_file
  proxy.config.ssl.SSLv2
  proxy.config.ssl.SSLv3
  proxy.config.ssl.TLSv1

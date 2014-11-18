@@ -2152,6 +2152,13 @@ SSL Termination
    Unless this is an absolute path, it is loaded relative to the
    path specified by :ts:cv:`proxy.config.ssl.server.cert.path`.
 
+.. ts:cv:: CONFIG proxy.config.ssl.server.dhparams_file STRING NULL
+
+   The name of a file containing a set of Diffie-Hellman key exchange
+   parameters. If not specified, 2048-bit DH parameters from RFC 5114 are
+   used. These parameters are only used if a DHE (or EDH) cipher suite has
+   been selected.
+
 .. ts:cv:: CONFIG proxy.config.ssl.CA.cert.path STRING NULL
 
    The location of the certificate authority file that client

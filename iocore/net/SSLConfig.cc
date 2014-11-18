@@ -69,6 +69,7 @@ SSLConfigParams::SSLConfigParams()
     clientCACertPath =
     cipherSuite =
     client_cipherSuite =
+    dhparamsFile =
     serverKeyPathOnly = NULL;
 
   clientCertLevel = client_verify_depth = verify_depth = clientVerify = 0;
@@ -103,6 +104,7 @@ SSLConfigParams::cleanup()
   ats_free_null(serverKeyPathOnly);
   ats_free_null(cipherSuite);
   ats_free_null(client_cipherSuite);
+  ats_free_null(dhparamsFile);
 
   clientCertLevel = client_verify_depth = verify_depth = clientVerify = 0;
 }
@@ -156,6 +158,7 @@ SSLConfigParams::initialize()
   REC_ReadConfigInt32(clientCertLevel, "proxy.config.ssl.client.certification_level");
   REC_ReadConfigStringAlloc(cipherSuite, "proxy.config.ssl.server.cipher_suite");
   REC_ReadConfigStringAlloc(client_cipherSuite, "proxy.config.ssl.client.cipher_suite");
+  REC_ReadConfigStringAlloc(dhparamsFile, "proxy.config.ssl.server.dhparams_file");
 
   int options;
   int client_ssl_options;

@@ -65,6 +65,7 @@ struct SSLConfigParams : public ConfigInfo
   char *  serverCACertFilename;
   char *  serverCACertPath;
   char *  configFilePath;
+  char *  dhparamsFile;
   char *  cipherSuite;
   char *  client_cipherSuite;
   int     clientCertLevel;
