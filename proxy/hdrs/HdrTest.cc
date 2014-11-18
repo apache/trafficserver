@@ -971,6 +971,12 @@ HdrTest::test_http_hdr_print_and_copy()
       test_http_hdr_print_and_copy_aux(i + 1, tests[i].req, tests[i].req_tgt, tests[i].rsp, tests[i].rsp_tgt);
     if (status == 0)
       ++failures;
+
+    // Test for expected failesure
+    // parse with a '\0' in the header.  Should fail
+    status =  test_http_hdr_null_char(i + 1, tests[i].req, tests[i].req_tgt);
+    if (status == 0)
+      ++failures;
   }
 
   return (failures_to_status("test_http_hdr_print_and_copy", failures));
@@ -1139,6 +1145,46 @@ done:
   }
 }
 
+int
+HdrTest::test_http_hdr_null_char(int testnum,
+                                 const char *request, const char * /*request_tgt*/)
+{
+  int err;
+  HTTPHdr hdr;
+  HTTPParser parser;
+  const char *start;
+  char cpy_buf[2048];
+  const char *cpy_buf_ptr = cpy_buf;
+
+
+  /*** (1) parse the request string into hdr ***/
+
+  hdr.create(HTTP_TYPE_REQUEST);
+
+  start = request;
+  if (strlen(start) > sizeof(cpy_buf)) {
+    printf("FAILED: (test #%d) Internal buffer too small for null char test\n", testnum);
+    return (0);
+  }
+  strcpy(cpy_buf, start);
+
+  // Put a null character somewhere in the header
+  int length = strlen(start);
+  cpy_buf[length/2] = '\0';
+
+  http_parser_init(&parser);
+
+  while (1) {
+    err = hdr.parse_req(&parser, &cpy_buf_ptr, cpy_buf_ptr + length, true);
+    if (err != PARSE_CONT)
+      break;
+  }
+  if (err != PARSE_ERROR) {
+    printf("FAILED: (test #%d) no parse error parsing request with null char\n", testnum);
+    return (0);
+  }
+  return 1;
+}
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
