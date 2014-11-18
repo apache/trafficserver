@@ -99,3 +99,25 @@ Glossary
       The unit of storage in the cache. All reads from the cache always read exactly one fragment. Fragments may be
       written in groups, but every write is always an integral number of fragments. Each fragment has a corresponding
       :term:`directory entry` which describes its location in the cache storage.
+
+   object store
+      The database of :term:`cache objects <cache object>`.
+
+   fresh
+      The state of a :term:`cache object` which can be served directly from the
+      the cache in response to client requests. Fresh objects have not met or
+      passed their :term:`origin server` defined expiration time, nor have they
+      reached the algorithmically determined :term:`stale` age.
+
+   stale
+      The state of a :term:`cache object` which is not yet expired, but has
+      reached an algorithmically determined age at which the :term:`origin server`
+      will be contacted to :term:`revalidate <revalidation>` the freshness of
+      the object. Contrast with :term:`fresh`.
+
+   origin server
+      An HTTP server which provides the original source of content being cached
+      by Traffic Server.
+
+   cache partition
+

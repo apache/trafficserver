@@ -140,7 +140,7 @@ cluster, for example::
     127.1.2.5:80
 
 After successfully joining a cluster, all changes of global configurations
-performed on any node in that cluster will take effect on **all** nodes, removing
+performed on any node in that cluster will take effect on all nodes, removing
 the need to manually duplicate configuration changes across each node individually.
 
 Deleting Nodes from a Cluster

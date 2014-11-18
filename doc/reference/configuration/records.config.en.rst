@@ -1334,9 +1334,9 @@ Cache Control
 
 .. ts:cv:: CONFIG proxy.config.cache.target_fragment_size INT 1048576
 
-   Sets the target size of a contiguous fragment of a file in the disk cache. Accepts values that are powers of 2, e.g. 65536, 131072,
-   262144, 524288, 1048576, 2097152, etc. When setting this, consider that larger numbers could waste memory on slow connections,
-   but smaller numbers could increase (waste) seeks.
+   Sets the target size of a contiguous fragment of a file in the disk cache.
+   When setting this, consider that larger numbers could waste memory on slow
+   connections, but smaller numbers could increase (waste) seeks.
 
 RAM Cache
 =========

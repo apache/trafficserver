@@ -21,8 +21,8 @@ Configuring the Cache
    under the License.
 
 The Traffic Server cache consists of a high-speed object database called
-the *object store* that indexes objects according to URLs and their
-associated headers.
+the :term:`object store` that indexes :term:`cache objects <cache object>`
+according to URLs and their associated headers.
 
 .. toctree::
    :maxdepth: 2
@@ -31,16 +31,16 @@ The Traffic Server Cache
 ========================
 
 The Traffic Server cache consists of a high-speed object database called
-the *object store*. The object store indexes objects according to URLs
-and associated headers. This enables Traffic Server to store, retrieve,
-and serve not only web pages, but also parts of web pages - which
-provides optimum bandwidth savings. Using sophisticated object
-management, the object store can cache alternate versions of the same
-object (versions may differ because of dissimilar language or encoding
-types). It can also efficiently store very small and very large
-documents, thereby minimizing wasted space. When the cache is full,
-Traffic Server removes stale data to ensure the most requested objects
-are kept readily available and fresh.
+the :term:`object store`. The object store indexes
+:term:`cache objects <cache object>` according to URLs and associated headers.
+This enables Traffic Server to store, retrieve, and serve not only web pages,
+but also parts of web pages - which provides optimum bandwidth savings. Using
+sophisticated object management, the object store can cache
+:term:`alternate` versions of the same object (versions may differ because of
+dissimilar language or encoding types). It can also efficiently store very
+small and very large documents, thereby minimizing wasted space. When the
+cache is full, Traffic Server removes :term:`stale` data to ensure the most
+requested objects are kept readily available and fresh.
 
 Traffic Server is designed to tolerate total disk failures on any of the
 cache disks. If the disk fails completely, then Traffic Server marks the
@@ -50,11 +50,15 @@ fail, then Traffic Server goes into proxy-only mode.
 
 You can perform the following cache configuration tasks:
 
--  Change the total amount of disk space allocated to the cache: refer
+-  Change the total amount of disk space allocated to the cache; refer
    to `Changing Cache Capacity`_.
+
 -  Partition the cache by reserving cache disk space for specific
-   protocols and origin servers/domains; refer to `Partitioning the Cache`_.
+   protocols and :term:`origin servers/domains <origin server>`; refer to
+   `Partitioning the Cache`_.
+
 -  Delete all data in the cache; refer to `Clearing the Cache`_.
+
 -  Override cache directives for a requested domain name, regex on a url,
    hostname or ip, with extra filters for time, port, method of the request,
    and more. ATS can be configured to never cache, always cache,
@@ -85,7 +89,7 @@ resistance against this problem.
 In addition, *CLFUS* also supports compressing in the RAM cache itself.
 This can be useful for content which is not compressed by itself (e.g.
 images). This should not be confused with ``Content-Encoding: gzip``, this
-feature is only thereto save space internally in the RAM cache itself. As
+feature is only present to save space internally in the RAM cache itself. As
 such, it is completely transparent to the User-Agent. The RAM cache
 compression is enabled with the option
 :ts:cv:`proxy.config.cache.ram_cache.compress`.
@@ -101,7 +105,6 @@ Value   Meaning
 3       *liblzma* compression
 ======= =============================
 
-
 .. _changing-the-size-of-the-ram-cache:
 
 Changing the Size of the RAM Cache
@@ -109,10 +112,10 @@ Changing the Size of the RAM Cache
 
 Traffic Server provides a dedicated RAM cache for fast retrieval of
 popular small objects. The default RAM cache size is automatically
-calculated based on the number and size of the cache partitions you have
-configured. If you've partitioned your cache according to protocol
-and/or hosts, then the size of the RAM cache for each partition is
-proportional to the size of that partition.
+calculated based on the number and size of the
+:term:`cache partitions <cache partition>` you have configured. If you've
+partitioned your cache according to protocol and/or hosts, then the size of
+the RAM cache for each partition is proportional to the size of that partition.
 
 You can increase the RAM cache size for better cache hit performance.
 However, if you increase the size of the RAM cache and observe a
@@ -124,10 +127,12 @@ its previous value.
 To change the RAM cache size:
 
 #. Stop Traffic Server.
+
 #. Set the variable :ts:cv:`proxy.config.cache.ram_cache.size`
    to specify the size of the RAM cache. The default value of ``-1`` means
    that the RAM cache is automatically sized at approximately 1MB per
    gigabyte of disk.
+
 #. Restart Traffic Server. If you increase the RAM cache to a size of
    1GB or more, then restart with the :program:`trafficserver` command
    (refer to :ref:`start-traffic-server`).
@@ -146,9 +151,12 @@ To increase the total amount of disk space allocated to the cache on
 existing disks, or to add new disks to a Traffic Server node:
 
 #. Stop Traffic Server.
+
 #. Add hardware, if necessary.
+
 #. Edit :file:`storage.config` to increase the amount of disk space allocated
    to the cache on existing disks or describe the new hardware you are adding.
+
 #. Restart Traffic Server.
 
 Reducing Cache Capacity
@@ -158,9 +166,12 @@ To reduce the total amount of disk space allocated to the cache on an
 existing disk, or to remove disks from a Traffic Server node:
 
 #. Stop Traffic Server.
+
 #. Remove hardware, if necessary.
+
 #. Edit :file:`storage.config` to reduce the amount of disk space allocated
    to the cache on existing disks or delete the reference to the hardware you're removing.
+
 #. Restart Traffic Server.
 
 .. important:: In :file:`storage.config`, a formatted or raw disk must be at least 128 MB.
@@ -171,26 +182,31 @@ Partitioning the Cache
 ======================
 
 You can manage your cache space more efficiently and restrict disk usage
-by creating cache volumes with different sizes for specific protocols.
-You can further configure these volumes to store data from specific
-origin servers and/or domains. The volume configuration must be the same
-on all nodes in a :ref:`cluster <traffic-server-cluster>`.
+by creating :term:`cache volumes <cache volume>` with different sizes for
+specific protocols. You can further configure these volumes to store data from
+specific :term:`origin servers <origin server>` and/or domains. The volume
+configuration must be the same on all nodes in a :ref:`cluster <traffic-server-cluster>`.
 
 Creating Cache Partitions for Specific Protocols
 ------------------------------------------------
 
-You can create separate volumes for your cache that vary in size to
-store content according to protocol. This ensures that a certain amount
-of disk space is always available for a particular protocol. Traffic
-Server currently supports the ``http`` partition type for HTTP objects.
-
-.. XXX: but not https?
+You can create separate :term:`volumes <cache volume>` for your cache that vary
+in size to store content according to protocol. This ensures that a certain
+amount of disk space is always available for a particular protocol. Traffic
+Server currently supports only the ``http`` partition type.
 
 To partition the cache according to protocol:
 
-#. Enter a line in the :file:`volume.config` file for
-   each volume you want to create
+#. Enter a line in :file:`volume.config` for each volume you want to create. ::
+
+    volume=1 scheme=http size=50%
+    volume=2 scheme=http size=50%
+
 #. Restart Traffic Server.
+
+.. important::
+
+    Volume definitions must be the same across all nodes in a cluster.
 
 Making Changes to Partition Sizes and Protocols
 -----------------------------------------------
@@ -201,13 +217,17 @@ note the following:
 
 -  You must stop Traffic Server before you change the cache volume size
    and protocol assignment.
+
 -  When you increase the size of a volume, the contents of the volume
    are *not* deleted. However, when you reduce the size of a volume, the
    contents of the volume *are* deleted.
+
 -  When you change the volume number, the volume is deleted and then
    recreated, even if the size and protocol type remain the same.
+
 -  When you add new disks to your Traffic Server node, volume sizes
    specified in percentages will increase proportionately.
+
 -  Substantial changes to volume sizes can result in disk fragmentation,
    which affects performance and cache hit rate. You should clear the cache
    before making many changes to cache volume sizes (refer to `Clearing the Cache`_).
@@ -232,11 +252,11 @@ then Traffic Server will run in proxy-only mode.
 
 .. note::
 
-    You do not need to stop Traffic Server before you assign
-    volumes to particular hosts or domains. However, this type of
-    configuration is time-consuming and can cause a spike in memory usage.
-    Therefore, it's best to configure partition assignment during periods of
-    low traffic.
+    You do not need to stop Traffic Server before you assign volumes
+    to particular hosts or domains. However, this type of configuration
+    is time-consuming and can cause a spike in memory usage.
+    Therefore, it's best to configure partition assignment during
+    periods of low traffic.
 
 To partition the cache according to hostname and domain:
 
