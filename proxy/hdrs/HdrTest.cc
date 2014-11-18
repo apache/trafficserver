@@ -972,7 +972,7 @@ HdrTest::test_http_hdr_print_and_copy()
     if (status == 0)
       ++failures;
 
-    // Test for expected failesure
+    // Test for expected failures
     // parse with a '\0' in the header.  Should fail
     status =  test_http_hdr_null_char(i + 1, tests[i].req, tests[i].req_tgt);
     if (status == 0)
