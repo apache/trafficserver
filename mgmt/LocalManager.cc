@@ -860,7 +860,7 @@ LocalManager::processEventQueue()
     // check if we have a local file update
     if (mh->msg_id == MGMT_EVENT_CONFIG_FILE_UPDATE || mh->msg_id == MGMT_EVENT_CONFIG_FILE_UPDATE_NO_INC_VERSION) {
       // records.config
-      if (!(strcmp(data_raw, "records.config"))) {
+      if (!(strcmp(data_raw, REC_CONFIG_FILE))) {
         bool incVersion = mh->msg_id == MGMT_EVENT_CONFIG_FILE_UPDATE;
         if (RecReadConfigFile(incVersion) != REC_ERR_OKAY) {
           mgmt_elog(stderr, errno, "[fileUpdated] Config update failed for records.config\n");

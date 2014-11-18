@@ -798,11 +798,12 @@ RecSyncConfigToTB(textBuffer * tb, bool *inc_version)
 //-------------------------------------------------------------------------
 // RecExecConfigUpdateCbs
 //-------------------------------------------------------------------------
-int
+RecUpdateT
 RecExecConfigUpdateCbs(unsigned int update_required_type)
 {
   RecRecord *r;
   int i, num_records;
+  RecUpdateT update_type = RECU_NULL;
 
   num_records = g_num_records;
   for (i = 0; i < num_records; i++) {
@@ -819,6 +820,14 @@ RecExecConfigUpdateCbs(unsigned int update_required_type)
          }
        */
 
+      if (r->config_meta.update_required) {
+        printf("update (type %#x) required on %s\n", r->config_meta.update_required, r->name);
+
+        if (r->config_meta.update_type > update_type) {
+          update_type = r->config_meta.update_type;
+        }
+      }
+
       if ((r->config_meta.update_required & update_required_type) && (r->config_meta.update_cb_list)) {
         RecConfigUpdateCbList *cur_callback = NULL;
         for (cur_callback = r->config_meta.update_cb_list; cur_callback; cur_callback = cur_callback->next) {
@@ -830,7 +839,7 @@ RecExecConfigUpdateCbs(unsigned int update_required_type)
     rec_mutex_release(&(r->lock));
   }
 
-  return REC_ERR_OKAY;
+  return update_type;
 }
 
 

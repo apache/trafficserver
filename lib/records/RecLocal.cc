@@ -112,8 +112,26 @@ sync_thr(void * data)
 static void *
 config_update_thr(void * /* data */)
 {
+
   while (true) {
-    RecExecConfigUpdateCbs(REC_LOCAL_UPDATE_REQUIRED);
+    switch (RecExecConfigUpdateCbs(REC_LOCAL_UPDATE_REQUIRED)) {
+    case RECU_RESTART_TS:
+      RecSetRecordInt("proxy.node.config.restart_required.proxy", 1);
+      break;
+    case RECU_RESTART_TM:
+      RecSetRecordInt("proxy.node.config.restart_required.proxy", 1);
+      RecSetRecordInt("proxy.node.config.restart_required.manager", 1);
+      break;
+    case RECU_RESTART_TC:
+      RecSetRecordInt("proxy.node.config.restart_required.proxy", 1);
+      RecSetRecordInt("proxy.node.config.restart_required.manager", 1);
+      RecSetRecordInt("proxy.node.config.restart_required.cop", 1);
+      break;
+    case RECU_NULL:
+    case RECU_DYNAMIC:
+      break;
+    }
+
     usleep(REC_CONFIG_UPDATE_INTERVAL_MS * 1000);
   }
   return NULL;
