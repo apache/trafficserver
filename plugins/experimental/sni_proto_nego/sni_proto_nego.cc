@@ -156,8 +156,10 @@ init_sni_callback(void *sslNetVC)
   if (it!=_sniProtoMap.end()) {
     SNIProtoConfig sniProtoConfig = it->second; 
     if (!sniProtoConfig.enableNpn) {
+#if TS_USE_TLS_NPN
       TSDebug(PLUGIN_NAME, "disabling NPN for serverName %s", serverName);
       SSL_CTX_set_next_protos_advertised_cb(ctx, NULL, NULL);
+#endif
     } else {
       TSDebug(PLUGIN_NAME, "setting NPN advertised list for %s", serverName);
       //TSSslAdvertiseProtocolSet(ssl_vc, (const unsigned char **)sniProtoConfig.npn_proto_list, sniProtoConfig.npn_proto_list_count);
