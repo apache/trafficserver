@@ -8757,16 +8757,6 @@ tsapi int TSVConnIsSsl(TSVConn sslp)
   return ssl_vc != NULL;
 }
 
-tsapi TSReturnCode
-TSSslAdvertiseProtocolSet(TSVConn sslp, const unsigned char ** list, unsigned int count)
-{
-  NetVConnection *vc = reinterpret_cast<NetVConnection*>(sslp);
-  SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection*>(vc);
-  sdk_assert(sdk_sanity_check_null_ptr((void*)ssl_vc) == TS_SUCCESS);
-  ssl_vc->setAdvertiseProtocols(list, count);
-  return TS_SUCCESS;
-}
-
 void
 TSVConnReenable(TSVConn vconn)
 {
