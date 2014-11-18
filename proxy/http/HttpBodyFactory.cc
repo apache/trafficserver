@@ -371,7 +371,7 @@ HttpBodyFactory::HttpBodyFactory()
 
   no_registrations_failed = true;
   for (i = 0; config_record_names[i] != NULL; i++) {
-    status = HTTP_RegisterConfigUpdateFunc(config_record_names[i], config_callback, (void *) this);
+    status = REC_RegisterConfigUpdateFunc(config_record_names[i], config_callback, (void *) this);
     if (status != REC_ERR_OKAY) {
       Warning("couldn't register variable '%s', is records.config up to date?", config_record_names[i]);
     }

@@ -355,10 +355,6 @@ do { \
 #define HTTP_READ_DYN_SUM(x, S) RecGetRawStatSum(http_rsb, (int)x, &S) // This aggregates threads too
 #define HTTP_READ_GLOBAL_DYN_SUM(x, S) RecGetGlobalRawStatSum(http_rsb, (int)x, &S)
 
-#define HTTP_ConfigReadInteger         REC_ConfigReadInteger
-#define HTTP_ConfigReadString          REC_ConfigReadString
-#define HTTP_RegisterConfigUpdateFunc  REC_RegisterConfigUpdateFunc
-
 /////////////////////////////////////////////////////////////
 //
 // struct HttpConfigPortRange
