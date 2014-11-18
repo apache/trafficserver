@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.2.0
 
+  *) [TS-2009] Fail HTTP header parsing for null characters.
+
   *) [TS-3153] Ability to disable/modify NPN advertisement list based on SNI
 
   *) [TS-3196] Prevent crash due to de-allocated read VIO continuation.

@@ -2446,6 +2446,10 @@ mime_scanner_get(MIMEScanner *S,
       *output_shares_raw_input = true;
     }
   }
+  // Make sure there are no '\0' in the input scanned so far
+  if (zret != PARSE_ERROR &&
+      memchr(*raw_input_s, '\0', raw_input_c - *raw_input_s) != NULL)
+    zret = PARSE_ERROR; 
 
   *raw_input_s = raw_input_c; // mark input consumed.
   return zret;
