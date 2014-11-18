@@ -203,8 +203,9 @@ msgstr ""
 #: ../../reference/configuration/remap.config.en.rst:138
 #: ../../reference/configuration/remap.config.en.rst:278
 #: ../../reference/configuration/remap.config.en.rst:364
-#: ../../reference/configuration/remap.config.en.rst:389
-#: ../../reference/configuration/remap.config.en.rst:434
+#: ../../reference/configuration/remap.config.en.rst:386
+#: ../../reference/configuration/remap.config.en.rst:411
+#: ../../reference/configuration/remap.config.en.rst:456
 msgid "Examples"
 msgstr "例"
 
@@ -485,11 +486,11 @@ msgid "This will pass \"1\" and \"2\" to plugin1.so and \"3\" to plugin2.so"
 msgstr ""
 "これは \"1\" と \"2\" を plugin1.so に \"3\" を plugin2.so に渡します。"
 
-#: ../../reference/configuration/remap.config.en.rst:379
+#: ../../reference/configuration/remap.config.en.rst:401
 msgid "Named Filters"
 msgstr "名前付きフィルター"
 
-#: ../../reference/configuration/remap.config.en.rst:381
+#: ../../reference/configuration/remap.config.en.rst:403
 msgid ""
 "Named filters can be created and applied to blocks of mappings using the ``."
 "definefilter``, ``.activatefilter``, and ``.deactivatefilter`` directives. "
@@ -504,7 +505,7 @@ msgstr ""
 "ルターが有効化し ``.deactivatefilter`` で無効化されるまでのすべてのマッピン"
 "グで使用できます。"
 
-#: ../../reference/configuration/remap.config.en.rst:406
+#: ../../reference/configuration/remap.config.en.rst:428
 msgid ""
 "The filter `disable_delete_purge` will be applied to all of the mapping "
 "rules. (It is activated before any mappings and is never deactivated.) The "
@@ -643,11 +644,11 @@ msgstr ""
 "合、\".*\\.evil\\.com\" からのリクエストだけは redirect-URL にリダイレクトさ"
 "れます。"
 
-#: ../../reference/configuration/remap.config.en.rst:412
+#: ../../reference/configuration/remap.config.en.rst:434
 msgid "Including Additional Remap Files"
 msgstr "追加のリマップファイルの取り込み"
 
-#: ../../reference/configuration/remap.config.en.rst:414
+#: ../../reference/configuration/remap.config.en.rst:436
 msgid ""
 "The ``.include`` directive allows mapping rules to be spread across "
 "multiple files. The argument to the ``.include`` directive is a list of "
@@ -660,7 +661,7 @@ msgstr ""
 "にパースされるファイル名のリストです。ファイル名が絶対パスでない場合は "
 "Traffic Server の設定ディレクトリからの相対で解決されます。"
 
-#: ../../reference/configuration/remap.config.en.rst:420
+#: ../../reference/configuration/remap.config.en.rst:442
 msgid ""
 "The effect of the ``.include`` directive is as if the contents of the "
 "listed files is included in the parent and parsing restarted at the point "
@@ -672,7 +673,7 @@ msgstr ""
 "名前の付けられたフィルターはスコープ内でグローバルであり、さらなる ``."
 "include`` ディレクティブも許されることを意味します。"
 
-#: ../../reference/configuration/remap.config.en.rst:428
+#: ../../reference/configuration/remap.config.en.rst:450
 msgid ""
 "Included remap files are not currently tracked by the configuration "
 "subsystem. Changes to included remap files will not be noticed by online "
@@ -684,7 +685,7 @@ msgstr ""
 "限りは :option:`traffic_ctl config reload` で適用されるオンラインでの設定の変更によっ"
 "て通知されません。"
 
-#: ../../reference/configuration/remap.config.en.rst:436
+#: ../../reference/configuration/remap.config.en.rst:458
 msgid ""
 "In this example, a top-level :file:`remap.config` file simply references "
 "additional mapping rules files ::"
@@ -692,15 +693,15 @@ msgstr ""
 "この例では、トップレベルの :file:`remap.config` ファイルが単純に追加のマッピ"
 "ングルールファイルを参照しています。"
 
-#: ../../reference/configuration/remap.config.en.rst:442
+#: ../../reference/configuration/remap.config.en.rst:464
 msgid "The file `filters.config` contains ::"
 msgstr "`filters.config` は次のルールを含んでいます。"
 
-#: ../../reference/configuration/remap.config.en.rst:447
+#: ../../reference/configuration/remap.config.en.rst:469
 msgid "The file `one.example.com.config` contains::"
 msgstr "`one.example.com.config` は次のルールを含んでいます。"
 
-#: ../../reference/configuration/remap.config.en.rst:453
+#: ../../reference/configuration/remap.config.en.rst:475
 msgid "The file `two.example.com.config` contains::"
 msgstr "`two.example.com.config` は次のルールを含んでいます。"
 
@@ -714,17 +715,6 @@ msgstr ""
 "trafficserver/`` に置かれます ) は Traffic Server が以下のアクションを行う際"
 "に利用するマッピングルールを含んでいます。"
 
-#: ../../reference/configuration/remap.config.en.rst:116
-#, fuzzy
-msgid ""
-"Remap rules are not processed top-down, but based on an internal priority. "
-"Once these rules are executed we pick the lowest line number as the match "
-"(which replicates first-match-wins)."
-msgstr ""
-"リマップルールは上から順にではなく、内部の優先順位をもとに処理されます。一度"
-"これらのルールが実行され、もっとも低い行番号を一致として選びます。( 前方一致"
-"を再現します )"
-
 #: ../../reference/configuration/remap.config.en.rst:120
 msgid "``map_with_recv_port`` and ```regex_map_with_recv_port```"
 msgstr "``map_with_recv_port`` と ```regex_map_with_recv_port```"
@@ -732,3 +722,36 @@ msgstr "``map_with_recv_port`` と ```regex_map_with_recv_port```"
 #: ../../reference/configuration/remap.config.en.rst:121
 msgid "``map`` and ``regex_map`` and ``reverse_map``"
 msgstr "``map`` と ``regex_map`` と ``reverse_map``"
+
+#: ../../reference/configuration/remap.config.en.rst:116
+msgid ""
+"Remap rules are not processed top-down, but based on an internal priority. "
+"Once these rules are executed we pick the first match based on "
+"configuration file parse order."
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:379
+msgid "Acl Filters"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:381
+msgid ""
+"Acl filters can be created to control access of specific remap lines. The "
+"markup is very similar to that of :file:`ip_allow.config`, with slight "
+"changes to accomodate remap markup"
+msgstr ""
+
+#: ../../reference/configuration/remap.config.en.rst:398
+msgid ""
+"Note that these Acl filters will return a 403 response if the resource is "
+"restricted."
+msgstr ""
+
+#~ msgid ""
+#~ "Remap rules are not processed top-down, but based on an internal "
+#~ "priority. Once these rules are executed we pick the lowest line number "
+#~ "as the match (which replicates first-match-wins)."
+#~ msgstr ""
+#~ "リマップルールは上から順にではなく、内部の優先順位をもとに処理されます。"
+#~ "一度これらのルールが実行され、もっとも低い行番号を一致として選びます。"
+#~ "( 前方一致を再現します )"

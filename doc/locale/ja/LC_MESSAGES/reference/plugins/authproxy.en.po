@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -51,24 +50,24 @@ msgid ""
 "to ``0`` in :file:`records.config`."
 msgstr ""
 
-#: ../../reference/plugins/authproxy.en.rst:39
+#: ../../reference/plugins/authproxy.en.rst:46
 msgid "Plugin Options"
 msgstr ""
 
-#: ../../reference/plugins/authproxy.en.rst:42
+#: ../../reference/plugins/authproxy.en.rst:49
 msgid ""
 "This option specifies how to route the incoming request to the "
 "authorization service. The transform type may be ``head`` or ``redirect``."
 msgstr ""
 
-#: ../../reference/plugins/authproxy.en.rst:46
+#: ../../reference/plugins/authproxy.en.rst:53
 msgid ""
 "If the transform type is ``head``, then the incoming request is transformed "
 "to a HEAD request and is sent to the same destination. If the response is "
 "``200 OK``, the incoming request is allowed to proceed."
 msgstr ""
 
-#: ../../reference/plugins/authproxy.en.rst:51
+#: ../../reference/plugins/authproxy.en.rst:58
 msgid ""
 "If the transform type is ``redirect`` then the incoming request is sent to "
 "the authorization service designated by the `--auth-host` and `--auth-port` "
@@ -76,7 +75,7 @@ msgid ""
 "proceed."
 msgstr ""
 
-#: ../../reference/plugins/authproxy.en.rst:56
+#: ../../reference/plugins/authproxy.en.rst:63
 msgid ""
 "When the authorization service responds with a status other than 200 OK, "
 "that response is returned to the client as the response to the incoming "
@@ -85,19 +84,19 @@ msgid ""
 "returned to the client."
 msgstr ""
 
-#: ../../reference/plugins/authproxy.en.rst:63
+#: ../../reference/plugins/authproxy.en.rst:70
 msgid ""
 "The name or address of the authorization host. This is only used by the "
 "``redirect`` transform."
 msgstr ""
 
-#: ../../reference/plugins/authproxy.en.rst:67
+#: ../../reference/plugins/authproxy.en.rst:74
 msgid ""
 "The TCP port of the authorization host. This is only used by the "
 "``redirect`` transform."
 msgstr ""
 
-#: ../../reference/plugins/authproxy.en.rst:71
+#: ../../reference/plugins/authproxy.en.rst:78
 msgid ""
 "If this options is set, the plugin will allow Traffic Server to cache the "
 "result of authorized requests. In the normal case, requests with "
@@ -106,19 +105,29 @@ msgid ""
 "on the request."
 msgstr ""
 
-#: ../../reference/plugins/authproxy.en.rst:78
+#: ../../reference/plugins/authproxy.en.rst:85
 msgid "Examples"
 msgstr ""
 
-#: ../../reference/plugins/authproxy.en.rst:80
+#: ../../reference/plugins/authproxy.en.rst:87
 msgid ""
 "In this example, the authentication is performed by converting the incoming "
 "HTTP request to a `HEAD` request and sending that to the origin server "
 "`origin.internal.com`::"
 msgstr ""
 
-#: ../../reference/plugins/authproxy.en.rst:87
+#: ../../reference/plugins/authproxy.en.rst:97
 msgid ""
 "In this example, the request is directed to a local authentication server "
 "that authorizes the request based on internal policy rules::"
+msgstr ""
+
+#: ../../reference/plugins/authproxy.en.rst:38
+msgid ""
+"Note that the authorization request will need to match a remap rule (which, "
+"as a standalone remap rule, does not need to call the AuthProxy plugin). If "
+"a second remap rule is required, by default, the authorization request will "
+"not have the same Host header as the request from the client. It could be "
+"added using the ``header_rewrite`` plugin (set-header Host \"pristine_host."
+"example.com\")."
 msgstr ""

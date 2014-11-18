@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -40,7 +39,7 @@ msgid ""
 "Authorization`` field:"
 msgstr ""
 
-#: ../../sdk/header-based-plugin-examples/basic-authorization-plugin/working-with-http-headers.en.rst:46
+#: ../../sdk/header-based-plugin-examples/basic-authorization-plugin/working-with-http-headers.en.rst:45
 msgid ""
 "If the ``Proxy-Authorization`` field is present, then the plugin checks "
 "that the authentication type is \"Basic\", and the user name and password "

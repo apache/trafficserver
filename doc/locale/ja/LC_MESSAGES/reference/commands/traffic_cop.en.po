@@ -25,15 +25,15 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../../reference/commands/traffic_cop.en.rst:20
+#: ../../reference/commands/traffic_cop.en.rst:22
 msgid "traffic_cop"
 msgstr "traffic_cop"
 
-#: ../../reference/commands/traffic_cop.en.rst:25
+#: ../../reference/commands/traffic_cop.en.rst:27
 msgid "Description"
 msgstr "概要"
 
-#: ../../reference/commands/traffic_cop.en.rst:27
+#: ../../reference/commands/traffic_cop.en.rst:29
 msgid ""
 ":program:`traffic_cop` is a watchdog program that is responsible for "
 "starting :program:`traffic_manager` and :program:`traffic_server` and "
@@ -46,7 +46,7 @@ msgstr ""
 "犬プログラムです。どちらかのプロセスがレスポンスがないと判断された場合、:"
 "program:`traffic_cop` はそれらをキルしてリスタートします。"
 
-#: ../../reference/commands/traffic_cop.en.rst:33
+#: ../../reference/commands/traffic_cop.en.rst:35
 msgid ""
 "On Linux, :program:`traffic_cop` will also monitor available memory and "
 "swap space, restarting the watched processes if the available memory falls "
@@ -60,11 +60,11 @@ msgstr ""
 "と :ts:cv:`proxy.config.cop.linux_min_memfree_kb` 変数で設定することができま"
 "す。"
 
-#: ../../reference/commands/traffic_cop.en.rst:39
+#: ../../reference/commands/traffic_cop.en.rst:41
 msgid "The following options are available:"
 msgstr "次のオプションが使用可能です。"
 
-#: ../../reference/commands/traffic_cop.en.rst:53
+#: ../../reference/commands/traffic_cop.en.rst:55
 msgid ""
 "Kill children using ``SIGSTOP`` instead of ``SIGKILL``. This option is "
 "primarily for debugging."
@@ -72,15 +72,15 @@ msgstr ""
 "``SIGKILL`` の代わりに ``SIGSTOP`` を使用して子プロセスをキルします。このオ"
 "プションは主にデバッグ用です。"
 
-#: ../../reference/commands/traffic_cop.en.rst:58
+#: ../../reference/commands/traffic_cop.en.rst:60
 msgid "Print version information and exit."
 msgstr "バージョン情報を表示して終了します。"
 
-#: ../../reference/commands/traffic_cop.en.rst:61
+#: ../../reference/commands/traffic_cop.en.rst:63
 msgid "See also"
 msgstr "参照"
 
-#: ../../reference/commands/traffic_cop.en.rst:63
+#: ../../reference/commands/traffic_cop.en.rst:65
 msgid ""
 ":manpage:`syslog(1)`, :manpage:`traffic_manager(8)`, :manpage:"
 "`traffic_server(8)`"
@@ -88,11 +88,11 @@ msgstr ""
 ":manpage:`syslog(1)`, :manpage:`traffic_manager(8)`, :manpage:"
 "`traffic_server(8)`"
 
-#: ../../reference/commands/traffic_cop.en.rst:43
+#: ../../reference/commands/traffic_cop.en.rst:45
 msgid "Emit debugging messages."
 msgstr "デバッグメッセージの発行。"
 
-#: ../../reference/commands/traffic_cop.en.rst:47
+#: ../../reference/commands/traffic_cop.en.rst:49
 msgid ""
 ":program:`traffic_cop` ordinarily logs to syslog, however for debugging "
 "purposes, this option causes it to print messages to standard output "

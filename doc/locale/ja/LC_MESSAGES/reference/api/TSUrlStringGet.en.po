@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -30,19 +29,19 @@ msgstr ""
 msgid "TSUrlStringGet"
 msgstr ""
 
-#: ../../reference/api/TSUrlStringGet.en.rst:25
+#: ../../reference/api/TSUrlStringGet.en.rst:27
 msgid "Synopsis"
 msgstr ""
 
-#: ../../reference/api/TSUrlStringGet.en.rst:27
+#: ../../reference/api/TSUrlStringGet.en.rst:29
 msgid "`#include <ts/ts.h>`"
 msgstr ""
 
-#: ../../reference/api/TSUrlStringGet.en.rst:35
+#: ../../reference/api/TSUrlStringGet.en.rst:37
 msgid "Description"
 msgstr ""
 
-#: ../../reference/api/TSUrlStringGet.en.rst:37
+#: ../../reference/api/TSUrlStringGet.en.rst:39
 msgid ""
 "The URL data structure is a parsed version of a standard internet URL. The "
 "Traffic Server URL API provides access to URL data stored in marshal "
@@ -51,7 +50,7 @@ msgid ""
 "scheme information."
 msgstr ""
 
-#: ../../reference/api/TSUrlStringGet.en.rst:43
+#: ../../reference/api/TSUrlStringGet.en.rst:45
 msgid ""
 ":func:`TSUrlStringGet` constructs a string representation of the URL "
 "located at :data:`offset` within the marshal buffer :data:`bufp`. :func:"
@@ -62,7 +61,7 @@ msgid ""
 "is :data:`NULL` then no attempt is made to de-reference it."
 msgstr ""
 
-#: ../../reference/api/TSUrlStringGet.en.rst:51
+#: ../../reference/api/TSUrlStringGet.en.rst:53
 msgid ""
 ":func:`TSUrlLengthGet` calculates the length of the URL located at :data:"
 "`offset` within the marshal buffer bufp as if it were returned as a string. "
@@ -70,19 +69,23 @@ msgid ""
 "`TSUrlStringGet`."
 msgstr ""
 
-#: ../../reference/api/TSUrlStringGet.en.rst:56
+#: ../../reference/api/TSUrlStringGet.en.rst:58
 msgid ""
 ":func:`TSUrlPrint` formats a URL stored in an :type:`TSMBuffer` to an :type:"
 "`TSIOBuffer`."
 msgstr ""
 
-#: ../../reference/api/TSUrlStringGet.en.rst:60
+#: ../../reference/api/TSUrlStringGet.en.rst:62
 msgid "See also"
 msgstr ""
 
-#: ../../reference/api/TSUrlStringGet.en.rst:62
+#: ../../reference/api/TSUrlStringGet.en.rst:64
 msgid ""
 ":manpage:`TSAPI(3ts)`, :manpage:`TSmalloc(3ts)`, :manpage:"
 "`TSUrlCreate(3ts)`, :manpage:`TSUrlHostGet(3ts)`, :manpage:"
 "`TSUrlHostSet(3ts)`, :manpage:`TSUrlPercentEncode(3ts)`"
+msgstr ""
+
+#: ../../reference/api/TSUrlStringGet.en.rst:24
+msgid "Traffic Server URL string representations API."
 msgstr ""

@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -26,22 +25,22 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../../reference/commands/traffic_server.en.rst:20
+#: ../../reference/commands/traffic_server.en.rst:22
 msgid "traffic_server"
 msgstr ""
 
-#: ../../reference/commands/traffic_server.en.rst:25
+#: ../../reference/commands/traffic_server.en.rst:27
 msgid "Description"
 msgstr ""
 
-#: ../../reference/commands/traffic_server.en.rst:69
+#: ../../reference/commands/traffic_server.en.rst:71
 msgid "Print usage information and exit."
 msgstr ""
 
-#: ../../reference/commands/traffic_server.en.rst:73
+#: ../../reference/commands/traffic_server.en.rst:75
 msgid "Print version information and exit."
 msgstr ""
 
-#: ../../reference/commands/traffic_server.en.rst:76
+#: ../../reference/commands/traffic_server.en.rst:78
 msgid "Environment"
 msgstr ""

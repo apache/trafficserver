@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -53,16 +52,16 @@ msgid ""
 msgstr ""
 
 #: ../../sdk/http-headers/guide-to-trafficserver-http-header-system/mime-fields-always-belong-to-an-associated-mime-header.en.rst:37
-#: ../../sdk/http-headers/guide-to-trafficserver-http-header-system/mime-fields-always-belong-to-an-associated-mime-header.en.rst:51
+#: ../../sdk/http-headers/guide-to-trafficserver-http-header-system/mime-fields-always-belong-to-an-associated-mime-header.en.rst:49
 msgid "Instead of:"
 msgstr ""
 
-#: ../../sdk/http-headers/guide-to-trafficserver-http-header-system/mime-fields-always-belong-to-an-associated-mime-header.en.rst:44
-#: ../../sdk/http-headers/guide-to-trafficserver-http-header-system/mime-fields-always-belong-to-an-associated-mime-header.en.rst:59
+#: ../../sdk/http-headers/guide-to-trafficserver-http-header-system/mime-fields-always-belong-to-an-associated-mime-header.en.rst:43
+#: ../../sdk/http-headers/guide-to-trafficserver-http-header-system/mime-fields-always-belong-to-an-associated-mime-header.en.rst:56
 msgid "You should use:"
 msgstr ""
 
-#: ../../sdk/http-headers/guide-to-trafficserver-http-header-system/mime-fields-always-belong-to-an-associated-mime-header.en.rst:68
+#: ../../sdk/http-headers/guide-to-trafficserver-http-header-system/mime-fields-always-belong-to-an-associated-mime-header.en.rst:64
 msgid ""
 "In the ``TSMimeHdrField*`` function prototypes, the ``TSMLoc`` field "
 "corresponds to the ``TSMLoc`` offset used the deprecated ``TSMimeField*`` "

@@ -50,7 +50,7 @@ msgid ""
 "MIME field value, and ``car`` is the second MIME field value."
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:38
+#: ../../sdk/http-headers/mime-headers.en.rst:37
 msgid ""
 "The following example is an augmented **Backus-Naur Form** (BNF) for the "
 "form of a MIME header - it specifies exactly what was described above. A "
@@ -63,7 +63,7 @@ msgid ""
 "equivalent."
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:56
+#: ../../sdk/http-headers/mime-headers.en.rst:54
 msgid ""
 "The MIME header data structure is a parsed version of a standard Internet "
 "MIME header. The MIME header data structure is similar to the URL data "
@@ -72,7 +72,7 @@ msgid ""
 "location (``TSMLoc``) within the buffer."
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:62
+#: ../../sdk/http-headers/mime-headers.en.rst:60
 msgid ""
 "After a call to ``TSMimeHdrFieldDestroy``, ``TSMimeHdrFieldRemove``, or "
 "``TSUrlDestroy`` is made, you must deallocate the ``TSMLoc`` handle with a "
@@ -83,7 +83,7 @@ msgid ""
 "the handle with a call to ``TSHandleMLocRelease``."
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:79
+#: ../../sdk/http-headers/mime-headers.en.rst:77
 msgid ""
 "**Note:** MIME headers may contain more than one MIME field with the same "
 "name. Previous versions of Traffic Server joined multiple fields with the "
@@ -95,574 +95,574 @@ msgid ""
 "``TSMimeHdrFieldNextDup``."
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:88
+#: ../../sdk/http-headers/mime-headers.en.rst:86
 msgid ""
 "To facilitate fast comparisons and reduce storage size, Traffic Server "
 "defines several pre-allocated field names. These field names correspond to "
 "the field names in HTTP and NNTP headers."
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:94
+#: ../../sdk/http-headers/mime-headers.en.rst:92
 msgid "``TS_MIME_FIELD_ACCEPT``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:93
+#: ../../sdk/http-headers/mime-headers.en.rst:91
 msgid "\"Accept\" ``TS_MIME_LEN_ACCEPT``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:98
+#: ../../sdk/http-headers/mime-headers.en.rst:96
 msgid "``TS_MIME_FIELD_ACCEPT_CHARSET``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:97
+#: ../../sdk/http-headers/mime-headers.en.rst:95
 msgid "\"Accept-Charset\" ``TS_MIME_LEN_ACCEPT_CHARSET``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:102
+#: ../../sdk/http-headers/mime-headers.en.rst:100
 msgid "``TS_MIME_FIELD_ACCEPT_ENCODING``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:101
+#: ../../sdk/http-headers/mime-headers.en.rst:99
 msgid "\"Accept-Encoding\" ``TS_MIME_LEN_ACCEPT_ENCODING``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:106
+#: ../../sdk/http-headers/mime-headers.en.rst:104
 msgid "``TS_MIME_FIELD_ACCEPT_LANGUAGE``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:105
+#: ../../sdk/http-headers/mime-headers.en.rst:103
 msgid "\"Accept-Language\" ``TS_MIME_LEN_ACCEPT_LANGUAGE``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:110
+#: ../../sdk/http-headers/mime-headers.en.rst:108
 msgid "``TS_MIME_FIELD_ACCEPT_RANGES``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:109
+#: ../../sdk/http-headers/mime-headers.en.rst:107
 msgid "\"Accept-Ranges\" ``TS_MIME_LEN_ACCEPT_RANGES``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:114
+#: ../../sdk/http-headers/mime-headers.en.rst:112
 msgid "``TS_MIME_FIELD_AGE``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:113
+#: ../../sdk/http-headers/mime-headers.en.rst:111
 msgid "\"Age\" ``TS_MIME_LEN_AGE``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:118
+#: ../../sdk/http-headers/mime-headers.en.rst:116
 msgid "``TS_MIME_FIELD_ALLOW``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:117
+#: ../../sdk/http-headers/mime-headers.en.rst:115
 msgid "\"Allow\" ``TS_MIME_LEN_ALLOW``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:122
+#: ../../sdk/http-headers/mime-headers.en.rst:120
 msgid "``TS_MIME_FIELD_APPROVED``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:121
+#: ../../sdk/http-headers/mime-headers.en.rst:119
 msgid "\"Approved\" ``TS_MIME_LEN_APPROVED``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:126
+#: ../../sdk/http-headers/mime-headers.en.rst:124
 msgid "``TS_MIME_FIELD_AUTHORIZATION``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:125
+#: ../../sdk/http-headers/mime-headers.en.rst:123
 msgid "\"Authorization\" ``TS_MIME_LEN_AUTHORIZATION``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:130
+#: ../../sdk/http-headers/mime-headers.en.rst:128
 msgid "``TS_MIME_FIELD_BYTES``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:129
+#: ../../sdk/http-headers/mime-headers.en.rst:127
 msgid "\"Bytes\" ``TS_MIME_LEN_BYTES``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:134
+#: ../../sdk/http-headers/mime-headers.en.rst:132
 msgid "``TS_MIME_FIELD_CACHE_CONTROL``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:133
+#: ../../sdk/http-headers/mime-headers.en.rst:131
 msgid "\"Cache-Control\" ``TS_MIME_LEN_CACHE_CONTROL``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:138
+#: ../../sdk/http-headers/mime-headers.en.rst:136
 msgid "``TS_MIME_FIELD_CLIENT_IP``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:137
+#: ../../sdk/http-headers/mime-headers.en.rst:135
 msgid "\"Client-ip\" ``TS_MIME_LEN_CLIENT_IP``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:142
+#: ../../sdk/http-headers/mime-headers.en.rst:140
 msgid "``TS_MIME_FIELD_CONNECTION``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:141
+#: ../../sdk/http-headers/mime-headers.en.rst:139
 msgid "\"Connection\" ``TS_MIME_LEN_CONNECTION``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:146
+#: ../../sdk/http-headers/mime-headers.en.rst:144
 msgid "``TS_MIME_FIELD_CONTENT_BASE``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:145
+#: ../../sdk/http-headers/mime-headers.en.rst:143
 msgid "\"Content-Base\" ``TS_MIME_LEN_CONTENT_BASE``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:150
+#: ../../sdk/http-headers/mime-headers.en.rst:148
 msgid "``TS_MIME_FIELD_CONTENT_ENCODING``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:149
+#: ../../sdk/http-headers/mime-headers.en.rst:147
 msgid "\"Content-Encoding\" ``TS_MIME_LEN_CONTENT_ENCODING``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:154
+#: ../../sdk/http-headers/mime-headers.en.rst:152
 msgid "``TS_MIME_FIELD_CONTENT_LANGUAGE``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:153
+#: ../../sdk/http-headers/mime-headers.en.rst:151
 msgid "\"Content-Language\" ``TS_MIME_LEN_CONTENT_LANGUAGE``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:158
+#: ../../sdk/http-headers/mime-headers.en.rst:156
 msgid "``TS_MIME_FIELD_CONTENT_LENGTH``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:157
+#: ../../sdk/http-headers/mime-headers.en.rst:155
 msgid "\"Content-Length\" ``TS_MIME_LEN_CONTENT_LENGTH``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:162
+#: ../../sdk/http-headers/mime-headers.en.rst:160
 msgid "``TS_MIME_FIELD_CONTENT_LOCATION``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:161
+#: ../../sdk/http-headers/mime-headers.en.rst:159
 msgid "\"Content-Location\" ``TS_MIME_LEN_CONTENT_LOCATION``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:166
+#: ../../sdk/http-headers/mime-headers.en.rst:164
 msgid "``TS_MIME_FIELD_CONTENT_MD5``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:165
+#: ../../sdk/http-headers/mime-headers.en.rst:163
 msgid "\"Content-MD5\" ``TS_MIME_LEN_CONTENT_MD5``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:170
+#: ../../sdk/http-headers/mime-headers.en.rst:168
 msgid "``TS_MIME_FIELD_CONTENT_RANGE``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:169
+#: ../../sdk/http-headers/mime-headers.en.rst:167
 msgid "\"Content-Range\" ``TS_MIME_LEN_CONTENT_RANGE``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:174
+#: ../../sdk/http-headers/mime-headers.en.rst:172
 msgid "``TS_MIME_FIELD_CONTENT_TYPE``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:173
+#: ../../sdk/http-headers/mime-headers.en.rst:171
 msgid "\"Content-Type\" ``TS_MIME_LEN_CONTENT_TYPE``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:178
+#: ../../sdk/http-headers/mime-headers.en.rst:176
 msgid "``TS_MIME_FIELD_CONTROL``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:177
+#: ../../sdk/http-headers/mime-headers.en.rst:175
 msgid "\"Control\" ``TS_MIME_LEN_CONTROL``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:182
+#: ../../sdk/http-headers/mime-headers.en.rst:180
 msgid "``TS_MIME_FIELD_COOKIE``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:181
+#: ../../sdk/http-headers/mime-headers.en.rst:179
 msgid "\"Cookie\" ``TS_MIME_LEN_COOKIE``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:186
+#: ../../sdk/http-headers/mime-headers.en.rst:184
 msgid "``TS_MIME_FIELD_DATE``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:185
+#: ../../sdk/http-headers/mime-headers.en.rst:183
 msgid "\"Date\" ``TS_MIME_LEN_DATE``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:190
+#: ../../sdk/http-headers/mime-headers.en.rst:188
 msgid "``TS_MIME_FIELD_DISTRIBUTION``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:189
+#: ../../sdk/http-headers/mime-headers.en.rst:187
 msgid "\"Distribution\" ``TS_MIME_LEN_DISTRIBUTION``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:194
+#: ../../sdk/http-headers/mime-headers.en.rst:192
 msgid "``TS_MIME_FIELD_ETAG``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:193
+#: ../../sdk/http-headers/mime-headers.en.rst:191
 msgid "\"Etag\" ``TS_MIME_LEN_ETAG``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:198
+#: ../../sdk/http-headers/mime-headers.en.rst:196
 msgid "``TS_MIME_FIELD_EXPECT``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:197
+#: ../../sdk/http-headers/mime-headers.en.rst:195
 msgid "\"Expect\" ``TS_MIME_LEN_EXPECT``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:202
+#: ../../sdk/http-headers/mime-headers.en.rst:200
 msgid "``TS_MIME_FIELD_EXPIRES``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:201
+#: ../../sdk/http-headers/mime-headers.en.rst:199
 msgid "\"Expires\" ``TS_MIME_LEN_EXPIRES``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:206
+#: ../../sdk/http-headers/mime-headers.en.rst:204
 msgid "``TS_MIME_FIELD_FOLLOWUP_TO``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:205
+#: ../../sdk/http-headers/mime-headers.en.rst:203
 msgid "\"Followup-To\" ``TS_MIME_LEN_FOLLOWUP_TO``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:210
+#: ../../sdk/http-headers/mime-headers.en.rst:208
 msgid "``TS_MIME_FIELD_FROM``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:209
+#: ../../sdk/http-headers/mime-headers.en.rst:207
 msgid "\"From\" ``TS_MIME_LEN_FROM``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:214
+#: ../../sdk/http-headers/mime-headers.en.rst:212
 msgid "``TS_MIME_FIELD_HOST``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:213
+#: ../../sdk/http-headers/mime-headers.en.rst:211
 msgid "\"Host\" ``TS_MIME_LEN_HOST``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:218
+#: ../../sdk/http-headers/mime-headers.en.rst:216
 msgid "``TS_MIME_FIELD_IF_MATCH``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:217
+#: ../../sdk/http-headers/mime-headers.en.rst:215
 msgid "\"If-Match\" ``TS_MIME_LEN_IF_MATCH``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:222
+#: ../../sdk/http-headers/mime-headers.en.rst:220
 msgid "``TS_MIME_FIELD_IF_MODIFIED_SINCE``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:221
+#: ../../sdk/http-headers/mime-headers.en.rst:219
 msgid "\"If-Modified-Since\" ``TS_MIME_LEN_IF_MODIFIED_SINCE``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:226
+#: ../../sdk/http-headers/mime-headers.en.rst:224
 msgid "``TS_MIME_FIELD_IF_NONE_MATCH``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:225
+#: ../../sdk/http-headers/mime-headers.en.rst:223
 msgid "\"If-None-Match\" ``TS_MIME_LEN_IF_NONE_MATCH``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:230
+#: ../../sdk/http-headers/mime-headers.en.rst:228
 msgid "``TS_MIME_FIELD_IF_RANGE``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:229
+#: ../../sdk/http-headers/mime-headers.en.rst:227
 msgid "\"If-Range\" ``TS_MIME_LEN_IF_RANGE``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:234
+#: ../../sdk/http-headers/mime-headers.en.rst:232
 msgid "``TS_MIME_FIELD_IF_UNMODIFIED_SINCE``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:233
+#: ../../sdk/http-headers/mime-headers.en.rst:231
 msgid "\"If-Unmodified-Since\" ``TS_MIME_LEN_IF_UNMODIFIED_SINCE``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:238
+#: ../../sdk/http-headers/mime-headers.en.rst:236
 msgid "``TS_MIME_FIELD_KEEP_ALIVE``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:237
+#: ../../sdk/http-headers/mime-headers.en.rst:235
 msgid "\"Keep-Alive\" ``TS_MIME_LEN_KEEP_ALIVE``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:242
+#: ../../sdk/http-headers/mime-headers.en.rst:240
 msgid "``TS_MIME_FIELD_KEYWORDS``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:241
+#: ../../sdk/http-headers/mime-headers.en.rst:239
 msgid "\"Keywords\" ``TS_MIME_LEN_KEYWORDS``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:246
+#: ../../sdk/http-headers/mime-headers.en.rst:244
 msgid "``TS_MIME_FIELD_LAST_MODIFIED``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:245
+#: ../../sdk/http-headers/mime-headers.en.rst:243
 msgid "\"Last-Modified\" ``TS_MIME_LEN_LAST_MODIFIED``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:250
+#: ../../sdk/http-headers/mime-headers.en.rst:248
 msgid "``TS_MIME_FIELD_LINES``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:249
+#: ../../sdk/http-headers/mime-headers.en.rst:247
 msgid "\"Lines\" ``TS_MIME_LEN_LINES``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:254
+#: ../../sdk/http-headers/mime-headers.en.rst:252
 msgid "``TS_MIME_FIELD_LOCATION``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:253
+#: ../../sdk/http-headers/mime-headers.en.rst:251
 msgid "\"Location\" ``TS_MIME_LEN_LOCATION``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:258
+#: ../../sdk/http-headers/mime-headers.en.rst:256
 msgid "``TS_MIME_FIELD_MAX_FORWARDS``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:257
+#: ../../sdk/http-headers/mime-headers.en.rst:255
 msgid "\"Max-Forwards\" ``TS_MIME_LEN_MAX_FORWARDS``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:262
+#: ../../sdk/http-headers/mime-headers.en.rst:260
 msgid "``TS_MIME_FIELD_MESSAGE_ID``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:261
+#: ../../sdk/http-headers/mime-headers.en.rst:259
 msgid "\"Message-ID\" ``TS_MIME_LEN_MESSAGE_ID``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:266
+#: ../../sdk/http-headers/mime-headers.en.rst:264
 msgid "``TS_MIME_FIELD_NEWSGROUPS``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:265
+#: ../../sdk/http-headers/mime-headers.en.rst:263
 msgid "\"Newsgroups\" ``TS_MIME_LEN_NEWSGROUPS``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:270
+#: ../../sdk/http-headers/mime-headers.en.rst:268
 msgid "``TS_MIME_FIELD_ORGANIZATION``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:269
+#: ../../sdk/http-headers/mime-headers.en.rst:267
 msgid "\"Organization\" ``TS_MIME_LEN_ORGANIZATION``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:274
+#: ../../sdk/http-headers/mime-headers.en.rst:272
 msgid "``TS_MIME_FIELD_PATH``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:273
+#: ../../sdk/http-headers/mime-headers.en.rst:271
 msgid "\"Path\" ``TS_MIME_LEN_PATH``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:278
+#: ../../sdk/http-headers/mime-headers.en.rst:276
 msgid "``TS_MIME_FIELD_PRAGMA``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:277
+#: ../../sdk/http-headers/mime-headers.en.rst:275
 msgid "\"Pragma\" ``TS_MIME_LEN_PRAGMA``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:282
+#: ../../sdk/http-headers/mime-headers.en.rst:280
 msgid "``TS_MIME_FIELD_PROXY_AUTHENTICATE``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:281
+#: ../../sdk/http-headers/mime-headers.en.rst:279
 msgid "\"Proxy-Authenticate\" ``TS_MIME_LEN_PROXY_AUTHENTICATE``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:286
+#: ../../sdk/http-headers/mime-headers.en.rst:284
 msgid "``TS_MIME_FIELD_PROXY_AUTHORIZATION``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:285
+#: ../../sdk/http-headers/mime-headers.en.rst:283
 msgid "\"Proxy-Authorization\" ``TS_MIME_LEN_PROXY_AUTHORIZATION``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:290
+#: ../../sdk/http-headers/mime-headers.en.rst:288
 msgid "``TS_MIME_FIELD_PROXY_CONNECTION``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:289
+#: ../../sdk/http-headers/mime-headers.en.rst:287
 msgid "\"Proxy-Connection\" ``TS_MIME_LEN_PROXY_CONNECTION``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:294
+#: ../../sdk/http-headers/mime-headers.en.rst:292
 msgid "``TS_MIME_FIELD_PUBLIC``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:293
+#: ../../sdk/http-headers/mime-headers.en.rst:291
 msgid "\"Public\" ``TS_MIME_LEN_PUBLIC``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:298
+#: ../../sdk/http-headers/mime-headers.en.rst:296
 msgid "``TS_MIME_FIELD_RANGE``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:297
+#: ../../sdk/http-headers/mime-headers.en.rst:295
 msgid "\"Range\" ``TS_MIME_LEN_RANGE``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:302
+#: ../../sdk/http-headers/mime-headers.en.rst:300
 msgid "``TS_MIME_FIELD_REFERENCES``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:301
+#: ../../sdk/http-headers/mime-headers.en.rst:299
 msgid "\"References\" ``TS_MIME_LEN_REFERENCES``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:306
+#: ../../sdk/http-headers/mime-headers.en.rst:304
 msgid "``TS_MIME_FIELD_REFERER``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:305
+#: ../../sdk/http-headers/mime-headers.en.rst:303
 msgid "\"Referer\" ``TS_MIME_LEN_REFERER``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:310
+#: ../../sdk/http-headers/mime-headers.en.rst:308
 msgid "``TS_MIME_FIELD_REPLY_TO``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:309
+#: ../../sdk/http-headers/mime-headers.en.rst:307
 msgid "\"Reply-To\" ``TS_MIME_LEN_REPLY_TO``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:314
+#: ../../sdk/http-headers/mime-headers.en.rst:312
 msgid "``TS_MIME_FIELD_RETRY_AFTER``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:313
+#: ../../sdk/http-headers/mime-headers.en.rst:311
 msgid "\"Retry-After\" ``TS_MIME_LEN_RETRY_AFTER``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:318
+#: ../../sdk/http-headers/mime-headers.en.rst:316
 msgid "``TS_MIME_FIELD_SENDER``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:317
+#: ../../sdk/http-headers/mime-headers.en.rst:315
 msgid "\"Sender\" ``TS_MIME_LEN_SENDER``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:322
+#: ../../sdk/http-headers/mime-headers.en.rst:320
 msgid "``TS_MIME_FIELD_SERVER``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:321
+#: ../../sdk/http-headers/mime-headers.en.rst:319
 msgid "\"Server\" ``TS_MIME_LEN_SERVER``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:326
+#: ../../sdk/http-headers/mime-headers.en.rst:324
 msgid "``TS_MIME_FIELD_SET_COOKIE``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:325
+#: ../../sdk/http-headers/mime-headers.en.rst:323
 msgid "\"Set-Cookie\" ``TS_MIME_LEN_SET_COOKIE``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:330
+#: ../../sdk/http-headers/mime-headers.en.rst:328
 msgid "``TS_MIME_FIELD_SUBJECT``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:329
+#: ../../sdk/http-headers/mime-headers.en.rst:327
 msgid "\"Subject\" ``TS_MIME_LEN_SUBJECTTS_MIME_LEN_SUBJECT``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:334
+#: ../../sdk/http-headers/mime-headers.en.rst:332
 msgid "``TS_MIME_FIELD_SUMMARY``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:333
+#: ../../sdk/http-headers/mime-headers.en.rst:331
 msgid "\"Summary\" ``TS_MIME_LEN_SUMMARY``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:338
+#: ../../sdk/http-headers/mime-headers.en.rst:336
 msgid "``TS_MIME_FIELD_TE``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:337
+#: ../../sdk/http-headers/mime-headers.en.rst:335
 msgid "\"TE\" ``TS_MIME_LEN_TE``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:342
+#: ../../sdk/http-headers/mime-headers.en.rst:340
 msgid "``TS_MIME_FIELD_TRANSFER_ENCODING``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:341
+#: ../../sdk/http-headers/mime-headers.en.rst:339
 msgid "\"Transfer-Encoding\" ``TS_MIME_LEN_TRANSFER_ENCODING``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:346
+#: ../../sdk/http-headers/mime-headers.en.rst:344
 msgid "``TS_MIME_FIELD_UPGRADE``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:345
+#: ../../sdk/http-headers/mime-headers.en.rst:343
 msgid "\"Upgrade\" ``TS_MIME_LEN_UPGRADE``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:350
+#: ../../sdk/http-headers/mime-headers.en.rst:348
 msgid "``TS_MIME_FIELD_USER_AGENT``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:349
+#: ../../sdk/http-headers/mime-headers.en.rst:347
 msgid "\"User-Agent\" ``TS_MIME_LEN_USER_AGENT``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:354
+#: ../../sdk/http-headers/mime-headers.en.rst:352
 msgid "``TS_MIME_FIELD_VARY``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:353
+#: ../../sdk/http-headers/mime-headers.en.rst:351
 msgid "\"Vary\" ``TS_MIME_LEN_VARY``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:358
+#: ../../sdk/http-headers/mime-headers.en.rst:356
 msgid "``TS_MIME_FIELD_VIA``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:357
+#: ../../sdk/http-headers/mime-headers.en.rst:355
 msgid "\"Via\" ``TS_MIME_LEN_VIA``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:362
+#: ../../sdk/http-headers/mime-headers.en.rst:360
 msgid "``TS_MIME_FIELD_WARNING``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:361
+#: ../../sdk/http-headers/mime-headers.en.rst:359
 msgid "\"Warning\" ``TS_MIME_LEN_WARNING``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:366
+#: ../../sdk/http-headers/mime-headers.en.rst:364
 msgid "``TS_MIME_FIELD_WWW_AUTHENTICATE``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:365
+#: ../../sdk/http-headers/mime-headers.en.rst:363
 msgid "\"Www-Authenticate\" ``TS_MIME_LEN_WWW_AUTHENTICATE``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:370
+#: ../../sdk/http-headers/mime-headers.en.rst:368
 msgid "``TS_MIME_FIELD_XREF``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:369
+#: ../../sdk/http-headers/mime-headers.en.rst:367
 msgid "\"Xref\" ``TS_MIME_LEN_XREF``"
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:372
+#: ../../sdk/http-headers/mime-headers.en.rst:370
 msgid ""
 "The header field names above are defined in ``ts.h`` as ``const char*`` "
 "strings. When Traffic Server sets the name portion of a header field (or "
@@ -676,7 +676,7 @@ msgid ""
 "known header field names to avoid the possibility of a spelling error."
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:384
+#: ../../sdk/http-headers/mime-headers.en.rst:382
 msgid ""
 "Traffic Server adds one important feature to MIME fields that you may not "
 "know about: Traffic Server does not print a MIME field if the field name "
@@ -691,16 +691,6 @@ msgstr ""
 
 #: ../../sdk/http-headers/mime-headers.en.rst:394
 msgid "The MIME header functions are listed below:"
-msgstr ""
-
-#: ../../sdk/http-headers/mime-headers.en.rst:71
-msgid ""
-"The location (``TSMLoc``) in the `MIME header functions "
-"<#MimeHeaderFxns>`__ can be either an HTTP header location or a MIME header "
-"location. If an HTTP header location is passed to these functions, then the "
-"system locates the MIME header associated with that HTTP header and "
-"executes the corresponding MIME header operations specified by the "
-"functions (see the example in the description of :c:func:`TSMimeHdrCopy`)."
 msgstr ""
 
 #: ../../sdk/http-headers/mime-headers.en.rst:396
@@ -862,4 +852,14 @@ msgstr ""
 
 #: ../../sdk/http-headers/mime-headers.en.rst:436
 msgid ":c:func:`TSMimeHdrPrint`"
+msgstr ""
+
+#: ../../sdk/http-headers/mime-headers.en.rst:69
+msgid ""
+"The location (``TSMLoc``) in the :ref:`MIME header functions "
+"<MimeHeaderFxns>` can be either an HTTP header location or a MIME header "
+"location. If an HTTP header location is passed to these functions, then the "
+"system locates the MIME header associated with that HTTP header and "
+"executes the corresponding MIME header operations specified by the "
+"functions (see the example in the description of :c:func:`TSMimeHdrCopy`)."
 msgstr ""

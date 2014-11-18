@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -166,16 +165,6 @@ msgid ""
 "origin server connection (if successful)."
 msgstr ""
 
-#: ../../arch/cache/tier-storage.en.rst:92
-msgid ""
-"This means, among other things, that if there is a tier with the object all "
-"other tiers that are written will get a local copy of the object, the "
-"origin server will not be used. In terms of implementation, currently a "
-"cache write to a volume is done via the construction of an instance of "
-"`CacheVC` which recieves the object stream. For tiered storage the same "
-"thing is done for each target volume."
-msgstr ""
-
 #: ../../arch/cache/tier-storage.en.rst:97
 msgid ""
 "For cache volume overrides (e.g. via :file:`hosting.config`) this same "
@@ -185,18 +174,6 @@ msgstr ""
 
 #: ../../arch/cache/tier-storage.en.rst:102
 msgid "Copying"
-msgstr ""
-
-#: ../../arch/cache/tier-storage.en.rst:104
-msgid ""
-"It may be necessary to provide a mechanism to copy objects between tiers "
-"outside of a client originated transaction. In terms of implementation this "
-"is straight forward using `HttpTunnel` as if in a transaction only using a "
-"`CacheVC` instance for both the producer and consumer. The more difficult "
-"question is what event would trigger a possible copy. A signal could be "
-"provided whenever a volume directory entry is deleted although it should be "
-"noted that the object in question may have already been evicted when this "
-"event happens."
 msgstr ""
 
 #: ../../arch/cache/tier-storage.en.rst:112
@@ -221,4 +198,26 @@ msgid ""
 "ordering for those tiers, they will usually want content stored at one tier "
 "level to also be stored at every other lower level as well, so that it does "
 "not have to be copied if evicted from a higher tier."
+msgstr ""
+
+#: ../../arch/cache/tier-storage.en.rst:92
+msgid ""
+"This means, among other things, that if there is a tier with the object all "
+"other tiers that are written will get a local copy of the object, the "
+"origin server will not be used. In terms of implementation, currently a "
+"cache write to a volume is done via the construction of an instance of :cpp:"
+"class:`CacheVC` which recieves the object stream. For tiered storage the "
+"same thing is done for each target volume."
+msgstr ""
+
+#: ../../arch/cache/tier-storage.en.rst:104
+msgid ""
+"It may be necessary to provide a mechanism to copy objects between tiers "
+"outside of a client originated transaction. In terms of implementation this "
+"is straight forward using :cpp:class:`HttpTunnel` as if in a transaction "
+"only using a :cpp:class:`CacheVC` instance for both the producer and "
+"consumer. The more difficult question is what event would trigger a "
+"possible copy. A signal could be provided whenever a volume directory entry "
+"is deleted although it should be noted that the object in question may have "
+"already been evicted when this event happens."
 msgstr ""

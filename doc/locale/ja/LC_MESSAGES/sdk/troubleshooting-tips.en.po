@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -55,7 +54,7 @@ msgid ""
 "could use the following commands to building a shared library:"
 msgstr ""
 
-#: ../../sdk/troubleshooting-tips.en.rst:50
+#: ../../sdk/troubleshooting-tips.en.rst:49
 msgid ""
 "To install this plugin in your ``plugindir`` use the equivalent of sudo on "
 "your platform to execute:"

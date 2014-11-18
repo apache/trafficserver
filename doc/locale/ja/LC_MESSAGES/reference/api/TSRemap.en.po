@@ -29,15 +29,15 @@ msgstr ""
 msgid "TSRemapInit"
 msgstr "TSRemapInit"
 
-#: ../../reference/api/TSRemap.en.rst:24
+#: ../../reference/api/TSRemap.en.rst:26
 msgid "Synopsis"
 msgstr "概要"
 
-#: ../../reference/api/TSRemap.en.rst:37
+#: ../../reference/api/TSRemap.en.rst:39
 msgid "Description"
 msgstr "解説"
 
-#: ../../reference/api/TSRemap.en.rst:49
+#: ../../reference/api/TSRemap.en.rst:51
 msgid ""
 ":func:`TSRemapInit` is a required entry point. This function will be called "
 "once when Traffic Server loads the plugin. If the optional :func:"
@@ -49,7 +49,7 @@ msgstr ""
 "`TSRemapDone` 関数がある場合、Traffic Server は remap プラグインをアンロード"
 "するときにそれを呼び出します。"
 
-#: ../../reference/api/TSRemap.en.rst:54
+#: ../../reference/api/TSRemap.en.rst:56
 msgid ""
 "A remap plugin may be invoked for different remap rules. Traffic Server "
 "will call the entry point each time a plugin is specified in a remap rule. "
@@ -61,7 +61,7 @@ msgstr ""
 "す。remap プラグインインスタンスが必要なくなると、Traffic Server は :func:"
 "`TSRemapDeleteInstance` を呼び出します。"
 
-#: ../../reference/api/TSRemap.en.rst:59
+#: ../../reference/api/TSRemap.en.rst:61
 msgid ""
 ":func:`TSRemapDoRemap` is called for each HTTP transaction. This is a "
 "mandatory entry point. In this function, the remap plugin may examine and "
@@ -71,11 +71,11 @@ msgstr ""
 "須のエントリーポイントです。この関数では remap プラグインが HTTP トランザク"
 "ションを検査し変更するかもしれません。"
 
-#: ../../reference/api/TSRemap.en.rst:64
+#: ../../reference/api/TSRemap.en.rst:66
 msgid "Return values"
 msgstr "戻り値"
 
-#: ../../reference/api/TSRemap.en.rst:66
+#: ../../reference/api/TSRemap.en.rst:68
 msgid ""
 ":func:`TSRemapInit` and :func:`TSRemapNewInstance` should return :data:"
 "`TS_SUCCESS` on success, and :data:`TS_ERROR` otherwise. A return value of :"
@@ -85,7 +85,7 @@ msgstr ""
 "`TS_SUCCESS` を、それ以外の時には :data:`TS_ERROR` を返すべきです。戻り値 :"
 "data:`TS_ERROR` は回復不可能です。"
 
-#: ../../reference/api/TSRemap.en.rst:70
+#: ../../reference/api/TSRemap.en.rst:72
 msgid ""
 ":func:`TSRemapDoRemap` returns a status code that indicates whether the "
 "HTTP transaction has been modified and whether Traffic Server should "
@@ -109,15 +109,15 @@ msgstr ""
 "data:`TSREMAP_ERROR` を返すと Traffic Server に remap チェーンの評価を止めさ"
 "せ、エラーを返させます。"
 
-#: ../../reference/api/TSRemap.en.rst:83
+#: ../../reference/api/TSRemap.en.rst:85
 msgid "See also"
 msgstr "参考"
 
-#: ../../reference/api/TSRemap.en.rst:85
+#: ../../reference/api/TSRemap.en.rst:87
 msgid ":manpage:`TSAPI(3ts)`"
 msgstr ":manpage:`TSAPI(3ts)`"
 
-#: ../../reference/api/TSRemap.en.rst:39
+#: ../../reference/api/TSRemap.en.rst:41
 msgid ""
 "The Traffic Server remap interface provides a simplified mechanism for "
 "plugins to manipulate HTTP transactions. A remap plugin is not global; it "
@@ -139,10 +139,14 @@ msgstr ""
 "指定されることもあり、HTTP トランザクションを検査する機会が各プラグインに与"
 "えられる remap プラグインチェーンとなります。"
 
-#: ../../reference/api/TSRemap.en.rst:26
+#: ../../reference/api/TSRemap.en.rst:28
 msgid "`#include <ts/ts.h>`"
 msgstr "`#include <ts/ts.h>`"
 
-#: ../../reference/api/TSRemap.en.rst:27
+#: ../../reference/api/TSRemap.en.rst:29
 msgid "`#include <ts/remap.h>`"
 msgstr "`#include <ts/remap.h>`"
+
+#: ../../reference/api/TSRemap.en.rst:23
+msgid "Traffic Server remap plugin entry points."
+msgstr ""

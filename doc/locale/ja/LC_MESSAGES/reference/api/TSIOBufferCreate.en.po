@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -30,19 +29,19 @@ msgstr ""
 msgid "TSIOBufferCreate"
 msgstr ""
 
-#: ../../reference/api/TSIOBufferCreate.en.rst:25
+#: ../../reference/api/TSIOBufferCreate.en.rst:27
 msgid "Synopsis"
 msgstr ""
 
-#: ../../reference/api/TSIOBufferCreate.en.rst:26
+#: ../../reference/api/TSIOBufferCreate.en.rst:28
 msgid "`#include <ts/ts.h>`"
 msgstr ""
 
-#: ../../reference/api/TSIOBufferCreate.en.rst:37
+#: ../../reference/api/TSIOBufferCreate.en.rst:39
 msgid "Description"
 msgstr ""
 
-#: ../../reference/api/TSIOBufferCreate.en.rst:39
+#: ../../reference/api/TSIOBufferCreate.en.rst:41
 msgid ""
 "The :type:`TSIOBuffer` data structure is the building block of the TSVConn "
 "abstraction. An IO buffer is composed of a list of buffer blocks which are "
@@ -54,7 +53,7 @@ msgid ""
 "blocks are a reasonable size."
 msgstr ""
 
-#: ../../reference/api/TSIOBufferCreate.en.rst:48
+#: ../../reference/api/TSIOBufferCreate.en.rst:50
 msgid ""
 "The IO buffer abstraction provides for a single writer and multiple "
 "readers. In order for the readers to have no knowledge of each other, they "
@@ -64,17 +63,17 @@ msgid ""
 "directly."
 msgstr ""
 
-#: ../../reference/api/TSIOBufferCreate.en.rst:55
+#: ../../reference/api/TSIOBufferCreate.en.rst:57
 msgid ":func:`TSIOBufferCreate` creates an empty :type:`TSIOBuffer`."
 msgstr ""
 
-#: ../../reference/api/TSIOBufferCreate.en.rst:57
+#: ../../reference/api/TSIOBufferCreate.en.rst:59
 msgid ""
 ":func:`TSIOBufferSizedCreate` creates an empty :type:`TSIOBuffer` with an "
 "initial capacity of index bytes."
 msgstr ""
 
-#: ../../reference/api/TSIOBufferCreate.en.rst:60
+#: ../../reference/api/TSIOBufferCreate.en.rst:62
 msgid ""
 ":func:`TSIOBufferDestroy` destroys the IO buffer bufp. Since multiple IO "
 "buffers can share data, this does not necessarily free all of the data "
@@ -82,14 +81,14 @@ msgid ""
 "reference counts."
 msgstr ""
 
-#: ../../reference/api/TSIOBufferCreate.en.rst:64
+#: ../../reference/api/TSIOBufferCreate.en.rst:66
 msgid ""
 ":func:`TSIOBufferWrite` appends length bytes from the buffer buf to the IO "
 "buffer bufp and returns the number of bytes successfully written into the "
 "IO buffer."
 msgstr ""
 
-#: ../../reference/api/TSIOBufferCreate.en.rst:68
+#: ../../reference/api/TSIOBufferCreate.en.rst:70
 msgid ""
 ":func:`TSIOBufferProduce` makes nbytes of data available for reading in the "
 "IO buffer bufp. A common pattern for writing to an IO buffer is to copy "
@@ -97,7 +96,7 @@ msgid ""
 "data visible to any readers."
 msgstr ""
 
-#: ../../reference/api/TSIOBufferCreate.en.rst:73
+#: ../../reference/api/TSIOBufferCreate.en.rst:75
 msgid ""
 "The watermark of an TSIOBuffer is the minimum number of bytes of data that "
 "have to be in the buffer before calling back any continuation that has "
@@ -108,16 +107,20 @@ msgid ""
 "`TSIOBufferWaterMarkGet` gets the current watermark for the IO buffer bufp."
 msgstr ""
 
-#: ../../reference/api/TSIOBufferCreate.en.rst:82
+#: ../../reference/api/TSIOBufferCreate.en.rst:84
 msgid ""
 ":func:`TSIOBufferWaterMarkSet` gets the current watermark for the IO buffer "
 "bufp to water_mark bytes."
 msgstr ""
 
-#: ../../reference/api/TSIOBufferCreate.en.rst:86
+#: ../../reference/api/TSIOBufferCreate.en.rst:88
 msgid "See also"
 msgstr ""
 
-#: ../../reference/api/TSIOBufferCreate.en.rst:88
+#: ../../reference/api/TSIOBufferCreate.en.rst:90
 msgid ":manpage:`TSAPI(3ts)`, :manpage:`TSIOBufferReaderAlloc(3ts)`"
+msgstr ""
+
+#: ../../reference/api/TSIOBufferCreate.en.rst:24
+msgid "Traffic Server IO buffer API."
 msgstr ""

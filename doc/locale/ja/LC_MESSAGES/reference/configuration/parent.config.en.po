@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -207,12 +206,12 @@ msgid ""
 "specify the port number."
 msgstr ""
 
-#: ../../reference/configuration/parent.config.en.rst:135
+#: ../../reference/configuration/parent.config.en.rst:136
 msgid "``round_robin``"
 msgstr ""
 
 #: ../../reference/configuration/parent.config.en.rst:128
-#: ../../reference/configuration/parent.config.en.rst:140
+#: ../../reference/configuration/parent.config.en.rst:141
 msgid "One of the following values:"
 msgstr ""
 
@@ -233,25 +232,25 @@ msgstr ""
 msgid "``false`` - Round robin selection does not occur."
 msgstr ""
 
-#: ../../reference/configuration/parent.config.en.rst:144
+#: ../../reference/configuration/parent.config.en.rst:145
 msgid "``go_direct``"
 msgstr ""
 
-#: ../../reference/configuration/parent.config.en.rst:142
+#: ../../reference/configuration/parent.config.en.rst:143
 msgid ""
 "``true`` - requests bypass parent hierarchies and go directly to the origin "
 "server."
 msgstr ""
 
-#: ../../reference/configuration/parent.config.en.rst:144
+#: ../../reference/configuration/parent.config.en.rst:145
 msgid "``false`` - requests do not bypass parent hierarchies."
 msgstr ""
 
-#: ../../reference/configuration/parent.config.en.rst:147
+#: ../../reference/configuration/parent.config.en.rst:148
 msgid "Examples"
 msgstr ""
 
-#: ../../reference/configuration/parent.config.en.rst:149
+#: ../../reference/configuration/parent.config.en.rst:150
 msgid ""
 "The following rule configures a parent cache hierarchy consisting of "
 "Traffic Server (which is the child) and two parents, ``p1.x.com`` and ``p2."
@@ -259,7 +258,7 @@ msgid ""
 "servers ``p1.x.com`` and ``p2.x.com`` in a round-robin fashion::"
 msgstr ""
 
-#: ../../reference/configuration/parent.config.en.rst:158
+#: ../../reference/configuration/parent.config.en.rst:161
 msgid ""
 "The following rule configures Traffic Server to route all requests "
 "containing the regular expression ``politics`` and the path ``/viewpoint`` "
@@ -267,8 +266,12 @@ msgid ""
 "``url_regex=politics prefix=/viewpoint go_direct=true``"
 msgstr ""
 
-#: ../../reference/configuration/parent.config.en.rst:163
+#: ../../reference/configuration/parent.config.en.rst:166
 msgid ""
 "Every line in the :file:`parent.config` file must contain either a "
 "``parent=`` or ``go_direct=`` directive."
+msgstr ""
+
+#: ../../reference/configuration/parent.config.en.rst:136
+msgid "``consistent_hash`` - consistent hash."
 msgstr ""

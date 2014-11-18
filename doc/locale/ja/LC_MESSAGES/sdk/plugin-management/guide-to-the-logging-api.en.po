@@ -42,22 +42,22 @@ msgstr ""
 msgid "The logging API enables you to:"
 msgstr ""
 
-#: ../../sdk/plugin-management/guide-to-the-logging-api.en.rst:53
+#: ../../sdk/plugin-management/guide-to-the-logging-api.en.rst:56
 msgid ""
 "The steps below show how the logging API is used in the ``blacklist-1.c`` "
 "sample plugin. For the complete source code, see the `*Sample Source Code* "
 "<App_SampleSourceCode.html>`__ appendix."
 msgstr ""
 
-#: ../../sdk/plugin-management/guide-to-the-logging-api.en.rst:57
+#: ../../sdk/plugin-management/guide-to-the-logging-api.en.rst:60
 msgid "A new log file is defined as a global variable."
 msgstr ""
 
-#: ../../sdk/plugin-management/guide-to-the-logging-api.en.rst:64
+#: ../../sdk/plugin-management/guide-to-the-logging-api.en.rst:66
 msgid "In ``TSPluginInit``, a new log object is allocated:"
 msgstr ""
 
-#: ../../sdk/plugin-management/guide-to-the-logging-api.en.rst:71
+#: ../../sdk/plugin-management/guide-to-the-logging-api.en.rst:72
 msgid ""
 "The new log is named ``blacklist.log``. Each entry written to the log will "
 "have a timestamp. The ``NULL`` argument specifies that the new log does not "
@@ -66,7 +66,7 @@ msgid ""
 "to ``TS_LOG_ERROR_NO_ERROR``."
 msgstr ""
 
-#: ../../sdk/plugin-management/guide-to-the-logging-api.en.rst:77
+#: ../../sdk/plugin-management/guide-to-the-logging-api.en.rst:78
 msgid ""
 "After creating the log, the plugin makes sure that the log was created "
 "successfully:"
@@ -77,26 +77,6 @@ msgid ""
 "The ``blacklist-1`` plugin matches the host portion of the URL (in each "
 "client request) with a list of blacklisted sites (stored in the array "
 "``sites[``]):"
-msgstr ""
-
-#: ../../sdk/plugin-management/guide-to-the-logging-api.en.rst:91
-msgid ""
-"::::c for (i = 0; i < nsites; i++) { if (strncmp (host, sites[i], host"
-"\\_length) == 0) { If the host matches one of the blacklisted sites (such "
-"as ``sites[i]``), then the plugin writes a blacklist entry to ``blacklist."
-"log``:"
-msgstr ""
-
-#: ../../sdk/plugin-management/guide-to-the-logging-api.en.rst:96
-msgid ""
-"::::c if (log) { TSTextLogObjectWrite(log, \"blacklisting site: %s\", "
-"sites[i]); The format of the log entry is as follows:"
-msgstr ""
-
-#: ../../sdk/plugin-management/guide-to-the-logging-api.en.rst:99
-msgid ""
-":::text blacklisting site: sites[i] The log is not flushed or destroyed in "
-"the ``blacklist-1`` plugin - it lives for the life of the plugin."
 msgstr ""
 
 #: ../../sdk/plugin-management/guide-to-the-logging-api.en.rst:29
@@ -129,20 +109,42 @@ msgid ""
 "`TSTextLogObjectRollingOffsetHrSet`"
 msgstr ""
 
-#: ../../sdk/plugin-management/guide-to-the-logging-api.en.rst:44
+#: ../../sdk/plugin-management/guide-to-the-logging-api.en.rst:47
 msgid ""
 "Write text entries to the custom text log: see :c:func:"
 "`TSTextLogObjectWrite`"
 msgstr ""
 
-#: ../../sdk/plugin-management/guide-to-the-logging-api.en.rst:47
+#: ../../sdk/plugin-management/guide-to-the-logging-api.en.rst:50
 msgid ""
 "Flush the contents of the custom text log's write buffer to disk: see :c:"
 "func:`TSTextLogObjectFlush`"
 msgstr ""
 
-#: ../../sdk/plugin-management/guide-to-the-logging-api.en.rst:50
+#: ../../sdk/plugin-management/guide-to-the-logging-api.en.rst:53
 msgid ""
 "Destroy custom text logs when you are done with them: see :c:func:"
 "`TSTextLogObjectDestroy`"
+msgstr ""
+
+#: ../../sdk/plugin-management/guide-to-the-logging-api.en.rst:44
+msgid ""
+"Set the rolling size for your custom text log: see :c:func:"
+"`TSTextLogObjectRollingSizeMbSet`"
+msgstr ""
+
+#: ../../sdk/plugin-management/guide-to-the-logging-api.en.rst:96
+msgid ""
+"If the host matches one of the blacklisted sites (such as ``sites[i]``), "
+"then the plugin writes a blacklist entry to ``blacklist.log``:"
+msgstr ""
+
+#: ../../sdk/plugin-management/guide-to-the-logging-api.en.rst:105
+msgid "The format of the log entry is as follows:"
+msgstr ""
+
+#: ../../sdk/plugin-management/guide-to-the-logging-api.en.rst:111
+msgid ""
+"The log is not flushed or destroyed in the ``blacklist-1`` plugin - it "
+"lives for the life of the plugin."
 msgstr ""

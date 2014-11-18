@@ -52,14 +52,6 @@ msgid "``Accept port is not between 1 and 65535. Please check configuration``"
 msgstr ""
 "``Accept port is not between 1 and 65535. Please check configuration``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:37
-msgid ""
-"The port specified in the :file:`records.config` file that accepts incoming "
-"HTTP requests is not valid."
-msgstr ""
-":file:`records.config` ファイルに指定されている入ってきた HTTP リクエストを"
-"受け入れるポートが妥当ではありません。"
-
 #: ../../admin/traffic-server-error-messages.en.rst:43
 msgid "``Self loop is detected in parent proxy configuration``"
 msgstr "``Self loop is detected in parent proxy configuration``"
@@ -143,14 +135,6 @@ msgstr "互換性の無いソフトウェアのバージョンが問題を引き
 msgid "``Log format symbol <symbol name> not found``"
 msgstr "``Log format symbol <symbol name> not found``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:68
-msgid ""
-"Custom log format references a field symbol that does not exist. Refer to :"
-"ref:`event-logging-formats`."
-msgstr ""
-"カスタムログのフォーマットが存在しないフィールドを参照しています。 :ref:"
-"`event-logging-formats` を参照してください。"
-
 #: ../../admin/traffic-server-error-messages.en.rst:72
 msgid "``Missing field for field marker``"
 msgstr "``Missing field for field marker``"
@@ -194,16 +178,6 @@ msgstr ""
 #: ../../admin/traffic-server-error-messages.en.rst:89
 msgid "``No cache disks specified in storage.config file: cache disabled``"
 msgstr "``No cache disks specified in storage.config file: cache disabled``"
-
-#: ../../admin/traffic-server-error-messages.en.rst:87
-msgid ""
-"The Traffic Server ``storage.config`` file does not list any cache disks; "
-"Traffic Server is running in proxy-only mode. You must add the disks you "
-"want to use for the cache to :file:`storage.config`."
-msgstr ""
-"Traffic Server の ``storage.config`` ファイルにキャッシュディスクが記載され"
-"ていません。Traffic Server はプロキシーモードで動作しています。キャッシュに"
-"使用したいディスクを :file:`storage.config` に記載しなくてななりません。"
 
 #: ../../admin/traffic-server-error-messages.en.rst:92
 msgid "Traffic Server Alarm Messages"
@@ -692,11 +666,11 @@ msgid ""
 "information."
 msgstr "次の標準的な HTTP レスポンスメッセージが参考情報として提供されます。"
 
-#: ../../admin/traffic-server-error-messages.en.rst:315
+#: ../../admin/traffic-server-error-messages.en.rst:317
 msgid "``200``"
 msgstr "``200``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:315
+#: ../../admin/traffic-server-error-messages.en.rst:317
 msgid "OK"
 msgstr "OK"
 
@@ -708,169 +682,141 @@ msgstr "``202``"
 msgid "Accepted"
 msgstr "Accepted"
 
-#: ../../admin/traffic-server-error-messages.en.rst:321
+#: ../../admin/traffic-server-error-messages.en.rst:319
 msgid "``204``"
 msgstr "``204``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:321
+#: ../../admin/traffic-server-error-messages.en.rst:319
 msgid "No Content"
 msgstr "No Content"
 
-#: ../../admin/traffic-server-error-messages.en.rst:324
+#: ../../admin/traffic-server-error-messages.en.rst:320
 msgid "``206``"
 msgstr "``206``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:324
+#: ../../admin/traffic-server-error-messages.en.rst:320
 msgid "Partial Content"
 msgstr "Partial Content"
 
-#: ../../admin/traffic-server-error-messages.en.rst:327
+#: ../../admin/traffic-server-error-messages.en.rst:321
 msgid "``300``"
 msgstr "``300``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:327
+#: ../../admin/traffic-server-error-messages.en.rst:321
 msgid "Multiple Choices"
 msgstr "Multiple Choices"
 
-#: ../../admin/traffic-server-error-messages.en.rst:330
+#: ../../admin/traffic-server-error-messages.en.rst:322
 msgid "``301``"
 msgstr "``301``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:330
+#: ../../admin/traffic-server-error-messages.en.rst:322
 msgid "Moved Permanently"
 msgstr "Moved Permanently"
 
-#: ../../admin/traffic-server-error-messages.en.rst:333
+#: ../../admin/traffic-server-error-messages.en.rst:323
 msgid "``302``"
 msgstr "``302``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:333
+#: ../../admin/traffic-server-error-messages.en.rst:323
 msgid "Found"
 msgstr "Found"
 
-#: ../../admin/traffic-server-error-messages.en.rst:336
+#: ../../admin/traffic-server-error-messages.en.rst:324
 msgid "``303``"
 msgstr "``303``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:336
+#: ../../admin/traffic-server-error-messages.en.rst:324
 msgid "See Other"
 msgstr "See Other"
 
-#: ../../admin/traffic-server-error-messages.en.rst:339
+#: ../../admin/traffic-server-error-messages.en.rst:325
 msgid "``304``"
 msgstr "``304``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:339
+#: ../../admin/traffic-server-error-messages.en.rst:325
 msgid "Not Modified"
 msgstr "Not Modified"
 
-#: ../../admin/traffic-server-error-messages.en.rst:342
+#: ../../admin/traffic-server-error-messages.en.rst:326
 msgid "``400``"
 msgstr "``400``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:342
+#: ../../admin/traffic-server-error-messages.en.rst:326
 msgid "Bad Request"
 msgstr "Bad Request"
 
-#: ../../admin/traffic-server-error-messages.en.rst:345
+#: ../../admin/traffic-server-error-messages.en.rst:327
 msgid "``401``"
 msgstr "``401``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:345
+#: ../../admin/traffic-server-error-messages.en.rst:327
 msgid "Unauthorized; retry"
 msgstr "Unauthorized; retry"
 
-#: ../../admin/traffic-server-error-messages.en.rst:348
+#: ../../admin/traffic-server-error-messages.en.rst:328
 msgid "``403``"
 msgstr "``403``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:348
+#: ../../admin/traffic-server-error-messages.en.rst:328
 msgid "Forbidden"
 msgstr "Forbidden"
 
-#: ../../admin/traffic-server-error-messages.en.rst:351
+#: ../../admin/traffic-server-error-messages.en.rst:329
 msgid "``404``"
 msgstr "``404``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:351
+#: ../../admin/traffic-server-error-messages.en.rst:329
 msgid "Not Found"
 msgstr "Not Found"
 
-#: ../../admin/traffic-server-error-messages.en.rst:354
+#: ../../admin/traffic-server-error-messages.en.rst:330
 msgid "``405``"
 msgstr "``405``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:354
+#: ../../admin/traffic-server-error-messages.en.rst:330
 msgid "Method Not Allowed"
 msgstr "Method Not Allowed"
 
-#: ../../admin/traffic-server-error-messages.en.rst:357
+#: ../../admin/traffic-server-error-messages.en.rst:331
 msgid "``406``"
 msgstr "``406``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:357
-msgid "Not acceptable"
-msgstr "Not acceptable"
-
-#: ../../admin/traffic-server-error-messages.en.rst:360
+#: ../../admin/traffic-server-error-messages.en.rst:332
 msgid "``408``"
 msgstr "``408``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:360
+#: ../../admin/traffic-server-error-messages.en.rst:332
 msgid "Request Timeout"
 msgstr "Request Timeout"
 
-#: ../../admin/traffic-server-error-messages.en.rst:363
+#: ../../admin/traffic-server-error-messages.en.rst:333
 msgid "``500``"
 msgstr "``500``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:363
-msgid "Internal server error"
-msgstr "Internal server error"
-
-#: ../../admin/traffic-server-error-messages.en.rst:366
+#: ../../admin/traffic-server-error-messages.en.rst:334
 msgid "``501``"
 msgstr "``501``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:366
+#: ../../admin/traffic-server-error-messages.en.rst:334
 msgid "Not Implemented"
 msgstr "Not Implemented"
 
-#: ../../admin/traffic-server-error-messages.en.rst:369
+#: ../../admin/traffic-server-error-messages.en.rst:335
 msgid "``502``"
 msgstr "``502``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:369
+#: ../../admin/traffic-server-error-messages.en.rst:335
 msgid "Bad Gateway"
 msgstr "Bad Gateway"
 
-#: ../../admin/traffic-server-error-messages.en.rst:372
+#: ../../admin/traffic-server-error-messages.en.rst:336
 msgid "``504``"
 msgstr "``504``"
 
-#: ../../admin/traffic-server-error-messages.en.rst:372
+#: ../../admin/traffic-server-error-messages.en.rst:336
 msgid "Gateway Timeout"
 msgstr "Gateway Timeout"
-
-#: ../../admin/traffic-server-error-messages.en.rst:142
-msgid ""
-"Traffic Server returns detailed error messages to browser clients when "
-"there are problems with the HTTP transactions requested by the browser. "
-"These Traffic Server response messages correspond to standard HTTP response "
-"codes, but provide more information. A list of the more frequently-"
-"encountered HTTP response codes is provided in :ref:`standard-http-response-"
-"messages`. You can customize the Traffic Server response messages "
-"(typically in proxy/config/body_factory/default/, but set by :ts:cv:`proxy."
-"config.body_factory.template_sets_dir`)."
-msgstr ""
-"Traffic Server は ブラウザからリクエストされた HTTP トランザクションに問題が"
-"ある場合に、クライアントに詳細なエラーメッセージを返します。これらの "
-"Traffice Server のレスポンスメッセージは標準的な HTTP レスポンスコードに対応"
-"しますが、より多くの情報を提供します。より頻繁に遭遇する HTTP レスポンスコー"
-"ドの一覧は :ref:`standard-http-response-messages` で提供されています。"
-"Traffic Server のレスポンスメッセージをカスタマイズすることができます。( 通"
-"常は proxy/config/body_factory/default/ にありますが、:ts:cv:`proxy.config."
-"body_factory.template_sets_dir` で設定されています。)"
 
 #: ../../admin/traffic-server-error-messages.en.rst:212
 msgid "``Invalid Content Length``"
@@ -883,3 +829,106 @@ msgid ""
 msgstr ""
 "``400`` 指定された ``Content-Length`` が無効 ( 0 未満 ) だったためリクエスト"
 "を処理できなかった。``request#invalid_content_length``"
+
+#: ../../admin/traffic-server-error-messages.en.rst:37
+msgid ""
+"The port specified in :file:`records.config` that accepts incoming HTTP "
+"requests is not valid."
+msgstr ""
+
+#: ../../admin/traffic-server-error-messages.en.rst:68
+msgid ""
+"Custom log format references a field symbol that does not exist. Refer to :"
+"ref:`admin-event-logging-formats`."
+msgstr ""
+
+#: ../../admin/traffic-server-error-messages.en.rst:87
+msgid ""
+"The Traffic Server :file:`storage.config` file does not list any cache "
+"disks; Traffic Server is running in proxy-only mode. You must add the disks "
+"you want to use for the cache to :file:`storage.config`."
+msgstr ""
+
+#: ../../admin/traffic-server-error-messages.en.rst:142
+msgid ""
+"Traffic Server returns detailed error messages to browser clients when "
+"there are problems with the HTTP transactions requested by the browser. "
+"These Traffic Server response messages correspond to standard HTTP response "
+"codes, but provide more information. A list of the more frequently "
+"encountered HTTP response codes is provided in :ref:`standard-http-response-"
+"messages`. You can customize the Traffic Server response messages "
+"(typically in ``proxy/config/body_factory/default/``, but set by :ts:cv:"
+"`proxy.config.body_factory.template_sets_dir`)."
+msgstr ""
+
+#: ../../admin/traffic-server-error-messages.en.rst:315
+msgid "Code"
+msgstr ""
+
+#: ../../admin/traffic-server-error-messages.en.rst:315
+msgid "Description"
+msgstr ""
+
+#: ../../admin/traffic-server-error-messages.en.rst:331
+msgid "Not Acceptable"
+msgstr ""
+
+#: ../../admin/traffic-server-error-messages.en.rst:333
+msgid "Internal Server Error"
+msgstr ""
+
+#: ../../admin/traffic-server-error-messages.en.rst:339
+msgid ""
+"More detail can be found in `RFC2616 <http://www.w3.org/Protocols/rfc2616/"
+"rfc2616-sec10.html>`_ which defines the full range of standardized HTTP/1.1 "
+"response codes."
+msgstr ""
+
+#~ msgid ""
+#~ "The port specified in the :file:`records.config` file that accepts "
+#~ "incoming HTTP requests is not valid."
+#~ msgstr ""
+#~ ":file:`records.config` ファイルに指定されている入ってきた HTTP リクエスト"
+#~ "を受け入れるポートが妥当ではありません。"
+
+#~ msgid ""
+#~ "Custom log format references a field symbol that does not exist. Refer "
+#~ "to :ref:`event-logging-formats`."
+#~ msgstr ""
+#~ "カスタムログのフォーマットが存在しないフィールドを参照しています。 :ref:"
+#~ "`event-logging-formats` を参照してください。"
+
+#~ msgid ""
+#~ "The Traffic Server ``storage.config`` file does not list any cache "
+#~ "disks; Traffic Server is running in proxy-only mode. You must add the "
+#~ "disks you want to use for the cache to :file:`storage.config`."
+#~ msgstr ""
+#~ "Traffic Server の ``storage.config`` ファイルにキャッシュディスクが記載さ"
+#~ "れていません。Traffic Server はプロキシーモードで動作しています。キャッ"
+#~ "シュに使用したいディスクを :file:`storage.config` に記載しなくてななりま"
+#~ "せん。"
+
+#~ msgid "Not acceptable"
+#~ msgstr "Not acceptable"
+
+#~ msgid "Internal server error"
+#~ msgstr "Internal server error"
+
+#~ msgid ""
+#~ "Traffic Server returns detailed error messages to browser clients when "
+#~ "there are problems with the HTTP transactions requested by the browser. "
+#~ "These Traffic Server response messages correspond to standard HTTP "
+#~ "response codes, but provide more information. A list of the more "
+#~ "frequently-encountered HTTP response codes is provided in :ref:`standard-"
+#~ "http-response-messages`. You can customize the Traffic Server response "
+#~ "messages (typically in proxy/config/body_factory/default/, but set by :"
+#~ "ts:cv:`proxy.config.body_factory.template_sets_dir`)."
+#~ msgstr ""
+#~ "Traffic Server は ブラウザからリクエストされた HTTP トランザクションに問"
+#~ "題がある場合に、クライアントに詳細なエラーメッセージを返します。これらの "
+#~ "Traffice Server のレスポンスメッセージは標準的な HTTP レスポンスコードに"
+#~ "対応しますが、より多くの情報を提供します。より頻繁に遭遇する HTTP レスポ"
+#~ "ンスコードの一覧は :ref:`standard-http-response-messages` で提供されてい"
+#~ "ます。Traffic Server のレスポンスメッセージをカスタマイズすることができま"
+#~ "す。( 通常は proxy/config/body_factory/default/ にありますが、:ts:cv:"
+#~ "`proxy.config.body_factory.template_sets_dir` で設定されています。)"

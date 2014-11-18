@@ -1,0 +1,53 @@
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 5.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2014-11-19 07:35+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ../../reference/api/TSHttpTxnServerPacketTosSet.en.rst:18
+msgid "TSHttpTxnServerPacketTosSet"
+msgstr ""
+
+#: ../../reference/api/TSHttpTxnServerPacketTosSet.en.rst:20
+msgid "Change packet TOS for the server side connection."
+msgstr ""
+
+#: ../../reference/api/TSHttpTxnServerPacketTosSet.en.rst:24
+msgid "Synopsis"
+msgstr ""
+
+#: ../../reference/api/TSHttpTxnServerPacketTosSet.en.rst:26
+msgid "`#include <ts/ts.h>`"
+msgstr ""
+
+#: ../../reference/api/TSHttpTxnServerPacketTosSet.en.rst:32
+msgid "Description"
+msgstr ""
+
+#: ../../reference/api/TSHttpTxnServerPacketTosSet.en.rst:36
+msgid ""
+"The change takes effect immediately, if no OS connection has been made, "
+"then this sets the mark that will be used IF an OS connection is established"
+msgstr ""
+
+#: ../../reference/api/TSHttpTxnServerPacketTosSet.en.rst:40
+msgid ""
+"TOS is deprecated and replaced by DSCP, this is still used to set DSCP "
+"however the first 2 bits of this value will be ignored as they now belong "
+"to the ECN field."
+msgstr ""
+
+#: ../../reference/api/TSHttpTxnServerPacketTosSet.en.rst:46
+msgid "See Also"
+msgstr ""
+
+#: ../../reference/api/TSHttpTxnServerPacketTosSet.en.rst:48
+msgid "`Traffic Shaping`_"
+msgstr ""

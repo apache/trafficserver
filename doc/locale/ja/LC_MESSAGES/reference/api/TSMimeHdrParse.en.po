@@ -1,0 +1,41 @@
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 5.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2014-11-19 07:35+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ../../reference/api/TSMimeHdrParse.en.rst:19
+msgid "TSMimeHdrParse"
+msgstr ""
+
+#: ../../reference/api/TSMimeHdrParse.en.rst:21
+msgid "Parses a MIME header."
+msgstr ""
+
+#: ../../reference/api/TSMimeHdrParse.en.rst:25
+msgid "Synopsis"
+msgstr ""
+
+#: ../../reference/api/TSMimeHdrParse.en.rst:27
+msgid "`#include <ts/ts.h>`"
+msgstr ""
+
+#: ../../reference/api/TSMimeHdrParse.en.rst:33
+msgid "Description"
+msgstr ""
+
+#: ../../reference/api/TSMimeHdrParse.en.rst:35
+msgid ""
+"The MIME header must have already been allocated and both bufp and hdr_loc "
+"must point within that header.  It is possible to parse a MIME header a "
+"single byte at a time using repeated calls to :c:func:`TSMimeHdrParse`.  As "
+"long as an error does not occur, :c:func:`TSMimeHdrParse` consumes each "
+"single byte and asks for more."
+msgstr ""

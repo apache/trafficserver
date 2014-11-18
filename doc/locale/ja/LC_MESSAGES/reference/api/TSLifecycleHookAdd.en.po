@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -62,11 +61,7 @@ msgstr ""
 "あたっては特に言及されていない限りフックのうちの一つが常に他のどれかより前に"
 "呼び出されると仮定すべきではありません。"
 
-#: ../../reference/api/TSLifecycleHookAdd.en.rst:45
-msgid "`TS_LIFECYCLE_PORTS_INITIALIZED_HOOK`"
-msgstr "`TS_LIFECYCLE_PORTS_INITIALIZED_HOOK`"
-
-#: ../../reference/api/TSLifecycleHookAdd.en.rst:40
+#: ../../reference/api/TSLifecycleHookAdd.en.rst:41
 msgid ""
 "Called after the :ts:cv:`proxy server port <proxy.config.http."
 "server_ports>` data structures have been initialized but before connections "
@@ -82,19 +77,7 @@ msgstr ""
 "依存するその他の API 関数は :func:`TSPluginInit` ではなくこのフックから呼ば"
 "れるべきです。"
 
-#: ../../reference/api/TSLifecycleHookAdd.en.rst:45
-msgid ""
-"Invoked with the event `TS_EVENT_LIFECYCLE_PORTS_INITIALIZED` and `NULL` "
-"data."
-msgstr ""
-"`TS_EVENT_LIFECYCLE_PORTS_INITIALIZED` イベントと `NULL` データとともに呼び"
-"出されます。"
-
-#: ../../reference/api/TSLifecycleHookAdd.en.rst:53
-msgid "`TS_LIFECYCLE_PORTS_READY_HOOK`"
-msgstr "`TS_LIFECYCLE_PORTS_READY_HOOK`"
-
-#: ../../reference/api/TSLifecycleHookAdd.en.rst:48
+#: ../../reference/api/TSLifecycleHookAdd.en.rst:50
 msgid ""
 "Called after enabling connections on the proxy server ports. Because "
 "Traffic Server is threaded this may or may not be called before any "
@@ -109,45 +92,19 @@ msgstr ""
 "に対する接続が Traffic Server によって accept されると仮定し、そのことを外部"
 "プロセスに通知する便利な場所とできます。"
 
-#: ../../reference/api/TSLifecycleHookAdd.en.rst:53
-msgid ""
-"Invoked with the event `TS_EVENT_LIFECYCLE_PORTS_READY` and `NULL` data."
-msgstr ""
-"`TS_EVENT_LIFECYCLE_PORTS_READY` イベントと `NULL` データとともに呼び出され"
-"ます。"
-
-#: ../../reference/api/TSLifecycleHookAdd.en.rst:58
-msgid "`TS_LIFECYCLE_CACHE_READY_HOOK`"
-msgstr "`TS_LIFECYCLE_CACHE_READY_HOOK`"
-
-#: ../../reference/api/TSLifecycleHookAdd.en.rst:56
+#: ../../reference/api/TSLifecycleHookAdd.en.rst:59
 msgid "Called after Traffic Server cache initialization has finished."
 msgstr "Traffic Server のキャッシュの初期化が完了した後に呼ばれます。"
 
-#: ../../reference/api/TSLifecycleHookAdd.en.rst:58
-msgid ""
-"Invoked with the event `TS_EVENT_LIFECYCLE_CACHE_READY` and `NULL` data."
-msgstr ""
-"`TS_EVENT_LIFECYCLE_CACHE_READY` イベントと `NULL` データとともに呼び出され"
-"ます。"
-
-#: ../../reference/api/TSLifecycleHookAdd.en.rst:61
+#: ../../reference/api/TSLifecycleHookAdd.en.rst:64
 msgid "Ordering"
 msgstr "順番"
 
-#: ../../reference/api/TSLifecycleHookAdd.en.rst:63
-msgid ""
-"`TS_LIFECYCLE_PORTS_INITIALIZED_HOOK` will always be called before "
-"`TS_LIFECYCLE_PORTS_READY_HOOK`."
-msgstr ""
-"`TS_LIFECYCLE_PORTS_INITIALIZED_HOOK` は常に "
-"`TS_LIFECYCLE_PORTS_READY_HOOK` の前に呼び出されます。"
-
-#: ../../reference/api/TSLifecycleHookAdd.en.rst:66
+#: ../../reference/api/TSLifecycleHookAdd.en.rst:69
 msgid "Examples"
 msgstr "例"
 
-#: ../../reference/api/TSLifecycleHookAdd.en.rst:68
+#: ../../reference/api/TSLifecycleHookAdd.en.rst:71
 msgid ""
 "The following example demonstrates how to correctly use :func:"
 "`TSNetAcceptNamedProtocol`, which requires the proxy ports to be "
@@ -158,35 +115,106 @@ msgstr ""
 "シーポートが初期化され :func:`TSPluginInit` から直接呼び出された場合に動作し"
 "ないようにする方法を説明しています。"
 
-#: ../../reference/api/TSLifecycleHookAdd.en.rst:100
+#: ../../reference/api/TSLifecycleHookAdd.en.rst:103
 msgid "History"
 msgstr "歴史"
 
-#: ../../reference/api/TSLifecycleHookAdd.en.rst:102
-msgid ""
-"Lifecycle hooks were introduced to solve process initialization ordering "
-"issues (`TS-1487 <https://issues.apache.org/jira/browse/TS-1487>`_). "
-"Different API calls required different modules of Traffic Server to be "
-"initialized for the call to work, but others did not work that late in "
-"initialization, which was problematic because all of them could effectively "
-"only be called from :func:`TSPluginInit` . The solution was to move :func:"
-"`TSPluginInit` as early as possible in the process initialization and "
-"provide hooks for API calls that needed to be invoked later which served "
-"essentially as additional pluging initialization points."
-msgstr ""
-"ライフサイクルフックはプロセスの初期化順の課題を解決するために登場しました "
-"(`TS-1487 <https://issues.apache.org/jira/browse/TS-1487>`_) 。異なる API の"
-"呼び出しは Traffic Server の異なるモジュールが初期化されることを要求していま"
-"したが、初期化の終盤のものは動作せず、事実上 :func:`TSPluginInit` からのみ呼"
-"び出すことが可能だったので問題となっていました。その解決方法は :func:"
-"`TSPluginInit` をプロセスの初期化の可能な限り早い位置に移し、本来は追加のプ"
-"ラグイン初期化ポイントとして提供され後で呼び出される必要のあった API 呼び出"
-"しのためにフックを提供することでした。"
-
-#: ../../reference/api/TSLifecycleHookAdd.en.rst:108
+#: ../../reference/api/TSLifecycleHookAdd.en.rst:111
 msgid "See also"
 msgstr "参考"
 
-#: ../../reference/api/TSLifecycleHookAdd.en.rst:109
+#: ../../reference/api/TSLifecycleHookAdd.en.rst:112
 msgid ":manpage:`TSAPI(3ts)`, :manpage:`TSContCreate(3ts)`"
 msgstr ":manpage:`TSAPI(3ts)` 、\\ :manpage:`TSContCreate(3ts)`"
+
+#: ../../reference/api/TSLifecycleHookAdd.en.rst:46
+msgid ""
+"Invoked with the event :c:data:`TS_EVENT_LIFECYCLE_PORTS_INITIALIZED` and :"
+"c:data:`NULL` data."
+msgstr ""
+
+#: ../../reference/api/TSLifecycleHookAdd.en.rst:55
+msgid ""
+"Invoked with the event :c:data:`TS_EVENT_LIFECYCLE_PORTS_READY` and :c:data:"
+"`NULL` data."
+msgstr ""
+
+#: ../../reference/api/TSLifecycleHookAdd.en.rst:61
+msgid ""
+"Invoked with the event :c:data:`TS_EVENT_LIFECYCLE_CACHE_READY` and :c:data:"
+"`NULL` data."
+msgstr ""
+
+#: ../../reference/api/TSLifecycleHookAdd.en.rst:66
+msgid ""
+":c:data:`TS_LIFECYCLE_PORTS_INITIALIZED_HOOK` will always be called before :"
+"c:data:`TS_LIFECYCLE_PORTS_READY_HOOK`."
+msgstr ""
+
+#: ../../reference/api/TSLifecycleHookAdd.en.rst:105
+msgid ""
+"Lifecycle hooks were introduced to solve process initialization ordering "
+"issues (TS-1487). Different API calls required different modules of Traffic "
+"Server to be initialized for the call to work, but others did not work that "
+"late in initialization, which was problematic because all of them could "
+"effectively only be called from :func:`TSPluginInit` . The solution was to "
+"move :func:`TSPluginInit` as early as possible in the process "
+"initialization and provide hooks for API calls that needed to be invoked "
+"later which served essentially as additional pluging initialization points."
+msgstr ""
+
+#~ msgid "`TS_LIFECYCLE_PORTS_INITIALIZED_HOOK`"
+#~ msgstr "`TS_LIFECYCLE_PORTS_INITIALIZED_HOOK`"
+
+#~ msgid ""
+#~ "Invoked with the event `TS_EVENT_LIFECYCLE_PORTS_INITIALIZED` and `NULL` "
+#~ "data."
+#~ msgstr ""
+#~ "`TS_EVENT_LIFECYCLE_PORTS_INITIALIZED` イベントと `NULL` データとともに呼"
+#~ "び出されます。"
+
+#~ msgid "`TS_LIFECYCLE_PORTS_READY_HOOK`"
+#~ msgstr "`TS_LIFECYCLE_PORTS_READY_HOOK`"
+
+#~ msgid ""
+#~ "Invoked with the event `TS_EVENT_LIFECYCLE_PORTS_READY` and `NULL` data."
+#~ msgstr ""
+#~ "`TS_EVENT_LIFECYCLE_PORTS_READY` イベントと `NULL` データとともに呼び出さ"
+#~ "れます。"
+
+#~ msgid "`TS_LIFECYCLE_CACHE_READY_HOOK`"
+#~ msgstr "`TS_LIFECYCLE_CACHE_READY_HOOK`"
+
+#~ msgid ""
+#~ "Invoked with the event `TS_EVENT_LIFECYCLE_CACHE_READY` and `NULL` data."
+#~ msgstr ""
+#~ "`TS_EVENT_LIFECYCLE_CACHE_READY` イベントと `NULL` データとともに呼び出さ"
+#~ "れます。"
+
+#~ msgid ""
+#~ "`TS_LIFECYCLE_PORTS_INITIALIZED_HOOK` will always be called before "
+#~ "`TS_LIFECYCLE_PORTS_READY_HOOK`."
+#~ msgstr ""
+#~ "`TS_LIFECYCLE_PORTS_INITIALIZED_HOOK` は常に "
+#~ "`TS_LIFECYCLE_PORTS_READY_HOOK` の前に呼び出されます。"
+
+#~ msgid ""
+#~ "Lifecycle hooks were introduced to solve process initialization ordering "
+#~ "issues (`TS-1487 <https://issues.apache.org/jira/browse/TS-1487>`_). "
+#~ "Different API calls required different modules of Traffic Server to be "
+#~ "initialized for the call to work, but others did not work that late in "
+#~ "initialization, which was problematic because all of them could "
+#~ "effectively only be called from :func:`TSPluginInit` . The solution was "
+#~ "to move :func:`TSPluginInit` as early as possible in the process "
+#~ "initialization and provide hooks for API calls that needed to be invoked "
+#~ "later which served essentially as additional pluging initialization "
+#~ "points."
+#~ msgstr ""
+#~ "ライフサイクルフックはプロセスの初期化順の課題を解決するために登場しまし"
+#~ "た (`TS-1487 <https://issues.apache.org/jira/browse/TS-1487>`_) 。異なる "
+#~ "API の呼び出しは Traffic Server の異なるモジュールが初期化されることを要"
+#~ "求していましたが、初期化の終盤のものは動作せず、事実上 :func:"
+#~ "`TSPluginInit` からのみ呼び出すことが可能だったので問題となっていました。"
+#~ "その解決方法は :func:`TSPluginInit` をプロセスの初期化の可能な限り早い位"
+#~ "置に移し、本来は追加のプラグイン初期化ポイントとして提供され後で呼び出さ"
+#~ "れる必要のあった API 呼び出しのためにフックを提供することでした。"

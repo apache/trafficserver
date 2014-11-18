@@ -40,13 +40,13 @@ msgstr ""
 msgid "The general form of an Internet URL is:"
 msgstr ""
 
-#: ../../sdk/http-headers/urls.en.rst:33
+#: ../../sdk/http-headers/urls.en.rst:32
 msgid ""
 "The URL data structure includes support for two specific types of internet "
 "URLs. HTTP URLs have the form:"
 msgstr ""
 
-#: ../../sdk/http-headers/urls.en.rst:41
+#: ../../sdk/http-headers/urls.en.rst:39
 msgid ""
 "The URL port is stored as integer. All remaining parts of the URL (scheme, "
 "user, etc.) are stored as strings. Traffic Server URL functions are named "
@@ -55,101 +55,101 @@ msgid ""
 "``TSUrlHostGet``."
 msgstr ""
 
-#: ../../sdk/http-headers/urls.en.rst:47
+#: ../../sdk/http-headers/urls.en.rst:45
 msgid ""
 "To facilitate fast comparisons and reduce storage size, Traffic Server "
 "defines several preallocated scheme names."
 msgstr ""
 
-#: ../../sdk/http-headers/urls.en.rst:52
+#: ../../sdk/http-headers/urls.en.rst:50
 msgid "``TS_URL_SCHEME_FILE``"
 msgstr ""
 
-#: ../../sdk/http-headers/urls.en.rst:51
+#: ../../sdk/http-headers/urls.en.rst:49
 msgid "\"file\" ``TS_URL_LEN_FILE``"
 msgstr ""
 
-#: ../../sdk/http-headers/urls.en.rst:56
+#: ../../sdk/http-headers/urls.en.rst:54
 msgid "``TS_URL_SCHEME_FTP``"
 msgstr ""
 
-#: ../../sdk/http-headers/urls.en.rst:55
+#: ../../sdk/http-headers/urls.en.rst:53
 msgid "\"ftp\" ``TS_URL_LEN_FTP``"
 msgstr ""
 
-#: ../../sdk/http-headers/urls.en.rst:60
+#: ../../sdk/http-headers/urls.en.rst:58
 msgid "``TS_URL_SCHEME_GOPHER``"
 msgstr ""
 
-#: ../../sdk/http-headers/urls.en.rst:59
+#: ../../sdk/http-headers/urls.en.rst:57
 msgid "\"gopher\" ``TS_URL_LEN_GOPHER``"
 msgstr ""
 
-#: ../../sdk/http-headers/urls.en.rst:64
+#: ../../sdk/http-headers/urls.en.rst:62
 msgid "``TS_URL_SCHEME_HTTP``"
 msgstr ""
 
-#: ../../sdk/http-headers/urls.en.rst:63
+#: ../../sdk/http-headers/urls.en.rst:61
 msgid "\"http\" ``TS_URL_LEN_HTTP``"
 msgstr ""
 
-#: ../../sdk/http-headers/urls.en.rst:68
+#: ../../sdk/http-headers/urls.en.rst:66
 msgid "``TS_URL_SCHEME_HTTPS``"
 msgstr ""
 
-#: ../../sdk/http-headers/urls.en.rst:67
+#: ../../sdk/http-headers/urls.en.rst:65
 msgid "\"https\" ``TS_URL_LEN_HTTPS``"
 msgstr ""
 
-#: ../../sdk/http-headers/urls.en.rst:72
+#: ../../sdk/http-headers/urls.en.rst:70
 msgid "``TS_URL_SCHEME_MAILTO``"
 msgstr ""
 
-#: ../../sdk/http-headers/urls.en.rst:71
+#: ../../sdk/http-headers/urls.en.rst:69
 msgid "\"mailto\" ``TS_URL_LEN_MAILTO``"
 msgstr ""
 
-#: ../../sdk/http-headers/urls.en.rst:76
+#: ../../sdk/http-headers/urls.en.rst:74
 msgid "``TS_URL_SCHEME_NEWS``"
 msgstr ""
 
-#: ../../sdk/http-headers/urls.en.rst:75
+#: ../../sdk/http-headers/urls.en.rst:73
 msgid "\"news\" ``TS_URL_LEN_NEWS``"
 msgstr ""
 
-#: ../../sdk/http-headers/urls.en.rst:80
+#: ../../sdk/http-headers/urls.en.rst:78
 msgid "``TS_URL_SCHEME_NNTP``"
 msgstr ""
 
-#: ../../sdk/http-headers/urls.en.rst:79
+#: ../../sdk/http-headers/urls.en.rst:77
 msgid "\"nntp\" ``TS_URL_LEN_NNTP``"
 msgstr ""
 
-#: ../../sdk/http-headers/urls.en.rst:84
+#: ../../sdk/http-headers/urls.en.rst:82
 msgid "``TS_URL_SCHEME_PROSPERO``"
 msgstr ""
 
-#: ../../sdk/http-headers/urls.en.rst:83
+#: ../../sdk/http-headers/urls.en.rst:81
 msgid "\"prospero\" ``TS_URL_LEN_PROSPERO``"
 msgstr ""
 
-#: ../../sdk/http-headers/urls.en.rst:88
+#: ../../sdk/http-headers/urls.en.rst:86
 msgid "``TS_URL_SCHEME_TELNET``"
 msgstr ""
 
-#: ../../sdk/http-headers/urls.en.rst:87
+#: ../../sdk/http-headers/urls.en.rst:85
 msgid "\"telnet\" ``TS_URL_LEN_TELNET``"
 msgstr ""
 
-#: ../../sdk/http-headers/urls.en.rst:92
+#: ../../sdk/http-headers/urls.en.rst:90
 msgid "``TS_URL_SCHEME_WAIS``"
 msgstr ""
 
-#: ../../sdk/http-headers/urls.en.rst:91
+#: ../../sdk/http-headers/urls.en.rst:89
 msgid "\"wais\" ``TS_URL_LEN_WAIS``"
 msgstr ""
 
-#: ../../sdk/http-headers/urls.en.rst:94
+#: ../../sdk/http-headers/urls.en.rst:92
 msgid ""
 "The scheme names above are defined in ``ts.h`` as ``const`` ``char*`` "
 "strings. When Traffic Server sets the scheme portion of the URL (or any "
@@ -163,11 +163,11 @@ msgid ""
 "prevent the possibility of spelling errors."
 msgstr ""
 
-#: ../../sdk/http-headers/urls.en.rst:105
+#: ../../sdk/http-headers/urls.en.rst:103
 msgid "Traffic Server **URL functions** are listed below:"
 msgstr ""
 
-#: ../../sdk/http-headers/urls.en.rst:107
+#: ../../sdk/http-headers/urls.en.rst:105
 msgid ""
 ":c:func:`TSUrlClone` :c:func:`TSUrlCopy` :c:func:`TSUrlCreate` :c:func:"
 "`TSUrlDestroy` :c:func:`TSUrlPrint` :c:func:`TSUrlFtpTypeGet` :c:func:"

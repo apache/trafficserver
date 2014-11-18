@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -30,16 +29,12 @@ msgstr ""
 msgid "icp.config"
 msgstr ""
 
-#: ../../reference/configuration/icp.config.en.rst:26
-msgid "The Traffic Server ICP  feature is not functional in this release."
-msgstr ""
-
-#: ../../reference/configuration/icp.config.en.rst:28
+#: ../../reference/configuration/icp.config.en.rst:24
 msgid ""
 "The :file:`icp.config` file defines ICP peers (parent and sibling caches)."
 msgstr ""
 
-#: ../../reference/configuration/icp.config.en.rst:32
+#: ../../reference/configuration/icp.config.en.rst:28
 msgid ""
 "After you modify the icp.config file, navigate to the Traffic Server bin "
 "directory and run the :option:`traffic_ctl config reload` command to apply the "
@@ -47,131 +42,131 @@ msgid ""
 "automatically applies the changes to all other nodes in the cluster."
 msgstr ""
 
-#: ../../reference/configuration/icp.config.en.rst:39
+#: ../../reference/configuration/icp.config.en.rst:35
 msgid "Format"
 msgstr ""
 
-#: ../../reference/configuration/icp.config.en.rst:41
+#: ../../reference/configuration/icp.config.en.rst:37
 msgid ""
 "Each line in the icp.config file contains the name and configuration "
 "information for a single ICP peer in the following format::"
 msgstr ""
 
-#: ../../reference/configuration/icp.config.en.rst:46
+#: ../../reference/configuration/icp.config.en.rst:42
 msgid "Each field is described in the following list."
 msgstr ""
 
-#: ../../reference/configuration/icp.config.en.rst:52
+#: ../../reference/configuration/icp.config.en.rst:48
 msgid "*``host``* {#host}"
 msgstr ""
 
-#: ../../reference/configuration/icp.config.en.rst:49
+#: ../../reference/configuration/icp.config.en.rst:45
 msgid "The hostname of the ICP peer."
 msgstr ""
 
-#: ../../reference/configuration/icp.config.en.rst:51
+#: ../../reference/configuration/icp.config.en.rst:47
 msgid ""
 "This field is optional; if you do not specify the hostname of the ICP peer, "
 "you must specify the IP address."
 msgstr ""
 
-#: ../../reference/configuration/icp.config.en.rst:58
+#: ../../reference/configuration/icp.config.en.rst:54
 msgid "*``host_IP``* {#host_IP}"
 msgstr ""
 
-#: ../../reference/configuration/icp.config.en.rst:55
+#: ../../reference/configuration/icp.config.en.rst:51
 msgid "The IP address of the ICP peer."
 msgstr ""
 
-#: ../../reference/configuration/icp.config.en.rst:57
+#: ../../reference/configuration/icp.config.en.rst:53
 msgid ""
 "This field is optional; if you do not specify the IP address of the ICP "
 "peer, you must specify the hostname."
 msgstr ""
 
-#: ../../reference/configuration/icp.config.en.rst:64
+#: ../../reference/configuration/icp.config.en.rst:60
 msgid "*``ctype``* {#ctype}"
 msgstr ""
 
-#: ../../reference/configuration/icp.config.en.rst:61
+#: ../../reference/configuration/icp.config.en.rst:57
 msgid "Use the following options:"
 msgstr ""
 
-#: ../../reference/configuration/icp.config.en.rst:63
+#: ../../reference/configuration/icp.config.en.rst:59
 msgid "1 to indicate an ICP parent cache"
 msgstr ""
 
-#: ../../reference/configuration/icp.config.en.rst:64
+#: ../../reference/configuration/icp.config.en.rst:60
 msgid "2 to indicate an ICP sibling cache"
 msgstr ""
 
-#: ../../reference/configuration/icp.config.en.rst:68
+#: ../../reference/configuration/icp.config.en.rst:64
 msgid "*``proxy_port``* {#proxy_port}"
 msgstr ""
 
-#: ../../reference/configuration/icp.config.en.rst:67
+#: ../../reference/configuration/icp.config.en.rst:63
 msgid ""
 "The port number of the TCP port used by the ICP peer for proxy "
 "communication."
 msgstr ""
 
-#: ../../reference/configuration/icp.config.en.rst:72
+#: ../../reference/configuration/icp.config.en.rst:68
 msgid "*``icp_port``* {#icp_port}"
 msgstr ""
 
-#: ../../reference/configuration/icp.config.en.rst:71
+#: ../../reference/configuration/icp.config.en.rst:67
 msgid ""
 "The port number of the UDP port used by the ICP peer for ICP communication."
 msgstr ""
 
-#: ../../reference/configuration/icp.config.en.rst:78
+#: ../../reference/configuration/icp.config.en.rst:74
 msgid "*``MC_on``* {#mc_on}"
 msgstr ""
 
-#: ../../reference/configuration/icp.config.en.rst:75
+#: ../../reference/configuration/icp.config.en.rst:71
 msgid "Enable or disable MultiCast:"
 msgstr ""
 
-#: ../../reference/configuration/icp.config.en.rst:77
+#: ../../reference/configuration/icp.config.en.rst:73
 msgid "0 if multicast is disabled"
 msgstr ""
 
-#: ../../reference/configuration/icp.config.en.rst:78
+#: ../../reference/configuration/icp.config.en.rst:74
 msgid "1 if multicast is enabled"
 msgstr ""
 
-#: ../../reference/configuration/icp.config.en.rst:81
+#: ../../reference/configuration/icp.config.en.rst:77
 msgid "*``MC_ip``* {#mc_ip}"
 msgstr ""
 
-#: ../../reference/configuration/icp.config.en.rst:81
+#: ../../reference/configuration/icp.config.en.rst:77
 msgid "The MultiCast IP address."
 msgstr ""
 
-#: ../../reference/configuration/icp.config.en.rst:90
+#: ../../reference/configuration/icp.config.en.rst:86
 msgid "*``MC_ttl``* {#mc_ttl}"
 msgstr ""
 
-#: ../../reference/configuration/icp.config.en.rst:84
+#: ../../reference/configuration/icp.config.en.rst:80
 msgid "The multicast time to live. Use the following options:"
 msgstr ""
 
-#: ../../reference/configuration/icp.config.en.rst:86
+#: ../../reference/configuration/icp.config.en.rst:82
 msgid ""
 "1 if IP multicast datagrams will not be forwarded beyond a single subnetwork"
 msgstr ""
 
-#: ../../reference/configuration/icp.config.en.rst:88
+#: ../../reference/configuration/icp.config.en.rst:84
 msgid ""
 "2 to allow delivery of IP multicast datagrams to more than one subnet (if "
 "there are one or more multicast routers attached to the first hop subnet)."
 msgstr ""
 
-#: ../../reference/configuration/icp.config.en.rst:93
+#: ../../reference/configuration/icp.config.en.rst:89
 msgid "Examples"
 msgstr ""
 
-#: ../../reference/configuration/icp.config.en.rst:95
+#: ../../reference/configuration/icp.config.en.rst:91
 msgid ""
 "The following example configuration is for three nodes: the local host, one "
 "parent, and one sibling."

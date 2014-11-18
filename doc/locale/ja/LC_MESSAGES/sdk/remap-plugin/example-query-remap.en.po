@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -79,18 +78,18 @@ msgid ""
 "function when it is triggered for a request."
 msgstr ""
 
-#: ../../sdk/remap-plugin/example-query-remap.en.rst:87
+#: ../../sdk/remap-plugin/example-query-remap.en.rst:86
 msgid ""
 "Another way remap plugins may want handle more complex configuration is to "
 "specify a configuration filename as a ``pparam`` and parse the specified "
 "file during instance initialization."
 msgstr ""
 
-#: ../../sdk/remap-plugin/example-query-remap.en.rst:92
+#: ../../sdk/remap-plugin/example-query-remap.en.rst:91
 msgid "Performing the Remap"
 msgstr ""
 
-#: ../../sdk/remap-plugin/example-query-remap.en.rst:94
+#: ../../sdk/remap-plugin/example-query-remap.en.rst:93
 msgid ""
 "The plugin implements the ``tsremap_remap`` function, which is called when "
 "TS has read the client HTTP request headers and matched the request to a "
@@ -98,7 +97,7 @@ msgid ""
 "contains input and output members for the remap operation."
 msgstr ""
 
-#: ../../sdk/remap-plugin/example-query-remap.en.rst:99
+#: ../../sdk/remap-plugin/example-query-remap.en.rst:98
 msgid ""
 "``tsremap_remap`` uses the configuration information passed via the "
 "``ihandle`` and checks the ``request_query`` for the configured query "

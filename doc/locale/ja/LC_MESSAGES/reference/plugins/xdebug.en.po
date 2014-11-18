@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -79,16 +78,91 @@ msgstr ""
 "の :ts:cv:`proxy.config.http.insert_response_via_str` 設定変数に ``3`` を設"
 "定します。"
 
-#: ../../reference/plugins/xdebug.en.rst:46
+#: ../../reference/plugins/xdebug.en.rst:47
 msgid "X-Cache-Key"
 msgstr "X-Cache-Key"
 
 #: ../../reference/plugins/xdebug.en.rst:45
 msgid ""
-"The ``X-Cache-Key`` contains the URL that identifies the HTTP object in the "
-"Traffic Server cache. This header is particularly useful if a custom cache "
-"key is being used."
+"The ``X-Cache-Key`` header contains the URL that identifies the HTTP object "
+"in the Traffic Server cache. This header is particularly useful if a custom "
+"cache key is being used."
 msgstr ""
-"``X-Cache-Key`` は Traffic Server キャッシュの中で HTTP オブジェクトを識別す"
-"る URL を含んでいます。このヘッダーはカスタムキャッシュキーが使われている場"
-"合に特に便利です。"
+
+#: ../../reference/plugins/xdebug.en.rst:60
+msgid "X-Cache"
+msgstr ""
+
+#: ../../reference/plugins/xdebug.en.rst:50
+msgid "The ``X-Cache`` header contains the results of any cache lookup."
+msgstr ""
+
+#: ../../reference/plugins/xdebug.en.rst:53
+msgid "Value"
+msgstr ""
+
+#: ../../reference/plugins/xdebug.en.rst:53
+msgid "Description"
+msgstr ""
+
+#: ../../reference/plugins/xdebug.en.rst:55
+msgid "none"
+msgstr ""
+
+#: ../../reference/plugins/xdebug.en.rst:55
+msgid "No cache lookup was attempted."
+msgstr ""
+
+#: ../../reference/plugins/xdebug.en.rst:56
+msgid "miss"
+msgstr ""
+
+#: ../../reference/plugins/xdebug.en.rst:56
+msgid "The object was not found in the cache."
+msgstr ""
+
+#: ../../reference/plugins/xdebug.en.rst:57
+msgid "hit-stale"
+msgstr ""
+
+#: ../../reference/plugins/xdebug.en.rst:57
+msgid "The object was found in the cache, but it was stale."
+msgstr ""
+
+#: ../../reference/plugins/xdebug.en.rst:58
+msgid "hit-fresh"
+msgstr ""
+
+#: ../../reference/plugins/xdebug.en.rst:58
+msgid "The object was fresh in the cache."
+msgstr ""
+
+#: ../../reference/plugins/xdebug.en.rst:59
+msgid "skipped"
+msgstr ""
+
+#: ../../reference/plugins/xdebug.en.rst:59
+msgid "The cache lookup was skipped."
+msgstr ""
+
+#: ../../reference/plugins/xdebug.en.rst:67
+msgid "X-Milestones"
+msgstr ""
+
+#: ../../reference/plugins/xdebug.en.rst:63
+msgid ""
+"The ``X-Milestones`` header contains detailed information about how long "
+"the transaction took to traverse portions of the HTTP state machine. The "
+"timing information is obtained from the :c:func:`TSHttpTxnMilestoneGet` "
+"API. Each milestone value is a fractional number of seconds since the "
+"beginning of the transaction."
+msgstr ""
+
+#~ msgid ""
+#~ "The ``X-Cache-Key`` contains the URL that identifies the HTTP object in "
+#~ "the Traffic Server cache. This header is particularly useful if a custom "
+#~ "cache key is being used."
+#~ msgstr ""
+#~ "``X-Cache-Key`` は Traffic Server キャッシュの中で HTTP オブジェクトを識"
+#~ "別する URL を含んでいます。このヘッダーはカスタムキャッシュキーが使われて"
+#~ "いる場合に特に便利です。"

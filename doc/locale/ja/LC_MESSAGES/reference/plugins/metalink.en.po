@@ -25,10 +25,6 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../../reference/plugins/metalink.en.rst:21
-msgid "Metalink plugin"
-msgstr ""
-
 #: ../../reference/plugins/metalink.en.rst:41
 msgid ""
 "An extreme example of this happens when users share a limited, possibly "
@@ -47,23 +43,6 @@ msgstr ""
 msgid ""
 "Metalinks contain whole file hashes as described in Section 6, and MUST "
 "include SHA-256, as specified in [FIPS-180-3]."
-msgstr ""
-
-#: ../../reference/plugins/metalink.en.rst:23
-msgid ""
-"The `metalink` plugin implements the `Metalink`_ download description "
-"format in order to try not to download the same file twice.  This improves "
-"cache efficiency and speeds up users' downloads."
-msgstr ""
-
-#: ../../reference/plugins/metalink.en.rst:27
-msgid ""
-"It takes standard headers and knowledge about objects in the cache and "
-"potentially rewrites those headers so that a client will use a URL that's "
-"already cached instead of one that isn't.  The headers are specified in :"
-"rfc:`6249` (Metalink/HTTP: Mirrors and Hashes) and :rfc:`3230` (Instance "
-"Digests in HTTP) and are sent by various download redirectors or content "
-"distribution networks."
 msgstr ""
 
 #: ../../reference/plugins/metalink.en.rst:34
@@ -95,34 +74,6 @@ msgstr ""
 msgid ""
 "This way a client should get sent to a URL that's already cached and won't "
 "download the file again."
-msgstr ""
-
-#: ../../reference/plugins/metalink.en.rst:64
-msgid ""
-"The `metalink` plugin is a global plugin.  Enable it by adding ``metalink."
-"so`` to your :file:`plugin.config` file.  There are no options."
-msgstr ""
-
-#: ../../reference/plugins/metalink.en.rst:72
-msgid ""
-"The plugin implements the ``TS_HTTP_SEND_RESPONSE_HDR_HOOK`` hook to check "
-"and potentially rewrite the :mailheader:`Location` and :mailheader:`Digest` "
-"headers after responses are cached.  It doesn't do it before they're cached "
-"because the contents of the cache can change after responses are cached.  "
-"It uses :c:func:`TSCacheRead` to check if the URL in the :mailheader:"
-"`Location` header is already cached.  In future, the plugin should also "
-"check if the URL is fresh or not."
-msgstr ""
-
-#: ../../reference/plugins/metalink.en.rst:81
-msgid ""
-"The plugin implements the ``TS_HTTP_READ_RESPONSE_HDR_HOOK`` hook and `a "
-"null transformation`_ to compute the SHA-256 digest for content as it's "
-"added to the cache.  It uses SHA256_Init(), SHA256_Update(), and "
-"SHA256_Final() from OpenSSL to compute the digest, then it uses :c:func:"
-"`TSCacheWrite` to associate the digest with the request URL. This adds a "
-"new cache object where the key is the digest and the object is the request "
-"URL."
 msgstr ""
 
 #: ../../reference/plugins/metalink.en.rst:89
@@ -163,4 +114,53 @@ msgid ""
 "If Instance Digests are not provided by the Metalink servers, the :"
 "mailheader:`Link` header fields pertaining to this specification MUST be "
 "ignored."
+msgstr ""
+
+#: ../../reference/plugins/metalink.en.rst:21
+msgid "Metalink Plugin"
+msgstr ""
+
+#: ../../reference/plugins/metalink.en.rst:23
+msgid ""
+"The `Metalink` plugin implements the Metalink_ download description format "
+"in order to try not to download the same file twice.  This improves cache "
+"efficiency and speeds up users' downloads."
+msgstr ""
+
+#: ../../reference/plugins/metalink.en.rst:27
+msgid ""
+"It takes standard headers and knowledge about objects in the cache and "
+"potentially rewrites those headers so that a client will use a URL that's "
+"already cached instead of one that isn't.  The headers are specified in RFC "
+"6249 (Metalink/HTTP: Mirrors and Hashes) and RFC 3230 (Instance Digests in "
+"HTTP) and are sent by various download redirectors or content distribution "
+"networks."
+msgstr ""
+
+#: ../../reference/plugins/metalink.en.rst:64
+msgid ""
+"The `Metalink` plugin is a :term:`global plugin`.  Enable it by adding "
+"``metalink.so`` to your :file:`plugin.config` file.  There are no options."
+msgstr ""
+
+#: ../../reference/plugins/metalink.en.rst:72
+msgid ""
+"The plugin implements the :c:data:`TS_HTTP_SEND_RESPONSE_HDR_HOOK` hook to "
+"check and potentially rewrite the :mailheader:`Location` and :mailheader:"
+"`Digest` headers after responses are cached.  It doesn't do it before "
+"they're cached because the contents of the cache can change after responses "
+"are cached.  It uses :c:func:`TSCacheRead` to check if the URL in the :"
+"mailheader:`Location` header is already cached.  In future, the plugin "
+"should also check if the URL is fresh or not."
+msgstr ""
+
+#: ../../reference/plugins/metalink.en.rst:81
+msgid ""
+"The plugin implements the :c:data:`TS_HTTP_READ_RESPONSE_HDR_HOOK` hook and "
+"`a null transformation`_ to compute the SHA-256 digest for content as it's "
+"added to the cache.  It uses SHA256_Init(), SHA256_Update(), and "
+"SHA256_Final() from OpenSSL to compute the digest, then it uses :c:func:"
+"`TSCacheWrite` to associate the digest with the request URL.  This adds a "
+"new cache object where the key is the digest and the object is the request "
+"URL."
 msgstr ""

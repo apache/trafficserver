@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -37,7 +36,7 @@ msgid ""
 "file:`records.config` as follows:"
 msgstr ""
 
-#: ../../sdk/troubleshooting-tips/debugging-memory-leaks.en.rst:30
+#: ../../sdk/troubleshooting-tips/debugging-memory-leaks.en.rst:29
 msgid ""
 "This causes Traffic Server to dump memory information to ``traffic.out`` at "
 "``<value>`` (intervals are in seconds). A zero value means that it is "

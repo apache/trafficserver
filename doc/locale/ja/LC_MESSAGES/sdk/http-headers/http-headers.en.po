@@ -331,10 +331,6 @@ msgstr ""
 msgid "The **HTTP Header Functions** are listed below:"
 msgstr ""
 
-#: ../../sdk/http-headers/http-headers.en.rst:183
-msgid "`TSHttpParserDestroy <link/to/doxyge>`__"
-msgstr ""
-
 #: ../../sdk/http-headers/http-headers.en.rst:81
 msgid "``TS_HTTP_METHOD_PUSH``"
 msgstr ""
@@ -433,4 +429,8 @@ msgstr ""
 
 #: ../../sdk/http-headers/http-headers.en.rst:185
 msgid ":c:func:`TSHttpHdrParseResp`"
+msgstr ""
+
+#: ../../sdk/http-headers/http-headers.en.rst:183
+msgid ":c:func:`TSHttpParserDestroy`"
 msgstr ""

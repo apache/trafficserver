@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -30,19 +29,19 @@ msgstr ""
 msgid "TSMimeHdrFieldValueStringGet"
 msgstr "TSMimeHdrFieldValueStringGet"
 
-#: ../../reference/api/TSMimeHdrFieldValueStringGet.en.rst:25
+#: ../../reference/api/TSMimeHdrFieldValueStringGet.en.rst:27
 msgid "Synopsis"
 msgstr "概要"
 
-#: ../../reference/api/TSMimeHdrFieldValueStringGet.en.rst:27
+#: ../../reference/api/TSMimeHdrFieldValueStringGet.en.rst:29
 msgid "`#include <ts/ts.h>`"
 msgstr "`#include <ts/ts.h>`"
 
-#: ../../reference/api/TSMimeHdrFieldValueStringGet.en.rst:37
+#: ../../reference/api/TSMimeHdrFieldValueStringGet.en.rst:39
 msgid "Description"
 msgstr "解説"
 
-#: ../../reference/api/TSMimeHdrFieldValueStringGet.en.rst:39
+#: ../../reference/api/TSMimeHdrFieldValueStringGet.en.rst:41
 msgid ""
 "MIME headers and fields can be components of request headers, response "
 "headers, or standalone headers created within a Traffic Server plugin. The "
@@ -58,7 +57,7 @@ msgstr ""
 "す。 :func:`TSMimeHdrFieldValueStringGet` 以外では適切なデータ変換アルゴリズ"
 "ムがヘッダーフィールド文字列に適用されます。"
 
-#: ../../reference/api/TSMimeHdrFieldValueStringGet.en.rst:47
+#: ../../reference/api/TSMimeHdrFieldValueStringGet.en.rst:49
 msgid ""
 "All the APIs take a :type:`TSMBuffer` marshal buffer argument, and a :type:"
 "`TSMLoc` argument indicating the location of the HTTP headers. The "
@@ -70,7 +69,7 @@ msgstr ""
 "は :func:`TSMimeHdrFieldFind` のようなアクセッサ関数から返される特定のヘッ"
 "ダーの値を保管するものです。"
 
-#: ../../reference/api/TSMimeHdrFieldValueStringGet.en.rst:53
+#: ../../reference/api/TSMimeHdrFieldValueStringGet.en.rst:55
 msgid ""
 "Within the header field, comma-separated values can be retrieved with an "
 "index (:data:`idx`) ranging from 0 to the maximum number of fields for this "
@@ -87,7 +86,7 @@ msgstr ""
 "を取得する意味を持ちます。ヘッダーがコンマで分けられていない場合、:data:`0` "
 "と :data:`-1` の :data:`idx` は同じですが、後者が好ましいです。"
 
-#: ../../reference/api/TSMimeHdrFieldValueStringGet.en.rst:61
+#: ../../reference/api/TSMimeHdrFieldValueStringGet.en.rst:63
 msgid ""
 ":func:`TSMimeHdrFieldValueStringGet` returns a pointer to the header value, "
 "and populated :data:`value_len_ptr` with the length of the value in bytes. "
@@ -97,11 +96,11 @@ msgstr ""
 "位での値の長さで満たされた :data:`value_len_ptr` を返します。返されたヘッ"
 "ダーの値は NUL 終端ではありません。"
 
-#: ../../reference/api/TSMimeHdrFieldValueStringGet.en.rst:66
+#: ../../reference/api/TSMimeHdrFieldValueStringGet.en.rst:68
 msgid "Return values"
 msgstr "戻り値"
 
-#: ../../reference/api/TSMimeHdrFieldValueStringGet.en.rst:68
+#: ../../reference/api/TSMimeHdrFieldValueStringGet.en.rst:70
 msgid ""
 "All functions returns the header value with a type matching the respective "
 "function name. Using :func:`TSMimeHdrFieldValueDateGet` on a header which "
@@ -111,22 +110,26 @@ msgstr ""
 "time セマンティクスを持たないヘッダーでの :func:"
 "`TSMimeHdrFieldValueDateGet` の使用は常に :data:`0` を返します。"
 
-#: ../../reference/api/TSMimeHdrFieldValueStringGet.en.rst:73
+#: ../../reference/api/TSMimeHdrFieldValueStringGet.en.rst:75
 msgid "Examples"
 msgstr "例"
 
-#: ../../reference/api/TSMimeHdrFieldValueStringGet.en.rst:75
+#: ../../reference/api/TSMimeHdrFieldValueStringGet.en.rst:77
 msgid "This examples show how to retrieve and copy a specific header."
 msgstr "この例はどのように特定のヘッダーを取得しコピーするかを示しています。"
 
-#: ../../reference/api/TSMimeHdrFieldValueStringGet.en.rst:109
+#: ../../reference/api/TSMimeHdrFieldValueStringGet.en.rst:111
 msgid "See also"
 msgstr "参照"
 
-#: ../../reference/api/TSMimeHdrFieldValueStringGet.en.rst:111
+#: ../../reference/api/TSMimeHdrFieldValueStringGet.en.rst:113
 msgid ""
 ":manpage:`TSAPI(3ts)`, :manpage:`TSMBufferCreate(3ts)`, :manpage:"
 "`TSMimeHdrFieldValuesCount(3ts)`"
 msgstr ""
 ":manpage:`TSAPI(3ts)`, :manpage:`TSMBufferCreate(3ts)`, :manpage:"
 "`TSMimeHdrFieldValuesCount(3ts)`"
+
+#: ../../reference/api/TSMimeHdrFieldValueStringGet.en.rst:23
+msgid "Get HTTP MIME header values."
+msgstr ""

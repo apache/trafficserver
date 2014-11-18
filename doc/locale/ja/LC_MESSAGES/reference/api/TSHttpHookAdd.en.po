@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -30,19 +29,19 @@ msgstr ""
 msgid "TSHttpHookAdd"
 msgstr "TSHttpHookAdd"
 
-#: ../../reference/api/TSHttpHookAdd.en.rst:25
+#: ../../reference/api/TSHttpHookAdd.en.rst:27
 msgid "Synopsis"
 msgstr "概要"
 
-#: ../../reference/api/TSHttpHookAdd.en.rst:26
+#: ../../reference/api/TSHttpHookAdd.en.rst:28
 msgid "`#include <ts/ts.h>`"
 msgstr "`#include <ts/ts.h>`"
 
-#: ../../reference/api/TSHttpHookAdd.en.rst:33
+#: ../../reference/api/TSHttpHookAdd.en.rst:35
 msgid "Description"
 msgstr "解説"
 
-#: ../../reference/api/TSHttpHookAdd.en.rst:35
+#: ../../reference/api/TSHttpHookAdd.en.rst:37
 msgid ""
 "Hooks are points in Apache Traffic Server transaction HTTP processing where "
 "plugins can step in and do some work. Registering a plugin function for "
@@ -55,7 +54,7 @@ msgstr ""
 "数を追加することと同じです。一つずつすべてのトランザクション、もしくは特定の"
 "トランザクションのみにコールバックされるプラグインを登録することができます。"
 
-#: ../../reference/api/TSHttpHookAdd.en.rst:41
+#: ../../reference/api/TSHttpHookAdd.en.rst:43
 msgid ""
 "HTTP :term:`transaction` hooks are set on a global basis using the "
 "function :func:`TSHttpHookAdd`. This means that the continuation specified "
@@ -69,7 +68,7 @@ msgstr ""
 "`TSHttpHookAdd` は一般的に :func:`TSPluginInit` もしくは :func:"
 "`TSRemapInit` から呼ばれます。"
 
-#: ../../reference/api/TSHttpHookAdd.en.rst:47
+#: ../../reference/api/TSHttpHookAdd.en.rst:49
 msgid ""
 ":func:`TSHttpSsnHookAdd` adds :arg:`contp` to the end of the list of HTTP :"
 "term:`session` hooks specified by :arg:`id`. This means that :arg:`contp` "
@@ -85,7 +84,7 @@ msgstr ""
 "インの初期化ルーチンから :func:`TSHttpSsnHookAdd` を呼び出すことはできませ"
 "ん。プラグインは HTTP セッションを取り扱う必要があります。"
 
-#: ../../reference/api/TSHttpHookAdd.en.rst:55
+#: ../../reference/api/TSHttpHookAdd.en.rst:57
 msgid ""
 ":func:`TSHttpTxnHookAdd` adds :arg:`contp` to the end of the list of HTTP "
 "transaction hooks specified by :arg:`id`. Since :arg:`contp` is added to a "
@@ -99,19 +98,19 @@ msgstr ""
 "を呼び出すことはできず、プラグインが HTTP トランザクションを取り扱うときのみ"
 "呼び出せます。"
 
-#: ../../reference/api/TSHttpHookAdd.en.rst:63
+#: ../../reference/api/TSHttpHookAdd.en.rst:65
 msgid "Return values"
 msgstr "戻り値"
 
-#: ../../reference/api/TSHttpHookAdd.en.rst:65
+#: ../../reference/api/TSHttpHookAdd.en.rst:67
 msgid "None. Adding hooks is always successful."
 msgstr "無し。フックの追加は常に成功します。"
 
-#: ../../reference/api/TSHttpHookAdd.en.rst:68
+#: ../../reference/api/TSHttpHookAdd.en.rst:70
 msgid "Examples"
 msgstr "例"
 
-#: ../../reference/api/TSHttpHookAdd.en.rst:70
+#: ../../reference/api/TSHttpHookAdd.en.rst:72
 msgid ""
 "The following example demonstrates how to add global, session and "
 "transaction hooks::"
@@ -119,14 +118,18 @@ msgstr ""
 "次の例はどのようにグローバル、セッション、トランザクションフックを追加するか"
 "を紹介しています。"
 
-#: ../../reference/api/TSHttpHookAdd.en.rst:110
+#: ../../reference/api/TSHttpHookAdd.en.rst:112
 msgid "See also"
 msgstr "参考"
 
-#: ../../reference/api/TSHttpHookAdd.en.rst:111
+#: ../../reference/api/TSHttpHookAdd.en.rst:113
 msgid ""
 ":manpage:`TSAPI(3ts)`, :manpage:`TSContCreate(3ts)`, :manpage:"
 "`TSLifecycleHookAdd(3ts)`"
 msgstr ""
 ":manpage:`TSAPI(3ts)`, :manpage:`TSContCreate(3ts)`, :manpage:"
 "`TSLifecycleHookAdd(3ts)`"
+
+#: ../../reference/api/TSHttpHookAdd.en.rst:24
+msgid "Intercept Traffic Server events."
+msgstr ""

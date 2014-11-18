@@ -1,0 +1,42 @@
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 5.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2014-11-19 07:35+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ../../reference/api/TSfwrite.en.rst:19
+msgid "TSfwrite"
+msgstr ""
+
+#: ../../reference/api/TSfwrite.en.rst:21
+msgid ""
+"Attempts to write length bytes of data from the buffer buf to the file "
+"filep."
+msgstr ""
+
+#: ../../reference/api/TSfwrite.en.rst:26
+msgid "Synopsis"
+msgstr ""
+
+#: ../../reference/api/TSfwrite.en.rst:28
+msgid "`#include <ts/ts.h>`"
+msgstr ""
+
+#: ../../reference/api/TSfwrite.en.rst:34
+msgid "Description"
+msgstr ""
+
+#: ../../reference/api/TSfwrite.en.rst:36
+msgid ""
+"Make sure that filep is open for writing.  You might want to check the "
+"number of bytes written (:c:func:`TSfwrite` returns this value) against the "
+"value of length.  If it is less, there might be insufficient space on disk, "
+"for example."
+msgstr ""

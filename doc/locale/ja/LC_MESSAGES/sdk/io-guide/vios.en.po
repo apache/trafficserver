@@ -46,52 +46,52 @@ msgid ""
 "follows:"
 msgstr ""
 
-#: ../../sdk/io-guide/vios.en.rst:45
+#: ../../sdk/io-guide/vios.en.rst:44
 msgid ""
 "The VIO functions below access and modify various parts of the data "
 "structure."
 msgstr ""
 
-#: ../../sdk/io-guide/vios.en.rst:48
+#: ../../sdk/io-guide/vios.en.rst:47
 msgid ":c:func:`TSVIOBufferGet`"
 msgstr ""
 
-#: ../../sdk/io-guide/vios.en.rst:49
+#: ../../sdk/io-guide/vios.en.rst:48
 msgid ":c:func:`TSVIOVConnGet`"
 msgstr ""
 
-#: ../../sdk/io-guide/vios.en.rst:50
+#: ../../sdk/io-guide/vios.en.rst:49
 msgid ":c:func:`TSVIOContGet`"
 msgstr ""
 
-#: ../../sdk/io-guide/vios.en.rst:51
+#: ../../sdk/io-guide/vios.en.rst:50
 msgid ":c:func:`TSVIOMutexGet`"
 msgstr ""
 
-#: ../../sdk/io-guide/vios.en.rst:52
+#: ../../sdk/io-guide/vios.en.rst:51
 msgid ":c:func:`TSVIONBytesGet`"
 msgstr ""
 
-#: ../../sdk/io-guide/vios.en.rst:53
+#: ../../sdk/io-guide/vios.en.rst:52
 msgid ":c:func:`TSVIONBytesSet`"
 msgstr ""
 
-#: ../../sdk/io-guide/vios.en.rst:54
+#: ../../sdk/io-guide/vios.en.rst:53
 msgid ":c:func:`TSVIONDoneGet`"
 msgstr ""
 
-#: ../../sdk/io-guide/vios.en.rst:55
+#: ../../sdk/io-guide/vios.en.rst:54
 msgid ":c:func:`TSVIONDoneSet`"
 msgstr ""
 
-#: ../../sdk/io-guide/vios.en.rst:56
+#: ../../sdk/io-guide/vios.en.rst:55
 msgid ":c:func:`TSVIONTodoGet`"
 msgstr ""
 
-#: ../../sdk/io-guide/vios.en.rst:57
+#: ../../sdk/io-guide/vios.en.rst:56
 msgid ":c:func:`TSVIOReaderGet`"
 msgstr ""
 
-#: ../../sdk/io-guide/vios.en.rst:58
+#: ../../sdk/io-guide/vios.en.rst:57
 msgid ":c:func:`TSVIOReenable`"
 msgstr ""

@@ -79,38 +79,11 @@ msgstr ""
 ":file:`ssl_multicert.config` の各行は Traffic Server が特定の SSL 証明書をど"
 "う使用すべきかを指定する `key=value` フィールドの連続で成っています。"
 
-#: ../../reference/configuration/ssl_multicert.config.en.rst:64
-msgid "dest_ip=ADDRESS"
-msgstr "dest_ip=ADDRESS"
-
-#: ../../reference/configuration/ssl_multicert.config.en.rst:56
-msgid ""
-"The IP (v4 or v6) address that the certificate should be presented on. This "
-"is now only used as a fallback in the case that the TLS "
-"SubjectNameIndication extension is not supported. If `ADDRESS` is `*`, the "
-"corresponding certificate will be used as the global default fallback if no "
-"other match can be made.  The address may contain a port specifier, in "
-"which case the corresponding certificate will only match for connections "
-"accepted on the specified port. IPv6 addresses must be enclosed by square "
-"brackets if they have a port, eg, [::1]:80."
-msgstr ""
-"証明書が提出されるべき IP アドレス (v4 か v6) です。これは現在では TLS "
-"SubjectNameIndication 拡張がサポートされていない場合のフォールバックとしての"
-"み使用されます。`ADDRESS` が `*` の場合、他にマッチするものがなければグロー"
-"バルデフォルトフォールバックとして対応する証明書が使用されます。アドレスは"
-"ポート指定子を含んでもよく、その場合対応する証明書は特定のポートで受け入れら"
-"れたコネクションのみにマッチします。ポート指定がある場合、IPv6 アドレスは角"
-"括弧で囲われていなければなりません。例、[::1]:80 。"
-
-#: ../../reference/configuration/ssl_multicert.config.en.rst:76
-msgid "ssl_ca_name=FILENAME"
-msgstr "ssl_ca_name=FILENAME"
-
-#: ../../reference/configuration/ssl_multicert.config.en.rst:116
+#: ../../reference/configuration/ssl_multicert.config.en.rst:134
 msgid "Certificate Selection"
 msgstr "証明書の選択"
 
-#: ../../reference/configuration/ssl_multicert.config.en.rst:118
+#: ../../reference/configuration/ssl_multicert.config.en.rst:136
 msgid ""
 "Traffic Server attempts two certificate selections during SSL connection "
 "setup. An initial selection is made when a TCP connection is accepted. This "
@@ -137,7 +110,7 @@ msgstr ""
 "敗すると、ワイルドカードによる証明書のマッチが試されます。いずれにもマッチし"
 "ない場合、初回の証明書の選択がそのまま有効となります。"
 
-#: ../../reference/configuration/ssl_multicert.config.en.rst:132
+#: ../../reference/configuration/ssl_multicert.config.en.rst:150
 msgid ""
 "In all cases, Traffic Server attempts to select the most specific match. An "
 "address specification that contains a port number will take precedence over "
@@ -148,11 +121,11 @@ msgstr ""
 "を含むアドレス指定は、ポート番号を含まない指定に先立って行われます。具体的な"
 "証明サブジェクトはワイルドカードによる証明に先立って使用されます。"
 
-#: ../../reference/configuration/ssl_multicert.config.en.rst:139
+#: ../../reference/configuration/ssl_multicert.config.en.rst:157
 msgid "Examples"
 msgstr "例"
 
-#: ../../reference/configuration/ssl_multicert.config.en.rst:141
+#: ../../reference/configuration/ssl_multicert.config.en.rst:159
 msgid ""
 "The following example configures Traffic Server to use the SSL certificate "
 "``server.pem`` for all requests to the IP address 111.11.11.1 and the SSL "
@@ -168,7 +141,7 @@ msgstr ""
 "ミネートされます。秘密鍵は証明書に含まれているので、秘密鍵の名前は指定されて"
 "いません。"
 
-#: ../../reference/configuration/ssl_multicert.config.en.rst:155
+#: ../../reference/configuration/ssl_multicert.config.en.rst:191
 msgid ""
 "The following example configures Traffic Server to use the SSL certificate "
 "``server.pem`` and the private key ``serverKey.pem`` for all requests to "
@@ -180,84 +153,7 @@ msgstr ""
 "するよう設定しています。証明書 ``general.pem`` はサーバー名がマッチするもの"
 "で使用されます。"
 
-#: ../../reference/configuration/ssl_multicert.config.en.rst:53
-msgid "ssl_cert_name=FILENAME"
-msgstr "ssl_cert_name=FILENAME"
-
-#: ../../reference/configuration/ssl_multicert.config.en.rst:50
-msgid ""
-"The name of the file containing the TLS certificate. `FILENAME` is located "
-"relative to the directory specified by the :ts:cv:`proxy.config.ssl.server."
-"cert.path` configuration variable. This is the only field that is required "
-"to be present."
-msgstr ""
-"TLS 証明書を含んでいるファイルの名前です。`FILENAME` は :ts:cv:`proxy."
-"config.ssl.server.cert.path` 設定変数で指定されたディレクトリからの相対位置"
-"です。これは設定が必要とされている唯一のフィールドです。"
-
-#: ../../reference/configuration/ssl_multicert.config.en.rst:70
-msgid "ssl_key_name=FILENAME"
-msgstr "ssl_key_name=FILENAME"
-
-#: ../../reference/configuration/ssl_multicert.config.en.rst:67
-msgid ""
-"The name of the file containing the private key for this certificate. If "
-"the key is contained in the certificate file, this field can be omitted, "
-"otherwise `FILENAME` is resolved relative to the :ts:cv:`proxy.config.ssl."
-"server.private_key.path` configuration variable."
-msgstr ""
-"この証明書のための秘密鍵を含んでいるファイルの名前です。もし鍵が証明書に含ま"
-"れている場合、このフィールドは省略可能です。そうでは無い場合、`FILENAME` "
-"は :ts:cv:`proxy.config.ssl.server.private_key.path` 設定変数からの相対で解"
-"決されます。"
-
-#: ../../reference/configuration/ssl_multicert.config.en.rst:73
-msgid ""
-"If the certificate is issued by an authority that is not in the system CA "
-"bundle, additional certificates may be needed to validate the certificate "
-"chain. `FILENAME` is resolved relative to the :ts:cv:`proxy.config.ssl.CA."
-"cert.path` configuration variable."
-msgstr ""
-"システムの CA バンドルにない認証局によって発行された証明書では、証明書チェー"
-"ンの検証のために追加の証明書が必要になることがあります。`FILENAME` は :ts:"
-"cv:`proxy.config.ssl.CA.cert.path` 設定変数からの相対で解決されます。"
-
-#: ../../reference/configuration/ssl_multicert.config.en.rst:81
-msgid "ssl_ticket_enabled=1|0"
-msgstr "ssl_ticket_enabled=1|0"
-
-#: ../../reference/configuration/ssl_multicert.config.en.rst:79
-msgid ""
-"Enable :rfc:`5077` stateless TLS session tickets. To support this, OpenSSL "
-"should be upgraded to version 0.9.8f or higher. This option must be set to "
-"`0` to disable session ticket support."
-msgstr ""
-":rfc:`5077` ステートレス TLS セッションチケットを有効化します。これに対応す"
-"るには OpenSSL がバージョン 0.9.8f 以上にアップグレードされている必要があり"
-"ます。このオプションはセッションチケットのサポートを無効化するために `0` に"
-"設定されなければなりません。"
-
-#: ../../reference/configuration/ssl_multicert.config.en.rst:95
-msgid "ticket_key_name=FILENAME"
-msgstr "ticket_key_name=FILENAME"
-
-#: ../../reference/configuration/ssl_multicert.config.en.rst:84
-msgid ""
-"The name of session ticket key file which contains a secret for encrypting "
-"and decrypting TLS session tickets. If `FILENAME` is not an absolute path, "
-"it is resolved relative to the :ts:cv:`proxy.config.ssl.server.cert.path` "
-"configuration variable. This option has no effect if session tickets are "
-"disabled by the ``ssl_ticket_enabled`` option.  The contents of the key "
-"file should be 48 random bytes."
-msgstr ""
-"TSL セッションの暗号化と復号化のための秘密情報を含むセッションチケットキー"
-"ファイルの名前です。もし `FILENAME` が絶対パスではない場合、:ts:cv:`proxy."
-"config.ssl.server.cert.path` 設定変数からの相対で解決されます。このオプショ"
-"ンは ``ssl_ticket_enabled`` オプションでセッションチケットが無効化されている"
-"場合には効果をもちません。キーファイルの内容はランダムな 48 バイトのはずで"
-"す。"
-
-#: ../../reference/configuration/ssl_multicert.config.en.rst:92
+#: ../../reference/configuration/ssl_multicert.config.en.rst:110
 msgid ""
 "Session ticket support is enabled by default. If neither of the "
 "``ssl_ticket_enabled`` and ``ticket_key_name`` options are specified, and "
@@ -269,7 +165,7 @@ msgstr ""
 "ていない場合、内部セッションチケットキーが生成されます。キーは Traffic "
 "Server が起動されるたびに毎回異なります。"
 
-#: ../../reference/configuration/ssl_multicert.config.en.rst:164
+#: ../../reference/configuration/ssl_multicert.config.en.rst:200
 msgid ""
 "The following example configures Traffic Server to use the SSL certificate "
 "``server.pem`` for all requests to the IP address 111.11.11.1. Session "
@@ -279,11 +175,7 @@ msgstr ""
 "111.11.11.1 へのすべてのリクエストに使用するように設定しています。セッション"
 "チケットは恒久的なチケットキーで有効化されています。"
 
-#: ../../reference/configuration/ssl_multicert.config.en.rst:113
-msgid "ssl_key_dialog=builtin|\"exec:/path/to/program [args]\""
-msgstr "ssl_key_dialog=builtin|\"exec:/path/to/program [args]\""
-
-#: ../../reference/configuration/ssl_multicert.config.en.rst:98
+#: ../../reference/configuration/ssl_multicert.config.en.rst:116
 msgid ""
 "Method used to provide a pass phrase for encrypted private keys.  If the "
 "pass phrase is incorrect, SSL negotiation for this dest_ip will fail for "
@@ -294,11 +186,11 @@ msgstr ""
 "ションは失敗するでしょう。builtin と exec: の 2 つのオプションがサポートされ"
 "ています。"
 
-#: ../../reference/configuration/ssl_multicert.config.en.rst:105
+#: ../../reference/configuration/ssl_multicert.config.en.rst:123
 msgid "``builtin`` - Requests pass phrase via stdin/stdout. User will be"
 msgstr "``builtin``"
 
-#: ../../reference/configuration/ssl_multicert.config.en.rst:104
+#: ../../reference/configuration/ssl_multicert.config.en.rst:122
 msgid ""
 "provided the ssl_cert_name and be prompted for the pass phrase. Useful for "
 "debugging."
@@ -306,11 +198,11 @@ msgstr ""
 "stdin/stdout によるパスフレーズを要求します。ユーザーは ssl_cert_name を提示"
 "され、パスフレーズの入力を促されます。デバッグに便利です。"
 
-#: ../../reference/configuration/ssl_multicert.config.en.rst:113
+#: ../../reference/configuration/ssl_multicert.config.en.rst:131
 msgid "``exec:`` - Executes program /path/to/program and passes args, if"
 msgstr "``exec:``"
 
-#: ../../reference/configuration/ssl_multicert.config.en.rst:108
+#: ../../reference/configuration/ssl_multicert.config.en.rst:126
 msgid ""
 "specified, to the program and reads the output from stdout for the pass "
 "phrase.  If args are provided then the entire exec: string must be quoted "
@@ -327,7 +219,7 @@ msgstr ""
 "レーズを渡す前にシステムが攻撃者によって汚染されていないことを確かめることで"
 "す。"
 
-#: ../../reference/configuration/ssl_multicert.config.en.rst:173
+#: ../../reference/configuration/ssl_multicert.config.en.rst:209
 msgid ""
 "The following example configures Traffic Server to use the SSL certificate "
 "``server.pem`` and disable session tickets for all requests to the IP "
@@ -337,7 +229,7 @@ msgstr ""
 "で SSL 証明書 ``server.pem`` を 使用し、セッションチケットを無効化するように"
 "設定しています。"
 
-#: ../../reference/configuration/ssl_multicert.config.en.rst:181
+#: ../../reference/configuration/ssl_multicert.config.en.rst:217
 msgid ""
 "The following examples configure Traffic Server to use the SSL certificate "
 "``server.pem`` which includes an encrypted private key. The external "
@@ -351,3 +243,221 @@ msgstr ""
 "mypass は最初の例では 1 つ引数 (foo) と共に呼ばれ、２つ目の例では 2 つの引"
 "数 (foo) と (ba r) と共に呼ばれ、プログラム (mypass) は鍵を復号化するための"
 "パスフレーズを返すでしょう。"
+
+#: ../../reference/configuration/ssl_multicert.config.en.rst:71
+msgid "ssl_cert_name=FILENAME[,FILENAME ...]"
+msgstr ""
+
+#: ../../reference/configuration/ssl_multicert.config.en.rst:50
+msgid ""
+"The name of the file containing the TLS certificate. *FILENAME* is located "
+"relative to the directory specified by the :ts:cv:`proxy.config.ssl.server."
+"cert.path` configuration variable. It may also include the intermediate CA "
+"certificates, sorted from leaf to root.  At a minimum, the file must "
+"include a leaf certificate."
+msgstr ""
+
+#: ../../reference/configuration/ssl_multicert.config.en.rst:57
+msgid ""
+"When running with OpenSSL 1.0.2 or later, this directive can be used to "
+"configure the intermediate CA chain on a per-certificate basis.  Multiple "
+"chain files are separated by comma character. For example, it is possible "
+"able to configure a ECDSA certificate chain and a RSA certificate chain and "
+"serve them simultaneously, allowing OpenSSL to determine which certificate "
+"would be used when the TLS session cipher suites are negotiated.  Note that "
+"the leaf certs in `FILENAME1` and `FILENAME2` must have the same subjects "
+"and alternate names. The first certificate is used to to match the client's "
+"SNI request."
+msgstr ""
+
+#: ../../reference/configuration/ssl_multicert.config.en.rst:68
+msgid ""
+"You can also configure multiple leaf certificates in a same chain with "
+"OpenSSL 1.0.1."
+msgstr ""
+
+#: ../../reference/configuration/ssl_multicert.config.en.rst:71
+msgid "This is the only field that is required to be present."
+msgstr ""
+
+#: ../../reference/configuration/ssl_multicert.config.en.rst:82
+msgid "dest_ip=ADDRESS (optional)"
+msgstr ""
+
+#: ../../reference/configuration/ssl_multicert.config.en.rst:74
+msgid ""
+"The IP (v4 or v6) address that the certificate should be presented on. This "
+"is now only used as a fallback in the case that the TLS "
+"SubjectNameIndication extension is not supported. If *ADDRESS* is `*`, the "
+"corresponding certificate will be used as the global default fallback if no "
+"other match can be made. The address may contain a port specifier, in which "
+"case the corresponding certificate will only match for connections accepted "
+"on the specified port. IPv6 addresses must be enclosed by square brackets "
+"if they have a port, eg, [::1]:80. Care should be taken to make each "
+"ADDRESS unique."
+msgstr ""
+
+#: ../../reference/configuration/ssl_multicert.config.en.rst:88
+msgid "ssl_key_name=FILENAME (optional)"
+msgstr ""
+
+#: ../../reference/configuration/ssl_multicert.config.en.rst:85
+msgid ""
+"The name of the file containing the private key for this certificate. If "
+"the key is contained in the certificate file, this field can be omitted, "
+"otherwise *FILENAME* is resolved relative to the :ts:cv:`proxy.config.ssl."
+"server.private_key.path` configuration variable."
+msgstr ""
+
+#: ../../reference/configuration/ssl_multicert.config.en.rst:94
+msgid "ssl_ca_name=FILENAME (optional)"
+msgstr ""
+
+#: ../../reference/configuration/ssl_multicert.config.en.rst:91
+msgid ""
+"If the certificate is issued by an authority that is not in the system CA "
+"bundle, additional certificates may be needed to validate the certificate "
+"chain. *FILENAME* is resolved relative to the :ts:cv:`proxy.config.ssl.CA."
+"cert.path` configuration variable."
+msgstr ""
+
+#: ../../reference/configuration/ssl_multicert.config.en.rst:99
+msgid "ssl_ticket_enabled=1|0 (optional)"
+msgstr ""
+
+#: ../../reference/configuration/ssl_multicert.config.en.rst:97
+msgid ""
+"Enable RFC 5077 stateless TLS session tickets. To support this, OpenSSL "
+"should be upgraded to version 0.9.8f or higher. This option must be set to "
+"`0` to disable session ticket support."
+msgstr ""
+
+#: ../../reference/configuration/ssl_multicert.config.en.rst:113
+msgid "ticket_key_name=FILENAME (optional)"
+msgstr ""
+
+#: ../../reference/configuration/ssl_multicert.config.en.rst:102
+msgid ""
+"The name of session ticket key file which contains a secret for encrypting "
+"and decrypting TLS session tickets. If *FILENAME* is not an absolute path, "
+"it is resolved relative to the :ts:cv:`proxy.config.ssl.server.cert.path` "
+"configuration variable. This option has no effect if session tickets are "
+"disabled by the ``ssl_ticket_enabled`` option.  The contents of the key "
+"file should be 48 random bytes."
+msgstr ""
+
+#: ../../reference/configuration/ssl_multicert.config.en.rst:131
+msgid "ssl_key_dialog=builtin|\"exec:/path/to/program [args]\" (optional)"
+msgstr ""
+
+#: ../../reference/configuration/ssl_multicert.config.en.rst:173
+msgid ""
+"The following example configures Traffic Server to use the ECDSA "
+"certificate chain ``ecdsa.pem`` or RSA certificate chain ``rsa.pem`` for "
+"all requests."
+msgstr ""
+
+#: ../../reference/configuration/ssl_multicert.config.en.rst:181
+msgid ""
+"The following example configures Traffic Server to use the ECDSA "
+"certificate chain ``ecdsa.pem`` or RSA certificate chain ``rsa.pem`` for "
+"all requests, the public key and private key are in separate PEM files. "
+"Note that the number of files in ssl_key_name must match the files in "
+"ssl_cert_name, and they should be presented in the same order."
+msgstr ""
+
+#~ msgid "dest_ip=ADDRESS"
+#~ msgstr "dest_ip=ADDRESS"
+
+#~ msgid ""
+#~ "The IP (v4 or v6) address that the certificate should be presented on. "
+#~ "This is now only used as a fallback in the case that the TLS "
+#~ "SubjectNameIndication extension is not supported. If `ADDRESS` is `*`, "
+#~ "the corresponding certificate will be used as the global default "
+#~ "fallback if no other match can be made.  The address may contain a port "
+#~ "specifier, in which case the corresponding certificate will only match "
+#~ "for connections accepted on the specified port. IPv6 addresses must be "
+#~ "enclosed by square brackets if they have a port, eg, [::1]:80."
+#~ msgstr ""
+#~ "証明書が提出されるべき IP アドレス (v4 か v6) です。これは現在では TLS "
+#~ "SubjectNameIndication 拡張がサポートされていない場合のフォールバックとし"
+#~ "てのみ使用されます。`ADDRESS` が `*` の場合、他にマッチするものがなければ"
+#~ "グローバルデフォルトフォールバックとして対応する証明書が使用されます。ア"
+#~ "ドレスはポート指定子を含んでもよく、その場合対応する証明書は特定のポート"
+#~ "で受け入れられたコネクションのみにマッチします。ポート指定がある場合、"
+#~ "IPv6 アドレスは角括弧で囲われていなければなりません。例、[::1]:80 。"
+
+#~ msgid "ssl_ca_name=FILENAME"
+#~ msgstr "ssl_ca_name=FILENAME"
+
+#~ msgid "ssl_cert_name=FILENAME"
+#~ msgstr "ssl_cert_name=FILENAME"
+
+#~ msgid ""
+#~ "The name of the file containing the TLS certificate. `FILENAME` is "
+#~ "located relative to the directory specified by the :ts:cv:`proxy.config."
+#~ "ssl.server.cert.path` configuration variable. This is the only field "
+#~ "that is required to be present."
+#~ msgstr ""
+#~ "TLS 証明書を含んでいるファイルの名前です。`FILENAME` は :ts:cv:`proxy."
+#~ "config.ssl.server.cert.path` 設定変数で指定されたディレクトリからの相対位"
+#~ "置です。これは設定が必要とされている唯一のフィールドです。"
+
+#~ msgid "ssl_key_name=FILENAME"
+#~ msgstr "ssl_key_name=FILENAME"
+
+#~ msgid ""
+#~ "The name of the file containing the private key for this certificate. If "
+#~ "the key is contained in the certificate file, this field can be omitted, "
+#~ "otherwise `FILENAME` is resolved relative to the :ts:cv:`proxy.config."
+#~ "ssl.server.private_key.path` configuration variable."
+#~ msgstr ""
+#~ "この証明書のための秘密鍵を含んでいるファイルの名前です。もし鍵が証明書に"
+#~ "含まれている場合、このフィールドは省略可能です。そうでは無い場合、"
+#~ "`FILENAME` は :ts:cv:`proxy.config.ssl.server.private_key.path` 設定変数"
+#~ "からの相対で解決されます。"
+
+#~ msgid ""
+#~ "If the certificate is issued by an authority that is not in the system "
+#~ "CA bundle, additional certificates may be needed to validate the "
+#~ "certificate chain. `FILENAME` is resolved relative to the :ts:cv:`proxy."
+#~ "config.ssl.CA.cert.path` configuration variable."
+#~ msgstr ""
+#~ "システムの CA バンドルにない認証局によって発行された証明書では、証明書"
+#~ "チェーンの検証のために追加の証明書が必要になることがあります。`FILENAME` "
+#~ "は :ts:cv:`proxy.config.ssl.CA.cert.path` 設定変数からの相対で解決されま"
+#~ "す。"
+
+#~ msgid "ssl_ticket_enabled=1|0"
+#~ msgstr "ssl_ticket_enabled=1|0"
+
+#~ msgid ""
+#~ "Enable :rfc:`5077` stateless TLS session tickets. To support this, "
+#~ "OpenSSL should be upgraded to version 0.9.8f or higher. This option must "
+#~ "be set to `0` to disable session ticket support."
+#~ msgstr ""
+#~ ":rfc:`5077` ステートレス TLS セッションチケットを有効化します。これに対応"
+#~ "するには OpenSSL がバージョン 0.9.8f 以上にアップグレードされている必要が"
+#~ "あります。このオプションはセッションチケットのサポートを無効化するために "
+#~ "`0` に設定されなければなりません。"
+
+#~ msgid "ticket_key_name=FILENAME"
+#~ msgstr "ticket_key_name=FILENAME"
+
+#~ msgid ""
+#~ "The name of session ticket key file which contains a secret for "
+#~ "encrypting and decrypting TLS session tickets. If `FILENAME` is not an "
+#~ "absolute path, it is resolved relative to the :ts:cv:`proxy.config.ssl."
+#~ "server.cert.path` configuration variable. This option has no effect if "
+#~ "session tickets are disabled by the ``ssl_ticket_enabled`` option.  The "
+#~ "contents of the key file should be 48 random bytes."
+#~ msgstr ""
+#~ "TSL セッションの暗号化と復号化のための秘密情報を含むセッションチケット"
+#~ "キーファイルの名前です。もし `FILENAME` が絶対パスではない場合、:ts:cv:"
+#~ "`proxy.config.ssl.server.cert.path` 設定変数からの相対で解決されます。こ"
+#~ "のオプションは ``ssl_ticket_enabled`` オプションでセッションチケットが無"
+#~ "効化されている場合には効果をもちません。キーファイルの内容はランダムな "
+#~ "48 バイトのはずです。"
+
+#~ msgid "ssl_key_dialog=builtin|\"exec:/path/to/program [args]\""
+#~ msgstr "ssl_key_dialog=builtin|\"exec:/path/to/program [args]\""

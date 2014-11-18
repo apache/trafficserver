@@ -103,17 +103,6 @@ msgid ""
 "Display specific performance statistics or a current configuration setting."
 msgstr "特定のパフォーマンス統計や現在の設定を表示します。"
 
-#: ../../reference/commands/traffic_line.en.rst:86
-msgid ""
-"Set the configuration variable named `VAR`. The value of the configuration "
-"variable is given by the :option:`traffic_line -v` option. Refer to the :"
-"file:`records.config` documentation for a list of the configuration "
-"variables you can specify."
-msgstr ""
-"`VAR` という名前の設定変数をセットします。設定変数の値は :option:"
-"`traffic_line -v` オプションで与えられます。記述できる設定変数のリストについ"
-"ては :file:`records.config` のドキュメントを参照してください。"
-
 #: ../../reference/commands/traffic_line.en.rst:93
 msgid "Shut down Traffic Server on the local node."
 msgstr "ローカルノードの Traffic Server をシャットダウンします。"
@@ -146,19 +135,19 @@ msgstr "クラスター内のパフォーマンス統計をゼロにリセット
 msgid "Reset performance statistics to zero on the local node."
 msgstr "ローカルノードのパフォーマンス統計をゼロにリセットします。"
 
-#: ../../reference/commands/traffic_line.en.rst:146
+#: ../../reference/commands/traffic_line.en.rst:145
 msgid "Performance Statistics"
 msgstr "パフォーマンス統計"
 
-#: ../../reference/commands/traffic_line.en.rst:248
+#: ../../reference/commands/traffic_line.en.rst:247
 msgid "Examples"
 msgstr "例"
 
-#: ../../reference/commands/traffic_line.en.rst:250
+#: ../../reference/commands/traffic_line.en.rst:249
 msgid "Configure Traffic Server to log in Squid format::"
 msgstr "Squid フォーマットでログを取るように Traffic Server を設定するには"
 
-#: ../../reference/commands/traffic_line.en.rst:257
+#: ../../reference/commands/traffic_line.en.rst:256
 msgid "See also"
 msgstr "参照"
 
@@ -206,11 +195,11 @@ msgstr ""
 "すべてのパフォーマンス統計もしくは与えられた正規表現にマッチする名前をもつ設"
 "定変数の現在の値を表示します。"
 
-#: ../../reference/commands/traffic_line.en.rst:150
+#: ../../reference/commands/traffic_line.en.rst:149
 msgid "proxy.process.ssl.user_agent_other_errors"
 msgstr "proxy.process.ssl.user_agent_other_errors"
 
-#: ../../reference/commands/traffic_line.en.rst:149
+#: ../../reference/commands/traffic_line.en.rst:148
 msgid ""
 "Total number of *other* ssl client connection errors (counts ssl errors "
 "that are not captured in other user agent stats below)"
@@ -218,86 +207,86 @@ msgstr ""
 "*その他*\\ の クライアント側の SSL 接続エラーの総数 ( 以下のその他のユーザー"
 "エージェント統計に数えられない SSL エラーをカウントします )"
 
-#: ../../reference/commands/traffic_line.en.rst:154
+#: ../../reference/commands/traffic_line.en.rst:153
 msgid "proxy.process.ssl.user_agent_expired_cert"
 msgstr "proxy.process.ssl.user_agent_expired_cert"
 
-#: ../../reference/commands/traffic_line.en.rst:153
+#: ../../reference/commands/traffic_line.en.rst:152
 msgid ""
 "Total number of ssl client connection failures where the cert was expired."
 msgstr "証明書の期限切れによるクライアント側の SSL 接続の失敗の総数"
 
-#: ../../reference/commands/traffic_line.en.rst:158
+#: ../../reference/commands/traffic_line.en.rst:157
 msgid "proxy.process.ssl.user_agent_revoked_cert"
 msgstr "proxy.process.ssl.user_agent_revoked_cert"
 
-#: ../../reference/commands/traffic_line.en.rst:157
+#: ../../reference/commands/traffic_line.en.rst:156
 msgid ""
 "Total number of ssl client connection failures where the cert was revoked."
 msgstr "証明書の失効によるクライアント側の SSL 接続の失敗の総数"
 
-#: ../../reference/commands/traffic_line.en.rst:162
+#: ../../reference/commands/traffic_line.en.rst:161
 msgid "proxy.process.ssl.user_agent_unknown_cert"
 msgstr "proxy.process.ssl.user_agent_unknown_cert"
 
-#: ../../reference/commands/traffic_line.en.rst:161
+#: ../../reference/commands/traffic_line.en.rst:160
 msgid ""
 "Total number of ssl client connection failures related to the cert, but "
 "specific error was unknown."
 msgstr "原因不明な証明書に関するクライアント側の SSL 接続の失敗の総数"
 
-#: ../../reference/commands/traffic_line.en.rst:166
+#: ../../reference/commands/traffic_line.en.rst:165
 msgid "proxy.process.ssl.user_agent_cert_verify_failed"
 msgstr "proxy.process.ssl.user_agent_cert_verify_failed"
 
-#: ../../reference/commands/traffic_line.en.rst:165
+#: ../../reference/commands/traffic_line.en.rst:164
 msgid ""
 "Total number of ssl client connection failures where cert verification "
 "failed."
 msgstr "証明書の検証失敗によるクライアント側の SSL 接続の失敗の総数"
 
-#: ../../reference/commands/traffic_line.en.rst:169
+#: ../../reference/commands/traffic_line.en.rst:168
 msgid "proxy.process.ssl.user_agent_bad_cert"
 msgstr "proxy.process.ssl.user_agent_bad_cert"
 
-#: ../../reference/commands/traffic_line.en.rst:169
+#: ../../reference/commands/traffic_line.en.rst:168
 msgid "Total number of ssl client connection failures where the cert is bad."
 msgstr "証明書の異常によるクライアント側の SSL 接続の失敗の総数"
 
-#: ../../reference/commands/traffic_line.en.rst:173
+#: ../../reference/commands/traffic_line.en.rst:172
 msgid "proxy.process.ssl.user_agent_decryption_failed"
 msgstr "proxy.process.ssl.user_agent_decryption_failed"
 
-#: ../../reference/commands/traffic_line.en.rst:172
+#: ../../reference/commands/traffic_line.en.rst:171
 msgid ""
 "Total number of ssl client connection decryption failures (during "
 "negotiation)."
 msgstr ""
 "クライアント側の SSL 接続における ( ネゴシエーション中の ) 復号化失敗の総数"
 
-#: ../../reference/commands/traffic_line.en.rst:177
+#: ../../reference/commands/traffic_line.en.rst:176
 msgid "proxy.process.ssl.user_agent_wrong_version"
 msgstr "proxy.process.ssl.user_agent_wrong_version"
 
-#: ../../reference/commands/traffic_line.en.rst:176
+#: ../../reference/commands/traffic_line.en.rst:175
 msgid ""
 "Total number of ssl client connections that provided an invalid protocol "
 "version."
 msgstr "無効なプロトコルバージョンを渡したクライアント側の SSL 接続の総数"
 
-#: ../../reference/commands/traffic_line.en.rst:180
+#: ../../reference/commands/traffic_line.en.rst:179
 msgid "proxy.process.ssl.user_agent_unknown_ca"
 msgstr "proxy.process.ssl.user_agent_unknown_ca"
 
-#: ../../reference/commands/traffic_line.en.rst:180
+#: ../../reference/commands/traffic_line.en.rst:179
 msgid "Total number of ssl client connection that failed due to unknown ca."
 msgstr "不明な CA により失敗したクライアント側の SSL 接続の総数"
 
-#: ../../reference/commands/traffic_line.en.rst:184
+#: ../../reference/commands/traffic_line.en.rst:183
 msgid "proxy.process.ssl.origin_server_other_errors"
 msgstr "proxy.process.ssl.origin_server_other_errors"
 
-#: ../../reference/commands/traffic_line.en.rst:183
+#: ../../reference/commands/traffic_line.en.rst:182
 msgid ""
 "Total number of *other* ssl origin server connection errors (counts ssl "
 "errors that are not captured in other origin server stats below)."
@@ -305,60 +294,60 @@ msgstr ""
 "*その他*\\ のオリジンサーバー側の SSL 接続エラーの総数 ( 以下のその他のオリ"
 "ジンサーバー統計に数えられない SSL エラーをカウントします )"
 
-#: ../../reference/commands/traffic_line.en.rst:188
+#: ../../reference/commands/traffic_line.en.rst:187
 msgid "proxy.process.ssl.origin_server_expired_cert"
 msgstr "proxy.process.ssl.origin_server_expired_cert"
 
-#: ../../reference/commands/traffic_line.en.rst:187
+#: ../../reference/commands/traffic_line.en.rst:186
 msgid ""
 "Total number of ssl origin server connection failures where the cert was "
 "expired."
 msgstr "証明書の期限切れによるオリジンサーバー側の SSL 接続の失敗の総数"
 
-#: ../../reference/commands/traffic_line.en.rst:192
+#: ../../reference/commands/traffic_line.en.rst:191
 msgid "proxy.process.ssl.origin_server_revoked_cert"
 msgstr "proxy.process.ssl.origin_server_revoked_cert"
 
-#: ../../reference/commands/traffic_line.en.rst:191
+#: ../../reference/commands/traffic_line.en.rst:190
 msgid ""
 "Total number of ssl origin server connection failures where the cert was "
 "revoked."
 msgstr "証明書の失効によるオリジンサーバー側の SSL 接続の失敗の総数"
 
-#: ../../reference/commands/traffic_line.en.rst:196
+#: ../../reference/commands/traffic_line.en.rst:195
 msgid "proxy.process.ssl.origin_server_unknown_cert"
 msgstr "proxy.process.ssl.origin_server_unknown_cert"
 
-#: ../../reference/commands/traffic_line.en.rst:195
+#: ../../reference/commands/traffic_line.en.rst:194
 msgid ""
 "Total number of ssl origin server connection failures related to the cert "
 "where specific error was unknown."
 msgstr "原因不明な証明書に関するオリジンサーバー側の SSL 接続の失敗の総数"
 
-#: ../../reference/commands/traffic_line.en.rst:200
+#: ../../reference/commands/traffic_line.en.rst:199
 msgid "proxy.process.ssl.origin_server_cert_verify_failed"
 msgstr "proxy.process.ssl.origin_server_cert_verify_failed"
 
-#: ../../reference/commands/traffic_line.en.rst:199
+#: ../../reference/commands/traffic_line.en.rst:198
 msgid ""
 "Total number of ssl origin server connection failures where cert "
 "verification failed."
 msgstr "証明書の検証失敗によるオリジンサーバー側の SSL 接続の失敗の総数"
 
-#: ../../reference/commands/traffic_line.en.rst:204
+#: ../../reference/commands/traffic_line.en.rst:203
 msgid "proxy.process.ssl.origin_server_bad_cert"
 msgstr "proxy.process.ssl.origin_server_bad_cert"
 
-#: ../../reference/commands/traffic_line.en.rst:203
+#: ../../reference/commands/traffic_line.en.rst:202
 msgid ""
 "Total number of ssl origin server connection failures where the cert is bad."
 msgstr "証明書の異常によるオリジンサーバー側の SSL 接続の失敗の総数"
 
-#: ../../reference/commands/traffic_line.en.rst:208
+#: ../../reference/commands/traffic_line.en.rst:207
 msgid "proxy.process.ssl.origin_server_decryption_failed"
 msgstr "proxy.process.ssl.origin_server_decryption_failed"
 
-#: ../../reference/commands/traffic_line.en.rst:207
+#: ../../reference/commands/traffic_line.en.rst:206
 msgid ""
 "Total number of ssl origin server connection decryption failures (during "
 "negotiation)."
@@ -366,38 +355,38 @@ msgstr ""
 "オリジンサーバー側の SSL 接続における ( ネゴシエーション中の ) 復号化失敗の"
 "総数"
 
-#: ../../reference/commands/traffic_line.en.rst:212
+#: ../../reference/commands/traffic_line.en.rst:211
 msgid "proxy.process.ssl.origin_server_wrong_version"
 msgstr "proxy.process.ssl.origin_server_wrong_version"
 
-#: ../../reference/commands/traffic_line.en.rst:211
+#: ../../reference/commands/traffic_line.en.rst:210
 msgid ""
 "Total number of ssl origin server connections that provided an invalid "
 "protocol version."
 msgstr "無効なプロトコルバージョンを渡したオリジンサーバー側の SSL 接続の総数"
 
-#: ../../reference/commands/traffic_line.en.rst:216
+#: ../../reference/commands/traffic_line.en.rst:215
 msgid "proxy.process.ssl.origin_server_unknown_ca"
 msgstr "proxy.process.ssl.origin_server_unknown_ca"
 
-#: ../../reference/commands/traffic_line.en.rst:215
+#: ../../reference/commands/traffic_line.en.rst:214
 msgid ""
 "Total number of ssl origin server connection that failed due to unknown ca."
 msgstr "不明な CA により失敗したオリジンサーバー側の SSL 接続の総数"
 
-#: ../../reference/commands/traffic_line.en.rst:219
+#: ../../reference/commands/traffic_line.en.rst:218
 msgid "proxy.process.ssl.user_agent_sessions"
 msgstr "proxy.process.ssl.user_agent_sessions"
 
-#: ../../reference/commands/traffic_line.en.rst:219
+#: ../../reference/commands/traffic_line.en.rst:218
 msgid "Total number of ssl/tls sessions created."
 msgstr "作成された SSL/TLS セッションの総数"
 
-#: ../../reference/commands/traffic_line.en.rst:223
+#: ../../reference/commands/traffic_line.en.rst:222
 msgid "proxy.process.ssl.user_agent_session_hit"
 msgstr "proxy.process.ssl.user_agent_session_hit"
 
-#: ../../reference/commands/traffic_line.en.rst:222
+#: ../../reference/commands/traffic_line.en.rst:221
 msgid ""
 "Total number of session hits.  A previous session was reused which resulted "
 "in an abbreviated ssl client negotiation."
@@ -405,11 +394,11 @@ msgstr ""
 "セッションヒットの総数。SSL クライアントのネゴシエーションが省略され、前回の"
 "セッションが再利用された。"
 
-#: ../../reference/commands/traffic_line.en.rst:227
+#: ../../reference/commands/traffic_line.en.rst:226
 msgid "proxy.process.ssl.user_agent_session_miss"
 msgstr "proxy.process.ssl.user_agent_session_miss"
 
-#: ../../reference/commands/traffic_line.en.rst:226
+#: ../../reference/commands/traffic_line.en.rst:225
 msgid ""
 "Total number of session misses.  The ssl client provided a session id that "
 "was not found in cache and, therefore, could not be used."
@@ -417,11 +406,11 @@ msgstr ""
 "セッションミスの総数。SSL クライアントがセッション ID を提供したがキャッシュ"
 "内に見つからず使用できなかった。"
 
-#: ../../reference/commands/traffic_line.en.rst:231
+#: ../../reference/commands/traffic_line.en.rst:230
 msgid "proxy.process.ssl.user_agent_session_timeout"
 msgstr "proxy.process.ssl.user_agent_session_timeout"
 
-#: ../../reference/commands/traffic_line.en.rst:230
+#: ../../reference/commands/traffic_line.en.rst:229
 msgid ""
 "Total number of session timeouts.  The ssl client provided a session, but "
 "it could not be used because it was past the session timeout."
@@ -429,11 +418,11 @@ msgstr ""
 "セッションタイムアウトの総数。SSL クライアントがセッションを提供したが、セッ"
 "ションタイムアウトを経過していたので使用できなかった。"
 
-#: ../../reference/commands/traffic_line.en.rst:245
+#: ../../reference/commands/traffic_line.en.rst:244
 msgid "proxy.process.ssl.cipher.user_agent.{CIPHERNAME}"
 msgstr "proxy.process.ssl.cipher.user_agent.{CIPHERNAME}"
 
-#: ../../reference/commands/traffic_line.en.rst:234
+#: ../../reference/commands/traffic_line.en.rst:233
 msgid ""
 "Total number of ssl client connections that used cipherName.  The list of "
 "cipher statistics is dynamic and depends upon the installed ciphers and "
@@ -446,6 +435,24 @@ msgstr ""
 "cipher_suite` の設定によります。指定できる chiper 統計の一覧は :option:"
 "`traffic_line -m` で確認できます。例::"
 
-#: ../../reference/commands/traffic_line.en.rst:259
+#: ../../reference/commands/traffic_line.en.rst:258
 msgid ":manpage:`records.config(5)`, :manpage:`storage.config(5)`"
 msgstr ":manpage:`records.config(5)`, :manpage:`storage.config(5)`"
+
+#: ../../reference/commands/traffic_line.en.rst:86
+msgid ""
+"Set the configuration variable named *VAR*. The value of the configuration "
+"variable is given by the :option:`traffic_line -v` option. Refer to the :"
+"file:`records.config` documentation for a list of the configuration "
+"variables you can specify."
+msgstr ""
+
+#~ msgid ""
+#~ "Set the configuration variable named `VAR`. The value of the "
+#~ "configuration variable is given by the :option:`traffic_line -v` option. "
+#~ "Refer to the :file:`records.config` documentation for a list of the "
+#~ "configuration variables you can specify."
+#~ msgstr ""
+#~ "`VAR` という名前の設定変数をセットします。設定変数の値は :option:"
+#~ "`traffic_line -v` オプションで与えられます。記述できる設定変数のリストに"
+#~ "ついては :file:`records.config` のドキュメントを参照してください。"

@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -78,11 +77,11 @@ msgstr ""
 "func:`TSHttpTxnConfigFind` に渡すことで間接的に使用でき、この関数は文字列が"
 "上書き可能な値に一致した場合にキーとデータ型を返します。"
 
-#: ../../reference/api/TSHttpOverridableConfig.en.rst:139
+#: ../../reference/api/TSHttpOverridableConfig.en.rst:141
 msgid "Examples"
 msgstr "例"
 
-#: ../../reference/api/TSHttpOverridableConfig.en.rst:141
+#: ../../reference/api/TSHttpOverridableConfig.en.rst:143
 msgid ""
 "Enable :ref:`transaction buffer control <transaction-buffering-control>` "
 "with a high water mark of 262144 and a low water mark of 65536. ::"
@@ -90,11 +89,11 @@ msgstr ""
 ":ref:`transaction-buffering-control` を high water マーク 262144 と low "
 "water マーク 65536 で有効化します。\\ ::"
 
-#: ../../reference/api/TSHttpOverridableConfig.en.rst:153
+#: ../../reference/api/TSHttpOverridableConfig.en.rst:155
 msgid "See also"
 msgstr "参考"
 
-#: ../../reference/api/TSHttpOverridableConfig.en.rst:154
+#: ../../reference/api/TSHttpOverridableConfig.en.rst:156
 msgid ":manpage:`TSAPI(3ts)`"
 msgstr ":manpage:`TSAPI(3ts)`"
 
