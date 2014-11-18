@@ -158,7 +158,7 @@ SSLConfigParams::initialize()
   REC_ReadConfigInt32(clientCertLevel, "proxy.config.ssl.client.certification_level");
   REC_ReadConfigStringAlloc(cipherSuite, "proxy.config.ssl.server.cipher_suite");
   REC_ReadConfigStringAlloc(client_cipherSuite, "proxy.config.ssl.client.cipher_suite");
-  REC_ReadConfigStringAlloc(dhparamsFile, "proxy.config.ssl.server.dhparams_file");
+  dhparamsFile = RecConfigReadConfigPath("proxy.config.ssl.server.dhparams_file");
 
   int options;
   int client_ssl_options;
