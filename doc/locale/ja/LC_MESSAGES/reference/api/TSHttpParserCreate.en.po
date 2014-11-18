@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -30,19 +29,19 @@ msgstr ""
 msgid "TSHttpParserCreate"
 msgstr ""
 
-#: ../../reference/api/TSHttpParserCreate.en.rst:25
+#: ../../reference/api/TSHttpParserCreate.en.rst:27
 msgid "Synopsis"
 msgstr ""
 
-#: ../../reference/api/TSHttpParserCreate.en.rst:27
+#: ../../reference/api/TSHttpParserCreate.en.rst:29
 msgid "`#include <ts/ts.h>`"
 msgstr ""
 
-#: ../../reference/api/TSHttpParserCreate.en.rst:36
+#: ../../reference/api/TSHttpParserCreate.en.rst:38
 msgid "Description"
 msgstr ""
 
-#: ../../reference/api/TSHttpParserCreate.en.rst:38
+#: ../../reference/api/TSHttpParserCreate.en.rst:40
 msgid ""
 ":func:`TSHttpParserCreate` creates an HTTP parser object. The parser's data "
 "structure contains information about the header being parsed. A single HTTP "
@@ -50,7 +49,7 @@ msgid ""
 "used again, the parser must be cleared by calling :func:`TSHttpParserClear`."
 msgstr ""
 
-#: ../../reference/api/TSHttpParserCreate.en.rst:44
+#: ../../reference/api/TSHttpParserCreate.en.rst:46
 msgid ""
 ":func:`TSHttpHdrParseReq` parses an HTTP request header. The HTTP header :"
 "data:`offset` must already be created, and must reside inside the marshal "
@@ -60,7 +59,7 @@ msgid ""
 "data:`start` is modified to point past the last character parsed."
 msgstr ""
 
-#: ../../reference/api/TSHttpParserCreate.en.rst:52
+#: ../../reference/api/TSHttpParserCreate.en.rst:54
 msgid ""
 "It is possible to parse an HTTP request header a single byte at a time "
 "using repeated calls to :func:`TSHttpHdrParseReq`. As long as an error does "
@@ -69,30 +68,30 @@ msgid ""
 "data:`TS_HTTP_READ_REQUEST_HDR_HOOK`."
 msgstr ""
 
-#: ../../reference/api/TSHttpParserCreate.en.rst:58
+#: ../../reference/api/TSHttpParserCreate.en.rst:60
 msgid ""
 ":func:`TSHttpHdrParseResp` operates in the same manner as :func:"
 "`TSHttpHdrParseReq` except it parses an HTTP response header. It should be "
 "called after :data:`TS_HTTP_READ_RESPONSE_HDR_HOOK`."
 msgstr ""
 
-#: ../../reference/api/TSHttpParserCreate.en.rst:62
+#: ../../reference/api/TSHttpParserCreate.en.rst:64
 msgid ""
 ":func:`TSHttpParserClear` clears the specified HTTP parser so it may be "
 "used again."
 msgstr ""
 
-#: ../../reference/api/TSHttpParserCreate.en.rst:65
+#: ../../reference/api/TSHttpParserCreate.en.rst:67
 msgid ""
 ":func:`TSHttpParserDestroy` destroys the TSHttpParser object pointed to by :"
 "data:`parser`. The :data:`parser` pointer must not be NULL."
 msgstr ""
 
-#: ../../reference/api/TSHttpParserCreate.en.rst:69
+#: ../../reference/api/TSHttpParserCreate.en.rst:71
 msgid "Return values"
 msgstr ""
 
-#: ../../reference/api/TSHttpParserCreate.en.rst:71
+#: ../../reference/api/TSHttpParserCreate.en.rst:73
 msgid ""
 ":func:`TSHttpHdrParseReq` and :func:`TSHttpHdrParseResp` both return a :"
 "type:`TSParseResult` value. :data:`TS_PARSE_ERROR` is returned on error, :"
@@ -102,21 +101,25 @@ msgid ""
 "indicating the end of the header."
 msgstr ""
 
-#: ../../reference/api/TSHttpParserCreate.en.rst:79
+#: ../../reference/api/TSHttpParserCreate.en.rst:81
 msgid "Bugs"
 msgstr ""
 
-#: ../../reference/api/TSHttpParserCreate.en.rst:81
+#: ../../reference/api/TSHttpParserCreate.en.rst:83
 msgid ""
 "The distinction between the :data:`TS_PARSE_DONE` and :data:`TS_PARSE_OK` "
 "results is not well-defined. Plugins should expect both status codes and "
 "treat them equivalently."
 msgstr ""
 
-#: ../../reference/api/TSHttpParserCreate.en.rst:86
+#: ../../reference/api/TSHttpParserCreate.en.rst:88
 msgid "See also"
 msgstr ""
 
-#: ../../reference/api/TSHttpParserCreate.en.rst:87
+#: ../../reference/api/TSHttpParserCreate.en.rst:89
 msgid ":manpage:`TSAPI(3ts)`"
+msgstr ""
+
+#: ../../reference/api/TSHttpParserCreate.en.rst:24
+msgid "Parse HTTP headers from memory buffers."
 msgstr ""

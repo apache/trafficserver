@@ -29,16 +29,6 @@ msgstr ""
 msgid "Thread Functions"
 msgstr ""
 
-#: ../../sdk/misc-interface-guide/thread-functions.en.rst:21
-msgid ""
-"The Traffic Server API thread functions enable you to create, destroy, and "
-"identify threads within Traffic Server. Multithreading enables a single "
-"program to have more than one stream of execution and to process more than "
-"one transaction at a time. Threads serialize their access to shared "
-"resources and data using the ``TSMutex`` type, as described in `Mutexes <../"
-"mutex-guide/#Mutexes>`__."
-msgstr ""
-
 #: ../../sdk/misc-interface-guide/thread-functions.en.rst:28
 msgid "The thread functions are listed below:"
 msgstr ""
@@ -57,4 +47,14 @@ msgstr ""
 
 #: ../../sdk/misc-interface-guide/thread-functions.en.rst:33
 msgid ":c:func:`TSThreadSelf`"
+msgstr ""
+
+#: ../../sdk/misc-interface-guide/thread-functions.en.rst:21
+msgid ""
+"The Traffic Server API thread functions enable you to create, destroy, and "
+"identify threads within Traffic Server. Multithreading enables a single "
+"program to have more than one stream of execution and to process more than "
+"one transaction at a time. Threads serialize their access to shared "
+"resources and data using the ``TSMutex`` type, as described in :ref:"
+"`Mutexes`."
 msgstr ""

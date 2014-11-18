@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -30,19 +29,19 @@ msgstr ""
 msgid "TSmalloc"
 msgstr "TSmalloc"
 
-#: ../../reference/api/TSmalloc.en.rst:25
+#: ../../reference/api/TSmalloc.en.rst:27
 msgid "Synopsis"
 msgstr "概要"
 
-#: ../../reference/api/TSmalloc.en.rst:27
+#: ../../reference/api/TSmalloc.en.rst:29
 msgid "`#include <ts/ts.h>`"
 msgstr "`#include <ts/ts.h>`"
 
-#: ../../reference/api/TSmalloc.en.rst:38
+#: ../../reference/api/TSmalloc.en.rst:40
 msgid "Description"
 msgstr "解説"
 
-#: ../../reference/api/TSmalloc.en.rst:40
+#: ../../reference/api/TSmalloc.en.rst:42
 msgid ""
 "Traffic Server provides a number of routines for allocating and freeing "
 "memory. These routines correspond to similar routines in the C library. For "
@@ -67,7 +66,7 @@ msgstr ""
 "ることです。この追跡はとても優れており、常に有効化され、メモリーリークを探し"
 "出すのに便利です。"
 
-#: ../../reference/api/TSmalloc.en.rst:51
+#: ../../reference/api/TSmalloc.en.rst:53
 msgid ""
 ":func:`TSmalloc` returns a pointer to size bytes of memory allocated from "
 "the heap. Traffic Server uses :func:`TSmalloc` internally for memory "
@@ -79,7 +78,7 @@ msgstr ""
 "`TSmalloc` を使用します。:func:`TSmalloc` で割り当てられたメモリーを解放する"
 "には常に :func:`TSfree` を使用し、:func:`free` は使用しないでください。"
 
-#: ../../reference/api/TSmalloc.en.rst:67
+#: ../../reference/api/TSmalloc.en.rst:69
 msgid ""
 ":func:`TSstrlcpy` copies up to size - 1 characters from the NUL-terminated "
 "string src to dst, NUL-terminating the result."
@@ -87,7 +86,7 @@ msgstr ""
 ":func:`TSstrlcpy` は NUL 終端文字列 src から dst に size - 1 文字までコピー"
 "し、結果を NUL 終端します。`"
 
-#: ../../reference/api/TSmalloc.en.rst:70
+#: ../../reference/api/TSmalloc.en.rst:72
 msgid ""
 ":func:`TSstrlcat` appends the NUL-terminated string src to the end of dst. "
 "It will append at most size - strlen(dst) - 1 bytes, NUL-terminating the "
@@ -96,7 +95,7 @@ msgstr ""
 ":func:`TSstrlcat` は NUL 終端文字列 src を dst の終わりに追加します。これは"
 "最大で size - strlen(dst) - 1 を追加し、結果を NUL 終端します。"
 
-#: ../../reference/api/TSmalloc.en.rst:74
+#: ../../reference/api/TSmalloc.en.rst:76
 msgid ""
 ":func:`TSfree` releases the memory allocated by :func:`TSmalloc` or :func:"
 "`TSrealloc`. If ptr is :data:`NULL`, :func:`TSfree` does no operation."
@@ -105,15 +104,15 @@ msgstr ""
 "られたメモリーを解放します。ptr が :data:`NULL` の場合、:func:`TSfree` は何"
 "も行いません。"
 
-#: ../../reference/api/TSmalloc.en.rst:78
+#: ../../reference/api/TSmalloc.en.rst:80
 msgid "See also"
 msgstr "参考"
 
-#: ../../reference/api/TSmalloc.en.rst:79
+#: ../../reference/api/TSmalloc.en.rst:81
 msgid ":manpage:`TSAPI(3ts)`"
 msgstr ":manpage:`TSAPI(3ts)`"
 
-#: ../../reference/api/TSmalloc.en.rst:56
+#: ../../reference/api/TSmalloc.en.rst:58
 msgid ""
 ":func:`TSstrdup` returns a pointer to a new string that is a duplicate of "
 "the string pointed to by str. The memory for the new string is allocated "
@@ -135,3 +134,7 @@ msgstr ""
 "列値を NUL 終端文字列値に変換するのにとても便利です。新しい文字列のメモリー"
 "は :func:`TSmalloc` を使用して割り当てられ、:func:`TSfree` の呼び出しに酔っ"
 "て解放されるべきです。"
+
+#: ../../reference/api/TSmalloc.en.rst:24
+msgid "Traffic Server memory allocation API."
+msgstr ""

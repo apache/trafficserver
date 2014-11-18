@@ -35,11 +35,11 @@ msgid ""
 "mutex interface."
 msgstr ""
 
-#: ../../sdk/mutex-guide.en.rst:28
+#: ../../sdk/mutex-guide.en.rst:30
 msgid "Mutexes"
 msgstr ""
 
-#: ../../sdk/mutex-guide.en.rst:30
+#: ../../sdk/mutex-guide.en.rst:32
 msgid ""
 "A **mutex** is the basic synchronization method used within Traffic Server "
 "to protect data from simultaneous access by multiple threads. A mutex acts "
@@ -47,7 +47,7 @@ msgid ""
 "another thread."
 msgstr ""
 
-#: ../../sdk/mutex-guide.en.rst:35
+#: ../../sdk/mutex-guide.en.rst:37
 msgid ""
 "The Traffic Server API provides two functions that attempt to access and "
 "lock the data: ``InkMutexLockTry`` and ``TSMutexLock``. **``TSMutexLock``** "
@@ -62,7 +62,7 @@ msgid ""
 "impact."
 msgstr ""
 
-#: ../../sdk/mutex-guide.en.rst:47
+#: ../../sdk/mutex-guide.en.rst:49
 msgid ""
 "**``TSMutexLockTry``**, on the other hand, attempts to lock the mutex only "
 "if it is unlocked (i.e., not being used by another thread). It should be "
@@ -71,31 +71,31 @@ msgid ""
 "attempt (which must be at least 10 milliseconds later)."
 msgstr ""
 
-#: ../../sdk/mutex-guide.en.rst:54
+#: ../../sdk/mutex-guide.en.rst:56
 msgid ""
 "In general, you should use ``TSMutexLockTry`` instead of ``TSMutexLock``."
 msgstr ""
 
-#: ../../sdk/mutex-guide.en.rst:57
+#: ../../sdk/mutex-guide.en.rst:59
 msgid ""
 "``InkMutexLockTry`` is required if you are tying to lock Traffic Server "
 "internal or system resources (such as the network, cache, event processor, "
 "HTTP state machines, and IO buffers)."
 msgstr ""
 
-#: ../../sdk/mutex-guide.en.rst:61
+#: ../../sdk/mutex-guide.en.rst:63
 msgid ""
 "``InkMutexLockTry`` is required if you are making any blocking calls (such "
 "as network, cache, or file IO calls)."
 msgstr ""
 
-#: ../../sdk/mutex-guide.en.rst:64
+#: ../../sdk/mutex-guide.en.rst:66
 msgid ""
 "``TSMutexLock`` might *not* be necessary if you are not making blocking "
 "calls and if you are only accessing local resources."
 msgstr ""
 
-#: ../../sdk/mutex-guide.en.rst:67
+#: ../../sdk/mutex-guide.en.rst:69
 msgid ""
 "The Traffic Server API uses the ``TSMutex`` type for a mutex. There are two "
 "typical uses of mutex. One use is for locking global data or data shared by "
@@ -104,68 +104,68 @@ msgid ""
 "continuations)."
 msgstr ""
 
-#: ../../sdk/mutex-guide.en.rst:74
+#: ../../sdk/mutex-guide.en.rst:76
 msgid "Locking Global Data"
 msgstr ""
 
-#: ../../sdk/mutex-guide.en.rst:87
+#: ../../sdk/mutex-guide.en.rst:86
 msgid "General guidelines for locking shared data are as follows:"
 msgstr ""
 
-#: ../../sdk/mutex-guide.en.rst:104
+#: ../../sdk/mutex-guide.en.rst:103
 msgid "Protecting a Continuation's Data"
 msgstr ""
 
-#: ../../sdk/mutex-guide.en.rst:106
+#: ../../sdk/mutex-guide.en.rst:105
 msgid ""
 "You must create a mutex to protect a continuation's data if it might be "
 "accessed by other continuations or processes. Here's how:"
 msgstr ""
 
-#: ../../sdk/mutex-guide.en.rst:128
+#: ../../sdk/mutex-guide.en.rst:125
 msgid ""
 "If any other functions want to access ``contp``'s data, then it is up to "
 "them to get ``contp``'s mutex (using, for example, ``TSContMutexGet``) to "
 "lock it. For usage, ssee the sample Protocol plugin."
 msgstr ""
 
-#: ../../sdk/mutex-guide.en.rst:133
+#: ../../sdk/mutex-guide.en.rst:130
 msgid "How to Associate a Continuation With Every HTTP Transaction"
 msgstr ""
 
-#: ../../sdk/mutex-guide.en.rst:135
+#: ../../sdk/mutex-guide.en.rst:132
 msgid ""
 "There could be several reasons why you'd want to create a continuation for "
 "each HTTP transaction that calls back your plugin."
 msgstr ""
 
-#: ../../sdk/mutex-guide.en.rst:138
+#: ../../sdk/mutex-guide.en.rst:135
 msgid "Some potential scenarios are listed below."
 msgstr ""
 
-#: ../../sdk/mutex-guide.en.rst:140
+#: ../../sdk/mutex-guide.en.rst:137
 msgid ""
 "You want to register hooks locally with the new continuation instead of "
 "registering them globally to the continuation plugin."
 msgstr ""
 
-#: ../../sdk/mutex-guide.en.rst:143
+#: ../../sdk/mutex-guide.en.rst:140
 msgid ""
 "You want to store data specific to each HTTP transaction that you might "
 "need to reuse across various hooks."
 msgstr ""
 
-#: ../../sdk/mutex-guide.en.rst:146
+#: ../../sdk/mutex-guide.en.rst:143
 msgid ""
 "You're using APIs (like ``TSHostLookup``) that will call back the "
 "continuation with a certain event."
 msgstr ""
 
-#: ../../sdk/mutex-guide.en.rst:150
+#: ../../sdk/mutex-guide.en.rst:147
 msgid "How to Add the New Continuation"
 msgstr ""
 
-#: ../../sdk/mutex-guide.en.rst:152
+#: ../../sdk/mutex-guide.en.rst:149
 msgid ""
 "A typical way of adding the new continuation is by registering the plugin "
 "continuation to be called back by HTTP transactions globally when they "
@@ -173,51 +173,51 @@ msgid ""
 "transaction-specific continuation called ``txn_contp``."
 msgstr ""
 
-#: ../../sdk/mutex-guide.en.rst:173
+#: ../../sdk/mutex-guide.en.rst:169
 msgid ""
 "In the plugin continuation handler, create the new continuation "
 "``txn_contp`` and then register it to be called back at "
 "``TS_HTTP_TXN_CLOSE_HOOK``:"
 msgstr ""
 
-#: ../../sdk/mutex-guide.en.rst:209
+#: ../../sdk/mutex-guide.en.rst:204
 msgid ""
 "Remember that the ``txn_contp`` handler must destory itself when the HTTP "
 "transaction is closed. If you forget to do this, then your plugin will have "
 "a memory leak."
 msgstr ""
 
-#: ../../sdk/mutex-guide.en.rst:238
+#: ../../sdk/mutex-guide.en.rst:233
 msgid "How to Store Data Specific to Each HTTP Transaction"
 msgstr ""
 
-#: ../../sdk/mutex-guide.en.rst:240
+#: ../../sdk/mutex-guide.en.rst:235
 msgid ""
 "For the example above, store the data in the ``txn_contp`` data structure - "
 "this means that you'll create your own data structure. Now suppose you want "
 "to store the state of the HTTP transaction:"
 msgstr ""
 
-#: ../../sdk/mutex-guide.en.rst:251
+#: ../../sdk/mutex-guide.en.rst:245
 msgid ""
 "You need to allocate the memory and initialize this structure for each HTTP "
 "``txnp``. You can do that in the plugin continuation handler when it is "
 "called back with ``TS_EVENT_HTTP_TXN_START``"
 msgstr ""
 
-#: ../../sdk/mutex-guide.en.rst:295
+#: ../../sdk/mutex-guide.en.rst:288
 msgid "For accessing this data from anywhere, use TSContDataGet:"
 msgstr ""
 
-#: ../../sdk/mutex-guide.en.rst:309
+#: ../../sdk/mutex-guide.en.rst:301
 msgid "Remember to free this memory before destroying the continuation:"
 msgstr ""
 
-#: ../../sdk/mutex-guide.en.rst:343
+#: ../../sdk/mutex-guide.en.rst:334
 msgid "Using Locks"
 msgstr ""
 
-#: ../../sdk/mutex-guide.en.rst:345
+#: ../../sdk/mutex-guide.en.rst:336
 msgid ""
 "You do not need to use locks when a continuation has registered itself to "
 "be called back by HTTP hooks and it only uses the HTTP APIs. In the example "
@@ -231,7 +231,7 @@ msgid ""
 "is finished, ``txn_contp`` will reenable ``txnp``."
 msgstr ""
 
-#: ../../sdk/mutex-guide.en.rst:357
+#: ../../sdk/mutex-guide.en.rst:348
 msgid ""
 "In all other cases, you should create a mutex with the continuation. In "
 "general, a lock is needed when you're using iocore APIs or any other API "
@@ -244,49 +244,38 @@ msgid ""
 "conflict."
 msgstr ""
 
-#: ../../sdk/mutex-guide.en.rst:368
+#: ../../sdk/mutex-guide.en.rst:359
 msgid "Special Case: Continuations Created for HTTP Transactions"
 msgstr ""
 
-#: ../../sdk/mutex-guide.en.rst:370
+#: ../../sdk/mutex-guide.en.rst:361
 msgid ""
 "If your plugin creates a new continuation for each HTTP transaction, then "
 "you probably don't need to create a new mutex for it because each HTTP "
 "transaction (``TSHttpTxn`` object) already has its own mutex."
 msgstr ""
 
-#: ../../sdk/mutex-guide.en.rst:374
+#: ../../sdk/mutex-guide.en.rst:365
 msgid ""
 "In the example below, it's not necessary to specify a mutex for the "
 "continuation created in ``txn_handler``:"
 msgstr ""
 
-#: ../../sdk/mutex-guide.en.rst:406
+#: ../../sdk/mutex-guide.en.rst:396
 msgid "The mutex functions are listed below:"
 msgstr ""
 
-#: ../../sdk/mutex-guide.en.rst:76
-msgid ""
-"The ``blacklist-1.c`` sample plugin implements a mutex that locks global "
-"data. The blacklist plugin reads its blacklisted sites from a configuration "
-"file; file read operations are protected by a mutex created in "
-"``TSPluginInit``. The ``blacklist-1.c`` code uses ``TSMutexLockTry`` "
-"instead of ``InkMutexLock``. For more detailed information, see the "
-"```blacklist-1.c`` <../sample-source-code#Sample_blacklist-1.c>`__ code; "
-"start by looking at the :c:func:`TSPluginInit` function."
-msgstr ""
-
-#: ../../sdk/mutex-guide.en.rst:89
+#: ../../sdk/mutex-guide.en.rst:88
 msgid "Create a mutex for the shared data with :c:func:`TSMutexCreate`."
 msgstr ""
 
-#: ../../sdk/mutex-guide.en.rst:92
+#: ../../sdk/mutex-guide.en.rst:91
 msgid ""
 "Whenever you need to read or modify this data, first lock it by calling :c:"
 "func:`TSMutexLockTry`; then read or modify the data."
 msgstr ""
 
-#: ../../sdk/mutex-guide.en.rst:97
+#: ../../sdk/mutex-guide.en.rst:96
 msgid ""
 "When you are done with the data, unlock it with :c:func:`TSMutexUnlock`. If "
 "you are unlocking data accessed during the processing of an HTTP "
@@ -294,14 +283,25 @@ msgid ""
 "`TSHttpTxnReenable`."
 msgstr ""
 
-#: ../../sdk/mutex-guide.en.rst:408
+#: ../../sdk/mutex-guide.en.rst:398
 msgid ":c:func:`TSMutexCreate`"
 msgstr ""
 
-#: ../../sdk/mutex-guide.en.rst:409
+#: ../../sdk/mutex-guide.en.rst:399
 msgid ":c:func:`TSMutexLock`"
 msgstr ""
 
-#: ../../sdk/mutex-guide.en.rst:410
+#: ../../sdk/mutex-guide.en.rst:400
 msgid ":c:func:`TSMutexLockTry`"
+msgstr ""
+
+#: ../../sdk/mutex-guide.en.rst:78
+msgid ""
+"The ``blacklist-1.c`` sample plugin implements a mutex that locks global "
+"data. The blacklist plugin reads its blacklisted sites from a configuration "
+"file; file read operations are protected by a mutex created in "
+"``TSPluginInit``. The ``blacklist-1.c`` code uses ``TSMutexLockTry`` "
+"instead of ``InkMutexLock``. For more detailed information, see the :ref:"
+"`blacklist-1.c` code; start by looking at the :c:func:`TSPluginInit` "
+"function."
 msgstr ""

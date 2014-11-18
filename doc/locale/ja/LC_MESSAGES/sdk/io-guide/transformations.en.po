@@ -54,11 +54,11 @@ msgid ""
 "VIO by calling:"
 msgstr ""
 
-#: ../../sdk/io-guide/transformations.en.rst:44
+#: ../../sdk/io-guide/transformations.en.rst:43
 msgid "where ``contp`` is the transformation."
 msgstr ""
 
-#: ../../sdk/io-guide/transformations.en.rst:46
+#: ../../sdk/io-guide/transformations.en.rst:45
 msgid ""
 "A vconnection is a continuation. This means it has a handler function that "
 "is run when an event is sent to it, or more accurately, when an event that "
@@ -68,13 +68,13 @@ msgid ""
 "progress on the IO operations."
 msgstr ""
 
-#: ../../sdk/io-guide/transformations.en.rst:53
+#: ../../sdk/io-guide/transformations.en.rst:52
 msgid ""
 "It is common for the handler function for all vconnections to look similar. "
 "Their basic form looks something like the code fragment below:"
 msgstr ""
 
-#: ../../sdk/io-guide/transformations.en.rst:71
+#: ../../sdk/io-guide/transformations.en.rst:69
 msgid ""
 "This code fragment basically shows that many vconnections simply want to "
 "destroy themselves when they are closed. However, the situation might also "
@@ -82,7 +82,7 @@ msgid ""
 "``TSVConnClose`` does not simply just destroy the vconnection."
 msgstr ""
 
-#: ../../sdk/io-guide/transformations.en.rst:76
+#: ../../sdk/io-guide/transformations.en.rst:74
 msgid ""
 "Vconnections are state machines that are animated by the events they "
 "receive. An event is sent to the vconnection whenever an ``TSVConnRead``, "
@@ -100,7 +100,7 @@ msgid ""
 "processing one of its operations."
 msgstr ""
 
-#: ../../sdk/io-guide/transformations.en.rst:92
+#: ../../sdk/io-guide/transformations.en.rst:90
 msgid ""
 "Finally, a vconnection is likely the user of other vconnections. It also "
 "receives events as the user of these other vconnections. When it receives "
@@ -110,11 +110,11 @@ msgid ""
 "overall idea for what a vconnection needs to do."
 msgstr ""
 
-#: ../../sdk/io-guide/transformations.en.rst:100
+#: ../../sdk/io-guide/transformations.en.rst:98
 msgid "Transformation VConnection"
 msgstr ""
 
-#: ../../sdk/io-guide/transformations.en.rst:102
+#: ../../sdk/io-guide/transformations.en.rst:100
 msgid ""
 "A `transformation <HTTPTransformationPlugins.html#Transformations>`__ is a "
 "specific type of vconnection. It supports a subset of the vconnection "
@@ -126,7 +126,7 @@ msgid ""
 "data in some manner."
 msgstr ""
 
-#: ../../sdk/io-guide/transformations.en.rst:111
+#: ../../sdk/io-guide/transformations.en.rst:109
 msgid ""
 "A transformation can modify either the data stream being sent *to* an HTTP "
 "client (e.g. the document) or the data stream being sent *from* an HTTP "
@@ -134,15 +134,15 @@ msgid ""
 "one of the following hooks:"
 msgstr ""
 
-#: ../../sdk/io-guide/transformations.en.rst:116
+#: ../../sdk/io-guide/transformations.en.rst:114
 msgid "``TS_HTTP_REQUEST_TRANSFORM_HOOK``"
 msgstr ""
 
-#: ../../sdk/io-guide/transformations.en.rst:118
+#: ../../sdk/io-guide/transformations.en.rst:116
 msgid "``TS_HTTP_RESPONSE_TRANSFORM_HOOK``"
 msgstr ""
 
-#: ../../sdk/io-guide/transformations.en.rst:120
+#: ../../sdk/io-guide/transformations.en.rst:118
 msgid ""
 "Note that because a transformation is intimately associated with a given "
 "transaction, it is only possible to add the hook to the transaction hooks - "
@@ -151,7 +151,7 @@ msgid ""
 "themselves to the chain are simply appended to it."
 msgstr ""
 
-#: ../../sdk/io-guide/transformations.en.rst:126
+#: ../../sdk/io-guide/transformations.en.rst:124
 msgid ""
 "Data is passed in to the transformation by initiating a vconnection write "
 "operation on the transformation. As a consequence of this design, a "
@@ -167,18 +167,18 @@ msgid ""
 "causing a memory leak."
 msgstr ""
 
-#: ../../sdk/io-guide/transformations.en.rst:139
+#: ../../sdk/io-guide/transformations.en.rst:137
 msgid "Here's how to make sure that all incoming data is consumed:"
 msgstr ""
 
-#: ../../sdk/io-guide/transformations.en.rst:141
+#: ../../sdk/io-guide/transformations.en.rst:139
 msgid ""
 "After reading or copying data, make sure that you consume the data and "
 "increase the value of ndone for the input VIO, as in the following example "
 "taken from ``null-transform.c``:"
 msgstr ""
 
-#: ../../sdk/io-guide/transformations.en.rst:155
+#: ../../sdk/io-guide/transformations.en.rst:152
 msgid ""
 "Before sending ``TS_EVENT_VCONN_WRITE_COMPLETE``, your transformation "
 "should check the number of bytes remaining in the upstream vconnection's "
@@ -189,7 +189,7 @@ msgid ""
 "than zero."
 msgstr ""
 
-#: ../../sdk/io-guide/transformations.en.rst:163
+#: ../../sdk/io-guide/transformations.en.rst:160
 msgid ""
 "The transformation passes data out of itself by using the output "
 "vconnection retrieved by ``TSTransformOutputVConnGet``. Immediately before "
@@ -201,7 +201,7 @@ msgid ""
 "it at some point in order for it to be deallocated."
 msgstr ""
 
-#: ../../sdk/io-guide/transformations.en.rst:172
+#: ../../sdk/io-guide/transformations.en.rst:169
 msgid ""
 "All of the transformations in a transformation chain share the "
 "transaction's mutex. This small restriction (enforced by "
@@ -211,7 +211,7 @@ msgid ""
 "knows it already holds the mutex."
 msgstr ""
 
-#: ../../sdk/io-guide/transformations.en.rst:179
+#: ../../sdk/io-guide/transformations.en.rst:176
 msgid ""
 "The transformation functions are: \\* :c:func:`TSTransformCreate` \\* :c:"
 "func:`TSTransformOutputVConnGet`"

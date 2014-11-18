@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -26,14 +25,14 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../../reference/commands/traffic_manager.en.rst:20
+#: ../../reference/commands/traffic_manager.en.rst:22
 msgid "traffic_manager"
 msgstr ""
 
-#: ../../reference/commands/traffic_manager.en.rst:25
+#: ../../reference/commands/traffic_manager.en.rst:27
 msgid "Description"
 msgstr ""
 
-#: ../../reference/commands/traffic_manager.en.rst:43
+#: ../../reference/commands/traffic_manager.en.rst:45
 msgid "Environment"
 msgstr ""

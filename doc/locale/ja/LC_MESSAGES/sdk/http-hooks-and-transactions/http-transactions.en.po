@@ -52,102 +52,101 @@ msgid ""
 "and associate data to the transaction."
 msgstr ""
 
-#: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:152
-msgid ""
-"See `Adding Hooks <adding-hooks>`__ for background about HTTP transactions "
-"and HTTP hooks, as well as `HTTP Hooks and Transactions <../http-hooks-and-"
-"transactions>`__ Also see the [HTTP Transaction State Diagram ]"
-"(HTTPHooksAndTransactions.html(../http-hooks-and-"
-"transactions#HHTTPTxStateDiag) for an illustration of the steps involved in "
-"a typical HTTP transaction."
-msgstr ""
-
-#: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:159
+#: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:157
 msgid "The HTTP transaction functions are:"
 msgstr ""
 
-#: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:169
-msgid "`TSHttpTxnClientIncomingPortGet <link/to/doxygen>`__"
-msgstr ""
-
-#: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:171
-msgid "`TSHttpTxnClientIPGet <link/to/doxygen>`__"
-msgstr ""
-
-#: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:173
-msgid "`TSHttpTxnClientRemotePortGet <link/to/doxygen>`__"
-msgstr ""
-
-#: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:161
+#: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:159
 msgid ":c:func:`TSHttpTxnCacheLookupStatusGet`"
 msgstr ""
 
-#: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:163
+#: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:161
 msgid ""
 ":c:func:`TSHttpTxnCachedReqGet` - Note that it is an error to modify cached "
 "headers."
 msgstr ""
 
-#: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:166
+#: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:164
 msgid ""
 ":c:func:`TSHttpTxnCachedRespGet` - Note that it is an error to modify "
 "cached headers."
 msgstr ""
 
-#: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:175
+#: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:173
 msgid ""
 ":c:func:`TSHttpTxnClientReqGet` - Plugins that must read client request "
 "headers use this call to retrieve the HTTP header."
 msgstr ""
 
-#: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:179
+#: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:177
 msgid ":c:func:`TSHttpTxnClientRespGet`"
 msgstr ""
 
-#: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:181
+#: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:179
 msgid ":c:func:`TSHttpTxnErrorBodySet`"
 msgstr ""
 
-#: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:183
+#: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:181
 msgid ":c:func:`TSHttpTxnHookAdd`"
 msgstr ""
 
-#: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:185
+#: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:183
 msgid ":c:func:`TSHttpTxnNextHopAddrGet`"
 msgstr ""
 
-#: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:187
+#: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:185
 msgid ":c:func:`TSHttpTxnParentProxySet`"
 msgstr ""
 
-#: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:189
+#: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:187
 msgid ":c:func:`TSHttpTxnReenable`"
 msgstr ""
 
-#: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:191
+#: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:189
 msgid ":c:func:`TSHttpTxnServerAddrGet`"
 msgstr ""
 
-#: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:193
+#: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:191
 msgid ":c:func:`TSHttpTxnServerReqGet`"
 msgstr ""
 
-#: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:195
+#: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:193
 msgid ":c:func:`TSHttpTxnServerRespGet`"
 msgstr ""
 
-#: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:197
+#: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:195
 msgid ":c:func:`TSHttpTxnSsnGet`"
 msgstr ""
 
-#: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:199
+#: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:197
 msgid ":c:func:`TSHttpTxnTransformedRespCache`"
 msgstr ""
 
-#: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:201
+#: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:199
 msgid ":c:func:`TSHttpTxnTransformRespGet`"
 msgstr ""
 
-#: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:203
+#: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:201
 msgid ":c:func:`TSHttpTxnUntransformedRespCache`"
+msgstr ""
+
+#: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:151
+msgid ""
+"See :doc:`Adding Hooks <adding-hooks.en>` for background about HTTP "
+"transactions and HTTP hooks, as well as :doc:`HTTP Hooks and Transactions "
+"<../http-hooks-and-transactions.en>` Also see the :ref:`HTTP Transaction "
+"State Diagram <http-txn-state-diagram>` for an illustration of the steps "
+"involved in a typical HTTP transaction."
+msgstr ""
+
+#: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:167
+msgid ":c:func:`TSHttpTxnClientIncomingPortGet`"
+msgstr ""
+
+#: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:169
+msgid ":c:func:`TSHttpTxnClientIPGet`"
+msgstr ""
+
+#: ../../sdk/http-hooks-and-transactions/http-transactions.en.rst:171
+msgid ":c:func:`TSHttpTxnClientRemotePortGet`"
 msgstr ""

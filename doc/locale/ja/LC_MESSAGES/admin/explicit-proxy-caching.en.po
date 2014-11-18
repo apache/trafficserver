@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -74,27 +73,6 @@ msgstr ""
 msgid "The fully-qualified hostname or IP address of the Traffic Server node"
 msgstr "Traffic Server ノードの完全修飾ホスト名もしくは IP アドレス"
 
-#: ../../admin/explicit-proxy-caching.en.rst:45
-msgid "The Traffic Server proxy server port (port 8080)"
-msgstr "Traffic Server プロキシーサーバーポート ( ポート 8080)"
-
-#: ../../admin/explicit-proxy-caching.en.rst:47
-msgid ""
-"In addition, clients can specify *not* to use Traffic Server for certain "
-"sites - in such cases, requests to the listed sites go directly to the "
-"origin server. The procedures for manual configuration vary among browser "
-"versions; refer to specific browser documentation for complete proxy "
-"configuration instructions. You do not need to set any special "
-"configuration options on Traffic Server if you want to accept requests from "
-"manually-configured browsers."
-msgstr ""
-"これに加え、クライアントはあるサイトでは Traffic Server を使用しないように指"
-"定することができます。このようなケースでは、一覧にあるサイトへのリクエストは"
-"オリジンサーバーへ直接向かいます。手動設定の手続きはブラウザーのバージョンに"
-"よって異なります。完全なプロキシー設定手順は各ブラウザーのドキュメントを参照"
-"してください。手動で設定されたブラウザーからのリクエストを受け付けたい場合"
-"は、Traffic Server 上で特別な設定を行う必要はありません。"
-
 #: ../../admin/explicit-proxy-caching.en.rst:58
 msgid "Using a PAC File"
 msgstr "PAC ファイルの使用"
@@ -145,3 +123,74 @@ msgstr ""
 "次のサンプル PAC ファイルは、完全修飾ドメインのないすべてのホストとローカル"
 "ドメインのホストには直接接続するように指示します。その他のすべてのリクエスト"
 "は ``myproxy.company.com`` と名付けられた Traffic Server に向かいます。"
+
+#: ../../admin/explicit-proxy-caching.en.rst:45
+msgid "The Traffic Server proxy server port (by default, 8080)"
+msgstr ""
+
+#: ../../admin/explicit-proxy-caching.en.rst:47
+msgid ""
+"In addition, clients can specify not to use Traffic Server for certain "
+"sites - in such cases, requests to the listed sites go directly to the "
+"origin server. The procedures for manual configuration vary among browser "
+"versions; refer to specific browser documentation for complete proxy "
+"configuration instructions. You do not need to set any special "
+"configuration options on Traffic Server if you want to accept requests from "
+"manually-configured browsers."
+msgstr ""
+
+#: ../../admin/explicit-proxy-caching.en.rst:60
+msgid ""
+"A *PAC file* is a specialized JavaScript function definition that a browser "
+"calls to determine how requests are handled. Clients must specify (in their "
+"browser settings) the URL from which the PAC file is loaded. You can store "
+"a PAC file on Traffic Server (or on any server in your network) and then "
+"provide the URL for this file to your clients."
+msgstr ""
+
+#: ../../admin/explicit-proxy-caching.en.rst:66
+msgid ""
+"If you want to store a PAC file on the Traffic Server system, you must "
+"perform the following configuration:"
+msgstr ""
+
+#~ msgid "The Traffic Server proxy server port (port 8080)"
+#~ msgstr "Traffic Server プロキシーサーバーポート ( ポート 8080)"
+
+#~ msgid ""
+#~ "In addition, clients can specify *not* to use Traffic Server for certain "
+#~ "sites - in such cases, requests to the listed sites go directly to the "
+#~ "origin server. The procedures for manual configuration vary among "
+#~ "browser versions; refer to specific browser documentation for complete "
+#~ "proxy configuration instructions. You do not need to set any special "
+#~ "configuration options on Traffic Server if you want to accept requests "
+#~ "from manually-configured browsers."
+#~ msgstr ""
+#~ "これに加え、クライアントはあるサイトでは Traffic Server を使用しないよう"
+#~ "に指定することができます。このようなケースでは、一覧にあるサイトへのリク"
+#~ "エストはオリジンサーバーへ直接向かいます。手動設定の手続きはブラウザーの"
+#~ "バージョンによって異なります。完全なプロキシー設定手順は各ブラウザーのド"
+#~ "キュメントを参照してください。手動で設定されたブラウザーからのリクエスト"
+#~ "を受け付けたい場合は、Traffic Server 上で特別な設定を行う必要はありませ"
+#~ "ん。"
+
+#~ msgid ""
+#~ "A **PAC file** is a specialized JavaScript function definition that a "
+#~ "browser calls to determine how requests are handled. Clients must "
+#~ "specify (in their browser settings) the URL from which the PAC file is "
+#~ "loaded. You can store a PAC file on Traffic Server (or on any server in "
+#~ "your network) and then provide the URL for this file to your clients."
+#~ msgstr ""
+#~ "**PAC ファイル**\\ はリクエストがどう扱われるかを決定するためにブラウザー"
+#~ "が呼び出す特別な JavaScript の関数定義です。クライアントは ( ブラウザーの"
+#~ "設定に ) PAC ファイルが読み込まれる URL を指定しなければなりません。"
+#~ "Traffic Server 上に ( もしくはネットワーク内のいずれかのサーバー上に) "
+#~ "PAC ファイルを格納しクライアントに対してこのファイルのための URL を提供す"
+#~ "ることができます。"
+
+#~ msgid ""
+#~ "If you want to store a PAC file on the Traffic Server system, then you "
+#~ "must perform the following configuration:"
+#~ msgstr ""
+#~ "Traffic Server システムに PAC ファイルを格納したい場合、次の設定を行わな"
+#~ "ければなりません。"

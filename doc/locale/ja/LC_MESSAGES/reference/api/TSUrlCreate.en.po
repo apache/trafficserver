@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -30,23 +29,23 @@ msgstr ""
 msgid "TSUrlCreate"
 msgstr ""
 
-#: ../../reference/api/TSUrlCreate.en.rst:25
+#: ../../reference/api/TSUrlCreate.en.rst:27
 msgid "Synopsis"
 msgstr ""
 
-#: ../../reference/api/TSUrlCreate.en.rst:27
+#: ../../reference/api/TSUrlCreate.en.rst:29
 msgid "`#include <ts/ts.h>`"
 msgstr ""
 
-#: ../../reference/api/TSUrlCreate.en.rst:35
+#: ../../reference/api/TSUrlCreate.en.rst:37
 msgid "Description"
 msgstr ""
 
-#: ../../reference/api/TSUrlCreate.en.rst:78
+#: ../../reference/api/TSUrlCreate.en.rst:80
 msgid "See also"
 msgstr ""
 
-#: ../../reference/api/TSUrlCreate.en.rst:37
+#: ../../reference/api/TSUrlCreate.en.rst:39
 msgid ""
 "The URL data structure is a parsed version of a standard internet URL. The "
 "Traffic Server URL API provides access to URL data stored in marshal "
@@ -55,14 +54,14 @@ msgid ""
 "scheme information."
 msgstr ""
 
-#: ../../reference/api/TSUrlCreate.en.rst:43
+#: ../../reference/api/TSUrlCreate.en.rst:45
 msgid ""
 ":func:`TSUrlCreate` creates a new URL within the marshal buffer :data:"
 "`bufp`. Release the resulting handle with a call to :func:"
 "`TSHandleMLocRelease`."
 msgstr ""
 
-#: ../../reference/api/TSUrlCreate.en.rst:47
+#: ../../reference/api/TSUrlCreate.en.rst:49
 msgid ""
 ":func:`TSUrlClone` copies the contents of the URL at location :data:"
 "`src_url` within the marshal buffer :data:`src_bufp` to a location within "
@@ -70,7 +69,7 @@ msgid ""
 "call to :func:`TSHandleMLocRelease`."
 msgstr ""
 
-#: ../../reference/api/TSUrlCreate.en.rst:52
+#: ../../reference/api/TSUrlCreate.en.rst:54
 msgid ""
 ":func:`TSUrlCopy` copies the contents of the URL at location :data:"
 "`src_url` within the marshal buffer :data:`src_bufp` to the location :data:"
@@ -80,7 +79,7 @@ msgid ""
 "buffer and :type:`TSMLoc`) to have been created before copying into it."
 msgstr ""
 
-#: ../../reference/api/TSUrlCreate.en.rst:59
+#: ../../reference/api/TSUrlCreate.en.rst:61
 msgid ""
 ":func:`TSUrlParse` parses a URL. The :data:`start` pointer is both an input "
 "and an output parameter and marks the start of the URL to be parsed. After "
@@ -92,11 +91,11 @@ msgid ""
 "actual end of the URL."
 msgstr ""
 
-#: ../../reference/api/TSUrlCreate.en.rst:69
+#: ../../reference/api/TSUrlCreate.en.rst:71
 msgid "Return values"
 msgstr ""
 
-#: ../../reference/api/TSUrlCreate.en.rst:71
+#: ../../reference/api/TSUrlCreate.en.rst:73
 msgid ""
 "The :func:`TSUrlParse` function returns a :type:`TSParseResult`, where :"
 "data:`TS_PARSE_ERROR` indicates an error. Success is indicated by one of :"
@@ -105,9 +104,13 @@ msgid ""
 "`TS_SUCCESS`) or failure (:data:`TS_ERROR`) of the operation."
 msgstr ""
 
-#: ../../reference/api/TSUrlCreate.en.rst:80
+#: ../../reference/api/TSUrlCreate.en.rst:82
 msgid ""
 ":manpage:`TSAPI(3ts)`, :manpage:`TSMBufferCreate(3ts)`, :manpage:"
 "`TSUrlHostGet(3ts)`, :manpage:`TSUrlHostSet(3ts)`, :manpage:"
 "`TSUrlStringGet(3ts)`, :manpage:`TSUrlPercentEncode(3ts)`"
+msgstr ""
+
+#: ../../reference/api/TSUrlCreate.en.rst:24
+msgid "Traffic Server URL object construction API."
 msgstr ""

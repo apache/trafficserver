@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -45,7 +44,7 @@ msgid ""
 "error case:"
 msgstr ""
 
-#: ../../sdk/header-based-plugin-examples/basic-authorization-plugin/setting-a-transaction-hook.en.rst:37
+#: ../../sdk/header-based-plugin-examples/basic-authorization-plugin/setting-a-transaction-hook.en.rst:36
 msgid ""
 "If ``handle_dns`` does not find the ``Proxy-Authorization`` field set to "
 "Basic authorization or a valid username/password, then it adds a "
@@ -56,7 +55,7 @@ msgid ""
 "to terminate the transaction."
 msgstr ""
 
-#: ../../sdk/header-based-plugin-examples/basic-authorization-plugin/setting-a-transaction-hook.en.rst:45
+#: ../../sdk/header-based-plugin-examples/basic-authorization-plugin/setting-a-transaction-hook.en.rst:44
 msgid ""
 "When Traffic Server terminates the transaction, it sends the client an "
 "error message. Because of the ``SEND_RESPONSE_HDR_HOOK``, Traffic Server "
@@ -66,7 +65,7 @@ msgid ""
 "transaction begins."
 msgstr ""
 
-#: ../../sdk/header-based-plugin-examples/basic-authorization-plugin/setting-a-transaction-hook.en.rst:52
+#: ../../sdk/header-based-plugin-examples/basic-authorization-plugin/setting-a-transaction-hook.en.rst:51
 msgid ""
 "``handle_dns`` calls ``base64_decode`` to decode the username and password; "
 "``handle_dns`` also calls ``authorized`` to validate the username and "

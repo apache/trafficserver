@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -38,18 +37,20 @@ msgid ""
 "core files in the :file:`records.config` file to -1 as follows:"
 msgstr ""
 
-#: ../../sdk/troubleshooting-tips/using-a-debugger.en.rst:31
+#: ../../sdk/troubleshooting-tips/using-a-debugger.en.rst:30
 msgid "This is the equivalent of setting ``ulimit -c unlimited``"
 msgstr ""
 
-#: ../../sdk/troubleshooting-tips/using-a-debugger.en.rst:34
+#: ../../sdk/troubleshooting-tips/using-a-debugger.en.rst:33
 msgid "Debugging Tips:"
 msgstr ""
 
-#: ../../sdk/troubleshooting-tips/using-a-debugger.en.rst:36
+#: ../../sdk/troubleshooting-tips/using-a-debugger.en.rst:35
 msgid "Use a Traffic Server debug version."
 msgstr ""
 
-#: ../../sdk/troubleshooting-tips/using-a-debugger.en.rst:38
-msgid "Use assertions in your plugin (``TSAssert``/``TSReleaseAssert``)."
+#: ../../sdk/troubleshooting-tips/using-a-debugger.en.rst:37
+msgid ""
+"Use assertions in your plugin (:c:func:`TSAssert` and :c:func:"
+"`TSReleaseAssert`)."
 msgstr ""

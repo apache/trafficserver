@@ -40,14 +40,6 @@ msgid ""
 "changing global configuration information within a plugin."
 msgstr ""
 
-#: ../../sdk/plugin-configurations.en.rst:32
-msgid ""
-"The functions discussed in this section do not examine or modify Traffic "
-"Server configuration variables. To examine Traffic Server configuration and "
-"statistics variables, see `\"Reading Traffic Server Settings and Statistics"
-"\" <../plugin-management/reading-trafficserver-settings-and-statistics>`__"
-msgstr ""
-
 #: ../../sdk/plugin-configurations.en.rst:37
 msgid ""
 "The ``TSConfig`` family of functions is designed to provide a fast and "
@@ -76,22 +68,31 @@ msgstr ""
 msgid "Here's how the interface works:"
 msgstr ""
 
-#: ../../sdk/plugin-configurations.en.rst:106
+#: ../../sdk/plugin-configurations.en.rst:105
 msgid "The configuration functions are:"
 msgstr ""
 
-#: ../../sdk/plugin-configurations.en.rst:108
+#: ../../sdk/plugin-configurations.en.rst:107
 msgid ":c:func:`TSConfigDataGet`"
 msgstr ""
 
-#: ../../sdk/plugin-configurations.en.rst:110
+#: ../../sdk/plugin-configurations.en.rst:109
 msgid ":c:func:`TSConfigGet`"
 msgstr ""
 
-#: ../../sdk/plugin-configurations.en.rst:112
+#: ../../sdk/plugin-configurations.en.rst:111
 msgid ":c:func:`TSConfigRelease`"
 msgstr ""
 
-#: ../../sdk/plugin-configurations.en.rst:114
+#: ../../sdk/plugin-configurations.en.rst:113
 msgid ":c:func:`TSConfigSet`"
+msgstr ""
+
+#: ../../sdk/plugin-configurations.en.rst:32
+msgid ""
+"The functions discussed in this section do not examine or modify Traffic "
+"Server configuration variables. To examine Traffic Server configuration and "
+"statistics variables, see :doc:`\"Reading Traffic Server Settings and "
+"Statistics\" <plugin-management/reading-trafficserver-settings-and-"
+"statistics.en>`."
 msgstr ""

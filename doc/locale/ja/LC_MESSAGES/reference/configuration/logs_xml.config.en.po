@@ -149,10 +149,6 @@ msgstr ""
 msgid "LAST"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:109
-msgid "LogFilters"
-msgstr ""
-
 #: ../../reference/configuration/logs_xml.config.en.rst:111
 msgid "The following list shows the ``LogFilter`` specifications."
 msgstr ""
@@ -165,7 +161,7 @@ msgstr ""
 msgid "Required All filters must be uniquely named."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:139
+#: ../../reference/configuration/logs_xml.config.en.rst:143
 msgid ""
 "``<Condition = \"valid_log_field valid_operator valid_comparison_value\"/>``"
 msgstr ""
@@ -215,46 +211,40 @@ msgid ""
 "field must be equal to the specified value."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:143
+#: ../../reference/configuration/logs_xml.config.en.rst:147
 msgid ""
 "There are no negative comparison operators. If you want to specify a "
 "negative condition, then use the ``Action`` field to ``REJECT`` the record."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:150
+#: ../../reference/configuration/logs_xml.config.en.rst:155
 msgid "``<Action = \"valid_action_field\"/>``"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:148
-msgid ""
-"Required: ``ACCEPT`` or ``REJECT`` . This instructs Traffic Server to "
-"either accept or reject records that satisfy the filter condition."
-msgstr ""
-
-#: ../../reference/configuration/logs_xml.config.en.rst:155
+#: ../../reference/configuration/logs_xml.config.en.rst:165
 msgid "LogObject"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:157
+#: ../../reference/configuration/logs_xml.config.en.rst:167
 msgid "The following list shows the ``LogObject`` specifications."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:164
+#: ../../reference/configuration/logs_xml.config.en.rst:174
 msgid "``<Format = \"valid_format_name\"/>``"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:160
+#: ../../reference/configuration/logs_xml.config.en.rst:170
 msgid ""
 "Required Valid format names include the predefined logging formats: "
 "``squid``, ``common``, ``extended``, and ``extended2``, as well as any "
 "previously-defined custom log formats. There is no default for this tag."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:179
+#: ../../reference/configuration/logs_xml.config.en.rst:189
 msgid "``<Filename = \"file_name\"/>``"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:167
+#: ../../reference/configuration/logs_xml.config.en.rst:177
 msgid ""
 "Required The filename to which the given log file is written on the local "
 "file system or on a remote collation server. No local log file will be "
@@ -262,29 +252,29 @@ msgid ""
 "default logging directory."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:178
+#: ../../reference/configuration/logs_xml.config.en.rst:188
 msgid ""
 "If you do not want an extension to be added, then end the filename with a "
 "single (.) dot (for example: ``squid.`` )."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:207
+#: ../../reference/configuration/logs_xml.config.en.rst:217
 msgid "``<Mode = \"valid_logging_mode\"/>``"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:184
+#: ../../reference/configuration/logs_xml.config.en.rst:194
 msgid ""
 "Optional Valid logging modes include ``ascii`` , ``binary`` , and "
 "``ascii_pipe`` . The default is ``ascii`` ."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:188
+#: ../../reference/configuration/logs_xml.config.en.rst:198
 msgid ""
 "Use ``ascii`` to create event log files in human-readable form (plain "
 "ASCII)."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:190
+#: ../../reference/configuration/logs_xml.config.en.rst:200
 msgid ""
 "Use ``binary`` to create event log files in binary format. Binary log files "
 "generate lower system overhead and occupy less space on the disk (depending "
@@ -293,7 +283,7 @@ msgid ""
 "before you can read them."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:195
+#: ../../reference/configuration/logs_xml.config.en.rst:205
 msgid ""
 "Use ``ascii_pipe`` to write log entries to a UNIX named pipe (a buffer in "
 "memory). Other processes can then read the data using standard I/O "
@@ -303,7 +293,7 @@ msgid ""
 "exhausted because the pipe does not use disk space."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:203
+#: ../../reference/configuration/logs_xml.config.en.rst:213
 msgid ""
 "If you are using a collation server, then the log is written to a pipe on "
 "the collation server. A local pipe is created even before a transaction is "
@@ -311,52 +301,52 @@ msgid ""
 "on a collation server, however, *are* created when Traffic Server starts."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:213
+#: ../../reference/configuration/logs_xml.config.en.rst:223
 msgid "``<Filters = \"list_of_valid_filter_names\"/>``"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:210
+#: ../../reference/configuration/logs_xml.config.en.rst:220
 msgid ""
 "Optional A comma-separated list of names of any previously-defined log "
 "filters. If more than one filter is specified, then all filters must accept "
 "a record for the record to be logged."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:219
+#: ../../reference/configuration/logs_xml.config.en.rst:229
 msgid "``<Protocols = \"list_of_valid_protocols\"/>``"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:216
+#: ../../reference/configuration/logs_xml.config.en.rst:226
 msgid ""
 "Optional A comma-separated list of the protocols this object should log. "
 "Valid protocol names for this release are ``HTTP`` (FTP is deprecated)."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:224
+#: ../../reference/configuration/logs_xml.config.en.rst:234
 msgid "``<ServerHosts = \"list_of_valid_servers\"/>``"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:222
+#: ../../reference/configuration/logs_xml.config.en.rst:232
 msgid ""
 "Optional A comma-separated list of valid hostnames.This tag indicates that "
 "only entries from the named servers will be included in the file."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:245
+#: ../../reference/configuration/logs_xml.config.en.rst:255
 msgid "``<Header = \"header\"/>``"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:242
+#: ../../reference/configuration/logs_xml.config.en.rst:252
 msgid ""
 "Optional The header text you want the log files to contain. The header text "
 "appears at the beginning of the log file, just before the first record."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:265
+#: ../../reference/configuration/logs_xml.config.en.rst:275
 msgid "``<RollingEnabled = \"truth value\"/>``"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:248
+#: ../../reference/configuration/logs_xml.config.en.rst:258
 msgid ""
 "Optional Enables or disables log file rolling for the ``LogObject``. This "
 "setting overrides the value for the :ts:cv:`proxy.config.log."
@@ -364,58 +354,58 @@ msgid ""
 "value* to one of the following values:"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:255
+#: ../../reference/configuration/logs_xml.config.en.rst:265
 msgid "``0`` to disable rolling for this particular ``LogObject``."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:256
+#: ../../reference/configuration/logs_xml.config.en.rst:266
 msgid ""
 "``1`` to roll log files at specific intervals during the day (you specify "
 "time intervals with the ``RollingIntervalSec`` and ``RollingOffsetHr`` "
 "fields)."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:259
+#: ../../reference/configuration/logs_xml.config.en.rst:269
 msgid ""
 "``2`` to roll log files when they reach a certain size (you specify the "
 "size with the ``RollingSizeMb`` field)."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:261
+#: ../../reference/configuration/logs_xml.config.en.rst:271
 msgid ""
 "``3`` to roll log files at specific intervals during the day or when they "
 "reach a certain size (whichever occurs first)."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:263
+#: ../../reference/configuration/logs_xml.config.en.rst:273
 msgid ""
 "``4`` to roll log files at specific intervals during the day when log files "
 "reach a specific size (at a specified time if the file is of the specified "
 "size)."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:277
+#: ../../reference/configuration/logs_xml.config.en.rst:287
 msgid "``<RollingIntervalSec = \"seconds\"/>``"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:270
+#: ../../reference/configuration/logs_xml.config.en.rst:280
 msgid ""
 "Optional The seconds between log file rolling for the ``LogObject``; "
 "enables you to specify different rolling intervals for different "
 "``LogObjects``."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:275
+#: ../../reference/configuration/logs_xml.config.en.rst:285
 msgid ""
 "This setting overrides the value for :ts:cv:`proxy.config.log."
 "rolling_interval_sec` in the :file:`records.config` file."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:287
+#: ../../reference/configuration/logs_xml.config.en.rst:297
 msgid "``<RollingOffsetHr = \"hour\"/>``"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:280
+#: ../../reference/configuration/logs_xml.config.en.rst:290
 msgid ""
 "Optional Specifies an hour (from 0 to 23) at which rolling is guaranteed to "
 "align. Rolling might start before then, but a rolled file will be produced "
@@ -425,51 +415,51 @@ msgid ""
 "the :file:`records.config` file."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:291
+#: ../../reference/configuration/logs_xml.config.en.rst:301
 msgid "``<RollingSizeMb = \"size_in_MB\"/>``"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:290
+#: ../../reference/configuration/logs_xml.config.en.rst:300
 msgid "Optional The size at which log files are rolled."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:294
+#: ../../reference/configuration/logs_xml.config.en.rst:304
 msgid "Examples"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:296
+#: ../../reference/configuration/logs_xml.config.en.rst:306
 msgid ""
 "The following is an example of a ``LogFormat`` specification that collects "
 "information using three common fields: ::"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:304
+#: ../../reference/configuration/logs_xml.config.en.rst:314
 msgid ""
 "The following is an example of a ``LogFormat`` specification that uses "
 "aggregate operators: ::"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:313
+#: ../../reference/configuration/logs_xml.config.en.rst:323
 msgid ""
 "The following is an example of a ``LogFilter`` that will cause only "
 "``REFRESH_HIT`` entries to be logged: ::"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:324
+#: ../../reference/configuration/logs_xml.config.en.rst:334
 msgid ""
 "When specifying the field in the filter condition, you can omit the ``"
 "%<>``. This means that the filter below is equivalent to the example "
 "directly above: ::"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:334
+#: ../../reference/configuration/logs_xml.config.en.rst:353
 msgid ""
 "The following is an example of a ``LogObject`` specification that creates a "
 "local log file for the minimal format defined earlier. The log filename "
 "will be ``minimal.log`` because this is an ASCII log file (the default).::"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:344
+#: ../../reference/configuration/logs_xml.config.en.rst:363
 msgid ""
 "The following is an example of a ``LogObject`` specification that includes "
 "only HTTP requests served by hosts in the domain ``company.com`` or by the "
@@ -478,11 +468,11 @@ msgid ""
 "collation host ``209.131.52.129.`` ::"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:361
+#: ../../reference/configuration/logs_xml.config.en.rst:380
 msgid "WELF"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:363
+#: ../../reference/configuration/logs_xml.config.en.rst:382
 msgid ""
 "Traffic Server supports WELF (WebTrends Enhanced Log Format) so you can "
 "analyze Traffic Server log files with WebTrends reporting tools. A "
@@ -491,12 +481,12 @@ msgid ""
 "file, create a ``<LogObject>`` that uses this predefined format. ::"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:239
+#: ../../reference/configuration/logs_xml.config.en.rst:249
 msgid ""
 "``<CollationHosts = \"list_of_valid_hostnames:port|failover hosts\"/>``"
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:229
+#: ../../reference/configuration/logs_xml.config.en.rst:239
 msgid ""
 "Optional A comma-separated list of collation servers (with pipe delimited "
 "failover servers) to which all log entries (for this object) are forwarded. "
@@ -509,7 +499,7 @@ msgid ""
 "failhostA comes back. Logs would also be sent to host2."
 msgstr ""
 
-#: ../../reference/configuration/logs_xml.config.en.rst:173
+#: ../../reference/configuration/logs_xml.config.en.rst:183
 msgid ""
 "If the name does not contain an extension (for example, ``squid``), then "
 "the extension ``.log`` is automatically appended to it for ASCII logs and "
@@ -543,4 +533,61 @@ msgstr ""
 msgid ""
 "Use ``%<`` ``field`` ``>`` as a placeholder for valid field names. For more "
 "information, refer to :ref:`custom-logging-fields`."
+msgstr ""
+
+#: ../../reference/configuration/logs_xml.config.en.rst:109
+msgid "LogFilter"
+msgstr ""
+
+#: ../../reference/configuration/logs_xml.config.en.rst:141
+msgid ""
+"For IP address fields, this can be a list of IP addresses and include "
+"ranges. A range is an IP address, followed by a dash '``-``', and then "
+"another IP address of the same family. For instance, the 10/8 network can "
+"be represented by ``10.0.0.0-10.255.255.255``. Currently network specifiers "
+"are not supported."
+msgstr ""
+
+#: ../../reference/configuration/logs_xml.config.en.rst:152
+msgid ""
+"Required: ``ACCEPT`` or ``REJECT`` or ``WIPE_FIELD_VALUE``. ACCEPT or "
+"REJECT instructs Traffic Server to either accept or reject records that "
+"satisfy the filter condition. WIPE_FIELD_VALUE wipes out the values of the "
+"query params in the url fields specified in the Condition."
+msgstr ""
+
+#: ../../reference/configuration/logs_xml.config.en.rst:160
+msgid ""
+"NOTES: 1. WIPE_FIELD_VALUE action is only applied to the parameters in the "
+"query part."
+msgstr ""
+
+#: ../../reference/configuration/logs_xml.config.en.rst:158
+msgid "Multiple parameters can be listed in a single WIPE_FIELD_VALUE filter"
+msgstr ""
+
+#: ../../reference/configuration/logs_xml.config.en.rst:159
+msgid ""
+"If the same parameter appears more than once in the query part , only the "
+"value of the first occurance is wiped"
+msgstr ""
+
+#: ../../reference/configuration/logs_xml.config.en.rst:344
+msgid ""
+"The following is an example of a ``LogFilter`` that will cause the value of "
+"passwd field be wiped in cquc"
+msgstr ""
+
+#: ../../reference/configuration/logs_xml.config.en.rst:349
+msgid "<LogFilter>"
+msgstr ""
+
+#: ../../reference/configuration/logs_xml.config.en.rst:348
+msgid ""
+"<Name = \"wipe_password\"/> <Condition = \"cquc CONTAIN passwd\"/> <Action "
+"= \"WIPE_FIELD_VALUE\"/>"
+msgstr ""
+
+#: ../../reference/configuration/logs_xml.config.en.rst:351
+msgid "</LogFilter>"
 msgstr ""

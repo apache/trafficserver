@@ -29,19 +29,19 @@ msgstr ""
 msgid "TSDebug"
 msgstr "TSDebug"
 
-#: ../../reference/api/TSDebug.en.rst:24
+#: ../../reference/api/TSDebug.en.rst:26
 msgid "Synopsis"
 msgstr "概要"
 
-#: ../../reference/api/TSDebug.en.rst:25
+#: ../../reference/api/TSDebug.en.rst:27
 msgid "`#include <ts/ts.h>`"
 msgstr "`#include <ts/ts.h>`"
 
-#: ../../reference/api/TSDebug.en.rst:42
+#: ../../reference/api/TSDebug.en.rst:44
 msgid "Description"
 msgstr "解説"
 
-#: ../../reference/api/TSDebug.en.rst:44
+#: ../../reference/api/TSDebug.en.rst:46
 msgid ""
 ":func:`TSError` is similar to :func:`printf` except that instead of writing "
 "the output to the C standard output, it writes output to the Traffic Server "
@@ -50,7 +50,7 @@ msgstr ""
 ":func:`TSError` は C 標準出力に書き込む代わりに Traffic Server のエラーログ"
 "に書き込むことを除けば :func:`printf` に似ています。"
 
-#: ../../reference/api/TSDebug.en.rst:48
+#: ../../reference/api/TSDebug.en.rst:50
 msgid ""
 ":func:`TSDebug` is the same as :func:`TSError` except that it only logs the "
 "debug message if the given debug tag is enabled. It writes output to the "
@@ -59,14 +59,14 @@ msgstr ""
 ":func:`TSDebug` は与えられたデバッグタグが有効化されている場合にのみログメッ"
 "セージを出力する点を除いて :func:`TSError` と同じです。"
 
-#: ../../reference/api/TSDebug.en.rst:52
+#: ../../reference/api/TSDebug.en.rst:54
 msgid ""
 ":func:`TSIsDebugTagSet` returns non-zero if the given debug tag is enabled."
 msgstr ""
 ":func:`TSIsDebugTagSet` は与えられたデバッグタグが有効化されている場合に非ゼ"
 "ロを返します。"
 
-#: ../../reference/api/TSDebug.en.rst:55
+#: ../../reference/api/TSDebug.en.rst:57
 msgid ""
 "In debug mode, :macro:`TSAssert` Traffic Server to prints the file name, "
 "line number and expression, and then aborts. In release mode, the "
@@ -80,11 +80,11 @@ msgstr ""
 "`TSReleaseAssert` はリリースモードとデバッグモードのどちらでもエラーメッセー"
 "ジの出力と処理の中断を行います。"
 
-#: ../../reference/api/TSDebug.en.rst:73
+#: ../../reference/api/TSDebug.en.rst:75
 msgid "Examples"
 msgstr "例"
 
-#: ../../reference/api/TSDebug.en.rst:75
+#: ../../reference/api/TSDebug.en.rst:77
 msgid ""
 "This example uses :func:`TSDebugSpecific` to log a message when a specific "
 "debugging flag is enabled::"
@@ -92,15 +92,15 @@ msgstr ""
 "この例は特定のデバッグフラグが有効になっている場合にメッセージをログに出力す"
 "るために :func:`TSDebugSpecific` を使用しています。"
 
-#: ../../reference/api/TSDebug.en.rst:90
+#: ../../reference/api/TSDebug.en.rst:92
 msgid "See also"
 msgstr "参考"
 
-#: ../../reference/api/TSDebug.en.rst:91
+#: ../../reference/api/TSDebug.en.rst:93
 msgid ":manpage:`TSAPI(3ts)`, :manpage:`printf(3)`"
 msgstr ":manpage:`TSAPI(3ts)`, :manpage:`printf(3)`"
 
-#: ../../reference/api/TSDebug.en.rst:61
+#: ../../reference/api/TSDebug.en.rst:63
 msgid ""
 ":func:`TSDebugSpecific` emits a debug line even if the debug tag is turned "
 "off, as long as debug flag is enabled. This can be used in conjunction "
@@ -115,7 +115,7 @@ msgstr ""
 "`TSHttpTxnDebugGet` 、:func:`TSHttpSsnDebugGet` と組み合わせて使用されること"
 "があります。"
 
-#: ../../reference/api/TSDebug.en.rst:67
+#: ../../reference/api/TSDebug.en.rst:69
 msgid ""
 ":func:`TSHttpServerStateNameLookup`, :func:`TSHttpHookNameLookup` and :func:"
 "`TSHttpEventNameLookup` converts the respective internal state to a string "
@@ -125,3 +125,7 @@ msgstr ""
 ":func:`TSHttpServerStateNameLookup` 、:func:`TSHttpHookNameLookup` そして :"
 "func:`TSHttpEventNameLookup` はそれぞれの内部状態を文字列表現に変換します。"
 "これはデバッグ、ロギング、その他のタイプの通知を行う際に便利です。"
+
+#: ../../reference/api/TSDebug.en.rst:23
+msgid "Traffic Server Debugging APIs."
+msgstr ""

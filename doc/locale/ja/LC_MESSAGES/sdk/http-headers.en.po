@@ -65,33 +65,33 @@ msgstr ""
 msgid "A MIME header"
 msgstr ""
 
-#: ../../sdk/http-headers.en.rst:80
+#: ../../sdk/http-headers.en.rst:84
 msgid ""
 "The following figure illustrates an HTTP message with an expanded HTTP "
 "header."
 msgstr ""
 
-#: ../../sdk/http-headers.en.rst:83
+#: ../../sdk/http-headers.en.rst:87
 msgid "**Figure 10.1. HTTP Request/Response and Header Structure**"
 msgstr ""
 
-#: ../../sdk/http-headers.en.rst:88
+#: ../../sdk/http-headers.en.rst:92
 msgid "HTTP Request/Response and Header Structure"
 msgstr ""
 
-#: ../../sdk/http-headers.en.rst:90
+#: ../../sdk/http-headers.en.rst:94
 msgid "The figure below shows example HTTP request and response headers."
 msgstr ""
 
-#: ../../sdk/http-headers.en.rst:92
+#: ../../sdk/http-headers.en.rst:96
 msgid "**Figure 10.2. Examples of HTTP Request and Response Headers**"
 msgstr ""
 
-#: ../../sdk/http-headers.en.rst:97
+#: ../../sdk/http-headers.en.rst:101
 msgid "Examples of HTTP Request and Response Headers"
 msgstr ""
 
-#: ../../sdk/http-headers.en.rst:99
+#: ../../sdk/http-headers.en.rst:103
 msgid ""
 "The marshal buffer or ``TSMBuffer`` is a heap data structure that stores "
 "parsed URLs, MIME headers, and HTTP headers. You can allocate new objects "
@@ -101,45 +101,45 @@ msgid ""
 "(``TSMBuffer``)."
 msgstr ""
 
-#: ../../sdk/http-headers.en.rst:106
+#: ../../sdk/http-headers.en.rst:110
 msgid "**Figure 10.3. Marshal Buffers and Header Locations**"
 msgstr ""
 
-#: ../../sdk/http-headers.en.rst:111
+#: ../../sdk/http-headers.en.rst:115
 msgid "Marshal Buffers and Header Locations"
 msgstr ""
 
-#: ../../sdk/http-headers.en.rst:113
+#: ../../sdk/http-headers.en.rst:117
 msgid "The figure above shows the following:"
 msgstr ""
 
-#: ../../sdk/http-headers.en.rst:115
+#: ../../sdk/http-headers.en.rst:119
 msgid "The marshal buffer containing the HTTP request, ``reqest_bufp``"
 msgstr ""
 
-#: ../../sdk/http-headers.en.rst:117
+#: ../../sdk/http-headers.en.rst:121
 msgid "``TSMLoc`` location pointer for the HTTP header (``http_hdr_loc``)"
 msgstr ""
 
-#: ../../sdk/http-headers.en.rst:119
+#: ../../sdk/http-headers.en.rst:123
 msgid "``TSMLoc`` location pointer for the request URL (``url_loc``)"
 msgstr ""
 
-#: ../../sdk/http-headers.en.rst:121
+#: ../../sdk/http-headers.en.rst:125
 msgid "``TSMLoc`` location pointers for the MIME header (``mime_hdr_loc``)"
 msgstr ""
 
-#: ../../sdk/http-headers.en.rst:123
+#: ../../sdk/http-headers.en.rst:127
 msgid "``TSMLoc`` location pointers for MIME fields (``fieldi_loc``)"
 msgstr ""
 
-#: ../../sdk/http-headers.en.rst:125
+#: ../../sdk/http-headers.en.rst:129
 msgid ""
 "``TSMLoc`` location pointer for the next duplicate MIME field "
 "(``next_dup_loc``)"
 msgstr ""
 
-#: ../../sdk/http-headers.en.rst:128
+#: ../../sdk/http-headers.en.rst:132
 msgid ""
 "The diagram also shows that an HTTP header contains pointers to the URL "
 "location and the MIME header location. You can obtain the URL location from "
@@ -164,11 +164,10 @@ msgid ""
 "field** is composed of a field name, a colon, and (zero or more) field "
 "values. The values in a field are separated by commas. An HTTP header "
 "containing a request line is usually referred to as a **request**. The "
-"following example shows a typical request header::"
+"following example shows a typical request header:"
 msgstr ""
 
-#: ../../sdk/http-headers.en.rst:66
+#: ../../sdk/http-headers.en.rst:68
 msgid ""
-"The **response header** for the above request might look like the "
-"following::"
+"The **response header** for the above request might look like the following:"
 msgstr ""

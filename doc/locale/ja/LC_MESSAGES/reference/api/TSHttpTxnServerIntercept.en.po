@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -30,19 +29,19 @@ msgstr ""
 msgid "TSHttpTxnServerIntercept"
 msgstr ""
 
-#: ../../reference/api/TSHttpTxnServerIntercept.en.rst:25
+#: ../../reference/api/TSHttpTxnServerIntercept.en.rst:27
 msgid "Synopsis"
 msgstr ""
 
-#: ../../reference/api/TSHttpTxnServerIntercept.en.rst:27
+#: ../../reference/api/TSHttpTxnServerIntercept.en.rst:29
 msgid "`#include <ts/ts.h>`"
 msgstr ""
 
-#: ../../reference/api/TSHttpTxnServerIntercept.en.rst:32
+#: ../../reference/api/TSHttpTxnServerIntercept.en.rst:34
 msgid "Description"
 msgstr ""
 
-#: ../../reference/api/TSHttpTxnServerIntercept.en.rst:34
+#: ../../reference/api/TSHttpTxnServerIntercept.en.rst:36
 msgid ""
 ":func:`TSHttpTxnServerIntercept` allows a plugin take over the servicing of "
 "the request as though it was the origin server. In the event a request "
@@ -54,7 +53,7 @@ msgid ""
 "response header and body."
 msgstr ""
 
-#: ../../reference/api/TSHttpTxnServerIntercept.en.rst:44
+#: ../../reference/api/TSHttpTxnServerIntercept.en.rst:46
 msgid ""
 ":func:`TSHttpTxnServerIntercept` must be not be called after the connection "
 "to the server has taken place. This means that the last hook last hook that "
@@ -64,7 +63,7 @@ msgid ""
 "transaction completes."
 msgstr ""
 
-#: ../../reference/api/TSHttpTxnServerIntercept.en.rst:52
+#: ../../reference/api/TSHttpTxnServerIntercept.en.rst:54
 msgid ""
 "The response from the plugin is cached subject to standard and configured "
 "HTTP caching rules. Should the plugin wish the response not be cached, the "
@@ -75,17 +74,21 @@ msgid ""
 "overrides parent cache configuration."
 msgstr ""
 
-#: ../../reference/api/TSHttpTxnServerIntercept.en.rst:60
+#: ../../reference/api/TSHttpTxnServerIntercept.en.rst:62
 msgid ""
 ":func:`TSHttpTxnServerIntercept` must only be called once per transaction. "
 "The continuation :arg:`contp` must have been created with a valid :type:"
 "`TSMutex`."
 msgstr ""
 
-#: ../../reference/api/TSHttpTxnServerIntercept.en.rst:65
+#: ../../reference/api/TSHttpTxnServerIntercept.en.rst:67
 msgid "See also"
 msgstr ""
 
-#: ../../reference/api/TSHttpTxnServerIntercept.en.rst:67
+#: ../../reference/api/TSHttpTxnServerIntercept.en.rst:69
 msgid ":manpage:`TSAPI(3ts)`"
+msgstr ""
+
+#: ../../reference/api/TSHttpTxnServerIntercept.en.rst:24
+msgid "Intercept origin server requests."
 msgstr ""

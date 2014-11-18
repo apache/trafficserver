@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -56,40 +55,40 @@ msgstr ""
 "関数や関数グループに固有のものですが、それ以外はより広範囲で使用されます。そ"
 "れらはこのページで解説されます。"
 
-#: ../../reference/api/TSTypes.en.rst:36
+#: ../../reference/api/TSTypes.en.rst:46
 msgid "An opaque type that represents a Traffic Server :term:`continuation`."
 msgstr "Traffic Server の\\ :term:`継続`\\ を表現する不明瞭な型。"
 
-#: ../../reference/api/TSTypes.en.rst:40
+#: ../../reference/api/TSTypes.en.rst:71
 msgid ""
 "An enumeration that identifies a specific type of hook for HTTP "
 "transactions."
 msgstr "HTTP トランザクション用の特定のタイプのフックを特定する列挙型。"
 
-#: ../../reference/api/TSTypes.en.rst:44
+#: ../../reference/api/TSTypes.en.rst:77
 msgid "An opaque type that represents a Traffic Server :term:`session`."
 msgstr "Traffic Server :term:`session` を表現する不明瞭な型。"
 
-#: ../../reference/api/TSTypes.en.rst:48
+#: ../../reference/api/TSTypes.en.rst:65
 msgid "\"High Resolution Time\""
 msgstr "\"高精度の時間\""
 
-#: ../../reference/api/TSTypes.en.rst:50
+#: ../../reference/api/TSTypes.en.rst:67
 msgid "A 64 bit time value, measured in nanoseconds."
 msgstr "ナノ秒で計られた 64 ビットの時間値。"
 
-#: ../../reference/api/TSTypes.en.rst:54
+#: ../../reference/api/TSTypes.en.rst:91
 msgid ""
 "An opaque type that represents a Traffic Server HTTP :term:`transaction`."
 msgstr "Traffic Server HTTP :term:`transaction` を表現する不明瞭な型。"
 
-#: ../../reference/api/TSTypes.en.rst:58
+#: ../../reference/api/TSTypes.en.rst:115
 msgid ""
 "An enumeration that identifies a :ref:`life cycle hook <ts-lifecycle-hook-"
 "add>`."
 msgstr ":ref:`life cycle hook <ts-lifecycle-hook-add>` を識別する列挙型。"
 
-#: ../../reference/api/TSTypes.en.rst:62
+#: ../../reference/api/TSTypes.en.rst:162
 msgid ""
 "An indicator of the results of an API call. A value of :const:`TS_SUCCESS` "
 "means the call was successful. Any other value indicates a failure and is "
@@ -98,13 +97,13 @@ msgstr ""
 "API 呼び出しの結果。:const:`TS_SUCCESS` は呼び出しの成功を意味します。その他"
 "の値は失敗を意味し、API 呼び出しに固有のものです。"
 
-#: ../../reference/api/TSTypes.en.rst:67
+#: ../../reference/api/TSTypes.en.rst:152
 msgid ""
 "An enumeration that specifies the type of a value in an internal data "
 "structure that is accessible via the API."
 msgstr "API からアクセス可能な内部データ構造の値の型を表現する列挙型。"
 
-#: ../../reference/api/TSTypes.en.rst:71
+#: ../../reference/api/TSTypes.en.rst:128
 msgid ""
 "The type used internally for an integer. This corresponds to the value :"
 "const:`TS_RECORDDATATYPE_INT` for :type:`TSRecordDataType`."
@@ -112,10 +111,80 @@ msgstr ""
 "内部で整数として使われる型。これは :type:`TSRecordDataType` の :const:"
 "`TS_RECORDDATATYPE_INT` に相当します。"
 
-#: ../../reference/api/TSTypes.en.rst:76
+#: ../../reference/api/TSTypes.en.rst:123
 msgid ""
 "The type used internally for a floating point value. This corresponds to "
 "the value :const:`TS_RECORDDATATYPE_FLOAT` for :type:`TSRecordDataType`."
 msgstr ""
 "内部で浮動小数点の値として使われる型。これは :type:`TSRecordDataType` の :"
 "const:`TS_RECORDDATATYPE_FLOAT` に相当します。"
+
+#: ../../reference/api/TSTypes.en.rst:50
+msgid ":type:`TSEvents` are sent to continuations when they are called back."
+msgstr ""
+
+#: ../../reference/api/TSTypes.en.rst:53
+msgid ""
+"The :type:`TSEvent` provides the continuation's handler function with "
+"information about the callback.  Based on the event it receives, the "
+"handler function can decide what to do."
+msgstr ""
+
+#: ../../reference/api/TSTypes.en.rst:81
+msgid ""
+"This set of enums represents possible return values from :func:"
+"`TSHttpHdrStatusGet`, which retrieves the status code from an HTTP response "
+"header (:func:`TSHttpHdrStatusGet` retrieves status codes only from headers "
+"of type :data:`TS_HTTP_TYPE_RESPONSE`)."
+msgstr ""
+
+#: ../../reference/api/TSTypes.en.rst:86
+msgid ""
+"You can also set the :type:`TSHttpStatus` of a response header using :func:"
+"`TSHttpHdrStatusSet`."
+msgstr ""
+
+#: ../../reference/api/TSTypes.en.rst:95
+msgid ""
+"This set of enums represents the possible HTTP types that can be assigned "
+"to an HTTP header."
+msgstr ""
+
+#: ../../reference/api/TSTypes.en.rst:98
+msgid ""
+"When a header is created with :func:`TSHttpHdrCreate`, it is automatically "
+"assigned a type of :data:`TS_HTTP_TYPE_UNKNOWN`.  You can modify the HTTP "
+"type ONCE after it the header is created, using :func:`TSHttpHdrTypeSet`.  "
+"After setting the HTTP type once, you cannot set it again.  Use :func:"
+"`TSHttpHdrTypeGet` to obtain the :type:`TSHttpType` of an HTTP header."
+msgstr ""
+
+#: ../../reference/api/TSTypes.en.rst:141
+msgid ""
+"This set of enums are possible values returned by :func:`TSHttpHdrParseReq` "
+"and :func:`TSHttpHdrParseResp`."
+msgstr ""
+
+#: ../../reference/api/TSTypes.en.rst:146
+msgid "The following struct is used by :func:`TSPluginRegister`."
+msgstr ""
+
+#: ../../reference/api/TSTypes.en.rst:148
+msgid "It stores registration information about the plugin."
+msgstr ""
+
+#: ../../reference/api/TSTypes.en.rst:167
+msgid "Starting 2.0, SDK now follows same versioning as Traffic Server."
+msgstr ""
+
+#: ../../reference/api/TSTypes.en.rst:173
+msgid ""
+"This type represents a custom log file that you create with :func:"
+"`TSTextLogObjectCreate`."
+msgstr ""
+
+#: ../../reference/api/TSTypes.en.rst:176
+msgid ""
+"Your plugin writes entries into this log file using :func:"
+"`TSTextLogObjectWrite`."
+msgstr ""

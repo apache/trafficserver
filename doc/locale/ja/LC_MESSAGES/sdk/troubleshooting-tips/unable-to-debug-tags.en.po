@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -53,38 +52,38 @@ msgid ""
 "``my-plugin``, then the debug output goes to ``traffic.out.``\\ See below:"
 msgstr ""
 
-#: ../../sdk/troubleshooting-tips/unable-to-debug-tags.en.rst:40
+#: ../../sdk/troubleshooting-tips/unable-to-debug-tags.en.rst:39
 msgid ""
 "Set the following variables in :file:`records.config` (in the Traffic "
 "Server ``config`` directory):"
 msgstr ""
 
-#: ../../sdk/troubleshooting-tips/unable-to-debug-tags.en.rst:49
+#: ../../sdk/troubleshooting-tips/unable-to-debug-tags.en.rst:47
 msgid "In this case, debug output goes to ``traffic.out``."
 msgstr ""
 
-#: ../../sdk/troubleshooting-tips/unable-to-debug-tags.en.rst:51
+#: ../../sdk/troubleshooting-tips/unable-to-debug-tags.en.rst:49
 msgid "Example:"
 msgstr ""
 
-#: ../../sdk/troubleshooting-tips/unable-to-debug-tags.en.rst:58
+#: ../../sdk/troubleshooting-tips/unable-to-debug-tags.en.rst:55
 msgid ""
 "The statement ``\"Starting my-plugin at <time>\"`` appears whenever you run "
 "Traffic Server with the ``my-plugin`` tag:"
 msgstr ""
 
-#: ../../sdk/troubleshooting-tips/unable-to-debug-tags.en.rst:67
+#: ../../sdk/troubleshooting-tips/unable-to-debug-tags.en.rst:63
 msgid "Other Useful Internal Debug Tags"
 msgstr ""
 
-#: ../../sdk/troubleshooting-tips/unable-to-debug-tags.en.rst:69
+#: ../../sdk/troubleshooting-tips/unable-to-debug-tags.en.rst:65
 msgid ""
 "Embedded in the base Traffic Server code are many debug tags for internal "
 "debugging purposes. These can also be used to follow Traffic Server "
 "behavior for testing and analysis."
 msgstr ""
 
-#: ../../sdk/troubleshooting-tips/unable-to-debug-tags.en.rst:73
+#: ../../sdk/troubleshooting-tips/unable-to-debug-tags.en.rst:69
 msgid ""
 "The debug tag setting (``-T`` and ``proxy.config.diags.debug.tags``) is a "
 "anchored regular expression against which the tag for a specific debug "
@@ -96,64 +95,64 @@ msgid ""
 "\" nor \"splitdns\")."
 msgstr ""
 
-#: ../../sdk/troubleshooting-tips/unable-to-debug-tags.en.rst:82
+#: ../../sdk/troubleshooting-tips/unable-to-debug-tags.en.rst:78
 msgid "Some of the useful HTTP debug tags are:"
 msgstr ""
 
-#: ../../sdk/troubleshooting-tips/unable-to-debug-tags.en.rst:84
+#: ../../sdk/troubleshooting-tips/unable-to-debug-tags.en.rst:80
 msgid "``http_hdrs`` - traces all incoming and outgoing HTTP headers."
 msgstr ""
 
-#: ../../sdk/troubleshooting-tips/unable-to-debug-tags.en.rst:86
+#: ../../sdk/troubleshooting-tips/unable-to-debug-tags.en.rst:82
 msgid "``http_trans`` - traces actions in an HTTP transaction."
 msgstr ""
 
-#: ../../sdk/troubleshooting-tips/unable-to-debug-tags.en.rst:88
+#: ../../sdk/troubleshooting-tips/unable-to-debug-tags.en.rst:84
 msgid "``http_seq`` - traces the sequence of the HTTP state machine."
 msgstr ""
 
-#: ../../sdk/troubleshooting-tips/unable-to-debug-tags.en.rst:90
+#: ../../sdk/troubleshooting-tips/unable-to-debug-tags.en.rst:86
 msgid "``http_tproxy`` - transparency related HTTP events"
 msgstr ""
 
-#: ../../sdk/troubleshooting-tips/unable-to-debug-tags.en.rst:92
+#: ../../sdk/troubleshooting-tips/unable-to-debug-tags.en.rst:88
 msgid "``dns`` - DNS operations"
 msgstr ""
 
-#: ../../sdk/troubleshooting-tips/unable-to-debug-tags.en.rst:94
+#: ../../sdk/troubleshooting-tips/unable-to-debug-tags.en.rst:90
 msgid "``hostdb`` - Host name lookup"
 msgstr ""
 
-#: ../../sdk/troubleshooting-tips/unable-to-debug-tags.en.rst:96
+#: ../../sdk/troubleshooting-tips/unable-to-debug-tags.en.rst:92
 msgid "``iocore_net`` - Socket and low level IO (very voluminous)"
 msgstr ""
 
-#: ../../sdk/troubleshooting-tips/unable-to-debug-tags.en.rst:98
+#: ../../sdk/troubleshooting-tips/unable-to-debug-tags.en.rst:94
 msgid "``socket`` - socket operations"
 msgstr ""
 
-#: ../../sdk/troubleshooting-tips/unable-to-debug-tags.en.rst:100
+#: ../../sdk/troubleshooting-tips/unable-to-debug-tags.en.rst:96
 msgid "``ssl`` - SSL related events"
 msgstr ""
 
-#: ../../sdk/troubleshooting-tips/unable-to-debug-tags.en.rst:102
+#: ../../sdk/troubleshooting-tips/unable-to-debug-tags.en.rst:98
 msgid ""
 "``cache`` - Cache operations (many subtags, examine the output to narrow "
 "the tag set)"
 msgstr ""
 
-#: ../../sdk/troubleshooting-tips/unable-to-debug-tags.en.rst:105
+#: ../../sdk/troubleshooting-tips/unable-to-debug-tags.en.rst:101
 msgid "``cache_update`` - Cache updates including writes"
 msgstr ""
 
-#: ../../sdk/troubleshooting-tips/unable-to-debug-tags.en.rst:107
+#: ../../sdk/troubleshooting-tips/unable-to-debug-tags.en.rst:103
 msgid "``cache_read`` - Cache read events."
 msgstr ""
 
-#: ../../sdk/troubleshooting-tips/unable-to-debug-tags.en.rst:109
+#: ../../sdk/troubleshooting-tips/unable-to-debug-tags.en.rst:105
 msgid "``dir_probe`` - Cache searches."
 msgstr ""
 
-#: ../../sdk/troubleshooting-tips/unable-to-debug-tags.en.rst:111
+#: ../../sdk/troubleshooting-tips/unable-to-debug-tags.en.rst:107
 msgid "``sdk`` - gives some warning concerning API usage."
 msgstr ""

@@ -29,251 +29,104 @@ msgstr ""
 msgid "ts-lua Plugin"
 msgstr ""
 
-#: ../../reference/plugins/ts_lua.en.rst:24
-msgid "Embed the Power of Lua into TrafficServer."
-msgstr ""
-
-#: ../../reference/plugins/ts_lua.en.rst:27
+#: ../../reference/plugins/ts_lua.en.rst:29
 msgid "Synopsis"
 msgstr ""
 
-#: ../../reference/plugins/ts_lua.en.rst:29
+#: ../../reference/plugins/ts_lua.en.rst:30
 msgid "**test_hdr.lua**"
 msgstr ""
 
-#: ../../reference/plugins/ts_lua.en.rst:55
-msgid "**test_transform.lua**"
-msgstr ""
-
-#: ../../reference/plugins/ts_lua.en.rst:93
-msgid "**test_cache_lookup.lua**"
-msgstr ""
-
-#: ../../reference/plugins/ts_lua.en.rst:126
-msgid "**test_ret_403.lua**"
-msgstr ""
-
-#: ../../reference/plugins/ts_lua.en.rst:153
+#: ../../reference/plugins/ts_lua.en.rst:46
 msgid "**sethost.lua**"
 msgstr ""
 
-#: ../../reference/plugins/ts_lua.en.rst:182
-msgid "**test_intercept.lua**"
-msgstr ""
-
-#: ../../reference/plugins/ts_lua.en.rst:210
-msgid "**test_server_intercept.lua**"
-msgstr ""
-
-#: ../../reference/plugins/ts_lua.en.rst:261
-msgid "Description"
-msgstr ""
-
-#: ../../reference/plugins/ts_lua.en.rst:269
-msgid ""
-"Sometimes we want to receive parameters and process them in the script, we "
-"should realize **'\\__init__'** function in the lua script(sethost.lua is a "
-"reference), and we can write this in remap.config:::"
-msgstr ""
-
-#: ../../reference/plugins/ts_lua.en.rst:284
+#: ../../reference/plugins/ts_lua.en.rst:117
 msgid "TS API for Lua"
 msgstr ""
 
-#: ../../reference/plugins/ts_lua.en.rst:287
+#: ../../reference/plugins/ts_lua.en.rst:120
 msgid "Introduction"
 msgstr ""
 
-#: ../../reference/plugins/ts_lua.en.rst:289
-msgid ""
-"The API is exposed to Lua in the form of one standard packages ts. This "
-"package is in the default global scope and is always available within lua "
-"script."
-msgstr ""
-
-#: ../../reference/plugins/ts_lua.en.rst:295
+#: ../../reference/plugins/ts_lua.en.rst:132
 msgid "ts.now"
 msgstr ""
 
-#: ../../reference/plugins/ts_lua.en.rst:296
-msgid "**syntax**: *val = ts.now()*"
-msgstr ""
-
-#: ../../reference/plugins/ts_lua.en.rst:298
-#: ../../reference/plugins/ts_lua.en.rst:314
-#: ../../reference/plugins/ts_lua.en.rst:418
-msgid "**context**: global"
-msgstr ""
-
-#: ../../reference/plugins/ts_lua.en.rst:300
-msgid ""
-"**description**: This function returns the time since the Epoch (00:00:00 "
-"UTC, January 1, 1970), measured in seconds."
-msgstr ""
-
-#: ../../reference/plugins/ts_lua.en.rst:302
-#: ../../reference/plugins/ts_lua.en.rst:318
-#: ../../reference/plugins/ts_lua.en.rst:339
-#: ../../reference/plugins/ts_lua.en.rst:371
-#: ../../reference/plugins/ts_lua.en.rst:394
-#: ../../reference/plugins/ts_lua.en.rst:434
-#: ../../reference/plugins/ts_lua.en.rst:450
-#: ../../reference/plugins/ts_lua.en.rst:478
-#: ../../reference/plugins/ts_lua.en.rst:506
-#: ../../reference/plugins/ts_lua.en.rst:592
-msgid "Here is an example:::"
-msgstr ""
-
-#: ../../reference/plugins/ts_lua.en.rst:311
+#: ../../reference/plugins/ts_lua.en.rst:148
 msgid "ts.debug"
 msgstr ""
 
-#: ../../reference/plugins/ts_lua.en.rst:312
-msgid "**syntax**: *ts.debug(MESSAGE)*"
-msgstr ""
-
-#: ../../reference/plugins/ts_lua.en.rst:316
+#: ../../reference/plugins/ts_lua.en.rst:153
 msgid "**description**: Log the MESSAGE to traffic.out if debug is enabled."
 msgstr ""
 
-#: ../../reference/plugins/ts_lua.en.rst:325
-msgid "The debug tag is ts_lua and we should write this in records.config:::"
-msgstr ""
-
-#: ../../reference/plugins/ts_lua.en.rst:331
+#: ../../reference/plugins/ts_lua.en.rst:184
 msgid "ts.hook"
 msgstr ""
 
-#: ../../reference/plugins/ts_lua.en.rst:332
-msgid "**syntax**: *ts.hook(HOOK_POINT, FUNCTION)*"
-msgstr ""
-
-#: ../../reference/plugins/ts_lua.en.rst:336
+#: ../../reference/plugins/ts_lua.en.rst:189
 msgid ""
 "**description**: Hooks are points in http transaction processing where we "
 "can step in and do some work. FUNCTION will be called when the http "
 "transaction steps in to HOOK_POINT."
 msgstr ""
 
-#: ../../reference/plugins/ts_lua.en.rst:350
+#: ../../reference/plugins/ts_lua.en.rst:242
 msgid "Hook point constants"
 msgstr ""
 
-#: ../../reference/plugins/ts_lua.en.rst:353
-msgid ""
-"TS_LUA_HOOK_CACHE_LOOKUP_COMPLETE TS_LUA_HOOK_SEND_REQUEST_HDR "
-"TS_LUA_HOOK_READ_RESPONSE_HDR TS_LUA_HOOK_SEND_RESPONSE_HDR "
-"TS_LUA_REQUEST_TRANSFORM TS_LUA_RESPONSE_TRANSFORM"
-msgstr ""
-
-#: ../../reference/plugins/ts_lua.en.rst:360
+#: ../../reference/plugins/ts_lua.en.rst:261
 msgid "These constants are usually used in ts.hook method call."
 msgstr ""
 
-#: ../../reference/plugins/ts_lua.en.rst:364
+#: ../../reference/plugins/ts_lua.en.rst:266
 msgid "ts.ctx"
 msgstr ""
 
-#: ../../reference/plugins/ts_lua.en.rst:365
-msgid "**syntax**: *ts.ctx[KEY]*"
-msgstr ""
-
-#: ../../reference/plugins/ts_lua.en.rst:369
-msgid ""
-"**description**: This table can be used to store per-request Lua context "
-"data and has a life time identical to the current request."
-msgstr ""
-
-#: ../../reference/plugins/ts_lua.en.rst:387
+#: ../../reference/plugins/ts_lua.en.rst:709
 msgid "ts.http.get_cache_lookup_status"
 msgstr ""
 
-#: ../../reference/plugins/ts_lua.en.rst:388
-msgid "**syntax**: *ts.http.get_cache_lookup_status()*"
-msgstr ""
-
-#: ../../reference/plugins/ts_lua.en.rst:390
-msgid "**context**: function @ TS_LUA_HOOK_CACHE_LOOKUP_COMPLETE hook point"
-msgstr ""
-
-#: ../../reference/plugins/ts_lua.en.rst:392
-msgid "**description**: This function can be used to get cache lookup status."
-msgstr ""
-
-#: ../../reference/plugins/ts_lua.en.rst:417
+#: ../../reference/plugins/ts_lua.en.rst:738
 msgid "Http cache lookup status constants"
 msgstr ""
 
-#: ../../reference/plugins/ts_lua.en.rst:420
-msgid ""
-"TS_LUA_CACHE_LOOKUP_MISS (0) TS_LUA_CACHE_LOOKUP_HIT_STALE (1) "
-"TS_LUA_CACHE_LOOKUP_HIT_FRESH (2) TS_LUA_CACHE_LOOKUP_SKIPPED (3)"
-msgstr ""
-
-#: ../../reference/plugins/ts_lua.en.rst:427
+#: ../../reference/plugins/ts_lua.en.rst:655
 msgid "ts.http.set_cache_url"
 msgstr ""
 
-#: ../../reference/plugins/ts_lua.en.rst:428
-msgid "**syntax**: *ts.http.set_cache_url(KEY_URL)*"
-msgstr ""
-
-#: ../../reference/plugins/ts_lua.en.rst:430
-#: ../../reference/plugins/ts_lua.en.rst:530
-#: ../../reference/plugins/ts_lua.en.rst:557
-#: ../../reference/plugins/ts_lua.en.rst:575
-msgid "**context**: do_remap"
-msgstr ""
-
-#: ../../reference/plugins/ts_lua.en.rst:432
-msgid ""
-"**description**: This function can be used to modify the cache key for the "
-"request."
-msgstr ""
-
-#: ../../reference/plugins/ts_lua.en.rst:443
+#: ../../reference/plugins/ts_lua.en.rst:1368
 msgid "ts.http.resp_cache_transformed"
 msgstr ""
 
-#: ../../reference/plugins/ts_lua.en.rst:444
-msgid "**syntax**: *ts.http.resp_cache_transformed(BOOL)*"
-msgstr ""
-
-#: ../../reference/plugins/ts_lua.en.rst:448
+#: ../../reference/plugins/ts_lua.en.rst:1373
 msgid ""
 "**description**: This function can be used to tell trafficserver whether to "
 "cache the transformed data."
 msgstr ""
 
-#: ../../reference/plugins/ts_lua.en.rst:467
-#: ../../reference/plugins/ts_lua.en.rst:495
+#: ../../reference/plugins/ts_lua.en.rst:1393
+#: ../../reference/plugins/ts_lua.en.rst:1424
 msgid ""
 "This function is usually called after we hook TS_LUA_RESPONSE_TRANSFORM."
 msgstr ""
 
-#: ../../reference/plugins/ts_lua.en.rst:471
+#: ../../reference/plugins/ts_lua.en.rst:1399
 msgid "ts.http.resp_cache_untransformed"
 msgstr ""
 
-#: ../../reference/plugins/ts_lua.en.rst:472
-msgid "**syntax**: *ts.http.resp_cache_untransformed(BOOL)*"
-msgstr ""
-
-#: ../../reference/plugins/ts_lua.en.rst:476
+#: ../../reference/plugins/ts_lua.en.rst:1404
 msgid ""
 "**description**: This function can be used to tell trafficserver whether to "
 "cache the untransformed data."
 msgstr ""
 
-#: ../../reference/plugins/ts_lua.en.rst:499
+#: ../../reference/plugins/ts_lua.en.rst:506
 msgid "ts.client_request.client_addr.get_addr"
 msgstr ""
 
-#: ../../reference/plugins/ts_lua.en.rst:500
-msgid "**syntax**: *ts.client_request.client_addr.get_addr()*"
-msgstr ""
-
-#: ../../reference/plugins/ts_lua.en.rst:504
+#: ../../reference/plugins/ts_lua.en.rst:511
 msgid ""
 "**description**: This function can be used to get socket address of the "
 "client."
@@ -285,190 +138,1659 @@ msgid ""
 "ip is a string, port and family is number."
 msgstr ""
 
-#: ../../reference/plugins/ts_lua.en.rst:517
+#: ../../reference/plugins/ts_lua.en.rst:305
 msgid "ts.client_request.get_method"
 msgstr ""
 
-#: ../../reference/plugins/ts_lua.en.rst:518
-msgid "**syntax**: *ts.client_request.get_method()*"
-msgstr ""
-
-#: ../../reference/plugins/ts_lua.en.rst:522
-msgid ""
-"**description**: This function can be used to retrieve the current "
-"request's request method name. String like \"GET\" or \"POST\" is returned."
-msgstr ""
-
-#: ../../reference/plugins/ts_lua.en.rst:527
+#: ../../reference/plugins/ts_lua.en.rst:316
 msgid "ts.client_request.set_method"
 msgstr ""
 
-#: ../../reference/plugins/ts_lua.en.rst:528
-msgid "**syntax**: *ts.client_request.set_method(METHOD_NAME)*"
-msgstr ""
-
-#: ../../reference/plugins/ts_lua.en.rst:532
-msgid ""
-"**description**: This function can be used to override the current "
-"request's request method with METHOD_NAME."
-msgstr ""
-
-#: ../../reference/plugins/ts_lua.en.rst:536
+#: ../../reference/plugins/ts_lua.en.rst:426
 msgid "ts.client_request.get_url"
 msgstr ""
 
-#: ../../reference/plugins/ts_lua.en.rst:537
-msgid "**syntax**: *ts.client_request.get_url()*"
-msgstr ""
-
-#: ../../reference/plugins/ts_lua.en.rst:541
-msgid ""
-"**description**: This function can be used to retrieve the whole request's "
-"url."
-msgstr ""
-
-#: ../../reference/plugins/ts_lua.en.rst:545
+#: ../../reference/plugins/ts_lua.en.rst:350
 msgid "ts.client_request.get_uri"
 msgstr ""
 
-#: ../../reference/plugins/ts_lua.en.rst:546
-msgid "**syntax**: *ts.client_request.get_uri()*"
-msgstr ""
-
-#: ../../reference/plugins/ts_lua.en.rst:550
-msgid ""
-"**description**: This function can be used to retrieve the request's path."
-msgstr ""
-
-#: ../../reference/plugins/ts_lua.en.rst:554
+#: ../../reference/plugins/ts_lua.en.rst:374
 msgid "ts.client_request.set_uri"
 msgstr ""
 
-#: ../../reference/plugins/ts_lua.en.rst:555
-msgid "**syntax**: *ts.client_request.set_uri(PATH)*"
-msgstr ""
-
-#: ../../reference/plugins/ts_lua.en.rst:559
-msgid ""
-"**description**: This function can be used to override the request's path."
-msgstr ""
-
-#: ../../reference/plugins/ts_lua.en.rst:563
+#: ../../reference/plugins/ts_lua.en.rst:387
 msgid "ts.client_request.get_uri_args"
 msgstr ""
 
-#: ../../reference/plugins/ts_lua.en.rst:564
-msgid "**syntax**: *ts.client_request.get_uri_args()*"
-msgstr ""
-
-#: ../../reference/plugins/ts_lua.en.rst:568
-msgid ""
-"**description**: This function can be used to retrieve the request's query "
-"string."
-msgstr ""
-
-#: ../../reference/plugins/ts_lua.en.rst:572
+#: ../../reference/plugins/ts_lua.en.rst:411
 msgid "ts.client_request.set_uri_args"
 msgstr ""
 
-#: ../../reference/plugins/ts_lua.en.rst:573
-msgid "**syntax**: *ts.client_request.set_uri_args(QUERY_STRING)*"
-msgstr ""
-
-#: ../../reference/plugins/ts_lua.en.rst:577
-msgid ""
-"**description**: This function can be used to override the request's query "
-"string."
-msgstr ""
-
-#: ../../reference/plugins/ts_lua.en.rst:581
+#: ../../reference/plugins/ts_lua.en.rst:449
 msgid "ts.client_request.header.HEADER"
 msgstr ""
 
-#: ../../reference/plugins/ts_lua.en.rst:582
-msgid "**syntax**: *ts.client_request.header.HEADER = VALUE*"
-msgstr ""
-
-#: ../../reference/plugins/ts_lua.en.rst:584
-msgid "**syntax**: *ts.client_request.header[HEADER] = VALUE*"
-msgstr ""
-
-#: ../../reference/plugins/ts_lua.en.rst:586
-msgid "**syntax**: *VALUE = ts.client_request.header.HEADER*"
-msgstr ""
-
-#: ../../reference/plugins/ts_lua.en.rst:590
-msgid ""
-"**description**: Set, add to, clear or get the current request's HEADER."
-msgstr ""
-
-#: ../../reference/plugins/ts_lua.en.rst:601
-msgid "TODO"
-msgstr ""
-
-#: ../../reference/plugins/ts_lua.en.rst:604
-msgid "Short Term"
-msgstr ""
-
-#: ../../reference/plugins/ts_lua.en.rst:605
-msgid "document configuration"
-msgstr ""
-
-#: ../../reference/plugins/ts_lua.en.rst:606
-msgid "non-blocking I/O operation"
-msgstr ""
-
-#: ../../reference/plugins/ts_lua.en.rst:607
+#: ../../reference/plugins/ts_lua.en.rst:2065
 msgid "ts.fetch"
 msgstr ""
 
-#: ../../reference/plugins/ts_lua.en.rst:610
-msgid "Long Term"
+#: ../../reference/plugins/ts_lua.en.rst:24
+msgid ""
+"This module embeds Lua, via the standard Lua 5.1 interpreter, into Apache "
+"Traffic Server. With this module, we can implement ATS plugin by writing "
+"lua script instead of c code. Lua code executed using this module can be "
+"100% non-blocking because the powerful Lua coroutines had been integrated "
+"in to ATS event model."
 msgstr ""
 
-#: ../../reference/plugins/ts_lua.en.rst:611
-msgid "ts.regex"
+#: ../../reference/plugins/ts_lua.en.rst:66
+msgid "Installation"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:68
+msgid "This plugin is only built if the configure option"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:74
+msgid "is given at build time."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:77
+msgid "Configuration"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:79
+msgid ""
+"This module acts as remap plugin of Traffic Server, so we should realize "
+"'do_remap' function in each lua script. We can write this in remap.config:"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:86
+msgid ""
+"Sometimes we want to receive parameters and process them in the script, we "
+"should realize '__init__' function in the lua script, and we can write this "
+"in remap.config:"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:93
+msgid ""
+"This module can also act as a global plugin of Traffic Server. In this case "
+"we should provide one of these functions in each lua script:"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:96
+msgid "**'do_global_txn_start'**"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:97
+msgid "**'do_global_txn_close'**"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:98
+msgid "**'do_global_os_dns'**"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:99
+msgid "**'do_global_pre_remap'**"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:100
+msgid "**'do_global_post_remap'**"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:101
+msgid "**'do_global_read_request'**"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:102
+msgid "**'do_global_send_request'**"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:103
+msgid "**'do_global_read_response'**"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:104
+msgid "**'do_global_send_response'**"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:105
+msgid "**'do_global_cache_lookup_complete'**"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:106
+msgid "**'do_global_read_cache'**"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:107
+msgid "**'do_global_select_alt'**"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:109
+msgid "We can write this in plugin.config:"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:121
+msgid ""
+"The API is exposed to Lua in the form of one standard packages ``ts``. This "
+"package is in the default global scope and is always available within lua "
+"script. This package can be introduced into Lua like this:"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:129
+#: ../../reference/plugins/ts_lua.en.rst:145
+#: ../../reference/plugins/ts_lua.en.rst:165
+#: ../../reference/plugins/ts_lua.en.rst:181
+#: ../../reference/plugins/ts_lua.en.rst:239
+#: ../../reference/plugins/ts_lua.en.rst:263
+#: ../../reference/plugins/ts_lua.en.rst:302
+#: ../../reference/plugins/ts_lua.en.rst:313
+#: ../../reference/plugins/ts_lua.en.rst:333
+#: ../../reference/plugins/ts_lua.en.rst:347
+#: ../../reference/plugins/ts_lua.en.rst:371
+#: ../../reference/plugins/ts_lua.en.rst:384
+#: ../../reference/plugins/ts_lua.en.rst:408
+#: ../../reference/plugins/ts_lua.en.rst:423
+#: ../../reference/plugins/ts_lua.en.rst:446
+#: ../../reference/plugins/ts_lua.en.rst:475
+#: ../../reference/plugins/ts_lua.en.rst:503
+#: ../../reference/plugins/ts_lua.en.rst:527
+#: ../../reference/plugins/ts_lua.en.rst:550
+#: ../../reference/plugins/ts_lua.en.rst:580
+#: ../../reference/plugins/ts_lua.en.rst:604
+#: ../../reference/plugins/ts_lua.en.rst:616
+#: ../../reference/plugins/ts_lua.en.rst:640
+#: ../../reference/plugins/ts_lua.en.rst:652
+#: ../../reference/plugins/ts_lua.en.rst:671
+#: ../../reference/plugins/ts_lua.en.rst:706
+#: ../../reference/plugins/ts_lua.en.rst:735
+#: ../../reference/plugins/ts_lua.en.rst:749
+#: ../../reference/plugins/ts_lua.en.rst:777
+#: ../../reference/plugins/ts_lua.en.rst:790
+#: ../../reference/plugins/ts_lua.en.rst:820
+#: ../../reference/plugins/ts_lua.en.rst:863
+#: ../../reference/plugins/ts_lua.en.rst:893
+#: ../../reference/plugins/ts_lua.en.rst:906
+#: ../../reference/plugins/ts_lua.en.rst:935
+#: ../../reference/plugins/ts_lua.en.rst:950
+#: ../../reference/plugins/ts_lua.en.rst:984
+#: ../../reference/plugins/ts_lua.en.rst:1019
+#: ../../reference/plugins/ts_lua.en.rst:1081
+#: ../../reference/plugins/ts_lua.en.rst:1095
+#: ../../reference/plugins/ts_lua.en.rst:1170
+#: ../../reference/plugins/ts_lua.en.rst:1196
+#: ../../reference/plugins/ts_lua.en.rst:1220
+#: ../../reference/plugins/ts_lua.en.rst:1232
+#: ../../reference/plugins/ts_lua.en.rst:1246
+#: ../../reference/plugins/ts_lua.en.rst:1280
+#: ../../reference/plugins/ts_lua.en.rst:1321
+#: ../../reference/plugins/ts_lua.en.rst:1365
+#: ../../reference/plugins/ts_lua.en.rst:1396
+#: ../../reference/plugins/ts_lua.en.rst:1427
+#: ../../reference/plugins/ts_lua.en.rst:1488
+#: ../../reference/plugins/ts_lua.en.rst:1513
+#: ../../reference/plugins/ts_lua.en.rst:1535
+#: ../../reference/plugins/ts_lua.en.rst:1555
+#: ../../reference/plugins/ts_lua.en.rst:1576
+#: ../../reference/plugins/ts_lua.en.rst:1596
+#: ../../reference/plugins/ts_lua.en.rst:1652
+#: ../../reference/plugins/ts_lua.en.rst:1663
+#: ../../reference/plugins/ts_lua.en.rst:1726
+#: ../../reference/plugins/ts_lua.en.rst:1760
+#: ../../reference/plugins/ts_lua.en.rst:1816
+#: ../../reference/plugins/ts_lua.en.rst:1831
+#: ../../reference/plugins/ts_lua.en.rst:1851
+#: ../../reference/plugins/ts_lua.en.rst:1862
+#: ../../reference/plugins/ts_lua.en.rst:1873
+#: ../../reference/plugins/ts_lua.en.rst:1884
+#: ../../reference/plugins/ts_lua.en.rst:1895
+#: ../../reference/plugins/ts_lua.en.rst:1965
+#: ../../reference/plugins/ts_lua.en.rst:1980
+#: ../../reference/plugins/ts_lua.en.rst:2000
+#: ../../reference/plugins/ts_lua.en.rst:2013
+#: ../../reference/plugins/ts_lua.en.rst:2027
+#: ../../reference/plugins/ts_lua.en.rst:2037
+#: ../../reference/plugins/ts_lua.en.rst:2047
+#: ../../reference/plugins/ts_lua.en.rst:2061
+#: ../../reference/plugins/ts_lua.en.rst:2076
+#: ../../reference/plugins/ts_lua.en.rst:2083
+msgid "`TOP <#ts-lua-plugin>`_"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:133
+msgid "**syntax:** *val = ts.now()*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:135
+#: ../../reference/plugins/ts_lua.en.rst:151
+#: ../../reference/plugins/ts_lua.en.rst:739
+#: ../../reference/plugins/ts_lua.en.rst:1520
+#: ../../reference/plugins/ts_lua.en.rst:1541
+#: ../../reference/plugins/ts_lua.en.rst:1561
+#: ../../reference/plugins/ts_lua.en.rst:1582
+msgid "**context:** global"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:137
+msgid ""
+"**description:** This function returns the time since the Epoch (00:00:00 "
+"UTC, January 1, 1970), measured in seconds."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:139
+#: ../../reference/plugins/ts_lua.en.rst:155
+#: ../../reference/plugins/ts_lua.en.rst:276
+#: ../../reference/plugins/ts_lua.en.rst:357
+#: ../../reference/plugins/ts_lua.en.rst:394
+#: ../../reference/plugins/ts_lua.en.rst:433
+#: ../../reference/plugins/ts_lua.en.rst:460
+#: ../../reference/plugins/ts_lua.en.rst:485
+#: ../../reference/plugins/ts_lua.en.rst:515
+#: ../../reference/plugins/ts_lua.en.rst:537
+#: ../../reference/plugins/ts_lua.en.rst:561
+#: ../../reference/plugins/ts_lua.en.rst:590
+#: ../../reference/plugins/ts_lua.en.rst:626
+#: ../../reference/plugins/ts_lua.en.rst:662
+#: ../../reference/plugins/ts_lua.en.rst:681
+#: ../../reference/plugins/ts_lua.en.rst:716
+#: ../../reference/plugins/ts_lua.en.rst:760
+#: ../../reference/plugins/ts_lua.en.rst:802
+#: ../../reference/plugins/ts_lua.en.rst:830
+#: ../../reference/plugins/ts_lua.en.rst:874
+#: ../../reference/plugins/ts_lua.en.rst:916
+#: ../../reference/plugins/ts_lua.en.rst:964
+#: ../../reference/plugins/ts_lua.en.rst:994
+#: ../../reference/plugins/ts_lua.en.rst:1030
+#: ../../reference/plugins/ts_lua.en.rst:1055
+#: ../../reference/plugins/ts_lua.en.rst:1109
+#: ../../reference/plugins/ts_lua.en.rst:1139
+#: ../../reference/plugins/ts_lua.en.rst:1181
+#: ../../reference/plugins/ts_lua.en.rst:1206
+#: ../../reference/plugins/ts_lua.en.rst:1260
+#: ../../reference/plugins/ts_lua.en.rst:1290
+#: ../../reference/plugins/ts_lua.en.rst:1334
+#: ../../reference/plugins/ts_lua.en.rst:1375
+#: ../../reference/plugins/ts_lua.en.rst:1406
+#: ../../reference/plugins/ts_lua.en.rst:1437
+#: ../../reference/plugins/ts_lua.en.rst:1457
+#: ../../reference/plugins/ts_lua.en.rst:1477
+#: ../../reference/plugins/ts_lua.en.rst:1501
+#: ../../reference/plugins/ts_lua.en.rst:1524
+#: ../../reference/plugins/ts_lua.en.rst:1545
+#: ../../reference/plugins/ts_lua.en.rst:1565
+#: ../../reference/plugins/ts_lua.en.rst:1586
+#: ../../reference/plugins/ts_lua.en.rst:1609
+#: ../../reference/plugins/ts_lua.en.rst:1677
+#: ../../reference/plugins/ts_lua.en.rst:1738
+#: ../../reference/plugins/ts_lua.en.rst:1773
+#: ../../reference/plugins/ts_lua.en.rst:1841
+#: ../../reference/plugins/ts_lua.en.rst:1990
+msgid "Here is an example:"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:149
+msgid "**syntax:** *ts.debug(MESSAGE)*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:161
+msgid ""
+"The debug tag is **ts_lua** and we should write this in records.config:"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:163
+msgid "``CONFIG proxy.config.diags.debug.tags STRING ts_lua``"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:168
+msgid "Remap status constants"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:169
+msgid "**context:** do_remap"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:179
+msgid "These constants are usually used as return value of do_remap function."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:185
+msgid "**syntax:** *ts.hook(HOOK_POINT, FUNCTION)*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:187
+msgid "**context:** global or do_remap or do_global_* or later"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:192
+msgid "Here is an example"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:204
+#: ../../reference/plugins/ts_lua.en.rst:291
+msgid "Then the client will get the response like this:"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:215
+msgid "You can create global hook as well"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:226
+msgid "Or you can do it this way"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:231
+msgid "ts.hook(TS_LUA_HOOK_READ_REQUEST_HDR,"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:230
+msgid "function()"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:230
+msgid "ts.debug('do_some_work') return 0"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:232
+msgid "end"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:233
+msgid ")"
 msgstr ""
 
 #: ../../reference/plugins/ts_lua.en.rst:235
-msgid "**test_global_hdr.lua**"
+msgid ""
+"Also the return value of the function will control how the transaction will "
+"be re-enabled. Return value of 0 will cause the transaction to be re-"
+"enabled normally (TS_EVENT_HTTP_CONTINUE). Return value of 1 will be using "
+"TS_EVENT_HTTP_ERROR instead."
 msgstr ""
 
-#: ../../reference/plugins/ts_lua.en.rst:263
-msgid ""
-"This module embeds Lua, into Apache Traffic Server. This module acts as "
-"remap plugin of Traffic Server. In this case we should provide "
-"**'do_remap'** function in each lua script. We can write this in remap."
-"config:::"
+#: ../../reference/plugins/ts_lua.en.rst:243
+#: ../../reference/plugins/ts_lua.en.rst:353
+msgid "**context:** do_remap or later"
 msgstr ""
 
 #: ../../reference/plugins/ts_lua.en.rst:267
-msgid "@pparam=/etc/trafficserver/script/test_hdr.lua"
+msgid "**syntax:** *ts.ctx[KEY] = VALUE*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:269
+msgid "**syntax:** *VALUE = ts.ctx[KEY]*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:271
+#: ../../reference/plugins/ts_lua.en.rst:308
+#: ../../reference/plugins/ts_lua.en.rst:327
+#: ../../reference/plugins/ts_lua.en.rst:339
+#: ../../reference/plugins/ts_lua.en.rst:390
+#: ../../reference/plugins/ts_lua.en.rst:429
+#: ../../reference/plugins/ts_lua.en.rst:456
+#: ../../reference/plugins/ts_lua.en.rst:481
+#: ../../reference/plugins/ts_lua.en.rst:509
+#: ../../reference/plugins/ts_lua.en.rst:533
+#: ../../reference/plugins/ts_lua.en.rst:586
+#: ../../reference/plugins/ts_lua.en.rst:622
+#: ../../reference/plugins/ts_lua.en.rst:1371
+#: ../../reference/plugins/ts_lua.en.rst:1402
+#: ../../reference/plugins/ts_lua.en.rst:1899
+#: ../../reference/plugins/ts_lua.en.rst:2004
+msgid "**context:** do_remap or do_global_* or later"
 msgstr ""
 
 #: ../../reference/plugins/ts_lua.en.rst:273
-msgid "@pparam=/etc/trafficserver/script/sethost.lua @pparam=img03.tbcdn.cn"
-msgstr ""
-
-#: ../../reference/plugins/ts_lua.en.rst:275
 msgid ""
-"This module can also act as a global plugin of Traffic Server. In this case "
-"we should provide one of these functions (**'do_global_read_request'**, "
-"**'do_global_send_request'**, **'do_global_read_response'**, "
-"**'do_global_send_response'**, **'do_global_cache_lookup_complete'**) in "
-"each lua script. We can write this in plugin.config:::"
+"**description:** This table can be used to store per-request Lua context "
+"data and has a life time identical to the current request."
 msgstr ""
 
-#: ../../reference/plugins/ts_lua.en.rst:334
+#: ../../reference/plugins/ts_lua.en.rst:306
+msgid "**syntax:** *ts.client_request.get_method()*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:310
+msgid ""
+"**description:** This function can be used to retrieve the current client "
+"request's method name. String like \"GET\" or \"POST\" is returned."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:317
+msgid "**syntax:** *ts.client_request.set_method()*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:319
+#: ../../reference/plugins/ts_lua.en.rst:377
+#: ../../reference/plugins/ts_lua.en.rst:414
+#: ../../reference/plugins/ts_lua.en.rst:556
+#: ../../reference/plugins/ts_lua.en.rst:610
+#: ../../reference/plugins/ts_lua.en.rst:646
+#: ../../reference/plugins/ts_lua.en.rst:658
+#: ../../reference/plugins/ts_lua.en.rst:677
+#: ../../reference/plugins/ts_lua.en.rst:1602
+#: ../../reference/plugins/ts_lua.en.rst:1766
+msgid "**context:** do_remap or do_global_*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:321
+msgid ""
+"**description:** This function can be used to override the current client "
+"request's method with METHOD_NAME."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:324
+msgid "ts.client_request.get_version"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:325
+msgid "**syntax:** *ver = ts.client_request.get_version()*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:329
+msgid "**description:** Return the http version string of the client request."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:331
+#: ../../reference/plugins/ts_lua.en.rst:787
+#: ../../reference/plugins/ts_lua.en.rst:1079
+#: ../../reference/plugins/ts_lua.en.rst:1230
+msgid "Current possible values are 1.0, 1.1, and 0.9."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:336
+msgid "ts.client_request.set_version"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:337
+msgid "**syntax:** *ts.client_request.set_version(VERSION_STR)*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:341
+msgid ""
+"**description:** Set the http version of the client request with the "
+"VERSION_STR"
+msgstr ""
+
 #: ../../reference/plugins/ts_lua.en.rst:351
-#: ../../reference/plugins/ts_lua.en.rst:367
-#: ../../reference/plugins/ts_lua.en.rst:446
-#: ../../reference/plugins/ts_lua.en.rst:474
-#: ../../reference/plugins/ts_lua.en.rst:502
-#: ../../reference/plugins/ts_lua.en.rst:520
-#: ../../reference/plugins/ts_lua.en.rst:539
+msgid "**syntax:** *ts.client_request.get_uri()*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:355
+msgid ""
+"**description:** This function can be used to retrieve the client request's "
+"path."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:366
+msgid "Then ``GET /st?a=1`` will yield the output:"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:368
+msgid "``/st``"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:375
+msgid "**syntax:** *ts.client_request.set_uri(PATH)*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:379
+msgid ""
+"**description:** This function can be used to override the client request's "
+"path."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:381
+#: ../../reference/plugins/ts_lua.en.rst:903
+msgid "The PATH argument must be a Lua string and starts with ``/``"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:388
+msgid "**syntax:** *ts.client_request.get_uri_args()*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:392
+msgid ""
+"**description:** This function can be used to retrieve the client request's "
+"query string."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:403
+#: ../../reference/plugins/ts_lua.en.rst:930
+msgid "Then ``GET /st?a=1&b=2`` will yield the output:"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:405
+#: ../../reference/plugins/ts_lua.en.rst:932
+msgid "``a=1&b=2``"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:412
+msgid "**syntax:** *ts.client_request.set_uri_args(QUERY_STRING)*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:416
+msgid ""
+"**description:** This function can be used to override the client request's "
+"query string."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:427
+msgid "**syntax:** *ts.client_request.get_url()*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:431
+msgid ""
+"**description:** This function can be used to retrieve the whole client "
+"request's url."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:442
+msgid ""
+"Then ``GET /st?a=1&b=2 HTTP/1.1\\r\\nHost: a.tbcdn.cn\\r\\n...`` will yield "
+"the output:"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:444
+msgid "``http://a.tbcdn.cn/st?a=1&b=2``"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:450
+msgid "**syntax:** *ts.client_request.header.HEADER = VALUE*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:452
+msgid "**syntax:** *ts.client_request.header[HEADER] = VALUE*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:454
+msgid "**syntax:** *VALUE = ts.client_request.header.HEADER*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:458
+msgid ""
+"**description:** Set, add to, clear or get the current client request's "
+"HEADER."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:470
+#: ../../reference/plugins/ts_lua.en.rst:979
+msgid ""
+"Then ``GET /st HTTP/1.1\\r\\nHost: b.tb.cn\\r\\nUser-Agent: Mozilla/5.0\\r"
+"\\n...`` will yield the output:"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:472
+#: ../../reference/plugins/ts_lua.en.rst:981
+msgid "``Mozilla/5.0``"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:478
+msgid "ts.client_request.get_headers"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:479
+msgid "**syntax:** *ts.client_request.get_headers()*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:483
+msgid ""
+"**description:** Returns a Lua table holding all the headers for the "
+"current client request."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:496
+msgid ""
+"Then ``GET /st HTTP/1.1\\r\\nHost: b.tb.cn\\r\\nUser-Aget: Mozilla/5.0\\r"
+"\\nAccept: */*`` will yield the output ::"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:507
+msgid "**syntax:** *ts.client_request.client_addr.get_addr()*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:530
+msgid "ts.client_request.get_url_host"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:531
+msgid "**syntax:** *host = ts.client_request.get_url_host()*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:535
+msgid "**description:** Return the ``host`` field of the request url."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:546
+#: ../../reference/plugins/ts_lua.en.rst:635
+msgid ""
+"Then ``GET /liuyurou.txt HTTP/1.1\\r\\nHost: 192.168.231.129:8080\\r\\n..."
+"`` will yield the output:"
+msgstr ""
+
 #: ../../reference/plugins/ts_lua.en.rst:548
-#: ../../reference/plugins/ts_lua.en.rst:566
+msgid "``192.168.231.129``"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:553
+msgid "ts.client_request.set_url_host"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:554
+msgid "**syntax:** *ts.client_request.set_url_host(str)*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:558
+msgid ""
+"**description:** Set ``host`` field of the request url with ``str``. This "
+"function is used to change the address of the origin server, and we should "
+"return TS_LUA_REMAP_DID_REMAP(_STOP) in do_remap."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:572
+msgid "remap.config like this:"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:578
+msgid "Then server request will connect to ``192.168.231.130:80``"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:583
+msgid "ts.client_request.get_url_port"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:584
+msgid "**syntax:** *port = ts.client_request.get_url_port()*"
+msgstr ""
+
 #: ../../reference/plugins/ts_lua.en.rst:588
-msgid "**context**: do_remap/do_global_*/later"
+msgid ""
+"**description:** Returns the ``port`` field of the request url as a Lua "
+"number."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:599
+msgid ""
+"Then Then ``GET /liuyurou.txt HTTP/1.1\\r\\nHost: 192.168.231.129:8080\\r"
+"\\n...`` will yield the output:"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:601
+msgid "``8080``"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:607
+msgid "ts.client_request.set_url_port"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:608
+msgid "**syntax:** *ts.client_request.set_url_port(NUMBER)*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:612
+msgid ""
+"**description:** Set ``port`` field of the request url with ``NUMBER``. "
+"This function is used to change the address of the origin server, and we "
+"should return TS_LUA_REMAP_DID_REMAP(_STOP) in do_remap."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:619
+msgid "ts.client_request.get_url_scheme"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:620
+msgid "**syntax:** *scheme = ts.client_request.get_url_scheme()*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:624
+msgid "**description:** Return the ``scheme`` field of the request url."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:637
+msgid "``http``"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:643
+msgid "ts.client_request.set_url_scheme"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:644
+msgid "**syntax:** *ts.client_request.set_url_scheme(str)*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:648
+msgid ""
+"**description:** Set ``scheme`` field of the request url with ``str``. This "
+"function is used to change the scheme of the server request, and we should "
+"return TS_LUA_REMAP_DID_REMAP(_STOP) in do_remap."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:656
+msgid "**syntax:** *ts.http.set_cache_url(KEY_URL)*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:660
+msgid ""
+"**description:** This function can be used to modify the cache key for the "
+"client request."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:674
+msgid "ts.http.set_resp"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:675
+msgid "**syntax:** *ts.http.set_resp(CODE, BODY)*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:679
+msgid ""
+"**description:** This function can be used to set response for the client "
+"with the CODE status and BODY string."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:690
+#: ../../reference/plugins/ts_lua.en.rst:1352
+#: ../../reference/plugins/ts_lua.en.rst:1705
+msgid "We will get the response like this:"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:710
+msgid "**syntax:** *ts.http.get_cache_lookup_status()*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:712
+msgid "**context:** function @ TS_LUA_HOOK_CACHE_LOOKUP_COMPLETE hook point"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:714
+msgid "**description:** This function can be used to get cache lookup status."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:752
+msgid "ts.cached_response.get_status"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:753
+msgid "**syntax:** *status = ts.cached_response.get_status()*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:755
+#: ../../reference/plugins/ts_lua.en.rst:783
+#: ../../reference/plugins/ts_lua.en.rst:798
+#: ../../reference/plugins/ts_lua.en.rst:826
+msgid ""
+"**context:** function @ TS_LUA_HOOK_CACHE_LOOKUP_COMPLETE hook point or "
+"later"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:757
+msgid ""
+"**description:** This function can be used to retrieve the status code of "
+"the cached response. A Lua number will be returned."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:780
+msgid "ts.cached_response.get_version"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:781
+msgid "**syntax:** *ver = ts.cached_response.get_version()*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:785
+msgid ""
+"**description:** Return the http version string of the cached response."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:793
+msgid "ts.cached_response.header.HEADER"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:794
+msgid "**syntax:** *VALUE = ts.cached_response.header.HEADER*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:796
+msgid "**syntax:** *VALUE = ts.cached_response.header[HEADER]*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:800
+msgid "**description:** get the current cached response's HEADER."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:823
+msgid "ts.cached_response.get_headers"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:824
+msgid "**syntax:** *ts.cached_response.get_headers()*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:828
+msgid ""
+"**description:** Returns a Lua table holding all the headers for the "
+"current cached response."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:849
+#: ../../reference/plugins/ts_lua.en.rst:1010
+#: ../../reference/plugins/ts_lua.en.rst:1124
+#: ../../reference/plugins/ts_lua.en.rst:1155
+#: ../../reference/plugins/ts_lua.en.rst:1275
+#: ../../reference/plugins/ts_lua.en.rst:1306
+msgid "We will get the output:"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:867
+msgid "ts.server_request.get_uri"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:868
+msgid "**syntax:** *ts.server_request.get_uri()*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:870
+#: ../../reference/plugins/ts_lua.en.rst:912
+#: ../../reference/plugins/ts_lua.en.rst:960
+#: ../../reference/plugins/ts_lua.en.rst:990
+msgid ""
+"**context:** function @ TS_LUA_HOOK_SEND_REQUEST_HDR hook point or later"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:872
+msgid ""
+"**description:** This function can be used to retrieve the server request's "
+"path."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:888
+msgid "Then ``GET /am.txt?a=1`` will yield the output:"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:890
+msgid "``/am.txt``"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:896
+msgid "ts.server_request.set_uri"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:897
+msgid "**syntax:** *ts.server_request.set_uri(PATH)*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:899
+#: ../../reference/plugins/ts_lua.en.rst:941
+msgid "**context:** function @ TS_LUA_HOOK_SEND_REQUEST_HDR hook point"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:901
+msgid ""
+"**description:** This function can be used to override the server request's "
+"path."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:909
+msgid "ts.server_request.get_uri_args"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:910
+msgid "**syntax:** *ts.server_request.get_uri_args()*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:914
+msgid ""
+"**description:** This function can be used to retrieve the server request's "
+"query string."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:938
+msgid "ts.server_request.set_uri_args"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:939
+msgid "**syntax:** *ts.server_request.set_uri_args(QUERY_STRING)*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:943
+msgid ""
+"**description:** This function can be used to override the server request's "
+"query string."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:953
+msgid "ts.server_request.header.HEADER"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:954
+msgid "**syntax:** *ts.server_request.header.HEADER = VALUE*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:956
+msgid "**syntax:** *ts.server_request.header[HEADER] = VALUE*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:958
+msgid "**syntax:** *VALUE = ts.server_request.header.HEADER*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:962
+msgid ""
+"**description:** Set, add to, clear or get the current server request's "
+"HEADER."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:987
+msgid "ts.server_request.get_headers"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:988
+msgid "**syntax:** *ts.server_request.get_headers()*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:992
+msgid ""
+"**description:** Returns a Lua table holding all the headers for the "
+"current server request."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1022
+msgid "ts.server_response.get_status"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1023
+msgid "**syntax:** *status = ts.server_response.get_status()*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1025
+#: ../../reference/plugins/ts_lua.en.rst:1135
+msgid ""
+"**context:** function @ TS_LUA_HOOK_READ_RESPONSE_HDR hook point or later"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1027
+msgid ""
+"**description:** This function can be used to retrieve the status code of "
+"the origin server's response. A Lua number will be returned."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1045
+#: ../../reference/plugins/ts_lua.en.rst:1069
+#: ../../reference/plugins/ts_lua.en.rst:1129
+msgid "`TOP <#ts-lua-plugin>`_'"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1048
+msgid "ts.server_response.set_status"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1049
+msgid "**syntax:** *ts.server_response.set_status(NUMBER)*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1051
+#: ../../reference/plugins/ts_lua.en.rst:1087
+msgid "**context:** function @ TS_LUA_HOOK_READ_RESPONSE_HDR hook point"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1053
+msgid ""
+"**description:** This function can be used to set the status code of the "
+"origin server's response."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1072
+msgid "ts.server_response.get_version"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1073
+msgid "**syntax:** *ver = ts.server_response.get_version()*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1075
+#: ../../reference/plugins/ts_lua.en.rst:1105
+msgid ""
+"**context:** function @ TS_LUA_HOOK_READ_RESPONSE_HDR hook point or later."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1077
+msgid ""
+"**description:** Return the http version string of the server response."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1084
+msgid "ts.server_response.set_version"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1085
+msgid "**syntax:** *ts.server_response.set_version(VERSION_STR)*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1089
+msgid ""
+"**description:** Set the http version of the server response with the "
+"VERSION_STR"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1098
+msgid "ts.server_response.header.HEADER"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1099
+msgid "**syntax:** *ts.server_response.header.HEADER = VALUE*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1101
+msgid "**syntax:** *ts.server_response.header[HEADER] = VALUE*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1103
+msgid "**syntax:** *VALUE = ts.server_response.header.HEADER*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1107
+msgid ""
+"**description:** Set, add to, clear or get the current server response's "
+"HEADER."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1126
+#: ../../reference/plugins/ts_lua.en.rst:1277
+msgid "``text/html``"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1132
+msgid "ts.server_response.get_headers"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1133
+msgid "**syntax:** *ts.server_response.get_headers()*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1137
+msgid ""
+"**description:** Returns a Lua table holding all the headers for the "
+"current server response."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1173
+msgid "ts.client_response.get_status"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1174
+msgid "**syntax:** *status = ts.client_response.get_status()*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1176
+#: ../../reference/plugins/ts_lua.en.rst:1202
+#: ../../reference/plugins/ts_lua.en.rst:1238
+msgid "**context:** function @ TS_LUA_HOOK_SEND_RESPONSE_HDR hook point"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1178
+msgid ""
+"**description:** This function can be used to retrieve the status code of "
+"the response to the client. A Lua number will be returned."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1199
+msgid "ts.client_response.set_status"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1200
+msgid "**syntax:** *ts.client_response.set_status(NUMBER)*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1204
+msgid ""
+"**description:** This function can be used to set the status code of the "
+"response to the client."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1223
+msgid "ts.client_response.get_version"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1224
+msgid "**syntax:** *ver = ts.client_response.get_version()*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1226
+#: ../../reference/plugins/ts_lua.en.rst:1256
+#: ../../reference/plugins/ts_lua.en.rst:1286
+#: ../../reference/plugins/ts_lua.en.rst:1327
+msgid "**context:** function @ TS_LUA_HOOK_SEND_RESPONSE_HDR hook point."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1228
+msgid ""
+"**description:** Return the http version string of the response to the "
+"client."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1235
+msgid "ts.client_response.set_version"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1236
+msgid "**syntax:** *ts.client_response.set_version(VERSION_STR)*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1240
+msgid ""
+"**description:** Set the http version of the response to the client with "
+"the VERSION_STR"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1249
+msgid "ts.client_response.header.HEADER"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1250
+msgid "**syntax:** *ts.client_response.header.HEADER = VALUE*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1252
+msgid "**syntax:** *ts.client_response.header[HEADER] = VALUE*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1254
+msgid "**syntax:** *VALUE = ts.client_response.header.HEADER*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1258
+msgid ""
+"**description:** Set, add to, clear or get the current client response's "
+"HEADER."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1283
+msgid "ts.client_response.get_headers"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1284
+msgid "**syntax:** *ts.client_response.get_headers()*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1288
+msgid ""
+"**description:** Returns a Lua table holding all the headers for the "
+"current client response."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1324
+msgid "ts.client_response.set_error_resp"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1325
+msgid "**syntax:** *ts.client_response.set_error_resp(CODE, BODY)*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1329
+msgid ""
+"**description:** This function can be used to set the error response to the "
+"client."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1331
+msgid ""
+"With this function we can jump to send error response to the client if "
+"exception exists, meanwhile we should return `-1` from the function where "
+"exception raises."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1369
+msgid "**syntax:** *ts.http.resp_cache_transformed(BOOL)*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1400
+msgid "**syntax:** *ts.http.resp_cache_untransformed(BOOL)*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1430
+msgid "ts.http.skip_remapping_set"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1431
+msgid "**syntax:** *ts.http.skip_remapping_set(BOOL)*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1433
+msgid "**context:** do_global_read_request"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1435
+msgid ""
+"**description**: This function can be used to tell trafficserver to skip "
+"doing remapping"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1447
+msgid "This function is usually called in do_global_read_request function"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1450
+msgid "ts.http.is_internal_request"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1451
+msgid "**syntax:** *ts.http.is_internal_request()*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1453
+msgid "** context:** do_remap or do_global_* or later"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1455
+msgid ""
+"** description**: This function can be used to tell is a request is "
+"internal or not"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1468
+msgid "ts.add_package_path"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1469
+msgid "**syntax:** *ts.add_package_path(lua-style-path-str)*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1471
+#: ../../reference/plugins/ts_lua.en.rst:1495
+msgid "**context:** init stage of the lua script"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1473
+msgid "**description:** Adds the Lua module search path used by scripts."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1475
+msgid "The path string is in standard Lua path form."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1492
+msgid "ts.add_package_cpath"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1493
+msgid "**syntax:** *ts.add_package_cpath(lua-style-cpath-str)*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1497
+msgid "**description:** Adds the Lua C-module search path used by scripts."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1499
+msgid "The cpath string is in standard Lua cpath form."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1517
+msgid "ts.md5"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1518
+msgid "**syntax:** *digest = ts.md5(str)*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1522
+msgid ""
+"**description:** Returns the hexadecimal representation of the MD5 digest "
+"of the ``str`` argument."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1538
+msgid "ts.md5_bin"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1539
+msgid "**syntax:** *digest = ts.md5_bin(str)*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1543
+msgid ""
+"**description:** Returns the binary form of the MD5 digest of the ``str`` "
+"argument."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1558
+msgid "ts.sha1"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1559
+msgid "**syntax:** *digest = ts.sha1(str)*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1563
+msgid ""
+"**description:** Returns the hexadecimal representation of the SHA-1 digest "
+"of the ``str`` argument."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1579
+msgid "ts.sha1_bin"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1580
+msgid "**syntax:** *digest = ts.sha1_bin(str)*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1584
+msgid ""
+"**description:** Returns the binary form of the SHA-1 digest of the ``str`` "
+"argument."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1599
+msgid "ts.intercept"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1600
+msgid "**syntax:** *ts.intercept(FUNCTION)*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1604
+msgid ""
+"**description:** Intercepts the client request and processes it in FUNCTION."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1606
+msgid ""
+"We should construct the response for the client request, and the request "
+"will not be processed by other modules, like hostdb, cache, origin server..."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1634
+#: ../../reference/plugins/ts_lua.en.rst:1798
+msgid "Then we will get the response like this:"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1655
+msgid "ts.say"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1656
+msgid "**syntax:** *ts.say(data)*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1658
+#: ../../reference/plugins/ts_lua.en.rst:1669
+#: ../../reference/plugins/ts_lua.en.rst:1732
+msgid "**context:** *intercept or server_intercept*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1660
+msgid ""
+"**description:** Write response to ATS within intercept or server_intercept."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1666
+msgid "ts.flush"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1667
+msgid "**syntax:** *ts.flush()*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1671
+msgid ""
+"**description:** Flushes the output to ATS within intercept or "
+"server_intercept."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1673
+msgid ""
+"In synchronous mode, the function will not return until all output data has "
+"been written into the system send buffer. Note that using the Lua coroutine "
+"mechanism means that this function does not block the ATS event loop even "
+"in the synchronous mode."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1729
+msgid "ts.sleep"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1730
+msgid "**syntax:** *ts.sleep(sec)*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1734
+msgid "**description:** Sleeps for the specified seconds without blocking."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1736
+msgid "Behind the scene, this method makes use of the ATS event model."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1763
+msgid "ts.server_intercept"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1764
+msgid "**syntax:** *ts.server_intercept(FUNCTION)*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1768
+msgid ""
+"**description:** Intercepts the server request and acts as the origin "
+"server."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1770
+msgid ""
+"We should construct the response for the server request, so the request "
+"will be processed within FUNCTION in case of miss for the cache lookup."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1819
+msgid "ts.http.config_int_get"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1820
+msgid "**syntax:** *val = ts.http.config_int_get(CONFIG)*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1822
+#: ../../reference/plugins/ts_lua.en.rst:1837
+#: ../../reference/plugins/ts_lua.en.rst:1857
+#: ../../reference/plugins/ts_lua.en.rst:1868
+#: ../../reference/plugins/ts_lua.en.rst:1879
+#: ../../reference/plugins/ts_lua.en.rst:1890
+#: ../../reference/plugins/ts_lua.en.rst:1971
+#: ../../reference/plugins/ts_lua.en.rst:1986
+#: ../../reference/plugins/ts_lua.en.rst:2019
+#: ../../reference/plugins/ts_lua.en.rst:2033
+#: ../../reference/plugins/ts_lua.en.rst:2043
+#: ../../reference/plugins/ts_lua.en.rst:2053
+msgid "**context:** do_remap or do_global_* or later."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1824
+msgid ""
+"**description:** Configuration option which has a int value can be "
+"retrieved with this function."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1834
+msgid "ts.http.config_int_set"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1835
+msgid "**syntax:** *ts.http.config_int_set(CONFIG, NUMBER)*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1839
+#: ../../reference/plugins/ts_lua.en.rst:1870
+#: ../../reference/plugins/ts_lua.en.rst:1892
+msgid ""
+"**description:** This function can be used to overwrite the configuration "
+"options."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1854
+msgid "ts.http.config_float_get"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1855
+msgid "**syntax:** *val = ts.http.config_float_get(CONFIG)*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1859
+msgid ""
+"**description:** Configuration option which has a float value can be "
+"retrieved with this function."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1865
+msgid "ts.http.config_float_set"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1866
+msgid "**syntax:** *ts.http.config_float_set(CONFIG, NUMBER)*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1876
+msgid "ts.http.config_string_get"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1877
+msgid "**syntax:** *val = ts.http.config_string_get(CONFIG)*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1881
+msgid ""
+"**description:** Configuration option which has a string value can be "
+"retrieved with this function."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1887
+msgid "ts.http.config_string_set"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1888
+msgid "**syntax:** *ts.http.config_string_set(CONFIG, NUMBER)*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1898
+msgid "Http config constants"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1968
+msgid "ts.http.cntl_get"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1969
+msgid "**syntax:** *val = ts.http.cntl_get(CNTL_TYPE)*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1973
+msgid ""
+"**description:** This function can be used to retireve the value of control "
+"channel."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1983
+msgid "ts.http.cntl_set"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1984
+msgid "**syntax:** *ts.http.cntl_set(CNTL_TYPE, BOOL)*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:1988
+msgid ""
+"**description:** This function can be used to set the value of control "
+"channel."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:2003
+msgid "Http control channel constants"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:2016
+msgid "ts.mgmt.get_counter"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:2017
+msgid "**syntax:** *val = ts.mgmt.get_counter(RECORD_NAME)*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:2021
+msgid ""
+"**description:** This function can be used to retrieve the record value "
+"which has a counter type."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:2030
+msgid "ts.mgmt.get_int"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:2031
+msgid "**syntax:** *val = ts.mgmt.get_int(RECORD_NAME)*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:2035
+msgid ""
+"**description:** This function can be used to retrieve the record value "
+"which has a int type."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:2040
+msgid "ts.mgmt.get_float"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:2041
+msgid "**syntax:** *val = ts.mgmt.get_float(RECORD_NAME)*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:2045
+msgid ""
+"**description:** This function can be used to retrieve the record value "
+"which has a float type."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:2050
+msgid "ts.mgmt.get_string"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:2051
+msgid "**syntax:** *val = ts.mgmt.get_string(RECORD_NAME)*"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:2055
+msgid ""
+"**description:** This function can be used to retrieve the record value "
+"which has a string type."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:2064
+msgid "Todo"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:2066
+msgid "ts.cache_xxx"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:2067
+msgid ""
+"`support lua-5.2 <https://github.com/portl4t/ts-lua/wiki/support-Lua-5.2>`_"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:2069
+msgid ""
+"Currently when we use ts_lua as a global plugin, each global hook is using "
+"a separate lua state for the same transaction. This can be wasteful. Also "
+"the state cannot be reused for the same transaction across the global "
+"hooks. The alternative will be to use a TXN_START hook to create a lua "
+"state first and then add each global hook in the lua script as transaction "
+"hook instead. But this will have problem down the road when we need to have "
+"multiple plugins to work together in some proper orderings. In the future, "
+"we should consider different approach, such as creating and maintaining the "
+"lua state in the ATS core."
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:2079
+msgid "More docs"
+msgstr ""
+
+#: ../../reference/plugins/ts_lua.en.rst:2081
+msgid "https://github.com/portl4t/ts-lua"
 msgstr ""

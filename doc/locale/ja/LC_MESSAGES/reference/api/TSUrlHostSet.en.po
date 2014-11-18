@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -30,19 +29,19 @@ msgstr ""
 msgid "TSUrlHostSet"
 msgstr ""
 
-#: ../../reference/api/TSUrlHostSet.en.rst:25
+#: ../../reference/api/TSUrlHostSet.en.rst:27
 msgid "Synopsis"
 msgstr ""
 
-#: ../../reference/api/TSUrlHostSet.en.rst:27
+#: ../../reference/api/TSUrlHostSet.en.rst:29
 msgid "`#include <ts/ts.h>`"
 msgstr ""
 
-#: ../../reference/api/TSUrlHostSet.en.rst:40
+#: ../../reference/api/TSUrlHostSet.en.rst:42
 msgid "Description"
 msgstr ""
 
-#: ../../reference/api/TSUrlHostSet.en.rst:42
+#: ../../reference/api/TSUrlHostSet.en.rst:44
 msgid ""
 "The URL data structure is a parsed version of a standard internet URL. The "
 "Traffic Server URL API provides access to URL data stored in marshal "
@@ -51,42 +50,46 @@ msgid ""
 "scheme information."
 msgstr ""
 
-#: ../../reference/api/TSUrlHostSet.en.rst:48
-msgid ""
-":func:`TSUrlSchemeSet`, :func:`TSUrlUserSet`, :func:`TSUrlPasswordSet`, :"
-"func:`TSUrlHostSet`, :func:`TSUrlHttpParamsSet`, :func:`TSUrlHttpQuerySet` "
-"and :func:`TSUrlHttpFragmentSet` each set the specified portion of the URL "
-"located at offset within the marshal buffer :data:`bufp` to the string "
-"value. If :data:`length` is :data:`-1` then these functions assume that "
-"value is NULL-terminated. Otherwise, the length of the :data:`string` value "
-"is taken to be the value of :data:`length`. These functions copy the string "
-"to within :data:`bufp`, so it can be subsequently modified or deleted."
-msgstr ""
-
-#: ../../reference/api/TSUrlHostSet.en.rst:57
-msgid ""
-":func:`TSUrlPortSet` sets the port number portion of the URL located at :"
-"data:`offset` within the marshal buffer :data:`bufp` to the value port. "
-"Normal canonicalization based on the URL scheme still applies."
-msgstr ""
-
-#: ../../reference/api/TSUrlHostSet.en.rst:62
+#: ../../reference/api/TSUrlHostSet.en.rst:64
 msgid "Return values"
 msgstr ""
 
-#: ../../reference/api/TSUrlHostSet.en.rst:64
+#: ../../reference/api/TSUrlHostSet.en.rst:66
 msgid ""
 "All these APIs returns a :type:`TSReturnCode`, indicating success (:data:"
 "`TS_SUCCESS`) or failure (:data:`TS_ERROR`) of the operation."
 msgstr ""
 
-#: ../../reference/api/TSUrlHostSet.en.rst:68
+#: ../../reference/api/TSUrlHostSet.en.rst:70
 msgid "See also"
 msgstr ""
 
-#: ../../reference/api/TSUrlHostSet.en.rst:70
+#: ../../reference/api/TSUrlHostSet.en.rst:72
 msgid ""
 ":manpage:`TSAPI(3ts)`, :manpage:`TSUrlCreate(3ts)`, :manpage:"
 "`TSUrlHostGet(3ts)`, :manpage:`TSUrlStringGet(3ts)`, :manpage:"
 "`TSUrlPercentEncode(3ts)`"
+msgstr ""
+
+#: ../../reference/api/TSUrlHostSet.en.rst:24
+msgid "Traffic Server URL component manipulation API."
+msgstr ""
+
+#: ../../reference/api/TSUrlHostSet.en.rst:50
+msgid ""
+":func:`TSUrlSchemeSet`, :func:`TSUrlUserSet`, :func:`TSUrlPasswordSet`, :"
+"func:`TSUrlHostSet`, :func:`TSUrlHttpParamsSet`, :func:`TSUrlHttpQuerySet` "
+"and :func:`TSUrlHttpFragmentSet` each set the specified portion of the URL "
+"located at offset within the marshal buffer :arg:`bufp` to the string "
+"value. If :arg:`length` is ``-1`` then these functions assume that value is "
+"NULL-terminated. Otherwise, the length of the :arg:`string` value is taken "
+"to be the value of :arg:`length`. These functions copy the string to "
+"within :arg:`bufp`, so it can be subsequently modified or deleted."
+msgstr ""
+
+#: ../../reference/api/TSUrlHostSet.en.rst:59
+msgid ""
+":func:`TSUrlPortSet` sets the port number portion of the URL located at :"
+"arg:`offset` within the marshal buffer :arg:`bufp` to the value port. "
+"Normal canonicalization based on the URL scheme still applies."
 msgstr ""

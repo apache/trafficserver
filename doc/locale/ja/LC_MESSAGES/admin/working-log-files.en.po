@@ -29,39 +29,18 @@ msgstr ""
 msgid "Working with Log Files"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:32
+#: ../../admin/working-log-files.en.rst:31
 msgid "Understanding Traffic Server Log Files"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:34
+#: ../../admin/working-log-files.en.rst:33
 msgid ""
 "Traffic Server records information about every transaction (or request) it "
 "processes and every error it detects in log files. Traffic Server keeps "
 "three types of log files:"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:38
-msgid ""
-"**Error log files** record information about why a particular transaction "
-"was in error."
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:41
-msgid ""
-"**Event log files** (also called **access log files**) record information "
-"about the state of each transaction Traffic Server processes."
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:45
-msgid ""
-"**System log files** record system information, including messages about "
-"the state of Traffic Server and errors/warnings it produces. This kind of "
-"information might include a note that event log files were rolled, a "
-"warning that cluster communication timed out, or an error indicating that "
-"Traffic Server was restarted."
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:51
+#: ../../admin/working-log-files.en.rst:50
 msgid ""
 "All system information messages are logged with the system-wide logging "
 "facility :manpage:`syslog` under the daemon facility. The :manpage:`syslog."
@@ -70,7 +49,7 @@ msgid ""
 "messages`` (Linux)."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:57
+#: ../../admin/working-log-files.en.rst:56
 msgid ""
 "The :manpage:`syslog(8)` process works on a system-wide basis, so it serves "
 "as the single repository for messages from all Traffic Server processes "
@@ -78,7 +57,7 @@ msgid ""
 "program:`traffic_cop`)."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:62
+#: ../../admin/working-log-files.en.rst:61
 msgid ""
 "System information logs observe a static format. Each log entry in the log "
 "contains information about the date and time the error was logged, the "
@@ -86,42 +65,17 @@ msgid ""
 "of the error or warning."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:67
+#: ../../admin/working-log-files.en.rst:66
 msgid ""
 "Refer to :ref:`traffic-server-error-messages` for a list of the messages "
 "logged by Traffic Server."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:70
-msgid ""
-"By default, Traffic Server creates both error and event log files and "
-"records system information in system log files. You can disable event "
-"logging and/or error logging by setting the configuration variable :ts:cv:"
-"`proxy.config.log.logging_enabled` (in the :file:`records.config` file) to "
-"one of the following values:"
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:76
-msgid "``0`` to disable both event and error logging"
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:77
-msgid "``1`` to enable error logging only"
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:78
-msgid "``2`` to enable transaction logging only"
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:79
-msgid "``3`` to enable both transaction and error logging"
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:82
+#: ../../admin/working-log-files.en.rst:85
 msgid "Understanding Event Log Files"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:84
+#: ../../admin/working-log-files.en.rst:87
 msgid ""
 "Event log files record information about every request that Traffic Server "
 "processes. By analyzing the log files, you can determine how many people "
@@ -136,28 +90,20 @@ msgid ""
 "certain size."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:96
+#: ../../admin/working-log-files.en.rst:99
 msgid ""
 "The following sections describe the Traffic Server logging system features "
 "and discuss how to:"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:99
-msgid "**Manage your event log files**"
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:101
+#: ../../admin/working-log-files.en.rst:103
 msgid ""
 "You can choose a central location for storing log files, set how much disk "
 "space to use for log files, and set how and when to roll log files. Refer "
 "to `Managing Event Log Files`_."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:105
-msgid "**Choose different event log file formats**"
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:107
+#: ../../admin/working-log-files.en.rst:108
 msgid ""
 "You can choose which standard log file formats you want to use for traffic "
 "analysis, such as Squid or Netscape. Alternatively, you can use the Traffic "
@@ -166,23 +112,7 @@ msgid ""
 "`Choosing Event Log File Formats`_."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:113
-msgid "**Roll event log files automatically**"
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:115
-msgid ""
-"Configure Traffic Server to roll event log files at specific intervals "
-"during the day or when they reach a certain size; this enables you to "
-"identify and manipulate log files that are no longer active. Refer to "
-"`Rolling Event Log Files`_."
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:120
-msgid "**Separate log files according to protocols and hosts**"
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:122
+#: ../../admin/working-log-files.en.rst:121
 msgid ""
 "Configure Traffic Server to create separate log files for different "
 "protocols. You can also configure Traffic Server to generate separate log "
@@ -191,10 +121,6 @@ msgid ""
 msgstr ""
 
 #: ../../admin/working-log-files.en.rst:126
-msgid "**Collate log files from different Traffic Server nodes**"
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:128
 msgid ""
 "Designate one or more nodes on the network to serve as log collation "
 "servers. These servers, which might be standalone or part of Traffic "
@@ -202,51 +128,36 @@ msgid ""
 "locations. Refer to `Collating Event Log Files`_."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:133
-msgid "**View statistics about the logging system**"
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:135
+#: ../../admin/working-log-files.en.rst:132
 msgid ""
 "Traffic Server provides statistics about the logging system; you can access "
 "these statistics via Traffic Line. Refer to `Viewing Logging Statistics`_."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:138
-msgid "**Interpret log file entries for the log file formats**"
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:140
+#: ../../admin/working-log-files.en.rst:136
 msgid "Refer to `Example Event Log File Entries`_."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:143
+#: ../../admin/working-log-files.en.rst:139
 msgid "Managing Event Log Files"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:145
-msgid ""
-"Traffic Server enables you to control where event log files are located and "
-"how much space they can consume. Additionally you can specify how to handle "
-"low disk space in the logging directory."
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:150
+#: ../../admin/working-log-files.en.rst:146
 msgid "Choosing the Logging Directory"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:152
+#: ../../admin/working-log-files.en.rst:148
 msgid ""
 "By default, Traffic Server writes all event log files in the ``logs`` "
 "directory located in the directory where you installed Traffic Server. To "
 "use a different directory, refer to `Setting Log File Management Options`_."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:157
+#: ../../admin/working-log-files.en.rst:153
 msgid "Controlling Logging Space"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:159
+#: ../../admin/working-log-files.en.rst:155
 msgid ""
 "Traffic Server enables you to control the amount of disk space that the "
 "logging directory can consume. This allows the system to operate smoothly "
@@ -257,16 +168,7 @@ msgid ""
 "and takes the following actions:"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:167
-msgid ""
-"If the autodelete option (discussed in `Rolling Event Log Files`_) is "
-"*enabled*, then Traffic Server identifies previously-rolled log files (i."
-"e., log files with the ``.old`` extension). It starts deleting files one by "
-"one, beginning with the oldest file, until it emerges from the low state. "
-"Traffic Server logs a record of all deleted files in the system error log."
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:174
+#: ../../admin/working-log-files.en.rst:170
 msgid ""
 "If the autodelete option is *disabled* or there are not enough old log "
 "files to delete for the system to emerge from its low space state, then "
@@ -278,7 +180,7 @@ msgid ""
 "manually."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:183
+#: ../../admin/working-log-files.en.rst:179
 msgid ""
 "You can run a :manpage:`cron(8)` script in conjunction with Traffic Server "
 "to automatically remove old log files from the logging directory before "
@@ -288,83 +190,64 @@ msgid ""
 "location, or simply delete them."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:192
+#: ../../admin/working-log-files.en.rst:187
 msgid "Setting Log File Management Options"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:194
+#: ../../admin/working-log-files.en.rst:189
 msgid "To set log management options, follow the steps below:"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:196
-#: ../../admin/working-log-files.en.rst:231
-#: ../../admin/working-log-files.en.rst:568
-#: ../../admin/working-log-files.en.rst:652
+#: ../../admin/working-log-files.en.rst:191
+#: ../../admin/working-log-files.en.rst:227
+#: ../../admin/working-log-files.en.rst:661
 msgid "In the :file:`records.config` file, edit the following variables"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:198
-#: ../../admin/working-log-files.en.rst:800
+#: ../../admin/working-log-files.en.rst:193
 msgid ":ts:cv:`proxy.config.log.logfile_dir`"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:199
+#: ../../admin/working-log-files.en.rst:194
 msgid ":ts:cv:`proxy.config.log.max_space_mb_for_logs`"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:200
+#: ../../admin/working-log-files.en.rst:195
 msgid ":ts:cv:`proxy.config.log.max_space_mb_headroom`"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:202
-#: ../../admin/working-log-files.en.rst:260
-#: ../../admin/working-log-files.en.rst:575
-#: ../../admin/working-log-files.en.rst:657
-#: ../../admin/working-log-files.en.rst:688
-#: ../../admin/working-log-files.en.rst:759
-#: ../../admin/working-log-files.en.rst:826
+#: ../../admin/working-log-files.en.rst:197
+#: ../../admin/working-log-files.en.rst:257
+#: ../../admin/working-log-files.en.rst:591
+#: ../../admin/working-log-files.en.rst:666
+#: ../../admin/working-log-files.en.rst:696
+#: ../../admin/working-log-files.en.rst:776
+#: ../../admin/working-log-files.en.rst:856
 msgid ""
 "Run the command :option:`traffic_ctl config reload` to apply the configuration "
 "changes."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:206
+#: ../../admin/working-log-files.en.rst:201
 msgid "Choosing Event Log File Formats"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:208
+#: ../../admin/working-log-files.en.rst:203
 msgid "Traffic Server supports the following log file formats:"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:210
-msgid ""
-"Standard formats, such as Squid or Netscape; refer to `Using Standard "
-"Formats`_."
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:211
-msgid "The Traffic Server custom format; refer to `Using the Custom Format`_."
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:213
-msgid ""
-"In addition to the standard and custom log file format, you can choose "
-"whether to save log files in binary or ASCII; refer to `Choosing Binary or "
-"ASCII`_."
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:216
+#: ../../admin/working-log-files.en.rst:212
 msgid ""
 "Event log files consume substantial disk space. Creating log entries in "
 "multiple formats at the same time can consume disk resources very quickly "
 "and adversely impact Traffic Server performance."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:221
+#: ../../admin/working-log-files.en.rst:217
 msgid "Using Standard Formats"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:223
+#: ../../admin/working-log-files.en.rst:219
 msgid ""
 "The standard log formats include Squid, Netscape Common, Netscape extended, "
 "and Netscape Extended-2. The standard log file formats can be analyzed with "
@@ -377,17 +260,7 @@ msgstr ""
 msgid "Using the Custom Format"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:269
-msgid ""
-"The XML-based custom log format is more flexible then the standard log file "
-"formats and gives you more control over the type of information recorded in "
-"log files. You should create a custom log format if you need data for "
-"analysis that's not available in the standard formats. You can decide what "
-"information to record for each Traffic Server transaction and create "
-"filters that specify which transactions to log."
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:276
+#: ../../admin/working-log-files.en.rst:272
 msgid ""
 "The heart of the XML-based custom logging feature is the XML-based logging "
 "configuration file (:file:`logs_xml.config`) that enables you to create "
@@ -398,133 +271,38 @@ msgid ""
 "definition)."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:284
-msgid ""
-"The ``LogFormat`` object defines the content of the log file using printf-"
-"style format strings."
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:286
-msgid ""
-"The ``LogFilter`` object defines a filter so that you include or exclude "
-"certain information from the log file."
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:288
-msgid ""
-"The ``LogObject`` object specifies all the information needed to produce a "
-"log file."
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:291
-msgid "The name of the log file. (required)"
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:292
-msgid ""
-"The format to be used (required). This can be a standard format (Squid or "
-"Netscape) or"
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:294
-msgid ""
-"a previously-defined custom format (i.e., a previously-defined "
-"``LogFormat`` object)."
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:296
-msgid ""
-"The file mode: ``ASCII``, ``Binary``, or ``ASCII_PIPE``. The default is "
-"``ASCII``. The ``ASCII_PIPE`` mode writes log entries to a UNIX-named pipe "
-"(a buffer in memory); other processes can then read the data using standard "
-"I/O functions. The advantage of this option is that Traffic Server does not "
-"have to write to disk, which frees disk space and bandwidth for other "
-"tasks. When the buffer is full, Traffic Server drops log entries and issues "
-"an error message indicating how many entries were dropped. Because Traffic "
-"Server only writes complete log entries to the pipe, only full records are "
-"dropped."
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:307
-msgid ""
-"Any filters you want to use (i.e., previously-defined ``LogFilter`` "
-"objects)."
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:309
+#: ../../admin/working-log-files.en.rst:301
 msgid "The collation servers that are to receive the log files."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:310
-msgid ""
-"The protocols you want to log. If the protocols tag is used, then Traffic "
-"Server will only log transactions from the protocols listed; otherwise, all "
-"transactions for all protocols are logged."
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:313
+#: ../../admin/working-log-files.en.rst:307
 msgid ""
 "The origin servers you want to log. If the ``servers`` tag is used, then "
 "Traffic Server will only log transactions for the origin servers listed; "
 "otherwise, transactions for all origin servers are logged."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:317
+#: ../../admin/working-log-files.en.rst:312
 msgid ""
 "The header text you want the log files to contain. The header text appears "
 "at the beginning of the log file, just before the first record."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:320
+#: ../../admin/working-log-files.en.rst:316
 msgid "The log file rolling options."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:322
-msgid "In order to accomplish this, we"
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:324
-msgid "edit the following variables in the :file:`records.config` file:"
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:326
-msgid ":ts:cv:`proxy.config.log.custom_logs_enabled`"
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:327
-msgid "In the :file:`logs_xml.config` file"
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:329
-msgid ""
-"Add :ref:`LogFormat`, :ref:`LogFilters`, and :ref:`LogObject` "
-"specifications to the configuration file."
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:331
-msgid "Save and close the :file:`logs_xml.config` file."
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:332
+#: ../../admin/working-log-files.en.rst:328
 msgid ""
 "Run the command :option:`traffic_ctl config reload` to apply your configuration "
 "changes."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:336
+#: ../../admin/working-log-files.en.rst:346
 msgid "Creating Summary Log Files"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:338
-msgid ""
-"Traffic Server performs several hundred operations per second; therefore, "
-"event log files can quickly grow to large sizes. Using SQL-like aggregate "
-"operators, you can configure Traffic Server to create summary log files "
-"that summarize a set of log entries over a specified period of time. This "
-"can significantly reduce the size of the log files generated."
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:345
+#: ../../admin/working-log-files.en.rst:354
 msgid ""
 "To generate a summary log file, create a :ref:`LogFormat` object in the XML-"
 "based logging configuration file (:file:`logs_xml.config`) using the SQL-"
@@ -532,79 +310,47 @@ msgid ""
 "specific fields, over a specified interval."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:351
+#: ../../admin/working-log-files.en.rst:359
 msgid "``COUNT``"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:352
+#: ../../admin/working-log-files.en.rst:360
 msgid "``SUM``"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:353
+#: ../../admin/working-log-files.en.rst:361
 msgid "``AVERAGE``"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:354
+#: ../../admin/working-log-files.en.rst:362
 msgid "``FIRST``"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:355
+#: ../../admin/working-log-files.en.rst:363
 msgid "``LAST``"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:357
-msgid "To create a summary log file format, we"
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:359
+#: ../../admin/working-log-files.en.rst:367
 msgid ""
 "Define the format of the log file in :file:`logs_xml.config` as follows:"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:372
-msgid ""
-"where ``operator`` is one of the five aggregate operators (``COUNT``, "
-"``SUM``, ``AVERAGE``, ``FIRST``, ``LAST``), ``field`` is the logging field "
-"you want to aggregate, and ``n`` is the interval (in seconds) between "
-"summary log entries. You can specify more than one ``operator`` in the "
-"format line. For more information, refer to :file`logs_xml.config`."
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:379
+#: ../../admin/working-log-files.en.rst:385
 msgid ""
 "Run the command :option:`traffic_ctl config reload` to apply configuration changes ."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:381
-msgid ""
-"The following example format generates one entry every 10 seconds. Each "
-"entry contains the timestamp of the last entry of the interval, a count of "
-"the number of entries seen within that 10-second interval, and the sum of "
-"all bytes sent to the client: ::"
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:394
-msgid ""
-"You cannot create a format specification that contains both aggregate "
-"operators and regular fields. For example, the following specification "
-"would be **invalid**: ::"
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:401
+#: ../../admin/working-log-files.en.rst:409
 msgid "Choosing Binary or ASCII"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:403
+#: ../../admin/working-log-files.en.rst:411
 msgid ""
 "You can configure Traffic Server to create event log files in either of the "
 "following:"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:406
-msgid "**ASCII**"
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:408
+#: ../../admin/working-log-files.en.rst:415
 msgid ""
 "These files are human-readable and can be processed using standard, off-the-"
 "shelf log analysis tools. However, Traffic Server must perform additional "
@@ -613,11 +359,7 @@ msgid ""
 "files. By default, ASCII log files have a ``.log`` filename extension."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:415
-msgid "**Binary**"
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:417
+#: ../../admin/working-log-files.en.rst:423
 msgid ""
 "These files generate lower system overhead and generally occupy less space "
 "on the disk than ASCII files (depending on the type of information being "
@@ -626,82 +368,38 @@ msgid ""
 "use a ``.blog`` filename extension."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:424
+#: ../../admin/working-log-files.en.rst:430
 msgid ""
 "While binary log files typically require less disk space, there are "
 "exceptions."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:427
-msgid ""
-"For example: the value ``0`` (zero) requires only one byte to store in "
-"ASCII, but requires four bytes when stored as a binary integer. Conversely: "
-"if you define a custom format that logs IP addresses, then a binary log "
-"file would only require four bytes of storage per 32-bit address. However, "
-"the same IP address stored in dot notation would require around 15 "
-"characters (bytes) in an ASCII log file. Therefore, it's wise to consider "
-"the type of data that will be logged before you select ASCII or binary for "
-"your log files. For example, you might try logging for one day using ASCII "
-"and then another day using binary. If the number of requests is roughly the "
-"same for both days, then you can calculate a rough metric that compares the "
-"two formats."
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:439
-msgid ""
-"For standard log formats, select Binary or ASCII (refer to `Setting "
-"Standard Log File Format Options`). For the custom log format, specify "
-"ASCII or Binary mode in the :ref:`LogObject` (refer to :ref:`Using the "
-"Custom Format <using-custom-log-formats>`). In addition to the ASCII and "
-"binary options, you can also write custom log entries to a UNIX-named pipe "
-"(i.e., a buffer in memory). Other processes can then read the data using "
-"standard I/O functions. The advantage of using this option is that Traffic "
-"Server does not have to write to disk, which frees disk space and bandwidth "
-"for other tasks. In addition, writing to a pipe does not stop when logging "
-"space is exhausted because the pipe does not use disk space. Refer to :file:"
-"`logs_xml.config` for more information about the ``ASCII_PIPE`` option."
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:455
+#: ../../admin/working-log-files.en.rst:456
 msgid "Rolling Event Log Files"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:457
-msgid ""
-"Traffic Server provides automatic log file rolling. This means that at "
-"specific intervals during the day or when log files reach a certain size, "
-"Traffic Server closes its current set of log files and opens new log files. "
-"Depending on the amount of traffic your servers are exposed to, you should "
-"roll log files several times a day. Rolling every six hours is a good "
-"guideline to start with."
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:464
+#: ../../admin/working-log-files.en.rst:467
 msgid "Log file rolling offers the following benefits:"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:466
-msgid "It defines an interval over which log analysis can be performed."
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:467
+#: ../../admin/working-log-files.en.rst:471
 msgid ""
 "It keeps any single log file from becoming too large and helps to keep the "
 "logging system within the specified space limits."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:469
+#: ../../admin/working-log-files.en.rst:474
 msgid ""
 "It provides an easy way to identify files that are no longer being used so "
 "that an automated script can clean the logging directory and run log "
 "analysis programs."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:474
+#: ../../admin/working-log-files.en.rst:479
 msgid "Rolled Log Filename Format"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:476
+#: ../../admin/working-log-files.en.rst:481
 msgid ""
 "Traffic Server provides a consistent naming scheme for rolled log files "
 "that enables you to easily identify log files. When Traffic Server rolls a "
@@ -709,90 +407,54 @@ msgid ""
 "Traffic Server renames the old file to include the following information:"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:482
+#: ../../admin/working-log-files.en.rst:487
 msgid "The format of the file (such as ``squid.log``)."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:483
+#: ../../admin/working-log-files.en.rst:489
 msgid "The hostname of the Traffic Server that generated the log file."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:484
-msgid ""
-"Two timestamps separated by a hyphen (``-``). The first timestamp is a "
-"**lower bound** for the timestamp of the first record in the log file. The "
-"lower bound is the time when the new buffer for log records is created. "
-"Under low load, the first timestamp in the filename can be different from "
-"the timestamp of the first entry. Under normal load, the first timestamp in "
-"the filename and the timestamp of the first entry are similar. The second "
-"timestamp is an **upper bound** for the timestamp of the last record in the "
-"log file (this is normally the rolling time)."
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:493
+#: ../../admin/working-log-files.en.rst:501
 msgid ""
 "The suffix ``.old``, which makes it easy for automated scripts to find "
 "rolled log files."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:496
+#: ../../admin/working-log-files.en.rst:504
 msgid "Timestamps have the following format: ::"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:500
+#: ../../admin/working-log-files.en.rst:508
 msgid "The following table describes the format:"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:503
+#: ../../admin/working-log-files.en.rst:513
 msgid "``%Y``"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:503
-msgid "The year in four-digit format. For example: 2000."
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:506
-#: ../../admin/working-log-files.en.rst:515
+#: ../../admin/working-log-files.en.rst:514
+#: ../../admin/working-log-files.en.rst:517
 msgid "``%M``"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:506
-msgid "The month in two-digit format, from 01-12. For example: 07."
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:509
+#: ../../admin/working-log-files.en.rst:515
 msgid "``%D``"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:509
-msgid "The day in two-digit format, from 01-31. For example: 19."
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:512
+#: ../../admin/working-log-files.en.rst:516
 msgid "``%H``"
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:512
-msgid "The hour in two-digit format, from 00-23. For example: 21."
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:515
-msgid "The minute in two-digit format, from 00-59. For example: 52."
 msgstr ""
 
 #: ../../admin/working-log-files.en.rst:518
 msgid "``%S``"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:518
-msgid "The second in two-digit format, from 00-59. For example: 36."
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:520
+#: ../../admin/working-log-files.en.rst:523
 msgid "The following is an example of a rolled log filename: ::"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:524
+#: ../../admin/working-log-files.en.rst:527
 msgid ""
 "The logging system buffers log records before writing them to disk. When a "
 "log file is rolled, the log buffer might be partially full. If it is, then "
@@ -801,45 +463,37 @@ msgid ""
 "be a lower bound for the timestamp of the first entry."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:530
+#: ../../admin/working-log-files.en.rst:533
 msgid ""
 "For example, suppose logs are rolled every three hours, and the first "
 "rolled log file is: ::"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:535
+#: ../../admin/working-log-files.en.rst:538
 msgid ""
 "If the lower bound for the first entry in the log buffer at 3:00:00 is "
 "2:59:47, then the next log file will have the following timestamp when "
 "rolled: ::"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:541
+#: ../../admin/working-log-files.en.rst:544
 msgid ""
 "The contents of a log file are always between the two timestamps. Log files "
 "do not contain overlapping entries, even if successive timestamps appear to "
 "overlap."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:546
+#: ../../admin/working-log-files.en.rst:549
 msgid "Rolling Intervals"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:548
+#: ../../admin/working-log-files.en.rst:551
 msgid ""
 "Log files are rolled at specific intervals relative to a given hour of the "
 "day. Two options control when log files are rolled:"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:551
-msgid "The offset hour, which is an hour between 0 (midnight) and 23"
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:552
-msgid "The rolling interval"
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:554
+#: ../../admin/working-log-files.en.rst:558
 msgid ""
 "Both the offset hour and the rolling interval determine when log file "
 "rolling starts. Rolling occurs every rolling interval and at the offset "
@@ -849,46 +503,15 @@ msgid ""
 "is 3, then logs will roll at 03:00 and 15:00 each day."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:563
+#: ../../admin/working-log-files.en.rst:567
 msgid "Setting Log File Rolling Options"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:565
-msgid ""
-"To set log file rolling options and/or configure Traffic Server to roll log "
-"files when they reach a certain size, follow the steps below:"
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:570
-msgid ":ts:cv:`proxy.config.log.rolling_enabled`"
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:571
-msgid ":ts:cv:`proxy.config.log.rolling_size_mb`"
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:572
-msgid ":ts:cv:`proxy.config.log.rolling_offset_hr`"
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:573
-msgid ":ts:cv:`proxy.config.log.rolling_interval_sec`"
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:578
-msgid ""
-"You can fine-tune log file rolling settings for a custom log file in the :"
-"ref:`LogObject` specification in the :file:`logs_xml.config` file. The "
-"custom log file uses the rolling settings in its :ref:`LogObject`, which "
-"override the default settings you specify in Traffic Manager or the :file:"
-"`records.config` file described above."
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:588
+#: ../../admin/working-log-files.en.rst:601
 msgid "Splitting Event Log Files"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:590
+#: ../../admin/working-log-files.en.rst:603
 msgid ""
 "By default, Traffic Server uses standard log formats and generates log "
 "files that contain HTTP & ICP transactions in the same file. However, you "
@@ -896,103 +519,52 @@ msgid ""
 "protocols in separate log files."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:596
+#: ../../admin/working-log-files.en.rst:609
 msgid "ICP Log Splitting"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:598
-msgid ""
-"When ICP log splitting is enabled, Traffic Server records ICP transactions "
-"in a separate log file with a name that contains ``icp``. For example: if "
-"you enable the Squid format, then all ICP transactions are recorded in the "
-"``squid-icp.log`` file. When you disable ICP log splitting, Traffic Server "
-"records all ICP transactions in the same log file as HTTP transactions."
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:606
+#: ../../admin/working-log-files.en.rst:618
 msgid "HTTP Host Log Splitting"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:608
-msgid ""
-"HTTP host log splitting enables you to record HTTP transactions for "
-"different origin servers in separate log files. When HTTP host log "
-"splitting is enabled, Traffic Server creates a separate log file for each "
-"origin server that's listed in the :file:`log_hosts.config` file. When both "
-"ICP and HTTP host log splitting are enabled, Traffic Server generates "
-"separate log files for HTTP transactions (based on the origin server) and "
-"places all ICP transactions in their own respective log files. For example, "
-"if the :file:`log_hosts.config` file contains the two origin servers ``uni."
-"edu`` and ``company.com`` and Squid format is enabled, then Traffic Server "
-"generates the following log files:"
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:620
-#: ../../admin/working-log-files.en.rst:636
+#: ../../admin/working-log-files.en.rst:634
+#: ../../admin/working-log-files.en.rst:647
 msgid "``squid-uni.edu.log``"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:620
-msgid "All HTTP transactions for ``uni.edu``"
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:623
-#: ../../admin/working-log-files.en.rst:639
+#: ../../admin/working-log-files.en.rst:635
+#: ../../admin/working-log-files.en.rst:648
 msgid "``squid-company.com.log``"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:623
-msgid "All HTTP transactions for ``company.com``"
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:626
+#: ../../admin/working-log-files.en.rst:636
 msgid "``squid-icp.log``"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:626
-msgid "All ICP transactions for all hosts"
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:629
-#: ../../admin/working-log-files.en.rst:642
+#: ../../admin/working-log-files.en.rst:637
+#: ../../admin/working-log-files.en.rst:649
 msgid "``squid.log``"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:629
-msgid "All HTTP transactions for other hosts"
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:631
+#: ../../admin/working-log-files.en.rst:640
 msgid ""
 "If you disable ICP log splitting, then ICP transactions are placed in the "
 "same log file as HTTP transactions. Using the hosts and log format from the "
 "previous example, Traffic Server generates the log files below:"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:636
-msgid "All entries for ``uni.edu``"
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:639
-msgid "All entries for ``company.com``"
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:642
-msgid "All other entries"
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:644
+#: ../../admin/working-log-files.en.rst:652
 msgid ""
 "Traffic Server also enables you to create XML-based :ref:`Custom Log "
 "Formats <using-custom-log-formats>` that offer even greater control over "
 "log file generation."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:648
+#: ../../admin/working-log-files.en.rst:657
 msgid "Setting Log Splitting Options"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:650
+#: ../../admin/working-log-files.en.rst:659
 msgid "To set log splitting options, follow the steps below:"
 msgstr ""
 
@@ -1000,39 +572,18 @@ msgstr ""
 msgid "Editing the log_hosts.config File"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:663
-msgid ""
-"The default :file:`log_hosts.config` file is located in the Traffic Server "
-"``config`` directory. To record HTTP transactions for different origin "
-"servers in separate log files, you must specify the hostname of each origin "
-"server on a separate line in the :file:`log_hosts.config` file. For "
-"example, if you specify the keyword sports, then Traffic Server records all "
-"HTTP transactions from ``sports.yahoo.com`` and ``www.foxsports.com`` in a "
-"log file called ``squid-sports.log`` (if the Squid format is enabled)."
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:674
+#: ../../admin/working-log-files.en.rst:683
 msgid ""
 "If Traffic Server is clustered and you enable log file collation, then you "
 "should use the same :file:`log_hosts.config` file on every Traffic Server "
 "node in the cluster."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:678
-msgid "To edit the :file:`log_hosts.config` file follow the steps below:"
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:680
-msgid ""
-"In the :file:`log_hosts.config` file, enter the hostname of each origin "
-"server on a separate line in the file, e.g.: ::"
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:692
+#: ../../admin/working-log-files.en.rst:700
 msgid "Collating Event Log Files"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:694
+#: ../../admin/working-log-files.en.rst:702
 msgid ""
 "You can use the Traffic Server log file collation feature to collect all "
 "logged information in one place. Log collation enables you to analyze a set "
@@ -1048,7 +599,7 @@ msgid ""
 "Traffic Server."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:707
+#: ../../admin/working-log-files.en.rst:715
 msgid ""
 "The collation client nodes prepare their log buffers for transfer across "
 "the network and send the buffers to the log collation server. When the log "
@@ -1057,18 +608,18 @@ msgid ""
 "this, see the figure below."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:717
+#: ../../admin/working-log-files.en.rst:725
 msgid "Log collation"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:719
+#: ../../admin/working-log-files.en.rst:727
 msgid ""
 "If log clients cannot contact their log collation server, then they write "
 "their log buffers to their local disks, into *orphan* log files. Orphan log "
 "files require manual collation."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:725
+#: ../../admin/working-log-files.en.rst:733
 msgid ""
 "Log collation can have an impact on network performance. Because all nodes "
 "are forwarding their log data buffers to the single collation server, a "
@@ -1078,137 +629,69 @@ msgid ""
 "doing analysis."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:732
+#: ../../admin/working-log-files.en.rst:740
 msgid ""
 "To configure Traffic Server to collate event log files, you must perform "
 "the following tasks:"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:735
-msgid ""
-"Either `Configure Traffic Server Node to Be a Collation Server <Configuring "
-"Traffic Server to Be a Collation Server>`_ or install & configure a "
-"`Standalone Collator <Using a Standalone Collator>`_"
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:738
+#: ../../admin/working-log-files.en.rst:747
 msgid ""
 "`Configure Traffic Server Nodes to Be a Collation Clients <Configuring "
 "Traffic Server to Be a Collation Server>`_."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:740
-msgid ""
-"Add an attribute to the :ref:`LogObject` specification in the :file:"
-"`logs_xml.config` file if you are using custom log file formats; refer to "
-"`Collating Custom Event Log Files`_."
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:748
+#: ../../admin/working-log-files.en.rst:755
 msgid "Configuring Traffic Server to Be a Collation Server"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:750
-msgid ""
-"To configure a Traffic Server node to be a collation server, simply edit a "
-"configuration file via the steps below."
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:753
-msgid "In the :file:`records.config`  file, edit the following variables"
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:755
-msgid ":ts:cv:`proxy.local.log.collation_mode` (``1`` for server mode)"
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:756
-#: ../../admin/working-log-files.en.rst:821
+#: ../../admin/working-log-files.en.rst:851
 msgid ":ts:cv:`proxy.config.log.collation_port`"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:757
-#: ../../admin/working-log-files.en.rst:822
+#: ../../admin/working-log-files.en.rst:852
 msgid ":ts:cv:`proxy.config.log.collation_secret`"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:764
+#: ../../admin/working-log-files.en.rst:781
 msgid ""
 "If you modify the ``collation_port`` or ``secret`` after connections "
 "between the collation server and collation clients have been established, "
 "then you must restart Traffic Server."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:769
+#: ../../admin/working-log-files.en.rst:786
 msgid "Using a Standalone Collator"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:771
+#: ../../admin/working-log-files.en.rst:788
 msgid ""
 "If you do not want the log collation server to be a Traffic Server node, "
 "then you can install and configure a standalone collator (SAC) that will "
 "dedicate more of its power to collecting, processing, and writing log files."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:776
+#: ../../admin/working-log-files.en.rst:793
 msgid "To install and configure a standalone collator:"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:778
-msgid ""
-"Configure your Traffic Server nodes as log collation clients; refer to "
-"`Configuring Traffic Server to Be a Collation Client "
-"<#ConfiguringTSCollationClient>`_."
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:781
-msgid ""
-"Copy the :program:`traffic_sac` binary from the Traffic Server ``bin`` "
-"directory and"
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:783
+#: ../../admin/working-log-files.en.rst:802
 msgid ""
 "Copy the ``libtsutil.so`` libraries from the Traffic Server ``lib`` "
 "directory to the machine serving as the standalone collator."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:785
+#: ../../admin/working-log-files.en.rst:805
 msgid ""
 "Create a directory called ``config`` in the directory that contains the :"
 "program:`traffic_sac` binary."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:787
-msgid ""
-"Create a directory called ``internal`` in the ``config`` directory you "
-"created in Step 4 (above). This directory is used internally by the "
-"standalone collator to store lock files."
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:790
-msgid ""
-"Copy the :file:`records.config` file from a Traffic Server node configured "
-"to be a log collation client to the ``config`` directory you created in "
-"Step 4 on the standalone collator. The :file:`records.config` file contains "
-"the log collation secret and the port you specified when configuring "
-"Traffic Server nodes to be collation clients. The collation port and secret "
-"must be the same for all collation clients and servers."
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:797
-msgid "In the :file:`records.config` file, edit the following variable"
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:802
-msgid "Enter the following command::"
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:807
+#: ../../admin/working-log-files.en.rst:837
 msgid "Configuring Traffic Server to Be a Collation Client"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:809
+#: ../../admin/working-log-files.en.rst:839
 msgid ""
 "To configure a Traffic Server node to be a collation client, follow the "
 "steps below. If you modify the ``collation_port`` or ``secret`` after "
@@ -1216,11 +699,11 @@ msgid ""
 "been established, then you must restart Traffic Server."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:814
+#: ../../admin/working-log-files.en.rst:844
 msgid "In the :file:`records.config` file, edit the following variables:"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:816
+#: ../../admin/working-log-files.en.rst:846
 msgid ""
 ":ts:cv:`proxy.local.log.collation_mode`: ``2`` to configure this node as "
 "log collation client and send standard formatted log entries to the "
@@ -1229,109 +712,66 @@ msgid ""
 "formats>`."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:820
+#: ../../admin/working-log-files.en.rst:850
 msgid ":ts:cv:`proxy.config.log.collation_host`"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:823
+#: ../../admin/working-log-files.en.rst:853
 msgid ":ts:cv:`proxy.config.log.collation_host_tagged`"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:824
+#: ../../admin/working-log-files.en.rst:854
 msgid ":ts:cv:`proxy.config.log.max_space_mb_for_orphan_logs`"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:830
+#: ../../admin/working-log-files.en.rst:860
 msgid "Collating Custom Event Log Files"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:832
-msgid ""
-"If you use custom event log files, then you must edit the :file:`logs_xml."
-"config` file (in addition to configuring a collation server and collation "
-"clients)."
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:836
-msgid "To collate custom event log files"
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:838
-msgid "On each collation client, edit the `:file:`logs_xml.config`"
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:839
-msgid ""
-"Add the :ref:`CollationHost <logs-xml-logobject-collationhost>` attribute "
-"to the :ref:`LogObject` specification: ::"
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:850
-msgid ""
-"where ``ipaddress`` is the hostname or IP address of the collation server "
-"to which all log entries (for this object) are forwarded, and ``port`` is "
-"the port number for communication between the collation server and "
-"collation clients."
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:855
+#: ../../admin/working-log-files.en.rst:884
 msgid ""
 "Run the command :option:`traffic_line -L` to restart Traffic Server on the "
 "local node or :option:`traffic_line -M` to restart Traffic Server on all "
 "the nodes in a cluster."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:860
+#: ../../admin/working-log-files.en.rst:889
 msgid "Viewing Logging Statistics"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:862
+#: ../../admin/working-log-files.en.rst:891
 msgid ""
 "Traffic Server generates logging statistics that enable you to see the "
 "following information:"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:865
+#: ../../admin/working-log-files.en.rst:894
 msgid "How many log files (formats) are currently being written."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:866
+#: ../../admin/working-log-files.en.rst:896
 msgid ""
 "The current amount of space used by the logging directory, which contains "
 "all event and error logs."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:868
-msgid ""
-"The number of access events written to log files since Traffic Server "
-"installation. This counter represents one entry in one file; if multiple "
-"formats are being written, then a single event creates multiple event log "
-"entries."
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:872
+#: ../../admin/working-log-files.en.rst:904
 msgid ""
 "The number of access events skipped (because they were filtered) since "
 "Traffic Server installation."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:874
+#: ../../admin/working-log-files.en.rst:907
 msgid ""
 "The number of access events written to the event error log since Traffic "
 "Server installation."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:877
-msgid ""
-"You can retrieve the statistics via the Traffic Line command-line "
-"interface; refer to `Monitoring Traffic <../monitoring-traffic>`_."
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:881
+#: ../../admin/working-log-files.en.rst:914
 msgid "Viewing Log Files"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:883
+#: ../../admin/working-log-files.en.rst:916
 msgid ""
 "You can view the system, event, and error log files Traffic Server creates. "
 "You can also delete a log file or copy it to your local system if you have "
@@ -1341,11 +781,11 @@ msgid ""
 "message indicating that the file is too big."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:891
+#: ../../admin/working-log-files.en.rst:924
 msgid "Online Event Log XML Builder"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:893
+#: ../../admin/working-log-files.en.rst:926
 msgid ""
 "If you need any assistance building your event log, you can try out our "
 "`online log builder <http://trafficserver.apache.org/logbuilder/>`_. This "
@@ -1353,7 +793,7 @@ msgid ""
 "welcome."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:24
+#: ../../admin/working-log-files.en.rst:23
 msgid ""
 "Traffic Server generates log files that contain information about every "
 "request it receives and every error it detects. This chapter will examine "
@@ -1361,151 +801,131 @@ msgid ""
 "various pre-defined log formats that are available."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:898
+#: ../../admin/working-log-files.en.rst:931
 msgid "Example Event Log File Entries"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:900
+#: ../../admin/working-log-files.en.rst:933
 msgid ""
 "This section shows an example log file entry in each of the standard log "
 "formats supported by Traffic Server: Squid, Netscape Common, Netscape "
 "Extended, and Netscape Extended-2."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:907
+#: ../../admin/working-log-files.en.rst:940
 msgid "Squid Format"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:909
+#: ../../admin/working-log-files.en.rst:942
 msgid "The following figure shows a sample log entry in a ``squid.log`` file."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:915
+#: ../../admin/working-log-files.en.rst:948
 msgid "Sample log entry in squid.log"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:918
-#: ../../admin/working-log-files.en.rst:968
-#: ../../admin/working-log-files.en.rst:1003
-#: ../../admin/working-log-files.en.rst:1050
+#: ../../admin/working-log-files.en.rst:951
+#: ../../admin/working-log-files.en.rst:1001
+#: ../../admin/working-log-files.en.rst:1036
+#: ../../admin/working-log-files.en.rst:1083
 msgid "Field"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:918
-#: ../../admin/working-log-files.en.rst:968
-#: ../../admin/working-log-files.en.rst:1003
-#: ../../admin/working-log-files.en.rst:1050
+#: ../../admin/working-log-files.en.rst:951
+#: ../../admin/working-log-files.en.rst:1001
+#: ../../admin/working-log-files.en.rst:1036
+#: ../../admin/working-log-files.en.rst:1083
 msgid "Symbol"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:918
-#: ../../admin/working-log-files.en.rst:968
-#: ../../admin/working-log-files.en.rst:1003
-#: ../../admin/working-log-files.en.rst:1050
+#: ../../admin/working-log-files.en.rst:76
+#: ../../admin/working-log-files.en.rst:511
+#: ../../admin/working-log-files.en.rst:951
+#: ../../admin/working-log-files.en.rst:1001
+#: ../../admin/working-log-files.en.rst:1036
+#: ../../admin/working-log-files.en.rst:1083
 msgid "Description"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:920
-#: ../../admin/working-log-files.en.rst:970
+#: ../../admin/working-log-files.en.rst:953
+#: ../../admin/working-log-files.en.rst:1003
 msgid "1"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:920
+#: ../../admin/working-log-files.en.rst:953
 msgid "cqtq"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:920
-msgid ""
-"The client request timestamp in Squid format; the time of the client "
-"request in seconds since January 1, 1970 UTC (with millisecond resolution)."
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:922
-#: ../../admin/working-log-files.en.rst:971
+#: ../../admin/working-log-files.en.rst:955
+#: ../../admin/working-log-files.en.rst:1004
 msgid "2"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:922
+#: ../../admin/working-log-files.en.rst:955
 msgid "ttms"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:922
-msgid ""
-"The time Traffic Server spent processing the client request; the number of "
-"milliseconds between the time the client established the connection with "
-"Traffic Server and the time Traffic Server sent the last byte of the "
-"response back to the client."
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:926
-#: ../../admin/working-log-files.en.rst:972
+#: ../../admin/working-log-files.en.rst:959
+#: ../../admin/working-log-files.en.rst:1005
 msgid "3"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:926
-#: ../../admin/working-log-files.en.rst:970
+#: ../../admin/working-log-files.en.rst:959
+#: ../../admin/working-log-files.en.rst:1003
 msgid "chi"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:926
+#: ../../admin/working-log-files.en.rst:959
 msgid "The IP address of the client’s host machine."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:927
-#: ../../admin/working-log-files.en.rst:974
+#: ../../admin/working-log-files.en.rst:960
+#: ../../admin/working-log-files.en.rst:1007
 msgid "4"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:927
+#: ../../admin/working-log-files.en.rst:960
 msgid "crc/pssc"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:927
-msgid ""
-"The cache result code; how the cache responded to the request: ``HIT``, "
-"``MISS``, and so on. Cache result codes are described :ref:`here <squid-"
-"netscape-result-codes>`. The proxy response status code (the HTTP response "
-"status code from Traffic Server to client)."
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:932
-#: ../../admin/working-log-files.en.rst:975
+#: ../../admin/working-log-files.en.rst:965
+#: ../../admin/working-log-files.en.rst:1008
 msgid "5"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:932
+#: ../../admin/working-log-files.en.rst:965
 msgid "psql"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:932
+#: ../../admin/working-log-files.en.rst:965
 msgid ""
 "The length of the Traffic Server response to the client in bytes, including "
 "headers and content."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:934
-#: ../../admin/working-log-files.en.rst:976
+#: ../../admin/working-log-files.en.rst:967
+#: ../../admin/working-log-files.en.rst:1009
 msgid "6"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:934
+#: ../../admin/working-log-files.en.rst:967
 msgid "cqhm"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:934
+#: ../../admin/working-log-files.en.rst:967
 msgid "The client request method: ``GET``, ``POST``, and so on."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:935
-#: ../../admin/working-log-files.en.rst:977
+#: ../../admin/working-log-files.en.rst:968
+#: ../../admin/working-log-files.en.rst:1010
 msgid "7"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:935
+#: ../../admin/working-log-files.en.rst:968
 msgid "cauc"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:935
+#: ../../admin/working-log-files.en.rst:968
 msgid ""
 "The client request canonical URL; blanks and other characters that might "
 "not be parsed by log analysis tools are replaced by escape sequences. The "
@@ -1513,244 +933,237 @@ msgid ""
 "the replaced character in hex."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:939
-#: ../../admin/working-log-files.en.rst:1005
+#: ../../admin/working-log-files.en.rst:972
+#: ../../admin/working-log-files.en.rst:1038
 msgid "8"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:939
 #: ../../admin/working-log-files.en.rst:972
+#: ../../admin/working-log-files.en.rst:1005
 msgid "caun"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:939
+#: ../../admin/working-log-files.en.rst:972
 msgid ""
 "The username of the authenticated client. A hyphen (``-``) means that no "
 "authentication was required."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:941
-#: ../../admin/working-log-files.en.rst:1006
+#: ../../admin/working-log-files.en.rst:974
+#: ../../admin/working-log-files.en.rst:1039
 msgid "9"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:941
+#: ../../admin/working-log-files.en.rst:974
 msgid "phr/pqsn"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:941
-#: ../../admin/working-log-files.en.rst:1052
+#: ../../admin/working-log-files.en.rst:1085
 msgid ""
 "The proxy hierarchy route; the route Traffic Server used to retrieve the "
 "object."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:943
-#: ../../admin/working-log-files.en.rst:1008
+#: ../../admin/working-log-files.en.rst:976
+#: ../../admin/working-log-files.en.rst:1041
 msgid "10"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:943
+#: ../../admin/working-log-files.en.rst:976
 msgid "psct"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:943
-msgid ""
-"The proxy response content type; the object content type taken from the "
-"Traffic Server response header."
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:948
+#: ../../admin/working-log-files.en.rst:981
 msgid "Squid log in XML"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:950
 #: ../../admin/working-log-files.en.rst:983
-#: ../../admin/working-log-files.en.rst:1029
-#: ../../admin/working-log-files.en.rst:1068
+#: ../../admin/working-log-files.en.rst:1016
+#: ../../admin/working-log-files.en.rst:1062
+#: ../../admin/working-log-files.en.rst:1101
 msgid "This is the equivalent XML configuration for the log above::"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:959
+#: ../../admin/working-log-files.en.rst:992
 msgid "Netscape Common"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:965
+#: ../../admin/working-log-files.en.rst:998
 msgid "Sample log entry in common.log"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:970
+#: ../../admin/working-log-files.en.rst:1003
 msgid "The IP address of the client's host machine."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:971
+#: ../../admin/working-log-files.en.rst:1004
 msgid "--"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:971
+#: ../../admin/working-log-files.en.rst:1004
 msgid "This hyphen (``-``) is always present in Netscape log entries."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:972
+#: ../../admin/working-log-files.en.rst:1005
 msgid ""
 "The authenticated client username. A hyphen (``-``) means no authentication "
 "was required."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:974
+#: ../../admin/working-log-files.en.rst:1007
 msgid "cqtd"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:974
+#: ../../admin/working-log-files.en.rst:1007
 msgid "The date and time of the client request, enclosed in brackets."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:975
+#: ../../admin/working-log-files.en.rst:1008
 msgid "cqtx"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:975
+#: ../../admin/working-log-files.en.rst:1008
 msgid "The request line, enclosed in quotes."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:976
+#: ../../admin/working-log-files.en.rst:1009
 msgid "pssc"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:976
+#: ../../admin/working-log-files.en.rst:1009
 msgid "The proxy response status code (HTTP reply code)."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:977
+#: ../../admin/working-log-files.en.rst:1010
 msgid "pscl"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:977
+#: ../../admin/working-log-files.en.rst:1010
 msgid "The length of the Traffic Server response to the client in bytes."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:981
+#: ../../admin/working-log-files.en.rst:1014
 msgid "Netscape Common in XML"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:991
+#: ../../admin/working-log-files.en.rst:1024
 msgid "Netscape Extended"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:997
+#: ../../admin/working-log-files.en.rst:1030
 msgid "Sample log entry in extended.log"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:999
+#: ../../admin/working-log-files.en.rst:1032
 msgid ""
 "In addition to field 1-7 from the Netscape Common log format above, the "
 "Extended format also adds the following fields:"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1005
+#: ../../admin/working-log-files.en.rst:1038
 msgid "sssc"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1005
+#: ../../admin/working-log-files.en.rst:1038
 msgid "The origin server response status code."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1006
-#: ../../admin/working-log-files.en.rst:1018
+#: ../../admin/working-log-files.en.rst:1039
+#: ../../admin/working-log-files.en.rst:1051
 msgid "sshl"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1006
+#: ../../admin/working-log-files.en.rst:1039
 msgid ""
 "The server response transfer length; the body length in the origin server "
 "response to Traffic Server, in bytes."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1008
+#: ../../admin/working-log-files.en.rst:1041
 msgid "cqbl"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1008
+#: ../../admin/working-log-files.en.rst:1041
 msgid ""
 "The client request transfer length; the body length in the client request "
 "to Traffic Server, in bytes."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1010
+#: ../../admin/working-log-files.en.rst:1043
 msgid "11"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1010
+#: ../../admin/working-log-files.en.rst:1043
 msgid "pqbl"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1010
+#: ../../admin/working-log-files.en.rst:1043
 msgid ""
 "The proxy request transfer length; the body length in the Traffic Server "
 "request to the origin server."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1012
+#: ../../admin/working-log-files.en.rst:1045
 msgid "12"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1012
+#: ../../admin/working-log-files.en.rst:1045
 msgid "cqhl"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1012
+#: ../../admin/working-log-files.en.rst:1045
 msgid ""
 "The client request header length; the header length in the client request "
 "to Traffic Server."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1014
+#: ../../admin/working-log-files.en.rst:1047
 msgid "13"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1014
+#: ../../admin/working-log-files.en.rst:1047
 msgid "pshl"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1014
+#: ../../admin/working-log-files.en.rst:1047
 msgid ""
 "The proxy response header length; the header length in the Traffic Server "
 "response to the client."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1016
+#: ../../admin/working-log-files.en.rst:1049
 msgid "14"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1016
+#: ../../admin/working-log-files.en.rst:1049
 msgid "pqhl"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1016
+#: ../../admin/working-log-files.en.rst:1049
 msgid ""
 "The proxy request header length; the header length in Traffic Server "
 "request to the origin server."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1018
+#: ../../admin/working-log-files.en.rst:1051
 msgid "15"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1018
+#: ../../admin/working-log-files.en.rst:1051
 msgid ""
 "The server response header length; the header length in the origin server "
 "response to Traffic Server."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1020
+#: ../../admin/working-log-files.en.rst:1053
 msgid "16"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1020
+#: ../../admin/working-log-files.en.rst:1053
 msgid "tts"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1020
+#: ../../admin/working-log-files.en.rst:1053
 msgid ""
 "The time Traffic Server spent processing the client request; the number of "
 "seconds between the time that the client established the connection with "
@@ -1758,115 +1171,116 @@ msgid ""
 "response back to the client."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1027
+#: ../../admin/working-log-files.en.rst:1060
 msgid "Netscape Extended in XML"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1038
+#: ../../admin/working-log-files.en.rst:1071
 msgid "Netscape Extended2"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1044
+#: ../../admin/working-log-files.en.rst:1077
 msgid "Sample log entry in extended2.log"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1046
+#: ../../admin/working-log-files.en.rst:1079
 msgid ""
 "In addition to field 1-16 from the log formats above, the Extended2 format "
 "also adds the following fields:"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1052
+#: ../../admin/working-log-files.en.rst:1085
 msgid "17"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1052
+#: ../../admin/working-log-files.en.rst:1085
 msgid "phr"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1054
+#: ../../admin/working-log-files.en.rst:1087
 msgid "18"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1054
+#: ../../admin/working-log-files.en.rst:1087
 msgid "cfsc"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1054
+#: ../../admin/working-log-files.en.rst:1087
 msgid ""
 "The client finish status code: ``FIN`` if the client request completed "
 "successfully or ``INTR`` if the client request was interrupted."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1057
+#: ../../admin/working-log-files.en.rst:515
+#: ../../admin/working-log-files.en.rst:1090
 msgid "19"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1057
+#: ../../admin/working-log-files.en.rst:1090
 msgid "pfsc"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1057
+#: ../../admin/working-log-files.en.rst:1090
 msgid ""
 "The proxy finish status code: ``FIN`` if the Traffic Server request to the "
 "origin server completed successfully or ``INTR`` if the request was "
 "interrupted."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1060
+#: ../../admin/working-log-files.en.rst:1093
 msgid "20"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1060
+#: ../../admin/working-log-files.en.rst:1093
 msgid "crc"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1060
+#: ../../admin/working-log-files.en.rst:1093
 msgid ""
 "The cache result code; how the Traffic Server cache responded to the "
 "request: HIT, MISS, and so on. Cache result codes are described :ref:`here "
 "<squid-netscape-result-codes>`."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1066
+#: ../../admin/working-log-files.en.rst:1099
 msgid "Netscape Extended2 in XML"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1079
+#: ../../admin/working-log-files.en.rst:1112
 msgid "Squid- and Netscape-format: Cache Result Codes"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1081
+#: ../../admin/working-log-files.en.rst:1114
 msgid ""
 "The following table describes the cache result codes in Squid and Netscape "
 "log files."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1086
+#: ../../admin/working-log-files.en.rst:1119
 msgid "``TCP_HIT``"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1085
+#: ../../admin/working-log-files.en.rst:1118
 msgid ""
 "A valid copy of the requested object was in the cache and Traffic Server "
 "sent the object to the client."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1091
+#: ../../admin/working-log-files.en.rst:1124
 msgid "``TCP_MISS``"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1089
+#: ../../admin/working-log-files.en.rst:1122
 msgid ""
 "The requested object was not in cache, so Traffic Server retrieved the "
 "object from the origin server (or a parent proxy) and sent it to the client."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1097
+#: ../../admin/working-log-files.en.rst:1130
 msgid "``TCP_REFRESH_HIT``"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1094
+#: ../../admin/working-log-files.en.rst:1127
 msgid ""
 "The object was in the cache, but it was stale. Traffic Server made an ``if-"
 "modified-since`` request to the origin server and the origin server sent a "
@@ -1874,133 +1288,828 @@ msgid ""
 "client."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1103
+#: ../../admin/working-log-files.en.rst:1136
 msgid "``TCP_REF_FAIL_HIT``"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1100
+#: ../../admin/working-log-files.en.rst:1133
 msgid ""
 "The object was in the cache but was stale. Traffic Server made an ``if-"
 "modified-since`` request to the origin server but the server did not "
 "respond. Traffic Server sent the cached object to the client."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1109
+#: ../../admin/working-log-files.en.rst:1142
 msgid "``TCP_REFRESH_MISS``"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1106
+#: ../../admin/working-log-files.en.rst:1139
 msgid ""
 "The object was in the cache but was stale. Traffic Server made an ``if-"
 "modified-since`` request to the origin server and the server returned a new "
 "object. Traffic Server served the new object to the client."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1115
+#: ../../admin/working-log-files.en.rst:1148
 msgid "``TCP_CLIENT_REFRESH``"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1112
+#: ../../admin/working-log-files.en.rst:1145
 msgid ""
 "The client issued a request with a ``no-cache`` header. Traffic Server "
 "obtained the requested object from the origin server and sent a copy to the "
 "client. Traffic Server deleted the previous copy of the object from cache."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1122
+#: ../../admin/working-log-files.en.rst:1155
 msgid "``TCP_IMS_HIT``"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1118
-msgid ""
-"The client issued an ``if-modified-since`` request and the object was in "
-"cache & fresher than the IMS date, **or** an ``if-modified-since`` request "
-"to the origin server revealed the cached object was fresh. Traffic Server "
-"served the cached object to the client."
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:1129
+#: ../../admin/working-log-files.en.rst:1162
 msgid "``TCP_IMS_MISS``"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1125
-msgid ""
-"The client issued an ``if-modified-since request``, and the object was "
-"either not in cache or was stale in cache. Traffic Server sent an ``if-"
-"modified-since request`` to the origin server and received the new object. "
-"Traffic Server sent the updated object to the client."
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:1133
+#: ../../admin/working-log-files.en.rst:1166
 msgid "``TCP_SWAPFAIL``"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1132
+#: ../../admin/working-log-files.en.rst:1165
 msgid ""
 "The object was in the cache but could not be accessed. The client did not "
 "receive the object."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1136
+#: ../../admin/working-log-files.en.rst:1169
 msgid "``ERR_CLIENT_ABORT``"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1136
+#: ../../admin/working-log-files.en.rst:1169
 msgid "The client disconnected before the complete object was sent."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1139
+#: ../../admin/working-log-files.en.rst:1172
 msgid "``ERR_CONNECT_FAIL``"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1139
+#: ../../admin/working-log-files.en.rst:1172
 msgid "Traffic Server could not reach the origin server."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1143
+#: ../../admin/working-log-files.en.rst:1176
 msgid "``ERR_DNS_FAIL``"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1142
+#: ../../admin/working-log-files.en.rst:1175
 msgid ""
 "The Domain Name Server (DNS) could not resolve the origin server name, or "
 "no DNS could be reached."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1147
+#: ../../admin/working-log-files.en.rst:1180
 msgid "``ERR_INVALID_REQ``"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1146
+#: ../../admin/working-log-files.en.rst:1179
 msgid ""
 "The client HTTP request was invalid. (Traffic Server forwards requests with "
 "unknown methods to the origin server.)"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1151
+#: ../../admin/working-log-files.en.rst:1184
 msgid "``ERR_READ_TIMEOUT``"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1150
+#: ../../admin/working-log-files.en.rst:1183
 msgid ""
 "The origin server did not respond to Traffic Server's request within the "
 "timeout interval."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1154
+#: ../../admin/working-log-files.en.rst:1187
 msgid "``ERR_PROXY_DENIED``"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1154
+#: ../../admin/working-log-files.en.rst:1187
 msgid "Client service was denied."
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1157
+#: ../../admin/working-log-files.en.rst:1190
 msgid "``ERR_UNKNOWN``"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:1157
+#: ../../admin/working-log-files.en.rst:1190
 msgid ""
 "The client connected, but subsequently disconnected without sending a "
 "request."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:37
+msgid ""
+"*Error log files* record information about why a particular transaction was "
+"in error."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:40
+msgid ""
+"*Event log files* (also called *access log files*) record information about "
+"the state of each transaction Traffic Server processes."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:44
+msgid ""
+"*System log files* record system information, including messages about the "
+"state of Traffic Server and errors/warnings it produces. This kind of "
+"information might include a note that event log files were rolled, a "
+"warning that cluster communication timed out, or an error indicating that "
+"Traffic Server was restarted."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:69
+msgid ""
+"By default, Traffic Server creates both error and event log files and "
+"records system information in system log files. You can disable event "
+"logging and/or error logging by setting the configuration variable :ts:cv:"
+"`proxy.config.log.logging_enabled` in :file:`records.config` to one of the "
+"following values:"
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:76
+msgid "Value"
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:78
+msgid "``0``"
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:78
+msgid "Disable both event and error logging."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:79
+msgid "``1``"
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:79
+msgid "Enable error logging only."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:80
+msgid "``2``"
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:80
+msgid "Enable event logging only."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:81
+msgid "``3``"
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:81
+msgid "Enable both event and error logging."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:105
+msgid "*Manage your event log files*"
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:112
+msgid "*Choose different event log file formats*"
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:118
+msgid "*Roll event log files automatically*"
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:115
+msgid ""
+"Configure Traffic Server to roll event log files at specific intervals "
+"during the day or when they reach a certain size. This enables you to "
+"identify and manipulate log files that are no longer active. Refer to "
+"`Rolling Event Log Files`_."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:123
+msgid "*Separate log files according to protocols and hosts*"
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:129
+msgid "*Collate log files from different Traffic Server nodes*"
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:133
+msgid "*View statistics about the logging system*"
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:136
+msgid "*Interpret log file entries for the log file formats*"
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:141
+msgid ""
+"Traffic Server enables you to control where event log files are located and "
+"how much space they can consume. Additionally, you can specify how to "
+"handle low disk space in the logging directory."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:163
+msgid ""
+"If the autodelete option (discussed in `Rolling Event Log Files`_) is "
+"*enabled*, then Traffic Server identifies previously-rolled log files (log "
+"files with the ``.old`` extension). It starts deleting files one by one, "
+"beginning with the oldest file, until it emerges from the low state. "
+"Traffic Server logs a record of all deleted files in the system error log."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:205
+msgid ""
+"Standard formats, such as Squid or Netscape. Refer to `Using Standard "
+"Formats`_."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:206
+msgid "The Traffic Server custom format. Refer to `Using the Custom Format`_."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:208
+msgid ""
+"In addition to the standard and custom log file format, you can choose "
+"whether to save log files in binary or ASCII. Refer to `Choosing Binary or "
+"ASCII`_ for more details on the benefits and drawbacks of the two storage "
+"formats."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:265
+msgid ""
+"The XML-based custom log format is more flexible than the standard log file "
+"formats and gives you more control over the type of information recorded in "
+"log files. You should create a custom log format if you need data for "
+"analysis that's not available in the standard formats. You can decide what "
+"information to record for each Traffic Server transaction and create "
+"filters that specify which transactions to log."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:281
+msgid ":ref:`LogFormat`"
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:281
+msgid "Defines the content of the log file using printf-style format strings."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:285
+msgid ":ref:`LogFilter`"
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:284
+msgid ""
+"Defines a filter so that you include or exclude certain information from "
+"the log file."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:316
+msgid ":ref:`LogObject`"
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:288
+msgid "Specifies all the information needed to produce a log file:"
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:290
+msgid "The name of the log file. *Required*."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:292
+msgid ""
+"The format to be used. This can be a standard format (Squid or Netscape) or "
+"a previously-defined custom format (a :ref:`LogFormat`). *Required*."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:295
+msgid ""
+"The file mode: ``ASCII``, ``Binary``, or ``ASCII_PIPE``. The default is "
+"``ASCII``. Refer to `ASCII_PIPE File Mode`_ for more details on sending "
+"entries to a named pipe."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:299
+msgid "Any filters you want to use (:ref:`LogFilter` objects)."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:303
+msgid ""
+"The protocols you want to log. If the ``protocols`` tag is used, then "
+"Traffic Server will only log transactions from the protocols listed; "
+"otherwise, all transactions for all protocols are logged."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:318
+msgid "In order to accomplish this, we:"
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:320
+msgid ""
+"Enable :ts:cv:`proxy.config.log.custom_logs_enabled` in :file:`records."
+"config`. ::"
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:325
+msgid ""
+"Add :ref:`LogFormat`, :ref:`LogFilter`, and :ref:`LogObject` specifications "
+"to the configuration file :file:`logs_xml.config`."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:332
+msgid "ASCII_PIPE File Mode"
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:334
+msgid ""
+"In addition to ``ASCII`` and ``BINARY`` file modes for custom log formats, "
+"Traffic Server can output log entries in ``ASCII_PIPE`` mode. This mode "
+"writes the log entries to a UNIX named pipe (a buffer in memory). Other "
+"processes may read from this named pipe using standard I/O functions."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:339
+msgid ""
+"The advantage of this mode is that Traffic Server does not need to write "
+"the entries to disk, which frees disk space and bandwidth for other tasks. "
+"When the buffer is full, Traffic Server drops log entries and issues an "
+"error message indicating how many entries were dropped. Because Traffic "
+"Server only writes complete log entries to the pipe, only full records are "
+"dropped."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:348
+msgid ""
+"Due to the speed and efficiency of Traffic Server, a heavily-loaded node "
+"will generate many events and the event logs can quickly grow to very large "
+"sizes. Using SQL-like aggregate operators, you can configure Traffic Server "
+"to create summary log files that summarize a set of log entries over a "
+"specified period of time. This can significantly reduce the size of the log "
+"files generated."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:365
+msgid "To create a summary log file format:"
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:377
+msgid ""
+"Where ``operator`` is one of the five aggregate operators (``COUNT``, "
+"``SUM``, ``AVERAGE``, ``FIRST``, ``LAST``); ``field`` is the logging field "
+"you want to aggregate; and ``n`` is the interval (in seconds) between "
+"summary log entries."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:382
+msgid ""
+"You can specify more than one ``operator`` in the format line. For more "
+"information, refer to :file:`logs_xml.config`."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:387
+msgid ""
+"The following example format generates one entry every 10 seconds. Each "
+"entry contains the timestamp of the last entry of the interval, a count of "
+"the number of entries seen within that 10-second interval, and the sum of "
+"all bytes sent to the client:"
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:402
+msgid ""
+"You cannot create a format specification that contains both aggregate "
+"operators and regular fields. For example, the following specification "
+"would be invalid: ::"
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:420
+msgid "ASCII"
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:428
+msgid "Binary"
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:433
+msgid ""
+"For example, the value ``0`` (zero) requires only one byte to store in "
+"ASCII, but requires four bytes when stored as a binary integer. Conversely, "
+"if you define a custom format that logs IP addresses, then a binary log "
+"file would only require four bytes of storage per 32-bit address. However, "
+"the same IP address stored in dot notation would require around 15 "
+"characters (bytes) in an ASCII log file."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:440
+msgid ""
+"It is wise to consider the type of data that will be logged before you "
+"select ASCII or binary for your log files, if your decision is being driven "
+"by storage space concerns. For example, you might try logging for one day "
+"using ASCII and then another day using binary. If the number of requests is "
+"roughly the same for both days, then you can calculate a rough metric that "
+"compares the two formats."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:447
+msgid ""
+"For standard log formats, select Binary or ASCII (refer to `Setting "
+"Standard Log File Format Options`_). For the custom log format, specify "
+"ASCII or Binary mode in the :ref:`LogObject` (refer to :ref:`using-custom-"
+"log-formats`). In addition to the ASCII and binary options, you can also "
+"write custom log entries to a UNIX-named pipe (a buffer in memory) with the "
+"`ASCII_PIPE File Mode`_ setting."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:458
+msgid ""
+"Traffic Server provides automatic log file rolling. At specific intervals "
+"during the day or when log files reach a certain size, Traffic Server "
+"closes its current set of log files and opens new log files. Depending on "
+"the amount of traffic your servers are exposed to, you may find that "
+"increasing the frequency of log rolling is beneficial, or even necessary, "
+"to maintain manageable log file sets. Traffic Server nodes processing "
+"moderately high levels of traffic may want to start by rolling logs every "
+"six hours, and adjusting from there."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:469
+msgid ""
+"It defines an consistent interval over which log analysis can be performed."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:491
+msgid ""
+"Two timestamps separated by a hyphen (``-``). The first timestamp is a "
+"*lower bound* for the timestamp of the first record in the log file. The "
+"lower bound is the time when the new buffer for log records is created. "
+"Under low load, the first timestamp in the filename can be different from "
+"the timestamp of the first entry. Under normal load, the first timestamp in "
+"the filename and the timestamp of the first entry are similar. The second "
+"timestamp is an *upper bound* for the timestamp of the last record in the "
+"log file (this is normally the rolling time)."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:511
+msgid "Format"
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:511
+msgid "Sample"
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:513
+msgid "The year in four-digit format."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:513
+msgid "2000"
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:514
+msgid "The month in two-digit format, from 01-12."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:514
+msgid "07"
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:515
+msgid "The day in two-digit format, from 01-31."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:516
+msgid "The hour in two-digit format, from 00-23."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:516
+msgid "21"
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:517
+msgid "The minute in two-digit format, from 00-59."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:517
+msgid "52"
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:518
+msgid "The second in two-digit format, from 00-59."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:518
+msgid "36"
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:554
+msgid "The offset hour, which is an hour between ``0`` (midnight) and ``23``."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:556
+msgid "The rolling interval."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:569
+msgid ""
+"To set log file rolling options and/or configure Traffic Server to roll log "
+"files when they reach a certain size, adjust the following setting in :file:"
+"`records.config`:"
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:573
+msgid "Enable log rolling with :ts:cv:`proxy.config.log.rolling_enabled`. ::"
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:577
+msgid ""
+"Configure the upper limit on log file size with :ts:cv:`proxy.config.log."
+"rolling_size_mb`. ::"
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:582
+msgid ""
+"Set the offset hour with :ts:cv:`proxy.config.log.rolling_offset_hr`. ::"
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:586
+msgid ""
+"Set the interval (in seconds) with :ts:cv:`proxy.config.log."
+"rolling_interval_sec`. ::"
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:594
+msgid ""
+"You can fine-tune log file rolling settings for a custom log file in the :"
+"ref:`LogObject` specification in :file:`logs_xml.config`. The custom log "
+"file uses the rolling settings in its :ref:`LogObject`, which override the "
+"default settings you specify in Traffic Manager or :file:`records.config` "
+"described above."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:611
+msgid ""
+"When ICP log splitting is enabled, Traffic Server records ICP transactions "
+"in a separate log file with a name that contains ``icp``. For example, if "
+"you enable the Squid format, then all ICP transactions are recorded in the "
+"``squid-icp.log`` file. When you disable ICP log splitting, Traffic Server "
+"records all ICP transactions in the same log file as HTTP transactions."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:620
+msgid ""
+"HTTP host log splitting enables you to record HTTP transactions for "
+"different origin servers in separate log files. When HTTP host log "
+"splitting is enabled, Traffic Server creates a separate log file for each "
+"origin server that's listed in :file:`log_hosts.config`. When both ICP and "
+"HTTP host log splitting are enabled, Traffic Server generates separate log "
+"files for HTTP transactions (based on the origin server) and places all ICP "
+"transactions in their own respective log files. For example, if :file:"
+"`log_hosts.config` contains the two origin servers ``uni.edu`` and "
+"``company.com`` and Squid format is enabled, then Traffic Server generates "
+"the following log files:"
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:632
+#: ../../admin/working-log-files.en.rst:645
+msgid "Log File"
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:632
+#: ../../admin/working-log-files.en.rst:645
+msgid "Contents"
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:634
+msgid "All HTTP transactions for ``uni.edu``."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:635
+msgid "All HTTP transactions for ``company.com``."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:636
+msgid "All ICP transactions for all hosts."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:637
+msgid "All HTTP transactions for other hosts."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:647
+msgid "All entries for ``uni.edu``."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:648
+msgid "All entries for ``company.com``."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:649
+msgid "All other entries."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:672
+msgid ""
+"The default :file:`log_hosts.config` file is located in the Traffic Server "
+"``config`` directory. To record HTTP transactions for different origin "
+"servers in separate log files, you must specify the hostname of each origin "
+"server on a separate line in :file:`log_hosts.config`. For example, if you "
+"specify the keyword ``sports``, then Traffic Server records all HTTP "
+"transactions from ``sports.yahoo.com`` and ``www.foxsports.com`` in a log "
+"file called ``squid-sports.log`` (if the Squid format is enabled)."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:687
+msgid "To edit the log hosts list:"
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:689
+msgid ""
+"Enter the hostname of each origin server on a separate line in :file:"
+"`log_hosts.config`. ::"
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:743
+msgid ""
+"Either `Configure Traffic Server Node to Be a Collation Server <Configuring "
+"Traffic Server to Be a Collation Server>`_ or install and configure a "
+"`Standalone Collator <Using a Standalone Collator>`_."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:750
+msgid ""
+"Add an attribute to the :ref:`LogObject` specification in :file:`logs_xml."
+"config` if you are using custom log file formats. Refer to `Collating "
+"Custom Event Log Files`_."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:757
+msgid ""
+"To configure a Traffic Server node to be a collation server, perform the "
+"following configuration adjustments in :file:`records.config`:"
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:760
+msgid ""
+"Set :ts:cv:`proxy.local.log.collation_mode` to ``1`` to indicate this node "
+"will be a server. ::"
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:765
+msgid ""
+"Configure the port on which the server will listen to incoming collation "
+"transfers from clients, using :ts:cv:`proxy.config.log.collation_port`. If "
+"omitted, this defaults to port ``8085``. ::"
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:771
+msgid ""
+"Configure the shared secret (password) used by collation clients to "
+"authenticate their sessions, using :ts:cv:`proxy.config.log."
+"collation_secret`. ::"
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:795
+msgid ""
+"Configure your Traffic Server nodes as log collation clients. Refer to "
+"`Configuring Traffic Server to Be a Collation Client`_."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:798
+msgid ""
+"Copy the :program:`traffic_sac` binary from the Traffic Server ``bin`` "
+"directory, and place in a suitable location on the system that will act as "
+"the standalone collator."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:808
+msgid ""
+"Create a directory called ``internal`` in the ``config`` directory you "
+"created above. This directory is used internally by the standalone collator "
+"to store lock files."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:812
+msgid ""
+"Copy the :file:`records.config` file from a Traffic Server node configured "
+"to be a log collation client to the ``config`` directory you created on the "
+"standalone collator."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:816
+msgid ""
+"The :file:`records.config` file contains the log collation secret and the "
+"port you specified when configuring Traffic Server nodes to be collation "
+"clients. The collation port and secret must be the same for all collation "
+"clients and servers."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:821
+msgid ""
+"Edit :ts:cv:`proxy.config.log.logfile_dir` in :file:`records.config` to "
+"specify a location on your standalone collator where the collected log "
+"files should be stored. ::"
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:827
+msgid "Enter the following command to start the standalone collator process::"
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:831
+msgid ""
+"You will likely want to configure this program to run at server startup, as "
+"well as configure a service monitor in the event the process terminates "
+"abnormally. Please consult your operating system's documentation for how to "
+"achieve this."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:862
+msgid ""
+"If you use custom event log files, then you must edit :file:`logs_xml."
+"config`, in addition to configuring a collation server and collation "
+"clients."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:865
+msgid "To collate custom event log files:"
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:867
+msgid ""
+"On each collation client, edit :file:`logs_xml.config` and add the :ref:"
+"`CollationHosts <logs-xml-logobject-collationhost>` attribute to the :ref:"
+"`LogObject` specification:"
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:879
+msgid ""
+"Where ``ipaddress`` is the hostname or IP address of the collation server "
+"to which all log entries (for this object) are forwarded, and ``port`` is "
+"the port number for communication between the collation server and "
+"collation clients."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:899
+msgid ""
+"The number of access events written to log files since Traffic Server "
+"installation. This counter represents one entry in one file. If multiple "
+"formats are being written, then a single event creates multiple event log "
+"entries."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:910
+msgid ""
+"You can retrieve the statistics via the Traffic Line command-line "
+"interface. Refer to `Monitoring Traffic <../monitoring-traffic>`_."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:953
+msgid ""
+"The client request timestamp in Squid format. The time of the client "
+"request in seconds since January 1, 1970 UTC (with millisecond resolution)."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:955
+msgid ""
+"The time Traffic Server spent processing the client request. The number of "
+"milliseconds between the time the client established the connection with "
+"Traffic Server and the time Traffic Server sent the last byte of the "
+"response back to the client."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:960
+msgid ""
+"The cache result code; how the cache responded to the request: ``HIT``, "
+"``MISS``, and so on. Cache result codes are described in :ref:`<squid-"
+"netscape-result-codes>`. The proxy response status code (the HTTP response "
+"status code from Traffic Server to client)."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:974
+msgid ""
+"The proxy hierarchy route. The route Traffic Server used to retrieve the "
+"object."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:976
+msgid ""
+"The proxy response content type. The object content type taken from the "
+"Traffic Server response header."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:1151
+msgid ""
+"The client issued an ``if-modified-since`` request and the object was in "
+"cache and fresher than the IMS date, or an ``if-modified-since`` request to "
+"the origin server revealed the cached object was fresh. Traffic Server "
+"served the cached object to the client."
+msgstr ""
+
+#: ../../admin/working-log-files.en.rst:1158
+msgid ""
+"The client issued an ``if-modified-since request`` and the object was "
+"either not in cache or was stale in cache. Traffic Server sent an ``if-"
+"modified-since request`` to the origin server and received the new object. "
+"Traffic Server sent the updated object to the client."
 msgstr ""

@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -126,10 +125,6 @@ msgid ""
 "will be based on a regular expression."
 msgstr ""
 
-#: ../../reference/configuration/splitdns.config.en.rst:89
-msgid "``dns_server``"
-msgstr ""
-
 #: ../../reference/configuration/splitdns.config.en.rst:82
 msgid ""
 "This is a required directive. It identifies the DNS server that Traffic "
@@ -193,4 +188,8 @@ msgid ""
 "server ``255.255.255.253``. Because no ``def_domain`` or ``search_list`` "
 "was supplied, Traffic Server retrieves this information from :manpage:"
 "`resolv.conf(5)`"
+msgstr ""
+
+#: ../../reference/configuration/splitdns.config.en.rst:89
+msgid "``named``"
 msgstr ""

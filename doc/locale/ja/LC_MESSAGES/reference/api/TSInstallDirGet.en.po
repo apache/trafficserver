@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -30,19 +29,19 @@ msgstr ""
 msgid "TSInstallDirGet"
 msgstr "TSInstallDirGet"
 
-#: ../../reference/api/TSInstallDirGet.en.rst:25
+#: ../../reference/api/TSInstallDirGet.en.rst:27
 msgid "Synopsis"
 msgstr "概要"
 
-#: ../../reference/api/TSInstallDirGet.en.rst:27
+#: ../../reference/api/TSInstallDirGet.en.rst:29
 msgid "`#include <ts/ts.h>`"
 msgstr "`#include <ts/ts.h>`"
 
-#: ../../reference/api/TSInstallDirGet.en.rst:34
+#: ../../reference/api/TSInstallDirGet.en.rst:36
 msgid "Description"
 msgstr "解説"
 
-#: ../../reference/api/TSInstallDirGet.en.rst:36
+#: ../../reference/api/TSInstallDirGet.en.rst:38
 msgid ""
 ":func:`TSInstallDirGet` returns the path to the root of the Traffic Server "
 "installation. :func:`TSConfigDirGet` and :func:`TSPluginDirGet` return the "
@@ -54,31 +53,35 @@ msgstr ""
 "それぞれ設定ディレクトリとインストール済みのプラグインディレクトリへの完全な"
 "絶対パスを返します。"
 
-#: ../../reference/api/TSInstallDirGet.en.rst:42
+#: ../../reference/api/TSInstallDirGet.en.rst:44
 msgid "Return values"
 msgstr "戻り値"
 
-#: ../../reference/api/TSInstallDirGet.en.rst:44
+#: ../../reference/api/TSInstallDirGet.en.rst:46
 msgid ""
 "These functions all return a NUL-terminated string that must not be "
 "modified or freed."
 msgstr ""
 "これらの関数はすべて変更や解放をしてはならない NULL 終端文字列を返します。"
 
-#: ../../reference/api/TSInstallDirGet.en.rst:47
+#: ../../reference/api/TSInstallDirGet.en.rst:49
 msgid "Examples"
 msgstr "例"
 
-#: ../../reference/api/TSInstallDirGet.en.rst:49
+#: ../../reference/api/TSInstallDirGet.en.rst:51
 msgid ""
 "To load a file that is located in the Traffic Server configuration "
 "directory::"
 msgstr "Traffic Server 設定ディレクトリにあるファイルを読み込むためには::"
 
-#: ../../reference/api/TSInstallDirGet.en.rst:58
+#: ../../reference/api/TSInstallDirGet.en.rst:60
 msgid "See also"
 msgstr "参考"
 
-#: ../../reference/api/TSInstallDirGet.en.rst:59
+#: ../../reference/api/TSInstallDirGet.en.rst:61
 msgid ":manpage:`TSAPI(3ts)`"
 msgstr ":manpage:`TSAPI(3ts)`"
+
+#: ../../reference/api/TSInstallDirGet.en.rst:24
+msgid "Return Traffic Server installation directories."
+msgstr ""

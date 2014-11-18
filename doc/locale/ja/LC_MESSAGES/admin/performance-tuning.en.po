@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -26,47 +25,47 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../../admin/performance-tuning.en.rst:5
+#: ../../admin/performance-tuning.en.rst:4
 msgid "Performance Tuning"
 msgstr ""
 
-#: ../../admin/performance-tuning.en.rst:29
+#: ../../admin/performance-tuning.en.rst:27
 msgid "Before you start"
 msgstr ""
 
-#: ../../admin/performance-tuning.en.rst:31
-msgid ""
-"There is no single option to that will guarantee maximum performance of "
-"Apache Traffic Server in every use-case. There are however numerous options "
-"that help tune its performance under different loads and in its - often "
-"vastly different - use-cases."
-msgstr ""
-
-#: ../../admin/performance-tuning.en.rst:37
+#: ../../admin/performance-tuning.en.rst:35
 msgid "Building Traffic Server"
 msgstr ""
 
-#: ../../admin/performance-tuning.en.rst:39
+#: ../../admin/performance-tuning.en.rst:37
 msgid ""
 "A lot of speed can be gained or lost depending on the way ATS is built."
 msgstr ""
 
-#: ../../admin/performance-tuning.en.rst:42
+#: ../../admin/performance-tuning.en.rst:40
 msgid "Tuning the Machine"
 msgstr ""
 
-#: ../../admin/performance-tuning.en.rst:45
+#: ../../admin/performance-tuning.en.rst:43
 msgid "Operating Systems Options"
 msgstr ""
 
-#: ../../admin/performance-tuning.en.rst:48
+#: ../../admin/performance-tuning.en.rst:46
 msgid "Optimal Use of Memory"
 msgstr ""
 
-#: ../../admin/performance-tuning.en.rst:51
+#: ../../admin/performance-tuning.en.rst:49
 msgid "Tuning different Thread types"
 msgstr ""
 
-#: ../../admin/performance-tuning.en.rst:54
+#: ../../admin/performance-tuning.en.rst:52
 msgid "Tuning Plugin Execution"
+msgstr ""
+
+#: ../../admin/performance-tuning.en.rst:29
+msgid ""
+"There is no single option to that will guarantee maximum performance of "
+"Apache Traffic Server in every use case. There are however numerous options "
+"that help tune its performance under different loads and in its - often "
+"vastly different - use cases."
 msgstr ""

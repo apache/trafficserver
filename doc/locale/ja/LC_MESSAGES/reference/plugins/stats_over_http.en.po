@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -54,23 +53,52 @@ msgstr ""
 "Traffic Server を開始すると、次のデフォルト URL で JSON 形式のメトリクスが利"
 "用可能になっています。"
 
-#: ../../reference/plugins/stats_over_http.en.rst:39
-msgid ""
-"where host and port is the hostname/IP and port number of the server. You "
-"can optionally modify the path to use, and this is highly recommended in a "
-"public facing server. For example::"
-msgstr ""
-"host と port の部分はサーバーのホスト名/IP とポート番号です。オプションで使"
-"用するパスを変更することができ、公開されているサーバーでは強く推奨されます。"
-
-#: ../../reference/plugins/stats_over_http.en.rst:46
+#: ../../reference/plugins/stats_over_http.en.rst:62
 msgid "and the URL would then be e.g.::"
 msgstr "URL は例えば次のようになるでしょう。"
 
-#: ../../reference/plugins/stats_over_http.en.rst:51
+#: ../../reference/plugins/stats_over_http.en.rst:67
 msgid ""
 "This is weak security at best, since the secret could possibly leak if you "
 "are careless and send it over clear text."
 msgstr ""
 "不注意により秘密を平文で送った場合それが漏れる可能性があるので、これはせいぜ"
 "い弱いセキュリティでしかありません。"
+
+#: ../../reference/plugins/stats_over_http.en.rst:38
+msgid "where host and port is the hostname/IP and port number of the server."
+msgstr ""
+
+#: ../../reference/plugins/stats_over_http.en.rst:41
+msgid "Plugin Options"
+msgstr ""
+
+#: ../../reference/plugins/stats_over_http.en.rst:45
+msgid ""
+"This option causes the plugin to emit floating point and integral metric "
+"values as JSON numbers, rather then JSON strings. This can cause "
+"interoperability problems since integer metrics have a 64-bit unsigned "
+"range."
+msgstr ""
+
+#: ../../reference/plugins/stats_over_http.en.rst:52
+msgid ""
+"This option wraps 64-bit unsigned values to the 64-bit signed range. This "
+"aids interoperability with Java, since prior to the Java SE 8 release, Java "
+"did not have a 64-bit unsigned type."
+msgstr ""
+
+#: ../../reference/plugins/stats_over_http.en.rst:56
+msgid ""
+"You can optionally modify the path to use, and this is highly recommended "
+"in a public facing server. For example::"
+msgstr ""
+
+#~ msgid ""
+#~ "where host and port is the hostname/IP and port number of the server. "
+#~ "You can optionally modify the path to use, and this is highly "
+#~ "recommended in a public facing server. For example::"
+#~ msgstr ""
+#~ "host と port の部分はサーバーのホスト名/IP とポート番号です。オプションで"
+#~ "使用するパスを変更することができ、公開されているサーバーでは強く推奨され"
+#~ "ます。"

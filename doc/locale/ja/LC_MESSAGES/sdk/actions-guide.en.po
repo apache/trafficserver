@@ -76,7 +76,7 @@ msgstr ""
 msgid "Below is an example of typical usage for an action:"
 msgstr ""
 
-#: ../../sdk/actions-guide.en.rst:104
+#: ../../sdk/actions-guide.en.rst:103
 msgid ""
 "The example above shows a simple plugin that creates a continuation and "
 "then schedules it to be called immediately. When the plugin's handler "
@@ -91,7 +91,7 @@ msgid ""
 "pointer."
 msgstr ""
 
-#: ../../sdk/actions-guide.en.rst:116
+#: ../../sdk/actions-guide.en.rst:115
 msgid ""
 "A final question might be, \"why would a plugin want to cancel an action?\" "
 "In the above example, a valid reason could be to place a limit on the "
@@ -101,14 +101,14 @@ msgid ""
 "action. The following sample code implements this:"
 msgstr ""
 
-#: ../../sdk/actions-guide.en.rst:176
+#: ../../sdk/actions-guide.en.rst:174
 msgid "The action functions are:"
 msgstr ""
 
-#: ../../sdk/actions-guide.en.rst:178
+#: ../../sdk/actions-guide.en.rst:176
 msgid ":c:func:`TSActionCancel`"
 msgstr ""
 
-#: ../../sdk/actions-guide.en.rst:179
+#: ../../sdk/actions-guide.en.rst:177
 msgid ":c:func:`TSActionDone`"
 msgstr ""

@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -30,19 +29,19 @@ msgstr ""
 msgid "TSMBufferCreate"
 msgstr "TSMBufferCreate"
 
-#: ../../reference/api/TSMBufferCreate.en.rst:24
+#: ../../reference/api/TSMBufferCreate.en.rst:26
 msgid "Synopsis"
 msgstr "概要"
 
-#: ../../reference/api/TSMBufferCreate.en.rst:26
+#: ../../reference/api/TSMBufferCreate.en.rst:28
 msgid "`#include <ts/ts.h>`"
 msgstr "`#include <ts/ts.h>`"
 
-#: ../../reference/api/TSMBufferCreate.en.rst:33
+#: ../../reference/api/TSMBufferCreate.en.rst:35
 msgid "Description"
 msgstr "解説"
 
-#: ../../reference/api/TSMBufferCreate.en.rst:35
+#: ../../reference/api/TSMBufferCreate.en.rst:37
 msgid ""
 "The marshal buffer or :type:`TSMBuffer` is a heap data structure that "
 "stores parsed URLs, MIME headers and HTTP headers. You can allocate new "
@@ -58,7 +57,7 @@ msgstr ""
 "`TSMLoc`) のハンドルとオブジェクトを含んでいるマーシャルバッファー (:type:"
 "`TSMBuffer`) が必要になります。"
 
-#: ../../reference/api/TSMBufferCreate.en.rst:41
+#: ../../reference/api/TSMBufferCreate.en.rst:43
 msgid ""
 "Any marshal buffer fetched by :func:`TSHttpTxn*Get` will be used by other "
 "parts of the system. Be careful not to destroy these shared, transaction "
@@ -68,7 +67,7 @@ msgstr ""
 "ムの他の場所で使用されます。これらの共有されたトランザクションマーシャルバッ"
 "ファーを破棄さないよう気をつけてください。"
 
-#: ../../reference/api/TSMBufferCreate.en.rst:44
+#: ../../reference/api/TSMBufferCreate.en.rst:46
 msgid ""
 ":func:`TSMBufferCreate` creates a new marshal buffer and initializes the "
 "reference count. :func:`TSMBufferDestroy` Ignores the reference count and "
@@ -80,7 +79,7 @@ msgstr ""
 "を破棄します。マーシャルバッファーに紐付けられた内部データバッファーがマー"
 "シャルバッファーによって割り当てられていた場合はそれも破棄されます。"
 
-#: ../../reference/api/TSMBufferCreate.en.rst:50
+#: ../../reference/api/TSMBufferCreate.en.rst:52
 msgid ""
 ":func:`TSHandleMLocRelease` Releases the :type:`TSMLoc` mloc created from "
 "the :type:`TSMLoc` parent. If a :type:`TSMLoc` is obtained from a "
@@ -92,11 +91,11 @@ msgstr ""
 "場合は parent :type:`TSMLoc` を持っていません。定数 :data:`TS_NULL_MLOC` を "
 "parent として使用してください。"
 
-#: ../../reference/api/TSMBufferCreate.en.rst:56
+#: ../../reference/api/TSMBufferCreate.en.rst:58
 msgid "Return values"
 msgstr "戻り値"
 
-#: ../../reference/api/TSMBufferCreate.en.rst:58
+#: ../../reference/api/TSMBufferCreate.en.rst:60
 msgid ""
 ":func:`TSMBufferDestroy` and :func:`TSHandleMLocRelease` return :data:"
 "`TS_SUCCESS` on success, or :data:`TS_ERROR` on failure. :func:"
@@ -106,14 +105,18 @@ msgstr ""
 "`TS_SUCCESS` を返し、失敗時には :data:`TS_ERROR` を返します。:func:"
 "`TSMBufferCreate` は新しい :type:`TSMBuffer` を返します。"
 
-#: ../../reference/api/TSMBufferCreate.en.rst:63
+#: ../../reference/api/TSMBufferCreate.en.rst:65
 msgid "Examples"
 msgstr "例"
 
-#: ../../reference/api/TSMBufferCreate.en.rst:93
+#: ../../reference/api/TSMBufferCreate.en.rst:95
 msgid "See also"
 msgstr "参考"
 
-#: ../../reference/api/TSMBufferCreate.en.rst:95
+#: ../../reference/api/TSMBufferCreate.en.rst:97
 msgid ":manpage:`TSAPI(3ts)`"
 msgstr ":manpage:`TSAPI(3ts)`"
+
+#: ../../reference/api/TSMBufferCreate.en.rst:23
+msgid "Traffic Server marshall buffer API."
+msgstr ""

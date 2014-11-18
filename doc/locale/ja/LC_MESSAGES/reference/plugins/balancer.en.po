@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -45,11 +44,11 @@ msgid ""
 "to refine the requested policy."
 msgstr ""
 
-#: ../../reference/plugins/balancer.en.rst:37
+#: ../../reference/plugins/balancer.en.rst:42
 msgid "Hash Balancing Policy"
 msgstr ""
 
-#: ../../reference/plugins/balancer.en.rst:39
+#: ../../reference/plugins/balancer.en.rst:44
 msgid ""
 "The ``hash`` balancing policy performs a consistent hash across the set of "
 "origins. This minimizes the number of hash entries that must be moved when "
@@ -58,54 +57,54 @@ msgid ""
 "outbound origin server."
 msgstr ""
 
-#: ../../reference/plugins/balancer.en.rst:45
+#: ../../reference/plugins/balancer.en.rst:50
 msgid "The following fields can be supplied to the hash:"
 msgstr ""
 
-#: ../../reference/plugins/balancer.en.rst:50
+#: ../../reference/plugins/balancer.en.rst:55
 msgid "key"
 msgstr ""
 
-#: ../../reference/plugins/balancer.en.rst:48
+#: ../../reference/plugins/balancer.en.rst:53
 msgid ""
 "The request cache key. Note that the cache key will only be set if you have "
 "already chained a plugin that sets a custom cache key."
 msgstr ""
 
-#: ../../reference/plugins/balancer.en.rst:54
+#: ../../reference/plugins/balancer.en.rst:59
 msgid "url"
 msgstr ""
 
-#: ../../reference/plugins/balancer.en.rst:53
+#: ../../reference/plugins/balancer.en.rst:58
 msgid ""
 "The request URL. This is the default hash field that is used if no other "
 "fields are specified."
 msgstr ""
 
-#: ../../reference/plugins/balancer.en.rst:57
+#: ../../reference/plugins/balancer.en.rst:62
 msgid "srcaddr"
 msgstr ""
 
-#: ../../reference/plugins/balancer.en.rst:57
+#: ../../reference/plugins/balancer.en.rst:62
 msgid "The source IP address of the request."
 msgstr ""
 
-#: ../../reference/plugins/balancer.en.rst:60
+#: ../../reference/plugins/balancer.en.rst:65
 msgid "Round Robin Balancing Policy"
 msgstr ""
 
-#: ../../reference/plugins/balancer.en.rst:62
+#: ../../reference/plugins/balancer.en.rst:67
 msgid ""
 "The ``roundrobin`` balancing policy simply allocates requests to origin "
 "servers in order. Over time, the number of requests received by each origin "
 "should be approximately the same."
 msgstr ""
 
-#: ../../reference/plugins/balancer.en.rst:67
+#: ../../reference/plugins/balancer.en.rst:72
 msgid "Health Checking"
 msgstr ""
 
-#: ../../reference/plugins/balancer.en.rst:69
+#: ../../reference/plugins/balancer.en.rst:74
 msgid ""
 "The ``balancer`` plugin does not check the health of the origin servers, "
 "however the plugin is fully reloadable so health checking is usualy simple "
@@ -114,4 +113,11 @@ msgid ""
 "this information and rewrite :file:`remap.config` when appropriate. "
 "Running :option:`traffic_ctl config reload` will reload the ``balancer`` plugin with "
 "the new set of origin servers."
+msgstr ""
+
+#: ../../reference/plugins/balancer.en.rst:36
+msgid ""
+"The remaining plugin arguments are balancer targets. Typically, these will "
+"be the host names of origin servers that requests should be balanced "
+"across. The target name may contain a colon-separated port number."
 msgstr ""

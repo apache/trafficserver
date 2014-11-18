@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -30,23 +29,23 @@ msgstr ""
 msgid "TSAPI"
 msgstr "TSAPI"
 
-#: ../../reference/api/TSAPI.en.rst:24
+#: ../../reference/api/TSAPI.en.rst:26
 msgid "Synopsis"
 msgstr "概要"
 
-#: ../../reference/api/TSAPI.en.rst:25
+#: ../../reference/api/TSAPI.en.rst:27
 msgid "`#include <ts/ts.h>`"
 msgstr "`#include <ts/ts.h>`"
 
-#: ../../reference/api/TSAPI.en.rst:26
+#: ../../reference/api/TSAPI.en.rst:28
 msgid "`#include <ts/remap.h>`"
 msgstr "`#include <ts/remap.h>`"
 
-#: ../../reference/api/TSAPI.en.rst:29
+#: ../../reference/api/TSAPI.en.rst:31
 msgid "Description"
 msgstr "解説"
 
-#: ../../reference/api/TSAPI.en.rst:30
+#: ../../reference/api/TSAPI.en.rst:32
 msgid ""
 "The Apache Traffic Server API enables you to create plugins, using the C "
 "programming language, that customize the behavior of your Traffic Server "
@@ -55,7 +54,7 @@ msgstr ""
 "Apache Traffic Server API は C 言語を使ってインストール済みの Traffic "
 "Server の振る舞いをカスタマイズするプラグインの作成を可能にします。"
 
-#: ../../reference/api/TSAPI.en.rst:34
+#: ../../reference/api/TSAPI.en.rst:36
 msgid ""
 "Traffic Server enables sophisticated caching and processing of web-related "
 "traffic, such as DNS and HTTP requests and responses. Traffic Server itself "
@@ -65,7 +64,7 @@ msgstr ""
 "のような Web 関連トラフィックの処理を可能とします。Traffic Server 自体は次の"
 "ように簡素化されたイベントドリブンループから成っています。"
 
-#: ../../reference/api/TSAPI.en.rst:44
+#: ../../reference/api/TSAPI.en.rst:46
 msgid ""
 "You compile your plugin source code to create a shared library that Traffic "
 "Server loads when it is started. Your plugin contains callback functions "
@@ -79,11 +78,11 @@ msgstr ""
 "処理を必要とすると、そのイベントタイプに登録したあらゆるコールバック関数が呼"
 "び出されます。"
 
-#: ../../reference/api/TSAPI.en.rst:51
+#: ../../reference/api/TSAPI.en.rst:53
 msgid "Possible uses for plugins include the following:"
 msgstr "プラグインは次の使い方ができます。"
 
-#: ../../reference/api/TSAPI.en.rst:53
+#: ../../reference/api/TSAPI.en.rst:55
 msgid ""
 "HTTP processing plugins can filter, blacklist, authorize users or transform "
 "content."
@@ -91,7 +90,7 @@ msgstr ""
 "HTTP 処理プラグインはフィルター、ブラックリスト、ユーザー認証、コンテンツの"
 "変換ができます。"
 
-#: ../../reference/api/TSAPI.en.rst:54
+#: ../../reference/api/TSAPI.en.rst:56
 msgid ""
 "Protocol plugins can enable Traffic Server to proxy-cache new protocol "
 "content."
@@ -99,22 +98,22 @@ msgstr ""
 "プロトコルプラグインは Traffic Server が新しいプロトコルコンテンツをプロキ"
 "シーキャッシュできるようにします。"
 
-#: ../../reference/api/TSAPI.en.rst:55
+#: ../../reference/api/TSAPI.en.rst:57
 msgid ""
 "A blacklisting plugin denies attempts to access web sites that are off-"
 "limits."
 msgstr ""
 "ブラックリストプラグインは進入禁止の Web サイトへのアクセスを拒絶します。"
 
-#: ../../reference/api/TSAPI.en.rst:56
+#: ../../reference/api/TSAPI.en.rst:58
 msgid "Append transform plugins add data to HTTP response content."
 msgstr "追加変換プラグインは HTTP レスポンスコンテンツにデータを追加します。"
 
-#: ../../reference/api/TSAPI.en.rst:57
+#: ../../reference/api/TSAPI.en.rst:59
 msgid "An image conversion plugin transforms JPEG images to GIF images."
 msgstr "画像変換プラグインは JPEG 画像を GIF 画像に変換します。"
 
-#: ../../reference/api/TSAPI.en.rst:58
+#: ../../reference/api/TSAPI.en.rst:60
 msgid ""
 "Compression plugins send response content to a compression server that "
 "compresses the data (alternatively, a compression library local to the "
@@ -124,7 +123,7 @@ msgstr ""
 "(もしくは、Traffic Server のホストマシンにある圧縮ライブラリが圧縮を行うかも"
 "しれません) 。"
 
-#: ../../reference/api/TSAPI.en.rst:61
+#: ../../reference/api/TSAPI.en.rst:63
 msgid ""
 "Authorization plugins check a user's permissions to access particular web "
 "sites. The plugin could consult a local authorization program or send "
@@ -134,7 +133,7 @@ msgstr ""
 "ます。このプラグインはローカルの認証プログラムに問い合わせたり、認証サーバー"
 "に問い合わせを送信したりするかもしれません。"
 
-#: ../../reference/api/TSAPI.en.rst:64
+#: ../../reference/api/TSAPI.en.rst:66
 msgid ""
 "A plugin that gathers client information from request headers and enters "
 "this information in a database."
@@ -142,7 +141,7 @@ msgstr ""
 "リクエストヘッダーからクライアントの情報を収集しその情報をデータベースに入力"
 "するプラグイン。"
 
-#: ../../reference/api/TSAPI.en.rst:66
+#: ../../reference/api/TSAPI.en.rst:68
 msgid ""
 "A protocol plugin listen for specific protocol requests on a designated "
 "port and then uses Traffic Server's proxy server and cache to serve client "
@@ -152,15 +151,15 @@ msgstr ""
 "け、クライアントのリクエストに応えるために Traffic Server のプロキシーサー"
 "バーとキャッシュを使用します。"
 
-#: ../../reference/api/TSAPI.en.rst:71
+#: ../../reference/api/TSAPI.en.rst:73
 msgid "Naming conventions"
 msgstr "命名規則"
 
-#: ../../reference/api/TSAPI.en.rst:73
+#: ../../reference/api/TSAPI.en.rst:75
 msgid "The Traffic Server API adheres to the following naming conventions:"
 msgstr "Traffic Server API は次の命名規則に従います。"
 
-#: ../../reference/api/TSAPI.en.rst:75
+#: ../../reference/api/TSAPI.en.rst:77
 msgid ""
 "The TS prefix is used for all function and variable names defined in the "
 "Traffic Server API. For example, :data:`TS_EVENT_NONE`, :type:`TSMutex`, "
@@ -170,7 +169,7 @@ msgstr ""
 "ます。例えば、:data:`TS_EVENT_NONE` 、:type:`TSMutex` 、:func:"
 "`TSContCreate` となります。"
 
-#: ../../reference/api/TSAPI.en.rst:78
+#: ../../reference/api/TSAPI.en.rst:80
 msgid ""
 "Enumerated values are always written in all uppercase letters. For "
 "example, :data:`TS_EVENT_NONE` and :data:`TS_VC_CLOSE_ABORT`."
@@ -178,7 +177,7 @@ msgstr ""
 "列挙された値は常にすべて大文字で書かれます。例えば、:data:`TS_EVENT_NONE` "
 "や :data:`TS_VC_CLOSE_ABORT` となります。"
 
-#: ../../reference/api/TSAPI.en.rst:80
+#: ../../reference/api/TSAPI.en.rst:82
 msgid ""
 "Constant values are all uppercase; enumerated values can be seen as a "
 "subset of constants. For example, :data:`TS_URL_SCHEME_FILE` and :data:"
@@ -187,7 +186,7 @@ msgstr ""
 "定数はすべて大文字です。列挙された値は定数の一部に見えるかもしれません。例え"
 "ば、:data:`TS_URL_SCHEME_FILE` や :data:`TS_MIME_FIELD_ACCEPT` となります。"
 
-#: ../../reference/api/TSAPI.en.rst:83
+#: ../../reference/api/TSAPI.en.rst:85
 msgid ""
 "The names of defined types are mixed-case. For example, :type:`TSHttpSsn` "
 "and :func:`TSHttpTxn`. :func:`TSDebug`"
@@ -195,7 +194,7 @@ msgstr ""
 "定義された型の名前は大文字小文字が混在します。例えば、:type:`TSHttpSsn` 、:"
 "func:`TSHttpTxn` 、:func:`TSDebug` となります。"
 
-#: ../../reference/api/TSAPI.en.rst:85
+#: ../../reference/api/TSAPI.en.rst:87
 msgid ""
 "Function names are mixed-case. For example, :func:`TSUrlCreate` and :func:"
 "`TSContDestroy`."
@@ -203,7 +202,7 @@ msgstr ""
 "関数名は混在になります。例えば、:func:`TSUrlCreate` や :func:"
 "`TSContDestroy` となります。"
 
-#: ../../reference/api/TSAPI.en.rst:87
+#: ../../reference/api/TSAPI.en.rst:89
 msgid ""
 "Function names use the following subject-verb naming style: TS-<subject>-"
 "<verb>, where <subject> goes from general to specific. This makes it easier "
@@ -217,7 +216,7 @@ msgstr ""
 "スワードフィールド (限定的な主語) を取得する関数は :func:`TSUrlPasswordGet` "
 "となります。"
 
-#: ../../reference/api/TSAPI.en.rst:93
+#: ../../reference/api/TSAPI.en.rst:95
 msgid ""
 "Common verbs like Create, Destroy, Get, Set, Copy, Find, Retrieve, Insert, "
 "Remove, and Delete are used only when appropriate."
@@ -225,11 +224,11 @@ msgstr ""
 "Create 、Destroy 、Get 、Set 、Copy 、Find 、Retrieve 、Insert 、Remove 、"
 "Delete のような一般的な動詞はそれが適切な場合にのみ使用されます。"
 
-#: ../../reference/api/TSAPI.en.rst:97
+#: ../../reference/api/TSAPI.en.rst:99
 msgid "Plugin loading and configuration"
 msgstr "プラグインの読み込みと設定"
 
-#: ../../reference/api/TSAPI.en.rst:99
+#: ../../reference/api/TSAPI.en.rst:101
 msgid ""
 "When Traffic Server is first started, it consults the plugin.config file to "
 "determine the names of all shared plugin libraries that need to be loaded. "
@@ -243,7 +242,7 @@ msgstr ""
 "渡される引数も定義します。:file:`records.config` ファイルは個々のプラグイン"
 "共有ライブラリのパスを定義します。"
 
-#: ../../reference/api/TSAPI.en.rst:106
+#: ../../reference/api/TSAPI.en.rst:108
 msgid ""
 "The sample :file:`plugin.config` file below contains a comment line, a "
 "blank line, and two plugin configurations::"
@@ -251,7 +250,7 @@ msgstr ""
 "以下の :file:`plugin.config` ファイルのサンプルはコメント行、空行、二つのプ"
 "ラグインの設定から成っています。"
 
-#: ../../reference/api/TSAPI.en.rst:113
+#: ../../reference/api/TSAPI.en.rst:115
 msgid ""
 "Each plugin configuration in the :file:`plugin.config` file resembles a "
 "UNIX or DOS shell command; each line in :file:`plugin.config` cannot exceed "
@@ -261,7 +260,7 @@ msgstr ""
 "のシェルコマンドに似ています。:file:`plugin.config` 内の各行は 1023 文字を超"
 "えることはできません。"
 
-#: ../../reference/api/TSAPI.en.rst:117
+#: ../../reference/api/TSAPI.en.rst:119
 msgid ""
 "The first plugin configuration is for a plugin named my-plugin.so. It "
 "contains three arguments that are to be passed to that plugin's "
@@ -277,7 +276,7 @@ msgstr ""
 "on は実は設定変数です。Traffic Server は指定された設定変数を参照し、その値で"
 "置き換えます。"
 
-#: ../../reference/api/TSAPI.en.rst:125
+#: ../../reference/api/TSAPI.en.rst:127
 msgid ""
 "Plugins are loaded and initialized by Traffic Server in the order they "
 "appear in the :file:`plugin.config` file."
@@ -285,11 +284,11 @@ msgstr ""
 "プラグインは :file:`plugin.config` ファイルに出てくる順番で Traffic Server "
 "に読み込まれ初期化されます。"
 
-#: ../../reference/api/TSAPI.en.rst:129
+#: ../../reference/api/TSAPI.en.rst:131
 msgid "Plugin initialization"
 msgstr "プラグインの初期化"
 
-#: ../../reference/api/TSAPI.en.rst:131
+#: ../../reference/api/TSAPI.en.rst:133
 msgid ""
 "Each plugin must define an initialization function named :func:"
 "`TSPluginInit` that Traffic Server invokes when the plugin is loaded. :func:"
@@ -301,20 +300,24 @@ msgstr ""
 "`TSPluginInit` は一般的に設定情報を読み込みイベント通知のフックを登録するた"
 "めに使用されます。"
 
-#: ../../reference/api/TSAPI.en.rst:138
+#: ../../reference/api/TSAPI.en.rst:140
 msgid "Files"
 msgstr "ファイル"
 
-#: ../../reference/api/TSAPI.en.rst:139
+#: ../../reference/api/TSAPI.en.rst:141
 msgid ""
 ":file:`{CONFIG_DIR}/plugin.config`, :file:`{CONFIG_DIR}/records.config`"
 msgstr ""
 ":file:`{CONFIG_DIR}/plugin.config`, :file:`{CONFIG_DIR}/records.config`"
 
-#: ../../reference/api/TSAPI.en.rst:142
+#: ../../reference/api/TSAPI.en.rst:144
 msgid "See also"
 msgstr "参考"
 
-#: ../../reference/api/TSAPI.en.rst:143
+#: ../../reference/api/TSAPI.en.rst:145
 msgid ":manpage:`TSPluginInit(3ts)`"
 msgstr ":manpage:`TSPluginInit(3ts)`"
+
+#: ../../reference/api/TSAPI.en.rst:23
+msgid "Introduction to the Apache Traffic Server API."
+msgstr ""

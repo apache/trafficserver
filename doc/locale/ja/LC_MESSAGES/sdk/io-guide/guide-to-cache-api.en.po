@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -51,24 +50,24 @@ msgstr ""
 msgid "**Example:**"
 msgstr ""
 
-#: ../../sdk/io-guide/guide-to-cache-api.en.rst:54
+#: ../../sdk/io-guide/guide-to-cache-api.en.rst:53
 msgid "How to Do a Cache Read"
 msgstr ""
 
-#: ../../sdk/io-guide/guide-to-cache-api.en.rst:56
+#: ../../sdk/io-guide/guide-to-cache-api.en.rst:55
 msgid ""
 "``TSCacheRead`` does not really read - it is used for lookups (see the "
 "sample Protocol plugin). Possible callback events include:"
 msgstr ""
 
-#: ../../sdk/io-guide/guide-to-cache-api.en.rst:59
+#: ../../sdk/io-guide/guide-to-cache-api.en.rst:58
 msgid ""
 "``TS_EVENT_CACHE_OPEN_READ`` - indicates the lookup was successful. The "
 "data passed back along with this event is a cache vconnection that can be "
 "used to initiate a read on this keyed data."
 msgstr ""
 
-#: ../../sdk/io-guide/guide-to-cache-api.en.rst:63
+#: ../../sdk/io-guide/guide-to-cache-api.en.rst:62
 msgid ""
 "``TS_EVENT_CACHE_OPEN_READ_FAILED`` - indicates the lookup was "
 "unsuccessful. Reasons for this event could be that another continuation is "

@@ -95,20 +95,6 @@ msgstr ""
 "Traffic Server は Java アプレット、JavaScript のブログラムもしくは VBScript "
 "の様なその他のアプリケーションファイルをキャッシュできますか？"
 
-#: ../../admin/faqs.en.rst:59
-msgid ""
-"Yes, Traffic Server can store and serve Java applets, JavaScript programs, "
-"VBScripts, and other executable objects from its cache according to the "
-"freshness and cacheability rules for HTTP objects. Traffic Server does not "
-"execute the applets, scripts, or programs, however - these objects run only "
-"when the client system (ie, the one that sent the request) loads them."
-msgstr ""
-"はい、Traffic Server は Java アプレット、JavaScript プログラム、VBScript、そ"
-"の他実行可能なオブジェクトを保存し、HTTP オブジェクトの新鮮さとキャッシュ"
-"ルールにもとづいて配信することができます。Traffic Server はアプレット、スク"
-"リプト、プログラムを実行せず、クライアントはこれらシステムに読み込んだときに"
-"のみ実行されます。"
-
 #: ../../admin/faqs.en.rst:67
 msgid ""
 "In Squid- and Netscape-format log files, what do the cache result codes "
@@ -128,26 +114,6 @@ msgstr ""
 msgid "What is recorded by the ``cqtx`` field in a custom log file?"
 msgstr ""
 "カスタムログファイル内の ``cqtx`` フィールドには何が記録されていますか？"
-
-#: ../../admin/faqs.en.rst:74
-msgid ""
-"In **forward proxy mode**, the cqtx field records the complete client "
-"request in the log file (for example, ``GET http://www.company.com "
-"HTTP/1.0``)."
-msgstr ""
-"**フォワードプロキシーモード** では、cqtx フィールドはクライアントの完全なリ"
-"クエストを記録しています (例えば、``GET http://www.company.com HTTP/1.0`` な"
-"ど) 。"
-
-#: ../../admin/faqs.en.rst:76
-msgid ""
-"In **reverse proxy mode**, the cqtx field records the hostname or IP "
-"address of the origin server because Traffic Server first remaps the "
-"request as per map rules in the :file:`remap.config` file."
-msgstr ""
-"**リバースプロキシーモード** では、Traffic Server はまずリクエストを :file:"
-"`remap.config` ファイル内のマップルールごとにリマップを行うので、cqtx フィー"
-"ルドはオリジンサーバーのホスト名もしくは IP アドレスを記録しています。"
 
 #: ../../admin/faqs.en.rst:81
 msgid ""
@@ -172,10 +138,6 @@ msgstr ""
 "設定することも可能です。もしくは、ネームサーバーによってセットされた "
 "``ttl`` の値と Traffic Server の設定値を比較し、低いものか高いものかどちらか"
 "を使用するように Traffic Serverを設定することも可能です。"
-
-#: ../../admin/faqs.en.rst:91
-msgid "see :ts:cv:`proxy.config.hostdb.ttl_mode` for more info"
-msgstr "詳しくは :ts:cv:`proxy.config.hostdb.ttl_mode` を観てください。"
 
 #: ../../admin/faqs.en.rst:94
 msgid ""
@@ -209,30 +171,6 @@ msgstr ""
 "Traffic Server はフォワードプロキシーモードとリバースプロキシーモードを同時"
 "に実行できますか？"
 
-#: ../../admin/faqs.en.rst:107
-msgid ""
-"Yes. When you enable reverse proxy mode, Traffic Server remaps incoming "
-"requests according to the map rules in the :file:`remap.config` file. All "
-"other requests that do not match a map rule are simply served in forward "
-"proxy mode."
-msgstr ""
-"はい。リバースプロキシーモードを有効にした場合、Traffic Server は入ってきた"
-"リクエストを :file:`remap.config` ファイル内のマップルールにもとづいて "
-"remap します。マップルールにマッチしないその他のすべてのリクエストはフォワー"
-"ドプロキシーモードで単純に処理されます。"
-
-#: ../../admin/faqs.en.rst:112
-msgid ""
-"If you want to run in reverse proxy only mode (wherein Traffic Server does "
-"*not* serve requests that fail to match a map rule), then you must set the "
-"configuration variable :ts:cv:`proxy.config.url_remap.remap_required` to "
-"``1`` in the :file:`records.config` file."
-msgstr ""
-"リバースプロキシーモードのみで実行したい場合 (Traffic Server はマップルール"
-"にマッチしなかったリクエストに応え\\ *ません*\\ ) は、:file:`records."
-"config` ファイル内の設定変数 :ts:cv:`proxy.config.url_remap.remap_required` "
-"を ``1`` にセットしなければなりません。"
-
 #: ../../admin/faqs.en.rst:118
 msgid "How do I enable forward proxy mode"
 msgstr "どうやってフォワードプロキシーモードを有効するのですか？"
@@ -245,47 +183,19 @@ msgstr ":ref:`forward-proxy` を参照してください。"
 msgid "How do I interpret the Via: header code?"
 msgstr "どうやって Via: ヘッダーコードを解釈するのですか？"
 
-#: ../../admin/faqs.en.rst:128
+#: ../../admin/faqs.en.rst:326
 msgid "Support for HTTP Expect: Header"
 msgstr "HTTP Expect: ヘッダーのサポート"
 
-#: ../../admin/faqs.en.rst:130
-msgid ""
-"Traffic Server currently does not handle request Expect: headers according "
-"to the HTTP/1.1 spec."
-msgstr ""
-"Traffic Server は現在 HTTP/1.1 仕様による Expect: ヘッダーを扱いません。"
-
-#: ../../admin/faqs.en.rst:133
-msgid ""
-"Note that clients such as cURL automatically send Expect: for POST requests "
-"with large POST bodies, with a 1 second timeout if a 100 Continue response "
-"is not received. To avoid the timeout when using cURL as a client to "
-"Traffic Server, you can turn off the Expect: header as follows::"
-msgstr ""
-"cURL などのクライアントは大きい POST ボディを持つ POST リクエストで、1 秒の"
-"タイムアウトで 100 Continue レスポンスを受け取らない場合に自動的に Expect: "
-"ヘッダーを送信することに注意してください。cURL を Traffic Server のクライア"
-"ントとして使用する際のタイムアウトを防ぐためには、次のように Expect: ヘッ"
-"ダーをオフにすることができます。"
-
-#: ../../admin/faqs.en.rst:141
-msgid "C (libcurl)::"
-msgstr "C (libcurl)::"
-
-#: ../../admin/faqs.en.rst:147
-msgid "php::"
-msgstr "php::"
-
-#: ../../admin/faqs.en.rst:152
+#: ../../admin/faqs.en.rst:349
 msgid "Troubleshooting Tips"
 msgstr "トラブルシューティングの秘訣"
 
-#: ../../admin/faqs.en.rst:155
+#: ../../admin/faqs.en.rst:352
 msgid "The throughput statistic is inaccurate"
 msgstr "スループットの統計が不正確"
 
-#: ../../admin/faqs.en.rst:157
+#: ../../admin/faqs.en.rst:354
 msgid ""
 "Traffic Server updates the throughput statistic after it has transferred an "
 "entire object. For larger files, the byte count increases sharply at the "
@@ -300,56 +210,15 @@ msgstr ""
 "ります。この不正確さは負荷が軽い場合に顕著です。重い負荷はより正確な統計をも"
 "たらします。"
 
-#: ../../admin/faqs.en.rst:165
+#: ../../admin/faqs.en.rst:362
 msgid "You are unable to execute Traffic Line commands"
 msgstr "Traffic Line コマンドが実行できない"
 
-#: ../../admin/faqs.en.rst:167
+#: ../../admin/faqs.en.rst:364
 msgid "Traffic Line commands do not execute under the following conditions:"
 msgstr "Traffic Line コマンドは次の状況で動作しません。"
 
-#: ../../admin/faqs.en.rst:169
-msgid ""
-"**When the traffic_manager process is not running** Check to see if the :"
-"program:`traffic_manager` process is running by entering the following "
-"command: ``pgrep -l traffic_manager``"
-msgstr ""
-"**traffic_manager プロセスが実行されていない場合**\\ 次のコマンドを入力し"
-"て :program:`traffic_manager` プロセスが実行中であることを確認してください。"
-
-#: ../../admin/faqs.en.rst:173
-msgid ""
-"If the :program:`traffic_manager` process is not running, then enter the "
-"following command from the Traffic Server ``bin`` directory to start it: "
-"``./traffic_manager``"
-msgstr ""
-":program:`traffic_manager` プロセスが実行中ではない場合は、開始するために "
-"Traffic Server の ``bin`` ディレクトリで次のコマンドを入力してください。``./"
-"traffic_manager``"
-
-#: ../../admin/faqs.en.rst:179
-msgid ""
-"You should always start and stop Traffic Server with the :program:"
-"`trafficserver start`` and :program:`trafficserver stop` commands to ensure "
-"that all the processes start and stop correctly. For more information, "
-"refer to :ref:`getting-started`."
-msgstr ""
-"すべてのプロセスで正常に開始と終了が行われることを確実にするために、Traffic "
-"Server は :program:`trafficserver start` と :program:`trafficserver stop` コ"
-"マンドで開始と終了をすべきです。詳しくは :ref:`getting-started` を参照してく"
-"ださい。"
-
-#: ../../admin/faqs.en.rst:184
-msgid ""
-"**When you are not executing the command from $TSHome/bin** If the Traffic "
-"Server ``bin`` directory is not in your path, then prepend the Traffic Line "
-"commands with ``./`` (for example, ``./traffic_line -h``)."
-msgstr ""
-"**コマンドを $TSHome/bin で実行していない場合** Traffic Server の ``bin`` "
-"ディレクトリがパスに含まれていない場合、Traffic Line コマンドの前に ``./`` "
-"を追加してください (例えば、``./traffic_line -h``) 。"
-
-#: ../../admin/faqs.en.rst:188
+#: ../../admin/faqs.en.rst:388
 msgid ""
 "**When multiple Traffic Server installations are present and you are not "
 "executing the Traffic Line command from the active Traffic Server path "
@@ -359,7 +228,7 @@ msgstr ""
 "指定された Traffic Server のパスから Traffic Line コマンドが実行されていない"
 "場合。**"
 
-#: ../../admin/faqs.en.rst:194
+#: ../../admin/faqs.en.rst:394
 msgid ""
 "You observe inconsistent behavior when one node obtains an object from "
 "another node in the cluster"
@@ -367,7 +236,7 @@ msgstr ""
 "クラスター内の他のノードからあるノードがオブジェクトを取得する際に矛盾した振"
 "る舞いを観測した"
 
-#: ../../admin/faqs.en.rst:196
+#: ../../admin/faqs.en.rst:396
 msgid ""
 "As part of the initial system preparation, you must synchronize the clocks "
 "on all nodes in your cluster. Minor time differences do not cause problems, "
@@ -378,29 +247,21 @@ msgstr ""
 "ば成りません。多少の違いは問題となりませんが、数分以上のずれは Traffic "
 "Server の動作に影響を与えます。"
 
-#: ../../admin/faqs.en.rst:201
-msgid ""
-"You should run a clock synchronization daemon such as xntpd. To obtain the "
-"latest version of xntpd, go to ``http://www.eecis.udel.edu/~ntp/``"
-msgstr ""
-"xntpd などの時刻同期デーモンを実行するべきです。xntpd の最新バージョンを取得"
-"するには ``http://www.eecis.udel.edu/~ntp/`` にアクセスしてください。"
-
-#: ../../admin/faqs.en.rst:205
+#: ../../admin/faqs.en.rst:405
 msgid "Web browsers display an error document with a 'data missing' message"
 msgstr ""
 "ウェブブラウザーが 'data missing' というメッセージのエラードキュメントを表示"
 "します"
 
-#: ../../admin/faqs.en.rst:207
+#: ../../admin/faqs.en.rst:407
 msgid "A message similar to the following might display in web browsers: ::"
 msgstr "次のようなメッセージがウェブブラウザーに表示されるかもしれません。"
 
-#: ../../admin/faqs.en.rst:221
+#: ../../admin/faqs.en.rst:421
 msgid "Traffic Server does not resolve any websites"
 msgstr "Traffic Server がどのウェブサイトも解決しません"
 
-#: ../../admin/faqs.en.rst:223
+#: ../../admin/faqs.en.rst:423
 msgid ""
 "The browser indicates that it is contacting the host and then times out "
 "with the following message: ::"
@@ -408,7 +269,7 @@ msgstr ""
 "ブラウザーはホストへ接続しようとしてタイムアウトしたことを次のメッセージで示"
 "しています。"
 
-#: ../../admin/faqs.en.rst:228
+#: ../../admin/faqs.en.rst:428
 msgid ""
 "Make sure the system is configured correctly and that Traffic Server can "
 "read the name resolution file:"
@@ -416,7 +277,7 @@ msgstr ""
 "システムが正しく設定されていることと Traffic Server が名前解決ファイルを読み"
 "込めるを確認してください。"
 
-#: ../../admin/faqs.en.rst:231
+#: ../../admin/faqs.en.rst:431
 msgid ""
 "Check if the server can resolve DNS lookups by issuing the nslookup command "
 "(for example, ``nslookup www.myhost.com``)."
@@ -424,7 +285,7 @@ msgstr ""
 "nslookup コマンドでサーバーが DNS 問い合わせを解決できるか ( 例えば、"
 "``nslookup www.myhost.com``) 確認してください。"
 
-#: ../../admin/faqs.en.rst:233
+#: ../../admin/faqs.en.rst:433
 msgid ""
 "Check if the :manpage:`resolv.conf(5)` file contains valid IP addresses for "
 "your DNS servers."
@@ -432,7 +293,7 @@ msgstr ""
 ":manpage:`resolv.conf(5)` ファイルが DNS サーバーの妥当な IP アドレスを含ん"
 "でいるか確認してください。"
 
-#: ../../admin/faqs.en.rst:235
+#: ../../admin/faqs.en.rst:435
 msgid ""
 "On some systems, if the :manpage:`resolv.conf(5)` file is unreadable or has "
 "no name server entry, then the operating system uses ``localhost`` as a "
@@ -448,201 +309,52 @@ msgstr ""
 "くは ``0.0.0.0`` へのネームサーバーの項目を :manpage:`resolv.conf(5)` ファイ"
 "ルに追加しなければ成りません。"
 
-#: ../../admin/faqs.en.rst:241
-msgid ""
-"Check that the Traffic Server user account has permission to read the /etc/"
-"resolv.conf file. If it does not, then change the file permissions to ``rw-"
-"r--r--`` (``644``)"
-msgstr ""
-"Traffic Server のユーザーアカウントが /etc/resolv.conf ファイルを読み込む権"
-"限を持っていることを確認してください。もし権限がない場合はファイルのパーミッ"
-"ションを ``rw-r--r--`` (``644``) に変更してください。"
-
-#: ../../admin/faqs.en.rst:246
+#: ../../admin/faqs.en.rst:446
 msgid "'Maximum document size exceeded' message in the system log file"
 msgstr ""
 "システムログファイル内の 'Maximum document size exceeded' というメッセージ"
 
-#: ../../admin/faqs.en.rst:248
+#: ../../admin/faqs.en.rst:448
 msgid "The following message appears in the system log file: ::"
 msgstr "次のメッセージがシステムログファイルに現れます。"
 
-#: ../../admin/faqs.en.rst:261
+#: ../../admin/faqs.en.rst:461
 msgid "'DrainIncomingChannel' message in the system log file"
 msgstr "システムログファイル内の 'DrainIncomingChannel' というメッセージ"
 
-#: ../../admin/faqs.en.rst:263
+#: ../../admin/faqs.en.rst:463
 msgid "The following messages may appear in the system log file: ::"
 msgstr "次のメッセージがシステムログファイルに現れるかもしれません。"
 
-#: ../../admin/faqs.en.rst:269
-msgid ""
-"These error messages indicate that a browser is sending HTTP requests to "
-"one of the Traffic Server cluster ports - either ``rsport`` (default port "
-"8088) or ``mcport`` (default port 8089). Traffic Server discards the "
-"request; this error does not cause any Traffic Server problems. The "
-"misconfigured browser must be reconfigured to use the correct proxy port. "
-"Traffic Server clusters work best when configured to use a separate network "
-"interface and cluster on a private subnet, so that client machines have no "
-"access to the cluster ports."
-msgstr ""
-"これらのエラーメッセージはブラウザーが HTTP リクエストを Traffic Server のク"
-"ラスターポートに送信したことを示しています。これは ``rsport`` ( デフォルト"
-"ポートは 8088) もしくは ``mcport`` ( デフォルトポートは 8089) です。Traffic "
-"Server はこのリクエストを破棄します。このエラーは Traffic Server になんの問"
-"題ももたらしません。間違って設定されたブラウザーは正しいプロキシーポートを使"
-"用するために再設定されなければなりません。Traffic Server クラスターはクライ"
-"アントマシンがクラスターポートにアクセスできないよう別のネットワークインタ"
-"フェースを使用しプライベートサブネット上で使用するよう設定された場合によく動"
-"作します。"
-
-#: ../../admin/faqs.en.rst:279
+#: ../../admin/faqs.en.rst:479
 msgid "'No cop file' message in the system log file"
 msgstr "システムログファイル内の 'No cop file' というメッセージ"
 
-#: ../../admin/faqs.en.rst:281
+#: ../../admin/faqs.en.rst:481
 msgid "The following message appears repeatedly in the system log file: ::"
 msgstr "次のメッセージがシステムログファイルに繰り返し現れます。"
 
-#: ../../admin/faqs.en.rst:285
-msgid ""
-"The file ``var/trafficserver/no_cop`` acts as an administrative control "
-"that instructs the :program:`traffic_cop` process to exit immediately "
-"without starting :program:`traffic_manager` or performing any health "
-"checks. The ``no_cop`` file prevents Traffic Server from starting "
-"automatically when it has been stopped with the option:`trafficserver stop` "
-"command. Without this static control, Traffic Server would restart "
-"automatically upon system reboot. The ``no_cop`` control keeps Traffic "
-"Server off until it is explicitly restarted with the ::"
-msgstr ""
-"``var/trafficserver/no_cop`` は :program:`traffic_cop` が :program:"
-"`traffic_manager` を起動せずヘルスチェックを行わずに直ちに終了するように指示"
-"する管理制御として振る舞います。``no_cop`` ファイルは Traffic Server が "
-"option:`trafficserver stop` で停止されたときに自動的に開始するのを抑止しま"
-"す。この静的な制御を行わないと、Traffic Server はシステムリブートにより自動"
-"的に再開します。``no_cop`` 制御は"
-
-#: ../../admin/faqs.en.rst:296
-msgid "command."
-msgstr "コマンドで明示的に再開されるまで Traffic Server を停止し続けます。"
-
-#: ../../admin/faqs.en.rst:300
+#: ../../admin/faqs.en.rst:497
 msgid "Warning in the system log file when manually editing vaddrs.config"
 msgstr "vaddrs.config を手動で編集したときのシステムログファイルの警告"
 
-#: ../../admin/faqs.en.rst:302
-msgid ""
-"If you manually edit the vaddrs.config file as a non-root user, then "
-"Traffic Server issues a warning message in the system log file similar to "
-"the following::"
-msgstr ""
-"vaddrs.config ファイルを非 root ユーザーとして手動で編集すると、Traffic "
-"Server はシステムログファイルに次のような警告メッセージを発行します。"
-
-#: ../../admin/faqs.en.rst:308
-msgid ""
-"You can safely ignore this message; Traffic Server *does* apply your "
-"configuration edits."
-msgstr ""
-"このメッセージは安全に無視することができます。Traffic Server は設定ファイル"
-"の編集を適用\\ *します*\\ 。"
-
-#: ../../admin/faqs.en.rst:312
+#: ../../admin/faqs.en.rst:509
 msgid "Traffic Server is running but no log files are created"
 msgstr "Traffic Server は実行中だがログファイルが作られない"
 
-#: ../../admin/faqs.en.rst:314
-msgid ""
-"Traffic Server only writes event log files when there is information to "
-"record. If Traffic Server is idle, then it's possible/probable that no log "
-"files exist. In addition:"
-msgstr ""
-"Traffic Server は記録する情報があるときにだけイベントログファイルに書き込み"
-"ます。Traffic Server がアイドル状態の場合、ログファイルは存在しない可能性が"
-"あります。"
-
-#: ../../admin/faqs.en.rst:318
-msgid ""
-"Make sure you're looking in the correct directory. By default, Traffic "
-"Server creates log files in the logs directory. Check the location of log "
-"files by checking the value of the variable proxy.config.log.logfile_dir in "
-"the records.config file. Check that the log directory has read/write "
-"permissions for the Traffic Server user account. If the log directory does "
-"not have the correct permissions, then the traffic_server process is unable "
-"to open or create log files. Check that logging is enabled by checking the "
-"value of the proxy.config.log.logging_enabled variable in the records."
-"config file. Check that a log format is enabled. In the records.config "
-"file, select the standard or custom format by editing variables in the "
-"Logging Config section."
-msgstr ""
-"正しいディレクトリを見ていることを確認してください。デフォルトでは、Traffic "
-"Server はログファイルをログディレクトリに作成します。records.config の "
-"variable proxy.config.log.logfile_dir 変数の値を確認しログファイルの場所を確"
-"認してください。ログディレクトリに Traffic Server ユーザーアカウントに対する"
-"読み書きのパーミッションがあることを確認してください。ログディレクトリが正し"
-"いパーミッションを持っていない場合、traffic_server プロセスはログファイルを"
-"作成したり開いたりできません。records.config の proxy.config.log."
-"logging_enabled 変数の値を確認し、ロギングが有効化されていることを確認してく"
-"ださい。ログフォーマットが有効化されていることを確認してください。records."
-"config ファイルで、ロギング設定セクションの変数を編集して標準もしくはカスタ"
-"ムフォーマットを選択してください。"
-
-#: ../../admin/faqs.en.rst:332
+#: ../../admin/faqs.en.rst:535
 msgid "Traffic Server shows an error indicating too many network connections"
 msgstr "Traffic Server がネットワーク接続が多すぎることを示すエラーを表示する"
 
-#: ../../admin/faqs.en.rst:334
-msgid ""
-"By default, Traffic Server supports 8000 network connections: half of this "
-"number is allocated for client connections and the remaining half is for "
-"origin server connections. A **connection throttle event** occurs when "
-"client or origin server connections reach 90% of half the configured limit "
-"(3600 by default). When a connection throttle event occurs, Traffic Server "
-"continues processing all existing connections but will not accept new "
-"client connection requests until the connection count falls below the limit."
-msgstr ""
-"デフォルトでは、Traffic Server は 8000 のネットワーク接続に対応しています。"
-"このうちの半分がクライアントとの接続に割り当てられ、残りの半分はオリジンサー"
-"バーとの接続のためのものです。クライアントまたはオリジンサーバーの接続が設定"
-"された制限の半分の 90% ( デフォルトでは 3600) に達すると **connection "
-"throttle event** が発生します。connection throttle event が発生すると、"
-"Traffic Server はすべての既存の接続の処理を継続しますが、接続数が制限を下回"
-"るまで新規の接続要求を受け付けません。"
-
-#: ../../admin/faqs.en.rst:343
+#: ../../admin/faqs.en.rst:546
 msgid "Connection throttle events can occur under the following conditions:"
 msgstr "Connection throttle event は次の条件で発生します。"
 
-#: ../../admin/faqs.en.rst:345
-msgid ""
-"If there is a **connection spike** (e.g., if thousands of client requests "
-"all reach Traffic Server at the same time). Such events are typically "
-"transient and require no corrective action."
-msgstr ""
-"**接続のスパイク**\\ がある場合 ( 例えば、数千のクライアントのリクエストすべ"
-"てが Traffic Server に同時に届いたなど ) 。このようなイベントは一般的に一時"
-"的なもので修正の必要はありません。"
-
-#: ../../admin/faqs.en.rst:348
-msgid ""
-"If there is a **service overload** (e.g., if client requests continuously "
-"arrive faster than Traffic Server can service them). Service overloads "
-"often indicate network problems between Traffic Server and origin servers. "
-"Conversely, it may indicate that Traffic Server needs more memory, CPU, "
-"cache disks, or other resources to handle the client load."
-msgstr ""
-"**サービス過負荷**\\ がある場合 ( 例えば、クライアントのリクエストが "
-"Traffic Server が捌けるよりも早く継続的に届く場合) 。サービス過負荷は "
-"Traffic Server とオリジンサーバーとの間のネットワークの問題を示していること"
-"がよくあります。逆に言えば、Traffic Server はその負荷を扱うためにより多くの"
-"メモリー、CPU 、キャッシュディスク、その他のリソースを必要としていることを示"
-"しているかもしれません。"
-
-#: ../../admin/faqs.en.rst:365
+#: ../../admin/faqs.en.rst:572
 msgid "Low memory symptoms"
 msgstr "メモリ不足の兆候"
 
-#: ../../admin/faqs.en.rst:367
+#: ../../admin/faqs.en.rst:574
 msgid ""
 "Under heavy load, the Linux kernel can run out of RAM. This low memory "
 "condition can cause slow performance and a variety of other system "
@@ -654,7 +366,7 @@ msgstr ""
 "こします。事実、RAM の枯渇 はシステムが豊富な空きスワップ領域を持っていたと"
 "しても発生し得ます。"
 
-#: ../../admin/faqs.en.rst:372
+#: ../../admin/faqs.en.rst:579
 msgid ""
 "Symptoms of extreme memory exhaustion include the following messages in the "
 "system log files (``/var/log/messages``)::"
@@ -662,7 +374,7 @@ msgstr ""
 "極限のメモリー消耗の兆候はシステムログファイル (``/var/log/messages``) の次"
 "のメッセージを含みます。"
 
-#: ../../admin/faqs.en.rst:381
+#: ../../admin/faqs.en.rst:588
 msgid ""
 "To avoid memory exhaustion, add more RAM to the system or reduce the load "
 "on Traffic Server."
@@ -670,23 +382,9 @@ msgstr ""
 "メモリーの消耗を防ぐために、システムにもっと RAM を追加するか Traffic "
 "Server の負荷を減らしてください。"
 
-#: ../../admin/faqs.en.rst:385
+#: ../../admin/faqs.en.rst:592
 msgid "Connection timeouts with the origin server"
 msgstr "オリジンサーバーとの接続タイムアウト"
-
-#: ../../admin/faqs.en.rst:387
-msgid ""
-"Certain origin servers take longer than 30 seconds to post HTTP requests, "
-"which results in connection timeouts with Traffic Server. To prevent such "
-"connection timeouts, you must change the value of the configuration "
-"variable proxy.config.http.connect_attempts_timeout in the records.config "
-"file to 60 seconds or more."
-msgstr ""
-"いくらかのオリジンサーバーが HTTP リクエストを投稿するのに 30 秒以上を費や"
-"し、これが Traffic Server で接続タイムアウトとなります。このような接続タイム"
-"アウトを防ぐためには、records.config ファイルの proxy.config.http."
-"connect_attempts_timeout 設定変数を 60 秒かそれ以上に変更しなければなりませ"
-"ん。"
 
 #: ../../admin/faqs.en.rst:32
 msgid ""
@@ -708,22 +406,7 @@ msgstr ""
 "``Via`` ヘッダー文字列は `Via Decoder Ring <http://trafficserver.apache.org/"
 "tools/via>`_ でデコードできます。"
 
-#: ../../admin/faqs.en.rst:213
-msgid ""
-"This is a Web browser issue and not a problem specific to (or caused by) "
-"Traffic Server. Because Web browsers maintain a separate local cache in "
-"memory and/or disk on the client system, messages about documents that have "
-"expired from cache refer to the browser's local cache and *not* to the "
-"Traffic Server cache. There is no Traffic Server message or condition that "
-"can cause such messages to appear in a web browser."
-msgstr ""
-"これはウェブブラウザーの課題であり、Traffic Server に限ったもの ( もしくは引"
-"き起こされるもの ) ではありません。ウェブブラウザーはクライアントシステム上"
-"にメモリと/またはディスクに別にローカルキャッシュを持っているので、有効期限"
-"の切れたドキュメントに関するメッセージは Traffic Server のキャッシュでは\\ *"
-"なく*\\ ブラウザーのローカルキャッシュを参照します。"
-
-#: ../../admin/faqs.en.rst:252
+#: ../../admin/faqs.en.rst:452
 msgid ""
 "A requested object was larger than the maximum size allowed in the Traffic "
 "Server cache, so Traffic Server provided proxy service for the oversized "
@@ -740,20 +423,1057 @@ msgstr ""
 "のサイズを制限したくない場合は、ドキュメントサイズを ``0`` ( ゼロ ) に設定し"
 "てください。"
 
-#: ../../admin/faqs.en.rst:355
+#: ../../admin/faqs.en.rst:59
 msgid ""
-"If necessary, you can reset the maximum number of connections supported by "
-"Traffic Server by editing the value of the :ts:cv:`proxy.config.net."
-"connections_throttle` configuration variable in the records.config file. Do "
-"not increase the connection throttle limit unless the system has adequate "
-"memory to handle the client connections required. A system with limited RAM "
-"might need a throttle limit lower than the default value. Do not set this "
-"variable below the minimum value of 100."
+"Yes, Traffic Server can store and serve Java applets, JavaScript programs, "
+"VBScripts, and other executable objects from its cache according to the "
+"freshness and cacheability rules for HTTP objects. Traffic Server does not "
+"execute the applets, scripts, or programs. These objects run entirely "
+"client-side (the system which originated the request for the objects), and "
+"do not execute on the server."
 msgstr ""
-"必要であれば、records.config ファイルの :ts:cv:`proxy.config.net."
-"connections_throttle` 設定変数を編集して Traffic Server がサポートする最大接"
-"続数を再設定することができます。システムがクライアントの接続を扱うのに必要と"
-"される十分なメモリーを持っていない限りは connection throttle 制限を増加しな"
-"いでください。限られた RAM を持つシステムはデフォルト値よりも低い throttle "
-"制限が必要かもしれません。この変数を最低値の 100 よりも低く設定しないでくだ"
-"さい。"
+
+#: ../../admin/faqs.en.rst:74
+msgid ""
+"In *forward proxy mode*, the ``cqtx`` field records the complete client "
+"request in the log file (for example, ``GET http://www.company.com "
+"HTTP/1.0``)."
+msgstr ""
+
+#: ../../admin/faqs.en.rst:76
+msgid ""
+"In *reverse proxy mode*, the ``cqtx`` field records the hostname or IP "
+"address of the origin server because Traffic Server first remaps the "
+"request as per map rules in the :file:`remap.config` file."
+msgstr ""
+
+#: ../../admin/faqs.en.rst:91
+msgid "Refer to :ts:cv:`proxy.config.hostdb.ttl_mode` for more info."
+msgstr ""
+
+#: ../../admin/faqs.en.rst:107
+msgid ""
+"Yes. When you enable reverse proxy mode, Traffic Server remaps incoming "
+"requests according to the map rules in :file:`remap.config`. All other "
+"requests that do not match a map rule are served in forward proxy mode."
+msgstr ""
+
+#: ../../admin/faqs.en.rst:112
+msgid ""
+"If you want to run in reverse proxy only mode (wherein Traffic Server does "
+"not serve requests that fail to match a map rule), then you must set the "
+"configuration variable :ts:cv:`proxy.config.url_remap.remap_required` to "
+"``1`` in :file:`records.config`."
+msgstr ""
+
+#: ../../admin/faqs.en.rst:127
+msgid ""
+"The Via header is an optional HTTP header added by Traffic Server and other "
+"HTTP proxies. If a request goes through multiple proxies, each one appends "
+"its Via header content to the end of the existing Via header. Via header "
+"content is for general information and diagnostic use only and should not "
+"be used as a programmatic interface to Traffic Server."
+msgstr ""
+
+#: ../../admin/faqs.en.rst:129
+msgid "The form of the Via header is"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:131
+msgid "Via: <protocol> <proxyname> (<product/version> [<via-codes>])"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:134 ../../admin/faqs.en.rst:161
+#: ../../admin/faqs.en.rst:175 ../../admin/faqs.en.rst:189
+#: ../../admin/faqs.en.rst:202 ../../admin/faqs.en.rst:215
+#: ../../admin/faqs.en.rst:228 ../../admin/faqs.en.rst:247
+#: ../../admin/faqs.en.rst:263 ../../admin/faqs.en.rst:273
+#: ../../admin/faqs.en.rst:292 ../../admin/faqs.en.rst:304
+#: ../../admin/faqs.en.rst:316
+msgid "Value"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:134 ../../admin/faqs.en.rst:161
+#: ../../admin/faqs.en.rst:175 ../../admin/faqs.en.rst:189
+#: ../../admin/faqs.en.rst:202 ../../admin/faqs.en.rst:215
+#: ../../admin/faqs.en.rst:228 ../../admin/faqs.en.rst:247
+#: ../../admin/faqs.en.rst:263 ../../admin/faqs.en.rst:273
+#: ../../admin/faqs.en.rst:292 ../../admin/faqs.en.rst:304
+#: ../../admin/faqs.en.rst:316
+msgid "Meaning"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:136
+msgid "<protocol>"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:136
+msgid "the scheme and version of the HTTP request"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:137
+msgid "<proxyname>"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:137
+msgid "the configured name of the proxy server"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:138
+msgid "<product/version>"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:138
+msgid "the Traffic Server product name and version"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:139
+msgid "<via-codes>"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:139
+msgid ""
+"a string of alphabetic codes presenting status information about the proxy "
+"handling of the HTTP request"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:142
+msgid "For example: Via: HTTP/1.0 storm (Traffic-Server/4.0.0   [cMs f ])"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:145
+msgid "[u lH o  f  pS eN]     cache hit"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:146
+msgid "[u lM oS fF pS eN]     cache miss"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:147
+msgid "[uN l oS f  pS eN]     no-cache origin server fetch"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:149
+msgid ""
+"The short status code shows the cache-lookup, server-info and cache-fill "
+"information as listed in the full status code description below. The long "
+"status code list provided in older, commercial versions of Traffic Server "
+"can be restored by setting the verbose_via_str config variable. The "
+"character strings in the via-code show [<request results>:<proxy op>] where "
+"<request results> represents status information about the results of the "
+"client request and <proxy op> represent some information about the proxy "
+"operations performed during request processing. The full via-code status "
+"format is"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:152
+msgid ""
+"[u<client-info> c<cache-lookup> s<server-info> f<cache-fill> p<proxy-info> "
+"e<error-codes> : t<tunnel-info>c<cache-type><cache-lookup-result> i<icp-"
+"conn-info> p<parent-proxy> s<server-conn-info>]"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:156
+msgid "u client-info"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:158
+msgid "Request headers received from client. Value is one of:"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:163 ../../admin/faqs.en.rst:231
+#: ../../admin/faqs.en.rst:265 ../../admin/faqs.en.rst:275
+msgid "C"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:163
+msgid "cookie"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:164 ../../admin/faqs.en.rst:191
+msgid "E"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:164
+msgid "error in request"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:165 ../../admin/faqs.en.rst:266
+#: ../../admin/faqs.en.rst:278
+msgid "I"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:165
+msgid "If Modified Since (IMS)"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:166 ../../admin/faqs.en.rst:192
+#: ../../admin/faqs.en.rst:217 ../../admin/faqs.en.rst:235
+#: ../../admin/faqs.en.rst:280
+msgid "N"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:166
+msgid "no-cache"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:167 ../../admin/faqs.en.rst:180
+#: ../../admin/faqs.en.rst:193 ../../admin/faqs.en.rst:219
+#: ../../admin/faqs.en.rst:236 ../../admin/faqs.en.rst:281
+#: ../../admin/faqs.en.rst:295 ../../admin/faqs.en.rst:307
+#: ../../admin/faqs.en.rst:319
+msgid "S"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:167
+msgid "simple request (not conditional)"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:171
+msgid "c cache-lookup"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:172
+msgid "Result of Traffic Server cache lookup for URL. Value is one of:"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:177 ../../admin/faqs.en.rst:230
+msgid "A"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:177
+msgid "in cache, not acceptable (a cache \"MISS\")"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:178 ../../admin/faqs.en.rst:234
+#: ../../admin/faqs.en.rst:277
+msgid "H"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:178
+msgid "in cache, fresh (a cache \"HIT\")"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:179 ../../admin/faqs.en.rst:250
+#: ../../admin/faqs.en.rst:279
+msgid "M"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:179
+msgid "miss (a cache \"MISS\")"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:180
+msgid "in cache, stale (a cache \"MISS\")"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:181 ../../admin/faqs.en.rst:194
+#: ../../admin/faqs.en.rst:207 ../../admin/faqs.en.rst:253
+#: ../../admin/faqs.en.rst:267 ../../admin/faqs.en.rst:283
+#: ../../admin/faqs.en.rst:296 ../../admin/faqs.en.rst:308
+#: ../../admin/faqs.en.rst:320
+msgid "blank"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:181
+msgid "no cache lookup performed"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:185
+msgid "s server-info"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:186
+msgid "Response information received from origin server. Value is one of:"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:191
+msgid "error in response"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:192 ../../admin/faqs.en.rst:217
+msgid "not-modified"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:193 ../../admin/faqs.en.rst:219
+msgid "served"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:194
+msgid "no server connection needed"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:198
+msgid "f cache-fill"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:199
+msgid "Result of document write to cache. Value is one of:"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:204 ../../admin/faqs.en.rst:232
+#: ../../admin/faqs.en.rst:276
+msgid "D"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:204
+msgid "cached copy deleted"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:205 ../../admin/faqs.en.rst:252
+#: ../../admin/faqs.en.rst:282
+msgid "U"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:205
+msgid "updated old cache copy"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:206
+msgid "W"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:206
+msgid "written into cache (new copy)"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:207
+msgid "no cache write performed"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:211
+msgid "p proxy-info"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:212
+msgid "Proxy operation result. Value is one of:"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:218
+msgid "R"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:218
+msgid "origin server revalidated"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:223
+msgid "e error-codes"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:225
+msgid "Value is one of:"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:230
+msgid "authorization failure"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:231
+msgid "connection to server failed"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:232
+msgid "dns failure"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:233 ../../admin/faqs.en.rst:249
+#: ../../admin/faqs.en.rst:294 ../../admin/faqs.en.rst:306
+#: ../../admin/faqs.en.rst:318
+msgid "F"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:233
+msgid "request forbidden"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:234
+msgid "header syntax unacceptable"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:235
+msgid "no error"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:236
+msgid "server related error"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:237
+msgid "T"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:237
+msgid "connection timed out"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:240
+msgid ""
+": = Separates proxy request result information from operation detail codes"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:243
+msgid "t tunnel-info"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:244
+msgid "Proxy-only service operation. Value is one of:"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:249
+msgid "tunneling due to a header field (such as presence of If-Range header)"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:250
+msgid "tunneling due to a method (e.g. CONNECT)"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:251
+msgid "O"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:251
+msgid "tunneling because cache is turned off"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:252
+msgid "tunneling because of url (url suggests dynamic content)"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:253
+msgid "no tunneling"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:257
+msgid "c cache-type and cache-lookup"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:258
+msgid "cache result values (2 characters)"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:260
+msgid "cache-type character value is one of"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:265
+msgid "cache"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:266
+msgid "icp"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:267
+msgid "cache miss or no cache lookup"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:270
+msgid "cache-lookup-result character value is one of:"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:275
+msgid "cache hit, but config forces revalidate"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:276
+msgid "cache hit, but method forces revalidated (e.g. ftp, not anonymous)"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:277
+msgid "cache hit"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:278
+msgid ""
+"conditional miss (client sent conditional, fresh in cache, returned 412)"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:279
+msgid "cache miss (url not in cache)"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:280
+msgid ""
+"conditional hit (client sent conditional, doc fresh in cache, returned 304)"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:281
+msgid "cache hit, but expired"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:282
+msgid "cache hit, but client forces revalidate (e.g. Pragma: no-cache)"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:283
+msgid "no cache lookup"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:287
+msgid "i icp-conn-info"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:289
+msgid "ICP status"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:294 ../../admin/faqs.en.rst:306
+#: ../../admin/faqs.en.rst:318
+msgid "connection open failed"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:295 ../../admin/faqs.en.rst:307
+#: ../../admin/faqs.en.rst:319
+msgid "connection opened successfully"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:296
+msgid "no icp"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:300
+msgid "p parent-proxy"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:301
+msgid "parent proxy connection status"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:308
+msgid "no parent proxy"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:312
+msgid "s server-conn-info"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:313
+msgid "origin server connection status"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:320
+msgid "no server connection"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:328
+msgid ""
+"Traffic Server currently does not handle Expect: request headers according "
+"to the HTTP/1.1 spec."
+msgstr ""
+
+#: ../../admin/faqs.en.rst:331
+msgid ""
+"Clients such as cURL automatically send Expect: for POST requests with "
+"large POST bodies, with a 1 second timeout if a 100 Continue response is "
+"not received. To avoid the timeout when using cURL as a client to Traffic "
+"Server, you can turn off the Expect: header::"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:338
+msgid "Or with the C (libcurl) library from within your own applications::"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:344
+msgid "Or with the PHP cURL library::"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:375
+msgid "**When the traffic_manager process is not running**"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:367
+msgid ""
+"Check to see if the :program:`traffic_manager` process is running by "
+"entering the following command::"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:372
+msgid ""
+"If the :program:`traffic_manager` process is not running, then enter the "
+"following command from the Traffic Server ``bin`` directory to start it::"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:386
+msgid "**When you are not executing the command from $TSHome/bin**"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:385
+msgid ""
+"If the Traffic Server ``bin`` directory is not in your path, then prepend "
+"the Traffic Line commands with ``./`` (for example, ``./traffic_line -h``)."
+msgstr ""
+
+#: ../../admin/faqs.en.rst:401
+msgid ""
+"You should run a clock synchronization daemon such as xntpd. To obtain the "
+"latest version of xntpd, go to `<http://www.eecis.udel.edu/~ntp/>`_."
+msgstr ""
+
+#: ../../admin/faqs.en.rst:413
+msgid ""
+"This is a Web browser issue and not a problem specific to (or caused by) "
+"Traffic Server. Because Web browsers maintain a separate local cache in "
+"memory and/or disk on the client system, messages about documents that have "
+"expired from cache refer to the browser's local cache and not to the "
+"Traffic Server cache. There is no Traffic Server message or condition that "
+"can cause such messages to appear in a web browser."
+msgstr ""
+
+#: ../../admin/faqs.en.rst:441
+msgid ""
+"Check that the Traffic Server user account has permission to read the :"
+"manpage:`resolv.conf(5)` file. If it does not, then change the file "
+"permissions to ``rw-r--r--`` (``644``)."
+msgstr ""
+
+#: ../../admin/faqs.en.rst:469
+msgid ""
+"These error messages indicate that a browser is sending HTTP requests to "
+"one of the Traffic Server cluster ports, either ``rsport`` (default port "
+"8088) or ``mcport`` (default port 8089). Traffic Server discards these "
+"requests. This error does not cause any Traffic Server problems. The "
+"misconfigured browser must be reconfigured to use the correct proxy port. "
+"Traffic Server clusters should ideally be configured to use a separate "
+"network interface and cluster on a private subnet, so that client machines "
+"have no access to the cluster ports."
+msgstr ""
+
+#: ../../admin/faqs.en.rst:485
+msgid ""
+"The file ``var/trafficserver/no_cop`` acts as an administrative control "
+"that instructs the :program:`traffic_cop` process to exit immediately "
+"without starting :program:`traffic_manager` or performing any health "
+"checks. The ``no_cop`` file prevents Traffic Server from starting "
+"automatically when it has been stopped with the option:`trafficserver stop` "
+"command. Without this static control, Traffic Server would restart "
+"automatically upon system reboot. The ``no_cop`` control keeps Traffic "
+"Server off until it is explicitly restarted with: ::"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:499
+msgid ""
+"If you manually edit :file:`vaddrs.config` as a non-root user, then Traffic "
+"Server issues a warning message in the system log file similar to the "
+"following::"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:505
+msgid ""
+"You can safely ignore this message as Traffic Server will still apply your "
+"configuration edits."
+msgstr ""
+
+#: ../../admin/faqs.en.rst:511
+msgid ""
+"Traffic Server only writes event log files when there is information to "
+"record. If Traffic Server is idle, then it's possible that no log files "
+"exist."
+msgstr ""
+
+#: ../../admin/faqs.en.rst:515
+msgid ""
+"If Traffic Server is not idle, and you still do not see log files being "
+"generated, verify the following:"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:518
+msgid ""
+"Make sure you're looking in the correct directory. By default, Traffic "
+"Server creates log files in the ``logs`` directory. This can be modified by "
+"changing :ts:cv:`proxy.config.log.logfile_dir` in :file:`records.config`."
+msgstr ""
+
+#: ../../admin/faqs.en.rst:522
+msgid ""
+"Check that the log directory has read/write permissions for the Traffic "
+"Server user account. If the log directory does not have the correct "
+"permissions, then the :program:`traffic_server` process will be unable to "
+"open or create log files."
+msgstr ""
+
+#: ../../admin/faqs.en.rst:527
+msgid ""
+"Check that logging is enabled by checking the value of the :ts:cv:`proxy."
+"config.log.logging_enabled` variable in :file:`records.config`."
+msgstr ""
+
+#: ../../admin/faqs.en.rst:530
+msgid ""
+"Check that a log format is enabled. In :file:`records.config`, select the "
+"standard or custom format by editing variables in the Logging Config "
+"section."
+msgstr ""
+
+#: ../../admin/faqs.en.rst:537
+msgid ""
+"By default, Traffic Server supports 8000 network connections. Half of this "
+"number is allocated for client connections and the remaining half is for "
+"origin server connections. A *connection throttle event* occurs when either "
+"client or origin server connections reach 90% of half the configured total "
+"limit (3600 by default). When a connection throttle event occurs, Traffic "
+"Server continues processing all existing connections but will not accept "
+"new client connection requests until the connection count falls below the "
+"limit."
+msgstr ""
+
+#: ../../admin/faqs.en.rst:552
+msgid "Connection Spike"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:549
+msgid ""
+"Too many client requests (enough to exceed your configured maximum "
+"connections) all reach Traffic Server at the same time. Such events are "
+"typically transient and require no corrective action if your connection "
+"limits are already configured appropriately for your Traffic Server and "
+"origin resources."
+msgstr ""
+
+#: ../../admin/faqs.en.rst:558
+msgid "Service Overload"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:555
+msgid ""
+"Client requests are arriving at a rate faster than that which Traffic "
+"Server can service them. This may indicate network problems between Traffic "
+"Server and origin servers or that Traffic Server may require more memory, "
+"CPU, cache disks, or other resources to handle the client load."
+msgstr ""
+
+#: ../../admin/faqs.en.rst:560
+msgid ""
+"If necessary, you can adjust the maximum number of connections supported by "
+"Traffic Server by editing :ts:cv:`proxy.config.net.connections_throttle` "
+"in :file:`records.config`."
+msgstr ""
+
+#: ../../admin/faqs.en.rst:566
+msgid ""
+"Do not increase the connection throttle limit unless the system has "
+"adequate memory to handle the client connections required. A system with "
+"limited RAM might need a throttle limit lower than the default value. Do "
+"not set this variable below the minimum value of ``100``."
+msgstr ""
+
+#: ../../admin/faqs.en.rst:594
+msgid ""
+"By default, Traffic Server will timeout after 30 seconds when contacting "
+"origin servers. If you cannot avoid such timeouts by otherwise addressing "
+"the performance on your origin servers, you may adjust the origin "
+"connection timeout in Traffic Server by changing :ts:cv:`proxy.config.http."
+"connect_attempts_timeout` in :file:`records.config` to a larger value."
+msgstr ""
+
+#~ msgid ""
+#~ "Yes, Traffic Server can store and serve Java applets, JavaScript "
+#~ "programs, VBScripts, and other executable objects from its cache "
+#~ "according to the freshness and cacheability rules for HTTP objects. "
+#~ "Traffic Server does not execute the applets, scripts, or programs, "
+#~ "however - these objects run only when the client system (ie, the one "
+#~ "that sent the request) loads them."
+#~ msgstr ""
+#~ "はい、Traffic Server は Java アプレット、JavaScript プログラム、"
+#~ "VBScript、その他実行可能なオブジェクトを保存し、HTTP オブジェクトの新鮮さ"
+#~ "とキャッシュルールにもとづいて配信することができます。Traffic Server はア"
+#~ "プレット、スクリプト、プログラムを実行せず、クライアントはこれらシステム"
+#~ "に読み込んだときにのみ実行されます。"
+
+#~ msgid ""
+#~ "In **forward proxy mode**, the cqtx field records the complete client "
+#~ "request in the log file (for example, ``GET http://www.company.com "
+#~ "HTTP/1.0``)."
+#~ msgstr ""
+#~ "**フォワードプロキシーモード** では、cqtx フィールドはクライアントの完全"
+#~ "なリクエストを記録しています (例えば、``GET http://www.company.com "
+#~ "HTTP/1.0`` など) 。"
+
+#~ msgid ""
+#~ "In **reverse proxy mode**, the cqtx field records the hostname or IP "
+#~ "address of the origin server because Traffic Server first remaps the "
+#~ "request as per map rules in the :file:`remap.config` file."
+#~ msgstr ""
+#~ "**リバースプロキシーモード** では、Traffic Server はまずリクエストを :"
+#~ "file:`remap.config` ファイル内のマップルールごとにリマップを行うので、"
+#~ "cqtx フィールドはオリジンサーバーのホスト名もしくは IP アドレスを記録して"
+#~ "います。"
+
+#~ msgid "see :ts:cv:`proxy.config.hostdb.ttl_mode` for more info"
+#~ msgstr "詳しくは :ts:cv:`proxy.config.hostdb.ttl_mode` を観てください。"
+
+#~ msgid ""
+#~ "Yes. When you enable reverse proxy mode, Traffic Server remaps incoming "
+#~ "requests according to the map rules in the :file:`remap.config` file. "
+#~ "All other requests that do not match a map rule are simply served in "
+#~ "forward proxy mode."
+#~ msgstr ""
+#~ "はい。リバースプロキシーモードを有効にした場合、Traffic Server は入ってき"
+#~ "たリクエストを :file:`remap.config` ファイル内のマップルールにもとづいて "
+#~ "remap します。マップルールにマッチしないその他のすべてのリクエストはフォ"
+#~ "ワードプロキシーモードで単純に処理されます。"
+
+#~ msgid ""
+#~ "If you want to run in reverse proxy only mode (wherein Traffic Server "
+#~ "does *not* serve requests that fail to match a map rule), then you must "
+#~ "set the configuration variable :ts:cv:`proxy.config.url_remap."
+#~ "remap_required` to ``1`` in the :file:`records.config` file."
+#~ msgstr ""
+#~ "リバースプロキシーモードのみで実行したい場合 (Traffic Server はマップルー"
+#~ "ルにマッチしなかったリクエストに応え\\ *ません*\\ ) は、:file:`records."
+#~ "config` ファイル内の設定変数 :ts:cv:`proxy.config.url_remap."
+#~ "remap_required` を ``1`` にセットしなければなりません。"
+
+#~ msgid ""
+#~ "Traffic Server currently does not handle request Expect: headers "
+#~ "according to the HTTP/1.1 spec."
+#~ msgstr ""
+#~ "Traffic Server は現在 HTTP/1.1 仕様による Expect: ヘッダーを扱いません。"
+
+#~ msgid ""
+#~ "Note that clients such as cURL automatically send Expect: for POST "
+#~ "requests with large POST bodies, with a 1 second timeout if a 100 "
+#~ "Continue response is not received. To avoid the timeout when using cURL "
+#~ "as a client to Traffic Server, you can turn off the Expect: header as "
+#~ "follows::"
+#~ msgstr ""
+#~ "cURL などのクライアントは大きい POST ボディを持つ POST リクエストで、1 秒"
+#~ "のタイムアウトで 100 Continue レスポンスを受け取らない場合に自動的に "
+#~ "Expect: ヘッダーを送信することに注意してください。cURL を Traffic Server "
+#~ "のクライアントとして使用する際のタイムアウトを防ぐためには、次のように "
+#~ "Expect: ヘッダーをオフにすることができます。"
+
+#~ msgid "C (libcurl)::"
+#~ msgstr "C (libcurl)::"
+
+#~ msgid "php::"
+#~ msgstr "php::"
+
+#~ msgid ""
+#~ "**When the traffic_manager process is not running** Check to see if the :"
+#~ "program:`traffic_manager` process is running by entering the following "
+#~ "command: ``pgrep -l traffic_manager``"
+#~ msgstr ""
+#~ "**traffic_manager プロセスが実行されていない場合**\\ 次のコマンドを入力し"
+#~ "て :program:`traffic_manager` プロセスが実行中であることを確認してくださ"
+#~ "い。"
+
+#~ msgid ""
+#~ "If the :program:`traffic_manager` process is not running, then enter the "
+#~ "following command from the Traffic Server ``bin`` directory to start it: "
+#~ "``./traffic_manager``"
+#~ msgstr ""
+#~ ":program:`traffic_manager` プロセスが実行中ではない場合は、開始するため"
+#~ "に Traffic Server の ``bin`` ディレクトリで次のコマンドを入力してくださ"
+#~ "い。``./traffic_manager``"
+
+#~ msgid ""
+#~ "You should always start and stop Traffic Server with the :program:"
+#~ "`trafficserver start`` and :program:`trafficserver stop` commands to "
+#~ "ensure that all the processes start and stop correctly. For more "
+#~ "information, refer to :ref:`getting-started`."
+#~ msgstr ""
+#~ "すべてのプロセスで正常に開始と終了が行われることを確実にするために、"
+#~ "Traffic Server は :program:`trafficserver start` と :program:"
+#~ "`trafficserver stop` コマンドで開始と終了をすべきです。詳しくは :ref:"
+#~ "`getting-started` を参照してください。"
+
+#~ msgid ""
+#~ "**When you are not executing the command from $TSHome/bin** If the "
+#~ "Traffic Server ``bin`` directory is not in your path, then prepend the "
+#~ "Traffic Line commands with ``./`` (for example, ``./traffic_line -h``)."
+#~ msgstr ""
+#~ "**コマンドを $TSHome/bin で実行していない場合** Traffic Server の "
+#~ "``bin`` ディレクトリがパスに含まれていない場合、Traffic Line コマンドの前"
+#~ "に ``./`` を追加してください (例えば、``./traffic_line -h``) 。"
+
+#~ msgid ""
+#~ "You should run a clock synchronization daemon such as xntpd. To obtain "
+#~ "the latest version of xntpd, go to ``http://www.eecis.udel.edu/~ntp/``"
+#~ msgstr ""
+#~ "xntpd などの時刻同期デーモンを実行するべきです。xntpd の最新バージョンを"
+#~ "取得するには ``http://www.eecis.udel.edu/~ntp/`` にアクセスしてください。"
+
+#~ msgid ""
+#~ "Check that the Traffic Server user account has permission to read the /"
+#~ "etc/resolv.conf file. If it does not, then change the file permissions "
+#~ "to ``rw-r--r--`` (``644``)"
+#~ msgstr ""
+#~ "Traffic Server のユーザーアカウントが /etc/resolv.conf ファイルを読み込む"
+#~ "権限を持っていることを確認してください。もし権限がない場合はファイルの"
+#~ "パーミッションを ``rw-r--r--`` (``644``) に変更してください。"
+
+#~ msgid ""
+#~ "These error messages indicate that a browser is sending HTTP requests to "
+#~ "one of the Traffic Server cluster ports - either ``rsport`` (default "
+#~ "port 8088) or ``mcport`` (default port 8089). Traffic Server discards "
+#~ "the request; this error does not cause any Traffic Server problems. The "
+#~ "misconfigured browser must be reconfigured to use the correct proxy "
+#~ "port. Traffic Server clusters work best when configured to use a "
+#~ "separate network interface and cluster on a private subnet, so that "
+#~ "client machines have no access to the cluster ports."
+#~ msgstr ""
+#~ "これらのエラーメッセージはブラウザーが HTTP リクエストを Traffic Server "
+#~ "のクラスターポートに送信したことを示しています。これは ``rsport`` ( デ"
+#~ "フォルトポートは 8088) もしくは ``mcport`` ( デフォルトポートは 8089) で"
+#~ "す。Traffic Server はこのリクエストを破棄します。このエラーは Traffic "
+#~ "Server になんの問題ももたらしません。間違って設定されたブラウザーは正しい"
+#~ "プロキシーポートを使用するために再設定されなければなりません。Traffic "
+#~ "Server クラスターはクライアントマシンがクラスターポートにアクセスできない"
+#~ "よう別のネットワークインタフェースを使用しプライベートサブネット上で使用"
+#~ "するよう設定された場合によく動作します。"
+
+#~ msgid ""
+#~ "The file ``var/trafficserver/no_cop`` acts as an administrative control "
+#~ "that instructs the :program:`traffic_cop` process to exit immediately "
+#~ "without starting :program:`traffic_manager` or performing any health "
+#~ "checks. The ``no_cop`` file prevents Traffic Server from starting "
+#~ "automatically when it has been stopped with the option:`trafficserver "
+#~ "stop` command. Without this static control, Traffic Server would restart "
+#~ "automatically upon system reboot. The ``no_cop`` control keeps Traffic "
+#~ "Server off until it is explicitly restarted with the ::"
+#~ msgstr ""
+#~ "``var/trafficserver/no_cop`` は :program:`traffic_cop` が :program:"
+#~ "`traffic_manager` を起動せずヘルスチェックを行わずに直ちに終了するように"
+#~ "指示する管理制御として振る舞います。``no_cop`` ファイルは Traffic Server "
+#~ "が option:`trafficserver stop` で停止されたときに自動的に開始するのを抑止"
+#~ "します。この静的な制御を行わないと、Traffic Server はシステムリブートによ"
+#~ "り自動的に再開します。``no_cop`` 制御は"
+
+#~ msgid "command."
+#~ msgstr "コマンドで明示的に再開されるまで Traffic Server を停止し続けます。"
+
+#~ msgid ""
+#~ "If you manually edit the vaddrs.config file as a non-root user, then "
+#~ "Traffic Server issues a warning message in the system log file similar "
+#~ "to the following::"
+#~ msgstr ""
+#~ "vaddrs.config ファイルを非 root ユーザーとして手動で編集すると、Traffic "
+#~ "Server はシステムログファイルに次のような警告メッセージを発行します。"
+
+#~ msgid ""
+#~ "You can safely ignore this message; Traffic Server *does* apply your "
+#~ "configuration edits."
+#~ msgstr ""
+#~ "このメッセージは安全に無視することができます。Traffic Server は設定ファイ"
+#~ "ルの編集を適用\\ *します*\\ 。"
+
+#~ msgid ""
+#~ "Traffic Server only writes event log files when there is information to "
+#~ "record. If Traffic Server is idle, then it's possible/probable that no "
+#~ "log files exist. In addition:"
+#~ msgstr ""
+#~ "Traffic Server は記録する情報があるときにだけイベントログファイルに書き込"
+#~ "みます。Traffic Server がアイドル状態の場合、ログファイルは存在しない可能"
+#~ "性があります。"
+
+#~ msgid ""
+#~ "Make sure you're looking in the correct directory. By default, Traffic "
+#~ "Server creates log files in the logs directory. Check the location of "
+#~ "log files by checking the value of the variable proxy.config.log."
+#~ "logfile_dir in the records.config file. Check that the log directory has "
+#~ "read/write permissions for the Traffic Server user account. If the log "
+#~ "directory does not have the correct permissions, then the traffic_server "
+#~ "process is unable to open or create log files. Check that logging is "
+#~ "enabled by checking the value of the proxy.config.log.logging_enabled "
+#~ "variable in the records.config file. Check that a log format is enabled. "
+#~ "In the records.config file, select the standard or custom format by "
+#~ "editing variables in the Logging Config section."
+#~ msgstr ""
+#~ "正しいディレクトリを見ていることを確認してください。デフォルトでは、"
+#~ "Traffic Server はログファイルをログディレクトリに作成します。records."
+#~ "config の variable proxy.config.log.logfile_dir 変数の値を確認しログファ"
+#~ "イルの場所を確認してください。ログディレクトリに Traffic Server ユーザー"
+#~ "アカウントに対する読み書きのパーミッションがあることを確認してください。"
+#~ "ログディレクトリが正しいパーミッションを持っていない場合、traffic_server "
+#~ "プロセスはログファイルを作成したり開いたりできません。records.config の "
+#~ "proxy.config.log.logging_enabled 変数の値を確認し、ロギングが有効化されて"
+#~ "いることを確認してください。ログフォーマットが有効化されていることを確認"
+#~ "してください。records.config ファイルで、ロギング設定セクションの変数を編"
+#~ "集して標準もしくはカスタムフォーマットを選択してください。"
+
+#~ msgid ""
+#~ "By default, Traffic Server supports 8000 network connections: half of "
+#~ "this number is allocated for client connections and the remaining half "
+#~ "is for origin server connections. A **connection throttle event** occurs "
+#~ "when client or origin server connections reach 90% of half the "
+#~ "configured limit (3600 by default). When a connection throttle event "
+#~ "occurs, Traffic Server continues processing all existing connections but "
+#~ "will not accept new client connection requests until the connection "
+#~ "count falls below the limit."
+#~ msgstr ""
+#~ "デフォルトでは、Traffic Server は 8000 のネットワーク接続に対応していま"
+#~ "す。このうちの半分がクライアントとの接続に割り当てられ、残りの半分はオリ"
+#~ "ジンサーバーとの接続のためのものです。クライアントまたはオリジンサーバー"
+#~ "の接続が設定された制限の半分の 90% ( デフォルトでは 3600) に達すると "
+#~ "**connection throttle event** が発生します。connection throttle event が"
+#~ "発生すると、Traffic Server はすべての既存の接続の処理を継続しますが、接続"
+#~ "数が制限を下回るまで新規の接続要求を受け付けません。"
+
+#~ msgid ""
+#~ "If there is a **connection spike** (e.g., if thousands of client "
+#~ "requests all reach Traffic Server at the same time). Such events are "
+#~ "typically transient and require no corrective action."
+#~ msgstr ""
+#~ "**接続のスパイク**\\ がある場合 ( 例えば、数千のクライアントのリクエスト"
+#~ "すべてが Traffic Server に同時に届いたなど ) 。このようなイベントは一般的"
+#~ "に一時的なもので修正の必要はありません。"
+
+#~ msgid ""
+#~ "If there is a **service overload** (e.g., if client requests "
+#~ "continuously arrive faster than Traffic Server can service them). "
+#~ "Service overloads often indicate network problems between Traffic Server "
+#~ "and origin servers. Conversely, it may indicate that Traffic Server "
+#~ "needs more memory, CPU, cache disks, or other resources to handle the "
+#~ "client load."
+#~ msgstr ""
+#~ "**サービス過負荷**\\ がある場合 ( 例えば、クライアントのリクエストが "
+#~ "Traffic Server が捌けるよりも早く継続的に届く場合) 。サービス過負荷は "
+#~ "Traffic Server とオリジンサーバーとの間のネットワークの問題を示しているこ"
+#~ "とがよくあります。逆に言えば、Traffic Server はその負荷を扱うためにより多"
+#~ "くのメモリー、CPU 、キャッシュディスク、その他のリソースを必要としている"
+#~ "ことを示しているかもしれません。"
+
+#~ msgid ""
+#~ "Certain origin servers take longer than 30 seconds to post HTTP "
+#~ "requests, which results in connection timeouts with Traffic Server. To "
+#~ "prevent such connection timeouts, you must change the value of the "
+#~ "configuration variable proxy.config.http.connect_attempts_timeout in the "
+#~ "records.config file to 60 seconds or more."
+#~ msgstr ""
+#~ "いくらかのオリジンサーバーが HTTP リクエストを投稿するのに 30 秒以上を費"
+#~ "やし、これが Traffic Server で接続タイムアウトとなります。このような接続"
+#~ "タイムアウトを防ぐためには、records.config ファイルの proxy.config.http."
+#~ "connect_attempts_timeout 設定変数を 60 秒かそれ以上に変更しなければなりま"
+#~ "せん。"
+
+#~ msgid ""
+#~ "This is a Web browser issue and not a problem specific to (or caused by) "
+#~ "Traffic Server. Because Web browsers maintain a separate local cache in "
+#~ "memory and/or disk on the client system, messages about documents that "
+#~ "have expired from cache refer to the browser's local cache and *not* to "
+#~ "the Traffic Server cache. There is no Traffic Server message or "
+#~ "condition that can cause such messages to appear in a web browser."
+#~ msgstr ""
+#~ "これはウェブブラウザーの課題であり、Traffic Server に限ったもの ( もしく"
+#~ "は引き起こされるもの ) ではありません。ウェブブラウザーはクライアントシス"
+#~ "テム上にメモリと/またはディスクに別にローカルキャッシュを持っているので、"
+#~ "有効期限の切れたドキュメントに関するメッセージは Traffic Server のキャッ"
+#~ "シュでは\\ *なく*\\ ブラウザーのローカルキャッシュを参照します。"
+
+#~ msgid ""
+#~ "If necessary, you can reset the maximum number of connections supported "
+#~ "by Traffic Server by editing the value of the :ts:cv:`proxy.config.net."
+#~ "connections_throttle` configuration variable in the records.config file. "
+#~ "Do not increase the connection throttle limit unless the system has "
+#~ "adequate memory to handle the client connections required. A system with "
+#~ "limited RAM might need a throttle limit lower than the default value. Do "
+#~ "not set this variable below the minimum value of 100."
+#~ msgstr ""
+#~ "必要であれば、records.config ファイルの :ts:cv:`proxy.config.net."
+#~ "connections_throttle` 設定変数を編集して Traffic Server がサポートする最"
+#~ "大接続数を再設定することができます。システムがクライアントの接続を扱うの"
+#~ "に必要とされる十分なメモリーを持っていない限りは connection throttle 制限"
+#~ "を増加しないでください。限られた RAM を持つシステムはデフォルト値よりも低"
+#~ "い throttle 制限が必要かもしれません。この変数を最低値の 100 よりも低く設"
+#~ "定しないでください。"
