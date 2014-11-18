@@ -77,6 +77,11 @@ static char * epic_prefix;
   "proxy.node.client_throughput_out", \
   "proxy.node.client_throughput_out_kbit", \
   "proxy.node.cluster.nodes", \
+  "proxy.node.config.reconfigure_required", \
+  "proxy.node.config.reconfigure_time", \
+  "proxy.node.config.restart_required.cop", \
+  "proxy.node.config.restart_required.manager", \
+  "proxy.node.config.restart_required.proxy", \
   "proxy.node.current_cache_connections", \
   "proxy.node.current_client_connections", \
   "proxy.node.current_server_connections", \
