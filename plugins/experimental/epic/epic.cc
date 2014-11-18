@@ -358,6 +358,16 @@ struct epic_sample_context
   char sample_host[TS_MAX_HOST_NAME_LEN];     /* sysconf(_SC_HOST_NAME_MAX) */
 };
 
+// Valid epic metric names contain only [A-Z] [a-z] [0-9] _ - . = >
+static bool
+epic_name_is_valid(const char * name)
+{
+  // In practice the only metrics we have that are not OK are the
+  // proxy.process.cache.frags_per_doc.3+ set. Let's just check for
+  // that rather than regexing everything all the time.
+  return strchr(name, '+') == NULL;
+}
+
 static void
 epic_write_stats(
     TSRecordType /* rtype */,
@@ -372,6 +382,10 @@ epic_write_stats(
 
   TSReleaseAssert(sample != NULL);
   TSReleaseAssert(sample->sample_fp != NULL);
+
+  if (!epic_name_is_valid(name)) {
+    return;
+  }
 
   /*
    * O:varName:itime:value:node:type:step
@@ -392,7 +406,7 @@ epic_write_stats(
    * not sending
    */
 
-  /* Traffic server metrics don't tell is their semantics, only their data
+  /* Traffic server metrics don't tell us their semantics, only their data
    * type. Mostly, metrics are counters, though a few are really gauges. This
    * sucks, but there's no workaround right now ...
    */
