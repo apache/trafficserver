@@ -251,13 +251,9 @@ Traffic Server offers the following administration options:
    Traffic Line, you can execute individual commands or script a series of
    commands in a shell.
 
--  The Traffic Shell (:program:`traffic_shell`) command-line interface is an
-   additional command-line tool that enables you to execute individual commands
-   that monitor and configure the Traffic Server system.
-
 -  Various configuration files enable you to configure Traffic Server
    through a simple file-editing and signal-handling interface. Any
-   changes you make through Traffic Line or Traffic Shell are
+   changes you make through Traffic Line is
    automatically made to the configuration files as well.
 
 -  Finally, there is a clean C API which can be put to good use from a
@@ -270,7 +266,7 @@ Traffic Analysis Options
 Traffic Server provides several options for network traffic analysis and
 monitoring:
 
--  Traffic Line and Traffic Shell enable you to collect and process
+-  Traffic Line enables you to collect and process
    statistics obtained from network traffic information.
 
 -  Transaction logging enables you to record information (in a log file)

@@ -58,7 +58,7 @@ variables, see :ref:`configuration-variables`.
 Configure Traffic Server Using Configuration Files
 ==================================================
 
-As an alternative to using Traffic Line or Traffic Shell, you can change
+As an alternative to using Traffic Line, you can change
 Traffic Server configuration options by manually editing specific
 variables in :file:`records.config`.
 

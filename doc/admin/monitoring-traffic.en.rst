@@ -39,10 +39,6 @@ performance and analyze network traffic:
    method of viewing Traffic Server performance and network traffic
    information; refer to `Viewing Statistics from Traffic Line`_.
 
--  The Traffic Shell command-line tool provides yet another alternative
-   method of viewing Traffic Server performance and network traffic
-   information; refer to `Starting Traffic Shell <../getting-started#StartTrafficShell>`_.
-
 
 Working with Traffic Manager Alarms
 ===================================

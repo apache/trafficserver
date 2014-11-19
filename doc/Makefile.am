@@ -14,39 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-trafficshelldir = $(pkgdocdir)/trafficshell
-
 .PHONY: help dirhtml singlehtml epub latex man changes linkcheck doxygen
-
-dist_trafficshell_DATA = \
-  man/show_alarms.1 \
-  man/show_cache.1 \
-  man/show_cache-stats.1 \
-  man/show_cluster.1 \
-  man/show_dns-resolver.1 \
-  man/show_dns-stats.1 \
-  man/show_hostdb.1 \
-  man/show_hostdb-stats.1 \
-  man/show_http.1 \
-  man/show_http-stats.1 \
-  man/show_http-trans-stats.1 \
-  man/show_icp.1 \
-  man/show_icp-stats.1 \
-  man/show_logging.1 \
-  man/show_logging-stats.1 \
-  man/show_network.1 \
-  man/show_parent.1 \
-  man/show_port-tunnels.1 \
-  man/show_proxy.1 \
-  man/show_proxy-stats.1 \
-  man/show_remap.1 \
-  man/show_scheduled-update.1 \
-  man/show_security.1 \
-  man/show_socks.1 \
-  man/show_ssl.1 \
-  man/show_status.1 \
-  man/show_version.1 \
-  man/show_virtual-ip.1
 
 if BUILD_MANPAGES
 
@@ -63,9 +31,6 @@ $(man1_MANS) $(man3_MANS) $(man5_MANS) $(man8_MANS): man
 all-am: $(man1_MANS) $(man3_MANS) $(man5_MANS) $(man8_MANS)
 
 endif
-
-EXTRA_DIST = \
-  $(dist_trafficshell_DATA)
 
 clean-local:
 	-rm -rf $(BUILDDIR)/* _build/html/* xml

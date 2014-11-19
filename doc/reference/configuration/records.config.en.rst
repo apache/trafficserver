@@ -25,7 +25,7 @@ The :file:`records.config` file (by default, located in
 ``/opt/trafficserver/etc/trafficserver/``) is a list of configurable variables used by
 the Traffic Server software. Many of the variables in the
 :file:`records.config` file are set automatically when you set configuration
-options in Traffic Line or Traffic Shell. After you modify the
+options in Traffic Line. After you modify the
 :file:`records.config` file,
 run the command :option:`traffic_line -x` to apply the changes.
 When you apply changes to one node in a cluster, Traffic Server
