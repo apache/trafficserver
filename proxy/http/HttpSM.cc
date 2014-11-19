@@ -5979,6 +5979,7 @@ HttpSM::setup_internal_transfer(HttpSMHandler handler_arg)
     // Set the content length here since a plugin
     //   may have changed the error body
     t_state.hdr_info.client_response.set_content_length(t_state.internal_msg_buffer_size);
+    t_state.hdr_info.client_response.field_delete(MIME_FIELD_TRANSFER_ENCODING, MIME_LEN_TRANSFER_ENCODING);
 
     // set internal_msg_buffer_type if available
     if (t_state.internal_msg_buffer_type) {
@@ -6004,6 +6005,7 @@ HttpSM::setup_internal_transfer(HttpSMHandler handler_arg)
     //   Needed for keep-alive on PURGE requests
     if (!is_response_body_precluded(t_state.hdr_info.client_response.status_get(), t_state.method)) {
       t_state.hdr_info.client_response.set_content_length(0);
+      t_state.hdr_info.client_response.field_delete(MIME_FIELD_TRANSFER_ENCODING, MIME_LEN_TRANSFER_ENCODING);
     }
   }
 
