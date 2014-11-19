@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.2.0
 
+  *) [TS-3065] Remove"Transfer-Encoding" header when the error body was set by
+   ATS (e.g. plugin). Author: portl4t <portl4t.cn@gmail.com>
+
   *) [TS-3064] Expose TS_EVENT_VCONN_ACTIVE_TIMEOUT in headers.
    Author: Daniel Vitor Morilha <dmorilha@gmail.com>
 
