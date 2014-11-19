@@ -160,11 +160,11 @@ init_sni_callback(void *sslNetVC)
       SSL_CTX_set_next_protos_advertised_cb(ctx, NULL, NULL);
     } else {
       TSDebug(PLUGIN_NAME, "setting NPN advertised list for %s", serverName);
-      //TSSslAdvertiseProtocolSet(ssl_vc, (const unsigned char **)sniProtoConfig.npn_proto_list, sniProtoConfig.npn_proto_list_count);
+      TSSslAdvertiseProtocolSet(ssl_vc, (const unsigned char **)sniProtoConfig.npn_proto_list, sniProtoConfig.npn_proto_list_count);
     }
   } else {
     TSDebug(PLUGIN_NAME, "setting NPN advertised list for %s", serverName);
-    //TSSslAdvertiseProtocolSet(ssl_vc, NULL, 0);
+    TSSslAdvertiseProtocolSet(ssl_vc, NULL, 0);
   }
 }
 
