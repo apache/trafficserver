@@ -2432,20 +2432,21 @@ mime_scanner_get(MIMEScanner *S,
     // If we're already accumulating, continue to do so if we have data.
     mime_scanner_append(S, *raw_input_s, data_size);
   }
+  // No sharing if we've accumulated data (really, force this to make compiler shut up).
+  *output_shares_raw_input = 0 == S->m_line_length;
 
   // adjust out arguments.
   if (PARSE_CONT != zret) {
     if (0 != S->m_line_length) {
       *output_s = S->m_line;
       *output_e = *output_s + S->m_line_length;
-      *output_shares_raw_input = false;
       S->m_line_length = 0;
     } else {
       *output_s = *raw_input_s;
       *output_e = raw_input_c;
-      *output_shares_raw_input = true;
     }
   }
+
   // Make sure there are no '\0' in the input scanned so far
   if (zret != PARSE_ERROR &&
       memchr(*raw_input_s, '\0', raw_input_c - *raw_input_s) != NULL)
