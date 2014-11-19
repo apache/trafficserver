@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.2.0
 
+  *) [TS-3064] Expose TS_EVENT_VCONN_ACTIVE_TIMEOUT in headers.
+   Author: Daniel Vitor Morilha <dmorilha@gmail.com>
+
   *) [TS-3190] Change producer_run() to run a specific producer in more cases.
 
   *) [TS-3188] Do not set half_close_flag on keep_alive connections.
@@ -8,7 +11,7 @@ Changes with Apache Traffic Server 5.2.0
   *) [TS-3189] Delay starting read on server to user agent tunnel.
 
   *) [TS-2417] Add forward secrecy support with DHE.
-  Author: John Eaglesham <je@8192.net>
+   Author: John Eaglesham <je@8192.net>
 
   *) [TS-3202] Enforce token character constraints on method field in HTTP header.
 
