@@ -534,6 +534,7 @@ HttpSM::attach_client_session(HttpClientSession * client_vc, IOBufferReader * bu
   ink_assert(client_vc != NULL);
 
   ua_session = client_vc;
+  ink_release_assert(ua_session->get_half_close_flag() == false);
   mutex = client_vc->mutex;
   if (ua_session->debug()) debug_on = true;
 
