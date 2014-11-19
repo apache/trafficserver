@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.2.0
 
+  *) [TS-3191] Reduce confusion with HTTP_TUNNEL_STATIC_PRODUCER.
+
   *) [TS-3190] Change producer_run() to run a specific producer in more cases.
 
   *) [TS-3188] Do not set half_close_flag on keep_alive connections.
