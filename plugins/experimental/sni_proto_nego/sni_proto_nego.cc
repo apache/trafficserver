@@ -23,6 +23,7 @@
 */
 #include <stdio.h>
 #include <ts/ts.h>
+#include <ts/apidefs.h>
 #include <openssl/ssl.h>
 #include <string>
 #include <map>
@@ -169,8 +170,21 @@ init_sni_callback(void *sslNetVC)
 }
 
 int
-SSLSniInitCallbackHandler(TSCont /* cont */, TSEvent /* id */, void* sslNetVC) {
-  init_sni_callback(sslNetVC);
+SSLSniInitCallbackHandler(TSCont cont, TSEvent id, void* sslNetVC) {
+  (void) cont;
+  TSDebug(PLUGIN_NAME, "SSLSniInitCallbackHandler with id %d", id);
+  switch (id) {
+  case TS_SSL_SNI_HOOK:
+      {
+        init_sni_callback(sslNetVC);
+      }
+      break;
+
+  default:
+    TSDebug(PLUGIN_NAME, "Unexpected event %d", id);
+    break;
+  }
+
   return TS_EVENT_NONE;
 }
 
