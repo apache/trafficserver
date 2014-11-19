@@ -49,7 +49,7 @@ ats_malloc(size_t size)
   if (likely(size > 0)) {
     if (unlikely((ptr = malloc(size)) == NULL)) {
       ink_stack_trace_dump();
-      ink_fatal(1, "ats_malloc: couldn't allocate %zu bytes", size);
+      ink_fatal("ats_malloc: couldn't allocate %zu bytes", size);
     }
   }
   return ptr;
@@ -61,7 +61,7 @@ ats_calloc(size_t nelem, size_t elsize)
   void *ptr = calloc(nelem, elsize);
   if (unlikely(ptr == NULL)) {
     ink_stack_trace_dump();
-    ink_fatal(1, "ats_calloc: couldn't allocate %zu %zu byte elements", nelem, elsize);
+    ink_fatal("ats_calloc: couldn't allocate %zu %zu byte elements", nelem, elsize);
   }
   return ptr;
 }                               /* End ats_calloc */
@@ -72,7 +72,7 @@ ats_realloc(void *ptr, size_t size)
   void *newptr = realloc(ptr, size);
   if (unlikely(newptr == NULL)) {
     ink_stack_trace_dump();
-    ink_fatal(1, "ats_realloc: couldn't reallocate %zu bytes", size);
+    ink_fatal("ats_realloc: couldn't reallocate %zu bytes", size);
   }
   return newptr;
 }                               /* End ats_realloc */
@@ -97,20 +97,20 @@ ats_memalign(size_t alignment, size_t size)
 
   if (unlikely(retcode)) {
     if (retcode == EINVAL) {
-      ink_fatal(1, "ats_memalign: couldn't allocate %zu bytes at alignment %zu - invalid alignment parameter",
+      ink_fatal("ats_memalign: couldn't allocate %zu bytes at alignment %zu - invalid alignment parameter",
                 size, alignment);
     } else if (retcode == ENOMEM) {
-      ink_fatal(1, "ats_memalign: couldn't allocate %zu bytes at alignment %zu - insufficient memory",
+      ink_fatal("ats_memalign: couldn't allocate %zu bytes at alignment %zu - insufficient memory",
                 size, alignment);
     } else {
-      ink_fatal(1, "ats_memalign: couldn't allocate %zu bytes at alignment %zu - unknown error %d",
+      ink_fatal("ats_memalign: couldn't allocate %zu bytes at alignment %zu - unknown error %d",
                 size, alignment, retcode);
     }
   }
 #else
   ptr = memalign(alignment, size);
   if (unlikely(ptr == NULL)) {
-    ink_fatal(1, "ats_memalign: couldn't allocate %zu bytes at alignment %zu",  size,  alignment);
+    ink_fatal("ats_memalign: couldn't allocate %zu bytes at alignment %zu",  size,  alignment);
   }
 #endif
   return ptr;

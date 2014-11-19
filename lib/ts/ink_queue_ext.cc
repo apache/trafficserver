@@ -189,7 +189,7 @@ mmap_align(size_t size, size_t alignment) {
     const char *err_str = "Out of memory, or the process's maximum number of "
                           "mappings would have been exceeded(if so, you can "
                           "enlarge 'vm.max_map_count' by sysctl in linux).";
-    ink_fatal(1, "Failed to mmap %zu bytes, %s", size,
+    ink_fatal("Failed to mmap %zu bytes, %s", size,
               (errno == ENOMEM) ? err_str : strerror(errno));
   }
 
@@ -234,7 +234,7 @@ get_chunk_item_magic_idx(InkFreeList *f, void *item, InkChunkInfo **ppChunk,
   if (do_check && (idx >= f->chunk_size
                    || ((uintptr_t)item - chunk_addr) % f->type_size)) {
     ink_stack_trace_dump();
-    ink_fatal(1, "Invalid address:%p, chunk_addr:%p, type_size:%d, chunk_size:%u, idx:%u",
+    ink_fatal("Invalid address:%p, chunk_addr:%p, type_size:%d, chunk_size:%u, idx:%u",
               item, (void *)chunk_addr, f->type_size, f->chunk_size, idx);
   }
 
@@ -345,7 +345,7 @@ ink_chunk_delete(InkFreeList *f, InkThreadCache *pCache, InkChunkInfo *pChunk)
 
   if (unlikely(munmap(chunk_addr, f->chunk_byte_size))) {
     ink_stack_trace_dump();
-    ink_fatal(1, "Failed to munmap %u bytes, %s", f->chunk_byte_size, strerror(errno));
+    ink_fatal("Failed to munmap %u bytes, %s", f->chunk_byte_size, strerror(errno));
   }
 
   ink_atomic_increment((int *)&f->allocated, -f->chunk_size);

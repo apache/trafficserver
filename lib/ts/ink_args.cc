@@ -66,7 +66,7 @@ static void
 append_file_argument(const char * arg)
 {
     if (n_file_arguments >= countof(file_arguments)) {
-      ink_fatal(1, "too many files");
+      ink_fatal("too many files");
     }
     file_arguments[n_file_arguments++] = arg;
     file_arguments[n_file_arguments] = NULL;
@@ -112,7 +112,7 @@ process_arg(const AppVersionInfo * appinfo, const ArgumentDescription * argument
         }
         break;
       default:
-        ink_fatal(1, (char *) "bad argument description");
+        ink_fatal("bad argument description");
         break;
       }
       **argv += strlen(**argv) - 1;
@@ -149,7 +149,7 @@ show_argument_configuration(const ArgumentDescription * argument_descriptions, u
         printf("%s", (char *) argument_descriptions[i].location);
         break;
       default:
-        ink_fatal(1, (char *) "bad argument description");
+        ink_fatal("bad argument description");
         break;
       }
       printf("\n");

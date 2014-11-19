@@ -34,5 +34,5 @@ Assertions
 void
 _ink_assert(const char *expression, const char *file, int line)
 {
-  ink_fatal(1, "%s:%d: failed assert `%s`", file, line, expression);
+  ink_fatal("%s:%d: failed assert `%s`", file, line, expression);
 }

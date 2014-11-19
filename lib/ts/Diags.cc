@@ -546,8 +546,9 @@ Diags::error_va(DiagsLevel level,
   }
 
   if (DiagsLevel_IsTerminal(level)) {
-    if (cleanup_func)
+    if (cleanup_func) {
       cleanup_func();
-    ink_fatal_va(1, format_string, ap2);
+    }
+    ink_fatal_va(format_string, ap2);
   }
 }

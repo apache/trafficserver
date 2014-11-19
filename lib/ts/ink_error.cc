@@ -29,7 +29,7 @@
 #include <syslog.h>
 #include <signal.h>    /* MAGIC_EDITING_TAG */
 
-static int ink_dprintf_level = 0;
+static void ink_die_die_die() TS_NORETURN;
 
 /**
   This routine causes process death. Some signal handler problems got
@@ -37,22 +37,21 @@ static int ink_dprintf_level = 0;
   amusing implementation.
 
 */
-void
-ink_die_die_die(int retval)
+static void
+ink_die_die_die()
 {
   abort();
-  _exit(retval);
-  exit(retval);
+  _exit(70); // 70 corresponds to EX_SOFTWARE in BSD's sysexits. As good a status as any.
+  exit(70);
 }
 
 /**
   This routine prints/logs an error message given the printf format
-  string in message_format, and the optional arguments.  The program is
-  then terminated with return_code.
+  string in message_format, and the optional arguments.
 
 */
 void
-ink_fatal_va(int return_code, const char * fmt, va_list ap)
+ink_fatal_va(const char * fmt, va_list ap)
 {
   char msg[1024];
   const size_t len = sizeof("FATAL: ") - 1;
@@ -63,54 +62,44 @@ ink_fatal_va(int return_code, const char * fmt, va_list ap)
 
   fprintf(stderr, "%s\n", msg);
   syslog(LOG_CRIT, "%s", msg);
-  ink_stack_trace_dump();
-  ink_die_die_die(return_code);
+  ink_die_die_die();
 }
 
 void
-ink_fatal(int return_code, const char *message_format, ...)
+ink_fatal(const char *message_format, ...)
 {
   va_list ap;
   va_start(ap, message_format);
-  ink_fatal_va(return_code, message_format, ap);
-  va_end(ap);
-}
-
-void
-ink_fatal_die(const char *message_format, ...)
-{
-  va_list ap;
-  va_start(ap, message_format);
-  ink_fatal_va(1, message_format, ap);
+  ink_fatal_va(message_format, ap);
   va_end(ap);
 }
 
 /**
   This routine prints/logs an error message given the printf format
   string in message_format, and the optional arguments.  The current
-  errno is also printed.  The program is then terminated with return_code.
+  errno is also printed.
 
 */
 void
-ink_pfatal(int return_code, const char *message_format, ...)
+ink_pfatal(const char *message_format, ...)
 {
   va_list ap;
   char extended_format[4096], message[4096];
 
-  char *errno_string;
+  int errsav = errno;
+  const char * errno_string = strerror(errsav);
 
   va_start(ap, message_format);
-  errno_string = strerror(errno);
   snprintf(extended_format, sizeof(extended_format) - 1, "FATAL: %s <last errno = %d (%s)>",
-           message_format, errno, (errno_string == NULL ? "unknown" : errno_string));
+           message_format, errsav, (errno_string == NULL ? "unknown" : errno_string));
   extended_format[sizeof(extended_format) - 1] = 0;
   vsnprintf(message, sizeof(message) - 1, extended_format, ap);
   message[sizeof(message) - 1] = 0;
   fprintf(stderr, "%s\n", message);
   syslog(LOG_CRIT, "%s", message);
   va_end(ap);
-  ink_stack_trace_dump();
-  ink_die_die_die(return_code);
+
+  ink_die_die_die();
 }
 
 /**
@@ -213,37 +202,4 @@ ink_error(const char *message_format, ...)
   fprintf(stderr, "%s\n", message);
   syslog(LOG_ERR, "%s", message);
   va_end(ap);
-}
-
-/**
-  This routine prints/logs a message given the printf format string in
-  message_format, and the optional arguments.
-
-*/
-void
-ink_dprintf(int debug_level, const char *message_format, ...)
-{
-  char message[4096];
-  va_list ap;
-  if (debug_level <= ink_dprintf_level) {
-    va_start(ap, message_format);
-    vsnprintf(message, sizeof(message) - 1, message_format, ap);
-    message[sizeof(message) - 1] = 0;
-    fprintf(stderr, "%s\n", message);
-    va_end(ap);
-  }
-}
-
-/**
-  Set output level for ink_dprintf() function. For debugging purposes
-  only!
-
-*/
-int
-ink_set_dprintf_level(int debug_level)
-{
-  int old_ink_dprintf_level = ink_dprintf_level;
-  if ((ink_dprintf_level = debug_level) < 0)
-    ink_dprintf_level = 0;
-  return old_ink_dprintf_level;
 }

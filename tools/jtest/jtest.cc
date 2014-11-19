@@ -2582,7 +2582,7 @@ struct UrlHashTable {
       }
     } END_HASH_LOOP;
 
-    ink_fatal(1, "overview entries overflow");
+    ink_fatal("overview entries overflow");
   }
 
   void clear(uint64_t i) {

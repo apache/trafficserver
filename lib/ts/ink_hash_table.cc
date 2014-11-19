@@ -65,7 +65,7 @@ ink_hash_table_create(InkHashTableKeyType key_type)
   else if (key_type == InkHashTableKeyType_Word)
     tcl_key_type = TCL_ONE_WORD_KEYS;
   else
-    ink_fatal(1, "ink_hash_table_create: bad key_type %d", key_type);
+    ink_fatal("ink_hash_table_create: bad key_type %d", key_type);
 
   Tcl_InitHashTable(tcl_ht_ptr, tcl_key_type);
 
@@ -270,7 +270,7 @@ ink_hash_table_get_entry(InkHashTable *ht_ptr, const char *key, int *new_value)
   tcl_he_ptr = Tcl_CreateHashEntry(tcl_ht_ptr, key, new_value);
 
   if (tcl_he_ptr == NULL) {
-    ink_fatal(1, "%s: Tcl_CreateHashEntry returned NULL", "ink_hash_table_get_entry");
+    ink_fatal("%s: Tcl_CreateHashEntry returned NULL", "ink_hash_table_get_entry");
   }
 
   return ((InkHashTableEntry *) tcl_he_ptr);

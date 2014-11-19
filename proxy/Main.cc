@@ -1318,7 +1318,7 @@ change_uid_gid(const char * user)
 
 #if !defined(BIG_SECURITY_HOLE) || (BIG_SECURITY_HOLE != 0)
   if (getuid() == 0 || geteuid() == 0) {
-    ink_fatal_die(
+    ink_fatal(
       "Trafficserver has not been designed to serve pages while\n"
       "\trunning as root. There are known race conditions that\n"
       "\twill allow any local user to read any file on the system.\n"
@@ -1368,10 +1368,6 @@ main(int /* argc ATS_UNUSED */, char **argv)
   // Set stdout/stdin to be unbuffered
   setbuf(stdout, NULL);
   setbuf(stdin, NULL);
-
-  // Set new debug output level (from command line arg)
-  // Only for debug purposes. We should do it as early as possible.
-  ink_set_dprintf_level(cmd_line_dprintf_level);
 
   // Bootstrap syslog.  Since we haven't read records.config
   //   yet we do not know where
