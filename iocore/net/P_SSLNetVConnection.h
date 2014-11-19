@@ -122,9 +122,6 @@ public:
   static int advertise_next_protocol(SSL * ssl, const unsigned char ** out, unsigned * outlen, void *);
   static int select_next_protocol(SSL * ssl, const unsigned char ** out, unsigned char * outlen, const unsigned char * in, unsigned inlen, void *);
 
-  bool modify_npn_advertisement(const unsigned char ** list, unsigned cnt);
-  bool setAdvertiseProtocols(const unsigned char ** list, unsigned cnt);
-
   Continuation * endpoint() const {
     return npnEndpoint;
   }
@@ -201,9 +198,6 @@ private:
 
   const SSLNextProtocolSet * npnSet;
   Continuation * npnEndpoint;
-  unsigned char * npnAdvertised;
-  size_t npnszAdvertised;
-  int npnAdvertisedBufIndex;
 };
 
 typedef int (SSLNetVConnection::*SSLNetVConnHandler) (int, void *);

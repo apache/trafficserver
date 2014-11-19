@@ -1238,7 +1238,6 @@ extern "C"
   tsapi TSSslContext TSSslContextFindByAddr(struct sockaddr const*);
   // Returns 1 if the sslp argument refers to a SSL connection
   tsapi int TSVConnIsSsl(TSVConn sslp);
-  tsapi TSReturnCode TSSslAdvertiseProtocolSet(TSVConn sslp, const unsigned char ** list, unsigned int count);
 
   /* --------------------------------------------------------------------------
      HTTP transactions */

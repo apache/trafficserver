@@ -307,11 +307,6 @@ ssl_servername_callback(SSL * ssl, int * ad, void * /*arg*/)
     goto done;
   }
 
-  // set the default 
-#if TS_USE_TLS_NPN
-  SSL_CTX_set_next_protos_advertised_cb(ctx, SSLNetVConnection::advertise_next_protocol, NULL);
-#endif /* TS_USE_TLS_NPN */
-
   // Call the plugin SNI code
   reenabled = netvc->callHooks(TS_SSL_SNI_HOOK);
   // If it did not re-enable, return the code to

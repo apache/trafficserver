@@ -33,7 +33,6 @@ SUBDIRS = \
  regex_revalidate \
  remap_stats \
  s3_auth \
- sni_proto_nego \
  ssl_cert_loader \
  sslheaders \
  stale_while_revalidate \
