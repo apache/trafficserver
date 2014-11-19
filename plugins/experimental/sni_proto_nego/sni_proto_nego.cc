@@ -31,8 +31,6 @@
 using namespace std;
 
 const char* PLUGIN_NAME = "sni_proto_nego";
-
-#if TS_USE_TLS_SNI
 const int MAX_BUFFER_SIZE = 1024;
 const int MAX_FILE_PATH_SIZE = 1024;
 const unsigned int MAX_PROTO_LIST_LEN = 100;
@@ -52,7 +50,7 @@ bool read_config(char* config_file) {
   char file_path[MAX_FILE_PATH_SIZE];
   TSFile file;
   if (config_file == NULL) {
-    TSError("%s: invalid config file", PLUGIN_NAME);
+    TSError("invalid config file");
     return false;
   }
   TSDebug(PLUGIN_NAME, "trying to open config file in this path: %s", file_path);
@@ -61,7 +59,7 @@ bool read_config(char* config_file) {
     snprintf(file_path, sizeof(file_path), "%s/%s", TSInstallDirGet(), config_file);
     file = TSfopen(file_path, "r");
     if (file == NULL) {
-      TSError("%s:Failed to open config file %s", PLUGIN_NAME, config_file);
+      TSError("Failed to open config file %s", config_file);
       return false;
     }
   }
@@ -71,7 +69,7 @@ bool read_config(char* config_file) {
     char *eol = 0;
     // make sure line was not bigger than buffer
     if ((eol = strchr(buffer, '\n')) == NULL && (eol = strstr(buffer, "\r\n")) == NULL) {
-      TSError("%s: sni_proto_nego line too long, did not get a good line in cfg, skipping, line: %s", PLUGIN_NAME, buffer);
+      TSError("sni_proto_nego line too long, did not get a good line in cfg, skipping, line: %s", buffer);
       memset(buffer, 0, sizeof(buffer));
       continue;
     }
@@ -158,8 +156,10 @@ init_sni_callback(void *sslNetVC)
   if (it!=_sniProtoMap.end()) {
     SNIProtoConfig sniProtoConfig = it->second; 
     if (!sniProtoConfig.enableNpn) {
+#if TS_USE_TLS_NPN
       TSDebug(PLUGIN_NAME, "disabling NPN for serverName %s", serverName);
       SSL_CTX_set_next_protos_advertised_cb(ctx, NULL, NULL);
+#endif
     } else {
       TSDebug(PLUGIN_NAME, "setting NPN advertised list for %s", serverName);
       //TSSslAdvertiseProtocolSet(ssl_vc, (const unsigned char **)sniProtoConfig.npn_proto_list, sniProtoConfig.npn_proto_list_count);
@@ -171,8 +171,7 @@ init_sni_callback(void *sslNetVC)
 }
 
 int
-SSLSniInitCallbackHandler(TSCont /* cont */, TSEvent /* id */, void* sslNetVC)
-{
+SSLSniInitCallbackHandler(TSCont /* cont */, TSEvent /* id */, void* sslNetVC) {
   init_sni_callback(sslNetVC);
   return TS_EVENT_NONE;
 }
@@ -187,7 +186,7 @@ TSPluginInit(int argc, const char *argv[])
   info.vendor_name = (char *)("ats");
 
   if (TSPluginRegister(TS_SDK_VERSION_3_0, &info) != TS_SUCCESS) {
-    TSError("%s: Plugin registration failed.", PLUGIN_NAME);
+    TSError("Plugin registration failed.");
   }
 
   char* config_file = (char*)"conf/sni_proto_nego/sni_proto_nego.config";
@@ -204,10 +203,3 @@ TSPluginInit(int argc, const char *argv[])
   TSCont cont = TSContCreate(SSLSniInitCallbackHandler, NULL);
   TSHttpHookAdd(TS_SSL_SNI_HOOK, cont);
 }
-#else // #if TS_USE_TLS_SNI
-void
-TSPluginInit(int, const char *[])
-{
-    TSError("%s: requires TLS SNI which is not available.", PLUGIN_NAME);
-}
-#endif // #if TS_USE_TLS_SNI
