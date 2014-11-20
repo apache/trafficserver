@@ -861,7 +861,7 @@ LogAccess::marshal_ip(char* dest, sockaddr const* ip) {
 inline int
 LogAccess::unmarshal_with_map(int64_t code, char *dest, int len, Ptr<LogFieldAliasMap> map, const char *msg)
 {
-  int codeStrLen;
+  long int codeStrLen = 0;
 
   switch (map->asString(code, dest, len, (size_t *) & codeStrLen)) {
   case LogFieldAliasMap::INVALID_INT:
