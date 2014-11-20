@@ -51,7 +51,7 @@ ink_max_out_rlimit(int which, bool max_it, bool unlim_it)
     }
   }
 
-#if !defined(darwin)
+#if !(defined(darwin) || defined(freebsd))
   if (unlim_it) {
     ink_release_assert(getrlimit(MAGIC_CAST(which), &rl) >= 0);
     if (rl.rlim_cur != (rlim_t)RLIM_INFINITY) {
