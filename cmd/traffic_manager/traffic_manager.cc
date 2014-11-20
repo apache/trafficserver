@@ -96,6 +96,24 @@ static void SignalAlrmHandler(int sig);
 static volatile int sigHupNotifier = 0;
 static void SigChldHandler(int sig);
 
+static bool
+is_server_idle()
+{
+  RecInt active = 0;
+  RecInt threshold = 0;
+
+  if (RecGetRecordInt("proxy.config.restart.active_client_threshold", &threshold) != REC_ERR_OKAY) {
+    return false;
+  }
+
+  if (RecGetRecordInt("proxy.process.http.current_active_client_connections", &active) != REC_ERR_OKAY) {
+    return false;
+  }
+
+  Debug("lm", "%" PRId64 " active clients, threshold is %" PRId64, active, threshold);
+  return active <= threshold;
+}
+
 static void
 check_lockfile()
 {
@@ -726,9 +744,32 @@ main(int argc, char **argv)
       statProcessor->processStat();
     }
 
-    if (lmgmt->mgmt_shutdown_outstanding == true) {
-      lmgmt->mgmtShutdown(true);
+    if (lmgmt->mgmt_shutdown_outstanding != MGMT_PENDING_NONE) {
+      Debug("lm", "pending shutdown %d", lmgmt->mgmt_shutdown_outstanding);
+    }
+    switch (lmgmt->mgmt_shutdown_outstanding) {
+    case MGMT_PENDING_RESTART:
+      lmgmt->mgmtShutdown();
       _exit(0);
+      break;
+    case MGMT_PENDING_IDLE_RESTART:
+      if (is_server_idle()) {
+        lmgmt->mgmtShutdown();
+        _exit(0);
+      }
+      break;
+    case MGMT_PENDING_BOUNCE:
+      lmgmt->processBounce();
+      lmgmt->mgmt_shutdown_outstanding = MGMT_PENDING_NONE;
+      break;
+    case MGMT_PENDING_IDLE_BOUNCE:
+      if (is_server_idle()) {
+        lmgmt->processBounce();
+        lmgmt->mgmt_shutdown_outstanding = MGMT_PENDING_NONE;
+      }
+      break;
+    default:
+      break;
     }
 
     if (lmgmt->run_proxy && !lmgmt->processRunning()) { /* Make sure we still have a proxy up */

@@ -266,6 +266,12 @@ Value Effect
    before :program:`traffic_server` drops privilege. If this variable
    is set to ``NULL``, no helper will be spawned.
 
+.. ts:cv:: CONFIG proxy.config.restart.active_client_threshold INT 0
+   :reloadable:
+
+  This setting specifies the number of active client connections
+  for use by :option:`traffic_line --drain`.
+
 Network
 =======
 

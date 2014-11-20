@@ -425,13 +425,14 @@ Reconfigure()
  * restart Traffic Manager!!
  */
 TSMgmtError
-Restart(bool cluster)
+Restart(unsigned options)
 {
-  if (cluster) {                // Enqueue an event to restart the proxies across the cluster
+  if (options & TS_RESTART_OPT_CLUSTER) {
+    // Enqueue an event to restart the proxies across the cluster
     // this will kill TM completely;traffic_cop will restart TM/TS
     lmgmt->ccom->sendClusterMessage(CLUSTER_MSG_SHUTDOWN_MANAGER);
-  } else {                      // just bounce local proxy
-    lmgmt->mgmtShutdown();
+  } else {
+    lmgmt->mgmt_shutdown_outstanding = (options & TS_RESTART_OPT_DRAIN) ? MGMT_PENDING_IDLE_RESTART : MGMT_PENDING_RESTART;
   }
 
   return TS_ERR_OKAY;
@@ -443,12 +444,12 @@ Restart(bool cluster)
  * Bounces traffic_server process(es).
  */
 TSMgmtError
-Bounce(bool cluster)
+Bounce(unsigned options)
 {
-  if (cluster) {
+  if (options & TS_RESTART_OPT_CLUSTER) {
     lmgmt->ccom->sendClusterMessage(CLUSTER_MSG_BOUNCE_PROCESS);
   } else {
-    lmgmt->processBounce();
+    lmgmt->mgmt_shutdown_outstanding = (options & TS_RESTART_OPT_DRAIN) ? MGMT_PENDING_IDLE_BOUNCE : MGMT_PENDING_BOUNCE;
   }
 
   return TS_ERR_OKAY;

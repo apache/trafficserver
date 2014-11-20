@@ -406,6 +406,12 @@ extern "C"
     TS_MGMT_OPT_NO_SOCK_TESTS  /* No socket test thread */
   } TSInitOptionT;
 
+  typedef enum
+  {
+    TS_RESTART_OPT_NONE = 0x0,
+    TS_RESTART_OPT_CLUSTER = 0x01, /* Restart across the cluster */
+    TS_RESTART_OPT_DRAIN = 0x02,   /* Wait for traffic to drain before restarting. */
+  } TSRestartOptionT;
 
 /***************************************************************************
  * Structures
@@ -967,10 +973,10 @@ extern "C"
   tsapi TSMgmtError TSReconfigure();
 
 /* TSRestart: restarts Traffic Manager and Traffic Server
- * Input:  cluster - local or cluster-wide
+ * Input: options - bitmask of TSRestartOptionT
  * Output: TSMgmtError
  */
-  tsapi TSMgmtError TSRestart(bool cluster);
+  tsapi TSMgmtError TSRestart(unsigned options);
 
 /* TSActionDo: based on TSActionNeedT, will take appropriate action
  * Input: action - action that needs to be taken
@@ -979,10 +985,10 @@ extern "C"
   tsapi TSMgmtError TSActionDo(TSActionNeedT action);
 
 /* TSBounce: restart the traffic_server process(es).
- * Input: cluster - local or cluster-wide
+ * Input: options - bitmask of TSRestartOptionT
  * Output TSMgmtError
  */
-  tsapi TSMgmtError TSBounce(bool cluster);
+  tsapi TSMgmtError TSBounce(unsigned options);
 
 /* TSStorageDeviceOp: Request an operation on a storage device.
  * @arg dev Target device, specified by path to device.

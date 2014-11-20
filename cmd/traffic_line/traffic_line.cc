@@ -51,23 +51,26 @@ static char StorageCmdOffline[1024];
 static int ShowAlarms;
 static int ShowStatus;
 static int ShowBacktrace;
+static int DrainTraffic;
 static char ClearAlarms[1024];
 
 static TSMgmtError
 handleArgInvocation()
 {
+  unsigned restart = DrainTraffic ? TS_RESTART_OPT_DRAIN : TS_RESTART_OPT_NONE;
+
   if (ReRead == 1) {
     return TSReconfigure();
   } else if (ShutdownMgmtCluster == 1) {
-    return TSRestart(true);
+    return TSRestart(restart | TS_RESTART_OPT_CLUSTER);
   } else if (ShutdownMgmtLocal == 1) {
-    return TSRestart(false);
+    return TSRestart(restart);
   } else if (Shutdown == 1) {
     return TSProxyStateSet(TS_PROXY_OFF, TS_CACHE_CLEAR_OFF);
   } else if (BounceCluster == 1) {
-    return TSBounce(true);
+    return TSBounce(restart | TS_RESTART_OPT_CLUSTER);
   } else if (BounceLocal == 1) {
-    return TSBounce(false);
+    return TSBounce(restart);
   } else if (Startup == 1) {
     return TSProxyStateSet(TS_PROXY_ON, TS_CACHE_CLEAR_OFF);
   } else if (ClearCluster == 1) {
@@ -355,6 +358,7 @@ main(int /* argc ATS_UNUSED */, char **argv)
     {"clear_alarms", '-', "Clear specified, or all,  alarms", "S1024", &ClearAlarms, NULL, NULL},
     {"status", '-', "Show proxy server status", "F", &ShowStatus, NULL, NULL},
     {"backtrace", '-', "Show proxy stack backtrace", "F", &ShowBacktrace, NULL, NULL},
+    {"drain", '-', "Wait for client connections to drain before restarting", "F", &DrainTraffic, NULL, NULL},
     HELP_ARGUMENT_DESCRIPTION(),
     VERSION_ARGUMENT_DESCRIPTION()
   };

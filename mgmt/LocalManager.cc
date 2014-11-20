@@ -54,27 +54,22 @@ LocalManager::mgmtCleanup()
 
 
 void
-LocalManager::mgmtShutdown(bool mainThread)
+LocalManager::mgmtShutdown()
 {
-  if (mainThread) {
-    mgmt_log("[LocalManager::mgmtShutdown] Executing shutdown request.\n");
-    processShutdown(mainThread);
-    // WCCP TBD: Send a shutdown message to routers.
+  mgmt_log("[LocalManager::mgmtShutdown] Executing shutdown request.\n");
+  processShutdown(true);
+  // WCCP TBD: Send a shutdown message to routers.
 
-    if (processRunning()) {
-      waitpid(watched_process_pid, NULL, 0);
+  if (processRunning()) {
+    waitpid(watched_process_pid, NULL, 0);
 #if defined(linux)
-      /* Avert race condition, wait for the thread to complete,
-         before getting one more restart process */
-      /* Workaround for bugid INKqa10060 */
-      mgmt_sleep_msec(1);
+    /* Avert race condition, wait for the thread to complete,
+       before getting one more restart process */
+    /* Workaround for bugid INKqa10060 */
+    mgmt_sleep_msec(1);
 #endif
-    }
-    mgmtCleanup();
-  } else {
-    mgmt_shutdown_outstanding = true;
   }
-  return;
+  mgmtCleanup();
 }
 
 
@@ -207,7 +202,7 @@ LocalManager::LocalManager(bool proxy_on)
   proxy_launch_count = 0;
   manager_started_at = time(NULL);
   proxy_launch_outstanding = false;
-  mgmt_shutdown_outstanding = false;
+  mgmt_shutdown_outstanding = MGMT_PENDING_NONE;
   proxy_running = 0;
   RecSetRecordInt("proxy.node.proxy_running", 0);
   mgmt_sync_key = REC_readInteger("proxy.config.lm.sem_id", &found);

@@ -620,18 +620,16 @@ static TSMgmtError
 handle_restart(int fd, void * req, size_t reqlen)
 {
   MgmtMarshallInt optype;
-  MgmtMarshallInt cluster;
+  MgmtMarshallInt options;
   MgmtMarshallInt err;
 
-  err = recv_mgmt_request(req, reqlen, RESTART, &optype, &cluster);
+  err = recv_mgmt_request(req, reqlen, RESTART, &optype, &options);
   if (err == TS_ERR_OKAY) {
-    bool bounce = (optype == BOUNCE);
-
-    // cluster == 0 means no cluster
-    if (bounce)
-      err = Bounce(0 != cluster);
-    else
-      err = Restart(0 != cluster);
+    switch (optype) {
+    case BOUNCE: err = Bounce(options); break;
+    case RESTART: err = Restart(options); break;
+    default: err = TS_ERR_PARAMS; break;
+    }
   }
 
   return send_mgmt_response(fd, RESTART, &err);

@@ -48,8 +48,8 @@ TSMgmtError ProxyStateSet(TSProxyStateT state, TSCacheClearT clear);
 TSMgmtError ServerBacktrace(unsigned options, char ** trace);
 
 TSMgmtError Reconfigure();         // TS reread config files
-TSMgmtError Restart(bool cluster); //restart TM
-TSMgmtError Bounce(bool cluster);  //restart traffic_server
+TSMgmtError Restart(unsigned options); //restart TM
+TSMgmtError Bounce(unsigned options);  //restart traffic_server
 TSMgmtError StorageDeviceCmdOffline(const char * dev); // Storage device operation.
 
 /***************************************************************************

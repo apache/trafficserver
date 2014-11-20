@@ -1781,13 +1781,13 @@ TSReconfigure()
 }
 
 /* TSRestart: restarts Traffic Server
- * Input:  cluster - local or cluster-wide
+ * Input:  options - bitmask of TSRestartOptionT
  * Output: TSMgmtError
  */
 tsapi TSMgmtError
-TSRestart(bool cluster)
+TSRestart(unsigned options)
 {
-  return Restart(cluster);
+  return Restart(options);
 }
 
 /* TSActionDo: based on TSActionNeedT, will take appropriate action
@@ -1818,13 +1818,13 @@ TSActionDo(TSActionNeedT action)
 }
 
 /* TSBouncer: restarts the traffic_server process(es)
- * Input:  cluster - local or cluster-wide
+ * Input:  options - bitmask of TSRestartOptionT
  * Output: TSMgmtError
  */
 tsapi TSMgmtError
-TSBounce(bool cluster)
+TSBounce(unsigned options)
 {
-  return Bounce(cluster);
+  return Bounce(options);
 }
 
 tsapi TSMgmtError

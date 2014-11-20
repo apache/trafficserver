@@ -45,6 +45,15 @@ class FileManager;
 class ClusterCom;
 class VMap;
 
+enum ManagementPendingOperation
+{
+  MGMT_PENDING_NONE,          // Do nothing
+  MGMT_PENDING_RESTART,       // Restart TS and TM
+  MGMT_PENDING_BOUNCE,        // Restart TS
+  MGMT_PENDING_IDLE_RESTART,  // Restart TS and TM when TS is idle
+  MGMT_PENDING_IDLE_BOUNCE    // Restart TS when TS is idle
+};
+
 class LocalManager: public BaseManager
 {
 public:
@@ -72,7 +81,7 @@ public:
   void closeProxyPorts();
 
   void mgmtCleanup();
-  void mgmtShutdown(bool mainThread = false);
+  void mgmtShutdown();
   void processShutdown(bool mainThread = false);
   void processRestart();
   void processBounce();
@@ -98,7 +107,7 @@ public:
   volatile time_t proxy_started_at;
   volatile int proxy_launch_count;
   volatile bool proxy_launch_outstanding;
-  volatile bool mgmt_shutdown_outstanding;
+  volatile ManagementPendingOperation mgmt_shutdown_outstanding;
   volatile int proxy_running;
   HttpProxyPort::Group m_proxy_ports;
   // Local inbound addresses to bind, if set.

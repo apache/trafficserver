@@ -57,6 +57,15 @@ Options
 
     Clears accumulated statistics on the local node.
 
+.. option:: --drain
+
+    This option modifies the behavior of :option:`traffic_line -b`
+    and :option:`traffic_line -L` such that :program:`traffic_server`
+    is not shut down until the number of active client connections
+    drops to the number given by the
+    :ts:cv:`proxy.config.restart.active_client_threshold` configuration
+    variable.
+
 .. option:: -h, --help
 
     Print usage information and exit.

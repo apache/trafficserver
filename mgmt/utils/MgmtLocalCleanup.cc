@@ -28,6 +28,6 @@ void
 mgmt_cleanup()
 {
   if (lmgmt != NULL) {
-    lmgmt->mgmtShutdown(true);
+    lmgmt->mgmtShutdown();
   }
 }

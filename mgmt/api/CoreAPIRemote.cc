@@ -408,13 +408,13 @@ Reconfigure()
  * so keep trying to reconnect until successful or for MAX_CONN_TRIES
  */
 TSMgmtError
-Restart(bool cluster)
+Restart(unsigned options)
 {
   TSMgmtError ret;
   MgmtMarshallInt optype = RESTART;
-  MgmtMarshallInt bval = cluster ? 1 : 0;
+  MgmtMarshallInt oval = options;
 
-  ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, RESTART, &optype, &bval);
+  ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, RESTART, &optype, &oval);
   if (ret != TS_ERR_OKAY) {
     return ret;
   }
@@ -434,13 +434,13 @@ Restart(bool cluster)
  * Restart the traffic_server process(es) only.
  */
 TSMgmtError
-Bounce(bool cluster)
+Bounce(unsigned options)
 {
   TSMgmtError ret;
   MgmtMarshallInt optype = BOUNCE;
-  MgmtMarshallInt bval = cluster ? 1 : 0;
+  MgmtMarshallInt oval = options;
 
-  ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, BOUNCE, &optype, &bval);
+  ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, BOUNCE, &optype, &oval);
   if (ret != TS_ERR_OKAY) {
     return ret;
   }
