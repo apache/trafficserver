@@ -6577,11 +6577,7 @@ HttpSM::kill_this()
     transform_cache_sm.end_both();
     vc_table.cleanup_all();
 
-    // Why don't we just kill the tunnel?
-    // That will deallocate buffers and do
-    // other cleanup as well
-    // tunnel.deallocate_buffers();
-    tunnel.kill_tunnel();
+    tunnel.deallocate_buffers();
 
     // It possible that a plugin added transform hook
     //   but the hook never executed due to a client abort
