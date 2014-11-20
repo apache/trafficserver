@@ -28,10 +28,10 @@
 struct RegexThreadKey
 {
   RegexThreadKey() {
-    pthread_key_create(&this->key, (void (*)(void *)) &pcre_jit_stack_free);
+    ink_thread_key_create(&this->key, (void (*)(void *)) &pcre_jit_stack_free);
   }
 
-  pthread_key_t key;
+  ink_thread_key key;
 };
 
 static RegexThreadKey k;
@@ -41,9 +41,9 @@ get_jit_stack(void *data ATS_UNUSED)
 {
   pcre_jit_stack *jit_stack;
 
-  if ((jit_stack = (pcre_jit_stack *) pthread_getspecific(k.key)) == NULL) {
+  if ((jit_stack = (pcre_jit_stack *) ink_thread_getspecific(k.key)) == NULL) {
     jit_stack = pcre_jit_stack_alloc(ats_pagesize(), 1024 * 1024); // 1 page min and 1MB max
-    pthread_setspecific(k.key, (void *)jit_stack);
+    ink_thread_setspecific(k.key, (void *)jit_stack);
   }
 
   return jit_stack;
