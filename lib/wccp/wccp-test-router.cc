@@ -28,7 +28,7 @@
 
 # include <getopt.h>
 
-# include "ats-wccp-api.h"
+# include "Wccp.h"
 
 # include <sys/socket.h>
 # include <netinet/in.h>
@@ -36,7 +36,7 @@
 
 # include <poll.h>
 
-# include <libconfig.h++>
+# include <tsconfig/TsValue.h>
 
 static char const USAGE_TEXT[] =
   "%s\n"
@@ -55,7 +55,7 @@ inline void Error(char const* fmt, ...) {
 
 int
 main(int argc, char** argv) {
-  Wccp::Router wcp;
+  wccp::Router wcp;
 
   // Reading stdin support.
   size_t in_size = 200;
@@ -124,11 +124,11 @@ main(int argc, char** argv) {
   pfa[0].fd = STDIN_FILENO;
   pfa[0].events = POLLIN;
 
-  pfa[1].fd = wcp.get_socket();
+  pfa[1].fd = wcp.getSocket();
   pfa[1].events = POLLIN;
 
   while (true) {
-    int n = poll(pfa, POLL_FD_COUNT, Wccp::TIME_UNIT * 1000);
+    int n = poll(pfa, POLL_FD_COUNT, wccp::TIME_UNIT * 1000);
     if (n < 0) { // error
       perror("General polling failure");
       return 5;
@@ -136,7 +136,7 @@ main(int argc, char** argv) {
       if (pfa[1].revents) {
         if (pfa[1].revents & POLLIN) {
           wcp.handleMessage();
-          wcp.sendPendingMessages();
+          //wcp.sendPendingMessages();
         } else {
           fprintf(stderr, "Socket failure.\n");
           return 6;
@@ -150,7 +150,7 @@ main(int argc, char** argv) {
         }
       }
     } else { // timeout
-      wcp.sendPendingMessages();
+      //wcp.sendPendingMessages();
     }
   }
 

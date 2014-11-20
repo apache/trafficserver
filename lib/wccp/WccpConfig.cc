@@ -67,6 +67,7 @@ static char const * const SVC_PROP_ROUTERS = "routers";
 static char const * const SVC_PROP_FORWARD = "forward";
 static char const * const SVC_PROP_RETURN = "return";
 static char const * const SVC_PROP_ASSIGN = "assignment";
+static char const * const SVC_PROP_PROC = "proc-name";
 
 static char const * const SECURITY_PROP_OPTION = "option";
 static char const * const SECURITY_PROP_KEY = "key";
@@ -725,6 +726,16 @@ CacheImpl::loadServicesFromFile(char const* path) {
 
     // Properties after this are optional so we can proceed if they fail.
     GroupData& svc = this->defineServiceGroup(svc_info);
+
+    // Is there a process we should track?
+    if ((prop = svc_cfg[SVC_PROP_PROC]).hasValue()) {
+      if (ts::config::StringValue == prop.getType()) {
+         svc.setProcName(prop.getText());
+      } else {
+        zret.push(Prop_Invalid_Type(prop, ts::config::StringValue));
+      }
+    } 
+
     // Add seed routers.
     std::vector<uint32_t>::iterator rspot, rlimit;
     for ( rspot = routers.begin(), rlimit = routers.end() ; rspot != rlimit ; ++rspot )

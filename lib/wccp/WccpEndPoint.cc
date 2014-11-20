@@ -255,7 +255,7 @@ Impl::handleRemovalQuery(IpHeader const&, ts::Buffer const& /* data ATS_UNUSED *
 }
 // ------------------------------------------------------
 CacheImpl::GroupData::GroupData()
-  : m_assignment_pending(false) {
+  : m_proc_name(NULL), m_assignment_pending(false) {
 }
 
 CacheImpl::GroupData&
@@ -400,6 +400,37 @@ CacheImpl::GroupData::waitTime(time_t now) const {
     else zret = std::min(tx - now, zret);
   }
 
+  return zret;
+}
+
+bool
+CacheImpl::GroupData::processUp() {
+  bool zret = false;
+  const char *proc_pid_path = this->getProcName();
+  if (proc_pid_path == NULL || proc_pid_path[0] == '\0') {
+    zret = true; // No process to track, always chatter
+  } else {
+    // Look for the pid file
+    int fd = open(proc_pid_path, O_RDONLY);
+    if (fd > 0) {
+      char buffer[256];
+      ssize_t read_count = read(fd, buffer, sizeof(buffer)-1);
+      close(fd);
+      if (read_count > 0) {
+        buffer[read_count] = '\0';
+        int pid = atoi(buffer);
+        if (pid > 0) {
+          // If the process is still running, it has an entry in the proc file system, (Linux only)
+          sprintf(buffer, "/proc/%d/status", pid);
+          fd = open(buffer, O_RDONLY);
+          if (fd > 0) {
+            zret = true;
+            close(fd); 
+          }
+        }
+      }
+    }
+  }
   return zret;
 }
 
@@ -603,37 +634,40 @@ CacheImpl::housekeeping() {
 
     group.cullRouters(now); // TBD UPDATE VIEW!
 
-    // Check the active routers for scheduled packets.
-    for ( RouterBag::iterator rspot = group.m_routers.begin(),
-             rend = group.m_routers.end() ;
-           rspot != rend ;
-           ++rspot
-    ) {
-      dst_addr.sin_addr.s_addr = rspot->m_addr;
-      if (0 == rspot->pingTime(now)) {
-        HereIAmMsg here_i_am;
-        here_i_am.setBuffer(msg_buffer);
-        this->generateHereIAm(here_i_am, group, *rspot);
-        zret = sendto(m_fd, msg_data, here_i_am.getCount(), 0, addr_ptr, sizeof(dst_addr));
-        if (0 <= zret) {
-          rspot->m_xmit.set(now, group.m_generation);
-          rspot->m_send_caps = false;
-          logf(LVL_DEBUG, "Sent HERE_I_AM for service group %d to router %s%s[#%d,%lu].",
-            group.m_svc.getSvcId(),
-            ip_addr_to_str(rspot->m_addr),
-            rspot->m_rapid ? " [rapid] " : " ",
-            group.m_generation, now
-          );
-          if (rspot->m_rapid) --(rspot->m_rapid);
-        } else {
-          logf_errno(LVL_WARN, "Failed to send to router " ATS_IP_PRINTF_CODE " - ", ATS_IP_OCTETS(rspot->m_addr));
+    // Check to see if the related service is up
+    if (group.processUp()) {
+      // Check the active routers for scheduled packets.
+      for ( RouterBag::iterator rspot = group.m_routers.begin(),
+               rend = group.m_routers.end() ;
+             rspot != rend ;
+             ++rspot
+      ) {
+        dst_addr.sin_addr.s_addr = rspot->m_addr;
+        if (0 == rspot->pingTime(now)) {
+          HereIAmMsg here_i_am;
+          here_i_am.setBuffer(msg_buffer);
+          this->generateHereIAm(here_i_am, group, *rspot);
+          zret = sendto(m_fd, msg_data, here_i_am.getCount(), 0, addr_ptr, sizeof(dst_addr));
+          if (0 <= zret) {
+            rspot->m_xmit.set(now, group.m_generation);
+            rspot->m_send_caps = false;
+            logf(LVL_DEBUG, "Sent HERE_I_AM for service group %d to router %s%s[#%d,%lu].",
+              group.m_svc.getSvcId(),
+              ip_addr_to_str(rspot->m_addr),
+              rspot->m_rapid ? " [rapid] " : " ",
+              group.m_generation, now
+            );
+            if (rspot->m_rapid) --(rspot->m_rapid);
+          } else {
+            logf_errno(LVL_WARN, "Failed to send to router " ATS_IP_PRINTF_CODE " - ", ATS_IP_OCTETS(rspot->m_addr));
+          }
+        } else if (rspot->m_assign) {
+          RedirectAssignMsg redirect_assign;
+          redirect_assign.setBuffer(msg_buffer);
+          this->generateRedirectAssign(redirect_assign, group);
+          zret = sendto(m_fd, msg_data, redirect_assign.getCount(), 0, addr_ptr, sizeof(dst_addr));
+          if (0 <= zret) rspot->m_assign = false;
         }
-      } else if (rspot->m_assign) {
-        RedirectAssignMsg redirect_assign;
-        redirect_assign.setBuffer(msg_buffer);
-        this->generateRedirectAssign(redirect_assign, group);
-        zret = sendto(m_fd, msg_data, redirect_assign.getCount(), 0, addr_ptr, sizeof(dst_addr));
-        if (0 <= zret) rspot->m_assign = false;
       }
     }
 
@@ -644,32 +678,35 @@ CacheImpl::housekeeping() {
            sspot != slimit ;
            ++sspot
     ) {
-      HereIAmMsg here_i_am;
-      here_i_am.setBuffer(msg_buffer);
-      // Is the router due for a ping?
-      if (sspot->m_xmit + TIME_UNIT > now) continue; // no
+      // Check to see if the related service is up
+      if (group.processUp()) {
+        HereIAmMsg here_i_am;
+        here_i_am.setBuffer(msg_buffer);
+        // Is the router due for a ping?
+        if (sspot->m_xmit + TIME_UNIT > now) continue; // no
 
-      this->generateHereIAm(here_i_am, group);
+        this->generateHereIAm(here_i_am, group);
 
-      dst_addr.sin_addr.s_addr = sspot->m_addr;
-      zret = sendto(m_fd, msg_data, here_i_am.getCount(), 0,
-        addr_ptr, sizeof(dst_addr));
-      if (0 <= zret) {
-        logf(LVL_DEBUG, "Sent HERE_I_AM for SG %d to seed router %s [gen=#%d,t=%lu,n=%lu].",
+        dst_addr.sin_addr.s_addr = sspot->m_addr;
+        zret = sendto(m_fd, msg_data, here_i_am.getCount(), 0,
+          addr_ptr, sizeof(dst_addr));
+        if (0 <= zret) {
+          logf(LVL_DEBUG, "Sent HERE_I_AM for SG %d to seed router %s [gen=#%d,t=%lu,n=%lu].",
+            group.m_svc.getSvcId(),
+            ip_addr_to_str(sspot->m_addr),
+            group.m_generation, now, here_i_am.getCount()
+          );
+          sspot->m_xmit = now;
+          sspot->m_count += 1;
+        }
+        else logf(LVL_DEBUG,
+          "Error [%d:%s] sending HERE_I_AM for SG %d to seed router %s [#%d,%lu].",
+          zret, strerror(errno),
           group.m_svc.getSvcId(),
           ip_addr_to_str(sspot->m_addr),
-          group.m_generation, now, here_i_am.getCount()
+          group.m_generation, now
         );
-        sspot->m_xmit = now;
-        sspot->m_count += 1;
       }
-      else logf(LVL_DEBUG,
-        "Error [%d:%s] sending HERE_I_AM for SG %d to seed router %s [#%d,%lu].",
-        zret, strerror(errno),
-        group.m_svc.getSvcId(),
-        ip_addr_to_str(sspot->m_addr),
-        group.m_generation, now
-      );
     }
   }
   return zret;

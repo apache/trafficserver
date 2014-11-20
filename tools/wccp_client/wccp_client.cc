@@ -30,39 +30,39 @@
 
 # include <getopt.h>
 
-# include "Wccp.h"
-
 # include <sys/socket.h>
 # include <netinet/in.h>
 # include <arpa/inet.h>
 
 # include <poll.h>
 
-# include <libconfig.h++>
+# include "ink_memory.h"
+# include "Wccp.h"
+# include "WccpUtil.h"
+# include "tsconfig/TsValue.h"
+# include "ink_lockfile.h"
+
+#define WCCP_LOCK       "wccp.pid"
+
+bool do_debug = false;
+bool do_daemon = false;
 
 static char const USAGE_TEXT[] =
   "%s\n"
   "--address IP address to bind.\n"
   "--router Booststrap IP address for routers.\n"
   "--service Path to service group definitions.\n"
+  "--debug Print debugging information.\n"
+  "--daemon Run as daemon.\n"
   "--help Print usage and exit.\n"
   ;
 
-static bool Ready = true;
-
-inline void Error(char const* fmt, ...) {
-  va_list args;
-  va_start(args, fmt);
-  vfprintf(stderr, fmt, args);
-  Ready = false;
-}
-
 void Log(
   std::ostream& out,
-  ats::Errata const& errata,
+  ts::Errata const& errata,
   int indent = 0
 ) {
-  for ( ats::Errata::const_iterator spot = errata.begin(), limit = errata.end();
+  for ( ts::Errata::const_iterator spot = errata.begin(), limit = errata.end();
         spot != limit;
         ++spot
   ) {
@@ -76,21 +76,66 @@ void Log(
   }
 }
 
-void LogToStdErr(ats::Errata const& errata) {
+void LogToStdErr(ts::Errata const& errata) {
   Log(std::cerr, errata);
+}
+
+static void
+PrintErrata(ts::Errata const& err) {
+  size_t n;
+  static size_t const SIZE = 4096;
+  char buff[SIZE];
+  if (err.size()) {
+    ts::Errata::Code code = err.top().getCode();
+    if (do_debug || code >=  wccp::LVL_WARN) {
+      n = err.write(buff, SIZE, 1, 0, 2, "> ");
+      // strip trailing newlines.
+      while (n && (buff[n-1] == '\n' || buff[n-1] == '\r'))
+        buff[--n] = 0;
+      printf("%s\n", buff);
+    }
+  }
+}
+
+static void
+Init_Errata_Logging() {
+  ts::Errata::registerSink(&PrintErrata);
+}
+
+static void
+check_lockfile()
+{
+  char lockfile[256];
+  pid_t holding_pid;
+  int err;
+
+  strcpy(lockfile, "/var/run/");
+  strcat(lockfile, WCCP_LOCK);
+
+  Lockfile server_lockfile(lockfile);
+  err = server_lockfile.Get(&holding_pid);
+
+  if (err != 1) {
+    char *reason = strerror(-err);
+    fprintf(stderr, "WARNING: Can't acquire lockfile '%s'", (const char *)lockfile);
+
+    if ((err == 0) && (holding_pid != -1)) {
+      fprintf(stderr, " (Lock file held by process ID %ld)\n", (long)holding_pid);
+    } else if ((err == 0) && (holding_pid == -1)) {
+      fprintf(stderr, " (Lock file exists, but can't read process ID)\n");
+    } else if (reason) {
+      fprintf(stderr, " (%s)\n", reason);
+    } else {
+      fprintf(stderr, "\n");
+    }
+    _exit(1);
+  }
 }
 
 int
 main(int argc, char** argv) {
-  Wccp::Cache wcp;
+  wccp::Cache wcp;
 
-  // Reading stdin support.
-  size_t in_size = 200;
-  char* in_buff = 0;
-  ssize_t in_count;
-
-  // Set up erratum support.
-  ats::Errata::registerSink(&LogToStdErr);
 
   // getopt return values. Selected to avoid collisions with
   // short arguments.
@@ -98,11 +143,15 @@ main(int argc, char** argv) {
   static int const OPT_HELP = 258; ///< Print help message.
   static int const OPT_ROUTER = 259; ///< Seeded router IP address.
   static int const OPT_SERVICE = 260; ///< Service group definition.
+  static int const OPT_DEBUG = 261; ///< Enable debug printing
+  static int const OPT_DAEMON = 262; ///< Disconnect and run as daemon
 
   static option OPTIONS[] = {
     { "address", 1, 0, OPT_ADDRESS },
     { "router", 1, 0, OPT_ROUTER },
     { "service", 1, 0, OPT_SERVICE },
+    { "debug", 0, 0, OPT_DEBUG },
+    { "daemon", 0, 0, OPT_DAEMON },
     { "help", 0, 0, OPT_HELP },
     { 0, 0, 0, 0 } // required terminator.
   };
@@ -137,9 +186,16 @@ main(int argc, char** argv) {
         fail = true;
       }
       break;
-    case OPT_SERVICE:
-      ats::Errata status = wcp.loadServicesFromFile(optarg);
+    case OPT_SERVICE: {
+      ts::Errata status = wcp.loadServicesFromFile(optarg);
       if (!status) fail = true;
+      break;
+    }
+    case OPT_DEBUG: 
+      do_debug = true;
+      break;
+    case OPT_DAEMON: 
+      do_daemon = true;
       break;
     }
   }
@@ -148,45 +204,49 @@ main(int argc, char** argv) {
     printf(USAGE_TEXT, FAIL_MSG);
     return 1;
   }
-
+ 
   if (0 > wcp.open(ip_addr.s_addr)) {
     fprintf(stderr, "Failed to open or bind socket.\n");
     return 2;
   }
 
-  static int const POLL_FD_COUNT = 2;
+  if (do_daemon) {
+    pid_t pid = fork();
+    if (pid > 0) {
+      // Successful, the parent should go away
+      _exit(0);
+    }
+  }
+
+  check_lockfile();
+
+  // Set up erratum support.
+  //ts::Errata::registerSink(&LogToStdErr);
+  Init_Errata_Logging();
+
+  static int const POLL_FD_COUNT = 1;
   pollfd pfa[POLL_FD_COUNT];
 
-  // Poll on STDIN and the socket.
-  pfa[0].fd = STDIN_FILENO;
+  // Poll on the socket.
+  pfa[0].fd = wcp.getSocket();
   pfa[0].events = POLLIN;
-
-  pfa[1].fd = wcp.getSocket();
-  pfa[1].events = POLLIN;
 
   wcp.housekeeping();
 
   while (true) {
-    time_t dt = std::min(Wccp::TIME_UNIT, wcp.waitTime());
-    printf("Waiting %lu milliseconds\n", dt * 1000);
-    int n = poll(pfa, POLL_FD_COUNT, dt * 1000);
+    //time_t dt = std::min(wccp::TIME_UNIT, wcp.waitTime());
+    //printf("Waiting %lu milliseconds\n", dt * 1000);
+    int n = poll(pfa, POLL_FD_COUNT,  1000);
     if (n < 0) { // error
       perror("General polling failure");
       return 5;
     } else if (n > 0) { // things of interest happened
-      if (pfa[1].revents) {
-        if (pfa[1].revents & POLLIN) {
+      if (pfa[0].revents) {
+        if (pfa[0].revents & POLLIN) {
           wcp.handleMessage();
         } else {
           fprintf(stderr, "Socket failure.\n");
           return 6;
-        }
-      }
-      if (pfa[0].revents) {
-        if (pfa[0].revents & POLLIN) {
-          in_count = getline(&in_buff, &in_size, stdin);
-          fprintf(stderr, "Terminated from console.\n");
-          return 0;
         }
       }
     } else { // timeout

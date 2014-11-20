@@ -27,6 +27,7 @@
 # include <tsconfig/Errata.h>
 # include <memory.h>
 # include <ink_defs.h>
+# include <ink_memory.h>
 // Nasty, defining this with no prefix. The value is still available
 // in TS_VERSION_STRING.
 # undef VERSION
@@ -421,7 +422,6 @@ inline ServiceGroup::Type
 ServiceGroup::getSvcType() const {
   return static_cast<ServiceGroup::Type>(m_svc_type);
 }
-
 inline uint8_t
 ServiceGroup::getSvcId() const {
   return m_svc_id;

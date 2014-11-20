@@ -2463,10 +2463,12 @@ namespace detail {
       /// Cache assignment methods supported.
       ServiceGroup::CacheAssignmentStyle m_cache_assign;
 
+
       /// Known caches.
       CacheBag m_caches;
       /// Known routers.
       RouterBag m_routers;
+      char *m_proc_name;
 
       /// Set if there an assignment should be computed and sent.
       /// This is before checking for being a designated cache
@@ -2477,6 +2479,9 @@ namespace detail {
       std::vector<SeedRouter> m_seed_routers;
 
       GroupData(); ///< Default constructor.
+
+      void setProcName(const ts::ConstBuffer &name);
+      const char *getProcName();
 
       /// Find a router by IP @a addr.
       /// @return A pointer to the router, or @c NULL if not found.
@@ -2518,6 +2523,10 @@ namespace detail {
         time_t now ///< Current time.
       );
 
+      /** Check to see if the process associated with service is up
+      */
+      bool processUp();
+
       /// Update state to reflect a view change.
       self& viewChanged(time_t now);
 
@@ -2530,6 +2539,14 @@ namespace detail {
         SecurityOption style ///< Security style to use.
       );
     };
+    inline const char *
+    GroupData::getProcName() {
+      return m_proc_name;
+    }
+    inline void
+    GroupData::setProcName(const ts::ConstBuffer &name) {
+      m_proc_name = ats_strndup(name.data(), name.size());
+    }
   }
 }
 

@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.0
 
+  *) [TS-3219] Create WCCP client process.
+
   *) [TS-3272] Fix to ensure that SSL_SNI callback only called when state
    changes.
 

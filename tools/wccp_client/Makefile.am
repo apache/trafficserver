@@ -1,5 +1,5 @@
 #
-# Makefile.am for WCCP module.
+# Makefile.am for WCCP client
 #
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -25,20 +25,9 @@ AM_CPPFLAGS = \
 #WCCP_DEFS = @WCCP_DEFS@
 #DEFS += $(WCCP_DEFS)
 
-noinst_LIBRARIES = libwccp.a
-# noinst_PROGRAMS = test-cache 
+noinst_PROGRAMS = test-cache 
 
-libwccp_a_SOURCES = \
-  Wccp.h \
-  WccpConfig.cc \
-  WccpEndPoint.cc \
-  WccpLocal.h \
-  WccpMeta.h \
-  WccpMsg.cc \
-  WccpStatic.cc \
-  WccpUtil.h
+test_cache_SOURCES = \
+  wccp-test-cache.cc
 
-# test_cache_SOURCES = \
-#   wccp-test-cache.cc
-
-# test_cache_LDADD = $(LDADD) -L$(top_builddir)/lib/tsconfig -ltsconfig -L$(top_builddir)/lib/wccp -lwccp -L$(top_builddir)/lib/ts -ltsutil
+test_cache_LDADD = $(LDADD) -L$(top_builddir)/lib/tsconfig -ltsconfig -L$(top_builddir)/lib/wccp -lwccp -L$(top_builddir)/lib/ts -ltsutil
