@@ -2489,8 +2489,8 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
   bool line_is_real;
   const char *colon;
   const char *line_c;
-  const char *line_s;
-  const char *line_e;
+  const char *line_s = NULL;
+  const char *line_e = NULL;
   const char *field_name_first;
   const char *field_name_last;
   const char *field_value_first;
