@@ -6577,7 +6577,11 @@ HttpSM::kill_this()
     transform_cache_sm.end_both();
     vc_table.cleanup_all();
 
-    tunnel.deallocate_buffers();
+    // tunnel.deallocate_buffers();
+    // Why don't we just kill the tunnel?  Might still be
+    // active if the state machine is going down hard,
+    // and we should clean it up.
+    tunnel.kill_tunnel();
 
     // It possible that a plugin added transform hook
     //   but the hook never executed due to a client abort
