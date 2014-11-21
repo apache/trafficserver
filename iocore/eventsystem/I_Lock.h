@@ -471,42 +471,38 @@ class MutexTryLock
 {
 private:
   Ptr<ProxyMutex> m;
-  volatile bool lock_acquired;
+  bool lock_acquired;
 
 public:
   MutexTryLock(
 #ifdef DEBUG
                   const char *afile, int aline, const char *ahandler,
 #endif                          //DEBUG
-                  ProxyMutex * am, EThread * t)
+                  ProxyMutex * am, EThread * t) : m(am)
   {
       lock_acquired = Mutex_trylock(
 #ifdef DEBUG
                                      afile, aline, ahandler,
 #endif //DEBUG
-                                     am, t);
-      if (lock_acquired)
-        m = am;
+                                     m, t);
   }
 
   MutexTryLock(
 #ifdef DEBUG
                 const char *afile, int aline, const char *ahandler,
 #endif                          //DEBUG
-                ProxyMutex * am, EThread * t, int sp)
+                ProxyMutex * am, EThread * t, int sp) : m(am)
   {
       lock_acquired = Mutex_trylock_spin(
 #ifdef DEBUG
                                           afile, aline, ahandler,
 #endif //DEBUG
-                                          am, t, sp);
-      if (lock_acquired)
-        m = am;
+                                          m, t, sp);
   }
 
   ~MutexTryLock()
   {
-    if (m.m_ptr)
+    if (lock_acquired)
       Mutex_unlock(m.m_ptr, m.m_ptr->thread_holding);
   }
 
@@ -520,10 +516,9 @@ public:
 
   void release()
   {
-    ink_assert(m.m_ptr);
-    if (m.m_ptr) {
+    ink_assert(lock_acquired); // generate a warning because it shouldn't be done.
+    if (lock_acquired) {
       Mutex_unlock(m.m_ptr, m.m_ptr->thread_holding);
-      m.clear();
     }
     lock_acquired = false;
   }
