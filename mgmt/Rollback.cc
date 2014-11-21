@@ -66,7 +66,7 @@ Rollback::Rollback(const char *baseFileName, bool root_access_needed_)
 
   // Copy the file name
   fileNameLen = strlen(baseFileName);
-  fileName = new char[fileNameLen + 1];
+  fileName = (char*)ats_malloc(fileNameLen + 1);
   ink_strlcpy(fileName, baseFileName, fileNameLen + 1);
 
   // TODO: Use the runtime directory for storing mutable data
@@ -125,8 +125,8 @@ Rollback::Rollback(const char *baseFileName, bool root_access_needed_)
           //  remove it from the backup verision q
           versionQ.remove(versionQ.tail);
         }
-        delete[]highestSeenStr;
-        delete[]activeVerStr;
+        ats_free(highestSeenStr);
+        ats_free(activeVerStr);
       } else {
         needZeroLength = true;
       }
@@ -210,7 +210,7 @@ Rollback::Rollback(const char *baseFileName, bool root_access_needed_)
 
 Rollback::~Rollback()
 {
-  delete[]fileName;
+  ats_free(fileName);
 }
 
 
@@ -498,9 +498,10 @@ UPDATE_CLEANUP:
     unlink(nextVersion);
   }
 
-  delete[]currentVersion_local;
-  delete[]activeVersion;
-  delete[]nextVersion;
+  ats_free(currentVersion_local);
+  ats_free(activeVersion);
+  ats_free(nextVersion);
+
   return returnCode;
 }
 
@@ -798,7 +799,6 @@ Rollback::removeVersion(version_t version)
 RollBackCodes
 Rollback::removeVersion_ml(version_t version)
 {
-
   struct stat statInfo;
   char *versionPath;
   versionInfo *removeInfo = NULL;
@@ -811,7 +811,7 @@ Rollback::removeVersion_ml(version_t version)
 
   versionPath = createPathStr(version);
   if (unlink(versionPath) < 0) {
-    delete[]versionPath;
+    ats_free(versionPath);
     mgmt_log(stderr, "[Rollback::removeVersion] Unlink failed on %s version %d: %s\n",
              fileName, version, strerror(errno));
     return SYS_CALL_ERROR_ROLLBACK;
@@ -835,7 +835,7 @@ Rollback::removeVersion_ml(version_t version)
 
   numVersions--;
 
-  delete[]versionPath;
+  ats_free(versionPath);
   return OK_ROLLBACK;
 }
 

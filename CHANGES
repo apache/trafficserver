@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.2.0
 
+  *) [TS-3205] ASAN complaints on config reload freeing malloc'ed memory with
+   delete[].
+
   *) [TS-3074] Fix FreeBSD regression.
 
   *) [TS-3191] Reduce confusion with HTTP_TUNNEL_STATIC_PRODUCER.
