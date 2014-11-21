@@ -728,8 +728,7 @@ HttpTunnel::tunnel_run(HttpTunnelProducer * p_arg)
 
     for (int i = 0 ; i < MAX_PRODUCERS ; ++i) {
       p = producers + i;
-      if (p->vc != NULL &&
-          (p->alive || (p->vc_type == HT_STATIC && p->buffer_start != NULL))) {
+      if (p->vc != NULL && (p->alive || (p->vc_type == HT_STATIC && p->buffer_start != NULL))) {
         producer_run(p);
       }
     }
