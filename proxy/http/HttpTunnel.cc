@@ -1228,6 +1228,7 @@ HttpTunnel::consumer_reenable(HttpTunnelConsumer* c)
 {
   HttpTunnelProducer* p = c->producer;
   HttpTunnelProducer* srcp = p->flow_control_source;
+
   if (p->alive
 #ifndef LAZY_BUF_ALLOC
       && p->read_buffer->write_avail() > 0
@@ -1238,8 +1239,7 @@ HttpTunnel::consumer_reenable(HttpTunnelConsumer* c)
     // the backlog short cuts quit when the value is equal (or
     // greater) to the target, we use strict comparison only for
     // checking low water, otherwise the flow control can stall out.
-    uint64_t backlog = (flow_state.enabled_p && p->is_source())
-      ? p->backlog(flow_state.high_water) : 0;
+    uint64_t backlog = (flow_state.enabled_p && p->is_source()) ? p->backlog(flow_state.high_water) : 0;
 
     if (backlog >= flow_state.high_water) {
       if (is_debug_tag_set("http_tunnel"))
