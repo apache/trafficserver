@@ -82,6 +82,7 @@ public:
   virtual int marshal_proxy_resp_header_len(char *);    // INT
   virtual int marshal_proxy_finish_status_code(char *); // INT
   virtual int marshal_cache_result_code(char *);        // INT
+  virtual int marshal_cache_hit_miss(char *);           // INT
 
   //
   // proxy -> server fields

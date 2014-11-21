@@ -274,6 +274,19 @@ LogAccessTest::marshal_cache_result_code(char *buf)
   -------------------------------------------------------------------------*/
 
 int
+LogAccessTest::marshal_cache_miss_hit(char *buf)
+{
+  if (buf) {
+    int64_t val = 10;
+    marshal_int(buf, val);
+  }
+  return sizeof(int64_t);
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
 LogAccessTest::marshal_proxy_req_header_len(char *buf)
 {
   if (buf) {

@@ -301,6 +301,15 @@ LogAccess::marshal_cache_result_code(char *buf)
   -------------------------------------------------------------------------*/
 
 int
+LogAccess::marshal_cache_hit_miss(char *buf)
+{
+  DEFAULT_INT_FIELD;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
 LogAccess::marshal_proxy_req_header_len(char *buf)
 {
   DEFAULT_INT_FIELD;
@@ -1328,6 +1337,24 @@ LogAccess::unmarshal_cache_code(char **buf, char *dest, int len, Ptr<LogFieldAli
   ink_assert(dest != NULL);
 
   return (LogAccess::unmarshal_with_map(unmarshal_int(buf), dest, len, map, "ERROR_UNKNOWN"));
+}
+
+/*-------------------------------------------------------------------------
+  LogAccess::unmarshal_cache_hit_miss
+
+  Retrieve the int pointed at by the buffer and treat as a SquidHitMissCode.
+  Use this to index into the local string tables and return the string
+  equiv of the enum.  Advance the pointer.
+  -------------------------------------------------------------------------*/
+
+int
+LogAccess::unmarshal_cache_hit_miss(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map)
+{
+  ink_assert(buf != NULL);
+  ink_assert(*buf != NULL);
+  ink_assert(dest != NULL);
+
+  return (LogAccess::unmarshal_with_map(unmarshal_int(buf), dest, len, map, "HIT_MISS_UNKNOWN"));
 }
 
 /*-------------------------------------------------------------------------

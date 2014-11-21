@@ -204,16 +204,17 @@ enum SquidHierarchyCode
 /* squid hit/miss codes */
 enum SquidHitMissCode
 {
-  SQUID_HIT_RESERVED = '0',
-  SQUID_HIT_LEVEL_1 = '1',
-  SQUID_HIT_LEVEL_2 = '2',
-  SQUID_HIT_LEVEL_3 = '3',
-  SQUID_HIT_LEVEL_4 = '4',
-  SQUID_HIT_LEVEL_5 = '5',
-  SQUID_HIT_LEVEL_6 = '6',
-  SQUID_HIT_LEVEL_7 = '7',
-  SQUID_HIT_LEVEL_8 = '8',
-  SQUID_HIT_LEVEl_9 = '9',
+  SQUID_HIT_RESERVED = '0', // Kinda wonky that this is '0', so skipping 'A' for now
+  SQUID_HIT_LEVEL_1 = 'B',
+  SQUID_HIT_LEVEL_2 = 'C',
+  SQUID_HIT_LEVEL_3 = 'D',
+  SQUID_HIT_LEVEL_4 = 'E',
+  SQUID_HIT_LEVEL_5 = 'F',
+  SQUID_HIT_LEVEL_6 = 'G',
+  SQUID_HIT_LEVEL_7 = 'H',
+  SQUID_HIT_LEVEL_8 = 'I',
+  SQUID_HIT_LEVEl_9 = 'J',
+  SQUID_HIT_LEVEL_10 = 'K',
   SQUID_MISS_NONE = '1',
   SQUID_MISS_ICP_AUTH = '2',
   SQUID_MISS_HTTP_NON_CACHE = '3',
@@ -226,7 +227,13 @@ enum SquidHitMissCode
   SQUID_MISS_PRE_EXPIRED = 'a',
   SQUID_MISS_ERROR = 'b',
   SQUID_MISS_CACHE_BYPASS = 'c',
-  SQUID_HIT_MISS_INVALID_ASSIGNED_CODE = 'z'
+  SQUID_HIT_MISS_INVALID_ASSIGNED_CODE = 'z',
+  // These are pre-allocated with special semantics, added here for convenience
+  SQUID_HIT_RAM = SQUID_HIT_LEVEL_1,
+  SQUID_HIT_SSD = SQUID_HIT_LEVEL_2,
+  SQUID_HIT_DISK = SQUID_HIT_LEVEL_3,
+  SQUID_HIT_CLUSTER = SQUID_HIT_LEVEL_4,
+  SQUID_HIT_NET = SQUID_HIT_LEVEL_5
 };
 
 

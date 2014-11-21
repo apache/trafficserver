@@ -646,7 +646,7 @@ public:
     int open_write_retries;
     CacheWriteLock_t write_lock_state;
     int lookup_count;
-    bool is_ram_cache_hit;
+    SquidHitMissCode hit_miss_code;
 
     _CacheLookupInfo()
       : action(CACHE_DO_UNDEFINED),
@@ -664,9 +664,9 @@ public:
         directives(),
         open_read_retries(0),
         open_write_retries(0),
-      write_lock_state(CACHE_WL_INIT),
-      lookup_count(0),
-      is_ram_cache_hit(false)
+        write_lock_state(CACHE_WL_INIT),
+        lookup_count(0),
+        hit_miss_code(SQUID_MISS_NONE)
     { }
   } CacheLookupInfo;
 

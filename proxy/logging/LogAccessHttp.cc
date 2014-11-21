@@ -724,6 +724,19 @@ LogAccessHttp::marshal_cache_result_code(char *buf)
   -------------------------------------------------------------------------*/
 
 int
+LogAccessHttp::marshal_cache_hit_miss(char *buf)
+{
+  if (buf) {
+    SquidHitMissCode code = m_http_sm->t_state.squid_codes.hit_miss_code;
+    marshal_int(buf, (int64_t) code);
+  }
+  return INK_MIN_ALIGN;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
 LogAccessHttp::marshal_proxy_req_header_len(char *buf)
 {
   if (buf) {

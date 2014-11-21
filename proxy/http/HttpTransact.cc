@@ -2696,7 +2696,8 @@ HttpTransact::HandleCacheOpenReadHit(State* s)
   DebugTxn("http_trans", "CacheOpenRead --- HIT-FRESH");
   DebugTxn("http_seq", "[HttpTransact::HandleCacheOpenReadHit] " "Serve from cache");
 
-  if (s->cache_info.is_ram_cache_hit) {
+  // ToDo: Should support other levels of cache hits here, but the cache does not support it (yet)
+  if (SQUID_HIT_RAM == s->cache_info.hit_miss_code) {
     SET_VIA_STRING(VIA_CACHE_RESULT, VIA_IN_RAM_CACHE_FRESH);
   } else {
     SET_VIA_STRING(VIA_CACHE_RESULT, VIA_IN_CACHE_FRESH);
@@ -6933,7 +6934,8 @@ bool
 HttpTransact::delete_all_document_alternates_and_return(State* s, bool cache_hit)
 {
   if (cache_hit == true) {
-    if (s->cache_info.is_ram_cache_hit) {
+    // ToDo: Should support other levels of cache hits here, but the cache does not support it (yet)
+    if (SQUID_HIT_RAM == s->cache_info.hit_miss_code) {
       SET_VIA_STRING(VIA_CACHE_RESULT, VIA_IN_RAM_CACHE_FRESH);
     } else {
       SET_VIA_STRING(VIA_CACHE_RESULT, VIA_IN_CACHE_FRESH);

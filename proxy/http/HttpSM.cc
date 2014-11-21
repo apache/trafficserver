@@ -2446,7 +2446,12 @@ HttpSM::state_cache_open_write(int event, void *data)
     // The write vector was locked and the cache_sm retried
     // and got the read vector again.
     cache_sm.cache_read_vc->get_http_info(&t_state.cache_info.object_read);
-    t_state.cache_info.is_ram_cache_hit = (cache_sm.cache_read_vc)->is_ram_cache_hit();
+    // ToDo: Should support other levels of cache hits here, but the cache does not support it (yet)
+    if (cache_sm.cache_read_vc->is_ram_cache_hit()) {
+      t_state.cache_info.hit_miss_code = SQUID_HIT_RAM;
+    } else {
+      t_state.cache_info.hit_miss_code = SQUID_HIT_DISK;
+    }
 
     ink_assert(t_state.cache_info.object_read != 0);
     t_state.source = HttpTransact::SOURCE_CACHE;
@@ -2530,7 +2535,12 @@ HttpSM::state_cache_open_read(int event, void *data)
       t_state.source = HttpTransact::SOURCE_CACHE;
 
       cache_sm.cache_read_vc->get_http_info(&t_state.cache_info.object_read);
-      t_state.cache_info.is_ram_cache_hit = (cache_sm.cache_read_vc)->is_ram_cache_hit();
+      // ToDo: Should support other levels of cache hits here, but the cache does not support it (yet)
+      if (cache_sm.cache_read_vc->is_ram_cache_hit()) {
+        t_state.cache_info.hit_miss_code = SQUID_HIT_RAM;
+      } else {
+        t_state.cache_info.hit_miss_code = SQUID_HIT_DISK;
+      }
 
       ink_assert(t_state.cache_info.object_read != 0);
       call_transact_and_set_next_state(HttpTransact::HandleCacheOpenRead);

@@ -197,6 +197,7 @@ public:
   inkcoreapi virtual int marshal_proxy_finish_status_code(char *);      // INT
   inkcoreapi virtual int marshal_cache_result_code(char *);     // INT
   inkcoreapi virtual int marshal_proxy_host_port(char *); // INT
+  inkcoreapi virtual int marshal_cache_hit_miss(char *);     // INT
 
   //
   // proxy -> server fields
@@ -300,6 +301,7 @@ public:
   static int unmarshal_hierarchy(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map);
   static int unmarshal_finish_status(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map);
   static int unmarshal_cache_code(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map);
+  static int unmarshal_cache_hit_miss(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map);
   static int unmarshal_entry_type(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map);
   static int unmarshal_cache_write_code(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map);
   static int unmarshal_client_protocol_stack(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map);

@@ -512,12 +512,15 @@ HttpTransactHeaders::generate_and_set_squid_codes(HTTPHdr *header,
       (via_string[VIA_DETAIL_CACHE_LOOKUP] == VIA_DETAIL_MISS_CONDITIONAL) ||
       (via_string[VIA_DETAIL_CACHE_LOOKUP] == VIA_DETAIL_HIT_SERVED)) {
     // its a cache hit.
-    // INKqa10331
-    hit_miss_code = SQUID_HIT_RESERVED;
+    if (via_string[VIA_CACHE_RESULT] == VIA_IN_RAM_CACHE_FRESH) {
+      hit_miss_code = SQUID_HIT_RAM;
+    } else { // TODO: Support other cache tiers here
+      hit_miss_code = SQUID_HIT_RESERVED;
+    }
   } else {
     int reason_len;
     const char *reason = header->reason_get(&reason_len);
-    // INKqa10331
+
     if (reason != NULL && reason_len >= 24 && reason[0] == '!' && reason[1] == SQUID_HIT_RESERVED)
       hit_miss_code = SQUID_HIT_RESERVED;
     // its a miss in the cache. find out why.
@@ -647,9 +650,8 @@ HttpTransactHeaders::generate_and_set_squid_codes(HTTPHdr *header,
     break;
   }
 
-  Debug("http_trans",
-        "[Squid code generation] Hit/Miss: %d, Log: %d, Hier: %d",
-        hit_miss_code, log_code, hier_code);
+  Debug("http_trans", "[Squid code generation] Hit/Miss: %c, Log: %c, Hier: %c", hit_miss_code, log_code, hier_code);
+
   squid_codes->log_code = log_code;
   squid_codes->hier_code = hier_code;
   squid_codes->hit_miss_code = hit_miss_code;
