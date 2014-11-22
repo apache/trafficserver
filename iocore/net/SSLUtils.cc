@@ -90,8 +90,9 @@ typedef SSL_METHOD * ink_ssl_method_t;
 // gather user provided settings from ssl_multicert.config in to a single struct
 struct ssl_user_config
 {
-  ssl_user_config () : session_ticket_enabled(1), opt(SSLCertContext::OPT_NONE) {
-  }
+  ssl_user_config ()
+    : session_ticket_enabled(1), opt(SSLCertContext::OPT_NONE)
+  { }
 
   int session_ticket_enabled;  // ssl_ticket_enabled - session ticket enabled
   ats_scoped_str addr;   // dest_ip - IPv[64] address to match
@@ -182,10 +183,12 @@ SSL_CTX_add_extra_chain_cert_file(SSL_CTX * ctx, const char * chainfile)
 }
 
 
-static SSL_SESSION* ssl_get_cached_session(SSL *ssl, unsigned char *id, int len, int *copy) {
-  *copy = 0;
-
+static SSL_SESSION*
+ssl_get_cached_session(SSL *ssl, unsigned char *id, int len, int *copy)
+{
   SSLSessionID sid(id, len);
+
+  *copy = 0;
   if (diags->tag_activated("ssl.session_cache")) {
     char printable_buf[(len * 2) + 1];
     sid.toString(printable_buf, sizeof(printable_buf));
@@ -193,21 +196,24 @@ static SSL_SESSION* ssl_get_cached_session(SSL *ssl, unsigned char *id, int len,
   }
 
   SSL_SESSION *session = NULL;
-  if(session_cache->getSession(sid, &session)) {
+
+  if (session_cache->getSession(sid, &session)) {
     return session;
   }
-  else
-    return NULL;
 
+  return NULL;
 }
 
-static int ssl_new_cached_session(SSL *ssl, SSL_SESSION *sess) {
+static int
+ssl_new_cached_session(SSL *ssl, SSL_SESSION *sess)
+{
   unsigned int len = 0;
   const unsigned char *id = SSL_SESSION_get_id(sess, &len);
-
   SSLSessionID sid(id, len);
+
   if (diags->tag_activated("ssl.session_cache")) {
     char printable_buf[(len * 2) + 1];
+
     sid.toString(printable_buf, sizeof(printable_buf));
     Debug("ssl.session_cache.insert", "ssl_new_cached_session session '%s' and context %p", printable_buf, SSL_get_SSL_CTX(ssl));
   }
@@ -218,13 +224,15 @@ static int ssl_new_cached_session(SSL *ssl, SSL_SESSION *sess) {
   return 0;
 }
 
-static void ssl_rm_cached_session(SSL_CTX *ctx, SSL_SESSION *sess) {
+static void
+ssl_rm_cached_session(SSL_CTX *ctx, SSL_SESSION *sess)
+{
   SSL_CTX_remove_session(ctx, sess);
 
   unsigned int len = 0;
   const unsigned char *id = SSL_SESSION_get_id(sess, &len);
-
   SSLSessionID sid(id, len);
+
   if (diags->tag_activated("ssl.session_cache")) {
     char printable_buf[(len * 2) + 1];
     sid.toString(printable_buf, sizeof(printable_buf));
@@ -512,13 +520,14 @@ fail:
 
 struct passphrase_cb_userdata
 {
-    const SSLConfigParams * _configParams;
-    const char * _serverDialog;
-    const char * _serverCert;
-    const char * _serverKey;
+  const SSLConfigParams * _configParams;
+  const char * _serverDialog;
+  const char * _serverCert;
+  const char * _serverKey;
 
-    passphrase_cb_userdata(const SSLConfigParams *params,const char *dialog, const char *cert, const char *key) :
-            _configParams(params), _serverDialog(dialog), _serverCert(cert), _serverKey(key) {}
+  passphrase_cb_userdata(const SSLConfigParams *params,const char *dialog, const char *cert, const char *key)
+    : _configParams(params), _serverDialog(dialog), _serverCert(cert), _serverKey(key)
+  {}
 };
 
 // RAII implementation for struct termios
@@ -540,9 +549,7 @@ struct ssl_termios : public  termios
     }
   }
 
-  bool ok() {
-    return (_fd != -1);
-  }
+  bool ok() const { return (_fd != -1); }
 
 private:
   int _fd;
@@ -571,6 +578,7 @@ ssl_getpassword(const char* prompt, char* buffer, int size)
 
   int i = 0;
   int ch = 0;
+
   *buffer = 0;
   while ((ch = getchar()) != '\n' && ch != EOF) {
     // make sure room in buffer
@@ -663,7 +671,7 @@ ssl_private_key_validate_exec(const char *cmdLine)
   char *cmdLineCopy = ats_strdup(cmdLine);
   char *ptr = cmdLineCopy;
 
-  while(*ptr && !isspace(*ptr)) ++ptr;
+  while (*ptr && !isspace(*ptr)) ++ptr;
   *ptr = 0;
   if (access(cmdLineCopy, X_OK) != -1) {
     bReturn = true;
@@ -1153,9 +1161,7 @@ SSLPrivateKeyHandler(
 }
 
 SSL_CTX *
-SSLInitServerContext(
-    const SSLConfigParams * params,
-    const ssl_user_config & sslMultCertSettings)
+SSLInitServerContext(const SSLConfigParams * params, const ssl_user_config & sslMultCertSettings)
 {
   int         server_verify_client;
   ats_scoped_str  completeServerCertPath;
@@ -1667,10 +1673,7 @@ ssl_store_ssl_context(
 }
 
 static bool
-ssl_extract_certificate(
-    const matcher_line * line_info,
-    ssl_user_config & sslMultCertSettings)
-
+ssl_extract_certificate(const matcher_line * line_info, ssl_user_config & sslMultCertSettings)
 {
   for (int i = 0; i < MATCHER_MAX_TOKENS; ++i) {
     const char * label;
@@ -1735,9 +1738,7 @@ ssl_extract_certificate(
 }
 
 bool
-SSLParseCertificateConfiguration(
-    const SSLConfigParams * params,
-    SSLCertLookup *         lookup)
+SSLParseCertificateConfiguration(const SSLConfigParams * params, SSLCertLookup * lookup)
 {
   char *      tok_state = NULL;
   char *      line = NULL;
@@ -1831,13 +1832,8 @@ session_ticket_free(void * /*parent*/, void * ptr, CRYPTO_EX_DATA * /*ad*/,
  * a mechanism to present the ticket back to the server.
  * */
 static int
-ssl_callback_session_ticket(
-    SSL * ssl,
-    unsigned char * keyname,
-    unsigned char * iv,
-    EVP_CIPHER_CTX * cipher_ctx,
-    HMAC_CTX * hctx,
-    int enc)
+ssl_callback_session_ticket(SSL * ssl, unsigned char * keyname, unsigned char * iv, EVP_CIPHER_CTX * cipher_ctx,
+                            HMAC_CTX * hctx, int enc)
 {
   ssl_ticket_key_t* ssl_ticket_key = (ssl_ticket_key_t*) SSL_CTX_get_ex_data(SSL_get_SSL_CTX(ssl), ssl_session_ticket_index);
 
