@@ -81,16 +81,18 @@ struct InterceptPlugin::State {
   void *saved_edata_;
 
   TSAction timeout_action_;
+  bool plugin_io_done_;
 
   State(TSCont cont, InterceptPlugin *plugin)
     : cont_(cont), net_vc_(NULL), expected_body_size_(0), num_body_bytes_read_(0), hdr_parsed_(false),
-      hdr_buf_(NULL), hdr_loc_(NULL), num_bytes_written_(0), plugin_(plugin), timeout_action_(NULL) {
+      hdr_buf_(NULL), hdr_loc_(NULL), num_bytes_written_(0), plugin_(plugin), timeout_action_(NULL),
+      plugin_io_done_(false) {
     plugin_mutex_ = plugin->getMutex();
     http_parser_ = TSHttpParserCreate();
   }
-
+  
   ~State() {
-    TSHttpParserDestroy(http_parser_);
+    TSHttpParserDestroy(http_parser_); 
     if (hdr_loc_) {
       TSHandleMLocRelease(hdr_buf_, TS_NULL_MLOC, hdr_loc_);
     }
@@ -127,7 +129,7 @@ InterceptPlugin::~InterceptPlugin() {
     state_->plugin_ = NULL; // prevent callback from invoking plugin
   }
   else { // safe to cleanup
-    LOG_DEBUG("Normal shutdown");
+    LOG_DEBUG("Normal cleanup");
     delete state_;
   }
 }
@@ -166,6 +168,7 @@ bool InterceptPlugin::setOutputComplete() {
   }
   TSVIONBytesSet(state_->output_.vio_, state_->num_bytes_written_);
   TSVIOReenable(state_->output_.vio_);
+  state_->plugin_io_done_ = true;
   LOG_DEBUG("Response complete");
   return true;
 }
@@ -180,7 +183,7 @@ bool InterceptPlugin::doRead() {
     LOG_ERROR("Error while getting number of bytes available");
     return false;
   }
-
+  
   int consumed = 0; // consumed is used to update the input buffers
   if (avail > 0) {
     int64_t num_body_bytes_in_block;
@@ -233,7 +236,7 @@ bool InterceptPlugin::doRead() {
   }
   LOG_DEBUG("Consumed %d bytes from input vio", consumed);
   TSIOBufferReaderConsume(state_->input_.reader_, consumed);
-
+  
   // Modify the input VIO to reflect how much data we've completed.
   TSVIONDoneSet(state_->input_.vio_, TSVIONDoneGet(state_->input_.vio_) + consumed);
 
@@ -274,11 +277,11 @@ void InterceptPlugin::handleEvent(int abstract_event, void *edata) {
     break;
 
   case TS_EVENT_VCONN_WRITE_READY: // nothing to do
-    LOG_DEBUG("Got write ready");
+    LOG_DEBUG("Got write ready"); 
     break;
 
   case TS_EVENT_VCONN_READ_READY:
-    LOG_DEBUG("Handling read ready");
+    LOG_DEBUG("Handling read ready");  
     if (doRead()) {
       break;
     }
@@ -297,7 +300,6 @@ void InterceptPlugin::handleEvent(int abstract_event, void *edata) {
     }
     LOG_DEBUG("Shutting down intercept");
     destroyCont(state_);
-    state_->cont_ = NULL;
     break;
 
   default:
@@ -307,7 +309,12 @@ void InterceptPlugin::handleEvent(int abstract_event, void *edata) {
 
 namespace {
 
-int handleEvents(TSCont cont, TSEvent event, void *edata) {
+int handleEvents(TSCont cont, TSEvent pristine_event, void *pristine_edata) {
+
+  // Separating pristine and mutable data helps debugging
+  TSEvent event = pristine_event;
+  void *edata = pristine_edata;
+
   InterceptPlugin::State *state = static_cast<InterceptPlugin::State *>(TSContDataGet(cont));
   ScopedSharedMutexTryLock scopedTryLock(state->plugin_mutex_);
   if (!scopedTryLock.hasLock()) {
@@ -319,10 +326,16 @@ int handleEvents(TSCont cont, TSEvent event, void *edata) {
     state->timeout_action_ = TSContSchedule(cont, 1, TS_THREAD_POOL_DEFAULT);
     return 0;
   }
-  if (event == TS_EVENT_TIMEOUT) {
+  if (event == TS_EVENT_TIMEOUT) { // we have a saved event to restore
     state->timeout_action_ = NULL;
-    event = state->saved_event_; // restore saved event
-    edata = state->saved_edata_;
+    if (state->plugin_io_done_) { // plugin is done, so can't send it saved event
+      event = TS_EVENT_VCONN_EOS; // fake completion
+      edata = NULL;
+    }
+    else {
+      event = state->saved_event_;
+      edata = state->saved_edata_;
+    }
   }
   if (state->plugin_) {
     utils::internal::dispatchInterceptEvent(state->plugin_, event, edata);
@@ -343,7 +356,10 @@ void destroyCont(InterceptPlugin::State *state) {
     TSVConnClose(state->net_vc_);
     state->net_vc_ = NULL;
   }
-  TSContDestroy(state->cont_);
+  if (!state->timeout_action_) {
+    TSContDestroy(state->cont_);
+    state->cont_ = NULL;
+  }
 }
 
 }
