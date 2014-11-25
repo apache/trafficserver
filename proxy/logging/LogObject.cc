@@ -476,7 +476,6 @@ LogObject::_checkout_write(size_t * write_offset, size_t bytes_needed) {
       // transaction cannot be logged
       //
       retry = false;
-      buffer = NULL;
       break;
 
     default:
@@ -503,7 +502,9 @@ LogObject::_checkout_write(size_t * write_offset, size_t bytes_needed) {
   // not retry because we really do
   // not want to write to the buffer
   // only to set it as full
-
+  if (result_code == LogBuffer::LB_BUFFER_TOO_SMALL) {
+    buffer = NULL;
+  }
   return buffer;
 }
 
