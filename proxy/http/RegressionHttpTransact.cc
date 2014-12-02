@@ -99,7 +99,8 @@ REGRESSION_TEST(HttpTransact_is_request_valid)(RegressionTest *t, int /* level *
     setup_client_request(&sm, requests[i].scheme, requests[i].req);
 
     if (requests[i].result != transaction.is_request_valid(&sm.t_state, &sm.t_state.hdr_info.client_request)) {
-      rprintf(t, "HttpTransact::is_request_valid - failed for request = '%s'.  Expected result was %s request\n", requests[i].req,(requests[i].result ? "valid" :"invalid") );
+      rprintf(t, "HttpTransact::is_request_valid - failed for request = '%s'.  Expected result was %s request\n",
+              requests[i].req,(requests[i].result ? "valid" :"invalid") );
       *pstatus = REGRESSION_TEST_FAILED;
     }
   }
@@ -125,11 +126,14 @@ REGRESSION_TEST(HttpTransact_handle_trace_and_options_requests)(RegressionTest *
     setup_client_request(&sm, requests[i].scheme, requests[i].req);
 
     if (requests[i].result != transaction.is_request_valid(&sm.t_state, &sm.t_state.hdr_info.client_request)) {
-      rprintf(t, "HttpTransact::is_request_valid - failed for request = '%s'.  Expected result was %s request\n", requests[i].req,(requests[i].result ? "valid" :"invalid") );
+      rprintf(t, "HttpTransact::is_request_valid - failed for request = '%s'.  Expected result was %s request\n",
+              requests[i].req,(requests[i].result ? "valid" :"invalid") );
       *pstatus = REGRESSION_TEST_FAILED;
     }
-    if (requests[i].result != transaction.handle_trace_and_options_requests(&sm.t_state, &sm.t_state.hdr_info.client_request)) {
-      rprintf(t, "HttpTransact::handle_trace_and_options_requests - failed for request = '%s'.  Expected result was %s request\n", requests[i].req,(requests[i].result ? "true" :"false") );
+    if (requests[i].result != transaction.handle_trace_and_options_requests(&sm.t_state,
+        &sm.t_state.hdr_info.client_request)) {
+      rprintf(t, "HttpTransact::handle_trace_and_options - failed for request = '%s'.  Expected result was %s request\n",
+              requests[i].req,(requests[i].result ? "true" :"false") );
       *pstatus = REGRESSION_TEST_FAILED;
     }
   }
