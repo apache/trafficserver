@@ -561,3 +561,40 @@ Netscape Extended-2 Field Symbols
 ``ss``              ``pfsc``
 ``crc``             ``crc``
 =================== =============
+
+.. _log-field-slicing:
+
+Log Field Slicing
+=================
+
+It is sometimes desirable to slice a log field to limit the length of a given
+log field's output.
+
+Log Field slicing can be specified as below:
+
+``%<field[start:end]>``
+``%<{field}container[start:end]>``
+
+Omitting the slice notation defaults to the entire log field.
+
+Slice notation only applies to a log field that is of type string
+and can not be applied to ip/timestamp which are converted to
+string from integer.
+
+The below slice specifiers are allowed.
+
+``[start:end]``
+          Log field value from start through end-1
+``[start:]``
+          Log field value from start through the rest of the string
+``[:end]``
+          Log field value from the beginning through end-1
+``[:]``
+          Default - entire Log field
+
+For example,
+  '%<cqup>'       //the whole characters of <cqup>.
+  '%<cqup>[:]'    //the whole characters of <cqup>.
+  '%<cqup[0:30]>' //the first 30 characters of <cqup>.
+  '%<cqup[-10:]>' //the last 10 characters of <cqup>.
+  '%<cqup[:-5]>'  //everything except the last 5 characters of <cqup>.
