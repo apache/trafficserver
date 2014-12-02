@@ -52,6 +52,7 @@ setup_client_request(HttpSM * sm, const char * scheme, const char * request)
   int bytes_used = 0;
   sm->t_state.hdr_info.client_request.parse_req(&httpParser, buffer_reader, &bytes_used, true /* eos */);
   sm->t_state.hdr_info.client_request.url_get()->scheme_set(scheme, strlen(scheme));
+  sm->t_state.method = sm->t_state.hdr_info.client_request.method_get_wksidx();
   free_MIOBuffer(read_buffer);
 }
 
@@ -78,6 +79,8 @@ REGRESSION_TEST(HttpTransact_is_request_valid)(RegressionTest *t, int /* level *
     { "http", "GET / HTTP/1.1\r\n\r\n", false},
     // good get request
     { "http", "GET / HTTP/1.1\r\nHost: abc.com\r\n\r\n", true},
+    // good trace request
+    { "http", "TRACE / HTTP/1.1\r\nHost: abc.com\r\n\r\n", true},
     // content len < 0
     { "http", "POST / HTTP/1.1\r\nHost: abc.com\r\nContent-Length: -1\r\n\r\n", false},
     { "http", "PUSH / HTTP/1.1\r\nHost: abc.com\r\nContent-Length: -1\r\n\r\n", false},
@@ -101,3 +104,40 @@ REGRESSION_TEST(HttpTransact_is_request_valid)(RegressionTest *t, int /* level *
     }
   }
 }
+
+REGRESSION_TEST(HttpTransact_handle_trace_and_options_requests)(RegressionTest *t, int /* level */, int *pstatus)
+{
+  HttpTransact transaction;
+  HttpSM sm;
+  *pstatus = REGRESSION_TEST_PASSED;
+
+  struct
+  {
+    const char *scheme;
+    const char *req;
+    bool result;
+  } requests[] = {
+    // good trace request
+    { "http", "TRACE www.abc.com/ HTTP/1.1\r\nHost: abc.com\r\nMax-Forwards: 0\r\n\r\n", true},
+    { NULL, NULL, false}
+  };
+  for (int i = 0; requests[i].req; i++) {
+    setup_client_request(&sm, requests[i].scheme, requests[i].req);
+
+    if (requests[i].result != transaction.is_request_valid(&sm.t_state, &sm.t_state.hdr_info.client_request)) {
+      rprintf(t, "HttpTransact::is_request_valid - failed for request = '%s'.  Expected result was %s request\n", requests[i].req,(requests[i].result ? "valid" :"invalid") );
+      *pstatus = REGRESSION_TEST_FAILED;
+    }
+    if (requests[i].result != transaction.handle_trace_and_options_requests(&sm.t_state, &sm.t_state.hdr_info.client_request)) {
+      rprintf(t, "HttpTransact::handle_trace_and_options_requests - failed for request = '%s'.  Expected result was %s request\n", requests[i].req,(requests[i].result ? "true" :"false") );
+      *pstatus = REGRESSION_TEST_FAILED;
+    }
+  }
+}
+
+REGRESSION_TEST(HttpTransact_handle_request)(RegressionTest * /* t */, int /* level */, int *pstatus)
+{
+  // To be added..
+  *pstatus = REGRESSION_TEST_PASSED;
+}
+
