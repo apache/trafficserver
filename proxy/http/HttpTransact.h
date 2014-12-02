@@ -916,7 +916,6 @@ public:
     char *internal_msg_buffer_type;     // out
     int64_t internal_msg_buffer_size;       // out
     int64_t internal_msg_buffer_fast_allocator_size;
-    int64_t internal_msg_buffer_index;      // out
 
     bool icp_lookup_success;    // in
     struct sockaddr_in icp_ip_result;   // in
@@ -1055,7 +1054,6 @@ public:
         internal_msg_buffer_type(NULL),
         internal_msg_buffer_size(0),
         internal_msg_buffer_fast_allocator_size(-1),
-        internal_msg_buffer_index(0),
         icp_lookup_success(false),
         scheme(-1),
         next_hop_scheme(scheme),

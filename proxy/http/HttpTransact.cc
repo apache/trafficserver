@@ -5395,9 +5395,8 @@ HttpTransact::handle_trace_and_options_requests(State* s, HTTPHdr* incoming_hdr)
       int req_length = incoming_hdr->length_get();
       HTTP_RELEASE_ASSERT(req_length > 0);
 
-      s->internal_msg_buffer_index = 0;
-      s->internal_msg_buffer_size = req_length * 2;
       s->free_internal_msg_buffer();
+      s->internal_msg_buffer_size = req_length * 2;
 
       if (s->internal_msg_buffer_size <= max_iobuffer_size) {
         s->internal_msg_buffer_fast_allocator_size = buffer_size_to_index(s->internal_msg_buffer_size);
@@ -8107,7 +8106,6 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
   s->free_internal_msg_buffer();
   s->internal_msg_buffer = new_msg;
   s->internal_msg_buffer_size = len;
-  s->internal_msg_buffer_index = 0;
   s->internal_msg_buffer_fast_allocator_size = -1;
 
   s->hdr_info.client_response.value_set(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE, body_type, strlen(body_type));
@@ -8190,7 +8188,6 @@ HttpTransact::build_redirect_response(State* s)
   //////////////////////////
   // set descriptive text //
   //////////////////////////
-  s->internal_msg_buffer_index = 0;
   s->free_internal_msg_buffer();
   s->internal_msg_buffer_fast_allocator_size = -1;
   s->internal_msg_buffer = body_factory->fabricate_with_old_api_build_va("redirect#moved_temporarily", s, 8192,
