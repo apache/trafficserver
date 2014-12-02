@@ -1316,9 +1316,7 @@ Cache Control
 .. ts:cv:: CONFIG proxy.config.cache.limits.http.max_alts INT 5
 
    The maximum number of alternates that are allowed for any given URL.
-   Disable by setting to 0. Note that this setting will not strictly enforce
-   this if the variable ``proxy.config.cache.vary_on_user_agent`` is set
-   to 1 (by default it is 0).
+   Disable by setting to 0.
 
 .. ts:cv:: CONFIG proxy.config.cache.target_fragment_size INT 1048576
 

@@ -64,7 +64,6 @@ int cache_config_ram_cache_use_seen_filter = 0;
 int cache_config_http_max_alts = 3;
 int cache_config_dir_sync_frequency = 60;
 int cache_config_permit_pinning = 0;
-int cache_config_vary_on_user_agent = 0;
 int cache_config_select_alternate = 1;
 int cache_config_max_doc_size = 0;
 int cache_config_min_average_object_size = ESTIMATED_OBJECT_SIZE;
@@ -3508,9 +3507,6 @@ ink_cache_init(ModuleVersion v)
 
   REC_EstablishStaticConfigInt32(cache_config_dir_sync_frequency, "proxy.config.cache.dir.sync_frequency");
   Debug("cache_init", "proxy.config.cache.dir.sync_frequency = %d", cache_config_dir_sync_frequency);
-
-  REC_EstablishStaticConfigInt32(cache_config_vary_on_user_agent, "proxy.config.cache.vary_on_user_agent");
-  Debug("cache_init", "proxy.config.cache.vary_on_user_agent = %d", cache_config_vary_on_user_agent);
 
   REC_EstablishStaticConfigInt32(cache_config_select_alternate, "proxy.config.cache.select_alternate");
   Debug("cache_init", "proxy.config.cache.select_alternate = %d", cache_config_select_alternate);

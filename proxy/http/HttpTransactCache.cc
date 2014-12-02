@@ -1238,9 +1238,8 @@ HttpTransactCache::CalcVariability(CacheLookupHttpConfig * http_config_params, H
       }
       ////////////////////////////////////////////////////////////////////////////////////////
       // Special case: if 'proxy.config.http.global_user_agent_header' set                  //
-      // we should ignore Vary: User-Agent even if 'proxy.config.cache.vary_on_user_agent'  //
-      // is 1. Actually the 'proxy.config.cache.vary_on_user_agent' is useless in such case //
-      ///////////////////////////////////////////////////////////////////////////////////////
+      // we should ignore Vary: User-Agent.                                                 //
+      ////////////////////////////////////////////////////////////////////////////////////////
       if (http_config_params->cache_global_user_agent_header &&
           !strcasecmp((char *) field->str, "User-Agent"))
         continue;

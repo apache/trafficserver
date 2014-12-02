@@ -888,8 +888,6 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.cache.permit.pinning", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.cache.vary_on_user_agent", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
   //  # default the ram cache size to AUTO_SIZE (-1)
   //  # alternatively: 20971520 (20MB)
   {RECT_CONFIG, "proxy.config.cache.ram_cache.size", RECD_INT, "-1", RECU_RESTART_TS, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
@@ -912,8 +910,6 @@ static const RecordElement RecordsConfig[] =
   {RECT_CONFIG, "proxy.config.cache.ram_cache_cutoff", RECD_INT, "4194304", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   //  # The maximum number of alternates that are allowed for any given URL.
-  //  # It is not possible to strictly enforce this if the variable
-  //  #   'proxy.config.cache.vary_on_user_agent' is set to 1.
   //  # (0 disables the maximum number of alts check)
   {RECT_CONFIG, "proxy.config.cache.limits.http.max_alts", RECD_INT, "5", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
   ,

@@ -212,7 +212,6 @@ extern int cache_config_dir_sync_frequency;
 extern int cache_config_http_max_alts;
 extern int cache_config_permit_pinning;
 extern int cache_config_select_alternate;
-extern int cache_config_vary_on_user_agent;
 extern int cache_config_max_doc_size;
 extern int cache_config_min_average_object_size;
 extern int cache_config_agg_write_backlog;

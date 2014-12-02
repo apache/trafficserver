@@ -3197,9 +3197,7 @@ msgstr ""
 #: ../../reference/configuration/records.config.en.rst:1199
 msgid ""
 "The maximum number of alternates that are allowed for any given URL. "
-"Disable by setting to 0. Note that this setting will not strictly enforce "
-"this if the variable ``proxy.config.cache.vary_on_user_agent`` is set to 1 "
-"(by default it is 0)."
+"Disable by setting to 0."
 msgstr ""
 
 #: ../../reference/configuration/records.config.en.rst:1206
