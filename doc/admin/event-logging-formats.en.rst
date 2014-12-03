@@ -592,7 +592,8 @@ The below slice specifiers are allowed.
 ``[:]``
           Default - entire Log field
 
-For example,
+Some examples below ::
+
   '%<cqup>'       //the whole characters of <cqup>.
   '%<cqup>[:]'    //the whole characters of <cqup>.
   '%<cqup[0:30]>' //the first 30 characters of <cqup>.
