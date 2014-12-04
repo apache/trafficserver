@@ -4,6 +4,8 @@ Changes with Apache Traffic Server 5.3.0
 
 Changes with Apache Traffic Server 5.2.0
 
+  *) [TS-3211] Add support for modifying the SCHEME via header_rewrite
+
   *) [TS-3130]: Delay setting buffer to NULL to prevent crash in logging 
 
   *) [TS-3207] _xstrdup incorrectly calls ink_strlcpy with 0 length strings.

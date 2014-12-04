@@ -181,6 +181,17 @@ OperatorSetDestination::exec(const Resources& res) const
     // Never set an empty destination value (I don't think that ever makes sense?)
     switch (_url_qual) {
 
+    case URL_QUAL_SCHEME:
+        _value.append_value(value, res);
+        if (value.empty()) {
+          TSDebug(PLUGIN_NAME, "Would set destination SCHEME to an empty value, skipping");
+        } else {
+          const_cast<Resources&>(res).changed_url = true;
+          TSUrlSchemeSet(bufp, url_m_loc, value.c_str(), value.size());
+          TSDebug(PLUGIN_NAME, "OperatorSetDestination::exec() invoked with SCHEME: %s", value.c_str());
+        }
+        break;
+
     case URL_QUAL_HOST:
       _value.append_value(value, res);
       if (value.empty()) {
