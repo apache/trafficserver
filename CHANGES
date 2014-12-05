@@ -1,6 +1,11 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.2.0
 
+
+  *) [TS-3223] Fix the internal buffer sizing.
+
+  *) [TS-3130] Delay setting buffer to NULL to prevent crash in logging 
+
   *) [TS-3207] _xstrdup incorrectly calls ink_strlcpy with 0 length strings.
 
   *) [TS-3205] ASAN complaints on config reload freeing malloc'ed memory with
