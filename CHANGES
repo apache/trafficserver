@@ -1,6 +1,10 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.1.2
 
+  *) [TS-3130] Fix core dump in logging.
+
+  *) [TS-3223] Security issue.
+
 Changes with Apache Traffic Server 5.1.1
 
   *) [TS-2677] Fix potential open relay problem with CONNECT and remap.
