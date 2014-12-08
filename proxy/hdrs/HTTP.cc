@@ -952,7 +952,9 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
       if (version == HTTP_VERSION(0, 9))
         return PARSE_DONE;
 
-      return mime_parser_parse(&parser->m_mime_parser, heap, hh->m_fields_impl, start, end, must_copy_strings, eof);
+      MIMEParseResult ret =  mime_parser_parse(&parser->m_mime_parser, heap, hh->m_fields_impl, start, end, must_copy_strings, eof);
+      if (ret == PARSE_DONE) ret = validate_hdr_host(hh); // if we're done with the main parse, check HOST.
+      return ret;
     }
 #endif
 
@@ -972,6 +974,7 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
       goto start;
 
   parse_method1:
+
     if (ParseRules::is_ws(*cur)) {
       GETNEXT(done);
       goto parse_method1;
@@ -1089,9 +1092,42 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
     parser->m_parsing_http = false;
     if (version == HTTP_VERSION(0, 9))
       return PARSE_DONE;
+
+  	MIMEParseResult ret =  mime_parser_parse(&parser->m_mime_parser, heap, hh->m_fields_impl, start, end, must_copy_strings, eof);
+  	if (ret == PARSE_DONE) ret = validate_hdr_host(hh); // if we're done with the main parse, check HOST.
+  	return ret;
   }
 
   return mime_parser_parse(&parser->m_mime_parser, heap, hh->m_fields_impl, start, end, must_copy_strings, eof);
+}
+
+MIMEParseResult
+validate_hdr_host(HTTPHdrImpl* hh) {
+  MIMEParseResult ret = PARSE_DONE;
+  MIMEField* host_field = mime_hdr_field_find(hh->m_fields_impl, MIME_FIELD_HOST, MIME_LEN_HOST);
+  if (host_field) {
+    if (host_field->has_dups()) {
+      ret = PARSE_ERROR; // can't have more than 1 host field.
+    } else {
+      int host_len = 0;
+      char const* host_val = host_field->value_get(&host_len);
+      ts::ConstBuffer addr, port, rest, host(host_val, host_len);
+      if (0 == ats_ip_parse(host, &addr, &port, &rest)) {
+	if (port) {
+	  if (port.size() > 5) return PARSE_ERROR;
+	  int port_i = ink_atoi(port.data(), port.size());
+          if ( port.size() > 5 || port_i >= 65536 || port_i <= 0) return PARSE_ERROR;
+        } 
+        while (rest && PARSE_DONE == ret) {
+          if (!ParseRules::is_ws(*rest)) return PARSE_ERROR;
+          ++rest;
+        }
+      } else {
+        ret = PARSE_ERROR;
+      }
+    }
+  }
+  return ret;
 }
 
 /*-------------------------------------------------------------------------

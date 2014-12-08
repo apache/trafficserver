@@ -246,7 +246,7 @@ namespace ts {
         This is convenient when tokenizing and @a p points at the token
         separator.
 
-        @note If @a *p is in the buffer then @a this is not changed
+        @note If @a *p is not in the buffer then @a this is not changed
         and an empty buffer is returned. This means the caller can
         simply pass the result of @c find and check for an empty
         buffer returned to detect no more separators.

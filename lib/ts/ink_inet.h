@@ -165,7 +165,8 @@ int
 ats_ip_parse(
              ts::ConstBuffer src, ///< [in] String to search.
              ts::ConstBuffer* addr, ///< [out] Range containing IP address.
-             ts::ConstBuffer* port ///< [out] Range containing port.
+             ts::ConstBuffer* port, ///< [out] Range containing port.
+	     ts::ConstBuffer* rest = 0 ///< [out] Remnant past the addr/port if any.
 );
 
 /**  Check to see if a buffer contains only IP address characters.

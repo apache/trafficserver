@@ -193,17 +193,19 @@ char const* ats_ip_nptop(
 }
 
 int
-ats_ip_parse(ts::ConstBuffer src, ts::ConstBuffer* addr, ts::ConstBuffer* port) {
+ats_ip_parse(ts::ConstBuffer src, ts::ConstBuffer* addr, ts::ConstBuffer* port, ts::ConstBuffer* rest) {
   // In case the incoming arguments are null.
   ts::ConstBuffer localAddr, localPort;
   if (!addr) addr = &localAddr;
   if (!port) port = &localPort;
   addr->reset();
   port->reset();
+  if (rest) rest->reset();
 
   // Let's see if we can find out what's in the address string.
   if (src) {
-    while (src && isspace(*src)) ++src;
+    bool colon_p = false;
+    while (src && ParseRules::is_ws(*src)) ++src;
     // Check for brackets.
     if ('[' == *src) {
       /* Ugly. In a number of places we must use bracket notation
@@ -222,25 +224,31 @@ ats_ip_parse(ts::ConstBuffer src, ts::ConstBuffer* addr, ts::ConstBuffer* port) 
       */
       ++src; // skip bracket.
       *addr = src.splitOn(']');
-      if (*addr && ':' == *src) { // found the closing bracket and port colon
-        ++src; // skip colon.
-        *port = src;
-      } // else it's a fail for unclosed brackets.
+      if (':' == *src) {
+        colon_p = true;
+        ++src;
+      }
     } else {
-      // See if there's exactly 1 colon
-      ts::ConstBuffer tmp = src.after(':');
-      if (tmp && ! tmp.find(':')) { // 1 colon and no others
-        src.clip(tmp.data() - 1); // drop port from address.
-        *port = tmp;
-      } // else 0 or > 1 colon and no brackets means no port.
-      *addr = src;
+      *addr = src.splitOn(':');
+      if (*addr) {
+        colon_p = true;
+      } else { // no colon found, use everything.
+        *addr = src;
+        src.reset();
+      }
     }
-    // clip port down to digits.
-    if (*port) {
-      char const* spot = port->data();
-      while (isdigit(*spot)) ++spot;
-      port->clip(spot);
+    if (colon_p) {
+      ts::ConstBuffer tmp(src);
+      while (ParseRules::is_digit(*src))
+        ++src;
+
+      if (tmp.data() == src.data()) { // no digits at all
+        src.set(tmp.data()-1, tmp.size()+1); // back up to include colon
+      } else {
+        *port = tmp.clip(src.data());
+      }
     }
+    if (rest) *rest = src;
   }
   return *addr ? 0 : -1; // true if we found an address.
 }
