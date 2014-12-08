@@ -268,7 +268,7 @@ ink_atoi64(const char *str, int len)
     len--;
   }
 
-  if (len <= 1)
+  if (len < 1)
     return 0;
 
   if (unlikely(str[0] == '0' && len > 1 && str[1] == 'x')) {
