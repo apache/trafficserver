@@ -271,20 +271,20 @@ URIHANDLER_FUNC(mod_generator_subrequest_handler) {
   }
   start = end + 1;
 
-  // get the id from the url
-  int64_t id = strtoll(start, &end, 10);
-
-  if (start == end && id < 0 && *start != '-') {
+  // get the id from the url.
+  end = strchr(start, '-');
+  if (end == NULL) {
     log_error_write(srv, __FILE__, __LINE__,  "s", "problems finding the id");
     return HANDLER_GO_ON;
   }
+
   start = end + 1;
 
   // get the time to sleep from the url
   int64_t sleepval = strtoll(start, &end, 10);
 
-  if (start == end && id < 0 && *start != '-') {
-    log_error_write(srv, __FILE__, __LINE__,  "s", "problems finding the id");
+  if (start == end && sleepval < 0 && *start != '-') {
+    log_error_write(srv, __FILE__, __LINE__,  "s", "problems finding the sleepval");
     return HANDLER_GO_ON;
   }
   start = end + 1;
