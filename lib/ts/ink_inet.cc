@@ -229,17 +229,18 @@ ats_ip_parse(ts::ConstBuffer src, ts::ConstBuffer* addr, ts::ConstBuffer* port, 
         ++src;
       }
     } else {
-      *addr = src.splitOn(':');
-      if (*addr) {
-        colon_p = true;
-      } else { // no colon found, use everything.
+      ts::ConstBuffer post = src.after(':');
+      if (post && ! post.find(':')) {
+	*addr = src.splitOn(post.data()-1);
+	colon_p = true;
+      } else { // presume no port, use everything.
         *addr = src;
         src.reset();
       }
     }
     if (colon_p) {
       ts::ConstBuffer tmp(src);
-      while (ParseRules::is_digit(*src))
+      while (src && ParseRules::is_digit(*src))
         ++src;
 
       if (tmp.data() == src.data()) { // no digits at all
