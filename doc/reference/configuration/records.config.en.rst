@@ -620,6 +620,14 @@ Value Effect
 
    The ``Via`` header string can be decoded with the `Via Decoder Ring <http://trafficserver.apache.org/tools/via>`_.
 
+.. ts:cv:: CONFIG proxy.config.http.send_100_continue_response INT 0
+   :reloadable:
+
+   You can specify one of the following:
+
+   -  ``0`` ATS buffer the request until the post body has been recieved and then send the request to origin.
+   -  ``1`` immediately return a 100 Continue from ATS without waiting for the post body
+
 .. ts:cv:: CONFIG proxy.config.http.response_server_enabled INT 1
    :reloadable:
 
@@ -2543,7 +2551,7 @@ Sockets
    Sets the maximum number of elements that can be contained in a ProxyAllocator (per-thread)
    before returning the objects to the global pool
 
-.. ts:cv:: CONFIG proxy.config.allocator.thread_freelist_low_watermark INT 32 
+.. ts:cv:: CONFIG proxy.config.allocator.thread_freelist_low_watermark INT 32
 
    Sets the minimum number of items a ProxyAllocator (per-thread) will guarantee to be
    holding at any one time.
