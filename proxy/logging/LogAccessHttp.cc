@@ -584,6 +584,34 @@ LogAccessHttp::marshal_client_finish_status_code(char *buf)
 }
 
 /*-------------------------------------------------------------------------
+-------------------------------------------------------------------------*/
+int
+LogAccessHttp::marshal_client_rtt(char *buf)
+{
+  if (buf) {
+    int rtt = 0;
+#ifdef HAVE_RTT
+    rtt = m_http_sm->client_rtt;
+#endif
+    marshal_int(buf, rtt);
+  }
+  return INK_MIN_ALIGN;
+}
+
+int
+LogAccessHttp::marshal_server_rtt(char *buf)
+{
+  if (buf) {
+    int rtt = 0;
+#ifdef HAVE_RTT
+    rtt = m_http_sm->server_rtt;
+#endif
+    marshal_int(buf, rtt);
+  }
+  return INK_MIN_ALIGN;
+}
+
+/*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
 int

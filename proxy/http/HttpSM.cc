@@ -576,6 +576,10 @@ HttpSM::attach_client_session(HttpClientSession * client_vc, IOBufferReader * bu
   client_vc->get_netvc()->set_inactivity_timeout(HRTIME_SECONDS(HttpConfig::m_master.accept_no_activity_timeout));
   client_vc->get_netvc()->set_active_timeout(HRTIME_SECONDS(HttpConfig::m_master.transaction_active_timeout_in));
 
+#ifdef HAVE_RTT
+  setup_client_rtt(client_vc);
+#endif
+
   ++reentrancy_count;
   // Add our state sm to the sm list
   state_add_to_list(EVENT_NONE, NULL);
@@ -5589,6 +5593,10 @@ HttpSM::attach_server_session(HttpServerSession * s)
     server_session->get_netvc()->set_active_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_active_timeout_out));
   }
 
+#ifdef HAVE_RTT
+  setup_server_rtt(s);
+#endif
+
   if (plugin_tunnel_type != HTTP_NO_PLUGIN_TUNNEL) {
     DebugSM("http_ss", "Setting server session to private");
     server_session->private_session = true;
@@ -7673,3 +7681,41 @@ HttpSM::is_redirect_required()
   }
   return redirect_required;
 }
+
+#ifdef HAVE_RTT
+void
+HttpSM::setup_client_rtt(HttpClientSession * cs)
+{
+  NetVConnection *vc = (cs == NULL) ? NULL : cs->get_netvc();
+  int fd = (vc == NULL) ? 0 : vc->get_socket();
+  struct tcp_info info;
+  socklen_t tcp_info_len = sizeof(info);
+
+  if ( cs != NULL && vc != NULL ) {
+    if (getsockopt(fd, IPPROTO_TCP, TCP_INFO, &info, &tcp_info_len) == 0) {
+      client_rtt = info.tcpi_rtt;
+      DebugSM("http", "Client RTT: [%d].", client_rtt);
+    } else {
+      DebugSM("http", "Could not get client RTT info.");
+    }
+  }
+}
+
+void
+HttpSM::setup_server_rtt(HttpServerSession * cs)
+{
+  NetVConnection *vc = (cs == NULL) ? NULL : cs->get_netvc();
+  int fd = (vc == NULL) ? 0 : vc->get_socket();
+  struct tcp_info info;
+  socklen_t tcp_info_len = sizeof(info);
+
+  if ( cs != NULL && vc != NULL ) {
+    if (getsockopt(fd, IPPROTO_TCP, TCP_INFO, &info, &tcp_info_len) == 0) {
+      server_rtt = info.tcpi_rtt;
+      DebugSM("http", "Server RTT: [%d].", server_rtt);
+    } else {
+      DebugSM("http", "Could not get server RTT info.");
+    }
+  }
+}
+#endif

@@ -523,6 +523,13 @@ Log::init_fields()
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cfsc", field);
 
+  field = new LogField("client_estimated_round_trip_time", "crtt",
+                       LogField::sINT,
+                       &LogAccess::marshal_client_rtt,
+                       &LogAccess::unmarshal_int_to_str);
+                       global_field_list.add(field, false);
+  ink_hash_table_insert(field_symbol_hash, "crtt", field);
+
   // proxy -> client fields
   field = new LogField("proxy_resp_content_type", "psct",
                        LogField::STRING,
@@ -803,6 +810,13 @@ Log::init_fields()
                        &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "crat", field);
+
+  field = new LogField("server_estimated_round_trip_time", "srtt",
+                       LogField::sINT,
+                       &LogAccess::marshal_server_rtt,
+                       &LogAccess::unmarshal_int_to_str);
+                       global_field_list.add(field, false);
+  ink_hash_table_insert(field_symbol_hash, "srtt", field); 
 
   // cache write fields
 
