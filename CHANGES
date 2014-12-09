@@ -1,18 +1,27 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.0
 
+  *) [TS-3229] Filter unsupported epic metric names.
+
+  *) [TS-3230] Remove unused ink_error APIs.
+
+  *) [TS-3231] Add metrics to represent configuration freshness.
+
+  *) [TS-3232] Remove obsolete proxy.config.vary_on_user_agent configuration.
+
+  *) [TS-3233] Add drain option to restart API.
 
 Changes with Apache Traffic Server 5.2.0
- 
+
   *) [TS-1570] Remap doesn't reject request with extract characters after port in Host header
-     Author: Cynthia Gu <czhenggu@linkedin.com> 
- 
+     Author: Cynthia Gu <czhenggu@linkedin.com>
+
   *) [TS-3221] ink_atoi64 fix for single digit case
      Author: Cynthia Gu <czhenggu@linkedin.com>
 
   *) [TS-3223] Fix the internal buffer sizing.
 
-  *) [TS-3130] Delay setting buffer to NULL to prevent crash in logging 
+  *) [TS-3130] Delay setting buffer to NULL to prevent crash in logging
 
   *) [TS-3207] _xstrdup incorrectly calls ink_strlcpy with 0 length strings.
 
