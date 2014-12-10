@@ -230,9 +230,9 @@ ats_ip_parse(ts::ConstBuffer src, ts::ConstBuffer* addr, ts::ConstBuffer* port, 
       }
     } else {
       ts::ConstBuffer post = src.after(':');
-      if (post && ! post.find(':')) {
-	*addr = src.splitOn(post.data()-1);
-	colon_p = true;
+      if (post.data() && ! post.find(':')) {
+        *addr = src.splitOn(post.data()-1);
+        colon_p = true;
       } else { // presume no port, use everything.
         *addr = src;
         src.reset();
@@ -547,7 +547,7 @@ ats_ip_check_characters(ts::ConstBuffer text) {
 }
 
 // Need to declare this type globally so gcc 4.4 can use it in the countof() template ...
-struct ip_parse_spec { const char * hostspec; const char * host; const char * port; };
+struct ip_parse_spec { char const* hostspec; char const* host; char const* port; char const* rest;};
 
 REGRESSION_TEST(Ink_Inet) (RegressionTest * t, int /* atype */, int * pstatus) {
   TestBox box(t, pstatus);
@@ -559,28 +559,47 @@ REGRESSION_TEST(Ink_Inet) (RegressionTest * t, int /* atype */, int * pstatus) {
   // Test ats_ip_parse() ...
   {
     struct ip_parse_spec names[] = {
-      { "::", "::", NULL },
-      { "[::1]:99", "::1", "99" },
-      { "127.0.0.1:8080", "127.0.0.1", "8080" },
-      { "foo.example.com", "foo.example.com", NULL },
-      { "foo.example.com:99", "foo.example.com", "99" },
+      { "::", "::", NULL, NULL },
+      { "[::1]:99", "::1", "99", NULL },
+      { "127.0.0.1:8080", "127.0.0.1", "8080", NULL },
+      { "127.0.0.1:8080-Bob", "127.0.0.1", "8080", "-Bob" },
+      { "127.0.0.1:", "127.0.0.1", NULL, ":" },
+      { "foo.example.com", "foo.example.com", NULL, NULL },
+      { "foo.example.com:99", "foo.example.com", "99", NULL },
+      { "ffee::24c3:3349:3cee:0143", "ffee::24c3:3349:3cee:0143", NULL },
+      { "fe80:88b5:4a:20c:29ff:feae:1c33:8080", "fe80:88b5:4a:20c:29ff:feae:1c33:8080", NULL, NULL },
+      { "[ffee::24c3:3349:3cee:0143]", "ffee::24c3:3349:3cee:0143", NULL },
+      { "[ffee::24c3:3349:3cee:0143]:80", "ffee::24c3:3349:3cee:0143", "80", NULL },
+      { "[ffee::24c3:3349:3cee:0143]:8080x", "ffee::24c3:3349:3cee:0143", "8080", "x" }
     };
 
     for (unsigned i = 0; i < countof(names); ++i) {
-      ts::ConstBuffer addr, port;
+      ip_parse_spec const& s = names[i];
+      ts::ConstBuffer host, port, rest;
+      size_t len;
 
-      box.check(ats_ip_parse(ts::ConstBuffer(names[i].hostspec, strlen(names[i].hostspec)), &addr, &port) == 0,
-          "ats_ip_parse(%s)", names[i].hostspec);
-      box.check(strncmp(addr.data(), names[i].host, addr.size()) ==  0,
-          "ats_ip_parse(%s) gave addr '%.*s'", names[i].hostspec, (int)addr.size(), addr.data());
-      if (names[i].port) {
-        box.check(strncmp(port.data(), names[i].port, port.size()) ==  0,
-          "ats_ip_parse(%s) gave port '%.*s'", names[i].hostspec, (int)port.size(), port.data());
+      box.check(ats_ip_parse(ts::ConstBuffer(s.hostspec, strlen(s.hostspec)), &host, &port, &rest) == 0,
+                "ats_ip_parse(%s)", s.hostspec);
+      len = strlen(s.host);
+      box.check(len == host.size() && strncmp(host.data(), s.host, host.size()) ==  0,
+                "ats_ip_parse(%s) gave addr '%.*s'", s.hostspec, static_cast<int>(host.size()), host.data());
+      if (s.port) {
+        len = strlen(s.port);
+        box.check(len == port.size() && strncmp(port.data(), s.port, port.size()) ==  0,
+                  "ats_ip_parse(%s) gave port '%.*s'", s.hostspec, static_cast<int>(port.size()), port.data());
       } else {
         box.check(port.size() == 0,
-          "ats_ip_parse(%s) gave port '%.*s'", names[i].hostspec, (int)port.size(), port.data());
+                  "ats_ip_parse(%s) gave port '%.*s' instead of empty", s.hostspec, static_cast<int>(port.size()), port.data());
       }
 
+      if (s.rest) {
+        len = strlen(s.rest);
+        box.check(len == rest.size() && strncmp(rest.data(), s.rest, len) == 0
+                  , "ats_ip_parse(%s) gave rest '%.*s' instead of '%s'", s.hostspec, static_cast<int>(rest.size()), rest.data(), s.rest);
+      } else {
+        box.check(rest.size() == 0,
+                  "ats_ip_parse(%s) gave rest '%.*s' instead of empty", s.hostspec, static_cast<int>(rest.size()), rest.data());
+      }
     }
   }
 
@@ -601,6 +620,4 @@ REGRESSION_TEST(Ink_Inet) (RegressionTest * t, int /* atype */, int * pstatus) {
       ;
     }
   }
-
-
 }
