@@ -290,9 +290,14 @@ ts_lua_server_response_get_version(lua_State * L)
 
   version = TSHttpHdrVersionGet(http_ctx->server_response_bufp, http_ctx->server_response_hdrp);
 
-  n = snprintf(buf, sizeof(buf) - 1, "%d.%d", TS_HTTP_MAJOR(version), TS_HTTP_MINOR(version));
-  lua_pushlstring(L, buf, n);
+  n = snprintf(buf, sizeof(buf), "%d.%d", TS_HTTP_MAJOR(version), TS_HTTP_MINOR(version));
 
+  if(n >= sizeof(buf)) {
+    lua_pushlstring(L, buf, sizeof(buf) - 1);
+  } else {
+    lua_pushlstring(L, buf, n);
+  }
+  
   return 1;
 }
 

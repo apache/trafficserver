@@ -499,7 +499,11 @@ ts_lua_client_request_get_uri(lua_State * L)
 
   uri_len = snprintf(uri, TS_LUA_MAX_URL_LENGTH, "/%.*s", path_len, path);
 
-  lua_pushlstring(L, uri, uri_len);
+  if(uri_len >= TS_LUA_MAX_URL_LENGTH) {
+    lua_pushlstring(L, uri, TS_LUA_MAX_URL_LENGTH - 1);
+  } else {
+    lua_pushlstring(L, uri, uri_len);
+  }
 
   return 1;
 }
@@ -762,8 +766,12 @@ ts_lua_client_request_get_version(lua_State * L)
 
   version = TSHttpHdrVersionGet(http_ctx->client_request_bufp, http_ctx->client_request_hdrp);
 
-  n = snprintf(buf, sizeof(buf) - 1, "%d.%d", TS_HTTP_MAJOR(version), TS_HTTP_MINOR(version));
-  lua_pushlstring(L, buf, n);
+  n = snprintf(buf, sizeof(buf), "%d.%d", TS_HTTP_MAJOR(version), TS_HTTP_MINOR(version));
+  if (n >= sizeof(buf)) {
+    lua_pushlstring(L, buf, sizeof(buf) - 1);
+  } else {
+    lua_pushlstring(L, buf, n);
+  }
 
   return 1;
 }

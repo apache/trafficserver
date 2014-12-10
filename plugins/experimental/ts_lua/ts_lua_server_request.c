@@ -322,7 +322,11 @@ ts_lua_server_request_get_uri(lua_State * L)
 
   uri_len = snprintf(uri, TS_LUA_MAX_URL_LENGTH, "/%.*s", path_len, path);
 
-  lua_pushlstring(L, uri, uri_len);
+  if(uri_len >= TS_LUA_MAX_URL_LENGTH) {
+    lua_pushlstring(L, uri, TS_LUA_MAX_URL_LENGTH - 1);
+  } else {
+    lua_pushlstring(L, uri, uri_len);
+  }
 
   return 1;
 }
