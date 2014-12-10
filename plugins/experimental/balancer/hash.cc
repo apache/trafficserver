@@ -65,9 +65,22 @@ struct md5_key {
 
 typedef void (*HashComponent)(TSHttpTxn txn, TSRemapRequestInfo *, MD5_CTX *);
 
-// Hash on the source IP address;
+// Hash on the source (client) IP address.
 void
 HashTxnSrcaddr(TSHttpTxn txn, TSRemapRequestInfo *, MD5_CTX * ctx)
+{
+  struct sockaddr const * sa;
+
+  sa = TSHttpTxnClientAddrGet(txn);
+  if (txn) {
+    MD5_Update(ctx, sa, sockaddrlen(sa));
+    TSDebug("balancer", "%s(addr[%zu]]", __func__, sockaddrlen(sa));
+  }
+}
+
+// Hash on the destination (server) IP address;
+void
+HashTxnDstaddr(TSHttpTxn txn, TSRemapRequestInfo *, MD5_CTX * ctx)
 {
   struct sockaddr const * sa;
 
@@ -195,6 +208,8 @@ MakeHashBalancer(const char * options)
         hash->hash_parts.push_back(HashTxnUrl);
       } else if (strcmp(opt, "srcaddr") == 0) {
         hash->hash_parts.push_back(HashTxnSrcaddr);
+      } else if (strcmp(opt, "dstaddr") == 0) {
+        hash->hash_parts.push_back(HashTxnDstaddr);
       } else {
         TSError("balancer: ignoring invalid hash field '%s'", opt);
       }

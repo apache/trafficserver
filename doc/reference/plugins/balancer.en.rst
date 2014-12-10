@@ -61,6 +61,9 @@ url
 srcaddr
   The source IP address of the request.
 
+dstaddr
+  The destination IP address of the request.
+
 Round Robin Balancing Policy
 ----------------------------
 
