@@ -387,8 +387,6 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
   int64_t r = 0;
   int64_t bytes = 0;
   NetState *s = &this->read;
-  MIOBufferAccessor &buf = s->vio.buffer;
-  int64_t ntodo = s->vio.ntodo();
 
   if (HttpProxyPort::TRANSPORT_BLIND_TUNNEL == this->attributes) {
     this->super::net_read_io(nh, lthread);
@@ -415,6 +413,8 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
     return;
   }
 
+  MIOBufferAccessor &buf = s->vio.buffer;
+  int64_t ntodo = s->vio.ntodo();
   ink_assert(buf.writer());
 
   // This function will always return true unless

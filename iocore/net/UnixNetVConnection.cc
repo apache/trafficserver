@@ -209,7 +209,6 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
 {
   NetState *s = &vc->read;
   ProxyMutex *mutex = thread->mutex;
-  MIOBufferAccessor & buf = s->vio.buffer;
   int64_t r = 0;
 
   MUTEX_TRY_LOCK_FOR(lock, s->vio.mutex, thread, s->vio._cont);
@@ -224,6 +223,7 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
     return;
   }
 
+  MIOBufferAccessor & buf = s->vio.buffer;
   ink_assert(buf.writer());
 
   // if there is nothing to do, disable connection
