@@ -343,6 +343,15 @@ Init_Errata_Logging() {
 }
 #endif
 
+static void
+millisleep(int ms) {
+  struct timespec ts;
+
+  ts.tv_sec = ms / 1000;
+  ts.tv_nsec = (ms - ts.tv_sec * 100) * 1000 * 1000;
+  nanosleep(&ts, NULL); //we use nanosleep instead of sleep because it does not interact with signals
+}
+
 int
 main(int argc, char **argv)
 {
@@ -685,6 +694,8 @@ main(int argc, char **argv)
 
   statProcessor = new StatProcessor(configFiles);
 
+  int sleep_time = 1; //sleep_time given in sec
+
   for (;;) {
     lmgmt->processEventQueue();
     lmgmt->pollMgmtProcessServer();
@@ -756,7 +767,9 @@ main(int argc, char **argv)
 #endif /* NEED_PSIGNAL */
         }
       }
-      mgmt_log(stderr, "[main] Proxy launch failed, retrying...\n");
+      mgmt_log(stderr, "[main] Proxy launch failed, retrying after %d sec...\n", sleep_time);
+      millisleep(sleep_time * 1000); //we use millisleep because it doesn't interact with signals
+      sleep_time = (sleep_time > 30) ? 60 : sleep_time * 2;
     }
 
   }
