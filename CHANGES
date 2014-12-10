@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.0
 
+  *) [TS-3226]: Move access of read vio inside the mutex to prevent ntodo corruption
+
   *) [TS-3224] fix ts_lua core dump issue.
 
   *) [TS-3229] Filter unsupported epic metric names.
