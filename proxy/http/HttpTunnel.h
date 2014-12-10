@@ -340,7 +340,7 @@ public:
   void tunnel_run(HttpTunnelProducer * p = NULL);
 
   int main_handler(int event, void *data);
-  bool consumer_reenable(HttpTunnelConsumer* c);
+  void consumer_reenable(HttpTunnelConsumer* c);
   bool consumer_handler(int event, HttpTunnelConsumer * c);
   bool producer_handler(int event, HttpTunnelProducer * p);
   int producer_handler_dechunked(int event, HttpTunnelProducer * p);

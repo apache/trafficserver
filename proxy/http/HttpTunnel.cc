@@ -1222,7 +1222,7 @@ bool HttpTunnel::producer_handler(int event, HttpTunnelProducer * p)
   return sm_callback;
 }
 
-bool
+void
 HttpTunnel::consumer_reenable(HttpTunnelConsumer* c)
 {
   HttpTunnelProducer* p = c->producer;
@@ -1274,7 +1274,6 @@ HttpTunnel::consumer_reenable(HttpTunnelConsumer* c)
       p->read_vio->reenable();
     }
   }
-  return p->is_throttled();
 }
 
 //
