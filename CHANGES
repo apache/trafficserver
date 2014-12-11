@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.0
 
+  *) [TS-3239] Add a new `generator` plugin.
+
   *) [TS-3238] Stop referencing the global _res symbol.
 
   *) [TS-3237] Change HostDB to not segregate DNS results by port.

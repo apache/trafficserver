@@ -8,9 +8,9 @@ Plugin Reference
   to you under the Apache License, Version 2.0 (the
   "License"); you may not use this file except in compliance
   with the License.  You may obtain a copy of the License at
- 
+
    http://www.apache.org/licenses/LICENSE-2.0
- 
+
   Unless required by applicable law or agreed to in writing,
   software distributed under the License is distributed on an
   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -70,12 +70,12 @@ directory of the Apache Traffic Server source tree. Experimental plugins can be 
   Combohandler Plugin: provides an intelligent way to combine multiple URLs into a single URL, and have Apache Traffic Server combine the components into one response <combo_handler.en>
   Epic Plugin: emits Traffic Server metrics in a format that is consumed tby the Epic Network Monitoring System <epic.en>
   ESI Plugin: implements the ESI specification <esi.en>
+  Generator Plugin: generate arbitrary response data <generator.en>
   GeoIP ACLs Plugin: denying (or allowing) requests based on the source IP geo-location <geoip_acl.en>
-  hipes.en 
+  hipes.en
   Metalink Plugin: implements the Metalink download description format in order to try not to download the same file twice. <metalink.en>
   MySQL Remap Plugin: allows dynamic “remaps” from a database <mysql_remap.en>
   AWS S3 Authentication plugin: provides support for the Amazon S3 authentication features <s3_auth.en>
-  stale_while_revalidate.en 
+  stale_while_revalidate.en
   ts-lua Plugin: allows plugins to be written in Lua instead of C code <ts_lua.en>
   XDebug Plugin: allows HTTP clients to debug the operation of the Traffic Server cache using the X-Debug header <xdebug.en>
-

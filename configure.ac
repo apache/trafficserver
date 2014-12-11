@@ -1925,7 +1925,6 @@ AM_CONDITIONAL([HAS_MYSQL], [ test "x${has_mysql}" = "x1" ])
 
 AS_IF([test "x$enable_experimental_plugins" = xyes], [  
   AC_CONFIG_FILES([
-    plugins/experimental/mysql_remap/Makefile
     plugins/experimental/Makefile
     plugins/experimental/authproxy/Makefile
     plugins/experimental/background_fetch/Makefile
@@ -1937,16 +1936,18 @@ AS_IF([test "x$enable_experimental_plugins" = xyes], [
     plugins/experimental/epic/Makefile
     plugins/experimental/escalate/Makefile
     plugins/experimental/esi/Makefile
+    plugins/experimental/generator/Makefile
     plugins/experimental/geoip_acl/Makefile
     plugins/experimental/header_normalize/Makefile
     plugins/experimental/healthchecks/Makefile
     plugins/experimental/hipes/Makefile
     plugins/experimental/metalink/Makefile
+    plugins/experimental/mysql_remap/Makefile
     plugins/experimental/regex_revalidate/Makefile
     plugins/experimental/remap_stats/Makefile
     plugins/experimental/s3_auth/Makefile
-    plugins/experimental/sslheaders/Makefile
     plugins/experimental/ssl_cert_loader/Makefile
+    plugins/experimental/sslheaders/Makefile
     plugins/experimental/stale_while_revalidate/Makefile
     plugins/experimental/ts_lua/Makefile
     plugins/experimental/url_sig/Makefile
