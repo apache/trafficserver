@@ -348,7 +348,7 @@ millisleep(int ms) {
   struct timespec ts;
 
   ts.tv_sec = ms / 1000;
-  ts.tv_nsec = (ms - ts.tv_sec * 100) * 1000 * 1000;
+  ts.tv_nsec = (ms - ts.tv_sec * 1000) * 1000 * 1000;
   nanosleep(&ts, NULL); //we use nanosleep instead of sleep because it does not interact with signals
 }
 
@@ -694,7 +694,7 @@ main(int argc, char **argv)
 
   statProcessor = new StatProcessor(configFiles);
 
-  int sleep_time = 1; //sleep_time given in sec
+  int sleep_time = 0; //sleep_time given in sec
 
   for (;;) {
     lmgmt->processEventQueue();
@@ -742,6 +742,13 @@ main(int argc, char **argv)
     }
 
     if (lmgmt->run_proxy && !lmgmt->processRunning()) { /* Make sure we still have a proxy up */
+      if(sleep_time){
+        mgmt_log(stderr, "Relaunching proxy after %d sec...", sleep_time);
+        millisleep(1000 * sleep_time); //we use millisleep instead of sleep because it doesnt interfere with signals
+        sleep_time = (sleep_time > 30) ? 60 : sleep_time * 2;
+      } else {
+        sleep_time = 1;
+      }
       if (lmgmt->startProxy())
         just_started = 0;
       else
@@ -761,15 +768,13 @@ main(int argc, char **argv)
         if (WIFSIGNALED(res)) {
           int sig = WTERMSIG(res);
 #ifdef NEED_PSIGNAL
-          mgmt_log(stderr, "[main] Proxy terminated due to Sig %d\n", sig);
+          mgmt_log(stderr, "[main] Proxy terminated due to Sig %d. Relaunching after %d sec...\n", sig, sleep_time);
 #else
-          mgmt_log(stderr, "[main] Proxy terminated due to Sig %d: %s\n", sig, strsignal(sig));
+          mgmt_log(stderr, "[main] Proxy terminated due to Sig %d: %s. Relaunching after %d sec...\n", sig, strsignal(sig), sleep_time);
 #endif /* NEED_PSIGNAL */
         }
       }
       mgmt_log(stderr, "[main] Proxy launch failed, retrying after %d sec...\n", sleep_time);
-      millisleep(sleep_time * 1000); //we use millisleep because it doesn't interact with signals
-      sleep_time = (sleep_time > 30) ? 60 : sleep_time * 2;
     }
 
   }
