@@ -300,7 +300,7 @@ DiagnosticMessage(TSDiagsT mode, const char *fmt, va_list ap)
   // format the diag message now so it can be sent
   // vsnprintf does not compile on DEC
   vsnprintf(diag_msg, MAX_BUF_SIZE - 1, fmt, ap);
-  MGMTAPI_SEND_MESSAGE(main_socket_fd, DIAGS, &optype, &level, &msg);
+  (void) MGMTAPI_SEND_MESSAGE(main_socket_fd, DIAGS, &optype, &level, &msg);
 }
 
 /***************************************************************************
@@ -441,9 +441,6 @@ Bounce(unsigned options)
   MgmtMarshallInt oval = options;
 
   ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, BOUNCE, &optype, &oval);
-  if (ret != TS_ERR_OKAY) {
-    return ret;
-  }
 
   return (ret == TS_ERR_OKAY) ? parse_generic_response(BOUNCE, main_socket_fd) : ret;
 }
