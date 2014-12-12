@@ -742,17 +742,19 @@ main(int argc, char **argv)
     }
 
     if (lmgmt->run_proxy && !lmgmt->processRunning()) { /* Make sure we still have a proxy up */
-      if(sleep_time){
+      if (sleep_time){
         mgmt_log(stderr, "Relaunching proxy after %d sec...", sleep_time);
         millisleep(1000 * sleep_time); //we use millisleep instead of sleep because it doesnt interfere with signals
         sleep_time = (sleep_time > 30) ? 60 : sleep_time * 2;
       } else {
         sleep_time = 1;
       }
-      if (lmgmt->startProxy())
+      if (lmgmt->startProxy()) {
         just_started = 0;
-      else
+        sleep_time = 0;
+      } else {
         just_started++;
+      }
     } else {                    /* Give the proxy a chance to fire up */
       just_started++;
     }
