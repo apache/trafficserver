@@ -21,7 +21,7 @@ Epic Plugin
   under the License.
 
 The `Epic` plugin emits Traffic Server metrics in a format that is
-consumed tby the `Epic Network Monitoring System
+consumed by the `Epic Network Monitoring System
 <https://code.google.com/p/epicnms/>`.  It is a global plugin that
 is installed by adding it to the :file:`plugin.config` file.
 
