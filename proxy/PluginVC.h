@@ -100,6 +100,8 @@ public:
   virtual void set_inactivity_timeout(ink_hrtime timeout_in);
   virtual void cancel_active_timeout();
   virtual void cancel_inactivity_timeout();
+  virtual void add_to_keep_alive_lru();
+  virtual void remove_from_keep_alive_lru();
   virtual ink_hrtime get_active_timeout();
   virtual ink_hrtime get_inactivity_timeout();
 

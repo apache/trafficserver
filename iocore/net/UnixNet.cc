@@ -79,6 +79,26 @@ public:
       if (vc->next_inactivity_timeout_at && vc->next_inactivity_timeout_at < now)
         vc->handleEvent(EVENT_IMMEDIATE, e);
     }
+
+    // Keep-alive LRU for incoming connections
+    int32_t max_keep_alive = 0;
+    REC_ReadConfigInt32(max_keep_alive, "proxy.config.http.client_max_keep_alive_connections");
+    if (max_keep_alive > 0) {
+      const int event_threads = eventProcessor.n_threads_for_type[ET_NET];
+      const int ssl_threads = (ET_NET == SSLNetProcessor::ET_SSL) ? 0 : eventProcessor.n_threads_for_type[SSLNetProcessor::ET_SSL];
+
+      max_keep_alive = max_keep_alive / (event_threads + ssl_threads);
+      Debug("inactivity_cop_verbose", "max_keep_alive: %d lru size: %d net threads: %d ssl threads: %d net type: %d "
+            "ssl type: %d", max_keep_alive, nh->keep_alive_lru_size, event_threads, ssl_threads, ET_NET,
+            SSLNetProcessor::ET_SSL);
+
+      while (nh->keep_alive_lru_size > max_keep_alive) {
+        UnixNetVConnection *vc = nh->keep_alive_list.pop();
+        Debug("inactivity_cop", "removing keep-alives from the lru NetVC=%p size: %u", vc, nh->keep_alive_lru_size);
+        --(nh->keep_alive_lru_size);
+        close_UnixNetVConnection(vc, e->ethread);
+      }
+    }
     return 0;
   }
 private:
@@ -235,7 +255,7 @@ initialize_thread_for_net(EThread *thread)
 
 // NetHandler method definitions
 
-NetHandler::NetHandler():Continuation(NULL), trigger_event(0)
+NetHandler::NetHandler():Continuation(NULL), trigger_event(0), keep_alive_lru_size(0)
 {
   SET_HANDLER((NetContHandler) & NetHandler::startNetEvent);
 }

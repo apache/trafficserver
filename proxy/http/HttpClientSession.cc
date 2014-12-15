@@ -134,6 +134,7 @@ HttpClientSession::new_transaction()
   transact_count++;
   DebugHttpSsn("[%" PRId64 "] Starting transaction %d using sm [%" PRId64 "]", con_id, transact_count, current_reader->sm_id);
 
+  client_vc->remove_from_keep_alive_lru();
   current_reader->attach_client_session(this, sm_reader);
   if (pi) {
     // it's a plugin VC of some sort with identify information.
@@ -503,6 +504,7 @@ HttpClientSession::release(IOBufferReader * r)
     SET_HANDLER(&HttpClientSession::state_keep_alive);
     ka_vio = this->do_io_read(this, INT64_MAX, read_buffer);
     ink_assert(slave_ka_vio != ka_vio);
+    client_vc->add_to_keep_alive_lru();
     client_vc->set_inactivity_timeout(HRTIME_SECONDS(ka_in));
     client_vc->cancel_active_timeout();
   }

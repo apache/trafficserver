@@ -67,6 +67,7 @@ write_reschedule(NetHandler *nh, UnixNetVConnection *vc)
 void
 net_activity(UnixNetVConnection *vc, EThread *thread)
 {
+  Debug("socket", "net_activity updating inactivity %" PRId64 ", NetVC=%p", vc->inactivity_timeout_in, vc);
   (void) thread;
 #ifdef INACTIVITY_TIMEOUT
   if (vc->inactivity_timeout && vc->inactivity_timeout_in && vc->inactivity_timeout->ethread == thread)
@@ -616,6 +617,7 @@ UnixNetVConnection::do_io_close(int alerrno /* = -1 */ )
   else
     closed = -1;
 
+  remove_from_keep_alive_lru();
   if (close_inline)
     close_UnixNetVConnection(this, t);
 }

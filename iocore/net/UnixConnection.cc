@@ -388,5 +388,24 @@ Connection::apply_options(NetVCOptions const& opt)
   uint32_t tos = opt.packet_tos;
   safe_setsockopt(fd, IPPROTO_IP, IP_TOS, reinterpret_cast<char *>(&tos), sizeof(uint32_t));
 #endif
+}
 
+void
+UnixNetVConnection::add_to_keep_alive_lru()
+{
+  Debug("socket", "UnixNetVConnection::add_to_keep_alive_lru NetVC=%p", this);
+  if (! nh->keep_alive_list.in(this)) {
+    nh->keep_alive_list.push(this);
+    ++nh->keep_alive_lru_size;
+  }
+}
+
+void
+UnixNetVConnection::remove_from_keep_alive_lru()
+{
+  Debug("socket", "UnixNetVConnection::remove_from_keep_alive_lru NetVC=%p", this);
+  if (nh->keep_alive_list.in(this)) {
+    nh->keep_alive_list.remove(this);
+    --nh->keep_alive_lru_size;
+  }
 }

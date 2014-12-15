@@ -192,6 +192,8 @@ public:
   DList(UnixNetVConnection, cop_link) cop_list;
   ASLLM(UnixNetVConnection, NetState, read, enable_link) read_enable_list;
   ASLLM(UnixNetVConnection, NetState, write, enable_link) write_enable_list;
+  DList(UnixNetVConnection, keep_alive_link) keep_alive_list;
+  uint32_t keep_alive_lru_size;
 
   time_t sec;
   int cycles;
@@ -397,8 +399,10 @@ read_disable(NetHandler * nh, UnixNetVConnection * vc)
     }
   }
 #else
-  if (!vc->write.enabled)
+  if (!vc->write.enabled) {
     vc->next_inactivity_timeout_at = 0;
+    Debug("socket", "read_disable updating inactivity_at %" PRId64 ", NetVC=%p", vc->next_inactivity_timeout_at, vc);
+  }
 #endif
   vc->read.enabled = 0;
   nh->read_ready_list.remove(vc);
@@ -416,8 +420,10 @@ write_disable(NetHandler * nh, UnixNetVConnection * vc)
     }
   }
 #else
-  if (!vc->read.enabled)
+  if (!vc->read.enabled) {
     vc->next_inactivity_timeout_at = 0;
+    Debug("socket", "write_disable updating inactivity_at %" PRId64 ", NetVC=%p", vc->next_inactivity_timeout_at, vc);
+  }
 #endif
   vc->write.enabled = 0;
   nh->write_ready_list.remove(vc);

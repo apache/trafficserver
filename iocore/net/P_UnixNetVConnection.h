@@ -135,6 +135,8 @@ public:
   virtual void set_inactivity_timeout(ink_hrtime timeout_in);
   virtual void cancel_active_timeout();
   virtual void cancel_inactivity_timeout();
+  virtual void add_to_keep_alive_lru();
+  virtual void remove_from_keep_alive_lru();
 
   // The public interface is VIO::reenable()
   virtual void reenable(VIO *vio);
@@ -203,6 +205,7 @@ public:
   SLINKM(UnixNetVConnection, read, enable_link)
   LINKM(UnixNetVConnection, write, ready_link)
   SLINKM(UnixNetVConnection, write, enable_link)
+  LINK(UnixNetVConnection, keep_alive_link);
 
   ink_hrtime inactivity_timeout_in;
   ink_hrtime active_timeout_in;
@@ -211,6 +214,7 @@ public:
 #else
   ink_hrtime next_inactivity_timeout_at;
 #endif
+
   Event *active_timeout;
   EventIO ep;
   NetHandler *nh;

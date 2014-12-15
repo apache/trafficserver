@@ -880,6 +880,18 @@ PluginVC::get_inactivity_timeout()
   return inactive_timeout;
 }
 
+void
+PluginVC::add_to_keep_alive_lru()
+{
+  // do nothing
+}
+
+void
+PluginVC::remove_from_keep_alive_lru()
+{
+  // do nothing
+}
+
 SOCKET
 PluginVC::get_socket()
 {
