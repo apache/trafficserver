@@ -76,6 +76,7 @@ directory of the Apache Traffic Server source tree. Experimental plugins can be 
   Metalink Plugin: implements the Metalink download description format in order to try not to download the same file twice. <metalink.en>
   MySQL Remap Plugin: allows dynamic “remaps” from a database <mysql_remap.en>
   AWS S3 Authentication plugin: provides support for the Amazon S3 authentication features <s3_auth.en>
+  SSL Headers: Populate request headers with SSL session information <sslheaders.en>
   stale_while_revalidate.en
   ts-lua Plugin: allows plugins to be written in Lua instead of C code <ts_lua.en>
   XDebug Plugin: allows HTTP clients to debug the operation of the Traffic Server cache using the X-Debug header <xdebug.en>
