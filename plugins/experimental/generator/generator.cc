@@ -469,7 +469,7 @@ GeneratorInterceptionHook(TSCont contp, TSEvent event, void * edata)
     if (cdata.grq->nbytes) {
       int64_t nbytes;
 
-      if (cdata.grq->nbytes >= sizeof(GeneratorData)) {
+      if (cdata.grq->nbytes >= (ssize_t)sizeof(GeneratorData)) {
         nbytes = sizeof(GeneratorData);
       } else {
         nbytes = cdata.grq->nbytes % sizeof(GeneratorData);
