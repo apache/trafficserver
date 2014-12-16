@@ -401,7 +401,7 @@ GeneratorInterceptionHook(TSCont contp, TSEvent event, void * edata)
 
     TSIOBufferBlock blk;
     ssize_t         consumed = 0;
-    TSParseResult   result;
+    TSParseResult   result = TS_PARSE_CONT;
 
     for (blk = TSIOBufferReaderStart(cdata.grq->readio.reader); blk; blk = TSIOBufferBlockNext(blk)) {
         const char *    ptr;
@@ -417,43 +417,33 @@ GeneratorInterceptionHook(TSCont contp, TSEvent event, void * edata)
         result = TSHttpHdrParseReq(rqheader.parser, rqheader.buffer, rqheader.header, &ptr, end);
         switch (result) {
         case TS_PARSE_ERROR:
-          break;
+          // If we got a bad request, just shut it down.
+          VDEBUG("bad request on grq=%p, sending an error", cdata.grq);
+          GeneratorRequestDestroy(cdata.grq, arg.vio, contp);
+          return TS_EVENT_ERROR;
+
         case TS_PARSE_DONE:
         case TS_PARSE_OK:
-          result = TS_PARSE_OK;
+          // Check the response.
+          VDEBUG("parsed request on grq=%p, sending a response ", cdata.grq);
+          if (GeneratorParseRequest(cdata.grq) && GeneratorWriteResponseHeader(cdata.grq, TSVIOVConnGet(arg.vio), contp)) {
+            // If this is a HEAD request, we don't need to send any bytes.
+            if (cdata.grq->flags & GeneratorRequest::ISHEAD) {
+              cdata.grq->nbytes = 0;
+            }
+            return TS_EVENT_NONE;
+          }
+
+          // We got a syntactically bad URL. It would be graceful to send
+          // a 400 response, but we are graceless and just fail the
+          // transaction.
+          GeneratorRequestDestroy(cdata.grq, arg.vio, contp);
+          return TS_EVENT_ERROR;
+
         case TS_PARSE_CONT:
           // We consumed the buffer we got minus the remainder.
           consumed += (nbytes - std::distance(ptr, end));
         }
-
-        if (result == TS_PARSE_ERROR || result == TS_PARSE_OK) {
-            break;
-        }
-    }
-
-    // If we got a bad request, just shut it down.
-    if (result == TS_PARSE_ERROR) {
-      VDEBUG("bad request on grq=%p, sending an error", cdata.grq);
-      GeneratorRequestDestroy(cdata.grq, arg.vio, contp);
-      return TS_EVENT_ERROR;
-    }
-
-    if (result == TS_PARSE_OK) {
-      // Check the response.
-      VDEBUG("parsed request on grq=%p, sending a response ", cdata.grq);
-      if (GeneratorParseRequest(cdata.grq) && GeneratorWriteResponseHeader(cdata.grq, TSVIOVConnGet(arg.vio), contp)) {
-        // If this is a HEAD request, we don't need to send any bytes.
-        if (cdata.grq->flags & GeneratorRequest::ISHEAD) {
-          cdata.grq->nbytes = 0;
-        }
-        return TS_EVENT_NONE;
-      }
-
-      // We got a syntactically bad URL. It would be graceful to send
-      // a 400 response, but we are graceless and just fail the
-      // transaction.
-      GeneratorRequestDestroy(cdata.grq, arg.vio, contp);
-      return TS_EVENT_ERROR;
     }
 
     TSReleaseAssert(result == TS_PARSE_CONT);
