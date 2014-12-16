@@ -146,6 +146,7 @@ struct GeneratorHttpHeader
 
     TSHttpHdrDestroy(this->buffer, this->header);
     TSHandleMLocRelease(this->buffer, TS_NULL_MLOC, this->header);
+    TSMBufferDestroy(this->buffer);
   }
 };
 
