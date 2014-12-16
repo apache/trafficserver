@@ -92,7 +92,7 @@ public:
             "ssl type: %d", max_keep_alive, nh->keep_alive_lru_size, event_threads, ssl_threads, ET_NET,
             SSLNetProcessor::ET_SSL);
 
-      while (nh->keep_alive_lru_size > max_keep_alive) {
+      while (nh->keep_alive_lru_size > (uint32_t)max_keep_alive) {
         UnixNetVConnection *vc = nh->keep_alive_list.pop();
         Debug("inactivity_cop", "removing keep-alives from the lru NetVC=%p size: %u", vc, nh->keep_alive_lru_size);
         --(nh->keep_alive_lru_size);
