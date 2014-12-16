@@ -26,14 +26,14 @@ response is specified by the first two coomponents of the requested
 URL path. This plugin only supports the ``GET`` and ``HEAD`` HTTP
 methods.
 
-=============== ===========
-Path component  Description
-=============== ===========
-1               ``cache`` or ``nocache``. If ``cache`` is specifed, the
-                `Generator` plugin will respond with ``Cache-Control`` headers
-                marking the response as cacheable for 24 hours.
-2               Integral number of bytes to return in the response.
-=============== ===========
++---------------+----------------------------------------------------------------+
+|Path component | Description                                                    |
++===============+================================================================+
+|1              | ``cache`` or ``nocache``. If ``cache`` is specifed, the        |
+|               | `Generator` plugin will respond with ``Cache-Control`` headers |
+|               | marking the response as cacheable for 24 hours.                |
+|2              | Integral number of bytes to return in the response.            |
++---------------+----------------------------------------------------------------+
 
 Path components after the first 2 are ignored. This means that the
 trailing path components can be manipulated to create unique URLs
