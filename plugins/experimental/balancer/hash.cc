@@ -72,7 +72,7 @@ HashTxnSrcaddr(TSHttpTxn txn, TSRemapRequestInfo *, MD5_CTX * ctx)
   struct sockaddr const * sa;
 
   sa = TSHttpTxnClientAddrGet(txn);
-  if (txn) {
+  if (sa) {
     MD5_Update(ctx, sa, sockaddrlen(sa));
     TSDebug("balancer", "%s(addr[%zu]]", __func__, sockaddrlen(sa));
   }
@@ -85,7 +85,7 @@ HashTxnDstaddr(TSHttpTxn txn, TSRemapRequestInfo *, MD5_CTX * ctx)
   struct sockaddr const * sa;
 
   sa = TSHttpTxnIncomingAddrGet(txn);
-  if (txn) {
+  if (sa) {
     MD5_Update(ctx, sa, sockaddrlen(sa));
     TSDebug("balancer", "%s(addr[%zu]]", __func__, sockaddrlen(sa));
   }
