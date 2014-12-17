@@ -312,8 +312,8 @@ init:
   argc -= optind;
   argv += optind;
 
-  if (argc > 1) {
-    url_path = TSstrdup(argv[1] + ('/' == argv[1][0] ? 1 : 0)); /* Skip leading / */
+  if (argc > 0) {
+    url_path = TSstrdup(argv[0] + ('/' == argv[0][0] ? 1 : 0)); /* Skip leading / */
   }
   url_path_len = strlen(url_path);
 
