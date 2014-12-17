@@ -296,10 +296,10 @@ ink_freelist_free(InkFreeList * f, void *item)
 }
 
 void
-ink_freelist_free_bulk(InkFreeList *f, void *head, void *tail, size_t num_item)
+ink_freelist_free_bulk(ATS_UNUSED InkFreeList *f, ATS_UNUSED void *head, ATS_UNUSED void *tail, ATS_UNUSED size_t num_item)
 {
-
 #if TS_USE_FREELIST
+#if !TS_USE_RECLAIMABLE_FREELIST
   volatile_void_p *adr_of_next = (volatile_void_p *) ADDRESS_OF_NEXT(tail, 0);
   head_p h;
   head_p item_pair;
@@ -343,6 +343,7 @@ ink_freelist_free_bulk(InkFreeList *f, void *head, void *tail, size_t num_item)
 
   ink_atomic_increment((int *) &f->used, -1 * num_item);
   ink_atomic_increment(&fastalloc_mem_in_use, -(int64_t) f->type_size * num_item);
+#endif
 #else
   void * item = head;
   if (f->alignment) {
