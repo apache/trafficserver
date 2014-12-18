@@ -120,13 +120,6 @@ countof(const T (&)[N]) {
 #define ROUNDUP(x, y) ((((x)+((y)-1))/(y))*(y))
 #endif
 
-/* Types
-*/
-typedef void *(*VPVP_PFN) (void *);
-typedef void (*VVP_PFN) (void *);
-typedef void (*VV_PFN) (void);
-typedef void (*VI_PFN) (int);
-
 /* Variables
 */
 extern int debug_level;
