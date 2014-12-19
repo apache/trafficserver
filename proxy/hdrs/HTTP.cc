@@ -1563,7 +1563,6 @@ class UrlPrintHack {
     hdr->_test_and_fill_target_cache();
     if (hdr->m_url_cached.valid()) {
       URLImpl* ui = hdr->m_url_cached.m_url_impl;
-      char port_buff[10];
 
       m_hdr = hdr; // mark as potentially having modified values.
 
@@ -1584,8 +1583,8 @@ class UrlPrintHack {
 
       if (0 == hdr->m_url_cached.port_get_raw() && hdr->m_port_in_header) {
         ink_assert(0 == ui->m_ptr_port); // shouldn't be set if not in URL.
-        ui->m_ptr_port = port_buff;
-        ui->m_len_port = sprintf(port_buff, "%.5d", hdr->m_port);
+        ui->m_ptr_port = m_port_buff;
+        ui->m_len_port = sprintf(m_port_buff, "%.5d", hdr->m_port);
         m_port_modified_p = true;
       } else {
         m_port_modified_p = false;
@@ -1627,6 +1626,8 @@ class UrlPrintHack {
   bool m_port_modified_p;
   HTTPHdr* m_hdr;
   ///@}
+  /// Temporary buffer for port data.
+  char m_port_buff[6];
 };
 
 char*
