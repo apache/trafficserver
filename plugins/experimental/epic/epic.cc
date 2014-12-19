@@ -52,6 +52,7 @@ static char * epic_prefix;
 
 #define GAUGE_METRIC_NAMES \
   "proxy.node.bandwidth_hit_ratio_avg_10s", \
+  "proxy.node.bandwidth_hit_ratio_avg_10s", \
   "proxy.node.bandwidth_hit_ratio_avg_10s_int_pct", \
   "proxy.node.bandwidth_hit_ratio_int_pct", \
   "proxy.node.cache.bytes_free", \
@@ -62,9 +63,11 @@ static char * epic_prefix;
   "proxy.node.cache.bytes_used_mb", \
   "proxy.node.cache.percent_free", \
   "proxy.node.cache.percent_free_int_pct", \
+  "proxy.node.cache_hit_mem_ratio", \
   "proxy.node.cache_hit_mem_ratio_avg_10s", \
   "proxy.node.cache_hit_mem_ratio_avg_10s_int_pct", \
   "proxy.node.cache_hit_mem_ratio_int_pct", \
+  "proxy.node.cache_hit_ratio", \
   "proxy.node.cache_hit_ratio_avg_10s", \
   "proxy.node.cache_hit_ratio_avg_10s_int_pct", \
   "proxy.node.cache_hit_ratio_int_pct", \
@@ -88,6 +91,7 @@ static char * epic_prefix;
   "proxy.node.dns.lookup_avg_time_ms", \
   "proxy.node.dns.lookups_per_second", \
   "proxy.node.dns.total_dns_lookups", \
+  "proxy.node.hostdb.hit_ratio", \
   "proxy.node.hostdb.hit_ratio_avg_10s", \
   "proxy.node.hostdb.hit_ratio_int_pct", \
   "proxy.node.hostdb.total_hits", \
