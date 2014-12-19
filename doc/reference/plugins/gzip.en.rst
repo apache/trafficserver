@@ -40,6 +40,7 @@ In this case, the plugin will use the default behaviour:
 -  Don't hide accept encoding from origin servers (for an offloading
    reverse proxy)
 -  No urls are disallowed from compression
+-  Disable flush (flush gzipped content to client)
 
 Configuration
 =============
@@ -75,6 +76,8 @@ compressible content types.
 
 ``disallow``: Wildcard pattern for disabling compression on urls.
 
+``flush``: (``true`` or ``false``) Enable or disable flushing of gzipped content.
+
 Options can be set globally or on a per-site basis, as such::
 
     # Set some global options first
@@ -82,11 +85,13 @@ Options can be set globally or on a per-site basis, as such::
     enabled true
     remove-accept-encoding false
     compressible-content-type text/*
+    flush false
 
     # Now set a configuration for www.example.com
     [www.example.com]
     cache false
     remove-accept-encoding true
     disallow /notthis/*.js
+    flush true
 
 See example.gzip.config for example configurations.

@@ -259,6 +259,9 @@ gzip_transform_one(GzipData * data, TSIOBufferReader upstream_reader, int amount
   char *downstream_buffer;
   int64_t upstream_length, downstream_length;
   int err;
+  
+  TSHttpTxn txnp = (TSHttpTxn) data->txn;
+  HostConfiguration * hc = (HostConfiguration*)TSHttpTxnArgGet(txnp, arg_idx_host_configuration);
 
   while (amount > 0) {
     downstream_blkp = TSIOBufferReaderStart(upstream_reader);
@@ -287,8 +290,14 @@ gzip_transform_one(GzipData * data, TSIOBufferReader upstream_reader, int amount
       data->zstrm.next_out = (unsigned char *) downstream_buffer;
       data->zstrm.avail_out = downstream_length;
 
-      err = deflate(&data->zstrm, Z_NO_FLUSH);
-
+      if(!hc->flush()) {
+        debug("gzip_transform: deflate with Z_NO_FLUSH");
+        err = deflate(&data->zstrm, Z_NO_FLUSH);
+      } else {
+        debug("gzip_transform: deflate with Z_SYNC_FLUSH");
+        err = deflate(&data->zstrm, Z_SYNC_FLUSH);
+      }
+      
       if (err != Z_OK)
         warning("deflate() call failed: %d", err);
 
@@ -420,6 +429,7 @@ gzip_transform_do(TSCont contp)
 static int
 gzip_transform(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
 {
+  
   if (TSVConnClosedGet(contp)) {
     gzip_data_destroy((GzipData*)TSContDataGet(contp));
     TSContDestroy(contp);

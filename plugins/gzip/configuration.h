@@ -37,12 +37,15 @@ namespace Gzip  {
       , enabled_(true)
       , cache_(true)
       , remove_accept_encoding_(false)
+      , flush_(false)
     {}
 
     inline bool enabled() { return enabled_; }
     inline void set_enabled(bool x) { enabled_ = x; }
     inline bool cache() { return cache_; }
     inline void set_cache(bool x) { cache_ = x; }
+    inline bool flush() { return flush_; }
+    inline void set_flush(bool x) { flush_ = x; }
     inline bool remove_accept_encoding() { return remove_accept_encoding_; }
     inline void set_remove_accept_encoding(bool x) { remove_accept_encoding_ = x; }
     inline std::string host() { return host_; }
@@ -56,6 +59,7 @@ namespace Gzip  {
     bool enabled_;
     bool cache_;
     bool remove_accept_encoding_;
+    bool flush_;
     std::vector<std::string> compressible_content_types_;
     std::vector<std::string> disallows_;
     DISALLOW_COPY_AND_ASSIGN(HostConfiguration);
