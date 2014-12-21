@@ -575,7 +575,7 @@ HttpSM::attach_client_session(HttpClientSession * client_vc, IOBufferReader * bu
   //  this hook maybe asynchronous, we need to disable IO on
   //  client but set the continuation to be the state machine
   //  so if we get an timeout events the sm handles them
-  ua_entry->read_vio = client_vc->do_io_read(this, 0, NULL);
+  ua_entry->read_vio = client_vc->do_io_read(this, 0, buffer_reader->mbuf);
 
   /////////////////////////
   // set up timeouts     //
@@ -1987,6 +1987,11 @@ HttpSM::state_send_server_request_header(int event, void *data)
   case VC_EVENT_ACTIVE_TIMEOUT:
   case VC_EVENT_INACTIVITY_TIMEOUT:
     handle_server_setup_error(event, data);
+    break;
+
+  case VC_EVENT_READ_COMPLETE:
+    // new event expected due to TS-3189
+    DebugSM("http_ss", "read complete due to 0 byte do_io_read");
     break;
 
   default:
@@ -5654,7 +5659,7 @@ HttpSM::attach_server_session(HttpServerSession * s)
   // first tunnel instead of the producer of the second tunnel.
   // The real read is setup in setup_server_read_response_header()
   //
-  server_entry->read_vio = server_session->do_io_read(this, 0, NULL);
+  server_entry->read_vio = server_session->do_io_read(this, 0, server_session->read_buffer);
 
   // Transfer control of the write side as well
   server_session->do_io_write(this, 0, NULL);
