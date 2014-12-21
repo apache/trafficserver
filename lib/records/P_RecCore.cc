@@ -821,8 +821,6 @@ RecExecConfigUpdateCbs(unsigned int update_required_type)
        */
 
       if (r->config_meta.update_required) {
-        printf("update (type %#x) required on %s\n", r->config_meta.update_required, r->name);
-
         if (r->config_meta.update_type > update_type) {
           update_type = r->config_meta.update_type;
         }
