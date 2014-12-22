@@ -699,8 +699,8 @@ public:
     TransferEncoding_t transfer_encoding;
 
     //TS-2157 Replace addr with src_addr dst_addr
-    IpEndpoint src_addr;    // replaces 'ip' field
-    IpEndpoint dst_addr;
+    IpEndpoint remote_addr;    // replaces 'ip' field
+    IpEndpoint local_addr;
 
     ServerState_t state;
     AbortState_t abort;
@@ -728,8 +728,8 @@ public:
         port_attribute(HttpProxyPort::TRANSPORT_DEFAULT),
         is_transparent(false)
     {
-      memset(&src_addr, 0, sizeof(src_addr));
-      memset(&dst_addr, 0, sizeof(dst_addr));
+      memset(&remote_addr, 0, sizeof(remote_addr));
+      memset(&local_addr, 0, sizeof(local_addr));
     }
 
   };
