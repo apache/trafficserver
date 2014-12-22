@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.0
 
+  *) [TS-3248] Fix with Susan's help to resolve crash introduced in TS-3189
+
   *) [TS-3255] support flush option in gzip plugins.
 
   *) [TS-3222] Fix port print to not have leading 0.
