@@ -1655,7 +1655,7 @@ HttpSM::state_http_server_open(int event, void *data)
        server_vc->con.fd); */
     ats_ip_copy(&session->server_ip, &t_state.current.server->remote_addr);
     session->new_connection((NetVConnection *) data);
-    ats_ip_port_cast(&session->server_ip) = htons(t_state.current.server->local_addr.port());
+    ats_ip_port_cast(&session->server_ip) = htons(t_state.current.server->remote_addr.port());
     session->state = HSS_ACTIVE;
 
     attach_server_session(session);
@@ -2163,7 +2163,7 @@ HttpSM::state_hostdb_lookup(int event, void *data)
 
       char *host_name = t_state.dns_info.srv_lookup_success ? t_state.dns_info.srv_hostname : t_state.dns_info.lookup_name;
       HostDBProcessor::Options opt;
-      opt.port = t_state.dns_info.srv_lookup_success ? t_state.dns_info.srv_port : t_state.server_info.local_addr.port();
+      opt.port = t_state.dns_info.srv_lookup_success ? t_state.dns_info.srv_port : t_state.server_info.remote_addr.port();
       opt.flags = (t_state.cache_info.directives.does_client_permit_dns_storing)
             ? HostDBProcessor::HOSTDB_DO_NOT_FORCE_DNS
             : HostDBProcessor::HOSTDB_FORCE_DNS_RELOAD
@@ -3985,7 +3985,7 @@ HttpSM::do_hostdb_lookup()
       historical_action = pending_action;
     } else {
       char *host_name = t_state.dns_info.srv_lookup_success ? t_state.dns_info.srv_hostname : t_state.dns_info.lookup_name;
-      opt.port = t_state.dns_info.srv_lookup_success ? t_state.dns_info.srv_port : t_state.server_info.local_addr.port();
+      opt.port = t_state.dns_info.srv_lookup_success ? t_state.dns_info.srv_port : t_state.server_info.remote_addr.port();
       opt.flags = (t_state.cache_info.directives.does_client_permit_dns_storing)
             ? HostDBProcessor::HOSTDB_DO_NOT_FORCE_DNS
             : HostDBProcessor::HOSTDB_FORCE_DNS_RELOAD
@@ -4012,7 +4012,7 @@ HttpSM::do_hostdb_lookup()
 
     // If there is not a current server, we must be looking up the origin
     //  server at the beginning of the transaction
-    int server_port = t_state.current.server ? t_state.current.server->local_addr.port() : t_state.server_info.local_addr.port();
+    int server_port = t_state.current.server ? t_state.current.server->remote_addr.port() : t_state.server_info.remote_addr.port();
 
     if (t_state.api_txn_dns_timeout_value != -1) {
       DebugSM("http_timeout", "beginning DNS lookup. allowing %d mseconds for DNS lookup",
@@ -4101,7 +4101,7 @@ HttpSM::do_hostdb_update_if_necessary()
   } else {
     if (t_state.host_db_info.app.http_data.last_failure != 0) {
       t_state.host_db_info.app.http_data.last_failure = 0;
-      ats_ip_port_cast(&t_state.current.server->remote_addr) = htons(t_state.current.server->local_addr.port());
+      ats_ip_port_cast(&t_state.current.server->remote_addr) = htons(t_state.current.server->remote_addr.port());
       issue_update |= 1;
       char addrbuf[INET6_ADDRPORTSTRLEN];
       DebugSM("http", "[%" PRId64 "] hostdb update marking IP: %s as up",
@@ -4580,8 +4580,8 @@ HttpSM::do_http_server_open(bool raw)
   ink_assert(pending_action == NULL);
 
   if (false == t_state.api_server_addr_set) {
-    ink_assert(t_state.current.server->local_addr.port() > 0);
-    t_state.current.server->remote_addr.port() = htons(t_state.current.server->local_addr.port());
+    ink_assert(t_state.current.server->remote_addr.port() > 0);
+    t_state.current.server->remote_addr.port() = htons(t_state.current.server->remote_addr.port());
   } else {
     ink_assert(ats_ip_port_cast(&t_state.current.server->remote_addr) != 0);
   }

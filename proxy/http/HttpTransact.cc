@@ -312,7 +312,7 @@ find_server_and_update_current_info(HttpTransact::State* s)
   switch (s->parent_result.r) {
   case PARENT_SPECIFIED:
     s->parent_info.name = s->arena.str_store(s->parent_result.hostname, strlen(s->parent_result.hostname));
-    s->parent_info.local_addr.port() = s->parent_result.port;
+    s->parent_info.remote_addr.port() = s->parent_result.port;
     update_current_info(&s->current, &s->parent_info, HttpTransact::PARENT_PROXY, (s->current.attempts)++);
     update_dns_info(&s->dns_info, &s->current, 0, &s->arena);
     ink_assert(s->dns_info.looking_up == HttpTransact::PARENT_PROXY);
@@ -3090,12 +3090,12 @@ HttpTransact::HandleICPLookup(State* s)
     HTTP_INCREMENT_TRANS_STAT(http_icp_suggested_lookups_stat);
     DebugTxn("http_trans", "[HandleICPLookup] Success, sending request to icp suggested host.");
     ats_ip4_set(&s->icp_info.remote_addr, s->icp_ip_result.sin_addr.s_addr);
-    s->icp_info.local_addr.port() = ntohs(s->icp_ip_result.sin_port);
+    s->icp_info.remote_addr.port() = ntohs(s->icp_ip_result.sin_port);
 
     // TODO in this case we should go to the miss case
     // just a little shy about using goto's, that's all.
     ink_release_assert(
-        (s->icp_info.local_addr.port() != s->client_info.local_addr.port()) ||
+        (s->icp_info.remote_addr.port() != s->client_info.local_addr.port()) ||
         (ats_ip_addr_cmp(&s->icp_info.remote_addr.sa, &Machine::instance()->ip.sa) != 0)
     );
 
@@ -5412,13 +5412,13 @@ void
 HttpTransact::initialize_state_variables_for_origin_server(State* s, HTTPHdr* incoming_request, bool second_time)
 {
   if (s->server_info.name && !second_time) {
-    ink_assert(s->server_info.local_addr.port() != 0);
+    ink_assert(s->server_info.remote_addr.port() != 0);
   }
 
   int host_len;
   const char *host = incoming_request->host_get(&host_len);
   s->server_info.name = s->arena.str_store(host, host_len);
-  s->server_info.local_addr.port() = incoming_request->port_get();
+  s->server_info.remote_addr.port() = incoming_request->port_get();
 
   if (second_time) {
     s->dns_info.attempts = 0;
@@ -5488,7 +5488,7 @@ HttpTransact::initialize_state_variables_from_request(State* s, HTTPHdr* obsolet
 
   if (!s->server_info.name || s->redirect_info.redirect_in_process) {
     s->server_info.name = s->arena.str_store(host_name, host_len);
-    s->server_info.local_addr.port() = incoming_request->port_get();
+    s->server_info.remote_addr.port() = incoming_request->port_get();
   }
 
   s->next_hop_scheme = s->scheme = incoming_request->url_get()->scheme_get_wksidx();

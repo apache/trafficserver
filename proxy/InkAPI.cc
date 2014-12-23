@@ -5285,7 +5285,7 @@ TSHttpTxnServerAddrSet(TSHttpTxn txnp, struct sockaddr const* addr)
   HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
   if (ats_ip_copy(&sm->t_state.server_info.remote_addr.sa, addr)) {
     ats_ip_port_cast(&sm->t_state.server_info.remote_addr.sa) = ats_ip_port_cast(addr);
-    sm->t_state.server_info.local_addr.port() = htons(ats_ip_port_cast(addr));
+    sm->t_state.server_info.remote_addr.port() = htons(ats_ip_port_cast(addr));
     sm->t_state.api_server_addr_set = true;
     return TS_SUCCESS;
   } else {
