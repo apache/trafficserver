@@ -1,7 +1,12 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.2.0
 
-  *) [TS-3226] Move access of read vio inside the mutex to prevent ntodo corruption
+  *) [TS-3248] Fix to resolve crash introduced in TS-3189.
+
+  *) [TS-3254] Patches to fix perl get_stats API.
+
+  *) [TS-3226] Move access of read vio inside the mutex to prevent ntodo
+   corruption.
 
   *) [TS-3244] stats_over_http plugin does not use optional path argument.
 
