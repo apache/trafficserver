@@ -230,7 +230,7 @@ LogAccessHttp::marshal_plugin_identity_tag(char *buf)
 int
 LogAccessHttp::marshal_client_host_ip(char *buf)
 {
-  return marshal_ip(buf, &m_http_sm->t_state.client_info.addr.sa);
+  return marshal_ip(buf, &m_http_sm->t_state.client_info.remote_addr.sa);
 }
 
 /*-------------------------------------------------------------------------
@@ -240,7 +240,7 @@ int
 LogAccessHttp::marshal_client_host_port(char *buf)
 {
   if (buf) {
-    uint16_t port = ntohs(m_http_sm->t_state.client_info.addr.port());
+    uint16_t port = ntohs(m_http_sm->t_state.client_info.remote_addr.port());
     marshal_int(buf, port);
   }
   return INK_MIN_ALIGN;
@@ -773,7 +773,7 @@ LogAccessHttp::marshal_proxy_req_server_name(char *buf)
 int
 LogAccessHttp::marshal_proxy_req_server_ip(char *buf)
 {
-  return marshal_ip(buf, m_http_sm->t_state.current.server != NULL ? &m_http_sm->t_state.current.server->addr.sa : 0);
+  return marshal_ip(buf, m_http_sm->t_state.current.server != NULL ? &m_http_sm->t_state.current.server->remote_addr.sa : 0);
 }
 
 /*-------------------------------------------------------------------------
@@ -797,10 +797,10 @@ int
 LogAccessHttp::marshal_server_host_ip(char *buf)
 {
   sockaddr const* ip = 0;
-  ip = &m_http_sm->t_state.server_info.addr.sa;
+  ip = &m_http_sm->t_state.server_info.remote_addr.sa;
   if (! ats_is_ip(ip)) {
     if (m_http_sm->t_state.current.server) {
-      ip = &m_http_sm->t_state.current.server->addr.sa;
+      ip = &m_http_sm->t_state.current.server->remote_addr.sa;
       if (! ats_is_ip(ip)) ip = 0;
     } else {
       ip = 0;

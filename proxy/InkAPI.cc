@@ -5274,7 +5274,7 @@ TSHttpTxnServerAddrGet(TSHttpTxn txnp)
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
   HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
-  return &sm->t_state.server_info.addr.sa;
+  return &sm->t_state.server_info.remote_addr.sa;
 }
 
 TSReturnCode
@@ -5283,9 +5283,9 @@ TSHttpTxnServerAddrSet(TSHttpTxn txnp, struct sockaddr const* addr)
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
   HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
-  if (ats_ip_copy(&sm->t_state.server_info.addr.sa, addr)) {
-    ats_ip_port_cast(&sm->t_state.server_info.addr.sa) = ats_ip_port_cast(addr);
-    sm->t_state.server_info.port = htons(ats_ip_port_cast(addr));
+  if (ats_ip_copy(&sm->t_state.server_info.remote_addr.sa, addr)) {
+    ats_ip_port_cast(&sm->t_state.server_info.remote_addr.sa) = ats_ip_port_cast(addr);
+    sm->t_state.server_info.local_addr.port() = htons(ats_ip_port_cast(addr));
     sm->t_state.api_server_addr_set = true;
     return TS_SUCCESS;
   } else {
@@ -5299,7 +5299,7 @@ TSHttpTxnClientIncomingPortSet(TSHttpTxn txnp, int port)
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
   HttpSM *sm = (HttpSM *) txnp;
-  sm->t_state.client_info.port = port;
+  sm->t_state.client_info.local_addr.port() = port;
 }
 
 // [amc] This might use the port. The code path should do that but it
@@ -5336,7 +5336,7 @@ TSHttpTxnNextHopAddrGet(TSHttpTxn txnp)
   if (sm->t_state.current.server == NULL)
     return NULL;
 
-  return &sm->t_state.current.server->addr.sa;
+  return &sm->t_state.current.server->remote_addr.sa;
 }
 
 TSReturnCode

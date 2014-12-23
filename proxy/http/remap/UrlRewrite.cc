@@ -426,7 +426,7 @@ UrlRewrite::PerformACLFiltering(HttpTransact::State *s, url_mapping *map)
     int method = s->hdr_info.client_request.method_get_wksidx();
     int method_wksidx = (method != -1) ? (method - HTTP_WKSIDX_CONNECT) : -1;
     bool client_enabled_flag = true;
-    ink_release_assert(ats_is_ip(&s->client_info.addr));
+    ink_release_assert(ats_is_ip(&s->client_info.remote_addr));
     for (acl_filter_rule * rp = map->filter; rp; rp = rp->next) {
       bool match = true;
       if (rp->method_restriction_enabled) {
@@ -442,7 +442,7 @@ UrlRewrite::PerformACLFiltering(HttpTransact::State *s, url_mapping *map)
       if (match && rp->src_ip_valid) {
         match = false;
         for (int j = 0; j < rp->src_ip_cnt && !match; j++) {
-          res = rp->src_ip_array[j].contains(s->client_info.addr) ? 1 : 0;
+          res = rp->src_ip_array[j].contains(s->client_info.remote_addr) ? 1 : 0;
           if (rp->src_ip_array[j].invert) {
             if (res != 1)
               match = true;
