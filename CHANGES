@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.2.0
 
+  *) [TS-3257] Fix ssl handshake buffer memory leak introduced in TS-3006.
+
   *) [TS-3248] Fix to resolve crash introduced in TS-3189.
 
   *) [TS-3254] Patches to fix perl get_stats API.
