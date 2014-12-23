@@ -39,7 +39,7 @@ Changes with Apache Traffic Server 5.3.0
 
 Changes with Apache Traffic Server 5.2.0
 
-  *) [TS-3257]: Fix ssl handshake buffer memory leak introduced in TS-3006.
+  *) [TS-3257] Fix ssl handshake buffer memory leak introduced in TS-3006.
 
   *) [TS-3248] Fix to resolve crash introduced in TS-3189.
 
@@ -116,7 +116,7 @@ Changes with Apache Traffic Server 5.2.0
 
   *) [TS-2682] Add per remap support for background fetch plugin.
 
-  *) [TS-2683]: Enhance the bg fetch plugin to support configuration
+  *) [TS-2683] Enhance the bg fetch plugin to support configuration
      control with inclusion/exclusion criteria based on client-ip
      or any header.
 
@@ -146,7 +146,7 @@ Changes with Apache Traffic Server 5.2.0
 
   *) [TS-3145] Add traffic_line --backtrace option.
 
-  *) [TS-2503]: Dynamic TLS Record Sizing for better page load latencies.
+  *) [TS-2503] Dynamic TLS Record Sizing for better page load latencies.
 
   *) [TS-3139] New script, traffic_primer, which will fetch a URL from origin
    (or another proxy) and PUSH the same object to a given set of
@@ -261,7 +261,7 @@ Changes with Apache Traffic Server 5.2.0
 
   *) [TS-2561] Remove example/app-template, it's no longer supported.
 
-  *) [TS-3048]: Remove hard coded directory in TSPluginDirGet() regression.
+  *) [TS-3048] Remove hard coded directory in TSPluginDirGet() regression.
    Author: Steven Feltner <steven.feltner@gmail.com>
 
   *) [TS-3047] The Makefile.am for traffic_top is inconsistent with the rest
@@ -1623,7 +1623,7 @@ Changes with Apache Traffic Server 3.3.5
 
   *) [TS-2100] Initialize the SSL/NPN registration mutex.
 
-  * [TS-1987, TS-2097]: Remove duplicate and unused string functions.
+  * [TS-1987, TS-2097] Remove duplicate and unused string functions.
 
   *) [TS-2091] Return an error from RecGetRecordOrderAndId if the stat isn't
    registered.
@@ -3651,7 +3651,7 @@ Changes with Apache Traffic Server 2.1.5
   *) Change default settings for MSIE User-Agent sniffing [TS-615].
 
   *) Remove remnants from InktoSwitch. This removes the following
-  configurations [TS-614]:
+  configurations [TS-614]
 
       proxy.config.http.inktoswitch_enabled
       proxy.config.http.router_ip
