@@ -815,6 +815,7 @@ SSLNetVConnection::free(EThread * t) {
   hookOpRequested = TS_SSL_HOOK_OP_DEFAULT;
   npnSet = NULL;
   npnEndpoint= NULL;
+  free_handshake_buffers();
 
   if (from_accept_thread) {
     sslNetVCAllocator.free(this);

@@ -155,10 +155,15 @@ public:
     this->handShakeHolder = this->handShakeReader->clone();
   }
   void free_handshake_buffers() {
-
-    this->handShakeReader->dealloc();
-    this->handShakeHolder->dealloc();
-    free_MIOBuffer(this->handShakeBuffer);
+    if (this->handShakeReader) {
+      this->handShakeReader->dealloc();
+    }
+    if (this->handShakeHolder) {
+      this->handShakeHolder->dealloc();
+    }
+    if (this->handShakeBuffer) {
+      free_MIOBuffer(this->handShakeBuffer);
+    }
     this->handShakeReader = NULL;
     this->handShakeHolder = NULL;
     this->handShakeBuffer = NULL;
