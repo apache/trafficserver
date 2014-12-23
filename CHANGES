@@ -1,10 +1,6 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.0
 
-  *) [TS-3254] : patch from James to fix perl get_stats API
-
-  *) [TS-3248] Fix with Susan's help to resolve crash introduced in TS-3189
-
   *) [TS-3255] support flush option in gzip plugins.
 
   *) [TS-3222] Fix port print to not have leading 0.
@@ -34,7 +30,12 @@ Changes with Apache Traffic Server 5.3.0
 
   *) [TS-3233] Add drain option to restart API.
 
+
 Changes with Apache Traffic Server 5.2.0
+
+  *) [TS-3248] Fix to resolve crash introduced in TS-3189.
+
+  *) [TS-3254] Patches to fix perl get_stats API.
 
   *) [TS-3244] stats_over_http plugin does not use optional path argument.
 
