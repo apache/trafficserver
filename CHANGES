@@ -30,6 +30,12 @@ Changes with Apache Traffic Server 5.3.0
 
   *) [TS-3233] Add drain option to restart API.
 
+  *) [TS-3221] ink_atoi64 fix for single digit case.
+     Author: Cynthia Gu <czhenggu@linkedin.com>
+
+  *) [TS-1570] Remap doesn't reject request with extract characters after port
+     in Host header. Author: Cynthia Gu <czhenggu@linkedin.com>
+
 
 Changes with Apache Traffic Server 5.2.0
 
@@ -38,12 +44,6 @@ Changes with Apache Traffic Server 5.2.0
   *) [TS-3254] Patches to fix perl get_stats API.
 
   *) [TS-3244] stats_over_http plugin does not use optional path argument.
-
-  *) [TS-1570] Remap doesn't reject request with extract characters after port
-     in Host header. Author: Cynthia Gu <czhenggu@linkedin.com>
-
-  *) [TS-3221] ink_atoi64 fix for single digit case.
-     Author: Cynthia Gu <czhenggu@linkedin.com>
 
   *) [TS-3223] Fix the internal buffer sizing.
 
