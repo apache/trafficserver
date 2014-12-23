@@ -70,6 +70,7 @@
 #define TS_LUA_MAX_URL_LENGTH                   2048
 #define TS_LUA_MAX_OVEC_SIZE                    (3 * 32)
 #define TS_LUA_MAX_RESIDENT_PCRE                64
+#define TS_LUA_MAX_STR_LENGTH                   2048
 
 #define TS_LUA_MIN_ALIGN                        sizeof(void*)
 #define TS_LUA_MEM_ALIGN(size)                  (((size) + ((TS_LUA_MIN_ALIGN) - 1)) & ~((TS_LUA_MIN_ALIGN) - 1))

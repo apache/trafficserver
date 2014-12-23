@@ -85,6 +85,13 @@ typedef enum
   TS_LUA_CONFIG_LAST_ENTRY = TS_CONFIG_LAST_ENTRY
 } TSLuaOverridableConfigKey;
 
+typedef enum
+{
+  TS_LUA_TIMEOUT_ACTIVE = 0,
+  TS_LUA_TIMEOUT_CONNECT = 1,
+  TS_LUA_TIMEOUT_DNS = 2,
+  TS_LUA_TIMEOUT_NO_ACTIVITY = 3
+} TSLuaTimeoutKey;
 
 ts_lua_var_item ts_lua_http_config_vars[] = {
   TS_LUA_MAKE_VAR_ITEM(TS_LUA_CONFIG_URL_REMAP_PRISTINE_HOST_HDR),
@@ -151,6 +158,13 @@ ts_lua_var_item ts_lua_http_config_vars[] = {
   TS_LUA_MAKE_VAR_ITEM(TS_LUA_CONFIG_LAST_ENTRY),
 };
 
+ts_lua_var_item ts_lua_http_timeout_vars[] = {
+  TS_LUA_MAKE_VAR_ITEM(TS_LUA_TIMEOUT_ACTIVE),
+  TS_LUA_MAKE_VAR_ITEM(TS_LUA_TIMEOUT_CONNECT),
+  TS_LUA_MAKE_VAR_ITEM(TS_LUA_TIMEOUT_DNS),
+  TS_LUA_MAKE_VAR_ITEM(TS_LUA_TIMEOUT_NO_ACTIVITY),
+};
+
 static void ts_lua_inject_http_config_variables(lua_State * L);
 
 static int ts_lua_http_config_int_set(lua_State * L);
@@ -159,7 +173,11 @@ static int ts_lua_http_config_float_set(lua_State * L);
 static int ts_lua_http_config_float_get(lua_State * L);
 static int ts_lua_http_config_string_set(lua_State * L);
 static int ts_lua_http_config_string_get(lua_State * L);
-
+static int ts_lua_http_timeout_set(lua_State * L);
+static int ts_lua_http_client_packet_mark_set(lua_State * L);
+static int ts_lua_http_server_packet_mark_set(lua_State * L);
+static int ts_lua_http_client_packet_tos_set(lua_State * L);
+static int ts_lua_http_server_packet_tos_set(lua_State * L);
 
 void
 ts_lua_inject_http_config_api(lua_State * L)
@@ -183,6 +201,21 @@ ts_lua_inject_http_config_api(lua_State * L)
 
   lua_pushcfunction(L, ts_lua_http_config_string_get);
   lua_setfield(L, -2, "config_string_get");
+
+  lua_pushcfunction(L, ts_lua_http_timeout_set);
+  lua_setfield(L, -2, "timeout_set");
+
+  lua_pushcfunction(L, ts_lua_http_client_packet_mark_set);
+  lua_setfield(L, -2, "client_packet_mark_set");
+
+  lua_pushcfunction(L, ts_lua_http_server_packet_mark_set);
+  lua_setfield(L, -2, "server_packet_mark_set");
+
+  lua_pushcfunction(L, ts_lua_http_client_packet_tos_set);
+  lua_setfield(L, -2, "client_packet_tos_set");
+
+  lua_pushcfunction(L, ts_lua_http_server_packet_tos_set);
+  lua_setfield(L, -2, "server_packet_tos_set");
 }
 
 static void
@@ -193,6 +226,11 @@ ts_lua_inject_http_config_variables(lua_State * L)
   for (i = 0; i < sizeof(ts_lua_http_config_vars) / sizeof(ts_lua_var_item); i++) {
     lua_pushinteger(L, ts_lua_http_config_vars[i].nvar);
     lua_setglobal(L, ts_lua_http_config_vars[i].svar);
+  }
+
+  for (i = 0; i < sizeof(ts_lua_http_timeout_vars)/ sizeof(ts_lua_var_item); i++) {
+    lua_pushinteger(L, ts_lua_http_timeout_vars[i].nvar);
+    lua_setglobal(L, ts_lua_http_timeout_vars[i].svar);
   }
 }
 
@@ -302,3 +340,109 @@ ts_lua_http_config_string_get(lua_State * L)
 
   return 1;
 }
+
+static int
+ts_lua_http_timeout_set(lua_State * L)
+{
+  int conf;
+  int value;
+  ts_lua_http_ctx *http_ctx;
+
+  http_ctx = ts_lua_get_http_ctx(L);
+
+  conf = luaL_checkinteger(L, 1);
+  value = luaL_checkinteger(L, 2);
+
+  switch(conf) {
+  case TS_LUA_TIMEOUT_ACTIVE:
+    TSDebug(TS_LUA_DEBUG_TAG, "setting active timeout");
+    TSHttpTxnActiveTimeoutSet(http_ctx->txnp, value);
+    break;
+
+  case TS_LUA_TIMEOUT_CONNECT:
+    TSDebug(TS_LUA_DEBUG_TAG, "setting connect timeout");
+    TSHttpTxnConnectTimeoutSet(http_ctx->txnp, value);
+    break;
+
+  case TS_LUA_TIMEOUT_DNS:
+    TSDebug(TS_LUA_DEBUG_TAG, "setting dns timeout");
+    TSHttpTxnDNSTimeoutSet(http_ctx->txnp, value);
+    break;
+
+  case TS_LUA_TIMEOUT_NO_ACTIVITY:
+    TSDebug(TS_LUA_DEBUG_TAG, "setting no activity timeout");
+    TSHttpTxnNoActivityTimeoutSet(http_ctx->txnp, value);
+    break;
+
+  default:
+    TSError("unsupported timeout config option for lua plugin"); 
+    break;
+  }
+
+  return 0;
+}
+
+static int
+ts_lua_http_client_packet_mark_set(lua_State * L)
+{
+  int value;
+  ts_lua_http_ctx *http_ctx;
+
+  http_ctx = ts_lua_get_http_ctx(L);
+
+  value = luaL_checkinteger(L, 1);
+
+  TSDebug(TS_LUA_DEBUG_TAG, "client packet mark set");
+  TSHttpTxnClientPacketMarkSet(http_ctx->txnp, value);
+
+  return 0;
+}
+
+static int
+ts_lua_http_server_packet_mark_set(lua_State * L)
+{
+  int value;
+  ts_lua_http_ctx *http_ctx;
+
+  http_ctx = ts_lua_get_http_ctx(L);
+
+  value = luaL_checkinteger(L, 1);
+
+  TSDebug(TS_LUA_DEBUG_TAG, "server packet mark set");
+  TSHttpTxnServerPacketMarkSet(http_ctx->txnp, value);
+
+  return 0;
+}
+
+static int
+ts_lua_http_client_packet_tos_set(lua_State * L)
+{
+  int value;
+  ts_lua_http_ctx *http_ctx;
+
+  http_ctx = ts_lua_get_http_ctx(L);
+
+  value = luaL_checkinteger(L, 1);
+
+  TSDebug(TS_LUA_DEBUG_TAG, "client packet tos set");
+  TSHttpTxnClientPacketTosSet(http_ctx->txnp, value);
+
+  return 0;
+}
+
+static int
+ts_lua_http_server_packet_tos_set(lua_State * L)
+{
+  int value;
+  ts_lua_http_ctx *http_ctx;
+
+  http_ctx = ts_lua_get_http_ctx(L);
+
+  value = luaL_checkinteger(L, 1);
+
+  TSDebug(TS_LUA_DEBUG_TAG, "server packet tos set");
+  TSHttpTxnServerPacketTosSet(http_ctx->txnp, value);
+
+  return 0;
+}
+

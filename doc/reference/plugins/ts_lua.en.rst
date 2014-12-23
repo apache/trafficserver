@@ -734,6 +734,36 @@ Here is an example:
 
 `TOP <#ts-lua-plugin>`_
 
+ts.http.set_cache_lookup_status
+-------------------------------
+**syntax:** *ts.http.set_cache_lookup_status()*
+
+**context:** function after TS_LUA_HOOK_CACHE_LOOKUP_COMPLETE hook point
+
+**description:** This function can be used to set cache lookup status.
+
+Here is an example:
+
+::
+
+    function cache_lookup()
+        local cache_status = ts.http.get_cache_lookup_status()
+        if cache_status == TS_LUA_CACHE_LOOKUP_HIT_FRESH then
+            print('hit')
+        else
+            print('not hit')
+        end
+        ts.http.set_cache_lookup_status(TS_LUA_CACHE_LOOKUP_MISS)
+    end
+
+    function do_remap()
+        ts.hook(TS_LUA_HOOK_CACHE_LOOKUP_COMPLETE, cache_lookup)
+        return 0
+    end
+
+
+`TOP <#ts-lua-plugin>`_
+
 Http cache lookup status constants
 ----------------------------------
 **context:** global
@@ -1595,6 +1625,87 @@ Here is an example:
 
 `TOP <#ts-lua-plugin>`_
 
+ts.base64_encode
+-----------
+**syntax:** *value = ts.base64_encode(str)*
+
+**context:** global
+
+**description:** Returns the base64 encoding of the ``str`` argument.
+
+Here is an example:
+
+::
+
+    function do_remap()
+        uri = ts.client_request.get_uri()
+        value = ts.base64_encode(uri)
+    end
+
+
+`TOP <#ts-lua-plugin>`_
+
+ts.base64_decode
+-----------
+**syntax:** *value = ts.base64_decode(str)*
+
+**context:** global
+
+**description:** Returns the base64 decoding of the ``str`` argument.
+
+Here is an example:
+
+::
+
+    function do_remap()
+        uri = ts.client_request.get_uri()
+        encoded_value = ts.base64_encode(uri)
+        decoded_value = ts.base64_decode(encoded_value)
+    end
+
+
+`TOP <#ts-lua-plugin>`_
+
+ts.escape_uri
+-----------
+**syntax:** *value = ts.escape_uri(str)*
+
+**context:** global
+
+**description:** Returns the uri-escaped value of the ``str`` argument.
+
+Here is an example:
+
+::
+
+    function do_remap()
+        test = '/some value/'
+        value = ts.escape_uri(test)
+    end
+
+`TOP <#ts-lua-plugin>`_
+
+ts.unescape_uri
+-----------
+**syntax:** *value = ts.unescape_uri(str)*
+
+**context:** global
+
+**description:** Returns the uri-unescaped value of the ``str`` argument.
+
+Here is an example:
+
+::
+
+    function do_remap()
+        test = '/some value/'
+        escaped_value = ts.escape_uri(test)
+        unescaped_value = ts.unescape_uri(escaped_value)
+    end
+
+
+`TOP <#ts-lua-plugin>`_
+
 ts.intercept
 ------------
 **syntax:** *ts.intercept(FUNCTION)*
@@ -1961,6 +2072,93 @@ Http config constants
     TS_LUA_CONFIG_HTTP_CACHE_FUZZ_PROBABILITY
     TS_LUA_CONFIG_NET_SOCK_PACKET_MARK_OUT
     TS_LUA_CONFIG_NET_SOCK_PACKET_TOS_OUT
+
+
+`TOP <#ts-lua-plugin>`_
+
+ts.http.timeout_set
+----------------------
+**syntax:** *ts.http.timeout_set(CONFIG, NUMBER)*
+
+**context:** do_remap or do_global_* or later.
+
+**description:** This function can be used to overwrite the timeout settings.
+
+Here is an example:
+
+::
+
+    function do_remap()
+        ts.http.timeout_set(TS_LUA_TIMEOUT_DNS, 30)    -- 30 seconds
+        return 0
+    end
+
+
+`TOP <#ts-lua-plugin>`_
+
+Timeout constants
+---------------------
+**context:** do_remap or do_global_* or later
+
+::
+
+    TS_LUA_TIMEOUT_ACTIVE
+    TS_LUA_TIMEOUT_DNS
+    TS_LUA_TIMEOUT_CONNECT
+    TS_LUA_TIMEOUT_NO_ACTIVITY
+
+
+`TOP <#ts-lua-plugin>`_
+
+ts.http.client_packet_mark_set
+----------------------
+**syntax:** *ts.http.client_packet_mark_set(NUMBER)*
+
+**context:** do_remap or do_global_* or later.
+
+**description:** This function can be used to set packet mark for client connection.
+
+Here is an example:
+
+::
+
+    function do_remap()
+        ts.http.client_packet_mark_set(TS_LUA_TIMEOUT_DNS, 0)
+        return 0
+    end
+
+`TOP <#ts-lua-plugin>`_
+
+ts.http.server_packet_mark_set
+-------------------------
+**syntax:** *ts.http.server_packet_mark_set(NUMBER)*
+
+**context:** do_remap or do_global_* or later.
+
+**description:** This function can be used to set packet mark for server connection.
+
+
+`TOP <#ts-lua-plugin>`_
+
+ts.http.client_packet_tos_set
+-------------------------
+**syntax:** *ts.http.client_packet_tos_set(NUMBER)*
+
+**context:** do_remap or do_global_* or later.
+
+**description:** This function can be used to set packet tos for client connection.
+
+
+`TOP <#ts-lua-plugin>`_
+
+ts.http.server_packet_tos_set
+-------------------------
+**syntax:** *ts.http.server_packet_tos_set(NUMBER)*
+
+**context:** do_remap or do_global_* or later.
+
+**description:** This function can be used to set packet tos for server connection.
+
 
 `TOP <#ts-lua-plugin>`_
 
