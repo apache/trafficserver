@@ -120,6 +120,28 @@ public:
     sslClientRenegotiationAbort = state;
   };
 
+  const char * get_ssl_protocol(void) const
+  {
+    if ( ssl == NULL )
+      return NULL;
+    return SSL_get_cipher_version(ssl);
+  };
+
+  const char * get_ssl_cipher_suite(void) const
+  {
+    if ( ssl == NULL )
+      return NULL;
+    return SSL_get_cipher_name(ssl);    
+  }
+
+  bool get_ssl_session_reused(void) const
+  {
+    if ( ssl == NULL )
+      return false;
+    return SSL_session_reused(ssl);
+  }
+
+
 private:
   SSLNetVConnection(const SSLNetVConnection &);
   SSLNetVConnection & operator =(const SSLNetVConnection &);

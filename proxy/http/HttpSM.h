@@ -532,6 +532,19 @@ public:
 
 public:
   bool set_server_session_private(bool private_session);
+
+// Info about client's SSL connection.
+private:
+  const char * sec_protocol;
+  const char * sec_cipher_suite;
+  bool         sec_session_reused;
+
+  inline void setup_security_properties(void);
+
+public:
+  const char * get_security_protocol(void);
+  const char * get_security_cipher_suite(void);
+  bool get_security_session_reused(void);
 };
 
 //Function to get the cache_sm object - YTS Team, yamsat

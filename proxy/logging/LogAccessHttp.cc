@@ -584,6 +584,44 @@ LogAccessHttp::marshal_client_finish_status_code(char *buf)
 }
 
 /*-------------------------------------------------------------------------
+-------------------------------------------------------------------------*/
+int
+LogAccessHttp::marshal_client_security_protocol(char *buf)
+{
+  const char * proto = m_http_sm->get_security_protocol();
+  int round_len = LogAccess::strlen(proto);
+  if (buf) {
+    marshal_str(buf, proto, round_len);
+  }
+  return round_len;
+}
+
+int
+LogAccessHttp::marshal_client_security_cipher_suite(char *buf)
+{
+  const char * cipher = m_http_sm->get_security_cipher_suite();
+  int round_len = LogAccess::strlen(cipher);
+  if (buf) {
+    marshal_str(buf, cipher, round_len);
+  }
+  return round_len;
+}
+
+int
+LogAccessHttp::marshal_client_security_session_reused(char *buf)
+{
+  
+  bool reused = m_http_sm->get_security_session_reused();
+  const char * out = (reused) ? "r" : "-";
+  int round_len = LogAccess::strlen(out);
+  if (buf) {
+    marshal_str(buf, out, round_len);
+  }
+  return round_len;
+}
+
+
+/*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
 int

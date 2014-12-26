@@ -71,6 +71,9 @@ public:
   virtual int marshal_client_req_header_len(char *);    // INT
   virtual int marshal_client_req_body_len(char *);      // INT
   virtual int marshal_client_finish_status_code(char *);        // INT
+  virtual int marshal_client_security_protocol(char *);       // STR
+  virtual int marshal_client_security_cipher_suite(char *);   // STR
+  virtual int marshal_client_security_session_reused(char *); // STR
 
   //
   // proxy -> client fields
