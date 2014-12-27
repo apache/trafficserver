@@ -33,7 +33,7 @@ void
 SSL_set_rbio(SSLNetVConnection *sslvc, BIO *rbio)
 {
   if (sslvc->ssl->rbio != NULL) {
-    BIO_free (sslvc->ssl->rbio);
+    BIO_free(sslvc->ssl->rbio);
   }
   sslvc->ssl->rbio = rbio;
 }
