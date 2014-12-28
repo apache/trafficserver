@@ -143,14 +143,6 @@ make_ssl_connection(SSL_CTX * ctx, SSLNetVConnection * netvc)
       BIO *rbio = BIO_new(BIO_s_mem());
       BIO *wbio = BIO_new_fd(netvc->get_socket(), BIO_NOCLOSE);
       BIO_set_mem_eof_return(wbio, -1);
-      BIO* old_rbio = SSL_get_rbio(ssl);
-      BIO* old_wbio = SSL_get_wbio(ssl);
-      if (old_rbio) {
-        BIO_free(old_rbio);
-      }
-      if (old_wbio) {
-        BIO_free(old_wbio);
-      }
       SSL_set_bio(ssl, rbio, wbio);
     }
 
