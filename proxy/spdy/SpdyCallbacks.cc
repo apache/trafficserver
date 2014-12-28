@@ -52,7 +52,11 @@ spdy_callbacks_init(spdylay_session_callbacks *callbacks)
 void
 spdy_prepare_status_response_and_clean_request(SpdyClientSession *sm, int stream_id, const char *status)
 {
-  SpdyRequest *req = sm->req_map[stream_id];
+  SpdyRequest *req = sm->find_request(stream_id);
+  if (!req) {
+    Error ("spdy_prepare_status_response_and_clean_request, req object null for sm %" PRId64 ", stream_id %d", sm->sm_id, stream_id);
+    return;
+  }
   string date_str = http_date(time(0));
   const char **nv = new const char*[8+req->headers.size()*2+1];
 
@@ -328,7 +332,11 @@ spdy_on_ctrl_recv_callback(spdylay_session *session, spdylay_frame_type type,
 
   case SPDYLAY_HEADERS:
     stream_id = frame->syn_stream.stream_id;
-    req = sm->req_map[stream_id];
+    req = sm->find_request(stream_id);
+    if (!req) {
+      Error ("spdy_on_ctrl_recv_callback, req object null on SPDYLAY_HEADERS for sm %" PRId64 ", stream_id %d", sm->sm_id, stream_id);
+      return;
+    }
     req->append_nv(frame->headers.nv);
     break;
 
