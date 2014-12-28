@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.0
 
+  *) [TS-3265] Fix spdy req_map access to use iterator instead of operator[]
+
   *) [TS-3261] Fix SSL BIO memory leak issue introduced in TS-3006
 
   *) [TS-3225] add more API support to ts_lua plugin.
