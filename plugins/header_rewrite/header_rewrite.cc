@@ -29,28 +29,6 @@
 const char PLUGIN_NAME[] = "header_rewrite";
 const char PLUGIN_NAME_DBG[] = "dbg_header_rewrite";
 
-const char* HOOK_NAMES[] = {
-  "TS_HTTP_READ_REQUEST_HDR_HOOK",
-  "TS_HTTP_OS_DNS_HOOK",
-  "TS_HTTP_SEND_REQUEST_HDR_HOOK",
-  "TS_HTTP_READ_CACHE_HDR_HOOK",
-  "TS_HTTP_READ_RESPONSE_HDR_HOOK",
-  "TS_HTTP_SEND_RESPONSE_HDR_HOOK",
-  "TS_HTTP_REQUEST_TRANSFORM_HOOK",
-  "TS_HTTP_RESPONSE_TRANSFORM_HOOK",
-  "TS_HTTP_SELECT_ALT_HOOK",
-  "TS_HTTP_TXN_START_HOOK",
-  "TS_HTTP_TXN_CLOSE_HOOK",
-  "TS_HTTP_SSN_START_HOOK",
-  "TS_HTTP_SSN_CLOSE_HOOK",
-  "TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK",
-  "TS_HTTP_PRE_REMAP_HOOK",
-  "TS_HTTP_POST_REMAP_HOOK",
-  "TS_HTTP_RESPONSE_CLIENT_HOOK",
-  "TS_HTTP_LAST_HOOK"
-};
-
-
 // Forward declaration for the main continuation.
 static int cont_rewrite_headers(TSCont, TSEvent, void *);
 
@@ -98,7 +76,7 @@ bool
 RulesConfig::add_rule(RuleSet* rule)
 {
   if (rule && rule->has_operator()) {
-    TSDebug(PLUGIN_NAME_DBG, "   Adding rule to hook=%s\n", HOOK_NAMES[rule->get_hook()]);
+    TSDebug(PLUGIN_NAME_DBG, "   Adding rule to hook=%s\n", TSHttpHookNameLookup(rule->get_hook()));
     if (NULL == _rules[rule->get_hook()]) {
       _rules[rule->get_hook()] = rule;
     } else {
@@ -317,7 +295,7 @@ TSPluginInit(int argc, const char *argv[])
 
     for (int i=TS_HTTP_READ_REQUEST_HDR_HOOK; i<TS_HTTP_LAST_HOOK; ++i) {
       if (conf->rule(i)) {
-        TSDebug(PLUGIN_NAME, "Adding global ruleset to hook=%s", HOOK_NAMES[i]);
+        TSDebug(PLUGIN_NAME, "Adding global ruleset to hook=%s", TSHttpHookNameLookup((TSHttpHookID)i));
         TSHttpHookAdd(static_cast<TSHttpHookID>(i), contp);
       }
     }
@@ -382,7 +360,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
   if (TSIsDebugTagSet(PLUGIN_NAME)) {
     for (int i=TS_HTTP_READ_REQUEST_HDR_HOOK; i<TS_HTTP_LAST_HOOK; ++i) {
       if (conf->rule(i)) {
-        TSDebug(PLUGIN_NAME, "Adding remap ruleset to hook=%s", HOOK_NAMES[i]);
+        TSDebug(PLUGIN_NAME, "Adding remap ruleset to hook=%s", TSHttpHookNameLookup((TSHttpHookID)i));
       }
     }
   }
@@ -420,7 +398,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
   for (int i=TS_HTTP_READ_REQUEST_HDR_HOOK; i<TS_HTTP_LAST_HOOK; ++i) {
     if (conf->rule(i)) {
       TSHttpTxnHookAdd(rh, static_cast<TSHttpHookID>(i), conf->continuation());
-      TSDebug(PLUGIN_NAME, "Added remapped TXN hook=%s", HOOK_NAMES[i]);
+      TSDebug(PLUGIN_NAME, "Added remapped TXN hook=%s", TSHttpHookNameLookup((TSHttpHookID)i));
     }
   }
 
