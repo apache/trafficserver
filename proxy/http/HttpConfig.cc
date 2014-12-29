@@ -83,11 +83,11 @@ template <typename T> struct ConfigEnumPair
 /// @a n is the number of entries in the list.
 /// @return @c true if the string is found, @c false if not found.
 /// If found @a value is set to the corresponding value in @a list.
-template <typename T> static bool
-http_config_enum_search(char const* key, ConfigEnumPair<T>* list, size_t n, MgmtByte value)
+template <typename T, unsigned N> static bool
+http_config_enum_search(char const* key, const ConfigEnumPair<T> (&list)[N], MgmtByte& value)
 {
   // We don't expect any of these lists to be more than 10 long, so a linear search is the best choice.
-  for ( size_t i = 0 ; i < n ; ++i ) {
+  for ( unsigned i = 0 ; i < N ; ++i ) {
     if (0 == strcasecmp(list[i]._key, key)) {
       value = list[i]._value;
       return true;
@@ -100,18 +100,18 @@ http_config_enum_search(char const* key, ConfigEnumPair<T>* list, size_t n, Mgmt
 /// @a n is the number of entries in the list.
 /// @return @c true if the string is found, @c false if not found.
 /// If found @a value is set to the corresponding value in @a list.
-template <typename T> static bool
-http_config_enum_read(char const* name, ConfigEnumPair<T>* list, size_t n, MgmtByte value)
+template <typename T, unsigned N> static bool
+http_config_enum_read(char const* name, const ConfigEnumPair<T> (&list)[N], MgmtByte& value)
 {
   char key[512]; // it's just one key - painful UI if keys are longer than this
   if (REC_ERR_OKAY == RecGetRecordString(name, key, sizeof(key))) {
-    return http_config_enum_search(key, list, n, value);
+    return http_config_enum_search(key, list, value);
   }
   return false;
 }
 
 /// Session sharing match types.
-static
+static const
 ConfigEnumPair<TSServerSessionSharingMatchType> SessionSharingMatchStrings[] =
 {
   { TS_SERVER_SESSION_SHARING_MATCH_NONE, "none" },
@@ -120,14 +120,12 @@ ConfigEnumPair<TSServerSessionSharingMatchType> SessionSharingMatchStrings[] =
   { TS_SERVER_SESSION_SHARING_MATCH_BOTH, "both" }
 };
 
-static
+static const
 ConfigEnumPair<TSServerSessionSharingPoolType> SessionSharingPoolStrings[] =
 {
   { TS_SERVER_SESSION_SHARING_POOL_GLOBAL, "global" },
   { TS_SERVER_SESSION_SHARING_POOL_THREAD, "thread" }
 };
-
-# define ARRAY_SIZE(x) (sizeof(x)/(sizeof((x)[0])))
 
 ////////////////////////////////////////////////////////////////
 //
@@ -211,7 +209,7 @@ http_server_session_sharing_cb(char const* name, RecDataT dtype, RecData data, v
     MgmtByte& match = c->oride.server_session_sharing_match;
     if (RECD_INT == dtype) {
       match = static_cast<TSServerSessionSharingMatchType>(data.rec_int);
-    } else if (RECD_STRING == dtype && http_config_enum_search(data.rec_string, SessionSharingMatchStrings, ARRAY_SIZE(SessionSharingMatchStrings), match)) {
+    } else if (RECD_STRING == dtype && http_config_enum_search(data.rec_string, SessionSharingMatchStrings, match)) {
       // empty
     } else {
       valid_p = false;
@@ -220,7 +218,7 @@ http_server_session_sharing_cb(char const* name, RecDataT dtype, RecData data, v
     MgmtByte& match = c->oride.server_session_sharing_pool;
     if (RECD_INT == dtype) {
       match = static_cast<TSServerSessionSharingPoolType>(data.rec_int);
-    } else if (RECD_STRING == dtype && http_config_enum_search(data.rec_string, SessionSharingPoolStrings, ARRAY_SIZE(SessionSharingPoolStrings), match)) {
+    } else if (RECD_STRING == dtype && http_config_enum_search(data.rec_string, SessionSharingPoolStrings, match)) {
       // empty
     } else {
       valid_p = false;
@@ -1291,9 +1289,9 @@ HttpConfig::startup()
 
   // [amc] This is a bit of a mess, need to figure out to make this cleaner.
   RecRegisterConfigUpdateCb("proxy.config.http.server_session_sharing.pool", &http_server_session_sharing_cb, &c);
-  http_config_enum_read("proxy.config.http.server_session_sharing.pool", SessionSharingPoolStrings, ARRAY_SIZE(SessionSharingPoolStrings), c.oride.server_session_sharing_pool);
+  http_config_enum_read("proxy.config.http.server_session_sharing.pool", SessionSharingPoolStrings, c.oride.server_session_sharing_pool);
   RecRegisterConfigUpdateCb("proxy.config.http.server_session_sharing.match", &http_server_session_sharing_cb, &c);
-  http_config_enum_read("proxy.config.http.server_session_sharing.match", SessionSharingMatchStrings, ARRAY_SIZE(SessionSharingMatchStrings), c.oride.server_session_sharing_match);
+  http_config_enum_read("proxy.config.http.server_session_sharing.match", SessionSharingMatchStrings, c.oride.server_session_sharing_match);
 
   HttpEstablishStaticConfigByte(c.oride.keep_alive_post_out, "proxy.config.http.keep_alive_post_out");
 
