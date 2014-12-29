@@ -114,8 +114,9 @@ int program_counter = 0;
 #endif /* darwin || freebsd || solaris */
 
 #include "EventName.h"
-
 #include "http/HttpSM.h"
+
+#include <cstdlib>
 
 bool inTable;
 FILE *fp;
@@ -263,7 +264,7 @@ CoreUtils::read_from_core(intptr_t vaddr, intptr_t bytes, char *buf)
   intptr_t vadd = arrayMem[index - 1].vaddr;
   intptr_t offset = arrayMem[index - 1].offset;
   intptr_t size = arrayMem[index - 1].fsize;
-  intptr_t offset2 = abs(vaddr - vadd);
+  intptr_t offset2 = std::abs(vaddr - vadd);
 
   if (bytes > (size - offset2))
     return -1;
@@ -302,7 +303,7 @@ CoreUtils::get_base_frame(intptr_t framep, core_stack_state *coress)
   intptr_t index = find_vaddr(framep, arrayMem.length(), 0);
   intptr_t vadd = arrayMem[index - 1].vaddr;
   intptr_t off = arrayMem[index - 1].offset;
-  intptr_t off2 = abs(vadd - framep);
+  intptr_t off2 = std::abs(vadd - framep);
   intptr_t size = arrayMem[index - 1].fsize;
   intptr_t i = 0;
 
@@ -345,7 +346,7 @@ CoreUtils::get_next_frame(core_stack_state * coress)
   // finds vaddress less than framep
   intptr_t vadd = arrayMem[index - 1].vaddr;
   intptr_t off = arrayMem[index - 1].offset;
-  intptr_t off2 = abs(vadd - framep);
+  intptr_t off2 = std::abs(vadd - framep);
 
   // seek to the framep offset
   if (fseek(fp, off + off2, SEEK_SET) != -1) {
@@ -649,7 +650,7 @@ CoreUtils::load_http_hdr(HTTPHdr * core_hdr, HTTPHdr * live_hdr)
     }
 
     char *free_start = (char *) (((HdrStrHeap *) str_hdr)->m_free_start);
-    int nto_copy = abs((char *) copy_start - free_start);
+    int nto_copy = std::abs((char *) copy_start - free_start);
     ats_free(str_hdr);
 #if defined(__GNUC__)
     char rw_heap[sizeof(char) * nto_copy];
@@ -791,7 +792,7 @@ CoreUtils::read_heap_header(intptr_t vaddr, intptr_t bytes, HdrHeap h)
   intptr_t vadd = arrayMem[index - 1].vaddr;
   intptr_t offset = arrayMem[index - 1].offset;
   intptr_t size = arrayMem[index - 1].fsize;
-  intptr_t offset2 = abs(vaddr - vadd);
+  intptr_t offset2 = std::abs(vaddr - vadd);
 
   if (bytes > (size - offset2))
     return -1;
