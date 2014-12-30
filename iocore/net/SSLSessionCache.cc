@@ -19,10 +19,10 @@
   limitations under the License.
  */
 
-#include <cstring>
-#include <deque>
 #include "P_SSLConfig.h"
 #include "SSLSessionCache.h"
+#include <cstring>
+#include <memory>
 
 #define SSLSESSIONCACHE_STRINGIFY0(x) #x
 #define SSLSESSIONCACHE_STRINGIFY(x) SSLSESSIONCACHE_STRINGIFY0(x)
@@ -121,7 +121,7 @@ void SSLSessionBucket::insertSession(const SSLSessionID &id, SSL_SESSION *sess) 
   unsigned char *loc = reinterpret_cast<unsigned char *>(buf->data());
   i2d_SSL_SESSION(sess, &loc);
 
-  SSLSession *ssl_session = new SSLSession(id, buf, len);
+  std::auto_ptr<SSLSession> ssl_session(new SSLSession(id, buf, len));
 
   MUTEX_TRY_LOCK(lock, mutex, this_ethread());
   if (!lock.is_locked()) {
@@ -138,7 +138,7 @@ void SSLSessionBucket::insertSession(const SSLSessionID &id, SSL_SESSION *sess) 
   }
 
   /* do the actual insert */
-  queue.enqueue(ssl_session);
+  queue.enqueue(ssl_session.release());
 
   PRINT_BUCKET("insertSession after")
 }
@@ -200,7 +200,12 @@ void inline SSLSessionBucket::print(const char *ref_str) const {
   }
 }
 
-void inline SSLSessionBucket::removeOldestSession() {
+void inline
+SSLSessionBucket::removeOldestSession()
+{
+  // Caller must hold the bucket lock.
+  ink_assert(this_ethread() == mutex->thread_holding);
+
   PRINT_BUCKET("removeOldestSession before")
   while (queue.head && queue.size >= static_cast<int>(SSLConfigParams::session_cache_max_bucket_size)) {
     SSLSession *old_head = queue.pop();

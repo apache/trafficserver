@@ -118,7 +118,6 @@ class SSLSessionBucket {
 public:
   SSLSessionBucket();
   ~SSLSessionBucket();
-  void removeOldestSession();
   void insertSession(const SSLSessionID &, SSL_SESSION *ctx);
   bool getSession(const SSLSessionID &, SSL_SESSION **ctx);
   void removeSession(const SSLSessionID &);
@@ -126,6 +125,7 @@ public:
 private:
   /* these method must be used while hold the lock */
   void print(const char *) const;
+  void removeOldestSession();
 
   Ptr<ProxyMutex> mutex;
   CountQueue<SSLSession> queue;
