@@ -246,30 +246,36 @@ template < typename ID, ID N >
 void
 FeatureAPIHooks<ID,N>::prepend(ID id, INKContInternal *cont)
 {
-  hooks_p = true;
-  m_hooks[id].prepend(cont);
+  if (likely(is_valid(id))) {
+    hooks_p = true;
+    m_hooks[id].prepend(cont);
+  }
 }
 
 template < typename ID, ID N >
 void
 FeatureAPIHooks<ID,N>::append(ID id, INKContInternal *cont)
 {
-  hooks_p = true;
-  m_hooks[id].append(cont);
+  if (likely(is_valid(id))) {
+    hooks_p = true;
+    m_hooks[id].append(cont);
+  }
 }
 
 template < typename ID, ID N >
 APIHook *
 FeatureAPIHooks<ID,N>::get(ID id) const
 {
-  return m_hooks[id].get();
+  return likely(is_valid(id)) ? m_hooks[id].get() : NULL;
 }
 
 template < typename ID, ID N >
 void
 FeatureAPIHooks<ID,N>::invoke(ID id, int event, void* data)
 {
-  m_hooks[id].invoke(event, data);
+  if (likely(is_valid(id))) {
+    m_hooks[id].invoke(event, data);
+  }
 }
 
 template < typename ID, ID N >

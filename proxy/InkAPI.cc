@@ -631,17 +631,13 @@ sdk_sanity_check_alt_info(TSHttpAltInfo info)
 TSReturnCode
 sdk_sanity_check_hook_id(TSHttpHookID id)
 {
-  if (id<TS_HTTP_READ_REQUEST_HDR_HOOK || id> TS_HTTP_LAST_HOOK)
-    return TS_ERROR;
-  return TS_SUCCESS;
+  return HttpAPIHooks::is_valid(id) ? TS_SUCCESS : TS_ERROR;
 }
 
 TSReturnCode
 sdk_sanity_check_lifecycle_hook_id(TSLifecycleHookID id)
 {
-  if (id<TS_LIFECYCLE_PORTS_INITIALIZED_HOOK || id> TS_LIFECYCLE_LAST_HOOK)
-    return TS_ERROR;
-  return TS_SUCCESS;
+  return LifecycleAPIHooks::is_valid(id) ? TS_SUCCESS : TS_ERROR;
 }
 
 TSReturnCode
