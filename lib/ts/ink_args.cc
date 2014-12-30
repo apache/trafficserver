@@ -68,8 +68,8 @@ append_file_argument(const char * arg)
     if (n_file_arguments >= countof(file_arguments)) {
       ink_fatal("too many files");
     }
+
     file_arguments[n_file_arguments++] = arg;
-    file_arguments[n_file_arguments] = NULL;
 }
 
 static void
