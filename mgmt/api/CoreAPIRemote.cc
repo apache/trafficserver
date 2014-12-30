@@ -575,11 +575,13 @@ MgmtRecordGetMatching(const char * regex, TSList rec_vals)
     // parse the reply to get record value and type
     ret = mgmt_record_get_reply(RECORD_MATCH_GET, rec_ele);
     if (ret != TS_ERR_OKAY) {
+      TSRecordEleDestroy(rec_ele);
       goto fail;
     }
 
     // A NULL record ends the list.
     if (rec_ele->rec_type == TS_REC_UNDEFINED) {
+      TSRecordEleDestroy(rec_ele);
       break;
     }
 
@@ -590,7 +592,6 @@ MgmtRecordGetMatching(const char * regex, TSList rec_vals)
 
 fail:
 
-  TSRecordEleDestroy(rec_ele);
   for (rec_ele = (TSRecordEle *) dequeue((LLQ *) rec_vals); rec_ele; rec_ele = (TSRecordEle *) dequeue((LLQ *) rec_vals)) {
       TSRecordEleDestroy(rec_ele);
   }
