@@ -67,7 +67,8 @@ The steps below show how the logging API is used in the
 
    .. code-block:: c
 
-           log = TSTextLogObjectCreate("blacklist", TS_LOG_MODE_ADD_TIMESTAMP, NULL, &error);
+           TSReturnCode error = TSTextLogObjectCreate("blacklist",
+                                TS_LOG_MODE_ADD_TIMESTAMP, &log);
 
    The new log is named ``blacklist.log``. Each entry written to the log
    will have a timestamp. The ``NULL`` argument specifies that the new
@@ -80,7 +81,7 @@ The steps below show how the logging API is used in the
 
    .. code-block:: c
 
-       if (!log) {
+       if (error != TS_SUCCESS) {
            printf("Blacklist plugin: error %d while creating log\n", error);
        }
 

@@ -267,7 +267,6 @@ This plugin illustrates:
            int i;
            TSCont contp;
            TSPluginRegistrationInfo info;
-           int error;
 
            info.plugin_name = "blacklist-1";
            info.vendor_name = "DsCompany";
@@ -283,9 +282,9 @@ This plugin illustrates:
            }
 
            /* create an TSTextLogObject to log blacklisted requests to */
-           log = TSTextLogObjectCreate("blacklist", TS_LOG_MODE_ADD_TIMESTAMP,
-                    NULL, &error);
-           if (!log) {
+           TSReturnCode error = TSTextLogObjectCreate("blacklist", TS_LOG_MODE_ADD_TIMESTAMP,
+                    &log);
+           if (error != TS_SUCCESS) {
                printf("Blacklist plugin: error %d while creating log\n", error);
            }
 
