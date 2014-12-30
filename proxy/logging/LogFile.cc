@@ -865,32 +865,33 @@ MetaInfo::_read_from_file()
 void
 MetaInfo::_write_to_file()
 {
-  int fd = open(_filename, O_WRONLY | O_CREAT | O_TRUNC,
-                Log::config->logfile_perm);
-
-  if (fd <= 0) {
+  int fd = open(_filename, O_WRONLY | O_CREAT | O_TRUNC, Log::config->logfile_perm);
+  if (fd < 0) {
     Warning("Could not open metafile %s for writing: %s", _filename, strerror(errno));
-  } else {
-    int n;
-    if (_flags & VALID_CREATION_TIME) {
-      n = snprintf(_buffer, BUF_SIZE, "creation_time = %lu\n", (unsigned long) _creation_time);
-      // TODO modify this runtime check so that it is not an assertion
-      ink_release_assert(n <= BUF_SIZE);
-      if (write(fd, _buffer, n) == -1) {
-        Warning("Could not write creation_time");
-      }
-    }
-    if (_flags & VALID_SIGNATURE) {
-      n = snprintf(_buffer, BUF_SIZE, "object_signature = %" PRIu64 "\n", _log_object_signature);
-      // TODO modify this runtime check so that it is not an assertion
-      ink_release_assert(n <= BUF_SIZE);
-      if (write(fd, _buffer, n) == -1) {
-        Warning("Could not write object_signaure");
-      }
-      Debug("log-meta", "MetaInfo::_write_to_file\n"
-            "\tfilename = %s\n"
-            "\tsignature value = %" PRIu64 "\n" "\tsignature string = %s", _filename, _log_object_signature, _buffer);
+    return;
+  }
+
+  int n;
+  if (_flags & VALID_CREATION_TIME) {
+    n = snprintf(_buffer, BUF_SIZE, "creation_time = %lu\n", (unsigned long) _creation_time);
+    // TODO modify this runtime check so that it is not an assertion
+    ink_release_assert(n <= BUF_SIZE);
+    if (write(fd, _buffer, n) == -1) {
+      Warning("Could not write creation_time");
     }
   }
+
+  if (_flags & VALID_SIGNATURE) {
+    n = snprintf(_buffer, BUF_SIZE, "object_signature = %" PRIu64 "\n", _log_object_signature);
+    // TODO modify this runtime check so that it is not an assertion
+    ink_release_assert(n <= BUF_SIZE);
+    if (write(fd, _buffer, n) == -1) {
+      Warning("Could not write object_signaure");
+    }
+    Debug("log-meta", "MetaInfo::_write_to_file\n"
+          "\tfilename = %s\n"
+          "\tsignature value = %" PRIu64 "\n" "\tsignature string = %s", _filename, _log_object_signature, _buffer);
+  }
+
   close(fd);
 }
