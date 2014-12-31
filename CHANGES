@@ -1,15 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.0
 
-  *) [TS-3262] Change abs() to std::abs(), avoid compiler errors.
+  *) [TS-3225] Add more API support to ts_lua plugin.
 
-  *) [TS-3265] Fix spdy req_map access to use iterator instead of operator[].
-
-  *) [TS-3261] Fix SSL BIO memory leak issue introduced in TS-3006.
-
-  *) [TS-3225] add more API support to ts_lua plugin.
-
-  *) [TS-3255] support flush option in gzip plugin.
+  *) [TS-3255] Support flush option in gzip plugin.
 
   *) [TS-3222] Fix port print to not have leading 0.
 
@@ -26,7 +20,7 @@ Changes with Apache Traffic Server 5.3.0
   *) [TS-3226] Move access of read vio inside the mutex to prevent ntodo
    corruption.
 
-  *) [TS-3224] fix ts_lua core dump issue.
+  *) [TS-3224] Fix ts_lua core dump issue.
 
   *) [TS-3229] Filter unsupported epic metric names.
 
@@ -46,6 +40,12 @@ Changes with Apache Traffic Server 5.3.0
 
 
 Changes with Apache Traffic Server 5.2.0
+
+  *) [TS-3262] Change abs() to std::abs(), avoid compiler errors.
+
+  *) [TS-3265] Fix spdy req_map access to use iterator instead of operator[].
+
+  *) [TS-3261] Fix SSL BIO memory leak issue introduced in TS-3006.
 
   *) [TS-3257] Fix ssl handshake buffer memory leak introduced in TS-3006.
 
