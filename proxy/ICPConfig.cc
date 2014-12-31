@@ -473,7 +473,7 @@ ICPConfiguration::UpdatePeerConfig()
     //
     memcpy(_peer_cdata[i], _peer_cdata_current[i], sizeof(*_peer_cdata[i]));
     // Setup IP address
-    if ((_peer_cdata[i]->_ip_addr.isValid()) && _peer_cdata[i]->_hostname) {
+    if ((_peer_cdata[i]->_ip_addr.isValid()) && _peer_cdata[i]->_hostname[0]) {
       // IP address not specified, lookup using hostname.
       (void) PeerConfigData::GetHostIPByName(_peer_cdata[i]->_hostname, _peer_cdata[i]->_my_ip_addr);
     } else {
