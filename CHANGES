@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.0
 
+  *) [TS-3083] Fix core dump due to FetchSM double delete
+
   *) [TS-3225] Add more API support to ts_lua plugin.
 
   *) [TS-3255] Support flush option in gzip plugin.
