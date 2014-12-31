@@ -1,6 +1,12 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.2.0
 
+  *) [TS-3262] Change abs() to std::abs(), avoid compiler errors.
+
+  *) [TS-3265] Fix spdy req_map access to use iterator instead of operator[].
+
+  *) [TS-3261] Fix SSL BIO memory leak issue introduced in TS-3006.
+
   *) [TS-3257] Fix ssl handshake buffer memory leak introduced in TS-3006.
 
   *) [TS-3248] Fix to resolve crash introduced in TS-3189.
