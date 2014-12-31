@@ -52,6 +52,7 @@ public:
     header_done = 0;
     user_data = NULL;
     has_sent_header = false;
+    destroyed = false;
     req_content_length = 0;
     resp_is_chunked = -1;
     resp_content_length = -1;
@@ -167,6 +168,7 @@ private:
   bool header_done;
   bool is_method_head;
   bool is_internal_request;
+  bool destroyed;
   IpEndpoint _addr;
   int resp_is_chunked;
   int resp_received_close;

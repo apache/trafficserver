@@ -36,6 +36,11 @@ FetchSM::cleanUp()
 {
   Debug(DEBUG_TAG, "[%s] calling cleanup", __FUNCTION__);
 
+  if (!ink_atomic_cas(&destroyed, false, true)) {
+    Debug(DEBUG_TAG, "Error: Double delete on FetchSM, this:%p", this);
+    return;
+  }
+
   if (resp_is_chunked > 0 && (fetch_flags & TS_FETCH_FLAGS_DECHUNK)) {
     chunked_handler.clear();
    }
