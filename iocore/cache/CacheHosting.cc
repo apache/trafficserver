@@ -797,11 +797,9 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
           total += size;
           if (size > 100 || total > 100) {
             state = INK_ERROR_VOLUME;
-            if (state == INK_ERROR_VOLUME || *tmp) {
-              RecSignalWarning(REC_SIGNAL_CONFIG_ERROR,
-                       "Total volume size added upto more than 100 percent,No volumes created");
-              break;
-            }
+            RecSignalWarning(REC_SIGNAL_CONFIG_ERROR,
+                             "Total volume size added upto more than 100 percent, No volumes created");
+            break;
           }
           //ends here
           in_percent = 1;
