@@ -889,11 +889,9 @@ REGRESSION_TEST(SDK_API_TSCache) (RegressionTest * test, int /* atype ATS_UNUSED
 //                    TSfread
 //                    TSfwrite
 //////////////////////////////////////////////
-
-// Used to create tmp file
-//#define TMP_DIR "/var/tmp"
 #define	PFX	"plugin.config"
 
+// Note that for each test, if it fails, we set the error status and return.
 REGRESSION_TEST(SDK_API_TSfopen) (RegressionTest * test, int /* atype ATS_UNUSED */, int *pstatus)
 {
   *pstatus = REGRESSION_TEST_INPROGRESS;
@@ -908,12 +906,10 @@ REGRESSION_TEST(SDK_API_TSfopen) (RegressionTest * test, int /* atype ATS_UNUSED
   char cmp_buffer[BUFSIZ];
   struct stat stat_buffer_pre, stat_buffer_post, stat_buffer_input;
   char *ret_val;
-  int error_counter = 0, read = 0, wrote = 0;
+  int read = 0, wrote = 0;
   int64_t read_amount = 0;
   char INPUT_TEXT_FILE[] = "plugin.config";
   char input_file_full_path[BUFSIZ];
-
-
 
   // Set full path to file at run time.
   // TODO: This can never fail since we are
@@ -921,7 +917,6 @@ REGRESSION_TEST(SDK_API_TSfopen) (RegressionTest * test, int /* atype ATS_UNUSED
   //       Better check the dir itself.
   //
   if (TSInstallDirGet() == NULL) {
-    error_counter++;
     *pstatus = REGRESSION_TEST_FAILED;
     return;
   }
@@ -931,7 +926,6 @@ REGRESSION_TEST(SDK_API_TSfopen) (RegressionTest * test, int /* atype ATS_UNUSED
   // open existing file for reading
   if (!(source_read_file = TSfopen(input_file_full_path, "r"))) {
     SDK_RPRINT(test, "TSfopen", "TestCase1", TC_FAIL, "can't open file for reading");
-    error_counter++;
 
     // no need to continue, return
     *pstatus = REGRESSION_TEST_FAILED;
@@ -944,7 +938,6 @@ REGRESSION_TEST(SDK_API_TSfopen) (RegressionTest * test, int /* atype ATS_UNUSED
   int write_file_fd;            // this file will be reopened below
   if ((write_file_fd = mkstemp(write_file_name)) <= 0) {
     SDK_RPRINT(test, "mkstemp", "std func", TC_FAIL, "can't create file for writing");
-    error_counter++;
 
     // no need to continue, return
     *pstatus = REGRESSION_TEST_FAILED;
@@ -957,7 +950,6 @@ REGRESSION_TEST(SDK_API_TSfopen) (RegressionTest * test, int /* atype ATS_UNUSED
   // open file for writing, the file doesn't have to exist.
   if (!(write_file = TSfopen(write_file_name, "w"))) {
     SDK_RPRINT(test, "TSfopen", "TestCase2", TC_FAIL, "can't open file for writing");
-    error_counter++;
 
     // no need to continue, return
     *pstatus = REGRESSION_TEST_FAILED;
@@ -972,7 +964,6 @@ REGRESSION_TEST(SDK_API_TSfopen) (RegressionTest * test, int /* atype ATS_UNUSED
   // source_read_file and input_file_full_path are the same file
   if (stat(input_file_full_path, &stat_buffer_input) != 0) {
     SDK_RPRINT(test, "stat", "std func", TC_FAIL, "source file and input file messed up");
-    error_counter++;
 
     // no need to continue, return
     *pstatus = REGRESSION_TEST_FAILED;
@@ -990,7 +981,6 @@ REGRESSION_TEST(SDK_API_TSfopen) (RegressionTest * test, int /* atype ATS_UNUSED
   if ((ret_val = TSfgets(source_read_file, input_buffer, read_amount))
       == NULL) {
     SDK_RPRINT(test, "TSfgets", "TestCase1", TC_FAIL, "can't read from file");
-    error_counter++;
 
     // no need to continue, return
     *pstatus = REGRESSION_TEST_FAILED;
@@ -1002,7 +992,6 @@ REGRESSION_TEST(SDK_API_TSfopen) (RegressionTest * test, int /* atype ATS_UNUSED
   } else {
     if (ret_val != input_buffer) {
       SDK_RPRINT(test, "TSfgets", "TestCase2", TC_FAIL, "reading error");
-      error_counter++;
 
       // no need to continue, return
       *pstatus = REGRESSION_TEST_FAILED;
@@ -1019,7 +1008,6 @@ REGRESSION_TEST(SDK_API_TSfopen) (RegressionTest * test, int /* atype ATS_UNUSED
   wrote = TSfwrite(write_file, input_buffer, read_amount);
   if (wrote != read_amount) {
     SDK_RPRINT(test, "TSfwrite", "TestCase1", TC_FAIL, "writing error");
-    error_counter++;
 
     // no need to continue, return
     *pstatus = REGRESSION_TEST_FAILED;
@@ -1035,7 +1023,6 @@ REGRESSION_TEST(SDK_API_TSfopen) (RegressionTest * test, int /* atype ATS_UNUSED
   // TSfflush
   if (stat(write_file_name, &stat_buffer_pre) != 0) {
     SDK_RPRINT(test, "stat", "std func", TC_FAIL, "TSfwrite error");
-    error_counter++;
 
     // no need to continue, return
     *pstatus = REGRESSION_TEST_FAILED;
@@ -1050,7 +1037,6 @@ REGRESSION_TEST(SDK_API_TSfopen) (RegressionTest * test, int /* atype ATS_UNUSED
 
   if (stat(write_file_name, &stat_buffer_post) != 0) {
     SDK_RPRINT(test, "stat", "std func", TC_FAIL, "TSfflush error");
-    error_counter++;
 
     // no need to continue, return
     *pstatus = REGRESSION_TEST_FAILED;
@@ -1065,7 +1051,6 @@ REGRESSION_TEST(SDK_API_TSfopen) (RegressionTest * test, int /* atype ATS_UNUSED
     SDK_RPRINT(test, "TSfflush", "TestCase1", TC_PASS, "ok");
   } else {
     SDK_RPRINT(test, "TSfflush", "TestCase1", TC_FAIL, "TSfflush error");
-    error_counter++;
 
     // no need to continue, return
     *pstatus = REGRESSION_TEST_FAILED;
@@ -1081,7 +1066,6 @@ REGRESSION_TEST(SDK_API_TSfopen) (RegressionTest * test, int /* atype ATS_UNUSED
   cmp_read_file = TSfopen(write_file_name, "r");
   if (cmp_read_file == NULL) {
     SDK_RPRINT(test, "TSfopen", "TestCase3", TC_FAIL, "can't open file for reading");
-    error_counter++;
 
     // no need to continue, return
     *pstatus = REGRESSION_TEST_FAILED;
@@ -1098,7 +1082,6 @@ REGRESSION_TEST(SDK_API_TSfopen) (RegressionTest * test, int /* atype ATS_UNUSED
   read = TSfread(cmp_read_file, cmp_buffer, read_amount);
   if (read != read_amount) {
     SDK_RPRINT(test, "TSfread", "TestCase1", TC_FAIL, "can't reading");
-    error_counter++;
 
     // no need to continue, return
     *pstatus = REGRESSION_TEST_FAILED;
@@ -1115,7 +1098,6 @@ REGRESSION_TEST(SDK_API_TSfopen) (RegressionTest * test, int /* atype ATS_UNUSED
   // compare input_buffer and cmp_buffer buffers
   if (memcmp(input_buffer, cmp_buffer, read_amount) != 0) {
     SDK_RPRINT(test, "TSfread", "TestCase2", TC_FAIL, "reading error");
-    error_counter++;
 
     // no need to continue, return
     *pstatus = REGRESSION_TEST_FAILED;
@@ -1141,11 +1123,7 @@ REGRESSION_TEST(SDK_API_TSfopen) (RegressionTest * test, int /* atype ATS_UNUSED
   TSfclose(write_file);
   SDK_RPRINT(test, "TSfclose", "TestCase2", TC_PASS, "ok");
 
-  if (error_counter == 0) {
-    *pstatus = REGRESSION_TEST_PASSED;
-  } else {
-    *pstatus = REGRESSION_TEST_FAILED;
-  }
+  *pstatus = REGRESSION_TEST_PASSED;
   if (cmp_read_file != NULL)
     TSfclose(cmp_read_file);
 }
