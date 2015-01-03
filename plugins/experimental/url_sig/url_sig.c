@@ -137,6 +137,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
         if (keynum > MAX_KEY_NUM || keynum == -1) {
           snprintf(errbuf, errbuf_size - 1, "[TSRemapNewInstance] - Key number (%d) > MAX_KEY_NUM (%d) or NaN.", keynum,
                    MAX_KEY_NUM);
+          fclose(file);
           return TS_ERROR;
         }
         strcpy(&cfg->keys[keynum][0], value);
@@ -167,6 +168,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
     if (cfg->err_url == NULL) {
       snprintf(errbuf, errbuf_size - 1,
                "[TSRemapNewInstance] - Invalid config, err_status == 302, but err_url == NULL");
+      fclose(file);
       return TS_ERROR;
     }
     break;
@@ -180,6 +182,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
     break;
   default:
     snprintf(errbuf, errbuf_size - 1, "[TSRemapNewInstance] - Return code %d not supported.", cfg->err_status);
+    fclose(file);
     return TS_ERROR;
 
   }
