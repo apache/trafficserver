@@ -2096,7 +2096,7 @@ SSL Termination
 
    Enables (``1``) or disables (``0``) SSLv2. Please don't enable it.
 
-.. ts:cv:: CONFIG proxy.config.ssl.SSLv3 INT 1
+.. ts:cv:: CONFIG proxy.config.ssl.SSLv3 INT 0
 
    Enables (``1``) or disables (``0``) SSLv3.
 
