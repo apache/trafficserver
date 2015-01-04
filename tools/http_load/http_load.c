@@ -951,8 +951,11 @@ start_connection(struct timeval *nowP)
         cycle_slot = 0;
       if (prev_cycle_slot == cycle_slot) {
         return;
+#if 0        
+        /* Unused right now, not sure why */
         printf("Warning: cycling through all socket slots\n");
         tmr_run(nowP);
+#endif
       }
       if (connections[cycle_slot].conn_state == CNST_FREE) {
         /* Choose a URL. */
