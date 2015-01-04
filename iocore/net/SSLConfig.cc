@@ -257,11 +257,12 @@ SSLConfigParams::initialize()
   REC_ReadConfigInteger(ssl_session_cache, "proxy.config.ssl.session_cache");
   REC_ReadConfigInteger(ssl_session_cache_size, "proxy.config.ssl.session_cache.size");
   REC_ReadConfigInteger(ssl_session_cache_num_buckets, "proxy.config.ssl.session_cache.num_buckets");
-  REC_ReadConfigInteger(ssl_session_cache_skip_on_contention, "proxy.config.ssl.session_cache.skip_cache_on_bucket_contention");
+  REC_ReadConfigInteger(ssl_session_cache_skip_on_contention,
+                        "proxy.config.ssl.session_cache.skip_cache_on_bucket_contention");
   REC_ReadConfigInteger(ssl_session_cache_timeout, "proxy.config.ssl.session_cache.timeout");
   REC_ReadConfigInteger(ssl_session_cache_auto_clear, "proxy.config.ssl.session_cache.auto_clear");
 
-  SSLConfigParams::session_cache_max_bucket_size = ceil(ssl_session_cache_size/ssl_session_cache_num_buckets );
+  SSLConfigParams::session_cache_max_bucket_size = ceil((double)ssl_session_cache_size/ssl_session_cache_num_buckets );
   SSLConfigParams::session_cache_skip_on_lock_contention = ssl_session_cache_skip_on_contention;
   SSLConfigParams::session_cache_number_buckets = ssl_session_cache_num_buckets;
 
