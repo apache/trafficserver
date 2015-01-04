@@ -2596,9 +2596,6 @@ TSMimeFieldValueGet(TSMBuffer /* bufp ATS_UNUSED */, TSMLoc field_obj, int idx, 
   } else {
     return mime_field_value_get(handle->field_ptr, value_len_ptr);
   }
-
-  *value_len_ptr = 0;
-  return NULL;
 }
 
 void
