@@ -61,11 +61,13 @@ FileManager::FileManager()
   ats_scoped_str snapshotDir(RecConfigReadSnapshotDir());
 
   // Check to see if the directory already exists, if not create it.
-  if (access(snapshotDir, F_OK) == -1) {
-    if (mkdir(snapshotDir, DIR_MODE) < 0) {
-      // Failed to create the snapshot directory
-      mgmt_fatal(stderr, 0, "[FileManager::FileManager] Failed to create the snapshot directory %s: %s\n", (const char *)snapshotDir, strerror(errno));
-    }
+  if (mkdir(snapshotDir, DIR_MODE) < 0 && errno != EEXIST) {
+    // Failed to create the snapshot directory
+    mgmt_fatal(stderr, 0, "[FileManager::FileManager] Failed to create the snapshot directory %s: %s\n", (const char *)snapshotDir, strerror(errno));
+  }
+
+  if (!ink_file_is_directory(snapshotDir)) {
+    mgmt_fatal(stderr, 0, "[FileManager::FileManager] snapshot directory %s is not a directory\n", (const char *)snapshotDir);
   }
 
   this->managedDir = snapshotDir.release();
@@ -107,11 +109,9 @@ FileManager::~FileManager()
 
   ink_hash_table_destroy(bindings);
 
-
   ink_mutex_destroy(&accessLock);
   ink_mutex_destroy(&cbListLock);
 }
-
 
 // void FileManager::registerCallback(FileCallbackFunc func)
 //
@@ -191,7 +191,6 @@ FileManager::fileChanged(const char *baseFileName, bool incVersion)
   char *filenameCopy;
 
   ink_mutex_acquire(&cbListLock);
-
 
   for (cb = cblist.head; cb != NULL; cb = cb->link.next) {
     // Dup the string for each callback to be
@@ -273,7 +272,6 @@ FileManager::doRollbackLocks(lockAction_t action)
   }
 }
 
-
 // void FileManager::abortRestore(const char* abortTo)
 //
 //  Iterates through the hash table of managed files
@@ -315,7 +313,6 @@ FileManager::abortRestore(const char *abortTo)
     }
   }
 }
-
 
 // SnapResult FileManager::restoresSnap(const char* snapName)
 //
@@ -385,9 +382,6 @@ FileManager::restoreSnap(const char *snapName, const char *snapDir)
   return result;
 }
 
-
-
-
 // SnapResult FileManager::removeSnap(const char* snapName)
 //
 //
@@ -451,14 +445,6 @@ FileManager::removeSnap(const char *snapName, const char *snapDir)
   return result;
 }
 
-
-
-
-
-
-
-
-
  //
  //  Creates a new snapshot with snapName
  //     Creates a directory named snapName in the snapshot directory
@@ -474,8 +460,6 @@ FileManager::takeSnap(const char *snapName, const char *snapDir)
   InkHashTableIteratorState iterator_state;
   char *snapPath;
   SnapResult callResult = SNAP_OK;
-  struct stat snapDirStat;
-
 
   // Make sure the user sent us a name
   if (snapName == NULL || *snapName == '\0') {
@@ -490,24 +474,21 @@ FileManager::takeSnap(const char *snapName, const char *snapDir)
     return SNAP_ILLEGAL_NAME;
   }
 
-
   snapPath = newPathString(snapDir, snapName);
 
-  if (!stat(snapPath, &snapDirStat)) {
-    if (!S_ISDIR(snapDirStat.st_mode)) {
-      delete[]snapPath;
-      return SNAP_DIR_CREATE_FAILED;
-    }
+  if (mkdir(snapPath, DIR_MODE) < 0 && errno != EEXIST) {
+    mgmt_log(stderr, "[FileManager::takeSnap] Failed to create directory for snapshot %s: %s\n", snapName, strerror(errno));
+    delete[]snapPath;
+    return SNAP_DIR_CREATE_FAILED;
   }
-  if (mkdir(snapPath, DIR_MODE) < 0) {
-    mgmt_log(stderr, "[FileManager::takeSnap] Failed to create directory for snapshot %s: %s\n",
-             snapName, strerror(errno));
+
+  if (!ink_file_is_directory(snapPath)) {
+    mgmt_log(stderr, "[FileManager::takeSnap] snapshot directory %s is not a directory\n", snapPath);
     delete[]snapPath;
     return SNAP_DIR_CREATE_FAILED;
   }
 
   ink_mutex_acquire(&accessLock);
-
 
   // To get a stable snap shot, we need to get the rollback
   //   locks on all configuration files so the files
@@ -521,7 +502,7 @@ FileManager::takeSnap(const char *snapName, const char *snapDir)
     rb = (Rollback *) ink_hash_table_entry_value(bindings, entry);
     callResult = this->copyFile(rb, snapPath);
     if (callResult != SNAP_OK) {
-      // Remove the failed napshot so that we do not have a partial
+      // Remove the failed snapshot so that we do not have a partial
       //   one hanging around
       if (removeSnap(snapName, snapDir) != SNAP_OK) {
         mgmt_log(stderr,
@@ -540,13 +521,6 @@ FileManager::takeSnap(const char *snapName, const char *snapDir)
   delete[]snapPath;
   return callResult;
 }
-
-
-
-
-
-
-
 
 //
 //  SnapResult FileManager::readFile(const char* filePath, textBuffer* contents)
@@ -631,12 +605,6 @@ FileManager::copyFile(Rollback * rb, const char *snapPath)
   return result;
 }
 
-
-
-
-
-
-
 // SnapResult FileManager::WalkSnaps(ExpandingArray* snapList)
 //
 //   Iterates through the snapshot directory and adds every snapshot
@@ -661,8 +629,6 @@ FileManager::WalkSnaps(ExpandingArray * snapList)
   ink_mutex_release(&accessLock);
   return (SnapResult) r;
 }
-
-
 
 // void FileManger::rereadConfig()
 //
@@ -742,8 +708,6 @@ FileManager::displaySnapOption(textBuffer * output)
   }
 }
 
-
-
 // void FileManger::createSelect(char* formVar, textBuffer* output, ExpandingArray*)
 //
 //  Creats a form with a select list.  The select options come
@@ -775,7 +739,6 @@ FileManager::createSelect(char *action, textBuffer * output, ExpandingArray * op
   }
 }
 
-
 // bool checkValidName(const char* name)
 //
 // if the string is invalid, ie. all white spaces or contains "irregular" chars,
@@ -795,7 +758,6 @@ FileManager::checkValidName(const char *name)
 
   return false;                 // all white spaces
 }
-
 
 //  int snapEntryCmpFunc(void* e1, void* e2)
 //
