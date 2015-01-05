@@ -104,19 +104,6 @@ struct MachineList
   }
 };
 
-MachineList *read_MachineList(char *filename, int test_fd = -1);
-void free_MachineList(MachineList * l);
-
-#ifdef FIXME_CONFIG
-struct clusterConfigFile: configFile
-{
-  char *parseFile(int fd)
-  {
-    return (char *) read_MachineList(NULL, fd);
-  }
-};
-#endif
-
 inkcoreapi Machine *this_machine();
 void create_this_machine();
 
