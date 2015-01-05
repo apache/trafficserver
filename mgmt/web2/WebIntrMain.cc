@@ -105,7 +105,7 @@ checkWebContext(WebContext * wctx, const char *desc)
     return 1;
   }
 
-  if (!(fInfo.st_mode & S_IFDIR)) {
+  if (!S_ISDIR(fInfo.st_mode)) {
     mgmt_log(stderr, "[checkWebContext] Document root '%s' for %s is not a directory\n", wctx->docRoot, desc);
     return 1;
   }
@@ -124,7 +124,7 @@ checkWebContext(WebContext * wctx, const char *desc)
     return 1;
   }
 
-  if (!(fInfo.st_mode & S_IFREG)) {
+  if (!S_ISREG(fInfo.st_mode)) {
     mgmt_log(stderr, "[checkWebContext] Default document for %s is not a file\n", desc);
     return 1;
   }

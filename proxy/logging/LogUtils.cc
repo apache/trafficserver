@@ -495,7 +495,7 @@ LogUtils::file_is_writeable(const char *full_filename,
     // stat succeeded, check if full_filename points to a regular
     // file/fifo and if so, check if file has write permission
     //
-    if (!(stat_data.st_mode & S_IFREG || stat_data.st_mode & S_IFIFO)) {
+    if (!(S_ISREG(stat_data.st_mode) || S_ISFIFO(stat_data.st_mode))) {
       ret_val = 1;
     } else if (!(stat_data.st_mode & S_IWUSR)) {
       errno = EACCES;
