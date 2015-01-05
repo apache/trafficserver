@@ -923,6 +923,7 @@ static int read_request(int sock) {
             if (verbose)
               printf("read_request %d got request %d\n", sock, length);
             char * ims = strncasestr(buffer,"If-Modified-Since:", i);
+            // coverity[dont_call]
             if (drand48() > ims_rate) ims = NULL;
             fd[sock].ims = ims?1:0;
             if (!ims) {
@@ -944,7 +945,9 @@ static int read_request(int sock) {
               fd[sock].keepalive = 0;
             else
               fd[sock].keepalive--;
+            // coverity[dont_call]
             if (fd[sock].length && drand48() < server_abort_rate) {
+              // coverity[dont_call]
               fd[sock].length = (int)(drand48() * (fd[sock].length -1));
               fd[sock].keepalive = 0;
             }
@@ -1147,6 +1150,7 @@ static int read_ftp_request(int sock) {
         return 0;
     } else if (STREQ(buffer,"MDTM")) {
       double err_rand = 1.0;
+      // coverity[dont_call]
       if (ftp_mdtm_err_rate != 0.0) err_rand = drand48();
       if (err_rand < ftp_mdtm_err_rate) {
         fd[sock].length =
@@ -1495,7 +1499,9 @@ static int gen_bfc_dist(double f = 10.0) {
   double rand2 = 0.0;
   bool f_given = f < 9.0;
   if (!f_given) {
+    // coverity[dont_call]
     rand = drand48();
+    // coverity[dont_call]
     rand2 = drand48();
   } else {
     rand = f;
@@ -1545,6 +1551,7 @@ static int gen_bfc_dist(double f = 10.0) {
   // vary about the mean doc size for
   // that class/size
   if (!f_given)
+    // coverity[dont_call]
     size += (int)((-increment * 0.5) + (increment * drand48()));
   if (verbose) printf("gen_bfc_dist %d\n",size);
   return size;
@@ -2002,8 +2009,10 @@ static int read_response(int sock) {
         total_proxy_response_header_bytes += p - fd[sock].req_header;
         fd[sock].length -= lbody;
         fd[sock].req_pos = -1;
+        // coverity[dont_call]
         if (fd[sock].length && drand48() < client_abort_rate) {
           fd[sock].client_abort = 1;
+          // coverity[dont_call]
           fd[sock].length = (int)(drand48() * (fd[sock].length -1));
           fd[sock].keepalive = 0;
           fd[sock].drop_after_CL = 1;
@@ -2339,7 +2348,9 @@ static void make_bfc_client (unsigned int addr, int port) {
   }
   if (sock<0)
     panic("unable to open client connection\n");
+  // coverity[dont_call]
   double h = drand48();
+  // coverity[dont_call]
   double dr = drand48();
   if (zipf == 0.0) {
     if (h < hitrate) {
@@ -2375,6 +2386,7 @@ static void make_bfc_client (unsigned int addr, int port) {
   }
   char cookie[256];
   *cookie = 0;
+  // coverity[dont_call]
   fd[sock].nalternate = (int)(alternates * drand48());
   if (alternates) {
     if (!vary_user_agent) {
@@ -2417,6 +2429,7 @@ static void make_bfc_client (unsigned int addr, int port) {
             local_host, server_port, dr,
             fd[sock].response_length, evo_str, extension,
             fd[sock].keepalive?"Proxy-Connection: Keep-Alive\r\n":"",
+            // coverity[dont_call]
             reload_rate > drand48() ? "Pragma: no-cache\r\n":"",
             eheaders, cookie
       );
@@ -2432,6 +2445,7 @@ static void make_bfc_client (unsigned int addr, int port) {
             dr, fd[sock].response_length, evo_str, extension,
             local_host, server_port,
             fd[sock].keepalive?"Connection: Keep-Alive\r\n":"",
+            // coverity[dont_call]
             reload_rate > drand48() ? "Pragma: no-cache\r\n":"",
             eheaders, cookie);
   } else if (2 == hostrequest) {
@@ -2445,6 +2459,7 @@ static void make_bfc_client (unsigned int addr, int port) {
             "\r\n",
             dr, fd[sock].response_length, evo_str, extension,
             fd[sock].keepalive?"Connection: Keep-Alive\r\n":"",
+            // coverity[dont_call]
             reload_rate > drand48() ? "Pragma: no-cache\r\n":"",
             eheaders,
             cookie);
@@ -2787,6 +2802,7 @@ static int make_url_client(const char * url,const char * base_url, bool seen,
             "%s"
             "\r\n",
             curl,
+            // coverity[dont_call]
             reload_rate > drand48() ? "Pragma: no-cache\r\n":"",
             fd[sock].keepalive?"Proxy-Connection: Keep-Alive\r\n":"",eheaders);
   else
@@ -2798,6 +2814,7 @@ static int make_url_client(const char * url,const char * base_url, bool seen,
             "%s"
             "\r\n",
             path,xquer?"?":"",quer,xpar?";":"",para,host,
+            // coverity[dont_call]
             reload_rate > drand48() ? "Pragma: no-cache\r\n":"",
             fd[sock].keepalive?"Connection: Keep-Alive\r\n":"",eheaders);
 
@@ -2849,8 +2866,10 @@ int main(int argc __attribute__((unused)), char *argv[])
   process_args(&appVersionInfo, argument_descriptions, n_argument_descriptions, argv);
 
   if (!drand_seed)
+    // coverity[dont_call]
     srand48((long)time(NULL));
   else
+    // coverity[dont_call]
     srand48((long)drand_seed);
   if (zipf != 0.0)
     build_zipf();

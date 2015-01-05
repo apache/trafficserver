@@ -436,8 +436,6 @@ public:
   inline PeerConfigData *indexToPeerConfigData(int index)
   {
     ink_assert(index <= MAX_DEFINED_PEERS);
-    // TODO coverity warning should be addressed with model for ink_assert
-    // coverity[overrun-local]
     return _peer_cdata[index];
   }
 
