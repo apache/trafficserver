@@ -43,7 +43,7 @@
 #include "TextBuffer.h"
 
 // forward declarations
-void init_pdss_format(TSPdSsFormat * info);
+void init_pdss_format(TSPdSsFormat& info);
 
 
 /***************************************************************************
@@ -667,21 +667,21 @@ TSIntListIsValid(TSIntList intl, int min, int max)
 
 // helper fn that sets default values for the info passed in
 void
-init_pdss_format(TSPdSsFormat * info)
+init_pdss_format(TSPdSsFormat& info)
 {
-  info->pd_type = TS_PD_UNDEFINED;
-  info->pd_val = NULL;
-  info->sec_spec.active = 0;
-  info->sec_spec.time.hour_a = 0;
-  info->sec_spec.time.min_a = 0;
-  info->sec_spec.time.hour_b = 0;
-  info->sec_spec.time.min_b = 0;
-  info->sec_spec.src_ip = TS_INVALID_IP_ADDR;
-  info->sec_spec.prefix = NULL;
-  info->sec_spec.suffix = NULL;
-  info->sec_spec.port = TS_INVALID_PORT;
-  info->sec_spec.method = TS_METHOD_UNDEFINED;
-  info->sec_spec.scheme = TS_SCHEME_UNDEFINED;
+  info.pd_type = TS_PD_UNDEFINED;
+  info.pd_val = NULL;
+  info.sec_spec.active = 0;
+  info.sec_spec.time.hour_a = 0;
+  info.sec_spec.time.min_a = 0;
+  info.sec_spec.time.hour_b = 0;
+  info.sec_spec.time.min_b = 0;
+  info.sec_spec.src_ip = TS_INVALID_IP_ADDR;
+  info.sec_spec.prefix = NULL;
+  info.sec_spec.suffix = NULL;
+  info.sec_spec.port = TS_INVALID_PORT;
+  info.sec_spec.method = TS_METHOD_UNDEFINED;
+  info.sec_spec.scheme = TS_SCHEME_UNDEFINED;
 }
 
 /*--- allocate/deallocate operations --------------------------------------*/
@@ -856,18 +856,14 @@ TSPdSsFormatCreate(void)
 }
 
 tsapi void
-TSPdSsFormatDestroy(TSPdSsFormat * ele)
+TSPdSsFormatDestroy(TSPdSsFormat& ele)
 {
-  if (ele) {
-    ats_free(ele->pd_val);
-    ats_free(ele->sec_spec.src_ip);
-    ats_free(ele->sec_spec.prefix);
-    ats_free(ele->sec_spec.suffix);
-    if (ele->sec_spec.port)
-      TSPortEleDestroy(ele->sec_spec.port);
-    ats_free(ele);
-  }
-  return;
+  ats_free(ele.pd_val);
+  ats_free(ele.sec_spec.src_ip);
+  ats_free(ele.sec_spec.prefix);
+  ats_free(ele.sec_spec.suffix);
+  if (ele.sec_spec.port)
+    TSPortEleDestroy(ele.sec_spec.port);
 }
 
 /*-------------------------------------------------------------
@@ -893,7 +889,7 @@ TSCacheEleCreate(TSRuleTypeT type)
   /* set defaults */
   ele->cfg_ele.type = type;
   ele->cfg_ele.error = TS_ERR_OKAY;
-  init_pdss_format(&(ele->cache_info));
+  init_pdss_format(ele->cache_info);
   ele->time_period.d = 0;
   ele->time_period.h = 0;
   ele->time_period.m = 0;
@@ -906,7 +902,7 @@ tsapi void
 TSCacheEleDestroy(TSCacheEle * ele)
 {
   if (ele) {
-    TSPdSsFormatDestroy(&(ele->cache_info));
+    TSPdSsFormatDestroy(ele->cache_info);
     ats_free(ele);
   }
   return;
@@ -926,7 +922,7 @@ TSCongestionEleCreate()
   /* set defaults */
   ele->cfg_ele.type = TS_CONGESTION;
   ele->cfg_ele.error = TS_ERR_OKAY;
-  //init_pdss_format(&(ele->congestion_info));
+  //init_pdss_format(ele->congestion_info);
   ele->pd_type = TS_PD_UNDEFINED;
   ele->pd_val = NULL;
   ele->prefix = NULL;
@@ -1169,7 +1165,7 @@ TSParentProxyEleCreate(TSRuleTypeT type)
 
   ele->cfg_ele.type = type;
   ele->cfg_ele.error = TS_ERR_OKAY;
-  init_pdss_format(&(ele->parent_info));
+  init_pdss_format(ele->parent_info);
   ele->rr = TS_RR_NONE;
   ele->proxy_list = TS_INVALID_LIST;
   ele->direct = false;
@@ -1181,7 +1177,7 @@ tsapi void
 TSParentProxyEleDestroy(TSParentProxyEle * ele)
 {
   if (ele) {
-    TSPdSsFormatDestroy(&(ele->parent_info));
+    TSPdSsFormatDestroy(ele->parent_info);
     if (ele->proxy_list)
       TSDomainListDestroy(ele->proxy_list);
     ats_free(ele);

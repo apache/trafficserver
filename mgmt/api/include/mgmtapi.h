@@ -861,7 +861,7 @@ extern "C"
   tsapi TSSspec *TSSspecCreate();
   tsapi void TSSspecDestroy(TSSspec * ele);
   tsapi TSPdSsFormat *TSPdSsFormatCreate();
-  tsapi void TSPdSsFormatDestroy(TSPdSsFormat * ele);
+  tsapi void TSPdSsFormatDestroy(TSPdSsFormat& ele);
   tsapi TSCacheEle *TSCacheEleCreate(TSRuleTypeT type);
   tsapi void TSCacheEleDestroy(TSCacheEle * ele);
   tsapi TSCongestionEle *TSCongestionEleCreate();
