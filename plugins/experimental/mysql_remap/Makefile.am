@@ -30,8 +30,8 @@ endif
 mysql_remap_la_SOURCES = mysql_remap.cc
 
 libmysql_remap_la_SOURCES = \
-  lib/dictionary.cc \
-  lib/iniparser.cc
+  lib/dictionary.c \
+  lib/iniparser.c
 
 mysql_remap_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS) $(LIB_MYSQLCLIENT) -no-undefined
 mysql_remap_la_LIBADD = libmysql_remap.la
