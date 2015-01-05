@@ -2070,7 +2070,7 @@ ClusterCom::sendReliableMessageReadTillClose(unsigned long addr, char *buf, int 
   }
 
   memset(tmp_reply, 0, 1024);
-  while ((res = read_socket(fd, tmp_reply, 1022) > 0)) {
+  while ((res = read_socket(fd, tmp_reply, 1022)) > 0) {
     if (tmp_reply[0] == (char)EOF) {
       break;
     }
