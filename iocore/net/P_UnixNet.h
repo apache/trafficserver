@@ -607,7 +607,7 @@ TS_INLINE int EventIO::refresh(int e) {
 
 TS_INLINE int EventIO::stop() {
   if (event_loop) {
-    int retval;
+    int retval = 0;
 #if TS_USE_EPOLL
     struct epoll_event ev;
     memset(&ev, 0, sizeof(struct epoll_event));
