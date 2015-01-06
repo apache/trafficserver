@@ -1,7 +1,11 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.0
 
-  *) [TS-3274] Forward port fix for cache fixup race condition in ram cache from 4.2.X.
+  *) [TS-3275] Clear out event_loop when stop'ing an EventIO. This was as the
+   code originally intended, but was somehow lost.
+
+  *) [TS-3274] Forward port fix for cache fixup race condition in ram cache
+   from 4.2.X.
 
   *) [TS-3225] Add more API support to ts_lua plugin.
 

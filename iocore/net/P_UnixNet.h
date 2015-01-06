@@ -490,6 +490,7 @@ TS_INLINE int EventIO::start(EventLoop l, int afd, Continuation *c, int e) {
 }
 
 TS_INLINE int EventIO::modify(int e) {
+  ink_assert(event_loop);
 #if TS_USE_EPOLL && !defined(USE_EDGE_TRIGGER)
   struct epoll_event ev;
   memset(&ev, 0, sizeof(ev));
@@ -565,6 +566,7 @@ TS_INLINE int EventIO::modify(int e) {
 }
 
 TS_INLINE int EventIO::refresh(int e) {
+  ink_assert(event_loop);
 #if TS_USE_KQUEUE && defined(USE_EDGE_TRIGGER)
   e = e & events;
   struct kevent ev[2];
@@ -605,18 +607,19 @@ TS_INLINE int EventIO::refresh(int e) {
 
 TS_INLINE int EventIO::stop() {
   if (event_loop) {
+    int retval;
 #if TS_USE_EPOLL
     struct epoll_event ev;
     memset(&ev, 0, sizeof(struct epoll_event));
     ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
-    return epoll_ctl(event_loop->epoll_fd, EPOLL_CTL_DEL, fd, &ev);
+    retval = epoll_ctl(event_loop->epoll_fd, EPOLL_CTL_DEL, fd, &ev);
 #endif
 #if TS_USE_PORT
-    int retval = port_dissociate(event_loop->port_fd, PORT_SOURCE_FD, fd);
+    retval = port_dissociate(event_loop->port_fd, PORT_SOURCE_FD, fd);
     Debug("iocore_eventio", "[EventIO::stop] %d[%s]=port_dissociate(%d,%d,%d)", retval, retval<0? strerror(errno) : "ok", event_loop->port_fd, PORT_SOURCE_FD, fd);
-    return retval;
 #endif
-    event_loop = 0;
+    event_loop = NULL;
+    return retval;
   }
   return 0;
 }
