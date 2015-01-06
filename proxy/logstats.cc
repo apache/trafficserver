@@ -2533,15 +2533,11 @@ main(int /* argc ATS_UNUSED */, char *argv[])
     close(main_fd);
     close(state_fd);
   } else {
-    if (cl.log_file[0] != '\0') {
-      main_fd = open(cl.log_file, O_RDONLY);
-      if (main_fd < 0) {
-        exit_status.set(EXIT_CRITICAL, " can't open log file ");
-        exit_status.append(cl.log_file);
-        my_exit(exit_status);
-      }
-    } else {
-      main_fd = open_main_log(exit_status);
+    main_fd = cl.log_file[0] ? open(cl.log_file, O_RDONLY) : open_main_log(exit_status);
+    if (main_fd < 0) {
+      exit_status.set(EXIT_CRITICAL, " can't open log file ");
+      exit_status.append(cl.log_file);
+      my_exit(exit_status);
     }
 
     if (cl.tail > 0) {
