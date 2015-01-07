@@ -52,6 +52,7 @@
 #include <stdlib.h>
 
 #include "ink_defs.h"
+#include "ink_memory.h"
 #include "ink_assert.h"
 #include "INK_MD5.h"
 #include "ParseRules.h"
@@ -387,6 +388,8 @@ struct FD {
 
   void reset() {
     next = 0;
+    nalternate = 0;
+    ip = 0;
     fd = -1;
     read_cb = NULL;
     write_cb = NULL;
@@ -406,6 +409,7 @@ struct FD {
     bytes = 0;
     doc = 0.0;
     doc_length = 0;
+    binary = 0;
     ims = 0;
     drop_after_CL = ::drop_after_CL;
     client_abort = 0;
@@ -413,6 +417,7 @@ struct FD {
     ftp_mode = FTP_NULL;
     ftp_peer_addr = 0;
     ftp_peer_port = 0;
+    ink_zero(name);
   }
 
   void close();
@@ -2571,7 +2576,6 @@ void interval_report() {
     }
 
 struct UrlHashTable {
-
   unsigned int    numbytes;
   unsigned char * bytes;
   int fd;
@@ -2635,7 +2639,9 @@ struct UrlHashTable {
 };
 UrlHashTable * uniq_urls = NULL;
 
-UrlHashTable::UrlHashTable() {
+UrlHashTable::UrlHashTable()
+  : numbytes(0), bytes(NULL), fd(-1)
+{
   off_t len = 0;
 
   if (!url_hash_entries)
