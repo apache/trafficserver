@@ -463,7 +463,7 @@ HttpTunnelConsumer::HttpTunnelConsumer()
 }
 
 HttpTunnel::HttpTunnel()
-  : Continuation(NULL), num_producers(0), num_consumers(0), sm(NULL), active(false)
+  : Continuation(NULL), num_producers(0), num_consumers(0), sm(NULL), active(false), postbuf(NULL)
 {
 }
 
