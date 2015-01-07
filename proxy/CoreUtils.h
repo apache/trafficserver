@@ -117,41 +117,12 @@ public:
   static void insert_table(intptr_t vaddr1, intptr_t offset1, intptr_t fsize1);
 
   /**********************************************************************
-  * purpose: fills the given buffer with characters from the beginning
-  *          of the given memory section
-  * inputs: int vaddr, int length, char* buf, FILE *fp
-  * outputs: returns -1 on read error or 1 if successful
-  **********************************************************************/
-  static intptr_t read_core_memory(intptr_t vaddr, intptr_t length, char *buf, FILE * fp);
-
-  /**********************************************************************
-  * purpose: fills the given buffer with characters from the beginning
-  *          of the given memory section + given offset
-  * inputs: int offset, int vaddr, int length, char* buf, FILE *fp
-  * outputs: returns -1 on read error or 1 if successful
-  **********************************************************************/
-  static intptr_t read_core_memory(intptr_t offset, intptr_t vaddr, intptr_t length, char *buf, FILE * fp);
-
-  /**********************************************************************
   * purpose: fills the buffer with num of given bytes from the
   *          beginning of the memory section
   * inputs: int vaddr, int bytes, char* buf
   * outputs: returns -1 on read error or num of bytes read
   **********************************************************************/
   static intptr_t read_from_core(intptr_t vaddr, intptr_t bytes, char *buf);
-
-  /**********************************************************************
-  * purpose: beats the heck outta me
-  * inputs: int vaddr, int bytes, HdrHeap h
-  * outputs: returns -1 on read error or num of bytes read
-  **********************************************************************/
-  static intptr_t read_heap_header(intptr_t vaddr, intptr_t bytes, HdrHeap h);
-
-  /**********************************************************************
-  * purpose: returns the active lwp id
-  * inputs: none
-  * outputs: returns the active lwp id
-  **********************************************************************/
 
   /**********************************************************************
   * purpose: returns the base core_stack_state for the given thread id

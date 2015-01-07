@@ -77,12 +77,6 @@
  *        +-----------------+     +-----------------+
  */
 
-/*
-   PORTING ISSUES:
-   read_core_memory read_core_memory II read_heap_header not used
-   -> figure out some way to make print_netstate useful!
-*/
-
 /* 32-bit arguments are pushed down stack in reverse syntactic order (hence accessed/popped in the right order), above the 32-bit near return address. %ebp, %esi, %edi, %ebx are callee-saved, other registers are caller-saved; %eax is to hold the result, or %edx:%eax for 64-bit results */
 
 /*    has -fomit-frame-pointer has any repercussions??
@@ -209,48 +203,6 @@ CoreUtils::insert_table(intptr_t vaddr1, intptr_t offset1, intptr_t fsize1)
       arrayMem[index].offset = offset1;
       arrayMem[index].fsize = fsize1;
     }
-  }
-}
-
-
-// returns -1 if not found in table or fills the buffer with characters
-// from the beginning of the memory section
-intptr_t
-CoreUtils::read_core_memory(intptr_t vaddr, intptr_t length, char *buf, FILE * fp)
-{
-  intptr_t index = find_vaddr(vaddr, arrayMem.length(), 0);
-  if (inTable == false)
-    return -1;
-  else {
-    intptr_t offset = arrayMem[index].offset;
-
-    if (fseek(fp, offset, SEEK_SET) != -1) {
-      for (int j = 0; j < length; j++) {
-        *buf++ = (char) getc(fp);
-      }
-    }
-    return 1;
-  }
-}
-
-// returns -1 if not found in table or fills the buffer with characters
-// from the beginning of the memory section + offset
-intptr_t
-CoreUtils::read_core_memory(intptr_t offset, intptr_t vaddr, intptr_t length, char *buf, FILE * fp)
-{
-  intptr_t index = find_vaddr(vaddr, arrayMem.length(), 0);
-
-  if (inTable == false)
-    return -1;
-  else {
-    intptr_t offset2 = arrayMem[index].offset;
-
-    if (fseek(fp, offset2 + offset, SEEK_SET) != -1) {
-      for (int j = 0; j < length; j++) {
-        *buf++ = (char) getc(fp);
-      }
-    }
-    return 1;
   }
 }
 
@@ -783,28 +735,6 @@ CoreUtils::dump_history(HttpSM * hsm)
   }
 
   printf("-------- End History -----------\n\n");
-}
-
-intptr_t
-CoreUtils::read_heap_header(intptr_t vaddr, intptr_t bytes, HdrHeap h)
-{
-  intptr_t index = find_vaddr(vaddr, arrayMem.length(), 0);
-  intptr_t vadd = arrayMem[index - 1].vaddr;
-  intptr_t offset = arrayMem[index - 1].offset;
-  intptr_t size = arrayMem[index - 1].fsize;
-  intptr_t offset2 = std::abs(vaddr - vadd);
-
-  if (bytes > (size - offset2))
-    return -1;
-  else {
-    if (fseek(fp, offset2 + offset, SEEK_SET) != -1) {
-      if (fread(&h, sizeof(HdrHeap), 1, fp) > 0)
-        return bytes;
-      else
-        return -1;
-    }
-  }
-  return -1;
 }
 
 void
