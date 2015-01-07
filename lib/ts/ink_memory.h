@@ -438,8 +438,18 @@ public:
   typedef ats_scoped_resource<detail::SCOPED_OBJECT_TRAITS<T> > super; ///< Super type.
   typedef ats_scoped_obj self; ///< Self reference.
 
+  /// Default constructor - an empty container.
+  ats_scoped_obj() : super() {}
+
+  /// Construct with contained resource.
+  explicit ats_scoped_obj(T* obj) : super(obj) {}
+
   self& operator = (T* obj) {
     super::operator=(obj);
+    return *this;
+  }
+
+  T* operator -> () const {
     return *this;
   }
 };
