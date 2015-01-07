@@ -26,8 +26,9 @@
 
 //-------------------------------------------------------------------------
 // ink_rwlock_init
+//
+// Note: This should be called only once.
 //-------------------------------------------------------------------------
-
 int
 ink_rwlock_init(ink_rwlock * rw)
 {
@@ -35,10 +36,12 @@ ink_rwlock_init(ink_rwlock * rw)
 
   if ((result = ink_mutex_init(&rw->rw_mutex, NULL)) != 0)
     goto Lerror;
+
   ink_cond_init(&rw->rw_condreaders);
   ink_cond_init(&rw->rw_condwriters);
   rw->rw_nwaitreaders = 0;
   rw->rw_nwaitwriters = 0;
+  // coverity[missing_lock]
   rw->rw_refcount = 0;
   rw->rw_magic = RW_MAGIC;
 
