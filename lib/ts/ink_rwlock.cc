@@ -31,7 +31,6 @@
 int
 ink_rwlock_init(ink_rwlock * rw)
 {
-
   int result;
 
   if ((result = ink_mutex_init(&rw->rw_mutex, NULL)) != 0)
@@ -43,10 +42,10 @@ ink_rwlock_init(ink_rwlock * rw)
   rw->rw_refcount = 0;
   rw->rw_magic = RW_MAGIC;
 
-  return (0);
+  return 0;
 
 Lerror:
-  return (result);              /* an errno value */
+  return result;              /* an errno value */
 
 }
 
@@ -57,18 +56,17 @@ Lerror:
 int
 ink_rwlock_destroy(ink_rwlock * rw)
 {
-
   if (rw->rw_magic != RW_MAGIC)
-    return (EINVAL);
+    return EINVAL;
   if (rw->rw_refcount != 0 || rw->rw_nwaitreaders != 0 || rw->rw_nwaitwriters != 0)
-    return (EBUSY);
+    return EBUSY;
 
   ink_mutex_destroy(&rw->rw_mutex);
   ink_cond_destroy(&rw->rw_condreaders);
   ink_cond_destroy(&rw->rw_condwriters);
   rw->rw_magic = 0;
 
-  return (0);
+  return 0;
 }
 
 //-------------------------------------------------------------------------
@@ -78,14 +76,13 @@ ink_rwlock_destroy(ink_rwlock * rw)
 int
 ink_rwlock_rdlock(ink_rwlock * rw)
 {
-
   int result;
 
   if (rw->rw_magic != RW_MAGIC)
-    return (EINVAL);
+    return EINVAL;
 
   if ((result = ink_mutex_acquire(&rw->rw_mutex)) != 0)
-    return (result);
+    return result;
 
   /* give preference to waiting writers */
   while (rw->rw_refcount < 0 || rw->rw_nwaitwriters > 0) {
@@ -97,8 +94,7 @@ ink_rwlock_rdlock(ink_rwlock * rw)
 
   ink_mutex_release(&rw->rw_mutex);
 
-  return (0);
-
+  return 0;
 }
 
 //-------------------------------------------------------------------------
@@ -108,14 +104,13 @@ ink_rwlock_rdlock(ink_rwlock * rw)
 int
 ink_rwlock_wrlock(ink_rwlock * rw)
 {
-
   int result;
 
   if (rw->rw_magic != RW_MAGIC)
-    return (EINVAL);
+    return EINVAL;
 
   if ((result = ink_mutex_acquire(&rw->rw_mutex)) != 0)
-    return (result);
+    return result;
 
   while (rw->rw_refcount != 0) {
     rw->rw_nwaitwriters++;
@@ -126,8 +121,7 @@ ink_rwlock_wrlock(ink_rwlock * rw)
 
   ink_mutex_release(&rw->rw_mutex);
 
-  return (0);
-
+  return 0;
 }
 
 //-------------------------------------------------------------------------
@@ -137,14 +131,13 @@ ink_rwlock_wrlock(ink_rwlock * rw)
 int
 ink_rwlock_unlock(ink_rwlock * rw)
 {
-
   int result;
 
   if (rw->rw_magic != RW_MAGIC)
-    return (EINVAL);
+    return EINVAL;
 
   if ((result = ink_mutex_acquire(&rw->rw_mutex)) != 0)
-    return (result);
+    return result;
 
   if (rw->rw_refcount > 0)
     rw->rw_refcount--;          /* releasing a reader */
@@ -162,6 +155,5 @@ ink_rwlock_unlock(ink_rwlock * rw)
 
   ink_mutex_release(&rw->rw_mutex);
 
-  return (0);
-
+  return 0;
 }
