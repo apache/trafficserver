@@ -542,7 +542,7 @@ REGRESSION_TEST(HPACK_EncodeInteger)(RegressionTest * t, int, int *pstatus)
 
     box.check(len == integer_test_case[i].encoded_field_len, "encoded length was %d, expecting %d",
         len, integer_test_case[i].encoded_field_len);
-    box.check(memcmp(buf, integer_test_case[i].encoded_field, len) == 0, "encoded value was invalid");
+    box.check(len > 0 && memcmp(buf, integer_test_case[i].encoded_field, len) == 0, "encoded value was invalid");
   }
 }
 
@@ -562,7 +562,7 @@ REGRESSION_TEST(HPACK_EncodeString)(RegressionTest * t, int, int *pstatus)
 
     box.check(len == string_test_case[i].encoded_field_len, "encoded length was %d, expecting %d",
         len, integer_test_case[i].encoded_field_len);
-    box.check(memcmp(buf, string_test_case[i].encoded_field, len) == 0, "encoded string was invalid");
+    box.check(len > 0 && memcmp(buf, string_test_case[i].encoded_field, len) == 0, "encoded string was invalid");
   }
 }
 
@@ -580,7 +580,7 @@ REGRESSION_TEST(HPACK_EncodeIndexedHeaderField)(RegressionTest * t, int, int *ps
 
     box.check(len == indexed_test_case[i].encoded_field_len, "encoded length was %d, expecting %d",
         len, indexed_test_case[i].encoded_field_len);
-    box.check(memcmp(buf, indexed_test_case[i].encoded_field, len) == 0, "encoded value was invalid");
+    box.check(len > 0 && memcmp(buf, indexed_test_case[i].encoded_field, len) == 0, "encoded value was invalid");
   }
 }
 
@@ -609,7 +609,7 @@ REGRESSION_TEST(HPACK_EncodeLiteralHeaderField)(RegressionTest * t, int, int *ps
     }
 
     box.check(len == literal_test_case[i].encoded_field_len, "encoded length was %d, expecting %d", len, literal_test_case[i].encoded_field_len);
-    box.check(memcmp(buf, literal_test_case[i].encoded_field, len) == 0, "encoded value was invalid");
+    box.check(len > 0 && memcmp(buf, literal_test_case[i].encoded_field, len) == 0, "encoded value was invalid");
   }
 
 }
@@ -644,7 +644,7 @@ REGRESSION_TEST(HPACK_Encode)(RegressionTest * t, int, int *pstatus)
 
     box.check(len == encoded_field_test_case[i].encoded_field_len, "encoded length was %d, expecting %d",
         len, encoded_field_test_case[i].encoded_field_len);
-    box.check(memcmp(buf, encoded_field_test_case[i].encoded_field, len) == 0, "encoded value was invalid");
+    box.check(len > 0 && memcmp(buf, encoded_field_test_case[i].encoded_field, len) == 0, "encoded value was invalid");
   }
 }
 
@@ -685,7 +685,7 @@ REGRESSION_TEST(HPACK_DecodeString)(RegressionTest * t, int, int *pstatus)
         len, string_test_case[i].encoded_field_len);
     box.check(actual_len == string_test_case[i].raw_string_len, "length of decoded string was %d, expecting %d",
         actual_len, string_test_case[i].raw_string_len);
-    box.check(memcmp(actual, string_test_case[i].raw_string, actual_len) == 0, "decoded string was invalid");
+    box.check(len > 0 && memcmp(actual, string_test_case[i].raw_string, actual_len) == 0, "decoded string was invalid");
 
     ats_free(actual);
   }
@@ -712,7 +712,7 @@ REGRESSION_TEST(HPACK_DecodeIndexedHeaderField)(RegressionTest * t, int, int *ps
 
     int name_len;
     const char* name = header.name_get(&name_len);
-    box.check(memcmp(name, indexed_test_case[i].raw_name, name_len) == 0,
+    box.check(len > 0 && memcmp(name, indexed_test_case[i].raw_name, name_len) == 0,
       "decoded header name was invalid");
 
     int actual_value_len;
@@ -743,12 +743,12 @@ REGRESSION_TEST(HPACK_DecodeLiteralHeaderField)(RegressionTest * t, int, int *ps
 
     int name_len;
     const char* name = header.name_get(&name_len);
-    box.check(memcmp(name, literal_test_case[i].raw_name, name_len) == 0,
+    box.check(name_len > 0 && memcmp(name, literal_test_case[i].raw_name, name_len) == 0,
       "decoded header name was invalid");
 
     int actual_value_len;
     const char* actual_value = header.value_get(&actual_value_len);
-    box.check(memcmp(actual_value, literal_test_case[i].raw_value, actual_value_len) == 0,
+    box.check(actual_value_len > 0 && memcmp(actual_value, literal_test_case[i].raw_value, actual_value_len) == 0,
       "decoded header value was invalid");
   }
 }
