@@ -595,7 +595,7 @@ REGRESSION_TEST(HPACK_EncodeLiteralHeaderField)(RegressionTest * t, int, int *ps
   for (unsigned int i=0; i<sizeof(literal_test_case)/sizeof(literal_test_case[0]); i++) {
     memset(buf, 0, BUFSIZE_FOR_REGRESSION_TEST);
 
-    HTTPHdr* headers = new HTTPHdr();
+    ats_scoped_obj<HTTPHdr> headers(new HTTPHdr);
     headers->create(HTTP_TYPE_RESPONSE);
     MIMEField *field = mime_field_create(headers->m_heap, headers->m_http->m_fields_impl);
     MIMEFieldWrapper header(field, headers->m_heap, headers->m_http->m_fields_impl);
@@ -624,7 +624,7 @@ REGRESSION_TEST(HPACK_Encode)(RegressionTest * t, int, int *pstatus)
 
   // FIXME Current encoder don't support indexing.
   for (unsigned int i=0; i<sizeof(encoded_field_test_case)/sizeof(encoded_field_test_case[0]); i++) {
-    HTTPHdr* headers = new HTTPHdr();
+    ats_scoped_obj<HTTPHdr> headers(new HTTPHdr);
     headers->create(HTTP_TYPE_REQUEST);
 
     for (unsigned int j=0; j<sizeof(raw_field_test_case[i])/sizeof(raw_field_test_case[i][0]); j++) {
@@ -699,7 +699,7 @@ REGRESSION_TEST(HPACK_DecodeIndexedHeaderField)(RegressionTest * t, int, int *ps
   Http2HeaderTable header_table;
 
   for (unsigned int i=0; i<sizeof(indexed_test_case)/sizeof(indexed_test_case[0]); i++) {
-    HTTPHdr* headers = new HTTPHdr();
+    ats_scoped_obj<HTTPHdr> headers(new HTTPHdr);
     headers->create(HTTP_TYPE_REQUEST);
     MIMEField *field = mime_field_create(headers->m_heap, headers->m_http->m_fields_impl);
     MIMEFieldWrapper header(field, headers->m_heap, headers->m_http->m_fields_impl);
@@ -730,7 +730,7 @@ REGRESSION_TEST(HPACK_DecodeLiteralHeaderField)(RegressionTest * t, int, int *ps
   Http2HeaderTable header_table;
 
   for (unsigned int i=0; i<sizeof(literal_test_case)/sizeof(literal_test_case[0]); i++) {
-    HTTPHdr* headers = new HTTPHdr();
+    ats_scoped_obj<HTTPHdr> headers(new HTTPHdr);
     headers->create(HTTP_TYPE_REQUEST);
     MIMEField *field = mime_field_create(headers->m_heap, headers->m_http->m_fields_impl);
     MIMEFieldWrapper header(field, headers->m_heap, headers->m_http->m_fields_impl);
@@ -761,7 +761,7 @@ REGRESSION_TEST(HPACK_Decode)(RegressionTest * t, int, int *pstatus)
   Http2HeaderTable header_table;
 
   for (unsigned int i=0; i<sizeof(encoded_field_test_case)/sizeof(encoded_field_test_case[0]); i++) {
-    HTTPHdr* headers = new HTTPHdr();
+    ats_scoped_obj<HTTPHdr> headers(new HTTPHdr);
     headers->create(HTTP_TYPE_REQUEST);
 
     http2_parse_header_fragment(headers, make_iovec(encoded_field_test_case[i].encoded_field, encoded_field_test_case[i].encoded_field_len), header_table);
