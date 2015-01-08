@@ -157,6 +157,3 @@ msgstr "``INT`` デフォルト: ``0``"
 msgid "``STRING`` Default: *value from* ``--on-port``"
 msgstr "``STRING`` デフォルト: ``--on-port`` *の値*"
 
-#: ../../admin/transparent-proxy/router-inline.en.rst:82
-msgid "``proxy.config.http.server_port_attr``"
-msgstr "``proxy.config.http.server_port_attr``"

@@ -77,10 +77,6 @@ To configure Traffic Server set the following values in
     ``STRING``
     Default: *value from* ``--on-port``
 
-``proxy.config.http.server_port_attr``
-    ``STRING``
-    Default: ``=``
-
 ``proxy.config.reverse_proxy.enabled``
     ``INT``
     Default: ``1``
