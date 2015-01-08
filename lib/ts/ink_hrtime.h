@@ -33,21 +33,13 @@
 
 #include "ink_config.h"
 #include "ink_assert.h"
-#include "Compatability.h"
-
-int squid_timestamp_to_buf(char *buf, unsigned int buf_size, long timestamp_sec, long timestamp_usec);
-char *int64_to_str(char *buf, unsigned int buf_size, int64_t val, unsigned int *total_chars, unsigned int req_width=0, char pad_char='0');
-
-#ifdef NEED_HRTIME
 #include <time.h>
 #include <sys/time.h>
 #include <stdlib.h>
 typedef int64_t ink_hrtime;
-#else /* !defined (NEED_HRTIME) */
-#include <sys/time.h>
-typedef hrtime_t ink_hrtime;
-#endif
 
+int squid_timestamp_to_buf(char *buf, unsigned int buf_size, long timestamp_sec, long timestamp_usec);
+char *int64_to_str(char *buf, unsigned int buf_size, int64_t val, unsigned int *total_chars, unsigned int req_width=0, char pad_char='0');
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -255,7 +247,6 @@ ink_hrtime_to_timeval2(ink_hrtime t, struct timeval *tv)
 static inline ink_hrtime
 ink_get_hrtime_internal()
 {
-#if defined (NEED_HRTIME)
 #if defined (USE_TIME_STAMP_COUNTER_HRTIME)
   return get_hrtime_rdtsc();
 #elif defined(freebsd)
@@ -266,9 +257,6 @@ ink_get_hrtime_internal()
   timeval tv;
   gettimeofday(&tv, NULL);
   return ink_hrtime_from_timeval(&tv);
-#endif
-#else /* !defined (NEED_HRTIME) */
-  return gethrtime();
 #endif
 }
 

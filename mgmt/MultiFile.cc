@@ -29,7 +29,6 @@
 #include "ink_string.h"
 #include "ink_time.h"
 
-#include "Compatability.h"
 #include "MgmtUtils.h"
 #include "MultiFile.h"
 #include "ExpandingArray.h"

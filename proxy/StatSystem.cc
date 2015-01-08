@@ -182,8 +182,7 @@ persistent_stat(int i)
 static int
 open_stats_snap()
 {
-  int fd = socketManager.open(snap_filename,
-                              O_CREAT | O_RDWR | _O_ATTRIB_NORMAL);
+  int fd = socketManager.open(snap_filename, O_CREAT | O_RDWR);
   if (fd < 0) {
     Warning("unable to open %s: %s", snap_filename, strerror(-fd));
     return -1;

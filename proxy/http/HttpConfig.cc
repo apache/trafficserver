@@ -33,13 +33,6 @@
 #include "P_RecUtils.h"
 #include <records/I_RecHttp.h>
 
-#ifndef min
-#define         min(a,b)        ((a) < (b) ? (a) : (b))
-#endif
-#ifndef max
-#define         max(a,b)        ((a) > (b) ? (a) : (b))
-#endif
-
 #define HttpEstablishStaticConfigStringAlloc(_ix,_n) \
   REC_EstablishStaticConfigStringAlloc(_ix,_n); \
   REC_RegisterConfigUpdateFunc(_n, http_config_cb, NULL)
@@ -1618,7 +1611,7 @@ HttpConfig::reconfigure()
 
   params->oride.cache_heuristic_min_lifetime = m_master.oride.cache_heuristic_min_lifetime;
   params->oride.cache_heuristic_max_lifetime = m_master.oride.cache_heuristic_max_lifetime;
-  params->oride.cache_heuristic_lm_factor = min(max(m_master.oride.cache_heuristic_lm_factor, 0), 1);
+  params->oride.cache_heuristic_lm_factor = min(max(m_master.oride.cache_heuristic_lm_factor, 0.0f), 1.0f);
 
   params->oride.cache_guaranteed_min_lifetime = m_master.oride.cache_guaranteed_min_lifetime;
   params->oride.cache_guaranteed_max_lifetime = m_master.oride.cache_guaranteed_max_lifetime;

@@ -721,19 +721,19 @@ FileImpl::fopen(const char *filename, const char *mode)
       return 0;
     }
     m_mode = READ;
-    m_fd = open(filename, O_RDONLY | _O_ATTRIB_NORMAL);
+    m_fd = open(filename, O_RDONLY);
   } else if (mode[0] == 'w') {
     if (mode[1] != '\0') {
       return 0;
     }
     m_mode = WRITE;
-    m_fd = open(filename, O_WRONLY | O_CREAT | _O_ATTRIB_NORMAL, 0644);
+    m_fd = open(filename, O_WRONLY | O_CREAT, 0644);
   } else if (mode[0] == 'a') {
     if (mode[1] != '\0') {
       return 0;
     }
     m_mode = WRITE;
-    m_fd = open(filename, O_WRONLY | O_CREAT | O_APPEND | _O_ATTRIB_NORMAL, 0644);
+    m_fd = open(filename, O_WRONLY | O_CREAT | O_APPEND, 0644);
   }
 
   if (m_fd < 0) {

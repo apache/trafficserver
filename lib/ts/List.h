@@ -58,7 +58,6 @@
 
 #include "ink_assert.h"
 #include "ink_queue.h"
-#include "Compatability.h"
 #include "defalloc.h"
 
 //

@@ -24,7 +24,6 @@
 #include "libts.h"
 #include <stdio.h>
 #include "Allocator.h"
-#include "Compatability.h"
 #include "HTTP.h"
 #include "HdrToken.h"
 #include "MIME.h"

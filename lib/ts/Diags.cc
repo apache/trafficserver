@@ -42,8 +42,6 @@
 #include "ink_time.h"
 #include "ink_hrtime.h"
 #include "Diags.h"
-#include "Compatability.h"
-
 
 int diags_on_for_plugins = 0;
 bool DiagsConfigState::enabled[2] = { false, false };

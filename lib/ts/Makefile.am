@@ -45,7 +45,6 @@ libtsutil_la_SOURCES = \
   Arena.h \
   Bitops.cc \
   Bitops.h \
-  Compatability.h \
   ConsistentHash.cc \
   ConsistentHash.h \
   Cryptohash.h \

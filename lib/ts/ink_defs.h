@@ -27,6 +27,7 @@
 
 #include "ink_config.h"
 #include <stddef.h>
+#include <sys/mman.h>
 
 #ifdef HAVE_STDINT_H
 # include <stdint.h>
@@ -100,6 +101,21 @@ countof(const T (&)[N]) {
 #define MIN(x,y) (((x) <= (y)) ? (x) : (y))
 #endif
 
+#ifdef __cplusplus
+// We can't use #define for min and max because it will conflict with
+// other declarations of min and max functions.  This conflict
+// occurs with STL
+template<class T> T min(const T a, const T b)
+{
+  return a < b ? a : b;
+}
+
+template<class T> T max(const T a, const T b)
+{
+  return a > b ? a : b;
+}
+#endif
+
 #define ATS_UNUSED __attribute__ ((unused))
 #define ATS_WARN_IF_UNUSED __attribute__ ((warn_unused_result))
 #define	ATS_UNUSED_RETURN(x)	if (x) {}
@@ -118,6 +134,12 @@ countof(const T (&)[N]) {
 
 #ifndef ROUNDUP
 #define ROUNDUP(x, y) ((((x)+((y)-1))/(y))*(y))
+#endif
+
+#if defined(MAP_NORESERVE)
+#define MAP_SHARED_MAP_NORESERVE (MAP_SHARED | MAP_NORESERVE)
+#else
+#define MAP_SHARED_MAP_NORESERVE (MAP_SHARED)
 #endif
 
 /* Variables

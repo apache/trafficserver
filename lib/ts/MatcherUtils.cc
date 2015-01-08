@@ -54,7 +54,7 @@ readIntoBuffer(const char *file_path, const char *module_name, int *read_size_pt
   }
   // Open the file for Blocking IO.  We will be reading this
   //   at start up and infrequently afterward
-  if ((fd = open(file_path, O_RDONLY | _O_ATTRIB_NORMAL)) < 0) {
+  if ((fd = open(file_path, O_RDONLY)) < 0) {
     Error("%s Can not open %s file : %s", module_name, file_path, strerror(errno));
     return NULL;
   }

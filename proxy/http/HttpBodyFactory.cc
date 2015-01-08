@@ -772,7 +772,7 @@ HttpBodySet::init(char *set, char *dir)
   char buffer[1024], name[1025], value[1024];
 
   ink_filepath_make(info_path, sizeof(info_path), dir, ".body_factory_info");
-  fd = open(info_path, O_RDONLY | _O_ATTRIB_NORMAL);
+  fd = open(info_path, O_RDONLY);
   if (fd < 0)
     return (-1);
 
@@ -961,7 +961,7 @@ HttpBodyTemplate::load_from_file(char *dir, char *file)
   ///////////////////
 
   // coverity[toctou]
-  fd = open(path, O_RDONLY | _O_ATTRIB_NORMAL);
+  fd = open(path, O_RDONLY);
   if (fd < 0)
     return (0);
 

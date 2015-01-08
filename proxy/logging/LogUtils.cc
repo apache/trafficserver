@@ -43,9 +43,6 @@
 // REC_SIGNAL_LOGGING_ERROR    is defined in I_RecSignals.h
 // REC_SIGNAL_LOGGING_WARNING  is defined in I_RecSignals.h
 
-
-#include "Compatability.h"
-
 #include "LogUtils.h"
 #include "LogLimits.h"
 
@@ -104,17 +101,9 @@ LogUtils::timestamp_to_netscape_str(long timestamp)
     // most of this garbage is simply to find out the offset from GMT,
     // taking daylight savings into account.
     //
-#ifdef NEED_ALTZONE_DEFINED
-    time_t altzone = timezone;
-#endif
     struct tm res;
     struct tm *tms = ink_localtime_r((const time_t *) &timestamp, &res);
-    // TODO: Not sure this makes sense, can altzone actually be != timezone ??
-#ifdef NEED_ALTZONE_DEFINED
-    long zone = (tms->tm_isdst > 0) ? altzone : timezone;
-#else
     long zone = -tms->tm_gmtoff;        // double negative!
-#endif
     int offset;
     char sign;
 

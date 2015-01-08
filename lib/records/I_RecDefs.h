@@ -24,7 +24,6 @@
 #ifndef _I_REC_DEFS_H_
 #define _I_REC_DEFS_H_
 
-#include "Compatability.h"
 #include "ink_mutex.h"
 #include "ink_rwlock.h"
 #include "I_RecMutex.h"

@@ -26,7 +26,6 @@
 #include "ink_platform.h"
 #include "MgmtUtils.h"
 #include "I_Layout.h"
-#include "Compatability.h"
 #include "LocalManager.h"
 #include "MgmtSocket.h"
 #include "ink_cap.h"

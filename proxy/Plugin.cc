@@ -24,7 +24,6 @@
 #include <stdio.h>
 #include "ink_platform.h"
 #include "ink_file.h"
-#include "Compatability.h"
 #include "ParseRules.h"
 #include "I_RecCore.h"
 #include "I_Layout.h"

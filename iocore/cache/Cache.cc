@@ -577,7 +577,7 @@ CacheProcessor::start(int, size_t)
   return start_internal(0);
 }
 
-static const int DEFAULT_CACHE_OPTIONS = (O_RDWR | _O_ATTRIB_OVERLAPPED);
+static const int DEFAULT_CACHE_OPTIONS = (O_RDWR);
 
 int
 CacheProcessor::start_internal(int flags)
@@ -633,10 +633,11 @@ CacheProcessor::start_internal(int flags)
       ink_strlcat(path, "/cache.db", sizeof(path));
       opts |= O_CREAT;
     }
-    opts |= _O_ATTRIB_OVERLAPPED;
+
 #ifdef O_DIRECT
     opts |= O_DIRECT;
 #endif
+
 #ifdef O_DSYNC
     opts |= O_DSYNC;
 #endif
