@@ -296,7 +296,7 @@ ink_freelist_free(InkFreeList * f, void *item)
 }
 
 void
-ink_freelist_free_bulk(ATS_UNUSED InkFreeList *f, ATS_UNUSED void *head, ATS_UNUSED void *tail, ATS_UNUSED size_t num_item)
+ink_freelist_free_bulk(InkFreeList *f, void *head, void *tail, size_t num_item)
 {
 #if TS_USE_FREELIST
 #if !TS_USE_RECLAIMABLE_FREELIST
@@ -312,14 +312,14 @@ ink_freelist_free_bulk(ATS_UNUSED InkFreeList *f, ATS_UNUSED void *head, ATS_UNU
     static const char str[4] = { (char) 0xde, (char) 0xad, (char) 0xbe, (char) 0xef };
 
     // set the entire item to DEADBEEF;
-    void * temp = head;
-    for(size_t i = 0; i<num_item; i++){
-      for (int j = 0; j < (int)f->type_size; j++)
+    void* temp = head;
+    for (size_t i = 0; i<num_item; i++) {
+      for (int j = sizeof(void*); j < (int)f->type_size; j++)
         ((char*)temp)[j] = str[j % 4];
-      temp = *(void **) temp;
+      temp = *ADDRESS_OF_NEXT(temp, 0);
     }
   }
-#endif
+#endif /* DEADBEEF */
 
   while (!result) {
     INK_QUEUE_LD(h, f->head);
@@ -330,22 +330,32 @@ ink_freelist_free_bulk(ATS_UNUSED InkFreeList *f, ATS_UNUSED void *head, ATS_UNU
       ink_fatal("ink_freelist_free: bad list");
     if (TO_PTR(FREELIST_POINTER(h)))
       fake_global_for_ink_queue = *(int *) TO_PTR(FREELIST_POINTER(h));
-#endif
+#endif /* SANITY */
     *adr_of_next = FREELIST_POINTER(h);
     SET_FREELIST_POINTER_VERSION(item_pair, FROM_PTR(head), FREELIST_VERSION(h));
     INK_MEMORY_BARRIER;
 #if TS_HAS_128BIT_CAS
        result = ink_atomic_cas((__int128_t*) & f->head, h.data, item_pair.data);
-#else
+#else /* !TS_HAS_128BIT_CAS */
        result = ink_atomic_cas((int64_t *) & f->head, h.data, item_pair.data);
-#endif
+#endif /* TS_HAS_128BIT_CAS */
   }
 
   ink_atomic_increment((int *) &f->used, -1 * num_item);
   ink_atomic_increment(&fastalloc_mem_in_use, -(int64_t) f->type_size * num_item);
-#endif
-#else
+#else /* TS_USE_RECLAIMABLE_FREELIST */
+  // Avoid compiler warnings
+  (void)f;
+  (void)head;
+  (void)tail;
+  (void)num_item;
+#endif /* !TS_USE_RECLAIMABLE_FREELIST */
+#else /* !TS_USE_FREELIST */
   void * item = head;
+
+  // Avoid compiler warnings
+  (void)tail;
+
   if (f->alignment) {
     for (size_t i = 0; i < num_item && item; ++i, item = *(void **)item) {
       ats_memalign_free(item);
@@ -355,7 +365,7 @@ ink_freelist_free_bulk(ATS_UNUSED InkFreeList *f, ATS_UNUSED void *head, ATS_UNU
       ats_free(item);
     }
   }
-#endif
+#endif /* TS_USE_FREELIST */
 }
 
 void
