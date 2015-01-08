@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.0
 
+  *) [TS-3272] Fix to ensure that SSL_SNI callback only called when state
+   changes.
+
   *) [TS-3279] add operator ->() and explicit constructor to ats_scoped_obj
 
   *) [TS-3275] Clear out event_loop when stop'ing an EventIO. This was as the

@@ -417,85 +417,84 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
   int64_t ntodo = s->vio.ntodo();
   ink_assert(buf.writer());
 
-  // This function will always return true unless
-  // vc is an SSLNetVConnection.
+  // Continue on if we are still in the handshake
   if (!getSSLHandShakeComplete()) {
     int err;
     int data_to_read = 0;
     char *data_ptr = NULL;
 
-    // Not done handshaking, go into the SSL handshake logic again
-    if (!getSSLHandShakeComplete()) {
-
-      if (getSSLClientConnection()) {
-        ret = sslStartHandShake(SSL_EVENT_CLIENT, err);
-      } else {
-        ret = sslStartHandShake(SSL_EVENT_SERVER, err);
+    if (getSSLClientConnection()) {
+      ret = sslStartHandShake(SSL_EVENT_CLIENT, err);
+    } else {
+      ret = sslStartHandShake(SSL_EVENT_SERVER, err);
+    }
+    // If we have flipped to blind tunnel, don't read ahead
+    if (this->handShakeReader) {
+      if (this->attributes != HttpProxyPort::TRANSPORT_BLIND_TUNNEL) {
+        // Check and consume data that has been read
+        int data_still_to_read = BIO_get_mem_data(SSL_get_rbio(this->ssl), &data_ptr);
+        data_to_read = this->handShakeReader->read_avail();
+        this->handShakeReader->consume(data_to_read - data_still_to_read);
       }
-      // If we have flipped to blind tunnel, don't read ahead
-      if (this->handShakeReader) {
-        if (this->attributes != HttpProxyPort::TRANSPORT_BLIND_TUNNEL) {
-          // Check and consume data that has been read
-          int data_still_to_read = BIO_get_mem_data(SSL_get_rbio(this->ssl), &data_ptr);
-          data_to_read = this->handShakeReader->read_avail();
-          this->handShakeReader->consume(data_to_read - data_still_to_read);
-        }
-        else {  // Now in blind tunnel. Set things up to read what is in the buffer
+      else {
+        // Now in blind tunnel. Set things up to read what is in the buffer
+        // Must send the READ_COMPLETE here before considering
+        // forwarding on the handshake buffer, so the 
+        // SSLNextProtocolTrampoline has a chance to do its
+        // thing before forwarding the buffers.
+        this->readSignalDone(VC_EVENT_READ_COMPLETE, nh);
+
+        // If the handshake isn't set yet, this means the tunnel
+        // decision was make in the SNI callback.  We must move
+        // the client hello message back into the standard read.vio
+        // so it will get forwarded onto the origin server
+        if (!this->getSSLHandShakeComplete()) {
+          this->sslHandShakeComplete = 1;
+          // Copy over all data already read in during the SSL_accept
+          // (the client hello message)
+          NetState *s = &this->read;
+          MIOBufferAccessor &buf = s->vio.buffer;
+          int64_t r = buf.writer()->write(this->handShakeHolder);
+          s->vio.nbytes += r;
+          s->vio.ndone += r;
+
+          // Clean up the handshake buffers
+          this->free_handshake_buffers();
+
+          // Kick things again, so the data that was copied into the
+          // vio.read buffer gets processed
           this->readSignalDone(VC_EVENT_READ_COMPLETE, nh);
-
-          // If the handshake isn't set yet, this means the tunnel
-          // decision was make in the SNI callback.  We must move
-          // the client hello message back into the standard read.vio
-          // so it will get forwarded onto the origin server
-          if (!this->sslHandShakeComplete) {
-            // Kick things to get the http forwarding buffers set up
-            this->sslHandShakeComplete = 1;
-            // Copy over all data already read in during the SSL_accept
-            // (the client hello message)
-            NetState *s = &this->read;
-            MIOBufferAccessor &buf = s->vio.buffer;
-            int64_t r = buf.writer()->write(this->handShakeHolder);
-            s->vio.nbytes += r;
-            s->vio.ndone += r;
-
-            // Clean up the handshake buffers
-            this->free_handshake_buffers();
-
-            // Kick things again, so the data that was copied into the
-            // vio.read buffer gets processed
-            this->readSignalDone(VC_EVENT_READ_COMPLETE, nh);
-          }
-          return;
         }
+        return;
       }
+    }
 
-      if (ret == EVENT_ERROR) {
-        this->read.triggered = 0;
-        readSignalError(nh, err);
-      } else if (ret == SSL_HANDSHAKE_WANT_READ || ret == SSL_HANDSHAKE_WANT_ACCEPT) {
-        read.triggered = 0;
-        nh->read_ready_list.remove(this);
-        readReschedule(nh);
-      } else if (ret == SSL_HANDSHAKE_WANT_CONNECT || ret == SSL_HANDSHAKE_WANT_WRITE) {
-        write.triggered = 0;
-        nh->write_ready_list.remove(this);
-        writeReschedule(nh);
-      } else if (ret == EVENT_DONE) {
-        // If this was driven by a zero length read, signal complete when
-        // the handshake is complete. Otherwise set up for continuing read
-        // operations.
-        if (ntodo <= 0) {
-          readSignalDone(VC_EVENT_READ_COMPLETE, nh);
-        } else {
-          read.triggered = 1;
-          if (read.enabled)
-            nh->read_ready_list.in_or_enqueue(this);
-        }
-      } else if (ret == SSL_WAIT_FOR_HOOK) {
-        // avoid readReschedule - done when the plugin calls us back to reenable
+    if (ret == EVENT_ERROR) {
+      this->read.triggered = 0;
+      readSignalError(nh, err);
+    } else if (ret == SSL_HANDSHAKE_WANT_READ || ret == SSL_HANDSHAKE_WANT_ACCEPT) {
+      read.triggered = 0;
+      nh->read_ready_list.remove(this);
+      readReschedule(nh);
+    } else if (ret == SSL_HANDSHAKE_WANT_CONNECT || ret == SSL_HANDSHAKE_WANT_WRITE) {
+      write.triggered = 0;
+      nh->write_ready_list.remove(this);
+      writeReschedule(nh);
+    } else if (ret == EVENT_DONE) {
+      // If this was driven by a zero length read, signal complete when
+      // the handshake is complete. Otherwise set up for continuing read
+      // operations.
+      if (ntodo <= 0) {
+        readSignalDone(VC_EVENT_READ_COMPLETE, nh);
       } else {
-        readReschedule(nh);
+        read.triggered = 1;
+        if (read.enabled)
+          nh->read_ready_list.in_or_enqueue(this);
       }
+    } else if (ret == SSL_WAIT_FOR_HOOK) {
+      // avoid readReschedule - done when the plugin calls us back to reenable
+    } else {
+      readReschedule(nh);
     }
     return;
   }
@@ -932,7 +931,10 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
     this->attributes = HttpProxyPort::TRANSPORT_BLIND_TUNNEL;
     SSL_free(this->ssl);
     this->ssl = NULL;
-    sslHandShakeComplete = 1;
+    // Don't mark the handshake as complete yet,
+    // Will be checking for that flag not being set after
+    // we get out of this callback, and then will shuffle
+    // over the buffered handshake packets to the O.S.
     return EVENT_DONE;
   } else if (TS_SSL_HOOK_OP_TERMINATE == hookOpRequested) {
     sslHandShakeComplete = 1;
@@ -1042,8 +1044,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
     }
     else {
       //  Stopping for some other reason, perhaps loading certificate
-      //;return EVENT_ERROR;
-      return EVENT_CONT;
+      return SSL_WAIT_FOR_HOOK;
     }
 #endif
 
@@ -1201,11 +1202,11 @@ void
 SSLNetVConnection::reenable(NetHandler* nh) {
   if (this->sslPreAcceptHookState != SSL_HOOKS_DONE) {
     this->sslPreAcceptHookState = SSL_HOOKS_INVOKE;
-    this->readReschedule(nh);
   } else {
     // Reenabling from the SNI callback
     this->sslSNIHookState = SNI_HOOKS_CONTINUE;
   }
+  this->readReschedule(nh);
 }
 
 
