@@ -39,8 +39,8 @@ appropriately.
     iptables -t mangle -A PREROUTING -i eth1 -p tcp -m tcp --dport 80 -j TPROXY \
        --on-ip 0.0.0.0 --on-port 8080 --tproxy-mark 1/1
     # Let locally directed traffic pass through.
-    iptables -t mangle -A PREROUTING -i eth0 --source 192.168.56.0/24 -j ACCEPT
-    iptables -t mangle -A PREROUTING -i eth0 --destination 192.168.56.0/24 -j ACCEPT
+    iptables -t mangle -A PREROUTING -i eth0 --source 192.168.1.0/24 -j ACCEPT
+    iptables -t mangle -A PREROUTING -i eth0 --destination 192.168.1.0/24 -j ACCEPT
     # Mark presumed return web traffic
     iptables -t mangle -A PREROUTING -i eth0 -p tcp -m tcp --sport 80 -j MARK --set-mark 1/1
 
@@ -73,7 +73,7 @@ The marking used is arbitrary but it must be consistent between
 To configure Traffic Server set the following values in
 :file:`records.config`
 
-``proxy.config.http.server_port``
+``proxy.config.http.server_ports``
     ``STRING``
     Default: *value from* ``--on-port``
 

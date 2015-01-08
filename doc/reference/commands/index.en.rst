@@ -32,3 +32,4 @@ Command Reference
    traffic_via.en
    tspush.en
    tsxs.en
+   wccp_client.en

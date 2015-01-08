@@ -18,6 +18,7 @@ WCCP Configuration
   specific language governing permissions and limitations
   under the License.
 
+.. _wccp-configuration:
 
 .. toctree::
    :maxdepth: 2
