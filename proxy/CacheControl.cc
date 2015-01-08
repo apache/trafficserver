@@ -31,13 +31,6 @@
 #include <sys/types.h>
 
 #include "ink_config.h"
-
-#ifdef HAVE_PCRE_PCRE_H
-#include <pcre/pcre.h>
-#else
-#include <pcre.h>
-#endif
-
 #include "CacheControl.h"
 #include "ControlMatcher.h"
 #include "Main.h"
@@ -48,6 +41,7 @@
 #include "HttpConfig.h"
 #include "StatSystem.h"
 #include "P_Cache.h"
+#include "Regex.h"
 
 static const char modulePrefix[] = "[CacheControl]";
 

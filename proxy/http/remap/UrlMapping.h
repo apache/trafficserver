@@ -24,21 +24,15 @@
 #ifndef _URL_MAPPING_H_
 #define _URL_MAPPING_H_
 
+#include "ink_config.h"
 #include "AclFiltering.h"
 #include "Main.h"
 #include "Error.h"
 #include "URL.h"
 #include "RemapPluginInfo.h"
-#include "ink_config.h"
-
-#ifdef HAVE_PCRE_PCRE_H
-#include <pcre/pcre.h>
-#else
-#include <pcre.h>
-#endif
+#include "Regex.h"
 
 static const unsigned int MAX_REMAP_PLUGIN_CHAIN = 10;
-
 
 /**
  * Used to store http referer strings (and/or regexp)

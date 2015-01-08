@@ -90,15 +90,10 @@
 #include "DynArray.h"
 #include <ts/IpMap.h>
 
+#include "ink_apidefs.h"
 #include "ink_defs.h"
 #include "HTTP.h"
-#include "ink_apidefs.h"
-
-#ifdef HAVE_PCRE_PCRE_H
-#include <pcre/pcre.h>
-#else
-#include <pcre.h>
-#endif
+#include "Regex.h"
 
 #ifdef HAVE_CTYPE_H
 #include <ctype.h>

@@ -26,13 +26,7 @@
 #include "MgmtUtils.h"
 #include "WebMgmtUtils.h"
 #include "MultiFile.h"
-
-#ifdef HAVE_PCRE_PCRE_H
-#include <pcre/pcre.h>
-#else
-#include <pcre.h>
-#endif
-
+#include "Regex.h"
 
 /****************************************************************************
  *

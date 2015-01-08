@@ -37,21 +37,14 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "libts.h"
-
-#ifdef HAVE_PCRE_PCRE_H
-#include <pcre/pcre.h>
-#else
-#include <pcre.h>
-#endif
-
 #ifdef HAVE_CTYPE_H
 #include <ctype.h>
 #endif
 
+#include "libts.h"
+#include "Regex.h"
 #include "HttpProxyAPIEnums.h"
 #include "ProxyConfig.h"
-
 #include "P_RecProcess.h"
 
 /* Instead of enumerating the stats in DynamicStats.h, each module needs
