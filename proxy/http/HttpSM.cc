@@ -1924,6 +1924,10 @@ HttpSM::state_send_server_request_header(int event, void *data)
           // imediately, before receive the real response from original server.
           if ((len == HTTP_LEN_100_CONTINUE) && (strncasecmp(expect, HTTP_VALUE_100_CONTINUE, HTTP_LEN_100_CONTINUE) == 0)) {
             int64_t alloc_index = buffer_size_to_index(len_100_continue_response);
+            if (ua_entry->write_buffer) {
+              free_MIOBuffer(ua_entry->write_buffer);
+              ua_entry->write_buffer = NULL;
+            }
             ua_entry->write_buffer = new_MIOBuffer(alloc_index);
             IOBufferReader *buf_start = ua_entry->write_buffer->alloc_reader();
 
@@ -2657,12 +2661,16 @@ HttpSM::tunnel_handler_post(int event, void *data)
 
   HttpTunnelProducer *p = tunnel.get_producer(ua_session);
   if (event != HTTP_TUNNEL_EVENT_DONE) {
+    if ((event == VC_EVENT_WRITE_COMPLETE) || (event == VC_EVENT_EOS)) {
+      if (ua_entry->write_buffer) {
+        free_MIOBuffer(ua_entry->write_buffer);
+        ua_entry->write_buffer = NULL;
+      }
+    }
     if (t_state.http_config_param->send_408_post_timeout_response && p->handler_state == HTTP_SM_POST_UA_FAIL) {
       Debug("http_tunnel", "cleanup tunnel in tunnel_handler_post");
       hsm_release_assert(ua_entry->in_tunnel == true);
       ink_assert((event == VC_EVENT_WRITE_COMPLETE) || (event == VC_EVENT_EOS));
-      free_MIOBuffer(ua_entry->write_buffer);
-      ua_entry->write_buffer = NULL;
       vc_table.cleanup_all();
       tunnel.chain_abort_all(p);
       p->read_vio = NULL;
@@ -3419,15 +3427,6 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer * p)
 
   case VC_EVENT_READ_COMPLETE:
   case HTTP_TUNNEL_EVENT_PRECOMPLETE:
-    // We have completed reading POST data from client here.
-    // It's time to free MIOBuffer of 100 Continue's response now,
-    // althought this is a little late.
-    if (t_state.http_config_param->send_100_continue_response &&
-       ua_entry->write_buffer) {
-      free_MIOBuffer(ua_entry->write_buffer);
-      ua_entry->write_buffer = NULL;
-    }
-
     p->handler_state = HTTP_SM_POST_SUCCESS;
     p->read_success = true;
     ua_entry->in_tunnel = false;
