@@ -97,7 +97,7 @@ int url_hash_method = 0;
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
-URLHashContext::HashType URLHashContext::Setting = URLHashContext::MD5;
+URLHashContext::HashType URLHashContext::Setting = URLHashContext::MMH;
 
 URLHashContext::URLHashContext() {
   switch (Setting) {
