@@ -11,9 +11,6 @@ Changes with Apache Traffic Server 5.3.0
   *) [TS-3275] Clear out event_loop when stop'ing an EventIO. This was as the
    code originally intended, but was somehow lost.
 
-  *) [TS-3274] Forward port fix for cache fixup race condition in ram cache
-   from 4.2.X.
-
   *) [TS-3225] Add more API support to ts_lua plugin.
 
   *) [TS-3255] Support flush option in gzip plugin.
@@ -55,6 +52,9 @@ Changes with Apache Traffic Server 5.3.0
 Changes with Apache Traffic Server 5.2.0
 
   *) [TS-3276] Fix cache backwards compatibility issue.
+
+  *) [TS-3274] Forward port fix for cache fixup race condition in ram cache
+   from 4.2.X.
 
   *) [TS-2119] Fix builds for mysql remap plugin.
 
