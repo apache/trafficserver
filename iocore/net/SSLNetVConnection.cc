@@ -461,9 +461,11 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
           // Clean up the handshake buffers
           this->free_handshake_buffers();
 
-          // Kick things again, so the data that was copied into the
-          // vio.read buffer gets processed
-          this->readSignalDone(VC_EVENT_READ_COMPLETE, nh);
+          if (r > 0) {
+            // Kick things again, so the data that was copied into the
+            // vio.read buffer gets processed
+            this->readSignalDone(VC_EVENT_READ_COMPLETE, nh);
+          }
         }
         return;
       }
