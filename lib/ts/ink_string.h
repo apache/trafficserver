@@ -50,8 +50,6 @@
 /* these are supposed to be fast */
 
 inkcoreapi char *ink_memcpy_until_char(char *dst, char *src, unsigned int n, unsigned char c);
-inkcoreapi char *ink_strncpy(char *dest, const char *src, int n);
-inkcoreapi char *ink_strncat(char *dest, const char *src, int n);
 inkcoreapi char *ink_string_concatenate_strings(char *dest, ...);
 inkcoreapi char *ink_string_concatenate_strings_n(char *dest, int n, ...);
 inkcoreapi char *ink_string_append(char *dest, char *src, int n);
