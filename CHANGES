@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.2.0
 
+  *) [TS-3276] Fix cache backwards compatibility issue.
+
   *) [TS-2119] Fix builds for mysql remap plugin.
 
   *) [TS-3083] Fix core dump due to FetchSM double delete.
