@@ -45,9 +45,9 @@ ${ATS_MAKE} -j8
 ${ATS_MAKE} install
 ${ATS_MAKE} clean
 
-# Run all the TSQA tests
+# Run all the TSQA tests. We skip a couple since they can not succeed from the CI
 cd ci/tsqa || exit 2
-./run_all.sh
+./run_all.sh -e test-multicert-loading -e test-privilege-elevation
 status=$?
 
 # Exit with proper status, right now there's only one test, but still

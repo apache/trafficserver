@@ -18,25 +18,63 @@
 
 OK=()
 FAIL=()
+EXCLUDE=()
 STATUS=0
+
+# Produce a help page
+do_help() {
+    echo "run_all.sh: Run all TSQA tests"
+    echo
+    echo "Options:"
+    echo "	-e	Exclude the given test"
+    echo "	-h	Show this help page"
+}
+
+# Parse the arguments
+while getopts "e:" opt; do
+  case $opt in
+      e)
+	  EXCLUDE+=($OPTARG)
+	  ;;
+      \?|h)
+	  do_help
+	  exit 1
+	  ;;
+  esac
+done
+
 
 # Run all tests, record the results
 for test in test-*; do
-    echo "--> Starting test: $test"
-    ./${test}
-    res=$?
-    if [ $res != 0 ]; then
-	echo "Failure: ${test}"
-	FAIL+=(${test})
-	STATUS=1
-    else
-	echo "Success: ${test}"
-	OK+=(${test})
+    run_it=1
+    for ex in ${EXCLUDE[@]}; do
+	echo $ex
+	if [ "$ex" == "$test" ]; then
+	    run_it=0
+	    break
+	fi
+    done
+    if [ $run_it -ne 0 ]; then
+	echo "--> Starting test: $test"
+	./${test}
+	res=$?
+	if [ $res != 0 ]; then
+	    echo "Failure: ${test}"
+	    FAIL+=(${test})
+	    STATUS=1
+	else
+	    echo "Success: ${test}"
+	    OK+=(${test})
+	fi
     fi
 done
 
-echo "RESULTS"
-echo "======="
+
+# Print out a results summary
+echo
+echo
+echo "RESULT SUMMARY"
+echo "=============="
 for t in ${OK[@]}; do
     echo "$t	...OK"
 done
