@@ -316,7 +316,8 @@ ink_freelist_free_bulk(InkFreeList *f, void *head, void *tail, size_t num_item)
     for (size_t i = 0; i<num_item; i++) {
       for (int j = sizeof(void*); j < (int)f->type_size; j++)
         ((char*)temp)[j] = str[j % 4];
-      temp = *ADDRESS_OF_NEXT(temp, 0);
+      *ADDRESS_OF_NEXT(temp, 0) = FROM_PTR(*ADDRESS_OF_NEXT(temp,0));
+      temp = TO_PTR(*ADDRESS_OF_NEXT(temp, 0));
     }
   }
 #endif /* DEADBEEF */
