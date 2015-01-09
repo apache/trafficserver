@@ -24,7 +24,7 @@ test "${JOB_NAME#*-4.2.x}" != "${JOB_NAME}" && enable_cppapi=""
 
 # Where do we run this?
 TS_PREFIX="/opt/jenkins/${JOB_NAME}"
-TSQA_TSXS=${TS_PREFIX}/bin/tsxs; export TSXS
+TSQA_TSXS=${TS_PREFIX}/bin/tsxs; export TSQA_TSXS
 
 cd "${WORKSPACE}/src"
 
