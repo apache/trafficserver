@@ -1,5 +1,5 @@
 /** @file
-    WCCP cache simulation for testing.
+    WCCP cache client
 
     @section license License
 
@@ -20,29 +20,29 @@
     limitations under the License.
  */
 
-# include <stdio.h>
-# include <unistd.h>
-# include <stdarg.h>
-# include <memory.h>
-# include <strings.h>
-# include <iostream>
-# include <iomanip>
+#include <stdio.h>
+#include <unistd.h>
+#include <stdarg.h>
+#include <memory.h>
+#include <strings.h>
+#include <iostream>
+#include <iomanip>
 
-# include <getopt.h>
+#include <getopt.h>
 
-# include <sys/socket.h>
-# include <netinet/in.h>
-# include <arpa/inet.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
-# include <poll.h>
+#include <poll.h>
 
-# include "ink_memory.h"
-# include "Wccp.h"
-# include "WccpUtil.h"
-# include "tsconfig/TsValue.h"
-# include "ink_lockfile.h"
+#include "ink_memory.h"
+#include "Wccp.h"
+#include "WccpUtil.h"
+#include "tsconfig/TsValue.h"
+#include "ink_lockfile.h"
 
-#define WCCP_LOCK       "wccp.pid"
+#define WCCP_LOCK "wccp.pid"
 
 bool do_debug = false;
 bool do_daemon = false;
@@ -57,31 +57,9 @@ static char const USAGE_TEXT[] =
   "--help Print usage and exit.\n"
   ;
 
-void Log(
-  std::ostream& out,
-  ts::Errata const& errata,
-  int indent = 0
-) {
-  for ( ts::Errata::const_iterator spot = errata.begin(), limit = errata.end();
-        spot != limit;
-        ++spot
-  ) {
-    if (spot->m_id) {
-      if (indent) out << std::setw(indent) << std::setfill(' ') << "> ";
-      out << spot->m_id << " [" << spot->m_code << "]: " << spot->m_text
-          << std::endl
-        ;
-    }
-    if (spot->getErrata().size()) Log(out, spot->getErrata(), indent+2);
-  }
-}
-
-void LogToStdErr(ts::Errata const& errata) {
-  Log(std::cerr, errata);
-}
-
 static void
-PrintErrata(ts::Errata const& err) {
+PrintErrata(ts::Errata const& err) 
+{
   size_t n;
   static size_t const SIZE = 4096;
   char buff[SIZE];
@@ -98,7 +76,8 @@ PrintErrata(ts::Errata const& err) {
 }
 
 static void
-Init_Errata_Logging() {
+Init_Errata_Logging() 
+{
   ts::Errata::registerSink(&PrintErrata);
 }
 
@@ -120,7 +99,7 @@ check_lockfile()
     fprintf(stderr, "WARNING: Can't acquire lockfile '%s'", (const char *)lockfile);
 
     if ((err == 0) && (holding_pid != -1)) {
-      fprintf(stderr, " (Lock file held by process ID %ld)\n", (long)holding_pid);
+      fprintf(stderr, " (Lock file held by process ID %l" PRIu32 ")\n", (long)holding_pid);
     } else if ((err == 0) && (holding_pid == -1)) {
       fprintf(stderr, " (Lock file exists, but can't read process ID)\n");
     } else if (reason) {
@@ -135,7 +114,6 @@ check_lockfile()
 int
 main(int argc, char** argv) {
   wccp::Cache wcp;
-
 
   // getopt return values. Selected to avoid collisions with
   // short arguments.
@@ -221,7 +199,6 @@ main(int argc, char** argv) {
   check_lockfile();
 
   // Set up erratum support.
-  //ts::Errata::registerSink(&LogToStdErr);
   Init_Errata_Logging();
 
   static int const POLL_FD_COUNT = 1;
@@ -234,8 +211,6 @@ main(int argc, char** argv) {
   wcp.housekeeping();
 
   while (true) {
-    //time_t dt = std::min(wccp::TIME_UNIT, wcp.waitTime());
-    //printf("Waiting %lu milliseconds\n", dt * 1000);
     int n = poll(pfa, POLL_FD_COUNT,  1000);
     if (n < 0) { // error
       perror("General polling failure");

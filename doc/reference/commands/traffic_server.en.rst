@@ -15,7 +15,7 @@
   specific language governing permissions and limitations
   under the License.
 
-.. _traffic_server:
+.. _traffic-server:
 
 ==============
 traffic_server

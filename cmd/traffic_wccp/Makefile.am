@@ -1,5 +1,5 @@
 #
-# Makefile.am for WCCP client
+# Makefile.am for the Enterprise Management module.
 #
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -17,17 +17,20 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-AM_CPPFLAGS = \
+
+AM_CPPFLAGS = $(iocore_include_dirs) \
   -I$(top_srcdir)/lib \
+  -I$(top_srcdir)/lib/records \
   -I$(top_srcdir)/lib/ts \
-  -I$(top_srcdir)/proxy/api/ts
+  -I$(top_srcdir)/lib/wccp
 
-#WCCP_DEFS = @WCCP_DEFS@
-#DEFS += $(WCCP_DEFS)
+bin_PROGRAMS = traffic_wccp
 
-noinst_PROGRAMS = test-cache 
+traffic_wccp_SOURCES = wccp_client.cc
 
-test_cache_SOURCES = \
-  wccp-test-cache.cc
+traffic_wccp_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
 
-test_cache_LDADD = $(LDADD) -L$(top_builddir)/lib/tsconfig -ltsconfig -L$(top_builddir)/lib/wccp -lwccp -L$(top_builddir)/lib/ts -ltsutil
+traffic_wccp_LDADD = -L$(top_builddir)/lib/tsconfig -ltsconfig \
+  -L$(top_builddir)/lib/wccp -lwccp \
+  -L$(top_builddir)/lib/ts -ltsutil
+

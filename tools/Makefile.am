@@ -51,16 +51,3 @@ http_load_http_load_SOURCES =  \
 
 endif
 
-if BUILD_WCCP 
-
-if BUILD_TEST_TOOLS
-bin_PROGRAMS += wccp_client/wccp_client
-else
-bin_PROGRAMS = wccp_client/wccp_client
-endif
-
-wccp_client_wccp_client_SOURCES = wccp_client/wccp_client.cc
-
-wccp_client_wccp_client_LDADD = -L$(top_builddir)/lib/tsconfig -ltsconfig -L$(top_builddir)/lib/wccp -lwccp -L$(top_builddir)/lib/ts -ltsutil
-
-endif

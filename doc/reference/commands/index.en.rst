@@ -30,6 +30,6 @@ Command Reference
    traffic_server.en
    traffic_top.en
    traffic_via.en
+   traffic_wccp.en
    tspush.en
    tsxs.en
-   wccp_client.en
