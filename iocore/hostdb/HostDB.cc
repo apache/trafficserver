@@ -354,12 +354,20 @@ struct HostDBTestRR: public Continuation
   }
 
 
-HostDBTestRR():Continuation(new_ProxyMutex()), nb(0), outstanding(0), success(0), failure(0), in(0) {
+  HostDBTestRR()
+    : Continuation(new_ProxyMutex()), nb(0), outstanding(0), success(0), failure(0), in(0)
+  {
     printf("starting HostDBTestRR....\n");
     fd = open("hostdb_test.config", O_RDONLY, 0);
     ink_release_assert(fd >= 0);
     read_some();
     SET_HANDLER(&HostDBTestRR::mainEvent);
+  }
+
+  ~HostDBTestRR()
+  {
+    if (fd)
+      close(fd);
   }
 };
 
