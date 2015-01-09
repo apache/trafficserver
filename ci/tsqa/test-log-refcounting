@@ -94,7 +94,7 @@ reload&
 for i in $(seq $COUNT) ; do
   msg $(bindir)/jtest --proxy_port $PORT --proxy_host 127.0.0.1 \
     --server_port $SERVER_PORT --server_host jtest.trafficserver.apache.org \
-    --clients 10 --test_time 3600
+    --clients 10 --test_time 60
   $(bindir)/jtest --proxy_port $PORT --proxy_host 127.0.0.1 \
     --server_port $SERVER_PORT --server_host jtest.trafficserver.apache.org \
     --clients 10 --test_time 60
