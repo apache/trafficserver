@@ -366,8 +366,7 @@ struct HostDBTestRR: public Continuation
 
   ~HostDBTestRR()
   {
-    if (fd)
-      close(fd);
+    close(fd);
   }
 };
 
