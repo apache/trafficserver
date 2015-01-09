@@ -1931,11 +1931,11 @@ static int read_response(int sock) {
       int l = HEADER_SIZE - fd[sock].req_pos - 1;
       if (l <= 0) {
         if (verbose || verbose_errors)
+          // coverity[string_null_argument]
           printf("header too long '%s'", fd[sock].req_header);
         return read_response_error(sock);
       }
-      err = read(sock, fd[sock].req_header + fd[sock].req_pos,
-                 HEADER_SIZE - fd[sock].req_pos - 1);
+      err = read(sock, fd[sock].req_header + fd[sock].req_pos, HEADER_SIZE - fd[sock].req_pos - 1);
     } while ((err == -1) && (errno == EINTR));
     if (err <= 0) {
       if (!err) {
