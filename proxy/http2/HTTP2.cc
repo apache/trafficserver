@@ -305,10 +305,11 @@ convert_from_2_to_1_1_header(HTTPHdr* headers)
     size_t url_length = scheme_len + 3 + authority_len + path_len;
     char* url = arena.str_alloc(url_length);
     const char* url_start = url;
-    strncpy(url, scheme, scheme_len);
-    strncpy(url+scheme_len, "://", 3);
-    strncpy(url+scheme_len+3, authority, authority_len);
-    strncpy(url+scheme_len+3+authority_len, path, path_len);
+
+    memcpy(url, scheme, scheme_len);
+    memcpy(url+scheme_len, "://", 3);
+    memcpy(url+scheme_len+3, authority, authority_len);
+    memcpy(url+scheme_len+3+authority_len, path, path_len);
     url_parse(headers->m_heap, headers->m_http->u.req.m_url_impl, &url_start, url + url_length, 1);
     arena.str_free(url);
 
