@@ -1,8 +1,6 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.0
 
-  *) [TS-3280] Segfault in new freelist bulk freeing
-   
   *) [TS-3285] Fix premature freeing of MIOBuffer to prevent freelist corruption
 
   *) [TS-3284] Remove ink_strncpy() and ink_strlcpy().
@@ -56,6 +54,8 @@ Changes with Apache Traffic Server 5.3.0
 
 
 Changes with Apache Traffic Server 5.2.0
+
+  *) [TS-3280] Segfault in new freelist bulk freeing
 
   *) [TS-3276] Fix cache backwards compatibility issue.
 
