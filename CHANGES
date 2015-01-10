@@ -55,7 +55,7 @@ Changes with Apache Traffic Server 5.3.0
 
 Changes with Apache Traffic Server 5.2.0
 
-  *) [TS-3280] Segfault in new freelist bulk freeing
+  *) [TS-3280] Segfault in new freelist bulk freeing (in debug mode).
 
   *) [TS-3276] Fix cache backwards compatibility issue.
 
