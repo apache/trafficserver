@@ -1360,7 +1360,7 @@ br(HttpRequestData * h, const char *os_hostname, sockaddr const* dest_ip)
   ink_zero(h->dest_ip);
   ats_ip_copy(&h->dest_ip.sa, dest_ip);
   h->incoming_port = 80;
-  h->api_info = new _HttpApiInfo();
+  h->api_info = new HttpApiInfo();
 }
 
 // show_result prints out the ParentResult information

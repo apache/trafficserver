@@ -105,7 +105,7 @@
 #endif
 
 class HostLookup;
-struct _HttpApiInfo;
+struct HttpApiInfo;
 struct matcher_line;
 struct matcher_tags;
 
@@ -152,7 +152,7 @@ public:
 
   HTTPHdr *hdr;
   char *hostname_str;
-  _HttpApiInfo *api_info;
+  HttpApiInfo *api_info;
   time_t xact_start;
   IpEndpoint src_ip;
   IpEndpoint dest_ip;

@@ -233,7 +233,7 @@ enum ViaString_t
   VIA_DETAIL_SERVER_FAILURE = 'F'
 };
 
-typedef struct _HttpApiInfo
+struct HttpApiInfo
 {
   char *parent_proxy_name;
   int parent_proxy_port;
@@ -242,12 +242,12 @@ typedef struct _HttpApiInfo
   bool logging_enabled;
   bool retry_intercept_failures;
 
-  _HttpApiInfo()
+  HttpApiInfo()
   : parent_proxy_name(NULL),
     parent_proxy_port(-1),
     cache_untransformed(false), cache_transformed(true), logging_enabled(true), retry_intercept_failures(false)
   { }
-} HttpApiInfo;
+};
 
 enum
 {
