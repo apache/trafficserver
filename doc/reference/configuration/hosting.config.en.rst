@@ -26,7 +26,7 @@ The :file:`hosting.config` file (by default, located in
 specific origin servers and/or domains so that you can manage cache
 space efficiently and restrict disk usage. For step-by-step instructions
 on partitioning the cache according to origin servers and/or domains,
-refer to `Partitioning the Cache <../configuring-cache#PartitoningCache>`_.
+refer to :ref:`partitioning-the-cache`.
 
 Before you can assign cache partitions to specific
 origin servers and/or domains, you must first partition your cache
