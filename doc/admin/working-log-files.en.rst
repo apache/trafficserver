@@ -614,6 +614,9 @@ the Squid format, then all ICP transactions are recorded in the
 ``squid-icp.log`` file. When you disable ICP log splitting, Traffic Server
 records all ICP transactions in the same log file as HTTP transactions.
 
+
+.. _httphostlogsplitting:
+
 HTTP Host Log Splitting
 ~~~~~~~~~~~~~~~~~~~~~~~
 
