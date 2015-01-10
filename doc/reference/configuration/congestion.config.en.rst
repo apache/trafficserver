@@ -30,8 +30,8 @@ navigate to the Traffic Server bin directory; then run the
 :option:`traffic_line -x` command to apply changes. When you apply the changes
 to a node in a cluster, Traffic Server automatically applies the changes
 to all other nodes in the cluster. Traffic Server uses the
-:file:`congestion.config` file only if you enable the `Congestion
-Control <http#UsingCongestionControl>`_ option.
+:file:`congestion.config` file only if you enable the 
+:ts:cv:`proxy.config.http.congestion_control.enabled` option.
 
 You can create rules in the congestion.config file to specify:
 
