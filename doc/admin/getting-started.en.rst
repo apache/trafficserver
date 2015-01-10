@@ -36,7 +36,7 @@ As of v4.0.0, there are no longer any development (or unstable) releases.
 All releases are considered stable and ready for production use. Releases
 within a major version are always upgrade compatible. More details are
 available on the `New Release Processes
-<https://cwiki.apache.org/confluence/display/TS/New+Release+Processes>`_ wiki
+<https://cwiki.apache.org/confluence/display/TS/Release+Process>`_ wiki
 page.
 
 Sometimes we speak of *trunk*, *master* or *HEAD*, all of which are used
@@ -48,7 +48,7 @@ a next-major release branch; for example, we have the ``5.0.x`` branch where
 changes incompatible with 4.x are managed.
 
 If your distribution does not come with a prepackaged Traffic Server,
-please go to `downloads </downloads>`_ to choose the version that you
+please go to `downloads <https://trafficserver.apache.org/downloads>`_ to choose the version that you
 consider most appropriate for yourself. If you want to really be on the
 bleeding edge you can clone our `git
 repository <https://git-wip-us.apache.org/repos/asf/trafficserver.git>`_.
