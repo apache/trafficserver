@@ -602,10 +602,7 @@ decode_literal_header_field(MIMEFieldWrapper& header, const uint8_t *buf_start, 
   char *c_value = NULL;
   uint32_t c_value_len = 0;
   len = decode_string(&c_value, c_value_len, p, buf_end);
-  if (len == -1) {
-    ats_free(c_name);
-    return -1;
-  }
+  if (len == -1) return -1;
   p += len;
   header.value_set(c_value, c_value_len);
   ats_free(c_value);
