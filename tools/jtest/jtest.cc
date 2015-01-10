@@ -389,7 +389,6 @@ struct FD {
   void reset() {
     next = 0;
     nalternate = 0;
-    ip = 0;
     fd = -1;
     read_cb = NULL;
     write_cb = NULL;
