@@ -127,7 +127,7 @@ public:
   CacheControlType directive;
   int time_arg;
   int cache_responses_to_cookies;
-  char *Init(matcher_line * line_info);
+  config_parse_error Init(matcher_line * line_info);
   inkcoreapi void UpdateMatch(CacheControlResult * result, RequestData * rdata);
   void Print();
 };

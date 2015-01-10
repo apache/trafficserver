@@ -136,19 +136,14 @@ CongestionControlRecord::setdefault()
   max_connection = DEFAULT_max_connection;
 }
 
-char *
+config_parse_error
 CongestionControlRecord::validate()
 {
-  char *error_buf = NULL;
-  int error_len = 1024;
-
 #define IsGt0(var)\
   if ( var < 1 ) { \
-    error_buf = (char*)ats_malloc(error_len); \
-    snprintf(error_buf, error_len, "line %d: invalid %s = %d, %s must > 0", \
-	    line_num, #var, var, #var); \
+    config_parse_error error("line %d: invalid %s = %d, %s must > 0", line_num, #var, var, #var); \
     cleanup(); \
-    return error_buf; \
+    return error; \
   }
 
   if (error_page == NULL)
@@ -156,11 +151,10 @@ CongestionControlRecord::validate()
   if (max_connection_failures >= CONG_RULE_MAX_max_connection_failures ||
       (max_connection_failures <= 0 && max_connection_failures != CONG_RULE_ULIMITED_max_connection_failures)
     ) {
-    error_buf = (char *)ats_malloc(error_len);
-    snprintf(error_buf, error_len, "line %d: invalid %s = %d not in [1, %d) range",
+    config_parse_error error("line %d: invalid %s = %d not in [1, %d) range",
              line_num, "max_connection_failures", max_connection_failures, CONG_RULE_MAX_max_connection_failures);
     cleanup();
-    return error_buf;
+    return error;
   }
 
   IsGt0(fail_window);
@@ -176,14 +170,13 @@ CongestionControlRecord::validate()
   // max_connection_failures <= 0 && max_connection == -1 no congestion control for the rule
   // max_connection == 0, no connection allow to the origin server for the rule
 #undef IsGt0
-  return error_buf;
+
+  return config_parse_error();
 }
 
-char *
+config_parse_error
 CongestionControlRecord::Init(matcher_line * line_info)
 {
-  char *errBuf;
-  const int errBufLen = 1024;
   const char *tmp;
   char *label;
   char *val;
@@ -250,18 +243,16 @@ CongestionControlRecord::Init(matcher_line * line_info)
     tmp = ProcessModifiers(line_info);
 
     if (tmp != NULL) {
-      errBuf = (char *)ats_malloc(errBufLen * sizeof(char));
-      snprintf(errBuf, errBufLen, "%s %s at line %d in congestion.config", congestPrefix, tmp, line_num);
-      return errBuf;
+      return config_parse_error("%s %s at line %d in congestion.config", congestPrefix, tmp, line_num);
     }
-
   }
 
-  char *err_msg = validate();
-  if (err_msg == NULL) {
+  config_parse_error error = validate();
+  if (!error) {
     pRecord = new CongestionControlRecord(*this);
   }
-  return err_msg;
+
+  return error;
 }
 
 void

@@ -64,13 +64,13 @@ public:
   CongestionControlRecord();
   CongestionControlRecord(const CongestionControlRecord & rec);
    ~CongestionControlRecord();
-  char *Init(matcher_line * line_info);
+  config_parse_error Init(matcher_line * line_info);
   void UpdateMatch(CongestionControlRule * pRule, RequestData * rdata);
   void Print();
 
   void cleanup();
   void setdefault();
-  char *validate();
+  config_parse_error validate();
 
   int rank;                     // matching preference
 /*

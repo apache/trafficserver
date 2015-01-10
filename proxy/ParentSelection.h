@@ -195,7 +195,7 @@ public:
 
   ~ParentRecord();
 
-  char *Init(matcher_line *line_info);
+  config_parse_error Init(matcher_line *line_info);
   bool DefaultInit(char *val);
   void UpdateMatch(ParentResult *result, RequestData *rdata);
   void FindParent(bool firstCall, ParentResult *result, RequestData *rdata, ParentConfigParams *config);

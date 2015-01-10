@@ -115,6 +115,42 @@ extern const matcher_tags socks_server_tags;
 
 const char *parseConfigLine(char *line, matcher_line * p_line, const matcher_tags * tags);
 
+struct config_parse_error
+{
+  config_parse_error() {
+  }
+
+  config_parse_error(const config_parse_error& rhs) {
+    if (rhs.msg.get()) {
+      this->msg = ats_strdup(rhs.msg.get());
+    }
+  }
+
+  config_parse_error(const char * fmt, ...) TS_PRINTFLIKE(2, 3);
+
+  config_parse_error& operator=(const config_parse_error& rhs) {
+    if (rhs.msg.get()) {
+      this->msg = ats_strdup(rhs.msg.get());
+    } else {
+      this->msg = (char *)NULL;
+    }
+
+    return *this;
+  }
+
+  const char * get() const {
+    return msg.get();
+  }
+
+  // A config error object evaluates to true if there is an error message.
+  operator bool() const {
+    return msg.get() != NULL;
+  }
+
+private:
+  ats_scoped_str msg;
+};
+
 // inline void LowerCaseStr(char* str)
 //
 //   Modifies str so all characters are lower

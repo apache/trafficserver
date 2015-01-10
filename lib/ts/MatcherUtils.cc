@@ -31,6 +31,23 @@
 
 #include "libts.h"      /* MAGIC_EDITING_TAG */
 
+config_parse_error::config_parse_error(const char * fmt, ...)
+{
+  va_list ap;
+  int num;
+
+  va_start(ap, fmt);
+  num = vsnprintf(NULL, 0, fmt, ap);
+  va_end(ap);
+
+  this->msg = (char *)ats_malloc(num + 1);
+
+  va_start(ap, fmt);
+  num = vsnprintf(&this->msg[0], num + 1, fmt, ap);
+  va_end(ap);
+}
+
+
 // char* readIntoBuffer(const char* file_path, const char* module_name,
 //                          int* read_size_ptr)
 //
@@ -570,9 +587,9 @@ parseConfigLine(char *line, matcher_line *p_line, const matcher_tags * tags)
         // Check to see if this second destination specifier
         if (p_line->type != MATCH_NONE) {
           if (tags->dest_error_msg == false) {
-            return "Muliple Sources Specified";
+            return "Multiple Sources Specified";
           } else {
-            return "Muliple Destinations Specified";
+            return "Multiple Destinations Specified";
           }
         } else {
           p_line->dest_entry = num_el;

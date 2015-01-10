@@ -99,6 +99,13 @@
 #include <ctype.h>
 #endif
 
+#define SignalError(_buf, _already)                                     \
+{                                                                       \
+  if(_already == false) pmgmt->signalManager(MGMT_SIGNAL_CONFIG_ERROR, _buf); \
+  _already = true;                                                      \
+  Warning("%s", _buf);                                                  \
+}                                                                       \
+
 class HostLookup;
 struct HttpApiInfo;
 struct matcher_line;
@@ -162,7 +169,7 @@ public:
   ~UrlMatcher();
   void Match(RequestData * rdata, Result * result);
   void AllocateSpace(int num_entries);
-  char *NewEntry(matcher_line * line_info);
+  config_parse_error NewEntry(matcher_line * line_info);
   void Print();
 
   int getNumElements() { return num_el; }
@@ -186,7 +193,7 @@ public:
   ~RegexMatcher();
   void Match(RequestData * rdata, Result * result);
   void AllocateSpace(int num_entries);
-  char *NewEntry(matcher_line * line_info);
+  config_parse_error NewEntry(matcher_line * line_info);
   void Print();
 
   int getNumElements() { return num_el; }
@@ -214,7 +221,7 @@ public:
   ~HostMatcher();
   void Match(RequestData * rdata, Result * result);
   void AllocateSpace(int num_entries);
-  char *NewEntry(matcher_line * line_info);
+  config_parse_error NewEntry(matcher_line * line_info);
   void Print();
 
   int getNumElements() { return num_el; }
@@ -237,7 +244,7 @@ public:
   ~IpMatcher();
   void Match(sockaddr const* ip_addr, RequestData * rdata, Result * result);
   void AllocateSpace(int num_entries);
-  char *NewEntry(matcher_line * line_info);
+  config_parse_error NewEntry(matcher_line * line_info);
   void Print();
 
   int getNumElements() { return num_el; }

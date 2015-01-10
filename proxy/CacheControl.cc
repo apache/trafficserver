@@ -256,7 +256,7 @@ CacheControlRecord::Print()
   ControlBase::Print();
 }
 
-// bool CacheControlRecord::Init(matcher_line* line_info)
+// config_parse_error CacheControlRecord::Init(matcher_line* line_info)
 //
 //    matcher_line* line_info - contains parsed label/value
 //      pairs of the current cache.config line
@@ -265,12 +265,10 @@ CacheControlRecord::Print()
 //      Otherwise, returns an error string that the caller MUST
 //        DEALLOCATE with free()
 //
-char *
+config_parse_error
 CacheControlRecord::Init(matcher_line * line_info)
 {
   int time_in;
-  char *errBuf;
-  const int errBufLen = 1024;
   const char *tmp;
   char *label;
   char *val;
@@ -289,10 +287,7 @@ CacheControlRecord::Init(matcher_line * line_info)
       char* ptr = 0;
       int v = strtol(val, &ptr, 0);
       if (!ptr || v < 0 || v > 4) {
-        errBuf = static_cast<char*>(ats_malloc(errBufLen * sizeof(char)));
-        snprintf(errBuf, errBufLen, "Value for " TWEAK_CACHE_RESPONSES_TO_COOKIES
-                 " must be an integer in the range 0..4");
-        return errBuf;
+        return config_parse_error("Value for " TWEAK_CACHE_RESPONSES_TO_COOKIES " must be an integer in the range 0..4");
       } else {
         cache_responses_to_cookies = v;
       }
@@ -335,9 +330,7 @@ CacheControlRecord::Init(matcher_line * line_info)
         directive = CC_IGNORE_SERVER_NO_CACHE;
         d_found = true;
       } else {
-        errBuf = (char *)ats_malloc(errBufLen * sizeof(char));
-        snprintf(errBuf, errBufLen, "%s Invalid action at line %d in cache.config", modulePrefix, line_num);
-        return errBuf;
+        return config_parse_error("%s Invalid action at line %d in cache.config", modulePrefix, line_num);
       }
     } else {
 
@@ -358,9 +351,7 @@ CacheControlRecord::Init(matcher_line * line_info)
           this->time_arg = time_in;
 
         } else {
-          errBuf = (char *)ats_malloc(errBufLen * sizeof(char));
-          snprintf(errBuf, errBufLen, "%s %s at line %d in cache.config", modulePrefix, tmp, line_num);
-          return errBuf;
+          return config_parse_error("%s %s at line %d in cache.config", modulePrefix, tmp, line_num);
         }
       }
     }
@@ -374,18 +365,14 @@ CacheControlRecord::Init(matcher_line * line_info)
   }
 
   if (d_found == false) {
-    errBuf = (char *)ats_malloc(errBufLen * sizeof(char));
-    snprintf(errBuf, errBufLen, "%s No directive in cache.config at line %d", modulePrefix, line_num);
-    return errBuf;
+    return config_parse_error("%s No directive in cache.config at line %d", modulePrefix, line_num);
   }
   // Process any modifiers to the directive, if they exist
   if (line_info->num_el > 0) {
     tmp = ProcessModifiers(line_info);
 
     if (tmp != NULL) {
-      errBuf = (char *)ats_malloc(errBufLen * sizeof(char));
-      snprintf(errBuf, errBufLen, "%s %s at line %d in cache.config", modulePrefix, tmp, line_num);
-      return errBuf;
+      return config_parse_error("%s %s at line %d in cache.config", modulePrefix, tmp, line_num);
     }
   }
 

@@ -48,8 +48,6 @@
  *   Place all template instantiations at the bottom of the file
  ****************************************************************/
 
-
-
 // HttpRequestData accessors
 //   Can not be inlined due being virtual functions
 //
@@ -174,7 +172,7 @@ template<class Data, class Result> void HostMatcher<Data, Result>::Match(Request
 }
 
 //
-// char* HostMatcher<Data,Result>::NewEntry(bool domain_record,
+// config_parse_error HostMatcher<Data,Result>::NewEntry(bool domain_record,
 //          char* match_data, char* match_info, int line_num)
 //
 //   Creates a new host/domain record
@@ -183,10 +181,11 @@ template<class Data, class Result> void HostMatcher<Data, Result>::Match(Request
 //   If not, returns a pointer to malloc allocated error string
 //     that the caller MUST DEALLOCATE
 //
-template<class Data, class Result> char *HostMatcher<Data, Result>::NewEntry(matcher_line * line_info)
+template<class Data, class Result> config_parse_error
+HostMatcher<Data, Result>::NewEntry(matcher_line * line_info)
 {
   Data *cur_d;
-  char *errBuf;
+  config_parse_error error;
   char *match_data;
 
   // Make sure space has been allocated
@@ -208,18 +207,17 @@ template<class Data, class Result> char *HostMatcher<Data, Result>::NewEntry(mat
 
   // Fill in the parameter info
   cur_d = data_array + num_el;
-  errBuf = cur_d->Init(line_info);
-
-  if (errBuf != NULL) {
+  error = cur_d->Init(line_info);
+  if (error) {
     // There was a problem so undo the effects this function
     memset(cur_d, 0, sizeof(Data));
-    return errBuf;
+  } else {
+    // Fill in the matching info
+    host_lookup->NewEntry(match_data, (line_info->type == MATCH_DOMAIN) ? true : false, cur_d);
+    num_el++;
   }
-  // Fill in the matching info
-  host_lookup->NewEntry(match_data, (line_info->type == MATCH_DOMAIN) ? true : false, cur_d);
 
-  num_el++;
-  return NULL;
+  return error;
 }
 
 /*************************************************************
@@ -231,6 +229,10 @@ template<class Data, class Result> char *HostMatcher<Data, Result>::NewEntry(mat
 //
 template<class Data, class Result> UrlMatcher<Data, Result>::UrlMatcher(const char *name, const char *filename)
   : url_ht(NULL),
+    url_str(NULL),
+    url_value(NULL),
+    data_array(NULL),
+    array_len(0),
     num_el(-1),
     matcher_name(name),
     file_name(filename)
@@ -283,14 +285,15 @@ template<class Data, class Result> void UrlMatcher<Data, Result>::AllocateSpace(
 }
 
 //
-// char* UrlMatcher<Data,Result>::NewEntry(matcher_line* line_info)
+// config_parse_error UrlMatcher<Data,Result>::NewEntry(matcher_line* line_info)
 //
-template<class Data, class Result> char *UrlMatcher<Data, Result>::NewEntry(matcher_line * line_info)
+template<class Data, class Result> config_parse_error
+UrlMatcher<Data, Result>::NewEntry(matcher_line * line_info)
 {
   Data *cur_d;
-  char *errBuf;
   char *pattern;
   int *value;
+  config_parse_error error;
 
   // Make sure space has been allocated
   ink_assert(num_el >= 0);
@@ -305,11 +308,7 @@ template<class Data, class Result> char *UrlMatcher<Data, Result>::NewEntry(matc
   ink_assert(pattern != NULL);
 
   if (ink_hash_table_lookup(url_ht, pattern, (void **)&value)) {
-    errBuf = (char *)ats_malloc(1024 * sizeof(char));
-    *errBuf = '\0';
-    snprintf(errBuf, 1024, "%s url expression error(have exist) at line %d position",
-                 matcher_name, line_info->line_num);
-    return errBuf;
+    return config_parse_error("%s url expression error (have exist) at line %d position", matcher_name, line_info->line_num);
   }
 
   // Remove our consumed label from the parsed line
@@ -318,15 +317,15 @@ template<class Data, class Result> char *UrlMatcher<Data, Result>::NewEntry(matc
 
   // Fill in the parameter info
   cur_d = data_array + num_el;
-  errBuf = cur_d->Init(line_info);
-
-  if (errBuf == NULL) {
+  error = cur_d->Init(line_info);
+  if (error) {
     url_str[num_el] = ats_strdup(pattern);
     url_value[num_el] = num_el;
     ink_hash_table_insert(url_ht, url_str[num_el], (void *)&url_value[num_el]);
     num_el++;
   }
-  return errBuf;
+
+  return error;
 }
 
 //
@@ -425,15 +424,16 @@ template<class Data, class Result> void RegexMatcher<Data, Result>::AllocateSpac
 }
 
 //
-// char* RegexMatcher<Data,Result>::NewEntry(matcher_line* line_info)
+// config_parse_error RegexMatcher<Data,Result>::NewEntry(matcher_line* line_info)
 //
-template<class Data, class Result> char *RegexMatcher<Data, Result>::NewEntry(matcher_line * line_info)
+template<class Data, class Result> config_parse_error
+RegexMatcher<Data, Result>::NewEntry(matcher_line * line_info)
 {
   Data *cur_d;
-  char *errBuf;
   char *pattern;
-  const char *error;
+  const char *errptr;
   int erroffset;
+  config_parse_error error;
 
   // Make sure space has been allocated
   ink_assert(num_el >= 0);
@@ -448,14 +448,10 @@ template<class Data, class Result> char *RegexMatcher<Data, Result>::NewEntry(ma
   ink_assert(pattern != NULL);
 
   // Create the compiled regular expression
-  re_array[num_el] = pcre_compile(pattern, 0, &error, &erroffset, NULL);
+  re_array[num_el] = pcre_compile(pattern, 0, &errptr, &erroffset, NULL);
   if (!re_array[num_el]) {
-    errBuf = (char *)ats_malloc(1024 * sizeof(char));
-    *errBuf = '\0';
-    snprintf(errBuf, 1024, "%s regular expression error at line %d position %d : %s",
-                 matcher_name, line_info->line_num, erroffset, error);
-    re_array[num_el] = NULL;
-    return errBuf;
+    return config_parse_error("%s regular expression error at line %d position %d : %s",
+                 matcher_name, line_info->line_num, erroffset, errptr);
   }
   re_str[num_el] = ats_strdup(pattern);
 
@@ -465,19 +461,19 @@ template<class Data, class Result> char *RegexMatcher<Data, Result>::NewEntry(ma
 
   // Fill in the parameter info
   cur_d = data_array + num_el;
-  errBuf = cur_d->Init(line_info);
+  error = cur_d->Init(line_info);
 
-  if (errBuf == NULL) {
-    num_el++;
-  } else {
+  if (error) {
     // There was a problem so undo the effects this function
     ats_free(re_str[num_el]);
     re_str[num_el] = NULL;
     pcre_free(re_array[num_el]);
     re_array[num_el] = NULL;
+  } else {
+    num_el++;
   }
 
-  return errBuf;
+  return error;
 }
 
 //
@@ -605,7 +601,7 @@ template<class Data, class Result> void IpMatcher<Data, Result>::AllocateSpace(i
 }
 
 //
-// char* IpMatcher<Data,Result>::NewEntry(matcher_line* line_info)
+// config_parse_error IpMatcher<Data,Result>::NewEntry(matcher_line* line_info)
 //
 //    Inserts a range the ip lookup table.
 //        Creates new table levels as needed
@@ -614,14 +610,14 @@ template<class Data, class Result> void IpMatcher<Data, Result>::AllocateSpace(i
 //     allocated error string which the CALLEE is responsible
 //     for deallocating
 //
-template<class Data, class Result> char *IpMatcher<Data, Result>::NewEntry(matcher_line * line_info)
+template<class Data, class Result> config_parse_error
+IpMatcher<Data, Result>::NewEntry(matcher_line * line_info)
 {
-
   Data *cur_d;
-  const char *errPtr;
-  char *errBuf;
+  const char *errptr;
   char *match_data;
   IpEndpoint addr1, addr2;
+  config_parse_error error;
 
   // Make sure space has been allocated
   ink_assert(num_el >= 0);
@@ -637,12 +633,9 @@ template<class Data, class Result> char *IpMatcher<Data, Result>::NewEntry(match
   ink_assert(match_data != NULL);
 
   // Extract the IP range
-  errPtr = ExtractIpRange(match_data, &addr1.sa, &addr2.sa);
-  if (errPtr != NULL) {
-    const size_t errorSize = 1024;
-    errBuf = (char *)ats_malloc(errorSize * sizeof(char));
-    snprintf(errBuf, errorSize, "%s %s at %s line %d", matcher_name, errPtr, file_name, line_info->line_num);
-    return errBuf;
+  errptr = ExtractIpRange(match_data, &addr1.sa, &addr2.sa);
+  if (errptr != NULL) {
+    return config_parse_error("%s %s at %s line %d", matcher_name, errptr, file_name, line_info->line_num);
   }
 
   // Remove our consumed label from the parsed line
@@ -651,15 +644,13 @@ template<class Data, class Result> char *IpMatcher<Data, Result>::NewEntry(match
 
   // Fill in the parameter info
   cur_d = data_array + num_el;
-  errBuf = cur_d->Init(line_info);
-  if (errBuf != NULL) {
-    return errBuf;
+  error = cur_d->Init(line_info);
+  if (!error) {
+    ip_map.mark(&addr1.sa, &addr2.sa, cur_d);
+    ++num_el;
   }
 
-  ip_map.mark(&addr1.sa, &addr2.sa, cur_d);
-
-  ++num_el;
-  return NULL;
+  return error;
 }
 
 //
@@ -782,14 +773,13 @@ template<class Data, class Result> void ControlMatcher<Data, Result>::Match(Requ
   }
 }
 
-int fstat_wrapper(int fd, struct stat *s);
-
 // int ControlMatcher::BuildTable() {
 //
 //    Reads the cache.config file and build the records array
 //      from it
 //
-template<class Data, class Result> int ControlMatcher<Data, Result>::BuildTableFromString(char *file_buf)
+template<class Data, class Result> int
+ControlMatcher<Data, Result>::BuildTableFromString(char *file_buf)
 {
   // Table build locals
   Tokenizer bufTok("\n");
@@ -802,8 +792,6 @@ template<class Data, class Result> int ControlMatcher<Data, Result>::BuildTableF
   int second_pass = 0;
   int numEntries = 0;
   bool alarmAlready = false;
-  char errBuf[1024];
-  const char *errPtr = NULL;
 
   // type counts
   int hostDomain = 0;
@@ -828,15 +816,15 @@ template<class Data, class Result> int ControlMatcher<Data, Result>::BuildTableF
     }
 
     if (*tmp != '#' && *tmp != '\0') {
+      const char * errptr;
 
       current = (matcher_line *)ats_malloc(sizeof(matcher_line));
-      errPtr = parseConfigLine((char *) tmp, current, config_tags);
+      errptr = parseConfigLine((char *) tmp, current, config_tags);
 
-      if (errPtr != NULL) {
+      if (errptr != NULL) {
         if (config_tags != &socks_server_tags) {
-          snprintf(errBuf, sizeof(errBuf), "%s discarding %s entry at line %d : %s",
-                   matcher_name, config_file_path, line_num, errPtr);
-          SignalError(errBuf, alarmAlready);
+          config_parse_error error("%s discarding %s entry at line %d : %s", matcher_name, config_file_path, line_num, errptr);
+          SignalError(error.get(), alarmAlready);
         }
         ats_free(current);
       } else {
@@ -913,33 +901,32 @@ template<class Data, class Result> int ControlMatcher<Data, Result>::BuildTableF
   // Traverse the list and build the records table
   current = first;
   while (current != NULL) {
+    config_parse_error error;
+
     second_pass++;
     if ((flags & ALLOW_HOST_TABLE) && current->type == MATCH_DOMAIN) {
-      errPtr = hostMatch->NewEntry(current);
+      error = hostMatch->NewEntry(current);
     } else if ((flags & ALLOW_HOST_TABLE) && current->type == MATCH_HOST) {
-      errPtr = hostMatch->NewEntry(current);
+      error = hostMatch->NewEntry(current);
     } else if ((flags & ALLOW_REGEX_TABLE) && current->type == MATCH_REGEX) {
-      errPtr = reMatch->NewEntry(current);
+      error = reMatch->NewEntry(current);
     } else if ((flags & ALLOW_URL_TABLE) && current->type == MATCH_URL) {
-      errPtr = urlMatch->NewEntry(current);
+      error = urlMatch->NewEntry(current);
     } else if ((flags & ALLOW_IP_TABLE) && current->type == MATCH_IP) {
-      errPtr = ipMatch->NewEntry(current);
+      error = ipMatch->NewEntry(current);
     } else if ((flags & ALLOW_HOST_REGEX_TABLE) && current->type == MATCH_HOST_REGEX) {
-      errPtr = hrMatch->NewEntry(current);
+      error = hrMatch->NewEntry(current);
     } else {
-      errPtr = NULL;
-      snprintf(errBuf, sizeof(errBuf), "%s discarding %s entry with unknown type at line %d",
+      error = config_parse_error("%s discarding %s entry with unknown type at line %d",
                matcher_name, config_file_path, current->line_num);
-      SignalError(errBuf, alarmAlready);
     }
 
     // Check to see if there was an error in creating
     //   the NewEntry
-    if (errPtr != NULL) {
-      SignalError(errPtr, alarmAlready);
-      //ats_free(errPtr); // XXX - why are we trying to free
-      errPtr = NULL;
+    if (error) {
+      SignalError(error.get(), alarmAlready);
     }
+
     // Deallocate the parsing structure
     last = current;
     current = current->next;

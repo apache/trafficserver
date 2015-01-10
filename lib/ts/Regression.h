@@ -101,11 +101,4 @@ char *regression_status_string(int status);
 
 extern int regression_level;
 
-#define SignalError(_buf, _already)                                     \
-{                                                                       \
-  if(_already == false) pmgmt->signalManager(MGMT_SIGNAL_CONFIG_ERROR, _buf); \
-  _already = true;                                                      \
-  Warning("%s", _buf);                                                  \
-}                                                                       \
-
 #endif /* _Regression_h */
