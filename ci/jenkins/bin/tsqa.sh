@@ -31,10 +31,10 @@ cd "${WORKSPACE}/src"
 rm -rf ${TS_PREFIX}
 
 # This needs to be added back when we resolve all debug build issues
-#    --enable-debug \
 autoreconf -fi
 ./configure \
     --prefix=${TS_PREFIX} \
+    --enable-debug \
     --enable-ccache \
     --enable-werror \
     --enable-experimental-plugins \
