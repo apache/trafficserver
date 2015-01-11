@@ -743,16 +743,16 @@ Orphan log files require manual collation.
 To configure Traffic Server to collate event log files, you must perform
 the following tasks:
 
--  Either `Configure Traffic Server Node to Be a Collation
-   Server <Configuring Traffic Server to Be a Collation Server>`_ or install
-   and configure a `Standalone Collator <Using a Standalone Collator>`_.
+-  Either :ref:`admin-configuring-traffic-server-to-be-a-collation-server` or install
+   and configure a :ref:`admin-using-a-standalone-collator:`.
 
--  `Configure Traffic Server Nodes to Be a Collation
-   Clients <Configuring Traffic Server to Be a Collation Server>`_.
+-  :ref:`admin-configuring-traffic-server-to-be-a-collation-server`
 
 -  Add an attribute to the :ref:`LogObject` specification in
    :file:`logs_xml.config` if you are using custom log file formats. Refer to
    `Collating Custom Event Log Files`_.
+
+.. _admin-configuring-traffic-server-to-be-a-collation-server:
 
 Configuring Traffic Server to Be a Collation Server
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -784,6 +784,8 @@ following configuration adjustments in :file:`records.config`:
     If you modify the ``collation_port`` or ``secret`` after
     connections between the collation server and collation clients have been
     established, then you must restart Traffic Server.
+
+.. _admin-using-a-standalone-collator:
 
 Using a Standalone Collator
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -911,7 +913,7 @@ following information:
    Traffic Server installation.
 
 You can retrieve the statistics via the Traffic Line command-line
-interface. Refer to `Monitoring Traffic <../monitoring-traffic>`_.
+interface. Refer to :doc:`Monitoring Traffic <monitoring-traffic.en>`.
 
 Viewing Log Files
 =================
