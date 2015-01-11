@@ -79,7 +79,8 @@ cached.  In future, the plugin should also check if the URL is fresh
 or not.
 
 The plugin implements the :c:data:`TS_HTTP_READ_RESPONSE_HDR_HOOK`
-hook and `a null transformation`_ to compute the SHA-256 digest for
+hook and :doc:`a null transformation <../../sdk/http-transformation-plugin/sample-null-transformation-plugin.en>` 
+to compute the SHA-256 digest for
 content as it's added to the cache.  It uses SHA256_Init(),
 SHA256_Update(), and SHA256_Final() from OpenSSL to compute the
 digest, then it uses :c:func:`TSCacheWrite` to associate the digest
@@ -120,6 +121,3 @@ rel=duplicate` headers MUST be ignored:
 
 
 .. _Metalink:    http://en.wikipedia.org/wiki/Metalink
-
-.. _a null transformation:
-                 /sdk/http-transformation-plugin/sample-null-transformation-plugin
