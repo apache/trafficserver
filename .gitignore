@@ -2,7 +2,7 @@
 *.a
 *.so
 *.pyc
-*.in
+Makefile.in
 *~
 *.tar.gz
 *.lo
@@ -131,6 +131,7 @@ lib/tsconfig/test-tsconfig
 
 tools/http_load/http_load
 tools/jtest/jtest
+tools/trafficserver.pc
 
 BUILDS
 DEBUG

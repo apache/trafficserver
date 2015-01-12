@@ -1911,6 +1911,7 @@ AC_CONFIG_FILES([
   rc/trafficserver.service
   rc/trafficserver.xml
   tools/Makefile
+  tools/trafficserver.pc
   tools/tsxs
 ])
 

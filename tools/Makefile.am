@@ -19,6 +19,9 @@
 
 bin_SCRIPTS = tsxs tspush
 
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = trafficserver.pc
+
 AM_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
 AM_CPPFLAGS = $(iocore_include_dirs) \
   -I$(top_srcdir)/lib -I$(top_builddir)/lib \
