@@ -22,7 +22,7 @@ congestion.config
 .. configfile:: congestion.config
 
 The :file:`congestion.config` file (by default, located in 
-``/opt/trafficserver/etc/trafficserver/``) enables you to configure Traffic Server
+``/usr/local/etc/trafficserver/``) enables you to configure Traffic Server
 to stop forwarding HTTP requests to origin servers when they become
 congested, and then send the client a message to retry the congested
 origin server later. After you modify the :file:`congestion.config` file,

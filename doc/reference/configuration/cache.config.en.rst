@@ -22,7 +22,7 @@ cache.config
 ============
 
 The :file:`cache.config` file (by default, located in 
-``/opt/trafficserver/etc/trafficserver/``) defines how Traffic Server caches 
+``/usr/local/etc/trafficserver/``) defines how Traffic Server caches 
 web objects. You can add caching rules to specify the following: 
 
     - Not to cache objects from specific IP addresses 

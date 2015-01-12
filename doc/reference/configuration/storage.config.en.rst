@@ -22,7 +22,7 @@ storage.config
 .. configfile:: storage.config
 
 The :file:`storage.config` file (by default, located in
-``/opt/trafficserver/etc/trafficserver/``) lists all the files, directories, and/or
+``/usr/local/etc/trafficserver/``) lists all the files, directories, and/or
 hard disk partitions that make up the Traffic Server cache. After you
 modify the :file:`storage.config` file the new settings will not be effective until Traffic Server is restarted.
 

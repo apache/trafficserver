@@ -22,7 +22,7 @@ records.config
 .. configfile:: records.config
 
 The :file:`records.config` file (by default, located in
-``/opt/trafficserver/etc/trafficserver/``) is a list of configurable variables used by
+``/usr/local/etc/trafficserver/``) is a list of configurable variables used by
 the Traffic Server software. Many of the variables in the
 :file:`records.config` file are set automatically when you set configuration
 options in Traffic Line. After you modify the

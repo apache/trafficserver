@@ -22,7 +22,7 @@ hosting.config
 .. configfile:: hosting.config
 
 The :file:`hosting.config` file (by default, located in 
-``/opt/trafficserver/etc/trafficserver/``) you to assign cache partitions to
+``/usr/local/etc/trafficserver/``) you to assign cache partitions to
 specific origin servers and/or domains so that you can manage cache
 space efficiently and restrict disk usage. For step-by-step instructions
 on partitioning the cache according to origin servers and/or domains,

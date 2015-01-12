@@ -26,7 +26,7 @@ remap.config
 
 
 The :file:`remap.config` file (by default, located in
-``/opt/trafficserver/etc/trafficserver/``) contains mapping rules that Traffic Server
+``/usr/local/etc/trafficserver/``) contains mapping rules that Traffic Server
 uses to perform the following actions:
 
 -  Map URL requests for a specific origin server to the appropriate
