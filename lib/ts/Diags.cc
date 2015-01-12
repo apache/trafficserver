@@ -194,6 +194,8 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SrcLoc *loc
   char *buffer, *d, timestamp_buf[48];
   char format_buf[1024], format_buf_w_ts[1024], *end_of_format;
 
+  ink_release_assert(diags_level < DiagsLevel_Count);
+
   ////////////////////////////////////////////////////////////////////////
   // there are 2 format buffers that hold a printf-style format string  //
   // format_buf contains <prefix_string>: (<debug_tag>) <format_string> //
