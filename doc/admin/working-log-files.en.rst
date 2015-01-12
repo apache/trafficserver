@@ -941,8 +941,8 @@ and Netscape Extended-2.
 
 .. _log-formats-squid-format:
 
-Squid Format
-------------
+Squid Log File Format
+---------------------
 
 The following figure shows a sample log entry in a ``squid.log`` file.
 
