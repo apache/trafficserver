@@ -1348,13 +1348,6 @@ RAM Cache
    Alternatively, it can be set to a fixed value such as
    **20GB** (21474836480)
 
-.. ts:cv:: CONFIG proxy.config.cache.ram_cache_cutoff INT 4194304
-
-   Objects greater than this size will not be kept in the RAM cache.
-   This should be set high enough to keep objects accessed frequently
-   in memory in order to improve performance.
-   **4MB** (4194304)
-
 .. ts:cv:: CONFIG proxy.config.cache.ram_cache.algorithm INT 0
 
    Two distinct RAM caches are supported, the default (0) being the **CLFUS**
