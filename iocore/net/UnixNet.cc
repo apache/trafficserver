@@ -393,7 +393,7 @@ NetHandler::mainNetEvent(int event, Event *e)
                 "Unhandled epoll event on write: 0x%04x write.enabled=%d closed=%d write.netready_queue=%d",
                 get_ev_events(pd,x), vc->write.enabled, vc->closed, write_ready_list.in(vc));
         }
-      } else if (!get_ev_events(pd,x) & EVENTIO_ERROR) {
+      } else if (!(get_ev_events(pd,x) & EVENTIO_ERROR)) {
         Debug("iocore_net_main", "Unhandled epoll event: 0x%04x", get_ev_events(pd,x));
       }
     } else if (epd->type == EVENTIO_DNS_CONNECTION) {
@@ -403,8 +403,9 @@ NetHandler::mainNetEvent(int event, Event *e)
         epd->refresh(EVENTIO_READ);
 #endif
       }
-    } else if (epd->type == EVENTIO_ASYNC_SIGNAL)
+    } else if (epd->type == EVENTIO_ASYNC_SIGNAL) {
       net_signal_hook_callback(trigger_event->ethread);
+    }
     ev_next_event(pd,x);
   }
 
