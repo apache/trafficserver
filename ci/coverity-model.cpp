@@ -43,4 +43,10 @@ ink_die_die_die()
   __coverity_panic__();
 }
 
+// Teach Coverity that this aborts in all compilation modes.
+void _TSReleaseAssert(const char* txt, const char* f, int l)
+{
+  __coverity_panic__();
+}
+
 } /* extern "C" */
