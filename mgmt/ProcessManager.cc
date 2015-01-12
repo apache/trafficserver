@@ -232,28 +232,17 @@ void
 ProcessManager::pollLMConnection()
 {
   int res;
-  struct timeval poll_timeout;
 
   MgmtMessageHdr mh_hdr;
   MgmtMessageHdr *mh_full;
   char *data_raw;
 
-  int num;
-  fd_set fdlist;
-
   while (1) {
+    int num;
 
-    // poll only
-    poll_timeout.tv_sec = 0;
-    poll_timeout.tv_usec = 1000;
-
-    FD_ZERO(&fdlist);
-    FD_SET(local_manager_sockfd, &fdlist);
-    num = mgmt_select(FD_SETSIZE, &fdlist, NULL, NULL, &poll_timeout);
+    num = mgmt_read_timeout(local_manager_sockfd, 1 /* sec */, 0 /* usec */);
     if (num == 0) {             /* Have nothing */
-
       break;
-
     } else if (num > 0) {       /* We have a message */
 
       if ((res = mgmt_read_pipe(local_manager_sockfd, (char *) &mh_hdr, sizeof(MgmtMessageHdr))) > 0) {

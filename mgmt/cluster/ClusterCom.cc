@@ -55,7 +55,6 @@ static void *
 drainIncomingChannel_broadcast(void *arg)
 {
   char message[61440];
-  fd_set fdlist;
   ClusterCom * ccom = (ClusterCom *)arg;
 
   time_t t;
@@ -70,26 +69,21 @@ drainIncomingChannel_broadcast(void *arg)
   lmgmt->syslogThrInit();
 
   for (;;) {                    /* Loop draining mgmt network channels */
-    // linux: set tv.tv_set in select() loop, since linux's select()
-    // will update tv with the amount of time not slept (most other
-    // implementations do not do this)
-    tv.tv_sec = ccom->mc_poll_timeout;             // interface not-responding timeout
-    tv.tv_usec = 0;
+    int nevents = 0;
 
-    memset(message, 0, 61440);
-    FD_ZERO(&fdlist);
-
-    if (ccom->cluster_type != NO_CLUSTER) {
-      if (ccom->receive_fd > 0) {
-        FD_SET(ccom->receive_fd, &fdlist);       /* Multicast fd */
-      }
+    // It's not clear whether this can happen, but historically, this code was written as if it
+    // could. A hacky little sleep here will prevent this thread spinning on the read timeout.
+    if (ccom->cluster_type == NO_CLUSTER || ccom->receive_fd == ts::NO_FD) {
+      mgmt_sleep_sec(1);
     }
 
-    mgmt_select(FD_SETSIZE, &fdlist, NULL, NULL, &tv);
+    ink_zero(message);
 
     if (ccom->cluster_type != NO_CLUSTER) {
-      // Multicast timeout considerations
-      if ((ccom->receive_fd < 0) || !FD_ISSET(ccom->receive_fd, &fdlist)) {
+      nevents = mgmt_read_timeout(ccom->receive_fd, ccom->mc_poll_timeout /* secs */, 0 /* usecs */);
+      if (nevents > 0) {
+        last_multicast_receive_time = time(NULL);       // valid multicast msg
+      } else {
         t = time(NULL);
         if ((t - last_multicast_receive_time) > (tv.tv_sec - 1)) {
           // Timeout on multicast receive channel, reset channel.
@@ -104,16 +98,14 @@ drainIncomingChannel_broadcast(void *arg)
           }
           last_multicast_receive_time = t;      // next action at next interval
         }
-      } else {
-        last_multicast_receive_time = time(NULL);       // valid multicast msg
       }
     }
 
     /* Broadcast message */
     if (ccom->cluster_type != NO_CLUSTER &&
         ccom->receive_fd > 0 &&
-        FD_ISSET(ccom->receive_fd, &fdlist) &&
-        (ccom->receiveIncomingMessage(message, 61440) > 0)) {
+        nevents > 0 &&
+        (ccom->receiveIncomingMessage(message, sizeof(message)) > 0)) {
       ccom->handleMultiCastMessage(message);
     }
   }
@@ -127,11 +119,10 @@ drainIncomingChannel_broadcast(void *arg)
  * continuous draining of the network. It drains and handles requests made on
  * the reliable and multicast channels between all the peers.
  */
-void *
+static void *
 drainIncomingChannel(void *arg)
 {
   char message[61440];
-  fd_set fdlist;
   ClusterCom * ccom = (ClusterCom *)arg;
   struct sockaddr_in cli_addr;
 
@@ -162,7 +153,6 @@ drainIncomingChannel(void *arg)
   // to reopen the channel (e.g. opening the socket would fail if the
   // interface was down).  In this case, the ccom->receive_fd is set
   // to '-1' and the open is retried until it succeeds.
-  struct timeval tv;
 
   /* Avert race condition, thread spun during constructor */
   while (lmgmt->ccom != ccom || !lmgmt->ccom->init) {
@@ -172,22 +162,15 @@ drainIncomingChannel(void *arg)
   lmgmt->syslogThrInit();
 
   for (;;) {                    /* Loop draining mgmt network channels */
-    // linux: set tv.tv_set in select() loop, since linux's select()
-    // will update tv with the amount of time not slept (most other
-    // implementations do not do this)
-    tv.tv_sec = ccom->mc_poll_timeout;             // interface not-responding timeout
-    tv.tv_usec = 0;
+    ink_zero(message);
 
-    memset(message, 0, 61440);
-    FD_ZERO(&fdlist);
-
-    if (ccom->cluster_type != NO_CLUSTER) {
-      FD_SET(ccom->reliable_server_fd, &fdlist);   /* TCP Server fd */
+    // It's not clear whether this can happen, but historically, this code was written as if it
+    // could. A hacky little sleep here will prevent this thread spinning on the read timeout.
+    if (ccom->cluster_type == NO_CLUSTER || ccom->reliable_server_fd == ts::NO_FD) {
+      mgmt_sleep_sec(1);
     }
 
-    mgmt_select(FD_SETSIZE, &fdlist, NULL, NULL, &tv);
-
-    if (FD_ISSET(ccom->reliable_server_fd, &fdlist)) {
+    if (mgmt_read_timeout(ccom->reliable_server_fd, ccom->mc_poll_timeout /* secs */, 0 /* usecs */) > 0) {
       /* Reliable(TCP) request */
       int clilen = sizeof(cli_addr);
       int req_fd = mgmt_accept(ccom->reliable_server_fd, (struct sockaddr *) &cli_addr, &clilen);
