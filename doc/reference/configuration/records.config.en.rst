@@ -1754,8 +1754,7 @@ Logging Configuration
 .. ts:cv:: CONFIG proxy.config.log.squid_log_enabled INT 1
    :reloadable:
 
-   Enables (``1``) or disables (``0``) the `squid log file format
-   <../working-log-files/log-formats#SquidFormat>`_.
+   Enables (``1``) or disables (``0``) the :ref:`log-formats-squid-format`.
 
 .. ts:cv:: CONFIG proxy.config.log.squid_log_is_ascii INT 0
    :reloadable:
@@ -1768,21 +1767,21 @@ Logging Configuration
 .. ts:cv:: CONFIG proxy.config.log.squid_log_name STRING squid
    :reloadable:
 
-   The `squid log <../working-log-files/log-formats#SquidFormat>`_ filename.
+   The  :ref:`squid log <log-formats-squid-format>` filename.
 
 .. ts:cv:: CONFIG proxy.config.log.squid_log_header STRING NULL
 
-   The `squid log <../working-log-files/log-formats#SquidFormat>`_ file header text.
+   The :ref:`squid log <log-formats-squid-format>` file header text.
 
 .. ts:cv:: CONFIG proxy.config.log.common_log_enabled INT 0
    :reloadable:
 
-   Enables (``1``) or disables (``0``) the `Netscape common log file format <../working-log-files/log-formats#NetscapeFormats>`_.
+   Enables (``1``) or disables (``0``) the :ref:`Netscape common log file format <admin-log-formats-netscape-common>`.
 
 .. ts:cv:: CONFIG proxy.config.log.common_log_is_ascii INT 1
    :reloadable:
 
-   The `Netscape common log <../working-log-files/log-formats#NetscapeFormats>`_ file type:
+   The :ref:`Netscape common log <admin-log-formats-netscape-common>` file type:
 
    -  ``1`` = ASCII
    -  ``0`` = binary
@@ -1790,45 +1789,44 @@ Logging Configuration
 .. ts:cv:: CONFIG proxy.config.log.common_log_name STRING common
    :reloadable:
 
-   The `Netscape common log <../working-log-files/log-formats#NetscapeFormats>`_ filename.
+   The :ref:`Netscape common log <admin-log-formats-netscape-common>` filename.
 
 .. ts:cv:: CONFIG proxy.config.log.common_log_header STRING NULL
    :reloadable:
 
-   The `Netscape common log <../working-log-files/log-formats#NetscapeFormats>`_ file header text.
+   The :ref:`Netscape common log <admin-log-formats-netscape-common>` file header text.
 
 .. ts:cv:: CONFIG proxy.config.log.extended_log_enabled INT 0
    :reloadable:
 
-   Enables (``1``) or disables (``0``) the `Netscape extended log file format
-   <../working-log-files/log-formats#NetscapeFormats>`_.
+   Enables (``1``) or disables (``0``) the :ref:`Netscape extended log file format
+   <admin-log-formats-netscape-extended>`.
 
 .. ts:cv:: CONFIG proxy.config.log.extended_log_is_ascii INT 0
 
-   The `Netscape extended log <../working-log-files/log-formats#NetscapeFormats>`_ file type:
+   The :ref:`Netscape extended log <admin-log-formats-netscape-extended>` file type:
 
    -  ``1`` = ASCII
    -  ``0`` = binary
 
 .. ts:cv:: CONFIG proxy.config.log.extended_log_name STRING extended
 
-   The `Netscape extended log <../working-log-files/log-formats#NetscapeFormats>`_ filename.
+   The :ref:`Netscape extended log <admin-log-formats-netscape-extended>` filename.
 
 .. ts:cv:: CONFIG proxy.config.log.extended_log_header STRING NULL
    :reloadable:
 
-   The `Netscape extended log <../working-log-files/log-formats#NetscapeFormats>`_ file header text.
+   The :ref:`Netscape extended log <admin-log-formats-netscape-extended>` file header text.
 
 .. ts:cv:: CONFIG proxy.config.log.extended2_log_enabled INT 0
    :reloadable:
 
-   Enables (``1``) or disables (``0``) the `Netscape Extended-2 log file
-   format <../working-log-files/log-formats#NetscapeFormats>`_.
+   Enables (``1``) or disables (``0``) the :ref:`Netscape Extended-2 log file format <admin-log-formats-netscape-extended2>`.
 
 .. ts:cv:: CONFIG proxy.config.log.extended2_log_is_ascii INT 1
    :reloadable:
 
-   The `Netscape Extended-2 log <../working-log-files/log-formats#NetscapeFormats>`_ file type:
+   The :ref:`Netscape Extended-2 log <admin-log-formats-netscape-extended2>` file type:
 
    -  ``1`` = ASCII
    -  ``0`` = binary
@@ -1836,12 +1834,12 @@ Logging Configuration
 .. ts:cv:: CONFIG proxy.config.log.extended2_log_name STRING extended2
    :reloadable:
 
-   The `Netscape Extended-2 log <../working-log-files/log-formats#NetscapeFormats>`_ filename.
+   The :ref:`Netscape Extended-2 log <admin-log-formats-netscape-extended2>` filename.
 
 .. ts:cv:: CONFIG proxy.config.log.extended2_log_header STRING NULL
    :reloadable:
 
-   The `Netscape Extended-2 log <../working-log-files/log-formats#NetscapeFormats>`_ file header text.
+   The :ref:`Netscape Extended-2 log <admin-log-formats-netscape-extended2>` file header text.
 
 .. ts:cv:: CONFIG proxy.config.log.separate_icp_logs INT 0
    :reloadable:
@@ -1856,7 +1854,7 @@ Logging Configuration
    :reloadable:
 
    When enabled (``1``), configures Traffic Server to create a separate log file for HTTP transactions for each origin server listed in the
-   :file:`log_hosts.config` file. Refer to `HTTP Host Log Splitting <../working-log-files#HTTPHostLogSplitting>`_.
+   :file:`log_hosts.config` file. Refer to :ref:`HTTP Host Log Splitting <httphostlogsplitting>`.
 
 .. ts:cv:: LOCAL proxy.local.log.collation_mode INT 0
    :reloadable:
@@ -1874,7 +1872,7 @@ Value Effect
 ===== ======
 
 For information on sending XML-based custom formats to the collation
-server, refer to `logs_xml.config <logs_xml.config>`_.
+server, refer to :file:`logs_xml.config`.
 
 .. note:: Although Traffic Server supports traditional custom logging, you should use the more versatile XML-based custom formats.
 
@@ -2269,7 +2267,7 @@ ICP Configuration
    -  ``1`` = allows Traffic Server to receive ICP queries only
    -  ``2`` = allows Traffic Server to send and receive ICP queries
 
-   Refer to `ICP Peering <../hierachical-caching#ICPPeering>`_.
+   Refer to :ref:`<admin-icp-peering>`.
 
 .. ts:cv:: CONFIG proxy.config.icp.icp_interface STRING your_interface
 
