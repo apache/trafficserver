@@ -25,7 +25,7 @@ The :file:`records.config` file (by default, located in
 ``/usr/local/etc/trafficserver/``) is a list of configurable variables used by
 the Traffic Server software. Many of the variables in the
 :file:`records.config` file are set automatically when you set configuration
-options in Traffic Line or Traffic Shell. After you modify the
+options in Traffic Line. After you modify the
 :file:`records.config` file,
 run the command :option:`traffic_line -x` to apply the changes.
 When you apply changes to one node in a cluster, Traffic Server
@@ -96,7 +96,6 @@ The last examples configures a 64GB RAM cache, using a human readable
 prefix. ::
 
    CONFIG proxy.config.cache.ram_cache.size INT 64G
-
 
 Environment Overrides
 =====================
@@ -253,6 +252,26 @@ Value Effect
 
    Set the maximum number of file handles for the traffic_server process as a percentage of the the fs.file-max proc value in Linux. The default is 90%.
 
+.. ts:cv:: CONFIG proxy.config.crash_log_helper STRING traffic_crashlog
+
+   This option directs :program:`traffic_server` to spawn a crash
+   log helper at startup. The value should be the path to an
+   executable program. If the path is not absolute, it is located
+   relative to configured ``bin`` directory.  Any user-provided
+   program specified here must behave in a fashion compatible with
+   :program:`traffic_crashlog`. Specifically, it must implement
+   the :option:`traffic_crashlog --wait` behavior.
+
+   This setting not reloadable because the helper must be spawned
+   before :program:`traffic_server` drops privilege. If this variable
+   is set to ``NULL``, no helper will be spawned.
+
+.. ts:cv:: CONFIG proxy.config.restart.active_client_threshold INT 0
+   :reloadable:
+
+  This setting specifies the number of active client connections
+  for use by :option:`traffic_line --drain`.
+
 Network
 =======
 
@@ -362,7 +381,6 @@ this be local"
    almost never what you want; instead, you want to use this either via
    e.g. ``conf_remap.so`` overrides for a certain remap rule, or through a
    custom plugin using the appropriate APIs.
-
 
 Local Manager
 =============
@@ -602,6 +620,14 @@ Value Effect
 
    The ``Via`` header string can be decoded with the `Via Decoder Ring <http://trafficserver.apache.org/tools/via>`_.
 
+.. ts:cv:: CONFIG proxy.config.http.send_100_continue_response INT 0
+   :reloadable:
+
+   You can specify one of the following:
+
+   -  ``0`` ATS buffer the request until the post body has been recieved and then send the request to origin.
+   -  ``1`` immediately return a 100 Continue from ATS without waiting for the post body
+
 .. ts:cv:: CONFIG proxy.config.http.response_server_enabled INT 1
    :reloadable:
 
@@ -815,6 +841,9 @@ specific domains.
    Controls wether new POST requests re-use keep-alive sessions (``1``) or
    create new connections per request (``0``).
 
+.. ts:cv:: CONFIG proxy.config.http.send_408_post_timeout_response INT 0
+
+   Controls wether POST timeout sends a HTTP status 408 response (``1``)
 
 Parent Proxy Configuration
 ==========================
@@ -860,21 +889,22 @@ Parent Proxy Configuration
 
    Don't try to resolve DNS, forward all DNS requests to the parent. This is off (``0``) by default.
 
-
-
-
 HTTP Connection Timeouts
 ========================
 
 .. ts:cv:: CONFIG proxy.config.http.keep_alive_no_activity_timeout_in INT 115
    :reloadable:
 
-   Specifies how long Traffic Server keeps connections to clients open for a subsequent request after a transaction ends.
+   Specifies how long Traffic Server keeps connections to clients open for a
+   subsequent request after a transaction ends. A value of ``0`` will disable
+   the no activity timeout.
 
 .. ts:cv:: CONFIG proxy.config.http.keep_alive_no_activity_timeout_out INT 120
    :reloadable:
 
-   Specifies how long Traffic Server keeps connections to origin servers open for a subsequent transfer of data after a transaction ends.
+   Specifies how long Traffic Server keeps connections to origin servers open
+   for a subsequent transfer of data after a transaction ends. A value of
+   ``0`` will disable the no activity timeout.
 
 .. ts:cv:: CONFIG proxy.config.http.transaction_no_activity_timeout_in INT 30
    :reloadable:
@@ -1028,9 +1058,6 @@ Negative Response Caching
 
    .. note::
 
-      ``Cache-Control`` directives from the server forbidding cache are ignored for the following HTTP response codes, regardless
-      of the value specified for the :ts:cv:`proxy.config.http.negative_caching_enabled` variable.
-
       The following negative responses are cached by Traffic Server:::
 
          204  No Content
@@ -1107,7 +1134,6 @@ Proxy User Variables
    This is useful for minimizing cached alternates of documents (e.g. ``gzip, deflate`` vs. ``deflate, gzip``). Enabling this option is
    recommended if your origin servers use no encodings other than ``gzip``.
 
-
 Security
 ========
 
@@ -1129,8 +1155,21 @@ Cache Control
 .. ts:cv:: CONFIG proxy.config.cache.enable_read_while_writer INT 1
    :reloadable:
 
-   Enables (``1``) or disables (``0``) ability to a read cached object while the another connection is completing the write to cache for
-   the same object. Several other configuration values need to be set for this to become active. See :ref:`reducing-origin-server-requests-avoiding-the-thundering-herd`
+   Specifies when to enable the ability to read a cached object while another
+   connection is completing the write to cache for that same object. The goal
+   here is to avoid multiple origin connections for the same cacheable object
+   upon a cache miss. The possible values of this config are:
+
+   -  ``0`` = never read while writing
+   -  ``1`` = always read while writing
+   -  ``2`` = always read while writing, but allow non-cached Range requests through to the origin
+
+   The ``2`` option is useful to avoid delaying requests which can not easily
+   be satisfied by the partially written response.
+
+   Several other configuration values need to be set for this to be
+   usable. See :ref:`Reducing Origin Server Requests
+   <http-proxy-caching.en.html#reducing-origin-server-requests-avoiding-the-thundering-herd>`.
 
 .. ts:cv:: CONFIG proxy.config.cache.force_sector_size INT 0
    :reloadable:
@@ -1249,7 +1288,6 @@ Cache Control
       ``Vary: Accept`` or doesn't respond with ``406 (Not Acceptable)``,
       you can also enable this configuration with a ``1``.
 
-
 .. ts:cv:: CONFIG proxy.config.http.cache.ignore_accept_language_mismatch INT 2
    :reloadable:
 
@@ -1265,7 +1303,6 @@ Cache Control
       header. Alternatively, if the origin is incorrectly setting
       ``Vary: Accept-Language`` or doesn't respond with ``406 (Not Acceptable)``,
       you can also enable this configuration with a ``1``.
-
 
 .. ts:cv:: CONFIG proxy.config.http.cache.ignore_accept_encoding_mismatch INT 2
    :reloadable:
@@ -1283,7 +1320,6 @@ Cache Control
       ``Vary: Accept-Encoding`` or doesn't respond with ``406 (Not Acceptable)``
       you can also enable this configuration with a ``1``.
 
-
 .. ts:cv:: CONFIG proxy.config.http.cache.ignore_accept_charset_mismatch INT 2
    :reloadable:
 
@@ -1299,7 +1335,6 @@ Cache Control
       header. Alternatively, if the origin is incorrectly setting
       ``Vary: Accept-Charset`` or doesn't respond with ``406 (Not Acceptable)``,
       you can also enable this configuration with a ``1``.
-
 
 .. ts:cv:: CONFIG proxy.config.http.cache.ignore_client_cc_max_age INT 1
    :reloadable:
@@ -1343,9 +1378,9 @@ Cache Control
 
 .. ts:cv:: CONFIG proxy.config.cache.target_fragment_size INT 1048576
 
-   Sets the target size of a contiguous fragment of a file in the disk cache. Accepts values that are powers of 2, e.g. 65536, 131072,
-   262144, 524288, 1048576, 2097152, etc. When setting this, consider that larger numbers could waste memory on slow connections,
-   but smaller numbers could increase (waste) seeks.
+   Sets the target size of a contiguous fragment of a file in the disk cache.
+   When setting this, consider that larger numbers could waste memory on slow
+   connections, but smaller numbers could increase (waste) seeks.
 
 RAM Cache
 =========
@@ -1396,7 +1431,6 @@ RAM Cache
    .. note::
 
       Compression runs on task threads.  To use more cores for RAM cache compression, increase :ts:cv:`proxy.config.task_threads`.
-
 
 Heuristic Expiration
 ====================
@@ -1628,6 +1662,23 @@ uses the same origin server for the same client, for as long as the origin serve
 set to :arg:`N` the IP address is rotated if more than :arg:`N` seconds have past since the first time the
 current address was used.
 
+.. ts:cv:: CONFIG proxy.config.hostdb.host_file.path STRING /etc/hosts
+
+   Set the file path for an external host file.
+
+If this is set (non-empty) then the file is presumed to be a hosts file in the standard `host file format <http://tools.ietf.org/html/rfc1123#page-13>`_. It is read and the entries there added to the HostDB. The file is periodically checked for a more recent modification date in which case it is reloaded. The interval is set by the value :ts:cv:`proxy.config.hostdb.host_file.interval`.
+
+While not technically reloadable, the value is read every time the file is to be checked so that if changed the new
+value will be used on the next check and the file will be treated as modified.
+
+.. ts:cv:: CONFIG proxy.config.hostdb.host_file.interval INT 86400
+   :metric: seconds
+   :reloadable:
+
+   Set the file changed check timer for :ts:cv:`proxy.config.hostdb.host_file.path`.
+
+The file is checked every this many seconds to see if it has changed. If so the HostDB is updated with the new values in the file.
+
 .. ts:cv:: CONFIG proxy.config.hostdb.ip_resolve STRING NULL
 
    Set the host resolution style.
@@ -1772,7 +1823,8 @@ Logging Configuration
 .. ts:cv:: CONFIG proxy.config.log.squid_log_enabled INT 1
    :reloadable:
 
-   Enables (``1``) or disables (``0``) the :ref:`log-formats-squid-format`.
+   Enables (``1``) or disables (``0``) the `squid log file format
+   <../working-log-files/log-formats#SquidFormat>`_.
 
 .. ts:cv:: CONFIG proxy.config.log.squid_log_is_ascii INT 0
    :reloadable:
@@ -1817,8 +1869,8 @@ Logging Configuration
 .. ts:cv:: CONFIG proxy.config.log.extended_log_enabled INT 0
    :reloadable:
 
-   Enables (``1``) or disables (``0``) the :ref:`Netscape extended log file format
-   <admin-log-formats-netscape-extended>`.
+   Enables (``1``) or disables (``0``) the `Netscape extended log file format
+   <../working-log-files/log-formats#NetscapeFormats>`_.
 
 .. ts:cv:: CONFIG proxy.config.log.extended_log_is_ascii INT 0
 
@@ -1839,7 +1891,8 @@ Logging Configuration
 .. ts:cv:: CONFIG proxy.config.log.extended2_log_enabled INT 0
    :reloadable:
 
-   Enables (``1``) or disables (``0``) the :ref:`Netscape Extended-2 log file format <admin-log-formats-netscape-extended2>`.
+   Enables (``1``) or disables (``0``) the `Netscape Extended-2 log file
+   format <../working-log-files/log-formats#NetscapeFormats>`_.
 
 .. ts:cv:: CONFIG proxy.config.log.extended2_log_is_ascii INT 1
    :reloadable:
@@ -2017,9 +2070,10 @@ Diagnostic Logging Configuration
 ============  =====================================================
 Tag           Subsytem usage
 ============  =====================================================
-ssl           TLS termination and certificate processing
 dns           DNS query resolution
 http_hdrs     Logs the headers for HTTP requests and responses
+privileges    Privilege elevation
+ssl           TLS termination and certificate processing
 ============  =====================================================
 
   Traffic Server plugins will typically log debug messages using
@@ -2093,7 +2147,7 @@ SSL Termination
 
    Enables (``1``) or disables (``0``) SSLv2. Please don't enable it.
 
-.. ts:cv:: CONFIG proxy.config.ssl.SSLv3 INT 1
+.. ts:cv:: CONFIG proxy.config.ssl.SSLv3 INT 0
 
    Enables (``1``) or disables (``0``) SSLv3.
 
@@ -2178,6 +2232,13 @@ SSL Termination
    Unless this is an absolute path, it is loaded relative to the
    path specified by :ts:cv:`proxy.config.ssl.server.cert.path`.
 
+.. ts:cv:: CONFIG proxy.config.ssl.server.dhparams_file STRING NULL
+
+   The name of a file containing a set of Diffie-Hellman key exchange
+   parameters. If not specified, 2048-bit DH parameters from RFC 5114 are
+   used. These parameters are only used if a DHE (or EDH) cipher suite has
+   been selected.
+
 .. ts:cv:: CONFIG proxy.config.ssl.CA.cert.path STRING NULL
 
    The location of the certificate authority file that client
@@ -2198,26 +2259,29 @@ SSL Termination
   This configuration specifies the maximum number of bytes to write
   into a SSL record when replying over a SSL session. In some
   circumstances this setting can improve response latency by reducing
-  buffering at the SSL layer. The default of ``0`` means to always
-  write all available data into a single SSL record. A value of ``-1``
-  means to determine the record size dynamically. Specifically, use
-  small TLS records that fit into a single TCP segment for the first
-  1 MB of data, increase record size to 16 KB after that to optimize
-  throughput, and then reset record size back to a single segment
-  after 1 second of inactivity—lather, rinse, repeat.
+  buffering at the SSL layer. This setting can have a value between 0
+  and 16383 (max TLS record size).
+
+  The default of ``0`` means to always write all available data into
+  a single SSL record.
+
+  A value of ``-1`` means TLS record size is dynamically determined. The
+  strategy employed is to use small TLS records that fit into a single
+  TCP segment for the first ~1 MB of data, but, increase the record size to
+  16 KB after that to optimize throughput. The record size is reset back to
+  a single segment after ~1 second of inactivity and the record size ramping
+  mechanism is repeated again.
 
 .. ts:cv:: CONFIG proxy.config.ssl.session_cache INT 2
 
 	Enables the SSL Session Cache:
-	
 	- ``0`` = Disables the session cache entirely
-	
+
 	- ``1`` = Enables the session cache using OpenSSLs implementation.
-	
+
 	- ``2`` = (default) Enables the session cache using Traffic Server's implementation.
 			This implentation should perform much better than the OpenSSL
 			implementation.
-			
 
 .. ts:cv:: CONFIG proxy.config.ssl.session_cache.timeout INT 0
 
@@ -2227,11 +2291,16 @@ SSL Termination
   when using the Traffic Server session cache (option ``2`` in 
   ``proxy.config.ssl.session_cache``)
   
+.. ts:cv:: CONFIG proxy.config.ssl.session_cache.auto_clear INT 1
+
+  This will set the OpenSSL auto clear flag. Auto clear is enabled by
+  default with ``1`` it can be disabled by changing this setting to ``0``.
+
 .. ts:cv:: CONFIG proxy.config.ssl.session_cache.size INT 102400
 
   This configuration specifies the maximum number of entries
   the SSL session cache may contain.
-  
+
 .. ts:cv:: CONFIG proxy.config.ssl.session_cache.num_buckets INT 1024
 
   This configuration specifies the number of buckets to use with the
@@ -2244,10 +2313,9 @@ SSL Termination
 	cache implementation during lock contention on each bucket:
 	
 	- ``0`` = (default) Don't skip session caching when bucket lock is contented.
-	
+
 	- ``1`` = Don't use the SSL session cache for this connection during lock contention.
 
-	
 .. ts:cv:: CONFIG proxy.config.ssl.hsts_max_age INT -1
 
   This configuration specifies the max-age value that will be used
@@ -2275,6 +2343,9 @@ SSL Termination
   privileges during loading of SSL certificates.  By enabling this, SSL
   certificate files' access rights can be restricted to help reduce the
   vulnerability of certificates.
+
+  This feature requires Traffic Server to be built with POSIX
+  capabilities enabled.
 
 Client-Related Configuration
 ----------------------------
@@ -2446,7 +2517,7 @@ Sockets
 
    Turns different options "on" for the socket handling client connections:::
 
-        TCP_NODELAY (1)
+        TCP_NODELAY  (1)
         SO_KEEPALIVE (2)
         SO_LINGER (4) - with a timeout of 0 seconds
 
@@ -2469,7 +2540,7 @@ Sockets
 
    Turns different options "on" for the origin server socket:::
 
-        TCP_NODELAY (1)
+        TCP_NODELAY  (1)
         SO_KEEPALIVE (2)
         SO_LINGER (4) - with a timeout of 0 seconds
 
@@ -2479,9 +2550,11 @@ Sockets
        you must set the value to ``3`` if you want to enable nodelay and
        keepalive options above.
 
-       When SO_LINGER is enalbed, the linger timeout time is set to 0.
-       This setting is useful on outgoing connections when there is port
-       exhaustion between ATS and the origin server.
+        When SO_LINGER is enabled, the linger timeout time is set
+        to 0. This is useful when ATS and origin server were installed
+        This is useful when Traffic Server and the origin server
+        are co-located and large numbers of sockets are retained
+        in the TIME_WAIT state.
 
 .. ts:cv:: CONFIG proxy.config.net.sock_mss_in INT 0
 
@@ -2492,28 +2565,28 @@ Sockets
    Set the packet mark on traffic destined for the client
    (the packets that make up a client response).
 
-   .. seealso:: :c:func:`TSHttpTxnClientPacketMarkSet` and TS-1090
+   .. seealso:: `Traffic Shaping`_
 
 .. ts:cv:: CONFIG proxy.config.net.sock_packet_mark_out INT 0x0
 
    Set the packet mark on traffic destined for the origin
    (the packets that make up an origin request).
 
-   .. seealso:: :c:func:`TSHttpTxnServerPacketMarkSet` and TS-1090
+   .. seealso:: `Traffic Shaping`_
 
 .. ts:cv:: CONFIG proxy.config.net.sock_packet_tos_in INT 0x0
 
-   Set the TOS/DSCP field on packets sent to the client
+   Set the ToS/DiffServ Field on packets sent to the client
    (the packets that make up a client response).
 
-   .. seealso:: :c:func:`TSHttpTxnClientPacketTosSet` and TS-1090
+   .. seealso:: `Traffic Shaping`_
 
 .. ts:cv:: CONFIG proxy.config.net.sock_packet_tos_out INT 0x0
 
-   Set the TOS/DSCP field on packets sent to the origin
+   Set the ToS/DiffServ Field on packets sent to the origin
    (the packets that make up an origin request).
 
-   .. seealso:: :c:func:`TSHttpTxnServerPacketTosSet` and TS-1090
+   .. seealso:: `Traffic Shaping`_
 
 .. ts:cv:: CONFIG proxy.config.net.poll_timeout INT 10 (or 30 on Solaris)
 
@@ -2542,15 +2615,26 @@ Sockets
        CONFIG proxy.config.accept_threads INT 1
        CONFIG proxy.config.cache.threads_per_disk INT 8
 
-
 .. ts:cv:: CONFIG proxy.config.task_threads INT 2
 
    Specifies the number of task threads to run. These threads are used for
    various tasks that should be off-loaded from the normal network threads.
 
+.. ts:cv:: CONFIG proxy.config.allocator.thread_freelist_size INT 512
+
+   Sets the maximum number of elements that can be contained in a ProxyAllocator (per-thread)
+   before returning the objects to the global pool
+
+.. ts:cv:: CONFIG proxy.config.allocator.thread_freelist_low_watermark INT 32
+
+   Sets the minimum number of items a ProxyAllocator (per-thread) will guarantee to be
+   holding at any one time.
 
 .. ts:cv:: CONFIG proxy.config.http.enabled INT 1
 
    Turn on or off support for HTTP proxying. This is rarely used, the one
    exception being if you run Traffic Server with a protocol plugin, and would
    like for it to not support HTTP requests at all.
+
+.. _Traffic Shaping:
+                 https://cwiki.apache.org/confluence/display/TS/Traffic+Shaping
