@@ -41,6 +41,11 @@ In the second example, hooks which are not to be executed during the remap
 phase (the default) causes a transaction hook to be instantiated and used
 at a later time. This allows you to setup e.g. a rule that gets executed
 during the origin response header parsing, using READ_RESPONSE_HDR_HOOK.
+Note that inorder to setup the plugin with rules that are not to be executed
+during the remap phase (e.g. SEND_REQUEST_HDR_HOOK, READ_RESPONSE_HDR_HOOK etc),
+global hooks must be setup via the below entry in plugin.config ::
+
+  header_rewrite.so
 
 Configuration filenames without an absolute paths are searched for in the
 default configuration directory. This is typically where your main
