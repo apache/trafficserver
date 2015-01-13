@@ -202,7 +202,6 @@ TSPluginInit(int argc, const char *argv[])
   }
 
   if (!success) {
-    if (cb_pa) TSContDestroy(cb_pa);
     TSError(PCP "not initialized");
   }
   TSDebug(PN, "Plugin %s", success ? "online" : "offline");
