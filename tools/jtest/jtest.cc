@@ -138,7 +138,7 @@ static int proxy_port = 8080;
 static unsigned int proxy_addr = 0;
 static unsigned int local_addr = 0;
 static char proxy_host[81] = "localhost";
-static char local_host[81];
+static char local_host[255 + 1];
 static int verbose = 0;
 static int verbose_errors = 1;
 static int debug = 0;
@@ -2647,7 +2647,10 @@ UrlHashTable::UrlHashTable()
     return;
 
   if (*url_hash_filename) {
-    ink_assert((fd = open(url_hash_filename,O_RDWR|O_CREAT, 0644))>0);
+    if ((fd = open(url_hash_filename,O_RDWR|O_CREAT, 0644)) == -1) {
+      panic_perror("failed to open URL Hash file");
+    }
+
     len = lseek(fd, 0, SEEK_END);
   }
 
@@ -2677,7 +2680,10 @@ UrlHashTable::UrlHashTable()
   }
 
   if (*url_hash_filename) {
-    ink_assert( !ftruncate(fd,numbytes) );
+    if (ftruncate(fd, numbytes) == -1) {
+      panic_perror("unable to truncate URL Hash file");
+    }
+
     bytes = (unsigned char *)
       mmap(NULL,numbytes,PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
     if (bytes == (unsigned char*)MAP_FAILED || !bytes)
@@ -2691,8 +2697,8 @@ UrlHashTable::UrlHashTable()
 
 UrlHashTable::~UrlHashTable()
 {
-  ink_assert(!munmap((char*)bytes, numbytes));
-  ink_assert(!close(fd));
+  if (bytes) { munmap((char*)bytes, numbytes); }
+  if (fd != -1) { close(fd); }
 } // UrlHashTable::~UrlHashTable
 
 static int seen_it(char * url) {
@@ -2884,8 +2890,12 @@ int main(int argc __attribute__((unused)), char *argv[])
   urls_mode = n_file_arguments || *urls_file;
   nclients = client_rate? 0 : nclients;
 
-  if (!local_host[0])
-    ink_assert(!gethostname(local_host,80));
+  if (!local_host[0]) {
+    if (gethostname(local_host, sizeof(local_host)) != 0) {
+      panic_perror("gethostname failed");
+    }
+  }
+
   local_addr = get_addr(local_host);
   if (!proxy_host[0])
     strcpy(proxy_host, local_host);
