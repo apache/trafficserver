@@ -1305,6 +1305,20 @@ Cache Control
    262144, 524288, 1048576, 2097152, etc. When setting this, consider that larger numbers could waste memory on slow connections,
    but smaller numbers could increase (waste) seeks.
 
+INTERIM Cache
+=============
+.. ts:cv:: LOCAL proxy.config.cache.interim.storage STRING NULL
+
+   Disk device(s) for the interim cache, we only support block devices in
+   full path, multipule disks may seperate by SPACE (8 fast disks at most).
+
+.. ts:cv:: CONFIG proxy.config.cache.interim.migrate_threshold INT 2
+
+   Controls how many times one content should be migrate to the interim cache
+   from the storage, which will control the writing on the interim disk,
+   which means it should be seen in the LRU list two times before we thinking
+   of migrate it to the interim caching device.
+
 RAM Cache
 =========
 
