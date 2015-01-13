@@ -2606,8 +2606,9 @@ struct UrlHashTable {
   void clear(uint64_t i) {
     BEGIN_HASH_LOOP {
       if (ENTRY_TAG(e) == tag) {
-        if (e != last)
-          SET_ENTRY_TAG(e,ENTRY_TAG(last));
+        if (e != last) {
+          SET_ENTRY_TAG(e, ENTRY_TAG(last));
+        }
         SET_ENTRY_TAG(last,0);
         return;
       }
