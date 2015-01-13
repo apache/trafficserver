@@ -51,9 +51,23 @@ DLL<PluginRegInfo> plugin_reg_list;
 PluginRegInfo *plugin_reg_current = NULL;
 
 PluginRegInfo::PluginRegInfo()
-  : plugin_registered(false), plugin_path(NULL), sdk_version(PLUGIN_SDK_VERSION_UNKNOWN),
+  : plugin_registered(false), plugin_path(NULL),
     plugin_name(NULL), vendor_name(NULL), support_email(NULL)
-{ }
+{
+}
+
+PluginRegInfo::~PluginRegInfo()
+{
+  // We don't support unloading plugins once they are successfully loaded, so assert
+  // that we don't accidentally attempt this.
+  ink_release_assert(this->plugin_registered == false);
+  ink_release_assert(this->link.prev == NULL);
+
+  ats_free(this->plugin_path);
+  ats_free(this->plugin_name);
+  ats_free(this->vendor_name);
+  ats_free(this->support_email);
+}
 
 static void
 plugin_load(int argc, char *argv[])
@@ -61,7 +75,6 @@ plugin_load(int argc, char *argv[])
   char path[PATH_NAME_MAX + 1];
   void *handle;
   init_func_t init;
-  PluginRegInfo *plugin_reg_temp;
 
   if (argc < 1) {
     return;
@@ -70,14 +83,14 @@ plugin_load(int argc, char *argv[])
 
   Note("loading plugin '%s'", path);
 
-  plugin_reg_temp = plugin_reg_list.head;
-  while (plugin_reg_temp) {
+  for (PluginRegInfo * plugin_reg_temp = plugin_reg_list.head; plugin_reg_temp != NULL;
+      plugin_reg_temp = (plugin_reg_temp->link).next) {
     if (strcmp(plugin_reg_temp->plugin_path, path) == 0) {
       Warning("multiple loading of plugin %s", path);
       break;
     }
-    plugin_reg_temp = (plugin_reg_temp->link).next;
   }
+
   // elevate the access to read files as root if compiled with capabilities, if not
   // change the effective user to root
   {
@@ -108,7 +121,12 @@ plugin_load(int argc, char *argv[])
     init(argc, argv);
   } // done elevating access
 
-  plugin_reg_list.push(plugin_reg_current);
+  if (plugin_reg_current->plugin_registered) {
+    plugin_reg_list.push(plugin_reg_current);
+  } else {
+    delete plugin_reg_current;
+  }
+
   plugin_reg_current = NULL;
 }
 
