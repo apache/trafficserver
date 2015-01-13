@@ -961,6 +961,15 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
   if (ssl_error != SSL_ERROR_NONE) {
     err = errno;
     SSLDebugVC(this,"SSL handshake error: %s (%d), errno=%d", SSLErrorName(ssl_error), ssl_error, err);
+
+    // start a blind tunnel if tr-pass is set and data does not look like ClientHello
+    char* buf = handShakeBuffer->buf();
+    if (getTransparentPassThrough() && buf && *buf != SSL_OP_HANDSHAKE) {
+      SSLDebugVC(this, "Data does not look like SSL handshake, starting blind tunnel");
+      this->attributes = HttpProxyPort::TRANSPORT_BLIND_TUNNEL;
+      sslHandShakeComplete = 0;
+      return EVENT_CONT;
+    }
   }
 
   switch (ssl_error) {

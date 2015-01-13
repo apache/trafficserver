@@ -34,7 +34,7 @@
 class SSLNextProtocolAccept: public SessionAccept
 {
 public:
-  SSLNextProtocolAccept(Continuation *);
+  SSLNextProtocolAccept(Continuation *, bool);
   ~SSLNextProtocolAccept();
 
   void accept(NetVConnection *, MIOBuffer *, IOBufferReader*);
@@ -58,6 +58,7 @@ private:
   MIOBuffer * buffer; // XXX do we really need this?
   Continuation * endpoint;
   SSLNextProtocolSet protoset;
+  bool transparent_passthrough;
 
 friend struct SSLNextProtocolTrampoline;
 };

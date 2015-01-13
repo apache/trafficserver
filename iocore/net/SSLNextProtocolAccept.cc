@@ -125,6 +125,9 @@ SSLNextProtocolAccept::mainEvent(int event, void * edata)
   switch (event) {
   case NET_EVENT_ACCEPT:
     ink_release_assert(netvc != NULL);
+
+    netvc->setTransparentPassThrough(transparent_passthrough);
+
     // Register our protocol set with the VC and kick off a zero-length read to
     // force the SSLNetVConnection to complete the SSL handshake. Don't tell
     // the endpoint that there is an accept to handle until the read completes
@@ -158,8 +161,9 @@ SSLNextProtocolAccept::unregisterEndpoint(
   return this->protoset.unregisterEndpoint(protocol, handler);
 }
 
-SSLNextProtocolAccept::SSLNextProtocolAccept(Continuation * ep)
-    : SessionAccept(NULL), buffer(new_empty_MIOBuffer()), endpoint(ep)
+SSLNextProtocolAccept::SSLNextProtocolAccept(Continuation * ep, bool transparent_passthrough)
+    : SessionAccept(NULL), buffer(new_empty_MIOBuffer()), endpoint(ep),
+      transparent_passthrough(transparent_passthrough)
 {
   SET_HANDLER(&SSLNextProtocolAccept::mainEvent);
 }

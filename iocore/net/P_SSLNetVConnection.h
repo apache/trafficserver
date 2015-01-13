@@ -52,6 +52,8 @@
 #define SSL_TLSEXT_ERR_NOACK 3
 #endif
 
+#define SSL_OP_HANDSHAKE 0x16
+
 // TS-2503: dynamic TLS record sizing
 // For smaller records, we should also reserve space for various TCP options
 // (timestamps, SACKs.. up to 40 bytes [1]), and account for TLS record overhead
@@ -136,6 +138,16 @@ public:
     sslClientRenegotiationAbort = state;
   };
 
+  bool getTransparentPassThrough() const
+  {
+    return transparentPassThrough;
+  };
+
+  void setTransparentPassThrough(bool val)
+  {
+    transparentPassThrough = val;
+  };
+
   // Copy up here so we overload but don't override
   using super::reenable;
 
@@ -181,6 +193,8 @@ private:
   MIOBuffer *handShakeBuffer;
   IOBufferReader *handShakeHolder;
   IOBufferReader *handShakeReader;
+
+  bool transparentPassThrough;
 
   /// The current hook.
   /// @note For @C SSL_HOOKS_INVOKE, this is the hook to invoke.
