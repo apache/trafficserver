@@ -163,14 +163,9 @@ AC_MSG_RESULT([$enable_debug])
 #
 AC_MSG_CHECKING([whether to enable -Werror])
 AC_ARG_ENABLE([werror],
-  [AS_HELP_STRING([--enable-werror],[turn compiler warnings into errors @<:@default=auto@:>@])],
+  [AS_HELP_STRING([--enable-werror],[turn compiler warnings into errors])],
   [],
-  [
-    case $TS_VERSION_STRING in
-      *dev) enable_werror=yes ;;
-      *) enable_werror=no ;;
-    esac
-  ]
+  [enable_werror=no]
 )
 AC_MSG_RESULT([$enable_werror])
 

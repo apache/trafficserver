@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.0
 
+  *) [TS-3291] Remove remnants from "dev" builds from configure.ac.
+
   *) [TS-3285] Fix premature freeing of MIOBuffer to prevent freelist corruption
 
   *) [TS-3284] Remove ink_strncpy() and ink_strlcpy().
