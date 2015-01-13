@@ -1277,6 +1277,7 @@ HdrTest::test_http_hdr_print_and_copy_aux(int testnum,
 
   if (err == PARSE_ERROR) {
     printf("FAILED: (test #%d) parse error parsing request hdr\n", testnum);
+    ats_free(marshal_buf);
     return (0);
   }
 
