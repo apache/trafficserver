@@ -356,8 +356,7 @@ SSLNetVConnection::read_raw_data()
 
     this->handShakeBuffer->fill(r);
 
-  } else
-    r = 0;
+  }
 
   char *start = this->handShakeReader->start();
   char *end = this->handShakeReader->end();
