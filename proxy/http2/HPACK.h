@@ -96,6 +96,7 @@ public:
   ~Http2HeaderTable() {
     _headers.clear();
     _mhdr->fields_clear();
+    delete _mhdr;
   }
 
   void add_header_field(const MIMEField * field);
