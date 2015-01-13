@@ -388,7 +388,6 @@ struct FD {
 
   void reset() {
     next = 0;
-    nalternate = 0;
     fd = -1;
     read_cb = NULL;
     write_cb = NULL;
@@ -408,7 +407,6 @@ struct FD {
     bytes = 0;
     doc = 0.0;
     doc_length = 0;
-    binary = 0;
     ims = 0;
     drop_after_CL = ::drop_after_CL;
     client_abort = 0;
@@ -416,13 +414,14 @@ struct FD {
     ftp_mode = FTP_NULL;
     ftp_peer_addr = 0;
     ftp_peer_port = 0;
-    ink_zero(name);
   }
 
   void close();
-  FD() {
-    req_header = 0; base_url = 0; keepalive = 0;
-    response_header = 0; ftp_data_fd = 0;
+  FD()
+    : base_url(NULL), req_header(NULL), response_header(NULL), keepalive(0), nalternate(0), ip(0), binary(0),
+      ftp_data_fd(0)
+  {
+    ink_zero(name);
     reset();
   }
 };
