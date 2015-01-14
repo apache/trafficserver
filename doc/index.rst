@@ -37,6 +37,7 @@ bandwidth.
 .. toctree::
   :maxdepth: 1
 
+  getting-started.en
   admin/index.en
   sdk/index.en
   reference/configuration/index.en
