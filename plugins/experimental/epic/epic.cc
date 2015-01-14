@@ -37,14 +37,12 @@
   } \
 } while(0)
 
-#define debug(fmt, ...) \
-    debug_tag("epic", "%s:%d: " fmt, __func__, __LINE__, ##__VA_ARGS__)
+#define debug(fmt, ...) debug_tag("epic", "%s:%d: " fmt, __func__, __LINE__, ##__VA_ARGS__)
 
 #if defined(DEBUG)
 #define error(fmt, ...) debug(fmt, ##__VA_ARGS__)
 #else
-#define error(fmt, ...) \
-    TSError("epic:%s:%d: " fmt, __func__, __LINE__, ##__VA_ARGS__)
+#define error(fmt, ...) TSError("epic:%s:%d: " fmt, __func__, __LINE__, ##__VA_ARGS__)
 #endif
 
 static TSHRTime epic_period;
@@ -71,11 +69,8 @@ static char * epic_prefix;
   "proxy.node.cache_hit_ratio_avg_10s", \
   "proxy.node.cache_hit_ratio_avg_10s_int_pct", \
   "proxy.node.cache_hit_ratio_int_pct", \
-  "proxy.node.cache_total_hits", \
   "proxy.node.cache_total_hits_avg_10s", \
-  "proxy.node.cache_total_hits_mem", \
   "proxy.node.cache_total_hits_mem_avg_10s", \
-  "proxy.node.cache_total_misses", \
   "proxy.node.cache_total_misses_avg_10s", \
   "proxy.node.client_throughput_out", \
   "proxy.node.client_throughput_out_kbit", \
@@ -90,13 +85,10 @@ static char * epic_prefix;
   "proxy.node.current_server_connections", \
   "proxy.node.dns.lookup_avg_time_ms", \
   "proxy.node.dns.lookups_per_second", \
-  "proxy.node.dns.total_dns_lookups", \
   "proxy.node.hostdb.hit_ratio", \
   "proxy.node.hostdb.hit_ratio_avg_10s", \
   "proxy.node.hostdb.hit_ratio_int_pct", \
-  "proxy.node.hostdb.total_hits", \
   "proxy.node.hostdb.total_hits_avg_10s", \
-  "proxy.node.hostdb.total_lookups", \
   "proxy.node.hostdb.total_lookups_avg_10s", \
   "proxy.node.http.cache_current_connections_count", \
   "proxy.node.http.cache_hit_fresh_avg_10s", \
@@ -112,11 +104,6 @@ static char * epic_prefix;
   "proxy.node.http.cache_read_error_avg_10s", \
   "proxy.node.http.current_parent_proxy_connections", \
   "proxy.node.http.origin_server_current_connections_count", \
-  "proxy.node.http.origin_server_total_request_bytes", \
-  "proxy.node.http.origin_server_total_response_bytes", \
-  "proxy.node.http.origin_server_total_transactions_count", \
-  "proxy.node.http.parent_proxy_total_request_bytes", \
-  "proxy.node.http.parent_proxy_total_response_bytes", \
   "proxy.node.http.transaction_counts_avg_10s.errors.aborts", \
   "proxy.node.http.transaction_counts_avg_10s.errors.connect_failed", \
   "proxy.node.http.transaction_counts_avg_10s.errors.early_hangups", \
@@ -174,25 +161,18 @@ static char * epic_prefix;
   "proxy.node.http.transaction_msec_avg_10s.miss_not_cacheable", \
   "proxy.node.http.transaction_msec_avg_10s.other.unclassified", \
   "proxy.node.http.user_agent_current_connections_count", \
-  "proxy.node.http.user_agent_total_request_bytes", \
-  "proxy.node.http.user_agent_total_response_bytes", \
   "proxy.node.http.user_agent_xacts_per_second", \
-  "proxy.node.http.user_agents_total_documents_served", \
-  "proxy.node.http.user_agents_total_transactions_count", \
   "proxy.node.log.bytes_received_from_network_avg_10s", \
   "proxy.node.log.bytes_sent_to_network_avg_10s", \
   "proxy.node.num_processes", \
-  "proxy.node.origin_server_total_bytes", \
   "proxy.node.origin_server_total_bytes_avg_10s", \
   "proxy.node.proxy_running", \
   "proxy.node.restarts.manager.start_time", \
   "proxy.node.restarts.proxy.cache_ready_time", \
   "proxy.node.restarts.proxy.start_time", \
   "proxy.node.restarts.proxy.stop_time", \
-  "proxy.node.user_agent_total_bytes", \
   "proxy.node.user_agent_total_bytes_avg_10s", \
   "proxy.node.user_agent_xacts_per_second", \
-  "proxy.node.user_agents_total_documents_served", \
   "proxy.node.version.manager.build_time", \
   "proxy.process.cache.KB_read_per_sec", \
   "proxy.process.cache.KB_write_per_sec", \
@@ -232,18 +212,11 @@ static char * epic_prefix;
   "proxy.process.dns.in_flight", \
   "proxy.process.dns.lookup_avg_time", \
   "proxy.process.dns.success_avg_time", \
-  "proxy.process.dns.total_dns_lookups", \
   "proxy.process.hostdb.total_entries", \
-  "proxy.process.hostdb.total_hits", \
-  "proxy.process.hostdb.total_lookups", \
   "proxy.process.http.avg_transactions_per_client_connection", \
   "proxy.process.http.avg_transactions_per_parent_connection", \
   "proxy.process.http.avg_transactions_per_server_connection", \
   "proxy.process.http.background_fill_current_count", \
-  "proxy.process.http.cache_connection_time", \
-  "proxy.process.http.client_connection_time", \
-  "proxy.process.http.client_transaction_time", \
-  "proxy.process.http.client_write_time", \
   "proxy.process.http.current_active_client_connections", \
   "proxy.process.http.current_cache_connections", \
   "proxy.process.http.current_client_connections", \
@@ -256,12 +229,6 @@ static char * epic_prefix;
   "proxy.process.http.current_server_connections", \
   "proxy.process.http.current_server_raw_transactions", \
   "proxy.process.http.current_server_transactions", \
-  "proxy.process.http.icp_raw_transaction_time", \
-  "proxy.process.http.icp_transaction_time", \
-  "proxy.process.http.origin_server_request_document_total_size", \
-  "proxy.process.http.origin_server_request_header_total_size", \
-  "proxy.process.http.origin_server_response_document_total_size", \
-  "proxy.process.http.origin_server_response_header_total_size", \
   "proxy.process.http.origin_server_speed_bytes_per_sec_100", \
   "proxy.process.http.origin_server_speed_bytes_per_sec_100K", \
   "proxy.process.http.origin_server_speed_bytes_per_sec_100M", \
@@ -269,45 +236,6 @@ static char * epic_prefix;
   "proxy.process.http.origin_server_speed_bytes_per_sec_10M", \
   "proxy.process.http.origin_server_speed_bytes_per_sec_1K", \
   "proxy.process.http.origin_server_speed_bytes_per_sec_1M", \
-  "proxy.process.http.parent_proxy_connection_time", \
-  "proxy.process.http.parent_proxy_raw_transaction_time", \
-  "proxy.process.http.parent_proxy_request_total_bytes", \
-  "proxy.process.http.parent_proxy_response_total_bytes", \
-  "proxy.process.http.parent_proxy_transaction_time", \
-  "proxy.process.http.pushed_document_total_size", \
-  "proxy.process.http.pushed_response_header_total_size", \
-  "proxy.process.http.server_connection_time", \
-  "proxy.process.http.server_raw_transaction_time", \
-  "proxy.process.http.server_read_time", \
-  "proxy.process.http.server_transaction_time", \
-  "proxy.process.http.total_client_connections", \
-  "proxy.process.http.total_client_connections_ipv4", \
-  "proxy.process.http.total_client_connections_ipv6", \
-  "proxy.process.http.total_incoming_connections", \
-  "proxy.process.http.total_parent_proxy_connections", \
-  "proxy.process.http.total_server_connections", \
-  "proxy.process.http.total_transactions_think_time", \
-  "proxy.process.http.total_transactions_time", \
-  "proxy.process.http.total_x_redirect_count", \
-  "proxy.process.http.transaction_totaltime.errors.aborts", \
-  "proxy.process.http.transaction_totaltime.errors.connect_failed", \
-  "proxy.process.http.transaction_totaltime.errors.early_hangups", \
-  "proxy.process.http.transaction_totaltime.errors.empty_hangups", \
-  "proxy.process.http.transaction_totaltime.errors.other", \
-  "proxy.process.http.transaction_totaltime.errors.possible_aborts", \
-  "proxy.process.http.transaction_totaltime.errors.pre_accept_hangups", \
-  "proxy.process.http.transaction_totaltime.hit_fresh", \
-  "proxy.process.http.transaction_totaltime.hit_fresh.process", \
-  "proxy.process.http.transaction_totaltime.hit_revalidated", \
-  "proxy.process.http.transaction_totaltime.miss_changed", \
-  "proxy.process.http.transaction_totaltime.miss_client_no_cache", \
-  "proxy.process.http.transaction_totaltime.miss_cold", \
-  "proxy.process.http.transaction_totaltime.miss_not_cacheable", \
-  "proxy.process.http.transaction_totaltime.other.unclassified", \
-  "proxy.process.http.user_agent_request_document_total_size", \
-  "proxy.process.http.user_agent_request_header_total_size", \
-  "proxy.process.http.user_agent_response_document_total_size", \
-  "proxy.process.http.user_agent_response_header_total_size", \
   "proxy.process.http.user_agent_speed_bytes_per_sec_100", \
   "proxy.process.http.user_agent_speed_bytes_per_sec_100K", \
   "proxy.process.http.user_agent_speed_bytes_per_sec_100M", \
@@ -315,22 +243,18 @@ static char * epic_prefix;
   "proxy.process.http.user_agent_speed_bytes_per_sec_10M", \
   "proxy.process.http.user_agent_speed_bytes_per_sec_1K", \
   "proxy.process.http.user_agent_speed_bytes_per_sec_1M", \
-  "proxy.process.https.total_client_connections", \
   "proxy.process.log.log_files_open", \
   "proxy.process.log.log_files_space_used", \
   "proxy.process.net.accepts_currently_open", \
   "proxy.process.net.connections_currently_open", \
   "proxy.process.socks.connections_currently_open", \
-  "proxy.process.ssl.total_handshake_time", \
-  "proxy.process.ssl.total_success_handshake_count", \
-  "proxy.process.ssl.user_agent_session_timeout", \
   "proxy.process.update.state_machines", \
   "proxy.process.version.server.build_time", \
   "proxy.process.websocket.current_active_client_connections"
 
 // XXX SSL stats (TS-2169) are going to land soon; we will need to update this list ...
 
-// NOTE: the status list of gauge metric names does not capture dynamically constructed
+// NOTE: the static list of gauge metric names does not capture dynamically constructed
 // names like proxy.process.cache.volume_XX.*.active
 
 #if __cplusplus >= 201102L

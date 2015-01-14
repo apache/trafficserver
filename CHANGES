@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.0
 
+  *) [TS-3338] Update the list of gauges in the epic plugin.
+
   *) [TS-3337] Remove internal plugin SDK versioning.
 
   *) [TS-3336] Remove unimplemented HTTP metrics.
