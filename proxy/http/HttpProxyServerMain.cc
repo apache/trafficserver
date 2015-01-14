@@ -190,7 +190,8 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor& acceptor, HttpProxyPort& port, unsigned
   }
 
   if (port.isSSL()) {
-    SSLNextProtocolAccept *ssl = new SSLNextProtocolAccept(probe, port.m_transparent_passthrough);
+    SSLNextProtocolAccept *ssl = new SSLNextProtocolAccept(probe,
+      port.m_transparent_passthrough && port.m_inbound_transparent_p);
 
     // ALPN selects the first server-offered protocol,
     // so make sure that we offer the newest protocol first.
