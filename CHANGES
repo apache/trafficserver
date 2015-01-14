@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.0
 
+  *) [TS-3292] Make tr-pass work for SSL. 
+   Author: Lev Stipakov <lstipakov@gmail.com>
+
   *) [TS-3291] Remove remnants from "dev" builds from configure.ac.
 
   *) [TS-3285] Fix premature freeing of MIOBuffer to prevent freelist corruption
