@@ -188,7 +188,9 @@ read_blacklist(TSCont contp)
 
   /* If the Mutext lock is not successful try again in RETRY_TIME */
   if (TSMutexLockTry(sites_mutex) != TS_SUCCESS) {
-    TSfclose(file);
+    if (file != NULL) {
+      TSfclose(file);
+    }
     TSContSchedule(contp, RETRY_TIME, TS_THREAD_POOL_DEFAULT);
     return;
   }
