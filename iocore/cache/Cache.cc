@@ -2060,7 +2060,7 @@ build_vol_hash_table(CacheHostRecord *cp)
 
   num_vols -= bad_vols;
 
-  if (!num_vols) {
+  if (!num_vols || !total) {
     // all the disks are corrupt,
     if (cp->vol_hash_table) {
       new_Freer(cp->vol_hash_table, CACHE_MEM_FREE_TIMEOUT);
