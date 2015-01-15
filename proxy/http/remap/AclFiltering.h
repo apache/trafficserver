@@ -64,11 +64,11 @@ private:
 
 public:
   acl_filter_rule *next;
-  int filter_name_size;         // size of optional filter name
   char *filter_name;            // optional filter name
   unsigned int allow_flag:1,    // action allow deny
     src_ip_valid:1,             // src_ip range valid
-    active_queue_flag:1;        // filter is in active state (used by .useflt directive)
+    active_queue_flag:1,        // filter is in active state (used by .useflt directive)
+    internal:1;                 // filter internal HTTP requests
 
   // we need arguments as string array for directive processing
   int argc;                     // argument counter (only for filter defs)
@@ -86,7 +86,7 @@ public:
   src_ip_info_t src_ip_array[ACL_FILTER_MAX_SRC_IP];
   acl_filter_rule();
   ~acl_filter_rule();
-  int name(const char *_name = NULL);
+  void name(const char *_name = NULL);
   int add_argv(int _argc, char *_argv[]);
   void print(void);
 

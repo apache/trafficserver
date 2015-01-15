@@ -27,6 +27,7 @@
 #include "UrlMappingPathIndex.h"
 #include "RemapConfig.h"
 #include "I_Layout.h"
+#include "HttpSM.h"
 
 #define modulePrefix "[ReverseProxy]"
 
@@ -416,42 +417,53 @@ UrlRewrite::ReverseMap(HTTPHdr *response_header)
 void
 UrlRewrite::PerformACLFiltering(HttpTransact::State *s, url_mapping *map)
 {
-  if (unlikely(!s || s->acl_filtering_performed || !s->client_connection_enabled))
+  if (unlikely(!s || s->acl_filtering_performed || !s->client_connection_enabled)) {
     return;
+  }
 
   s->acl_filtering_performed = true;    // small protection against reverse mapping
 
   if (map->filter) {
-    int res;
     int method = s->hdr_info.client_request.method_get_wksidx();
     int method_wksidx = (method != -1) ? (method - HTTP_WKSIDX_CONNECT) : -1;
     bool client_enabled_flag = true;
+
     ink_release_assert(ats_is_ip(&s->client_info.addr));
-    for (acl_filter_rule * rp = map->filter; rp; rp = rp->next) {
+
+    for (acl_filter_rule * rp = map->filter; rp && client_enabled_flag; rp = rp->next) {
       bool match = true;
+
       if (rp->method_restriction_enabled) {
         if (method_wksidx != -1) {
           match = rp->standard_method_lookup[method_wksidx];
-        }
-        else if (!rp->nonstandard_methods.empty()) {
+        } else if (!rp->nonstandard_methods.empty()) {
           int method_str_len;
           const char *method_str = s->hdr_info.client_request.method_get(&method_str_len);
           match = rp->nonstandard_methods.count(std::string(method_str, method_str_len));
         }
       }
+
       if (match && rp->src_ip_valid) {
         match = false;
         for (int j = 0; j < rp->src_ip_cnt && !match; j++) {
-          res = rp->src_ip_array[j].contains(s->client_info.addr) ? 1 : 0;
+          bool in_range = rp->src_ip_array[j].contains(s->client_info.addr);
           if (rp->src_ip_array[j].invert) {
-            if (res != 1)
+            if (!in_range) {
               match = true;
+            }
           } else {
-            if (res == 1)
+            if (in_range) {
               match = true;
+            }
           }
         }
       }
+
+      if (rp->internal) {
+        match = s->state_machine->ua_session->get_netvc()->get_is_internal_request();
+        Debug("url_rewrite", "%s an internal request", match ? "matched" : "didn't match");
+      }
+
       if (match && client_enabled_flag) {     //make sure that a previous filter did not DENY
         Debug("url_rewrite", "matched ACL filter rule, %s request", rp->allow_flag ? "allowing" : "denying");
         client_enabled_flag = rp->allow_flag ? true : false;
@@ -465,6 +477,7 @@ UrlRewrite::PerformACLFiltering(HttpTransact::State *s, url_mapping *map)
       }
 
     }                         /* end of for(rp = map->filter;rp;rp = rp->next) */
+
     s->client_connection_enabled = client_enabled_flag;
   }
 }

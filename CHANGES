@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.0
 
+  *) [TS-3300] Add a @internal ACL filter.
+
   *) [TS-2884] TSActionCancel() on TSNetAccept() causes spinning thread
 
   *) [TS-3324] If a chunked fetch from origin dies due to inactivity timeout, truncated cache entry can be created

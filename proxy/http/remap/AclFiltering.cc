@@ -48,7 +48,7 @@ acl_filter_rule::reset(void)
   src_ip_valid = 0;
 }
 
-acl_filter_rule::acl_filter_rule():next(NULL), filter_name_size(0), filter_name(NULL), allow_flag(1),
+acl_filter_rule::acl_filter_rule():next(NULL), filter_name(NULL), allow_flag(1),
 src_ip_valid(0), active_queue_flag(0), argc(0)
 {
   standard_method_lookup.resize(HTTP_WKSIDX_METHODS_CNT);
@@ -77,15 +77,13 @@ acl_filter_rule::add_argv(int _argc, char *_argv[])
   return real_cnt;
 }
 
-int
+void
 acl_filter_rule::name(const char *_name)
 {
-  filter_name_size = 0;
   filter_name = (char *)ats_free_null(filter_name);
-  if (_name && _name[0] && (filter_name = ats_strdup(_name)) != NULL) {
-    filter_name_size = strlen(filter_name);
+  if (_name) {
+    filter_name = ats_strdup(_name);
   }
-  return filter_name_size;
 }
 
 void
@@ -93,9 +91,9 @@ acl_filter_rule::print(void)
 {
   int i;
   printf("-----------------------------------------------------------------------------------------\n");
-  printf("Filter \"%s\" status: allow_flag=%d, src_ip_valid=%d, active_queue_flag=%d\n",
-         filter_name ? filter_name : "<NONAME>", (int) allow_flag,
-         (int) src_ip_valid, (int) active_queue_flag);
+  printf("Filter \"%s\" status: allow_flag=%s, src_ip_valid=%s, internal=%s, active_queue_flag=%d\n",
+         filter_name ? filter_name : "<NONAME>", allow_flag ? "true" : "false",
+         src_ip_valid ? "true" : "false", internal ? "true" : "false", (int) active_queue_flag);
   printf("standard methods=");
   for (i = 0; i < HTTP_WKSIDX_METHODS_CNT; i++) {
     if (standard_method_lookup[i]) {
@@ -127,7 +125,7 @@ acl_filter_rule::find_byname(acl_filter_rule *list, const char *_name)
   acl_filter_rule *rp = 0;
   if (likely(list && _name && (_name_size = strlen(_name)) > 0)) {
     for (rp = list; rp; rp = rp->next) {
-      if (rp->filter_name_size == _name_size && !strcasecmp(rp->filter_name, _name))
+      if (strcasecmp(rp->filter_name, _name) == 0)
         break;
     }
   }
@@ -141,7 +139,7 @@ acl_filter_rule::delete_byname(acl_filter_rule **rpp, const char *_name)
   acl_filter_rule *rp;
   if (likely(rpp && _name && (_name_size = strlen(_name)) > 0)) {
     for (; (rp = *rpp) != NULL; rpp = &rp->next) {
-      if (rp->filter_name_size == _name_size && !strcasecmp(rp->filter_name, _name)) {
+      if (strcasecmp(rp->filter_name, _name) == 0) {
         *rpp = rp->next;
         delete rp;
         break;

@@ -368,8 +368,10 @@ remap_validate_filter_args(acl_filter_rule ** rule_pp, const char ** argv, int a
   }
 
   for (i = 0; i < argc; i++) {
+    bool hasarg;
+
     if ((ul = remap_check_option((const char **)&argv[i], 1, 0, NULL, &argptr)) == 0) {
-      Debug("url_rewrite", "[validate_filter_args] Unknow remap option - %s", argv[i]);
+      Debug("url_rewrite", "[validate_filter_args] Unknown remap option - %s", argv[i]);
       snprintf(errStrBuf, errStrBufSize, "Unknown option - \"%s\"", argv[i]);
       errStrBuf[errStrBufSize - 1] = 0;
       if (new_rule_flg) {
@@ -378,7 +380,11 @@ remap_validate_filter_args(acl_filter_rule ** rule_pp, const char ** argv, int a
       }
       return (const char *) errStrBuf;
     }
-    if (!argptr || !argptr[0]) {
+
+    // Every filter operator requires an argument except @internal.
+    hasarg = !(ul & REMAP_OPTFLG_INTERNAL);
+
+    if (hasarg && (!argptr || !argptr[0])) {
       Debug("url_rewrite", "[validate_filter_args] Empty argument in %s", argv[i]);
       snprintf(errStrBuf, errStrBufSize, "Empty argument in \"%s\"", argv[i]);
       errStrBuf[errStrBufSize - 1] = 0;
@@ -423,7 +429,9 @@ remap_validate_filter_args(acl_filter_rule ** rule_pp, const char ** argv, int a
         rule->nonstandard_methods.insert(argptr);
       }
       rule->method_restriction_enabled = true;
-    } else if (ul & REMAP_OPTFLG_SRC_IP) {      /* "src_ip=" option */
+    }
+
+    if (ul & REMAP_OPTFLG_SRC_IP) {      /* "src_ip=" option */
       if (rule->src_ip_cnt >= ACL_FILTER_MAX_SRC_IP) {
         Debug("url_rewrite", "[validate_filter_args] Too many \"src_ip=\" filters");
         snprintf(errStrBuf, errStrBufSize, "Defined more than %d \"src_ip=\" filters!", ACL_FILTER_MAX_SRC_IP);
@@ -460,7 +468,9 @@ remap_validate_filter_args(acl_filter_rule ** rule_pp, const char ** argv, int a
         rule->src_ip_cnt++;
         rule->src_ip_valid = 1;
       }
-    } else if (ul & REMAP_OPTFLG_ACTION) {      /* "action=" option */
+    }
+
+    if (ul & REMAP_OPTFLG_ACTION) {      /* "action=" option */
       if (is_inkeylist(argptr, "0", "off", "deny", "disable", NULL)) {
         rule->allow_flag = 0;
       } else if (is_inkeylist(argptr, "1", "on", "allow", "enable", NULL)) {
@@ -475,6 +485,10 @@ remap_validate_filter_args(acl_filter_rule ** rule_pp, const char ** argv, int a
         }
         return (const char *) errStrBuf;
       }
+    }
+
+    if (ul & REMAP_OPTFLG_INTERNAL) {
+      rule->internal = 1;
     }
   }
 
@@ -540,6 +554,11 @@ remap_check_option(const char ** argv, int argc, unsigned long findmode, int *_r
         if (argptr)
           *argptr = &argv[i][6];
         ret_flags |= REMAP_OPTFLG_MAP_ID;
+      } else if (!strncasecmp(argv[i], "internal", 8)) {
+        if ((findmode & REMAP_OPTFLG_INTERNAL) != 0) {
+            idx = i;
+        }
+        ret_flags |= REMAP_OPTFLG_INTERNAL;
       }
 
       if ((findmode & ret_flags) && !argptr) {
