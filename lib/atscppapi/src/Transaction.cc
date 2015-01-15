@@ -69,7 +69,7 @@ Transaction::Transaction(void *raw_txn) {
   TSHttpTxn txn = static_cast<TSHttpTxn>(raw_txn);
   TSMBuffer hdr_buf;
   TSMLoc hdr_loc;
-  TSHttpTxnClientReqGet(txn, &hdr_buf, &hdr_loc);
+  (void) TSHttpTxnClientReqGet(txn, &hdr_buf, &hdr_loc);
   if (!hdr_buf || !hdr_loc) {
     LOG_ERROR("TSHttpTxnClientReqGet tshttptxn=%p returned a null hdr_buf=%p or hdr_loc=%p.", txn, hdr_buf, hdr_loc);
   }

@@ -56,7 +56,7 @@ int handleTransactionEvents(TSCont cont, TSEvent event, void *edata) {
     // This is here to force a refresh of the cached client request url
     TSMBuffer hdr_buf;
     TSMLoc hdr_loc;
-    TSHttpTxnClientReqGet(static_cast<TSHttpTxn>(transaction.getAtsHandle()), &hdr_buf, &hdr_loc);
+    (void) TSHttpTxnClientReqGet(static_cast<TSHttpTxn>(transaction.getAtsHandle()), &hdr_buf, &hdr_loc);
     break;
   case TS_EVENT_HTTP_SEND_REQUEST_HDR:
     utils::internal::initTransactionServerRequest(transaction);
