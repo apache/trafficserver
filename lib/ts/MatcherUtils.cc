@@ -43,7 +43,7 @@ config_parse_error::config_parse_error(const char * fmt, ...)
   this->msg = (char *)ats_malloc(num + 1);
 
   va_start(ap, fmt);
-  num = vsnprintf(&this->msg[0], num + 1, fmt, ap);
+  vsnprintf(&this->msg[0], num + 1, fmt, ap);
   va_end(ap);
 }
 
