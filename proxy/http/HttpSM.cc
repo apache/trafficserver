@@ -7660,6 +7660,9 @@ HttpSM::redirect_request(const char *redirect_url, const int redirect_len)
         // the client request didn't have a host, so use the current origin host
         DebugSM("http_redirect", "[HttpSM::redirect_request] keeping client request host %s://%s", next_hop_scheme, origHost);
         char* origHost1 = strtok_r(origHost, ":", &saveptr);
+        if (origHost1 == NULL) {
+          goto LhostError;
+        }
         origHost_len = strlen(origHost1);
         int origHostPort_len = origHost_len;
         char buf[origHostPort_len + 7];
@@ -7691,6 +7694,7 @@ HttpSM::redirect_request(const char *redirect_url, const int redirect_len)
         t_state.hdr_info.client_request.m_target_cached = false;
         clientUrl.scheme_set(scheme_str, scheme_len);
       } else {
+LhostError:
         // the server request didn't have a host, so remove it from the headers
         t_state.hdr_info.client_request.field_delete(MIME_FIELD_HOST, MIME_LEN_HOST);
       }
