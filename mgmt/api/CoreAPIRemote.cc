@@ -150,11 +150,11 @@ mgmt_record_set(const char *rec_name, const char *rec_val, TSActionNeedT * actio
   MgmtMarshallInt err;
   MgmtMarshallInt action = TS_ACTION_UNDEFINED;
 
-  *action_need = TS_ACTION_UNDEFINED;
-
   if (!rec_name || !rec_val || !action_need) {
     return TS_ERR_PARAMS;
   }
+
+  *action_need = TS_ACTION_UNDEFINED;
 
   // create and send request
   ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, RECORD_SET, &optype, &name, &value);
