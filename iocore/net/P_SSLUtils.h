@@ -68,6 +68,8 @@ enum SSL_Stats
   ssl_total_success_handshake_count_stat,
   ssl_total_tickets_created_stat,
   ssl_total_tickets_verified_stat,
+  ssl_total_tickets_verified_old_key_stat, // verified with old key.
+  ssl_total_ticket_keys_renewed_stat, // number of keys renewed.
   ssl_total_tickets_not_found_stat,
   ssl_total_tickets_renewed_stat,
   ssl_total_dyn_def_tls_record_count,

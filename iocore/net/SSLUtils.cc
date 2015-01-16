@@ -125,6 +125,39 @@ struct ssl_ticket_key_t
 
 #if HAVE_OPENSSL_SESSION_TICKETS
 static int ssl_session_ticket_index = -1;
+
+struct ssl_ticket_key_block
+{
+  unsigned num_keys;
+  ssl_ticket_key_t keys[];
+};
+
+// Zero out and free the heap space allocated for ticket keys to avoid leaking secrets.
+// The first several bytes stores the number of keys and the rest stores the ticket keys.
+static void
+ticket_block_free(void *ptr)
+{
+  if (ptr) {
+    ssl_ticket_key_block *key_block_ptr = (ssl_ticket_key_block *)ptr;
+    unsigned num_ticket_keys = key_block_ptr->num_keys;
+    memset(ptr, 0, sizeof(ssl_ticket_key_block) + num_ticket_keys * sizeof(ssl_ticket_key_t));
+  }
+  ats_free(ptr);
+}
+
+static ssl_ticket_key_block *
+ticket_block_alloc(unsigned count)
+{
+  ssl_ticket_key_block * ptr;
+  size_t nbytes = sizeof(ssl_ticket_key_block) + count * sizeof(ssl_ticket_key_t);
+
+  ptr = (ssl_ticket_key_block *)ats_malloc(nbytes);
+  memset(ptr, 0, nbytes);
+  ptr->num_keys = count;
+
+  return ptr;
+}
+
 #endif
 static pthread_mutex_t *mutex_buf = NULL;
 static bool open_ssl_initialized = false;
@@ -472,9 +505,10 @@ static SSL_CTX *
 ssl_context_enable_tickets(SSL_CTX * ctx, const char * ticket_key_path)
 {
 #if HAVE_OPENSSL_SESSION_TICKETS
-  ats_scoped_str          ticket_key_data;
+  ats_scoped_str      ticket_key_data;
   int                 ticket_key_len;
-  ssl_ticket_key_t *  ticket_key = NULL;
+  unsigned            num_ticket_keys;
+  ssl_ticket_key_block * keyblock = NULL;
 
   ticket_key_data = readIntoBuffer(ticket_key_path, __func__, &ticket_key_len);
   if (!ticket_key_data) {
@@ -482,15 +516,27 @@ ssl_context_enable_tickets(SSL_CTX * ctx, const char * ticket_key_path)
     goto fail;
   }
 
-  if (ticket_key_len < 48) {
-    Error("SSL session ticket key from %s is too short (48 bytes are required)", (const char *)ticket_key_path);
+  num_ticket_keys = ticket_key_len / sizeof(ssl_ticket_key_t);
+  if (num_ticket_keys == 0) {
+    Error("SSL session ticket key from %s is too short (>= 48 bytes are required)", (const char *)ticket_key_path);
     goto fail;
   }
 
-  ticket_key = new ssl_ticket_key_t();
-  memcpy(ticket_key->key_name, (const char *)ticket_key_data, 16);
-  memcpy(ticket_key->hmac_secret, (const char *)ticket_key_data + 16, 16);
-  memcpy(ticket_key->aes_key, (const char *)ticket_key_data + 32, 16);
+  // Increase the stats.
+  if (ssl_rsb != NULL) { // ssl_rsb is not initialized during the first run.
+    SSL_INCREMENT_DYN_STAT(ssl_total_ticket_keys_renewed_stat);
+  }
+
+  keyblock = ticket_block_alloc(num_ticket_keys);
+
+  // Slurp all the keys in the ticket key file. We will encrypt with the first key, and decrypt
+  // with any key (for rotation purposes).
+  for (unsigned i = 0; i < num_ticket_keys; ++i) {
+    const char * data = (const char *)ticket_key_data + (i * sizeof(ssl_ticket_key_t));
+    memcpy(keyblock->keys[i].key_name, data, sizeof(ssl_ticket_key_t::key_name));
+    memcpy(keyblock->keys[i].hmac_secret, data + sizeof(ssl_ticket_key_t::key_name), sizeof(ssl_ticket_key_t::hmac_secret));
+    memcpy(keyblock->keys[i].aes_key, data + sizeof(ssl_ticket_key_t::key_name) + sizeof(ssl_ticket_key_t::hmac_secret), sizeof(ssl_ticket_key_t::aes_key));
+  }
 
   // Setting the callback can only fail if OpenSSL does not recognize the
   // SSL_CTRL_SET_TLSEXT_TICKET_KEY_CB constant. we set the callback first
@@ -500,7 +546,7 @@ ssl_context_enable_tickets(SSL_CTX * ctx, const char * ticket_key_path)
     goto fail;
   }
 
-  if (SSL_CTX_set_ex_data(ctx, ssl_session_ticket_index, ticket_key) == 0) {
+  if (SSL_CTX_set_ex_data(ctx, ssl_session_ticket_index, keyblock) == 0) {
     Error ("failed to set session ticket data to ctx");
     goto fail;
   }
@@ -509,7 +555,7 @@ ssl_context_enable_tickets(SSL_CTX * ctx, const char * ticket_key_path)
   return ctx;
 
 fail:
-  delete ticket_key;
+  ticket_block_free(keyblock);
   return ctx;
 
 #else /* !HAVE_OPENSSL_SESSION_TICKETS */
@@ -849,6 +895,14 @@ SSLInitializeStatistics()
   // TODO: ticket renewal is not used right now.
   RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.total_tickets_renewed",
                      RECD_INT, RECP_PERSISTENT, (int) ssl_total_tickets_renewed_stat,
+                     RecRawStatSyncCount);
+  // The number of session tickets verified with an "old" key.
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.total_tickets_verified_old_key",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_total_tickets_verified_old_key_stat,
+                     RecRawStatSyncCount);
+  // The number of ticket keys renewed.
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.total_ticket_keys_renewed",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_total_ticket_keys_renewed_stat,
                      RecRawStatSyncCount);
 
   RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_session_cache_hit",
@@ -1822,8 +1876,7 @@ static void
 session_ticket_free(void * /*parent*/, void * ptr, CRYPTO_EX_DATA * /*ad*/,
     int /*idx*/, long /*argl*/, void * /*argp*/)
 {
-  ssl_ticket_key_t * key = (ssl_ticket_key_t *)ptr;
-  delete key;
+  ticket_block_free((struct ssl_ticket_key_block *)ptr);
 }
 
 /*
@@ -1835,35 +1888,44 @@ static int
 ssl_callback_session_ticket(SSL * ssl, unsigned char * keyname, unsigned char * iv, EVP_CIPHER_CTX * cipher_ctx,
                             HMAC_CTX * hctx, int enc)
 {
-  ssl_ticket_key_t* ssl_ticket_key = (ssl_ticket_key_t*) SSL_CTX_get_ex_data(SSL_get_SSL_CTX(ssl), ssl_session_ticket_index);
+  ssl_ticket_key_block *key_block_ptr = (ssl_ticket_key_block *)SSL_CTX_get_ex_data(SSL_get_SSL_CTX(ssl), ssl_session_ticket_index);
+  // Read the num of ticket keys stored at the first 4 bytes of the malloc'ed memory.
+  unsigned num_ticket_keys = key_block_ptr->num_keys;
+  ssl_ticket_key_t* ssl_ticket_keys = (ssl_ticket_key_t *)(key_block_ptr + 1);
 
-  if (NULL == ssl_ticket_key) {
-    Error("ssl ticket key is null.");
-    return -1;
-  }
+  ink_release_assert(ssl_ticket_keys != NULL);
 
   if (enc == 1) {
-    memcpy(keyname, ssl_ticket_key->key_name, 16);
+    const ssl_ticket_key_t &most_recent_key = ssl_ticket_keys[0];
+    memcpy(keyname, most_recent_key.key_name, sizeof(ssl_ticket_key_t::key_name));
     RAND_pseudo_bytes(iv, EVP_MAX_IV_LENGTH);
-    EVP_EncryptInit_ex(cipher_ctx, EVP_aes_128_cbc(), NULL, ssl_ticket_key->aes_key, iv);
-    HMAC_Init_ex(hctx, ssl_ticket_key->hmac_secret, 16, evp_md_func, NULL);
+    EVP_EncryptInit_ex(cipher_ctx, EVP_aes_128_cbc(), NULL, most_recent_key.aes_key, iv);
+    HMAC_Init_ex(hctx, most_recent_key.hmac_secret, sizeof(ssl_ticket_key_t::hmac_secret), evp_md_func, NULL);
 
     Debug("ssl", "create ticket for a new session.");
     SSL_INCREMENT_DYN_STAT(ssl_total_tickets_created_stat);
     return 0;
   } else if (enc == 0) {
-    if (memcmp(keyname, ssl_ticket_key->key_name, 16)) {
-      Debug("ssl", "keyname is not consistent.");
-      SSL_INCREMENT_DYN_STAT(ssl_total_tickets_not_found_stat);
-      return 0;
+    for (unsigned i = 0; i < num_ticket_keys; ++i) {
+      if (memcmp(keyname, ssl_ticket_keys[i].key_name, sizeof(ssl_ticket_key_t::key_name)) == 0) {
+        EVP_DecryptInit_ex(cipher_ctx, EVP_aes_128_cbc(), NULL, ssl_ticket_keys[i].aes_key, iv);
+        HMAC_Init_ex(hctx, ssl_ticket_keys[i].hmac_secret, sizeof(ssl_ticket_key_t::hmac_secret), evp_md_func, NULL);
+
+        Debug("ssl", "verify the ticket for an existing session.");
+        // Increase the total number of decrypted tickets.
+        SSL_INCREMENT_DYN_STAT(ssl_total_tickets_verified_stat);
+
+        if (i != 0) // The number of tickets decrypted with "older" keys.
+          SSL_INCREMENT_DYN_STAT(ssl_total_tickets_verified_old_key_stat);
+
+        // When we decrypt with an "older" key, encrypt the ticket again with the most recent key.
+        return (i == 0) ? 1 : 2;
+      }
     }
 
-    EVP_DecryptInit_ex(cipher_ctx, EVP_aes_128_cbc(), NULL, ssl_ticket_key->aes_key, iv);
-    HMAC_Init_ex(hctx, ssl_ticket_key->hmac_secret, 16, evp_md_func, NULL);
-
-    Debug("ssl", "verify the ticket for an existing session.");
-    SSL_INCREMENT_DYN_STAT(ssl_total_tickets_verified_stat);
-    return 1;
+    Debug("ssl", "keyname is not consistent.");
+    SSL_INCREMENT_DYN_STAT(ssl_total_tickets_not_found_stat);
+    return 0;
   }
 
   return -1;

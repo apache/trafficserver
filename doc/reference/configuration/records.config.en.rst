@@ -2148,6 +2148,11 @@ SSL Termination
    The filename of the certificate authority that client certificates
    will be verified against.
 
+.. ts:cv:: CONFIG proxy.config.ssl.server.ticket_key.filename STRING ssl_ticket.key
+
+   The location of the :file:`ssl_ticket.key` file, relative to the
+   :ts:cv:`proxy.config.ssl.server.cert.path` directory.
+
 .. ts:cv:: CONFIG proxy.config.ssl.max_record_size INT 0
 
   This configuration specifies the maximum number of bytes to write

@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.0
 
+  *) [TS-3301] improved TLS ticket rotation support.
+   Author: Bin Zeng <bzeng@linkedin.com>
+
   *) [TS-3303] tcpinfo: we can close the log file object multiple times.
 
   *) [TS-3297] Begin encapsulating parse errors in an error object.
