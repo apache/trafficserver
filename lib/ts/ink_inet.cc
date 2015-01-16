@@ -97,6 +97,10 @@ ink_inet_addr(const char *s)
   int n = 0;
   uint32_t base = 10;
 
+  if (NULL == s) {
+    return htonl((uint32_t) - 1);
+  }
+
   while (n < 4) {
 
     u[n] = 0;
