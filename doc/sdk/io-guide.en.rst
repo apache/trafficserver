@@ -30,6 +30,8 @@ This chapter contains the following sections:
    io-guide/guide-to-cache-api.en
 
 
+.. _sdk-vconnections:
+
 Vconnections
 ------------
 
