@@ -55,7 +55,7 @@ The logging API enables you to:
 
 The steps below show how the logging API is used in the
 ``blacklist-1.c`` sample plugin. For the complete source code, see the
-`*Sample Source Code* <App_SampleSourceCode.html>`__ appendix.
+:doc:`*Sample Source Code* <../sample-source-code.en>` appendix.
 
 1. A new log file is defined as a global variable.
 
