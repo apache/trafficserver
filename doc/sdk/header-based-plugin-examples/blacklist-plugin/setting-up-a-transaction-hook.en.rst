@@ -66,9 +66,11 @@ following things happen:
    with the ``TS_EVENT_HTTP_CONTINUE`` event.
 
 3. The string and ``TSMLoc`` data stored in the marshal buffer ``bufp``
-   is released by ``TSHandleMLocRelease`` (see `Release Marshal Buffer
-   Handles <RlsMarshalBufHandles.html>`__). Release these handles before
+   is released by ``TSHandleMLocRelease`` (see :doc:`Release Marshal Buffer
+   Handles <../../http-headers/guide-to-trafficserver-http-header-system/release-marshal-buffer-handles.en>`). Release these handles before
    reenabling the transaction.
+
+/http-headers/guide-to-trafficserver-http-header-system/release-marshal-buffer-handles.en.rst
 
 In general, whenever the plugin is doing something to a transaction, it
 must reenable the transaction when it is finished. In other words: every
