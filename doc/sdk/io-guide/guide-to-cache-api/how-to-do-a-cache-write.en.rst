@@ -18,8 +18,8 @@ How to Do a Cache Write
   specific language governing permissions and limitations
   under the License.
 
-Use ``TSCacheWrite`` to write to a cache (see the `sample Protocol
-plugin <../../new-protocol-plugins#AboutSampleProtocol>`__). Possible
+Use ``TSCacheWrite`` to write to a cache (see the :ref:`sample Protocol
+plugin <about-the-sample-protocol>`). Possible
 callback events include:
 
 -  ``TS_EVENT_CACHE_WRITE_READ`` - indicates the lookup was successful.
