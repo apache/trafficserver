@@ -44,7 +44,9 @@ do {        \
     }   \
 } while(0)
 
+static void ts_lua_inject_server_request_server_addr_api(lua_State * L);
 
+static void ts_lua_inject_server_request_socket_api(lua_State * L);
 static void ts_lua_inject_server_request_header_api(lua_State * L);
 static void ts_lua_inject_server_request_headers_api(lua_State * L);
 static void ts_lua_inject_server_request_get_header_size_api(lua_State * L);
@@ -62,12 +64,16 @@ static int ts_lua_server_request_set_uri(lua_State * L);
 static int ts_lua_server_request_set_uri_args(lua_State * L);
 static int ts_lua_server_request_get_uri_args(lua_State * L);
 
+static int ts_lua_server_request_server_addr_get_ip(lua_State * L);
+static int ts_lua_server_request_server_addr_get_port(lua_State * L);
+static int ts_lua_server_request_server_addr_get_addr(lua_State * L);
 
 void
 ts_lua_inject_server_request_api(lua_State * L)
 {
   lua_newtable(L);
 
+  ts_lua_inject_server_request_socket_api(L);
   ts_lua_inject_server_request_header_api(L);
   ts_lua_inject_server_request_headers_api(L);
   ts_lua_inject_server_request_get_header_size_api(L);
@@ -79,6 +85,28 @@ ts_lua_inject_server_request_api(lua_State * L)
   lua_setfield(L, -2, "server_request");
 }
 
+static void
+ts_lua_inject_server_request_socket_api(lua_State * L)
+{
+  ts_lua_inject_server_request_server_addr_api(L);
+}
+
+static void
+ts_lua_inject_server_request_server_addr_api(lua_State * L)
+{
+  lua_newtable(L);
+
+  lua_pushcfunction(L, ts_lua_server_request_server_addr_get_ip);
+  lua_setfield(L, -2, "get_ip");
+
+  lua_pushcfunction(L, ts_lua_server_request_server_addr_get_port);
+  lua_setfield(L, -2, "get_port");
+
+  lua_pushcfunction(L, ts_lua_server_request_server_addr_get_addr);
+  lua_setfield(L, -2, "get_addr");
+
+  lua_setfield(L, -2, "server_addr");
+}
 
 static void
 ts_lua_inject_server_request_header_api(lua_State * L)
@@ -406,3 +434,98 @@ ts_lua_server_request_get_uri_args(lua_State * L)
 
   return 1;
 }
+
+static int
+ts_lua_server_request_server_addr_get_ip(lua_State * L)
+{
+  struct sockaddr const *server_ip;
+  char sip[128];
+  ts_lua_http_ctx *http_ctx;
+
+  http_ctx = ts_lua_get_http_ctx(L);
+
+  server_ip = TSHttpTxnServerAddrGet(http_ctx->txnp);
+
+  if (server_ip == NULL) {
+    lua_pushnil(L);
+
+  } else {
+
+    if (server_ip->sa_family == AF_INET) {
+      inet_ntop(AF_INET, (const void *) &((struct sockaddr_in *) server_ip)->sin_addr, sip, sizeof(sip));
+    } else {
+      inet_ntop(AF_INET6, (const void *) &((struct sockaddr_in6 *) server_ip)->sin6_addr, sip, sizeof(sip));
+    }
+
+    lua_pushstring(L, sip);
+  }
+
+  return 1;
+}
+
+static int
+ts_lua_server_request_server_addr_get_port(lua_State * L)
+{
+  struct sockaddr const *server_ip;
+  ts_lua_http_ctx *http_ctx;
+  int port;
+
+  http_ctx = ts_lua_get_http_ctx(L);
+
+  server_ip = TSHttpTxnServerAddrGet(http_ctx->txnp);
+
+  if (server_ip == NULL) {
+    lua_pushnil(L);
+
+  } else {
+
+    if (server_ip->sa_family == AF_INET) {
+      port = ((struct sockaddr_in *) server_ip)->sin_port;
+    } else {
+      port = ((struct sockaddr_in6 *) server_ip)->sin6_port;
+    }
+
+    lua_pushnumber(L, port);
+  }
+
+  return 1;
+}
+
+static int
+ts_lua_server_request_server_addr_get_addr(lua_State * L)
+{
+  struct sockaddr const *server_ip;
+  ts_lua_http_ctx *http_ctx;
+  int port;
+  int family;
+  char sip[128];
+
+  http_ctx = ts_lua_get_http_ctx(L);
+
+  server_ip = TSHttpTxnServerAddrGet(http_ctx->txnp);
+
+  if (server_ip == NULL) {
+    lua_pushnil(L);
+    lua_pushnil(L);
+    lua_pushnil(L);
+
+  } else {
+
+    if (server_ip->sa_family == AF_INET) {
+      port = ntohs(((struct sockaddr_in *) server_ip)->sin_port);
+      inet_ntop(AF_INET, (const void *) &((struct sockaddr_in *) server_ip)->sin_addr, sip, sizeof(sip));
+      family = AF_INET;
+    } else {
+      port = ntohs(((struct sockaddr_in6 *) server_ip)->sin6_port);
+      inet_ntop(AF_INET6, (const void *) &((struct sockaddr_in6 *) server_ip)->sin6_addr, sip, sizeof(sip));
+      family = AF_INET6;
+    }
+
+    lua_pushstring(L, sip);
+    lua_pushnumber(L, port);
+    lua_pushnumber(L, family);
+  }
+
+  return 3;
+}
+

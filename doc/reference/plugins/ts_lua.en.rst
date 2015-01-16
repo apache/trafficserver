@@ -1048,6 +1048,29 @@ We will get the output:
 
 `TOP <#ts-lua-plugin>`_
 
+ts.server_request.server_addr.get_addr
+--------------------------------------
+**syntax:** *ts.server_request.server_addr.get_addr()*
+
+**context:** do_remap or do_global_* or later
+
+**description**: This function can be used to get socket address of the origin server.
+
+The ts.server_request.server_addr.get_addr function returns three values, ip is a string, port and family is number.
+
+Here is an example:
+
+::
+
+    function do_global_send_request()
+        ip, port, family = ts.server_request.server_addr.get_addr()
+        print(ip)               -- 192.168.231.17
+        print(port)             -- 80
+        print(family)           -- 2(AF_INET)
+    end
+
+`TOP <#ts-lua-plugin>`_
+
 ts.server_response.get_status
 -----------------------------
 **syntax:** *status = ts.server_response.get_status()*

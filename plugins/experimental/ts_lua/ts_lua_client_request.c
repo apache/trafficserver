@@ -655,11 +655,11 @@ ts_lua_client_request_client_addr_get_addr(lua_State * L)
   } else {
 
     if (client_ip->sa_family == AF_INET) {
-      port = ((struct sockaddr_in *) client_ip)->sin_port;
+      port = ntohs(((struct sockaddr_in *) client_ip)->sin_port);
       inet_ntop(AF_INET, (const void *) &((struct sockaddr_in *) client_ip)->sin_addr, cip, sizeof(cip));
       family = AF_INET;
     } else {
-      port = ((struct sockaddr_in6 *) client_ip)->sin6_port;
+      port = ntohs(((struct sockaddr_in6 *) client_ip)->sin6_port);
       inet_ntop(AF_INET6, (const void *) &((struct sockaddr_in6 *) client_ip)->sin6_addr, cip, sizeof(cip));
       family = AF_INET6;
     }
