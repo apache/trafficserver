@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.0
 
+  *) [TS-3303] tcpinfo: we can close the log file object multiple times.
+
   *) [TS-3297] Begin encapsulating parse errors in an error object.
 
   *) [TS-3296] Use Regex.h to find PCRE headers.

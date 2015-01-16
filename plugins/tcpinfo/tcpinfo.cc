@@ -171,12 +171,9 @@ log_tcp_info(Config * config, const char * event_name, TSHttpSsn ssnp)
                      info.tcpi_rtt);
   }
 
-  // It's really not clear how we should handle logging failures. It a failure transient
-  // or persistent? Should we try to re-open the logs? How frequently should we do that?
   if (ret != TS_SUCCESS) {
-    TSError("[tcpinfo] log write failed, disabling logging");
-    TSTextLogObjectDestroy(config->log);
-    config->log = NULL;
+      // ToDo: This could be due to a failure, or logs full. Should we consider
+      // closing / reopening the log? If so, how often do we do that ?
   }
 }
 
