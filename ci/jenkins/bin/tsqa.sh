@@ -47,6 +47,7 @@ ${ATS_MAKE} clean
 
 # Run all the TSQA tests. We skip a couple since they can not succeed from the CI
 cd ci/tsqa || exit 2
+rm -rf /tmp/test-*.[0-9]*
 ./run_all.sh -e test-multicert-loading -e test-privilege-elevation
 status=$?
 
