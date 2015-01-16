@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.3
 
+  *) [TS-3304] Add NULL check to ink_inet_addr() input.
+
   *) [TS-898] Remove pointless NULL check on address of array.
 
   *) [TS-2959] Fix compiler issue for MultiCache.
