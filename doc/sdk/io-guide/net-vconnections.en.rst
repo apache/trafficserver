@@ -18,10 +18,10 @@ Net Vconnections
   specific language governing permissions and limitations
   under the License.
 
-A **network** **vconnection** (or*\* netvconnection*\ \*) is a wrapper
+A **network vconnection** (or *netvconnection*) is a wrapper
 around a TCP socket that enables the socket to work within the Traffic
 Server vconnection framework. See
-`vconnections <index.en.html#Vconnections>`__ for more information about
+:ref:`vconnections <sdk-vconnections>` for more information about
 the Traffic Server abstraction for doing asynchronous IO.
 
 The netvconnection functions are listed below:
