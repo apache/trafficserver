@@ -42,13 +42,8 @@
 
  */
 
-# if USE_STL
-#   include <iterator>
-# else
-namespace std {
-  struct bidirectional_iterator_tag;
-}
-# endif
+/// FreeBSD doesn't like just declaring the tag struct we need so we have to include the file.
+# include <iterator>
 
 /** Intrusive doubly linked list container.
 
