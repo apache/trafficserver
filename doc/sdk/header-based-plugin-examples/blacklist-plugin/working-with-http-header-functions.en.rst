@@ -54,8 +54,8 @@ transaction. This is done in the ``handle_dns`` routine, using
    }
 
 To access the host header, the plugin must first get the client request,
-retrieve the URL portion, and then obtain the host header. See `HTTP
-Headers <../../http-headers>`__ for more information about these calls.
-See `Release Marshal Buffer
-Handles <../../http-headers/guide-to-trafficserver-http-header-system/release-marshal-buffer-handles>`__
+retrieve the URL portion, and then obtain the host header. See :doc:`HTTP
+Headers <../../http-headers.en>` for more information about these calls.
+See :doc:`Release Marshal Buffer
+Handles <../../http-headers/guide-to-trafficserver-http-header-system/release-marshal-buffer-handles.en>`
 for guidelines on using ``TSHandleMLocRelease``.
