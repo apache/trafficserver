@@ -97,7 +97,7 @@ intended to give the overall idea for what a vconnection needs to do.
 Transformation VConnection
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-A `transformation <HTTPTransformationPlugins.html#Transformations>`__ is
+A :ref:`transformation <transformations>` is
 a specific type of vconnection. It supports a subset of the vconnection
 functionality that enables one or more transformations to be chained
 together. A transformation sits as a bottleneck between an input data
