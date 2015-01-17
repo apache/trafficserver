@@ -27,8 +27,8 @@ In general, the return value of the handler function is not used. The
 continuation argument is the continuation being called back, the event
 is the event being sent to the continuation, and the data pointed to by
 ``void *edata`` depends on the type of event. The data types for each
-event type are listed in `Writing Handler
-Functions <../../continuations/writing-handler-functions>`__
+event type are listed in :doc:`Writing Handler
+Functions <../../continuations/writing-handler-functions.en>`
 
 The key here is that if the event is an HTTP transaction event, then the
 data passed to the continuation's handler is of type ``TSHttpTxn`` (a
