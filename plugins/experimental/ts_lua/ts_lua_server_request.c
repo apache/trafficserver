@@ -16,8 +16,8 @@
   limitations under the License.
 */
 
-
-#include <arpa/inet.h>
+#include "ink_platform.h"
+#include <netinet/in.h>
 #include "ts_lua_util.h"
 
 #define TS_LUA_CHECK_SERVER_REQUEST_HDR(http_ctx)     \
