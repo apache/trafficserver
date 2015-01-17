@@ -1,4 +1,9 @@
                                                          -*- coding: utf-8 -*-
+Changes with Apache Traffic Server 5.2.1
+
+  *) [TS-3316] Fix the build for 32 bit architectures.
+
+
 Changes with Apache Traffic Server 5.2.0
 
   *) [TS-3280] Segfault in new freelist bulk freeing (in debug mode).

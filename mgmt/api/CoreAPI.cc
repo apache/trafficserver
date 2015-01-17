@@ -366,7 +366,7 @@ ServerBacktrace(unsigned /* options */, char ** trace)
 
   Debug("backtrace", "tracing %zd threads for traffic_server PID %ld", threads.count(), (long)lmgmt->watched_process_pid);
   for_Vec(pid_t, threadid, threads) {
-    Debug("backtrace", "tracing thread %zd", (long)threadid);
+    Debug("backtrace", "tracing thread %ld", (long)threadid);
     // Get the thread name using /proc/PID/comm
     ats_scoped_fd fd;
     char threadname[128];

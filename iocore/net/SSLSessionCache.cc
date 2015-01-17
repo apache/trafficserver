@@ -40,7 +40,7 @@ using ts::detail::RBNode;
 SSLSessionCache::SSLSessionCache()
   : session_bucket(NULL), nbuckets(SSLConfigParams::session_cache_number_buckets)
 {
-  Debug("ssl.session_cache", "Created new ssl session cache %p with %ld buckets each with size max size %ld",
+  Debug("ssl.session_cache", "Created new ssl session cache %p with %zu buckets each with size max size %zu",
     this, nbuckets, SSLConfigParams::session_cache_max_bucket_size);
 
   session_bucket = new SSLSessionBucket[nbuckets];

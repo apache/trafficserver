@@ -207,7 +207,7 @@ ts_lua_http_intercept_handler(TSCont contp, TSEvent event, void *edata)
 
   } else {
     mtxp = ictx->mctx->mutexp;
-    n = (int64_t) edata & 0xFFFF;
+    n = (int)((intptr_t) edata & 0xFFFF);
     TSMutexLock(mtxp);
     ret = ts_lua_http_intercept_run_coroutine(ictx, n);
   }
