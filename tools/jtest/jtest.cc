@@ -2679,9 +2679,7 @@ UrlHashTable::UrlHashTable()
   if (*url_hash_filename) {
     ink_assert( !ftruncate(fd,numbytes) );
     bytes = (unsigned char *)
-      mmap(NULL,numbytes,PROT_READ|PROT_WRITE,
-           MAP_SHARED|MAP_NORESERVE,
-           fd, 0);
+      mmap(NULL,numbytes,PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
     if (bytes == (unsigned char*)MAP_FAILED || !bytes)
       panic("unable to map URL Hash file\n");
   } else {
