@@ -2152,7 +2152,7 @@ HostDBContinuation::backgroundEvent(int /* event ATS_UNUSED */, Event * /* e ATS
     }
     hostdb_hostfile_check_timestamp = hostdb_current_interval;
     if (0 == stat(hostdb_hostfile_path, &info)) {
-      if (info.st_mtime > hostdb_hostfile_update_timestamp) {
+      if (info.st_mtime > (time_t)hostdb_hostfile_update_timestamp) {
         ParseHostFile(hostdb_hostfile_path);
       }
     } else {

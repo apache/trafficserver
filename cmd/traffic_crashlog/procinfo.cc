@@ -284,7 +284,7 @@ crashlog_write_registers(FILE * fp, const crashlog_target& target)
   // x86 register names as per ucontext.h.
 #if defined(__i386__)
 #define REGFMT "0x%08" PRIx32
-#define ADDRCAST(x) ((uint32_t)(x))
+#define REGCAST(x) ((uint32_t)(x))
   static const char * names[NGREG] = {
     "GS", "FS", "ES", "DS", "EDI", "ESI", "EBP", "ESP",
     "EBX", "EDX", "ECX", "EAX", "TRAPNO", "ERR", "EIP", "CS",

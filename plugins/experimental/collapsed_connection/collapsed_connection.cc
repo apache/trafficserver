@@ -374,7 +374,7 @@ addOrCheckKeepPassRecords(uint32_t hash_key, int64_t timeout)
       keep_pass_list->push_back(passRecord);
       getCurrentKeepPassEntries(keep_pass_list);
       TSDebug(PLUGIN_NAME,
-              "push_back pass entry with timeout = %zd, hash_key = %u", passRecord.timeout, passRecord.hash_key);
+              "push_back pass entry with timeout = %" PRId64 ", hash_key = %" PRIu32, passRecord.timeout, passRecord.hash_key);
     } else {
       added = false;
     }
@@ -392,13 +392,13 @@ addOrCheckKeepPassRecords(uint32_t hash_key, int64_t timeout)
       keep_pass_list->erase(it++);
       getCurrentKeepPassEntries(keep_pass_list);
       TSDebug(PLUGIN_NAME,
-              "remove pass entry with timeout = %zd, hash_key = %u", thisRecord.timeout, thisRecord.hash_key);
+              "remove pass entry with timeout = %" PRId64 ", hash_key = %" PRIu32, thisRecord.timeout, thisRecord.hash_key);
     } else if (false == added) {
       if (thisRecord.timeout >= passRecord.timeout) {
         keep_pass_list->insert(it, passRecord);
         getCurrentKeepPassEntries(keep_pass_list);
         TSDebug(PLUGIN_NAME,
-                "insert pass entry with timeout = %zd, hash_key = %u", passRecord.timeout, passRecord.hash_key);
+                "insert pass entry with timeout = %" PRId64 ", hash_key = %" PRIu32, passRecord.timeout, passRecord.hash_key);
         break;
       }
     } else {
@@ -436,7 +436,7 @@ insertNewHashEntry(CcTxnData * txn_data)
     size = getCurrentHashEntries(active_hash_map);
     TSMutexUnlock(plugin_data->mutex);
     if (false != map_ret.second) {
-      TSDebug(PLUGIN_NAME, "[%" PRIu64 "] hash_key inserted, active_hash_map.size = %zd", txn_data->seq_id, size);
+      TSDebug(PLUGIN_NAME, "[%" PRIu64 "] hash_key inserted, active_hash_map.size = %" PRId64, txn_data->seq_id, size);
       ret = CC_INSERT;
     } else if (CC_PASS == map_ret.first->second) {
       TSDebug(PLUGIN_NAME, "hash value = %d, previous request mark it non-cacheable", map_ret.first->second);
@@ -458,12 +458,12 @@ insertNewHashEntry(CcTxnData * txn_data)
       txn_data->wait_time = cur_ms - txn_data->wait_time;
       // Pass cache lock
       ret = CC_PASS;
-      TSDebug(PLUGIN_NAME, "timeout (%zd > %d), pass plugin",
+      TSDebug(PLUGIN_NAME, "timeout (%" PRId64 " > %d), pass plugin",
               txn_data->wait_time, static_cast < int32_t > (txn_data->config->max_lock_retry_timeout));
     }
   } else if (0 != txn_data->wait_time) {
     txn_data->wait_time = TShrtime() / 1000000 - txn_data->wait_time;
-    TSDebug(PLUGIN_NAME, "waited for %zd ms", txn_data->wait_time);
+    TSDebug(PLUGIN_NAME, "waited for %" PRId64 " ms", txn_data->wait_time);
   }
 
   return ret;
@@ -503,14 +503,14 @@ updateOrRemoveHashEntry(CcTxnData * txn_data)
       size = getCurrentHashEntries(active_hash_map);
       TSMutexUnlock(plugin_data->mutex);
 
-      TSDebug(PLUGIN_NAME, "[%" PRIu64 "] hashEntry updated, active_hash_map.size = %zd", txn_data->seq_id, size);
+      TSDebug(PLUGIN_NAME, "[%" PRIu64 "] hashEntry updated, active_hash_map.size = %" PRId64, txn_data->seq_id, size);
       txn_data->cc_state = CC_PASSED;
     } else {
       addOrCheckKeepPassRecords(0, 0);
       size = getCurrentHashEntries(active_hash_map);
       TSMutexUnlock(plugin_data->mutex);
 
-      TSDebug(PLUGIN_NAME, "[%" PRIu64 "] hashEntry removed, active_hash_map.size = %zd", txn_data->seq_id, size);
+      TSDebug(PLUGIN_NAME, "[%" PRIu64 "] hashEntry removed, active_hash_map.size = %" PRId64, txn_data->seq_id, size);
       txn_data->cc_state = CC_DONE;
     }
     ret = TS_SUCCESS;
