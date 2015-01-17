@@ -1240,23 +1240,29 @@ SSLNetVConnection::callHooks(TSHttpHookID eventId)
   // Only dealing with the SNI hook so far
   ink_assert(eventId == TS_SSL_SNI_HOOK);
 
-  APIHook *hook = ssl_hooks->get(TS_SSL_SNI_INTERNAL_HOOK);
+  if (this->sslSNIHookState == SNI_HOOKS_INIT) {
+    curHook = ssl_hooks->get(TS_SSL_SNI_INTERNAL_HOOK);
+  }
+  else if (curHook != NULL) {
+    curHook = curHook->next();
+  }
   bool reenabled = true;
-  while (hook && reenabled) {
+  while (curHook && reenabled) {
     // Must reset to a completed state for each invocation
     this->sslSNIHookState = SNI_HOOKS_DONE;
 
     // Invoke the hook
-    hook->invoke(TS_SSL_SNI_HOOK, this);
+    curHook->invoke(TS_SSL_SNI_HOOK, this);
 
     // If it did not re-enable, return the code to
     // stop the accept processing
     if (this->sslSNIHookState == SNI_HOOKS_DONE) {
       reenabled = false;
     }
-
-    // Otherwise, look for the next plugin code
-    hook = hook->next();
+    else {
+      // Otherwise, look for the next plugin code
+      curHook = curHook->next();
+    }
   }
   return reenabled;
 }
