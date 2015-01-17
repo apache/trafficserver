@@ -53,7 +53,7 @@ are all equivalent.
 
 The MIME header data structure is a parsed version of a standard
 Internet MIME header. The MIME header data structure is similar to the
-URL data structure (see `URLs <urls>`__). The actual data is stored in a
+URL data structure (see :doc:`URLs <urls.en>`). The actual data is stored in a
 marshal buffer; the MIME header functions operate on a marshal buffer
 and a location (``TSMLoc``) within the buffer.
 
