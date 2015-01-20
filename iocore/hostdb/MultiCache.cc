@@ -548,9 +548,7 @@ MultiCacheBase::write_config(const char *config_filename, int nominal_size, int 
 
   Layout::relative_to(p, sizeof(p), rundir, config_filename);
 
-  // XXX: Shouldn't that be 0664?
-  //
-  if ((fd =::open(p, O_CREAT | O_WRONLY | O_TRUNC, 0666)) >= 0) {
+  if ((fd =::open(p, O_CREAT | O_WRONLY | O_TRUNC, 0644)) >= 0) {
     snprintf(buf, sizeof(buf) - 1, "%d\n%d\n%d\n", nominal_size, abuckets, heap_size);
     buf[sizeof(buf) - 1] = 0;
     if (ink_file_fd_writestring(fd, buf) != -1 && store->write(fd, filename) >= 0)
