@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.0
 
+  *) [TS-3308] We need an explicit -lpthread (when available) for ASAN
+   builds to succeed.
+
   *) [TS-3290] Add function to get origin server IP address in lua plugin.
 
   *) [TS-3304] Add NULL check to ink_inet_addr() input.

@@ -1070,12 +1070,12 @@ AC_SEARCH_LIBS([MLD_demangle_string], [mld], [], [])
 AC_SEARCH_LIBS([dlopen], [dl], [], [])
 AC_SEARCH_LIBS([socket], [socket], [], [])
 AC_SEARCH_LIBS([gethostbyname], [nsl], [], [])
+AC_SEARCH_LIBS([clock_gettime], [rt], [], [])
+AC_SEARCH_LIBS([clock_gettime], [posix4], [], [])
 
 dnl Linux has pthread symbol stubss in both libc ad libpthread, so it's important to test
 dnl specifically for pthread_create() here.
-AC_SEARCH_LIBS([pthread_create], [pthread], [], [])
-AC_SEARCH_LIBS([clock_gettime], [rt], [], [])
-AC_SEARCH_LIBS([clock_gettime], [posix4], [], [])
+AC_SEARCH_LIBS([pthread_create], [pthread],[AC_SUBST([LIBPTHREAD],["-lpthread"])], [])
 
 dnl XXX The following check incorrectly causes the build to succeed
 dnl on Darwin. We should be using AC_SEARCH_LIBS, but rest_init is
