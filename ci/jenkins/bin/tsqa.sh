@@ -43,7 +43,7 @@ autoreconf -fi
 
 ${ATS_MAKE} -j8
 ${ATS_MAKE} install
-${ATS_MAKE} clean
+${ATS_MAKE} distclean
 
 # Run all the TSQA tests. We skip a couple since they can not succeed from the CI
 cd ci/tsqa || exit 2
