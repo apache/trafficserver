@@ -188,15 +188,15 @@ A value of ``0`` means no signal will be sent.
 .. ts:cv:: CONFIG proxy.config.cop.linux_min_memfree_kb INT 0
 
    The minimum amount of free memory space allowed before Traffic Server stops
-   the :program:`traffic_server` and :program:`traffic_manager` processes to 
+   the :program:`traffic_server` and :program:`traffic_manager` processes to
    prevent the system from hanging.
 
 .. ts:cv:: CONFIG proxy.config.cop.linux_min_swapfree_kb INT 0
 
    The minimum amount of free swap space allowed before Traffic Server stops
-   the :program:`traffic_server` and :program:`traffic_manager` processes to 
+   the :program:`traffic_server` and :program:`traffic_manager` processes to
    prevent the system from hanging. This configuration variable applies if
-   swap is enabled in Linux 2.2 only. 
+   swap is enabled in Linux 2.2 only.
 
 .. ts:cv:: CONFIG proxy.config.output.logfile  STRING traffic.out
 
@@ -680,6 +680,8 @@ Value Effect
    if those sessions can be re-used. However, not all web servers support requests for different virtual hosts on the
    same connection so use with caution.
 
+   .. note: Server sessions to different ports never match even if the FQDN and IP address match.
+
 .. ts:cv:: CONFIG proxy.config.http.server_session_sharing.pool STRING thread
 
    Control the scope of server session re-use if it is enabled by :ts:cv:`proxy.config.http.server_session_sharing.match`. The valid values are
@@ -689,6 +691,25 @@ Value Effect
 
    thread
       Re-use sessions from a per-thread pool.
+
+.. ts:cv:: CONFIG proxy.config.http.attach_server_session_to_client INT 0
+
+   Control the re-use of an server session by a user agent (client) session.
+
+   If a user agent performs more than one HTTP transaction on its connection to Traffic Server a server session must be
+   obtained for the second (and subsequent) transaction as for the first. This settings affects how that server session
+   is selected.
+
+   If this setting is ``0`` then after the first transaction the server session for that transaction is released to the
+   server pool (if any). When a server session is needed for subsequent transactions one is selected from the server
+   pool or created if there is no suitable server session in the pool.
+
+   If this setting is not ``0`` then the current server session for the user agent session is "sticky". It will be
+   preferred to any other server session (either from the pool or newly created). The server session will be detached
+   from the user agent session only if it cannot be used for the transaction. This is determined by the
+   :ts:cv:`proxy.config.http.server_session_sharing.match` value. If the server session matches the next transaction
+   according to this setting then it will be used, otherwise it will be released to the pool and a different session
+   selected or created.
 
 .. ts:cv:: CONFIG proxy.config.http.record_heartbeat INT 0
    :reloadable:
@@ -712,14 +733,14 @@ is done for the connection.
 
 There are three valid values.
 *  0 - Disables the feature.
-*  1 - Enables the feature with address verification.  The Proxy does the 
-regular DNS processing.  If the client-specified origin address is not in the 
+*  1 - Enables the feature with address verification.  The Proxy does the
+regular DNS processing.  If the client-specified origin address is not in the
 set of addresses found by the Proxy, the request continues to the client
 specified address, but the result is not cached.
 *  2 - Enables the feature with no address verification.  No DNS processing
 is performed.  The result is cached (if allowed otherwise).  This option is
 vulnerable to cache poisoning if an incorrect Host header is specified, so
-this option should be used with extreme caution.  See bug TS-2954 for 
+this option should be used with extreme caution.  See bug TS-2954 for
 details.
 
 If all of these conditions are met, then the origin server IP
@@ -1731,7 +1752,7 @@ Logging Configuration
    :reloadable:
 
    Enables (``1``) or disables (``0``) the `squid log file format
-   <../working-log-files/log-formats#SquidFormat>`_. 
+   <../working-log-files/log-formats#SquidFormat>`_.
 
 .. ts:cv:: CONFIG proxy.config.log.squid_log_is_ascii INT 0
    :reloadable:
@@ -1777,7 +1798,7 @@ Logging Configuration
    :reloadable:
 
    Enables (``1``) or disables (``0``) the `Netscape extended log file format
-   <../working-log-files/log-formats#NetscapeFormats>`_. 
+   <../working-log-files/log-formats#NetscapeFormats>`_.
 
 .. ts:cv:: CONFIG proxy.config.log.extended_log_is_ascii INT 0
 
@@ -1799,7 +1820,7 @@ Logging Configuration
    :reloadable:
 
    Enables (``1``) or disables (``0``) the `Netscape Extended-2 log file
-   format <../working-log-files/log-formats#NetscapeFormats>`_. 
+   format <../working-log-files/log-formats#NetscapeFormats>`_.
 
 .. ts:cv:: CONFIG proxy.config.log.extended2_log_is_ascii INT 1
    :reloadable:
@@ -2011,9 +2032,9 @@ URL Remap Rules
    :reloadable:
 
    Enables (``1``) or disables (``0``) requests for a PAC file on the proxy
-   service port (8080 by default) to be redirected to the PAC 
+   service port (8080 by default) to be redirected to the PAC
    port. For this type of redirection to work, the variable
-   `proxy.config.reverse_proxy.enabled`_ must be set to ``1``. 
+   `proxy.config.reverse_proxy.enabled`_ must be set to ``1``.
 
 .. ts:cv:: CONFIG proxy.config.url_remap.default_to_server_pac_port INT -1
    :reloadable:
@@ -2091,14 +2112,14 @@ SSL Termination
 .. ts:cv:: CONFIG proxy.config.ssl.number.threads INT 0
 
    Sets the number of SSL threads to use, this defaults to 0 (autoconfigure).
-    
+
    -  ``0`` = autoconfigure, this will allow Traffic Server to determine
       the appropriate number of threads
-   
+
    -  ``-1`` = disable, this makes ET_NET threads behave like ET_SSL threads
       Note: this does not disable SSL, it simply allows another thread pool
       to assist in SSL tasks without dedicated SSL threads.
-   
+
    -  ``>0`` = Use a non-zero number of SSL threads
 
 .. ts:cv:: CONFIG proxy.config.ssl.server.multicert.filename STRING ssl_multicert.config
