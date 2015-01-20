@@ -1134,11 +1134,10 @@ UnixNetVConnection::connectUp(EThread *t, int fd)
   } else {
     int len = sizeof(con.sock_type);
 
+    // This call will fail if fd is not a socket (e.g. it is a 
+    // eventfd or a regular file fd.  That is ok, because sock_type
+    // is only used when setting up the socket.
     res = safe_getsockopt(fd, SOL_SOCKET, SO_TYPE, (char *)&con.sock_type, &len);
-    if (res != 0) {
-      goto fail;
-    }
-
     safe_nonblocking(fd);
     con.fd = fd;
     con.is_connected = true;

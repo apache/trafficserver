@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.0
 
+  *) [TS-3307] TSVConnFdCreate does not allow non-socket file descriptors.
+
   *) [TS-2421] MultiCache could theoretically create world-writeable
    files. This is masked (pun intended) by system default umask's.
 
