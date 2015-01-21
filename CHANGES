@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 4.2.3
 
+  *) [TS-3283] Certain SSL handshake error during client-hello hangs the client and
+   leaves network connection open.
+
   *) [TS-3304] Add NULL check to ink_inet_addr() input.
 
   *) [TS-898] Remove pointless NULL check on address of array.
