@@ -120,7 +120,8 @@ public:
     // not used directly
     lookup_table.insert(make_pair("ram_hit", LookupItem("Ram Hit", "proxy.process.cache.ram_cache.hits", 2)));
     lookup_table.insert(make_pair("ram_miss", LookupItem("Ram Misses", "proxy.process.cache.ram_cache.misses", 2)));
-
+    lookup_table.insert(make_pair("ka_total", LookupItem("KA Total", "proxy.process.net.dynamic_keep_alive_timeout_in_total", 2)));
+    lookup_table.insert(make_pair("ka_count", LookupItem("KA Count", "proxy.process.net.dynamic_keep_alive_timeout_in_count", 2)));
 
 
     lookup_table.insert(make_pair("client_abort", LookupItem("Clnt Abort", "proxy.process.http.err_client_abort_count_stat", 2)));
@@ -128,6 +129,7 @@ public:
     lookup_table.insert(make_pair("abort", LookupItem("Abort", "proxy.process.http.transaction_counts.errors.aborts", 2)));
     lookup_table.insert(make_pair("t_conn_fail", LookupItem("Conn Fail", "proxy.process.http.transaction_counts.errors.connect_failed", 2)));
     lookup_table.insert(make_pair("other_err", LookupItem("Other Err", "proxy.process.http.transaction_counts.errors.other", 2)));
+
     // percentage
     lookup_table.insert(make_pair("ram_ratio", LookupItem("Ram Hit", "ram_hit", "ram_hit_miss", 4)));
     lookup_table.insert(make_pair("dns_ratio", LookupItem("DNS Hit", "dns_hits", "dns_lookups", 4)));
@@ -217,7 +219,10 @@ public:
 
 
     lookup_table.insert(make_pair("total_time", LookupItem("Total Time", "proxy.process.http.total_transactions_time", 2)));
+
+    // ratio
     lookup_table.insert(make_pair("client_req_time", LookupItem("Resp (ms)", "total_time", "client_req", 3)));
+    lookup_table.insert(make_pair("client_dyn_ka", LookupItem("Dynamic KA", "ka_total", "ka_count", 3)));
   }
 
   void getStats() {
@@ -246,6 +251,9 @@ public:
             string key = item.name;
             (*_stats)[key] = strValue;
           } else {
+            if (TSRecordGetInt(item.name, &value) != TS_ERR_OKAY) {
+              fprintf(stderr, "Error getting stat: %s\n", item.name);
+            }
             assert(TSRecordGetInt(item.name, &value) == TS_ERR_OKAY);
             string key = item.name;
             char buffer[32];

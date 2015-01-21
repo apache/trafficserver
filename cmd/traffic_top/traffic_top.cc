@@ -337,6 +337,7 @@ void main_stats_page(Stats &stats)
   client1.push_back("client_conn");
   client1.push_back("client_curr_conn");
   client1.push_back("client_actv_conn");
+  client1.push_back("client_dyn_ka");
   makeTable(0, 17, client1, stats);
 
   list<string> client2;
