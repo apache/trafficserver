@@ -328,6 +328,7 @@ spdy_on_ctrl_recv_callback(spdylay_session *session, spdylay_frame_type type,
     req->init(sm, stream_id);
     req->append_nv(frame->syn_stream.nv);
     sm->req_map[stream_id] = req;
+    sm->vc->add_to_keep_alive_lru();
     spdy_process_syn_stream_frame(sm, req);
     break;
 

@@ -394,8 +394,11 @@ void
 UnixNetVConnection::add_to_keep_alive_lru()
 {
   Debug("socket", "UnixNetVConnection::add_to_keep_alive_lru NetVC=%p", this);
-  if (! nh->keep_alive_list.in(this)) {
-    nh->keep_alive_list.push(this);
+  if (nh->keep_alive_list.in(this)) {
+    nh->keep_alive_list.remove(this);
+    nh->keep_alive_list.enqueue(this);
+  } else {
+    nh->keep_alive_list.enqueue(this);
     ++nh->keep_alive_lru_size;
   }
 }

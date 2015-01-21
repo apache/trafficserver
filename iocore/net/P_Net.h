@@ -51,6 +51,8 @@ enum Net_Stats
   socks_connections_unsuccessful_stat,
   socks_connections_currently_open_stat,
   inactivity_cop_lock_acquire_failure_stat,
+  keep_alive_lru_timeout_total_stat,
+  keep_alive_lru_timeout_count_stat,
   Net_Stat_Count
 };
 

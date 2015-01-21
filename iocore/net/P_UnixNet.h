@@ -192,7 +192,7 @@ public:
   DList(UnixNetVConnection, cop_link) cop_list;
   ASLLM(UnixNetVConnection, NetState, read, enable_link) read_enable_list;
   ASLLM(UnixNetVConnection, NetState, write, enable_link) write_enable_list;
-  DList(UnixNetVConnection, keep_alive_link) keep_alive_list;
+  Que(UnixNetVConnection, keep_alive_link) keep_alive_list;
   uint32_t keep_alive_lru_size;
 
   time_t sec;

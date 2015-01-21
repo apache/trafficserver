@@ -146,6 +146,9 @@ public:
       spdyRequestAllocator.free(req);
       this->req_map.erase(streamId);
     }
+    if (req_map.empty() == true) {
+      vc->add_to_keep_alive_lru();
+    }
   }
 
 private:
