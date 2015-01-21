@@ -312,7 +312,7 @@ url_rewrite_remap_request(const UrlMappingContainer& mapping_container, URL *req
     // Should be +3, little extra padding won't hurt. Use the stack allocation
     // for better performance (bummer that arrays of variable length is not supported
     // on Solaris CC.
-    char *newPath = static_cast<char*>(alloca(sizeof(char*)*((requestPathLen - fromPathLen) + toPathLen + 8)));
+    char * newPath = static_cast<char *>(alloca(sizeof(char) * ((requestPathLen - fromPathLen) + toPathLen + 8)));
     int newPathLen = 0;
 
     *newPath = 0;
