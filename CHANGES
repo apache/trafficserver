@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.0
 
+  *) [TS-3309] Document TLS session ticket rotation.
+   Author: Bin Zeng <bzeng@linkedin.com>
+
   *) [TS-3307] TSVConnFdCreate does not allow non-socket file descriptors.
 
   *) [TS-2421] MultiCache could theoretically create world-writeable

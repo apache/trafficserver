@@ -25,7 +25,7 @@ Security Options
 Controlling Client Access to the Proxy Cache
 ============================================
 
-Traffic Server can be confgiured to allow only certain clients to use
+Traffic Server can be configured to allow only certain clients to use
 the proxy cache.
 
 #. Add a line to :file:`ip_allow.config` for each IP address or
@@ -260,3 +260,18 @@ and origin server connections, you must do the following:
    local node or :option:`traffic_line -M` to restart Traffic Server on all
    the nodes in a cluster.
 
+Rotating TLS Session Ticket Keys
+============================================
+
+TLS sessions can be resumed through session tickets which are encrypted with
+a session ticket key and stored on clients. For better security, the ticket keys
+can be rotated periodically, say, every 24 hours. The ticket keys are stored in
+a ticket key file as a reverse queue in 48-byte chunks.
+
+#. Generate a new ticket key and push it to the beginning of the ticket key file.
+
+#. *Optional*: Delete the last ticket key from the ticket key file.
+
+#. Touch :file:`ssl_multicert.config` to indicate that the SSL configuration is stale.
+
+#. Run the command :option:`traffic_line -x` to apply the new ticket key.
