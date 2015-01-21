@@ -61,7 +61,7 @@ struct VIA
 static VIA *
 detailViaLookup(char flag)
 {
-  VIA * viaTable = new VIA();
+  VIA * viaTable;
 
   //Detailed via codes after ":"
   switch (flag) {
@@ -117,9 +117,11 @@ detailViaLookup(char flag)
     viaTable->viaData[(unsigned char) 'F'] = "connection open failed";
     break;
   default:
+    viaTable = new VIA();
     fprintf(stderr, "%s: %s: %c\n", appVersionInfo.AppStr, "Invalid VIA header character",flag);
     break;
   }
+
   return viaTable;
 }
 
@@ -128,8 +130,6 @@ static VIA *
 standardViaLookup(char flag)
 {
   VIA * viaTable;
-
-  viaTable = new VIA();
 
   //Via codes before ":"
   switch (flag) {
@@ -186,9 +186,11 @@ standardViaLookup(char flag)
       viaTable->viaData[(unsigned char) ' '] = "unknown";
       break;
     default:
+      viaTable = new VIA();
       fprintf(stderr, "%s: %s: %c\n", appVersionInfo.AppStr, "Invalid VIA header character",flag);
       break;
   }
+
   return viaTable;
 }
 

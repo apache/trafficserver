@@ -1,5 +1,4 @@
-#
-# Makefile.am for the Enterprise Management module.
+#! /usr/bin/env bash
 #
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -17,21 +16,15 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-AM_CPPFLAGS = \
-  $(iocore_include_dirs) \
-  -I$(top_srcdir)/lib \
-  -I$(top_srcdir)/lib/ts \
-  -I$(top_srcdir)/mgmt/api/include
+set -e # exit on error
 
-bin_PROGRAMS = traffic_via
+TMPDIR=${TMPDIR:-/tmp}
+tmpfile=$(mktemp "$TMPDIR/via.XXXXXX")
+srcdir=$(cd $srcdir && pwd)
 
-traffic_via_SOURCES = \
-  traffic_via.cc
-
-traffic_via_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
-traffic_via_LDADD = \
-  $(top_builddir)/lib/ts/libtsutil.la \
-  @LIBTCL@
-
-TESTS = \
-  test_traffic_via
+find $srcdir/tests -type f |
+while read f ; do
+    name=$(basename "$f")
+    ./traffic_via "$name" > "$tmpfile" 2>&1 || true
+    diff -u "$tmpfile" "$srcdir/tests/$name"
+done
