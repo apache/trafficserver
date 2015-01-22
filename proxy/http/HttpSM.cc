@@ -1515,13 +1515,9 @@ HttpSM::handle_api_return()
   case HttpTransact::SM_ACTION_API_READ_CACHE_HDR:
   case HttpTransact::SM_ACTION_API_READ_RESPONSE_HDR:
   case HttpTransact::SM_ACTION_API_CACHE_LOOKUP_COMPLETE:
-    // this part is added for automatic redirect
-    if (t_state.api_next_action == HttpTransact::SM_ACTION_API_READ_RESPONSE_HDR && t_state.api_release_server_session) {
-      t_state.api_release_server_session = false;
-      release_server_session();
-    } else if (t_state.api_next_action == HttpTransact::SM_ACTION_API_CACHE_LOOKUP_COMPLETE &&
-               t_state.api_cleanup_cache_read &&
-               t_state.api_update_cached_object != HttpTransact::UPDATE_CACHED_OBJECT_PREPARE) {
+    if (t_state.api_next_action == HttpTransact::SM_ACTION_API_CACHE_LOOKUP_COMPLETE &&
+        t_state.api_cleanup_cache_read &&
+        t_state.api_update_cached_object != HttpTransact::UPDATE_CACHED_OBJECT_PREPARE) {
       t_state.api_cleanup_cache_read = false;
       t_state.cache_info.object_read = NULL;
       t_state.request_sent_time = UNDEFINED_TIME;
@@ -1603,6 +1599,11 @@ HttpSM::handle_api_return()
 
   case HttpTransact::SM_ACTION_REDIRECT_READ:
     {
+      // Clean up from any communication with previous servers
+      release_server_session();
+      cache_sm.close_write();
+      //tunnel.deallocate_redirect_postdata_buffers();
+    
       call_transact_and_set_next_state(HttpTransact::HandleRequest);
       break;
     }
@@ -5075,6 +5076,7 @@ HttpSM::release_server_session(bool serve_from_cache)
   if (TS_SERVER_SESSION_SHARING_MATCH_NONE != t_state.txn_conf->server_session_sharing_match &&
       t_state.current.server->keep_alive == HTTP_KEEPALIVE &&
       t_state.hdr_info.server_response.valid() &&
+      t_state.hdr_info.server_request.valid() &&
       (t_state.hdr_info.server_response.status_get() == HTTP_STATUS_NOT_MODIFIED ||
        (t_state.hdr_info.server_request.method_get_wksidx() == HTTP_WKSIDX_HEAD
         && t_state.www_auth_content != HttpTransact::CACHE_AUTH_NONE)) &&
@@ -7616,8 +7618,10 @@ HttpSM::redirect_request(const char *redirect_url, const int redirect_len)
     valid_origHost = false;
 
   t_state.hdr_info.server_request.destroy();
+
   // we want to close the server session
-  t_state.api_release_server_session = true;
+  // will do that in handle_api_return under the 
+  // HttpTransact::SM_ACTION_REDIRECT_READ state
   t_state.parent_result.r = PARENT_UNDEFINED;
   t_state.request_sent_time = 0;
   t_state.response_received_time = 0;
@@ -7626,6 +7630,10 @@ HttpSM::redirect_request(const char *redirect_url, const int redirect_len)
   // we have a new OS and need to have DNS lookup the new OS
   t_state.dns_info.lookup_success = false;
   t_state.force_dns = false;
+
+  if (t_state.txn_conf->cache_http) {
+    t_state.cache_info.object_read = NULL;
+  }
 
   bool noPortInHost = HttpConfig::m_master.redirection_host_no_port;
 

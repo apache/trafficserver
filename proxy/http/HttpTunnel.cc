@@ -1639,11 +1639,17 @@ HttpTunnel::allocate_redirect_postdata_buffers(IOBufferReader * ua_reader)
   // If fixed, obviously also fix the deallocator.
   if (postbuf == NULL) {
     postbuf = new PostDataBuffers();
+    postbuf->ua_buffer_reader = ua_reader;
+    postbuf->postdata_copy_buffer = new_MIOBuffer(alloc_index);
+    postbuf->postdata_copy_buffer_start = postbuf->postdata_copy_buffer->alloc_reader();
+    allocate_redirect_postdata_producer_buffer();
+  } else {
+    // Reset the buffer readers
+    postbuf->postdata_copy_buffer->dealloc_reader(postbuf->postdata_copy_buffer_start);
+    postbuf->postdata_copy_buffer_start = postbuf->postdata_copy_buffer->alloc_reader();
+    postbuf->postdata_producer_buffer->dealloc_reader(postbuf->postdata_producer_reader);
+    postbuf->postdata_producer_reader = postbuf->postdata_producer_buffer->alloc_reader();
   }
-  postbuf->ua_buffer_reader = ua_reader;
-  postbuf->postdata_copy_buffer = new_MIOBuffer(alloc_index);
-  postbuf->postdata_copy_buffer_start = postbuf->postdata_copy_buffer->alloc_reader();
-  allocate_redirect_postdata_producer_buffer();
 }
 
 

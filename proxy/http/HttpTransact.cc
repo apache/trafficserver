@@ -1243,9 +1243,6 @@ HttpTransact::HandleRequest(State* s)
     HTTP_INCREMENT_TRANS_STAT(https_incoming_requests_stat);
   }
 
-  if (s->api_release_server_session == true) {
-    s->api_release_server_session = false;
-  }
   ///////////////////////////////////////////////
   // if request is bad, return error response  //
   ///////////////////////////////////////////////

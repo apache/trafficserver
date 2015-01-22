@@ -969,7 +969,6 @@ public:
     // These ptrs are deallocate when transaction is over.
     HdrHeapSDKHandle *cache_req_hdr_heap_handle;
     HdrHeapSDKHandle *cache_resp_hdr_heap_handle;
-    bool api_release_server_session;
     bool api_cleanup_cache_read;
     bool api_server_response_no_store;
     bool api_server_response_ignore;
@@ -1082,7 +1081,6 @@ public:
         api_txn_no_activity_timeout_value(-1),
         cache_req_hdr_heap_handle(NULL),
         cache_resp_hdr_heap_handle(NULL),
-        api_release_server_session(false),
         api_cleanup_cache_read(false),
         api_server_response_no_store(false),
         api_server_response_ignore(false),
