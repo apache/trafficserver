@@ -108,7 +108,7 @@ void InactivityCop::keep_alive_lru(NetHandler &nh, const ink_hrtime now, Event *
 {
   // get the configuration value for the maximum incoming connections and check to see if it is set
   int32_t connections_per_thread = 0;
-  REC_ReadConfigInt32(connections_per_thread, "proxy.config.net.connections.threshold_shed_idle_in");
+  REC_ReadConfigInt32(connections_per_thread, "proxy.config.net.max_connections_in");
   if (connections_per_thread <= 0) {
     Debug("inactivity_cop_dynamic", "dynamic keep-alive not configured");
     return;
