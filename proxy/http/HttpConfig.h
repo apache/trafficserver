@@ -58,17 +58,10 @@ enum
   http_websocket_current_active_client_connections_stat,
   http_current_client_transactions_stat,
   http_total_incoming_connections_stat,
-  http_current_parent_proxy_transactions_stat,
-  http_current_icp_transactions_stat,
   http_current_server_transactions_stat,
-  http_current_parent_proxy_raw_transactions_stat,
-  http_current_icp_raw_transactions_stat,
-  http_current_server_raw_transactions_stat,
 
   //  Http Abort information (from HttpNetConnection)
   http_ua_msecs_counts_errors_pre_accept_hangups_stat,
-  http_ua_msecs_counts_errors_empty_hangups_stat,
-  http_ua_msecs_counts_errors_early_hangups_stat,
 
   // Http Total Connections Stats
   //
@@ -88,16 +81,8 @@ enum
   // Http K-A Stats
   http_transactions_per_client_con,
   http_transactions_per_server_con,
-  http_transactions_per_parent_con,
 
-  // Http Time Stuff
-  http_client_connection_time_stat,
-  http_parent_proxy_connection_time_stat,
-  http_server_connection_time_stat,
-  http_cache_connection_time_stat,
-
-
-  // Transactional stats (originaly in proxy/HttpTransStats.h)
+  // Transactional stats (originally in proxy/HttpTransStats.h)
   http_incoming_requests_stat,
   http_outgoing_requests_stat,
   http_incoming_responses_stat,
@@ -116,20 +101,9 @@ enum
   http_extension_method_requests_stat,
 
   http_completed_requests_stat,
-
-  http_client_no_cache_requests_stat,
-
-  //    http_icp_requests_stat,
-  //    http_icp_invalid_responses_stat,
-  //    http_parent_proxy_requests_stat,
-  //    http_parent_invalid_responses_stat,
-  //    http_invalid_responses_stat,
-  //    http_retried_requests_stat,
-
   http_broken_server_connections_stat,
 
   http_cache_lookups_stat,
-  http_cache_misses_stat,
   http_cache_writes_stat,
   http_cache_updates_stat,
   http_cache_deletes_stat,
@@ -244,13 +218,10 @@ enum
 
   http_ua_msecs_counts_hit_fresh_process_stat,
   http_ua_msecs_counts_hit_reval_stat,
-  http_ua_msecs_counts_hit_ims_stat,
-  http_ua_msecs_counts_hit_stale_served_stat,
   http_ua_msecs_counts_miss_cold_stat,
   http_ua_msecs_counts_miss_changed_stat,
   http_ua_msecs_counts_miss_client_no_cache_stat,
   http_ua_msecs_counts_miss_uncacheable_stat,
-  http_ua_msecs_counts_miss_ims_stat,
   http_ua_msecs_counts_errors_aborts_stat,
   http_ua_msecs_counts_errors_possible_aborts_stat,
   http_ua_msecs_counts_errors_connect_failed_stat,
@@ -261,19 +232,7 @@ enum
 
   // Times
   http_total_transactions_time_stat,
-  http_total_transactions_think_time_stat,
-
-  http_client_transaction_time_stat,
-
-  http_client_write_time_stat,
-  http_server_read_time_stat,
-
-  http_icp_transaction_time_stat,
-  http_icp_raw_transaction_time_stat,
   http_parent_proxy_transaction_time_stat,
-  http_parent_proxy_raw_transaction_time_stat,
-  http_server_transaction_time_stat,
-  http_server_raw_transaction_time_stat,
 
   // Http cache errors
   http_cache_write_errors,

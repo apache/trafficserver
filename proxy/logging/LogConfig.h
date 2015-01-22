@@ -117,7 +117,6 @@ public:
   void display(FILE * fd = stdout);
   void setup_log_objects();
 
-  static void register_configs();
   static int reconfigure(const char *name, RecDataT data_type, RecData data, void *cookie);
 
   static void register_config_callbacks();

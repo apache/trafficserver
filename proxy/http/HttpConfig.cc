@@ -230,11 +230,6 @@ http_server_session_sharing_cb(char const* name, RecDataT dtype, RecData data, v
 }
 
 void
-register_configs()
-{
-}
-
-void
 register_stat_callbacks()
 {
 
@@ -264,32 +259,9 @@ register_stat_callbacks()
                      RECD_INT, RECP_NON_PERSISTENT, (int) http_current_client_transactions_stat, RecRawStatSyncSum);
   HTTP_CLEAR_DYN_STAT(http_current_client_transactions_stat);
   RecRegisterRawStat(http_rsb, RECT_PROCESS,
-                     "proxy.process.http.current_parent_proxy_transactions",
-                     RECD_INT, RECP_NON_PERSISTENT,
-                     (int) http_current_parent_proxy_transactions_stat, RecRawStatSyncSum);
-  HTTP_CLEAR_DYN_STAT(http_current_parent_proxy_transactions_stat);
-  RecRegisterRawStat(http_rsb, RECT_PROCESS,
-                     "proxy.process.http.current_icp_transactions",
-                     RECD_INT, RECP_NON_PERSISTENT, (int) http_current_icp_transactions_stat, RecRawStatSyncSum);
-  HTTP_CLEAR_DYN_STAT(http_current_icp_transactions_stat);
-  RecRegisterRawStat(http_rsb, RECT_PROCESS,
                      "proxy.process.http.current_server_transactions",
                      RECD_INT, RECP_NON_PERSISTENT, (int) http_current_server_transactions_stat, RecRawStatSyncSum);
   HTTP_CLEAR_DYN_STAT(http_current_server_transactions_stat);
-  // Current Transaction (Raw) Stats
-  RecRegisterRawStat(http_rsb, RECT_PROCESS,
-                     "proxy.process.http.current_parent_proxy_raw_transactions",
-                     RECD_INT, RECP_NON_PERSISTENT,
-                     (int) http_current_parent_proxy_raw_transactions_stat, RecRawStatSyncSum);
-  HTTP_CLEAR_DYN_STAT(http_current_parent_proxy_raw_transactions_stat);
-  RecRegisterRawStat(http_rsb, RECT_PROCESS,
-                     "proxy.process.http.current_icp_raw_transactions",
-                     RECD_INT, RECP_NON_PERSISTENT, (int) http_current_icp_raw_transactions_stat, RecRawStatSyncSum);
-  HTTP_CLEAR_DYN_STAT(http_current_icp_raw_transactions_stat);
-  RecRegisterRawStat(http_rsb, RECT_PROCESS,
-                     "proxy.process.http.current_server_raw_transactions",
-                     RECD_INT, RECP_NON_PERSISTENT, (int) http_current_server_raw_transactions_stat, RecRawStatSyncSum);
-  HTTP_CLEAR_DYN_STAT(http_current_server_raw_transactions_stat);
   // Total connections stats
 
   RecRegisterRawStat(http_rsb, RECT_PROCESS,
@@ -343,26 +315,6 @@ register_stat_callbacks()
                      RECD_FLOAT, RECP_PERSISTENT, (int) http_transactions_per_server_con, RecRawStatSyncAvg);
 
   RecRegisterRawStat(http_rsb, RECT_PROCESS,
-                     "proxy.process.http.avg_transactions_per_parent_connection",
-                     RECD_FLOAT, RECP_PERSISTENT, (int) http_transactions_per_parent_con, RecRawStatSyncAvg);
-
-  RecRegisterRawStat(http_rsb, RECT_PROCESS,
-                     "proxy.process.http.client_connection_time",
-                     RECD_INT, RECP_PERSISTENT, (int) http_client_connection_time_stat, RecRawStatSyncSum);
-
-  RecRegisterRawStat(http_rsb, RECT_PROCESS,
-                     "proxy.process.http.parent_proxy_connection_time",
-                     RECD_INT, RECP_PERSISTENT, (int) http_parent_proxy_connection_time_stat, RecRawStatSyncSum);
-
-  RecRegisterRawStat(http_rsb, RECT_PROCESS,
-                     "proxy.process.http.server_connection_time",
-                     RECD_INT, RECP_PERSISTENT, (int) http_server_connection_time_stat, RecRawStatSyncSum);
-
-  RecRegisterRawStat(http_rsb, RECT_PROCESS,
-                     "proxy.process.http.cache_connection_time",
-                     RECD_INT, RECP_PERSISTENT, (int) http_cache_connection_time_stat, RecRawStatSyncSum);
-
-  RecRegisterRawStat(http_rsb, RECT_PROCESS,
                      "proxy.process.http.transaction_counts.errors.pre_accept_hangups",
                      RECD_COUNTER, RECP_PERSISTENT,
                      (int) http_ua_msecs_counts_errors_pre_accept_hangups_stat, RecRawStatSyncCount);
@@ -371,26 +323,6 @@ register_stat_callbacks()
                      "proxy.process.http.transaction_totaltime.errors.pre_accept_hangups",
                      RECD_FLOAT, RECP_PERSISTENT,
                      (int) http_ua_msecs_counts_errors_pre_accept_hangups_stat, RecRawStatSyncIntMsecsToFloatSeconds);
-
-  RecRegisterRawStat(http_rsb, RECT_PROCESS,
-                     "proxy.process.http.transaction_counts.errors.empty_hangups",
-                     RECD_COUNTER, RECP_PERSISTENT,
-                     (int) http_ua_msecs_counts_errors_empty_hangups_stat, RecRawStatSyncCount);
-
-  RecRegisterRawStat(http_rsb, RECT_PROCESS,
-                     "proxy.process.http.transaction_totaltime.errors.empty_hangups",
-                     RECD_FLOAT, RECP_PERSISTENT, (int) http_ua_msecs_counts_errors_empty_hangups_stat, RecRawStatSyncCount);
-
-  RecRegisterRawStat(http_rsb, RECT_PROCESS,
-                     "proxy.process.http.transaction_counts.errors.early_hangups",
-                     RECD_COUNTER, RECP_PERSISTENT,
-                     (int) http_ua_msecs_counts_errors_early_hangups_stat, RecRawStatSyncCount);
-
-  RecRegisterRawStat(http_rsb, RECT_PROCESS,
-                     "proxy.process.http.transaction_totaltime.errors.early_hangups",
-                     RECD_FLOAT, RECP_PERSISTENT, (int) http_ua_msecs_counts_errors_early_hangups_stat, RecRawStatSyncCount);
-
-
 
   // Transactional stats
 
@@ -459,10 +391,6 @@ register_stat_callbacks()
                      RECD_COUNTER, RECP_PERSISTENT, (int) http_extension_method_requests_stat, RecRawStatSyncCount);
 
   RecRegisterRawStat(http_rsb, RECT_PROCESS,
-                     "proxy.process.http.client_no_cache_requests",
-                     RECD_COUNTER, RECP_PERSISTENT, (int) http_client_no_cache_requests_stat, RecRawStatSyncCount);
-
-  RecRegisterRawStat(http_rsb, RECT_PROCESS,
                      "proxy.process.http.broken_server_connections",
                      RECD_COUNTER, RECP_PERSISTENT, (int) http_broken_server_connections_stat, RecRawStatSyncCount);
 
@@ -495,40 +423,8 @@ register_stat_callbacks()
                      RECD_COUNTER, RECP_PERSISTENT, (int) http_icp_suggested_lookups_stat, RecRawStatSyncCount);
 
   RecRegisterRawStat(http_rsb, RECT_PROCESS,
-                     "proxy.process.http.client_transaction_time",
-                     RECD_INT, RECP_PERSISTENT, (int) http_client_transaction_time_stat, RecRawStatSyncSum);
-
-  RecRegisterRawStat(http_rsb, RECT_PROCESS,
-                     "proxy.process.http.client_write_time",
-                     RECD_INT, RECP_PERSISTENT, (int) http_client_write_time_stat, RecRawStatSyncSum);
-
-  RecRegisterRawStat(http_rsb, RECT_PROCESS,
-                     "proxy.process.http.server_read_time",
-                     RECD_INT, RECP_PERSISTENT, (int) http_server_read_time_stat, RecRawStatSyncSum);
-
-  RecRegisterRawStat(http_rsb, RECT_PROCESS,
-                     "proxy.process.http.icp_transaction_time",
-                     RECD_INT, RECP_PERSISTENT, (int) http_icp_transaction_time_stat, RecRawStatSyncSum);
-
-  RecRegisterRawStat(http_rsb, RECT_PROCESS,
-                     "proxy.process.http.icp_raw_transaction_time",
-                     RECD_INT, RECP_PERSISTENT, (int) http_icp_raw_transaction_time_stat, RecRawStatSyncSum);
-
-  RecRegisterRawStat(http_rsb, RECT_PROCESS,
                      "proxy.process.http.parent_proxy_transaction_time",
                      RECD_INT, RECP_PERSISTENT, (int) http_parent_proxy_transaction_time_stat, RecRawStatSyncSum);
-
-  RecRegisterRawStat(http_rsb, RECT_PROCESS,
-                     "proxy.process.http.parent_proxy_raw_transaction_time",
-                     RECD_INT, RECP_PERSISTENT, (int) http_parent_proxy_raw_transaction_time_stat, RecRawStatSyncSum);
-
-  RecRegisterRawStat(http_rsb, RECT_PROCESS,
-                     "proxy.process.http.server_transaction_time",
-                     RECD_INT, RECP_PERSISTENT, (int) http_server_transaction_time_stat, RecRawStatSyncSum);
-
-  RecRegisterRawStat(http_rsb, RECT_PROCESS,
-                     "proxy.process.http.server_raw_transaction_time",
-                     RECD_INT, RECP_PERSISTENT, (int) http_server_raw_transaction_time_stat, RecRawStatSyncSum);
 
   RecRegisterRawStat(http_rsb, RECT_PROCESS,
                      "proxy.process.http.user_agent_request_header_total_size",
@@ -701,10 +597,6 @@ register_stat_callbacks()
   RecRegisterRawStat(http_rsb, RECT_PROCESS,
                      "proxy.process.http.total_transactions_time",
                      RECD_INT, RECP_PERSISTENT, (int) http_total_transactions_time_stat, RecRawStatSyncSum);
-
-  RecRegisterRawStat(http_rsb, RECT_PROCESS,
-                     "proxy.process.http.total_transactions_think_time",
-                     RECD_INT, RECP_PERSISTENT, (int) http_total_transactions_think_time_stat, RecRawStatSyncSum);
 
   RecRegisterRawStat(http_rsb, RECT_PROCESS,
                      "proxy.process.http.cache_hit_fresh",
@@ -881,6 +773,10 @@ register_stat_callbacks()
   RecRegisterRawStat(http_rsb, RECT_PROCESS,
                      "proxy.process.http.misc_user_agent_bytes_stat",
                      RECD_INT, RECP_PERSISTENT, (int) http_misc_user_agent_bytes_stat, RecRawStatSyncSum);
+
+  RecRegisterRawStat(http_rsb, RECT_PROCESS,
+                     "proxy.process.http.http_misc_origin_server_bytes_stat",
+                     RECD_INT, RECP_PERSISTENT, (int) http_misc_origin_server_bytes_stat, RecRawStatSyncSum);
 
   RecRegisterRawStat(http_rsb, RECT_PROCESS,
                      "proxy.process.http.background_fill_bytes_aborted_stat",
@@ -1208,7 +1104,6 @@ HttpConfig::startup()
 {
 
   http_rsb = RecAllocateRawStatBlock((int) http_stat_count);
-  register_configs();
   register_stat_callbacks();
 
   HttpConfigParams &c = m_master;
