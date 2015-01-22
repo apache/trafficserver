@@ -48,7 +48,9 @@ union semun
 #include <grp.h>
 
 static const long MAX_LOGIN =  sysconf(_SC_LOGIN_NAME_MAX) <= 0 ? _POSIX_LOGIN_NAME_MAX :  sysconf(_SC_LOGIN_NAME_MAX);
+#if TS_USE_COP_DEBUG
 static const char COP_TRACE_FILE[] = "/tmp/traffic_cop.trace";
+#endif
 
 #define OPTIONS_MAX     32
 #define OPTIONS_LEN_MAX 1024
