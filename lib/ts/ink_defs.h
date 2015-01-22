@@ -152,6 +152,7 @@ extern int on;
 */
 int ink_sys_name_release(char *name, int namelen, char *release, int releaselen);
 int ink_number_of_processors();
+int ink_login_name_max();
 
 #if TS_USE_HWLOC
 // Get the hardware topology

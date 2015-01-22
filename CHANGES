@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.0
 
+  *) [TS-3320] traffic_manager does not accept "#-1" as the admin user.
+
   *) [TS-3318] Remove mgmt/Web2/WebHttpSession.{cc,h}, it is not used.
 
   *) [TS-3243] Removing warnings from loading certificates with duplicated 

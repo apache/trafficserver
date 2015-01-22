@@ -113,7 +113,7 @@ extern "C" int plock(int);
 #define DEFAULT_REMOTE_MANAGEMENT_FLAG    0
 #define DIAGS_LOG_FILENAME                "diags.log"
 
-static const long MAX_LOGIN =  sysconf(_SC_LOGIN_NAME_MAX) <= 0 ? _POSIX_LOGIN_NAME_MAX :  sysconf(_SC_LOGIN_NAME_MAX);
+static const long MAX_LOGIN = ink_login_name_max();
 
 static void * mgmt_restart_shutdown_callback(void *, char *, int data_len);
 static void*  mgmt_storage_device_cmd_callback(void* x, char* data, int len);

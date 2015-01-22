@@ -136,3 +136,10 @@ ink_number_of_processors()
   return sysconf(_SC_NPROCESSORS_ONLN); // number of processing units (includes Hyper Threading)
 #endif
 }
+
+int
+ink_login_name_max()
+{
+  long value = sysconf(_SC_LOGIN_NAME_MAX);
+  return value <= 0 ? _POSIX_LOGIN_NAME_MAX : value;
+}

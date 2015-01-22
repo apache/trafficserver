@@ -373,6 +373,8 @@ millisleep(int ms) {
 int
 main(int argc, char **argv)
 {
+  const long MAX_LOGIN = ink_login_name_max();
+
   // Before accessing file system initialize Layout engine
   Layout::create();
   ink_strlcpy(mgmt_path, Layout::get()->sysconfdir, sizeof(mgmt_path));
@@ -398,7 +400,7 @@ main(int argc, char **argv)
   int proxy_backdoor = -1;
   char *envVar = NULL, *group_addr = NULL, *tsArgs = NULL;
   bool log_to_syslog = true;
-  char userToRunAs[80];
+  char userToRunAs[MAX_LOGIN + 1];
   RecInt fds_throttle = -1;
   time_t ticker;
   ink_thread webThrId;
@@ -554,7 +556,12 @@ main(int argc, char **argv)
   RecGetRecordInt("proxy.config.net.connections_throttle", &fds_throttle);
 
   set_process_limits(fds_throttle); // as root
-  runAsUser(userToRunAs);
+
+  // A user of #-1 means to not attempt to switch user. Yes, it's documented ;)
+  if (strcmp(userToRunAs, "#-1") != 0) {
+    runAsUser(userToRunAs);
+  }
+
   EnableCoreFile(true);
   check_lockfile();
 
