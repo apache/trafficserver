@@ -1,5 +1,6 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.0
+  *) [TS-3140] Traffic Server asserts during response redirect.
 
   *) [TS-3309] Document TLS session ticket rotation.
    Author: Bin Zeng <bzeng@linkedin.com>

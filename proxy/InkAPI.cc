@@ -4957,6 +4957,11 @@ TSHttpTxnSecondUrlTryLock(TSHttpTxn txnp)
   return TS_SUCCESS;
 }
 
+/*
+ * TSHttpTxnRedirectRequest is very odd.  It is only in experimental.h.  
+ * It is not used in any checked in code.  We should probably remove this.
+ * SKH 1/15/2015
+ */
 TSReturnCode
 TSHttpTxnRedirectRequest(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc url_loc)
 {
@@ -4991,8 +4996,6 @@ TSHttpTxnRedirectRequest(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc url_loc)
   r_url->copy(&u);
 
   s->hdr_info.server_request.destroy();
-  // we want to close the server session
-  s->api_release_server_session = true;
 
   s->request_sent_time = 0;
   s->response_received_time = 0;
