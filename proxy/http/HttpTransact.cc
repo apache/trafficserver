@@ -69,47 +69,6 @@ extern HttpBodyFactory *body_factory;
 
 static const char local_host_ip_str[] = "127.0.0.1";
 
-
-// someday, reduce the amount of duplicate code between this
-// function and _process_xxx_connection_field_in_outgoing_header
-inline static HTTPKeepAlive
-is_header_keep_alive(const HTTPVersion & http_version, const HTTPVersion & request_http_version, MIMEField* con_hdr    /*, bool* unknown_tokens */)
-{
-  enum
-  {
-    CON_TOKEN_NONE = 0,
-    CON_TOKEN_KEEP_ALIVE,
-    CON_TOKEN_CLOSE
-  };
-
-  int con_token = CON_TOKEN_NONE;
-  HTTPKeepAlive keep_alive = HTTP_NO_KEEPALIVE;
-  //    *unknown_tokens = false;
-
-  if (con_hdr) {
-    if (con_hdr->value_get_index("keep-alive", 10) >= 0)
-      con_token = CON_TOKEN_KEEP_ALIVE;
-    else if (con_hdr->value_get_index("close", 5) >= 0)
-      con_token = CON_TOKEN_CLOSE;
-  }
-
-  if (HTTPVersion(1, 0) == http_version) {
-    keep_alive = (con_token == CON_TOKEN_KEEP_ALIVE) ? (HTTP_KEEPALIVE) : (HTTP_NO_KEEPALIVE);
-  } else if (HTTPVersion(1, 1) == http_version) {
-    // We deviate from the spec here.  If the we got a response where
-    //   where there is no Connection header and the request 1.0 was
-    //   1.0 don't treat this as keep-alive since Netscape-Enterprise/3.6 SP1
-    //   server doesn't
-    keep_alive = ((con_token == CON_TOKEN_KEEP_ALIVE) ||
-                  (con_token == CON_TOKEN_NONE && HTTPVersion(1, 1) == request_http_version)) ? (HTTP_KEEPALIVE)
-      : (HTTP_NO_KEEPALIVE);
-  } else {
-    keep_alive = HTTP_NO_KEEPALIVE;
-  }
-
-  return (keep_alive);
-}
-
 inline static bool
 is_request_conditional(HTTPHdr* header)
 {
@@ -5468,14 +5427,7 @@ HttpTransact::initialize_state_variables_from_request(State* s, HTTPHdr* obsolet
   if (!s->txn_conf->keep_alive_enabled_in) {
     s->client_info.keep_alive = HTTP_NO_KEEPALIVE;
   } else {
-    // If there is a Proxy-Connection header use that, otherwise use the Connection header
-    if (pc != NULL) {
-      s->client_info.keep_alive = is_header_keep_alive(s->client_info.http_version, s->client_info.http_version, pc);
-    } else {
-      MIMEField *c = incoming_request->field_find(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION);
-
-      s->client_info.keep_alive = is_header_keep_alive(s->client_info.http_version, s->client_info.http_version, c);
-    }
+    s->client_info.keep_alive = incoming_request->keep_alive_get();
   }
 
   if (s->client_info.keep_alive == HTTP_KEEPALIVE && s->client_info.http_version == HTTPVersion(1, 1)) {
@@ -5582,23 +5534,7 @@ HttpTransact::initialize_state_variables_from_response(State* s, HTTPHdr* incomi
    *   if we sent "Connection: close"  We need check the response
    *   header regardless of what we sent to the server
    */
-  MIMEField *c_hdr;
-  if ((s->current.request_to != ORIGIN_SERVER) &&
-      (s->current.request_to == PARENT_PROXY ||
-       s->current.request_to == ICP_SUGGESTED_HOST)) {
-    c_hdr = s->hdr_info.server_response.field_find(MIME_FIELD_PROXY_CONNECTION, MIME_LEN_PROXY_CONNECTION);
-
-    // If there is a Proxy-Connection header use that,
-    //   otherwise use the Connection header
-    if (c_hdr == NULL) {
-      c_hdr = s->hdr_info.server_response.field_find(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION);
-    }
-  } else {
-    c_hdr = s->hdr_info.server_response.field_find(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION);
-  }
-
-  s->current.server->keep_alive = is_header_keep_alive(s->hdr_info.server_response.version_get(),
-                                                       s->hdr_info.server_request.version_get(), c_hdr);
+  s->current.server->keep_alive = s->hdr_info.server_response.keep_alive_get();
 
   // Don't allow an upgrade request to Keep Alive
   if (s->is_upgrade_request) {

@@ -680,11 +680,25 @@ HttpSM::state_read_client_request_header(int event, void *data)
   // We need to handle EOS as well as READ_READY because the client
   // may have sent all of the data already followed by a fIN and that
   // should be OK.
-  if ((event == VC_EVENT_READ_READY || event == VC_EVENT_EOS) &&
-      state == PARSE_ERROR &&
-      is_transparent_passthrough_allowed() &&
+  if (is_transparent_passthrough_allowed() &&
       ua_raw_buffer_reader != NULL) {
+    bool do_blind_tunnel = false;
+    // If we had a parse error and we're done reading data
+    // blind tunnel
+    if ((event == VC_EVENT_READ_READY || event == VC_EVENT_EOS) &&
+        state == PARSE_ERROR) {
+      do_blind_tunnel = true;
 
+    // If we had a GET request that has data after the
+    // get request, do blind tunnel
+    } else if (state == PARSE_DONE &&
+               t_state.hdr_info.client_request.method_get_wksidx() == 
+               HTTP_WKSIDX_GET &&
+               ua_raw_buffer_reader->read_avail() > 0 &&
+               !t_state.hdr_info.client_request.is_keep_alive_set()) {
+      do_blind_tunnel = true;
+    }
+    if (do_blind_tunnel) {
       DebugSM("http", "[%" PRId64 "] first request on connection failed parsing, switching to passthrough.", sm_id);
 
       t_state.transparent_passthrough = true;
@@ -703,6 +717,7 @@ HttpSM::state_read_client_request_header(int event, void *data)
         t_state.client_info.keep_alive = HTTP_NO_KEEPALIVE;
       }
       return 0;
+    }
   }
 
   // Check to see if we are done parsing the header

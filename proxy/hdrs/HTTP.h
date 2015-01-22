@@ -549,7 +549,7 @@ public:
 
   HTTPType type_get() const;
 
-  HTTPVersion version_get();
+  HTTPVersion version_get() const;
   void version_set(HTTPVersion version);
 
   const char *method_get(int *length);
@@ -662,6 +662,9 @@ public:
   // Utility routines
   bool is_cache_control_set(const char *cc_directive_wks);
   bool is_pragma_no_cache_set();
+  bool is_keep_alive_set() const;
+  HTTPKeepAlive keep_alive_get() const;
+
 
 protected:
   /** Load the target cache.
@@ -1006,10 +1009,69 @@ http_hdr_version_get(HTTPHdrImpl *hh)
   -------------------------------------------------------------------------*/
 
 inline HTTPVersion
-HTTPHdr::version_get()
+HTTPHdr::version_get() const
 {
   ink_assert(valid());
   return HTTPVersion(http_hdr_version_get(m_http));
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+inline static HTTPKeepAlive
+is_header_keep_alive(const HTTPVersion & http_version, const MIMEField* con_hdr)
+{
+  enum {
+    CON_TOKEN_NONE = 0,
+    CON_TOKEN_KEEP_ALIVE,
+    CON_TOKEN_CLOSE
+  };
+
+  int con_token = CON_TOKEN_NONE;
+  HTTPKeepAlive keep_alive = HTTP_NO_KEEPALIVE;
+  //    *unknown_tokens = false;
+
+  if (con_hdr) {
+    if (con_hdr->value_get_index("keep-alive", 10) >= 0)
+      con_token = CON_TOKEN_KEEP_ALIVE;
+    else if (con_hdr->value_get_index("close", 5) >= 0) 
+      con_token = CON_TOKEN_CLOSE;
+  }
+
+  if (HTTPVersion(1, 0) == http_version) {
+    keep_alive = (con_token == CON_TOKEN_KEEP_ALIVE) ? (HTTP_KEEPALIVE) : (HTTP_NO_KEEPALIVE);
+  } else if (HTTPVersion(1, 1) == http_version) {
+    // We deviate from the spec here.  If the we got a response where
+    //   where there is no Connection header and the request 1.0 was
+    //   1.0 don't treat this as keep-alive since Netscape-Enterprise/3.6 SP1
+    //   server doesn't
+    keep_alive = ((con_token == CON_TOKEN_KEEP_ALIVE) ||
+                  (con_token == CON_TOKEN_NONE && HTTPVersion(1, 1) == http_version)) ? (HTTP_KEEPALIVE)
+      : (HTTP_NO_KEEPALIVE);
+  } else {
+    keep_alive = HTTP_NO_KEEPALIVE;
+  }
+  return (keep_alive);
+}
+
+inline HTTPKeepAlive
+HTTPHdr::keep_alive_get() const
+{
+  HTTPKeepAlive retval = HTTP_NO_KEEPALIVE;
+  const MIMEField *pc = this->field_find(MIME_FIELD_PROXY_CONNECTION, MIME_LEN_PROXY_CONNECTION);
+  if (pc != NULL) {
+    retval = is_header_keep_alive(this->version_get(), pc);
+  } else {
+    const MIMEField *c = this->field_find(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION);
+    retval = is_header_keep_alive(this->version_get(), c);
+  }
+  return retval; 
+}
+
+inline bool
+HTTPHdr::is_keep_alive_set() const
+{
+  return this->keep_alive_get() == HTTP_KEEPALIVE;
 }
 
 /*-------------------------------------------------------------------------
