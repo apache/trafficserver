@@ -658,6 +658,9 @@ Value Effect
    Enables (``1``) or disables (``0``) the reuse of server sessions. The
    default (``2``) is similar to enabled, except it creates a server session
    pool per network thread. This has the best performance characteristics.
+   Note that setting this parameter to (``2``) will not work correctly unless
+   the dedicated SSL threads are disabled (:ts:cv `proxy.config.ssl.number.threads`
+   is set to (``-1``)).
 
 .. ts:cv:: CONFIG proxy.config.http.server_session_sharing.match STRING both
 
