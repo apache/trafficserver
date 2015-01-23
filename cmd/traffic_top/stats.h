@@ -254,6 +254,7 @@ public:
             if (TSRecordGetInt(item.name, &value) != TS_ERR_OKAY) {
               fprintf(stderr, "Error getting stat: %s when calling TSRecordGetInt() failed: file \"%s\", line %d\n\n",
                   item.name, __FILE__, __LINE__);
+              abort();
             }
             string key = item.name;
             char buffer[32];
