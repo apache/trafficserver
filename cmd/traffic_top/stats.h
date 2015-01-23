@@ -252,9 +252,9 @@ public:
             (*_stats)[key] = strValue;
           } else {
             if (TSRecordGetInt(item.name, &value) != TS_ERR_OKAY) {
-              fprintf(stderr, "Error getting stat: %s\n", item.name);
+              fprintf(stderr, "Error getting stat: %s when calling TSRecordGetInt() failed: file \"%s\", line %d\n\n",
+                  item.name, __FILE__, __LINE__);
             }
-            assert(TSRecordGetInt(item.name, &value) == TS_ERR_OKAY);
             string key = item.name;
             char buffer[32];
             sprintf(buffer, "%" PRId64, value);

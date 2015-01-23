@@ -125,6 +125,7 @@ close_UnixNetVConnection(UnixNetVConnection *vc, EThread *t)
     nh->write_enable_list.remove(vc);
     vc->write.in_enabled_list = 0;
   }
+  vc->remove_from_keep_alive_lru();
   vc->free(t);
 }
 
@@ -617,7 +618,6 @@ UnixNetVConnection::do_io_close(int alerrno /* = -1 */ )
   else
     closed = -1;
 
-  remove_from_keep_alive_lru();
   if (close_inline)
     close_UnixNetVConnection(this, t);
 }

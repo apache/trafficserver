@@ -35,25 +35,32 @@ extern "C" void fd_reify(struct ev_loop *);
 
 
 #ifndef INACTIVITY_TIMEOUT
+int update_cop_config(const char *name, RecDataT data_type, RecData data, void *cookie);
+
 // INKqa10496
 // One Inactivity cop runs on each thread once every second and
 // loops through the list of NetVCs and calls the timeouts
 class InactivityCop : public Continuation {
 public:
-  InactivityCop(ProxyMutex *m):Continuation(m), default_inactivity_timeout(0), total_connections(0) {
+  InactivityCop(ProxyMutex *m):Continuation(m), default_inactivity_timeout(0), total_connections_in(0),
+  max_connections_in(0), connections_per_thread_in(0) {
     SET_HANDLER(&InactivityCop::check_inactivity);
     REC_ReadConfigInteger(default_inactivity_timeout, "proxy.config.net.default_inactivity_timeout");
     Debug("inactivity_cop", "default inactivity timeout is set to: %d", default_inactivity_timeout);
+    REC_ReadConfigInt32(max_connections_in, "proxy.config.net.max_connections_in");
+    RecRegisterConfigUpdateCb("proxy.config.net.max_connections_in", update_cop_config, (void *)this);
   }
   int check_inactivity(int event, Event *e) {
     (void) event;
     ink_hrtime now = ink_get_hrtime();
     NetHandler &nh = *get_NetHandler(this_ethread());
-    total_connections = 0;
+    total_connections_in = 0;
     // Copy the list and use pop() to catch any closes caused by callbacks.
     forl_LL(UnixNetVConnection, vc, nh.open_list) {
       if (vc->thread == this_ethread()) {
-        ++total_connections;
+        if (vc->from_accept_thread == true) {
+          ++total_connections_in;
+        }
         nh.cop_list.push(vc);
       }
     }
@@ -98,38 +105,53 @@ public:
 
     return 0;
   }
+  void set_max_connections(const int32_t x) { max_connections_in = x; }
+  void set_connections_pre_thread(const int32_t x) { connections_per_thread_in = x; }
 private:
   void keep_alive_lru(NetHandler &nh, ink_hrtime now, Event *e);
   int default_inactivity_timeout;  // only used when one is not set for some bad reason
-  int total_connections;
+  int32_t total_connections_in;
+  int32_t max_connections_in;
+  int32_t connections_per_thread_in;
 };
+
+int
+update_cop_config(const char *name, RecDataT data_type, RecData data, void *cookie)
+{
+  if ((cookie != NULL) && (strcmp(name, "proxy.config.net.max_connections_in") == 0)) {
+    Debug("inactivity_cop_dynamic", "proxy.config.net.max_connections_in change: %" PRId64, data.rec_int);
+    InactivityCop *cop = static_cast<InactivityCop*>(cookie);
+    cop->set_max_connections(data.rec_int);
+    cop->set_connections_pre_thread(0);
+  }
+  return REC_ERR_OKAY;
+}
 
 void InactivityCop::keep_alive_lru(NetHandler &nh, const ink_hrtime now, Event *e)
 {
-  // get the configuration value for the maximum incoming connections and check to see if it is set
-  int32_t connections_per_thread = 0;
-  REC_ReadConfigInt32(connections_per_thread, "proxy.config.net.max_connections_in");
-  if (connections_per_thread <= 0) {
-    Debug("inactivity_cop_dynamic", "dynamic keep-alive not configured");
+  // maximum incoming connections is set to 0 then the feature is disabled
+  if (max_connections_in == 0) {
     return;
   }
 
-  // figure out the number of threads and calculate the number of connections per thread
-  const int event_threads = eventProcessor.n_threads_for_type[ET_NET];
-  const int ssl_threads = (ET_NET == SSLNetProcessor::ET_SSL) ? 0 :
-      eventProcessor.n_threads_for_type[SSLNetProcessor::ET_SSL];
-  connections_per_thread = connections_per_thread / (event_threads + ssl_threads);
+  if (connections_per_thread_in == 0) {
+    // figure out the number of threads and calculate the number of connections per thread
+    const int event_threads = eventProcessor.n_threads_for_type[ET_NET];
+    const int ssl_threads = (ET_NET == SSLNetProcessor::ET_SSL) ? 0 :
+        eventProcessor.n_threads_for_type[SSLNetProcessor::ET_SSL];
+    connections_per_thread_in = max_connections_in / (event_threads + ssl_threads);
+  }
 
   // calculate how many connections to close
-  int32_t to_process = total_connections - connections_per_thread;
+  int32_t to_process = total_connections_in - connections_per_thread_in;
   if (to_process <= 0) {
     return;
   }
   to_process = min((int32_t)nh.keep_alive_lru_size, to_process);
 
-  Debug("inactivity_cop_dynamic", "max cons: %d active: %d idle: %d process: %d net threads: %d ssl threads: %d"
-        "net type: %d ssl type: %d", connections_per_thread, total_connections - nh.keep_alive_lru_size,
-        nh.keep_alive_lru_size, to_process, event_threads, ssl_threads, ET_NET, SSLNetProcessor::ET_SSL);
+  Debug("inactivity_cop_dynamic", "max cons: %d active: %d idle: %d process: %d"
+        " net type: %d ssl type: %d", connections_per_thread_in, total_connections_in - nh.keep_alive_lru_size,
+        nh.keep_alive_lru_size, to_process, ET_NET, SSLNetProcessor::ET_SSL);
 
   // loop over the non-active connections and try to close them
   UnixNetVConnection *vc = nh.keep_alive_list.head;
@@ -140,8 +162,13 @@ void InactivityCop::keep_alive_lru(NetHandler &nh, const ink_hrtime now, Event *
   int total_idle_count = 0;
   for (int32_t i = 0; i < to_process && vc != NULL; ++i, vc = vc_next) {
     vc_next = vc->keep_alive_link.next;
-    if (vc->thread != this_ethread())
+    if (vc->thread != this_ethread()) {
       continue;
+    }
+    MUTEX_TRY_LOCK(lock, vc->mutex, this_ethread());
+    if (!lock.is_locked()) {
+      continue;
+    }
     ink_hrtime diff = (now - (vc->next_inactivity_timeout_at - vc->inactivity_timeout_in)) / HRTIME_SECOND;
     if (diff > 0) {
       total_idle_time += diff;
@@ -166,7 +193,8 @@ void InactivityCop::keep_alive_lru(NetHandler &nh, const ink_hrtime now, Event *
 
   if (total_idle_count > 0) {
     Debug("inactivity_cop_dynamic", "max cons: %d active: %d idle: %d already closed: %d, close event: %d"
-          "mean idle: %d\n", connections_per_thread, total_connections - nh.keep_alive_lru_size,
+          " mean idle: %d\n", connections_per_thread_in,
+          total_connections_in - nh.keep_alive_lru_size - closed - handle_event,
           nh.keep_alive_lru_size, closed, handle_event, total_idle_time / total_idle_count);
   }
 }
