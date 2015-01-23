@@ -1568,6 +1568,7 @@ ssl_index_certificate(SSLCertLookup * lookup, SSLCertContext const& cc, const ch
 
   // Insert a key for the subject CN.
   subject = X509_get_subject_name(cert);
+  ats_scoped_str subj_name;
   if (subject) {
     int pos = -1;
     for (;;) {
@@ -1578,10 +1579,10 @@ ssl_index_certificate(SSLCertLookup * lookup, SSLCertContext const& cc, const ch
 
       X509_NAME_ENTRY * e = X509_NAME_get_entry(subject, pos);
       ASN1_STRING * cn = X509_NAME_ENTRY_get_data(e);
-      ats_scoped_str name(asn1_strdup(cn));
+      subj_name = asn1_strdup(cn);
 
-      Debug("ssl", "mapping '%s' to certificate %s", (const char *) name, certfile);
-      lookup->insert(name, cc);
+      Debug("ssl", "mapping '%s' to certificate %s", (const char *) subj_name, certfile);
+      lookup->insert(subj_name, cc);
     }
   }
 
@@ -1596,8 +1597,11 @@ ssl_index_certificate(SSLCertLookup * lookup, SSLCertContext const& cc, const ch
       name = sk_GENERAL_NAME_value(names, i);
       if (name->type == GEN_DNS) {
         ats_scoped_str dns(asn1_strdup(name->d.dNSName));
-        Debug("ssl", "mapping '%s' to certificate %s", (const char *) dns, certfile);
-        lookup->insert(dns, cc);
+        // only try to insert if the alternate name is not the main name
+        if (strcmp(dns, subj_name) != 0) {
+          Debug("ssl", "mapping '%s' to certificate %s", (const char *) dns, certfile);
+          lookup->insert(dns, cc);
+        }
       }
     }
 
