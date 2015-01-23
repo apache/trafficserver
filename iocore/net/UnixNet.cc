@@ -116,7 +116,7 @@ private:
 };
 
 int
-update_cop_config(const char *name, RecDataT data_type, RecData data, void *cookie)
+update_cop_config(const char *name, RecDataT data_type ATS_UNUSED, RecData data, void *cookie)
 {
   if ((cookie != NULL) && (strcmp(name, "proxy.config.net.max_connections_in") == 0)) {
     Debug("inactivity_cop_dynamic", "proxy.config.net.max_connections_in change: %" PRId64, data.rec_int);
