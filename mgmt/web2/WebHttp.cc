@@ -38,7 +38,6 @@
 #include "WebHttp.h"
 #include "WebHttpContext.h"
 #include "WebHttpMessage.h"
-#include "WebHttpSession.h"
 #include "WebOverview.h"
 
 #include "mgmtapi.h"
@@ -469,9 +468,6 @@ WebHttpInit()
   // initialize file bindings
   g_file_bindings_ht = ink_hash_table_create(InkHashTableKeyType_String);
   ink_hash_table_insert(g_file_bindings_ht, "/synthetic.txt", (void *) handle_synthetic);
-
-  // initialize other modules
-  WebHttpSessionInit();
 }
 
 //-------------------------------------------------------------------------

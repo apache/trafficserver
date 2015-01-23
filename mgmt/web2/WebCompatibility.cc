@@ -201,27 +201,3 @@ WebFileGetDateGmt(WebHandle h_file)
   return date;
 
 }
-
-//-------------------------------------------------------------------------
-// WebSeedRand
-//-------------------------------------------------------------------------
-
-void
-WebSeedRand(long seed)
-{
-  srand48(seed);
-  return;
-
-}
-
-//-------------------------------------------------------------------------
-// WebRand
-//-------------------------------------------------------------------------
-
-long
-WebRand()
-{
-  // we may want to fix this later
-  // coverity[secure_coding]
-  return lrand48();
-}

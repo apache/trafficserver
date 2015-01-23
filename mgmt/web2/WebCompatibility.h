@@ -79,11 +79,4 @@ int WebFileImport_Xmalloc(const char *file, char **file_buf, int *file_size);
 int WebFileGetSize(WebHandle h_file);
 time_t WebFileGetDateGmt(WebHandle h_file);
 
-//-------------------------------------------------------------------------
-// Random Numbers
-//-------------------------------------------------------------------------
-
-void WebSeedRand(long seed);
-long WebRand();
-
 #endif // _WEB_COMPATIBILITY_H_
