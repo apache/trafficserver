@@ -7742,6 +7742,7 @@ HttpTransact::build_response(State* s, HTTPHdr* base_response, HTTPHdr* outgoing
           for (size_t i = 0; i < sizeof(field_len) / sizeof(field_len[0]); i++) {
             if (base_response->presence(field_presence[i])) {
               field = base_response->field_find(field_name[i], field_len[i]);
+              ink_assert(field != NULL);
               value = field->value_get(&len);
               outgoing_response->value_append(field_name[i], field_len[i], value, len, 0);
             }
