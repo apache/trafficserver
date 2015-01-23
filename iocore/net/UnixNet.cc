@@ -181,7 +181,6 @@ void InactivityCop::keep_alive_lru(NetHandler &nh, const ink_hrtime now, Event *
           vc, nh.keep_alive_lru_size, ink_hrtime_to_sec(now), ink_hrtime_to_sec(vc->next_inactivity_timeout_at),
           ink_hrtime_to_sec(vc->inactivity_timeout_in), diff);
     if (vc->closed) {
-      vc->remove_from_keep_alive_lru();
       close_UnixNetVConnection(vc, e->ethread);
       ++closed;
     } else {
