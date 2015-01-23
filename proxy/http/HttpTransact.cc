@@ -5572,6 +5572,7 @@ HttpTransact::initialize_state_variables_from_response(State* s, HTTPHdr* incomi
 
   if (incoming_response->presence(MIME_PRESENCE_TRANSFER_ENCODING)) {
     MIMEField *field = incoming_response->field_find(MIME_FIELD_TRANSFER_ENCODING, MIME_LEN_TRANSFER_ENCODING);
+    ink_assert(field != NULL);
 
     HdrCsvIter enc_val_iter;
     int enc_val_len;
