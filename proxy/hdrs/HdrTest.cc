@@ -608,6 +608,12 @@ HdrTest::test_mime()
   StrList slist;
 
   cc_field = hdr.field_find("Cache-Control", 13);
+
+  if (cc_field == NULL) {
+    printf("FAILED: missing Cache-Control header\n\n");
+    return (failures_to_status("test_mime", 1));
+  }
+
   // TODO: Do we need to check the "count" returned?
   cc_field->value_get_comma_list(&slist); // FIX: correct usage?
 
