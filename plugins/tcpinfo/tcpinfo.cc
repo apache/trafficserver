@@ -238,6 +238,7 @@ tcp_info_hook(TSCont contp, TSEvent event, void *edata)
 
   // no need to run rand if we are always going log (100%)
   if (config->sample < 1000) {
+    // coverity[dont_call]
     random = rand() % 1000;
     TSDebug("tcpinfo", "random: %d, config->sample: %d", random, config->sample);
   }
