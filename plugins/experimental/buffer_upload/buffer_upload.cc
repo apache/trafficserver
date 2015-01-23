@@ -885,6 +885,7 @@ attach_pvc_plugin(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
 
     if (uconfig->use_disk_buffer) {
       char path[500];
+      // coverity[dont_call]
       int index = (int) (random() % uconfig->subdir_num);
 
       sprintf(path, "%s/%02X/tmp-XXXXXX", uconfig->base_dir, index);
