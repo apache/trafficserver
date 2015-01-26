@@ -3615,13 +3615,15 @@ MIMEFieldBlockImpl::unmarshal(intptr_t offset)
   for (uint32_t index = 0; index < m_freetop; index++) {
     MIMEField *field = &(m_field_slots[index]);
 
-    // FIX ME - DO I NEED TO DEAL WITH OTHER READINESSES?
     if (field->is_live()) {
       HDR_UNMARSHAL_STR(field->m_ptr_name, offset);
       HDR_UNMARSHAL_STR(field->m_ptr_value, offset);
       if (field->m_next_dup) {
         HDR_UNMARSHAL_PTR(field->m_next_dup, MIMEField, offset);
       }
+    } else {
+      // Clear out other types of slots
+      field->m_readiness = MIME_FIELD_SLOT_READINESS_EMPTY;
     }
 
   }
