@@ -134,7 +134,7 @@ static char *make_vol_map(Vol *d)
         break;
       }
       while (e) {
-        if (dir_offset(e)) {
+        if (dir_offset(e) && dir_valid(d, e) && dir_agg_valid(d, e) && dir_head(e)) {
             off_t offset = vol_offset(d, e) - start_offset;
             if (offset <= vol_len) vol_map[offset / SCAN_BUF_SIZE] = 1;
         }
@@ -179,7 +179,7 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     scan_vol_map = make_vol_map(vol);
     io.aiocb.aio_offset = next_in_map(vol, scan_vol_map, vol_offset_to_offset(vol, 0));
     if (io.aiocb.aio_offset >= (off_t)(vol->skip + vol->len))
-      goto Ldone;
+      goto Lnext_vol;
     io.aiocb.aio_nbytes = SCAN_BUF_SIZE;
     io.aiocb.aio_buf = buf->data();
     io.action = this;
@@ -347,6 +347,7 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   }
 
   if (io.aiocb.aio_offset >= vol->skip + vol->len) {
+Lnext_vol:
     SET_HANDLER(&CacheVC::scanVol);
     eventProcessor.schedule_in(this, HRTIME_MSECONDS(scan_msec_delay));
     return EVENT_CONT;
