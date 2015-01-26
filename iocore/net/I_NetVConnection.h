@@ -185,7 +185,7 @@ struct NetVCOptions {
     IpEndpoint ip;
 
     // Literal IPv4 and IPv6 addresses are not permitted in "HostName".(rfc6066#section-3)
-    if (ats_ip_pton(ts::ConstBuffer(name, len), &ip) != 0) {
+    if (name && len && ats_ip_pton(ts::ConstBuffer(name, len), &ip) != 0) {
       sni_servername = ats_strndup(name, len);
     } else {
       sni_servername = NULL;
