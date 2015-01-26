@@ -136,21 +136,7 @@ overviewRecord::updateStatus(time_t currentTime, ClusterPeerInfo * cpi)
   }
 }
 
-// bool overviewRecord::ipMatch(char* ipStr)
-//
-//   Returns true if the passed in string matches
-//     the ip address for this node
-bool
-overviewRecord::ipMatch(char *ipStr)
-{
-  if (inet_addr(ipStr) == inetAddr) {
-    return true;
-  } else {
-    return false;
-  }
-}
-
-//  overview::readCounter, overview::readInteger
+// overview::readInteger
 //
 //  Accessor functions for node records.  For remote node,
 //    we get the value in the node_data array we maintain
@@ -161,32 +147,6 @@ overviewRecord::ipMatch(char *ipStr)
 //  Locking should be done by overviewPage::accessLock.
 //  CALLEE is responsible for obtaining and releasing the lock
 //
-RecCounter
-overviewRecord::readCounter(const char *name, bool * found)
-{
-  RecCounter rec = 0;
-  int rec_status = REC_ERR_OKAY;
-  int order = -1;
-  if (localNode == false) {
-    rec_status = RecGetRecordOrderAndId(name, &order, NULL);
-    if (rec_status == REC_ERR_OKAY) {
-      order -= node_rec_first_ix; // Offset
-      ink_release_assert(order < node_rec_data.num_recs);
-      ink_assert(order < node_rec_data.num_recs);
-      rec = node_rec_data.recs[order].data.rec_counter;
-    } else {
-      mgmt_log(stderr, "node variables '%s' not found!\n");
-    }
-  }
-
-  if (found) {
-    *found = (rec_status == REC_ERR_OKAY);
-  } else {
-    mgmt_log(stderr, "node variables '%s' not found!\n");
-  }
-  return rec;
-}
-
 RecInt
 overviewRecord::readInteger(const char *name, bool * found)
 {
@@ -303,137 +263,6 @@ overviewRecord::readData(RecDataT varType, const char *name, bool * found)
     mgmt_log(stderr, "node variables '%s' not found!\n");
   }
   return rec;
-}
-
-// bool overviewRecord::varStrFromName (char*, char*bufVal, char*, int)
-//
-//  Accessor function for node records.  Looks up varName for
-//    this node and if found, turns it value into a string
-//    and places it in bufVal
-//
-//  return true if bufVal was succefully set
-//    and false otherwise
-//
-//  EVIL ALERT: varStrFromName in WebMgmtUtils.cc is extremely
-//    similar to this function except in how it gets it's
-//    data.  Changes to this fuction must be propogated
-//    to its twin.  Cut and Paste sucks but there is not
-//    an easy way to merge the functions
-//
-bool
-overviewRecord::varStrFromName(const char *varNameConst, char *bufVal, int bufLen)
-{
-  char *varName;
-  RecDataT varDataType;
-  bool found = true;
-  int varNameLen;
-  char formatOption = '\0';
-
-  union
-  {
-    MgmtIntCounter counter_data;        /* Data */
-    MgmtInt int_data;
-    MgmtFloat float_data;
-    MgmtString string_data;
-  } data;
-
-  // Check to see if there is a \ option on the end of variable
-  //   \ options indicate that we need special formatting
-  //   of the results.  Supported \ options are
-  //
-  ///  b - bytes.  Ints and Counts only.  Amounts are
-  //       transformed into one of GB, MB, KB, or B
-  //
-  varName = ats_strdup(varNameConst);
-  varNameLen = strlen(varName);
-  if (varNameLen > 3 && varName[varNameLen - 2] == '\\') {
-    formatOption = varName[varNameLen - 1];
-
-    // Now that we know the format option, terminate the string
-    //   to make the option disappear
-    varName[varNameLen - 2] = '\0';
-
-    // Return not found for unknown format options
-    if (formatOption != 'b' && formatOption != 'm' && formatOption != 'c' && formatOption != 'p') {
-      ats_free(varName);
-      return false;
-    }
-  }
-  if (RecGetRecordDataType(varName, &varDataType) == REC_ERR_FAIL) {
-    ats_free(varName);
-    return false;
-  }
-
-  switch (varDataType) {
-  case RECD_INT:
-    data.int_data = this->readInteger(varName, &found);
-    if (formatOption == 'b') {
-      bytesFromInt(data.int_data, bufVal);
-    } else if (formatOption == 'm') {
-      MbytesFromInt(data.int_data, bufVal);
-    } else if (formatOption == 'c') {
-      commaStrFromInt(data.int_data, bufVal);
-    } else {
-      snprintf(bufVal, bufLen, "%" PRId64 "", data.int_data);
-    }
-    break;
-  case RECD_COUNTER:
-    data.counter_data = this->readCounter(varName, &found);
-    if (formatOption == 'b') {
-      bytesFromInt((MgmtInt) data.counter_data, bufVal);
-    } else if (formatOption == 'm') {
-      MbytesFromInt((MgmtInt) data.counter_data, bufVal);
-    } else if (formatOption == 'c') {
-      commaStrFromInt(data.counter_data, bufVal);
-    } else {
-      snprintf(bufVal, bufLen, "%" PRId64 "", data.counter_data);
-    }
-    break;
-  case RECD_FLOAT:
-    data.float_data = this->readFloat(varName, &found);
-    if (formatOption == 'p') {
-      percentStrFromFloat(data.float_data, bufVal);
-    } else {
-      snprintf(bufVal, bufLen, "%.2f", data.float_data);
-    }
-    break;
-  case RECD_STRING:
-    data.string_data = this->readString(varName, &found);
-    if (data.string_data == NULL) {
-      bufVal[0] = '\0';
-    } else {
-      ink_strlcpy(bufVal, data.string_data, bufLen);
-    }
-    ats_free(data.string_data);
-    break;
-  case RECD_NULL:
-  default:
-    found = false;
-    break;
-  }
-
-  ats_free(varName);
-  return found;
-}
-
-bool
-overviewRecord::varCounterFromName(const char *name, MgmtIntCounter * value)
-{
-  bool found = false;
-
-  if (value)
-    *value = readCounter((char *) name, &found);
-  return found;
-}
-
-bool
-overviewRecord::varIntFromName(const char *name, MgmtInt * value)
-{
-  bool found = false;
-
-  if (value)
-    *value = readInteger((char *) name, &found);
-  return found;
 }
 
 bool

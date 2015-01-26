@@ -70,31 +70,25 @@
 //    should be returned as a copy (or a const ptr)
 //    through an accessor function
 
-enum PowerLampState
-{ LAMP_ON, LAMP_OFF, LAMP_WARNING };
-
 // information about a specific node in the cluster
 class overviewRecord
 {
 public:
   overviewRecord(unsigned long inet_addr, bool local, ClusterPeerInfo * cpi = NULL);
-   ~overviewRecord();
+
+  ~overviewRecord();
+
   void updateStatus(time_t currentTime, ClusterPeerInfo * cpi);
-  void getStatus(char **hotsname, bool * up, bool * alarms, PowerLampState * proxyUp);
-  bool ipMatch(char *ipStr);    // is this the ip address of this node
+
   bool up;
   bool localNode;
   char *hostname;               // FQ hostname of the node
   unsigned long inetAddr;       // IP address of the node
-  bool varStrFromName(const char *varName, char *bufVal, int bufLen);
-  RecCounter readCounter(const char *name, bool * found);
   RecInt readInteger(const char *name, bool * found);
   RecFloat readFloat(const char *name, bool * found);
   RecString readString(const char *name, bool * found);
   RecData readData(RecDataT varType, const char *name, bool * found);
-  bool varIntFromName(const char *varName, RecInt * value);
   bool varFloatFromName(const char *varName, RecFloat * value);
-  bool varCounterFromName(const char *varName, RecCounter * value);
 
 private:
   RecRecords node_rec_data;   // a copy from ClusterPeerInfo
