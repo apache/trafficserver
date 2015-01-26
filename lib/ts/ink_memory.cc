@@ -238,7 +238,8 @@ _xstrdup(const char *str, int length, const char* /* path ATS_UNUSED */)
     if (unlikely(length == 0)) {
       *newstr = '\0';
     } else {
-      ink_strlcpy(newstr, str, length + 1);
+      strncpy(newstr, str, length); // we cannot do length + 1 because the string isn't
+      newstr[length] = '\0'; // guaranteeed to be null terminated!
     }
     return newstr;
   }

@@ -4802,7 +4802,8 @@ HttpSM::do_http_server_open(bool raw)
     DebugSM("http", "calling sslNetProcessor.connect_re");
     int len = 0;
     const char * host = t_state.hdr_info.server_request.host_get(&len);
-    opt.set_sni_servername(host, len);
+    if (host && len > 0)
+      opt.set_sni_servername(host, len);
     connect_action_handle = sslNetProcessor.connect_re(this,    // state machine
                                                        &t_state.current.server->addr.sa,    // addr + port
                                                        &opt);
