@@ -29,56 +29,38 @@
 
 **************************************************************************/
 #include "P_EventSystem.h"
+#include "Diags.h"
 
 ClassAllocator<ProxyMutex> mutexAllocator("mutexAllocator");
 
-// #define ERROR_CONFIG_TAG_LOCKS
-
-#ifdef ERROR_CONFIG_TAG_LOCKS
-#include "Diags.h"
-#endif
-
-#ifdef DEBUG  // debug build needs lock_* functions
-#undef INK_NO_LOCKS
-#endif
-
 void
-lock_waiting(const char *file, int line, const char *handler)
+lock_waiting(const SrcLoc& srcloc, const char *handler)
 {
-  (void) file;
-  (void) line;
-  (void) handler;
-#ifdef ERROR_CONFIG_TAG_LOCKS
-  if (is_diags_on("locks"))
-    fprintf(stderr, "WARNING: waiting on lock %s:%d for %s\n",
-            file ? file : "UNKNOWN", line, handler ? handler : "UNKNOWN");
-#endif
+  if (is_diags_on("locks")) {
+    char buf[128];
+    fprintf(stderr, "WARNING: waiting on lock %s for %s\n",
+            srcloc.str(buf, sizeof(buf)), handler ? handler : "UNKNOWN");
+  }
 }
 
 void
-lock_holding(const char *file, int line, const char *handler)
+lock_holding(const SrcLoc& srcloc, const char *handler)
 {
-  (void) file;
-  (void) line;
-  (void) handler;
-#ifdef ERROR_CONFIG_TAG_LOCKS
-  if (is_diags_on("locks"))
-    fprintf(stderr, "WARNING: holding lock %s:%d too long for %s\n",
-            file ? file : "UNKNOWN", line, handler ? handler : "UNKNOWN");
-#endif
+  if (is_diags_on("locks")) {
+    char buf[128];
+    fprintf(stderr, "WARNING: holding lock %s too long for %s\n",
+            srcloc.str(buf, sizeof(buf)), handler ? handler : "UNKNOWN");
+    }
 }
 
 void
-lock_taken(const char *file, int line, const char *handler)
+lock_taken(const SrcLoc& srcloc, const char *handler)
 {
-  (void) file;
-  (void) line;
-  (void) handler;
-#ifdef ERROR_CONFIG_TAG_LOCKS
-  if (is_diags_on("locks"))
-    fprintf(stderr, "WARNING: lock %s:%d taken too many times for %s\n",
-            file ? file : "UNKNOWN", line, handler ? handler : "UNKNOWN");
-#endif
+  if (is_diags_on("locks")) {
+    char buf[128];
+    fprintf(stderr, "WARNING: lock %s taken too many times for %s\n",
+            srcloc.str(buf, sizeof(buf)), handler ? handler : "UNKNOWN");
+  }
 }
 
 #ifdef LOCK_CONTENTION_PROFILING

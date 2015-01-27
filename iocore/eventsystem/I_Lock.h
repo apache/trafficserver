@@ -49,7 +49,7 @@
 
 */
 #  ifdef DEBUG
-#    define MUTEX_LOCK(_l,_m,_t) MutexLock _l(__FILE__,__LINE__,NULL,_m,_t)
+#    define MUTEX_LOCK(_l,_m,_t) MutexLock _l(DiagsMakeLocation(),NULL,_m,_t)
 #  else
 #    define MUTEX_LOCK(_l,_m,_t) MutexLock _l(_m,_t)
 #  endif //DEBUG
@@ -69,7 +69,7 @@
 
 */
 #    define MUTEX_TRY_LOCK(_l,_m,_t) \
-MutexTryLock _l(__FILE__,__LINE__,(char*)NULL,_m,_t)
+MutexTryLock _l(DiagsMakeLocation(),(char*)NULL,_m,_t)
 
 /**
   Attempts to acquire the lock to the ProxyMutex.
@@ -86,7 +86,7 @@ MutexTryLock _l(__FILE__,__LINE__,(char*)NULL,_m,_t)
 
 */
 #    define MUTEX_TRY_LOCK_SPIN(_l,_m,_t,_sc) \
-MutexTryLock _l(__FILE__,__LINE__,(char*)NULL,_m,_t,_sc)
+MutexTryLock _l(DiagsMakeLocation(),(char*)NULL,_m,_t,_sc)
 
 /**
   Attempts to acquire the lock to the ProxyMutex.
@@ -104,7 +104,7 @@ MutexTryLock _l(__FILE__,__LINE__,(char*)NULL,_m,_t,_sc)
 */
 
 #    define MUTEX_TRY_LOCK_FOR(_l,_m,_t,_c) \
-MutexTryLock _l(__FILE__,__LINE__,NULL,_m,_t)
+MutexTryLock _l(DiagsMakeLocation(),NULL,_m,_t)
 #  else //DEBUG
 #    define MUTEX_TRY_LOCK(_l,_m,_t) MutexTryLock _l(_m,_t)
 #    define MUTEX_TRY_LOCK_SPIN(_l,_m,_t,_sc) MutexTryLock _l(_m,_t,_sc)
@@ -129,11 +129,11 @@ MutexTryLock _l(__FILE__,__LINE__,NULL,_m,_t)
 // DEPRECATED DEPRECATED DEPRECATED
 #ifdef DEBUG
 #  define MUTEX_TAKE_TRY_LOCK(_m,_t) \
-Mutex_trylock(__FILE__,__LINE__,(char*)NULL,_m,_t)
+Mutex_trylock(DiagsMakeLocation(),(char*)NULL,_m,_t)
 #  define MUTEX_TAKE_TRY_LOCK_FOR(_m,_t,_c) \
-Mutex_trylock(__FILE__,__LINE__,(char*)NULL,_m,_t)
+Mutex_trylock(DiagsMakeLocation(),(char*)NULL,_m,_t)
 #  define MUTEX_TAKE_TRY_LOCK_FOR_SPIN(_m,_t,_c,_sc) \
-Mutex_trylock_spin(__FILE__,__LINE__,NULL,_m,_t,_sc)
+Mutex_trylock_spin(DiagsMakeLocation(),NULL,_m,_t,_sc)
 #else
 #  define MUTEX_TAKE_TRY_LOCK(_m,_t) Mutex_trylock(_m,_t)
 #  define MUTEX_TAKE_TRY_LOCK_FOR(_m,_t,_c) Mutex_trylock(_m,_t)
@@ -143,9 +143,9 @@ Mutex_trylock_spin(_m,_t,_sc)
 
 #ifdef DEBUG
 #  define MUTEX_TAKE_LOCK(_m,_t)\
-Mutex_lock(__FILE__,__LINE__,(char*)NULL,_m,_t)
+Mutex_lock(DiagsMakeLocation(),(char*)NULL,_m,_t)
 #  define MUTEX_TAKE_LOCK_FOR(_m,_t,_c) \
-Mutex_lock(__FILE__,__LINE__,NULL,_m,_t)
+Mutex_lock(DiagsMakeLocation(),NULL,_m,_t)
 #else
 #  define MUTEX_TAKE_LOCK(_m,_t) Mutex_lock(_m,_t)
 #  define MUTEX_TAKE_LOCK_FOR(_m,_t,_c) Mutex_lock(_m,_t)
@@ -159,9 +159,11 @@ class EThread;
 typedef EThread *EThreadPtr;
 typedef volatile EThreadPtr VolatileEThreadPtr;
 
-inkcoreapi extern void lock_waiting(const char *file, int line, const char *handler);
-inkcoreapi extern void lock_holding(const char *file, int line, const char *handler);
-extern void lock_taken(const char *file, int line, const char *handler);
+#if DEBUG
+inkcoreapi extern void lock_waiting(const SrcLoc&, const char *handler);
+inkcoreapi extern void lock_holding(const SrcLoc&, const char *handler);
+inkcoreapi extern void lock_taken(const SrcLoc&, const char *handler);
+#endif
 
 /**
   Lock object used in continuations and threads.
@@ -215,8 +217,7 @@ public:
 
 #ifdef DEBUG
   ink_hrtime hold_time;
-  const char *file;
-  int line;
+  SrcLoc srcloc;
   const char *handler;
 
 #  ifdef MAX_LOCK_TAKEN
@@ -242,13 +243,14 @@ public:
 
   */
   ProxyMutex()
+#ifdef DEBUG
+    : srcloc(NULL, NULL, 0)
+#endif
   {
     thread_holding = NULL;
     nthread_holding = 0;
 #ifdef DEBUG
     hold_time = 0;
-    file = NULL;
-    line = 0;
     handler = NULL;
 #  ifdef MAX_LOCK_TAKEN
     taken = 0;
@@ -285,7 +287,7 @@ extern inkcoreapi ClassAllocator<ProxyMutex> mutexAllocator;
 inline bool
 Mutex_trylock(
 #ifdef DEBUG
-               const char *afile, int aline, const char *ahandler,
+               const SrcLoc& location, const char *ahandler,
 #endif
                ProxyMutex * m, EThread * t)
 {
@@ -295,7 +297,7 @@ Mutex_trylock(
   if (m->thread_holding != t) {
     if (!ink_mutex_try_acquire(&m->the_mutex)) {
 #ifdef DEBUG
-      lock_waiting(m->file, m->line, m->handler);
+      lock_waiting(m->srcloc, m->handler);
 #ifdef LOCK_CONTENTION_PROFILING
       m->unsuccessful_nonblocking_acquires++;
       m->nonblocking_acquires++;
@@ -307,8 +309,7 @@ Mutex_trylock(
     }
     m->thread_holding = t;
 #ifdef DEBUG
-    m->file = afile;
-    m->line = aline;
+    m->srcloc = location;
     m->handler = ahandler;
     m->hold_time = ink_get_hrtime();
 #ifdef MAX_LOCK_TAKEN
@@ -331,7 +332,7 @@ Mutex_trylock(
 inline bool
 Mutex_trylock_spin(
 #ifdef DEBUG
-                    const char *afile, int aline, const char *ahandler,
+                    const SrcLoc& location, const char *ahandler,
 #endif
                     ProxyMutex * m, EThread * t, int spincnt = 1)
 {
@@ -345,7 +346,7 @@ Mutex_trylock_spin(
     } while (--spincnt);
     if (!locked) {
 #ifdef DEBUG
-      lock_waiting(m->file, m->line, m->handler);
+      lock_waiting(m->srcloc, m->handler);
 #ifdef LOCK_CONTENTION_PROFILING
       m->unsuccessful_nonblocking_acquires++;
       m->nonblocking_acquires++;
@@ -358,8 +359,7 @@ Mutex_trylock_spin(
     m->thread_holding = t;
     ink_assert(m->thread_holding);
 #ifdef DEBUG
-    m->file = afile;
-    m->line = aline;
+    m->srcloc = location;
     m->handler = ahandler;
     m->hold_time = ink_get_hrtime();
 #ifdef MAX_LOCK_TAKEN
@@ -382,7 +382,7 @@ Mutex_trylock_spin(
 inline int
 Mutex_lock(
 #ifdef DEBUG
-            const char *afile, int aline, const char *ahandler,
+            const SrcLoc& location, const char *ahandler,
 #endif
             ProxyMutex * m, EThread * t)
 {
@@ -393,8 +393,7 @@ Mutex_lock(
     m->thread_holding = t;
     ink_assert(m->thread_holding);
 #ifdef DEBUG
-    m->file = afile;
-    m->line = aline;
+    m->srcloc = location;
     m->handler = ahandler;
     m->hold_time = ink_get_hrtime();
 #ifdef MAX_LOCK_TAKEN
@@ -422,13 +421,12 @@ Mutex_unlock(ProxyMutex * m, EThread * t)
     if (!m->nthread_holding) {
 #ifdef DEBUG
       if (ink_get_hrtime() - m->hold_time > MAX_LOCK_TIME)
-        lock_holding(m->file, m->line, m->handler);
+        lock_holding(m->srcloc, m->handler);
 #ifdef MAX_LOCK_TAKEN
       if (m->taken > MAX_LOCK_TAKEN)
-        lock_taken(m->file, m->line, m->handler);
+        lock_taken(m->srcloc, m->handler);
 #endif //MAX_LOCK_TAKEN
-      m->file = NULL;
-      m->line = 0;
+      m->srcloc = SrcLoc(NULL, NULL, 0);
       m->handler = NULL;
 #endif //DEBUG
       ink_assert(m->thread_holding);
@@ -448,13 +446,13 @@ private:
 public:
   MutexLock(
 #ifdef DEBUG
-             const char *afile, int aline, const char *ahandler,
+             const SrcLoc& location, const char *ahandler,
 #endif                          //DEBUG
              ProxyMutex * am, EThread * t):m(am)
   {
     Mutex_lock(
 #ifdef DEBUG
-                afile, aline, ahandler,
+                location, ahandler,
 #endif //DEBUG
                 m, t);
   }
@@ -476,26 +474,26 @@ private:
 public:
   MutexTryLock(
 #ifdef DEBUG
-                  const char *afile, int aline, const char *ahandler,
+                  const SrcLoc& location, const char *ahandler,
 #endif                          //DEBUG
                   ProxyMutex * am, EThread * t) : m(am)
   {
       lock_acquired = Mutex_trylock(
 #ifdef DEBUG
-                                     afile, aline, ahandler,
+                                     location, ahandler,
 #endif //DEBUG
                                      m, t);
   }
 
   MutexTryLock(
 #ifdef DEBUG
-                const char *afile, int aline, const char *ahandler,
+                const SrcLoc& location, const char *ahandler,
 #endif                          //DEBUG
                 ProxyMutex * am, EThread * t, int sp) : m(am)
   {
       lock_acquired = Mutex_trylock_spin(
 #ifdef DEBUG
-                                          afile, aline, ahandler,
+                                          location, ahandler,
 #endif //DEBUG
                                           m, t, sp);
   }

@@ -107,14 +107,24 @@ class SrcLoc
 public:
   const char *file;
   const char *func;
-  const int line;
+  int line;
 
   bool valid() const {
     return file && line;
   }
 
+  SrcLoc(const SrcLoc& rhs) : file(rhs.file), func(rhs.func), line(rhs.line) {
+  }
+
   SrcLoc(const char *_file, const char *_func, int _line)
     : file(_file), func(_func), line(_line) {
+  }
+
+  SrcLoc& operator=(const SrcLoc& rhs) {
+    this->file = rhs.file;
+    this->func = rhs.func;
+    this->line = rhs.line;
+    return *this;
   }
 
   char * str(char *buf, int buflen) const;
