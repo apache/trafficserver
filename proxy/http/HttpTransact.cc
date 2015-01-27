@@ -4962,7 +4962,10 @@ HttpTransact::get_ka_info_from_config(State *s, ConnectionAttributes *server_inf
     // FALL THROUGH
   case HttpConfigParams::SEND_HTTP11_IF_REQUEST_11_AND_HOSTDB:
     server_info->http_version = HTTPVersion(1, 0);
-    check_hostdb = true;
+    if (s->hdr_info.client_request.version_get() == HTTPVersion(1, 1)) {
+      // check hostdb only if client req is http/1.1
+      check_hostdb = true;
+    }
     break;
   }
   DebugTxn("http_trans", "get_ka_info_from_config, server_info->http_version %d, check_hostdb %d",
