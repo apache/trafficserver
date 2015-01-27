@@ -297,17 +297,13 @@ Alarms::signalAlarm(alarm_t a, const char *desc, const char *ip)
     p++;
   if (*p == '\n')
     *p = '\0';
-  char *new_desc;
-  const size_t new_desc_size = sizeof(char) * (strlen(desc) + strlen(my_ctime_str) + 4);
-  ink_assert(new_desc = (char *) alloca(new_desc_size));
-  snprintf(new_desc, new_desc_size, "[%s] %s", my_ctime_str, desc);
-  desc = new_desc;
-  ats_free(atmp->description);
-  const size_t atmp_desc_size = sizeof(char) * (strlen(desc) + 1);
-  atmp->description = (char *)ats_malloc(atmp_desc_size);
-  ink_strlcpy(atmp->description, desc, atmp_desc_size);
-  ink_mutex_release(&mutex);
 
+  const size_t sz = sizeof(char) * (strlen(desc) + strlen(my_ctime_str) + 4);
+  ats_free(atmp->description);
+  atmp->description = (char *)ats_malloc(sz);
+  snprintf(atmp->description, sz, "[%s] %s", my_ctime_str, desc);
+
+  ink_mutex_release(&mutex);
 
   for (entry = ink_hash_table_iterator_first(cblist, &iterator_state);
        entry != NULL; entry = ink_hash_table_iterator_next(cblist, &iterator_state)) {

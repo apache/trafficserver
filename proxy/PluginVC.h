@@ -135,7 +135,7 @@ private:
   void process_read_side(bool);
   void process_write_side(bool);
   void process_close();
-  void process_timeout(Event * e, int event_to_send, Event ** our_eptr);
+  void process_timeout(Event ** e, int event_to_send);
 
   void setup_event_cb(ink_hrtime in, Event ** e_ptr);
 

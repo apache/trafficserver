@@ -2832,7 +2832,7 @@ CacheVC::removeEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     if (!f.remove_aborted_writers) {
       if (vol->open_write(this, true, 1)) {
         // writer  exists
-        ink_assert(od = vol->open_read(&key));
+        ink_release_assert(od = vol->open_read(&key));
         od->dont_update_directory = 1;
         od = NULL;
       } else {
