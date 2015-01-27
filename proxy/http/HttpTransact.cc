@@ -4941,7 +4941,7 @@ HttpTransact::get_ka_info_from_config(State *s, ConnectionAttributes *server_inf
   // the origin server, and search_keepalive_to().      //
   ////////////////////////////////////////////////////////
   bool check_hostdb = false;
-  if (server_info->http_version != HTTPVersion(0, 9)) {
+  if (server_info->http_version > HTTPVersion(0, 9)) {
     DebugTxn("http_trans", "get_ka_info_from_config, version already set server_info->http_version %d",
             server_info->http_version.m_version);
     return false;
