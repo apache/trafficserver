@@ -2389,12 +2389,13 @@ Sockets
 
         TCP_NODELAY (1)
         SO_KEEPALIVE (2)
+        SO_LINGER (4) - with a timeout of 0 seconds
 
    .. note::
 
-       This is a flag and you look at the bits set. Therefore,
-       you must set the value to ``3`` if you want to enable both options
-       above.
+       This is a bitmask and you need to decide what bits to set.  Therefore,
+       you must set the value to ``3`` if you want to enable nodely and
+       keepalive options above.
 
 .. ts:cv:: CONFIG proxy.config.net.sock_send_buffer_size_out INT 0
 
@@ -2411,12 +2412,17 @@ Sockets
 
         TCP_NODELAY (1)
         SO_KEEPALIVE (2)
+        SO_LINGER (4) - with a timeout of 0 seconds
 
    .. note::
 
-        This is a flag and you look at the bits set. Therefore,
-        you must set the value to ``3`` if you want to enable both options
-        above.
+       This is a bitmask and you need to decide what bits to set.  Therefore,
+       you must set the value to ``3`` if you want to enable nodely and
+       keepalive options above.
+
+       When SO_LINGER is enalbed, the linger timeout time is set to 0.
+       This setting is useful on outgoing connections when there is port
+       exhaustion between ATS and the origin server.
 
 .. ts:cv:: CONFIG proxy.config.net.sock_mss_in INT 0
 
