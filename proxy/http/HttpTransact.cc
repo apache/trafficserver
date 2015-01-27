@@ -4963,7 +4963,7 @@ HttpTransact::get_ka_info_from_config(State *s, ConnectionAttributes *server_inf
     }
     break;
   default:
-    // The default is the "1" config, SEND_HTTP11_ALWAYS.
+    // The default is the "1" config, SEND_HTTP11_ALWAYS, but assert in debug builds since we shouldn't be here
     ink_assert(0);
     // FALL THROUGH in a release build
   case HttpConfigParams::SEND_HTTP11_ALWAYS:
@@ -5007,7 +5007,7 @@ HttpTransact::get_ka_info_from_host_db(State *s, ConnectionAttributes *server_in
     }
     break;
   default:
-    // The default is the "1" config, SEND_HTTP11_ALWAYS
+    // The default is the "1" config, SEND_HTTP11_ALWAYS, but assert in debug builds since we shouldn't be here
     ink_assert(0);
     // FALL THROUGH in a release build
   case HttpConfigParams::SEND_HTTP11_ALWAYS:
