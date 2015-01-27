@@ -138,9 +138,7 @@ Git sources.
     cd /opt/ats
     sudo bin/traffic_server -R 1
 
-You are now ready to configure and run your Traffic Server installation.
-
-.. _start-traffic-server:
+.. _build-traffic-server-with-spdy:
 
 Building Traffic Server with SPDY
 =================================
@@ -164,6 +162,10 @@ building a fresh Traffic Server with SPDY enabled from Git sources.
    with an additional option --enable-spdy as below  ::
 
     ./configure --enable-spdy
+
+You are now ready to configure and run your Traffic Server installation.
+
+.. _start-traffic-server:
 
 Start Traffic Server
 ====================
