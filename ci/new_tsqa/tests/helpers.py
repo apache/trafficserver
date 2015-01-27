@@ -14,6 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 import os
+import tempfile
 
 import tsqa.environment
 import tsqa.test_cases
@@ -39,7 +40,7 @@ class EnvironmentCase(tsqa.test_cases.EnvironmentCase):
         This function is responsible for returning an environment
         '''
         SOURCE_DIR = os.path.realpath(os.path.join(__file__, '..', '..', '..', '..'))
-        TMP_DIR = '/tmp/tsqa/'
+        TMP_DIR = os.path.join(tempfile.gettempdir(), 'tsqa')
         ef = tsqa.environment.EnvironmentFactory(SOURCE_DIR,
                                                  os.path.join(TMP_DIR, 'base_envs'),
                                                  default_configure={'enable-example-plugins': None,
