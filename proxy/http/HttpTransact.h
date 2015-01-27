@@ -1296,6 +1296,7 @@ public:
 
   // Utility Methods
   static void issue_revalidate(State* s);
+  static bool get_ka_info_from_config(State* s, ConnectionAttributes* server_info);
   static void get_ka_info_from_host_db(State* s, ConnectionAttributes* server_info, ConnectionAttributes* client_info,
                                        HostDBInfo* host_db_info);
   static bool service_transaction_in_proxy_only_mode(State* s);

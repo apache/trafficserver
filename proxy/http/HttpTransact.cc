@@ -2603,7 +2603,9 @@ HttpTransact::HandleCacheOpenReadHit(State* s)
     }
 
     if (server_up || s->stale_icp_lookup) {
-      if (!s->stale_icp_lookup && !ats_is_ip(&s->current.server->addr)) {
+      bool check_hostdb = get_ka_info_from_config(s, s->current.server);
+      DebugTxn("http_trans", "CacheOpenReadHit - check_hostdb %d", check_hostdb);
+      if (!s->stale_icp_lookup && (check_hostdb || !ats_is_ip(&s->current.server->addr))) {
 //        ink_release_assert(s->current.request_to == PARENT_PROXY ||
 //                    s->http_config_param->no_dns_forward_to_parent != 0);
 
@@ -2629,6 +2631,7 @@ HttpTransact::HandleCacheOpenReadHit(State* s)
         }
       }
 
+      DebugTxn("http_trans", "CacheOpenReadHit - version %d", s->current.server->http_version.m_version);
       build_request(s, &s->hdr_info.client_request, &s->hdr_info.server_request, s->current.server->http_version);
 
       issue_revalidate(s);
@@ -4926,6 +4929,53 @@ HttpTransact::merge_warning_header(HTTPHdr* cached_header, HTTPHdr* response_hea
 
     r_warn = r_warn->m_next_dup;
   }
+}
+
+bool
+HttpTransact::get_ka_info_from_config(State *s, ConnectionAttributes *server_info)
+{
+  ////////////////////////////////////////////////////////
+  // Set the keep-alive and version flags for later use //
+  // in request construction                            //
+  // this is also used when opening a connection to     //
+  // the origin server, and search_keepalive_to().      //
+  ////////////////////////////////////////////////////////
+  bool check_hostdb = false;
+  if (server_info->http_version != HTTPVersion(0, 9)) {
+    DebugTxn("http_trans", "get_ka_info_from_config, version already set server_info->http_version %d",
+            server_info->http_version.m_version);
+    return false;
+  }
+  switch (s->txn_conf->send_http11_requests) {
+  case HttpConfigParams::SEND_HTTP11_NEVER:
+    server_info->http_version = HTTPVersion(1, 0);
+    break;
+  case HttpConfigParams::SEND_HTTP11_ALWAYS:
+    server_info->http_version = HTTPVersion(1, 1);
+    break;
+  case HttpConfigParams::SEND_HTTP11_UPGRADE_HOSTDB:
+    server_info->http_version = HTTPVersion(1, 0);
+    check_hostdb = true;
+    break;
+  default:
+    ink_assert(0);
+    // FALL THROUGH
+  case HttpConfigParams::SEND_HTTP11_IF_REQUEST_11_AND_HOSTDB:
+    server_info->http_version = HTTPVersion(1, 0);
+    check_hostdb = true;
+    break;
+  }
+  DebugTxn("http_trans", "get_ka_info_from_config, server_info->http_version %d, check_hostdb %d",
+            server_info->http_version.m_version, check_hostdb);
+  /////////////////////////////
+  // origin server keep_alive //
+  /////////////////////////////
+  if (s->txn_conf->keep_alive_enabled_out) {
+    server_info->keep_alive = HTTP_KEEPALIVE;
+  } else {
+    server_info->keep_alive = HTTP_NO_KEEPALIVE;
+  }
+  return check_hostdb;
 }
 
 void
