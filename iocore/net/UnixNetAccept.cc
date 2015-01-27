@@ -283,7 +283,11 @@ NetAccept::do_blocking_accept(EThread * t)
 
 #if TS_HAS_IP_TOS
       if (packet_tos != 0) {
-        safe_setsockopt(con.fd, IPPROTO_IP, IP_TOS, reinterpret_cast<char *>(&packet_tos), sizeof(uint32_t));
+        if (con.addr.isIp4()) {
+          safe_setsockopt(con.fd, IPPROTO_IP, IP_TOS, reinterpret_cast<char *>(&packet_tos), sizeof(uint32_t));
+        } else if (con.addr.isIp6()) {
+          safe_setsockopt(con.fd, IPPROTO_IPV6, IPV6_TCLASS, reinterpret_cast<char *>(&packet_tos), sizeof(uint32_t));
+        }
       }
 #endif
 
@@ -420,7 +424,11 @@ NetAccept::acceptFastEvent(int event, void *ep)
 
 #if TS_HAS_IP_TOS
       if (packet_tos != 0) {
-        safe_setsockopt(fd, IPPROTO_IP, IP_TOS, reinterpret_cast<char *>(&packet_tos), sizeof(uint32_t));
+        if (con.addr.isIp4()) {
+          safe_setsockopt(con.fd, IPPROTO_IP, IP_TOS, reinterpret_cast<char *>(&packet_tos), sizeof(uint32_t));
+        } else if (con.addr.isIp6()) {
+          safe_setsockopt(con.fd, IPPROTO_IPV6, IPV6_TCLASS, reinterpret_cast<char *>(&packet_tos), sizeof(uint32_t));
+        }
       }
 #endif
       do {
