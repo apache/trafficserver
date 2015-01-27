@@ -2394,7 +2394,7 @@ Sockets
    .. note::
 
        This is a bitmask and you need to decide what bits to set.  Therefore,
-       you must set the value to ``3`` if you want to enable nodely and
+       you must set the value to ``3`` if you want to enable nodelay and
        keepalive options above.
 
 .. ts:cv:: CONFIG proxy.config.net.sock_send_buffer_size_out INT 0
@@ -2417,7 +2417,7 @@ Sockets
    .. note::
 
        This is a bitmask and you need to decide what bits to set.  Therefore,
-       you must set the value to ``3`` if you want to enable nodely and
+       you must set the value to ``3`` if you want to enable nodelay and
        keepalive options above.
 
        When SO_LINGER is enalbed, the linger timeout time is set to 0.
