@@ -142,6 +142,29 @@ You are now ready to configure and run your Traffic Server installation.
 
 .. _start-traffic-server:
 
+Building Traffic Server with SPDY
+=================================
+
+Traffic Server v5.0.x and above support SPDY. The following instructions demonstrate
+building a fresh Traffic Server with SPDY enabled from Git sources.
+
+#. Clone the spdylay Git repository from tatsuhiro. ::
+
+    git clone https://github.com/tatsuhiro-t/spdylay
+
+#. The below steps will build spdylay library and set the PKG_CONFIG_PATH ::
+
+    cd spdylay/
+    autoreconf -if
+    ./configure --prefix=/opt/spdylay
+    make install
+    export PKG_CONFIG_PATH=/opt/spdylay/lib/pkgconfig/
+
+#. Finally, you can build trafficserver following the steps in the previous section along
+   with an additional option --enable-spdy as below  ::
+
+    ./configure --enable-spdy
+
 Start Traffic Server
 ====================
 
