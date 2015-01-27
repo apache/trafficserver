@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.0
 
+  *) [TS-3330] Several broken stats
+
   *) [TS-3326] apply proxy.config.http.send_http11_requests when hostdb is
    skipped.
 
