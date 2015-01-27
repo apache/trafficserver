@@ -275,32 +275,25 @@ ssl_rm_cached_session(SSL_CTX *ctx, SSL_SESSION *sess)
   session_cache->removeSession(sid);
 }
 
-
-
 #if TS_USE_TLS_SNI
-
-static int
-ssl_servername_callback(SSL * ssl, int * ad, void * /*arg*/)
+int 
+set_context_cert(SSL *ssl) 
 {
   SSL_CTX *           ctx = NULL;
   SSLCertContext *    cc = NULL;
-  // Fetching the lookup via the callback arg allows for race
-  // condition with reconfigure
-  //SSLCertLookup *     lookup = (SSLCertLookup *) arg;
   SSLCertLookup *lookup = SSLCertificateConfig::acquire();
   const char *        servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
   SSLNetVConnection * netvc = (SSLNetVConnection *)SSL_get_app_data(ssl);
   bool found = true;
-  bool reenabled;
-  int retval = SSL_TLSEXT_ERR_OK;
+  int retval = 1;
 
-  Debug("ssl", "ssl_servername_callback ssl=%p ad=%d server=%s handshake_complete=%d", ssl, *ad, servername,
+  Debug("ssl", "set_context_cert ssl=%p server=%s handshake_complete=%d", ssl, servername,
     netvc->getSSLHandShakeComplete());
 
   // catch the client renegotiation early on
   if (SSLConfigParams::ssl_allow_client_renegotiation == false && netvc->getSSLHandShakeComplete()) {
-    Debug("ssl", "ssl_servername_callback trying to renegotiate from the client");
-    retval = SSL_TLSEXT_ERR_ALERT_FATAL;
+    Debug("ssl", "set_context_cert trying to renegotiate from the client");
+    retval = 0; // Error 
     goto done;
   }
 
@@ -311,14 +304,9 @@ ssl_servername_callback(SSL * ssl, int * ad, void * /*arg*/)
     cc = lookup->find((char *)servername);
     if (cc && cc->ctx) ctx = cc->ctx;
     if (cc && SSLCertContext::OPT_TUNNEL == cc->opt && netvc->get_is_transparent()) {
-#ifdef SSL_TLSEXT_ERR_READ_AGAIN
       netvc->attributes = HttpProxyPort::TRANSPORT_BLIND_TUNNEL;
       netvc->setSSLHandShakeComplete(true);
-      retval = SSL_TLSEXT_ERR_READ_AGAIN;
-#else
-      Error("Must have openssl patch to support OPT_TUNNEL from SNI callback");
-      retval = SSL_TLSEXT_ERR_ALERT_FATAL;
-#endif
+      retval = -1;
       goto done;
     }
   }
@@ -341,11 +329,66 @@ ssl_servername_callback(SSL * ssl, int * ad, void * /*arg*/)
   }
 
   ctx = SSL_get_SSL_CTX(ssl);
-  Debug("ssl", "ssl_servername_callback %s SSL context %p for requested name '%s'", found ? "found" : "using", ctx, servername);
+  Debug("ssl", "ssl_cert_callback %s SSL context %p for requested name '%s'", found ? "found" : "using", ctx, servername);
 
   if (ctx == NULL) {
-    retval = SSL_TLSEXT_ERR_NOACK;
+    retval = 0;
     goto done;
+  }
+done:
+  SSLCertificateConfig::release(lookup);
+  return retval;
+}
+
+// Use the certificate callback for openssl 1.0.2 and greater
+// otherwise use the SNI callback
+#if OPENSSL_VERSION_NUMBER >= 0x1000200fL
+/**
+ * Called before either the server or the client certificate is used
+ * Return 1 on success, 0 on error, or -1 to pause
+ */
+static int
+ssl_cert_callback(SSL * ssl, void * /*arg*/)
+{
+  SSLNetVConnection * netvc = (SSLNetVConnection *)SSL_get_app_data(ssl);
+  bool reenabled;
+  int retval =  1;
+
+  // Do the common certificate lookup only once.  If we pause
+  // and restart processing, do not execute the common logic again
+  if (!netvc->calledHooks(TS_SSL_CERT_HOOK)) {
+    retval = set_context_cert(ssl); 
+    if (retval != 1) {
+      return retval;
+    }
+  }
+
+  // Call the plugin cert code
+  reenabled = netvc->callHooks(TS_SSL_CERT_HOOK);
+  // If it did not re-enable, return the code to
+  // stop the accept processing
+  if (!reenabled){
+    retval = -1; // Pause
+  }
+
+  // Return 1 for success, 0 for error, or -1 to pause
+  return retval;
+}
+#else
+static int
+ssl_servername_callback(SSL * ssl, int * /* ad */, void * /*arg*/)
+{
+  SSLNetVConnection * netvc = (SSLNetVConnection *)SSL_get_app_data(ssl);
+  bool reenabled;
+  int retval = 1;
+
+  // Do the common certificate lookup only once.  If we pause
+  // and restart processing, do not execute the common logic again
+  if (!netvc->calledHooks(TS_SSL_CERT_HOOK)) {
+    retval = set_context_cert(ssl); 
+    if (retval != 1) {
+      goto done;
+    }
   }
 
   // Call the plugin SNI code
@@ -353,41 +396,34 @@ ssl_servername_callback(SSL * ssl, int * ad, void * /*arg*/)
   // If it did not re-enable, return the code to
   // stop the accept processing
   if (!reenabled){
-#ifdef SSL_TLSEXT_ERR_READ_AGAIN
-    retval = SSL_TLSEXT_ERR_READ_AGAIN;
-#else
-    Error("Must have openssl patch to support OPT_TUNNEL from SNI callback");
-    retval = SSL_TLSEXT_ERR_ALERT_FATAL;
-#endif
-    goto done;
+    retval = -1;
   }
 
 done:
-  SSLCertificateConfig::release(lookup);
-  // We need to return one of the SSL_TLSEXT_ERR constants. If we return an
-  // error, we can fill in *ad with an alert code to propgate to the
-  // client, see SSL_AD_*.
+  // Map 1 to SSL_TLSEXT_ERR_OK
+  // Map 0 to SSL_TLSEXT_ERR_ALERT_FATAL
+  // Map -1 to SSL_TLSEXT_ERR_READ_AGAIN, if present
+  switch (retval) {
+  case 1:
+    retval = SSL_TLSEXT_ERR_OK;
+    break;
+  case -1:
+#ifdef SSL_TLSEXT_ERR_READ_AGAIN
+    retval = SSL_TLSEXT_ERR_READ_AGAIN;
+#else
+    Error("Cannot pause SNI processsing with this version of openssl");
+    retval = SSL_TLSEXT_ERR_ALERT_FATAL;
+#endif
+    break;
+  case 0:
+  default:
+    retval = SSL_TLSEXT_ERR_ALERT_FATAL;
+    break;
+  }
   return retval;
 }
-
+#endif
 #endif /* TS_USE_TLS_SNI */
-
-static SSL_CTX *
-ssl_context_enable_sni(SSL_CTX * ctx, SSLCertLookup * /*lookup*/)
-{
-#if TS_USE_TLS_SNI
-  if (ctx) {
-    Debug("ssl", "setting SNI callbacks with for ctx %p", ctx);
-    SSL_CTX_set_tlsext_servername_callback(ctx, ssl_servername_callback);
-    // Possible race conditions against reconfigure here
-    // Better to use the SSLCertificate.acquire function to access the
-    // lookup data structure safely
-    //SSL_CTX_set_tlsext_servername_arg(ctx, lookup);
-  }
-
-#endif /* TS_USE_TLS_SNI */
-  return ctx;
-}
 
 /* Build 2048-bit MODP Group with 256-bit Prime Order Subgroup from RFC 5114 */
 static DH *get_dh2048()
@@ -1643,20 +1679,28 @@ ssl_callback_info(const SSL *ssl, int where, int ret)
   }
 }
 
-static bool
+static void 
+setSslHandshakeCallbacks(SSL_CTX *ctx) {
+  // Make sure the callbacks are set 
+#if OPENSSL_VERSION_NUMBER >= 0x1000200fL
+  SSL_CTX_set_cert_cb(ctx, ssl_cert_callback, NULL);
+#else
+  SSL_CTX_set_tlsext_servername_callback(ctx, ssl_servername_callback);
+#endif
+}
+
+static SSL_CTX *
 ssl_store_ssl_context(
     const SSLConfigParams * params,
     SSLCertLookup *         lookup,
     const ssl_user_config & sslMultCertSettings)
 {
-  SSL_CTX *   ctx;
+  SSL_CTX *   ctx = SSLInitServerContext(params, sslMultCertSettings);
   ats_scoped_str  certpath;
   ats_scoped_str  session_key_path;
 
-  ctx = ssl_context_enable_sni(SSLInitServerContext(params, sslMultCertSettings), lookup);
-  if (!ctx) {
-    return false;
-  }
+  // The certificate callbacks are set by the caller only 
+  // for the default certificate
 
   SSL_CTX_set_info_callback(ctx, ssl_callback_info);
 
@@ -1728,7 +1772,7 @@ ssl_store_ssl_context(
     SSLConfigParams::init_ssl_ctx_cb(ctx, true);
   }
 
-  return true;
+  return ctx;
 }
 
 static bool
@@ -1848,7 +1892,7 @@ SSLParseCertificateConfiguration(const SSLConfigParams * params, SSLCertLookup *
                      __func__, params->configFilePath, line_num, errPtr);
       } else {
         if (ssl_extract_certificate(&line_info, sslMultiCertSettings)) {
-          if (!ssl_store_ssl_context(params, lookup, sslMultiCertSettings)) {
+          if (ssl_store_ssl_context(params, lookup, sslMultiCertSettings) == NULL) {
             Error("failed to load SSL certificate specification from %s line %u",
                 params->configFilePath, line_num);
           }
@@ -1869,9 +1913,11 @@ SSLParseCertificateConfiguration(const SSLConfigParams * params, SSLCertLookup *
   if (lookup->ssl_default == NULL) {
     ssl_user_config sslMultiCertSettings;
     sslMultiCertSettings.addr = ats_strdup("*");
-    ssl_store_ssl_context(params, lookup, sslMultiCertSettings);
+    SSL_CTX *ctx = ssl_store_ssl_context(params, lookup, sslMultiCertSettings);
+    if (ctx != NULL) {
+      setSslHandshakeCallbacks(ctx);
+    }
   }
-
   return true;
 }
 

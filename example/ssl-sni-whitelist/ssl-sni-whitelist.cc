@@ -27,7 +27,7 @@
 # include <memory.h>
 # include <inttypes.h>
 # include <ts/ts.h>
-# include <ink_config.h>
+# include <ts/ink_config.h>
 # include <tsconfig/TsValue.h>
 # include <openssl/ssl.h>
 # include <getopt.h>
@@ -142,7 +142,7 @@ TSPluginInit(int argc, const char *argv[])
   } else if (0 == (cb_sni = TSContCreate(&CB_servername_whitelist, TSMutexCreate()))) {
     TSError(PCP "Failed to create SNI callback.");
   } else {
-    TSHttpHookAdd(TS_SSL_SNI_HOOK, cb_sni);
+    TSHttpHookAdd(TS_SSL_CERT_HOOK, cb_sni);
     success = true;
   }
 

@@ -30,7 +30,7 @@
 # include <memory.h>
 # include <inttypes.h>
 # include <ts/ts.h>
-# include <ink_config.h>
+# include <ts/ink_config.h>
 # include <tsconfig/TsValue.h>
 # include <openssl/ssl.h>
 # include <getopt.h>
@@ -130,7 +130,7 @@ TSPluginInit(int argc, const char *argv[])
 {
   bool success = false;
   TSPluginRegistrationInfo info;
-  TSCont cb_sni = 0; // sni callback continuation
+  TSCont cb_cert = 0; // Certificate callback continuation
   static const struct option longopt[] = {
     { const_cast<char *>("config"), required_argument, NULL, 'c' },
     { NULL, no_argument, NULL, '\0' }
@@ -162,10 +162,10 @@ TSPluginInit(int argc, const char *argv[])
     TSError(PCP "requires Traffic Server 2.0 or later.");
   } else if (0 > Load_Configuration()) {
     TSError(PCP "Failed to load config file.");
-  } else if (0 == (cb_sni = TSContCreate(&CB_servername, TSMutexCreate()))) {
-    TSError(PCP "Failed to create SNI callback.");
+  } else if (0 == (cb_cert = TSContCreate(&CB_servername, TSMutexCreate()))) {
+    TSError(PCP "Failed to create cert callback.");
   } else {
-    TSHttpHookAdd(TS_SSL_SNI_HOOK, cb_sni);
+    TSHttpHookAdd(TS_SSL_CERT_HOOK, cb_cert);
     success = true;
   }
 

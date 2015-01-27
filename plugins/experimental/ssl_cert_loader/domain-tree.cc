@@ -97,8 +97,8 @@ DomainNameTree::DomainNameNode *DomainNameTree::find(std::string key, bool best_
   }
 
   bool set_iter = false;
-  std::deque<DomainNameNode *>::iterator sibPtr;
   DomainNameNode *current_node = root;
+  std::deque<DomainNameNode *>::iterator sibPtr, endPtr;
 
   while (current_node != NULL) {
     bool partial_match = false;
@@ -110,6 +110,7 @@ DomainNameTree::DomainNameNode *DomainNameTree::find(std::string key, bool best_
         if (NULL == first || retval->order < first->order) {
           first = retval;
         }
+        current_node = NULL;
         break;
       } else if (relative < 0) {
         retval = current_node;
@@ -122,12 +123,15 @@ DomainNameTree::DomainNameNode *DomainNameTree::find(std::string key, bool best_
     if (partial_match) {
       // Check out the children, maybe there is something better there
       sibPtr = current_node->children.begin();
+      endPtr = current_node->children.end();
       set_iter = true;
-      if (sibPtr == current_node->children.end()) break;  // We are done
+      if (sibPtr == endPtr) {
+        break;  // We are done
+      }
       current_node = *(sibPtr++);
     } else { // No match here.  Look at next sibling?
       // Is there another sibling to look at?
-      if (set_iter && sibPtr != current_node->children.end()) {
+      if (set_iter && sibPtr != endPtr) {
         current_node = *(sibPtr++);
       } else {	// No more siblings to check, give it up.
         break;
