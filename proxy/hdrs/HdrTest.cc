@@ -419,20 +419,18 @@ HdrTest::test_url()
     "/finance/external/cbsm/*http://cbs.marketwatch.com/archive/19990713/news/current/net.htx?source=blq/yhoo&dist=yhoo",
     "http://a.b.com/xx.jpg?newpath=http://bob.dave.com"
   };
-  static int nstrs = sizeof(strs) / sizeof(strs[0]);
 
   static char const* bad[] = {
     "http://[1:2:3:4:5:6:7:8:9]",
     "http://1:2:3:4:5:6:7:8:A:B",
     "http://bob.com[::1]",
-    "http://[::1].com"
+    "http://[::1].com",
     "http://foo:bar:baz@bob.com/",
     "http://foo:bar:baz@[::1]:8080/",
     "http://]",
     "http://:",
     "http:/"
   };
-  static int nbad = sizeof(bad) / sizeof(bad[0]);
 
   int err, failed;
   URL url;
@@ -443,7 +441,7 @@ HdrTest::test_url()
   bri_box("test_url");
 
   failed = 0;
-  for (i = 0; i < nstrs; i++) {
+  for (i = 0; i < countof(strs); i++) {
     old_length = (int) strlen(strs[i]);
     start = strs[i];
     end = start + old_length;
@@ -489,7 +487,7 @@ HdrTest::test_url()
     url.destroy();
   }
 
-  for (i = 0 ; i < nbad ; ++i) {
+  for (i = 0 ; i < countof(bad) ; ++i) {
     char const* x = bad[i];
     url.create(NULL);
     err = url.parse(x, strlen(x));
@@ -505,7 +503,7 @@ HdrTest::test_url()
   if (!failed) {
     Note("URL performance test start");
     for (int j = 0 ; j < 100000 ; ++j) {
-      for (i = 0 ; i < nstrs ; ++i) {
+      for (i = 0 ; i < countof(strs) ; ++i) {
         char const* x = strs[i];
         url.create(NULL);
         err = url.parse(x, strlen(x));
