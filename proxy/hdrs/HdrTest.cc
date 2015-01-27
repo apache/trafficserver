@@ -436,12 +436,12 @@ HdrTest::test_url()
   URL url;
   const char *start;
   const char *end;
-  int i, old_length, new_length;
+  int old_length, new_length;
 
   bri_box("test_url");
 
   failed = 0;
-  for (i = 0; i < countof(strs); i++) {
+  for (unsigned i = 0; i < countof(strs); i++) {
     old_length = (int) strlen(strs[i]);
     start = strs[i];
     end = start + old_length;
@@ -487,7 +487,7 @@ HdrTest::test_url()
     url.destroy();
   }
 
-  for (i = 0 ; i < countof(bad) ; ++i) {
+  for (unsigned i = 0 ; i < countof(bad) ; ++i) {
     char const* x = bad[i];
     url.create(NULL);
     err = url.parse(x, strlen(x));
