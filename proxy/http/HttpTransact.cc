@@ -4931,16 +4931,17 @@ HttpTransact::merge_warning_header(HTTPHdr* cached_header, HTTPHdr* response_hea
   }
 }
 
+////////////////////////////////////////////////////////
+// Set the keep-alive and version flags for later use //
+// in request construction                            //
+// this is also used when opening a connection to     //
+// the origin server, and search_keepalive_to().      //
+////////////////////////////////////////////////////////
 bool
 HttpTransact::get_ka_info_from_config(State *s, ConnectionAttributes *server_info)
 {
-  ////////////////////////////////////////////////////////
-  // Set the keep-alive and version flags for later use //
-  // in request construction                            //
-  // this is also used when opening a connection to     //
-  // the origin server, and search_keepalive_to().      //
-  ////////////////////////////////////////////////////////
   bool check_hostdb = false;
+
   if (server_info->http_version > HTTPVersion(0, 9)) {
     DebugTxn("http_trans", "get_ka_info_from_config, version already set server_info->http_version %d",
             server_info->http_version.m_version);
@@ -4950,16 +4951,10 @@ HttpTransact::get_ka_info_from_config(State *s, ConnectionAttributes *server_inf
   case HttpConfigParams::SEND_HTTP11_NEVER:
     server_info->http_version = HTTPVersion(1, 0);
     break;
-  case HttpConfigParams::SEND_HTTP11_ALWAYS:
-    server_info->http_version = HTTPVersion(1, 1);
-    break;
   case HttpConfigParams::SEND_HTTP11_UPGRADE_HOSTDB:
     server_info->http_version = HTTPVersion(1, 0);
     check_hostdb = true;
     break;
-  default:
-    ink_assert(0);
-    // FALL THROUGH
   case HttpConfigParams::SEND_HTTP11_IF_REQUEST_11_AND_HOSTDB:
     server_info->http_version = HTTPVersion(1, 0);
     if (s->hdr_info.client_request.version_get() == HTTPVersion(1, 1)) {
@@ -4967,31 +4962,34 @@ HttpTransact::get_ka_info_from_config(State *s, ConnectionAttributes *server_inf
       check_hostdb = true;
     }
     break;
+  default:
+    // The default is the "1" config, SEND_HTTP11_ALWAYS.
+    ink_assert(0);
+    // FALL THROUGH in a release build
+  case HttpConfigParams::SEND_HTTP11_ALWAYS:
+    server_info->http_version = HTTPVersion(1, 1);
+    break;
   }
   DebugTxn("http_trans", "get_ka_info_from_config, server_info->http_version %d, check_hostdb %d",
             server_info->http_version.m_version, check_hostdb);
-  /////////////////////////////
-  // origin server keep_alive //
-  /////////////////////////////
-  if (s->txn_conf->keep_alive_enabled_out) {
-    server_info->keep_alive = HTTP_KEEPALIVE;
-  } else {
-    server_info->keep_alive = HTTP_NO_KEEPALIVE;
-  }
+
+  // Set keep_alive info based on the records.config setting
+  server_info->keep_alive = s->txn_conf->keep_alive_enabled_out ? HTTP_KEEPALIVE : HTTP_NO_KEEPALIVE;
+
   return check_hostdb;
 }
 
+
+////////////////////////////////////////////////////////
+// Set the keep-alive and version flags for later use //
+// in request construction                            //
+// this is also used when opening a connection to     //
+// the origin server, and search_keepalive_to().      //
+////////////////////////////////////////////////////////
 void
 HttpTransact::get_ka_info_from_host_db(State *s, ConnectionAttributes *server_info,
                                        ConnectionAttributes * /* client_info ATS_UNUSED */, HostDBInfo *host_db_info)
 {
-  ////////////////////////////////////////////////////////
-  // Set the keep-alive and version flags for later use //
-  // in request construction                            //
-  // this is also used when opening a connection to     //
-  // the origin server, and search_keepalive_to().      //
-  ////////////////////////////////////////////////////////
-
   bool force_http11 = false;
   bool http11_if_hostdb = false;
 
@@ -5000,19 +4998,20 @@ HttpTransact::get_ka_info_from_host_db(State *s, ConnectionAttributes *server_in
     // No need to do anything since above vars
     //   are defaulted false
     break;
-  case HttpConfigParams::SEND_HTTP11_ALWAYS:
-    force_http11 = true;
-    break;
   case HttpConfigParams::SEND_HTTP11_UPGRADE_HOSTDB:
     http11_if_hostdb = true;
     break;
-  default:
-    ink_assert(0);
-    // FALL THROUGH
   case HttpConfigParams::SEND_HTTP11_IF_REQUEST_11_AND_HOSTDB:
     if (s->hdr_info.client_request.version_get() == HTTPVersion(1, 1)) {
       http11_if_hostdb = true;
     }
+    break;
+  default:
+    // The default is the "1" config, SEND_HTTP11_ALWAYS
+    ink_assert(0);
+    // FALL THROUGH in a release build
+  case HttpConfigParams::SEND_HTTP11_ALWAYS:
+    force_http11 = true;
     break;
   }
 
