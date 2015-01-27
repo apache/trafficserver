@@ -157,6 +157,15 @@ AC_ARG_ENABLE([debug],
 )
 AC_MSG_RESULT([$enable_debug])
 
+# Enable code coverage instrumentation only if requested by the user.
+AC_MSG_CHECKING([whether to code coverage])
+AC_ARG_ENABLE([debug],
+  [AS_HELP_STRING([--enable-coverage],[generate code coverage instrumentation])],
+  [],
+  [enable_coverage=no]
+)
+AC_MSG_RESULT([$enable_coverage])
+
 #
 # Enable -Werror. We want this enabled by default for developers, but disabled by default
 # for end users (because we don't want released versions to suffer from compiler warning hell).
@@ -922,6 +931,28 @@ case $host_os_def in
       cxx_opt="-Wno-invalid-offsetof"
     ])
 esac
+
+# Map per-compiler code coverage instrumentation flags.  Note that
+# we don't test whether the compiler actually support these options
+# (we don't do that in general). The user is expected to use a modern,
+# supported compiler to test coverage.
+AS_CASE("$ax_cv_c_compiler_vendor",
+  [clang], [
+    TS_ADDTO(CXXFLAGS, "-fprofile-instr-generate -fcoverage-mapping")
+    TS_ADDTO(CFLAGS, "-fprofile-instr-generate -fcoverage-mapping")
+  ],
+  [gnu], [
+    TS_ADDTO(CXXFLAGS, "--coverage")
+    TS_ADDTO(CFLAGS, "--coverage")
+    TS_ADDTO(LIBS, "-lgcov")
+  ]
+)
+
+
+AS_IF([test x"$enable_coverage" = xyes], [
+  TS_ADDTO(release_opt, "$coverage_opt")
+  TS_ADDTO(debug_opt, "$coverage_opt")
+])
 
 # Only add -Werror if the user has requested it. We enable this by default for
 # development, disable it by default for release.
