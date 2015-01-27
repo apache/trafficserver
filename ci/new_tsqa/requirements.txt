@@ -1,0 +1,5 @@
+# requirements for the python virtualenv
+
+# TODO: pin a specific version
+https://github.com/jacksontj/tsqa/archive/master.zip
+pyyaml
