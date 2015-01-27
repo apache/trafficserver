@@ -106,7 +106,7 @@ public:
     return 0;
   }
   void set_max_connections(const int32_t x) { max_connections_in = x; }
-  void set_connections_pre_thread(const int32_t x) { connections_per_thread_in = x; }
+  void set_connections_per_thread(const int32_t x) { connections_per_thread_in = x; }
 private:
   void keep_alive_lru(NetHandler &nh, ink_hrtime now, Event *e);
   int default_inactivity_timeout;  // only used when one is not set for some bad reason
@@ -122,7 +122,7 @@ update_cop_config(const char *name, RecDataT data_type ATS_UNUSED, RecData data,
     Debug("inactivity_cop_dynamic", "proxy.config.net.max_connections_in change: %" PRId64, data.rec_int);
     InactivityCop *cop = static_cast<InactivityCop*>(cookie);
     cop->set_max_connections(data.rec_int);
-    cop->set_connections_pre_thread(0);
+    cop->set_connections_per_thread(0);
   }
   return REC_ERR_OKAY;
 }
