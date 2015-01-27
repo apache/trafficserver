@@ -328,7 +328,7 @@ SSLNetVConnection::read_raw_data()
       } else {
         r = socketManager.readv(this->con.fd, &tiovec[0], niov);
       }
-      NET_DEBUG_COUNT_DYN_STAT(net_calls_to_read_stat, 1);
+      NET_INCREMENT_DYN_STAT(net_calls_to_read_stat);
       total_read += rattempted;
     } while (rattempted && r == rattempted && total_read < toread);
 
@@ -343,7 +343,7 @@ SSLNetVConnection::read_raw_data()
     if (r <= 0) {
 
       if (r == -EAGAIN || r == -ENOTCONN) {
-        NET_DEBUG_COUNT_DYN_STAT(net_calls_to_read_nodata_stat, 1);
+        NET_INCREMENT_DYN_STAT(net_calls_to_read_nodata_stat);
         return r;
       }
 
@@ -702,7 +702,7 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, i
     }
 
     Debug("ssl", "SSLNetVConnection::loadBufferAndCallWrite,Number of bytes written=%" PRId64" , total=%" PRId64"", r, total_written);
-    NET_DEBUG_COUNT_DYN_STAT(net_calls_to_write_stat, 1);
+    NET_INCREMENT_DYN_STAT(net_calls_to_write_stat);
   } while (r == l && total_written < towrite && b);
 
   if (r > 0) {
