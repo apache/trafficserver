@@ -563,12 +563,13 @@ OperatorSetConnDSCP::initialize_hooks()
 {
   add_allowed_hook(TS_HTTP_READ_REQUEST_HDR_HOOK);
   add_allowed_hook(TS_HTTP_SEND_RESPONSE_HDR_HOOK);
+  add_allowed_hook(TS_REMAP_PSEUDO_HOOK);
 }
 
 void
 OperatorSetConnDSCP::exec(const Resources& res) const
 {
   if (res.txnp) {
-    TSHttpTxnClientPacketTosSet(res.txnp, _ds_value.get_int_value());
+    TSHttpTxnClientPacketTosSet(res.txnp, _ds_value.get_int_value() << 2);
   }
 }
