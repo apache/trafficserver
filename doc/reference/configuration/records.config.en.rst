@@ -655,7 +655,7 @@ Value Effect
 .. ts:cv:: CONFIG proxy.config.http.send_http11_requests INT 1
    :reloadable:
 
-   Specifies when and how Traffic Sever uses http/1.1 to communicate with the origin server
+   Specifies when and how Traffic Sever uses HTTP/1.1 to communicate with the origin server
 
    -  ``0`` Never
    -  ``1`` Always
