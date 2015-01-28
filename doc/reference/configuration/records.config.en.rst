@@ -659,8 +659,8 @@ Value Effect
 
    -  ``0`` Never
    -  ``1`` Always
-   -  ``2`` if the server has returned http1.1 before
-   -  ``3`` if the client request is 1.1 & the server has returned 1.1 before
+   -  ``2`` If the server has returned HTTP/1.1 before
+   -  ``3`` If the client request is HTTP/1.1 and the server has returned HTTP/1.1 before
 
    .. note::
 
