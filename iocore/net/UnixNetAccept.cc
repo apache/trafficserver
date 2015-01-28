@@ -518,8 +518,8 @@ NetAccept::acceptLoopEvent(int event, Event * e)
   (void) e;
   EThread *t = this_ethread();
 
-  while (1)
-    do_blocking_accept(t);
+  while (do_blocking_accept(t) >= 0)
+      ;
 
   // Don't think this ever happens ...
   NET_DECREMENT_DYN_STAT(net_accepts_currently_open_stat);
