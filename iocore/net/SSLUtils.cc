@@ -1673,8 +1673,9 @@ ssl_store_ssl_context(
   // Index this certificate by the specified IP(v6) address. If the address is "*", make it the default context.
   if (sslMultCertSettings.addr) {
     if (strcmp(sslMultCertSettings.addr, "*") == 0) {
-      lookup->ssl_default = ctx;
-      lookup->insert(sslMultCertSettings.addr, SSLCertContext(ctx, sslMultCertSettings.opt));
+      if (lookup->insert(sslMultCertSettings.addr, SSLCertContext(ctx, sslMultCertSettings.opt)) >= 0) {
+        lookup->ssl_default = ctx;
+      }
     } else {
       IpEndpoint ep;
 

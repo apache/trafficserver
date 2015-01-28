@@ -26,13 +26,15 @@ class TestSSL(helpers.EnvironmentCase):
     @classmethod
     def setUpEnv(cls, env):
         '''
-        This funciton is responsible for setting up the environment for this fixture
+        This function is responsible for setting up the environment for this fixture
         This includes everything pre-daemon start
         '''
 
         # add an SSL port to ATS
         cls.ssl_port = tsqa.utils.bind_unused_port()[1]
         cls.configs['records.config']['CONFIG']['proxy.config.http.server_ports'] += ' {0}:ssl'.format(cls.ssl_port)
+        cls.configs['records.config']['CONFIG']['proxy.config.diags.debug.enabled'] = 1
+        cls.configs['records.config']['CONFIG']['proxy.config.diags.debug.tags'] = 'ssl'
 
         # configure SSL multicert
         cls.configs['ssl_multicert.config'].add_line('dest_ip=127.0.0.2 ssl_cert_name={0}'.format(helpers.tests_file_path('rsa_keys/www.example.com.pem')))
