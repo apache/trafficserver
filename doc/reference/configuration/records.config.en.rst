@@ -664,7 +664,7 @@ Value Effect
 
    .. note::
 
-       If :ts:cv: `proxy.config.http.use_client_target_addr` is set to 1, options 2 and 3 cause the proxy to use
+       If :ts:cv:`proxy.config.http.use_client_target_addr` is set to 1, options 2 and 3 cause the proxy to use
        the client HTTP version for upstream requests.
 
 .. ts:cv:: CONFIG proxy.config.http.share_server_sessions INT 2
@@ -674,7 +674,7 @@ Value Effect
    default (``2``) is similar to enabled, except it creates a server session
    pool per network thread. This has the best performance characteristics.
    Note that setting this parameter to (``2``) will not work correctly unless
-   the dedicated SSL threads are disabled (:ts:cv: `proxy.config.ssl.number.threads`
+   the dedicated SSL threads are disabled (:ts:cv:`proxy.config.ssl.number.threads`
    is set to (``-1``)).
 
 .. ts:cv:: CONFIG proxy.config.http.server_session_sharing.match STRING both
