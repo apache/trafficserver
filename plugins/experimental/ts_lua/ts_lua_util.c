@@ -132,7 +132,7 @@ ts_lua_add_module(ts_lua_instance_conf * conf, ts_lua_main_ctx * arr, int n, int
         return -1;
       }
 
-    } else if (conf->script) {
+    } else if (strlen(conf->script)) {
       if (luaL_loadfile(L, conf->script)) {
         TSError("[%s] luaL_loadfile %s failed: %s", __FUNCTION__, conf->script, lua_tostring(L, -1));
         lua_pop(L, 1);

@@ -71,12 +71,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
   struct config *cfg;
 
   cfg = TSmalloc(sizeof(struct config));
-  *ih = (void *) cfg;
-
-  int i = 0;
-  for (i = 0; i < MAX_KEY_NUM; i++) {
-    cfg->keys[i][0] = '\0';
-  }
+  memset(cfg, 0, sizeof(struct config));
 
   if (argc != 3) {
     snprintf(errbuf, errbuf_size - 1,
@@ -187,11 +182,13 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
 
   }
 
-  for (i = 0; i < MAX_KEY_NUM; i++) {
-    if (cfg->keys[i] != NULL && strlen(cfg->keys[i]) > 0)
-      TSDebug(PLUGIN_NAME, "shared secret key[%d] = %s\n", i, cfg->keys[i]);
+  for (unsigned i = 0; i < MAX_KEY_NUM; i++) {
+    if (strlen(cfg->keys[i]) > 0)
+      TSDebug(PLUGIN_NAME, "shared secret key[%i] = %s\n", i, cfg->keys[i]);
   }
   fclose(file);
+
+  *ih = (void *) cfg;
   return TS_SUCCESS;
 }
 
