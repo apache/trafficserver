@@ -2196,7 +2196,12 @@ SSL Termination
   into a SSL record when replying over a SSL session. In some
   circumstances this setting can improve response latency by reducing
   buffering at the SSL layer. The default of ``0`` means to always
-  write all available data into a single SSL record.
+  write all available data into a single SSL record. A value of ``-1``
+  means to determine the record size dynamically. Specifically, use
+  small TLS records that fit into a single TCP segment for the first
+  1 MB of data, increase record size to 16 KB after that to optimize
+  throughput, and then reset record size back to a single segment
+  after 1 second of inactivity—lather, rinse, repeat.
 
 .. ts:cv:: CONFIG proxy.config.ssl.session_cache.timeout INT 0
 
