@@ -1037,6 +1037,7 @@ HttpTunnel::producer_handler_chunked(int event, HttpTunnelProducer * p)
   switch (event) {
   case VC_EVENT_READ_READY:
   case VC_EVENT_READ_COMPLETE:
+  case VC_EVENT_INACTIVITY_TIMEOUT:
   case HTTP_TUNNEL_EVENT_PRECOMPLETE:
   case VC_EVENT_EOS:
     break;
@@ -1068,6 +1069,7 @@ HttpTunnel::producer_handler_chunked(int event, HttpTunnelProducer * p)
   case HTTP_TUNNEL_EVENT_PRECOMPLETE:
   case VC_EVENT_EOS:
   case VC_EVENT_READ_COMPLETE:
+  case VC_EVENT_INACTIVITY_TIMEOUT:
     if (!done) {
       p->chunked_handler.truncation = true;
     }
