@@ -28,6 +28,8 @@
 #include "ts/ts.h"
 #include "ts/remap.h"
 #include "ink_defs.h"
+
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -205,7 +207,7 @@ load_config_file(const char *config_file)
   char buffer[1024];
   std::string path;
   TSFile fh;
-  pr_list *prl = new pr_list();
+  std::auto_ptr<pr_list> prl(new pr_list());
 
   /* locations in a config file line, end of line, split start, split end */
   char *eol, *spstart, *spend;
@@ -232,7 +234,7 @@ load_config_file(const char *config_file)
 
   if (!fh) {
     TSError("[%s] Unable to open %s. No patterns will be loaded\n", PLUGIN_NAME, path.c_str());
-    return prl;
+    return NULL;
   }
 
   while (TSfgets(fh, buffer, sizeof(buffer) - 1)) {
@@ -256,7 +258,7 @@ load_config_file(const char *config_file)
     }
     if (!spstart) {
       TSError("[%s] ERROR: Invalid format on line %d. Skipping\n", PLUGIN_NAME, lineno);
-      continue;
+      return NULL;
     }
     /* Find part of the line after any whitespace */
     spend = spstart + 1;
@@ -266,7 +268,7 @@ load_config_file(const char *config_file)
     if (*spend == 0) {
       /* We reached the end of the string without any non-whitepace */
       TSError("[%s] ERROR: Invalid format on line %d. Skipping\n", PLUGIN_NAME, lineno);
-      continue;
+      return NULL;
     }
 
     *spstart = 0;
@@ -277,14 +279,19 @@ load_config_file(const char *config_file)
     retval = regex_compile(&info, buffer, spend);
     if (!retval) {
       TSError("[%s] Error precompiling regex/replacement. Skipping.\n", PLUGIN_NAME);
+      return NULL;
     }
 
     prl->pr.push_back(info);
   }
   TSfclose(fh);
 
+  if ( prl->pr.empty()) {
+    TSError("[%s] No regular expressions loaded.\n", PLUGIN_NAME);
+  }
+
   TSDebug(PLUGIN_NAME, "loaded %u regexes", (unsigned) prl->pr.size());
-  return prl;
+  return prl.release();
 }
 
 static int
@@ -387,7 +394,7 @@ TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf ATS_UNUSED, int errbuf_size ATS_UNUSED)
 {
   *ih = load_config_file(argc > 2 ? argv[2] : NULL);
-  return TS_SUCCESS;
+  return (NULL == *ih) ? TS_ERROR : TS_SUCCESS;
 }
 
 
@@ -431,9 +438,10 @@ TSPluginInit(int argc, const char *argv[])
   }
 
   prl = load_config_file(argc > 1 ? argv[1] : NULL);
-
-  contp = TSContCreate((TSEventFunc) handle_hook, NULL);
-  /* Store the pattern replacement list in the continuation */
-  TSContDataSet(contp, prl);
-  TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, contp);
+  if (prl) {
+    contp = TSContCreate((TSEventFunc) handle_hook, NULL);
+    /* Store the pattern replacement list in the continuation */
+    TSContDataSet(contp, prl);
+    TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, contp);
+  }
 }
