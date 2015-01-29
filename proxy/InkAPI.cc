@@ -5433,6 +5433,48 @@ TSHttpTxnServerPacketTosSet(TSHttpTxn txnp, int tos)
   return TS_SUCCESS;
 }
 
+TSReturnCode
+TSHttpTxnClientPacketDscpSet(TSHttpTxn txnp, int dscp)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  HttpSM *sm = (HttpSM *) txnp;
+  if (NULL == sm->ua_session) {
+    return TS_ERROR;
+  }
+
+  NetVConnection *vc = sm->ua_session->get_netvc();
+  if (NULL == vc) {
+    return TS_ERROR;
+  }
+
+  vc->options.packet_tos = (uint32_t)dscp << 2;
+  vc->apply_options();
+  return TS_SUCCESS;
+}
+
+TSReturnCode
+TSHttpTxnServerPacketDscpSet(TSHttpTxn txnp, int dscp)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  HttpSM *sm = (HttpSM *) txnp;
+
+  // change the tos on an active server session
+  if (NULL != sm->ua_session) {
+    HttpServerSession *ssn = sm->ua_session->get_server_session();
+    if (NULL != ssn) {
+      NetVConnection *vc = ssn->get_netvc();
+      if (vc != NULL) {
+        vc->options.packet_tos = (uint32_t)dscp << 2;
+        vc->apply_options();
+      }
+    }
+  }
+
+  // update the transactions mark config for future connections
+  TSHttpTxnConfigIntSet(txnp, TS_CONFIG_NET_SOCK_PACKET_TOS_OUT, dscp << 2);
+  return TS_SUCCESS;
+}
+
 // Set the body, or, if you provide a NULL buffer, clear the body message
 void
 TSHttpTxnErrorBodySet(TSHttpTxn txnp, char *buf, size_t buflength, char *mimetype)

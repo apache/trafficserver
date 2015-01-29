@@ -1412,6 +1412,24 @@ extern "C"
   */
   tsapi TSReturnCode TSHttpTxnServerPacketTosSet(TSHttpTxn txnp, int tos);
 
+  /** Change packet DSCP for the client side connection
+   *
+      @note The change takes effect immediately
+
+      @return TS_SUCCESS if the client connection was modified
+  */
+  tsapi TSReturnCode TSHttpTxnClientPacketDscpSet(TSHttpTxn txnp, int dscp);
+
+  /** Change packet DSCP for the server side connection
+   *
+
+      @note The change takes effect immediately, if no OS connection has been
+      made, then this sets the mark that will be used IF an OS connection
+      is established
+
+      @return TS_SUCCESS if the (future?) server connection was modified
+  */
+  tsapi TSReturnCode TSHttpTxnServerPacketDscpSet(TSHttpTxn txnp, int dscp);
 
   /**
      Sets an error type body to a transaction. Note that both string arguments
