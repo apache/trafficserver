@@ -601,7 +601,7 @@ PluginVC::process_read_side(bool other_side_call)
 
   need_read_process = false;
 
-  if (read_state.vio.op != VIO::READ || closed || read_state.shutdown) {
+  if (read_state.vio.op != VIO::READ || closed) {
     return;
   }
   // Acquire the lock of the read side continuation
@@ -618,6 +618,11 @@ PluginVC::process_read_side(bool other_side_call)
 
   Debug("pvc", "[%u] %s: process_read_side", core_obj->id, PVC_TYPE);
   need_read_process = false;
+
+  // Check read_state.shutdown after the lock has been obtained.
+  if (read_state.shutdown) {
+      return;
+  }
 
   // Check the state of our read buffer as well as ntodo
   int64_t ntodo = read_state.vio.ntodo();
