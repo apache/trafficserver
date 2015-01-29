@@ -27,8 +27,9 @@ import helpers
 import tsqa.test_cases
 import tsqa.utils
 
-# you can also skip (or conditionally skip) tests
-@helpers.unittest.skip('Not running TestNoOp, as it is a NoOp test')
+# TODO: for some reason subclasses of subclasses of TestCase don't work with the
+# decorator
+#@helpers.unittest.skip('Not running TestNoOp, as it is a NoOp test')
 class TestNoOp(helpers.EnvironmentCase):
     '''
     This is purely a documentation test
@@ -42,6 +43,15 @@ class TestNoOp(helpers.EnvironmentCase):
                       },
         'env': None,
     }
+
+    @classmethod
+    def setUpClass(cls):
+        '''
+        If you'd like to skip an entire test
+        '''
+        # you can also skip (or conditionally skip) tests
+        raise helpers.unittest.SkipTest('Skip the entire class')
+
     @classmethod
     def setUpEnv(cls, env):
         '''
