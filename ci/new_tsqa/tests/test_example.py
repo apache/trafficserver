@@ -21,6 +21,7 @@ Some example tests of the new tsqa
 import os
 import requests
 import time
+import subprocess
 
 import helpers
 
@@ -86,7 +87,6 @@ class TestNoOp(helpers.EnvironmentCase):
 class TestConfigureFlags(helpers.EnvironmentCase):
     environment_factory = {
         'configure': {'enable-spdy': None},
-        'env': None,
     }
 
     def test_spdy(self):
@@ -100,19 +100,26 @@ class TestBootstrap(helpers.EnvironmentCase):
         self.assertEqual(ret.status_code, 404)
         self.assertIn('ATS', ret.headers['server'])
 
-    # TODO: re-enable once traffic_manager works
-    @helpers.unittest.skip('TSQA is currently unable to run traffic_cop or traffic_manager')
     def test_trafficline(self):
+        '''
+        Test that traffic_line works, and verify that the values for proxy.config
+        match what we put in records.config
+        '''
         cmd = [os.path.join(self.environment.layout.bindir, 'traffic_line'),
                '-m',
                'proxy.config',
                ]
-        stdout, stderr = tsqa.utils.run_sync_command(cmd)
-        raise Exception(stdout)
+        stdout, _ = tsqa.utils.run_sync_command(cmd, stdout=subprocess.PIPE)
+        for line in stdout.splitlines():
+            if not line.strip():
+                continue
+            k, v = line.split(' ', 1)
+            if k not in self.configs['records.config']['CONFIG']:
+                continue
+            r_val = self.configs['records.config']['CONFIG'][k]
+            self.assertEqual(type(r_val)(v), self.configs['records.config']['CONFIG'][k])
 
 
-# TODO: enable once traffic_cop works (jpeach's fix for proxy.config.admin.user_id)
-'''
 class TestServerIntercept(helpers.EnvironmentCase, tsqa.test_cases.DynamicHTTPEndpointCase):
     endpoint_port = 60000
     @classmethod
@@ -131,8 +138,6 @@ class TestServerIntercept(helpers.EnvironmentCase, tsqa.test_cases.DynamicHTTPEn
             ret = requests.get('http://127.0.0.1:{0}/'.format(self.configs['records.config']['CONFIG']['proxy.config.http.server_ports']))
 
             self.assertEqual(ret.status_code, 200)
-            self.assertIn('ATS', ret.headers['server'])
-'''
 
 
 class TestLogs(helpers.EnvironmentCase):
@@ -161,8 +166,7 @@ class TestLogs(helpers.EnvironmentCase):
         time.sleep(10)  # wait for logs to hit disk
 
         # verify that the log files exist
-        # TODO: check for logs 'manager.log', 'traffic.out
-        for logfile in ('diags.log', 'error.log', 'squid.blog'):
+        for logfile in ('diags.log', 'error.log', 'squid.blog', 'traffic.out', 'manager.log'):
             logfile_path = os.path.join(self.environment.layout.logdir, logfile)
             self.assertTrue(os.path.isfile(logfile_path), logfile_path)
 
