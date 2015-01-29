@@ -339,14 +339,18 @@ spdy_process_fetch(TSEvent event, SpdyClientSession *sm, void *edata)
     if (req->fetch_body_completed)
       ret = 0; // Ignore fetch errors after FETCH BODY DONE
     else {
-      Debug("spdy_error", "spdy_process_fetch fetch error, fetch_sm %p, ret %d for sm_id %" PRId64 ", stream_id %u, req time %" PRId64 ", url %s", req->fetch_sm, ret, sm->sm_id, req->stream_id, req->start_time, req->url.c_str());
+      Debug("spdy_error", "spdy_process_fetch fetch error, fetch_sm %p, ret %d for sm_id %"
+            PRId64 ", stream_id %u, req time %" PRId64 ", url %s", req->fetch_sm, ret,
+            sm->sm_id, req->stream_id, req->start_time, req->url.c_str());
       req->fetch_sm = NULL;
     }
     break;
   }
 
   if (ret) {
-    Debug("spdy_error", "spdy_process_fetch sending STATUS_500, fetch_sm %p, ret %d for sm_id %" PRId64 ", stream_id %u, req time %" PRId64 ", url %s", req->fetch_sm, ret, sm->sm_id, req->stream_id, req->start_time, req->url.c_str());
+    Debug("spdy_error", "spdy_process_fetch sending STATUS_500, fetch_sm %p, ret %d for sm_id %"
+          PRId64 ", stream_id %u, req time %" PRId64 ", url %s", req->fetch_sm, ret, sm->sm_id,
+          req->stream_id, req->start_time, req->url.c_str());
     spdy_prepare_status_response_and_clean_request(sm, req->stream_id, STATUS_500);
   }
 
@@ -372,7 +376,9 @@ spdy_process_fetch_header(TSEvent /*event*/, SpdyClientSession *sm, TSFetchSM fe
                                  SPDYLAY_CTRL_FLAG_NONE, req->stream_id,
                                  spdy_nv.nv);
   } else {
-    Error("spdy_process_fetch_header, sm->session NULL, sm_id %" PRId64 ", fetch_sm %p, stream_id %d, req_time %" PRId64 ", url %s", sm->sm_id, fetch_sm, req->stream_id, req->start_time, req->url.c_str());
+    Error("spdy_process_fetch_header, sm->session NULL, sm_id %" PRId64 ", fetch_sm %p,"
+          "stream_id %d, req_time %" PRId64 ", url %s", sm->sm_id, fetch_sm, req->stream_id,
+          req->start_time, req->url.c_str());
   }
 
   TSVIOReenable(sm->write_vio);

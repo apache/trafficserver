@@ -3109,7 +3109,8 @@ HttpSM::is_bg_fill_necessary(HttpTunnelConsumer * c)
       if (pDone <= 1.0 && pDone > t_state.txn_conf->background_fill_threshold) {
         return true;
       } else {
-        DebugSM("http", "[%" PRId64 "] no background.  Only %%%f of %%%f done [%" PRId64 " / %" PRId64" ]", sm_id, pDone, t_state.txn_conf->background_fill_threshold, ua_body_done, ua_cl);
+        DebugSM("http", "[%" PRId64 "] no background.  Only %%%f of %%%f done [%"
+                PRId64 " / %" PRId64" ]", sm_id, pDone, t_state.txn_conf->background_fill_threshold, ua_body_done, ua_cl);
       }
 
     }

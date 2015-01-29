@@ -56,7 +56,8 @@ HttpSessionAccept::accept(NetVConnection * netvc, MIOBuffer * iobuf, IOBufferRea
 
 
   if (is_debug_tag_set("http_seq")) {
-    Debug("http_seq", "[HttpSessionAccept:mainEvent %p] accepted connection from %s transport type = %d", netvc, ats_ip_nptop(client_ip, ipb, sizeof(ipb)), netvc->attributes);
+    Debug("http_seq", "[HttpSessionAccept:mainEvent %p] accepted connection from %s transport type = %d",
+           netvc, ats_ip_nptop(client_ip, ipb, sizeof(ipb)), netvc->attributes);
   }
 
   HttpClientSession *new_session = THREAD_ALLOC_INIT(httpClientSessionAllocator, this_ethread());

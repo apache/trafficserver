@@ -54,7 +54,8 @@ spdy_prepare_status_response_and_clean_request(SpdyClientSession *sm, int stream
 {
   SpdyRequest *req = sm->find_request(stream_id);
   if (!req) {
-    Error ("spdy_prepare_status_response_and_clean_request, req object null for sm %" PRId64 ", stream_id %d",
+    Debug ("spdy_error", "spdy_prepare_status_response_and_clean_request,"
+           "req object null for sm %" PRId64 ", stream_id %d",
            sm->sm_id, stream_id);
     return;
   }
