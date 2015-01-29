@@ -329,16 +329,14 @@ struct eqstr
 struct hash_fnv32 {
   inline uint32_t operator()(const char* s) const
   {
-    uint32_t hval = (uint32_t)0x811c9dc5; /* FNV1_32_INIT */
+    ATSHash32FNV1a fnv;
 
     if (s) {
-      while (*s) {
-        hval ^= (uint32_t)*s++;
-        hval *= (uint32_t)0x01000193;  /* FNV_32_PRIME */
-      }
+      fnv.update(s, strlen(s));
     }
 
-    return hval;
+    fnv.final();
+    return fnv.get();
   }
 };
 
