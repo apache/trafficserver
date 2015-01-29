@@ -4246,7 +4246,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State* s)
       s->next_action = SM_ACTION_SERVE_FROM_CACHE;
       client_response_code = base_response->status_get();
     } else if (s->cache_info.action == CACHE_DO_UPDATE) {
-      if (s->www_auth_content == CACHE_AUTH_FRESH) {
+      if (s->www_auth_content == CACHE_AUTH_FRESH || s->api_server_response_ignore) {
         s->cache_info.action = CACHE_DO_NO_ACTION;
       } else if (s->www_auth_content == CACHE_AUTH_STALE && server_response_code == HTTP_STATUS_UNAUTHORIZED) {
         s->cache_info.action = CACHE_DO_NO_ACTION;
