@@ -59,7 +59,6 @@ drainIncomingChannel_broadcast(void *arg)
 
   time_t t;
   time_t last_multicast_receive_time = time(NULL);
-  struct timeval tv;
 
   /* Avert race condition, thread spun during constructor */
   while (lmgmt->ccom != ccom || !lmgmt->ccom->init) {
@@ -85,7 +84,7 @@ drainIncomingChannel_broadcast(void *arg)
         last_multicast_receive_time = time(NULL);       // valid multicast msg
       } else {
         t = time(NULL);
-        if ((t - last_multicast_receive_time) > (tv.tv_sec - 1)) {
+        if ((t - last_multicast_receive_time) > ccom->mc_poll_timeout) {
           // Timeout on multicast receive channel, reset channel.
           if (ccom->receive_fd > 0) {
             close(ccom->receive_fd);
