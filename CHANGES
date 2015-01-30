@@ -3,17 +3,21 @@ Changes with Apache Traffic Server 5.3.0
 
   *) [TS-3349] Add DscpSet API's.
 
-  *) [TS-3344] 401 responses invalidate cache entry even if TSHttpTxnServerRespIgnore() used
+  *) [TS-3344] 401 responses invalidate cache entry even if
+   TSHttpTxnServerRespIgnore() used.
 
-  *) [TS-3339] Multithread access to PluginVC can cause crash due to unprotected check of shutdown/close
+  *) [TS-3339] Multithread access to PluginVC can cause crash due to
+   unprotected check of shutdown/close.
 
   *) [TS-3300] Add a @internal ACL filter.
 
-  *) [TS-2884] TSActionCancel() on TSNetAccept() causes spinning thread
+  *) [TS-2884] TSActionCancel() on TSNetAccept() causes spinning thread.
 
-  *) [TS-3324] If a chunked fetch from origin dies due to inactivity timeout, truncated cache entry can be created
+  *) [TS-3324] If a chunked fetch from origin dies due to inactivity timeout,
+   truncated cache entry can be created.
 
-  *) [TS-3325] TSHttpTxnConfigIntSet(txn, TS_CONFIG_HTTP_CACHE_HTTP, 0) can crash
+  *) [TS-3325] TSHttpTxnConfigIntSet(txn, TS_CONFIG_HTTP_CACHE_HTTP, 0) can
+   crash.
 
   *) [TS-3338] Update the list of gauges in the epic plugin.
 
