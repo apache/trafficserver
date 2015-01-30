@@ -45,7 +45,6 @@ static AppVersionInfo appVersionInfo;
 
 struct VIA
 {
-  VIA() : title(NULL), next(NULL) { memset(viaData, 0, sizeof(viaData)); }
   VIA(const char * t) : title(t), next(NULL) { memset(viaData, 0, sizeof(viaData)); }
 
   ~VIA() {
