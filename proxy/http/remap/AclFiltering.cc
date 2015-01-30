@@ -46,10 +46,11 @@ acl_filter_rule::reset(void)
     src_ip_array[i].reset();
   }
   src_ip_valid = 0;
+  internal = 0;
 }
 
 acl_filter_rule::acl_filter_rule():next(NULL), filter_name(NULL), allow_flag(1),
-src_ip_valid(0), active_queue_flag(0), argc(0)
+src_ip_valid(0), active_queue_flag(0), internal(0), argc(0)
 {
   standard_method_lookup.resize(HTTP_WKSIDX_METHODS_CNT);
   ink_zero(argv);
