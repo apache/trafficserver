@@ -55,6 +55,7 @@ cmd/traffic_layout/traffic_layout
 cmd/traffic_via/traffic_via
 
 lib/ts/ink_autoconf.h
+lib/ts/ink_autoconf.h.in
 lib/ts/ink_config.h
 lib/ts/apidefs.h
 lib/ts/stamp-h1
