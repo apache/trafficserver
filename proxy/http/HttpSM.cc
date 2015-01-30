@@ -4321,7 +4321,7 @@ Lfaild:
 }
 
 void
-HttpSM::calculate_output_cl(int64_t content_length, int64_t num_chars)
+HttpSM::calculate_output_cl(int64_t num_chars_for_ct, int64_t num_chars_for_cl)
 {
   int i;
 
@@ -4338,9 +4338,9 @@ HttpSM::calculate_output_cl(int64_t content_length, int64_t num_chars)
     for (i = 0; i < t_state.num_range_fields; i++) {
       if (t_state.ranges[i]._start >= 0) {
         t_state.range_output_cl += boundary_size;
-        t_state.range_output_cl += sub_header_size + content_length;
+        t_state.range_output_cl += sub_header_size + num_chars_for_ct;
         t_state.range_output_cl += num_chars_for_int(t_state.ranges[i]._start)
-          + num_chars_for_int(t_state.ranges[i]._end) + num_chars + 2;
+          + num_chars_for_int(t_state.ranges[i]._end) + num_chars_for_cl + 2;
         t_state.range_output_cl += t_state.ranges[i]._end - t_state.ranges[i]._start + 1;
         t_state.range_output_cl += 2;
       }
@@ -4355,11 +4355,14 @@ HttpSM::calculate_output_cl(int64_t content_length, int64_t num_chars)
 void
 HttpSM::do_range_parse(MIMEField *range_field)
 {
+  int num_chars_for_ct = 0;
+  t_state.cache_info.object_read->response_get()->value_get(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE, &num_chars_for_ct);
+
   int64_t content_length   = t_state.cache_info.object_read->object_size_get();
   int64_t num_chars_for_cl = num_chars_for_int(content_length);
 
   parse_range_and_compare(range_field, content_length);
-  calculate_output_cl(content_length, num_chars_for_cl);
+  calculate_output_cl(num_chars_for_ct, num_chars_for_cl);
 }
 
 // this function looks for any Range: headers, parses them and either

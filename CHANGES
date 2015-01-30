@@ -1,7 +1,11 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.0
 
-  *) [TS-3343] outbound transparent can end up with Connection: keep-alive hea
+  *) [TS-1435] return full content if client is a muti range request
+    Author: Lars Svensson <lars-apache@vmail.se>
+
+  *) [TS-3343] outbound transparent can end up with Connection: keep-alive
+    headers on failures
 
   *) [TS-3351] Add basic pkg-config support.
 
