@@ -7934,6 +7934,16 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
     //  the content-length
     s->hdr_info.trust_response_cl = true;
   }
+  // If transparent and the forward server connection looks unhappy don't
+  // keep alive the ua connection.
+  if ((s->state_machine->ua_session &&
+       s->state_machine->ua_session->f_outbound_transparent) &&
+      (status_code == HTTP_STATUS_INTERNAL_SERVER_ERROR ||
+       status_code == HTTP_STATUS_GATEWAY_TIMEOUT ||
+       status_code == HTTP_STATUS_BAD_GATEWAY ||
+       status_code == HTTP_STATUS_SERVICE_UNAVAILABLE)) {
+    s->client_info.keep_alive = HTTP_NO_KEEPALIVE;
+  }
 
   switch (status_code) {
   case HTTP_STATUS_BAD_REQUEST:

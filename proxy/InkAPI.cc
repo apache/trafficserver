@@ -5340,10 +5340,6 @@ TSHttpTxnOutgoingTransparencySet(TSHttpTxn txnp, int flag)
 {
   if (TS_SUCCESS != sdk_sanity_check_txn(txnp)) return TS_ERROR;
 
-# if ! TS_USE_TPROXY
-  if (flag) return TS_ERROR; // can't enable if it's not configured.
-# endif
-
   HttpSM *sm = reinterpret_cast<HttpSM*>(txnp);
   if (NULL == sm || NULL == sm->ua_session) {
     return TS_ERROR;
