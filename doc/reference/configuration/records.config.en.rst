@@ -424,6 +424,23 @@ bypass that restriction
 * Specify ``-DBIG_SECURITY_HOLE`` in ``CXXFLAGS`` during compilation.
 * Set the ``user_id=#-1`` and start trafficserver as root.
 
+.. ts:cv:: CONFIG proxy.config.admin.api.restricted INT 1
+
+This setting specifies whether the management API should be restricted
+to root processes. If this is set to ``0``, then on platforms that
+support passing process credentials, non-root processes will be
+allowed to make read-only management API calls. Any management API
+calls that modify server state (eg. setting a configuration variable)
+will still be restricted to root processes.
+
+This setting is not reloadable, since it is must be applied when
+program:`traffic_manager` initializes.
+
+.. note::
+
+  In Traffic Server 6.0, the default value of
+  :ts:cv:`proxy.config.admin.api.restricted` will be changed to ``0``.
+
 Process Manager
 ===============
 

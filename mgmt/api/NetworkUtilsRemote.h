@@ -74,6 +74,9 @@ struct mgmtapi_sender : public mgmt_message_sender
 
 #define MGMTAPI_SEND_MESSAGE(fd, optype, ...) send_mgmt_request(mgmtapi_sender(fd), (optype), __VA_ARGS__)
 
+#define MGMTAPI_MGMT_SOCKET_NAME "mgmtapi.sock"
+#define MGMTAPI_EVENT_SOCKET_NAME "eventapi.sock"
+
 /*****************************************************************************
  * Marshalling (create requests)
  *****************************************************************************/

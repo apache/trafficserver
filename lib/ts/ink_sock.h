@@ -63,5 +63,6 @@ int read_socket(int s, char *buffer, int length);
 
 inkcoreapi uint32_t ink_inet_addr(const char *s);
 
+int bind_unix_domain_socket(const char * path, mode_t mode);
 
 #endif /* _ink_sock_h_ */

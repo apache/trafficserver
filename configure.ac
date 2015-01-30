@@ -1191,7 +1191,7 @@ fi
 
 AC_CHECK_FUNCS([clock_gettime kqueue epoll_ctl posix_memalign posix_fadvise posix_madvise posix_fallocate inotify_init])
 AC_CHECK_FUNCS([lrand48_r srand48_r port_create strlcpy strlcat sysconf getpagesize])
-AC_CHECK_FUNCS([getreuid getresuid getresgid setreuid setresuid])
+AC_CHECK_FUNCS([getreuid getresuid getresgid setreuid setresuid getpeereid getpeerucred])
 AC_CHECK_FUNCS([strsignal psignal psiginfo])
 
 # Check for eventfd() and sys/eventfd.h (both must exist ...)
@@ -1495,7 +1495,8 @@ AC_CHECK_HEADERS([sys/types.h \
                   net/ppp_defs.h \
                   ifaddrs.h\
                   readline/readline.h \
-                  editline/readline.h ])
+                  editline/readline.h \
+                  ucred.h ])
 
 AC_SUBST(sys_epollh)
 AC_SUBST(sys_eventh)
@@ -1783,35 +1784,13 @@ AS_IF([test "x$enable_tproxy" != "xno"], [
 AC_SUBST(use_tproxy)
 AC_SUBST(ip_transparent)
 
-AC_MSG_CHECKING([for SO_MARK])
-AC_TRY_COMPILE([
-#include <sys/socket.h>
-], [
-if( SO_MARK > 0) return 0;
-else return 1;
-], [has_so_mark=1]
-msg=yes, [
-has_so_mark=0
-msg=no ] )
+TS_CHECK_SOCKOPT(SO_PEERCRED, [has_so_peercred=1], [has_so_peercred=0])
+TS_CHECK_SOCKOPT(SO_MARK, [has_so_mark=1], [has_so_mark=0])
+TS_CHECK_SOCKOPT(IP_TOS, [has_ip_tos=1], [has_ip_tos=0])
 
-AC_MSG_RESULT([$msg])
 AC_SUBST(has_so_mark)
-
-AC_MSG_CHECKING([for IP_TOS])
-AC_TRY_COMPILE([
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netinet/ip.h>
-],[
-if( IP_TOS > 0) return 0;
-else return 1;
-], [has_ip_tos=1]
-msg=yes, [
-has_ip_tos=0
-msg=no ] )
-
-AC_MSG_RESULT([$msg])
 AC_SUBST(has_ip_tos)
+AC_SUBST(has_so_peercred)
 
 TS_CHECK_LOOPBACK_IFACE
 TS_CHECK_GETHOSTBYNAME_R_STYLE

@@ -214,6 +214,9 @@ ts_ctrl_main(void *arg)
 
             if (ret != TS_ERR_OKAY) {
               Debug("ts_main", "[ts_ctrl_main] ERROR: sending response for message (%d)", ret);
+
+              // XXX this doesn't actually send a error response ...
+
               remove_client(client_entry, accepted_con);
               con_entry = ink_hash_table_iterator_next(accepted_con, &con_state);
               continue;
@@ -260,24 +263,12 @@ ts_ctrl_main(void *arg)
  */
 
 static TSMgmtError
-send_record_get_error(int fd, TSMgmtError ecode)
-{
-  MgmtMarshallInt err = ecode;
-  MgmtMarshallInt type = TS_REC_UNDEFINED;
-  MgmtMarshallString name = NULL;
-  MgmtMarshallData value = { NULL, 0 };
-
-  return send_mgmt_response(fd, RECORD_GET, &err, &type, &name, &value);
-}
-
-static TSMgmtError
 send_record_get_response(int fd, TSRecordT rec_type, const char * rec_name, const void * rec_data, size_t data_len)
 {
   MgmtMarshallInt err = TS_ERR_OKAY;
   MgmtMarshallInt type = rec_type;
   MgmtMarshallString name = const_cast<MgmtMarshallString>(rec_name);
   MgmtMarshallData value = { const_cast<void *>(rec_data), data_len };
-
 
   return send_mgmt_response(fd, RECORD_GET, &err, &type, &name, &value);
 }
@@ -302,12 +293,12 @@ handle_record_get(int fd, void * req, size_t reqlen)
 
   ret = recv_mgmt_request(req, reqlen, RECORD_GET, &optype, &name);
   if (ret != TS_ERR_OKAY) {
-    return send_record_get_error(fd, ret);
+    return ret;
   }
 
   if (strlen(name) == 0) {
     ats_free(name);
-    return send_record_get_error(fd, TS_ERR_FAIL);
+    return ret;
   }
 
   // call CoreAPI call on Traffic Manager side
@@ -316,8 +307,7 @@ handle_record_get(int fd, void * req, size_t reqlen)
   ats_free(name);
 
   if (ret != TS_ERR_OKAY) {
-    TSRecordEleDestroy(ele);
-    return send_record_get_error(fd, ret);
+    goto done;
   }
 
   // create and send reply back to client
@@ -340,10 +330,10 @@ handle_record_get(int fd, void * req, size_t reqlen)
     }
     break;
   default:                     // invalid record type
-    TSRecordEleDestroy(ele);
-    return send_record_get_error(fd, TS_ERR_FAIL);
+    ret = TS_ERR_FAIL;
   }
 
+done:
   TSRecordEleDestroy(ele);
   return ret;
 }
@@ -399,17 +389,17 @@ handle_record_match(int fd, void * req, size_t reqlen)
 
   ret = recv_mgmt_request(req, reqlen, RECORD_MATCH_GET, &optype, &name);
   if (ret != TS_ERR_OKAY) {
-    return send_record_get_error(fd, ret);
+    return ret;
   }
 
   if (strlen(name) == 0) {
     ats_free(name);
-    return send_record_get_error(fd, TS_ERR_FAIL);
+    return TS_ERR_FAIL;
   }
 
   if (match.regex.compile(name, RE_CASE_INSENSITIVE | RE_UNANCHORED) != 0) {
     ats_free(name);
-    return send_record_get_error(fd, TS_ERR_FAIL);
+    return TS_ERR_FAIL;
   }
 
   ats_free(name);
@@ -488,7 +478,7 @@ handle_file_read(int fd, void * req, size_t reqlen)
 
   err = recv_mgmt_request(req, reqlen, FILE_READ, &optype, &fid);
   if (err != TS_ERR_OKAY) {
-    return send_mgmt_response(fd, FILE_READ, &err, &version, &data);
+    return (TSMgmtError)err;
   }
 
   // make CoreAPI call on Traffic Manager side
@@ -539,7 +529,6 @@ done:
   ats_free(data.ptr);
   return send_mgmt_response(fd, FILE_WRITE, &err);
 }
-
 
 /**************************************************************************
  * handle_proxy_state_get
@@ -768,7 +757,6 @@ done:
   return send_mgmt_response(fd, EVENT_ACTIVE, &err, &bval);
 }
 
-
 /**************************************************************************
  * handle_snapshot
  *
@@ -863,7 +851,6 @@ done:
   delete_queue(snap_list);
   return send_mgmt_response(fd, SNAPSHOT_GET_MLT, &err, &list);
 }
-
 
 /**************************************************************************
  * handle_diags
@@ -984,52 +971,79 @@ handle_server_backtrace(int fd, void * req, size_t reqlen)
   return (TSMgmtError)err;
 }
 
-typedef TSMgmtError (*control_message_handler)(int, void *, size_t);
+struct control_message_handler
+{
+  unsigned flags;
+  TSMgmtError (*handler)(int, void *, size_t);
+};
 
 static const control_message_handler handlers[] = {
-  handle_file_read,                   // FILE_READ
-  handle_file_write,                  // FILE_WRITE
-  handle_record_set,                  // RECORD_SET
-  handle_record_get,                  // RECORD_GET
-  handle_proxy_state_get,             // PROXY_STATE_GET
-  handle_proxy_state_set,             // PROXY_STATE_SET
-  handle_reconfigure,                 // RECONFIGURE
-  handle_restart,                     // RESTART
-  handle_restart,                     // BOUNCE
-  handle_event_resolve,               // EVENT_RESOLVE
-  handle_event_get_mlt,               // EVENT_GET_MLT
-  handle_event_active,                // EVENT_ACTIVE
-  NULL,                               // EVENT_REG_CALLBACK
-  NULL,                               // EVENT_UNREG_CALLBACK
-  NULL,                               // EVENT_NOTIFY
-  handle_snapshot,                    // SNAPSHOT_TAKE
-  handle_snapshot,                    // SNAPSHOT_RESTORE
-  handle_snapshot,                    // SNAPSHOT_REMOVE
-  handle_snapshot_get_mlt,            // SNAPSHOT_GET_MLT
-  handle_diags,                       // DIAGS
-  handle_stats_reset,                 // STATS_RESET_NODE
-  handle_stats_reset,                 // STATS_RESET_CLUSTER
-  handle_storage_device_cmd_offline,  // STORAGE_DEVICE_CMD_OFFLINE
-  handle_record_match,                // RECORD_MATCH_GET
-  handle_api_ping,                    // API_PING
-  handle_server_backtrace             // SERVER_BACKTRACE
+  /* FILE_READ                  */ { MGMT_API_PRIVILEGED, handle_file_read },
+  /* FILE_WRITE                 */ { MGMT_API_PRIVILEGED, handle_file_write },
+  /* RECORD_SET                 */ { MGMT_API_PRIVILEGED, handle_record_set },
+  /* RECORD_GET                 */ { MGMT_API_PRIVILEGED, handle_record_get },
+  /* PROXY_STATE_GET            */ { 0, handle_proxy_state_get },
+  /* PROXY_STATE_SET            */ { MGMT_API_PRIVILEGED, handle_proxy_state_set },
+  /* RECONFIGURE                */ { MGMT_API_PRIVILEGED, handle_reconfigure },
+  /* RESTART                    */ { MGMT_API_PRIVILEGED, handle_restart },
+  /* BOUNCE                     */ { MGMT_API_PRIVILEGED, handle_restart },
+  /* EVENT_RESOLVE              */ { MGMT_API_PRIVILEGED, handle_event_resolve },
+  /* EVENT_GET_MLT              */ { 0, handle_event_get_mlt },
+  /* EVENT_ACTIVE               */ { 0, handle_event_active },
+  /* EVENT_REG_CALLBACK         */ { 0, NULL },
+  /* EVENT_UNREG_CALLBACK       */ { 0, NULL },
+  /* EVENT_NOTIFY               */ { 0, NULL },
+  /* SNAPSHOT_TAKE              */ { MGMT_API_PRIVILEGED, handle_snapshot },
+  /* SNAPSHOT_RESTORE           */ { MGMT_API_PRIVILEGED, handle_snapshot },
+  /* SNAPSHOT_REMOVE            */ { MGMT_API_PRIVILEGED, handle_snapshot },
+  /* SNAPSHOT_GET_MLT           */ { 0, handle_snapshot_get_mlt },
+  /* DIAGS                      */ { MGMT_API_PRIVILEGED, handle_diags },
+  /* STATS_RESET_NODE           */ { MGMT_API_PRIVILEGED, handle_stats_reset },
+  /* STATS_RESET_CLUSTER        */ { MGMT_API_PRIVILEGED, handle_stats_reset },
+  /* STORAGE_DEVICE_CMD_OFFLINE */ { MGMT_API_PRIVILEGED, handle_storage_device_cmd_offline },
+  /* RECORD_MATCH_GET           */ { 0, handle_record_match },
+  /* API_PING                   */ { 0, handle_api_ping },
+  /* SERVER_BACKTRACE           */ { MGMT_API_PRIVILEGED, handle_server_backtrace }
 };
 
 static TSMgmtError
 handle_control_message(int fd, void * req, size_t reqlen)
 {
   OpType optype = extract_mgmt_request_optype(req, reqlen);
+  TSMgmtError error;
 
   if (optype < 0 || static_cast<unsigned>(optype) >= countof(handlers)) {
     goto fail;
   }
 
-  if (handlers[optype] == NULL) {
+  if (handlers[optype].handler == NULL) {
     goto fail;
   }
 
+  if (mgmt_has_peereid()) {
+    uid_t euid = -1;
+    gid_t egid = -1;
+
+    // For privileged calls, ensure we have caller credentials and that the caller is root.
+    if (handlers[optype].flags & MGMT_API_PRIVILEGED) {
+      if (mgmt_get_peereid(fd, &euid, &egid) == -1 || euid != 0) {
+        Debug("ts_main", "denied privileged API access on fd=%d for uid=%d gid=%d", fd, euid, egid);
+        return send_mgmt_error(fd, optype, TS_ERR_PERMISSION_DENIED);
+      }
+    }
+  }
+
   Debug("ts_main", "handling message type=%d ptr=%p len=%zu on fd=%d", optype, req, reqlen, fd);
-  return handlers[optype](fd, req, reqlen);
+
+  error = handlers[optype].handler(fd, req, reqlen);
+  if (error != TS_ERR_OKAY) {
+    // NOTE: if the error was produced by the handler sending a response, this could attempt to
+    // send a response again. However, this would only happen if sending the response failed, so
+    // it is safe to fail to send it again here ...
+    return send_mgmt_error(fd, optype, error);
+  }
+
+  return TS_ERR_OKAY;
 
 fail:
   mgmt_elog(0, "%s: missing handler for type %d control message\n", __func__, (int)optype);

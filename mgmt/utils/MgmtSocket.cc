@@ -24,6 +24,10 @@
 #include "ink_platform.h"
 #include "MgmtSocket.h"
 
+#if HAVE_UCRED_H
+#include <ucred.h>
+#endif
+
 //-------------------------------------------------------------------------
 // defines
 //-------------------------------------------------------------------------
@@ -261,4 +265,56 @@ mgmt_read_timeout(int fd, int sec, int usec)
   FD_SET(fd, &readSet);
 
   return mgmt_select(fd + 1, &readSet, NULL, NULL, &timeout);
+}
+
+bool
+mgmt_has_peereid(void)
+{
+#if HAVE_GETPEEREID
+  return true;
+#elif HAVE_GETPEERUCRED
+  return true;
+#elif TS_HAS_SO_PEERCRED
+  return true;
+#else
+  return false;
+#endif
+}
+
+int
+mgmt_get_peereid(int fd, uid_t * euid, gid_t * egid)
+{
+  *euid = -1;
+  *egid = -1;
+
+#if HAVE_GETPEEREID
+  int err = getpeereid(fd, euid, egid);
+  fprintf(stderr, "getpeereid -> %d (%d, %s)", err, errno, strerror(errno));
+  return err;
+#elif HAVE_GETPEERUCRED
+  ucred_t * ucred;
+
+  if (getpeerucred(fd, &ucred) == -1) {
+    return -1;
+  }
+
+  *euid = ucred_geteuid(ucred);
+  *guid = ucred_getegid(ucred);
+  ucred_free(ucred);
+  return 0;
+#elif TS_HAS_SO_PEERCRED
+  struct ucred cred;
+  socklen_t credsz = sizeof(cred);
+  if (getsockopt(fd, SOL_SOCKET, SO_PEERCRED, &cred, &credsz) == -1) {
+    return -1;
+  }
+
+  *euid = cred.uid;
+  *egid = cred.gid;
+  return 0;
+#else
+  (void)fd;
+  errno = ENOTSUP;
+  return -1;
+#endif
 }

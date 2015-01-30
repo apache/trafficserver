@@ -72,6 +72,7 @@ extern "C"
     TS_ERR_PARAMS,             /* Invalid parameters for a fn */
 
     TS_ERR_NOT_SUPPORTED,      /* Operation not supported */
+    TS_ERR_PERMISSION_DENIED,  /* Operation not permitted */
 
     TS_ERR_FAIL
   } TSMgmtError;

@@ -567,3 +567,25 @@ AC_DEFUN([TS_SEARCH_LIBRARY], [
   LIBS="$__saved_LIBS"
   unset __saved_LIBS
 ])
+
+dnl TS_CHECK_SOCKOPT(socket-option, [action-if-found], [action-if-not-found]
+AC_DEFUN([TS_CHECK_SOCKOPT], [
+  AC_MSG_CHECKING([for $1 socket option])
+  AC_COMPILE_IFELSE([
+    AC_LANG_PROGRAM([
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <netinet/in.h>
+#include <netinet/ip.h>
+#include <netinet/tcp.h>
+    ], [
+    setsockopt(0, SOL_SOCKET, $1, (void*)0, 0);
+    ])], [
+    AC_MSG_RESULT(yes)
+    $2
+    ], [
+    AC_MSG_RESULT(no)
+    $3
+  ])
+])

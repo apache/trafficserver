@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.0
 
+  *) [TS-3358] Add access checking to the management API.
+
   *) [TS-3400] Use common FNV hash code everywhere.
 
   *) [TS-3334] Restore default for proxy.config.proxy_name.

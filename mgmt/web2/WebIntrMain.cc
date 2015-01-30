@@ -40,6 +40,7 @@
 #include "WebIntrMain.h"
 #include "Diags.h"
 #include "MgmtSocket.h"
+#include "NetworkUtilsRemote.h"
 
 //INKqa09866
 #include "TSControlMain.h"
@@ -130,71 +131,6 @@ checkWebContext(WebContext * wctx, const char *desc)
   }
 
   return 0;
-}
-
-
-//  fd newUNIXsocket(char* fpath)
-//
-//  returns a file descriptor associated with a new socket
-//    with the specified file path
-//
-//  returns -1 if socket could not be created
-//
-//  Thread Safe: NO!  Call only from main Web interface thread
-//
-static fd
-newUNIXsocket(char *fpath)
-{
-  // coverity[var_decl]
-  struct sockaddr_un serv_addr;
-  int servlen;
-  fd socketFD;
-  int one = 1;
-
-  unlink(fpath);
-  socketFD = socket(AF_UNIX, SOCK_STREAM, 0);
-
-  if (socketFD < 0) {
-    mgmt_log(stderr, "[newUNIXsocket] Unable to create socket: %s", strerror(errno));
-    return socketFD;
-  }
-
-  ink_zero(serv_addr);
-  serv_addr.sun_family = AF_UNIX;
-  ink_strlcpy(serv_addr.sun_path, fpath, sizeof(serv_addr.sun_path));
-#if defined(darwin) || defined(freebsd)
-  servlen = sizeof(struct sockaddr_un);
-#else
-  servlen = strlen(serv_addr.sun_path) + sizeof(serv_addr.sun_family);
-#endif
-  if (setsockopt(socketFD, SOL_SOCKET, SO_REUSEADDR, (char *) &one, sizeof(int)) < 0) {
-    mgmt_log(stderr, "[newUNIXsocket] Unable to set socket options: %s\n", strerror(errno));
-  }
-
-  if ((bind(socketFD, (struct sockaddr *) &serv_addr, servlen)) < 0) {
-    mgmt_log(stderr, "[newUNIXsocket] Unable to bind socket: %s\n", strerror(errno));
-    close_socket(socketFD);
-    return -1;
-  }
-
-  if (chmod(fpath, 00755) < 0) {
-    mgmt_log(stderr, "[newUNIXsocket] Unable to chmod unix-domain socket: %s\n", strerror(errno));
-    close_socket(socketFD);
-    return -1;
-  }
-
-  if ((listen(socketFD, 5)) < 0) {
-    mgmt_log(stderr, "[newUNIXsocket] Unable to listen on socket: %s", strerror(errno));
-    close_socket(socketFD);
-    return -1;
-  }
-  // Set the close on exec flag so our children do not
-  //  have this socket open
-  if (fcntl(socketFD, F_SETFD, 1) < 0) {
-    mgmt_elog(stderr, errno, "[newUNIXSocket] Unable to set close on exec flag\n");
-  }
-
-  return socketFD;
 }
 
 //  fd newTcpSocket(int port)
@@ -308,6 +244,22 @@ serviceThrReaper(void * /* arg ATS_UNUSED */)
   return NULL;
 }                               // END serviceThrReaper()
 
+static bool
+api_socket_is_restricted()
+{
+  RecInt intval;
+
+  // If the socket is not administratively restricted, check whether we have platform
+  // support. Otherwise, default to making it restricted.
+  if (RecGetRecordInt("proxy.config.admin.api.restricted", &intval) == REC_ERR_OKAY) {
+    if (intval == 0) {
+      return !mgmt_has_peereid();
+    }
+  }
+
+  return true;
+}
+
 void *
 webIntr_main(void *)
 {
@@ -408,28 +360,26 @@ webIntr_main(void *)
   // INKqa09866
   // fire up interface for ts configuration through API; use absolute path from root to
   // set up socket paths;
-  char api_sock_path[1024];
-  char event_sock_path[1024];
   ats_scoped_str rundir(RecConfigReadRuntimeDir());
+  ats_scoped_str apisock(Layout::relative_to(rundir, MGMTAPI_MGMT_SOCKET_NAME));
+  ats_scoped_str eventsock(Layout::relative_to(rundir, MGMTAPI_EVENT_SOCKET_NAME));
 
-  bzero(api_sock_path, 1024);
-  bzero(event_sock_path, 1024);
-  snprintf(api_sock_path, sizeof(api_sock_path), "%s/mgmtapisocket", (const char *)rundir);
-  snprintf(event_sock_path, sizeof(event_sock_path), "%s/eventapisocket", (const char *)rundir);
+  mode_t oldmask = umask(0);
+  mode_t newmode = api_socket_is_restricted() ? 00700 : 00777;
 
-  // INKqa12562: MgmtAPI sockets should be created with 775 permission
-  mode_t oldmask = umask(S_IWOTH);
-  if ((mgmtapiFD = newUNIXsocket(api_sock_path)) < 0) {
+  mgmtapiFD = bind_unix_domain_socket(apisock, newmode);
+  if (mgmtapiFD == -1) {
     mgmt_log(stderr, "[WebIntrMain] Unable to set up socket for handling management API calls. API socket path = %s\n",
-             api_sock_path);
+             (const char *)apisock);
     lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_WEB_ERROR, mgmtapiFailMsg);
   }
 
-  if ((eventapiFD = newUNIXsocket(event_sock_path)) < 0) {
-    mgmt_log(stderr,
-             "[WebIntrMain] Unable to set up so for handling management API event calls. Event Socket path: %s\n",
-             event_sock_path);
+  eventapiFD = bind_unix_domain_socket(eventsock, newmode);
+  if (eventapiFD == -1) {
+    mgmt_log(stderr, "[WebIntrMain] Unable to set up so for handling management API event calls. Event Socket path: %s\n",
+             (const char *)eventsock);
   }
+
   umask(oldmask);
 
   // launch threads

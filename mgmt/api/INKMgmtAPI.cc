@@ -1894,6 +1894,9 @@ TSGetErrorMessage(TSMgmtError err_id)
   case TS_ERR_NOT_SUPPORTED:
     snprintf(msg, sizeof(msg), "[%d] Operation not supported on this platform.", err_id);
     break;
+  case TS_ERR_PERMISSION_DENIED:
+    snprintf(msg, sizeof(msg), "[%d] Operation not permitted.", err_id);
+    break;
 
   default:
     snprintf(msg, sizeof(msg), "[%d] Invalid error type.", err_id);
