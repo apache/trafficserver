@@ -7926,8 +7926,7 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
   //////////////////////////////////////////////////////
   if (status_code == HTTP_STATUS_REQUEST_TIMEOUT ||
       s->hdr_info.client_request.get_content_length() != 0 ||
-      s->client_info.transfer_encoding == HttpTransact::CHUNKED_ENCODING ||
-      s->state_machine->ua_session->f_outbound_transparent) {
+      s->client_info.transfer_encoding == HttpTransact::CHUNKED_ENCODING) {
     s->client_info.keep_alive = HTTP_NO_KEEPALIVE;
   } else {
     // We don't have a request body.  Since we are
