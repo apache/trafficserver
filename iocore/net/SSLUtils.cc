@@ -1681,11 +1681,13 @@ ssl_callback_info(const SSL *ssl, int where, int ret)
 
 static void 
 setSslHandshakeCallbacks(SSL_CTX *ctx) {
+#if TS_USE_TLS_SNI
   // Make sure the callbacks are set 
 #if OPENSSL_VERSION_NUMBER >= 0x1000200fL
   SSL_CTX_set_cert_cb(ctx, ssl_cert_callback, NULL);
 #else
   SSL_CTX_set_tlsext_servername_callback(ctx, ssl_servername_callback);
+#endif
 #endif
 }
 
