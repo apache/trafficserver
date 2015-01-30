@@ -45,8 +45,8 @@ static AppVersionInfo appVersionInfo;
 
 struct VIA
 {
-  VIA() : title(NULL), next(NULL) { }
-  VIA(const char * t) : title(t), next(NULL) { }
+  VIA() : title(NULL), next(NULL) { memset(viaData, 0, sizeof(viaData)); }
+  VIA(const char * t) : title(t), next(NULL) { memset(viaData, 0, sizeof(viaData)); }
 
   ~VIA() {
     delete next;
@@ -117,7 +117,7 @@ detailViaLookup(char flag)
     viaTable->viaData[(unsigned char) 'F'] = "connection open failed";
     break;
   default:
-    viaTable = new VIA();
+    viaTable = NULL;
     fprintf(stderr, "%s: %s: %c\n", appVersionInfo.AppStr, "Invalid VIA header character",flag);
     break;
   }
@@ -186,7 +186,7 @@ standardViaLookup(char flag)
       viaTable->viaData[(unsigned char) ' '] = "unknown";
       break;
     default:
-      viaTable = new VIA();
+      viaTable = NULL;
       fprintf(stderr, "%s: %s: %c\n", appVersionInfo.AppStr, "Invalid VIA header character",flag);
       break;
   }
@@ -219,7 +219,7 @@ printViaHeader(const char * header)
       // This is a one of the sequence of (uppercase) VIA codes.
       if (viaEntry) {
         printf("%-55s:", viaEntry->title);
-        printf("%s\n", viaEntry->viaData[(unsigned char)*c]);
+        printf("%s\n", viaEntry->viaData[(unsigned char)*c] ? viaEntry->viaData[(unsigned char)*c] : "Invalid sequence");
         viaEntry = viaEntry->next;
       }
     }

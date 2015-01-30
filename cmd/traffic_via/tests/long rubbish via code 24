@@ -14,7 +14,4 @@ traffic_via: Invalid VIA header character: o
 traffic_via: Invalid VIA header character: d
 Via header is long rubbish via code 24, Length is 24
 Via Header Details:
-(null)                                                 :(null)
-(null)                                                 :no server connection needed
-(null)                                                 :no server connection needed
 Error codes (if any)                                   :unknown
