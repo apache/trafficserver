@@ -1,8 +1,11 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.0
 
+  *) [TS-3353] fix traffic_via memory bug.
+   Author: Bin Zeng <bzeng@linkedin.com>
+
   *) [TS-3319] Adapt to OpenSSL 1.0.2 certificate callback.
- 
+
   *) [TS-1435] return full content if client is a muti range request
     Author: Lars Svensson <lars-apache@vmail.se>
 

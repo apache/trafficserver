@@ -230,12 +230,12 @@ printViaHeader(const char * header)
 static TSMgmtError
 decodeViaHeader(const char * str)
 {
-  size_t viaHdrLength;
-  ats_scoped_str tmp(strdup(str));
-  char * Via = &tmp[0];
+  size_t viaHdrLength = strlen(str);
+  char tmp[viaHdrLength + 2];
+  char * Via = tmp;
 
-  viaHdrLength = strlen(Via);
-  printf("Via header is %s, Length is %zu\n",Via, viaHdrLength);
+  strncpy(Via, str, viaHdrLength + 1); // Safe to call strcpy.
+  printf("Via header is %s, Length is %zu\n", Via, viaHdrLength);
 
   //Via header inside square brackets
   if (Via[0] == '[' && Via[viaHdrLength-1] == ']') {
@@ -244,12 +244,13 @@ decodeViaHeader(const char * str)
     Via[viaHdrLength] = '\0'; //null terminate the string after trimming
   }
 
+  if (viaHdrLength == 5) {
+    Via = strcat(Via, " ");  //Add one space character before decoding via header
+    ++viaHdrLength;
+  }
+
   if (viaHdrLength == 24 || viaHdrLength == 6) {
     //Decode via header
-    printViaHeader(Via);
-    return TS_ERR_OKAY;
-  } else if(viaHdrLength == 5) {
-    Via = strcat(Via," "); //Add one space character before decoding via header
     printViaHeader(Via);
     return TS_ERR_OKAY;
   }
