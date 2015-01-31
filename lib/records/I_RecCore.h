@@ -176,8 +176,6 @@ int RecGetRecordDefaultDataString_Xmalloc(char *name, char **buf, bool lock = tr
 int RecGetRecordAccessType(const char *name, RecAccessT * secure, bool lock = true);
 int RecSetRecordAccessType(const char *name, RecAccessT secure, bool lock = true);
 
-void RecGetRecordTree(char *subtree = NULL);
-void RecGetRecordList(char *, char ***, int *);
 int RecGetRecordPrefix_Xmalloc(char *prefix, char **result, int *result_len);
 
 

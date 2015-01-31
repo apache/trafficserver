@@ -26,7 +26,6 @@
 #include "P_RecFile.h"
 #include "P_RecCore.h"
 #include "P_RecUtils.h"
-#include "P_RecTree.h"
 #include "I_Layout.h"
 
 static bool g_initialized = false;
@@ -35,8 +34,6 @@ RecRecord *g_records = NULL;
 InkHashTable *g_records_ht = NULL;
 ink_rwlock g_records_rwlock;
 int g_num_records = 0;
-
-RecTree *g_records_tree = NULL;
 
 //-------------------------------------------------------------------------
 // register_record
@@ -163,7 +160,6 @@ RecCoreInit(RecModeT mode_type, Diags *_diags)
   // Initialize config file parsing data structures.
   RecConfigFileInit();
 
-  g_records_tree = new RecTree(NULL);
   g_num_records = 0;
 
   // initialize record array for our internal stats (this can be reallocated later)
@@ -919,23 +915,6 @@ RecDumpRecordsHt(RecT rec_type) {
   RecDebug(DL_Note, "Dumping Records:");
   RecDumpRecords(rec_type, debug_record_callback, NULL);
 }
-
-void
-RecGetRecordTree(char *subtree)
-{
-  RecTree *tree = g_records_tree;
-  if (subtree) {
-    tree = tree->rec_tree_get(subtree);
-  }
-  tree->print();
-}
-
-void
-RecGetRecordList(char *var, char ***buffer, int *count)
-{
-  g_records_tree->rec_tree_get_list(&(*var), &(*buffer), &(*count));
-}
-
 
 //-------------------------------------------------------------------------
 // RecGetRecordPrefix_Xmalloc

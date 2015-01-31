@@ -21,6 +21,8 @@
   limitations under the License.
  */
 
+#include "libts.h"
+
 #include "TextBuffer.h"
 #include "Tokenizer.h"
 #include "ink_defs.h"

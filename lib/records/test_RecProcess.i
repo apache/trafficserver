@@ -557,60 +557,6 @@ struct DumpRecordsHtCont:public Continuation
 };
 
 //-------------------------------------------------------------------------
-// TreeTest01: 
-//
-//-------------------------------------------------------------------------
-
-void
-TreeTest01()
-{
-  char **var_buf = NULL;
-  int buf_len = 0;
-  RecGetRecordList("proxy.config", &var_buf, &buf_len);
-  for (int i = 0; i < buf_len; i++) {
-    ink_assert(var_buf[i]);
-    diags->print(NULL, DL_Note, NULL, NULL, "\tRecTree node: (proxy.config.*) %s", var_buf[i]);
-  }
-  delete[]var_buf;
-  printf("\n");
-  if (buf_len == 12) {
-    diags->print(NULL, DL_Note, NULL, NULL, "\tRecTree Test -- PASS\n");
-  } else {
-    diags->print(NULL, DL_Note, NULL, NULL, "\tRecTree Test -- FAIL\n");
-  }
-  printf("\n");
-}
-
-
-//-------------------------------------------------------------------------
-// TreeTest02: 
-//
-// This should only run after Test03.
-// Determine whether proxy.process.* variable are referred by the RecTree
-// properly.
-//-------------------------------------------------------------------------
-
-void
-TreeTest02()
-{
-  char **var_buf = NULL;
-  int buf_len = 0;
-  RecGetRecordList("proxy.process", &var_buf, &buf_len);
-  for (int i = 0; i < buf_len; i++) {
-    ink_assert(var_buf[i]);
-    diags->print(NULL, DL_Note, NULL, NULL, "\tRecTree (proxy.process.*) node: %s", var_buf[i]);
-  }
-  delete[]var_buf;
-  printf("\n");
-  if (buf_len == 7) {
-    diags->print(NULL, DL_Note, NULL, NULL, "\tRecTree Test -- PASS\n");
-  } else {
-    diags->print(NULL, DL_Note, NULL, NULL, "\tRecTree Test -- FAIL\n");
-  }
-  printf("\n");
-}
-
-//-------------------------------------------------------------------------
 // main
 //-------------------------------------------------------------------------
 

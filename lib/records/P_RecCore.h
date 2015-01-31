@@ -32,7 +32,7 @@
 
 #include "I_RecCore.h"
 #include "P_RecDefs.h"
-#include "P_RecTree.h"
+#include "P_RecUtils.h"
 
 // records, record hash-table, and hash-table rwlock
 extern RecRecord *g_records;
@@ -40,7 +40,6 @@ extern InkHashTable *g_records_ht;
 extern ink_rwlock g_records_rwlock;
 extern int g_num_records;
 extern RecModeT g_mode_type;
-extern RecTree *g_records_tree;
 
 // records.config items
 extern const char *g_rec_config_fpath;

@@ -42,7 +42,6 @@ librecords_COMMON = \
   P_RecFile.h \
   P_RecFile.h \
   P_RecMessage.h \
-  P_RecTree.h \
   P_RecUtils.h \
   RecConfigParse.cc \
   RecCore.cc \
@@ -51,7 +50,6 @@ librecords_COMMON = \
   RecHttp.cc \
   RecMessage.cc \
   RecMutex.cc \
-  RecTree.cc \
   RecUtils.cc
 
 librecords_lm_a_SOURCES = \

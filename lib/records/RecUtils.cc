@@ -24,7 +24,6 @@
 #include "libts.h"
 #include "P_RecUtils.h"
 #include "P_RecCore.h"
-#include "P_RecTree.h"
 
 //-------------------------------------------------------------------------
 // RecRecord initializer / Free
@@ -61,8 +60,6 @@ RecAlloc(RecT rec_type, const char *name, RecDataT data_type)
   r->name = ats_strdup(name);
   r->order = i;
   r->data_type = data_type;
-
-  g_records_tree->rec_tree_insert(r->name);
 
   return r;
 }
