@@ -934,6 +934,7 @@ collapsedConnectionMainHandler(TSCont /* contp ATS_UNUSED */, TSEvent event, voi
     case TS_EVENT_HTTP_TXN_CLOSE:
       if (CC_DONE == txn_data->cc_state) {
         freeCcTxnData(txn_data);
+        txn_data = NULL;
         TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
       } else if (CC_PASS == txn_data->cc_state || CC_PASSED == txn_data->cc_state) {
         // keep pass sentinel for config->keep_pass_record_time
