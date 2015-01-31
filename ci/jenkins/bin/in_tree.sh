@@ -37,5 +37,5 @@ autoreconf -fi
     CORES=2
 
 ${ATS_MAKE} -j5 V=1
-${ATS_MAKE} check VERBOSE=Y
+#${ATS_MAKE} check VERBOSE=Y
 ${ATS_MAKE} clean
