@@ -673,7 +673,7 @@ REGRESSION_TEST(HPACK_DecodeString)(RegressionTest * t, int, int *pstatus)
   TestBox box(t, pstatus);
   box = REGRESSION_TEST_PASSED;
 
-  char* actual;
+  char* actual = NULL;
   uint32_t actual_len;
 
   hpack_huffman_init();
@@ -689,6 +689,7 @@ REGRESSION_TEST(HPACK_DecodeString)(RegressionTest * t, int, int *pstatus)
     box.check(len > 0 && memcmp(actual, string_test_case[i].raw_string, actual_len) == 0, "decoded string was invalid");
 
     ats_free(actual);
+    actual = NULL;
   }
 }
 
