@@ -93,7 +93,7 @@ struct RamCacheCLFUS : public RamCache {
   void victimize(RamCacheCLFUSEntry *e);
   void move_compressed(RamCacheCLFUSEntry *e);
   RamCacheCLFUSEntry *destroy(RamCacheCLFUSEntry *e);
-  void requeue_victims(RamCacheCLFUS *c, Que(RamCacheCLFUSEntry, lru_link) &victims);
+  void requeue_victims(Que(RamCacheCLFUSEntry, lru_link) &victims);
   void tick(); // move CLOCK on history
   RamCacheCLFUS(): max_bytes(0), bytes(0), objects(0), vol(0), history(0), ibuckets(0), nbuckets(0), bucket(0),
               seen(0), ncompressed(0), compressed(0) { }
@@ -290,7 +290,7 @@ void RamCacheCLFUS::tick() {
   RamCacheCLFUSEntry *e = lru[1].dequeue();
   if (!e)
     return;
-  e->hits <<= 1;
+  e->hits >>= 1;
   if (e->hits) {
     e->hits = REQUEUE_HITS(e->hits);
     lru[1].enqueue(e);
@@ -485,14 +485,14 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
 }
 
 void
-RamCacheCLFUS::requeue_victims(RamCacheCLFUS *c, Que(RamCacheCLFUSEntry, lru_link) &victims)
+RamCacheCLFUS::requeue_victims(Que(RamCacheCLFUSEntry, lru_link) &victims)
 {
   RamCacheCLFUSEntry *victim = 0;
   while ((victim = victims.dequeue())) {
-    c->bytes += victim->size + ENTRY_OVERHEAD;
+    bytes += victim->size + ENTRY_OVERHEAD;
     CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_bytes_stat, victim->size);
     victim->hits = REQUEUE_HITS(victim->hits);
-    c->lru[0].enqueue(victim);
+    lru[0].enqueue(victim);
   }
 }
 
@@ -564,7 +564,7 @@ RamCacheCLFUS::put(INK_MD5 *key, IOBufferData *data, uint32_t len, bool copy, ui
         goto Linsert;
       if (e)
         lru[1].enqueue(e);
-      requeue_victims(this, victims);
+      requeue_victims(victims);
       DDebug("ram_cache", "put %X %d %d NO VICTIM", key->slice32(3), auxkey1, auxkey2);
       return 0;
     }
@@ -575,14 +575,14 @@ RamCacheCLFUS::put(INK_MD5 *key, IOBufferData *data, uint32_t len, bool copy, ui
       compressed = 0;
     else
       ncompressed--;
-    victim->hits <<= 1;
+    victim->hits >>= 1;
     tick();
     if (!e)
       goto Lhistory;
     else { // e from history
       DDebug("ram_cache_compare", "put %f %f", CACHE_VALUE(victim), CACHE_VALUE(e));
       if (bytes + victim->size + size > max_bytes && CACHE_VALUE(victim) > CACHE_VALUE(e)) {
-        requeue_victims(this, victims);
+        requeue_victims(victims);
         lru[1].enqueue(e);
         DDebug("ram_cache", "put %X %d %d size %d INC %" PRId64" HISTORY",
                key->slice32(3), auxkey1, auxkey2, e->size, e->hits);
@@ -637,7 +637,7 @@ Linsert:
   DDebug("ram_cache", "put %X %d %d size %d INSERTED", key->slice32(3), auxkey1, auxkey2, e->size);
   return 1;
 Lhistory:
-  requeue_victims(this, victims);
+  requeue_victims(victims);
   check_accounting(this);
   e = THREAD_ALLOC(ramCacheCLFUSEntryAllocator, this_ethread());
   e->key = *key;

@@ -32,6 +32,8 @@ struct RamCacheLRUEntry {
   Ptr<IOBufferData> data;
 };
 
+#define ENTRY_OVERHEAD 128 // per-entry overhead to consider when computing sizes
+
 struct RamCacheLRU: public RamCache {
   int64_t max_bytes;
   int64_t bytes;
@@ -127,8 +129,8 @@ RamCacheLRUEntry * RamCacheLRU::remove(RamCacheLRUEntry *e) {
   uint32_t b = e->key.slice32(3) % nbuckets;
   bucket[b].remove(e);
   lru.remove(e);
-  bytes -= e->data->block_size();
-  CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_bytes_stat, -e->data->block_size());
+  bytes -= ENTRY_OVERHEAD + e->data->block_size();
+  CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_bytes_stat, -(ENTRY_OVERHEAD + e->data->block_size()));
   DDebug("ram_cache", "put %X %d %d FREED", e->key.slice32(3), e->auxkey1, e->auxkey2);
   e->data = NULL;
   THREAD_FREE(e, ramCacheLRUEntryAllocator, this_thread());
@@ -171,9 +173,9 @@ int RamCacheLRU::put(INK_MD5 *key, IOBufferData *data, uint32_t len, bool, uint3
   e->data = data;
   bucket[i].push(e);
   lru.enqueue(e);
-  bytes += data->block_size();
+  bytes += ENTRY_OVERHEAD + data->block_size();
   objects++;
-  CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_bytes_stat, data->block_size());
+  CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_bytes_stat, ENTRY_OVERHEAD + data->block_size());
   while (bytes > max_bytes) {
     RamCacheLRUEntry *ee = lru.dequeue();
     if (ee)
