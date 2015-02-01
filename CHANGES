@@ -3,6 +3,9 @@ Changes with Apache Traffic Server 5.3.0
 
   *) [TS-3357] Clean out some unused code from Machine.*.
 
+  *) [TS-1264] Account for overhead in LRU cache. Add RamCache regression
+   test. Fix hit accounting for history in CLFUS Ram cache.
+
   *) [TS-3355] Fix compiler warning on CentOS5.
 
   *) [TS-3353] fix traffic_via memory bug.
