@@ -2897,8 +2897,10 @@ int main(int argc __attribute__((unused)), char *argv[])
   }
 
   local_addr = get_addr(local_host);
-  if (!proxy_host[0])
-    strcpy(proxy_host, local_host);
+  if (!proxy_host[0]) {
+    strncpy(proxy_host, local_host, sizeof(proxy_host) - 1);
+    proxy_host[sizeof(proxy_host) - 1] = 0;
+  }
   if (proxy_port) {
     proxy_addr = get_addr(proxy_host);
   }
