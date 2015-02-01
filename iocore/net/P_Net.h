@@ -53,6 +53,7 @@ enum Net_Stats
   inactivity_cop_lock_acquire_failure_stat,
   keep_alive_lru_timeout_total_stat,
   keep_alive_lru_timeout_count_stat,
+  default_inactivity_timeout_stat,
   Net_Stat_Count
 };
 

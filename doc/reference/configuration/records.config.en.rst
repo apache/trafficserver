@@ -285,6 +285,15 @@ Network
    handled. This should be tuned according to your memory size, and expected
    work load.
 
+.. ts:cv:: CONFIG proxy.config.net.default_inactivity_timeout INT 86400
+   :reloadable:
+
+   The connection inactivity timeout (in seconds) to apply when
+   Traffic Server detects that no inactivity timeout has been applied
+   by the HTTP state machine. When this timeout is applied, the
+   `proxy.process.net.default_inactivity_timeout_applied` metric
+   is incremented.
+
 .. ts:cv:: LOCAL proxy.local.incoming_ip_to_bind STRING 0.0.0.0 [::]
 
    Controls the global default IP addresses to which to bind proxy server ports. The value is a space separated list of IP addresses, one per supported IP address family (currently IPv4 and IPv6).
