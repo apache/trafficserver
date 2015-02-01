@@ -83,18 +83,4 @@ protected:
   static self* _instance; ///< Singleton for the class.
 };
 
-/**
-  Creates a Machine Object with the hostname and IP address.  If no
-  hostname or IP address is given, the hostname defaults to the name of
-  the current processor.
-
- */
-void create_this_machine(char *hostname = 0, unsigned int ip = 0);
-
-/**
-  Returns the Machine object created by create_this_machine().
-
- */
-Machine *this_machine();
-
 #endif

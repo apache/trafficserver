@@ -104,24 +104,11 @@ struct MachineList
   }
 };
 
-inkcoreapi Machine *this_machine();
-void create_this_machine();
-
 void free_Machine(Machine * m);
 
-MachineList *the_machines_config();
 MachineList *the_cluster_config();
 extern ProxyMutex *the_cluster_config_mutex;
 
-#define INK_GETHOSTBYNAME_R_DATA_SIZE 10000
-struct ink_gethostbyname_r_data
-{
-  int herrno;
-  struct hostent ent;
-  char buf[INK_GETHOSTBYNAME_R_DATA_SIZE];
-};
-
-struct hostent *ink_gethostbyname_r(char *hostname, ink_gethostbyname_r_data * data);
 //
 // Private
 //
