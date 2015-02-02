@@ -2907,6 +2907,7 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer * p)
     if (is_http_server_eos_truncation(p)) {
       DebugSM("http", "[%" PRId64 "] [HttpSM::tunnel_handler_server] aborting HTTP tunnel due to server truncation", sm_id);
       tunnel.chain_abort_all(p);
+      ua_session = NULL;
       t_state.current.server->abort = HttpTransact::ABORTED;
       t_state.client_info.keep_alive = HTTP_NO_KEEPALIVE;
       t_state.current.server->keep_alive = HTTP_NO_KEEPALIVE;
