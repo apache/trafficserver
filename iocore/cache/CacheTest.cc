@@ -491,43 +491,54 @@ REGRESSION_TEST(cache_disk_replacement_stability)(RegressionTest *t, int level, 
   hr2.vols = 0;
 }
 
-bool test_RamCache(RegressionTest *t, RamCache *cache) {
+bool
+test_RamCache(RegressionTest *t, RamCache *cache)
+{
   bool pass = true;
   CacheKey key;
   Vol *vol = theCache->key_to_vol(&key, "example.com", sizeof("example.com")-1);
+  vector< Ptr<IOBufferData> > data;
+
   cache->init(1 << 20, vol);
-  vector<Ptr<IOBufferData>> data;
+
   for (int l = 0; l < 10; l++) {
     for (int i = 0; i < 200; i++) {
       IOBufferData *d = new IOBufferData;
-      d->alloc(BUFFER_SIZE_INDEX_16K);
-      data.emplace_back(d);
       INK_MD5 md5;
+
+      d->alloc(BUFFER_SIZE_INDEX_16K);
+      data.push_back(Ptr<IOBufferData>(d));
       md5.u64[0] = ((uint64_t)i << 32) + i;
       md5.u64[1] = ((uint64_t)i << 32) + i;
       cache->put(&md5, data[i], 1 << 15);
       // More hits for the first 10.
       for (int j = 0; j <= i && j < 10; j++) {
+        Ptr<IOBufferData> data;
         INK_MD5 md5;
+
         md5.u64[0] = ((uint64_t)j << 32) + j;
         md5.u64[1] = ((uint64_t)j << 32) + j;
-        Ptr<IOBufferData> data;
         cache->get(&md5, &data);
       }
     }
   }
+
   for (int i = 0; i < 10; i++) {
     INK_MD5 md5;
+    Ptr<IOBufferData> data;
+
     md5.u64[0] = ((uint64_t)i << 32) + i;
     md5.u64[1] = ((uint64_t)i << 32) + i;
-    Ptr<IOBufferData> data;
-    if (!cache->get(&md5, &data)) pass = false;
+    if (!cache->get(&md5, &data)) {
+      pass = false;
+    }
   }
   rprintf(t, "RamCache Test Done");
   return pass;
 }
 
-REGRESSION_TEST(ram_cache)(RegressionTest *t, int /* level ATS_UNUSED */, int *pstatus) {
+REGRESSION_TEST(ram_cache)(RegressionTest *t, int /* level ATS_UNUSED */, int *pstatus)
+{
   if (cacheProcessor.IsCacheEnabled() != CACHE_INITIALIZED) {
     rprintf(t, "cache not initialized");
     *pstatus = REGRESSION_TEST_FAILED;
