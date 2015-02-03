@@ -1680,7 +1680,7 @@ ssl_callback_info(const SSL *ssl, int where, int ret)
 }
 
 static void 
-setSslHandshakeCallbacks(SSL_CTX *ctx) {
+ssl_set_handshake_callbacks(SSL_CTX *ctx) {
 #if TS_USE_TLS_SNI
   // Make sure the callbacks are set 
 #if OPENSSL_VERSION_NUMBER >= 0x1000200fL
@@ -1721,7 +1721,7 @@ ssl_store_ssl_context(
     if (strcmp(sslMultCertSettings.addr, "*") == 0) {
       if (lookup->insert(sslMultCertSettings.addr, SSLCertContext(ctx, sslMultCertSettings.opt)) >= 0) {
         lookup->ssl_default = ctx;
-        setSslHandshakeCallbacks(ctx);
+        ssl_set_handshake_callbacks(ctx);
       }
     } else {
       IpEndpoint ep;
@@ -1916,7 +1916,7 @@ SSLParseCertificateConfiguration(const SSLConfigParams * params, SSLCertLookup *
   if (lookup->ssl_default == NULL) {
     ssl_user_config sslMultiCertSettings;
     sslMultiCertSettings.addr = ats_strdup("*");
-    SSL_CTX *ctx = ssl_store_ssl_context(params, lookup, sslMultiCertSettings);
+    ssl_store_ssl_context(params, lookup, sslMultiCertSettings);
   }
   return true;
 }
