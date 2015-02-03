@@ -62,7 +62,7 @@ if [ "/tmp" !=  "$output" ]; then
     ln -s $(/usr/bin/ls -1t | head -1) latest
 
     # Purge the cached URL
-    curl -o /dev/null -s -X PURGE https://ci.trafficserver.apache.org/files/clang-analyzer/latest/
+    #curl -o /dev/null -k -s -X PURGE https://ci.trafficserver.apache.org/files/clang-analyzer/latest/
 fi
 
 # Exit with the scan-build exit code (thanks to --status-bugs)
