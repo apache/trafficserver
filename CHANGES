@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.0
 
+  *) [TS-3403] Stop parsing command-line options at the first non-option.
+
   *) [TS-3402] Rationalize lock debugging infrastructure.
 
   *) [TS-3358] Add access checking to the management API.

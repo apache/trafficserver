@@ -192,36 +192,50 @@ process_args(const AppVersionInfo * appinfo, const ArgumentDescription * argumen
   //
   program_name = appinfo->AppStr;
   while (*++argv) {
-    if (**argv == '-') {
-      if ((*argv)[1] == '-') {
-        for (i = 0; i < n_argument_descriptions; i++)
-          if (!strcmp(argument_descriptions[i].name, (*argv) + 2)) {
-            *argv += strlen(*argv) - 1;
+
+    // Hack for supporting '-' as a file argument.
+    if (strcmp(*argv, "-") == 0) {
+      append_file_argument(*argv);
+      break;
+    }
+
+    // No leading '-', this is the start of the file arguments.
+    if ((*argv)[0] != '-') {
+      append_file_argument(*argv);
+      break;
+    }
+
+    if ((*argv)[1] == '-') {
+      // Deal with long options ...
+      for (i = 0; i < n_argument_descriptions; i++)
+        if (!strcmp(argument_descriptions[i].name, (*argv) + 2)) {
+          *argv += strlen(*argv) - 1;
+          process_arg(appinfo, argument_descriptions, n_argument_descriptions, i, &argv, usage_string);
+          break;
+        }
+      if (i >= n_argument_descriptions)
+        usage(argument_descriptions, n_argument_descriptions, usage_string);
+    } else {
+      // Deal with (possibly combined) short options ...
+      while (*++(*argv)) {
+        for (i = 0; i < n_argument_descriptions; i++) {
+          if (argument_descriptions[i].key == **argv) {
             process_arg(appinfo, argument_descriptions, n_argument_descriptions, i, &argv, usage_string);
             break;
           }
-        if (i >= n_argument_descriptions)
-          usage(argument_descriptions, n_argument_descriptions, usage_string);
-      } else {
-        // Hack for supporting '-' as a file argument.
-        if (strcmp(*argv, "-") == 0) {
-          append_file_argument(*argv);
         }
 
-        while (*++(*argv)) {
-          for (i = 0; i < n_argument_descriptions; i++) {
-            if (argument_descriptions[i].key == **argv) {
-              process_arg(appinfo, argument_descriptions, n_argument_descriptions, i, &argv, usage_string);
-              break;
-            }
-          }
-
-          if (i >= n_argument_descriptions) {
-            usage(argument_descriptions, n_argument_descriptions, usage_string);
-          }
+        if (i >= n_argument_descriptions) {
+          usage(argument_descriptions, n_argument_descriptions, usage_string);
         }
       }
-    } else {
+    }
+
+  }
+
+  // If we have any arguments left, slurp them up into file_arguments.
+  if (*argv) {
+    while (*++argv) {
       append_file_argument(*argv);
     }
   }
