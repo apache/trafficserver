@@ -17,6 +17,7 @@
 #  limitations under the License.
 
 AM_CPPFLAGS = \
+  @OPENSSL_INCLUDES@ \
   $(iocore_include_dirs) \
   -I$(top_srcdir)/lib \
   -I$(top_builddir)/lib \
@@ -40,6 +41,9 @@ test_certlookup_SOURCES = \
   SSLCertLookup.cc
 
 test_certlookup_LDADD = \
+  @LIBTOOL_LINK_FLAGS@ \
+  @OPENSSL_LIBS@ \
+  @OPENSSL_LDFLAGS@ \
   $(top_builddir)/lib/ts/libtsutil.la \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   @OPENSSL_LIBS@
