@@ -18,6 +18,7 @@
 #  limitations under the License.
 
 AM_CPPFLAGS = \
+  @OPENSSL_INCLUDES@ \
   -I$(top_srcdir)/iocore/utils \
   -I$(top_srcdir)/mgmt \
   -I$(top_srcdir)/mgmt/api \
@@ -57,5 +58,8 @@ libutils_p_la_SOURCES = \
 
 test_marshall_SOURCES = test_marshall.cc
 test_marshall_LDADD = \
+  @LIBTOOL_LINK_FLAGS@ \
+  @OPENSSL_LIBS@ \
+  @OPENSSL_LDFLAGS@ \
   libutils_p.la \
   $(top_builddir)/lib/ts/libtsutil.la
