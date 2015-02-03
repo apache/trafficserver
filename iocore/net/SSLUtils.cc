@@ -1721,6 +1721,7 @@ ssl_store_ssl_context(
     if (strcmp(sslMultCertSettings.addr, "*") == 0) {
       if (lookup->insert(sslMultCertSettings.addr, SSLCertContext(ctx, sslMultCertSettings.opt)) >= 0) {
         lookup->ssl_default = ctx;
+        setSslHandshakeCallbacks(ctx);
       }
     } else {
       IpEndpoint ep;
@@ -1916,9 +1917,6 @@ SSLParseCertificateConfiguration(const SSLConfigParams * params, SSLCertLookup *
     ssl_user_config sslMultiCertSettings;
     sslMultiCertSettings.addr = ats_strdup("*");
     SSL_CTX *ctx = ssl_store_ssl_context(params, lookup, sslMultiCertSettings);
-    if (ctx != NULL) {
-      setSslHandshakeCallbacks(ctx);
-    }
   }
   return true;
 }
