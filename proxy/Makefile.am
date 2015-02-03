@@ -34,6 +34,7 @@ TESTS = \
   test_xml_parser
 
 AM_CPPFLAGS = \
+  @OPENSSL_INCLUDES@ \
   $(iocore_include_dirs) \
   -I$(top_srcdir)/lib/records \
   -I$(top_srcdir)/lib/ts \
@@ -193,6 +194,9 @@ traffic_server_LDFLAGS += -all-static
 endif
 
 traffic_server_LDADD = \
+  @LIBTOOL_LINK_FLAGS@ \
+  @OPENSSL_LIBS@ \
+  @OPENSSL_LDFLAGS@ \
   http/libhttp.a \
   http2/libhttp2.a \
   spdy/libspdy.a \
@@ -243,6 +247,9 @@ endif
 traffic_logcat_SOURCES = logcat.cc
 traffic_logcat_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
 traffic_logcat_LDADD = \
+  @LIBTOOL_LINK_FLAGS@ \
+  @OPENSSL_LIBS@ \
+  @OPENSSL_LDFLAGS@ \
   logging/liblogging.a \
   shared/libdiagsconfig.a \
   shared/libUglyLogStubs.a \
@@ -257,6 +264,9 @@ traffic_logcat_LDADD = \
 traffic_logstats_SOURCES = logstats.cc
 traffic_logstats_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
 traffic_logstats_LDADD = \
+  @LIBTOOL_LINK_FLAGS@ \
+  @OPENSSL_LIBS@ \
+  @OPENSSL_LDFLAGS@ \
   logging/liblogging.a \
   shared/libdiagsconfig.a \
   shared/libUglyLogStubs.a \
@@ -299,6 +309,9 @@ traffic_sac_SOURCES = \
 
 traffic_sac_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
 traffic_sac_LDADD = \
+  @LIBTOOL_LINK_FLAGS@ \
+  @OPENSSL_LIBS@ \
+  @OPENSSL_LDFLAGS@ \
   http/libhttp.a \
   http2/libhttp2.a \
   spdy/libspdy.a \
@@ -332,6 +345,9 @@ endif
 
 test_xml_parser_SOURCES = test_xml_parser.cc
 test_xml_parser_LDADD = \
+  @LIBTOOL_LINK_FLAGS@ \
+  @OPENSSL_LIBS@ \
+  @OPENSSL_LDFLAGS@ \
   $(top_builddir)/mgmt/libmgmt_p.la \
   $(top_builddir)/lib/records/librecords_p.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
