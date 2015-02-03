@@ -1396,7 +1396,7 @@ change_uid_gid(const char * user)
 //
 
 int
-main(int /* argc ATS_UNUSED */, char **argv)
+main(int /* argc ATS_UNUSED */, const char **argv)
 {
 #if TS_HAS_PROFILER
   ProfilerStart("/tmp/ts.prof");

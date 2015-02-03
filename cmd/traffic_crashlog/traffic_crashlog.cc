@@ -83,7 +83,7 @@ crashlog_open(const char * path)
 }
 
 int
-main(int /* argc ATS_UNUSED */, char **argv)
+main(int /* argc ATS_UNUSED */, const char **argv)
 {
   FILE * fp;
   char * logname;

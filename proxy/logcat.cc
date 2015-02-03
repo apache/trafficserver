@@ -206,7 +206,7 @@ open_output_file(char *output_file)
   -------------------------------------------------------------------------*/
 
 int
-main(int /* argc ATS_UNUSED */, char *argv[])
+main(int /* argc ATS_UNUSED */, const char *argv[])
 {
   enum
   {

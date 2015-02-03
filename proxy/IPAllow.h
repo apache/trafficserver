@@ -95,7 +95,6 @@ struct AclRecord {
  */
 class IpAllow : public ConfigInfo
 {
-  friend int main(int, char**);
   friend struct IpAllowUpdate;
 
 public:

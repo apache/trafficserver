@@ -1829,7 +1829,7 @@ static const ArgumentDescription argument_descriptions[] = {
 };
 
 int
-main(int /* argc */, char *argv[])
+main(int /* argc */, const char *argv[])
 {
   int fd;
   appVersionInfo.setup(PACKAGE_NAME,"traffic_cop", PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");

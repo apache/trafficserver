@@ -648,7 +648,7 @@ struct CommandLineArgs
     state_tag[0] = '\0';
   }
 
-  void parse_arguments(char** argv);
+  void parse_arguments(const char** argv);
 };
 
 static CommandLineArgs cl;
@@ -679,7 +679,7 @@ static const char *USAGE_LINE =
   "Usage: " PROGRAM_NAME " [-f logfile] [-o origin[,...]] [-O originfile] [-m minhits] [-inshv]";
 
 void
-CommandLineArgs::parse_arguments(char** argv)
+CommandLineArgs::parse_arguments(const char** argv)
 {
   // process command-line arguments
   process_args(&appVersionInfo, argument_descriptions, countof(argument_descriptions), argv, USAGE_LINE);
@@ -2269,7 +2269,7 @@ open_main_log(ExitStatus& status)
 ///////////////////////////////////////////////////////////////////////////////
 // main
 int
-main(int /* argc ATS_UNUSED */, char *argv[])
+main(int /* argc ATS_UNUSED */, const char *argv[])
 {
   ExitStatus exit_status;
   int res, cnt;

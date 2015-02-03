@@ -78,6 +78,6 @@ void usage(const ArgumentDescription * argument_descriptions, unsigned n_argumen
 /* Process all arguments
 */
 void process_args(const AppVersionInfo * appinfo, const ArgumentDescription * argument_descriptions,
-                  unsigned n_argument_descriptions, char **argv, const char *usage_string = 0);
+                  unsigned n_argument_descriptions, const char **argv, const char *usage_string = 0);
 
 #endif /*_INK_ARGS_H*/

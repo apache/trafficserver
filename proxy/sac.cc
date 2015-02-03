@@ -77,7 +77,7 @@ sac_signal_handler(int signo, siginfo_t * info, void *)
 }
 
 int
-main(int /* argc ATS_UNUSED */, char *argv[])
+main(int /* argc ATS_UNUSED */, const char *argv[])
 {
   // build the application information structure
   //

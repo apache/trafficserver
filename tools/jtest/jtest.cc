@@ -2864,7 +2864,7 @@ static FILE * get_defered_urls(FILE * fp) {
   return fp;
 }
 
-int main(int argc __attribute__((unused)), char *argv[])
+int main(int argc __attribute__((unused)), const char *argv[])
 {
   appVersionInfo.setup(PACKAGE_NAME, "jtest", PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
 

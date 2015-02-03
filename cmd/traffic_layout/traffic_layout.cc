@@ -41,7 +41,7 @@ printvar(const char * name, char * val)
 }
 
 int
-main(int /* argc ATS_UNUSED */, char **argv)
+main(int /* argc ATS_UNUSED */, const char **argv)
 {
   AppVersionInfo appVersionInfo;
 

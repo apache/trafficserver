@@ -74,9 +74,9 @@ append_file_argument(const char * arg)
 
 static void
 process_arg(const AppVersionInfo * appinfo, const ArgumentDescription * argument_descriptions,
-            unsigned n_argument_descriptions, int i, char ***argv, const char *usage_string)
+            unsigned n_argument_descriptions, int i, const char ***argv, const char *usage_string)
 {
-  char *arg = NULL;
+  const char *arg = NULL;
 
   if (arg_is_version_flag(&argument_descriptions[i])) {
     ink_fputln(stdout, appinfo->FullVersionInfoStr);
@@ -158,7 +158,7 @@ show_argument_configuration(const ArgumentDescription * argument_descriptions, u
 }
 
 void
-process_args(const AppVersionInfo * appinfo, const ArgumentDescription * argument_descriptions, unsigned n_argument_descriptions, char **argv, const char *usage_string)
+process_args(const AppVersionInfo * appinfo, const ArgumentDescription * argument_descriptions, unsigned n_argument_descriptions, const char **argv, const char *usage_string)
 {
   unsigned i = 0;
   //
