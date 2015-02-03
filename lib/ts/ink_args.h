@@ -31,6 +31,14 @@ Process arguments
 #include "ink_defs.h"
 #include "ink_apidefs.h"
 
+#if HAVE_SYSEXITS_H
+#include <sysexits.h>
+#endif
+
+#ifndef EX_USAGE
+#define EX_USAGE 64
+#endif
+
 #define MAX_FILE_ARGUMENTS 100
 
 struct ArgumentDescription;
@@ -79,5 +87,8 @@ void usage(const ArgumentDescription * argument_descriptions, unsigned n_argumen
 */
 void process_args(const AppVersionInfo * appinfo, const ArgumentDescription * argument_descriptions,
                   unsigned n_argument_descriptions, const char **argv, const char *usage_string = 0);
+
+bool process_args_ex(const AppVersionInfo * appinfo, const ArgumentDescription * argument_descriptions,
+                  unsigned n_argument_descriptions, const char **argv);
 
 #endif /*_INK_ARGS_H*/

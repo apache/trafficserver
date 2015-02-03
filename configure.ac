@@ -1492,6 +1492,7 @@ AC_CHECK_HEADERS([sys/types.h \
                   math.h \
                   stdint.h \
                   stdbool.h \
+                  sysexits.h \
                   net/ppp_defs.h \
                   ifaddrs.h\
                   readline/readline.h \
@@ -1860,6 +1861,7 @@ AC_CONFIG_FILES([
   cmd/Makefile
   cmd/traffic_cop/Makefile
   cmd/traffic_crashlog/Makefile
+  cmd/traffic_ctl/Makefile
   cmd/traffic_layout/Makefile
   cmd/traffic_line/Makefile
   cmd/traffic_manager/Makefile
