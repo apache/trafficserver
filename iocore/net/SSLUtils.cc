@@ -116,21 +116,9 @@ static void session_ticket_free(void *, void *, CRYPTO_EX_DATA *, int, long, voi
 static int ssl_callback_session_ticket(SSL *, unsigned char *, unsigned char *, EVP_CIPHER_CTX *, HMAC_CTX *, int);
 #endif /* SSL_CTX_set_tlsext_ticket_key_cb */
 
-struct ssl_ticket_key_t
-{
-  unsigned char key_name[16];
-  unsigned char hmac_secret[16];
-  unsigned char aes_key[16];
-};
-
 #if HAVE_OPENSSL_SESSION_TICKETS
 static int ssl_session_ticket_index = -1;
 
-struct ssl_ticket_key_block
-{
-  unsigned num_keys;
-  ssl_ticket_key_t keys[];
-};
 
 // Zero out and free the heap space allocated for ticket keys to avoid leaking secrets.
 // The first several bytes stores the number of keys and the rest stores the ticket keys.
@@ -323,8 +311,11 @@ set_context_cert(SSL *ssl)
 
   if (ctx != NULL) {
     SSL_set_SSL_CTX(ssl, ctx);
-  }
-  else {
+#if HAVE_OPENSSL_SESSION_TICKETS
+    // Reset the ticket callback if needed
+    SSL_CTX_set_tlsext_ticket_key_cb(ctx, ssl_callback_session_ticket);
+#endif
+  } else {
     found = false;
   }
 
@@ -537,7 +528,7 @@ ssl_context_enable_ecdh(SSL_CTX * ctx)
   return ctx;
 }
 
-static SSL_CTX *
+static ssl_ticket_key_block *
 ssl_context_enable_tickets(SSL_CTX * ctx, const char * ticket_key_path)
 {
 #if HAVE_OPENSSL_SESSION_TICKETS
@@ -546,32 +537,34 @@ ssl_context_enable_tickets(SSL_CTX * ctx, const char * ticket_key_path)
   unsigned            num_ticket_keys;
   ssl_ticket_key_block * keyblock = NULL;
 
-  ticket_key_data = readIntoBuffer(ticket_key_path, __func__, &ticket_key_len);
-  if (!ticket_key_data) {
-    Error("failed to read SSL session ticket key from %s", (const char *)ticket_key_path);
-    goto fail;
-  }
+  if (ticket_key_path != NULL) {
+    ticket_key_data = readIntoBuffer(ticket_key_path, __func__, &ticket_key_len);
+    if (!ticket_key_data) {
+      Error("failed to read SSL session ticket key from %s", (const char *)ticket_key_path);
+      goto fail;
+    }
 
-  num_ticket_keys = ticket_key_len / sizeof(ssl_ticket_key_t);
-  if (num_ticket_keys == 0) {
-    Error("SSL session ticket key from %s is too short (>= 48 bytes are required)", (const char *)ticket_key_path);
-    goto fail;
-  }
+    num_ticket_keys = ticket_key_len / sizeof(ssl_ticket_key_t);
+    if (num_ticket_keys == 0) {
+      Error("SSL session ticket key from %s is too short (>= 48 bytes are required)", (const char *)ticket_key_path);
+      goto fail;
+    }
 
-  // Increase the stats.
-  if (ssl_rsb != NULL) { // ssl_rsb is not initialized during the first run.
-    SSL_INCREMENT_DYN_STAT(ssl_total_ticket_keys_renewed_stat);
-  }
+    // Increase the stats.
+    if (ssl_rsb != NULL) { // ssl_rsb is not initialized during the first run.
+      SSL_INCREMENT_DYN_STAT(ssl_total_ticket_keys_renewed_stat);
+    }
 
-  keyblock = ticket_block_alloc(num_ticket_keys);
+    keyblock = ticket_block_alloc(num_ticket_keys);
 
-  // Slurp all the keys in the ticket key file. We will encrypt with the first key, and decrypt
-  // with any key (for rotation purposes).
-  for (unsigned i = 0; i < num_ticket_keys; ++i) {
-    const char * data = (const char *)ticket_key_data + (i * sizeof(ssl_ticket_key_t));
-    memcpy(keyblock->keys[i].key_name, data, sizeof(ssl_ticket_key_t::key_name));
-    memcpy(keyblock->keys[i].hmac_secret, data + sizeof(ssl_ticket_key_t::key_name), sizeof(ssl_ticket_key_t::hmac_secret));
-    memcpy(keyblock->keys[i].aes_key, data + sizeof(ssl_ticket_key_t::key_name) + sizeof(ssl_ticket_key_t::hmac_secret), sizeof(ssl_ticket_key_t::aes_key));
+    // Slurp all the keys in the ticket key file. We will encrypt with the first key, and decrypt
+    // with any key (for rotation purposes).
+    for (unsigned i = 0; i < num_ticket_keys; ++i) {
+      const char * data = (const char *)ticket_key_data + (i * sizeof(ssl_ticket_key_t));
+      memcpy(keyblock->keys[i].key_name, data, sizeof(ssl_ticket_key_t::key_name));
+      memcpy(keyblock->keys[i].hmac_secret, data + sizeof(ssl_ticket_key_t::key_name), sizeof(ssl_ticket_key_t::hmac_secret));
+      memcpy(keyblock->keys[i].aes_key, data + sizeof(ssl_ticket_key_t::key_name) + sizeof(ssl_ticket_key_t::hmac_secret), sizeof(ssl_ticket_key_t::aes_key));
+    }
   }
 
   // Setting the callback can only fail if OpenSSL does not recognize the
@@ -582,21 +575,16 @@ ssl_context_enable_tickets(SSL_CTX * ctx, const char * ticket_key_path)
     goto fail;
   }
 
-  if (SSL_CTX_set_ex_data(ctx, ssl_session_ticket_index, keyblock) == 0) {
-    Error ("failed to set session ticket data to ctx");
-    goto fail;
-  }
-
   SSL_CTX_clear_options(ctx, SSL_OP_NO_TICKET);
-  return ctx;
+  return keyblock;
 
 fail:
   ticket_block_free(keyblock);
-  return ctx;
+  return NULL;
 
 #else /* !HAVE_OPENSSL_SESSION_TICKETS */
   (void)ticket_key_path;
-  return ctx;
+  return NULL;
 #endif /* HAVE_OPENSSL_SESSION_TICKETS */
 }
 
@@ -1700,6 +1688,7 @@ ssl_store_ssl_context(
   SSL_CTX *   ctx = SSLInitServerContext(params, sslMultCertSettings);
   ats_scoped_str  certpath;
   ats_scoped_str  session_key_path;
+  ssl_ticket_key_block *keyblock = NULL;
 
   // The certificate callbacks are set by the caller only 
   // for the default certificate
@@ -1716,10 +1705,20 @@ ssl_store_ssl_context(
 
   certpath = Layout::relative_to(params->serverCertPathOnly, sslMultCertSettings.first_cert);
 
+  // Load the session ticket key if session tickets are not disabled and we have key name.
+  if (sslMultCertSettings.session_ticket_enabled != 0 && sslMultCertSettings.ticket_key_filename) {
+    ats_scoped_str ticket_key_path(Layout::relative_to(params->serverCertPathOnly, sslMultCertSettings.ticket_key_filename));
+    keyblock = ssl_context_enable_tickets(ctx, ticket_key_path);
+  }
+  else if (sslMultCertSettings.session_ticket_enabled != 0) {
+    keyblock = ssl_context_enable_tickets(ctx, NULL);
+  }
+
+
   // Index this certificate by the specified IP(v6) address. If the address is "*", make it the default context.
   if (sslMultCertSettings.addr) {
     if (strcmp(sslMultCertSettings.addr, "*") == 0) {
-      if (lookup->insert(sslMultCertSettings.addr, SSLCertContext(ctx, sslMultCertSettings.opt)) >= 0) {
+      if (lookup->insert(sslMultCertSettings.addr, SSLCertContext(ctx, sslMultCertSettings.opt, keyblock)) >= 0) {
         lookup->ssl_default = ctx;
         ssl_set_handshake_callbacks(ctx);
       }
@@ -1728,7 +1727,7 @@ ssl_store_ssl_context(
 
       if (ats_ip_pton(sslMultCertSettings.addr, &ep) == 0) {
         Debug("ssl", "mapping '%s' to certificate %s", (const char *)sslMultCertSettings.addr, (const char *)certpath);
-        lookup->insert(ep, SSLCertContext(ctx, sslMultCertSettings.opt));
+        lookup->insert(ep, SSLCertContext(ctx, sslMultCertSettings.opt, keyblock));
       } else {
         Error("'%s' is not a valid IPv4 or IPv6 address", (const char *)sslMultCertSettings.addr);
       }
@@ -1742,12 +1741,6 @@ ssl_store_ssl_context(
     Debug("ssl", "ssl session ticket is disabled");
   }
 #endif
-
-  // Load the session ticket key if session tickets are not disabled and we have key name.
-  if (sslMultCertSettings.session_ticket_enabled != 0 && sslMultCertSettings.ticket_key_filename) {
-    ats_scoped_str ticket_key_path(Layout::relative_to(params->serverCertPathOnly, sslMultCertSettings.ticket_key_filename));
-    ssl_context_enable_tickets(ctx, ticket_key_path);
-  }
 
 #ifdef HAVE_OPENSSL_OCSP_STAPLING
   if (SSLConfigParams::ssl_ocsp_enabled) {
@@ -1831,13 +1824,13 @@ ssl_extract_certificate(const matcher_line * line_info, ssl_user_config & sslMul
   }
   if (!sslMultCertSettings.cert) {
     Error("missing %s tag", SSL_CERT_TAG);
-    return false;
-  }
-
-  SimpleTokenizer cert_tok(sslMultCertSettings.cert, SSL_CERT_SEPARATE_DELIM);
-  const char * first_cert = cert_tok.getNext();
-  if (first_cert) {
-      sslMultCertSettings.first_cert = ats_strdup(first_cert);
+    //return false;
+  } else {
+    SimpleTokenizer cert_tok(sslMultCertSettings.cert, SSL_CERT_SEPARATE_DELIM);
+    const char * first_cert = cert_tok.getNext();
+    if (first_cert) {
+        sslMultCertSettings.first_cert = ats_strdup(first_cert);
+    }
   }
 
   return true;
@@ -1939,15 +1932,29 @@ static int
 ssl_callback_session_ticket(SSL * ssl, unsigned char * keyname, unsigned char * iv, EVP_CIPHER_CTX * cipher_ctx,
                             HMAC_CTX * hctx, int enc)
 {
-  ssl_ticket_key_block *key_block_ptr = (ssl_ticket_key_block *)SSL_CTX_get_ex_data(SSL_get_SSL_CTX(ssl), ssl_session_ticket_index);
-  // Read the num of ticket keys stored at the first 4 bytes of the malloc'ed memory.
-  unsigned num_ticket_keys = key_block_ptr->num_keys;
-  ssl_ticket_key_t* ssl_ticket_keys = (ssl_ticket_key_t *)(key_block_ptr + 1);
+  SSLCertLookup *lookup = SSLCertificateConfig::acquire();
+  SSLNetVConnection * netvc = (SSLNetVConnection *)SSL_get_app_data(ssl);
 
-  ink_release_assert(ssl_ticket_keys != NULL);
+  // Get the IP address to look up the keyblock
+  IpEndpoint ip;
+  int namelen = sizeof(ip);
+  safe_getsockname(netvc->get_socket(), &ip.sa, &namelen);
+  SSLCertContext *cc = lookup->find(ip);
+  if (cc == NULL || cc->keyblock == NULL) {
+    // Try the default
+    cc = lookup->find("*");
+  }
+  if (cc == NULL || cc->keyblock == NULL) {
+    // No, key specified.  Must fail out at this point.
+    // Alternatively we could generate a random key
+    return -1; 
+  }
+  ssl_ticket_key_block *keyblock = cc->keyblock;
+
+  ink_release_assert(keyblock != NULL && keyblock->num_keys > 0);
 
   if (enc == 1) {
-    const ssl_ticket_key_t &most_recent_key = ssl_ticket_keys[0];
+    const ssl_ticket_key_t &most_recent_key = keyblock->keys[0];
     memcpy(keyname, most_recent_key.key_name, sizeof(ssl_ticket_key_t::key_name));
     RAND_pseudo_bytes(iv, EVP_MAX_IV_LENGTH);
     EVP_EncryptInit_ex(cipher_ctx, EVP_aes_128_cbc(), NULL, most_recent_key.aes_key, iv);
@@ -1957,10 +1964,10 @@ ssl_callback_session_ticket(SSL * ssl, unsigned char * keyname, unsigned char * 
     SSL_INCREMENT_DYN_STAT(ssl_total_tickets_created_stat);
     return 0;
   } else if (enc == 0) {
-    for (unsigned i = 0; i < num_ticket_keys; ++i) {
-      if (memcmp(keyname, ssl_ticket_keys[i].key_name, sizeof(ssl_ticket_key_t::key_name)) == 0) {
-        EVP_DecryptInit_ex(cipher_ctx, EVP_aes_128_cbc(), NULL, ssl_ticket_keys[i].aes_key, iv);
-        HMAC_Init_ex(hctx, ssl_ticket_keys[i].hmac_secret, sizeof(ssl_ticket_key_t::hmac_secret), evp_md_func, NULL);
+    for (unsigned i = 0; i < keyblock->num_keys; ++i) {
+      if (memcmp(keyname, keyblock->keys[i].key_name, sizeof(ssl_ticket_key_t::key_name)) == 0) {
+        EVP_DecryptInit_ex(cipher_ctx, EVP_aes_128_cbc(), NULL, keyblock->keys[i].aes_key, iv);
+        HMAC_Init_ex(hctx, keyblock->keys[i].hmac_secret, sizeof(ssl_ticket_key_t::hmac_secret), evp_md_func, NULL);
 
         Debug("ssl", "verify the ticket for an existing session.");
         // Increase the total number of decrypted tickets.

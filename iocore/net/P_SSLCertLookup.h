@@ -30,6 +30,19 @@
 struct SSLConfigParams;
 struct SSLContextStorage;
 
+struct ssl_ticket_key_t
+{
+  unsigned char key_name[16];
+  unsigned char hmac_secret[16];
+  unsigned char aes_key[16];
+};
+
+struct ssl_ticket_key_block
+{
+  unsigned num_keys;
+  ssl_ticket_key_t keys[];
+};
+
 /** A certificate context.
 
     This holds data about a certificate and how it is used by the SSL logic. Current this is mainly
@@ -52,12 +65,15 @@ struct SSLCertContext
     OPT_TUNNEL ///< Just tunnel, don't terminate.
   };
 
-  SSLCertContext() : ctx(0), opt(OPT_NONE) {}
-  explicit SSLCertContext(SSL_CTX* c) : ctx(c), opt(OPT_NONE) {}
-  SSLCertContext(SSL_CTX* c, Option o) : ctx(c), opt(o) {}
+  SSLCertContext() : ctx(0), opt(OPT_NONE), keyblock(NULL) {}
+  explicit SSLCertContext(SSL_CTX* c) : ctx(c), opt(OPT_NONE), keyblock(NULL) {}
+  SSLCertContext(SSL_CTX* c, Option o) : ctx(c), opt(o), keyblock(NULL) {}
+  SSLCertContext(SSL_CTX* c, Option o, ssl_ticket_key_block *kb) : ctx(c), opt(o), keyblock(kb) {}
 
   SSL_CTX* ctx; ///< openSSL context.
   Option opt; ///< Special handling option.
+  ssl_ticket_key_block *keyblock; ///< session keys associated with this address
+  
 };
 
 struct SSLCertLookup : public ConfigInfo
