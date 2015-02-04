@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.0
   
+  *) [TS-3299] Fix leaking vc's during inactivitycop, due to null continuation
+
   *) [TS-3359] Use after free: Tunnel destroyed without updating HttpSM
 
   *) [TS-3357] Clean out some unused code from Machine.*.
