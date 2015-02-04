@@ -69,7 +69,6 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
 {
   char config_file[PATH_MAX];
   struct config *cfg;
-  unsigned i;
 
   cfg = TSmalloc(sizeof(struct config));
   memset(cfg, 0, sizeof(struct config));
