@@ -424,6 +424,8 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
       MUTEX_TAKE_LOCK(vol->mutex, thread);
       // see if the entry is till around
       {
+        if (failed)
+          goto Lfailed;
         uint32_t i = key.slice32(3) % nbuckets;
         RamCacheCLFUSEntry *ee = bucket[i].head;
         while (ee) {
@@ -434,8 +436,6 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
           e = compressed;
           goto Lcontinue;
         }
-        if (failed)
-          goto Lfailed;
       }
       if (l > REQUIRED_COMPRESSION * e->len)
         e->flag_bits.incompressible = true;
