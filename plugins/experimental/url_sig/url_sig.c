@@ -103,6 +103,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
     char *pos = strchr(line, '=');
     if (pos == NULL) {
       TSError("Error parsing line %d of file %s (%s).", line_no, config_file, line);
+      continue;
     }
     *pos = '\0';
     char *value = pos + 1;
