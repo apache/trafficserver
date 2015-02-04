@@ -119,25 +119,23 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
       return TS_ERROR;
     }
     if (strncmp(line, "key", 3) == 0) {
-      if (value != NULL) {
-        if (strncmp((char *) (line + 3), "0", 1) == 0) {
-          keynum = 0;
-        } else {
-          TSDebug(PLUGIN_NAME, ">>> %s <<<", line + 3);
-          keynum = atoi((char *) (line + 3));
-          if (keynum == 0) {
-            keynum = -1;        // Not a Number
-          }
+      if (strncmp((char *) (line + 3), "0", 1) == 0) {
+        keynum = 0;
+      } else {
+        TSDebug(PLUGIN_NAME, ">>> %s <<<", line + 3);
+        keynum = atoi((char *) (line + 3));
+        if (keynum == 0) {
+          keynum = -1;        // Not a Number
         }
-        TSDebug(PLUGIN_NAME, "key number %d == %s", keynum, value);
-        if (keynum > MAX_KEY_NUM || keynum == -1) {
-          snprintf(errbuf, errbuf_size - 1, "[TSRemapNewInstance] - Key number (%d) > MAX_KEY_NUM (%d) or NaN.", keynum,
-                   MAX_KEY_NUM);
-          fclose(file);
-          return TS_ERROR;
-        }
-        strcpy(&cfg->keys[keynum][0], value);
       }
+      TSDebug(PLUGIN_NAME, "key number %d == %s", keynum, value);
+      if (keynum > MAX_KEY_NUM || keynum == -1) {
+        snprintf(errbuf, errbuf_size - 1, "[TSRemapNewInstance] - Key number (%d) > MAX_KEY_NUM (%d) or NaN.", keynum,
+                 MAX_KEY_NUM);
+        fclose(file);
+        return TS_ERROR;
+      }
+      strcpy(&cfg->keys[keynum][0], value);
     } else if (strncmp(line, "error_url", 9) == 0) {
       if (atoi(value)) {
         cfg->err_status = atoi(value);
