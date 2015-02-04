@@ -136,6 +136,20 @@ read_signal_and_update(int event, UnixNetVConnection *vc)
   vc->recursion++;
   if (vc->read.vio._cont) {
     vc->read.vio._cont->handleEvent(event, &vc->read.vio);
+  } else {
+    switch (event) {
+    case VC_EVENT_EOS:
+    case VC_EVENT_ERROR:
+    case VC_EVENT_ACTIVE_TIMEOUT:
+    case VC_EVENT_INACTIVITY_TIMEOUT:
+      Debug("inactivity_cop", "event %d: null cont, closing vc %p", event, vc);
+      vc->closed = 1;
+      break;
+    default:
+      Error ("Unexpected event %d for vc %p", event, vc);
+      ink_release_assert(0);
+      break;
+    }
   }
   if (!--vc->recursion && vc->closed) {
     /* BZ  31932 */
