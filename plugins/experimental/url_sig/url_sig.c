@@ -38,12 +38,18 @@ static const char *PLUGIN_NAME = "url_sig";
 
 struct config
 {
-  char *map_from;
-  char *map_to;
   TSHttpStatus err_status;
   char *err_url;
   char keys[MAX_KEY_NUM][MAX_KEY_LEN];
 };
+
+void
+free_cfg(struct config *cfg)
+{
+  TSError("Cleaning up...");
+  TSfree(cfg->err_url);
+  TSfree(cfg);
+}
 
 TSReturnCode
 TSRemapInit(TSRemapInterface * api_info, char *errbuf, int errbuf_size)
@@ -70,9 +76,6 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
   char config_file[PATH_MAX];
   struct config *cfg;
 
-  cfg = TSmalloc(sizeof(struct config));
-  memset(cfg, 0, sizeof(struct config));
-
   if (argc != 3) {
     snprintf(errbuf, errbuf_size - 1,
              "[TSRemapNewKeyInstance] - Argument count wrong (%d)... Need exactly two pparam= (config file name).",
@@ -80,8 +83,6 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
     return TS_ERROR;
   }
   TSDebug(PLUGIN_NAME, "Initializing remap function of %s -> %s with config from %s", argv[0], argv[1], argv[2]);
-  cfg->map_from = TSstrndup(argv[0], strlen(argv[0]));
-  cfg->map_to = TSstrndup(argv[0], strlen(argv[1]));
 
   const char *install_dir = TSInstallDirGet();
   snprintf(config_file, sizeof(config_file), "%s/%s/%s", install_dir, "etc/trafficserver", argv[2]);
@@ -95,6 +96,10 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
   char line[260];
   int line_no = 0;
   int keynum;
+
+  cfg = TSmalloc(sizeof(struct config));
+  memset(cfg, 0, sizeof(struct config));
+
   while (fgets(line, sizeof(line), file) != NULL) {
     TSDebug(PLUGIN_NAME, "LINE: %s (%d)", line, (int) strlen(line));
     line_no++;
@@ -116,6 +121,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
       snprintf(errbuf, errbuf_size - 1, "[TSRemapNewInstance] - Maximum line (%d) exceeded on line %d.", MAX_KEY_LEN,
                line_no);
       fclose(file);
+      free_cfg(cfg);
       return TS_ERROR;
     }
     if (strncmp(line, "key", 3) == 0) {
@@ -133,6 +139,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
         snprintf(errbuf, errbuf_size - 1, "[TSRemapNewInstance] - Key number (%d) > MAX_KEY_NUM (%d) or NaN.", keynum,
                  MAX_KEY_NUM);
         fclose(file);
+        free_cfg(cfg);
         return TS_ERROR;
       }
       strcpy(&cfg->keys[keynum][0], value);
@@ -163,6 +170,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
       snprintf(errbuf, errbuf_size - 1,
                "[TSRemapNewInstance] - Invalid config, err_status == 302, but err_url == NULL");
       fclose(file);
+      free_cfg(cfg);
       return TS_ERROR;
     }
     break;
@@ -171,12 +179,14 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
       snprintf(errbuf, errbuf_size - 1,
                "[TSRemapNewInstance] - Invalid config, err_status == 403, but err_url != NULL");
       fclose(file);
+      free_cfg(cfg);
       return TS_ERROR;
     }
     break;
   default:
     snprintf(errbuf, errbuf_size - 1, "[TSRemapNewInstance] - Return code %d not supported.", cfg->err_status);
     fclose(file);
+    free_cfg(cfg);
     return TS_ERROR;
 
   }
@@ -190,14 +200,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
 void
 TSRemapDeleteInstance(void *ih)
 {
-  struct config *cfg;
-  cfg = (struct config *) ih;
-
-  TSError("Cleaning up...");
-  TSfree(cfg->map_from);
-  TSfree(cfg->map_to);
-  TSfree(cfg->err_url);
-  TSfree(cfg);
+  free_cfg((struct config *)ih);
 }
 
 void
