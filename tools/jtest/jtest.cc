@@ -2326,6 +2326,7 @@ static int make_client (unsigned int addr, int port) {
       break;
     if (verbose_errors) fprintf(stderr, "connect failed errno = %d\n", errno);
     errors++;
+    close(sock);
     return -1;
   }
 
