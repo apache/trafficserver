@@ -1689,6 +1689,7 @@ ssl_store_ssl_context(
   ats_scoped_str  certpath;
   ats_scoped_str  session_key_path;
   ssl_ticket_key_block *keyblock = NULL;
+  bool inserted = false;
 
   // The certificate callbacks are set by the caller only 
   // for the default certificate
@@ -1719,6 +1720,7 @@ ssl_store_ssl_context(
   if (sslMultCertSettings.addr) {
     if (strcmp(sslMultCertSettings.addr, "*") == 0) {
       if (lookup->insert(sslMultCertSettings.addr, SSLCertContext(ctx, sslMultCertSettings.opt, keyblock)) >= 0) {
+        inserted = true;
         lookup->ssl_default = ctx;
         ssl_set_handshake_callbacks(ctx);
       }
@@ -1727,7 +1729,9 @@ ssl_store_ssl_context(
 
       if (ats_ip_pton(sslMultCertSettings.addr, &ep) == 0) {
         Debug("ssl", "mapping '%s' to certificate %s", (const char *)sslMultCertSettings.addr, (const char *)certpath);
-        lookup->insert(ep, SSLCertContext(ctx, sslMultCertSettings.opt, keyblock));
+        if (lookup->insert(ep, SSLCertContext(ctx, sslMultCertSettings.opt, keyblock)) >= 0) {
+          inserted = true;
+        }
       } else {
         Error("'%s' is not a valid IPv4 or IPv6 address", (const char *)sslMultCertSettings.addr);
       }
@@ -1766,6 +1770,9 @@ ssl_store_ssl_context(
 
   if (SSLConfigParams::init_ssl_ctx_cb) {
     SSLConfigParams::init_ssl_ctx_cb(ctx, true);
+  }
+  if (!inserted && keyblock != NULL) {
+    ticket_block_free(keyblock);
   }
 
   return ctx;
