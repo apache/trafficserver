@@ -168,6 +168,7 @@ RecPipeCreate(const char *base_path, const char *name)
   // set so that child process doesn't inherit our fd
   if (fcntl(listenfd, F_SETFD, 1) < 0) {
     RecLog(DL_Warning, "[RecPipeCreate] fcntl error\n");
+    close(listenfd);
     return REC_HANDLE_INVALID;
   }
 
@@ -178,6 +179,7 @@ RecPipeCreate(const char *base_path, const char *name)
   int optval = 1;
   if (setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, (char *) &optval, sizeof(int)) < 0) {
     RecLog(DL_Warning, "[RecPipeCreate] setsockopt error\n");
+    close(listenfd);
     return REC_HANDLE_INVALID;
   }
 
