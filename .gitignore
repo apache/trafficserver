@@ -129,6 +129,7 @@ CTAGS
 
 lib/tsconfig/TsConfigGrammar.hpp
 lib/tsconfig/test-tsconfig
+lib/tsconfig/TsConfigSyntax.c
 
 tools/http_load/http_load
 tools/jtest/jtest
