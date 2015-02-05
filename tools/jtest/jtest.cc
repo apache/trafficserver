@@ -1401,8 +1401,10 @@ static int open_server(unsigned short int port, accept_fn_t accept_fn) {
     exit( EXIT_FAILURE);
   }
   if ((err=bind (sock, (struct sockaddr *) &name, sizeof (name))) < 0) {
-    if (errno == EADDRINUSE)
+    if (errno == EADDRINUSE) {
+      close(sock);
       return -EADDRINUSE;
+   }
     perror("bind");
     exit( EXIT_FAILURE);
   }
