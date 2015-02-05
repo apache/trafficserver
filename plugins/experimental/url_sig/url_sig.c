@@ -434,8 +434,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo * rri)
 
   /* ********* Deny ********* */
 deny:
-  if (url)
-    TSfree(url);
+  TSfree(url);
 
   switch (cfg->err_status) {
   case TS_HTTP_STATUS_MOVED_TEMPORARILY:
@@ -459,8 +458,8 @@ deny:
   return TSREMAP_DID_REMAP;
 
   /* ********* Allow ********* */
-allow:if (url)
-    TSfree(url);
+allow:
+  TSfree(url);
   /* drop the query string so we can cache-hit */
   rval = TSUrlHttpQuerySet(rri->requestBufp, rri->requestUrl, NULL, 0);
   if (rval != TS_SUCCESS) {
