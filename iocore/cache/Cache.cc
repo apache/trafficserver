@@ -728,7 +728,7 @@ CacheProcessor::start_internal(int flags)
     if (fd < 0 && (opts & O_CREAT))  // Try without O_DIRECT if this is a file on filesystem, e.g. tmpfs.
       fd = open(path, DEFAULT_CACHE_OPTIONS | O_CREAT, 0644);
 
-    if (fd > 0) {
+    if (fd >= 0) {
       if (!sd->file_pathname) {
         if (ftruncate(fd, ((uint64_t) blocks) * STORE_BLOCK_SIZE) < 0) {
           Warning("unable to truncate cache file '%s' to %d blocks", path, blocks);
@@ -773,7 +773,7 @@ CacheProcessor::start_internal(int flags)
       else
         Warning("cache unable to open '%s': %s", path, strerror(errno));
     }
-    if (fd > 0) {
+    if (fd >= 0) {
       close(fd);
     }
   }
