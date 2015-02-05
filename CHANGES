@@ -1,13 +1,15 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.0
 
-  *) [TS-3366] TS shouldn't use HostDB for 127.0.0.1 or ::1
+  *) [TS-3366] TS shouldn't use HostDB for 127.0.0.1 or ::1.
 
-  *) [TS-2480] Fix session ticket key lookup to work with the default context bootstrap
+  *) [TS-2480] Fix session ticket key lookup to work with the default context
+   bootstrap.
 
-  *) [TS-3299] Fix leaking vc's during inactivitycop, due to null continuation
+  *) [TS-3299] Fix leaking vc's during inactivitycop, due to null
+   continuation.
 
-  *) [TS-3359] Use after free: Tunnel destroyed without updating HttpSM
+  *) [TS-3359] Use after free: Tunnel destroyed without updating HttpSM.
 
   *) [TS-3357] Clean out some unused code from Machine.*.
 
@@ -21,7 +23,7 @@ Changes with Apache Traffic Server 5.3.0
 
   *) [TS-3319] Adapt to OpenSSL 1.0.2 certificate callback.
 
-  *) [TS-1435] return full content if client is a muti range request
+  *) [TS-1435] return full content if client is a multi-range request
     Author: Lars Svensson <lars-apache@vmail.se>
 
   *) [TS-3343] outbound transparent can end up with Connection: keep-alive
