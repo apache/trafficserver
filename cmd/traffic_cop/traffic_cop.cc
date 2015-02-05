@@ -1875,13 +1875,19 @@ main(int /* argc */, char *argv[])
 
   // Detach STDIN, STDOUT, and STDERR (basically, "nohup"). /leif
   if (!stdout_flag) {
-    close(STDIN_FILENO);
-    close(STDOUT_FILENO);
-    close(STDERR_FILENO);
     if ((fd = open("/dev/null", O_WRONLY, 0)) >= 0) {
-      fcntl(fd, F_DUPFD, STDIN_FILENO);
-      fcntl(fd, F_DUPFD, STDOUT_FILENO);
-      fcntl(fd, F_DUPFD, STDERR_FILENO);
+      if ((dup2(fd, STDIN_FILENO)) < 0) {
+        ink_fputln(stderr, "Unable to detach stdin");
+        return 0;
+      }
+      if ((dup2(fd, STDOUT_FILENO)) < 0) {
+        ink_fputln(stderr, "Unable to detach stdout");
+        return 0;
+      }
+      if ((dup2(fd, STDERR_FILENO)) < 0) {
+        ink_fputln(stderr, "Unable to detach stderr");
+        return 0;
+      }
       close(fd);
     } else {
       ink_fputln(stderr, "Unable to open /dev/null");
