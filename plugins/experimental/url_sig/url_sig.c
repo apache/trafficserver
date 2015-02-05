@@ -135,8 +135,8 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
         }
       }
       TSDebug(PLUGIN_NAME, "key number %d == %s", keynum, value);
-      if (keynum > MAX_KEY_NUM || keynum == -1) {
-        snprintf(errbuf, errbuf_size - 1, "[TSRemapNewInstance] - Key number (%d) > MAX_KEY_NUM (%d) or NaN.", keynum,
+      if (keynum >= MAX_KEY_NUM  || keynum < 0) {
+        snprintf(errbuf, errbuf_size - 1, "[TSRemapNewInstance] - Key number (%d) >= MAX_KEY_NUM (%d) or NaN.", keynum,
                  MAX_KEY_NUM);
         fclose(file);
         free_cfg(cfg);
