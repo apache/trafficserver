@@ -445,7 +445,7 @@ the same for both days, then you can calculate a rough metric that compares
 the two formats.
 
 For standard log formats, select Binary or ASCII (refer to
-`Setting Standard Log File Format Options`_). For the custom log
+`Using Standard Formats`_). For the custom log
 format, specify ASCII or Binary mode in the :ref:`LogObject`
 (refer to :ref:`using-custom-log-formats`). In addition
 to the ASCII and binary options, you can also write custom log entries
