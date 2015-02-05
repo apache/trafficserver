@@ -342,13 +342,13 @@ The following is an example of a ``LogFilter`` that will cause only
          </LogFilter>
 
 The following is an example of a ``LogFilter`` that will cause the value of
-passwd field be wiped in cquc
+passwd field be wiped in ``cquc`` ::
 
-<LogFilter>
-    <Name = "wipe_password"/>
-    <Condition = "cquc CONTAIN passwd"/>
-    <Action = "WIPE_FIELD_VALUE"/>
-</LogFilter>
+         <LogFilter>
+             <Name = "wipe_password"/>
+             <Condition = "cquc CONTAIN passwd"/>
+             <Action = "WIPE_FIELD_VALUE"/>
+         </LogFilter>
 
 The following is an example of a ``LogObject`` specification that
 creates a local log file for the minimal format defined earlier. The log
