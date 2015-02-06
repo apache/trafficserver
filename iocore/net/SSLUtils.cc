@@ -543,28 +543,34 @@ ssl_context_enable_tickets(SSL_CTX * ctx, const char * ticket_key_path)
       Error("failed to read SSL session ticket key from %s", (const char *)ticket_key_path);
       goto fail;
     }
+  } else {
+     // Generate a random ticket key
+     ticket_key_len = 48;
+     ticket_key_data = (char *)ats_malloc(ticket_key_len);
+     char *tmp_ptr = ticket_key_data;
+     RAND_bytes(reinterpret_cast<unsigned char *>(tmp_ptr), ticket_key_len);
+  }
 
-    num_ticket_keys = ticket_key_len / sizeof(ssl_ticket_key_t);
-    if (num_ticket_keys == 0) {
-      Error("SSL session ticket key from %s is too short (>= 48 bytes are required)", (const char *)ticket_key_path);
-      goto fail;
-    }
+  num_ticket_keys = ticket_key_len / sizeof(ssl_ticket_key_t);
+  if (num_ticket_keys == 0) {
+    Error("SSL session ticket key from %s is too short (>= 48 bytes are required)", (const char *)ticket_key_path);
+    goto fail;
+  }
 
-    // Increase the stats.
-    if (ssl_rsb != NULL) { // ssl_rsb is not initialized during the first run.
-      SSL_INCREMENT_DYN_STAT(ssl_total_ticket_keys_renewed_stat);
-    }
+  // Increase the stats.
+  if (ssl_rsb != NULL) { // ssl_rsb is not initialized during the first run.
+    SSL_INCREMENT_DYN_STAT(ssl_total_ticket_keys_renewed_stat);
+  }
 
-    keyblock = ticket_block_alloc(num_ticket_keys);
+  keyblock = ticket_block_alloc(num_ticket_keys);
 
-    // Slurp all the keys in the ticket key file. We will encrypt with the first key, and decrypt
-    // with any key (for rotation purposes).
-    for (unsigned i = 0; i < num_ticket_keys; ++i) {
-      const char * data = (const char *)ticket_key_data + (i * sizeof(ssl_ticket_key_t));
-      memcpy(keyblock->keys[i].key_name, data, sizeof(ssl_ticket_key_t::key_name));
-      memcpy(keyblock->keys[i].hmac_secret, data + sizeof(ssl_ticket_key_t::key_name), sizeof(ssl_ticket_key_t::hmac_secret));
-      memcpy(keyblock->keys[i].aes_key, data + sizeof(ssl_ticket_key_t::key_name) + sizeof(ssl_ticket_key_t::hmac_secret), sizeof(ssl_ticket_key_t::aes_key));
-    }
+  // Slurp all the keys in the ticket key file. We will encrypt with the first key, and decrypt
+  // with any key (for rotation purposes).
+  for (unsigned i = 0; i < num_ticket_keys; ++i) {
+    const char * data = (const char *)ticket_key_data + (i * sizeof(ssl_ticket_key_t));
+    memcpy(keyblock->keys[i].key_name, data, sizeof(ssl_ticket_key_t::key_name));
+    memcpy(keyblock->keys[i].hmac_secret, data + sizeof(ssl_ticket_key_t::key_name), sizeof(ssl_ticket_key_t::hmac_secret));
+    memcpy(keyblock->keys[i].aes_key, data + sizeof(ssl_ticket_key_t::key_name) + sizeof(ssl_ticket_key_t::hmac_secret), sizeof(ssl_ticket_key_t::aes_key));
   }
 
   // Setting the callback can only fail if OpenSSL does not recognize the
@@ -1771,10 +1777,11 @@ ssl_store_ssl_context(
   if (SSLConfigParams::init_ssl_ctx_cb) {
     SSLConfigParams::init_ssl_ctx_cb(ctx, true);
   }
+#if HAVE_OPENSSL_SESSION_TICKETS
   if (!inserted && keyblock != NULL) {
     ticket_block_free(keyblock);
   }
-
+#endif
   return ctx;
 }
 
