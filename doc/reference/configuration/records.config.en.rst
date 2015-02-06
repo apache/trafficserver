@@ -924,12 +924,17 @@ Origin Server Connect Attempts
 .. ts:cv:: CONFIG proxy.config.http.connect_attempts_max_retries INT 6
    :reloadable:
 
-   The maximum number of connection retries Traffic Server can make when the origin server is not responding.
+   The maximum number of connection retries Traffic Server can make when the origin server is not responding.  
+   Each retry attempt lasts for `proxy.config.http.connect_attempts_timeout`_ seconds.  Once the maximum number of retries is
+   reached, the origin is marked dead.  After this, the setting  `proxy.config.http.connect_attempts_max_retries_dead_server`_
+   is used to limit the number of retry attempts to the known dead origin.
 
 .. ts:cv:: CONFIG proxy.config.http.connect_attempts_max_retries_dead_server INT 3
    :reloadable:
 
-   The maximum number of connection retries Traffic Server can make when the origin server is unavailable.
+   Maximum number of connection retries Traffic Server can make while an origin is marked dead.  Typically this value is smaller than
+   `proxy.config.http.connect_attempts_max_retries`_ so an error is returned to the client faster and also to reduce the load on the dead origin.
+   The timeout interval `proxy.config.http.connect_attempts_timeout`_ in seconds is used with this setting.
 
 .. ts:cv:: CONFIG proxy.config.http.server_max_connections INT 0
    :reloadable:
@@ -963,7 +968,7 @@ Origin Server Connect Attempts
 .. ts:cv:: CONFIG proxy.config.http.connect_attempts_timeout INT 30
    :reloadable:
 
-   The timeout value (in seconds) for an origin server connection.
+   The timeout value (in seconds) for **time to first byte** for an origin server connection.
 
 .. ts:cv:: CONFIG proxy.config.http.post_connect_attempts_timeout INT 1800
    :reloadable:
