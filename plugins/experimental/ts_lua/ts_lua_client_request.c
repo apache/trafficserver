@@ -202,7 +202,7 @@ ts_lua_client_request_header_set(lua_State * L)
     }
 
   } else if (field_loc) {
-    TSMimeHdrFieldValueStringSet(http_ctx->client_request_bufp, http_ctx->client_request_hdrp, field_loc, 0, val,
+    TSMimeHdrFieldValueStringSet(http_ctx->client_request_bufp, http_ctx->client_request_hdrp, field_loc, -1, val,
                                  val_len);
 
   } else if (TSMimeHdrFieldCreateNamed(http_ctx->client_request_bufp, http_ctx->client_request_hdrp,
