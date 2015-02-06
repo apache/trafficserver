@@ -24,13 +24,18 @@ AM_CPPFLAGS = $(iocore_include_dirs) \
   -I$(top_srcdir)/lib/ts \
   -I$(top_srcdir)/lib/wccp
 
+AM_LDFLAGS = \
+  @EXTRA_CXX_LDFLAGS@ \
+  @LIBTOOL_LINK_FLAGS@ \
+  @OPENSSL_LDFLAGS@
+
 bin_PROGRAMS = traffic_wccp
 
-traffic_wccp_SOURCES = wccp_client.cc
+traffic_wccp_SOURCES = \
+  wccp_client.cc
 
-traffic_wccp_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
-
-traffic_wccp_LDADD = -L$(top_builddir)/lib/tsconfig -ltsconfig \
-  -L$(top_builddir)/lib/wccp -lwccp \
-  -L$(top_builddir)/lib/ts -ltsutil
+traffic_wccp_LDADD = \
+  $(top_builddir)/lib/tsconfig/libtsconfig.la \
+  $(top_builddir)/lib/wccp/libwccp.a \
+  $(top_builddir)/lib/ts/libtsutil.a
 

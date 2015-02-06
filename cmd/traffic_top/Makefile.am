@@ -20,17 +20,22 @@ if BUILD_TSTOP
 
 AM_CPPFLAGS = \
   $(iocore_include_dirs) \
-  -I$(top_srcdir)/lib -I$(top_builddir)/lib \
-  -I$(top_srcdir)/lib/ts -I$(top_builddir)/lib/ts \
+  -I$(top_srcdir)/lib \
+  -I$(top_builddir)/lib \
+  -I$(top_srcdir)/lib/ts \
+  -I$(top_builddir)/lib/ts \
   -I$(top_srcdir)/mgmt/api/include \
   @CURL_CFLAGS@
 
+AM_LDFLAGS = \
+  @EXTRA_CXX_LDFLAGS@ \
+  @LIBTOOL_LINK_FLAGS@ \
+  @OPENSSL_LDFLAGS@
 
 bin_PROGRAMS = traffic_top
 
 traffic_top_SOURCES = traffic_top.cc
 
-traffic_top_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
 traffic_top_LDADD = \
   $(top_builddir)/mgmt/api/libtsmgmt.la \
   @CURL_LIBS@ @CURSES_LIB@

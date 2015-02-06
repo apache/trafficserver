@@ -18,7 +18,6 @@
 bin_PROGRAMS = traffic_crashlog
 
 AM_CPPFLAGS = \
-  @OPENSSL_INCLUDES@ \
   $(iocore_include_dirs) \
   -I$(top_srcdir)/lib \
   -I$(top_builddir)/lib \
@@ -28,15 +27,17 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/mgmt/utils \
   -I$(top_srcdir)/mgmt/api/include
 
+AM_LDFLAGS = \
+  @EXTRA_CXX_LDFLAGS@ \
+  @LIBTOOL_LINK_FLAGS@ \
+  @OPENSSL_LDFLAGS@
+
 traffic_crashlog_SOURCES = \
   procinfo.cc \
   traffic_crashlog.cc \
   traffic_crashlog.h
 
 traffic_crashlog_LDADD = \
-  @LIBTOOL_LINK_FLAGS@ \
-  @OPENSSL_LIBS@ \
-  @OPENSSL_LDFLAGS@ \
   $(top_builddir)/lib/records/librecords_p.a \
   $(top_builddir)/mgmt/libmgmt_p.la \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \

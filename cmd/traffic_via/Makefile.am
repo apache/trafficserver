@@ -23,12 +23,16 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/lib/ts \
   -I$(top_srcdir)/mgmt/api/include
 
+AM_LDFLAGS = \
+  @EXTRA_CXX_LDFLAGS@ \
+  @LIBTOOL_LINK_FLAGS@ \
+  @OPENSSL_LDFLAGS@
+
 bin_PROGRAMS = traffic_via
 
 traffic_via_SOURCES = \
   traffic_via.cc
 
-traffic_via_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
 traffic_via_LDADD = \
   $(top_builddir)/lib/ts/libtsutil.la \
   @LIBTCL@

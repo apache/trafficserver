@@ -73,9 +73,9 @@ libmgmt_lm_la_SOURCES = \
 
 libmgmt_lm_la_LIBADD = \
   libmgmt_c.la \
-  cluster/libcluster.la \
-  utils/libutils_lm.la
+  $(top_builddir)/mgmt/cluster/libcluster.la \
+  $(top_builddir)/mgmt/utils/libutils_lm.la
 
 libmgmt_p_la_LIBADD = \
   libmgmt_c.la \
-  utils/libutils_p.la
+  $(top_builddir)/mgmt/utils/libutils_p.la
