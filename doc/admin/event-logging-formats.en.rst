@@ -43,12 +43,18 @@ The following list describes Traffic Server custom logging fields.
     HTTP header. For example, ``%<{Accept-Language}cqh>`` logs the
     ``Accept-Language:`` field in client request headers.
 
+    .. note::
+        ecqh is the escaped version of this map
+
 .. _pqh:
 
 ``{HTTP header field name}pqh``
     Logs the information in the requested field of the proxy request
     HTTP header. For example, ``%<{Authorization}pqh>`` logs
     the ``Authorization:`` field in proxy request headers.
+
+    .. note::
+        epqh is the escaped version of this map
 
 .. _psh:
 
@@ -57,12 +63,28 @@ The following list describes Traffic Server custom logging fields.
     HTTP header. For example, ``%<{Retry-After}psh>`` logs the
     ``Retry-After:`` field in proxy response headers.
 
+    .. note::
+        epsh is the escaped version of this map
+
 .. _ssh:
 
 ``{HTTP header field name}ssh``
     Logs the information in the requested field of the server response
     HTTP header. For example, ``%<{Age}ssh>`` logs the ``Age:`` field in
     server response headers.
+
+    .. note::
+        essh is the escaped version of this map
+
+.. _cssh:
+
+``{HTTP header field name}cssh``
+    Logs the information in the requested field of the cached server response
+    HTTP header. For example, ``%<{Age}cssh>`` logs the ``Age:`` field in
+    the cached server response headers.
+
+    .. note::
+        ecssh is the escaped version of this map
 
 .. _caun:
 
