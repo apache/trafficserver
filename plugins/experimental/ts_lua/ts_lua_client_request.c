@@ -767,9 +767,9 @@ ts_lua_client_request_get_version(lua_State * L)
   version = TSHttpHdrVersionGet(http_ctx->client_request_bufp, http_ctx->client_request_hdrp);
 
   n = snprintf(buf, sizeof(buf), "%d.%d", TS_HTTP_MAJOR(version), TS_HTTP_MINOR(version));
-  if (n >= sizeof(buf)) {
+  if (n >= (int)sizeof(buf)) {
     lua_pushlstring(L, buf, sizeof(buf) - 1);
-  } else {
+  } else if(n > 0){
     lua_pushlstring(L, buf, n);
   }
 

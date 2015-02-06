@@ -79,10 +79,10 @@ ts_lua_inject_hook_api(lua_State * L)
 static void
 ts_lua_inject_hook_variables(lua_State * L)
 {
-  int i;
+  size_t i;
 
   for (i = 0; i < sizeof(ts_lua_hook_id_string) / sizeof(char *); i++) {
-    lua_pushinteger(L, i);
+    lua_pushinteger(L, (lua_Integer)i);
     lua_setglobal(L, ts_lua_hook_id_string[i]);
   }
 }

@@ -62,7 +62,8 @@ ts_lua_add_package_path(lua_State * L)
   const char *data;
   const char *ptr, *end, *hit;
   size_t dlen;
-  size_t i, n, item_len;
+  int i, n;
+  size_t item_len;
   ts_lua_package_path pp[TS_LUA_MAX_PACKAGE_NUM];
   ts_lua_package_path *elt;
 
@@ -183,7 +184,8 @@ ts_lua_add_package_cpath(lua_State * L)
   const char *data;
   const char *ptr, *end, *hit;
   size_t dlen;
-  size_t i, n, item_len;
+  int i, n;
+  size_t item_len;
   ts_lua_package_path pp[TS_LUA_MAX_PACKAGE_NUM];
   ts_lua_package_path *elt;
 

@@ -50,7 +50,7 @@ ts_lua_inject_remap_api(lua_State * L)
 static void
 ts_lua_inject_remap_variables(lua_State * L)
 {
-  int i;
+  size_t i;
 
   for (i = 0; i < sizeof(ts_lua_remap_status_vars) / sizeof(ts_lua_var_item); i++) {
     lua_pushinteger(L, ts_lua_remap_status_vars[i].nvar);

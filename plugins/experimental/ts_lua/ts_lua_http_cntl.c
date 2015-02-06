@@ -57,7 +57,7 @@ ts_lua_inject_http_cntl_api(lua_State * L)
 static void
 ts_lua_inject_http_cntl_variables(lua_State * L)
 {
-  int i;
+  size_t i;
 
   for (i = 0; i < sizeof(ts_lua_http_cntl_type_vars) / sizeof(ts_lua_var_item); i++) {
     lua_pushinteger(L, ts_lua_http_cntl_type_vars[i].nvar);

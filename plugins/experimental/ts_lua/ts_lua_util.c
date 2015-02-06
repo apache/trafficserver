@@ -338,7 +338,7 @@ ts_lua_get_http_ctx(lua_State * L)
 ts_lua_http_ctx *
 ts_lua_create_http_ctx(ts_lua_main_ctx * main_ctx, ts_lua_instance_conf * conf)
 {
-  int i, size;
+  size_t i, size;
   ts_lua_http_ctx *http_ctx;
   lua_State *L;
   lua_State *l;
@@ -445,7 +445,7 @@ ts_lua_get_http_intercept_ctx(lua_State * L)
 ts_lua_http_intercept_ctx *
 ts_lua_create_http_intercept_ctx(ts_lua_http_ctx * http_ctx)
 {
-  int i, size;
+  size_t i, size;
   lua_State *L;
   ts_lua_http_intercept_ctx *ictx;
 

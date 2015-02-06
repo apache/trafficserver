@@ -125,10 +125,10 @@ ts_lua_inject_http_misc_api(lua_State * L)
 static void
 ts_lua_inject_cache_lookup_result_variables(lua_State * L)
 {
-  int i;
+  size_t i;
 
   for (i = 0; i < sizeof(ts_lua_cache_lookup_result_string) / sizeof(char *); i++) {
-    lua_pushinteger(L, i);
+    lua_pushinteger(L, (lua_Integer)i);
     lua_setglobal(L, ts_lua_cache_lookup_result_string[i]);
   }
 }

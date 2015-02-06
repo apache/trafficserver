@@ -292,9 +292,9 @@ ts_lua_server_response_get_version(lua_State * L)
 
   n = snprintf(buf, sizeof(buf), "%d.%d", TS_HTTP_MAJOR(version), TS_HTTP_MINOR(version));
 
-  if(n >= sizeof(buf)) {
+  if(n >= (int)sizeof(buf)) {
     lua_pushlstring(L, buf, sizeof(buf) - 1);
-  } else {
+  } else if(n > 0) {
     lua_pushlstring(L, buf, n);
   }
   

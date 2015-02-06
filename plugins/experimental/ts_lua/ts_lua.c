@@ -39,6 +39,7 @@ TSRemapInit(TSRemapInterface * api_info, char *errbuf, int errbuf_size)
 
   if (!api_info || api_info->size < sizeof(TSRemapInterface)) {
     strncpy(errbuf, "[TSRemapInit] - Incorrect size of TSRemapInterface structure", errbuf_size - 1);
+    errbuf[errbuf_size - 1] = '\0';
     return TS_ERROR;
   }
 
@@ -67,6 +68,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
 
   if (argc < 3) {
     strncpy(errbuf, "[TSRemapNewInstance] - lua script file or string is required !!", errbuf_size - 1);
+    errbuf[errbuf_size - 1] = '\0';
     return TS_ERROR;
   }
 
@@ -81,14 +83,14 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
   ts_lua_instance_conf *conf = TSmalloc(sizeof(ts_lua_instance_conf));
   if (!conf) {
     strncpy(errbuf, "[TSRemapNewInstance] TSmalloc failed!!", errbuf_size - 1);
+    errbuf[errbuf_size - 1] = '\0';
     return TS_ERROR;
   }
 
   memset(conf, 0, sizeof(ts_lua_instance_conf));
 
   if (fn) {
-    sprintf(conf->script, "%s", argv[2]);
-
+    snprintf(conf->script, TS_LUA_MAX_SCRIPT_FNAME_LENGTH, "%s", argv[2]);
   } else {
     conf->content = argv[2];
   }
@@ -99,6 +101,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
 
   if (ret != 0) {
     strncpy(errbuf, "[TSRemapNewInstance] ts_lua_add_module failed", errbuf_size - 1);
+    errbuf[errbuf_size - 1] = '\0';
     return TS_ERROR;
   }
 
@@ -355,7 +358,7 @@ TSPluginInit(int argc, const char *argv[])
   }
   memset(conf, 0, sizeof(ts_lua_instance_conf));
 
-  sprintf(conf->script, "%s", argv[1]);
+  snprintf(conf->script, TS_LUA_MAX_SCRIPT_FNAME_LENGTH, "%s", argv[1]);
 
   ts_lua_init_instance(conf);
 
