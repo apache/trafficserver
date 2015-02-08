@@ -35,10 +35,7 @@ ServiceGroup::setSvcType(ServiceGroup::Type t) {
   if (STANDARD == t) {
     // For standard service, everything past ID must be zero.
     memset(&m_priority, 0,
-      sizeof(this) - (
-        reinterpret_cast<char*>(&m_priority) - reinterpret_cast<char*>(this)
-      )
-    );
+           sizeof(*this) - (reinterpret_cast<char*>(&m_priority) - reinterpret_cast<char*>(this)));
   }
   m_svc_type = t; // store actual type.
   return *this;
