@@ -96,6 +96,7 @@ bool FailureInfo::isAttemptReq()
             prob=_avgOverWindow;
 
         _debugLog(_debug_tag,"[%s] Calculated probability is %lf",__FUNCTION__,prob);
+        // coverity[dont_call]
         int decision=rand()%100;
 
         if(decision<prob*100) {
