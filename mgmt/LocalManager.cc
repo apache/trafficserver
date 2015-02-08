@@ -1006,7 +1006,7 @@ LocalManager::listenForProxy()
     return;
 
   // We are not already bound, bind the port
-  for ( int i = 0, n = lmgmt->m_proxy_ports.length() ; i < n ; ++i ) {
+  for (int i = 0, n = lmgmt->m_proxy_ports.length() ; i < n ; ++i ) {
     HttpProxyPort& p = lmgmt->m_proxy_ports[i];
     if (ts::NO_FD == p.m_fd) {
       this->bindProxyPort(p);
@@ -1019,11 +1019,24 @@ LocalManager::listenForProxy()
     if (found) {
       backlog = config_backlog;
     }
+    const char* af_family;
+
+    switch (p.m_family) {
+    case AF_INET6:
+      af_family = "IPv6";
+      break;
+    case AF_INET:
+      af_family = "IPv4";
+      break;
+    default:
+      af_family = "Unknown";
+    }
 
     if ((listen(p.m_fd, backlog)) < 0) {
-      mgmt_fatal(stderr, errno, "[LocalManager::listenForProxy] Unable to listen on socket: %d\n", p.m_port);
+      mgmt_fatal(stderr, errno, "[LocalManager::listenForProxy] Unable to listen on port: %d (%s)\n",
+                 p.m_port, af_family);
     }
-    mgmt_log(stderr, "[LocalManager::listenForProxy] Listening on port: %d\n", p.m_port);
+    mgmt_log(stderr, "[LocalManager::listenForProxy] Listening on port: %d (%s)\n", p.m_port, af_family);
   }
   return;
 }
