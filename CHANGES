@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.0
 
+  *) [TS-3364] Add command line config validation support to traffic_server
+
   *) [TS-3377] Fix bad file descriptor handling that caused disks in
    storage.config to be marked bad.
 
