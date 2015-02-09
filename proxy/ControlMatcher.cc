@@ -185,7 +185,7 @@ template<class Data, class Result> config_parse_error
 HostMatcher<Data, Result>::NewEntry(matcher_line * line_info)
 {
   Data *cur_d;
-  config_parse_error error;
+  config_parse_error error = config_parse_error::ok();
   char *match_data;
 
   // Make sure space has been allocated
@@ -293,7 +293,7 @@ UrlMatcher<Data, Result>::NewEntry(matcher_line * line_info)
   Data *cur_d;
   char *pattern;
   int *value;
-  config_parse_error error;
+  config_parse_error error = config_parse_error::ok();
 
   // Make sure space has been allocated
   ink_assert(num_el >= 0);
@@ -433,7 +433,7 @@ RegexMatcher<Data, Result>::NewEntry(matcher_line * line_info)
   char *pattern;
   const char *errptr;
   int erroffset;
-  config_parse_error error;
+  config_parse_error error = config_parse_error::ok();
 
   // Make sure space has been allocated
   ink_assert(num_el >= 0);
@@ -617,7 +617,7 @@ IpMatcher<Data, Result>::NewEntry(matcher_line * line_info)
   const char *errptr;
   char *match_data;
   IpEndpoint addr1, addr2;
-  config_parse_error error;
+  config_parse_error error = config_parse_error::ok();
 
   // Make sure space has been allocated
   ink_assert(num_el >= 0);
@@ -901,7 +901,7 @@ ControlMatcher<Data, Result>::BuildTableFromString(char *file_buf)
   // Traverse the list and build the records table
   current = first;
   while (current != NULL) {
-    config_parse_error error;
+    config_parse_error error = config_parse_error::ok();
 
     second_pass++;
     if ((flags & ALLOW_HOST_TABLE) && current->type == MATCH_DOMAIN) {

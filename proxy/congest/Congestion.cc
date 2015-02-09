@@ -171,7 +171,7 @@ CongestionControlRecord::validate()
   // max_connection == 0, no connection allow to the origin server for the rule
 #undef IsGt0
 
-  return config_parse_error();
+  return config_parse_error::ok();
 }
 
 config_parse_error

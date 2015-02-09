@@ -536,7 +536,7 @@ SplitDNSRecord::Init(matcher_line * line_info)
     }
   }
 
-  return config_parse_error();
+  return config_parse_error::ok();
 }
 
 

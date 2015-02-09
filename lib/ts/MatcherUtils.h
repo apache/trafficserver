@@ -117,7 +117,9 @@ const char *parseConfigLine(char *line, matcher_line * p_line, const matcher_tag
 
 struct config_parse_error
 {
-  config_parse_error() {
+  // Wrapper to make a syntactically nice success value.
+  static config_parse_error ok() {
+    return config_parse_error();
   }
 
   config_parse_error(const config_parse_error& rhs) {
@@ -126,7 +128,7 @@ struct config_parse_error
     }
   }
 
-  config_parse_error(const char * fmt, ...) TS_PRINTFLIKE(2, 3);
+  explicit config_parse_error(const char * fmt, ...) TS_NONNULL(2) TS_PRINTFLIKE(2, 3);
 
   config_parse_error& operator=(const config_parse_error& rhs) {
     if (rhs.msg.get()) {
@@ -148,6 +150,9 @@ struct config_parse_error
   }
 
 private:
+  config_parse_error() {
+  }
+
   ats_scoped_str msg;
 };
 
