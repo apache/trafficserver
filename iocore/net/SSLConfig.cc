@@ -332,7 +332,7 @@ SSLConfig::release(SSLConfigParams * params)
   configProcessor.release(configid, params);
 }
 
-void
+bool
 SSLCertificateConfig::startup()
 {
   sslCertUpdate = new ConfigUpdateHandler<SSLCertificateConfig>();
@@ -342,12 +342,13 @@ SSLCertificateConfig::startup()
   sslCertUpdate->attach("proxy.config.ssl.server.private_key.path");
   sslCertUpdate->attach("proxy.config.ssl.server.cert_chain.filename");
 
-  reconfigure();
+  return reconfigure();
 }
 
-void
+bool
 SSLCertificateConfig::reconfigure()
 {
+  bool retStatus = true;
   SSLConfig::scoped_config params;
   SSLCertLookup * lookup = new SSLCertLookup();
 
@@ -362,8 +363,11 @@ SSLCertificateConfig::reconfigure()
   if (SSLParseCertificateConfiguration(params, lookup)) {
     configid = configProcessor.set(configid, lookup);
   } else {
+    retStatus = false;
     delete lookup;
   }
+
+  return retStatus;
 }
 
 SSLCertLookup *

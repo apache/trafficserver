@@ -65,7 +65,7 @@ mapping_type request_url_remap_redirect(HTTPHdr *request_header, URL *redirect_u
 bool response_url_remap(HTTPHdr *response_header);
 
 // Reload Functions
-void reloadUrlRewrite();
+bool reloadUrlRewrite();
 
 int url_rewrite_CB(const char *name, RecDataT data_type, RecData data, void *cookie);
 

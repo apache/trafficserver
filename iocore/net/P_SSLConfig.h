@@ -125,8 +125,8 @@ private:
 
 struct SSLCertificateConfig
 {
-  static void startup();
-  static void reconfigure();
+  static bool startup();
+  static bool reconfigure();
   static SSLCertLookup * acquire();
   static void release(SSLCertLookup * params);
 

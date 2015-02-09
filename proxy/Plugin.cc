@@ -69,15 +69,15 @@ PluginRegInfo::~PluginRegInfo()
   ats_free(this->support_email);
 }
 
-static void
-plugin_load(int argc, char *argv[])
+static bool
+plugin_load(int argc, char *argv[], bool validateOnly)
 {
   char path[PATH_NAME_MAX + 1];
   void *handle;
   init_func_t init;
 
   if (argc < 1) {
-    return;
+    return true;
   }
   ink_filepath_make(path, sizeof(path), plugin_dir, argv[0]);
 
@@ -103,6 +103,9 @@ plugin_load(int argc, char *argv[])
 
     handle = dlopen(path, RTLD_NOW);
     if (!handle) {
+      if (validateOnly) {
+        return false;
+      }
       Fatal("unable to load '%s': %s", path, dlerror());
     }
 
@@ -114,8 +117,11 @@ plugin_load(int argc, char *argv[])
 
     init = (init_func_t) dlsym(handle, "TSPluginInit");
     if (!init) {
+      if (validateOnly) {
+        return false;
+      }
       Fatal("unable to find TSPluginInit function in '%s': %s", path, dlerror());
-      return; // this line won't get called since Fatal brings down ATS
+      return false; // this line won't get called since Fatal brings down ATS
     }
 
     init(argc, argv);
@@ -128,6 +134,8 @@ plugin_load(int argc, char *argv[])
   }
 
   plugin_reg_current = NULL;
+
+  return true;
 }
 
 static char *
@@ -200,8 +208,8 @@ not_found:
   return NULL;
 }
 
-void
-plugin_init(void)
+bool
+plugin_init(bool validateOnly)
 {
   ats_scoped_str path;
   char line[1024], *p;
@@ -210,6 +218,7 @@ plugin_init(void)
   int argc;
   int fd;
   int i;
+  bool retVal = true;
   static bool INIT_ONCE = true;
 
   if (INIT_ONCE) {
@@ -223,7 +232,7 @@ plugin_init(void)
   fd = open(path, O_RDONLY);
   if (fd < 0) {
     Warning("unable to open plugin config file '%s': %d, %s", (const char *)path, errno, strerror(errno));
-    return;
+    return false;
   }
 
   while (ink_file_fd_readline(fd, sizeof(line) - 1, line) > 0) {
@@ -275,12 +284,13 @@ plugin_init(void)
       }
     }
 
-    plugin_load(argc, argv);
+    retVal = plugin_load(argc, argv, validateOnly);
 
     for (i = 0; i < argc; i++)
       ats_free(vars[i]);
   }
 
   close(fd);
+  return retVal;
 }
 
