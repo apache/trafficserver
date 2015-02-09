@@ -208,11 +208,6 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor& acceptor, HttpProxyPort& port, unsigned
       ssl->registerEndpoint(TS_NPN_PROTOCOL_HTTP_1_1, http);
     }
 
-    // HTTP2
-    if (port.m_session_protocol_preference.contains(TS_NPN_PROTOCOL_INDEX_HTTP_2_0)) {
-      ssl->registerEndpoint(TS_NPN_PROTOCOL_HTTP_2_0, new Http2SessionAccept(accept_opt));
-    }
-
     // SPDY
 #if TS_HAS_SPDY
     if (port.m_session_protocol_preference.contains(TS_NPN_PROTOCOL_INDEX_SPDY_3)) {
@@ -223,6 +218,11 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor& acceptor, HttpProxyPort& port, unsigned
       ssl->registerEndpoint(TS_NPN_PROTOCOL_SPDY_3_1, new SpdySessionAccept(spdy::SESSION_VERSION_3_1));
     }
 #endif
+
+    // HTTP2
+    if (port.m_session_protocol_preference.contains(TS_NPN_PROTOCOL_INDEX_HTTP_2_0)) {
+      ssl->registerEndpoint(TS_NPN_PROTOCOL_HTTP_2_0, new Http2SessionAccept(accept_opt));
+    }
 
     MUTEX_LOCK(lock, ssl_plugin_mutex, this_ethread());
     ssl_plugin_acceptors.push(ssl);
