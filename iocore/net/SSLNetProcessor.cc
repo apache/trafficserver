@@ -68,7 +68,7 @@ SSLNetProcessor::start(int number_of_ssl_threads, size_t stacksize)
   SSLInitializeLibrary();
   SSLConfig::startup();
 
-  (void) SSLCertificateConfig::startup();
+  if (!SSLCertificateConfig::startup()) return -1;
 
   // Acquire a SSLConfigParams instance *after* we start SSL up.
   SSLConfig::scoped_config params;

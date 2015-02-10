@@ -1697,7 +1697,10 @@ main(int /* argc ATS_UNUSED */, char **argv)
     (void) plugin_init();        // plugin.config
 
     SSLConfigParams::init_ssl_ctx_cb = init_ssl_ctx_callback;
-    sslNetProcessor.start(getNumSSLThreads(), stacksize);
+    if (sslNetProcessor.start(getNumSSLThreads(), stacksize) < 0) {
+      // Failure to load SSL state
+      exit(1);
+    }
     pmgmt->registerPluginCallbacks(global_config_cbs);
 
     cacheProcessor.set_after_init_callback(&CB_After_Cache_Init);

@@ -1584,16 +1584,17 @@ asn1_strdup(ASN1_STRING * s)
 // Given a certificate and it's corresponding SSL_CTX context, insert hash
 // table aliases for subject CN and subjectAltNames DNS without wildcard,
 // insert trie aliases for those with wildcard.
-static void
+static bool
 ssl_index_certificate(SSLCertLookup * lookup, SSLCertContext const& cc, const char * certfile)
 {
   X509_NAME *   subject = NULL;
   X509 *        cert;
   scoped_BIO    bio(BIO_new_file(certfile, "r"));
+  bool inserted = false;
 
   cert = PEM_read_bio_X509_AUX(bio.get(), NULL, NULL, NULL);
   if (NULL == cert) {
-    return;
+    return inserted;
   }
 
   // Insert a key for the subject CN.
@@ -1612,7 +1613,7 @@ ssl_index_certificate(SSLCertLookup * lookup, SSLCertContext const& cc, const ch
       subj_name = asn1_strdup(cn);
 
       Debug("ssl", "mapping '%s' to certificate %s", (const char *) subj_name, certfile);
-      lookup->insert(subj_name, cc);
+      if (lookup->insert(subj_name, cc) >= 0) inserted = true;
     }
   }
 
@@ -1630,7 +1631,7 @@ ssl_index_certificate(SSLCertLookup * lookup, SSLCertContext const& cc, const ch
         // only try to insert if the alternate name is not the main name
         if (strcmp(dns, subj_name) != 0) {
           Debug("ssl", "mapping '%s' to certificate %s", (const char *) dns, certfile);
-          lookup->insert(dns, cc);
+          if (lookup->insert(dns, cc) >= 0) inserted = true;
         }
       }
     }
@@ -1639,6 +1640,7 @@ ssl_index_certificate(SSLCertLookup * lookup, SSLCertContext const& cc, const ch
   }
 #endif // HAVE_OPENSSL_TS_H
   X509_free(cert);
+  return inserted;
 }
 
 // This callback function is executed while OpenSSL processes the SSL
@@ -1697,6 +1699,8 @@ ssl_store_ssl_context(
   ssl_ticket_key_block *keyblock = NULL;
   bool inserted = false;
 
+  if (!ctx) return ctx;
+
   // The certificate callbacks are set by the caller only 
   // for the default certificate
 
@@ -1740,6 +1744,7 @@ ssl_store_ssl_context(
         }
       } else {
         Error("'%s' is not a valid IPv4 or IPv6 address", (const char *)sslMultCertSettings.addr);
+        goto end;
       }
     }
   }
@@ -1757,14 +1762,14 @@ ssl_store_ssl_context(
     Debug("ssl", "ssl ocsp stapling is enabled");
     SSL_CTX_set_tlsext_status_cb(ctx, ssl_callback_ocsp_stapling);
     if (!ssl_stapling_init_cert(ctx, (const char *)certpath)) {
-      Error("fail to configure SSL_CTX for OCSP Stapling info");
+      Warning("fail to configure SSL_CTX for OCSP Stapling info for certificate at %s", (const char *)certpath);
     }
   } else {
     Debug("ssl", "ssl ocsp stapling is disabled");
   }
 #else
   if (SSLConfigParams::ssl_ocsp_enabled) {
-    Error("fail to enable ssl ocsp stapling, this openssl version does not support it");
+    Warning("fail to enable ssl ocsp stapling, this openssl version does not support it");
   }
 #endif /* HAVE_OPENSSL_OCSP_STAPLING */
 
@@ -1772,16 +1777,25 @@ ssl_store_ssl_context(
   // this code is updated to reconfigure the SSL certificates, it will need some sort of
   // refcounting or alternate way of avoiding double frees.
   Debug("ssl", "importing SNI names from %s", (const char *)certpath);
-  ssl_index_certificate(lookup, SSLCertContext(ctx, sslMultCertSettings.opt), certpath);
+  inserted = inserted || ssl_index_certificate(lookup, SSLCertContext(ctx, sslMultCertSettings.opt), certpath);
 
-  if (SSLConfigParams::init_ssl_ctx_cb) {
-    SSLConfigParams::init_ssl_ctx_cb(ctx, true);
+  if (inserted) {
+    if (SSLConfigParams::init_ssl_ctx_cb) {
+      SSLConfigParams::init_ssl_ctx_cb(ctx, true);
+    }
   }
+end:
+  if (!inserted) {
 #if HAVE_OPENSSL_SESSION_TICKETS
-  if (!inserted && keyblock != NULL) {
-    ticket_block_free(keyblock);
-  }
+    if (keyblock != NULL) {
+      ticket_block_free(keyblock);
+    }
 #endif
+    if (ctx != NULL) {
+      SSL_CTX_free(ctx);
+      ctx = NULL;
+    }
+  }
   return ctx;
 }
 
@@ -1905,6 +1919,7 @@ SSLParseCertificateConfiguration(const SSLConfigParams * params, SSLCertLookup *
           if (ssl_store_ssl_context(params, lookup, sslMultiCertSettings) == NULL) {
             Error("failed to load SSL certificate specification from %s line %u",
                 params->configFilePath, line_num);
+            return false;
           }
         } else {
           RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "%s: discarding invalid %s entry at line %u",
@@ -1923,7 +1938,10 @@ SSLParseCertificateConfiguration(const SSLConfigParams * params, SSLCertLookup *
   if (lookup->ssl_default == NULL) {
     ssl_user_config sslMultiCertSettings;
     sslMultiCertSettings.addr = ats_strdup("*");
-    ssl_store_ssl_context(params, lookup, sslMultiCertSettings);
+    if (ssl_store_ssl_context(params, lookup, sslMultiCertSettings) == NULL) {
+      Error("failed set default context");
+      return false;
+    }
   }
   return true;
 }
