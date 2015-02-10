@@ -91,7 +91,7 @@ AC_DEFUN([TS_CHECK_CRYPTO_SNI], [
   TS_ADDTO(LIBS, [$OPENSSL_LIBS])
   AC_CHECK_HEADERS(openssl/ssl.h openssl/ts.h)
   AC_CHECK_HEADERS(openssl/tls1.h, [], [], 
-[ #ifdef HEADER_SSL_H
+[ #if HAVE_OPENSSL_SSL_H
 #include <openssl/tls1.h>
 #endif ])
 
@@ -133,11 +133,7 @@ AC_DEFUN([TS_CHECK_CRYPTO_CERT_CB], [
   enable_cert_cb=yes
 
   TS_ADDTO(LIBS, [$OPENSSL_LIBS])
-  AC_CHECK_HEADERS(openssl/ssl.h openssl/ts.h)
 
-  # We are looking for SSL_CTX_set_tlsext_servername_callback, but it's a
-  # macro, so AC_CHECK_FUNCS is not going to do the business.
-  AC_MSG_CHECKING([for SSL_CTX_set_cert_cb])
   AC_LINK_IFELSE(
   [
     AC_LANG_PROGRAM([[
@@ -171,10 +167,6 @@ AC_DEFUN([TS_CHECK_CRYPTO_SET_RBIO], [
   enable_set_rbio=yes
 
   TS_ADDTO(LIBS, [$OPENSSL_LIBS])
-  AC_CHECK_HEADERS(openssl/ssl.h openssl/ts.h)
-
-  # We are looking for SSL_CTX_set_tlsext_servername_callback, but it's a
-  # macro, so AC_CHECK_FUNCS is not going to do the business.
   AC_MSG_CHECKING([for SSL_set_rbio])
   AC_LINK_IFELSE(
   [
