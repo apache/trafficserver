@@ -82,7 +82,7 @@ TSReturnCode TSRemapInit(NOWARN_UNUSED TSRemapInterface *api_info, NOWARN_UNUSED
   return TS_SUCCESS;
 }
 
-TSReturnCode TSRemapNewInstance(int argc, char* argv[], void** ih, char* errbuf, int errbuf_size) {
+TSReturnCode TSRemapNewInstance(int argc, char* argv[], void** ih, NOWARN_UNUSED char* errbuf, NOWARN_UNUSED int errbuf_size) {
   remap_line *rl = NULL;
 
   TSDebug(TAG, "TSRemapNewInstance()");
