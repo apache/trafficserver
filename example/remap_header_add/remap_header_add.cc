@@ -75,7 +75,7 @@ EXTERN void ParseArgIntoNv(const char *arg, char **n, char **v) {
   memcpy(*v, colon_pos + 1, val_len);
   (*v)[val_len] = '\0';
 
-  TSDebug(TAG, "\t name_len=%d, val_len=%d, %s=%s", name_len, val_len, *n, *v);
+  TSDebug(TAG, "\t name_len=%zu, val_len=%zu, %s=%s", name_len, val_len, *n, *v);
 }
 
 TSReturnCode TSRemapInit(NOWARN_UNUSED TSRemapInterface *api_info, NOWARN_UNUSED char *errbuf, NOWARN_UNUSED int errbuf_size) {
