@@ -106,9 +106,6 @@ ts_lua_stat_create(lua_State * L)
   int persist;
   int sync; 
   int idp;
-  ts_lua_http_ctx *http_ctx;
-
-  http_ctx = ts_lua_get_http_ctx(L);
 
   name = luaL_checklstring(L, 1, &name_len);
 
@@ -160,9 +157,6 @@ ts_lua_stat_find(lua_State * L)
   const char *name;
   size_t name_len;
   int idp;
-  ts_lua_http_ctx *http_ctx;
-
-  http_ctx = ts_lua_get_http_ctx(L);
 
   name = luaL_checklstring(L, 1, &name_len);
 
