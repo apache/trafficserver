@@ -1,6 +1,6 @@
 # requirements for the python virtualenv
 
 # TODO: pin a specific version
-https://github.com/jacksontj/tsqa/archive/master.zip
+https://github.com/apache/trafficserver-qa/archive/master.zip
 pyyaml
 pyOpenSSL
