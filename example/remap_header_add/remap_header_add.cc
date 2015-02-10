@@ -27,8 +27,6 @@
     map /foo http://127.0.0.1/ @plugin=remap_header_add.so @pparam=foo:"x" @pparam=@test:"c" @pparam=a:"b"
 
  */
-
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -36,7 +34,8 @@
 #include "ts/ts.h"
 #include "ts/remap.h"
 
-struct remap_line {
+struct remap_line
+{
   int argc;
   char **argv; // store the originals
 
@@ -49,8 +48,12 @@ struct remap_line {
 #define NOWARN_UNUSED __attribute__ ((unused))
 #define EXTERN extern "C"
 
-EXTERN void ParseArgIntoNv(const char *arg, char **n, char **v) {
+
+EXTERN void
+ParseArgIntoNv(const char *arg, char **n, char **v)
+{
   const char *colon_pos = strchr(arg, ':');
+
   if (colon_pos == NULL) {
     *n = NULL;
     *v = NULL;
@@ -78,11 +81,17 @@ EXTERN void ParseArgIntoNv(const char *arg, char **n, char **v) {
   TSDebug(TAG, "\t name_len=%zu, val_len=%zu, %s=%s", name_len, val_len, *n, *v);
 }
 
-TSReturnCode TSRemapInit(NOWARN_UNUSED TSRemapInterface *api_info, NOWARN_UNUSED char *errbuf, NOWARN_UNUSED int errbuf_size) {
+
+TSReturnCode
+TSRemapInit(NOWARN_UNUSED TSRemapInterface *api_info, NOWARN_UNUSED char *errbuf, NOWARN_UNUSED int errbuf_size)
+{
   return TS_SUCCESS;
 }
 
-TSReturnCode TSRemapNewInstance(int argc, char* argv[], void** ih, NOWARN_UNUSED char* errbuf, NOWARN_UNUSED int errbuf_size) {
+
+TSReturnCode
+TSRemapNewInstance(int argc, char* argv[], void** ih, NOWARN_UNUSED char* errbuf, NOWARN_UNUSED int errbuf_size)
+{
   remap_line *rl = NULL;
 
   TSDebug(TAG, "TSRemapNewInstance()");
@@ -113,7 +122,9 @@ TSReturnCode TSRemapNewInstance(int argc, char* argv[], void** ih, NOWARN_UNUSED
   return TS_SUCCESS;
 }
 
-void TSRemapDeleteInstance(void* ih)
+
+void
+TSRemapDeleteInstance(void* ih)
 {
   TSDebug(TAG, "deleting instance %p", ih);
 
@@ -130,7 +141,10 @@ void TSRemapDeleteInstance(void* ih)
   }
 }
 
-TSRemapStatus TSRemapDoRemap(void* ih, NOWARN_UNUSED TSHttpTxn txn, NOWARN_UNUSED TSRemapRequestInfo *rri) {
+
+TSRemapStatus
+TSRemapDoRemap(void* ih, NOWARN_UNUSED TSHttpTxn txn, NOWARN_UNUSED TSRemapRequestInfo *rri)
+{
   remap_line *rl = (remap_line *) ih;
 
   if (!rl || !rri) {
@@ -159,5 +173,6 @@ TSRemapStatus TSRemapDoRemap(void* ih, NOWARN_UNUSED TSHttpTxn txn, NOWARN_UNUSE
       TSError(TAG ": Failure on TSMimeHdrFieldCreate");
     }
   }
+
   return TSREMAP_NO_REMAP;
 }
