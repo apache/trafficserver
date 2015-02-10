@@ -32,6 +32,7 @@
 #include "ts_lua_crypto.h"
 #include "ts_lua_mgmt.h"
 #include "ts_lua_package.h"
+#include "ts_lua_stat.h"
 
 static lua_State *ts_lua_new_state();
 static void ts_lua_init_registry(lua_State * L);
@@ -281,6 +282,7 @@ ts_lua_inject_ts_api(lua_State * L)
   ts_lua_inject_crypto_api(L);
   ts_lua_inject_mgmt_api(L);
   ts_lua_inject_package_api(L);
+  ts_lua_inject_stat_api(L);
 
   lua_getglobal(L, "package");
   lua_getfield(L, -1, "loaded");

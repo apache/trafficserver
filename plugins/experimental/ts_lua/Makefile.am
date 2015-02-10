@@ -45,6 +45,7 @@ tslua_la_SOURCES = \
   ts_lua_mgmt.c \
   ts_lua_package.c \
   ts_lua_string.c \
-  ts_lua_crypto.c
+  ts_lua_crypto.c \
+  ts_lua_stat.c
 
 tslua_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)

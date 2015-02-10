@@ -2281,6 +2281,57 @@ ts.mgmt.get_string
 
 `TOP <#ts-lua-plugin>`_
 
+ts.stat_create
+--------------
+**syntax:** *val = ts.stat_create(STAT_NAME, RECORDDATA_TYPE, PERSISTENT, SYNC)*
+
+**context:** global
+
+**description:** This function can be used to create a statistics record given the name, data type, persistent 
+requirement, and sync requirement. A statistics record table will be created with 4 functions to increment, 
+decrement, get and set the value.
+
+:: 
+
+    stat:increment(value)
+    stat:decrement(value)
+    v = stat:get_value()
+    stat:set_value(value)
+
+Here is an example.
+
+::
+
+    name = ts.mgmt.get_string('proxy.config.product_name')
+    local test_stat;
+
+    function __init__(args)
+        test_stat = ts.stat_create("test_stat", 
+          TS_LUA_RECORDDATATYPE_INT, 
+          TS_LUA_STAT_PERSISTENT, 
+          TS_LUA_STAT_SYNC_COUNT);
+    end
+
+    function do_global_read_request()
+        local value = test_stat:get_value()
+        ts.debug(value)
+        test_stat:increment(1)
+        return 0
+    end
+
+`TOP <#ts-lua-plugin>`_
+
+ts.stat_find
+--------------
+**syntax:** *val = ts.stat_create(STAT_NAME)*
+
+**context:** global
+
+**description:** This function can be used to find a statistics record given the name. A statistics record table will 
+be returned with 4 functions to increment, decrement, get and set the value. That is similar to ts.stat_create()
+
+`TOP <#ts-lua-plugin>`_
+
 Todo
 ====
 * ts.fetch
