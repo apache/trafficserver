@@ -135,7 +135,7 @@ struct UR_UpdateContinuation: public Continuation
 {
   int file_update_handler(int /* etype ATS_UNUSED */, void * /* data ATS_UNUSED */)
   {
-    reloadUrlRewrite();
+    (void) reloadUrlRewrite();
     delete this;
     return EVENT_DONE;
   }
@@ -152,7 +152,7 @@ struct UR_UpdateContinuation: public Continuation
   blocking.
 
 */
-void
+bool
 reloadUrlRewrite()
 {
   UrlRewrite *newTable;
@@ -163,11 +163,13 @@ reloadUrlRewrite()
     new_Deleter(rewrite_table, URL_REWRITE_TIMEOUT);
     Debug("url_rewrite", "remap.config done reloading!");
     ink_atomic_swap(&rewrite_table, newTable);
+    return true;
   } else {
     static const char* msg = "failed to reload remap.config, not replacing!";
     delete newTable;
     Debug("url_rewrite", "%s", msg);
     Warning("%s", msg);
+    return false;
   }
 }
 

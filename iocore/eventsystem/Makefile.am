@@ -71,8 +71,13 @@ libinkevent_a_SOURCES = \
 
 check_PROGRAMS = test_Buffer test_Event
 
-test_CXXFLAGS = \
-  @OPENSSL_INCLUDES@ \
+test_LD_FLAGS = \
+  @EXTRA_CXX_LDFLAGS@ \
+  @LIBTOOL_LINK_FLAGS@ \
+  @OPENSSL_LDFLAGS@
+
+test_CPP_FLAGS = \
+  $(AM_CPPFLAGS) \
   $(iocore_include_dirs) \
   -I$(top_srcdir)/proxy/api/ts \
   -I$(top_srcdir)/proxy/api \
@@ -81,12 +86,10 @@ test_CXXFLAGS = \
   -I$(top_srcdir)/proxy/http \
   -I$(top_srcdir)/proxy/logging \
   -I$(top_srcdir)/mgmt \
-  -I$(top_srcdir)/mgmt/utils
+  -I$(top_srcdir)/mgmt/utils \
+  @OPENSSL_INCLUDES@
 
-test_LDADD = \
-  @LIBTOOL_LINK_FLAGS@ \
-  @OPENSSL_LIBS@ \
-  @OPENSSL_LDFLAGS@ \
+test_LD_ADD = \
   libinkevent.a \
   $(top_builddir)/lib/records/librecords_p.a \
   $(top_builddir)/mgmt/libmgmt_p.la \
@@ -109,8 +112,11 @@ test_Event_SOURCES = \
 #  test_I_Event.cc \
 #  test_P_Event.cc
 
-test_Buffer_CXXFLAGS = $(test_CXXFLAGS)
-test_Event_CXXFLAGS = $(test_CXXFLAGS)
+test_Buffer_CPPFLAGS = $(test_CPP_FLAGS)
+test_Event_CPPFLAGS = $(test_CPP_FLAGS)
 
-test_Buffer_LDADD = $(test_LDADD)
-test_Event_LDADD = $(test_LDADD)
+test_Buffer_LDFLAGS = $(test_LD_FLAGS)
+test_Event_LDFLAGS = $(test_LD_FLAGS)
+
+test_Buffer_LDADD = $(test_LD_ADD)
+test_Event_LDADD = $(test_LD_ADD)

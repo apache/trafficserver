@@ -764,7 +764,7 @@ CacheProcessor::start_internal(int flags)
 #else
         gdisks[gndisks]->open(path, blocks, skip, sector_size, fd, clear);
 #endif
-        fd = 0;
+        fd = -1;
         gndisks++;
       }
     } else {

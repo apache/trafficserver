@@ -18,7 +18,6 @@
 #  limitations under the License.
 
 AM_CPPFLAGS = \
-  @OPENSSL_INCLUDES@ \
   -I$(top_srcdir)/iocore/utils \
   -I$(top_srcdir)/mgmt \
   -I$(top_srcdir)/mgmt/api \
@@ -28,7 +27,8 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/lib/records \
   -I$(top_srcdir)/lib/ts \
   -I$(top_builddir)/lib \
-  -I$(top_srcdir)/lib
+  -I$(top_srcdir)/lib \
+  @OPENSSL_INCLUDES@
 
 # header files used by other libraries
 EXTRA_DIST = MgmtHashTable.h MgmtSocket.h
@@ -56,10 +56,12 @@ libutils_p_la_SOURCES = \
   $(libutils_COMMON) \
   MgmtProcessCleanup.cc
 
+test_marshall_LDFLAGS = \
+  @EXTRA_CXX_LDFLAGS@ \
+  @LIBTOOL_LINK_FLAGS@ \
+  @OPENSSL_LDFLAGS@
+
 test_marshall_SOURCES = test_marshall.cc
 test_marshall_LDADD = \
-  @LIBTOOL_LINK_FLAGS@ \
-  @OPENSSL_LIBS@ \
-  @OPENSSL_LDFLAGS@ \
   libutils_p.la \
   $(top_builddir)/lib/ts/libtsutil.la

@@ -696,6 +696,58 @@ cmd_clear(char *cmd)
   return CMD_OK;
 }
 
+static int
+cmd_verify(char * /* cmd ATS_UNUSED */)
+{
+  int exitStatus = 0;
+
+  fprintf(stderr, "NOTE: VERIFY\n\n");
+  if (!reloadUrlRewrite()) {
+    exitStatus |= (1 << 0);
+    fprintf(stderr, "ERROR: Failed to load remap.config, exitStatus %d\n\n", exitStatus);
+  } else {
+    fprintf(stderr, "INFO:Successfully loaded remap.config\n\n");
+  }
+
+  if (RecReadConfigFile(false) != REC_ERR_OKAY) {
+    exitStatus |= (1 << 1);
+    fprintf(stderr, "ERROR: Failed to load records.config, exitStatus %d\n\n", exitStatus);
+  } else {
+    fprintf(stderr, "INFO: Successfully loaded records.config\n\n");
+  }
+
+  if (!plugin_init(true)) {
+    exitStatus |= (1 << 2);
+    fprintf(stderr, "ERROR: Failed to load plugin.config, exitStatus %d\n\n", exitStatus);
+  } else {
+    fprintf(stderr, "INFO: Successfully loaded plugin.config\n\n");
+  }
+
+  SSLInitializeLibrary();
+  SSLConfig::startup();
+  if (!SSLCertificateConfig::startup()) {
+    exitStatus |= (1 << 3);
+    fprintf(stderr, "ERROR: Failed to load ssl multicert.config, exitStatus %d\n\n", exitStatus);
+  } else {
+    fprintf(stderr, "INFO: Successfully loaded ssl multicert.config\n\n");
+  }
+
+  SSLConfig::scoped_config params;
+  if (!SSLInitClientContext(params) ) {
+    exitStatus |= (1 << 4);
+    fprintf(stderr, "Can't initialize the SSL client, HTTPS in remap rules will not function %d\n\n", exitStatus);
+  } else {
+    fprintf(stderr, "INFO: Successfully initialized SSL client context\n\n");
+  }
+
+  //TODO: Add more config validation..
+
+  _exit(exitStatus);
+
+  return 0;
+}
+
+
 static int cmd_help(char *cmd);
 
 static const struct CMD
@@ -748,6 +800,12 @@ commands[] = {
       "\n"
       "FORMAT: clear_hostdb\n"
       "\n" "Clear the entire hostdb cache.  All host name resolution\n" "information is lost.\n", cmd_clear}, {
+  "verify_config",
+      "Verify the config",
+      "\n"
+      "\n"
+      "FORMAT: verify_config\n"
+      "\n" "Load the config and verify traffic_server comes up correctly. \n", cmd_verify}, {
 "help",
       "Obtain a short description of a command (e.g. 'help clear')",
       "HELP\n"
@@ -1391,8 +1449,12 @@ main(int /* argc ATS_UNUSED */, char **argv)
   // Local process manager
   initialize_process_manager();
 
-  // Ensure only one copy of traffic server is running
-  check_lockfile();
+  if ((*command_string) && (cmd_index(command_string) == cmd_index((char*)"verify_config"))) {
+    fprintf (stderr, "\n\n skip lock check for %s \n\n", command_string);
+  } else {
+    // Ensure only one copy of traffic server is running
+    check_lockfile();
+  }
 
   // Set the core limit for the process
   init_core_size();
@@ -1632,7 +1694,7 @@ main(int /* argc ATS_UNUSED */, char **argv)
     Log::init(remote_management_flag ? 0 : Log::NO_REMOTE_MANAGEMENT);
 
     // Init plugins as soon as logging is ready.
-    plugin_init();        // plugin.config
+    (void) plugin_init();        // plugin.config
 
     SSLConfigParams::init_ssl_ctx_cb = init_ssl_ctx_callback;
     sslNetProcessor.start(getNumSSLThreads(), stacksize);

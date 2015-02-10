@@ -34,7 +34,6 @@ TESTS = \
   test_xml_parser
 
 AM_CPPFLAGS = \
-  @OPENSSL_INCLUDES@ \
   $(iocore_include_dirs) \
   -I$(top_srcdir)/lib/records \
   -I$(top_srcdir)/lib/ts \
@@ -48,7 +47,15 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/mgmt/utils \
   -I$(top_srcdir)/proxy/api/ts \
   -I$(top_srcdir)/lib \
-  -I$(top_builddir)/lib
+  -I$(top_builddir)/lib \
+  @OPENSSL_INCLUDES@
+
+# NOTE: it is safe to use AM_LDFLAGS here because we are only building executables. If we start
+# building libtool archives, change these to only apply to the executables.
+AM_LDFLAGS = \
+  @EXTRA_CXX_LDFLAGS@ \
+  @LIBTOOL_LINK_FLAGS@ \
+  @OPENSSL_LDFLAGS@
 
 noinst_HEADERS = \
   ConfigParse.h \
@@ -182,21 +189,19 @@ traffic_server_SOURCES = \
   Update.h
 
 if BUILD_TESTS
-  traffic_server_SOURCES +=  InkAPITest.cc  \
-    RegressionSM.h \
-    RegressionSM.cc
+traffic_server_SOURCES +=  \
+  InkAPITest.cc  \
+  RegressionSM.h \
+  RegressionSM.cc
 endif
 
-traffic_server_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
+traffic_server_LDFLAGS = $(AM_LDFLAGS)
 
 if BUILD_STATIC_PROXY
 traffic_server_LDFLAGS += -all-static
 endif
 
 traffic_server_LDADD = \
-  @LIBTOOL_LINK_FLAGS@ \
-  @OPENSSL_LIBS@ \
-  @OPENSSL_LDFLAGS@ \
   http/libhttp.a \
   http2/libhttp2.a \
   spdy/libspdy.a \
@@ -245,11 +250,7 @@ if BUILD_LUAJIT
 endif
 
 traffic_logcat_SOURCES = logcat.cc
-traffic_logcat_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
 traffic_logcat_LDADD = \
-  @LIBTOOL_LINK_FLAGS@ \
-  @OPENSSL_LIBS@ \
-  @OPENSSL_LDFLAGS@ \
   logging/liblogging.a \
   shared/libdiagsconfig.a \
   shared/libUglyLogStubs.a \
@@ -258,15 +259,11 @@ traffic_logcat_LDADD = \
   $(top_builddir)/lib/records/librecords_p.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/lib/ts/libtsutil.la \
-  @LIBRESOLV@ @LIBPCRE@ @OPENSSL_LIBS@ @LIBTCL@ @HWLOC_LIBS@\
+  @LIBRESOLV@ @LIBPCRE@ @LIBTCL@ @HWLOC_LIBS@\
   @LIBEXPAT@ @LIBPROFILER@ @LIBPTHREAD@ -lm
 
 traffic_logstats_SOURCES = logstats.cc
-traffic_logstats_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
 traffic_logstats_LDADD = \
-  @LIBTOOL_LINK_FLAGS@ \
-  @OPENSSL_LIBS@ \
-  @OPENSSL_LDFLAGS@ \
   logging/liblogging.a \
   shared/libdiagsconfig.a \
   shared/libUglyLogStubs.a \
@@ -275,7 +272,7 @@ traffic_logstats_LDADD = \
   $(top_builddir)/lib/records/librecords_p.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/lib/ts/libtsutil.la \
-  @LIBRESOLV@ @LIBPCRE@ @OPENSSL_LIBS@ @LIBTCL@ @HWLOC_LIBS@ \
+  @LIBRESOLV@ @LIBPCRE@ @LIBTCL@ @HWLOC_LIBS@ \
   @LIBEXPAT@ @LIBPROFILER@ @LIBPTHREAD@ -lm
 
 traffic_sac_SOURCES = \
@@ -307,11 +304,7 @@ traffic_sac_SOURCES = \
   FetchSM.cc \
   InkIOCoreAPI.cc
 
-traffic_sac_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
 traffic_sac_LDADD = \
-  @LIBTOOL_LINK_FLAGS@ \
-  @OPENSSL_LIBS@ \
-  @OPENSSL_LDFLAGS@ \
   http/libhttp.a \
   http2/libhttp2.a \
   spdy/libspdy.a \
@@ -335,7 +328,7 @@ traffic_sac_LDADD = \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/lib/records/librecords_p.a \
   $(top_builddir)/lib/ts/libtsutil.la \
-  @LIBRESOLV@ @LIBPCRE@ @OPENSSL_LIBS@ @LIBTCL@ @HWLOC_LIBS@ \
+  @LIBRESOLV@ @LIBPCRE@ @LIBTCL@ @HWLOC_LIBS@ \
   @LIBEXPAT@ @LIBZ@ @LIBLZMA@ @LIBPROFILER@ @SPDYLAY_LIBS@ @LIBPTHREAD@ -lm
 
 if BUILD_TESTS
@@ -345,9 +338,6 @@ endif
 
 test_xml_parser_SOURCES = test_xml_parser.cc
 test_xml_parser_LDADD = \
-  @LIBTOOL_LINK_FLAGS@ \
-  @OPENSSL_LIBS@ \
-  @OPENSSL_LDFLAGS@ \
   $(top_builddir)/mgmt/libmgmt_p.la \
   $(top_builddir)/lib/records/librecords_p.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \

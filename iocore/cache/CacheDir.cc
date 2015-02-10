@@ -1407,7 +1407,7 @@ regress_rand_CacheKey(CacheKey *key)
 void
 dir_corrupt_bucket(Dir *b, int s, Vol *d)
 {
-  // coverity[secure_coding]
+  // coverity[dont_call]
   int l = ((int) (dir_bucket_length(b, s, d) * drand48()));
   Dir *e = b;
   Dir *seg = dir_segment(s, d);

@@ -89,7 +89,12 @@ AC_DEFUN([TS_CHECK_CRYPTO_SNI], [
   enable_tls_sni=yes
 
   TS_ADDTO(LIBS, [$OPENSSL_LIBS])
-  AC_CHECK_HEADERS(openssl/tls1.h openssl/ssl.h openssl/ts.h)
+  AC_CHECK_HEADERS(openssl/ssl.h openssl/ts.h)
+  AC_CHECK_HEADERS(openssl/tls1.h, [], [], 
+[ #ifdef HEADER_SSL_H
+#include <openssl/tls1.h>
+#endif ])
+
   # We are looking for SSL_CTX_set_tlsext_servername_callback, but it's a
   # macro, so AC_CHECK_FUNCS is not going to do the business.
   AC_MSG_CHECKING([for SSL_CTX_set_tlsext_servername_callback])
@@ -121,4 +126,80 @@ AC_DEFUN([TS_CHECK_CRYPTO_SNI], [
   AC_MSG_RESULT([$enable_tls_sni])
   TS_ARG_ENABLE_VAR([use], [tls-sni])
   AC_SUBST(use_tls_sni)
+])
+
+AC_DEFUN([TS_CHECK_CRYPTO_CERT_CB], [
+  _cert_saved_LIBS=$LIBS
+  enable_cert_cb=yes
+
+  TS_ADDTO(LIBS, [$OPENSSL_LIBS])
+  AC_CHECK_HEADERS(openssl/ssl.h openssl/ts.h)
+
+  # We are looking for SSL_CTX_set_tlsext_servername_callback, but it's a
+  # macro, so AC_CHECK_FUNCS is not going to do the business.
+  AC_MSG_CHECKING([for SSL_CTX_set_cert_cb])
+  AC_LINK_IFELSE(
+  [
+    AC_LANG_PROGRAM([[
+#if HAVE_OPENSSL_SSL_H
+#include <openssl/ssl.h>
+#endif
+#if HAVE_OPENSSL_TLS1_H
+#include <openssl/tls1.h>
+#endif
+      ]],
+      [[SSL_CTX_set_cert_cb(NULL, NULL, NULL);]])
+  ],
+  [
+    AC_MSG_RESULT([yes])
+  ],
+  [
+    AC_MSG_RESULT([no])
+    enable_cert_cb=no
+  ])
+
+  LIBS=$_cert_saved_LIBS
+
+  AC_MSG_CHECKING(whether to enable Certificate callback support)
+  AC_MSG_RESULT([$enable_cert_cb])
+  TS_ARG_ENABLE_VAR([use], [cert-cb])
+  AC_SUBST(use_cert_cb)
+])
+
+AC_DEFUN([TS_CHECK_CRYPTO_SET_RBIO], [
+  _rbio_saved_LIBS=$LIBS
+  enable_set_rbio=yes
+
+  TS_ADDTO(LIBS, [$OPENSSL_LIBS])
+  AC_CHECK_HEADERS(openssl/ssl.h openssl/ts.h)
+
+  # We are looking for SSL_CTX_set_tlsext_servername_callback, but it's a
+  # macro, so AC_CHECK_FUNCS is not going to do the business.
+  AC_MSG_CHECKING([for SSL_set_rbio])
+  AC_LINK_IFELSE(
+  [
+    AC_LANG_PROGRAM([[
+#if HAVE_OPENSSL_SSL_H
+#include <openssl/ssl.h>
+#endif
+#if HAVE_OPENSSL_TLS1_H
+#include <openssl/tls1.h>
+#endif
+      ]],
+      [[SSL_set_rbio(NULL, NULL);]])
+  ],
+  [
+    AC_MSG_RESULT([yes])
+  ],
+  [
+    AC_MSG_RESULT([no])
+    enable_set_rbio=no
+  ])
+
+  LIBS=$_rbio_saved_LIBS
+
+  AC_MSG_CHECKING(whether to enable set rbio)
+  AC_MSG_RESULT([$enable_set_rbio])
+  TS_ARG_ENABLE_VAR([use], [set-rbio])
+  AC_SUBST(use_set_rbio)
 ])

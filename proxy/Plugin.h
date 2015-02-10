@@ -45,7 +45,7 @@ struct PluginRegInfo
 extern DLL<PluginRegInfo> plugin_reg_list;
 extern PluginRegInfo *plugin_reg_current;
 
-void plugin_init(void);
+bool plugin_init(bool validateOnly=false);
 
 /** Abstract interface class for plugin based continuations.
 

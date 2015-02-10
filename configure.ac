@@ -1120,6 +1120,14 @@ TS_CHECK_CRYPTO_EC_KEYS
 # Check for ServerNameIndication TLS extension support.
 TS_CHECK_CRYPTO_SNI
 
+# 
+# Check for the presense of the certificate callback in the ssl library
+TS_CHECK_CRYPTO_CERT_CB
+
+#
+# Check for SSL_set_rbio call
+TS_CHECK_CRYPTO_SET_RBIO
+
 #
 # Check for zlib presence and usability
 TS_CHECK_ZLIB
@@ -1824,7 +1832,6 @@ iocore_include_dirs="-I\$(top_srcdir)/iocore/eventsystem \
 # Testing Framework suffix generation hack
 TFW_PACKAGE_SUFFIX=$os_type
 
-AC_SUBST([API_DEFS])
 AC_SUBST([CC])
 AC_SUBST([CFLAGS])
 AC_SUBST([CXX])
@@ -1991,16 +1998,17 @@ AC_MSG_NOTICE([Build option summary:
     CXX:                $CXX
     CPP:                $CPP
     CFLAGS:             $CFLAGS
-    SHARED_CFLAGS:      $SHARED_CFLAGS
     CXXFLAGS:           $CXXFLAGS
-    SHARED_CXXFLAGS:    $SHARED_CXXFLAGS
-    SHARED_CXXLINKFLAGS:$SHARED_LINKCXXFLAGS
     CPPFLAGS:           $CPPFLAGS
     LDFLAGS:            $LDFLAGS
+    SHARED_CFLAGS:      $SHARED_CFLAGS
+    SHARED_CXXFLAGS:    $SHARED_CXXFLAGS
+    SHARED_CXXLINKFLAGS:$SHARED_LINKCXXFLAGS
     SHARED_LDFLAGS:     $SHARED_LDFLAGS
+    OPENSSL_LDFLAGS:    $OPENSSL_LDFLAGS
+    OPENSSL_INCLUDES:   $OPENSSL_INCLUDES
     EXTRA_CC_LDFLAGS:   $EXTRA_CC_LDFLAGS
     EXTRA_CXX_LDFLAGS:  $EXTRA_CXX_LDFLAGS
     LIBTOOL_LINK_FLAGS: $LIBTOOL_LINK_FLAGS
-    API_DEFS:           $API_DEFS
 
 ])

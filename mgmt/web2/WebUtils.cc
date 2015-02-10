@@ -37,7 +37,7 @@
  *
  ****************************************************************************/
 
-#include "openssl/ssl.h"
+#include <openssl/ssl.h>
 
 ssize_t
 socket_write(SocketInfo socketD, const char *buf, size_t nbyte)

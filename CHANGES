@@ -1,6 +1,13 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.0
 
+  *) [TS-3380] Fix the detection of new openssl calls to enable compilation against libressl.
+
+  *) [TS-3364] Add command line config validation support to traffic_server
+
+  *) [TS-3377] Fix bad file descriptor handling that caused disks in
+   storage.config to be marked bad.
+
   *) [TS-3305] fix minor bugs in ats lua plugin.
 
   *) [TS-3369] fix bug in header setting functions in lua plugin.

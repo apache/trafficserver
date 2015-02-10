@@ -51,6 +51,6 @@ class EnvironmentCase(tsqa.test_cases.EnvironmentCase):
         # TODO: figure out a way to determine why the build didn't fail and
         # not skip all build failures?
         try:
-            return ef.get_environment(cls.environment_factory['configure'], cls.environment_factory['env'])
+            return ef.get_environment(cls.environment_factory.get('configure'), cls.environment_factory.get('env'))
         except Exception as e:
             raise unittest.SkipTest(e)
