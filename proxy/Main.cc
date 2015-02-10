@@ -699,7 +699,7 @@ cmd_clear(char *cmd)
 static int
 cmd_verify(char * /* cmd ATS_UNUSED */)
 {
-  int exitStatus = 0;
+  unsigned char exitStatus = 0; // exit status is 8 bits
 
   fprintf(stderr, "NOTE: VERIFY\n\n");
   if (!reloadUrlRewrite()) {
