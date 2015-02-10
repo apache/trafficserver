@@ -138,6 +138,7 @@ TSRemapDeleteInstance(void* ih)
 
     TSfree(rl->name);
     TSfree(rl->val);
+    TSfree(rl);
   }
 }
 
