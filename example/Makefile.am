@@ -41,6 +41,7 @@ plugins = \
   secure-link.la \
   server-transform.la \
   ssl-preaccept.la \
+  remap_header_add.la \
   ssl-sni.la \
   ssl-sni-whitelist.la \
   thread-1.la \
@@ -69,6 +70,7 @@ protocol_la_SOURCES = protocol/Protocol.c protocol/TxnSM.c
 query_remap_la_SOURCES = query-remap/query-remap.c
 remap_la_SOURCES = remap/remap.cc
 replace_header_la_SOURCES = replace-header/replace-header.c
+remap_header_add_la_SOURCES = remap_header_add/remap_header_add.cc
 response_header_1_la_SOURCES = response-header-1/response-header-1.c
 server_transform_la_SOURCES = server-transform/server-transform.c
 thread_1_la_SOURCES = thread-1/thread-1.c

@@ -376,7 +376,7 @@ CacheControlRecord::Init(matcher_line * line_info)
     }
   }
 
-  return NULL;
+  return config_parse_error::ok();
 }
 
 // void CacheControlRecord::UpdateMatch(CacheControlResult* result, RequestData* rdata)
