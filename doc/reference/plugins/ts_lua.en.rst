@@ -2302,14 +2302,13 @@ Here is an example.
 
 ::
 
-    name = ts.mgmt.get_string('proxy.config.product_name')
     local test_stat;
 
     function __init__(args)
         test_stat = ts.stat_create("test_stat", 
           TS_LUA_RECORDDATATYPE_INT, 
           TS_LUA_STAT_PERSISTENT, 
-          TS_LUA_STAT_SYNC_COUNT);
+          TS_LUA_STAT_SYNC_COUNT)
     end
 
     function do_global_read_request()
