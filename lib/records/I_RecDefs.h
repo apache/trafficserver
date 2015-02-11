@@ -193,11 +193,4 @@ typedef int (*RecConfigUpdateCb) (const char *name, RecDataT data_type, RecData 
 typedef int (*RecStatUpdateFunc) (const char *name, RecDataT data_type, RecData * data, RecRawStatBlock * rsb, int id, void *cookie);
 typedef int (*RecRawStatSyncCb) (const char *name, RecDataT data_type, RecData * data, RecRawStatBlock * rsb, int id);
 
-
-//-------------------------------------------------------------------------
-// RecTree Defines
-//-------------------------------------------------------------------------
-#define REC_VAR_NAME_DELIMITOR '.'
-#define REC_VAR_NAME_WILDCARD  '*'
-
 #endif
