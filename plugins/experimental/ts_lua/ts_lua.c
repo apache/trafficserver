@@ -368,7 +368,7 @@ TSPluginInit(int argc, const char *argv[])
                           errbuf, errbuf_len);
 
   if (ret != 0) {
-    TSError(errbuf);
+    TSError(errbuf, NULL);
     TSError("[%s] ts_lua_add_module failed", __FUNCTION__);
     return;
   }
