@@ -100,7 +100,8 @@ ts_lua_new_state()
 }
 
 int
-ts_lua_add_module(ts_lua_instance_conf * conf, ts_lua_main_ctx * arr, int n, int argc, char *argv[])
+ts_lua_add_module(ts_lua_instance_conf * conf, ts_lua_main_ctx * arr, int n, int argc, char *argv[], 
+    char *errbuf, int errbuf_size)
 {
   int i, ret;
   int t;
@@ -127,7 +128,8 @@ ts_lua_add_module(ts_lua_instance_conf * conf, ts_lua_main_ctx * arr, int n, int
 
     if (conf->content) {
       if (luaL_loadstring(L, conf->content)) {
-        TSError("[%s] luaL_loadstring %s failed: %s", __FUNCTION__, conf->script, lua_tostring(L, -1));
+        snprintf(errbuf, errbuf_size - 1, "[%s] luaL_loadstring %s failed: %s", __FUNCTION__, 
+             conf->script, lua_tostring(L, -1));
         lua_pop(L, 1);
         TSMutexUnlock(arr[i].mutexp);
         return -1;
@@ -135,7 +137,8 @@ ts_lua_add_module(ts_lua_instance_conf * conf, ts_lua_main_ctx * arr, int n, int
 
     } else if (strlen(conf->script)) {
       if (luaL_loadfile(L, conf->script)) {
-        TSError("[%s] luaL_loadfile %s failed: %s", __FUNCTION__, conf->script, lua_tostring(L, -1));
+        snprintf(errbuf, errbuf_size - 1, "[%s] luaL_loadfile %s failed: %s", __FUNCTION__,
+             conf->script, lua_tostring(L, -1));
         lua_pop(L, 1);
         TSMutexUnlock(arr[i].mutexp);
         return -1;
@@ -143,7 +146,8 @@ ts_lua_add_module(ts_lua_instance_conf * conf, ts_lua_main_ctx * arr, int n, int
     }
 
     if (lua_pcall(L, 0, 0, 0)) {
-      TSError("[%s] lua_pcall %s failed: %s", __FUNCTION__, conf->script, lua_tostring(L, -1));
+      snprintf(errbuf, errbuf_size - 1, "[%s] lua_pcall %s failed: %s", __FUNCTION__,
+           conf->script, lua_tostring(L, -1));
       lua_pop(L, 1);
       TSMutexUnlock(arr[i].mutexp);
       return -1;
@@ -163,7 +167,8 @@ ts_lua_add_module(ts_lua_instance_conf * conf, ts_lua_main_ctx * arr, int n, int
       }
 
       if (lua_pcall(L, 1, 1, 0)) {
-        TSError("[%s] lua_pcall %s failed: %s", __FUNCTION__, conf->script, lua_tostring(L, -1));
+        snprintf(errbuf, errbuf_size - 1, "[%s] lua_pcall %s failed: %s", __FUNCTION__,
+             conf->script, lua_tostring(L, -1));
         lua_pop(L, 1);
         TSMutexUnlock(arr[i].mutexp);
         return -1;

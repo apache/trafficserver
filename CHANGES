@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.0
 
+  *) [TS-3385] show script loading error when using lua plugin as remap plugin.
+
   *) [TS-3346] support TS Stat api in lua plugin.
 
   *) [TS-3375] Memory leak and error handling in SSL loading.

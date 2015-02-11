@@ -97,11 +97,10 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
 
   ts_lua_init_instance(conf);
 
-  ret = ts_lua_add_module(conf, ts_lua_main_ctx_array, TS_LUA_MAX_STATE_COUNT, argc - 2, &argv[2]);
+  ret = ts_lua_add_module(conf, ts_lua_main_ctx_array, TS_LUA_MAX_STATE_COUNT, argc - 2, &argv[2], 
+                          errbuf, errbuf_size);
 
   if (ret != 0) {
-    strncpy(errbuf, "[TSRemapNewInstance] ts_lua_add_module failed", errbuf_size - 1);
-    errbuf[errbuf_size - 1] = '\0';
     return TS_ERROR;
   }
 
@@ -362,9 +361,14 @@ TSPluginInit(int argc, const char *argv[])
 
   ts_lua_init_instance(conf);
 
-  ret = ts_lua_add_module(conf, ts_lua_g_main_ctx_array, TS_LUA_MAX_STATE_COUNT, argc - 1, (char **) &argv[1]);
+
+  char errbuf[TS_LUA_MAX_STR_LENGTH];
+  int errbuf_len = sizeof(errbuf);
+  ret = ts_lua_add_module(conf, ts_lua_g_main_ctx_array, TS_LUA_MAX_STATE_COUNT, argc - 1, (char **) &argv[1], 
+                          errbuf, errbuf_len);
 
   if (ret != 0) {
+    TSError(errbuf);
     TSError("[%s] ts_lua_add_module failed", __FUNCTION__);
     return;
   }
