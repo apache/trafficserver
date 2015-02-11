@@ -38,6 +38,8 @@ struct PluginRegInfo
   char *vendor_name;
   char *support_email;
 
+  void *dlh;
+
   LINK(PluginRegInfo, link);
 };
 
