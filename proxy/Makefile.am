@@ -229,7 +229,6 @@ traffic_server_LDADD = \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   @HWLOC_LIBS@ \
   @LIBPCRE@ \
-  @OPENSSL_LIBS@ \
   @LIBTCL@ \
   @LIBEXPAT@ \
   @LIBCAP@ \
@@ -238,6 +237,7 @@ traffic_server_LDADD = \
   @LIBLZMA@ \
   @LIBPROFILER@ \
   @SPDYLAY_LIBS@ \
+  @OPENSSL_LIBS@ \
   @LIBPTHREAD@ \
   -lm
 
@@ -328,8 +328,18 @@ traffic_sac_LDADD = \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/lib/records/librecords_p.a \
   $(top_builddir)/lib/ts/libtsutil.la \
-  @LIBRESOLV@ @LIBPCRE@ @LIBTCL@ @HWLOC_LIBS@ \
-  @LIBEXPAT@ @LIBZ@ @LIBLZMA@ @LIBPROFILER@ @SPDYLAY_LIBS@ @LIBPTHREAD@ -lm
+  @LIBRESOLV@ \
+  @LIBPCRE@ \
+  @LIBTCL@ \
+  @HWLOC_LIBS@ \
+  @LIBEXPAT@ \
+  @LIBZ@ \
+  @LIBLZMA@ \
+  @LIBPROFILER@ \
+  @SPDYLAY_LIBS@ \
+  @OPENSSL_LIBS@ \
+  @LIBPTHREAD@ \
+  -lm
 
 if BUILD_TESTS
   traffic_sac_SOURCES += RegressionSM.cc
