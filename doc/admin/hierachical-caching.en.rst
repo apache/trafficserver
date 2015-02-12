@@ -85,7 +85,7 @@ When you configure your Traffic Server to use more than one parent
 cache, Traffic Server detects when a parent is not available and sends
 missed requests to another parent cache. If you specify more than two
 parent caches, then the order in which the parent caches are queried
-depends upon the parent proxy rules configured in the file:`parent.config`
+depends upon the parent proxy rules configured in the :file:`parent.config`
 configuration file. By default, the parent caches are queried in the
 order they are listed in the configuration file.
 
