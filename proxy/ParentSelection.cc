@@ -801,7 +801,8 @@ ParentRecord::DefaultInit(char *val)
 }
 
 void
-ParentRecord::buildConsistentHash(void) {
+ParentRecord::buildConsistentHash(void)
+{
   ATSHash64Sip24 hash;
   int i;
 
