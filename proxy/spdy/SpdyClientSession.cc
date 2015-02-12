@@ -425,8 +425,8 @@ spdy_read_fetch_body_callback(spdylay_session * /*session*/, int32_t stream_id,
       Debug("spdy", "----Request[%" PRIu64 ":%d] %s %lld %d", sm->sm_id, req->stream_id,
             req->url.c_str(), (end_time - req->start_time)/TS_HRTIME_MSECOND,
             req->fetch_data_len);
-      unsigned char digest[MD5_DIGEST_LENGTH];
       if (is_debug_tag_set("spdy")) {
+        unsigned char digest[MD5_DIGEST_LENGTH];
         MD5_Final(digest, &req->recv_md5);
         char md5_strbuf[MD5_DIGEST_LENGTH * 2 + 1];
         for (int i = 0; i < MD5_DIGEST_LENGTH; i++) {
