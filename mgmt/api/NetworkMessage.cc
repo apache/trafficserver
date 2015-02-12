@@ -29,7 +29,7 @@
 #include "NetworkMessage.h"
 
 #define MAX_OPERATION_BUFSZ   1024
-#define MAX_OPERATION_FIELDS  10
+#define MAX_OPERATION_FIELDS  16
 
 struct NetCmdOperation
 {
@@ -65,6 +65,7 @@ static const struct NetCmdOperation requests[] = {
   /* RECORD_MATCH_GET           */ { 2, { MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING } },
   /* API_PING                   */ { 2, { MGMT_MARSHALL_INT, MGMT_MARSHALL_INT } },
   /* SERVER_BACKTRACE           */ { 2, { MGMT_MARSHALL_INT, MGMT_MARSHALL_INT } },
+  /* RECORD_DESCRIBE_CONFIG     */ { 3, { MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING, MGMT_MARSHALL_INT } },
 };
 
 // Responses always begin with a TSMgmtError code, followed by additional fields.
@@ -95,6 +96,12 @@ static const struct NetCmdOperation responses[] = {
   /* RECORD_MATCH_GET           */ { 4, { MGMT_MARSHALL_INT, MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING, MGMT_MARSHALL_DATA } },
   /* API_PING                   */ { 0, {} }, // no reply
   /* SERVER_BACKTRACE           */ { 2, { MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING } },
+  /* RECORD_DESCRIBE_CONFIG     */ { 14, { MGMT_MARSHALL_INT /* status */,
+    MGMT_MARSHALL_STRING /* name */,  MGMT_MARSHALL_DATA /* value */,     MGMT_MARSHALL_DATA /* default */,
+    MGMT_MARSHALL_INT /* type */,     MGMT_MARSHALL_INT /* class */,      MGMT_MARSHALL_INT /* version */,
+    MGMT_MARSHALL_INT /* rsb */,      MGMT_MARSHALL_INT /* order */,      MGMT_MARSHALL_INT /* access */,
+    MGMT_MARSHALL_INT /* update */,   MGMT_MARSHALL_INT /* updatetype */, MGMT_MARSHALL_INT /* checktype */,
+    MGMT_MARSHALL_STRING /* checkexpr */} },
 };
 
 #define GETCMD(ops, optype, cmd) do { \
@@ -220,6 +227,15 @@ send_mgmt_error(int fd, OpType optype, TSMgmtError error)
   case RECORD_MATCH_GET:
     ink_release_assert(responses[optype].nfields == 4);
     return send_mgmt_response(fd, optype, &ecode, &intval, &strval, &dataval);
+
+  case RECORD_DESCRIBE_CONFIG:
+    ink_release_assert(responses[optype].nfields == 14);
+    return send_mgmt_response(fd, optype, &ecode,
+      &strval /* name */,   &dataval /* value */,     &dataval /* default */,
+      &intval /* type */,   &intval /* class */,      &intval /* version */,
+      &intval /* rsb */,    &intval /* order */,      &intval /* access */,
+      &intval /* update */, &intval /* updatetype */, &intval /* checktype */,
+      &strval /* checkexpr */);
 
   case EVENT_REG_CALLBACK:
   case EVENT_UNREG_CALLBACK:

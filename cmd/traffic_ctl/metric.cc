@@ -40,7 +40,7 @@ metric_get(unsigned argc, const char ** argv)
       return CTRL_EX_ERROR;
     }
 
-    printf("%s %s\n", record.name(), record.c_str());
+    printf("%s %s\n", record.name(), CtrlMgmtRecordValue(record).c_str());
   }
 
   return CTRL_EX_OK;
@@ -67,7 +67,7 @@ metric_match(unsigned argc, const char ** argv)
 
     while (!reclist.empty()) {
       CtrlMgmtRecord record(reclist.next());
-      printf("%s %s\n", record.name(), record.c_str());
+      printf("%s %s\n", record.name(), CtrlMgmtRecordValue(record).c_str());
     }
   }
 

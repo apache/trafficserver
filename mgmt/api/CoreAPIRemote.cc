@@ -427,7 +427,6 @@ Restart(unsigned options)
   return ret;
 }
 
-
 /*-------------------------------------------------------------------------
  * Bounce
  *-------------------------------------------------------------------------
@@ -464,6 +463,35 @@ StorageDeviceCmdOffline(char const* dev)
 /***************************************************************************
  * Record Operations
  ***************************************************************************/
+
+static void
+mgmt_record_convert_value(TSRecordT rec_type, const MgmtMarshallData& data, TSRecordValueT& value)
+{
+  // convert the record value to appropriate type
+  if (data.ptr) {
+    switch (rec_type) {
+    case TS_REC_INT:
+      ink_assert(data.len == sizeof(TSInt));
+      value.int_val = *(TSInt *)data.ptr;
+      break;
+    case TS_REC_COUNTER:
+      ink_assert(data.len == sizeof(TSCounter));
+      value.counter_val = *(TSCounter *)data.ptr;
+      break;
+    case TS_REC_FLOAT:
+      ink_assert(data.len == sizeof(TSFloat));
+      value.float_val = *(TSFloat *)data.ptr;
+      break;
+    case TS_REC_STRING:
+      ink_assert(data.len == strlen((char *)data.ptr) + 1);
+      value.string_val = ats_strdup((char *)data.ptr);
+      break;
+    default:
+      ; // nothing ... shut up compiler!
+    }
+  }
+}
+
 static TSMgmtError
 mgmt_record_get_reply(OpType op, TSRecordEle * rec_ele)
 {
@@ -472,8 +500,8 @@ mgmt_record_get_reply(OpType op, TSRecordEle * rec_ele)
   MgmtMarshallData reply = { NULL, 0 };
   MgmtMarshallInt err;
   MgmtMarshallInt type;
-  MgmtMarshallString name;
-  MgmtMarshallData value;
+  MgmtMarshallString name = NULL;
+  MgmtMarshallData value = { NULL, 0 };
 
   ink_zero(*rec_ele);
   rec_ele->rec_type = TS_REC_UNDEFINED;
@@ -487,50 +515,22 @@ mgmt_record_get_reply(OpType op, TSRecordEle * rec_ele)
   ret = recv_mgmt_response(reply.ptr, reply.len, op, &err, &type, &name, &value);
   ats_free(reply.ptr);
   if (ret != TS_ERR_OKAY) {
-    return ret;
+    goto done;
   }
 
   if (err != TS_ERR_OKAY) {
-    ats_free(name);
-    ats_free(value.ptr);
-    return (TSMgmtError)err;
+    ret = (TSMgmtError)err;
+    goto done;
   }
 
   rec_ele->rec_type = (TSRecordT)type;
+  rec_ele->rec_name = ats_strdup(name);
+  mgmt_record_convert_value(rec_ele->rec_type, value, rec_ele->valueT);
 
-  // convert the record value to appropriate type
-  if (value.ptr) {
-    switch (rec_ele->rec_type) {
-    case TS_REC_INT:
-      ink_assert(value.len == sizeof(TSInt));
-      rec_ele->valueT.int_val = *(TSInt *)value.ptr;
-      break;
-    case TS_REC_COUNTER:
-      ink_assert(value.len == sizeof(TSCounter));
-      rec_ele->valueT.counter_val = *(TSCounter *)value.ptr;
-      break;
-    case TS_REC_FLOAT:
-      ink_assert(value.len == sizeof(TSFloat));
-      rec_ele->valueT.float_val = *(TSFloat *)value.ptr;
-      break;
-    case TS_REC_STRING:
-      ink_assert(value.len == strlen((char *)value.ptr) + 1);
-      rec_ele->valueT.string_val = ats_strdup((char *)value.ptr);
-      break;
-    default:
-      ; // nothing ... shut up compiler!
-    }
-  }
-
-  // The record takes ownership of the (non-empty) name.
-  if (strlen(name)) {
-    rec_ele->rec_name = name;
-  } else {
-    ats_free(name);
-  }
-
+done:
+  ats_free(name);
   ats_free(value.ptr);
-  return TS_ERR_OKAY;
+  return ret;
 }
 
 // note that the record value is being sent as chunk of memory, regardless of
@@ -549,6 +549,82 @@ MgmtRecordGet(const char *rec_name, TSRecordEle * rec_ele)
   // create and send request
   ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, RECORD_GET, &optype, &record);
   return (ret == TS_ERR_OKAY) ? mgmt_record_get_reply(RECORD_GET, rec_ele) : ret;
+}
+
+TSMgmtError
+MgmtConfigRecordDescribe(const char *rec_name, unsigned options, TSConfigRecordDescription * val)
+{
+  TSMgmtError ret;
+  MgmtMarshallInt optype = RECORD_DESCRIBE_CONFIG;
+  MgmtMarshallInt flags = options;
+  MgmtMarshallString record = const_cast<MgmtMarshallString>(rec_name);
+
+  MgmtMarshallData reply = { NULL, 0 };
+
+  // create and send request
+  ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, RECORD_DESCRIBE_CONFIG, &optype, &record, &flags);
+  if (ret != TS_ERR_OKAY) {
+    return ret;
+  }
+
+  ret = recv_mgmt_message(main_socket_fd, reply);
+  if (ret != TS_ERR_OKAY) {
+    return ret;
+  } else {
+    MgmtMarshallInt err;
+    MgmtMarshallString name = NULL;
+    MgmtMarshallString expr = NULL;
+    MgmtMarshallData value = { NULL, 0 };
+    MgmtMarshallData deflt = { NULL, 0 };
+
+    MgmtMarshallInt rtype;
+    MgmtMarshallInt rclass;
+    MgmtMarshallInt version;
+    MgmtMarshallInt rsb;
+    MgmtMarshallInt order;
+    MgmtMarshallInt access;
+    MgmtMarshallInt update;
+    MgmtMarshallInt updatetype;
+    MgmtMarshallInt checktype;
+
+    ret = recv_mgmt_response(reply.ptr, reply.len, RECORD_DESCRIBE_CONFIG, &err, &name, &value, &deflt, &rtype,
+        &rclass, &version, &rsb, &order, &access, &update, &updatetype, &checktype, &expr);
+
+    ats_free(reply.ptr);
+
+    if (ret != TS_ERR_OKAY) {
+      goto done;
+    }
+
+    if (err != TS_ERR_OKAY) {
+      ret = (TSMgmtError)err;
+      goto done;
+    }
+
+    // Everything is cool, populate the description ...
+    val->rec_name = ats_strdup(name);
+    val->rec_checkexpr = ats_strdup(expr);
+    val->rec_type = (TSRecordT)rtype;
+    val->rec_class = rclass;
+    val->rec_version = version;
+    val->rec_rsb = rsb;
+    val->rec_order = order;
+    val->rec_access = access;
+    val->rec_updatetype = updatetype;
+    val->rec_checktype = checktype;
+
+    mgmt_record_convert_value(val->rec_type, value, val->rec_value);
+    mgmt_record_convert_value(val->rec_type, deflt, val->rec_default);
+
+done:
+    ats_free(name);
+    ats_free(expr);
+    ats_free(value.ptr);
+    ats_free(deflt.ptr);
+    return ret;
+  }
+
+  return ret;
 }
 
 TSMgmtError
@@ -661,7 +737,6 @@ MgmtRecordSetFloat(const char *rec_name, MgmtFloat float_val, TSActionNeedT * ac
   return ret;
 }
 
-
 TSMgmtError
 MgmtRecordSetString(const char *rec_name, const char *string_val, TSActionNeedT * action_need)
 {
@@ -673,7 +748,6 @@ MgmtRecordSetString(const char *rec_name, const char *string_val, TSActionNeedT 
   ret = mgmt_record_set(rec_name, string_val, action_need);
   return ret;
 }
-
 
 /***************************************************************************
  * File Operations
@@ -981,4 +1055,3 @@ StatsReset(bool cluster, const char * stat_name)
   ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, op, &optype, &name);
   return (ret == TS_ERR_OKAY) ? parse_generic_response(op, main_socket_fd) : ret;
 }
-

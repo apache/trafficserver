@@ -110,6 +110,7 @@ extern "C"
   typedef int64_t TSInt;
   typedef int64_t TSCounter;
   typedef float TSFloat;
+  typedef bool TSBool;
   typedef char *TSString;
   typedef char *TSIpAddr;
 
@@ -432,18 +433,43 @@ extern "C"
 
 /*--- records -------------------------------------------------------------*/
 
+  typedef union
+  {                           /* record value */
+    TSInt     int_val;
+    TSCounter counter_val;
+    TSFloat   float_val;
+    TSString  string_val;
+  } TSRecordValueT;
+
   typedef struct
   {
-    char *rec_name;             /* record name */
+    char *rec_name;            /* record name */
     TSRecordT rec_type;        /* record type {TS_REC_INT...} */
-    union
-    {                           /* record value */
-      TSInt int_val;
-      TSCounter counter_val;
-      TSFloat float_val;
-      TSString string_val;
-    } valueT;
+    TSRecordValueT valueT;    /* record value */
   } TSRecordEle;
+
+  typedef struct
+  {
+    /* Common RecRecord fields ... */
+    char *          rec_name;
+    TSRecordValueT  rec_value;
+    TSRecordValueT  rec_default;
+    TSRecordT       rec_type;     /* data type (RecDataT) */
+    TSInt           rec_class;    /* data class (RecT) */
+    TSInt           rec_version;
+    TSInt           rec_rsb;      /* Raw Stat Block ID */
+    TSInt           rec_order;
+
+    /* RecConfigMeta fields ... */
+    TSInt           rec_access;       /* access rights (RecAccessT) */
+    TSInt           rec_update;   /* update_required bitmask */
+    TSInt           rec_updatetype;   /* update type (RecUpdateT) */
+    TSInt           rec_checktype;    /* syntax check type (RecCheckT) */
+    char *          rec_checkexpr;    /* syntax check expression */
+  } TSConfigRecordDescription;
+
+  /* Free (the contents of) a TSConfigRecordDescription */
+  tsapi void TSConfigRecordDescriptionFree(TSConfigRecordDescription * val);
 
 /*--- events --------------------------------------------------------------*/
 
@@ -1159,6 +1185,14 @@ extern "C"
   tsapi TSMgmtError TSRecordSetCounter(const char *rec_name, TSCounter counter_val, TSActionNeedT * action_need);
   tsapi TSMgmtError TSRecordSetFloat(const char *rec_name, TSFloat float_val, TSActionNeedT * action_need);
   tsapi TSMgmtError TSRecordSetString(const char *rec_name, const char *string_val, TSActionNeedT * action_need);
+
+/* TSConfigRecordDescribe: fetch a full description of a configuration record
+ * Input: rec_name  - name of the record
+ *        flags     - (unused) fetch flags bitmask
+ *        val       - output value;
+ * Output: TSMgmtError
+ */
+  tsapi TSMgmtError TSConfigRecordDescribe(const char * rec_name, unsigned flags, TSConfigRecordDescription * val);
 
 /* TSRecordSetMlt: sets a set of records
  * Input:  rec_list     - list of record names the user wants to set;

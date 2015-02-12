@@ -60,8 +60,11 @@ typedef enum
   RECORD_MATCH_GET,
   API_PING,
   SERVER_BACKTRACE,
+  RECORD_DESCRIBE_CONFIG,
   UNDEFINED_OP /* This must be last */
 } OpType;
+
+#define MGMT_OPERATION_TYPE_MAX (UNDEFINED_OP)
 
 struct mgmt_message_sender
 {

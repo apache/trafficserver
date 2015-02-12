@@ -263,6 +263,39 @@ ts_ctrl_main(void *arg)
  */
 
 static TSMgmtError
+marshall_rec_data(RecDataT rec_type, const RecData& rec_data, MgmtMarshallData& data)
+{
+  switch (rec_type) {
+  case TS_REC_INT:
+    data.ptr = const_cast<RecInt *>(&rec_data.rec_int);
+    data.len = sizeof(TSInt);
+    break;
+  case TS_REC_COUNTER:
+    data.ptr = const_cast<RecCounter *>(&rec_data.rec_counter);
+    data.len = sizeof(TSCounter);
+    break;
+  case TS_REC_FLOAT:
+    data.ptr = const_cast<RecFloat *>(&rec_data.rec_float);
+    data.len = sizeof(TSFloat);
+    break;
+  case TS_REC_STRING:
+    // Make sure to send the NULL in the string value response.
+    if (rec_data.rec_string) {
+      data.ptr = rec_data.rec_string;
+      data.len = strlen(rec_data.rec_string) + 1;
+    } else {
+      data.ptr = (void *)"NULL";
+      data.len = countof("NULL");
+    }
+    break;
+  default:                     // invalid record type
+    return TS_ERR_FAIL;
+  }
+
+  return TS_ERR_OKAY;
+}
+
+static TSMgmtError
 send_record_get_response(int fd, TSRecordT rec_type, const char * rec_name, const void * rec_data, size_t data_len)
 {
   MgmtMarshallInt err = TS_ERR_OKAY;
@@ -971,6 +1004,94 @@ handle_server_backtrace(int fd, void * req, size_t reqlen)
   return (TSMgmtError)err;
 }
 
+static void
+send_record_describe(const RecRecord * rec, void * ptr)
+{
+  MgmtMarshallString  rec_name = const_cast<char *>(rec->name);
+  MgmtMarshallData    rec_value = { NULL, 0 };
+  MgmtMarshallData    rec_default { NULL, 0 };
+  MgmtMarshallInt     rec_type = rec->data_type;
+  MgmtMarshallInt     rec_class = rec->rec_type;
+  MgmtMarshallInt     rec_version = rec->version;
+  MgmtMarshallInt     rec_rsb = rec->rsb_id;
+  MgmtMarshallInt     rec_order = rec->order;
+  MgmtMarshallInt     rec_access = rec->config_meta.access_type;
+  MgmtMarshallInt     rec_update = rec->config_meta.update_required;
+  MgmtMarshallInt     rec_updatetype = rec->config_meta.update_type;
+  MgmtMarshallInt     rec_checktype = rec->config_meta.check_type;
+  MgmtMarshallString  rec_checkexpr = rec->config_meta.check_expr;
+
+  MgmtMarshallInt     err = TS_ERR_OKAY;
+
+  int * fderr = (int *)ptr;
+
+  // We only describe config variables (for now).
+  if (!REC_TYPE_IS_CONFIG(rec->rec_type)) {
+    *fderr = TS_ERR_PARAMS;
+    return;
+  }
+
+  switch (rec_type) {
+  case RECD_INT: rec_type = TS_REC_INT; break;
+  case RECD_FLOAT: rec_type = TS_REC_FLOAT; break;
+  case RECD_STRING: rec_type = TS_REC_STRING; break;
+  case RECD_COUNTER: rec_type = TS_REC_COUNTER; break;
+  default: rec_type = TS_REC_UNDEFINED;
+  }
+
+  err = marshall_rec_data(rec->data_type, rec->data, rec_value);
+  if (err != TS_ERR_OKAY) {
+    goto done;
+  }
+
+  err = marshall_rec_data(rec->data_type, rec->data_default, rec_default);
+  if (err != TS_ERR_OKAY) {
+    goto done;
+  }
+
+  err = send_mgmt_response(*fderr, RECORD_DESCRIBE_CONFIG, &err,
+    &rec_name, &rec_value, &rec_default, &rec_type, &rec_class, &rec_version, &rec_rsb, &rec_order,
+    &rec_access, &rec_update, &rec_updatetype, &rec_checktype, &rec_checkexpr);
+
+done:
+  *fderr = err;
+}
+
+static TSMgmtError
+handle_record_describe(int fd, void * req, size_t reqlen)
+{
+  TSMgmtError ret;
+  MgmtMarshallInt optype;
+  MgmtMarshallInt options;
+  MgmtMarshallString name;
+
+  int fderr = fd; // [in,out] variable for the fd and error
+
+  ret = recv_mgmt_request(req, reqlen, RECORD_DESCRIBE_CONFIG, &optype, &name, &options);
+  if (ret != TS_ERR_OKAY) {
+    return ret;
+  }
+
+  if (strlen(name) == 0) {
+    ret = TS_ERR_PARAMS;
+    goto done;
+  }
+
+  if (RecLookupRecord(name, send_record_describe, &fderr) != REC_ERR_OKAY) {
+    ret = TS_ERR_PARAMS;
+    goto done;
+  }
+
+  // If the lookup succeeded, the final error is in "fderr".
+  if (ret == TS_ERR_OKAY) {
+    ret = (TSMgmtError)fderr;
+  }
+
+done:
+  ats_free(name);
+  return ret;
+}
+
 struct control_message_handler
 {
   unsigned flags;
@@ -1003,8 +1124,13 @@ static const control_message_handler handlers[] = {
   /* STORAGE_DEVICE_CMD_OFFLINE */ { MGMT_API_PRIVILEGED, handle_storage_device_cmd_offline },
   /* RECORD_MATCH_GET           */ { 0, handle_record_match },
   /* API_PING                   */ { 0, handle_api_ping },
-  /* SERVER_BACKTRACE           */ { MGMT_API_PRIVILEGED, handle_server_backtrace }
+  /* SERVER_BACKTRACE           */ { MGMT_API_PRIVILEGED, handle_server_backtrace },
+  /* RECORD_DESCRIBE_CONFIG     */ { 0, handle_record_describe }
 };
+
+// This should use countof(), but we need a constexpr :-/
+#define NUM_OP_HANDLERS (sizeof(handlers)/sizeof(handlers[0]))
+extern char __msg_handler_static_assert[NUM_OP_HANDLERS == MGMT_OPERATION_TYPE_MAX ? 0 : -1];
 
 static TSMgmtError
 handle_control_message(int fd, void * req, size_t reqlen)

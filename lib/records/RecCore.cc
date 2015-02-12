@@ -422,6 +422,31 @@ RecGetRecordBool(const char *name, RecBool *rec_bool, bool lock)
 //-------------------------------------------------------------------------
 // RecGetRec Attributes
 //-------------------------------------------------------------------------
+
+int
+RecLookupRecord(const char *name, void (*callback)(const RecRecord *, void *), void * data, bool lock)
+{
+  int err = REC_ERR_FAIL;
+  RecRecord *r;
+
+  if (lock) {
+    ink_rwlock_rdlock(&g_records_rwlock);
+  }
+
+  if (ink_hash_table_lookup(g_records_ht, name, (void **) &r)) {
+    rec_mutex_acquire(&(r->lock));
+    callback(r, data);
+    err = REC_ERR_OKAY;
+    rec_mutex_release(&(r->lock));
+  }
+
+  if (lock) {
+    ink_rwlock_unlock(&g_records_rwlock);
+  }
+
+  return err;
+}
+
 int
 RecGetRecordType(const char *name, RecT * rec_type, bool lock)
 {

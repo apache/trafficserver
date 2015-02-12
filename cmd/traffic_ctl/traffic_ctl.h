@@ -75,10 +75,9 @@ struct CtrlMgmtRecord
   }
 
   TSMgmtError fetch(const char *);
+
   const char * name() const;
   TSRecordT type() const;
-  const char * c_str() const;
-
   int64_t as_int() const;
 
 private:
@@ -86,7 +85,28 @@ private:
   CtrlMgmtRecord& operator=(const CtrlMgmtRecord&); // disabled
 
   TSRecordEle * ele;
-  mutable char nbuf[32];
+
+  friend struct CtrlMgmtRecordValue;
+};
+
+struct CtrlMgmtRecordValue
+{
+  explicit CtrlMgmtRecordValue(const TSRecordEle *);
+  explicit CtrlMgmtRecordValue(const CtrlMgmtRecord&);
+
+  CtrlMgmtRecordValue(TSRecordT, TSRecordValueT);
+  const char * c_str() const;
+
+private:
+  CtrlMgmtRecordValue(const CtrlMgmtRecordValue&); // disabled
+  CtrlMgmtRecordValue& operator=(const CtrlMgmtRecordValue&); // disabled
+  void init(TSRecordT, TSRecordValueT);
+
+  TSRecordT rec_type;
+  union {
+    const char * str;
+    char nbuf[32];
+  } fmt;
 };
 
 struct CtrlMgmtRecordList

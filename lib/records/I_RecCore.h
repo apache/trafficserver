@@ -31,6 +31,7 @@
 #include "I_RecSignals.h"
 #include "I_RecEvents.h"
 
+struct RecRecord;
 
 //-------------------------------------------------------------------------
 // Diagnostic Output
@@ -163,6 +164,9 @@ int RecGetRecordBool(const char *name, RecBool * rec_byte, bool lock = true);
 //------------------------------------------------------------------------
 // Record Attributes Reading
 //------------------------------------------------------------------------
+
+int RecLookupRecord(const char *name, void (*callback)(const RecRecord *, void *), void * data, bool lock = true);
+
 int RecGetRecordType(const char *name, RecT * rec_type, bool lock = true);
 int RecGetRecordDataType(const char *name, RecDataT * data_type, bool lock = true);
 int RecGetRecordPersistenceType(const char *name, RecPersistT * persist_type, bool lock = true);
@@ -300,7 +304,5 @@ int RecSetSyncRequired(char *name, bool lock = true);
 //------------------------------------------------------------------------
 typedef void *(*RecManagerCb) (void *opaque_cb_data, char *data_raw, int data_len);
 int RecRegisterManagerCb(int _signal, RecManagerCb _fn, void *_data = NULL);
-
-void RecResizeAdditional(int add);
 
 #endif

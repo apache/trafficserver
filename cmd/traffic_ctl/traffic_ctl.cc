@@ -50,26 +50,6 @@ CtrlMgmtRecord::as_int() const
   }
 }
 
-const char *
-CtrlMgmtRecord::c_str() const
-{
-  switch (this->ele->rec_type) {
-  case TS_REC_INT:
-    snprintf(this->nbuf, sizeof(this->nbuf), "%" PRId64, this->ele->valueT.int_val);
-    return this->nbuf;
-  case TS_REC_COUNTER:
-    snprintf(this->nbuf, sizeof(this->nbuf), "%" PRId64, this->ele->valueT.counter_val);
-    return this->nbuf;
-  case TS_REC_FLOAT:
-    snprintf(this->nbuf, sizeof(this->nbuf), "%f", this->ele->valueT.float_val);
-    return this->nbuf;
-  case TS_REC_STRING:
-    return this->ele->valueT.string_val;
-  default:
-    return "(invalid)";
-  }
-}
-
 TSMgmtError
 CtrlMgmtRecord::fetch(const char * name)
 {
@@ -80,6 +60,55 @@ TSMgmtError
 CtrlMgmtRecordList::match(const char * name)
 {
   return TSRecordGetMatchMlt(name, this->list);
+}
+
+CtrlMgmtRecordValue::CtrlMgmtRecordValue(const CtrlMgmtRecord& rec)
+{
+  this->init(rec.ele->rec_type, rec.ele->valueT);
+}
+
+CtrlMgmtRecordValue::CtrlMgmtRecordValue(const TSRecordEle * ele)
+{
+  this->init(ele->rec_type, ele->valueT);
+}
+
+CtrlMgmtRecordValue::CtrlMgmtRecordValue(TSRecordT _t, TSRecordValueT _v)
+{
+  this->init(_t, _v);
+}
+
+void
+CtrlMgmtRecordValue::init(TSRecordT _t, TSRecordValueT _v)
+{
+  this->rec_type = _t;
+  switch (this->rec_type) {
+  case TS_REC_INT:
+    snprintf(this->fmt.nbuf, sizeof(this->fmt.nbuf), "%" PRId64, _v.int_val);
+    break;
+  case TS_REC_COUNTER:
+    snprintf(this->fmt.nbuf, sizeof(this->fmt.nbuf), "%" PRId64, _v.counter_val);
+    break;
+  case TS_REC_FLOAT:
+    snprintf(this->fmt.nbuf, sizeof(this->fmt.nbuf), "%f", _v.float_val);
+    break;
+  case TS_REC_STRING:
+    this->fmt.str = _v.string_val;
+    break;
+  default:
+    rec_type = TS_REC_STRING;
+    this->fmt.str = "(invalid)";
+  }
+}
+
+const char *
+CtrlMgmtRecordValue::c_str() const
+{
+  switch (this->rec_type) {
+  case TS_REC_STRING:
+    return this->fmt.str;
+  default:
+    return this->fmt.nbuf;
+  }
 }
 
 void

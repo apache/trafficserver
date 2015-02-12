@@ -45,7 +45,6 @@
 // forward declarations
 void init_pdss_format(TSPdSsFormat& info);
 
-
 /***************************************************************************
  * API Memory Management
  ***************************************************************************/
@@ -72,7 +71,6 @@ _TSfree(void *ptr)
 {
   ats_free(ptr);
 }
-
 
 /***************************************************************************
  * API Helper Functions for Data Carrier Structures
@@ -212,7 +210,6 @@ TSIpAddrListEnqueue(TSIpAddrList ip_addrl, TSIpAddrEle * ip_addr)
   }
 }
 
-
 /* The the TSIpAddrEle returned is actually removed from the end of list */
 tsapi TSIpAddrEle *
 TSIpAddrListDequeue(TSIpAddrList ip_addrl)
@@ -223,7 +220,6 @@ TSIpAddrListDequeue(TSIpAddrList ip_addrl)
 
   return (TSIpAddrEle *) dequeue((LLQ *) ip_addrl);
 }
-
 
 tsapi int
 TSIpAddrListLen(TSIpAddrList ip_addrl)
@@ -369,7 +365,6 @@ TSPortListIsValid(TSPortList portl)
   }
   return true;
 }
-
 
 /*--- TSDomainList operations -----------------------------------------*/
 tsapi TSDomainList
@@ -656,7 +651,6 @@ TSIntListIsValid(TSIntList intl, int min, int max)
   }
   return true;
 }
-
 
 // helper fn that sets default values for the info passed in
 void
@@ -948,7 +942,6 @@ TSCongestionEleDestroy(TSCongestionEle * ele)
   return;
 }
 
-
 /*-------------------------------------------------------------
  * HostingObj
  *-------------------------------------------------------------*/
@@ -1042,7 +1035,6 @@ TSIpAllowEleDestroy(TSIpAllowEle * ele)
   return;
 
 }
-
 
 /*-------------------------------------------------------------
  * TSLogFilterEle
@@ -1513,7 +1505,6 @@ END:
   return ret;
 }
 
-
 /*-------------------------------------------------------------------------
  * TSRecordGetMlt
  *-------------------------------------------------------------------------
@@ -1586,7 +1577,6 @@ TSRecordSet(const char *rec_name, const char *val, TSActionNeedT * action_need)
   return MgmtRecordSet(rec_name, val, action_need);
 }
 
-
 tsapi TSMgmtError
 TSRecordSetInt(const char *rec_name, TSInt int_val, TSActionNeedT * action_need)
 {
@@ -1610,7 +1600,6 @@ TSRecordSetString(const char *rec_name, const char *str_val, TSActionNeedT * act
 {
   return MgmtRecordSetString(rec_name, str_val, action_need);
 }
-
 
 /*-------------------------------------------------------------------------
  * TSRecordSetMlt
@@ -1822,7 +1811,6 @@ TSStorageDeviceCmdOffline(char const* dev)
   return StorageDeviceCmdOffline(dev);
 }
 
-
 /*--- diags output operations ---------------------------------------------*/
 tsapi void
 TSDiags(TSDiagsT mode, const char *fmt, ...)
@@ -1900,7 +1888,6 @@ TSGetErrorMessage(TSMgmtError err_id)
   return err_msg;
 }
 
-
 /*--- password operations -------------------------------------------------*/
 tsapi TSMgmtError
 TSEncryptPassword(char *passwd, char **e_passwd)
@@ -1940,7 +1927,6 @@ TSConfigFileWrite(TSFileNameT file, char *text, int size, int version)
 {
   return WriteFile(file, text, size, version);
 }
-
 
 /* ReadFromUrl: reads a remotely located config file into a buffer
  * Input:  url        - remote location of the file
@@ -2376,7 +2362,6 @@ TSCfgContextMoveEleDown(TSCfgContext ctx, int index)
   return CfgContextMoveEleDown((CfgContext *) ctx, index);
 }
 
-
 TSMgmtError
 TSCfgContextAppendEle(TSCfgContext ctx, TSCfgEle * ele)
 {
@@ -2412,4 +2397,31 @@ TSIsValid(TSCfgEle * ele)
 
   ele_obj = create_ele_obj_from_ele(ele);
   return (ele_obj->isValid());
+}
+
+void
+TSConfigRecordDescriptionFree(TSConfigRecordDescription * val)
+{
+  if (val) {
+    ats_free(val->rec_name);
+    ats_free(val->rec_checkexpr);
+
+    if (val->rec_type == TS_REC_STRING) {
+      ats_free(val->rec_value.string_val);
+    }
+
+    ink_zero(*val);
+    val->rec_type = TS_REC_UNDEFINED;
+  }
+}
+
+TSMgmtError
+TSConfigRecordDescribe(const char * rec_name, unsigned flags, TSConfigRecordDescription * val)
+{
+  if (!rec_name || !val) {
+    return TS_ERR_PARAMS;
+  }
+
+  TSConfigRecordDescriptionFree(val);
+  return MgmtConfigRecordDescribe(rec_name, flags, val);
 }

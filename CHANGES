@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.0
 
+  *) [TS-3408] Add a "config describe" command to traffic_ctl.
+
   *) [TS-3393] Fix records with missing validation expressions.
 
   *) [TS-3424] SSL Failed: decryption failed or bad record mac.

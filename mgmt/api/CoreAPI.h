@@ -66,6 +66,7 @@ TSMgmtError MgmtRecordSetFloat(const char * rec_name, MgmtFloat float_val, TSAct
 TSMgmtError MgmtRecordSetString(const char * rec_name, const char * string_val, TSActionNeedT * action_need);
 TSMgmtError MgmtRecordGetMatching(const char * regex, TSList rec_vals);
 
+TSMgmtError MgmtConfigRecordDescribe(const char * rec_name, unsigned flags, TSConfigRecordDescription * val);
 
 /***************************************************************************
  * File Operations

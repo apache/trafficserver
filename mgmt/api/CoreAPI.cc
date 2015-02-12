@@ -557,6 +557,12 @@ MgmtRecordGetMatching(const char * /* regex */, TSList /* rec_vals */)
   return TS_ERR_FAIL;
 }
 
+TSMgmtError
+MgmtConfigRecordDescribe(const char * /* rec_name */, unsigned /* flags */, TSConfigRecordDescription * /* val */)
+{
+  return TS_ERR_NOT_SUPPORTED;
+}
+
 /*-------------------------------------------------------------------------
  * reads the RecordsConfig info to determine which type of action is needed
  * when the record rec_name is changed; if the rec_name is invalid,
