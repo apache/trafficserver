@@ -700,26 +700,27 @@ CommandLineArgs::parse_arguments(const char** argv)
 
       for (tok = strtok_r(buffer, "&", &sep_ptr); tok != NULL;) {
         val = strchr(tok, '=');
-        if (val)
+        if (val) {
           *(val++) = '\0';
-        if (0 == strncmp(tok, "origin_list", 11)) {
-          ink_strlcpy(origin_list, val, sizeof(origin_list));
-        } else if (0 == strncmp(tok, "state_tag", 9)) {
-          ink_strlcpy(state_tag, val, sizeof(state_tag));
-        } else if (0 == strncmp(tok, "max_origins", 11)) {
-          max_origins = strtol(val, NULL, 10);
-        } else if (0 == strncmp(tok, "urls", 4)) {
-          urls = strtol(val, NULL, 10);
-        } else if (0 == strncmp(tok, "show_urls", 9)) {
-          show_urls = strtol(val, NULL, 10);
-        } else if (0 == strncmp(tok, "as_object", 9)) {
-          as_object = strtol(val, NULL, 10);
-        } else if (0 == strncmp(tok, "min_hits", 8)) {
-          min_hits = strtol(val, NULL, 10);
-        } else if (0 == strncmp(tok, "incremental", 11)) {
-          incremental = strtol(val, NULL, 10);
-        } else {
+          if (0 == strncmp(tok, "origin_list", 11)) {
+            ink_strlcpy(origin_list, val, sizeof(origin_list));
+          } else if (0 == strncmp(tok, "state_tag", 9)) {
+            ink_strlcpy(state_tag, val, sizeof(state_tag));
+          } else if (0 == strncmp(tok, "max_origins", 11)) {
+            max_origins = strtol(val, NULL, 10);
+          } else if (0 == strncmp(tok, "urls", 4)) {
+            urls = strtol(val, NULL, 10);
+          } else if (0 == strncmp(tok, "show_urls", 9)) {
+            show_urls = strtol(val, NULL, 10);
+          } else if (0 == strncmp(tok, "as_object", 9)) {
+            as_object = strtol(val, NULL, 10);
+          } else if (0 == strncmp(tok, "min_hits", 8)) {
+            min_hits = strtol(val, NULL, 10);
+          } else if (0 == strncmp(tok, "incremental", 11)) {
+            incremental = strtol(val, NULL, 10);
+          } else {
           // Unknown query arg.
+          }
         }
 
         tok = strtok_r(NULL, "&", &sep_ptr);
