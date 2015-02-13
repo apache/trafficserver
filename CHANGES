@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.0
+  
+  *) [TS-3390] TrafficServer segfaults on shutdown because of uninitialized SPDY sessions
 
   *) [TS-3389] Refine error returns in SSL loading.
 
