@@ -1224,21 +1224,22 @@ SSLPrivateKeyHandler(
     // assume private key is contained in cert obtained from multicert file.
     if (!SSL_CTX_use_PrivateKey_file(ctx, completeServerCertPath, SSL_FILETYPE_PEM)) {
       SSLError("failed to load server private key from %s", (const char *) completeServerCertPath);
-      return false;
+      _exit(1);
     }
   } else if (params->serverKeyPathOnly != NULL) {
     ats_scoped_str completeServerKeyPath(Layout::get()->relative_to(params->serverKeyPathOnly, keyPath));
     if (!SSL_CTX_use_PrivateKey_file(ctx, completeServerKeyPath, SSL_FILETYPE_PEM)) {
       SSLError("failed to load server private key from %s", (const char *) completeServerKeyPath);
-      return false;
+      _exit(1);
     }
   } else {
     SSLError("empty SSL private key path in records.config");
+    _exit(1);
   }
 
   if (!SSL_CTX_check_private_key(ctx)) {
     SSLError("server private key does not match the certificate public key");
-    return false;
+    _exit(1);
   }
 
   return true;
@@ -1342,9 +1343,9 @@ SSLInitServerContext(const SSLConfigParams * params, const ssl_user_config & ssl
 
     for (const char * certname = cert_tok.getNext(); certname; certname = cert_tok.getNext()) {
       completeServerCertPath = Layout::relative_to(params->serverCertPathOnly, certname);
-      if (SSL_CTX_use_certificate_chain_file(ctx, completeServerCertPath) < 0) {
+      if (SSL_CTX_use_certificate_chain_file(ctx, completeServerCertPath) <= 0) {
         SSLError("failed to load certificate chain from %s", (const char *)completeServerCertPath);
-        goto fail;
+        _exit(1);
       }
 
       const char * keyPath = key_tok.getNext();
@@ -1358,7 +1359,7 @@ SSLInitServerContext(const SSLConfigParams * params, const ssl_user_config & ssl
       ats_scoped_str completeServerCertChainPath(Layout::relative_to(params->serverCertPathOnly, params->serverCertChainFilename));
       if (!SSL_CTX_add_extra_chain_cert_file(ctx, completeServerCertChainPath)) {
         SSLError("failed to load global certificate chain from %s", (const char *) completeServerCertChainPath);
-        goto fail;
+        _exit(1);
       }
     }
 
@@ -1367,7 +1368,7 @@ SSLInitServerContext(const SSLConfigParams * params, const ssl_user_config & ssl
       ats_scoped_str completeServerCertChainPath(Layout::relative_to(params->serverCertPathOnly, sslMultCertSettings.ca));
       if (!SSL_CTX_add_extra_chain_cert_file(ctx, completeServerCertChainPath)) {
         SSLError("failed to load certificate chain from %s", (const char *) completeServerCertChainPath);
-        goto fail;
+        _exit(1);
       }
     }
   }
@@ -1499,7 +1500,7 @@ SSLInitClientContext(const SSLConfigParams * params)
   SSL_CTX_set_options(client_ctx, params->ssl_ctx_options);
   if (!client_ctx) {
     SSLError("cannot create new client context");
-    return NULL;
+    _exit(1);
   }
 
   if (params->ssl_client_ctx_protocols) {
@@ -1566,7 +1567,7 @@ SSLInitClientContext(const SSLConfigParams * params)
 
 fail:
   SSL_CTX_free(client_ctx);
-  return NULL;
+  _exit(1);
 }
 
 static char *
@@ -1594,7 +1595,8 @@ ssl_index_certificate(SSLCertLookup * lookup, SSLCertContext const& cc, const ch
 
   cert = PEM_read_bio_X509_AUX(bio.get(), NULL, NULL, NULL);
   if (NULL == cert) {
-    return inserted;
+    Error("Failed to load certificate from file %s", certfile); 
+    _exit(1);
   }
 
   // Insert a key for the subject CN.
@@ -1744,7 +1746,7 @@ ssl_store_ssl_context(
         }
       } else {
         Error("'%s' is not a valid IPv4 or IPv6 address", (const char *)sslMultCertSettings.addr);
-        goto end;
+        _exit(1);
       }
     }
   }
@@ -1784,7 +1786,6 @@ ssl_store_ssl_context(
       SSLConfigParams::init_ssl_ctx_cb(ctx, true);
     }
   }
-end:
   if (!inserted) {
 #if HAVE_OPENSSL_SESSION_TICKETS
     if (keyblock != NULL) {
@@ -1851,8 +1852,8 @@ ssl_extract_certificate(const matcher_line * line_info, ssl_user_config & sslMul
     }
   }
   if (!sslMultCertSettings.cert) {
-    Error("missing %s tag", SSL_CERT_TAG);
-    //return false;
+    Warning("missing %s tag", SSL_CERT_TAG);
+    return false;
   } else {
     SimpleTokenizer cert_tok(sslMultCertSettings.cert, SSL_CERT_SEPARATE_DELIM);
     const char * first_cert = cert_tok.getNext();
@@ -1916,15 +1917,8 @@ SSLParseCertificateConfiguration(const SSLConfigParams * params, SSLCertLookup *
                      __func__, params->configFilePath, line_num, errPtr);
       } else {
         if (ssl_extract_certificate(&line_info, sslMultiCertSettings)) {
-          if (ssl_store_ssl_context(params, lookup, sslMultiCertSettings) == NULL) {
-            Error("failed to load SSL certificate specification from %s line %u",
-                params->configFilePath, line_num);
-            return false;
-          }
-        } else {
-          RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "%s: discarding invalid %s entry at line %u",
-                       __func__, params->configFilePath, line_num);
-        }
+          ssl_store_ssl_context(params, lookup, sslMultiCertSettings);
+        } 
       }
 
     }
