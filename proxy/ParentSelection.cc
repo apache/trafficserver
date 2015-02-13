@@ -303,7 +303,6 @@ ParentConfigParams::findParent(HttpRequestData * rdata, ParentResult * result)
       Debug("parent_select", "Result for %s was %s", host, ParentResultStr[result->r]);
       break;
     case PARENT_SPECIFIED:
-      Debug("parent_select", "sizeof ParentResult = %zu", sizeof(ParentResult));
       Debug("parent_select", "Result for %s was parent %s:%d", host, result->hostname, result->port);
       break;
     default:
@@ -802,7 +801,8 @@ ParentRecord::DefaultInit(char *val)
 }
 
 void
-ParentRecord::buildConsistentHash(void) {
+ParentRecord::buildConsistentHash(void)
+{
   ATSHash64Sip24 hash;
   int i;
 

@@ -45,7 +45,6 @@ Description
 See Also
 --------
 
-`Traffic Shaping`_
-
 .. _Traffic Shaping:
                  https://cwiki.apache.org/confluence/display/TS/Traffic+Shaping
+:ts:cv:`proxy.config.net.sock_packet_tos_out` and TS-1090
