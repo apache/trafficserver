@@ -66,6 +66,9 @@ SpdyRequest::init(SpdyClientSession *sm, int id)
 void
 SpdyRequest::clear()
 {
+  if (!spdy_sm)
+    return; // this object wasn't initialized.
+
   SPDY_DECREMENT_THREAD_DYN_STAT(SPDY_STAT_CURRENT_CLIENT_STREAM_COUNT, spdy_sm->mutex->thread_holding);
 
   if (fetch_sm) {
