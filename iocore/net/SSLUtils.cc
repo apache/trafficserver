@@ -1779,7 +1779,9 @@ ssl_store_ssl_context(
   // this code is updated to reconfigure the SSL certificates, it will need some sort of
   // refcounting or alternate way of avoiding double frees.
   Debug("ssl", "importing SNI names from %s", (const char *)certpath);
-  inserted = inserted || ssl_index_certificate(lookup, SSLCertContext(ctx, sslMultCertSettings.opt), certpath);
+  if (ssl_index_certificate(lookup, SSLCertContext(ctx, sslMultCertSettings.opt), certpath)) {
+    inserted = true;
+  } 
 
   if (inserted) {
     if (SSLConfigParams::init_ssl_ctx_cb) {
