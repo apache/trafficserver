@@ -1719,8 +1719,11 @@ ssl_store_ssl_context(
 #if TS_USE_TLS_ALPN
   SSL_CTX_set_alpn_select_cb(ctx, SSLNetVConnection::select_next_protocol, NULL);
 #endif /* TS_USE_TLS_ALPN */
-
-  certpath = Layout::relative_to(params->serverCertPathOnly, sslMultCertSettings.first_cert);
+  if (sslMultCertSettings.first_cert) {
+    certpath = Layout::relative_to(params->serverCertPathOnly, sslMultCertSettings.first_cert);
+  } else {
+    certpath = NULL;
+  }
 
   // Load the session ticket key if session tickets are not disabled and we have key name.
   if (sslMultCertSettings.session_ticket_enabled != 0 && sslMultCertSettings.ticket_key_filename) {
@@ -1745,7 +1748,7 @@ ssl_store_ssl_context(
 
       if (ats_ip_pton(sslMultCertSettings.addr, &ep) == 0) {
         Debug("ssl", "mapping '%s' to certificate %s", (const char *)sslMultCertSettings.addr, (const char *)certpath);
-        if (lookup->insert(ep, SSLCertContext(ctx, sslMultCertSettings.opt, keyblock)) >= 0) {
+        if (certpath != NULL && lookup->insert(ep, SSLCertContext(ctx, sslMultCertSettings.opt, keyblock)) >= 0) {
           inserted = true;
         }
       } else {
@@ -1783,7 +1786,7 @@ ssl_store_ssl_context(
   // this code is updated to reconfigure the SSL certificates, it will need some sort of
   // refcounting or alternate way of avoiding double frees.
   Debug("ssl", "importing SNI names from %s", (const char *)certpath);
-  if (ssl_index_certificate(lookup, SSLCertContext(ctx, sslMultCertSettings.opt), certpath)) {
+  if (certpath != NULL && ssl_index_certificate(lookup, SSLCertContext(ctx, sslMultCertSettings.opt), certpath)) {
     inserted = true;
   } 
 
