@@ -80,6 +80,7 @@ struct SSLCertLookup : public ConfigInfo
 {
   SSLContextStorage * ssl_storage;
   SSL_CTX *           ssl_default;
+  bool                is_valid;
 
   int insert(const char *name, SSLCertContext const &cc);
   int insert(const IpEndpoint& address, SSLCertContext const &cc);

@@ -1224,22 +1224,22 @@ SSLPrivateKeyHandler(
     // assume private key is contained in cert obtained from multicert file.
     if (!SSL_CTX_use_PrivateKey_file(ctx, completeServerCertPath, SSL_FILETYPE_PEM)) {
       SSLError("failed to load server private key from %s", (const char *) completeServerCertPath);
-      _exit(1);
+      return false;
     }
   } else if (params->serverKeyPathOnly != NULL) {
     ats_scoped_str completeServerKeyPath(Layout::get()->relative_to(params->serverKeyPathOnly, keyPath));
     if (!SSL_CTX_use_PrivateKey_file(ctx, completeServerKeyPath, SSL_FILETYPE_PEM)) {
       SSLError("failed to load server private key from %s", (const char *) completeServerKeyPath);
-      _exit(1);
+      return false;
     }
   } else {
     SSLError("empty SSL private key path in records.config");
-    _exit(1);
+    return false;
   }
 
   if (!SSL_CTX_check_private_key(ctx)) {
     SSLError("server private key does not match the certificate public key");
-    _exit(1);
+    return false;
   }
 
   return true;
@@ -1345,7 +1345,7 @@ SSLInitServerContext(const SSLConfigParams * params, const ssl_user_config & ssl
       completeServerCertPath = Layout::relative_to(params->serverCertPathOnly, certname);
       if (SSL_CTX_use_certificate_chain_file(ctx, completeServerCertPath) <= 0) {
         SSLError("failed to load certificate chain from %s", (const char *)completeServerCertPath);
-        _exit(1);
+        goto fail;
       }
 
       const char * keyPath = key_tok.getNext();
@@ -1359,7 +1359,7 @@ SSLInitServerContext(const SSLConfigParams * params, const ssl_user_config & ssl
       ats_scoped_str completeServerCertChainPath(Layout::relative_to(params->serverCertPathOnly, params->serverCertChainFilename));
       if (!SSL_CTX_add_extra_chain_cert_file(ctx, completeServerCertChainPath)) {
         SSLError("failed to load global certificate chain from %s", (const char *) completeServerCertChainPath);
-        _exit(1);
+        goto fail;
       }
     }
 
@@ -1368,7 +1368,7 @@ SSLInitServerContext(const SSLConfigParams * params, const ssl_user_config & ssl
       ats_scoped_str completeServerCertChainPath(Layout::relative_to(params->serverCertPathOnly, sslMultCertSettings.ca));
       if (!SSL_CTX_add_extra_chain_cert_file(ctx, completeServerCertChainPath)) {
         SSLError("failed to load certificate chain from %s", (const char *) completeServerCertChainPath);
-        _exit(1);
+        goto fail;
       }
     }
   }
@@ -1596,7 +1596,8 @@ ssl_index_certificate(SSLCertLookup * lookup, SSLCertContext const& cc, const ch
   cert = PEM_read_bio_X509_AUX(bio.get(), NULL, NULL, NULL);
   if (NULL == cert) {
     Error("Failed to load certificate from file %s", certfile); 
-    _exit(1);
+    lookup->is_valid = false;
+    return false;
   }
 
   // Insert a key for the subject CN.
@@ -1701,7 +1702,10 @@ ssl_store_ssl_context(
   ssl_ticket_key_block *keyblock = NULL;
   bool inserted = false;
 
-  if (!ctx) return ctx;
+  if (!ctx) {
+    lookup->is_valid = false;
+    return ctx;
+  }
 
   // The certificate callbacks are set by the caller only 
   // for the default certificate
@@ -1746,7 +1750,7 @@ ssl_store_ssl_context(
         }
       } else {
         Error("'%s' is not a valid IPv4 or IPv6 address", (const char *)sslMultCertSettings.addr);
-        _exit(1);
+        lookup->is_valid = false;
       }
     }
   }

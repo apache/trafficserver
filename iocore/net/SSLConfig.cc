@@ -342,7 +342,10 @@ SSLCertificateConfig::startup()
   sslCertUpdate->attach("proxy.config.ssl.server.private_key.path");
   sslCertUpdate->attach("proxy.config.ssl.server.cert_chain.filename");
 
-  return reconfigure();
+  if (!reconfigure()) {
+    _exit(1);
+  }
+  return true;
 }
 
 bool
@@ -360,7 +363,8 @@ SSLCertificateConfig::reconfigure()
     ink_hrtime_sleep(HRTIME_SECONDS(secs));
   }
 
-  if (SSLParseCertificateConfiguration(params, lookup)) {
+  SSLParseCertificateConfiguration(params, lookup);
+  if (lookup->is_valid) {
     configid = configProcessor.set(configid, lookup);
   } else {
     retStatus = false;
