@@ -733,6 +733,7 @@ public:
 
   MgmtByte send_100_continue_response;
   MgmtByte send_408_post_timeout_response;
+  MgmtByte parser_allow_non_http;
 
   OverridableHttpConfigParams oride;
 
@@ -888,6 +889,7 @@ HttpConfigParams::HttpConfigParams()
     ignore_accept_charset_mismatch(0),
     send_100_continue_response(0),
     send_408_post_timeout_response(0),
+    parser_allow_non_http(1),
     autoconf_port(0),
     autoconf_localhost_only(0)
 {

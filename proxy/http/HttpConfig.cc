@@ -1289,6 +1289,7 @@ HttpConfig::startup()
 
   HttpEstablishStaticConfigByte(c.send_100_continue_response, "proxy.config.http.send_100_continue_response");
   HttpEstablishStaticConfigByte(c.send_408_post_timeout_response, "proxy.config.http.send_408_post_timeout_response");
+  HttpEstablishStaticConfigByte(c.parser_allow_non_http, "proxy.config.http.parse.allow_non_http");
 
   HttpEstablishStaticConfigByte(c.oride.cache_when_to_revalidate, "proxy.config.http.cache.when_to_revalidate");
   HttpEstablishStaticConfigByte(c.oride.cache_required_headers, "proxy.config.http.cache.required_headers");
@@ -1546,6 +1547,7 @@ HttpConfig::reconfigure()
 
   params->send_100_continue_response = INT_TO_BOOL(m_master.send_100_continue_response);
   params->send_408_post_timeout_response = INT_TO_BOOL(m_master.send_408_post_timeout_response);
+  params->parser_allow_non_http = INT_TO_BOOL(m_master.parser_allow_non_http);
 
   params->oride.cache_when_to_revalidate = m_master.oride.cache_when_to_revalidate;
 

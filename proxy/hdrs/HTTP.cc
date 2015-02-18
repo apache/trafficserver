@@ -1287,7 +1287,10 @@ http_parser_parse_resp(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const
 
   eoh:
     *start = old_start;
-    return PARSE_DONE;
+    if (parser->m_allow_non_http)
+      return PARSE_DONE;
+    else
+      return PARSE_ERROR;
 
   done:
     if (!version_start || !version_end) {

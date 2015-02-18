@@ -358,6 +358,8 @@ static const RecordElement RecordsConfig[] =
   //        ###########
   {RECT_CONFIG, "proxy.config.header.parse.no_host_url_redirect", RECD_STRING, NULL, RECU_DYNAMIC, RR_NULL, RECC_STR, ".*", RECA_NULL}
   ,
+  {RECT_CONFIG, "proxy.config.http.parse.allow_non_http", RECD_INT, "1", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  ,
 
   //##############################################################################
   //#
