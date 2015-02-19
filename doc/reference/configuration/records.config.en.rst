@@ -635,7 +635,7 @@ Value Effect
 
    -  ``0`` no Server: header is added to the response.
    -  ``1`` the Server: header is added (see string below).
-   -  ``2`` the Server: header is added only if the response from rigin does not have one already.
+   -  ``2`` the Server: header is added only if the response from origin does not have one already.
 
 .. ts:cv:: CONFIG proxy.config.http.insert_age_in_response INT 1
    :reloadable:
@@ -954,7 +954,7 @@ Origin Server Connect Attempts
 .. ts:cv:: CONFIG proxy.config.http.connect_attempts_max_retries INT 6
    :reloadable:
 
-   The maximum number of connection retries Traffic Server can make when the origin server is not responding.  
+   The maximum number of connection retries Traffic Server can make when the origin server is not responding.
    Each retry attempt lasts for `proxy.config.http.connect_attempts_timeout`_ seconds.  Once the maximum number of retries is
    reached, the origin is marked dead.  After this, the setting  `proxy.config.http.connect_attempts_max_retries_dead_server`_
    is used to limit the number of retry attempts to the known dead origin.
