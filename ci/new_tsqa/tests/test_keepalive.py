@@ -18,6 +18,7 @@ import os
 import requests
 import time
 import logging
+import socket
 
 import helpers
 
@@ -53,6 +54,81 @@ class KeepaliveTCPHandler(SocketServer.BaseRequestHandler):
                     '\r\n'
                     '{body}'.format(content_length=len(body), body=body))
             self.request.sendall(resp)
+
+
+class TestKeepAliveInHTTP(tsqa.test_cases.DynamicHTTPEndpointCase, helpers.EnvironmentCase):
+    @classmethod
+    def setUpEnv(cls, env):
+
+        def hello(request):
+            return 'hello'
+        cls.http_endpoint.add_handler('/exists/', hello)
+
+        cls.configs['remap.config'].add_line('map /exists/ http://127.0.0.1:{0}/exists/'.format(cls.http_endpoint.address[1]))
+
+        # only add server headers when there weren't any
+        cls.configs['records.config']['CONFIG']['proxy.config.http.response_server_enabled'] = 2
+        cls.configs['records.config']['CONFIG']['proxy.config.http.keep_alive_enabled_in'] = 1
+        cls.configs['records.config']['CONFIG']['share_server_session'] = 2
+
+        # set only one ET_NET thread (so we don't have to worry about the per-thread pools causing issues)
+        cls.configs['records.config']['CONFIG']['proxy.config.exec_thread.limit'] = 1
+        cls.configs['records.config']['CONFIG']['proxy.config.exec_thread.autoconfig'] = 0
+
+    def _get_socket(self):
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect(('127.0.0.1', int(self.configs['records.config']['CONFIG']['proxy.config.http.server_ports'])))
+        return s
+
+    def test_working_path(self):
+        # connect tcp
+        s = self._get_socket()
+
+        request = ('GET /exists/ HTTP/1.1\r\n'
+                   'Host: foobar.com\r\n'
+                   '\r\n')
+        for x in xrange(1, 10):
+            s.send(request)
+            response = s.recv(4096)
+            # cheat, since we know what the body should have
+            if not response.endswith('hello'):
+                response += s.recv(4096)
+            self.assertIn('HTTP/1.1 200 OK', response)
+            self.assertIn('hello', response)
+
+    def test_error_path(self):
+        # connect tcp
+        s = self._get_socket()
+
+        request = ('GET / HTTP/1.1\r\n'
+                   'Host: foobar.com\r\n'
+                   '\r\n')
+        for x in xrange(1, 10):
+            s.send(request)
+            response = s.recv(4096)
+            self.assertIn('HTTP/1.1 404 Not Found on Accelerator', response)
+
+    def test_error_path_post(self):
+        '''
+        Ensure that sending a request with a body doesn't break the keepalive session
+        '''
+        # connect tcp
+        s = self._get_socket()
+
+        request = ('POST / HTTP/1.1\r\n'
+                   'Host: foobar.com\r\n'
+                   'Content-Length: 10\r\n'
+                   '\r\n'
+                   '1234567890')
+        for x in xrange(1, 10):
+            try:
+                s.send(request)
+            except IOError:
+                s = self._get_socket()
+                s.send(request)
+
+            response = s.recv(4096)
+            self.assertIn('HTTP/1.1 404 Not Found on Accelerator', response)
 
 # TODO: test timeouts
 # https://issues.apache.org/jira/browse/TS-3312
