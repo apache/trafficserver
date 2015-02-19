@@ -229,6 +229,7 @@ _http_hdr(0),
 _offset_hour(0), _interval(0), _max_depth(0), _start_time(0), _expired(0), _scheme_index(-1), _update_event_status(0)
 {
   http_parser_init(&_http_parser);
+  _http_parser.m_allow_non_http = true;
 }
 
 UpdateEntry::~UpdateEntry()
