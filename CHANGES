@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.2.1
 
+  *) [TS-3359] Use after free: Tunnel destroyed without updating HttpSM.
+
   *) [TS-3355] Fix compiler warning on CentOS5.
 
   *) [TS-3316] Fix the build for 32 bit architectures.
