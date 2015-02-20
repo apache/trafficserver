@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.2.1
 
+  *) [TS-3397] Bug with ink_strlcpy and non-null terminated strings.
+
   *) [TS-3359] Use after free: Tunnel destroyed without updating HttpSM.
 
   *) [TS-3304] Add NULL check to ink_inet_addr() input.
