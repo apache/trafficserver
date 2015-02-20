@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.0
   
+  *) [TS-3345] cacheurl plugin: Better error handling on config problems.
+
   *) [TS-3397] Bug with ink_strlcpy and non-null terminated strings.
 
   *) [TS-3398] Enhance header_rewrite to support METHOD as a condition
