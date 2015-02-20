@@ -12,7 +12,7 @@ Changes with Apache Traffic Server 5.3.0
   *) [TS-3358] Add access checking to the management API.
 
   *) [TS-3400] Use common FNV hash code everywhere.
-  
+
   *) [TS-3379] Show which AF was specified to bind, on success as well as
    error.
 
@@ -22,11 +22,12 @@ Changes with Apache Traffic Server 5.3.0
 
   *) [TS-3397] Bug with ink_strlcpy and non-null terminated strings.
 
-  *) [TS-3398] Enhance header_rewrite to support METHOD as a condition
+  *) [TS-3398] Enhance header_rewrite to support METHOD as a condition.
 
-  *) [TS-3394] Return an error on a non-http response
+  *) [TS-3394] Return an error on a non-http response.
 
-  *) [TS-3390] TrafficServer segfaults on shutdown because of uninitialized SPDY sessions
+  *) [TS-3390] TrafficServer segfaults on shutdown because of uninitialized
+   SPDY sessions.
 
   *) [TS-3389] Refine error returns in SSL loading.
 
@@ -40,9 +41,10 @@ Changes with Apache Traffic Server 5.3.0
 
   *) [TS-3375] Memory leak and error handling in SSL loading.
 
-  *) [TS-3380] Fix the detection of new openssl calls to enable compilation against libressl.
+  *) [TS-3380] Fix the detection of new openssl calls to enable compilation
+   against libressl.
 
-  *) [TS-3364] Add command line config validation support to traffic_server
+  *) [TS-3364] Add command line config validation support to traffic_server.
 
   *) [TS-3377] Fix bad file descriptor handling that caused disks in
    storage.config to be marked bad.
