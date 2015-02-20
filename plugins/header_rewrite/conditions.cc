@@ -72,6 +72,49 @@ ConditionStatus::append_value(std::string& s, const Resources& res)
 }
 
 
+// ConditionMethod
+void
+ConditionMethod::initialize(Parser& p)
+{
+  Condition::initialize(p);
+
+  Matchers<std::string>* match = new Matchers<std::string>(_cond_op);
+  match->set(p.get_arg());
+
+  _matcher = match;
+}
+
+bool
+ConditionMethod::eval(const Resources& res)
+{
+  std::string s;
+
+  append_value(s, res);
+  bool rval = static_cast<const Matchers<std::string>*>(_matcher)->test(s);
+  TSDebug(PLUGIN_NAME, "Evaluating METHOD(): %s - rval: %d", s.c_str(), rval);
+  return rval;
+}
+
+
+void
+ConditionMethod::append_value(std::string& s, const Resources& res)
+{
+  TSMBuffer bufp;
+  TSMLoc hdr_loc;
+  const char* value;
+  int len;
+
+  bufp = res.client_bufp;
+  hdr_loc = res.client_hdr_loc;
+
+  if (bufp && hdr_loc) {
+    value = TSHttpHdrMethodGet(bufp, hdr_loc, &len);
+    TSDebug(PLUGIN_NAME, "Appending METHOD(%s) to evaluation value -> %.*s", _qualifier.c_str(), len, value);
+    s.append(value, len);
+  }
+}
+
+
 // ConditionRandom: random 0 to (N-1)
 void
 ConditionRandom::initialize(Parser& p)
