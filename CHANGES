@@ -15,6 +15,8 @@ Changes with Apache Traffic Server 5.3.0
 
   *) [TS-3389] Refine error returns in SSL loading.
 
+  *) [TS-3388] Add --enable-coverage configuration option.
+
   *) [TS-3387] Convert ink_args to accept an array of constant strings.
 
   *) [TS-3385] show script loading error when using lua plugin as remap plugin.
