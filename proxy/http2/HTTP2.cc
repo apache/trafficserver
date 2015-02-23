@@ -715,9 +715,9 @@ http2_parse_header_fragment(HTTPHdr * hdr, IOVec iov, Http2DynamicTable& dynamic
     if (name_len == MIME_LEN_TE &&
         strncmp(name, MIME_FIELD_TE, name_len) == 0) {
       int value_len = 0;
-      const char * value = field->value_get(&value_len);
-      if (!(value_len == strlen("trailers") &&
-            strncmp(value, "trailers", value_len) == 0)) {
+      const char *value = field->value_get(&value_len);
+      char trailers[] = "trailers";
+      if (!(value_len == (sizeof(trailers) - 1) && memcmp(value, trailers, value_len) == 0)) {
         return HPACK_ERROR_HTTP2_PROTOCOL_ERROR;
       }
     }
