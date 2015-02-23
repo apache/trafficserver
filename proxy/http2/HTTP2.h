@@ -235,6 +235,8 @@ struct Http2HeadersParameter
 // 6.8 GOAWAY Format
 struct Http2Goaway
 {
+  Http2Goaway(): last_streamid(0), error_code(0) {}
+
   Http2StreamId last_streamid;
   uint32_t      error_code;
 
