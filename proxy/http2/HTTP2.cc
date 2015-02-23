@@ -27,6 +27,7 @@
 #include "ink_assert.h"
 
 const char * const HTTP2_CONNECTION_PREFACE = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n";
+static size_t HPACK_LEN_STATUS_VALUE_STR = 3;
 
 union byte_pointer {
   byte_pointer(void * p) : ptr(p) {}
@@ -45,6 +46,13 @@ union byte_addressable_value
 };
 
 static void
+write_and_advance(byte_pointer& dst, const uint8_t* src, size_t length)
+{
+  memcpy(dst.u8, src, length);
+  dst.u8 += length;
+}
+
+static void
 write_and_advance(byte_pointer& dst, uint32_t src)
 {
   byte_addressable_value<uint32_t> pval;
@@ -54,8 +62,6 @@ write_and_advance(byte_pointer& dst, uint32_t src)
   dst.u8 += sizeof(pval.bytes);
 }
 
-// Avoid a [-Werror,-Wunused-function] error until we need this overload ...
-#if 0
 static void
 write_and_advance(byte_pointer& dst, uint16_t src)
 {
@@ -65,7 +71,6 @@ write_and_advance(byte_pointer& dst, uint16_t src)
   memcpy(dst.u8, pval.bytes, sizeof(pval.bytes));
   dst.u8 += sizeof(pval.bytes);
 }
-#endif
 
 static void
 write_and_advance(byte_pointer& dst, uint8_t src)
@@ -102,8 +107,6 @@ http2_are_frame_flags_valid(uint8_t ftype, uint8_t fflags)
     HTTP2_FLAGS_GOAWAY_MASK,
     HTTP2_FLAGS_WINDOW_UPDATE_MASK,
     HTTP2_FLAGS_CONTINUATION_MASK,
-    HTTP2_FLAGS_ALTSVC_MASK,
-    HTTP2_FLAGS_BLOCKED_MASK,
   };
 
   // The frame flags are valid for this frame if nothing outside the defined bits is set.
@@ -117,7 +120,7 @@ http2_frame_header_is_valid(const Http2FrameHeader& hdr)
     return false;
   }
 
-  if (hdr.length > HTTP2_MAX_FRAME_PAYLOAD) {
+  if (hdr.length > HTTP2_MAX_FRAME_SIZE) {
     return false;
   }
 
@@ -147,6 +150,16 @@ http2_settings_parameter_is_valid(const Http2SettingsParameter& param)
   }
 
   if (param.value > settings_max[param.id]) {
+    return false;
+  }
+
+  if (param.id == HTTP2_SETTINGS_ENABLE_PUSH &&
+      param.value != 0 && param.value != 1) {
+    return false;
+  }
+
+  if (param.id == HTTP2_SETTINGS_MAX_FRAME_SIZE &&
+      (param.value < (1 << 14) || param.value > (1 << 24) -1)) {
     return false;
   }
 
@@ -213,6 +226,60 @@ http2_write_frame_header(const Http2FrameHeader& hdr, IOVec iov)
   return true;
 }
 
+bool
+http2_write_data(const uint8_t* src, size_t length, const IOVec& iov)
+{
+  byte_pointer ptr(iov.iov_base);
+  write_and_advance(ptr, src, length);
+
+  return true;
+}
+
+bool
+http2_write_headers(const uint8_t* src, size_t length, const IOVec& iov)
+{
+  byte_pointer ptr(iov.iov_base);
+  write_and_advance(ptr, src, length);
+
+  return true;
+}
+
+bool
+http2_write_rst_stream(uint32_t error_code, IOVec iov)
+{
+  byte_pointer ptr(iov.iov_base);
+
+  write_and_advance(ptr, error_code);
+
+  return true;
+}
+
+bool
+http2_write_settings(const Http2SettingsParameter& param, IOVec iov)
+{
+  byte_pointer ptr(iov.iov_base);
+
+  if (unlikely(iov.iov_len < HTTP2_SETTINGS_PARAMETER_LEN)) {
+    return false;
+  }
+
+  write_and_advance(ptr, param.id);
+  write_and_advance(ptr, param.value);
+
+  return true;
+}
+
+bool
+http2_write_ping(const uint8_t * opaque_data, IOVec iov)
+{
+  if (iov.iov_len != HTTP2_PING_LEN)
+    return false;
+
+  memcpy(iov.iov_base, opaque_data, HTTP2_PING_LEN);
+
+  return true;
+}
+
 // 6.8. GOAWAY
 //
 // 0                   1                   2                   3
@@ -236,6 +303,70 @@ http2_write_goaway(const Http2Goaway& goaway, IOVec iov)
 
   write_and_advance(ptr, goaway.last_streamid);
   write_and_advance(ptr, goaway.error_code);
+
+  return true;
+}
+
+bool
+http2_write_window_update(const uint32_t new_size, const IOVec& iov)
+{
+  byte_pointer ptr(iov.iov_base);
+  write_and_advance(ptr, new_size);
+
+  return true;
+}
+
+bool
+http2_parse_headers_parameter(IOVec iov, Http2HeadersParameter& params)
+{
+  byte_pointer ptr(iov.iov_base);
+  memcpy_and_advance(params.pad_length, ptr);
+
+  return true;
+}
+
+
+// 6.3.  PRIORITY
+//
+// 0                   1                   2                   3
+// 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+// |E|                  Stream Dependency (31)                     |
+// +-+-------------+-----------------------------------------------+
+// |   Weight (8)  |
+// +-+-------------+
+
+bool
+http2_parse_priority_parameter(IOVec iov, Http2Priority& params)
+{
+  byte_pointer ptr(iov.iov_base);
+  byte_addressable_value<uint32_t> dependency;
+
+  memcpy_and_advance(dependency.bytes, ptr);
+  memcpy_and_advance(params.weight, ptr);
+
+  params.stream_dependency = ntohs(dependency.value);
+
+  return true;
+}
+
+// 6.4.  RST_STREAM
+//
+// 0                   1                   2                   3
+// 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+// |                        Error Code (32)                        |
+// +---------------------------------------------------------------+
+
+bool
+http2_parse_rst_stream(IOVec iov, Http2RstStream& rst_stream)
+{
+  byte_pointer ptr(iov.iov_base);
+  byte_addressable_value<uint32_t> ec;
+
+  memcpy_and_advance(ec.bytes, ptr);
+
+  rst_stream.error_code = ntohl(ec.value);
 
   return true;
 }
@@ -266,6 +397,56 @@ http2_parse_settings_parameter(IOVec iov, Http2SettingsParameter& param)
 
   param.id = ntohs(pid.value);
   param.value = ntohl(pval.value);
+
+  return true;
+}
+
+
+// 6.8.  GOAWAY
+//
+// 0                   1                   2                   3
+// 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+// |R|                  Last-Stream-ID (31)                        |
+// +-+-------------------------------------------------------------+
+// |                      Error Code (32)                          |
+// +---------------------------------------------------------------+
+// |                  Additional Debug Data (*)                    |
+// +---------------------------------------------------------------+
+
+bool
+http2_parse_goaway(IOVec iov, Http2Goaway& goaway)
+{
+  byte_pointer ptr(iov.iov_base);
+  byte_addressable_value<uint32_t> sid;
+  byte_addressable_value<uint32_t> ec;
+
+  memcpy_and_advance(sid.bytes, ptr);
+  memcpy_and_advance(ec.bytes, ptr);
+
+  goaway.last_streamid = ntohl(sid.value);
+  goaway.error_code = ntohl(ec.value);
+  return true;
+}
+
+
+// 6.9.  WINDOW_UPDATE
+//
+// 0                   1                   2                   3
+// 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+// |R|              Window Size Increment (31)                     |
+// +-+-------------------------------------------------------------+
+
+bool
+http2_parse_window_update(IOVec iov, uint32_t& size)
+{
+  byte_pointer ptr(iov.iov_base);
+  byte_addressable_value<uint32_t> s;
+
+  memcpy_and_advance(s.bytes, ptr);
+
+  size = ntohl(s.value);
 
   return true;
 }
@@ -348,11 +529,35 @@ convert_from_2_to_1_1_header(HTTPHdr* headers)
     headers->field_delete(HPACK_VALUE_STATUS, HPACK_LEN_STATUS);
   }
 
+  // Intermediaries SHOULD also remove other connection-
+  // specific header fields, such as Keep-Alive, Proxy-Connection,
+  // Transfer-Encoding and Upgrade, even if they are not nominated by
+  // Connection.
+  headers->field_delete(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION);
+  headers->field_delete(MIME_FIELD_KEEP_ALIVE, MIME_LEN_KEEP_ALIVE);
+  headers->field_delete(MIME_FIELD_PROXY_CONNECTION, MIME_LEN_PROXY_CONNECTION);
+  headers->field_delete(MIME_FIELD_TRANSFER_ENCODING, MIME_LEN_TRANSFER_ENCODING);
+  headers->field_delete(MIME_FIELD_UPGRADE, MIME_LEN_UPGRADE);
+
   return PARSE_DONE;
 }
 
+void
+convert_headers_from_1_1_to_2(HTTPHdr* in)
+{
+  // Intermediaries SHOULD also remove other connection-
+  // specific header fields, such as Keep-Alive, Proxy-Connection,
+  // Transfer-Encoding and Upgrade, even if they are not nominated by
+  // Connection.
+  in->field_delete(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION);
+  in->field_delete(MIME_FIELD_KEEP_ALIVE, MIME_LEN_KEEP_ALIVE);
+  in->field_delete(MIME_FIELD_PROXY_CONNECTION, MIME_LEN_PROXY_CONNECTION);
+  in->field_delete(MIME_FIELD_TRANSFER_ENCODING, MIME_LEN_TRANSFER_ENCODING);
+  in->field_delete(MIME_FIELD_UPGRADE, MIME_LEN_UPGRADE);
+}
+
 int64_t
-convert_from_1_1_to_2_header(HTTPHdr* in, uint8_t* out, uint64_t out_len, Http2HeaderTable& /* header_table */)
+http2_write_psuedo_headers(HTTPHdr* in, uint8_t* out, uint64_t out_len, Http2DynamicTable& /* dynamic_table */)
 {
   uint8_t *p = out;
   uint8_t *end = out + out_len;
@@ -360,26 +565,82 @@ convert_from_1_1_to_2_header(HTTPHdr* in, uint8_t* out, uint64_t out_len, Http2H
 
   ink_assert(http_hdr_type_get(in->m_http) != HTTP_TYPE_UNKNOWN);
 
-  // TODO Get a index value from the tables for the header field, and then choose a representation type.
-  // TODO Each indexing types per field should be passed by a caller, HTTP/2 implementation.
+  // TODO Check whether buffer size is enough
 
-  MIMEField* field;
-  MIMEFieldIter field_iter;
-  for (field = in->iter_get_first(&field_iter); field != NULL; field = in->iter_get_next(&field_iter)) {
-    do {
-      MIMEFieldWrapper header(field, in->m_heap, in->m_http->m_fields_impl);
-      if ((len = encode_literal_header_field(p, end, header, HPACK_FIELD_INDEXED_LITERAL)) == -1) {
-        return -1;
-      }
-      p += len;
-    } while (field->has_dups() && (field = field->m_next_dup) != NULL);
+  // Set psuedo header
+  if (http_hdr_type_get(in->m_http) == HTTP_TYPE_RESPONSE) {
+    char status_str[HPACK_LEN_STATUS_VALUE_STR+1];
+    snprintf(status_str, sizeof(status_str), "%d", in->status_get());
+
+    // Add 'Status:' dummy header field
+    MIMEField *status_field = mime_field_create(in->m_heap, in->m_http->m_fields_impl);
+    mime_field_name_value_set(in->m_heap, in->m_mime, status_field, -1,
+                              HPACK_VALUE_STATUS, HPACK_LEN_STATUS,
+                              status_str, HPACK_LEN_STATUS_VALUE_STR, true, HPACK_LEN_STATUS+HPACK_LEN_STATUS_VALUE_STR, 0);
+    mime_hdr_field_attach(in->m_mime, status_field, 1, NULL);
+
+    // Encode psuedo headers by HPACK
+    MIMEFieldWrapper header(status_field, in->m_heap, in->m_http->m_fields_impl);
+    len = encode_literal_header_field(p, end, header, HPACK_FIELD_NEVERINDEX_LITERAL);
+    if (len == -1) return -1;
+    p += len;
+
+    // Remove dummy header field
+    in->field_delete(HPACK_VALUE_STATUS, HPACK_LEN_STATUS);
   }
 
   return p - out;
 }
 
-MIMEParseResult
-http2_parse_header_fragment(HTTPHdr * hdr, IOVec iov, Http2HeaderTable& header_table)
+int64_t
+http2_write_header_fragment(HTTPHdr* in, MIMEFieldIter& field_iter, uint8_t* out, uint64_t out_len, Http2DynamicTable& /* dynamic_table */, bool& cont)
+{
+  uint8_t *p = out;
+  uint8_t *end = out + out_len;
+  int64_t len;
+
+  ink_assert(http_hdr_type_get(in->m_http) != HTTP_TYPE_UNKNOWN);
+  ink_assert(in);
+
+  // TODO Get a index value from the tables for the header field, and then choose a representation type.
+  // TODO Each indexing types per field should be passed by a caller, HTTP/2 implementation.
+
+  // Get first header field which is required encoding
+  MIMEField* field;
+  if (!field_iter.m_block) {
+    field = in->iter_get_first(&field_iter);
+  } else {
+    field = in->iter_get_next(&field_iter);
+  }
+
+  // Set mime headers
+  cont = false;
+  while (field) {
+    MIMEFieldIter current_iter = field_iter;
+    do {
+      MIMEFieldWrapper header(field, in->m_heap, in->m_http->m_fields_impl);
+      if ((len = encode_literal_header_field(p, end, header, HPACK_FIELD_INDEXED_LITERAL)) == -1) {
+        if (!cont) {
+          // Parsing a part of headers is done
+          cont = true;
+          field_iter = current_iter;
+          return p - out;
+        } else {
+          // Parse error
+          return -1;
+        }
+      }
+      p += len;
+    } while (field->has_dups() && (field = field->m_next_dup) != NULL);
+    field = in->iter_get_next(&field_iter);
+  }
+
+  // Parsing all headers is done
+  return p - out;
+}
+
+int64_t
+http2_parse_header_fragment(HTTPHdr * hdr, IOVec iov, Http2DynamicTable& dynamic_table, bool cont)
 {
   uint8_t * buf_start = (uint8_t *)iov.iov_base;
   uint8_t * buf_end = (uint8_t *)iov.iov_base + iov.iov_len;
@@ -391,10 +652,6 @@ http2_parse_header_fragment(HTTPHdr * hdr, IOVec iov, Http2HeaderTable& header_t
   do {
     int64_t read_bytes = 0;
 
-    if ((read_bytes = update_header_table_size(cursor, buf_end, header_table)) == -1) {
-      return PARSE_ERROR;
-    }
-
     // decode a header field encoded by HPACK
     MIMEField *field = mime_field_create(heap, hh->m_fields_impl);
     MIMEFieldWrapper header(field, heap, hh->m_fields_impl);
@@ -402,29 +659,91 @@ http2_parse_header_fragment(HTTPHdr * hdr, IOVec iov, Http2HeaderTable& header_t
 
     switch (ftype) {
     case HPACK_FIELD_INDEX:
-      if ((read_bytes = decode_indexed_header_field(header, cursor, buf_end, header_table)) == -1) {
-        return PARSE_ERROR;
+      read_bytes = decode_indexed_header_field(header, cursor, buf_end, dynamic_table);
+      if (read_bytes == HPACK_ERROR_COMPRESSION_ERROR) {
+        if (cont) {
+          // Parsing a part of headers is done
+          return cursor - buf_start;
+        } else {
+          // Parse error
+          return HPACK_ERROR_COMPRESSION_ERROR;
+        }
       }
       cursor += read_bytes;
       break;
     case HPACK_FIELD_INDEXED_LITERAL:
     case HPACK_FIELD_NOINDEX_LITERAL:
     case HPACK_FIELD_NEVERINDEX_LITERAL:
-      if ((read_bytes = decode_literal_header_field(header, cursor, buf_end, header_table)) == -1) {
-        return PARSE_ERROR;
+      read_bytes = decode_literal_header_field(header, cursor, buf_end, dynamic_table);
+      if (read_bytes == HPACK_ERROR_COMPRESSION_ERROR) {
+        if (cont) {
+          // Parsing a part of headers is done
+          return cursor - buf_start;
+        } else {
+          // Parse error
+          return HPACK_ERROR_COMPRESSION_ERROR;
+        }
       }
       cursor += read_bytes;
       break;
     case HPACK_FIELD_TABLESIZE_UPDATE:
-      // XXX not supported yet
-      return PARSE_ERROR;
+      read_bytes = update_dynamic_table_size(cursor, buf_end, dynamic_table);
+      if (read_bytes == HPACK_ERROR_COMPRESSION_ERROR) {
+        if (cont) {
+          // Parsing a part of headers is done
+          return cursor - buf_start;
+        } else {
+          // Parse error
+          return HPACK_ERROR_COMPRESSION_ERROR;
+        }
+      }
+      cursor += read_bytes;
+      continue;
+    }
+
+    int name_len = 0;
+    const char * name = field->name_get(&name_len);
+
+    // ':' started header name is only allowed for psuedo headers
+    if (hdr->fields_count() >= 4 && (name_len <= 0 || name[0] == ':')) {
+      // Decoded header field is invalid
+      return HPACK_ERROR_HTTP2_PROTOCOL_ERROR;
+    }
+
+    // when The TE header field is received, it MUST NOT contain any
+    // value other than "trailers".
+    if (name_len == MIME_LEN_TE &&
+        strncmp(name, MIME_FIELD_TE, name_len) == 0) {
+      int value_len = 0;
+      const char * value = field->value_get(&value_len);
+      if (!(value_len == strlen("trailers") &&
+            strncmp(value, "trailers", value_len) == 0)) {
+        return HPACK_ERROR_HTTP2_PROTOCOL_ERROR;
+      }
     }
 
     // Store to HdrHeap
     mime_hdr_field_attach(hh->m_fields_impl, field, 1, NULL);
+
+    // Check psuedo headers
+    if (hdr->fields_count() == 4) {
+      if (hdr->field_find(HPACK_VALUE_SCHEME,    HPACK_LEN_SCHEME)    == NULL ||
+          hdr->field_find(HPACK_VALUE_METHOD,    HPACK_LEN_METHOD)    == NULL ||
+          hdr->field_find(HPACK_VALUE_PATH,      HPACK_LEN_PATH)      == NULL ||
+          hdr->field_find(HPACK_VALUE_AUTHORITY, HPACK_LEN_AUTHORITY) == NULL) {
+        // Decoded header field is invalid
+        return HPACK_ERROR_HTTP2_PROTOCOL_ERROR;
+      }
+    }
   } while (cursor < buf_end);
 
-  return PARSE_DONE;
+  // Psuedo headers is insufficient
+  if (hdr->fields_count() < 4 && !cont) {
+    return HPACK_ERROR_HTTP2_PROTOCOL_ERROR;
+  }
+
+  // Parsing all headers is done
+  return cursor - buf_start;
 }
 
 #if TS_HAS_TESTS
@@ -621,7 +940,7 @@ REGRESSION_TEST(HPACK_Encode)(RegressionTest * t, int, int *pstatus)
   box = REGRESSION_TEST_PASSED;
 
   uint8_t buf[BUFSIZE_FOR_REGRESSION_TEST];
-  Http2HeaderTable header_table;
+  Http2DynamicTable dynamic_table;
 
   // FIXME Current encoder don't support indexing.
   for (unsigned int i=0; i<sizeof(encoded_field_test_case)/sizeof(encoded_field_test_case[0]); i++) {
@@ -641,9 +960,17 @@ REGRESSION_TEST(HPACK_Encode)(RegressionTest * t, int, int *pstatus)
     }
 
     memset(buf, 0, BUFSIZE_FOR_REGRESSION_TEST);
-    int len = convert_from_1_1_to_2_header(headers, buf, BUFSIZE_FOR_REGRESSION_TEST, header_table);
+    convert_headers_from_1_1_to_2(headers);
+    uint64_t buf_len = BUFSIZE_FOR_REGRESSION_TEST;
+    int64_t len = http2_write_psuedo_headers(headers, buf, buf_len, dynamic_table);
+    buf_len -= len;
 
-    box.check(len == encoded_field_test_case[i].encoded_field_len, "encoded length was %d, expecting %d",
+    MIMEFieldIter field_iter;
+    field_iter.m_block = NULL;
+    bool cont = false;
+    len += http2_write_header_fragment(headers, field_iter, buf, buf_len, dynamic_table, cont);
+
+    box.check(len == encoded_field_test_case[i].encoded_field_len, "encoded length was %ld, expecting %d",
         len, encoded_field_test_case[i].encoded_field_len);
     box.check(len > 0 && memcmp(buf, encoded_field_test_case[i].encoded_field, len) == 0, "encoded value was invalid");
   }
@@ -673,23 +1000,21 @@ REGRESSION_TEST(HPACK_DecodeString)(RegressionTest * t, int, int *pstatus)
   TestBox box(t, pstatus);
   box = REGRESSION_TEST_PASSED;
 
+  Arena arena;
   char* actual = NULL;
-  uint32_t actual_len;
+  uint32_t actual_len = 0;
 
   hpack_huffman_init();
 
   for (unsigned int i=0; i<sizeof(string_test_case)/sizeof(string_test_case[0]); i++) {
-    int len = decode_string(&actual, actual_len, string_test_case[i].encoded_field,
+    int len = decode_string(arena, &actual, actual_len, string_test_case[i].encoded_field,
         string_test_case[i].encoded_field + string_test_case[i].encoded_field_len);
 
     box.check(len == string_test_case[i].encoded_field_len, "decoded length was %d, expecting %d",
         len, string_test_case[i].encoded_field_len);
     box.check(actual_len == string_test_case[i].raw_string_len, "length of decoded string was %d, expecting %d",
         actual_len, string_test_case[i].raw_string_len);
-    box.check(len > 0 && memcmp(actual, string_test_case[i].raw_string, actual_len) == 0, "decoded string was invalid");
-
-    ats_free(actual);
-    actual = NULL;
+    box.check(memcmp(actual, string_test_case[i].raw_string, actual_len) == 0, "decoded string was invalid");
   }
 }
 
@@ -698,7 +1023,7 @@ REGRESSION_TEST(HPACK_DecodeIndexedHeaderField)(RegressionTest * t, int, int *ps
   TestBox box(t, pstatus);
   box = REGRESSION_TEST_PASSED;
 
-  Http2HeaderTable header_table;
+  Http2DynamicTable dynamic_table;
 
   for (unsigned int i=0; i<sizeof(indexed_test_case)/sizeof(indexed_test_case[0]); i++) {
     ats_scoped_obj<HTTPHdr> headers(new HTTPHdr);
@@ -707,7 +1032,7 @@ REGRESSION_TEST(HPACK_DecodeIndexedHeaderField)(RegressionTest * t, int, int *ps
     MIMEFieldWrapper header(field, headers->m_heap, headers->m_http->m_fields_impl);
 
     int len = decode_indexed_header_field(header, indexed_test_case[i].encoded_field,
-        indexed_test_case[i].encoded_field+indexed_test_case[i].encoded_field_len, header_table);
+        indexed_test_case[i].encoded_field+indexed_test_case[i].encoded_field_len, dynamic_table);
 
     box.check(len == indexed_test_case[i].encoded_field_len, "decoded length was %d, expecting %d",
         len, indexed_test_case[i].encoded_field_len);
@@ -729,7 +1054,7 @@ REGRESSION_TEST(HPACK_DecodeLiteralHeaderField)(RegressionTest * t, int, int *ps
   TestBox box(t, pstatus);
   box = REGRESSION_TEST_PASSED;
 
-  Http2HeaderTable header_table;
+  Http2DynamicTable dynamic_table;
 
   for (unsigned int i=0; i<sizeof(literal_test_case)/sizeof(literal_test_case[0]); i++) {
     ats_scoped_obj<HTTPHdr> headers(new HTTPHdr);
@@ -738,7 +1063,7 @@ REGRESSION_TEST(HPACK_DecodeLiteralHeaderField)(RegressionTest * t, int, int *ps
     MIMEFieldWrapper header(field, headers->m_heap, headers->m_http->m_fields_impl);
 
     int len = decode_literal_header_field(header, literal_test_case[i].encoded_field,
-        literal_test_case[i].encoded_field+literal_test_case[i].encoded_field_len, header_table);
+        literal_test_case[i].encoded_field+literal_test_case[i].encoded_field_len, dynamic_table);
 
     box.check(len == literal_test_case[i].encoded_field_len, "decoded length was %d, expecting %d",
         len, literal_test_case[i].encoded_field_len);
@@ -760,13 +1085,13 @@ REGRESSION_TEST(HPACK_Decode)(RegressionTest * t, int, int *pstatus)
   TestBox box(t, pstatus);
   box = REGRESSION_TEST_PASSED;
 
-  Http2HeaderTable header_table;
+  Http2DynamicTable dynamic_table;
 
   for (unsigned int i=0; i<sizeof(encoded_field_test_case)/sizeof(encoded_field_test_case[0]); i++) {
     ats_scoped_obj<HTTPHdr> headers(new HTTPHdr);
     headers->create(HTTP_TYPE_REQUEST);
 
-    http2_parse_header_fragment(headers, make_iovec(encoded_field_test_case[i].encoded_field, encoded_field_test_case[i].encoded_field_len), header_table);
+    http2_parse_header_fragment(headers, make_iovec(encoded_field_test_case[i].encoded_field, encoded_field_test_case[i].encoded_field_len), dynamic_table, false);
 
     for (unsigned int j=0; j<sizeof(raw_field_test_case[i])/sizeof(raw_field_test_case[i][0]); j++) {
       const char* expected_name  = raw_field_test_case[i][j].raw_name;

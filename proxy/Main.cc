@@ -80,6 +80,7 @@ extern "C" int plock(int);
 #include "MgmtUtils.h"
 #include "StatPages.h"
 #include "HTTP.h"
+#include "HuffmanCodec.h"
 #include "Plugin.h"
 #include "DiagsConfig.h"
 #include "CoreUtils.h"
@@ -1185,6 +1186,7 @@ init_http_header()
   url_init();
   mime_init();
   http_init();
+  hpack_huffman_init();
 }
 
 struct AutoStopCont: public Continuation

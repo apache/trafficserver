@@ -979,6 +979,29 @@ bool HttpTransact::handle_upgrade_request(State *s) {
         DebugTxn("http_trans_upgrade", "Unable to upgrade connection to websockets, invalid headers (RFC 6455).");
       }
     }
+
+    /*
+       draft-ietf-httpbis-http2-15
+
+       3.2.  Starting HTTP/2 for "http" URIs
+
+       The client makes an HTTP/1.1 request
+       that includes an Upgrade header field identifying HTTP/2 with the
+       "h2c" token.  The HTTP/1.1 request MUST include exactly one
+       HTTP2-Settings header field.
+     */
+    if (s->upgrade_token_wks == MIME_VALUE_H2C) {
+      MIMEField *http2_settings = s->hdr_info.client_request.field_find(MIME_FIELD_HTTP2_SETTINGS, MIME_LEN_HTTP2_SETTINGS);
+
+      // TODO Check whether h2c is enabled or not.
+      if (http2_settings) {
+        s->state_machine->ua_session->set_h2c_upgrade_flag();
+        build_upgrade_response(s);
+        TRANSACT_RETURN_VAL(SM_ACTION_INTERNAL_CACHE_NOOP, NULL, true);
+      } else {
+        DebugTxn("http_trans_upgrade", "Unable to upgrade connection to h2c, invalid headers");
+      }
+    }
   } else {
     DebugTxn("http_trans_upgrade", "Transaction requested upgrade for unknown protocol: %s", upgrade_hdr_val);
   }
@@ -8167,6 +8190,24 @@ HttpTransact::build_redirect_response(State* s)
   h->value_set(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE, "text/html", 9);
 
   s->arena.str_free(to_free);
+}
+
+void
+HttpTransact::build_upgrade_response(State* s)
+{
+  DebugTxn("http_upgrade", "[HttpTransact::build_upgrade_response]");
+
+  // 101 Switching Protocols
+  HTTPStatus status_code = HTTP_STATUS_SWITCHING_PROTOCOL;
+  const char *reason_phrase = http_hdr_reason_lookup(status_code);
+  build_response(s, &s->hdr_info.client_response, s->client_info.http_version, status_code, reason_phrase);
+
+  //////////////////////////
+  // set upgrade headers  //
+  //////////////////////////
+  HTTPHdr *h = &s->hdr_info.client_response;
+  h->value_set(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION, "Upgrade", strlen("Upgrade"));
+  h->value_set(MIME_FIELD_UPGRADE, MIME_LEN_UPGRADE, MIME_UPGRADE_H2C_TOKEN, strlen(MIME_UPGRADE_H2C_TOKEN));
 }
 
 const char *

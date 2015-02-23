@@ -89,6 +89,8 @@ public:
 
   int get_transact_count() const { return  transact_count; }
 
+  void set_h2c_upgrade_flag() { upgrade_to_h2c = true; }
+
 private:
   HttpClientSession(HttpClientSession &);
 
@@ -113,6 +115,7 @@ private:
   bool tcp_init_cwnd_set;
   bool half_close;
   bool conn_decrease;
+  bool upgrade_to_h2c; // Switching to HTTP/2 with upgrade mechanism
 
   HttpServerSession *bound_ss;
 

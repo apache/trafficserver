@@ -1359,6 +1359,7 @@ public:
   static void build_error_response(State *s, HTTPStatus status_code, const char *reason_phrase_or_null, const char *error_body_type,
                                    const char *format, ...);
   static void build_redirect_response(State* s);
+  static void build_upgrade_response(State* s);
   static const char *get_error_string(int erno);
 
   // the stat functions
