@@ -86,6 +86,12 @@ initialize_record(const RecordElement * record, void *)
     const char * value = RecConfigOverrideFromEnvironment(record->name, record->value);
     RecData data = {0};
 
+    // If you specify a consistency check, you have to specify a regex expression. We abort here
+    // so that this breaks QA completely.
+    if (record->check != RECC_NULL && record->regex == NULL) {
+      ink_fatal("%s has a consistency check but no regular expression", record->name);
+    }
+
     RecDataSetFromString(record->value_type, &data, value);
 
     switch (record->value_type) {
