@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.0
 
+  *) [TS-3406] Change TS_NPN_PROTOCOL_HTTP_2_0 to "h2".
+
   *) [TS-3376] Add traffic_ctl, a new command line management tool.
 
   *) [TS-3403] Stop parsing command-line options at the first non-option.
