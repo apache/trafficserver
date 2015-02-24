@@ -970,7 +970,7 @@ REGRESSION_TEST(HPACK_Encode)(RegressionTest * t, int, int *pstatus)
     bool cont = false;
     len += http2_write_header_fragment(headers, field_iter, buf, buf_len, dynamic_table, cont);
 
-    box.check(len == encoded_field_test_case[i].encoded_field_len, "encoded length was %ld, expecting %d",
+    box.check(len == encoded_field_test_case[i].encoded_field_len, "encoded length was %" PRId64 ", expecting %d",
         len, encoded_field_test_case[i].encoded_field_len);
     box.check(len > 0 && memcmp(buf, encoded_field_test_case[i].encoded_field, len) == 0, "encoded value was invalid");
   }
