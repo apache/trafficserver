@@ -258,6 +258,7 @@ load_config_file(const char *config_file)
     }
     if (!spstart) {
       TSError("[%s] ERROR: Invalid format on line %d. Skipping\n", PLUGIN_NAME, lineno);
+      TSfclose(fh);
       return NULL;
     }
     /* Find part of the line after any whitespace */
@@ -268,6 +269,7 @@ load_config_file(const char *config_file)
     if (*spend == 0) {
       /* We reached the end of the string without any non-whitepace */
       TSError("[%s] ERROR: Invalid format on line %d. Skipping\n", PLUGIN_NAME, lineno);
+      TSfclose(fh);
       return NULL;
     }
 
@@ -279,6 +281,7 @@ load_config_file(const char *config_file)
     retval = regex_compile(&info, buffer, spend);
     if (!retval) {
       TSError("[%s] Error precompiling regex/replacement. Skipping.\n", PLUGIN_NAME);
+      TSfclose(fh);
       return NULL;
     }
 
