@@ -636,7 +636,7 @@ PluginVC::process_read_side(bool other_side_call)
   Debug("pvc", "[%u] %s: process_read_side; act_on %" PRId64"", core_obj->id, PVC_TYPE, act_on);
 
   if (act_on <= 0) {
-    if (other_side->closed || other_side->write_state.shutdown) {
+    if (other_side->closed || other_side->write_state.shutdown || write_state.shutdown) {
       read_state.vio._cont->handleEvent(VC_EVENT_EOS, &read_state.vio);
     }
     return;
