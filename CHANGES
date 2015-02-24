@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.2.1
 
+  *) [TS-3299] Fix leaking vc's during inactivitycop, due to null
+   continuation.
+
   *) [TS-3334] Restore default for proxy.config.proxy_name.
 
   *) [TS-3397] Bug with ink_strlcpy and non-null terminated strings.
