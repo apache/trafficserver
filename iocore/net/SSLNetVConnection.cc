@@ -991,7 +991,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
       Debug("ssl", "ssl handshake time:%" PRId64, ssl_handshake_time);
       sslHandshakeBeginTime = 0;
       SSL_INCREMENT_DYN_STAT_EX(ssl_total_handshake_time_stat, ssl_handshake_time);
-      SSL_INCREMENT_DYN_STAT(ssl_total_success_handshake_count_stat);
+      SSL_INCREMENT_DYN_STAT(ssl_total_success_handshake_count_in_stat);
     }
 
     {
@@ -1109,6 +1109,7 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
         X509_free(cert);
       }
     }
+    SSL_INCREMENT_DYN_STAT(ssl_total_success_handshake_count_out_stat);
 
     sslHandShakeComplete = true;
     return EVENT_DONE;

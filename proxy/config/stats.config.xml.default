@@ -1946,6 +1946,14 @@
         </expression>
     </statistics>
 
+    <statistics
+	minimum="0">
+        <destination>proxy.process.ssl.total_success_handshake_count</destination>
+        <expression>
+            proxy.process.ssl.total_success_handshake_count_in
+        </expression>
+    </statistics>
+
 </ink:statistics>
 
 

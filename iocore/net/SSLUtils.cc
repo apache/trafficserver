@@ -908,8 +908,11 @@ SSLInitializeStatistics()
   RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.total_handshake_time",
                      RECD_INT, RECP_PERSISTENT, (int) ssl_total_handshake_time_stat,
                      RecRawStatSyncSum);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.total_success_handshake_count",
-                     RECD_INT, RECP_PERSISTENT, (int) ssl_total_success_handshake_count_stat,
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.total_success_handshake_count_in",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_total_success_handshake_count_in_stat,
+                     RecRawStatSyncCount);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.total_success_handshake_count_out",
+                     RECD_INT, RECP_PERSISTENT, (int) ssl_total_success_handshake_count_out_stat,
                      RecRawStatSyncCount);
 
   // TLS tickets

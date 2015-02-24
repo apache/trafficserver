@@ -65,7 +65,7 @@ enum SSL_Stats
   ssl_user_agent_session_miss_stat,
   ssl_user_agent_session_timeout_stat,
   ssl_total_handshake_time_stat,
-  ssl_total_success_handshake_count_stat,
+  ssl_total_success_handshake_count_in_stat,
   ssl_total_tickets_created_stat,
   ssl_total_tickets_verified_stat,
   ssl_total_tickets_verified_old_key_stat, // verified with old key.
@@ -89,6 +89,7 @@ enum SSL_Stats
   ssl_error_zero_return,
   ssl_error_ssl,
   ssl_sni_name_set_failure,
+  ssl_total_success_handshake_count_out_stat,
 
   ssl_cipher_stats_start = 100,
   ssl_cipher_stats_end = 300,
