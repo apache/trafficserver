@@ -24,33 +24,12 @@
 #include "traffic_ctl.h"
 
 static int drain = 0;
+static int manager = 0;
 
 const ArgumentDescription opts[] = {
   { "drain", '-', "Wait for client connections to drain before restarting", "F", &drain, NULL, NULL },
+  { "manager", '-', "Restart traffic_manager as well as traffic_server", "F", &manager, NULL, NULL },
 };
-
-static int
-bounce(unsigned argc, const char ** argv, unsigned flags)
-{
-  TSMgmtError error;
-  const char * usage = (flags & TS_RESTART_OPT_CLUSTER) ?  "cluster bounce [OPTIONS]" :  "server bounce [OPTIONS]";
-
-  if (!CtrlProcessArguments(argc, argv, opts, countof(opts)) || n_file_arguments != 0) {
-    return CtrlCommandUsage(usage, opts, countof(opts));
-  }
-
-  if (drain) {
-    flags |= TS_RESTART_OPT_DRAIN;
-  }
-
-  error = TSBounce(flags);
-  if (error != TS_ERR_OKAY) {
-    CtrlMgmtError(error, "%s bounce failed", (flags & TS_RESTART_OPT_CLUSTER) ? "cluster" : "server");
-    return CTRL_EX_ERROR;
-  }
-
-  return CTRL_EX_OK;
-}
 
 static int
 restart(unsigned argc, const char ** argv, unsigned flags)
@@ -66,25 +45,18 @@ restart(unsigned argc, const char ** argv, unsigned flags)
     flags |= TS_RESTART_OPT_DRAIN;
   }
 
-  error = TSRestart(flags);
+  if (manager) {
+    error = TSRestart(flags);
+  } else {
+    error = TSBounce(flags);
+  }
+
   if (error != TS_ERR_OKAY) {
     CtrlMgmtError(error, "%s restart failed", (flags & TS_RESTART_OPT_CLUSTER) ? "cluster" : "server");
     return CTRL_EX_ERROR;
   }
 
   return CTRL_EX_OK;
-}
-
-static int
-cluster_bounce(unsigned argc, const char ** argv)
-{
-  return bounce(argc, argv, TS_RESTART_OPT_CLUSTER);
-}
-
-static int
-server_bounce(unsigned argc, const char ** argv)
-{
-  return bounce(argc, argv, TS_RESTART_OPT_NONE);
 }
 
 static int
@@ -149,8 +121,7 @@ subcommand_cluster(unsigned argc, const char ** argv)
 {
   const subcommand commands[] =
   {
-    { cluster_bounce, "bounce", "Restart traffic_server across the cluster" },
-    { cluster_restart, "restart", "Restart traffic_server and traffic_server  across the cluster" },
+    { cluster_restart, "restart", "Restart the Traffic Server cluster" },
     { CtrlUnimplementedCommand, "status", "Show the cluster status" },
   };
 
@@ -162,8 +133,7 @@ subcommand_server(unsigned argc, const char ** argv)
 {
   const subcommand commands[] =
   {
-    { server_bounce, "bounce", "Restart traffic_server" },
-    { server_restart, "restart", "Restart traffic_server and traffic_server" },
+    { server_restart, "restart", "Restart Traffic Server" },
     { server_backtrace, "backtrace", "Show a full stack trace of the traffic_server process" },
     { server_status, "status", "Show the proxy status" },
 
