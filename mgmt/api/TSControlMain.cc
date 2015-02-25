@@ -981,7 +981,7 @@ static const control_message_handler handlers[] = {
   /* FILE_READ                  */ { MGMT_API_PRIVILEGED, handle_file_read },
   /* FILE_WRITE                 */ { MGMT_API_PRIVILEGED, handle_file_write },
   /* RECORD_SET                 */ { MGMT_API_PRIVILEGED, handle_record_set },
-  /* RECORD_GET                 */ { MGMT_API_PRIVILEGED, handle_record_get },
+  /* RECORD_GET                 */ { 0, handle_record_get },
   /* PROXY_STATE_GET            */ { 0, handle_proxy_state_get },
   /* PROXY_STATE_SET            */ { MGMT_API_PRIVILEGED, handle_proxy_state_set },
   /* RECONFIGURE                */ { MGMT_API_PRIVILEGED, handle_reconfigure },
