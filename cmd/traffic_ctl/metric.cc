@@ -27,7 +27,7 @@ static int
 metric_get(unsigned argc, const char ** argv)
 {
   if (!CtrlProcessArguments(argc, argv, NULL, 0) || n_file_arguments < 1) {
-    return CtrlCommandUsage("metric get RECORD [RECORD ...]", NULL, 0);
+    return CtrlCommandUsage("metric get METRIC [METRIC ...]", NULL, 0);
   }
 
   for (unsigned i = 0; i < n_file_arguments; ++i) {
@@ -85,7 +85,7 @@ metric_clear(unsigned argc, const char ** argv)
   };
 
   if (!CtrlProcessArguments(argc, argv, opts, countof(opts)) || n_file_arguments != 0) {
-    return CtrlCommandUsage("config clear [OPTIONS]", opts, countof(opts));
+    return CtrlCommandUsage("metric clear [OPTIONS]", opts, countof(opts));
   }
 
   error = TSStatsReset(cluster, NULL);
@@ -107,14 +107,14 @@ metric_zero(unsigned argc, const char ** argv)
     { "cluster", '-', "Zero cluster metrics", "F", &cluster, NULL, NULL },
   };
 
-  if (!CtrlProcessArguments(argc, argv, opts, countof(opts)) || n_file_arguments == 0) {
-    return CtrlCommandUsage("config zero [OPTIONS]", opts, countof(opts));
+  if (!CtrlProcessArguments(argc, argv, opts, countof(opts)) || n_file_arguments < 1) {
+    return CtrlCommandUsage("metric zero [OPTIONS] METRIC [METRIC ...]", opts, countof(opts));
   }
 
   for (unsigned i = 0; i < n_file_arguments; ++i) {
-    error = TSStatsReset(cluster, NULL);
+    error = TSStatsReset(cluster, file_arguments[i]);
     if (error != TS_ERR_OKAY) {
-      CtrlMgmtError(error, "failed to clear %smetrics", cluster ? "cluster " : "");
+      CtrlMgmtError(error, "failed to clear %s", file_arguments[i]);
       return CTRL_EX_ERROR;
     }
   }
