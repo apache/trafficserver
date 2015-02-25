@@ -1024,9 +1024,9 @@ handle_control_message(int fd, void * req, size_t reqlen)
     uid_t euid = -1;
     gid_t egid = -1;
 
-    // For privileged calls, ensure we have caller credentials and that the caller is root.
+    // For privileged calls, ensure we have caller credentials and that the caller is privileged.
     if (handlers[optype].flags & MGMT_API_PRIVILEGED) {
-      if (mgmt_get_peereid(fd, &euid, &egid) == -1 || euid != 0) {
+      if (mgmt_get_peereid(fd, &euid, &egid) == -1 || (euid != 0 && euid != geteuid())) {
         Debug("ts_main", "denied privileged API access on fd=%d for uid=%d gid=%d", fd, euid, egid);
         return send_mgmt_error(fd, optype, TS_ERR_PERMISSION_DENIED);
       }
