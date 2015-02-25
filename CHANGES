@@ -1,7 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.0
 
-  *) [TS-3140] Remove the traffic_ctl "bounce" command.
+  *) [TS-3410] Remove the traffic_ctl "bounce" command.
 
   *) [TS-3404] Handle race condition in handling delayed terminating chunk
 
