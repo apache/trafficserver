@@ -1154,6 +1154,7 @@ extern "C"
   extern tsapi const char * const TS_NPN_PROTOCOL_HTTP_0_9;
   extern tsapi const char * const TS_NPN_PROTOCOL_HTTP_1_0;
   extern tsapi const char * const TS_NPN_PROTOCOL_HTTP_1_1;
+  extern tsapi const char * const TS_NPN_PROTOCOL_HTTP_2_0_14;
   extern tsapi const char * const TS_NPN_PROTOCOL_HTTP_2_0;
   extern tsapi const char * const TS_NPN_PROTOCOL_SPDY_1;
   extern tsapi const char * const TS_NPN_PROTOCOL_SPDY_2;

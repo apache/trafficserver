@@ -80,10 +80,10 @@ use constant {
 # Semi-intelligent way of finding the mgmtapi socket.
 sub _find_socket {
     my $path = shift || "";
-    my $name = shift || "mgmtapisocket";
+    my $name = shift || "mgmtapi.sock";
     my @sockets_def = (
         $path,
-        Apache::TS::PREFIX . '/' . Apache::TS::REL_RUNTIMEDIR . '/' . 'mgmtapisocket',
+        Apache::TS::PREFIX . '/' . Apache::TS::REL_RUNTIMEDIR . '/' . 'mgmtapi.sock',
         '/usr/local/var/trafficserver',
         '/usr/local/var/run/trafficserver',
         '/usr/local/var/run',
@@ -279,7 +279,7 @@ For example:
 
 
 This would make the module look for the 'Unix Domain Socket' in the directory '/var/trafficserver'. The path
-can optionally include the name of the Socket file, without it the constructor defaults to 'mgmtapisocket'.
+can optionally include the name of the Socket file, without it the constructor defaults to 'mgmtapi.sock'.
 
 =back
 

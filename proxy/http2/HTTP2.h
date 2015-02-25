@@ -41,11 +41,25 @@ extern const char * const HTTP2_CONNECTION_PREFACE;
 const size_t HTTP2_CONNECTION_PREFACE_LEN = 24;
 
 const size_t HTTP2_FRAME_HEADER_LEN = 9;
+const size_t HTTP2_DATA_PADLEN_LEN = 1;
+const size_t HTTP2_HEADERS_PADLEN_LEN = 1;
+const size_t HTTP2_PRIORITY_LEN = 5;
+const size_t HTTP2_RST_STREAM_LEN = 4;
+const size_t HTTP2_PING_LEN = 8;
 const size_t HTTP2_GOAWAY_LEN = 8;
+const size_t HTTP2_WINDOW_UPDATE_LEN = 4;
 const size_t HTTP2_SETTINGS_PARAMETER_LEN = 6;
 
-// 4.2. Frame Size. The absolute maximum size of a frame payload is 2^14-1 (16,383) octets.
-const size_t HTTP2_MAX_FRAME_PAYLOAD = 16383;
+// SETTINGS initial values
+const uint32_t HTTP2_HEADER_TABLE_SIZE      = 4096;
+const uint32_t HTTP2_ENABLE_PUSH            = 0;     // Server Push is NOT supported
+const uint32_t HTTP2_MAX_CONCURRENT_STREAMS = 100;
+const uint32_t HTTP2_INITIAL_WINDOW_SIZE    = 65535;
+const uint32_t HTTP2_MAX_FRAME_SIZE         = 16384;
+const uint32_t HTTP2_MAX_HEADER_LIST_SIZE   = UINT_MAX;
+
+// 6.9.1 The Flow Control Window
+static const Http2WindowSize HTTP2_MAX_WINDOW_SIZE = 0x7FFFFFFF;
 
 enum Http2ErrorCode
 {
@@ -67,6 +81,18 @@ enum Http2ErrorCode
   HTTP2_ERROR_MAX,
 };
 
+// 5.1. Stream States
+enum Http2StreamState
+{
+  HTTP2_STREAM_STATE_IDLE,
+  HTTP2_STREAM_STATE_RESERVED_LOCAL,
+  HTTP2_STREAM_STATE_RESERVED_REMOTE,
+  HTTP2_STREAM_STATE_OPEN,
+  HTTP2_STREAM_STATE_HALF_CLOSED_LOCAL,
+  HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE,
+  HTTP2_STREAM_STATE_CLOSED
+};
+
 enum Http2FrameType
 {
   HTTP2_FRAME_TYPE_DATA = 0,
@@ -79,8 +105,6 @@ enum Http2FrameType
   HTTP2_FRAME_TYPE_GOAWAY = 7,
   HTTP2_FRAME_TYPE_WINDOW_UPDATE = 8,
   HTTP2_FRAME_TYPE_CONTINUATION = 9,
-  HTTP2_FRAME_TYPE_ALTSVC = 10,
-  HTTP2_FRAME_TYPE_BLOCKED = 11,
 
   HTTP2_FRAME_TYPE_MAX,
 };
@@ -89,10 +113,7 @@ enum Http2FrameType
 enum Http2FrameFlagsData
 {
   HTTP2_FLAGS_DATA_END_STREAM = 0x01,
-  HTTP2_FLAGS_DATA_END_SEGMENT = 0x02,
-  HTTP2_FLAGS_DATA_PAD_LOW = 0x08,
-  HTTP2_FLAGS_DATA_PAD_HIGH = 0x10,
-  HTTP2_FLAGS_DATA_COMPRESSESD = 0x20,
+  HTTP2_FLAGS_DATA_PADDED = 0x08,
 
   HTTP2_FLAGS_DATA_MASK = 0x2B,
 };
@@ -101,9 +122,8 @@ enum Http2FrameFlagsData
 enum Http2FrameFlagsHeaders
 {
   HTTP2_FLAGS_HEADERS_END_STREAM = 0x01,
-  HTTP2_FLAGS_HEADERS_END_SEGMENT = 0x02,
-  HTTP2_FLAGS_HEADERS_PAD_LOW = 0x08,
-  HTTP2_FLAGS_HEADERS_PAD_HIGH = 0x10,
+  HTTP2_FLAGS_HEADERS_END_HEADERS = 0x04,
+  HTTP2_FLAGS_HEADERS_PADDED = 0x08,
   HTTP2_FLAGS_HEADERS_PRIORITY = 0x20,
 
   HTTP2_FLAGS_HEADERS_MASK = 0x2B,
@@ -169,18 +189,6 @@ enum Http2FrameFlagsContinuation
   HTTP2_FLAGS_CONTINUATION_MASK = 0x1C,
 };
 
-// 6.11 Altsvc
-enum Http2FrameFlagsAltsvc
-{
-  HTTP2_FLAGS_ALTSVC_MASK = 0x00
-};
-
-// 6.12 Blocked
-enum Http2FrameFlagsBlocked
-{
-  HTTP2_FLAGS_BLOCKED_MASK = 0x00
-};
-
 // 6.5.2 Defined SETTINGS Parameters
 enum Http2SettingsIdentifier
 {
@@ -210,9 +218,25 @@ struct Http2SettingsParameter
   uint32_t  value;
 };
 
+// 6.3 PRIORITY
+struct Http2Priority
+{
+  uint32_t stream_dependency;
+  uint8_t  weight;
+};
+
+// 6.2 HEADERS Format
+struct Http2HeadersParameter
+{
+  uint8_t pad_length;
+  Http2Priority priority;
+};
+
 // 6.8 GOAWAY Format
 struct Http2Goaway
 {
+  Http2Goaway(): last_streamid(0), error_code(0) {}
+
   Http2StreamId last_streamid;
   uint32_t      error_code;
 
@@ -221,11 +245,11 @@ struct Http2Goaway
   // just complicates memory management.
 };
 
-// 6.9.1 The Flow Control Window
-static const Http2WindowSize HTTP2_MAX_WINDOW_SIZE = 0x7FFFFFFF;
-
-// 6.9.2 Initial Flow Control Window Size
-static const Http2WindowSize HTTP2_INITIAL_WINDOW_SIZE = 0x0000FFFF;
+// 6.4 RST_STREAM Format
+struct Http2RstStream
+{
+  uint32_t error_code;
+};
 
 static inline bool
 http2_is_client_streamid(Http2StreamId streamid) {
@@ -234,7 +258,7 @@ http2_is_client_streamid(Http2StreamId streamid) {
 
 static inline bool
 http2_is_server_streamid(Http2StreamId streamid) {
-  return (streamid & 0x1u) == 0x0u;
+  return (streamid & 0x1u) == 0x0u && streamid != 0x0u;
 }
 
 bool
@@ -244,7 +268,25 @@ bool
 http2_write_frame_header(const Http2FrameHeader&, IOVec);
 
 bool
+http2_write_data(const uint8_t*, size_t, const IOVec&);
+
+bool
+http2_write_headers(const uint8_t*, size_t, const IOVec&);
+
+bool
+http2_write_rst_stream(uint32_t, IOVec);
+
+bool
+http2_write_settings(const Http2SettingsParameter&, IOVec);
+
+bool
+http2_write_ping(const uint8_t *, IOVec);
+
+bool
 http2_write_goaway(const Http2Goaway&, IOVec);
+
+bool
+http2_write_window_update(const uint32_t new_size, const IOVec&);
 
 bool
 http2_frame_header_is_valid(const Http2FrameHeader&);
@@ -253,15 +295,36 @@ bool
 http2_settings_parameter_is_valid(const Http2SettingsParameter&);
 
 bool
+http2_parse_headers_parameter(IOVec, Http2HeadersParameter&);
+
+bool
+http2_parse_priority_parameter(IOVec, Http2Priority&);
+
+bool
+http2_parse_rst_stream(IOVec, Http2RstStream&);
+
+bool
 http2_parse_settings_parameter(IOVec, Http2SettingsParameter&);
 
-MIMEParseResult
-http2_parse_header_fragment(HTTPHdr *, IOVec, Http2HeaderTable&);
+bool
+http2_parse_goaway(IOVec, Http2Goaway&);
 
-MIMEParseResult
-convert_from_2_to_1_1_header(HTTPHdr * header);
+bool
+http2_parse_window_update(IOVec, uint32_t&);
 
 int64_t
-convert_from_1_1_to_2_header(HTTPHdr * in, uint8_t * out, uint64_t out_len, Http2HeaderTable& header_table);
+http2_parse_header_fragment(HTTPHdr *, IOVec, Http2DynamicTable&, bool);
+
+MIMEParseResult
+convert_from_2_to_1_1_header(HTTPHdr *);
+
+void
+convert_headers_from_1_1_to_2(HTTPHdr*);
+
+int64_t
+http2_write_psuedo_headers(HTTPHdr*, uint8_t*, uint64_t, Http2DynamicTable&);
+
+int64_t
+http2_write_header_fragment(HTTPHdr*, MIMEFieldIter&, uint8_t*, uint64_t, Http2DynamicTable&, bool&);
 
 #endif /* __HTTP2_H__ */

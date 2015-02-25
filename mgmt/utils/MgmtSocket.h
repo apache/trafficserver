@@ -94,4 +94,10 @@ int mgmt_write_timeout(int fd, int sec, int usec);
 //-------------------------------------------------------------------------
 int mgmt_read_timeout(int fd, int sec, int usec);
 
+// Do we support passing Unix domain credentials on this platform?
+bool mgmt_has_peereid(void);
+
+// Get the Unix domain peer credentials.
+int mgmt_get_peereid(int fd, uid_t * euid, gid_t * egid);
+
 #endif // _MGMT_SOCKET_H_

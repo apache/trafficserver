@@ -42,14 +42,18 @@ int update_cop_config(const char *name, RecDataT data_type, RecData data, void *
 // loops through the list of NetVCs and calls the timeouts
 class InactivityCop : public Continuation {
 public:
-  InactivityCop(ProxyMutex *m):Continuation(m), default_inactivity_timeout(0), total_connections_in(0),
-  max_connections_in(0), connections_per_thread_in(0) {
+  InactivityCop(ProxyMutex *m)
+    : Continuation(m), default_inactivity_timeout(0), total_connections_in(0), max_connections_in(0), connections_per_thread_in(0)
+  {
     SET_HANDLER(&InactivityCop::check_inactivity);
     REC_ReadConfigInteger(default_inactivity_timeout, "proxy.config.net.default_inactivity_timeout");
     Debug("inactivity_cop", "default inactivity timeout is set to: %d", default_inactivity_timeout);
     REC_ReadConfigInt32(max_connections_in, "proxy.config.net.max_connections_in");
+
     RecRegisterConfigUpdateCb("proxy.config.net.max_connections_in", update_cop_config, (void *)this);
+    RecRegisterConfigUpdateCb("proxy.config.net.default_inactivity_timeout", update_cop_config, (void *)this);
   }
+
   int check_inactivity(int event, Event *e) {
     (void) event;
     ink_hrtime now = ink_get_hrtime();
@@ -82,6 +86,7 @@ public:
         Debug("inactivity_cop", "vc: %p inactivity timeout not set, setting a default of %d", vc,
             default_inactivity_timeout);
         vc->set_inactivity_timeout(HRTIME_SECONDS(default_inactivity_timeout));
+        NET_INCREMENT_DYN_STAT(default_inactivity_timeout_stat);
       } else {
         Debug("inactivity_cop_verbose", "vc: %p now: %" PRId64 " timeout at: %" PRId64 " timeout in: %" PRId64, vc,
             now, ink_hrtime_to_sec(vc->next_inactivity_timeout_at), ink_hrtime_to_sec(vc->inactivity_timeout_in));
@@ -105,8 +110,11 @@ public:
 
     return 0;
   }
+
   void set_max_connections(const int32_t x) { max_connections_in = x; }
   void set_connections_per_thread(const int32_t x) { connections_per_thread_in = x; }
+  void set_default_timeout(const int x) { default_inactivity_timeout = x; }
+
 private:
   void keep_alive_lru(NetHandler &nh, ink_hrtime now, Event *e);
   int default_inactivity_timeout;  // only used when one is not set for some bad reason
@@ -118,12 +126,23 @@ private:
 int
 update_cop_config(const char *name, RecDataT data_type ATS_UNUSED, RecData data, void *cookie)
 {
-  if ((cookie != NULL) && (strcmp(name, "proxy.config.net.max_connections_in") == 0)) {
-    Debug("inactivity_cop_dynamic", "proxy.config.net.max_connections_in change: %" PRId64, data.rec_int);
-    InactivityCop *cop = static_cast<InactivityCop*>(cookie);
-    cop->set_max_connections(data.rec_int);
-    cop->set_connections_per_thread(0);
+  InactivityCop * cop = static_cast<InactivityCop *>(cookie);
+  ink_assert(cop != NULL);
+
+  if (cop != NULL) {
+    if (strcmp(name, "proxy.config.net.max_connections_in") == 0) {
+      Debug("inactivity_cop_dynamic", "proxy.config.net.max_connections_in updated to %" PRId64, data.rec_int);
+      cop->set_max_connections(data.rec_int);
+      cop->set_connections_per_thread(0);
+    }
+
+    if (strcmp(name, "proxy.config.net.default_inactivity_timeout") == 0) {
+      Debug("inactivity_cop_dynamic", "proxy.config.net.default_inactivity_timeout updated to %" PRId64, data.rec_int);
+      cop->set_default_timeout(data.rec_int);
+    }
+
   }
+
   return REC_ERR_OKAY;
 }
 

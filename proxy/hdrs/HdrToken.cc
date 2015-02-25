@@ -148,6 +148,10 @@ static const char *_hdrtoken_strs[] = {
   "Sec-WebSocket-Key",
   "Sec-WebSocket-Version",
 
+  // HTTP/2 cleartext
+  MIME_UPGRADE_H2C_TOKEN,
+  "HTTP2-Settings",
+
   // URL schemes
   "file",
   "ftp",
@@ -368,17 +372,10 @@ hash_to_slot(uint32_t hash)
 inline uint32_t
 hdrtoken_hash(const unsigned char *string, unsigned int length)
 {
-  static const uint32_t InitialFNV = 2166136261U;
-  static const int32_t FNVMultiple = 16777619;
-
-  uint32_t hash = InitialFNV;
-
-  for (size_t i = 0; i < length; i++)  {
-      hash = hash ^ (toupper(string[i]));
-      hash = hash * FNVMultiple;
-  }
-
-  return hash;
+  ATSHash32FNV1a fnv;
+  fnv.update(string, length, ATSHash::nocase());
+  fnv.final();
+  return fnv.get();
 }
 
 /*-------------------------------------------------------------------------
@@ -487,6 +484,10 @@ static const char *_hdrtoken_commonly_tokenized_strs[] = {
   "websocket",
   "Sec-WebSocket-Key",
   "Sec-WebSocket-Version",
+
+  // HTTP/2 cleartext
+  MIME_UPGRADE_H2C_TOKEN,
+  "HTTP2-Settings",
 
   // URL schemes
   "file",

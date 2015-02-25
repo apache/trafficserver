@@ -41,6 +41,23 @@
 
 static size_t const HTTP2_HEADER_BUFFER_SIZE_INDEX = CLIENT_CONNECTION_FIRST_READ_BUFFER_SIZE_INDEX;
 
+// To support Upgrade: h2c
+struct Http2UpgradeContext
+{
+  ~Http2UpgradeContext() {
+    if (req_header) {
+      req_header->clear();
+      delete req_header;
+    }
+  }
+
+  // Modified request header
+  HTTPHdr * req_header;
+
+  // Decoded HTTP2-Settings Header Field
+  Http2ConnectionSettings client_settings;
+};
+
 class Http2Frame
 {
 public:
@@ -133,6 +150,13 @@ public:
     return this->con_id;
   }
 
+  sockaddr const* get_client_addr() { return client_vc->get_remote_addr(); }
+
+  void write_reenable() { write_vio->reenable(); }
+
+  void set_upgrade_context(HTTPHdr * h);
+  const Http2UpgradeContext& get_upgrade_context() const { return upgrade_context; }
+
 private:
 
   Http2ClientSession(Http2ClientSession &); // noncopyable
@@ -153,6 +177,14 @@ private:
   IOBufferReader *      sm_writer;
   Http2FrameHeader      current_hdr;
   Http2ConnectionState  connection_state;
+
+  // For Upgrade: h2c
+  Http2UpgradeContext upgrade_context;
+
+  VIO * write_vio;
+
+  // Mark whether ATS is sending GOAWAY
+  bool is_sending_goaway;
 };
 
 extern ClassAllocator<Http2ClientSession> http2ClientSessionAllocator;

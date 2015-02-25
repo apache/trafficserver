@@ -39,8 +39,8 @@ int main_socket_fd = -1;
 int event_socket_fd = -1;
 
 // need to store for reconnecting scenario
-char *main_socket_path = NULL;  // "<path>/mgmtapisocket"
-char *event_socket_path = NULL; // "<path>/eventapisocket"
+char *main_socket_path = NULL;  // "<path>/mgmtapi.sock"
+char *event_socket_path = NULL; // "<path>/eventapi.sock"
 
 static void * event_callback_thread(void * arg);
 
@@ -55,10 +55,10 @@ set_socket_paths(const char *path)
   ats_free(event_socket_path);
 
   // construct paths based on user input
-  // form by replacing "mgmtapisocket" with "eventapisocket"
+  // form by replacing "mgmtapi.sock" with "eventapi.sock"
   if (path) {
-    main_socket_path = Layout::relative_to(path, "mgmtapisocket");
-    event_socket_path = Layout::relative_to(path, "eventapisocket");
+    main_socket_path = Layout::relative_to(path, MGMTAPI_MGMT_SOCKET_NAME);
+    event_socket_path = Layout::relative_to(path, MGMTAPI_EVENT_SOCKET_NAME);
   } else {
     main_socket_path = NULL;
     event_socket_path = NULL;

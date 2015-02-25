@@ -24,6 +24,7 @@
 
 #include <cstddef>
 #include <stdint.h>
+#include <ctype.h>
 
 struct ATSHashBase
 {
@@ -35,6 +36,14 @@ struct ATSHashBase
 
 struct ATSHash:ATSHashBase
 {
+  struct nullxfrm {
+    uint8_t operator() (uint8_t byte) const { return byte; }
+  };
+
+  struct nocase {
+    uint8_t operator() (uint8_t byte) const { return toupper(byte); }
+  };
+
   virtual const void *get(void) const = 0;
   virtual size_t size(void) const = 0;
   virtual bool operator==(const ATSHash &) const;

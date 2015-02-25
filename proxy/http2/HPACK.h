@@ -40,6 +40,11 @@ extern const unsigned HPACK_LEN_AUTHORITY;
 extern const unsigned HPACK_LEN_PATH;
 extern const unsigned HPACK_LEN_STATUS;
 
+// It means that any header field can be compressed/decompressed by ATS
+const static int HPACK_ERROR_COMPRESSION_ERROR  = -1;
+// It means that any header field is invalid in HTTP/2 spec
+const static int HPACK_ERROR_HTTP2_PROTOCOL_ERROR = -2;
+
 enum HpackFieldType
 {
   HPACK_FIELD_INDEX,              // HPACK 7.1 Indexed Header Field Representation
@@ -83,17 +88,17 @@ private:
   MIMEHdrImpl * _mh;
 };
 
-// 3.2 Header Table
-class Http2HeaderTable
+// 2.3.2. Dynamic Table
+class Http2DynamicTable
 {
 public:
 
-  Http2HeaderTable() : _current_size(0), _settings_header_table_size(4096) {
+  Http2DynamicTable() : _current_size(0), _settings_dynamic_table_size(4096) {
     _mhdr = new MIMEHdr();
     _mhdr->create();
   }
 
-  ~Http2HeaderTable() {
+  ~Http2DynamicTable() {
     _headers.clear();
     _mhdr->fields_clear();
     delete _mhdr;
@@ -101,7 +106,7 @@ public:
 
   void add_header_field(const MIMEField * field);
   int get_header_from_indexing_tables(uint32_t index, MIMEFieldWrapper& header_field) const;
-  void set_header_table_size(uint32_t new_size);
+  void set_dynamic_table_size(uint32_t new_size);
 
 private:
 
@@ -114,7 +119,7 @@ private:
   }
 
   uint32_t          _current_size;
-  uint32_t          _settings_header_table_size;
+  uint32_t          _settings_dynamic_table_size;
 
   MIMEHdr *         _mhdr;
   Vec<MIMEField *>  _headers;
@@ -138,7 +143,7 @@ decode_integer(uint32_t& dst, const uint8_t *buf_start, const uint8_t *buf_end, 
 int64_t
 encode_string(uint8_t *buf_start, const uint8_t *buf_end, const char* value, size_t value_len);
 int64_t
-decode_string(char **c_str, uint32_t& c_str_length, const uint8_t *buf_start, const uint8_t *buf_end);
+decode_string(Arena& arena, char **str, uint32_t& str_length, const uint8_t *buf_start, const uint8_t *buf_end);
 
 int64_t
 encode_indexed_header_field(uint8_t *buf_start, const uint8_t *buf_end, uint32_t index);
@@ -147,11 +152,13 @@ encode_literal_header_field(uint8_t *buf_start, const uint8_t *buf_end, const MI
 int64_t
 encode_literal_header_field(uint8_t *buf_start, const uint8_t *buf_end, const MIMEFieldWrapper& header, HpackFieldType type);
 
+// When these functions returns minus value, any error occurs
+// TODO Separate error code and length of processed buffer
 int64_t
-decode_indexed_header_field(MIMEFieldWrapper& header, const uint8_t *buf_start, const uint8_t *buf_end, Http2HeaderTable& header_table);
+decode_indexed_header_field(MIMEFieldWrapper& header, const uint8_t *buf_start, const uint8_t *buf_end, Http2DynamicTable& dynamic_table);
 int64_t
-decode_literal_header_field(MIMEFieldWrapper& header, const uint8_t *buf_start, const uint8_t *buf_end, Http2HeaderTable& header_table);
+decode_literal_header_field(MIMEFieldWrapper& header, const uint8_t *buf_start, const uint8_t *buf_end, Http2DynamicTable& dynamic_table);
 int64_t
-update_header_table_size(const uint8_t *buf_start, const uint8_t *buf_end, Http2HeaderTable& header_table);
+update_dynamic_table_size(const uint8_t *buf_start, const uint8_t *buf_end, Http2DynamicTable& dynamic_table);
 
 #endif /* __HPACK_H__ */

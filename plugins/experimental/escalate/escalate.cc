@@ -53,7 +53,7 @@ struct EscalationState
     std::string target;
   };
 
-  typedef std::map<unsigned, RetryInfo*> StatusMapType;
+  typedef std::map<unsigned, RetryInfo> StatusMapType;
 
   EscalationState()
   {
@@ -63,9 +63,6 @@ struct EscalationState
 
   ~EscalationState()
   {
-    for (StatusMapType::iterator iter = status_map.begin(); iter != status_map.end(); ++iter) {
-      delete(iter->second);
-    }
     TSContDestroy(cont);
   }
 
@@ -82,7 +79,7 @@ EscalateResponse(TSCont cont, TSEvent event, void* edata)
 {
   TSHttpTxn txn = (TSHttpTxn)edata;
   EscalationState* es = static_cast<EscalationState*>(TSContDataGet(cont));
-  EscalationState::StatusMapType::iterator entry;
+  EscalationState::StatusMapType::const_iterator entry;
   TSMBuffer mbuf;
   TSMLoc hdrp, url;
   TSHttpStatus status;
@@ -113,15 +110,15 @@ EscalateResponse(TSCont cont, TSEvent event, void* edata)
   }
 
   TSDebug(PLUGIN_NAME, "Found an entry for HTTP status %u", (unsigned)status);
-  if (EscalationState::RETRY_URL == entry->second->type) {
-    url_str = TSstrdup(entry->second->target.c_str());
-    url_len = entry->second->target.size();
+  if (EscalationState::RETRY_URL == entry->second.type) {
+    url_str = TSstrdup(entry->second.target.c_str());
+    url_len = entry->second.target.size();
     TSDebug(PLUGIN_NAME, "Setting new URL to %.*s", url_len, url_str);
-  } else if (EscalationState::RETRY_HOST == entry->second->type) {
+  } else if (EscalationState::RETRY_HOST == entry->second.type) {
     if (TS_SUCCESS == TSHttpTxnClientReqGet(txn, &mbuf, &hdrp)) {
       if (TS_SUCCESS == TSHttpHdrUrlGet(mbuf, hdrp, &url)) {
         // Update the request URL with the new Host to try.
-        TSUrlHostSet(mbuf, url, entry->second->target.c_str(), entry->second->target.size());
+        TSUrlHostSet(mbuf, url, entry->second.target.c_str(), entry->second.target.size());
         url_str = TSUrlStringGet(mbuf, url, &url_len);
         TSDebug(PLUGIN_NAME, "Setting new Host: to %.*s", url_len, url_str);
       }
@@ -170,14 +167,14 @@ TSRemapNewInstance(int argc, char* argv[], void** instance, char* errbuf, int er
     ++sep; // Skip over the ':' (which is now \0)
 
     // OK, we have a valid status/URL pair.
-    EscalationState::RetryInfo* info = new EscalationState::RetryInfo();
+    EscalationState::RetryInfo info;
 
-    info->target = sep;
-    if (std::string::npos != info->target.find('/')) {
-      info->type = EscalationState::RETRY_URL;
+    info.target = sep;
+    if (std::string::npos != info.target.find('/')) {
+      info.type = EscalationState::RETRY_URL;
       TSDebug(PLUGIN_NAME, "Creating Redirect rule with URL = %s", sep);
     } else {
-      info->type = EscalationState::RETRY_HOST;
+      info.type = EscalationState::RETRY_HOST;
       TSDebug(PLUGIN_NAME, "Creating Redirect rule with Host = %s", sep);
     }
 
@@ -186,7 +183,6 @@ TSRemapNewInstance(int argc, char* argv[], void** instance, char* errbuf, int er
 
       if (status < 100 || status > 599) {
         snprintf(errbuf, errbuf_size, "invalid status code: %.*s", (int)std::distance(argv[i], sep), argv[i]);
-        delete info;
         goto fail;
       }
 

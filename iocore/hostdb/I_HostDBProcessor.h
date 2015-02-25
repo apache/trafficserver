@@ -64,20 +64,15 @@ static inline unsigned int
 makeHostHash(const char *string)
 {
   ink_assert(string && *string);
-  if (!string || *string == 0)
-    return 0;
 
-  const uint32_t InitialFNV = 2166136261U;
-  const int32_t FNVMultiple = 16777619;
-
-  uint64_t hash = InitialFNV;
-  uint32_t *p = (uint32_t *) &hash;
-  while(*string)  {
-    p[0] = p[0] ^ (toupper(*string));
-    hash = (p[1] ^ p[0]) * FNVMultiple;
-    ++string;
+  if (string && *string) {
+    ATSHash32FNV1a fnv;
+    fnv.update(string, strlen(string), ATSHash::nocase());
+    fnv.final();
+    return fnv.get();
   }
-  return (p[1] ^ p[0]);
+
+  return 0;
 }
 
 //

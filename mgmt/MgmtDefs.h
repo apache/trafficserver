@@ -64,7 +64,7 @@ typedef void *(*MgmtCallback) (void *opaque_cb_data, char *data_raw, int data_le
 
 #define MGMT_SEMID_DEFAULT            11452
 #define MGMT_DB_FILENAME              "mgmt_db"
-#define LM_CONNECTION_SERVER          "process_server"
+#define LM_CONNECTION_SERVER          "processerver.sock"
 
 /* Structs used in Average Statistics calculations */
 struct StatTwoIntSamples

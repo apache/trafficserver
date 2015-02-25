@@ -101,6 +101,25 @@ private:
 };
 
 
+// Check the HTTP method
+class ConditionMethod : public Condition
+{
+public:
+  ConditionMethod()
+  {
+    TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionMethod");
+  }
+  void initialize(Parser& p);
+  void append_value(std::string& s, const Resources& res);
+
+protected:
+  bool eval(const Resources& res);
+
+private:
+  DISALLOW_COPY_AND_ASSIGN(ConditionMethod);
+};
+
+
 // Random 0 to (N-1)
 class ConditionRandom : public Condition
 {

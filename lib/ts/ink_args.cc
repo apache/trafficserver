@@ -72,9 +72,9 @@ append_file_argument(const char * arg)
     file_arguments[n_file_arguments++] = arg;
 }
 
-static void
+static bool
 process_arg(const AppVersionInfo * appinfo, const ArgumentDescription * argument_descriptions,
-            unsigned n_argument_descriptions, int i, const char ***argv, const char *usage_string)
+            unsigned n_argument_descriptions, int i, const char ***argv)
 {
   const char *arg = NULL;
 
@@ -85,14 +85,15 @@ process_arg(const AppVersionInfo * appinfo, const ArgumentDescription * argument
 
   if (argument_descriptions[i].type) {
     char type = argument_descriptions[i].type[0];
-    if (type == 'F' || type == 'f')
+    if (type == 'F' || type == 'f') {
       *(int *) argument_descriptions[i].location = type == 'F' ? 1 : 0;
-    else if (type == 'T')
+    } else if (type == 'T') {
       *(int *) argument_descriptions[i].location = !*(int *) argument_descriptions[i].location;
-    else {
+    } else {
       arg = *++(**argv) ? **argv : *++(*argv);
-      if (!arg)
-        usage(argument_descriptions, n_argument_descriptions, usage_string);
+      if (!arg) {
+        return false;
+      }
       switch (type) {
       case 'I':
         *(int *) argument_descriptions[i].location = atoi(arg);
@@ -118,8 +119,12 @@ process_arg(const AppVersionInfo * appinfo, const ArgumentDescription * argument
       **argv += strlen(**argv) - 1;
     }
   }
-  if (argument_descriptions[i].pfn)
+
+  if (argument_descriptions[i].pfn) {
     argument_descriptions[i].pfn(argument_descriptions, n_argument_descriptions, arg);
+  }
+
+  return true;
 }
 
 
@@ -160,6 +165,15 @@ show_argument_configuration(const ArgumentDescription * argument_descriptions, u
 void
 process_args(const AppVersionInfo * appinfo, const ArgumentDescription * argument_descriptions, unsigned n_argument_descriptions, const char **argv, const char *usage_string)
 {
+  if (!process_args_ex(appinfo, argument_descriptions, n_argument_descriptions, argv)) {
+      usage(argument_descriptions, n_argument_descriptions, usage_string);
+  }
+}
+
+bool
+process_args_ex(const AppVersionInfo * appinfo, const ArgumentDescription * argument_descriptions,
+                  unsigned n_argument_descriptions, const char **argv)
+{
   unsigned i = 0;
   //
   // Grab Environment Variables
@@ -192,39 +206,60 @@ process_args(const AppVersionInfo * appinfo, const ArgumentDescription * argumen
   //
   program_name = appinfo->AppStr;
   while (*++argv) {
-    if (**argv == '-') {
-      if ((*argv)[1] == '-') {
-        for (i = 0; i < n_argument_descriptions; i++)
-          if (!strcmp(argument_descriptions[i].name, (*argv) + 2)) {
-            *argv += strlen(*argv) - 1;
-            process_arg(appinfo, argument_descriptions, n_argument_descriptions, i, &argv, usage_string);
-            break;
-          }
-        if (i >= n_argument_descriptions)
-          usage(argument_descriptions, n_argument_descriptions, usage_string);
-      } else {
-        // Hack for supporting '-' as a file argument.
-        if (strcmp(*argv, "-") == 0) {
-          append_file_argument(*argv);
-        }
 
-        while (*++(*argv)) {
-          for (i = 0; i < n_argument_descriptions; i++) {
-            if (argument_descriptions[i].key == **argv) {
-              process_arg(appinfo, argument_descriptions, n_argument_descriptions, i, &argv, usage_string);
-              break;
-            }
-          }
+    // Hack for supporting '-' as a file argument.
+    if (strcmp(*argv, "-") == 0) {
+      append_file_argument(*argv);
+      break;
+    }
 
-          if (i >= n_argument_descriptions) {
-            usage(argument_descriptions, n_argument_descriptions, usage_string);
+    // No leading '-', this is the start of the file arguments.
+    if ((*argv)[0] != '-') {
+      append_file_argument(*argv);
+      break;
+    }
+
+    if ((*argv)[1] == '-') {
+      // Deal with long options ...
+      for (i = 0; i < n_argument_descriptions; i++)
+        if (!strcmp(argument_descriptions[i].name, (*argv) + 2)) {
+          *argv += strlen(*argv) - 1;
+          if (!process_arg(appinfo, argument_descriptions, n_argument_descriptions, i, &argv)) {
+            return false;
           }
+          break;
         }
+      if (i >= n_argument_descriptions) {
+        return false;
       }
     } else {
+      // Deal with (possibly combined) short options ...
+      while (*++(*argv)) {
+        for (i = 0; i < n_argument_descriptions; i++) {
+          if (argument_descriptions[i].key == **argv) {
+            if (!process_arg(appinfo, argument_descriptions, n_argument_descriptions, i, &argv)) {
+              return false;
+            }
+            break;
+          }
+        }
+
+        if (i >= n_argument_descriptions) {
+          return false;
+        }
+      }
+    }
+
+  }
+
+  // If we have any arguments left, slurp them up into file_arguments.
+  if (*argv) {
+    while (*++argv) {
       append_file_argument(*argv);
     }
   }
+
+  return true;
 }
 
 void
@@ -298,5 +333,5 @@ usage(const ArgumentDescription * argument_descriptions, unsigned n_argument_des
     }
     fprintf(stderr, " %s\n", argument_descriptions[i].description);
   }
-  _exit(1);
+  exit(EX_USAGE);
 }

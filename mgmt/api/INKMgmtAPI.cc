@@ -126,18 +126,11 @@ TSListDequeue(TSList l)
 tsapi bool
 TSListIsEmpty(TSList l)
 {
-  int ret;
-
   ink_assert(l);
   if (!l)
     return true;                // list doesn't exist, so it's empty
 
-  ret = queue_is_empty((LLQ *) l);      /* returns 0 if empty, non-zero if not empty */
-  if (ret == 0) {               /* empty */
-    return true;
-  } else {
-    return false;
-  }
+  return queue_is_empty((LLQ *) l);
 }
 
 tsapi int
@@ -1449,7 +1442,7 @@ TSStatsReset(bool cluster, const char *name)
 /* Call the CfgFileIO variable operations */
 
 tsapi TSMgmtError
-TSRecordGet(char *rec_name, TSRecordEle * rec_val)
+TSRecordGet(const char *rec_name, TSRecordEle * rec_val)
 {
   return MgmtRecordGet(rec_name, rec_val);
 }
@@ -1894,6 +1887,9 @@ TSGetErrorMessage(TSMgmtError err_id)
   case TS_ERR_NOT_SUPPORTED:
     snprintf(msg, sizeof(msg), "[%d] Operation not supported on this platform.", err_id);
     break;
+  case TS_ERR_PERMISSION_DENIED:
+    snprintf(msg, sizeof(msg), "[%d] Operation not permitted.", err_id);
+    break;
 
   default:
     snprintf(msg, sizeof(msg), "[%d] Invalid error type.", err_id);
@@ -2279,7 +2275,7 @@ TSEventSignal(char *event_name, ...)
 }
 
 tsapi TSMgmtError
-TSEventResolve(char *event_name)
+TSEventResolve(const char *event_name)
 {
   return EventResolve(event_name);
 }

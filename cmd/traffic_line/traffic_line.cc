@@ -378,8 +378,11 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   TSTerminate();
 
   if (TS_ERR_OKAY != status) {
+    char * msg = TSGetErrorMessage(status);
     if (ReadVar[0] == '\0' && SetVar[0] == '\0')
-      fprintf(stderr, "error: the requested command failed\n");
+      fprintf(stderr, "error: the requested command failed: %s\n", msg);
+
+    TSfree(msg);
     exit(1);
   }
 

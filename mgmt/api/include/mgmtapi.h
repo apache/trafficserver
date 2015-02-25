@@ -72,6 +72,7 @@ extern "C"
     TS_ERR_PARAMS,             /* Invalid parameters for a fn */
 
     TS_ERR_NOT_SUPPORTED,      /* Operation not supported */
+    TS_ERR_PERMISSION_DENIED,  /* Operation not permitted */
 
     TS_ERR_FAIL
   } TSMgmtError;
@@ -1116,7 +1117,7 @@ extern "C"
  *         rec_val  - allocated TSRecordEle structure, value stored inside
  * Output: TSMgmtError (if the rec_name does not exist, returns TS_ERR_FAIL)
  */
-  tsapi TSMgmtError TSRecordGet(char *rec_name, TSRecordEle * rec_val);
+  tsapi TSMgmtError TSRecordGet(const char *rec_name, TSRecordEle * rec_val);
 
 /* TSRecordGet*: gets a record w/ a known type
  * Input:  rec_name - the name of the record (proxy.config.record_name)
@@ -1186,7 +1187,7 @@ extern "C"
  * Input:  event_name - event to resolve
  * Output: TSMgmtError
  */
-  tsapi TSMgmtError TSEventResolve(char *event_name);
+  tsapi TSMgmtError TSEventResolve(const char *event_name);
 
 /* TSActiveEventGetMlt: query for a list of all the currently active events
  * Input:  active_events - an empty TSList; if function call is successful,

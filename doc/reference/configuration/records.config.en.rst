@@ -285,6 +285,15 @@ Network
    handled. This should be tuned according to your memory size, and expected
    work load.
 
+.. ts:cv:: CONFIG proxy.config.net.default_inactivity_timeout INT 86400
+   :reloadable:
+
+   The connection inactivity timeout (in seconds) to apply when
+   Traffic Server detects that no inactivity timeout has been applied
+   by the HTTP state machine. When this timeout is applied, the
+   `proxy.process.net.default_inactivity_timeout_applied` metric
+   is incremented.
+
 .. ts:cv:: LOCAL proxy.local.incoming_ip_to_bind STRING 0.0.0.0 [::]
 
    Controls the global default IP addresses to which to bind proxy server ports. The value is a space separated list of IP addresses, one per supported IP address family (currently IPv4 and IPv6).
@@ -414,6 +423,23 @@ bypass that restriction
 
 * Specify ``-DBIG_SECURITY_HOLE`` in ``CXXFLAGS`` during compilation.
 * Set the ``user_id=#-1`` and start trafficserver as root.
+
+.. ts:cv:: CONFIG proxy.config.admin.api.restricted INT 1
+
+This setting specifies whether the management API should be restricted
+to root processes. If this is set to ``0``, then on platforms that
+support passing process credentials, non-root processes will be
+allowed to make read-only management API calls. Any management API
+calls that modify server state (eg. setting a configuration variable)
+will still be restricted to root processes.
+
+This setting is not reloadable, since it is must be applied when
+program:`traffic_manager` initializes.
+
+.. note::
+
+  In Traffic Server 6.0, the default value of
+  :ts:cv:`proxy.config.admin.api.restricted` will be changed to ``0``.
 
 Process Manager
 ===============

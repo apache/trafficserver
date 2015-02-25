@@ -1,4 +1,6 @@
 #
+# Makefile.am for the Enterprise Management module.
+#
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -15,18 +17,24 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-SUBDIRS = \
-  traffic_cop \
-  traffic_ctl \
-  traffic_crashlog \
-  traffic_layout \
-  traffic_line \
-  traffic_manager \
-  traffic_top \
-  traffic_via
+AM_CPPFLAGS = \
+  $(iocore_include_dirs) \
+  -I$(top_srcdir)/lib \
+  -I$(top_srcdir)/lib/ts \
+  -I$(top_srcdir)/mgmt/api/include
 
-if BUILD_WCCP
+bin_PROGRAMS = traffic_ctl
 
-SUBDIRS += traffic_wccp
+traffic_ctl_SOURCES = \
+  alarm.cc \
+  config.cc \
+  metric.cc \
+  server.cc \
+  storage.cc \
+  traffic_ctl.cc
 
-endif
+traffic_ctl_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
+traffic_ctl_LDADD = \
+  $(top_builddir)/mgmt/api/libtsmgmt.la \
+  $(top_builddir)/lib/ts/libtsutil.la \
+  @LIBRESOLV@ @LIBTCL@

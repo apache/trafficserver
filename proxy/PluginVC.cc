@@ -188,10 +188,10 @@ PluginVC::main_handler(int event, void *data)
   reentrancy_count++;
 
   if (call_event == active_event) {
-    process_timeout(call_event, VC_EVENT_ACTIVE_TIMEOUT, &active_event);
+    process_timeout(&active_event, VC_EVENT_ACTIVE_TIMEOUT);
   } else if (call_event == inactive_event) {
     if (inactive_timeout_at && inactive_timeout_at < ink_get_hrtime()) {
-      process_timeout(call_event, VC_EVENT_INACTIVITY_TIMEOUT, &inactive_event);
+      process_timeout(&inactive_event, VC_EVENT_INACTIVITY_TIMEOUT);
       call_event->cancel();
     }
   } else {
@@ -636,7 +636,7 @@ PluginVC::process_read_side(bool other_side_call)
   Debug("pvc", "[%u] %s: process_read_side; act_on %" PRId64"", core_obj->id, PVC_TYPE, act_on);
 
   if (act_on <= 0) {
-    if (other_side->closed || other_side->write_state.shutdown) {
+    if (other_side->closed || other_side->write_state.shutdown || write_state.shutdown) {
       read_state.vio._cont->handleEvent(VC_EVENT_EOS, &read_state.vio);
     }
     return;
@@ -739,11 +739,11 @@ PluginVC::process_close()
   core_obj->attempt_delete();
 }
 
-// void PluginVC::process_timeout(Event* e, int event_to_send, Event** our_eptr)
+// void PluginVC::process_timeout(Event** e, int event_to_send, Event** our_eptr)
 //
 //   Handles sending timeout event to the VConnection.  e is the event we got
-//     which indicats the timeout.  event_to_send is the event to the
-//     vc user.  Our_eptr is a pointer our event either inactive_event,
+//     which indicates the timeout.  event_to_send is the event to the
+//     vc user.  e is a pointer to either inactive_event,
 //     or active_event.  If we successfully send the timeout to vc user,
 //     we clear the pointer, otherwise we reschedule it.
 //
@@ -751,29 +751,28 @@ PluginVC::process_close()
 //      touch any state after making the call back
 //
 void
-PluginVC::process_timeout(Event * e, int event_to_send, Event ** our_eptr)
+PluginVC::process_timeout(Event ** e, int event_to_send)
 {
-
-  ink_assert(e = *our_eptr);
+  ink_assert(*e == inactive_event || *e == active_event);
 
   if (read_state.vio.op == VIO::READ && !read_state.shutdown && read_state.vio.ntodo() > 0) {
-    MUTEX_TRY_LOCK(lock, read_state.vio.mutex, e->ethread);
+    MUTEX_TRY_LOCK(lock, read_state.vio.mutex, (*e)->ethread);
     if (!lock.is_locked()) {
-      e->schedule_in(PVC_LOCK_RETRY_TIME);
+      (*e)->schedule_in(PVC_LOCK_RETRY_TIME);
       return;
     }
-    *our_eptr = NULL;
+    *e = NULL;
     read_state.vio._cont->handleEvent(event_to_send, &read_state.vio);
   } else if (write_state.vio.op == VIO::WRITE && !write_state.shutdown && write_state.vio.ntodo() > 0) {
-    MUTEX_TRY_LOCK(lock, write_state.vio.mutex, e->ethread);
+    MUTEX_TRY_LOCK(lock, write_state.vio.mutex, (*e)->ethread);
     if (!lock.is_locked()) {
-      e->schedule_in(PVC_LOCK_RETRY_TIME);
+      (*e)->schedule_in(PVC_LOCK_RETRY_TIME);
       return;
     }
-    *our_eptr = NULL;
+    *e = NULL;
     write_state.vio._cont->handleEvent(event_to_send, &write_state.vio);
   } else {
-    *our_eptr = NULL;
+    *e = NULL;
   }
 }
 

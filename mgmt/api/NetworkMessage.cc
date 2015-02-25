@@ -175,6 +175,73 @@ send_mgmt_request(int fd, OpType optype, ...)
   return TS_ERR_OKAY;
 }
 
+TSMgmtError
+send_mgmt_error(int fd, OpType optype, TSMgmtError error)
+{
+  MgmtMarshallInt ecode = error;
+  MgmtMarshallInt intval = 0;
+  MgmtMarshallData dataval = { NULL, 0 };
+  MgmtMarshallString strval = NULL;
+
+  // Switch on operations, grouped by response format.
+  switch (optype) {
+  case FILE_WRITE:
+  case PROXY_STATE_SET:
+  case RECONFIGURE:
+  case RESTART:
+  case BOUNCE:
+  case EVENT_RESOLVE:
+  case SNAPSHOT_TAKE:
+  case SNAPSHOT_RESTORE:
+  case SNAPSHOT_REMOVE:
+  case STATS_RESET_NODE:
+  case STATS_RESET_CLUSTER:
+  case STORAGE_DEVICE_CMD_OFFLINE:
+    ink_release_assert(responses[optype].nfields == 1);
+    return send_mgmt_response(fd, optype, &ecode);
+
+  case RECORD_SET:
+  case PROXY_STATE_GET:
+  case EVENT_ACTIVE:
+    ink_release_assert(responses[optype].nfields == 2);
+    return send_mgmt_response(fd, optype, &ecode, &intval);
+
+  case EVENT_GET_MLT:
+  case SNAPSHOT_GET_MLT:
+  case SERVER_BACKTRACE:
+    ink_release_assert(responses[optype].nfields == 2);
+    return send_mgmt_response(fd, optype, &ecode, &strval);
+
+  case FILE_READ:
+    ink_release_assert(responses[optype].nfields == 3);
+    return send_mgmt_response(fd, optype, &ecode, &intval, &dataval);
+
+  case RECORD_GET:
+  case RECORD_MATCH_GET:
+    ink_release_assert(responses[optype].nfields == 4);
+    return send_mgmt_response(fd, optype, &ecode, &intval, &strval, &dataval);
+
+  case EVENT_REG_CALLBACK:
+  case EVENT_UNREG_CALLBACK:
+  case EVENT_NOTIFY:
+  case DIAGS:
+  case API_PING:
+    /* no response for these */
+    ink_release_assert(responses[optype].nfields == 0);
+    return TS_ERR_OKAY;
+
+  case UNDEFINED_OP:
+    return TS_ERR_OKAY;
+  }
+
+  // We should never get here unless OpTypes are added without
+  // updating the switch statement above. Don't do that; this
+  // code must be able to handle every OpType.
+
+  ink_fatal("missing generic error support for type %d management message", optype);
+  return TS_ERR_FAIL;
+}
+
 // Send a management message response. We don't need to worry about retransmitting the message if we get
 // disconnected, so this is much simpler. We can directly marshall the response as a data object.
 TSMgmtError

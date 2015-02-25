@@ -842,7 +842,7 @@ ClusterCom::handleMultiCastMessage(char *message)
   /* Have we see this guy before? */
   ink_mutex_acquire(&(mutex));  /* Grab cluster lock to access hash table */
   if (ink_hash_table_lookup(peers, (InkHashTableKey) ip, &hash_value) == 0) {
-    ink_assert((p = (ClusterPeerInfo *)ats_malloc(sizeof(ClusterPeerInfo))));
+    p = (ClusterPeerInfo *)ats_malloc(sizeof(ClusterPeerInfo));
     p->inet_address = inet_addr(ip);
     p->num_virt_addrs = 0;
 
@@ -1000,9 +1000,7 @@ ClusterCom::handleMultiCastStatPacket(char *last, ClusterPeerInfo * peer)
           rec->data.rec_string = NULL;
         } else if (!(strcmp(tmp_msg_val, "NULL") == 0)) {
           ats_free(rec->data.rec_string);
-          int rec_string_size = strlen(tmp_msg_val) + 1;
-          ink_assert((rec->data.rec_string = (RecString)ats_malloc(rec_string_size)));
-          ink_strlcpy(rec->data.rec_string, tmp_msg_val, rec_string_size);
+          rec->data.rec_string = (RecString)ats_strdup(tmp_msg_val);
         }
         break;
       }

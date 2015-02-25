@@ -73,6 +73,9 @@ struct mgmt_message_sender
 TSMgmtError send_mgmt_request(const mgmt_message_sender& snd, OpType optype, ...);
 TSMgmtError send_mgmt_request(int fd, OpType optype, ...);
 
+// Marshall and send an error respose for this operation type.
+TSMgmtError send_mgmt_error(int fd, OpType op, TSMgmtError error);
+
 // Parse a request message from a buffer.
 TSMgmtError recv_mgmt_request(void * buf, size_t buflen, OpType optype, ...);
 

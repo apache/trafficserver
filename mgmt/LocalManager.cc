@@ -372,9 +372,8 @@ void
 LocalManager::initMgmtProcessServer()
 {
   ats_scoped_str rundir(RecConfigReadRuntimeDir());
-  char fpath[MAXPATHLEN];
-  int servlen, one = 1;
-  struct sockaddr_un serv_addr;
+  ats_scoped_str sockpath(Layout::relative_to(rundir, LM_CONNECTION_SERVER));
+  mode_t oldmask = umask(0);
 
 #if TS_HAS_WCCP
   if (wccp_cache.isConfigured()) {
@@ -382,37 +381,12 @@ LocalManager::initMgmtProcessServer()
   }
 #endif
 
-  ink_filepath_make(fpath, sizeof(fpath), rundir, LM_CONNECTION_SERVER);
-
-  unlink(fpath);
-  if ((process_server_sockfd = socket(AF_UNIX, SOCK_STREAM, 0)) < 0) {
-    mgmt_fatal(stderr, errno, "[LocalManager::initMgmtProcessServer] Unable to open socket exiting\n");
+  process_server_sockfd = bind_unix_domain_socket(sockpath, 00700);
+  if (process_server_sockfd == -1) {
+    mgmt_fatal(stderr, errno, "[LocalManager::initMgmtProcessServer] failed to bind socket at %s\n", (const char *)sockpath);
   }
 
-  if (fcntl(process_server_sockfd, F_SETFD, 1) < 0) {
-    mgmt_fatal(stderr, errno, "[LocalManager::initMgmtProcessServer] Unable to set close-on-exec\n");
-  }
-
-  memset(&serv_addr, 0, sizeof(serv_addr));
-  serv_addr.sun_family = AF_UNIX;
-  ink_strlcpy(serv_addr.sun_path, fpath, sizeof(serv_addr.sun_path));
-#if defined(darwin) || defined(freebsd)
-  servlen = sizeof(struct sockaddr_un);
-#else
-  servlen = strlen(serv_addr.sun_path) + sizeof(serv_addr.sun_family);
-#endif
-  if (setsockopt(process_server_sockfd, SOL_SOCKET, SO_REUSEADDR, (char *) &one, sizeof(int)) < 0) {
-    mgmt_fatal(stderr, errno, "[LocalManager::initMgmtProcessServer] Unable to set socket options.\n");
-  }
-
-  if ((bind(process_server_sockfd, (struct sockaddr *) &serv_addr, servlen)) < 0) {
-    mgmt_fatal(stderr, errno, "[LocalManager::initMgmtProcessServer] Unable to bind '%s' socket exiting\n", fpath);
-  }
-
-  if ((listen(process_server_sockfd, 5)) < 0) {
-    mgmt_fatal(stderr, errno, "[LocalManager::initMgmtProcessServer] Unable to listen on socket exiting\n");
-  }
-
+  umask(oldmask);
   RecSetRecordInt("proxy.node.restarts.manager.start_time", manager_started_at);
 }
 
@@ -1032,7 +1006,7 @@ LocalManager::listenForProxy()
     return;
 
   // We are not already bound, bind the port
-  for ( int i = 0, n = lmgmt->m_proxy_ports.length() ; i < n ; ++i ) {
+  for (int i = 0, n = lmgmt->m_proxy_ports.length() ; i < n ; ++i ) {
     HttpProxyPort& p = lmgmt->m_proxy_ports[i];
     if (ts::NO_FD == p.m_fd) {
       this->bindProxyPort(p);
@@ -1045,11 +1019,12 @@ LocalManager::listenForProxy()
     if (found) {
       backlog = config_backlog;
     }
-
     if ((listen(p.m_fd, backlog)) < 0) {
-      mgmt_fatal(stderr, errno, "[LocalManager::listenForProxy] Unable to listen on socket: %d\n", p.m_port);
+      mgmt_fatal(stderr, errno, "[LocalManager::listenForProxy] Unable to listen on port: %d (%s)\n",
+                 p.m_port, ats_ip_family_name(p.m_family));
     }
-    mgmt_log(stderr, "[LocalManager::listenForProxy] Listening on port: %d\n", p.m_port);
+    mgmt_log(stderr, "[LocalManager::listenForProxy] Listening on port: %d (%s)\n", p.m_port,
+             ats_ip_family_name(p.m_family));
   }
   return;
 }

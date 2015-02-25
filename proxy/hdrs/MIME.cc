@@ -158,6 +158,7 @@ const char *MIME_FIELD_X_ID;
 const char *MIME_FIELD_X_FORWARDED_FOR;
 const char *MIME_FIELD_SEC_WEBSOCKET_KEY;
 const char *MIME_FIELD_SEC_WEBSOCKET_VERSION;
+const char *MIME_FIELD_HTTP2_SETTINGS;
 
 const char *MIME_VALUE_BYTES;
 const char *MIME_VALUE_CHUNKED;
@@ -182,6 +183,7 @@ const char *MIME_VALUE_PUBLIC;
 const char *MIME_VALUE_S_MAXAGE;
 const char *MIME_VALUE_NEED_REVALIDATE_ONCE;
 const char *MIME_VALUE_WEBSOCKET;
+const char *MIME_VALUE_H2C;
 
 // Cache-control: extension "need-revalidate-once" is used internally by T.S.
 // to invalidate a document, and it is not returned/forwarded.
@@ -271,6 +273,7 @@ int MIME_LEN_X_ID;
 int MIME_LEN_X_FORWARDED_FOR;
 int MIME_LEN_SEC_WEBSOCKET_KEY;
 int MIME_LEN_SEC_WEBSOCKET_VERSION;
+int MIME_LEN_HTTP2_SETTINGS;
 
 int MIME_WKSIDX_ACCEPT;
 int MIME_WKSIDX_ACCEPT_CHARSET;
@@ -348,6 +351,7 @@ int MIME_WKSIDX_X_ID;
 int MIME_WKSIDX_X_FORWARDED_FOR;
 int MIME_WKSIDX_SEC_WEBSOCKET_KEY;
 int MIME_WKSIDX_SEC_WEBSOCKET_VERSION;
+int MIME_WKSIDX_HTTP2_SETTINGS;
 
 /***********************************************************************
  *                                                                     *
@@ -722,6 +726,8 @@ mime_init()
     MIME_FIELD_SEC_WEBSOCKET_KEY = hdrtoken_string_to_wks("Sec-WebSocket-Key");
     MIME_FIELD_SEC_WEBSOCKET_VERSION = hdrtoken_string_to_wks("Sec-WebSocket-Version");
 
+    MIME_FIELD_HTTP2_SETTINGS = hdrtoken_string_to_wks("HTTP2-Settings");
+
 
     MIME_LEN_ACCEPT = hdrtoken_wks_to_length(MIME_FIELD_ACCEPT);
     MIME_LEN_ACCEPT_CHARSET = hdrtoken_wks_to_length(MIME_FIELD_ACCEPT_CHARSET);
@@ -801,6 +807,8 @@ mime_init()
     MIME_LEN_SEC_WEBSOCKET_KEY = hdrtoken_wks_to_length(MIME_FIELD_SEC_WEBSOCKET_KEY);
     MIME_LEN_SEC_WEBSOCKET_VERSION = hdrtoken_wks_to_length(MIME_FIELD_SEC_WEBSOCKET_VERSION);
 
+    MIME_LEN_HTTP2_SETTINGS = hdrtoken_wks_to_length(MIME_FIELD_HTTP2_SETTINGS);
+
 
     MIME_WKSIDX_ACCEPT = hdrtoken_wks_to_index(MIME_FIELD_ACCEPT);
     MIME_WKSIDX_ACCEPT_CHARSET = hdrtoken_wks_to_index(MIME_FIELD_ACCEPT_CHARSET);
@@ -877,6 +885,7 @@ mime_init()
     MIME_WKSIDX_X_FORWARDED_FOR = hdrtoken_wks_to_index(MIME_FIELD_X_FORWARDED_FOR);
     MIME_WKSIDX_SEC_WEBSOCKET_KEY = hdrtoken_wks_to_index(MIME_FIELD_SEC_WEBSOCKET_KEY);
     MIME_WKSIDX_SEC_WEBSOCKET_VERSION = hdrtoken_wks_to_index(MIME_FIELD_SEC_WEBSOCKET_VERSION);
+    MIME_WKSIDX_HTTP2_SETTINGS = hdrtoken_wks_to_index(MIME_FIELD_HTTP2_SETTINGS);
 
     MIME_VALUE_BYTES = hdrtoken_string_to_wks("bytes");
     MIME_VALUE_CHUNKED = hdrtoken_string_to_wks("chunked");
@@ -901,6 +910,7 @@ mime_init()
     MIME_VALUE_S_MAXAGE = hdrtoken_string_to_wks("s-maxage");
     MIME_VALUE_NEED_REVALIDATE_ONCE = hdrtoken_string_to_wks("need-revalidate-once");
     MIME_VALUE_WEBSOCKET = hdrtoken_string_to_wks("websocket");
+    MIME_VALUE_H2C = hdrtoken_string_to_wks(MIME_UPGRADE_H2C_TOKEN);
 
 
     mime_init_date_format_table();

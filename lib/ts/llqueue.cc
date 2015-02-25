@@ -169,17 +169,14 @@ queue_highwater(LLQ * Q)
  *
  *---------------------------------------------------------------------------
  */
-int
+bool
 queue_is_empty(LLQ * Q)
 {
   uint64_t len;
 
   len = queue_len(Q);
 
-  if (len)
-    return 0;
-  else
-    return 1;
+  return len == 0;
 }
 
 void *

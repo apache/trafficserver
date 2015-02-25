@@ -389,6 +389,7 @@ extern const char *MIME_FIELD_X_ID;
 extern const char *MIME_FIELD_X_FORWARDED_FOR;
 extern const char *MIME_FIELD_SEC_WEBSOCKET_KEY;
 extern const char *MIME_FIELD_SEC_WEBSOCKET_VERSION;
+extern const char *MIME_FIELD_HTTP2_SETTINGS;
 
 extern const char *MIME_VALUE_BYTES;
 extern const char *MIME_VALUE_CHUNKED;
@@ -413,6 +414,7 @@ extern const char *MIME_VALUE_PUBLIC;
 extern const char *MIME_VALUE_S_MAXAGE;
 extern const char *MIME_VALUE_NEED_REVALIDATE_ONCE;
 extern const char *MIME_VALUE_WEBSOCKET;
+extern const char *MIME_VALUE_H2C;
 
 extern int MIME_LEN_ACCEPT;
 extern int MIME_LEN_ACCEPT_CHARSET;
@@ -515,6 +517,8 @@ extern int MIME_LEN_NEED_REVALIDATE_ONCE;
 extern int MIME_LEN_SEC_WEBSOCKET_KEY;
 extern int MIME_LEN_SEC_WEBSOCKET_VERSION;
 
+extern int MIME_LEN_HTTP2_SETTINGS;
+
 extern int MIME_WKSIDX_ACCEPT;
 extern int MIME_WKSIDX_ACCEPT_CHARSET;
 extern int MIME_WKSIDX_ACCEPT_ENCODING;
@@ -590,6 +594,7 @@ extern int MIME_WKSIDX_INT_DATA_INFO;
 extern int MIME_WKSIDX_X_ID;
 extern int MIME_WKSIDX_SEC_WEBSOCKET_KEY;
 extern int MIME_WKSIDX_SEC_WEBSOCKET_VERSION;
+extern int MIME_WKSIDX_HTTP2_SETTINGS;
 
 /***********************************************************************
  *                                                                     *
@@ -920,13 +925,13 @@ public:
 
   int parse(MIMEParser * parser, const char **start, const char *end, bool must_copy_strs, bool eof);
 
-  int value_get_index(const char *name, int name_length, const char *value, int value_length);
-  const char *value_get(const char *name, int name_length, int *value_length);
-  int32_t value_get_int(const char *name, int name_length);
-  uint32_t value_get_uint(const char *name, int name_length);
-  int64_t value_get_int64(const char *name, int name_length);
-  time_t value_get_date(const char *name, int name_length);
-  int value_get_comma_list(const char *name, int name_length, StrList * list);
+  int value_get_index(const char *name, int name_length, const char *value, int value_length) const;
+  const char *value_get(const char *name, int name_length, int *value_length) const;
+  int32_t value_get_int(const char *name, int name_length) const;
+  uint32_t value_get_uint(const char *name, int name_length) const;
+  int64_t value_get_int64(const char *name, int name_length) const;
+  time_t value_get_date(const char *name, int name_length) const;
+  int value_get_comma_list(const char *name, int name_length, StrList * list) const;
 
   void value_set(const char *name, int name_length, const char *value, int value_length);
   void value_set_int(const char *name, int name_length, int32_t value);
@@ -948,7 +953,7 @@ public:
   void field_value_append(MIMEField * field,
                           const char *value, int value_length, bool prepend_comma = false, const char separator = ',');
   time_t get_age();
-  int64_t get_content_length();
+  int64_t get_content_length() const;
   time_t get_date();
   time_t get_expires();
   time_t get_if_modified_since();
@@ -1214,9 +1219,9 @@ MIMEHdr::parse(MIMEParser * parser, const char **start, const char *end, bool mu
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 inline int
-MIMEHdr::value_get_index(const char *name, int name_length, const char *value, int value_length)
+MIMEHdr::value_get_index(const char *name, int name_length, const char *value, int value_length) const
 {
-  MIMEField *field = field_find(name, name_length);
+  const MIMEField *field = field_find(name, name_length);
   if (field)
     return field->value_get_index(value, value_length);
   else
@@ -1227,10 +1232,10 @@ MIMEHdr::value_get_index(const char *name, int name_length, const char *value, i
   -------------------------------------------------------------------------*/
 
 inline const char *
-MIMEHdr::value_get(const char *name, int name_length, int *value_length_return)
+MIMEHdr::value_get(const char *name, int name_length, int *value_length_return) const
 {
 //    ink_assert(valid());
-  MIMEField *field = field_find(name, name_length);
+  const MIMEField *field = field_find(name, name_length);
 
   if (field)
     return (mime_field_value_get(field, value_length_return));
@@ -1239,9 +1244,9 @@ MIMEHdr::value_get(const char *name, int name_length, int *value_length_return)
 }
 
 inline int32_t
-MIMEHdr::value_get_int(const char *name, int name_length)
+MIMEHdr::value_get_int(const char *name, int name_length) const
 {
-  MIMEField *field = field_find(name, name_length);
+  const MIMEField *field = field_find(name, name_length);
 
   if (field)
     return (mime_field_value_get_int(field));
@@ -1250,9 +1255,9 @@ MIMEHdr::value_get_int(const char *name, int name_length)
 }
 
 inline uint32_t
-MIMEHdr::value_get_uint(const char *name, int name_length)
+MIMEHdr::value_get_uint(const char *name, int name_length) const
 {
-  MIMEField *field = field_find(name, name_length);
+  const MIMEField *field = field_find(name, name_length);
 
   if (field)
     return (mime_field_value_get_uint(field));
@@ -1261,9 +1266,9 @@ MIMEHdr::value_get_uint(const char *name, int name_length)
 }
 
 inline int64_t
-MIMEHdr::value_get_int64(const char *name, int name_length)
+MIMEHdr::value_get_int64(const char *name, int name_length) const
 {
-  MIMEField *field = field_find(name, name_length);
+  const MIMEField *field = field_find(name, name_length);
 
   if (field)
     return (mime_field_value_get_int64(field));
@@ -1272,9 +1277,9 @@ MIMEHdr::value_get_int64(const char *name, int name_length)
 }
 
 inline time_t
-MIMEHdr::value_get_date(const char *name, int name_length)
+MIMEHdr::value_get_date(const char *name, int name_length) const
 {
-  MIMEField *field = field_find(name, name_length);
+  const MIMEField *field = field_find(name, name_length);
 
   if (field)
     return (mime_field_value_get_date(field));
@@ -1283,9 +1288,9 @@ MIMEHdr::value_get_date(const char *name, int name_length)
 }
 
 inline int
-MIMEHdr::value_get_comma_list(const char *name, int name_length, StrList * list)
+MIMEHdr::value_get_comma_list(const char *name, int name_length, StrList * list) const
 {
-  MIMEField *field = field_find(name, name_length);
+  const MIMEField *field = field_find(name, name_length);
 
   if (field)
     return (field->value_get_comma_list(list));
@@ -1420,7 +1425,7 @@ MIMEHdr::get_age()
   -------------------------------------------------------------------------*/
 
 inline int64_t
-MIMEHdr::get_content_length()
+MIMEHdr::get_content_length() const
 {
   return (value_get_int64(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH));
 }

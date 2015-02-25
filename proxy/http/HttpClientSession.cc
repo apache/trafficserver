@@ -37,6 +37,7 @@
 #include "HttpDebugNames.h"
 #include "HttpServerSession.h"
 #include "Plugin.h"
+#include "Http2ClientSession.h"
 
 #define DebugHttpSsn(fmt, ...) DebugSsn(this, "http_cs", fmt, __VA_ARGS__)
 
@@ -61,9 +62,9 @@ ClassAllocator<HttpClientSession> httpClientSessionAllocator("httpClientSessionA
 HttpClientSession::HttpClientSession()
   : con_id(0), client_vc(NULL), magic(HTTP_CS_MAGIC_DEAD),
     transact_count(0), tcp_init_cwnd_set(false),
-    half_close(false), conn_decrease(false), bound_ss(NULL),
-    read_buffer(NULL), current_reader(NULL), read_state(HCS_INIT),
-    ka_vio(NULL), slave_ka_vio(NULL),
+    half_close(false), conn_decrease(false), upgrade_to_h2c(false),
+    bound_ss(NULL),read_buffer(NULL), current_reader(NULL),
+    read_state(HCS_INIT), ka_vio(NULL), slave_ka_vio(NULL),
     outbound_port(0), f_outbound_transparent(false),
     host_res_style(HOST_RES_IPV4), acl_record(NULL),
     m_active(false)
@@ -75,7 +76,7 @@ HttpClientSession::destroy()
 {
   DebugHttpSsn("[%" PRId64 "] session destroy", con_id);
 
-  ink_release_assert(client_vc == NULL);
+  ink_release_assert(upgrade_to_h2c || !client_vc);
   ink_release_assert(bound_ss == NULL);
   ink_assert(read_buffer);
 
@@ -296,9 +297,16 @@ HttpClientSession::do_io_close(int alerrno)
     client_vc->set_active_timeout(HRTIME_SECONDS(current_reader->t_state.txn_conf->keep_alive_no_activity_timeout_out));
   } else {
     read_state = HCS_CLOSED;
-    client_vc->do_io_close(alerrno);
-    DebugHttpSsn("[%" PRId64 "] session closed", con_id);
-    client_vc = NULL;
+    if (upgrade_to_h2c) {
+      Http2ClientSession * h2_session = http2ClientSessionAllocator.alloc();
+      h2_session->set_upgrade_context(&current_reader->t_state.hdr_info.client_request);
+      h2_session->new_connection(client_vc, NULL, NULL, false /* backdoor */);
+      // TODO Consider about handling HTTP/1 hooks and stats
+    } else {
+      client_vc->do_io_close(alerrno);
+      DebugHttpSsn("[%" PRId64 "] session closed", con_id);
+      client_vc = NULL;
+    }
     HTTP_SUM_DYN_STAT(http_transactions_per_client_con, transact_count);
     HTTP_DECREMENT_DYN_STAT(http_current_client_connections_stat);
     conn_decrease = false;

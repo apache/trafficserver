@@ -71,6 +71,9 @@
 #define HTTP_PORT    80
 #define BUFSIZE      1024
 
+// Flags for management API behaviour.
+#define MGMT_API_PRIVILEGED 0x0001u
+
 // used by TSReadFromUrl
 TSMgmtError parseHTTPResponse(char *buffer, char **header, int *hdr_size, char **body, int *bdy_size);
 TSMgmtError readHTTPResponse(int sock, char *buffer, int bufsize, uint64_t timeout);

@@ -262,3 +262,52 @@ read_socket(int s, char *buffer, int length)
 {
   return read(s, (void *) buffer, length);
 }
+
+int
+bind_unix_domain_socket(const char * path, mode_t mode)
+{
+  int sockfd;
+  struct sockaddr_un sockaddr;
+  socklen_t socklen;
+
+  (void)unlink(path);
+
+  sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
+  if (sockfd < 0) {
+    return sockfd;
+  }
+
+  ink_zero(sockaddr);
+  sockaddr.sun_family = AF_UNIX;
+  ink_strlcpy(sockaddr.sun_path, path, sizeof(sockaddr.sun_path));
+
+#if defined(darwin) || defined(freebsd)
+  socklen = sizeof(struct sockaddr_un);
+#else
+  socklen = strlen(sockaddr.sun_path) + sizeof(sockaddr.sun_family);
+#endif
+
+  safe_setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, SOCKOPT_ON, sizeof(int));
+  fcntl(sockfd, F_SETFD, 1);
+
+  if (bind(sockfd, (struct sockaddr *)&sockaddr, socklen) < 0) {
+    goto fail;
+  }
+
+  if (chmod(path, mode) < 0) {
+    goto fail;
+  }
+
+  if (listen(sockfd, 5) < 0) {
+    goto fail;
+  }
+
+  return sockfd;
+
+fail:
+  int errsav = errno;
+  close(sockfd);
+  errno = errsav;
+  return -1;
+}
+

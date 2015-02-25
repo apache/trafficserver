@@ -157,6 +157,15 @@ AC_ARG_ENABLE([debug],
 )
 AC_MSG_RESULT([$enable_debug])
 
+# Enable code coverage instrumentation only if requested by the user.
+AC_MSG_CHECKING([whether to code coverage])
+AC_ARG_ENABLE([debug],
+  [AS_HELP_STRING([--enable-coverage],[generate code coverage instrumentation])],
+  [],
+  [enable_coverage=no]
+)
+AC_MSG_RESULT([$enable_coverage])
+
 #
 # Enable -Werror. We want this enabled by default for developers, but disabled by default
 # for end users (because we don't want released versions to suffer from compiler warning hell).
@@ -923,6 +932,22 @@ case $host_os_def in
     ])
 esac
 
+AS_IF([test x"$enable_coverage" = xyes], [
+  # Map per-compiler code coverage instrumentation flags.  Note that
+  # we don't test whether the compiler actually support these options
+  # (we don't do that in general). The user is expected to use a modern,
+  # supported compiler to test coverage.
+  AS_CASE("$ax_cv_c_compiler_vendor",
+    [clang], [
+      TS_ADDTO(CXXFLAGS, "-fprofile-instr-generate -fcoverage-mapping")
+      TS_ADDTO(CFLAGS, "-fprofile-instr-generate -fcoverage-mapping")
+    ], [gnu], [
+      TS_ADDTO(CXXFLAGS, "--coverage")
+      TS_ADDTO(CFLAGS, "--coverage")
+      TS_ADDTO(LIBS, "-lgcov")
+  ])
+])
+
 # Only add -Werror if the user has requested it. We enable this by default for
 # development, disable it by default for release.
 AS_IF([test x"$enable_werror" = xyes], [
@@ -1166,7 +1191,7 @@ fi
 
 AC_CHECK_FUNCS([clock_gettime kqueue epoll_ctl posix_memalign posix_fadvise posix_madvise posix_fallocate inotify_init])
 AC_CHECK_FUNCS([lrand48_r srand48_r port_create strlcpy strlcat sysconf getpagesize])
-AC_CHECK_FUNCS([getreuid getresuid getresgid setreuid setresuid])
+AC_CHECK_FUNCS([getreuid getresuid getresgid setreuid setresuid getpeereid getpeerucred])
 AC_CHECK_FUNCS([strsignal psignal psiginfo])
 
 # Check for eventfd() and sys/eventfd.h (both must exist ...)
@@ -1467,10 +1492,12 @@ AC_CHECK_HEADERS([sys/types.h \
                   math.h \
                   stdint.h \
                   stdbool.h \
+                  sysexits.h \
                   net/ppp_defs.h \
                   ifaddrs.h\
                   readline/readline.h \
-                  editline/readline.h ])
+                  editline/readline.h \
+                  ucred.h ])
 
 AC_SUBST(sys_epollh)
 AC_SUBST(sys_eventh)
@@ -1758,35 +1785,13 @@ AS_IF([test "x$enable_tproxy" != "xno"], [
 AC_SUBST(use_tproxy)
 AC_SUBST(ip_transparent)
 
-AC_MSG_CHECKING([for SO_MARK])
-AC_TRY_COMPILE([
-#include <sys/socket.h>
-], [
-if( SO_MARK > 0) return 0;
-else return 1;
-], [has_so_mark=1]
-msg=yes, [
-has_so_mark=0
-msg=no ] )
+TS_CHECK_SOCKOPT(SO_PEERCRED, [has_so_peercred=1], [has_so_peercred=0])
+TS_CHECK_SOCKOPT(SO_MARK, [has_so_mark=1], [has_so_mark=0])
+TS_CHECK_SOCKOPT(IP_TOS, [has_ip_tos=1], [has_ip_tos=0])
 
-AC_MSG_RESULT([$msg])
 AC_SUBST(has_so_mark)
-
-AC_MSG_CHECKING([for IP_TOS])
-AC_TRY_COMPILE([
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netinet/ip.h>
-],[
-if( IP_TOS > 0) return 0;
-else return 1;
-], [has_ip_tos=1]
-msg=yes, [
-has_ip_tos=0
-msg=no ] )
-
-AC_MSG_RESULT([$msg])
 AC_SUBST(has_ip_tos)
+AC_SUBST(has_so_peercred)
 
 TS_CHECK_LOOPBACK_IFACE
 TS_CHECK_GETHOSTBYNAME_R_STYLE
@@ -1856,6 +1861,7 @@ AC_CONFIG_FILES([
   cmd/Makefile
   cmd/traffic_cop/Makefile
   cmd/traffic_crashlog/Makefile
+  cmd/traffic_ctl/Makefile
   cmd/traffic_layout/Makefile
   cmd/traffic_line/Makefile
   cmd/traffic_manager/Makefile

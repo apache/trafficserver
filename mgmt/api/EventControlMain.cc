@@ -558,6 +558,17 @@ handle_event_message(EventClientT * client, void * req, size_t reqlen)
     goto fail;
   }
 
+  if (mgmt_has_peereid()) {
+    uid_t euid = -1;
+    gid_t egid = -1;
+
+    // For now, all event messages require privilege. This is compatible with earlier
+    // versions of Traffic Server that
+    if (mgmt_get_peereid(client->fd, &euid, &egid) == -1 || euid != 0) {
+      return TS_ERR_PERMISSION_DENIED;
+    }
+  }
+
   return handlers[optype](client, req, reqlen);
 
 fail:
