@@ -1114,8 +1114,8 @@ CacheSync::mainEvent(int event, Event *e)
   }
 
 Lrestart:
-  if (vol >= gnvol) {
-    vol = 0;
+  if (vol_idx >= gnvol) {
+    vol_idx = 0;
     if (buf) {
       ats_memalign_free(buf);
       buf = 0;
@@ -1128,32 +1128,38 @@ Lrestart:
       trigger = eventProcessor.schedule_in(this, HRTIME_SECONDS(cache_config_dir_sync_frequency));
     return EVENT_CONT;
   }
+
+  Vol* vol = gvol[vol_idx]; // must be named "vol" to make STAT macros work.
+
   if (event == AIO_EVENT_DONE) {
     // AIO Thread
     if (io.aio_result != (int64_t)io.aiocb.aio_nbytes) {
-      Warning("vol write error during directory sync '%s'", gvol[vol]->hash_text.get());
+      Warning("vol write error during directory sync '%s'", gvol[vol_idx]->hash_text.get());
       event = EVENT_NONE;
       goto Ldone;
     }
+    CACHE_SUM_DYN_STAT(cache_directory_sync_bytes_stat, io.aio_result);
+
     trigger = eventProcessor.schedule_in(this, SYNC_DELAY);
     return EVENT_CONT;
   }
   {
-    CACHE_TRY_LOCK(lock, gvol[vol]->mutex, mutex->thread_holding);
+    CACHE_TRY_LOCK(lock, gvol[vol_idx]->mutex, mutex->thread_holding);
     if (!lock.is_locked()) {
       trigger = eventProcessor.schedule_in(this, HRTIME_MSECONDS(cache_config_mutex_retry_delay));
       return EVENT_CONT;
     }
-    Vol *d = gvol[vol];
+
+    if (!vol->dir_sync_in_progress) start_time = ink_get_hrtime();
 
     // recompute hit_evacuate_window
-    d->hit_evacuate_window = (d->data_blocks * cache_config_hit_evacuate_percent) / 100;
+    vol->hit_evacuate_window = (vol->data_blocks * cache_config_hit_evacuate_percent) / 100;
 
-    if (DISK_BAD(d->disk))
+    if (DISK_BAD(vol->disk))
       goto Ldone;
 
     int headerlen = ROUND_TO_STORE_BLOCK(sizeof(VolHeaderFooter));
-    size_t dirlen = vol_dirlen(d);
+    size_t dirlen = vol_dirlen(vol);
     if (!writepos) {
       // start
       Debug("cache_dir_sync", "sync started");
@@ -1163,65 +1169,68 @@ Lrestart:
          than necessary.
          The dirty bit it set in dir_insert, dir_overwrite and dir_delete_entry
        */
-      if (!d->header->dirty) {
-        Debug("cache_dir_sync", "Dir %s not dirty", d->hash_text.get());
+      if (!vol->header->dirty) {
+        Debug("cache_dir_sync", "Dir %s not dirty", vol->hash_text.get());
         goto Ldone;
       }
-      if (d->is_io_in_progress() || d->agg_buf_pos) {
-        Debug("cache_dir_sync", "Dir %s: waiting for agg buffer", d->hash_text.get());
-        d->dir_sync_waiting = 1;
-        if (!d->is_io_in_progress())
-          d->aggWrite(EVENT_IMMEDIATE, 0);
+      if (vol->is_io_in_progress() || vol->agg_buf_pos) {
+        Debug("cache_dir_sync", "Dir %s: waiting for agg buffer", vol->hash_text.get());
+        vol->dir_sync_waiting = 1;
+        if (!vol->is_io_in_progress())
+          vol->aggWrite(EVENT_IMMEDIATE, 0);
 #if TS_USE_INTERIM_CACHE == 1
-        for (int i = 0; i < d->num_interim_vols; i++) {
-          if (!d->interim_vols[i].is_io_in_progress()) {
-            d->interim_vols[i].sync = true;
-            d->interim_vols[i].aggWrite(EVENT_IMMEDIATE, 0);
+        for (int i = 0; i < vol->num_interim_vols; i++) {
+          if (!vol->interim_vols[i].is_io_in_progress()) {
+            vol->interim_vols[i].sync = true;
+            vol->interim_vols[i].aggWrite(EVENT_IMMEDIATE, 0);
           }
         }
 #endif
         return EVENT_CONT;
       }
-      Debug("cache_dir_sync", "pos: %" PRIu64 " Dir %s dirty...syncing to disk", d->header->write_pos, d->hash_text.get());
-      d->header->dirty = 0;
+      Debug("cache_dir_sync", "pos: %" PRIu64 " Dir %s dirty...syncing to disk", vol->header->write_pos, vol->hash_text.get());
+      vol->header->dirty = 0;
       if (buflen < dirlen) {
         if (buf)
           ats_memalign_free(buf);
         buf = (char *)ats_memalign(ats_pagesize(), dirlen);
         buflen = dirlen;
       }
-      d->header->sync_serial++;
-      d->footer->sync_serial = d->header->sync_serial;
+      vol->header->sync_serial++;
+      vol->footer->sync_serial = vol->header->sync_serial;
 #if TS_USE_INTERIM_CACHE == 1
-      for (int j = 0; j < d->num_interim_vols; j++) {
-          d->interim_vols[j].header->sync_serial = d->header->sync_serial;
+      for (int j = 0; j < vol->num_interim_vols; j++) {
+          vol->interim_vols[j].header->sync_serial = vol->header->sync_serial;
       }
 #endif
       CHECK_DIR(d);
-      memcpy(buf, d->raw_dir, dirlen);
-      d->dir_sync_in_progress = 1;
+      memcpy(buf, vol->raw_dir, dirlen);
+      vol->dir_sync_in_progress = 1;
     }
-    size_t B = d->header->sync_serial & 1;
-    off_t start = d->skip + (B ? dirlen : 0);
+    size_t B = vol->header->sync_serial & 1;
+    off_t start = vol->skip + (B ? dirlen : 0);
 
     if (!writepos) {
       // write header
-      aio_write(d->fd, buf + writepos, headerlen, start + writepos);
+      aio_write(vol->fd, buf + writepos, headerlen, start + writepos);
       writepos += headerlen;
     } else if (writepos < (off_t)dirlen - headerlen) {
       // write part of body
       int l = SYNC_MAX_WRITE;
       if (writepos + l > (off_t)dirlen - headerlen)
         l = dirlen - headerlen - writepos;
-      aio_write(d->fd, buf + writepos, l, start + writepos);
+      aio_write(vol->fd, buf + writepos, l, start + writepos);
       writepos += l;
     } else if (writepos < (off_t)dirlen) {
       ink_assert(writepos == (off_t)dirlen - headerlen);
       // write footer
-      aio_write(d->fd, buf + writepos, headerlen, start + writepos);
+      aio_write(vol->fd, buf + writepos, headerlen, start + writepos);
       writepos += headerlen;
     } else {
-      d->dir_sync_in_progress = 0;
+      vol->dir_sync_in_progress = 0;
+      CACHE_INCREMENT_DYN_STAT(cache_directory_sync_count_stat);
+      CACHE_SUM_DYN_STAT(cache_directory_sync_time_stat, ink_get_hrtime() - start_time);
+      start_time = 0;
       goto Ldone;
     }
     return EVENT_CONT;
@@ -1229,7 +1238,7 @@ Lrestart:
 Ldone:
   // done
   writepos = 0;
-  vol++;
+  ++vol_idx;
   goto Lrestart;
 }
 

@@ -160,6 +160,10 @@ enum
   cache_hdr_vector_marshal_stat,
   cache_hdr_marshal_stat,
   cache_hdr_marshal_bytes_stat,
+  cache_directory_wrap_stat,
+  cache_directory_sync_count_stat,
+  cache_directory_sync_time_stat,
+  cache_directory_sync_bytes_stat,
   cache_stat_count
 };
 
