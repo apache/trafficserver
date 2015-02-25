@@ -949,6 +949,10 @@ Vol::agg_wrap()
   header->agg_pos = header->write_pos;
   dir_lookaside_cleanup(this);
   dir_clean_vol(this);
+  {
+    Vol* vol = this;
+    CACHE_INCREMENT_DYN_STAT(cache_directory_wrap_stat);
+  }
   periodic_scan();
 }
 

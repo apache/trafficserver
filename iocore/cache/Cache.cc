@@ -3472,6 +3472,10 @@ register_cache_stats(RecRawStatBlock *rsb, const char *prefix)
   REG_INT("hdr_marshal_bytes", cache_hdr_marshal_bytes_stat);
   REG_INT("gc_bytes_evacuated", cache_gc_bytes_evacuated_stat);
   REG_INT("gc_frags_evacuated", cache_gc_frags_evacuated_stat);
+  REG_INT("wrap_count", cache_directory_wrap_stat);
+  REG_INT("sync.count", cache_directory_sync_count_stat);
+  REG_INT("sync.bytes", cache_directory_sync_bytes_stat);
+  REG_INT("sync.time", cache_directory_sync_time_stat);
 }
 
 
