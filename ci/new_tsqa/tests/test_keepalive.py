@@ -14,7 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import os
+import uuid
 import requests
 import time
 import logging
@@ -29,24 +29,26 @@ import tsqa.endpoint
 log = logging.getLogger(__name__)
 
 import SocketServer
+
+
 class KeepaliveTCPHandler(SocketServer.BaseRequestHandler):
     """
-    A subclass of RequestHandler which will count the number of requests
-    per tcp session
+    A subclass of RequestHandler which will return a connection uuid
     """
 
     def handle(self):
-        num_requests = 0
         # Receive the data in small chunks and retransmit it
+        start = time.time()
+        conn_id = uuid.uuid4().hex
         while True:
-            num_requests += 1
+            now = time.time() - start
             data = self.request.recv(4096).strip()
             if data:
-                log.info('sending data back to the client')
+                log.debug('Sending data back to the client: {uid}'.format(uid=conn_id))
             else:
-                log.info('Client disconnected')
+                log.debug('Client disconnected: {timeout}seconds'.format(timeout=now))
                 break
-            body = str(num_requests)
+            body = conn_id
             resp = ('HTTP/1.1 200 OK\r\n'
                     'Content-Length: {content_length}\r\n'
                     'Content-Type: text/html; charset=UTF-8\r\n'
@@ -56,31 +58,17 @@ class KeepaliveTCPHandler(SocketServer.BaseRequestHandler):
             self.request.sendall(resp)
 
 
-class TestKeepAliveInHTTP(tsqa.test_cases.DynamicHTTPEndpointCase, helpers.EnvironmentCase):
-    @classmethod
-    def setUpEnv(cls, env):
+class KeepAliveInMixin(object):
+    """Mixin for keep alive in.
 
-        def hello(request):
-            return 'hello'
-        cls.http_endpoint.add_handler('/exists/', hello)
-
-        cls.configs['remap.config'].add_line('map /exists/ http://127.0.0.1:{0}/exists/'.format(cls.http_endpoint.address[1]))
-
-        # only add server headers when there weren't any
-        cls.configs['records.config']['CONFIG']['proxy.config.http.response_server_enabled'] = 2
-        cls.configs['records.config']['CONFIG']['proxy.config.http.keep_alive_enabled_in'] = 1
-        cls.configs['records.config']['CONFIG']['share_server_session'] = 2
-
-        # set only one ET_NET thread (so we don't have to worry about the per-thread pools causing issues)
-        cls.configs['records.config']['CONFIG']['proxy.config.exec_thread.limit'] = 1
-        cls.configs['records.config']['CONFIG']['proxy.config.exec_thread.autoconfig'] = 0
-
+       TODO: Allow protocol to be specified for ssl traffic
+    """
     def _get_socket(self):
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.connect(('127.0.0.1', int(self.configs['records.config']['CONFIG']['proxy.config.http.server_ports'])))
         return s
 
-    def test_working_path(self):
+    def _aux_working_path(self, protocol):
         # connect tcp
         s = self._get_socket()
 
@@ -96,7 +84,7 @@ class TestKeepAliveInHTTP(tsqa.test_cases.DynamicHTTPEndpointCase, helpers.Envir
             self.assertIn('HTTP/1.1 200 OK', response)
             self.assertIn('hello', response)
 
-    def test_error_path(self):
+    def _aux_error_path(self, protocol):
         # connect tcp
         s = self._get_socket()
 
@@ -108,7 +96,7 @@ class TestKeepAliveInHTTP(tsqa.test_cases.DynamicHTTPEndpointCase, helpers.Envir
             response = s.recv(4096)
             self.assertIn('HTTP/1.1 404 Not Found on Accelerator', response)
 
-    def test_error_path_post(self):
+    def _aux_error_path_post(self, protocol):
         '''
         Ensure that sending a request with a body doesn't break the keepalive session
         '''
@@ -128,14 +116,112 @@ class TestKeepAliveInHTTP(tsqa.test_cases.DynamicHTTPEndpointCase, helpers.Envir
                 s.send(request)
 
             response = s.recv(4096)
-            self.assertIn('HTTP/1.1 404 Not Found on Accelerator', response)
-
-# TODO: test timeouts
-# https://issues.apache.org/jira/browse/TS-3312
-# https://issues.apache.org/jira/browse/TS-242
+            # Check if client disconnected
+            if response:
+                self.assertIn('HTTP/1.1 404 Not Found on Accelerator', response)
 
 
-class TestKeepAliveOutHTTP(helpers.EnvironmentCase):
+class BasicTestsOutMixin(object):
+
+    def _aux_KA_origin(self, protocol):
+        '''
+        Test that the origin does in fact support keepalive
+        '''
+        conn_id = None
+        with requests.Session() as s:
+            url = '{0}://127.0.0.1:{1}/'.format(protocol, self.socket_server.port)
+            for x in xrange(1, 10):
+                ret = s.get(url, verify=False)
+                if not conn_id:
+                    conn_id = ret.text.strip()
+                self.assertEqual(ret.status_code, 200)
+                self.assertEqual(ret.text.strip(), conn_id, "Client reports server closed connection")
+
+    def _aux_KA_proxy(self, protocol):
+        '''
+        Test that keepalive works through ATS to that origin
+        '''
+        url = '{0}://127.0.0.1:{1}'.format(protocol,
+            self.configs['records.config']['CONFIG']['proxy.config.http.server_ports'])
+        conn_id = None
+        for x in xrange(1, 10):
+            ret = requests.get(url, verify=False)
+            if not conn_id:
+              conn_id = ret.text.strip()
+            self.assertEqual(ret.status_code, 200)
+            self.assertEqual(ret.text.strip(), conn_id, "Client reports server closed connection")
+
+class TimeoutOutMixin(object):
+
+    def _aux_KA_timeout_direct(self, protocol):
+        '''Tests that origin does not timeout using keepalive.'''
+        with requests.Session() as s:
+            url = '{0}://127.0.0.1:{1}/'.format(protocol, self.socket_server.port)
+            conn_id = None
+            for x in xrange(0, 3):
+                ret = s.get(url, verify=False)
+                if not conn_id:
+                    conn_id = ret.text.strip()
+                self.assertEqual(ret.text.strip(), conn_id, "Client reports server closed connection")
+                time.sleep(3)
+
+    def _aux_KA_timeout_proxy(self, protocol):
+        '''Tests that keepalive timeout is honored through ATS to origin.'''
+        url = '{0}://127.0.0.1:{1}'.format(protocol,
+            self.configs['records.config']['CONFIG']['proxy.config.http.server_ports'])
+        conn_id = None
+        for x in xrange(0, 3):
+            ret = requests.get(url, verify=False)
+            if not conn_id:
+                conn_id = ret.text.strip()
+            self.assertEqual(ret.text.strip(), conn_id, "Client reports server closed connection")
+            time.sleep(3)
+
+
+class OriginMinMaxMixin(object):
+
+    def _aux_KA_min_origin(self, protocol):
+        '''Tests that origin_min_keep_alive_connections is honored.'''
+        url = '{0}://127.0.0.1:{1}'.format(protocol,
+            self.configs['records.config']['CONFIG']['proxy.config.http.server_ports'])
+        ret = requests.get(url, verify=False)
+        conn_id = ret.text.strip()
+        time.sleep(3)
+        ret = requests.get(url, verify=False)
+        self.assertEqual(ret.text.strip(), conn_id, "Client reports server closed connection")
+
+class TestKeepAliveInHTTP(tsqa.test_cases.DynamicHTTPEndpointCase, helpers.EnvironmentCase, KeepAliveInMixin):
+    @classmethod
+    def setUpEnv(cls, env):
+
+        def hello(request):
+            return 'hello'
+        cls.http_endpoint.add_handler('/exists/', hello)
+
+        cls.configs['remap.config'].add_line('map /exists/ http://127.0.0.1:{0}/exists/'.format(cls.http_endpoint.address[1]))
+
+        # only add server headers when there weren't any
+        cls.configs['records.config']['CONFIG']['proxy.config.http.response_server_enabled'] = 2
+        cls.configs['records.config']['CONFIG']['proxy.config.http.keep_alive_enabled_in'] = 1
+        cls.configs['records.config']['CONFIG']['share_server_session'] = 2
+
+        # set only one ET_NET thread (so we don't have to worry about the per-thread pools causing issues)
+        cls.configs['records.config']['CONFIG']['proxy.config.exec_thread.limit'] = 1
+        cls.configs['records.config']['CONFIG']['proxy.config.exec_thread.autoconfig'] = 0
+
+    def test_working_path(self):
+        self._aux_working_path("http")
+
+    def test_error_path(self):
+        self._aux_error_path("http")
+
+    def test_error_path_post(self):
+        '''
+        Ensure that sending a request with a body doesn't break the keepalive session
+        '''
+        self._aux_error_path_post("http")
+
+class TestKeepAliveOriginConnOutHTTP(helpers.EnvironmentCase, OriginMinMaxMixin):
     @classmethod
     def setUpEnv(cls, env):
         '''
@@ -146,7 +232,7 @@ class TestKeepAliveOutHTTP(helpers.EnvironmentCase):
         cls.socket_server = tsqa.endpoint.SocketServerDaemon(KeepaliveTCPHandler)
         cls.socket_server.start()
         cls.socket_server.ready.wait()
-        cls.configs['remap.config'].add_line('map / http://127.0.0.1:{0}/\n'.format(cls.socket_server.port))
+        cls.configs['remap.config'].add_line('map / http://127.0.0.1:{0}/'.format(cls.socket_server.port))
 
         # only add server headers when there weren't any
         cls.configs['records.config']['CONFIG']['proxy.config.http.response_server_enabled'] = 2
@@ -157,39 +243,28 @@ class TestKeepAliveOutHTTP(helpers.EnvironmentCase):
         cls.configs['records.config']['CONFIG']['proxy.config.exec_thread.limit'] = 1
         cls.configs['records.config']['CONFIG']['proxy.config.exec_thread.autoconfig'] = 0
 
-    def test_KA_origin(self):
-        '''
-        Test that the origin does in fact support keepalive
-        '''
-        with requests.Session() as s:
-            url = 'http://127.0.0.1:{0}/'.format(self.socket_server.port)
-            for x in xrange(1, 10):
-                ret = s.get(url)
-                self.assertEqual(ret.status_code, 200)
-                self.assertEqual(ret.text.strip(), str(x))
+        # Timeouts
+        cls.configs['records.config']['CONFIG']['proxy.config.http.keep_alive_no_activity_timeout_out'] = 1
+        cls.configs['records.config']['CONFIG']['proxy.config.http.transaction_no_activity_timeout_out'] = 1
 
-    def test_KA_proxy(self):
-        '''
-        Test that keepalive works through ATS to that origin
-        '''
-        url = 'http://127.0.0.1:{0}'.format(self.socket_server.port)
-        for x in xrange(1, 10):
-            ret = requests.get(url, proxies=self.proxies)
-            self.assertEqual(ret.status_code, 200)
-            self.assertEqual(ret.text.strip(), str(x))
+        cls.configs['records.config']['CONFIG']['proxy.config.http.origin_min_keep_alive_connections'] = 1
 
-class TestKeepAliveOutHTTPS(helpers.EnvironmentCase):
+    def test_KA_min_origin(self):
+        '''Tests that origin_min_keep_alive_connections is honored via http.'''
+        self._aux_KA_min_origin("http")
+
+
+class TestKeepAliveOriginConnOutHTTPS(helpers.EnvironmentCase, OriginMinMaxMixin):
     @classmethod
     def setUpEnv(cls, env):
         '''
         This function is responsible for setting up the environment for this fixture
         This includes everything pre-daemon start
         '''
-        # create a socket server
+         # create a socket server
         cls.socket_server = tsqa.endpoint.SSLSocketServerDaemon(KeepaliveTCPHandler,
                                              helpers.tests_file_path('cert.pem'),
                                              helpers.tests_file_path('key.pem'))
-
         cls.socket_server.start()
         cls.socket_server.ready.wait()
         cls.configs['remap.config'].add_line('map / https://127.0.0.1:{0}/\n'.format(cls.socket_server.port))
@@ -202,27 +277,103 @@ class TestKeepAliveOutHTTPS(helpers.EnvironmentCase):
         # set only one ET_NET thread (so we don't have to worry about the per-thread pools causing issues)
         cls.configs['records.config']['CONFIG']['proxy.config.exec_thread.limit'] = 1
         cls.configs['records.config']['CONFIG']['proxy.config.exec_thread.autoconfig'] = 0
-
         cls.configs['records.config']['CONFIG']['proxy.config.ssl.number.threads'] = -1
 
+        # Timeouts
+        cls.configs['records.config']['CONFIG']['proxy.config.http.keep_alive_no_activity_timeout_out'] = 1
+        cls.configs['records.config']['CONFIG']['proxy.config.http.transaction_no_activity_timeout_out'] = 1
+
+        cls.configs['records.config']['CONFIG']['proxy.config.http.origin_min_keep_alive_connections'] = 1
+
+    def test_KA_min_origin(self):
+        '''Tests that origin_min_keep_alive_connections is honored via https.'''
+        self._aux_KA_min_origin("http")
+
+
+class TestKeepAliveOutHTTP(helpers.EnvironmentCase, BasicTestsOutMixin, TimeoutOutMixin):
+    @classmethod
+    def setUpEnv(cls, env):
+        '''
+        This function is responsible for setting up the environment for this fixture
+        This includes everything pre-daemon start
+        '''
+        # create a socket server
+        cls.socket_server = tsqa.endpoint.SocketServerDaemon(KeepaliveTCPHandler)
+        cls.socket_server.start()
+        cls.socket_server.ready.wait()
+        cls.configs['remap.config'].add_line('map / http://127.0.0.1:{0}/'.format(cls.socket_server.port))
+
+        # only add server headers when there weren't any
+        cls.configs['records.config']['CONFIG']['proxy.config.http.response_server_enabled'] = 2
+        cls.configs['records.config']['CONFIG']['proxy.config.http.keep_alive_enabled_out'] = 1
+        cls.configs['records.config']['CONFIG']['share_server_session'] = 2
+
+        # set only one ET_NET thread (so we don't have to worry about the per-thread pools causing issues)
+        cls.configs['records.config']['CONFIG']['proxy.config.exec_thread.limit'] = 1
+        cls.configs['records.config']['CONFIG']['proxy.config.exec_thread.autoconfig'] = 0
+
+        # Timeouts
+        cls.configs['records.config']['CONFIG']['proxy.config.http.keep_alive_no_activity_timeout_out'] = 10
+        cls.configs['records.config']['CONFIG']['proxy.config.http.transaction_no_activity_timeout_out'] = 2
 
     def test_KA_origin(self):
-        '''
-        Test that the origin does in fact support keepalive
-        '''
-        with requests.Session() as s:
-            url = 'https://127.0.0.1:{0}/'.format(self.socket_server.port)
-            for x in xrange(1, 10):
-                ret = s.get(url, verify=False)
-                self.assertEqual(ret.status_code, 200)
-                self.assertEqual(ret.text.strip(), str(x))
+        '''Test that the origin does in fact support keepalive via http.'''
+        self._aux_KA_origin("http")
 
     def test_KA_proxy(self):
+        '''Tests that keepalive works through ATS to origin via http.'''
+        self._aux_KA_proxy("http")
+
+    def test_KA_timeout_direct(self):
+        '''Tests that origin does not timeout using keepalive via http.'''
+        self._aux_KA_timeout_direct("http")
+
+    def test_KA_timeout_proxy(self):
+        '''Tests that keepalive timeout is honored through ATS to origin via http.'''
+        self._aux_KA_timeout_proxy("http")
+
+
+class TestKeepAliveOutHTTPS(helpers.EnvironmentCase, BasicTestsOutMixin, TimeoutOutMixin):
+    @classmethod
+    def setUpEnv(cls, env):
         '''
-        Test that keepalive works through ATS to that origin
+        This function is responsible for setting up the environment for this fixture
+        This includes everything pre-daemon start
         '''
-        url = 'http://127.0.0.1:{0}'.format(self.configs['records.config']['CONFIG']['proxy.config.http.server_ports'])
-        for x in xrange(1, 10):
-            ret = requests.get(url)
-            self.assertEqual(ret.status_code, 200)
-            self.assertEqual(ret.text.strip(), str(x))
+        # create a socket server
+        cls.socket_server = tsqa.endpoint.SSLSocketServerDaemon(KeepaliveTCPHandler,
+                                             helpers.tests_file_path('cert.pem'),
+                                             helpers.tests_file_path('key.pem'))
+        cls.socket_server.start()
+        cls.socket_server.ready.wait()
+        cls.configs['remap.config'].add_line('map / https://127.0.0.1:{0}/\n'.format(cls.socket_server.port))
+
+        # only add server headers when there weren't any
+        cls.configs['records.config']['CONFIG']['proxy.config.http.response_server_enabled'] = 2
+        cls.configs['records.config']['CONFIG']['proxy.config.http.keep_alive_enabled_out'] = 1
+        cls.configs['records.config']['CONFIG']['share_server_session'] = 2
+
+        # set only one ET_NET thread (so we don't have to worry about the per-thread pools causing issues)
+        cls.configs['records.config']['CONFIG']['proxy.config.exec_thread.limit'] = 1
+        cls.configs['records.config']['CONFIG']['proxy.config.exec_thread.autoconfig'] = 0
+        cls.configs['records.config']['CONFIG']['proxy.config.ssl.number.threads'] = -1
+
+        # Timeouts
+        cls.configs['records.config']['CONFIG']['proxy.config.http.keep_alive_no_activity_timeout_out'] = 10
+        cls.configs['records.config']['CONFIG']['proxy.config.http.transaction_no_activity_timeout_out'] = 2
+
+    def test_KA_origin(self):
+        '''Test that the origin does in fact support keepalive via https.'''
+        self._aux_KA_origin("https")
+
+    def test_KA_proxy(self):
+        '''Tests that keepalive works through ATS to origin via https.'''
+        self._aux_KA_proxy("http")
+
+    def test_KA_timeout_direct(self):
+        '''Tests that origin does not timeout using keepalive via https.'''
+        self._aux_KA_timeout_direct("https")
+
+    def test_KA_timeout_proxy(self):
+        '''Tests that keepalive timeout is honored through ATS to origin via https.'''
+        self._aux_KA_timeout_proxy("http")
