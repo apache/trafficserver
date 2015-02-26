@@ -59,7 +59,7 @@ send_connection_event(Continuation * cont, int event, void * edata)
 }
 
 Http2ClientSession::Http2ClientSession()
-  : con_id(0), client_vc(NULL), read_buffer(NULL), sm_reader(NULL), write_buffer(NULL), sm_writer(NULL), upgrade_context(), is_sending_goaway(false)
+  : con_id(0), client_vc(NULL), read_buffer(NULL), sm_reader(NULL), write_buffer(NULL), sm_writer(NULL), upgrade_context()
 {
 }
 
@@ -69,6 +69,8 @@ Http2ClientSession::destroy()
   DebugHttp2Ssn0("session destroy");
 
   ink_release_assert(this->client_vc == NULL);
+
+  this->connection_state.destroy();
 
   free_MIOBuffer(this->read_buffer);
   ProxyClientSession::cleanup();
@@ -213,12 +215,6 @@ Http2ClientSession::main_event_handler(int event, void * edata)
   case HTTP2_SESSION_EVENT_XMIT: {
     Http2Frame * frame = (Http2Frame *)edata;
     frame->xmit(this->write_buffer);
-
-    // Mark to wait until sending GOAWAY is complete
-    if (frame->header().type == HTTP2_FRAME_TYPE_GOAWAY) {
-      is_sending_goaway = true;
-    }
-
     write_reenable();
     return 0;
   }
@@ -233,7 +229,7 @@ Http2ClientSession::main_event_handler(int event, void * edata)
   case VC_EVENT_WRITE_COMPLETE:
   case VC_EVENT_WRITE_READY:
     // After sending GOAWAY, close the connection
-    if (is_sending_goaway && write_vio->ntodo() <= 0) {
+    if (this->connection_state.is_state_closed() && write_vio->ntodo() <= 0) {
       this->do_io_close();
     }
     return 0;
@@ -328,21 +324,30 @@ Http2ClientSession::state_start_frame_read(int event, void * edata)
 
     // If we know up front that the payload is too long, nuke this connection.
     if (this->current_hdr.length > this->connection_state.client_settings.get(HTTP2_SETTINGS_MAX_FRAME_SIZE)) {
-      this->connection_state.send_goaway_frame(this->current_hdr.streamid, HTTP2_ERROR_FRAME_SIZE_ERROR);
+      MUTEX_LOCK(lock, this->connection_state.mutex, this_ethread());
+      if (!this->connection_state.is_state_closed()) {
+        this->connection_state.send_goaway_frame(this->current_hdr.streamid, HTTP2_ERROR_FRAME_SIZE_ERROR);
+      }
       return 0;
     }
 
     // Allow only stream id = 0 or streams started by client.
     if (this->current_hdr.streamid != 0 &&
         !http2_is_client_streamid(this->current_hdr.streamid)) {
-      this->connection_state.send_goaway_frame(this->current_hdr.streamid, HTTP2_ERROR_PROTOCOL_ERROR);
+      MUTEX_LOCK(lock, this->connection_state.mutex, this_ethread());
+      if (!this->connection_state.is_state_closed()) {
+        this->connection_state.send_goaway_frame(this->current_hdr.streamid, HTTP2_ERROR_PROTOCOL_ERROR);
+      }
       return 0;
     }
 
     // CONTINUATIONs MUST follow behind HEADERS which doesn't have END_HEADERS
     if (this->connection_state.get_continued_id() != 0 &&
         this->current_hdr.type != HTTP2_FRAME_TYPE_CONTINUATION) {
-      this->connection_state.send_goaway_frame(this->current_hdr.streamid, HTTP2_ERROR_PROTOCOL_ERROR);
+      MUTEX_LOCK(lock, this->connection_state.mutex, this_ethread());
+      if (!this->connection_state.is_state_closed()) {
+        this->connection_state.send_goaway_frame(this->current_hdr.streamid, HTTP2_ERROR_PROTOCOL_ERROR);
+      }
       return 0;
     }
 

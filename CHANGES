@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.0
 
+  *) [TS-3405] Memory use after free in HTTP/2. 
+
   *) [TS-3409] Add metric to track number of SSL connections from ATS to Origin Servers.
 
   *) [TS-3410] Remove the traffic_ctl "bounce" command.

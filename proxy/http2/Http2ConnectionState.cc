@@ -412,7 +412,7 @@ rcv_ping_frame(Http2ClientSession& cs, Http2ConnectionState& cstate, const Http2
 }
 
 static Http2ErrorCode
-rcv_goaway_frame(Http2ClientSession& cs, Http2ConnectionState& /*cstate*/, const Http2Frame& frame)
+rcv_goaway_frame(Http2ClientSession& cs, Http2ConnectionState& cstate, const Http2Frame& frame)
 {
   Http2Goaway goaway;
   char      buf[HTTP2_GOAWAY_LEN];
@@ -437,6 +437,7 @@ rcv_goaway_frame(Http2ClientSession& cs, Http2ConnectionState& /*cstate*/, const
   DebugSsn(&cs, "http2_cs",  "[%" PRId64 "] GOAWAY: last stream id=%d, error code=%d.",
       cs.connection_id(), goaway.last_streamid, goaway.error_code);
 
+  cstate.handleEvent(HTTP2_SESSION_EVENT_FINI, NULL);
   // eventProcessor.schedule_imm(&cs, ET_NET, VC_EVENT_ERROR);
 
   return HTTP2_ERROR_NO_ERROR;
@@ -785,6 +786,7 @@ Http2ConnectionState::finish_continued_headers()
 {
   continued_id = 0;
   ats_free(continued_buffer.iov_base);
+  continued_buffer.iov_base = NULL;
   continued_buffer.iov_len = 0;
 }
 
@@ -958,6 +960,8 @@ Http2ConnectionState::send_goaway_frame(Http2StreamId id, Http2ErrorCode ec)
   // xmit event
   MUTEX_LOCK(lock, this->ua_session->mutex, this_ethread());
   this->ua_session->handleEvent(HTTP2_SESSION_EVENT_XMIT, &frame);
+
+  handleEvent(HTTP2_SESSION_EVENT_FINI, NULL);
 }
 
 void

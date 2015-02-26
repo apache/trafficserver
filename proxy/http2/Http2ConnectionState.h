@@ -151,14 +151,6 @@ public:
     SET_HANDLER(&Http2ConnectionState::main_event_handler);
   }
 
-  ~Http2ConnectionState()
-  {
-    delete local_dynamic_table;
-    delete remote_dynamic_table;
-
-    ats_free(continued_buffer.iov_base);
-  }
-
   Http2ClientSession * ua_session;
   Http2DynamicTable * local_dynamic_table;
   Http2DynamicTable * remote_dynamic_table;
@@ -174,6 +166,16 @@ public:
 
     continued_buffer.iov_base = NULL;
     continued_buffer.iov_len  = 0;
+  }
+
+  void destroy()
+  {
+    cleanup_streams();
+
+    delete local_dynamic_table;
+    delete remote_dynamic_table;
+
+    ats_free(continued_buffer.iov_base);
   }
 
   // Event handlers
@@ -205,6 +207,8 @@ public:
   void send_ping_frame(Http2StreamId id, uint8_t flag, const uint8_t * opaque_data);
   void send_goaway_frame(Http2StreamId id, Http2ErrorCode ec);
   void send_window_update_frame(Http2StreamId id, uint32_t size);
+
+  bool is_state_closed() const { return ua_session == NULL; }
 
 private:
   Http2ConnectionState(const Http2ConnectionState&); // noncopyable

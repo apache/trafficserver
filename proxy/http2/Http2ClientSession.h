@@ -182,9 +182,6 @@ private:
   Http2UpgradeContext upgrade_context;
 
   VIO * write_vio;
-
-  // Mark whether ATS is sending GOAWAY
-  bool is_sending_goaway;
 };
 
 extern ClassAllocator<Http2ClientSession> http2ClientSessionAllocator;
