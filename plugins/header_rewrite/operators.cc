@@ -234,9 +234,31 @@ OperatorSetDestination::exec(const Resources& res) const
       }
       break;
     case URL_QUAL_URL:
-      // TODO: Implement URL parser.
+      if (_value.empty()){
+        TSDebug(PLUGIN_NAME, "Would set destination URL to an empty value, skipping");
+      } else {
+        const char *start = _value.get_value().c_str();
+        const char *end = _value.get_value().size() + start;
+        TSMLoc new_url_loc;
+        if (TSUrlCreate(bufp, &new_url_loc) == TS_SUCCESS &&
+            TSUrlParse(bufp, new_url_loc, &start, end) == TS_PARSE_DONE &&
+            TSHttpHdrUrlSet(bufp, res.hdr_loc, new_url_loc) == TS_SUCCESS){
+          TSDebug(PLUGIN_NAME, "Set destination URL to %s", _value.get_value().c_str());
+        } else {
+          TSDebug(PLUGIN_NAME, "Failed to set URL %s", _value.get_value().c_str());
+        }
+      }
+      break;
+    case URL_QUAL_SCHEME:
+      if (_value.empty()){
+        TSDebug(PLUGIN_NAME, "Would set destination SCHEME to an empty value, skipping");
+      } else {
+        TSUrlSchemeSet(bufp, url_m_loc, _value.get_value().c_str(), _value.get_value().length());
+        TSDebug(PLUGIN_NAME, "OperatorSetDestination::exec() invoked with SCHEME: %s", _value.get_value().c_str());
+      }
       break;
     default:
+      TSDebug(PLUGIN_NAME, "Set destination %i has no handler", _url_qual);
       break;
     }
   } else {
