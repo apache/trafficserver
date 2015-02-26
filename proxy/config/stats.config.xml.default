@@ -1948,9 +1948,9 @@
 
     <statistics
 	minimum="0">
-        <destination>proxy.process.ssl.total_success_handshake_count</destination>
+        <destination>proxy.process.ssl.total_success_handshake_count_in</destination>
         <expression>
-            proxy.process.ssl.total_success_handshake_count_in
+            proxy.process.ssl.total_success_handshake_count
         </expression>
     </statistics>
 
