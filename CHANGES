@@ -1,13 +1,14 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.0
 
-  *) [TS-3405] Memory use after free in HTTP/2. 
+  *) [TS-3405] Memory use after free in HTTP/2.
 
-  *) [TS-3409] Add metric to track number of SSL connections from ATS to Origin Servers.
+  *) [TS-3409] Add metric to track number of SSL connections from ATS to
+   Origin Servers.
 
   *) [TS-3410] Remove the traffic_ctl "bounce" command.
 
-  *) [TS-3404] Handle race condition in handling delayed terminating chunk
+  *) [TS-3404] Handle race condition in handling delayed terminating chunk.
 
   *) [TS-3406] Change TS_NPN_PROTOCOL_HTTP_2_0 to "h2".
 
@@ -132,7 +133,7 @@ Changes with Apache Traffic Server 5.3.0
 
   *) [TS-3318] Remove mgmt/Web2/WebHttpSession.{cc,h}, it is not used.
 
-  *) [TS-3243] Removing warnings from loading certificates with duplicated 
+  *) [TS-3243] Removing warnings from loading certificates with duplicated
    names.
 
   *) [TS-3316] Fix the build for 32 bit architectures.
