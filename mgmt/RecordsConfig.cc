@@ -35,6 +35,7 @@
 // RecordsConfig
 //-------------------------------------------------------------------------
 
+// clang-format off
 static const RecordElement RecordsConfig[] =
 {
   //##############################################################################
@@ -1798,8 +1799,6 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_NODE, "proxy.node.log.bytes_lost_before_written_to_disk", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
-
-  
   {RECT_NODE, "proxy.process.ssl.total_success_handshake_count_in", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
 
@@ -2080,6 +2079,8 @@ static const RecordElement RecordsConfig[] =
   {RECT_CONFIG, "proxy.config.cache.http.compatibility.4-2-0-fixup", RECD_INT, "1", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
 
 };
+// clang-format on
+
 
 void RecordsConfigIterate(RecordElementCallback callback, void * data)
 {
