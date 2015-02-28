@@ -25,7 +25,9 @@
   UIOBuffer.cc
 
 **************************************************************************/
+#include "ink_defs.h"
 #include "P_EventSystem.h"
+#include "I_RecCore.h"
 
 //
 // General Buffer Allocator
@@ -45,6 +47,16 @@ void
 init_buffer_allocators()
 {
   char *name;
+  int advice = 0;
+
+#ifdef MADV_DONTDUMP // This should only exist on Linux 3.4 and higher.
+    bool dont_dump_enabled;
+    RecGetRecordBool("proxy.config.allocator.dontdump_iobuffers", &dont_dump_enabled, false);
+
+    if (dont_dump_enabled) {
+      advice = MADV_DONTDUMP;
+    }
+#endif
 
   for (int i = 0; i < DEFAULT_BUFFER_SIZES; i++) {
     int64_t s = DEFAULT_BUFFER_BASE_SIZE * (((int64_t)1) << i);
@@ -55,7 +67,7 @@ init_buffer_allocators()
 
     name = new char[64];
     snprintf(name, 64, "ioBufAllocator[%d]", i);
-    ioBufAllocator[i].re_init(name, s, n, a);
+    ioBufAllocator[i].re_init(name, s, n, a, advice);
   }
 }
 

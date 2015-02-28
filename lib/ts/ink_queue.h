@@ -146,8 +146,6 @@ extern "C"
 #error "unsupported processor"
 #endif
 
-  typedef void *void_p;
-
 #if TS_USE_RECLAIMABLE_FREELIST
   extern float cfg_reclaim_factor;
   extern int64_t cfg_max_overage;
@@ -160,6 +158,7 @@ extern "C"
     const char *name;
     uint32_t type_size, chunk_size, used, allocated, alignment;
     uint32_t allocated_base, used_base;
+    int advice;
   };
 
   inkcoreapi extern volatile int64_t fastalloc_mem_in_use;
@@ -184,6 +183,7 @@ extern "C"
   inkcoreapi void ink_freelist_init(InkFreeList **fl, const char *name,
                                     uint32_t type_size, uint32_t chunk_size,
                                     uint32_t alignment);
+  inkcoreapi void ink_freelist_madvise_init(InkFreeList **fl, const char *name, uint32_t type_size, uint32_t chunk_size, uint32_t alignment, int advice);
   inkcoreapi void *ink_freelist_new(InkFreeList * f);
   inkcoreapi void ink_freelist_free(InkFreeList * f, void *item);
   inkcoreapi void ink_freelist_free_bulk(InkFreeList * f, void *head, void *tail, size_t num_item);

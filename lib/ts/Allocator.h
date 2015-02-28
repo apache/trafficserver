@@ -96,10 +96,9 @@ public:
 
   /** Re-initialize the parameters of the allocator. */
   void
-  re_init(const char *name, unsigned int element_size,
-          unsigned int chunk_size, unsigned int alignment)
+  re_init(const char *name, unsigned int element_size, unsigned int chunk_size, unsigned int alignment, int advice)
   {
-    ink_freelist_init(&this->fl, name, element_size, chunk_size, alignment);
+    ink_freelist_madvise_init(&this->fl, name, element_size, chunk_size, alignment, advice);
   }
 
 protected:

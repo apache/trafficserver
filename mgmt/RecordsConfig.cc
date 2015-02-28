@@ -2062,6 +2062,8 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.allocator.thread_freelist_low_watermark", RECD_INT, "32", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
+  {RECT_CONFIG, "proxy.config.allocator.dontdump_iobuffers", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, "[0-1]", RECA_NULL}
+  ,
 
   //############
   //#

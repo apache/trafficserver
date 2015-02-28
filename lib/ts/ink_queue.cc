@@ -111,8 +111,16 @@ ink_freelist_init(InkFreeList **fl, const char *name, uint32_t type_size,
   f->allocated = 0;
   f->allocated_base = 0;
   f->used_base = 0;
+  f->advice = 0;
   *fl = f;
 #endif
+}
+
+void
+ink_freelist_madvise_init(InkFreeList **fl, const char *name, uint32_t type_size, uint32_t chunk_size, uint32_t alignment, int advice)
+{
+  ink_freelist_init(fl, name, type_size, chunk_size, alignment);
+  (*fl)->advice = advice;
 }
 
 InkFreeList *
@@ -165,6 +173,8 @@ ink_freelist_new(InkFreeList * f)
         newp = ats_memalign(f->alignment, f->chunk_size * type_size);
       else
         newp = ats_malloc(f->chunk_size * type_size);
+      ats_madvise((caddr_t)newp, f->chunk_size * type_size, f->advice);
+
       fl_memadd(f->chunk_size * type_size);
 #ifdef DEBUG
       newsbrk = (char *) sbrk(0);
@@ -235,10 +245,10 @@ ink_freelist_new(InkFreeList * f)
     newp = ats_memalign(f->alignment, f->type_size);
   else
     newp = ats_malloc(f->type_size);
+  ats_madvise((caddr_t)newp, f->type_size, f->advice);
   return newp;
 #endif
 }
-typedef volatile void *volatile_void_p;
 
 void
 ink_freelist_free(InkFreeList * f, void *item)
@@ -247,7 +257,7 @@ ink_freelist_free(InkFreeList * f, void *item)
 #if TS_USE_RECLAIMABLE_FREELIST
   return reclaimable_freelist_free(f, item);
 #else
-  volatile_void_p *adr_of_next = (volatile_void_p *) ADDRESS_OF_NEXT(item, 0);
+  volatile void **adr_of_next = (volatile void **) ADDRESS_OF_NEXT(item, 0);
   head_p h;
   head_p item_pair;
   int result = 0;
@@ -300,7 +310,7 @@ ink_freelist_free_bulk(InkFreeList *f, void *head, void *tail, size_t num_item)
 {
 #if TS_USE_FREELIST
 #if !TS_USE_RECLAIMABLE_FREELIST
-  volatile_void_p *adr_of_next = (volatile_void_p *) ADDRESS_OF_NEXT(tail, 0);
+  volatile void **adr_of_next = (volatile void **) ADDRESS_OF_NEXT(tail, 0);
   head_p h;
   head_p item_pair;
   int result = 0;
@@ -505,7 +515,7 @@ ink_atomiclist_popall(InkAtomicList * l)
 void *
 ink_atomiclist_push(InkAtomicList * l, void *item)
 {
-  volatile_void_p *adr_of_next = (volatile_void_p *) ADDRESS_OF_NEXT(item, l->offset);
+  volatile void **adr_of_next = (volatile void **) ADDRESS_OF_NEXT(item, l->offset);
   head_p head;
   head_p item_pair;
   int result = 0;
