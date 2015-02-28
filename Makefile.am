@@ -98,6 +98,9 @@ rat:
 submodules:
 	git submodule update --init
 
+clang-format:
+	for f in `find . -iname \*.[ch] -o -iname \*.cc | fgrep -v -e lib/ck -e lib/luajit`; do echo $$f; clang-format -i $$f; done
+
 help:
 	@echo 'all             default target for building the package' && \
 	echo 'check            run the test suite, if any' && \
@@ -113,6 +116,7 @@ help:
 	echo 'rat              produce a RAT licence compliance report of the source' && \
 	echo 'submodules       update the git submodules' && \
 	echo 'doxygen          generate doxygen docs in doc/html dir' && \
+	echo 'clang-format     run clang-format over most C and C++ files (not git submodules/trees)' && \
 	echo 'help             display this list of make targets' && \
 	echo 'install          install by copying the built files to system-wide dirs' && \
 	echo 'install-strip    same as install but then strips debugging symbols' && \
