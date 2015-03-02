@@ -30,7 +30,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <ts/apidefs.h>
 
 /***************************************************************************
  * System Specific Items
@@ -45,6 +44,10 @@ extern "C"
 {
 #endif                          /* __cplusplus */
 
+#define __TS_RES_PATH(x)   #x
+#define _TS_RES_PATH(x)    __TS_RES_PATH (x)
+#define TS_RES_PATH(x)     x __FILE__ ":" _TS_RES_PATH (__LINE__)
+#define TS_RES_MEM_PATH    TS_RES_PATH ("memory/")
 
 /***************************************************************************
  * Error and Return Values
