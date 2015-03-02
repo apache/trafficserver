@@ -122,6 +122,19 @@ void inline invokePluginForEvent(Plugin *plugin, TSHttpTxn ats_txn_handle, TSEve
   case TS_EVENT_HTTP_OS_DNS:
     plugin->handleOsDns(transaction);
     break;
+  case TS_EVENT_HTTP_READ_REQUEST_HDR:
+    plugin->handleReadRequestHeaders(transaction);
+    break;
+  case TS_EVENT_HTTP_READ_CACHE_HDR:
+    plugin->handleReadCacheHeaders(transaction);
+    break;
+  case TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE:
+    plugin->handleReadCacheLookupComplete(transaction);
+    break;
+  case TS_EVENT_HTTP_SELECT_ALT:
+    plugin->handleSelectAlt(transaction);
+    break;
+
   default:
     assert(false); /* we should never get here */
     break;
@@ -158,6 +171,14 @@ TSHttpHookID utils::internal::convertInternalHookToTsHook(Plugin::HookType hookt
     return TS_HTTP_SEND_RESPONSE_HDR_HOOK;
   case Plugin::HOOK_OS_DNS:
     return TS_HTTP_OS_DNS_HOOK;
+  case Plugin::HOOK_READ_REQUEST_HEADERS:
+    return TS_HTTP_READ_REQUEST_HDR_HOOK;
+  case Plugin::HOOK_READ_CACHE_HEADERS:
+    return TS_HTTP_READ_CACHE_HDR_HOOK;
+  case Plugin::HOOK_CACHE_LOOKUP_COMPLETE:
+    return TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK;
+  case Plugin::HOOK_SELECT_ALT:
+    return TS_HTTP_SELECT_ALT_HOOK;
   default:
     assert(false); // shouldn't happen, let's catch it early
     break;

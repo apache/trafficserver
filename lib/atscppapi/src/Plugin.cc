@@ -26,6 +26,10 @@ const std::string atscppapi::HOOK_TYPE_STRINGS[] = { std::string("HOOK_READ_REQU
                                                      std::string("HOOK_SEND_REQUEST_HEADERS"),
                                                      std::string("HOOK_READ_RESPONSE_HEADERS"),
                                                      std::string("HOOK_SEND_RESPONSE_HEADERS"),
-                                                     std::string("HOOK_OS_DNS")
+                                                     std::string("HOOK_OS_DNS"),
+                                                     std::string("HOOK_READ_REQUEST_HEADERS"),
+                                                     std::string("HOOK_READ_CACHE_HEADERS"),
+                                                     std::string("HOOK_CACHE_LOOKUP_COMPLETE"),
+                                                     std::string("HOOK_SELECT_ALT")
                                                       };
 

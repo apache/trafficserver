@@ -54,7 +54,11 @@ public:
     HOOK_SEND_REQUEST_HEADERS, /**< This hook will be fired right before request headers are sent to the origin */
     HOOK_READ_RESPONSE_HEADERS, /**< This hook will be fired right after response headers have been read from the origin */
     HOOK_SEND_RESPONSE_HEADERS, /**< This hook will be fired right before the response headers are sent to the client */
-    HOOK_OS_DNS /**< This hook will be fired right after the OS DNS lookup */
+    HOOK_OS_DNS, /**< This hook will be fired right after the OS DNS lookup */
+    HOOK_READ_REQUEST_HEADERS, /**< This hook will be fired after the request is read. */
+    HOOK_READ_CACHE_HEADERS, /**< This hook will be fired after the CACHE hdrs. */
+    HOOK_CACHE_LOOKUP_COMPLETE, /**< This hook will be fired after caceh lookup complete. */
+    HOOK_SELECT_ALT /**< This hook will be fired after select alt. */
   };
 
   /**
@@ -86,6 +90,26 @@ public:
    * This method must be implemented when you hook HOOK_OS_DNS
    */
   virtual void handleOsDns(Transaction &transaction) { transaction.resume(); };
+
+  /**
+   * This method must be implemented when you hook HOOK_READ_REQUEST_HEADERS
+   */
+  virtual void handleReadRequestHeaders(Transaction &transaction) { transaction.resume(); };
+
+  /**
+   * This method must be implemented when you hook HOOK_READ_CACHE_HEADERS
+   */
+  virtual void handleReadCacheHeaders(Transaction &transaction) { transaction.resume(); };
+
+  /**
+   * This method must be implemented when you hook HOOK_CACHE_LOOKUP_COMPLETE
+   */
+  virtual void handleReadCacheLookupComplete(Transaction &transaction) { transaction.resume(); };
+
+  /**
+   * This method must be implemented when you hook HOOK_SELECT_ALT
+   */
+  virtual void handleSelectAlt(Transaction &transaction) { transaction.resume(); };
 
   virtual ~Plugin() { };
 protected:
