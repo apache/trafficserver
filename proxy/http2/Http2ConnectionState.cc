@@ -825,8 +825,14 @@ Http2ConnectionState::send_data_frame(FetchSM *fetch_sm)
     size_t send_size   = min(buf_len, window_size);
 
     size_t payload_length = fetch_sm->ext_read_data(reinterpret_cast<char*>(payload_buffer), send_size);
-    if (payload_length == 0) break;
 
+    // If we break here, we never send the END_STREAM in the case of a
+    // early terminating OS.  Ok if there is no body yet.  Otherwise 
+    // continue on to delete the stream
+    if (payload_length == 0 && !stream->is_body_done()) {
+      break;
+    }
+ 
     // Update window size
     this->client_rwnd -= payload_length;
     stream->client_rwnd -= payload_length;
