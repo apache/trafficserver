@@ -44,10 +44,12 @@ extern "C"
 {
 #endif                          /* __cplusplus */
 
+#ifndef TS_RES_MEM_PATH
 #define __TS_RES_PATH(x)   #x
 #define _TS_RES_PATH(x)    __TS_RES_PATH (x)
 #define TS_RES_PATH(x)     x __FILE__ ":" _TS_RES_PATH (__LINE__)
 #define TS_RES_MEM_PATH    TS_RES_PATH ("memory/")
+#endif
 
 /***************************************************************************
  * Error and Return Values

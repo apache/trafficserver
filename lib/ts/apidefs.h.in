@@ -83,10 +83,14 @@ extern "C"
 #define TS_HTTP_VERSION(a,b)  ((((a) & 0xFFFF) << 16) | ((b) & 0xFFFF))
 #define TS_HTTP_MINOR(v)      ((v) & 0xFFFF)
 #define TS_HTTP_MAJOR(v)      (((v) >> 16) & 0xFFFF)
+
+#ifndef TS_RES_MEM_PATH
 #define __TS_RES_PATH(x)   #x
 #define _TS_RES_PATH(x)    __TS_RES_PATH (x)
 #define TS_RES_PATH(x)     x __FILE__ ":" _TS_RES_PATH (__LINE__)
 #define TS_RES_MEM_PATH    TS_RES_PATH ("memory/")
+#endif
+
 #define TS_MAX_USER_NAME_LEN 256
 
 #ifndef TS_DEPRECATED
