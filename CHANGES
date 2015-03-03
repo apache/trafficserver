@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.0
 
+  *) [TS-3414] Add new TS API TSHttpTxnOutgoingAddrGet 
+
   *) [TS-3421] Add a "-t range" option for proxyauth plugin, which similar to
    the "head" requests, except it asks for a Range: bytes=0-0.
 
