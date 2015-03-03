@@ -55,6 +55,12 @@ Plugin Options
   If the response is ``200 OK``, the incoming request is allowed
   to proceed.
 
+  If the transform type is ``range``, then the incoming request is
+  transformed to a Range request asking for 0 bytes. Other than that,
+  the behavior is identical to the ``head`` option above. This type
+  of Range request is useful when the upstream destination is a cache,
+  and it's not able to cache HEAD requests.
+
   If the transform type is ``redirect`` then the incoming
   request is sent to the authorization service designated by the
   `--auth-host` and `--auth-port` parameters. If the response is
