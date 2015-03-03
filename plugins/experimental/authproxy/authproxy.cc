@@ -159,14 +159,14 @@ struct AuthRequestContext
   TSHttpParser hparser;                 // HTTP response header parser.
   HttpHeader rheader;                   // HTTP response header.
   HttpIoBuffer iobuf;
-  bool is_head;                         // This is a HEAD request
+  const char* method;                   // Client request method (e.g. GET)
   bool read_body;
 
   const StateTransition* state;
 
   AuthRequestContext()
     : txn(NULL), cont(NULL), vconn(NULL), hparser(TSHttpParserCreate()), rheader(),
-      iobuf(TS_IOBUFFER_SIZE_INDEX_4K), is_head(false), read_body(true), state(NULL)
+      iobuf(TS_IOBUFFER_SIZE_INDEX_4K), method(NULL), read_body(true), state(NULL)
   {
     this->cont = TSContCreate(dispatch, TSMutexCreate());
     TSContDataSet(this->cont, this);
@@ -255,20 +255,20 @@ pump:
 }
 
 // Return whether the client request was a HEAD request.
-static bool
-AuthRequestIsHead(TSHttpTxn txn)
+const char*
+AuthRequestGetMethod(TSHttpTxn txn)
 {
   TSMBuffer mbuf;
   TSMLoc mhdr;
   int len;
-  bool is_head;
+  const char* method;
 
   TSReleaseAssert(TSHttpTxnClientReqGet(txn, &mbuf, &mhdr) == TS_SUCCESS);
 
-  is_head = (TSHttpHdrMethodGet(mbuf, mhdr, &len) == TS_HTTP_METHOD_HEAD);
+  method = TSHttpHdrMethodGet(mbuf, mhdr, &len);
   TSHandleMLocRelease(mbuf, TS_NULL_MLOC, mhdr);
 
-  return is_head;
+  return method;
 }
 
 // Chain the response header hook to send the proxy's authorization response.
@@ -311,6 +311,43 @@ AuthWriteHeadRequest(AuthRequestContext* auth)
   // We have to tell the auth context not to try to ready the response
   // body (since HEAD can have a content-length but must not have any
   // content).
+  auth->read_body = false;
+
+  TSHandleMLocRelease(mbuf, TS_NULL_MLOC, mhdr);
+  return true;
+}
+
+// Transform the client request into a GET Range: bytes=0-0 request. This is useful
+// for example of the authentication service is a caching proxy which might not
+// cache HEAD requests.
+static bool
+AuthWriteRangeRequest(AuthRequestContext* auth)
+{
+  HttpHeader rq;
+  TSMBuffer mbuf;
+  TSMLoc mhdr;
+
+  TSReleaseAssert(TSHttpTxnClientReqGet(auth->txn, &mbuf, &mhdr) == TS_SUCCESS);
+
+  // First, copy the whole client request to our new auth proxy request.
+  TSReleaseAssert(TSHttpHdrCopy(rq.buffer, rq.header, mbuf, mhdr) == TS_SUCCESS);
+
+  // Next, assure that the request to the auth server is a GET request, since we'll send a Range:
+  if (TS_HTTP_METHOD_GET != auth->method) {
+    TSReleaseAssert(TSHttpHdrMethodSet(rq.buffer, rq.header, TS_HTTP_METHOD_GET, -1) == TS_SUCCESS);
+  }
+
+  HttpSetMimeHeader(rq.buffer, rq.header, TS_MIME_FIELD_CONTENT_LENGTH, 0u);
+  HttpSetMimeHeader(rq.buffer, rq.header, TS_MIME_FIELD_RANGE, "bytes=0-0");
+  HttpSetMimeHeader(rq.buffer, rq.header, TS_MIME_FIELD_CACHE_CONTROL, "no-cache");
+
+  HttpDebugHeader(rq.buffer, rq.header);
+
+  // Serialize the HTTP request to the write IO buffer.
+  TSHttpHdrPrint(rq.buffer, rq.header, auth->iobuf.buffer);
+
+  // We have to tell the auth context not to try to ready the response
+  // body, since we'are asking for a zero length Range.
   auth->read_body = false;
 
   TSHandleMLocRelease(mbuf, TS_NULL_MLOC, mhdr);
@@ -374,8 +411,8 @@ StateAuthProxyConnect(AuthRequestContext* auth, void* /* edata ATS_UNUSED */)
 
   TSReleaseAssert(ip); // We must have a client IP.
 
-  auth->is_head = AuthRequestIsHead(auth->txn);
-  AuthLogDebug("client request %s a HEAD request", auth->is_head ? "is" : "is not");
+  auth->method = AuthRequestGetMethod(auth->txn);
+  AuthLogDebug("client request %s a HEAD request", auth->method == TS_HTTP_METHOD_HEAD ? "is" : "is not");
 
   auth->vconn = TSHttpConnect(ip);
   if (auth->vconn == NULL) {
@@ -453,7 +490,7 @@ StateAuthProxySendResponse(AuthRequestContext* auth, void* /* edata ATS_UNUSED *
   // We must not whack the content length for HEAD responses, since the
   // client already knows that there is no body. Forcing content length to
   // zero breaks hdiutil(1) on Mac OS X.
-  if (!auth->is_head) {
+  if (TS_HTTP_METHOD_HEAD != auth->method) {
     HttpSetMimeHeader(mbuf, mhdr, TS_MIME_FIELD_CONTENT_LENGTH, 0u);
   }
 
@@ -688,6 +725,8 @@ AuthParseOptions(int argc, const char** argv)
         options->transform = AuthWriteRedirectedRequest;
       } else if (strcasecmp(optarg, "head") == 0) {
         options->transform = AuthWriteHeadRequest;
+      } else if (strcasecmp(optarg, "range") == 0) {
+        options->transform = AuthWriteRangeRequest;
       } else {
         AuthLogError("invalid authorization transform '%s'", optarg);
         // XXX make this a fatal error?
