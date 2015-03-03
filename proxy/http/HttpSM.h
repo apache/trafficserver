@@ -209,6 +209,13 @@ public:
   //  holding the lock for the server session
   void attach_server_session(HttpServerSession * s);
 
+  // Used to read attributes of
+  // the current active server session
+  HttpServerSession* get_server_session()
+  {
+    return server_session;
+  }
+
   // Called by transact.  Updates are fire and forget
   //  so there are no callbacks and are safe to do
   //  directly from transact

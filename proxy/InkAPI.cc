@@ -5265,6 +5265,26 @@ TSHttpTxnIncomingAddrGet(TSHttpTxn txnp)
 }
 
 sockaddr const*
+TSHttpTxnOutgoingAddrGet(TSHttpTxn txnp)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+
+  HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
+
+  HttpServerSession *ssn = sm->get_server_session();
+  if (ssn == NULL) {
+    return 0;
+  }
+
+  NetVConnection *vc = ssn->get_netvc();
+  if (vc == NULL) {
+    return 0;
+  }
+
+  return vc->get_local_addr();
+}
+
+sockaddr const*
 TSHttpTxnServerAddrGet(TSHttpTxn txnp)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);

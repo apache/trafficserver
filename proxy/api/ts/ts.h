@@ -1327,6 +1327,15 @@ extern "C"
       @return Local address of the client connection for transaction @a txnp.
   */
   tsapi struct sockaddr const* TSHttpTxnIncomingAddrGet(TSHttpTxn txnp);
+  /** Get the outgoing address.
+
+      @note The pointer is valid only for the current callback. Clients
+      that need to keep the value across callbacks must maintain their
+      own storage.
+
+      @return Local address of the server connection for transaction @a txnp.
+  */
+  tsapi struct sockaddr const* TSHttpTxnOutgoingAddrGet(TSHttpTxn txnp);
   /** Get the origin server address.
    *
       @note The pointer is valid only for the current callback. Clients

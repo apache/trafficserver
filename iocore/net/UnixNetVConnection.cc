@@ -1187,6 +1187,7 @@ UnixNetVConnection::connectUp(EThread *t, int fd)
 
   ink_assert(!inactivity_timeout_in);
   ink_assert(!active_timeout_in);
+  this->set_local_addr();
   action_.continuation->handleEvent(NET_EVENT_OPEN, this);
   return CONNECT_SUCCESS;
 
