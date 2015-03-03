@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.0
 
+  *) [TS-2515] Add statistics for stripe wrap and cache sync.
+
   *) [TS-2721] add more hook support for atscppapi.
 
   *) [TS-3413] High CPU utiliziation when processing HTTP/2 traffic.

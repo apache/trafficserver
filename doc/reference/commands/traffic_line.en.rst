@@ -256,6 +256,27 @@ proxy.process.ssl.cipher.user_agent.{CIPHERNAME}
     proxy.process.ssl.cipher.user_agent.ECDHE-ECDSA-AES256-SHA384 0
     ...
 
+Cache Statistics
+======================
+
+Cache statistics come in two varieties, global and per cache volume. These will be listed here in the global form. To get a
+cache volume statistic add `.volume_#` to the name after `cache` where `#` is 1-based index of the volume in :file:`storage.config`.
+For example the statistic `proxy.process.cache.sync.bytes` is a global statistic. The value for the third cache volume is
+`proxy.process.cache.volume_3.sync.bytes`.
+
+proxy.process.cache.sync.bytes
+   The total number of bytes written to disk to synchronize the cache directory.
+
+proxy.process.cache.sync.time
+   The total time, in nanoseconds, during which the cache directory was being written to disk.
+
+proxy.process.cache.sync.count
+   The number of times a cache directory sync has been done.
+
+proxy.process.cache.wrap_count
+   The number of times a cache stripe has cycled. Each stripe is a circular buffer and this is incremented each time the
+   write cursor is reset to the start of the stripe.
+
 Examples
 ========
 
