@@ -45,7 +45,7 @@ class EnvironmentCase(tsqa.test_cases.EnvironmentCase):
                                                  os.path.join(TMP_DIR, 'base_envs'),
                                                  default_configure={'enable-example-plugins': None,
                                                                     'enable-test-tools': None,
-                                                                    'enable-example-plugins': None,
+                                                                    'disable-dependency-tracking': None,
                                                                     },
                                                  )
         # TODO: figure out a way to determine why the build didn't fail and
