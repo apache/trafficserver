@@ -542,20 +542,6 @@ convert_from_2_to_1_1_header(HTTPHdr* headers)
   return PARSE_DONE;
 }
 
-void
-convert_headers_from_1_1_to_2(HTTPHdr* in)
-{
-  // Intermediaries SHOULD also remove other connection-
-  // specific header fields, such as Keep-Alive, Proxy-Connection,
-  // Transfer-Encoding and Upgrade, even if they are not nominated by
-  // Connection.
-  in->field_delete(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION);
-  in->field_delete(MIME_FIELD_KEEP_ALIVE, MIME_LEN_KEEP_ALIVE);
-  in->field_delete(MIME_FIELD_PROXY_CONNECTION, MIME_LEN_PROXY_CONNECTION);
-  in->field_delete(MIME_FIELD_TRANSFER_ENCODING, MIME_LEN_TRANSFER_ENCODING);
-  in->field_delete(MIME_FIELD_UPGRADE, MIME_LEN_UPGRADE);
-}
-
 int64_t
 http2_write_psuedo_headers(HTTPHdr* in, uint8_t* out, uint64_t out_len, Http2DynamicTable& /* dynamic_table */)
 {
@@ -615,7 +601,19 @@ http2_write_header_fragment(HTTPHdr* in, MIMEFieldIter& field_iter, uint8_t* out
 
   // Set mime headers
   cont = false;
-  while (field) {
+  for (; field != NULL; field = in->iter_get_next(&field_iter)) {
+
+    // Intermediaries SHOULD remove connection-specific header fields.
+    int name_len;
+    const char* name = field->name_get(&name_len);
+    if ((name_len == MIME_LEN_CONNECTION        && strncasecmp(name, MIME_FIELD_CONNECTION, name_len) == 0) ||
+        (name_len == MIME_LEN_KEEP_ALIVE        && strncasecmp(name, MIME_FIELD_KEEP_ALIVE, name_len) == 0) ||
+        (name_len == MIME_LEN_PROXY_CONNECTION  && strncasecmp(name, MIME_FIELD_PROXY_CONNECTION, name_len) == 0) ||
+        (name_len == MIME_LEN_TRANSFER_ENCODING && strncasecmp(name, MIME_FIELD_TRANSFER_ENCODING, name_len) == 0) ||
+        (name_len == MIME_LEN_UPGRADE           && strncasecmp(name, MIME_FIELD_UPGRADE, name_len) == 0)) {
+      continue;
+    }
+
     MIMEFieldIter current_iter = field_iter;
     do {
       MIMEFieldWrapper header(field, in->m_heap, in->m_http->m_fields_impl);
@@ -632,7 +630,6 @@ http2_write_header_fragment(HTTPHdr* in, MIMEFieldIter& field_iter, uint8_t* out
       }
       p += len;
     } while (field->has_dups() && (field = field->m_next_dup) != NULL);
-    field = in->iter_get_next(&field_iter);
   }
 
   // Parsing all headers is done
@@ -960,7 +957,6 @@ REGRESSION_TEST(HPACK_Encode)(RegressionTest * t, int, int *pstatus)
     }
 
     memset(buf, 0, BUFSIZE_FOR_REGRESSION_TEST);
-    convert_headers_from_1_1_to_2(headers);
     uint64_t buf_len = BUFSIZE_FOR_REGRESSION_TEST;
     int64_t len = http2_write_psuedo_headers(headers, buf, buf_len, dynamic_table);
     buf_len -= len;

@@ -880,15 +880,14 @@ Http2ConnectionState::send_headers_frame(FetchSM *fetch_sm)
   Http2Stream* stream = static_cast<Http2Stream*>(fetch_sm->ext_get_user_data());
   HTTPHdr* resp_header = reinterpret_cast<HTTPHdr*>(fetch_sm->resp_hdr_bufp());
 
-  // Convert header fields to HTTP/2 format
-  convert_headers_from_1_1_to_2(resp_header);
-
   // Write psuedo headers
   payload_length += http2_write_psuedo_headers(resp_header, payload_buffer,
                                                buf_len, *(this->remote_dynamic_table));
 
   // If response body is empry, set END_STREAM flag to HEADERS frame
-  if (resp_header->get_content_length() == 0) {
+  // Must check to ensure content-length is there.  Otherwise the value defaults to 0
+  if (resp_header->presence(MIME_PRESENCE_CONTENT_LENGTH) && 
+      resp_header->get_content_length() == 0) {
     flags |= HTTP2_FLAGS_HEADERS_END_STREAM;
   }
 

@@ -318,9 +318,6 @@ http2_parse_header_fragment(HTTPHdr *, IOVec, Http2DynamicTable&, bool);
 MIMEParseResult
 convert_from_2_to_1_1_header(HTTPHdr *);
 
-void
-convert_headers_from_1_1_to_2(HTTPHdr*);
-
 int64_t
 http2_write_psuedo_headers(HTTPHdr*, uint8_t*, uint64_t, Http2DynamicTable&);
 
