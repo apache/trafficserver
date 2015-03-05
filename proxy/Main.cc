@@ -703,6 +703,12 @@ cmd_verify(char * /* cmd ATS_UNUSED */)
   unsigned char exitStatus = 0; // exit status is 8 bits
 
   fprintf(stderr, "NOTE: VERIFY\n\n");
+
+  // initialize logging since a plugin
+  // might call TS_ERROR which needs
+  // log_rsb to be init'ed
+  Log::init(DEFAULT_REMOTE_MANAGEMENT_FLAG);
+
   if (!reloadUrlRewrite()) {
     exitStatus |= (1 << 0);
     fprintf(stderr, "ERROR: Failed to load remap.config, exitStatus %d\n\n", exitStatus);
