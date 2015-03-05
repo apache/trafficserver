@@ -7601,7 +7601,8 @@ HttpTransact::handle_server_died(State* s)
 bool
 HttpTransact::is_request_likely_cacheable(State* s, HTTPHdr* request)
 {
-  if ((s->method == HTTP_WKSIDX_GET || s->api_req_cacheable == true) &&
+  if ((s->method == HTTP_WKSIDX_GET || s->api_req_cacheable) &&
+      !s->api_server_response_no_store &&
       !request->presence(MIME_PRESENCE_AUTHORIZATION) &&
       (!request->presence(MIME_PRESENCE_RANGE) || s->txn_conf->cache_range_write)) {
     return true;
