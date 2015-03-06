@@ -143,6 +143,7 @@ char cluster_host[MAXDNAME + 1] = DEFAULT_CLUSTER_HOST;
 
 //         = DEFAULT_CLUSTER_PORT_NUMBER;
 static char command_string[512] = "";
+static char conf_dir[512] = "";
 int remote_management_flag = DEFAULT_REMOTE_MANAGEMENT_FLAG;
 
 static char error_tags[1024] = "";
@@ -201,6 +202,7 @@ static const ArgumentDescription argument_descriptions[] = {
   {"interval", 'i', "Statistics Interval", "I", &show_statistics, "PROXY_STATS_INTERVAL", NULL},
   {"remote_management", 'M', "Remote Management", "T", &remote_management_flag, "PROXY_REMOTE_MANAGEMENT", NULL},
   {"command", 'C', "Maintenance Command to Execute", "S511", &command_string, "PROXY_COMMAND_STRING", NULL},
+  {"conf_dir", 'D', "config dir to verify", "S511", &conf_dir, "PROXY_SYS_CONFIG_DIR", NULL},
   {"clear_hostdb", 'k', "Clear HostDB on Startup", "F", &auto_clear_hostdb_flag, "PROXY_CLEAR_HOSTDB", NULL},
   {"clear_cache", 'K', "Clear Cache on Startup", "F", &cacheProcessor.auto_clear_flag, "PROXY_CLEAR_CACHE", NULL},
 #if defined(linux)
@@ -708,6 +710,11 @@ cmd_verify(char * /* cmd ATS_UNUSED */)
   // might call TS_ERROR which needs
   // log_rsb to be init'ed
   Log::init(DEFAULT_REMOTE_MANAGEMENT_FLAG);
+
+  if (*conf_dir) {
+    fprintf(stderr, "NOTE: VERIFY remap config file: %s...\n\n", conf_dir);
+    Layout::get()->update_sysconfdir(conf_dir);
+  }
 
   if (!reloadUrlRewrite()) {
     exitStatus |= (1 << 0);
@@ -1460,6 +1467,10 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   if ((*command_string) && (cmd_index(command_string) == cmd_index((char*)"verify_config"))) {
     fprintf (stderr, "\n\n skip lock check for %s \n\n", command_string);
   } else {
+    if (*conf_dir) {
+      fprintf(stderr, "-D option should be used with -Cverify_config\n");
+      _exit(0);
+    }
     // Ensure only one copy of traffic server is running
     check_lockfile();
   }

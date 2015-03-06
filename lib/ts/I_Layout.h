@@ -65,6 +65,11 @@ struct Layout
   char *relative(const char *file);
 
   /**
+   update the sysconfdir to a test conf dir
+   */
+  void update_sysconfdir(const char *dir);
+
+  /**
    Return file path relative to Layout->prefix
    Store the path to buf. The buf should be large eough to store
    PATH_NAME_MAX characters

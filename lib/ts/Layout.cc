@@ -100,6 +100,16 @@ Layout::relative(char *buf, size_t bufsz, const char *file)
   }
 }
 
+void
+update_sysconfdir(const char *dir)
+{
+  if (sysconfdir) {
+    ats_free(sysconfdir);
+  }
+
+  sysconfdir = ats_strdup(dir);
+}
+
 char *
 Layout::relative_to(const char *dir, const char *file)
 {
