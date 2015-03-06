@@ -712,7 +712,7 @@ cmd_verify(char * /* cmd ATS_UNUSED */)
   Log::init(DEFAULT_REMOTE_MANAGEMENT_FLAG);
 
   if (*conf_dir) {
-    fprintf(stderr, "NOTE: VERIFY remap config file: %s...\n\n", conf_dir);
+    fprintf(stderr, "NOTE: VERIFY config dir: %s...\n\n", conf_dir);
     Layout::get()->update_sysconfdir(conf_dir);
   }
 

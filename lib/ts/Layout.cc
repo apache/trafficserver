@@ -101,7 +101,7 @@ Layout::relative(char *buf, size_t bufsz, const char *file)
 }
 
 void
-update_sysconfdir(const char *dir)
+Layout::update_sysconfdir(const char *dir)
 {
   if (sysconfdir) {
     ats_free(sysconfdir);
