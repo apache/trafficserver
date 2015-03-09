@@ -266,19 +266,19 @@ static TSMgmtError
 marshall_rec_data(RecDataT rec_type, const RecData& rec_data, MgmtMarshallData& data)
 {
   switch (rec_type) {
-  case TS_REC_INT:
+  case RECD_INT:
     data.ptr = const_cast<RecInt *>(&rec_data.rec_int);
     data.len = sizeof(TSInt);
     break;
-  case TS_REC_COUNTER:
+  case RECD_COUNTER:
     data.ptr = const_cast<RecCounter *>(&rec_data.rec_counter);
     data.len = sizeof(TSCounter);
     break;
-  case TS_REC_FLOAT:
+  case RECD_FLOAT:
     data.ptr = const_cast<RecFloat *>(&rec_data.rec_float);
     data.len = sizeof(TSFloat);
     break;
-  case TS_REC_STRING:
+  case RECD_STRING:
     // Make sure to send the NULL in the string value response.
     if (rec_data.rec_string) {
       data.ptr = rec_data.rec_string;
