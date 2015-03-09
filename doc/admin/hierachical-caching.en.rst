@@ -74,6 +74,41 @@ content from the origin server (or from another cache, depending on the parentâ€
 configuration). The parent caches the content and then sends a copy to Traffic
 Server (its child), where it is cached and served to the client.
 
+Interaction with Remap.config
+-----------------------------
+
+If remap rules are required (:ts:cv:`proxy.config.reverse_proxy.enabled`), 
+when a request comes in to a child node, its :file:`remap.config` is evaluated before 
+parent selection. This means that the client request is translated according to the 
+remap rule, and therefore, any parent selection should be made against the remapped 
+host name. This is true regardless of pristine host headers 
+(:ts:cv:`proxy.config.url_remap.pristine_host_hdr`) being enabled or not. The parent node
+will receive the translated request (and thus needs to be configured to accept it).
+
+
+Example
+~~~~~~~
+The client makes a request to Traffic Server for http://example.com. The origin server 
+for the request is http://origin.example.com; the parent node is ``parent1.example.com``, 
+and the child node is configured as a reverse proxy.
+
+If the child's :file:`remap.config` contains
+
+``map http://example.com http://origin.example.com``
+
+with the child's :file:`parent.config` containing
+
+``dest_domain=origin.example.com method=get parent="parent1.example.com:80`` )
+
+and parent cache (parent1.example.com) would need to have a :file:`remap.config`
+line similar to
+
+``map http://origin.example.com http://origin.example.com``
+
+With this example, if parent1.example.com is down, the child node would automatically 
+directly contact the ``origin.example.com`` on a cache miss.
+
+
 Parent Failover
 ---------------
 
@@ -99,8 +134,9 @@ the configuration adjustments detailed below.
 
 .. note::
 
-    You need to configure the child cache only. No additional configuration is
-    needed for the nodes acting as Traffic Server parent caches.
+    You need to configure the child cache only. Assuming the parent nodes are
+    configured to serve the child's origin server, no additional configuration is
+    needed for the nodes acting as Traffic Server parent caches. 
 
 #. Enable the parent caching option by adjusting
    :ts:cv:`proxy.config.http.parent_proxy_routing_enable` in
