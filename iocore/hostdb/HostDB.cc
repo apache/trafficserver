@@ -2493,7 +2493,7 @@ ink_hostdb_init(ModuleVersion v)
 
   RecRegisterRawStat(hostdb_rsb, RECT_PROCESS,
                      "proxy.process.hostdb.total_hits",
-                     RECD_INT, RECP_NON_PERSISTENT, (int) hostdb_total_hits_stat, RecRawStatSyncSum);
+                     RECD_INT, RECP_PERSISTENT, (int) hostdb_total_hits_stat, RecRawStatSyncSum);
 
   RecRegisterRawStat(hostdb_rsb, RECT_PROCESS,
                      "proxy.process.hostdb.ttl", RECD_FLOAT, RECP_PERSISTENT, (int) hostdb_ttl_stat, RecRawStatSyncAvg);

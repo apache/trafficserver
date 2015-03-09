@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.0
 
+  *) [TS-3176] Some DNS stats don't persist through restart.
+   Author: Adam W. Dace <colonelforbin74@gmail.com>
+
   *) [TS-3211] Add support for modifying the SCHEME via the
    header_rewrite plugin. Original author: Scott Beardsley.
 

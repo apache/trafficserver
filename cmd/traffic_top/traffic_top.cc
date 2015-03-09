@@ -298,7 +298,7 @@ void main_stats_page(Stats &stats)
   cache2.push_back("not_time");
   cache2.push_back("no_time");
   cache2.push_back("dns_ratio");
-  cache2.push_back("dns_time");
+  cache2.push_back("dns_entry");
   makeTable(21, 1, cache2, stats);
 
   list<string> response1;
