@@ -1,6 +1,10 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.0
 
+  *) [TS-3036] Add a new log tag, 'chm', which shows cache-hit-miss specific
+   information. For example, was this a RAM cache hit.
+   Co-Author: Ryan Franz.
+
   *) [TS-3176] Some DNS stats don't persist through restart.
    Author: Adam W. Dace <colonelforbin74@gmail.com>
 
