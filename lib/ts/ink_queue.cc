@@ -120,7 +120,11 @@ void
 ink_freelist_madvise_init(InkFreeList **fl, const char *name, uint32_t type_size, uint32_t chunk_size, uint32_t alignment, int advice)
 {
   ink_freelist_init(fl, name, type_size, chunk_size, alignment);
+#if TS_USE_RECLAIMABLE_FREELIST
+  (void)advice;
+#else
   (*fl)->advice = advice;
+#endif
 }
 
 InkFreeList *
