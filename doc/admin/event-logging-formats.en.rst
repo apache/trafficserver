@@ -252,6 +252,15 @@ The following list describes Traffic Server custom logging fields.
     The cache result code; specifies how the cache responded to the
     request (``HIT``, ``MISS``, and so on).
 
+.. _chm:
+
+``chm``
+    The cache hit-miss status, specifying which level of the cache this
+    was served out of. This is useful for example to show whether it was a
+    RAM cache vs disk cache hit. Future versions of the cache will support
+    more levels, but right now it only supports RAM (``HIT_RAM``) vs
+    rotational disk (``HIT_DISK``).
+
 .. _csscl:
 
 ``csscl``
