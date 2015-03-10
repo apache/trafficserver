@@ -1009,7 +1009,7 @@ send_record_describe(const RecRecord * rec, void * ptr)
 {
   MgmtMarshallString  rec_name = const_cast<char *>(rec->name);
   MgmtMarshallData    rec_value = { NULL, 0 };
-  MgmtMarshallData    rec_default { NULL, 0 };
+  MgmtMarshallData    rec_default = { NULL, 0 };
   MgmtMarshallInt     rec_type = rec->data_type;
   MgmtMarshallInt     rec_class = rec->rec_type;
   MgmtMarshallInt     rec_version = rec->version;
