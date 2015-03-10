@@ -51,7 +51,7 @@ init_buffer_allocators()
 
 #ifdef MADV_DONTDUMP // This should only exist on Linux 3.4 and higher.
     bool dont_dump_enabled;
-    RecGetRecordBool("proxy.config.allocator.dontdump_iobuffers", &dont_dump_enabled, false);
+    RecGetRecordBool("proxy.config.allocator.dontdump_iobuffers", (RecBool *)&dont_dump_enabled, false);
 
     if (dont_dump_enabled) {
       advice = MADV_DONTDUMP;
