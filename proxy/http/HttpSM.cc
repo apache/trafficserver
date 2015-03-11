@@ -98,6 +98,41 @@ static const int len_100_continue_response = strlen(str_100_continue_response);
 static const char *str_408_request_timeout_response = "HTTP/1.1 408 Request Timeout\r\nConnection: close\r\n\r\n";
 static const int len_408_request_timeout_response = strlen(str_408_request_timeout_response);
 
+namespace
+{
+/// Update the milestone state given the milestones and timer.
+inline void
+milestone_update_api_time(TransactionMilestones &milestones, ink_hrtime &api_timer)
+{
+  // Bit of funkiness - we set @a api_timer to be the negative value when we're tracking
+  // non-active API time. In that case we need to make a note of it and flip the value back
+  // to positive.
+  if (api_timer) {
+    ink_hrtime delta;
+    bool active = api_timer >= 0;
+    if (!active)
+      api_timer = -api_timer;
+    delta = ink_get_hrtime() - api_timer;
+    api_timer = 0;
+    // Exactly zero is a problem because we want to signal *something* happened
+    // vs. no API activity at all. This can happen when the API time is less than
+    // the HR timer resolution, so in fact we're understating the time even with
+    // this tweak.
+    if (0 == delta)
+      ++delta;
+
+    if (0 == milestones.plugin_total)
+      milestones.plugin_total = milestones.sm_start;
+    milestones.plugin_total += delta;
+    if (active) {
+      if (0 == milestones.plugin_active)
+        milestones.plugin_active = milestones.sm_start;
+      milestones.plugin_active += delta;
+    }
+  }
+}
+}
+
 void
 HttpSM::_make_scatter_list(HttpSM *prototype)
 {
@@ -1247,6 +1282,8 @@ HttpSM::state_api_callback(int event, void *data)
   ink_assert(reentrancy_count >= 0);
   reentrancy_count++;
 
+  milestone_update_api_time(milestones, api_timer);
+
   STATE_ENTER(&HttpSM::state_api_callback, event);
 
   state_api_callout(event, data);
@@ -1294,6 +1331,7 @@ HttpSM::state_api_callout(int event, void *data)
   case EVENT_INTERVAL:
     ink_assert(pending_action == data);
     pending_action = NULL;
+    milestone_update_api_time(milestones, api_timer);
   // FALLTHROUGH
   case EVENT_NONE:
   case HTTP_API_CONTINUE:
@@ -1340,6 +1378,7 @@ HttpSM::state_api_callout(int event, void *data)
           plugin_lock = MUTEX_TAKE_TRY_LOCK(cur_hook->m_cont->mutex, mutex->thread_holding);
 
           if (!plugin_lock) {
+            api_timer = -ink_get_hrtime();
             HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_api_callout);
             ink_assert(pending_action == NULL);
             pending_action = mutex->thread_holding->schedule_in(this, HRTIME_MSECONDS(10));
@@ -1355,7 +1394,15 @@ HttpSM::state_api_callout(int event, void *data)
         APIHook *hook = cur_hook;
         cur_hook = cur_hook->next();
 
+        api_timer = ink_get_hrtime();
         hook->invoke(TS_EVENT_HTTP_READ_REQUEST_HDR + cur_hook_id, this);
+        if (api_timer > 0) {
+          milestone_update_api_time(milestones, api_timer);
+          api_timer = -ink_get_hrtime(); // set in order to track non-active callout duration
+          // which means that if we get back from the invoke with api_timer < 0 we're already
+          // tracking a non-complete callout from a chain so just let it ride. It will get cleaned
+          // up in state_api_callback.
+        }
 
         if (plugin_lock) {
           Mutex_unlock(plugin_mutex, mutex->thread_holding);
@@ -1424,6 +1471,7 @@ HttpSM::state_api_callout(int event, void *data)
   // Now that we're completed with the api state and figured out what
   //   to do next, do it
   callout_state = HTTP_API_NO_CALLOUT;
+  api_timer = 0;
   switch (api_next) {
   case API_RETURN_CONTINUE:
     if (t_state.api_next_action == HttpTransact::SM_ACTION_API_SEND_RESPONSE_HDR) {
@@ -6726,7 +6774,9 @@ HttpSM::update_stats()
           "server_read_header_done: %.3f "
           "server_close: %.3f "
           "ua_close: %.3f "
-          "sm_finish: %.3f",
+          "sm_finish: %.3f "
+          "plugin_active: %.3f "
+          "plugin_total: %.3f",
           sm_id, client_ip, ats_ip_port_host_order(&t_state.client_info.addr), url_string, status, unique_id_string,
           redirection_tries, client_response_body_bytes, fd, t_state.client_info.state, t_state.server_info.state,
           milestone_difference(milestones.sm_start, milestones.ua_begin),
@@ -6741,7 +6791,9 @@ HttpSM::update_stats()
           milestone_difference(milestones.sm_start, milestones.server_read_header_done),
           milestone_difference(milestones.sm_start, milestones.server_close),
           milestone_difference(milestones.sm_start, milestones.ua_close),
-          milestone_difference(milestones.sm_start, milestones.sm_finish));
+          milestone_difference(milestones.sm_start, milestones.sm_finish),
+          milestone_difference(milestones.sm_start, milestones.plugin_active),
+          milestone_difference(milestones.sm_start, milestones.plugin_total));
   }
 }
 

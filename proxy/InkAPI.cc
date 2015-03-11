@@ -5984,6 +5984,12 @@ TSHttpTxnMilestoneGet(TSHttpTxn txnp, TSMilestonesType milestone, ink_hrtime *ti
   case TS_MILESTONE_SM_FINISH:
     *time = sm->milestones.sm_finish;
     break;
+  case TS_MILESTONE_PLUGIN_ACTIVE:
+    *time = sm->milestones.plugin_active;
+    break;
+  case TS_MILESTONE_PLUGIN_TOTAL:
+    *time = sm->milestones.plugin_total;
+    break;
   default:
     *time = -1;
     ret = TS_ERROR;
