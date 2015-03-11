@@ -177,6 +177,8 @@ find_appropriate_cached_resp(HttpTransact::State* s)
   return s->cache_info.object_read->response_get();
 }
 
+int response_cacheable_indicated_by_cc(HTTPHdr* response);
+
 inline static bool
 is_negative_caching_appropriate(HttpTransact::State* s)
 {
@@ -196,7 +198,10 @@ is_negative_caching_appropriate(HttpTransact::State* s)
   case HTTP_STATUS_BAD_GATEWAY:
   case HTTP_STATUS_SERVICE_UNAVAILABLE:
   case HTTP_STATUS_GATEWAY_TIMEOUT:
-    return true;
+    return ((response_cacheable_indicated_by_cc(&s->hdr_info.server_response) >= 0) &&
+            (HttpTransactHeaders::does_server_allow_response_to_be_stored(&s->hdr_info.server_response) ||
+                s->cache_control.ignore_server_no_cache ||
+                (s->cache_control.ttl_in_cache > 0)));
   default:
     break;
   }

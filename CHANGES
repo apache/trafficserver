@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.0
 
+  *) [TS-3331] negative responses cached even when headers indicate otherwise
+
   *) [TS-3417] Add MADV_DONTDUMP capability
 
   *) [TS-3036] Add a new log tag, 'chm', which shows cache-hit-miss specific
