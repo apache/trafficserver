@@ -388,6 +388,13 @@ does_method_require_cache_copy_deletion(const HttpConfigParams *http_config_para
            (http_config_param->cache_post_method != 1 && method == HTTP_WKSIDX_POST)));
 }
 
+inline static bool
+does_method_effect_cache(int method)
+{
+  return ((method == HTTP_WKSIDX_GET  || method == HTTP_WKSIDX_DELETE ||
+           method == HTTP_WKSIDX_PURGE || method == HTTP_WKSIDX_PUT ||
+           method == HTTP_WKSIDX_POST));
+}
 
 inline static
 HttpTransact::StateMachineAction_t
@@ -2997,6 +3004,7 @@ HttpTransact::HandleCacheOpenReadMiss(State* s)
   if (does_method_require_cache_copy_deletion(s->http_config_param, s->method) && s->api_req_cacheable == false) {
     s->cache_info.action = CACHE_DO_NO_ACTION;
   } else if ((s->hdr_info.client_request.presence(MIME_PRESENCE_RANGE) && !s->txn_conf->cache_range_write) ||
+             does_method_effect_cache(s->method) == false ||
              s->range_setup == RANGE_NOT_SATISFIABLE || s->range_setup == RANGE_NOT_HANDLED) {
     s->cache_info.action = CACHE_DO_NO_ACTION;
   } else {
