@@ -167,6 +167,8 @@ InjectMilestonesHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
     { TS_MILESTONE_CACHE_OPEN_WRITE_END,    "CACHE-OPEN-WRITE-END" },
     { TS_MILESTONE_DNS_LOOKUP_BEGIN,        "DNS-LOOKUP-BEGIN" },
     { TS_MILESTONE_DNS_LOOKUP_END,          "DNS-LOOKUP-END" },
+    { TS_MILESTONE_PLUGIN_ACTIVE,              "PLUGIN-ACTIVE" },
+    { TS_MILESTONE_PLUGIN_TOTAL,               "PLUGIN-TOTAL" },
   };
 
   TSMLoc dst = TS_NULL_MLOC;
