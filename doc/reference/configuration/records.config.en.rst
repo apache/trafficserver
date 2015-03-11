@@ -2258,6 +2258,11 @@ SSL Termination
    Unless this is an absolute path, it is loaded relative to the
    path specified by :ts:cv:`proxy.config.ssl.server.cert.path`.
 
+.. ts:cv:: CONFIG proxy.config.ssl.client.enable_dhparams INT 0
+
+   Enable or disable the dhparams_file configuration option,
+   this is disabled by default
+
 .. ts:cv:: CONFIG proxy.config.ssl.server.dhparams_file STRING NULL
 
    The name of a file containing a set of Diffie-Hellman key exchange
