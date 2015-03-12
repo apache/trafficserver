@@ -198,10 +198,7 @@ is_negative_caching_appropriate(HttpTransact::State* s)
   case HTTP_STATUS_BAD_GATEWAY:
   case HTTP_STATUS_SERVICE_UNAVAILABLE:
   case HTTP_STATUS_GATEWAY_TIMEOUT:
-    return ((response_cacheable_indicated_by_cc(&s->hdr_info.server_response) >= 0) &&
-            (HttpTransactHeaders::does_server_allow_response_to_be_stored(&s->hdr_info.server_response) ||
-                s->cache_control.ignore_server_no_cache ||
-                (s->cache_control.ttl_in_cache > 0)));
+    return true;
   default:
     break;
   }
@@ -4263,7 +4260,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State* s)
     client_response_code = server_response_code;
     base_response = &s->hdr_info.server_response;
 
-    s->negative_caching = is_negative_caching_appropriate(s);
+    s->negative_caching = is_negative_caching_appropriate(s) && cacheable;
 
     // determine the correct cache action given the original cache action,
     // cacheability of server response, and request method
