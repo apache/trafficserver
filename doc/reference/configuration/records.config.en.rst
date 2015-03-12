@@ -1332,7 +1332,7 @@ Cache Control
 
    When enabled (``1``), Traffic Server will attempt to write (lock) the URL
    to cache. This is rarely useful (at the moment), since it'll only be able
-   to write to cache if the origin has ignored the ``Range:` header. For a use
+   to write to cache if the origin has ignored the ``Range:`` header. For a use
    case where you know the origin will respond with a full (``200``) response,
    you can turn this on to allow it to be cached.
 
