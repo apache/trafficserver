@@ -120,14 +120,8 @@ ServerSessionPool::releaseSession(HttpServerSession* ss)
   // Transfer control of the write side as well
   ss->do_io_write(this, 0, NULL);
 
-  HttpConfigParams *http_config_params = HttpConfig::acquire();
-
-  // when placing the session to the shared pool we have to set the time out to
-  // keep_alive_no_activity_timeout_out and not to transaction_no_activity_timeout_out,
-  // since there is no transaction pending at this point.
-  // Once there is an active transaction on this connection, inactivity timeout will be
-  // overwritten to transaction_no_activity_timeout_out
-  ss->get_netvc()->set_inactivity_timeout(HRTIME_SECONDS(http_config_params->oride.keep_alive_no_activity_timeout_out));
+  // we probably don't need the active timeout set, but will leave it for now
+  ss->get_netvc()->set_inactivity_timeout(ss->get_netvc()->get_inactivity_timeout());
   ss->get_netvc()->set_active_timeout(ss->get_netvc()->get_active_timeout());
   // put it in the pools.
   m_ip_pool.insert(ss);
