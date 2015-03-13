@@ -44,6 +44,8 @@ struct CacheVC;
 
 #define MAX_DIR_SEGMENTS (32 * (1 << 16))
 #define DIR_DEPTH 4
+#define MAX_ENTRIES_PER_SEGMENT (1 << 16)
+#define MAX_BUCKETS_PER_SEGMENT (MAX_ENTRIES_PER_SEGMENT / DIR_DEPTH)
 #define DIR_SIZE_WIDTH 6
 #define DIR_BLOCK_SIZES 4
 #define DIR_BLOCK_SHIFT(_i) (3 * (_i))

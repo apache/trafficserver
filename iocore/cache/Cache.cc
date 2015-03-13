@@ -103,8 +103,9 @@ Store theCacheStore;
 volatile int CacheProcessor::initialized = CACHE_INITIALIZING;
 volatile uint32_t CacheProcessor::cache_ready = 0;
 volatile int CacheProcessor::start_done = 0;
-int CacheProcessor::clear = 0;
-int CacheProcessor::fix = 0;
+bool CacheProcessor::clear = false;
+bool CacheProcessor::fix = false;
+bool CacheProcessor::check = false;
 int CacheProcessor::start_internal_flags = 0;
 int CacheProcessor::auto_clear_flag = 0;
 CacheProcessor cacheProcessor;
@@ -615,6 +616,7 @@ CacheProcessor::start_internal(int flags)
   start_internal_flags = flags;
   clear = !!(flags & PROCESSOR_RECONFIGURE) || auto_clear_flag;
   fix = !!(flags & PROCESSOR_FIX);
+  check = (flags & PROCESSOR_CHECK) != 0;
   start_done = 0;
   int diskok = 1;
   Span *sd;
@@ -646,18 +648,37 @@ CacheProcessor::start_internal(int flags)
 #ifdef O_DSYNC
     opts |= O_DSYNC;
 #endif
+    if (check) {
+      opts &= ~O_CREAT;
+      opts |= O_RDONLY;
+    }
 
     int fd = open(path, opts, 0644);
     int blocks = sd->blocks;
     if (fd > 0) {
       if (!sd->file_pathname) {
-        if (ftruncate(fd, ((uint64_t)blocks) * STORE_BLOCK_SIZE) < 0) {
-          Warning("unable to truncate cache file '%s' to %d blocks", path, blocks);
+        if (!check) {
+          if (ftruncate(fd, ((uint64_t)blocks) * STORE_BLOCK_SIZE) < 0) {
+            Warning("unable to truncate cache file '%s' to %d blocks", path, blocks);
+            diskok = 0;
+          }
+        } else { // read-only mode
+          struct stat sbuf;
           diskok = 0;
+          if (-1 == fstat(fd, &sbuf)) {
+            fprintf(stderr, "Failed to stat cache file for directory %s", path)
+          } else if (blocks != sbuf.st_size / STORE_BLOCK_SIZE) {
+            fprintf(stderr, "Cache file for directory %s is %" PRId64 " bytes, expected %" PRId64, path, sbuf.st_size,
+                    blocks * STORE_BLOCK_SIZE);
+          } else {
+            diskok = 1;
+          }
         }
       }
       if (diskok) {
         CacheDisk *disk = new CacheDisk();
+        if (check)
+          disk->read_only_p = true;
         Debug("cache_hosting", "interim Disk: %d, blocks: %d", gn_interim_disks, blocks);
         int sector_size = sd->hw_sector_size;
         if (sector_size < cache_config_force_sector_size)
@@ -726,6 +747,10 @@ CacheProcessor::start_internal(int flags)
 #ifdef O_DSYNC
     opts |= O_DSYNC;
 #endif
+    if (check) {
+      opts &= ~O_CREAT;
+      opts |= O_RDONLY;
+    }
 
     int fd = open(path, opts, 0644);
     int blocks = sd->blocks;
@@ -735,15 +760,30 @@ CacheProcessor::start_internal(int flags)
 
     if (fd >= 0) {
       if (!sd->file_pathname) {
-        if (ftruncate(fd, ((uint64_t)blocks) * STORE_BLOCK_SIZE) < 0) {
-          Warning("unable to truncate cache file '%s' to %d blocks", path, blocks);
+        if (check) {
+          if (ftruncate(fd, ((uint64_t)blocks) * STORE_BLOCK_SIZE) < 0) {
+            Warning("unable to truncate cache file '%s' to %d blocks", path, blocks);
+            diskok = 0;
+          }
+        } else { // read-only mode checks
+          struct stat sbuf;
           diskok = 0;
+          if (-1 == fstat(fd, &sbuf)) {
+            fprintf(stderr, "Failed to stat cache file for directory %s", path);
+          } else if (blocks != sbuf.st_size / STORE_BLOCK_SIZE) {
+            fprintf(stderr, "Cache file for directory %s is %" PRId64 " bytes, expected %" PRId64, path, sbuf.st_size,
+                    blocks * static_cast<int64_t>(STORE_BLOCK_SIZE));
+          } else {
+            diskok = 1;
+          }
         }
       }
       if (diskok) {
         int sector_size = sd->hw_sector_size;
 
         gdisks[gndisks] = new CacheDisk();
+        if (check)
+          gdisks[gndisks]->read_only_p = true;
         gdisks[gndisks]->forced_volume_num = sd->forced_volume_num;
         if (sd->hash_base_string)
           gdisks[gndisks]->hash_base_string = ats_strdup(sd->hash_base_string);
@@ -872,7 +912,8 @@ CacheProcessor::diskInitialized()
                 d->header->vol_info[j].len, d->header->vol_info[j].free);
         }
       }
-      d->sync();
+      if (!check)
+        d->sync();
     }
     if (config_volumes.num_volumes == 0) {
       theCache = new Cache();
@@ -1087,7 +1128,8 @@ CacheProcessor::cacheInitialized()
       GLOBAL_CACHE_SET_DYN_STAT(cache_bytes_total_stat, total_cache_bytes);
       GLOBAL_CACHE_SET_DYN_STAT(cache_direntries_total_stat, total_direntries);
       GLOBAL_CACHE_SET_DYN_STAT(cache_direntries_used_stat, used_direntries);
-      dir_sync_init();
+      if (!check)
+        dir_sync_init();
       cache_init_ok = 1;
     } else
       Warning("cache unable to open any vols, disabled");
@@ -1098,7 +1140,7 @@ CacheProcessor::cacheInitialized()
     CacheProcessor::cache_ready = caches_ready;
     Note("cache enabled");
 #ifdef CLUSTER_CACHE
-    if (!(start_internal_flags & PROCESSOR_RECONFIGURE)) {
+    if (!(start_internal_flags & (PROCESSOR_RECONFIGURE | PROCESSOR_CHECK))) {
       CacheContinuation::init();
       clusterProcessor.start();
     }

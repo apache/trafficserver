@@ -1247,6 +1247,15 @@ Ldone:
   goto Lrestart;
 }
 
+namespace {
+  int
+  compare_ushort(void const* a, void const* b)
+  {
+    return *static_cast<unsigned short const*>(a) - *static_cast<unsigned short const*>(b);
+  }
+}
+
+
 //
 // Check
 //
@@ -1254,75 +1263,127 @@ Ldone:
 #define HIST_DEPTH 8
 int Vol::dir_check(bool /* fix ATS_UNUSED */) // TODO: we should eliminate this parameter ?
 {
-  int hist[HIST_DEPTH + 1] = {0};
-  int *shist = (int *)ats_malloc(segments * sizeof(int));
-  memset(shist, 0, segments * sizeof(int));
+  static int const SEGMENT_HISTOGRAM_WIDTH = 16;
+  int hist[SEGMENT_HISTOGRAM_WIDTH + 1] = { 0 };
+  unsigned short chain_tag[MAX_ENTRIES_PER_SEGMENT];
+  int32_t chain_mark[MAX_ENTRIES_PER_SEGMENT];
+  uint64_t total_buckets = buckets * segments;
+  uint64_t total_entries = total_buckets * DIR_DEPTH;
+
   int j;
   int stale = 0, full = 0, empty = 0;
-  int last = 0, free = 0;
+  int free = 0, head = 0;
+
+  int max_chain_length = 0;
+  int64_t bytes_in_use = 0;
+
+  printf("Stripe '[%s]'\n", hash_text.get());
+  printf("  Directory Bytes: %" PRIu64 "\n", total_buckets * SIZEOF_DIR);
+  printf("  Segments:  %d\n", segments);
+  printf("  Buckets:   %" PRIu64 "\n", buckets);
+  printf("  Entries:   %" PRIu64 "\n", total_entries);
+
   for (int s = 0; s < segments; s++) {
     Dir *seg = dir_segment(s, this);
+    int seg_chain_max = 0;
+    int seg_empty = 0;
+    int seg_full = 0;
+    int seg_stale = 0;
+    int seg_bytes_in_use = 0;
+    int seg_dups = 0;
+
+    ink_zero(chain_tag);
+    memset(chain_mark, -1, sizeof(chain_mark));
+
     for (int b = 0; b < buckets; b++) {
-      int h = 0;
-      Dir *e = dir_bucket(b, seg);
-      while (e) {
-        if (!dir_offset(e))
-          empty++;
-        else {
-          h++;
-          if (!dir_valid(this, e))
-            stale++;
-          else
-            full++;
+      Dir *root = dir_bucket(b, seg);
+      int h = 0; // chain length starting in this bucket
+
+      // Walk the chain starting in this bucket
+      int chain_idx = 0;
+      int mark = 0;
+      for ( Dir* e = root ; e ; e = next_dir(e, seg) ) {
+        if (!dir_offset(e)) { // this should only happen on the first dir in a bucket
+          ++seg_empty;
+        } else {
+          int e_idx = e - seg;
+          ++h;
+          chain_tag[chain_idx++] = dir_tag(e);
+          if (chain_mark[e_idx] == mark) {
+            printf("    - Cycle of length %d detected for bucket %d\n", h, b);
+          } else if (chain_mark[e_idx] >= 0) {
+            printf("    - Entry %" PRIu64 " is in chain %d and %d", e - seg, chain_mark[e_idx], mark);
+          } else {
+            chain_mark[e_idx] = mark;
+          }
+
+          if (dir_head(e)) ++head;
+
+          if (!dir_valid(this, e)) {
+            ++seg_stale;
+          } else {
+            ++seg_full;
+            seg_bytes_in_use += dir_approx_size(e);
+          }
         }
         e = next_dir(e, seg);
         if (!e)
           break;
       }
-      if (h > HIST_DEPTH)
-        h = HIST_DEPTH;
-      hist[h]++;
+
+      // Check for duplicates (identical tags in the same bucket).
+      if (h > 1) {
+        unsigned short last;
+        qsort(chain_tag, h, sizeof(chain_tag[0]), &compare_ushort);
+        last = chain_tag[0];
+        for ( int k = 1 ; k < h ; ++k ) {
+          if (last == chain_tag[k]) ++seg_dups;
+          last = chain_tag[k];
+        }
+      }
+
+      ++hist[std::min(h, SEGMENT_HISTOGRAM_WIDTH)];
+      seg_chain_max = std::max(seg_chain_max, h);
     }
-    int t = stale + full;
-    shist[s] = t - last;
-    last = t;
+    int seg_chains = buckets - seg_empty;
+    full += seg_full;
+    empty += seg_empty;
+    stale += seg_stale;
     free += dir_freelist_length(this, s);
+    max_chain_length = std::max(max_chain_length, seg_chain_max);
+    bytes_in_use += seg_bytes_in_use;
+
+    printf("  - Segment-%d: full:%d stale:%d empty:%d bytes-used:%d chain-count:%d chain-max:%d chain-avg:%.2f chain-dups:%d\n"
+           , s, seg_full, seg_stale, seg_empty, seg_bytes_in_use
+           , seg_chains, seg_chain_max, seg_chains ? static_cast<float>(seg_full+seg_stale)/seg_chains : 0.0, seg_dups
+      );
   }
-  int total = buckets * segments * DIR_DEPTH;
-  printf("    Directory for [%s]\n", hash_text.get());
-  printf("        Bytes:     %d\n", total * SIZEOF_DIR);
-  printf("        Segments:  %" PRIu64 "\n", (uint64_t)segments);
-  printf("        Buckets:   %" PRIu64 "\n", (uint64_t)buckets);
-  printf("        Entries:   %d\n", total);
-  printf("        Full:      %d\n", full);
-  printf("        Empty:     %d\n", empty);
-  printf("        Stale:     %d\n", stale);
-  printf("        Free:      %d\n", free);
-  printf("        Bucket Fullness:   ");
-  for (j = 0; j < HIST_DEPTH; j++) {
-    printf("%8d ", hist[j]);
-    if ((j % 4 == 3))
-      printf("\n"
-             "                           ");
-  }
+
+  int chain_count = total_buckets - empty;
+  printf("  - Stripe: full:%d stale:%d empty:%d free:%d chain-count:%d chain-max:%d chain-avg:%.2f\n"
+         , full, stale, empty, free, chain_count, max_chain_length
+         , chain_count ? static_cast<float>(full + stale)/chain_count : 0
+    );
+
+  printf("    Chain lengths:  ");
+  for (j = 0; j < SEGMENT_HISTOGRAM_WIDTH; ++j)
+    printf(" %d=%d ", j, hist[j]);
+  printf(" %d>=%d\n", SEGMENT_HISTOGRAM_WIDTH, hist[SEGMENT_HISTOGRAM_WIDTH]);
+
+  char tt[256];
+  printf("    Total Size:      %" PRIu64 "\n", (uint64_t)len);
+  printf("    Bytes in Use:    %" PRIu64 "\n", bytes_in_use);
+  printf("    Objects:         %d\n", head);
+  printf("    Average Size:    %" PRIu64 "\n", head ? (bytes_in_use/head) : 0);
+  printf("    Write Position:  %" PRIu64 "\n", (uint64_t) (header->write_pos - skip - start));
+  printf("    Phase:           %d\n", (int)!!header->phase);
+  ink_ctime_r(&header->create_time, tt);
+  tt[strlen(tt) - 1] = 0;
+  printf("    Create Time:     %s\n", tt);
+  printf("    Sync Serial:     %u\n", (unsigned int)header->sync_serial);
+  printf("    Write Serial:    %u\n", (unsigned int)header->write_serial);
   printf("\n");
-  printf("        Segment Fullness:  ");
-  for (j = 0; j < segments; j++) {
-    printf("%5d ", shist[j]);
-    if ((j % 5 == 4))
-      printf("\n"
-             "                           ");
-  }
-  printf("\n");
-  printf("        Freelist Fullness: ");
-  for (j = 0; j < segments; j++) {
-    printf("%5d ", dir_freelist_length(this, j));
-    if ((j % 5 == 4))
-      printf("\n"
-             "                           ");
-  }
-  printf("\n");
-  ats_free(shist);
+
   return 0;
 }
 

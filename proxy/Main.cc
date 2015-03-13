@@ -132,6 +132,10 @@ int http_accept_file_descriptor = NO_FD;
 static char core_file[255] = "";
 static bool enable_core_file_p = false; // Enable core file dump?
 int command_flag = DEFAULT_COMMAND_FLAG;
+int command_index = -1;
+bool command_valid = false;
+// Commands that have special processing / requirements.
+static char const *CMD_VERIFY_CONFIG = "verify_config";
 #if TS_HAS_TESTS
 static char regression_test[1024] = "";
 #endif
@@ -546,64 +550,39 @@ CB_After_Cache_Init()
   }
 }
 
-struct CmdCacheCont : public Continuation {
-  int cache_fix;
+void
+CB_cmd_cache_clear()
+{
+  if (cacheProcessor.IsCacheEnabled() == CACHE_INITIALIZED) {
+    Note("CLEAR, succeeded");
+    _exit(0);
+  } else if (cacheProcessor.IsCacheEnabled() == CACHE_INIT_FAILED) {
+    Note("unable to open Cache, CLEAR failed");
+    _exit(1);
+  }
+}
 
-  int
-  ClearEvent(int event, Event *e)
-  {
-    (void)event;
-    (void)e;
-    if (cacheProcessor.IsCacheEnabled() == CACHE_INITIALIZED) {
-      Note("CLEAR, succeeded");
+void
+CB_cmd_cache_check()
+{
+  int res = 0;
+  if (cacheProcessor.IsCacheEnabled() == CACHE_INITIALIZED) {
+    res = cacheProcessor.dir_check(false) < 0 || res;
+    cacheProcessor.stop();
+    const char *n = "CHECK";
+
+    if (res) {
+      printf("\n%s failed", n);
+      _exit(1);
+    } else {
+      printf("\n%s succeeded\n", n);
       _exit(0);
-    } else if (cacheProcessor.IsCacheEnabled() == CACHE_INIT_FAILED) {
-      Note("unable to open Cache, CLEAR failed");
-      _exit(1);
     }
-    return EVENT_CONT;
+  } else if (cacheProcessor.IsCacheEnabled() == CACHE_INIT_FAILED) {
+    Note("unable to open Cache, Check failed");
+    _exit(1);
   }
-
-  int
-  CheckEvent(int event, Event *e)
-  {
-    (void)event;
-    (void)e;
-    int res = 0;
-    Note("Cache Directory");
-    if (cacheProcessor.IsCacheEnabled() == CACHE_INITIALIZED) {
-      res = cacheProcessor.dir_check(cache_fix) < 0 || res;
-
-      Note("Cache");
-      res = cacheProcessor.db_check(cache_fix) < 0 || res;
-
-      cacheProcessor.stop();
-
-      const char *n = cache_fix ? "REPAIR" : "CHECK";
-
-      if (res) {
-        printf("\n%s failed", n);
-        _exit(1);
-      } else {
-        printf("\n%s succeeded\n", n);
-        _exit(0);
-      }
-    } else if (cacheProcessor.IsCacheEnabled() == CACHE_INIT_FAILED) {
-      Note("unable to open Cache, Check failed");
-      _exit(1);
-    }
-    return EVENT_CONT;
-  }
-
-  CmdCacheCont(bool check, bool fix = false) : Continuation(new_ProxyMutex())
-  {
-    cache_fix = fix;
-    if (check)
-      SET_HANDLER(&CmdCacheCont::CheckEvent);
-    else
-      SET_HANDLER(&CmdCacheCont::ClearEvent);
-  }
-};
+}
 
 static int
 cmd_check_internal(char * /* cmd ATS_UNUSED */, bool fix = false)
@@ -614,6 +593,7 @@ cmd_check_internal(char * /* cmd ATS_UNUSED */, bool fix = false)
 
   hostdb_current_interval = (ink_get_based_hrtime() / HRTIME_MINUTE);
 
+#if 0
   printf("Host Database\n");
   HostDBCache hd;
   if (hd.start(fix) < 0) {
@@ -622,13 +602,13 @@ cmd_check_internal(char * /* cmd ATS_UNUSED */, bool fix = false)
   }
   hd.check("hostdb.config", fix);
   hd.reset();
+#endif
 
-  if (cacheProcessor.start() < 0) {
+  cacheProcessor.set_after_init_callback(&CB_cmd_cache_check);
+  if (cacheProcessor.start_internal(PROCESSOR_CHECK) < 0) {
     printf("\nbad cache configuration, %s failed\n", n);
     return CMD_FAILED;
   }
-  eventProcessor.schedule_every(new CmdCacheCont(true, fix), HRTIME_SECONDS(1));
-
   return CMD_IN_PROGRESS;
 }
 
@@ -689,11 +669,11 @@ cmd_clear(char *cmd)
   if (c_all || c_cache) {
     Note("Clearing Cache");
 
+    cacheProcessor.set_after_init_callback(&CB_cmd_cache_clear);
     if (cacheProcessor.start_internal(PROCESSOR_RECONFIGURE) < 0) {
       Note("unable to open Cache, CLEAR failed");
       return CMD_FAILED;
     }
-    eventProcessor.schedule_every(new CmdCacheCont(false), HRTIME_SECONDS(1));
     return CMD_IN_PROGRESS;
   }
 
@@ -770,6 +750,7 @@ static const struct CMD {
   const char *d; // description (part of a line)
   const char *h; // help string (multi-line)
   int (*f)(char *);
+  bool no_process_lock; /// If set this command doesn't need a process level lock.
 } commands[] = {
   {"list", "List cache configuration", "LIST\n"
                                        "\n"
@@ -786,7 +767,7 @@ static const struct CMD {
                                                          "CHECK does not make any changes to the data stored in\n"
                                                          "the cache. CHECK requires a scan of the contents of the\n"
                                                          "cache and may take a long time for large caches.\n",
-   cmd_check},
+   cmd_check, true},
   {"clear", "Clear the entire cache", "CLEAR\n"
                                       "\n"
                                       "FORMAT: clear\n"
@@ -810,12 +791,12 @@ static const struct CMD {
                                              "Clear the entire hostdb cache.  All host name resolution\n"
                                              "information is lost.\n",
    cmd_clear},
-  {"verify_config", "Verify the config", "\n"
-                                         "\n"
-                                         "FORMAT: verify_config\n"
-                                         "\n"
-                                         "Load the config and verify traffic_server comes up correctly. \n",
-   cmd_verify},
+  {CMD_VERIFY_CONFIG, "Verify the config", "\n"
+                                           "\n"
+                                           "FORMAT: verify_config\n"
+                                           "\n"
+                                           "Load the config and verify traffic_server comes up correctly. \n",
+   cmd_verify, true},
   {"help", "Obtain a short description of a command (e.g. 'help clear')", "HELP\n"
                                                                           "\n"
                                                                           "FORMAT: help [command_name]\n"
@@ -828,14 +809,14 @@ static const struct CMD {
 };
 
 static int
-cmd_index(char *p)
+find_cmd_index(char const *p)
 {
   p += strspn(p, " \t");
   for (unsigned c = 0; c < countof(commands); c++) {
-    const char *l = commands[c].n;
+    char const *l = commands[c].n;
     while (l) {
-      const char *s = strchr(l, '/');
-      char *e = strpbrk(p, " \t\n");
+      char const *s = strchr(l, '/');
+      char const *e = strpbrk(p, " \t\n");
       int len = s ? s - l : strlen(l);
       int lenp = e ? e - p : strlen(p);
       if ((len == lenp) && !strncasecmp(p, l, len))
@@ -858,7 +839,7 @@ cmd_help(char *cmd)
     }
   } else {
     int i;
-    if ((i = cmd_index(cmd)) < 0) {
+    if ((i = find_cmd_index(cmd)) < 0) {
       printf("\nno help found for: %s\n", cmd);
       return CMD_FAILED;
     }
@@ -892,14 +873,11 @@ check_fd_limit()
 static int
 cmd_mode()
 {
-  if (*command_string) {
-    int c = cmd_index(command_string);
-    if (c >= 0) {
-      return commands[c].f(command_string);
-    } else {
-      Warning("unrecognized command: '%s'", command_string);
-      return CMD_FAILED; // in error
-    }
+  if (command_index >= 0) {
+    return commands[command_index].f(command_string);
+  } else if (*command_string) {
+    Warning("unrecognized command: '%s'", command_string);
+    return CMD_FAILED; // in error
   } else {
     printf("\n");
     printf("WARNING\n");
@@ -1429,6 +1407,14 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 
   process_args(&appVersionInfo, argument_descriptions, countof(argument_descriptions), argv);
   command_flag = command_flag || *command_string;
+  command_index = find_cmd_index(command_string);
+  command_valid = command_flag && command_index >= 0;
+
+  // Specific validity checks.
+  if (*conf_dir && command_index != find_cmd_index(CMD_VERIFY_CONFIG)) {
+    fprintf(stderr, "-D option can only be used with the %s command\n", CMD_VERIFY_CONFIG);
+    _exit(1);
+  }
 
   // Set stdout/stdin to be unbuffered
   setbuf(stdout, NULL);
@@ -1456,16 +1442,10 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   // Local process manager
   initialize_process_manager();
 
-  if ((*command_string) && (cmd_index(command_string) == cmd_index((char *)"verify_config"))) {
-    fprintf(stderr, "\n\n skip lock check for %s \n\n", command_string);
-  } else {
-    if (*conf_dir) {
-      fprintf(stderr, "-D option should be used with -Cverify_config\n");
-      _exit(0);
-    }
-    // Ensure only one copy of traffic server is running
+  // Ensure only one copy of traffic server is running, unless it's a command
+  // that doesn't require a lock.
+  if (!(command_valid && commands[command_index].no_process_lock))
     check_lockfile();
-  }
 
   // Set the core limit for the process
   init_core_size();

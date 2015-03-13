@@ -152,8 +152,9 @@ struct CacheProcessor : public Processor {
   static volatile uint32_t cache_ready;
   static volatile int initialized;
   static volatile int start_done;
-  static int clear;
-  static int fix;
+  static bool clear;
+  static bool fix;
+  static bool check;
   static int start_internal_flags;
   static int auto_clear_flag;
 
