@@ -2904,7 +2904,8 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer * p)
   bool close_connection = false;
 
   if (t_state.current.server->keep_alive == HTTP_KEEPALIVE &&
-      server_entry->eos == false && plugin_tunnel_type == HTTP_NO_PLUGIN_TUNNEL) {
+      server_entry->eos == false && plugin_tunnel_type == HTTP_NO_PLUGIN_TUNNEL &&
+      t_state.txn_conf->keep_alive_enabled_out == 1) {
     close_connection = false;
   } else {
     close_connection = true;
