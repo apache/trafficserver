@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.0
 
+  *) [TS-3439] Chunked responses don't honor keep-alive
+ 
   *) [TS-3437] Make DH params configurable
 
   *) [TS-3342] Non-standard method in bad request can cause crash
