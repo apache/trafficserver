@@ -84,9 +84,6 @@ struct CacheProcessor:public Processor
                             CacheFragType frag_type = CACHE_FRAG_TYPE_NONE, char *hostname = 0, int host_len = 0);
   inkcoreapi Action *open_read(Continuation *cont, CacheKey *key, bool cluster_cache_local,
                                CacheFragType frag_type = CACHE_FRAG_TYPE_NONE, char *hostname = 0, int host_len = 0);
-  Action *open_read_buffer(Continuation *cont, MIOBuffer *buf, CacheKey *key,
-                           CacheFragType frag_type = CACHE_FRAG_TYPE_NONE, char *hostname = 0, int host_len = 0);
-
   inkcoreapi Action *open_write(Continuation *cont,
                                 CacheKey *key,
                                 bool cluster_cache_local,
@@ -95,12 +92,6 @@ struct CacheProcessor:public Processor
                                 int options = 0,
                                 time_t pin_in_cache = (time_t) 0,
                                 char *hostname = 0, int host_len = 0);
-  Action *open_write_buffer(Continuation *cont, MIOBuffer *buf,
-                            CacheKey *key,
-                            CacheFragType frag_type = CACHE_FRAG_TYPE_NONE,
-                            int options = 0,
-                            time_t pin_in_cache = (time_t) 0,
-                            char *hostname = 0, int host_len = 0);
   inkcoreapi Action *remove(Continuation *cont, CacheKey *key,
                             bool cluster_cache_local,
                             CacheFragType frag_type = CACHE_FRAG_TYPE_NONE,
@@ -115,15 +106,9 @@ struct CacheProcessor:public Processor
                                CacheHTTPHdr *request,
                                CacheLookupHttpConfig *params,
                                time_t pin_in_cache = (time_t) 0, CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP);
-  Action *open_read_buffer(Continuation *cont, MIOBuffer *buf, URL *url,
-                           CacheHTTPHdr *request,
-                           CacheLookupHttpConfig *params, CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP);
   Action *open_write(Continuation *cont, int expected_size, URL *url, bool cluster_cache_local,
                      CacheHTTPHdr *request, CacheHTTPInfo *old_info,
                      time_t pin_in_cache = (time_t) 0, CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP);
-  Action *open_write_buffer(Continuation *cont, MIOBuffer *buf, URL *url,
-                            CacheHTTPHdr *request, CacheHTTPHdr *response,
-                            CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP);
   Action *remove(Continuation *cont, URL *url, bool cluster_cache_local, CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP);
 
   Action *open_read_internal(int, Continuation *, MIOBuffer *, CacheURL *,

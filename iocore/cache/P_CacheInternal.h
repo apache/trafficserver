@@ -1155,21 +1155,6 @@ CacheProcessor::open_read(Continuation *cont, CacheKey *key, bool cluster_cache_
   return caches[frag_type]->open_read(cont, key, frag_type, hostname, host_len);
 }
 
-TS_INLINE Action *
-CacheProcessor::open_read_buffer(Continuation *cont, MIOBuffer *buf ATS_UNUSED, CacheKey *key, CacheFragType frag_type,
-                                 char *hostname, int host_len)
-{
-#ifdef CLUSTER_CACHE
-  if (cache_clustering_enabled > 0) {
-    return open_read_internal(CACHE_OPEN_READ_BUFFER, cont, buf,
-                              (CacheURL *) 0, (CacheHTTPHdr *) 0,
-                              (CacheLookupHttpConfig *) 0, key, 0, frag_type, hostname, host_len);
-  }
-#endif
-  return caches[frag_type]->open_read(cont, key, frag_type, hostname, host_len);
-}
-
-
 TS_INLINE inkcoreapi Action *
 CacheProcessor::open_write(Continuation *cont, CacheKey *key, bool cluster_cache_local  ATS_UNUSED,
                            CacheFragType frag_type, int expected_size ATS_UNUSED, int options,
@@ -1186,23 +1171,6 @@ CacheProcessor::open_write(Continuation *cont, CacheKey *key, bool cluster_cache
   }
 #endif
   return caches[frag_type]->open_write(cont, key, frag_type, options, pin_in_cache, hostname, host_len);
-}
-
-TS_INLINE Action *
-CacheProcessor::open_write_buffer(Continuation *cont, MIOBuffer *buf, CacheKey *key,
-                                  CacheFragType frag_type, int options, time_t pin_in_cache,
-                                  char *hostname, int host_len)
-{
-  (void)pin_in_cache;
-  (void)cont;
-  (void)buf;
-  (void)key;
-  (void)frag_type;
-  (void)options;
-  (void)hostname;
-  (void)host_len;
-  ink_assert(!"implemented");
-  return NULL;
 }
 
 TS_INLINE Action *
@@ -1241,34 +1209,6 @@ CacheProcessor::lookup(Continuation *cont, URL *url, bool cluster_cache_local, b
   const char *hostname = url->host_get(&host_len);
 
   return lookup(cont, &md5, cluster_cache_local, local_only, frag_type, (char *) hostname, host_len);
-}
-
-TS_INLINE Action *
-CacheProcessor::open_read_buffer(Continuation *cont, MIOBuffer *buf,
-                                 URL *url, CacheHTTPHdr *request, CacheLookupHttpConfig *params, CacheFragType type)
-{
-  (void) buf;
-#ifdef CLUSTER_CACHE
-  if (cache_clustering_enabled > 0) {
-    return open_read_internal(CACHE_OPEN_READ_BUFFER_LONG, cont, buf, url,
-                              request, params, (CacheKey *) 0, 0, type, (char *) 0, 0);
-  }
-#endif
-  return caches[type]->open_read(cont, url, request, params, type);
-}
-
-TS_INLINE Action *
-CacheProcessor::open_write_buffer(Continuation * cont, MIOBuffer * buf, URL * url,
-                                  CacheHTTPHdr * request, CacheHTTPHdr * response, CacheFragType type)
-{
-  (void) cont;
-  (void) buf;
-  (void) url;
-  (void) request;
-  (void) response;
-  (void) type;
-  ink_assert(!"implemented");
-  return NULL;
 }
 
 #endif
