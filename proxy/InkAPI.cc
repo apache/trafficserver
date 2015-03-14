@@ -7958,6 +7958,10 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   case TS_CONFIG_HTTP_CACHE_RANGE_WRITE:
     ret = &overridableHttpConfig->cache_range_write;
     break;
+  case TS_CONFIG_HTTP_CACHE_GENERATION:
+    typ = OVERRIDABLE_TYPE_INT;
+    ret = &overridableHttpConfig->cache_generation_number;
+    break;
   case TS_CONFIG_HTTP_POST_CHECK_CONTENT_LENGTH_ENABLED:
     ret = &overridableHttpConfig->post_check_content_length_enabled;
     break;
@@ -8228,6 +8232,8 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
   case 34:
     if (!strncmp(name, "proxy.config.http.chunking_enabled", length))
       cnf = TS_CONFIG_HTTP_CHUNKING_ENABLED;
+    else if (!strncmp(name, "proxy.config.http.cache.generation", length))
+      cnf = TS_CONFIG_HTTP_CACHE_GENERATION;
     break;
 
   case 35:
