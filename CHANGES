@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.2.1
 
+  *) [TS-3285] Fix premature freeing of MIOBuffer to prevent freelist
+   corruption.
+
   *) [TS-3299] Fix leaking vc's during inactivitycop, due to null
    continuation.
 
