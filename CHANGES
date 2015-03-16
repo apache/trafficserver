@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.2.1
 
+  *) [TS-3404] Handle race condition in handling delayed terminating chunk.
+
   *) [TS-3285] Fix premature freeing of MIOBuffer to prevent freelist
    corruption.
 
