@@ -627,7 +627,7 @@ Log::init_fields()
                        SQUID_LOG_ERR_UNKNOWN, "ERR_UNKNOWN");
 
   Ptr<LogFieldAliasTable> cache_hit_miss_map = make_ptr(new LogFieldAliasTable);
-  cache_hit_miss_map->init(24,
+  cache_hit_miss_map->init(23,
                            SQUID_HIT_RESERVED, "HIT",
                            SQUID_HIT_LEVEL_1, "HIT_RAM",  // Also SQUID_HIT_RAM
                            SQUID_HIT_LEVEL_2, "HIT_SSD",  // Also SQUID_HIT_SSD
