@@ -654,16 +654,15 @@ public:
     bool dns_round_robin;
     TransferEncoding_t transfer_encoding;
 
-    IpEndpoint addr; // replaces 'ip' field
+    /** This is the source address of the connection from the point of view of the transaction.
+	It is the address of the source of the request.
+    */
+    IpEndpoint src_addr;
+    /** This is the destination address of the connection from the point of view of the transaction.
+	It is the address of the target of the request.
+    */
+    IpEndpoint dst_addr;
 
-    // port to connect to, except for client
-    // connection where it is port on proxy
-    // that client connected to.
-    // This field is managed separately from the port
-    // part of 'addr' above as in various cases the two
-    // are set/manipulated independently and things are
-    // clearer this way.
-    uint16_t port; // host order.
     ServerState_t state;
     AbortState_t abort;
     HttpProxyPort::TransportType port_attribute;
@@ -690,10 +689,10 @@ public:
     ConnectionAttributes()
       : http_version(), keep_alive(HTTP_KEEPALIVE_UNDEFINED), receive_chunked_response(false), pipeline_possible(false),
         proxy_connect_hdr(false), connect_result(0), name(NULL), dns_round_robin(false), transfer_encoding(NO_TRANSFER_ENCODING),
-        port(0), state(STATE_UNDEFINED), abort(ABORT_UNDEFINED), port_attribute(HttpProxyPort::TRANSPORT_DEFAULT),
-        is_transparent(false)
+        state(STATE_UNDEFINED), abort(ABORT_UNDEFINED), port_attribute(HttpProxyPort::TRANSPORT_DEFAULT), is_transparent(false)
     {
-      memset(&addr, 0, sizeof(addr));
+      memset(&src_addr, 0, sizeof(src_addr));
+      memset(&dst_addr, 0, sizeof(dst_addr));
     }
   };
 

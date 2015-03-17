@@ -1284,6 +1284,10 @@ tsapi TSReturnCode TSHttpTxnCacheLookupStatusGet(TSHttpTxn txnp, int *lookup_sta
 
 tsapi TSReturnCode TSHttpTxnTransformRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *offset);
 
+/** Set the @a port value for the inbound (user agent) connection in the transaction @a txnp.
+    This is used primarily where the conection is synthetic and therefore does not have a port.
+    @note @a port is in @b host @b order.
+*/
 tsapi void TSHttpTxnClientIncomingPortSet(TSHttpTxn txnp, int port);
 
 /** Get SSL object of this session.
