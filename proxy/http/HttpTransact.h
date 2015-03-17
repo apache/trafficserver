@@ -698,16 +698,11 @@ public:
     bool dns_round_robin;
     TransferEncoding_t transfer_encoding;
 
-    IpEndpoint addr;    // replaces 'ip' field
+    // TS-2157 Replace addr with src_addr dst_addr
+    // also replaces port field
+    IpEndpoint src_addr;
+    IpEndpoint dst_addr;
 
-    // port to connect to, except for client
-    // connection where it is port on proxy
-    // that client connected to.
-    // This field is managed separately from the port
-    // part of 'addr' above as in various cases the two
-    // are set/manipulated independently and things are
-    // clearer this way.
-    uint16_t port; // host order.
     ServerState_t state;
     AbortState_t abort;
     HttpProxyPort::TransportType port_attribute;
@@ -729,13 +724,13 @@ public:
         name(NULL),
         dns_round_robin(false),
         transfer_encoding(NO_TRANSFER_ENCODING),
-        port(0),
         state(STATE_UNDEFINED),
         abort(ABORT_UNDEFINED),
         port_attribute(HttpProxyPort::TRANSPORT_DEFAULT),
         is_transparent(false)
     {
-      memset(&addr, 0, sizeof(addr));
+      memset(&src_addr, 0, sizeof(src_addr));
+      memset(&dst_addr, 0, sizeof(dst_addr));
     }
 
   };
