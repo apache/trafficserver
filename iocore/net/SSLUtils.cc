@@ -2057,9 +2057,9 @@ SSLWriteBuffer(SSL * ssl, const void * buf, int64_t nbytes, int64_t& nwritten)
   int ssl_error = SSL_get_error(ssl, ret);
   if (ssl_error == SSL_ERROR_SSL) {
     char buf[512];
-    unsigned long e = ERR_get_error();
+    unsigned long e = ERR_peek_last_error();
     ERR_error_string_n(e, buf, sizeof(buf));
-    Debug("ssl.error.write", "SSL write returned %d, ssl_error=%d, ERR_get_error=%d (%s)", ret, ssl_error, e, buf);
+    Debug("ssl.error.write", "SSL write returned %d, ssl_error=%d, ERR_get_error=%ld (%s)", ret, ssl_error, e, buf);
   }
   return ssl_error;
 }
@@ -2081,9 +2081,9 @@ SSLReadBuffer(SSL * ssl, void * buf, int64_t nbytes, int64_t& nread)
   int ssl_error = SSL_get_error(ssl, ret);
   if (ssl_error == SSL_ERROR_SSL) {
     char buf[512];
-    unsigned long e = ERR_get_error();
+    unsigned long e = ERR_peek_last_error();
     ERR_error_string_n(e, buf, sizeof(buf));
-    Debug("ssl.error.read", "SSL read returned %d, ssl_error=%d, ERR_get_error=%d (%s)", ret, ssl_error, e, buf);
+    Debug("ssl.error.read", "SSL read returned %d, ssl_error=%d, ERR_get_error=%ld (%s)", ret, ssl_error, e, buf);
   }
 
   return ssl_error;
@@ -2100,9 +2100,9 @@ SSLAccept(SSL * ssl)
   int ssl_error = SSL_get_error(ssl, ret);
   if (ssl_error == SSL_ERROR_SSL) {
     char buf[512];
-    unsigned long e = ERR_get_error();
+    unsigned long e = ERR_peek_last_error();
     ERR_error_string_n(e, buf, sizeof(buf));
-    Debug("ssl.error.accept", "SSL accept returned %d, ssl_error=%d, ERR_get_error=%d (%s)", ret, ssl_error, e, buf);
+    Debug("ssl.error.accept", "SSL accept returned %d, ssl_error=%d, ERR_get_error=%ld (%s)", ret, ssl_error, e, buf);
   }
 
   return ssl_error;
@@ -2119,9 +2119,9 @@ SSLConnect(SSL * ssl)
   int ssl_error = SSL_get_error(ssl, ret);
    if (ssl_error == SSL_ERROR_SSL) {
      char buf[512];
-     unsigned long e = ERR_get_error();
+     unsigned long e = ERR_peek_last_error();
      ERR_error_string_n(e, buf, sizeof(buf));
-     Debug("ssl.error.connect", "SSL connect returned %d, ssl_error=%d, ERR_get_error=%d (%s)", ret, ssl_error, e, buf);
+     Debug("ssl.error.connect", "SSL connect returned %d, ssl_error=%d, ERR_get_error=%ld (%s)", ret, ssl_error, e, buf);
    }
 
    return ssl_error;
