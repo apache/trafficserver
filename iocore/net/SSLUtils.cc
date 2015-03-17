@@ -2059,7 +2059,7 @@ SSLWriteBuffer(SSL * ssl, const void * buf, int64_t nbytes, int64_t& nwritten)
     char buf[512];
     unsigned long e = ERR_get_error();
     ERR_error_string_n(e, buf, sizeof(buf));
-    Debug("ssl.error.write", "SSL write returned %d, ssl_error=%ld, ERR_get_error=%d (%s)", ret, ssl_error, e, buf);
+    Debug("ssl.error.write", "SSL write returned %d, ssl_error=%d, ERR_get_error=%d (%s)", ret, ssl_error, e, buf);
   }
   return ssl_error;
 }
@@ -2083,7 +2083,7 @@ SSLReadBuffer(SSL * ssl, void * buf, int64_t nbytes, int64_t& nread)
     char buf[512];
     unsigned long e = ERR_get_error();
     ERR_error_string_n(e, buf, sizeof(buf));
-    Debug("ssl.error.read", "SSL read returned %d, ssl_error=%ld, ERR_get_error=%d (%s)", ret, ssl_error, e, buf);
+    Debug("ssl.error.read", "SSL read returned %d, ssl_error=%d, ERR_get_error=%d (%s)", ret, ssl_error, e, buf);
   }
 
   return ssl_error;
@@ -2102,7 +2102,7 @@ SSLAccept(SSL * ssl)
     char buf[512];
     unsigned long e = ERR_get_error();
     ERR_error_string_n(e, buf, sizeof(buf));
-    Debug("ssl.error.accept", "SSL accept returned %d, ssl_error=%ld, ERR_get_error=%d (%s)", ret, ssl_error, e, buf);
+    Debug("ssl.error.accept", "SSL accept returned %d, ssl_error=%d, ERR_get_error=%d (%s)", ret, ssl_error, e, buf);
   }
 
   return ssl_error;
@@ -2121,7 +2121,7 @@ SSLConnect(SSL * ssl)
      char buf[512];
      unsigned long e = ERR_get_error();
      ERR_error_string_n(e, buf, sizeof(buf));
-     Debug("ssl.error.connect", "SSL connect returned %d, ssl_error=%ld, ERR_get_error=%d (%s)", ret, ssl_error, e, buf);
+     Debug("ssl.error.connect", "SSL connect returned %d, ssl_error=%d, ERR_get_error=%d (%s)", ret, ssl_error, e, buf);
    }
 
    return ssl_error;
