@@ -633,6 +633,56 @@ TagMod::make(char *value, char const ** /* error ATS_UNUSED */)
 }
 
 // ----------
+struct InternalMod : public ControlBase::Modifier {
+  bool flag;
+  static char const *const NAME;
+
+  virtual Type
+  type() const
+  {
+    return MOD_INTERNAL;
+  }
+  virtual char const *
+  name() const
+  {
+    return NAME;
+  }
+  virtual bool
+  check(HttpRequestData *req) const
+  {
+    return req->internal_txn == flag;
+  }
+  virtual void
+  print(FILE *f) const
+  {
+    fprintf(f, "%s=%s  ", this->name(), flag ? "true" : "false");
+  }
+  static InternalMod *make(char *value, char const **error);
+};
+
+char const *const InternalMod::NAME = "Internal";
+
+InternalMod *
+InternalMod::make(char *value, char const **error)
+{
+  InternalMod tmp;
+
+  if (0 == strncasecmp("false", value, 5)) {
+    tmp.flag = false;
+  } else if (0 == strncasecmp("true", value, 4)) {
+    tmp.flag = true;
+  } else {
+    *error = "Value must be true or false";
+  }
+
+  if (*error) {
+    return NULL;
+  } else {
+    return new InternalMod(tmp);
+  }
+}
+
+// ----------
 } // anon name space
 // ------------------------------------------------
 ControlBase::~ControlBase()
@@ -765,6 +815,8 @@ ControlBase::ProcessModifiers(matcher_line *line_info)
       mod = TimeMod::make(value, &errBuf);
     } else if (strcasecmp(label, "tag") == 0) {
       mod = TagMod::make(value, &errBuf);
+    } else if (strcasecmp(label, "internal") == 0) {
+      mod = InternalMod::make(value, &errBuf);
     } else {
       err = ME_BAD_MOD;
     }

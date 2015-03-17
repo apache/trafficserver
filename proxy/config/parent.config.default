@@ -28,6 +28,7 @@
 #     method=
 #     time=
 #     src_ip=
+#     internal={true,false}
 #
 # Available parent directives are:
 #     parent=    (a semicolon separated list of parent proxies)

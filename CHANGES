@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-3448] Add a new Mod operator to ControlMatcher, named "internal".
+
   *) [TS-3483] Fix regex remap to work with CONNECT.
 
   *) [TS-3479] Remove verbose Warning() from HTTP/2 connections.

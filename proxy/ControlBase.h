@@ -54,6 +54,7 @@ public:
       MOD_SRC_IP,
       MOD_IPORT,
       MOD_TAG,
+      MOD_INTERNAL,
     };
     /// Destructor - force virtual.
     virtual ~Modifier();

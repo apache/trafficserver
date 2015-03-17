@@ -5591,6 +5591,7 @@ HttpTransact::initialize_state_variables_from_request(State *s, HTTPHdr *obsolet
   }
   s->request_data.xact_start = s->client_request_time;
   s->request_data.api_info = &s->api_info;
+  s->request_data.internal_txn = s->state_machine->ua_session->get_netvc()->get_is_internal_request();
 
   /////////////////////////////////////////////
   // Do dns lookup for the host. We need     //

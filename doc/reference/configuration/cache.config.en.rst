@@ -111,6 +111,13 @@ following list shows possible secondary specifiers with allowed values.
 ``src_ip``
    A client IP address.
 
+.. _cache-config-format-internal:
+
+``internal``
+    A boolean value, ``true`` or ``false``, specifying if the rule should
+    match (or not match) a transaction originating from an internal API. This
+    is useful to differentiate transaction originating from an ATS plugin.
+
 The following list shows possible actions and their allowed values.
 
 

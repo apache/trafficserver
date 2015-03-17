@@ -146,7 +146,7 @@ public:
   inkcoreapi sockaddr const *get_ip();
   inkcoreapi sockaddr const *get_client_ip();
 
-  HttpRequestData() : hdr(NULL), hostname_str(NULL), api_info(NULL), xact_start(0), incoming_port(0), tag(NULL)
+  HttpRequestData() : hdr(NULL), hostname_str(NULL), api_info(NULL), xact_start(0), incoming_port(0), tag(NULL), internal_txn(false)
   {
     ink_zero(src_ip);
     ink_zero(dest_ip);
@@ -160,6 +160,7 @@ public:
   IpEndpoint dest_ip;
   uint16_t incoming_port;
   char *tag;
+  bool internal_txn;
 };
 
 

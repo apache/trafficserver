@@ -27,6 +27,7 @@
 #     method=
 #     time=
 #     src_ip=
+#     internal={true,false}
 #
 # Each line must include exactly one cache directive
 #   Cache directives are
