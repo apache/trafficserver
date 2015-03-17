@@ -2044,7 +2044,7 @@ SSLWriteBuffer(SSL * ssl, const void * buf, int64_t nbytes, int64_t& nwritten)
   if (unlikely(nbytes == 0)) {
     return SSL_ERROR_NONE;
   }
-
+  ERR_clear_error();
   int ret = SSL_write(ssl, buf, (int)nbytes);
   if (ret > 0) {
     nwritten = ret;
@@ -2054,8 +2054,14 @@ SSLWriteBuffer(SSL * ssl, const void * buf, int64_t nbytes, int64_t& nwritten)
     }
     return SSL_ERROR_NONE;
   }
-
-  return SSL_get_error(ssl, ret);
+  int ssl_error = SSL_get_error(ssl, ret);
+  if (ssl_error == SSL_ERROR_SSL) {
+    char buf[512];
+    unsigned long e = ERR_get_error();
+    ERR_error_string_n(e, buf, sizeof(buf));
+    Debug("ssl.error.write", "SSL write returned %d, ssl_error=%ld, ERR_get_error=%d (%s)", ret, ssl_error, e, buf);
+  }
+  return ssl_error;
 }
 
 ssl_error_t
@@ -2066,34 +2072,57 @@ SSLReadBuffer(SSL * ssl, void * buf, int64_t nbytes, int64_t& nread)
   if (unlikely(nbytes == 0)) {
     return SSL_ERROR_NONE;
   }
-
+  ERR_clear_error();
   int ret = SSL_read(ssl, buf, (int)nbytes);
   if (ret > 0) {
     nread = ret;
     return SSL_ERROR_NONE;
   }
+  int ssl_error = SSL_get_error(ssl, ret);
+  if (ssl_error == SSL_ERROR_SSL) {
+    char buf[512];
+    unsigned long e = ERR_get_error();
+    ERR_error_string_n(e, buf, sizeof(buf));
+    Debug("ssl.error.read", "SSL read returned %d, ssl_error=%ld, ERR_get_error=%d (%s)", ret, ssl_error, e, buf);
+  }
 
-  return SSL_get_error(ssl, ret);
+  return ssl_error;
 }
 
 ssl_error_t
 SSLAccept(SSL * ssl)
 {
+  ERR_clear_error();
   int ret = SSL_accept(ssl);
   if (ret > 0) {
     return SSL_ERROR_NONE;
   }
+  int ssl_error = SSL_get_error(ssl, ret);
+  if (ssl_error == SSL_ERROR_SSL) {
+    char buf[512];
+    unsigned long e = ERR_get_error();
+    ERR_error_string_n(e, buf, sizeof(buf));
+    Debug("ssl.error.accept", "SSL accept returned %d, ssl_error=%ld, ERR_get_error=%d (%s)", ret, ssl_error, e, buf);
+  }
 
-  return SSL_get_error(ssl, ret);
+  return ssl_error;
 }
 
 ssl_error_t
 SSLConnect(SSL * ssl)
 {
+  ERR_clear_error();
   int ret = SSL_connect(ssl);
   if (ret > 0) {
     return SSL_ERROR_NONE;
   }
+  int ssl_error = SSL_get_error(ssl, ret);
+   if (ssl_error == SSL_ERROR_SSL) {
+     char buf[512];
+     unsigned long e = ERR_get_error();
+     ERR_error_string_n(e, buf, sizeof(buf));
+     Debug("ssl.error.connect", "SSL connect returned %d, ssl_error=%ld, ERR_get_error=%d (%s)", ret, ssl_error, e, buf);
+   }
 
-  return SSL_get_error(ssl, ret);
+   return ssl_error;
 }
