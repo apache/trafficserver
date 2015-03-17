@@ -753,6 +753,15 @@ attach_pvc_plugin(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
         memcpy(replacement_host_str, host_hdr_str_val, host_hdr_str_val_len);
         TSDebug(DEBUG_TAG, "Adding host to request url: %s", replacement_host_str);
 
+        const char *colon = strstr(replacement_host_str, ":");
+        if (colon != NULL && colon + 1 != NULL) {
+          int port_str_val = atoi(colon + 1);
+
+          if (port_str_val != 80) {
+            TSUrlPortSet(req_bufp, url_loc, port_str_val);
+          }
+          host_hdr_str_val_len -= strlen(colon);
+        }
         TSUrlHostSet(req_bufp, url_loc, host_hdr_str_val, host_hdr_str_val_len);
 
         //TSHandleStringRelease(req_bufp, field_loc, str);
