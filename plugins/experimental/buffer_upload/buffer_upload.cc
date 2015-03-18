@@ -627,8 +627,8 @@ convert_url_func(TSMBuffer req_bufp, TSMLoc req_loc)
       return;
     }
     char pathTmp[len + 1];
-    memset(pathTmp, 0, sizeof pathTmp);
     memcpy(pathTmp, str, len);
+    pathTmp[len] = '\0';
     TSDebug(DEBUG_TAG, "convert_url_func working on path: %s", pathTmp);
     colon = strstr(str, ":");
     if (colon != NULL && colon < slash) {
@@ -638,8 +638,12 @@ convert_url_func(TSMBuffer req_bufp, TSMLoc req_loc)
       TSUrlPortSet(req_bufp, url_loc, atoi(port_str));
       TSfree(port_str);
     } else {
-      if (port != 80) {
-        TSUrlPortSet(req_bufp, url_loc, 80);
+      int length = 0;
+      const char *scheme = TSUrlSchemeGet(req_bufp, url_loc, &length);
+
+      if ((length == TS_URL_LEN_HTTP && strncmp(TS_URL_SCHEME_HTTP, scheme, length) == 0 && port != 80) ||
+          (length == TS_URL_LEN_HTTPS && strncmp(TS_URL_SCHEME_HTTPS, scheme, length) == 0 && port != 443)) {
+        TSUrlPortSet(req_bufp, url_loc, port);
       }
       colon = slash;
     }
@@ -749,10 +753,22 @@ attach_pvc_plugin(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
         }
 
         char replacement_host_str[host_hdr_str_val_len + 1];
-        memset(replacement_host_str, 0, sizeof replacement_host_str);
         memcpy(replacement_host_str, host_hdr_str_val, host_hdr_str_val_len);
+        replacement_host_str[host_hdr_str_val_len] = '\0';
         TSDebug(DEBUG_TAG, "Adding host to request url: %s", replacement_host_str);
 
+        const char *colon = strchr(replacement_host_str, ':');
+        if (colon != NULL && colon + 1 != NULL) {
+          int length = 0;
+          const char *scheme = TSUrlSchemeGet(req_bufp, url_loc, &length);
+          int port_str_val = atoi(colon + 1);
+
+          if ((length == TS_URL_LEN_HTTP && strncmp(TS_URL_SCHEME_HTTP, scheme, length) == 0 && port_str_val != 80) ||
+              (length == TS_URL_LEN_HTTPS && strncmp(TS_URL_SCHEME_HTTPS, scheme, length) == 0 && port_str_val != 443)) {
+            TSUrlPortSet(req_bufp, url_loc, port_str_val);
+          }
+          host_hdr_str_val_len = colon - replacement_host_str;
+        }
         TSUrlHostSet(req_bufp, url_loc, host_hdr_str_val, host_hdr_str_val_len);
 
         //TSHandleStringRelease(req_bufp, field_loc, str);
@@ -765,8 +781,8 @@ attach_pvc_plugin(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
       url = TSUrlStringGet(req_bufp, url_loc, &url_len);
       if (VALID_PTR(url)) {
         char urlStr[url_len + 1];
-        memset(urlStr, 0, sizeof urlStr);
         memcpy(urlStr, url, url_len);
+        urlStr[url_len] = '\0';
         TSDebug(DEBUG_TAG, "Request url: %s", urlStr);
 
         for (i = 0; i < uconfig->url_num; i++) {
