@@ -41,6 +41,7 @@ tslua_la_SOURCES = \
   ts_lua_util.c \
   ts_lua_remap.c \
   ts_lua_http_cntl.c \
+  ts_lua_http_milestone.c \
   ts_lua_http_config.c \
   ts_lua_mgmt.c \
   ts_lua_package.c \

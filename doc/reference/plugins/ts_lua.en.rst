@@ -2185,6 +2185,28 @@ ts.http.server_packet_tos_set
 
 `TOP <#ts-lua-plugin>`_
 
+ts.http.client_packet_dscp_set
+-------------------------
+**syntax:** *ts.http.client_packet_dscp_set(NUMBER)*
+
+**context:** do_remap or do_global_* or later.
+
+**description:** This function can be used to set packet dscp for client connection.
+
+
+`TOP <#ts-lua-plugin>`_
+
+ts.http.server_packet_dscp_set
+-------------------------
+**syntax:** *ts.http.server_packet_dscp_set(NUMBER)*
+
+**context:** do_remap or do_global_* or later.
+
+**description:** This function can be used to set packet dscp for server connection.
+
+
+`TOP <#ts-lua-plugin>`_
+
 ts.http.cntl_get
 ----------------
 **syntax:** *val = ts.http.cntl_get(CNTL_TYPE)*
@@ -2230,6 +2252,52 @@ Http control channel constants
     TS_LUA_HTTP_CNTL_SET_LOGGING_MODE
     TS_LUA_HTTP_CNTL_GET_INTERCEPT_RETRY_MODE
     TS_LUA_HTTP_CNTL_SET_INTERCEPT_RETRY_MODE
+
+
+`TOP <#ts-lua-plugin>`_
+
+ts.http.milestone_get
+----------------
+**syntax:** *val = ts.http.milestone_get(MILESTONE_TYPE)*
+
+**context:** do_remap or do_global_* or later.
+
+**description:** This function can be used to retireve the various milestone times. They are how long the 
+transaction took to traverse portions of the HTTP state machine. Each milestone value is a fractional number 
+of seconds since the beginning of the transaction.
+
+::
+
+    val = ts.http.milestone_get(TS_LUA_MILESTONE_SM_START)
+
+`TOP <#ts-lua-plugin>`_
+
+Milestone constants
+------------------------------
+**context:** do_remap or do_global_* or later
+
+::
+
+    TS_LUA_MILESTONE_UA_BEGIN
+    TS_LUA_MILESTONE_UA_READ_HEADER_DONE
+    TS_LUA_MILESTONE_UA_BEGIN_WRITE
+    TS_LUA_MILESTONE_UA_CLOSE
+    TS_LUA_MILESTONE_SERVER_FIRST_CONNECT
+    TS_LUA_MILESTONE_SERVER_CONNECT
+    TS_LUA_MILESTONE_SERVER_CONNECT_END
+    TS_LUA_MILESTONE_SERVER_BEGIN_WRITE
+    TS_LUA_MILESTONE_SERVER_FIRST_READ
+    TS_LUA_MILESTONE_SERVER_READ_HEADER_DONE
+    TS_LUA_MILESTONE_SERVER_CLOSE
+    TS_LUA_MILESTONE_CACHE_OPEN_READ_BEGIN
+    TS_LUA_MILESTONE_CACHE_OPEN_READ_END
+    TS_LUA_MILESTONE_CACHE_OPEN_WRITE_BEGIN
+    TS_LUA_MILESTONE_CACHE_OPEN_WRITE_END
+    TS_LUA_MILESTONE_DNS_LOOKUP_BEGIN
+    TS_LUA_MILESTONE_DNS_LOOKUP_END
+    TS_LUA_MILESTONE_SM_START
+    TS_LUA_MILESTONE_SM_FINISH
+
 
 `TOP <#ts-lua-plugin>`_
 

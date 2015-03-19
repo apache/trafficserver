@@ -21,6 +21,7 @@
 #include "ts_lua_http_intercept.h"
 #include "ts_lua_http_config.h"
 #include "ts_lua_http_cntl.h"
+#include "ts_lua_http_milestone.h"
 
 typedef enum
 {
@@ -69,6 +70,7 @@ ts_lua_inject_http_api(lua_State * L)
   ts_lua_inject_http_intercept_api(L);
   ts_lua_inject_http_config_api(L);
   ts_lua_inject_http_cntl_api(L);
+  ts_lua_inject_http_milestone_api(L);
   ts_lua_inject_http_misc_api(L);
 
   lua_setfield(L, -2, "http");
