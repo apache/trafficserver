@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.0
 
+  *) [TS-3312] KA timeout to origin does not honor configs
+
   *) [TS-3437] A null dhParams file will disable DHE.
 
   *) [TS-3454] add support for dscp and milestone api for lua plugin.
