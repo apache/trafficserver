@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.0
+  
+  *) [TS-3437] A null dhParams file will disable dh params
 
   *) [TS-3454] add support for dscp and milestone api for lua plugin.
 
