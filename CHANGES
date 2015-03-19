@@ -1,11 +1,11 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.0
-  
-  *) [TS-3437] A null dhParams file will disable dh params
+
+  *) [TS-3437] A null dhParams file will disable DHE.
 
   *) [TS-3454] add support for dscp and milestone api for lua plugin.
 
-  *) [TS-3452] Better debug messages for SSL_ERROR_SSL errors
+  *) [TS-3452] Better debug messages for SSL_ERROR_SSL errors.
 
   *) [TS-3439] Chunked responses don't honor keep-alive.
  
