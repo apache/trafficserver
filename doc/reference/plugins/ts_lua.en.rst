@@ -1071,6 +1071,69 @@ Here is an example:
 
 `TOP <#ts-lua-plugin>`_
 
+ts.server_request.server_addr.get_ip
+------------------------------------
+**syntax:** *ts.server_request.server_addr.get_ip()*
+
+**context:** do_remap or do_global_* or later
+
+**description**: This function can be used to get ip address of the origin server.
+
+The ts.server_request.server_addr.get_ip function returns ip as a string.
+
+Here is an example:
+
+::
+
+    function do_global_send_request()
+        ip = ts.server_request.server_addr.get_ip()
+        print(ip)               -- 192.168.231.17
+    end
+
+`TOP <#ts-lua-plugin>`_
+
+ts.server_request.server_addr.get_port
+--------------------------------------
+**syntax:** *ts.server_request.server_addr.get_port()*
+
+**context:** do_remap or do_global_* or later
+
+**description**: This function can be used to get port of the origin server.
+
+The ts.server_request.server_addr.get_port function returns port as number.
+
+Here is an example:
+
+::
+
+    function do_global_send_request()
+        port = ts.server_request.server_addr.get_port()
+        print(port)             -- 80
+    end
+
+`TOP <#ts-lua-plugin>`_
+
+ts.server_request.server_addr.get_outgoing_port
+-----------------------------------------------
+**syntax:** *ts.server_request.server_addr.get_outgoing_port()*
+
+**context:** do_remap or do_global_* or later
+
+**description**: This function can be used to get outgoing port to the origin server.
+
+The ts.server_request.server_addr.get_outgoing_port function returns outgoing port as number.
+
+Here is an example:
+
+::
+
+    function do_global_send_request()
+        port = ts.server_request.server_addr.get_outgoing_port()
+        print(port)             -- 50880
+    end
+
+`TOP <#ts-lua-plugin>`_
+
 ts.server_response.get_status
 -----------------------------
 **syntax:** *status = ts.server_response.get_status()*
