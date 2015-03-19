@@ -1473,7 +1473,7 @@ SSLInitServerContext(const SSLConfigParams * params, const ssl_user_config & ssl
   SSL_CTX_set_default_passwd_cb_userdata(CTX, NULL);\
   }
   SSL_CLEAR_PW_REFERENCES(ud,ctx)
-  if (!ssl_context_enable_dhe(params->dhparamsFile, ctx)) {
+  if (params->dhparamsFile != NULL && !ssl_context_enable_dhe(params->dhparamsFile, ctx)) {
     goto fail;
   }
   return ssl_context_enable_ecdh(ctx);
