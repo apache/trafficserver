@@ -1473,10 +1473,8 @@ SSLInitServerContext(const SSLConfigParams * params, const ssl_user_config & ssl
   SSL_CTX_set_default_passwd_cb_userdata(CTX, NULL);\
   }
   SSL_CLEAR_PW_REFERENCES(ud,ctx)
-  if (params->enable_dhparams && !ssl_context_enable_dhe(params->dhparamsFile, ctx)) {
+  if (!ssl_context_enable_dhe(params->dhparamsFile, ctx)) {
     goto fail;
-  } else if (!params->enable_dhparams) {
-    Debug("ssl", "Not using dhparams");
   }
   return ssl_context_enable_ecdh(ctx);
 

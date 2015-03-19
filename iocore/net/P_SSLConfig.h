@@ -81,7 +81,6 @@ struct SSLConfigParams : public ConfigInfo
   char *  clientKeyPath;
   char *  clientCACertFilename;
   char *  clientCACertPath;
-  int     enable_dhparams;
   int     clientVerify;
   int     client_verify_depth;
   long    ssl_ctx_options;

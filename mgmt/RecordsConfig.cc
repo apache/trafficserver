@@ -1322,8 +1322,6 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.ssl.allow_client_renegotiation", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.ssl.server.enable_dhparams", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
-  ,
   {RECT_CONFIG, "proxy.config.ssl.server.dhparams_file", RECD_STRING, NULL, RECU_RESTART_TS, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   //##############################################################################
