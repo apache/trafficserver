@@ -876,6 +876,10 @@ MIMEField::has_dups() const
 
 struct MIMEFieldIter
 {
+  MIMEFieldIter()
+    : m_slot(0), m_block(NULL)
+  {}
+
   uint32_t m_slot;
   MIMEFieldBlockImpl *m_block;
 };

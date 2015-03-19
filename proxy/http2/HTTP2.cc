@@ -962,7 +962,6 @@ REGRESSION_TEST(HPACK_Encode)(RegressionTest * t, int, int *pstatus)
     buf_len -= len;
 
     MIMEFieldIter field_iter;
-    field_iter.m_block = NULL;
     bool cont = false;
     len += http2_write_header_fragment(headers, field_iter, buf, buf_len, dynamic_table, cont);
 

@@ -892,7 +892,6 @@ Http2ConnectionState::send_headers_frame(FetchSM *fetch_sm)
   }
 
   MIMEFieldIter field_iter;
-  field_iter.m_block = NULL;
   bool cont = false;
   do {
     // Handle first sending frame is as HEADERS
