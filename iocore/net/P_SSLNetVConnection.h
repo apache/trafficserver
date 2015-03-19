@@ -153,7 +153,6 @@ public:
     this->handShakeBuffer = new_MIOBuffer();
     this->handShakeReader = this->handShakeBuffer->alloc_reader();
     this->handShakeHolder = this->handShakeReader->clone();
-    this->handShakeBioStored = 0;
   }
   void free_handshake_buffers() {
     if (this->handShakeReader) {
@@ -168,7 +167,6 @@ public:
     this->handShakeReader = NULL;
     this->handShakeHolder = NULL;
     this->handShakeBuffer = NULL;
-    this->handShakeBioStored = 0;
   }
   // Returns true if all the hooks reenabled
   bool callHooks(TSHttpHookID eventId);
@@ -183,7 +181,6 @@ private:
   MIOBuffer *handShakeBuffer;
   IOBufferReader *handShakeHolder;
   IOBufferReader *handShakeReader;
-  int handShakeBioStored;
 
   /// The current hook.
   /// @note For @C SSL_HOOKS_INVOKE, this is the hook to invoke.
