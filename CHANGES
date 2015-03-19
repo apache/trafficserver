@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.2.1
 
+  *) [TS-3424] SSL Failed: decryption failed or bad record mac.
+
   *) [TS-3439] Chunked responses don't honor keep-alive.
 
   *) [TS-3404] Handle race condition in handling delayed terminating chunk.
