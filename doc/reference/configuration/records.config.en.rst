@@ -871,6 +871,14 @@ specific domains.
 
    Controls wether POST timeout sends a HTTP status 408 response (``1``)
 
+.. ts:cv:: CONFIG proxy.config.http.disallow_post_100_continue INT 0
+
+   Allows you to return a 405 Method Not Supported with Posts also
+   containing an Expect: 100-continue.
+   
+   When a Post w/ Expect: 100-continue is blocked the stat
+   proxy.process.http.disallowed_post_100_continue will be incremented.
+
 Parent Proxy Configuration
 ==========================
 
