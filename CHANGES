@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.0
 
+  *) [TS-3459] Create a new config to disallow Post w/ Expect: 100-continue
+
   *) [TS-3312] KA timeout to origin does not honor configs
 
   *) [TS-3437] A null dhParams file will disable DHE.
