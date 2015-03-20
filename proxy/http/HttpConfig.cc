@@ -1081,6 +1081,10 @@ register_stat_callbacks()
                      (int) http_ua_msecs_counts_other_unclassified_stat, RecRawStatSyncIntMsecsToFloatSeconds);
 
   RecRegisterRawStat(http_rsb, RECT_PROCESS,
+                     "proxy.process.http.disallowed_post_100_continue",
+                     RECD_COUNTER, RECP_PERSISTENT, (int) disallowed_post_100_continue, RecRawStatSyncCount);
+
+  RecRegisterRawStat(http_rsb, RECT_PROCESS,
                      "proxy.process.http.total_x_redirect_count",
                      RECD_COUNTER, RECP_PERSISTENT,
                      (int) http_total_x_redirect_stat, RecRawStatSyncCount);
@@ -1289,6 +1293,7 @@ HttpConfig::startup()
 
   HttpEstablishStaticConfigByte(c.send_100_continue_response, "proxy.config.http.send_100_continue_response");
   HttpEstablishStaticConfigByte(c.send_408_post_timeout_response, "proxy.config.http.send_408_post_timeout_response");
+  HttpEstablishStaticConfigByte(c.disallow_post_100_continue, "proxy.config.http.disallow_post_100_continue");
   HttpEstablishStaticConfigByte(c.parser_allow_non_http, "proxy.config.http.parse.allow_non_http");
 
   HttpEstablishStaticConfigByte(c.oride.cache_when_to_revalidate, "proxy.config.http.cache.when_to_revalidate");
@@ -1547,6 +1552,7 @@ HttpConfig::reconfigure()
 
   params->send_100_continue_response = INT_TO_BOOL(m_master.send_100_continue_response);
   params->send_408_post_timeout_response = INT_TO_BOOL(m_master.send_408_post_timeout_response);
+  params->disallow_post_100_continue = INT_TO_BOOL(m_master.disallow_post_100_continue);
   params->parser_allow_non_http = INT_TO_BOOL(m_master.parser_allow_non_http);
 
   params->oride.cache_when_to_revalidate = m_master.oride.cache_when_to_revalidate;

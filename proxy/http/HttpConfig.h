@@ -228,6 +228,8 @@ enum
   http_ua_msecs_counts_errors_other_stat,
   http_ua_msecs_counts_other_unclassified_stat,
 
+  disallowed_post_100_continue,
+
   http_total_x_redirect_stat,
 
   // Times
@@ -733,6 +735,7 @@ public:
 
   MgmtByte send_100_continue_response;
   MgmtByte send_408_post_timeout_response;
+  MgmtByte disallow_post_100_continue;
   MgmtByte parser_allow_non_http;
 
   OverridableHttpConfigParams oride;
@@ -742,7 +745,6 @@ public:
   ////////////////////
   MgmtInt autoconf_port;
   MgmtByte autoconf_localhost_only;
-
 
 private:
   /////////////////////////////////////
@@ -889,6 +891,7 @@ HttpConfigParams::HttpConfigParams()
     ignore_accept_charset_mismatch(0),
     send_100_continue_response(0),
     send_408_post_timeout_response(0),
+    disallow_post_100_continue(0),
     parser_allow_non_http(1),
     autoconf_port(0),
     autoconf_localhost_only(0)

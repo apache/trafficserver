@@ -1255,6 +1255,24 @@ HttpTransact::HandleRequest(State* s)
   // client keep-alive, cache action, etc.
   initialize_state_variables_from_request(s, &s->hdr_info.client_request);
 
+  // The following chunk of code allows you to disallow post w/ expect 100-continue (TS-3459)
+  if (s->hdr_info.request_content_length && s->http_config_param->disallow_post_100_continue) {
+    MIMEField *expect = s->hdr_info.client_request.field_find(MIME_FIELD_EXPECT, MIME_LEN_EXPECT);
+
+    if (expect != NULL) {
+      const char *expect_hdr_val = NULL;
+      int expect_hdr_val_len = 0;
+      expect_hdr_val = expect->value_get(&expect_hdr_val_len);
+      if (ptr_len_casecmp(expect_hdr_val, expect_hdr_val_len, HTTP_VALUE_100_CONTINUE, HTTP_LEN_100_CONTINUE) == 0) {
+        // Let's error out this request.
+        DebugTxn("http_trans", "Client sent a post expect: 100-continue, sending 405.");
+        HTTP_INCREMENT_TRANS_STAT(disallowed_post_100_continue);
+        build_error_response(s, HTTP_STATUS_METHOD_NOT_ALLOWED, "Method Not Allowed", "request#method_unsupported", NULL);
+        TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, NULL);
+      }
+    }
+  }
+
   // Cache lookup or not will be decided later at DecideCacheLookup().
   // Before it's decided to do a cache lookup,
   // assume no cache lookup and using proxy (not tunneling)
