@@ -27,8 +27,8 @@
 #include <stdint.h>
 #include <string>
 
-namespace atscppapi {
-
+namespace atscppapi
+{
 /**
  * @brief A Stat is an atomic variable that can be used to store counters, averages, time averages, or summations.
  *
@@ -46,16 +46,17 @@ namespace atscppapi {
  *
  * A full example is available in examples/stat_example/.
  */
-class Stat : noncopyable {
+class Stat : noncopyable
+{
 public:
   /**
    * The available Stat types.
    */
   enum SyncType {
     SYNC_SUM = 0, /**< The stat will sum all values from a stat.inc(VAL) */
-    SYNC_COUNT, /**< The stat will count all calls to stat.inc(VAL) */
-    SYNC_AVG, /**< The stat will keep an average after call calls to stat.inc(VAL) */
-    SYNC_TIMEAVG /**< The stat will keep a time average of all calls to stat.inc(VAL) */
+    SYNC_COUNT,   /**< The stat will count all calls to stat.inc(VAL) */
+    SYNC_AVG,     /**< The stat will keep an average after call calls to stat.inc(VAL) */
+    SYNC_TIMEAVG  /**< The stat will keep a time average of all calls to stat.inc(VAL) */
   };
 
   Stat();
@@ -96,6 +97,7 @@ public:
    * @param value the value to set the stat to.
    */
   void set(int64_t value);
+
 private:
   int stat_id_; /**< The internal stat ID */
 };

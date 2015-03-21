@@ -27,38 +27,40 @@
 #include "InkPool.h"
 #include "P_EventSystem.h"
 
-template<class C> class InkStaticPool_r:
-public InkStaticPool<C> {
+template <class C> class InkStaticPool_r : public InkStaticPool<C>
+{
 public:
-  InkStaticPool_r(int size):InkStaticPool<C> (size)
-  {
-    mutex = new_ProxyMutex();
-  }
+  InkStaticPool_r(int size) : InkStaticPool<C>(size) { mutex = new_ProxyMutex(); }
 
-  virtual ~ InkStaticPool_r() {
+  virtual ~InkStaticPool_r()
+  {
     MUTEX_LOCK(lock, mutex, this_ethread());
     cleanUp();
   }
 
-  C *get()
+  C *
+  get()
   {
     MUTEX_LOCK(lock, mutex, this_ethread());
     return (InkStaticPool<C>::get());
   }
 
-  bool put(C * newObj)
+  bool
+  put(C *newObj)
   {
     MUTEX_LOCK(lock, mutex, this_ethread());
     return (InkStaticPool<C>::put(newObj));
   }
 
-  void put_or_delete(C * newObj)
+  void
+  put_or_delete(C *newObj)
   {
     if (!this->put(newObj))
       delete newObj;
   }
 
-  ProxyMutex *getMutex()
+  ProxyMutex *
+  getMutex()
   {
     return (mutex);
   }

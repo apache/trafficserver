@@ -29,10 +29,11 @@
 #include <atscppapi/shared_ptr.h>
 #include <atscppapi/Mutex.h>
 
-namespace atscppapi {
-
-namespace utils {
- class internal;
+namespace atscppapi
+{
+namespace utils
+{
+  class internal;
 } /* utils */
 
 /**
@@ -76,7 +77,8 @@ struct TransactionPluginState;
  * @see Plugin
  * @see HookType
  */
-class TransactionPlugin : public Plugin {
+class TransactionPlugin : public Plugin
+{
 public:
   /**
    * registerHook is the mechanism used to attach a transaction hook.
@@ -91,6 +93,7 @@ public:
    */
   void registerHook(Plugin::HookType hook_type);
   virtual ~TransactionPlugin();
+
 protected:
   TransactionPlugin(Transaction &transaction);
 
@@ -102,6 +105,7 @@ protected:
    * TransactionPlugin.
    */
   shared_ptr<Mutex> getMutex();
+
 private:
   TransactionPluginState *state_; /**< The internal state for a TransactionPlugin */
   friend class utils::internal;

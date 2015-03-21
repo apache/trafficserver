@@ -30,10 +30,9 @@
 #include "ink_atomic.h"
 
 // Used for Debug etc.
-static const char* PLUGIN_NAME = "geoip_acl";
+static const char *PLUGIN_NAME = "geoip_acl";
 
 #endif // __LULU_H__
-
 
 
 /*

@@ -52,7 +52,7 @@
  *        the message is not dealt with by the other parsing functions
  **********************************************************************/
 TSMgmtError
-preprocess_msg(int fd, void ** req, size_t * reqlen)
+preprocess_msg(int fd, void **req, size_t *reqlen)
 {
   TSMgmtError ret;
   MgmtMarshallData msg;

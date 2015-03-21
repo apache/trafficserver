@@ -23,7 +23,7 @@
 
 #include "I_NetVConnection.h"
 
-TS_INLINE sockaddr const*
+TS_INLINE sockaddr const *
 NetVConnection::get_remote_addr()
 {
   if (!got_remote_addr) {
@@ -36,10 +36,8 @@ NetVConnection::get_remote_addr()
 TS_INLINE in_addr_t
 NetVConnection::get_remote_ip()
 {
-  sockaddr const* addr = this->get_remote_addr();
-  return ats_is_ip4(addr)
-    ? ats_ip4_addr_cast(addr)
-    : 0;
+  sockaddr const *addr = this->get_remote_addr();
+  return ats_is_ip4(addr) ? ats_ip4_addr_cast(addr) : 0;
 }
 
 
@@ -50,16 +48,14 @@ NetVConnection::get_remote_port()
   return ats_ip_port_host_order(this->get_remote_addr());
 }
 
-TS_INLINE sockaddr const*
+TS_INLINE sockaddr const *
 NetVConnection::get_local_addr()
 {
   if (!got_local_addr) {
     set_local_addr();
-    if (
-      (ats_is_ip(&local_addr) && ats_ip_port_cast(&local_addr)) // IP and has a port.
-      || (ats_is_ip4(&local_addr) && INADDR_ANY != ats_ip4_addr_cast(&local_addr)) // IPv4
-      || (ats_is_ip6(&local_addr) && !IN6_IS_ADDR_UNSPECIFIED(&local_addr.sin6.sin6_addr))
-    ) {
+    if ((ats_is_ip(&local_addr) && ats_ip_port_cast(&local_addr))                    // IP and has a port.
+        || (ats_is_ip4(&local_addr) && INADDR_ANY != ats_ip4_addr_cast(&local_addr)) // IPv4
+        || (ats_is_ip6(&local_addr) && !IN6_IS_ADDR_UNSPECIFIED(&local_addr.sin6.sin6_addr))) {
       got_local_addr = 1;
     }
   }
@@ -69,10 +65,8 @@ NetVConnection::get_local_addr()
 TS_INLINE in_addr_t
 NetVConnection::get_local_ip()
 {
-  sockaddr const* addr = this->get_local_addr();
-  return ats_is_ip4(addr)
-    ? ats_ip4_addr_cast(addr)
-    : 0;
+  sockaddr const *addr = this->get_local_addr();
+  return ats_is_ip4(addr) ? ats_ip4_addr_cast(addr) : 0;
 }
 
 /// @return The local port in host order.

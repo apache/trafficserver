@@ -67,7 +67,7 @@
 #define HAVE_SRANDOMDEV
 #ifdef SO_ACCEPTFILTER
 #define HAVE_ACCEPT_FILTERS
-#if ( __FreeBSD_version >= 411000 )
+#if (__FreeBSD_version >= 411000)
 #define ACCEPT_FILTER_NAME "httpready"
 #else
 #define ACCEPT_FILTER_NAME "dataready"
@@ -123,8 +123,8 @@
 #define HAVE_SCANDIR
 #define HAVE_TM_GMTOFF
 #define NO_SNPRINTF
-                                /* # define HAVE_INT64T *//* Digital Unix 4.0d doesn't have int64_t */
-#endif /* OS_DigitalUnix */
+/* # define HAVE_INT64T */ /* Digital Unix 4.0d doesn't have int64_t */
+#endif                     /* OS_DigitalUnix */
 
 #ifdef OS_SysV
 #define HAVE_SETSID

@@ -21,28 +21,28 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 
-template <> std::string
-stringof<struct sockaddr>(const sockaddr& sa)
+template <>
+std::string
+stringof<struct sockaddr>(const sockaddr &sa)
 {
-    char buf[INET6_ADDRSTRLEN + 1];
-    union {
-        const in_addr * in;
-        const in6_addr * in6;
-    } ptr;
+  char buf[INET6_ADDRSTRLEN + 1];
+  union {
+    const in_addr *in;
+    const in6_addr *in6;
+  } ptr;
 
-    ptr.in = nullptr;
-    switch (sa.sa_family) {
-    case AF_INET:
-        ptr.in = &((const sockaddr_in *)(&sa))->sin_addr;
-        break;
-    case AF_INET6:
-        ptr.in6 = &((const sockaddr_in6 *)(&sa))->sin6_addr;
-        break;
-    }
+  ptr.in = nullptr;
+  switch (sa.sa_family) {
+  case AF_INET:
+    ptr.in = &((const sockaddr_in *)(&sa))->sin_addr;
+    break;
+  case AF_INET6:
+    ptr.in6 = &((const sockaddr_in6 *)(&sa))->sin6_addr;
+    break;
+  }
 
-    inet_ntop(sa.sa_family, ptr.in, buf, sizeof(buf));
-    return std::string(buf);
+  inet_ntop(sa.sa_family, ptr.in, buf, sizeof(buf));
+  return std::string(buf);
 }
 
 /* vim: set sw=4 ts=4 tw=79 et : */
-

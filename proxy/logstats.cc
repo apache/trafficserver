@@ -22,7 +22,7 @@
  */
 
 #include "libts.h"
-#undef std  // FIXME: remove dependency on the STL
+#undef std // FIXME: remove dependency on the STL
 #include "ink_config.h"
 #include "ink_file.h"
 #include "I_Layout.h"
@@ -59,7 +59,7 @@
 using namespace std;
 
 // Constants, please update the VERSION number when you make a new build!!!
-#define PROGRAM_NAME		"traffic_logstats"
+#define PROGRAM_NAME "traffic_logstats"
 
 const int MAX_LOGBUFFER_SIZE = 65536;
 const int DEFAULT_LINE_LEN = 78;
@@ -86,16 +86,15 @@ const int XML_AS_INT = 7105912;
 const int HTML_AS_INT = 1819112552;
 const int ZIP_AS_INT = 7367034;
 
-const int JAVA_AS_INT = 1635148138;     // For "javascript"
-const int X_JA_AS_INT = 1634348408;     // For "x-javascript"
-const int RSSp_AS_INT = 728986482;      // For "RSS+"
-const int PLAI_AS_INT = 1767992432;     // For "plain"
-const int IMAG_AS_INT = 1734438249;     // For "image"
-const int HTTP_AS_INT = 1886680168;     // For "http" followed by "s://" or "://"
+const int JAVA_AS_INT = 1635148138; // For "javascript"
+const int X_JA_AS_INT = 1634348408; // For "x-javascript"
+const int RSSp_AS_INT = 728986482;  // For "RSS+"
+const int PLAI_AS_INT = 1767992432; // For "plain"
+const int IMAG_AS_INT = 1734438249; // For "image"
+const int HTTP_AS_INT = 1886680168; // For "http" followed by "s://" or "://"
 
 // Store our "state" (position in log file etc.)
-struct LastState
-{
+struct LastState {
   off_t offset;
   ino_t st_ino;
 };
@@ -103,37 +102,31 @@ static LastState last_state;
 
 
 // Store the collected counters and stats, per Origin Server, URL or total
-struct StatsCounter
-{
+struct StatsCounter {
   int64_t count;
   int64_t bytes;
 };
 
-struct ElapsedStats
-{
+struct ElapsedStats {
   int min;
   int max;
   float avg;
   float stddev;
 };
 
-struct OriginStats
-{
+struct OriginStats {
   const char *server;
   StatsCounter total;
 
-  struct
-  {
-    struct
-    {
+  struct {
+    struct {
       ElapsedStats hit;
       ElapsedStats ims;
       ElapsedStats refresh;
       ElapsedStats other;
       ElapsedStats total;
     } hits;
-    struct
-    {
+    struct {
       ElapsedStats miss;
       ElapsedStats ims;
       ElapsedStats refresh;
@@ -142,26 +135,22 @@ struct OriginStats
     } misses;
   } elapsed;
 
-  struct
-  {
-    struct
-    {
+  struct {
+    struct {
       StatsCounter hit;
       StatsCounter ims;
       StatsCounter refresh;
       StatsCounter other;
       StatsCounter total;
     } hits;
-    struct
-    {
+    struct {
       StatsCounter miss;
       StatsCounter ims;
       StatsCounter refresh;
       StatsCounter other;
       StatsCounter total;
     } misses;
-    struct
-    {
+    struct {
       StatsCounter client_abort;
       StatsCounter connect_fail;
       StatsCounter invalid_req;
@@ -172,9 +161,8 @@ struct OriginStats
     StatsCounter other;
   } results;
 
-  struct
-  {
-    StatsCounter c_000;         // Bad
+  struct {
+    StatsCounter c_000; // Bad
     StatsCounter c_100;
     StatsCounter c_200;
     StatsCounter c_201;
@@ -220,8 +208,7 @@ struct OriginStats
     StatsCounter c_5xx;
   } codes;
 
-  struct
-  {
+  struct {
     StatsCounter direct;
     StatsCounter none;
     StatsCounter sibling;
@@ -231,16 +218,14 @@ struct OriginStats
     StatsCounter other;
   } hierarchies;
 
-  struct
-  {
+  struct {
     StatsCounter http;
     StatsCounter https;
     StatsCounter none;
     StatsCounter other;
   } schemes;
 
-  struct
-  {
+  struct {
     StatsCounter options;
     StatsCounter get;
     StatsCounter head;
@@ -254,10 +239,8 @@ struct OriginStats
     StatsCounter other;
   } methods;
 
-  struct
-  {
-    struct
-    {
+  struct {
+    struct {
       StatsCounter plain;
       StatsCounter xml;
       StatsCounter html;
@@ -266,8 +249,7 @@ struct OriginStats
       StatsCounter other;
       StatsCounter total;
     } text;
-    struct
-    {
+    struct {
       StatsCounter jpeg;
       StatsCounter gif;
       StatsCounter png;
@@ -275,8 +257,7 @@ struct OriginStats
       StatsCounter other;
       StatsCounter total;
     } image;
-    struct
-    {
+    struct {
       StatsCounter shockwave_flash;
       StatsCounter quicktime;
       StatsCounter javascript;
@@ -287,8 +268,7 @@ struct OriginStats
       StatsCounter rss_other;
       StatsCounter total;
     } application;
-    struct
-    {
+    struct {
       StatsCounter wav;
       StatsCounter mpeg;
       StatsCounter other;
@@ -299,9 +279,8 @@ struct OriginStats
   } content;
 };
 
-struct UrlStats
-{
-  bool operator < (const UrlStats& rhs) const  { return req.count > rhs.req.count;  } // Reverse order
+struct UrlStats {
+  bool operator<(const UrlStats &rhs) const { return req.count > rhs.req.count; } // Reverse order
 
   const char *url;
   StatsCounter req;
@@ -318,16 +297,12 @@ struct UrlStats
 
 ///////////////////////////////////////////////////////////////////////////////
 // Equal operator for char* (for the hash_map)
-struct eqstr
-{
-  inline bool operator() (const char *s1, const char *s2) const
-  {
-    return 0 == strcmp(s1, s2);
-  }
+struct eqstr {
+  inline bool operator()(const char *s1, const char *s2) const { return 0 == strcmp(s1, s2); }
 };
 
 struct hash_fnv32 {
-  inline uint32_t operator()(const char* s) const
+  inline uint32_t operator()(const char *s) const
   {
     ATSHash32FNV1a fnv;
 
@@ -352,12 +327,13 @@ typedef std::unordered_map<const char *, LruStack::iterator, hash_fnv32, eqstr> 
 // Resize a hash-based container.
 template <class T, class N>
 void
-rehash(T& container, N size) {
+rehash(T &container, N size)
+{
   container.rehash(size);
 }
 
 #elif HAVE_GNU_CXX_HASH_MAP
-#define _BACKWARD_BACKWARD_WARNING_H    // needed for gcc 4.3
+#define _BACKWARD_BACKWARD_WARNING_H // needed for gcc 4.3
 #include <ext/hash_map>
 #include <ext/hash_set>
 typedef __gnu_cxx::hash_map<const char *, OriginStats *, hash_fnv32, eqstr> OriginStorage;
@@ -367,7 +343,8 @@ typedef __gnu_cxx::hash_map<const char *, LruStack::iterator, hash_fnv32, eqstr>
 // Resize a hash-based container.
 template <class T, class N>
 void
-rehash(T& container, N size) {
+rehash(T &container, N size)
+{
   container.resize(size);
 }
 
@@ -377,23 +354,21 @@ rehash(T& container, N size) {
 #endif
 
 // LRU class for the URL data
-void  update_elapsed(ElapsedStats &stat, const int elapsed, const StatsCounter &counter);
+void update_elapsed(ElapsedStats &stat, const int elapsed, const StatsCounter &counter);
 
 class UrlLru
 {
-
 public:
-  UrlLru(int size=1000000, int show_urls=0)
-    : _size(size)
+  UrlLru(int size = 1000000, int show_urls = 0) : _size(size)
   {
-    _show_urls = size > 0 ? (show_urls >= size ? size-1 : show_urls) : show_urls;
+    _show_urls = size > 0 ? (show_urls >= size ? size - 1 : show_urls) : show_urls;
     _init();
     _reset(false);
     _cur = _stack.begin();
   }
 
   void
-  resize(int size=0)
+  resize(int size = 0)
   {
     if (0 != size)
       _size = size;
@@ -404,7 +379,7 @@ public:
   }
 
   void
-  dump(int as_object=0)
+  dump(int as_object = 0)
   {
     int show = _stack.size();
 
@@ -412,7 +387,7 @@ public:
       show = _show_urls;
 
     _stack.sort();
-    for (LruStack::iterator u=_stack.begin(); NULL != u->url && --show >= 0; ++u)
+    for (LruStack::iterator u = _stack.begin(); NULL != u->url && --show >= 0; ++u)
       _dump_url(u, as_object);
     if (as_object)
       std::cout << "  \"_timestamp\" : \"" << static_cast<int>(ink_time_wall_seconds()) << "\"" << std::endl;
@@ -421,7 +396,7 @@ public:
   }
 
   void
-  add_stat(const char* url, int64_t bytes, int time, int result, int http_code, int as_object=0)
+  add_stat(const char *url, int64_t bytes, int time, int result, int http_code, int as_object = 0)
   {
     LruHash::iterator h = _hash.find(url);
 
@@ -475,7 +450,7 @@ public:
       // Move this entry to the top of the stack (hence, LRU)
       if (_size > 0)
         _stack.splice(_stack.begin(), _stack, l);
-    } else { // "new" URL
+    } else {                           // "new" URL
       const char *u = ats_strdup(url); // We own it.
       LruStack::iterator l = _stack.end();
 
@@ -490,7 +465,7 @@ public:
         } else {
           l = _cur++;
         }
-        ats_free(const_cast<char*>(l->url)); // We no longer own this string.
+        ats_free(const_cast<char *>(l->url)); // We no longer own this string.
       } else {
         l = _stack.insert(l, UrlStats()); // This seems faster than having a static "template" ...
       }
@@ -562,11 +537,11 @@ private:
   }
 
   void
-  _reset(bool free=false)
+  _reset(bool free = false)
   {
-    for (LruStack::iterator l=_stack.begin(); l != _stack.end(); ++l) {
+    for (LruStack::iterator l = _stack.begin(); l != _stack.end(); ++l) {
       if (free && l->url)
-        ats_free(const_cast<char*>(l->url));
+        ats_free(const_cast<char *>(l->url));
       memset(&(*l), 0, sizeof(UrlStats));
     }
   }
@@ -579,21 +554,14 @@ private:
     else
       std::cout << "  { \"" << u->url << "\" : { ";
     // Requests
-    std::cout << "\"req\" : { \"total\" : \"" << u->req.count <<
-      "\", \"hits\" : \"" <<  u->hits <<
-      "\", \"misses\" : \"" <<  u->misses <<
-      "\", \"errors\" : \"" <<  u->errors <<
-      "\", \"000\" : \"" <<  u->c_000 <<
-      "\", \"2xx\" : \"" <<  u->c_2xx <<
-      "\", \"3xx\" : \"" <<  u->c_3xx <<
-      "\", \"4xx\" : \"" <<  u->c_4xx <<
-      "\", \"5xx\" : \"" <<  u->c_5xx << "\" }, ";
-    std:: cout << "\"bytes\" : \"" << u->req.bytes << "\", ";
+    std::cout << "\"req\" : { \"total\" : \"" << u->req.count << "\", \"hits\" : \"" << u->hits << "\", \"misses\" : \""
+              << u->misses << "\", \"errors\" : \"" << u->errors << "\", \"000\" : \"" << u->c_000 << "\", \"2xx\" : \"" << u->c_2xx
+              << "\", \"3xx\" : \"" << u->c_3xx << "\", \"4xx\" : \"" << u->c_4xx << "\", \"5xx\" : \"" << u->c_5xx << "\" }, ";
+    std::cout << "\"bytes\" : \"" << u->req.bytes << "\", ";
     // Service times
-    std::cout << "\"svc_t\" : { \"min\" : \"" << u->time.min <<
-      "\", \"max\" : \"" << u->time.max <<
-      "\", \"avg\" : \"" << std::setiosflags(ios::fixed) << std::setprecision(2) << u->time.avg <<
-      "\", \"dev\" : \"" << std::setiosflags(ios::fixed) << std::setprecision(2) << u->time.stddev;
+    std::cout << "\"svc_t\" : { \"min\" : \"" << u->time.min << "\", \"max\" : \"" << u->time.max << "\", \"avg\" : \""
+              << std::setiosflags(ios::fixed) << std::setprecision(2) << u->time.avg << "\", \"dev\" : \""
+              << std::setiosflags(ios::fixed) << std::setprecision(2) << u->time.stddev;
 
     if (as_object)
       std::cout << "\" } }," << std::endl;
@@ -617,8 +585,7 @@ static UrlLru *urls;
 static int parse_errors;
 
 // Command line arguments (parsing)
-struct CommandLineArgs
-{
+struct CommandLineArgs {
   char log_file[1024];
   char origin_file[1024];
   char origin_list[MAX_ORIG_STRING];
@@ -627,18 +594,18 @@ struct CommandLineArgs
   int64_t min_hits;
   int max_age;
   int line_len;
-  int incremental;              // Do an incremental run
-  int tail;                     // Tail the log file
-  int summary;                  // Summary only
-  int json;			// JSON output
-  int cgi;			// CGI output (typically with json)
-  int urls;			// Produce JSON output of URL stats, arg is LRU size
-  int show_urls;		// Max URLs to show
-  int as_object;		// Show the URL stats as a single JSON object (not array)
+  int incremental; // Do an incremental run
+  int tail;        // Tail the log file
+  int summary;     // Summary only
+  int json;        // JSON output
+  int cgi;         // CGI output (typically with json)
+  int urls;        // Produce JSON output of URL stats, arg is LRU size
+  int show_urls;   // Max URLs to show
+  int as_object;   // Show the URL stats as a single JSON object (not array)
 
   CommandLineArgs()
-    : max_origins(0), min_hits(0), max_age(0), line_len(DEFAULT_LINE_LEN), incremental(0),
-      tail(0), summary(0), json(0), cgi(0), urls(0), show_urls(0), as_object(0)
+    : max_origins(0), min_hits(0), max_age(0), line_len(DEFAULT_LINE_LEN), incremental(0), tail(0), summary(0), json(0), cgi(0),
+      urls(0), show_urls(0), as_object(0)
   {
     log_file[0] = '\0';
     origin_file[0] = '\0';
@@ -646,7 +613,7 @@ struct CommandLineArgs
     state_tag[0] = '\0';
   }
 
-  void parse_arguments(const char** argv);
+  void parse_arguments(const char **argv);
 };
 
 static CommandLineArgs cl;
@@ -670,14 +637,12 @@ static ArgumentDescription argument_descriptions[] = {
   {"line_len", 'l', "Output line length", "I", &cl.line_len, NULL, NULL},
   {"debug_tags", 'T', "Colon-Separated Debug Tags", "S1023", &error_tags, NULL, NULL},
   HELP_ARGUMENT_DESCRIPTION(),
-  VERSION_ARGUMENT_DESCRIPTION()
-};
+  VERSION_ARGUMENT_DESCRIPTION()};
 
-static const char *USAGE_LINE =
-  "Usage: " PROGRAM_NAME " [-f logfile] [-o origin[,...]] [-O originfile] [-m minhits] [-inshv]";
+static const char *USAGE_LINE = "Usage: " PROGRAM_NAME " [-f logfile] [-o origin[,...]] [-O originfile] [-m minhits] [-inshv]";
 
 void
-CommandLineArgs::parse_arguments(const char** argv)
+CommandLineArgs::parse_arguments(const char **argv)
 {
   // process command-line arguments
   process_args(&appVersionInfo, argument_descriptions, countof(argument_descriptions), argv, USAGE_LINE);
@@ -717,7 +682,7 @@ CommandLineArgs::parse_arguments(const char** argv)
           } else if (0 == strncmp(tok, "incremental", 11)) {
             incremental = strtol(val, NULL, 10);
           } else {
-          // Unknown query arg.
+            // Unknown query arg.
           }
         }
 
@@ -729,45 +694,44 @@ CommandLineArgs::parse_arguments(const char** argv)
 
 
 // Enum for return code levels.
-enum ExitLevel
-{
+enum ExitLevel {
   EXIT_OK = 0,
   EXIT_WARNING = 1,
   EXIT_CRITICAL = 2,
-  EXIT_UNKNOWN = 3
+  EXIT_UNKNOWN = 3,
 };
 
-struct ExitStatus
-{
+struct ExitStatus {
   ExitLevel level;
   char notice[1024];
 
-  ExitStatus()
-    : level(EXIT_OK)
-  {
-    memset(notice, 0, sizeof(notice));
-  }
+  ExitStatus() : level(EXIT_OK) { memset(notice, 0, sizeof(notice)); }
 
-  void set(ExitLevel l, const char* n=NULL) {
+  void
+  set(ExitLevel l, const char *n = NULL)
+  {
     if (l > level)
       level = l;
     if (n)
       ink_strlcat(notice, n, sizeof(notice));
   }
 
-  void append(const char *n) {
+  void
+  append(const char *n)
+  {
     ink_strlcat(notice, n, sizeof(notice));
   }
 
-  void append(const std::string s) {
+  void
+  append(const std::string s)
+  {
     ink_strlcat(notice, s.c_str(), sizeof(notice));
   }
 };
 
 
 // Enum for parsing a log line
-enum ParseStates
-{
+enum ParseStates {
   P_STATE_ELAPSED,
   P_STATE_IP,
   P_STATE_RESULT,
@@ -783,8 +747,7 @@ enum ParseStates
 };
 
 // Enum for HTTP methods
-enum HTTPMethod
-{
+enum HTTPMethod {
   METHOD_OPTIONS,
   METHOD_GET,
   METHOD_HEAD,
@@ -799,12 +762,11 @@ enum HTTPMethod
 };
 
 // Enum for URL schemes
-enum URLScheme
-{
+enum URLScheme {
   SCHEME_HTTP,
   SCHEME_HTTPS,
   SCHEME_NONE,
-  SCHEME_OTHER
+  SCHEME_OTHER,
 };
 
 
@@ -827,7 +789,7 @@ init_elapsed(OriginStats *stats)
 
 // Update the counters for one StatsCounter
 inline void
-update_counter(StatsCounter& counter, int size)
+update_counter(StatsCounter &counter, int size)
 {
   counter.count++;
   counter.bytes += size;
@@ -865,22 +827,20 @@ update_elapsed(ElapsedStats &stat, const int elapsed, const StatsCounter &counte
   else
     sum_of_squares = 0;
 
-  //Find the old sum of squares.
-  sum_of_squares = sum_of_squares + 2 * oldavg * oldcount * (oldavg - newavg)
-    + oldcount * (newavg * newavg - oldavg * oldavg);
+  // Find the old sum of squares.
+  sum_of_squares = sum_of_squares + 2 * oldavg * oldcount * (oldavg - newavg) + oldcount * (newavg * newavg - oldavg * oldavg);
 
-  //Now, find the new sum of squares.
+  // Now, find the new sum of squares.
   sum_of_squares = sum_of_squares + (elapsed - newavg) * (elapsed - newavg);
 
   stat.stddev = sqrt(sum_of_squares / newcount);
   stat.avg = newavg;
-
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 // Update the "result" and "elapsed" stats for a particular record
 inline void
-update_results_elapsed(OriginStats * stat, int result, int elapsed, int size)
+update_results_elapsed(OriginStats *stat, int result, int elapsed, int size)
 {
   switch (result) {
   case SQUID_LOG_TCP_HIT:
@@ -968,7 +928,7 @@ update_results_elapsed(OriginStats * stat, int result, int elapsed, int size)
 ///////////////////////////////////////////////////////////////////////////////
 // Update the "codes" stats for a particular record
 inline void
-update_codes(OriginStats * stat, int code, int size)
+update_codes(OriginStats *stat, int code, int size)
 {
   switch (code) {
   case 100:
@@ -1116,7 +1076,7 @@ update_codes(OriginStats * stat, int code, int size)
 ///////////////////////////////////////////////////////////////////////////////
 // Update the "methods" stats for a particular record
 inline void
-update_methods(OriginStats * stat, int method, int size)
+update_methods(OriginStats *stat, int method, int size)
 {
   // We're so loppsided on GETs, so makes most sense to test 'out of order'.
   switch (method) {
@@ -1170,7 +1130,7 @@ update_methods(OriginStats * stat, int method, int size)
 ///////////////////////////////////////////////////////////////////////////////
 // Update the "schemes" stats for a particular record
 inline void
-update_schemes(OriginStats * stat, int scheme, int size)
+update_schemes(OriginStats *stat, int scheme, int size)
 {
   if (SCHEME_HTTP == scheme)
     update_counter(stat->schemes.http, size);
@@ -1186,7 +1146,7 @@ update_schemes(OriginStats * stat, int scheme, int size)
 ///////////////////////////////////////////////////////////////////////////////
 // Parse a log buffer
 int
-parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
+parse_log_buff(LogBufferHeader *buf_header, bool summary = false)
 {
   static LogFieldList *fieldlist = NULL;
 
@@ -1200,7 +1160,7 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
   char *tok;
   char *ptr;
   int tok_len;
-  int flag = 0;                 // Flag used in state machine to carry "state" forward
+  int flag = 0; // Flag used in state machine to carry "state" forward
 
   // Parsed results
   int http_code = 0, size = 0, result = 0, hier = 0, elapsed = 0;
@@ -1217,11 +1177,11 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
   }
   // Loop over all entries
   while ((entry = buf_iter.next())) {
-    read_from = (char *) entry + sizeof(LogEntryHeader);
+    read_from = (char *)entry + sizeof(LogEntryHeader);
     // We read and skip over the first field, which is the timestamp.
     if ((field = fieldlist->first()))
       read_from += INK_MIN_ALIGN;
-    else                        // This shouldn't happen, buffer must be messed up.
+    else // This shouldn't happen, buffer must be messed up.
       break;
 
     state = P_STATE_ELAPSED;
@@ -1234,7 +1194,7 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
       switch (state) {
       case P_STATE_ELAPSED:
         state = P_STATE_IP;
-        elapsed = *((int64_t *) (read_from));
+        elapsed = *((int64_t *)(read_from));
         read_from += INK_MIN_ALIGN;
         break;
 
@@ -1242,19 +1202,21 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
         state = P_STATE_RESULT;
         // Just skip the IP, we no longer assume it's always the same.
         {
-          LogFieldIp* ip = reinterpret_cast<LogFieldIp*>(read_from);
+          LogFieldIp *ip = reinterpret_cast<LogFieldIp *>(read_from);
           int len = sizeof(LogFieldIp);
-          if (AF_INET == ip->_family) len = sizeof(LogFieldIp4);
-          else if (AF_INET6 == ip->_family) len = sizeof(LogFieldIp6);
+          if (AF_INET == ip->_family)
+            len = sizeof(LogFieldIp4);
+          else if (AF_INET6 == ip->_family)
+            len = sizeof(LogFieldIp6);
           read_from += INK_ALIGN_DEFAULT(len);
         }
         break;
 
       case P_STATE_RESULT:
         state = P_STATE_CODE;
-        result = *((int64_t *) (read_from));
+        result = *((int64_t *)(read_from));
         read_from += INK_MIN_ALIGN;
-        if ((result<32) || (result>255)) {
+        if ((result < 32) || (result > 255)) {
           flag = 1;
           state = P_STATE_END;
         }
@@ -1262,9 +1224,9 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
 
       case P_STATE_CODE:
         state = P_STATE_SIZE;
-        http_code = *((int64_t *) (read_from));
+        http_code = *((int64_t *)(read_from));
         read_from += INK_MIN_ALIGN;
-        if ((http_code<0) || (http_code>999)) {
+        if ((http_code < 0) || (http_code > 999)) {
           flag = 1;
           state = P_STATE_END;
         }
@@ -1274,7 +1236,7 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
         // Warning: This is not 64-bit safe, when converting the log format,
         // this needs to be fixed as well.
         state = P_STATE_METHOD;
-        size = *((int64_t *) (read_from));
+        size = *((int64_t *)(read_from));
         read_from += INK_MIN_ALIGN;
         break;
 
@@ -1283,7 +1245,7 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
         flag = 0;
 
         // Small optimization for common (3-4 char) cases
-        switch (*reinterpret_cast <int*>(read_from)) {
+        switch (*reinterpret_cast<int *>(read_from)) {
         case GET_AS_INT:
           method = METHOD_GET;
           read_from += LogAccess::round_strlen(3 + 1);
@@ -1310,7 +1272,7 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
             method = METHOD_OPTIONS;
           else if ((1 == tok_len) && ('-' == *read_from)) {
             method = METHOD_NONE;
-            flag = 1;           // No method, so no need to parse the URL
+            flag = 1; // No method, so no need to parse the URL
           } else {
             ptr = read_from;
             while (*ptr && isupper(*ptr))
@@ -1332,7 +1294,7 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
         // TODO check for read_from being empty string
         if (0 == flag) {
           tok = read_from;
-          if (HTTP_AS_INT == *reinterpret_cast <int*>(tok)) {
+          if (HTTP_AS_INT == *reinterpret_cast<int *>(tok)) {
             tok += 4;
             if (':' == *tok) {
               scheme = SCHEME_HTTP;
@@ -1349,7 +1311,7 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
               scheme = SCHEME_NONE;
             tok_len = strlen(tok);
           }
-          if ('/' == *tok)      // This is to handle crazy stuff like http:///origin.com
+          if ('/' == *tok) // This is to handle crazy stuff like http:///origin.com
             tok++;
           ptr = strchr(tok, '/');
           if (ptr && !summary) { // Find the origin
@@ -1405,7 +1367,7 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
 
       case P_STATE_HIERARCHY:
         state = P_STATE_PEER;
-        hier = *((int64_t *) (read_from));
+        hier = *((int64_t *)(read_from));
         switch (hier) {
         case SQUID_HIER_NONE:
           update_counter(totals.hierarchies.none, size);
@@ -1457,12 +1419,12 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
 
       case P_STATE_TYPE:
         state = P_STATE_END;
-        if (IMAG_AS_INT == *reinterpret_cast <int*>(read_from)) {
+        if (IMAG_AS_INT == *reinterpret_cast<int *>(read_from)) {
           update_counter(totals.content.image.total, size);
           if (o_stats != NULL)
             update_counter(o_stats->content.image.total, size);
           tok = read_from + 6;
-          switch (*reinterpret_cast <int*>(tok)) {
+          switch (*reinterpret_cast<int *>(tok)) {
           case JPEG_AS_INT:
             tok_len = 10;
             update_counter(totals.content.image.jpeg, size);
@@ -1500,12 +1462,12 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
               update_counter(o_stats->content.image.other, size);
             break;
           }
-        } else if (TEXT_AS_INT == *reinterpret_cast <int*>(read_from)) {
+        } else if (TEXT_AS_INT == *reinterpret_cast<int *>(read_from)) {
           tok = read_from + 5;
           update_counter(totals.content.text.total, size);
           if (o_stats != NULL)
             update_counter(o_stats->content.text.total, size);
-          switch (*reinterpret_cast <int*>(tok)) {
+          switch (*reinterpret_cast<int *>(tok)) {
           case JAVA_AS_INT:
             // TODO verify if really "javascript"
             tok_len = 15;
@@ -1538,7 +1500,8 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
               update_counter(o_stats->content.text.plain, size);
             break;
           default:
-            tok_len = 5 + strlen(tok);;
+            tok_len = 5 + strlen(tok);
+            ;
             update_counter(totals.content.text.other, size);
             if (o_stats != NULL)
               update_counter(o_stats->content.text.other, size);
@@ -1549,7 +1512,7 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
           update_counter(totals.content.application.total, size);
           if (o_stats != NULL)
             update_counter(o_stats->content.application.total, size);
-          switch (*reinterpret_cast <int*>(tok)) {
+          switch (*reinterpret_cast<int *>(tok)) {
           case ZIP_AS_INT:
             tok_len = 15;
             update_counter(totals.content.application.zip, size);
@@ -1567,12 +1530,12 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
               update_counter(o_stats->content.application.javascript, size);
             break;
           case RSSp_AS_INT:
-            if (0 == strcmp(tok+4, "xml")) {
+            if (0 == strcmp(tok + 4, "xml")) {
               tok_len = 19;
               update_counter(totals.content.application.rss_xml, size);
               if (o_stats != NULL)
                 update_counter(o_stats->content.application.rss_xml, size);
-            } else if (0 == strcmp(tok+4,"atom")) {
+            } else if (0 == strcmp(tok + 4, "atom")) {
               tok_len = 20;
               update_counter(totals.content.application.rss_atom, size);
               if (o_stats != NULL)
@@ -1633,7 +1596,7 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
             update_counter(o_stats->content.other, size);
         }
         read_from += LogAccess::round_strlen(tok_len + 1);
-        flag = 0;               // We exited this state without errors
+        flag = 0; // We exited this state without errors
         break;
 
       case P_STATE_END:
@@ -1648,7 +1611,6 @@ parse_log_buff(LogBufferHeader * buf_header, bool summary = false)
 
   return 0;
 }
-
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1674,7 +1636,7 @@ process_file(int in_fd, off_t offset, unsigned max_age)
       Debug("logstats", "Re-aligning file read.");
       while (true) {
         if (lseek(in_fd, offset, SEEK_SET) < 0) {
-          Debug("logstats", "Internal seek failed (offset=%"  PRId64 ").", (int64_t)offset);
+          Debug("logstats", "Internal seek failed (offset=%" PRId64 ").", (int64_t)offset);
           return 1;
         }
 
@@ -1696,7 +1658,7 @@ process_file(int in_fd, off_t offset, unsigned max_age)
       }
     } else {
       nread = read(in_fd, buffer, first_read_size);
-      if (!nread ||  EOF == nread || !header->cookie)
+      if (!nread || EOF == nread || !header->cookie)
         return 0;
 
       // ensure that this is a valid logbuffer header
@@ -1714,7 +1676,8 @@ process_file(int in_fd, off_t offset, unsigned max_age)
     unsigned second_read_size = sizeof(LogBufferHeader) - first_read_size;
     nread = read(in_fd, &buffer[first_read_size], second_read_size);
     if (!nread || EOF == nread) {
-      Debug("logstats", "Second read of header failed (attemped %d bytes at offset %d, got nothing), errno=%d.", second_read_size, first_read_size, errno);
+      Debug("logstats", "Second read of header failed (attemped %d bytes at offset %d, got nothing), errno=%d.", second_read_size,
+            first_read_size, errno);
       return 1;
     }
 
@@ -1725,7 +1688,7 @@ process_file(int in_fd, off_t offset, unsigned max_age)
     }
 
     buffer_bytes = header->byte_count - sizeof(LogBufferHeader);
-    if (buffer_bytes <= 0 || (unsigned int) buffer_bytes > (sizeof(buffer) - sizeof(LogBufferHeader))) {
+    if (buffer_bytes <= 0 || (unsigned int)buffer_bytes > (sizeof(buffer) - sizeof(LogBufferHeader))) {
       Debug("logstats", "Buffer payload [%d] is wrong.", buffer_bytes);
       return 1;
     }
@@ -1736,7 +1699,8 @@ process_file(int in_fd, off_t offset, unsigned max_age)
     do {
       nread = read(in_fd, &buffer[sizeof(LogBufferHeader) + total_read], buffer_bytes - total_read);
       if (EOF == nread || !nread) { // just bail on error
-        Debug("logstats", "Read failed while reading log buffer, wanted %d bytes, nread=%d, errno=%d", buffer_bytes - total_read, nread, errno);
+        Debug("logstats", "Read failed while reading log buffer, wanted %d bytes, nread=%d, errno=%d", buffer_bytes - total_read,
+              nread, errno);
         return 1;
       } else {
         total_read += nread;
@@ -1744,13 +1708,15 @@ process_file(int in_fd, off_t offset, unsigned max_age)
 
       if (total_read < buffer_bytes) {
         if (--read_tries_remaining <= 0) {
-          Debug("logstats_failed_retries", "Unable to read after %d tries, total_read=%d, buffer_bytes=%d", MAX_READ_TRIES, total_read, buffer_bytes);
+          Debug("logstats_failed_retries", "Unable to read after %d tries, total_read=%d, buffer_bytes=%d", MAX_READ_TRIES,
+                total_read, buffer_bytes);
           return 1;
         }
         // let's wait until we get more data on this file descriptor
-        Debug("logstats_partial_read", "Failed to read buffer payload [%d bytes], total_read=%d, buffer_bytes=%d, tries_remaining=%d",
-            buffer_bytes - total_read, total_read, buffer_bytes, read_tries_remaining);
-        usleep(50*1000); // wait 50ms
+        Debug("logstats_partial_read",
+              "Failed to read buffer payload [%d bytes], total_read=%d, buffer_bytes=%d, tries_remaining=%d",
+              buffer_bytes - total_read, total_read, buffer_bytes, read_tries_remaining);
+        usleep(50 * 1000); // wait 50ms
       }
     } while (total_read < buffer_bytes);
 
@@ -1773,7 +1739,7 @@ process_file(int in_fd, off_t offset, unsigned max_age)
 // Determine if this "stat" (Origin Server) is worthwhile to produce a
 // report for.
 inline int
-use_origin(const OriginStats * stat)
+use_origin(const OriginStats *stat)
 {
   return ((stat->total.count > cl.min_hits) && (NULL != strchr(stat->server, '.')) && (NULL == strchr(stat->server, '%')));
 }
@@ -1791,7 +1757,7 @@ inline void
 format_int(int64_t num)
 {
   if (num > 0) {
-    int64_t mult = (int64_t) pow((double)10, (int) (log10((double)num) / 3) * 3);
+    int64_t mult = (int64_t)pow((double)10, (int)(log10((double)num) / 3) * 3);
     int64_t div;
     std::stringstream ss;
 
@@ -1818,10 +1784,11 @@ format_elapsed_header()
 }
 
 inline void
-format_elapsed_line(const char *desc, const ElapsedStats &stat, bool json=false)
+format_elapsed_line(const char *desc, const ElapsedStats &stat, bool json = false)
 {
   if (json) {
-    std::cout << "    " << '"' << desc << "\" : " << "{ ";
+    std::cout << "    " << '"' << desc << "\" : "
+              << "{ ";
     std::cout << "\"min\": \"" << stat.min << "\", ";
     std::cout << "\"max\": \"" << stat.max << "\", ";
     std::cout << "\"avg\": \"" << std::setiosflags(ios::fixed) << std::setprecision(2) << stat.avg << "\", ";
@@ -1851,56 +1818,56 @@ format_detail_header(const char *desc)
 }
 
 inline void
-format_line(const char *desc, const StatsCounter &stat, const StatsCounter &total, bool json=false)
+format_line(const char *desc, const StatsCounter &stat, const StatsCounter &total, bool json = false)
 {
   static char metrics[] = "KKMGTP";
   static char buf[64];
-  int ix = (stat.bytes > 1024 ? (int) (log10((double)stat.bytes) / LOG10_1024) : 1);
+  int ix = (stat.bytes > 1024 ? (int)(log10((double)stat.bytes) / LOG10_1024) : 1);
 
   if (json) {
-    std::cout << "    " << '"' << desc << "\" : " << "{ ";
+    std::cout << "    " << '"' << desc << "\" : "
+              << "{ ";
     std::cout << "\"req\": \"" << stat.count << "\", ";
-    std::cout << "\"req_pct\": \"" << std::setiosflags(ios::fixed) << std::setprecision(2) <<
-      (double)stat.count / total.count * 100 << "\", ";
+    std::cout << "\"req_pct\": \"" << std::setiosflags(ios::fixed) << std::setprecision(2) << (double)stat.count / total.count * 100
+              << "\", ";
     std::cout << "\"bytes\": \"" << stat.bytes << "\", ";
-    std::cout << "\"bytes_pct\": \"" << std::setiosflags(ios::fixed) << std::setprecision(2) <<
-      (double)stat.bytes / total.bytes * 100 << "\" }," << std::endl;
+    std::cout << "\"bytes_pct\": \"" << std::setiosflags(ios::fixed) << std::setprecision(2)
+              << (double)stat.bytes / total.bytes * 100 << "\" }," << std::endl;
   } else {
     std::cout << std::left << std::setw(29) << desc;
 
     std::cout << std::right << std::setw(15);
     format_int(stat.count);
 
-    snprintf(buf, sizeof(buf), "%10.2f%%", ((double) stat.count / total.count * 100));
+    snprintf(buf, sizeof(buf), "%10.2f%%", ((double)stat.count / total.count * 100));
     std::cout << std::right << buf;
 
     snprintf(buf, sizeof(buf), "%10.2f%cB", stat.bytes / pow((double)1024, ix), metrics[ix]);
     std::cout << std::right << buf;
 
-    snprintf(buf, sizeof(buf), "%10.2f%%", ((double) stat.bytes / total.bytes * 100));
+    snprintf(buf, sizeof(buf), "%10.2f%%", ((double)stat.bytes / total.bytes * 100));
     std::cout << std::right << buf << std::endl;
   }
 }
 
 
 // Little "helpers" for the vector we use to sort the Origins.
-typedef pair<const char *, OriginStats *>OriginPair;
-inline bool
-operator<(const OriginPair &a, const OriginPair &b)
+typedef pair<const char *, OriginStats *> OriginPair;
+inline bool operator<(const OriginPair &a, const OriginPair &b)
 {
   return a.second->total.count > b.second->total.count;
 }
 
 void
-print_detail_stats(const OriginStats * stat, bool json=false)
+print_detail_stats(const OriginStats *stat, bool json = false)
 {
   // Cache hit/misses etc.
   if (!json)
     format_detail_header("Request Result");
 
   format_line(json ? "hit.direct" : "Cache hit", stat->results.hits.hit, stat->total, json);
-  format_line(json ? "hit.ims" : "Cache hit IMS", stat->results.hits.ims, stat->total,json);
-  format_line(json ? "hit.refresh" : "Cache hit refresh", stat->results.hits.refresh, stat->total,json);
+  format_line(json ? "hit.ims" : "Cache hit IMS", stat->results.hits.ims, stat->total, json);
+  format_line(json ? "hit.refresh" : "Cache hit refresh", stat->results.hits.refresh, stat->total, json);
   format_line(json ? "hit.other" : "Cache hit other", stat->results.hits.other, stat->total, json);
   format_line(json ? "hit.total" : "Cache hit total", stat->results.hits.total, stat->total, json);
 
@@ -2071,19 +2038,23 @@ print_detail_stats(const OriginStats * stat, bool json=false)
   format_line(json ? "content.audio.x-wav" : "audio/x-wav", stat->content.audio.wav, stat->total, json);
   format_line(json ? "content.audio.x-mpeg" : "audio/x-mpeg", stat->content.audio.mpeg, stat->total, json);
   format_line(json ? "content.audio.other" : "audio/ other", stat->content.audio.other, stat->total, json);
-  format_line(json ? "content.audio.total": "audio/ total", stat->content.audio.total, stat->total, json);
+  format_line(json ? "content.audio.total" : "audio/ total", stat->content.audio.total, stat->total, json);
 
   if (!json)
     std::cout << std::endl;
 
-  format_line(json ? "content.application.shockwave" : "application/x-shockwave", stat->content.application.shockwave_flash, stat->total, json);
-  format_line(json ? "content.application.javascript" : "application/[x-]javascript", stat->content.application.javascript, stat->total, json);
-  format_line(json ? "content.application.quicktime" : "application/x-quicktime", stat->content.application.quicktime, stat->total, json);
+  format_line(json ? "content.application.shockwave" : "application/x-shockwave", stat->content.application.shockwave_flash,
+              stat->total, json);
+  format_line(json ? "content.application.javascript" : "application/[x-]javascript", stat->content.application.javascript,
+              stat->total, json);
+  format_line(json ? "content.application.quicktime" : "application/x-quicktime", stat->content.application.quicktime, stat->total,
+              json);
   format_line(json ? "content.application.zip" : "application/zip", stat->content.application.zip, stat->total, json);
   format_line(json ? "content.application.rss_xml" : "application/rss+xml", stat->content.application.rss_xml, stat->total, json);
-  format_line(json ? "content.application.rss_atom" : "application/rss+atom", stat->content.application.rss_atom, stat->total, json);
+  format_line(json ? "content.application.rss_atom" : "application/rss+atom", stat->content.application.rss_atom, stat->total,
+              json);
   format_line(json ? "content.application.other" : "application/ other", stat->content.application.other, stat->total, json);
-  format_line(json ? "content.application.total": "application/ total", stat->content.application.total, stat->total, json);
+  format_line(json ? "content.application.total" : "application/ total", stat->content.application.total, stat->total, json);
 
   if (!json)
     std::cout << std::endl;
@@ -2094,7 +2065,7 @@ print_detail_stats(const OriginStats * stat, bool json=false)
   if (!json) {
     std::cout << std::endl << std::endl;
 
-  // Elapsed time
+    // Elapsed time
     format_elapsed_header();
   }
 
@@ -2122,7 +2093,7 @@ print_detail_stats(const OriginStats * stat, bool json=false)
 ///////////////////////////////////////////////////////////////////////////////
 // Little wrapper around exit, to allow us to exit gracefully
 void
-my_exit(const ExitStatus& status)
+my_exit(const ExitStatus &status)
 {
   vector<OriginPair> vec;
   bool first = true;
@@ -2214,7 +2185,7 @@ my_exit(const ExitStatus& status)
       } else {
         std::cout << "," << std::endl << "  ";
       }
-      std::cout << '"' <<  i->first << "\": {" << std::endl;
+      std::cout << '"' << i->first << "\": {" << std::endl;
       print_detail_stats(i->second, cl.json);
       std::cout << "  }";
     } else {
@@ -2234,7 +2205,7 @@ my_exit(const ExitStatus& status)
 ///////////////////////////////////////////////////////////////////////////////
 // Open the "default" log file (squid.blog), allow for it to be rotated.
 int
-open_main_log(ExitStatus& status)
+open_main_log(ExitStatus &status)
 {
   std::string logfile(Layout::get()->logdir);
   int cnt = 3;
@@ -2264,7 +2235,6 @@ open_main_log(ExitStatus& status)
 }
 
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // main
 int
@@ -2277,8 +2247,7 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
   struct flock lck;
 
   // build the application information structure
-  appVersionInfo.setup(PACKAGE_NAME, PROGRAM_NAME, PACKAGE_VERSION, __DATE__, __TIME__,
-                       BUILD_MACHINE, BUILD_PERSON, "");
+  appVersionInfo.setup(PACKAGE_NAME, PROGRAM_NAME, PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
 
   // Before accessing file system initialize Layout engine
   Layout::create();
@@ -2484,7 +2453,7 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
             if (old_fd < 0) {
               exit_status.set(EXIT_WARNING, " can't open ");
               exit_status.append(dp->d_name);
-              break;            // Don't attempt any more files
+              break; // Don't attempt any more files
             }
             // Process it
             if (process_file(old_fd, last_state.offset, max_age) != 0) {
@@ -2492,7 +2461,7 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
               exit_status.append(dp->d_name);
             }
             close(old_fd);
-            break;              // Don't attempt any more files
+            break; // Don't attempt any more files
           }
         }
       }
@@ -2526,7 +2495,7 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
         exit_status.set(EXIT_WARNING, " can't write state_fd ");
       }
     }
-    //flock(state_fd, LOCK_UN);
+    // flock(state_fd, LOCK_UN);
     lck.l_type = F_UNLCK;
     fcntl(state_fd, F_SETLK, &lck);
     close(main_fd);

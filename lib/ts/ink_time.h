@@ -32,7 +32,7 @@
  ****************************************************************************/
 
 #ifndef _ink_time_h_
-#define	_ink_time_h_
+#define _ink_time_h_
 
 #include "ink_platform.h"
 #include "ink_defs.h"
@@ -60,13 +60,13 @@ typedef time_t ink_time_t;
 uint64_t ink_microseconds(int which);
 double ink_time_wall_seconds();
 
-int cftime_replacement(char *s, int maxsize, const char *format, const time_t * clock);
+int cftime_replacement(char *s, int maxsize, const char *format, const time_t *clock);
 #define cftime(s, format, clock) cftime_replacement(s, 8192, format, clock)
 
 ink_time_t convert_tm(const struct tm *tp);
 
-inkcoreapi char *ink_ctime_r(const ink_time_t * clock, char *buf);
-inkcoreapi struct tm *ink_localtime_r(const ink_time_t * clock, struct tm *res);
+inkcoreapi char *ink_ctime_r(const ink_time_t *clock, char *buf);
+inkcoreapi struct tm *ink_localtime_r(const ink_time_t *clock, struct tm *res);
 
 /*===========================================================================*
                               Inline Stuffage
@@ -82,7 +82,7 @@ ink_timezone()
   return tzp.tz_minuteswest * 60;
 }
 
-#else  // non-freebsd, non-openbsd for the else
+#else // non-freebsd, non-openbsd for the else
 
 inline int
 ink_timezone()

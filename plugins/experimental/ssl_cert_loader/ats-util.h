@@ -53,13 +53,13 @@
     @endcode
 
  */
-template <typename T> inline void
-ink_zero(
-	 T& t ///< Object to zero.
-	 )
+template <typename T>
+inline void
+ink_zero(T &t ///< Object to zero.
+         )
 {
   memset(&t, 0, sizeof(t));
 }
-#endif  /* __cplusplus */
+#endif /* __cplusplus */
 
 #endif // ats-util.h

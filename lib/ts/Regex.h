@@ -32,8 +32,7 @@
 #include <pcre.h>
 #endif
 
-enum REFlags
-{
+enum REFlags {
   RE_CASE_INSENSITIVE = 0x0001, // default is case sensitive
   RE_UNANCHORED = 0x0002,       // default (for DFA) is to anchor at the first matching position
   RE_ANCHORED = 0x0004,         // default (for Regex) is unanchored
@@ -42,8 +41,7 @@ enum REFlags
 class Regex
 {
 public:
-  Regex():regex(NULL), regex_extra(NULL) {
-  }
+  Regex() : regex(NULL), regex_extra(NULL) {}
   bool compile(const char *pattern, unsigned flags = 0);
   // It is safe to call exec() concurrently on the same object instance
   bool exec(const char *str);
@@ -59,14 +57,13 @@ typedef struct __pat {
   int _idx;
   Regex *_re;
   char *_p;
-  __pat * _next;
+  __pat *_next;
 } dfa_pattern;
 
 class DFA
 {
 public:
-  DFA():_my_patterns(0) {
-  }
+  DFA() : _my_patterns(0) {}
 
   ~DFA();
 
@@ -77,9 +74,9 @@ public:
   int match(const char *str, int length) const;
 
 private:
-  dfa_pattern * build(const char *pattern, unsigned flags = 0);
+  dfa_pattern *build(const char *pattern, unsigned flags = 0);
 
-  dfa_pattern * _my_patterns;
+  dfa_pattern *_my_patterns;
 };
 
 #endif /* __TS_REGEX_H__ */

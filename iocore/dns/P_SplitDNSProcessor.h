@@ -54,10 +54,10 @@ struct SplitDNSResult;
 
 struct DNSServer;
 
-enum DNSResultType
-{ DNS_SRVR_UNDEFINED = 0,
+enum DNSResultType {
+  DNS_SRVR_UNDEFINED = 0,
   DNS_SRVR_SPECIFIED,
-  DNS_SRVR_FAIL
+  DNS_SRVR_FAIL,
 };
 
 typedef ControlMatcher<SplitDNSRecord, SplitDNSResult> DNS_table;
@@ -66,8 +66,7 @@ typedef ControlMatcher<SplitDNSRecord, SplitDNSResult> DNS_table;
 /* --------------------------------------------------------------
    **                struct SplitDNSResult
    -------------------------------------------------------------- */
-struct SplitDNSResult
-{
+struct SplitDNSResult {
   SplitDNSResult();
 
   /* ------------
@@ -91,13 +90,12 @@ struct SplitDNSResult
 /* --------------------------------------------------------------
    **                struct SplitDNS
    -------------------------------------------------------------- */
-struct SplitDNS:public ConfigInfo
-{
+struct SplitDNS : public ConfigInfo {
   SplitDNS();
   ~SplitDNS();
 
   void *getDNSRecord(const char *hostname);
-  void findServer(RequestData * rdata, SplitDNSResult * result);
+  void findServer(RequestData *rdata, SplitDNSResult *result);
 
 
   DNS_table *m_DNSSrvrTable;
@@ -117,7 +115,8 @@ struct SplitDNS:public ConfigInfo
 /* --------------------------------------------------------------
    SplitDNSConfig::isSplitDNSEnabled()
    -------------------------------------------------------------- */
-TS_INLINE bool SplitDNSConfig::isSplitDNSEnabled()
+TS_INLINE bool
+SplitDNSConfig::isSplitDNSEnabled()
 {
   return (gsplit_dns_enabled ? true : false);
 }
@@ -133,18 +132,17 @@ TS_INLINE bool SplitDNSConfig::isSplitDNSEnabled()
 
    A record for an single server
    -------------------------------------------------------------- */
-class DNSRequestData: public RequestData
+class DNSRequestData : public RequestData
 {
 public:
-
   DNSRequestData();
 
   char *get_string();
 
   const char *get_host();
 
-  sockaddr const* get_ip(); // unused required virtual method.
-  sockaddr const* get_client_ip(); // unused required virtual method.
+  sockaddr const *get_ip();        // unused required virtual method.
+  sockaddr const *get_client_ip(); // unused required virtual method.
 
   const char *m_pHost;
 };
@@ -153,8 +151,8 @@ public:
 /* --------------------------------------------------------------
    DNSRequestData::get_string()
    -------------------------------------------------------------- */
-TS_INLINE DNSRequestData::DNSRequestData()
-: m_pHost(0)
+TS_INLINE
+DNSRequestData::DNSRequestData() : m_pHost(0)
 {
 }
 
@@ -165,7 +163,7 @@ TS_INLINE DNSRequestData::DNSRequestData()
 TS_INLINE char *
 DNSRequestData::get_string()
 {
-  return ats_strdup((char *) m_pHost);
+  return ats_strdup((char *)m_pHost);
 }
 
 
@@ -182,7 +180,8 @@ DNSRequestData::get_host()
 /* --------------------------------------------------------------
    DNSRequestData::get_ip()
    -------------------------------------------------------------- */
-TS_INLINE sockaddr const* DNSRequestData::get_ip()
+TS_INLINE sockaddr const *
+DNSRequestData::get_ip()
 {
   return NULL;
 }
@@ -191,7 +190,8 @@ TS_INLINE sockaddr const* DNSRequestData::get_ip()
 /* --------------------------------------------------------------
    DNSRequestData::get_client_ip()
    -------------------------------------------------------------- */
-TS_INLINE sockaddr const* DNSRequestData::get_client_ip()
+TS_INLINE sockaddr const *
+DNSRequestData::get_client_ip()
 {
   return NULL;
 }
@@ -201,20 +201,19 @@ TS_INLINE sockaddr const* DNSRequestData::get_client_ip()
 
    A record for a configuration line in the splitdns.config file
    -------------------------------------------------------------- */
-class SplitDNSRecord: public ControlBase
+class SplitDNSRecord : public ControlBase
 {
 public:
-
   SplitDNSRecord();
   ~SplitDNSRecord();
 
-  config_parse_error Init(matcher_line * line_info);
+  config_parse_error Init(matcher_line *line_info);
 
   const char *ProcessDNSHosts(char *val);
   const char *ProcessDomainSrchList(char *val);
   const char *ProcessDefDomain(char *val);
 
-  void UpdateMatch(SplitDNSResult * result, RequestData * rdata);
+  void UpdateMatch(SplitDNSResult *result, RequestData *rdata);
   void Print();
 
   DNSServer m_servers;
@@ -226,16 +225,18 @@ public:
 /* --------------------------------------------------------------
    SplitDNSRecord::SplitDNSRecord()
    -------------------------------------------------------------- */
-TS_INLINE SplitDNSRecord::SplitDNSRecord()
-: m_dnsSrvr_cnt(0), m_domain_srch_list(0)
-{ }
+TS_INLINE
+SplitDNSRecord::SplitDNSRecord() : m_dnsSrvr_cnt(0), m_domain_srch_list(0)
+{
+}
 
 
 /* --------------------------------------------------------------
    SplitDNSRecord::~SplitDNSRecord()
    -------------------------------------------------------------- */
 TS_INLINE SplitDNSRecord::~SplitDNSRecord()
-{ }
+{
+}
 
 
 /* ------------------

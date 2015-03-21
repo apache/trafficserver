@@ -26,8 +26,7 @@
 
 #include "List.h"
 
-struct PluginRegInfo
-{
+struct PluginRegInfo {
   PluginRegInfo();
   ~PluginRegInfo();
 
@@ -47,7 +46,7 @@ struct PluginRegInfo
 extern DLL<PluginRegInfo> plugin_reg_list;
 extern PluginRegInfo *plugin_reg_current;
 
-bool plugin_init(bool validateOnly=false);
+bool plugin_init(bool validateOnly = false);
 
 /** Abstract interface class for plugin based continuations.
 
@@ -65,7 +64,7 @@ bool plugin_init(bool validateOnly=false);
  */
 class PluginIdentity
 {
- public:
+public:
   /// Make sure destructor is virtual.
   virtual ~PluginIdentity() {}
 
@@ -73,12 +72,20 @@ class PluginIdentity
       The returned string must have a lifetime at least as long as the plugin.
       @return A string identifying the plugin or @c NULL.
   */
-  virtual char const* getPluginTag() const { return NULL; }
+  virtual char const *
+  getPluginTag() const
+  {
+    return NULL;
+  }
   /** Get the plugin instance ID.
       A plugin can create multiple subsidiary instances. This is used as the
       identifier for those to distinguish the instances.
   */
-  virtual int64_t getPluginId() const { return 0; }
+  virtual int64_t
+  getPluginId() const
+  {
+    return 0;
+  }
 };
 
 #endif /* __PLUGIN_H__ */

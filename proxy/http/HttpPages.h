@@ -46,18 +46,17 @@ class HttpSM;
 const int HTTP_LIST_BUCKETS = 63;
 const int HTTP_LIST_RETRY = HRTIME_MSECONDS(10);
 
-struct HttpSMListBucket
-{
+struct HttpSMListBucket {
   Ptr<ProxyMutex> mutex;
   DList(HttpSM, debug_link) sm_list;
 };
 
 extern HttpSMListBucket HttpSMList[];
 
-class HttpPagesHandler:public BaseStatPagesHandler
+class HttpPagesHandler : public BaseStatPagesHandler
 {
 public:
-  HttpPagesHandler(Continuation * cont, HTTPHdr * header);
+  HttpPagesHandler(Continuation *cont, HTTPHdr *header);
   ~HttpPagesHandler();
 
   int handle_smlist(int event, void *edata);
@@ -66,20 +65,21 @@ public:
   Action action;
 
 private:
-
   int64_t extract_id(const char *query);
   void dump_hdr(HTTPHdr *hdr, const char *desc);
-  void dump_tunnel_info(HttpSM * sm);
-  void dump_history(HttpSM * sm);
-  int dump_sm(HttpSM * sm);
+  void dump_tunnel_info(HttpSM *sm);
+  void dump_history(HttpSM *sm);
+  int dump_sm(HttpSM *sm);
 
 
   Arena arena;
   char *request;
   int list_bucket;
 
-  enum HP_State_t
-  { HP_INIT, HP_RUN };
+  enum HP_State_t {
+    HP_INIT,
+    HP_RUN,
+  };
   HP_State_t state;
 
   // Info for SM details

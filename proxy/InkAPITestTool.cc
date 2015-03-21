@@ -24,32 +24,35 @@
 #include "Regression.h"
 #include "api/ts/ts.h"
 
-#include <arpa/inet.h>          /* For htonl */
+#include <arpa/inet.h> /* For htonl */
 #include "P_Net.h"
 #include <records/I_RecHttp.h>
 
 #define SDBG_TAG "SockServer"
 #define CDBG_TAG "SockClient"
 
-#define IP(a,b,c,d) htonl((a) << 24 | (b) << 16 | (c) << 8 | (d))
+#define IP(a, b, c, d) htonl((a) << 24 | (b) << 16 | (c) << 8 | (d))
 
-#define SET_TEST_HANDLER(_d, _s) {_d = _s;}
+#define SET_TEST_HANDLER(_d, _s) \
+  {                              \
+    _d = _s;                     \
+  }
 
 #define MAGIC_ALIVE 0xfeedbaba
-#define MAGIC_DEAD  0xdeadbeef
+#define MAGIC_DEAD 0xdeadbeef
 
-#define SYNSERVER_LISTEN_PORT  3300
+#define SYNSERVER_LISTEN_PORT 3300
 
 #define PROXY_CONFIG_NAME_HTTP_PORT "proxy.config.http.server_port"
 #define PROXY_HTTP_DEFAULT_PORT 8080
 
-#define REQUEST_MAX_SIZE  4095
+#define REQUEST_MAX_SIZE 4095
 #define RESPONSE_MAX_SIZE 4095
 
 #define HTTP_REQUEST_END "\r\n\r\n"
 
 // each request/response includes an identifier as a Mime field
-#define X_REQUEST_ID  "X-Request-ID"
+#define X_REQUEST_ID "X-Request-ID"
 #define X_RESPONSE_ID "X-Response-ID"
 
 #define ERROR_BODY "TESTING ERROR PAGE"
@@ -59,11 +62,10 @@
 // STRUCTURES
 //////////////////////////////////////////////////////////////////////////////
 
-typedef int (*TxnHandler) (TSCont contp, TSEvent event, void *data);
+typedef int (*TxnHandler)(TSCont contp, TSEvent event, void *data);
 
 /* Server transaction structure */
-typedef struct
-{
+typedef struct {
   TSVConn vconn;
 
   TSVIO read_vio;
@@ -82,24 +84,21 @@ typedef struct
 } ServerTxn;
 
 /* Server structure */
-typedef struct
-{
+typedef struct {
   int accept_port;
   TSAction accept_action;
   TSCont accept_cont;
   unsigned int magic;
 } SocketServer;
 
-typedef enum
-{
+typedef enum {
   REQUEST_SUCCESS,
   REQUEST_INPROGRESS,
-  REQUEST_FAILURE
+  REQUEST_FAILURE,
 } RequestStatus;
 
 /* Client structure */
-typedef struct
-{
+typedef struct {
   TSVConn vconn;
 
   TSVIO read_vio;
@@ -140,10 +139,10 @@ static int get_request_id(TSHttpTxn txnp);
 
 /* client side */
 static ClientTxn *synclient_txn_create(void);
-static int synclient_txn_delete(ClientTxn * txn);
+static int synclient_txn_delete(ClientTxn *txn);
 static int synclient_txn_close(TSCont contp);
-static int synclient_txn_send_request(ClientTxn * txn, char *request);
-static int synclient_txn_send_request_to_vc(ClientTxn * txn, char *request, TSVConn vc);
+static int synclient_txn_send_request(ClientTxn *txn, char *request);
+static int synclient_txn_send_request_to_vc(ClientTxn *txn, char *request, TSVConn vc);
 static int synclient_txn_read_response(TSCont contp);
 static int synclient_txn_read_response_handler(TSCont contp, TSEvent event, void *data);
 static int synclient_txn_write_request(TSCont contp);
@@ -153,9 +152,9 @@ static int synclient_txn_main_handler(TSCont contp, TSEvent event, void *data);
 
 /* Server side */
 SocketServer *synserver_create(int port);
-static int synserver_start(SocketServer * s);
-static int synserver_stop(SocketServer * s);
-static int synserver_delete(SocketServer * s);
+static int synserver_start(SocketServer *s);
+static int synserver_stop(SocketServer *s);
+static int synserver_delete(SocketServer *s);
 static int synserver_accept_handler(TSCont contp, TSEvent event, void *data);
 static int synserver_txn_close(TSCont contp);
 static int synserver_txn_write_response(TSCont contp);
@@ -171,7 +170,7 @@ static int synserver_txn_main_handler(TSCont contp, TSEvent event, void *data);
 static char *
 get_body_ptr(const char *request)
 {
-  char *ptr = (char *) strstr((const char *) request, (const char *) "\r\n\r\n");
+  char *ptr = (char *)strstr((const char *)request, (const char *)"\r\n\r\n");
   return (ptr != NULL) ? (ptr + 4) : NULL;
 }
 
@@ -180,53 +179,63 @@ get_body_ptr(const char *request)
 static char *
 generate_request(int test_case)
 {
-
 // We define request formats.
 // Each format has an X-Request-ID field that contains the id of the testcase
-#define HTTP_REQUEST_DEFAULT_FORMAT  "GET http://127.0.0.1:%d/default.html HTTP/1.0\r\n" \
-                                     "X-Request-ID: %d\r\n" \
-				     "\r\n"
+#define HTTP_REQUEST_DEFAULT_FORMAT                   \
+  "GET http://127.0.0.1:%d/default.html HTTP/1.0\r\n" \
+  "X-Request-ID: %d\r\n"                              \
+  "\r\n"
 
-#define HTTP_REQUEST_FORMAT1 "GET http://127.0.0.1:%d/format1.html HTTP/1.0\r\n" \
-			     "X-Request-ID: %d\r\n" \
-			     "\r\n"
+#define HTTP_REQUEST_FORMAT1                          \
+  "GET http://127.0.0.1:%d/format1.html HTTP/1.0\r\n" \
+  "X-Request-ID: %d\r\n"                              \
+  "\r\n"
 
-#define HTTP_REQUEST_FORMAT2 "GET http://127.0.0.1:%d/format2.html HTTP/1.0\r\n" \
-			     "X-Request-ID: %d\r\n" \
-                             "Content-Type: text/html\r\n" \
-			     "\r\n"
-#define HTTP_REQUEST_FORMAT3 "GET http://127.0.0.1:%d/format3.html HTTP/1.0\r\n" \
-			     "X-Request-ID: %d\r\n" \
-			     "Response: Error\r\n" \
-			     "\r\n"
-#define HTTP_REQUEST_FORMAT4 "GET http://127.0.0.1:%d/format4.html HTTP/1.0\r\n" \
-			     "X-Request-ID: %d\r\n" \
-                             "Request:%d\r\n" \
-                             "\r\n"
-#define HTTP_REQUEST_FORMAT5 "GET http://127.0.0.1:%d/format5.html HTTP/1.0\r\n" \
-			     "X-Request-ID: %d\r\n" \
-                             "Request:%d\r\n" \
-                             "\r\n"
-#define HTTP_REQUEST_FORMAT6 "GET http://127.0.0.1:%d/format.html HTTP/1.0\r\n" \
-			     "X-Request-ID: %d\r\n" \
-                             "Accept-Language: English\r\n" \
-                             "\r\n"
-#define HTTP_REQUEST_FORMAT7 "GET http://127.0.0.1:%d/format.html HTTP/1.0\r\n" \
-			     "X-Request-ID: %d\r\n" \
-                             "Accept-Language: French\r\n" \
-                             "\r\n"
-#define HTTP_REQUEST_FORMAT8 "GET http://127.0.0.1:%d/format.html HTTP/1.0\r\n" \
-			     "X-Request-ID: %d\r\n" \
-                             "Accept-Language: English,French\r\n" \
-                             "\r\n"
-#define HTTP_REQUEST_FORMAT9 "GET http://trafficserver.apache.org/format9.html HTTP/1.0\r\n" \
-			     "X-Request-ID: %d\r\n" \
-                             "\r\n"
-#define HTTP_REQUEST_FORMAT10 "GET http://trafficserver.apache.org/format10.html HTTP/1.0\r\n" \
-			      "X-Request-ID: %d\r\n" \
-                              "\r\n"
+#define HTTP_REQUEST_FORMAT2                          \
+  "GET http://127.0.0.1:%d/format2.html HTTP/1.0\r\n" \
+  "X-Request-ID: %d\r\n"                              \
+  "Content-Type: text/html\r\n"                       \
+  "\r\n"
+#define HTTP_REQUEST_FORMAT3                          \
+  "GET http://127.0.0.1:%d/format3.html HTTP/1.0\r\n" \
+  "X-Request-ID: %d\r\n"                              \
+  "Response: Error\r\n"                               \
+  "\r\n"
+#define HTTP_REQUEST_FORMAT4                          \
+  "GET http://127.0.0.1:%d/format4.html HTTP/1.0\r\n" \
+  "X-Request-ID: %d\r\n"                              \
+  "Request:%d\r\n"                                    \
+  "\r\n"
+#define HTTP_REQUEST_FORMAT5                          \
+  "GET http://127.0.0.1:%d/format5.html HTTP/1.0\r\n" \
+  "X-Request-ID: %d\r\n"                              \
+  "Request:%d\r\n"                                    \
+  "\r\n"
+#define HTTP_REQUEST_FORMAT6                         \
+  "GET http://127.0.0.1:%d/format.html HTTP/1.0\r\n" \
+  "X-Request-ID: %d\r\n"                             \
+  "Accept-Language: English\r\n"                     \
+  "\r\n"
+#define HTTP_REQUEST_FORMAT7                         \
+  "GET http://127.0.0.1:%d/format.html HTTP/1.0\r\n" \
+  "X-Request-ID: %d\r\n"                             \
+  "Accept-Language: French\r\n"                      \
+  "\r\n"
+#define HTTP_REQUEST_FORMAT8                         \
+  "GET http://127.0.0.1:%d/format.html HTTP/1.0\r\n" \
+  "X-Request-ID: %d\r\n"                             \
+  "Accept-Language: English,French\r\n"              \
+  "\r\n"
+#define HTTP_REQUEST_FORMAT9                                      \
+  "GET http://trafficserver.apache.org/format9.html HTTP/1.0\r\n" \
+  "X-Request-ID: %d\r\n"                                          \
+  "\r\n"
+#define HTTP_REQUEST_FORMAT10                                      \
+  "GET http://trafficserver.apache.org/format10.html HTTP/1.0\r\n" \
+  "X-Request-ID: %d\r\n"                                           \
+  "\r\n"
 
-  char *request = (char *) TSmalloc(REQUEST_MAX_SIZE + 1);
+  char *request = (char *)TSmalloc(REQUEST_MAX_SIZE + 1);
 
   switch (test_case) {
   case 1:
@@ -274,76 +283,87 @@ generate_response(const char *request)
 {
 // define format for response
 // Each response contains a field X-Response-ID that contains the id of the testcase
-#define HTTP_REQUEST_TESTCASE_FORMAT "GET %1024s HTTP/1.%d\r\n" \
-                                     "X-Request-ID: %d\r\n"
+#define HTTP_REQUEST_TESTCASE_FORMAT \
+  "GET %1024s HTTP/1.%d\r\n"         \
+  "X-Request-ID: %d\r\n"
 
-#define HTTP_RESPONSE_DEFAULT_FORMAT "HTTP/1.0 200 OK\r\n" \
-			      "X-Response-ID: %d\r\n" \
-                              "Cache-Control: max-age=86400\r\n" \
-                              "Content-Type: text/html\r\n" \
-			      "\r\n" \
-			      "Default body"
+#define HTTP_RESPONSE_DEFAULT_FORMAT \
+  "HTTP/1.0 200 OK\r\n"              \
+  "X-Response-ID: %d\r\n"            \
+  "Cache-Control: max-age=86400\r\n" \
+  "Content-Type: text/html\r\n"      \
+  "\r\n"                             \
+  "Default body"
 
-#define HTTP_RESPONSE_FORMAT1 "HTTP/1.0 200 OK\r\n" \
-			      "X-Response-ID: %d\r\n" \
-                              "Content-Type: text/html\r\n" \
-			      "Cache-Control: no-cache\r\n" \
-			      "\r\n" \
-			      "Body for response 1"
+#define HTTP_RESPONSE_FORMAT1   \
+  "HTTP/1.0 200 OK\r\n"         \
+  "X-Response-ID: %d\r\n"       \
+  "Content-Type: text/html\r\n" \
+  "Cache-Control: no-cache\r\n" \
+  "\r\n"                        \
+  "Body for response 1"
 
-#define HTTP_RESPONSE_FORMAT2 "HTTP/1.0 200 OK\r\n" \
-			      "X-Response-ID: %d\r\n" \
-                              "Cache-Control: max-age=86400\r\n" \
-                              "Content-Type: text/html\r\n" \
-			      "\r\n" \
-			      "Body for response 2"
-#define HTTP_RESPONSE_FORMAT4 "HTTP/1.0 200 OK\r\n" \
-			      "X-Response-ID: %d\r\n" \
-                              "Cache-Control: max-age=86400\r\n" \
-                              "Content-Type: text/html\r\n" \
-                              "\r\n" \
-                              "Body for response 4"
-#define HTTP_RESPONSE_FORMAT5 "HTTP/1.0 200 OK\r\n" \
-			      "X-Response-ID: %d\r\n" \
-                              "Content-Type: text/html\r\n" \
-                              "\r\n" \
-                              "Body for response 5"
-#define HTTP_RESPONSE_FORMAT6 "HTTP/1.0 200 OK\r\n" \
-			      "X-Response-ID: %d\r\n" \
-                              "Cache-Control: max-age=86400\r\n" \
-                              "Content-Language: English\r\n" \
-                              "\r\n" \
-                              "Body for response 6"
-#define HTTP_RESPONSE_FORMAT7 "HTTP/1.0 200 OK\r\n" \
-			      "X-Response-ID: %d\r\n" \
-                              "Cache-Control: max-age=86400\r\n" \
-                              "Content-Language: French\r\n" \
-                              "\r\n" \
-                              "Body for response 7"
+#define HTTP_RESPONSE_FORMAT2        \
+  "HTTP/1.0 200 OK\r\n"              \
+  "X-Response-ID: %d\r\n"            \
+  "Cache-Control: max-age=86400\r\n" \
+  "Content-Type: text/html\r\n"      \
+  "\r\n"                             \
+  "Body for response 2"
+#define HTTP_RESPONSE_FORMAT4        \
+  "HTTP/1.0 200 OK\r\n"              \
+  "X-Response-ID: %d\r\n"            \
+  "Cache-Control: max-age=86400\r\n" \
+  "Content-Type: text/html\r\n"      \
+  "\r\n"                             \
+  "Body for response 4"
+#define HTTP_RESPONSE_FORMAT5   \
+  "HTTP/1.0 200 OK\r\n"         \
+  "X-Response-ID: %d\r\n"       \
+  "Content-Type: text/html\r\n" \
+  "\r\n"                        \
+  "Body for response 5"
+#define HTTP_RESPONSE_FORMAT6        \
+  "HTTP/1.0 200 OK\r\n"              \
+  "X-Response-ID: %d\r\n"            \
+  "Cache-Control: max-age=86400\r\n" \
+  "Content-Language: English\r\n"    \
+  "\r\n"                             \
+  "Body for response 6"
+#define HTTP_RESPONSE_FORMAT7        \
+  "HTTP/1.0 200 OK\r\n"              \
+  "X-Response-ID: %d\r\n"            \
+  "Cache-Control: max-age=86400\r\n" \
+  "Content-Language: French\r\n"     \
+  "\r\n"                             \
+  "Body for response 7"
 
-#define HTTP_RESPONSE_FORMAT8 "HTTP/1.0 200 OK\r\n" \
-			      "X-Response-ID: %d\r\n" \
-                              "Cache-Control: max-age=86400\r\n" \
-                              "Content-Language: French, English\r\n" \
-                              "\r\n" \
-                              "Body for response 8"
+#define HTTP_RESPONSE_FORMAT8             \
+  "HTTP/1.0 200 OK\r\n"                   \
+  "X-Response-ID: %d\r\n"                 \
+  "Cache-Control: max-age=86400\r\n"      \
+  "Content-Language: French, English\r\n" \
+  "\r\n"                                  \
+  "Body for response 8"
 
-#define HTTP_RESPONSE_FORMAT9 "HTTP/1.0 200 OK\r\n" \
-                              "Cache-Control: max-age=86400\r\n" \
-			      "X-Response-ID: %d\r\n" \
-                              "\r\n" \
-                              "Body for response 9"
+#define HTTP_RESPONSE_FORMAT9        \
+  "HTTP/1.0 200 OK\r\n"              \
+  "Cache-Control: max-age=86400\r\n" \
+  "X-Response-ID: %d\r\n"            \
+  "\r\n"                             \
+  "Body for response 9"
 
-#define HTTP_RESPONSE_FORMAT10 "HTTP/1.0 200 OK\r\n" \
-                              "Cache-Control: max-age=86400\r\n" \
-			      "X-Response-ID: %d\r\n" \
-                              "\r\n" \
-                              "Body for response 10"
+#define HTTP_RESPONSE_FORMAT10       \
+  "HTTP/1.0 200 OK\r\n"              \
+  "Cache-Control: max-age=86400\r\n" \
+  "X-Response-ID: %d\r\n"            \
+  "\r\n"                             \
+  "Body for response 10"
 
 
   int test_case, match, http_version;
 
-  char *response = (char *) TSmalloc(RESPONSE_MAX_SIZE + 1);
+  char *response = (char *)TSmalloc(RESPONSE_MAX_SIZE + 1);
   char url[1025];
 
   // coverity[secure_coding]
@@ -418,7 +438,6 @@ get_request_id(TSHttpTxn txnp)
 }
 
 
-
 //////////////////////////////////////////////////////////////////////////////
 // SOCKET CLIENT
 //////////////////////////////////////////////////////////////////////////////
@@ -426,15 +445,15 @@ get_request_id(TSHttpTxn txnp)
 static ClientTxn *
 synclient_txn_create(void)
 {
-  HttpProxyPort* proxy_port;
+  HttpProxyPort *proxy_port;
 
-  ClientTxn *txn = (ClientTxn *) TSmalloc(sizeof(ClientTxn));
+  ClientTxn *txn = (ClientTxn *)TSmalloc(sizeof(ClientTxn));
   if (0 == (proxy_port = HttpProxyPort::findHttp(AF_INET)))
     txn->connect_port = PROXY_HTTP_DEFAULT_PORT;
   else
     txn->connect_port = proxy_port->m_port;
 
-  txn->local_port = (int) 0;
+  txn->local_port = (int)0;
   txn->connect_ip = IP(127, 0, 0, 1);
   txn->status = REQUEST_INPROGRESS;
   txn->request = NULL;
@@ -451,7 +470,7 @@ synclient_txn_create(void)
 }
 
 static int
-synclient_txn_delete(ClientTxn * txn)
+synclient_txn_delete(ClientTxn *txn)
 {
   TSAssert(txn->magic == MAGIC_ALIVE);
   if (txn->connect_action && !TSActionDone(txn->connect_action)) {
@@ -468,7 +487,7 @@ synclient_txn_delete(ClientTxn * txn)
 static int
 synclient_txn_close(TSCont contp)
 {
-  ClientTxn *txn = (ClientTxn *) TSContDataGet(contp);
+  ClientTxn *txn = (ClientTxn *)TSContDataGet(contp);
   TSAssert(txn->magic == MAGIC_ALIVE);
 
   if (txn->vconn != NULL) {
@@ -488,7 +507,7 @@ synclient_txn_close(TSCont contp)
 }
 
 static int
-synclient_txn_send_request(ClientTxn * txn, char *request)
+synclient_txn_send_request(ClientTxn *txn, char *request)
 {
   TSCont cont;
   sockaddr_in addr;
@@ -507,7 +526,7 @@ synclient_txn_send_request(ClientTxn * txn, char *request)
 
 /* This can be used to send a request to a specific VC */
 static int
-synclient_txn_send_request_to_vc(ClientTxn * txn, char *request, TSVConn vc)
+synclient_txn_send_request_to_vc(ClientTxn *txn, char *request, TSVConn vc)
 {
   TSCont cont;
   TSAssert(txn->magic == MAGIC_ALIVE);
@@ -525,7 +544,7 @@ synclient_txn_send_request_to_vc(ClientTxn * txn, char *request, TSVConn vc)
 static int
 synclient_txn_read_response(TSCont contp)
 {
-  ClientTxn *txn = (ClientTxn *) TSContDataGet(contp);
+  ClientTxn *txn = (ClientTxn *)TSContDataGet(contp);
   TSAssert(txn->magic == MAGIC_ALIVE);
 
   TSIOBufferBlock block = TSIOBufferReaderStart(txn->resp_reader);
@@ -533,11 +552,11 @@ synclient_txn_read_response(TSCont contp)
     int64_t blocklen;
     const char *blockptr = TSIOBufferBlockReadStart(block, txn->resp_reader, &blocklen);
 
-    if (txn->response_len+blocklen <= RESPONSE_MAX_SIZE) {
-      memcpy((char *) (txn->response + txn->response_len), blockptr, blocklen);
+    if (txn->response_len + blocklen <= RESPONSE_MAX_SIZE) {
+      memcpy((char *)(txn->response + txn->response_len), blockptr, blocklen);
       txn->response_len += blocklen;
     } else {
-      TSError("Error: Response length %" PRId64" > response buffer size %d", txn->response_len+blocklen, RESPONSE_MAX_SIZE);
+      TSError("Error: Response length %" PRId64 " > response buffer size %d", txn->response_len + blocklen, RESPONSE_MAX_SIZE);
     }
 
     block = TSIOBufferBlockNext(block);
@@ -552,7 +571,7 @@ synclient_txn_read_response(TSCont contp)
 static int
 synclient_txn_read_response_handler(TSCont contp, TSEvent event, void * /* data ATS_UNUSED */)
 {
-  ClientTxn *txn = (ClientTxn *) TSContDataGet(contp);
+  ClientTxn *txn = (ClientTxn *)TSContDataGet(contp);
   TSAssert(txn->magic == MAGIC_ALIVE);
 
   int64_t avail;
@@ -567,7 +586,7 @@ synclient_txn_read_response_handler(TSCont contp, TSEvent event, void * /* data 
     }
 
     avail = TSIOBufferReaderAvail(txn->resp_reader);
-    TSDebug(CDBG_TAG, "%" PRId64" bytes available in buffer", avail);
+    TSDebug(CDBG_TAG, "%" PRId64 " bytes available in buffer", avail);
 
     if (avail > 0) {
       synclient_txn_read_response(contp);
@@ -601,7 +620,7 @@ synclient_txn_read_response_handler(TSCont contp, TSEvent event, void * /* data 
 static int
 synclient_txn_write_request(TSCont contp)
 {
-  ClientTxn *txn = (ClientTxn *) TSContDataGet(contp);
+  ClientTxn *txn = (ClientTxn *)TSContDataGet(contp);
   TSAssert(txn->magic == MAGIC_ALIVE);
 
   TSIOBufferBlock block;
@@ -623,7 +642,7 @@ synclient_txn_write_request(TSCont contp)
   }
 
   /* Start writing the response */
-  TSDebug(CDBG_TAG, "Writing |%s| (%" PRId64") bytes", txn->request, len);
+  TSDebug(CDBG_TAG, "Writing |%s| (%" PRId64 ") bytes", txn->request, len);
   txn->write_vio = TSVConnWrite(txn->vconn, contp, txn->req_reader, len);
 
   return 1;
@@ -632,7 +651,7 @@ synclient_txn_write_request(TSCont contp)
 static int
 synclient_txn_write_request_handler(TSCont contp, TSEvent event, void * /* data ATS_UNUSED */)
 {
-  ClientTxn *txn = (ClientTxn *) TSContDataGet(contp);
+  ClientTxn *txn = (ClientTxn *)TSContDataGet(contp);
   TSAssert(txn->magic == MAGIC_ALIVE);
 
   switch (event) {
@@ -676,7 +695,7 @@ synclient_txn_connect_handler(TSCont contp, TSEvent event, void *data)
 {
   TSAssert((event == TS_EVENT_NET_CONNECT) || (event == TS_EVENT_NET_CONNECT_FAILED));
 
-  ClientTxn *txn = (ClientTxn *) TSContDataGet(contp);
+  ClientTxn *txn = (ClientTxn *)TSContDataGet(contp);
   TSAssert(txn->magic == MAGIC_ALIVE);
 
   if (event == TS_EVENT_NET_CONNECT) {
@@ -690,8 +709,8 @@ synclient_txn_connect_handler(TSCont contp, TSEvent event, void *data)
     txn->response[0] = '\0';
     txn->response_len = 0;
 
-    txn->vconn = (TSVConn) data;
-    txn->local_port = (int) ((NetVConnection *) data)->get_local_port();
+    txn->vconn = (TSVConn)data;
+    txn->local_port = (int)((NetVConnection *)data)->get_local_port();
 
     txn->write_vio = NULL;
     txn->read_vio = NULL;
@@ -714,11 +733,11 @@ synclient_txn_connect_handler(TSCont contp, TSEvent event, void *data)
 static int
 synclient_txn_main_handler(TSCont contp, TSEvent event, void *data)
 {
-  ClientTxn *txn = (ClientTxn *) TSContDataGet(contp);
+  ClientTxn *txn = (ClientTxn *)TSContDataGet(contp);
   TSAssert(txn->magic == MAGIC_ALIVE);
 
   TxnHandler handler = txn->current_handler;
-  return (*handler) (contp, event, data);
+  return (*handler)(contp, event, data);
 }
 
 
@@ -729,7 +748,7 @@ synclient_txn_main_handler(TSCont contp, TSEvent event, void *data)
 SocketServer *
 synserver_create(int port)
 {
-  SocketServer *s = (SocketServer *) TSmalloc(sizeof(SocketServer));
+  SocketServer *s = (SocketServer *)TSmalloc(sizeof(SocketServer));
   s->magic = MAGIC_ALIVE;
   s->accept_port = port;
   s->accept_action = NULL;
@@ -739,7 +758,7 @@ synserver_create(int port)
 }
 
 static int
-synserver_start(SocketServer * s)
+synserver_start(SocketServer *s)
 {
   TSAssert(s->magic == MAGIC_ALIVE);
   s->accept_action = TSNetAccept(s->accept_cont, s->accept_port, -1, 0);
@@ -747,7 +766,7 @@ synserver_start(SocketServer * s)
 }
 
 static int
-synserver_stop(SocketServer * s)
+synserver_stop(SocketServer *s)
 {
   TSAssert(s->magic == MAGIC_ALIVE);
   if (s->accept_action && !TSActionDone(s->accept_action)) {
@@ -760,7 +779,7 @@ synserver_stop(SocketServer * s)
 }
 
 static int
-synserver_delete(SocketServer * s)
+synserver_delete(SocketServer *s)
 {
   TSAssert(s->magic == MAGIC_ALIVE);
   synserver_stop(s);
@@ -781,7 +800,7 @@ synserver_accept_handler(TSCont contp, TSEvent event, void *data)
 {
   TSAssert((event == TS_EVENT_NET_ACCEPT) || (event == TS_EVENT_NET_ACCEPT_FAILED));
 
-  SocketServer *s = (SocketServer *) TSContDataGet(contp);
+  SocketServer *s = (SocketServer *)TSContDataGet(contp);
   TSAssert(s->magic == MAGIC_ALIVE);
 
   if (event == TS_EVENT_NET_ACCEPT_FAILED) {
@@ -794,7 +813,7 @@ synserver_accept_handler(TSCont contp, TSEvent event, void *data)
   TSDebug(SDBG_TAG, "NET_ACCEPT");
 
   /* Create a new transaction */
-  ServerTxn *txn = (ServerTxn *) TSmalloc(sizeof(ServerTxn));
+  ServerTxn *txn = (ServerTxn *)TSmalloc(sizeof(ServerTxn));
   txn->magic = MAGIC_ALIVE;
 
   SET_TEST_HANDLER(txn->current_handler, synserver_txn_read_request_handler);
@@ -811,7 +830,7 @@ synserver_accept_handler(TSCont contp, TSEvent event, void *data)
   txn->request[0] = '\0';
   txn->request_len = 0;
 
-  txn->vconn = (TSVConn) data;
+  txn->vconn = (TSVConn)data;
 
   txn->write_vio = NULL;
 
@@ -825,7 +844,7 @@ synserver_accept_handler(TSCont contp, TSEvent event, void *data)
 static int
 synserver_txn_close(TSCont contp)
 {
-  ServerTxn *txn = (ServerTxn *) TSContDataGet(contp);
+  ServerTxn *txn = (ServerTxn *)TSContDataGet(contp);
   TSAssert(txn->magic == MAGIC_ALIVE);
 
   if (txn->vconn != NULL) {
@@ -850,7 +869,7 @@ synserver_txn_close(TSCont contp)
 static int
 synserver_txn_write_response(TSCont contp)
 {
-  ServerTxn *txn = (ServerTxn *) TSContDataGet(contp);
+  ServerTxn *txn = (ServerTxn *)TSContDataGet(contp);
   TSAssert(txn->magic == MAGIC_ALIVE);
 
   SET_TEST_HANDLER(txn->current_handler, synserver_txn_write_response_handler);
@@ -876,7 +895,7 @@ synserver_txn_write_response(TSCont contp)
   }
 
   /* Start writing the response */
-  TSDebug(SDBG_TAG, "Writing response: |%s| (%" PRId64") bytes)", response, len);
+  TSDebug(SDBG_TAG, "Writing response: |%s| (%" PRId64 ") bytes)", response, len);
   txn->write_vio = TSVConnWrite(txn->vconn, contp, txn->resp_reader, len);
 
   /* Now that response is in IOBuffer, free up response */
@@ -889,7 +908,7 @@ synserver_txn_write_response(TSCont contp)
 static int
 synserver_txn_write_response_handler(TSCont contp, TSEvent event, void * /* data ATS_UNUSED */)
 {
-  ServerTxn *txn = (ServerTxn *) TSContDataGet(contp);
+  ServerTxn *txn = (ServerTxn *)TSContDataGet(contp);
   TSAssert(txn->magic == MAGIC_ALIVE);
 
   switch (event) {
@@ -925,7 +944,7 @@ synserver_txn_write_response_handler(TSCont contp, TSEvent event, void * /* data
 static int
 synserver_txn_read_request(TSCont contp)
 {
-  ServerTxn *txn = (ServerTxn *) TSContDataGet(contp);
+  ServerTxn *txn = (ServerTxn *)TSContDataGet(contp);
   TSAssert(txn->magic == MAGIC_ALIVE);
 
   int end;
@@ -935,11 +954,11 @@ synserver_txn_read_request(TSCont contp)
     int64_t blocklen;
     const char *blockptr = TSIOBufferBlockReadStart(block, txn->req_reader, &blocklen);
 
-    if (txn->request_len+blocklen <= REQUEST_MAX_SIZE) {
-      memcpy((char *) (txn->request + txn->request_len), blockptr, blocklen);
+    if (txn->request_len + blocklen <= REQUEST_MAX_SIZE) {
+      memcpy((char *)(txn->request + txn->request_len), blockptr, blocklen);
       txn->request_len += blocklen;
     } else {
-      TSError("Error: Request length %" PRId64" > request buffer size %d", txn->request_len+blocklen, REQUEST_MAX_SIZE);
+      TSError("Error: Request length %" PRId64 " > request buffer size %d", txn->request_len + blocklen, REQUEST_MAX_SIZE);
     }
 
     block = TSIOBufferBlockNext(block);
@@ -957,7 +976,7 @@ synserver_txn_read_request(TSCont contp)
 static int
 synserver_txn_read_request_handler(TSCont contp, TSEvent event, void * /* data ATS_UNUSED */)
 {
-  ServerTxn *txn = (ServerTxn *) TSContDataGet(contp);
+  ServerTxn *txn = (ServerTxn *)TSContDataGet(contp);
   TSAssert(txn->magic == MAGIC_ALIVE);
 
   int64_t avail;
@@ -968,7 +987,7 @@ synserver_txn_read_request_handler(TSCont contp, TSEvent event, void * /* data A
   case TS_EVENT_VCONN_READ_COMPLETE:
     TSDebug(SDBG_TAG, (event == TS_EVENT_VCONN_READ_READY) ? "READ_READY" : "READ_COMPLETE");
     avail = TSIOBufferReaderAvail(txn->req_reader);
-    TSDebug(SDBG_TAG, "%" PRId64" bytes available in buffer", avail);
+    TSDebug(SDBG_TAG, "%" PRId64 " bytes available in buffer", avail);
 
     if (avail > 0) {
       end_of_request = synserver_txn_read_request(contp);
@@ -1004,10 +1023,9 @@ synserver_txn_read_request_handler(TSCont contp, TSEvent event, void * /* data A
 static int
 synserver_txn_main_handler(TSCont contp, TSEvent event, void *data)
 {
-  ServerTxn *txn = (ServerTxn *) TSContDataGet(contp);
+  ServerTxn *txn = (ServerTxn *)TSContDataGet(contp);
   TSAssert(txn->magic == MAGIC_ALIVE);
 
   TxnHandler handler = txn->current_handler;
-  return (*handler) (contp, event, data);
+  return (*handler)(contp, event, data);
 }
-

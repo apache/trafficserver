@@ -36,13 +36,10 @@
 // LogCollationAccept::LogCollationAccept
 //-------------------------------------------------------------------------
 
-LogCollationAccept::LogCollationAccept(int port)
-  : Continuation(new_ProxyMutex()),
-    m_port(port),
-    m_pending_event(NULL)
+LogCollationAccept::LogCollationAccept(int port) : Continuation(new_ProxyMutex()), m_port(port), m_pending_event(NULL)
 {
   NetProcessor::AcceptOptions opt;
-  SET_HANDLER((LogCollationAcceptHandler) & LogCollationAccept::accept_event);
+  SET_HANDLER((LogCollationAcceptHandler)&LogCollationAccept::accept_event);
   // work around for iocore problem where _pre_fetch_buffer can get
   // appended to itself if multiple do_io_reads are called requesting
   // small amounts of data.  Most arguments are default except for the
@@ -69,10 +66,10 @@ LogCollationAccept::~LogCollationAccept()
     m_accept_action = NULL;
 
     Debug("log-collation", "closing Log::collation_accept_file_descriptor "
-          "(%d)", Log::collation_accept_file_descriptor);
+                           "(%d)",
+          Log::collation_accept_file_descriptor);
     if (::close(Log::collation_accept_file_descriptor) < 0) {
-      Error("error closing collate listen file descriptor [%d]: %s",
-            Log::collation_accept_file_descriptor, strerror(errno));
+      Error("error closing collate listen file descriptor [%d]: %s", Log::collation_accept_file_descriptor, strerror(errno));
     } else {
       Log::collation_accept_file_descriptor = NO_FD;
     }
@@ -92,7 +89,7 @@ LogCollationAccept::~LogCollationAccept()
 //-------------------------------------------------------------------------
 
 int
-LogCollationAccept::accept_event(int event, NetVConnection * net_vc)
+LogCollationAccept::accept_event(int event, NetVConnection *net_vc)
 {
   LogCollationHostSM *sm;
 
@@ -104,7 +101,6 @@ LogCollationAccept::accept_event(int event, NetVConnection * net_vc)
 
   default:
     ink_assert(!"[ERROR] Unexpected Event");
-
   }
 
   return EVENT_CONT;

@@ -51,19 +51,17 @@ class EThread;
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#define CONTINUATION_EVENT_NONE      0
+#define CONTINUATION_EVENT_NONE 0
 
-#define CONTINUATION_DONE            0
-#define CONTINUATION_CONT            1
+#define CONTINUATION_DONE 0
+#define CONTINUATION_CONT 1
 
-typedef int (Continuation::*ContinuationHandler) (int event, void *data);
+typedef int (Continuation::*ContinuationHandler)(int event, void *data);
 
 class force_VFPT_to_top
 {
 public:
-  virtual ~force_VFPT_to_top()
-  {
-  }
+  virtual ~force_VFPT_to_top() {}
 };
 
 /**
@@ -91,10 +89,9 @@ public:
 
 */
 
-class Continuation: private force_VFPT_to_top
+class Continuation : private force_VFPT_to_top
 {
 public:
-
   /**
     The current continuation handler function.
 
@@ -142,8 +139,10 @@ public:
     @return State machine and processor specific return code.
 
   */
-  int handleEvent(int event = CONTINUATION_EVENT_NONE, void *data = 0) {
-    return (this->*handler) (event, data);
+  int
+  handleEvent(int event = CONTINUATION_EVENT_NONE, void *data = 0)
+  {
+    return (this->*handler)(event, data);
   }
 
   /**
@@ -153,7 +152,7 @@ public:
     @param amutex Lock to be set for this Continuation.
 
   */
-  Continuation(ProxyMutex * amutex = NULL);
+  Continuation(ProxyMutex *amutex = NULL);
 };
 
 /**
@@ -164,11 +163,9 @@ public:
 
 */
 #ifdef DEBUG
-#define SET_HANDLER(_h) \
-  (handler = ((ContinuationHandler)_h),handler_name = #_h)
+#define SET_HANDLER(_h) (handler = ((ContinuationHandler)_h), handler_name = #_h)
 #else
-#define SET_HANDLER(_h) \
-  (handler = ((ContinuationHandler)_h))
+#define SET_HANDLER(_h) (handler = ((ContinuationHandler)_h))
 #endif
 
 /**
@@ -181,20 +178,18 @@ public:
 
 */
 #ifdef DEBUG
-#define SET_CONTINUATION_HANDLER(_c,_h) \
-  (_c->handler = ((ContinuationHandler) _h),_c->handler_name = #_h)
+#define SET_CONTINUATION_HANDLER(_c, _h) (_c->handler = ((ContinuationHandler)_h), _c->handler_name = #_h)
 #else
-#define SET_CONTINUATION_HANDLER(_c,_h) \
-  (_c->handler = ((ContinuationHandler) _h))
+#define SET_CONTINUATION_HANDLER(_c, _h) (_c->handler = ((ContinuationHandler)_h))
 #endif
 
-inline
-Continuation::Continuation(ProxyMutex * amutex)
+inline Continuation::Continuation(ProxyMutex *amutex)
   : handler(NULL),
 #ifdef DEBUG
     handler_name(NULL),
 #endif
-             mutex(amutex)
-{ }
+    mutex(amutex)
+{
+}
 
 #endif /*_Continuation_h_*/

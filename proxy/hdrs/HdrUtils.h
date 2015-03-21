@@ -43,20 +43,21 @@ class HdrCsvIter
 public:
   // MIME standard separator ',' is used as the default value
   // Set-cookie/Cookie uses ';'
-HdrCsvIter(const char s = ','):m_value_start(NULL),
-    m_value_len(0), m_bytes_consumed(0), m_follow_dups(false),
-    m_csv_start(NULL), m_csv_len(0), m_csv_end(NULL), m_csv_index(0), m_cur_field(NULL), m_separator(s) {
+  HdrCsvIter(const char s = ',')
+    : m_value_start(NULL), m_value_len(0), m_bytes_consumed(0), m_follow_dups(false), m_csv_start(NULL), m_csv_len(0),
+      m_csv_end(NULL), m_csv_index(0), m_cur_field(NULL), m_separator(s)
+  {
   }
-  const char *get_first(const MIMEField * m, int *len, bool follow_dups = true);
+  const char *get_first(const MIMEField *m, int *len, bool follow_dups = true);
   const char *get_next(int *len);
   const char *get_current(int *len);
 
-  const char *get_nth(MIMEField * m, int *len, int n, bool follow_dups = true);
-  int count_values(MIMEField * field, bool follow_dups = true);
+  const char *get_nth(MIMEField *m, int *len, int n, bool follow_dups = true);
+  int count_values(MIMEField *field, bool follow_dups = true);
 
   int get_index();
 
-  int get_first_int(MIMEField * m, int *valid = NULL);
+  int get_first_int(MIMEField *m, int *valid = NULL);
   int get_next_int(int *valid = NULL);
 
 private:
@@ -88,11 +89,11 @@ private:
   // for the Cookie/Set-cookie headers, the separator is ';'
   const char m_separator;
 
-  void field_init(const MIMEField * m);
+  void field_init(const MIMEField *m);
 };
 
 inline void
-HdrCsvIter::field_init(const MIMEField * m)
+HdrCsvIter::field_init(const MIMEField *m)
 {
   m_cur_field = m;
   m_value_start = m->m_ptr_value;
@@ -101,9 +102,8 @@ HdrCsvIter::field_init(const MIMEField * m)
 }
 
 inline const char *
-HdrCsvIter::get_first(const MIMEField * m, int *len, bool follow_dups)
+HdrCsvIter::get_first(const MIMEField *m, int *len, bool follow_dups)
 {
-
   field_init(m);
 
   m_follow_dups = follow_dups;
@@ -125,8 +125,6 @@ HdrCsvIter::get_first(const MIMEField * m, int *len, bool follow_dups)
 inline const char *
 HdrCsvIter::get_next(int *len)
 {
-
-
   if (m_csv_start) {
     // Skip past the current csv
     m_csv_start = m_csv_end + 1;
@@ -145,7 +143,7 @@ HdrCsvIter::get_current(int *len)
 }
 
 inline int
-HdrCsvIter::get_first_int(MIMEField * m, int *valid)
+HdrCsvIter::get_first_int(MIMEField *m, int *valid)
 {
   int len;
   const char *r = get_first(m, &len);
@@ -177,7 +175,6 @@ HdrCsvIter::get_next_int(int *valid)
     return 0;
   }
 }
-
 
 
 #endif

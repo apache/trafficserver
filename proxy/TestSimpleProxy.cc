@@ -28,9 +28,7 @@
 #include "DNS.h"
 #include "OneWayTunnel.h"
 
-struct TestProxy:Continuation
-{
-
+struct TestProxy : Continuation {
   NetVConnection *vc;
   NetVConnection *remote;
   MIOBuffer *inbuf;
@@ -38,7 +36,8 @@ struct TestProxy:Continuation
   char *host, *url, *url_end;
   char s[256];
 
-  int done()
+  int
+  done()
   {
     if (inbuf)
       free_MIOBuffer(inbuf);
@@ -49,10 +48,11 @@ struct TestProxy:Continuation
     if (remote)
       remote->do_io(VIO::CLOSE);
     delete this;
-      return EVENT_DONE;
+    return EVENT_DONE;
   }
 
-  int startEvent(int event, VIO * vio)
+  int
+  startEvent(int event, VIO *vio)
   {
     if (event != VC_EVENT_READ_READY) {
       printf("TestProxy startEvent error %d\n", event);
@@ -66,25 +66,27 @@ struct TestProxy:Continuation
       dnsProcessor.gethostbyname(host, this);
       *url = '/';
       SET_HANDLER(dnsEvent);
-      vc = (NetVConnection *) vio->vc_server;
+      vc = (NetVConnection *)vio->vc_server;
       return EVENT_DONE;
     }
     return EVENT_CONT;
   }
 
-  int dnsEvent(int event, HostEnt * ent)
+  int
+  dnsEvent(int event, HostEnt *ent)
   {
     if (!ent) {
       printf("TestProxy dnsEvent error %d\n", event);
       return done();
     }
-    unsigned int ip = *(unsigned int *) ent->h_addr_list[0];
+    unsigned int ip = *(unsigned int *)ent->h_addr_list[0];
     netProcessor.connect(this, ip, 80);
     SET_HANDLER(connectEvent);
     return EVENT_DONE;
   }
 
-  int connectEvent(int event, NetVConnection * aremote)
+  int
+  connectEvent(int event, NetVConnection *aremote)
   {
     if (!aremote) {
       printf("TestProxy connectEvent error %d\n", event);
@@ -101,7 +103,8 @@ struct TestProxy:Continuation
     return EVENT_CONT;
   }
 
-  int sendEvent(int event, VIO * vio)
+  int
+  sendEvent(int event, VIO *vio)
   {
     if (event != VC_EVENT_WRITE_READY) {
       printf("TestProxy sendEvent error %d\n", event);
@@ -114,9 +117,10 @@ struct TestProxy:Continuation
     return EVENT_DONE;
   }
 
-  int tunnelEvent(int event, Continuation * cont)
+  int
+  tunnelEvent(int event, Continuation *cont)
   {
-    (void) cont;
+    (void)cont;
     if (event != VC_EVENT_EOS) {
       printf("TestProxy sendEvent error %d\n", event);
       return done();
@@ -127,30 +131,27 @@ struct TestProxy:Continuation
     return done();
   }
 
-  TestProxy(MIOBuffer * abuf)
-:  Continuation(new_ProxyMutex()), vc(0), remote(0), inbuf(abuf), outbuf(0), host(0), url(0), url_end(0) {
+  TestProxy(MIOBuffer *abuf) : Continuation(new_ProxyMutex()), vc(0), remote(0), inbuf(abuf), outbuf(0), host(0), url(0), url_end(0)
+  {
     SET_HANDLER(startEvent);
   }
 };
 
 
-struct TestAccept:Continuation
-{
-  int startEvent(int event, NetVConnection * e)
+struct TestAccept : Continuation {
+  int
+  startEvent(int event, NetVConnection *e)
   {
     if (!event) {
       MIOBuffer *buf = new_MIOBuffer();
-        e->do_io(VIO::READ, new TestProxy(buf), INT64_MAX, buf);
-    } else
-    {
+      e->do_io(VIO::READ, new TestProxy(buf), INT64_MAX, buf);
+    } else {
       printf("TestAccept error %d\n", event);
       return EVENT_DONE;
     }
     return EVENT_CONT;
   }
-TestAccept():Continuation(new_ProxyMutex()) {
-    SET_HANDLER(startEvent);
-  }
+  TestAccept() : Continuation(new_ProxyMutex()) { SET_HANDLER(startEvent); }
 };
 
 void

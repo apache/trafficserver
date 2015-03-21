@@ -40,14 +40,14 @@ using namespace EsiLib;
 pthread_key_t threadKey;
 
 void
-addToHeaderList(const char *strings[], HttpHeaderList &headers) {
+addToHeaderList(const char *strings[], HttpHeaderList &headers)
+{
   for (int i = 0; strings[i]; i += 2) {
     if (i % 4 == 0) {
       headers.push_back(HttpHeader(strings[i], -1, strings[i + 1], -1));
       headers.push_back(HttpHeader());
     } else {
-      headers.push_back(HttpHeader(strings[i], strlen(strings[i]),
-                                   strings[i + 1], strlen(strings[i + 1])));
+      headers.push_back(HttpHeader(strings[i], strlen(strings[i]), strings[i + 1], strlen(strings[i + 1])));
     }
   }
 }
@@ -55,7 +55,8 @@ addToHeaderList(const char *strings[], HttpHeaderList &headers) {
 string gFakeDebugLog;
 
 void
-fakeDebug(const char *tag, const char *fmt, ...) {
+fakeDebug(const char *tag, const char *fmt, ...)
+{
   static const int LINE_SIZE = 1024;
   char buf[LINE_SIZE];
   va_list ap;
@@ -66,7 +67,8 @@ fakeDebug(const char *tag, const char *fmt, ...) {
   gFakeDebugLog.append(buf);
 }
 
-int main()
+int
+main()
 {
   pthread_key_create(&threadKey, NULL);
   Utils::init(&Debug, &Error);
@@ -74,13 +76,8 @@ int main()
   {
     cout << endl << "===================== Test 1" << endl;
     Variables esi_vars("vars_test", &Debug, &Error);
-    const char *strings[] = { "Cookie", "; c1=v1; c2=v2; ;   c3; c4=;    c5=v5  ",
-                              "Host", "example.com",
-                              "Referer", "google.com",
-                              "Blah", "Blah",
-                              "Accept-Language", "en-gb , en-us ,  ,",
-                              "Accept-Language", "ka-in",
-                              0 };
+    const char *strings[] = {"Cookie", "; c1=v1; c2=v2; ;   c3; c4=;    c5=v5  ", "Host", "example.com", "Referer", "google.com",
+                             "Blah", "Blah", "Accept-Language", "en-gb , en-us ,  ,", "Accept-Language", "ka-in", 0};
 
     HttpHeaderList headers;
     addToHeaderList(strings, headers);
@@ -121,9 +118,9 @@ int main()
     esi_vars.populate(HttpHeader("hosT", -1, "localhost", -1));
     assert(esi_vars.getValue("HTTP_HOST") == "localhost");
 
-    esi_vars.populate(HttpHeader("User-agent", -1,
-                                 "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.1.6) "
-                                 "Gecko/20091201 Firefox/3.5.6 (.NETgecko CLR 3.5.30729)", -1));
+    esi_vars.populate(HttpHeader("User-agent", -1, "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.1.6) "
+                                                   "Gecko/20091201 Firefox/3.5.6 (.NETgecko CLR 3.5.30729)",
+                                 -1));
 
     /*
     assert(esi_vars.getValue("HTTP_USER_AGENT{vendor}") == "Gecko");
@@ -158,7 +155,7 @@ int main()
     assert(esi_expr.expand("$(HTTP_COOKIE{c1})$(HTTP_COOKIE{c2})$(HTTP_HOST)") == "v1v2example.com");
 
     // quotes
-    assert(esi_expr.expand("'blah") == ""); // unterminated quote
+    assert(esi_expr.expand("'blah") == "");  // unterminated quote
     assert(esi_expr.expand("\"blah") == ""); // unterminated quote
     assert(esi_expr.expand("'blah'") == "blah");
     assert(esi_expr.expand("\"blah\"") == "blah");
@@ -316,7 +313,7 @@ int main()
     esi_vars.populate(HttpHeader("Host", -1, "localhost", -1));
     assert(esi_vars.getValue("HTTP_HOST") == "localhost");
     assert(gFakeDebugLog.rfind(PARSING_DEBUG_MESSAGE) == str_pos); // should not have parsed all headers
-    assert(esi_vars.getValue("HTTP_HOST") == "localhost"); // only this one
+    assert(esi_vars.getValue("HTTP_HOST") == "localhost");         // only this one
     assert(esi_vars.getValue("HTTP_REFERER") == "google.com");
 
     esi_vars.clear();
@@ -341,7 +338,7 @@ int main()
     assert(esi_expr.evaluate("$(HTTP_COOKIE{age}) < 22"));
     assert(esi_expr.evaluate("$(HTTP_COOKIE{age}) <= 22.1"));
     assert(esi_expr.evaluate("$(HTTP_COOKIE{age}) > 100a")); // non-numerical
-    assert(esi_expr.evaluate("$(HTTP_COOKIE{t1})")); // non-numerical
+    assert(esi_expr.evaluate("$(HTTP_COOKIE{t1})"));         // non-numerical
     assert(esi_expr.evaluate("$(HTTP_COOKIE{grade})"));
     assert(esi_expr.evaluate("$(HTTP_COOKIE{grade}) == -5"));
     assert(esi_expr.evaluate("$(HTTP_COOKIE{grade}) != -5.1"));
@@ -365,7 +362,10 @@ int main()
   {
     cout << endl << "===================== Test 4" << endl;
     Variables esi_vars("vars_test", &Debug, &Error);
-    string cookie_str("FPS=dl; mb=d=OPsv7rvU4FFaAOoIRi75BBuqdMdbMLFuDwQmk6nKrCgno7L4xuN44zm7QBQJRmQSh8ken6GSVk8-&v=1; C=mg=1; Y=v=1&n=fmaptagvuff50&l=fc0d94i7/o&p=m2f0000313000400&r=8j&lg=en-US&intl=us; F=a=4KvLV9IMvTJnIAqCk25y9Use6hnPALtUf3n78PihlcIqvmzoW.Ax8UyW8_oxtgFNrrdmooqZmPa7WsX4gE.6sI69wuNwRKrRPFT29h9lhwuxxLz0RuQedVXhJhc323Q-&b=8gQZ"); // TODO - might need to
+    string cookie_str("FPS=dl; mb=d=OPsv7rvU4FFaAOoIRi75BBuqdMdbMLFuDwQmk6nKrCgno7L4xuN44zm7QBQJRmQSh8ken6GSVk8-&v=1; C=mg=1; "
+                      "Y=v=1&n=fmaptagvuff50&l=fc0d94i7/o&p=m2f0000313000400&r=8j&lg=en-US&intl=us; "
+                      "F=a=4KvLV9IMvTJnIAqCk25y9Use6hnPALtUf3n78PihlcIqvmzoW.Ax8UyW8_oxtgFNrrdmooqZmPa7WsX4gE."
+                      "6sI69wuNwRKrRPFT29h9lhwuxxLz0RuQedVXhJhc323Q-&b=8gQZ"); // TODO - might need to
     esi_vars.populate(HttpHeader("Cookie", -1, cookie_str.data(), cookie_str.size()));
 
     assert(esi_vars.getValue("HTTP_COOKIE{FPS}") == "dl");
@@ -377,17 +377,18 @@ int main()
     assert(esi_vars.getValue("HTTP_COOKIE{C}") == "mg=1");
     assert(esi_vars.getValue("HTTP_COOKIE{non-existent}") == "");
 
-    assert(esi_vars.getValue("HTTP_COOKIE{Y}") ==
-           "v=1&n=fmaptagvuff50&l=fc0d94i7/o&p=m2f0000313000400&r=8j&lg=en-US&intl=us");
+    assert(esi_vars.getValue("HTTP_COOKIE{Y}") == "v=1&n=fmaptagvuff50&l=fc0d94i7/o&p=m2f0000313000400&r=8j&lg=en-US&intl=us");
 
     esi_vars.populate(HttpHeader("Host", -1, "www.example.com", -1));
-    assert(esi_vars.getValue("HTTP_COOKIE{F}") == "a=4KvLV9IMvTJnIAqCk25y9Use6hnPALtUf3n78PihlcIqvmzoW."
+    assert(esi_vars.getValue("HTTP_COOKIE{F}") ==
+           "a=4KvLV9IMvTJnIAqCk25y9Use6hnPALtUf3n78PihlcIqvmzoW."
            "Ax8UyW8_oxtgFNrrdmooqZmPa7WsX4gE.6sI69wuNwRKrRPFT29h9lhwuxxLz0RuQedVXhJhc323Q-&b=8gQZ");
     assert(esi_vars.getValue("HTTP_HOST") == "www.example.com");
 
     esi_vars.populate(HttpHeader("Cookie", -1, "a=b; c=d", -1));
     assert(esi_vars.getValue("HTTP_COOKIE{Y;intl}") == "us");
-    assert(esi_vars.getValue("HTTP_COOKIE{F}") == "a=4KvLV9IMvTJnIAqCk25y9Use6hnPALtUf3n78PihlcIqvmzoW."
+    assert(esi_vars.getValue("HTTP_COOKIE{F}") ==
+           "a=4KvLV9IMvTJnIAqCk25y9Use6hnPALtUf3n78PihlcIqvmzoW."
            "Ax8UyW8_oxtgFNrrdmooqZmPa7WsX4gE.6sI69wuNwRKrRPFT29h9lhwuxxLz0RuQedVXhJhc323Q-&b=8gQZ");
     assert(esi_vars.getValue("HTTP_COOKIE{a}") == "b");
     assert(esi_vars.getValue("HTTP_COOKIE{c}") == "d");

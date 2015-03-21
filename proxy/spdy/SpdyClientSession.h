@@ -31,40 +31,34 @@
 #include "Plugin.h"
 
 class SpdyClientSession;
-typedef int (*SpdyClientSessionHandler) (TSCont contp, TSEvent event, void *data);
+typedef int (*SpdyClientSessionHandler)(TSCont contp, TSEvent event, void *data);
 
 class SpdyRequest
 {
 public:
-  SpdyRequest():
-    spdy_sm(NULL), stream_id(-1), fetch_sm(NULL),
-    has_submitted_data(false), need_resume_data(false),
-    fetch_data_len(0), delta_window_size(0),
-    fetch_body_completed(false)
+  SpdyRequest()
+    : spdy_sm(NULL), stream_id(-1), fetch_sm(NULL), has_submitted_data(false), need_resume_data(false), fetch_data_len(0),
+      delta_window_size(0), fetch_body_completed(false)
   {
   }
 
-  SpdyRequest(SpdyClientSession *sm, int id):
-    spdy_sm(NULL), stream_id(-1), fetch_sm(NULL),
-    has_submitted_data(false), need_resume_data(false),
-    fetch_data_len(0), delta_window_size(0),
-    fetch_body_completed(false)
+  SpdyRequest(SpdyClientSession *sm, int id)
+    : spdy_sm(NULL), stream_id(-1), fetch_sm(NULL), has_submitted_data(false), need_resume_data(false), fetch_data_len(0),
+      delta_window_size(0), fetch_body_completed(false)
   {
     init(sm, id);
   }
 
-  ~SpdyRequest()
-  {
-    clear();
-  }
+  ~SpdyRequest() { clear(); }
 
   void init(SpdyClientSession *sm, int id);
   void clear();
 
-  void append_nv(char **nv)
+  void
+  append_nv(char **nv)
   {
-    for(int i = 0; nv[i]; i += 2) {
-      headers.push_back(make_pair(nv[i], nv[i+1]));
+    for (int i = 0; nv[i]; i += 2) {
+      headers.push_back(make_pair(nv[i], nv[i + 1]));
     }
   }
 
@@ -95,17 +89,12 @@ extern ClassAllocator<SpdyRequest> spdyRequestAllocator;
 
 class SpdyClientSession : public Continuation, public PluginIdentity
 {
-
 public:
+  SpdyClientSession() : Continuation(NULL) {}
 
-  SpdyClientSession() : Continuation(NULL) {
-  }
+  ~SpdyClientSession() { clear(); }
 
-  ~SpdyClientSession() {
-    clear();
-  }
-
-  void init(NetVConnection * netvc, spdy::SessionVersion vers);
+  void init(NetVConnection *netvc, spdy::SessionVersion vers);
   void clear();
 
   int64_t sm_id;
@@ -113,7 +102,7 @@ public:
   uint64_t total_size;
   TSHRTime start_time;
 
-  NetVConnection * vc;
+  NetVConnection *vc;
 
   TSIOBuffer req_buffer;
   TSIOBufferReader req_reader;
@@ -121,26 +110,28 @@ public:
   TSIOBuffer resp_buffer;
   TSIOBufferReader resp_reader;
 
-  TSVIO   read_vio;
-  TSVIO   write_vio;
+  TSVIO read_vio;
+  TSVIO write_vio;
 
   int event;
   spdylay_session *session;
 
-  map<int32_t, SpdyRequest*> req_map;
+  map<int32_t, SpdyRequest *> req_map;
 
-  virtual char const* getPluginTag() const;
+  virtual char const *getPluginTag() const;
   virtual int64_t getPluginId() const;
 
   SpdyRequest *
-  find_request(int streamId) {
-    map<int32_t, SpdyRequest*>::iterator iter = this->req_map.find(streamId);
+  find_request(int streamId)
+  {
+    map<int32_t, SpdyRequest *>::iterator iter = this->req_map.find(streamId);
     return ((iter == this->req_map.end()) ? NULL : iter->second);
   }
 
   void
-  cleanup_request(int streamId) {
-    SpdyRequest* req = this->find_request(streamId);
+  cleanup_request(int streamId)
+  {
+    SpdyRequest *req = this->find_request(streamId);
     if (req) {
       req->clear();
       spdyRequestAllocator.free(req);
@@ -152,10 +143,10 @@ public:
   }
 
 private:
-  int state_session_start(int event, void * edata);
-  int state_session_readwrite(int event, void * edata);
+  int state_session_start(int event, void *edata);
+  int state_session_readwrite(int event, void *edata);
 };
 
-void spdy_cs_create(NetVConnection * netvc, spdy::SessionVersion vers, MIOBuffer * iobuf, IOBufferReader * reader);
+void spdy_cs_create(NetVConnection *netvc, spdy::SessionVersion vers, MIOBuffer *iobuf, IOBufferReader *reader);
 
 #endif

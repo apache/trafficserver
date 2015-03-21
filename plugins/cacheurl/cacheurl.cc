@@ -43,27 +43,23 @@
 #define OVECOUNT 30
 #define PLUGIN_NAME "cacheurl"
 
-struct regex_info
-{
-  pcre *re;                     /* Compiled regular expression */
-  int tokcount;                 /* Token count */
-  char *pattern;                /* Pattern string */
-  char *replacement;            /* Replacement string */
-  int *tokens;                  /* Array of $x token values */
-  int *tokenoffset;             /* Array of $x token offsets */
+struct regex_info {
+  pcre *re;          /* Compiled regular expression */
+  int tokcount;      /* Token count */
+  char *pattern;     /* Pattern string */
+  char *replacement; /* Replacement string */
+  int *tokens;       /* Array of $x token values */
+  int *tokenoffset;  /* Array of $x token offsets */
 };
 
-struct pr_list
-{
-  std::vector<regex_info*>pr;
+struct pr_list {
+  std::vector<regex_info *> pr;
 
-  pr_list()
-  {
-  }
+  pr_list() {}
 
   ~pr_list()
   {
-    for (std::vector < regex_info * >::iterator info = this->pr.begin(); info != this->pr.end(); ++info) {
+    for (std::vector<regex_info *>::iterator info = this->pr.begin(); info != this->pr.end(); ++info) {
       TSfree((*info)->tokens);
       TSfree((*info)->tokenoffset);
       pcre_free((*info)->re);
@@ -73,12 +69,12 @@ struct pr_list
 };
 
 static int
-regex_substitute(char **buf, char *str, regex_info * info)
+regex_substitute(char **buf, char *str, regex_info *info)
 {
   int matchcount;
-  int ovector[OVECOUNT];        /* Locations of matches in regex */
+  int ovector[OVECOUNT]; /* Locations of matches in regex */
 
-  int replacelen;               /* length of replacement string */
+  int replacelen; /* length of replacement string */
   int i;
   int offset;
   int prev;
@@ -106,43 +102,42 @@ regex_substitute(char **buf, char *str, regex_info * info)
 
   /* malloc the replacement string */
   replacelen = strlen(info->replacement);
-  replacelen -= info->tokcount * 2;     /* Subtract $1, $2 etc... */
+  replacelen -= info->tokcount * 2; /* Subtract $1, $2 etc... */
   for (i = 0; i < info->tokcount; i++) {
     replacelen += (ovector[info->tokens[i] * 2 + 1] - ovector[info->tokens[i] * 2]);
   }
-  replacelen++;                 /* Null terminator */
-  *buf = (char *) TSmalloc(replacelen);
+  replacelen++; /* Null terminator */
+  *buf = (char *)TSmalloc(replacelen);
 
   /* perform string replacement */
-  offset = 0;                   /* Where we are adding new data in the string */
+  offset = 0; /* Where we are adding new data in the string */
   prev = 0;
   for (i = 0; i < info->tokcount; i++) {
     memcpy(*buf + offset, info->replacement + prev, info->tokenoffset[i] - prev);
     offset += (info->tokenoffset[i] - prev);
     prev = info->tokenoffset[i] + 2;
 
-    memcpy(*buf + offset, str + ovector[info->tokens[i] * 2],
-           ovector[info->tokens[i] * 2 + 1] - ovector[info->tokens[i] * 2]);
+    memcpy(*buf + offset, str + ovector[info->tokens[i] * 2], ovector[info->tokens[i] * 2 + 1] - ovector[info->tokens[i] * 2]);
     offset += (ovector[info->tokens[i] * 2 + 1] - ovector[info->tokens[i] * 2]);
   }
   memcpy(*buf + offset, info->replacement + prev, strlen(info->replacement) - prev);
   offset += strlen(info->replacement) - prev;
-  (*buf)[offset] = 0;           /* Null termination */
+  (*buf)[offset] = 0; /* Null termination */
   return 1;
 }
 
 static int
-regex_compile(regex_info ** buf, char *pattern, char *replacement)
+regex_compile(regex_info **buf, char *pattern, char *replacement)
 {
-  const char *reerror;          /* Error string from pcre */
-  int reerroffset;              /* Offset where any pcre error occured */
+  const char *reerror; /* Error string from pcre */
+  int reerroffset;     /* Offset where any pcre error occured */
 
   int tokcount;
   int *tokens = NULL;
   int *tokenoffset = NULL;
 
-  int status = 1;               /* Status (return value) of the function */
-  regex_info *info = (regex_info *) TSmalloc(sizeof(regex_info));
+  int status = 1; /* Status (return value) of the function */
+  regex_info *info = (regex_info *)TSmalloc(sizeof(regex_info));
 
   /* Precompile the regular expression */
   info->re = pcre_compile(pattern, 0, &reerror, &reerroffset, NULL);
@@ -154,17 +149,19 @@ regex_compile(regex_info ** buf, char *pattern, char *replacement)
   /* Precalculate the location of $X tokens in the replacement */
   tokcount = 0;
   if (status) {
-    tokens = (int *) TSmalloc(sizeof(int) * TOKENCOUNT);
-    tokenoffset = (int *) TSmalloc(sizeof(int) * TOKENCOUNT);
+    tokens = (int *)TSmalloc(sizeof(int) * TOKENCOUNT);
+    tokenoffset = (int *)TSmalloc(sizeof(int) * TOKENCOUNT);
     for (unsigned i = 0; i < strlen(replacement); i++) {
       if (replacement[i] == '$') {
         if (tokcount >= TOKENCOUNT) {
-          TSError("[%s] Error: too many tokens in replacement " "string: %s\n", PLUGIN_NAME, replacement);
+          TSError("[%s] Error: too many tokens in replacement "
+                  "string: %s\n",
+                  PLUGIN_NAME, replacement);
           status = 0;
           break;
         } else if (replacement[i + 1] < '0' || replacement[i + 1] > '9') {
-          TSError("[%s] Error: Invalid replacement token $%c in %s: should be $0 - $9\n",
-                  PLUGIN_NAME, replacement[i + 1], replacement);
+          TSError("[%s] Error: Invalid replacement token $%c in %s: should be $0 - $9\n", PLUGIN_NAME, replacement[i + 1],
+                  replacement);
           status = 0;
           break;
         } else {
@@ -245,7 +242,7 @@ load_config_file(const char *config_file)
     }
     eol = strstr(buffer, "\n");
     if (eol) {
-      *eol = 0;                 /* Terminate string at newline */
+      *eol = 0; /* Terminate string at newline */
     } else {
       /* Malformed line - skip */
       continue;
@@ -289,16 +286,16 @@ load_config_file(const char *config_file)
   }
   TSfclose(fh);
 
-  if ( prl->pr.empty()) {
+  if (prl->pr.empty()) {
     TSError("[%s] No regular expressions loaded.\n", PLUGIN_NAME);
   }
 
-  TSDebug(PLUGIN_NAME, "loaded %u regexes", (unsigned) prl->pr.size());
+  TSDebug(PLUGIN_NAME, "loaded %u regexes", (unsigned)prl->pr.size());
   return prl.release();
 }
 
 static int
-rewrite_cacheurl(pr_list * prl, TSHttpTxn txnp)
+rewrite_cacheurl(pr_list *prl, TSHttpTxn txnp)
 {
   int ok = 1;
   char *newurl = 0;
@@ -313,7 +310,7 @@ rewrite_cacheurl(pr_list * prl, TSHttpTxn txnp)
   }
 
   if (ok) {
-    for (std::vector<regex_info*>::iterator info = prl->pr.begin(); info != prl->pr.end(); ++info) {
+    for (std::vector<regex_info *>::iterator info = prl->pr.begin(); info != prl->pr.end(); ++info) {
       retval = regex_substitute(&newurl, url, *info);
       if (retval) {
         /* Successful match/substitution */
@@ -322,9 +319,10 @@ rewrite_cacheurl(pr_list * prl, TSHttpTxn txnp)
     }
     if (newurl) {
       TSDebug(PLUGIN_NAME, "Rewriting cache URL for %s to %s", url, newurl);
-      if (TSCacheUrlSet(txnp, newurl, strlen(newurl))
-          != TS_SUCCESS) {
-        TSError("[%s] Unable to modify cache url from " "%s to %s\n", PLUGIN_NAME, url, newurl);
+      if (TSCacheUrlSet(txnp, newurl, strlen(newurl)) != TS_SUCCESS) {
+        TSError("[%s] Unable to modify cache url from "
+                "%s to %s\n",
+                PLUGIN_NAME, url, newurl);
         ok = 0;
       }
     }
@@ -342,11 +340,11 @@ rewrite_cacheurl(pr_list * prl, TSHttpTxn txnp)
 static int
 handle_hook(TSCont contp, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp = (TSHttpTxn) edata;
+  TSHttpTxn txnp = (TSHttpTxn)edata;
   pr_list *prl;
   int ok = 1;
 
-  prl = (pr_list *) TSContDataGet(contp);
+  prl = (pr_list *)TSContDataGet(contp);
 
   switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR:
@@ -371,7 +369,7 @@ initialization_error(const char *msg)
 }
 
 TSReturnCode
-TSRemapInit(TSRemapInterface * api_info, char *errbuf, int errbuf_size)
+TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 {
   if (!api_info) {
     strncpy(errbuf, "[tsremap_init] Invalid TSRemapInterface argument", errbuf_size - 1);
@@ -384,8 +382,8 @@ TSRemapInit(TSRemapInterface * api_info, char *errbuf, int errbuf_size)
   }
 
   if (api_info->tsremap_version < TSREMAP_VERSION) {
-    snprintf(errbuf, errbuf_size - 1, "[tsremap_init] Incorrect API version %ld.%ld",
-             api_info->tsremap_version >> 16, (api_info->tsremap_version & 0xffff));
+    snprintf(errbuf, errbuf_size - 1, "[tsremap_init] Incorrect API version %ld.%ld", api_info->tsremap_version >> 16,
+             (api_info->tsremap_version & 0xffff));
     return TS_ERROR;
   }
 
@@ -404,7 +402,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf ATS_UNUSED, i
 void
 TSRemapDeleteInstance(void *ih)
 {
-  pr_list *prl = (pr_list *) ih;
+  pr_list *prl = (pr_list *)ih;
 
   TSDebug(PLUGIN_NAME, "Deleting remap instance");
 
@@ -412,11 +410,11 @@ TSRemapDeleteInstance(void *ih)
 }
 
 TSRemapStatus
-TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo * rri ATS_UNUSED)
+TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri ATS_UNUSED)
 {
   int ok;
 
-  ok = rewrite_cacheurl((pr_list *) ih, rh);
+  ok = rewrite_cacheurl((pr_list *)ih, rh);
   if (ok) {
     return TSREMAP_NO_REMAP;
   } else {
@@ -431,9 +429,9 @@ TSPluginInit(int argc, const char *argv[])
   TSCont contp;
   pr_list *prl;
 
-  info.plugin_name = (char *) PLUGIN_NAME;
-  info.vendor_name = (char *) "Apache Software Foundation";
-  info.support_email = (char *) "dev@trafficserver.apache.org";
+  info.plugin_name = (char *)PLUGIN_NAME;
+  info.vendor_name = (char *)"Apache Software Foundation";
+  info.support_email = (char *)"dev@trafficserver.apache.org";
 
   if (TSPluginRegister(TS_SDK_VERSION_3_0, &info) != TS_SUCCESS) {
     initialization_error("Plugin registration failed.");
@@ -442,7 +440,7 @@ TSPluginInit(int argc, const char *argv[])
 
   prl = load_config_file(argc > 1 ? argv[1] : NULL);
   if (prl) {
-    contp = TSContCreate((TSEventFunc) handle_hook, NULL);
+    contp = TSContCreate((TSEventFunc)handle_hook, NULL);
     /* Store the pattern replacement list in the continuation */
     TSContDataSet(contp, prl);
     TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, contp);

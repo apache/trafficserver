@@ -44,24 +44,21 @@ using ts::config::Value;
 
 #if TS_USE_TLS_SNI
 
-namespace {
-
-class CertLookup {
+namespace
+{
+class CertLookup
+{
 public:
   DomainNameTree tree;
   IpMap ipmap;
 } Lookup;
 
-class SslEntry {
+class SslEntry
+{
 public:
-  SslEntry()
-    : ctx(NULL), op(TS_SSL_HOOK_OP_DEFAULT)
-  {
-    this->mutex = TSMutexCreate();
-  }
+  SslEntry() : ctx(NULL), op(TS_SSL_HOOK_OP_DEFAULT) { this->mutex = TSMutexCreate(); }
 
-  ~SslEntry()
-  { }
+  ~SslEntry() {}
 
   SSL_CTX *ctx;
   TSSslVConnOp op;
@@ -89,7 +86,7 @@ Parse_Addr_String(ts::ConstBuffer const &text, IpRange &range)
 
   if (hyphen_pos != std::string::npos) {
     std::string addr1 = textstr.substr(0, hyphen_pos);
-    std::string addr2 = textstr.substr(hyphen_pos+1);
+    std::string addr2 = textstr.substr(hyphen_pos + 1);
     range.first.load(ts::ConstBuffer(addr1.c_str(), addr1.length()));
     range.second.load(ts::ConstBuffer(addr2.c_str(), addr2.length()));
   } else { // Assume it is a single address
@@ -108,7 +105,7 @@ Load_Config_File()
     char error_buffer[1024];
 
     cv._errata.write(error_buffer, sizeof(error_buffer), 0, 0, 0, "");
-    TSDebug(PN,"Failed to parse %s as TSConfig format", ConfigPath.c_str());
+    TSDebug(PN, "Failed to parse %s as TSConfig format", ConfigPath.c_str());
     TSError(PCP "Failed to parse %s as TSConfig format", ConfigPath.c_str());
     TSDebug(PN, "Errors: %s", error_buffer);
     return -1;
@@ -156,7 +153,7 @@ SSL_CTX *
 Load_Certificate(SslEntry const *entry, std::deque<std::string> &names)
 {
   SSL_CTX *retval = SSL_CTX_new(SSLv23_client_method());
-  X509* cert = NULL;
+  X509 *cert = NULL;
 
   if (entry->certFileName.length() > 0) {
     // Must load the cert file to fetch the names out later
@@ -181,7 +178,7 @@ Load_Certificate(SslEntry const *entry, std::deque<std::string> &names)
   // Fetch out the names associated with the certificate
   if (cert != NULL) {
     X509_NAME *name = X509_get_subject_name(cert);
-    char  subjectCn[256];
+    char subjectCn[256];
 
     if (X509_NAME_get_text_by_NID(name, NID_commonName, subjectCn, sizeof(subjectCn)) >= 0) {
       std::string tmp_name(subjectCn);
@@ -196,7 +193,7 @@ Load_Certificate(SslEntry const *entry, std::deque<std::string> &names)
 
         if (alt_name->type == GEN_DNS) {
           // Current name is a DNS name, let's check it
-          char *name_ptr = (char *) ASN1_STRING_data(alt_name->d.dNSName);
+          char *name_ptr = (char *)ASN1_STRING_data(alt_name->d.dNSName);
           std::string tmp_name(name_ptr);
           names.push_back(tmp_name);
         }
@@ -239,15 +236,14 @@ Load_Certificate_Entry(ParsedSslValues const &values, std::deque<std::string> &n
     retval->keyFileName = priv_file_path;
   }
   // Must go ahead and load the cert to get the names
-  if (values.server_name.length() == 0 &&
-      values.server_ips.size() == 0) {
+  if (values.server_name.length() == 0 && values.server_ips.size() == 0) {
     retval->ctx = Load_Certificate(retval, names);
   }
   if (values.action.length() > 0) {
     if (values.action == "tunnel") {
       retval->op = TS_SSL_HOOK_OP_TUNNEL;
     } else if (values.action == "teriminate") {
-      retval-> op = TS_SSL_HOOK_OP_TERMINATE;
+      retval->op = TS_SSL_HOOK_OP_TERMINATE;
     }
   }
 
@@ -290,14 +286,11 @@ Parse_Config(Value &parent, ParsedSslValues &orig_values)
     Parse_Config_Rules(val, cur_values);
   } else { // We are terminal, enter a match case
     TSDebug(PN, "Terminal SSL Config: server_priv_key_file=%s server_name=%s server_cert_name=%s action=%s",
-      cur_values.server_priv_key_file.c_str(),
-      cur_values.server_name.c_str(),
-      cur_values.server_cert_name.c_str(),
-      cur_values.action.c_str()
-    );
+            cur_values.server_priv_key_file.c_str(), cur_values.server_name.c_str(), cur_values.server_cert_name.c_str(),
+            cur_values.action.c_str());
     // Load the certificate and create a context if appropriate
     std::deque<std::string> cert_names;
-    SslEntry *entry  = Load_Certificate_Entry(cur_values, cert_names);
+    SslEntry *entry = Load_Certificate_Entry(cur_values, cert_names);
 
     // Store in appropriate table
     if (cur_values.server_name.length() > 0) {
@@ -334,7 +327,7 @@ Parse_Config_Rules(Value &parent, ParsedSslValues &orig_values)
 void *
 Load_Certificate_Thread(void *arg)
 {
-  SslEntry *entry = reinterpret_cast<SslEntry*>(arg);
+  SslEntry *entry = reinterpret_cast<SslEntry *>(arg);
 
   TSMutexLock(entry->mutex);
   if (entry->ctx == NULL) {
@@ -362,7 +355,7 @@ Load_Certificate_Thread(void *arg)
 }
 
 int
-CB_Life_Cycle(TSCont , TSEvent , void *)
+CB_Life_Cycle(TSCont, TSEvent, void *)
 {
   // By now the SSL library should have been initialized,
   // We can safely parse the config file and load the ctx tables
@@ -380,12 +373,9 @@ CB_Pre_Accept(TSCont /*contp*/, TSEvent event, void *edata)
   IpAddr ip_client(TSNetVConnRemoteAddrGet(ssl_vc));
   char buff2[INET6_ADDRSTRLEN];
 
-  TSDebug(PN, "Pre accept callback %p - event is %s, target address %s, client address %s",
-          ssl_vc,
-          event == TS_EVENT_VCONN_PRE_ACCEPT ? "good" : "bad",
-          ip.toString(buff, sizeof(buff)),
-          ip_client.toString(buff2, sizeof(buff2))
-    );
+  TSDebug(PN, "Pre accept callback %p - event is %s, target address %s, client address %s", ssl_vc,
+          event == TS_EVENT_VCONN_PRE_ACCEPT ? "good" : "bad", ip.toString(buff, sizeof(buff)),
+          ip_client.toString(buff2, sizeof(buff2)));
 
   // Is there a cert already defined for this IP?
   //
@@ -398,8 +388,7 @@ CB_Pre_Accept(TSCont /*contp*/, TSEvent event, void *edata)
     SSL *ssl = reinterpret_cast<SSL *>(sslobj);
     SslEntry *entry = reinterpret_cast<SslEntry *>(payload);
     TSMutexLock(entry->mutex);
-    if (entry->op == TS_SSL_HOOK_OP_TUNNEL ||
-        entry->op == TS_SSL_HOOK_OP_TERMINATE) {
+    if (entry->op == TS_SSL_HOOK_OP_TUNNEL || entry->op == TS_SSL_HOOK_OP_TERMINATE) {
       // Push everything to blind tunnel, or terminate
       if (entry->op == TS_SSL_HOOK_OP_TUNNEL) {
         TSVConnTunnel(ssl_vc);
@@ -446,8 +435,7 @@ CB_servername(TSCont /*contp*/, TSEvent /*event*/, void *edata)
     DomainNameTree::DomainNameNode *node = Lookup.tree.findFirstMatch(servername);
     if (node != NULL && node->payload != NULL) {
       SslEntry *entry = reinterpret_cast<SslEntry *>(node->payload);
-      if (entry->op == TS_SSL_HOOK_OP_TUNNEL ||
-          entry->op == TS_SSL_HOOK_OP_TERMINATE) {
+      if (entry->op == TS_SSL_HOOK_OP_TUNNEL || entry->op == TS_SSL_HOOK_OP_TERMINATE) {
         // Push everything to blind tunnel
         if (entry->op == TS_SSL_HOOK_OP_TUNNEL) {
           TSVConnTunnel(ssl_vc);
@@ -469,7 +457,7 @@ CB_servername(TSCont /*contp*/, TSEvent /*event*/, void *edata)
         }
         // Won't reenable until the certificate has been loaded
         return TS_SUCCESS;
-      } else { //if (entry->ctx != NULL) {
+      } else { // if (entry->ctx != NULL) {
         SSL_set_SSL_CTX(ssl, entry->ctx);
         TSDebug(PN, "Replace cert based on name %s", servername);
       }
@@ -490,23 +478,21 @@ TSPluginInit(int argc, const char *argv[])
 {
   bool success = false;
   TSPluginRegistrationInfo info;
-  TSCont cb_pa = 0; // pre-accept callback continuation
-  TSCont cb_lc = 0; // life cycle callback continuuation
-  TSCont cb_sni = 0; // SNI callback continuuation
+  TSCont cb_pa = 0;   // pre-accept callback continuation
+  TSCont cb_lc = 0;   // life cycle callback continuuation
+  TSCont cb_sni = 0;  // SNI callback continuuation
   TSCont cb_sni2 = 0; // SNI callback continuuation
-  static const struct option longopt[] = {
-    { const_cast<char *>("config"), required_argument, NULL, 'c' },
-    { NULL, no_argument, NULL, '\0' }
-  };
+  static const struct option longopt[] = {{const_cast<char *>("config"), required_argument, NULL, 'c'},
+                                          {NULL, no_argument, NULL, '\0'}};
 
 
-  info.plugin_name = const_cast<char*>("SSL Certificate Loader");
-  info.vendor_name = const_cast<char*>("Network Geographics");
-  info.support_email = const_cast<char*>("shinrich@network-geographics.com");
+  info.plugin_name = const_cast<char *>("SSL Certificate Loader");
+  info.vendor_name = const_cast<char *>("Network Geographics");
+  info.support_email = const_cast<char *>("shinrich@network-geographics.com");
 
   int opt = 0;
   while (opt >= 0) {
-    opt = getopt_long(argc, (char * const *)argv, "c:", longopt, NULL);
+    opt = getopt_long(argc, (char *const *)argv, "c:", longopt, NULL);
     switch (opt) {
     case 'c':
       ConfigPath = optarg;
@@ -515,7 +501,7 @@ TSPluginInit(int argc, const char *argv[])
     }
   }
   if (ConfigPath.length() == 0) {
-    static char const * const DEFAULT_CONFIG_PATH = "ssl_start.cfg";
+    static char const *const DEFAULT_CONFIG_PATH = "ssl_start.cfg";
     ConfigPath = std::string(TSConfigDirGet()) + '/' + std::string(DEFAULT_CONFIG_PATH);
     TSDebug(PN, "No config path set in arguments, using default: %s", DEFAULT_CONFIG_PATH);
   }
@@ -539,8 +525,10 @@ TSPluginInit(int argc, const char *argv[])
   }
 
   if (!success) {
-    if (cb_pa) TSContDestroy(cb_pa);
-    if (cb_lc) TSContDestroy(cb_lc);
+    if (cb_pa)
+      TSContDestroy(cb_pa);
+    if (cb_lc)
+      TSContDestroy(cb_lc);
     TSError(PCP "not initialized");
   }
   TSDebug(PN, "Plugin %s", success ? "online" : "offline");

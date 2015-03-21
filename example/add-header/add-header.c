@@ -65,7 +65,6 @@ add_header(TSHttpTxn txnp, TSCont contp ATS_UNUSED)
 
   /* Loop on our header containing fields to add */
   while (field_loc) {
-
     /* First create a new field in the client request header */
     if (TSMimeHdrFieldCreate(req_bufp, req_loc, &new_field_loc) != TS_SUCCESS) {
       TSError("[add_header] Error while creating new field");
@@ -108,7 +107,7 @@ done:
 static int
 add_header_plugin(TSCont contp, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp = (TSHttpTxn) edata;
+  TSHttpTxn txnp = (TSHttpTxn)edata;
 
   switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR:

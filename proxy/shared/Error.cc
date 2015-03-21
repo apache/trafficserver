@@ -38,8 +38,7 @@ ErrorClass::~ErrorClass()
 {
 }
 
-void
-ErrorClass::operator() (const char *aformat_string, ...)
+void ErrorClass::operator()(const char *aformat_string, ...)
 {
   va_list aap;
   va_start(aap, aformat_string);
@@ -94,7 +93,7 @@ void
 ProcessFatalClass::raise(va_list ap, const char *prefix)
 {
   ErrorClass::raise(ap, prefix ? prefix : "PROCESS FATAL");
-  //exit(1);
+  // exit(1);
   ink_assert(!"ProcessFatal");
 }
 

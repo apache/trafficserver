@@ -38,17 +38,20 @@ struct atscppapi::GlobalPluginState : noncopyable {
   bool ignore_internal_transactions_;
 
   GlobalPluginState(GlobalPlugin *global_plugin, bool ignore_internal_transactions)
-    : global_plugin_(global_plugin), ignore_internal_transactions_(ignore_internal_transactions) { }
+    : global_plugin_(global_plugin), ignore_internal_transactions_(ignore_internal_transactions)
+  {
+  }
 };
 
-namespace {
-
-static int handleGlobalPluginEvents(TSCont cont, TSEvent event, void *edata) {
+namespace
+{
+static int
+handleGlobalPluginEvents(TSCont cont, TSEvent event, void *edata)
+{
   TSHttpTxn txn = static_cast<TSHttpTxn>(edata);
   GlobalPluginState *state = static_cast<GlobalPluginState *>(TSContDataGet(cont));
   if (state->ignore_internal_transactions_ && (TSHttpIsInternalRequest(txn) == TS_SUCCESS)) {
-    LOG_DEBUG("Ignoring event %d on internal transaction %p for global plugin %p", event, txn,
-              state->global_plugin_);
+    LOG_DEBUG("Ignoring event %d on internal transaction %p for global plugin %p", event, txn, state->global_plugin_);
     TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
   } else {
     LOG_DEBUG("Invoking global plugin %p for event %d on transaction %p", state->global_plugin_, event, txn);
@@ -59,7 +62,8 @@ static int handleGlobalPluginEvents(TSCont cont, TSEvent event, void *edata) {
 
 } /* anonymous namespace */
 
-GlobalPlugin::GlobalPlugin(bool ignore_internal_transactions) {
+GlobalPlugin::GlobalPlugin(bool ignore_internal_transactions)
+{
   utils::internal::initTransactionManagement();
   state_ = new GlobalPluginState(this, ignore_internal_transactions);
   TSMutex mutex = NULL;
@@ -67,12 +71,15 @@ GlobalPlugin::GlobalPlugin(bool ignore_internal_transactions) {
   TSContDataSet(state_->cont_, static_cast<void *>(state_));
 }
 
-GlobalPlugin::~GlobalPlugin() {
+GlobalPlugin::~GlobalPlugin()
+{
   TSContDestroy(state_->cont_);
   delete state_;
 }
 
-void GlobalPlugin::registerHook(Plugin::HookType hook_type) {
+void
+GlobalPlugin::registerHook(Plugin::HookType hook_type)
+{
   TSHttpHookID hook_id = utils::internal::convertInternalHookToTsHook(hook_type);
   TSHttpHookAdd(hook_id, state_->cont_);
   LOG_DEBUG("Registered global plugin %p for hook %s", this, HOOK_TYPE_STRINGS[hook_type].c_str());

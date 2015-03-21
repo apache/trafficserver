@@ -46,19 +46,30 @@ using std::string;
  * header is correctly set on the way out.
  */
 
-class Helpers {
+class Helpers
+{
 public:
-  static bool clientAcceptsGzip(Transaction &transaction) {
+  static bool
+  clientAcceptsGzip(Transaction &transaction)
+  {
     return transaction.getClientRequest().getHeaders().values("Accept-Encoding").find("gzip") != string::npos;
   }
 
-  static bool serverReturnedGzip(Transaction &transaction) {
+  static bool
+  serverReturnedGzip(Transaction &transaction)
+  {
     return transaction.getServerResponse().getHeaders().values("Content-Encoding").find("gzip") != string::npos;
   }
 
-  enum ContentType { UNKNOWN = 0, TEXT_HTML  = 1, TEXT_PLAIN = 2 };
+  enum ContentType {
+    UNKNOWN = 0,
+    TEXT_HTML = 1,
+    TEXT_PLAIN = 2,
+  };
 
-  static ContentType getContentType(Transaction &transaction) {
+  static ContentType
+  getContentType(Transaction &transaction)
+  {
     if (transaction.getServerResponse().getHeaders().values("Content-Type").find("text/html") != string::npos) {
       return TEXT_HTML;
     } else if (transaction.getServerResponse().getHeaders().values("Content-Type").find("text/plain") != string::npos) {
@@ -69,24 +80,32 @@ public:
   }
 };
 
-class SomeTransformationPlugin : public TransformationPlugin {
+class SomeTransformationPlugin : public TransformationPlugin
+{
 public:
   SomeTransformationPlugin(Transaction &transaction)
-    : TransformationPlugin(transaction, RESPONSE_TRANSFORMATION), transaction_(transaction) {
+    : TransformationPlugin(transaction, RESPONSE_TRANSFORMATION), transaction_(transaction)
+  {
     registerHook(HOOK_SEND_RESPONSE_HEADERS);
   }
 
-  void handleSendResponseHeaders(Transaction &transaction) {
+  void
+  handleSendResponseHeaders(Transaction &transaction)
+  {
     TS_DEBUG(TAG, "Added X-Content-Transformed header");
     transaction.getClientResponse().getHeaders()["X-Content-Transformed"] = "1";
     transaction.resume();
   }
 
-  void consume(const string &data) {
+  void
+  consume(const string &data)
+  {
     produce(data);
   }
 
-  void handleInputComplete() {
+  void
+  handleInputComplete()
+  {
     Helpers::ContentType content_type = Helpers::getContentType(transaction_);
     if (content_type == Helpers::TEXT_HTML) {
       TS_DEBUG(TAG, "Adding an HTML comment at the end of the page");
@@ -100,20 +119,25 @@ public:
     setOutputComplete();
   }
 
-  virtual ~SomeTransformationPlugin() { }
+  virtual ~SomeTransformationPlugin() {}
+
 private:
   Transaction &transaction_;
 };
 
-class GlobalHookPlugin : public GlobalPlugin {
+class GlobalHookPlugin : public GlobalPlugin
+{
 public:
-  GlobalHookPlugin() {
+  GlobalHookPlugin()
+  {
     registerHook(HOOK_SEND_REQUEST_HEADERS);
     registerHook(HOOK_READ_RESPONSE_HEADERS);
     registerHook(HOOK_SEND_RESPONSE_HEADERS);
   }
 
-  virtual void handleSendRequestHeaders(Transaction &transaction) {
+  virtual void
+  handleSendRequestHeaders(Transaction &transaction)
+  {
     // Since we can only decompress gzip we will change the accept encoding header
     // to gzip, even if the user cannot accept gziped content we will return to them
     // uncompressed content in that case since we have to be able to transform the content.
@@ -126,45 +150,48 @@ public:
     transaction.resume();
   }
 
-  virtual void handleReadResponseHeaders(Transaction &transaction) {
+  virtual void
+  handleReadResponseHeaders(Transaction &transaction)
+  {
     TS_DEBUG(TAG, "Determining if we need to add an inflate transformation or a deflate transformation..");
     // We're guaranteed to have been returned either gzipped content or Identity.
 
     if (Helpers::serverReturnedGzip(transaction)) {
       // If the returned content was gziped we will inflate it so we can transform it.
-      TS_DEBUG(TAG,"Creating Inflate Transformation because the server returned gziped content");
-      transaction.addPlugin(new GzipInflateTransformation(transaction,
-                                                          TransformationPlugin::RESPONSE_TRANSFORMATION));
+      TS_DEBUG(TAG, "Creating Inflate Transformation because the server returned gziped content");
+      transaction.addPlugin(new GzipInflateTransformation(transaction, TransformationPlugin::RESPONSE_TRANSFORMATION));
     }
 
     transaction.addPlugin(new SomeTransformationPlugin(transaction));
 
     // Even if the server didn't return gziped content, if the user supports it we will gzip it.
     if (Helpers::clientAcceptsGzip(transaction)) {
-      TS_DEBUG(TAG,"The client supports gzip so we will deflate the content on the way out.");
-      transaction.addPlugin(new GzipDeflateTransformation(transaction,
-                                                          TransformationPlugin::RESPONSE_TRANSFORMATION));
+      TS_DEBUG(TAG, "The client supports gzip so we will deflate the content on the way out.");
+      transaction.addPlugin(new GzipDeflateTransformation(transaction, TransformationPlugin::RESPONSE_TRANSFORMATION));
     }
     transaction.resume();
   }
 
-  virtual void handleSendResponseHeaders(Transaction &transaction) {
+  virtual void
+  handleSendResponseHeaders(Transaction &transaction)
+  {
     // If the client supported gzip then we can guarantee they are receiving gzip since regardless of the
     // origins content-encoding we returned gzip, so let's make sure the content-encoding header is correctly
     // set to gzip or identity.
     if (Helpers::clientAcceptsGzip(transaction)) {
-      TS_DEBUG(TAG,"Setting the client response content-encoding to gzip since the user supported it, that's what they got.");
+      TS_DEBUG(TAG, "Setting the client response content-encoding to gzip since the user supported it, that's what they got.");
       transaction.getClientResponse().getHeaders()["Content-Encoding"] = "gzip";
     } else {
-      TS_DEBUG(TAG,"Setting the client response content-encoding to identity since the user didn't support gzip");
+      TS_DEBUG(TAG, "Setting the client response content-encoding to identity since the user didn't support gzip");
       transaction.getClientResponse().getHeaders()["Content-Encoding"] = "identity";
     }
     transaction.resume();
   }
-
 };
 
-void TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED) {
+void
+TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
+{
   TS_DEBUG(TAG, "TSPluginInit");
   new GlobalHookPlugin();
 }

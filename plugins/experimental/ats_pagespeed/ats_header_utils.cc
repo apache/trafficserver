@@ -23,24 +23,26 @@
 
 #include "ats_header_utils.h"
 
-GoogleString get_header(TSMBuffer bufp, TSMLoc hdr_loc, const char * header_name)
+GoogleString
+get_header(TSMBuffer bufp, TSMLoc hdr_loc, const char *header_name)
 {
-  const char * val = NULL;
+  const char *val = NULL;
   int val_len;
-  TSMLoc field_loc = TSMimeHdrFieldFind( bufp, hdr_loc, header_name, -1);
+  TSMLoc field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, header_name, -1);
 
   if (field_loc) {
-    val = TSMimeHdrFieldValueStringGet (bufp, hdr_loc, field_loc, 0, &val_len);
-    TSHandleMLocRelease(bufp,hdr_loc,field_loc);
-    return GoogleString(val,val_len);
+    val = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, 0, &val_len);
+    TSHandleMLocRelease(bufp, hdr_loc, field_loc);
+    return GoogleString(val, val_len);
   }
 
   return GoogleString("");
 }
 
-void unset_header(TSMBuffer bufp, TSMLoc hdr_loc, const char * header_name)
+void
+unset_header(TSMBuffer bufp, TSMLoc hdr_loc, const char *header_name)
 {
-  TSMLoc field_loc = TSMimeHdrFieldFind( bufp, hdr_loc, header_name, -1);
+  TSMLoc field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, header_name, -1);
 
   if (field_loc) {
     TSMimeHdrFieldDestroy(bufp, hdr_loc, field_loc);
@@ -48,7 +50,8 @@ void unset_header(TSMBuffer bufp, TSMLoc hdr_loc, const char * header_name)
   }
 }
 
-void hide_accept_encoding(TSMBuffer reqp, TSMLoc hdr_loc, const char * hidden_header_name)
+void
+hide_accept_encoding(TSMBuffer reqp, TSMLoc hdr_loc, const char *hidden_header_name)
 {
   TSMLoc field = TSMimeHdrFieldFind(reqp, hdr_loc, TS_MIME_FIELD_ACCEPT_ENCODING, TS_MIME_LEN_ACCEPT_ENCODING);
   while (field) {
@@ -60,7 +63,8 @@ void hide_accept_encoding(TSMBuffer reqp, TSMLoc hdr_loc, const char * hidden_he
   }
 }
 
-void restore_accept_encoding(TSMBuffer reqp, TSMLoc hdr_loc, const char * hidden_header_name)
+void
+restore_accept_encoding(TSMBuffer reqp, TSMLoc hdr_loc, const char *hidden_header_name)
 {
   TSMLoc field = TSMimeHdrFieldFind(reqp, hdr_loc, hidden_header_name, -1);
 
@@ -73,17 +77,18 @@ void restore_accept_encoding(TSMBuffer reqp, TSMLoc hdr_loc, const char * hidden
   }
 }
 
-void set_header(TSMBuffer bufp, TSMLoc hdr_loc, const char * header_name, const char * header_value)
+void
+set_header(TSMBuffer bufp, TSMLoc hdr_loc, const char *header_name, const char *header_value)
 {
-  TSMLoc field_loc = TSMimeHdrFieldFind( bufp, hdr_loc, header_name, -1);
+  TSMLoc field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, header_name, -1);
 
   if (field_loc) {
     TSMimeHdrFieldValueStringSet(bufp, hdr_loc, field_loc, -1, header_value, -1);
   } else {
-    if ( TSMimeHdrFieldCreate(bufp, hdr_loc, &field_loc) == TS_SUCCESS ) {
+    if (TSMimeHdrFieldCreate(bufp, hdr_loc, &field_loc) == TS_SUCCESS) {
       TSMimeHdrFieldNameSet(bufp, hdr_loc, field_loc, header_name, -1);
       TSMimeHdrFieldAppend(bufp, hdr_loc, field_loc);
-      TSMimeHdrFieldValueStringSet(bufp,hdr_loc,field_loc,-1,header_value,-1);
+      TSMimeHdrFieldValueStringSet(bufp, hdr_loc, field_loc, -1, header_value, -1);
     } else {
       TSError("field creation error for field [%s]", header_name);
       return;
@@ -91,6 +96,6 @@ void set_header(TSMBuffer bufp, TSMLoc hdr_loc, const char * header_name, const 
   }
 
   if (field_loc) {
-    TSHandleMLocRelease(bufp,hdr_loc,field_loc);
+    TSHandleMLocRelease(bufp, hdr_loc, field_loc);
   }
 }

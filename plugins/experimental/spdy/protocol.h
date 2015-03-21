@@ -19,29 +19,13 @@
 #ifndef PROTOCOL_H_46E29A3D_9EE6_4C4F_A355_FF42DE19EF18
 #define PROTOCOL_H_46E29A3D_9EE6_4C4F_A355_FF42DE19EF18
 
-void
-spdy_send_reset_stream(
-        spdy_io_control *   io,
-        unsigned            stream_id,
-        spdy::error         status);
+void spdy_send_reset_stream(spdy_io_control *io, unsigned stream_id, spdy::error status);
 
-void
-spdy_send_syn_reply(
-        spdy_io_stream * stream,
-        const spdy::key_value_block& kvblock);
+void spdy_send_syn_reply(spdy_io_stream *stream, const spdy::key_value_block &kvblock);
 
-void
-spdy_send_data_frame(
-        spdy_io_stream *    stream,
-        unsigned            flags,
-        const void *        ptr,
-        size_t              nbytes);
+void spdy_send_data_frame(spdy_io_stream *stream, unsigned flags, const void *ptr, size_t nbytes);
 
-void
-spdy_send_ping(
-        spdy_io_control *       io,
-        spdy::protocol_version  version,
-        unsigned                ping_id);
+void spdy_send_ping(spdy_io_control *io, spdy::protocol_version version, unsigned ping_id);
 
 #endif /* PROTOCOL_H_46E29A3D_9EE6_4C4F_A355_FF42DE19EF18 */
 /* vim: set sw=4 ts=4 tw=79 et : */

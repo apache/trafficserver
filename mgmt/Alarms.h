@@ -54,29 +54,29 @@ class AppVersionInfo;
 // When adding new alarms, please make sure add the
 //   corresponding alarm text
 //
-#define MGMT_ALARM_PROXY_PROCESS_DIED            1
-#define MGMT_ALARM_PROXY_PROCESS_BORN            2
-#define MGMT_ALARM_PROXY_PEER_BORN               3      /* Data is ip addr */
-#define MGMT_ALARM_PROXY_PEER_DIED               4
-#define MGMT_ALARM_PROXY_CONFIG_ERROR            5      /* Data is descriptive string */
-#define MGMT_ALARM_PROXY_SYSTEM_ERROR            6
-#define MGMT_ALARM_PROXY_LOG_SPACE_CRISIS        7
-#define MGMT_ALARM_PROXY_CACHE_ERROR             8
-#define MGMT_ALARM_PROXY_CACHE_WARNING           9
-#define MGMT_ALARM_PROXY_LOGGING_ERROR           10
-#define MGMT_ALARM_PROXY_LOGGING_WARNING         11
-#define MGMT_ALARM_MGMT_TEST                     13     /* to aid in debugging */
-#define MGMT_ALARM_CONFIG_UPDATE_FAILED          14
-#define MGMT_ALARM_WEB_ERROR                     15
-#define MGMT_ALARM_PING_FAILURE	                 16
-#define MGMT_ALARM_MGMT_CONFIG_ERROR             17
-#define MGMT_ALARM_ADD_ALARM                     18     /* OEM_ALARM */
-#define MGMT_ALARM_PROXY_LOG_SPACE_ROLLED        19     /* Alarm when log files will be rolled */
-#define MGMT_ALARM_PROXY_HTTP_CONGESTED_SERVER   20     /* Congestion control -- congested server */
-#define MGMT_ALARM_PROXY_HTTP_ALLEVIATED_SERVER  21     /* Congestion control -- alleviated server */
-#define MGMT_ALARM_PROXY_FTP_ERROR	         22
+#define MGMT_ALARM_PROXY_PROCESS_DIED 1
+#define MGMT_ALARM_PROXY_PROCESS_BORN 2
+#define MGMT_ALARM_PROXY_PEER_BORN 3 /* Data is ip addr */
+#define MGMT_ALARM_PROXY_PEER_DIED 4
+#define MGMT_ALARM_PROXY_CONFIG_ERROR 5 /* Data is descriptive string */
+#define MGMT_ALARM_PROXY_SYSTEM_ERROR 6
+#define MGMT_ALARM_PROXY_LOG_SPACE_CRISIS 7
+#define MGMT_ALARM_PROXY_CACHE_ERROR 8
+#define MGMT_ALARM_PROXY_CACHE_WARNING 9
+#define MGMT_ALARM_PROXY_LOGGING_ERROR 10
+#define MGMT_ALARM_PROXY_LOGGING_WARNING 11
+#define MGMT_ALARM_MGMT_TEST 13 /* to aid in debugging */
+#define MGMT_ALARM_CONFIG_UPDATE_FAILED 14
+#define MGMT_ALARM_WEB_ERROR 15
+#define MGMT_ALARM_PING_FAILURE 16
+#define MGMT_ALARM_MGMT_CONFIG_ERROR 17
+#define MGMT_ALARM_ADD_ALARM 18                    /* OEM_ALARM */
+#define MGMT_ALARM_PROXY_LOG_SPACE_ROLLED 19       /* Alarm when log files will be rolled */
+#define MGMT_ALARM_PROXY_HTTP_CONGESTED_SERVER 20  /* Congestion control -- congested server */
+#define MGMT_ALARM_PROXY_HTTP_ALLEVIATED_SERVER 21 /* Congestion control -- alleviated server */
+#define MGMT_ALARM_PROXY_FTP_ERROR 22
 
-#define MGMT_ALARM_SAC_SERVER_DOWN		400
+#define MGMT_ALARM_SAC_SERVER_DOWN 400
 
 extern const char *alarmText[];
 extern const int alarmTextNum;
@@ -85,26 +85,24 @@ extern const int alarmTextNum;
 /* OEM_ALARM: the alarm type is used as a key for hash tables;
    need offset and modulo constants which will keep the unique
    keys for OEM alarms within a specified range */
-const int minOEMkey = 1000;     // used as offset
+const int minOEMkey = 1000; // used as offset
 const int maxOEMkey = 6000;
 
 typedef int alarm_t;
-typedef void (*AlarmCallbackFunc) (alarm_t, const char *, const char *);
+typedef void (*AlarmCallbackFunc)(alarm_t, const char *, const char *);
 
-typedef struct _alarm
-{
+typedef struct _alarm {
   alarm_t type;
   int priority;
   bool linger;
   bool local;
   bool seen;
-  unsigned long inet_address;   /* If not local */
+  unsigned long inet_address; /* If not local */
   char *description;
 } Alarm;
 
 class Alarms
 {
-
 public:
   Alarms();
   ~Alarms();
@@ -112,10 +110,10 @@ public:
   void registerCallback(AlarmCallbackFunc func);
   bool isCurrentAlarm(alarm_t a, char *ip = NULL);
 
-  void signalAlarm(alarm_t t, const char * desc, const char * ip = NULL);
+  void signalAlarm(alarm_t t, const char *desc, const char *ip = NULL);
   void resolveAlarm(alarm_t a, char *ip = NULL);
 
-  void constructAlarmMessage(const AppVersionInfo& version,  char *ip, char *message, int max);
+  void constructAlarmMessage(const AppVersionInfo &version, char *ip, char *message, int max);
   void resetSeenFlag(char *ip);
   void clearUnSeen(char *ip);
 
@@ -123,13 +121,13 @@ public:
   void execAlarmBin(const char *desc);
 
   const char *getAlarmText(alarm_t id);
-  InkHashTable *getLocalAlarms()
+  InkHashTable *
+  getLocalAlarms()
   {
     return local_alarms;
   }
 
 private:
-
   int cur_cb;
   ink_mutex mutex;
 
@@ -142,6 +140,6 @@ private:
      alarm descriptions */
   int alarmOEMcount;
 
-};                              /* End class Alarms */
+}; /* End class Alarms */
 
 #endif /* _ALARMS_H */

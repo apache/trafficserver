@@ -57,27 +57,27 @@
  *  // Outputs [file.cc:125, function()] [DEBUG] This is a test DEBUG message: hello.
  * \endcode
  */
-#define LOG_DEBUG(log, fmt, ...) \
-  do { \
-    (log).logDebug("[%s:%d, %s()] " fmt, __FILE__, __LINE__, __FUNCTION__, ## __VA_ARGS__); \
+#define LOG_DEBUG(log, fmt, ...)                                                           \
+  do {                                                                                     \
+    (log).logDebug("[%s:%d, %s()] " fmt, __FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__); \
   } while (false)
 
 /**
  * A helper macro for Logger objects that allows you to easily add a info level message
  * which will include file, line, and function name with the message. See example in LOG_DEBUG
  */
-#define LOG_INFO(log, fmt, ...) \
-  do { \
-    (log).logInfo("[%s:%d, %s()] " fmt, __FILE__, __LINE__, __FUNCTION__, ## __VA_ARGS__); \
+#define LOG_INFO(log, fmt, ...)                                                           \
+  do {                                                                                    \
+    (log).logInfo("[%s:%d, %s()] " fmt, __FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__); \
   } while (false)
 
 /**
  * A helper macro for Logger objects that allows you to easily add a error level message
  * which will include file, line, and function name with the message.  See example in LOG_DEBUG
  */
-#define LOG_ERROR(log, fmt, ...) \
-  do { \
-    (log).logError("[%s:%d, %s()] " fmt, __FILE__, __LINE__, __FUNCTION__, ## __VA_ARGS__); \
+#define LOG_ERROR(log, fmt, ...)                                                           \
+  do {                                                                                     \
+    (log).logError("[%s:%d, %s()] " fmt, __FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__); \
   } while (false)
 
 /**
@@ -87,7 +87,7 @@
  *
  * @private
  */
-extern "C" void TSDebug(const char *tag, const char *fmt, ...) ATSCPPAPI_PRINTFLIKE(2,3);
+extern "C" void TSDebug(const char *tag, const char *fmt, ...) ATSCPPAPI_PRINTFLIKE(2, 3);
 
 /**
  * We forward declare this because if we didn't we end up writing our
@@ -96,7 +96,7 @@ extern "C" void TSDebug(const char *tag, const char *fmt, ...) ATSCPPAPI_PRINTFL
  *
  * @private
  */
-extern "C" void TSError(const char *fmt, ...) ATSCPPAPI_PRINTFLIKE(1,2);
+extern "C" void TSError(const char *fmt, ...) ATSCPPAPI_PRINTFLIKE(1, 2);
 
 // This is weird, but see the following:
 //   http://stackoverflow.com/questions/5641427/how-to-make-preprocessor-generate-a-string-for-line-keyword
@@ -109,9 +109,9 @@ extern "C" void TSError(const char *fmt, ...) ATSCPPAPI_PRINTFLIKE(1,2);
  * via traffic_server -T "tag.*" or since this macro includes the file can you further refine to an
  * individual file or even a particular line! This can also be enabled via records.config.
  */
-#define TS_DEBUG(tag, fmt, ...) \
-  do { \
-    TSDebug(tag "." __FILE__ ":" LINE_NO , "[%s()] " fmt, __FUNCTION__, ## __VA_ARGS__); \
+#define TS_DEBUG(tag, fmt, ...)                                                        \
+  do {                                                                                 \
+    TSDebug(tag "." __FILE__ ":" LINE_NO, "[%s()] " fmt, __FUNCTION__, ##__VA_ARGS__); \
   } while (false)
 
 /**
@@ -119,14 +119,14 @@ extern "C" void TSError(const char *fmt, ...) ATSCPPAPI_PRINTFLIKE(1,2);
  * will also output a DEBUG message visible via traffic_server -T "tag.*", or by enabling the
  * tag in records.config.
  */
-#define TS_ERROR(tag, fmt, ...) \
-  do { \
-    TS_DEBUG(tag, "[ERROR] " fmt, ## __VA_ARGS__); \
-    TSError("[%s] [%s:%d, %s()] " fmt, tag, __FILE__, __LINE__, __FUNCTION__, ## __VA_ARGS__); \
+#define TS_ERROR(tag, fmt, ...)                                                               \
+  do {                                                                                        \
+    TS_DEBUG(tag, "[ERROR] " fmt, ##__VA_ARGS__);                                             \
+    TSError("[%s] [%s:%d, %s()] " fmt, tag, __FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__); \
   } while (false)
 
-namespace atscppapi {
-
+namespace atscppapi
+{
 struct LoggerState;
 
 /**
@@ -155,17 +155,17 @@ struct LoggerState;
  *   Apply the patch in TS-1813 to correct log rolling in 3.2.x
  *
  */
-class Logger : noncopyable {
+class Logger : noncopyable
+{
 public:
-
   /**
    * The available log levels
    */
   enum LogLevel {
     LOG_LEVEL_NO_LOG = 128, /**< This log level is used to disable all logging */
-    LOG_LEVEL_DEBUG = 1, /**< This log level is used for DEBUG level logging (DEBUG + INFO + ERROR) */
-    LOG_LEVEL_INFO = 2, /**< This log level is used for INFO level logging (INFO + ERROR) */
-    LOG_LEVEL_ERROR = 4 /**< This log level is used for ERROR level logging (ERROR ONLY) */
+    LOG_LEVEL_DEBUG = 1,    /**< This log level is used for DEBUG level logging (DEBUG + INFO + ERROR) */
+    LOG_LEVEL_INFO = 2,     /**< This log level is used for INFO level logging (INFO + ERROR) */
+    LOG_LEVEL_ERROR = 4     /**< This log level is used for ERROR level logging (ERROR ONLY) */
   };
 
   Logger();
@@ -177,7 +177,8 @@ public:
    *
    * @param file The name of the file to create in the logging directory, if you do not specify an extension .log will be used.
    * @param add_timestamp Prepend a timestamp to the log lines, the default value is true.
-   * @param rename_file If a file already exists by the same name it will attempt to rename using a scheme that appends .1, .2, and so on,
+   * @param rename_file If a file already exists by the same name it will attempt to rename using a scheme that appends .1, .2, and
+   *so on,
    *   the default value for this argument is true.
    * @param level the default log level to use when creating the logger, this is set to LOG_LEVEL_INFO by default.
    * @param rolling_enabled if set to true this will enable log rolling on a periodic basis, this is enabled by default.
@@ -185,8 +186,8 @@ public:
    * @return returns true if the logger was successfully created and initialized.
    * @see LogLevel
    */
-  bool init(const std::string &file, bool add_timestamp = true, bool rename_file = true,
-      LogLevel level = LOG_LEVEL_INFO, bool rolling_enabled = true, int rolling_interval_seconds = 3600);
+  bool init(const std::string &file, bool add_timestamp = true, bool rename_file = true, LogLevel level = LOG_LEVEL_INFO,
+            bool rolling_enabled = true, int rolling_interval_seconds = 3600);
 
   /**
    * Allows you to change the rolling interval in seconds
@@ -241,28 +242,27 @@ public:
    * log.logDebug("Hello you are %d years old", 27);
    * \endcode
    */
-  void logDebug(const char *fmt, ...) ATSCPPAPI_PRINTFLIKE(2,3);
+  void logDebug(const char *fmt, ...) ATSCPPAPI_PRINTFLIKE(2, 3);
 
   /**
    * This method writes an INFO level message to the log file, the LOG_INFO
    * macro in Logger.h should be used in favor of these when possible because it
    * will produce a much more rich info message.
    */
-  void logInfo(const char *fmt, ...) ATSCPPAPI_PRINTFLIKE(2,3);
+  void logInfo(const char *fmt, ...) ATSCPPAPI_PRINTFLIKE(2, 3);
 
   /**
    * This method writes an ERROR level message to the log file, the LOG_ERROR
    * macro in Logger.h should be used in favor of these when possible because it
    * will produce a much more rich error message.
    */
-  void logError(const char *fmt, ...) ATSCPPAPI_PRINTFLIKE(2,3);
+  void logError(const char *fmt, ...) ATSCPPAPI_PRINTFLIKE(2, 3);
+
 private:
   LoggerState *state_; /**< Internal state for the Logger */
 };
 
 } /* atscppapi */
-
-
 
 
 #endif /* ATSCPPAPI_LOGGER_H_ */

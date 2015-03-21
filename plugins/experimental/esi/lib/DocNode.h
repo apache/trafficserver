@@ -30,22 +30,25 @@
 
 #include "Attribute.h"
 
-namespace EsiLib {
-
+namespace EsiLib
+{
 class DocNode;
 
-class DocNodeList : public std::list<DocNode> {
-
+class DocNodeList : public std::list<DocNode>
+{
 public:
-
-  inline void pack(std::string &buffer, bool retain_buffer_data = false) const {
+  inline void
+  pack(std::string &buffer, bool retain_buffer_data = false) const
+  {
     if (!retain_buffer_data) {
       buffer.clear();
     }
     packToBuffer(buffer);
   }
 
-  inline std::string pack() const {
+  inline std::string
+  pack() const
+  {
     std::string buffer("");
     pack(buffer);
     return buffer;
@@ -53,22 +56,21 @@ public:
 
   bool unpack(const char *data, int data_len);
 
-  inline bool unpack(const std::string &data) {
+  inline bool
+  unpack(const std::string &data)
+  {
     return unpack(data.data(), data.size());
   }
 
 private:
-
   void packToBuffer(std::string &buffer) const;
 
   friend class DocNode; // to use the method above
-
 };
 
 
 class DocNode
 {
-
 public:
   enum TYPE {
     TYPE_UNKNOWN = 0,
@@ -99,7 +101,7 @@ public:
   DocNodeList child_nodes;
 
   DocNode(TYPE _type = TYPE_UNKNOWN, const char *_data = 0, int32_t _data_len = 0)
-    : type(_type), data(_data), data_len(_data_len) { };
+    : type(_type), data(_data), data_len(_data_len){};
 
   void pack(std::string &buffer) const;
 
@@ -108,7 +110,6 @@ public:
 private:
   static const char DOCNODE_VERSION = 1;
 };
-
 };
 
 #endif // _FETCHER_DOC_NODE_H

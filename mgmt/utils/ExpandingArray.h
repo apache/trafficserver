@@ -39,19 +39,22 @@ class ExpandingArray
 {
 public:
   ExpandingArray(int initialSize, bool freeContents);
-   ~ExpandingArray();
-  void *operator [] (int index);
+  ~ExpandingArray();
+  void *operator[](int index);
   int addEntry(void *entry);
-  void sortWithFunction(int (sortFunc) (const void *, const void *));
-  int getNumEntries()
+  void sortWithFunction(int(sortFunc)(const void *, const void *));
+  int
+  getNumEntries()
   {
     return numValidValues;
   };
   // INTERNAL DataStructure access, use with care
-  void **getArray()
+  void **
+  getArray()
   {
     return internalArray;
   };
+
 private:
   int internalArraySize;
   void **internalArray;

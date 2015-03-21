@@ -48,30 +48,30 @@
  * of the rules in the queue
  */
 CfgContext *CfgContextCreate(TSFileNameT filetype);
-TSMgmtError CfgContextDestroy(CfgContext * ctx);
-TSMgmtError CfgContextCommit(CfgContext * ctx, LLQ * errRules = NULL);
-TSMgmtError CfgContextGet(CfgContext * ctx);
+TSMgmtError CfgContextDestroy(CfgContext *ctx);
+TSMgmtError CfgContextCommit(CfgContext *ctx, LLQ *errRules = NULL);
+TSMgmtError CfgContextGet(CfgContext *ctx);
 
 
 /***************************************************************************
  * CfgContext Operations
  ***************************************************************************/
 /* returns number of ele's in the CfgContext * */
-int CfgContextGetCount(CfgContext * ctx);
+int CfgContextGetCount(CfgContext *ctx);
 
 /* user must typecast the TSCfgEle to appropriate TSEle before using */
-TSCfgEle *CfgContextGetEleAt(CfgContext * ctx, int index);
-CfgEleObj *CfgContextGetObjAt(CfgContext * ctx, int index);
+TSCfgEle *CfgContextGetEleAt(CfgContext *ctx, int index);
+CfgEleObj *CfgContextGetObjAt(CfgContext *ctx, int index);
 
-TSCfgEle *CfgContextGetFirst(CfgContext * ctx, TSCfgIterState * state);
-TSCfgEle *CfgContextGetNext(CfgContext * ctx, TSCfgIterState * state);
+TSCfgEle *CfgContextGetFirst(CfgContext *ctx, TSCfgIterState *state);
+TSCfgEle *CfgContextGetNext(CfgContext *ctx, TSCfgIterState *state);
 
-TSMgmtError CfgContextMoveEleUp(CfgContext * ctx, int index);
-TSMgmtError CfgContextMoveEleDown(CfgContext * ctx, int index);
+TSMgmtError CfgContextMoveEleUp(CfgContext *ctx, int index);
+TSMgmtError CfgContextMoveEleDown(CfgContext *ctx, int index);
 
-TSMgmtError CfgContextAppendEle(CfgContext * ctx, TSCfgEle * ele);
-TSMgmtError CfgContextInsertEleAt(CfgContext * ctx, TSCfgEle * ele, int index);
-TSMgmtError CfgContextRemoveEleAt(CfgContext * ctx, int index);
-TSMgmtError CfgContextRemoveAll(CfgContext * ctx);
+TSMgmtError CfgContextAppendEle(CfgContext *ctx, TSCfgEle *ele);
+TSMgmtError CfgContextInsertEleAt(CfgContext *ctx, TSCfgEle *ele, int index);
+TSMgmtError CfgContextRemoveEleAt(CfgContext *ctx, int index);
+TSMgmtError CfgContextRemoveAll(CfgContext *ctx);
 
 #endif

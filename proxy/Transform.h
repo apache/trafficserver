@@ -28,13 +28,10 @@
 #include "HTTP.h"
 #include "InkAPIInternal.h"
 
-#define TRANSFORM_READ_READY   (TRANSFORM_EVENTS_START + 0)
+#define TRANSFORM_READ_READY (TRANSFORM_EVENTS_START + 0)
 
-typedef struct _RangeRecord
-{
-  _RangeRecord() :
-  _start(-1), _end(-1), _done_byte(-1)
-  { }
+typedef struct _RangeRecord {
+  _RangeRecord() : _start(-1), _end(-1), _done_byte(-1) {}
 
   int64_t _start;
   int64_t _end;
@@ -47,9 +44,10 @@ public:
   void start();
 
 public:
-  VConnection * open(Continuation * cont, APIHook * hooks);
-  INKVConnInternal *null_transform(ProxyMutex * mutex);
-  INKVConnInternal *range_transform(ProxyMutex * mutex, RangeRecord * ranges, int, HTTPHdr *, const char * content_type, int content_type_len, int64_t content_length);
+  VConnection *open(Continuation *cont, APIHook *hooks);
+  INKVConnInternal *null_transform(ProxyMutex *mutex);
+  INKVConnInternal *range_transform(ProxyMutex *mutex, RangeRecord *ranges, int, HTTPHdr *, const char *content_type,
+                                    int content_type_len, int64_t content_length);
 };
 
 #ifdef TS_HAS_TESTS
@@ -66,10 +64,11 @@ public:
 */
 class TransformVCChain : public VConnection
 {
- protected:
+protected:
   /// Required constructor
-  TransformVCChain(ProxyMutex* m);
- public:
+  TransformVCChain(ProxyMutex *m);
+
+public:
   /** Compute the backlog.  This is the amount of data ready to read
       for each element of the chain.  If @a limit is non-negative then
       the method will return as soon as the computed backlog is at
@@ -77,14 +76,11 @@ class TransformVCChain : public VConnection
       the caller is interested only in whether the backlog is at least
       @a limit. The default is to accurately compute the backlog.
   */
-  virtual uint64_t backlog(
-			   uint64_t limit = UINT64_MAX ///< Maximum value of interest
-			  ) = 0;
+  virtual uint64_t backlog(uint64_t limit = UINT64_MAX ///< Maximum value of interest
+                           ) = 0;
 };
 
-inline
-TransformVCChain::TransformVCChain(ProxyMutex* m)
-		 : VConnection(m)
+inline TransformVCChain::TransformVCChain(ProxyMutex *m) : VConnection(m)
 {
 }
 
@@ -114,4 +110,3 @@ extern TransformProcessor transformProcessor;
 
 
 #endif /* __TRANSFORM_H__ */
-

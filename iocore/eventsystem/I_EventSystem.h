@@ -46,10 +46,8 @@
 
 #define EVENT_SYSTEM_MODULE_MAJOR_VERSION 1
 #define EVENT_SYSTEM_MODULE_MINOR_VERSION 0
-#define EVENT_SYSTEM_MODULE_VERSION makeModuleVersion(                 \
-                                    EVENT_SYSTEM_MODULE_MAJOR_VERSION, \
-                                    EVENT_SYSTEM_MODULE_MINOR_VERSION, \
-                                    PUBLIC_MODULE_HEADER)
+#define EVENT_SYSTEM_MODULE_VERSION \
+  makeModuleVersion(EVENT_SYSTEM_MODULE_MAJOR_VERSION, EVENT_SYSTEM_MODULE_MINOR_VERSION, PUBLIC_MODULE_HEADER)
 
 void ink_event_system_init(ModuleVersion version);
 

@@ -47,7 +47,6 @@ test()
   int version = 7;
 
   while (version > -1) {
-
     // the select the version
     //
     machineClusterHash = !!(version & 1);
@@ -65,9 +64,8 @@ test()
 
     ClusterConfiguration *c = this_cluster()->current_configuration();
 
-    printf("hash by %s - %s - %s\n",
-           (machineClusterHash ? "MACHINE" : "BUCKET"),
-           (boundClusterHash ? "BOUNDED" : "UNBOUND"), (randClusterHash ? "RAND" : "LINEAR CONGUENCE"));
+    printf("hash by %s - %s - %s\n", (machineClusterHash ? "MACHINE" : "BUCKET"), (boundClusterHash ? "BOUNDED" : "UNBOUND"),
+           (randClusterHash ? "RAND" : "LINEAR CONGUENCE"));
 
     // from 1 to 32 machines
 
@@ -99,7 +97,7 @@ test()
       }
       ink_assert(!total);
       printf("n = %d:", i);
-      printf(" high = %d low = %d high/low = %f", high, low, (float) high / (float) low);
+      printf(" high = %d low = %d high/low = %f", high, low, (float)high / (float)low);
 
       //
       // Compute sharing with n-1
@@ -109,9 +107,9 @@ test()
         if (c->machines[c->hash_table[j]] == cc->machines[cc->hash_table[j]])
           share++;
       }
-      printf(" shared = %d %%%6.2f", share, (float) share / (float) CLUSTER_HASH_TABLE_SIZE);
+      printf(" shared = %d %%%6.2f", share, (float)share / (float)CLUSTER_HASH_TABLE_SIZE);
 
-      printf(" time = %f secs\n", ((float) (t2 - t) / (float) HRTIME_SECONDS(1)));
+      printf(" time = %f secs\n", ((float)(t2 - t) / (float)HRTIME_SECONDS(1)));
       c = cc;
     }
 

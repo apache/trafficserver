@@ -25,28 +25,28 @@
   limitations under the License.
  */
 
-# include <stdio.h>
-# include <memory.h>
-# include <inttypes.h>
-# include <ts/ts.h>
-# include <tsconfig/TsValue.h>
-# include <ts/ink_inet.h>
-# include <getopt.h>
+#include <stdio.h>
+#include <memory.h>
+#include <inttypes.h>
+#include <ts/ts.h>
+#include <tsconfig/TsValue.h>
+#include <ts/ink_inet.h>
+#include <getopt.h>
 
 using ts::config::Configuration;
 using ts::config::Value;
 
-# define PN "ssl-preaccept"
-# define PCP "[" PN " Plugin] "
+#define PN "ssl-preaccept"
+#define PCP "[" PN " Plugin] "
 
-namespace {
-
+namespace
+{
 std::string ConfigPath;
 typedef std::pair<IpAddr, IpAddr> IpRange;
 typedef std::deque<IpRange> IpRangeQueue;
 IpRangeQueue ClientBlindTunnelIp;
 
-Configuration Config;	// global configuration
+Configuration Config; // global configuration
 
 void
 Parse_Addr_String(ts::ConstBuffer const &text, IpRange &range)
@@ -57,11 +57,10 @@ Parse_Addr_String(ts::ConstBuffer const &text, IpRange &range)
   size_t hyphen_pos = textstr.find("-");
   if (hyphen_pos != std::string::npos) {
     std::string addr1 = textstr.substr(0, hyphen_pos);
-    std::string addr2 = textstr.substr(hyphen_pos+1);
+    std::string addr2 = textstr.substr(hyphen_pos + 1);
     range.first.load(ts::ConstBuffer(addr1.c_str(), addr1.length()));
     range.second.load(ts::ConstBuffer(addr2.c_str(), addr2.length()));
-  }
-  else { // Assume it is a single address
+  } else { // Assume it is a single address
     newAddr.load(text);
     range.first = newAddr;
     range.second = newAddr;
@@ -69,7 +68,8 @@ Parse_Addr_String(ts::ConstBuffer const &text, IpRange &range)
 }
 
 /// Get a string value from a config node.
-void Load_Config_Value(Value const& parent, char const* name, IpRangeQueue &addrs)
+void
+Load_Config_Value(Value const &parent, char const *name, IpRangeQueue &addrs)
 {
   Value v = parent[name];
   std::string zret;
@@ -124,12 +124,9 @@ CB_Pre_Accept(TSCont, TSEvent event, void *edata)
   IpAddr ip_client(TSNetVConnRemoteAddrGet(ssl_vc));
   char buff2[INET6_ADDRSTRLEN];
 
-  TSDebug("skh", "Pre accept callback %p - event is %s, target address %s, client address %s"
-          , ssl_vc
-          , event == TS_EVENT_VCONN_PRE_ACCEPT ? "good" : "bad"
-          , ip.toString(buff, sizeof(buff))
-          , ip_client.toString(buff2, sizeof(buff2))
-    );
+  TSDebug("skh", "Pre accept callback %p - event is %s, target address %s, client address %s", ssl_vc,
+          event == TS_EVENT_VCONN_PRE_ACCEPT ? "good" : "bad", ip.toString(buff, sizeof(buff)),
+          ip_client.toString(buff2, sizeof(buff2)));
 
   // Not the worlds most efficient address comparison.  For short lists
   // shouldn't be too bad.  If the client IP is in any of the ranges,
@@ -163,18 +160,16 @@ TSPluginInit(int argc, const char *argv[])
   bool success = false;
   TSPluginRegistrationInfo info;
   TSCont cb_pa = 0; // pre-accept callback continuation
-  static const struct option longopt[] = {
-    { const_cast<char *>("config"), required_argument, NULL, 'c' },
-    { NULL, no_argument, NULL, '\0' }
-  };
+  static const struct option longopt[] = {{const_cast<char *>("config"), required_argument, NULL, 'c'},
+                                          {NULL, no_argument, NULL, '\0'}};
 
-  info.plugin_name = const_cast<char*>("SSL Preaccept test");
-  info.vendor_name = const_cast<char*>("Network Geographics");
-  info.support_email = const_cast<char*>("shinrich@network-geographics.com");
+  info.plugin_name = const_cast<char *>("SSL Preaccept test");
+  info.vendor_name = const_cast<char *>("Network Geographics");
+  info.support_email = const_cast<char *>("shinrich@network-geographics.com");
 
   int opt = 0;
   while (opt >= 0) {
-    opt = getopt_long(argc, (char * const *)argv, "c:", longopt, NULL);
+    opt = getopt_long(argc, (char *const *)argv, "c:", longopt, NULL);
     switch (opt) {
     case 'c':
       ConfigPath = optarg;
@@ -183,7 +178,7 @@ TSPluginInit(int argc, const char *argv[])
     }
   }
   if (ConfigPath.length() == 0) {
-    static char const * const DEFAULT_CONFIG_PATH = "ssl_preaccept.config";
+    static char const *const DEFAULT_CONFIG_PATH = "ssl_preaccept.config";
     ConfigPath = std::string(TSConfigDirGet()) + '/' + std::string(DEFAULT_CONFIG_PATH);
     TSDebug(PN, "No config path set in arguments, using default: %s", DEFAULT_CONFIG_PATH);
   }
@@ -208,4 +203,3 @@ TSPluginInit(int argc, const char *argv[])
 
   return;
 }
-

@@ -26,8 +26,7 @@
 #include "I_Machine.h"
 #include "Error.h"
 
-Http2SessionAccept::Http2SessionAccept(const HttpSessionAccept::Options& _o)
-  : SessionAccept(NULL), options(_o)
+Http2SessionAccept::Http2SessionAccept(const HttpSessionAccept::Options &_o) : SessionAccept(NULL), options(_o)
 {
   SET_HANDLER(&Http2SessionAccept::mainEvent);
 }
@@ -37,7 +36,7 @@ Http2SessionAccept::~Http2SessionAccept()
 }
 
 void
-Http2SessionAccept::accept(NetVConnection * netvc, MIOBuffer * iobuf, IOBufferReader * reader)
+Http2SessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferReader *reader)
 {
   // XXX we need to refactor the ACL checks from HttpSessionAccept so that we can invoke them here, and also in
   // the SPDY protocol layer ...
@@ -46,15 +45,15 @@ Http2SessionAccept::accept(NetVConnection * netvc, MIOBuffer * iobuf, IOBufferRe
   netvc->attributes = this->options.transport_type;
 
   if (is_debug_tag_set("http2_seq")) {
-    const sockaddr * client_ip = netvc->get_remote_addr();
+    const sockaddr *client_ip = netvc->get_remote_addr();
     ip_port_text_buffer ipb;
 
-    Debug("http2_seq", "[HttpSessionAccept2:mainEvent %p] accepted connection from %s transport type = %d",
-      netvc, ats_ip_nptop(client_ip, ipb, sizeof(ipb)), netvc->attributes);
+    Debug("http2_seq", "[HttpSessionAccept2:mainEvent %p] accepted connection from %s transport type = %d", netvc,
+          ats_ip_nptop(client_ip, ipb, sizeof(ipb)), netvc->attributes);
   }
 
   // XXX Allocate a Http2ClientSession
-  Http2ClientSession * new_session = http2ClientSessionAllocator.alloc();
+  Http2ClientSession *new_session = http2ClientSessionAllocator.alloc();
 
   new_session->new_connection(netvc, iobuf, reader, false /* backdoor */);
 }
@@ -72,7 +71,7 @@ Http2SessionAccept::mainEvent(int event, void *data)
 
   // XXX We should hoist the error handling so that all the protocols generate the statistics
   // without code duplication.
-  if (((long) data) == -ECONNABORTED) {
+  if (((long)data) == -ECONNABORTED) {
     HTTP_SUM_DYN_STAT(http_ua_msecs_counts_errors_pre_accept_hangups_stat, 0);
   }
 

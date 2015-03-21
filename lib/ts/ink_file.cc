@@ -46,31 +46,30 @@
 #endif
 
 #if HAVE_LINUX_HDREG_H
-#include <linux/hdreg.h>        /* for struct hd_geometry */
+#include <linux/hdreg.h> /* for struct hd_geometry */
 #endif
 
 #if HAVE_LINUX_FS_H
-#include <linux/fs.h>           /* for BLKGETSIZE.  sys/mount.h is another candidate */
+#include <linux/fs.h> /* for BLKGETSIZE.  sys/mount.h is another candidate */
 #endif
 
 typedef union {
-  uint64_t  u64;
-  uint32_t  u32;
-  off_t     off;
+  uint64_t u64;
+  uint32_t u32;
+  off_t off;
 } ioctl_arg_t;
 
 int
-ink_fputln(FILE * stream, const char *s)
+ink_fputln(FILE *stream, const char *s)
 {
   if (stream && s) {
     int rc = fputs(s, stream);
     if (rc > 0)
       rc += fputc('\n', stream);
     return rc;
-  }
-  else
+  } else
     return -EINVAL;
-}                               /* End ink_fgets */
+} /* End ink_fgets */
 
 /*---------------------------------------------------------------------------*
 
@@ -98,22 +97,22 @@ ink_file_fd_readline(int fd, int bufsz, char *buf)
   int i = 0;
 
   if (bufsz < 2)
-    return (-EINVAL);           /* bufsz must by >= 2 */
+    return (-EINVAL); /* bufsz must by >= 2 */
 
-  while (i < bufsz - 1) {       /* leave 1 byte for NUL */
-    int n = read(fd, &c, 1);    /* read 1 byte */
+  while (i < bufsz - 1) {    /* leave 1 byte for NUL */
+    int n = read(fd, &c, 1); /* read 1 byte */
     if (n == 0)
-      break;                    /* EOF */
+      break; /* EOF */
     if (n < 0)
-      return (n);               /* error */
-    buf[i++] = c;               /* store in buffer */
+      return (n); /* error */
+    buf[i++] = c; /* store in buffer */
     if (c == '\n')
-      break;                    /* stop if stored a LF */
+      break; /* stop if stored a LF */
   }
 
-  buf[i] = '\0';                /* NUL terminate buffer */
-  return (i);                   /* number of bytes read */
-}                               /* End ink_file_fd_readline */
+  buf[i] = '\0'; /* NUL terminate buffer */
+  return (i);    /* number of bytes read */
+} /* End ink_file_fd_readline */
 
 /* Write until NUL */
 int
@@ -121,11 +120,11 @@ ink_file_fd_writestring(int fd, const char *buf)
 {
   int len, i = 0;
 
-  if (buf && (len = strlen(buf)) > 0 && (i = (int) write(fd, buf, (size_t) len) != len))
+  if (buf && (len = strlen(buf)) > 0 && (i = (int)write(fd, buf, (size_t)len) != len))
     i = -1;
 
-  return i;                     /* return chars written */
-}                               /* End ink_file_fd_writestring */
+  return i; /* return chars written */
+} /* End ink_file_fd_writestring */
 
 int
 ink_filepath_merge(char *path, int pathsz, const char *rootpath, const char *addpath, int flags)
@@ -158,8 +157,7 @@ ink_filepath_merge(char *path, int pathsz, const char *rootpath, const char *add
     //
     if (!rootpath && !(flags & INK_FILEPATH_NOTABOVEROOT))
       rootpath = "";
-  }
-  else {
+  } else {
     // If INK_FILEPATH_NOTABSOLUTE is specified, the caller
     // requires a relative result.  If the rootpath is
     // ommitted, we do not retrieve the working path,
@@ -169,7 +167,7 @@ ink_filepath_merge(char *path, int pathsz, const char *rootpath, const char *add
       if (!rootpath)
         rootpath = "";
       else if (rootpath[0] == '/')
-        return EISDIR; //APR_EABSOLUTE;
+        return EISDIR; // APR_EABSOLUTE;
     }
   }
   if (!rootpath) {
@@ -187,7 +185,7 @@ ink_filepath_merge(char *path, int pathsz, const char *rootpath, const char *add
                                           // root, and at end, plus trailing
                                           // null
   if (maxlen > (size_t)pathsz) {
-    return E2BIG; //APR_ENAMETOOLONG;
+    return E2BIG; // APR_ENAMETOOLONG;
   }
   if (addpath[0] == '/') {
     // Ignore the given root path, strip off leading
@@ -199,12 +197,11 @@ ink_filepath_merge(char *path, int pathsz, const char *rootpath, const char *add
       ++addpath;
     path[0] = '/';
     pathlen = 1;
-  }
-  else {
+  } else {
     // If both paths are relative, fail early
     //
     if (rootpath[0] != '/' && (flags & INK_FILEPATH_NOTRELATIVE))
-      return EBADF; //APR_ERELATIVE;
+      return EBADF; // APR_ERELATIVE;
 
     // Base the result path on the rootpath
     //
@@ -231,32 +228,27 @@ ink_filepath_merge(char *path, int pathsz, const char *rootpath, const char *add
     if (seglen == 0 || (seglen == 1 && addpath[0] == '.')) {
       // noop segment (/ or ./) so skip it
       //
-    }
-    else if (seglen == 2 && addpath[0] == '.' && addpath[1] == '.') {
+    } else if (seglen == 2 && addpath[0] == '.' && addpath[1] == '.') {
       // backpath (../)
       if (pathlen == 1 && path[0] == '/') {
         // Attempt to move above root.  Always die if the
         // INK_FILEPATH_SECUREROOTTEST flag is specified.
         //
         if (flags & INK_FILEPATH_SECUREROOTTEST) {
-          return EACCES; //APR_EABOVEROOT;
+          return EACCES; // APR_EABOVEROOT;
         }
 
         // Otherwise this is simply a noop, above root is root.
         // Flag that rootpath was entirely replaced.
         //
         keptlen = 0;
-      }
-      else if (pathlen == 0
-               || (pathlen == 3
-               && !memcmp(path + pathlen - 3, "../", 3))
-               || (pathlen  > 3
-               && !memcmp(path + pathlen - 4, "/../", 4))) {
+      } else if (pathlen == 0 || (pathlen == 3 && !memcmp(path + pathlen - 3, "../", 3)) ||
+                 (pathlen > 3 && !memcmp(path + pathlen - 4, "/../", 4))) {
         // Path is already backpathed or empty, if the
         // INK_FILEPATH_SECUREROOTTEST.was given die now.
         //
         if (flags & INK_FILEPATH_SECUREROOTTEST) {
-          return EACCES; //APR_EABOVEROOT;
+          return EACCES; // APR_EABOVEROOT;
         }
 
         // Otherwise append another backpath, including
@@ -264,12 +256,11 @@ ink_filepath_merge(char *path, int pathsz, const char *rootpath, const char *add
         //
         memcpy(path + pathlen, "../", *next ? 3 : 2);
         pathlen += *next ? 3 : 2;
-      }
-      else {
+      } else {
         // otherwise crop the prior segment
         //
         do {
-            --pathlen;
+          --pathlen;
         } while (pathlen && path[pathlen - 1] != '/');
       }
 
@@ -278,14 +269,13 @@ ink_filepath_merge(char *path, int pathsz, const char *rootpath, const char *add
       //
       if (pathlen < keptlen) {
         if (flags & INK_FILEPATH_SECUREROOTTEST) {
-          return EACCES; //APR_EABOVEROOT;
+          return EACCES; // APR_EABOVEROOT;
         }
         keptlen = pathlen;
       }
-    }
-    else {
-        // An actual segment, append it to the destination path
-        //
+    } else {
+      // An actual segment, append it to the destination path
+      //
       if (*next) {
         seglen++;
       }
@@ -319,11 +309,10 @@ ink_filepath_merge(char *path, int pathsz, const char *rootpath, const char *add
   //
   if ((flags & INK_FILEPATH_NOTABOVEROOT) && keptlen < rootlen) {
     if (strncmp(rootpath, path, rootlen)) {
-      return EACCES; //APR_EABOVEROOT;
+      return EACCES; // APR_EABOVEROOT;
     }
-    if (rootpath[rootlen - 1] != '/'
-        && path[rootlen] && path[rootlen] != '/') {
-      return EACCES; //APR_EABOVEROOT;
+    if (rootpath[rootlen - 1] != '/' && path[rootlen] && path[rootlen] != '/') {
+      return EACCES; // APR_EABOVEROOT;
     }
   }
 
@@ -352,7 +341,7 @@ ink_filepath_make(char *path, int pathsz, const char *rootpath, const char *addp
     return 0;
   }
   rootlen = strlen(rootpath);
-  maxlen  = strlen(addpath) + 2;
+  maxlen = strlen(addpath) + 2;
   if (maxlen > (size_t)pathsz) {
     *path = '\0';
     return (int)maxlen;
@@ -376,8 +365,8 @@ ink_file_fd_zerofill(int fd, off_t size)
     return errno;
   }
 
-  // ZFS does not implement posix_fallocate() and fails with EINVAL. As a general workaround,
-  // just fall back to ftrucate if the preallocation fails.
+// ZFS does not implement posix_fallocate() and fails with EINVAL. As a general workaround,
+// just fall back to ftrucate if the preallocation fails.
 #if HAVE_POSIX_FALLOCATE
   if (posix_fallocate(fd, 0, size) == 0) {
     return 0;
@@ -392,7 +381,7 @@ ink_file_fd_zerofill(int fd, off_t size)
 }
 
 bool
-ink_file_is_directory(const char * path)
+ink_file_is_directory(const char *path)
 {
   struct stat sbuf;
 
@@ -429,18 +418,17 @@ ink_file_is_mmappable(mode_t st_mode)
 #endif
 
   return false;
-
 }
 
 bool
-ink_file_get_geometry(int fd ATS_UNUSED, ink_device_geometry& geometry)
+ink_file_get_geometry(int fd ATS_UNUSED, ink_device_geometry &geometry)
 {
   ink_zero(geometry);
 
 #if defined(freebsd) || defined(darwin) || defined(openbsd)
   ioctl_arg_t arg ATS_UNUSED;
 
-  // These IOCTLs are standard across the BSD family; Darwin has a different set though.
+// These IOCTLs are standard across the BSD family; Darwin has a different set though.
 #if defined(DIOCGMEDIASIZE)
   if (ioctl(fd, DIOCGMEDIASIZE, &arg.off) == 0) {
     geometry.totalsz = arg.off;
@@ -506,7 +494,7 @@ ink_file_get_geometry(int fd ATS_UNUSED, ink_device_geometry& geometry)
 }
 
 size_t
-ink_file_namemax(const char * path)
+ink_file_namemax(const char *path)
 {
   long namemax = pathconf(path, _PC_NAME_MAX);
   if (namemax > 0) {

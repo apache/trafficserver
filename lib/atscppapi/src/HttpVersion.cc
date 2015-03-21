@@ -22,8 +22,5 @@
 
 #include "atscppapi/HttpVersion.h"
 
-const std::string atscppapi::HTTP_VERSION_STRINGS[] = { std::string("UNKNOWN"),
-                                                        std::string("HTTP/0.9"),
-                                                        std::string("HTTP/1.0"),
-                                                        std::string("HTTP/1.1") };
-
+const std::string atscppapi::HTTP_VERSION_STRINGS[] = {std::string("UNKNOWN"), std::string("HTTP/0.9"), std::string("HTTP/1.0"),
+                                                       std::string("HTTP/1.1")};

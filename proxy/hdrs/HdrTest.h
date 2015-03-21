@@ -40,15 +40,12 @@
 class HdrTest
 {
 public:
-  RegressionTest * rtest;
+  RegressionTest *rtest;
 
-  HdrTest():rtest(NULL)
-  {
-  };
-  ~HdrTest() {
-  };
+  HdrTest() : rtest(NULL){};
+  ~HdrTest(){};
 
-  int go(RegressionTest * t, int atype);
+  int go(RegressionTest *t, int atype);
 
 private:
   int test_error_page_selection();
@@ -71,15 +68,12 @@ private:
   int test_http();
   int test_http_mutation();
 
-  int test_http_hdr_print_and_copy_aux(int testnum, const char *req, const char *req_tgt, const char *rsp,
-                                       const char *rsp_tgt);
-  int test_http_hdr_null_char(int testnum,
-                              const char *req, const char *req_tgt );
-  int test_http_hdr_ctl_char(int testnum, 
-                             const char *req, const char *req_tgt);
+  int test_http_hdr_print_and_copy_aux(int testnum, const char *req, const char *req_tgt, const char *rsp, const char *rsp_tgt);
+  int test_http_hdr_null_char(int testnum, const char *req, const char *req_tgt);
+  int test_http_hdr_ctl_char(int testnum, const char *req, const char *req_tgt);
   int test_http_hdr_copy_over_aux(int testnum, const char *request, const char *response);
   int test_http_aux(const char *request, const char *response);
-  int test_arena_aux(Arena * arena, int len);
+  int test_arena_aux(Arena *arena, int len);
   void bri_box(const char *s);
   int failures_to_status(const char *testname, int nfail);
 };

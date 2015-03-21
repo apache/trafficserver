@@ -24,7 +24,7 @@
 #define _URL_MAPPING_PATH_INDEX_H
 
 #include "libts.h"
-#undef std  // FIXME: remove dependancy on the STL
+#undef std // FIXME: remove dependancy on the STL
 #include <map>
 
 #include "URL.h"
@@ -34,12 +34,11 @@
 class UrlMappingPathIndex
 {
 public:
-  UrlMappingPathIndex()
-  { }
+  UrlMappingPathIndex() {}
 
   virtual ~UrlMappingPathIndex();
   bool Insert(url_mapping *mapping);
-  url_mapping* Search(URL *request_url, int request_port, bool normal_search = true) const;
+  url_mapping *Search(URL *request_url, int request_port, bool normal_search = true) const;
   void Print();
 
 private:
@@ -49,11 +48,10 @@ private:
     int scheme_wks_idx;
     int port;
 
-    UrlMappingTrieKey(int idx, int p)
-      : scheme_wks_idx(idx), port(p)
-    { }
+    UrlMappingTrieKey(int idx, int p) : scheme_wks_idx(idx), port(p) {}
 
-    bool operator <(const UrlMappingTrieKey &rhs) const {
+    bool operator<(const UrlMappingTrieKey &rhs) const
+    {
       if (scheme_wks_idx == rhs.scheme_wks_idx) {
         return (port < rhs.port);
       }
@@ -66,20 +64,21 @@ private:
 
   // make copy-constructor and assignment operator private
   // till we properly implement them
-  UrlMappingPathIndex(const UrlMappingPathIndex & /* rhs ATS_UNUSED */) { };
-  UrlMappingPathIndex &operator =(const UrlMappingPathIndex & /* rhs ATS_UNUSED */) { return *this; }
+  UrlMappingPathIndex(const UrlMappingPathIndex & /* rhs ATS_UNUSED */){};
+  UrlMappingPathIndex &operator=(const UrlMappingPathIndex & /* rhs ATS_UNUSED */) { return *this; }
 
   inline UrlMappingTrie *
-  _GetTrie(URL *url, int &idx, int port, bool search = true) const {
+  _GetTrie(URL *url, int &idx, int port, bool search = true) const
+  {
     idx = url->scheme_get_wksidx();
     // If the scheme is empty (e.g. because of a CONNECT method), guess it
     // based on port
     if (idx == -1) {
-        if (port == 80) {
-            idx = URL_WKSIDX_HTTP;
-        } else {
-            idx = URL_WKSIDX_HTTPS;
-        }
+      if (port == 80) {
+        idx = URL_WKSIDX_HTTP;
+      } else {
+        idx = URL_WKSIDX_HTTPS;
+      }
     }
     UrlMappingGroup::const_iterator group_iter;
     if (search) { // normal search

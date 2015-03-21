@@ -88,7 +88,8 @@ i_am_the_record_owner(RecT rec_type)
 // Simple setters for the intervals to decouple this from the proxy
 //-------------------------------------------------------------------------
 void
-RecProcess_set_raw_stat_sync_interval_ms(int ms) {
+RecProcess_set_raw_stat_sync_interval_ms(int ms)
+{
   Debug("statsproc", "g_rec_raw_stat_sync_interval_ms -> %d", ms);
   g_rec_raw_stat_sync_interval_ms = ms;
   if (raw_stat_sync_cont_event) {
@@ -97,7 +98,8 @@ RecProcess_set_raw_stat_sync_interval_ms(int ms) {
   }
 }
 void
-RecProcess_set_config_update_interval_ms(int ms) {
+RecProcess_set_config_update_interval_ms(int ms)
+{
   Debug("statsproc", "g_rec_config_update_interval_ms -> %d", ms);
   g_rec_config_update_interval_ms = ms;
   if (config_update_cont_event) {
@@ -106,7 +108,8 @@ RecProcess_set_config_update_interval_ms(int ms) {
   }
 }
 void
-RecProcess_set_remote_sync_interval_ms(int ms) {
+RecProcess_set_remote_sync_interval_ms(int ms)
+{
   Debug("statsproc", "g_rec_remote_sync_interval_ms -> %d", ms);
   g_rec_remote_sync_interval_ms = ms;
   if (sync_cont_event) {
@@ -133,13 +136,13 @@ raw_stat_get_total(RecRawStatBlock *rsb, int id, RecRawStat *total)
 
   // get thread local values
   for (i = 0; i < eventProcessor.n_ethreads; i++) {
-    tlp = ((RecRawStat *) ((char *) (eventProcessor.all_ethreads[i]) + rsb->ethr_stat_offset)) + id;
+    tlp = ((RecRawStat *)((char *)(eventProcessor.all_ethreads[i]) + rsb->ethr_stat_offset)) + id;
     total->sum += tlp->sum;
     total->count += tlp->count;
   }
 
   for (i = 0; i < eventProcessor.n_dthreads; i++) {
-    tlp = ((RecRawStat *) ((char *) (eventProcessor.all_dthreads[i]) + rsb->ethr_stat_offset)) + id;
+    tlp = ((RecRawStat *)((char *)(eventProcessor.all_dthreads[i]) + rsb->ethr_stat_offset)) + id;
     total->sum += tlp->sum;
     total->count += tlp->count;
   }
@@ -167,13 +170,13 @@ raw_stat_sync_to_global(RecRawStatBlock *rsb, int id)
 
   // sum the thread local values
   for (i = 0; i < eventProcessor.n_ethreads; i++) {
-    tlp = ((RecRawStat *) ((char *) (eventProcessor.all_ethreads[i]) + rsb->ethr_stat_offset)) + id;
+    tlp = ((RecRawStat *)((char *)(eventProcessor.all_ethreads[i]) + rsb->ethr_stat_offset)) + id;
     total.sum += tlp->sum;
     total.count += tlp->count;
   }
 
   for (i = 0; i < eventProcessor.n_dthreads; i++) {
-    tlp = ((RecRawStat *) ((char *) (eventProcessor.all_dthreads[i]) + rsb->ethr_stat_offset)) + id;
+    tlp = ((RecRawStat *)((char *)(eventProcessor.all_dthreads[i]) + rsb->ethr_stat_offset)) + id;
     total.sum += tlp->sum;
     total.count += tlp->count;
   }
@@ -191,8 +194,9 @@ raw_stat_sync_to_global(RecRawStatBlock *rsb, int id)
   delta.count = total.count - rsb->global[id]->last_count;
 
   // This is too verbose now, so leaving it out / leif
-  //Debug("stats", "raw_stat_sync_to_global(): rsb pointer:%p id:%d delta:%" PRId64 " total:%" PRId64 " last:%" PRId64 " global:%" PRId64 "\n",
-  //rsb, id, delta.sum, total.sum, rsb->global[id]->last_sum, rsb->global[id]->sum);
+  // Debug("stats", "raw_stat_sync_to_global(): rsb pointer:%p id:%d delta:%" PRId64 " total:%" PRId64 " last:%" PRId64 " global:%"
+  // PRId64 "\n",
+  // rsb, id, delta.sum, total.sum, rsb->global[id]->last_sum, rsb->global[id]->sum);
 
   // increment the global values by the delta
   ink_atomic_increment(&(rsb->global[id]->sum), delta.sum);
@@ -228,13 +232,13 @@ raw_stat_clear(RecRawStatBlock *rsb, int id)
   // reset the local stats
   RecRawStat *tlp;
   for (int i = 0; i < eventProcessor.n_ethreads; i++) {
-    tlp = ((RecRawStat *) ((char *) (eventProcessor.all_ethreads[i]) + rsb->ethr_stat_offset)) + id;
+    tlp = ((RecRawStat *)((char *)(eventProcessor.all_ethreads[i]) + rsb->ethr_stat_offset)) + id;
     ink_atomic_swap(&(tlp->sum), (int64_t)0);
     ink_atomic_swap(&(tlp->count), (int64_t)0);
   }
 
   for (int i = 0; i < eventProcessor.n_dthreads; i++) {
-    tlp = ((RecRawStat *) ((char *) (eventProcessor.all_dthreads[i]) + rsb->ethr_stat_offset)) + id;
+    tlp = ((RecRawStat *)((char *)(eventProcessor.all_dthreads[i]) + rsb->ethr_stat_offset)) + id;
     ink_atomic_swap(&(tlp->sum), (int64_t)0);
     ink_atomic_swap(&(tlp->count), (int64_t)0);
   }
@@ -261,12 +265,12 @@ raw_stat_clear_sum(RecRawStatBlock *rsb, int id)
   // reset the local stats
   RecRawStat *tlp;
   for (int i = 0; i < eventProcessor.n_ethreads; i++) {
-    tlp = ((RecRawStat *) ((char *) (eventProcessor.all_ethreads[i]) + rsb->ethr_stat_offset)) + id;
+    tlp = ((RecRawStat *)((char *)(eventProcessor.all_ethreads[i]) + rsb->ethr_stat_offset)) + id;
     ink_atomic_swap(&(tlp->sum), (int64_t)0);
   }
 
   for (int i = 0; i < eventProcessor.n_dthreads; i++) {
-    tlp = ((RecRawStat *) ((char *) (eventProcessor.all_dthreads[i]) + rsb->ethr_stat_offset)) + id;
+    tlp = ((RecRawStat *)((char *)(eventProcessor.all_dthreads[i]) + rsb->ethr_stat_offset)) + id;
     ink_atomic_swap(&(tlp->sum), (int64_t)0);
   }
 
@@ -292,12 +296,12 @@ raw_stat_clear_count(RecRawStatBlock *rsb, int id)
   // reset the local stats
   RecRawStat *tlp;
   for (int i = 0; i < eventProcessor.n_ethreads; i++) {
-    tlp = ((RecRawStat *) ((char *) (eventProcessor.all_ethreads[i]) + rsb->ethr_stat_offset)) + id;
+    tlp = ((RecRawStat *)((char *)(eventProcessor.all_ethreads[i]) + rsb->ethr_stat_offset)) + id;
     ink_atomic_swap(&(tlp->count), (int64_t)0);
   }
 
   for (int i = 0; i < eventProcessor.n_dthreads; i++) {
-    tlp = ((RecRawStat *) ((char *) (eventProcessor.all_dthreads[i]) + rsb->ethr_stat_offset)) + id;
+    tlp = ((RecRawStat *)((char *)(eventProcessor.all_dthreads[i]) + rsb->ethr_stat_offset)) + id;
     ink_atomic_swap(&(tlp->count), (int64_t)0);
   }
 
@@ -327,15 +331,11 @@ recv_message_cb__process(RecMessage *msg, RecMessageT msg_type, void *cookie)
 //-------------------------------------------------------------------------
 // raw_stat_sync_cont
 //-------------------------------------------------------------------------
-struct raw_stat_sync_cont: public Continuation
-{
-  raw_stat_sync_cont(ProxyMutex *m)
-    : Continuation(m)
-  {
-    SET_HANDLER(&raw_stat_sync_cont::exec_callbacks);
-  }
+struct raw_stat_sync_cont : public Continuation {
+  raw_stat_sync_cont(ProxyMutex *m) : Continuation(m) { SET_HANDLER(&raw_stat_sync_cont::exec_callbacks); }
 
-  int exec_callbacks(int /* event */, Event * /* e */)
+  int
+  exec_callbacks(int /* event */, Event * /* e */)
   {
     RecExecRawStatSyncCbs();
     Debug("statsproc", "raw_stat_sync_cont() processed");
@@ -348,15 +348,11 @@ struct raw_stat_sync_cont: public Continuation
 //-------------------------------------------------------------------------
 // config_update_cont
 //-------------------------------------------------------------------------
-struct config_update_cont: public Continuation
-{
-  config_update_cont(ProxyMutex *m)
-    : Continuation(m)
-  {
-    SET_HANDLER(&config_update_cont::exec_callbacks);
-  }
+struct config_update_cont : public Continuation {
+  config_update_cont(ProxyMutex *m) : Continuation(m) { SET_HANDLER(&config_update_cont::exec_callbacks); }
 
-  int exec_callbacks(int /* event */, Event * /* e */)
+  int
+  exec_callbacks(int /* event */, Event * /* e */)
   {
     RecExecConfigUpdateCbs(REC_PROCESS_UPDATE_REQUIRED);
     Debug("statsproc", "config_update_cont() processed");
@@ -369,18 +365,16 @@ struct config_update_cont: public Continuation
 //-------------------------------------------------------------------------
 // sync_cont
 //-------------------------------------------------------------------------
-struct sync_cont: public Continuation
-{
+struct sync_cont : public Continuation {
   textBuffer *m_tb;
 
-  sync_cont(ProxyMutex *m)
-    : Continuation(m)
+  sync_cont(ProxyMutex *m) : Continuation(m)
   {
     SET_HANDLER(&sync_cont::sync);
     m_tb = new textBuffer(65536);
   }
 
-   ~sync_cont()
+  ~sync_cont()
   {
     if (m_tb != NULL) {
       delete m_tb;
@@ -388,12 +382,13 @@ struct sync_cont: public Continuation
     }
   }
 
-  int sync(int /* event */, Event * /* e */)
+  int
+  sync(int /* event */, Event * /* e */)
   {
     send_push_message();
     RecSyncStatsFile();
     if (RecSyncConfigToTB(m_tb) == REC_ERR_OKAY) {
-        RecWriteConfigFile(m_tb);
+      RecWriteConfigFile(m_tb);
     }
     Debug("statsproc", "sync_cont() processed");
 
@@ -533,7 +528,7 @@ RecAllocateRawStatBlock(int num_stats)
   memset(rsb->global, 0, num_stats * sizeof(RecRawStat *));
   rsb->num_stats = 0;
   rsb->max_stats = num_stats;
-  ink_mutex_init(&(rsb->mutex),"net stat mutex");
+  ink_mutex_init(&(rsb->mutex), "net stat mutex");
   return rsb;
 }
 
@@ -543,7 +538,7 @@ RecAllocateRawStatBlock(int num_stats)
 //-------------------------------------------------------------------------
 int
 _RecRegisterRawStat(RecRawStatBlock *rsb, RecT rec_type, const char *name, RecDataT data_type, RecPersistT persist_type, int id,
-                   RecRawStatSyncCb sync_cb)
+                    RecRawStatSyncCb sync_cb)
 {
   Debug("stats", "RecRawStatSyncCb(%s): rsb pointer:%p id:%d\n", name, rsb, id);
 
@@ -626,7 +621,7 @@ RecRawStatSyncAvg(const char *name, RecDataT data_type, RecData *data, RecRawSta
   total.sum = rsb->global[id]->sum;
   total.count = rsb->global[id]->count;
   if (total.count != 0)
-    avg = (float) ((double) total.sum / (double) total.count);
+    avg = (float)((double)total.sum / (double)total.count);
   RecDataSetFromFloat(data_type, data, avg);
   return REC_ERR_OKAY;
 }
@@ -644,8 +639,8 @@ RecRawStatSyncHrTimeAvg(const char *name, RecDataT data_type, RecData *data, Rec
   if (total.count == 0) {
     r = 0.0f;
   } else {
-    r = (float) ((double) total.sum / (double) total.count);
-    r = r / (float) (HRTIME_SECOND);
+    r = (float)((double)total.sum / (double)total.count);
+    r = r / (float)(HRTIME_SECOND);
   }
   RecDataSetFromFloat(data_type, data, r);
   return REC_ERR_OKAY;
@@ -664,7 +659,7 @@ RecRawStatSyncIntMsecsToFloatSeconds(const char *name, RecDataT data_type, RecDa
   if (total.count == 0) {
     r = 0.0f;
   } else {
-    r = (float) ((double) total.sum / 1000);
+    r = (float)((double)total.sum / 1000);
   }
   RecDataSetFromFloat(data_type, data, r);
   return REC_ERR_OKAY;
@@ -683,8 +678,8 @@ RecRawStatSyncMHrTimeAvg(const char *name, RecDataT data_type, RecData *data, Re
   if (total.count == 0) {
     r = 0.0f;
   } else {
-    r = (float) ((double) total.sum / (double) total.count);
-    r = r / (float) (HRTIME_MSECOND);
+    r = (float)((double)total.sum / (double)total.count);
+    r = r / (float)(HRTIME_MSECOND);
   }
   RecDataSetFromFloat(data_type, data, r);
   return REC_ERR_OKAY;
@@ -695,8 +690,8 @@ RecRawStatSyncMHrTimeAvg(const char *name, RecDataT data_type, RecData *data, Re
 // RecIncrRawStatXXX
 //-------------------------------------------------------------------------
 int
-RecIncrRawStatBlock(RecRawStatBlock */* rsb ATS_UNUSED */, EThread */* ethread ATS_UNUSED */,
-                    RecRawStat */* stat_array ATS_UNUSED */)
+RecIncrRawStatBlock(RecRawStatBlock * /* rsb ATS_UNUSED */, EThread * /* ethread ATS_UNUSED */,
+                    RecRawStat * /* stat_array ATS_UNUSED */)
 {
   return REC_ERR_FAIL;
 }
@@ -722,7 +717,7 @@ RecSetRawStatCount(RecRawStatBlock *rsb, int id, int64_t data)
 }
 
 int
-RecSetRawStatBlock(RecRawStatBlock */* rsb ATS_UNUSED */, RecRawStat */* stat_array ATS_UNUSED */)
+RecSetRawStatBlock(RecRawStatBlock * /* rsb ATS_UNUSED */, RecRawStat * /* stat_array ATS_UNUSED */)
 {
   return REC_ERR_FAIL;
 }
@@ -847,7 +842,7 @@ RecRegisterRawStatSyncCb(const char *name, RecRawStatSyncCb sync_cb, RecRawStatB
   RecRecord *r;
 
   ink_rwlock_rdlock(&g_records_rwlock);
-  if (ink_hash_table_lookup(g_records_ht, name, (void **) &r)) {
+  if (ink_hash_table_lookup(g_records_ht, name, (void **)&r)) {
     rec_mutex_acquire(&(r->lock));
     if (REC_TYPE_IS_STAT(r->rec_type)) {
       if (!(r->stat_meta.sync_cb)) {
@@ -887,7 +882,7 @@ RecExecRawStatSyncCbs()
           raw_stat_clear(r->stat_meta.sync_rsb, r->stat_meta.sync_id);
           r->stat_meta.sync_rsb->global[r->stat_meta.sync_id]->version = r->version;
         } else {
-          (*(r->stat_meta.sync_cb)) (r->name, r->data_type, &(r->data), r->stat_meta.sync_rsb, r->stat_meta.sync_id);
+          (*(r->stat_meta.sync_cb))(r->name, r->data_type, &(r->data), r->stat_meta.sync_rsb, r->stat_meta.sync_id);
         }
         r->sync_required = REC_SYNC_REQUIRED;
       }
@@ -899,7 +894,7 @@ RecExecRawStatSyncCbs()
 }
 
 void
-RecSignalManager(int id, const char * msg, size_t msgsize)
+RecSignalManager(int id, const char *msg, size_t msgsize)
 {
   ink_assert(pmgmt);
   pmgmt->signalManager(id, msg, msgsize);
@@ -916,7 +911,7 @@ RecRegisterManagerCb(int _signal, RecManagerCb _fn, void *_data)
 //-------------------------------------------------------------------------
 
 int
-RecMessageSend(RecMessage * msg)
+RecMessageSend(RecMessage *msg)
 {
   int msg_size;
 
@@ -927,9 +922,8 @@ RecMessageSend(RecMessage * msg)
   if (g_mode_type == RECM_CLIENT || g_mode_type == RECM_SERVER) {
     msg->o_end = msg->o_write;
     msg_size = sizeof(RecMessageHdr) + (msg->o_write - msg->o_start);
-    pmgmt->signalManager(MGMT_SIGNAL_LIBRECORDS, (char *) msg, msg_size);
+    pmgmt->signalManager(MGMT_SIGNAL_LIBRECORDS, (char *)msg, msg_size);
   }
 
   return REC_ERR_OKAY;
 }
-

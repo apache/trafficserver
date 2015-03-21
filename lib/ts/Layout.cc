@@ -30,7 +30,8 @@ Layout *
 Layout::get()
 {
   if (layout == NULL) {
-    ink_assert("need to call create_default_layout before accessing" "default_layout()");
+    ink_assert("need to call create_default_layout before accessing"
+               "default_layout()");
   }
   return layout;
 }
@@ -55,8 +56,7 @@ layout_relative(const char *root, const char *file)
       ink_error("Cannot merge path '%s' above the root '%s'\n", file, root);
     } else if (err == E2BIG) {
       ink_error("Exceeding file name length limit of %d characters\n", PATH_NAME_MAX);
-    }
-    else {
+    } else {
       // TODO: Make some pretty errors.
       ink_error("Cannot merge '%s' with '%s' error=%d\n", file, root, err);
     }
@@ -76,16 +76,14 @@ Layout::relative(char *buf, size_t bufsz, const char *file)
 {
   char path[PATH_NAME_MAX];
 
-  if (ink_filepath_merge(path, PATH_NAME_MAX, prefix, file,
-      INK_FILEPATH_TRUENAME)) {
+  if (ink_filepath_merge(path, PATH_NAME_MAX, prefix, file, INK_FILEPATH_TRUENAME)) {
     int err = errno;
     // Log error
     if (err == EACCES) {
       ink_error("Cannot merge path '%s' above the root '%s'\n", file, prefix);
     } else if (err == E2BIG) {
       ink_error("Exceeding file name length limit of %d characters\n", PATH_NAME_MAX);
-    }
-    else {
+    } else {
       // TODO: Make some pretty errors.
       ink_error("Cannot merge '%s' with '%s' error=%d\n", file, prefix, err);
     }
@@ -94,8 +92,7 @@ Layout::relative(char *buf, size_t bufsz, const char *file)
   size_t path_len = strlen(path) + 1;
   if (path_len > bufsz) {
     ink_error("Provided buffer is too small: %zu, required %zu\n", bufsz, path_len);
-  }
-  else {
+  } else {
     ink_strlcpy(buf, path, bufsz);
   }
 }
@@ -128,8 +125,7 @@ Layout::relative_to(char *buf, size_t bufsz, const char *dir, const char *file)
       ink_error("Cannot merge path '%s' above the root '%s'\n", file, dir);
     } else if (err == E2BIG) {
       ink_error("Exceeding file name length limit of %d characters\n", PATH_NAME_MAX);
-    }
-    else {
+    } else {
       // TODO: Make some pretty errors.
       ink_error("Cannot merge '%s' with '%s' error=%d\n", file, dir, err);
     }
@@ -138,8 +134,7 @@ Layout::relative_to(char *buf, size_t bufsz, const char *dir, const char *file)
   size_t path_len = strlen(path) + 1;
   if (path_len > bufsz) {
     ink_error("Provided buffer is too small: %zu, required %zu\n", bufsz, path_len);
-  }
-  else {
+  } else {
     ink_strlcpy(buf, path, bufsz);
   }
 }
@@ -151,12 +146,12 @@ Layout::Layout(const char *_prefix)
   } else {
     char *env_path;
     char path[PATH_NAME_MAX];
-    int  len;
+    int len;
 
     if ((env_path = getenv("TS_ROOT"))) {
       len = strlen(env_path);
       if ((len + 1) > PATH_NAME_MAX) {
-        ink_error("TS_ROOT environment variable is too big: %d, max %d\n", len, PATH_NAME_MAX -1);
+        ink_error("TS_ROOT environment variable is too big: %d, max %d\n", len, PATH_NAME_MAX - 1);
         return;
       }
       ink_strlcpy(path, env_path, sizeof(path));
@@ -165,7 +160,7 @@ Layout::Layout(const char *_prefix)
         --len;
       }
     } else {
-        // Use compile time --prefix
+      // Use compile time --prefix
       ink_strlcpy(path, TS_BUILD_PREFIX, sizeof(path));
     }
 
@@ -185,7 +180,6 @@ Layout::Layout(const char *_prefix)
   mandir = layout_relative(prefix, TS_BUILD_MANDIR);
   infodir = layout_relative(prefix, TS_BUILD_INFODIR);
   cachedir = layout_relative(prefix, TS_BUILD_CACHEDIR);
-
 }
 
 Layout::~Layout()
@@ -206,4 +200,3 @@ Layout::~Layout()
   ats_free(infodir);
   ats_free(cachedir);
 }
-

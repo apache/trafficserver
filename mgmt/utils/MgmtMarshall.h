@@ -46,8 +46,7 @@
 // Wire size is 4 byte length followed by N data bytes. If the length is 0, no subsequent bytes are sent. In this case
 // the unmarshalled data pointer is guaranteed to be NULL.
 //
-enum MgmtMarshallType
-{
+enum MgmtMarshallType {
   MGMT_MARSHALL_INT,    // int32_t
   MGMT_MARSHALL_LONG,   // int64_t
   MGMT_MARSHALL_STRING, // NUL-terminated string
@@ -56,27 +55,26 @@ enum MgmtMarshallType
 
 typedef int32_t MgmtMarshallInt;
 typedef int64_t MgmtMarshallLong;
-typedef char *  MgmtMarshallString;
+typedef char *MgmtMarshallString;
 
-struct MgmtMarshallData
-{
-  void * ptr;
+struct MgmtMarshallData {
+  void *ptr;
   size_t len;
 };
 
-MgmtMarshallInt mgmt_message_length(const MgmtMarshallType * fields, unsigned count, ...);
-MgmtMarshallInt mgmt_message_length_v(const MgmtMarshallType * fields, unsigned count, va_list ap);
+MgmtMarshallInt mgmt_message_length(const MgmtMarshallType *fields, unsigned count, ...);
+MgmtMarshallInt mgmt_message_length_v(const MgmtMarshallType *fields, unsigned count, va_list ap);
 
-ssize_t mgmt_message_read(int fd, const MgmtMarshallType * fields, unsigned count, ...);
-ssize_t mgmt_message_read_v(int fd, const MgmtMarshallType * fields, unsigned count, va_list ap);
+ssize_t mgmt_message_read(int fd, const MgmtMarshallType *fields, unsigned count, ...);
+ssize_t mgmt_message_read_v(int fd, const MgmtMarshallType *fields, unsigned count, va_list ap);
 
-ssize_t mgmt_message_write(int fd, const MgmtMarshallType * fields, unsigned count, ...);
-ssize_t mgmt_message_write_v(int fd, const MgmtMarshallType * fields, unsigned count, va_list ap);
+ssize_t mgmt_message_write(int fd, const MgmtMarshallType *fields, unsigned count, ...);
+ssize_t mgmt_message_write_v(int fd, const MgmtMarshallType *fields, unsigned count, va_list ap);
 
-ssize_t mgmt_message_parse(const void * ptr, size_t len, const MgmtMarshallType * fields, unsigned count, ...);
-ssize_t mgmt_message_parse_v(const void * ptr, size_t len, const MgmtMarshallType * fields, unsigned count, va_list ap);
+ssize_t mgmt_message_parse(const void *ptr, size_t len, const MgmtMarshallType *fields, unsigned count, ...);
+ssize_t mgmt_message_parse_v(const void *ptr, size_t len, const MgmtMarshallType *fields, unsigned count, va_list ap);
 
-ssize_t mgmt_message_marshall(void * ptr, size_t len, const MgmtMarshallType * fields, unsigned count, ...);
-ssize_t mgmt_message_marshall_v(void * ptr, size_t len, const MgmtMarshallType * fields, unsigned count, va_list ap);
+ssize_t mgmt_message_marshall(void *ptr, size_t len, const MgmtMarshallType *fields, unsigned count, ...);
+ssize_t mgmt_message_marshall_v(void *ptr, size_t len, const MgmtMarshallType *fields, unsigned count, va_list ap);
 
 #endif /* _MGMT_MARSHALL_H */

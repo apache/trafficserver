@@ -60,7 +60,7 @@ inkcoreapi char *ink_string_append(char *dest, char *src, int n);
  * Returns strlen(src); if retval >= siz, truncation occurred.
  */
 #if HAVE_STRLCPY
-#define  ink_strlcpy strlcpy
+#define ink_strlcpy strlcpy
 #else
 size_t ink_strlcpy(char *dst, const char *str, size_t siz);
 #endif
@@ -72,7 +72,7 @@ size_t ink_strlcpy(char *dst, const char *str, size_t siz);
  * If retval >= siz, truncation occurred.
  */
 #if HAVE_STRLCAT
-#define  ink_strlcat strlcat
+#define ink_strlcat strlcat
 #else
 size_t ink_strlcat(char *dst, const char *str, size_t siz);
 #endif
@@ -146,14 +146,12 @@ ptr_len_casecmp(const char *p1, int l1, const char *p2, int l2)
 inline const char *
 ptr_len_str(const char *p1, int l1, const char *str)
 {
-
   if (str && str[0]) {
     int str_index = 0;
     const char *match_start = NULL;
 
     while (l1 > 0) {
       if (*p1 == str[str_index]) {
-
         // If this is the start of a match,
         //    record it;
         if (str_index == 0) {
@@ -185,8 +183,6 @@ ptr_len_str(const char *p1, int l1, const char *str)
 inline int
 ptr_len_ncmp(const char *p1, int l1, const char *str, int n)
 {
-
-
   while (l1 > 0 && n > 0) {
     if (*str == '\0') {
       return 1;
@@ -229,8 +225,6 @@ ptr_len_ncmp(const char *p1, int l1, const char *str, int n)
 inline int
 ptr_len_ncasecmp(const char *p1, int l1, const char *str, int n)
 {
-
-
   while (l1 > 0 && n > 0) {
     if (*str == '\0') {
       return 1;
@@ -272,7 +266,6 @@ ptr_len_ncasecmp(const char *p1, int l1, const char *str, int n)
 inline int
 ptr_len_casecmp(const char *p1, int l1, const char *str)
 {
-
   while (l1 > 0) {
     if (*str == '\0') {
       return 1;
@@ -313,7 +306,6 @@ ptr_len_casecmp(const char *p1, int l1, const char *str)
 inline int
 ptr_len_cmp(const char *p1, int l1, const char *str)
 {
-
   while (l1 > 0) {
     if (*str == '\0') {
       return 1;
@@ -357,7 +349,7 @@ ptr_len_pbrk(const char *p1, int l1, const char *str)
 
     while (*str_cur != '\0') {
       if (*p1 == *str_cur) {
-        return (char *) p1;
+        return (char *)p1;
       }
       str_cur++;
     }
@@ -373,27 +365,27 @@ ptr_len_pbrk(const char *p1, int l1, const char *str)
 // On error, we'll return 0, and nothing is written to the buffer.
 // TODO: Do these really need to be inline?
 inline int
-ink_small_itoa(int val, char* buf, int buf_len)
+ink_small_itoa(int val, char *buf, int buf_len)
 {
   ink_assert(buf_len > 5);
   ink_assert((val >= 0) && (val < 100000));
 
-  if (val < 10) {               // 0 - 9
+  if (val < 10) { // 0 - 9
     buf[0] = '0' + val;
     return 1;
-  } else if (val < 100) {       // 10 - 99
+  } else if (val < 100) { // 10 - 99
     buf[1] = '0' + (val % 10);
     val /= 10;
     buf[0] = '0' + (val % 10);
     return 2;
-  } else if (val < 1000) {      // 100 - 999
+  } else if (val < 1000) { // 100 - 999
     buf[2] = '0' + (val % 10);
     val /= 10;
     buf[1] = '0' + (val % 10);
     val /= 10;
     buf[0] = '0' + (val % 10);
     return 3;
-  } else if (val < 10000) {     // 1000 - 9999
+  } else if (val < 10000) { // 1000 - 9999
     buf[3] = '0' + (val % 10);
     val /= 10;
     buf[2] = '0' + (val % 10);
@@ -402,7 +394,7 @@ ink_small_itoa(int val, char* buf, int buf_len)
     val /= 10;
     buf[0] = '0' + (val % 10);
     return 4;
-  } else {                      // 10000 - 99999
+  } else { // 10000 - 99999
     buf[4] = '0' + (val % 10);
     val /= 10;
     buf[3] = '0' + (val % 10);
@@ -417,7 +409,7 @@ ink_small_itoa(int val, char* buf, int buf_len)
 }
 
 inline int
-ink_fast_itoa(int32_t val, char* buf, int buf_len)
+ink_fast_itoa(int32_t val, char *buf, int buf_len)
 {
   if ((val < 0) || (val > 99999)) {
     int ret = snprintf(buf, buf_len, "%d", val);
@@ -429,7 +421,7 @@ ink_fast_itoa(int32_t val, char* buf, int buf_len)
 }
 
 inline int
-ink_fast_uitoa(uint32_t val, char* buf, int buf_len)
+ink_fast_uitoa(uint32_t val, char *buf, int buf_len)
 {
   if (val > 99999) {
     int ret = snprintf(buf, buf_len, "%u", val);
@@ -441,7 +433,7 @@ ink_fast_uitoa(uint32_t val, char* buf, int buf_len)
 }
 
 inline int
-ink_fast_ltoa(int64_t val, char* buf, int buf_len)
+ink_fast_ltoa(int64_t val, char *buf, int buf_len)
 {
   if ((val < 0) || (val > 99999)) {
     int ret = snprintf(buf, buf_len, "%" PRId64 "", val);

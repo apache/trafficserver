@@ -44,15 +44,12 @@ class MIOBuffer;
 class IOBufferReader;
 
 
-
-enum NetVcTestType_t
-{
+enum NetVcTestType_t {
   NET_VC_TEST_ACTIVE,
-  NET_VC_TEST_PASSIVE
+  NET_VC_TEST_PASSIVE,
 };
 
-struct NVC_test_def
-{
+struct NVC_test_def {
   const char *test_name;
 
   int bytes_to_send;
@@ -71,21 +68,21 @@ struct NVC_test_def
 extern NVC_test_def netvc_tests_def[];
 extern const unsigned num_netvc_tests;
 
-class NetTestDriver:public Continuation
+class NetTestDriver : public Continuation
 {
 public:
   NetTestDriver();
   ~NetTestDriver();
 
   int errors;
-protected:
 
-    RegressionTest * r;
+protected:
+  RegressionTest *r;
   int *pstatus;
 };
 
 
-class NetVCTest:public Continuation
+class NetVCTest : public Continuation
 {
 public:
   NetVCTest();
@@ -97,12 +94,11 @@ public:
   void write_handler(int event);
   void cleanup();
 
-  void init_test(NetVcTestType_t n_type, NetTestDriver * driver,
-                 NetVConnection * nvc, RegressionTest * robj,
-                 NVC_test_def * my_def, const char *module_name_arg, const char *debug_tag_arg);
+  void init_test(NetVcTestType_t n_type, NetTestDriver *driver, NetVConnection *nvc, RegressionTest *robj, NVC_test_def *my_def,
+                 const char *module_name_arg, const char *debug_tag_arg);
   void start_test();
-  int fill_buffer(MIOBuffer * buf, uint8_t * seed, int bytes);
-  int consume_and_check_bytes(IOBufferReader * r, uint8_t * seed);
+  int fill_buffer(MIOBuffer *buf, uint8_t *seed, int bytes);
+  int consume_and_check_bytes(IOBufferReader *r, uint8_t *seed);
 
   void write_finished();
   void read_finished();

@@ -37,13 +37,13 @@
 
 class PluginVC;
 
-class FetchSM: public Continuation
+class FetchSM : public Continuation
 {
 public:
-  FetchSM()
-  { }
+  FetchSM() {}
 
-  void init_comm()
+  void
+  init_comm()
   {
     is_internal_request = true;
     recursion = 0;
@@ -65,23 +65,21 @@ public:
     resp_reader = resp_buffer->alloc_reader();
     http_parser_init(&http_parser);
     client_response_hdr.create(HTTP_TYPE_RESPONSE);
-    client_response  = NULL;
+    client_response = NULL;
     SET_HANDLER(&FetchSM::fetch_handler);
   }
 
-  void init(Continuation* cont, TSFetchWakeUpOptions options,
-            TSFetchEvent events, const char* headers, int length,
-            sockaddr const *addr)
+  void
+  init(Continuation *cont, TSFetchWakeUpOptions options, TSFetchEvent events, const char *headers, int length, sockaddr const *addr)
   {
-    Debug("FetchSM", "[%s] FetchSM initialized for request with headers\n--\n%.*s\n--",
-          __FUNCTION__, length, headers);
+    Debug("FetchSM", "[%s] FetchSM initialized for request with headers\n--\n%.*s\n--", __FUNCTION__, length, headers);
     init_comm();
     contp = cont;
     callback_events = events;
     callback_options = options;
     _addr.assign(addr);
     fetch_flags = TS_FETCH_FLAGS_DECHUNK;
-    writeRequest(headers,length);
+    writeRequest(headers, length);
     mutex = new_ProxyMutex();
 
     //
@@ -101,7 +99,7 @@ public:
   void httpConnect();
   void cleanUp();
   void get_info_from_buffer(IOBufferReader *reader);
-  char* resp_get(int* length);
+  char *resp_get(int *length);
 
   TSMBuffer resp_hdr_bufp();
   TSMLoc resp_hdr_mloc();
@@ -111,35 +109,46 @@ public:
   //
   // *flags* can be bitwise OR of several TSFetchFlags
   //
-  void ext_init(Continuation *cont, const char *method,
-                const char *url, const char *version,
-                const sockaddr *client_addr, int flags);
-  void ext_add_header(const char *name, int name_len,
-                      const char *value, int value_len);
+  void ext_init(Continuation *cont, const char *method, const char *url, const char *version, const sockaddr *client_addr,
+                int flags);
+  void ext_add_header(const char *name, int name_len, const char *value, int value_len);
   void ext_launch();
   void ext_destroy();
   ssize_t ext_read_data(char *buf, size_t len);
   void ext_write_data(const void *data, size_t len);
   void ext_set_user_data(void *data);
-  void* ext_get_user_data();
-  bool get_internal_request() { return is_internal_request; }
-  void set_internal_request(bool val) { is_internal_request = val; }
-
-private:
-  int InvokePlugin(int event, void*data);
-  void InvokePluginExt(int error_event = 0);
-
-  void writeRequest(const char *headers,int length)
+  void *ext_get_user_data();
+  bool
+  get_internal_request()
   {
-    if(length == -1)
-    req_buffer->write(headers, strlen(headers));
-    else
-    req_buffer->write(headers,length);
+    return is_internal_request;
+  }
+  void
+  set_internal_request(bool val)
+  {
+    is_internal_request = val;
   }
 
-  int64_t getReqLen() const { return req_reader->read_avail(); }
+private:
+  int InvokePlugin(int event, void *data);
+  void InvokePluginExt(int error_event = 0);
+
+  void
+  writeRequest(const char *headers, int length)
+  {
+    if (length == -1)
+      req_buffer->write(headers, strlen(headers));
+    else
+      req_buffer->write(headers, length);
+  }
+
+  int64_t
+  getReqLen() const
+  {
+    return req_reader->read_avail();
+  }
   /// Check if the comma supproting MIME field @a name has @a value in it.
-  bool check_for_field_value(char const* name, size_t name_len, char const* value, size_t value_len);
+  bool check_for_field_value(char const *name, size_t name_len, char const *value, size_t value_len);
 
   bool has_body();
   bool check_body_done();
@@ -148,14 +157,14 @@ private:
   int dechunk_body();
 
   int recursion;
-  PluginVC* http_vc;
+  PluginVC *http_vc;
   VIO *read_vio;
   VIO *write_vio;
   MIOBuffer *req_buffer;
   IOBufferReader *req_reader;
   char *client_response;
-  int  client_bytes;
-  MIOBuffer *resp_buffer;       // response to HttpConnect Call
+  int client_bytes;
+  MIOBuffer *resp_buffer; // response to HttpConnect Call
   IOBufferReader *resp_reader;
   Continuation *contp;
   Ptr<ProxyMutex> cont_mutex;

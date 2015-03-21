@@ -61,35 +61,40 @@
 #define MM 156
 #define MATRIX_A 0xB5026F5AA96619E9ULL
 #define UM 0xFFFFFFFF80000000ULL /* Most significant 33 bits */
-#define LM 0x7FFFFFFFULL /* Least significant 31 bits */
+#define LM 0x7FFFFFFFULL         /* Least significant 31 bits */
 
-static uint64_t mag01[2]={0ULL, MATRIX_A};
+static uint64_t mag01[2] = {0ULL, MATRIX_A};
 
-InkRand::InkRand(uint64_t d) {
+InkRand::InkRand(uint64_t d)
+{
   seed(d);
 }
 
-void InkRand::seed(uint64_t seed) {
+void
+InkRand::seed(uint64_t seed)
+{
   mt[0] = seed;
-  for (mti=1; mti<NN; mti++)
-    mt[mti] =  (6364136223846793005ULL * (mt[mti-1] ^ (mt[mti-1] >> 62)) + mti);
+  for (mti = 1; mti < NN; mti++)
+    mt[mti] = (6364136223846793005ULL * (mt[mti - 1] ^ (mt[mti - 1] >> 62)) + mti);
 }
 
-uint64_t InkRand::random() {
+uint64_t
+InkRand::random()
+{
   int i;
   uint64_t x;
 
   if (mti >= NN) { /* generate NN words at one time */
-    for (i=0;i<NN-MM;i++) {
-      x = (mt[i]&UM)|(mt[i+1]&LM);
-      mt[i] = mt[i+MM] ^ (x>>1) ^ mag01[(int)(x&1ULL)];
+    for (i = 0; i < NN - MM; i++) {
+      x = (mt[i] & UM) | (mt[i + 1] & LM);
+      mt[i] = mt[i + MM] ^ (x >> 1) ^ mag01[(int)(x & 1ULL)];
     }
-    for (;i<NN-1;i++) {
-      x = (mt[i]&UM)|(mt[i+1]&LM);
-      mt[i] = mt[i+(MM-NN)] ^ (x>>1) ^ mag01[(int)(x&1ULL)];
+    for (; i < NN - 1; i++) {
+      x = (mt[i] & UM) | (mt[i + 1] & LM);
+      mt[i] = mt[i + (MM - NN)] ^ (x >> 1) ^ mag01[(int)(x & 1ULL)];
     }
-    x = (mt[NN-1]&UM)|(mt[0]&LM);
-    mt[NN-1] = mt[MM-1] ^ (x>>1) ^ mag01[(int)(x&1ULL)];
+    x = (mt[NN - 1] & UM) | (mt[0] & LM);
+    mt[NN - 1] = mt[MM - 1] ^ (x >> 1) ^ mag01[(int)(x & 1ULL)];
 
     mti = 0;
   }
@@ -104,6 +109,8 @@ uint64_t InkRand::random() {
   return x;
 }
 
-double InkRand::drandom() {
-  return (random() >> 11) * (1.0/9007199254740991.0);
+double
+InkRand::drandom()
+{
+  return (random() >> 11) * (1.0 / 9007199254740991.0);
 }

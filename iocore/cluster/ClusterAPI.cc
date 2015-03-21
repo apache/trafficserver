@@ -26,7 +26,7 @@
 
   ClusterAPI.cc
 
-	Support for Cluster RPC API.
+        Support for Cluster RPC API.
 ****************************************************************************/
 #include "P_Cluster.h"
 
@@ -35,17 +35,16 @@
 class ClusterAPIPeriodicSM;
 static void send_machine_online_list(TSClusterStatusHandle_t *);
 
-typedef struct node_callout_entry
-{
+typedef struct node_callout_entry {
   Ptr<ProxyMutex> mutex;
   TSClusterStatusFunction func;
-  int state;                    // See NE_STATE_XXX defines
+  int state; // See NE_STATE_XXX defines
 } node_callout_entry_t;
 
-#define NE_STATE_FREE			0
-#define NE_STATE_INITIALIZED		1
+#define NE_STATE_FREE 0
+#define NE_STATE_INITIALIZED 1
 
-#define MAX_CLUSTERSTATUS_CALLOUTS 	32
+#define MAX_CLUSTERSTATUS_CALLOUTS 32
 
 static ProxyMutex *ClusterAPI_mutex;
 static ClusterAPIPeriodicSM *periodicSM;
@@ -54,21 +53,17 @@ static node_callout_entry_t status_callouts[MAX_CLUSTERSTATUS_CALLOUTS];
 static TSClusterRPCFunction RPC_Functions[API_END_CLUSTER_FUNCTION];
 
 #define INDEX_TO_CLUSTER_STATUS_HANDLE(i) ((TSClusterStatusHandle_t)((i)))
-#define CLUSTER_STATUS_HANDLE_TO_INDEX(h) ((int) ((h)))
-#define NODE_HANDLE_TO_IP(h) (*((struct in_addr *) &((h))))
+#define CLUSTER_STATUS_HANDLE_TO_INDEX(h) ((int)((h)))
+#define NODE_HANDLE_TO_IP(h) (*((struct in_addr *)&((h))))
 #define RPC_FUNCTION_KEY_TO_CLUSTER_NUMBER(k) ((int)((k)))
 #define IP_TO_NODE_HANDLE(ip) ((TSNodeHandle_t)((ip)))
-#define SIZEOF_RPC_MSG_LESS_DATA (sizeof(TSClusterRPCMsg_t) - \
-	 (sizeof(TSClusterRPCMsg_t) - sizeof(TSClusterRPCHandle_t)))
+#define SIZEOF_RPC_MSG_LESS_DATA (sizeof(TSClusterRPCMsg_t) - (sizeof(TSClusterRPCMsg_t) - sizeof(TSClusterRPCHandle_t)))
 
-typedef struct RPCHandle
-{
-  union
-  {                             // Note: All union elements are assumed to be the same size
+typedef struct RPCHandle {
+  union { // Note: All union elements are assumed to be the same size
     //       sizeof(u.internal) == sizeof(u.external)
     TSClusterRPCHandle_t external;
-    struct real_format
-    {
+    struct real_format {
       int cluster_function;
       int magic;
     } internal;
@@ -78,39 +73,35 @@ typedef struct RPCHandle
 #define RPC_HANDLE_MAGIC 0x12345678
 
 class MachineStatusSM;
-typedef int (MachineStatusSM::*MachineStatusSMHandler) (int, void *);
-class MachineStatusSM:public Continuation
+typedef int (MachineStatusSM::*MachineStatusSMHandler)(int, void *);
+class MachineStatusSM : public Continuation
 {
 public:
   // Broadcast constructor
-  MachineStatusSM(TSNodeHandle_t h, TSNodeStatus_t s):_node_handle(h), _node_status(s), _status_handle(0),
-    _broadcast(1), _restart(0), _next_n(0)
+  MachineStatusSM(TSNodeHandle_t h, TSNodeStatus_t s)
+    : _node_handle(h), _node_status(s), _status_handle(0), _broadcast(1), _restart(0), _next_n(0)
   {
-    SET_HANDLER((MachineStatusSMHandler)
-                & MachineStatusSM::MachineStatusSMEvent);
+    SET_HANDLER((MachineStatusSMHandler)&MachineStatusSM::MachineStatusSMEvent);
   }
   // Unicast constructor
-  MachineStatusSM(TSNodeHandle_t h, TSNodeStatus_t s,
-                  TSClusterStatusHandle_t sh):_node_handle(h), _node_status(s), _status_handle(sh),
-    _broadcast(0), _restart(0), _next_n(0)
+  MachineStatusSM(TSNodeHandle_t h, TSNodeStatus_t s, TSClusterStatusHandle_t sh)
+    : _node_handle(h), _node_status(s), _status_handle(sh), _broadcast(0), _restart(0), _next_n(0)
   {
-    SET_HANDLER((MachineStatusSMHandler)
-                & MachineStatusSM::MachineStatusSMEvent);
+    SET_HANDLER((MachineStatusSMHandler)&MachineStatusSM::MachineStatusSMEvent);
   }
   // Send machine online list constructor
-MachineStatusSM(TSClusterStatusHandle_t sh):
-  _node_handle(0), _node_status(NODE_ONLINE), _status_handle(sh), _broadcast(0), _restart(0), _next_n(0) {
-    SET_HANDLER((MachineStatusSMHandler)
-                & MachineStatusSM::MachineStatusSMEvent);
+  MachineStatusSM(TSClusterStatusHandle_t sh)
+    : _node_handle(0), _node_status(NODE_ONLINE), _status_handle(sh), _broadcast(0), _restart(0), _next_n(0)
+  {
+    SET_HANDLER((MachineStatusSMHandler)&MachineStatusSM::MachineStatusSMEvent);
   }
-  ~MachineStatusSM() {
-  }
-  int MachineStatusSMEvent(Event * e, void *d);
+  ~MachineStatusSM() {}
+  int MachineStatusSMEvent(Event *e, void *d);
 
 private:
   TSNodeHandle_t _node_handle;
   TSNodeStatus_t _node_status;
-  TSClusterStatusHandle_t _status_handle;      // Valid only if !_broadcast
+  TSClusterStatusHandle_t _status_handle; // Valid only if !_broadcast
   int _broadcast;
   int _restart;
   int _next_n;
@@ -129,7 +120,6 @@ MachineStatusSM::MachineStatusSMEvent(Event * /* e ATS_UNUSED */, void * /* d AT
     n = _restart ? _next_n : 0;
     for (; n < MAX_CLUSTERSTATUS_CALLOUTS; ++n) {
       if (status_callouts[n].func && (status_callouts[n].state == NE_STATE_INITIALIZED)) {
-
         MUTEX_TRY_LOCK(lock, status_callouts[n].mutex, et);
         if (lock.is_locked()) {
           status_callouts[n].func(&_node_handle, _node_status);
@@ -163,8 +153,8 @@ MachineStatusSM::MachineStatusSMEvent(Event * /* e ATS_UNUSED */, void * /* d AT
                 nh = IP_TO_NODE_HANDLE(cc->machines[mi]->ip);
                 status_callouts[n].func(&nh, NODE_ONLINE);
 
-                Debug("cluster_api",
-                      "initial callout: n %d ([%u.%u.%u.%u], %d)", n, DOT_SEPARATED(cc->machines[mi]->ip), NODE_ONLINE);
+                Debug("cluster_api", "initial callout: n %d ([%u.%u.%u.%u], %d)", n, DOT_SEPARATED(cc->machines[mi]->ip),
+                      NODE_ONLINE);
               }
             }
           }
@@ -186,8 +176,7 @@ MachineStatusSM::MachineStatusSMEvent(Event * /* e ATS_UNUSED */, void * /* d AT
         if (lock.is_locked()) {
           status_callouts[n].func(&_node_handle, _node_status);
 
-          Debug("cluster_api",
-                "directed callout: n %d ([%u.%u.%u.%u], %d)", n, DOT_SEPARATED(_node_handle), _node_status);
+          Debug("cluster_api", "directed callout: n %d ([%u.%u.%u.%u], %d)", n, DOT_SEPARATED(_node_handle), _node_status);
         } else {
           _restart = 1;
           _next_n = n;
@@ -201,23 +190,20 @@ MachineStatusSM::MachineStatusSMEvent(Event * /* e ATS_UNUSED */, void * /* d AT
 }
 
 class ClusterAPIPeriodicSM;
-typedef int (ClusterAPIPeriodicSM::*ClusterAPIPeriodicSMHandler) (int, void *);
-class ClusterAPIPeriodicSM:public Continuation
+typedef int (ClusterAPIPeriodicSM::*ClusterAPIPeriodicSMHandler)(int, void *);
+class ClusterAPIPeriodicSM : public Continuation
 {
 public:
-  ClusterAPIPeriodicSM(ProxyMutex * m):Continuation(m), _active_msmp(0)
+  ClusterAPIPeriodicSM(ProxyMutex *m) : Continuation(m), _active_msmp(0)
   {
-    SET_HANDLER((ClusterAPIPeriodicSMHandler)
-                & ClusterAPIPeriodicSM::ClusterAPIPeriodicSMEvent);
+    SET_HANDLER((ClusterAPIPeriodicSMHandler)&ClusterAPIPeriodicSM::ClusterAPIPeriodicSMEvent);
   }
-   ~ClusterAPIPeriodicSM()
-  {
-  }
+  ~ClusterAPIPeriodicSM() {}
   int ClusterAPIPeriodicSMEvent(int, void *);
   MachineStatusSM *GetNextSM();
 
 private:
-  MachineStatusSM * _active_msmp;
+  MachineStatusSM *_active_msmp;
 };
 
 static InkAtomicList status_callout_atomic_q;
@@ -232,11 +218,10 @@ ClusterAPIPeriodicSM::GetNextSM()
   while (1) {
     msmp = status_callout_q.pop();
     if (!msmp) {
-      msmp = (MachineStatusSM *)
-        ink_atomiclist_popall(&status_callout_atomic_q);
+      msmp = (MachineStatusSM *)ink_atomiclist_popall(&status_callout_atomic_q);
       if (msmp) {
         while (msmp) {
-          msmp_next = (MachineStatusSM *) msmp->link.next;
+          msmp_next = (MachineStatusSM *)msmp->link.next;
           msmp->link.next = 0;
           status_callout_q.push(msmp);
           msmp = msmp_next;
@@ -277,11 +262,10 @@ void
 clusterAPI_init()
 {
   MachineStatusSM *mssmp = 0;
-  ink_atomiclist_init(&status_callout_atomic_q,
-                      "cluster API status_callout_q", (char *) &mssmp->link.next - (char *) mssmp);
+  ink_atomiclist_init(&status_callout_atomic_q, "cluster API status_callout_q", (char *)&mssmp->link.next - (char *)mssmp);
   ClusterAPI_mutex = new_ProxyMutex();
   MUTEX_TRY_LOCK(lock, ClusterAPI_mutex, this_ethread());
-  ink_release_assert(lock.is_locked());     // Should never fail
+  ink_release_assert(lock.is_locked()); // Should never fail
   periodicSM = new ClusterAPIPeriodicSM(ClusterAPI_mutex);
 
   // TODO: Should we do something with this return value?
@@ -296,7 +280,7 @@ clusterAPI_init()
  *	  called at plugin load time.
  */
 int
-TSAddClusterStatusFunction(TSClusterStatusFunction Status_Function, TSMutex m, TSClusterStatusHandle_t * h)
+TSAddClusterStatusFunction(TSClusterStatusFunction Status_Function, TSMutex m, TSClusterStatusHandle_t *h)
 {
   Debug("cluster_api", "TSAddClusterStatusFunction func %p", Status_Function);
   int n;
@@ -306,7 +290,7 @@ TSAddClusterStatusFunction(TSClusterStatusFunction Status_Function, TSMutex m, T
   MUTEX_TAKE_LOCK(ClusterAPI_mutex, e);
   for (n = 0; n < MAX_CLUSTERSTATUS_CALLOUTS; ++n) {
     if (!status_callouts[n].func) {
-      status_callouts[n].mutex = (ProxyMutex *) m;
+      status_callouts[n].mutex = (ProxyMutex *)m;
       status_callouts[n].func = Status_Function;
       MUTEX_UNTAKE_LOCK(ClusterAPI_mutex, e);
       *h = INDEX_TO_CLUSTER_STATUS_HANDLE(n);
@@ -327,7 +311,7 @@ TSAddClusterStatusFunction(TSClusterStatusFunction Status_Function, TSMutex m, T
  *	  called at plugin unload time (unload currently not supported).
  */
 int
-TSDeleteClusterStatusFunction(TSClusterStatusHandle_t * h)
+TSDeleteClusterStatusFunction(TSClusterStatusHandle_t *h)
 {
   int n = CLUSTER_STATUS_HANDLE_TO_INDEX(*h);
   EThread *e = this_ethread();
@@ -337,7 +321,7 @@ TSDeleteClusterStatusFunction(TSClusterStatusHandle_t * h)
 
   MUTEX_TAKE_LOCK(ClusterAPI_mutex, e);
   status_callouts[n].mutex = 0;
-  status_callouts[n].func = (TSClusterStatusFunction) 0;
+  status_callouts[n].func = (TSClusterStatusFunction)0;
   status_callouts[n].state = NE_STATE_FREE;
   MUTEX_UNTAKE_LOCK(ClusterAPI_mutex, e);
 
@@ -345,14 +329,14 @@ TSDeleteClusterStatusFunction(TSClusterStatusHandle_t * h)
 }
 
 int
-TSNodeHandleToIPAddr(TSNodeHandle_t * h, struct in_addr *in)
+TSNodeHandleToIPAddr(TSNodeHandle_t *h, struct in_addr *in)
 {
   *in = NODE_HANDLE_TO_IP(*h);
   return 0;
 }
 
 void
-TSGetMyNodeHandle(TSNodeHandle_t * h)
+TSGetMyNodeHandle(TSNodeHandle_t *h)
 {
   *h = IP_TO_NODE_HANDLE((this_cluster_machine())->ip);
 }
@@ -364,7 +348,7 @@ TSGetMyNodeHandle(TSNodeHandle_t * h)
  *  callouts are updates to the state obtained at this point.
  */
 void
-TSEnableClusterStatusCallout(TSClusterStatusHandle_t * h)
+TSEnableClusterStatusCallout(TSClusterStatusHandle_t *h)
 {
   int ci = CLUSTER_STATUS_HANDLE_TO_INDEX(*h);
   // This isn't used.
@@ -380,11 +364,11 @@ TSEnableClusterStatusCallout(TSClusterStatusHandle_t * h)
 }
 
 static void
-send_machine_online_list(TSClusterStatusHandle_t * h)
+send_machine_online_list(TSClusterStatusHandle_t *h)
 {
   MachineStatusSM *msm = new MachineStatusSM(*h);
 
-  ink_atomiclist_push(&status_callout_atomic_q, (void *) msm);
+  ink_atomiclist_push(&status_callout_atomic_q, (void *)msm);
 }
 
 /*
@@ -393,11 +377,11 @@ send_machine_online_list(TSClusterStatusHandle_t * h)
 // This doesn't seem to be used...
 #ifdef NOT_USED_HERE
 static void
-directed_machine_online(int Ipaddr, TSClusterStatusHandle_t * h)
+directed_machine_online(int Ipaddr, TSClusterStatusHandle_t *h)
 {
   MachineStatusSM *msm = new MachineStatusSM(IP_TO_NODE_HANDLE(Ipaddr), NODE_ONLINE, *h);
 
-  ink_atomiclist_push(&status_callout_atomic_q, (void *) msm);
+  ink_atomiclist_push(&status_callout_atomic_q, (void *)msm);
 }
 #endif
 
@@ -409,7 +393,7 @@ machine_online_APIcallout(int Ipaddr)
 {
   MachineStatusSM *msm = new MachineStatusSM(IP_TO_NODE_HANDLE(Ipaddr), NODE_ONLINE);
 
-  ink_atomiclist_push(&status_callout_atomic_q, (void *) msm);
+  ink_atomiclist_push(&status_callout_atomic_q, (void *)msm);
 }
 
 /*
@@ -420,7 +404,7 @@ machine_offline_APIcallout(int Ipaddr)
 {
   MachineStatusSM *msm = new MachineStatusSM(IP_TO_NODE_HANDLE(Ipaddr), NODE_OFFLINE);
 
-  ink_atomiclist_push(&status_callout_atomic_q, (void *) msm);
+  ink_atomiclist_push(&status_callout_atomic_q, (void *)msm);
 }
 
 /*
@@ -430,15 +414,14 @@ machine_offline_APIcallout(int Ipaddr)
  *	  called at plugin load time.
  */
 int
-TSAddClusterRPCFunction(TSClusterRPCKey_t k, TSClusterRPCFunction func, TSClusterRPCHandle_t * h)
+TSAddClusterRPCFunction(TSClusterRPCKey_t k, TSClusterRPCFunction func, TSClusterRPCHandle_t *h)
 {
   RPCHandle_t handle;
   int n = RPC_FUNCTION_KEY_TO_CLUSTER_NUMBER(k);
   EThread *e = this_ethread();
 
   ink_release_assert(func);
-  ink_release_assert((n >= API_STARECT_CLUSTER_FUNCTION)
-                     && (n <= API_END_CLUSTER_FUNCTION));
+  ink_release_assert((n >= API_STARECT_CLUSTER_FUNCTION) && (n <= API_END_CLUSTER_FUNCTION));
   Debug("cluster_api", "TSAddClusterRPCFunction: key %d func %p", k, func);
 
   handle.u.internal.cluster_function = n;
@@ -460,13 +443,13 @@ TSAddClusterRPCFunction(TSClusterRPCKey_t k, TSClusterRPCFunction func, TSCluste
  *	  called at plugin unload time (unload currently not supported).
  */
 int
-TSDeleteClusterRPCFunction(TSClusterRPCHandle_t * rpch)
+TSDeleteClusterRPCFunction(TSClusterRPCHandle_t *rpch)
 {
-  RPCHandle_t *h = (RPCHandle_t *) rpch;
+  RPCHandle_t *h = (RPCHandle_t *)rpch;
   EThread *e = this_ethread();
 
-  ink_release_assert(((h->u.internal.cluster_function >= API_STARECT_CLUSTER_FUNCTION)
-                      && (h->u.internal.cluster_function <= API_END_CLUSTER_FUNCTION)));
+  ink_release_assert(((h->u.internal.cluster_function >= API_STARECT_CLUSTER_FUNCTION) &&
+                      (h->u.internal.cluster_function <= API_END_CLUSTER_FUNCTION)));
   Debug("cluster_api", "TSDeleteClusterRPCFunction: n %d", h->u.internal.cluster_function);
 
   MUTEX_TAKE_LOCK(ClusterAPI_mutex, e);
@@ -483,20 +466,19 @@ default_api_ClusterFunction(ClusterHandler *ch, void *data, int len)
 {
   Debug("cluster_api", "default_api_ClusterFunction: [%u.%u.%u.%u] data %p len %d", DOT_SEPARATED(ch->machine->ip), data, len);
 
-  TSClusterRPCMsg_t *msg = (TSClusterRPCMsg_t *) data;
-  RPCHandle_t *rpch = (RPCHandle_t *) & msg->m_handle;
+  TSClusterRPCMsg_t *msg = (TSClusterRPCMsg_t *)data;
+  RPCHandle_t *rpch = (RPCHandle_t *)&msg->m_handle;
   int cluster_function = rpch->u.internal.cluster_function;
 
-  ink_release_assert((size_t) len >= sizeof(TSClusterRPCMsg_t));
-  ink_release_assert(((cluster_function >= API_STARECT_CLUSTER_FUNCTION)
-                      && (cluster_function <= API_END_CLUSTER_FUNCTION)));
+  ink_release_assert((size_t)len >= sizeof(TSClusterRPCMsg_t));
+  ink_release_assert(((cluster_function >= API_STARECT_CLUSTER_FUNCTION) && (cluster_function <= API_END_CLUSTER_FUNCTION)));
 
   if (cluster_function < API_END_CLUSTER_FUNCTION && RPC_Functions[cluster_function]) {
     int msg_data_len = len - SIZEOF_RPC_MSG_LESS_DATA;
     TSNodeHandle_t nh = IP_TO_NODE_HANDLE(ch->machine->ip);
-    (*RPC_Functions[cluster_function]) (&nh, msg, msg_data_len);
+    (*RPC_Functions[cluster_function])(&nh, msg, msg_data_len);
   } else {
-    clusterProcessor.free_remote_data((char *) data, len);
+    clusterProcessor.free_remote_data((char *)data, len);
   }
 }
 
@@ -504,25 +486,25 @@ default_api_ClusterFunction(ClusterHandler *ch, void *data, int len)
  *  Free TSClusterRPCMsg_t received via the RPC function.
  */
 void
-TSFreeRPCMsg(TSClusterRPCMsg_t * msg, int msg_data_len)
+TSFreeRPCMsg(TSClusterRPCMsg_t *msg, int msg_data_len)
 {
-  RPCHandle_t *rpch = (RPCHandle_t *) & msg->m_handle;
+  RPCHandle_t *rpch = (RPCHandle_t *)&msg->m_handle;
   ink_release_assert(rpch->u.internal.magic == RPC_HANDLE_MAGIC);
   Debug("cluster_api", "TSFreeRPCMsg: msg %p msg_data_len %d", msg, msg_data_len);
 
-  clusterProcessor.free_remote_data((char *) msg, msg_data_len + SIZEOF_RPC_MSG_LESS_DATA);
+  clusterProcessor.free_remote_data((char *)msg, msg_data_len + SIZEOF_RPC_MSG_LESS_DATA);
 }
 
 /*
  *  Allocate a message structure for use in the call to TSSendClusterRPC().
  */
 TSClusterRPCMsg_t *
-TSAllocClusterRPCMsg(TSClusterRPCHandle_t * h, int data_size)
+TSAllocClusterRPCMsg(TSClusterRPCHandle_t *h, int data_size)
 {
   ink_assert(data_size >= 4);
   if (data_size < 4) {
     /* Message must be at least 4 bytes in length */
-    return (TSClusterRPCMsg_t *) 0;
+    return (TSClusterRPCMsg_t *)0;
   }
 
   TSClusterRPCMsg_t *rpcm;
@@ -530,9 +512,9 @@ TSAllocClusterRPCMsg(TSClusterRPCHandle_t * h, int data_size)
 
   c->len = sizeof(OutgoingControl *) + SIZEOF_RPC_MSG_LESS_DATA + data_size;
   c->alloc_data();
-  *((OutgoingControl **) c->data) = c;
+  *((OutgoingControl **)c->data) = c;
 
-  rpcm = (TSClusterRPCMsg_t *) (c->data + sizeof(OutgoingControl *));
+  rpcm = (TSClusterRPCMsg_t *)(c->data + sizeof(OutgoingControl *));
   rpcm->m_handle = *h;
 
   /*
@@ -548,25 +530,24 @@ TSAllocClusterRPCMsg(TSClusterRPCHandle_t * h, int data_size)
  *  Send the given message to the specified node.
  */
 int
-TSSendClusterRPC(TSNodeHandle_t * nh, TSClusterRPCMsg_t * msg)
+TSSendClusterRPC(TSNodeHandle_t *nh, TSClusterRPCMsg_t *msg)
 {
   struct in_addr ipaddr = NODE_HANDLE_TO_IP(*nh);
-  RPCHandle_t *rpch = (RPCHandle_t *) & msg->m_handle;
+  RPCHandle_t *rpch = (RPCHandle_t *)&msg->m_handle;
 
-  OutgoingControl *c = *((OutgoingControl **)
-                         ((char *) msg - sizeof(OutgoingControl *)));
-  ClusterConfiguration * cc = this_cluster()->current_configuration();
+  OutgoingControl *c = *((OutgoingControl **)((char *)msg - sizeof(OutgoingControl *)));
+  ClusterConfiguration *cc = this_cluster()->current_configuration();
   ClusterMachine *m;
 
   ink_release_assert(rpch->u.internal.magic == RPC_HANDLE_MAGIC);
 
   if ((m = cc->find(ipaddr.s_addr))) {
     int len = c->len - sizeof(OutgoingControl *);
-    ink_release_assert((size_t) len >= sizeof(TSClusterRPCMsg_t));
+    ink_release_assert((size_t)len >= sizeof(TSClusterRPCMsg_t));
 
     Debug("cluster_api", "TSSendClusterRPC: msg %p dlen %d [%u.%u.%u.%u] sent", msg, len, DOT_SEPARATED(ipaddr.s_addr));
-    clusterProcessor.invoke_remote(m->pop_ClusterHandler(), rpch->u.internal.cluster_function,
-                                   msg, len, (CLUSTER_OPT_STEAL | CLUSTER_OPT_DATA_IS_OCONTROL));
+    clusterProcessor.invoke_remote(m->pop_ClusterHandler(), rpch->u.internal.cluster_function, msg, len,
+                                   (CLUSTER_OPT_STEAL | CLUSTER_OPT_DATA_IS_OCONTROL));
   } else {
     Debug("cluster_api", "TSSendClusterRPC: msg %p to [%u.%u.%u.%u] dropped", msg, DOT_SEPARATED(ipaddr.s_addr));
     c->freeall();

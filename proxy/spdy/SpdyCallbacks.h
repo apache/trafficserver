@@ -41,9 +41,7 @@ void spdy_prepare_status_response_and_clean_request(SpdyClientSession *sm, int s
  * it must return :enum:`SPDYLAY_ERR_WOULDBLOCK`. For other errors, it
  * must return :enum:`SPDYLAY_ERR_CALLBACK_FAILURE`.
  */
-ssize_t spdy_send_callback
-(spdylay_session *session,
- const uint8_t *data, size_t length, int flags, void *user_data);
+ssize_t spdy_send_callback(spdylay_session *session, const uint8_t *data, size_t length, int flags, void *user_data);
 
 /**
  * @functypedef
@@ -58,9 +56,7 @@ ssize_t spdy_send_callback
  * :enum:`SPDYLAY_ERR_EOF`. For other errors, it must return
  * :enum:`SPDYLAY_ERR_CALLBACK_FAILURE`.
  */
-ssize_t spdy_recv_callback
-(spdylay_session *session,
- uint8_t *buf, size_t length, int flags, void *user_data);
+ssize_t spdy_recv_callback(spdylay_session *session, uint8_t *buf, size_t length, int flags, void *user_data);
 
 /**
  * @functypedef
@@ -68,9 +64,7 @@ ssize_t spdy_recv_callback
  * Callback function invoked by `spdylay_session_recv()` when a
  * control frame is received.
  */
-void spdy_on_ctrl_recv_callback
-(spdylay_session *session, spdylay_frame_type type, spdylay_frame *frame,
- void *user_data);
+void spdy_on_ctrl_recv_callback(spdylay_session *session, spdylay_frame_type type, spdylay_frame *frame, void *user_data);
 
 /**
  * @functypedef
@@ -81,9 +75,8 @@ void spdy_on_ctrl_recv_callback
  * callback function is invoked, the library automatically submits
  * either RST_STREAM or GOAWAY frame.
  */
-void spdy_on_invalid_ctrl_recv_callback
-(spdylay_session *session, spdylay_frame_type type, spdylay_frame *frame,
- uint32_t status_code, void *user_data);
+void spdy_on_invalid_ctrl_recv_callback(spdylay_session *session, spdylay_frame_type type, spdylay_frame *frame,
+                                        uint32_t status_code, void *user_data);
 
 /**
  * @functypedef
@@ -96,9 +89,8 @@ void spdy_on_invalid_ctrl_recv_callback
  * stream. You should use :type:`spdylay_on_data_recv_callback` to
  * know all data frames are received.
  */
-void spdy_on_data_chunk_recv_callback
-(spdylay_session *session, uint8_t flags, int32_t stream_id,
- const uint8_t *data, size_t len, void *user_data);
+void spdy_on_data_chunk_recv_callback(spdylay_session *session, uint8_t flags, int32_t stream_id, const uint8_t *data, size_t len,
+                                      void *user_data);
 
 /**
  * @functypedef
@@ -107,9 +99,7 @@ void spdy_on_data_chunk_recv_callback
  * data it contains are received by
  * :type:`spdylay_on_data_chunk_recv_callback`.
  */
-void spdy_on_data_recv_callback
-(spdylay_session *session, uint8_t flags, int32_t stream_id, int32_t length,
- void *user_data);
+void spdy_on_data_recv_callback(spdylay_session *session, uint8_t flags, int32_t stream_id, int32_t length, void *user_data);
 
 /**
  * @functypedef
@@ -120,9 +110,7 @@ void spdy_on_data_recv_callback
  * `spdylay_session_get_stream_user_data()`), which is not assigned
  * when it was queued.
  */
-void spdy_before_ctrl_send_callback
-(spdylay_session *session, spdylay_frame_type type, spdylay_frame *frame,
- void *user_data);
+void spdy_before_ctrl_send_callback(spdylay_session *session, spdylay_frame_type type, spdylay_frame *frame, void *user_data);
 
 /**
  * @functypedef
@@ -130,9 +118,7 @@ void spdy_before_ctrl_send_callback
  * Callback function invoked after the control frame |frame| of type
  * |type| is sent.
  */
-void spdy_on_ctrl_send_callback
-(spdylay_session *session, spdylay_frame_type type, spdylay_frame *frame,
- void *user_data);
+void spdy_on_ctrl_send_callback(spdylay_session *session, spdylay_frame_type type, spdylay_frame *frame, void *user_data);
 
 /**
  * @functypedef
@@ -142,18 +128,15 @@ void spdy_on_ctrl_send_callback
  * the |error_code|, which is one of the values defined in
  * :type:`spdylay_error`.
  */
-void spdy_on_ctrl_not_send_callback
-(spdylay_session *session, spdylay_frame_type type, spdylay_frame *frame,
- int error_code, void *user_data);
+void spdy_on_ctrl_not_send_callback(spdylay_session *session, spdylay_frame_type type, spdylay_frame *frame, int error_code,
+                                    void *user_data);
 
 /**
  * @functypedef
  *
  * Callback function invoked after DATA frame is sent.
  */
-void spdy_on_data_send_callback
-(spdylay_session *session, uint8_t flags, int32_t stream_id, int32_t length,
- void *user_data);
+void spdy_on_data_send_callback(spdylay_session *session, uint8_t flags, int32_t stream_id, int32_t length, void *user_data);
 
 /**
  * @functypedef
@@ -164,9 +147,7 @@ void spdy_on_data_send_callback
  * `spdylay_submit_request()` or `spdylay_submit_syn_stream()`, is
  * still available in this function.
  */
-void spdy_on_stream_close_callback
-(spdylay_session *session, int32_t stream_id, spdylay_status_code status_code,
- void *user_data);
+void spdy_on_stream_close_callback(spdylay_session *session, int32_t stream_id, spdylay_status_code status_code, void *user_data);
 
 /**
  * @functypedef
@@ -182,9 +163,8 @@ void spdy_on_stream_close_callback
  * the application code may be required to pass the same proof more
  * than once.
  */
-ssize_t spdy_get_credential_proof
-(spdylay_session *session, const spdylay_origin *origin,
- uint8_t *proof, size_t prooflen, void *user_data);
+ssize_t spdy_get_credential_proof(spdylay_session *session, const spdylay_origin *origin, uint8_t *proof, size_t prooflen,
+                                  void *user_data);
 
 /**
  * @functypedef
@@ -198,8 +178,7 @@ ssize_t spdy_get_credential_proof
  * :type:`spdylay_get_credential_cert` callback functions will be used
  * to get the cryptographic proof and certificate respectively.
  */
-ssize_t spdy_get_credential_ncerts
-(spdylay_session *session, const spdylay_origin *origin, void *user_data);
+ssize_t spdy_get_credential_ncerts(spdylay_session *session, const spdylay_origin *origin, void *user_data);
 
 /**
  * @functypedef
@@ -212,9 +191,8 @@ ssize_t spdy_get_credential_ncerts
  * |certlen| > 0, write certificate into |cert| exactly |certlen|
  * bytes and return 0.
  */
-ssize_t spdy_get_credential_cert
-(spdylay_session *session, const spdylay_origin *origin, size_t idx,
- uint8_t *cert, size_t certlen, void *user_data);
+ssize_t spdy_get_credential_cert(spdylay_session *session, const spdylay_origin *origin, size_t idx, uint8_t *cert, size_t certlen,
+                                 void *user_data);
 
 /**
  * @functypedef
@@ -224,8 +202,7 @@ ssize_t spdy_get_credential_cert
  * In HTTP, this means HTTP request, including request body, is fully
  * received.
  */
-void spdy_on_request_recv_callback
-(spdylay_session *session, int32_t stream_id, void *user_data);
+void spdy_on_request_recv_callback(spdylay_session *session, int32_t stream_id, void *user_data);
 
 /**
  * @functypedef
@@ -242,11 +219,8 @@ void spdy_on_request_recv_callback
  * error code defined in :enum:`spdylay_error` and indicates the
  * error.
  */
-void spdy_on_ctrl_recv_parse_error_callback
-(spdylay_session *session, spdylay_frame_type type,
- const uint8_t *head, size_t headlen,
- const uint8_t *payload, size_t payloadlen,
- int error_code, void *user_data);
+void spdy_on_ctrl_recv_parse_error_callback(spdylay_session *session, spdylay_frame_type type, const uint8_t *head, size_t headlen,
+                                            const uint8_t *payload, size_t payloadlen, int error_code, void *user_data);
 
 /**
  * @functypedef
@@ -260,10 +234,7 @@ void spdy_on_ctrl_recv_parse_error_callback
  * |payloadlen| is the length of the |payload|. This is the data after
  * the length field.
  */
-void spdy_on_unknown_ctrl_recv_callback
-(spdylay_session *session,
- const uint8_t *head, size_t headlen,
- const uint8_t *payload, size_t payloadlen,
- void *user_data);
+void spdy_on_unknown_ctrl_recv_callback(spdylay_session *session, const uint8_t *head, size_t headlen, const uint8_t *payload,
+                                        size_t payloadlen, void *user_data);
 
 #endif

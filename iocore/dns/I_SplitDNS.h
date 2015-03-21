@@ -35,9 +35,7 @@
 
 #define SPLITDNS_MODULE_MAJOR_VERSION 1
 #define SPLITDNS_MODULE_MINOR_VERSION 0
-#define SPLITDNS_MODULE_VERSION makeModuleVersion(                 \
-                                    SPLITDNS_MODULE_MAJOR_VERSION, \
-                                    SPLITDNS_MODULE_MINOR_VERSION, \
-                                    PUBLIC_MODULE_HEADER)
+#define SPLITDNS_MODULE_VERSION \
+  makeModuleVersion(SPLITDNS_MODULE_MAJOR_VERSION, SPLITDNS_MODULE_MINOR_VERSION, PUBLIC_MODULE_HEADER)
 
 #endif //_I_SPLIT_DNS_H_

@@ -27,28 +27,42 @@
 
 // Record data type names, indexed by TSRecordT.
 static const char *
-rec_typeof(int rec_type) {
+rec_typeof(int rec_type)
+{
   switch (rec_type) {
-  case TS_REC_INT: return "INT";
-  case TS_REC_COUNTER: return "COUNTER";
-  case TS_REC_FLOAT: return "FLOAT";
-  case TS_REC_STRING: return "STRING";
+  case TS_REC_INT:
+    return "INT";
+  case TS_REC_COUNTER:
+    return "COUNTER";
+  case TS_REC_FLOAT:
+    return "FLOAT";
+  case TS_REC_STRING:
+    return "STRING";
   case TS_REC_UNDEFINED: /* fallthru */
-  default: return "UNDEFINED";
+  default:
+    return "UNDEFINED";
   }
 }
 
 // Record type name, indexed by RecT.
 static const char *
-rec_classof(int rec_class) {
+rec_classof(int rec_class)
+{
   switch (rec_class) {
-  case RECT_CONFIG: return "standard config";
-  case RECT_LOCAL:  return "local config";
-  case RECT_PROCESS:return "process metric";
-  case RECT_NODE:   return "node metric";
-  case RECT_CLUSTER:return "cluster metric";
-  case RECT_PLUGIN: return "plugin metric";
-  default: return "undefined";
+  case RECT_CONFIG:
+    return "standard config";
+  case RECT_LOCAL:
+    return "local config";
+  case RECT_PROCESS:
+    return "process metric";
+  case RECT_NODE:
+    return "node metric";
+  case RECT_CLUSTER:
+    return "cluster metric";
+  case RECT_PLUGIN:
+    return "plugin metric";
+  default:
+    return "undefined";
   }
 }
 
@@ -57,10 +71,13 @@ static const char *
 rec_accessof(int rec_access)
 {
   switch (rec_access) {
-  case RECA_NO_ACCESS: return "no access";
-  case RECA_READ_ONLY: return "read only";
+  case RECA_NO_ACCESS:
+    return "no access";
+  case RECA_READ_ONLY:
+    return "read only";
   case RECA_NULL: /* fallthru */
-  default: return "default";
+  default:
+    return "default";
   }
 }
 
@@ -69,12 +86,17 @@ static const char *
 rec_updateof(int rec_updatetype)
 {
   switch (rec_updatetype) {
-  case RECU_DYNAMIC: return "dynamic, no restart";
-  case RECU_RESTART_TS: return "static, restart traffic_server";
-  case RECU_RESTART_TM: return "static, restart traffic_manager";
-  case RECU_RESTART_TC: return "static, full restart";
+  case RECU_DYNAMIC:
+    return "dynamic, no restart";
+  case RECU_RESTART_TS:
+    return "static, restart traffic_server";
+  case RECU_RESTART_TM:
+    return "static, restart traffic_manager";
+  case RECU_RESTART_TC:
+    return "static, full restart";
   case RECU_NULL: /* fallthru */
-  default: return "none";
+  default:
+    return "none";
   }
 }
 
@@ -83,11 +105,15 @@ static const char *
 rec_checkof(int rec_checktype)
 {
   switch (rec_checktype) {
-  case RECC_STR: return "string matching a regular expression";
-  case RECC_INT: return "integer with a specified range";
-  case RECC_IP: return "IP address";
+  case RECC_STR:
+    return "string matching a regular expression";
+  case RECC_INT:
+    return "integer with a specified range";
+  case RECC_IP:
+    return "IP address";
   case RECC_NULL: /* fallthru */
-  default: return "none";
+  default:
+    return "none";
   }
 }
 
@@ -99,7 +125,7 @@ timestr(time_t tm)
 }
 
 static void
-format_record(const CtrlMgmtRecord& record, bool recfmt)
+format_record(const CtrlMgmtRecord &record, bool recfmt)
 {
   CtrlMgmtRecordValue value(record);
 
@@ -112,11 +138,11 @@ format_record(const CtrlMgmtRecord& record, bool recfmt)
 }
 
 static int
-config_get(unsigned argc, const char ** argv)
+config_get(unsigned argc, const char **argv)
 {
   int recfmt = 0;
   const ArgumentDescription opts[] = {
-    { "records", '-', "Emit output in records.config format", "F", &recfmt, NULL, NULL },
+    {"records", '-', "Emit output in records.config format", "F", &recfmt, NULL, NULL},
   };
 
   if (!CtrlProcessArguments(argc, argv, opts, countof(opts)) || n_file_arguments < 1) {
@@ -140,7 +166,7 @@ config_get(unsigned argc, const char ** argv)
 }
 
 static int
-config_describe(unsigned argc, const char ** argv)
+config_describe(unsigned argc, const char **argv)
 {
   if (!CtrlProcessArguments(argc, argv, NULL, 0) || n_file_arguments < 1) {
     return CtrlCommandUsage("config describe RECORD [RECORD ...]");
@@ -183,7 +209,7 @@ config_describe(unsigned argc, const char ** argv)
 }
 
 static int
-config_set(unsigned argc, const char ** argv)
+config_set(unsigned argc, const char **argv)
 {
   TSMgmtError error;
   TSActionNeedT action;
@@ -193,7 +219,7 @@ config_set(unsigned argc, const char ** argv)
   }
 
   error = TSRecordSet(file_arguments[0], file_arguments[1], &action);
-  if (error  != TS_ERR_OKAY) {
+  if (error != TS_ERR_OKAY) {
     CtrlMgmtError(error, "failed to set %s", file_arguments[0]);
     return CTRL_EX_ERROR;
   }
@@ -218,11 +244,11 @@ config_set(unsigned argc, const char ** argv)
 }
 
 static int
-config_match(unsigned argc, const char ** argv)
+config_match(unsigned argc, const char **argv)
 {
   int recfmt = 0;
   const ArgumentDescription opts[] = {
-    { "records", '-', "Emit output in records.config format", "F", &recfmt, NULL, NULL },
+    {"records", '-', "Emit output in records.config format", "F", &recfmt, NULL, NULL},
   };
 
   if (!CtrlProcessArguments(argc, argv, opts, countof(opts)) || n_file_arguments < 1) {
@@ -251,7 +277,7 @@ config_match(unsigned argc, const char ** argv)
 }
 
 static int
-config_reload(unsigned argc, const char ** argv)
+config_reload(unsigned argc, const char **argv)
 {
   if (!CtrlProcessArguments(argc, argv, NULL, 0) || n_file_arguments != 0) {
     return CtrlCommandUsage("config reload");
@@ -267,7 +293,7 @@ config_reload(unsigned argc, const char ** argv)
 }
 
 static int
-config_status(unsigned argc, const char ** argv)
+config_status(unsigned argc, const char **argv)
 {
   if (!CtrlProcessArguments(argc, argv, NULL, 0) || n_file_arguments != 0) {
     return CtrlCommandUsage("config status");
@@ -308,16 +334,15 @@ config_status(unsigned argc, const char ** argv)
 }
 
 int
-subcommand_config(unsigned argc, const char ** argv)
+subcommand_config(unsigned argc, const char **argv)
 {
-  const subcommand commands[] =
-  {
-    { config_describe, "describe", "Show detailed information about configuration values" },
-    { config_get, "get", "Get one or more configuration values" },
-    { config_match, "match", "Get configuration matching a regular expression" },
-    { config_reload, "reload", "Request a configuration reload" },
-    { config_set, "set", "Set a configuration value" },
-    { config_status, "status", "Check the configuration status" },
+  const subcommand commands[] = {
+    {config_describe, "describe", "Show detailed information about configuration values"},
+    {config_get, "get", "Get one or more configuration values"},
+    {config_match, "match", "Get configuration matching a regular expression"},
+    {config_reload, "reload", "Request a configuration reload"},
+    {config_set, "set", "Set a configuration value"},
+    {config_status, "status", "Check the configuration status"},
   };
 
   return CtrlGenericSubcommand("config", commands, countof(commands), argc, argv);

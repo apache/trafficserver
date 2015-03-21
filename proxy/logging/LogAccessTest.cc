@@ -77,7 +77,7 @@ LogAccessTest::marshal_client_host_ip(char *buf)
 int
 LogAccessTest::marshal_client_auth_user_name(char *buf)
 {
-  static char const* str = "major tom";
+  static char const *str = "major tom";
   int len = LogAccess::strlen(str);
   if (buf) {
     marshal_str(buf, str, len);
@@ -91,7 +91,7 @@ LogAccessTest::marshal_client_auth_user_name(char *buf)
 int
 LogAccessTest::marshal_client_req_text(char *buf)
 {
-  static char const* str = "GET http://www.foobar.com/ HTTP/1.0";
+  static char const *str = "GET http://www.foobar.com/ HTTP/1.0";
   int len = LogAccess::strlen(str);
   if (buf) {
     marshal_str(buf, str, len);
@@ -118,7 +118,7 @@ LogAccessTest::marshal_client_req_http_method(char *buf)
 int
 LogAccessTest::marshal_client_req_url(char *buf)
 {
-  static char const* str = "http://www.foobar.com/";
+  static char const *str = "http://www.foobar.com/";
   int len = LogAccess::strlen(str);
   if (buf) {
     marshal_str(buf, str, len);
@@ -184,7 +184,7 @@ LogAccessTest::marshal_client_finish_status_code(char *buf)
 int
 LogAccessTest::marshal_proxy_resp_content_type(char *buf)
 {
-  static char const* str = "text/html";
+  static char const *str = "text/html";
   int len = LogAccess::strlen(str);
   if (buf) {
     marshal_str(buf, str, len);
@@ -339,7 +339,7 @@ LogAccessTest::marshal_server_host_ip(char *buf)
 int
 LogAccessTest::marshal_server_host_name(char *buf)
 {
-  static char const* str = "www.foobar.com";
+  static char const *str = "www.foobar.com";
   int len = LogAccess::strlen(str);
   if (buf) {
     marshal_str(buf, str, len);
@@ -405,5 +405,5 @@ LogAccessTest::marshal_transfer_time_ms(char *buf)
 int
 LogAccessTest::marshal_http_header_field(char *header_symbol, char *field, char *buf)
 {
-  return 0;                     // STUB
+  return 0; // STUB
 }

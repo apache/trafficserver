@@ -30,17 +30,19 @@
 
 using namespace net_instaweb;
 
-AtsRewriteOptions* AtsServerContext::config() {
-  return (AtsRewriteOptions*)global_options();
+AtsRewriteOptions *
+AtsServerContext::config()
+{
+  return (AtsRewriteOptions *)global_options();
 }
 
-AtsServerContext::AtsServerContext(AtsRewriteDriverFactory* factory) :
-  // TODO(oschaaf): host/port
-  SystemServerContext(factory, "foo.com" /*hostname*/, 8080/*port*/),
-    initialized_(false),
-    ats_factory_(factory) {
+AtsServerContext::AtsServerContext(AtsRewriteDriverFactory *factory)
+  : // TODO(oschaaf): host/port
+    SystemServerContext(factory, "foo.com" /*hostname*/, 8080 /*port*/),
+    initialized_(false), ats_factory_(factory)
+{
 }
 
-AtsServerContext::~AtsServerContext() {
-
+AtsServerContext::~AtsServerContext()
+{
 }

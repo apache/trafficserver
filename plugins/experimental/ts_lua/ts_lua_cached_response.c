@@ -20,38 +20,36 @@
 #include "ts_lua_util.h"
 
 
-#define TS_LUA_CHECK_CACHED_RESPONSE_HDR(http_ctx)   \
-do {                                                 \
-    TSMBuffer       bufp;                            \
-    TSMLoc          hdrp;                            \
-    if (!http_ctx->cached_response_hdrp) {           \
-        if (TSHttpTxnCachedRespGet(http_ctx->txnp,   \
-                    &bufp,                           \
-                    &hdrp) != TS_SUCCESS) {          \
-            return 0;                                \
-        }                                            \
-        http_ctx->cached_response_bufp = TSMBufferCreate();                                         \
-        http_ctx->cached_response_hdrp = TSHttpHdrCreate(http_ctx->cached_response_bufp);           \
-        TSHttpHdrCopy(http_ctx->cached_response_bufp, http_ctx->cached_response_hdrp, bufp, hdrp);  \
-        TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdrp);                                              \
-    }   \
-} while(0)
+#define TS_LUA_CHECK_CACHED_RESPONSE_HDR(http_ctx)                                               \
+  do {                                                                                           \
+    TSMBuffer bufp;                                                                              \
+    TSMLoc hdrp;                                                                                 \
+    if (!http_ctx->cached_response_hdrp) {                                                       \
+      if (TSHttpTxnCachedRespGet(http_ctx->txnp, &bufp, &hdrp) != TS_SUCCESS) {                  \
+        return 0;                                                                                \
+      }                                                                                          \
+      http_ctx->cached_response_bufp = TSMBufferCreate();                                        \
+      http_ctx->cached_response_hdrp = TSHttpHdrCreate(http_ctx->cached_response_bufp);          \
+      TSHttpHdrCopy(http_ctx->cached_response_bufp, http_ctx->cached_response_hdrp, bufp, hdrp); \
+      TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdrp);                                             \
+    }                                                                                            \
+  } while (0)
 
 
-static void ts_lua_inject_cached_response_misc_api(lua_State * L);
-static void ts_lua_inject_cached_response_header_api(lua_State * L);
-static void ts_lua_inject_cached_response_headers_api(lua_State * L);
+static void ts_lua_inject_cached_response_misc_api(lua_State *L);
+static void ts_lua_inject_cached_response_header_api(lua_State *L);
+static void ts_lua_inject_cached_response_headers_api(lua_State *L);
 
-static int ts_lua_cached_response_header_get(lua_State * L);
-static int ts_lua_cached_response_header_set(lua_State * L);
-static int ts_lua_cached_response_get_headers(lua_State * L);
+static int ts_lua_cached_response_header_get(lua_State *L);
+static int ts_lua_cached_response_header_set(lua_State *L);
+static int ts_lua_cached_response_get_headers(lua_State *L);
 
-static int ts_lua_cached_response_get_status(lua_State * L);
-static int ts_lua_cached_response_get_version(lua_State * L);
+static int ts_lua_cached_response_get_status(lua_State *L);
+static int ts_lua_cached_response_get_version(lua_State *L);
 
 
 void
-ts_lua_inject_cached_response_api(lua_State * L)
+ts_lua_inject_cached_response_api(lua_State *L)
 {
   lua_newtable(L);
 
@@ -64,9 +62,9 @@ ts_lua_inject_cached_response_api(lua_State * L)
 }
 
 static void
-ts_lua_inject_cached_response_header_api(lua_State * L)
+ts_lua_inject_cached_response_header_api(lua_State *L)
 {
-  lua_newtable(L);              /*  .header */
+  lua_newtable(L); /*  .header */
 
   lua_createtable(L, 0, 2);
 
@@ -83,14 +81,14 @@ ts_lua_inject_cached_response_header_api(lua_State * L)
 }
 
 static void
-ts_lua_inject_cached_response_headers_api(lua_State * L)
+ts_lua_inject_cached_response_headers_api(lua_State *L)
 {
   lua_pushcfunction(L, ts_lua_cached_response_get_headers);
   lua_setfield(L, -2, "get_headers");
 }
 
 static void
-ts_lua_inject_cached_response_misc_api(lua_State * L)
+ts_lua_inject_cached_response_misc_api(lua_State *L)
 {
   lua_pushcfunction(L, ts_lua_cached_response_get_status);
   lua_setfield(L, -2, "get_status");
@@ -100,7 +98,7 @@ ts_lua_inject_cached_response_misc_api(lua_State * L)
 }
 
 static int
-ts_lua_cached_response_get_status(lua_State * L)
+ts_lua_cached_response_get_status(lua_State *L)
 {
   int status;
   ts_lua_http_ctx *http_ctx;
@@ -117,7 +115,7 @@ ts_lua_cached_response_get_status(lua_State * L)
 }
 
 static int
-ts_lua_cached_response_get_version(lua_State * L)
+ts_lua_cached_response_get_version(lua_State *L)
 {
   int version;
   char buf[32];
@@ -132,9 +130,9 @@ ts_lua_cached_response_get_version(lua_State * L)
   version = TSHttpHdrVersionGet(http_ctx->cached_response_bufp, http_ctx->cached_response_hdrp);
 
   n = snprintf(buf, sizeof(buf), "%d.%d", TS_HTTP_MAJOR(version), TS_HTTP_MINOR(version));
-  if(n >= (int)sizeof(buf)) {
+  if (n >= (int)sizeof(buf)) {
     lua_pushlstring(L, buf, sizeof(buf) - 1);
-  } else if(n > 0){
+  } else if (n > 0) {
     lua_pushlstring(L, buf, n);
   }
 
@@ -142,7 +140,7 @@ ts_lua_cached_response_get_version(lua_State * L)
 }
 
 static int
-ts_lua_cached_response_header_get(lua_State * L)
+ts_lua_cached_response_header_get(lua_State *L)
 {
   const char *key;
   const char *val;
@@ -163,9 +161,7 @@ ts_lua_cached_response_header_get(lua_State * L)
     field_loc = TSMimeHdrFieldFind(http_ctx->cached_response_bufp, http_ctx->cached_response_hdrp, key, key_len);
 
     if (field_loc) {
-      val =
-        TSMimeHdrFieldValueStringGet(http_ctx->cached_response_bufp, http_ctx->cached_response_hdrp, field_loc, -1,
-                                     &val_len);
+      val = TSMimeHdrFieldValueStringGet(http_ctx->cached_response_bufp, http_ctx->cached_response_hdrp, field_loc, -1, &val_len);
       lua_pushlstring(L, val, val_len);
       TSHandleMLocRelease(http_ctx->cached_response_bufp, http_ctx->cached_response_hdrp, field_loc);
 
@@ -180,13 +176,13 @@ ts_lua_cached_response_header_get(lua_State * L)
 }
 
 static int
-ts_lua_cached_response_header_set(lua_State * L ATS_UNUSED)
+ts_lua_cached_response_header_set(lua_State *L ATS_UNUSED)
 {
   return 0;
 }
 
 static int
-ts_lua_cached_response_get_headers(lua_State * L)
+ts_lua_cached_response_get_headers(lua_State *L)
 {
   const char *name;
   const char *value;
@@ -206,13 +202,10 @@ ts_lua_cached_response_get_headers(lua_State * L)
   field_loc = TSMimeHdrFieldGet(http_ctx->cached_response_bufp, http_ctx->cached_response_hdrp, 0);
 
   while (field_loc) {
-
     name = TSMimeHdrFieldNameGet(http_ctx->cached_response_bufp, http_ctx->cached_response_hdrp, field_loc, &name_len);
     if (name && name_len) {
-
       value =
-        TSMimeHdrFieldValueStringGet(http_ctx->cached_response_bufp, http_ctx->cached_response_hdrp, field_loc, -1,
-                                     &value_len);
+        TSMimeHdrFieldValueStringGet(http_ctx->cached_response_bufp, http_ctx->cached_response_hdrp, field_loc, -1, &value_len);
       lua_pushlstring(L, name, name_len);
       lua_pushlstring(L, value, value_len);
       lua_rawset(L, -3);

@@ -30,27 +30,27 @@
 #include <stdio.h>
 #include <stdarg.h>
 #ifdef HAVE_STDLIB_H
-# include <stdlib.h>
+#include <stdlib.h>
 #endif
 #include <ctype.h>
 #ifdef HAVE_STRING_H
-# include <string.h>
+#include <string.h>
 #endif
 #ifdef HAVE_STRINGS_H
-# include <strings.h>
+#include <strings.h>
 #endif
 #include <errno.h>
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
 #ifdef HAVE_SYS_STAT_H
-# include <sys/stat.h>
+#include <sys/stat.h>
 #endif
 #include <fcntl.h>
 
 #include <limits.h>
 #ifdef HAVE_UNISTD_H
-# include <unistd.h>
+#include <unistd.h>
 #endif
 #include <sys/stat.h>
 #include <assert.h>
@@ -72,39 +72,39 @@
 #include <sys/mman.h>
 
 #ifdef HAVE_NETINET_IN_H
-# include <netinet/in.h>
+#include <netinet/in.h>
 #endif
 #ifdef HAVE_NETINET_IN_SYSTM_H
-# include <netinet/in_systm.h>
+#include <netinet/in_systm.h>
 #endif
 #ifdef HAVE_NETINET_TCP_H
-# include <netinet/tcp.h>
+#include <netinet/tcp.h>
 #endif
 #ifdef HAVE_NETINET_IP_H
-# include <netinet/ip.h>
+#include <netinet/ip.h>
 #endif
 #ifdef HAVE_NETINET_IP_ICMP_H
-# include <netinet/ip_icmp.h>
+#include <netinet/ip_icmp.h>
 #endif
 #ifdef HAVE_NETDB_H
-# include <netdb.h>
+#include <netdb.h>
 #endif
 #ifdef HAVE_ARPA_INET_H
-# include <arpa/inet.h>
+#include <arpa/inet.h>
 #endif
 #ifdef HAVE_ARPA_NAMESER_H
-# include <arpa/nameser.h>
+#include <arpa/nameser.h>
 #endif
 #ifdef HAVE_ARPA_NAMESER_COMPAT_H
-# include <arpa/nameser_compat.h>
+#include <arpa/nameser_compat.h>
 #endif
 
 #include <signal.h>
 #ifdef HAVE_SIGINFO_H
-# include <siginfo.h>
+#include <siginfo.h>
 #endif
 #ifdef HAVE_WAIT_H
-# include <wait.h>
+#include <wait.h>
 #endif
 
 #include <syslog.h>
@@ -123,17 +123,17 @@
 
 
 #ifdef HAVE_VALUES_H
-# include <values.h>
+#include <values.h>
 #endif
 #ifdef HAVE_ALLOCA_H
-# include <alloca.h>
+#include <alloca.h>
 #endif
 
 #include <errno.h>
 #include <dirent.h>
 
 #ifdef HAVE_CPIO_H
-# include <cpio.h>
+#include <cpio.h>
 #endif
 
 struct ifafilt;
@@ -152,20 +152,20 @@ struct ifafilt;
 #endif
 
 #ifdef HAVE_MACHINE_ENDIAN_H
-# include <machine/endian.h>
+#include <machine/endian.h>
 #endif
 #ifdef HAVE_ENDIAN_H
-# include <endian.h>
+#include <endian.h>
 #endif
 #ifdef HAVE_SYS_BYTEORDER_H
-# include <sys/byteorder.h>
+#include <sys/byteorder.h>
 #endif
 
 #ifdef HAVE_SYS_IOCTL_H
-# include <sys/ioctl.h>
+#include <sys/ioctl.h>
 #endif
 #ifdef HAVE_SYS_SOCKIO_H
-# include <sys/sockio.h>
+#include <sys/sockio.h>
 #endif
 
 #include <resolv.h>
@@ -176,30 +176,30 @@ typedef unsigned int in_addr_t;
 #endif
 
 #ifdef HAVE_SYS_SYSINFO_H
-# include <sys/sysinfo.h>
+#include <sys/sysinfo.h>
 #endif
 
 #if !defined(darwin)
-# ifdef HAVE_SYS_SYSCTL_H
-#  include <sys/sysctl.h>
-# endif
+#ifdef HAVE_SYS_SYSCTL_H
+#include <sys/sysctl.h>
+#endif
 #endif
 #ifdef HAVE_SYS_SYSTEMINFO_H
-# include <sys/systeminfo.h>
+#include <sys/systeminfo.h>
 #endif
 
 #ifdef HAVE_DLFCN_H
-# include <dlfcn.h>
+#include <dlfcn.h>
 #endif
 #ifdef HAVE_MATH_H
-# include <math.h>
+#include <math.h>
 #endif
 #ifdef HAVE_FLOAT_H
-# include <float.h>
+#include <float.h>
 #endif
 
 #ifdef HAVE_SYS_SYSMACROS_H
-# include <sys/sysmacros.h>
+#include <sys/sysmacros.h>
 #endif
 
 #ifdef HAVE_SYS_PRCTL_H

@@ -30,10 +30,10 @@ PriorityEventQueue::PriorityEventQueue()
 }
 
 void
-PriorityEventQueue::check_ready(ink_hrtime now, EThread * t)
+PriorityEventQueue::check_ready(ink_hrtime now, EThread *t)
 {
   int i, j, k = 0;
-  uint32_t check_buckets = (uint32_t) (now / PQ_BUCKET_TIME(0));
+  uint32_t check_buckets = (uint32_t)(now / PQ_BUCKET_TIME(0));
   uint32_t todo_buckets = check_buckets ^ last_check_buckets;
   last_check_time = now;
   last_check_buckets = check_buckets;

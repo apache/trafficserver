@@ -32,8 +32,7 @@
 
 // Net Stats
 
-enum Net_Stats
-{
+enum Net_Stats {
   net_handler_run_stat,
   net_read_bytes_stat,
   net_write_bytes_stat,
@@ -59,32 +58,30 @@ enum Net_Stats
 
 struct RecRawStatBlock;
 extern RecRawStatBlock *net_rsb;
-#define SSL_HANDSHAKE_WANT_READ   6
-#define SSL_HANDSHAKE_WANT_WRITE  7
+#define SSL_HANDSHAKE_WANT_READ 6
+#define SSL_HANDSHAKE_WANT_WRITE 7
 #define SSL_HANDSHAKE_WANT_ACCEPT 8
 #define SSL_HANDSHAKE_WANT_CONNECT 9
 
-#define NET_INCREMENT_DYN_STAT(_x)  \
-RecIncrRawStatSum(net_rsb, mutex->thread_holding, (int)_x, 1)
+#define NET_INCREMENT_DYN_STAT(_x) RecIncrRawStatSum(net_rsb, mutex->thread_holding, (int)_x, 1)
 
-#define NET_DECREMENT_DYN_STAT(_x) \
-RecIncrRawStatSum(net_rsb, mutex->thread_holding, (int)_x, -1)
+#define NET_DECREMENT_DYN_STAT(_x) RecIncrRawStatSum(net_rsb, mutex->thread_holding, (int)_x, -1)
 
-#define NET_SUM_DYN_STAT(_x, _r) \
-RecIncrRawStatSum(net_rsb, mutex->thread_holding, (int)_x, _r)
+#define NET_SUM_DYN_STAT(_x, _r) RecIncrRawStatSum(net_rsb, mutex->thread_holding, (int)_x, _r)
 
-#define NET_READ_DYN_SUM(_x, _sum)  RecGetRawStatSum(net_rsb, (int)_x, &_sum)
+#define NET_READ_DYN_SUM(_x, _sum) RecGetRawStatSum(net_rsb, (int)_x, &_sum)
 
-#define NET_READ_DYN_STAT(_x, _count, _sum) do {\
-RecGetRawStatSum(net_rsb, (int)_x, &_sum);          \
-RecGetRawStatCount(net_rsb, (int)_x, &_count);         \
-} while (0)
+#define NET_READ_DYN_STAT(_x, _count, _sum)        \
+  do {                                             \
+    RecGetRawStatSum(net_rsb, (int)_x, &_sum);     \
+    RecGetRawStatCount(net_rsb, (int)_x, &_count); \
+  } while (0)
 
-#define NET_CLEAR_DYN_STAT(x) \
-do { \
-	RecSetRawStatSum(net_rsb, x, 0); \
-	RecSetRawStatCount(net_rsb, x, 0); \
-} while (0);
+#define NET_CLEAR_DYN_STAT(x)          \
+  do {                                 \
+    RecSetRawStatSum(net_rsb, x, 0);   \
+    RecSetRawStatCount(net_rsb, x, 0); \
+  } while (0);
 
 // For global access
 #define NET_SUM_GLOBAL_DYN_STAT(_x, _r) RecIncrGlobalRawStatSum(net_rsb, (_x), (_r))
@@ -109,15 +106,15 @@ do { \
 #include "P_SSLNetAccept.h"
 #include "P_SSLCertLookup.h"
 
-#undef  NET_SYSTEM_MODULE_VERSION
-#define NET_SYSTEM_MODULE_VERSION makeModuleVersion(                    \
-                                       NET_SYSTEM_MODULE_MAJOR_VERSION, \
-                                       NET_SYSTEM_MODULE_MINOR_VERSION, \
-                                       PRIVATE_MODULE_HEADER)
+#undef NET_SYSTEM_MODULE_VERSION
+#define NET_SYSTEM_MODULE_VERSION \
+  makeModuleVersion(NET_SYSTEM_MODULE_MAJOR_VERSION, NET_SYSTEM_MODULE_MINOR_VERSION, PRIVATE_MODULE_HEADER)
 
 // For very verbose iocore debugging.
 #ifndef DEBUG
-#define NetDebug if (0) dummy_debug
+#define NetDebug \
+  if (0)         \
+  dummy_debug
 #else
 #define NetDebug Debug
 #endif

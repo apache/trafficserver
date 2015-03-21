@@ -33,9 +33,9 @@
 #include <ts/experimental.h>
 
 TSPrefetchReturnCode
-my_preparse_hook(TSPrefetchHookID hook, TSPrefetchInfo * info)
+my_preparse_hook(TSPrefetchHookID hook, TSPrefetchInfo *info)
 {
-  unsigned char *ip = (unsigned char *) &info->client_ip;
+  unsigned char *ip = (unsigned char *)&info->client_ip;
 
   printf("preparse hook (%d): request from child %u.%u.%u.%u\n", hook, ip[0], ip[1], ip[2], ip[3]);
 
@@ -45,13 +45,12 @@ my_preparse_hook(TSPrefetchHookID hook, TSPrefetchInfo * info)
 }
 
 TSPrefetchReturnCode
-my_embedded_url_hook(TSPrefetchHookID hook, TSPrefetchInfo * info)
+my_embedded_url_hook(TSPrefetchHookID hook, TSPrefetchInfo *info)
 {
+  unsigned char *ip = (unsigned char *)&info->client_ip;
 
-  unsigned char *ip = (unsigned char *) &info->client_ip;
-
-  printf("url hook (%d): url: %s %s child: %u.%u.%u.%u\n",
-         hook, info->embedded_url, (info->present_in_cache) ? "(present in cache)" : "", ip[0], ip[1], ip[2], ip[3]);
+  printf("url hook (%d): url: %s %s child: %u.%u.%u.%u\n", hook, info->embedded_url,
+         (info->present_in_cache) ? "(present in cache)" : "", ip[0], ip[1], ip[2], ip[3]);
 
   /*
      We will select UDP for sending url and TCP for sending object

@@ -37,7 +37,7 @@
 // Protected Interface
 //-------------------------------------------------------------------------
 
-int RecRegisterRawStatSyncCb(const char *name, RecRawStatSyncCb sync_cb, RecRawStatBlock * rsb, int id);
+int RecRegisterRawStatSyncCb(const char *name, RecRawStatSyncCb sync_cb, RecRawStatBlock *rsb, int id);
 
 int RecExecRawStatSyncCbs();
 

@@ -32,7 +32,7 @@
 #include "I_Layout.h"
 #include "P_HostDB.h"
 #include "P_MultiCache.h"
-#include "P_EventSystem.h"      // FIXME: need to have this in I_* header files.
+#include "P_EventSystem.h" // FIXME: need to have this in I_* header files.
 #include "ink_file.h"
 
 static const int MC_SYNC_MIN_PAUSE_TIME = HRTIME_MSECONDS(200); // Pause for at least 200ms
@@ -53,7 +53,7 @@ store_verify(Store *store)
   if (!store)
     return 0;
   for (unsigned i = 0; i < store->n_disks; i++) {
-    for (Span * sd = store->disk[i]; sd; sd = sd->link.next) {
+    for (Span *sd = store->disk[i]; sd; sd = sd->link.next) {
       if (!sd->file_pathname && sd->offset)
         return 0;
     }
@@ -62,9 +62,8 @@ store_verify(Store *store)
 }
 
 MultiCacheHeader::MultiCacheHeader()
-  : magic(MULTI_CACHE_MAGIC_NUMBER), levels(0),
-    tag_bits(0), max_hits(0), elementsize(0),
-    buckets(0), totalelements(0), totalsize(0), nominal_elements(0), heap_size(0), heap_halfspace(0)
+  : magic(MULTI_CACHE_MAGIC_NUMBER), levels(0), tag_bits(0), max_hits(0), elementsize(0), buckets(0), totalelements(0),
+    totalsize(0), nominal_elements(0), heap_size(0), heap_halfspace(0)
 {
   memset(level_offset, 0, sizeof(level_offset));
   memset(bucketsize, 0, sizeof(bucketsize));
@@ -78,7 +77,7 @@ MultiCacheHeader::MultiCacheHeader()
 static inline int
 bytes_to_blocks(int64_t b)
 {
-  return (int) ((b + (STORE_BLOCK_SIZE - 1)) / STORE_BLOCK_SIZE);
+  return (int)((b + (STORE_BLOCK_SIZE - 1)) / STORE_BLOCK_SIZE);
 }
 
 inline int
@@ -88,7 +87,7 @@ MultiCacheBase::blocks_in_level(unsigned int level)
   int prevblocks = 0;
   int b = 0;
   for (unsigned int i = 0; i <= level; i++) {
-    sumbytes += buckets * ((int64_t) bucketsize[i]);
+    sumbytes += buckets * ((int64_t)bucketsize[i]);
     int sumblocks = bytes_to_blocks(sumbytes);
     b = sumblocks - prevblocks;
     prevblocks = sumblocks;
@@ -102,10 +101,8 @@ MultiCacheBase::blocks_in_level(unsigned int level)
 // The higher levels (lower in number) contain fewer.
 //
 int
-MultiCacheBase::initialize(Store *astore, char *afilename,
-                           int aelements, int abuckets, unsigned int alevels,
-                           int level0_elements_per_bucket,
-                           int level1_elements_per_bucket, int level2_elements_per_bucket)
+MultiCacheBase::initialize(Store *astore, char *afilename, int aelements, int abuckets, unsigned int alevels,
+                           int level0_elements_per_bucket, int level1_elements_per_bucket, int level2_elements_per_bucket)
 {
   int64_t size = 0;
 
@@ -136,7 +133,7 @@ MultiCacheBase::initialize(Store *astore, char *afilename,
     elements[2] = level2_elements_per_bucket;
     totalelements += buckets * level2_elements_per_bucket;
     bucketsize[2] = elementsize * level2_elements_per_bucket;
-    size += (int64_t) bucketsize[2] * (int64_t) buckets;
+    size += (int64_t)bucketsize[2] * (int64_t)buckets;
 
     if (!(level2_elements_per_bucket / level1_elements_per_bucket)) {
       Warning("Size change too large, unable to reconfigure");
@@ -159,7 +156,7 @@ MultiCacheBase::initialize(Store *astore, char *afilename,
     elements[1] = level1_elements_per_bucket;
     totalelements += buckets * level1_elements_per_bucket;
     bucketsize[1] = elementsize * level1_elements_per_bucket;
-    size += (int64_t) bucketsize[1] * (int64_t) buckets;
+    size += (int64_t)bucketsize[1] * (int64_t)buckets;
     if (!(level1_elements_per_bucket / level0_elements_per_bucket)) {
       Warning("Size change too large, unable to reconfigure");
       return -2;
@@ -179,18 +176,18 @@ MultiCacheBase::initialize(Store *astore, char *afilename,
   elements[0] = level0_elements_per_bucket;
   totalelements += buckets * level0_elements_per_bucket;
   bucketsize[0] = elementsize * level0_elements_per_bucket;
-  size += (int64_t) bucketsize[0] * (int64_t) buckets;
+  size += (int64_t)bucketsize[0] * (int64_t)buckets;
 
   buckets_per_partitionF8 = (buckets << 8) / MULTI_CACHE_PARTITIONS;
   ink_release_assert(buckets_per_partitionF8);
 
   unsigned int blocks = (size + (STORE_BLOCK_SIZE - 1)) / STORE_BLOCK_SIZE;
 
-  heap_size = int ((float)totalelements * estimated_heap_bytes_per_entry());
+  heap_size = int((float)totalelements * estimated_heap_bytes_per_entry());
   blocks += bytes_to_blocks(heap_size);
 
-  blocks += 1;                  // header
-  totalsize = (int64_t) blocks *(int64_t) STORE_BLOCK_SIZE;
+  blocks += 1; // header
+  totalsize = (int64_t)blocks * (int64_t)STORE_BLOCK_SIZE;
 
   Debug("multicache", "heap_size = %d, totalelements = %d, totalsize = %d", heap_size, totalelements, totalsize);
 
@@ -209,13 +206,13 @@ MultiCacheBase::initialize(Store *astore, char *afilename,
     Warning("Configured store too small, unable to reconfigure");
     return -3;
   }
-  totalsize = (STORE_BLOCK_SIZE) * blocks;
+  totalsize = (STORE_BLOCK_SIZE)*blocks;
 
   level_offset[1] = buckets * bucketsize[0];
   level_offset[2] = buckets * bucketsize[1] + level_offset[1];
 
   if (lowest_level_data)
-    delete[]lowest_level_data;
+    delete[] lowest_level_data;
   lowest_level_data = new char[lowest_level_data_size()];
   ink_assert(lowest_level_data);
   memset(lowest_level_data, 0xFF, lowest_level_data_size());
@@ -224,7 +221,7 @@ MultiCacheBase::initialize(Store *astore, char *afilename,
 }
 
 char *
-MultiCacheBase::mmap_region(int blocks, int *fds, char *cur, size_t& total_length, bool private_flag, int zero_fill)
+MultiCacheBase::mmap_region(int blocks, int *fds, char *cur, size_t &total_length, bool private_flag, int zero_fill)
 {
   if (!blocks)
     return cur;
@@ -252,13 +249,13 @@ MultiCacheBase::mmap_region(int blocks, int *fds, char *cur, size_t& total_lengt
         int flags = private_flag ? MAP_PRIVATE : MAP_SHARED_MAP_NORESERVE;
 
         if (cur)
-          res = (char *) mmap(cur, nbytes, PROT_READ | PROT_WRITE, MAP_FIXED | flags, fd, d->offset * STORE_BLOCK_SIZE);
+          res = (char *)mmap(cur, nbytes, PROT_READ | PROT_WRITE, MAP_FIXED | flags, fd, d->offset * STORE_BLOCK_SIZE);
         else
-          res = (char *) mmap(cur, nbytes, PROT_READ | PROT_WRITE, flags, fd, d->offset * STORE_BLOCK_SIZE);
+          res = (char *)mmap(cur, nbytes, PROT_READ | PROT_WRITE, flags, fd, d->offset * STORE_BLOCK_SIZE);
 
         d->offset += b;
 
-        if (res == NULL || res == (caddr_t) MAP_FAILED)
+        if (res == NULL || res == (caddr_t)MAP_FAILED)
           return NULL;
         ink_assert(!cur || res == cur);
         cur = res + nbytes;
@@ -278,7 +275,7 @@ MultiCacheBase::reset()
     delete store;
   store = 0;
   if (lowest_level_data)
-    delete[]lowest_level_data;
+    delete[] lowest_level_data;
   lowest_level_data = 0;
   if (data)
     unmap_data();
@@ -301,7 +298,7 @@ int
 MultiCacheBase::mmap_data(bool private_flag, bool zero_fill)
 {
   ats_scoped_fd fd;
-  int fds[MULTI_CACHE_MAX_FILES] = { 0 };
+  int fds[MULTI_CACHE_MAX_FILES] = {0};
   int n_fds = 0;
   size_t total_mapped = 0; // total mapped memory from storage.
 
@@ -374,13 +371,13 @@ MultiCacheBase::mmap_data(bool private_flag, bool zero_fill)
     }
 #endif
 
-    // lots of useless stuff
+// lots of useless stuff
 #if defined(darwin)
-    cur = (char *) mmap(0, totalsize, PROT_READ, MAP_SHARED_MAP_NORESERVE | MAP_ANON, -1, 0);
+    cur = (char *)mmap(0, totalsize, PROT_READ, MAP_SHARED_MAP_NORESERVE | MAP_ANON, -1, 0);
 #else
-    cur = (char *) mmap(0, totalsize, PROT_READ, MAP_SHARED_MAP_NORESERVE, fd, 0);
+    cur = (char *)mmap(0, totalsize, PROT_READ, MAP_SHARED_MAP_NORESERVE, fd, 0);
 #endif
-    if (cur == NULL || cur == (caddr_t) MAP_FAILED) {
+    if (cur == NULL || cur == (caddr_t)MAP_FAILED) {
       store = saved;
 #if defined(darwin)
       Warning("unable to mmap anonymous region for %u bytes: %d, %s", totalsize, errno, strerror(errno));
@@ -432,7 +429,7 @@ MultiCacheBase::mmap_data(bool private_flag, bool zero_fill)
         goto Labort;
       }
     }
-    mapped_header = (MultiCacheHeader *) cur;
+    mapped_header = (MultiCacheHeader *)cur;
     if (!mmap_region(1, fds, cur, total_mapped, private_flag, fd)) {
       store = saved;
       goto Labort;
@@ -450,29 +447,28 @@ MultiCacheBase::mmap_data(bool private_flag, bool zero_fill)
   }
 
   return 0;
-Lalloc:
-  {
-    free(data);
-    char *cur = 0;
+Lalloc : {
+  free(data);
+  char *cur = 0;
 
-    data = (char *)ats_memalign(ats_pagesize(), totalsize);
-    cur = data + STORE_BLOCK_SIZE * blocks_in_level(0);
-    if (levels > 1)
-      cur = data + STORE_BLOCK_SIZE * blocks_in_level(1);
-    if (levels > 2)
-      cur = data + STORE_BLOCK_SIZE * blocks_in_level(2);
-    if (heap_size) {
-      heap = cur;
-      cur += bytes_to_blocks(heap_size) * STORE_BLOCK_SIZE;
-    }
-    mapped_header = (MultiCacheHeader *) cur;
-    for (int i = 0; i < n_fds; i++) {
-      if (fds[i] >= 0)
-        socketManager.close(fds[i]);
-    }
-
-    return 0;
+  data = (char *)ats_memalign(ats_pagesize(), totalsize);
+  cur = data + STORE_BLOCK_SIZE * blocks_in_level(0);
+  if (levels > 1)
+    cur = data + STORE_BLOCK_SIZE * blocks_in_level(1);
+  if (levels > 2)
+    cur = data + STORE_BLOCK_SIZE * blocks_in_level(2);
+  if (heap_size) {
+    heap = cur;
+    cur += bytes_to_blocks(heap_size) * STORE_BLOCK_SIZE;
   }
+  mapped_header = (MultiCacheHeader *)cur;
+  for (int i = 0; i < n_fds; i++) {
+    if (fds[i] >= 0)
+      socketManager.close(fds[i]);
+  }
+
+  return 0;
+}
 
 Labort:
   for (int i = 0; i < n_fds; i++) {
@@ -492,18 +488,18 @@ MultiCacheBase::clear()
   heap_used[0] = 8;
   heap_used[1] = 8;
   heap_halfspace = 0;
-  *mapped_header = *(MultiCacheHeader *) this;
+  *mapped_header = *(MultiCacheHeader *)this;
 }
 
 void
 MultiCacheBase::clear_but_heap()
 {
   memset(data, 0, totalelements * elementsize);
-  *mapped_header = *(MultiCacheHeader *) this;
+  *mapped_header = *(MultiCacheHeader *)this;
 }
 
 int
-MultiCacheBase::read_config(const char *config_filename, Store & s, char *fn, int *pi, int *pbuck)
+MultiCacheBase::read_config(const char *config_filename, Store &s, char *fn, int *pi, int *pbuck)
 {
   int scratch;
   ats_scoped_str rundir(RecConfigReadRuntimeDir());
@@ -548,7 +544,7 @@ MultiCacheBase::write_config(const char *config_filename, int nominal_size, int 
 
   Layout::relative_to(p, sizeof(p), rundir, config_filename);
 
-  if ((fd =::open(p, O_CREAT | O_WRONLY | O_TRUNC, 0644)) >= 0) {
+  if ((fd = ::open(p, O_CREAT | O_WRONLY | O_TRUNC, 0644)) >= 0) {
     snprintf(buf, sizeof(buf) - 1, "%d\n%d\n%d\n", nominal_size, abuckets, heap_size);
     buf[sizeof(buf) - 1] = 0;
     if (ink_file_fd_writestring(fd, buf) != -1 && store->write(fd, filename) >= 0)
@@ -561,8 +557,7 @@ MultiCacheBase::write_config(const char *config_filename, int nominal_size, int 
 }
 
 int
-MultiCacheBase::open(Store *s, const char *config_filename, char *db_filename, int db_size,
-                     bool reconfigure, bool fix, bool silent)
+MultiCacheBase::open(Store *s, const char *config_filename, char *db_filename, int db_size, bool reconfigure, bool fix, bool silent)
 {
   int ret = 0;
   const char *err = NULL;
@@ -628,7 +623,7 @@ MultiCacheBase::open(Store *s, const char *config_filename, char *db_filename, i
             stealStore(freeStore, delta);
             Store more;
             freeStore.spread_alloc(more, delta);
-            if (delta > (int) more.total_blocks())
+            if (delta > (int)more.total_blocks())
               goto LfailReconfig;
             Store more_diff;
             s->try_realloc(more, more_diff);
@@ -676,7 +671,7 @@ MultiCacheBase::open(Store *s, const char *config_filename, char *db_filename, i
           goto LfailMap;
         if (!verify_header())
           goto LheaderCorrupt;
-        *(MultiCacheHeader *) this = *mapped_header;
+        *(MultiCacheHeader *)this = *mapped_header;
         ink_assert(store_verify(store));
 
         if (fix)
@@ -730,20 +725,19 @@ LfailMap:
   serr = strerror(errno);
   goto Lfail;
 
-Lfail:
-  {
-    unmap_data();
-    if (!silent) {
-      if (reconfigure) {
-        RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "%s: [%s] %s: disabling database\n"
-                     "You may need to 'reconfigure' your cache manually.  Please refer to\n"
-                     "the 'Configuration' chapter in the manual.", err, config_filename, serr ? serr : "");
-      } else {
-        RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "%s: [%s] %s: reinitializing database", err, config_filename,
-                     serr ? serr : "");
-      }
+Lfail : {
+  unmap_data();
+  if (!silent) {
+    if (reconfigure) {
+      RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "%s: [%s] %s: disabling database\n"
+                                                "You may need to 'reconfigure' your cache manually.  Please refer to\n"
+                                                "the 'Configuration' chapter in the manual.",
+                       err, config_filename, serr ? serr : "");
+    } else {
+      RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "%s: [%s] %s: reinitializing database", err, config_filename, serr ? serr : "");
     }
   }
+}
   ret = -1;
   goto Lcontinue;
 }
@@ -751,31 +745,21 @@ Lfail:
 bool
 MultiCacheBase::verify_header()
 {
-  return
-    mapped_header->magic == magic &&
-    mapped_header->version.ink_major == version.ink_major &&
-    mapped_header->version.ink_minor == version.ink_minor &&
-    mapped_header->levels == levels &&
-    mapped_header->tag_bits == tag_bits &&
-    mapped_header->max_hits == max_hits &&
-    mapped_header->elementsize == elementsize &&
-    mapped_header->buckets == buckets &&
-    mapped_header->level_offset[0] == level_offset[0] &&
-    mapped_header->level_offset[1] == level_offset[1] &&
-    mapped_header->level_offset[2] == level_offset[2] &&
-    mapped_header->elements[0] == elements[0] &&
-    mapped_header->elements[1] == elements[1] &&
-    mapped_header->elements[2] == elements[2] &&
-    mapped_header->bucketsize[0] == bucketsize[0] &&
-    mapped_header->bucketsize[1] == bucketsize[1] &&
-    mapped_header->bucketsize[2] == bucketsize[2] &&
-    mapped_header->totalelements == totalelements &&
-    mapped_header->totalsize == totalsize && mapped_header->nominal_elements == nominal_elements;
+  return mapped_header->magic == magic && mapped_header->version.ink_major == version.ink_major &&
+         mapped_header->version.ink_minor == version.ink_minor && mapped_header->levels == levels &&
+         mapped_header->tag_bits == tag_bits && mapped_header->max_hits == max_hits && mapped_header->elementsize == elementsize &&
+         mapped_header->buckets == buckets && mapped_header->level_offset[0] == level_offset[0] &&
+         mapped_header->level_offset[1] == level_offset[1] && mapped_header->level_offset[2] == level_offset[2] &&
+         mapped_header->elements[0] == elements[0] && mapped_header->elements[1] == elements[1] &&
+         mapped_header->elements[2] == elements[2] && mapped_header->bucketsize[0] == bucketsize[0] &&
+         mapped_header->bucketsize[1] == bucketsize[1] && mapped_header->bucketsize[2] == bucketsize[2] &&
+         mapped_header->totalelements == totalelements && mapped_header->totalsize == totalsize &&
+         mapped_header->nominal_elements == nominal_elements;
 }
 
 void
 MultiCacheBase::print_info(FILE *fp)
-{                               // STDIO OK
+{ // STDIO OK
   fprintf(fp, "    Elements:       %-10d\n", totalelements);
   fprintf(fp, "    Size (bytes):   %-10u\n", totalsize);
 }
@@ -788,7 +772,7 @@ MultiCacheBase::print_info(FILE *fp)
 // if data == NULL we are rebuilding (as opposed to check or fix)
 //
 int
-MultiCacheBase::rebuild(MultiCacheBase & old, int kind)
+MultiCacheBase::rebuild(MultiCacheBase &old, int kind)
 {
   char *new_data = 0;
 
@@ -803,11 +787,11 @@ MultiCacheBase::rebuild(MultiCacheBase & old, int kind)
     return -1;
   }
 
-  new_data = (char *) mmap(0, old.totalsize, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
+  new_data = (char *)mmap(0, old.totalsize, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
 
   ink_assert(data != new_data);
-  if (new_data == NULL || new_data == (caddr_t) MAP_FAILED) {
-    Warning("unable to mmap /dev/zero for %u bytes: %d, %s", totalsize,errno, strerror(errno));
+  if (new_data == NULL || new_data == (caddr_t)MAP_FAILED) {
+    Warning("unable to mmap /dev/zero for %u bytes: %d, %s", totalsize, errno, strerror(errno));
     return -1;
   }
   // if we are rebuilding get the original data
@@ -890,18 +874,15 @@ MultiCacheBase::rebuild(MultiCacheBase & old, int kind)
   if (r.good)
     fprintf(diag_output_fp, "\tGood:       %.2f%% (%d)\n", r.total ? ((r.good * 100.0) / r.total) : 0, r.good);
   if (r.deleted)
-    fprintf(diag_output_fp, "\tDeleted:    %5.2f%% (%d)\n",
-            r.deleted ? ((r.deleted * 100.0) / r.total) : 0.0, r.deleted);
+    fprintf(diag_output_fp, "\tDeleted:    %5.2f%% (%d)\n", r.deleted ? ((r.deleted * 100.0) / r.total) : 0.0, r.deleted);
   if (r.backed)
     fprintf(diag_output_fp, "\tBacked:     %5.2f%% (%d)\n", r.backed ? ((r.backed * 100.0) / r.total) : 0.0, r.backed);
   if (r.duplicates)
-    fprintf(diag_output_fp, "\tDuplicates: %5.2f%% (%d)\n",
-            r.duplicates ? ((r.duplicates * 100.0) / r.total) : 0.0, r.duplicates);
+    fprintf(diag_output_fp, "\tDuplicates: %5.2f%% (%d)\n", r.duplicates ? ((r.duplicates * 100.0) / r.total) : 0.0, r.duplicates);
   if (r.stale)
     fprintf(diag_output_fp, "\tStale:      %5.2f%% (%d)\n", r.stale ? ((r.stale * 100.0) / r.total) : 0.0, r.stale);
   if (r.corrupt)
-    fprintf(diag_output_fp, "\tCorrupt:    %5.2f%% (%d)\n",
-            r.corrupt ? ((r.corrupt * 100.0) / r.total) : 0.0, r.corrupt);
+    fprintf(diag_output_fp, "\tCorrupt:    %5.2f%% (%d)\n", r.corrupt ? ((r.corrupt * 100.0) / r.total) : 0.0, r.corrupt);
 
   old.reset();
 
@@ -936,8 +917,7 @@ MultiCacheBase::sync_heap(int part)
 {
   if (heap_size) {
     int b_per_part = heap_size / MULTI_CACHE_PARTITIONS;
-    if (ats_msync(data + level_offset[2] + buckets * bucketsize[2] +
-                   b_per_part * part, b_per_part, data + totalsize, MS_SYNC) < 0)
+    if (ats_msync(data + level_offset[2] + buckets * bucketsize[2] + b_per_part * part, b_per_part, data + totalsize, MS_SYNC) < 0)
       return -1;
   }
   return 0;
@@ -975,8 +955,8 @@ MultiCacheBase::sync_partition(int partition)
 int
 MultiCacheBase::sync_header()
 {
-  *mapped_header = *(MultiCacheHeader *) this;
-  return ats_msync((char *) mapped_header, STORE_BLOCK_SIZE, (char *) mapped_header + STORE_BLOCK_SIZE, MS_SYNC);
+  *mapped_header = *(MultiCacheHeader *)this;
+  return ats_msync((char *)mapped_header, STORE_BLOCK_SIZE, (char *)mapped_header + STORE_BLOCK_SIZE, MS_SYNC);
 }
 
 int
@@ -998,38 +978,37 @@ MultiCacheBase::sync_all()
 // Syncs MulitCache
 //
 struct MultiCacheSync;
-typedef int (MultiCacheSync::*MCacheSyncHandler) (int, void *);
+typedef int (MultiCacheSync::*MCacheSyncHandler)(int, void *);
 
-struct MultiCacheSync: public Continuation
-{
+struct MultiCacheSync : public Continuation {
   int partition;
   MultiCacheBase *mc;
   Continuation *cont;
   int before_used;
 
-  int heapEvent(int event, Event *e)
+  int
+  heapEvent(int event, Event *e)
   {
     if (!partition) {
       before_used = mc->heap_used[mc->heap_halfspace];
-      mc->header_snap = *(MultiCacheHeader *) mc;
+      mc->header_snap = *(MultiCacheHeader *)mc;
     }
-    if (partition < MULTI_CACHE_PARTITIONS)
-    {
+    if (partition < MULTI_CACHE_PARTITIONS) {
       mc->sync_heap(partition++);
       e->schedule_imm();
       return EVENT_CONT;
     }
     *mc->mapped_header = mc->header_snap;
-    ink_assert(!ats_msync((char *) mc->mapped_header, STORE_BLOCK_SIZE,
-                           (char *) mc->mapped_header + STORE_BLOCK_SIZE, MS_SYNC));
+    ink_assert(!ats_msync((char *)mc->mapped_header, STORE_BLOCK_SIZE, (char *)mc->mapped_header + STORE_BLOCK_SIZE, MS_SYNC));
     partition = 0;
-    SET_HANDLER((MCacheSyncHandler) & MultiCacheSync::mcEvent);
+    SET_HANDLER((MCacheSyncHandler)&MultiCacheSync::mcEvent);
     return mcEvent(event, e);
   }
 
-  int mcEvent(int event, Event *e)
+  int
+  mcEvent(int event, Event *e)
   {
-    (void) event;
+    (void)event;
     if (partition >= MULTI_CACHE_PARTITIONS) {
       cont->handleEvent(MULTI_CACHE_EVENT_SYNC, 0);
       Debug("multicache", "MultiCacheSync done (%d, %d)", mc->heap_used[0], mc->heap_used[1]);
@@ -1040,28 +1019,30 @@ struct MultiCacheSync: public Continuation
     mc->sync_partition(partition);
     partition++;
     mutex = e->ethread->mutex;
-    SET_HANDLER((MCacheSyncHandler) & MultiCacheSync::pauseEvent);
+    SET_HANDLER((MCacheSyncHandler)&MultiCacheSync::pauseEvent);
     e->schedule_in(MAX(MC_SYNC_MIN_PAUSE_TIME, HRTIME_SECONDS(hostdb_sync_frequency - 5) / MULTI_CACHE_PARTITIONS));
     return EVENT_CONT;
   }
 
-  int pauseEvent(int event, Event *e)
+  int
+  pauseEvent(int event, Event *e)
   {
-    (void) event;
-    (void) e;
+    (void)event;
+    (void)e;
     if (partition < MULTI_CACHE_PARTITIONS)
       mutex = mc->locks[partition];
     else
       mutex = cont->mutex;
-    SET_HANDLER((MCacheSyncHandler) & MultiCacheSync::mcEvent);
+    SET_HANDLER((MCacheSyncHandler)&MultiCacheSync::mcEvent);
     e->schedule_imm();
     return EVENT_CONT;
   }
 
-MultiCacheSync(Continuation *acont, MultiCacheBase *amc):
-  Continuation(amc->locks[0]), partition(0), mc(amc), cont(acont), before_used(0) {
+  MultiCacheSync(Continuation *acont, MultiCacheBase *amc)
+    : Continuation(amc->locks[0]), partition(0), mc(amc), cont(acont), before_used(0)
+  {
     mutex = mc->locks[partition];
-    SET_HANDLER((MCacheSyncHandler) & MultiCacheSync::heapEvent);
+    SET_HANDLER((MCacheSyncHandler)&MultiCacheSync::heapEvent);
   }
 };
 
@@ -1076,10 +1057,10 @@ MultiCacheBase::fixup_heap_offsets(int partition, int before_used, UnsunkPtrRegi
     r = &unsunk[partition];
   bool found = 0;
   for (int i = 0; i < r->n; i++) {
-    UnsunkPtr & p = r->ptrs[i];
+    UnsunkPtr &p = r->ptrs[i];
     if (p.offset) {
-      Debug("multicache", "fixup p.offset %d offset %d %" PRId64 " part %d",
-            p.offset, *p.poffset, (int64_t)((char *) p.poffset - data), partition);
+      Debug("multicache", "fixup p.offset %d offset %d %" PRId64 " part %d", p.offset, *p.poffset,
+            (int64_t)((char *)p.poffset - data), partition);
       if (*p.poffset == -(i + base) - 1) {
         if (halfspace_of(p.offset) != heap_halfspace) {
           ink_assert(0);
@@ -1092,12 +1073,11 @@ MultiCacheBase::fixup_heap_offsets(int partition, int before_used, UnsunkPtrRegi
             continue;
         }
       } else {
-        Debug("multicache",
-              "not found %" PRId64 " i %d base %d *p.poffset = %d",
-              (int64_t)((char *) p.poffset - data), i, base, *p.poffset);
+        Debug("multicache", "not found %" PRId64 " i %d base %d *p.poffset = %d", (int64_t)((char *)p.poffset - data), i, base,
+              *p.poffset);
       }
       p.offset = 0;
-      p.poffset = (int *) r->next_free;
+      p.poffset = (int *)r->next_free;
       r->next_free = &p;
       found = true;
     }
@@ -1113,41 +1093,36 @@ MultiCacheBase::fixup_heap_offsets(int partition, int before_used, UnsunkPtrRegi
   return r;
 }
 
-struct OffsetTable
-{
+struct OffsetTable {
   int new_offset;
   int *poffset;
 };
 
 struct MultiCacheHeapGC;
-typedef int (MultiCacheHeapGC::*MCacheHeapGCHandler) (int, void *);
-struct MultiCacheHeapGC: public Continuation
-{
+typedef int (MultiCacheHeapGC::*MCacheHeapGCHandler)(int, void *);
+struct MultiCacheHeapGC : public Continuation {
   Continuation *cont;
   MultiCacheBase *mc;
   int partition;
   int n_offsets;
   OffsetTable *offset_table;
 
-  int startEvent(int event, Event *e)
+  int
+  startEvent(int event, Event *e)
   {
-    (void) event;
-    if (partition < MULTI_CACHE_PARTITIONS)
-    {
-
+    (void)event;
+    if (partition < MULTI_CACHE_PARTITIONS) {
       // copy heap data
 
       char *before = mc->heap + mc->heap_used[mc->heap_halfspace];
-        mc->copy_heap(partition, this);
+      mc->copy_heap(partition, this);
       char *after = mc->heap + mc->heap_used[mc->heap_halfspace];
 
       // sync new heap data and header (used)
 
-      if (after - before > 0)
-      {
+      if (after - before > 0) {
         ink_assert(!ats_msync(before, after - before, mc->heap + mc->totalsize, MS_SYNC));
-        ink_assert(!ats_msync((char *) mc->mapped_header, STORE_BLOCK_SIZE,
-                               (char *) mc->mapped_header + STORE_BLOCK_SIZE, MS_SYNC));
+        ink_assert(!ats_msync((char *)mc->mapped_header, STORE_BLOCK_SIZE, (char *)mc->mapped_header + STORE_BLOCK_SIZE, MS_SYNC));
       }
       // update table to point to new entries
 
@@ -1169,26 +1144,24 @@ struct MultiCacheHeapGC: public Continuation
       e->schedule_in(MAX(MC_SYNC_MIN_PAUSE_TIME, HRTIME_SECONDS(hostdb_sync_frequency - 5) / MULTI_CACHE_PARTITIONS));
       return EVENT_CONT;
     }
-    mc->heap_used[mc->heap_halfspace ? 0 : 1] = 8;      // skip 0
+    mc->heap_used[mc->heap_halfspace ? 0 : 1] = 8; // skip 0
     cont->handleEvent(MULTI_CACHE_EVENT_SYNC, 0);
     Debug("multicache", "MultiCacheHeapGC done");
     delete this;
     return EVENT_DONE;
   }
 
-MultiCacheHeapGC(Continuation *acont, MultiCacheBase *amc):
-  Continuation(amc->locks[0]), cont(acont), mc(amc), partition(0), n_offsets(0) {
-
-    SET_HANDLER((MCacheHeapGCHandler) & MultiCacheHeapGC::startEvent);
+  MultiCacheHeapGC(Continuation *acont, MultiCacheBase *amc)
+    : Continuation(amc->locks[0]), cont(acont), mc(amc), partition(0), n_offsets(0)
+  {
+    SET_HANDLER((MCacheHeapGCHandler)&MultiCacheHeapGC::startEvent);
     offset_table = (OffsetTable *)ats_malloc(sizeof(OffsetTable) *
-        ((mc->totalelements / MULTI_CACHE_PARTITIONS) + mc->elements[mc->levels - 1] * 3 + 1));
+                                             ((mc->totalelements / MULTI_CACHE_PARTITIONS) + mc->elements[mc->levels - 1] * 3 + 1));
     // flip halfspaces
     mutex = mc->locks[partition];
     mc->heap_halfspace = mc->heap_halfspace ? 0 : 1;
   }
-  ~MultiCacheHeapGC() {
-    ats_free(offset_table);
-  }
+  ~MultiCacheHeapGC() { ats_free(offset_table); }
 };
 
 void
@@ -1206,11 +1179,11 @@ MultiCacheBase::sync_partitions(Continuation *cont)
 void
 MultiCacheBase::copy_heap_data(char *src, int s, int *pi, int partition, MultiCacheHeapGC *gc)
 {
-  char *dest = (char *) alloc(NULL, s);
+  char *dest = (char *)alloc(NULL, s);
   Debug("multicache", "copy %p to %p", src, dest);
   if (dest) {
     memcpy(dest, src, s);
-    if (*pi < 0) {              // already in the unsunk ptr registry, ok to change there
+    if (*pi < 0) { // already in the unsunk ptr registry, ok to change there
       UnsunkPtr *ptr = unsunk[partition].ptr(-*pi - 1);
       if (ptr->poffset == pi)
         ptr->offset = dest - heap;
@@ -1229,8 +1202,7 @@ MultiCacheBase::copy_heap_data(char *src, int s, int *pi, int partition, MultiCa
   }
 }
 
-UnsunkPtrRegistry::UnsunkPtrRegistry()
-:mc(NULL), n(0), ptrs(NULL), next_free(NULL), next(NULL)
+UnsunkPtrRegistry::UnsunkPtrRegistry() : mc(NULL), n(0), ptrs(NULL), next_free(NULL), next(NULL)
 {
 }
 
@@ -1247,7 +1219,7 @@ UnsunkPtrRegistry::alloc_data()
   ptrs = (UnsunkPtr *)ats_malloc(s);
   for (int i = 0; i < bs; i++) {
     ptrs[i].offset = 0;
-    ptrs[i].poffset = (int *) &ptrs[i + 1];
+    ptrs[i].poffset = (int *)&ptrs[i + 1];
   }
   ptrs[bs - 1].poffset = NULL;
   next_free = ptrs;
@@ -1259,7 +1231,7 @@ UnsunkPtrRegistry::alloc(int *poffset, int base)
 {
   if (next_free) {
     UnsunkPtr *res = next_free;
-    next_free = (UnsunkPtr *) next_free->poffset;
+    next_free = (UnsunkPtr *)next_free->poffset;
     *poffset = -(base + (res - ptrs)) - 1;
     ink_assert(*poffset);
     return res;
@@ -1282,10 +1254,10 @@ MultiCacheBase::alloc(int *poffset, int asize)
 {
   int h = heap_halfspace;
   int size = (asize + MULTI_CACHE_HEAP_ALIGNMENT - 1) & ~(MULTI_CACHE_HEAP_ALIGNMENT - 1);
-  int o = ink_atomic_increment((int *) &heap_used[h], size);
+  int o = ink_atomic_increment((int *)&heap_used[h], size);
 
   if (o + size > halfspace_size()) {
-    ink_atomic_increment((int *) &heap_used[h], -size);
+    ink_atomic_increment((int *)&heap_used[h], -size);
     ink_assert(!"out of space");
     if (poffset)
       *poffset = 0;
@@ -1294,16 +1266,16 @@ MultiCacheBase::alloc(int *poffset, int asize)
   int offset = (h ? halfspace_size() : 0) + o;
   char *p = heap + offset;
   if (poffset) {
-    int part = ptr_to_partition((char *) poffset);
+    int part = ptr_to_partition((char *)poffset);
     if (part < 0)
       return NULL;
     UnsunkPtr *up = unsunk[part].alloc(poffset);
     up->offset = offset;
     up->poffset = poffset;
-    Debug("multicache", "alloc unsunk %d at %" PRId64 " part %d offset %d",
-          *poffset, (int64_t)((char *) poffset - data), part, offset);
+    Debug("multicache", "alloc unsunk %d at %" PRId64 " part %d offset %d", *poffset, (int64_t)((char *)poffset - data), part,
+          offset);
   }
-  return (void *) p;
+  return (void *)p;
 }
 
 UnsunkPtr *
@@ -1325,14 +1297,14 @@ void *
 MultiCacheBase::ptr(int *poffset, int partition)
 {
   int o = *poffset;
-  Debug("multicache", "ptr %" PRId64 " part %d %d", (int64_t)((char *) poffset - data), partition, o);
+  Debug("multicache", "ptr %" PRId64 " part %d %d", (int64_t)((char *)poffset - data), partition, o);
   if (o > 0) {
     if (!valid_offset(o)) {
       ink_assert(!"bad offset");
       *poffset = 0;
       return NULL;
     }
-    return (void *) (heap + o - 1);
+    return (void *)(heap + o - 1);
   }
   if (!o)
     return NULL;
@@ -1341,14 +1313,14 @@ MultiCacheBase::ptr(int *poffset, int partition)
     return NULL;
   if (p->poffset != poffset)
     return NULL;
-  return (void *) (heap + p->offset);
+  return (void *)(heap + p->offset);
 }
 
 void
 MultiCacheBase::update(int *poffset, int *old_poffset)
 {
   int o = *poffset;
-  Debug("multicache", "updating %" PRId64 " %d", (int64_t)((char *) poffset - data), o);
+  Debug("multicache", "updating %" PRId64 " %d", (int64_t)((char *)poffset - data), o);
   if (o > 0) {
     if (!valid_offset(o)) {
       ink_assert(!"bad poffset");
@@ -1359,7 +1331,7 @@ MultiCacheBase::update(int *poffset, int *old_poffset)
   if (!o)
     return;
 
-  int part = ptr_to_partition((char *) poffset);
+  int part = ptr_to_partition((char *)poffset);
 
   if (part < 0)
     return;
@@ -1392,7 +1364,7 @@ MultiCacheBase::ptr_to_partition(char *ptr)
 
 
 void
-stealStore(Store & s, int blocks)
+stealStore(Store &s, int blocks)
 {
   if (s.read_config())
     return;
@@ -1414,14 +1386,14 @@ stealStore(Store & s, int blocks)
   }
   // grab some end portion of some block... so as not to damage the
   // pool header
-  for (unsigned d = 0; d < s.n_disks; ) {
+  for (unsigned d = 0; d < s.n_disks;) {
     Span *ds = s.disk[d];
     while (ds) {
       if (!blocks)
         ds->blocks = 0;
       else {
         int b = blocks;
-        if ((int) ds->blocks < blocks)
+        if ((int)ds->blocks < blocks)
           b = ds->blocks;
         if (ds->file_pathname)
           ds->offset += (ds->blocks - b);

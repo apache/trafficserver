@@ -29,8 +29,8 @@
 #include <atscppapi/noncopyable.h>
 #include <atscppapi/shared_ptr.h>
 
-namespace atscppapi {
-
+namespace atscppapi
+{
 /**
  * @private
  *
@@ -38,7 +38,8 @@ namespace atscppapi {
  * is used to dispatch an event to a receiver. This interface exists so that the types in this
  * header file can be defined.
  */
-class AsyncDispatchControllerBase : noncopyable {
+class AsyncDispatchControllerBase : noncopyable
+{
 public:
   /**
    * Dispatches an async event to a receiver.
@@ -53,7 +54,7 @@ public:
   /** Returns true if receiver can be communicated with */
   virtual bool isEnabled() = 0;
 
-  virtual ~AsyncDispatchControllerBase() { }
+  virtual ~AsyncDispatchControllerBase() {}
 };
 
 /**
@@ -63,7 +64,8 @@ public:
  * handles this case. Because of this decoupling, it is the responsibility of the provider
  * to manage it's expiration - self-destruct on completion is a good option.
  */
-class AsyncProvider {
+class AsyncProvider
+{
 public:
   /**
    * This method is invoked when the async operation is requested. This call should be used
@@ -74,20 +76,28 @@ public:
 
   /** Base implementation just breaks communication channel with receiver. Implementations
    * should add business logic here. */
-  virtual void cancel() {
+  virtual void
+  cancel()
+  {
     if (dispatch_controller_) {
       dispatch_controller_->disable();
     }
   }
 
-  virtual ~AsyncProvider() { }
+  virtual ~AsyncProvider() {}
 
 protected:
-  shared_ptr<AsyncDispatchControllerBase> getDispatchController() { return dispatch_controller_; }
+  shared_ptr<AsyncDispatchControllerBase>
+  getDispatchController()
+  {
+    return dispatch_controller_;
+  }
 
 private:
   shared_ptr<AsyncDispatchControllerBase> dispatch_controller_;
-  void doRun(shared_ptr<AsyncDispatchControllerBase> dispatch_controller) {
+  void
+  doRun(shared_ptr<AsyncDispatchControllerBase> dispatch_controller)
+  {
     dispatch_controller_ = dispatch_controller;
     run();
   }
@@ -100,10 +110,13 @@ private:
  * @brief Dispatch controller implementation. When invoking the receiver, it verifies that the
  * receiver is still alive, locks the mutex and then invokes handleAsyncComplete().
  */
-template<typename AsyncEventReceiverType, typename AsyncProviderType>
-class AsyncDispatchController : public AsyncDispatchControllerBase {
+template <typename AsyncEventReceiverType, typename AsyncProviderType>
+class AsyncDispatchController : public AsyncDispatchControllerBase
+{
 public:
-  bool dispatch() {
+  bool
+  dispatch()
+  {
     bool ret = false;
     ScopedSharedMutexLock scopedLock(dispatch_mutex_);
     if (event_receiver_) {
@@ -113,12 +126,16 @@ public:
     return ret;
   }
 
-  void disable() {
+  void
+  disable()
+  {
     ScopedSharedMutexLock scopedLock(dispatch_mutex_);
     event_receiver_ = NULL;
   }
 
-  bool isEnabled() {
+  bool
+  isEnabled()
+  {
     return (event_receiver_ != NULL);
   }
 
@@ -129,14 +146,17 @@ public:
    * @param provider Async operation provider that is passed to the receiver on dispatch.
    * @param mutex Mutex of the receiver that is locked during the dispatch
    */
-  AsyncDispatchController(AsyncEventReceiverType *event_receiver, AsyncProviderType *provider, shared_ptr<Mutex> mutex) :
-    event_receiver_(event_receiver), dispatch_mutex_(mutex), provider_(provider) {
+  AsyncDispatchController(AsyncEventReceiverType *event_receiver, AsyncProviderType *provider, shared_ptr<Mutex> mutex)
+    : event_receiver_(event_receiver), dispatch_mutex_(mutex), provider_(provider)
+  {
   }
 
-  virtual ~AsyncDispatchController() { }
+  virtual ~AsyncDispatchController() {}
+
 public:
   AsyncEventReceiverType *event_receiver_;
   shared_ptr<Mutex> dispatch_mutex_;
+
 private:
   AsyncProviderType *provider_;
 };
@@ -148,16 +168,20 @@ private:
  * alive to receive the async complete dispatch. When the receiver dies, this promise is
  * broken and it automatically updates the dispatch controller.
  */
-template<typename AsyncEventReceiverType, typename AsyncProviderType>
-class AsyncReceiverPromise : noncopyable {
+template <typename AsyncEventReceiverType, typename AsyncProviderType> class AsyncReceiverPromise : noncopyable
+{
 public:
-  AsyncReceiverPromise(shared_ptr<AsyncDispatchController<AsyncEventReceiverType, AsyncProviderType> > dispatch_controller) :
-    dispatch_controller_(dispatch_controller) { }
+  AsyncReceiverPromise(shared_ptr<AsyncDispatchController<AsyncEventReceiverType, AsyncProviderType> > dispatch_controller)
+    : dispatch_controller_(dispatch_controller)
+  {
+  }
 
-  ~AsyncReceiverPromise() {
+  ~AsyncReceiverPromise()
+  {
     ScopedSharedMutexLock scopedLock(dispatch_controller_->dispatch_mutex_);
     dispatch_controller_->event_receiver_ = NULL;
   }
+
 protected:
   shared_ptr<AsyncDispatchController<AsyncEventReceiverType, AsyncProviderType> > dispatch_controller_;
 };
@@ -166,8 +190,8 @@ protected:
  * @brief AsyncReceiver is the interface that receivers of async operations must implement. It is
  * templated on the type of the async operation provider.
  */
-template<typename AsyncProviderType>
-class AsyncReceiver : noncopyable {
+template <typename AsyncProviderType> class AsyncReceiver : noncopyable
+{
 public:
   /**
    * This method is invoked when the async operation is completed. The
@@ -177,10 +201,12 @@ public:
    * @param provider A reference to the provider which completed the async operation.
    */
   virtual void handleAsyncComplete(AsyncProviderType &provider) = 0;
-  virtual ~AsyncReceiver() { }
+  virtual ~AsyncReceiver() {}
+
 protected:
-  AsyncReceiver() { }
+  AsyncReceiver() {}
   friend class Async;
+
 private:
   mutable std::list<shared_ptr<AsyncReceiverPromise<AsyncReceiver<AsyncProviderType>, AsyncProviderType> > > receiver_promises_;
 };
@@ -188,7 +214,8 @@ private:
 /**
  * @brief This class provides a method to create an async operation.
  */
-class Async : noncopyable {
+class Async : noncopyable
+{
 public:
   /**
    * This method sets up the dispatch controller to link the async operation provider and
@@ -201,20 +228,21 @@ public:
    *              TransactionPlugin::getMutex() here and global plugins can pass an appropriate
    *              or NULL mutex.
    */
-  template<typename AsyncProviderType>
-  static void execute(AsyncReceiver<AsyncProviderType> *event_receiver, AsyncProviderType *provider, shared_ptr<Mutex> mutex) {
+  template <typename AsyncProviderType>
+  static void
+  execute(AsyncReceiver<AsyncProviderType> *event_receiver, AsyncProviderType *provider, shared_ptr<Mutex> mutex)
+  {
     if (!mutex.get()) {
       mutex.reset(new Mutex(Mutex::TYPE_RECURSIVE));
     }
-    shared_ptr<AsyncDispatchController<AsyncReceiver<AsyncProviderType>, AsyncProviderType > > dispatcher(
-      new AsyncDispatchController<AsyncReceiver<AsyncProviderType>, AsyncProviderType >(event_receiver, provider, mutex));
-    shared_ptr<AsyncReceiverPromise<AsyncReceiver<AsyncProviderType>, AsyncProviderType > > receiver_promise(
-      new AsyncReceiverPromise<AsyncReceiver<AsyncProviderType>, AsyncProviderType >(dispatcher));
+    shared_ptr<AsyncDispatchController<AsyncReceiver<AsyncProviderType>, AsyncProviderType> > dispatcher(
+      new AsyncDispatchController<AsyncReceiver<AsyncProviderType>, AsyncProviderType>(event_receiver, provider, mutex));
+    shared_ptr<AsyncReceiverPromise<AsyncReceiver<AsyncProviderType>, AsyncProviderType> > receiver_promise(
+      new AsyncReceiverPromise<AsyncReceiver<AsyncProviderType>, AsyncProviderType>(dispatcher));
     event_receiver->receiver_promises_.push_back(receiver_promise); // now if the event receiver dies, we're safe.
     provider->doRun(dispatcher);
   }
 };
-
 }
 
 

@@ -36,7 +36,7 @@
 
  */
 
-#if !defined (I_IOBuffer_h)
+#if !defined(I_IOBuffer_h)
 #define I_IOBuffer_h
 
 #include "libts.h"
@@ -59,25 +59,24 @@ extern int64_t default_large_iobuffer_size; // matched to size of OS buffers
 #define TRACK_BUFFER_USER 1
 #endif
 
-enum AllocType
-{
+enum AllocType {
   NO_ALLOC,
   FAST_ALLOCATED,
   XMALLOCED,
   MEMALIGNED,
   DEFAULT_ALLOC,
-  CONSTANT
+  CONSTANT,
 };
 
 #if TS_USE_RECLAIMABLE_FREELIST
-#define DEFAULT_BUFFER_NUMBER        64
+#define DEFAULT_BUFFER_NUMBER 64
 #else
-#define DEFAULT_BUFFER_NUMBER        128
+#define DEFAULT_BUFFER_NUMBER 128
 #endif
-#define DEFAULT_HUGE_BUFFER_NUMBER   32
-#define MAX_MIOBUFFER_READERS        5
-#define DEFAULT_BUFFER_ALIGNMENT     8192       // should be disk/page size
-#define DEFAULT_BUFFER_BASE_SIZE     128
+#define DEFAULT_HUGE_BUFFER_NUMBER 32
+#define MAX_MIOBUFFER_READERS 5
+#define DEFAULT_BUFFER_ALIGNMENT 8192 // should be disk/page size
+#define DEFAULT_BUFFER_BASE_SIZE 128
 
 ////////////////////////////////////////////////
 // These are defines so that code that used 2 //
@@ -85,49 +84,45 @@ enum AllocType
 // still work if it uses BUFFER_SIZE_INDEX_2K //
 // instead.                                   //
 ////////////////////////////////////////////////
-#define BUFFER_SIZE_INDEX_128           0
-#define BUFFER_SIZE_INDEX_256           1
-#define BUFFER_SIZE_INDEX_512           2
-#define BUFFER_SIZE_INDEX_1K            3
-#define BUFFER_SIZE_INDEX_2K            4
-#define BUFFER_SIZE_INDEX_4K            5
-#define BUFFER_SIZE_INDEX_8K            6
-#define BUFFER_SIZE_INDEX_16K           7
-#define BUFFER_SIZE_INDEX_32K           8
-#define BUFFER_SIZE_INDEX_64K           9
-#define BUFFER_SIZE_INDEX_128K          10
-#define BUFFER_SIZE_INDEX_256K          11
-#define BUFFER_SIZE_INDEX_512K          12
-#define BUFFER_SIZE_INDEX_1M            13
-#define BUFFER_SIZE_INDEX_2M            14
-#define MAX_BUFFER_SIZE_INDEX           14
-#define DEFAULT_BUFFER_SIZES            (MAX_BUFFER_SIZE_INDEX+1)
+#define BUFFER_SIZE_INDEX_128 0
+#define BUFFER_SIZE_INDEX_256 1
+#define BUFFER_SIZE_INDEX_512 2
+#define BUFFER_SIZE_INDEX_1K 3
+#define BUFFER_SIZE_INDEX_2K 4
+#define BUFFER_SIZE_INDEX_4K 5
+#define BUFFER_SIZE_INDEX_8K 6
+#define BUFFER_SIZE_INDEX_16K 7
+#define BUFFER_SIZE_INDEX_32K 8
+#define BUFFER_SIZE_INDEX_64K 9
+#define BUFFER_SIZE_INDEX_128K 10
+#define BUFFER_SIZE_INDEX_256K 11
+#define BUFFER_SIZE_INDEX_512K 12
+#define BUFFER_SIZE_INDEX_1M 13
+#define BUFFER_SIZE_INDEX_2M 14
+#define MAX_BUFFER_SIZE_INDEX 14
+#define DEFAULT_BUFFER_SIZES (MAX_BUFFER_SIZE_INDEX + 1)
 
-#define BUFFER_SIZE_FOR_INDEX(_i)    (DEFAULT_BUFFER_BASE_SIZE * (1 << (_i)))
-#define DEFAULT_SMALL_BUFFER_SIZE    BUFFER_SIZE_INDEX_512
-#define DEFAULT_LARGE_BUFFER_SIZE    BUFFER_SIZE_INDEX_4K
-#define DEFAULT_TS_BUFFER_SIZE       BUFFER_SIZE_INDEX_8K
-#define DEFAULT_MAX_BUFFER_SIZE      BUFFER_SIZE_FOR_INDEX(MAX_BUFFER_SIZE_INDEX)
-#define MIN_IOBUFFER_SIZE            BUFFER_SIZE_INDEX_128
-#define MAX_IOBUFFER_SIZE            (DEFAULT_BUFFER_SIZES-1)
+#define BUFFER_SIZE_FOR_INDEX(_i) (DEFAULT_BUFFER_BASE_SIZE * (1 << (_i)))
+#define DEFAULT_SMALL_BUFFER_SIZE BUFFER_SIZE_INDEX_512
+#define DEFAULT_LARGE_BUFFER_SIZE BUFFER_SIZE_INDEX_4K
+#define DEFAULT_TS_BUFFER_SIZE BUFFER_SIZE_INDEX_8K
+#define DEFAULT_MAX_BUFFER_SIZE BUFFER_SIZE_FOR_INDEX(MAX_BUFFER_SIZE_INDEX)
+#define MIN_IOBUFFER_SIZE BUFFER_SIZE_INDEX_128
+#define MAX_IOBUFFER_SIZE (DEFAULT_BUFFER_SIZES - 1)
 
 
-#define BUFFER_SIZE_ALLOCATED(_i)     \
-  (BUFFER_SIZE_INDEX_IS_FAST_ALLOCATED(_i) || \
-   BUFFER_SIZE_INDEX_IS_XMALLOCED(_i) )
+#define BUFFER_SIZE_ALLOCATED(_i) (BUFFER_SIZE_INDEX_IS_FAST_ALLOCATED(_i) || BUFFER_SIZE_INDEX_IS_XMALLOCED(_i))
 
-#define BUFFER_SIZE_NOT_ALLOCATED    DEFAULT_BUFFER_SIZES
+#define BUFFER_SIZE_NOT_ALLOCATED DEFAULT_BUFFER_SIZES
 #define BUFFER_SIZE_INDEX_IS_XMALLOCED(_size_index) (_size_index < 0)
-#define BUFFER_SIZE_INDEX_IS_FAST_ALLOCATED(_size_index) \
-  (((uint64_t)_size_index) < DEFAULT_BUFFER_SIZES)
-#define BUFFER_SIZE_INDEX_IS_CONSTANT(_size_index) \
-  (_size_index >= DEFAULT_BUFFER_SIZES)
+#define BUFFER_SIZE_INDEX_IS_FAST_ALLOCATED(_size_index) (((uint64_t)_size_index) < DEFAULT_BUFFER_SIZES)
+#define BUFFER_SIZE_INDEX_IS_CONSTANT(_size_index) (_size_index >= DEFAULT_BUFFER_SIZES)
 
 #define BUFFER_SIZE_FOR_XMALLOC(_size) (-(_size))
 #define BUFFER_SIZE_INDEX_FOR_XMALLOC_SIZE(_size) (-(_size))
 
 #define BUFFER_SIZE_FOR_CONSTANT(_size) (_size - DEFAULT_BUFFER_SIZES)
-#define BUFFER_SIZE_INDEX_FOR_CONSTANT_SIZE(_size) (_size+DEFAULT_BUFFER_SIZES)
+#define BUFFER_SIZE_INDEX_FOR_CONSTANT_SIZE(_size) (_size + DEFAULT_BUFFER_SIZES)
 
 inkcoreapi extern Allocator ioBufAllocator[DEFAULT_BUFFER_SIZES];
 
@@ -175,10 +170,9 @@ void init_buffer_allocators();
   </table>
 
  */
-class IOBufferData:public RefCountObj
+class IOBufferData : public RefCountObj
 {
 public:
-
   /**
     The size of the memory allocated by this IOBufferData. Calculates
     the amount of memory allocated by this IOBufferData.
@@ -215,7 +209,8 @@ public:
     @return address of the memory handled by this IOBufferData.
 
   */
-  char *data()
+  char *
+  data()
   {
     return _data;
   }
@@ -227,10 +222,7 @@ public:
     parameter to functions requiring a char*.
 
   */
-  operator  char *()
-  {
-    return _data;
-  }
+  operator char *() { return _data; }
 
   /**
     Frees the IOBufferData object and its underlying memory. Deallocates
@@ -269,9 +261,10 @@ public:
 
   */
   IOBufferData()
-:  _size_index(BUFFER_SIZE_NOT_ALLOCATED), _mem_type(NO_ALLOC), _data(NULL)
+    : _size_index(BUFFER_SIZE_NOT_ALLOCATED), _mem_type(NO_ALLOC), _data(NULL)
 #ifdef TRACK_BUFFER_USER
-    , _location(NULL)
+      ,
+      _location(NULL)
 #endif
   {
   }
@@ -279,7 +272,7 @@ public:
 private:
   // declaration only
   IOBufferData(const IOBufferData &);
-  IOBufferData & operator =(const IOBufferData &);
+  IOBufferData &operator=(const IOBufferData &);
 };
 
 inkcoreapi extern ClassAllocator<IOBufferData> ioDataAllocator;
@@ -292,7 +285,7 @@ inkcoreapi extern ClassAllocator<IOBufferData> ioDataAllocator;
   block is both in use and usable by the MIOBuffer it is attached to.
 
 */
-class IOBufferBlock:public RefCountObj
+class IOBufferBlock : public RefCountObj
 {
 public:
   /**
@@ -302,7 +295,8 @@ public:
     @return pointer to the underlying data.
 
   */
-  char *buf()
+  char *
+  buf()
   {
     return data->_data;
   }
@@ -314,7 +308,8 @@ public:
     @return pointer to the start of the inuse section.
 
   */
-  char *start()
+  char *
+  start()
   {
     return _start;
   }
@@ -326,7 +321,8 @@ public:
     @return pointer to the end of the inuse portion of the block.
 
   */
-  char *end()
+  char *
+  end()
   {
     return _end;
   }
@@ -336,7 +332,8 @@ public:
     represented by this block.
 
   */
-  char *buf_end()
+  char *
+  buf_end()
   {
     return _buf_end;
   }
@@ -347,9 +344,10 @@ public:
     @return bytes occupied by the inuse area.
 
   */
-  int64_t size()
+  int64_t
+  size()
   {
-    return (int64_t) (_end - _start);
+    return (int64_t)(_end - _start);
   }
 
   /**
@@ -359,9 +357,10 @@ public:
     @return bytes available for reading from the inuse area.
 
   */
-  int64_t read_avail()
+  int64_t
+  read_avail()
   {
-    return (int64_t) (_end - _start);
+    return (int64_t)(_end - _start);
   }
 
   /**
@@ -370,9 +369,10 @@ public:
 
     @return space available for writing in this IOBufferBlock.
   */
-  int64_t write_avail()
+  int64_t
+  write_avail()
   {
-    return (int64_t) (_buf_end - _end);
+    return (int64_t)(_buf_end - _end);
   }
 
   /**
@@ -385,7 +385,8 @@ public:
       IOBufferBlock.
 
   */
-  int64_t block_size()
+  int64_t
+  block_size()
   {
     return data->block_size();
   }
@@ -472,7 +473,7 @@ public:
       and to mark its start.
 
   */
-  void set(IOBufferData * d, int64_t len = 0, int64_t offset = 0);
+  void set(IOBufferData *d, int64_t len = 0, int64_t offset = 0);
   void set_internal(void *b, int64_t len, int64_t asize_index);
   void realloc_set_internal(void *b, int64_t buf_size, int64_t asize_index);
   void realloc(void *b, int64_t buf_size);
@@ -521,7 +522,7 @@ public:
 
 private:
   IOBufferBlock(const IOBufferBlock &);
-  IOBufferBlock & operator =(const IOBufferBlock &);
+  IOBufferBlock &operator=(const IOBufferBlock &);
 };
 
 extern inkcoreapi ClassAllocator<IOBufferBlock> ioBlockAllocator;
@@ -540,7 +541,6 @@ extern inkcoreapi ClassAllocator<IOBufferBlock> ioBlockAllocator;
 class IOBufferReader
 {
 public:
-
   /**
     Start of unconsumed data. Returns a pointer to first unconsumed data
     on the buffer for this reader. A null pointer indicates no data is
@@ -760,12 +760,20 @@ public:
     @return reference to the character in that position.
 
   */
-  char &operator[] (int64_t i);
+  char &operator[](int64_t i);
 
-  MIOBuffer *writer() const { return mbuf; }
-  MIOBuffer *allocated() const { return mbuf; }
+  MIOBuffer *
+  writer() const
+  {
+    return mbuf;
+  }
+  MIOBuffer *
+  allocated() const
+  {
+    return mbuf;
+  }
 
-  MIOBufferAccessor *accessor;  // pointer back to the accessor
+  MIOBufferAccessor *accessor; // pointer back to the accessor
 
   /**
     Back pointer to this object's MIOBuffer. A pointer back to the
@@ -784,9 +792,7 @@ public:
   int64_t start_offset;
   int64_t size_limit;
 
-  IOBufferReader()
-    : accessor(NULL), mbuf(NULL), start_offset(0), size_limit(INT64_MAX)
-  { }
+  IOBufferReader() : accessor(NULL), mbuf(NULL), start_offset(0), size_limit(INT64_MAX) {}
 };
 
 /**
@@ -808,7 +814,6 @@ public:
 class MIOBuffer
 {
 public:
-
   /**
     Increase writer's inuse area. Instructs the writer associated with
     this MIOBuffer to increase the inuse area of the block by as much as
@@ -825,7 +830,7 @@ public:
     other buffer.
 
   */
-  void append_block(IOBufferBlock * b);
+  void append_block(IOBufferBlock *b);
 
   /**
     Adds a new block to the end of the block list. The size is determined
@@ -877,7 +882,7 @@ public:
     this space becomes available to the copy.
 
   */
-  inkcoreapi int64_t write_and_transfer_left_over_space(IOBufferReader * r, int64_t len = INT64_MAX, int64_t offset = 0);
+  inkcoreapi int64_t write_and_transfer_left_over_space(IOBufferReader *r, int64_t len = INT64_MAX, int64_t offset = 0);
 #endif
 
   /**
@@ -905,7 +910,7 @@ public:
     rather than sharing blocks to prevent a build of blocks on the buffer.
 
   */
-  inkcoreapi int64_t write(IOBufferReader * r, int64_t len = INT64_MAX, int64_t offset = 0);
+  inkcoreapi int64_t write(IOBufferReader *r, int64_t len = INT64_MAX, int64_t offset = 0);
 
   int64_t remove_append(IOBufferReader *);
 
@@ -915,7 +920,8 @@ public:
     block list.
 
   */
-  IOBufferBlock *first_write_block()
+  IOBufferBlock *
+  first_write_block()
   {
     if (_writer) {
       if (_writer->next && !_writer->write_avail())
@@ -923,24 +929,28 @@ public:
       ink_assert(!_writer->next || !_writer->next->read_avail());
       return _writer;
     } else
-        return NULL;
+      return NULL;
   }
 
 
-  char *buf()
+  char *
+  buf()
   {
     IOBufferBlock *b = first_write_block();
     return b ? b->buf() : 0;
   }
-  char *buf_end()
+  char *
+  buf_end()
   {
     return first_write_block()->buf_end();
   }
-  char *start()
+  char *
+  start()
   {
     return first_write_block()->start();
   }
-  char *end()
+  char *
+  end()
   {
     return first_write_block()->end();
   }
@@ -979,7 +989,8 @@ public:
     Returns the default data block size for this buffer.
 
   */
-  int64_t total_size()
+  int64_t
+  total_size()
   {
     return block_size();
   }
@@ -989,7 +1000,8 @@ public:
     the watermark.
 
   */
-  bool high_water()
+  bool
+  high_water()
   {
     return max_read_avail() > water_mark;
   }
@@ -1000,7 +1012,8 @@ public:
     on write_avail() it may add blocks.
 
   */
-  bool low_water()
+  bool
+  low_water()
   {
     return write_avail() <= water_mark;
   }
@@ -1010,7 +1023,8 @@ public:
     blocks on the buffer is less than the water mark.
 
   */
-  bool current_low_water()
+  bool
+  current_low_water()
   {
     return current_write_avail() <= water_mark;
   }
@@ -1021,7 +1035,7 @@ public:
     to point to 'anAccessor'.
 
   */
-  IOBufferReader *alloc_accessor(MIOBufferAccessor * anAccessor);
+  IOBufferReader *alloc_accessor(MIOBufferAccessor *anAccessor);
 
   /**
     Allocates an IOBufferReader for this buffer. IOBufferReaders hold
@@ -1040,7 +1054,7 @@ public:
     previous allocated from this buffer.
 
   */
-  IOBufferReader *clone_reader(IOBufferReader * r);
+  IOBufferReader *clone_reader(IOBufferReader *r);
 
   /**
     Deallocates reader e from this buffer. e MUST be a pointer to a reader
@@ -1050,7 +1064,7 @@ public:
     being freed as all outstanding readers are automatically deallocated.
 
   */
-  void dealloc_reader(IOBufferReader * e);
+  void dealloc_reader(IOBufferReader *e);
 
   /**
     Deallocates all outstanding readers on the buffer.
@@ -1062,12 +1076,13 @@ public:
   void set_xmalloced(void *b, int64_t len);
   void alloc(int64_t i = default_large_iobuffer_size);
   void alloc_xmalloc(int64_t buf_size);
-  void append_block_internal(IOBufferBlock * b);
+  void append_block_internal(IOBufferBlock *b);
   int64_t puts(char *buf, int64_t len);
 
   // internal interface
 
-  bool empty()
+  bool
+  empty()
   {
     return !_writer;
   }
@@ -1078,7 +1093,8 @@ public:
 
   IOBufferBlock *get_current_block();
 
-  void reset()
+  void
+  reset()
   {
     if (_writer) {
       _writer->reset();
@@ -1089,39 +1105,46 @@ public:
       }
   }
 
-  void init_readers()
+  void
+  init_readers()
   {
     for (int j = 0; j < MAX_MIOBUFFER_READERS; j++)
       if (readers[j].allocated() && !readers[j].block)
         readers[j].block = _writer;
   }
 
-  void dealloc()
+  void
+  dealloc()
   {
     _writer = NULL;
     dealloc_all_readers();
   }
 
-  void clear()
+  void
+  clear()
   {
     dealloc();
     size_index = BUFFER_SIZE_NOT_ALLOCATED;
     water_mark = 0;
   }
 
-  void realloc(int64_t i)
+  void
+  realloc(int64_t i)
   {
     _writer->realloc(i);
   }
-  void realloc(void *b, int64_t buf_size)
+  void
+  realloc(void *b, int64_t buf_size)
   {
     _writer->realloc(b, buf_size);
   }
-  void realloc_xmalloc(void *b, int64_t buf_size)
+  void
+  realloc_xmalloc(void *b, int64_t buf_size)
   {
     _writer->realloc_xmalloc(b, buf_size);
   }
-  void realloc_xmalloc(int64_t buf_size)
+  void
+  realloc_xmalloc(int64_t buf_size)
   {
     _writer->realloc_xmalloc(buf_size);
   }
@@ -1155,61 +1178,70 @@ public:
   A wrapper for either a reader or a writer of an MIOBuffer.
 
 */
-struct MIOBufferAccessor
-{
-  IOBufferReader * reader() {
+struct MIOBufferAccessor {
+  IOBufferReader *
+  reader()
+  {
     return entry;
   }
 
-  MIOBuffer * writer() {
+  MIOBuffer *
+  writer()
+  {
     return mbuf;
   }
 
-  int64_t block_size() const {
+  int64_t
+  block_size() const
+  {
     return mbuf->block_size();
   }
 
-  int64_t total_size() const {
+  int64_t
+  total_size() const
+  {
     return block_size();
   }
 
-  void reader_for(IOBufferReader * abuf);
-  void reader_for(MIOBuffer * abuf);
-  void writer_for(MIOBuffer * abuf);
+  void reader_for(IOBufferReader *abuf);
+  void reader_for(MIOBuffer *abuf);
+  void writer_for(MIOBuffer *abuf);
 
-  void clear() {
+  void
+  clear()
+  {
     mbuf = NULL;
     entry = NULL;
   }
 
-  MIOBufferAccessor():
+  MIOBufferAccessor()
+    :
 #ifdef DEBUG
-    name(NULL),
+      name(NULL),
 #endif
-    mbuf(NULL), entry(NULL)
+      mbuf(NULL), entry(NULL)
   {
   }
 
   ~MIOBufferAccessor();
 
 #ifdef DEBUG
-  const char * name;
+  const char *name;
 #endif
 
 private:
   MIOBufferAccessor(const MIOBufferAccessor &);
-  MIOBufferAccessor & operator =(const MIOBufferAccessor &);
+  MIOBufferAccessor &operator=(const MIOBufferAccessor &);
 
   MIOBuffer *mbuf;
   IOBufferReader *entry;
-
 };
 
-extern MIOBuffer * new_MIOBuffer_internal(
+extern MIOBuffer *new_MIOBuffer_internal(
 #ifdef TRACK_BUFFER_USER
-                                          const char *loc,
+  const char *loc,
 #endif
-                                          int64_t size_index = default_large_iobuffer_size);
+  int64_t size_index = default_large_iobuffer_size);
 
 #ifdef TRACK_BUFFER_USER
 class MIOBuffer_tracker
@@ -1217,17 +1249,12 @@ class MIOBuffer_tracker
   const char *loc;
 
 public:
-    MIOBuffer_tracker(const char *_loc):loc(_loc)
-  {
-  }
-  MIOBuffer *operator() (int64_t size_index = default_large_iobuffer_size) {
-    return new_MIOBuffer_internal(loc, size_index);
-  }
-
+  MIOBuffer_tracker(const char *_loc) : loc(_loc) {}
+  MIOBuffer *operator()(int64_t size_index = default_large_iobuffer_size) { return new_MIOBuffer_internal(loc, size_index); }
 };
 #endif
 
-extern MIOBuffer * new_empty_MIOBuffer_internal(
+extern MIOBuffer *new_empty_MIOBuffer_internal(
 #ifdef TRACK_BUFFER_USER
   const char *loc,
 #endif
@@ -1239,37 +1266,33 @@ class Empty_MIOBuffer_tracker
   const char *loc;
 
 public:
-    Empty_MIOBuffer_tracker(const char *_loc):loc(_loc)
-  {
-  }
-  MIOBuffer *operator() (int64_t size_index = default_large_iobuffer_size) {
-    return new_empty_MIOBuffer_internal(loc, size_index);
-  }
+  Empty_MIOBuffer_tracker(const char *_loc) : loc(_loc) {}
+  MIOBuffer *operator()(int64_t size_index = default_large_iobuffer_size) { return new_empty_MIOBuffer_internal(loc, size_index); }
 };
 #endif
 
 /// MIOBuffer allocator/deallocator
 #ifdef TRACK_BUFFER_USER
-#define new_MIOBuffer               MIOBuffer_tracker(RES_PATH("memory/IOBuffer/"))
-#define new_empty_MIOBuffer         Empty_MIOBuffer_tracker(RES_PATH("memory/IOBuffer/"))
+#define new_MIOBuffer MIOBuffer_tracker(RES_PATH("memory/IOBuffer/"))
+#define new_empty_MIOBuffer Empty_MIOBuffer_tracker(RES_PATH("memory/IOBuffer/"))
 #else
-#define new_MIOBuffer               new_MIOBuffer_internal
-#define new_empty_MIOBuffer         new_empty_MIOBuffer_internal
+#define new_MIOBuffer new_MIOBuffer_internal
+#define new_empty_MIOBuffer new_empty_MIOBuffer_internal
 #endif
-extern void free_MIOBuffer(MIOBuffer * mio);
+extern void free_MIOBuffer(MIOBuffer *mio);
 //////////////////////////////////////////////////////////////////////
 
-extern IOBufferBlock * new_IOBufferBlock_internal(
+extern IOBufferBlock *new_IOBufferBlock_internal(
 #ifdef TRACK_BUFFER_USER
   const char *loc
 #endif
-);
+  );
 
-extern IOBufferBlock * new_IOBufferBlock_internal(
+extern IOBufferBlock *new_IOBufferBlock_internal(
 #ifdef TRACK_BUFFER_USER
   const char *loc,
 #endif
-  IOBufferData * d, int64_t len = 0, int64_t offset = 0);
+  IOBufferData *d, int64_t len = 0, int64_t offset = 0);
 
 #ifdef TRACK_BUFFER_USER
 class IOBufferBlock_tracker
@@ -1277,25 +1300,20 @@ class IOBufferBlock_tracker
   const char *loc;
 
 public:
-    IOBufferBlock_tracker(const char *_loc):loc(_loc)
+  IOBufferBlock_tracker(const char *_loc) : loc(_loc) {}
+  IOBufferBlock *operator()() { return new_IOBufferBlock_internal(loc); }
+  IOBufferBlock *operator()(IOBufferData *d, int64_t len = 0, int64_t offset = 0)
   {
-  }
-  IOBufferBlock *operator() ()
-  {
-    return new_IOBufferBlock_internal(loc);
-  }
-  IOBufferBlock *operator() (IOBufferData * d, int64_t len = 0, int64_t offset = 0) {
     return new_IOBufferBlock_internal(loc, d, len, offset);
   }
-
 };
 #endif
 
 /// IOBufferBlock allocator
 #ifdef TRACK_BUFFER_USER
-#define new_IOBufferBlock  IOBufferBlock_tracker(RES_PATH("memory/IOBuffer/"))
+#define new_IOBufferBlock IOBufferBlock_tracker(RES_PATH("memory/IOBuffer/"))
 #else
-#define new_IOBufferBlock  new_IOBufferBlock_internal
+#define new_IOBufferBlock new_IOBufferBlock_internal
 #endif
 ////////////////////////////////////////////////////////////
 
@@ -1303,8 +1321,7 @@ extern IOBufferData *new_IOBufferData_internal(
 #ifdef TRACK_BUFFER_USER
   const char *location,
 #endif
-  int64_t size_index = default_large_iobuffer_size,
-  AllocType type = DEFAULT_ALLOC);
+  int64_t size_index = default_large_iobuffer_size, AllocType type = DEFAULT_ALLOC);
 
 extern IOBufferData *new_xmalloc_IOBufferData_internal(
 #ifdef TRACK_BUFFER_USER
@@ -1324,28 +1341,22 @@ class IOBufferData_tracker
   const char *loc;
 
 public:
-  IOBufferData_tracker(const char *_loc):loc(_loc)
+  IOBufferData_tracker(const char *_loc) : loc(_loc) {}
+  IOBufferData *operator()(int64_t size_index = default_large_iobuffer_size, AllocType type = DEFAULT_ALLOC)
   {
-  }
-  IOBufferData *operator() (int64_t size_index = default_large_iobuffer_size, AllocType type = DEFAULT_ALLOC) {
     return new_IOBufferData_internal(loc, size_index, type);
   }
-
 };
 #endif
 
 #ifdef TRACK_BUFFER_USER
 #define new_IOBufferData IOBufferData_tracker(RES_PATH("memory/IOBuffer/"))
-#define  new_xmalloc_IOBufferData(b, size)                      \
-new_xmalloc_IOBufferData_internal(RES_PATH("memory/IOBuffer/"), \
-				  (b), (size))
-#define  new_constant_IOBufferData(b, size)                      \
-new_constant_IOBufferData_internal(RES_PATH("memory/IOBuffer/"), \
-				  (b), (size))
+#define new_xmalloc_IOBufferData(b, size) new_xmalloc_IOBufferData_internal(RES_PATH("memory/IOBuffer/"), (b), (size))
+#define new_constant_IOBufferData(b, size) new_constant_IOBufferData_internal(RES_PATH("memory/IOBuffer/"), (b), (size))
 #else
 #define new_IOBufferData new_IOBufferData_internal
-#define  new_xmalloc_IOBufferData new_xmalloc_IOBufferData_internal
-#define  new_constant_IOBufferData new_constant_IOBufferData_internal
+#define new_xmalloc_IOBufferData new_xmalloc_IOBufferData_internal
+#define new_constant_IOBufferData new_constant_IOBufferData_internal
 #endif
 
 extern int64_t iobuffer_size_to_index(int64_t size, int64_t max = max_iobuffer_size);
@@ -1360,7 +1371,7 @@ extern int64_t index_to_buffer_size(int64_t idx);
   @return ptr to head of new IOBufferBlock chain.
 
 */
-extern IOBufferBlock *iobufferblock_clone(IOBufferBlock * b, int64_t offset, int64_t len);
+extern IOBufferBlock *iobufferblock_clone(IOBufferBlock *b, int64_t offset, int64_t len);
 /**
   Skip over specified bytes in chain. Used for dropping references.
 
@@ -1372,5 +1383,5 @@ extern IOBufferBlock *iobufferblock_clone(IOBufferBlock * b, int64_t offset, int
   @return ptr to head of new IOBufferBlock chain.
 
 */
-extern IOBufferBlock *iobufferblock_skip(IOBufferBlock * b, int64_t *poffset, int64_t *plen, int64_t write);
+extern IOBufferBlock *iobufferblock_skip(IOBufferBlock *b, int64_t *poffset, int64_t *plen, int64_t write);
 #endif

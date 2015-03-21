@@ -27,7 +27,9 @@
 
 using namespace atscppapi;
 
-TSRemapStatus TSRemapDoRemap(void* ih, TSHttpTxn rh, TSRemapRequestInfo* rri) {
+TSRemapStatus
+TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
+{
   RemapPlugin *remap_plugin = static_cast<RemapPlugin *>(ih);
   Url map_from_url(rri->requestBufp, rri->mapFromUrl), map_to_url(rri->requestBufp, rri->mapToUrl);
   Transaction &transaction = utils::internal::getTransaction(rh);
@@ -51,16 +53,20 @@ TSRemapStatus TSRemapDoRemap(void* ih, TSHttpTxn rh, TSRemapRequestInfo* rri) {
   }
 }
 
-void TSRemapDeleteInstance(void *ih) {
+void
+TSRemapDeleteInstance(void *ih)
+{
   RemapPlugin *remap_plugin = static_cast<RemapPlugin *>(ih);
   delete remap_plugin;
 }
 
-TSReturnCode TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size) {
+TSReturnCode
+TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
+{
   return TS_SUCCESS;
 }
 
-RemapPlugin::RemapPlugin(void **instance_handle) {
+RemapPlugin::RemapPlugin(void **instance_handle)
+{
   *instance_handle = static_cast<void *>(this);
 }
-

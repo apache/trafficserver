@@ -23,18 +23,17 @@
 
 
 #ifndef _STATXML_H_
-#define	_STATXML_H_
+#define _STATXML_H_
 
 #include "WebMgmtUtils.h"
 #include "List.h"
 
-typedef enum
-{
+typedef enum {
   INVALID_TAG = -1,
   ROOT_TAG,
   STAT_TAG,
   DST_TAG,
-  EXPR_TAG
+  EXPR_TAG,
 } StatXMLTag;
 
 /***************************************************************

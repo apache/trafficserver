@@ -64,7 +64,6 @@ domaincmp(const char *hostname, const char *domain)
   }
   // Walk through both strings backward
   while (domain_cur >= domain && host_cur >= hostname) {
-
     // If we still have characters left on both strings and
     //   they do not match, matching fails
     //
@@ -170,39 +169,27 @@ hostcmp(const char *c1, const char *c2)
 //   Illegal characters map to 255
 //
 static const unsigned char asciiToTable[256] = {
-  255, 255, 255, 255, 255, 255, 255, 255,       // 0 - 7
-  255, 255, 255, 255, 255, 255, 255, 255,       // 8 - 15
-  255, 255, 255, 255, 255, 255, 255, 255,       // 16 - 23
-  255, 255, 255, 255, 255, 255, 255, 255,       // 24 - 31
-  255, 255, 255, 255, 255, 255, 255, 255,       // 32 - 39
-  255, 255, 255, 255, 255, 0, 255, 255, // 40 - 47 ('-')
-  1, 2, 3, 4, 5, 6, 7, 8,       // 48 - 55 (0-7)
-  9, 10, 255, 255, 255, 255, 255, 255,  // 56 - 63 (8-9)
-  255, 11, 12, 13, 14, 15, 16, 17,      // 64 - 71 (A-G)
-  18, 19, 20, 21, 22, 23, 24, 25,       // 72 - 79 (H-O)
-  26, 27, 28, 29, 30, 31, 32, 33,       // 80 - 87 (P-W)
-  34, 35, 36, 255, 255, 255, 255, 37,   // 88 - 95 (X-Z, '_')
-  255, 11, 12, 13, 14, 15, 16, 17,      // 96 - 103 (a-g)
-  18, 19, 20, 21, 22, 23, 24, 25,       // 104 - 111 (h-0)
-  26, 27, 28, 29, 30, 31, 32, 33,       // 112 - 119 (p-w)
-  34, 35, 36, 255, 255, 255, 255, 255,  // 120 - 127 (x-z)
-  255, 255, 255, 255, 255, 255, 255, 255,
-  255, 255, 255, 255, 255, 255, 255, 255,
-  255, 255, 255, 255, 255, 255, 255, 255,
-  255, 255, 255, 255, 255, 255, 255, 255,
-  255, 255, 255, 255, 255, 255, 255, 255,
-  255, 255, 255, 255, 255, 255, 255, 255,
-  255, 255, 255, 255, 255, 255, 255, 255,
-  255, 255, 255, 255, 255, 255, 255, 255,
-  255, 255, 255, 255, 255, 255, 255, 255,
-  255, 255, 255, 255, 255, 255, 255, 255,
-  255, 255, 255, 255, 255, 255, 255, 255,
-  255, 255, 255, 255, 255, 255, 255, 255,
-  255, 255, 255, 255, 255, 255, 255, 255,
-  255, 255, 255, 255, 255, 255, 255, 255,
-  255, 255, 255, 255, 255, 255, 255, 255,
-  255, 255, 255, 255, 255, 255, 255, 255
-};
+  255, 255, 255, 255, 255, 255, 255, 255, // 0 - 7
+  255, 255, 255, 255, 255, 255, 255, 255, // 8 - 15
+  255, 255, 255, 255, 255, 255, 255, 255, // 16 - 23
+  255, 255, 255, 255, 255, 255, 255, 255, // 24 - 31
+  255, 255, 255, 255, 255, 255, 255, 255, // 32 - 39
+  255, 255, 255, 255, 255, 0,   255, 255, // 40 - 47 ('-')
+  1,   2,   3,   4,   5,   6,   7,   8,   // 48 - 55 (0-7)
+  9,   10,  255, 255, 255, 255, 255, 255, // 56 - 63 (8-9)
+  255, 11,  12,  13,  14,  15,  16,  17,  // 64 - 71 (A-G)
+  18,  19,  20,  21,  22,  23,  24,  25,  // 72 - 79 (H-O)
+  26,  27,  28,  29,  30,  31,  32,  33,  // 80 - 87 (P-W)
+  34,  35,  36,  255, 255, 255, 255, 37,  // 88 - 95 (X-Z, '_')
+  255, 11,  12,  13,  14,  15,  16,  17,  // 96 - 103 (a-g)
+  18,  19,  20,  21,  22,  23,  24,  25,  // 104 - 111 (h-0)
+  26,  27,  28,  29,  30,  31,  32,  33,  // 112 - 119 (p-w)
+  34,  35,  36,  255, 255, 255, 255, 255, // 120 - 127 (x-z)
+  255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+  255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+  255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+  255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+  255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255};
 
 // Number of legal characters in the acssiToTable array
 static const int numLegalChars = 38;
@@ -212,8 +199,7 @@ static const int numLegalChars = 38;
 //   Used by class charIndex.  Forms a single level
 //    in charIndex tree
 //
-struct charIndex_el
-{
+struct charIndex_el {
   charIndex_el();
   ~charIndex_el();
   HostBranch *branch_array[numLegalChars];
@@ -245,23 +231,21 @@ charIndex_el::~charIndex_el()
 //    Stores the location of an element in
 //    class charIndex
 //
-struct charIndexIterInternal
-{
+struct charIndexIterInternal {
   charIndex_el *ptr;
   int index;
 };
 
 // Used as a default return element for DynArray in
 //   struct charIndexIterState
-static charIndexIterInternal default_iter = { NULL, -1 };
+static charIndexIterInternal default_iter = {NULL, -1};
 
 // struct charIndexIterState
 //
 //    struct for the callee to keep interation state
 //      for class charIndex
 //
-struct charIndexIterState
-{
+struct charIndexIterState {
   charIndexIterState();
 
   // Where that level we are in interation
@@ -272,10 +256,10 @@ struct charIndexIterState
   charIndex_el *cur_el;
 
   //  Queue of the above levels
-    DynArray<charIndexIterInternal> q;
+  DynArray<charIndexIterInternal> q;
 };
 
-charIndexIterState::charIndexIterState():cur_level(-1), cur_index(-1), cur_el(NULL), q(&default_iter, 6)
+charIndexIterState::charIndexIterState() : cur_level(-1), cur_index(-1), cur_el(NULL), q(&default_iter, 6)
 {
 }
 
@@ -316,29 +300,22 @@ charIndexIterState::charIndexIterState():cur_level(-1), cur_index(-1), cur_el(NU
 //
 //
 //
-class
-  charIndex
+class charIndex
 {
 public:
   charIndex();
-  ~
-  charIndex();
-  void
-  Insert(const char *match_data, HostBranch * toInsert);
-  HostBranch *
-  Lookup(const char *match_data);
-  HostBranch *
-  iter_first(charIndexIterState * s);
-  HostBranch *
-  iter_next(charIndexIterState * s);
+  ~charIndex();
+  void Insert(const char *match_data, HostBranch *toInsert);
+  HostBranch *Lookup(const char *match_data);
+  HostBranch *iter_first(charIndexIterState *s);
+  HostBranch *iter_next(charIndexIterState *s);
+
 private:
-  charIndex_el *
-    root;
-  InkHashTable *
-    illegalKey;
+  charIndex_el *root;
+  InkHashTable *illegalKey;
 };
 
-charIndex::charIndex():illegalKey(NULL)
+charIndex::charIndex() : illegalKey(NULL)
 {
   root = new charIndex_el;
 }
@@ -357,7 +334,7 @@ charIndex::~charIndex()
     ht_entry = ink_hash_table_iterator_first(illegalKey, &ht_iter);
 
     while (ht_entry != NULL) {
-      tmp = (HostBranch *) ink_hash_table_entry_value(illegalKey, ht_entry);
+      tmp = (HostBranch *)ink_hash_table_entry_value(illegalKey, ht_entry);
       ink_assert(tmp != NULL);
       delete tmp;
       ht_entry = ink_hash_table_iterator_next(illegalKey, &ht_iter);
@@ -371,7 +348,7 @@ charIndex::~charIndex()
 //   Places a binding for match_data to toInsert into the index
 //
 void
-charIndex::Insert(const char *match_data, HostBranch * toInsert)
+charIndex::Insert(const char *match_data, HostBranch *toInsert)
 {
   unsigned char index;
   const char *match_start = match_data;
@@ -385,7 +362,7 @@ charIndex::Insert(const char *match_data, HostBranch * toInsert)
   }
 
   while (1) {
-    index = asciiToTable[(unsigned char) (*match_data)];
+    index = asciiToTable[(unsigned char)(*match_data)];
 
     // Check to see if our index into table is for an
     //  'illegal' DNS character
@@ -394,7 +371,7 @@ charIndex::Insert(const char *match_data, HostBranch * toInsert)
       if (illegalKey == NULL) {
         illegalKey = ink_hash_table_create(InkHashTableKeyType_String);
       }
-      ink_hash_table_insert(illegalKey, (char *) match_start, toInsert);
+      ink_hash_table_insert(illegalKey, (char *)match_start, toInsert);
       break;
     }
 
@@ -441,8 +418,7 @@ charIndex::Lookup(const char *match_data)
   }
 
   while (1) {
-
-    index = asciiToTable[(unsigned char) (*match_data)];
+    index = asciiToTable[(unsigned char)(*match_data)];
 
     // Check to see if our index into table is for an
     //  'illegal' DNS character
@@ -450,8 +426,8 @@ charIndex::Lookup(const char *match_data)
       if (illegalKey == NULL) {
         return NULL;
       } else {
-        if (ink_hash_table_lookup(illegalKey, (char *) match_start, &hash_lookup)) {
-          return (HostBranch *) hash_lookup;
+        if (ink_hash_table_lookup(illegalKey, (char *)match_start, &hash_lookup)) {
+          return (HostBranch *)hash_lookup;
         } else {
           return NULL;
         }
@@ -481,7 +457,7 @@ charIndex::Lookup(const char *match_data)
 //     is returned
 //
 HostBranch *
-charIndex::iter_first(charIndexIterState * s)
+charIndex::iter_first(charIndexIterState *s)
 {
   s->cur_level = 0;
   s->cur_index = -1;
@@ -498,7 +474,7 @@ charIndex::iter_first(charIndexIterState * s)
 //      is returned
 //
 HostBranch *
-charIndex::iter_next(charIndexIterState * s)
+charIndex::iter_next(charIndexIterState *s)
 {
   int index;
   charIndex_el *current_el = s->cur_el;
@@ -519,7 +495,6 @@ charIndex::iter_next(charIndexIterState * s)
   }
 
   while (1) {
-
     // Check to see if we need to go back up a level
     if (index >= numLegalChars) {
       if (level <= 0) {
@@ -582,17 +557,18 @@ class hostArray
 public:
   hostArray();
   ~hostArray();
-  bool Insert(const char *match_data_in, HostBranch * toInsert);
+  bool Insert(const char *match_data_in, HostBranch *toInsert);
   HostBranch *Lookup(const char *match_data_in, bool bNotProcess);
-  HostBranch *iter_first(hostArrayIterState * s, char **key = NULL);
-  HostBranch *iter_next(hostArrayIterState * s, char **key = NULL);
+  HostBranch *iter_first(hostArrayIterState *s, char **key = NULL);
+  HostBranch *iter_next(hostArrayIterState *s, char **key = NULL);
+
 private:
-  int num_el;                   // number of elements currently in the array
+  int num_el; // number of elements currently in the array
   HostBranch *branch_array[HOST_ARRAY_MAX];
   char *match_data[HOST_ARRAY_MAX];
 };
 
-hostArray::hostArray():num_el(0)
+hostArray::hostArray() : num_el(0)
 {
   memset(branch_array, 0, sizeof(branch_array));
   memset(match_data, 0, sizeof(match_data));
@@ -614,7 +590,7 @@ hostArray::~hostArray()
 //    If space is inadequate, false is returned and nothing is inserted
 //
 bool
-hostArray::Insert(const char *match_data_in, HostBranch * toInsert)
+hostArray::Insert(const char *match_data_in, HostBranch *toInsert)
 {
   if (num_el >= HOST_ARRAY_MAX) {
     return false;
@@ -642,7 +618,6 @@ hostArray::Lookup(const char *match_data_in, bool bNotProcess)
     pMD = match_data[i];
 
     if (bNotProcess && '!' == *pMD) {
-
       char *cp = ++pMD;
       if ('\0' == *cp)
         continue;
@@ -668,7 +643,7 @@ hostArray::Lookup(const char *match_data_in, bool bNotProcess)
 //     NULL if no elements exist
 //
 HostBranch *
-hostArray::iter_first(hostArrayIterState * s, char **key)
+hostArray::iter_first(hostArrayIterState *s, char **key)
 {
   *s = -1;
   return iter_next(s, key);
@@ -680,7 +655,7 @@ hostArray::iter_first(hostArrayIterState * s, char **key)
 //      NULL if none exist
 //
 HostBranch *
-hostArray::iter_next(hostArrayIterState * s, char **key)
+hostArray::iter_next(hostArrayIterState *s, char **key)
 {
   (*s)++;
 
@@ -695,17 +670,11 @@ hostArray::iter_next(hostArrayIterState * s, char **key)
 }
 
 // maps enum LeafType to strings
-const char *LeafTypeStr[] = {
-  "Leaf Invalid",
-  "Host (Partial)",
-  "Host (Full)",
-  "Domain (Full)",
-  "Domain (Partial)"
-};
+const char *LeafTypeStr[] = {"Leaf Invalid", "Host (Partial)", "Host (Full)", "Domain (Full)", "Domain (Partial)"};
 
 static int negative_one = -1;
 
-HostBranch::HostBranch():level(0), type(HOST_TERMINAL), next_level(NULL), leaf_indexs(&negative_one, 1)
+HostBranch::HostBranch() : level(0), type(HOST_TERMINAL), next_level(NULL), leaf_indexs(&negative_one, 1)
 {
 }
 
@@ -715,7 +684,6 @@ HostBranch::HostBranch():level(0), type(HOST_TERMINAL), next_level(NULL), leaf_i
 //
 HostBranch::~HostBranch()
 {
-
   // Hash Iteration
   InkHashTable *ht;
   InkHashTableIteratorState ht_iter;
@@ -737,11 +705,11 @@ HostBranch::~HostBranch()
     break;
   case HOST_HASH:
     ink_assert(next_level != NULL);
-    ht = (InkHashTable *) next_level;
+    ht = (InkHashTable *)next_level;
     ht_entry = ink_hash_table_iterator_first(ht, &ht_iter);
 
     while (ht_entry != NULL) {
-      lower_branch = (HostBranch *) ink_hash_table_entry_value(ht, ht_entry);
+      lower_branch = (HostBranch *)ink_hash_table_entry_value(ht, ht_entry);
       delete lower_branch;
       ht_entry = ink_hash_table_iterator_next(ht, &ht_iter);
     }
@@ -749,7 +717,7 @@ HostBranch::~HostBranch()
     break;
   case HOST_INDEX:
     ink_assert(next_level != NULL);
-    ci = (charIndex *) next_level;
+    ci = (charIndex *)next_level;
     lower_branch = ci->iter_first(&ci_iter);
     while (lower_branch != NULL) {
       delete lower_branch;
@@ -759,7 +727,7 @@ HostBranch::~HostBranch()
     break;
   case HOST_ARRAY:
     ink_assert(next_level != NULL);
-    ha = (hostArray *) next_level;
+    ha = (hostArray *)next_level;
     lower_branch = ha->iter_first(&ha_iter);
     while (lower_branch != NULL) {
       delete lower_branch;
@@ -770,13 +738,8 @@ HostBranch::~HostBranch()
   }
 }
 
-HostLookup::HostLookup(const char *name):
-leaf_array(NULL),
-array_len(-1),
-num_el(-1),
-matcher_name(name)
+HostLookup::HostLookup(const char *name) : leaf_array(NULL), array_len(-1), num_el(-1), matcher_name(name)
 {
-
   root = new HostBranch;
   root->level = 0;
   root->type = HOST_TERMINAL;
@@ -785,20 +748,19 @@ matcher_name(name)
 
 HostLookup::~HostLookup()
 {
-
   if (leaf_array != NULL) {
     // Free up the match strings
     for (int i = 0; i < num_el; i++) {
       ats_free(leaf_array[i].match);
     }
-    delete[]leaf_array;
+    delete[] leaf_array;
   }
 
   delete root;
 }
 
 static void
-empty_print_fn(void */* opaque_data ATS_UNUSED */)
+empty_print_fn(void * /* opaque_data ATS_UNUSED */)
 {
 }
 
@@ -821,9 +783,8 @@ HostLookup::Print(HostLookupPrintFunc f)
 //     and print out each element
 //
 void
-HostLookup::PrintHostBranch(HostBranch * hb, HostLookupPrintFunc f)
+HostLookup::PrintHostBranch(HostBranch *hb, HostLookupPrintFunc f)
 {
-
   // Hash iteration
   InkHashTable *ht;
   InkHashTableIteratorState ht_iter;
@@ -839,7 +800,7 @@ HostLookup::PrintHostBranch(HostBranch * hb, HostLookupPrintFunc f)
 
   HostBranch *lower_branch;
   intptr_t curIndex;
-  intptr_t i;                        // Loop var
+  intptr_t i; // Loop var
 
   for (i = 0; i < hb->leaf_indexs.length(); i++) {
     curIndex = hb->leaf_indexs[i];
@@ -853,18 +814,18 @@ HostLookup::PrintHostBranch(HostBranch * hb, HostLookupPrintFunc f)
     break;
   case HOST_HASH:
     ink_assert(hb->next_level != NULL);
-    ht = (InkHashTable *) hb->next_level;
+    ht = (InkHashTable *)hb->next_level;
     ht_entry = ink_hash_table_iterator_first(ht, &ht_iter);
 
     while (ht_entry != NULL) {
-      lower_branch = (HostBranch *) ink_hash_table_entry_value(ht, ht_entry);
+      lower_branch = (HostBranch *)ink_hash_table_entry_value(ht, ht_entry);
       PrintHostBranch(lower_branch, f);
       ht_entry = ink_hash_table_iterator_next(ht, &ht_iter);
     }
     break;
   case HOST_INDEX:
     ink_assert(hb->next_level != NULL);
-    ci = (charIndex *) hb->next_level;
+    ci = (charIndex *)hb->next_level;
     lower_branch = ci->iter_first(&ci_iter);
     while (lower_branch != NULL) {
       PrintHostBranch(lower_branch, f);
@@ -873,7 +834,7 @@ HostLookup::PrintHostBranch(HostBranch * hb, HostLookupPrintFunc f)
     break;
   case HOST_ARRAY:
     ink_assert(hb->next_level != NULL);
-    h_array = (hostArray *) hb->next_level;
+    h_array = (hostArray *)hb->next_level;
     lower_branch = h_array->iter_first(&ha_iter);
     while (lower_branch != NULL) {
       PrintHostBranch(lower_branch, f);
@@ -892,7 +853,7 @@ HostLookup::PrintHostBranch(HostBranch * hb, HostLookupPrintFunc f)
 //         HostBranch
 //
 HostBranch *
-HostLookup::TableNewLevel(HostBranch * from, const char *level_data)
+HostLookup::TableNewLevel(HostBranch *from, const char *level_data)
 {
   hostArray *new_ha_table;
   charIndex *new_ci_table;
@@ -924,9 +885,8 @@ HostLookup::TableNewLevel(HostBranch * from, const char *level_data)
 //      by class HostMatcher
 //
 HostBranch *
-HostLookup::InsertBranch(HostBranch * insert_in, const char *level_data)
+HostLookup::InsertBranch(HostBranch *insert_in, const char *level_data)
 {
-
   // Variables for moving an array into a hash table after it
   //   gets too big
   //
@@ -948,18 +908,17 @@ HostLookup::InsertBranch(HostBranch * insert_in, const char *level_data)
     ink_release_assert(0);
     break;
   case HOST_HASH:
-    ink_hash_table_insert((InkHashTable *) insert_in->next_level, (char *) level_data, new_branch);
+    ink_hash_table_insert((InkHashTable *)insert_in->next_level, (char *)level_data, new_branch);
     break;
   case HOST_INDEX:
-    ((charIndex *) insert_in->next_level)->Insert(level_data, new_branch);
+    ((charIndex *)insert_in->next_level)->Insert(level_data, new_branch);
     break;
   case HOST_ARRAY:
-    if (((hostArray *) insert_in->next_level)->Insert(level_data, new_branch) == false) {
-
+    if (((hostArray *)insert_in->next_level)->Insert(level_data, new_branch) == false) {
       // The array is out of space, time to move to a hash table
-      ha = (hostArray *) insert_in->next_level;
+      ha = (hostArray *)insert_in->next_level;
       new_ht = ink_hash_table_create(InkHashTableKeyType_String);
-      ink_hash_table_insert(new_ht, (char *) level_data, new_branch);
+      ink_hash_table_insert(new_ht, (char *)level_data, new_branch);
 
       // Iterate through the existing elements in the array and
       //  stuff them into the hash table
@@ -977,7 +936,6 @@ HostLookup::InsertBranch(HostBranch * insert_in, const char *level_data)
       insert_in->type = HOST_HASH;
     }
     break;
-
   }
 
   return new_branch;
@@ -992,9 +950,8 @@ HostLookup::InsertBranch(HostBranch * insert_in, const char *level_data)
 //    otherwise returns NULL
 //
 HostBranch *
-HostLookup::FindNextLevel(HostBranch * from, const char *level_data, bool bNotProcess)
+HostLookup::FindNextLevel(HostBranch *from, const char *level_data, bool bNotProcess)
 {
-
   HostBranch *r = NULL;
   InkHashTable *hash;
   charIndex *ci_table;
@@ -1007,21 +964,21 @@ HostLookup::FindNextLevel(HostBranch * from, const char *level_data, bool bNotPr
     ink_assert(0);
     return NULL;
   case HOST_HASH:
-    hash = (InkHashTable *) from->next_level;
+    hash = (InkHashTable *)from->next_level;
     ink_assert(hash != NULL);
-    if (ink_hash_table_lookup(hash, (char *) level_data, &lookup)) {
-      r = (HostBranch *) lookup;
+    if (ink_hash_table_lookup(hash, (char *)level_data, &lookup)) {
+      r = (HostBranch *)lookup;
     } else {
       r = NULL;
     }
     break;
   case HOST_INDEX:
-    ci_table = (charIndex *) from->next_level;
+    ci_table = (charIndex *)from->next_level;
     ink_assert(ci_table != NULL);
     r = ci_table->Lookup(level_data);
     break;
   case HOST_ARRAY:
-    ha_table = (hostArray *) from->next_level;
+    ha_table = (hostArray *)from->next_level;
     ink_assert(ha_table != NULL);
     r = ha_table->Lookup(level_data, bNotProcess);
     break;
@@ -1054,7 +1011,6 @@ HostLookup::TableInsert(const char *match_data, int index, bool domain_record)
   //  OR   We reach the level where the match stops
   //
   for (i = 0; i < HOST_TABLE_DEPTH; i++) {
-
     // Check to see we need to stop at the current level
     if (numTok == cur->level) {
       break;
@@ -1122,7 +1078,7 @@ HostLookup::TableInsert(const char *match_data, int index, bool domain_record)
 //
 
 bool
-HostLookup::MatchArray(HostLookupState * s, void **opaque_ptr, DynArray<int>&array, bool host_done)
+HostLookup::MatchArray(HostLookupState *s, void **opaque_ptr, DynArray<int> &array, bool host_done)
 {
   intptr_t index;
   intptr_t i;
@@ -1153,7 +1109,7 @@ HostLookup::MatchArray(HostLookupState * s, void **opaque_ptr, DynArray<int>&arr
       if (domaincmp(s->hostname, leaf_array[index].match) == false) {
         break;
       }
-      // FALL THROUGH
+    // FALL THROUGH
     case DOMAIN_COMPLETE:
       *opaque_ptr = leaf_array[index].opaque_data;
       s->array_index = i;
@@ -1174,7 +1130,7 @@ HostLookup::MatchArray(HostLookupState * s, void **opaque_ptr, DynArray<int>&arr
 //
 //
 bool
-HostLookup::MatchFirst(const char *host, HostLookupState * s, void **opaque_ptr)
+HostLookup::MatchFirst(const char *host, HostLookupState *s, void **opaque_ptr)
 {
   char *last_dot = NULL;
 
@@ -1210,7 +1166,7 @@ HostLookup::MatchFirst(const char *host, HostLookupState * s, void **opaque_ptr)
 //    arg hostname
 //
 bool
-HostLookup::MatchNext(HostLookupState * s, void **opaque_ptr)
+HostLookup::MatchNext(HostLookupState *s, void **opaque_ptr)
 {
   HostBranch *cur = s->cur;
 
@@ -1220,7 +1176,6 @@ HostLookup::MatchNext(HostLookupState * s, void **opaque_ptr)
   }
 
   while (s->table_level <= HOST_TABLE_DEPTH) {
-
     if (MatchArray(s, opaque_ptr, cur->leaf_indexs, (s->host_copy_next == NULL))) {
       return true;
     }
@@ -1247,7 +1202,6 @@ HostLookup::MatchNext(HostLookupState * s, void **opaque_ptr)
         // Nothing left
         s->host_copy_next = NULL;
       } else {
-
         // Back up to period ahead of us and axe it
         s->host_copy_next--;
         ink_assert(*s->host_copy_next == '.');
@@ -1256,7 +1210,6 @@ HostLookup::MatchNext(HostLookupState * s, void **opaque_ptr)
         s->host_copy_next--;
 
         while (1) {
-
           if (s->host_copy_next <= s->host_copy) {
             s->host_copy_next = s->host_copy;
             break;
@@ -1302,7 +1255,6 @@ HostLookup::AllocateSpace(int num_entries)
 void
 HostLookup::NewEntry(const char *match_data, bool domain_record, void *opaque_data_in)
 {
-
   // Make sure space has been allocated
   ink_assert(num_el >= 0);
   ink_assert(array_len >= 0);

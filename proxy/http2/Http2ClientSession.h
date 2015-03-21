@@ -34,17 +34,17 @@
 // HTTP2_SESSION_EVENT_RECV   Http2Frame *          Received a frame
 // HTTP2_SESSION_EVENT_XMIT   Http2Frame *          Send this frame
 
-#define HTTP2_SESSION_EVENT_INIT  (HTTP2_SESSION_EVENTS_START + 1)
-#define HTTP2_SESSION_EVENT_FINI  (HTTP2_SESSION_EVENTS_START + 2)
-#define HTTP2_SESSION_EVENT_RECV  (HTTP2_SESSION_EVENTS_START + 3)
-#define HTTP2_SESSION_EVENT_XMIT  (HTTP2_SESSION_EVENTS_START + 4)
+#define HTTP2_SESSION_EVENT_INIT (HTTP2_SESSION_EVENTS_START + 1)
+#define HTTP2_SESSION_EVENT_FINI (HTTP2_SESSION_EVENTS_START + 2)
+#define HTTP2_SESSION_EVENT_RECV (HTTP2_SESSION_EVENTS_START + 3)
+#define HTTP2_SESSION_EVENT_XMIT (HTTP2_SESSION_EVENTS_START + 4)
 
 static size_t const HTTP2_HEADER_BUFFER_SIZE_INDEX = CLIENT_CONNECTION_FIRST_READ_BUFFER_SIZE_INDEX;
 
 // To support Upgrade: h2c
-struct Http2UpgradeContext
-{
-  ~Http2UpgradeContext() {
+struct Http2UpgradeContext {
+  ~Http2UpgradeContext()
+  {
     if (req_header) {
       req_header->clear();
       delete req_header;
@@ -52,7 +52,7 @@ struct Http2UpgradeContext
   }
 
   // Modified request header
-  HTTPHdr * req_header;
+  HTTPHdr *req_header;
 
   // Decoded HTTP2-Settings Header Field
   Http2ConnectionSettings client_settings;
@@ -61,27 +61,35 @@ struct Http2UpgradeContext
 class Http2Frame
 {
 public:
-  Http2Frame(const Http2FrameHeader& h, IOBufferReader * r) {
+  Http2Frame(const Http2FrameHeader &h, IOBufferReader *r)
+  {
     this->hdr.cooked = h;
     this->ioreader = r;
   }
 
-  Http2Frame(Http2FrameType type, Http2StreamId streamid, uint8_t flags) {
-    Http2FrameHeader hdr = { 0, (uint8_t)type, flags, streamid };
+  Http2Frame(Http2FrameType type, Http2StreamId streamid, uint8_t flags)
+  {
+    Http2FrameHeader hdr = {0, (uint8_t)type, flags, streamid};
     http2_write_frame_header(hdr, make_iovec(this->hdr.raw));
   }
 
-  IOBufferReader * reader() const {
+  IOBufferReader *
+  reader() const
+  {
     return ioreader;
   }
 
-  const Http2FrameHeader& header() const {
+  const Http2FrameHeader &
+  header() const
+  {
     return this->hdr.cooked;
   }
 
   // Allocate an IOBufferBlock for this frame. This switches us from using the in-line header
   // buffer, to an external buffer block.
-  void alloc(int index) {
+  void
+  alloc(int index)
+  {
     this->ioblock = new_IOBufferBlock();
     this->ioblock->alloc(index);
     memcpy(this->ioblock->start(), this->hdr.raw, sizeof(this->hdr.raw));
@@ -91,12 +99,16 @@ public:
   }
 
   // Return the writeable buffer space.
-  IOVec write() {
+  IOVec
+  write()
+  {
     return make_iovec(this->ioblock->end(), this->ioblock->write_avail());
   }
 
   // Once the frame has been serialized, update the length.
-  void finalize(size_t nbytes) {
+  void
+  finalize(size_t nbytes)
+  {
     if (this->ioblock) {
       ink_assert((int64_t)nbytes <= this->ioblock->write_avail());
       this->ioblock->fill(nbytes);
@@ -106,7 +118,9 @@ public:
     }
   }
 
-  void xmit(MIOBuffer * iobuffer) {
+  void
+  xmit(MIOBuffer *iobuffer)
+  {
     if (ioblock) {
       iobuffer->append_block(this->ioblock);
     } else {
@@ -115,11 +129,11 @@ public:
   }
 
 private:
-  Http2Frame(Http2Frame &); // noncopyable
-  Http2Frame& operator=(const Http2Frame &); // noncopyable
+  Http2Frame(Http2Frame &);                  // noncopyable
+  Http2Frame &operator=(const Http2Frame &); // noncopyable
 
-  Ptr<IOBufferBlock>  ioblock;
-  IOBufferReader *    ioreader;
+  Ptr<IOBufferBlock> ioblock;
+  IOBufferReader *ioreader;
 
   union {
     Http2FrameHeader cooked;
@@ -137,30 +151,43 @@ public:
   // Implement ProxyClientSession interface.
   void start();
   void destroy();
-  void new_connection(NetVConnection * new_vc, MIOBuffer * iobuf, IOBufferReader * reader, bool backdoor);
+  void new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader, bool backdoor);
 
   // Implement VConnection interface.
-  VIO * do_io_read(Continuation * c, int64_t nbytes = INT64_MAX, MIOBuffer * buf = 0);
-  VIO * do_io_write(Continuation * c = NULL, int64_t nbytes = INT64_MAX, IOBufferReader * buf = 0, bool owner = false);
+  VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = 0);
+  VIO *do_io_write(Continuation *c = NULL, int64_t nbytes = INT64_MAX, IOBufferReader *buf = 0, bool owner = false);
   void do_io_close(int lerrno = -1);
   void do_io_shutdown(ShutdownHowTo_t howto);
-  void reenable(VIO * vio);
+  void reenable(VIO *vio);
 
-  int64_t connection_id() const {
+  int64_t
+  connection_id() const
+  {
     return this->con_id;
   }
 
-  sockaddr const* get_client_addr() { return client_vc->get_remote_addr(); }
+  sockaddr const *
+  get_client_addr()
+  {
+    return client_vc->get_remote_addr();
+  }
 
-  void write_reenable() { write_vio->reenable(); }
+  void
+  write_reenable()
+  {
+    write_vio->reenable();
+  }
 
-  void set_upgrade_context(HTTPHdr * h);
-  const Http2UpgradeContext& get_upgrade_context() const { return upgrade_context; }
+  void set_upgrade_context(HTTPHdr *h);
+  const Http2UpgradeContext &
+  get_upgrade_context() const
+  {
+    return upgrade_context;
+  }
 
 private:
-
-  Http2ClientSession(Http2ClientSession &); // noncopyable
-  Http2ClientSession& operator=(const Http2ClientSession &); // noncopyable
+  Http2ClientSession(Http2ClientSession &);                  // noncopyable
+  Http2ClientSession &operator=(const Http2ClientSession &); // noncopyable
 
   int main_event_handler(int, void *);
 
@@ -168,20 +195,20 @@ private:
   int state_start_frame_read(int, void *);
   int state_complete_frame_read(int, void *);
 
-  int64_t               con_id;
-  SessionHandler        session_handler;
-  NetVConnection *      client_vc;
-  MIOBuffer *           read_buffer;
-  IOBufferReader *      sm_reader;
-  MIOBuffer *           write_buffer;
-  IOBufferReader *      sm_writer;
-  Http2FrameHeader      current_hdr;
-  Http2ConnectionState  connection_state;
+  int64_t con_id;
+  SessionHandler session_handler;
+  NetVConnection *client_vc;
+  MIOBuffer *read_buffer;
+  IOBufferReader *sm_reader;
+  MIOBuffer *write_buffer;
+  IOBufferReader *sm_writer;
+  Http2FrameHeader current_hdr;
+  Http2ConnectionState connection_state;
 
   // For Upgrade: h2c
   Http2UpgradeContext upgrade_context;
 
-  VIO * write_vio;
+  VIO *write_vio;
 };
 
 extern ClassAllocator<Http2ClientSession> http2ClientSessionAllocator;

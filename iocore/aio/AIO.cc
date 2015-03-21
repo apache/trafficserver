@@ -28,7 +28,7 @@
 #include "P_AIO.h"
 
 #if AIO_MODE == AIO_MODE_NATIVE
-#define AIO_PERIOD                                -HRTIME_MSECONDS(10)
+#define AIO_PERIOD -HRTIME_MSECONDS(10)
 #else
 
 #define MAX_DISKS_POSSIBLE 100
@@ -65,8 +65,8 @@ uint64_t aio_bytes_written = 0;
 static int
 aio_stats_cb(const char * /* name ATS_UNUSED */, RecDataT data_type, RecData *data, RecRawStatBlock *rsb, int id)
 {
-  (void) data_type;
-  (void) rsb;
+  (void)data_type;
+  (void)rsb;
   int64_t new_val = 0;
   int64_t diff = 0;
   int64_t count, sum;
@@ -102,7 +102,7 @@ aio_stats_cb(const char * /* name ATS_UNUSED */, RecDataT data_type, RecData *da
   diff = new_val - sum;
   RecSetGlobalRawStatSum(aio_rsb, id, new_val);
   RecSetGlobalRawStatCount(aio_rsb, id, now);
-  data->rec_float = (float) diff *1000.00 / (float) time_diff;
+  data->rec_float = (float)diff * 1000.00 / (float)time_diff;
   return 0;
 }
 
@@ -117,8 +117,8 @@ int
 AIOTestData::ink_aio_stats(int event, void *d)
 {
   ink_hrtime now = ink_get_hrtime();
-  double time_msec = (double) (now - start) / (double) HRTIME_MSECOND;
-  int i = (aio_reqs[0] == NULL)? 1 : 0;
+  double time_msec = (double)(now - start) / (double)HRTIME_MSECOND;
+  int i = (aio_reqs[0] == NULL) ? 1 : 0;
   for (; i < num_filedes; ++i)
     printf("%0.2f\t%i\t%i\t%i\n", time_msec, aio_reqs[i]->filedes, aio_reqs[i]->pending, aio_reqs[i]->queued);
   printf("Num Requests: %i Num Queued: %i num Moved: %i\n\n", data->num_req, data->num_queue, data->num_temp);
@@ -148,17 +148,15 @@ ink_aio_init(ModuleVersion v)
 {
   ink_release_assert(!checkModuleVersion(v, AIO_MODULE_VERSION));
 
-  aio_rsb = RecAllocateRawStatBlock((int) AIO_STAT_COUNT);
-  RecRegisterRawStat(aio_rsb, RECT_PROCESS, "proxy.process.cache.read_per_sec",
-                     RECD_FLOAT, RECP_PERSISTENT, (int) AIO_STAT_READ_PER_SEC, aio_stats_cb);
-  RecRegisterRawStat(aio_rsb, RECT_PROCESS, "proxy.process.cache.write_per_sec",
-                     RECD_FLOAT, RECP_PERSISTENT, (int) AIO_STAT_WRITE_PER_SEC, aio_stats_cb);
-  RecRegisterRawStat(aio_rsb, RECT_PROCESS,
-                     "proxy.process.cache.KB_read_per_sec",
-                     RECD_FLOAT, RECP_PERSISTENT, (int) AIO_STAT_KB_READ_PER_SEC, aio_stats_cb);
-  RecRegisterRawStat(aio_rsb, RECT_PROCESS,
-                     "proxy.process.cache.KB_write_per_sec",
-                     RECD_FLOAT, RECP_PERSISTENT, (int) AIO_STAT_KB_WRITE_PER_SEC, aio_stats_cb);
+  aio_rsb = RecAllocateRawStatBlock((int)AIO_STAT_COUNT);
+  RecRegisterRawStat(aio_rsb, RECT_PROCESS, "proxy.process.cache.read_per_sec", RECD_FLOAT, RECP_PERSISTENT,
+                     (int)AIO_STAT_READ_PER_SEC, aio_stats_cb);
+  RecRegisterRawStat(aio_rsb, RECT_PROCESS, "proxy.process.cache.write_per_sec", RECD_FLOAT, RECP_PERSISTENT,
+                     (int)AIO_STAT_WRITE_PER_SEC, aio_stats_cb);
+  RecRegisterRawStat(aio_rsb, RECT_PROCESS, "proxy.process.cache.KB_read_per_sec", RECD_FLOAT, RECP_PERSISTENT,
+                     (int)AIO_STAT_KB_READ_PER_SEC, aio_stats_cb);
+  RecRegisterRawStat(aio_rsb, RECT_PROCESS, "proxy.process.cache.KB_write_per_sec", RECD_FLOAT, RECP_PERSISTENT,
+                     (int)AIO_STAT_KB_WRITE_PER_SEC, aio_stats_cb);
 #if AIO_MODE != AIO_MODE_NATIVE
   memset(&aio_reqs, 0, MAX_DISKS_POSSIBLE * sizeof(AIO_Reqs *));
   ink_mutex_init(&insert_mutex, NULL);
@@ -176,29 +174,27 @@ ink_aio_start()
   return 0;
 }
 
-#if  AIO_MODE != AIO_MODE_NATIVE
+#if AIO_MODE != AIO_MODE_NATIVE
 
 static void *aio_thread_main(void *arg);
 
-struct AIOThreadInfo:public Continuation
-{
-
+struct AIOThreadInfo : public Continuation {
   AIO_Reqs *req;
   int sleep_wait;
 
-  int start(int event, Event *e)
+  int
+  start(int event, Event *e)
   {
-    (void) event;
-    (void) e;
+    (void)event;
+    (void)e;
     aio_thread_main(this);
     return EVENT_DONE;
   }
 
-  AIOThreadInfo(AIO_Reqs *thr_req, int sleep):Continuation(new_ProxyMutex()), req(thr_req), sleep_wait(sleep)
+  AIOThreadInfo(AIO_Reqs *thr_req, int sleep) : Continuation(new_ProxyMutex()), req(thr_req), sleep_wait(sleep)
   {
     SET_HANDLER(&AIOThreadInfo::start);
   }
-
 };
 
 /* priority scheduling */
@@ -227,7 +223,7 @@ aio_init_fildes(int fildes, int fromAPI = 0)
 
   ink_cond_init(&request->aio_cond);
   ink_mutex_init(&request->aio_mutex, NULL);
-  ink_atomiclist_init(&request->aio_temp_list, "temp_list", (uintptr_t) &((AIOCallback *) 0)->link);
+  ink_atomiclist_init(&request->aio_temp_list, "temp_list", (uintptr_t) & ((AIOCallback *)0)->link);
 
   RecInt thread_num;
 
@@ -275,18 +271,17 @@ aio_insert(AIOCallback *op, AIO_Reqs *req)
   num_requests++;
   req->queued++;
 #endif
-  if (op->aiocb.aio_reqprio == AIO_LOWEST_PRIORITY)     // http request
+  if (op->aiocb.aio_reqprio == AIO_LOWEST_PRIORITY) // http request
   {
-    AIOCallback *cb = (AIOCallback *) req->http_aio_todo.tail;
+    AIOCallback *cb = (AIOCallback *)req->http_aio_todo.tail;
     if (!cb)
       req->http_aio_todo.push(op);
     else
       req->http_aio_todo.insert(op, cb);
   } else {
+    AIOCallback *cb = (AIOCallback *)req->aio_todo.tail;
 
-    AIOCallback *cb = (AIOCallback *) req->aio_todo.tail;
-
-    for (; cb; cb = (AIOCallback *) cb->link.prev) {
+    for (; cb; cb = (AIOCallback *)cb->link.prev) {
       if (cb->aiocb.aio_reqprio >= op->aiocb.aio_reqprio) {
         req->aio_todo.insert(op, cb);
         return;
@@ -302,12 +297,12 @@ aio_insert(AIOCallback *op, AIO_Reqs *req)
 static void
 aio_move(AIO_Reqs *req)
 {
-  AIOCallback *next = NULL, *prev = NULL, *cb = (AIOCallback *) ink_atomiclist_popall(&req->aio_temp_list);
+  AIOCallback *next = NULL, *prev = NULL, *cb = (AIOCallback *)ink_atomiclist_popall(&req->aio_temp_list);
   /* flip the list */
   if (!cb)
     return;
   while (cb->link.next) {
-    next = (AIOCallback *) cb->link.next;
+    next = (AIOCallback *)cb->link.next;
     cb->link.next = prev;
     prev = cb;
     cb = next;
@@ -315,7 +310,7 @@ aio_move(AIO_Reqs *req)
   /* fix the last pointer */
   cb->link.next = prev;
   for (; cb; cb = next) {
-    next = (AIOCallback *) cb->link.next;
+    next = (AIOCallback *)cb->link.next;
     cb->link.next = NULL;
     cb->link.prev = NULL;
     aio_insert(cb, req);
@@ -328,10 +323,11 @@ aio_queue_req(AIOCallbackInternal *op, int fromAPI = 0)
 {
   int thread_ndx = 1;
   AIO_Reqs *req = op->aio_req;
-  op->link.next = NULL;;
+  op->link.next = NULL;
+  ;
   op->link.prev = NULL;
 #ifdef AIO_STATS
-  ink_atomic_increment((int *) &data->num_req, 1);
+  ink_atomic_increment((int *)&data->num_req, 1);
 #endif
   if (!fromAPI && (!req || req->filedes != op->aiocb.aio_fildes)) {
     /* search for the matching file descriptor */
@@ -382,7 +378,7 @@ aio_queue_req(AIOCallbackInternal *op, int fromAPI = 0)
 #endif
     ink_atomiclist_push(&req->aio_temp_list, op);
   } else {
-    /* check if any pending requests on the atomic list */
+/* check if any pending requests on the atomic list */
 #ifdef AIO_STATS
     ink_atomic_increment(&data->num_queue, 1);
 #endif
@@ -399,27 +395,26 @@ static inline int
 cache_op(AIOCallbackInternal *op)
 {
   bool read = (op->aiocb.aio_lio_opcode == LIO_READ) ? 1 : 0;
-  for (; op; op = (AIOCallbackInternal *) op->then) {
+  for (; op; op = (AIOCallbackInternal *)op->then) {
     ink_aiocb_t *a = &op->aiocb;
     ssize_t err, res = 0;
 
     while (a->aio_nbytes - res > 0) {
       do {
         if (read)
-          err = pread(a->aio_fildes, ((char *) a->aio_buf) + res, a->aio_nbytes - res, a->aio_offset + res);
+          err = pread(a->aio_fildes, ((char *)a->aio_buf) + res, a->aio_nbytes - res, a->aio_offset + res);
         else
-          err = pwrite(a->aio_fildes, ((char *) a->aio_buf) + res, a->aio_nbytes - res, a->aio_offset + res);
+          err = pwrite(a->aio_fildes, ((char *)a->aio_buf) + res, a->aio_nbytes - res, a->aio_offset + res);
       } while ((err < 0) && (errno == EINTR || errno == ENOBUFS || errno == ENOMEM));
       if (err <= 0) {
-        Warning("cache disk operation failed %s %zd %d\n",
-                (a->aio_lio_opcode == LIO_READ) ? "READ" : "WRITE", err, errno);
+        Warning("cache disk operation failed %s %zd %d\n", (a->aio_lio_opcode == LIO_READ) ? "READ" : "WRITE", err, errno);
         op->aio_result = -errno;
         return (err);
       }
       res += err;
     }
     op->aio_result = res;
-    ink_assert(op->aio_result == (int64_t) a->aio_nbytes);
+    ink_assert(op->aio_result == (int64_t)a->aio_nbytes);
   }
   return 1;
 }
@@ -428,7 +423,7 @@ int
 ink_aio_read(AIOCallback *op, int fromAPI)
 {
   op->aiocb.aio_lio_opcode = LIO_READ;
-  aio_queue_req((AIOCallbackInternal *) op, fromAPI);
+  aio_queue_req((AIOCallbackInternal *)op, fromAPI);
 
   return 1;
 }
@@ -437,7 +432,7 @@ int
 ink_aio_write(AIOCallback *op, int fromAPI)
 {
   op->aiocb.aio_lio_opcode = LIO_WRITE;
-  aio_queue_req((AIOCallbackInternal *) op, fromAPI);
+  aio_queue_req((AIOCallbackInternal *)op, fromAPI);
 
   return 1;
 }
@@ -456,8 +451,8 @@ ink_aio_thread_num_set(int thread_num)
 void *
 aio_thread_main(void *arg)
 {
-  AIOThreadInfo *thr_info = (AIOThreadInfo *) arg;
-  AIO_Reqs *my_aio_req = (AIO_Reqs *) thr_info->req;
+  AIOThreadInfo *thr_info = (AIOThreadInfo *)arg;
+  AIO_Reqs *my_aio_req = (AIO_Reqs *)thr_info->req;
   AIO_Reqs *current_req = NULL;
   AIOCallback *op = NULL;
   ink_mutex_acquire(&my_aio_req->aio_mutex);
@@ -472,7 +467,7 @@ aio_thread_main(void *arg)
 #ifdef AIO_STATS
       num_requests--;
       current_req->queued--;
-      ink_atomic_increment((int *) &current_req->pending, 1);
+      ink_atomic_increment((int *)&current_req->pending, 1);
 #endif
       // update the stats;
       if (op->aiocb.aio_lio_opcode == LIO_WRITE) {
@@ -483,7 +478,7 @@ aio_thread_main(void *arg)
         aio_bytes_read += op->aiocb.aio_nbytes;
       }
       ink_mutex_release(&current_req->aio_mutex);
-      if (cache_op((AIOCallbackInternal *) op) <= 0) {
+      if (cache_op((AIOCallbackInternal *)op) <= 0) {
         if (aio_err_callbck) {
           AIOCallback *callback_op = new AIOCallbackInternal();
           callback_op->aiocb.aio_fildes = op->aiocb.aio_fildes;
@@ -492,9 +487,9 @@ aio_thread_main(void *arg)
           eventProcessor.schedule_imm(callback_op);
         }
       }
-      ink_atomic_increment((int *) &current_req->requests_queued, -1);
+      ink_atomic_increment((int *)&current_req->requests_queued, -1);
 #ifdef AIO_STATS
-      ink_atomic_increment((int *) &current_req->pending, -1);
+      ink_atomic_increment((int *)&current_req->pending, -1);
 #endif
       op->link.prev = NULL;
       op->link.next = NULL;
@@ -516,7 +511,8 @@ aio_thread_main(void *arg)
 }
 #else
 int
-DiskHandler::startAIOEvent(int /* event ATS_UNUSED */, Event *e) {
+DiskHandler::startAIOEvent(int /* event ATS_UNUSED */, Event *e)
+{
   SET_HANDLER(&DiskHandler::mainAIOEvent);
   e->schedule_every(AIO_PERIOD);
   trigger_event = e;
@@ -524,12 +520,13 @@ DiskHandler::startAIOEvent(int /* event ATS_UNUSED */, Event *e) {
 }
 
 int
-DiskHandler::mainAIOEvent(int event, Event *e) {
+DiskHandler::mainAIOEvent(int event, Event *e)
+{
   AIOCallback *op = NULL;
 Lagain:
   int ret = io_getevents(ctx, 0, MAX_AIO_EVENTS, events, NULL);
   for (int i = 0; i < ret; i++) {
-    op = (AIOCallback *) events[i].data;
+    op = (AIOCallback *)events[i].data;
     op->aio_result = events[i].res;
     ink_assert(op->action.continuation);
     complete_list.enqueue(op);
@@ -576,7 +573,8 @@ Lagain:
 }
 
 int
-ink_aio_read(AIOCallback *op, int /* fromAPI ATS_UNUSED */) {
+ink_aio_read(AIOCallback *op, int /* fromAPI ATS_UNUSED */)
+{
   op->aiocb.aio_reqprio = AIO_DEFAULT_PRIORITY;
   op->aiocb.aio_lio_opcode = IO_CMD_PREAD;
   op->aiocb.data = op;
@@ -590,7 +588,8 @@ ink_aio_read(AIOCallback *op, int /* fromAPI ATS_UNUSED */) {
 }
 
 int
-ink_aio_write(AIOCallback *op, int /* fromAPI ATS_UNUSED */) {
+ink_aio_write(AIOCallback *op, int /* fromAPI ATS_UNUSED */)
+{
   op->aiocb.aio_reqprio = AIO_DEFAULT_PRIORITY;
   op->aiocb.aio_lio_opcode = IO_CMD_PWRITE;
   op->aiocb.data = op;
@@ -604,7 +603,8 @@ ink_aio_write(AIOCallback *op, int /* fromAPI ATS_UNUSED */) {
 }
 
 int
-ink_aio_readv(AIOCallback *op, int /* fromAPI ATS_UNUSED */) {
+ink_aio_readv(AIOCallback *op, int /* fromAPI ATS_UNUSED */)
+{
   EThread *t = this_ethread();
   DiskHandler *dh = t->diskHandler;
   AIOCallback *io = op;
@@ -634,7 +634,8 @@ ink_aio_readv(AIOCallback *op, int /* fromAPI ATS_UNUSED */) {
 }
 
 int
-ink_aio_writev(AIOCallback *op, int /* fromAPI ATS_UNUSED */) {
+ink_aio_writev(AIOCallback *op, int /* fromAPI ATS_UNUSED */)
+{
   EThread *t = this_ethread();
   DiskHandler *dh = t->diskHandler;
   AIOCallback *io = op;

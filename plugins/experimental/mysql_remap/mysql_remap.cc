@@ -28,66 +28,63 @@
 MYSQL mysql;
 
 typedef struct {
-  char * query;
+  char *query;
 } my_data;
 
-bool do_mysql_remap(TSCont contp,TSHttpTxn txnp) {
+bool
+do_mysql_remap(TSCont contp, TSHttpTxn txnp)
+{
   TSMBuffer reqp;
   TSMLoc hdr_loc, url_loc, field_loc;
   bool ret_val = false;
 
-  const char * request_host;
+  const char *request_host;
   int request_host_length = 0;
-  const char * request_scheme;
+  const char *request_scheme;
   int request_scheme_length = 0;
   int request_port = 80;
-  char * query;
+  char *query;
 
   MYSQL_ROW row;
   MYSQL_RES *res;
 
-  my_data * data = (my_data*) TSContDataGet(contp);
+  my_data *data = (my_data *)TSContDataGet(contp);
   query = data->query;
 
   if (TSHttpTxnClientReqGet(txnp, &reqp, &hdr_loc) != TS_SUCCESS) {
-    TSDebug(PLUGIN_NAME,"could not get request data");
+    TSDebug(PLUGIN_NAME, "could not get request data");
     return false;
   }
 
-  TSHttpHdrUrlGet(reqp, hdr_loc,&url_loc);
+  TSHttpHdrUrlGet(reqp, hdr_loc, &url_loc);
 
   if (!url_loc) {
-    TSDebug(PLUGIN_NAME,"couldn't retrieve request url");
+    TSDebug(PLUGIN_NAME, "couldn't retrieve request url");
     goto release_hdr;
   }
 
   field_loc = TSMimeHdrFieldFind(reqp, hdr_loc, TS_MIME_FIELD_HOST, TS_MIME_LEN_HOST);
 
   if (!field_loc) {
-      TSDebug(PLUGIN_NAME,"couldn't retrieve request HOST header");
-      goto release_url;
+    TSDebug(PLUGIN_NAME, "couldn't retrieve request HOST header");
+    goto release_url;
   }
 
-  request_host = TSMimeHdrFieldValueStringGet (reqp, hdr_loc, field_loc, -1, &request_host_length);
+  request_host = TSMimeHdrFieldValueStringGet(reqp, hdr_loc, field_loc, -1, &request_host_length);
   if (!request_host_length) {
-    TSDebug(PLUGIN_NAME,"couldn't find request HOST header");
+    TSDebug(PLUGIN_NAME, "couldn't find request HOST header");
     goto release_field;
   }
 
-  request_scheme = TSUrlSchemeGet(reqp,url_loc,&request_scheme_length);
-  request_port   = TSUrlPortGet(reqp,url_loc);
+  request_scheme = TSUrlSchemeGet(reqp, url_loc, &request_scheme_length);
+  request_port = TSUrlPortGet(reqp, url_loc);
 
-  TSDebug(PLUGIN_NAME,"      +++++MYSQL REMAP+++++      ");
+  TSDebug(PLUGIN_NAME, "      +++++MYSQL REMAP+++++      ");
 
-  TSDebug(PLUGIN_NAME,"\nINCOMING REQUEST ->\n ::: from_scheme_desc: %.*s\n ::: from_hostname: %.*s\n ::: from_port: %d",\
-    request_scheme_length,\
-    request_scheme,\
-    request_host_length,\
-    request_host,\
-    request_port
-  );
+  TSDebug(PLUGIN_NAME, "\nINCOMING REQUEST ->\n ::: from_scheme_desc: %.*s\n ::: from_hostname: %.*s\n ::: from_port: %d",
+          request_scheme_length, request_scheme, request_host_length, request_host, request_port);
 
-  snprintf(query,QSIZE," \
+  snprintf(query, QSIZE, " \
     SELECT \
         t_scheme.scheme_desc, \
         t_host.hostname, \
@@ -102,35 +99,34 @@ bool do_mysql_remap(TSCont contp,TSHttpTxn txnp) {
         AND f_host.hostname = '%.*s' \
         AND f_scheme.id = %d \
         AND from_port = %d \
-      LIMIT 1", \
-    request_host_length, \
-    request_host, \
-    (strcmp(request_scheme,"https") == 0) ? 2:1, \
-    request_port \
-  );
+      LIMIT 1",
+           request_host_length, request_host, (strcmp(request_scheme, "https") == 0) ? 2 : 1, request_port);
 
-  mysql_real_query(&mysql,query,(unsigned int)strlen(query));
+  mysql_real_query(&mysql, query, (unsigned int)strlen(query));
   res = mysql_use_result(&mysql);
 
-  if (!res) goto not_found; //TODO: define a fallback
+  if (!res)
+    goto not_found; // TODO: define a fallback
 
   do {
     row = mysql_fetch_row(res);
-    if (!row) goto not_found;
-    TSDebug(PLUGIN_NAME,"\nOUTGOING REQUEST ->\n ::: to_scheme_desc: %s\n ::: to_hostname: %s\n ::: to_port: %s",row[0],row[1],row[2]);
-    TSMimeHdrFieldValueStringSet(reqp, hdr_loc, field_loc, 0,row[1],-1);
-    TSUrlHostSet(reqp,url_loc,row[1],-1);
-    TSUrlSchemeSet(reqp,url_loc,row[0],-1);
-    TSUrlPortSet(reqp,url_loc,atoi(row[2]));
-  } while(0);
+    if (!row)
+      goto not_found;
+    TSDebug(PLUGIN_NAME, "\nOUTGOING REQUEST ->\n ::: to_scheme_desc: %s\n ::: to_hostname: %s\n ::: to_port: %s", row[0], row[1],
+            row[2]);
+    TSMimeHdrFieldValueStringSet(reqp, hdr_loc, field_loc, 0, row[1], -1);
+    TSUrlHostSet(reqp, url_loc, row[1], -1);
+    TSUrlSchemeSet(reqp, url_loc, row[0], -1);
+    TSUrlPortSet(reqp, url_loc, atoi(row[2]));
+  } while (0);
 
   ret_val = true;
 
 not_found:
   if (!ret_val) {
-    //lets build up a nice 404 message for someone
-    TSHttpHdrStatusSet(reqp,hdr_loc,TS_HTTP_STATUS_NOT_FOUND);
-    TSHttpTxnSetHttpRetStatus(txnp,TS_HTTP_STATUS_NOT_FOUND);
+    // lets build up a nice 404 message for someone
+    TSHttpHdrStatusSet(reqp, hdr_loc, TS_HTTP_STATUS_NOT_FOUND);
+    TSHttpTxnSetHttpRetStatus(txnp, TS_HTTP_STATUS_NOT_FOUND);
   }
   if (res)
     mysql_free_result(res);
@@ -154,20 +150,21 @@ release_hdr:
 }
 
 static int
-mysql_remap (TSCont contp, TSEvent event, void *edata) {
-  TSHttpTxn txnp = (TSHttpTxn) edata;
+mysql_remap(TSCont contp, TSEvent event, void *edata)
+{
+  TSHttpTxn txnp = (TSHttpTxn)edata;
   TSEvent reenable = TS_EVENT_HTTP_CONTINUE;
 
-  switch(event) {
-    case TS_EVENT_HTTP_READ_REQUEST_HDR:
-      TSDebug(PLUGIN_NAME,"Reading Request");
-      TSSkipRemappingSet(txnp,1);
-      if (!do_mysql_remap(contp,txnp)) {
-        reenable = TS_EVENT_HTTP_ERROR;
-      }
-      break;
-    default:
-      break;
+  switch (event) {
+  case TS_EVENT_HTTP_READ_REQUEST_HDR:
+    TSDebug(PLUGIN_NAME, "Reading Request");
+    TSSkipRemappingSet(txnp, 1);
+    if (!do_mysql_remap(contp, txnp)) {
+      reenable = TS_EVENT_HTTP_ERROR;
+    }
+    break;
+  default:
+    break;
   }
 
   TSHttpTxnReenable(txnp, reenable);
@@ -175,73 +172,74 @@ mysql_remap (TSCont contp, TSEvent event, void *edata) {
 }
 
 void
-TSPluginInit(int argc, const char *argv[]) {
-  dictionary * ini;
-  const char * host;
+TSPluginInit(int argc, const char *argv[])
+{
+  dictionary *ini;
+  const char *host;
   int port;
-  const char * username;
-  const char * password;
-  const char * db;
+  const char *username;
+  const char *password;
+  const char *db;
 
-  my_data * data = (my_data*) malloc(1*sizeof(my_data));
+  my_data *data = (my_data *)malloc(1 * sizeof(my_data));
 
   TSPluginRegistrationInfo info;
   my_bool reconnect = 1;
 
-  info.plugin_name   = const_cast<char*>(PLUGIN_NAME);
-  info.vendor_name   = const_cast<char*>("Apache Software Foundation");
-  info.support_email = const_cast<char*>("dev@trafficserver.apache.org");
+  info.plugin_name = const_cast<char *>(PLUGIN_NAME);
+  info.vendor_name = const_cast<char *>("Apache Software Foundation");
+  info.support_email = const_cast<char *>("dev@trafficserver.apache.org");
 
-  if (TSPluginRegister(TS_SDK_VERSION_2_0 , &info) != TS_SUCCESS) {
+  if (TSPluginRegister(TS_SDK_VERSION_2_0, &info) != TS_SUCCESS) {
     TSError("mysql_remap: plugin registration failed.\n");
   }
 
   if (argc != 2) {
-    TSError( "usage: %s /path/to/sample.ini\n", argv[0] );
+    TSError("usage: %s /path/to/sample.ini\n", argv[0]);
     return;
   }
 
   ini = iniparser_load(argv[1]);
   if (!ini) {
     TSError("Error with ini file (1)");
-    TSDebug(PLUGIN_NAME,"Error parsing ini file(1)");
+    TSDebug(PLUGIN_NAME, "Error parsing ini file(1)");
     return;
   }
 
-  host     = iniparser_getstring(ini, "mysql_remap:mysql_host", (char*)"localhost");
-  port     =    iniparser_getint(ini,"mysql_remap:mysql_port",3306);
+  host = iniparser_getstring(ini, "mysql_remap:mysql_host", (char *)"localhost");
+  port = iniparser_getint(ini, "mysql_remap:mysql_port", 3306);
   username = iniparser_getstring(ini, "mysql_remap:mysql_username", NULL);
   password = iniparser_getstring(ini, "mysql_remap:mysql_password", NULL);
-  db       = iniparser_getstring(ini, "mysql_remap:mysql_database", (char*)"mysql_remap");
+  db = iniparser_getstring(ini, "mysql_remap:mysql_database", (char *)"mysql_remap");
 
   if (mysql_library_init(0, NULL, NULL)) {
     TSError("Error initializing mysql client library");
-    TSDebug(PLUGIN_NAME,"Error initializing mysql client library");
+    TSDebug(PLUGIN_NAME, "Error initializing mysql client library");
     return;
   }
 
   if (!mysql_init(&mysql)) {
     TSError("Could not initialize MySQL");
-    TSDebug(PLUGIN_NAME,"Could not initialize MySQL");
+    TSDebug(PLUGIN_NAME, "Could not initialize MySQL");
     return;
   }
 
   mysql_options(&mysql, MYSQL_OPT_RECONNECT, &reconnect);
 
-  if (!mysql_real_connect(&mysql,host,username,password,db,port,NULL,0)) {
+  if (!mysql_real_connect(&mysql, host, username, password, db, port, NULL, 0)) {
     TSError("Could not connect to mysql");
-    TSDebug(PLUGIN_NAME,"Could not connect to mysql: %s",mysql_error(&mysql));
+    TSDebug(PLUGIN_NAME, "Could not connect to mysql: %s", mysql_error(&mysql));
     return;
   }
 
-  data->query = (char*)TSmalloc(QSIZE * sizeof(char)); //TODO: malloc smarter sizes
+  data->query = (char *)TSmalloc(QSIZE * sizeof(char)); // TODO: malloc smarter sizes
 
-  TSDebug(PLUGIN_NAME, "h: %s; u: %s; p: %s; p:%d; d:%s",host,username,password,port,db);
+  TSDebug(PLUGIN_NAME, "h: %s; u: %s; p: %s; p:%d; d:%s", host, username, password, port, db);
   TSCont cont = TSContCreate(mysql_remap, TSMutexCreate());
 
   TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, cont);
 
-  TSContDataSet (cont, (void *)data);
+  TSContDataSet(cont, (void *)data);
 
   TSDebug(PLUGIN_NAME, "plugin is successfully initialized [plugin mode]");
   iniparser_freedict(ini);

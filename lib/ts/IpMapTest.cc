@@ -25,27 +25,27 @@
 #include <ts/TestBox.h>
 
 void
-IpMapTestPrint(IpMap& map) {
+IpMapTestPrint(IpMap &map)
+{
   printf("IpMap Dump\n");
-  for ( IpMap::iterator spot(map.begin()), limit(map.end())
-      ; spot != limit
-      ; ++spot
-  ) {
+  for (IpMap::iterator spot(map.begin()), limit(map.end()); spot != limit; ++spot) {
     ip_text_buffer ipb1, ipb2;
 
-    printf("%s - %s : %p\n", ats_ip_ntop(spot->min(), ipb1, sizeof ipb1), ats_ip_ntop(spot->max(), ipb2, sizeof(ipb2)), spot->data());
+    printf("%s - %s : %p\n", ats_ip_ntop(spot->min(), ipb1, sizeof ipb1), ats_ip_ntop(spot->max(), ipb2, sizeof(ipb2)),
+           spot->data());
   }
   printf("\n");
 }
 
-REGRESSION_TEST(IpMap_Basic)(RegressionTest* t, int /* atype ATS_UNUSED */, int*  pstatus) {
+REGRESSION_TEST(IpMap_Basic)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
+{
   TestBox tb(t, pstatus);
 
   IpMap map;
-  void* const markA = reinterpret_cast<void*>(1);
-  void* const markB = reinterpret_cast<void*>(2);
-  void* const markC = reinterpret_cast<void*>(3);
-  void* mark; // for retrieval
+  void *const markA = reinterpret_cast<void *>(1);
+  void *const markB = reinterpret_cast<void *>(2);
+  void *const markC = reinterpret_cast<void *>(3);
+  void *mark; // for retrieval
 
   in_addr_t ip5 = htonl(5), ip9 = htonl(9);
   in_addr_t ip10 = htonl(10), ip15 = htonl(15), ip20 = htonl(20);
@@ -58,7 +58,7 @@ REGRESSION_TEST(IpMap_Basic)(RegressionTest* t, int /* atype ATS_UNUSED */, int*
 
   *pstatus = REGRESSION_TEST_PASSED;
 
-  map.mark(ip10,ip20,markA);
+  map.mark(ip10, ip20, markA);
   map.mark(ip5, ip9, markA);
   tb.check(map.getCount() == 1, "Coalesce failed");
   tb.check(map.contains(ip9), "Range max not found.");
@@ -93,10 +93,10 @@ REGRESSION_TEST(IpMap_Basic)(RegressionTest* t, int /* atype ATS_UNUSED */, int*
   tb.check(!map.contains(ip160), "Test 3 - unmark right edge still there.");
 
   map.clear();
-  map.mark(ip20,ip20, markA);
+  map.mark(ip20, ip20, markA);
   tb.check(map.contains(ip20), "Map failed on singleton insert");
   map.mark(ip10, ip200, markB);
-  mark=0;
+  mark = 0;
   map.contains(ip20, &mark);
   tb.check(mark == markB, "Map held singleton against range.");
   map.mark(ip100, ip120, markA);
@@ -105,14 +105,15 @@ REGRESSION_TEST(IpMap_Basic)(RegressionTest* t, int /* atype ATS_UNUSED */, int*
   tb.check(map.getCount() == 1, "IpMap: Full range fill left extra ranges.");
 }
 
-REGRESSION_TEST(IpMap_Unmark)(RegressionTest* t, int /* atype ATS_UNUSED */, int* pstatus) {
+REGRESSION_TEST(IpMap_Unmark)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
+{
   TestBox tb(t, pstatus);
   IpMap map;
-//  ip_text_buffer ipb1, ipb2;
-  void* const markA = reinterpret_cast<void*>(1);
+  //  ip_text_buffer ipb1, ipb2;
+  void *const markA = reinterpret_cast<void *>(1);
 
   IpEndpoint a_0, a_0_0_0_16, a_0_0_0_17, a_max;
-  IpEndpoint a_10_28_56_0,a_10_28_56_4, a_10_28_56_255;
+  IpEndpoint a_10_28_56_0, a_10_28_56_4, a_10_28_56_255;
   IpEndpoint a_10_28_55_255, a_10_28_57_0;
   IpEndpoint a_63_128_1_12;
   IpEndpoint a_loopback, a_loopback2;
@@ -153,18 +154,19 @@ REGRESSION_TEST(IpMap_Unmark)(RegressionTest* t, int /* atype ATS_UNUSED */, int
   tb.check(map.contains(&a_0_0_0_17), "IpMap Unmark: Range unmark zero bounded range max+1 removed.");
 }
 
-REGRESSION_TEST(IpMap_Fill)(RegressionTest* t, int /* atype ATS_UNUSED */, int* pstatus) {
+REGRESSION_TEST(IpMap_Fill)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
+{
   TestBox tb(t, pstatus);
   IpMap map;
   ip_text_buffer ipb1, ipb2;
-  void* const allow = reinterpret_cast<void*>(0);
-  void* const deny = reinterpret_cast<void*>(~0);
-  void* const markA = reinterpret_cast<void*>(1);
-  void* const markB = reinterpret_cast<void*>(2);
-  void* const markC = reinterpret_cast<void*>(3);
-  void* mark; // for retrieval
+  void *const allow = reinterpret_cast<void *>(0);
+  void *const deny = reinterpret_cast<void *>(~0);
+  void *const markA = reinterpret_cast<void *>(1);
+  void *const markB = reinterpret_cast<void *>(2);
+  void *const markC = reinterpret_cast<void *>(3);
+  void *mark; // for retrieval
 
-  IpEndpoint a0,a_10_28_56_0,a_10_28_56_255,a3,a4;
+  IpEndpoint a0, a_10_28_56_0, a_10_28_56_255, a3, a4;
   IpEndpoint a_9_255_255_255, a_10_0_0_0, a_10_0_0_19, a_10_0_0_255, a_10_0_1_0;
   IpEndpoint a_10_28_56_4, a_max, a_loopback, a_loopback2;
   IpEndpoint a_10_28_55_255, a_10_28_57_0;
@@ -205,10 +207,10 @@ REGRESSION_TEST(IpMap_Fill)(RegressionTest* t, int /* atype ATS_UNUSED */, int* 
   ats_ip_pton("127.0.0.255", &a_loopback2);
   ats_ip_pton("63.128.1.12", &a_63_128_1_12);
 
-  map.fill(&a_10_28_56_0,&a_10_28_56_255,deny);
-  map.fill(&a0,&a_max,allow);
+  map.fill(&a_10_28_56_0, &a_10_28_56_255, deny);
+  map.fill(&a0, &a_max, allow);
 
-  tb.check(map.contains(&a_10_28_56_4,&mark), "IpMap Fill: Target not found.");
+  tb.check(map.contains(&a_10_28_56_4, &mark), "IpMap Fill: Target not found.");
   tb.check(mark == deny, "IpMap Fill: Expected deny, got allow at %s.", ats_ip_ntop(&a_10_28_56_4, ipb1, sizeof(ipb1)));
 
   map.clear();
@@ -216,12 +218,13 @@ REGRESSION_TEST(IpMap_Fill)(RegressionTest* t, int /* atype ATS_UNUSED */, int* 
   tb.check(map.contains(&a_loopback), "IpMap fill: singleton not marked.");
   map.fill(&a0, &a_max, deny);
 
-  mark=0;
+  mark = 0;
   tb.check(map.contains(&a_loopback, &mark), "IpMap fill: singleton marking lost.");
   tb.check(mark == allow, "IpMap fill: overwrote existing singleton mark.");
   if (tb.check(map.begin() != map.end(), "IpMap fill: map is empty.")) {
     if (tb.check(++(map.begin()) != map.end(), "IpMap fill: only one range.")) {
-      tb.check(-1 == ats_ip_addr_cmp(map.begin()->max(), (++map.begin())->min()), "IpMap fill: ranges not disjoint [%s < %s].", ats_ip_ntop(map.begin()->max(), ipb1, sizeof(ipb1)), ats_ip_ntop((++map.begin())->min(), ipb2, sizeof(ipb2)));
+      tb.check(-1 == ats_ip_addr_cmp(map.begin()->max(), (++map.begin())->min()), "IpMap fill: ranges not disjoint [%s < %s].",
+               ats_ip_ntop(map.begin()->max(), ipb1, sizeof(ipb1)), ats_ip_ntop((++map.begin())->min(), ipb2, sizeof(ipb2)));
     }
   }
 
@@ -251,20 +254,13 @@ REGRESSION_TEST(IpMap_Fill)(RegressionTest* t, int /* atype ATS_UNUSED */, int* 
   map.fill(&a_0000_0001, &a_0000_0001, markA);
   map.fill(&a_0000_0000, &a_ffff_ffff, markB);
 
-  tb.check(map.contains(&a_0000_0000, &mark) && mark == markB,
-           "IpMap Fill[v6]: Zero address has bad mark.");
-  tb.check(map.contains(&a_ffff_ffff, &mark) && mark == markB,
-           "IpMap Fill[v6]: Max address has bad mark.");
-  tb.check(map.contains(&a_fe80_9d90, &mark) && mark == markA,
-           "IpMap Fill[v6]: 9d90 address has bad mark.");
-  tb.check(map.contains(&a_fe80_9d8f, &mark) && mark == markB,
-           "IpMap Fill[v6]: 9d8f address has bad mark.");
-  tb.check(map.contains(&a_fe80_9d9d, &mark) && mark == markA,
-           "IpMap Fill[v6]: 9d9d address has bad mark.");
-  tb.check(map.contains(&a_fe80_9d9e, &mark) && mark == markB,
-           "IpMap Fill[v6]: 9d9b address has bad mark.");
-  tb.check(map.contains(&a_0000_0001, &mark) && mark == markA,
-           "IpMap Fill[v6]: ::1 has bad mark.");
+  tb.check(map.contains(&a_0000_0000, &mark) && mark == markB, "IpMap Fill[v6]: Zero address has bad mark.");
+  tb.check(map.contains(&a_ffff_ffff, &mark) && mark == markB, "IpMap Fill[v6]: Max address has bad mark.");
+  tb.check(map.contains(&a_fe80_9d90, &mark) && mark == markA, "IpMap Fill[v6]: 9d90 address has bad mark.");
+  tb.check(map.contains(&a_fe80_9d8f, &mark) && mark == markB, "IpMap Fill[v6]: 9d8f address has bad mark.");
+  tb.check(map.contains(&a_fe80_9d9d, &mark) && mark == markA, "IpMap Fill[v6]: 9d9d address has bad mark.");
+  tb.check(map.contains(&a_fe80_9d9e, &mark) && mark == markB, "IpMap Fill[v6]: 9d9b address has bad mark.");
+  tb.check(map.contains(&a_0000_0001, &mark) && mark == markA, "IpMap Fill[v6]: ::1 has bad mark.");
 
   tb.check(map.getCount() == 10, "IpMap Fill[pre-refill]: Bad range count.");
   // These should be ignored by the map as it is completely covered for IPv6.
@@ -277,19 +273,11 @@ REGRESSION_TEST(IpMap_Fill)(RegressionTest* t, int /* atype ATS_UNUSED */, int* 
   map.fill(&a_fe80_9d90, &a_fe80_9d9d, markA);
   map.fill(&a_0000_0001, &a_0000_0001, markC);
   map.fill(&a_0000_0000, &a_ffff_ffff, markB);
-  tb.check(map.contains(&a_0000_0000, &mark) && mark == markB,
-           "IpMap Fill[v6-2]: Zero address has bad mark.");
-  tb.check(map.contains(&a_ffff_ffff, &mark) && mark == markB,
-           "IpMap Fill[v6-2]: Max address has bad mark.");
-  tb.check(map.contains(&a_fe80_9d90, &mark) && mark == markA,
-           "IpMap Fill[v6-2]: 9d90 address has bad mark.");
-  tb.check(map.contains(&a_fe80_9d8f, &mark) && mark == markB,
-           "IpMap Fill[v6-2]: 9d8f address has bad mark.");
-  tb.check(map.contains(&a_fe80_9d9d, &mark) && mark == markA,
-           "IpMap Fill[v6-2]: 9d9d address has bad mark.");
-  tb.check(map.contains(&a_fe80_9d9e, &mark) && mark == markB,
-           "IpMap Fill[v6-2]: 9d9b address has bad mark.");
-  tb.check(map.contains(&a_0000_0001, &mark) && mark == markC,
-           "IpMap Fill[v6-2]: ::1 has bad mark.");
-
+  tb.check(map.contains(&a_0000_0000, &mark) && mark == markB, "IpMap Fill[v6-2]: Zero address has bad mark.");
+  tb.check(map.contains(&a_ffff_ffff, &mark) && mark == markB, "IpMap Fill[v6-2]: Max address has bad mark.");
+  tb.check(map.contains(&a_fe80_9d90, &mark) && mark == markA, "IpMap Fill[v6-2]: 9d90 address has bad mark.");
+  tb.check(map.contains(&a_fe80_9d8f, &mark) && mark == markB, "IpMap Fill[v6-2]: 9d8f address has bad mark.");
+  tb.check(map.contains(&a_fe80_9d9d, &mark) && mark == markA, "IpMap Fill[v6-2]: 9d9d address has bad mark.");
+  tb.check(map.contains(&a_fe80_9d9e, &mark) && mark == markB, "IpMap Fill[v6-2]: 9d9b address has bad mark.");
+  tb.check(map.contains(&a_0000_0001, &mark) && mark == markC, "IpMap Fill[v6-2]: ::1 has bad mark.");
 }

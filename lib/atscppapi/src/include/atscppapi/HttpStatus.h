@@ -27,13 +27,12 @@
 
 #include <string>
 
-namespace atscppapi {
-
+namespace atscppapi
+{
 /**
  * An enumeration of all available Http Status Codes.
  */
-enum HttpStatus
-{
+enum HttpStatus {
   HTTP_STATUS_UNKNOWN = 0,
 
   HTTP_STATUS_CONTINUE = 100,
@@ -98,7 +97,6 @@ enum HttpStatus
   HTTP_STATUS_NETWORK_AUTHENTICATION_REQUIRED = 511
 
 };
-
 }
 
 #endif

@@ -40,10 +40,8 @@ const string EsiParser::HANDLER_ATTR_STR("handler");
 const unsigned int EsiParser::MAX_DOC_SIZE = 1024 * 1024;
 
 const EsiParser::EsiNodeInfo EsiParser::ESI_NODES[] = {
-  EsiNodeInfo(DocNode::TYPE_INCLUDE, "include", 7, "/>", 2),
-  EsiNodeInfo(DocNode::TYPE_REMOVE, "remove>", 7, "</esi:remove>", 13),
-  EsiNodeInfo(DocNode::TYPE_COMMENT, "comment", 7, "/>", 2),
-  EsiNodeInfo(DocNode::TYPE_VARS, "vars>", 5, "</esi:vars>", 11),
+  EsiNodeInfo(DocNode::TYPE_INCLUDE, "include", 7, "/>", 2), EsiNodeInfo(DocNode::TYPE_REMOVE, "remove>", 7, "</esi:remove>", 13),
+  EsiNodeInfo(DocNode::TYPE_COMMENT, "comment", 7, "/>", 2), EsiNodeInfo(DocNode::TYPE_VARS, "vars>", 5, "</esi:vars>", 11),
   EsiNodeInfo(DocNode::TYPE_CHOOSE, "choose>", 7, "</esi:choose>", 13),
   EsiNodeInfo(DocNode::TYPE_WHEN, "when", 4, "</esi:when>", 11),
   EsiNodeInfo(DocNode::TYPE_OTHERWISE, "otherwise>", 10, "</esi:otherwise>", 16),
@@ -51,38 +49,35 @@ const EsiParser::EsiNodeInfo EsiParser::ESI_NODES[] = {
   EsiNodeInfo(DocNode::TYPE_ATTEMPT, "attempt>", 8, "</esi:attempt>", 14),
   EsiNodeInfo(DocNode::TYPE_EXCEPT, "except>", 7, "</esi:except>", 13),
   EsiNodeInfo(DocNode::TYPE_SPECIAL_INCLUDE, "special-include", 15, "/>", 2),
-  EsiNodeInfo(DocNode::TYPE_UNKNOWN, "", 0, "", 0)  // serves as end marker
+  EsiNodeInfo(DocNode::TYPE_UNKNOWN, "", 0, "", 0) // serves as end marker
 };
 
-const EsiParser::EsiNodeInfo EsiParser::HTML_COMMENT_NODE_INFO(DocNode::TYPE_HTML_COMMENT,
-                                                               "<!--esi", 7, "-->", 3);
+const EsiParser::EsiNodeInfo EsiParser::HTML_COMMENT_NODE_INFO(DocNode::TYPE_HTML_COMMENT, "<!--esi", 7, "-->", 3);
 
-EsiParser::EsiParser(const char *debug_tag,
-                     ComponentBase::Debug debug_func,
-                     ComponentBase::Error error_func)
-  : ComponentBase(debug_tag, debug_func, error_func), _parse_start_pos(-1) {
+EsiParser::EsiParser(const char *debug_tag, ComponentBase::Debug debug_func, ComponentBase::Error error_func)
+  : ComponentBase(debug_tag, debug_func, error_func), _parse_start_pos(-1)
+{
   // do this so that object doesn't move around in memory;
   // (because we return pointers into this object)
   _data.reserve(MAX_DOC_SIZE);
 }
 
 bool
-EsiParser::_setup(string &data, int &parse_start_pos, size_t &orig_output_list_size,
-                  DocNodeList &node_list, const char *data_ptr, int &data_len) const {
+EsiParser::_setup(string &data, int &parse_start_pos, size_t &orig_output_list_size, DocNodeList &node_list, const char *data_ptr,
+                  int &data_len) const
+{
   bool retval = true;
   if (!data_ptr || !data_len) {
     _debugLog(_debug_tag, "[%s] Returning true for empty data", __FUNCTION__);
-  }
-  else {
+  } else {
     if (data_len == -1) {
       data_len = strlen(data_ptr);
     }
     if ((data.size() + data_len) > MAX_DOC_SIZE) {
-      _errorLog("[%s] Cannot allow attempted doc of size %d; Max allowed size is %d", __FUNCTION__,
-                data.size() + data_len, MAX_DOC_SIZE);
+      _errorLog("[%s] Cannot allow attempted doc of size %d; Max allowed size is %d", __FUNCTION__, data.size() + data_len,
+                MAX_DOC_SIZE);
       retval = false;
-    }
-    else {
+    } else {
       data.append(data_ptr, data_len);
     }
   }
@@ -94,7 +89,8 @@ EsiParser::_setup(string &data, int &parse_start_pos, size_t &orig_output_list_s
 }
 
 bool
-EsiParser::parseChunk(const char *data, DocNodeList &node_list, int data_len /* = -1 */) {
+EsiParser::parseChunk(const char *data, DocNodeList &node_list, int data_len /* = -1 */)
+{
   if (!_setup(_data, _parse_start_pos, _orig_output_list_size, node_list, data, data_len)) {
     return false;
   }
@@ -107,9 +103,9 @@ EsiParser::parseChunk(const char *data, DocNodeList &node_list, int data_len /* 
 }
 
 bool
-EsiParser::_completeParse(string &data, int &parse_start_pos, size_t &orig_output_list_size,
-                          DocNodeList &node_list, const char *data_ptr /* = 0 */,
-                          int data_len /* = -1 */) const {
+EsiParser::_completeParse(string &data, int &parse_start_pos, size_t &orig_output_list_size, DocNodeList &node_list,
+                          const char *data_ptr /* = 0 */, int data_len /* = -1 */) const
+{
   if (!_setup(data, parse_start_pos, orig_output_list_size, node_list, data_ptr, data_len)) {
     return false;
   }
@@ -118,8 +114,8 @@ EsiParser::_completeParse(string &data, int &parse_start_pos, size_t &orig_outpu
     return true;
   }
   if (!_parse(data, parse_start_pos, node_list, true)) {
-    _errorLog("[%s] Failed to complete parse of data of total size %d starting with [%.5s]...",
-              __FUNCTION__, data.size(), (data.size() ? data.data() : "(null)"));
+    _errorLog("[%s] Failed to complete parse of data of total size %d starting with [%.5s]...", __FUNCTION__, data.size(),
+              (data.size() ? data.data() : "(null)"));
     node_list.resize(orig_output_list_size);
     return false;
   }
@@ -127,7 +123,8 @@ EsiParser::_completeParse(string &data, int &parse_start_pos, size_t &orig_outpu
 }
 
 EsiParser::MATCH_TYPE
-EsiParser::_searchData(const string &data, size_t start_pos, const char *str, int str_len, size_t &pos) const {
+EsiParser::_searchData(const string &data, size_t start_pos, const char *str, int str_len, size_t &pos) const
+{
   const char *data_ptr = data.data() + start_pos;
   int data_len = data.size() - start_pos;
   int i_data = 0, i_str = 0;
@@ -147,13 +144,12 @@ EsiParser::_searchData(const string &data, size_t start_pos, const char *str, in
 
   if (i_str == str_len) {
     pos = start_pos + i_data + 1 - i_str;
-    _debugLog(_debug_tag, "[%s] Found full match of %.*s in [%.5s...] at position %d",
-              __FUNCTION__, str_len, str, data_ptr, pos);
+    _debugLog(_debug_tag, "[%s] Found full match of %.*s in [%.5s...] at position %d", __FUNCTION__, str_len, str, data_ptr, pos);
     return COMPLETE_MATCH;
   } else if (i_str) {
     pos = start_pos + i_data - i_str;
-    _debugLog(_debug_tag, "[%s] Found partial match of %.*s in [%.5s...] at position %d",
-              __FUNCTION__, str_len, str, data_ptr, pos);
+    _debugLog(_debug_tag, "[%s] Found partial match of %.*s in [%.5s...] at position %d", __FUNCTION__, str_len, str, data_ptr,
+              pos);
     return PARTIAL_MATCH;
   } else {
     _debugLog(_debug_tag, "[%s] Found no match of %.*s in [%.5s...]", __FUNCTION__, str_len, str, data_ptr);
@@ -162,19 +158,18 @@ EsiParser::_searchData(const string &data, size_t start_pos, const char *str, in
 }
 
 EsiParser::MATCH_TYPE
-EsiParser::_compareData(const string &data, size_t pos, const char *str, int str_len) const {
+EsiParser::_compareData(const string &data, size_t pos, const char *str, int str_len) const
+{
   int i_str = 0;
   size_t i_data = pos;
   for (; i_data < data.size(); ++i_data) {
     if (data[i_data] == str[i_str]) {
       ++i_str;
       if (i_str == str_len) {
-        _debugLog(_debug_tag, "[%s] string [%.*s] is equal to data at position %d",
-                  __FUNCTION__, str_len, str, pos);
+        _debugLog(_debug_tag, "[%s] string [%.*s] is equal to data at position %d", __FUNCTION__, str_len, str, pos);
         return COMPLETE_MATCH;
       }
-    }
-    else {
+    } else {
       /*
       _debugLog(_debug_tag, "[%s] string [%.*s] is not equal to data at position %d",
                 __FUNCTION__, str_len, str, pos);
@@ -182,8 +177,7 @@ EsiParser::_compareData(const string &data, size_t pos, const char *str, int str
       return NO_MATCH;
     }
   }
-  _debugLog(_debug_tag, "[%s] string [%.*s] is partially equal to data at position %d",
-            __FUNCTION__, str_len, str, pos);
+  _debugLog(_debug_tag, "[%s] string [%.*s] is partially equal to data at position %d", __FUNCTION__, str_len, str, pos);
   return PARTIAL_MATCH;
 }
 
@@ -192,8 +186,8 @@ EsiParser::_compareData(const string &data, size_t pos, const char *str, int str
  * or something like that), this will break. However that is not the
  * case for the two opening tags we are looking for */
 EsiParser::MATCH_TYPE
-EsiParser::_findOpeningTag(const string &data, size_t start_pos,
-                           size_t &opening_tag_pos, bool &is_html_comment_node) const {
+EsiParser::_findOpeningTag(const string &data, size_t start_pos, size_t &opening_tag_pos, bool &is_html_comment_node) const
+{
   size_t i_data = start_pos;
   int i_esi = 0, i_html_comment = 0;
 
@@ -207,7 +201,7 @@ EsiParser::_findOpeningTag(const string &data, size_t start_pos,
     } else {
       if (i_esi) {
         i_esi = 0;
-        --i_data;  // we do this to reexamine the current char as target string might start from here
+        --i_data; // we do this to reexamine the current char as target string might start from here
         if (i_html_comment) {
           --i_html_comment; // in case other target string has started matching, adjust it's index
         }
@@ -216,9 +210,8 @@ EsiParser::_findOpeningTag(const string &data, size_t start_pos,
     // doing the exact same thing for the other target string
     if (i_html_comment < HTML_COMMENT_NODE_INFO.tag_suffix_len &&
         data[i_data] == HTML_COMMENT_NODE_INFO.tag_suffix[i_html_comment]) {
-      if (++i_html_comment == HTML_COMMENT_NODE_INFO.tag_suffix_len &&
-          i_data + 1 < data.size()) {
-        char ch = data[i_data + 1];  //<!--esi must follow by a space char
+      if (++i_html_comment == HTML_COMMENT_NODE_INFO.tag_suffix_len && i_data + 1 < data.size()) {
+        char ch = data[i_data + 1]; //<!--esi must follow by a space char
         if (ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n') {
           is_html_comment_node = true;
           opening_tag_pos = i_data - i_html_comment + 1;
@@ -255,12 +248,11 @@ EsiParser::_findOpeningTag(const string &data, size_t start_pos,
 }
 
 inline bool
-EsiParser::_processSimpleContentTag(DocNode::TYPE node_type, const char *data, int data_len,
-                                    DocNodeList &node_list) const {
+EsiParser::_processSimpleContentTag(DocNode::TYPE node_type, const char *data, int data_len, DocNodeList &node_list) const
+{
   DocNode new_node(node_type);
   if (!parse(new_node.child_nodes, data, data_len)) {
-    _errorLog("[%s] Could not parse simple content of [%s] node", __FUNCTION__,
-              DocNode::type_names_[node_type]);
+    _errorLog("[%s] Could not parse simple content of [%s] node", __FUNCTION__, DocNode::type_names_[node_type]);
     return false;
   }
   node_list.push_back(new_node);
@@ -268,8 +260,8 @@ EsiParser::_processSimpleContentTag(DocNode::TYPE node_type, const char *data, i
 }
 
 bool
-EsiParser::_parse(const string &data, int &parse_start_pos,
-                  DocNodeList &node_list, bool last_chunk /* = false */) const {
+EsiParser::_parse(const string &data, int &parse_start_pos, DocNodeList &node_list, bool last_chunk /* = false */) const
+{
   size_t orig_list_size = node_list.size();
   size_t curr_pos, end_pos;
   const char *data_ptr;
@@ -299,10 +291,9 @@ EsiParser::_parse(const string &data, int &parse_start_pos,
     // we have a complete match of the opening tag
     if ((curr_pos - parse_start_pos) > 0) {
       // add text till here as a PRE node
-      _debugLog(_debug_tag, "[%s], Adding data of size %d before (newly found) ESI tag as PRE node",
-                __FUNCTION__, curr_pos - parse_start_pos);
-      node_list.push_back(DocNode(DocNode::TYPE_PRE,
-                                  data_start_ptr + parse_start_pos, curr_pos - parse_start_pos));
+      _debugLog(_debug_tag, "[%s], Adding data of size %d before (newly found) ESI tag as PRE node", __FUNCTION__,
+                curr_pos - parse_start_pos);
+      node_list.push_back(DocNode(DocNode::TYPE_PRE, data_start_ptr + parse_start_pos, curr_pos - parse_start_pos));
       parse_start_pos = curr_pos;
     }
 
@@ -319,20 +310,20 @@ EsiParser::_parse(const string &data, int &parse_start_pos,
         search_result = _compareData(data, curr_pos, node_info->tag_suffix, node_info->tag_suffix_len);
         if (search_result == COMPLETE_MATCH) {
           if (node_info->tag_suffix[node_info->tag_suffix_len - 1] == '>') {
-            _debugLog(_debug_tag, "[%s] Found [%s] tag at position %d",
-                __FUNCTION__, DocNode::type_names_[node_info->type], curr_pos - ESI_TAG_PREFIX_LEN);
+            _debugLog(_debug_tag, "[%s] Found [%s] tag at position %d", __FUNCTION__, DocNode::type_names_[node_info->type],
+                      curr_pos - ESI_TAG_PREFIX_LEN);
             break;
           } else {
             if (curr_pos + node_info->tag_suffix_len < data_size) {
               char ch = data_start_ptr[curr_pos + node_info->tag_suffix_len];
               if (ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n') {
-                _debugLog(_debug_tag, "[%s] Found [%s] tag at position %d",
-                    __FUNCTION__, DocNode::type_names_[node_info->type], curr_pos - ESI_TAG_PREFIX_LEN);
-                ++curr_pos; //skip the space char
+                _debugLog(_debug_tag, "[%s] Found [%s] tag at position %d", __FUNCTION__, DocNode::type_names_[node_info->type],
+                          curr_pos - ESI_TAG_PREFIX_LEN);
+                ++curr_pos; // skip the space char
                 break;
-              } else if(ch == '/' || ch == '>') {
-                _debugLog(_debug_tag, "[%s] Found [%s] tag at position %d",
-                    __FUNCTION__, DocNode::type_names_[node_info->type], curr_pos - ESI_TAG_PREFIX_LEN);
+              } else if (ch == '/' || ch == '>') {
+                _debugLog(_debug_tag, "[%s] Found [%s] tag at position %d", __FUNCTION__, DocNode::type_names_[node_info->type],
+                          curr_pos - ESI_TAG_PREFIX_LEN);
                 break;
               }
             } else {
@@ -357,65 +348,59 @@ EsiParser::_parse(const string &data, int &parse_start_pos,
         _errorLog("[%s] ESI tag starting with [%.10s]... has no matching closing tag [%.*s]", __FUNCTION__,
                   data_ptr - ESI_TAG_PREFIX_LEN, node_info->closing_tag_len, node_info->closing_tag);
         goto lFail;
-      }
-      else {
+      } else {
         goto lPartialMatch;
       }
     }
 
     // now we process only complete nodes
-    switch(node_info->type) {
-      case DocNode::TYPE_INCLUDE:
-        _debugLog(_debug_tag, "[%s] Handling include tag...", __FUNCTION__);
-        parse_result = _processIncludeTag(data, curr_pos, end_pos, node_list);
-        break;
-      case DocNode::TYPE_COMMENT:
-      case DocNode::TYPE_REMOVE:
-        _debugLog(_debug_tag, "[%s] Adding node [%s]", __FUNCTION__,
-            DocNode::type_names_[node_info->type]);
-        node_list.push_back(DocNode(node_info->type)); // no data required
-        parse_result = true;
-        break;
-      case DocNode::TYPE_WHEN:
-        _debugLog(_debug_tag, "[%s] Handling when tag...", __FUNCTION__);
-        parse_result = _processWhenTag(data, curr_pos, end_pos, node_list);
-        break;
-      case DocNode::TYPE_TRY:
-        _debugLog(_debug_tag, "[%s] Handling try tag...", __FUNCTION__);
-        parse_result = _processTryTag(data, curr_pos, end_pos, node_list);
-        break;
-      case DocNode::TYPE_CHOOSE:
-        _debugLog(_debug_tag, "[%s] Handling choose tag...", __FUNCTION__);
-        parse_result = _processChooseTag(data, curr_pos, end_pos, node_list);
-        break;
-      case DocNode::TYPE_OTHERWISE:
-      case DocNode::TYPE_ATTEMPT:
-      case DocNode::TYPE_EXCEPT:
-        _debugLog(_debug_tag, "[%s] Handling %s tag...", __FUNCTION__,
-            DocNode::type_names_[node_info->type]);
-        parse_result = _processSimpleContentTag(node_info->type, data.data() + curr_pos,
-            end_pos - curr_pos, node_list);
-        break;
-      case DocNode::TYPE_VARS:
-      case DocNode::TYPE_HTML_COMMENT:
-        _debugLog(_debug_tag, "[%s] added string of size %d starting with [%.5s] for node %s",
-            __FUNCTION__, end_pos - curr_pos, data.data() + curr_pos,
-            DocNode::type_names_[node_info->type]);
-        node_list.push_back(DocNode(node_info->type, data.data() + curr_pos, end_pos - curr_pos));
-        parse_result = true;
-        break;
-      case DocNode::TYPE_SPECIAL_INCLUDE:
-        _debugLog(_debug_tag, "[%s] Handling special include tag...", __FUNCTION__);
-        parse_result = _processSpecialIncludeTag(data, curr_pos, end_pos, node_list);
-        break;
-      default:
-        parse_result = false;
-        break;
+    switch (node_info->type) {
+    case DocNode::TYPE_INCLUDE:
+      _debugLog(_debug_tag, "[%s] Handling include tag...", __FUNCTION__);
+      parse_result = _processIncludeTag(data, curr_pos, end_pos, node_list);
+      break;
+    case DocNode::TYPE_COMMENT:
+    case DocNode::TYPE_REMOVE:
+      _debugLog(_debug_tag, "[%s] Adding node [%s]", __FUNCTION__, DocNode::type_names_[node_info->type]);
+      node_list.push_back(DocNode(node_info->type)); // no data required
+      parse_result = true;
+      break;
+    case DocNode::TYPE_WHEN:
+      _debugLog(_debug_tag, "[%s] Handling when tag...", __FUNCTION__);
+      parse_result = _processWhenTag(data, curr_pos, end_pos, node_list);
+      break;
+    case DocNode::TYPE_TRY:
+      _debugLog(_debug_tag, "[%s] Handling try tag...", __FUNCTION__);
+      parse_result = _processTryTag(data, curr_pos, end_pos, node_list);
+      break;
+    case DocNode::TYPE_CHOOSE:
+      _debugLog(_debug_tag, "[%s] Handling choose tag...", __FUNCTION__);
+      parse_result = _processChooseTag(data, curr_pos, end_pos, node_list);
+      break;
+    case DocNode::TYPE_OTHERWISE:
+    case DocNode::TYPE_ATTEMPT:
+    case DocNode::TYPE_EXCEPT:
+      _debugLog(_debug_tag, "[%s] Handling %s tag...", __FUNCTION__, DocNode::type_names_[node_info->type]);
+      parse_result = _processSimpleContentTag(node_info->type, data.data() + curr_pos, end_pos - curr_pos, node_list);
+      break;
+    case DocNode::TYPE_VARS:
+    case DocNode::TYPE_HTML_COMMENT:
+      _debugLog(_debug_tag, "[%s] added string of size %d starting with [%.5s] for node %s", __FUNCTION__, end_pos - curr_pos,
+                data.data() + curr_pos, DocNode::type_names_[node_info->type]);
+      node_list.push_back(DocNode(node_info->type, data.data() + curr_pos, end_pos - curr_pos));
+      parse_result = true;
+      break;
+    case DocNode::TYPE_SPECIAL_INCLUDE:
+      _debugLog(_debug_tag, "[%s] Handling special include tag...", __FUNCTION__);
+      parse_result = _processSpecialIncludeTag(data, curr_pos, end_pos, node_list);
+      break;
+    default:
+      parse_result = false;
+      break;
     }
 
     if (!parse_result) {
-      _errorLog("[%s] Cannot handle ESI tag [%.*s]", __FUNCTION__,
-                node_info->tag_suffix_len, node_info->tag_suffix);
+      _errorLog("[%s] Cannot handle ESI tag [%.*s]", __FUNCTION__, node_info->tag_suffix_len, node_info->tag_suffix);
       goto lFail;
     }
 
@@ -431,22 +416,21 @@ EsiParser::_parse(const string &data, int &parse_start_pos,
     break;
   }
   if (last_chunk && (parse_start_pos < static_cast<int>(data_size))) {
-    _debugLog(_debug_tag, "[%s] Adding trailing text of size %d starting at [%.5s] as a PRE node",
-              __FUNCTION__, data_size - parse_start_pos, data_start_ptr + parse_start_pos);
-    node_list.push_back(DocNode(DocNode::TYPE_PRE,
-                                data_start_ptr + parse_start_pos, data_size - parse_start_pos));
+    _debugLog(_debug_tag, "[%s] Adding trailing text of size %d starting at [%.5s] as a PRE node", __FUNCTION__,
+              data_size - parse_start_pos, data_start_ptr + parse_start_pos);
+    node_list.push_back(DocNode(DocNode::TYPE_PRE, data_start_ptr + parse_start_pos, data_size - parse_start_pos));
   }
   _debugLog(_debug_tag, "[%s] Added %d node(s) during parse", __FUNCTION__, node_list.size() - orig_list_size);
   return true;
 
 lFail:
-  node_list.resize(orig_list_size);   // delete whatever nodes we have added so far
+  node_list.resize(orig_list_size); // delete whatever nodes we have added so far
   return false;
 }
 
 bool
-EsiParser::_processIncludeTag(const string &data, size_t curr_pos, size_t end_pos,
-                              DocNodeList &node_list) const {
+EsiParser::_processIncludeTag(const string &data, size_t curr_pos, size_t end_pos, DocNodeList &node_list) const
+{
   Attribute src_info;
   if (!Utils::getAttribute(data, SRC_ATTR_STR, curr_pos, end_pos, src_info)) {
     _errorLog("[%s] Could not find src attribute", __FUNCTION__);
@@ -454,14 +438,13 @@ EsiParser::_processIncludeTag(const string &data, size_t curr_pos, size_t end_po
   }
   node_list.push_back(DocNode(DocNode::TYPE_INCLUDE));
   node_list.back().attr_list.push_back(src_info);
-  _debugLog(_debug_tag, "[%s] Added include tag with url [%.*s]",
-            __FUNCTION__, src_info.value_len, src_info.value);
+  _debugLog(_debug_tag, "[%s] Added include tag with url [%.*s]", __FUNCTION__, src_info.value_len, src_info.value);
   return true;
 }
 
 bool
-EsiParser::_processSpecialIncludeTag(const string &data, size_t curr_pos, size_t end_pos,
-                                     DocNodeList &node_list) const {
+EsiParser::_processSpecialIncludeTag(const string &data, size_t curr_pos, size_t end_pos, DocNodeList &node_list) const
+{
   Attribute handler_info;
   if (!Utils::getAttribute(data, HANDLER_ATTR_STR, curr_pos, end_pos, handler_info)) {
     _errorLog("[%s] Could not find handler attribute", __FUNCTION__);
@@ -472,13 +455,14 @@ EsiParser::_processSpecialIncludeTag(const string &data, size_t curr_pos, size_t
   node.attr_list.push_back(handler_info);
   node.data = data.data() + curr_pos;
   node.data_len = end_pos - curr_pos;
-  _debugLog(_debug_tag, "[%s] Added special include tag with handler [%.*s] and data [%.*s]",
-            __FUNCTION__, handler_info.value_len, handler_info.value, node.data_len, node.data);
+  _debugLog(_debug_tag, "[%s] Added special include tag with handler [%.*s] and data [%.*s]", __FUNCTION__, handler_info.value_len,
+            handler_info.value, node.data_len, node.data);
   return true;
 }
 
 inline bool
-EsiParser::_isWhitespace(const char *data, int data_len) const {
+EsiParser::_isWhitespace(const char *data, int data_len) const
+{
   for (int i = 0; i < data_len; ++i) {
     if (!isspace(data[i])) {
       return false;
@@ -488,8 +472,8 @@ EsiParser::_isWhitespace(const char *data, int data_len) const {
 }
 
 bool
-EsiParser::_processWhenTag(const string &data, size_t curr_pos, size_t end_pos,
-                           DocNodeList &node_list) const {
+EsiParser::_processWhenTag(const string &data, size_t curr_pos, size_t end_pos, DocNodeList &node_list) const
+{
   Attribute test_expr;
   size_t term_pos;
   if (!Utils::getAttribute(data, TEST_ATTR_STR, curr_pos, end_pos, test_expr, &term_pos, '>')) {
@@ -504,14 +488,14 @@ EsiParser::_processWhenTag(const string &data, size_t curr_pos, size_t end_pos,
     return false;
   }
   node_list.back().attr_list.push_back(test_expr);
-  _debugLog(_debug_tag, "[%s] Added when tag with expression [%.*s] and data starting with [%.5s]",
-            __FUNCTION__, test_expr.value_len, test_expr.value, data_start_ptr);
+  _debugLog(_debug_tag, "[%s] Added when tag with expression [%.*s] and data starting with [%.5s]", __FUNCTION__,
+            test_expr.value_len, test_expr.value, data_start_ptr);
   return true;
 }
 
 bool
-EsiParser::_processTryTag(const string &data, size_t curr_pos, size_t end_pos,
-                          DocNodeList &node_list) const {
+EsiParser::_processTryTag(const string &data, size_t curr_pos, size_t end_pos, DocNodeList &node_list) const
+{
   const char *data_start_ptr = data.data() + curr_pos;
   int data_size = end_pos - curr_pos;
   DocNode try_node(DocNode::TYPE_TRY);
@@ -549,8 +533,8 @@ EsiParser::_processTryTag(const string &data, size_t curr_pos, size_t end_pos,
       iter = temp_iter;
       continue; // skip the increment
     } else {
-      _errorLog("[%s] Only attempt/except/text nodes allowed in try block; [%s] node invalid",
-                __FUNCTION__, DocNode::type_names_[iter->type]);
+      _errorLog("[%s] Only attempt/except/text nodes allowed in try block; [%s] node invalid", __FUNCTION__,
+                DocNode::type_names_[iter->type]);
       return false;
     }
     ++iter;
@@ -565,8 +549,8 @@ EsiParser::_processTryTag(const string &data, size_t curr_pos, size_t end_pos,
 }
 
 bool
-EsiParser::_processChooseTag(const string &data, size_t curr_pos, size_t end_pos,
-                             DocNodeList &node_list) const {
+EsiParser::_processChooseTag(const string &data, size_t curr_pos, size_t end_pos, DocNodeList &node_list) const
+{
   const char *data_start_ptr = data.data() + curr_pos;
   size_t data_size = end_pos - curr_pos;
   DocNode choose_node(DocNode::TYPE_CHOOSE);
@@ -586,8 +570,8 @@ EsiParser::_processChooseTag(const string &data, size_t curr_pos, size_t end_pos
       otherwise_node = iter;
     } else if (iter->type == DocNode::TYPE_PRE) {
       if (!_isWhitespace(iter->data, iter->data_len)) {
-        _errorLog("[%s] Cannot have non-whitespace raw text as top-level node in choose data",
-                  __FUNCTION__, DocNode::type_names_[iter->type]);
+        _errorLog("[%s] Cannot have non-whitespace raw text as top-level node in choose data", __FUNCTION__,
+                  DocNode::type_names_[iter->type]);
         return false;
       }
       _debugLog(_debug_tag, "[%s] Ignoring top-level whitespace raw text", __FUNCTION__);
@@ -598,7 +582,8 @@ EsiParser::_processChooseTag(const string &data, size_t curr_pos, size_t end_pos
       continue; // skip the increment
     } else if (iter->type != DocNode::TYPE_WHEN) {
       _errorLog("[%s] Cannot have %s as top-level node in choose data; only when/otherwise/whitespace-text "
-                "permitted", __FUNCTION__, DocNode::type_names_[iter->type]);
+                "permitted",
+                __FUNCTION__, DocNode::type_names_[iter->type]);
       return false;
     }
     ++iter;
@@ -608,17 +593,20 @@ EsiParser::_processChooseTag(const string &data, size_t curr_pos, size_t end_pos
 }
 
 void
-EsiParser::clear() {
+EsiParser::clear()
+{
   _data.clear();
   _parse_start_pos = -1;
 }
 
-EsiParser::~EsiParser() {
+EsiParser::~EsiParser()
+{
 }
 
 inline void
-EsiParser::_adjustPointers(DocNodeList::iterator node_iter, DocNodeList::iterator end,
-                           const char *ext_data_ptr, const char *int_data_start) const {
+EsiParser::_adjustPointers(DocNodeList::iterator node_iter, DocNodeList::iterator end, const char *ext_data_ptr,
+                           const char *int_data_start) const
+{
   AttributeList::iterator attr_iter;
   for (; node_iter != end; ++node_iter) {
     if (node_iter->data_len) {
@@ -633,14 +621,14 @@ EsiParser::_adjustPointers(DocNodeList::iterator node_iter, DocNodeList::iterato
       }
     }
     if (node_iter->child_nodes.size()) {
-      _adjustPointers(node_iter->child_nodes.begin(), node_iter->child_nodes.end(),
-                      ext_data_ptr, int_data_start);
+      _adjustPointers(node_iter->child_nodes.begin(), node_iter->child_nodes.end(), ext_data_ptr, int_data_start);
     }
   }
 }
 
 bool
-EsiParser::parse(DocNodeList &node_list, const char *ext_data_ptr, int data_len /* = -1 */) const {
+EsiParser::parse(DocNodeList &node_list, const char *ext_data_ptr, int data_len /* = -1 */) const
+{
   string data;
   size_t orig_output_list_size;
   int parse_start_pos = -1;
@@ -649,7 +637,8 @@ EsiParser::parse(DocNodeList &node_list, const char *ext_data_ptr, int data_len 
     // adjust all pointers to addresses in input parameter
     const char *int_data_start = data.data();
     DocNodeList::iterator node_iter = node_list.begin();
-    for (size_t i = 0; i < orig_output_list_size; ++i, ++node_iter);
+    for (size_t i = 0; i < orig_output_list_size; ++i, ++node_iter)
+      ;
     _adjustPointers(node_iter, node_list.end(), ext_data_ptr, int_data_start);
   }
   return retval;

@@ -87,7 +87,8 @@ typedef struct {
 // }
 
 /* init the plugin data */
-INIT_FUNC(mod_generator_init) {
+INIT_FUNC(mod_generator_init)
+{
   plugin_data *p;
 
   p = calloc(1, sizeof(*p));
@@ -98,12 +99,14 @@ INIT_FUNC(mod_generator_init) {
 }
 
 /* detroy the plugin data */
-FREE_FUNC(mod_generator_free) {
+FREE_FUNC(mod_generator_free)
+{
   plugin_data *p = p_d;
 
   UNUSED(srv);
 
-  if (!p) return HANDLER_GO_ON;
+  if (!p)
+    return HANDLER_GO_ON;
 
   if (p->config_storage) {
     size_t i;
@@ -111,7 +114,8 @@ FREE_FUNC(mod_generator_free) {
     for (i = 0; i < srv->config_context->used; i++) {
       plugin_config *s = p->config_storage[i];
 
-      if (!s) continue;
+      if (!s)
+        continue;
 
       array_free(s->match);
 
@@ -129,16 +133,16 @@ FREE_FUNC(mod_generator_free) {
 
 /* handle plugin config and check values */
 
-SETDEFAULTS_FUNC(mod_generator_set_defaults) {
+SETDEFAULTS_FUNC(mod_generator_set_defaults)
+{
   plugin_data *p = p_d;
   size_t i = 0;
 
-  config_values_t cv[] = {
-    { "generator.array",             NULL, T_CONFIG_ARRAY, T_CONFIG_SCOPE_CONNECTION },       /* 0 */
-    { NULL,                         NULL, T_CONFIG_UNSET, T_CONFIG_SCOPE_UNSET }
-  };
+  config_values_t cv[] = {{"generator.array", NULL, T_CONFIG_ARRAY, T_CONFIG_SCOPE_CONNECTION}, /* 0 */
+                          {NULL, NULL, T_CONFIG_UNSET, T_CONFIG_SCOPE_UNSET}};
 
-  if (!p) return HANDLER_ERROR;
+  if (!p)
+    return HANDLER_ERROR;
 
   p->config_storage = calloc(1, srv->config_context->used * sizeof(specific_config *));
 
@@ -146,7 +150,7 @@ SETDEFAULTS_FUNC(mod_generator_set_defaults) {
     plugin_config *s;
 
     s = calloc(1, sizeof(plugin_config));
-    s->match    = array_init();
+    s->match = array_init();
 
     cv[0].destination = s->match;
 
@@ -160,9 +164,10 @@ SETDEFAULTS_FUNC(mod_generator_set_defaults) {
   return HANDLER_GO_ON;
 }
 
-#define PATCH(x)                                \
-  p->conf.x = s->x;
-static int mod_generator_patch_connection(server *srv, connection *con, plugin_data *p) {
+#define PATCH(x) p->conf.x = s->x;
+static int
+mod_generator_patch_connection(server *srv, connection *con, plugin_data *p)
+{
   size_t i, j;
   plugin_config *s = p->config_storage[0];
 
@@ -174,7 +179,8 @@ static int mod_generator_patch_connection(server *srv, connection *con, plugin_d
     s = p->config_storage[i];
 
     /* condition didn't match */
-    if (!config_check_cond(srv, con, dc)) continue;
+    if (!config_check_cond(srv, con, dc))
+      continue;
 
     /* merge config */
     for (j = 0; j < dc->value->used; j++) {
@@ -190,16 +196,19 @@ static int mod_generator_patch_connection(server *srv, connection *con, plugin_d
 }
 #undef PATCH
 
-URIHANDLER_FUNC(mod_generator_uri_handler) {
+URIHANDLER_FUNC(mod_generator_uri_handler)
+{
   plugin_data *p = p_d;
   int s_len;
   size_t k;
 
   UNUSED(srv);
 
-  if (con->mode != DIRECT) return HANDLER_GO_ON;
+  if (con->mode != DIRECT)
+    return HANDLER_GO_ON;
 
-  if (con->uri.path->used == 0) return HANDLER_GO_ON;
+  if (con->uri.path->used == 0)
+    return HANDLER_GO_ON;
 
   mod_generator_patch_connection(srv, con, p);
 
@@ -209,8 +218,10 @@ URIHANDLER_FUNC(mod_generator_uri_handler) {
     data_string *ds = (data_string *)p->conf.match->data[k];
     int ct_len = ds->value->used - 1;
 
-    if (ct_len > s_len) continue;
-    if (ds->value->used == 0) continue;
+    if (ct_len > s_len)
+      continue;
+    if (ds->value->used == 0)
+      continue;
 
     if (0 == strncmp(con->uri.path->ptr + s_len - ct_len, ds->value->ptr, ct_len)) {
       con->http_status = 403;
@@ -224,20 +235,21 @@ URIHANDLER_FUNC(mod_generator_uri_handler) {
 }
 
 
-URIHANDLER_FUNC(mod_generator_subrequest_handler) {
-  (void) p_d;
-  //plugin_data *p = p_d;
+URIHANDLER_FUNC(mod_generator_subrequest_handler)
+{
+  (void)p_d;
+  // plugin_data *p = p_d;
   buffer *b;
   b = chunkqueue_get_append_buffer(con->write_queue);
 
 
   // get the url information
-  //int length = strlen(con->uri.path->ptr);
+  // int length = strlen(con->uri.path->ptr);
   char *start = con->uri.path->ptr;
   char *end;
   //  char *end = start + length;
   if (*start != '/') {
-    log_error_write(srv, __FILE__, __LINE__,  "s", "url doesn't start with a slash");
+    log_error_write(srv, __FILE__, __LINE__, "s", "url doesn't start with a slash");
     return HANDLER_GO_ON;
   }
   ++start;
@@ -253,12 +265,12 @@ URIHANDLER_FUNC(mod_generator_subrequest_handler) {
     break;
   case 'm':
   case 'M':
-    bytes *= 1024*1024;
+    bytes *= 1024 * 1024;
     ++end;
     break;
   case 'g':
   case 'G':
-    bytes *= 1024*1024*1024;
+    bytes *= 1024 * 1024 * 1024;
     ++end;
     break;
   default:
@@ -266,7 +278,7 @@ URIHANDLER_FUNC(mod_generator_subrequest_handler) {
   }
 
   if (start == end && bytes <= 0 && *start != '-') {
-    log_error_write(srv, __FILE__, __LINE__,  "s", "can't find size in bytes");
+    log_error_write(srv, __FILE__, __LINE__, "s", "can't find size in bytes");
     return HANDLER_GO_ON;
   }
   start = end + 1;
@@ -274,7 +286,7 @@ URIHANDLER_FUNC(mod_generator_subrequest_handler) {
   // get the id from the url.
   end = strchr(start, '-');
   if (end == NULL) {
-    log_error_write(srv, __FILE__, __LINE__,  "s", "problems finding the id");
+    log_error_write(srv, __FILE__, __LINE__, "s", "problems finding the id");
     return HANDLER_GO_ON;
   }
 
@@ -284,7 +296,7 @@ URIHANDLER_FUNC(mod_generator_subrequest_handler) {
   int64_t sleepval = strtoll(start, &end, 10);
 
   if (start == end && sleepval < 0 && *start != '-') {
-    log_error_write(srv, __FILE__, __LINE__,  "s", "problems finding the sleepval");
+    log_error_write(srv, __FILE__, __LINE__, "s", "problems finding the sleepval");
     return HANDLER_GO_ON;
   }
   start = end + 1;
@@ -299,13 +311,13 @@ URIHANDLER_FUNC(mod_generator_subrequest_handler) {
   } else if (strcmp(start, "no_cache") == 0) {
     cache = 0;
   } else {
-    log_error_write(srv, __FILE__, __LINE__,  "s", "didn't see cache or no_cache in the url");
+    log_error_write(srv, __FILE__, __LINE__, "s", "didn't see cache or no_cache in the url");
     return HANDLER_GO_ON;
   }
 
   // print the body of the message
   uint64_t to_write = 0;
-  --bytes;              // leave a char left over for \n
+  --bytes; // leave a char left over for \n
   while (bytes > 0) {
     if ((uint64_t)bytes > sizeof(static_data)) {
       // biger then the static buffer, so write the entire buffer
@@ -337,18 +349,19 @@ URIHANDLER_FUNC(mod_generator_subrequest_handler) {
 
 /* this function is called at dlopen() time and inits the callbacks */
 
-int mod_generator_plugin_init(plugin *p) {
+int
+mod_generator_plugin_init(plugin *p)
+{
+  p->version = LIGHTTPD_VERSION_ID;
+  p->name = buffer_init_string("generator");
 
-  p->version     = LIGHTTPD_VERSION_ID;
-  p->name        = buffer_init_string("generator");
+  p->init = mod_generator_init;
+  p->handle_uri_clean = mod_generator_uri_handler;
+  p->handle_physical = mod_generator_subrequest_handler;
+  p->set_defaults = mod_generator_set_defaults;
+  p->cleanup = mod_generator_free;
 
-  p->init        = mod_generator_init;
-  p->handle_uri_clean  = mod_generator_uri_handler;
-  p->handle_physical  = mod_generator_subrequest_handler;
-  p->set_defaults  = mod_generator_set_defaults;
-  p->cleanup     = mod_generator_free;
-
-  p->data        = NULL;
+  p->data = NULL;
 
   // set the static data used in the response;
   memset(static_data, 'x', sizeof(static_data));

@@ -37,17 +37,17 @@
 /*--------------------------------------------------------------------------*/
 
 /*
-	$Id: dictionary.h,v 1.12 2007-11-23 21:37:00 ndevilla Exp $
-	$Author: ndevilla $
-	$Date: 2007-11-23 21:37:00 $
-	$Revision: 1.12 $
+        $Id: dictionary.h,v 1.12 2007-11-23 21:37:00 ndevilla Exp $
+        $Author: ndevilla $
+        $Date: 2007-11-23 21:37:00 $
+        $Revision: 1.12 $
 */
 
 #ifndef _DICTIONARY_H_
 #define _DICTIONARY_H_
 
 /*---------------------------------------------------------------------------
-   								Includes
+                                                                Includes
  ---------------------------------------------------------------------------*/
 
 #include <stdio.h>
@@ -56,7 +56,7 @@
 #include <unistd.h>
 
 /*---------------------------------------------------------------------------
-   								New types
+                                                                New types
  ---------------------------------------------------------------------------*/
 
 
@@ -71,16 +71,16 @@
  */
 /*-------------------------------------------------------------------------*/
 typedef struct _dictionary_ {
-	int				n ;		/** Number of entries in dictionary */
-	int				size ;	/** Storage size */
-	char 		**	val ;	/** List of string values */
-	char 		**  key ;	/** List of string keys */
-	unsigned	 *	hash ;	/** List of hash values for keys */
-} dictionary ;
+  int n;          /** Number of entries in dictionary */
+  int size;       /** Storage size */
+  char **val;     /** List of string values */
+  char **key;     /** List of string keys */
+  unsigned *hash; /** List of hash values for keys */
+} dictionary;
 
 
 /*---------------------------------------------------------------------------
-  							Function prototypes
+                                                        Function prototypes
  ---------------------------------------------------------------------------*/
 
 /*-------------------------------------------------------------------------*/
@@ -95,7 +95,7 @@ typedef struct _dictionary_ {
   by comparing the key itself in last resort.
  */
 /*--------------------------------------------------------------------------*/
-unsigned dictionary_hash(char * key);
+unsigned dictionary_hash(char *key);
 
 /*-------------------------------------------------------------------------*/
 /**
@@ -108,7 +108,7 @@ unsigned dictionary_hash(char * key);
   dictionary, give size=0.
  */
 /*--------------------------------------------------------------------------*/
-dictionary * dictionary_new(int size);
+dictionary *dictionary_new(int size);
 
 /*-------------------------------------------------------------------------*/
 /**
@@ -119,7 +119,7 @@ dictionary * dictionary_new(int size);
   Deallocate a dictionary object and all memory associated to it.
  */
 /*--------------------------------------------------------------------------*/
-void dictionary_del(dictionary * vd);
+void dictionary_del(dictionary *vd);
 
 /*-------------------------------------------------------------------------*/
 /**
@@ -135,7 +135,7 @@ void dictionary_del(dictionary * vd);
   dictionary object, you should not try to free it or modify it.
  */
 /*--------------------------------------------------------------------------*/
-char * dictionary_get(dictionary * d, char * key, char * def);
+char *dictionary_get(dictionary *d, char *key, char *def);
 
 
 /*-------------------------------------------------------------------------*/
@@ -164,7 +164,7 @@ char * dictionary_get(dictionary * d, char * key, char * def);
   This function returns non-zero in case of failure.
  */
 /*--------------------------------------------------------------------------*/
-int dictionary_set(dictionary * vd, char * key, char * val);
+int dictionary_set(dictionary *vd, char *key, char *val);
 
 /*-------------------------------------------------------------------------*/
 /**
@@ -177,7 +177,7 @@ int dictionary_set(dictionary * vd, char * key, char * val);
   key cannot be found.
  */
 /*--------------------------------------------------------------------------*/
-void dictionary_unset(dictionary * d, char * key);
+void dictionary_unset(dictionary *d, char *key);
 
 
 /*-------------------------------------------------------------------------*/
@@ -192,6 +192,6 @@ void dictionary_unset(dictionary * d, char * key);
   output file pointers.
  */
 /*--------------------------------------------------------------------------*/
-void dictionary_dump(dictionary * d, FILE * out);
+void dictionary_dump(dictionary *d, FILE *out);
 
 #endif

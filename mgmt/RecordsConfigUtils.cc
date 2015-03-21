@@ -30,14 +30,13 @@
 //-------------------------------------------------------------------------
 
 static void
-override_record(const RecordElement * record, void *)
+override_record(const RecordElement *record, void *)
 {
   if (REC_TYPE_IS_CONFIG(record->type)) {
-    const char * value;
+    const char *value;
     RecData data = {0};
 
     if ((value = RecConfigOverrideFromEnvironment(record->name, NULL))) {
-
       if (RecDataSetFromString(record->value_type, &data, value)) {
         // WARNING: If we are not the record owner, RecSetRecord() doesn't set our copy
         // of the record. It sends a set message to the local manager. This can cause
@@ -48,7 +47,6 @@ override_record(const RecordElement * record, void *)
       }
     }
   }
-
 }
 
 // We process environment variable overrides when we parse the records.config configuration file, but the
@@ -65,7 +63,7 @@ RecordsConfigOverrideFromEnvironment()
 //-------------------------------------------------------------------------
 
 static void
-initialize_record(const RecordElement * record, void *)
+initialize_record(const RecordElement *record, void *)
 {
   RecInt tempInt = 0;
   RecFloat tempFloat = 0.0;
@@ -83,7 +81,7 @@ initialize_record(const RecordElement * record, void *)
   access = record->access;
 
   if (REC_TYPE_IS_CONFIG(type)) {
-    const char * value = RecConfigOverrideFromEnvironment(record->name, record->value);
+    const char *value = RecConfigOverrideFromEnvironment(record->name, record->value);
     RecData data = {0};
 
     // If you specify a consistency check, you have to specify a regex expression. We abort here
@@ -114,21 +112,20 @@ initialize_record(const RecordElement * record, void *)
     default:
       ink_assert(true);
       break;
-    }                         // switch
+    } // switch
 
     RecDataClear(record->value_type, &data);
   } else { // Everything else, except PROCESS, are stats. TODO: Should modularize this too like PROCESS was done.
     ink_assert(REC_TYPE_IS_STAT(type));
 
     switch (record->value_type) {
-
     case RECD_INT:
-      tempInt = (RecInt) ink_atoi64(record->value);
+      tempInt = (RecInt)ink_atoi64(record->value);
       RecRegisterStatInt(type, record->name, tempInt, RECP_NON_PERSISTENT);
       break;
 
     case RECD_FLOAT:
-      tempFloat = (RecFloat) atof(record->value);
+      tempFloat = (RecFloat)atof(record->value);
       RecRegisterStatFloat(type, record->name, tempFloat, RECP_NON_PERSISTENT);
       break;
 
@@ -137,16 +134,15 @@ initialize_record(const RecordElement * record, void *)
       break;
 
     case RECD_COUNTER:
-      tempCounter = (RecCounter) ink_atoi64(record->value);
+      tempCounter = (RecCounter)ink_atoi64(record->value);
       RecRegisterStatCounter(type, record->name, tempCounter, RECP_NON_PERSISTENT);
       break;
 
     default:
       ink_assert(true);
       break;
-    }                         // switch
+    } // switch
   }
-
 }
 
 void
@@ -158,8 +154,8 @@ LibRecordsConfigInit()
 void
 test_librecords()
 {
-  RecRegisterStatInt(RECT_PROCESS, "proxy.process.librecords.testing.int", (RecInt) 100, RECP_NON_PERSISTENT);
-  RecRegisterStatFloat(RECT_NODE, "proxy.node.librecords.testing.float", (RecFloat) 100.1, RECP_NON_PERSISTENT);
+  RecRegisterStatInt(RECT_PROCESS, "proxy.process.librecords.testing.int", (RecInt)100, RECP_NON_PERSISTENT);
+  RecRegisterStatFloat(RECT_NODE, "proxy.node.librecords.testing.float", (RecFloat)100.1, RECP_NON_PERSISTENT);
   RecRegisterStatString(RECT_CLUSTER, "proxy.cluster.librecords.testing.string", (RecString) "Hello World\n", RECP_NON_PERSISTENT);
-  RecRegisterStatCounter(RECT_LOCAL, "proxy.local.librecords.testing.counter", (RecCounter) 99, RECP_NON_PERSISTENT);
+  RecRegisterStatCounter(RECT_LOCAL, "proxy.local.librecords.testing.counter", (RecCounter)99, RECP_NON_PERSISTENT);
 }

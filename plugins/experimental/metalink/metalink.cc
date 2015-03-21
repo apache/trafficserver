@@ -114,8 +114,8 @@ cache_open_write(TSCont contp, void *edata)
   char *value;
   int length;
 
-  WriteData *data = (WriteData *) TSContDataGet(contp);
-  data->connp = (TSVConn) edata;
+  WriteData *data = (WriteData *)TSContDataGet(contp);
+  data->connp = (TSVConn)edata;
 
   TSCacheKeyDestroy(data->key);
 
@@ -173,9 +173,9 @@ cache_open_write(TSCont contp, void *edata)
 /* Do nothing */
 
 static int
-cache_open_write_failed(TSCont contp, void */* edata ATS_UNUSED */)
+cache_open_write_failed(TSCont contp, void * /* edata ATS_UNUSED */)
 {
-  WriteData *data = (WriteData *) TSContDataGet(contp);
+  WriteData *data = (WriteData *)TSContDataGet(contp);
   TSContDestroy(contp);
 
   TSCacheKeyDestroy(data->key);
@@ -185,9 +185,9 @@ cache_open_write_failed(TSCont contp, void */* edata ATS_UNUSED */)
 }
 
 static int
-write_vconn_write_complete(TSCont contp, void */* edata ATS_UNUSED */)
+write_vconn_write_complete(TSCont contp, void * /* edata ATS_UNUSED */)
 {
-  WriteData *data = (WriteData *) TSContDataGet(contp);
+  WriteData *data = (WriteData *)TSContDataGet(contp);
   TSContDestroy(contp);
 
   /* The object is not committed to the cache until the VConnection is
@@ -336,14 +336,14 @@ write_handler(TSCont contp, TSEvent event, void *edata)
  *                  Clean up the output buffer. */
 
 static int
-vconn_write_ready(TSCont contp, void */* edata ATS_UNUSED */)
+vconn_write_ready(TSCont contp, void * /* edata ATS_UNUSED */)
 {
   const char *value;
   int64_t length;
 
   char digest[32]; /* SHA-256 */
 
-  TransformData *transform_data = (TransformData *) TSContDataGet(contp);
+  TransformData *transform_data = (TransformData *)TSContDataGet(contp);
 
   /* Check if we are "closed" before doing anything else to avoid
    * errors.  We *must* check for this case, if only to clean up
@@ -392,7 +392,6 @@ vconn_write_ready(TSCont contp, void */* edata ATS_UNUSED */)
    * we get the final chunk of a chunked response. */
   TSIOBufferReader readerp = TSVIOReaderGet(input_viop);
   if (readerp) {
-
     int avail = TSIOBufferReaderAvail(readerp);
     if (avail) {
       TSIOBufferCopy(transform_data->output_bufp, readerp, avail, 0);
@@ -400,7 +399,6 @@ vconn_write_ready(TSCont contp, void */* edata ATS_UNUSED */)
       /* Feed content to the message digest */
       TSIOBufferBlock blockp = TSIOBufferReaderStart(readerp);
       while (blockp) {
-
         /* No allocation? */
         value = TSIOBufferBlockReadStart(blockp, readerp, &length);
         SHA256_Update(&transform_data->c, value, length);
@@ -424,17 +422,16 @@ vconn_write_ready(TSCont contp, void */* edata ATS_UNUSED */)
 
     TSContCall(TSVIOContGet(input_viop), TS_EVENT_VCONN_WRITE_READY, input_viop);
 
-  /* Don't finish computing the digest (and tell downstream and thank
-   * upstream) more than once!  There might be multiple
-   * TS_EVENT_IMMEDIATE events between the end of the input and the
-   * TS_EVENT_VCONN_WRITE_COMPLETE event from downstream, e.g.
-   * INKVConnInternal::reenable() is called by
-   * HttpTunnel::producer_handler() when more input is available and
-   * TransformVConnection::do_io_shutdown() is called by
-   * HttpSM::tunnel_handler_transform_write() when we send our own
-   * TS_EVENT_VCONN_WRITE_COMPLETE event upstream. */
+    /* Don't finish computing the digest (and tell downstream and thank
+     * upstream) more than once!  There might be multiple
+     * TS_EVENT_IMMEDIATE events between the end of the input and the
+     * TS_EVENT_VCONN_WRITE_COMPLETE event from downstream, e.g.
+     * INKVConnInternal::reenable() is called by
+     * HttpTunnel::producer_handler() when more input is available and
+     * TransformVConnection::do_io_shutdown() is called by
+     * HttpSM::tunnel_handler_transform_write() when we send our own
+     * TS_EVENT_VCONN_WRITE_COMPLETE event upstream. */
   } else if (transform_data->txnp) {
-
     int ndone = TSVIONDoneGet(input_viop);
     TSVIONBytesSet(transform_data->output_viop, ndone);
 
@@ -449,9 +446,9 @@ vconn_write_ready(TSCont contp, void */* edata ATS_UNUSED */)
 
     /* Write the digest to the cache */
 
-    SHA256_Final((unsigned char *) digest, &transform_data->c);
+    SHA256_Final((unsigned char *)digest, &transform_data->c);
 
-    WriteData *write_data = (WriteData *) TSmalloc(sizeof(WriteData));
+    WriteData *write_data = (WriteData *)TSmalloc(sizeof(WriteData));
     write_data->txnp = transform_data->txnp;
 
     /* Don't finish computing the digest more than once! */
@@ -459,7 +456,6 @@ vconn_write_ready(TSCont contp, void */* edata ATS_UNUSED */)
 
     write_data->key = TSCacheKeyCreate();
     if (TSCacheKeyDigestSet(write_data->key, digest, sizeof(digest)) != TS_SUCCESS) {
-
       TSCacheKeyDestroy(write_data->key);
       TSfree(write_data);
 
@@ -481,9 +477,9 @@ vconn_write_ready(TSCont contp, void */* edata ATS_UNUSED */)
 }
 
 static int
-transform_vconn_write_complete(TSCont contp, void */* edata ATS_UNUSED */)
+transform_vconn_write_complete(TSCont contp, void * /* edata ATS_UNUSED */)
 {
-  TransformData *data = (TransformData *) TSContDataGet(contp);
+  TransformData *data = (TransformData *)TSContDataGet(contp);
   TSContDestroy(contp);
 
   TSIOBufferDestroy(data->output_bufp);
@@ -519,8 +515,8 @@ transform_handler(TSCont contp, TSEvent event, void *edata)
 static int
 http_read_response_hdr(TSCont /* contp ATS_UNUSED */, void *edata)
 {
-  TransformData *data = (TransformData *) TSmalloc(sizeof(TransformData));
-  data->txnp = (TSHttpTxn) edata;
+  TransformData *data = (TransformData *)TSmalloc(sizeof(TransformData));
+  data->txnp = (TSHttpTxn)edata;
 
   /* Can't initialize data here because we can't call TSVConnWrite()
    * before TS_HTTP_RESPONSE_TRANSFORM_HOOK */
@@ -544,8 +540,8 @@ http_read_response_hdr(TSCont /* contp ATS_UNUSED */, void *edata)
 static int
 cache_open_read(TSCont contp, void *edata)
 {
-  SendData *data = (SendData *) TSContDataGet(contp);
-  data->connp = (TSVConn) edata;
+  SendData *data = (SendData *)TSContDataGet(contp);
+  data->connp = (TSVConn)edata;
 
   data->cache_bufp = TSIOBufferCreate();
 
@@ -558,9 +554,9 @@ cache_open_read(TSCont contp, void *edata)
 /* Do nothing, just reenable the response */
 
 static int
-cache_open_read_failed(TSCont contp, void */* edata ATS_UNUSED */)
+cache_open_read_failed(TSCont contp, void * /* edata ATS_UNUSED */)
 {
-  SendData *data = (SendData *) TSContDataGet(contp);
+  SendData *data = (SendData *)TSContDataGet(contp);
   TSContDestroy(contp);
 
   TSCacheKeyDestroy(data->key);
@@ -579,15 +575,14 @@ cache_open_read_failed(TSCont contp, void */* edata ATS_UNUSED */)
  * cached */
 
 static int
-rewrite_handler(TSCont contp, TSEvent event, void */* edata ATS_UNUSED */)
+rewrite_handler(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
 {
-  SendData *data = (SendData *) TSContDataGet(contp);
+  SendData *data = (SendData *)TSContDataGet(contp);
   TSContDestroy(contp);
 
   TSCacheKeyDestroy(data->key);
 
   switch (event) {
-
   /* Yes: Rewrite the Location header and reenable the response */
   case TS_EVENT_CACHE_OPEN_READ:
 
@@ -618,9 +613,9 @@ rewrite_handler(TSCont contp, TSEvent event, void */* edata ATS_UNUSED */)
 /* Read the URL stored at the digest */
 
 static int
-vconn_read_ready(TSCont contp, void */* edata ATS_UNUSED */)
+vconn_read_ready(TSCont contp, void * /* edata ATS_UNUSED */)
 {
-  SendData *data = (SendData *) TSContDataGet(contp);
+  SendData *data = (SendData *)TSContDataGet(contp);
   TSContDestroy(contp);
 
   TSVConnClose(data->connp);
@@ -688,7 +683,6 @@ static int
 digest_handler(TSCont contp, TSEvent event, void *edata)
 {
   switch (event) {
-
   /* Yes: Read the URL stored at that key */
   case TS_EVENT_CACHE_OPEN_READ:
     return cache_open_read(contp, edata);
@@ -710,18 +704,17 @@ digest_handler(TSCont contp, TSEvent event, void *edata)
 /* TSCacheRead() handler: Check if the Location URL is already cached */
 
 static int
-location_handler(TSCont contp, TSEvent event, void */* edata ATS_UNUSED */)
+location_handler(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
 {
   const char *value;
   int length;
 
   char digest[33]; /* ATS_BASE64_DECODE_DSTLEN() */
 
-  SendData *data = (SendData *) TSContDataGet(contp);
+  SendData *data = (SendData *)TSContDataGet(contp);
   TSContDestroy(contp);
 
   switch (event) {
-
   /* Yes: Do nothing, just reenable the response */
   case TS_EVENT_CACHE_OPEN_READ:
     break;
@@ -731,8 +724,8 @@ location_handler(TSCont contp, TSEvent event, void */* edata ATS_UNUSED */)
 
     /* No allocation, freed with data->resp_bufp? */
     value = TSMimeHdrFieldValueStringGet(data->resp_bufp, data->hdr_loc, data->digest_loc, data->idx, &length);
-    if (TSBase64Decode(value + 8, length - 8, (unsigned char *) digest, sizeof(digest), NULL) != TS_SUCCESS
-        || TSCacheKeyDigestSet(data->key, digest, 32 /* SHA-256 */ ) != TS_SUCCESS) {
+    if (TSBase64Decode(value + 8, length - 8, (unsigned char *)digest, sizeof(digest), NULL) != TS_SUCCESS ||
+        TSCacheKeyDigestSet(data->key, digest, 32 /* SHA-256 */) != TS_SUCCESS) {
       break;
     }
 
@@ -776,8 +769,8 @@ http_send_response_hdr(TSCont contp, void *edata)
   const char *value;
   int length;
 
-  SendData *data = (SendData *) TSmalloc(sizeof(SendData));
-  data->txnp = (TSHttpTxn) edata;
+  SendData *data = (SendData *)TSmalloc(sizeof(SendData));
+  data->txnp = (TSHttpTxn)edata;
 
   if (TSHttpTxnClientRespGet(data->txnp, &data->resp_bufp, &data->hdr_loc) != TS_SUCCESS) {
     TSError("Couldn't retrieve client response header");
@@ -823,7 +816,6 @@ http_send_response_hdr(TSCont contp, void *edata)
   /* No allocation, freed with data->resp_bufp? */
   value = TSMimeHdrFieldValueStringGet(data->resp_bufp, data->hdr_loc, data->location_loc, -1, &length);
   if (TSUrlParse(data->resp_bufp, data->url_loc, &value, value + length) != TS_PARSE_DONE) {
-
     TSHandleMLocRelease(data->resp_bufp, TS_NULL_MLOC, data->url_loc);
     TSHandleMLocRelease(data->resp_bufp, data->hdr_loc, data->location_loc);
     TSHandleMLocRelease(data->resp_bufp, TS_NULL_MLOC, data->hdr_loc);
@@ -851,10 +843,8 @@ http_send_response_hdr(TSCont contp, void *edata)
   /* ... and a Digest header */
   data->digest_loc = TSMimeHdrFieldFind(data->resp_bufp, data->hdr_loc, "Digest", 6);
   while (data->digest_loc) {
-
     int count = TSMimeHdrFieldValuesCount(data->resp_bufp, data->hdr_loc, data->digest_loc);
     for (data->idx = 0; data->idx < count; data->idx += 1) {
-
       /* No allocation, freed with data->resp_bufp? */
       value = TSMimeHdrFieldValueStringGet(data->resp_bufp, data->hdr_loc, data->digest_loc, data->idx, &length);
       if (length < 8 + 44 /* 32 bytes, Base64 */ || strncasecmp(value, "SHA-256=", 8)) {
@@ -911,13 +901,13 @@ handler(TSCont contp, TSEvent event, void *edata)
 }
 
 void
-TSPluginInit(int /* argc ATS_UNUSED */, const char */* argv ATS_UNUSED */[])
+TSPluginInit(int /* argc ATS_UNUSED */, const char * /* argv ATS_UNUSED */ [])
 {
   TSPluginRegistrationInfo info;
 
-  info.plugin_name = (char *) "metalink";
-  info.vendor_name = (char *) "Apache Software Foundation";
-  info.support_email = (char *) "dev@trafficserver.apache.org";
+  info.plugin_name = (char *)"metalink";
+  info.vendor_name = (char *)"Apache Software Foundation";
+  info.support_email = (char *)"dev@trafficserver.apache.org";
 
   if (TSPluginRegister(TS_SDK_VERSION_3_0, &info) != TS_SUCCESS) {
     TSError("Plugin registration failed");

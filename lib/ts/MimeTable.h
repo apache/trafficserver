@@ -21,43 +21,29 @@
   limitations under the License.
  */
 
-#if !defined (_MimeTable_h_)
+#if !defined(_MimeTable_h_)
 #define _MimeTable_h_
 
 #include <string.h>
 #include "ink_defs.h"
 #include "ink_string.h"
 
-struct MimeTableEntry
-{
+struct MimeTableEntry {
   const char *name;
   const char *mime_type;
   const char *mime_encoding;
   const char *icon;
 
-  friend int operator ==(const MimeTableEntry & a, const MimeTableEntry & b)
-  {
-    return (strcasecmp(a.name, b.name) == 0);
-  }
-  friend int operator <(const MimeTableEntry & a, const MimeTableEntry & b)
-  {
-    return (strcasecmp(a.name, b.name) < 0);
-  }
-  friend int operator >(const MimeTableEntry & a, const MimeTableEntry & b)
-  {
-    return (strcasecmp(a.name, b.name) < 0);
-  }
+  friend int operator==(const MimeTableEntry &a, const MimeTableEntry &b) { return (strcasecmp(a.name, b.name) == 0); }
+  friend int operator<(const MimeTableEntry &a, const MimeTableEntry &b) { return (strcasecmp(a.name, b.name) < 0); }
+  friend int operator>(const MimeTableEntry &a, const MimeTableEntry &b) { return (strcasecmp(a.name, b.name) < 0); }
 };
 
 class MimeTable
 {
 public:
-  MimeTable()
-  {
-  }
-   ~MimeTable()
-  {
-  }
+  MimeTable() {}
+  ~MimeTable() {}
 
   MimeTableEntry *get_entry_path(const char *path);
   MimeTableEntry *get_entry(const char *name);
@@ -69,7 +55,7 @@ private:
 
 private:
   MimeTable(const MimeTable &);
-  MimeTable & operator =(const MimeTable &);
+  MimeTable &operator=(const MimeTable &);
 };
 extern MimeTable mimeTable;
 #endif

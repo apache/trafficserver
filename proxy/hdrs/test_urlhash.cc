@@ -22,7 +22,6 @@
  */
 
 
-
 #include <stdlib.h>
 #include <string.h>
 
@@ -38,10 +37,7 @@ test_url()
 {
   url_hash_method = 1;
 
-  static const char *strs[] = {
-    "http://npdev:19080/1.6664000000/4000",
-    "http://npdev:19080/1.8666000000/4000"
-  };
+  static const char *strs[] = {"http://npdev:19080/1.6664000000/4000", "http://npdev:19080/1.8666000000/4000"};
   static int nstrs = sizeof(strs) / sizeof(strs[0]);
 
   int err, failed;
@@ -65,8 +61,8 @@ test_url()
 
     INK_MD5 md5;
     url.MD5_get(&md5);
-    //url_MD5_get(url.m_url_impl, &md5);
-    unsigned int *h = (unsigned int *) &md5;
+    // url_MD5_get(url.m_url_impl, &md5);
+    unsigned int *h = (unsigned int *)&md5;
     printf("(%s)\n", strs[i]);
     printf("%X %X %X %X\n", h[0], h[1], h[2], h[3]);
 

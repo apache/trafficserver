@@ -39,17 +39,21 @@ static int const ACL_FILTER_MAX_ARGV = 512;
 
 struct src_ip_info_t {
   IpEndpoint start; ///< Minimum value in range.
-  IpEndpoint end; ///< Maximum value in range.
+  IpEndpoint end;   ///< Maximum value in range.
   bool invert;      ///< Should we "invert" the meaning of this IP range ("not in range")
 
-  void reset() {
+  void
+  reset()
+  {
     ink_zero(start);
     ink_zero(end);
     invert = false;
   }
 
   /// @return @c true if @a ip is inside @a this range.
-  bool contains(IpEndpoint const& ip) {
+  bool
+  contains(IpEndpoint const &ip)
+  {
     return ats_ip_addr_cmp(&start, &ip) <= 0 && ats_ip_addr_cmp(&ip, &end) <= 0;
   }
 };
@@ -64,15 +68,15 @@ private:
 
 public:
   acl_filter_rule *next;
-  char *filter_name;            // optional filter name
-  unsigned int allow_flag:1,    // action allow deny
-    src_ip_valid:1,             // src_ip range valid
-    active_queue_flag:1,        // filter is in active state (used by .useflt directive)
-    internal:1;                 // filter internal HTTP requests
+  char *filter_name;           // optional filter name
+  unsigned int allow_flag : 1, // action allow deny
+    src_ip_valid : 1,          // src_ip range valid
+    active_queue_flag : 1,     // filter is in active state (used by .useflt directive)
+    internal : 1;              // filter internal HTTP requests
 
   // we need arguments as string array for directive processing
-  int argc;                     // argument counter (only for filter defs)
-  char *argv[ACL_FILTER_MAX_ARGV];      // argument strings (only for filter defs)
+  int argc;                        // argument counter (only for filter defs)
+  char *argv[ACL_FILTER_MAX_ARGV]; // argument strings (only for filter defs)
 
   // methods
   bool method_restriction_enabled;
@@ -82,7 +86,7 @@ public:
   MethodMap nonstandard_methods;
 
   // src_ip
-  int src_ip_cnt;               // how many valid src_ip rules we have
+  int src_ip_cnt; // how many valid src_ip rules we have
   src_ip_info_t src_ip_array[ACL_FILTER_MAX_SRC_IP];
   acl_filter_rule();
   ~acl_filter_rule();

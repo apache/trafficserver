@@ -39,9 +39,7 @@
 
 class MgmtHashTable
 {
-
 public:
-
   MgmtHashTable(const char *name, bool xfree_on_delete, InkHashTableKeyType type)
   {
     ink_mutex_init(&mutex, name);
@@ -49,7 +47,7 @@ public:
     ht = ink_hash_table_create(type);
   }
 
-   ~MgmtHashTable()
+  ~MgmtHashTable()
   {
     ink_mutex_acquire(&mutex);
     if (destroy_and_free) {
@@ -60,7 +58,8 @@ public:
     ink_mutex_release(&mutex);
   }
 
-  int mgmt_hash_table_isbound(InkHashTableKey key)
+  int
+  mgmt_hash_table_isbound(InkHashTableKey key)
   {
     int ret;
 
@@ -68,18 +67,20 @@ public:
     ret = ink_hash_table_isbound(ht, key);
     ink_mutex_release(&mutex);
     return ret;
-  }                             /* End MgmtHashTable::mgmt_hash_table_isbound */
+  } /* End MgmtHashTable::mgmt_hash_table_isbound */
 
-  int mgmt_hash_table_lookup(const char *key, InkHashTableValue * value_ptr)
+  int
+  mgmt_hash_table_lookup(const char *key, InkHashTableValue *value_ptr)
   {
     int ret;
     ink_mutex_acquire(&mutex);
     ret = ink_hash_table_lookup(ht, key, value_ptr);
     ink_mutex_release(&mutex);
     return ret;
-  }                             /* End MgmtHashTable::mgmt_hash_table_lookup */
+  } /* End MgmtHashTable::mgmt_hash_table_lookup */
 
-  int mgmt_hash_table_delete(InkHashTableKey key)
+  int
+  mgmt_hash_table_delete(InkHashTableKey key)
   {
     InkHashTableEntry *entry;
     int ret;
@@ -92,96 +93,101 @@ public:
           ats_free(value);
         }
         ret = ink_hash_table_delete(ht, key);
-      }
-      else {  //not found
+      } else { // not found
         ret = 0;
       }
-    }
-    else {
+    } else {
       ret = ink_hash_table_delete(ht, key);
     }
     ink_mutex_release(&mutex);
     return ret;
-  }                             /* End MgmtHashTable::mgmt_hash_table_delete */
+  } /* End MgmtHashTable::mgmt_hash_table_delete */
 
-  InkHashTableEntry *mgmt_hash_table_lookup_entry(InkHashTableKey key)
+  InkHashTableEntry *
+  mgmt_hash_table_lookup_entry(InkHashTableKey key)
   {
     InkHashTableEntry *ret;
     ink_mutex_acquire(&mutex);
     ret = ink_hash_table_lookup_entry(ht, key);
     ink_mutex_release(&mutex);
     return ret;
-  }                             /* End MgmtHashTable::mgmt_hash_table_lookup_entry */
+  } /* End MgmtHashTable::mgmt_hash_table_lookup_entry */
 
-  InkHashTableEntry *mgmt_hash_table_get_entry(InkHashTableKey key, int *new_value)
+  InkHashTableEntry *
+  mgmt_hash_table_get_entry(InkHashTableKey key, int *new_value)
   {
     InkHashTableEntry *ret;
     ink_mutex_acquire(&mutex);
     ret = ink_hash_table_get_entry(ht, key, new_value);
     ink_mutex_release(&mutex);
     return ret;
-  }                             /* End MgmtHashTable::mgmt_hash_table_get_entry */
+  } /* End MgmtHashTable::mgmt_hash_table_get_entry */
 
-  void mgmt_hash_table_insert(const char *key, InkHashTableValue value)
+  void
+  mgmt_hash_table_insert(const char *key, InkHashTableValue value)
   {
     ink_mutex_acquire(&mutex);
     ink_hash_table_insert(ht, key, value);
     ink_mutex_release(&mutex);
     return;
-  }                             /* End MgmtHashTable::mgmt_hash_table_insert */
+  } /* End MgmtHashTable::mgmt_hash_table_insert */
 
-  InkHashTableEntry *mgmt_hash_table_iterator_first(InkHashTableIteratorState * state_ptr)
+  InkHashTableEntry *
+  mgmt_hash_table_iterator_first(InkHashTableIteratorState *state_ptr)
   {
     InkHashTableEntry *ret;
     ink_mutex_acquire(&mutex);
     ret = ink_hash_table_iterator_first(ht, state_ptr);
     ink_mutex_release(&mutex);
     return ret;
-  }                             /* End MgmtHashTable::mgmt_hash_table_iterator_first */
+  } /* End MgmtHashTable::mgmt_hash_table_iterator_first */
 
-  InkHashTableEntry *mgmt_hash_table_iterator_next(InkHashTableIteratorState * state_ptr)
+  InkHashTableEntry *
+  mgmt_hash_table_iterator_next(InkHashTableIteratorState *state_ptr)
   {
     InkHashTableEntry *ret;
     ink_mutex_acquire(&mutex);
     ret = ink_hash_table_iterator_next(ht, state_ptr);
     ink_mutex_release(&mutex);
     return ret;
-  }                             /* End MgmtHashTable::mgmt_hash_table_iterator_next */
+  } /* End MgmtHashTable::mgmt_hash_table_iterator_next */
 
-  InkHashTableKey mgmt_hash_table_entry_key(InkHashTableEntry * entry_ptr)
+  InkHashTableKey
+  mgmt_hash_table_entry_key(InkHashTableEntry *entry_ptr)
   {
     InkHashTableKey ret;
     ink_mutex_acquire(&mutex);
     ret = ink_hash_table_entry_key(ht, entry_ptr);
     ink_mutex_release(&mutex);
     return ret;
-  }                             /* End MgmtHashTable::mgmt_hash_table_entry_key */
+  } /* End MgmtHashTable::mgmt_hash_table_entry_key */
 
-  InkHashTableValue mgmt_hash_table_entry_value(InkHashTableEntry * entry_ptr)
+  InkHashTableValue
+  mgmt_hash_table_entry_value(InkHashTableEntry *entry_ptr)
   {
     InkHashTableValue ret;
     ink_mutex_acquire(&mutex);
     ret = ink_hash_table_entry_value(ht, entry_ptr);
     ink_mutex_release(&mutex);
     return ret;
-  }                             /* End MgmtHashTable::mgmt_hash_table_entry_value */
+  } /* End MgmtHashTable::mgmt_hash_table_entry_value */
 
-  void mgmt_hash_table_dump_strings()
+  void
+  mgmt_hash_table_dump_strings()
   {
     ink_mutex_acquire(&mutex);
     ink_hash_table_dump_strings(ht);
     ink_mutex_release(&mutex);
     return;
-  }                             /* End MgmtHashTable::mgmt_hash_Table_dump_strings */
+  } /* End MgmtHashTable::mgmt_hash_Table_dump_strings */
 
 private:
-
   bool destroy_and_free;
 
   InkHashTable *ht;
   ink_mutex mutex;
 
-};                              /* End class MgmtHashTable */
+}; /* End class MgmtHashTable */
 
 
 #endif /* _MGMT_HASH_TABLE_H */

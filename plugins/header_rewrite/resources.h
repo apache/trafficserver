@@ -55,10 +55,9 @@ public:
     TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Resources (InkAPI)");
   }
 
-  Resources(TSHttpTxn txnptr, TSRemapRequestInfo *rri) :
-    txnp(txnptr), contp(NULL),
-    bufp(NULL), hdr_loc(NULL), client_bufp(NULL), client_hdr_loc(NULL), resp_status(TS_HTTP_STATUS_NONE),
-      _rri(rri), changed_url(false), _ready(false)
+  Resources(TSHttpTxn txnptr, TSRemapRequestInfo *rri)
+    : txnp(txnptr), contp(NULL), bufp(NULL), hdr_loc(NULL), client_bufp(NULL), client_hdr_loc(NULL),
+      resp_status(TS_HTTP_STATUS_NONE), _rri(rri), changed_url(false), _ready(false)
   {
     TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Resources (RemapAPI)");
   }
@@ -66,7 +65,11 @@ public:
   ~Resources() { destroy(); }
 
   void gather(const ResourceIDs ids, TSHttpHookID hook);
-  bool ready() const { return _ready; }
+  bool
+  ready() const
+  {
+    return _ready;
+  }
 
   TSHttpTxn txnp;
   TSCont contp;

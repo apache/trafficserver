@@ -28,5 +28,3 @@
 
 #define TS_INLINE
 #include "P_HostDB.h"
-
-

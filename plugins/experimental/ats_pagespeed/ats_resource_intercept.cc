@@ -46,7 +46,8 @@
 using namespace net_instaweb;
 
 static void
-shutdown (TSCont cont, InterceptCtx * intercept_ctx) {
+shutdown(TSCont cont, InterceptCtx *intercept_ctx)
+{
   if (intercept_ctx->req_reader != NULL) {
     TSIOBufferReaderFree(intercept_ctx->req_reader);
     intercept_ctx->req_reader = NULL;
@@ -95,118 +96,108 @@ resource_intercept(TSCont cont, TSEvent event, void *edata)
   // TODO(oschaaf): have a look at https://github.com/apache/trafficserver/blob/master/plugins/experimental/esi/serverIntercept.c
   // and see if we have any edge cases we should fix.
   switch (event) {
-    case TS_EVENT_NET_ACCEPT: {
-      intercept_ctx->vconn = static_cast<TSVConn>(edata);
-      intercept_ctx->req_buffer = TSIOBufferCreate();
-      intercept_ctx->req_reader = TSIOBufferReaderAlloc(intercept_ctx->req_buffer);
-      intercept_ctx->resp_buffer = TSIOBufferCreate();
-      intercept_ctx->resp_reader = TSIOBufferReaderAlloc(intercept_ctx->resp_buffer);
-      TSVConnRead(intercept_ctx->vconn, cont, intercept_ctx->req_buffer, 0x7fffffff);
-    } break;
-    case TS_EVENT_VCONN_READ_READY: {
-      CHECK(intercept_ctx->request_ctx->base_fetch == NULL) << "Base fetch must not be set!";
-      CHECK(intercept_ctx->request_ctx->url_string != NULL) << "Url must be set!";
+  case TS_EVENT_NET_ACCEPT: {
+    intercept_ctx->vconn = static_cast<TSVConn>(edata);
+    intercept_ctx->req_buffer = TSIOBufferCreate();
+    intercept_ctx->req_reader = TSIOBufferReaderAlloc(intercept_ctx->req_buffer);
+    intercept_ctx->resp_buffer = TSIOBufferCreate();
+    intercept_ctx->resp_reader = TSIOBufferReaderAlloc(intercept_ctx->resp_buffer);
+    TSVConnRead(intercept_ctx->vconn, cont, intercept_ctx->req_buffer, 0x7fffffff);
+  } break;
+  case TS_EVENT_VCONN_READ_READY: {
+    CHECK(intercept_ctx->request_ctx->base_fetch == NULL) << "Base fetch must not be set!";
+    CHECK(intercept_ctx->request_ctx->url_string != NULL) << "Url must be set!";
 
-      TSVConnShutdown(intercept_ctx->vconn, 1, 0);
+    TSVConnShutdown(intercept_ctx->vconn, 1, 0);
 
-      // response will already have a size for internal pages at this point.
-      // resources, however, will have to be fetched.
-      // TODO(oschaaf): this is extremely ugly.
-      if (intercept_ctx->response->size() == 0) {
-        // TODO(oschaaf): unused - must we close / clean this up?
-        TSVIO downstream_vio = TSVConnWrite(
-            intercept_ctx->vconn, cont, intercept_ctx->resp_reader, 0x7fffffff);
+    // response will already have a size for internal pages at this point.
+    // resources, however, will have to be fetched.
+    // TODO(oschaaf): this is extremely ugly.
+    if (intercept_ctx->response->size() == 0) {
+      // TODO(oschaaf): unused - must we close / clean this up?
+      TSVIO downstream_vio = TSVConnWrite(intercept_ctx->vconn, cont, intercept_ctx->resp_reader, 0x7fffffff);
 
-        AtsServerContext* server_context = intercept_ctx->request_ctx->server_context;
+      AtsServerContext *server_context = intercept_ctx->request_ctx->server_context;
 
-        // TODO:(oschaaf) host/port
-        SystemRequestContext* system_request_context =
-            new SystemRequestContext(server_context->thread_system()->NewMutex(),
-                                     server_context->timer(),
-				     "www.foo.com",// TODO(oschaaf): compute these
-                                     80,
-                                     "127.0.0.1");
+      // TODO:(oschaaf) host/port
+      SystemRequestContext *system_request_context =
+        new SystemRequestContext(server_context->thread_system()->NewMutex(), server_context->timer(),
+                                 "www.foo.com", // TODO(oschaaf): compute these
+                                 80, "127.0.0.1");
 
-        intercept_ctx->request_ctx->base_fetch = new AtsBaseFetch(
-            server_context, RequestContextPtr(system_request_context),
-            downstream_vio, intercept_ctx->resp_buffer, true);
-        intercept_ctx->request_ctx->base_fetch->set_request_headers(
-            intercept_ctx->request_headers);
+      intercept_ctx->request_ctx->base_fetch = new AtsBaseFetch(server_context, RequestContextPtr(system_request_context),
+                                                                downstream_vio, intercept_ctx->resp_buffer, true);
+      intercept_ctx->request_ctx->base_fetch->set_request_headers(intercept_ctx->request_headers);
 
-        RewriteOptions* options = NULL;
+      RewriteOptions *options = NULL;
 
-        //const char* host = intercept_ctx->request_headers->Lookup1(HttpAttributes::kHost);
-        const char* host = intercept_ctx->request_ctx->gurl->HostAndPort().as_string().c_str();
-        if (host != NULL && strlen(host) > 0) {
-          intercept_ctx->request_ctx->options = get_host_options(host);
-        }
-
-        // TODO(oschaaf): directory options should be coming from configuration!
-        bool ok = ps_determine_options(server_context,
-                                       intercept_ctx->request_ctx->options,
-                                       intercept_ctx->request_ctx->base_fetch->request_headers(),
-                                       intercept_ctx->request_ctx->base_fetch->response_headers(),
-                                       &options,
-                                       intercept_ctx->request_ctx->gurl);
-
-        // Take ownership of custom_options.
-        scoped_ptr<RewriteOptions> custom_options(options);
-
-        if (!ok) {
-          TSError("Failure while determining request options for psol resource");
-          // options = server_context->global_options();
-        } else {
-          // ps_determine_options modified url, removing any ModPagespeedFoo=Bar query
-          // parameters.  Keep url_string in sync with url.
-          // TODO(oschaaf): we really should determine if we have to do the lookup
-          intercept_ctx->request_ctx->gurl->Spec().CopyToString(intercept_ctx->request_ctx->url_string);
-        }
-
-        // The url we have here is already checked for IsWebValid()
-        net_instaweb::ResourceFetch::Start(
-            GoogleUrl(*intercept_ctx->request_ctx->url_string),
-            custom_options.release() /* null if there aren't custom options */,
-            false /* using_spdy */, server_context, intercept_ctx->request_ctx->base_fetch);
-      } else {
-        int64_t numBytesToWrite, numBytesWritten;
-        numBytesToWrite = intercept_ctx->response->size();
-	TSDebug("ats-speed", "resource intercept writing out a %d bytes response", (int)numBytesToWrite);
-        numBytesWritten = TSIOBufferWrite(intercept_ctx->resp_buffer,
-                                          intercept_ctx->response->c_str(), numBytesToWrite);
-
-        if (numBytesWritten == numBytesToWrite) {
-          TSVConnWrite(intercept_ctx->vconn, cont, intercept_ctx->resp_reader, numBytesToWrite);
-        } else {
-          TSError("Not all output could be written in one go");
-          DCHECK(false);
-        }
+      // const char* host = intercept_ctx->request_headers->Lookup1(HttpAttributes::kHost);
+      const char *host = intercept_ctx->request_ctx->gurl->HostAndPort().as_string().c_str();
+      if (host != NULL && strlen(host) > 0) {
+        intercept_ctx->request_ctx->options = get_host_options(host);
       }
-    }  break;
-    case TS_EVENT_VCONN_EOS:
-      TSVConnShutdown(intercept_ctx->vconn, 1, 0);
-      break;
-    case TS_EVENT_VCONN_READ_COMPLETE: {
-      TSVConnShutdown(intercept_ctx->vconn, 1, 0);
-    } break;
-    case TS_EVENT_VCONN_WRITE_READY:
-      break;
-    case TS_EVENT_VCONN_WRITE_COMPLETE:
-      shutDown = true;
-      break;
-    case TS_EVENT_ERROR:
-      TSError("vconn event: error %s", intercept_ctx->request_ctx->url_string->c_str());
-      shutDown = true;
-      break;
-    case TS_EVENT_NET_ACCEPT_FAILED:
-      TSError("vconn event: accept failed");
-      shutDown = true;
-      break;
-    case TS_EVENT_IMMEDIATE:
-    case TS_EVENT_TIMEOUT:
-      break;
-    default:
-      TSError("default clause event: %d", event);
-      break;
+
+      // TODO(oschaaf): directory options should be coming from configuration!
+      bool ok = ps_determine_options(
+        server_context, intercept_ctx->request_ctx->options, intercept_ctx->request_ctx->base_fetch->request_headers(),
+        intercept_ctx->request_ctx->base_fetch->response_headers(), &options, intercept_ctx->request_ctx->gurl);
+
+      // Take ownership of custom_options.
+      scoped_ptr<RewriteOptions> custom_options(options);
+
+      if (!ok) {
+        TSError("Failure while determining request options for psol resource");
+        // options = server_context->global_options();
+      } else {
+        // ps_determine_options modified url, removing any ModPagespeedFoo=Bar query
+        // parameters.  Keep url_string in sync with url.
+        // TODO(oschaaf): we really should determine if we have to do the lookup
+        intercept_ctx->request_ctx->gurl->Spec().CopyToString(intercept_ctx->request_ctx->url_string);
+      }
+
+      // The url we have here is already checked for IsWebValid()
+      net_instaweb::ResourceFetch::Start(GoogleUrl(*intercept_ctx->request_ctx->url_string),
+                                         custom_options.release() /* null if there aren't custom options */, false /* using_spdy */,
+                                         server_context, intercept_ctx->request_ctx->base_fetch);
+    } else {
+      int64_t numBytesToWrite, numBytesWritten;
+      numBytesToWrite = intercept_ctx->response->size();
+      TSDebug("ats-speed", "resource intercept writing out a %d bytes response", (int)numBytesToWrite);
+      numBytesWritten = TSIOBufferWrite(intercept_ctx->resp_buffer, intercept_ctx->response->c_str(), numBytesToWrite);
+
+      if (numBytesWritten == numBytesToWrite) {
+        TSVConnWrite(intercept_ctx->vconn, cont, intercept_ctx->resp_reader, numBytesToWrite);
+      } else {
+        TSError("Not all output could be written in one go");
+        DCHECK(false);
+      }
+    }
+  } break;
+  case TS_EVENT_VCONN_EOS:
+    TSVConnShutdown(intercept_ctx->vconn, 1, 0);
+    break;
+  case TS_EVENT_VCONN_READ_COMPLETE: {
+    TSVConnShutdown(intercept_ctx->vconn, 1, 0);
+  } break;
+  case TS_EVENT_VCONN_WRITE_READY:
+    break;
+  case TS_EVENT_VCONN_WRITE_COMPLETE:
+    shutDown = true;
+    break;
+  case TS_EVENT_ERROR:
+    TSError("vconn event: error %s", intercept_ctx->request_ctx->url_string->c_str());
+    shutDown = true;
+    break;
+  case TS_EVENT_NET_ACCEPT_FAILED:
+    TSError("vconn event: accept failed");
+    shutDown = true;
+    break;
+  case TS_EVENT_IMMEDIATE:
+  case TS_EVENT_TIMEOUT:
+    break;
+  default:
+    TSError("default clause event: %d", event);
+    break;
   }
 
   if (shutDown) {
@@ -222,16 +213,15 @@ static int
 read_cache_header_callback(TSCont cont, TSEvent event, void *edata)
 {
   TSHttpTxn txn = static_cast<TSHttpTxn>(edata);
-  TransformCtx* ctx = get_transaction_context(txn);
+  TransformCtx *ctx = get_transaction_context(txn);
 
   if (ctx == NULL) {
     TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
     return 0;
   } else if (ctx->in_place && !cache_hit(txn) && !ctx->resource_request) {
     ctx->base_fetch->set_ctx(ctx);
-    ctx->base_fetch->set_ipro_callback((void*)resource_intercept);
-    ctx->driver->FetchInPlaceResource(
-        *ctx->gurl, false /* proxy_mode */, ctx->base_fetch);
+    ctx->base_fetch->set_ipro_callback((void *)resource_intercept);
+    ctx->driver->FetchInPlaceResource(*ctx->gurl, false /* proxy_mode */, ctx->base_fetch);
     // wait for the lookup to complete. we'll know what to do
     // when the lookup completes.
     return 0;
@@ -255,14 +245,14 @@ read_cache_header_callback(TSCont cont, TSEvent event, void *edata)
     return 0;
   }
 
-  AtsServerContext* server_context = ctx->server_context;
-  AtsRewriteDriverFactory* factory = (AtsRewriteDriverFactory*)server_context->factory();
+  AtsServerContext *server_context = ctx->server_context;
+  AtsRewriteDriverFactory *factory = (AtsRewriteDriverFactory *)server_context->factory();
   GoogleString output;
   StringWriter writer(&output);
   HttpStatus::Code status = HttpStatus::kOK;
   ContentType content_type = kContentTypeHtml;
   StringPiece cache_control = HttpAttributes::kNoCache;
-  const char* error_message = NULL;
+  const char *error_message = NULL;
   StringPiece request_uri_path = ctx->gurl->PathAndLeaf();
 
   if (false && ctx->gurl->PathSansQuery() == "/robots.txt") {
@@ -271,15 +261,14 @@ read_cache_header_callback(TSCont cont, TSEvent event, void *edata)
     writer.Write("Disallow: /\n", server_context->message_handler());
   } else if (ctx->gurl->PathSansLeaf() == factory->static_asset_prefix()) {
     StringPiece file_contents;
-    if (server_context->static_asset_manager()->GetAsset(
-	    request_uri_path.substr(factory->static_asset_prefix().length()),
-            &file_contents, &content_type, &cache_control)) {
+    if (server_context->static_asset_manager()->GetAsset(request_uri_path.substr(factory->static_asset_prefix().length()),
+                                                         &file_contents, &content_type, &cache_control)) {
       file_contents.CopyToString(&output);
     } else {
       error_message = "Static asset not found";
     }
 
-  // TODO(oschaaf): /pagespeed_admin handling
+    // TODO(oschaaf): /pagespeed_admin handling
   } else {
     // Optimized resource are highly cacheable (1 year expiry)
     // TODO(oschaaf): configuration
@@ -326,8 +315,7 @@ read_cache_header_callback(TSCont cont, TSEvent event, void *edata)
   response_headers.SetLastModified(now_ms);
   response_headers.Add(HttpAttributes::kCacheControl, cache_control);
 
-  if (FindIgnoreCase(cache_control, "private") ==
-      static_cast<int>(StringPiece::npos)) {
+  if (FindIgnoreCase(cache_control, "private") == static_cast<int>(StringPiece::npos)) {
     response_headers.Add(HttpAttributes::kEtag, "W/\"0\"");
   }
 
@@ -349,9 +337,9 @@ read_cache_header_callback(TSCont cont, TSEvent event, void *edata)
   return 0;
 }
 
-void setup_resource_intercept()
+void
+setup_resource_intercept()
 {
   TSCont cont = TSContCreate(read_cache_header_callback, NULL);
   TSHttpHookAdd(TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, cont);
 }
-

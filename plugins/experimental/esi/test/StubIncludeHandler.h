@@ -28,14 +28,12 @@
 #include <list>
 #include "SpecialIncludeHandler.h"
 
-class StubIncludeHandler : public EsiLib::SpecialIncludeHandler {
-
+class StubIncludeHandler : public EsiLib::SpecialIncludeHandler
+{
 public:
-
-  StubIncludeHandler(EsiLib::Variables &esi_vars, EsiLib::Expression &esi_expr,
-                     HttpDataFetcher &http_fetcher)
-    : EsiLib::SpecialIncludeHandler(esi_vars, esi_expr, http_fetcher),
-      parseCompleteCalled(false), n_includes(0) {
+  StubIncludeHandler(EsiLib::Variables &esi_vars, EsiLib::Expression &esi_expr, HttpDataFetcher &http_fetcher)
+    : EsiLib::SpecialIncludeHandler(esi_vars, esi_expr, http_fetcher), parseCompleteCalled(false), n_includes(0)
+  {
   }
 
   int handleInclude(const char *data, int data_len);
@@ -57,10 +55,8 @@ public:
   static int FOOTER_SIZE;
 
 private:
-
   int n_includes;
   std::list<char *> heap_strings;
-
 };
 
 #endif

@@ -21,32 +21,39 @@
     limitations under the License.
 */
 
-# include <ts/IntrusivePtr.h>
-# include <ts/IntrusiveDList.h>
-# include <ts/TestBox.h>
+#include <ts/IntrusivePtr.h>
+#include <ts/IntrusiveDList.h>
+#include <ts/TestBox.h>
 
-namespace { // Hide our local defintions
+namespace
+{ // Hide our local defintions
 
 // Test class for pointers and lists.
-class A : public IntrusivePtrCounter {
+class A : public IntrusivePtrCounter
+{
 public:
   A() : _data(0) {}
-  static A*& nextPtr(A* a) { return a->_next; }
-  static A*& prevPtr(A* a) { return a->_prev; }
+  static A *&
+  nextPtr(A *a)
+  {
+    return a->_next;
+  }
+  static A *&
+  prevPtr(A *a)
+  {
+    return a->_prev;
+  }
   int _data;
-  A* _next;
-  A* _prev;
+  A *_next;
+  A *_prev;
 };
 
 // Definitions to test compilation.
-typedef IntrusivePtrQueue<
-  A,
-  IntrusivePtrLinkFunction<A, &A::nextPtr, &A::prevPtr>
-> AList;
-
+typedef IntrusivePtrQueue<A, IntrusivePtrLinkFunction<A, &A::nextPtr, &A::prevPtr> > AList;
 }
 
-REGRESSION_TEST(IntrusivePtr_Test_Basic)(RegressionTest* t, int atype, int* pstatus) {
+REGRESSION_TEST(IntrusivePtr_Test_Basic)(RegressionTest *t, int atype, int *pstatus)
+{
   IntrusivePtr<A> ptr1;
   IntrusivePtr<A> ptr2(new A);
 
@@ -66,10 +73,8 @@ REGRESSION_TEST(IntrusivePtr_Test_Basic)(RegressionTest* t, int atype, int* psta
   tb.check(ptr2->useCount() == 1, "Bad use count: expected 1 got %d", ptr2->useCount());
   alist1.prepend(ptr2);
   tb.check(ptr2->useCount() == 2, "Bad use count: expected 2 got %d", ptr2->useCount());
-  for ( AList::iterator spot = alist1.begin(), limit = alist1.end()
-          ; spot != limit
-          ; ++spot
-  ) {
-    if (spot->_data) break;
+  for (AList::iterator spot = alist1.begin(), limit = alist1.end(); spot != limit; ++spot) {
+    if (spot->_data)
+      break;
   }
 }

@@ -26,27 +26,27 @@
 
 #include "libts.h"
 
-#define USE_EDGE_TRIGGER_EPOLL  1
+#define USE_EDGE_TRIGGER_EPOLL 1
 #define USE_EDGE_TRIGGER_KQUEUE 1
-#define USE_EDGE_TRIGGER_PORT   1
+#define USE_EDGE_TRIGGER_PORT 1
 
 
-#define EVENTIO_NETACCEPT       1
-#define EVENTIO_READWRITE_VC    2
-#define EVENTIO_DNS_CONNECTION  3
-#define EVENTIO_UDP_CONNECTION  4
-#define EVENTIO_ASYNC_SIGNAL    5
+#define EVENTIO_NETACCEPT 1
+#define EVENTIO_READWRITE_VC 2
+#define EVENTIO_DNS_CONNECTION 3
+#define EVENTIO_UDP_CONNECTION 4
+#define EVENTIO_ASYNC_SIGNAL 5
 
 #if TS_USE_EPOLL
 #ifdef USE_EDGE_TRIGGER_EPOLL
 #define USE_EDGE_TRIGGER 1
-#define EVENTIO_READ (EPOLLIN|EPOLLET)
-#define EVENTIO_WRITE (EPOLLOUT|EPOLLET)
+#define EVENTIO_READ (EPOLLIN | EPOLLET)
+#define EVENTIO_WRITE (EPOLLOUT | EPOLLET)
 #else
 #define EVENTIO_READ EPOLLIN
 #define EVENTIO_WRITE EPOLLOUT
 #endif
-#define EVENTIO_ERROR (EPOLLERR|EPOLLPRI|EPOLLHUP)
+#define EVENTIO_ERROR (EPOLLERR | EPOLLPRI | EPOLLHUP)
 #endif
 
 #if TS_USE_KQUEUE
@@ -58,15 +58,15 @@
 #endif
 #define EVENTIO_READ INK_EVP_IN
 #define EVENTIO_WRITE INK_EVP_OUT
-#define EVENTIO_ERROR (0x010|0x002|0x020) // ERR PRI HUP
+#define EVENTIO_ERROR (0x010 | 0x002 | 0x020) // ERR PRI HUP
 #endif
 #if TS_USE_PORT
 #ifdef USE_EDGE_TRIGGER_PORT
 #define USE_EDGE_TRIGGER 1
 #endif
-#define EVENTIO_READ  POLLIN
+#define EVENTIO_READ POLLIN
 #define EVENTIO_WRITE POLLOUT
-#define EVENTIO_ERROR (POLLERR|POLLPRI|POLLHUP)
+#define EVENTIO_ERROR (POLLERR | POLLPRI | POLLHUP)
 #endif
 
 struct PollDescriptor;
@@ -76,16 +76,14 @@ class UnixNetVConnection;
 class UnixUDPConnection;
 struct DNSConnection;
 struct NetAccept;
-struct EventIO
-{
+struct EventIO {
   int fd;
 #if TS_USE_KQUEUE || TS_USE_EPOLL && !defined(USE_EDGE_TRIGGER) || TS_USE_PORT
   int events;
 #endif
   EventLoop event_loop;
   int type;
-  union
-  {
+  union {
     Continuation *c;
     UnixNetVConnection *vc;
     DNSConnection *dnscon;
@@ -104,7 +102,8 @@ struct EventIO
   int refresh(int events);
   int stop();
   int close();
-  EventIO() {
+  EventIO()
+  {
     type = 0;
     data.c = 0;
   }
@@ -119,7 +118,7 @@ struct EventIO
 
 class UnixNetVConnection;
 class NetHandler;
-typedef int (NetHandler::*NetContHandler) (int, void *);
+typedef int (NetHandler::*NetContHandler)(int, void *);
 typedef unsigned int uint32;
 
 extern ink_hrtime last_throttle_warning;
@@ -139,40 +138,39 @@ extern int http_accept_port_number;
 // Design notes are in Memo.NetDesign
 //
 
-#define THROTTLE_FD_HEADROOM                      (128 + 64)    // CACHE_DB_FDS + 64
+#define THROTTLE_FD_HEADROOM (128 + 64) // CACHE_DB_FDS + 64
 
-#define TRANSIENT_ACCEPT_ERROR_MESSAGE_EVERY      HRTIME_HOURS(24)
-#define NET_RETRY_DELAY                           HRTIME_MSECONDS(10)
+#define TRANSIENT_ACCEPT_ERROR_MESSAGE_EVERY HRTIME_HOURS(24)
+#define NET_RETRY_DELAY HRTIME_MSECONDS(10)
 
 // also the 'throttle connect headroom'
-#define THROTTLE_AT_ONCE                          5
-#define EMERGENCY_THROTTLE                        16
-#define HYPER_EMERGENCY_THROTTLE                  6
+#define THROTTLE_AT_ONCE 5
+#define EMERGENCY_THROTTLE 16
+#define HYPER_EMERGENCY_THROTTLE 6
 
-#define NET_THROTTLE_ACCEPT_HEADROOM              1.1   // 10%
-#define NET_THROTTLE_CONNECT_HEADROOM             1.0   // 0%
-#define NET_THROTTLE_MESSAGE_EVERY                HRTIME_MINUTES(10)
-#define NET_PERIOD                                -HRTIME_MSECONDS(5)
-#define ACCEPT_PERIOD                             -HRTIME_MSECONDS(4)
-#define NET_THROTTLE_DELAY                        50    /* mseconds */
+#define NET_THROTTLE_ACCEPT_HEADROOM 1.1  // 10%
+#define NET_THROTTLE_CONNECT_HEADROOM 1.0 // 0%
+#define NET_THROTTLE_MESSAGE_EVERY HRTIME_MINUTES(10)
+#define NET_PERIOD -HRTIME_MSECONDS(5)
+#define ACCEPT_PERIOD -HRTIME_MSECONDS(4)
+#define NET_THROTTLE_DELAY 50 /* mseconds */
 
-#define PRINT_IP(x) ((uint8_t*)&(x))[0],((uint8_t*)&(x))[1], ((uint8_t*)&(x))[2],((uint8_t*)&(x))[3]
+#define PRINT_IP(x) ((uint8_t *)&(x))[0], ((uint8_t *)&(x))[1], ((uint8_t *)&(x))[2], ((uint8_t *)&(x))[3]
 
 
 // function prototype needed for SSLUnixNetVConnection
 unsigned int net_next_connection_number();
 
-struct PollCont:public Continuation
-{
+struct PollCont : public Continuation {
   NetHandler *net_handler;
   PollDescriptor *pollDescriptor;
   PollDescriptor *nextPollDescriptor;
   int poll_timeout;
 
-  PollCont(ProxyMutex * m, int pt = net_config_poll_timeout);
-  PollCont(ProxyMutex * m, NetHandler * nh, int pt = net_config_poll_timeout);
+  PollCont(ProxyMutex *m, int pt = net_config_poll_timeout);
+  PollCont(ProxyMutex *m, NetHandler *nh, int pt = net_config_poll_timeout);
   ~PollCont();
-  int pollEvent(int event, Event * e);
+  int pollEvent(int event, Event *e);
 };
 
 
@@ -182,7 +180,7 @@ struct PollCont:public Continuation
 // A NetHandler handles the Network IO operations.  It maintains
 // lists of operations at multiples of it's periodicity.
 //
-class NetHandler:public Continuation
+class NetHandler : public Continuation
 {
 public:
   Event *trigger_event;
@@ -198,48 +196,49 @@ public:
   time_t sec;
   int cycles;
 
-  int startNetEvent(int event, Event * data);
-  int mainNetEvent(int event, Event * data);
-  int mainNetEventExt(int event, Event * data);
+  int startNetEvent(int event, Event *data);
+  int mainNetEvent(int event, Event *data);
+  int mainNetEventExt(int event, Event *data);
   void process_enabled_list(NetHandler *);
 
   NetHandler();
 };
 
 static inline NetHandler *
-get_NetHandler(EThread * t)
+get_NetHandler(EThread *t)
 {
-  return (NetHandler *) ETHREAD_GET_PTR(t, unix_netProcessor.netHandler_offset);
+  return (NetHandler *)ETHREAD_GET_PTR(t, unix_netProcessor.netHandler_offset);
 }
 static inline PollCont *
-get_PollCont(EThread * t)
+get_PollCont(EThread *t)
 {
-  return (PollCont *) ETHREAD_GET_PTR(t, unix_netProcessor.pollCont_offset);
+  return (PollCont *)ETHREAD_GET_PTR(t, unix_netProcessor.pollCont_offset);
 }
 static inline PollDescriptor *
-get_PollDescriptor(EThread * t)
+get_PollDescriptor(EThread *t)
 {
   PollCont *p = get_PollCont(t);
   return p->pollDescriptor;
 }
 
 
-enum ThrottleType
-{ ACCEPT, CONNECT };
+enum ThrottleType {
+  ACCEPT,
+  CONNECT,
+};
 
 TS_INLINE int
 net_connections_to_throttle(ThrottleType t)
 {
-
   double headroom = t == ACCEPT ? NET_THROTTLE_ACCEPT_HEADROOM : NET_THROTTLE_CONNECT_HEADROOM;
   int64_t sval = 0;
 
   NET_READ_GLOBAL_DYN_SUM(net_connections_currently_open_stat, sval);
-  int currently_open = (int) sval;
+  int currently_open = (int)sval;
   // deal with race if we got to multiple net threads
   if (currently_open < 0)
     currently_open = 0;
-  return (int) (currently_open * headroom);
+  return (int)(currently_open * headroom);
 }
 
 TS_INLINE void
@@ -279,7 +278,6 @@ check_throttle_warning()
   if (t - last_throttle_warning > NET_THROTTLE_MESSAGE_EVERY) {
     last_throttle_warning = t;
     RecSignalWarning(REC_SIGNAL_SYSTEM_ERROR, "too many connections, throttling");
-
   }
 }
 
@@ -295,7 +293,7 @@ check_throttle_warning()
 // will recover.
 //
 TS_INLINE int
-check_emergency_throttle(Connection & con)
+check_emergency_throttle(Connection &con)
 {
   int fd = con.fd;
   int emergency = fds_limit - EMERGENCY_THROTTLE;
@@ -315,10 +313,10 @@ check_emergency_throttle(Connection & con)
 TS_INLINE int
 change_net_connections_throttle(const char *token, RecDataT data_type, RecData value, void *data)
 {
-  (void) token;
-  (void) data_type;
-  (void) value;
-  (void) data;
+  (void)token;
+  (void)data_type;
+  (void)value;
+  (void)data;
   int throttle = fds_limit - THROTTLE_FD_HEADROOM;
   if (fds_throttle < 0)
     net_connections_throttle = throttle;
@@ -340,8 +338,8 @@ accept_error_seriousness(int res)
   switch (res) {
   case -EAGAIN:
   case -ECONNABORTED:
-  case -ECONNRESET:            // for Linux
-  case -EPIPE:                 // also for Linux
+  case -ECONNRESET: // for Linux
+  case -EPIPE:      // also for Linux
     return 1;
   case -EMFILE:
   case -ENOMEM:
@@ -389,7 +387,7 @@ check_transient_accept_error(int res)
 // Disable a UnixNetVConnection
 //
 static inline void
-read_disable(NetHandler * nh, UnixNetVConnection * vc)
+read_disable(NetHandler *nh, UnixNetVConnection *vc)
 {
 #ifdef INACTIVITY_TIMEOUT
   if (vc->inactivity_timeout) {
@@ -410,7 +408,7 @@ read_disable(NetHandler * nh, UnixNetVConnection * vc)
 }
 
 static inline void
-write_disable(NetHandler * nh, UnixNetVConnection * vc)
+write_disable(NetHandler *nh, UnixNetVConnection *vc)
 {
 #ifdef INACTIVITY_TIMEOUT
   if (vc->inactivity_timeout) {
@@ -430,34 +428,53 @@ write_disable(NetHandler * nh, UnixNetVConnection * vc)
   vc->ep.modify(-EVENTIO_WRITE);
 }
 
-TS_INLINE int EventIO::start(EventLoop l, DNSConnection *vc, int events) {
+TS_INLINE int
+EventIO::start(EventLoop l, DNSConnection *vc, int events)
+{
   type = EVENTIO_DNS_CONNECTION;
-  return start(l, vc->fd, (Continuation*)vc, events);
+  return start(l, vc->fd, (Continuation *)vc, events);
 }
-TS_INLINE int EventIO::start(EventLoop l, NetAccept *vc, int events) {
+TS_INLINE int
+EventIO::start(EventLoop l, NetAccept *vc, int events)
+{
   type = EVENTIO_NETACCEPT;
-  return start(l, vc->server.fd, (Continuation*)vc, events);
+  return start(l, vc->server.fd, (Continuation *)vc, events);
 }
-TS_INLINE int EventIO::start(EventLoop l, UnixNetVConnection *vc, int events) {
+TS_INLINE int
+EventIO::start(EventLoop l, UnixNetVConnection *vc, int events)
+{
   type = EVENTIO_READWRITE_VC;
-  return start(l, vc->con.fd, (Continuation*)vc, events);
+  return start(l, vc->con.fd, (Continuation *)vc, events);
 }
-TS_INLINE int EventIO::start(EventLoop l, UnixUDPConnection *vc, int events) {
+TS_INLINE int
+EventIO::start(EventLoop l, UnixUDPConnection *vc, int events)
+{
   type = EVENTIO_UDP_CONNECTION;
-  return start(l, vc->fd, (Continuation*)vc, events);
+  return start(l, vc->fd, (Continuation *)vc, events);
 }
-TS_INLINE int EventIO::close() {
+TS_INLINE int
+EventIO::close()
+{
   stop();
   switch (type) {
-    default: ink_assert(!"case");
-    case EVENTIO_DNS_CONNECTION: return data.dnscon->close(); break;
-    case EVENTIO_NETACCEPT: return data.na->server.close(); break;
-    case EVENTIO_READWRITE_VC: return data.vc->con.close(); break;
+  default:
+    ink_assert(!"case");
+  case EVENTIO_DNS_CONNECTION:
+    return data.dnscon->close();
+    break;
+  case EVENTIO_NETACCEPT:
+    return data.na->server.close();
+    break;
+  case EVENTIO_READWRITE_VC:
+    return data.vc->con.close();
+    break;
   }
   return -1;
 }
 
-TS_INLINE int EventIO::start(EventLoop l, int afd, Continuation *c, int e) {
+TS_INLINE int
+EventIO::start(EventLoop l, int afd, Continuation *c, int e)
+{
   data.c = c;
   fd = afd;
   event_loop = l;
@@ -476,20 +493,23 @@ TS_INLINE int EventIO::start(EventLoop l, int afd, Continuation *c, int e) {
   struct kevent ev[2];
   int n = 0;
   if (e & EVENTIO_READ)
-    EV_SET(&ev[n++], fd, EVFILT_READ, EV_ADD|INK_EV_EDGE_TRIGGER, 0, 0, this);
+    EV_SET(&ev[n++], fd, EVFILT_READ, EV_ADD | INK_EV_EDGE_TRIGGER, 0, 0, this);
   if (e & EVENTIO_WRITE)
-    EV_SET(&ev[n++], fd, EVFILT_WRITE, EV_ADD|INK_EV_EDGE_TRIGGER, 0, 0, this);
+    EV_SET(&ev[n++], fd, EVFILT_WRITE, EV_ADD | INK_EV_EDGE_TRIGGER, 0, 0, this);
   return kevent(l->kqueue_fd, &ev[0], n, NULL, 0, NULL);
 #endif
 #if TS_USE_PORT
   events = e;
   int retval = port_associate(event_loop->port_fd, PORT_SOURCE_FD, fd, events, this);
-  Debug("iocore_eventio", "[EventIO::start] e(%d), events(%d), %d[%s]=port_associate(%d,%d,%d,%d,%p)", e, events, retval, retval<0? strerror(errno) : "ok", event_loop->port_fd, PORT_SOURCE_FD, fd, events, this);
+  Debug("iocore_eventio", "[EventIO::start] e(%d), events(%d), %d[%s]=port_associate(%d,%d,%d,%d,%p)", e, events, retval,
+        retval < 0 ? strerror(errno) : "ok", event_loop->port_fd, PORT_SOURCE_FD, fd, events, this);
   return retval;
 #endif
 }
 
-TS_INLINE int EventIO::modify(int e) {
+TS_INLINE int
+EventIO::modify(int e)
+{
   ink_assert(event_loop);
 #if TS_USE_EPOLL && !defined(USE_EDGE_TRIGGER)
   struct epoll_event ev;
@@ -522,9 +542,9 @@ TS_INLINE int EventIO::modify(int e) {
   } else {
     ee |= e;
     if (e & EVENTIO_READ)
-      EV_SET(&ev[n++], fd, EVFILT_READ, EV_ADD|INK_EV_EDGE_TRIGGER, 0, 0, this);
+      EV_SET(&ev[n++], fd, EVFILT_READ, EV_ADD | INK_EV_EDGE_TRIGGER, 0, 0, this);
     if (e & EVENTIO_WRITE)
-      EV_SET(&ev[n++], fd, EVFILT_WRITE, EV_ADD|INK_EV_EDGE_TRIGGER, 0, 0, this);
+      EV_SET(&ev[n++], fd, EVFILT_WRITE, EV_ADD | INK_EV_EDGE_TRIGGER, 0, 0, this);
   }
   events = ee;
   if (n)
@@ -555,7 +575,8 @@ TS_INLINE int EventIO::modify(int e) {
   if (n && ne && event_loop) {
     events = ne;
     int retval = port_associate(event_loop->port_fd, PORT_SOURCE_FD, fd, events, this);
-    Debug("iocore_eventio", "[EventIO::modify] e(%d), ne(%d), events(%d), %d[%s]=port_associate(%d,%d,%d,%d,%p)", e, ne, events, retval, retval<0? strerror(errno) : "ok", event_loop->port_fd, PORT_SOURCE_FD, fd, events, this);
+    Debug("iocore_eventio", "[EventIO::modify] e(%d), ne(%d), events(%d), %d[%s]=port_associate(%d,%d,%d,%d,%p)", e, ne, events,
+          retval, retval < 0 ? strerror(errno) : "ok", event_loop->port_fd, PORT_SOURCE_FD, fd, events, this);
     return retval;
   }
   return 0;
@@ -565,16 +586,18 @@ TS_INLINE int EventIO::modify(int e) {
 #endif
 }
 
-TS_INLINE int EventIO::refresh(int e) {
+TS_INLINE int
+EventIO::refresh(int e)
+{
   ink_assert(event_loop);
 #if TS_USE_KQUEUE && defined(USE_EDGE_TRIGGER)
   e = e & events;
   struct kevent ev[2];
   int n = 0;
   if (e & EVENTIO_READ)
-    EV_SET(&ev[n++], fd, EVFILT_READ, EV_ADD|INK_EV_EDGE_TRIGGER, 0, 0, this);
+    EV_SET(&ev[n++], fd, EVFILT_READ, EV_ADD | INK_EV_EDGE_TRIGGER, 0, 0, this);
   if (e & EVENTIO_WRITE)
-    EV_SET(&ev[n++], fd, EVFILT_WRITE, EV_ADD|INK_EV_EDGE_TRIGGER, 0, 0, this);
+    EV_SET(&ev[n++], fd, EVFILT_WRITE, EV_ADD | INK_EV_EDGE_TRIGGER, 0, 0, this);
   if (n)
     return kevent(event_loop->kqueue_fd, &ev[0], n, NULL, 0, NULL);
   else
@@ -592,8 +615,8 @@ TS_INLINE int EventIO::refresh(int e) {
     if (n && ne && event_loop) {
       events = ne;
       int retval = port_associate(event_loop->port_fd, PORT_SOURCE_FD, fd, events, this);
-      Debug("iocore_eventio", "[EventIO::refresh] e(%d), ne(%d), events(%d), %d[%s]=port_associate(%d,%d,%d,%d,%p)",
-            e, ne, events, retval, retval<0? strerror(errno) : "ok", event_loop->port_fd, PORT_SOURCE_FD, fd, events, this);
+      Debug("iocore_eventio", "[EventIO::refresh] e(%d), ne(%d), events(%d), %d[%s]=port_associate(%d,%d,%d,%d,%p)", e, ne, events,
+            retval, retval < 0 ? strerror(errno) : "ok", event_loop->port_fd, PORT_SOURCE_FD, fd, events, this);
       return retval;
     }
   }
@@ -605,7 +628,9 @@ TS_INLINE int EventIO::refresh(int e) {
 }
 
 
-TS_INLINE int EventIO::stop() {
+TS_INLINE int
+EventIO::stop()
+{
   if (event_loop) {
     int retval = 0;
 #if TS_USE_EPOLL
@@ -616,7 +641,8 @@ TS_INLINE int EventIO::stop() {
 #endif
 #if TS_USE_PORT
     retval = port_dissociate(event_loop->port_fd, PORT_SOURCE_FD, fd);
-    Debug("iocore_eventio", "[EventIO::stop] %d[%s]=port_dissociate(%d,%d,%d)", retval, retval<0? strerror(errno) : "ok", event_loop->port_fd, PORT_SOURCE_FD, fd);
+    Debug("iocore_eventio", "[EventIO::stop] %d[%s]=port_dissociate(%d,%d,%d)", retval, retval < 0 ? strerror(errno) : "ok",
+          event_loop->port_fd, PORT_SOURCE_FD, fd);
 #endif
     event_loop = NULL;
     return retval;

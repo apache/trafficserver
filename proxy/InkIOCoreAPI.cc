@@ -43,8 +43,7 @@
 #if TS_USE_FAST_SDK
 #define sdk_assert(EX) (void)(EX)
 #else
-#define sdk_assert(EX)                                          \
-  ( (void)((EX) ? (void)0 : _TSReleaseAssert(#EX, __FILE__, __LINE__)) )
+#define sdk_assert(EX) ((void)((EX) ? (void)0 : _TSReleaseAssert(#EX, __FILE__, __LINE__)))
 #endif
 
 
@@ -54,7 +53,7 @@ sdk_sanity_check_mutex(TSMutex mutex)
   if (mutex == NULL)
     return TS_ERROR;
 
-  ProxyMutex *mutexp = (ProxyMutex *) mutex;
+  ProxyMutex *mutexp = (ProxyMutex *)mutex;
 
   if (mutexp->m_refcount < 0)
     return TS_ERROR;
@@ -93,11 +92,8 @@ TSReturnCode sdk_sanity_check_null_ptr(void *ptr);
 // Threads
 //
 ////////////////////////////////////////////////////////////////////
-struct INKThreadInternal:public EThread
-{
-  INKThreadInternal()
-    : EThread(DEDICATED, -1)
-  {  }
+struct INKThreadInternal : public EThread {
+  INKThreadInternal() : EThread(DEDICATED, -1) {}
 
   TSThreadFunc func;
   void *data;
@@ -109,7 +105,7 @@ ink_thread_trampoline(void *data)
   INKThreadInternal *thread;
   void *retval;
 
-  thread = (INKThreadInternal *) data;
+  thread = (INKThreadInternal *)data;
   thread->set_specific();
   retval = thread->func(thread->data);
   delete thread;
@@ -190,11 +186,12 @@ TSMutexCreate()
 }
 
 void
-TSMutexDestroy(TSMutex m) {
+TSMutexDestroy(TSMutex m)
+{
   sdk_assert(sdk_sanity_check_mutex(m) == TS_SUCCESS);
-  ink_release_assert(((ProxyMutex*)m)->refcount() == 0);
+  ink_release_assert(((ProxyMutex *)m)->refcount() == 0);
 
-  ((ProxyMutex*)m)->free();
+  ((ProxyMutex *)m)->free();
 }
 
 /* The following two APIs are for Into work, actually, APIs of Mutex
@@ -329,7 +326,7 @@ TSVIOContGet(TSVIO viop)
   sdk_assert(sdk_sanity_check_iocore_structure(viop) == TS_SUCCESS);
 
   VIO *vio = (VIO *)viop;
-  return (TSCont) vio->_cont;
+  return (TSCont)vio->_cont;
 }
 
 TSVConn
@@ -370,7 +367,8 @@ INKUDPBind(TSCont contp, unsigned int ip, int port)
   struct sockaddr_in addr;
   ats_ip4_set(&addr, ip, htons(port));
 
-  return reinterpret_cast<TSAction>(udpNet.UDPBind((Continuation *)contp, ats_ip_sa_cast(&addr), INK_ETHERNET_MTU_SIZE, INK_ETHERNET_MTU_SIZE));
+  return reinterpret_cast<TSAction>(
+    udpNet.UDPBind((Continuation *)contp, ats_ip_sa_cast(&addr), INK_ETHERNET_MTU_SIZE, INK_ETHERNET_MTU_SIZE));
 }
 
 TSAction
@@ -432,7 +430,7 @@ INKUDPPacketCreate()
 TSIOBufferBlock
 INKUDPPacketBufferBlockGet(INKUDPPacket packet)
 {
-  sdk_assert(sdk_sanity_check_null_ptr((void*)packet) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void *)packet) == TS_SUCCESS);
 
   UDPPacket *p = (UDPPacket *)packet;
   return ((TSIOBufferBlock)p->getIOBlockChain());
@@ -441,7 +439,7 @@ INKUDPPacketBufferBlockGet(INKUDPPacket packet)
 unsigned int
 INKUDPPacketFromAddressGet(INKUDPPacket packet)
 {
-  sdk_assert(sdk_sanity_check_null_ptr((void*)packet) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void *)packet) == TS_SUCCESS);
 
   UDPPacket *p = (UDPPacket *)packet;
   return ats_ip4_addr_cast(&p->from);
@@ -450,7 +448,7 @@ INKUDPPacketFromAddressGet(INKUDPPacket packet)
 int
 INKUDPPacketFromPortGet(INKUDPPacket packet)
 {
-  sdk_assert(sdk_sanity_check_null_ptr((void*)packet) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void *)packet) == TS_SUCCESS);
 
   UDPPacket *p = (UDPPacket *)packet;
   return ats_ip_port_host_order(&p->from);
@@ -459,7 +457,7 @@ INKUDPPacketFromPortGet(INKUDPPacket packet)
 INKUDPConn
 INKUDPPacketConnGet(INKUDPPacket packet)
 {
-  sdk_assert(sdk_sanity_check_null_ptr((void*)packet) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void *)packet) == TS_SUCCESS);
 
   UDPPacket *p = (UDPPacket *)packet;
   return ((INKUDPConn)p->getConnection());
@@ -468,7 +466,7 @@ INKUDPPacketConnGet(INKUDPPacket packet)
 void
 INKUDPPacketDestroy(INKUDPPacket packet)
 {
-  sdk_assert(sdk_sanity_check_null_ptr((void*)packet) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void *)packet) == TS_SUCCESS);
 
   UDPPacket *p = (UDPPacket *)packet;
   p->free();
@@ -535,7 +533,7 @@ TSIOBufferStart(TSIOBuffer bufp)
   blk = b->get_current_block();
 
   // TODO: Remove when memory allocations can't fail.
-  sdk_assert(sdk_sanity_check_null_ptr((void*)blk) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void *)blk) == TS_SUCCESS);
 
   return (TSIOBufferBlock)blk;
 }
@@ -557,7 +555,7 @@ int64_t
 TSIOBufferWrite(TSIOBuffer bufp, const void *buf, int64_t length)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(bufp) == TS_SUCCESS);
-  sdk_assert(sdk_sanity_check_null_ptr((void*)buf) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void *)buf) == TS_SUCCESS);
   sdk_assert(length >= 0);
 
   MIOBuffer *b = (MIOBuffer *)bufp;
@@ -709,7 +707,7 @@ TSIOBufferReaderAlloc(TSIOBuffer bufp)
   TSIOBufferReader readerp = (TSIOBufferReader)b->alloc_reader();
 
   // TODO: Should remove this when memory allocation can't fail.
-  sdk_assert(sdk_sanity_check_null_ptr((void*)readerp) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void *)readerp) == TS_SUCCESS);
   return readerp;
 }
 

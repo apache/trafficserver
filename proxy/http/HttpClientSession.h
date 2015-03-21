@@ -47,7 +47,7 @@ class HttpServerSession;
 
 class SecurityContext;
 
-class HttpClientSession: public ProxyClientSession
+class HttpClientSession : public ProxyClientSession
 {
 public:
   HttpClientSession();
@@ -55,41 +55,71 @@ public:
   // Implement ProxyClientSession interface.
   virtual void destroy();
 
-  virtual void start() {
+  virtual void
+  start()
+  {
     new_transaction();
   }
 
-  void new_connection(NetVConnection * new_vc, MIOBuffer * iobuf, IOBufferReader * reader, bool backdoor);
+  void new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader, bool backdoor);
 
   // Implement VConnection interface.
-  virtual VIO *do_io_read(Continuation * c, int64_t nbytes = INT64_MAX, MIOBuffer * buf = 0);
-  virtual VIO *do_io_write(Continuation * c = NULL, int64_t nbytes = INT64_MAX, IOBufferReader * buf = 0, bool owner = false);
+  virtual VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = 0);
+  virtual VIO *do_io_write(Continuation *c = NULL, int64_t nbytes = INT64_MAX, IOBufferReader *buf = 0, bool owner = false);
 
   virtual void do_io_close(int lerrno = -1);
   virtual void do_io_shutdown(ShutdownHowTo_t howto);
-  virtual void reenable(VIO * vio);
+  virtual void reenable(VIO *vio);
 
   void new_transaction();
 
-  void set_half_close_flag() { half_close = true; };
-  void clear_half_close_flag() { half_close = false; };
-  bool get_half_close_flag() const { return half_close; };
-  virtual void release(IOBufferReader * r);
-  NetVConnection *get_netvc() const { return client_vc;  };
+  void
+  set_half_close_flag()
+  {
+    half_close = true;
+  };
+  void
+  clear_half_close_flag()
+  {
+    half_close = false;
+  };
+  bool
+  get_half_close_flag() const
+  {
+    return half_close;
+  };
+  virtual void release(IOBufferReader *r);
+  NetVConnection *
+  get_netvc() const
+  {
+    return client_vc;
+  };
 
-  virtual void attach_server_session(HttpServerSession * ssession, bool transaction_done = true);
-  HttpServerSession *get_server_session() const { return bound_ss; };
+  virtual void attach_server_session(HttpServerSession *ssession, bool transaction_done = true);
+  HttpServerSession *
+  get_server_session() const
+  {
+    return bound_ss;
+  };
 
   // Used for the cache authenticated HTTP content feature
   HttpServerSession *get_bound_ss();
 
   // Functions for manipulating api hooks
-  void ssn_hook_append(TSHttpHookID id, INKContInternal * cont);
-  void ssn_hook_prepend(TSHttpHookID id, INKContInternal * cont);
+  void ssn_hook_append(TSHttpHookID id, INKContInternal *cont);
+  void ssn_hook_prepend(TSHttpHookID id, INKContInternal *cont);
 
-  int get_transact_count() const { return  transact_count; }
+  int
+  get_transact_count() const
+  {
+    return transact_count;
+  }
 
-  void set_h2c_upgrade_flag() { upgrade_to_h2c = true; }
+  void
+  set_h2c_upgrade_flag()
+  {
+    upgrade_to_h2c = true;
+  }
 
 private:
   HttpClientSession(HttpClientSession &);
@@ -99,13 +129,12 @@ private:
   int state_wait_for_close(int event, void *data);
   void set_tcp_init_cwnd();
 
-  enum C_Read_State
-  {
+  enum C_Read_State {
     HCS_INIT,
     HCS_ACTIVE_READER,
     HCS_KEEP_ALIVE,
     HCS_HALF_CLOSED,
-    HCS_CLOSED
+    HCS_CLOSED,
   };
 
   int64_t con_id;

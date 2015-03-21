@@ -22,37 +22,35 @@
  */
 
 
-
-#if !defined (_RECORDS_CONFIG_H_)
+#if !defined(_RECORDS_CONFIG_H_)
 #define _RECORDS_CONFIG_H_
 
 //#include "MgmtDefs.h"
 #include "P_RecCore.h"
 
 enum RecordRequiredType {
-  RR_NULL,                      // config is _not_ required to be defined in records.config
-  RR_REQUIRED                   // config _is_ required to be defined in record.config
+  RR_NULL,    // config is _not_ required to be defined in records.config
+  RR_REQUIRED // config _is_ required to be defined in record.config
 };
 
 // Retain this struct for ease of CVS merging
-struct RecordElement
-{
-  RecT type;                    // type of the record (CONFIG, PROCESS, etc)
-  const char *name;             // name of the record
-  RecDataT value_type;          // type of the record value (INT, FLOAT, etc)
-  const char *value;            // default value for the record
-  RecUpdateT update;            // action necessary to change a configuration
-  RecordRequiredType required;  // is records required to be in records.config?
+struct RecordElement {
+  RecT type;                   // type of the record (CONFIG, PROCESS, etc)
+  const char *name;            // name of the record
+  RecDataT value_type;         // type of the record value (INT, FLOAT, etc)
+  const char *value;           // default value for the record
+  RecUpdateT update;           // action necessary to change a configuration
+  RecordRequiredType required; // is records required to be in records.config?
   RecCheckT check;
   const char *regex;
-  RecAccessT access;            // access level of the record
+  RecAccessT access; // access level of the record
 };
 
 typedef void (*RecordElementCallback)(const RecordElement *, void *);
 void RecordsConfigIterate(RecordElementCallback, void *);
 
-void LibRecordsConfigInit();                  // initializes RecordsConfigIndex
-void RecordsConfigOverrideFromEnvironment();  // Override records from the environment
+void LibRecordsConfigInit();                 // initializes RecordsConfigIndex
+void RecordsConfigOverrideFromEnvironment(); // Override records from the environment
 void test_librecords();
 
 #endif

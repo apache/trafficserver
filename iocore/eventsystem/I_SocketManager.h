@@ -37,7 +37,7 @@
 #include "I_EventSystem.h"
 #include "I_Thread.h"
 
-#define DEFAULT_OPEN_MODE                         0644
+#define DEFAULT_OPEN_MODE 0644
 
 class Thread;
 extern int net_config_poll_timeout;
@@ -46,8 +46,7 @@ extern int net_config_poll_timeout;
 
 /** Utility class for socket operations.
  */
-struct SocketManager
-{
+struct SocketManager {
   SocketManager();
 
   // result is the socket or -errno
@@ -73,7 +72,7 @@ struct SocketManager
   int64_t pwrite(int fd, void *buf, int len, off_t offset, char *tag = NULL);
 
   int send(int fd, void *buf, int len, int flags);
-  int sendto(int fd, void *buf, int len, int flags, struct sockaddr const* to, int tolen);
+  int sendto(int fd, void *buf, int len, int flags, struct sockaddr const *to, int tolen);
   int sendmsg(int fd, struct msghdr *m, int flags, void *pOLP = 0);
   int64_t lseek(int fd, off_t offset, int whence);
   int fstat(int fd, struct stat *);
@@ -90,17 +89,14 @@ struct SocketManager
 #endif
 #if TS_USE_KQUEUE
   int kqueue();
-  int kevent(int kq, const struct kevent *changelist, int nchanges,
-             struct kevent *eventlist, int nevents,
+  int kevent(int kq, const struct kevent *changelist, int nchanges, struct kevent *eventlist, int nevents,
              const struct timespec *timeout);
 #endif
 #if TS_USE_PORT
   int port_create();
-  int port_associate(int port, int fd, uintptr_t obj,
-                     int events, void *user);
+  int port_associate(int port, int fd, uintptr_t obj, int events, void *user);
   int port_dissociate(int port, int fd, uintptr_t obj);
-  int port_getn(int port, port_event_t *list, uint_t max,
-                uint_t *nget, timespec_t *timeout);
+  int port_getn(int port, port_event_t *list, uint_t max, uint_t *nget, timespec_t *timeout);
 #endif
   int shutdown(int s, int how);
   int dup(int s);
@@ -120,16 +116,16 @@ struct SocketManager
       @return 0 if successful, -errno on error.
    */
   int close(int sock);
-  int ink_bind(int s, struct sockaddr const* name, int namelen, short protocol = 0);
+  int ink_bind(int s, struct sockaddr const *name, int namelen, short protocol = 0);
 
   const size_t pagesize;
 
-  virtual ~ SocketManager();
+  virtual ~SocketManager();
 
 private:
   // just don't do it
-    SocketManager(SocketManager &);
-    SocketManager & operator=(SocketManager &);
+  SocketManager(SocketManager &);
+  SocketManager &operator=(SocketManager &);
 };
 
 extern SocketManager socketManager;

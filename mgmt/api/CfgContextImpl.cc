@@ -55,7 +55,8 @@ CommentObj::formatEleToRule()
   return ats_strdup(m_ele->comment);
 }
 
-bool CommentObj::isValid()
+bool
+CommentObj::isValid()
 {
   return m_valid;
 }
@@ -63,14 +64,14 @@ bool CommentObj::isValid()
 TSCfgEle *
 CommentObj::getCfgEleCopy()
 {
-  return (TSCfgEle *) copy_comment_ele(m_ele);
+  return (TSCfgEle *)copy_comment_ele(m_ele);
 }
 
 
 //--------------------------------------------------------------------------
 // CacheObj
 //--------------------------------------------------------------------------
-CacheObj::CacheObj(TSCacheEle * ele)
+CacheObj::CacheObj(TSCacheEle *ele)
 {
   m_ele = ele;
   m_valid = true;
@@ -78,7 +79,7 @@ CacheObj::CacheObj(TSCacheEle * ele)
 }
 
 // assumes the specifiers are specified in specific order!!
-CacheObj::CacheObj(TokenList * tokens)
+CacheObj::CacheObj(TokenList *tokens)
 {
   Token *tok;
   m_ele = TSCacheEleCreate(TS_TYPE_UNDEFINED);
@@ -96,17 +97,16 @@ CacheObj::CacheObj(TokenList * tokens)
   tok = tokens->first();
   tok = tokens_to_pdss_format(tokens, tok, &(m_ele->cache_info));
 
-  if (!tok) {                   // INVALID FORMAT
+  if (!tok) { // INVALID FORMAT
     goto FORMAT_ERR;
   }
 
   tok = tokens->next(tok);
-  if (m_ele->cfg_ele.type == TS_CACHE_REVALIDATE ||
-      m_ele->cfg_ele.type == TS_CACHE_PIN_IN_CACHE || m_ele->cfg_ele.type == TS_CACHE_TTL_IN_CACHE) {
+  if (m_ele->cfg_ele.type == TS_CACHE_REVALIDATE || m_ele->cfg_ele.type == TS_CACHE_PIN_IN_CACHE ||
+      m_ele->cfg_ele.type == TS_CACHE_TTL_IN_CACHE) {
     // must have a time specified
-    if (strcmp(tok->name, "pin-in-cache") != 0 && strcmp(tok->name, "revalidate") != 0 &&
-        strcmp(tok->name, "ttl-in-cache") != 0) {
-      goto FORMAT_ERR;          // wrong token!!
+    if (strcmp(tok->name, "pin-in-cache") != 0 && strcmp(tok->name, "revalidate") != 0 && strcmp(tok->name, "ttl-in-cache") != 0) {
+      goto FORMAT_ERR; // wrong token!!
     }
     if (string_to_hms_time(tok->value, &(m_ele->time_period)) != TS_ERR_OKAY) {
       goto FORMAT_ERR;
@@ -200,10 +200,10 @@ CacheObj::formatEleToRule()
   return ats_strdup(buf);
 }
 
-bool CacheObj::isValid()
+bool
+CacheObj::isValid()
 {
-  char *
-    timeStr;
+  char *timeStr;
 
   if (m_ele->cfg_ele.error != TS_ERR_OKAY) {
     m_valid = false;
@@ -244,21 +244,21 @@ bool CacheObj::isValid()
 TSCfgEle *
 CacheObj::getCfgEleCopy()
 {
-  return (TSCfgEle *) copy_cache_ele(m_ele);
+  return (TSCfgEle *)copy_cache_ele(m_ele);
 }
 
 
 //--------------------------------------------------------------------------
 // CongestionObj
 //--------------------------------------------------------------------------
-CongestionObj::CongestionObj(TSCongestionEle * ele)
+CongestionObj::CongestionObj(TSCongestionEle *ele)
 {
   m_ele = ele;
   m_valid = true;
   m_valid = isValid();
 }
 
-CongestionObj::CongestionObj(TokenList * tokens)
+CongestionObj::CongestionObj(TokenList *tokens)
 {
   Token *tok;
   m_ele = TSCongestionEleCreate();
@@ -274,9 +274,9 @@ CongestionObj::CongestionObj(TokenList * tokens)
   // if any invalid values, set m_valid=false
   // convert token name and value into ele field
   tok = tokens->first();
-  //tok = tokens_to_pdss_format(tokens, tok, &(m_ele->congestion_info));
+  // tok = tokens_to_pdss_format(tokens, tok, &(m_ele->congestion_info));
 
-  if (!tok) {                   // INVALID FORMAT
+  if (!tok) { // INVALID FORMAT
     goto FORMAT_ERR;
   }
 
@@ -399,11 +399,9 @@ CongestionObj::formatEleToRule()
   }
 
   if (pos < sizeof(buf) &&
-      (psize =
-       snprintf(buf + pos, sizeof(buf) - pos, "max_connection_failures=%d ", m_ele->max_connection_failures)) > 0)
+      (psize = snprintf(buf + pos, sizeof(buf) - pos, "max_connection_failures=%d ", m_ele->max_connection_failures)) > 0)
     pos += psize;
-  if (pos < sizeof(buf) &&
-      (psize = snprintf(buf + pos, sizeof(buf) - pos, "fail_window=%d ", m_ele->fail_window)) > 0)
+  if (pos < sizeof(buf) && (psize = snprintf(buf + pos, sizeof(buf) - pos, "fail_window=%d ", m_ele->fail_window)) > 0)
     pos += psize;
   if (pos < sizeof(buf) &&
       (psize = snprintf(buf + pos, sizeof(buf) - pos, "proxy_retry_interval=%d ", m_ele->proxy_retry_interval)) > 0)
@@ -426,12 +424,10 @@ CongestionObj::formatEleToRule()
   if (pos < sizeof(buf) &&
       (psize = snprintf(buf + pos, sizeof(buf) - pos, "dead_os_conn_retries=%d ", m_ele->dead_os_conn_retries)) > 0)
     pos += psize;
-  if (pos < sizeof(buf) &&
-      (psize = snprintf(buf + pos, sizeof(buf) - pos, "max_connection=%d ", m_ele->max_connection)) > 0)
+  if (pos < sizeof(buf) && (psize = snprintf(buf + pos, sizeof(buf) - pos, "max_connection=%d ", m_ele->max_connection)) > 0)
     pos += psize;
   if (m_ele->error_page_uri) {
-    if (pos < sizeof(buf) &&
-        (psize = snprintf(buf + pos, sizeof(buf) - pos, "error_page=%s ", m_ele->error_page_uri)) > 0)
+    if (pos < sizeof(buf) && (psize = snprintf(buf + pos, sizeof(buf) - pos, "error_page=%s ", m_ele->error_page_uri)) > 0)
       pos += psize;
   }
   switch (m_ele->scheme) {
@@ -448,7 +444,8 @@ CongestionObj::formatEleToRule()
   return ats_strdup(buf);
 }
 
-bool CongestionObj::isValid()
+bool
+CongestionObj::isValid()
 {
   if (m_ele->cfg_ele.error != TS_ERR_OKAY) {
     m_valid = false;
@@ -465,21 +462,21 @@ bool CongestionObj::isValid()
 TSCfgEle *
 CongestionObj::getCfgEleCopy()
 {
-  return (TSCfgEle *) copy_congestion_ele(m_ele);
+  return (TSCfgEle *)copy_congestion_ele(m_ele);
 }
 
 
 //--------------------------------------------------------------------------
 // HostingObj
 //--------------------------------------------------------------------------
-HostingObj::HostingObj(TSHostingEle * ele)
+HostingObj::HostingObj(TSHostingEle *ele)
 {
   m_ele = ele;
   m_valid = true;
   m_valid = isValid();
 }
 
-HostingObj::HostingObj(TokenList * tokens)
+HostingObj::HostingObj(TokenList *tokens)
 {
   Token *token;
 
@@ -523,7 +520,6 @@ HostingObj::HostingObj(TokenList * tokens)
 FORMAT_ERR:
   m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
   m_valid = false;
-
 }
 
 HostingObj::~HostingObj()
@@ -565,13 +561,11 @@ HostingObj::formatEleToRule()
   return ats_strdup(buf);
 }
 
-bool HostingObj::isValid()
+bool
+HostingObj::isValid()
 {
-  int *
-    part;
-  int
-    len,
-    i;
+  int *part;
+  int len, i;
 
   if (m_ele->pd_type == TS_PD_UNDEFINED) {
     m_valid = false;
@@ -591,7 +585,7 @@ bool HostingObj::isValid()
   len = TSIntListLen(m_ele->volumes);
   for (i = 0; i < len; i++) {
     part = TSIntListDequeue(m_ele->volumes);
-    if (*part<1 || *part> 255) {
+    if (*part < 1 || *part > 255) {
       TSIntListEnqueue(m_ele->volumes, part);
       m_valid = false;
       goto Lend;
@@ -609,20 +603,20 @@ Lend:
 TSCfgEle *
 HostingObj::getCfgEleCopy()
 {
-  return (TSCfgEle *) copy_hosting_ele(m_ele);
+  return (TSCfgEle *)copy_hosting_ele(m_ele);
 }
 
 //--------------------------------------------------------------------------
 // IcpObj
 //--------------------------------------------------------------------------
-IcpObj::IcpObj(TSIcpEle * ele)
+IcpObj::IcpObj(TSIcpEle *ele)
 {
   m_ele = ele;
   m_valid = true;
   m_valid = isValid();
 }
 
-IcpObj::IcpObj(TokenList * tokens)
+IcpObj::IcpObj(TokenList *tokens)
 {
   Token *token;
   int i;
@@ -665,7 +659,7 @@ IcpObj::IcpObj(TokenList * tokens)
       }
       break;
     case 2:
-      cache_type = ink_atoi(alias);     // what if failed?
+      cache_type = ink_atoi(alias); // what if failed?
       switch (cache_type) {
       case 1:
         m_ele->peer_type = TS_ICP_PARENT;
@@ -773,12 +767,11 @@ IcpObj::formatEleToRule()
     ip_str2 = ats_strdup("0.0.0.0");
 
   if (m_ele->peer_hostname) {
-    snprintf(buf, sizeof(buf), "%s:%s:%d:%d:%d:%d:%s:",
-             m_ele->peer_hostname,
-             ip_str1, peer_type, m_ele->peer_proxy_port, m_ele->peer_icp_port, (m_ele->is_multicast ? 1 : 0), ip_str2);
+    snprintf(buf, sizeof(buf), "%s:%s:%d:%d:%d:%d:%s:", m_ele->peer_hostname, ip_str1, peer_type, m_ele->peer_proxy_port,
+             m_ele->peer_icp_port, (m_ele->is_multicast ? 1 : 0), ip_str2);
   } else {
-    snprintf(buf, sizeof(buf), ":%s:%d:%d:%d:%d:%s:",
-             ip_str1, peer_type, m_ele->peer_proxy_port, m_ele->peer_icp_port, (m_ele->is_multicast ? 1 : 0), ip_str2);
+    snprintf(buf, sizeof(buf), ":%s:%d:%d:%d:%d:%s:", ip_str1, peer_type, m_ele->peer_proxy_port, m_ele->peer_icp_port,
+             (m_ele->is_multicast ? 1 : 0), ip_str2);
   }
 
   switch (m_ele->mc_ttl) {
@@ -799,7 +792,8 @@ IcpObj::formatEleToRule()
   return ats_strdup(buf);
 }
 
-bool IcpObj::isValid()
+bool
+IcpObj::isValid()
 {
   if (m_ele->cfg_ele.error != TS_ERR_OKAY) {
     m_valid = false;
@@ -829,7 +823,7 @@ bool IcpObj::isValid()
     // a valid multicast address must be between 224.0.0.0-239.255.255.255
     if (!ccu_checkIpAddr(m_ele->mc_ip_addr, "224.0.0.0", "239.255.255.255") || m_ele->mc_ttl == TS_MC_TTL_UNDEFINED)
       m_valid = false;
-  } else {                      // multicast disabled; only valid mc ip is "0.0.0.0"
+  } else { // multicast disabled; only valid mc ip is "0.0.0.0"
     if (m_ele->mc_ip_addr && strcmp(m_ele->mc_ip_addr, "0.0.0.0") != 0)
       m_valid = false;
   }
@@ -844,20 +838,20 @@ bool IcpObj::isValid()
 TSCfgEle *
 IcpObj::getCfgEleCopy()
 {
-  return (TSCfgEle *) copy_icp_ele(m_ele);
+  return (TSCfgEle *)copy_icp_ele(m_ele);
 }
 
 //--------------------------------------------------------------------------
 // IpAllowObj
 //--------------------------------------------------------------------------
-IpAllowObj::IpAllowObj(TSIpAllowEle * ele)
+IpAllowObj::IpAllowObj(TSIpAllowEle *ele)
 {
   m_ele = ele;
   m_valid = true;
   m_valid = isValid();
 }
 
-IpAllowObj::IpAllowObj(TokenList * tokens)
+IpAllowObj::IpAllowObj(TokenList *tokens)
 {
   Token *token;
 
@@ -916,7 +910,8 @@ IpAllowObj::formatEleToRule()
 {
   if (!isValid()) {
     m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
-    return NULL;;
+    return NULL;
+    ;
   }
 
   char *rule;
@@ -950,7 +945,8 @@ IpAllowObj::formatEleToRule()
   return rule;
 }
 
-bool IpAllowObj::isValid()
+bool
+IpAllowObj::isValid()
 {
   if (m_ele->cfg_ele.error != TS_ERR_OKAY) {
     m_valid = false;
@@ -977,21 +973,21 @@ bool IpAllowObj::isValid()
 TSCfgEle *
 IpAllowObj::getCfgEleCopy()
 {
-  return (TSCfgEle *) copy_ip_allow_ele(m_ele);
+  return (TSCfgEle *)copy_ip_allow_ele(m_ele);
 }
 
 
 //--------------------------------------------------------------------------
 // ParentProxyObj
 //--------------------------------------------------------------------------
-ParentProxyObj::ParentProxyObj(TSParentProxyEle * ele)
+ParentProxyObj::ParentProxyObj(TSParentProxyEle *ele)
 {
   m_ele = ele;
   m_valid = true;
   m_valid = isValid();
 }
 
-ParentProxyObj::ParentProxyObj(TokenList * tokens)
+ParentProxyObj::ParentProxyObj(TokenList *tokens)
 {
   Token *tok;
   m_ele = TSParentProxyEleCreate(TS_TYPE_UNDEFINED);
@@ -1133,7 +1129,6 @@ ParentProxyObj::formatEleToRule()
       ats_free(list_str);
     }
     ink_strlcat(buf, "\"", sizeof(buf));
-
   }
 
   if (m_ele->direct) {
@@ -1152,7 +1147,8 @@ ParentProxyObj::formatEleToRule()
   return ats_strdup(buf);
 }
 
-bool ParentProxyObj::isValid()
+bool
+ParentProxyObj::isValid()
 {
   if (m_ele->cfg_ele.error != TS_ERR_OKAY) {
     m_valid = false;
@@ -1175,20 +1171,20 @@ bool ParentProxyObj::isValid()
 TSCfgEle *
 ParentProxyObj::getCfgEleCopy()
 {
-  return (TSCfgEle *) copy_parent_proxy_ele(m_ele);
+  return (TSCfgEle *)copy_parent_proxy_ele(m_ele);
 }
 
 //--------------------------------------------------------------------------
 // VolumeObj
 //--------------------------------------------------------------------------
-VolumeObj::VolumeObj(TSVolumeEle * ele)
+VolumeObj::VolumeObj(TSVolumeEle *ele)
 {
   m_ele = ele;
   m_valid = true;
   m_valid = isValid();
 }
 
-VolumeObj::VolumeObj(TokenList * tokens)
+VolumeObj::VolumeObj(TokenList *tokens)
 {
   Token *token;
 
@@ -1283,7 +1279,8 @@ VolumeObj::formatEleToRule()
   return ats_strdup(buf);
 }
 
-bool VolumeObj::isValid()
+bool
+VolumeObj::isValid()
 {
   if (m_ele->cfg_ele.error != TS_ERR_OKAY) {
     m_valid = false;
@@ -1326,14 +1323,14 @@ VolumeObj::getCfgEleCopy()
 //--------------------------------------------------------------------------
 // PluginObj
 //--------------------------------------------------------------------------
-PluginObj::PluginObj(TSPluginEle * ele)
+PluginObj::PluginObj(TSPluginEle *ele)
 {
   m_ele = ele;
   m_valid = true;
   m_valid = isValid();
 }
 
-PluginObj::PluginObj(TokenList * tokens)
+PluginObj::PluginObj(TokenList *tokens)
 {
   Token *token;
 
@@ -1401,7 +1398,8 @@ PluginObj::formatEleToRule()
   return ats_strdup(buf);
 }
 
-bool PluginObj::isValid()
+bool
+PluginObj::isValid()
 {
   if (m_ele->cfg_ele.error != TS_ERR_OKAY) {
     m_valid = false;
@@ -1417,24 +1415,24 @@ bool PluginObj::isValid()
 TSCfgEle *
 PluginObj::getCfgEleCopy()
 {
-  return (TSCfgEle *) copy_plugin_ele(m_ele);
+  return (TSCfgEle *)copy_plugin_ele(m_ele);
 }
 
 
 //--------------------------------------------------------------------------
 // RemapObj
 //--------------------------------------------------------------------------
-RemapObj::RemapObj(TSRemapEle * ele)
+RemapObj::RemapObj(TSRemapEle *ele)
 {
   m_ele = ele;
   m_valid = true;
   m_valid = isValid();
 }
 
-RemapObj::RemapObj(TokenList * tokens)
+RemapObj::RemapObj(TokenList *tokens)
 {
   Token *token;
-  short current;                // current token index
+  short current; // current token index
   Tokenizer fromTok(":/");
   Tokenizer toTok(":/");
   char buf[MAX_RULE_SIZE];
@@ -1462,7 +1460,7 @@ RemapObj::RemapObj(TokenList * tokens)
   }
 
   // TODO: Should we check the return value (count) here?
-  fromTok.Initialize(token->name, ALLOW_EMPTY_TOKS);       // allow empty token for parse sanity check
+  fromTok.Initialize(token->name, ALLOW_EMPTY_TOKS); // allow empty token for parse sanity check
 
   if (strcmp(fromTok[0], "http") == 0) {
     m_ele->from_scheme = TS_SCHEME_HTTP;
@@ -1478,18 +1476,16 @@ RemapObj::RemapObj(TokenList * tokens)
 
   current = 4;
   if (fromTok[4]) {
-
     // from port
     m_ele->from_port = ink_atoi(fromTok[4]);
-    if (m_ele->from_port != 0) {        // Does it have a port
+    if (m_ele->from_port != 0) { // Does it have a port
       current++;
-    } else {                    // No ports
+    } else { // No ports
       m_ele->from_port = TS_INVALID_PORT;
     }
 
     // from prefix
     if (fromTok[current]) {
-
       memset(buf, 0, MAX_RULE_SIZE);
 
       for (int i = current; fromTok[i]; i++) {
@@ -1498,7 +1494,7 @@ RemapObj::RemapObj(TokenList * tokens)
       }
 
       if ((token->name)[strlen(token->name) - 1] != '/') {
-        buf[strlen(buf) - 1] = '\0';    // truncate the last '/'
+        buf[strlen(buf) - 1] = '\0'; // truncate the last '/'
       }
 
       m_ele->from_path_prefix = ats_strdup(buf);
@@ -1518,7 +1514,7 @@ RemapObj::RemapObj(TokenList * tokens)
   }
 
   // TODO: Should we check the return value (count) here?
-  toTok.Initialize(token->value, ALLOW_EMPTY_TOKS);  // allow empty token for parse sanity check
+  toTok.Initialize(token->value, ALLOW_EMPTY_TOKS); // allow empty token for parse sanity check
 
   if (strcmp(toTok[0], "http") == 0) {
     m_ele->to_scheme = TS_SCHEME_HTTP;
@@ -1534,18 +1530,16 @@ RemapObj::RemapObj(TokenList * tokens)
 
   current = 4;
   if (toTok[4]) {
-
     // to port
     m_ele->to_port = ink_atoi(toTok[4]);
-    if (m_ele->to_port != 0) {  // Does it have a port
+    if (m_ele->to_port != 0) { // Does it have a port
       current++;
-    } else {                    // No ports
+    } else { // No ports
       m_ele->to_port = TS_INVALID_PORT;
     }
 
     // to prefix
     if (toTok[current]) {
-
       memset(buf, 0, MAX_RULE_SIZE);
 
       for (int i = current; toTok[i]; i++) {
@@ -1554,20 +1548,18 @@ RemapObj::RemapObj(TokenList * tokens)
       }
 
       if ((token->name)[strlen(token->name) - 1] != '/') {
-        buf[strlen(buf) - 1] = '\0';    // truncate the last '/'
+        buf[strlen(buf) - 1] = '\0'; // truncate the last '/'
       }
 
       m_ele->to_path_prefix = ats_strdup(buf);
     }
   } else {
     if ((token->value)[strlen(token->value) - 1] == '/') {
-
       memset(buf, 0, MAX_RULE_SIZE);
       ink_strlcpy(buf, m_ele->to_host, sizeof(buf));
       ats_free(m_ele->to_host);
       ink_strlcat(buf, "/", sizeof(buf));
       m_ele->to_host = ats_strdup(buf);
-
     }
   }
 
@@ -1678,7 +1670,8 @@ RemapObj::formatEleToRule()
   return ats_strdup(buf);
 }
 
-bool RemapObj::isValid()
+bool
+RemapObj::isValid()
 {
   if (m_ele->cfg_ele.error != TS_ERR_OKAY) {
     m_valid = false;
@@ -1734,20 +1727,20 @@ bool RemapObj::isValid()
 TSCfgEle *
 RemapObj::getCfgEleCopy()
 {
-  return (TSCfgEle *) copy_remap_ele(m_ele);
+  return (TSCfgEle *)copy_remap_ele(m_ele);
 }
 
 //--------------------------------------------------------------------------
 // SocksObj
 //--------------------------------------------------------------------------
-SocksObj::SocksObj(TSSocksEle * ele)
+SocksObj::SocksObj(TSSocksEle *ele)
 {
   m_ele = ele;
   m_valid = true;
   m_valid = isValid();
 }
 
-SocksObj::SocksObj(TokenList * tokens)
+SocksObj::SocksObj(TokenList *tokens)
 {
   Token *tok;
 
@@ -1765,13 +1758,13 @@ SocksObj::SocksObj(TokenList * tokens)
   }
   // Determine if it's  a "no-socks" rule or a "parent socks servers" rule
   tok = tokens->first();
-  if (strcmp(tok->name, "no_socks") == 0) {     // no-socks rule; TS_SOCKS_BYPASS
+  if (strcmp(tok->name, "no_socks") == 0) { // no-socks rule; TS_SOCKS_BYPASS
 
     if (m_ele->ip_addrs != NULL) {
       goto FORMAT_ERR;
     }
     m_ele->ip_addrs = string_to_ip_addr_list(tok->value, ",");
-  } else if (strcmp(tok->name, "auth") == 0) {  // TS_SOCKS_AUTH rule
+  } else if (strcmp(tok->name, "auth") == 0) { // TS_SOCKS_AUTH rule
     if (strcmp(tok->value, "u") == 0) {
       tok = tokens->next(tok);
       if (tok && tok->name) {
@@ -1788,7 +1781,7 @@ SocksObj::SocksObj(TokenList * tokens)
     } else {
       goto FORMAT_ERR;
     }
-  } else {                      // multiple socks servers rule; TS_SOCKS_MULTIPLE
+  } else { // multiple socks servers rule; TS_SOCKS_MULTIPLE
     // should be dest_ip tag
     if (strcmp(tok->name, "dest_ip") == 0) {
       m_ele->dest_ip_addr = string_to_ip_addr_ele(tok->value);
@@ -1812,7 +1805,7 @@ SocksObj::SocksObj(TokenList * tokens)
           m_ele->rr = TS_RR_FALSE;
         } else {
           m_ele->rr = TS_RR_NONE;
-          goto FORMAT_ERR;      // missing value for round_robin tag
+          goto FORMAT_ERR; // missing value for round_robin tag
         }
 
       } else if (strcmp(tok->name, "parent") == 0) {
@@ -1822,8 +1815,7 @@ SocksObj::SocksObj(TokenList * tokens)
         }
         m_ele->socks_servers = string_to_domain_list(tok->value, ";");
       }
-    }                           // end for loop
-
+    } // end for loop
   }
 
   return;
@@ -1848,25 +1840,25 @@ SocksObj::formatEleToRule()
   char buf[MAX_RULE_SIZE];
   memset(buf, 0, MAX_RULE_SIZE);
 
-  if (m_ele->ip_addrs != NULL) {        // TS_SOCKS_BYPASS rule
-    char *str_list = ip_addr_list_to_string((LLQ *) m_ele->ip_addrs, ",");
+  if (m_ele->ip_addrs != NULL) { // TS_SOCKS_BYPASS rule
+    char *str_list = ip_addr_list_to_string((LLQ *)m_ele->ip_addrs, ",");
     if (str_list) {
       snprintf(buf, sizeof(buf), "no_socks %s", str_list);
       ats_free(str_list);
     } else {
-      return NULL;              // invalid ip_addr_list
+      return NULL; // invalid ip_addr_list
     }
   } else if (m_ele->username != NULL) { // TS_SOCKS_AUTH rule
     snprintf(buf, sizeof(buf), "auth u %s %s", m_ele->username, m_ele->password);
-  } else {                      // TS_SOCKS_MULTIPLE rule
+  } else { // TS_SOCKS_MULTIPLE rule
     // destination ip
-    char *ip_str = ip_addr_ele_to_string((TSIpAddrEle *) m_ele->dest_ip_addr);
+    char *ip_str = ip_addr_ele_to_string((TSIpAddrEle *)m_ele->dest_ip_addr);
     if (ip_str) {
       ink_strlcat(buf, "dest_ip=", sizeof(buf));
       ink_strlcat(buf, ip_str, sizeof(buf));
       ats_free(ip_str);
     } else {
-      return NULL;              // invalid IP
+      return NULL; // invalid IP
     }
 
     // parent server list
@@ -1882,7 +1874,7 @@ SocksObj::formatEleToRule()
         ink_strlcat(buf, "\"", sizeof(buf));
         ats_free(list_str);
       } else {
-        return NULL;            // invalid list
+        return NULL; // invalid list
       }
     }
     // round-robin, if specified
@@ -1915,7 +1907,8 @@ SocksObj::formatEleToRule()
 // the rule must either have an ip addr list (exclusive) OR
 // the dest_ip_addr * socks_servers OR
 // the username and password
-bool SocksObj::isValid()
+bool
+SocksObj::isValid()
 {
   if (m_ele->cfg_ele.error != TS_ERR_OKAY) {
     m_valid = false;
@@ -1937,8 +1930,7 @@ bool SocksObj::isValid()
     }
     break;
   case TS_SOCKS_MULTIPLE:
-    if (m_ele->ip_addrs || m_ele->username ||
-        !(m_ele->dest_ip_addr && m_ele->socks_servers) ||
+    if (m_ele->ip_addrs || m_ele->username || !(m_ele->dest_ip_addr && m_ele->socks_servers) ||
         !ccu_checkIpAddrEle(m_ele->dest_ip_addr) || !TSDomainListIsValid(m_ele->socks_servers)) {
       m_valid = false;
     } else {
@@ -1959,20 +1951,20 @@ bool SocksObj::isValid()
 TSCfgEle *
 SocksObj::getCfgEleCopy()
 {
-  return (TSCfgEle *) copy_socks_ele(m_ele);
+  return (TSCfgEle *)copy_socks_ele(m_ele);
 }
 
 //--------------------------------------------------------------------------
 // SplitDnsObj
 //--------------------------------------------------------------------------
-SplitDnsObj::SplitDnsObj(TSSplitDnsEle * ele)
+SplitDnsObj::SplitDnsObj(TSSplitDnsEle *ele)
 {
   m_ele = ele;
   m_valid = true;
   m_valid = isValid();
 }
 
-SplitDnsObj::SplitDnsObj(TokenList * tokens)
+SplitDnsObj::SplitDnsObj(TokenList *tokens)
 {
   Token *tok;
 
@@ -2024,7 +2016,7 @@ SplitDnsObj::SplitDnsObj(TokenList * tokens)
         // fields are already defined!!
         goto FORMAT_ERR;
       }
-      m_ele->dns_servers_addrs = (TSDomainList) string_to_domain_list(tok->value, "; ");
+      m_ele->dns_servers_addrs = (TSDomainList)string_to_domain_list(tok->value, "; ");
     } else if (strcmp(tok->name, "def_domain") == 0) {
       if ((m_ele->def_domain != NULL) || (!tok->value)) {
         // fields are already defined!!
@@ -2036,7 +2028,7 @@ SplitDnsObj::SplitDnsObj(TokenList * tokens)
         // fields are already defined!!
         goto FORMAT_ERR;
       }
-      m_ele->search_list = (TSDomainList) string_to_domain_list(tok->value, "; ");
+      m_ele->search_list = (TSDomainList)string_to_domain_list(tok->value, "; ");
     } else {
       // Not able to recongize token name
       goto FORMAT_ERR;
@@ -2082,7 +2074,7 @@ SplitDnsObj::formatEleToRule()
     pd_name = ats_strdup("url");
     break;
   default:
-    pd_name = ats_strdup("");      // lv: just to make this junk workable
+    pd_name = ats_strdup(""); // lv: just to make this junk workable
     // Handled here:
     // TS_PD_IP, TS_PD_UNDEFINED
     break;
@@ -2103,7 +2095,7 @@ SplitDnsObj::formatEleToRule()
 
   if (m_ele->dns_servers_addrs) {
     ink_strlcat(buf, "named=", sizeof(buf));
-    char *temp = domain_list_to_string((LLQ *) m_ele->dns_servers_addrs, ";");
+    char *temp = domain_list_to_string((LLQ *)m_ele->dns_servers_addrs, ";");
     if (temp) {
       if (strstr(temp, " ")) {
         ink_strlcat(buf, "\"", sizeof(buf));
@@ -2154,7 +2146,8 @@ SplitDnsObj::formatEleToRule()
   return ats_strdup(buf);
 }
 
-bool SplitDnsObj::isValid()
+bool
+SplitDnsObj::isValid()
 {
   if (m_ele->cfg_ele.error != TS_ERR_OKAY) {
     m_valid = false;
@@ -2190,21 +2183,21 @@ bool SplitDnsObj::isValid()
 TSCfgEle *
 SplitDnsObj::getCfgEleCopy()
 {
-  return (TSCfgEle *) copy_split_dns_ele(m_ele);
+  return (TSCfgEle *)copy_split_dns_ele(m_ele);
 }
 
 //--------------------------------------------------------------------------
 // StorageObj
 //--------------------------------------------------------------------------
-StorageObj::StorageObj(TSStorageEle * ele)
+StorageObj::StorageObj(TSStorageEle *ele)
 {
   m_ele = ele;
   m_valid = true;
-  m_valid = isValid();          // now validate
+  m_valid = isValid(); // now validate
 }
 
 // must have at least 1 token (token-name = pathname, token-value = size (if any) )
-StorageObj::StorageObj(TokenList * tokens)
+StorageObj::StorageObj(TokenList *tokens)
 {
   Token *tok;
 
@@ -2223,13 +2216,13 @@ StorageObj::StorageObj(TokenList * tokens)
   // check first token; must exist
   tok = tokens->first();
   if (!tok->name) {
-    goto FORMAT_ERR;            // no pathname specified
+    goto FORMAT_ERR; // no pathname specified
   } else {
     m_ele->pathname = ats_strdup(tok->name);
   }
 
   // check if size is specified
-  if (tok->value)               // size is specified in second token
+  if (tok->value) // size is specified in second token
     m_ele->size = ink_atoi(tok->value);
 
   return;
@@ -2255,7 +2248,7 @@ StorageObj::formatEleToRule()
   char buf[MAX_RULE_SIZE];
   memset(buf, 0, MAX_RULE_SIZE);
 
-  if (m_ele->size < 0) {        // if size < 0, then raw volume
+  if (m_ele->size < 0) { // if size < 0, then raw volume
     snprintf(buf, sizeof(buf), "%s", m_ele->pathname);
   } else {
     snprintf(buf, sizeof(buf), "%s %d", m_ele->pathname, m_ele->size);
@@ -2264,7 +2257,8 @@ StorageObj::formatEleToRule()
   return ats_strdup(buf);
 }
 
-bool StorageObj::isValid()
+bool
+StorageObj::isValid()
 {
   if (m_ele->cfg_ele.error != TS_ERR_OKAY) {
     m_valid = false;
@@ -2282,20 +2276,20 @@ bool StorageObj::isValid()
 TSCfgEle *
 StorageObj::getCfgEleCopy()
 {
-  return (TSCfgEle *) copy_storage_ele(m_ele);
+  return (TSCfgEle *)copy_storage_ele(m_ele);
 }
 
 //--------------------------------------------------------------------------
 // UpdateObj
 //--------------------------------------------------------------------------
-UpdateObj::UpdateObj(TSUpdateEle * ele)
+UpdateObj::UpdateObj(TSUpdateEle *ele)
 {
   m_ele = ele;
   m_valid = true;
   m_valid = isValid();
 }
 
-UpdateObj::UpdateObj(TokenList * tokens)
+UpdateObj::UpdateObj(TokenList *tokens)
 {
   Token *token;
 
@@ -2368,31 +2362,28 @@ UpdateObj::formatEleToRule()
 
   list_str = string_list_to_string(m_ele->headers, ";");
   if (list_str) {
-    snprintf(buf, sizeof(buf), "%s\\%s\\%d\\%d\\%d\\",
-             m_ele->url, list_str, m_ele->offset_hour, m_ele->interval, m_ele->recursion_depth);
+    snprintf(buf, sizeof(buf), "%s\\%s\\%d\\%d\\%d\\", m_ele->url, list_str, m_ele->offset_hour, m_ele->interval,
+             m_ele->recursion_depth);
     ats_free(list_str);
   } else {
-    snprintf(buf, sizeof(buf), "%s\\\\%d\\%d\\%d\\",
-             m_ele->url, m_ele->offset_hour, m_ele->interval, m_ele->recursion_depth);
+    snprintf(buf, sizeof(buf), "%s\\\\%d\\%d\\%d\\", m_ele->url, m_ele->offset_hour, m_ele->interval, m_ele->recursion_depth);
   }
 
   return ats_strdup(buf);
 }
 
-bool UpdateObj::isValid()
+bool
+UpdateObj::isValid()
 {
   if (m_ele->cfg_ele.error != TS_ERR_OKAY) {
     m_valid = false;
   }
   // check url
-  if (!m_ele->url || strcmp(m_ele->url, "") == 0 ||
-      strstr(m_ele->url, "\\") ||
-      (!strstr(m_ele->url, "http"))) {
+  if (!m_ele->url || strcmp(m_ele->url, "") == 0 || strstr(m_ele->url, "\\") || (!strstr(m_ele->url, "http"))) {
     m_valid = false;
   }
   // bug 49322: check that there are no "\" in the url or headers
-  char *
-    list_str = string_list_to_string(m_ele->headers, ";");
+  char *list_str = string_list_to_string(m_ele->headers, ";");
   if (list_str) {
     if (strstr(list_str, "\\"))
       m_valid = false;
@@ -2425,20 +2416,20 @@ bool UpdateObj::isValid()
 TSCfgEle *
 UpdateObj::getCfgEleCopy()
 {
-  return (TSCfgEle *) copy_update_ele(m_ele);
+  return (TSCfgEle *)copy_update_ele(m_ele);
 }
 
 //--------------------------------------------------------------------------
 // VirtIpAddrObj
 //--------------------------------------------------------------------------
-VirtIpAddrObj::VirtIpAddrObj(TSVirtIpAddrEle * ele)
+VirtIpAddrObj::VirtIpAddrObj(TSVirtIpAddrEle *ele)
 {
   m_ele = ele;
   m_valid = true;
   m_valid = isValid();
 }
 
-VirtIpAddrObj::VirtIpAddrObj(TokenList * tokens)
+VirtIpAddrObj::VirtIpAddrObj(TokenList *tokens)
 {
   Token *tok;
 
@@ -2473,7 +2464,7 @@ VirtIpAddrObj::VirtIpAddrObj(TokenList * tokens)
   if (tok->value != NULL) {
     goto FORMAT_ERR;
   }
-  m_ele->sub_intr = ink_atoi(tok->name);        // ERROR: can't convert?
+  m_ele->sub_intr = ink_atoi(tok->name); // ERROR: can't convert?
 
   return;
 
@@ -2506,7 +2497,8 @@ VirtIpAddrObj::formatEleToRule()
   return ats_strdup(buf);
 }
 
-bool VirtIpAddrObj::isValid()
+bool
+VirtIpAddrObj::isValid()
 {
   if (m_ele->cfg_ele.error != TS_ERR_OKAY) {
     m_valid = false;
@@ -2533,7 +2525,7 @@ bool VirtIpAddrObj::isValid()
 TSCfgEle *
 VirtIpAddrObj::getCfgEleCopy()
 {
-  return (TSCfgEle *) copy_virt_ip_addr_ele(m_ele);
+  return (TSCfgEle *)copy_virt_ip_addr_ele(m_ele);
 }
 
 
@@ -2554,24 +2546,26 @@ CfgContext::~CfgContext()
   }
 }
 
-TSMgmtError CfgContext::addEle(CfgEleObj * ele)
+TSMgmtError
+CfgContext::addEle(CfgEleObj *ele)
 {
   ink_assert(ele != NULL);
-  m_eles.enqueue(ele);          // enqueue CfgEleObj at end of Queue
+  m_eles.enqueue(ele); // enqueue CfgEleObj at end of Queue
   return TS_ERR_OKAY;
 }
 
-TSMgmtError CfgContext::removeEle(CfgEleObj * ele)
+TSMgmtError
+CfgContext::removeEle(CfgEleObj *ele)
 {
   ink_assert(ele != NULL);
   m_eles.remove(ele);
-  delete
-    ele;
+  delete ele;
 
   return TS_ERR_OKAY;
 }
 
-TSMgmtError CfgContext::insertEle(CfgEleObj * ele, CfgEleObj * after_ele)
+TSMgmtError
+CfgContext::insertEle(CfgEleObj *ele, CfgEleObj *after_ele)
 {
   ink_assert(ele != NULL && after_ele != NULL);
   m_eles.insert(ele, after_ele);
@@ -2580,7 +2574,8 @@ TSMgmtError CfgContext::insertEle(CfgEleObj * ele, CfgEleObj * after_ele)
 }
 
 // insert Ele at front of the Queue
-TSMgmtError CfgContext::pushEle(CfgEleObj * ele)
+TSMgmtError
+CfgContext::pushEle(CfgEleObj *ele)
 {
   ink_assert(ele != NULL);
   m_eles.push(ele);

@@ -24,7 +24,7 @@
 #include "traffic_ctl.h"
 
 static int
-metric_get(unsigned argc, const char ** argv)
+metric_get(unsigned argc, const char **argv)
 {
   if (!CtrlProcessArguments(argc, argv, NULL, 0) || n_file_arguments < 1) {
     return CtrlCommandUsage("metric get METRIC [METRIC ...]", NULL, 0);
@@ -47,7 +47,7 @@ metric_get(unsigned argc, const char ** argv)
 }
 
 static int
-metric_match(unsigned argc, const char ** argv)
+metric_match(unsigned argc, const char **argv)
 {
   if (!CtrlProcessArguments(argc, argv, NULL, 0) || n_file_arguments < 1) {
     return CtrlCommandUsage("metric match [OPTIONS] REGEX [REGEX ...]", NULL, 0);
@@ -75,13 +75,13 @@ metric_match(unsigned argc, const char ** argv)
 }
 
 static int
-metric_clear(unsigned argc, const char ** argv)
+metric_clear(unsigned argc, const char **argv)
 {
   int cluster = 0;
   TSMgmtError error;
 
   const ArgumentDescription opts[] = {
-    { "cluster", '-', "Clear cluster metrics", "F", &cluster, NULL, NULL },
+    {"cluster", '-', "Clear cluster metrics", "F", &cluster, NULL, NULL},
   };
 
   if (!CtrlProcessArguments(argc, argv, opts, countof(opts)) || n_file_arguments != 0) {
@@ -98,13 +98,13 @@ metric_clear(unsigned argc, const char ** argv)
 }
 
 static int
-metric_zero(unsigned argc, const char ** argv)
+metric_zero(unsigned argc, const char **argv)
 {
   int cluster = 0;
   TSMgmtError error;
 
   const ArgumentDescription opts[] = {
-    { "cluster", '-', "Zero cluster metrics", "F", &cluster, NULL, NULL },
+    {"cluster", '-', "Zero cluster metrics", "F", &cluster, NULL, NULL},
   };
 
   if (!CtrlProcessArguments(argc, argv, opts, countof(opts)) || n_file_arguments < 1) {
@@ -123,19 +123,18 @@ metric_zero(unsigned argc, const char ** argv)
 }
 
 int
-subcommand_metric(unsigned argc, const char ** argv)
+subcommand_metric(unsigned argc, const char **argv)
 {
-  const subcommand commands[] =
-  {
-    { metric_get, "get", "Get one or more metric values" },
-    { metric_clear, "clear", "Clear all metric values" },
-    { CtrlUnimplementedCommand, "describe", "Show detailed information about one or more metric values" },
-    { metric_match, "match", "Get metrics matching a regular expression" },
-    { CtrlUnimplementedCommand, "monitor", "Display the value of a metric over time" },
+  const subcommand commands[] = {
+    {metric_get, "get", "Get one or more metric values"},
+    {metric_clear, "clear", "Clear all metric values"},
+    {CtrlUnimplementedCommand, "describe", "Show detailed information about one or more metric values"},
+    {metric_match, "match", "Get metrics matching a regular expression"},
+    {CtrlUnimplementedCommand, "monitor", "Display the value of a metric over time"},
 
     // We could allow clearing all the metrics in the "clear" subcommand, but that seems error-prone. It
     // would be too easy to just expect a help message and accidentally nuke all the metrics.
-    { metric_zero, "zero", "Clear one or more metric values" },
+    {metric_zero, "zero", "Clear one or more metric values"},
   };
 
   return CtrlGenericSubcommand("metric", commands, countof(commands), argc, argv);

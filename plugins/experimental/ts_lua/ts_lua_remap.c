@@ -20,8 +20,7 @@
 #include "ts_lua_remap.h"
 
 
-typedef enum
-{
+typedef enum {
   TS_LUA_REMAP_NO_REMAP = TSREMAP_NO_REMAP,
   TS_LUA_REMAP_DID_REMAP = TSREMAP_DID_REMAP,
   TS_LUA_REMAP_NO_REMAP_STOP = TSREMAP_NO_REMAP_STOP,
@@ -30,25 +29,22 @@ typedef enum
 } TSLuaRemapStatus;
 
 ts_lua_var_item ts_lua_remap_status_vars[] = {
-  TS_LUA_MAKE_VAR_ITEM(TS_LUA_REMAP_NO_REMAP),
-  TS_LUA_MAKE_VAR_ITEM(TS_LUA_REMAP_DID_REMAP),
-  TS_LUA_MAKE_VAR_ITEM(TS_LUA_REMAP_NO_REMAP_STOP),
-  TS_LUA_MAKE_VAR_ITEM(TS_LUA_REMAP_DID_REMAP_STOP),
-  TS_LUA_MAKE_VAR_ITEM(TS_LUA_REMAP_ERROR)
-};
+  TS_LUA_MAKE_VAR_ITEM(TS_LUA_REMAP_NO_REMAP), TS_LUA_MAKE_VAR_ITEM(TS_LUA_REMAP_DID_REMAP),
+  TS_LUA_MAKE_VAR_ITEM(TS_LUA_REMAP_NO_REMAP_STOP), TS_LUA_MAKE_VAR_ITEM(TS_LUA_REMAP_DID_REMAP_STOP),
+  TS_LUA_MAKE_VAR_ITEM(TS_LUA_REMAP_ERROR)};
 
 
-static void ts_lua_inject_remap_variables(lua_State * L);
+static void ts_lua_inject_remap_variables(lua_State *L);
 
 
 void
-ts_lua_inject_remap_api(lua_State * L)
+ts_lua_inject_remap_api(lua_State *L)
 {
   ts_lua_inject_remap_variables(L);
 }
 
 static void
-ts_lua_inject_remap_variables(lua_State * L)
+ts_lua_inject_remap_variables(lua_State *L)
 {
   size_t i;
 

@@ -30,8 +30,7 @@
 #include "ink_assert.h"
 
 
-struct ArenaBlock
-{
+struct ArenaBlock {
   ArenaBlock *next;
   char *m_heap_end;
   char *m_water_level;
@@ -42,13 +41,8 @@ struct ArenaBlock
 class Arena
 {
 public:
-  Arena():m_blocks(NULL)
-  {
-  }
-   ~Arena()
-  {
-    reset();
-  }
+  Arena() : m_blocks(NULL) {}
+  ~Arena() { reset(); }
 
   inkcoreapi void *alloc(size_t size, size_t alignment = sizeof(double));
   void free(void *mem, size_t size);
@@ -60,7 +54,7 @@ public:
   inkcoreapi void reset();
 
 private:
-  ArenaBlock * m_blocks;
+  ArenaBlock *m_blocks;
 };
 
 
@@ -73,7 +67,7 @@ Arena::str_length(const char *str)
   unsigned char *s, *e;
   size_t len;
 
-  e = (unsigned char *) str;
+  e = (unsigned char *)str;
   s = e - 1;
 
   while (*s >= 128) {
@@ -120,19 +114,19 @@ Arena::str_alloc(size_t len)
     tmp /= 128;
   }
 
-  mem = (unsigned char *) alloc(size, 1);
+  mem = (unsigned char *)alloc(size, 1);
 
   mem += (size - len - 1);
   p = mem - 1;
   tmp = len;
 
   while (tmp >= 128) {
-    *p-- = (unsigned char) (255 - (tmp % 128));
+    *p-- = (unsigned char)(255 - (tmp % 128));
     tmp /= 128;
   }
-  *p = (unsigned char) tmp;
+  *p = (unsigned char)tmp;
 
-  return (char *) mem;
+  return (char *)mem;
 }
 
 /*-------------------------------------------------------------------------
@@ -144,7 +138,7 @@ Arena::str_free(char *str)
   unsigned char *p, *s, *e;
   size_t len;
 
-  e = (unsigned char *) str;
+  e = (unsigned char *)str;
   s = e - 1;
 
   while (*s >= 128) {
@@ -179,4 +173,3 @@ Arena::str_store(const char *str, size_t len)
 
 
 #endif /* __ARENA_H__ */
-

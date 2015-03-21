@@ -34,57 +34,72 @@ using std::string;
 // To view the debug messages ./traffic_server -T "async_http_fetch_example.*"
 #define TAG "async_http_fetch_example"
 
-class AsyncHttpFetch2 : public AsyncHttpFetch {
+class AsyncHttpFetch2 : public AsyncHttpFetch
+{
 public:
-  AsyncHttpFetch2(string request) : AsyncHttpFetch(request) { };
+  AsyncHttpFetch2(string request) : AsyncHttpFetch(request){};
 };
 
-class AsyncHttpFetch3 : public AsyncHttpFetch {
+class AsyncHttpFetch3 : public AsyncHttpFetch
+{
 public:
-  AsyncHttpFetch3(string request, HttpMethod method) : AsyncHttpFetch(request, method) { };
+  AsyncHttpFetch3(string request, HttpMethod method) : AsyncHttpFetch(request, method){};
 };
 
-class DelayedAsyncHttpFetch : public AsyncHttpFetch, public AsyncReceiver<AsyncTimer> {
+class DelayedAsyncHttpFetch : public AsyncHttpFetch, public AsyncReceiver<AsyncTimer>
+{
 public:
   DelayedAsyncHttpFetch(string request, HttpMethod method, shared_ptr<Mutex> mutex)
-    : AsyncHttpFetch(request, method), mutex_(mutex), timer_(NULL) { };
-  void run() {
+    : AsyncHttpFetch(request, method), mutex_(mutex), timer_(NULL){};
+  void
+  run()
+  {
     timer_ = new AsyncTimer(AsyncTimer::TYPE_ONE_OFF, 1000 /* 1s */);
     Async::execute(this, timer_, mutex_);
   }
-  void handleAsyncComplete(AsyncTimer &/*timer ATS_UNUSED */) {
+  void
+  handleAsyncComplete(AsyncTimer & /*timer ATS_UNUSED */)
+  {
     TS_DEBUG(TAG, "Receiver should not be reachable");
     assert(!getDispatchController()->dispatch());
     delete this;
   }
-  bool isAlive() {
+  bool
+  isAlive()
+  {
     return getDispatchController()->isEnabled();
   }
   ~DelayedAsyncHttpFetch() { delete timer_; }
+
 private:
   shared_ptr<Mutex> mutex_;
   AsyncTimer *timer_;
 };
 
-class TransactionHookPlugin : public TransactionPlugin, public AsyncReceiver<AsyncHttpFetch>,
-                              public AsyncReceiver<AsyncHttpFetch2>, public AsyncReceiver<AsyncHttpFetch3>,
-                              public AsyncReceiver<DelayedAsyncHttpFetch> {
+class TransactionHookPlugin : public TransactionPlugin,
+                              public AsyncReceiver<AsyncHttpFetch>,
+                              public AsyncReceiver<AsyncHttpFetch2>,
+                              public AsyncReceiver<AsyncHttpFetch3>,
+                              public AsyncReceiver<DelayedAsyncHttpFetch>
+{
 public:
-  TransactionHookPlugin(Transaction &transaction) :
-    TransactionPlugin(transaction), transaction_(transaction), num_fetches_pending_(0) {
+  TransactionHookPlugin(Transaction &transaction)
+    : TransactionPlugin(transaction), transaction_(transaction), num_fetches_pending_(0)
+  {
     TS_DEBUG(TAG, "Constructed TransactionHookPlugin, saved a reference to this transaction.");
     registerHook(HOOK_SEND_REQUEST_HEADERS);
   }
 
-  void handleSendRequestHeaders(Transaction & /*transaction ATS_UNUSED */) {
+  void
+  handleSendRequestHeaders(Transaction & /*transaction ATS_UNUSED */)
+  {
     Async::execute<AsyncHttpFetch>(this, new AsyncHttpFetch("http://127.0.0.1/"), getMutex());
     ++num_fetches_pending_;
     AsyncHttpFetch *post_request = new AsyncHttpFetch("http://127.0.0.1/post", "data");
 
     (void)post_request;
 
-    Async::execute<AsyncHttpFetch>(this, new AsyncHttpFetch("http://127.0.0.1/post", "data"),
-                                   getMutex());
+    Async::execute<AsyncHttpFetch>(this, new AsyncHttpFetch("http://127.0.0.1/post", "data"), getMutex());
     ++num_fetches_pending_;
 
     // we'll add some custom headers for this request
@@ -105,29 +120,38 @@ public:
     assert(!delayed_provider->isAlive());
   }
 
-  void handleAsyncComplete(AsyncHttpFetch &async_http_fetch) {
+  void
+  handleAsyncComplete(AsyncHttpFetch &async_http_fetch)
+  {
     // This will be called when our async event is complete.
     TS_DEBUG(TAG, "AsyncHttpFetch completed");
     handleAnyAsyncComplete(async_http_fetch);
   }
 
-  void handleAsyncComplete(AsyncHttpFetch2 &async_http_fetch) {
+  void
+  handleAsyncComplete(AsyncHttpFetch2 &async_http_fetch)
+  {
     // This will be called when our async event is complete.
     TS_DEBUG(TAG, "AsyncHttpFetch2 completed");
     handleAnyAsyncComplete(async_http_fetch);
   }
 
-  virtual ~TransactionHookPlugin() {
+  virtual ~TransactionHookPlugin()
+  {
     TS_DEBUG(TAG, "Destroyed TransactionHookPlugin!");
     // since we die right away, we should not receive the callback for this (using POST request this time)
     Async::execute<AsyncHttpFetch3>(this, new AsyncHttpFetch3("http://127.0.0.1/", HTTP_METHOD_POST), getMutex());
   }
 
-  void handleAsyncComplete(AsyncHttpFetch3 & /* async_http_fetch ATS_UNUSED */) {
+  void
+  handleAsyncComplete(AsyncHttpFetch3 & /* async_http_fetch ATS_UNUSED */)
+  {
     assert(!"AsyncHttpFetch3 shouldn't have completed!");
   }
 
-  void handleAsyncComplete(DelayedAsyncHttpFetch &/*async_http_fetch ATS_UNUSED */) {
+  void
+  handleAsyncComplete(DelayedAsyncHttpFetch & /*async_http_fetch ATS_UNUSED */)
+  {
     assert(!"Should've been canceled!");
   }
 
@@ -135,14 +159,15 @@ private:
   Transaction &transaction_;
   int num_fetches_pending_;
 
-  void handleAnyAsyncComplete(AsyncHttpFetch &async_http_fetch) {
+  void
+  handleAnyAsyncComplete(AsyncHttpFetch &async_http_fetch)
+  {
     // This will be called when our async event is complete.
     TS_DEBUG(TAG, "Fetch completed for URL [%s]", async_http_fetch.getRequestUrl().getUrlString().c_str());
     const Response &response = async_http_fetch.getResponse();
     if (async_http_fetch.getResult() == AsyncHttpFetch::RESULT_SUCCESS) {
       TS_DEBUG(TAG, "Response version is [%s], status code %d, reason phrase [%s]",
-               HTTP_VERSION_STRINGS[response.getVersion()].c_str(), response.getStatusCode(),
-               response.getReasonPhrase().c_str());
+               HTTP_VERSION_STRINGS[response.getVersion()].c_str(), response.getStatusCode(), response.getReasonPhrase().c_str());
 
       TS_DEBUG(TAG, "Reponse Headers: \n%s\n", response.getHeaders().str().c_str());
 
@@ -150,44 +175,46 @@ private:
       size_t body_size;
       async_http_fetch.getResponseBody(body, body_size);
       TS_DEBUG(TAG, "Response body is %zu bytes long and is [%.*s]", body_size, static_cast<int>(body_size),
-               static_cast<const char*>(body));
+               static_cast<const char *>(body));
     } else {
-      TS_ERROR(TAG, "Fetch did not complete successfully; Result %d",
-               static_cast<int>(async_http_fetch.getResult()));
+      TS_ERROR(TAG, "Fetch did not complete successfully; Result %d", static_cast<int>(async_http_fetch.getResult()));
     }
     if (--num_fetches_pending_ == 0) {
       TS_DEBUG(TAG, "Reenabling transaction");
       transaction_.resume();
     }
   }
-
 };
 
-class GlobalHookPlugin : public GlobalPlugin {
+class GlobalHookPlugin : public GlobalPlugin
+{
 public:
-  GlobalHookPlugin() {
+  GlobalHookPlugin()
+  {
     TS_DEBUG(TAG, "Registering a global hook HOOK_READ_REQUEST_HEADERS_POST_REMAP");
     registerHook(HOOK_READ_REQUEST_HEADERS_POST_REMAP);
   }
 
-  virtual void handleReadRequestHeadersPostRemap(Transaction &transaction) {
+  virtual void
+  handleReadRequestHeadersPostRemap(Transaction &transaction)
+  {
     TS_DEBUG(TAG, "Received a request in handleReadRequestHeadersPostRemap.");
 
     // If we don't make sure to check if it's an internal request we can get ourselves into an infinite loop!
     if (!transaction.isInternalRequest()) {
       transaction.addPlugin(new TransactionHookPlugin(transaction));
-    }
-    else {
+    } else {
       TS_DEBUG(TAG, "Ignoring internal transaction");
     }
     transaction.resume();
   }
 };
 
-void TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED) {
+void
+TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
+{
   TS_DEBUG(TAG, "Loaded async_http_fetch_example plugin");
   GlobalPlugin *instance = new GlobalHookPlugin();
 
   (void)instance;
 }
-

@@ -29,109 +29,104 @@
 #endif
 
 #ifdef __cplusplus
-extern "C"
-{
-#endif                          /* __cplusplus */
+extern "C" {
+#endif /* __cplusplus */
 
-#define TSREMAP_VMAJOR   3      /* major version number */
-#define TSREMAP_VMINOR   0      /* minor version number */
-#define TSREMAP_VERSION ((TSREMAP_VMAJOR << 16)|TSREMAP_VMINOR)
+#define TSREMAP_VMAJOR 3 /* major version number */
+#define TSREMAP_VMINOR 0 /* minor version number */
+#define TSREMAP_VERSION ((TSREMAP_VMAJOR << 16) | TSREMAP_VMINOR)
 
-  typedef struct _tsremap_api_info
-  {
-    unsigned long size;         /* in: sizeof(struct _tsremap_api_info) */
-    unsigned long tsremap_version;      /* in: TS supported version ((major << 16) | minor) */
-  } TSRemapInterface;
+typedef struct _tsremap_api_info {
+  unsigned long size;            /* in: sizeof(struct _tsremap_api_info) */
+  unsigned long tsremap_version; /* in: TS supported version ((major << 16) | minor) */
+} TSRemapInterface;
 
 
-  typedef struct _tm_remap_request_info
-  {
-    /* Important: You should *not* release these buf pointers or TSMLocs from your plugin! */
+typedef struct _tm_remap_request_info {
+  /* Important: You should *not* release these buf pointers or TSMLocs from your plugin! */
 
-    /* these URL mloc's are read only, use normal ts/ts.h APIs for accesing  */
-    TSMLoc mapFromUrl;
-    TSMLoc mapToUrl;
+  /* these URL mloc's are read only, use normal ts/ts.h APIs for accesing  */
+  TSMLoc mapFromUrl;
+  TSMLoc mapToUrl;
 
-    /* the request URL mloc and buffer pointers are read-write. You can read and modify the
-     requestUrl using normal ts/ts.h APIs, which is how you change the destination URL. */
-    TSMLoc requestUrl;
+  /* the request URL mloc and buffer pointers are read-write. You can read and modify the
+   requestUrl using normal ts/ts.h APIs, which is how you change the destination URL. */
+  TSMLoc requestUrl;
 
-    /* requestBufp and requestHdrp are the equivalent of calling TSHttpTxnClientReqGet(). */
-    TSMBuffer requestBufp;
-    TSMLoc requestHdrp;
+  /* requestBufp and requestHdrp are the equivalent of calling TSHttpTxnClientReqGet(). */
+  TSMBuffer requestBufp;
+  TSMLoc requestHdrp;
 
-    /* 0 - don't redirect, 1 - use the (new)request URL as a redirect */
-    int redirect;
-  } TSRemapRequestInfo;
-
-
-  /* This is the type returned by the TSRemapDoRemap() callback */
-  typedef enum
-  {
-    TSREMAP_NO_REMAP = 0,	/* No remaping was done, continue with next in chain */
-    TSREMAP_DID_REMAP = 1,	/* Remapping was done, continue with next in chain */
-    TSREMAP_NO_REMAP_STOP = 2,	/* No remapping was done, and stop plugin chain evaluation */
-    TSREMAP_DID_REMAP_STOP = 3,	/* Remapping was done, but stop plugin chain evaluation */
-
-    /* In the future, the following error codes can also be used:
-       -400 to -499
-       -500 to -599
-       ....
-       This would allow a plugin to generate an error page. Right now,
-       setting the return code to any negative number is equivalent to TSREMAP_NO_REMAP */
-    TSREMAP_ERROR = -1		/* Some error, that should generate an error page */
-  } TSRemapStatus;
+  /* 0 - don't redirect, 1 - use the (new)request URL as a redirect */
+  int redirect;
+} TSRemapRequestInfo;
 
 
+/* This is the type returned by the TSRemapDoRemap() callback */
+typedef enum {
+  TSREMAP_NO_REMAP = 0,       /* No remaping was done, continue with next in chain */
+  TSREMAP_DID_REMAP = 1,      /* Remapping was done, continue with next in chain */
+  TSREMAP_NO_REMAP_STOP = 2,  /* No remapping was done, and stop plugin chain evaluation */
+  TSREMAP_DID_REMAP_STOP = 3, /* Remapping was done, but stop plugin chain evaluation */
 
-  /* ----------------------------------------------------------------------------------
-     These are the entry points a plugin can implement. Note that TSRemapInit() and
-     TSRemapDoRemap() are both required.
-     ----------------------------------------------------------------------------------
-  */
-
-  /* Plugin initialization - called first.
-     Mandatory interface function.
-     Return: TS_SUCCESS
-             TS_ERROR - error, errbuf can include error message from plugin
-  */
-  tsapi TSReturnCode TSRemapInit(TSRemapInterface* api_info, char* errbuf, int errbuf_size);
-
-
-  /* Remap new request
-     Mandatory interface function.
-     Remap API plugin can/should use SDK API function calls inside this function!
-     return: TSREMAP_NO_REMAP - No remaping was done, continue with next in chain
-             TSREMAP_DID_REMAP - Remapping was done, continue with next in chain
-             TSREMAP_NO_REMAP_STOP - No remapping was done, and stop plugin chain evaluation
-             TSREMAP_DID_REMAP_STOP -  Remapping was done, but stop plugin chain evaluation
-  */
-  tsapi TSRemapStatus TSRemapDoRemap(void* ih, TSHttpTxn rh, TSRemapRequestInfo* rri);
+  /* In the future, the following error codes can also be used:
+     -400 to -499
+     -500 to -599
+     ....
+     This would allow a plugin to generate an error page. Right now,
+     setting the return code to any negative number is equivalent to TSREMAP_NO_REMAP */
+  TSREMAP_ERROR = -1 /* Some error, that should generate an error page */
+} TSRemapStatus;
 
 
-  /* Plugin shutdown, called when plugin is unloaded.
-     Optional function. */
-  tsapi void TSRemapDone(void);
+/* ----------------------------------------------------------------------------------
+   These are the entry points a plugin can implement. Note that TSRemapInit() and
+   TSRemapDoRemap() are both required.
+   ----------------------------------------------------------------------------------
+*/
+
+/* Plugin initialization - called first.
+   Mandatory interface function.
+   Return: TS_SUCCESS
+           TS_ERROR - error, errbuf can include error message from plugin
+*/
+tsapi TSReturnCode TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size);
 
 
-  /* Plugin new instance. Create new plugin processing entry for unique remap record.
-     First two arguments in argv vector are - fromURL and toURL from remap record.
-     Please keep in mind that fromURL and toURL will be converted to canonical view.
-     Return: TS_SUCESS
-             TS_ERROR - instance creation error
-  */
-  tsapi TSReturnCode TSRemapNewInstance(int argc, char* argv[], void** ih, char* errbuf, int errbuf_size);
-  tsapi void TSRemapDeleteInstance(void*);
+/* Remap new request
+   Mandatory interface function.
+   Remap API plugin can/should use SDK API function calls inside this function!
+   return: TSREMAP_NO_REMAP - No remaping was done, continue with next in chain
+           TSREMAP_DID_REMAP - Remapping was done, continue with next in chain
+           TSREMAP_NO_REMAP_STOP - No remapping was done, and stop plugin chain evaluation
+           TSREMAP_DID_REMAP_STOP -  Remapping was done, but stop plugin chain evaluation
+*/
+tsapi TSRemapStatus TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri);
 
 
-  /* Check response code from Origin Server
-     os_response_type -> TSServerState
-     Remap API plugin can use InkAPI function calls inside TSRemapDoRemap()
-     Return: none
-  */
-  tsapi void TSRemapOSResponse(void* ih, TSHttpTxn rh, int os_response_type);
+/* Plugin shutdown, called when plugin is unloaded.
+   Optional function. */
+tsapi void TSRemapDone(void);
+
+
+/* Plugin new instance. Create new plugin processing entry for unique remap record.
+   First two arguments in argv vector are - fromURL and toURL from remap record.
+   Please keep in mind that fromURL and toURL will be converted to canonical view.
+   Return: TS_SUCESS
+           TS_ERROR - instance creation error
+*/
+tsapi TSReturnCode TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_size);
+tsapi void TSRemapDeleteInstance(void *);
+
+
+/* Check response code from Origin Server
+   os_response_type -> TSServerState
+   Remap API plugin can use InkAPI function calls inside TSRemapDoRemap()
+   Return: none
+*/
+tsapi void TSRemapOSResponse(void *ih, TSHttpTxn rh, int os_response_type);
 
 #ifdef __cplusplus
 }
-#endif                          /* __cplusplus */
-#endif                          /* #ifndef __TS_REMAP_H__ */
+#endif /* __cplusplus */
+#endif /* #ifndef __TS_REMAP_H__ */

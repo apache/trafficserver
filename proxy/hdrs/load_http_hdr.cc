@@ -60,25 +60,23 @@ void *high_load_addr = NULL;
 int heap_load_size = 0;
 int marshalled = 0;
 
-//Diags *diags;
+// Diags *diags;
 
-enum hdr_type
-{
+enum hdr_type {
   UNKNOWN_HDR,
   REQUEST_HDR,
   RESPONSE_HDR,
   HTTP_INFO_HDR,
-  RAW_MBUFFER
+  RAW_MBUFFER,
 };
 
 char *
 load_string(const char *s, int len, int offset)
 {
-
   const char *copy_from;
   if (marshalled == 0 && s > low_load_addr && s + len < high_load_addr) {
     copy_from = s + offset;
-  } else if (marshalled && ((unsigned int) s) + len < (unsigned int) heap_load_size) {
+  } else if (marshalled && ((unsigned int)s) + len < (unsigned int)heap_load_size) {
     copy_from = s + offset;
   } else {
     copy_from = "<BAD>";
@@ -92,10 +90,10 @@ load_string(const char *s, int len, int offset)
 
 
 void
-process_http_hdr_impl(HdrHeapObjImpl * obj, int offset)
+process_http_hdr_impl(HdrHeapObjImpl *obj, int offset)
 {
   char *s;
-  HTTPHdrImpl *hhdr = (HTTPHdrImpl *) obj;
+  HTTPHdrImpl *hhdr = (HTTPHdrImpl *)obj;
 
   if (hhdr->m_polarity == HTTP_TYPE_REQUEST) {
     printf("    is a request hdr\n");
@@ -104,7 +102,7 @@ process_http_hdr_impl(HdrHeapObjImpl * obj, int offset)
     ats_free(s);
   } else if (hhdr->m_polarity == HTTP_TYPE_RESPONSE) {
     printf("    is a response hdr\n");
-    printf("    status code: %d\n", (int) hhdr->u.resp.m_status);
+    printf("    status code: %d\n", (int)hhdr->u.resp.m_status);
     s = load_string(hhdr->u.resp.m_ptr_reason, hhdr->u.resp.m_len_reason, offset);
     printf("    method: %s\n", s);
     ats_free(s);
@@ -112,9 +110,8 @@ process_http_hdr_impl(HdrHeapObjImpl * obj, int offset)
 }
 
 void
-process_mime_block_impl(MIMEFieldBlockImpl * mblock, int offset)
+process_mime_block_impl(MIMEFieldBlockImpl *mblock, int offset)
 {
-
   printf("   Processing mime_flock_impl - freetop %d\n", mblock->m_freetop);
   int freetop;
   if (mblock->m_freetop <= MIME_FIELD_BLOCK_SLOTS) {
@@ -139,26 +136,25 @@ process_mime_block_impl(MIMEFieldBlockImpl * mblock, int offset)
 }
 
 void
-process_mime_hdr_impl(HdrHeapObjImpl * obj, int offset)
+process_mime_hdr_impl(HdrHeapObjImpl *obj, int offset)
 {
-  MIMEHdrImpl *mhdr = (MIMEHdrImpl *) obj;
+  MIMEHdrImpl *mhdr = (MIMEHdrImpl *)obj;
 
   process_mime_block_impl(&mhdr->m_first_fblock, offset);
 }
 
 
 void
-loop_over_heap_objs(HdrHeap * hdr_heap, int offset)
+loop_over_heap_objs(HdrHeap *hdr_heap, int offset)
 {
-
   char *buffer_end;
 
   printf("Looping over HdrHeap objects @ 0x%X\n", hdr_heap);
 
   if (hdr_heap->m_magic == HDR_BUF_MAGIC_MARSHALED) {
     printf(" marshalled heap - size %d\n", hdr_heap->m_size);
-    hdr_heap->m_data_start = ((char *) hdr_heap) + ROUND(sizeof(HdrHeap), HDR_PTR_SIZE);
-    hdr_heap->m_free_start = ((char *) hdr_heap) + hdr_heap->m_size;
+    hdr_heap->m_data_start = ((char *)hdr_heap) + ROUND(sizeof(HdrHeap), HDR_PTR_SIZE);
+    hdr_heap->m_free_start = ((char *)hdr_heap) + hdr_heap->m_size;
   } else {
     buffer_end = hdr_heap->m_free_start;
   }
@@ -167,7 +163,7 @@ loop_over_heap_objs(HdrHeap * hdr_heap, int offset)
 
   char *obj_data = hdr_heap->m_data_start;
   while (obj_data < hdr_heap->m_free_start) {
-    HdrHeapObjImpl *obj = (HdrHeapObjImpl *) obj_data;
+    HdrHeapObjImpl *obj = (HdrHeapObjImpl *)obj_data;
 
     switch (obj->m_type) {
     case HDR_HEAP_OBJ_HTTP_HEADER:
@@ -203,7 +199,6 @@ loop_over_heap_objs(HdrHeap * hdr_heap, int offset)
 void
 load_buffer(int fd, hdr_type h_type)
 {
-
   struct stat s_info;
 
   if (fstat(fd, &s_info) < 0) {
@@ -263,7 +258,6 @@ load_buffer(int fd, hdr_type h_type)
   int cur_line = 0;
 
   while (cur_line < num_lines && bytes_read < hdr_size) {
-
     int *cur_ptr;
     num_el = el_tok.Initialize(line_tok[cur_line]);
 
@@ -271,7 +265,7 @@ load_buffer(int fd, hdr_type h_type)
       fprintf(stderr, "Corrupted data file\n");
       exit(1);
     }
-    high_load_addr = ((char *) high_load_addr) + (num_el * 4);
+    high_load_addr = ((char *)high_load_addr) + (num_el * 4);
 
     int el;
     for (int i = 1; i < num_el; i++) {
@@ -279,22 +273,22 @@ load_buffer(int fd, hdr_type h_type)
         fprintf(stderr, "Corrupted data file\n");
         exit(1);
       }
-      cur_ptr = (int *) (hdr_heap + bytes_read);
+      cur_ptr = (int *)(hdr_heap + bytes_read);
       *cur_ptr = el;
       bytes_read += 4;
     }
     cur_line++;
   }
 
-  HdrHeap *my_heap = (HdrHeap *) hdr_heap;
-  int offset = hdr_heap - (char *) old_addr;
+  HdrHeap *my_heap = (HdrHeap *)hdr_heap;
+  int offset = hdr_heap - (char *)old_addr;
 
   // Patch up some values
   if (my_heap->m_magic == HDR_BUF_MAGIC_MARSHALED) {
-//      HdrHeapObjImpl* obj;
-//      my_heap->unmarshal(hdr_size, HDR_HEAP_OBJ_HTTP_HEADER, &obj, NULL);
+    //      HdrHeapObjImpl* obj;
+    //      my_heap->unmarshal(hdr_size, HDR_HEAP_OBJ_HTTP_HEADER, &obj, NULL);
     marshalled = 1;
-    offset = (int) hdr_heap;
+    offset = (int)hdr_heap;
   } else {
     my_heap->m_free_start = my_heap->m_free_start + offset;
     my_heap->m_data_start = my_heap->m_data_start + offset;
@@ -306,7 +300,6 @@ load_buffer(int fd, hdr_type h_type)
 int
 main(int argc, const char *argv[])
 {
-
   hdr_type h_type = UNKNOWN_HDR;
 
   http_init();

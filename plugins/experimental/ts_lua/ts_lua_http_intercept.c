@@ -19,31 +19,30 @@
 
 #include "ts_lua_util.h"
 
-#define TS_LUA_FUNCTION_HTTP_INTERCEPT            "do_intercept"
-#define TS_LUA_FUNCTION_HTTP_SERVER_INTERCEPT     "do_server_intercept"
+#define TS_LUA_FUNCTION_HTTP_INTERCEPT "do_intercept"
+#define TS_LUA_FUNCTION_HTTP_SERVER_INTERCEPT "do_server_intercept"
 
-typedef enum
-{
+typedef enum {
   TS_LUA_TYPE_HTTP_INTERCEPT = 0,
-  TS_LUA_TYPE_HTTP_SERVER_INTERCEPT = 1
+  TS_LUA_TYPE_HTTP_SERVER_INTERCEPT = 1,
 } TSInterceptType;
 
-static int ts_lua_http_intercept(lua_State * L);
-static int ts_lua_http_server_intercept(lua_State * L);
+static int ts_lua_http_intercept(lua_State *L);
+static int ts_lua_http_server_intercept(lua_State *L);
 static int ts_lua_http_intercept_entry(TSCont contp, TSEvent event, void *edata);
-static void ts_lua_http_intercept_process(ts_lua_http_ctx * http_ctx, TSVConn conn);
-static void ts_lua_http_intercept_setup_read(ts_lua_http_intercept_ctx * ictx);
-static void ts_lua_http_intercept_setup_write(ts_lua_http_intercept_ctx * ictx);
+static void ts_lua_http_intercept_process(ts_lua_http_ctx *http_ctx, TSVConn conn);
+static void ts_lua_http_intercept_setup_read(ts_lua_http_intercept_ctx *ictx);
+static void ts_lua_http_intercept_setup_write(ts_lua_http_intercept_ctx *ictx);
 static int ts_lua_http_intercept_handler(TSCont contp, TSEvent event, void *edata);
-static int ts_lua_http_intercept_run_coroutine(ts_lua_http_intercept_ctx * ictx, int n);
-static int ts_lua_http_intercept_process_read(TSEvent event, ts_lua_http_intercept_ctx * ictx);
-static int ts_lua_http_intercept_process_write(TSEvent event, ts_lua_http_intercept_ctx * ictx);
+static int ts_lua_http_intercept_run_coroutine(ts_lua_http_intercept_ctx *ictx, int n);
+static int ts_lua_http_intercept_process_read(TSEvent event, ts_lua_http_intercept_ctx *ictx);
+static int ts_lua_http_intercept_process_write(TSEvent event, ts_lua_http_intercept_ctx *ictx);
 
-extern int ts_lua_flush_launch(ts_lua_http_intercept_ctx * ictx);
+extern int ts_lua_flush_launch(ts_lua_http_intercept_ctx *ictx);
 
 
 void
-ts_lua_inject_http_intercept_api(lua_State * L)
+ts_lua_inject_http_intercept_api(lua_State *L)
 {
   lua_pushcfunction(L, ts_lua_http_intercept);
   lua_setfield(L, -2, "intercept");
@@ -53,7 +52,7 @@ ts_lua_inject_http_intercept_api(lua_State * L)
 }
 
 static int
-ts_lua_http_intercept(lua_State * L)
+ts_lua_http_intercept(lua_State *L)
 {
   TSCont contp;
   int type;
@@ -82,7 +81,7 @@ ts_lua_http_intercept(lua_State * L)
 }
 
 static int
-ts_lua_http_server_intercept(lua_State * L)
+ts_lua_http_server_intercept(lua_State *L)
 {
   TSCont contp;
   int type;
@@ -115,14 +114,13 @@ static int
 ts_lua_http_intercept_entry(TSCont contp, TSEvent event, void *edata)
 {
   switch (event) {
-
   case TS_EVENT_NET_ACCEPT_FAILED:
     if (edata)
-      TSVConnClose((TSVConn) edata);
+      TSVConnClose((TSVConn)edata);
     break;
 
   case TS_EVENT_NET_ACCEPT:
-    ts_lua_http_intercept_process((ts_lua_http_ctx *) TSContDataGet(contp), (TSVConn) edata);
+    ts_lua_http_intercept_process((ts_lua_http_ctx *)TSContDataGet(contp), (TSVConn)edata);
     break;
 
   default:
@@ -134,7 +132,7 @@ ts_lua_http_intercept_entry(TSCont contp, TSEvent event, void *edata)
 }
 
 static void
-ts_lua_http_intercept_process(ts_lua_http_ctx * http_ctx, TSVConn conn)
+ts_lua_http_intercept_process(ts_lua_http_ctx *http_ctx, TSVConn conn)
 {
   TSCont contp;
   lua_State *l;
@@ -170,11 +168,10 @@ ts_lua_http_intercept_process(ts_lua_http_ctx * http_ctx, TSVConn conn)
   ts_lua_http_intercept_run_coroutine(ictx, 0);
 
   TSMutexUnlock(mtxp);
-
 }
 
 static void
-ts_lua_http_intercept_setup_read(ts_lua_http_intercept_ctx * ictx)
+ts_lua_http_intercept_setup_read(ts_lua_http_intercept_ctx *ictx)
 {
   ictx->input.buffer = TSIOBufferCreate();
   ictx->input.reader = TSIOBufferReaderAlloc(ictx->input.buffer);
@@ -182,7 +179,7 @@ ts_lua_http_intercept_setup_read(ts_lua_http_intercept_ctx * ictx)
 }
 
 static void
-ts_lua_http_intercept_setup_write(ts_lua_http_intercept_ctx * ictx)
+ts_lua_http_intercept_setup_write(ts_lua_http_intercept_ctx *ictx)
 {
   ictx->output.buffer = TSIOBufferCreate();
   ictx->output.reader = TSIOBufferReaderAlloc(ictx->output.buffer);
@@ -196,7 +193,7 @@ ts_lua_http_intercept_handler(TSCont contp, TSEvent event, void *edata)
   TSMutex mtxp;
   ts_lua_http_intercept_ctx *ictx;
 
-  ictx = (ts_lua_http_intercept_ctx *) TSContDataGet(contp);
+  ictx = (ts_lua_http_intercept_ctx *)TSContDataGet(contp);
   mtxp = NULL;
 
   if (edata == ictx->input.vio) {
@@ -207,13 +204,12 @@ ts_lua_http_intercept_handler(TSCont contp, TSEvent event, void *edata)
 
   } else {
     mtxp = ictx->mctx->mutexp;
-    n = (int)((intptr_t) edata & 0xFFFF);
+    n = (int)((intptr_t)edata & 0xFFFF);
     TSMutexLock(mtxp);
     ret = ts_lua_http_intercept_run_coroutine(ictx, n);
   }
 
   if (ret || (ictx->send_complete && ictx->recv_complete)) {
-
     TSContDestroy(contp);
 
     if (!mtxp) {
@@ -231,7 +227,7 @@ ts_lua_http_intercept_handler(TSCont contp, TSEvent event, void *edata)
 }
 
 static int
-ts_lua_http_intercept_run_coroutine(ts_lua_http_intercept_ctx * ictx, int n)
+ts_lua_http_intercept_run_coroutine(ts_lua_http_intercept_ctx *ictx, int n)
 {
   int ret;
   int64_t avail;
@@ -243,8 +239,7 @@ ts_lua_http_intercept_run_coroutine(ts_lua_http_intercept_ctx * ictx, int n)
   ret = lua_resume(L, n);
 
   switch (ret) {
-
-  case 0:                      // finished
+  case 0: // finished
     avail = TSIOBufferReaderAvail(ictx->output.reader);
     done = TSVIONDoneGet(ictx->output.vio);
     TSVIONBytesSet(ictx->output.vio, avail + done);
@@ -258,10 +253,10 @@ ts_lua_http_intercept_run_coroutine(ts_lua_http_intercept_ctx * ictx, int n)
     }
     break;
 
-  case 1:                      // yield
+  case 1: // yield
     break;
 
-  default:                     // error
+  default: // error
     TSError("lua_resume failed: %s", lua_tostring(L, -1));
     return -1;
   }
@@ -270,13 +265,12 @@ ts_lua_http_intercept_run_coroutine(ts_lua_http_intercept_ctx * ictx, int n)
 }
 
 static int
-ts_lua_http_intercept_process_read(TSEvent event, ts_lua_http_intercept_ctx * ictx)
+ts_lua_http_intercept_process_read(TSEvent event, ts_lua_http_intercept_ctx *ictx)
 {
   int64_t avail = TSIOBufferReaderAvail(ictx->input.reader);
   TSIOBufferReaderConsume(ictx->input.reader, avail);
 
   switch (event) {
-
   case TS_EVENT_VCONN_READ_READY:
     TSVConnShutdown(ictx->net_vc, 1, 0);
 
@@ -293,7 +287,7 @@ ts_lua_http_intercept_process_read(TSEvent event, ts_lua_http_intercept_ctx * ic
 }
 
 static int
-ts_lua_http_intercept_process_write(TSEvent event, ts_lua_http_intercept_ctx * ictx)
+ts_lua_http_intercept_process_write(TSEvent event, ts_lua_http_intercept_ctx *ictx)
 {
   int64_t done, avail;
 
@@ -305,16 +299,16 @@ ts_lua_http_intercept_process_write(TSEvent event, ts_lua_http_intercept_ctx * i
     if (ictx->all_ready) {
       TSVIOReenable(ictx->output.vio);
 
-    } else if (ictx->to_flush > 0) {    // ts.flush()
+    } else if (ictx->to_flush > 0) { // ts.flush()
 
       done = TSVIONDoneGet(ictx->output.vio);
 
       if (ictx->to_flush > done) {
         TSVIOReenable(ictx->output.vio);
 
-      } else {                  // we had flush all the data we want
+      } else { // we had flush all the data we want
         ictx->to_flush = 0;
-        ts_lua_flush_launch(ictx);      // wake up
+        ts_lua_flush_launch(ictx); // wake up
       }
 
     } else if (avail > 0) {

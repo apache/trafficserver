@@ -32,11 +32,10 @@
   a zero key for you.
  */
 
-struct ATSHash64Sip24:ATSHash64
-{
+struct ATSHash64Sip24 : ATSHash64 {
   ATSHash64Sip24(void);
-    ATSHash64Sip24(const unsigned char key[16]);
-    ATSHash64Sip24(uint64_t key0, uint64_t key1);
+  ATSHash64Sip24(const unsigned char key[16]);
+  ATSHash64Sip24(uint64_t key0, uint64_t key1);
   void update(const void *data, size_t len);
   void final(void);
   uint64_t get(void) const;

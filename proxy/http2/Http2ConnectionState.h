@@ -33,19 +33,21 @@ class Http2ClientSession;
 class Http2ConnectionSettings
 {
 public:
-
-  Http2ConnectionSettings() {
+  Http2ConnectionSettings()
+  {
     // 6.5.2.  Defined SETTINGS Parameters
     // TODO these values should be configurable.
-    settings[indexof(HTTP2_SETTINGS_HEADER_TABLE_SIZE)]      = HTTP2_HEADER_TABLE_SIZE;
-    settings[indexof(HTTP2_SETTINGS_ENABLE_PUSH)]            = HTTP2_ENABLE_PUSH;
+    settings[indexof(HTTP2_SETTINGS_HEADER_TABLE_SIZE)] = HTTP2_HEADER_TABLE_SIZE;
+    settings[indexof(HTTP2_SETTINGS_ENABLE_PUSH)] = HTTP2_ENABLE_PUSH;
     settings[indexof(HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS)] = HTTP2_MAX_CONCURRENT_STREAMS;
-    settings[indexof(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE)]    = HTTP2_INITIAL_WINDOW_SIZE;
-    settings[indexof(HTTP2_SETTINGS_MAX_FRAME_SIZE)]         = HTTP2_MAX_FRAME_SIZE;
-    settings[indexof(HTTP2_SETTINGS_MAX_HEADER_LIST_SIZE)]   = HTTP2_MAX_HEADER_LIST_SIZE;
+    settings[indexof(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE)] = HTTP2_INITIAL_WINDOW_SIZE;
+    settings[indexof(HTTP2_SETTINGS_MAX_FRAME_SIZE)] = HTTP2_MAX_FRAME_SIZE;
+    settings[indexof(HTTP2_SETTINGS_MAX_HEADER_LIST_SIZE)] = HTTP2_MAX_HEADER_LIST_SIZE;
   }
 
-  unsigned get(Http2SettingsIdentifier id) const {
+  unsigned
+  get(Http2SettingsIdentifier id) const
+  {
     ink_assert(id <= HTTP2_SETTINGS_MAX - 1);
 
     if (id > HTTP2_SETTINGS_MAX - 1) {
@@ -54,7 +56,9 @@ public:
     return this->settings[indexof(id)];
   }
 
-  unsigned set(Http2SettingsIdentifier id, unsigned value) {
+  unsigned
+  set(Http2SettingsIdentifier id, unsigned value)
+  {
     ink_assert(id <= HTTP2_SETTINGS_MAX - 1);
 
     if (id > HTTP2_SETTINGS_MAX - 1) {
@@ -64,9 +68,10 @@ public:
   }
 
 private:
-
   // Settings ID is 1-based, so convert it to a 0-based index.
-  static unsigned indexof(Http2SettingsIdentifier id) {
+  static unsigned
+  indexof(Http2SettingsIdentifier id)
+  {
     ink_assert(id <= HTTP2_SETTINGS_MAX - 1);
 
     return id - 1;
@@ -80,10 +85,9 @@ class Http2ConnectionState;
 class Http2Stream
 {
 public:
-  Http2Stream(Http2StreamId sid=0, ssize_t initial_rwnd=HTTP2_INITIAL_WINDOW_SIZE)
-    : client_rwnd(initial_rwnd), server_rwnd(initial_rwnd),
-      _id(sid), _state(HTTP2_STREAM_STATE_IDLE),
-      _fetch_sm(NULL), body_done(false), data_length(0)
+  Http2Stream(Http2StreamId sid = 0, ssize_t initial_rwnd = HTTP2_INITIAL_WINDOW_SIZE)
+    : client_rwnd(initial_rwnd), server_rwnd(initial_rwnd), _id(sid), _state(HTTP2_STREAM_STATE_IDLE), _fetch_sm(NULL),
+      body_done(false), data_length(0)
   {
     _req_header.create(HTTP_TYPE_REQUEST);
   }
@@ -99,23 +103,51 @@ public:
   }
 
   // Operate FetchSM
-  void init_fetcher(Http2ConnectionState& cstate);
+  void init_fetcher(Http2ConnectionState &cstate);
   void set_body_to_fetcher(const void *data, size_t len);
-  FetchSM * get_fetcher() { return _fetch_sm; }
-  bool is_body_done() const { return body_done; }
-  void mark_body_done() { body_done = true; }
+  FetchSM *
+  get_fetcher()
+  {
+    return _fetch_sm;
+  }
+  bool
+  is_body_done() const
+  {
+    return body_done;
+  }
+  void
+  mark_body_done()
+  {
+    body_done = true;
+  }
 
-  const Http2StreamId get_id() const { return _id; }
-  const Http2StreamState get_state() const { return _state; }
+  const Http2StreamId
+  get_id() const
+  {
+    return _id;
+  }
+  const Http2StreamState
+  get_state() const
+  {
+    return _state;
+  }
   bool change_state(uint8_t type, uint8_t flags);
 
-  int64_t decode_request_header(const IOVec& iov, Http2DynamicTable& dynamic_table, bool cont) {
+  int64_t
+  decode_request_header(const IOVec &iov, Http2DynamicTable &dynamic_table, bool cont)
+  {
     return http2_parse_header_fragment(&_req_header, iov, dynamic_table, cont);
   }
 
   // Check entire DATA payload length if content-length: header is exist
-  void increment_data_length(uint64_t length) { data_length += length; }
-  bool payload_length_is_valid() const {
+  void
+  increment_data_length(uint64_t length)
+  {
+    data_length += length;
+  }
+  bool
+  payload_length_is_valid() const
+  {
     uint32_t content_length = _req_header.get_content_length();
     return content_length == 0 || content_length == data_length;
   }
@@ -124,12 +156,13 @@ public:
   ssize_t client_rwnd, server_rwnd;
 
   LINK(Http2Stream, link);
+
 private:
   Http2StreamId _id;
   Http2StreamState _state;
 
   HTTPHdr _req_header;
-  FetchSM* _fetch_sm;
+  FetchSM *_fetch_sm;
   bool body_done;
   uint64_t data_length;
 };
@@ -143,7 +176,6 @@ private:
 class Http2ConnectionState : public Continuation
 {
 public:
-
   Http2ConnectionState()
     : Continuation(NULL), ua_session(NULL), client_rwnd(HTTP2_INITIAL_WINDOW_SIZE), server_rwnd(HTTP2_INITIAL_WINDOW_SIZE),
       stream_list(), latest_streamid(0), continued_id(0)
@@ -151,24 +183,26 @@ public:
     SET_HANDLER(&Http2ConnectionState::main_event_handler);
   }
 
-  Http2ClientSession * ua_session;
-  Http2DynamicTable * local_dynamic_table;
-  Http2DynamicTable * remote_dynamic_table;
+  Http2ClientSession *ua_session;
+  Http2DynamicTable *local_dynamic_table;
+  Http2DynamicTable *remote_dynamic_table;
 
   // Settings.
   Http2ConnectionSettings server_settings;
   Http2ConnectionSettings client_settings;
 
-  void init()
+  void
+  init()
   {
     local_dynamic_table = new Http2DynamicTable();
     remote_dynamic_table = new Http2DynamicTable();
 
     continued_buffer.iov_base = NULL;
-    continued_buffer.iov_len  = 0;
+    continued_buffer.iov_len = 0;
   }
 
-  void destroy()
+  void
+  destroy()
   {
     cleanup_streams();
 
@@ -183,18 +217,26 @@ public:
   int state_closed(int, void *);
 
   // Stream control interfaces
-  Http2Stream* create_stream(Http2StreamId new_id);
-  Http2Stream* find_stream(Http2StreamId id) const;
+  Http2Stream *create_stream(Http2StreamId new_id);
+  Http2Stream *find_stream(Http2StreamId id) const;
   void restart_streams();
-  void delete_stream(Http2Stream* stream);
+  void delete_stream(Http2Stream *stream);
   void cleanup_streams();
 
   void update_initial_rwnd(Http2WindowSize new_size);
 
   // Continuated header decoding
-  Http2StreamId get_continued_id() const { return continued_id; }
-  const IOVec& get_continued_headers() const { return continued_buffer; }
-  void set_continued_headers(const char * buf, uint32_t len, Http2StreamId id);
+  Http2StreamId
+  get_continued_id() const
+  {
+    return continued_id;
+  }
+  const IOVec &
+  get_continued_headers() const
+  {
+    return continued_buffer;
+  }
+  void set_continued_headers(const char *buf, uint32_t len, Http2StreamId id);
   void finish_continued_headers();
 
   // Connection level window size
@@ -204,15 +246,19 @@ public:
   void send_data_frame(FetchSM *fetch_sm);
   void send_headers_frame(FetchSM *fetch_sm);
   void send_rst_stream_frame(Http2StreamId id, Http2ErrorCode ec);
-  void send_ping_frame(Http2StreamId id, uint8_t flag, const uint8_t * opaque_data);
+  void send_ping_frame(Http2StreamId id, uint8_t flag, const uint8_t *opaque_data);
   void send_goaway_frame(Http2StreamId id, Http2ErrorCode ec);
   void send_window_update_frame(Http2StreamId id, uint32_t size);
 
-  bool is_state_closed() const { return ua_session == NULL; }
+  bool
+  is_state_closed() const
+  {
+    return ua_session == NULL;
+  }
 
 private:
-  Http2ConnectionState(const Http2ConnectionState&); // noncopyable
-  Http2ConnectionState& operator=(const Http2ConnectionState&); // noncopyable
+  Http2ConnectionState(const Http2ConnectionState &);            // noncopyable
+  Http2ConnectionState &operator=(const Http2ConnectionState &); // noncopyable
 
   DLL<Http2Stream> stream_list;
   Http2StreamId latest_streamid;

@@ -32,23 +32,17 @@
 extern "C" {
 #endif
 
-EsiLib::SpecialIncludeHandler *createSpecialIncludeHandler(EsiLib::Variables &esi_vars,
-                                                           EsiLib::Expression &esi_expr,
-                                                           HttpDataFetcher &fetcher,
-                                                           const std::string &id);
+EsiLib::SpecialIncludeHandler *createSpecialIncludeHandler(EsiLib::Variables &esi_vars, EsiLib::Expression &esi_expr,
+                                                           HttpDataFetcher &fetcher, const std::string &id);
 
 #ifdef __cplusplus
 }
 #endif
 
-namespace EsiLib {
-
-typedef SpecialIncludeHandler *(*SpecialIncludeHandlerCreator)(Variables &esi_vars,
-                                                               Expression &esi_expr,
-                                                               HttpDataFetcher &fetcher,
+namespace EsiLib
+{
+typedef SpecialIncludeHandler *(*SpecialIncludeHandlerCreator)(Variables &esi_vars, Expression &esi_expr, HttpDataFetcher &fetcher,
                                                                const std::string &id);
-
 };
 
 #endif
-

@@ -42,25 +42,21 @@ int unescapifyStr(char *buffer);
     @a min and @a max should be at least the size of @c sockaddr_in6 to hold
     an IP address.
 */
-char const* ExtractIpRange(
-  char *match_str,
-  sockaddr* min,
-  sockaddr* max
-);
+char const *ExtractIpRange(char *match_str, sockaddr *min, sockaddr *max);
 
 /// Convenience overload for IPv4.
-char const* ExtractIpRange(
-  char *match_str,
-  in_addr_t * addr1, ///< [in,out] Returned address in host order.
-  in_addr_t * addr2 ///< [in,out] Returned address in host order.
-);
+char const *ExtractIpRange(char *match_str,
+                           in_addr_t *addr1, ///< [in,out] Returned address in host order.
+                           in_addr_t *addr2  ///< [in,out] Returned address in host order.
+                           );
 
 /// Convenience overload for IPv6.
-inline char const* ExtractIpRange(
-  char *match_str,
-  sockaddr_in6* addr1, ///< [in,out] Returned address in network order.
-  sockaddr_in6* addr2 ///< [in,out] Returned address in network order.
-) {
+inline char const *
+ExtractIpRange(char *match_str,
+               sockaddr_in6 *addr1, ///< [in,out] Returned address in network order.
+               sockaddr_in6 *addr2  ///< [in,out] Returned address in network order.
+               )
+{
   return ExtractIpRange(match_str, ats_ip_sa_cast(addr1), ats_ip_sa_cast(addr2));
 }
 
@@ -69,68 +65,71 @@ char *tokLine(char *buf, char **last, char cont = '\0');
 const char *processDurationString(char *str, int *seconds);
 
 // The first class types we support matching on
-enum matcher_type
-{ MATCH_NONE, MATCH_HOST, MATCH_DOMAIN,
-  MATCH_IP, MATCH_REGEX, MATCH_URL, MATCH_HOST_REGEX
+enum matcher_type {
+  MATCH_NONE,
+  MATCH_HOST,
+  MATCH_DOMAIN,
+  MATCH_IP,
+  MATCH_REGEX,
+  MATCH_URL,
+  MATCH_HOST_REGEX,
 };
 extern const char *matcher_type_str[];
 
 // A parsed config file line
 const int MATCHER_MAX_TOKENS = 40;
-struct matcher_line
-{
-  matcher_type type;            // dest type
-  int dest_entry;               // entry which specifies the destination
-  int num_el;                   // Number of elements
-  char *line[2][MATCHER_MAX_TOKENS];    // label, value pairs
-  int line_num;                 // config file line number
-  matcher_line *next;           // use for linked list
+struct matcher_line {
+  matcher_type type;                 // dest type
+  int dest_entry;                    // entry which specifies the destination
+  int num_el;                        // Number of elements
+  char *line[2][MATCHER_MAX_TOKENS]; // label, value pairs
+  int line_num;                      // config file line number
+  matcher_line *next;                // use for linked list
 };
 
 // Tag set to use to determining primary selector type
-struct matcher_tags
-{
+struct matcher_tags {
   const char *match_host;
   const char *match_domain;
   const char *match_ip;
   const char *match_regex;
   const char *match_url;
   const char *match_host_regex;
-  bool dest_error_msg;          // whether to use src or destination in any error messages
+  bool dest_error_msg; // whether to use src or destination in any error messages
 
-  bool empty() const {
-    return this->match_host == NULL &&
-      this->match_domain == NULL &&
-      this->match_ip == NULL &&
-      this->match_regex == NULL &&
-      this->match_url == NULL &&
-      this->match_host_regex == NULL;
+  bool
+  empty() const
+  {
+    return this->match_host == NULL && this->match_domain == NULL && this->match_ip == NULL && this->match_regex == NULL &&
+           this->match_url == NULL && this->match_host_regex == NULL;
   }
-
 };
 
 extern const matcher_tags http_dest_tags;
 extern const matcher_tags ip_allow_tags;
 extern const matcher_tags socks_server_tags;
 
-const char *parseConfigLine(char *line, matcher_line * p_line, const matcher_tags * tags);
+const char *parseConfigLine(char *line, matcher_line *p_line, const matcher_tags *tags);
 
-struct config_parse_error
-{
+struct config_parse_error {
   // Wrapper to make a syntactically nice success value.
-  static config_parse_error ok() {
+  static config_parse_error
+  ok()
+  {
     return config_parse_error();
   }
 
-  config_parse_error(const config_parse_error& rhs) {
+  config_parse_error(const config_parse_error &rhs)
+  {
     if (rhs.msg.get()) {
       this->msg = ats_strdup(rhs.msg.get());
     }
   }
 
-  explicit config_parse_error(const char * fmt, ...) TS_NONNULL(2) TS_PRINTFLIKE(2, 3);
+  explicit config_parse_error(const char *fmt, ...) TS_NONNULL(2) TS_PRINTFLIKE(2, 3);
 
-  config_parse_error& operator=(const config_parse_error& rhs) {
+  config_parse_error &operator=(const config_parse_error &rhs)
+  {
     if (rhs.msg.get()) {
       this->msg = ats_strdup(rhs.msg.get());
     } else {
@@ -140,18 +139,17 @@ struct config_parse_error
     return *this;
   }
 
-  const char * get() const {
+  const char *
+  get() const
+  {
     return msg.get();
   }
 
   // A config error object evaluates to true if there is an error message.
-  operator bool() const {
-    return msg.get() != NULL;
-  }
+  operator bool() const { return msg.get() != NULL; }
 
 private:
-  config_parse_error() {
-  }
+  config_parse_error() {}
 
   ats_scoped_str msg;
 };

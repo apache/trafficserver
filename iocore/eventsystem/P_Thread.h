@@ -33,12 +33,11 @@
 
 #include "I_Thread.h"
 
-  ///////////////////////////////////////////////
-  // Common Interface impl                     //
-  ///////////////////////////////////////////////
+///////////////////////////////////////////////
+// Common Interface impl                     //
+///////////////////////////////////////////////
 TS_INLINE
-Thread::~
-Thread()
+Thread::~Thread()
 {
 }
 
@@ -51,7 +50,7 @@ Thread::set_specific()
 TS_INLINE Thread *
 this_thread()
 {
-  return (Thread *) ink_thread_getspecific(Thread::thread_data_key);
+  return (Thread *)ink_thread_getspecific(Thread::thread_data_key);
 }
 
 TS_INLINE ink_hrtime

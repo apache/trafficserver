@@ -38,7 +38,7 @@ limitations under the License.
 static const char PLUGIN_NAME[] = "healthchecks";
 static const char SEPARATORS[] = " \t\n";
 
-#define MAX_PATH_LEN  4096
+#define MAX_PATH_LEN 4096
 #define MAX_FILENAME_LEN 2048
 #define MAX_BODY_LEN 16384
 #define FREELIST_TIMEOUT 300
@@ -46,53 +46,49 @@ static const char SEPARATORS[] = " \t\n";
 /* Some atomic stuff, from ATS core */
 typedef volatile void *vvoidp;
 
-static inline
-void *ink_atomic_swap_ptr(vvoidp mem, void *value)
+static inline void *
+ink_atomic_swap_ptr(vvoidp mem, void *value)
 {
-  return __sync_lock_test_and_set((void**)mem, value);
+  return __sync_lock_test_and_set((void **)mem, value);
 }
 
 /* Directories that we are watching for inotify IN_CREATE events. */
-typedef struct HCDirEntry_t
-{
-  char dname[MAX_FILENAME_LEN];   /* Directory name */
-  int wd;                         /* Watch descriptor */
-  struct HCDirEntry_t *_next;     /* Linked list */
+typedef struct HCDirEntry_t {
+  char dname[MAX_FILENAME_LEN]; /* Directory name */
+  int wd;                       /* Watch descriptor */
+  struct HCDirEntry_t *_next;   /* Linked list */
 } HCDirEntry;
 
 /* Information about a status file. This is never modified (only replaced, see HCFileInfo_t) */
-typedef struct HCFileData_t
-{
-  int exists;                     /* Does this file exist */
-  char body[MAX_BODY_LEN];        /* Body from fname. NULL means file is missing */
-  int b_len;                      /* Length of data */
-  time_t remove;                  /* Used for deciding when the old object can be permanently removed */
-  struct HCFileData_t *_next;     /* Only used when these guys end up on the freelist */
+typedef struct HCFileData_t {
+  int exists;                 /* Does this file exist */
+  char body[MAX_BODY_LEN];    /* Body from fname. NULL means file is missing */
+  int b_len;                  /* Length of data */
+  time_t remove;              /* Used for deciding when the old object can be permanently removed */
+  struct HCFileData_t *_next; /* Only used when these guys end up on the freelist */
 } HCFileData;
 
 /* The only thing that should change in this struct is data, atomically swapping ptrs */
-typedef struct HCFileInfo_t
-{
-  char fname[MAX_FILENAME_LEN];   /* Filename */
-  char *basename;                 /* The "basename" of the file */
-  char path[MAX_PATH_LEN];        /* URL path for this HC */
-  int p_len;                      /* Length of path */
-  const char *ok;                 /* Header for an OK result */
-  int o_len;                      /* Length of OK header */
-  const char *miss;               /* Header for miss results */
-  int m_len;                      /* Length of miss header */
-  HCFileData *data;               /* Holds the current data for this health check file */
-  int wd;                         /* Watch descriptor */
-  HCDirEntry *dir;                /* Reference to the directory this file resides in */
-  struct HCFileInfo_t *_next;     /* Linked list */
+typedef struct HCFileInfo_t {
+  char fname[MAX_FILENAME_LEN]; /* Filename */
+  char *basename;               /* The "basename" of the file */
+  char path[MAX_PATH_LEN];      /* URL path for this HC */
+  int p_len;                    /* Length of path */
+  const char *ok;               /* Header for an OK result */
+  int o_len;                    /* Length of OK header */
+  const char *miss;             /* Header for miss results */
+  int m_len;                    /* Length of miss header */
+  HCFileData *data;             /* Holds the current data for this health check file */
+  int wd;                       /* Watch descriptor */
+  HCDirEntry *dir;              /* Reference to the directory this file resides in */
+  struct HCFileInfo_t *_next;   /* Linked list */
 } HCFileInfo;
 
 /* Global configuration */
 HCFileInfo *g_config;
 
 /* State used for the intercept plugin. ToDo: Can this be improved ? */
-typedef struct HCState_t
-{
+typedef struct HCState_t {
   TSVConn net_vc;
   TSVIO read_vio;
   TSVIO write_vio;
@@ -109,8 +105,7 @@ typedef struct HCState_t
 } HCState;
 
 /* Read / check the status files */
-static
-void
+static void
 reload_status_file(HCFileInfo *info, HCFileData *data)
 {
   struct stat buf;
@@ -130,7 +125,7 @@ reload_status_file(HCFileInfo *info, HCFileData *data)
 }
 
 /* Find a HCDirEntry from the linked list */
-static HCDirEntry*
+static HCDirEntry *
 find_direntry(const char *dname, HCDirEntry *dir)
 {
   while (dir) {
@@ -142,7 +137,7 @@ find_direntry(const char *dname, HCDirEntry *dir)
 }
 
 /* Setup up watchers, directory as well as initial files */
-static HCDirEntry*
+static HCDirEntry *
 setup_watchers(int fd)
 {
   HCFileInfo *conf = g_config;
@@ -151,7 +146,7 @@ setup_watchers(int fd)
   char *dname;
 
   while (conf) {
-    conf->wd = inotify_add_watch(fd, conf->fname, IN_DELETE_SELF|IN_CLOSE_WRITE|IN_ATTRIB);
+    conf->wd = inotify_add_watch(fd, conf->fname, IN_DELETE_SELF | IN_CLOSE_WRITE | IN_ATTRIB);
     TSDebug(PLUGIN_NAME, "Setting up a watcher for %s", conf->fname);
     strncpy(fname, conf->fname, MAX_FILENAME_LEN - 1);
     dname = dirname(fname);
@@ -161,7 +156,7 @@ setup_watchers(int fd)
       dir = TSmalloc(sizeof(HCDirEntry));
       memset(dir, 0, sizeof(HCDirEntry));
       strncpy(dir->dname, dname, MAX_FILENAME_LEN - 1);
-      dir->wd = inotify_add_watch(fd, dname, IN_CREATE|IN_MOVED_FROM|IN_MOVED_TO|IN_ATTRIB);
+      dir->wd = inotify_add_watch(fd, dname, IN_CREATE | IN_MOVED_FROM | IN_MOVED_TO | IN_ATTRIB);
       if (!head_dir)
         head_dir = dir;
       else
@@ -197,7 +192,7 @@ hc_thread(void *data ATS_UNUSED)
     HCFileData *fdata = fl_head, *fdata_prev = NULL;
 
     /* Read the inotify events, blocking until we get something */
-    len  = read(fd, buffer, INOTIFY_BUFLEN);
+    len = read(fd, buffer, INOTIFY_BUFLEN);
     gettimeofday(&now, NULL);
 
     /* The fl_head is a linked list of previously released data entries. They
@@ -232,20 +227,21 @@ hc_thread(void *data ATS_UNUSED)
         struct inotify_event *event = (struct inotify_event *)&buffer[i];
         HCFileInfo *finfo = g_config;
 
-        while (finfo && !((event->wd == finfo->wd) ||
-                          ((event->wd == finfo->dir->wd) && !strncmp(event->name, finfo->basename, event->len)))) {
+        while (
+          finfo &&
+          !((event->wd == finfo->wd) || ((event->wd == finfo->dir->wd) && !strncmp(event->name, finfo->basename, event->len)))) {
           finfo = finfo->_next;
         }
         if (finfo) {
           HCFileData *new_data = TSmalloc(sizeof(HCFileData));
           HCFileData *old_data;
 
-          if (event->mask & (IN_CLOSE_WRITE|IN_ATTRIB)) {
+          if (event->mask & (IN_CLOSE_WRITE | IN_ATTRIB)) {
             TSDebug(PLUGIN_NAME, "Modify file event (%d) on %s", event->mask, finfo->fname);
-          } else if (event->mask & (IN_CREATE|IN_MOVED_TO)) {
+          } else if (event->mask & (IN_CREATE | IN_MOVED_TO)) {
             TSDebug(PLUGIN_NAME, "Create file event (%d) on %s", event->mask, finfo->fname);
-            finfo->wd = inotify_add_watch(fd, finfo->fname, IN_DELETE_SELF|IN_CLOSE_WRITE|IN_ATTRIB);
-          } else if (event->mask & (IN_DELETE_SELF|IN_MOVED_FROM)) {
+            finfo->wd = inotify_add_watch(fd, finfo->fname, IN_DELETE_SELF | IN_CLOSE_WRITE | IN_ATTRIB);
+          } else if (event->mask & (IN_DELETE_SELF | IN_MOVED_FROM)) {
             TSDebug(PLUGIN_NAME, "Delete file event (%d) on %s", event->mask, finfo->fname);
             finfo->wd = inotify_rm_watch(fd, finfo->wd);
           }
@@ -283,11 +279,11 @@ static char *
 gen_header(char *status_str, char *mime, int *header_len)
 {
   TSHttpStatus status;
-  char * buf = NULL;
+  char *buf = NULL;
 
   status = atoi(status_str);
   if (status > TS_HTTP_STATUS_NONE && status < (TSHttpStatus)999) {
-    const char* status_reason;
+    const char *status_reason;
     int len = sizeof(HEADER_TEMPLATE) + 3 + 1;
 
     status_reason = TSHttpHdrReasonLookup(status);
@@ -302,11 +298,11 @@ gen_header(char *status_str, char *mime, int *header_len)
   return buf;
 }
 
-static HCFileInfo*
-parse_configs(const char* fname)
+static HCFileInfo *
+parse_configs(const char *fname)
 {
   FILE *fd;
-  char buf[2*1024];
+  char buf[2 * 1024];
   HCFileInfo *head_finfo = NULL, *finfo = NULL, *prev_finfo = NULL;
 
   if (NULL == (fd = fopen(fname, "r")))
@@ -315,7 +311,7 @@ parse_configs(const char* fname)
   while (!feof(fd)) {
     char *str, *save;
     int state = 0;
-    char *ok=NULL, *miss=NULL, *mime=NULL;
+    char *ok = NULL, *miss = NULL, *mime = NULL;
 
     finfo = TSmalloc(sizeof(HCFileInfo));
     memset(finfo, 0, sizeof(HCFileInfo));
@@ -440,7 +436,7 @@ hc_process_write(TSCont contp, TSEvent event, HCState *my_state)
     char buf[48];
     int len;
 
-    len = snprintf(buf, sizeof(buf)-1, "Content-Length: %d\r\n\r\n", my_state->data->b_len);
+    len = snprintf(buf, sizeof(buf) - 1, "Content-Length: %d\r\n\r\n", my_state->data->b_len);
     my_state->output_bytes += add_data_to_resp(buf, len, my_state);
     if (my_state->data->b_len > 0)
       my_state->output_bytes += add_data_to_resp(my_state->data->body, my_state->data->b_len, my_state);
@@ -495,13 +491,12 @@ health_check_origin(TSCont contp ATS_UNUSED, TSEvent event ATS_UNUSED, void *eda
   TSMLoc hdr_loc = NULL, url_loc = NULL;
   TSCont icontp;
   HCState *my_state;
-  TSHttpTxn txnp = (TSHttpTxn) edata;
+  TSHttpTxn txnp = (TSHttpTxn)edata;
   HCFileInfo *info = g_config;
 
-  if ((TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &reqp, &hdr_loc)) &&
-      (TS_SUCCESS == TSHttpHdrUrlGet(reqp, hdr_loc, &url_loc))) {
+  if ((TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &reqp, &hdr_loc)) && (TS_SUCCESS == TSHttpHdrUrlGet(reqp, hdr_loc, &url_loc))) {
     int path_len = 0;
-    const char* path = TSUrlPathGet(reqp, url_loc, &path_len);
+    const char *path = TSUrlPathGet(reqp, url_loc, &path_len);
 
     /* Short circuit the / path, common case, and we won't allow healthecks on / */
     if (!path || !path_len)
@@ -530,7 +525,7 @@ health_check_origin(TSCont contp ATS_UNUSED, TSEvent event ATS_UNUSED, void *eda
     TSHttpTxnIntercept(icontp, txnp);
   }
 
- cleanup:
+cleanup:
   if (url_loc)
     TSHandleMLocRelease(reqp, hdr_loc, url_loc);
   if (hdr_loc)

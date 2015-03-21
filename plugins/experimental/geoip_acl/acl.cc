@@ -25,11 +25,11 @@
 #include "lulu.h"
 
 // Global GeoIP object.
-GeoIP* gGI;
+GeoIP *gGI;
 
 // Implementation of the ACL base class.
 void
-Acl::read_html(const char* fn)
+Acl::read_html(const char *fn)
 {
   std::ifstream f;
 
@@ -46,7 +46,7 @@ Acl::read_html(const char* fn)
 
 // Implementations for the RegexAcl class
 bool
-RegexAcl::parse_line(const char* filename, const std::string& line, int lineno)
+RegexAcl::parse_line(const char *filename, const std::string &line, int lineno)
 {
   static const char _SEPARATOR[] = " \t\n";
   std::string regex, tmp;
@@ -60,12 +60,12 @@ RegexAcl::parse_line(const char* filename, const std::string& line, int lineno)
 
   pos2 = line.find_first_of(_SEPARATOR, pos1);
   if (pos2 != std::string::npos) {
-    regex = line.substr(pos1, pos2-pos1);
+    regex = line.substr(pos1, pos2 - pos1);
     pos1 = line.find_first_not_of(_SEPARATOR, pos2);
     if (pos1 != std::string::npos) {
       pos2 = line.find_first_of(_SEPARATOR, pos1);
       if (pos2 != std::string::npos) {
-        tmp = line.substr(pos1, pos2-pos1);
+        tmp = line.substr(pos1, pos2 - pos1);
         if (tmp == "allow")
           _acl->set_allow(true);
         else if (tmp == "deny")
@@ -77,7 +77,7 @@ RegexAcl::parse_line(const char* filename, const std::string& line, int lineno)
         // The rest are "tokens"
         while ((pos1 = line.find_first_not_of(_SEPARATOR, pos2)) != std::string::npos) {
           pos2 = line.find_first_of(_SEPARATOR, pos1);
-          tmp = line.substr(pos1, pos2-pos1);
+          tmp = line.substr(pos1, pos2 - pos1);
           _acl->add_token(tmp);
         }
         compile(regex, filename, lineno);
@@ -91,9 +91,9 @@ RegexAcl::parse_line(const char* filename, const std::string& line, int lineno)
 }
 
 bool
-RegexAcl::compile(const std::string& str, const char* filename, int lineno)
+RegexAcl::compile(const std::string &str, const char *filename, int lineno)
 {
-  const char* error;
+  const char *error;
   int erroffset;
 
   _regex_s = str;
@@ -114,12 +114,12 @@ RegexAcl::compile(const std::string& str, const char* filename, int lineno)
 }
 
 void
-RegexAcl::append(RegexAcl* ra)
+RegexAcl::append(RegexAcl *ra)
 {
   if (NULL == _next) {
     _next = ra;
   } else {
-    RegexAcl* cur = _next;
+    RegexAcl *cur = _next;
 
     while (cur->_next)
       cur = cur->_next;
@@ -128,10 +128,9 @@ RegexAcl::append(RegexAcl* ra)
 }
 
 
-
 // Implementation of the Country ACL class.
 void
-CountryAcl::add_token(const std::string& str)
+CountryAcl::add_token(const std::string &str)
 {
   int iso = -1;
 
@@ -147,7 +146,7 @@ CountryAcl::add_token(const std::string& str)
 }
 
 void
-CountryAcl::read_regex(const char* fn)
+CountryAcl::read_regex(const char *fn)
 {
   std::ifstream f;
   int lineno = 0;
@@ -155,7 +154,7 @@ CountryAcl::read_regex(const char* fn)
   f.open(fn, std::ios::in);
   if (f.is_open()) {
     std::string line;
-    RegexAcl* acl = NULL;
+    RegexAcl *acl = NULL;
 
     while (!f.eof()) {
       getline(f, line);
@@ -184,9 +183,9 @@ CountryAcl::eval(TSRemapRequestInfo *rri, TSHttpTxn txnp) const
   // honor it's eval() rule. If no regexes matches, fall back on the default (which is
   // "allow" if nothing else is specified).
   if (NULL != _regexes) {
-    RegexAcl* acl = _regexes;
+    RegexAcl *acl = _regexes;
     int path_len;
-    const char* path = TSUrlPathGet(rri->requestBufp, rri->requestUrl, &path_len);
+    const char *path = TSUrlPathGet(rri->requestBufp, rri->requestUrl, &path_len);
 
     do {
       if (acl->match(path, path_len)) {
@@ -202,20 +201,18 @@ CountryAcl::eval(TSRemapRequestInfo *rri, TSHttpTxn txnp) const
 
   // None of the regexes (if any) matched, so fallback to the remap defaults if there are any.
   int iso = -1;
-  const sockaddr* addr = TSHttpTxnClientAddrGet(txnp);
+  const sockaddr *addr = TSHttpTxnClientAddrGet(txnp);
 
   switch (addr->sa_family) {
-  case AF_INET:
-    {
-      uint32_t ip = ntohl(reinterpret_cast<const struct sockaddr_in *>(addr)->sin_addr.s_addr);
+  case AF_INET: {
+    uint32_t ip = ntohl(reinterpret_cast<const struct sockaddr_in *>(addr)->sin_addr.s_addr);
 
-      iso = GeoIP_id_by_ipnum(gGI, ip);
-      if (TSIsDebugTagSet(PLUGIN_NAME)) {
-        const char* c = GeoIP_country_code_by_ipnum(gGI, ip);
-        TSDebug(PLUGIN_NAME, "eval(): IP=%u seems to come from ISO=%d / %s", ip, iso, c);
-      }
+    iso = GeoIP_id_by_ipnum(gGI, ip);
+    if (TSIsDebugTagSet(PLUGIN_NAME)) {
+      const char *c = GeoIP_country_code_by_ipnum(gGI, ip);
+      TSDebug(PLUGIN_NAME, "eval(): IP=%u seems to come from ISO=%d / %s", ip, iso, c);
     }
-    break;
+  } break;
   case AF_INET6:
     return true;
   default:
@@ -230,9 +227,9 @@ CountryAcl::eval(TSRemapRequestInfo *rri, TSHttpTxn txnp) const
 
 
 void
-CountryAcl::process_args(int argc, char* argv[])
+CountryAcl::process_args(int argc, char *argv[])
 {
-  for(int i=3; i < argc; ++i) {
+  for (int i = 3; i < argc; ++i) {
     if (!strncmp(argv[i], "allow", 5)) {
       _allow = true;
     } else if (!strncmp(argv[i], "deny", 4)) {
@@ -240,7 +237,7 @@ CountryAcl::process_args(int argc, char* argv[])
     } else if (!strncmp(argv[i], "regex::", 7)) {
       read_regex(argv[i] + 7);
     } else if (!strncmp(argv[i], "html::", 6)) {
-      read_html(argv[i]+ 6);
+      read_html(argv[i] + 6);
     } else { // ISO codes assumed for the rest
       add_token(argv[i]);
     }

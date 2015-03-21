@@ -23,9 +23,9 @@
 
 // Copied from IPRange.cc for backwards compatibility.
 
-# include <ts/IpMap.h>
-# include <ts/IpMapConf.h>
-# include <ts/ink_memory.h>
+#include <ts/IpMap.h>
+#include <ts/IpMapConf.h>
+#include <ts/ink_memory.h>
 
 static size_t const ERR_STRING_LEN = 256;
 static size_t const MAX_LINE_SIZE = 2048;
@@ -37,11 +37,11 @@ static size_t const MAX_LINE_SIZE = 2048;
 // addr  [out] Destination for address.
 // err   Buffer for error string (must be ERR_STRING_LEN big).
 int
-read_addr(char *line, int n, int *i, sockaddr* addr, char* err)
+read_addr(char *line, int n, int *i, sockaddr *addr, char *err)
 {
   int k;
   char dst[INET6_ADDRSTRLEN];
-  char* src = line + *i;
+  char *src = line + *i;
   bool bracketed_p = false;
 
   // Allow enclosing brackets to be more consistent but
@@ -50,11 +50,11 @@ read_addr(char *line, int n, int *i, sockaddr* addr, char* err)
     ++*i, ++src, bracketed_p = true;
   }
 
-  for (k = 0; k < INET6_ADDRSTRLEN && *i < n && (isxdigit(*src) || '.' == *src || ':' == *src) ; ++k, ++*i, ++src) {
+  for (k = 0; k < INET6_ADDRSTRLEN && *i < n && (isxdigit(*src) || '.' == *src || ':' == *src); ++k, ++*i, ++src) {
     dst[k] = *src;
   }
 
-  if (bracketed_p && (! (*i < n) || (']' != *src))) {
+  if (bracketed_p && (!(*i < n) || (']' != *src))) {
     snprintf(err, ERR_STRING_LEN, "Unclosed brackets");
     return EINVAL;
   }
@@ -73,13 +73,14 @@ read_addr(char *line, int n, int *i, sockaddr* addr, char* err)
 }
 
 char *
-Load_IpMap_From_File(IpMap* map, int fd, const char *key_str)
+Load_IpMap_From_File(IpMap *map, int fd, const char *key_str)
 {
-  char* zret = 0;
+  char *zret = 0;
   int fd2 = dup(fd); // dup to avoid closing the original file.
-  FILE* f = NULL;
+  FILE *f = NULL;
 
-  if (fd2 >= 0) f = fdopen(fd2, "r");
+  if (fd2 >= 0)
+    f = fdopen(fd2, "r");
 
   if (f != NULL) {
     zret = Load_IpMap_From_File(map, f, key_str);
@@ -97,7 +98,8 @@ Load_IpMap_From_File(IpMap* map, int fd, const char *key_str)
 // line    Source line.
 // n       Line length.
 // offset  Current offset
-static inline bool skip_space(char* line, int n, int& offset )
+static inline bool
+skip_space(char *line, int n, int &offset)
 {
   while (offset < n && isspace(line[offset]))
     ++offset;
@@ -106,7 +108,7 @@ static inline bool skip_space(char* line, int n, int& offset )
 
 // Returns 0 if successful, error string otherwise
 char *
-Load_IpMap_From_File(IpMap* map, FILE* f, const char *key_str)
+Load_IpMap_From_File(IpMap *map, FILE *f, const char *key_str)
 {
   int i, n, line_no;
   int key_len = strlen(key_str);
@@ -122,7 +124,7 @@ Load_IpMap_From_File(IpMap* map, FILE* f, const char *key_str)
     ++line_no;
     n = strlen(line);
     // Find first white space which terminates the line key.
-    for ( i = 0 ; i < n && ! isspace(line[i]); ++i)
+    for (i = 0; i < n && !isspace(line[i]); ++i)
       ;
     if (i != key_len || 0 != strncmp(line, key_str, key_len))
       continue;
@@ -131,10 +133,10 @@ Load_IpMap_From_File(IpMap* map, FILE* f, const char *key_str)
       if (!skip_space(line, n, i))
         break;
 
-      if (0 != read_addr(line, n,  &i, &laddr.sa, err_buff)) {
+      if (0 != read_addr(line, n, &i, &laddr.sa, err_buff)) {
         char *error_str = (char *)ats_malloc(ERR_STRING_LEN);
-        snprintf(error_str, ERR_STRING_LEN, "Invalid input configuration (%s) at line %d offset %d - '%s'", err_buff,
-                 line_no, i, line);
+        snprintf(error_str, ERR_STRING_LEN, "Invalid input configuration (%s) at line %d offset %d - '%s'", err_buff, line_no, i,
+                 line);
         return error_str;
       }
 
@@ -151,13 +153,11 @@ Load_IpMap_From_File(IpMap* map, FILE* f, const char *key_str)
         ++i;
         if (!skip_space(line, n, i)) {
           char *error_str = (char *)ats_malloc(ERR_STRING_LEN);
-          snprintf(error_str, ERR_STRING_LEN, "Invalid input (unterminated range) at line %d offset %d - '%s'", line_no,
-                   i, line);
+          snprintf(error_str, ERR_STRING_LEN, "Invalid input (unterminated range) at line %d offset %d - '%s'", line_no, i, line);
           return error_str;
         } else if (0 != read_addr(line, n, &i, &raddr.sa, err_buff)) {
           char *error_str = (char *)ats_malloc(ERR_STRING_LEN);
-          snprintf(error_str, ERR_STRING_LEN, "Invalid input (%s) at line %d offset %d - '%s'", err_buff, line_no, i,
-                   line);
+          snprintf(error_str, ERR_STRING_LEN, "Invalid input (%s) at line %d offset %d - '%s'", err_buff, line_no, i, line);
           return error_str;
         }
         map->mark(&laddr.sa, &raddr.sa);
@@ -165,8 +165,7 @@ Load_IpMap_From_File(IpMap* map, FILE* f, const char *key_str)
           break;
         if (line[i] != ',') {
           char *error_str = (char *)ats_malloc(ERR_STRING_LEN);
-          snprintf(error_str, ERR_STRING_LEN, "Invalid input (expecting comma) at line %d offset %d - '%s'", line_no,
-                   i, line);
+          snprintf(error_str, ERR_STRING_LEN, "Invalid input (expecting comma) at line %d offset %d - '%s'", line_no, i, line);
           return error_str;
         }
         ++i;

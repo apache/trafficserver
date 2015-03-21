@@ -34,7 +34,7 @@
 
 UnixUDPConnection::~UnixUDPConnection()
 {
-  UDPPacketInternal *p = (UDPPacketInternal *) ink_atomiclist_popall(&inQueue);
+  UDPPacketInternal *p = (UDPPacketInternal *)ink_atomiclist_popall(&inQueue);
 
   if (!tobedestroyed)
     tobedestroyed = 1;
@@ -64,8 +64,8 @@ UnixUDPConnection::~UnixUDPConnection()
 int
 UnixUDPConnection::callbackHandler(int event, void *data)
 {
-  (void) event;
-  (void) data;
+  (void)event;
+  (void)data;
   callbackAction = NULL;
   if (continuation == NULL)
     return EVENT_CONT;
@@ -73,11 +73,11 @@ UnixUDPConnection::callbackHandler(int event, void *data)
   if (m_errno) {
     if (!shouldDestroy())
       continuation->handleEvent(NET_EVENT_DATAGRAM_ERROR, this);
-    destroy();                  // don't destroy until after calling back with error
+    destroy(); // don't destroy until after calling back with error
     Release();
     return EVENT_CONT;
   } else {
-    UDPPacketInternal *p = (UDPPacketInternal *) ink_atomiclist_popall(&inQueue);
+    UDPPacketInternal *p = (UDPPacketInternal *)ink_atomiclist_popall(&inQueue);
     if (p) {
       Debug("udpnet", "UDPConnection::callbackHandler");
       UDPPacketInternal *pnext = NULL;
@@ -101,10 +101,10 @@ UnixUDPConnection::callbackHandler(int event, void *data)
 }
 
 void
-UDPConnection::bindToThread(Continuation * c)
+UDPConnection::bindToThread(Continuation *c)
 {
-  UnixUDPConnection *uc = (UnixUDPConnection *) this;
-  //add to new connections queue for EThread.
+  UnixUDPConnection *uc = (UnixUDPConnection *)this;
+  // add to new connections queue for EThread.
   EThread *t = eventProcessor.assign_thread(ET_UDP);
   ink_assert(t);
   ink_assert(get_UDPNetHandler(t));
@@ -116,10 +116,10 @@ UDPConnection::bindToThread(Continuation * c)
 }
 
 Action *
-UDPConnection::send(Continuation * c, UDPPacket * xp)
+UDPConnection::send(Continuation *c, UDPPacket *xp)
 {
-  UDPPacketInternal *p = (UDPPacketInternal *) xp;
-  UnixUDPConnection *conn = (UnixUDPConnection *) this;
+  UDPPacketInternal *p = (UDPPacketInternal *)xp;
+  UnixUDPConnection *conn = (UnixUDPConnection *)this;
 
   if (shouldDestroy()) {
     ink_assert(!"freeing packet sent on dead connection");
@@ -141,7 +141,7 @@ UDPConnection::send(Continuation * c, UDPPacket * xp)
 void
 UDPConnection::Release()
 {
-  UnixUDPConnection *p = (UnixUDPConnection *) this;
+  UnixUDPConnection *p = (UnixUDPConnection *)this;
 
   p->ep.stop();
 
@@ -155,4 +155,3 @@ UDPConnection::Release()
     delete this;
   }
 }
-

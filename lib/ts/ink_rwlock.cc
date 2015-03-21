@@ -30,7 +30,7 @@
 // Note: This should be called only once.
 //-------------------------------------------------------------------------
 int
-ink_rwlock_init(ink_rwlock * rw)
+ink_rwlock_init(ink_rwlock *rw)
 {
   int result;
 
@@ -48,8 +48,7 @@ ink_rwlock_init(ink_rwlock * rw)
   return 0;
 
 Lerror:
-  return result;              /* an errno value */
-
+  return result; /* an errno value */
 }
 
 //-------------------------------------------------------------------------
@@ -57,7 +56,7 @@ Lerror:
 //-------------------------------------------------------------------------
 
 int
-ink_rwlock_destroy(ink_rwlock * rw)
+ink_rwlock_destroy(ink_rwlock *rw)
 {
   if (rw->rw_magic != RW_MAGIC)
     return EINVAL;
@@ -77,7 +76,7 @@ ink_rwlock_destroy(ink_rwlock * rw)
 //-------------------------------------------------------------------------
 
 int
-ink_rwlock_rdlock(ink_rwlock * rw)
+ink_rwlock_rdlock(ink_rwlock *rw)
 {
   int result;
 
@@ -93,7 +92,7 @@ ink_rwlock_rdlock(ink_rwlock * rw)
     ink_cond_wait(&rw->rw_condreaders, &rw->rw_mutex);
     rw->rw_nwaitreaders--;
   }
-  rw->rw_refcount++;            /* another reader has a read lock */
+  rw->rw_refcount++; /* another reader has a read lock */
 
   ink_mutex_release(&rw->rw_mutex);
 
@@ -105,7 +104,7 @@ ink_rwlock_rdlock(ink_rwlock * rw)
 //-------------------------------------------------------------------------
 
 int
-ink_rwlock_wrlock(ink_rwlock * rw)
+ink_rwlock_wrlock(ink_rwlock *rw)
 {
   int result;
 
@@ -132,7 +131,7 @@ ink_rwlock_wrlock(ink_rwlock * rw)
 //-------------------------------------------------------------------------
 
 int
-ink_rwlock_unlock(ink_rwlock * rw)
+ink_rwlock_unlock(ink_rwlock *rw)
 {
   int result;
 
@@ -143,9 +142,9 @@ ink_rwlock_unlock(ink_rwlock * rw)
     return result;
 
   if (rw->rw_refcount > 0)
-    rw->rw_refcount--;          /* releasing a reader */
+    rw->rw_refcount--; /* releasing a reader */
   else if (rw->rw_refcount == -1)
-    rw->rw_refcount = 0;        /* releasing a reader */
+    rw->rw_refcount = 0; /* releasing a reader */
   else
     ink_release_assert("invalid rw_refcount!");
 

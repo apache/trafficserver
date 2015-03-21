@@ -105,19 +105,19 @@
 #include "CfgContextUtils.h"
 
 // refer to test_records() function
-#define TEST_STRING     1
-#define TEST_FLOAT      1
-#define TEST_INT        1
-#define TEST_COUNTER    1
-#define TEST_REC_SET    1
-#define TEST_REC_GET    0
-#define TEST_REC_GET_2  0
+#define TEST_STRING 1
+#define TEST_FLOAT 1
+#define TEST_INT 1
+#define TEST_COUNTER 1
+#define TEST_REC_SET 1
+#define TEST_REC_GET 0
+#define TEST_REC_GET_2 0
 
-#define SET_INT         0
+#define SET_INT 0
 
 // set to 1 if running as part of installation package
 // set to 0 if being tested in developer environment
-#define INSTALL_TEST    0
+#define INSTALL_TEST 0
 
 /***************************************************************************
  * Printing Helper Functions
@@ -224,7 +224,7 @@ print_domain_list(TSDomainList list)
 
 
 void
-print_ip_addr_ele(TSIpAddrEle * ele)
+print_ip_addr_ele(TSIpAddrEle *ele)
 {
   if (!ele)
     return;
@@ -277,7 +277,6 @@ print_list_of_ip_list(TSList list)
     printf("\n");
     TSListEnqueue(list, ele);
   }
-
 }
 
 
@@ -308,8 +307,8 @@ print_pd_sspec(TSPdSsFormat info)
   }
 
   printf("Secondary Specifiers:\n");
-  printf("\ttime: %d:%d-%d:%d\n",
-         info.sec_spec.time.hour_a, info.sec_spec.time.min_a, info.sec_spec.time.hour_b, info.sec_spec.time.min_b);
+  printf("\ttime: %d:%d-%d:%d\n", info.sec_spec.time.hour_a, info.sec_spec.time.min_a, info.sec_spec.time.hour_b,
+         info.sec_spec.time.min_b);
 
   if (info.sec_spec.src_ip)
     printf("\tsrc_ip: %s\n", info.sec_spec.src_ip);
@@ -372,7 +371,7 @@ print_pd_sspec(TSPdSsFormat info)
 
 
 void
-print_cache_ele(TSCacheEle * ele)
+print_cache_ele(TSCacheEle *ele)
 {
   if (!ele) {
     printf("can't print ele\n");
@@ -427,7 +426,7 @@ print_cache_ele(TSCacheEle * ele)
     snprintf(buf + buf_pos, sizeof(buf) - buf_pos, "revalidate=%s", time_str);
     ats_free(time_str);
     break;
-  default:                     /* invalid action directive */
+  default: /* invalid action directive */
     printf("hello..\n");
     return;
   }
@@ -443,7 +442,7 @@ print_cache_ele(TSCacheEle * ele)
 
 
 void
-print_hosting_ele(TSHostingEle * ele)
+print_hosting_ele(TSHostingEle *ele)
 {
   if (!ele) {
     printf("can't print ele\n");
@@ -475,7 +474,7 @@ print_hosting_ele(TSHostingEle * ele)
 }
 
 void
-print_icp_ele(TSIcpEle * ele)
+print_icp_ele(TSIcpEle *ele)
 {
   if (!ele) {
     printf("can't print ele\n");
@@ -496,18 +495,12 @@ print_icp_ele(TSIcpEle * ele)
     peer_type = 10;
   }
 
-  printf("%s:%s:%d:%d:%d:%d:%s:%d:\n",
-         ele->peer_hostname,
-         ele->peer_host_ip_addr,
-         peer_type,
-         ele->peer_proxy_port,
-         ele->peer_icp_port,
-         (ele->is_multicast ? 1 : 0), ele->mc_ip_addr, (ele->mc_ttl == TS_MC_TTL_SINGLE_SUBNET ? 1 : 2)
-    );
+  printf("%s:%s:%d:%d:%d:%d:%s:%d:\n", ele->peer_hostname, ele->peer_host_ip_addr, peer_type, ele->peer_proxy_port,
+         ele->peer_icp_port, (ele->is_multicast ? 1 : 0), ele->mc_ip_addr, (ele->mc_ttl == TS_MC_TTL_SINGLE_SUBNET ? 1 : 2));
 }
 
 void
-print_ip_allow_ele(TSIpAllowEle * ele)
+print_ip_allow_ele(TSIpAllowEle *ele)
 {
   if (!ele) {
     printf("can't print ele\n");
@@ -518,7 +511,7 @@ print_ip_allow_ele(TSIpAllowEle * ele)
 }
 
 void
-print_parent_ele(TSParentProxyEle * ele)
+print_parent_ele(TSParentProxyEle *ele)
 {
   if (!ele) {
     printf("can't print ele\n");
@@ -530,11 +523,10 @@ print_parent_ele(TSParentProxyEle * ele)
   printf("round robin? %d\n", ele->rr);
   print_domain_list(ele->proxy_list);
   printf("direct? %d\n", ele->direct);
-
 }
 
 void
-print_volume_ele(TSVolumeEle * ele)
+print_volume_ele(TSVolumeEle *ele)
 {
   if (!ele) {
     printf("can't print ele\n");
@@ -558,7 +550,7 @@ print_volume_ele(TSVolumeEle * ele)
 }
 
 void
-print_plugin_ele(TSPluginEle * ele)
+print_plugin_ele(TSPluginEle *ele)
 {
   if (!ele) {
     printf("can't print plugin ele\n");
@@ -575,7 +567,7 @@ print_plugin_ele(TSPluginEle * ele)
 }
 
 void
-print_remap_ele(TSRemapEle * ele)
+print_remap_ele(TSRemapEle *ele)
 {
   if (!ele) {
     printf("can't print ele\n");
@@ -672,7 +664,7 @@ print_remap_ele(TSRemapEle * ele)
 }
 
 void
-print_socks_ele(TSSocksEle * ele)
+print_socks_ele(TSSocksEle *ele)
 {
   printf("\n");
   if (!ele) {
@@ -688,7 +680,7 @@ print_socks_ele(TSSocksEle * ele)
 }
 
 void
-print_split_dns_ele(TSSplitDnsEle * ele)
+print_split_dns_ele(TSSplitDnsEle *ele)
 {
   if (!ele) {
     printf("can't print ele\n");
@@ -729,7 +721,7 @@ print_split_dns_ele(TSSplitDnsEle * ele)
 
   if (ele->dns_servers_addrs) {
     ink_strlcat(buf, "named=", sizeof(buf));
-    str = ip_addr_list_to_string((LLQ *) ele->dns_servers_addrs, " ");
+    str = ip_addr_list_to_string((LLQ *)ele->dns_servers_addrs, " ");
     ink_strlcat(buf, str, sizeof(buf));
     ats_free(str);
     ink_strlcat(buf, " ", sizeof(buf));
@@ -755,7 +747,7 @@ print_split_dns_ele(TSSplitDnsEle * ele)
 }
 
 void
-print_storage_ele(TSStorageEle * ele)
+print_storage_ele(TSStorageEle *ele)
 {
   if (!ele) {
     printf("can't print ele\n");
@@ -767,7 +759,7 @@ print_storage_ele(TSStorageEle * ele)
 }
 
 void
-print_update_ele(TSUpdateEle * ele)
+print_update_ele(TSUpdateEle *ele)
 {
   if (!ele) {
     printf("can't print ele\n");
@@ -781,7 +773,7 @@ print_update_ele(TSUpdateEle * ele)
 }
 
 void
-print_vaddrs_ele(TSVirtIpAddrEle * ele)
+print_vaddrs_ele(TSVirtIpAddrEle *ele)
 {
   if (!ele) {
     printf("can't print ele\n");
@@ -815,45 +807,45 @@ print_ele_list(TSFileNameT file, TSCfgContext ctx)
 
     switch (filename) {
     case TS_FNAME_CACHE_OBJ:
-      print_cache_ele((TSCacheEle *) ele);
+      print_cache_ele((TSCacheEle *)ele);
       break;
     case TS_FNAME_HOSTING:
-      print_hosting_ele((TSHostingEle *) ele);
+      print_hosting_ele((TSHostingEle *)ele);
       break;
     case TS_FNAME_ICP_PEER:
-      print_icp_ele((TSIcpEle *) ele);
+      print_icp_ele((TSIcpEle *)ele);
       break;
     case TS_FNAME_IP_ALLOW:
-      print_ip_allow_ele((TSIpAllowEle *) ele);
+      print_ip_allow_ele((TSIpAllowEle *)ele);
       break;
     case TS_FNAME_LOGS_XML:
-      break;                    /*NOT DONE */
+      break; /*NOT DONE */
     case TS_FNAME_PARENT_PROXY:
-      print_parent_ele((TSParentProxyEle *) ele);
+      print_parent_ele((TSParentProxyEle *)ele);
       break;
     case TS_FNAME_VOLUME:
-      print_volume_ele((TSVolumeEle *) ele);
+      print_volume_ele((TSVolumeEle *)ele);
       break;
     case TS_FNAME_PLUGIN:
-      print_plugin_ele((TSPluginEle *) ele);
+      print_plugin_ele((TSPluginEle *)ele);
       break;
     case TS_FNAME_REMAP:
-      print_remap_ele((TSRemapEle *) ele);
+      print_remap_ele((TSRemapEle *)ele);
       break;
     case TS_FNAME_SOCKS:
-      print_socks_ele((TSSocksEle *) ele);
+      print_socks_ele((TSSocksEle *)ele);
       break;
     case TS_FNAME_SPLIT_DNS:
-      print_split_dns_ele((TSSplitDnsEle *) ele);
+      print_split_dns_ele((TSSplitDnsEle *)ele);
       break;
     case TS_FNAME_STORAGE:
-      print_storage_ele((TSStorageEle *) ele);
+      print_storage_ele((TSStorageEle *)ele);
       break;
     case TS_FNAME_UPDATE_URL:
-      print_update_ele((TSUpdateEle *) ele);
+      print_update_ele((TSUpdateEle *)ele);
       break;
     case TS_FNAME_VADDRS:
-      print_vaddrs_ele((TSVirtIpAddrEle *) ele);
+      print_vaddrs_ele((TSVirtIpAddrEle *)ele);
     default:
       printf("[print_ele_list] invalid file type \n");
       return;
@@ -960,14 +952,13 @@ test_action_need(void)
 
   // RU_NULL record
   TSRecordSetString("proxy.config.proxy_name", "proxy_dorky", &action);
-  printf("[TSRecordSetString] proxy.config.proxy_name \n\tAction Should: [%d]\n\tAction is    : [%d]\n",
-         TS_ACTION_UNDEFINED, action);
+  printf("[TSRecordSetString] proxy.config.proxy_name \n\tAction Should: [%d]\n\tAction is    : [%d]\n", TS_ACTION_UNDEFINED,
+         action);
 
   // RU_RESTART_TS record
   TSRecordSetInt("proxy.config.cluster.cluster_port", 6666, &action);
-  printf("[TSRecordSetInt] proxy.config.cluster.cluster_port\n\tAction Should: [%d]\n\tAction is    : [%d]\n",
-         TS_ACTION_RESTART, action);
-
+  printf("[TSRecordSetInt] proxy.config.cluster.cluster_port\n\tAction Should: [%d]\n\tAction is    : [%d]\n", TS_ACTION_RESTART,
+         action);
 }
 
 /* Bouncer the traffic_server process(es) */
@@ -1028,7 +1019,6 @@ test_error_records()
     printf("TSRecordGetFloat FAILED!\n");
   else
     printf("[TSRecordGetFloat] proxy.config.http.cache.fuzz.probability=%f\n", flt1);
-
 }
 
 /* ------------------------------------------------------------------------
@@ -1098,7 +1088,7 @@ test_records()
   rec_value = NULL;
 
   // test RecordSet
-  err = TSRecordSetString("proxy.config.proxy_name", (TSString) new_str, &action);
+  err = TSRecordSetString("proxy.config.proxy_name", (TSString)new_str, &action);
   if (err != TS_ERR_OKAY)
     print_err("TSRecordSetString", err);
   else
@@ -1187,7 +1177,6 @@ test_records()
   else
     printf("[TSRecordGetFloat] proxy.config.http.cache.fuzz.probability=%f\n", flt2);
 #endif
-
 }
 
 // retrieves the value of the "proxy.config.xxx" record requested at input
@@ -1252,22 +1241,22 @@ test_record_get_mlt(void)
   rec_list = TSListCreate();
 
   const size_t v1_size = (sizeof(char) * (strlen("proxy.config.proxy_name") + 1));
-  v1 = (char *) TSmalloc(v1_size);
+  v1 = (char *)TSmalloc(v1_size);
   ink_strlcpy(v1, "proxy.config.proxy_name", v1_size);
   const size_t v2_size = (sizeof(char) * (strlen("proxy.config.bin_path") + 1));
-  v2 = (char *) TSmalloc(v2_size);
+  v2 = (char *)TSmalloc(v2_size);
   ink_strlcpy(v2, "proxy.config.bin_path", v2_size);
   const size_t v3_size = (sizeof(char) * (strlen("proxy.config.manager_binary") + 1));
-  v3 = (char *) TSmalloc(v3_size);
+  v3 = (char *)TSmalloc(v3_size);
   ink_strlcpy(v3, "proxy.config.manager_binary", v3_size);
   const size_t v6_size = (sizeof(char) * (strlen("proxy.config.env_prep") + 1));
-  v6 = (char *) TSmalloc(v6_size);
+  v6 = (char *)TSmalloc(v6_size);
   ink_strlcpy(v6, "proxy.config.env_prep", v6_size);
   const size_t v7_size = (sizeof(char) * (strlen("proxy.config.cop.core_signal") + 1));
-  v7 = (char *) TSmalloc(v7_size);
+  v7 = (char *)TSmalloc(v7_size);
   ink_strlcpy(v7, "proxy.config.cop.core_signal", v7_size);
   const size_t v8_size = (sizeof(char) * (strlen("proxy.config.http.cache.fuzz.probability") + 1));
-  v8 = (char *) TSmalloc(v8_size);
+  v8 = (char *)TSmalloc(v8_size);
   ink_strlcpy(v8, "proxy.config.http.cache.fuzz.probability", v8_size);
 
   // add the names to the get_list
@@ -1289,7 +1278,7 @@ test_record_get_mlt(void)
   }
 
   for (i = 0; i < num; i++) {
-    rec_ele = (TSRecordEle *) TSListDequeue(rec_list);
+    rec_ele = (TSRecordEle *)TSListDequeue(rec_list);
     if (!rec_ele) {
       printf("ERROR\n");
       break;
@@ -1316,7 +1305,7 @@ test_record_get_mlt(void)
     TSRecordEleDestroy(rec_ele);
   }
 
-  TSListDestroy(rec_list);     // must dequeue and free each string individually
+  TSListDestroy(rec_list); // must dequeue and free each string individually
 
   return;
 }
@@ -1337,28 +1326,28 @@ test_record_set_mlt(void)
 
   list = TSListCreate();
 
-  ele1 = TSRecordEleCreate();  // TS_TYPE_UNDEFINED action
+  ele1 = TSRecordEleCreate(); // TS_TYPE_UNDEFINED action
   ele1->rec_name = TSstrdup("proxy.config.cli_binary");
   ele1->rec_type = TS_REC_STRING;
   ele1->valueT.string_val = TSstrdup(ele1->rec_name);
 
-  ele2 = TSRecordEleCreate();  // reread action
+  ele2 = TSRecordEleCreate(); // reread action
   ele2->rec_name = TSstrdup("proxy.config.http.cache.fuzz.probability");
   ele2->rec_type = TS_REC_FLOAT;
   ele2->valueT.float_val = 0.1234;
 
-  ele3 = TSRecordEleCreate();  // undefined action
+  ele3 = TSRecordEleCreate(); // undefined action
   ele3->rec_name = TSstrdup("proxy.config.cop.core_signal");
   ele3->rec_type = TS_REC_INT;
   ele3->valueT.int_val = -4;
 
-  ele4 = TSRecordEleCreate();  //restart TM
-  ele4->rec_name = (char *) TSstrdup("proxy.local.cluster.type");
+  ele4 = TSRecordEleCreate(); // restart TM
+  ele4->rec_name = (char *)TSstrdup("proxy.local.cluster.type");
   ele4->rec_type = TS_REC_INT;
   ele4->valueT.int_val = 2;
 
-  ele5 = TSRecordEleCreate();  // reread action
-  ele5->rec_name = (char *) TSstrdup("proxy.config.cluster.mc_ttl");
+  ele5 = TSRecordEleCreate(); // reread action
+  ele5->rec_name = (char *)TSstrdup("proxy.config.cluster.mc_ttl");
   ele5->rec_type = TS_REC_INT;
   ele5->valueT.int_val = 555;
 
@@ -1376,7 +1365,7 @@ test_record_set_mlt(void)
   // cleanup: need to iterate through list and delete each ele
   int count = TSListLen(list);
   for (int i = 0; i < count; i++) {
-    TSRecordEle *ele = (TSRecordEle *) TSListDequeue(list);
+    TSRecordEle *ele = (TSRecordEle *)TSListDequeue(list);
     TSRecordEleDestroy(ele);
   }
   TSListDestroy(list);
@@ -1428,7 +1417,7 @@ test_read_url(bool valid)
     if (body)
       TSfree(body);
 
-  } else {                      // use valid urls
+  } else { // use valid urls
     err = TSReadFromUrlEx("lakota.example.com:80/", &header, &headerSize, &body, &bodySize, 50000);
 
     if (err != TS_ERR_OKAY) {
@@ -1480,7 +1469,6 @@ test_read_file()
     printf("[TSConfigFileRead]\n\tFile Size=%d, Version=%d\n%s\n", f_size, f_ver, f_text);
     TSfree(f_text);
   }
-
 }
 
 /* ------------------------------------------------------------------------
@@ -1602,7 +1590,7 @@ test_cfg_context_move(char *args)
   strtok(args, ":");
   filename = strtok(NULL, ":");
   fprintf(stderr, "modify file: %s\n", filename);
-  char *name =TSstrdup(filename);
+  char *name = TSstrdup(filename);
 
   // convert file name to TSFileNameT
   if (strcmp(name, "cache.config") == 0) {
@@ -1679,8 +1667,8 @@ void
 test_cfg_context_ops()
 {
   // Not used here.
-  //TSCfgIterState iter_state;
-  //TSCfgEle *cfg_ele;
+  // TSCfgIterState iter_state;
+  // TSCfgEle *cfg_ele;
   TSMgmtError err;
   TSCfgContext ctx;
   TSVirtIpAddrEle *ele;
@@ -1708,7 +1696,7 @@ test_cfg_context_ops()
       goto END;
     }
   }
-  //print_VirtIpAddr_ele_list(ctx);
+  // print_VirtIpAddr_ele_list(ctx);
 
   printf("\nREMOVE LAST ELE (originally the first ele)\n");
   // remove the last ele (which was originally the first ele)
@@ -1732,7 +1720,7 @@ test_cfg_context_ops()
     ele->ip_addr = TSstrdup("201.201.201.201");
     ele->intr = TSstrdup("appended");
     ele->sub_intr = 201;
-    err = TSCfgContextAppendEle(ctx, (TSCfgEle *) ele);
+    err = TSCfgContextAppendEle(ctx, (TSCfgEle *)ele);
     if (err != TS_ERR_OKAY) {
       printf("ERROR: append ele\n");
       TSVirtIpAddrEleDestroy(ele);
@@ -1741,7 +1729,7 @@ test_cfg_context_ops()
   } else {
     printf("Can't create VirtIpAddrEle\n");
   }
-  //print_VirtIpAddr_ele_list(ctx);
+  // print_VirtIpAddr_ele_list(ctx);
 
   insert_at = 1;
   // insert a new ele in insert_at index
@@ -1749,9 +1737,9 @@ test_cfg_context_ops()
   ele = TSVirtIpAddrEleCreate();
   if (ele) {
     ele->ip_addr = TSstrdup("101.101.101.101");
-    ele->intr = (char *) TSstrdup("inserted");
+    ele->intr = (char *)TSstrdup("inserted");
     ele->sub_intr = 100;
-    err = TSCfgContextInsertEleAt(ctx, (TSCfgEle *) ele, insert_at);
+    err = TSCfgContextInsertEleAt(ctx, (TSCfgEle *)ele, insert_at);
     if (err != TS_ERR_OKAY) {
       printf("ERROR: insert ele  at index %d\n", insert_at);
       TSVirtIpAddrEleDestroy(ele);
@@ -1760,7 +1748,7 @@ test_cfg_context_ops()
   } else {
     printf("Can't create VirtIpAddrEle\n");
   }
-  //print_VirtIpAddr_ele_list(ctx);
+  // print_VirtIpAddr_ele_list(ctx);
 
 
   printf("\nMove ele at index %d to botoom of list\n", insert_at);
@@ -1771,7 +1759,7 @@ test_cfg_context_ops()
       goto END;
     }
   }
-  //print_VirtIpAddr_ele_list(ctx);
+  // print_VirtIpAddr_ele_list(ctx);
 
   printf("\nShift all Ele's above last ele down; bottom ele becomes top ele\n");
   count = TSCfgContextGetCount(ctx);
@@ -1782,18 +1770,17 @@ test_cfg_context_ops()
       goto END;
     }
   }
-  //print_VirtIpAddr_ele_list(ctx);
+  // print_VirtIpAddr_ele_list(ctx);
 
 
   // commit change
   TSCfgContextCommit(ctx, NULL, NULL);
 
   printf("\nAFTER CHANGE:\n");
-  //print_VirtIpAddr_ele_list(ctx);
+// print_VirtIpAddr_ele_list(ctx);
 
 END:
   TSCfgContextDestroy(ctx);
-
 }
 
 /* ------------------------------------------------------------------------
@@ -1806,7 +1793,7 @@ void
 test_cfg_plugin()
 {
   // Not used here.
-  //TSCfgIterState iter_state;
+  // TSCfgIterState iter_state;
   TSCfgContext ctx;
   TSCfgEle *cfg_ele;
   TSPluginEle *ele;
@@ -1818,9 +1805,9 @@ test_cfg_plugin()
   // retrieve and modify ele
   printf("test_cfg_plugin: modifying the first ele...\n");
   cfg_ele = TSCfgContextGetEleAt(ctx, 0);
-  ele = (TSPluginEle *) cfg_ele;
+  ele = (TSPluginEle *)cfg_ele;
   if (ele) {
-    //free(ele->name);
+    // free(ele->name);
     ele->name = ats_strdup("change-plugin.so");
   }
 
@@ -1837,13 +1824,12 @@ test_cfg_plugin()
   ele->args = TSStringListCreate();
   TSStringListEnqueue(ele->args, ats_strdup("arg1"));
   TSStringListEnqueue(ele->args, ats_strdup("arg2"));
-  TSCfgContextAppendEle(ctx, (TSCfgEle *) ele);
+  TSCfgContextAppendEle(ctx, (TSCfgEle *)ele);
 
   // commit change
   TSCfgContextCommit(ctx, NULL, NULL);
 
   TSCfgContextDestroy(ctx);
-
 }
 
 /* ------------------------------------------------------------------------
@@ -1856,7 +1842,7 @@ void
 test_cfg_socks()
 {
   // Not used here.
-  //TSCfgIterState iter_state;
+  // TSCfgIterState iter_state;
   TSCfgContext ctx;
   TSCfgEle *cfg_ele;
   TSSocksEle *ele;
@@ -1868,7 +1854,7 @@ test_cfg_socks()
   // retrieving an ele
   printf("test_socks_set: modifying the fourth ele...\n");
   cfg_ele = TSCfgContextGetEleAt(ctx, 3);
-  ele = (TSSocksEle *) cfg_ele;
+  ele = (TSSocksEle *)cfg_ele;
   if (ele) {
     if (ele->rr != TS_RR_NONE)
       ele->rr = TS_RR_FALSE;
@@ -1908,7 +1894,7 @@ test_cfg_socks()
     ele->socks_servers = dlist;
     ele->rr = TS_RR_STRICT;
 
-    TSCfgContextAppendEle(ctx, (TSCfgEle *) ele);
+    TSCfgContextAppendEle(ctx, (TSCfgEle *)ele);
   } else {
     printf("Can't create SocksEle\n");
   }
@@ -1918,7 +1904,6 @@ test_cfg_socks()
 
   TSCfgContextDestroy(ctx);
 }
-
 
 
 /***************************************************************************
@@ -1945,10 +1930,10 @@ print_active_events()
   if (ret != TS_ERR_OKAY) {
     print_err("TSActiveEventGetMlt", ret);
     goto END;
-  } else {                      // successful get
+  } else { // successful get
     count = TSListLen(events);
     for (i = 0; i < count; i++) {
-      name = (char *) TSListDequeue(events);
+      name = (char *)TSListDequeue(events);
       printf("\t%s\n", name);
       TSfree(name);
     }
@@ -2002,10 +1987,10 @@ try_resolve(char *event_name)
   name = TSstrdup(event_name);
   printf("[try_resolve] Resolving event: %s\n", name);
 
-  if (check_active(name)) {     // resolve events
+  if (check_active(name)) { // resolve events
     ret = TSEventResolve(name);
     print_err("TSEventResolve", ret);
-    check_active(name);         // should be non-active now
+    check_active(name); // should be non-active now
   }
 
   TSfree(name);
@@ -2158,7 +2143,6 @@ test_diags()
 
   // debug
   TSDiags(TS_DIAG_DEBUG, "[remote]debug ... wish I was good at it");
-
 }
 
 /***************************************************************************
@@ -2240,7 +2224,8 @@ print_stats()
   TSRecordGetInt("proxy.process.http.current_server_connections", &i7);
   TSRecordGetInt("proxy.process.http.current_server_transactions", &i8);
 
-  fprintf(stderr, "%" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 "\n", i1, i2, i3, i4, i5, i6, i7, i8);
+  fprintf(stderr, "%" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 "\n", i1,
+          i2, i3, i4, i5, i6, i7, i8);
 
   TSRecordGetFloat("proxy.node.bandwidth_hit_ratio", &f1);
   TSRecordGetFloat("proxy.node.hostdb.hit_ratio", &f2);
@@ -2254,8 +2239,7 @@ print_stats()
   TSRecordGetFloat("proxy.node.http.cache_hit_ims_avg_10s", &f8);
   TSRecordGetFloat("proxy.node.client_throughput_out", &f9);
 
-  fprintf(stderr, "NODE stats: \n%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n",
-          f1, f2, f3, f4, f10, f5, f6, f11, f7, f8, f9);
+  fprintf(stderr, "NODE stats: \n%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n", f1, f2, f3, f4, f10, f5, f6, f11, f7, f8, f9);
 
   TSRecordGetInt("proxy.node.cache_hit_ratio_int_pct", &i1);
   TSRecordGetInt("proxy.node.cache_hit_mem_ratio_int_pct", &i7);
@@ -2267,7 +2251,8 @@ print_stats()
   TSRecordGetInt("proxy.node.current_client_connections", &i8);
   TSRecordGetInt("proxy.node.current_cache_connections", &i9);
 
-  fprintf(stderr, "%" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 "\n",
+  fprintf(stderr,
+          "%" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 "\n",
           i1, i7, i2, i3, i4, i5, i6, i8, i9);
 
   TSRecordGetFloat("proxy.cluster.user_agent_total_bytes_avg_10s", &f1);
@@ -2287,12 +2272,12 @@ print_stats()
 
   fprintf(stderr, "CLUSTER stats: \n");
   fprintf(stderr, "%f, %f, %f, %f, %f, %f\n", f1, f2, f3, f4, f5, f6);
-  fprintf(stderr, "%" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 "\n", i1, i6, i2, i3, i7, i4, i5);
+  fprintf(stderr, "%" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 "\n", i1, i6, i2, i3, i7,
+          i4, i5);
 
   fprintf(stderr, "PROCESS stats: \n");
   fprintf(stderr, "%f, %f\n", f1, f2);
   fprintf(stderr, "%" PRId64 ", %" PRId64 ", %" PRId64 ", %" PRId64 "\n", i1, i2, i3, i4);
-
 }
 
 void
@@ -2309,12 +2294,12 @@ sync_test()
   TSActionNeedT action;
 
   TSRecordSetString("proxy.config.proxy_name", "dorkface", &action);
-  printf("[TSRecordSetString] proxy.config.proxy_name \n\tAction Should: [%d]\n\tAction is    : [%d]\n",
-         TS_ACTION_UNDEFINED, action);
+  printf("[TSRecordSetString] proxy.config.proxy_name \n\tAction Should: [%d]\n\tAction is    : [%d]\n", TS_ACTION_UNDEFINED,
+         action);
 
   TSRecordSetInt("proxy.config.cluster.cluster_port", 3333, &action);
-  printf("[TSRecordSetInt] proxy.config.cluster.cluster_port\n\tAction Should: [%d]\n\tAction is    : [%d]\n",
-         TS_ACTION_RESTART, action);
+  printf("[TSRecordSetInt] proxy.config.cluster.cluster_port\n\tAction Should: [%d]\n\tAction is    : [%d]\n", TS_ACTION_RESTART,
+         action);
 
   if (TSRecordSet("proxy.config.http.cache.fuzz.probability", "-0.3333", &action) != TS_ERR_OKAY)
     printf("TSRecordSet FAILED!\n");
@@ -2336,7 +2321,7 @@ sync_test()
 static void
 runInteractive()
 {
-  char buf[512];                // holds request from interactive prompt
+  char buf[512]; // holds request from interactive prompt
 
   // process input from command line
   while (1) {
@@ -2361,7 +2346,7 @@ runInteractive()
     // exiting/quitting?
     if (strcasecmp("quit\n", buf) == 0 || strcasecmp("exit\n", buf) == 0) {
       // Don't wait for response LM
-      //exit(0);
+      // exit(0);
       return;
     }
     // check what operation user typed in
@@ -2432,11 +2417,9 @@ runInteractive()
     }
 
 
+  } // end while(1)
 
-
-  }                             // end while(1)
-
-}                               // end runInteractive
+} // end runInteractive
 
 
 /* ------------------------------------------------------------------------
@@ -2459,4 +2442,4 @@ main(int /* argc ATS_UNUSED */, char ** /* argv ATS_UNUSED */)
   }
 
   return 0;
-}                               // end main()
+} // end main()

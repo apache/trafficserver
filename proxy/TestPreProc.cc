@@ -27,12 +27,12 @@
 #include "HttpMessage.h"
 #include "HttpPreProcMessageManager.h"
 #include "RawHashTable.h"
-#include "ink_time.h"           /* ink_time_wall_seconds() */
+#include "ink_time.h" /* ink_time_wall_seconds() */
 #include <string.h>
 #include <iostream.h>
 
 /* local functions prototypes */
-void dumpMessage(const HttpMessage & msg);
+void dumpMessage(const HttpMessage &msg);
 void testPreProc();
 
 /* some global requests */
@@ -43,11 +43,7 @@ char *response1 = "HTTP/1.1 200\r\n\r\n";
 //////////////////////////////////////////////////////////////////////////////
 // RequestInput().
 //////////////////////////////////////////////////////////////////////////////
-RequestInput::RequestInput(const char *str, IOBuffer * cb)
-  :
-m_sp(0),
-m_len(0),
-m_cb(cb)
+RequestInput::RequestInput(const char *str, IOBuffer *cb) : m_sp(0), m_len(0), m_cb(cb)
 {
   m_len = strlen(str);
   m_sp = request1;
@@ -88,7 +84,7 @@ RequestInput::run()
 // dumpMessage()
 //////////////////////////////////////////////////////////////////////////////
 void
-dumpMessage(const HttpMessage & msg)
+dumpMessage(const HttpMessage &msg)
 {
   if (msg.isResponse()) {
     cout << "Http response" << endl;
@@ -147,7 +143,7 @@ dumpMessage(const HttpMessage & msg)
 double
 testPreProc(unsigned loopCount)
 {
-  IOBufferPool pool(96 /* bufferSize */ , 20 /* bufferCount */ );
+  IOBufferPool pool(96 /* bufferSize */, 20 /* bufferCount */);
   IOBuffer *cb = pool.newBuffer();
 
   HttpPreProcMessageManager msgMgr;
@@ -158,7 +154,6 @@ testPreProc(unsigned loopCount)
   double startTime = ink_time_wall_seconds();
 
   for (unsigned i = 0; i < loopCount; i++) {
-
     RequestInput requestInput(request1, cb);
 
     while (!requestInput.isDone()) {
@@ -181,7 +176,6 @@ main()
     double elapsedTime = testPreProc(lc);
     cout << "Elapsed time for " << lc << "loops is " << elapsedTime << endl;
   }
-
 
 
   return (0);

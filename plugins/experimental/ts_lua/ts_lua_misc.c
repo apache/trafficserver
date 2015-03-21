@@ -20,23 +20,23 @@
 #include "ts_lua_util.h"
 
 
-static int ts_lua_get_now_time(lua_State * L);
-static int ts_lua_debug(lua_State * L);
-static int ts_lua_error(lua_State * L);
-static int ts_lua_sleep(lua_State * L);
-static int ts_lua_say(lua_State * L);
-static int ts_lua_flush(lua_State * L);
+static int ts_lua_get_now_time(lua_State *L);
+static int ts_lua_debug(lua_State *L);
+static int ts_lua_error(lua_State *L);
+static int ts_lua_sleep(lua_State *L);
+static int ts_lua_say(lua_State *L);
+static int ts_lua_flush(lua_State *L);
 
 static int ts_lua_sleep_cleanup(struct ict_item *item);
 static int ts_lua_sleep_handler(TSCont contp, TSEvent event, void *edata);
 
-int ts_lua_flush_launch(ts_lua_http_intercept_ctx * ictx);
+int ts_lua_flush_launch(ts_lua_http_intercept_ctx *ictx);
 static int ts_lua_flush_cleanup(struct ict_item *item);
 static int ts_lua_flush_handler(TSCont contp, TSEvent event, void *edata);
 
 
 void
-ts_lua_inject_misc_api(lua_State * L)
+ts_lua_inject_misc_api(lua_State *L)
 {
   /* ts.now() */
   lua_pushcfunction(L, ts_lua_get_now_time);
@@ -64,7 +64,7 @@ ts_lua_inject_misc_api(lua_State * L)
 }
 
 static int
-ts_lua_get_now_time(lua_State * L)
+ts_lua_get_now_time(lua_State *L)
 {
   time_t now;
 
@@ -74,7 +74,7 @@ ts_lua_get_now_time(lua_State * L)
 }
 
 static int
-ts_lua_debug(lua_State * L)
+ts_lua_debug(lua_State *L)
 {
   const char *msg;
 
@@ -84,7 +84,7 @@ ts_lua_debug(lua_State * L)
 }
 
 static int
-ts_lua_error(lua_State * L)
+ts_lua_error(lua_State *L)
 {
   const char *msg;
 
@@ -94,7 +94,7 @@ ts_lua_error(lua_State * L)
 }
 
 static int
-ts_lua_sleep(lua_State * L)
+ts_lua_sleep(lua_State *L)
 {
   int sec;
   TSAction action;
@@ -108,7 +108,7 @@ ts_lua_sleep(lua_State * L)
   contp = TSContCreate(ts_lua_sleep_handler, TSContMutexGet(ictx->contp));
   action = TSContSchedule(contp, sec * 1000, TS_THREAD_POOL_DEFAULT);
 
-  node = (ts_lua_http_intercept_item *) TSmalloc(sizeof(ts_lua_http_intercept_item));
+  node = (ts_lua_http_intercept_item *)TSmalloc(sizeof(ts_lua_http_intercept_item));
   TS_LUA_ADD_INTERCEPT_ITEM(ictx, node, contp, ts_lua_sleep_cleanup, action);
   TSContDataSet(contp, node);
 
@@ -116,7 +116,7 @@ ts_lua_sleep(lua_State * L)
 }
 
 static int
-ts_lua_say(lua_State * L)
+ts_lua_say(lua_State *L)
 {
   const char *data;
   size_t len;
@@ -136,7 +136,7 @@ ts_lua_say(lua_State * L)
 }
 
 static int
-ts_lua_flush(lua_State * L)
+ts_lua_flush(lua_State *L)
 {
   int64_t avail;
   ts_lua_http_intercept_ctx *ictx;
@@ -173,7 +173,7 @@ ts_lua_sleep_cleanup(struct ict_item *item)
     return 0;
 
   if (item->data) {
-    TSActionCancel((TSAction) item->data);
+    TSActionCancel((TSAction)item->data);
     item->data = NULL;
   }
 
@@ -184,7 +184,7 @@ ts_lua_sleep_cleanup(struct ict_item *item)
 }
 
 int
-ts_lua_flush_launch(ts_lua_http_intercept_ctx * ictx)
+ts_lua_flush_launch(ts_lua_http_intercept_ctx *ictx)
 {
   TSAction action;
   TSCont contp;
@@ -193,7 +193,7 @@ ts_lua_flush_launch(ts_lua_http_intercept_ctx * ictx)
   contp = TSContCreate(ts_lua_flush_handler, TSContMutexGet(ictx->contp));
   action = TSContSchedule(contp, 0, TS_THREAD_POOL_DEFAULT);
 
-  node = (ts_lua_http_intercept_item *) TSmalloc(sizeof(ts_lua_http_intercept_item));
+  node = (ts_lua_http_intercept_item *)TSmalloc(sizeof(ts_lua_http_intercept_item));
   TS_LUA_ADD_INTERCEPT_ITEM(ictx, node, contp, ts_lua_flush_cleanup, action);
   TSContDataSet(contp, node);
 
@@ -207,7 +207,7 @@ ts_lua_flush_cleanup(struct ict_item *item)
     return 0;
 
   if (item->data) {
-    TSActionCancel((TSAction) item->data);
+    TSActionCancel((TSAction)item->data);
     item->data = NULL;
   }
 

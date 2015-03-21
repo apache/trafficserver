@@ -43,12 +43,13 @@ int RegressionTest::final_status = REGRESSION_TEST_PASSED;
 char *
 regression_status_string(int status)
 {
-  return (char *) (status == REGRESSION_TEST_NOT_RUN ? "NOT_RUN" :
-                   (status == REGRESSION_TEST_PASSED ? "PASSED" :
-                    (status == REGRESSION_TEST_INPROGRESS ? "INPROGRESS" : "FAILED")));
+  return (
+    char *)(status == REGRESSION_TEST_NOT_RUN ?
+              "NOT_RUN" :
+              (status == REGRESSION_TEST_PASSED ? "PASSED" : (status == REGRESSION_TEST_INPROGRESS ? "INPROGRESS" : "FAILED")));
 }
 
-RegressionTest::RegressionTest(const char *name_arg, TestFunction * function_arg, int aopt)
+RegressionTest::RegressionTest(const char *name_arg, TestFunction *function_arg, int aopt)
 {
   name = name_arg;
   function = function_arg;
@@ -68,16 +69,16 @@ RegressionTest::RegressionTest(const char *name_arg, TestFunction * function_arg
 }
 
 static inline int
-start_test(RegressionTest * t)
+start_test(RegressionTest *t)
 {
   ink_assert(t->status == REGRESSION_TEST_NOT_RUN);
   t->status = REGRESSION_TEST_INPROGRESS;
   fprintf(stderr, "REGRESSION TEST %s started\n", t->name);
-  (*t->function) (t, regression_level, &t->status);
+  (*t->function)(t, regression_level, &t->status);
   int tresult = t->status;
   if (tresult != REGRESSION_TEST_INPROGRESS) {
-    fprintf(stderr, "    REGRESSION_RESULT %s:%*s %s\n", t->name,
-            40 - (int)strlen(t->name), " ", regression_status_string(tresult));
+    fprintf(stderr, "    REGRESSION_RESULT %s:%*s %s\n", t->name, 40 - (int)strlen(t->name), " ",
+            regression_status_string(tresult));
     t->printed = 1;
   }
   return tresult;
@@ -92,7 +93,7 @@ RegressionTest::run(char *atest)
     dfa.compile(".*");
   fprintf(stderr, "REGRESSION_TEST initialization begun\n");
   // start the non exclusive tests
-  for (RegressionTest * t = test; t; t = t->next) {
+  for (RegressionTest *t = test; t; t = t->next) {
     if ((dfa.match(t->name) >= 0)) {
       int res = start_test(t);
       if (res == REGRESSION_TEST_FAILED)
@@ -106,15 +107,14 @@ RegressionTest::run(char *atest)
 int
 RegressionTest::run_some()
 {
-
   if (current) {
     if (current->status == REGRESSION_TEST_INPROGRESS)
       return REGRESSION_TEST_INPROGRESS;
     else if (current->status != REGRESSION_TEST_NOT_RUN) {
       if (!current->printed) {
         current->printed = true;
-        fprintf(stderr, "    REGRESSION_RESULT %s:%*s %s\n", current->name,
-                40 - (int)strlen(current->name), " ", regression_status_string(current->status));
+        fprintf(stderr, "    REGRESSION_RESULT %s:%*s %s\n", current->name, 40 - (int)strlen(current->name), " ",
+                regression_status_string(current->status));
       }
       current = current->next;
     }
@@ -148,8 +148,8 @@ check_test_list:
   while (t) {
     if ((t->status == REGRESSION_TEST_PASSED || t->status == REGRESSION_TEST_FAILED) && !t->printed) {
       t->printed = true;
-      fprintf(stderr, "    REGRESSION_RESULT %s:%*s %s\n", t->name,
-              40 - (int)strlen(t->name), " ", regression_status_string(t->status));
+      fprintf(stderr, "    REGRESSION_RESULT %s:%*s %s\n", t->name, 40 - (int)strlen(t->name), " ",
+              regression_status_string(t->status));
     }
 
     switch (t->status) {
@@ -202,9 +202,10 @@ rperf(RegressionTest *t, const char *tag, double val)
   return (l);
 }
 
-REGRESSION_TEST(Regression) (RegressionTest * t, int atype, int *status) {
-  (void) t;
-  (void) atype;
+REGRESSION_TEST(Regression)(RegressionTest *t, int atype, int *status)
+{
+  (void)t;
+  (void)atype;
   rprintf(t, "regression test\n");
   rperf(t, "speed", 100.0);
   if (!test)

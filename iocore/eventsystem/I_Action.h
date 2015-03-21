@@ -87,9 +87,7 @@
 */
 class Action
 {
-
 public:
-
   /**
     Contination that initiated this action.
 
@@ -99,7 +97,7 @@ public:
     directly by the state machine.
 
   */
-  Continuation * continuation;
+  Continuation *continuation;
 
 
   /**
@@ -136,7 +134,9 @@ public:
     @param c Continuation associated with this Action.
 
   */
-  virtual void cancel(Continuation * c = NULL) {
+  virtual void
+  cancel(Continuation *c = NULL)
+  {
     ink_assert(!c || c == continuation);
 #ifdef DEBUG
     ink_assert(!cancelled);
@@ -158,7 +158,9 @@ public:
     @param c Continuation associated with this Action.
 
   */
-  void cancel_action(Continuation * c = NULL) {
+  void
+  cancel_action(Continuation *c = NULL)
+  {
     ink_assert(!c || c == continuation);
 #ifdef DEBUG
     ink_assert(!cancelled);
@@ -169,7 +171,7 @@ public:
 #endif
   }
 
-  Continuation *operator =(Continuation * acont)
+  Continuation *operator=(Continuation *acont)
   {
     continuation = acont;
     if (acont)
@@ -185,29 +187,27 @@ public:
     Continuation.
 
   */
-Action():continuation(NULL), cancelled(false) {
-  }
+  Action() : continuation(NULL), cancelled(false) {}
 
 #if defined(__GNUC__)
-  virtual ~ Action() {
-  }
+  virtual ~Action() {}
 #endif
 };
 
-#define ACTION_RESULT_NONE           MAKE_ACTION_RESULT(0)
-#define ACTION_RESULT_DONE           MAKE_ACTION_RESULT(1)
-#define ACTION_IO_ERROR              MAKE_ACTION_RESULT(2)
-#define ACTION_RESULT_INLINE         MAKE_ACTION_RESULT(3)
+#define ACTION_RESULT_NONE MAKE_ACTION_RESULT(0)
+#define ACTION_RESULT_DONE MAKE_ACTION_RESULT(1)
+#define ACTION_IO_ERROR MAKE_ACTION_RESULT(2)
+#define ACTION_RESULT_INLINE MAKE_ACTION_RESULT(3)
 
 // Use these classes by
 // #define ACTION_RESULT_HOST_DB_OFFLINE
 //   MAKE_ACTION_RESULT(ACTION_RESULT_HOST_DB_BASE + 0)
 
-#define MAKE_ACTION_RESULT(_x) (Action*)(((uintptr_t)((_x<<1)+1)))
+#define MAKE_ACTION_RESULT(_x) (Action *)(((uintptr_t)((_x << 1) + 1)))
 
 #define ACTION_RESULT(_x) \
   (int)((((uintptr_t)_x)&1)!=0?(((uintptr_t)>>1):(uintptr_t)0))
 
-#define IS_ACTION_RESULT(_x) ((((uintptr_t)_x)&1) != 0)
+#define IS_ACTION_RESULT(_x) ((((uintptr_t)_x) & 1) != 0)
 
 #endif /*_Action_h_*/

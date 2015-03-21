@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#if !defined (_HttpSessionAccept_h_)
+#if !defined(_HttpSessionAccept_h_)
 #define _HttpSessionAccept_h_
 
 #include "libts.h"
@@ -32,133 +32,144 @@
 #include "I_Net.h"
 #include <records/I_RecHttp.h>
 
-namespace detail {
-  /** Options for @c HttpSessionAccept.
+namespace detail
+{
+/** Options for @c HttpSessionAccept.
 
-      @internal This is done as a separate class for two reasons.
+    @internal This is done as a separate class for two reasons.
 
-      The first is that in current usage many instances are created
-      with the same options so (for the client) this is easier and
-      more efficient than passing options directly to the @c
-      HttpSessionAccept or calling setters.
+    The first is that in current usage many instances are created
+    with the same options so (for the client) this is easier and
+    more efficient than passing options directly to the @c
+    HttpSessionAccept or calling setters.
 
-      The second is that @c HttpSessionAccept is not provided with any thread
-      safety because it is intended as an immutable object. Putting
-      the setters here and not there makes that clearer.
+    The second is that @c HttpSessionAccept is not provided with any thread
+    safety because it is intended as an immutable object. Putting
+    the setters here and not there makes that clearer.
 
-      We don't do this directly as nested class because we want to
-      inherit the data members rather than duplicate the declarations
-      and initializations.
-   */
-  class HttpSessionAcceptOptions {
-  private:
-    typedef HttpSessionAcceptOptions self; ///< Self reference type.
-  public:
-    HttpSessionAcceptOptions();
+    We don't do this directly as nested class because we want to
+    inherit the data members rather than duplicate the declarations
+    and initializations.
+ */
+class HttpSessionAcceptOptions
+{
+private:
+  typedef HttpSessionAcceptOptions self; ///< Self reference type.
+public:
+  HttpSessionAcceptOptions();
 
-    // Connection type (HttpProxyPort::TransportType)
-    int transport_type;
-    /// Set the transport type.
-    self& setTransportType(int);
-    /// Local address to bind for outbound connections.
-    IpAddr outbound_ip4;
-    /// Local address to bind for outbound connections.
-    IpAddr outbound_ip6;
-    /// Set the outbound IP address to @a ip.
-    self& setOutboundIp(IpAddr& ip);
-    /// Set the outbound IP address to @a ip.
-    self& setOutboundIp(IpEndpoint* ip);
-    /// Local port for outbound connection.
-    uint16_t outbound_port;
-    /// Set outbound port.
-    self& setOutboundPort(uint16_t);
-    /// Outbound transparent.
-    bool f_outbound_transparent;
-    /// Set outbound transparency.
-    self& setOutboundTransparent(bool);
-    /// Transparent pass-through.
-    bool f_transparent_passthrough;
-    /// Set transparent passthrough.
-    self& setTransparentPassthrough(bool);
-    /// Accepting backdoor connections.
-    bool backdoor;
-    /// Set backdoor accept.
-    self& setBackdoor(bool);
-    /// Host address resolution preference order.
-    HostResPreferenceOrder host_res_preference;
-    /// Set the host query preference.
-    self& setHostResPreference(HostResPreferenceOrder const);
-    /// Acceptable session protocols.
-    SessionProtocolSet session_protocol_preference;
-    /// Set the session protocol preference.
-    self& setSessionProtocolPreference(SessionProtocolSet const&);
-  };
+  // Connection type (HttpProxyPort::TransportType)
+  int transport_type;
+  /// Set the transport type.
+  self &setTransportType(int);
+  /// Local address to bind for outbound connections.
+  IpAddr outbound_ip4;
+  /// Local address to bind for outbound connections.
+  IpAddr outbound_ip6;
+  /// Set the outbound IP address to @a ip.
+  self &setOutboundIp(IpAddr &ip);
+  /// Set the outbound IP address to @a ip.
+  self &setOutboundIp(IpEndpoint *ip);
+  /// Local port for outbound connection.
+  uint16_t outbound_port;
+  /// Set outbound port.
+  self &setOutboundPort(uint16_t);
+  /// Outbound transparent.
+  bool f_outbound_transparent;
+  /// Set outbound transparency.
+  self &setOutboundTransparent(bool);
+  /// Transparent pass-through.
+  bool f_transparent_passthrough;
+  /// Set transparent passthrough.
+  self &setTransparentPassthrough(bool);
+  /// Accepting backdoor connections.
+  bool backdoor;
+  /// Set backdoor accept.
+  self &setBackdoor(bool);
+  /// Host address resolution preference order.
+  HostResPreferenceOrder host_res_preference;
+  /// Set the host query preference.
+  self &setHostResPreference(HostResPreferenceOrder const);
+  /// Acceptable session protocols.
+  SessionProtocolSet session_protocol_preference;
+  /// Set the session protocol preference.
+  self &setSessionProtocolPreference(SessionProtocolSet const &);
+};
 
-  inline HttpSessionAcceptOptions::HttpSessionAcceptOptions()
-    : transport_type(0)
-    , outbound_port(0)
-    , f_outbound_transparent(false)
-    , f_transparent_passthrough(false)
-    , backdoor(false)
-  {
-    memcpy(host_res_preference, host_res_default_preference_order, sizeof(host_res_preference));
-  }
+inline HttpSessionAcceptOptions::HttpSessionAcceptOptions()
+  : transport_type(0), outbound_port(0), f_outbound_transparent(false), f_transparent_passthrough(false), backdoor(false)
+{
+  memcpy(host_res_preference, host_res_default_preference_order, sizeof(host_res_preference));
+}
 
-  inline HttpSessionAcceptOptions&
-  HttpSessionAcceptOptions::setTransportType(int type) {
-    transport_type =  type;
-    return *this;
-  }
+inline HttpSessionAcceptOptions &
+HttpSessionAcceptOptions::setTransportType(int type)
+{
+  transport_type = type;
+  return *this;
+}
 
-  inline HttpSessionAcceptOptions&
-  HttpSessionAcceptOptions::setOutboundIp(IpAddr& ip) {
-    if (ip.isIp4()) outbound_ip4 = ip;
-    else if (ip.isIp6()) outbound_ip6 = ip;
-    return *this;
-  }
+inline HttpSessionAcceptOptions &
+HttpSessionAcceptOptions::setOutboundIp(IpAddr &ip)
+{
+  if (ip.isIp4())
+    outbound_ip4 = ip;
+  else if (ip.isIp6())
+    outbound_ip6 = ip;
+  return *this;
+}
 
-  inline HttpSessionAcceptOptions&
-  HttpSessionAcceptOptions::setOutboundIp(IpEndpoint* ip) {
-    if (ip->isIp4()) outbound_ip4 = *ip;
-    else if (ip->isIp6()) outbound_ip6 = *ip;
-    return *this;
-  }
+inline HttpSessionAcceptOptions &
+HttpSessionAcceptOptions::setOutboundIp(IpEndpoint *ip)
+{
+  if (ip->isIp4())
+    outbound_ip4 = *ip;
+  else if (ip->isIp6())
+    outbound_ip6 = *ip;
+  return *this;
+}
 
-  inline HttpSessionAcceptOptions&
-  HttpSessionAcceptOptions::setOutboundPort(uint16_t port) {
-    outbound_port = port;
-    return *this;
-  }
+inline HttpSessionAcceptOptions &
+HttpSessionAcceptOptions::setOutboundPort(uint16_t port)
+{
+  outbound_port = port;
+  return *this;
+}
 
-  inline HttpSessionAcceptOptions&
-  HttpSessionAcceptOptions::setOutboundTransparent(bool flag) {
-    f_outbound_transparent = flag;
-    return *this;
-  }
+inline HttpSessionAcceptOptions &
+HttpSessionAcceptOptions::setOutboundTransparent(bool flag)
+{
+  f_outbound_transparent = flag;
+  return *this;
+}
 
-  inline HttpSessionAcceptOptions&
-  HttpSessionAcceptOptions::setTransparentPassthrough(bool flag) {
-    f_transparent_passthrough = flag;
-    return *this;
-  }
+inline HttpSessionAcceptOptions &
+HttpSessionAcceptOptions::setTransparentPassthrough(bool flag)
+{
+  f_transparent_passthrough = flag;
+  return *this;
+}
 
- inline HttpSessionAcceptOptions&
-  HttpSessionAcceptOptions::setBackdoor(bool flag) {
-    backdoor = flag;
-    return *this;
-  }
+inline HttpSessionAcceptOptions &
+HttpSessionAcceptOptions::setBackdoor(bool flag)
+{
+  backdoor = flag;
+  return *this;
+}
 
-  inline HttpSessionAcceptOptions&
-  HttpSessionAcceptOptions::setHostResPreference(HostResPreferenceOrder const order) {
-    memcpy(host_res_preference, order, sizeof(host_res_preference));
-    return *this;
-  }
+inline HttpSessionAcceptOptions &
+HttpSessionAcceptOptions::setHostResPreference(HostResPreferenceOrder const order)
+{
+  memcpy(host_res_preference, order, sizeof(host_res_preference));
+  return *this;
+}
 
-  inline HttpSessionAcceptOptions&
-  HttpSessionAcceptOptions::setSessionProtocolPreference(SessionProtocolSet const& sp_set) {
-    session_protocol_preference = sp_set;
-    return *this;
-  }
+inline HttpSessionAcceptOptions &
+HttpSessionAcceptOptions::setSessionProtocolPreference(SessionProtocolSet const &sp_set)
+{
+  session_protocol_preference = sp_set;
+  return *this;
+}
 }
 
 /**
@@ -172,7 +183,7 @@ namespace detail {
    from the top level configuration to the HTTP session.
 */
 
-class HttpSessionAccept: public SessionAccept, private detail::HttpSessionAcceptOptions
+class HttpSessionAccept : public SessionAccept, private detail::HttpSessionAcceptOptions
 {
 private:
   typedef HttpSessionAccept self; ///< Self reference type.
@@ -187,25 +198,20 @@ public:
       initialization order issues. It is important to pick up data that is read
       from the config file and a static is initialized long before that point.
   */
-  HttpSessionAccept(Options const& opt = Options())
-    : SessionAccept(NULL)
-    , detail::HttpSessionAcceptOptions(opt) // copy these.
+  HttpSessionAccept(Options const &opt = Options()) : SessionAccept(NULL), detail::HttpSessionAcceptOptions(opt) // copy these.
   {
     SET_HANDLER(&HttpSessionAccept::mainEvent);
     return;
   }
 
-  ~HttpSessionAccept()
-  {
-    return;
-  }
+  ~HttpSessionAccept() { return; }
 
   void accept(NetVConnection *, MIOBuffer *, IOBufferReader *);
   int mainEvent(int event, void *netvc);
 
 private:
-    HttpSessionAccept(const HttpSessionAccept &);
-    HttpSessionAccept & operator =(const HttpSessionAccept &);
+  HttpSessionAccept(const HttpSessionAccept &);
+  HttpSessionAccept &operator=(const HttpSessionAccept &);
 };
 
 #endif

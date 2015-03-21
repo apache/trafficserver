@@ -44,33 +44,33 @@ class HttpSM;
 class HttpCacheSM;
 class CacheLookupHttpConfig;
 
-struct HttpCacheAction:public Action
-{
+struct HttpCacheAction : public Action {
   HttpCacheAction();
-  virtual void cancel(Continuation * c = NULL);
-  void init(HttpCacheSM * sm_arg)
+  virtual void cancel(Continuation *c = NULL);
+  void
+  init(HttpCacheSM *sm_arg)
   {
     sm = sm_arg;
   };
   HttpCacheSM *sm;
 };
 
-class HttpCacheSM:public Continuation
+class HttpCacheSM : public Continuation
 {
 public:
   HttpCacheSM();
 
-  void init(HttpSM * sm_arg, ProxyMutex * amutex)
+  void
+  init(HttpSM *sm_arg, ProxyMutex *amutex)
   {
     master_sm = sm_arg;
     mutex = amutex;
     captive_action.init(this);
   }
 
-  Action *open_read(URL * url, HTTPHdr * hdr, CacheLookupHttpConfig * params, time_t pin_in_cache);
+  Action *open_read(URL *url, HTTPHdr *hdr, CacheLookupHttpConfig *params, time_t pin_in_cache);
 
-  Action *open_write(URL * url,
-                     HTTPHdr * request, CacheHTTPInfo * old_info, time_t pin_in_cache, bool retry, bool allow_multiple);
+  Action *open_write(URL *url, HTTPHdr *request, CacheHTTPInfo *old_info, time_t pin_in_cache, bool retry, bool allow_multiple);
 
   CacheVConnection *cache_read_vc;
   CacheVConnection *cache_write_vc;
@@ -83,19 +83,22 @@ public:
   HttpSM *master_sm;
   Action *pending_action;
 
-  //Function to set readwhilewrite_inprogress flag
-  inline void set_readwhilewrite_inprogress(bool value)
+  // Function to set readwhilewrite_inprogress flag
+  inline void
+  set_readwhilewrite_inprogress(bool value)
   {
     readwhilewrite_inprogress = value;
   }
 
-  //Function to get the readwhilewrite_inprogress flag
-  inline bool is_readwhilewrite_inprogress()
+  // Function to get the readwhilewrite_inprogress flag
+  inline bool
+  is_readwhilewrite_inprogress()
   {
     return readwhilewrite_inprogress;
   }
 
-  inline void abort_read()
+  inline void
+  abort_read()
   {
     if (cache_read_vc) {
       HTTP_DECREMENT_DYN_STAT(http_current_cache_connections_stat);
@@ -103,7 +106,8 @@ public:
       cache_read_vc = NULL;
     }
   }
-  inline void abort_write()
+  inline void
+  abort_write()
   {
     if (cache_write_vc) {
       HTTP_DECREMENT_DYN_STAT(http_current_cache_connections_stat);
@@ -111,7 +115,8 @@ public:
       cache_write_vc = NULL;
     }
   }
-  inline void close_write()
+  inline void
+  close_write()
   {
     if (cache_write_vc) {
       HTTP_DECREMENT_DYN_STAT(http_current_cache_connections_stat);
@@ -119,7 +124,8 @@ public:
       cache_write_vc = NULL;
     }
   }
-  inline void close_read()
+  inline void
+  close_read()
   {
     if (cache_read_vc) {
       HTTP_DECREMENT_DYN_STAT(http_current_cache_connections_stat);
@@ -127,24 +133,26 @@ public:
       cache_read_vc = NULL;
     }
   }
-  inline void end_both()
+  inline void
+  end_both()
   {
     // We close the read so that cache
     //   records its stats
     close_read();
     abort_write();
   }
-  inline URL *get_lookup_url()
+  inline URL *
+  get_lookup_url()
   {
     return lookup_url;
   }
-  inline void set_lookup_url(URL * url)
+  inline void
+  set_lookup_url(URL *url)
   {
     lookup_url = url;
   }
 
 private:
-
   void do_schedule_in();
   Action *do_cache_open_read();
 

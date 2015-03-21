@@ -45,7 +45,7 @@
 #include "ink_defs.h"
 #include "ink_resource.h"
 
-#define RND16(_x)               (((_x)+15)&~15)
+#define RND16(_x) (((_x) + 15) & ~15)
 
 /** Allocator for fixed size memory blocks. */
 class Allocator
@@ -75,10 +75,7 @@ public:
     ink_freelist_free_bulk(this->fl, head, tail, num_item);
   }
 
-  Allocator()
-  {
-    fl = NULL;
-  }
+  Allocator() { fl = NULL; }
 
   /**
     Creates a new allocator.
@@ -88,8 +85,7 @@ public:
     @param chunk_size number of units to be allocated if free pool is empty.
     @param alignment of objects must be a power of 2.
   */
-  Allocator(const char *name, unsigned int element_size,
-            unsigned int chunk_size = 128, unsigned int alignment = 8)
+  Allocator(const char *name, unsigned int element_size, unsigned int chunk_size = 128, unsigned int alignment = 8)
   {
     ink_freelist_init(&fl, name, element_size, chunk_size, alignment);
   }
@@ -114,16 +110,17 @@ protected:
   copied onto the new objects. This is done for performance reasons.
 
 */
-template<class C> class ClassAllocator: public Allocator {
+template <class C> class ClassAllocator : public Allocator
+{
 public:
   /** Allocates objects of the templated type. */
-  C*
+  C *
   alloc()
   {
     void *ptr = ink_freelist_new(this->fl);
 
     memcpy(ptr, (void *)&this->proto.typeObject, sizeof(C));
-    return (C *) ptr;
+    return (C *)ptr;
   }
 
   /**
@@ -132,7 +129,7 @@ public:
     @param ptr pointer to be freed.
   */
   void
-  free(C * ptr)
+  free(C *ptr)
   {
     ink_freelist_free(this->fl, ptr);
   }
@@ -154,10 +151,10 @@ public:
     Allocate objects of the templated type via the inherited interface
     using void pointers.
   */
-  void*
+  void *
   alloc_void()
   {
-    return (void *) alloc();
+    return (void *)alloc();
   }
 
   /**
@@ -169,7 +166,7 @@ public:
   void
   free_void(void *ptr)
   {
-    free((C *) ptr);
+    free((C *)ptr);
   }
 
   /**
@@ -183,7 +180,7 @@ public:
   void
   free_void_bulk(void *head, void *tail, size_t num_item)
   {
-    free_bulk((C *) head, (C *) tail, num_item);
+    free_bulk((C *)head, (C *)tail, num_item);
   }
 
   /**
@@ -193,14 +190,12 @@ public:
     @param chunk_size number of units to be allocated if free pool is empty.
     @param alignment of objects must be a power of 2.
   */
-  ClassAllocator(const char *name, unsigned int chunk_size = 128,
-                 unsigned int alignment = 16)
+  ClassAllocator(const char *name, unsigned int chunk_size = 128, unsigned int alignment = 16)
   {
     ink_freelist_init(&this->fl, name, RND16(sizeof(C)), chunk_size, RND16(alignment));
   }
 
-  struct
-  {
+  struct {
     C typeObject;
     int64_t space_holder;
   } proto;
@@ -216,11 +211,11 @@ public:
   all of the members.
 
 */
-template<class C> class SparseClassAllocator:public ClassAllocator<C> {
+template <class C> class SparseClassAllocator : public ClassAllocator<C>
+{
 public:
-
   /** Allocates objects of the templated type. */
-  C*
+  C *
   alloc()
   {
     void *ptr = ink_freelist_new(this->fl);
@@ -228,8 +223,8 @@ public:
     if (!_instantiate) {
       memcpy(ptr, (void *)&this->proto.typeObject, sizeof(C));
     } else
-      (*_instantiate) ((C *) &this->proto.typeObject, (C *) ptr);
-    return (C *) ptr;
+      (*_instantiate)((C *)&this->proto.typeObject, (C *)ptr);
+    return (C *)ptr;
   }
 
 
@@ -242,16 +237,15 @@ public:
     @param instantiate_func
 
   */
-  SparseClassAllocator(const char *name, unsigned int chunk_size = 128,
-                       unsigned int alignment = 16,
-                       void (*instantiate_func) (C * proto, C * instance) = NULL)
+  SparseClassAllocator(const char *name, unsigned int chunk_size = 128, unsigned int alignment = 16,
+                       void (*instantiate_func)(C *proto, C *instance) = NULL)
     : ClassAllocator<C>(name, chunk_size, alignment)
   {
-    _instantiate = instantiate_func;       // NULL by default
+    _instantiate = instantiate_func; // NULL by default
   }
 
 private:
-  void (*_instantiate) (C* proto, C* instance);
+  void (*_instantiate)(C *proto, C *instance);
 };
 
-#endif  // _Allocator_h_
+#endif // _Allocator_h_

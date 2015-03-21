@@ -33,11 +33,10 @@
 #define MAX_STAPLING_DER 10240
 
 // Cached info stored in SSL_CTX ex_info
-struct certinfo
-{
-  unsigned char idx[20];  // Index in session cache SHA1 hash of certificate
-  OCSP_CERTID *cid; // Certificate ID for OCSP requests or NULL if ID cannot be determined
-  char *uri;  // Responder details
+struct certinfo {
+  unsigned char idx[20]; // Index in session cache SHA1 hash of certificate
+  OCSP_CERTID *cid;      // Certificate ID for OCSP requests or NULL if ID cannot be determined
+  char *uri;             // Responder details
   ink_mutex stapling_mutex;
   unsigned char resp_der[MAX_STAPLING_DER];
   unsigned int resp_derlen;
@@ -45,8 +44,8 @@ struct certinfo
   time_t expire_time;
 };
 
-void certinfo_free(void * /*parent*/, void *ptr, CRYPTO_EX_DATA * /*ad*/,
-    int /*idx*/, long /*argl*/, void * /*argp*/)
+void
+certinfo_free(void * /*parent*/, void *ptr, CRYPTO_EX_DATA * /*ad*/, int /*idx*/, long /*argl*/, void * /*argp*/)
 {
   certinfo *cinf = (certinfo *)ptr;
 
@@ -60,7 +59,8 @@ void certinfo_free(void * /*parent*/, void *ptr, CRYPTO_EX_DATA * /*ad*/,
 
 static int ssl_stapling_index = -1;
 
-void ssl_stapling_ex_init(void)
+void
+ssl_stapling_ex_init(void)
 {
   if (ssl_stapling_index != -1)
     return;
@@ -117,7 +117,7 @@ ssl_stapling_init_cert(SSL_CTX *ctx, const char *certfile)
     return false;
   }
 
-  cinf  = (certinfo *)SSL_CTX_get_ex_data(ctx, ssl_stapling_index);
+  cinf = (certinfo *)SSL_CTX_get_ex_data(ctx, ssl_stapling_index);
   if (cinf) {
     Debug("ssl", "certificate already initialized!");
     return false;
@@ -141,7 +141,7 @@ ssl_stapling_init_cert(SSL_CTX *ctx, const char *certfile)
 
   issuer = stapling_get_issuer(ctx, cert);
   if (issuer == NULL) {
-        Debug("ssl", "can not get issuer certificate!");
+    Debug("ssl", "can not get issuer certificate!");
     return false;
   }
 
@@ -154,7 +154,7 @@ ssl_stapling_init_cert(SSL_CTX *ctx, const char *certfile)
   if (aia)
     cinf->uri = sk_OPENSSL_STRING_pop(aia);
   if (!cinf->uri) {
-        Debug("ssl", "no responder URI");
+    Debug("ssl", "no responder URI");
   }
   if (aia)
     X509_email_free(aia);
@@ -226,8 +226,7 @@ stapling_check_response(certinfo *cinf, OCSP_RESPONSE *rsp)
     Error("stapling_check_response: can not parsing response");
     return SSL_TLSEXT_ERR_OK;
   }
-  if (!OCSP_resp_find_status(bs, cinf->cid, &status, &reason, &rev,
-        &thisupd, &nextupd)) {
+  if (!OCSP_resp_find_status(bs, cinf->cid, &status, &reason, &rev, &thisupd, &nextupd)) {
     // If ID not present just pass it back to client
     Error("stapling_check_response: certificate ID not present in response");
   } else {
@@ -267,9 +266,7 @@ query_responder(BIO *b, char *host, char *path, OCSP_REQUEST *req, int req_timeo
 }
 
 static OCSP_RESPONSE *
-process_responder(OCSP_REQUEST *req,
-    char *host, char *path, char *port,
-    int req_timeout)
+process_responder(OCSP_REQUEST *req, char *host, char *path, char *port, int req_timeout)
 {
   BIO *cbio = NULL;
   OCSP_RESPONSE *resp = NULL;
@@ -277,7 +274,8 @@ process_responder(OCSP_REQUEST *req,
   if (!cbio) {
     goto end;
   }
-  if (port) BIO_set_conn_port(cbio, port);
+  if (port)
+    BIO_set_conn_port(cbio, port);
 
   BIO_set_nbio(cbio, 1);
   if (BIO_do_connect(cbio) <= 0 && !BIO_should_retry(cbio)) {
@@ -367,19 +365,19 @@ ocsp_update()
     if (cc && cc->ctx) {
       ctx = cc->ctx;
       cinf = stapling_get_cert_info(ctx);
-       if (cinf) {
-         ink_mutex_acquire(&cinf->stapling_mutex);
-         current_time = time(NULL);
-         if (cinf->resp_derlen == 0 || cinf->is_expire || cinf->expire_time < current_time) {
-           ink_mutex_release(&cinf->stapling_mutex);
-           if (stapling_refresh_response(cinf, &resp)) {
-             Note("Success to refresh OCSP response for 1 certificate.");
-           } else {
-             Note("Fail to refresh OCSP response for 1 certificate.");
-           }
-         } else {
-           ink_mutex_release(&cinf->stapling_mutex);
-         }
+      if (cinf) {
+        ink_mutex_acquire(&cinf->stapling_mutex);
+        current_time = time(NULL);
+        if (cinf->resp_derlen == 0 || cinf->is_expire || cinf->expire_time < current_time) {
+          ink_mutex_release(&cinf->stapling_mutex);
+          if (stapling_refresh_response(cinf, &resp)) {
+            Note("Success to refresh OCSP response for 1 certificate.");
+          } else {
+            Note("Fail to refresh OCSP response for 1 certificate.");
+          }
+        } else {
+          ink_mutex_release(&cinf->stapling_mutex);
+        }
       }
     }
   }

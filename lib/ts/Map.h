@@ -30,17 +30,18 @@
 #include "List.h"
 #include "Vec.h"
 
-#define MAP_INTEGRAL_SIZE               (1 << (2))
+#define MAP_INTEGRAL_SIZE (1 << (2))
 //#define MAP_INITIAL_SHIFT               ((2)+1)
 //#define MAP_INITIAL_SIZE                (1 << MAP_INITIAL_SHIFT)
 
 typedef const char cchar;
 
-template<class A>
+template <class A>
 static inline char *
-_dupstr(cchar *s, cchar *e = 0) {
-  int l = e ? e-s : strlen(s);
-  char *ss = (char*)A::alloc(l+1);
+_dupstr(cchar *s, cchar *e = 0)
+{
+  int l = e ? e - s : strlen(s);
+  char *ss = (char *)A::alloc(l + 1);
   memcpy(ss, s, l);
   ss[l] = 0;
   return ss;
@@ -48,22 +49,28 @@ _dupstr(cchar *s, cchar *e = 0) {
 
 // Simple direct mapped Map (pointer hash table) and Environment
 
-template <class K, class C> class MapElem {
- public:
-  K     key;
-  C     value;
+template <class K, class C> class MapElem
+{
+public:
+  K key;
+  C value;
   bool operator==(MapElem &e) { return e.key == key; }
   operator uintptr_t(void) { return (uintptr_t)(uintptr_t)key; }
-  MapElem(uintptr_t x) { ink_assert(!x); key = 0; }
+  MapElem(uintptr_t x)
+  {
+    ink_assert(!x);
+    key = 0;
+  }
   MapElem(K akey, C avalue) : key(akey), value(avalue) {}
   MapElem(MapElem &e) : key(e.key), value(e.value) {}
   MapElem() : key(0) {}
 };
 
-template <class K, class C, class A = DefaultAlloc> class Map : public Vec<MapElem<K,C>, A> {
- public:
-  typedef MapElem<K,C> ME;
-  typedef Vec<ME,A> PType;
+template <class K, class C, class A = DefaultAlloc> class Map : public Vec<MapElem<K, C>, A>
+{
+public:
+  typedef MapElem<K, C> ME;
+  typedef Vec<ME, A> PType;
   using PType::n;
   using PType::i;
   using PType::v;
@@ -74,189 +81,251 @@ template <class K, class C, class A = DefaultAlloc> class Map : public Vec<MapEl
   void get_keys(Vec<K> &keys);
   void get_keys_set(Vec<K> &keys);
   void get_values(Vec<C> &values);
-  void map_union(Map<K,C> &m);
-  bool some_disjunction(Map<K,C> &m) const;
+  void map_union(Map<K, C> &m);
+  bool some_disjunction(Map<K, C> &m) const;
 };
 
-template <class C> class HashFns {
- public:
+template <class C> class HashFns
+{
+public:
   static uintptr_t hash(C a);
   static int equal(C a, C b);
 };
 
-template <class K, class C> class HashSetFns {
- public:
+template <class K, class C> class HashSetFns
+{
+public:
   static uintptr_t hash(C a);
   static uintptr_t hash(K a);
   static int equal(C a, C b);
   static int equal(K a, C b);
 };
 
-template <class K, class AHashFns, class C, class A = DefaultAlloc> class HashMap : public Map<K,C,A> {
- public:
-  typedef MapElem<K,C> value_type; ///< What's stored in the table.
-  using Map<K,C,A>::n;
-  using Map<K,C,A>::i;
-  using Map<K,C,A>::v;
-  using Map<K,C,A>::e;
-  MapElem<K,C> *get_internal(K akey);
+template <class K, class AHashFns, class C, class A = DefaultAlloc> class HashMap : public Map<K, C, A>
+{
+public:
+  typedef MapElem<K, C> value_type; ///< What's stored in the table.
+  using Map<K, C, A>::n;
+  using Map<K, C, A>::i;
+  using Map<K, C, A>::v;
+  using Map<K, C, A>::e;
+  MapElem<K, C> *get_internal(K akey);
   C get(K akey);
-  value_type* put(K akey, C avalue);
+  value_type *put(K akey, C avalue);
   void get_keys(Vec<K> &keys);
   void get_values(Vec<C> &values);
 };
 
-#define form_Map(_c, _p, _v) if ((_v).n) for (_c *qq__##_p = (_c*)0, *_p = &(_v).v[0]; \
-             ((uintptr_t)(qq__##_p) < (_v).n) && ((_p = &(_v).v[(uintptr_t)qq__##_p]) || 1); \
-             qq__##_p = (_c*)(((uintptr_t)qq__##_p) + 1)) \
-          if ((_p)->key)
+#define form_Map(_c, _p, _v)                                                                                                       \
+  if ((_v).n)                                                                                                                      \
+    for (_c *qq__##_p = (_c *)0, *_p = &(_v).v[0]; ((uintptr_t)(qq__##_p) < (_v).n) && ((_p = &(_v).v[(uintptr_t)qq__##_p]) || 1); \
+         qq__##_p = (_c *)(((uintptr_t)qq__##_p) + 1))                                                                             \
+      if ((_p)->key)
 
 
-template <class K, class AHashFns, class C, class A = DefaultAlloc> class HashSet : public Vec<C,A> {
- public:
-  typedef Vec<C,A> V;
+template <class K, class AHashFns, class C, class A = DefaultAlloc> class HashSet : public Vec<C, A>
+{
+public:
+  typedef Vec<C, A> V;
   using V::n;
   using V::i;
   using V::v;
   using V::e;
   C get(K akey);
-  C *put( C avalue);
+  C *put(C avalue);
 };
 
-class StringHashFns {
- public:
-  static uintptr_t hash(cchar *s) {
+class StringHashFns
+{
+public:
+  static uintptr_t
+  hash(cchar *s)
+  {
     uintptr_t h = 0;
     // 31 changed to 27, to avoid prime2 in vec.cpp
-    while (*s) h = h * 27 + (unsigned char)*s++;
+    while (*s)
+      h = h * 27 + (unsigned char)*s++;
     return h;
   }
-  static int equal(cchar *a, cchar *b) { return !strcmp(a, b); }
+  static int
+  equal(cchar *a, cchar *b)
+  {
+    return !strcmp(a, b);
+  }
 };
 
-class CaseStringHashFns {
- public:
-  static uintptr_t hash(cchar *s) {
+class CaseStringHashFns
+{
+public:
+  static uintptr_t
+  hash(cchar *s)
+  {
     uintptr_t h = 0;
     // 31 changed to 27, to avoid prime2 in vec.cpp
-    while (*s) h = h * 27 + (unsigned char)toupper(*s++);
+    while (*s)
+      h = h * 27 + (unsigned char)toupper(*s++);
     return h;
   }
-  static int equal(cchar *a, cchar *b) { return !strcasecmp(a, b); }
+  static int
+  equal(cchar *a, cchar *b)
+  {
+    return !strcasecmp(a, b);
+  }
 };
 
-class PointerHashFns {
- public:
-  static uintptr_t hash(void *s) { return (uintptr_t)(uintptr_t)s; }
-  static int equal(void *a, void *b) { return a == b; }
+class PointerHashFns
+{
+public:
+  static uintptr_t
+  hash(void *s)
+  {
+    return (uintptr_t)(uintptr_t)s;
+  }
+  static int
+  equal(void *a, void *b)
+  {
+    return a == b;
+  }
 };
 
-template <class C, class AHashFns, class A = DefaultAlloc> class ChainHash : public Map<uintptr_t, List<C,A>,A> {
- public:
-  using Map<uintptr_t, List<C,A>,A>::n;
-  using Map<uintptr_t, List<C,A>,A>::v;
+template <class C, class AHashFns, class A = DefaultAlloc> class ChainHash : public Map<uintptr_t, List<C, A>, A>
+{
+public:
+  using Map<uintptr_t, List<C, A>, A>::n;
+  using Map<uintptr_t, List<C, A>, A>::v;
   typedef ConsCell<C, A> ChainCons;
   C put(C c);
   C get(C c);
   C put_bag(C c);
-  int get_bag(C c,Vec<C> &v);
+  int get_bag(C c, Vec<C> &v);
   int del(C avalue);
   void get_elements(Vec<C> &elements);
 };
 
-template <class K, class AHashFns, class C, class A = DefaultAlloc> class ChainHashMap :
-  public Map<uintptr_t, List<MapElem<K,C>,A>,A> {
- public:
-  using Map<uintptr_t, List<MapElem<K,C>,A>,A>::n;
-  using Map<uintptr_t, List<MapElem<K,C>,A>,A>::v;
-  MapElem<K,C> *put(K akey, C avalue);
+template <class K, class AHashFns, class C, class A = DefaultAlloc>
+class ChainHashMap : public Map<uintptr_t, List<MapElem<K, C>, A>, A>
+{
+public:
+  using Map<uintptr_t, List<MapElem<K, C>, A>, A>::n;
+  using Map<uintptr_t, List<MapElem<K, C>, A>, A>::v;
+  MapElem<K, C> *put(K akey, C avalue);
   C get(K akey);
   int del(K akey);
-  MapElem<K,C> *put_bag(K akey, C c);
+  MapElem<K, C> *put_bag(K akey, C c);
   int get_bag(K akey, Vec<C> &v);
   void get_keys(Vec<K> &keys);
   void get_values(Vec<C> &values);
 };
 
-template<class F = StringHashFns, class A = DefaultAlloc>
-class StringChainHash : public ChainHash<cchar *, F, A> {
- public:
+template <class F = StringHashFns, class A = DefaultAlloc> class StringChainHash : public ChainHash<cchar *, F, A>
+{
+public:
   cchar *canonicalize(cchar *s, cchar *e);
-  cchar *canonicalize(cchar *s) { return canonicalize(s, s + strlen(s)); }
+  cchar *
+  canonicalize(cchar *s)
+  {
+    return canonicalize(s, s + strlen(s));
+  }
 };
 
-template <class C, class AHashFns, int N, class A = DefaultAlloc> class NBlockHash {
- public:
+template <class C, class AHashFns, int N, class A = DefaultAlloc> class NBlockHash
+{
+public:
   int n;
   int i;
   C *v;
   C e[N];
 
-  C* end() { return last(); }
-  int length() { return N * n; }
+  C *
+  end()
+  {
+    return last();
+  }
+  int
+  length()
+  {
+    return N * n;
+  }
   C *first();
   C *last();
   C put(C c);
   C get(C c);
-  C* assoc_put(C *c);
-  C* assoc_get(C *c);
+  C *assoc_put(C *c);
+  C *assoc_get(C *c);
   int del(C c);
   void clear();
   void reset();
   int count();
   void size(int p2);
-  void copy(const NBlockHash<C,AHashFns,N,A> &hh);
-  void move(NBlockHash<C,AHashFns,N,A> &hh);
+  void copy(const NBlockHash<C, AHashFns, N, A> &hh);
+  void move(NBlockHash<C, AHashFns, N, A> &hh);
   NBlockHash();
-  NBlockHash(NBlockHash<C,AHashFns,N,A> &hh) { v = e; copy(hh); }
+  NBlockHash(NBlockHash<C, AHashFns, N, A> &hh)
+  {
+    v = e;
+    copy(hh);
+  }
 };
 
 /* use forv_Vec on BlockHashes */
 
 #define DEFAULT_BLOCK_HASH_SIZE 4
-template <class C, class ABlockHashFns> class BlockHash :
-  public NBlockHash<C, ABlockHashFns, DEFAULT_BLOCK_HASH_SIZE> {};
+template <class C, class ABlockHashFns> class BlockHash : public NBlockHash<C, ABlockHashFns, DEFAULT_BLOCK_HASH_SIZE>
+{
+};
 typedef BlockHash<cchar *, StringHashFns> StringBlockHash;
 
-template <class K, class C, class A = DefaultAlloc> class Env {
- public:
+template <class K, class C, class A = DefaultAlloc> class Env
+{
+public:
   typedef ConsCell<C, A> EnvCons;
   void put(K akey, C avalue);
   C get(K akey);
   void push();
   void pop();
-  void clear() { store.clear(); scope.clear(); }
+  void
+  clear()
+  {
+    store.clear();
+    scope.clear();
+  }
 
   Env() {}
-  Map<K,List<C> *, A> store;
+  Map<K, List<C> *, A> store;
   List<List<K>, A> scope;
   List<C, A> *get_bucket(K akey);
 };
 
 /* IMPLEMENTATION */
 
-template <class K, class C, class A> inline C
-Map<K,C,A>::get(K akey) {
-  MapElem<K,C> e(akey, (C)0);
-  MapElem<K,C> *x = this->set_in(e);
+template <class K, class C, class A>
+inline C
+Map<K, C, A>::get(K akey)
+{
+  MapElem<K, C> e(akey, (C)0);
+  MapElem<K, C> *x = this->set_in(e);
   if (x)
     return x->value;
   return (C)0;
 }
 
-template <class K, class C, class A> inline C *
-Map<K,C,A>::getp(K akey) {
-  MapElem<K,C> e(akey, (C)0);
-  MapElem<K,C> *x = this->set_in(e);
+template <class K, class C, class A>
+inline C *
+Map<K, C, A>::getp(K akey)
+{
+  MapElem<K, C> e(akey, (C)0);
+  MapElem<K, C> *x = this->set_in(e);
   if (x)
     return &x->value;
   return 0;
 }
 
-template <class K, class C, class A> inline MapElem<K,C> *
-Map<K,C,A>::put(K akey, C avalue) {
-  MapElem<K,C> e(akey, avalue);
-  MapElem<K,C> *x = this->set_in(e);
+template <class K, class C, class A>
+inline MapElem<K, C> *
+Map<K, C, A>::put(K akey, C avalue)
+{
+  MapElem<K, C> e(akey, avalue);
+  MapElem<K, C> *x = this->set_in(e);
   if (x) {
     x->value = avalue;
     return x;
@@ -264,47 +333,59 @@ Map<K,C,A>::put(K akey, C avalue) {
     return this->set_add(e);
 }
 
-template <class K, class C, class A> inline MapElem<K,C> *
-Map<K,C,A>::put(K akey) {
-  MapElem<K,C> e(akey, 0);
-  MapElem<K,C> *x = this->set_in(e);
+template <class K, class C, class A>
+inline MapElem<K, C> *
+Map<K, C, A>::put(K akey)
+{
+  MapElem<K, C> e(akey, 0);
+  MapElem<K, C> *x = this->set_in(e);
   if (x)
     return x;
   else
     return this->set_add(e);
 }
 
-template <class K, class C, class A> inline void
-Map<K,C,A>::get_keys(Vec<K> &keys) {
+template <class K, class C, class A>
+inline void
+Map<K, C, A>::get_keys(Vec<K> &keys)
+{
   for (int i = 0; i < n; i++)
     if (v[i].key)
       keys.add(v[i].key);
 }
 
-template <class K, class C, class A> inline void
-Map<K,C,A>::get_keys_set(Vec<K> &keys) {
+template <class K, class C, class A>
+inline void
+Map<K, C, A>::get_keys_set(Vec<K> &keys)
+{
   for (int i = 0; i < n; i++)
     if (v[i].key)
       keys.set_add(v[i].key);
 }
 
-template <class K, class C, class A> inline void
-Map<K,C,A>::get_values(Vec<C> &values) {
+template <class K, class C, class A>
+inline void
+Map<K, C, A>::get_values(Vec<C> &values)
+{
   for (int i = 0; i < n; i++)
     if (v[i].key)
       values.set_add(v[i].value);
   values.set_to_vec();
 }
 
-template <class K, class C, class A> inline void
-Map<K,C,A>::map_union(Map<K,C> &m) {
+template <class K, class C, class A>
+inline void
+Map<K, C, A>::map_union(Map<K, C> &m)
+{
   for (int i = 0; i < m.n; i++)
     if (m.v[i].key)
       put(m.v[i].key, m.v[i].value);
 }
 
-template <class K, class C, class A> inline bool
-Map<K,C,A>::some_disjunction(Map<K,C> &m) const {
+template <class K, class C, class A>
+inline bool
+Map<K, C, A>::some_disjunction(Map<K, C> &m) const
+{
   for (size_t i = 0; i < m.n; i++) {
     if (m.v[i].key && get(m.v[i].key) != m.v[i].value) {
       return true;
@@ -318,24 +399,30 @@ Map<K,C,A>::some_disjunction(Map<K,C> &m) const {
   return false;
 }
 
-template <class K, class C, class A> inline void
-map_set_add(Map<K,Vec<C,A>*,A> &m, K akey, C avalue) {
-  Vec<C,A> *v = m.get(akey);
+template <class K, class C, class A>
+inline void
+map_set_add(Map<K, Vec<C, A> *, A> &m, K akey, C avalue)
+{
+  Vec<C, A> *v = m.get(akey);
   if (!v)
-    m.put(akey, (v = new Vec<C,A>));
+    m.put(akey, (v = new Vec<C, A>));
   v->set_add(avalue);
 }
 
-template <class K, class C, class A> inline void
-map_set_add(Map<K,Vec<C,A>*,A> &m, K akey, Vec<C> *madd) {
-  Vec<C,A> *v = m.get(akey);
+template <class K, class C, class A>
+inline void
+map_set_add(Map<K, Vec<C, A> *, A> &m, K akey, Vec<C> *madd)
+{
+  Vec<C, A> *v = m.get(akey);
   if (!v)
-    m.put(akey, (v = new Vec<C,A>));
+    m.put(akey, (v = new Vec<C, A>));
   v->set_union(*madd);
 }
 
-template <class K, class AHashFns, class C, class A> inline C
-HashSet<K, AHashFns, C, A>::get(K akey) {
+template <class K, class AHashFns, class C, class A>
+inline C
+HashSet<K, AHashFns, C, A>::get(K akey)
+{
   if (!n)
     return 0;
   if (n <= MAP_INTEGRAL_SIZE) {
@@ -347,7 +434,7 @@ HashSet<K, AHashFns, C, A>::get(K akey) {
   }
   uintptr_t h = AHashFns::hash(akey);
   h = h % n;
-  for (int k = h, j = 0; j < i + 3;j++) {
+  for (int k = h, j = 0; j < i + 3; j++) {
     if (!v[k])
       return 0;
     else if (AHashFns::equal(akey, v[k]))
@@ -357,8 +444,10 @@ HashSet<K, AHashFns, C, A>::get(K akey) {
   return 0;
 }
 
-template <class K, class AHashFns, class C, class A> inline C *
-HashSet<K, AHashFns, C, A>::put(C avalue) {
+template <class K, class AHashFns, class C, class A>
+inline C *
+HashSet<K, AHashFns, C, A>::put(C avalue)
+{
   if (n < MAP_INTEGRAL_SIZE) {
     if (!v)
       v = e;
@@ -367,7 +456,7 @@ HashSet<K, AHashFns, C, A>::put(C avalue) {
         return &v[i];
     v[n] = avalue;
     n++;
-    return &v[n-1];
+    return &v[n - 1];
   }
   if (n > MAP_INTEGRAL_SIZE) {
     uintptr_t h = AHashFns::hash(avalue);
@@ -380,21 +469,23 @@ HashSet<K, AHashFns, C, A>::put(C avalue) {
       k = (k + open_hash_primes[j]) % n;
     }
   } else
-    i = SET_INITIAL_INDEX-1; // will be incremented in set_expand
-  HashSet<K,AHashFns,C,A> vv(*this);
-  Vec<C,A>::set_expand();
+    i = SET_INITIAL_INDEX - 1; // will be incremented in set_expand
+  HashSet<K, AHashFns, C, A> vv(*this);
+  Vec<C, A>::set_expand();
   for (int i = 0; i < vv.n; i++)
     if (vv.v[i])
       put(vv.v[i]);
   return put(avalue);
 }
 
-template <class K, class AHashFns, class C, class A> inline MapElem<K,C> *
-HashMap<K,AHashFns,C,A>::get_internal(K akey) {
+template <class K, class AHashFns, class C, class A>
+inline MapElem<K, C> *
+HashMap<K, AHashFns, C, A>::get_internal(K akey)
+{
   if (!n)
     return 0;
   if (n <= MAP_INTEGRAL_SIZE) {
-    for (MapElem<K,C> *c = v; c < v + n; c++)
+    for (MapElem<K, C> *c = v; c < v + n; c++)
       if (c->key)
         if (AHashFns::equal(akey, c->key))
           return c;
@@ -402,7 +493,7 @@ HashMap<K,AHashFns,C,A>::get_internal(K akey) {
   }
   uintptr_t h = AHashFns::hash(akey);
   h = h % n;
-  for (size_t k = h, j = 0; j < i + 3;j++) {
+  for (size_t k = h, j = 0; j < i + 3; j++) {
     if (!v[k].key)
       return 0;
     else if (AHashFns::equal(akey, v[k].key))
@@ -412,17 +503,21 @@ HashMap<K,AHashFns,C,A>::get_internal(K akey) {
   return 0;
 }
 
-template <class K, class AHashFns, class C, class A> inline C
-HashMap<K,AHashFns,C,A>::get(K akey) {
-  MapElem<K,C> *x = get_internal(akey);
+template <class K, class AHashFns, class C, class A>
+inline C
+HashMap<K, AHashFns, C, A>::get(K akey)
+{
+  MapElem<K, C> *x = get_internal(akey);
   if (!x)
     return 0;
   return x->value;
 }
 
-template <class K, class AHashFns, class C, class A> inline MapElem<K,C> *
-HashMap<K,AHashFns,C,A>::put(K akey, C avalue) {
-  MapElem<K,C> *x = get_internal(akey);
+template <class K, class AHashFns, class C, class A>
+inline MapElem<K, C> *
+HashMap<K, AHashFns, C, A>::put(K akey, C avalue)
+{
+  MapElem<K, C> *x = get_internal(akey);
   if (x) {
     x->value = avalue;
     return x;
@@ -433,7 +528,7 @@ HashMap<K,AHashFns,C,A>::put(K akey, C avalue) {
       v[n].key = akey;
       v[n].value = avalue;
       n++;
-      return &v[n-1];
+      return &v[n - 1];
     }
     if (n > MAP_INTEGRAL_SIZE) {
       uintptr_t h = AHashFns::hash(akey);
@@ -447,108 +542,122 @@ HashMap<K,AHashFns,C,A>::put(K akey, C avalue) {
         k = (k + open_hash_primes[j]) % n;
       }
     } else
-      i = SET_INITIAL_INDEX-1; // will be incremented in set_expand
+      i = SET_INITIAL_INDEX - 1; // will be incremented in set_expand
   }
-  HashMap<K,AHashFns,C,A> vv(*this);
-  Map<K,C,A>::set_expand();
+  HashMap<K, AHashFns, C, A> vv(*this);
+  Map<K, C, A>::set_expand();
   for (size_t i = 0; i < vv.n; i++)
     if (vv.v[i].key)
       put(vv.v[i].key, vv.v[i].value);
   return put(akey, avalue);
 }
 
-template <class K, class AHashFns, class C, class A> inline void
-HashMap<K,AHashFns,C,A>::get_keys(Vec<K> &keys) { Map<K,C,A>::get_keys(keys); }
+template <class K, class AHashFns, class C, class A>
+inline void
+HashMap<K, AHashFns, C, A>::get_keys(Vec<K> &keys)
+{
+  Map<K, C, A>::get_keys(keys);
+}
 
-template <class K, class AHashFns, class C, class A> inline void
-HashMap<K,AHashFns,C,A>::get_values(Vec<C> &values) { Map<K,C,A>::get_values(values); }
+template <class K, class AHashFns, class C, class A>
+inline void
+HashMap<K, AHashFns, C, A>::get_values(Vec<C> &values)
+{
+  Map<K, C, A>::get_values(values);
+}
 
-template <class C, class AHashFns, class A> C
-ChainHash<C, AHashFns, A>::put(C c) {
+template <class C, class AHashFns, class A>
+C
+ChainHash<C, AHashFns, A>::put(C c)
+{
   uintptr_t h = AHashFns::hash(c);
-  List<C,A> *l;
-  MapElem<uintptr_t,List<C,A> > e(h, (C)0);
-  MapElem<uintptr_t,List<C,A> > *x = this->set_in(e);
+  List<C, A> *l;
+  MapElem<uintptr_t, List<C, A> > e(h, (C)0);
+  MapElem<uintptr_t, List<C, A> > *x = this->set_in(e);
   if (x)
     l = &x->value;
   else {
-    l = &Map<uintptr_t, List<C,A>, A>::put(h, c)->value;
+    l = &Map<uintptr_t, List<C, A>, A>::put(h, c)->value;
     return l->head->car;
   }
-  forc_List(ChainCons, x, *l)
-    if (AHashFns::equal(c, x->car))
-      return x->car;
+  forc_List(ChainCons, x, *l) if (AHashFns::equal(c, x->car)) return x->car;
   l->push(c);
   return (C)0;
 }
 
-template <class C, class AHashFns, class A> C
-ChainHash<C, AHashFns, A>::get(C c) {
+template <class C, class AHashFns, class A>
+C
+ChainHash<C, AHashFns, A>::get(C c)
+{
   uintptr_t h = AHashFns::hash(c);
   List<C> empty;
-  MapElem<uintptr_t,List<C,A> > e(h, empty);
-  MapElem<uintptr_t,List<C,A> > *x = this->set_in(e);
+  MapElem<uintptr_t, List<C, A> > e(h, empty);
+  MapElem<uintptr_t, List<C, A> > *x = this->set_in(e);
   if (!x)
     return 0;
   List<C> *l = &x->value;
-  forc_List(ChainCons, x, *l)
-    if (AHashFns::equal(c, x->car))
-      return x->car;
+  forc_List(ChainCons, x, *l) if (AHashFns::equal(c, x->car)) return x->car;
   return 0;
 }
 
-template <class C, class AHashFns, class A> C
-ChainHash<C, AHashFns, A>::put_bag(C c) {
+template <class C, class AHashFns, class A>
+C
+ChainHash<C, AHashFns, A>::put_bag(C c)
+{
   uintptr_t h = AHashFns::hash(c);
   List<C, A> *l;
-  MapElem<uintptr_t,List<C,A> > e(h, (C)0);
-  MapElem<uintptr_t,List<C,A> > *x = this->set_in(e);
+  MapElem<uintptr_t, List<C, A> > e(h, (C)0);
+  MapElem<uintptr_t, List<C, A> > *x = this->set_in(e);
   if (x)
     l = &x->value;
   else {
-    l = &Map<uintptr_t, List<C,A> >::put(h, c)->value;
+    l = &Map<uintptr_t, List<C, A> >::put(h, c)->value;
     return l->head->car;
   }
   l->push(c);
   return (C)0;
 }
 
-template <class C, class AHashFns, class A> int
-ChainHash<C, AHashFns, A>::get_bag(C c, Vec<C> &v) {
+template <class C, class AHashFns, class A>
+int
+ChainHash<C, AHashFns, A>::get_bag(C c, Vec<C> &v)
+{
   uintptr_t h = AHashFns::hash(c);
-  List<C,A> empty;
-  MapElem<uintptr_t,List<C,A> > e(h, empty);
-  MapElem<uintptr_t,List<C,A> > *x = this->set_in(e);
+  List<C, A> empty;
+  MapElem<uintptr_t, List<C, A> > e(h, empty);
+  MapElem<uintptr_t, List<C, A> > *x = this->set_in(e);
   if (!x)
     return 0;
-  List<C,A> *l = &x->value;
-  forc_List(C, x, *l)
-    if (AHashFns::equal(c, x->car))
-      v.add(x->car);
+  List<C, A> *l = &x->value;
+  forc_List(C, x, *l) if (AHashFns::equal(c, x->car)) v.add(x->car);
   return v.n;
 }
 
-template <class C, class AHashFns, class A> void
-ChainHash<C, AHashFns, A>::get_elements(Vec<C> &elements) {
+template <class C, class AHashFns, class A>
+void
+ChainHash<C, AHashFns, A>::get_elements(Vec<C> &elements)
+{
   for (int i = 0; i < n; i++) {
     List<C, A> *l = &v[i].value;
-    forc_List(C, x, *l)
-      elements.add(x);
+    forc_List(C, x, *l) elements.add(x);
   }
 }
 
-template <class C, class AHashFns, class A> int
-ChainHash<C, AHashFns, A>::del(C c) {
+template <class C, class AHashFns, class A>
+int
+ChainHash<C, AHashFns, A>::del(C c)
+{
   uintptr_t h = AHashFns::hash(c);
   List<C> *l;
-  MapElem<uintptr_t,List<C,A> > e(h, (C)0);
-  MapElem<uintptr_t,List<C,A> > *x = this->set_in(e);
+  MapElem<uintptr_t, List<C, A> > e(h, (C)0);
+  MapElem<uintptr_t, List<C, A> > *x = this->set_in(e);
   if (x)
     l = &x->value;
   else
     return 0;
   ConsCell<C> *last = 0;
-  forc_List(ConsCell<C>, x, *l) {
+  forc_List(ConsCell<C>, x, *l)
+  {
     if (AHashFns::equal(c, x->car)) {
       if (!last)
         l->head = x->cdr;
@@ -562,21 +671,23 @@ ChainHash<C, AHashFns, A>::del(C c) {
   return 0;
 }
 
-template <class K, class AHashFns, class C, class A>  MapElem<K,C> *
-ChainHashMap<K, AHashFns, C, A>::put(K akey, C avalue) {
+template <class K, class AHashFns, class C, class A>
+MapElem<K, C> *
+ChainHashMap<K, AHashFns, C, A>::put(K akey, C avalue)
+{
   uintptr_t h = AHashFns::hash(akey);
-  List<MapElem<K,C>,A> empty;
-  List<MapElem<K,C>,A> *l;
+  List<MapElem<K, C>, A> empty;
+  List<MapElem<K, C>, A> *l;
   MapElem<K, C> c(akey, avalue);
-  MapElem<uintptr_t,List<MapElem<K,C>,A> > e(h, empty);
-  MapElem<uintptr_t,List<MapElem<K,C>,A> > *x = this->set_in(e);
+  MapElem<uintptr_t, List<MapElem<K, C>, A> > e(h, empty);
+  MapElem<uintptr_t, List<MapElem<K, C>, A> > *x = this->set_in(e);
   if (x)
     l = &x->value;
   else {
-    l = &Map<uintptr_t, List<MapElem<K,C>,A>,A>::put(h, c)->value;
+    l = &Map<uintptr_t, List<MapElem<K, C>, A>, A>::put(h, c)->value;
     return &l->head->car;
   }
-  for (ConsCell<MapElem<K,C>,A> *p  = l->head; p; p = p->cdr)
+  for (ConsCell<MapElem<K, C>, A> *p = l->head; p; p = p->cdr)
     if (AHashFns::equal(akey, p->car.key)) {
       p->car.value = avalue;
       return &p->car;
@@ -585,71 +696,79 @@ ChainHashMap<K, AHashFns, C, A>::put(K akey, C avalue) {
   return 0;
 }
 
-template <class K, class AHashFns, class C, class A> C
-ChainHashMap<K, AHashFns, C, A>::get(K akey) {
+template <class K, class AHashFns, class C, class A>
+C
+ChainHashMap<K, AHashFns, C, A>::get(K akey)
+{
   uintptr_t h = AHashFns::hash(akey);
-  List<MapElem<K,C>, A> empty;
-  MapElem<uintptr_t,List<MapElem<K,C>,A> > e(h, empty);
-  MapElem<uintptr_t,List<MapElem<K,C>,A> > *x = this->set_in(e);
+  List<MapElem<K, C>, A> empty;
+  MapElem<uintptr_t, List<MapElem<K, C>, A> > e(h, empty);
+  MapElem<uintptr_t, List<MapElem<K, C>, A> > *x = this->set_in(e);
   if (!x)
     return 0;
-  List<MapElem<K,C>,A> *l = &x->value;
+  List<MapElem<K, C>, A> *l = &x->value;
   if (l->head)
-    for (ConsCell<MapElem<K,C>,A> *p  = l->head; p; p = p->cdr)
+    for (ConsCell<MapElem<K, C>, A> *p = l->head; p; p = p->cdr)
       if (AHashFns::equal(akey, p->car.key))
         return p->car.value;
   return 0;
 }
 
-template <class K, class AHashFns, class C, class A> MapElem<K,C> *
-ChainHashMap<K, AHashFns, C, A>::put_bag(K akey, C avalue) {
+template <class K, class AHashFns, class C, class A>
+MapElem<K, C> *
+ChainHashMap<K, AHashFns, C, A>::put_bag(K akey, C avalue)
+{
   uintptr_t h = AHashFns::hash(akey);
-  List<MapElem<K,C>,A> empty;
-  List<MapElem<K,C>,A> *l;
+  List<MapElem<K, C>, A> empty;
+  List<MapElem<K, C>, A> *l;
   MapElem<K, C> c(akey, avalue);
-  MapElem<uintptr_t,List<MapElem<K,C>,A> > e(h, empty);
-  MapElem<uintptr_t,List<MapElem<K,C>,A> > *x = this->set_in(e);
+  MapElem<uintptr_t, List<MapElem<K, C>, A> > e(h, empty);
+  MapElem<uintptr_t, List<MapElem<K, C>, A> > *x = this->set_in(e);
   if (x)
     l = &x->value;
   else {
-    l = &Map<uintptr_t, List<MapElem<K,C>,A>,A>::put(h, c)->value;
+    l = &Map<uintptr_t, List<MapElem<K, C>, A>, A>::put(h, c)->value;
     return &l->head->car;
   }
-  for (ConsCell<MapElem<K,C>,A> *p  = l->head; p; p = p->cdr)
+  for (ConsCell<MapElem<K, C>, A> *p = l->head; p; p = p->cdr)
     if (AHashFns::equal(akey, p->car.key) && AHashFns::equal_value(avalue, p->car.value))
       return &p->car;
   l->push(c);
   return 0;
 }
 
-template <class K, class AHashFns, class C, class A> int
-ChainHashMap<K, AHashFns, C, A>::get_bag(K akey, Vec<C> &v) {
+template <class K, class AHashFns, class C, class A>
+int
+ChainHashMap<K, AHashFns, C, A>::get_bag(K akey, Vec<C> &v)
+{
   uintptr_t h = AHashFns::hash(akey);
-  List<MapElem<K,C>,A> empty;
-  MapElem<uintptr_t,List<MapElem<K,C>,A> > e(h, empty);
-  MapElem<uintptr_t,List<MapElem<K,C>,A> > *x = this->set_in(e);
+  List<MapElem<K, C>, A> empty;
+  MapElem<uintptr_t, List<MapElem<K, C>, A> > e(h, empty);
+  MapElem<uintptr_t, List<MapElem<K, C>, A> > *x = this->set_in(e);
   if (!x)
     return 0;
-  List<MapElem<K,C>,A> *l = &x->value;
-  for (ConsCell<MapElem<K,C>,A> *p  = l->head; p; p = p->cdr)
+  List<MapElem<K, C>, A> *l = &x->value;
+  for (ConsCell<MapElem<K, C>, A> *p = l->head; p; p = p->cdr)
     if (AHashFns::equal(akey, p->car.key))
       return v.add(x->car);
   return v.n;
 }
 
-template <class K, class AHashFns, class C, class A> int
-ChainHashMap<K, AHashFns, C, A>::del(K akey) {
+template <class K, class AHashFns, class C, class A>
+int
+ChainHashMap<K, AHashFns, C, A>::del(K akey)
+{
   uintptr_t h = AHashFns::hash(akey);
-  List<MapElem<K,C>,A> empty;
-  List<MapElem<K,C>,A> *l;
-  MapElem<uintptr_t,List<MapElem<K,C>,A> > e(h, empty);
-  MapElem<uintptr_t,List<MapElem<K,C>,A> > *x = this->set_in(e);
+  List<MapElem<K, C>, A> empty;
+  List<MapElem<K, C>, A> *l;
+  MapElem<uintptr_t, List<MapElem<K, C>, A> > e(h, empty);
+  MapElem<uintptr_t, List<MapElem<K, C>, A> > *x = this->set_in(e);
   if (x)
     l = &x->value;
   else
     return 0;
-  ConsCell<MapElem<K,C>,A> *last = 0;
-  for (ConsCell<MapElem<K,C>,A> *p = l->head; p; p = p->cdr) {
+  ConsCell<MapElem<K, C>, A> *last = 0;
+  for (ConsCell<MapElem<K, C>, A> *p = l->head; p; p = p->cdr) {
     if (AHashFns::equal(akey, p->car.key)) {
       if (!last)
         l->head = p->cdr;
@@ -662,41 +781,50 @@ ChainHashMap<K, AHashFns, C, A>::del(K akey) {
   return 0;
 }
 
-template <class K, class AHashFns, class C, class A> void
-ChainHashMap<K, AHashFns, C, A>::get_keys(Vec<K> &keys) {
+template <class K, class AHashFns, class C, class A>
+void
+ChainHashMap<K, AHashFns, C, A>::get_keys(Vec<K> &keys)
+{
   for (size_t i = 0; i < n; i++) {
-    List<MapElem<K,C> > *l = &v[i].value;
+    List<MapElem<K, C> > *l = &v[i].value;
     if (l->head)
-      for (ConsCell<MapElem<K,C>,A> *p  = l->head; p; p = p->cdr)
+      for (ConsCell<MapElem<K, C>, A> *p = l->head; p; p = p->cdr)
         keys.add(p->car.key);
   }
 }
 
-template <class K, class AHashFns, class C, class A> void
-ChainHashMap<K, AHashFns, C, A>::get_values(Vec<C> &values) {
+template <class K, class AHashFns, class C, class A>
+void
+ChainHashMap<K, AHashFns, C, A>::get_values(Vec<C> &values)
+{
   for (size_t i = 0; i < n; i++) {
-    List<MapElem<K,C>,A> *l = &v[i].value;
+    List<MapElem<K, C>, A> *l = &v[i].value;
     if (l->head)
-      for (ConsCell<MapElem<K,C>,A> *p  = l->head; p; p = p->cdr)
+      for (ConsCell<MapElem<K, C>, A> *p = l->head; p; p = p->cdr)
         values.add(p->car.value);
   }
 }
 
-template <class F, class A> inline cchar *
-StringChainHash<F,A>::canonicalize(cchar *s, cchar *e) {
+template <class F, class A>
+inline cchar *
+StringChainHash<F, A>::canonicalize(cchar *s, cchar *e)
+{
   uintptr_t h = 0;
   cchar *a = s;
   // 31 changed to 27, to avoid prime2 in vec.cpp
   if (e)
-    while (a != e) h = h * 27 + (unsigned char)*a++;
+    while (a != e)
+      h = h * 27 + (unsigned char)*a++;
   else
-    while (*a) h = h * 27 + (unsigned char)*a++;
-  MapElem<uintptr_t,List<cchar*, A> > me(h, (char*)0);
-  MapElem<uintptr_t,List<cchar*, A> > *x = this->set_in(me);
+    while (*a)
+      h = h * 27 + (unsigned char)*a++;
+  MapElem<uintptr_t, List<cchar *, A> > me(h, (char *)0);
+  MapElem<uintptr_t, List<cchar *, A> > *x = this->set_in(me);
   if (x) {
-    List<cchar*, A> *l = &x->value;
+    List<cchar *, A> *l = &x->value;
     typedef ConsCell<cchar *, A> TT;
-    forc_List(TT, x, *l) {
+    forc_List(TT, x, *l)
+    {
       a = s;
       cchar *b = x->car;
       while (1) {
@@ -707,7 +835,8 @@ StringChainHash<F,A>::canonicalize(cchar *s, cchar *e) {
         }
         if (a >= e || *a != *b)
           break;
-        a++; b++;
+        a++;
+        b++;
       }
     }
   }
@@ -718,17 +847,21 @@ StringChainHash<F,A>::canonicalize(cchar *s, cchar *e) {
   return s;
 }
 
-template <class K, class C, class A> inline C
-Env<K,C,A>::get(K akey) {
-  MapElem<K,List<C, A> *> e(akey, 0);
-  MapElem<K,List<C, A> *> *x = store.set_in(e);
+template <class K, class C, class A>
+inline C
+Env<K, C, A>::get(K akey)
+{
+  MapElem<K, List<C, A> *> e(akey, 0);
+  MapElem<K, List<C, A> *> *x = store.set_in(e);
   if (x)
     return x->value->first();
   return (C)0;
 }
 
-template <class K, class C, class A> inline List<C, A> *
-Env<K,C,A>::get_bucket(K akey) {
+template <class K, class C, class A>
+inline List<C, A> *
+Env<K, C, A>::get_bucket(K akey)
+{
   List<C, A> *bucket = store.get(akey);
   if (bucket)
     return bucket;
@@ -737,41 +870,52 @@ Env<K,C,A>::get_bucket(K akey) {
   return bucket;
 }
 
-template <class K, class C, class A> inline void
-Env<K,C,A>::put(K akey, C avalue) {
+template <class K, class C, class A>
+inline void
+Env<K, C, A>::put(K akey, C avalue)
+{
   scope.head->car.push(akey);
   get_bucket(akey)->push(avalue);
 }
 
-template <class K, class C, class A> inline void
-Env<K,C,A>::push() {
+template <class K, class C, class A>
+inline void
+Env<K, C, A>::push()
+{
   scope.push();
 }
 
-template <class K, class C, class A> inline void
-Env<K,C,A>::pop() {
-  forc_List(EnvCons, e, scope.first())
-    get_bucket(e->car)->pop();
+template <class K, class C, class A>
+inline void
+Env<K, C, A>::pop()
+{
+  forc_List(EnvCons, e, scope.first()) get_bucket(e->car)->pop();
 }
 
-template <class C, class AHashFns, int N, class A> inline
-NBlockHash<C, AHashFns, N, A>::NBlockHash() : n(1), i(0) {
+template <class C, class AHashFns, int N, class A> inline NBlockHash<C, AHashFns, N, A>::NBlockHash() : n(1), i(0)
+{
   memset(&e[0], 0, sizeof(e));
   v = e;
 }
 
-template <class C, class AHashFns, int N, class A> inline C*
-NBlockHash<C, AHashFns, N, A>::first() {
+template <class C, class AHashFns, int N, class A>
+inline C *
+NBlockHash<C, AHashFns, N, A>::first()
+{
   return &v[0];
 }
 
-template <class C, class AHashFns, int N, class A> inline C*
-NBlockHash<C, AHashFns, N, A>::last() {
+template <class C, class AHashFns, int N, class A>
+inline C *
+NBlockHash<C, AHashFns, N, A>::last()
+{
   return &v[n * N];
 }
 
-template <class C, class AHashFns, int N, class A> inline C
-NBlockHash<C, AHashFns, N, A>::put(C c) {
+template <class C, class AHashFns, int N, class A>
+inline C
+NBlockHash<C, AHashFns, N, A>::put(C c)
+{
   int a;
   uintptr_t h = AHashFns::hash(c);
   C *x = &v[(h % n) * N];
@@ -789,7 +933,7 @@ NBlockHash<C, AHashFns, N, A>::put(C c) {
   C *old_v = v;
   i = i + 1;
   size(i);
-  for (;vv < ve; vv++)
+  for (; vv < ve; vv++)
     if (*vv)
       put(*vv);
   if (old_v != &e[0])
@@ -797,15 +941,19 @@ NBlockHash<C, AHashFns, N, A>::put(C c) {
   return put(c);
 }
 
-template <class C, class AHashFns, int N, class A> inline void
-NBlockHash<C, AHashFns, N, A>::size(int p2) {
+template <class C, class AHashFns, int N, class A>
+inline void
+NBlockHash<C, AHashFns, N, A>::size(int p2)
+{
   n = prime2[p2];
-  v = (C*)A::alloc(n * sizeof(C) * N);
+  v = (C *)A::alloc(n * sizeof(C) * N);
   memset(v, 0, n * sizeof(C) * N);
 }
 
-template <class C, class AHashFns, int N, class A> inline C
-NBlockHash<C, AHashFns, N, A>::get(C c) {
+template <class C, class AHashFns, int N, class A>
+inline C
+NBlockHash<C, AHashFns, N, A>::get(C c)
+{
   if (!n)
     return (C)0;
   uintptr_t h = AHashFns::hash(c);
@@ -819,10 +967,12 @@ NBlockHash<C, AHashFns, N, A>::get(C c) {
   return (C)0;
 }
 
-template <class C, class AHashFns, int N, class A> inline C*
-NBlockHash<C, AHashFns, N, A>::assoc_get(C *c) {
+template <class C, class AHashFns, int N, class A>
+inline C *
+NBlockHash<C, AHashFns, N, A>::assoc_get(C *c)
+{
   if (!n)
-    return (C*)0;
+    return (C *)0;
   uintptr_t h = AHashFns::hash(*c);
   C *x = &v[(h % n) * N];
   int a = 0;
@@ -830,15 +980,17 @@ NBlockHash<C, AHashFns, N, A>::assoc_get(C *c) {
     a = c - x + 1;
   for (; a < N; a++) {
     if (!x[a])
-      return (C*)0;
+      return (C *)0;
     if (AHashFns::equal(*c, x[a]))
       return &x[a];
   }
-  return (C*)0;
+  return (C *)0;
 }
 
-template <class C, class AHashFns, int N, class A> inline C*
-NBlockHash<C, AHashFns, N, A>::assoc_put(C *c) {
+template <class C, class AHashFns, int N, class A>
+inline C *
+NBlockHash<C, AHashFns, N, A>::assoc_put(C *c)
+{
   int a;
   uintptr_t h = AHashFns::hash(*c);
   C *x = &v[(h % n) * N];
@@ -848,15 +1000,17 @@ NBlockHash<C, AHashFns, N, A>::assoc_put(C *c) {
   }
   if (a < N) {
     x[a] = *c;
-    return  &x[a];
+    return &x[a];
   }
   x[i % N] = *c;
   i++;
   return &x[i % N];
 }
 
-template <class C, class AHashFns, int N, class A> inline int
-NBlockHash<C, AHashFns, N, A>::del(C c) {
+template <class C, class AHashFns, int N, class A>
+inline int
+NBlockHash<C, AHashFns, N, A>::del(C c)
+{
   int a, b;
   if (!n)
     return 0;
@@ -884,21 +1038,28 @@ NBlockHash<C, AHashFns, N, A>::del(C c) {
   return 0;
 }
 
-template <class C, class AHashFns, int N, class A> inline void
-NBlockHash<C, AHashFns, N, A>::clear() {
-  if (v && v != e) A::free(v);
+template <class C, class AHashFns, int N, class A>
+inline void
+NBlockHash<C, AHashFns, N, A>::clear()
+{
+  if (v && v != e)
+    A::free(v);
   v = e;
   n = 1;
 }
 
-template <class C, class AHashFns, int N, class A> inline void
-NBlockHash<C, AHashFns, N, A>::reset() {
+template <class C, class AHashFns, int N, class A>
+inline void
+NBlockHash<C, AHashFns, N, A>::reset()
+{
   if (v)
     memset(v, 0, n * N * sizeof(C));
 }
 
-template <class C, class AHashFns, int N, class A> inline int
-NBlockHash<C, AHashFns, N, A>::count() {
+template <class C, class AHashFns, int N, class A>
+inline int
+NBlockHash<C, AHashFns, N, A>::count()
+{
   int nelements = 0;
   C *l = last();
   for (C *xx = first(); xx < l; xx++)
@@ -907,8 +1068,10 @@ NBlockHash<C, AHashFns, N, A>::count() {
   return nelements;
 }
 
-template <class C, class AHashFns, int N, class A> inline void
-NBlockHash<C, AHashFns, N, A>::copy(const NBlockHash<C, AHashFns, N, A> &hh) {
+template <class C, class AHashFns, int N, class A>
+inline void
+NBlockHash<C, AHashFns, N, A>::copy(const NBlockHash<C, AHashFns, N, A> &hh)
+{
   clear();
   n = hh.n;
   i = hh.i;
@@ -917,15 +1080,17 @@ NBlockHash<C, AHashFns, N, A>::copy(const NBlockHash<C, AHashFns, N, A> &hh) {
     v = e;
   } else {
     if (hh.v) {
-      v = (C*)A::alloc(n * sizeof(C) * N);
+      v = (C *)A::alloc(n * sizeof(C) * N);
       memcpy(v, hh.v, n * sizeof(C) * N);
     } else
       v = 0;
   }
 }
 
-template <class C, class AHashFns, int N, class A> inline void
-NBlockHash<C, AHashFns, N, A>::move(NBlockHash<C, AHashFns, N, A> &hh) {
+template <class C, class AHashFns, int N, class A>
+inline void
+NBlockHash<C, AHashFns, N, A>::move(NBlockHash<C, AHashFns, N, A> &hh)
+{
   clear();
   n = hh.n;
   i = hh.i;
@@ -1024,25 +1189,25 @@ void test_map();
     which creates the internal links used by @c TSHashTable.
 
  */
-template <
-  typename H ///< Hashing utility class.
->
-class TSHashTable {
+template <typename H ///< Hashing utility class.
+          >
+class TSHashTable
+{
 public:
   typedef TSHashTable self; ///< Self reference type.
 
   // Make embedded types easier to use by importing them to the class namespace.
-  typedef H Hasher; ///< Rename and promote.
-  typedef typename Hasher::ID ID; ///< ID type.
-  typedef typename Hasher::Key Key; ///< Key type.
-  typedef typename Hasher::Value Value; ///< Stored value (element) type.
+  typedef H Hasher;                           ///< Rename and promote.
+  typedef typename Hasher::ID ID;             ///< ID type.
+  typedef typename Hasher::Key Key;           ///< Key type.
+  typedef typename Hasher::Value Value;       ///< Stored value (element) type.
   typedef typename Hasher::ListHead ListHead; ///< Anchor for chain.
 
   /// When the hash table is expanded.
   enum ExpansionPolicy {
-    MANUAL, ///< Client must explicitly expand the table.
+    MANUAL,  ///< Client must explicitly expand the table.
     AVERAGE, ///< Table expands if average chain length exceeds limit. [default]
-    MAXIMUM ///< Table expands if any chain length exceeds limit.
+    MAXIMUM  ///< Table expands if any chain length exceeds limit.
   };
 
   /** Hash bucket.
@@ -1053,7 +1218,7 @@ public:
   */
   struct Bucket {
     ListHead m_chain; ///< Chain of elements.
-    size_t m_count; ///< # of elements in chain.
+    size_t m_count;   ///< # of elements in chain.
 
     /** Internal chain for iteration.
 
@@ -1071,7 +1236,7 @@ public:
         exact.  What we want is to avoid expanding to shorten the chain if it won't help, which it
         won't if all the keys are the same.
 
-	@internal Because we've selected the default to be @c false so we can use @c Vec which zero fills empty elements.
+        @internal Because we've selected the default to be @c false so we can use @c Vec which zero fills empty elements.
     */
     bool m_mixed_p;
 
@@ -1090,33 +1255,44 @@ public:
       @a m_value member.
    */
   struct Location {
-    Value* m_value; ///< The value located.
-    Bucket* m_bucket; ///< Containing bucket of value.
-    ID m_id; ///< ID (hashed key).
+    Value *m_value;    ///< The value located.
+    Bucket *m_bucket;  ///< Containing bucket of value.
+    ID m_id;           ///< ID (hashed key).
     size_t m_distance; ///< How many values in the chain we've gone past to get here.
 
     /// Default constructor - empty location.
     Location() : m_value(NULL), m_bucket(NULL), m_id(0), m_distance(0) {}
 
     /// Check for location being valid (referencing a value).
-    bool isValid() const { return NULL != m_value; }
+    bool
+    isValid() const
+    {
+      return NULL != m_value;
+    }
 
     /// Automatically cast to a @c Value* for convenience.
     /// @note This lets you assign the return of @c find to a @c Value*.
     /// @note This also permits the use of this class directly as a boolean expression.
-    operator Value* () const { return m_value; }
+    operator Value *() const { return m_value; }
 
     /// Dereference.
-    Value& operator * () const { return *m_value; }
+    Value &operator*() const { return *m_value; }
     /// Dereference.
-    Value* operator -> () const { return m_value; }
+    Value *operator->() const { return m_value; }
 
     /// Find next value with matching key (prefix).
-    Location& operator ++ () { if (m_value) this->advance(); return *this; }
+    Location &operator++()
+    {
+      if (m_value)
+        this->advance();
+      return *this;
+    }
     /// Find next value with matching key (postfix).
-    Location& operator ++ (int) {
+    Location &operator++(int)
+    {
       Location zret(*this);
-      if (m_value) this->advance();
+      if (m_value)
+        this->advance();
       return zret;
     }
 
@@ -1132,24 +1308,24 @@ public:
       @internal Iterator is end if m_value is NULL.
    */
   struct iterator {
-    Value* m_value; ///< Current location.
-    Bucket* m_bucket; ///< Current bucket;
+    Value *m_value;   ///< Current location.
+    Bucket *m_bucket; ///< Current bucket;
 
     iterator() : m_value(0), m_bucket(0) {}
-    iterator& operator ++ ();
-    Value& operator * () { return *m_value; }
-    Value* operator -> () { return m_value; }
-    bool operator == (iterator const& that) { return m_bucket == that.m_bucket && m_value == that.m_value; }
-    bool operator != (iterator const& that) { return !(*this == that); }
+    iterator &operator++();
+    Value &operator*() { return *m_value; }
+    Value *operator->() { return m_value; }
+    bool operator==(iterator const &that) { return m_bucket == that.m_bucket && m_value == that.m_value; }
+    bool operator!=(iterator const &that) { return !(*this == that); }
 
   protected:
     /// Internal iterator constructor.
-    iterator(Bucket* b, Value* v) : m_value(v), m_bucket(b) {}
+    iterator(Bucket *b, Value *v) : m_value(v), m_bucket(b) {}
     friend class TSHashTable;
   };
 
   iterator begin(); ///< First element.
-  iterator end(); ///< Past last element.
+  iterator end();   ///< Past last element.
 
   /// The default starting number of buckets.
   static size_t const DEFAULT_BUCKET_COUNT = 7; ///< POOMA.
@@ -1165,7 +1341,7 @@ public:
       The @a value must @b NOT already be in a table of this type.
       @note The value itself is put in the table, @b not a copy.
   */
-  void insert(Value* value);
+  void insert(Value *value);
 
   /** Find a value that matches @a key.
 
@@ -1183,7 +1359,7 @@ public:
       value to construct a @c Location that can be used with other methods. The @a m_distance value
       is not set in this case for performance reasons.
    */
-  Location find(Value* value);
+  Location find(Value *value);
 
   /** Remove the value at @a location from the table.
 
@@ -1191,7 +1367,7 @@ public:
 
       @return @c true if the value was removed, @c false otherwise.
   */
-  bool remove(Location const& location);
+  bool remove(Location const &location);
 
   /** Remove @b all values with @a key.
 
@@ -1209,19 +1385,43 @@ public:
   void clear();
 
   /// Get the number of elements in the table.
-  size_t count() const { return m_count; }
+  size_t
+  count() const
+  {
+    return m_count;
+  }
 
   /// Get the number of buckets in the table.
-  size_t bucketCount() const { return m_array.n; }
+  size_t
+  bucketCount() const
+  {
+    return m_array.n;
+  }
 
   /// Enable or disable expanding the table when chains are long.
-  void setExpansionPolicy(ExpansionPolicy p) { m_expansion_policy = p; }
+  void
+  setExpansionPolicy(ExpansionPolicy p)
+  {
+    m_expansion_policy = p;
+  }
   /// Get the current expansion policy.
-  void expansionPolicy() const { return m_expansion_policy; }
+  void
+  expansionPolicy() const
+  {
+    return m_expansion_policy;
+  }
   /// Set the limit value for the expansion policy.
-  void setExpansionLimit(size_t n) { m_expansion_limit = n; }
+  void
+  setExpansionLimit(size_t n)
+  {
+    m_expansion_limit = n;
+  }
   /// Set the limit value for the expansion policy.
-  size_t expansionLimit() const { return m_expansion_limit; }
+  size_t
+  expansionLimit() const
+  {
+    return m_expansion_limit;
+  }
 
   /** Expand the hash.
 
@@ -1232,10 +1432,10 @@ public:
 protected:
   typedef Vec<Bucket, DefaultAlloc, 0> Array; ///< Bucket array.
 
-  size_t m_count; ///< # of elements stored in the table.
+  size_t m_count;                     ///< # of elements stored in the table.
   ExpansionPolicy m_expansion_policy; ///< When to exand the table.
-  size_t m_expansion_limit; ///< Limit value for expansion.
-  Array m_array; ///< Bucket storage.
+  size_t m_expansion_limit;           ///< Limit value for expansion.
+  Array m_array;                      ///< Bucket storage.
   /// Make available to nested classes statically.
   // We must reach inside the link hackery because we're in a template and
   // must use typename. Older compilers don't handle typename outside of
@@ -1248,28 +1448,29 @@ protected:
   /** Get the ID and bucket for key.
       Fills @a m_id and @a m_bucket in @a location from @a key.
   */
-  void findBucket(Key key, Location& location);
+  void findBucket(Key key, Location &location);
 };
 
-template < typename H > typename TSHashTable<H>::iterator
-TSHashTable<H>::begin() {
+template <typename H>
+typename TSHashTable<H>::iterator
+TSHashTable<H>::begin()
+{
   // Get the first non-empty bucket, if any.
-  Bucket* b = m_bucket_chain.head;
-  return b && b->m_chain.head
-    ? iterator(b, b->m_chain.head)
-    : this->end()
-    ;
+  Bucket *b = m_bucket_chain.head;
+  return b && b->m_chain.head ? iterator(b, b->m_chain.head) : this->end();
 }
 
-template < typename H > typename TSHashTable<H>::iterator
-TSHashTable<H>::end() {
-  return iterator(0,0);
+template <typename H>
+typename TSHashTable<H>::iterator
+TSHashTable<H>::end()
+{
+  return iterator(0, 0);
 }
 
-template < typename H > typename TSHashTable<H>::iterator&
-TSHashTable<H>::iterator::operator ++ () {
+template <typename H> typename TSHashTable<H>::iterator &TSHashTable<H>::iterator::operator++()
+{
   if (m_value) {
-    if (NULL == (m_value = ListHead::next(m_value))) { // end of bucket, next bucket.
+    if (NULL == (m_value = ListHead::next(m_value))) {        // end of bucket, next bucket.
       if (NULL != (m_bucket = BucketChain::next(m_bucket))) { // found non-empty next bucket.
         m_value = m_bucket->m_chain.head;
         ink_assert(m_value); // if bucket is in chain, must be non-empty.
@@ -1279,49 +1480,60 @@ TSHashTable<H>::iterator::operator ++ () {
   return *this;
 }
 
-template < typename H > TSHashTable<H>::TSHashTable(size_t nb)
-  : m_count(0), m_expansion_policy(AVERAGE), m_expansion_limit(DEFAULT_EXPANSION_LIMIT) {
+template <typename H>
+TSHashTable<H>::TSHashTable(size_t nb)
+  : m_count(0), m_expansion_policy(AVERAGE), m_expansion_limit(DEFAULT_EXPANSION_LIMIT)
+{
   if (nb) {
     int idx = 1;
-    while (prime2[idx] < nb) ++idx;
+    while (prime2[idx] < nb)
+      ++idx;
     m_array.n = 1; // anything non-zero.
     m_array.i = idx - 1;
   }
   m_array.set_expand();
 }
 
-template < typename H > void
-TSHashTable<H>::Location::advance() {
+template <typename H>
+void
+TSHashTable<H>::Location::advance()
+{
   Key key = Hasher::key(m_value);
   // assumes valid location with correct key, advance to next matching key or make location invalid.
   do {
     ++m_distance;
     m_value = ListHead::next(m_value);
-  } while (m_value && ! Hasher::equal(key, Hasher::key(m_value)));
+  } while (m_value && !Hasher::equal(key, Hasher::key(m_value)));
 }
 
-template < typename H > void
-TSHashTable<H>::findBucket(Key key, Location& location) {
+template <typename H>
+void
+TSHashTable<H>::findBucket(Key key, Location &location)
+{
   location.m_id = Hasher::hash(key);
   location.m_bucket = &(m_array[location.m_id % m_array.n]);
 }
 
-template < typename H > typename TSHashTable<H>::Location
-TSHashTable<H>::find(Key key) {
+template <typename H>
+typename TSHashTable<H>::Location
+TSHashTable<H>::find(Key key)
+{
   Location zret;
-  Value* v;
+  Value *v;
 
   this->findBucket(key, zret); // zret gets updated to match the bucket.
   v = zret.m_bucket->m_chain.head;
   // Search for first matching key.
-  while (0 != v && ! Hasher::equal(key, Hasher::key(v)))
+  while (0 != v && !Hasher::equal(key, Hasher::key(v)))
     v = ListHead::next(v);
   zret.m_value = v;
   return zret;
 }
 
-template < typename H > typename TSHashTable<H>::Location
-TSHashTable<H>::find(Value* value) {
+template <typename H>
+typename TSHashTable<H>::Location
+TSHashTable<H>::find(Value *value)
+{
   Location zret;
   this->findBucket(Hasher::key(value), zret);
   if (zret.m_bucket->m_chain.in(value)) // just checks value links and chain head.
@@ -1329,16 +1541,18 @@ TSHashTable<H>::find(Value* value) {
   return zret;
 }
 
-template < typename H > void
-TSHashTable<H>::insert(Value* value) {
+template <typename H>
+void
+TSHashTable<H>::insert(Value *value)
+{
   Key key = Hasher::key(value);
-  Bucket* bucket = &(m_array[Hasher::hash(key) % m_array.n]);
+  Bucket *bucket = &(m_array[Hasher::hash(key) % m_array.n]);
 
   // Bad client if already in a list!
-  ink_assert(! bucket->m_chain.in(value));
+  ink_assert(!bucket->m_chain.in(value));
 
   // Mark mixed if not already marked and we're adding a different key.
-  if (!bucket->m_mixed_p && !bucket->m_chain.empty() && ! Hasher::equal(key, Hasher::key(bucket->m_chain.head)))
+  if (!bucket->m_mixed_p && !bucket->m_chain.empty() && !Hasher::equal(key, Hasher::key(bucket->m_chain.head)))
     bucket->m_mixed_p = true;
 
   bucket->m_chain.push(value);
@@ -1346,13 +1560,15 @@ TSHashTable<H>::insert(Value* value) {
   if (1 == ++(bucket->m_count)) // not empty, put it on the non-empty list.
     m_bucket_chain.push(bucket);
   // auto expand if appropriate.
-  if ((AVERAGE == m_expansion_policy && (m_count / m_array.n) > m_expansion_limit)
-      || (MAXIMUM == m_expansion_policy && bucket->m_count > m_expansion_limit && bucket->m_mixed_p))
+  if ((AVERAGE == m_expansion_policy && (m_count / m_array.n) > m_expansion_limit) ||
+      (MAXIMUM == m_expansion_policy && bucket->m_count > m_expansion_limit && bucket->m_mixed_p))
     this->expand();
 }
 
-template < typename H > bool
-TSHashTable<H>::remove(Location const& l) {
+template <typename H>
+bool
+TSHashTable<H>::remove(Location const &l)
+{
   bool zret = false;
   if (l.isValid()) {
     ink_assert(l.m_bucket->m_count);
@@ -1360,7 +1576,7 @@ TSHashTable<H>::remove(Location const& l) {
     l.m_bucket->m_chain.remove(l.m_value);
     --m_count;
     --(l.m_bucket->m_count);
-    if (0 == l.m_bucket->m_count)  // if it's now empty, take it out of the non-empty bucket chain.
+    if (0 == l.m_bucket->m_count) // if it's now empty, take it out of the non-empty bucket chain.
       m_bucket_chain.remove(l.m_bucket);
     else if (1 == l.m_bucket->m_count) // if count drops to 1, then it's not mixed any more.
       l.m_bucket->m_mixed_p = false;
@@ -1369,8 +1585,10 @@ TSHashTable<H>::remove(Location const& l) {
   return zret;
 }
 
-template < typename H > bool
-TSHashTable<H>::remove(Key key) {
+template <typename H>
+bool
+TSHashTable<H>::remove(Key key)
+{
   Location loc = this->find(key);
   bool zret = loc.isValid();
   while (loc.isValid()) {
@@ -1381,11 +1599,13 @@ TSHashTable<H>::remove(Key key) {
   return zret;
 }
 
-template < typename H > void
-TSHashTable<H>::clear() {
+template <typename H>
+void
+TSHashTable<H>::clear()
+{
   Bucket null_bucket;
   // Remove the values but not the actual buckets.
-  for ( size_t i = 0 ; i < m_array.n ; ++i ) {
+  for (size_t i = 0; i < m_array.n; ++i) {
     m_array[i] = null_bucket;
   }
   // Clear container data.
@@ -1393,9 +1613,11 @@ TSHashTable<H>::clear() {
   m_bucket_chain.clear();
 }
 
-template < typename H > void
-TSHashTable<H>::expand() {
-  Bucket* b = m_bucket_chain.head; // stash before reset.
+template <typename H>
+void
+TSHashTable<H>::expand()
+{
+  Bucket *b = m_bucket_chain.head; // stash before reset.
   ExpansionPolicy org_expansion_policy = m_expansion_policy;
   Array tmp;
   tmp.move(m_array); // stash the current array here.
@@ -1406,14 +1628,14 @@ TSHashTable<H>::expand() {
   // Because we moved the array, we have to copy back a couple of things to make
   // the expansion actually expand. How this is supposed to work without leaks or
   // mucking about in the internal is unclear to me.
-  m_array.n = 1; // anything non-zero.
-  m_array.i = tmp.i;  // set the base index.
+  m_array.n = 1;        // anything non-zero.
+  m_array.i = tmp.i;    // set the base index.
   m_array.set_expand(); // bumps array size up to next index value.
 
   m_expansion_policy = MANUAL; // disable any auto expand while we're expanding.
   // Move the values from the stashed array to the expanded hash.
   while (b) {
-    Value* v = b->m_chain.head;
+    Value *v = b->m_chain.head;
     while (v) {
       b->m_chain.remove(v); // clear local pointers to be safe.
       this->insert(v);

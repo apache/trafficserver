@@ -31,10 +31,10 @@
 // set in the OS
 // #define RECV_BUF_SIZE            (1024*64)
 // #define SEND_BUF_SIZE            (1024*64)
-#define FIRST_RANDOM_PORT        16000
-#define LAST_RANDOM_PORT         32000
+#define FIRST_RANDOM_PORT 16000
+#define LAST_RANDOM_PORT 32000
 
-#define ROUNDUP(x, y) ((((x)+((y)-1))/(y))*(y))
+#define ROUNDUP(x, y) ((((x) + ((y)-1)) / (y)) * (y))
 
 #if TS_USE_TPROXY
 #if !defined(IP_TRANSPARENT)
@@ -46,12 +46,10 @@ unsigned int const IP_TRANSPARENT = 19;
 // Functions
 //
 int
-Connection::setup_mc_send(
-  sockaddr const* mc_addr,
-  sockaddr const* my_addr,
-  bool non_blocking, unsigned char mc_ttl, bool mc_loopback, Continuation * c
-) {
-  (void) c;
+Connection::setup_mc_send(sockaddr const *mc_addr, sockaddr const *my_addr, bool non_blocking, unsigned char mc_ttl,
+                          bool mc_loopback, Continuation *c)
+{
+  (void)c;
   ink_assert(fd == NO_FD);
   int res = 0;
   int enable_reuseaddr = 1;
@@ -62,7 +60,7 @@ Connection::setup_mc_send(
 
   fd = res;
 
-  if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *) &enable_reuseaddr, sizeof(enable_reuseaddr)) < 0)) {
+  if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *)&enable_reuseaddr, sizeof(enable_reuseaddr)) < 0)) {
     goto Lerror;
   }
 
@@ -82,18 +80,18 @@ Connection::setup_mc_send(
       goto Lerror;
 
   // Set MultiCast TTL to specified value
-  if ((res = safe_setsockopt(fd, IPPROTO_IP, IP_MULTICAST_TTL, (char *) &mc_ttl, sizeof(mc_ttl)) < 0))
+  if ((res = safe_setsockopt(fd, IPPROTO_IP, IP_MULTICAST_TTL, (char *)&mc_ttl, sizeof(mc_ttl)) < 0))
     goto Lerror;
 
   // Set MultiCast Interface to specified value
-  if ((res = safe_setsockopt(fd, IPPROTO_IP, IP_MULTICAST_IF, (char *) &mc_if, sizeof(mc_if)) < 0))
+  if ((res = safe_setsockopt(fd, IPPROTO_IP, IP_MULTICAST_IF, (char *)&mc_if, sizeof(mc_if)) < 0))
     goto Lerror;
 
   // Disable MultiCast loopback if requested
   if (!mc_loopback) {
     char loop = 0;
 
-    if ((res = safe_setsockopt(fd, IPPROTO_IP, IP_MULTICAST_LOOP, (char *) &loop, sizeof(loop)) < 0))
+    if ((res = safe_setsockopt(fd, IPPROTO_IP, IP_MULTICAST_LOOP, (char *)&loop, sizeof(loop)) < 0))
       goto Lerror;
   }
   return 0;
@@ -106,14 +104,12 @@ Lerror:
 
 
 int
-Connection::setup_mc_receive(
-  sockaddr const* mc_addr,
-  sockaddr const* my_addr,
-  bool non_blocking, Connection * sendChan, Continuation * c
-) {
+Connection::setup_mc_receive(sockaddr const *mc_addr, sockaddr const *my_addr, bool non_blocking, Connection *sendChan,
+                             Continuation *c)
+{
   ink_assert(fd == NO_FD);
-  (void) sendChan;
-  (void) c;
+  (void)sendChan;
+  (void)c;
   int res = 0;
   int enable_reuseaddr = 1;
   IpAddr inaddr_any(INADDR_ANY);
@@ -128,7 +124,7 @@ Connection::setup_mc_receive(
     goto Lerror;
 #endif
 
-  if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *) &enable_reuseaddr, sizeof(enable_reuseaddr)) < 0))
+  if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *)&enable_reuseaddr, sizeof(enable_reuseaddr)) < 0))
     goto Lerror;
 
   addr.assign(inaddr_any, ats_ip_port_cast(mc_addr));
@@ -146,7 +142,7 @@ Connection::setup_mc_receive(
     mc_request.imr_multiaddr.s_addr = ats_ip4_addr_cast(mc_addr);
     mc_request.imr_interface.s_addr = ats_ip4_addr_cast(my_addr);
 
-    if ((res = safe_setsockopt(fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char *) &mc_request, sizeof(mc_request)) < 0))
+    if ((res = safe_setsockopt(fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char *)&mc_request, sizeof(mc_request)) < 0))
       goto Lerror;
   }
   return 0;
@@ -157,42 +153,51 @@ Lerror:
   return res;
 }
 
-namespace {
-  /** Struct to make cleaning up resources easier.
+namespace
+{
+/** Struct to make cleaning up resources easier.
 
-      By default, the @a method is invoked on the @a object when
-      this object is destructed. This can be prevented by calling
-      the @c reset method.
+    By default, the @a method is invoked on the @a object when
+    this object is destructed. This can be prevented by calling
+    the @c reset method.
 
-      This is not overly useful in the allocate, check, return case
-      but very handy if there are
-      - multiple resources (each can have its own cleaner)
-      - multiple checks against the resource
-      In such cases, rather than trying to track all the resources
-      that might need cleaned up, you can set up a cleaner at allocation
-      and only have to deal with them on success, which is generally
-      singular.
+    This is not overly useful in the allocate, check, return case
+    but very handy if there are
+    - multiple resources (each can have its own cleaner)
+    - multiple checks against the resource
+    In such cases, rather than trying to track all the resources
+    that might need cleaned up, you can set up a cleaner at allocation
+    and only have to deal with them on success, which is generally
+    singular.
 
-      @code
-      self::some_method (...) {
-        /// allocate resource
-        cleaner<self> clean_up(this, &self::cleanup);
-        // modify or check the resource
-        if (fail) return FAILURE; // cleanup() is called
-        /// success!
-        clean_up.reset(); // cleanup() not called after this
-        return SUCCESS;
-      @endcode
-   */
-  template <typename T> struct cleaner {
-    T* obj; ///< Object instance.
-    typedef void (T::*method)(); ///< Method signature.
-    method m;
+    @code
+    self::some_method (...) {
+      /// allocate resource
+      cleaner<self> clean_up(this, &self::cleanup);
+      // modify or check the resource
+      if (fail) return FAILURE; // cleanup() is called
+      /// success!
+      clean_up.reset(); // cleanup() not called after this
+      return SUCCESS;
+    @endcode
+ */
+template <typename T> struct cleaner {
+  T *obj;                      ///< Object instance.
+  typedef void (T::*method)(); ///< Method signature.
+  method m;
 
-    cleaner(T* _obj, method  _method) : obj(_obj), m(_method) {}
-    ~cleaner() { if (obj) (obj->*m)(); }
-    void reset() { obj = 0; }
-  };
+  cleaner(T *_obj, method _method) : obj(_obj), m(_method) {}
+  ~cleaner()
+  {
+    if (obj)
+      (obj->*m)();
+  }
+  void
+  reset()
+  {
+    obj = 0;
+  }
+};
 }
 
 /** Default options.
@@ -215,15 +220,13 @@ namespace {
 NetVCOptions const Connection::DEFAULT_OPTIONS;
 
 int
-Connection::open(NetVCOptions const& opt)
+Connection::open(NetVCOptions const &opt)
 {
   ink_assert(fd == NO_FD);
   int enable_reuseaddr = 1; // used for sockopt setting
-  int res = 0; // temp result
+  int res = 0;              // temp result
   IpEndpoint local_addr;
-  sock_type = NetVCOptions::USE_UDP == opt.ip_proto
-    ? SOCK_DGRAM
-    : SOCK_STREAM;
+  sock_type = NetVCOptions::USE_UDP == opt.ip_proto ? SOCK_DGRAM : SOCK_STREAM;
   int family;
 
   // Need to do address calculations first, so we can determine the
@@ -231,9 +234,7 @@ Connection::open(NetVCOptions const& opt)
   ink_zero(local_addr);
 
   bool is_any_address = false;
-  if (NetVCOptions::FOREIGN_ADDR == opt.addr_binding ||
-    NetVCOptions::INTF_ADDR == opt.addr_binding
-  ) {
+  if (NetVCOptions::FOREIGN_ADDR == opt.addr_binding || NetVCOptions::INTF_ADDR == opt.addr_binding) {
     // Same for now, transparency for foreign addresses must be handled
     // *after* the socket is created, and we need to do this calculation
     // before the socket to get the IP family correct.
@@ -249,7 +250,8 @@ Connection::open(NetVCOptions const& opt)
   }
 
   res = socketManager.socket(family, sock_type, 0);
-  if (-1 == res) return -errno;
+  if (-1 == res)
+    return -errno;
 
   fd = res;
   // mark fd for close until we succeed.
@@ -257,20 +259,14 @@ Connection::open(NetVCOptions const& opt)
 
   // Try setting the various socket options, if requested.
 
-  if (-1 == safe_setsockopt(fd,
-                            SOL_SOCKET,
-                            SO_REUSEADDR,
-                            reinterpret_cast<char *>(&enable_reuseaddr),
-                            sizeof(enable_reuseaddr)))
+  if (-1 == safe_setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<char *>(&enable_reuseaddr), sizeof(enable_reuseaddr)))
     return -errno;
 
   if (NetVCOptions::FOREIGN_ADDR == opt.addr_binding) {
-    static char const * const DEBUG_TEXT = "::open setsockopt() IP_TRANSPARENT";
+    static char const *const DEBUG_TEXT = "::open setsockopt() IP_TRANSPARENT";
 #if TS_USE_TPROXY
     int value = 1;
-    if (-1 == safe_setsockopt(fd, SOL_IP, TS_IP_TRANSPARENT,
-                              reinterpret_cast<char*>(&value), sizeof(value)
-                              )) {
+    if (-1 == safe_setsockopt(fd, SOL_IP, TS_IP_TRANSPARENT, reinterpret_cast<char *>(&value), sizeof(value))) {
       Debug("socket", "%s - fail %d:%s", DEBUG_TEXT, errno, strerror(errno));
       return -errno;
     } else {
@@ -306,7 +302,7 @@ Connection::open(NetVCOptions const& opt)
   // apply dynamic options
   apply_options(opt);
 
-  if(local_addr.port() || !is_any_address) {
+  if (local_addr.port() || !is_any_address) {
     if (-1 == socketManager.ink_bind(fd, &local_addr.sa, ats_ip_size(&local_addr.sa)))
       return -errno;
   }
@@ -317,7 +313,8 @@ Connection::open(NetVCOptions const& opt)
 }
 
 int
-Connection::connect(sockaddr const* target, NetVCOptions const& opt) {
+Connection::connect(sockaddr const *target, NetVCOptions const &opt)
+{
   ink_assert(fd != NO_FD);
   ink_assert(is_bound);
   ink_assert(!is_connected);
@@ -335,14 +332,14 @@ Connection::connect(sockaddr const* target, NetVCOptions const& opt) {
   // (Is EWOULDBLOCK ok? Does that start the connect?)
   // We also want to handle the cases where the connect blocking
   // and IO blocking differ, by turning it on or off as needed.
-  if (-1 == res
-      && (opt.f_blocking_connect
-          || ! (EINPROGRESS == errno || EWOULDBLOCK == errno))) {
+  if (-1 == res && (opt.f_blocking_connect || !(EINPROGRESS == errno || EWOULDBLOCK == errno))) {
     return -errno;
   } else if (opt.f_blocking_connect && !opt.f_blocking) {
-    if (-1 == safe_nonblocking(fd)) return -errno;
+    if (-1 == safe_nonblocking(fd))
+      return -errno;
   } else if (!opt.f_blocking_connect && opt.f_blocking) {
-    if (-1 == safe_blocking(fd)) return -errno;
+    if (-1 == safe_blocking(fd))
+      return -errno;
   }
 
   cleanup.reset();
@@ -357,7 +354,7 @@ Connection::_cleanup()
 }
 
 void
-Connection::apply_options(NetVCOptions const& opt)
+Connection::apply_options(NetVCOptions const &opt)
 {
   // Set options which can be changed after a connection is established
   // ignore other changes
@@ -372,7 +369,7 @@ Connection::apply_options(NetVCOptions const& opt)
     }
     if (opt.sockopt_flags & NetVCOptions::SOCK_OPT_LINGER_ON) {
       struct linger l;
-      l.l_onoff  = 1;
+      l.l_onoff = 1;
       l.l_linger = 0;
       safe_setsockopt(fd, SOL_SOCKET, SO_LINGER, (char *)&l, sizeof(l));
       Debug("socket", "::open:: setsockopt() turn on SO_LINGER on socket");

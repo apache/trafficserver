@@ -41,7 +41,7 @@ typedef enum {
 /// Server session sharing values - pool
 typedef enum {
   TS_SERVER_SESSION_SHARING_POOL_GLOBAL,
-  TS_SERVER_SESSION_SHARING_POOL_THREAD
+  TS_SERVER_SESSION_SHARING_POOL_THREAD,
 } TSServerSessionSharingPoolType;
 
 #endif // _HTTP_PROXY_API_ENUMS_H_

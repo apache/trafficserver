@@ -22,5 +22,5 @@
  */
 
 _HEADER
-  //
-  _FOOTER
+//
+_FOOTER

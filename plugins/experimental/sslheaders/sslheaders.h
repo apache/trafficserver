@@ -32,66 +32,59 @@ typedef struct bio_st BIO;
 #define SslHdrDebug(fmt, ...) TSDebug(PLUGIN_NAME, "%s: " fmt, __func__, ##__VA_ARGS__)
 #define SslHdrError(fmt, ...) TSError(PLUGIN_NAME ": %s: " fmt, __func__, ##__VA_ARGS__)
 
-enum AttachOptions
-{
+enum AttachOptions {
   SSL_HEADERS_ATTACH_CLIENT,
   SSL_HEADERS_ATTACH_SERVER,
   SSL_HEADERS_ATTACH_BOTH,
 };
 
-enum ExpansionScope
-{
+enum ExpansionScope {
   SSL_HEADERS_SCOPE_NONE = 0,
   SSL_HEADERS_SCOPE_CLIENT, // Client certificate
   SSL_HEADERS_SCOPE_SERVER, // Server certificate
   SSL_HEADERS_SCOPE_SSL     // SSL connection
 };
 
-enum ExpansionField
-{
+enum ExpansionField {
   SSL_HEADERS_FIELD_NONE = 0,
-  SSL_HEADERS_FIELD_CERTIFICATE,  // Attach whole PEM certificate
-  SSL_HEADERS_FIELD_SUBJECT,      // Attach certificate subject
-  SSL_HEADERS_FIELD_ISSUER,       // Attach certificate issuer
-  SSL_HEADERS_FIELD_SERIAL,       // Attach certificate serial number
-  SSL_HEADERS_FIELD_SIGNATURE,    // Attach certificate signature
-  SSL_HEADERS_FIELD_NOTBEFORE,    // Attach certificate notBefore date
-  SSL_HEADERS_FIELD_NOTAFTER,     // Attach certificate notAfter date
+  SSL_HEADERS_FIELD_CERTIFICATE, // Attach whole PEM certificate
+  SSL_HEADERS_FIELD_SUBJECT,     // Attach certificate subject
+  SSL_HEADERS_FIELD_ISSUER,      // Attach certificate issuer
+  SSL_HEADERS_FIELD_SERIAL,      // Attach certificate serial number
+  SSL_HEADERS_FIELD_SIGNATURE,   // Attach certificate signature
+  SSL_HEADERS_FIELD_NOTBEFORE,   // Attach certificate notBefore date
+  SSL_HEADERS_FIELD_NOTAFTER,    // Attach certificate notAfter date
 
   SSL_HEADERS_FIELD_MAX
 };
 
-struct SslHdrExpansion
-{
-  SslHdrExpansion()
-    : name(), scope(SSL_HEADERS_SCOPE_NONE), field(SSL_HEADERS_FIELD_NONE) {
-  }
+struct SslHdrExpansion {
+  SslHdrExpansion() : name(), scope(SSL_HEADERS_SCOPE_NONE), field(SSL_HEADERS_FIELD_NONE) {}
 
-  std::string     name; // HTTP header name
-  ExpansionScope  scope;
-  ExpansionField  field;
+  std::string name; // HTTP header name
+  ExpansionScope scope;
+  ExpansionField field;
 
 private:
-  SslHdrExpansion& operator=(const SslHdrExpansion&);
+  SslHdrExpansion &operator=(const SslHdrExpansion &);
 };
 
-struct SslHdrInstance
-{
+struct SslHdrInstance {
   typedef std::list<SslHdrExpansion> expansion_list;
 
   SslHdrInstance();
   ~SslHdrInstance();
 
-  expansion_list  expansions;
-  AttachOptions   attach;
-  TSCont          cont;
+  expansion_list expansions;
+  AttachOptions attach;
+  TSCont cont;
 
   void register_hooks();
 
 private:
-  SslHdrInstance(const SslHdrInstance&);
-  SslHdrInstance& operator=(const SslHdrInstance&);
+  SslHdrInstance(const SslHdrInstance &);
+  SslHdrInstance &operator=(const SslHdrInstance &);
 };
 
-bool SslHdrParseExpansion(const char * spec, SslHdrExpansion& exp);
-bool SslHdrExpandX509Field(BIO * bio, X509 * ptr, ExpansionField field);
+bool SslHdrParseExpansion(const char *spec, SslHdrExpansion &exp);
+bool SslHdrExpandX509Field(BIO *bio, X509 *ptr, ExpansionField field);

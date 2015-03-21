@@ -30,30 +30,28 @@
 **************************************************************************/
 #include "P_EventSystem.h"
 
-  ///////////////////////////////////////////////
-  // Common Interface impl                     //
-  ///////////////////////////////////////////////
+///////////////////////////////////////////////
+// Common Interface impl                     //
+///////////////////////////////////////////////
 
 static ink_thread_key init_thread_key();
 
 ProxyMutex *global_mutex = NULL;
-ink_hrtime
-  Thread::cur_time = 0;
-inkcoreapi ink_thread_key
-  Thread::thread_data_key = init_thread_key();
+ink_hrtime Thread::cur_time = 0;
+inkcoreapi ink_thread_key Thread::thread_data_key = init_thread_key();
 
 Thread::Thread()
 {
   mutex = new_ProxyMutex();
   mutex_ptr = mutex;
-  MUTEX_TAKE_LOCK(mutex, (EThread *) this);
+  MUTEX_TAKE_LOCK(mutex, (EThread *)this);
   mutex->nthread_holding = THREAD_MUTEX_THREAD_HOLDING;
 }
 
 static void
 key_destructor(void *value)
 {
-  (void) value;
+  (void)value;
 }
 
 ink_thread_key
@@ -63,12 +61,11 @@ init_thread_key()
   return Thread::thread_data_key;
 }
 
-  ///////////////////////////////////////////////
-  // Unix & non-NT Interface impl              //
-  ///////////////////////////////////////////////
+///////////////////////////////////////////////
+// Unix & non-NT Interface impl              //
+///////////////////////////////////////////////
 
-struct thread_data_internal
-{
+struct thread_data_internal {
   ThreadFunction f;
   void *a;
   Thread *me;
@@ -78,7 +75,7 @@ struct thread_data_internal
 static void *
 spawn_thread_internal(void *a)
 {
-  thread_data_internal *p = (thread_data_internal *) a;
+  thread_data_internal *p = (thread_data_internal *)a;
 
   p->me->set_specific();
   ink_set_thread_name(p->name);
@@ -91,7 +88,7 @@ spawn_thread_internal(void *a)
 }
 
 ink_thread
-Thread::start(const char* name, size_t stacksize, ThreadFunction f, void *a)
+Thread::start(const char *name, size_t stacksize, ThreadFunction f, void *a)
 {
   thread_data_internal *p = (thread_data_internal *)ats_malloc(sizeof(thread_data_internal));
 
@@ -100,7 +97,7 @@ Thread::start(const char* name, size_t stacksize, ThreadFunction f, void *a)
   p->me = this;
   memset(p->name, 0, MAX_THREAD_NAME_LENGTH);
   ink_strlcpy(p->name, name, MAX_THREAD_NAME_LENGTH);
-  tid = ink_thread_create(spawn_thread_internal, (void *) p, 0, stacksize);
+  tid = ink_thread_create(spawn_thread_internal, (void *)p, 0, stacksize);
 
   return tid;
 }

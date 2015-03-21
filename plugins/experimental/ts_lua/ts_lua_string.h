@@ -25,6 +25,6 @@
 #include <sys/types.h>
 #include <inttypes.h>
 
-u_char *ts_lua_hex_dump(u_char * dst, u_char * src, size_t len);
+u_char *ts_lua_hex_dump(u_char *dst, u_char *src, size_t len);
 
 #endif

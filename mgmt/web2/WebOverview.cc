@@ -45,10 +45,9 @@
 //   fork, execl, exit squences
 overviewPage *overviewGenerator;
 
-overviewRecord::overviewRecord(unsigned long inet_addr, bool local, ClusterPeerInfo * cpi)
+overviewRecord::overviewRecord(unsigned long inet_addr, bool local, ClusterPeerInfo *cpi)
 {
-
-  char *name_l;                 // hostname looked up from node record
+  char *name_l; // hostname looked up from node record
   bool name_found;
   struct in_addr nameFailed;
 
@@ -59,8 +58,7 @@ overviewRecord::overviewRecord(unsigned long inet_addr, bool local, ClusterPeerI
 
   // If this is the local node, there is no cluster peer info
   //   record.  Remote nodes require a cluster peer info record
-  ink_assert((local == false && cpi != NULL)
-             || (local == true && cpi == NULL));
+  ink_assert((local == false && cpi != NULL) || (local == true && cpi == NULL));
 
   // Set up the copy of the records array and initialize it
   if (local == true) {
@@ -85,7 +83,7 @@ overviewRecord::overviewRecord(unsigned long inet_addr, bool local, ClusterPeerI
   if (name_found == false || name_l == NULL) {
     nameFailed.s_addr = inetAddr;
     mgmt_log("[overviewRecord::overviewRecord] Unable to find hostname for %s\n", inet_ntoa(nameFailed));
-    ats_free(name_l);              // about to overwrite name_l, so we need to free it first
+    ats_free(name_l); // about to overwrite name_l, so we need to free it first
     name_l = ats_strdup(inet_ntoa(nameFailed));
   }
 
@@ -97,11 +95,10 @@ overviewRecord::overviewRecord(unsigned long inet_addr, bool local, ClusterPeerI
 
 overviewRecord::~overviewRecord()
 {
-
-  delete[]hostname;
+  delete[] hostname;
 
   if (localNode == false) {
-    delete[]node_rec_data.recs;
+    delete[] node_rec_data.recs;
   }
 }
 
@@ -118,9 +115,8 @@ overviewRecord::~overviewRecord()
 //   a machine is up if we have heard from it in the last 15 seconds
 //
 void
-overviewRecord::updateStatus(time_t currentTime, ClusterPeerInfo * cpi)
+overviewRecord::updateStatus(time_t currentTime, ClusterPeerInfo *cpi)
 {
-
   // Update if the node is up or down
   if (currentTime - cpi->idle_ticks > 15) {
     up = false;
@@ -148,7 +144,7 @@ overviewRecord::updateStatus(time_t currentTime, ClusterPeerInfo * cpi)
 //  CALLEE is responsible for obtaining and releasing the lock
 //
 RecInt
-overviewRecord::readInteger(const char *name, bool * found)
+overviewRecord::readInteger(const char *name, bool *found)
 {
   RecInt rec = 0;
   int rec_status = REC_ERR_OKAY;
@@ -174,7 +170,7 @@ overviewRecord::readInteger(const char *name, bool * found)
 }
 
 RecFloat
-overviewRecord::readFloat(const char *name, bool * found)
+overviewRecord::readFloat(const char *name, bool *found)
 {
   RecFloat rec = 0.0;
   int rec_status = REC_ERR_OKAY;
@@ -200,7 +196,7 @@ overviewRecord::readFloat(const char *name, bool * found)
 }
 
 RecString
-overviewRecord::readString(const char *name, bool * found)
+overviewRecord::readString(const char *name, bool *found)
 {
   RecString rec = NULL;
   int rec_status = REC_ERR_OKAY;
@@ -237,7 +233,7 @@ overviewRecord::readString(const char *name, bool * found)
 //  CALLEE is responsible for obtaining and releasing the lock
 //
 RecData
-overviewRecord::readData(RecDataT varType, const char *name, bool * found)
+overviewRecord::readData(RecDataT varType, const char *name, bool *found)
 {
   int rec_status = REC_ERR_OKAY;
   int order = -1;
@@ -266,29 +262,27 @@ overviewRecord::readData(RecDataT varType, const char *name, bool * found)
 }
 
 bool
-overviewRecord::varFloatFromName(const char *name, MgmtFloat * value)
+overviewRecord::varFloatFromName(const char *name, MgmtFloat *value)
 {
   bool found = false;
 
   if (value)
-    *value = readFloat((char *) name, &found);
+    *value = readFloat((char *)name, &found);
 
   return found;
 }
 
-overviewPage::overviewPage():sortRecords(10, false)
+overviewPage::overviewPage() : sortRecords(10, false)
 {
-
   ink_mutex_init(&accessLock, "overviewRecord");
   nodeRecords = ink_hash_table_create(InkHashTableKeyType_Word);
   numHosts = 0;
-  ourAddr = 0;                  // We will update this when we add the record for
+  ourAddr = 0; // We will update this when we add the record for
   //  this machine
 }
 
 overviewPage::~overviewPage()
 {
-
   // Since we only have one global object and we never destruct it
   //  do not actually free memeory since it causes problems the
   //  process is vforked, and the child execs something
@@ -303,7 +297,6 @@ overviewPage::~overviewPage()
 void
 overviewPage::checkForUpdates()
 {
-
   ClusterPeerInfo *tmp;
   InkHashTableEntry *entry;
   InkHashTableIteratorState iterator_state;
@@ -317,12 +310,11 @@ overviewPage::checkForUpdates()
   ink_mutex_acquire(&accessLock);
   ink_mutex_acquire(&(lmgmt->ccom->mutex));
   currentTime = time(NULL);
-  for (entry = ink_hash_table_iterator_first(lmgmt->ccom->peers, &iterator_state);
-       entry != NULL; entry = ink_hash_table_iterator_next(lmgmt->ccom->peers, &iterator_state)) {
+  for (entry = ink_hash_table_iterator_first(lmgmt->ccom->peers, &iterator_state); entry != NULL;
+       entry = ink_hash_table_iterator_next(lmgmt->ccom->peers, &iterator_state)) {
+    tmp = (ClusterPeerInfo *)ink_hash_table_entry_value(lmgmt->ccom->peers, entry);
 
-    tmp = (ClusterPeerInfo *) ink_hash_table_entry_value(lmgmt->ccom->peers, entry);
-
-    if (ink_hash_table_lookup(nodeRecords, (InkHashTableKey) tmp->inet_address, (InkHashTableValue *) & current) == 0) {
+    if (ink_hash_table_lookup(nodeRecords, (InkHashTableKey)tmp->inet_address, (InkHashTableValue *)&current) == 0) {
       this->addRecord(tmp);
       newHostAdded = true;
     } else {
@@ -359,9 +351,8 @@ overviewPage::sortHosts()
 //   Assuems that this->accessLock is already held
 //
 void
-overviewPage::addRecord(ClusterPeerInfo * cpi)
+overviewPage::addRecord(ClusterPeerInfo *cpi)
 {
-
   overviewRecord *newRec;
 
   ink_assert(cpi != NULL);
@@ -369,7 +360,7 @@ overviewPage::addRecord(ClusterPeerInfo * cpi)
   newRec = new overviewRecord(cpi->inet_address, false, cpi);
   newRec->updateStatus(time(NULL), cpi);
 
-  ink_hash_table_insert(nodeRecords, (InkHashTableKey) cpi->inet_address, (InkHashTableEntry *) newRec);
+  ink_hash_table_insert(nodeRecords, (InkHashTableKey)cpi->inet_address, (InkHashTableEntry *)newRec);
 
   sortRecords.addEntry(newRec);
   numHosts++;
@@ -383,7 +374,6 @@ overviewPage::addRecord(ClusterPeerInfo * cpi)
 void
 overviewPage::addSelfRecord()
 {
-
   overviewRecord *newRec;
 
   ink_mutex_acquire(&accessLock);
@@ -398,7 +388,7 @@ overviewPage::addSelfRecord()
   newRec = new overviewRecord(ourAddr, true);
   newRec->up = true;
 
-  ink_hash_table_insert(nodeRecords, (InkHashTableKey) this->ourAddr, (InkHashTableEntry *) newRec);
+  ink_hash_table_insert(nodeRecords, (InkHashTableKey) this->ourAddr, (InkHashTableEntry *)newRec);
 
   sortRecords.addEntry(newRec);
   numHosts++;
@@ -412,7 +402,7 @@ overviewPage::addSelfRecord()
 //     for freeing the strings
 //
 int
-overviewPage::getClusterHosts(ExpandingArray * hosts)
+overviewPage::getClusterHosts(ExpandingArray *hosts)
 {
   int number = 0;
 
@@ -422,7 +412,7 @@ overviewPage::getClusterHosts(ExpandingArray * hosts)
   number = sortRecords.getNumEntries();
 
   for (int i = 0; i < number; i++) {
-    current = (overviewRecord *) sortRecords[i];
+    current = (overviewRecord *)sortRecords[i];
     hosts->addEntry(ats_strdup(current->hostname));
   }
 
@@ -449,7 +439,7 @@ overviewPage::findNodeByName(const char *nodeName)
   //   be a problem
   //
   for (int i = 0; i < numHosts; i++) {
-    current = (overviewRecord *) sortRecords[i];
+    current = (overviewRecord *)sortRecords[i];
     if (strcmp(nodeName, current->hostname) == 0) {
       nodeFound = true;
       break;
@@ -469,7 +459,7 @@ overviewPage::findNodeByName(const char *nodeName)
 //    CALLEE deallocates the string with free()
 //
 MgmtString
-overviewPage::readString(const char *nodeName, const char *name, bool * found)
+overviewPage::readString(const char *nodeName, const char *name, bool *found)
 {
   MgmtString r = NULL;
   //  bool nodeFound = false;
@@ -497,7 +487,7 @@ overviewPage::readString(const char *nodeName, const char *name, bool * found)
 //   Looks up a node record for a specific by nodeName
 //
 MgmtInt
-overviewPage::readInteger(const char *nodeName, const char *name, bool * found)
+overviewPage::readInteger(const char *nodeName, const char *name, bool *found)
 {
   MgmtInt r = -1;
   //  bool nodeFound = false;
@@ -525,7 +515,7 @@ overviewPage::readInteger(const char *nodeName, const char *name, bool * found)
 //   Looks up a node record for a specific by nodeName
 //
 RecFloat
-overviewPage::readFloat(const char *nodeName, const char *name, bool * found)
+overviewPage::readFloat(const char *nodeName, const char *name, bool *found)
 {
   RecFloat r = -1.0;
   //  bool nodeFound = false;
@@ -557,8 +547,7 @@ overviewPage::readFloat(const char *nodeName, const char *name, bool * found)
 //   CALLEE MUST HOLD this->accessLock
 //
 int
-overviewPage::clusterSumData(RecDataT varType, const char *nodeVar,
-                             RecData *sum)
+overviewPage::clusterSumData(RecDataT varType, const char *nodeVar, RecData *sum)
 {
   int numUsed = 0;
   int numHosts_local = sortRecords.getNumEntries();
@@ -570,7 +559,7 @@ overviewPage::clusterSumData(RecDataT varType, const char *nodeVar,
   RecDataClear(varType, sum);
 
   for (int i = 0; i < numHosts_local; i++) {
-    current = (overviewRecord *) sortRecords[i];
+    current = (overviewRecord *)sortRecords[i];
     if (current->up == true) {
       numUsed++;
       recTmp = current->readData(varType, nodeVar, &found);
@@ -583,8 +572,7 @@ overviewPage::clusterSumData(RecDataT varType, const char *nodeVar,
 }
 
 int
-overviewPage::varClusterDataFromName(RecDataT varType, char *nodeVar,
-                                     RecData *sum)
+overviewPage::varClusterDataFromName(RecDataT varType, char *nodeVar, RecData *sum)
 {
   int status = 0;
 
@@ -605,8 +593,8 @@ AgFloat_generic_scale_to_int(const char *processVar, const char *nodeVar, double
 
   if (varFloatFromName(processVar, &tmp)) {
     tmp = tmp * factor;
-    tmp = tmp + 0.5;            // round up.
-    varSetInt(nodeVar, (int) tmp);
+    tmp = tmp + 0.5; // round up.
+    varSetInt(nodeVar, (int)tmp);
   } else {
     varSetInt(nodeVar, -20);
   }
@@ -648,12 +636,12 @@ overviewPage::resolvePeerHostname_ml(const char *peerIP)
   ipAddr = inet_addr(peerIP);
 
   // Check to see if our address is malformed
-  if ((long int) ipAddr == -1) {
+  if ((long int)ipAddr == -1) {
     return NULL;
   }
 
-  if (ink_hash_table_lookup(nodeRecords, (InkHashTableKey) ipAddr, &lookup)) {
-    peerRecord = (overviewRecord *) lookup;
+  if (ink_hash_table_lookup(nodeRecords, (InkHashTableKey)ipAddr, &lookup)) {
+    peerRecord = (overviewRecord *)lookup;
     returnName = ats_strdup(peerRecord->hostname);
   }
 
@@ -668,8 +656,8 @@ overviewPage::resolvePeerHostname_ml(const char *peerIP)
 int
 hostSortFunc(const void *arg1, const void *arg2)
 {
-  overviewRecord *rec1 = (overviewRecord *) * (void **) arg1;
-  overviewRecord *rec2 = (overviewRecord *) * (void **) arg2;
+  overviewRecord *rec1 = (overviewRecord *)*(void **)arg1;
+  overviewRecord *rec2 = (overviewRecord *)*(void **)arg2;
 
   return strcmp(rec1->hostname, rec2->hostname);
 }

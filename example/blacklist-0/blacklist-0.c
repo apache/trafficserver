@@ -98,9 +98,8 @@ handle_response(TSHttpTxn txnp)
   }
 
   TSHttpHdrStatusSet(bufp, hdr_loc, TS_HTTP_STATUS_FORBIDDEN);
-  TSHttpHdrReasonSet(bufp, hdr_loc,
-                      TSHttpHdrReasonLookup(TS_HTTP_STATUS_FORBIDDEN),
-                      strlen(TSHttpHdrReasonLookup(TS_HTTP_STATUS_FORBIDDEN)));
+  TSHttpHdrReasonSet(bufp, hdr_loc, TSHttpHdrReasonLookup(TS_HTTP_STATUS_FORBIDDEN),
+                     strlen(TSHttpHdrReasonLookup(TS_HTTP_STATUS_FORBIDDEN)));
 
   if (TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
     TSError("couldn't retrieve client request header\n");
@@ -131,7 +130,7 @@ done:
 static int
 blacklist_plugin(TSCont contp, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp = (TSHttpTxn) edata;
+  TSHttpTxn txnp = (TSHttpTxn)edata;
 
   switch (event) {
   case TS_EVENT_HTTP_OS_DNS:
@@ -158,12 +157,11 @@ TSPluginInit(int argc, const char *argv[])
 
   if (TSPluginRegister(TS_SDK_VERSION_3_0, &info) != TS_SUCCESS) {
     TSError("Plugin registration failed.\n");
-
   }
 
   nsites = argc - 1;
   if (nsites > 0) {
-    sites = (char **) TSmalloc(sizeof(char *) * nsites);
+    sites = (char **)TSmalloc(sizeof(char *) * nsites);
 
     for (i = 0; i < nsites; i++) {
       sites[i] = TSstrdup(argv[i + 1]);

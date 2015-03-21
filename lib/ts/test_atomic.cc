@@ -43,7 +43,7 @@ volatile int al_done = 0;
 void *
 testalist(void *ame)
 {
-  int me = (int) (uintptr_t) ame;
+  int me = (int)(uintptr_t)ame;
   int j, k;
   for (k = 0; k < MAX_ALIST_ARRAY; k++)
     ink_atomiclist_push(&al[k % MAX_ALIST_TEST], &al_test[me][k]);
@@ -51,21 +51,20 @@ testalist(void *ame)
   for (j = 0; j < 1000000; j++)
     if ((x = ink_atomiclist_pop(&al[me])))
       ink_atomiclist_push(&al[rand() % MAX_ALIST_TEST], x);
-  ink_atomic_increment((int *) &al_done, 1);
+  ink_atomic_increment((int *)&al_done, 1);
   return NULL;
 }
 #endif // !LONG_ATOMICLIST_TEST
 
 #ifdef LONG_ATOMICLIST_TEST
 /************************************************************************/
-#define MAX_ATOMIC_LISTS	(4 * 1024)
-#define MAX_ITEMS_PER_LIST	(1 * 1024)
-#define MAX_TEST_THREADS	64
+#define MAX_ATOMIC_LISTS (4 * 1024)
+#define MAX_ITEMS_PER_LIST (1 * 1024)
+#define MAX_TEST_THREADS 64
 static InkAtomicList alists[MAX_ATOMIC_LISTS];
 struct listItem *items[MAX_ATOMIC_LISTS * MAX_ITEMS_PER_LIST];
 
-struct listItem
-{
+struct listItem {
   int data1;
   int data2;
   void *link;
@@ -83,11 +82,11 @@ init_data()
   struct listItem *plistItem;
 
   for (ali = 0; ali < MAX_ATOMIC_LISTS; ali++)
-    ink_atomiclist_init(&alists[ali], "alist", ((char *) &l.link - (char *) &l));
+    ink_atomiclist_init(&alists[ali], "alist", ((char *)&l.link - (char *)&l));
 
   for (ali = 0; ali < MAX_ATOMIC_LISTS; ali++) {
     for (j = 0; j < MAX_ITEMS_PER_LIST; j++) {
-      plistItem = (struct listItem *) malloc(sizeof(struct listItem));
+      plistItem = (struct listItem *)malloc(sizeof(struct listItem));
       items[ali + j] = plistItem;
       plistItem->data1 = ali + j;
       plistItem->data2 = ali + rand();
@@ -109,26 +108,26 @@ cycle_data(void *d)
   int iterations;
   int me;
 
-  me = (int) d;
+  me = (int)d;
   iterations = 0;
 
   while (1) {
     l = &alists[(me + rand()) % MAX_ATOMIC_LISTS];
 
-    pli = (struct listItem *) ink_atomiclist_popall(l);
+    pli = (struct listItem *)ink_atomiclist_popall(l);
     if (!pli)
       continue;
 
     // Place listItems into random queues
     while (pli) {
       ink_assert((pli->data1 ^ pli->data2 ^ pli->data3 ^ pli->data4) == pli->check);
-      pli_next = (struct listItem *) pli->link;
+      pli_next = (struct listItem *)pli->link;
       pli->link = 0;
-      ink_atomiclist_push(&alists[(me + rand()) % MAX_ATOMIC_LISTS], (void *) pli);
+      ink_atomiclist_push(&alists[(me + rand()) % MAX_ATOMIC_LISTS], (void *)pli);
       pli = pli_next;
     }
     iterations++;
-    poll(0, 0, 10);             // 10 msec delay
+    poll(0, 0, 10); // 10 msec delay
     if ((iterations % 100) == 0)
       printf("%d ", me);
   }
@@ -138,13 +137,13 @@ cycle_data(void *d)
 #endif // LONG_ATOMICLIST_TEST
 
 int
-main(int /* argc ATS_UNUSED */, const char */* argv ATS_UNUSED */[])
+main(int /* argc ATS_UNUSED */, const char * /* argv ATS_UNUSED */ [])
 {
 #ifndef LONG_ATOMICLIST_TEST
   int32_t m = 1, n = 100;
-  //int64 lm = 1LL, ln = 100LL;
-  const char* m2 = "hello";
-  char* n2;
+  // int64 lm = 1LL, ln = 100LL;
+  const char *m2 = "hello";
+  char *n2;
 
   printf("sizeof(int32_t)==%d   sizeof(void *)==%d\n", (int)sizeof(int32_t), (int)sizeof(void *));
 
@@ -158,16 +157,16 @@ main(int /* argc ATS_UNUSED */, const char */* argv ATS_UNUSED */[])
   printf("changed to: %d,  result=%s\n", m, n ? "true" : "false");
 
   printf("CAS pointer: '%s' == 'hello'  then  'new'\n", m2);
-  n = ink_atomic_cas( &m2,  "hello",  "new");
-  printf("changed to: %s, result=%s\n", m2, n ? (char *) "true" : (char *) "false");
+  n = ink_atomic_cas(&m2, "hello", "new");
+  printf("changed to: %s, result=%s\n", m2, n ? (char *)"true" : (char *)"false");
 
   printf("CAS pointer: '%s' == 'hello'  then  'new2'\n", m2);
-  n = ink_atomic_cas(&m2, m2,  "new2");
+  n = ink_atomic_cas(&m2, m2, "new2");
   printf("changed to: %s, result=%s\n", m2, n ? "true" : "false");
 
   n = 100;
   printf("Atomic Inc of %d\n", n);
-  m = ink_atomic_increment((int *) &n, 1);
+  m = ink_atomic_increment((int *)&n, 1);
   printf("changed to: %d,  result=%d\n", n, m);
 
 
@@ -205,11 +204,11 @@ main(int /* argc ATS_UNUSED */, const char */* argv ATS_UNUSED */[])
 
     init_data();
     for (id = 0; id < MAX_TEST_THREADS; id++) {
-      ink_assert(thr_create(NULL, 0, cycle_data, (void *) id, THR_NEW_LWP, NULL) == 0);
+      ink_assert(thr_create(NULL, 0, cycle_data, (void *)id, THR_NEW_LWP, NULL) == 0);
     }
   }
   while (1) {
-    poll(0, 0, 10);             // 10 msec delay
+    poll(0, 0, 10); // 10 msec delay
   }
 #endif // LONG_ATOMICLIST_TEST
 

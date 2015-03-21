@@ -43,7 +43,7 @@ ssize_t
 socket_write(SocketInfo socketD, const char *buf, size_t nbyte)
 {
   if (socketD.SSLcon != NULL) {
-    return SSL_write((SSL *) socketD.SSLcon, (char *) buf, nbyte);
+    return SSL_write((SSL *)socketD.SSLcon, (char *)buf, nbyte);
   } else {
     return write_socket(socketD.fd, buf, nbyte);
   }
@@ -54,7 +54,7 @@ ssize_t
 socket_read(SocketInfo socketD, char *buf, size_t nbyte)
 {
   if (socketD.SSLcon != NULL) {
-    return SSL_read((SSL *) socketD.SSLcon, (char *) buf, nbyte);
+    return SSL_read((SSL *)socketD.SSLcon, (char *)buf, nbyte);
   } else {
     return read_socket(socketD.fd, buf, nbyte);
   }
@@ -85,7 +85,6 @@ sigfdrdln(SocketInfo socketD, char *s, int len)
   char *bufStart = s;
 
   do {
-
     do {
       result = socket_read(socketD, &c, 1);
     } while (result < 0 && errno == EAGAIN);

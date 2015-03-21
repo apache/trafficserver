@@ -45,27 +45,28 @@
 class ConfigUpdateCbTable;
 
 void *startProcessManager(void *arg);
-class ProcessManager:public BaseManager
+class ProcessManager : public BaseManager
 {
-
 public:
   ProcessManager(bool rlm);
   ~ProcessManager()
   {
     close_socket(local_manager_sockfd);
     while (!queue_is_empty(mgmt_signal_queue)) {
-      char *sig = (char *) dequeue(mgmt_signal_queue);
+      char *sig = (char *)dequeue(mgmt_signal_queue);
       ats_free(sig);
     }
     ats_free(mgmt_signal_queue);
   }
 
-  void start()
+  void
+  start()
   {
     ink_thread_create(startProcessManager, 0);
   }
 
-  void stop()
+  void
+  stop()
   {
     mgmt_log(stderr, "[ProcessManager::stop] Bringing down connection\n");
     close_socket(local_manager_sockfd);
@@ -77,12 +78,14 @@ public:
   void reconfigure();
   void initLMConnection();
   void pollLMConnection();
-  void handleMgmtMsgFromLM(MgmtMessageHdr * mh);
+  void handleMgmtMsgFromLM(MgmtMessageHdr *mh);
 
   bool processEventQueue();
   bool processSignalQueue();
 
-  void registerPluginCallbacks(ConfigUpdateCbTable * _cbtable) {
+  void
+  registerPluginCallbacks(ConfigUpdateCbTable *_cbtable)
+  {
     cbtable = _cbtable;
   }
 
@@ -97,8 +100,8 @@ public:
   int local_manager_sockfd;
 
 private:
-  ConfigUpdateCbTable * cbtable;
-};                              /* End class ProcessManager */
+  ConfigUpdateCbTable *cbtable;
+}; /* End class ProcessManager */
 
 inkcoreapi extern ProcessManager *pmgmt;
 

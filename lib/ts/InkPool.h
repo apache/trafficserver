@@ -28,22 +28,21 @@
 // Template of a static size pool of objects.
 //
 //
-template<class C> class InkStaticPool {
+template <class C> class InkStaticPool
+{
 public:
+  InkStaticPool(int size) : sz1(size + 1), head(0), tail(0) { pool = new C *[sz1]; }
 
-  InkStaticPool(int size):sz1(size + 1), head(0), tail(0)
+  virtual ~InkStaticPool()
   {
-    pool = new C *[sz1];
-  }
-
-  virtual ~ InkStaticPool() {
     cleanUp();
-    delete[]pool;
+    delete[] pool;
   }
 
   C *get();
-  bool put(C * newObj);
-  void put_or_delete(C * newObj)
+  bool put(C *newObj);
+  void
+  put_or_delete(C *newObj)
   {
     if (!put(newObj))
       delete newObj;
@@ -59,7 +58,9 @@ private:
   C **pool;
 };
 
-template<class C> inline C * InkStaticPool<C>::get()
+template <class C>
+inline C *
+InkStaticPool<C>::get()
 {
   if (head != tail) {
     C *res = pool[head++];
@@ -69,10 +70,12 @@ template<class C> inline C * InkStaticPool<C>::get()
   return (NULL);
 }
 
-template<class C> inline bool InkStaticPool<C>::put(C * newObj)
+template <class C>
+inline bool
+InkStaticPool<C>::put(C *newObj)
 {
   if (newObj == NULL)
-    return (false);             // cannot put NULL pointer
+    return (false); // cannot put NULL pointer
 
   int newTail = (tail + 1) % sz1;
   bool res = (newTail != head);
@@ -83,7 +86,9 @@ template<class C> inline bool InkStaticPool<C>::put(C * newObj)
   return (res);
 }
 
-template<class C> inline void InkStaticPool<C>::cleanUp(void)
+template <class C>
+inline void
+InkStaticPool<C>::cleanUp(void)
 {
   while (true) {
     C *tp = get();

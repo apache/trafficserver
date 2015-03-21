@@ -42,12 +42,10 @@ class UDPPacket;
    and set up a persistent receive() operation.
  */
 
-class UDPConnection:public Continuation
+class UDPConnection : public Continuation
 {
 public:
-  virtual ~ UDPConnection()
-  {
-  };
+  virtual ~UDPConnection(){};
 
   SOCKET getFd();
   void setBinding(struct sockaddr const *);
@@ -66,7 +64,7 @@ public:
      @param c continuation to be called back
      @param p packet to be sent.
    */
-  Action *send(Continuation * c, UDPPacket * p);
+  Action *send(Continuation *c, UDPPacket *p);
 
   /**
      <p>
@@ -79,7 +77,7 @@ public:
      cancelled via this Action.
      @param c continuation to be called back
    */
-  Action *recv(Continuation * c);
+  Action *recv(Continuation *c);
 
   void Release();
   void AddRef();
@@ -87,10 +85,10 @@ public:
 
   int getPortNum(void);
 
-  int GetSendGenerationNumber();        //const
+  int GetSendGenerationNumber(); // const
   void SetLastSentPktTSSeqNum(int64_t sentSeqNum);
   int64_t cancel();
-  void setContinuation(Continuation * c);
+  void setContinuation(Continuation *c);
 
   /**
      Put socket on net queue for read/write polling.
@@ -101,7 +99,7 @@ public:
      bindToThread() automatically so that the sockets can be passed to
      other Continuations.
   */
-  void bindToThread(Continuation * c);
+  void bindToThread(Continuation *c);
 
   virtual void UDPConnection_is_abstract() = 0;
 };

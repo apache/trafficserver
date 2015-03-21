@@ -37,11 +37,7 @@ static const int LS_PROTOCOL = 0;
   first entry of the table (index 0) to be the port on which new
   connections are accepted.
 */
-LogSock::LogSock(int max_connects)
-  :
-ct((ConnectTable *) NULL),
-m_accept_connections(false),
-m_max_connections(max_connects + 1)
+LogSock::LogSock(int max_connects) : ct((ConnectTable *)NULL), m_accept_connections(false), m_max_connections(max_connects + 1)
 {
   ink_assert(m_max_connections > 0);
 
@@ -66,9 +62,9 @@ LogSock::~LogSock()
 {
   Debug("log-sock", "shutting down LogSocket on [%s:%d]", ct[0].host, ct[0].port);
 
-  this->close();                // close all connections
-  this->close(0);               // close accept socket
-  delete[]ct;                   // delete the connection table
+  this->close();  // close all connections
+  this->close(0); // close accept socket
+  delete[] ct;    // delete the connection table
 }
 
 /**
@@ -103,7 +99,7 @@ LogSock::listen(int accept_port, int family)
   //
   // create the socket for accepting new connections
   //
-  accept_sd =::socket(family, LS_SOCKTYPE, LS_PROTOCOL);
+  accept_sd = ::socket(family, LS_SOCKTYPE, LS_PROTOCOL);
   if (accept_sd < 0) {
     Warning("Could not create a socket for family %d: %s", family, strerror(errno));
     return -1;
@@ -120,7 +116,7 @@ LogSock::listen(int accept_port, int family)
   struct linger l;
   l.l_onoff = 0;
   l.l_linger = 0;
-  if ((ret = safe_setsockopt(accept_sd, SOL_SOCKET, SO_LINGER, (char *) &l, sizeof(l))) < 0) {
+  if ((ret = safe_setsockopt(accept_sd, SOL_SOCKET, SO_LINGER, (char *)&l, sizeof(l))) < 0) {
     Warning("Could not set option NO_LINGER on socket (%d): %s", ret, strerror(errno));
     return -1;
   }
@@ -207,7 +203,7 @@ LogSock::accept()
 
   Debug("log-sock", "waiting to accept a new connection");
 
-  connect_sd =::accept(ct[0].sd, &connect_addr.sa, &size);
+  connect_sd = ::accept(ct[0].sd, &connect_addr.sa, &size);
   if (connect_sd < 0) {
     return LogSock::LS_ERROR_ACCEPT;
   }
@@ -227,7 +223,7 @@ LogSock::accept()
   information into the connection and poll tables.
 */
 int
-LogSock::connect(sockaddr const* ip)
+LogSock::connect(sockaddr const *ip)
 {
   int cid, ret;
   ats_scoped_fd connect_sd;
@@ -249,7 +245,7 @@ LogSock::connect(sockaddr const* ip)
     return LogSock::LS_ERROR_CONNECT_TABLE_FULL;
   }
   // initialize a new socket descriptor
-  connect_sd =::socket(ip->sa_family, LS_SOCKTYPE, LS_PROTOCOL);
+  connect_sd = ::socket(ip->sa_family, LS_SOCKTYPE, LS_PROTOCOL);
   if (connect_sd < 0) {
     Note("Error initializing socket for connection: %d", static_cast<int>(connect_sd));
     return LogSock::LS_ERROR_SOCKET;
@@ -287,17 +283,12 @@ LogSock::connect(sockaddr const* ip)
   @return Returns true if there is something incoming, with *cid
   set to the index corresponding to the incoming socket.
 */
-bool LogSock::pending_data(int *cid, int timeout_msec, bool include_connects)
+bool
+LogSock::pending_data(int *cid, int timeout_msec, bool include_connects)
 {
-  int
-    start_index,
-    ret,
-    n_poll_fds,
-    i;
-  static struct pollfd
-    fds[LS_CONST_CLUSTER_MAX_MACHINES];
-  int
-    fd_to_cid[LS_CONST_CLUSTER_MAX_MACHINES];
+  int start_index, ret, n_poll_fds, i;
+  static struct pollfd fds[LS_CONST_CLUSTER_MAX_MACHINES];
+  int fd_to_cid[LS_CONST_CLUSTER_MAX_MACHINES];
 
   ink_assert(m_max_connections <= (LS_CONST_CLUSTER_MAX_MACHINES + 1));
   ink_assert(cid != NULL);
@@ -310,7 +301,7 @@ bool LogSock::pending_data(int *cid, int timeout_msec, bool include_connects)
   // that will be polled.
   //
 
-  if (*cid >= 0) {              // look for data on this specific socket
+  if (*cid >= 0) { // look for data on this specific socket
 
     ink_assert(*cid < m_max_connections);
     fds[0].fd = ct[*cid].sd;
@@ -319,7 +310,7 @@ bool LogSock::pending_data(int *cid, int timeout_msec, bool include_connects)
     fd_to_cid[0] = *cid;
     n_poll_fds = 1;
 
-  } else {                      // look for data on any INCOMING socket
+  } else { // look for data on any INCOMING socket
 
     if (include_connects) {
       start_index = 0;
@@ -342,13 +333,13 @@ bool LogSock::pending_data(int *cid, int timeout_msec, bool include_connects)
     return false;
   }
 
-  ret =::poll(fds, n_poll_fds, timeout_msec);
+  ret = ::poll(fds, n_poll_fds, timeout_msec);
 
   if (ret == 0) {
-    return false;               // timeout
+    return false; // timeout
   } else if (ret < 0) {
     Debug("log-sock", "error on poll");
-    return false;               // error
+    return false; // error
   }
   //
   // a positive return value indicates how many descriptors had something
@@ -373,7 +364,8 @@ bool LogSock::pending_data(int *cid, int timeout_msec, bool include_connects)
 
   Check for incomming data on any of the INCOMING sockets.
 */
-bool LogSock::pending_any(int *cid, int timeout_msec)
+bool
+LogSock::pending_any(int *cid, int timeout_msec)
 {
   ink_assert(cid != NULL);
   *cid = -1;
@@ -391,7 +383,8 @@ bool LogSock::pending_any(int *cid, int timeout_msec)
   the socket reserved for accepting new connections.
   -------------------------------------------------------------------------*/
 
-bool LogSock::pending_message_any(int *cid, int timeout_msec)
+bool
+LogSock::pending_message_any(int *cid, int timeout_msec)
 {
   ink_assert(cid != NULL);
   *cid = -1;
@@ -403,7 +396,8 @@ bool LogSock::pending_message_any(int *cid, int timeout_msec)
 
   Check for incomming data on the specified socket.
 */
-bool LogSock::pending_message_on(int cid, int timeout_msec)
+bool
+LogSock::pending_message_on(int cid, int timeout_msec)
 {
   return pending_data(&cid, timeout_msec, false);
 }
@@ -414,10 +408,10 @@ bool LogSock::pending_message_on(int cid, int timeout_msec)
   Check for an incoming connection request on the socket reserved for that
   (cid = 0).
 */
-bool LogSock::pending_connect(int timeout_msec)
+bool
+LogSock::pending_connect(int timeout_msec)
 {
-  int
-    cid = 0;
+  int cid = 0;
   if (m_accept_connections) {
     return pending_data(&cid, timeout_msec, true);
   } else {
@@ -462,8 +456,7 @@ LogSock::close()
 int
 LogSock::write(int cid, void *buf, int bytes)
 {
-  LogSock::MsgHeader header = {
-  0};
+  LogSock::MsgHeader header = {0};
   header.msg_bytes = 0;
   int ret;
 
@@ -484,7 +477,7 @@ LogSock::write(int cid, void *buf, int bytes)
   //
   Debug("log-sock", "   sending header (%zu bytes)", sizeof(LogSock::MsgHeader));
   header.msg_bytes = bytes;
-  ret =::send(ct[cid].sd, (char *) &header, sizeof(LogSock::MsgHeader), 0);
+  ret = ::send(ct[cid].sd, (char *)&header, sizeof(LogSock::MsgHeader), 0);
   if (ret != sizeof(LogSock::MsgHeader)) {
     return LogSock::LS_ERROR_WRITE;
   }
@@ -492,7 +485,7 @@ LogSock::write(int cid, void *buf, int bytes)
   // send the actual data
   //
   Debug("log-sock", "   sending data (%d bytes)", bytes);
-  return::send(ct[cid].sd, (char *) buf, bytes, 0);
+  return ::send(ct[cid].sd, (char *)buf, bytes, 0);
 }
 
 /**
@@ -521,7 +514,7 @@ LogSock::read(int cid, void *buf, unsigned maxsize)
     return LogSock::LS_ERROR_READ;
   }
 
-  size = ((unsigned) header.msg_bytes < maxsize) ? (unsigned) header.msg_bytes : maxsize;
+  size = ((unsigned)header.msg_bytes < maxsize) ? (unsigned)header.msg_bytes : maxsize;
   return read_body(ct[cid].sd, buf, size);
 }
 
@@ -564,12 +557,10 @@ LogSock::read_alloc(int cid, int *size)
 
 /**
 */
-bool LogSock::is_connected(int cid, bool ping) const
+bool
+LogSock::is_connected(int cid, bool ping) const
 {
-  int
-    i,
-    j,
-    flags;
+  int i, j, flags;
 
   ink_assert(cid >= 0 && cid < m_max_connections);
 
@@ -580,7 +571,7 @@ bool LogSock::is_connected(int cid, bool ping) const
   if (ping) {
     flags = fcntl(ct[cid].sd, F_GETFL);
     ::fcntl(ct[cid].sd, F_SETFL, O_NONBLOCK);
-    j =::recv(ct[cid].sd, (char *) &i, sizeof(int), MSG_PEEK);
+    j = ::recv(ct[cid].sd, (char *)&i, sizeof(int), MSG_PEEK);
     ::fcntl(ct[cid].sd, F_SETFL, flags);
     if (j != 0) {
       return true;
@@ -612,7 +603,8 @@ LogSock::check_connections()
   authorized to use the log collation port.  To authorize, the client is
   expected to send the logging secret string.
 */
-bool LogSock::authorized_client(int cid, char *key)
+bool
+LogSock::authorized_client(int cid, char *key)
 {
   //
   // Wait for up to 5 seconds for the client to authenticate
@@ -624,10 +616,8 @@ bool LogSock::authorized_client(int cid, char *key)
   // Ok, the client has a pending message, so check to see if it matches
   // the given key.
   //
-  char
-    buf[1024];
-  int
-    size = this->read(cid, buf, 1024);
+  char buf[1024];
+  int size = this->read(cid, buf, 1024);
   ink_assert(size >= 0 && size <= 1024);
 
   if (strncmp(buf, key, size) == 0) {
@@ -705,12 +695,12 @@ LogSock::init_cid(int cid, char *host, int port, int sd, LogSock::State state)
 /**
 */
 int
-LogSock::read_header(int sd, LogSock::MsgHeader * header)
+LogSock::read_header(int sd, LogSock::MsgHeader *header)
 {
   ink_assert(sd >= 0);
   ink_assert(header != NULL);
 
-  int bytes =::recv(sd, (char *) header, sizeof(LogSock::MsgHeader), 0);
+  int bytes = ::recv(sd, (char *)header, sizeof(LogSock::MsgHeader), 0);
   if (bytes != sizeof(LogSock::MsgHeader)) {
     return -1;
   }
@@ -733,10 +723,10 @@ LogSock::read_body(int sd, void *buf, int bytes)
 
   unsigned bytes_left = bytes;
   unsigned bytes_read;
-  char *to = (char *) buf;
+  char *to = (char *)buf;
 
   while (bytes_left) {
-    bytes_read =::recv(sd, to, bytes_left, 0);
+    bytes_read = ::recv(sd, to, bytes_left, 0);
     to += bytes_read;
     bytes_left -= bytes_read;
   }

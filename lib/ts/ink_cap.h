@@ -21,14 +21,13 @@
   limitations under the License.
 
  */
-#if !defined (_ink_cap_h_)
+#if !defined(_ink_cap_h_)
 #define _ink_cap_h_
 #include "ink_mutex.h"
 
 /// Generate a debug message with the current capabilities for the process.
-extern void DebugCapabilities(
-  char const* tag ///< Debug message tag.
-);
+extern void DebugCapabilities(char const *tag ///< Debug message tag.
+                              );
 /// Set capabilities to persist across change of user id.
 /// @return true on success
 extern bool PreserveCapabilities();
@@ -40,26 +39,25 @@ extern bool RestrictCapabilities();
     @a flag sets whether core files are enabled on crash.
     @return true on success
  */
-extern bool EnableCoreFile(
-  bool flag ///< New enable state.
-);
+extern bool EnableCoreFile(bool flag ///< New enable state.
+                           );
 
 void EnableDeathSignal(int signum);
 
 enum ImpersonationLevel {
-  IMPERSONATE_EFFECTIVE,  // Set the effective credential set.
-  IMPERSONATE_PERMANENT   // Set the real credential (permanently).
+  IMPERSONATE_EFFECTIVE, // Set the effective credential set.
+  IMPERSONATE_PERMANENT  // Set the real credential (permanently).
 };
 
-void ImpersonateUser(const char * user, ImpersonationLevel level);
+void ImpersonateUser(const char *user, ImpersonationLevel level);
 void ImpersonateUserID(uid_t user, ImpersonationLevel level);
 
-class ElevateAccess {
+class ElevateAccess
+{
 public:
-
   typedef enum {
-    FILE_PRIVILEGE  = 0x1u, // Access filesystem objects with privilege
-    TRACE_PRIVILEGE = 0x2u  // Trace other processes with privilege
+    FILE_PRIVILEGE = 0x1u, // Access filesystem objects with privilege
+    TRACE_PRIVILEGE = 0x2u // Trace other processes with privilege
   } privilege_level;
 
   ElevateAccess(const bool state, unsigned level = FILE_PRIVILEGE);

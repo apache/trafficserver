@@ -34,8 +34,7 @@
 #ifndef _PROTO_SM_H_
 #define _PROTO_SM_H_
 
-template<class VCTentry, int max_entries> struct ProtoVCTable
-{
+template <class VCTentry, int max_entries> struct ProtoVCTable {
 public:
   ProtoVCTable();
   VCTentry vc_table[max_entries];
@@ -49,12 +48,14 @@ public:
   bool is_table_clear();
 };
 
-template<class VCTentry, int max_entries> inline ProtoVCTable<VCTentry, max_entries>::ProtoVCTable()
+template <class VCTentry, int max_entries> inline ProtoVCTable<VCTentry, max_entries>::ProtoVCTable()
 {
   memset(&vc_table, 0, sizeof(vc_table));
 }
 
-template<class VCTentry, int max_entries> inline VCTentry * ProtoVCTable<VCTentry, max_entries>::new_entry()
+template <class VCTentry, int max_entries>
+inline VCTentry *
+ProtoVCTable<VCTentry, max_entries>::new_entry()
 {
   for (int i = 0; i < max_entries; i++) {
     if (vc_table[i].vc == NULL) {
@@ -66,8 +67,9 @@ template<class VCTentry, int max_entries> inline VCTentry * ProtoVCTable<VCTentr
   return NULL;
 }
 
-template<class VCTentry, int max_entries>
-  inline VCTentry * ProtoVCTable<VCTentry, max_entries>::find_entry(VConnection * vc)
+template <class VCTentry, int max_entries>
+inline VCTentry *
+ProtoVCTable<VCTentry, max_entries>::find_entry(VConnection *vc)
 {
   for (int i = 0; i < max_entries; i++) {
     if (vc_table[i].vc == vc) {
@@ -78,8 +80,9 @@ template<class VCTentry, int max_entries>
   return NULL;
 }
 
-template<class VCTentry, int max_entries>
-  inline VCTentry * ProtoVCTable<VCTentry, max_entries>::find_entry(VIO * vio)
+template <class VCTentry, int max_entries>
+inline VCTentry *
+ProtoVCTable<VCTentry, max_entries>::find_entry(VIO *vio)
 {
   for (int i = 0; i < max_entries; i++) {
     if (vc_table[i].read_vio == vio || vc_table[i].write_vio == vio) {
@@ -97,8 +100,9 @@ template<class VCTentry, int max_entries>
 //      entry and re-initializes it's other fields
 //      for reuse
 //
-template<class VCTentry, int max_entries>
-  inline void ProtoVCTable<VCTentry, max_entries>::remove_entry(VCTentry * e)
+template <class VCTentry, int max_entries>
+inline void
+ProtoVCTable<VCTentry, max_entries>::remove_entry(VCTentry *e)
 {
   ink_assert(e->vc == NULL || e->in_tunnel);
   if (e->read_buffer) {
@@ -115,10 +119,10 @@ template<class VCTentry, int max_entries>
 //    Closes the associate vc for the entry,
 //     and the call remove_entry
 //
-template<class VCTentry, int max_entries>
-  inline void ProtoVCTable<VCTentry, max_entries>::cleanup_entry(VCTentry * e)
+template <class VCTentry, int max_entries>
+inline void
+ProtoVCTable<VCTentry, max_entries>::cleanup_entry(VCTentry *e)
 {
-
   ink_assert(e->vc);
   if (e->in_tunnel == false) {
     e->vc->do_io_close();
@@ -127,7 +131,9 @@ template<class VCTentry, int max_entries>
   remove_entry(e);
 }
 
-template<class VCTentry, int max_entries> inline void ProtoVCTable<VCTentry, max_entries>::cleanup_all()
+template <class VCTentry, int max_entries>
+inline void
+ProtoVCTable<VCTentry, max_entries>::cleanup_all()
 {
   for (int i = 0; i < max_entries; i++) {
     if (vc_table[i].vc != NULL) {
@@ -137,7 +143,9 @@ template<class VCTentry, int max_entries> inline void ProtoVCTable<VCTentry, max
 }
 
 
-template<class VCTentry, int max_entries> inline bool ProtoVCTable<VCTentry, max_entries>::is_table_clear()
+template <class VCTentry, int max_entries>
+inline bool
+ProtoVCTable<VCTentry, max_entries>::is_table_clear()
 {
   for (int i = 0; i < max_entries; i++) {
     if (vc_table[i].vc != NULL) {

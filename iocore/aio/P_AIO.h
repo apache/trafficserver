@@ -37,27 +37,24 @@
 // for debugging
 // #define AIO_STATS 1
 
-#undef  AIO_MODULE_VERSION
-#define AIO_MODULE_VERSION        makeModuleVersion(AIO_MODULE_MAJOR_VERSION,\
-						    AIO_MODULE_MINOR_VERSION,\
-						    PRIVATE_MODULE_HEADER)
+#undef AIO_MODULE_VERSION
+#define AIO_MODULE_VERSION makeModuleVersion(AIO_MODULE_MAJOR_VERSION, AIO_MODULE_MINOR_VERSION, PRIVATE_MODULE_HEADER)
 
 TS_INLINE int
 AIOCallback::ok()
 {
-  return (off_t) aiocb.aio_nbytes == (off_t) aio_result;
+  return (off_t)aiocb.aio_nbytes == (off_t)aio_result;
 }
 
 #if AIO_MODE == AIO_MODE_NATIVE
 
 extern Continuation *aio_err_callbck;
 
-struct AIOCallbackInternal: public AIOCallback
-{
+struct AIOCallbackInternal : public AIOCallback {
   int io_complete(int event, void *data);
   AIOCallbackInternal()
   {
-    memset ((char *) &(this->aiocb), 0, sizeof(this->aiocb));
+    memset((char *)&(this->aiocb), 0, sizeof(this->aiocb));
     SET_HANDLER(&AIOCallbackInternal::io_complete);
   }
 };
@@ -65,8 +62,8 @@ struct AIOCallbackInternal: public AIOCallback
 TS_INLINE int
 AIOCallbackInternal::io_complete(int event, void *data)
 {
-  (void) event;
-  (void) data;
+  (void)event;
+  (void)data;
 
   if (!ok() && aio_err_callbck)
     eventProcessor.schedule_imm(aio_err_callbck, ET_CALL, AIO_EVENT_DONE);
@@ -78,7 +75,8 @@ AIOCallbackInternal::io_complete(int event, void *data)
 }
 
 TS_INLINE int
-AIOVec::mainEvent(int /* event */, Event *) {
+AIOVec::mainEvent(int /* event */, Event *)
+{
   ++completed;
   if (completed < size)
     return EVENT_CONT;
@@ -97,16 +95,15 @@ AIOVec::mainEvent(int /* event */, Event *) {
 
 struct AIO_Reqs;
 
-struct AIOCallbackInternal: public AIOCallback
-{
+struct AIOCallbackInternal : public AIOCallback {
   AIOCallback *first;
   AIO_Reqs *aio_req;
   ink_hrtime sleep_time;
   int io_complete(int event, void *data);
   AIOCallbackInternal()
   {
-    const size_t to_zero = sizeof(AIOCallbackInternal) - (size_t) & (((AIOCallbackInternal *) 0)->aiocb);
-    memset((char *) &(this->aiocb), 0, to_zero);
+    const size_t to_zero = sizeof(AIOCallbackInternal) - (size_t) & (((AIOCallbackInternal *)0)->aiocb);
+    memset((char *)&(this->aiocb), 0, to_zero);
     SET_HANDLER(&AIOCallbackInternal::io_complete);
   }
 };
@@ -114,32 +111,31 @@ struct AIOCallbackInternal: public AIOCallback
 TS_INLINE int
 AIOCallbackInternal::io_complete(int event, void *data)
 {
-  (void) event;
-  (void) data;
+  (void)event;
+  (void)data;
   if (!action.cancelled)
     action.continuation->handleEvent(AIO_EVENT_DONE, this);
   return EVENT_DONE;
 }
 
-struct AIO_Reqs
-{
-  Que(AIOCallback, link) aio_todo;       /* queue for holding non-http requests */
-  Que(AIOCallback, link) http_aio_todo;  /* queue for http requests */
-  /* Atomic list to temporarily hold the request if the
-     lock for a particular queue cannot be acquired */
+struct AIO_Reqs {
+  Que(AIOCallback, link) aio_todo;      /* queue for holding non-http requests */
+  Que(AIOCallback, link) http_aio_todo; /* queue for http requests */
+                                        /* Atomic list to temporarily hold the request if the
+                                           lock for a particular queue cannot be acquired */
   InkAtomicList aio_temp_list;
   ink_mutex aio_mutex;
   ink_cond aio_cond;
-  int index;                    /* position of this struct in the aio_reqs array */
-  volatile int pending;         /* number of outstanding requests on the disk */
-  volatile int queued;          /* total number of aio_todo and http_todo requests */
-  volatile int filedes;         /* the file descriptor for the requests */
+  int index;            /* position of this struct in the aio_reqs array */
+  volatile int pending; /* number of outstanding requests on the disk */
+  volatile int queued;  /* total number of aio_todo and http_todo requests */
+  volatile int filedes; /* the file descriptor for the requests */
   volatile int requests_queued;
 };
 
 #endif // AIO_MODE == AIO_MODE_NATIVE
 #ifdef AIO_STATS
-class AIOTestData:public Continuation
+class AIOTestData : public Continuation
 {
 public:
   int num_req;
@@ -149,7 +145,7 @@ public:
 
   int ink_aio_stats(int event, void *data);
 
-  AIOTestData():Continuation(new_ProxyMutex()), num_req(0), num_temp(0), num_queue(0)
+  AIOTestData() : Continuation(new_ProxyMutex()), num_req(0), num_temp(0), num_queue(0)
   {
     start = ink_get_hrtime();
     SET_HANDLER(&AIOTestData::ink_aio_stats);
@@ -157,8 +153,7 @@ public:
 };
 #endif
 
-enum aio_stat_enum
-{
+enum aio_stat_enum {
   AIO_STAT_READ_PER_SEC,
   AIO_STAT_KB_READ_PER_SEC,
   AIO_STAT_WRITE_PER_SEC,

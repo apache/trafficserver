@@ -104,7 +104,7 @@ Resources::gather(const ResourceIDs ids, TSHttpHookID hook)
     break;
   }
 
-    _ready  = true;
+  _ready = true;
 }
 
 void

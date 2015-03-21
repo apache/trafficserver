@@ -22,7 +22,6 @@
  */
 
 
-
 #ifndef LOG_CONFIG_H
 #define LOG_CONFIG_H
 
@@ -33,8 +32,7 @@
 /* Instead of enumerating the stats in DynamicStats.h, each module needs
    to enumerate its stats separately and register them with librecords
    */
-enum
-{
+enum {
   // Logging Events
   log_stat_event_log_error_ok_stat,
   log_stat_event_log_error_skip_stat,
@@ -107,14 +105,12 @@ struct PreDefinedFormatInfo;
 
 class LogConfig : public ConfigInfo
 {
-
 public:
-
   LogConfig();
   ~LogConfig();
 
-  void init(LogConfig * previous_config = 0);
-  void display(FILE * fd = stdout);
+  void init(LogConfig *previous_config = 0);
+  void display(FILE *fd = stdout);
   void setup_log_objects();
 
   static int reconfigure(const char *name, RecDataT data_type, RecData data, void *cookie);
@@ -125,10 +121,20 @@ public:
 
   bool space_to_write(int64_t bytes_to_write);
 
-  bool am_collation_host() const { return collation_mode == Log::COLLATION_HOST; }
-  bool space_is_short() { return !space_to_write(max_space_mb_headroom * LOG_MEGABYTE); };
+  bool
+  am_collation_host() const
+  {
+    return collation_mode == Log::COLLATION_HOST;
+  }
+  bool
+  space_is_short()
+  {
+    return !space_to_write(max_space_mb_headroom * LOG_MEGABYTE);
+  };
 
-  void increment_space_used(int bytes) {
+  void
+  increment_space_used(int bytes)
+  {
     m_space_used += bytes;
     m_partition_space_left -= bytes;
   }
@@ -136,18 +142,26 @@ public:
   void update_space_used();
   void read_configuration_variables();
 
-// CVR This is the mgmt callback function, hence all the strange arguments
+  // CVR This is the mgmt callback function, hence all the strange arguments
   static void *reconfigure_mgmt_variables(void *token, char *data_raw, int data_len);
 
-  int get_max_space_mb() {
+  int
+  get_max_space_mb()
+  {
     return (use_orphan_log_space_value ? max_space_mb_for_orphan_logs : max_space_mb_for_logs);
   }
 
-  void transfer_objects(LogConfig * old_config) {
+  void
+  transfer_objects(LogConfig *old_config)
+  {
     log_object_manager.transfer_objects(old_config->log_object_manager);
   }
 
-  bool has_api_objects() const { return log_object_manager.has_api_objects(); }
+  bool
+  has_api_objects() const
+  {
+    return log_object_manager.has_api_objects();
+  }
 
 public:
   bool initialized;
@@ -155,7 +169,7 @@ public:
   bool logging_space_exhausted;
   int64_t m_space_used;
   int64_t m_partition_space_left;
-  bool roll_log_files_now;      // signal that files must be rolled
+  bool roll_log_files_now; // signal that files must be rolled
 
   LogObjectManager log_object_manager;
   LogFilterList global_filter_list;
@@ -221,18 +235,17 @@ public:
   char *collation_secret;
 
 private:
-
   void read_xml_log_config(int from_memory);
-  char **read_log_hosts_file(size_t * nhosts);
+  char **read_log_hosts_file(size_t *nhosts);
 
   void setup_default_values();
-  void setup_collation(LogConfig * prev_config);
-  LogFilter *split_by_protocol(const PreDefinedFormatList & pre_def_info_list);
-  size_t split_by_hostname(const PreDefinedFormatList & pre_def_info_list, LogFilter * reject_protocol);
-  LogObject * create_predefined_object(const PreDefinedFormatInfo * pdi, size_t nfilters,
-        LogFilter ** filters, const char *filt_name = 0, bool force_extension = false);
-  void create_predefined_objects_with_filter(const PreDefinedFormatList &pre_def_info_list, size_t nfilters,
-        LogFilter ** filters, const char *filt_name = 0, bool force_extension = false);
+  void setup_collation(LogConfig *prev_config);
+  LogFilter *split_by_protocol(const PreDefinedFormatList &pre_def_info_list);
+  size_t split_by_hostname(const PreDefinedFormatList &pre_def_info_list, LogFilter *reject_protocol);
+  LogObject *create_predefined_object(const PreDefinedFormatInfo *pdi, size_t nfilters, LogFilter **filters,
+                                      const char *filt_name = 0, bool force_extension = false);
+  void create_predefined_objects_with_filter(const PreDefinedFormatList &pre_def_info_list, size_t nfilters, LogFilter **filters,
+                                             const char *filt_name = 0, bool force_extension = false);
 
   void add_filters_to_search_log_object(const char *format_name);
 
@@ -255,15 +268,14 @@ private:
 private:
   // -- member functions not allowed --
   LogConfig(const LogConfig &);
-  LogConfig & operator=(const LogConfig &);
+  LogConfig &operator=(const LogConfig &);
 };
 
 /*-------------------------------------------------------------------------
   LogDeleteCandidate
   -------------------------------------------------------------------------*/
 
-struct LogDeleteCandidate
-{
+struct LogDeleteCandidate {
   time_t mtime;
   char *name;
   int64_t size;

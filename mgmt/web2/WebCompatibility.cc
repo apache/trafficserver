@@ -36,19 +36,16 @@
 //-------------------------------------------------------------------------
 
 char *
-WebGetHostname_Xmalloc(sockaddr_in * client_info)
+WebGetHostname_Xmalloc(sockaddr_in *client_info)
 {
   ink_gethostbyaddr_r_data data;
   char *hostname_tmp;
 
-  struct hostent *r = ink_gethostbyaddr_r((char *) &client_info->sin_addr.s_addr,
-                                          sizeof(client_info->sin_addr.s_addr),
-                                          AF_INET,
-                                          &data);
+  struct hostent *r =
+    ink_gethostbyaddr_r((char *)&client_info->sin_addr.s_addr, sizeof(client_info->sin_addr.s_addr), AF_INET, &data);
 
   hostname_tmp = r ? r->h_name : inet_ntoa(client_info->sin_addr);
   return ats_strdup(hostname_tmp);
-
 }
 
 //-------------------------------------------------------------------------
@@ -58,7 +55,6 @@ WebGetHostname_Xmalloc(sockaddr_in * client_info)
 WebHandle
 WebFileOpenR(const char *file)
 {
-
   WebHandle h_file;
   if ((h_file = mgmt_open(file, O_RDONLY)) < 0) {
     return WEB_HANDLE_INVALID;
@@ -73,7 +69,6 @@ WebFileOpenR(const char *file)
 WebHandle
 WebFileOpenW(const char *file)
 {
-
   WebHandle h_file;
 
   if ((h_file = mgmt_open_mode(file, O_WRONLY | O_APPEND | O_CREAT, 0644)) < 0) {
@@ -82,7 +77,6 @@ WebFileOpenW(const char *file)
   fcntl(h_file, F_SETFD, 1);
 
   return h_file;
-
 }
 
 //-------------------------------------------------------------------------
@@ -92,7 +86,6 @@ WebFileOpenW(const char *file)
 void
 WebFileClose(WebHandle h_file)
 {
-
   close(h_file);
 }
 
@@ -103,8 +96,7 @@ WebFileClose(WebHandle h_file)
 int
 WebFileRead(WebHandle h_file, char *buf, int size, int *bytes_read)
 {
-
-  if ((*bytes_read =::read(h_file, buf, size)) < 0) {
+  if ((*bytes_read = ::read(h_file, buf, size)) < 0) {
     *bytes_read = 0;
     return WEB_HTTP_ERR_FAIL;
   }
@@ -118,8 +110,7 @@ WebFileRead(WebHandle h_file, char *buf, int size, int *bytes_read)
 int
 WebFileWrite(WebHandle h_file, char *buf, int size, int *bytes_written)
 {
-
-  if ((*bytes_written =::write(h_file, buf, size)) < 0) {
+  if ((*bytes_written = ::write(h_file, buf, size)) < 0) {
     *bytes_written = 0;
     return WEB_HTTP_ERR_FAIL;
   }
@@ -133,7 +124,6 @@ WebFileWrite(WebHandle h_file, char *buf, int size, int *bytes_written)
 int
 WebFileImport_Xmalloc(const char *file, char **file_buf, int *file_size)
 {
-
   int err = WEB_HTTP_ERR_OKAY;
   WebHandle h_file = WEB_HANDLE_INVALID;
   int bytes_read;
@@ -165,7 +155,6 @@ Ldone:
     WebFileClose(h_file);
 
   return err;
-
 }
 
 //-------------------------------------------------------------------------
@@ -175,14 +164,12 @@ Ldone:
 int
 WebFileGetSize(WebHandle h_file)
 {
-
   int size;
 
   struct stat fileStats;
   fstat(h_file, &fileStats);
   size = fileStats.st_size;
   return size;
-
 }
 
 //-------------------------------------------------------------------------
@@ -192,12 +179,10 @@ WebFileGetSize(WebHandle h_file)
 time_t
 WebFileGetDateGmt(WebHandle h_file)
 {
-
   time_t date;
 
   struct stat fileStats;
   fstat(h_file, &fileStats);
   date = fileStats.st_mtime + ink_timezone();
   return date;
-
 }

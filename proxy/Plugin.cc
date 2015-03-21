@@ -34,7 +34,7 @@
 
 static const char *plugin_dir = ".";
 
-typedef void (*init_func_t) (int argc, char *argv[]);
+typedef void (*init_func_t)(int argc, char *argv[]);
 
 // Plugin registration vars
 //
@@ -51,8 +51,7 @@ DLL<PluginRegInfo> plugin_reg_list;
 PluginRegInfo *plugin_reg_current = NULL;
 
 PluginRegInfo::PluginRegInfo()
-  : plugin_registered(false), plugin_path(NULL),
-    plugin_name(NULL), vendor_name(NULL), support_email(NULL), dlh(NULL)
+  : plugin_registered(false), plugin_path(NULL), plugin_name(NULL), vendor_name(NULL), support_email(NULL), dlh(NULL)
 {
 }
 
@@ -84,8 +83,8 @@ plugin_load(int argc, char *argv[], bool validateOnly)
 
   Note("loading plugin '%s'", path);
 
-  for (PluginRegInfo * plugin_reg_temp = plugin_reg_list.head; plugin_reg_temp != NULL;
-      plugin_reg_temp = (plugin_reg_temp->link).next) {
+  for (PluginRegInfo *plugin_reg_temp = plugin_reg_list.head; plugin_reg_temp != NULL;
+       plugin_reg_temp = (plugin_reg_temp->link).next) {
     if (strcmp(plugin_reg_temp->plugin_path, path) == 0) {
       Warning("multiple loading of plugin %s", path);
       break;
@@ -95,14 +94,13 @@ plugin_load(int argc, char *argv[], bool validateOnly)
   // elevate the access to read files as root if compiled with capabilities, if not
   // change the effective user to root
   {
-
 #if TS_USE_POSIX_CAP
     uint32_t elevate_access = 0;
     REC_ReadConfigInteger(elevate_access, "proxy.config.plugin.load_elevated");
     ElevateAccess access(elevate_access != 0);
 #endif /* TS_USE_POSIX_CAP */
 
-    void* handle = dlopen(path, RTLD_NOW);
+    void *handle = dlopen(path, RTLD_NOW);
     if (!handle) {
       if (validateOnly) {
         return false;
@@ -117,7 +115,7 @@ plugin_load(int argc, char *argv[], bool validateOnly)
     plugin_reg_current->plugin_path = ats_strdup(path);
     plugin_reg_current->dlh = handle;
 
-    init = (init_func_t) dlsym(plugin_reg_current->dlh, "TSPluginInit");
+    init = (init_func_t)dlsym(plugin_reg_current->dlh, "TSPluginInit");
     if (!init) {
       delete plugin_reg_current;
       if (validateOnly) {
@@ -148,7 +146,7 @@ plugin_expand(char *arg)
   char *str = NULL;
 
   if (*arg != '$') {
-    return (char *) NULL;
+    return (char *)NULL;
   }
   // skip the $ character
   arg += 1;
@@ -158,48 +156,44 @@ plugin_expand(char *arg)
   }
 
   switch (data_type) {
-  case RECD_STRING:
-    {
-      RecString str_val;
-      if (RecGetRecordString_Xmalloc(arg, &str_val) != REC_ERR_OKAY) {
-        goto not_found;
-      }
-      return (char *) str_val;
-      break;
+  case RECD_STRING: {
+    RecString str_val;
+    if (RecGetRecordString_Xmalloc(arg, &str_val) != REC_ERR_OKAY) {
+      goto not_found;
     }
-  case RECD_FLOAT:
-    {
-      RecFloat float_val;
-      if (RecGetRecordFloat(arg, &float_val) != REC_ERR_OKAY) {
-        goto not_found;
-      }
-      str = (char *)ats_malloc(128);
-      snprintf(str, 128, "%f", (float) float_val);
-      return str;
-      break;
+    return (char *)str_val;
+    break;
+  }
+  case RECD_FLOAT: {
+    RecFloat float_val;
+    if (RecGetRecordFloat(arg, &float_val) != REC_ERR_OKAY) {
+      goto not_found;
     }
-  case RECD_INT:
-    {
-      RecInt int_val;
-      if (RecGetRecordInt(arg, &int_val) != REC_ERR_OKAY) {
-        goto not_found;
-      }
-      str = (char *)ats_malloc(128);
-      snprintf(str, 128, "%ld", (long int) int_val);
-      return str;
-      break;
+    str = (char *)ats_malloc(128);
+    snprintf(str, 128, "%f", (float)float_val);
+    return str;
+    break;
+  }
+  case RECD_INT: {
+    RecInt int_val;
+    if (RecGetRecordInt(arg, &int_val) != REC_ERR_OKAY) {
+      goto not_found;
     }
-  case RECD_COUNTER:
-    {
-      RecCounter count_val;
-      if (RecGetRecordCounter(arg, &count_val) != REC_ERR_OKAY) {
-        goto not_found;
-      }
-      str = (char *)ats_malloc(128);
-      snprintf(str, 128, "%ld", (long int) count_val);
-      return str;
-      break;
+    str = (char *)ats_malloc(128);
+    snprintf(str, 128, "%ld", (long int)int_val);
+    return str;
+    break;
+  }
+  case RECD_COUNTER: {
+    RecCounter count_val;
+    if (RecGetRecordCounter(arg, &count_val) != REC_ERR_OKAY) {
+      goto not_found;
     }
+    str = (char *)ats_malloc(128);
+    snprintf(str, 128, "%ld", (long int)count_val);
+    return str;
+    break;
+  }
   default:
     goto not_found;
     break;
@@ -253,7 +247,7 @@ plugin_init(bool validateOnly)
       while (*p && ParseRules::is_wslfcr(*p))
         ++p;
       if ((*p == '\0') || (*p == '#'))
-        break;                  // EOL
+        break; // EOL
 
       if (*p == '\"') {
         p += 1;
@@ -296,4 +290,3 @@ plugin_init(bool validateOnly)
   close(fd);
   return retVal;
 }
-

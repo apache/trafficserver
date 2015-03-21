@@ -63,33 +63,30 @@
 
 
 #define PSI_FILENAME_MAX_SIZE 512
-#define PSI_PATH_MAX_SIZE     256
+#define PSI_PATH_MAX_SIZE 256
 #define PSI_PATH "include"
 
-#define PSI_START_TAG      "<!--include="
-#define PSI_START_TAG_LEN  12
+#define PSI_START_TAG "<!--include="
+#define PSI_START_TAG_LEN 12
 
-#define PSI_END_TAG        "-->"
-#define PSI_END_TAG_LEN    3
+#define PSI_END_TAG "-->"
+#define PSI_END_TAG_LEN 3
 
 #define MIME_FIELD_XPSI "X-Psi"
 
-typedef enum
-{
+typedef enum {
   STATE_READ_DATA = 1,
   STATE_READ_PSI = 2,
-  STATE_DUMP_PSI = 3
+  STATE_DUMP_PSI = 3,
 } PluginState;
 
-typedef enum
-{
+typedef enum {
   PARSE_SEARCH,
   PARSE_EXTRACT,
 } ParseState;
 
 
-typedef struct
-{
+typedef struct {
   unsigned int magic;
   TSVIO output_vio;
   TSIOBuffer output_buffer;
@@ -108,18 +105,16 @@ typedef struct
 } ContData;
 
 
-typedef struct
-{
+typedef struct {
   TSCont contp;
   TSEvent event;
 } TryLockData;
 
 
-typedef enum
-{
+typedef enum {
   STR_SUCCESS,
   STR_PARTIAL,
-  STR_FAIL
+  STR_FAIL,
 } StrOperationResult;
 
 
@@ -145,7 +140,7 @@ cont_data_alloc()
 {
   ContData *data;
 
-  data = (ContData *) TSmalloc(sizeof(ContData));
+  data = (ContData *)TSmalloc(sizeof(ContData));
   data->magic = MAGIC_ALIVE;
   data->output_vio = NULL;
   data->output_buffer = NULL;
@@ -177,7 +172,7 @@ cont_data_alloc()
     none
   -------------------------------------------------------------------------*/
 static void
-cont_data_destroy(ContData * data)
+cont_data_destroy(ContData *data)
 {
   TSDebug(DBG_TAG, "Destroying continuation data");
   if (data) {
@@ -253,7 +248,7 @@ strsearch_ioreader(TSIOBufferReader reader, const char *pattern, int *nparse)
     block = TSIOBufferBlockNext(block);
   }
 
-  *nparse -= index;             /* Adjust nparse so it doesn't include matching chars */
+  *nparse -= index; /* Adjust nparse so it doesn't include matching chars */
   if (index == slen) {
     TSDebug(DBG_TAG, "strfind: match for %s at position %d", pattern, *nparse);
     return STR_SUCCESS;
@@ -306,7 +301,6 @@ strextract_ioreader(TSIOBufferReader reader, int offset, const char *end_pattern
 
     for (ptr = blockptr; ptr < blockptr + blocklen; ptr++, nbytes_so_far++) {
       if (nbytes_so_far >= offset) {
-
         /* Add a new character to the filename */
         buffer[buf_idx++] = *ptr;
 
@@ -381,7 +375,6 @@ parse_data(TSCont contp, TSIOBufferReader input_reader, int avail, int *toconsum
   TSAssert(data->magic == MAGIC_ALIVE);
 
   if (data->parse_state == PARSE_SEARCH) {
-
     /* Search for the start pattern */
     status = strsearch_ioreader(input_reader, PSI_START_TAG, &nparse);
     switch (status) {
@@ -410,8 +403,7 @@ parse_data(TSCont contp, TSIOBufferReader input_reader, int avail, int *toconsum
 
 
   /* And now let's extract the filename */
-  status = strextract_ioreader(input_reader, nparse + PSI_START_TAG_LEN,
-                               PSI_END_TAG, data->psi_filename, &data->psi_filename_len);
+  status = strextract_ioreader(input_reader, nparse + PSI_START_TAG_LEN, PSI_END_TAG, data->psi_filename, &data->psi_filename_len);
   switch (status) {
   case STR_FAIL:
     /* We couldn't extract a valid filename */
@@ -438,7 +430,7 @@ parse_data(TSCont contp, TSIOBufferReader input_reader, int avail, int *toconsum
   return 0;
 }
 
-//TODO: Use libc basename function
+// TODO: Use libc basename function
 //
 /*-------------------------------------------------------------------------
   strip_path
@@ -456,7 +448,7 @@ _basename(const char *filename)
   char *cptr;
   const char *ptr = filename;
 
-  while ((cptr = strchr(ptr, (int) '/')) != NULL) {
+  while ((cptr = strchr(ptr, (int)'/')) != NULL) {
     ptr = cptr + 1;
   }
   return ptr;
@@ -650,7 +642,6 @@ handle_transform(TSCont contp)
 
     /* There are some data available for reading. Let's parse it */
     if (avail > 0) {
-
       /* No need to parse data if there are too few bytes left to contain
          an include command... */
       if (toread > (PSI_START_TAG_LEN + PSI_END_TAG_LEN)) {
@@ -724,7 +715,7 @@ dump_psi(TSCont contp)
   ContData *data;
   int psi_output_len;
 
-  /* TODO: This is odd, do we need to get the input_vio, but never use it ?? */
+/* TODO: This is odd, do we need to get the input_vio, but never use it ?? */
 #if 0
   TSVIO input_vio;
   input_vio = TSVConnWriteVIOGet(contp);
@@ -967,7 +958,7 @@ transform_add(TSHttpTxn txnp)
 static int
 read_response_handler(TSCont contp ATS_UNUSED, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp = (TSHttpTxn) edata;
+  TSHttpTxn txnp = (TSHttpTxn)edata;
 
   switch (event) {
   case TS_EVENT_HTTP_READ_RESPONSE_HDR:
@@ -1025,9 +1016,9 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
   init_queue(&job_queue);
 
   for (i = 0; i < NB_THREADS; i++) {
-    char *thread_name = (char *) TSmalloc(64);
+    char *thread_name = (char *)TSmalloc(64);
     sprintf(thread_name, "Thread[%d]", i);
-    if (!TSThreadCreate((TSThreadFunc) thread_loop, thread_name)) {
+    if (!TSThreadCreate((TSThreadFunc)thread_loop, thread_name)) {
       TSError("[TSPluginInit] Error while creating threads");
       return;
     }

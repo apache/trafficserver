@@ -31,44 +31,42 @@
 
 #include <vector>
 
-struct subcommand
-{
-  int (*handler) (unsigned, const char **);
-  const char * name;
-  const char * help;
+struct subcommand {
+  int (*handler)(unsigned, const char **);
+  const char *name;
+  const char *help;
 };
 
 extern AppVersionInfo CtrlVersionInfo;
 
 #define CtrlDebug(...) Debug("traffic_ctl", __VA_ARGS__)
 
-void CtrlMgmtError(TSMgmtError err, const char * fmt, ...) TS_PRINTFLIKE(2, 3);
-int CtrlSubcommandUsage(const char * name, const subcommand * cmds, unsigned ncmds, const ArgumentDescription * desc, unsigned ndesc);
-int CtrlCommandUsage(const char * msg, const ArgumentDescription * desc = NULL, unsigned ndesc = 0);
+void CtrlMgmtError(TSMgmtError err, const char *fmt, ...) TS_PRINTFLIKE(2, 3);
+int CtrlSubcommandUsage(const char *name, const subcommand *cmds, unsigned ncmds, const ArgumentDescription *desc, unsigned ndesc);
+int CtrlCommandUsage(const char *msg, const ArgumentDescription *desc = NULL, unsigned ndesc = 0);
 
-bool CtrlProcessArguments(int argc, const char ** argv, const ArgumentDescription * desc, unsigned ndesc);
-int CtrlUnimplementedCommand(unsigned argc, const char ** argv);
+bool CtrlProcessArguments(int argc, const char **argv, const ArgumentDescription *desc, unsigned ndesc);
+int CtrlUnimplementedCommand(unsigned argc, const char **argv);
 
-int CtrlGenericSubcommand(const char *, const subcommand * cmds, unsigned ncmds, unsigned argc, const char ** argv);
+int CtrlGenericSubcommand(const char *, const subcommand *cmds, unsigned ncmds, unsigned argc, const char **argv);
 
-#define CTRL_MGMT_CHECK(expr) do { \
-  TSMgmtError e = (expr); \
-  if (e != TS_ERR_OKAY) {  \
-    CtrlDebug("%s failed with status %d", #expr, e);\
-    CtrlMgmtError(e, NULL); \
-    return CTRL_EX_ERROR; \
-  } \
-} while (0)
+#define CTRL_MGMT_CHECK(expr)                          \
+  do {                                                 \
+    TSMgmtError e = (expr);                            \
+    if (e != TS_ERR_OKAY) {                            \
+      CtrlDebug("%s failed with status %d", #expr, e); \
+      CtrlMgmtError(e, NULL);                          \
+      return CTRL_EX_ERROR;                            \
+    }                                                  \
+  } while (0)
 
-struct CtrlMgmtRecord
-{
-  explicit CtrlMgmtRecord(TSRecordEle * e) : ele(e) {
-  }
+struct CtrlMgmtRecord {
+  explicit CtrlMgmtRecord(TSRecordEle *e) : ele(e) {}
 
-  CtrlMgmtRecord() : ele(TSRecordEleCreate()) {
-  }
+  CtrlMgmtRecord() : ele(TSRecordEleCreate()) {}
 
-  ~CtrlMgmtRecord() {
+  ~CtrlMgmtRecord()
+  {
     if (this->ele) {
       TSRecordEleDestroy(this->ele);
     }
@@ -76,113 +74,120 @@ struct CtrlMgmtRecord
 
   TSMgmtError fetch(const char *);
 
-  const char * name() const;
+  const char *name() const;
   TSRecordT type() const;
   int64_t as_int() const;
 
 private:
-  CtrlMgmtRecord(const CtrlMgmtRecord&); // disabled
-  CtrlMgmtRecord& operator=(const CtrlMgmtRecord&); // disabled
+  CtrlMgmtRecord(const CtrlMgmtRecord &);            // disabled
+  CtrlMgmtRecord &operator=(const CtrlMgmtRecord &); // disabled
 
-  TSRecordEle * ele;
+  TSRecordEle *ele;
 
   friend struct CtrlMgmtRecordValue;
 };
 
-struct CtrlMgmtRecordValue
-{
+struct CtrlMgmtRecordValue {
   explicit CtrlMgmtRecordValue(const TSRecordEle *);
-  explicit CtrlMgmtRecordValue(const CtrlMgmtRecord&);
+  explicit CtrlMgmtRecordValue(const CtrlMgmtRecord &);
 
   CtrlMgmtRecordValue(TSRecordT, TSRecordValueT);
-  const char * c_str() const;
+  const char *c_str() const;
 
 private:
-  CtrlMgmtRecordValue(const CtrlMgmtRecordValue&); // disabled
-  CtrlMgmtRecordValue& operator=(const CtrlMgmtRecordValue&); // disabled
+  CtrlMgmtRecordValue(const CtrlMgmtRecordValue &);            // disabled
+  CtrlMgmtRecordValue &operator=(const CtrlMgmtRecordValue &); // disabled
   void init(TSRecordT, TSRecordValueT);
 
   TSRecordT rec_type;
   union {
-    const char * str;
+    const char *str;
     char nbuf[32];
   } fmt;
 };
 
-struct CtrlMgmtRecordList
-{
-  CtrlMgmtRecordList() : list(TSListCreate()) {
-  }
+struct CtrlMgmtRecordList {
+  CtrlMgmtRecordList() : list(TSListCreate()) {}
 
-  ~CtrlMgmtRecordList() {
+  ~CtrlMgmtRecordList()
+  {
     this->clear();
     TSListDestroy(this->list);
   }
 
-  bool empty() const {
+  bool
+  empty() const
+  {
     return TSListIsEmpty(this->list);
   }
 
-  void clear() const {
+  void
+  clear() const
+  {
     while (!this->empty()) {
-        TSRecordEleDestroy((TSRecordEle *)TSListDequeue(this->list));
+      TSRecordEleDestroy((TSRecordEle *)TSListDequeue(this->list));
     }
   }
 
   // Return (ownership of) the next list entry.
-  TSRecordEle * next() {
+  TSRecordEle *
+  next()
+  {
     return (TSRecordEle *)TSListDequeue(this->list);
   }
 
   TSMgmtError match(const char *);
 
 private:
-  CtrlMgmtRecordList(const CtrlMgmtRecordList&); // disabled
-  CtrlMgmtRecordList& operator=(const CtrlMgmtRecordList&); // disabled
+  CtrlMgmtRecordList(const CtrlMgmtRecordList &);            // disabled
+  CtrlMgmtRecordList &operator=(const CtrlMgmtRecordList &); // disabled
 
   TSList list;
 };
 
-template<typename T>
-struct CtrlMgmtList
-{
-  CtrlMgmtList() : list(TSListCreate()) {
-  }
+template <typename T> struct CtrlMgmtList {
+  CtrlMgmtList() : list(TSListCreate()) {}
 
-  ~CtrlMgmtList() {
+  ~CtrlMgmtList()
+  {
     this->clear();
     TSListDestroy(this->list);
   }
 
-  bool empty() const {
+  bool
+  empty() const
+  {
     return TSListIsEmpty(this->list);
   }
 
-  void clear() const {
+  void
+  clear() const
+  {
     while (!this->empty()) {
       T::free(T::cast(TSListDequeue(this->list)));
     }
   }
 
   // Return (ownership of) the next list entry.
-  typename T::entry_type next() {
+  typename T::entry_type
+  next()
+  {
     return T::cast(TSListDequeue(this->list));
   }
 
   TSList list;
 
 private:
-  CtrlMgmtList(const CtrlMgmtList&); // disabled
-  CtrlMgmtList& operator=(const CtrlMgmtList&); // disabled
+  CtrlMgmtList(const CtrlMgmtList &);            // disabled
+  CtrlMgmtList &operator=(const CtrlMgmtList &); // disabled
 };
 
-struct CtrlCommandLine
-{
-  CtrlCommandLine() {
-    this->args.push_back(NULL);
-  }
+struct CtrlCommandLine {
+  CtrlCommandLine() { this->args.push_back(NULL); }
 
-  void init(unsigned argc, const char ** argv) {
+  void
+  init(unsigned argc, const char **argv)
+  {
     this->args.clear();
     for (unsigned i = 0; i < argc; ++i) {
       this->args.push_back(argv[i]);
@@ -192,11 +197,15 @@ struct CtrlCommandLine
     this->args.push_back(NULL);
   }
 
-  unsigned argc() {
+  unsigned
+  argc()
+  {
     return args.size() - 1;
   }
 
-  const char ** argv() {
+  const char **
+  argv()
+  {
     return &args[0];
   }
 
@@ -204,18 +213,18 @@ private:
   std::vector<const char *> args;
 };
 
-int subcommand_alarm(unsigned argc, const char ** argv);
-int subcommand_cluster(unsigned argc, const char ** argv);
-int subcommand_config(unsigned argc, const char ** argv);
-int subcommand_metric(unsigned argc, const char ** argv);
-int subcommand_server(unsigned argc, const char ** argv);
-int subcommand_storage(unsigned argc, const char ** argv);
+int subcommand_alarm(unsigned argc, const char **argv);
+int subcommand_cluster(unsigned argc, const char **argv);
+int subcommand_config(unsigned argc, const char **argv);
+int subcommand_metric(unsigned argc, const char **argv);
+int subcommand_server(unsigned argc, const char **argv);
+int subcommand_storage(unsigned argc, const char **argv);
 
 // Exit status codes, following BSD's sysexits(3)
-#define CTRL_EX_OK            0
-#define CTRL_EX_ERROR         2
+#define CTRL_EX_OK 0
+#define CTRL_EX_ERROR 2
 #define CTRL_EX_UNIMPLEMENTED 3
-#define CTRL_EX_USAGE         EX_USAGE
-#define CTRL_EX_UNAVAILABLE   69
+#define CTRL_EX_USAGE EX_USAGE
+#define CTRL_EX_UNAVAILABLE 69
 
 #endif /* _TRAFFIC_CTRL_H_ */

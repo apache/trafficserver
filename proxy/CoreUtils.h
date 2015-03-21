@@ -42,20 +42,20 @@
 #include <elf.h>
 #include "DynArray.h"
 
-#define SP_REGNUM 15            /* Contains address of top of stack USP */
-#define PC_REGNUM 12            /* Contains program counter EIP */
-#define FP_REGNUM 5             /* Virtual frame pointer EBP */
-#define NO_OF_ARGS 10           /* The argument depth upto which we would be looking into
-                                   the stack */
+#define SP_REGNUM 15 /* Contains address of top of stack USP */
+#define PC_REGNUM 12 /* Contains program counter EIP */
+#define FP_REGNUM 5  /* Virtual frame pointer EBP */
+#define NO_OF_ARGS                                             \
+  10 /* The argument depth upto which we would be looking into \
+        the stack */
 
 // contains local and in registers, frame pointer, and stack base
-struct core_stack_state
-{
-  intptr_t framep;                   //int stkbase;
+struct core_stack_state {
+  intptr_t framep; // int stkbase;
   intptr_t pc;
   intptr_t arg[NO_OF_ARGS];
 };
-#endif  // linux check
+#endif // linux check
 
 #if defined(darwin) || defined(freebsd) || defined(solaris) || defined(openbsd) // FIXME: solaris x86
 #include <stdio.h>
@@ -65,27 +65,26 @@ struct core_stack_state
 #include <math.h>
 #include <assert.h>
 
-#define NO_OF_ARGS 10           /* The argument depth upto which we would be looking into
-                                   the stack */
+#define NO_OF_ARGS                                             \
+  10 /* The argument depth upto which we would be looking into \
+        the stack */
 
 // contains local and in registers, frame pointer, and stack base
-struct core_stack_state
-{
-  intptr_t framep;                   //int stkbase;
+struct core_stack_state {
+  intptr_t framep; // int stkbase;
   intptr_t pc;
   intptr_t arg[NO_OF_ARGS];
 };
-#endif  /* darwin || freebsd || solaris */
+#endif /* darwin || freebsd || solaris */
 
 // to be sorted by virtual address
-struct memTable
-{
+struct memTable {
   intptr_t vaddr;
   intptr_t offset;
   intptr_t fsize;
 };
 
-typedef void (*StuffTest_f) (void *);
+typedef void (*StuffTest_f)(void *);
 
 class HttpSM;
 class HTTPHdr;
@@ -97,7 +96,6 @@ class UnixNetVConnection;
 class CoreUtils
 {
 public:
-
   /**********************************************************************
   * purpose: finds the index of the virtual address or finds what the
   *          index should be if the virtual address is not there
@@ -124,13 +122,13 @@ public:
   **********************************************************************/
   static intptr_t read_from_core(intptr_t vaddr, intptr_t bytes, char *buf);
 
-  /**********************************************************************
-  * purpose: returns the base core_stack_state for the given thread id
-  * inputs: int threadId, core_stack_state* coress
-  * outputs: returns the base core_stack_state for the given thread id
-  **********************************************************************/
+/**********************************************************************
+* purpose: returns the base core_stack_state for the given thread id
+* inputs: int threadId, core_stack_state* coress
+* outputs: returns the base core_stack_state for the given thread id
+**********************************************************************/
 #if defined(linux)
-  static void get_base_frame(intptr_t framep, core_stack_state * coress);
+  static void get_base_frame(intptr_t framep, core_stack_state *coress);
 #endif
 
   /**********************************************************************
@@ -139,7 +137,7 @@ public:
   * outputs: returns 0 if current frame is already at the top of the stack
   *          or returns 1 and moves up the stack once
   **********************************************************************/
-  static int get_next_frame(core_stack_state * coress);
+  static int get_next_frame(core_stack_state *coress);
 
   /**********************************************************************
   * purpose: loop ups over local & in registers on the stack and calls
@@ -162,16 +160,16 @@ public:
   * inputs: HttpSM* core_ptr (ptr to http_sm in core)
   * outputs: none
   **********************************************************************/
-  static void process_HttpSM(HttpSM * core_ptr);
-  static void process_EThread(EThread * eth_test);
-  static void process_NetVC(UnixNetVConnection * eth_test);
+  static void process_HttpSM(HttpSM *core_ptr);
+  static void process_EThread(EThread *eth_test);
+  static void process_NetVC(UnixNetVConnection *eth_test);
 
   /**********************************************************************
   * purpose: dumps the given state machine's history
   * inputs: HttpSM* hsm
   * outputs: none
   **********************************************************************/
-  static void dump_history(HttpSM * hsm);
+  static void dump_history(HttpSM *hsm);
 
   /**********************************************************************
   * purpose: fills in the given HTTPHdr * live_hdr with live information
@@ -179,14 +177,14 @@ public:
   * inputs: HTTPHdr* core_hdr, HTTPHdr* live_hdr
   * outputs: -1 on failure or total bytes in the header heaps
   **********************************************************************/
-  static int load_http_hdr(HTTPHdr * core_hdr, HTTPHdr * live_hdr);
+  static int load_http_hdr(HTTPHdr *core_hdr, HTTPHdr *live_hdr);
 
   /**********************************************************************
   * purpose: loads the http hdr from handle h in the core file
   * inputs: HTTPHdr* h, char* name
   * outputs: none
   **********************************************************************/
-  static void print_http_hdr(HTTPHdr * h, const char *name);
+  static void print_http_hdr(HTTPHdr *h, const char *name);
 
   /**********************************************************************
   * purpose: loads a null terminated string from the core file

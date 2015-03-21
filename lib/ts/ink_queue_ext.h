@@ -34,107 +34,101 @@
 #include "ink_queue.h"
 
 #ifdef __cplusplus
-extern "C"
-{
-#endif                          /* __cplusplus */
+extern "C" {
+#endif /* __cplusplus */
 #if TS_USE_RECLAIMABLE_FREELIST
-  struct _InkThreadCache;
-  struct _InkFreeList;
+struct _InkThreadCache;
+struct _InkFreeList;
 
-  typedef struct _InkChunkInfo
-  {
-    pthread_t tid;
+typedef struct _InkChunkInfo {
+  pthread_t tid;
 
-    uint32_t type_size;
-    uint32_t chunk_size;
-    uint32_t allocated;
-    uint32_t length;
+  uint32_t type_size;
+  uint32_t chunk_size;
+  uint32_t allocated;
+  uint32_t length;
 
-    /*
-     * inner free list will only be
-     * accessed by creator-thread
-     */
-    void *inner_free_list;
-    void *head;
+  /*
+   * inner free list will only be
+   * accessed by creator-thread
+   */
+  void *inner_free_list;
+  void *head;
 
-    struct _InkThreadCache *pThreadCache;
+  struct _InkThreadCache *pThreadCache;
 
-    LINK(_InkChunkInfo, link);
+  LINK(_InkChunkInfo, link);
 
 #ifdef DEBUG
-    /*
-     * magic code for each item,
-     * it's used to check double-free issue.
-     */
-    unsigned char item_magic[0];
+  /*
+   * magic code for each item,
+   * it's used to check double-free issue.
+   */
+  unsigned char item_magic[0];
 #endif
-  } InkChunkInfo;
+} InkChunkInfo;
 
-  typedef struct _InkThreadCache
-  {
-    struct _InkFreeList *f;
+typedef struct _InkThreadCache {
+  struct _InkFreeList *f;
 
-    /* outer free list will be accessed by:
-     * - creator-thread, asa producer-thread
-     * - consumer-thread
-     * - neighbor-thread
-     */
-    InkAtomicList outer_free_list;
+  /* outer free list will be accessed by:
+   * - creator-thread, asa producer-thread
+   * - consumer-thread
+   * - neighbor-thread
+   */
+  InkAtomicList outer_free_list;
 
-    /* using for memory reclaim algorithm */
-    float nr_average;
-    uint32_t nr_total;
-    uint32_t nr_free;
-    uint32_t nr_min;
-    uint32_t nr_overage;
-    uint32_t nr_malloc;
+  /* using for memory reclaim algorithm */
+  float nr_average;
+  uint32_t nr_total;
+  uint32_t nr_free;
+  uint32_t nr_min;
+  uint32_t nr_overage;
+  uint32_t nr_malloc;
 
-    /* represent the status(state) of allocator: Malloc-ing(0) or Free-ing(1),
-     * I use it as an simple state machine - calculating the minimum of free
-     * memory only when the status change from Malloc-ing to Free-ing.
-     */
-    uint32_t status;
+  /* represent the status(state) of allocator: Malloc-ing(0) or Free-ing(1),
+   * I use it as an simple state machine - calculating the minimum of free
+   * memory only when the status change from Malloc-ing to Free-ing.
+   */
+  uint32_t status;
 
-    uint32_t nr_free_chunks;
-    DLL<InkChunkInfo> free_chunk_list;
+  uint32_t nr_free_chunks;
+  DLL<InkChunkInfo> free_chunk_list;
 
-    _InkThreadCache *prev, *next;
-  } InkThreadCache;
+  _InkThreadCache *prev, *next;
+} InkThreadCache;
 
-  typedef struct _InkFreeList
-  {
-    uint32_t thread_cache_idx;
+typedef struct _InkFreeList {
+  uint32_t thread_cache_idx;
 
-    uint32_t refcnt;
-    const char *name;
+  uint32_t refcnt;
+  const char *name;
 
-    uint32_t type_size;
-    uint32_t alignment;
+  uint32_t type_size;
+  uint32_t alignment;
 
-    /* number of elements in one chunk */
-    uint32_t chunk_size;
-    /* total byte size of one chuck */
-    uint32_t chunk_byte_size;
-    /* chunk_addr = (uintptr_t)ptr & chunk_addr_mask */
-    uintptr_t chunk_addr_mask;
+  /* number of elements in one chunk */
+  uint32_t chunk_size;
+  /* total byte size of one chuck */
+  uint32_t chunk_byte_size;
+  /* chunk_addr = (uintptr_t)ptr & chunk_addr_mask */
+  uintptr_t chunk_addr_mask;
 
-    uint32_t used;
-    uint32_t allocated;
-    uint32_t allocated_base;
-    uint32_t used_base;
-    uint32_t chunk_size_base;
+  uint32_t used;
+  uint32_t allocated;
+  uint32_t allocated_base;
+  uint32_t used_base;
+  uint32_t chunk_size_base;
 
-    uint32_t nr_thread_cache;
-    InkThreadCache *pThreadCache;
-    ink_mutex lock;
-  } InkFreeList, *PInkFreeList;
+  uint32_t nr_thread_cache;
+  InkThreadCache *pThreadCache;
+  ink_mutex lock;
+} InkFreeList, *PInkFreeList;
 
-  /* reclaimable freelist API */
-  void reclaimable_freelist_init(InkFreeList **fl, const char *name,
-                                 uint32_t type_size, uint32_t chunk_size,
-                                 uint32_t alignment);
-  void *reclaimable_freelist_new(InkFreeList *f);
-  void reclaimable_freelist_free(InkFreeList *f, void *item);
+/* reclaimable freelist API */
+void reclaimable_freelist_init(InkFreeList **fl, const char *name, uint32_t type_size, uint32_t chunk_size, uint32_t alignment);
+void *reclaimable_freelist_new(InkFreeList *f);
+void reclaimable_freelist_free(InkFreeList *f, void *item);
 #endif /* END OF TS_USE_RECLAIMABLE_FREELIST */
 #ifdef __cplusplus
 }

@@ -30,7 +30,7 @@
 
  ****************************************************************************/
 
-#if !defined (_ink_string_pp_h_)
+#if !defined(_ink_string_pp_h_)
 #define _ink_string_pp_h_
 #include <stdio.h>
 #include <strings.h>
@@ -61,7 +61,7 @@ _strlen(const char *src)
   const char *old_src = src;
   while (*src)
     src++;
-  return (int) (src - old_src);
+  return (int)(src - old_src);
 }
 
 /***********************************************************************
@@ -70,16 +70,13 @@ _strlen(const char *src)
  *                                                                     *
  ***********************************************************************/
 
-struct Str
-{
-  const char *str;              // string pointer
-  size_t len;                   // length of string (not counting NUL)
-  struct Str *next;             // next in list
-  struct Str *prev;             // prev in list
+struct Str {
+  const char *str;  // string pointer
+  size_t len;       // length of string (not counting NUL)
+  struct Str *next; // next in list
+  struct Str *prev; // prev in list
 
-    Str():str(NULL), len(0), next(NULL), prev(NULL)
-  {
-  }
+  Str() : str(NULL), len(0), next(NULL), prev(NULL) {}
   Str(char *s)
   {
     str = s;
@@ -95,7 +92,8 @@ struct Str
     prev = NULL;
   }
 
-  void clean()
+  void
+  clean()
   {
     str = NULL;
     len = 0;
@@ -103,8 +101,10 @@ struct Str
     prev = NULL;
   }
 
-  void dump(FILE * fp = stderr) {
-    fprintf(fp, "Str [\"%.*s\", len %d]\n", (int) len, str, (int) len);
+  void
+  dump(FILE *fp = stderr)
+  {
+    fprintf(fp, "Str [\"%.*s\", len %d]\n", (int)len, str, (int)len);
   }
 };
 
@@ -114,33 +114,32 @@ struct Str
  *                                                                     *
  ***********************************************************************/
 
-#define	STRLIST_BASE_HEAP_SIZE		128
-#define	STRLIST_OVERFLOW_HEAP_SIZE	1024
-#define	STRLIST_BASE_CELLS		5
+#define STRLIST_BASE_HEAP_SIZE 128
+#define STRLIST_OVERFLOW_HEAP_SIZE 1024
+#define STRLIST_BASE_CELLS 5
 
 struct StrListOverflow;
 
-struct StrList
-{
+struct StrList {
 public:
   int count;
   Str *head;
   Str *tail;
 
 public:
-    StrList(bool do_copy_when_adding_string = true);
-   ~StrList();
+  StrList(bool do_copy_when_adding_string = true);
+  ~StrList();
 
   Str *get_idx(int i);
-  void append(Str * str);
-  void prepend(Str * str);
-  void add_after(Str * prev, Str * str);
-  void detach(Str * str);
+  void append(Str *str);
+  void prepend(Str *str);
+  void add_after(Str *prev, Str *str);
+  void detach(Str *str);
 
   Str *new_cell(const char *s, int len_not_counting_nul);
   Str *append_string(const char *s, int len_not_counting_nul);
 
-  void dump(FILE * fp = stderr);
+  void dump(FILE *fp = stderr);
 
 private:
   void init();
@@ -162,15 +161,14 @@ private:
   bool copy_when_adding_string;
 };
 
-struct StrListOverflow
-{
+struct StrListOverflow {
   StrListOverflow *next;
   int heap_size;
   int heap_used;
 
   void init();
   void clean();
-  void *alloc(int size, StrListOverflow ** new_heap_ptr);
+  void *alloc(int size, StrListOverflow **new_heap_ptr);
   static StrListOverflow *create_heap(int user_size);
 };
 
@@ -194,17 +192,14 @@ StrList::clean()
   init();
 }
 
-inline
-StrList::StrList(bool do_copy_when_adding_string)
+inline StrList::StrList(bool do_copy_when_adding_string)
 {
   memset(base_heap, 0, sizeof(base_heap));
   copy_when_adding_string = do_copy_when_adding_string;
   init();
 }
 
-inline
-StrList::~
-StrList()
+inline StrList::~StrList()
 {
   clean();
 }
@@ -217,7 +212,7 @@ StrList::base_heap_alloc(int size)
   if (size <= (base_heap_size - base_heap_used)) {
     p = &(base_heap[base_heap_used]);
     base_heap_used += size;
-    return ((void *) p);
+    return ((void *)p);
   } else
     return (NULL);
 }
@@ -253,12 +248,13 @@ StrList::get_idx(int i)
 {
   Str *s;
 
-  for (s = head; ((s != NULL) && i); s = s->next, i--);
+  for (s = head; ((s != NULL) && i); s = s->next, i--)
+    ;
   return ((i == 0) ? s : NULL);
 }
 
 inline void
-StrList::append(Str * str)
+StrList::append(Str *str)
 {
   // do nothing if str is NULL to avoid pointer chasing below
   if (str == NULL)
@@ -276,7 +272,7 @@ StrList::append(Str * str)
 }
 
 inline void
-StrList::prepend(Str * str)
+StrList::prepend(Str *str)
 {
   if (str == NULL)
     return;
@@ -293,7 +289,7 @@ StrList::prepend(Str * str)
 }
 
 inline void
-StrList::add_after(Str * prev, Str * str)
+StrList::add_after(Str *prev, Str *str)
 {
   if (str == NULL || prev == NULL)
     return;
@@ -306,7 +302,7 @@ StrList::add_after(Str * prev, Str * str)
 }
 
 inline void
-StrList::detach(Str * str)
+StrList::detach(Str *str)
 {
   if (str == NULL)
     return;

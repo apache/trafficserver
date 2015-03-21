@@ -37,29 +37,28 @@ public:
 
   bool registerEndpoint(const char *, Continuation *);
   bool unregisterEndpoint(const char *, Continuation *);
-  bool advertiseProtocols(const unsigned char ** out, unsigned * len) const;
+  bool advertiseProtocols(const unsigned char **out, unsigned *len) const;
 
-  Continuation * findEndpoint(const unsigned char *, unsigned) const;
+  Continuation *findEndpoint(const unsigned char *, unsigned) const;
 
-  struct NextProtocolEndpoint
-  {
+  struct NextProtocolEndpoint {
     // NOTE: the protocol and endpoint are NOT copied. The caller is
     // responsible for ensuring their lifetime.
-    NextProtocolEndpoint(const char * protocol, Continuation * endpoint);
+    NextProtocolEndpoint(const char *protocol, Continuation *endpoint);
     ~NextProtocolEndpoint();
 
-    const char * protocol;
-    Continuation * endpoint;
+    const char *protocol;
+    Continuation *endpoint;
     LINK(NextProtocolEndpoint, link);
 
     typedef DLL<NextProtocolEndpoint> list_type;
   };
 
 private:
-  SSLNextProtocolSet(const SSLNextProtocolSet&); // disabled
-  SSLNextProtocolSet& operator=(const SSLNextProtocolSet&); // disabled
+  SSLNextProtocolSet(const SSLNextProtocolSet &);            // disabled
+  SSLNextProtocolSet &operator=(const SSLNextProtocolSet &); // disabled
 
-  mutable unsigned char * npn;
+  mutable unsigned char *npn;
   mutable size_t npnsz;
 
   NextProtocolEndpoint::list_type endpoints;

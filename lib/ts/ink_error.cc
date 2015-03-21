@@ -27,7 +27,7 @@
 #include "ink_stack_trace.h"
 
 #include <syslog.h>
-#include <signal.h>    /* MAGIC_EDITING_TAG */
+#include <signal.h> /* MAGIC_EDITING_TAG */
 
 static void ink_die_die_die() TS_NORETURN;
 
@@ -51,7 +51,7 @@ ink_die_die_die()
 
 */
 void
-ink_fatal_va(const char * fmt, va_list ap)
+ink_fatal_va(const char *fmt, va_list ap)
 {
   char msg[1024];
   const size_t len = sizeof("FATAL: ") - 1;
@@ -87,11 +87,11 @@ ink_pfatal(const char *message_format, ...)
   char extended_format[4096], message[4096];
 
   int errsav = errno;
-  const char * errno_string = strerror(errsav);
+  const char *errno_string = strerror(errsav);
 
   va_start(ap, message_format);
-  snprintf(extended_format, sizeof(extended_format) - 1, "FATAL: %s <last errno = %d (%s)>",
-           message_format, errsav, (errno_string == NULL ? "unknown" : errno_string));
+  snprintf(extended_format, sizeof(extended_format) - 1, "FATAL: %s <last errno = %d (%s)>", message_format, errsav,
+           (errno_string == NULL ? "unknown" : errno_string));
   extended_format[sizeof(extended_format) - 1] = 0;
   vsnprintf(message, sizeof(message) - 1, extended_format, ap);
   message[sizeof(message) - 1] = 0;
@@ -137,8 +137,8 @@ ink_pwarning(const char *message_format, ...)
 
   va_start(ap, message_format);
   errno_string = strerror(errno);
-  snprintf(extended_format, sizeof(extended_format) - 1, "WARNING: %s <last errno = %d (%s)>",
-           message_format, errno, (errno_string == NULL ? "unknown" : errno_string));
+  snprintf(extended_format, sizeof(extended_format) - 1, "WARNING: %s <last errno = %d (%s)>", message_format, errno,
+           (errno_string == NULL ? "unknown" : errno_string));
   extended_format[sizeof(extended_format) - 1] = 0;
   vsnprintf(message, sizeof(message) - 1, extended_format, ap);
   message[sizeof(message) - 1] = 0;

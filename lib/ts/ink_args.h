@@ -44,23 +44,22 @@ Process arguments
 struct ArgumentDescription;
 class AppVersionInfo;
 
-typedef void ArgumentFunction(const ArgumentDescription * argument_descriptions, unsigned n_argument_descriptions, const char *arg);
+typedef void ArgumentFunction(const ArgumentDescription *argument_descriptions, unsigned n_argument_descriptions, const char *arg);
 
-struct ArgumentDescription
-{
+struct ArgumentDescription {
   const char *name;
   char key; // set to '-' if no single character key.
-  /*
-     "I" = integer
-     "L" = int64_t
-     "D" = double (floating point)
-     "T" = toggle
-     "F" = set flag to TRUE (default is FALSE)
-     "f" = set flag to FALSE (default is TRUE)
-     "T" = toggle
-     "S80" = read string, 80 chars max
-     "S*" = read unbounded string, allocating
-   */
+            /*
+               "I" = integer
+               "L" = int64_t
+               "D" = double (floating point)
+               "T" = toggle
+               "F" = set flag to TRUE (default is FALSE)
+               "f" = set flag to FALSE (default is TRUE)
+               "T" = toggle
+               "S80" = read string, 80 chars max
+               "S*" = read unbounded string, allocating
+             */
   const char *description;
   const char *type;
   void *location;
@@ -68,27 +67,33 @@ struct ArgumentDescription
   ArgumentFunction *pfn;
 };
 
-#define VERSION_ARGUMENT_DESCRIPTION() {"version", 'V', "Print version string", NULL, NULL, NULL, NULL}
-#define HELP_ARGUMENT_DESCRIPTION() {"help", 'h', "Print usage information", NULL, NULL, NULL, usage}
+#define VERSION_ARGUMENT_DESCRIPTION()                             \
+  {                                                                \
+    "version", 'V', "Print version string", NULL, NULL, NULL, NULL \
+  }
+#define HELP_ARGUMENT_DESCRIPTION()                                 \
+  {                                                                 \
+    "help", 'h', "Print usage information", NULL, NULL, NULL, usage \
+  }
 
 /* Global Data
 */
-extern const char *file_arguments[];  // exported by process_args()
+extern const char *file_arguments[]; // exported by process_args()
 extern unsigned n_file_arguments;    // exported by process_args()
-extern const char *program_name;      // exported by process_args()
+extern const char *program_name;     // exported by process_args()
 
 /* Print out arguments and values
 */
-void show_argument_configuration(const ArgumentDescription * argument_descriptions, unsigned n_argument_descriptions);
+void show_argument_configuration(const ArgumentDescription *argument_descriptions, unsigned n_argument_descriptions);
 
-void usage(const ArgumentDescription * argument_descriptions, unsigned n_argument_descriptions, const char *arg_unused) TS_NORETURN;
+void usage(const ArgumentDescription *argument_descriptions, unsigned n_argument_descriptions, const char *arg_unused) TS_NORETURN;
 
 /* Process all arguments
 */
-void process_args(const AppVersionInfo * appinfo, const ArgumentDescription * argument_descriptions,
-                  unsigned n_argument_descriptions, const char **argv, const char *usage_string = 0);
+void process_args(const AppVersionInfo *appinfo, const ArgumentDescription *argument_descriptions, unsigned n_argument_descriptions,
+                  const char **argv, const char *usage_string = 0);
 
-bool process_args_ex(const AppVersionInfo * appinfo, const ArgumentDescription * argument_descriptions,
-                  unsigned n_argument_descriptions, const char **argv);
+bool process_args_ex(const AppVersionInfo *appinfo, const ArgumentDescription *argument_descriptions,
+                     unsigned n_argument_descriptions, const char **argv);
 
 #endif /*_INK_ARGS_H*/

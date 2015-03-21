@@ -42,7 +42,7 @@ UDPTestInit()
   ip = inet_addr("209.131.48.79");
   readMutexp = TSMutexCreate();
   cont = TSContCreate(&handle_callbacks, readMutexp);
-//      INKUDPBind(cont, INADDR_ANY,1813);
+  //      INKUDPBind(cont, INADDR_ANY,1813);
   INKUDPBind(cont, ip, 1813);
 }
 
@@ -78,17 +78,16 @@ handle_callbacks(TSCont cont, TSEvent event, void *e)
   fp = fopen("UDPServer.log", "a+");
 
   switch (event) {
-
   case TS_NET_EVENT_DATAGRAM_OPEN:
     fprintf(fp, "open event called\n");
-    UDPConn = (INKUDPConn) e;
+    UDPConn = (INKUDPConn)e;
     INKUDPRecvFrom(cont, UDPConn);
     break;
 
 
   case TS_NET_EVENT_DATAGRAM_READ_READY:
     fprintf(fp, "read ready event called\n");
-    packetQueue = (INKUDPacketQueue) e;
+    packetQueue = (INKUDPacketQueue)e;
     total_len = 0;
     while ((packet = INKUDPPacketGet(packetQueue)) != NULL) {
       recvBuffBlock = INKUDPPacketBufferBlockGet(packet);
@@ -101,7 +100,7 @@ handle_callbacks(TSCont cont, TSEvent event, void *e)
         fprintf(fp, "Received message is\n");
         printN(buf, avail);
         fprintf(fp, "message length = %i\n", avail);
-        memcpy((char *) &recv_buffer + total_len, buf, avail);
+        memcpy((char *)&recv_buffer + total_len, buf, avail);
         TSIOBufferReaderConsume(reader, avail);
         total_len += avail;
       }
@@ -111,7 +110,7 @@ handle_callbacks(TSCont cont, TSEvent event, void *e)
       port = INKUDPPacketFromPortGet(packet);
       fprintf(fp, "port = %d\n", port);
 
-      UDPConn = (INKUDPConn) INKUDPPacketConnGet(packet);
+      UDPConn = (INKUDPConn)INKUDPPacketConnGet(packet);
       INKUDPSendTo(cont, UDPConn, ip, port, ACK, strlen(ACK));
 
       /* INKqa10255: we'd free the memory  - jinsheng */
@@ -124,7 +123,6 @@ handle_callbacks(TSCont cont, TSEvent event, void *e)
 
   case TS_NET_EVENT_DATAGRAM_WRITE_COMPLETE:
     break;
-
   }
   fclose(fp);
   return TS_EVENT_CONTINUE;

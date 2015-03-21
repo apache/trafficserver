@@ -23,24 +23,27 @@
 // Count of fields (not including SSL_HEADERS_FIELD_NONE).
 #define NUMFIELDS (SSL_HEADERS_FIELD_MAX - 1)
 
-static const struct _f { const char * name; ExpansionField field; } fields[] = {
-  { "certificate", SSL_HEADERS_FIELD_CERTIFICATE },
-  { "subject", SSL_HEADERS_FIELD_SUBJECT },
-  { "issuer", SSL_HEADERS_FIELD_ISSUER },
-  { "serial", SSL_HEADERS_FIELD_SERIAL },
-  { "signature", SSL_HEADERS_FIELD_SIGNATURE },
-  { "notbefore", SSL_HEADERS_FIELD_NOTBEFORE },
-  { "notafter", SSL_HEADERS_FIELD_NOTAFTER },
+static const struct _f {
+  const char *name;
+  ExpansionField field;
+} fields[] = {
+  {"certificate", SSL_HEADERS_FIELD_CERTIFICATE},
+  {"subject", SSL_HEADERS_FIELD_SUBJECT},
+  {"issuer", SSL_HEADERS_FIELD_ISSUER},
+  {"serial", SSL_HEADERS_FIELD_SERIAL},
+  {"signature", SSL_HEADERS_FIELD_SIGNATURE},
+  {"notbefore", SSL_HEADERS_FIELD_NOTBEFORE},
+  {"notafter", SSL_HEADERS_FIELD_NOTAFTER},
 };
 
 // Static assert to guarantee the fields table is current.
-extern char assert_fields_are_populated[((sizeof(fields)/sizeof(fields[0])) - NUMFIELDS) == 0 ? 0 : -1];
+extern char assert_fields_are_populated[((sizeof(fields) / sizeof(fields[0])) - NUMFIELDS) == 0 ? 0 : -1];
 
 bool
-SslHdrParseExpansion(const char * spec, SslHdrExpansion& exp)
+SslHdrParseExpansion(const char *spec, SslHdrExpansion &exp)
 {
-  const char * sep;
-  const char * selector;
+  const char *sep;
+  const char *selector;
 
   // First, split on '=' to separate the header name from the SSL expansion.
   sep = strchr(spec, '=');

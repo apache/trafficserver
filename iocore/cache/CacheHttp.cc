@@ -34,8 +34,7 @@ static vec_info default_vec_info;
 #ifdef HTTP_CACHE
 static CacheHTTPInfo default_http_info;
 
-CacheHTTPInfoVector::CacheHTTPInfoVector()
-:magic(NULL), data(&default_vec_info, 4), xcount(0)
+CacheHTTPInfoVector::CacheHTTPInfoVector() : magic(NULL), data(&default_vec_info, 4), xcount(0)
 {
 }
 
@@ -57,7 +56,7 @@ CacheHTTPInfoVector::~CacheHTTPInfoVector()
   -------------------------------------------------------------------------*/
 
 int
-CacheHTTPInfoVector::insert(CacheHTTPInfo * info, int index)
+CacheHTTPInfoVector::insert(CacheHTTPInfo *info, int index)
 {
   if (index == CACHE_ALT_INDEX_DEFAULT)
     index = xcount++;
@@ -71,7 +70,7 @@ CacheHTTPInfoVector::insert(CacheHTTPInfo * info, int index)
 
 
 void
-CacheHTTPInfoVector::detach(int idx, CacheHTTPInfo * r)
+CacheHTTPInfoVector::detach(int idx, CacheHTTPInfo *r)
 {
   int i;
 
@@ -153,8 +152,7 @@ CacheHTTPInfoVector::print(char *buffer, size_t buf_size, bool temps)
       }
 
       if (temps || !(data[i].alternate.object_key_get() == zero_key)) {
-        snprintf(p, buf_size, "[%d %s]", data[i].alternate.id_get(),
-                     CacheKey(data[i].alternate.object_key_get()).toHexStr(buf));
+        snprintf(p, buf_size, "[%d %s]", data[i].alternate.id_get(), CacheKey(data[i].alternate.object_key_get()).toHexStr(buf));
         tmp = strlen(p);
         p += tmp;
         buf_size -= tmp;
@@ -186,7 +184,7 @@ CacheHTTPInfoVector::marshal(char *buf, int length)
   char *start = buf;
   int count = 0;
 
-  ink_assert(!(((intptr_t) buf) & 3));      // buf must be aligned
+  ink_assert(!(((intptr_t)buf) & 3)); // buf must be aligned
 
   for (int i = 0; i < xcount; i++) {
     int tmp = data[i].alternate.marshal(buf, length);
@@ -202,37 +200,36 @@ CacheHTTPInfoVector::marshal(char *buf, int length)
 }
 
 int
-CacheHTTPInfoVector::unmarshal(const char *buf, int length, RefCountObj * block_ptr)
+CacheHTTPInfoVector::unmarshal(const char *buf, int length, RefCountObj *block_ptr)
 {
-  ink_assert(!(((intptr_t) buf) & 3));      // buf must be aligned
+  ink_assert(!(((intptr_t)buf) & 3)); // buf must be aligned
 
   const char *start = buf;
   CacheHTTPInfo info;
   xcount = 0;
 
-  while (length - (buf - start) > (int) sizeof(HTTPCacheAlt)) {
-
-    int tmp = HTTPInfo::unmarshal((char *) buf, length - (buf - start), block_ptr);
+  while (length - (buf - start) > (int)sizeof(HTTPCacheAlt)) {
+    int tmp = HTTPInfo::unmarshal((char *)buf, length - (buf - start), block_ptr);
     if (tmp < 0) {
       return -1;
     }
-    info.m_alt = (HTTPCacheAlt *) buf;
+    info.m_alt = (HTTPCacheAlt *)buf;
     buf += tmp;
 
     data(xcount).alternate = info;
     xcount++;
   }
 
-  return ((caddr_t) buf - (caddr_t) start);
+  return ((caddr_t)buf - (caddr_t)start);
 }
 
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 uint32_t
-CacheHTTPInfoVector::get_handles(const char *buf, int length, RefCountObj * block_ptr)
+CacheHTTPInfoVector::get_handles(const char *buf, int length, RefCountObj *block_ptr)
 {
-  ink_assert(!(((intptr_t) buf) & 3));      // buf must be aligned
+  ink_assert(!(((intptr_t)buf) & 3)); // buf must be aligned
 
   const char *start = buf;
   CacheHTTPInfo info;
@@ -240,12 +237,11 @@ CacheHTTPInfoVector::get_handles(const char *buf, int length, RefCountObj * bloc
 
   vector_buf = block_ptr;
 
-  while (length - (buf - start) > (int) sizeof(HTTPCacheAlt)) {
-
-    int tmp = info.get_handle((char *) buf, length - (buf - start));
+  while (length - (buf - start) > (int)sizeof(HTTPCacheAlt)) {
+    int tmp = info.get_handle((char *)buf, length - (buf - start));
     if (tmp < 0) {
       ink_assert(!"CacheHTTPInfoVector::unmarshal get_handle() failed");
-      return (uint32_t) -1;
+      return (uint32_t)-1;
     }
     buf += tmp;
 
@@ -253,13 +249,12 @@ CacheHTTPInfoVector::get_handles(const char *buf, int length, RefCountObj * bloc
     xcount++;
   }
 
-  return ((caddr_t) buf - (caddr_t) start);
+  return ((caddr_t)buf - (caddr_t)start);
 }
 
-#else //HTTP_CACHE
+#else // HTTP_CACHE
 
-CacheHTTPInfoVector::CacheHTTPInfoVector()
-:data(&default_vec_info, 4), xcount(0)
+CacheHTTPInfoVector::CacheHTTPInfoVector() : data(&default_vec_info, 4), xcount(0)
 {
 }
 
@@ -274,7 +269,7 @@ CacheHTTPInfoVector::~CacheHTTPInfoVector()
   -------------------------------------------------------------------------*/
 
 int
-CacheHTTPInfoVector::insert(CacheHTTPInfo */* info ATS_UNUSED */, int index)
+CacheHTTPInfoVector::insert(CacheHTTPInfo * /* info ATS_UNUSED */, int index)
 {
   ink_assert(0);
   return index;
@@ -285,7 +280,7 @@ CacheHTTPInfoVector::insert(CacheHTTPInfo */* info ATS_UNUSED */, int index)
 
 
 void
-CacheHTTPInfoVector::detach(int /* idx ATS_UNUSED */, CacheHTTPInfo */* r ATS_UNUSED */)
+CacheHTTPInfoVector::detach(int /* idx ATS_UNUSED */, CacheHTTPInfo * /* r ATS_UNUSED */)
 {
   ink_assert(0);
 }
@@ -311,7 +306,7 @@ CacheHTTPInfoVector::clear(bool /* destroy ATS_UNUSED */)
   -------------------------------------------------------------------------*/
 
 void
-CacheHTTPInfoVector::print(char */* buffer ATS_UNUSED */, size_t /* buf_size ATS_UNUSED */, bool /* temps ATS_UNUSED */)
+CacheHTTPInfoVector::print(char * /* buffer ATS_UNUSED */, size_t /* buf_size ATS_UNUSED */, bool /* temps ATS_UNUSED */)
 {
   ink_assert(0);
 }
@@ -329,14 +324,15 @@ CacheHTTPInfoVector::marshal_length()
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 int
-CacheHTTPInfoVector::marshal(char */* buf ATS_UNUSED */, int length)
+CacheHTTPInfoVector::marshal(char * /* buf ATS_UNUSED */, int length)
 {
   ink_assert(0);
   return length;
 }
 
 int
-CacheHTTPInfoVector::unmarshal(const char */* buf ATS_UNUSED */, int /* length ATS_UNUSED */, RefCountObj */* block_ptr ATS_UNUSED */)
+CacheHTTPInfoVector::unmarshal(const char * /* buf ATS_UNUSED */, int /* length ATS_UNUSED */,
+                               RefCountObj * /* block_ptr ATS_UNUSED */)
 {
   ink_assert(0);
   return 0;
@@ -346,10 +342,11 @@ CacheHTTPInfoVector::unmarshal(const char */* buf ATS_UNUSED */, int /* length A
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 uint32_t
-CacheHTTPInfoVector::get_handles(const char */* buf ATS_UNUSED */, int /* length ATS_UNUSED */, RefCountObj */* block_ptr ATS_UNUSED */)
+CacheHTTPInfoVector::get_handles(const char * /* buf ATS_UNUSED */, int /* length ATS_UNUSED */,
+                                 RefCountObj * /* block_ptr ATS_UNUSED */)
 {
   ink_assert(0);
   return 0;
 }
 
-#endif //HTTP_CACHE
+#endif // HTTP_CACHE

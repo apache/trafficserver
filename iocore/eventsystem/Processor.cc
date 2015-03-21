@@ -51,7 +51,7 @@
 
 Processor::Processor()
 {
-}                               /* End Processor::Processor() */
+} /* End Processor::Processor() */
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -64,7 +64,7 @@ Processor::Processor()
 
 Processor::~Processor()
 {
-}                               /* End Processor::~Processor() */
+} /* End Processor::~Processor() */
 
 //////////////////////////////////////////////////////////////////
 //
@@ -75,7 +75,7 @@ Thread *
 Processor::create_thread(int /* thread_index */)
 {
   ink_release_assert(!"Processor::create_thread -- no default implementation");
-  return ((Thread *) 0);
+  return ((Thread *)0);
 }
 
 //////////////////////////////////////////////////////////////////

@@ -46,40 +46,40 @@ typedef int8_t MgmtByte;
 typedef float MgmtFloat;
 typedef char *MgmtString;
 
-typedef enum
-{
+typedef enum {
   MGMT_INVALID = -1,
   MGMT_INT = 0,
   MGMT_FLOAT = 1,
   MGMT_STRING = 2,
   MGMT_COUNTER = 3,
-  MGMT_TYPE_MAX = 4
+  MGMT_TYPE_MAX = 4,
 } MgmtType;
 
 /*
  * MgmtCallback
  *   Management Callback functions.
  */
-typedef void *(*MgmtCallback) (void *opaque_cb_data, char *data_raw, int data_len);
+typedef void *(*MgmtCallback)(void *opaque_cb_data, char *data_raw, int data_len);
 
-#define MGMT_SEMID_DEFAULT            11452
-#define MGMT_DB_FILENAME              "mgmt_db"
-#define LM_CONNECTION_SERVER          "processerver.sock"
+#define MGMT_SEMID_DEFAULT 11452
+#define MGMT_DB_FILENAME "mgmt_db"
+#define LM_CONNECTION_SERVER "processerver.sock"
 
 /* Structs used in Average Statistics calculations */
-struct StatTwoIntSamples
-{
+struct StatTwoIntSamples {
   const char *lm_record_name;
   ink_hrtime previous_time;
   ink_hrtime current_time;
   MgmtInt previous_value;
   MgmtInt current_value;
 
-  MgmtInt diff_value()
+  MgmtInt
+  diff_value()
   {
     return (current_value - previous_value);
   }
-  ink_hrtime diff_time()
+  ink_hrtime
+  diff_time()
   {
     return (current_time - previous_time);
   }

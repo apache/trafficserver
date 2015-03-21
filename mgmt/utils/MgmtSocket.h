@@ -52,7 +52,7 @@ int mgmt_accept(int s, struct sockaddr *addr, int *addrlen);
 // mgmt_fopen
 //-------------------------------------------------------------------------
 
-FILE * mgmt_fopen(const char *filename, const char *mode);
+FILE *mgmt_fopen(const char *filename, const char *mode);
 
 //-------------------------------------------------------------------------
 // mgmt_open
@@ -70,7 +70,7 @@ int mgmt_open_mode(const char *path, int oflag, mode_t mode);
 // mgmt_select
 //-------------------------------------------------------------------------
 
-int mgmt_select(int nfds, fd_set * readfds, fd_set * writefds, fd_set * errorfds, struct timeval *timeout);
+int mgmt_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds, struct timeval *timeout);
 
 //-------------------------------------------------------------------------
 // mgmt_sendto
@@ -98,6 +98,6 @@ int mgmt_read_timeout(int fd, int sec, int usec);
 bool mgmt_has_peereid(void);
 
 // Get the Unix domain peer credentials.
-int mgmt_get_peereid(int fd, uid_t * euid, gid_t * egid);
+int mgmt_get_peereid(int fd, uid_t *euid, gid_t *egid);
 
 #endif // _MGMT_SOCKET_H_

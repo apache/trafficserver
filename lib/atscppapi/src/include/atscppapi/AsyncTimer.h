@@ -30,8 +30,8 @@
 #include <atscppapi/Request.h>
 #include <atscppapi/Response.h>
 
-namespace atscppapi {
-
+namespace atscppapi
+{
 // forward declarations
 struct AsyncTimerState;
 
@@ -45,10 +45,13 @@ struct AsyncTimerState;
  *
  * See example async_timer for sample usage.
  */
-class AsyncTimer : public AsyncProvider {
+class AsyncTimer : public AsyncProvider
+{
 public:
-
-  enum Type { TYPE_ONE_OFF = 0, TYPE_PERIODIC };
+  enum Type {
+    TYPE_ONE_OFF = 0,
+    TYPE_PERIODIC,
+  };
 
   /**
    * Constructor.

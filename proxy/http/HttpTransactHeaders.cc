@@ -43,10 +43,7 @@ HttpTransactHeaders::is_method_cache_lookupable(int method)
 {
   // responses to GET, HEAD, and POST are cacheable
   // URL's requested in DELETE and PUT are looked up to remove cached copies
-  return (method == HTTP_WKSIDX_GET ||
-          method == HTTP_WKSIDX_HEAD ||
-          method == HTTP_WKSIDX_POST ||
-          method == HTTP_WKSIDX_DELETE ||
+  return (method == HTTP_WKSIDX_GET || method == HTTP_WKSIDX_HEAD || method == HTTP_WKSIDX_POST || method == HTTP_WKSIDX_DELETE ||
           method == HTTP_WKSIDX_PUT || method == HTTP_WKSIDX_PURGE || method == HTTP_WKSIDX_PUSH);
 }
 
@@ -71,8 +68,7 @@ HttpTransactHeaders::is_this_method_supported(int the_scheme, int the_method)
     return true;
   } else if (the_scheme == URL_WKSIDX_HTTP || the_scheme == URL_WKSIDX_HTTPS) {
     return is_this_http_method_supported(the_method);
-  } else if ((the_scheme == URL_WKSIDX_WS || the_scheme == URL_WKSIDX_WSS) &&
-            the_method == HTTP_WKSIDX_GET) {
+  } else if ((the_scheme == URL_WKSIDX_WS || the_scheme == URL_WKSIDX_WSS) && the_method == HTTP_WKSIDX_GET) {
     return true;
   } else
     return false;
@@ -84,17 +80,8 @@ HttpTransactHeaders::insert_supported_methods_in_response(HTTPHdr *response, int
 {
   int method_output_lengths[32];
   const char *methods[] = {
-    HTTP_METHOD_CONNECT,
-    HTTP_METHOD_DELETE,
-    HTTP_METHOD_GET,
-    HTTP_METHOD_HEAD,
-    HTTP_METHOD_ICP_QUERY,
-    HTTP_METHOD_OPTIONS,
-    HTTP_METHOD_POST,
-    HTTP_METHOD_PURGE,
-    HTTP_METHOD_PUT,
-    HTTP_METHOD_PUSH,
-    HTTP_METHOD_TRACE,
+    HTTP_METHOD_CONNECT, HTTP_METHOD_DELETE, HTTP_METHOD_GET, HTTP_METHOD_HEAD, HTTP_METHOD_ICP_QUERY, HTTP_METHOD_OPTIONS,
+    HTTP_METHOD_POST,    HTTP_METHOD_PURGE,  HTTP_METHOD_PUT, HTTP_METHOD_PUSH, HTTP_METHOD_TRACE,
   };
   char inline_buffer[64];
   char *alloced_buffer, *value_buffer;
@@ -120,7 +107,7 @@ HttpTransactHeaders::insert_supported_methods_in_response(HTTPHdr *response, int
       method_output_lengths[i] = hdrtoken_wks_to_length(method_wks);
       bytes += method_output_lengths[i];
       if (num_methods_supported > 1)
-        bytes += 2;             // +2 if need leading ", "
+        bytes += 2; // +2 if need leading ", "
     } else {
       method_output_lengths[i] = 0;
     }
@@ -166,9 +153,8 @@ HttpTransactHeaders::insert_supported_methods_in_response(HTTPHdr *response, int
 
 
 void
-HttpTransactHeaders::build_base_response(HTTPHdr *outgoing_response,
-                                         HTTPStatus status,
-                                         const char *reason_phrase, int reason_phrase_len, ink_time_t date)
+HttpTransactHeaders::build_base_response(HTTPHdr *outgoing_response, HTTPStatus status, const char *reason_phrase,
+                                         int reason_phrase_len, ink_time_t date)
 {
   if (!outgoing_response->valid()) {
     outgoing_response->create(HTTP_TYPE_RESPONSE);
@@ -188,8 +174,7 @@ HttpTransactHeaders::build_base_response(HTTPHdr *outgoing_response,
 // If header Date: is not present or invalid in src_hdr,
 // then the given date will be used.
 void
-HttpTransactHeaders::copy_header_fields(HTTPHdr *src_hdr,
-                                        HTTPHdr *new_hdr, bool retain_proxy_auth_hdrs, ink_time_t date)
+HttpTransactHeaders::copy_header_fields(HTTPHdr *src_hdr, HTTPHdr *new_hdr, bool retain_proxy_auth_hdrs, ink_time_t date)
 {
   ink_assert(src_hdr->valid());
   ink_assert(!new_hdr->valid());
@@ -252,7 +237,8 @@ HttpTransactHeaders::convert_request(HTTPVersion outgoing_ver, HTTPHdr *outgoing
     // because they will all need to be removed anyway.
     convert_to_0_9_request_header(outgoing_request);
   } else {
-    Debug("http_trans", "[HttpTransactHeaders::convert_request]" "Unsupported Version - passing through");
+    Debug("http_trans", "[HttpTransactHeaders::convert_request]"
+                        "Unsupported Version - passing through");
   }
 }
 
@@ -270,7 +256,8 @@ HttpTransactHeaders::convert_response(HTTPVersion outgoing_ver, HTTPHdr *outgoin
     // because they will all need to be removed anyway.
     convert_to_0_9_response_header(outgoing_response);
   } else {
-    Debug("http_trans", "[HttpTransactHeaders::convert_response]" "Unsupported Version - passing through");
+    Debug("http_trans", "[HttpTransactHeaders::convert_response]"
+                        "Unsupported Version - passing through");
   }
 }
 
@@ -310,8 +297,8 @@ HttpTransactHeaders::convert_to_1_0_request_header(HTTPHdr *outgoing_request)
   }
   // We do not currently support chunked transfer encoding,
   // so specify that response should use identity transfer coding.
-  //outgoing_request->value_insert(MIME_FIELD_TE, "identity;q=1.0");
-  //outgoing_request->value_insert(MIME_FIELD_TE, "chunked;q=0.0");
+  // outgoing_request->value_insert(MIME_FIELD_TE, "identity;q=1.0");
+  // outgoing_request->value_insert(MIME_FIELD_TE, "chunked;q=0.0");
 }
 
 
@@ -320,19 +307,17 @@ HttpTransactHeaders::convert_to_1_0_request_header(HTTPHdr *outgoing_request)
 void
 HttpTransactHeaders::convert_to_1_1_request_header(HTTPHdr *outgoing_request)
 {
-
   // These are required
   ink_assert(outgoing_request->url_get()->valid());
   ink_assert(outgoing_request->version_get() == HTTPVersion(1, 1));
 
-  if (outgoing_request->get_cooked_pragma_no_cache() &&
-      !(outgoing_request->get_cooked_cc_mask() & MIME_COOKED_MASK_CC_NO_CACHE)) {
+  if (outgoing_request->get_cooked_pragma_no_cache() && !(outgoing_request->get_cooked_cc_mask() & MIME_COOKED_MASK_CC_NO_CACHE)) {
     outgoing_request->value_append(MIME_FIELD_CACHE_CONTROL, MIME_LEN_CACHE_CONTROL, "no-cache", 8, true);
   }
   // We do not currently support chunked transfer encoding,
   // so specify that response should use identity transfer coding.
-  //outgoing_request->value_insert(MIME_FIELD_TE, "identity;q=1.0");
-  //outgoing_request->value_insert(MIME_FIELD_TE, "chunked;q=0.0");
+  // outgoing_request->value_insert(MIME_FIELD_TE, "identity;q=1.0");
+  // outgoing_request->value_insert(MIME_FIELD_TE, "chunked;q=0.0");
 }
 
 
@@ -356,9 +341,9 @@ HttpTransactHeaders::convert_to_0_9_response_header(HTTPHdr * /* outgoing_respon
 void
 HttpTransactHeaders::convert_to_1_0_response_header(HTTPHdr *outgoing_response)
 {
-//     // These are required
-//     ink_assert(outgoing_response->status_get());
-//     ink_assert(outgoing_response->reason_get());
+  //     // These are required
+  //     ink_assert(outgoing_response->status_get());
+  //     ink_assert(outgoing_response->reason_get());
 
   // Set HTTP version to 1.0
   outgoing_response->version_set(HTTPVersion(1, 0));
@@ -378,7 +363,7 @@ HttpTransactHeaders::convert_to_1_1_response_header(HTTPHdr *outgoing_response)
   ink_assert(outgoing_response->status_get());
 
   // Set HTTP version to 1.1
-//    ink_assert(outgoing_response->version_get() == HTTPVersion (1, 1));
+  //    ink_assert(outgoing_response->version_get() == HTTPVersion (1, 1));
   outgoing_response->version_set(HTTPVersion(1, 1));
 }
 
@@ -395,9 +380,8 @@ HttpTransactHeaders::convert_to_1_1_response_header(HTTPHdr *outgoing_response)
 //
 ///////////////////////////////////////////////////////////////////////////////
 ink_time_t
-HttpTransactHeaders::calculate_document_age(ink_time_t request_time,
-                                            ink_time_t response_time,
-                                            HTTPHdr *base_response, ink_time_t base_response_date, ink_time_t now)
+HttpTransactHeaders::calculate_document_age(ink_time_t request_time, ink_time_t response_time, HTTPHdr *base_response,
+                                            ink_time_t base_response_date, ink_time_t now)
 {
   ink_time_t age_value = base_response->get_age();
   ink_time_t date_value = 0;
@@ -425,7 +409,7 @@ HttpTransactHeaders::calculate_document_age(ink_time_t request_time,
   ink_assert(now_value >= response_time);
 
   if (date_value > 0) {
-    apparent_age = max((time_t) 0, (response_time - date_value));
+    apparent_age = max((time_t)0, (response_time - date_value));
   }
   if (age_value < 0) {
     current_age = -1; // Overflow from Age: header
@@ -468,25 +452,20 @@ HttpTransactHeaders::does_server_allow_response_to_be_stored(HTTPHdr *resp)
 bool
 HttpTransactHeaders::downgrade_request(bool *origin_server_keep_alive, HTTPHdr *outgoing_request)
 {
-  //HTTPVersion ver;
+  // HTTPVersion ver;
   /* First try turning keep_alive off */
   if (*origin_server_keep_alive) {
-
     *origin_server_keep_alive = false;
-    //ver.set(outgoing_request->version_get());
-
+    // ver.set(outgoing_request->version_get());
   }
 
   if (outgoing_request->version_get() == HTTPVersion(1, 1)) {
-
-    //ver.set (HTTPVersion (1, 0));
+    // ver.set (HTTPVersion (1, 0));
     convert_to_1_0_request_header(outgoing_request);
 
     // bz48199: only GET requests can be downgraded to HTTP/0.9
-  } else if (outgoing_request->version_get() == HTTPVersion(1, 0) &&
-             outgoing_request->method_get_wksidx() == HTTP_WKSIDX_GET) {
-
-    //ver.set (HTTPVersion (0, 9));
+  } else if (outgoing_request->version_get() == HTTPVersion(1, 0) && outgoing_request->method_get_wksidx() == HTTP_WKSIDX_GET) {
+    // ver.set (HTTPVersion (0, 9));
     convert_to_0_9_request_header(outgoing_request);
 
   } else {
@@ -497,9 +476,7 @@ HttpTransactHeaders::downgrade_request(bool *origin_server_keep_alive, HTTPHdr *
 }
 
 void
-HttpTransactHeaders::generate_and_set_squid_codes(HTTPHdr *header,
-                                                 char *via_string,
-                                                 HttpTransact::SquidLogInfo *squid_codes)
+HttpTransactHeaders::generate_and_set_squid_codes(HTTPHdr *header, char *via_string, HttpTransact::SquidLogInfo *squid_codes)
 {
   SquidLogCode log_code;
   SquidHierarchyCode hier_code;
@@ -550,8 +527,7 @@ HttpTransactHeaders::generate_and_set_squid_codes(HTTPHdr *header,
 
   else {
     if (via_string[VIA_CLIENT_REQUEST] == VIA_CLIENT_IMS) {
-      if ((via_string[VIA_CACHE_RESULT] == VIA_IN_CACHE_FRESH) ||
-          (via_string[VIA_CACHE_RESULT] == VIA_IN_RAM_CACHE_FRESH)) {
+      if ((via_string[VIA_CACHE_RESULT] == VIA_IN_CACHE_FRESH) || (via_string[VIA_CACHE_RESULT] == VIA_IN_RAM_CACHE_FRESH)) {
         log_code = SQUID_LOG_TCP_IMS_HIT;
       } else {
         if (via_string[VIA_SERVER_RESULT] == VIA_SERVER_NOT_MODIFIED) {
@@ -675,14 +651,14 @@ HttpTransactHeaders::insert_warning_header(HttpConfigParams *http_config_param, 
 
   char *warning_text = (char *)alloca(bufsize);
 
-  len = snprintf(warning_text, bufsize, "%3d %s %.*s", code, http_config_param->proxy_response_via_string, warn_text_len, warn_text);
+  len =
+    snprintf(warning_text, bufsize, "%3d %s %.*s", code, http_config_param->proxy_response_via_string, warn_text_len, warn_text);
   header->value_set(MIME_FIELD_WARNING, MIME_LEN_WARNING, warning_text, len);
 }
 
 
 void
-HttpTransactHeaders::insert_time_and_age_headers_in_response(ink_time_t request_sent_time,
-                                                             ink_time_t response_received_time,
+HttpTransactHeaders::insert_time_and_age_headers_in_response(ink_time_t request_sent_time, ink_time_t response_received_time,
                                                              ink_time_t now, HTTPHdr *base, HTTPHdr *outgoing)
 {
   ink_time_t date = base->get_date();
@@ -850,7 +826,7 @@ HttpTransactHeaders::insert_via_header_in_response(HttpTransact::State *s, HTTPH
     return;
   }
 
-  char *incoming_via =  s->via_string;
+  char *incoming_via = s->via_string;
   int scheme = s->next_hop_scheme;
 
   ink_assert(scheme >= 0);
@@ -914,7 +890,7 @@ HttpTransactHeaders::insert_basic_realm_in_proxy_authenticate(const char *realm,
 
   basic_realm = new_basic_realm;
   basic_realm += nstrcpy(basic_realm, "Basic realm=\"");
-  basic_realm += nstrcpy(basic_realm, (char *) realm);
+  basic_realm += nstrcpy(basic_realm, (char *)realm);
   *basic_realm++ = '"';
   *basic_realm = 0;
 
@@ -933,9 +909,8 @@ HttpTransactHeaders::insert_basic_realm_in_proxy_authenticate(const char *realm,
 void
 HttpTransactHeaders::remove_conditional_headers(HTTPHdr *outgoing)
 {
-  if (outgoing->presence(MIME_PRESENCE_IF_MODIFIED_SINCE | MIME_PRESENCE_IF_UNMODIFIED_SINCE |
-                         MIME_PRESENCE_IF_MATCH | MIME_PRESENCE_IF_NONE_MATCH)) {
-
+  if (outgoing->presence(MIME_PRESENCE_IF_MODIFIED_SINCE | MIME_PRESENCE_IF_UNMODIFIED_SINCE | MIME_PRESENCE_IF_MATCH |
+                         MIME_PRESENCE_IF_NONE_MATCH)) {
     outgoing->field_delete(MIME_FIELD_IF_MODIFIED_SINCE, MIME_LEN_IF_MODIFIED_SINCE);
     outgoing->field_delete(MIME_FIELD_IF_UNMODIFIED_SINCE, MIME_LEN_IF_UNMODIFIED_SINCE);
     outgoing->field_delete(MIME_FIELD_IF_MATCH, MIME_LEN_IF_MATCH);
@@ -954,7 +929,6 @@ HttpTransactHeaders::remove_100_continue_headers(HttpTransact::State *s, HTTPHdr
     outgoing->field_delete(MIME_FIELD_EXPECT, MIME_LEN_EXPECT);
   }
 }
-
 
 
 ////////////////////////////////////////////////////////////////////////
@@ -980,8 +954,7 @@ HttpTransactHeaders::add_global_user_agent_header_to_request(OverridableHttpConf
     }
     // This will remove any old string (free it), and set our User-Agent.
     if (likely(ua_field))
-      header->field_value_set(ua_field, http_txn_conf->global_user_agent_header,
-                              http_txn_conf->global_user_agent_header_size);
+      header->field_value_set(ua_field, http_txn_conf->global_user_agent_header, http_txn_conf->global_user_agent_header_size);
   }
 }
 
@@ -1004,7 +977,8 @@ HttpTransactHeaders::add_server_header_to_response(OverridableHttpConfigParams *
     // This will remove any old string (free it), and set our Server header.
     if (do_add && likely(ua_field)) {
       Debug("http_trans", "Adding Server: %s", http_txn_conf->proxy_response_server_string);
-      header->field_value_set(ua_field, http_txn_conf->proxy_response_server_string, http_txn_conf->proxy_response_server_string_len);
+      header->field_value_set(ua_field, http_txn_conf->proxy_response_server_string,
+                              http_txn_conf->proxy_response_server_string_len);
     }
   }
 }

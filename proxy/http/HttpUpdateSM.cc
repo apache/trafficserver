@@ -26,7 +26,7 @@
    HttpSM_update.cc
 
    Description:
-	An HttpSM sub class for support scheduled update functionality
+        An HttpSM sub class for support scheduled update functionality
 
 
 
@@ -38,12 +38,12 @@
 
 ClassAllocator<HttpUpdateSM> httpUpdateSMAllocator("httpUpdateSMAllocator");
 
-#define STATE_ENTER(state_name, event, vio) { \
-        Debug("http", "[%" PRId64 "] [%s, %s]", sm_id, \
-        #state_name, HttpDebugNames::get_event_name(event)); }
+#define STATE_ENTER(state_name, event, vio)                                                             \
+  {                                                                                                     \
+    Debug("http", "[%" PRId64 "] [%s, %s]", sm_id, #state_name, HttpDebugNames::get_event_name(event)); \
+  }
 
-HttpUpdateSM::HttpUpdateSM():
-cb_occured(false), cb_cont(NULL), cb_action(), cb_event(HTTP_SCH_UPDATE_EVENT_ERROR)
+HttpUpdateSM::HttpUpdateSM() : cb_occured(false), cb_cont(NULL), cb_action(), cb_event(HTTP_SCH_UPDATE_EVENT_ERROR)
 {
 }
 
@@ -56,9 +56,8 @@ HttpUpdateSM::destroy()
 }
 
 Action *
-HttpUpdateSM::start_scheduled_update(Continuation * cont, HTTPHdr * request)
+HttpUpdateSM::start_scheduled_update(Continuation *cont, HTTPHdr *request)
 {
-
   // Use passed continuation's mutex for this state machine
   this->mutex = cont->mutex;
   MUTEX_LOCK(lock, this->mutex, this_ethread());
@@ -101,7 +100,6 @@ HttpUpdateSM::start_scheduled_update(Continuation * cont, HTTPHdr * request)
 void
 HttpUpdateSM::handle_api_return()
 {
-
   switch (t_state.api_next_action) {
   case HttpTransact::SM_ACTION_API_SM_START:
     call_transact_and_set_next_state(&HttpTransact::ModifyRequest);
@@ -116,82 +114,78 @@ HttpUpdateSM::handle_api_return()
   }
 
   switch (t_state.next_action) {
-  case HttpTransact::SM_ACTION_TRANSFORM_READ:
-    {
-      if (t_state.cache_info.transform_action == HttpTransact::CACHE_DO_WRITE) {
-        // Transform output cachable so initiate the transfer
-        //   to the cache
-        HttpTunnelProducer *p = setup_transfer_from_transform_to_cache_only();
-        tunnel.tunnel_run(p);
-      } else {
-        // We aren't caching the transformed response abort the
-        //  transform
+  case HttpTransact::SM_ACTION_TRANSFORM_READ: {
+    if (t_state.cache_info.transform_action == HttpTransact::CACHE_DO_WRITE) {
+      // Transform output cachable so initiate the transfer
+      //   to the cache
+      HttpTunnelProducer *p = setup_transfer_from_transform_to_cache_only();
+      tunnel.tunnel_run(p);
+    } else {
+      // We aren't caching the transformed response abort the
+      //  transform
 
-        Debug("http", "[%" PRId64 "] [HttpUpdateSM] aborting " "transform since result is not cached", sm_id);
-        HttpTunnelConsumer *c = tunnel.get_consumer(transform_info.vc);
-        ink_release_assert(c != NULL);
+      Debug("http", "[%" PRId64 "] [HttpUpdateSM] aborting "
+                    "transform since result is not cached",
+            sm_id);
+      HttpTunnelConsumer *c = tunnel.get_consumer(transform_info.vc);
+      ink_release_assert(c != NULL);
 
-        if (tunnel.is_tunnel_active()) {
-          default_handler = &HttpUpdateSM::tunnel_handler;
-          if (c->alive == true) {
-            // We're still streaming data to read
-            //  side of the transform so abort it
-            tunnel.handleEvent(VC_EVENT_ERROR, c->write_vio);
-          } else {
-            // The read side of the transform is done but
-            //  the tunnel is still going, presumably streaming
-            //  to the cache.  Just change the handler and
-            //  wait for the tunnel to complete
-            ink_assert(transform_info.entry->in_tunnel == false);
-          }
+      if (tunnel.is_tunnel_active()) {
+        default_handler = &HttpUpdateSM::tunnel_handler;
+        if (c->alive == true) {
+          // We're still streaming data to read
+          //  side of the transform so abort it
+          tunnel.handleEvent(VC_EVENT_ERROR, c->write_vio);
         } else {
-          // tunnel is not active so caching the untransformed
-          //  copy is done - bail out
+          // The read side of the transform is done but
+          //  the tunnel is still going, presumably streaming
+          //  to the cache.  Just change the handler and
+          //  wait for the tunnel to complete
           ink_assert(transform_info.entry->in_tunnel == false);
-          terminate_sm = true;
         }
+      } else {
+        // tunnel is not active so caching the untransformed
+        //  copy is done - bail out
+        ink_assert(transform_info.entry->in_tunnel == false);
+        terminate_sm = true;
       }
-      break;
     }
+    break;
+  }
   case HttpTransact::SM_ACTION_INTERNAL_CACHE_WRITE:
   case HttpTransact::SM_ACTION_SERVER_READ:
   case HttpTransact::SM_ACTION_INTERNAL_CACHE_NOOP:
   case HttpTransact::SM_ACTION_SEND_ERROR_CACHE_NOOP:
-  case HttpTransact::SM_ACTION_SERVE_FROM_CACHE:
-    {
-      cb_event = HTTP_SCH_UPDATE_EVENT_NOT_CACHED;
-      t_state.squid_codes.log_code = SQUID_LOG_TCP_MISS;
-      terminate_sm = true;
-      return;
-    }
+  case HttpTransact::SM_ACTION_SERVE_FROM_CACHE: {
+    cb_event = HTTP_SCH_UPDATE_EVENT_NOT_CACHED;
+    t_state.squid_codes.log_code = SQUID_LOG_TCP_MISS;
+    terminate_sm = true;
+    return;
+  }
 
   case HttpTransact::SM_ACTION_INTERNAL_CACHE_DELETE:
-  case HttpTransact::SM_ACTION_INTERNAL_CACHE_UPDATE_HEADERS:
-    {
-      if (t_state.next_action == HttpTransact::SM_ACTION_INTERNAL_CACHE_DELETE) {
-        cb_event = HTTP_SCH_UPDATE_EVENT_DELETED;
-      } else {
-        cb_event = HTTP_SCH_UPDATE_EVENT_UPDATED;
-      }
-
-      perform_cache_write_action();
-      terminate_sm = true;
-      return;
+  case HttpTransact::SM_ACTION_INTERNAL_CACHE_UPDATE_HEADERS: {
+    if (t_state.next_action == HttpTransact::SM_ACTION_INTERNAL_CACHE_DELETE) {
+      cb_event = HTTP_SCH_UPDATE_EVENT_DELETED;
+    } else {
+      cb_event = HTTP_SCH_UPDATE_EVENT_UPDATED;
     }
 
-  default:
-    {
-      ink_release_assert(!"Should not get here");
-    }
+    perform_cache_write_action();
+    terminate_sm = true;
+    return;
+  }
+
+  default: {
+    ink_release_assert(!"Should not get here");
+  }
   }
 }
 
 void
 HttpUpdateSM::set_next_state()
 {
-  if (t_state.cache_info.action == HttpTransact::CACHE_DO_NO_ACTION ||
-      t_state.cache_info.action == HttpTransact::CACHE_DO_SERVE) {
-
+  if (t_state.cache_info.action == HttpTransact::CACHE_DO_NO_ACTION || t_state.cache_info.action == HttpTransact::CACHE_DO_SERVE) {
     if (t_state.next_action == HttpTransact::SM_ACTION_SERVE_FROM_CACHE) {
       cb_event = HTTP_SCH_UPDATE_EVENT_NO_ACTION;
       t_state.squid_codes.log_code = SQUID_LOG_TCP_HIT;
@@ -215,14 +209,13 @@ HttpUpdateSM::kill_this_async_hook(int event, void * /* data ATS_UNUSED */)
   MUTEX_TRY_LOCK(lock, cb_action.mutex, this_ethread());
 
   if (!lock.is_locked()) {
-    default_handler = (HttpSMHandler) & HttpUpdateSM::kill_this_async_hook;
+    default_handler = (HttpSMHandler)&HttpUpdateSM::kill_this_async_hook;
     eventProcessor.schedule_in(this, HRTIME_MSECONDS(10), ET_CALL);
     return EVENT_DONE;
   }
 
   if (!cb_action.cancelled) {
-    Debug("http", "[%" PRId64 "] [HttpUpdateSM] calling back user with event %s",
-          sm_id, HttpDebugNames::get_event_name(cb_event));
+    Debug("http", "[%" PRId64 "] [HttpUpdateSM] calling back user with event %s", sm_id, HttpDebugNames::get_event_name(cb_event));
     cb_cont->handleEvent(cb_event, NULL);
   }
 

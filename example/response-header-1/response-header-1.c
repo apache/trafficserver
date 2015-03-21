@@ -85,18 +85,17 @@ modify_header(TSHttpTxn txnp)
   int num_refreshes = 0;
 
   if (!init_buffer_status)
-    return;                     /* caller reenables */
+    return; /* caller reenables */
 
   if (TSHttpTxnServerRespGet(txnp, &resp_bufp, &resp_loc) != TS_SUCCESS) {
     TSError("couldn't retrieve server response header\n");
-    return;                     /* caller reenables */
+    return; /* caller reenables */
   }
 
   /* TSqa06246/TSqa06144 */
   resp_status = TSHttpHdrStatusGet(resp_bufp, resp_loc);
 
   if (TS_HTTP_STATUS_OK == resp_status) {
-
     TSDebug("resphdr", "Processing 200 OK");
     TSMimeHdrFieldCreate(resp_bufp, resp_loc, &new_field_loc); /* Probably should check for errors */
     TSDebug("resphdr", "Created new resp field with loc %p", new_field_loc);
@@ -106,7 +105,7 @@ modify_header(TSHttpTxn txnp)
      */
     TSMimeHdrFieldCopy(resp_bufp, resp_loc, new_field_loc, hdr_bufp, hdr_loc, field_loc);
 
-        /*********** Unclear why this is needed **************/
+    /*********** Unclear why this is needed **************/
     TSMimeHdrFieldAppend(resp_bufp, resp_loc, new_field_loc);
 
 
@@ -114,10 +113,8 @@ modify_header(TSHttpTxn txnp)
     TSMimeHdrFieldCreate(resp_bufp, resp_loc, &new_field_loc); /* Probably should check for errors */
     TSDebug("resphdr", "Created new resp field with loc %p", new_field_loc);
     TSMimeHdrFieldAppend(resp_bufp, resp_loc, new_field_loc);
-    TSMimeHdrFieldNameSet(resp_bufp, resp_loc, new_field_loc,
-                           TS_MIME_FIELD_CACHE_CONTROL, TS_MIME_LEN_CACHE_CONTROL);
-    TSMimeHdrFieldValueStringInsert(resp_bufp, resp_loc, new_field_loc,
-                                     -1, TS_HTTP_VALUE_PUBLIC, TS_HTTP_LEN_PUBLIC);
+    TSMimeHdrFieldNameSet(resp_bufp, resp_loc, new_field_loc, TS_MIME_FIELD_CACHE_CONTROL, TS_MIME_LEN_CACHE_CONTROL);
+    TSMimeHdrFieldValueStringInsert(resp_bufp, resp_loc, new_field_loc, -1, TS_HTTP_VALUE_PUBLIC, TS_HTTP_LEN_PUBLIC);
 
     /*
      * mimehdr2_name  = TSstrdup( "x-date-200-recvd" ) : CurrentDateTime
@@ -133,7 +130,6 @@ modify_header(TSHttpTxn txnp)
     TSHandleMLocRelease(resp_bufp, TS_NULL_MLOC, resp_loc);
 
   } else if (TS_HTTP_STATUS_NOT_MODIFIED == resp_status) {
-
     TSDebug("resphdr", "Processing 304 Not Modified");
 
     /* N.B.: Protect writes to data (hash on URL + mutex: (ies)) */
@@ -143,17 +139,16 @@ modify_header(TSHttpTxn txnp)
       TSError("STATUS 304, TSHttpTxnCachedRespGet():");
       TSError("couldn't retrieve cached response header\n");
       TSHandleMLocRelease(resp_bufp, TS_NULL_MLOC, resp_loc);
-      return;                   /* Caller reenables */
+      return; /* Caller reenables */
     }
 
     /* Get the cached MIME field name for this HTTP header */
-    cached_field_loc = TSMimeHdrFieldFind(cached_bufp, cached_loc,
-                                           (const char *) mimehdr1_name, strlen(mimehdr1_name));
+    cached_field_loc = TSMimeHdrFieldFind(cached_bufp, cached_loc, (const char *)mimehdr1_name, strlen(mimehdr1_name));
     if (TS_NULL_MLOC == cached_field_loc) {
       TSError("Can't find header %s in cached document", mimehdr1_name);
       TSHandleMLocRelease(resp_bufp, TS_NULL_MLOC, resp_loc);
       TSHandleMLocRelease(cached_bufp, TS_NULL_MLOC, cached_loc);
-      return;                   /* Caller reenables */
+      return; /* Caller reenables */
     }
 
     /* Get the cached MIME value for this name in this HTTP header */
@@ -163,7 +158,7 @@ modify_header(TSHttpTxn txnp)
       TSHandleMLocRelease(resp_bufp, TS_NULL_MLOC, resp_loc);
       TSHandleMLocRelease(cached_bufp, TS_NULL_MLOC, cached_loc);
       TSHandleMLocRelease(cached_bufp, cached_loc, cached_field_loc);
-      return;                   /* Caller reenables */
+      return; /* Caller reenables */
     }
     TSDebug("resphdr", "Header field value is %s, with length %d", chkptr, chklength);
 
@@ -177,17 +172,17 @@ modify_header(TSHttpTxn txnp)
        num_refreshes++ ;
      */
 
-       /* txn origin server response for this transaction stored
-       * in resp_bufp, resp_loc
-       *
-       * Create a new MIME field/value. Cached value has been incremented.
-       * Insert new MIME field/value into the server response buffer,
-       * allow HTTP processing to continue. This will update
-       * (indirectly invalidates) the cached HTTP headers MIME field.
-       * It is apparently not necessary to update all of the MIME fields
-       * in the in-process response in order to have the cached response
-       * become invalid.
-     */
+    /* txn origin server response for this transaction stored
+    * in resp_bufp, resp_loc
+    *
+    * Create a new MIME field/value. Cached value has been incremented.
+    * Insert new MIME field/value into the server response buffer,
+    * allow HTTP processing to continue. This will update
+    * (indirectly invalidates) the cached HTTP headers MIME field.
+    * It is apparently not necessary to update all of the MIME fields
+    * in the in-process response in order to have the cached response
+    * become invalid.
+  */
     TSMimeHdrFieldCreate(resp_bufp, resp_loc, &new_field_loc); /* Probaby should check for errrors */
 
     /* mimehdr1_name : TSstrdup( "x-num-served-from-cache" ) ; */
@@ -217,14 +212,14 @@ modify_header(TSHttpTxn txnp)
 static int
 modify_response_header_plugin(TSCont contp ATS_UNUSED, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp = (TSHttpTxn) edata;
+  TSHttpTxn txnp = (TSHttpTxn)edata;
 
   switch (event) {
   case TS_EVENT_HTTP_READ_RESPONSE_HDR:
     TSDebug("resphdr", "Called back with TS_EVENT_HTTP_READ_RESPONSE_HDR");
     modify_header(txnp);
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
-    /*  fall through  */
+  /*  fall through  */
 
   default:
     break;

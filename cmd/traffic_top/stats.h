@@ -33,8 +33,10 @@
 using namespace std;
 
 struct LookupItem {
-  LookupItem(const char *s, const char *n, const int t): pretty(s), name(n), type(t) {}
-  LookupItem(const char *s, const char *n, const char *d, const int t): pretty(s), name(n), numerator(n), denominator(d), type(t) {}
+  LookupItem(const char *s, const char *n, const int t) : pretty(s), name(n), type(t) {}
+  LookupItem(const char *s, const char *n, const char *d, const int t) : pretty(s), name(n), numerator(n), denominator(d), type(t)
+  {
+  }
   const char *pretty;
   const char *name;
   const char *numerator;
@@ -45,19 +47,21 @@ extern size_t write_data(void *ptr, size_t size, size_t nmemb, void *stream);
 extern char curl_error[CURL_ERROR_SIZE];
 extern string response;
 
-namespace constant {
-  const char global[] = "\"global\": {\n";
-  const char start[] = "\"proxy.process.";
-  const char seperator[] = "\": \"";
-  const char end[] = "\",\n";
+namespace constant
+{
+const char global[] = "\"global\": {\n";
+const char start[] = "\"proxy.process.";
+const char seperator[] = "\": \"";
+const char end[] = "\",\n";
 };
 
 
 //----------------------------------------------------------------------------
-class Stats {
+class Stats
+{
 public:
-  Stats(const string &url): _url(url) {
-
+  Stats(const string &url) : _url(url)
+  {
     if (url != "") {
       if (_url.substr(0, 4) != "http") {
         // looks like it is a host using it the old way
@@ -104,7 +108,8 @@ public:
     lookup_table.insert(make_pair("client_conn", LookupItem("New Conn", "proxy.process.http.total_client_connections", 2)));
     lookup_table.insert(make_pair("client_req_conn", LookupItem("Req/Conn", "client_req", "client_conn", 3)));
     lookup_table.insert(make_pair("client_curr_conn", LookupItem("Curr Conn", "proxy.process.http.current_client_connections", 1)));
-    lookup_table.insert(make_pair("client_actv_conn", LookupItem("Active Con", "proxy.process.http.current_active_client_connections", 1)));
+    lookup_table.insert(
+      make_pair("client_actv_conn", LookupItem("Active Con", "proxy.process.http.current_active_client_connections", 1)));
 
     lookup_table.insert(make_pair("server_req", LookupItem("Requests", "proxy.process.http.outgoing_requests", 2)));
     lookup_table.insert(make_pair("server_conn", LookupItem("New Conn", "proxy.process.http.total_server_connections", 2)));
@@ -112,10 +117,14 @@ public:
     lookup_table.insert(make_pair("server_curr_conn", LookupItem("Curr Conn", "proxy.process.http.current_server_connections", 1)));
 
 
-    lookup_table.insert(make_pair("client_head", LookupItem("Head Bytes", "proxy.process.http.user_agent_response_header_total_size", 2)));
-    lookup_table.insert(make_pair("client_body", LookupItem("Body Bytes", "proxy.process.http.user_agent_response_document_total_size", 2)));
-    lookup_table.insert(make_pair("server_head", LookupItem("Head Bytes", "proxy.process.http.origin_server_response_header_total_size", 2)));
-    lookup_table.insert(make_pair("server_body", LookupItem("Body Bytes", "proxy.process.http.origin_server_response_document_total_size", 2)));
+    lookup_table.insert(
+      make_pair("client_head", LookupItem("Head Bytes", "proxy.process.http.user_agent_response_header_total_size", 2)));
+    lookup_table.insert(
+      make_pair("client_body", LookupItem("Body Bytes", "proxy.process.http.user_agent_response_document_total_size", 2)));
+    lookup_table.insert(
+      make_pair("server_head", LookupItem("Head Bytes", "proxy.process.http.origin_server_response_header_total_size", 2)));
+    lookup_table.insert(
+      make_pair("server_body", LookupItem("Body Bytes", "proxy.process.http.origin_server_response_document_total_size", 2)));
 
     // not used directly
     lookup_table.insert(make_pair("ram_hit", LookupItem("Ram Hit", "proxy.process.cache.ram_cache.hits", 2)));
@@ -127,7 +136,8 @@ public:
     lookup_table.insert(make_pair("client_abort", LookupItem("Clnt Abort", "proxy.process.http.err_client_abort_count_stat", 2)));
     lookup_table.insert(make_pair("conn_fail", LookupItem("Conn Fail", "proxy.process.http.err_connect_fail_count_stat", 2)));
     lookup_table.insert(make_pair("abort", LookupItem("Abort", "proxy.process.http.transaction_counts.errors.aborts", 2)));
-    lookup_table.insert(make_pair("t_conn_fail", LookupItem("Conn Fail", "proxy.process.http.transaction_counts.errors.connect_failed", 2)));
+    lookup_table.insert(
+      make_pair("t_conn_fail", LookupItem("Conn Fail", "proxy.process.http.transaction_counts.errors.connect_failed", 2)));
     lookup_table.insert(make_pair("other_err", LookupItem("Other Err", "proxy.process.http.transaction_counts.errors.other", 2)));
 
     // percentage
@@ -142,12 +152,18 @@ public:
     lookup_table.insert(make_pair("not", LookupItem("Not Cache", "proxy.process.http.transaction_counts.miss_not_cacheable", 5)));
     lookup_table.insert(make_pair("no", LookupItem("No Cache", "proxy.process.http.transaction_counts.miss_client_no_cache", 5)));
 
-    lookup_table.insert(make_pair("fresh_time", LookupItem("Fresh (ms)", "proxy.process.http.transaction_totaltime.hit_fresh", "fresh", 8)));
-    lookup_table.insert(make_pair("reval_time", LookupItem("Reval (ms)", "proxy.process.http.transaction_totaltime.hit_revalidated", "reval", 8)));
-    lookup_table.insert(make_pair("cold_time", LookupItem("Cold (ms)", "proxy.process.http.transaction_totaltime.miss_cold", "cold", 8)));
-    lookup_table.insert(make_pair("changed_time", LookupItem("Chang (ms)", "proxy.process.http.transaction_totaltime.miss_changed", "changed", 8)));
-    lookup_table.insert(make_pair("not_time", LookupItem("Not (ms)", "proxy.process.http.transaction_totaltime.miss_not_cacheable", "not", 8)));
-    lookup_table.insert(make_pair("no_time", LookupItem("No (ms)", "proxy.process.http.transaction_totaltime.miss_client_no_cache", "no", 8)));
+    lookup_table.insert(
+      make_pair("fresh_time", LookupItem("Fresh (ms)", "proxy.process.http.transaction_totaltime.hit_fresh", "fresh", 8)));
+    lookup_table.insert(
+      make_pair("reval_time", LookupItem("Reval (ms)", "proxy.process.http.transaction_totaltime.hit_revalidated", "reval", 8)));
+    lookup_table.insert(
+      make_pair("cold_time", LookupItem("Cold (ms)", "proxy.process.http.transaction_totaltime.miss_cold", "cold", 8)));
+    lookup_table.insert(
+      make_pair("changed_time", LookupItem("Chang (ms)", "proxy.process.http.transaction_totaltime.miss_changed", "changed", 8)));
+    lookup_table.insert(
+      make_pair("not_time", LookupItem("Not (ms)", "proxy.process.http.transaction_totaltime.miss_not_cacheable", "not", 8)));
+    lookup_table.insert(
+      make_pair("no_time", LookupItem("No (ms)", "proxy.process.http.transaction_totaltime.miss_client_no_cache", "no", 8)));
 
     lookup_table.insert(make_pair("get", LookupItem("GET", "proxy.process.http.get_requests", 5)));
     lookup_table.insert(make_pair("head", LookupItem("HEAD", "proxy.process.http.head_requests", 5)));
@@ -225,8 +241,9 @@ public:
     lookup_table.insert(make_pair("client_dyn_ka", LookupItem("Dynamic KA", "ka_total", "ka_count", 3)));
   }
 
-  void getStats() {
-
+  void
+  getStats()
+  {
     if (_url == "") {
       int64_t value = 0;
       if (_old_stats != NULL) {
@@ -239,8 +256,7 @@ public:
       gettimeofday(&_time, NULL);
       double now = _time.tv_sec + (double)_time.tv_usec / 1000000;
 
-      for (map<string, LookupItem>::const_iterator lookup_it = lookup_table.begin();
-           lookup_it != lookup_table.end(); ++lookup_it) {
+      for (map<string, LookupItem>::const_iterator lookup_it = lookup_table.begin(); lookup_it != lookup_table.end(); ++lookup_it) {
         const LookupItem &item = lookup_it->second;
 
         if (item.type == 1 || item.type == 2 || item.type == 5 || item.type == 8) {
@@ -252,8 +268,8 @@ public:
             (*_stats)[key] = strValue;
           } else {
             if (TSRecordGetInt(item.name, &value) != TS_ERR_OKAY) {
-              fprintf(stderr, "Error getting stat: %s when calling TSRecordGetInt() failed: file \"%s\", line %d\n\n",
-                  item.name, __FILE__, __LINE__);
+              fprintf(stderr, "Error getting stat: %s when calling TSRecordGetInt() failed: file \"%s\", line %d\n\n", item.name,
+                      __FILE__, __LINE__);
               abort();
             }
             string key = item.name;
@@ -310,7 +326,9 @@ public:
     }
   }
 
-  int64_t getValue(const string &key, const map<string, string> *stats) const {
+  int64_t
+  getValue(const string &key, const map<string, string> *stats) const
+  {
     map<string, string>::const_iterator stats_it = stats->find(key);
     if (stats_it == stats->end())
       return 0;
@@ -318,14 +336,18 @@ public:
     return value;
   }
 
-  void getStat(const string &key, double &value, int overrideType = 0) {
+  void
+  getStat(const string &key, double &value, int overrideType = 0)
+  {
     string strtmp;
     int typetmp;
     getStat(key, value, strtmp, typetmp, overrideType);
   }
 
 
-  void getStat(const string &key, string &value) {
+  void
+  getStat(const string &key, string &value)
+  {
     map<string, LookupItem>::const_iterator lookup_it = lookup_table.find(key);
     assert(lookup_it != lookup_table.end());
     const LookupItem &item = lookup_it->second;
@@ -337,7 +359,9 @@ public:
       value = stats_it->second.c_str();
   }
 
-  void getStat(const string &key, double &value, string &prettyName, int &type, int overrideType = 0) {
+  void
+  getStat(const string &key, double &value, string &prettyName, int &type, int overrideType = 0)
+  {
     map<string, LookupItem>::const_iterator lookup_it = lookup_table.find(key);
     assert(lookup_it != lookup_table.end());
     const LookupItem &item = lookup_it->second;
@@ -401,7 +425,9 @@ public:
     }
   }
 
-  bool toggleAbsolute() {
+  bool
+  toggleAbsolute()
+  {
     if (_absolute == true)
       _absolute = false;
     else
@@ -410,7 +436,9 @@ public:
     return _absolute;
   }
 
-  void parseResponse(const string &response) {
+  void
+  parseResponse(const string &response)
+  {
     // move past global
     size_t pos = response.find(constant::global);
     pos += sizeof(constant::global) - 1;
@@ -424,23 +452,29 @@ public:
       if (start == string::npos || seperator == string::npos || end == string::npos)
         return;
 
-      //cout << constant::start << " " << start << endl;
-      //cout << constant::seperator << " " << seperator << endl;
-      //cout << constant::end << " " << end << endl;
+      // cout << constant::start << " " << start << endl;
+      // cout << constant::seperator << " " << seperator << endl;
+      // cout << constant::end << " " << end << endl;
 
       string key = response.substr(start + 1, seperator - start - 1);
-      string value = response.substr(seperator + sizeof(constant::seperator) - 1, end - seperator - sizeof(constant::seperator) + 1);
+      string value =
+        response.substr(seperator + sizeof(constant::seperator) - 1, end - seperator - sizeof(constant::seperator) + 1);
 
       (*_stats)[key] = value;
-      //cout << "key " << key << " " << "value " << value << endl;
+      // cout << "key " << key << " " << "value " << value << endl;
       pos = end + sizeof(constant::end) - 1;
-      //cout << "pos: " << pos << endl;
+      // cout << "pos: " << pos << endl;
     }
   }
 
-  const string& getHost() const { return _host; }
+  const string &
+  getHost() const
+  {
+    return _host;
+  }
 
-  ~Stats() {
+  ~Stats()
+  {
     if (_stats != NULL) {
       delete _stats;
     }

@@ -32,8 +32,8 @@
 #include "net/instaweb/util/public/string.h"
 #include "net/instaweb/util/public/string_util.h"
 
-namespace net_instaweb {
-
+namespace net_instaweb
+{
 class AtsBaseFetch;
 class AtsRewriteOptions;
 class AtsServerContext;
@@ -46,66 +46,63 @@ class RequestHeaders;
 class ResponseHeaders;
 class ServerContext;
 
-}  // namespace net_instaweb
+} // namespace net_instaweb
 
 enum transform_state {
-    transform_state_initialized,
-    transform_state_output,
-    transform_state_finished
+  transform_state_initialized,
+  transform_state_output,
+  transform_state_finished,
 };
 
-typedef struct
-{
+typedef struct {
   TSHttpTxn txn;
   TSVIO downstream_vio;
   TSIOBuffer downstream_buffer;
   int64_t downstream_length;
   enum transform_state state;
 
-  net_instaweb::AtsBaseFetch* base_fetch;
-  net_instaweb::ProxyFetch* proxy_fetch;
-  net_instaweb::GzipInflater* inflater;
-  //driver is used for IPRO flow only
-  net_instaweb::RewriteDriver* driver;
+  net_instaweb::AtsBaseFetch *base_fetch;
+  net_instaweb::ProxyFetch *proxy_fetch;
+  net_instaweb::GzipInflater *inflater;
+  // driver is used for IPRO flow only
+  net_instaweb::RewriteDriver *driver;
 
   bool write_pending;
   bool fetch_done;
-  GoogleString* url_string;
+  GoogleString *url_string;
   bool beacon_request;
   bool resource_request;
   bool mps_user_agent;
   bool transform_added;
-  net_instaweb::GoogleUrl* gurl;
-  net_instaweb::AtsServerContext* server_context;
-  GoogleString* user_agent;
+  net_instaweb::GoogleUrl *gurl;
+  net_instaweb::AtsServerContext *server_context;
+  GoogleString *user_agent;
   bool html_rewrite;
-  const char* request_method;
+  const char *request_method;
   int alive;
-  net_instaweb::AtsRewriteOptions* options;
+  net_instaweb::AtsRewriteOptions *options;
   // TODO: Use GoogleString*
-  std::string* to_host;
+  std::string *to_host;
   bool in_place;
   bool record_in_place;
-  net_instaweb::InPlaceResourceRecorder* recorder;
-  net_instaweb::ResponseHeaders* ipro_response_headers;
+  net_instaweb::InPlaceResourceRecorder *recorder;
+  net_instaweb::ResponseHeaders *ipro_response_headers;
   bool serve_in_place;
 } TransformCtx;
 
-TransformCtx* get_transaction_context(TSHttpTxn txnp);
-void ats_ctx_destroy(TransformCtx * ctx);
+TransformCtx *get_transaction_context(TSHttpTxn txnp);
+void ats_ctx_destroy(TransformCtx *ctx);
 bool cache_hit(TSHttpTxn txnp);
 
-bool ps_determine_options(net_instaweb::ServerContext* server_context,
-  // Directory-specific options, usually null.  They've already been rebased off
-  // of the global options as part of the configuration process.
-                          net_instaweb::RewriteOptions* directory_options,
-                          net_instaweb::RequestHeaders* request_headers,
-                          net_instaweb::ResponseHeaders* response_headers,
-                          net_instaweb::RewriteOptions** options,
-                          net_instaweb::GoogleUrl* url);
+bool ps_determine_options(net_instaweb::ServerContext *server_context,
+                          // Directory-specific options, usually null.  They've already been rebased off
+                          // of the global options as part of the configuration process.
+                          net_instaweb::RewriteOptions *directory_options, net_instaweb::RequestHeaders *request_headers,
+                          net_instaweb::ResponseHeaders *response_headers, net_instaweb::RewriteOptions **options,
+                          net_instaweb::GoogleUrl *url);
 
-void copy_request_headers_to_psol(TSMBuffer bufp, TSMLoc hdr_loc, net_instaweb::RequestHeaders* psol_headers);
+void copy_request_headers_to_psol(TSMBuffer bufp, TSMLoc hdr_loc, net_instaweb::RequestHeaders *psol_headers);
 // You will own options returned by this:
-net_instaweb::AtsRewriteOptions* get_host_options(const StringPiece& host);
+net_instaweb::AtsRewriteOptions *get_host_options(const StringPiece &host);
 
 #endif /* ATS_PAGESPEED_H_ */

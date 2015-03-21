@@ -48,7 +48,7 @@
 //////////////////////
 
 int
-HdrTest::go(RegressionTest * t, int /* atype ATS_UNUSED */)
+HdrTest::go(RegressionTest *t, int /* atype ATS_UNUSED */)
 {
   HdrTest::rtest = t;
   int status = 1;
@@ -88,59 +88,51 @@ HdrTest::go(RegressionTest * t, int /* atype ATS_UNUSED */)
 int
 HdrTest::test_error_page_selection()
 {
-  static struct
-  {
+  static struct {
     const char *set_name;
     const char *content_language;
     const char *content_charset;
-  } sets[] = {
-    {
-    "default", "en", "iso-8859-1"}, {
-    "en-cockney", "en-cockney", "iso-8859-1"}, {
-    "en", "en", "iso-8859-1"}, {
-    "en-us", "en-us", "us-ascii"}, {
-    "en", "en", "unicode"}, {
-    "en-cockney-slang", "en-cockney-slang", "iso-8859-1"}, {
-    "ko", "ko", "iso-8859-1"}, {
-    "ko", "ko", "iso-2022-kr"}, {
-    "jp", "jp", "shift-jis"}
-  };
+  } sets[] = {{"default", "en", "iso-8859-1"},
+              {"en-cockney", "en-cockney", "iso-8859-1"},
+              {"en", "en", "iso-8859-1"},
+              {"en-us", "en-us", "us-ascii"},
+              {"en", "en", "unicode"},
+              {"en-cockney-slang", "en-cockney-slang", "iso-8859-1"},
+              {"ko", "ko", "iso-8859-1"},
+              {"ko", "ko", "iso-2022-kr"},
+              {"jp", "jp", "shift-jis"}};
 
-  static struct
-  {
+  static struct {
     const char *accept_language;
     const char *accept_charset;
     const char *expected_set;
     float expected_Q;
     int expected_La;
     int expected_I;
-  } tests[] = {
-    {
-    NULL, NULL, "default", 1, 0, INT_MAX}, {
-    "en", NULL, "en", 1, 2, 1}, {
-    "ko", NULL, "ko", 1, 2, 1}, {
-    "en-us", NULL, "en-us", 1, 5, 1}, {
-    "en-US", NULL, "en-us", 1, 5, 1}, {
-    "en,ko", NULL, "en", 1, 2, 1}, {
-    "ko,en", NULL, "ko", 1, 2, 1}, {
-    "en;q=0.7,ko", NULL, "ko", 1, 2, 2}, {
-    "en;q=.7,ko", NULL, "ko", 1, 2, 2}, {
-    "en;q=.7,ko;q=.7", NULL, "en", 0.7, 2, 1}, {
-    "en;q=.7,ko;q=.701", NULL, "ko", 0.701, 2, 2}, {
-    "en;q=.7  ,  ko;q=.701", NULL, "ko", 0.701, 2, 2}, {
-    "en  ;  q=.7  ,  ko  ;  ;  ;  ; q=.701", NULL, "ko", 0.701, 2, 2}, {
-    "en,ko;q=.7", NULL, "en", 1, 2, 1}, {
-    "en;q=1,ko;q=.7", NULL, "en", 1, 2, 1}, {
-    "en;;;q=1,ko;q=.7", NULL, "en", 1, 2, 1}, {
-    "en;;;q=1,,,,ko;q=.7", NULL, "en", 1, 2, 1}, {
-    "en;;;q=.7,,,,ko;q=.7", NULL, "en", 0.7, 2, 1}, {
-    "en;;;q=.699,,,,ko;q=.7", NULL, "ko", 0.7, 2, 5}, {
-    "en;q=0,ko;q=1", NULL, "ko", 1, 2, 2}, {
-    "en;q=0, ko;q=1", NULL, "ko", 1, 2, 2}, {
-    "en;q=0,ko;q=.5", NULL, "ko", 0.5, 2, 2}, {
-    "en;q=0, ko;q=.5", NULL, "ko", 0.5, 2, 2}, {
-    "en;q=000000000.00000000000000000000,ko;q=1.0000000000000000000", NULL, "ko", 1, 2, 2}
-  };
+  } tests[] = {{NULL, NULL, "default", 1, 0, INT_MAX},
+               {"en", NULL, "en", 1, 2, 1},
+               {"ko", NULL, "ko", 1, 2, 1},
+               {"en-us", NULL, "en-us", 1, 5, 1},
+               {"en-US", NULL, "en-us", 1, 5, 1},
+               {"en,ko", NULL, "en", 1, 2, 1},
+               {"ko,en", NULL, "ko", 1, 2, 1},
+               {"en;q=0.7,ko", NULL, "ko", 1, 2, 2},
+               {"en;q=.7,ko", NULL, "ko", 1, 2, 2},
+               {"en;q=.7,ko;q=.7", NULL, "en", 0.7, 2, 1},
+               {"en;q=.7,ko;q=.701", NULL, "ko", 0.701, 2, 2},
+               {"en;q=.7  ,  ko;q=.701", NULL, "ko", 0.701, 2, 2},
+               {"en  ;  q=.7  ,  ko  ;  ;  ;  ; q=.701", NULL, "ko", 0.701, 2, 2},
+               {"en,ko;q=.7", NULL, "en", 1, 2, 1},
+               {"en;q=1,ko;q=.7", NULL, "en", 1, 2, 1},
+               {"en;;;q=1,ko;q=.7", NULL, "en", 1, 2, 1},
+               {"en;;;q=1,,,,ko;q=.7", NULL, "en", 1, 2, 1},
+               {"en;;;q=.7,,,,ko;q=.7", NULL, "en", 0.7, 2, 1},
+               {"en;;;q=.699,,,,ko;q=.7", NULL, "ko", 0.7, 2, 5},
+               {"en;q=0,ko;q=1", NULL, "ko", 1, 2, 2},
+               {"en;q=0, ko;q=1", NULL, "ko", 1, 2, 2},
+               {"en;q=0,ko;q=.5", NULL, "ko", 0.5, 2, 2},
+               {"en;q=0, ko;q=.5", NULL, "ko", 0.5, 2, 2},
+               {"en;q=000000000.00000000000000000000,ko;q=1.0000000000000000000", NULL, "ko", 1, 2, 2}};
 
   bri_box("test_error_page_selection");
 
@@ -159,12 +151,12 @@ HdrTest::test_error_page_selection()
 
     body_set = (HttpBodySetRawData *)ats_malloc(sizeof(HttpBodySetRawData));
     body_set->magic = 0;
-    body_set->set_name = (char *) (sets[i].set_name);
-    body_set->content_language = (char *) (sets[i].content_language);
-    body_set->content_charset = (char *) (sets[i].content_charset);
-    body_set->table_of_pages = (RawHashTable *) 1;      // hack --- can't be NULL
+    body_set->set_name = (char *)(sets[i].set_name);
+    body_set->content_language = (char *)(sets[i].content_language);
+    body_set->content_charset = (char *)(sets[i].content_charset);
+    body_set->table_of_pages = (RawHashTable *)1; // hack --- can't be NULL
 
-    table_of_sets->setValue((RawHashTable_Key) (body_set->set_name), (RawHashTable_Value) body_set);
+    table_of_sets->setValue((RawHashTable_Key)(body_set->set_name), (RawHashTable_Value)body_set);
   }
 
   // (2) for each test, parse accept headers into lists, and test matching
@@ -180,27 +172,23 @@ HdrTest::test_error_page_selection()
     HttpCompat::parse_comma_list(&accept_language_list, tests[i].accept_language);
     HttpCompat::parse_comma_list(&accept_charset_list, tests[i].accept_charset);
 
-    printf("         test #%d: (Accept-Language='%s', Accept-Charset='%s')\n",
-           i + 1,
+    printf("         test #%d: (Accept-Language='%s', Accept-Charset='%s')\n", i + 1,
            (tests[i].accept_language ? tests[i].accept_language : "<null>"),
            (tests[i].accept_charset ? tests[i].accept_charset : "<null>"));
 
-    set_best = HttpCompat::determine_set_by_language(table_of_sets,
-                                                     &(accept_language_list), &(accept_charset_list),
-                                                     &Q_best, &La_best, &Lc_best, &I_best);
+    set_best = HttpCompat::determine_set_by_language(table_of_sets, &(accept_language_list), &(accept_charset_list), &Q_best,
+                                                     &La_best, &Lc_best, &I_best);
 
-    if ((strcmp(set_best, tests[i].expected_set) == 0) &&
-        (Q_best == tests[i].expected_Q) && (La_best == tests[i].expected_La) && (I_best == tests[i].expected_I)) {
-      printf("SUCCESS: test #%d expected [ S='%s', Q=%g, La=%d, I=%d ] got [ S='%s', Q=%g, La=%d, I=%d ]\n",
-             i + 1,
-             tests[i].expected_set, tests[i].expected_Q, tests[i].expected_La, tests[i].expected_I,
-             set_best, Q_best, La_best, I_best);
+    if ((strcmp(set_best, tests[i].expected_set) == 0) && (Q_best == tests[i].expected_Q) && (La_best == tests[i].expected_La) &&
+        (I_best == tests[i].expected_I)) {
+      printf("SUCCESS: test #%d expected [ S='%s', Q=%g, La=%d, I=%d ] got [ S='%s', Q=%g, La=%d, I=%d ]\n", i + 1,
+             tests[i].expected_set, tests[i].expected_Q, tests[i].expected_La, tests[i].expected_I, set_best, Q_best, La_best,
+             I_best);
     } else {
       ++failures;
-      printf(" FAILED: test #%d expected [ S='%s', Q=%g, La=%d, I=%d ] got [ S='%s', Q=%g, La=%d, I=%d ]\n",
-             i + 1,
-             tests[i].expected_set, tests[i].expected_Q, tests[i].expected_La, tests[i].expected_I,
-             set_best, Q_best, La_best, I_best);
+      printf(" FAILED: test #%d expected [ S='%s', Q=%g, La=%d, I=%d ] got [ S='%s', Q=%g, La=%d, I=%d ]\n", i + 1,
+             tests[i].expected_set, tests[i].expected_Q, tests[i].expected_La, tests[i].expected_I, set_best, Q_best, La_best,
+             I_best);
     }
   }
 
@@ -214,32 +202,29 @@ HdrTest::test_error_page_selection()
 int
 HdrTest::test_parse_date()
 {
-  static struct
-  {
+  static struct {
     const char *fast;
     const char *slow;
-  } dates[] = {
-    {
-    "Sun, 06 Nov 1994 08:49:37 GMT", "Sunday, 06-Nov-1994 08:49:37 GMT"}, {
-    "Mon, 07 Nov 1994 08:49:37 GMT", "Monday, 07-Nov-1994 08:49:37 GMT"}, {
-    "Tue, 08 Nov 1994 08:49:37 GMT", "Tuesday, 08-Nov-1994 08:49:37 GMT"}, {
-    "Wed, 09 Nov 1994 08:49:37 GMT", "Wednesday, 09-Nov-1994 08:49:37 GMT"}, {
-    "Thu, 10 Nov 1994 08:49:37 GMT", "Thursday, 10-Nov-1994 08:49:37 GMT"}, {
-    "Fri, 11 Nov 1994 08:49:37 GMT", "Friday, 11-Nov-1994 08:49:37 GMT"}, {
-    "Sat, 11 Nov 1994 08:49:37 GMT", "Saturday, 11-Nov-1994 08:49:37 GMT"}, {
-    "Sun, 03 Jan 1999 08:49:37 GMT", "Sunday, 03-Jan-1999 08:49:37 GMT"}, {
-    "Sun, 07 Feb 1999 08:49:37 GMT", "Sunday, 07-Feb-1999 08:49:37 GMT"}, {
-    "Sun, 07 Mar 1999 08:49:37 GMT", "Sunday, 07-Mar-1999 08:49:37 GMT"}, {
-    "Sun, 04 Apr 1999 08:49:37 GMT", "Sunday, 04-Apr-1999 08:49:37 GMT"}, {
-    "Sun, 02 May 1999 08:49:37 GMT", "Sunday, 02-May-1999 08:49:37 GMT"}, {
-    "Sun, 06 Jun 1999 08:49:37 GMT", "Sunday, 06-Jun-1999 08:49:37 GMT"}, {
-    "Sun, 04 Jul 1999 08:49:37 GMT", "Sunday, 04-Jul-1999 08:49:37 GMT"}, {
-    "Sun, 01 Aug 1999 08:49:37 GMT", "Sunday, 01-Aug-1999 08:49:37 GMT"}, {
-    "Sun, 05 Sep 1999 08:49:37 GMT", "Sunday, 05-Sep-1999 08:49:37 GMT"}, {
-    "Sun, 03 Oct 1999 08:49:37 GMT", "Sunday, 03-Oct-1999 08:49:37 GMT"}, {
-    "Sun, 07 Nov 1999 08:49:37 GMT", "Sunday, 07-Nov-1999 08:49:37 GMT"}, {
-    "Sun, 05 Dec 1999 08:49:37 GMT", "Sunday, 05-Dec-1999 08:49:37 GMT"}, {
-  NULL, NULL}};
+  } dates[] = {{"Sun, 06 Nov 1994 08:49:37 GMT", "Sunday, 06-Nov-1994 08:49:37 GMT"},
+               {"Mon, 07 Nov 1994 08:49:37 GMT", "Monday, 07-Nov-1994 08:49:37 GMT"},
+               {"Tue, 08 Nov 1994 08:49:37 GMT", "Tuesday, 08-Nov-1994 08:49:37 GMT"},
+               {"Wed, 09 Nov 1994 08:49:37 GMT", "Wednesday, 09-Nov-1994 08:49:37 GMT"},
+               {"Thu, 10 Nov 1994 08:49:37 GMT", "Thursday, 10-Nov-1994 08:49:37 GMT"},
+               {"Fri, 11 Nov 1994 08:49:37 GMT", "Friday, 11-Nov-1994 08:49:37 GMT"},
+               {"Sat, 11 Nov 1994 08:49:37 GMT", "Saturday, 11-Nov-1994 08:49:37 GMT"},
+               {"Sun, 03 Jan 1999 08:49:37 GMT", "Sunday, 03-Jan-1999 08:49:37 GMT"},
+               {"Sun, 07 Feb 1999 08:49:37 GMT", "Sunday, 07-Feb-1999 08:49:37 GMT"},
+               {"Sun, 07 Mar 1999 08:49:37 GMT", "Sunday, 07-Mar-1999 08:49:37 GMT"},
+               {"Sun, 04 Apr 1999 08:49:37 GMT", "Sunday, 04-Apr-1999 08:49:37 GMT"},
+               {"Sun, 02 May 1999 08:49:37 GMT", "Sunday, 02-May-1999 08:49:37 GMT"},
+               {"Sun, 06 Jun 1999 08:49:37 GMT", "Sunday, 06-Jun-1999 08:49:37 GMT"},
+               {"Sun, 04 Jul 1999 08:49:37 GMT", "Sunday, 04-Jul-1999 08:49:37 GMT"},
+               {"Sun, 01 Aug 1999 08:49:37 GMT", "Sunday, 01-Aug-1999 08:49:37 GMT"},
+               {"Sun, 05 Sep 1999 08:49:37 GMT", "Sunday, 05-Sep-1999 08:49:37 GMT"},
+               {"Sun, 03 Oct 1999 08:49:37 GMT", "Sunday, 03-Oct-1999 08:49:37 GMT"},
+               {"Sun, 07 Nov 1999 08:49:37 GMT", "Sunday, 07-Nov-1999 08:49:37 GMT"},
+               {"Sun, 05 Dec 1999 08:49:37 GMT", "Sunday, 05-Dec-1999 08:49:37 GMT"},
+               {NULL, NULL}};
 
   int i;
   int failures = 0;
@@ -248,12 +233,11 @@ HdrTest::test_parse_date()
   bri_box("test_parse_date");
 
   for (i = 0; dates[i].fast; i++) {
-    fast_t = mime_parse_date(dates[i].fast, dates[i].fast + (int) strlen(dates[i].fast));
-    slow_t = mime_parse_date(dates[i].slow, dates[i].slow + (int) strlen(dates[i].slow));
+    fast_t = mime_parse_date(dates[i].fast, dates[i].fast + (int)strlen(dates[i].fast));
+    slow_t = mime_parse_date(dates[i].slow, dates[i].slow + (int)strlen(dates[i].slow));
     // compare with strptime here!
     if (fast_t != slow_t) {
-      printf("FAILED: date %lu (%s) != %lu (%s)\n",
-             (unsigned long) fast_t, dates[i].fast, (unsigned long) slow_t, dates[i].slow);
+      printf("FAILED: date %lu (%s) != %lu (%s)\n", (unsigned long)fast_t, dates[i].fast, (unsigned long)slow_t, dates[i].slow);
       ++failures;
     }
   }
@@ -267,13 +251,8 @@ HdrTest::test_parse_date()
 int
 HdrTest::test_format_date()
 {
-  static const char *dates[] = {
-    "Sun, 06 Nov 1994 08:49:37 GMT",
-    "Sun, 03 Jan 1999 08:49:37 GMT",
-    "Sun, 05 Dec 1999 08:49:37 GMT",
-    "Tue, 25 Apr 2000 20:29:53 GMT",
-    NULL
-  };
+  static const char *dates[] = {"Sun, 06 Nov 1994 08:49:37 GMT", "Sun, 03 Jan 1999 08:49:37 GMT", "Sun, 05 Dec 1999 08:49:37 GMT",
+                                "Tue, 25 Apr 2000 20:29:53 GMT", NULL};
 
   bri_box("test_format_date");
 
@@ -286,11 +265,11 @@ HdrTest::test_format_date()
   int failures = 0;
 
   // shift into GMT timezone for cftime conversions
-  putenv((char*)envstr);
+  putenv((char *)envstr);
   tzset();
 
   for (i = 0; dates[i]; i++) {
-    t = mime_parse_date(dates[i], dates[i] + (int) strlen(dates[i]));
+    t = mime_parse_date(dates[i], dates[i] + (int)strlen(dates[i]));
 
     cftime_replacement(buffer, sizeof(buffer), "%a, %d %b %Y %T %Z", &t);
     if (memcmp(dates[i], buffer, 29) != 0) {
@@ -312,13 +291,13 @@ HdrTest::test_format_date()
   // (2) test a few times per day from 1/1/1970 to past 2010
 
   // coverity[dont_call]
-  for (t = 0; t < 40 * 366 * (24 * 60 * 60); t += (int) (drand48() * (24 * 60 * 60))) {
+  for (t = 0; t < 40 * 366 * (24 * 60 * 60); t += (int)(drand48() * (24 * 60 * 60))) {
     cftime_replacement(buffer, sizeof(buffer), "%a, %d %b %Y %T %Z", &t);
-    t2 = mime_parse_date(buffer, buffer + (int) strlen(buffer));
+    t2 = mime_parse_date(buffer, buffer + (int)strlen(buffer));
     if (t2 != t) {
       printf("FAILED: parsed time_t doesn't match original time_t\n");
-      printf("  input time_t:  %d (%s)\n", (int) t, buffer);
-      printf("  parsed time_t: %d\n", (int) t2);
+      printf("  input time_t:  %d (%s)\n", (int)t, buffer);
+      printf("  parsed time_t: %d\n", (int)t2);
       ++failures;
     }
     mime_format_date(buffer2, t);
@@ -328,11 +307,11 @@ HdrTest::test_format_date()
       printf("  formatted date: %s\n", buffer2);
       ++failures;
     }
-    t3 = mime_parse_date(buffer2, buffer2 + (int) strlen(buffer2));
+    t3 = mime_parse_date(buffer2, buffer2 + (int)strlen(buffer2));
     if (t != t3) {
       printf("FAILED: parsed time_t doesn't match original time_t\n");
-      printf("  input time_t:  %d (%s)\n", (int) t, buffer2);
-      printf("  parsed time_t: %d\n", (int) t3);
+      printf("  input time_t:  %d (%s)\n", (int)t, buffer2);
+      printf("  parsed time_t: %d\n", (int)t3);
       ++failures;
     }
 
@@ -359,78 +338,35 @@ HdrTest::test_url()
 
     // "cheese://bogosity",         This fails, but it's not clear it should work...
 
-    "some.place",
-    "some.place/",
-    "http://some.place",
-    "http://some.place/",
-    "http://some.place/path",
-    "http://some.place/path;params",
-    "http://some.place/path;params?query",
-    "http://some.place/path;params?query#fragment",
-    "http://some.place/path?query#fragment",
-    "http://some.place/path#fragment",
+    "some.place", "some.place/", "http://some.place", "http://some.place/", "http://some.place/path",
+    "http://some.place/path;params", "http://some.place/path;params?query", "http://some.place/path;params?query#fragment",
+    "http://some.place/path?query#fragment", "http://some.place/path#fragment",
 
-    "some.place:80",
-    "some.place:80/",
-    "http://some.place:80",
-    "http://some.place:80/",
+    "some.place:80", "some.place:80/", "http://some.place:80", "http://some.place:80/",
 
-    "foo@some.place:80",
-    "foo@some.place:80/",
-    "http://foo@some.place:80",
-    "http://foo@some.place:80/",
+    "foo@some.place:80", "foo@some.place:80/", "http://foo@some.place:80", "http://foo@some.place:80/",
 
-    "foo:bar@some.place:80",
-    "foo:bar@some.place:80/",
-    "http://foo:bar@some.place:80",
-    "http://foo:bar@some.place:80/",
+    "foo:bar@some.place:80", "foo:bar@some.place:80/", "http://foo:bar@some.place:80", "http://foo:bar@some.place:80/",
 
     // Some address stuff
-    "http://172.16.28.101",
-    "http://172.16.28.101:8080",
-    "http://[::]",
-    "http://[::1]",
-    "http://[fc01:172:16:28::101]",
-    "http://[fc01:172:16:28::101]:80",
-    "http://[fc01:172:16:28:BAAD:BEEF:DEAD:101]",
-    "http://[fc01:172:16:28:BAAD:BEEF:DEAD:101]:8080",
-    "http://172.16.28.101/some/path",
-    "http://172.16.28.101:8080/some/path",
-    "http://[::1]/some/path",
-    "http://[fc01:172:16:28::101]/some/path",
-    "http://[fc01:172:16:28::101]:80/some/path",
-    "http://[fc01:172:16:28:BAAD:BEEF:DEAD:101]/some/path",
-    "http://[fc01:172:16:28:BAAD:BEEF:DEAD:101]:8080/some/path",
-    "http://172.16.28.101/",
-    "http://[fc01:172:16:28:BAAD:BEEF:DEAD:101]:8080/",
+    "http://172.16.28.101", "http://172.16.28.101:8080", "http://[::]", "http://[::1]", "http://[fc01:172:16:28::101]",
+    "http://[fc01:172:16:28::101]:80", "http://[fc01:172:16:28:BAAD:BEEF:DEAD:101]",
+    "http://[fc01:172:16:28:BAAD:BEEF:DEAD:101]:8080", "http://172.16.28.101/some/path", "http://172.16.28.101:8080/some/path",
+    "http://[::1]/some/path", "http://[fc01:172:16:28::101]/some/path", "http://[fc01:172:16:28::101]:80/some/path",
+    "http://[fc01:172:16:28:BAAD:BEEF:DEAD:101]/some/path", "http://[fc01:172:16:28:BAAD:BEEF:DEAD:101]:8080/some/path",
+    "http://172.16.28.101/", "http://[fc01:172:16:28:BAAD:BEEF:DEAD:101]:8080/",
 
 
-    "foo:bar@some.place",
-    "foo:bar@some.place/",
-    "http://foo:bar@some.place",
-    "http://foo:bar@some.place/",
-    "http://foo:bar@[::1]:8080/",
-    "http://foo@[::1]",
+    "foo:bar@some.place", "foo:bar@some.place/", "http://foo:bar@some.place", "http://foo:bar@some.place/",
+    "http://foo:bar@[::1]:8080/", "http://foo@[::1]",
 
-    "mms://sm02.tsqa.example.com/0102rally.asf",
-    "pnm://foo:bar@some.place:80/path;params?query#fragment",
-    "rtsp://foo:bar@some.place:80/path;params?query#fragment",
-    "rtspu://foo:bar@some.place:80/path;params?query#fragment",
+    "mms://sm02.tsqa.example.com/0102rally.asf", "pnm://foo:bar@some.place:80/path;params?query#fragment",
+    "rtsp://foo:bar@some.place:80/path;params?query#fragment", "rtspu://foo:bar@some.place:80/path;params?query#fragment",
     "/finance/external/cbsm/*http://cbs.marketwatch.com/archive/19990713/news/current/net.htx?source=blq/yhoo&dist=yhoo",
-    "http://a.b.com/xx.jpg?newpath=http://bob.dave.com"
-  };
+    "http://a.b.com/xx.jpg?newpath=http://bob.dave.com"};
 
-  static char const* bad[] = {
-    "http://[1:2:3:4:5:6:7:8:9]",
-    "http://1:2:3:4:5:6:7:8:A:B",
-    "http://bob.com[::1]",
-    "http://[::1].com",
-    "http://foo:bar:baz@bob.com/",
-    "http://foo:bar:baz@[::1]:8080/",
-    "http://]",
-    "http://:",
-    "http:/"
-  };
+  static char const *bad[] = {"http://[1:2:3:4:5:6:7:8:9]", "http://1:2:3:4:5:6:7:8:A:B", "http://bob.com[::1]", "http://[::1].com",
+                              "http://foo:bar:baz@bob.com/", "http://foo:bar:baz@[::1]:8080/", "http://]", "http://:", "http:/"};
 
   int err, failed;
   URL url;
@@ -442,7 +378,7 @@ HdrTest::test_url()
 
   failed = 0;
   for (unsigned i = 0; i < countof(strs); i++) {
-    old_length = (int) strlen(strs[i]);
+    old_length = (int)strlen(strs[i]);
     start = strs[i];
     end = start + old_length;
 
@@ -467,8 +403,7 @@ HdrTest::test_url()
     } else if (old_length == new_length - 1) {
       // Check to see if the difference is the trailing
       //   slash we add
-      if (memcmp(print_buf, strs[i], old_length) != 0 ||
-          print_buf[new_length - 1] != '/' || (strs[i])[old_length - 1] == '/') {
+      if (memcmp(print_buf, strs[i], old_length) != 0 || print_buf[new_length - 1] != '/' || (strs[i])[old_length - 1] == '/') {
         fail_text = "TRAILING SLASH";
       }
     } else {
@@ -487,8 +422,8 @@ HdrTest::test_url()
     url.destroy();
   }
 
-  for (unsigned i = 0 ; i < countof(bad) ; ++i) {
-    char const* x = bad[i];
+  for (unsigned i = 0; i < countof(bad); ++i) {
+    char const *x = bad[i];
     url.create(NULL);
     err = url.parse(x, strlen(x));
     url.destroy();
@@ -523,24 +458,27 @@ HdrTest::test_url()
 int
 HdrTest::test_mime()
 {
-  static const char mime[] = {
-    //        "Date: Tuesday, 08-Dec-98 20:32:17 GMT\r\n"
-    "Date: 6 Nov 1994 08:49:37 GMT\r\n"
-      "Max-Forwards: 65535\r\n"
-      "Cache-Control: private\r\n"
-      "accept: foo\r\n"
-      "accept: bar\n"
-      ": (null) field name\r\n"
-      "aCCept: \n"
-      "ACCEPT\r\n"
-      "foo: bar\r\n"
-      "foo: argh\r\n"
-      "foo: three, four\r\n"
-      "word word: word \r\n"
-      "accept: \"fazzle, dazzle\"\r\n"
-      "accept: 1, 2, 3, 4, 5, 6, 7, 8\r\n"
-      "continuation: part1\r\n" " part2\r\n" "scooby: doo\r\n" "scooby : doo\r\n" "bar: foo\r\n" "\r\n"
-  };
+  static const char mime[] = {//        "Date: Tuesday, 08-Dec-98 20:32:17 GMT\r\n"
+                              "Date: 6 Nov 1994 08:49:37 GMT\r\n"
+                              "Max-Forwards: 65535\r\n"
+                              "Cache-Control: private\r\n"
+                              "accept: foo\r\n"
+                              "accept: bar\n"
+                              ": (null) field name\r\n"
+                              "aCCept: \n"
+                              "ACCEPT\r\n"
+                              "foo: bar\r\n"
+                              "foo: argh\r\n"
+                              "foo: three, four\r\n"
+                              "word word: word \r\n"
+                              "accept: \"fazzle, dazzle\"\r\n"
+                              "accept: 1, 2, 3, 4, 5, 6, 7, 8\r\n"
+                              "continuation: part1\r\n"
+                              " part2\r\n"
+                              "scooby: doo\r\n"
+                              "scooby : doo\r\n"
+                              "bar: foo\r\n"
+                              "\r\n"};
 
   int err;
   MIMEHdr hdr;
@@ -642,7 +580,7 @@ HdrTest::test_mime()
   printf("\n");
 
 
-  obj_describe((HdrHeapObjImpl *) (hdr.m_mime), true);
+  obj_describe((HdrHeapObjImpl *)(hdr.m_mime), true);
 
   hdr.fields_clear();
 
@@ -657,35 +595,31 @@ HdrTest::test_mime()
 int
 HdrTest::test_http_parser_eos_boundary_cases()
 {
-  struct
-  {
+  struct {
     const char *msg;
     int expected_result;
     int expected_bytes_consumed;
-  } tests[] = {
-    {
-    "GET /index.html HTTP/1.0\r\n", PARSE_DONE, 26}, {
-    "GET /index.html HTTP/1.0\r\n\r\n***BODY****", PARSE_DONE, 28}, {
-    "GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n\r\n***BODY****", PARSE_DONE, 48}, {
-    "GET", PARSE_ERROR, 3}, {
-    "GET /index.html", PARSE_ERROR, 15}, {
-    "GET /index.html\r\n", PARSE_DONE, 17}, {
-    "GET /index.html HTTP/1.0", PARSE_ERROR, 24}, {
-    "GET /index.html HTTP/1.0\r", PARSE_ERROR, 25}, {
-    "GET /index.html HTTP/1.0\n", PARSE_DONE, 25}, {
-    "GET /index.html HTTP/1.0\n\n", PARSE_DONE, 26}, {
-    "GET /index.html HTTP/1.0\r\n\r\n", PARSE_DONE, 28}, {
-    "GET /index.html HTTP/1.0\r\nUser-Agent: foobar", PARSE_ERROR, 44}, {
-    "GET /index.html HTTP/1.0\r\nUser-Agent: foobar\n", PARSE_DONE, 45}, {
-    "GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n", PARSE_DONE, 46}, {
-    "GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n\r\n", PARSE_DONE, 48}, {
-    "GET /index.html HTTP/1.0\nUser-Agent: foobar\n", PARSE_DONE, 44}, {
-    "GET /index.html HTTP/1.0\nUser-Agent: foobar\nBoo: foo\n", PARSE_DONE, 53}, {
-    "GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n", PARSE_DONE, 46}, {
-    "GET /index.html HTTP/1.0\r\n", PARSE_DONE, 26}, {
-    "", PARSE_ERROR, 0}, {
-    NULL, 0, 0}
-  };
+  } tests[] = {{"GET /index.html HTTP/1.0\r\n", PARSE_DONE, 26},
+               {"GET /index.html HTTP/1.0\r\n\r\n***BODY****", PARSE_DONE, 28},
+               {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n\r\n***BODY****", PARSE_DONE, 48},
+               {"GET", PARSE_ERROR, 3},
+               {"GET /index.html", PARSE_ERROR, 15},
+               {"GET /index.html\r\n", PARSE_DONE, 17},
+               {"GET /index.html HTTP/1.0", PARSE_ERROR, 24},
+               {"GET /index.html HTTP/1.0\r", PARSE_ERROR, 25},
+               {"GET /index.html HTTP/1.0\n", PARSE_DONE, 25},
+               {"GET /index.html HTTP/1.0\n\n", PARSE_DONE, 26},
+               {"GET /index.html HTTP/1.0\r\n\r\n", PARSE_DONE, 28},
+               {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar", PARSE_ERROR, 44},
+               {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\n", PARSE_DONE, 45},
+               {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n", PARSE_DONE, 46},
+               {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n\r\n", PARSE_DONE, 48},
+               {"GET /index.html HTTP/1.0\nUser-Agent: foobar\n", PARSE_DONE, 44},
+               {"GET /index.html HTTP/1.0\nUser-Agent: foobar\nBoo: foo\n", PARSE_DONE, 53},
+               {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n", PARSE_DONE, 46},
+               {"GET /index.html HTTP/1.0\r\n", PARSE_DONE, 26},
+               {"", PARSE_ERROR, 0},
+               {NULL, 0, 0}};
 
   int i, ret, bytes_consumed;
   const char *orig_start;
@@ -703,7 +637,7 @@ HdrTest::test_http_parser_eos_boundary_cases()
     HTTPHdr req_hdr;
 
     start = tests[i].msg;
-    end = start + strlen(start);        // 1 character past end of string
+    end = start + strlen(start); // 1 character past end of string
 
     req_hdr.create(HTTP_TYPE_REQUEST);
 
@@ -711,7 +645,7 @@ HdrTest::test_http_parser_eos_boundary_cases()
 
     orig_start = start;
     ret = req_hdr.parse_req(&parser, &start, end, true);
-    bytes_consumed = (int) (start - orig_start);
+    bytes_consumed = (int)(start - orig_start);
 
     printf("======== test %d (length=%d, consumed=%d)\n", i, (int)strlen(tests[i].msg), bytes_consumed);
     printf("[%s]\n", tests[i].msg);
@@ -721,8 +655,8 @@ HdrTest::test_http_parser_eos_boundary_cases()
 
     if ((ret != tests[i].expected_result) || (bytes_consumed != tests[i].expected_bytes_consumed)) {
       ++failures;
-      printf("FAILED: test %d: retval <expected %d, got %d>, eaten <expected %d, got %d>\n\n",
-             i, tests[i].expected_result, ret, tests[i].expected_bytes_consumed, bytes_consumed);
+      printf("FAILED: test %d: retval <expected %d, got %d>, eaten <expected %d, got %d>\n\n", i, tests[i].expected_result, ret,
+             tests[i].expected_bytes_consumed, bytes_consumed);
     }
 
     req_hdr.destroy();
@@ -747,10 +681,10 @@ HdrTest::test_http_aux(const char *request, const char *response)
 
   printf("   <<< MUST BE HAND-VERIFIED FOR FULL BENEFIT >>>\n\n");
 
-    /*** (1) parse the request string into req_hdr ***/
+  /*** (1) parse the request string into req_hdr ***/
 
   start = request;
-  end = start + strlen(start);  // 1 character past end of string
+  end = start + strlen(start); // 1 character past end of string
 
   http_parser_init(&parser);
 
@@ -769,14 +703,14 @@ HdrTest::test_http_aux(const char *request, const char *response)
     return (failures_to_status("test_http_aux", (status == 0)));
   }
 
-    /*** useless copy to exercise copy function ***/
+  /*** useless copy to exercise copy function ***/
 
   HTTPHdr new_hdr;
   new_hdr.create(HTTP_TYPE_REQUEST);
   new_hdr.copy(&req_hdr);
   new_hdr.destroy();
 
-    /*** (2) print out the request ***/
+  /*** (2) print out the request ***/
 
   printf("======== real request (length=%d)\n\n", (int)strlen(request));
   printf("%s\n", request);
@@ -790,7 +724,7 @@ HdrTest::test_http_aux(const char *request, const char *response)
   // req_hdr.destroy ();
   // ink_release_assert(!"req_hdr.destroy() not defined");
 
-    /*** (3) parse the response string into rsp_hdr ***/
+  /*** (3) parse the response string into rsp_hdr ***/
 
   start = response;
   end = start + strlen(start);
@@ -811,7 +745,7 @@ HdrTest::test_http_aux(const char *request, const char *response)
 
   http_parser_clear(&parser);
 
-    /*** (4) print out the response ***/
+  /*** (4) print out the response ***/
 
   printf("\n======== real response (length=%d)\n\n", (int)strlen(response));
   printf("%s\n", response);
@@ -834,7 +768,7 @@ HdrTest::test_http_aux(const char *request, const char *response)
     do {
       last_bufindex = bufindex;
       tmp = bufindex;
-      buf[0] = '#';             // make it obvious if hdr.print doesn't print anything
+      buf[0] = '#'; // make it obvious if hdr.print doesn't print anything
       err = rsp_hdr.print(buf, NNN, &bufindex, &tmp);
 
       // printf("test_header: tmp = %d  err = %d  bufindex = %d\n", tmp, err, bufindex);
@@ -863,105 +797,144 @@ HdrTest::test_http_aux(const char *request, const char *response)
 int
 HdrTest::test_http_hdr_print_and_copy()
 {
-  static struct
-  {
+  static struct {
     const char *req;
     const char *req_tgt;
     const char *rsp;
     const char *rsp_tgt;
-  } tests[] = {
-    {
-    "GET http://foo.com/bar.txt HTTP/1.0\r\n"
-        "Accept-Language: fjdfjdslkf dsjkfdj flkdsfjlk sjfdlk ajfdlksa\r\n"
-        "\r\n",
-        "GET http://foo.com/bar.txt HTTP/1.0\r\n"
-        "Accept-Language: fjdfjdslkf dsjkfdj flkdsfjlk sjfdlk ajfdlksa\r\n"
-        "\r\n", "HTTP/1.0 200 OK\r\n" "\r\n", "HTTP/1.0 200 OK\r\n" "\r\n"}, {
-    "GET http://foo.com/bar.txt HTTP/1.0\r\n"
-        "Accept-Language: fjdfjdslkf dsjkfdj flkdsfjlk sjfdlk ajfdlksa fjfj dslkfjdslk fjsdafkl dsajfkldsa jfkldsafj klsafjs lkafjdsalk fsdjakfl sdjaflkdsaj flksdjflsd ;ffd salfdjs lf;sdaf ;dsaf jdsal;fdjsaflkjsda \r\n"
-        "\r\n",
-        "GET http://foo.com/bar.txt HTTP/1.0\r\n"
-        "Accept-Language: fjdfjdslkf dsjkfdj flkdsfjlk sjfdlk ajfdlksa fjfj dslkfjdslk fjsdafkl dsajfkldsa jfkldsafj klsafjs lkafjdsalk fsdjakfl sdjaflkdsaj flksdjflsd ;ffd salfdjs lf;sdaf ;dsaf jdsal;fdjsaflkjsda \r\n"
-        "\r\n", "HTTP/1.0 200 OK\r\n" "\r\n", "HTTP/1.0 200 OK\r\n" "\r\n"}, {
-    "GET http://foo.com/bar.txt HTTP/1.0\r\n"
-        "Accept-Language: fjdfjdslkf dsjkfdj flkdsfjlk sjfdlk ajfdlksa fjfj dslkfjdslk fjsdafkl dsajfkldsa jfkldsafj klsafjs lkafjdsalk fsdjakfl sdjaflkdsaj flksdjflsd ;ffd salfdjs lf;sdaf ;dsaf jdsal;fdjsaflkjsda kfl; fsdajfl; sdjafl;dsajlsjfl;sdafjsdal;fjds al;fdjslaf ;slajdk;f\r\n"
-        "\r\n",
-        "GET http://foo.com/bar.txt HTTP/1.0\r\n"
-        "Accept-Language: fjdfjdslkf dsjkfdj flkdsfjlk sjfdlk ajfdlksa fjfj dslkfjdslk fjsdafkl dsajfkldsa jfkldsafj klsafjs lkafjdsalk fsdjakfl sdjaflkdsaj flksdjflsd ;ffd salfdjs lf;sdaf ;dsaf jdsal;fdjsaflkjsda kfl; fsdajfl; sdjafl;dsajlsjfl;sdafjsdal;fjds al;fdjslaf ;slajdk;f\r\n"
-        "\r\n", "HTTP/1.0 200 OK\r\n" "\r\n", "HTTP/1.0 200 OK\r\n" "\r\n"}, {
-      "GET http://people.netscape.com/jwz/hacks-1.gif HTTP/1.0\r\n" "If-Modified-Since: Wednesday, 26-Feb-97 06:58:17 GMT; length=842\r\n" "Referer: chocolate fribble\r\n",    // missing final CRLF
-        "GET http://people.netscape.com/jwz/hacks-1.gif HTTP/1.0\r\n" "If-Modified-Since: Wednesday, 26-Feb-97 06:58:17 GMT; length=842\r\n" "Referer: chocolate fribble\r\n" "\r\n", "HTTP/1.0 200 OK\r\n" "MIME-Version: 1.0\r\n" "Server: WebSTAR/2.1 ID/30013\r\n" "Content-Type: text/html\r\n" "Content-Length: 939\r\n" "Last-Modified: Thursday, 01-Jan-04 05:00:00 GMT\r\n",   // missing final CRLF
-    "HTTP/1.0 200 OK\r\n"
-        "MIME-Version: 1.0\r\n"
-        "Server: WebSTAR/2.1 ID/30013\r\n"
-        "Content-Type: text/html\r\n"
-        "Content-Length: 939\r\n" "Last-Modified: Thursday, 01-Jan-04 05:00:00 GMT\r\n" "\r\n"}, {
-      "GET http://people.netscape.com/jwz/hacks-1.gif HTTP/1.0\r\n" "If-Modified-Since: Wednesday, 26-Feb-97 06:58:17 GMT; length=842\r\n" "Referer: \r\n",     // missing final CRLF
-    "GET http://people.netscape.com/jwz/hacks-1.gif HTTP/1.0\r\n"
-        "If-Modified-Since: Wednesday, 26-Feb-97 06:58:17 GMT; length=842\r\n"
-        "Referer: \r\n"
-        "\r\n",
-        "HTTP/1.0 200 OK\r\n"
-        "MIME-Version: 1.0\r\n"
-        "Server: WebSTAR/2.1 ID/30013\r\n"
-        "Content-Type: text/html\r\n"
-        "Content-Length: 939\r\n"
-        "Last-Modified: Thursday, 01-Jan-04 05:00:00 GMT\r\n"
-        "\r\n",
-        "HTTP/1.0 200 OK\r\n"
-        "MIME-Version: 1.0\r\n"
-        "Server: WebSTAR/2.1 ID/30013\r\n"
-        "Content-Type: text/html\r\n"
-        "Content-Length: 939\r\n" "Last-Modified: Thursday, 01-Jan-04 05:00:00 GMT\r\n" "\r\n"}, {
-    "GET http://www.news.com:80/ HTTP/1.0\r\n"
-        "Proxy-Connection: Keep-Alive\r\n"
-        "User-Agent: Mozilla/4.04 [en] (X11; I; Linux 2.0.33 i586)\r\n"
-        "Pragma: no-cache\r\n"
-        "Host: www.news.com\r\n"
-        "Accept: image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, image/png, */*\r\n"
-        "Accept-Language: en\r\n"
-        "Accept-Charset: iso-8859-1, *, utf-8\r\n"
-        "Client-ip: D1012148\r\n"
-        "Foo: abcdefghijklmnopqrtu\r\n"
-        "\r\n",
-        "GET http://www.news.com:80/ HTTP/1.0\r\n"
-        "Proxy-Connection: Keep-Alive\r\n"
-        "User-Agent: Mozilla/4.04 [en] (X11; I; Linux 2.0.33 i586)\r\n"
-        "Pragma: no-cache\r\n"
-        "Host: www.news.com\r\n"
-        "Accept: image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, image/png, */*\r\n"
-        "Accept-Language: en\r\n"
-        "Accept-Charset: iso-8859-1, *, utf-8\r\n"
-        "Client-ip: D1012148\r\n"
-        "Foo: abcdefghijklmnopqrtu\r\n"
-        "\r\n",
-        "HTTP/1.0 200 OK\r\n"
-        "Content-Length: 16428\r\n"
-        "Content-Type: text/html\r\n"
-        "\r\n", "HTTP/1.0 200 OK\r\n" "Content-Length: 16428\r\n" "Content-Type: text/html\r\n" "\r\n"}, {
-    "GET http://people.netscape.com/jwz/hacks-1.gif HTTP/1.0\r\n"
-        "If-Modified-Since: Wednesday, 26-Feb-97 06:58:17 GMT; length=842\r\n"
-        "Referer: http://people.netscape.com/jwz/index.html\r\n"
-        "Proxy-Connection: Keep-Alive\r\n"
-        "User-Agent:  Mozilla/3.01 (X11; I; Linux 2.0.28 i586)\r\n"
-        "Pragma: no-cache\r\n"
-        "Host: people.netscape.com\r\n"
-        "Accept: image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, */*\r\n"
-        "\r\n",
-        "GET http://people.netscape.com/jwz/hacks-1.gif HTTP/1.0\r\n"
-        "If-Modified-Since: Wednesday, 26-Feb-97 06:58:17 GMT; length=842\r\n"
-        "Referer: http://people.netscape.com/jwz/index.html\r\n"
-        "Proxy-Connection: Keep-Alive\r\n"
-        "User-Agent:  Mozilla/3.01 (X11; I; Linux 2.0.28 i586)\r\n"
-        "Pragma: no-cache\r\n"
-        "Host: people.netscape.com\r\n"
-        "Accept: image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, */*\r\n"
-        "\r\n",
-        "HTTP/1.0 200 OK\r\n"
-        "Content-Length: 16428\r\n"
-        "Content-Type: text/html\r\n"
-        "\r\n", "HTTP/1.0 200 OK\r\n" "Content-Length: 16428\r\n" "Content-Type: text/html\r\n" "\r\n"}
-  };
+  } tests[] = {{"GET http://foo.com/bar.txt HTTP/1.0\r\n"
+                "Accept-Language: fjdfjdslkf dsjkfdj flkdsfjlk sjfdlk ajfdlksa\r\n"
+                "\r\n",
+                "GET http://foo.com/bar.txt HTTP/1.0\r\n"
+                "Accept-Language: fjdfjdslkf dsjkfdj flkdsfjlk sjfdlk ajfdlksa\r\n"
+                "\r\n",
+                "HTTP/1.0 200 OK\r\n"
+                "\r\n",
+                "HTTP/1.0 200 OK\r\n"
+                "\r\n"},
+               {"GET http://foo.com/bar.txt HTTP/1.0\r\n"
+                "Accept-Language: fjdfjdslkf dsjkfdj flkdsfjlk sjfdlk ajfdlksa fjfj dslkfjdslk fjsdafkl dsajfkldsa jfkldsafj "
+                "klsafjs lkafjdsalk fsdjakfl sdjaflkdsaj flksdjflsd ;ffd salfdjs lf;sdaf ;dsaf jdsal;fdjsaflkjsda \r\n"
+                "\r\n",
+                "GET http://foo.com/bar.txt HTTP/1.0\r\n"
+                "Accept-Language: fjdfjdslkf dsjkfdj flkdsfjlk sjfdlk ajfdlksa fjfj dslkfjdslk fjsdafkl dsajfkldsa jfkldsafj "
+                "klsafjs lkafjdsalk fsdjakfl sdjaflkdsaj flksdjflsd ;ffd salfdjs lf;sdaf ;dsaf jdsal;fdjsaflkjsda \r\n"
+                "\r\n",
+                "HTTP/1.0 200 OK\r\n"
+                "\r\n",
+                "HTTP/1.0 200 OK\r\n"
+                "\r\n"},
+               {"GET http://foo.com/bar.txt HTTP/1.0\r\n"
+                "Accept-Language: fjdfjdslkf dsjkfdj flkdsfjlk sjfdlk ajfdlksa fjfj dslkfjdslk fjsdafkl dsajfkldsa jfkldsafj "
+                "klsafjs lkafjdsalk fsdjakfl sdjaflkdsaj flksdjflsd ;ffd salfdjs lf;sdaf ;dsaf jdsal;fdjsaflkjsda kfl; fsdajfl; "
+                "sdjafl;dsajlsjfl;sdafjsdal;fjds al;fdjslaf ;slajdk;f\r\n"
+                "\r\n",
+                "GET http://foo.com/bar.txt HTTP/1.0\r\n"
+                "Accept-Language: fjdfjdslkf dsjkfdj flkdsfjlk sjfdlk ajfdlksa fjfj dslkfjdslk fjsdafkl dsajfkldsa jfkldsafj "
+                "klsafjs lkafjdsalk fsdjakfl sdjaflkdsaj flksdjflsd ;ffd salfdjs lf;sdaf ;dsaf jdsal;fdjsaflkjsda kfl; fsdajfl; "
+                "sdjafl;dsajlsjfl;sdafjsdal;fjds al;fdjslaf ;slajdk;f\r\n"
+                "\r\n",
+                "HTTP/1.0 200 OK\r\n"
+                "\r\n",
+                "HTTP/1.0 200 OK\r\n"
+                "\r\n"},
+               {"GET http://people.netscape.com/jwz/hacks-1.gif HTTP/1.0\r\n"
+                "If-Modified-Since: Wednesday, 26-Feb-97 06:58:17 GMT; length=842\r\n"
+                "Referer: chocolate fribble\r\n", // missing final CRLF
+                "GET http://people.netscape.com/jwz/hacks-1.gif HTTP/1.0\r\n"
+                "If-Modified-Since: Wednesday, 26-Feb-97 06:58:17 GMT; length=842\r\n"
+                "Referer: chocolate fribble\r\n"
+                "\r\n",
+                "HTTP/1.0 200 OK\r\n"
+                "MIME-Version: 1.0\r\n"
+                "Server: WebSTAR/2.1 ID/30013\r\n"
+                "Content-Type: text/html\r\n"
+                "Content-Length: 939\r\n"
+                "Last-Modified: Thursday, 01-Jan-04 05:00:00 GMT\r\n", // missing final CRLF
+                "HTTP/1.0 200 OK\r\n"
+                "MIME-Version: 1.0\r\n"
+                "Server: WebSTAR/2.1 ID/30013\r\n"
+                "Content-Type: text/html\r\n"
+                "Content-Length: 939\r\n"
+                "Last-Modified: Thursday, 01-Jan-04 05:00:00 GMT\r\n"
+                "\r\n"},
+               {"GET http://people.netscape.com/jwz/hacks-1.gif HTTP/1.0\r\n"
+                "If-Modified-Since: Wednesday, 26-Feb-97 06:58:17 GMT; length=842\r\n"
+                "Referer: \r\n", // missing final CRLF
+                "GET http://people.netscape.com/jwz/hacks-1.gif HTTP/1.0\r\n"
+                "If-Modified-Since: Wednesday, 26-Feb-97 06:58:17 GMT; length=842\r\n"
+                "Referer: \r\n"
+                "\r\n",
+                "HTTP/1.0 200 OK\r\n"
+                "MIME-Version: 1.0\r\n"
+                "Server: WebSTAR/2.1 ID/30013\r\n"
+                "Content-Type: text/html\r\n"
+                "Content-Length: 939\r\n"
+                "Last-Modified: Thursday, 01-Jan-04 05:00:00 GMT\r\n"
+                "\r\n",
+                "HTTP/1.0 200 OK\r\n"
+                "MIME-Version: 1.0\r\n"
+                "Server: WebSTAR/2.1 ID/30013\r\n"
+                "Content-Type: text/html\r\n"
+                "Content-Length: 939\r\n"
+                "Last-Modified: Thursday, 01-Jan-04 05:00:00 GMT\r\n"
+                "\r\n"},
+               {"GET http://www.news.com:80/ HTTP/1.0\r\n"
+                "Proxy-Connection: Keep-Alive\r\n"
+                "User-Agent: Mozilla/4.04 [en] (X11; I; Linux 2.0.33 i586)\r\n"
+                "Pragma: no-cache\r\n"
+                "Host: www.news.com\r\n"
+                "Accept: image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, image/png, */*\r\n"
+                "Accept-Language: en\r\n"
+                "Accept-Charset: iso-8859-1, *, utf-8\r\n"
+                "Client-ip: D1012148\r\n"
+                "Foo: abcdefghijklmnopqrtu\r\n"
+                "\r\n",
+                "GET http://www.news.com:80/ HTTP/1.0\r\n"
+                "Proxy-Connection: Keep-Alive\r\n"
+                "User-Agent: Mozilla/4.04 [en] (X11; I; Linux 2.0.33 i586)\r\n"
+                "Pragma: no-cache\r\n"
+                "Host: www.news.com\r\n"
+                "Accept: image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, image/png, */*\r\n"
+                "Accept-Language: en\r\n"
+                "Accept-Charset: iso-8859-1, *, utf-8\r\n"
+                "Client-ip: D1012148\r\n"
+                "Foo: abcdefghijklmnopqrtu\r\n"
+                "\r\n",
+                "HTTP/1.0 200 OK\r\n"
+                "Content-Length: 16428\r\n"
+                "Content-Type: text/html\r\n"
+                "\r\n",
+                "HTTP/1.0 200 OK\r\n"
+                "Content-Length: 16428\r\n"
+                "Content-Type: text/html\r\n"
+                "\r\n"},
+               {"GET http://people.netscape.com/jwz/hacks-1.gif HTTP/1.0\r\n"
+                "If-Modified-Since: Wednesday, 26-Feb-97 06:58:17 GMT; length=842\r\n"
+                "Referer: http://people.netscape.com/jwz/index.html\r\n"
+                "Proxy-Connection: Keep-Alive\r\n"
+                "User-Agent:  Mozilla/3.01 (X11; I; Linux 2.0.28 i586)\r\n"
+                "Pragma: no-cache\r\n"
+                "Host: people.netscape.com\r\n"
+                "Accept: image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, */*\r\n"
+                "\r\n",
+                "GET http://people.netscape.com/jwz/hacks-1.gif HTTP/1.0\r\n"
+                "If-Modified-Since: Wednesday, 26-Feb-97 06:58:17 GMT; length=842\r\n"
+                "Referer: http://people.netscape.com/jwz/index.html\r\n"
+                "Proxy-Connection: Keep-Alive\r\n"
+                "User-Agent:  Mozilla/3.01 (X11; I; Linux 2.0.28 i586)\r\n"
+                "Pragma: no-cache\r\n"
+                "Host: people.netscape.com\r\n"
+                "Accept: image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, */*\r\n"
+                "\r\n",
+                "HTTP/1.0 200 OK\r\n"
+                "Content-Length: 16428\r\n"
+                "Content-Type: text/html\r\n"
+                "\r\n",
+                "HTTP/1.0 200 OK\r\n"
+                "Content-Length: 16428\r\n"
+                "Content-Type: text/html\r\n"
+                "\r\n"}};
 
   int ntests = sizeof(tests) / sizeof(tests[0]);
   int i, failures;
@@ -971,19 +944,18 @@ HdrTest::test_http_hdr_print_and_copy()
   bri_box("test_http_hdr_print_and_copy");
 
   for (i = 0; i < ntests; i++) {
-    int status =
-      test_http_hdr_print_and_copy_aux(i + 1, tests[i].req, tests[i].req_tgt, tests[i].rsp, tests[i].rsp_tgt);
+    int status = test_http_hdr_print_and_copy_aux(i + 1, tests[i].req, tests[i].req_tgt, tests[i].rsp, tests[i].rsp_tgt);
     if (status == 0)
       ++failures;
 
     // Test for expected failures
     // parse with a '\0' in the header.  Should fail
-    status =  test_http_hdr_null_char(i + 1, tests[i].req, tests[i].req_tgt);
+    status = test_http_hdr_null_char(i + 1, tests[i].req, tests[i].req_tgt);
     if (status == 0)
       ++failures;
 
     // Parse with a CTL character in the method name.  Should fail
-    status =  test_http_hdr_ctl_char(i + 1, tests[i].req, tests[i].req_tgt);
+    status = test_http_hdr_ctl_char(i + 1, tests[i].req, tests[i].req_tgt);
     if (status == 0)
       ++failures;
   }
@@ -994,9 +966,8 @@ HdrTest::test_http_hdr_print_and_copy()
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 static const char *
-comp_http_hdr(HTTPHdr * h1, HTTPHdr * h2)
+comp_http_hdr(HTTPHdr *h1, HTTPHdr *h2)
 {
-
   int h1_len, h2_len;
   int p_index, p_dumpoffset, rval;
   char *h1_pbuf, *h2_pbuf;
@@ -1056,12 +1027,12 @@ HdrTest::test_http_hdr_copy_over_aux(int testnum, const char *request, const cha
   const char *end;
   const char *comp_str = NULL;
 
-    /*** (1) parse the request string into hdr ***/
+  /*** (1) parse the request string into hdr ***/
 
   req_hdr.create(HTTP_TYPE_REQUEST);
 
   start = request;
-  end = start + strlen(start);  // 1 character past end of string
+  end = start + strlen(start); // 1 character past end of string
 
   http_parser_init(&parser);
 
@@ -1078,12 +1049,12 @@ HdrTest::test_http_hdr_copy_over_aux(int testnum, const char *request, const cha
   http_parser_clear(&parser);
 
 
-    /*** (2) parse the response string into hdr ***/
+  /*** (2) parse the response string into hdr ***/
 
   resp_hdr.create(HTTP_TYPE_RESPONSE);
 
   start = response;
-  end = start + strlen(start);  // 1 character past end of string
+  end = start + strlen(start); // 1 character past end of string
 
   http_parser_init(&parser);
 
@@ -1098,7 +1069,7 @@ HdrTest::test_http_hdr_copy_over_aux(int testnum, const char *request, const cha
     return (0);
   }
 
-    /*** (3) Basic copy testing ***/
+  /*** (3) Basic copy testing ***/
   copy1.create(HTTP_TYPE_REQUEST);
   copy1.copy(&req_hdr);
   comp_str = comp_http_hdr(&req_hdr, &copy1);
@@ -1111,9 +1082,9 @@ HdrTest::test_http_hdr_copy_over_aux(int testnum, const char *request, const cha
   if (comp_str)
     goto done;
 
-  // The APIs for copying headers uses memcpy() which can be unsafe for
-  // overlapping memory areas. It's unclear to me why these tests were
-  // created in the first place honestly, since nothing else does this.
+// The APIs for copying headers uses memcpy() which can be unsafe for
+// overlapping memory areas. It's unclear to me why these tests were
+// created in the first place honestly, since nothing else does this.
 #if 0
     /*** (4) Copying over yourself ***/
   copy1.copy(&copy1);
@@ -1127,7 +1098,7 @@ HdrTest::test_http_hdr_copy_over_aux(int testnum, const char *request, const cha
     goto done;
 #endif
 
-    /*** (5) Gender bending copying ***/
+  /*** (5) Gender bending copying ***/
   copy1.copy(&resp_hdr);
   comp_str = comp_http_hdr(&resp_hdr, &copy1);
   if (comp_str)
@@ -1157,8 +1128,7 @@ done:
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 int
-HdrTest::test_http_hdr_null_char(int testnum,
-                                 const char *request, const char * /*request_tgt*/)
+HdrTest::test_http_hdr_null_char(int testnum, const char *request, const char * /*request_tgt*/)
 {
   int err;
   HTTPHdr hdr;
@@ -1181,7 +1151,7 @@ HdrTest::test_http_hdr_null_char(int testnum,
 
   // Put a null character somewhere in the header
   int length = strlen(start);
-  cpy_buf[length/2] = '\0';
+  cpy_buf[length / 2] = '\0';
   http_parser_init(&parser);
 
   while (1) {
@@ -1199,8 +1169,7 @@ HdrTest::test_http_hdr_null_char(int testnum,
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 int
-HdrTest::test_http_hdr_ctl_char(int testnum,
-                                const char *request, const char * /*request_tgt */)
+HdrTest::test_http_hdr_ctl_char(int testnum, const char *request, const char * /*request_tgt */)
 {
   int err;
   HTTPHdr hdr;
@@ -1214,7 +1183,7 @@ HdrTest::test_http_hdr_ctl_char(int testnum,
   hdr.create(HTTP_TYPE_REQUEST);
 
   start = request;
-  
+
   if (strlen(start) > sizeof(cpy_buf)) {
     printf("FAILED: (test #%d) Internal buffer too small for ctl char test\n", testnum);
     return (0);
@@ -1243,9 +1212,8 @@ HdrTest::test_http_hdr_ctl_char(int testnum,
   -------------------------------------------------------------------------*/
 
 int
-HdrTest::test_http_hdr_print_and_copy_aux(int testnum,
-                                          const char *request, const char *request_tgt,
-                                          const char *response, const char *response_tgt)
+HdrTest::test_http_hdr_print_and_copy_aux(int testnum, const char *request, const char *request_tgt, const char *response,
+                                          const char *response_tgt)
 {
   int err;
   HTTPHdr hdr;
@@ -1261,15 +1229,15 @@ HdrTest::test_http_hdr_print_and_copy_aux(int testnum,
   int cpy_bufsize = sizeof(cpy_buf);
   int cpy_bufindex, cpy_dumpoffset, cpy_ret;
 
-  char *marshal_buf = (char*)ats_malloc(2048);
+  char *marshal_buf = (char *)ats_malloc(2048);
   int marshal_bufsize = sizeof(cpy_buf);
 
-    /*** (1) parse the request string into hdr ***/
+  /*** (1) parse the request string into hdr ***/
 
   hdr.create(HTTP_TYPE_REQUEST);
 
   start = request;
-  end = start + strlen(start);  // 1 character past end of string
+  end = start + strlen(start); // 1 character past end of string
 
   http_parser_init(&parser);
 
@@ -1285,7 +1253,7 @@ HdrTest::test_http_hdr_print_and_copy_aux(int testnum,
     return (0);
   }
 
-    /*** (2) copy the request header ***/
+  /*** (2) copy the request header ***/
   HTTPHdr new_hdr, marshal_hdr;
   RefCountObj ref;
   ref.m_refcount = 100;
@@ -1296,7 +1264,7 @@ HdrTest::test_http_hdr_print_and_copy_aux(int testnum,
   new_hdr.copy(&marshal_hdr);
   ats_free(marshal_buf);
 
-    /*** (3) print the request header and copy to buffers ***/
+  /*** (3) print the request header and copy to buffers ***/
 
   prt_bufindex = prt_dumpoffset = 0;
   prt_ret = hdr.print(prt_buf, prt_bufsize, &prt_bufindex, &prt_dumpoffset);
@@ -1309,9 +1277,9 @@ HdrTest::test_http_hdr_print_and_copy_aux(int testnum,
     return (0);
   }
 
-  if (((size_t) prt_bufindex != strlen(request_tgt)) || ((size_t) cpy_bufindex != strlen(request_tgt))) {
-    printf("FAILED: (test #%d) print req output size mismatch --- tgt=%d, prt_bufsize=%d, cpy_bufsize=%d\n",
-           testnum, (int)strlen(request_tgt), prt_bufindex, cpy_bufindex);
+  if (((size_t)prt_bufindex != strlen(request_tgt)) || ((size_t)cpy_bufindex != strlen(request_tgt))) {
+    printf("FAILED: (test #%d) print req output size mismatch --- tgt=%d, prt_bufsize=%d, cpy_bufsize=%d\n", testnum,
+           (int)strlen(request_tgt), prt_bufindex, cpy_bufindex);
 
     printf("ORIGINAL:\n[%.*s]\n", (int)strlen(request), request);
     printf("TARGET  :\n[%.*s]\n", (int)strlen(request_tgt), request_tgt);
@@ -1333,12 +1301,12 @@ HdrTest::test_http_hdr_print_and_copy_aux(int testnum,
   hdr.destroy();
   new_hdr.destroy();
 
-    /*** (4) parse the response string into hdr ***/
+  /*** (4) parse the response string into hdr ***/
 
   hdr.create(HTTP_TYPE_RESPONSE);
 
   start = response;
-  end = start + strlen(start);  // 1 character past end of string
+  end = start + strlen(start); // 1 character past end of string
 
   http_parser_init(&parser);
 
@@ -1353,12 +1321,12 @@ HdrTest::test_http_hdr_print_and_copy_aux(int testnum,
     return (0);
   }
 
-    /*** (2) copy the response header ***/
+  /*** (2) copy the response header ***/
 
   new_hdr.create(HTTP_TYPE_RESPONSE);
   new_hdr.copy(&hdr);
 
-    /*** (3) print the response header and copy to buffers ***/
+  /*** (3) print the response header and copy to buffers ***/
 
   prt_bufindex = prt_dumpoffset = 0;
   prt_ret = hdr.print(prt_buf, prt_bufsize, &prt_bufindex, &prt_dumpoffset);
@@ -1371,9 +1339,9 @@ HdrTest::test_http_hdr_print_and_copy_aux(int testnum,
     return (0);
   }
 
-  if (((size_t) prt_bufindex != strlen(response_tgt)) || ((size_t) cpy_bufindex != strlen(response_tgt))) {
-    printf("FAILED: (test #%d) print rsp output size mismatch --- tgt=%d, prt_bufsize=%d, cpy_bufsize=%d\n",
-           testnum, (int)strlen(response_tgt), prt_bufindex, cpy_bufindex);
+  if (((size_t)prt_bufindex != strlen(response_tgt)) || ((size_t)cpy_bufindex != strlen(response_tgt))) {
+    printf("FAILED: (test #%d) print rsp output size mismatch --- tgt=%d, prt_bufsize=%d, cpy_bufsize=%d\n", testnum,
+           (int)strlen(response_tgt), prt_bufindex, cpy_bufindex);
     printf("ORIGINAL:\n[%.*s]\n", (int)strlen(response), response);
     printf("TARGET  :\n[%.*s]\n", (int)strlen(response_tgt), response_tgt);
     printf("PRT_BUFF:\n[%.*s]\n", prt_bufindex, prt_buf);
@@ -1409,159 +1377,151 @@ HdrTest::test_http()
 {
   int status = 1;
 
-  static const char request0[] = {
-    "GET http://www.news.com:80/ HTTP/1.0\r\n"
-      "Proxy-Connection: Keep-Alive\r\n"
-      "User-Agent: Mozilla/4.04 [en] (X11; I; Linux 2.0.33 i586)\r\n"
-      "Pragma: no-cache\r\n"
-      "Host: www.news.com\r\n"
-      "Accept: image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, image/png, */*\r\n"
-      "Accept-Language: en\r\n"
-      "Accept-Charset: iso-8859-1, *, utf-8\r\n"
-      "Cookie: u_vid_0_0=00031ba3; s_cur_0_0=0101sisi091314775496e7d3Jx4+POyJakrMybmNOsq6XOn5bVn5Z6a4Ln5crU5M7Rxq2lm5aWpqupo20=; SC_Cnet001=Sampled; SC_Cnet002=Sampled\r\n"
-      "Client-ip: D1012148\r\n" "Foo: abcdefghijklmnopqrtu\r\n" "\r\n"
-  };
+  static const char request0[] = {"GET http://www.news.com:80/ HTTP/1.0\r\n"
+                                  "Proxy-Connection: Keep-Alive\r\n"
+                                  "User-Agent: Mozilla/4.04 [en] (X11; I; Linux 2.0.33 i586)\r\n"
+                                  "Pragma: no-cache\r\n"
+                                  "Host: www.news.com\r\n"
+                                  "Accept: image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, image/png, */*\r\n"
+                                  "Accept-Language: en\r\n"
+                                  "Accept-Charset: iso-8859-1, *, utf-8\r\n"
+                                  "Cookie: u_vid_0_0=00031ba3; "
+                                  "s_cur_0_0=0101sisi091314775496e7d3Jx4+POyJakrMybmNOsq6XOn5bVn5Z6a4Ln5crU5M7Rxq2lm5aWpqupo20=; "
+                                  "SC_Cnet001=Sampled; SC_Cnet002=Sampled\r\n"
+                                  "Client-ip: D1012148\r\n"
+                                  "Foo: abcdefghijklmnopqrtu\r\n"
+                                  "\r\n"};
 
-  static const char request09[] = {
-    "GET /index.html\r\n" "\r\n"
-  };
+  static const char request09[] = {"GET /index.html\r\n"
+                                   "\r\n"};
 
-  static const char request1[] = {
-    "GET http://people.netscape.com/jwz/hacks-1.gif HTTP/1.0\r\n"
-      "If-Modified-Since: Wednesday, 26-Feb-97 06:58:17 GMT; length=842\r\n"
-      "Referer: http://people.netscape.com/jwz/index.html\r\n"
-      "Proxy-Connection: Keep-Alive\r\n"
-      "User-Agent:  Mozilla/3.01 (X11; I; Linux 2.0.28 i586)\r\n"
-      "Pragma: no-cache\r\n"
-      "Host: people.netscape.com\r\n" "Accept: image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, */*\r\n" "\r\n"
-  };
+  static const char request1[] = {"GET http://people.netscape.com/jwz/hacks-1.gif HTTP/1.0\r\n"
+                                  "If-Modified-Since: Wednesday, 26-Feb-97 06:58:17 GMT; length=842\r\n"
+                                  "Referer: http://people.netscape.com/jwz/index.html\r\n"
+                                  "Proxy-Connection: Keep-Alive\r\n"
+                                  "User-Agent:  Mozilla/3.01 (X11; I; Linux 2.0.28 i586)\r\n"
+                                  "Pragma: no-cache\r\n"
+                                  "Host: people.netscape.com\r\n"
+                                  "Accept: image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, */*\r\n"
+                                  "\r\n"};
 
-  static const char request_no_colon[] = {
-    "GET http://people.netscape.com/jwz/hacks-1.gif HTTP/1.0\r\n"
-      "If-Modified-Since Wednesday, 26-Feb-97 06:58:17 GMT; length=842\r\n"
-      "Referer http://people.netscape.com/jwz/index.html\r\n"
-      "Proxy-Connection Keep-Alive\r\n"
-      "User-Agent  Mozilla/3.01 (X11; I; Linux 2.0.28 i586)\r\n"
-      "Pragma no-cache\r\n"
-      "Host people.netscape.com\r\n" "Accept image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, */*\r\n" "\r\n"
-  };
+  static const char request_no_colon[] = {"GET http://people.netscape.com/jwz/hacks-1.gif HTTP/1.0\r\n"
+                                          "If-Modified-Since Wednesday, 26-Feb-97 06:58:17 GMT; length=842\r\n"
+                                          "Referer http://people.netscape.com/jwz/index.html\r\n"
+                                          "Proxy-Connection Keep-Alive\r\n"
+                                          "User-Agent  Mozilla/3.01 (X11; I; Linux 2.0.28 i586)\r\n"
+                                          "Pragma no-cache\r\n"
+                                          "Host people.netscape.com\r\n"
+                                          "Accept image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, */*\r\n"
+                                          "\r\n"};
 
-  static const char request_no_val[] = {
-    "GET http://people.netscape.com/jwz/hacks-1.gif HTTP/1.0\r\n"
-      "If-Modified-Since:\r\n" "Referer:     " "Proxy-Connection:\r\n" "User-Agent:     \r\n" "Host:::\r\n" "\r\n"
-  };
+  static const char request_no_val[] = {"GET http://people.netscape.com/jwz/hacks-1.gif HTTP/1.0\r\n"
+                                        "If-Modified-Since:\r\n"
+                                        "Referer:     "
+                                        "Proxy-Connection:\r\n"
+                                        "User-Agent:     \r\n"
+                                        "Host:::\r\n"
+                                        "\r\n"};
 
-  static const char request_multi_fblock[] = {
-    "GET http://people.netscape.com/jwz/hacks-1.gif HTTP/1.0\r\n"
-      "If-Modified-Since: Wednesday, 26-Feb-97 06:58:17 GMT; length=842\r\n"
-      "Referer: http://people.netscape.com/jwz/index.html\r\n"
-      "Proxy-Connection: Keep-Alive\r\n"
-      "User-Agent:  Mozilla/3.01 (X11; I; Linux 2.0.28 i586)\r\n"
-      "Pragma: no-cache\r\n"
-      "Host: people.netscape.com\r\n"
-      "Accept: image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, */*\r\n"
-      "X-1: blah\r\n"
-      "X-2: blah\r\n"
-      "X-3: blah\r\n"
-      "X-4: blah\r\n"
-      "X-5: blah\r\n"
-      "X-6: blah\r\n"
-      "X-7: blah\r\n"
-      "X-8: blah\r\n"
-      "X-9: blah\r\n"
-      "Pragma: no-cache\r\n"
-      "X-X-1: blah\r\n"
-      "X-X-2: blah\r\n"
-      "X-X-3: blah\r\n"
-      "X-X-4: blah\r\n" "X-X-5: blah\r\n" "X-X-6: blah\r\n" "X-X-7: blah\r\n" "X-X-8: blah\r\n" "X-X-9: blah\r\n" "\r\n"
-  };
+  static const char request_multi_fblock[] = {"GET http://people.netscape.com/jwz/hacks-1.gif HTTP/1.0\r\n"
+                                              "If-Modified-Since: Wednesday, 26-Feb-97 06:58:17 GMT; length=842\r\n"
+                                              "Referer: http://people.netscape.com/jwz/index.html\r\n"
+                                              "Proxy-Connection: Keep-Alive\r\n"
+                                              "User-Agent:  Mozilla/3.01 (X11; I; Linux 2.0.28 i586)\r\n"
+                                              "Pragma: no-cache\r\n"
+                                              "Host: people.netscape.com\r\n"
+                                              "Accept: image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, */*\r\n"
+                                              "X-1: blah\r\n"
+                                              "X-2: blah\r\n"
+                                              "X-3: blah\r\n"
+                                              "X-4: blah\r\n"
+                                              "X-5: blah\r\n"
+                                              "X-6: blah\r\n"
+                                              "X-7: blah\r\n"
+                                              "X-8: blah\r\n"
+                                              "X-9: blah\r\n"
+                                              "Pragma: no-cache\r\n"
+                                              "X-X-1: blah\r\n"
+                                              "X-X-2: blah\r\n"
+                                              "X-X-3: blah\r\n"
+                                              "X-X-4: blah\r\n"
+                                              "X-X-5: blah\r\n"
+                                              "X-X-6: blah\r\n"
+                                              "X-X-7: blah\r\n"
+                                              "X-X-8: blah\r\n"
+                                              "X-X-9: blah\r\n"
+                                              "\r\n"};
 
-  static const char request_leading_space[] = {
-    " GET http://www.news.com:80/ HTTP/1.0\r\n"
-      "Proxy-Connection: Keep-Alive\r\n" "User-Agent: Mozilla/4.04 [en] (X11; I; Linux 2.0.33 i586)\r\n" "\r\n"
-  };
+  static const char request_leading_space[] = {" GET http://www.news.com:80/ HTTP/1.0\r\n"
+                                               "Proxy-Connection: Keep-Alive\r\n"
+                                               "User-Agent: Mozilla/4.04 [en] (X11; I; Linux 2.0.33 i586)\r\n"
+                                               "\r\n"};
 
-  static const char request_padding[] = {
-    "GET http://www.padding.com:80/ HTTP/1.0\r\n" "X-1: blah1\r\n"
-      //       "X-2:  blah2\r\n"
-      "X-3:   blah3\r\n"
-      //       "X-4:    blah4\r\n"
-      "X-5:     blah5\r\n"
-      //       "X-6:      blah6\r\n"
-      "X-7:       blah7\r\n"
-      //       "X-8:        blah8\r\n"
-    "X-9:         blah9\r\n" "\r\n"
-  };
+  static const char request_padding[] = {"GET http://www.padding.com:80/ HTTP/1.0\r\n"
+                                         "X-1: blah1\r\n"
+                                         //       "X-2:  blah2\r\n"
+                                         "X-3:   blah3\r\n"
+                                         //       "X-4:    blah4\r\n"
+                                         "X-5:     blah5\r\n"
+                                         //       "X-6:      blah6\r\n"
+                                         "X-7:       blah7\r\n"
+                                         //       "X-8:        blah8\r\n"
+                                         "X-9:         blah9\r\n"
+                                         "\r\n"};
 
-  static const char request_09p[] = {
-    "GET http://www.news09.com/\r\n" "\r\n"
-  };
+  static const char request_09p[] = {"GET http://www.news09.com/\r\n"
+                                     "\r\n"};
 
-  static const char request_09ht[] = {
-    "GET http://www.news09.com/ HT\r\n" "\r\n"
-  };
+  static const char request_09ht[] = {"GET http://www.news09.com/ HT\r\n"
+                                      "\r\n"};
 
-  static const char request_11[] = {
-    "GET http://www.news.com/ HTTP/1.1\r\n" "Connection: close\r\n" "\r\n"
-  };
+  static const char request_11[] = {"GET http://www.news.com/ HTTP/1.1\r\n"
+                                    "Connection: close\r\n"
+                                    "\r\n"};
 
-  static const char request_unterminated[] = {
-    "GET http://www.unterminated.com/ HTTP/1.1"
-  };
+  static const char request_unterminated[] = {"GET http://www.unterminated.com/ HTTP/1.1"};
 
-  static const char request_blank[] = {
-    "\r\n"
-  };
+  static const char request_blank[] = {"\r\n"};
 
-  static const char request_blank2[] = {
-    "\r\n" "\r\n"
-  };
+  static const char request_blank2[] = {"\r\n"
+                                        "\r\n"};
 
-  static const char request_blank3[] = {
-    "     " "\r\n"
-  };
+  static const char request_blank3[] = {"     "
+                                        "\r\n"};
 
   ////////////////////////////////////////////////////
 
-  static const char response0[] = {
-    "HTTP/1.0 200 OK\r\n"
-      "MIME-Version: 1.0\r\n"
-      "Server: WebSTAR/2.1 ID/30013\r\n"
-      "Content-Type: text/html\r\n"
-      "Content-Length: 939\r\n" "Last-Modified: Thursday, 01-Jan-04 05:00:00 GMT\r\n" "\r\n"
-  };
+  static const char response0[] = {"HTTP/1.0 200 OK\r\n"
+                                   "MIME-Version: 1.0\r\n"
+                                   "Server: WebSTAR/2.1 ID/30013\r\n"
+                                   "Content-Type: text/html\r\n"
+                                   "Content-Length: 939\r\n"
+                                   "Last-Modified: Thursday, 01-Jan-04 05:00:00 GMT\r\n"
+                                   "\r\n"};
 
-  static const char response1[] = {
-    "HTTP/1.0 200 OK\r\n"
-      "Server: Netscape-Communications/1.12\r\n"
-      "Date: Tuesday, 08-Dec-98 20:32:17 GMT\r\n" "Content-Type: text/html\r\n" "\r\n"
-  };
+  static const char response1[] = {"HTTP/1.0 200 OK\r\n"
+                                   "Server: Netscape-Communications/1.12\r\n"
+                                   "Date: Tuesday, 08-Dec-98 20:32:17 GMT\r\n"
+                                   "Content-Type: text/html\r\n"
+                                   "\r\n"};
 
-  static const char response_no_colon[] = {
-    "HTTP/1.0 200 OK\r\n"
-      "Server Netscape-Communications/1.12\r\n"
-      "Date: Tuesday, 08-Dec-98 20:32:17 GMT\r\n" "Content-Type: text/html\r\n" "\r\n"
-  };
+  static const char response_no_colon[] = {"HTTP/1.0 200 OK\r\n"
+                                           "Server Netscape-Communications/1.12\r\n"
+                                           "Date: Tuesday, 08-Dec-98 20:32:17 GMT\r\n"
+                                           "Content-Type: text/html\r\n"
+                                           "\r\n"};
 
-  static const char response_unterminated[] = {
-    "HTTP/1.0 200 OK"
-  };
+  static const char response_unterminated[] = {"HTTP/1.0 200 OK"};
 
-  static const char response09[] = {
-    ""
-  };
+  static const char response09[] = {""};
 
-  static const char response_blank[] = {
-    "\r\n"
-  };
+  static const char response_blank[] = {"\r\n"};
 
-  static const char response_blank2[] = {
-    "\r\n" "\r\n"
-  };
+  static const char response_blank2[] = {"\r\n"
+                                         "\r\n"};
 
-  static const char response_blank3[] = {
-    "     " "\r\n"
-  };
+  static const char response_blank3[] = {"     "
+                                         "\r\n"};
 
   status = status & test_http_aux(request0, response0);
   status = status & test_http_aux(request09, response09);
@@ -1600,7 +1560,7 @@ HdrTest::test_http_mutation()
   const char base_resp[] = "HTTP/1.0 200 OK\r\n\r\n";
   const char *start, *end;
 
-    /*** (1) parse the response string into req_hdr ***/
+  /*** (1) parse the response string into req_hdr ***/
 
   start = base_resp;
   end = start + strlen(start);
@@ -1620,43 +1580,42 @@ HdrTest::test_http_mutation()
   resp_hdr.print(NULL, 0, NULL, NULL);
   printf("]\n\n");
 
-    /*** (2) add in a bunch of header fields ****/
+  /*** (2) add in a bunch of header fields ****/
   char field_name[1024];
   char field_value[1024];
   for (i = 1; i <= 100; i++) {
     snprintf(field_name, sizeof(field_name), "Test%d", i);
     snprintf(field_value, sizeof(field_value), "%d %d %d %d %d", i, i, i, i, i);
-    resp_hdr.value_set(field_name, (int) strlen(field_name), field_value, (int) strlen(field_value));
+    resp_hdr.value_set(field_name, (int)strlen(field_name), field_value, (int)strlen(field_value));
   }
 
-    /**** (3) delete all the even numbered fields *****/
+  /**** (3) delete all the even numbered fields *****/
   for (i = 2; i <= 100; i += 2) {
     snprintf(field_name, sizeof(field_name), "Test%d", i);
-    resp_hdr.field_delete(field_name, (int) strlen(field_name));
+    resp_hdr.field_delete(field_name, (int)strlen(field_name));
   }
 
-    /***** (4) add in secondary fields for all multiples of 3 ***/
+  /***** (4) add in secondary fields for all multiples of 3 ***/
   for (i = 3; i <= 100; i += 3) {
     snprintf(field_name, sizeof(field_name), "Test%d", i);
-    MIMEField *f = resp_hdr.field_create(field_name, (int) strlen(field_name));
+    MIMEField *f = resp_hdr.field_create(field_name, (int)strlen(field_name));
     resp_hdr.field_attach(f);
     snprintf(field_value, sizeof(field_value), "d %d %d %d %d %d", i, i, i, i, i);
-    f->value_set(resp_hdr.m_heap, resp_hdr.m_mime, field_value, (int) strlen(field_value));
-
+    f->value_set(resp_hdr.m_heap, resp_hdr.m_mime, field_value, (int)strlen(field_value));
   }
 
-    /***** (5) append all fields with multiples of 5 ***/
+  /***** (5) append all fields with multiples of 5 ***/
   for (i = 5; i <= 100; i += 5) {
     snprintf(field_name, sizeof(field_name), "Test%d", i);
     snprintf(field_value, sizeof(field_value), "a %d", i);
 
-    resp_hdr.value_append(field_name, (int) strlen(field_name), field_value, (int) strlen(field_value), true);
+    resp_hdr.value_append(field_name, (int)strlen(field_name), field_value, (int)strlen(field_value), true);
   }
 
-    /**** (6) delete all multiples of nine *****/
+  /**** (6) delete all multiples of nine *****/
   for (i = 9; i <= 100; i += 9) {
     snprintf(field_name, sizeof(field_name), "Test%d", i);
-    resp_hdr.field_delete(field_name, (int) strlen(field_name));
+    resp_hdr.field_delete(field_name, (int)strlen(field_name));
   }
 
 
@@ -1674,16 +1633,16 @@ HdrTest::test_http_mutation()
   -------------------------------------------------------------------------*/
 
 int
-HdrTest::test_arena_aux(Arena * arena, int len)
+HdrTest::test_arena_aux(Arena *arena, int len)
 {
   char *str = arena->str_alloc(len);
-  int verify_len = (int) arena->str_length(str);
+  int verify_len = (int)arena->str_length(str);
 
   if (len != verify_len) {
     printf("FAILED: requested %d, got %d bytes\n", len, verify_len);
-    return (1);                 // 1 error (different return convention)
+    return (1); // 1 error (different return convention)
   } else {
-    return (0);                 // no errors (different return convention)
+    return (0); // no errors (different return convention)
   }
 }
 
@@ -1729,15 +1688,11 @@ HdrTest::test_regex()
   DFA dfa;
   int status = 1;
 
-  const char *test_harness[] = {
-    "foo",
-    "(.*\\.apache\\.org)",
-    "(.*\\.example\\.com)"
-  };
+  const char *test_harness[] = {"foo", "(.*\\.apache\\.org)", "(.*\\.example\\.com)"};
 
   bri_box("test_regex");
 
-  dfa.compile(test_harness,SIZEOF(test_harness));
+  dfa.compile(test_harness, SIZEOF(test_harness));
   status = status & (dfa.match("trafficserver.apache.org") == 1);
   status = status & (dfa.match("www.example.com") == 2);
   status = status & (dfa.match("aaaaaafooooooooinktomi....com.org") == -1);
@@ -1754,39 +1709,35 @@ HdrTest::test_accept_language_match()
 {
   bri_box("test_accept_language_match");
 
-  struct
-  {
+  struct {
     const char *content_language;
     const char *accept_language;
     float Q;
     int L;
     int I;
-  } test_cases[] = {
-    {
-    "en", "*", 1.0, 1, 1}, {
-    "en", "fr", 0.0, 0, 0}, {
-    "en", "de, fr, en;q=0.7", 0.7, 2, 3}, {
-    "en-cockney", "de, fr, en;q=0.7", 0.7, 2, 3}, {
-    "en-cockney", "de, fr, en-foobar;q=0.8, en;q=0.7", 0.7, 2, 4}, {
-    "en-cockney", "de, fr, en-cockney;q=0.8, en;q=0.7", 0.8, 10, 3}, {
-    "en-cockney", "de, fr, en;q=0.8, en;q=0.7", 0.8, 2, 3}, {
-    "en-cockney", "de, fr, en;q=0.7, en;q=0.8", 0.8, 2, 4}, {
-    "en-cockney", "de, fr, en;q=0.8, en;q=0.8", 0.8, 2, 3}, {
-    "en-cockney", "de, fr, en-cockney;q=0.7, en;q=0.8", 0.7, 10, 3}, {
-    "en-cockney", "de, fr, en;q=0.8, en-cockney;q=0.7", 0.7, 10, 4}, {
-    "en-cockney", "de, fr, en-cockney;q=0.8, en;q=0.8", 0.8, 10, 3}, {
-    "en-cockney", "de, fr, en-cockney;q=0.8, en;q=0.7", 0.8, 10, 3}, {
-    "en-cockney", "de, fr, en-american", 0.0, 0, 0}, {
-    "en-cockney", "de, fr, en;q=0.8, en;q=0.8, *", 0.8, 2, 3}, {
-    "en-cockney", "de, fr, en;q=0.8, en;q=0.8, *;q=0.9", 0.8, 2, 3}, {
-    "en-foobar", "de, fr, en;q=0.8, en;q=0.8, *;q=0.9", 0.8, 2, 3}, {
-    "oo-foobar", "de, fr, en;q=0.8, en;q=0.8, *;q=0.9", 0.9, 1, 5}, {
-    "oo-foobar", "de, fr, en;q=0.8, en;q=0.8, *;q=0.9, *", 1.0, 1, 6}, {
-    "oo-foobar", "de, fr, en;q=0.8, en;q=0.8, *, *;q=0.9", 1.0, 1, 5}, {
-    "fr-belgian", "de, fr;hi-there;q=0.9, fr;q=0.8, en", 0.9, 2, 2}, {
-    "fr-belgian", "de, fr;q=0.8, fr;hi-there;q=0.9, en", 0.9, 2, 3}, {
-    NULL, NULL, 0.0}
-  };
+  } test_cases[] = {{"en", "*", 1.0, 1, 1},
+                    {"en", "fr", 0.0, 0, 0},
+                    {"en", "de, fr, en;q=0.7", 0.7, 2, 3},
+                    {"en-cockney", "de, fr, en;q=0.7", 0.7, 2, 3},
+                    {"en-cockney", "de, fr, en-foobar;q=0.8, en;q=0.7", 0.7, 2, 4},
+                    {"en-cockney", "de, fr, en-cockney;q=0.8, en;q=0.7", 0.8, 10, 3},
+                    {"en-cockney", "de, fr, en;q=0.8, en;q=0.7", 0.8, 2, 3},
+                    {"en-cockney", "de, fr, en;q=0.7, en;q=0.8", 0.8, 2, 4},
+                    {"en-cockney", "de, fr, en;q=0.8, en;q=0.8", 0.8, 2, 3},
+                    {"en-cockney", "de, fr, en-cockney;q=0.7, en;q=0.8", 0.7, 10, 3},
+                    {"en-cockney", "de, fr, en;q=0.8, en-cockney;q=0.7", 0.7, 10, 4},
+                    {"en-cockney", "de, fr, en-cockney;q=0.8, en;q=0.8", 0.8, 10, 3},
+                    {"en-cockney", "de, fr, en-cockney;q=0.8, en;q=0.7", 0.8, 10, 3},
+                    {"en-cockney", "de, fr, en-american", 0.0, 0, 0},
+                    {"en-cockney", "de, fr, en;q=0.8, en;q=0.8, *", 0.8, 2, 3},
+                    {"en-cockney", "de, fr, en;q=0.8, en;q=0.8, *;q=0.9", 0.8, 2, 3},
+                    {"en-foobar", "de, fr, en;q=0.8, en;q=0.8, *;q=0.9", 0.8, 2, 3},
+                    {"oo-foobar", "de, fr, en;q=0.8, en;q=0.8, *;q=0.9", 0.9, 1, 5},
+                    {"oo-foobar", "de, fr, en;q=0.8, en;q=0.8, *;q=0.9, *", 1.0, 1, 6},
+                    {"oo-foobar", "de, fr, en;q=0.8, en;q=0.8, *, *;q=0.9", 1.0, 1, 5},
+                    {"fr-belgian", "de, fr;hi-there;q=0.9, fr;q=0.8, en", 0.9, 2, 2},
+                    {"fr-belgian", "de, fr;q=0.8, fr;hi-there;q=0.9, en", 0.9, 2, 3},
+                    {NULL, NULL, 0.0}};
 
   int i, I, L;
   float Q;
@@ -1794,17 +1745,16 @@ HdrTest::test_accept_language_match()
 
   for (i = 0; test_cases[i].accept_language; i++) {
     StrList acpt_lang_list(false);
-    HttpCompat::parse_comma_list(&acpt_lang_list, test_cases[i].accept_language,
-                                 (int) strlen(test_cases[i].accept_language));
+    HttpCompat::parse_comma_list(&acpt_lang_list, test_cases[i].accept_language, (int)strlen(test_cases[i].accept_language));
 
-    Q = HttpCompat::match_accept_language(test_cases[i].content_language,
-                                          (int) strlen(test_cases[i].content_language), &acpt_lang_list, &L, &I);
+    Q = HttpCompat::match_accept_language(test_cases[i].content_language, (int)strlen(test_cases[i].content_language),
+                                          &acpt_lang_list, &L, &I);
 
     if ((Q != test_cases[i].Q) || (L != test_cases[i].L) || (I != test_cases[i].I)) {
-      printf
-        ("FAILED: (#%d) got { Q = %.3f; L = %d; I = %d; }, expected { Q = %.3f; L = %d; I = %d; }, from matching\n  '%s' against '%s'\n",
-         i, Q, L, I, test_cases[i].Q, test_cases[i].L, test_cases[i].I, test_cases[i].content_language,
-         test_cases[i].accept_language);
+      printf("FAILED: (#%d) got { Q = %.3f; L = %d; I = %d; }, expected { Q = %.3f; L = %d; I = %d; }, from matching\n  '%s' "
+             "against '%s'\n",
+             i, Q, L, I, test_cases[i].Q, test_cases[i].L, test_cases[i].I, test_cases[i].content_language,
+             test_cases[i].accept_language);
       ++failures;
     }
   }
@@ -1821,42 +1771,38 @@ HdrTest::test_accept_charset_match()
 {
   bri_box("test_accept_charset_match");
 
-  struct
-  {
+  struct {
     const char *content_charset;
     const char *accept_charset;
     float Q;
     int I;
-  } test_cases[] = {
-    {
-    "iso-8859-1", "*", 1.0, 1}, {
-    "iso-8859-1", "iso-8859-2", 0.0, 0}, {
-    "iso-8859-1", "iso-8859", 0.0, 0}, {
-    "iso-8859-1", "iso-8859-12", 0.0, 0}, {
-    "iso-8859-1", "koi-8-r", 0.0, 0}, {
-    "euc-jp", "shift_jis, iso-2022-jp, euc-jp;q=0.7", 0.7, 3}, {
-    "euc-jp", "shift_jis, iso-2022-jp, euc-jp;q=0.7", 0.7, 3}, {
-    "euc-jp", "shift_jis, iso-2022-jp, euc-jp;q=0.8, euc-jp;q=0.7", 0.8, 3}, {
-    "euc-jp", "shift_jis, iso-2022-jp, euc-jp;q=0.7, euc-jp;q=0.8", 0.8, 4}, {
-    "euc-jp", "euc-jp;q=0.9, shift_jis, iso-2022-jp, euc-jp;q=0.7, euc-jp;q=0.8", 0.9, 1}, {
-    "EUC-JP", "euc-jp;q=0.9, shift_jis, iso-2022-jp, euc-jp, euc-jp;q=0.8", 1.0, 4}, {
-    "euc-jp", "euc-jp;q=0.9, shift_jis, iso-2022-jp, EUC-JP, euc-jp;q=0.8", 1.0, 4}, {
-    "euc-jp", "shift_jis, iso-2022-jp, euc-jp-foobar", 0.0, 0}, {
-    "euc-jp", "shift_jis, iso-2022-jp, euc-jp-foobar, *", 1.0, 4}, {
-    "euc-jp", "shift_jis, iso-2022-jp, euc-jp-foobar, *;q=0.543", 0.543, 4}, {
-    "euc-jp", "shift_jis, iso-2022-jp, euc-jp-foobar, *;q=0.0", 0.0, 4}, {
-    "euc-jp", "shift_jis, iso-2022-jp, *;q=0.0, euc-jp-foobar, *;q=0.0", 0.0, 3}, {
-    "euc-jp", "shift_jis, iso-2022-jp, *;q=0.0, euc-jp-foobar, *;q=0.5", 0.5, 5}, {
-    "euc-jp", "shift_jis, iso-2022-jp, *;q=0.5, euc-jp-foobar, *;q=0.0", 0.5, 3}, {
-    "euc-jp", "shift_jis, iso-2022-jp, *;q=0.5, euc-jp-foobar, *, *;q=0.0", 1.0, 5}, {
-    "euc-jp", "shift_jis, euc-jp;hi-there;q=0.5, iso-2022-jp", 0.5, 2}, {
-    "euc-jp", "shift_jis, euc-jp;hi-there;q= 0.5, iso-2022-jp", 0.5, 2}, {
-    "euc-jp", "shift_jis, euc-jp;hi-there;q = 0.5, iso-2022-jp", 0.5, 2}, {
-    "euc-jp", "shift_jis, euc-jp;hi-there ; q = 0.5, iso-2022-jp", 0.5, 2}, {
-    "euc-jp", "shift_jis, euc-jp;hi-there ;; q = 0.5, iso-2022-jp", 0.5, 2}, {
-    "euc-jp", "shift_jis, euc-jp;hi-there ;; Q = 0.5, iso-2022-jp", 0.5, 2}, {
-    NULL, NULL, 0.0, 0}
-  };
+  } test_cases[] = {{"iso-8859-1", "*", 1.0, 1},
+                    {"iso-8859-1", "iso-8859-2", 0.0, 0},
+                    {"iso-8859-1", "iso-8859", 0.0, 0},
+                    {"iso-8859-1", "iso-8859-12", 0.0, 0},
+                    {"iso-8859-1", "koi-8-r", 0.0, 0},
+                    {"euc-jp", "shift_jis, iso-2022-jp, euc-jp;q=0.7", 0.7, 3},
+                    {"euc-jp", "shift_jis, iso-2022-jp, euc-jp;q=0.7", 0.7, 3},
+                    {"euc-jp", "shift_jis, iso-2022-jp, euc-jp;q=0.8, euc-jp;q=0.7", 0.8, 3},
+                    {"euc-jp", "shift_jis, iso-2022-jp, euc-jp;q=0.7, euc-jp;q=0.8", 0.8, 4},
+                    {"euc-jp", "euc-jp;q=0.9, shift_jis, iso-2022-jp, euc-jp;q=0.7, euc-jp;q=0.8", 0.9, 1},
+                    {"EUC-JP", "euc-jp;q=0.9, shift_jis, iso-2022-jp, euc-jp, euc-jp;q=0.8", 1.0, 4},
+                    {"euc-jp", "euc-jp;q=0.9, shift_jis, iso-2022-jp, EUC-JP, euc-jp;q=0.8", 1.0, 4},
+                    {"euc-jp", "shift_jis, iso-2022-jp, euc-jp-foobar", 0.0, 0},
+                    {"euc-jp", "shift_jis, iso-2022-jp, euc-jp-foobar, *", 1.0, 4},
+                    {"euc-jp", "shift_jis, iso-2022-jp, euc-jp-foobar, *;q=0.543", 0.543, 4},
+                    {"euc-jp", "shift_jis, iso-2022-jp, euc-jp-foobar, *;q=0.0", 0.0, 4},
+                    {"euc-jp", "shift_jis, iso-2022-jp, *;q=0.0, euc-jp-foobar, *;q=0.0", 0.0, 3},
+                    {"euc-jp", "shift_jis, iso-2022-jp, *;q=0.0, euc-jp-foobar, *;q=0.5", 0.5, 5},
+                    {"euc-jp", "shift_jis, iso-2022-jp, *;q=0.5, euc-jp-foobar, *;q=0.0", 0.5, 3},
+                    {"euc-jp", "shift_jis, iso-2022-jp, *;q=0.5, euc-jp-foobar, *, *;q=0.0", 1.0, 5},
+                    {"euc-jp", "shift_jis, euc-jp;hi-there;q=0.5, iso-2022-jp", 0.5, 2},
+                    {"euc-jp", "shift_jis, euc-jp;hi-there;q= 0.5, iso-2022-jp", 0.5, 2},
+                    {"euc-jp", "shift_jis, euc-jp;hi-there;q = 0.5, iso-2022-jp", 0.5, 2},
+                    {"euc-jp", "shift_jis, euc-jp;hi-there ; q = 0.5, iso-2022-jp", 0.5, 2},
+                    {"euc-jp", "shift_jis, euc-jp;hi-there ;; q = 0.5, iso-2022-jp", 0.5, 2},
+                    {"euc-jp", "shift_jis, euc-jp;hi-there ;; Q = 0.5, iso-2022-jp", 0.5, 2},
+                    {NULL, NULL, 0.0, 0}};
 
   int i, I;
   float Q;
@@ -1864,16 +1810,14 @@ HdrTest::test_accept_charset_match()
 
   for (i = 0; test_cases[i].accept_charset; i++) {
     StrList acpt_lang_list(false);
-    HttpCompat::parse_comma_list(&acpt_lang_list, test_cases[i].accept_charset,
-                                 (int) strlen(test_cases[i].accept_charset));
+    HttpCompat::parse_comma_list(&acpt_lang_list, test_cases[i].accept_charset, (int)strlen(test_cases[i].accept_charset));
 
-    Q = HttpCompat::match_accept_charset(test_cases[i].content_charset,
-                                         (int) strlen(test_cases[i].content_charset), &acpt_lang_list, &I);
+    Q = HttpCompat::match_accept_charset(test_cases[i].content_charset, (int)strlen(test_cases[i].content_charset), &acpt_lang_list,
+                                         &I);
 
     if ((Q != test_cases[i].Q) || (I != test_cases[i].I)) {
-      printf
-        ("FAILED: (#%d) got { Q = %.3f; I = %d; }, expected { Q = %.3f; I = %d; }, from matching\n  '%s' against '%s'\n",
-         i, Q, I, test_cases[i].Q, test_cases[i].I, test_cases[i].content_charset, test_cases[i].accept_charset);
+      printf("FAILED: (#%d) got { Q = %.3f; I = %d; }, expected { Q = %.3f; I = %d; }, from matching\n  '%s' against '%s'\n", i, Q,
+             I, test_cases[i].Q, test_cases[i].I, test_cases[i].content_charset, test_cases[i].accept_charset);
       ++failures;
     }
   }
@@ -1887,113 +1831,32 @@ HdrTest::test_accept_charset_match()
 int
 HdrTest::test_comma_vals()
 {
-  static struct
-  {
+  static struct {
     const char *value;
     int value_count;
-    struct
-    {
+    struct {
       int offset;
       int len;
     } pieces[4];
-  } tests[] = {
-    {
-      ",", 2, { {
-      0, 0}, {
-      1, 0}, {
-      -1, 0}, {
-    -1, 0}}}, {
-      "", 1, { {
-      0, 0}, {
-      -1, 0}, {
-      -1, 0}, {
-    -1, 0}}}, {
-      " ", 1, { {
-      0, 0}, {
-      -1, 0}, {
-      -1, 0}, {
-    -1, 0}}}, {
-      ", ", 2, { {
-      0, 0}, {
-      1, 0}, {
-      -1, 0}, {
-    -1, 0}}}, {
-      ",,", 3, { {
-      0, 0}, {
-      1, 0}, {
-      2, 0}, {
-    -1, 0}}}, {
-      " ,", 2, { {
-      0, 0}, {
-      2, 0}, {
-      -1, 0}, {
-    -1, 0}}}, {
-      " , ", 2, { {
-      0, 0}, {
-      2, 0}, {
-      -1, 0}, {
-    -1, 0}}}, {
-      "a, ", 2, { {
-      0, 1}, {
-      2, 0}, {
-      -1, 0}, {
-    -1, 0}}}, {
-      " a, ", 2, { {
-      1, 1}, {
-      3, 0}, {
-      -1, 0}, {
-    -1, 0}}}, {
-      " ,a", 2, { {
-      0, 0}, {
-      2, 1}, {
-      -1, 0}, {
-    -1, 0}}}, {
-      " , a", 2, { {
-      0, 0}, {
-      3, 1}, {
-      -1, 0}, {
-    -1, 0}}}, {
-      "a,a", 2, { {
-      0, 1}, {
-      2, 1}, {
-      -1, 0}, {
-    -1, 0}}}, {
-      "foo", 1, { {
-      0, 3}, {
-      -1, 0}, {
-      -1, 0}, {
-    -1, 0}}}, {
-      "foo,", 2, { {
-      0, 3}, {
-      4, 0}, {
-      -1, 0}, {
-    -1, 0}}}, {
-      "foo, ", 2, { {
-      0, 3}, {
-      4, 0}, {
-      -1, 0}, {
-    -1, 0}}}, {
-      "foo, bar", 2, { {
-      0, 3}, {
-      5, 3}, {
-      -1, 0}, {
-    -1, 0}}}, {
-      "foo, bar,", 3, { {
-      0, 3}, {
-      5, 3}, {
-      9, 0}, {
-    -1, 0}}}, {
-      "foo, bar, ", 3, { {
-      0, 3}, {
-      5, 3}, {
-      9, 0}, {
-    -1, 0}}}, {
-      ",foo,bar,", 4, { {
-      0, 0}, {
-      1, 3}, {
-      5, 3}, {
-    9, 0}}}
-  };
+  } tests[] = {{",", 2, {{0, 0}, {1, 0}, {-1, 0}, {-1, 0}}},
+               {"", 1, {{0, 0}, {-1, 0}, {-1, 0}, {-1, 0}}},
+               {" ", 1, {{0, 0}, {-1, 0}, {-1, 0}, {-1, 0}}},
+               {", ", 2, {{0, 0}, {1, 0}, {-1, 0}, {-1, 0}}},
+               {",,", 3, {{0, 0}, {1, 0}, {2, 0}, {-1, 0}}},
+               {" ,", 2, {{0, 0}, {2, 0}, {-1, 0}, {-1, 0}}},
+               {" , ", 2, {{0, 0}, {2, 0}, {-1, 0}, {-1, 0}}},
+               {"a, ", 2, {{0, 1}, {2, 0}, {-1, 0}, {-1, 0}}},
+               {" a, ", 2, {{1, 1}, {3, 0}, {-1, 0}, {-1, 0}}},
+               {" ,a", 2, {{0, 0}, {2, 1}, {-1, 0}, {-1, 0}}},
+               {" , a", 2, {{0, 0}, {3, 1}, {-1, 0}, {-1, 0}}},
+               {"a,a", 2, {{0, 1}, {2, 1}, {-1, 0}, {-1, 0}}},
+               {"foo", 1, {{0, 3}, {-1, 0}, {-1, 0}, {-1, 0}}},
+               {"foo,", 2, {{0, 3}, {4, 0}, {-1, 0}, {-1, 0}}},
+               {"foo, ", 2, {{0, 3}, {4, 0}, {-1, 0}, {-1, 0}}},
+               {"foo, bar", 2, {{0, 3}, {5, 3}, {-1, 0}, {-1, 0}}},
+               {"foo, bar,", 3, {{0, 3}, {5, 3}, {9, 0}, {-1, 0}}},
+               {"foo, bar, ", 3, {{0, 3}, {5, 3}, {9, 0}, {-1, 0}}},
+               {",foo,bar,", 4, {{0, 0}, {1, 3}, {5, 3}, {9, 0}}}};
 
   bri_box("test_comma_vals");
 
@@ -2009,22 +1872,22 @@ HdrTest::test_comma_vals()
   for (i = 0; i < ntests; i++) {
     snprintf(field_name, sizeof(field_name), "Test%d", i);
 
-    MIMEField *f = hdr.field_create(field_name, (int) strlen(field_name));
+    MIMEField *f = hdr.field_create(field_name, (int)strlen(field_name));
     ink_release_assert(f->m_ptr_value == NULL);
 
     hdr.field_attach(f);
     ink_release_assert(f->m_ptr_value == NULL);
 
     hdr.field_value_set(f, tests[i].value, strlen(tests[i].value));
-    ink_release_assert(f->m_ptr_value != tests[i].value);       // should be copied
+    ink_release_assert(f->m_ptr_value != tests[i].value); // should be copied
     ink_release_assert(f->m_len_value == strlen(tests[i].value));
     ink_release_assert(memcmp(f->m_ptr_value, tests[i].value, f->m_len_value) == 0);
 
     ncommavals = mime_field_value_get_comma_val_count(f);
     if (ncommavals != tests[i].value_count) {
       ++failures;
-      printf("FAILED: test #%d (field value '%s') expected val count %d, got %d\n",
-             i + 1, tests[i].value, tests[i].value_count, ncommavals);
+      printf("FAILED: test #%d (field value '%s') expected val count %d, got %d\n", i + 1, tests[i].value, tests[i].value_count,
+             ncommavals);
     }
 
     for (j = 0; j < tests[i].value_count; j++) {
@@ -2033,9 +1896,8 @@ HdrTest::test_comma_vals()
 
       if ((offset != tests[i].pieces[j].offset) || (len != tests[i].pieces[j].len)) {
         ++failures;
-        printf
-          ("FAILED: test #%d (field value '%s', commaval idx %d) expected [offset %d, len %d], got [offset %d, len %d]\n",
-           i + 1, tests[i].value, j, tests[i].pieces[j].offset, tests[i].pieces[j].len, offset, len);
+        printf("FAILED: test #%d (field value '%s', commaval idx %d) expected [offset %d, len %d], got [offset %d, len %d]\n",
+               i + 1, tests[i].value, j, tests[i].pieces[j].offset, tests[i].pieces[j].len, offset, len);
       }
     }
   }
@@ -2050,51 +1912,50 @@ HdrTest::test_comma_vals()
 int
 HdrTest::test_set_comma_vals()
 {
-  static struct
-  {
+  static struct {
     const char *old_raw;
     int idx;
     const char *slice;
     const char *new_raw;
   } tests[] = {
-    {
-    "a,b,c", 0, "fred", "fred, b, c"}, {
-    "a,b,c", 1, "fred", "a, fred, c"}, {
-    "a,b,c", 2, "fred", "a, b, fred"}, {
-    "a,b,c", 3, "fred", "a,b,c"}, {
-    "", 0, "", ""}, {
-    "", 0, "foo", "foo"}, {
-    "", 1, "foo", ""}, {
-    " ", 0, "", ""}, {
-    " ", 0, "foo", "foo"}, {
-    " ", 1, "foo", " "}, {
-    ",", 0, "foo", "foo, "}, {
-    ",", 1, "foo", ", foo"}, {
-    ",,", 0, "foo", "foo, , "}, {
-    ",,", 1, "foo", ", foo, "}, {
-    ",,", 2, "foo", ", , foo"}, {
-    "foo", 0, "abc", "abc"}, {
-    "foo", 1, "abc", "foo"}, {
-    "foo", 0, "abc,", "abc,"}, {
-    "foo", 0, ",abc", ",abc"}, {
-    ",,", 1, ",,,", ", ,,,, "}, {
-    " a , b , c", 0, "fred", "fred, b, c"}, {
-    " a , b , c", 1, "fred", "a, fred, c"}, {
-    " a , b , c", 2, "fred", "a, b, fred"}, {
-    " a , b , c", 3, "fred", " a , b , c"}, {
-    "    a   ,   b ", 0, "fred", "fred, b"}, {
-    "    a   ,   b ", 1, "fred", "a, fred"}, {
-    "    a   , b ", 1, "fred", "a, fred"}, {
-    "    a   ,b ", 1, "fred", "a, fred"}, {
-    "a, , , , e, , g,", 0, "fred", "fred, , , , e, , g, "}, {
-    "a, , , , e, , g,", 1, "fred", "a, fred, , , e, , g, "}, {
-    "a, , , , e, , g,", 2, "fred", "a, , fred, , e, , g, "}, {
-    "a, , , , e, , g,", 5, "fred", "a, , , , e, fred, g, "}, {
-    "a, , , , e, , g,", 7, "fred", "a, , , , e, , g, fred"}, {
-    "a, , , , e, , g,", 8, "fred", "a, , , , e, , g,"}, {
-    "a, \"boo,foo\", c", 0, "wawa", "wawa, \"boo,foo\", c"}, {
-    "a, \"boo,foo\", c", 1, "wawa", "a, wawa, c"}, {
-  "a, \"boo,foo\", c", 2, "wawa", "a, \"boo,foo\", wawa"},};
+    {"a,b,c", 0, "fred", "fred, b, c"},
+    {"a,b,c", 1, "fred", "a, fred, c"},
+    {"a,b,c", 2, "fred", "a, b, fred"},
+    {"a,b,c", 3, "fred", "a,b,c"},
+    {"", 0, "", ""},
+    {"", 0, "foo", "foo"},
+    {"", 1, "foo", ""},
+    {" ", 0, "", ""},
+    {" ", 0, "foo", "foo"},
+    {" ", 1, "foo", " "},
+    {",", 0, "foo", "foo, "},
+    {",", 1, "foo", ", foo"},
+    {",,", 0, "foo", "foo, , "},
+    {",,", 1, "foo", ", foo, "},
+    {",,", 2, "foo", ", , foo"},
+    {"foo", 0, "abc", "abc"},
+    {"foo", 1, "abc", "foo"},
+    {"foo", 0, "abc,", "abc,"},
+    {"foo", 0, ",abc", ",abc"},
+    {",,", 1, ",,,", ", ,,,, "},
+    {" a , b , c", 0, "fred", "fred, b, c"},
+    {" a , b , c", 1, "fred", "a, fred, c"},
+    {" a , b , c", 2, "fred", "a, b, fred"},
+    {" a , b , c", 3, "fred", " a , b , c"},
+    {"    a   ,   b ", 0, "fred", "fred, b"},
+    {"    a   ,   b ", 1, "fred", "a, fred"},
+    {"    a   , b ", 1, "fred", "a, fred"},
+    {"    a   ,b ", 1, "fred", "a, fred"},
+    {"a, , , , e, , g,", 0, "fred", "fred, , , , e, , g, "},
+    {"a, , , , e, , g,", 1, "fred", "a, fred, , , e, , g, "},
+    {"a, , , , e, , g,", 2, "fred", "a, , fred, , e, , g, "},
+    {"a, , , , e, , g,", 5, "fred", "a, , , , e, fred, g, "},
+    {"a, , , , e, , g,", 7, "fred", "a, , , , e, , g, fred"},
+    {"a, , , , e, , g,", 8, "fred", "a, , , , e, , g,"},
+    {"a, \"boo,foo\", c", 0, "wawa", "wawa, \"boo,foo\", c"},
+    {"a, \"boo,foo\", c", 1, "wawa", "a, wawa, c"},
+    {"a, \"boo,foo\", c", 2, "wawa", "a, \"boo,foo\", wawa"},
+  };
 
   bri_box("test_set_comma_vals");
 
@@ -2110,16 +1971,16 @@ HdrTest::test_set_comma_vals()
   for (i = 0; i < ntests; i++) {
     snprintf(field_name, sizeof(field_name), "Test%d", i);
 
-    MIMEField *f = hdr.field_create(field_name, (int) strlen(field_name));
+    MIMEField *f = hdr.field_create(field_name, (int)strlen(field_name));
     hdr.field_value_set(f, tests[i].old_raw, strlen(tests[i].old_raw));
     mime_field_value_set_comma_val(hdr.m_heap, hdr.m_mime, f, tests[i].idx, tests[i].slice, strlen(tests[i].slice));
     ink_release_assert(f->m_ptr_value != NULL);
 
     if ((f->m_len_value != strlen(tests[i].new_raw)) || (memcmp(f->m_ptr_value, tests[i].new_raw, f->m_len_value) != 0)) {
       ++failures;
-      printf("FAILED:  test #%d (setting idx %d of '%s' to '%s') expected '%s' len %d, got '%.*s' len %d\n",
-             i + 1, tests[i].idx, tests[i].old_raw, tests[i].slice,
-             tests[i].new_raw, (int)strlen(tests[i].new_raw), f->m_len_value, f->m_ptr_value, f->m_len_value);
+      printf("FAILED:  test #%d (setting idx %d of '%s' to '%s') expected '%s' len %d, got '%.*s' len %d\n", i + 1, tests[i].idx,
+             tests[i].old_raw, tests[i].slice, tests[i].new_raw, (int)strlen(tests[i].new_raw), f->m_len_value, f->m_ptr_value,
+             f->m_len_value);
     }
   }
 
@@ -2166,162 +2027,49 @@ HdrTest::test_insert_comma_vals()
 int
 HdrTest::test_parse_comma_list()
 {
-  static struct
-  {
+  static struct {
     const char *value;
     int count;
-    struct
-    {
+    struct {
       int offset;
       int len;
     } pieces[3];
-  } tests[] = {
-    {
-      "", 1, { {
-      0, 0}, {
-      -1, 0}, {
-    -1, 0}}}, {
-      ",", 2, { {
-      0, 0}, {
-      1, 0}, {
-    -1, 0}}}, {
-      " ,", 2, { {
-      0, 0}, {
-      2, 0}, {
-    -1, 0}}}, {
-      ", ", 2, { {
-      0, 0}, {
-      1, 0}, {
-    -1, 0}}}, {
-      " , ", 2, { {
-      0, 0}, {
-      2, 0}, {
-    -1, 0}}}, {
-      "abc,", 2, { {
-      0, 3}, {
-      4, 0}, {
-    -1, 0}}}, {
-      "abc, ", 2, { {
-      0, 3}, {
-      4, 0}, {
-    -1, 0}}}, {
-      "", 1, { {
-      0, 0}, {
-      -1, 0}, {
-    -1, 0}}}, {
-      " ", 1, { {
-      0, 0}, {
-      -1, 0}, {
-    -1, 0}}}, {
-      "  ", 1, { {
-      0, 0}, {
-      -1, 0}, {
-    -1, 0}}}, {
-      "a", 1, { {
-      0, 1}, {
-      -1, 0}, {
-    -1, 0}}}, {
-      " a", 1, { {
-      1, 1}, {
-      -1, 0}, {
-    -1, 0}}}, {
-      "  a  ", 1, { {
-      2, 1}, {
-      -1, 0}, {
-    -1, 0}}}, {
-      "abc,defg", 2, { {
-      0, 3}, {
-      4, 4}, {
-    -1, 0}}}, {
-      " abc,defg", 2, { {
-      1, 3}, {
-      5, 4}, {
-    -1, 0}}}, {
-      " abc, defg", 2, { {
-      1, 3}, {
-      6, 4}, {
-    -1, 0}}}, {
-      " abc , defg", 2, { {
-      1, 3}, {
-      7, 4}, {
-    -1, 0}}}, {
-      " abc , defg ", 2, { {
-      1, 3}, {
-      7, 4}, {
-    -1, 0}}}, {
-      " abc , defg, ", 3, { {
-      1, 3}, {
-      7, 4}, {
-    12, 0}}}, {
-      " abc , defg ,", 3, { {
-      1, 3}, {
-      7, 4}, {
-    13, 0}}}, {
-      ", abc , defg ", 3, { {
-      0, 0}, {
-      2, 3}, {
-    8, 4}}}, {
-      " ,abc , defg ", 3, { {
-      0, 0}, {
-      2, 3}, {
-    8, 4}}}, {
-      "a,b", 2, { {
-      0, 1}, {
-      2, 1}, {
-    -1, 0}}}, {
-      "a,,b", 3, { {
-      0, 1}, {
-      2, 0}, {
-    3, 1}}}, {
-      "a, ,b", 3, { {
-      0, 1}, {
-      2, 0}, {
-    4, 1}}}, {
-      "a ,,b", 3, { {
-      0, 1}, {
-      3, 0}, {
-    4, 1}}}, {
-      ",", 2, { {
-      0, 0}, {
-      1, 0}, {
-    -1, 0}}}, {
-      " ,", 2, { {
-      0, 0}, {
-      2, 0}, {
-    -1, 0}}}, {
-      ", ", 2, { {
-      0, 0}, {
-      1, 0}, {
-    -1, 0}}}, {
-      " , ", 2, { {
-      0, 0}, {
-      2, 0}, {
-    -1, 0}}}, {
-      "a,b,", 3, { {
-      0, 1}, {
-      2, 1}, {
-    4, 0}}}, {
-      "a,b, ", 3, { {
-      0, 1}, {
-      2, 1}, {
-    4, 0}}}, {
-      "a,b,  ", 3, { {
-      0, 1}, {
-      2, 1}, {
-    4, 0}}}, {
-      "a,b,  c", 3, { {
-      0, 1}, {
-      2, 1}, {
-    6, 1}}}, {
-      "a,b,  c ", 3, { {
-      0, 1}, {
-      2, 1}, {
-    6, 1}}}, {
-      "a,\"b,c\",d", 3, { {
-      0, 1}, {
-      3, 3}, {
-    8, 1}}}
-  };
+  } tests[] = {{"", 1, {{0, 0}, {-1, 0}, {-1, 0}}},
+               {",", 2, {{0, 0}, {1, 0}, {-1, 0}}},
+               {" ,", 2, {{0, 0}, {2, 0}, {-1, 0}}},
+               {", ", 2, {{0, 0}, {1, 0}, {-1, 0}}},
+               {" , ", 2, {{0, 0}, {2, 0}, {-1, 0}}},
+               {"abc,", 2, {{0, 3}, {4, 0}, {-1, 0}}},
+               {"abc, ", 2, {{0, 3}, {4, 0}, {-1, 0}}},
+               {"", 1, {{0, 0}, {-1, 0}, {-1, 0}}},
+               {" ", 1, {{0, 0}, {-1, 0}, {-1, 0}}},
+               {"  ", 1, {{0, 0}, {-1, 0}, {-1, 0}}},
+               {"a", 1, {{0, 1}, {-1, 0}, {-1, 0}}},
+               {" a", 1, {{1, 1}, {-1, 0}, {-1, 0}}},
+               {"  a  ", 1, {{2, 1}, {-1, 0}, {-1, 0}}},
+               {"abc,defg", 2, {{0, 3}, {4, 4}, {-1, 0}}},
+               {" abc,defg", 2, {{1, 3}, {5, 4}, {-1, 0}}},
+               {" abc, defg", 2, {{1, 3}, {6, 4}, {-1, 0}}},
+               {" abc , defg", 2, {{1, 3}, {7, 4}, {-1, 0}}},
+               {" abc , defg ", 2, {{1, 3}, {7, 4}, {-1, 0}}},
+               {" abc , defg, ", 3, {{1, 3}, {7, 4}, {12, 0}}},
+               {" abc , defg ,", 3, {{1, 3}, {7, 4}, {13, 0}}},
+               {", abc , defg ", 3, {{0, 0}, {2, 3}, {8, 4}}},
+               {" ,abc , defg ", 3, {{0, 0}, {2, 3}, {8, 4}}},
+               {"a,b", 2, {{0, 1}, {2, 1}, {-1, 0}}},
+               {"a,,b", 3, {{0, 1}, {2, 0}, {3, 1}}},
+               {"a, ,b", 3, {{0, 1}, {2, 0}, {4, 1}}},
+               {"a ,,b", 3, {{0, 1}, {3, 0}, {4, 1}}},
+               {",", 2, {{0, 0}, {1, 0}, {-1, 0}}},
+               {" ,", 2, {{0, 0}, {2, 0}, {-1, 0}}},
+               {", ", 2, {{0, 0}, {1, 0}, {-1, 0}}},
+               {" , ", 2, {{0, 0}, {2, 0}, {-1, 0}}},
+               {"a,b,", 3, {{0, 1}, {2, 1}, {4, 0}}},
+               {"a,b, ", 3, {{0, 1}, {2, 1}, {4, 0}}},
+               {"a,b,  ", 3, {{0, 1}, {2, 1}, {4, 0}}},
+               {"a,b,  c", 3, {{0, 1}, {2, 1}, {6, 1}}},
+               {"a,b,  c ", 3, {{0, 1}, {2, 1}, {6, 1}}},
+               {"a,\"b,c\",d", 3, {{0, 1}, {3, 3}, {8, 1}}}};
 
   bri_box("test_parse_comma_list");
 
@@ -2335,8 +2083,7 @@ HdrTest::test_parse_comma_list()
     HttpCompat::parse_comma_list(&list, tests[i].value);
     if (list.count != tests[i].count) {
       ++failures;
-      printf("FAILED: test #%d (string '%s') expected list count %d, got %d\n",
-             i + 1, tests[i].value, tests[i].count, list.count);
+      printf("FAILED: test #%d (string '%s') expected list count %d, got %d\n", i + 1, tests[i].value, tests[i].count, list.count);
     }
 
     for (j = 0; j < tests[i].count; j++) {
@@ -2344,23 +2091,23 @@ HdrTest::test_parse_comma_list()
       if (cell != NULL)
         offset = cell->str - tests[i].value;
 
-      if (tests[i].pieces[j].offset == -1)      // should not have a piece
+      if (tests[i].pieces[j].offset == -1) // should not have a piece
       {
         if (cell != NULL) {
           ++failures;
-          printf("FAILED: test #%d (string '%s', idx %d) expected NULL piece, got [offset %d len %d]\n",
-                 i + 1, tests[i].value, j, offset, (int)cell->len);
+          printf("FAILED: test #%d (string '%s', idx %d) expected NULL piece, got [offset %d len %d]\n", i + 1, tests[i].value, j,
+                 offset, (int)cell->len);
         }
-      } else                    // should have a piece
+      } else // should have a piece
       {
         if (cell == NULL) {
           ++failures;
-          printf("FAILED: test #%d (string '%s', idx %d) expected [offset %d len %d], got NULL piece\n",
-                 i + 1, tests[i].value, j, tests[i].pieces[j].offset, tests[i].pieces[j].len);
-        } else if ((offset != tests[i].pieces[j].offset) || (cell->len != (size_t) tests[i].pieces[j].len)) {
+          printf("FAILED: test #%d (string '%s', idx %d) expected [offset %d len %d], got NULL piece\n", i + 1, tests[i].value, j,
+                 tests[i].pieces[j].offset, tests[i].pieces[j].len);
+        } else if ((offset != tests[i].pieces[j].offset) || (cell->len != (size_t)tests[i].pieces[j].len)) {
           ++failures;
-          printf("FAILED: test #%d (string '%s', idx %d) expected [offset %d len %d], got [offset %d len %d]\n",
-                 i + 1, tests[i].value, j, tests[i].pieces[j].offset, tests[i].pieces[j].len, offset, (int)cell->len);
+          printf("FAILED: test #%d (string '%s', idx %d) expected [offset %d len %d], got [offset %d len %d]\n", i + 1,
+                 tests[i].value, j, tests[i].pieces[j].offset, tests[i].pieces[j].len, offset, (int)cell->len);
         }
       }
     }
@@ -2377,7 +2124,7 @@ HdrTest::bri_box(const char *s)
 {
   int i, len;
 
-  len = (int) strlen(s);
+  len = (int)strlen(s);
   printf("\n+-");
   for (i = 0; i < len; i++)
     putchar('-');
@@ -2398,4 +2145,3 @@ HdrTest::failures_to_status(const char *testname, int nfail)
   rprintf(rtest, "  HdrTest %s: %s\n", testname, ((nfail > 0) ? "FAILED" : "PASSED"));
   return ((nfail > 0) ? 0 : 1);
 }
-

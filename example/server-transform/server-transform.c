@@ -59,15 +59,14 @@
 #include "ts/ts.h"
 #include "ink_defs.h"
 
-#define STATE_BUFFER       1
-#define STATE_CONNECT      2
-#define STATE_WRITE        3
-#define STATE_READ_STATUS  4
-#define STATE_READ         5
-#define STATE_BYPASS       6
+#define STATE_BUFFER 1
+#define STATE_CONNECT 2
+#define STATE_WRITE 3
+#define STATE_READ_STATUS 4
+#define STATE_READ 5
+#define STATE_BYPASS 6
 
-typedef struct
-{
+typedef struct {
   int state;
   TSHttpTxn txn;
 
@@ -99,7 +98,7 @@ transform_create(TSHttpTxn txnp)
 
   contp = TSTransformCreate(transform_handler, txnp);
 
-  data = (TransformData *) TSmalloc(sizeof(TransformData));
+  data = (TransformData *)TSmalloc(sizeof(TransformData));
   data->state = STATE_BUFFER;
   data->txn = txnp;
   data->input_buf = NULL;
@@ -145,7 +144,7 @@ transform_destroy(TSCont contp)
 }
 
 static int
-transform_connect(TSCont contp, TransformData * data)
+transform_connect(TSCont contp, TransformData *data)
 {
   TSAction action;
   int content_length;
@@ -171,7 +170,7 @@ transform_connect(TSCont contp, TransformData * data)
       temp = TSIOBufferCreate();
       tempReader = TSIOBufferReaderAlloc(temp);
 
-      TSIOBufferWrite(temp, (const char *) &content_length, sizeof(int));
+      TSIOBufferWrite(temp, (const char *)&content_length, sizeof(int));
       TSIOBufferCopy(temp, data->input_reader, content_length, 0);
 
       TSIOBufferReaderFree(data->input_reader);
@@ -191,7 +190,7 @@ transform_connect(TSCont contp, TransformData * data)
   ip_addr.sin_addr.s_addr = server_ip; /* Should be in network byte order */
   ip_addr.sin_port = server_port;
   TSDebug("strans", "net connect..");
-  action = TSNetConnect(contp, (struct sockaddr const*)&ip_addr);
+  action = TSNetConnect(contp, (struct sockaddr const *)&ip_addr);
 
   if (!TSActionDone(action)) {
     data->pending_action = action;
@@ -201,7 +200,7 @@ transform_connect(TSCont contp, TransformData * data)
 }
 
 static int
-transform_write(TSCont contp, TransformData * data)
+transform_write(TSCont contp, TransformData *data)
 {
   int content_length;
 
@@ -217,7 +216,7 @@ transform_write(TSCont contp, TransformData * data)
 }
 
 static int
-transform_read_status(TSCont contp, TransformData * data)
+transform_read_status(TSCont contp, TransformData *data)
 {
   data->state = STATE_READ_STATUS;
 
@@ -233,7 +232,7 @@ transform_read_status(TSCont contp, TransformData * data)
 }
 
 static int
-transform_read(TSCont contp, TransformData * data)
+transform_read(TSCont contp, TransformData *data)
 {
   data->state = STATE_READ;
 
@@ -242,7 +241,7 @@ transform_read(TSCont contp, TransformData * data)
   data->input_reader = NULL;
 
   data->server_vio = TSVConnRead(data->server_vc, contp, data->output_buf, data->content_length);
-  data->output_vc = TSTransformOutputVConnGet((TSVConn) contp);
+  data->output_vc = TSTransformOutputVConnGet((TSVConn)contp);
   if (data->output_vc == NULL) {
     TSError("TSTransformOutputVConnGet returns NULL");
   } else {
@@ -256,7 +255,7 @@ transform_read(TSCont contp, TransformData * data)
 }
 
 static int
-transform_bypass(TSCont contp, TransformData * data)
+transform_bypass(TSCont contp, TransformData *data)
 {
   data->state = STATE_BYPASS;
 
@@ -273,12 +272,11 @@ transform_bypass(TSCont contp, TransformData * data)
   }
 
   TSIOBufferReaderConsume(data->input_reader, sizeof(int));
-  data->output_vc = TSTransformOutputVConnGet((TSVConn) contp);
+  data->output_vc = TSTransformOutputVConnGet((TSVConn)contp);
   if (data->output_vc == NULL) {
     TSError("TSTransformOutputVConnGet returns NULL");
   } else {
-    data->output_vio =
-      TSVConnWrite(data->output_vc, contp, data->input_reader, TSIOBufferReaderAvail(data->input_reader));
+    data->output_vio = TSVConnWrite(data->output_vc, contp, data->input_reader, TSIOBufferReaderAvail(data->input_reader));
     if (data->output_vio == NULL) {
       TSError("TSVConnWrite returns NULL");
     }
@@ -287,7 +285,7 @@ transform_bypass(TSCont contp, TransformData * data)
 }
 
 static int
-transform_buffer_event(TSCont contp, TransformData * data, TSEvent event ATS_UNUSED, void *edata ATS_UNUSED)
+transform_buffer_event(TSCont contp, TransformData *data, TSEvent event ATS_UNUSED, void *edata ATS_UNUSED)
 {
   TSVIO write_vio;
   int towrite;
@@ -358,14 +356,14 @@ transform_buffer_event(TSCont contp, TransformData * data, TSEvent event ATS_UNU
 }
 
 static int
-transform_connect_event(TSCont contp, TransformData * data, TSEvent event, void *edata)
+transform_connect_event(TSCont contp, TransformData *data, TSEvent event, void *edata)
 {
   switch (event) {
   case TS_EVENT_NET_CONNECT:
     TSDebug("strans", "connected");
 
     data->pending_action = NULL;
-    data->server_vc = (TSVConn) edata;
+    data->server_vc = (TSVConn)edata;
     return transform_write(contp, data);
   case TS_EVENT_NET_CONNECT_FAILED:
     TSDebug("strans", "connect failed");
@@ -379,7 +377,7 @@ transform_connect_event(TSCont contp, TransformData * data, TSEvent event, void 
 }
 
 static int
-transform_write_event(TSCont contp, TransformData * data, TSEvent event, void *edata ATS_UNUSED)
+transform_write_event(TSCont contp, TransformData *data, TSEvent event, void *edata ATS_UNUSED)
 {
   switch (event) {
   case TS_EVENT_VCONN_WRITE_READY:
@@ -402,7 +400,7 @@ transform_write_event(TSCont contp, TransformData * data, TSEvent event, void *e
 }
 
 static int
-transform_read_status_event(TSCont contp, TransformData * data, TSEvent event, void *edata ATS_UNUSED)
+transform_read_status_event(TSCont contp, TransformData *data, TSEvent event, void *edata ATS_UNUSED)
 {
   switch (event) {
   case TS_EVENT_ERROR:
@@ -420,17 +418,17 @@ transform_read_status_event(TSCont contp, TransformData * data, TSEvent event, v
       buf_ptr = &data->content_length;
       while (read_nbytes > 0) {
         blk = TSIOBufferReaderStart(data->output_reader);
-        buf = (char *) TSIOBufferBlockReadStart(blk, data->output_reader, &avail);
+        buf = (char *)TSIOBufferBlockReadStart(blk, data->output_reader, &avail);
         read_ndone = (avail >= read_nbytes) ? read_nbytes : avail;
         memcpy(buf_ptr, buf, read_ndone);
         if (read_ndone > 0) {
           TSIOBufferReaderConsume(data->output_reader, read_ndone);
           read_nbytes -= read_ndone;
           /* move ptr frwd by read_ndone bytes */
-          buf_ptr = (char *) buf_ptr + read_ndone;
+          buf_ptr = (char *)buf_ptr + read_ndone;
         }
       }
-      //data->content_length = ntohl(data->content_length);
+      // data->content_length = ntohl(data->content_length);
       return transform_read(contp, data);
     }
     return transform_bypass(contp, data);
@@ -442,7 +440,7 @@ transform_read_status_event(TSCont contp, TransformData * data, TSEvent event, v
 }
 
 static int
-transform_read_event(TSCont contp ATS_UNUSED, TransformData * data, TSEvent event, void *edata ATS_UNUSED)
+transform_read_event(TSCont contp ATS_UNUSED, TransformData *data, TSEvent event, void *edata ATS_UNUSED)
 {
   switch (event) {
   case TS_EVENT_ERROR:
@@ -487,7 +485,7 @@ transform_read_event(TSCont contp ATS_UNUSED, TransformData * data, TSEvent even
 }
 
 static int
-transform_bypass_event(TSCont contp ATS_UNUSED, TransformData * data, TSEvent event, void *edata ATS_UNUSED)
+transform_bypass_event(TSCont contp ATS_UNUSED, TransformData *data, TSEvent event, void *edata ATS_UNUSED)
 {
   switch (event) {
   case TS_EVENT_VCONN_WRITE_COMPLETE:
@@ -520,8 +518,7 @@ transform_handler(TSCont contp, TSEvent event, void *edata)
       TSError("Didn't get Continuation's Data. Ignoring Event..");
       return 0;
     }
-    TSDebug("strans", "transform handler event [%d], data->state = [%d]",
-	    event, data->state);
+    TSDebug("strans", "transform handler event [%d], data->state = [%d]", event, data->state);
 
     do {
       switch (data->state) {
@@ -607,7 +604,7 @@ server_response_ok(TSHttpTxn txnp)
 static int
 transform_plugin(TSCont contp, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp = (TSHttpTxn) edata;
+  TSHttpTxn txnp = (TSHttpTxn)edata;
 
   switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR:

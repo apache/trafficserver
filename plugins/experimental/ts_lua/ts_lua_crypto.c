@@ -22,14 +22,14 @@
 #include "ts_lua_util.h"
 
 
-#define TS_LUA_MD5_DIGEST_LENGTH    16
-#define TS_LUA_SHA_DIGEST_LENGTH    20
+#define TS_LUA_MD5_DIGEST_LENGTH 16
+#define TS_LUA_SHA_DIGEST_LENGTH 20
 
-static int ts_lua_md5(lua_State * L);
-static int ts_lua_md5_bin(lua_State * L);
+static int ts_lua_md5(lua_State *L);
+static int ts_lua_md5_bin(lua_State *L);
 
-static int ts_lua_sha1(lua_State * L);
-static int ts_lua_sha1_bin(lua_State * L);
+static int ts_lua_sha1(lua_State *L);
+static int ts_lua_sha1_bin(lua_State *L);
 
 static int ts_lua_base64_encode(lua_State *L);
 static int ts_lua_base64_decode(lua_State *L);
@@ -38,7 +38,7 @@ static int ts_lua_escape_uri(lua_State *L);
 static int ts_lua_unescape_uri(lua_State *L);
 
 void
-ts_lua_inject_crypto_api(lua_State * L)
+ts_lua_inject_crypto_api(lua_State *L)
 {
   /* ts.md5() */
   lua_pushcfunction(L, ts_lua_md5);
@@ -74,7 +74,7 @@ ts_lua_inject_crypto_api(lua_State * L)
 }
 
 static int
-ts_lua_md5(lua_State * L)
+ts_lua_md5(lua_State *L)
 {
   u_char *src;
   size_t slen;
@@ -88,11 +88,11 @@ ts_lua_md5(lua_State * L)
   }
 
   if (lua_isnil(L, 1)) {
-    src = (u_char *) "";
+    src = (u_char *)"";
     slen = 0;
 
   } else {
-    src = (u_char *) luaL_checklstring(L, 1, &slen);
+    src = (u_char *)luaL_checklstring(L, 1, &slen);
   }
 
   MD5_Init(&md5_ctx);
@@ -101,13 +101,13 @@ ts_lua_md5(lua_State * L)
 
   ts_lua_hex_dump(hex_buf, md5_buf, sizeof(md5_buf));
 
-  lua_pushlstring(L, (char *) hex_buf, sizeof(hex_buf));
+  lua_pushlstring(L, (char *)hex_buf, sizeof(hex_buf));
 
   return 1;
 }
 
 static int
-ts_lua_md5_bin(lua_State * L)
+ts_lua_md5_bin(lua_State *L)
 {
   u_char *src;
   size_t slen;
@@ -120,24 +120,24 @@ ts_lua_md5_bin(lua_State * L)
   }
 
   if (lua_isnil(L, 1)) {
-    src = (u_char *) "";
+    src = (u_char *)"";
     slen = 0;
 
   } else {
-    src = (u_char *) luaL_checklstring(L, 1, &slen);
+    src = (u_char *)luaL_checklstring(L, 1, &slen);
   }
 
   MD5_Init(&md5_ctx);
   MD5_Update(&md5_ctx, src, slen);
   MD5_Final(md5_buf, &md5_ctx);
 
-  lua_pushlstring(L, (char *) md5_buf, sizeof(md5_buf));
+  lua_pushlstring(L, (char *)md5_buf, sizeof(md5_buf));
 
   return 1;
 }
 
 static int
-ts_lua_sha1(lua_State * L)
+ts_lua_sha1(lua_State *L)
 {
   u_char *src;
   size_t slen;
@@ -151,11 +151,11 @@ ts_lua_sha1(lua_State * L)
   }
 
   if (lua_isnil(L, 1)) {
-    src = (u_char *) "";
+    src = (u_char *)"";
     slen = 0;
 
   } else {
-    src = (u_char *) luaL_checklstring(L, 1, &slen);
+    src = (u_char *)luaL_checklstring(L, 1, &slen);
   }
 
   SHA1_Init(&sha);
@@ -163,13 +163,13 @@ ts_lua_sha1(lua_State * L)
   SHA1_Final(sha_buf, &sha);
 
   ts_lua_hex_dump(hex_buf, sha_buf, sizeof(sha_buf));
-  lua_pushlstring(L, (char *) hex_buf, sizeof(hex_buf));
+  lua_pushlstring(L, (char *)hex_buf, sizeof(hex_buf));
 
   return 1;
 }
 
 static int
-ts_lua_sha1_bin(lua_State * L)
+ts_lua_sha1_bin(lua_State *L)
 {
   u_char *src;
   size_t slen;
@@ -182,18 +182,18 @@ ts_lua_sha1_bin(lua_State * L)
   }
 
   if (lua_isnil(L, 1)) {
-    src = (u_char *) "";
+    src = (u_char *)"";
     slen = 0;
 
   } else {
-    src = (u_char *) luaL_checklstring(L, 1, &slen);
+    src = (u_char *)luaL_checklstring(L, 1, &slen);
   }
 
   SHA1_Init(&sha);
   SHA1_Update(&sha, src, slen);
   SHA1_Final(sha_buf, &sha);
 
-  lua_pushlstring(L, (char *) sha_buf, sizeof(sha_buf));
+  lua_pushlstring(L, (char *)sha_buf, sizeof(sha_buf));
 
   return 1;
 }
@@ -206,7 +206,7 @@ ts_lua_base64_encode(lua_State *L)
   size_t slen;
   size_t dlen;
 
-  size_t length;  
+  size_t length;
 
   if (lua_gettop(L) != 1) {
     return luaL_error(L, "expecting one argument");
@@ -216,18 +216,17 @@ ts_lua_base64_encode(lua_State *L)
     src = (u_char *)"";
     slen = 0;
   } else {
-    src = (u_char*)luaL_checklstring(L, 1, &slen);
+    src = (u_char *)luaL_checklstring(L, 1, &slen);
   }
 
   dlen = TS_LUA_MAX_STR_LENGTH;
   dst = lua_newuserdata(L, dlen);
 
-  if(TS_SUCCESS == TSBase64Encode((const char *)src, slen, (char *)dst, dlen, 
-                                  &length)) {
-    lua_pushlstring( L, (char*)dst, length);
+  if (TS_SUCCESS == TSBase64Encode((const char *)src, slen, (char *)dst, dlen, &length)) {
+    lua_pushlstring(L, (char *)dst, length);
     return 1;
   } else {
-    return luaL_error(L, "base64 encoding error");  
+    return luaL_error(L, "base64 encoding error");
   }
 }
 
@@ -249,15 +248,14 @@ ts_lua_base64_decode(lua_State *L)
     src = (u_char *)"";
     slen = 0;
   } else {
-    src = (u_char*)luaL_checklstring(L, 1, &slen);
+    src = (u_char *)luaL_checklstring(L, 1, &slen);
   }
 
   dlen = TS_LUA_MAX_STR_LENGTH;
   dst = lua_newuserdata(L, dlen);
 
-  if(TS_SUCCESS == TSBase64Decode((const char *)src, slen, (unsigned char *)dst,
-                                  dlen, &length)) {
-    lua_pushlstring(L, (char*)dst, length); 
+  if (TS_SUCCESS == TSBase64Decode((const char *)src, slen, (unsigned char *)dst, dlen, &length)) {
+    lua_pushlstring(L, (char *)dst, length);
     return 1;
   } else {
     return luaL_error(L, "base64 decoding error");
@@ -275,22 +273,21 @@ ts_lua_escape_uri(lua_State *L)
   if (lua_gettop(L) != 1) {
     return luaL_error(L, "expecting one argument for ts.escape_uri(...)");
   }
-  
+
   if (lua_isnil(L, 1)) {
     lua_pushliteral(L, "");
     return 1;
   }
 
-  src = (u_char*)luaL_checklstring(L, 1, &len);
+  src = (u_char *)luaL_checklstring(L, 1, &len);
   if (len == 0)
     return 1;
 
   dlen = TS_LUA_MAX_STR_LENGTH;
   dst = lua_newuserdata(L, dlen);
 
-  if(TS_SUCCESS == TSStringPercentEncode((const char *)src, len, (char *)dst, 
-                                         dlen, &length, NULL)) {
-    lua_pushlstring(L, (char *) dst, length);
+  if (TS_SUCCESS == TSStringPercentEncode((const char *)src, len, (char *)dst, dlen, &length, NULL)) {
+    lua_pushlstring(L, (char *)dst, length);
     return 1;
   } else {
     return luaL_error(L, "percent encoding error");
@@ -314,20 +311,18 @@ ts_lua_unescape_uri(lua_State *L)
     return 1;
   }
 
-  src = (u_char *) luaL_checklstring(L, 1, &len);
-  if(len == 0)
+  src = (u_char *)luaL_checklstring(L, 1, &len);
+  if (len == 0)
     return 1;
 
   /* the unescaped string can only be smaller */
   dlen = len;
   dst = lua_newuserdata(L, dlen);
 
-  if(TS_SUCCESS == TSStringPercentDecode((const char *)src, len, (char *)dst, 
-                                         dlen, &length)) {
-    lua_pushlstring(L, (char *) dst, length);
+  if (TS_SUCCESS == TSStringPercentDecode((const char *)src, len, (char *)dst, dlen, &length)) {
+    lua_pushlstring(L, (char *)dst, length);
     return 1;
   } else {
     return luaL_error(L, "percent decoding error");
   }
 }
-

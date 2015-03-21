@@ -21,7 +21,7 @@
   limitations under the License.
  */
 #ifndef _Main_h_
-#define	_Main_h_
+#define _Main_h_
 
 #include <ts/ink_defs.h>
 #include "libts.h"
@@ -35,10 +35,10 @@
 #define ET_CACHE ET_CALL
 
 // TODO: consolidate location of these defaults
-#define DEFAULT_ROOT_DIRECTORY            PREFIX
-#define DEFAULT_LOCAL_STATE_DIRECTORY     "var/trafficserver"
-#define DEFAULT_SYSTEM_CONFIG_DIRECTORY   "etc/trafficserver"
-#define DEFAULT_LOG_DIRECTORY             "var/log/trafficserver"
+#define DEFAULT_ROOT_DIRECTORY PREFIX
+#define DEFAULT_LOCAL_STATE_DIRECTORY "var/trafficserver"
+#define DEFAULT_SYSTEM_CONFIG_DIRECTORY "etc/trafficserver"
+#define DEFAULT_LOG_DIRECTORY "var/log/trafficserver"
 
 //
 // Global Data
@@ -79,6 +79,6 @@ maintainance_mode()
 extern AppVersionInfo appVersionInfo;
 
 void crash_logger_init();
-void crash_logger_invoke(int signo, siginfo_t * info, void * ctx);
+void crash_logger_invoke(int signo, siginfo_t *info, void *ctx);
 
 #endif /* _Main_h_ */

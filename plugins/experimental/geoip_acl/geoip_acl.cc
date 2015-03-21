@@ -34,7 +34,7 @@
 // Initialize the plugin as a remap plugin.
 //
 TSReturnCode
-TSRemapInit(TSRemapInterface* api_info, char *errbuf, int errbuf_size)
+TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 {
   if (api_info->size < sizeof(TSRemapInterface)) {
     strncpy(errbuf, "[tsremap_init] - Incorrect size of TSRemapInterface structure", errbuf_size - 1);
@@ -42,27 +42,27 @@ TSRemapInit(TSRemapInterface* api_info, char *errbuf, int errbuf_size)
   }
 
   if (api_info->tsremap_version < TSREMAP_VERSION) {
-    snprintf(errbuf, errbuf_size - 1, "[tsremap_init] - Incorrect API version %ld.%ld",
-             api_info->tsremap_version >> 16, (api_info->tsremap_version & 0xffff));
+    snprintf(errbuf, errbuf_size - 1, "[tsremap_init] - Incorrect API version %ld.%ld", api_info->tsremap_version >> 16,
+             (api_info->tsremap_version & 0xffff));
     return TS_ERROR;
   }
 
-  //gGI = GeoIP_new(GEOIP_STANDARD); // This seems to break on threaded apps
+  // gGI = GeoIP_new(GEOIP_STANDARD); // This seems to break on threaded apps
   gGI = GeoIP_new(GEOIP_MMAP_CACHE);
 
   TSDebug(PLUGIN_NAME, "remap plugin is successfully initialized");
-  return TS_SUCCESS;                     /* success */
+  return TS_SUCCESS; /* success */
 }
 
 
 TSReturnCode
-TSRemapNewInstance(int argc, char* argv[], void** ih, char* /* errbuf */, int /* errbuf_size */)
+TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf */, int /* errbuf_size */)
 {
   if (argc < 3) {
     TSError("Unable to create remap instance, need more parameters");
     return TS_ERROR;
   } else {
-    Acl* a = NULL;
+    Acl *a = NULL;
 
     if (!strncmp(argv[2], "country", 11)) {
       TSDebug(PLUGIN_NAME, "creating an ACL rule with ISO country codes");
@@ -71,7 +71,7 @@ TSRemapNewInstance(int argc, char* argv[], void** ih, char* /* errbuf */, int /*
 
     if (a) {
       a->process_args(argc, argv);
-      *ih = static_cast<void*>(a);
+      *ih = static_cast<void *>(a);
     } else {
       TSError("Unable to create remap instance, no supported ACL specified as first parameter");
       return TS_ERROR;
@@ -82,9 +82,9 @@ TSRemapNewInstance(int argc, char* argv[], void** ih, char* /* errbuf */, int /*
 }
 
 void
-TSRemapDeleteInstance(void* ih)
+TSRemapDeleteInstance(void *ih)
 {
-  Acl* a = static_cast<Acl*>(ih);
+  Acl *a = static_cast<Acl *>(ih);
 
   delete a;
 }
@@ -94,12 +94,12 @@ TSRemapDeleteInstance(void* ih)
 // Main entry point when used as a remap plugin.
 //
 TSRemapStatus
-TSRemapDoRemap(void* ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
+TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 {
   if (NULL == ih) {
     TSDebug(PLUGIN_NAME, "No ACLs configured, this is probably a plugin bug");
   } else {
-    Acl* a = static_cast<Acl*>(ih);
+    Acl *a = static_cast<Acl *>(ih);
 
     if (!a->eval(rri, rh)) {
       TSHttpTxnSetHttpRetStatus((TSHttpTxn)rh, (TSHttpStatus)403);

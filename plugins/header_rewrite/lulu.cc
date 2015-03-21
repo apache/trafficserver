@@ -22,8 +22,8 @@
 #include "lulu.h"
 
 // Helper function to cleanly get the IP as a string.
-char*
-getIP(sockaddr const* s_sockaddr, char res[INET6_ADDRSTRLEN])
+char *
+getIP(sockaddr const *s_sockaddr, char res[INET6_ADDRSTRLEN])
 {
   res[0] = '\0';
 
@@ -32,18 +32,14 @@ getIP(sockaddr const* s_sockaddr, char res[INET6_ADDRSTRLEN])
   }
 
   switch (s_sockaddr->sa_family) {
-  case AF_INET:
-    {
-      const struct sockaddr_in *s_sockaddr_in = reinterpret_cast<const struct sockaddr_in *>(s_sockaddr);
-      inet_ntop(AF_INET, &s_sockaddr_in->sin_addr, res, INET_ADDRSTRLEN);
-    }
-    break;
-  case AF_INET6:
-    {
-      const struct sockaddr_in6 *s_sockaddr_in6 = reinterpret_cast<const struct sockaddr_in6 *>(s_sockaddr);
-      inet_ntop(AF_INET6, &s_sockaddr_in6->sin6_addr, res, INET6_ADDRSTRLEN);
-    }
-    break;
+  case AF_INET: {
+    const struct sockaddr_in *s_sockaddr_in = reinterpret_cast<const struct sockaddr_in *>(s_sockaddr);
+    inet_ntop(AF_INET, &s_sockaddr_in->sin_addr, res, INET_ADDRSTRLEN);
+  } break;
+  case AF_INET6: {
+    const struct sockaddr_in6 *s_sockaddr_in6 = reinterpret_cast<const struct sockaddr_in6 *>(s_sockaddr);
+    inet_ntop(AF_INET6, &s_sockaddr_in6->sin6_addr, res, INET6_ADDRSTRLEN);
+  } break;
   }
 
   return res[0] ? res : NULL;
@@ -51,9 +47,9 @@ getIP(sockaddr const* s_sockaddr, char res[INET6_ADDRSTRLEN])
 
 // Return it as a std::string instead (more expensive, but sometimes convenient)
 std::string
-getIP(sockaddr const* s_sockaddr)
+getIP(sockaddr const *s_sockaddr)
 {
-  char res[INET6_ADDRSTRLEN] = { '\0' };
+  char res[INET6_ADDRSTRLEN] = {'\0'};
 
   if (getIP(s_sockaddr, res)) {
     return res;
@@ -64,21 +60,17 @@ getIP(sockaddr const* s_sockaddr)
 
 // Returns the port of a sockaddr
 uint16_t
-getPort(sockaddr const* s_sockaddr)
+getPort(sockaddr const *s_sockaddr)
 {
   switch (s_sockaddr->sa_family) {
-  case AF_INET:
-    {
-      const struct sockaddr_in *s_sockaddr_in = reinterpret_cast<const struct sockaddr_in *>(s_sockaddr);
-      return ntohs(s_sockaddr_in->sin_port);
-    }
-    break;
-  case AF_INET6:
-    {
-      const struct sockaddr_in6 *s_sockaddr_in6 = reinterpret_cast<const struct sockaddr_in6 *>(s_sockaddr);
-      return ntohs(s_sockaddr_in6->sin6_port);
-    }
-    break;
+  case AF_INET: {
+    const struct sockaddr_in *s_sockaddr_in = reinterpret_cast<const struct sockaddr_in *>(s_sockaddr);
+    return ntohs(s_sockaddr_in->sin_port);
+  } break;
+  case AF_INET6: {
+    const struct sockaddr_in6 *s_sockaddr_in6 = reinterpret_cast<const struct sockaddr_in6 *>(s_sockaddr);
+    return ntohs(s_sockaddr_in6->sin6_port);
+  } break;
   default:
     return 0;
     break;

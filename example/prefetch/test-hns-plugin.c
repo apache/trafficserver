@@ -78,7 +78,7 @@ static TSMutex file_write_mutex;
 
 
 TSPrefetchReturnCode
-embedded_object_hook(TSPrefetchHookID hook, TSPrefetchInfo * info)
+embedded_object_hook(TSPrefetchHookID hook, TSPrefetchInfo *info)
 {
   TSIOBufferBlock block;
   const char *block_start;
@@ -88,8 +88,8 @@ embedded_object_hook(TSPrefetchHookID hook, TSPrefetchInfo * info)
 
   printf("(%s) >>> TS_PREFETCH_EMBEDDED_OBJECT_HOOK (%d)\n", TAG, hook);
 
-  printf("(%s) \tobject size for: %s is %lld\n",
-         TAG, info->embedded_url, (long long)TSIOBufferReaderAvail(info->object_buf_reader));
+  printf("(%s) \tobject size for: %s is %lld\n", TAG, info->embedded_url,
+         (long long)TSIOBufferReaderAvail(info->object_buf_reader));
 
   /* Get the embedded objects here */
   total_avail = TSIOBufferReaderAvail(info->object_buf_reader);
@@ -120,20 +120,18 @@ embedded_object_hook(TSPrefetchHookID hook, TSPrefetchInfo * info)
 }
 
 TSPrefetchReturnCode
-embedded_url_hook(TSPrefetchHookID hook, TSPrefetchInfo* info)
+embedded_url_hook(TSPrefetchHookID hook, TSPrefetchInfo *info)
 {
-
-  unsigned char *ip = (unsigned char *) &info->client_ip;
+  unsigned char *ip = (unsigned char *)&info->client_ip;
 
   printf("(%s) >>> TS_PREFETCH_EMBEDDED_URL_HOOK (%d)\n", TAG, hook);
 
-  printf("(%s) \tURL: %s %s Child IP: %u.%u.%u.%u\n",
-         TAG, info->embedded_url, (info->present_in_cache) ? "(present in cache)" : "", ip[0], ip[1], ip[2], ip[3]);
+  printf("(%s) \tURL: %s %s Child IP: %u.%u.%u.%u\n", TAG, info->embedded_url, (info->present_in_cache) ? "(present in cache)" : "",
+         ip[0], ip[1], ip[2], ip[3]);
 
   /* We will select UDP for sending url and TCP for sending object */
   if (embedded_object)
-    info->object_buf_status = (embedded_object == 1)
-      ? TS_PREFETCH_OBJ_BUF_NEEDED : TS_PREFETCH_OBJ_BUF_NEEDED_N_TRANSMITTED;
+    info->object_buf_status = (embedded_object == 1) ? TS_PREFETCH_OBJ_BUF_NEEDED : TS_PREFETCH_OBJ_BUF_NEEDED_N_TRANSMITTED;
   if (url_proto)
     info->url_response_proto = TS_PREFETCH_PROTO_TCP;
   else
@@ -156,9 +154,9 @@ embedded_url_hook(TSPrefetchHookID hook, TSPrefetchInfo* info)
 
 
 TSPrefetchReturnCode
-pre_parse_hook(TSPrefetchHookID hook, TSPrefetchInfo* info)
+pre_parse_hook(TSPrefetchHookID hook, TSPrefetchInfo *info)
 {
-  unsigned char *ip = (unsigned char *) &info->client_ip;
+  unsigned char *ip = (unsigned char *)&info->client_ip;
 
   printf("(%s) >>> TS_PREFETCH_PRE_PARSE_HOOK (%d)\n", TAG, hook);
 
@@ -177,14 +175,13 @@ pre_parse_hook(TSPrefetchHookID hook, TSPrefetchInfo* info)
 }
 
 
-
 void
 TSPluginInit(int argc, const char *argv[])
 {
   int c, arg;
   extern char *optarg;
   TSPluginRegistrationInfo plugin_info;
-  char file_name[512] = { 0 };
+  char file_name[512] = {0};
   plugin_info.plugin_name = "test-prefetch";
   plugin_info.vendor_name = "MyCompany";
   plugin_info.support_email = "ts-api-support@MyCompany.com";
@@ -194,7 +191,7 @@ TSPluginInit(int argc, const char *argv[])
     return;
   }
 
-  while ((c = getopt(argc, (char *const *) argv, "p:u:i:o:d:")) != EOF) {
+  while ((c = getopt(argc, (char *const *)argv, "p:u:i:o:d:")) != EOF) {
     switch (c) {
     case 'p':
     case 'u':

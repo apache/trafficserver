@@ -22,6 +22,6 @@
 
 #include "ts_lua_common.h"
 
-void ts_lua_inject_cached_response_api(lua_State * L);
+void ts_lua_inject_cached_response_api(lua_State *L);
 
 #endif

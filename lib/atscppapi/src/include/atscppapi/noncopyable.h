@@ -26,8 +26,8 @@
 #ifndef ATSCPPAPI_NONCOPYABLE_H_
 #define ATSCPPAPI_NONCOPYABLE_H_
 
-namespace atscppapi {
-
+namespace atscppapi
+{
 /**
  * @brief noncopyable is a base class that will prevent derived classes from being copied.
  *
@@ -53,9 +53,10 @@ class noncopyable
 protected:
   noncopyable() {}
   ~noncopyable() {}
+
 private:
-  noncopyable(const noncopyable&);
-  const noncopyable& operator=(const noncopyable&);
+  noncopyable(const noncopyable &);
+  const noncopyable &operator=(const noncopyable &);
 };
 
 } /* atscppapi */

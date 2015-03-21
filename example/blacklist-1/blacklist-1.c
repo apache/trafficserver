@@ -38,14 +38,11 @@ static TSCont global_contp;
 
 static void handle_txn_start(TSCont contp, TSHttpTxn txnp);
 
-typedef struct contp_data
-{
-
-  enum calling_func
-  {
+typedef struct contp_data {
+  enum calling_func {
     HANDLE_DNS,
     HANDLE_RESPONSE,
-    READ_BLACKLIST
+    READ_BLACKLIST,
   } cf;
 
   TSHttpTxn txnp;
@@ -57,7 +54,7 @@ destroy_continuation(TSHttpTxn txnp, TSCont contp)
 {
   cdata *cd = NULL;
 
-  cd = (cdata *) TSContDataGet(contp);
+  cd = (cdata *)TSContDataGet(contp);
   if (cd != NULL) {
     TSfree(cd);
   }
@@ -146,9 +143,8 @@ handle_response(TSHttpTxn txnp, TSCont contp ATS_UNUSED)
   }
 
   TSHttpHdrStatusSet(bufp, hdr_loc, TS_HTTP_STATUS_FORBIDDEN);
-  TSHttpHdrReasonSet(bufp, hdr_loc,
-                      TSHttpHdrReasonLookup(TS_HTTP_STATUS_FORBIDDEN),
-                      strlen(TSHttpHdrReasonLookup(TS_HTTP_STATUS_FORBIDDEN)));
+  TSHttpHdrReasonSet(bufp, hdr_loc, TSHttpHdrReasonLookup(TS_HTTP_STATUS_FORBIDDEN),
+                     strlen(TSHttpHdrReasonLookup(TS_HTTP_STATUS_FORBIDDEN)));
 
   if (TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
     TSError("couldn't retrieve client request header\n");
@@ -162,7 +158,7 @@ handle_response(TSHttpTxn txnp, TSCont contp ATS_UNUSED)
     goto done;
   }
 
-  buf = (char *) TSmalloc(4096);
+  buf = (char *)TSmalloc(4096);
 
   url_str = TSUrlStringGet(bufp, url_loc, &url_length);
   sprintf(buf, "You are forbidden from accessing \"%s\"\n", url_str);
@@ -223,7 +219,6 @@ read_blacklist(TSCont contp)
   }
 
   TSMutexUnlock(sites_mutex);
-
 }
 
 static int
@@ -234,12 +229,12 @@ blacklist_plugin(TSCont contp, TSEvent event, void *edata)
 
   switch (event) {
   case TS_EVENT_HTTP_TXN_START:
-    txnp = (TSHttpTxn) edata;
+    txnp = (TSHttpTxn)edata;
     handle_txn_start(contp, txnp);
     return 0;
   case TS_EVENT_HTTP_OS_DNS:
     if (contp != global_contp) {
-      cd = (cdata *) TSContDataGet(contp);
+      cd = (cdata *)TSContDataGet(contp);
       cd->cf = HANDLE_DNS;
       handle_dns(cd->txnp, contp);
       return 0;
@@ -247,14 +242,14 @@ blacklist_plugin(TSCont contp, TSEvent event, void *edata)
       break;
     }
   case TS_EVENT_HTTP_TXN_CLOSE:
-    txnp = (TSHttpTxn) edata;
+    txnp = (TSHttpTxn)edata;
     if (contp != global_contp) {
       destroy_continuation(txnp, contp);
     }
     break;
   case TS_EVENT_HTTP_SEND_RESPONSE_HDR:
     if (contp != global_contp) {
-      cd = (cdata *) TSContDataGet(contp);
+      cd = (cdata *)TSContDataGet(contp);
       cd->cf = HANDLE_RESPONSE;
       handle_response(cd->txnp, contp);
       return 0;
@@ -267,7 +262,7 @@ blacklist_plugin(TSCont contp, TSEvent event, void *edata)
        edata. We need to decide, in which function did the MutexLock
        failed and call that function again */
     if (contp != global_contp) {
-      cd = (cdata *) TSContDataGet(contp);
+      cd = (cdata *)TSContDataGet(contp);
       switch (cd->cf) {
       case HANDLE_DNS:
         handle_dns(cd->txnp, contp);
@@ -276,7 +271,7 @@ blacklist_plugin(TSCont contp, TSEvent event, void *edata)
         handle_response(cd->txnp, contp);
         return 0;
       default:
-	TSDebug("blacklist_plugin", "This event was unexpected: %d\n", event);
+        TSDebug("blacklist_plugin", "This event was unexpected: %d\n", event);
         break;
       }
     } else {
@@ -295,9 +290,9 @@ handle_txn_start(TSCont contp ATS_UNUSED, TSHttpTxn txnp)
   TSCont txn_contp;
   cdata *cd;
 
-  txn_contp = TSContCreate((TSEventFunc) blacklist_plugin, TSMutexCreate());
+  txn_contp = TSContCreate((TSEventFunc)blacklist_plugin, TSMutexCreate());
   /* create the data that'll be associated with the continuation */
-  cd = (cdata *) TSmalloc(sizeof(cdata));
+  cd = (cdata *)TSmalloc(sizeof(cdata));
   TSContDataSet(txn_contp, cd);
 
   cd->txnp = txnp;

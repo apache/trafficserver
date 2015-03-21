@@ -30,42 +30,40 @@ class LogFormat;
 class LogConfig;
 
 // Collects all the necesary info to build a pre-defined object.
-struct PreDefinedFormatInfo
-{
-  LogFormat *   format;
-  const char *  filename;
-  const char *  header;
+struct PreDefinedFormatInfo {
+  LogFormat *format;
+  const char *filename;
+  const char *header;
   LogFileFormat filefmt;
-  bool          collatable; // whether log collation is supported
+  bool collatable; // whether log collation is supported
 
   LINK(PreDefinedFormatInfo, link);
 
-  PreDefinedFormatInfo(LogFormat * fmt, const char * fname, const char * hdr, LogFileFormat _f, bool _c)
-    :format(fmt), filename(fname), header(hdr), filefmt(_f), collatable(_c)
-  { }
+  PreDefinedFormatInfo(LogFormat *fmt, const char *fname, const char *hdr, LogFileFormat _f, bool _c)
+    : format(fmt), filename(fname), header(hdr), filefmt(_f), collatable(_c)
+  {
+  }
 
-  static const char * const squid;
-  static const char * const common;
-  static const char * const extended;
-  static const char * const extended2;
+  static const char *const squid;
+  static const char *const common;
+  static const char *const extended;
+  static const char *const extended2;
 };
 
 typedef Queue<PreDefinedFormatInfo> PreDefinedFormatInfoList;
 
-struct PreDefinedFormatList
-{
+struct PreDefinedFormatList {
   PreDefinedFormatList();
   ~PreDefinedFormatList();
 
   // Initialize the predefined format list from the given LogConfig. This has the side-effect of
   // adding the predefined LogFormats to the LogConfig global_format_list.
-  void init(LogConfig * config);
+  void init(LogConfig *config);
 
   PreDefinedFormatInfoList formats;
 };
 
 // Return a PreDefinedFormatInfo structure for the ASCII error log.
-PreDefinedFormatInfo *
-MakePredefinedErrorLog(LogConfig * config);
+PreDefinedFormatInfo *MakePredefinedErrorLog(LogConfig *config);
 
 #endif /* LOG_PREDEFINED_H */

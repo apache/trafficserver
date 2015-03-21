@@ -39,26 +39,30 @@ struct SSLSessionID {
   char bytes[SSL_MAX_SSL_SESSION_ID_LENGTH];
   size_t len;
 
-  SSLSessionID(const unsigned char *s, size_t l) : len(l) {
+  SSLSessionID(const unsigned char *s, size_t l) : len(l)
+  {
     ink_release_assert(l <= sizeof(bytes));
     memcpy(bytes, s, l);
   }
 
-  SSLSessionID(const SSLSessionID& other) {
+  SSLSessionID(const SSLSessionID &other)
+  {
     if (other.len)
       memcpy(bytes, other.bytes, other.len);
 
     len = other.len;
   }
 
- bool operator<(const SSLSessionID &other) const {
-   if (len != other.len)
-     return len < other.len;
+  bool operator<(const SSLSessionID &other) const
+  {
+    if (len != other.len)
+      return len < other.len;
 
-   return (memcmp(bytes, other.bytes, len) < 0);
- }
+    return (memcmp(bytes, other.bytes, len) < 0);
+  }
 
-  SSLSessionID& operator=(const SSLSessionID& other) {
+  SSLSessionID &operator=(const SSLSessionID &other)
+  {
     if (other.len)
       memcpy(bytes, other.bytes, other.len);
 
@@ -66,15 +70,18 @@ struct SSLSessionID {
     return *this;
   }
 
-  bool operator==(const SSLSessionID &other) const {
-   if (len != other.len)
-       return false;
+  bool operator==(const SSLSessionID &other) const
+  {
+    if (len != other.len)
+      return false;
 
-   // memcmp returns 0 on equal
-   return (memcmp(bytes, other.bytes, len) == 0);
+    // memcmp returns 0 on equal
+    return (memcmp(bytes, other.bytes, len) == 0);
   }
 
-  const char *toString(char *buf, size_t buflen) const {
+  const char *
+  toString(char *buf, size_t buflen) const
+  {
     char *cur_pos = buf;
     for (size_t i = 0; i < len && buflen > 0; ++i) {
       if (buflen > 2) { // we have enough space for 3 bytes, 2 hex and 1 null terminator
@@ -89,7 +96,9 @@ struct SSLSessionID {
     return buf;
   }
 
-  uint64_t hash() const {
+  uint64_t
+  hash() const
+  {
     // because the session ids should be uniformly random let's just use the upper 64 bits as the hash.
     if (len >= sizeof(uint64_t))
       return *reinterpret_cast<uint64_t *>(const_cast<char *>(bytes));
@@ -98,23 +107,25 @@ struct SSLSessionID {
     else
       return 0;
   }
-
 };
 
-class SSLSession {
+class SSLSession
+{
 public:
   SSLSessionID session_id;
   Ptr<IOBufferData> asn1_data; /* this is the ASN1 representation of the SSL_CTX */
   size_t len_asn1_data;
 
   SSLSession(const SSLSessionID &id, Ptr<IOBufferData> ssl_asn1_data, size_t len_asn1)
- : session_id(id), asn1_data(ssl_asn1_data), len_asn1_data(len_asn1)
-  { }
+    : session_id(id), asn1_data(ssl_asn1_data), len_asn1_data(len_asn1)
+  {
+  }
 
-	LINK(SSLSession, link);
+  LINK(SSLSession, link);
 };
 
-class SSLSessionBucket {
+class SSLSessionBucket
+{
 public:
   SSLSessionBucket();
   ~SSLSessionBucket();
@@ -131,17 +142,18 @@ private:
   CountQueue<SSLSession> queue;
 };
 
-class SSLSessionCache {
+class SSLSessionCache
+{
 public:
-	bool getSession(const SSLSessionID &sid, SSL_SESSION **sess) const;
-	void insertSession(const SSLSessionID &sid, SSL_SESSION *sess);
-	void removeSession(const SSLSessionID &sid);
+  bool getSession(const SSLSessionID &sid, SSL_SESSION **sess) const;
+  void insertSession(const SSLSessionID &sid, SSL_SESSION *sess);
+  void removeSession(const SSLSessionID &sid);
   SSLSessionCache();
   ~SSLSessionCache();
 
- private:
-    SSLSessionBucket *session_bucket;
-    size_t nbuckets;
+private:
+  SSLSessionBucket *session_bucket;
+  size_t nbuckets;
 };
 
 #endif /* __SSLSESSIONCACHE_H__ */

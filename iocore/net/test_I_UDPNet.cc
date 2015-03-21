@@ -27,7 +27,7 @@
 #include "I_Net.h"
 #include "List.h"
 
-//Diags stuff from test_I_Net.cc:
+// Diags stuff from test_I_Net.cc:
 Diags *diags;
 #define DIAGS_LOG_FILE "diags.log"
 
@@ -59,7 +59,6 @@ reconfigure_diags()
 
   // read output routing values
   for (i = 0; i < DiagsLevel_Count; i++) {
-
     c.outputs[i].to_stdout = 0;
     c.outputs[i].to_stderr = 1;
     c.outputs[i].to_syslog = 1;
@@ -82,17 +81,15 @@ reconfigure_diags()
   if (diags->base_action_tags)
     diags->activate_taglist(diags->base_action_tags, DiagsTagType_Action);
 
-  ////////////////////////////////////
-  // change the diags config values //
-  ////////////////////////////////////
+////////////////////////////////////
+// change the diags config values //
+////////////////////////////////////
 #if !defined(__GNUC__) && !defined(hpux)
   diags->config = c;
 #else
-  memcpy(((void *) &diags->config), ((void *) &c), sizeof(DiagsConfigState));
+  memcpy(((void *)&diags->config), ((void *)&c), sizeof(DiagsConfigState));
 #endif
-
 }
-
 
 
 static void
@@ -117,20 +114,20 @@ init_diags(char *bdt, char *bat)
   if (diags_log_fp == NULL) {
     SrcLoc loc(__FILE__, __FUNCTION__, __LINE__);
 
-    diags->print(NULL, DL_Warning, NULL, &loc,
-                 "couldn't open diags log file '%s', " "will not log to this file", diags_logpath);
+    diags->print(NULL, DL_Warning, NULL, &loc, "couldn't open diags log file '%s', "
+                                               "will not log to this file",
+                 diags_logpath);
   }
 
   diags->print(NULL, DL_Status, "STATUS", NULL, "opened %s", diags_logpath);
   reconfigure_diags();
-
 }
 
 
 /*This implements a standard Unix echo server: just send every udp packet you
   get back to where it came from*/
 
-class EchoServer:public Continuation
+class EchoServer : public Continuation
 {
   int sock_fd;
   UDPConnection *conn;
@@ -138,10 +135,7 @@ class EchoServer:public Continuation
   int handlePacket(int event, void *data);
 
 public:
-    EchoServer()
-  : Continuation(new_ProxyMutex())
-  {
-  };
+  EchoServer() : Continuation(new_ProxyMutex()){};
 
   bool Start(int port);
 };
@@ -167,25 +161,24 @@ int
 EchoServer::handlePacket(int event, void *data)
 {
   switch (event) {
+  case NET_EVENT_DATAGRAM_READ_READY: {
+    Queue<UDPPacket> *q = (Queue<UDPPacket> *)data;
+    UDPPacket *p;
 
-  case NET_EVENT_DATAGRAM_READ_READY:{
-      Queue<UDPPacket> *q = (Queue<UDPPacket> *)data;
-      UDPPacket *p;
-
-      //send what ever we get back to the client
-      while (p = q->pop()) {
-        p->m_to = p->m_from;
-        conn->send(this, p);
-      }
-      break;
+    // send what ever we get back to the client
+    while (p = q->pop()) {
+      p->m_to = p->m_from;
+      conn->send(this, p);
     }
+    break;
+  }
 
   case NET_EVENT_DATAGRAM_READ_ERROR:
     printf("got Read Error exiting\n");
     _exit(1);
 
   case NET_EVENT_DATAGRAM_WRITE_ERROR:
-    printf("got write error: %d\n", (int) data);
+    printf("got write error: %d\n", (int)data);
     break;
 
   default:

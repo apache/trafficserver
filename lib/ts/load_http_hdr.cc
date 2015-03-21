@@ -43,18 +43,17 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-enum hdr_type
-{
+enum hdr_type {
   UNKNOWN_HDR,
   REQUEST_HDR,
   RESPONSE_HDR,
   HTTP_INFO_HDR,
-  RAW_MBUFFER
+  RAW_MBUFFER,
 };
 
 void walk_mime_field(MIMEField f);
-void walk_mstring(MBuffer * bufp, int32_t offset);
-void walk_mbuffer(MBuffer * bufp);
+void walk_mstring(MBuffer *bufp, int32_t offset);
+void walk_mbuffer(MBuffer *bufp);
 void print_http_info_impl(HTTPInfo hi);
 void print_http_hdr_impl(HTTPHdr h);
 
@@ -110,7 +109,6 @@ dump_hdr(char *mbuf, hdr_type h_type)
 void
 load_buffer(int fd, hdr_type h_type)
 {
-
   struct stat s_info;
 
   if (fstat(fd, &s_info) < 0) {
@@ -166,7 +164,6 @@ load_buffer(int fd, hdr_type h_type)
   int cur_line = 0;
 
   while (cur_line < num_lines && bytes_read < mbuf_size) {
-
     int *cur_ptr;
     num_el = el_tok.Initialize(line_tok[cur_line]);
 
@@ -176,7 +173,7 @@ load_buffer(int fd, hdr_type h_type)
         fprintf(stderr, "Corrupted data file\n");
         exit(1);
       }
-      cur_ptr = (int *) (mbuf + bytes_read);
+      cur_ptr = (int *)(mbuf + bytes_read);
       *cur_ptr = el;
       bytes_read += 4;
     }
@@ -185,7 +182,7 @@ load_buffer(int fd, hdr_type h_type)
 
   if (bytes_read != mbuf_length) {
     fprintf(stderr, "Size mismatch: read %d  mbuf_length %d  mbuf_size %d\n", bytes_read, mbuf_length, mbuf_size);
-//      exit(1);
+    //      exit(1);
   }
 
   /*
@@ -213,7 +210,6 @@ load_buffer(int fd, hdr_type h_type)
 int
 main(int argc, const char *argv[])
 {
-
   hdr_type h_type = UNKNOWN_HDR;
 
   http_init();
@@ -251,63 +247,46 @@ main(int argc, const char *argv[])
   Code for manual groking the mbuf objects
 *******************************************************************/
 
-//extern const char *marshal_strs[];
+// extern const char *marshal_strs[];
 
-char *marshal_type_strs[] = {
-  "EMPTY ",
-  "OBJ   ",
-  "STR   ",
-  "URL   ",
-  "URL_F ",
-  "URL_H ",
-  "M_VALS",
-  "M_FLD ",
-  "M_HDR ",
-  "H_HDR ",
-  "H_REQ ",
-  "H_RESP",
-  "H_INFO"
-};
+char *marshal_type_strs[] = {"EMPTY ", "OBJ   ", "STR   ", "URL   ", "URL_F ", "URL_H ", "M_VALS",
+                             "M_FLD ", "M_HDR ", "H_HDR ", "H_REQ ", "H_RESP", "H_INFO"};
 
 void
-walk_mbuffer(MBuffer * bufp)
+walk_mbuffer(MBuffer *bufp)
 {
   int offset = 3;
   int max_offset = (*bufp->m_length) / 4;
 
   do {
-    MObjectImpl *mo = (MObjectImpl *) mbuffer_get_obj(bufp, offset);
-    printf("offset %.3d  m_length %.2d  m_type %s     ", offset, (int) mo->m_length, marshal_type_strs[mo->type]);
+    MObjectImpl *mo = (MObjectImpl *)mbuffer_get_obj(bufp, offset);
+    printf("offset %.3d  m_length %.2d  m_type %s     ", offset, (int)mo->m_length, marshal_type_strs[mo->type]);
 
-    switch ((int) mo->type) {
-    case MARSHAL_MIME_FIELD:
-      {
-        MIMEField f(bufp, offset);
-        walk_mime_field(f);
-        break;
-      }
-    case MARSHAL_STRING:
-      {
-        walk_mstring(bufp, offset);
-        printf("\n");
-        break;
-      }
-    case MARSHAL_HTTP_INFO:
-      {
-        HTTPInfo i(bufp, offset);
-        print_http_info_impl(i);
-        printf("\n");
-        break;
-      }
+    switch ((int)mo->type) {
+    case MARSHAL_MIME_FIELD: {
+      MIMEField f(bufp, offset);
+      walk_mime_field(f);
+      break;
+    }
+    case MARSHAL_STRING: {
+      walk_mstring(bufp, offset);
+      printf("\n");
+      break;
+    }
+    case MARSHAL_HTTP_INFO: {
+      HTTPInfo i(bufp, offset);
+      print_http_info_impl(i);
+      printf("\n");
+      break;
+    }
     case MARSHAL_HTTP_HEADER:
     case MARSHAL_HTTP_HEADER_REQ:
-    case MARSHAL_HTTP_HEADER_RESP:
-      {
-        HTTPHdr h(bufp, offset);
-        print_http_hdr_impl(h);
-        printf("\n");
-        break;
-      }
+    case MARSHAL_HTTP_HEADER_RESP: {
+      HTTPHdr h(bufp, offset);
+      print_http_hdr_impl(h);
+      printf("\n");
+      break;
+    }
 
 
     default:
@@ -319,16 +298,16 @@ walk_mbuffer(MBuffer * bufp)
 }
 
 void
-walk_mstring(MBuffer * bufp, int32_t offset)
+walk_mstring(MBuffer *bufp, int32_t offset)
 {
   int bufindex = 0;
   int dumpoffset = 0;
   char fbuf[4096];
 
-//    int32_t soffset = field_offset;
-//    soffset <<= MARSHAL_ALIGNMENT;
-//    printf("offset: %d.  shifted field_offset: %d\n",
-//         field_offset, soffset);
+  //    int32_t soffset = field_offset;
+  //    soffset <<= MARSHAL_ALIGNMENT;
+  //    printf("offset: %d.  shifted field_offset: %d\n",
+  //         field_offset, soffset);
 
   memset(fbuf, 0, 4096);
   mstring_print(bufp, offset, fbuf, 4095, &bufindex, &dumpoffset);
@@ -339,22 +318,21 @@ walk_mstring(MBuffer * bufp, int32_t offset)
 void
 walk_mime_field(MIMEField f)
 {
-
   int bufindex = 0;
   int dumpoffset = 0;
   char fbuf[4096];
 
-//    int32_t soffset = field_offset;
-//    soffset <<= MARSHAL_ALIGNMENT;
-//    printf("offset: %d.  shifted field_offset: %d\n",
-//         field_offset, soffset);
+  //    int32_t soffset = field_offset;
+  //    soffset <<= MARSHAL_ALIGNMENT;
+  //    printf("offset: %d.  shifted field_offset: %d\n",
+  //         field_offset, soffset);
 
   MIMEFieldImpl *fi = MIMEFieldPtr(f.m_buffer, f.m_offset);
   memset(fbuf, 0, 4096);
   mime_field_print(f.m_buffer, f.m_offset, fbuf, 4095, &bufindex, &dumpoffset);
 
-  printf("(%d,%d) [%d,%d,%d] %s", (int) fi->m_nvalues, (int) fi->m_flags,
-         (int) fi->m_name_offset, (int) fi->m_values_offset, (int) fi->m_next_offset, fbuf);
+  printf("(%d,%d) [%d,%d,%d] %s", (int)fi->m_nvalues, (int)fi->m_flags, (int)fi->m_name_offset, (int)fi->m_values_offset,
+         (int)fi->m_next_offset, fbuf);
 }
 
 void
@@ -409,8 +387,7 @@ print_http_info_impl(HTTPInfo hi)
     return;
   }
 
-  printf("id: %d  rid: %d  req: %d  resp: %d",
-         info->m_id, info->m_rid, info->m_request_offset, info->m_response_offset);
+  printf("id: %d  rid: %d  req: %d  resp: %d", info->m_id, info->m_rid, info->m_request_offset, info->m_response_offset);
 }
 
 void
@@ -419,18 +396,16 @@ print_http_hdr_impl(HTTPHdr h)
   HTTPHdrImpl *hdr = HTTPHdrPtr(h.m_buffer, h.m_offset);
 
   if (hdr->type == MARSHAL_HTTP_HEADER) {
-    printf("fields: %d", (int) hdr->m_fields_offset);
+    printf("fields: %d", (int)hdr->m_fields_offset);
     return;
   } else if (hdr->type == MARSHAL_HTTP_HEADER_REQ) {
-    printf("method: %d  url: %d  fields: %d",
-           (int) hdr->u.req.m_method_offset, (int) hdr->u.req.m_url_offset, (int) hdr->m_fields_offset);
+    printf("method: %d  url: %d  fields: %d", (int)hdr->u.req.m_method_offset, (int)hdr->u.req.m_url_offset,
+           (int)hdr->m_fields_offset);
   } else if (hdr->type == MARSHAL_HTTP_HEADER_RESP) {
-    printf("status: %d  reason: %d  fields: %d",
-           (int) hdr->u.resp.m_status, (int) hdr->u.resp.m_reason_offset, (int) hdr->m_fields_offset);
+    printf("status: %d  reason: %d  fields: %d", (int)hdr->u.resp.m_status, (int)hdr->u.resp.m_reason_offset,
+           (int)hdr->m_fields_offset);
   } else {
     printf("Type match failed\n");
     return;
   }
-
-
 }

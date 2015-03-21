@@ -25,16 +25,15 @@
 #define ink_stack_trace_h
 
 // The max number of levels in the stack trace
-#define INK_STACK_TRACE_MAX_LEVELS		100
+#define INK_STACK_TRACE_MAX_LEVELS 100
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 /* dumps the current back trace to stderr */
-  void ink_stack_trace_dump();
+void ink_stack_trace_dump();
 #ifdef __cplusplus
 }
 #endif
 
-#endif                          /* ink_stack_trace_h */
+#endif /* ink_stack_trace_h */

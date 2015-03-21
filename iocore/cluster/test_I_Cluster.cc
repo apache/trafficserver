@@ -62,7 +62,6 @@ reconfigure_diags()
 
   // read output routing values
   for (i = 0; i < DiagsLevel_Count; i++) {
-
     c.outputs[i].to_stdout = 0;
     c.outputs[i].to_stderr = 1;
     c.outputs[i].to_syslog = 1;
@@ -85,18 +84,16 @@ reconfigure_diags()
   if (diags->base_action_tags)
     diags->activate_taglist(diags->base_action_tags, DiagsTagType_Action);
 
-  ////////////////////////////////////
-  // change the diags config values //
-  ////////////////////////////////////
-  // XXX: HP-UX ???
+////////////////////////////////////
+// change the diags config values //
+////////////////////////////////////
+// XXX: HP-UX ???
 #if !defined(__GNUC__) && !defined(hpux)
   diags->config = c;
 #else
-  memcpy(((void *) &diags->config), ((void *) &c), sizeof(DiagsConfigState));
+  memcpy(((void *)&diags->config), ((void *)&c), sizeof(DiagsConfigState));
 #endif
-
 }
-
 
 
 static void
@@ -121,13 +118,13 @@ init_diags(char *bdt, char *bat)
   if (diags_log_fp == NULL) {
     SrcLoc loc(__FILE__, __FUNCTION__, __LINE__);
 
-    diags->print(NULL, DL_Warning, NULL, &loc,
-                 "couldn't open diags log file '%s', " "will not log to this file", diags_logpath);
+    diags->print(NULL, DL_Warning, NULL, &loc, "couldn't open diags log file '%s', "
+                                               "will not log to this file",
+                 diags_logpath);
   }
 
   diags->print(NULL, DL_Status, "STATUS", NULL, "opened %s", diags_logpath);
   reconfigure_diags();
-
 }
 
 

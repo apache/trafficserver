@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#if !defined (_HttpTransactHeaders_h_)
+#if !defined(_HttpTransactHeaders_h_)
 #define _HttpTransactHeaders_h_
 
 #define ink_time_t time_t
@@ -37,57 +37,53 @@ public:
   static bool is_this_a_hop_by_hop_header(const char *field_name_wks);
   static bool is_this_method_supported(int the_scheme, int the_method);
 
-  static void insert_supported_methods_in_response(HTTPHdr * response, int the_scheme);
+  static void insert_supported_methods_in_response(HTTPHdr *response, int the_scheme);
 
-  static void build_base_response(HTTPHdr * outgoing_response, HTTPStatus status,
-                                  const char *reason_phrase, int reason_phrase_len, ink_time_t date);
+  static void build_base_response(HTTPHdr *outgoing_response, HTTPStatus status, const char *reason_phrase, int reason_phrase_len,
+                                  ink_time_t date);
 
-  static void copy_header_fields(HTTPHdr * src_hdr, HTTPHdr * new_hdr,
-                                 bool retain_proxy_auth_hdrs, ink_time_t date = 0);
+  static void copy_header_fields(HTTPHdr *src_hdr, HTTPHdr *new_hdr, bool retain_proxy_auth_hdrs, ink_time_t date = 0);
 
-  static void convert_request(HTTPVersion outgoing_ver, HTTPHdr * outgoing_request);
-  static void convert_response(HTTPVersion outgoing_ver, HTTPHdr * outgoing_response);
-  static void convert_to_0_9_request_header(HTTPHdr * outgoing_request);
-  static void convert_to_1_0_request_header(HTTPHdr * outgoing_request);
-  static void convert_to_1_1_request_header(HTTPHdr * outgoing_request);
-  static void convert_to_0_9_response_header(HTTPHdr * outgoing_response);
-  static void convert_to_1_0_response_header(HTTPHdr * outgoing_response);
-  static void convert_to_1_1_response_header(HTTPHdr * outgoing_response);
+  static void convert_request(HTTPVersion outgoing_ver, HTTPHdr *outgoing_request);
+  static void convert_response(HTTPVersion outgoing_ver, HTTPHdr *outgoing_response);
+  static void convert_to_0_9_request_header(HTTPHdr *outgoing_request);
+  static void convert_to_1_0_request_header(HTTPHdr *outgoing_request);
+  static void convert_to_1_1_request_header(HTTPHdr *outgoing_request);
+  static void convert_to_0_9_response_header(HTTPHdr *outgoing_response);
+  static void convert_to_1_0_response_header(HTTPHdr *outgoing_response);
+  static void convert_to_1_1_response_header(HTTPHdr *outgoing_response);
 
-  static ink_time_t calculate_document_age(ink_time_t request_time, ink_time_t response_time,
-                                           HTTPHdr * base_response, ink_time_t base_response_date, ink_time_t now);
-  static bool does_server_allow_response_to_be_stored(HTTPHdr * resp);
-  static bool downgrade_request(bool * origin_server_keep_alive, HTTPHdr * outgoing_request);
+  static ink_time_t calculate_document_age(ink_time_t request_time, ink_time_t response_time, HTTPHdr *base_response,
+                                           ink_time_t base_response_date, ink_time_t now);
+  static bool does_server_allow_response_to_be_stored(HTTPHdr *resp);
+  static bool downgrade_request(bool *origin_server_keep_alive, HTTPHdr *outgoing_request);
 
-  static void generate_and_set_squid_codes(HTTPHdr * header, char *via_string,
-                                          HttpTransact::SquidLogInfo * squid_codes);
+  static void generate_and_set_squid_codes(HTTPHdr *header, char *via_string, HttpTransact::SquidLogInfo *squid_codes);
 
   // Removing handle_conditional_headers.  Functionality appears to be elsewhere (issue_revalidate)
   // and the only condition when it does anything causes an assert to go
   // off
   // static void handle_conditional_headers(HttpTransact::CacheLookupInfo * cache_info, HTTPHdr * header);
-  static void insert_warning_header(HttpConfigParams *http_config_param,
-                                    HTTPHdr *header, HTTPWarningCode code,
+  static void insert_warning_header(HttpConfigParams *http_config_param, HTTPHdr *header, HTTPWarningCode code,
                                     const char *warn_text = NULL, int warn_text_len = 0);
-  static void insert_time_and_age_headers_in_response(ink_time_t request_sent_time,
-                                                      ink_time_t response_received_time,
-                                                      ink_time_t now, HTTPHdr * base, HTTPHdr * outgoing);
-  static void insert_server_header_in_response(const char *server_tag, int server_tag_size, HTTPHdr * header);
+  static void insert_time_and_age_headers_in_response(ink_time_t request_sent_time, ink_time_t response_received_time,
+                                                      ink_time_t now, HTTPHdr *base, HTTPHdr *outgoing);
+  static void insert_server_header_in_response(const char *server_tag, int server_tag_size, HTTPHdr *header);
   static void insert_via_header_in_request(HttpTransact::State *s, HTTPHdr *header);
   static void insert_via_header_in_response(HttpTransact::State *s, HTTPHdr *header);
   static void insert_hsts_header_in_response(HttpTransact::State *s, HTTPHdr *header);
 
-  static bool is_request_proxy_authorized(HTTPHdr * incoming_hdr);
+  static bool is_request_proxy_authorized(HTTPHdr *incoming_hdr);
 
-  static void insert_basic_realm_in_proxy_authenticate(const char *realm, HTTPHdr * header, bool bRevPrxy);
+  static void insert_basic_realm_in_proxy_authenticate(const char *realm, HTTPHdr *header, bool bRevPrxy);
 
-  static void remove_conditional_headers(HTTPHdr * outgoing);
-  static void remove_100_continue_headers(HttpTransact::State *s, HTTPHdr * outgoing);
-  static void remove_host_name_from_url(HTTPHdr * outgoing_request);
-  static void add_global_user_agent_header_to_request(OverridableHttpConfigParams *http_txn_conf, HTTPHdr * header);
-  static void add_server_header_to_response(OverridableHttpConfigParams *http_txn_conf, HTTPHdr * header);
-  static void remove_privacy_headers_from_request(HttpConfigParams *http_config_param,
-                                                  OverridableHttpConfigParams *http_txn_conf, HTTPHdr * header);
+  static void remove_conditional_headers(HTTPHdr *outgoing);
+  static void remove_100_continue_headers(HttpTransact::State *s, HTTPHdr *outgoing);
+  static void remove_host_name_from_url(HTTPHdr *outgoing_request);
+  static void add_global_user_agent_header_to_request(OverridableHttpConfigParams *http_txn_conf, HTTPHdr *header);
+  static void add_server_header_to_response(OverridableHttpConfigParams *http_txn_conf, HTTPHdr *header);
+  static void remove_privacy_headers_from_request(HttpConfigParams *http_config_param, OverridableHttpConfigParams *http_txn_conf,
+                                                  HTTPHdr *header);
 
   static int nstrcpy(char *d, const char *as);
 };
@@ -103,14 +99,10 @@ public:
 inline bool
 HttpTransactHeaders::is_this_http_method_supported(int method)
 {
-  return ((method == HTTP_WKSIDX_GET) ||
-          (method == HTTP_WKSIDX_POST) ||
-          (method == HTTP_WKSIDX_CONNECT) ||
-          (method == HTTP_WKSIDX_DELETE) ||
-          (method == HTTP_WKSIDX_PURGE) ||
-          (method == HTTP_WKSIDX_HEAD) ||
-          (method == HTTP_WKSIDX_OPTIONS) ||
-          (method == HTTP_WKSIDX_PUT) || (method == HTTP_WKSIDX_PUSH) || (method == HTTP_WKSIDX_TRACE));
+  return ((method == HTTP_WKSIDX_GET) || (method == HTTP_WKSIDX_POST) || (method == HTTP_WKSIDX_CONNECT) ||
+          (method == HTTP_WKSIDX_DELETE) || (method == HTTP_WKSIDX_PURGE) || (method == HTTP_WKSIDX_HEAD) ||
+          (method == HTTP_WKSIDX_OPTIONS) || (method == HTTP_WKSIDX_PUT) || (method == HTTP_WKSIDX_PUSH) ||
+          (method == HTTP_WKSIDX_TRACE));
 }
 
 inline int
@@ -133,7 +125,7 @@ HttpTransactHeaders::nstrcpy(char *d, const char *as)
 // Details    :
 //   Currently a place holder.
 inline bool
-HttpTransactHeaders::is_request_proxy_authorized(HTTPHdr * incoming_hdr)
+HttpTransactHeaders::is_request_proxy_authorized(HTTPHdr *incoming_hdr)
 {
   ink_assert(incoming_hdr);
   // TODO: What do we need to do here?

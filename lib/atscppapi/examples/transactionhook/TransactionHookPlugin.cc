@@ -24,37 +24,46 @@
 
 using namespace atscppapi;
 
-class TransactionHookPlugin : public atscppapi::TransactionPlugin {
+class TransactionHookPlugin : public atscppapi::TransactionPlugin
+{
 public:
-  TransactionHookPlugin(Transaction &transaction) : TransactionPlugin(transaction) {
+  TransactionHookPlugin(Transaction &transaction) : TransactionPlugin(transaction)
+  {
     char_ptr_ = new char[100];
     TransactionPlugin::registerHook(HOOK_SEND_RESPONSE_HEADERS);
     std::cout << "Constructed!" << std::endl;
   }
-  virtual ~TransactionHookPlugin() {
+  virtual ~TransactionHookPlugin()
+  {
     delete[] char_ptr_; // cleanup
     std::cout << "Destroyed!" << std::endl;
   }
-  void handleSendResponseHeaders(Transaction &transaction) {
+  void
+  handleSendResponseHeaders(Transaction &transaction)
+  {
     std::cout << "Send response headers!" << std::endl;
     transaction.resume();
   }
+
 private:
   char *char_ptr_;
 };
 
-class GlobalHookPlugin : public atscppapi::GlobalPlugin {
+class GlobalHookPlugin : public atscppapi::GlobalPlugin
+{
 public:
-  GlobalHookPlugin() {
-    GlobalPlugin::registerHook(HOOK_READ_REQUEST_HEADERS_PRE_REMAP);
-  }
-  virtual void handleReadRequestHeadersPreRemap(Transaction &transaction) {
+  GlobalHookPlugin() { GlobalPlugin::registerHook(HOOK_READ_REQUEST_HEADERS_PRE_REMAP); }
+  virtual void
+  handleReadRequestHeadersPreRemap(Transaction &transaction)
+  {
     std::cout << "Hello from handleReadRequesHeadersPreRemap!" << std::endl;
     transaction.addPlugin(new TransactionHookPlugin(transaction));
     transaction.resume();
   }
 };
 
-void TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED) {
+void
+TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
+{
   new GlobalHookPlugin();
 }

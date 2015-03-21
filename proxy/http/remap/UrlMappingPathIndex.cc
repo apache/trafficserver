@@ -43,8 +43,7 @@ UrlMappingPathIndex::Insert(url_mapping *mapping)
   if (!trie) {
     trie = new UrlMappingTrie();
     m_tries.insert(UrlMappingGroup::value_type(UrlMappingTrieKey(scheme_idx, port), trie));
-    Debug("UrlMappingPathIndex::Insert", "Created new trie for scheme index, port combo <%d, %d>",
-          scheme_idx, port);
+    Debug("UrlMappingPathIndex::Insert", "Created new trie for scheme index, port combo <%d, %d>", scheme_idx, port);
   }
 
   from_path = mapping->fromURL.path_get(&from_path_len);
@@ -68,8 +67,7 @@ UrlMappingPathIndex::Search(URL *request_url, int request_port, bool normal_sear
   trie = _GetTrie(request_url, scheme_idx, request_port, normal_search);
 
   if (!trie) {
-    Debug("UrlMappingPathIndex::Search", "No mappings exist for scheme index, port combo <%d, %d>",
-          scheme_idx, request_port);
+    Debug("UrlMappingPathIndex::Search", "No mappings exist for scheme index, port combo <%d, %d>", scheme_idx, request_port);
     goto lFail;
   }
 

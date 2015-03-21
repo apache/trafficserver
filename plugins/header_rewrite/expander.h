@@ -27,13 +27,12 @@
 #include "ts/ts.h"
 #include "resources.h"
 
-class VariableExpander {
+class VariableExpander
+{
 public:
-  VariableExpander(const std::string &source)
-    : _source(source)
-  { }
+  VariableExpander(const std::string &source) : _source(source) {}
 
-  std::string expand(const Resources& res);
+  std::string expand(const Resources &res);
 
 private:
   std::string _source;

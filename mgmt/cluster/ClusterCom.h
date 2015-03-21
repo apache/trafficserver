@@ -49,35 +49,41 @@
 
 class FileManager;
 
-#define CLUSTER_MSG_SHUTDOWN_MANAGER  1000
-#define CLUSTER_MSG_SHUTDOWN_PROCESS  1001
-#define CLUSTER_MSG_RESTART_PROCESS   1002
-#define CLUSTER_MSG_BOUNCE_PROCESS    1003
-#define CLUSTER_MSG_CLEAR_STATS       1004
+#define CLUSTER_MSG_SHUTDOWN_MANAGER 1000
+#define CLUSTER_MSG_SHUTDOWN_PROCESS 1001
+#define CLUSTER_MSG_RESTART_PROCESS 1002
+#define CLUSTER_MSG_BOUNCE_PROCESS 1003
+#define CLUSTER_MSG_CLEAR_STATS 1004
 
 #define MAX_MC_GROUP_LEN 20
 #define MAX_NODE_SYSINFO_STRING 32
 
-#define CLUSTER_CONFIG_FILE_BLURB "# Cluster Configuration file\n#\n# This file is machine generated and machine parsed.\n# Please do not change this file by hand.\n#\n# This file designates the machines which make up the cluster\n# proper.  Data and load are distributed among these machines.\n#\n############################################################################\n# Number\n# IP:Port \n# ...\n############################################################################\n# Number = { 0, 1 ... } where 0 is a stand-alone proxy\n# IP:Port = IP address: cluster accept port number\n#\n# Example 1: stand-alone proxy\n# 0\n#\n# Example 2: 3 machines\n# 3\n# 127.1.2.3:83\n# 127.1.2.4:83\n# 127.1.2.5:83\n#\n"
+#define CLUSTER_CONFIG_FILE_BLURB                                                                                                  \
+  "# Cluster Configuration file\n#\n# This file is machine generated and machine parsed.\n# Please do not change this file by "    \
+  "hand.\n#\n# This file designates the machines which make up the cluster\n# proper.  Data and load are distributed among these " \
+  "machines.\n#\n############################################################################\n# Number\n# IP:Port \n# "           \
+  "...\n############################################################################\n# Number = { 0, 1 ... } where 0 is a "       \
+  "stand-alone proxy\n# IP:Port = IP address: cluster accept port number\n#\n# Example 1: stand-alone proxy\n# 0\n#\n# Example "   \
+  "2: 3 machines\n# 3\n# 127.1.2.3:83\n# 127.1.2.4:83\n# 127.1.2.5:83\n#\n"
 
-enum MgmtClusterType
-{
+enum MgmtClusterType {
   CLUSTER_INVALID = 0,
   FULL_CLUSTER,
   MGMT_CLUSTER,
-  NO_CLUSTER
+  NO_CLUSTER,
 };
 
-enum ClusterMismatch
-{ TS_NAME_MISMATCH, TS_VER_MISMATCH };
+enum ClusterMismatch {
+  TS_NAME_MISMATCH,
+  TS_VER_MISMATCH,
+};
 
-typedef struct _cluster_peer_info
-{
-  unsigned long inet_address;   /* IP addr of node */
-  int port;                     /* Cluster port */
-  int ccom_port;                /* CCom reliable port */
-  time_t idle_ticks;            /* Number of ticks since last heard */
-  time_t manager_idle_ticks;    /* Time last manager heartbeat received */
+typedef struct _cluster_peer_info {
+  unsigned long inet_address; /* IP addr of node */
+  int port;                   /* Cluster port */
+  int ccom_port;              /* CCom reliable port */
+  time_t idle_ticks;          /* Number of ticks since last heard */
+  time_t manager_idle_ticks;  /* Time last manager heartbeat received */
   int manager_alive;
 
   long last_time_recorded;
@@ -92,17 +98,14 @@ typedef struct _cluster_peer_info
 class ClusterCom
 {
 public:
-
   ClusterCom(unsigned long oip, char *hname, int mcport, char *group, int rsport, char *p);
-   ~ClusterCom()
-  {
-  };
+  ~ClusterCom(){};
 
-  void checkPeers(time_t * ticker);
+  void checkPeers(time_t *ticker);
   void generateClusterDelta(void);
   void handleMultiCastMessage(char *message);
   void handleMultiCastFilePacket(char *last, char *from_ip);
-  void handleMultiCastStatPacket(char *last, ClusterPeerInfo * peer);
+  void handleMultiCastStatPacket(char *last, ClusterPeerInfo *peer);
   void handleMultiCastAlarmPacket(char *last, char *from_ip);
   void handleMultiCastVMapPacket(char *last, char *from_ip);
 
@@ -115,7 +118,7 @@ public:
   void constructSharedStatPacket(char *message, int max);
   void constructSharedFilePacket(char *message, int max);
 
-  static int constructSharedPacketHeader(const AppVersionInfo& version, char *message, char *ip, int max);
+  static int constructSharedPacketHeader(const AppVersionInfo &version, char *message, char *ip, int max);
 
   bool sendClusterMessage(int msg_type, const char *args = NULL);
   bool sendOutgoingMessage(char *buf, int len);
@@ -123,7 +126,7 @@ public:
 
   bool rl_sendReliableMessage(unsigned long addr, const char *buf, int len);
   bool sendReliableMessage(unsigned long addr, char *buf, int len, char *reply, int len2, bool take_lock);
-  bool sendReliableMessageReadTillClose(unsigned long addr, char *buf, int len, textBuffer * reply);
+  bool sendReliableMessageReadTillClose(unsigned long addr, char *buf, int len, textBuffer *reply);
 
   int receiveIncomingMessage(char *buf, int max);
 
@@ -131,14 +134,15 @@ public:
   unsigned long lowestPeer(int *no);
   unsigned long highestPeer(int *no);
 
-  unsigned long getIP()
+  unsigned long
+  getIP()
   {
     return our_ip;
   }
 
   void logClusterMismatch(const char *ip, ClusterMismatch type, char *data);
 
-  InkHashTable *mismatchLog;    // drainer thread use only
+  InkHashTable *mismatchLog; // drainer thread use only
 
   bool init;
 
@@ -183,7 +187,7 @@ public:
   struct sockaddr_in broadcast_addr;
   struct sockaddr_in receive_addr;
 
-};                              /* End class ClusterCom */
+}; /* End class ClusterCom */
 
 struct in_addr *mgmt_sortipaddrs(int num, struct in_addr **list);
 

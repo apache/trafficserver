@@ -43,10 +43,9 @@
 #include "ts/ts.h"
 #include "ink_defs.h"
 
-#define ASSERT_SUCCESS(_x) TSAssert ((_x) == TS_SUCCESS)
+#define ASSERT_SUCCESS(_x) TSAssert((_x) == TS_SUCCESS)
 
-typedef struct
-{
+typedef struct {
   TSVIO output_vio;
   TSIOBuffer output_buffer;
   TSIOBufferReader output_reader;
@@ -62,7 +61,7 @@ my_data_alloc()
 {
   MyData *data;
 
-  data = (MyData *) TSmalloc(sizeof(MyData));
+  data = (MyData *)TSmalloc(sizeof(MyData));
   TSReleaseAssert(data);
 
   data->output_vio = NULL;
@@ -74,7 +73,7 @@ my_data_alloc()
 }
 
 static void
-my_data_destroy(MyData * data)
+my_data_destroy(MyData *data)
 {
   if (data) {
     if (data->output_buffer)
@@ -208,20 +207,18 @@ append_transform(TSCont contp, TSEvent event, void *edata ATS_UNUSED)
     return 0;
   } else {
     switch (event) {
-    case TS_EVENT_ERROR:
-      {
-        TSVIO write_vio;
+    case TS_EVENT_ERROR: {
+      TSVIO write_vio;
 
-        /* Get the write VIO for the write operation that was
-           performed on ourself. This VIO contains the continuation of
-           our parent transformation. */
-        write_vio = TSVConnWriteVIOGet(contp);
+      /* Get the write VIO for the write operation that was
+         performed on ourself. This VIO contains the continuation of
+         our parent transformation. */
+      write_vio = TSVConnWriteVIOGet(contp);
 
-        /* Call back the write VIO continuation to let it know that we
-           have completed the write operation. */
-        TSContCall(TSVIOContGet(write_vio), TS_EVENT_ERROR, write_vio);
-      }
-      break;
+      /* Call back the write VIO continuation to let it know that we
+         have completed the write operation. */
+      TSContCall(TSVIOContGet(write_vio), TS_EVENT_ERROR, write_vio);
+    } break;
     case TS_EVENT_VCONN_WRITE_COMPLETE:
       /* When our output connection says that it has finished
          reading all the data we've written to it then we should
@@ -259,7 +256,6 @@ transformable(TSHttpTxn txnp)
    */
 
   if (TS_HTTP_STATUS_OK == (resp_status = TSHttpHdrStatusGet(bufp, hdr_loc))) {
-
     /* We only want to do the transformation on documents that have a
        content type of "text/html". */
     field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, "Content-Type", 12);
@@ -281,7 +277,7 @@ transformable(TSHttpTxn txnp)
     }
   }
 
-  return 0;                     /* not a 200 */
+  return 0; /* not a 200 */
 }
 
 static void
@@ -296,7 +292,7 @@ transform_add(TSHttpTxn txnp)
 static int
 transform_plugin(TSCont contp ATS_UNUSED, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp = (TSHttpTxn) edata;
+  TSHttpTxn txnp = (TSHttpTxn)edata;
 
   switch (event) {
   case TS_EVENT_HTTP_READ_RESPONSE_HDR:

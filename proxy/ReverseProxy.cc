@@ -45,7 +45,7 @@
 #include "UrlMapping.h"
 
 /** Time till we free the old stuff after a reconfiguration. */
-#define URL_REWRITE_TIMEOUT            (HRTIME_SECOND*60)
+#define URL_REWRITE_TIMEOUT (HRTIME_SECOND * 60)
 
 // Global Ptrs
 static Ptr<ProxyMutex> reconfig_mutex;
@@ -83,14 +83,15 @@ init_reverse_proxy()
     _exit(-1);
   }
 
-  REC_RegisterConfigUpdateFunc("proxy.config.url_remap.filename", url_rewrite_CB, (void *) FILE_CHANGED);
-  REC_RegisterConfigUpdateFunc("proxy.config.proxy_name", url_rewrite_CB, (void *) TSNAME_CHANGED);
-  REC_RegisterConfigUpdateFunc("proxy.config.reverse_proxy.enabled", url_rewrite_CB, (void *) REVERSE_CHANGED);
-  REC_RegisterConfigUpdateFunc("proxy.config.admin.autoconf_port", url_rewrite_CB, (void *) AC_PORT_CHANGED);
-  REC_RegisterConfigUpdateFunc("proxy.config.url_remap.default_to_server_pac", url_rewrite_CB, (void *) DEFAULT_TO_PAC_CHANGED);
-  REC_RegisterConfigUpdateFunc("proxy.config.url_remap.default_to_server_pac_port", url_rewrite_CB, (void *) DEFAULT_TO_PAC_PORT_CHANGED);
-  REC_RegisterConfigUpdateFunc("proxy.config.url_remap.url_remap_mode", url_rewrite_CB, (void *) URL_REMAP_MODE_CHANGED);
-  REC_RegisterConfigUpdateFunc("proxy.config.http.referer_default_redirect", url_rewrite_CB, (void *) HTTP_DEFAULT_REDIRECT_CHANGED);
+  REC_RegisterConfigUpdateFunc("proxy.config.url_remap.filename", url_rewrite_CB, (void *)FILE_CHANGED);
+  REC_RegisterConfigUpdateFunc("proxy.config.proxy_name", url_rewrite_CB, (void *)TSNAME_CHANGED);
+  REC_RegisterConfigUpdateFunc("proxy.config.reverse_proxy.enabled", url_rewrite_CB, (void *)REVERSE_CHANGED);
+  REC_RegisterConfigUpdateFunc("proxy.config.admin.autoconf_port", url_rewrite_CB, (void *)AC_PORT_CHANGED);
+  REC_RegisterConfigUpdateFunc("proxy.config.url_remap.default_to_server_pac", url_rewrite_CB, (void *)DEFAULT_TO_PAC_CHANGED);
+  REC_RegisterConfigUpdateFunc("proxy.config.url_remap.default_to_server_pac_port", url_rewrite_CB,
+                               (void *)DEFAULT_TO_PAC_PORT_CHANGED);
+  REC_RegisterConfigUpdateFunc("proxy.config.url_remap.url_remap_mode", url_rewrite_CB, (void *)URL_REMAP_MODE_CHANGED);
+  REC_RegisterConfigUpdateFunc("proxy.config.http.referer_default_redirect", url_rewrite_CB, (void *)HTTP_DEFAULT_REDIRECT_CHANGED);
   return 0;
 }
 
@@ -130,19 +131,18 @@ response_url_remap(HTTPHdr *response_header)
 
 /** Used to read the remap.config file after the manager signals a change. */
 struct UR_UpdateContinuation;
-typedef int (UR_UpdateContinuation::*UR_UpdContHandler) (int, void *);
-struct UR_UpdateContinuation: public Continuation
-{
-  int file_update_handler(int /* etype ATS_UNUSED */, void * /* data ATS_UNUSED */)
+typedef int (UR_UpdateContinuation::*UR_UpdContHandler)(int, void *);
+struct UR_UpdateContinuation : public Continuation {
+  int
+  file_update_handler(int /* etype ATS_UNUSED */, void * /* data ATS_UNUSED */)
   {
-    (void) reloadUrlRewrite();
+    (void)reloadUrlRewrite();
     delete this;
     return EVENT_DONE;
   }
-  UR_UpdateContinuation(ProxyMutex * m)
-    : Continuation(m)
+  UR_UpdateContinuation(ProxyMutex *m) : Continuation(m)
   {
-    SET_HANDLER((UR_UpdContHandler) & UR_UpdateContinuation::file_update_handler);
+    SET_HANDLER((UR_UpdContHandler)&UR_UpdateContinuation::file_update_handler);
   }
 };
 
@@ -165,7 +165,7 @@ reloadUrlRewrite()
     ink_atomic_swap(&rewrite_table, newTable);
     return true;
   } else {
-    static const char* msg = "failed to reload remap.config, not replacing!";
+    static const char *msg = "failed to reload remap.config, not replacing!";
     delete newTable;
     Debug("url_rewrite", "%s", msg);
     Warning("%s", msg);
@@ -176,7 +176,7 @@ reloadUrlRewrite()
 int
 url_rewrite_CB(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */, RecData data, void *cookie)
 {
-  int my_token = (int) (long) cookie;
+  int my_token = (int)(long)cookie;
 
   switch (my_token) {
   case REVERSE_CHANGED:
@@ -206,4 +206,3 @@ url_rewrite_CB(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNU
 
   return 0;
 }
-

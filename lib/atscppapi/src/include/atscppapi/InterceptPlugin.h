@@ -28,16 +28,15 @@
 #include <atscppapi/Transaction.h>
 #include <atscppapi/TransactionPlugin.h>
 
-namespace atscppapi {
-
-
-
+namespace atscppapi
+{
 /**
  * Allows a plugin to act as a server and return the response. This
  * plugin can be created in read request headers hook (pre or post
  * remap).
  */
-class InterceptPlugin : public TransactionPlugin {
+class InterceptPlugin : public TransactionPlugin
+{
 protected:
   /**
    * The available types of intercepts.
@@ -53,7 +52,7 @@ protected:
 public:
   enum RequestDataType {
     REQUEST_HEADER = 0,
-    REQUEST_BODY
+    REQUEST_BODY,
   };
 
   /**
@@ -82,7 +81,11 @@ protected:
    */
   bool produce(const void *data, int data_size);
 
-  bool produce(const std::string &data) { return produce(data.data(), data.size()); }
+  bool
+  produce(const std::string &data)
+  {
+    return produce(data.data(), data.size());
+  }
 
   bool setOutputComplete();
 

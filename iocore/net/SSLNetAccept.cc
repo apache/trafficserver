@@ -22,7 +22,7 @@
 #include "ink_config.h"
 #include "P_Net.h"
 
-typedef int (SSLNetAccept::*SSLNetAcceptHandler) (int, void *);
+typedef int (SSLNetAccept::*SSLNetAcceptHandler)(int, void *);
 
 // Virtual function allows the correct
 // etype to be used in NetAccept functions (ET_SSL
@@ -48,9 +48,9 @@ SSLNetAccept::init_accept_per_thread()
   if (do_listen(NON_BLOCKING))
     return;
   if (accept_fn == net_accept)
-    SET_HANDLER((SSLNetAcceptHandler) & SSLNetAccept::acceptFastEvent);
+    SET_HANDLER((SSLNetAcceptHandler)&SSLNetAccept::acceptFastEvent);
   else
-    SET_HANDLER((SSLNetAcceptHandler) & SSLNetAccept::acceptEvent);
+    SET_HANDLER((SSLNetAcceptHandler)&SSLNetAccept::acceptEvent);
   period = ACCEPT_PERIOD;
   n = eventProcessor.n_threads_for_type[SSLNetProcessor::ET_SSL];
   for (i = 0; i < n; i++) {

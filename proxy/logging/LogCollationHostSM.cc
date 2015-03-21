@@ -53,17 +53,16 @@
 // statics
 //-------------------------------------------------------------------------
 
-int
-  LogCollationHostSM::ID = 0;
+int LogCollationHostSM::ID = 0;
 
 //-------------------------------------------------------------------------
 // LogCollationHostSM::LogCollationHostSM
 //-------------------------------------------------------------------------
 
-LogCollationHostSM::LogCollationHostSM(NetVConnection * client_vc)
-  : Continuation(new_ProxyMutex()), m_client_vc(client_vc), m_client_vio(NULL), m_client_buffer(NULL),
-    m_client_reader(NULL), m_pending_event(NULL), m_read_buffer(NULL), m_read_bytes_wanted(0),
-    m_read_bytes_received(0), m_read_buffer_fast_allocator_size(-1), m_client_ip(0), m_client_port(0), m_id(ID++)
+LogCollationHostSM::LogCollationHostSM(NetVConnection *client_vc)
+  : Continuation(new_ProxyMutex()), m_client_vc(client_vc), m_client_vio(NULL), m_client_buffer(NULL), m_client_reader(NULL),
+    m_pending_event(NULL), m_read_buffer(NULL), m_read_bytes_wanted(0), m_read_bytes_received(0),
+    m_read_buffer_fast_allocator_size(-1), m_client_ip(0), m_client_port(0), m_id(ID++)
 {
   Debug("log-coll", "[%d]host::constructor", m_id);
 
@@ -72,12 +71,10 @@ LogCollationHostSM::LogCollationHostSM(NetVConnection * client_vc)
   // get client info
   m_client_ip = m_client_vc->get_remote_ip();
   m_client_port = m_client_vc->get_remote_port();
-  Note("[log-coll] client connected [%d.%d.%d.%d:%d]",
-       ((unsigned char *) (&m_client_ip))[0],
-       ((unsigned char *) (&m_client_ip))[1],
-       ((unsigned char *) (&m_client_ip))[2], ((unsigned char *) (&m_client_ip))[3], m_client_port);
+  Note("[log-coll] client connected [%d.%d.%d.%d:%d]", ((unsigned char *)(&m_client_ip))[0], ((unsigned char *)(&m_client_ip))[1],
+       ((unsigned char *)(&m_client_ip))[2], ((unsigned char *)(&m_client_ip))[3], m_client_port);
 
-  SET_HANDLER((LogCollationHostSMHandler) & LogCollationHostSM::host_handler);
+  SET_HANDLER((LogCollationHostSMHandler)&LogCollationHostSM::host_handler);
   host_init(LOG_COLL_EVENT_SWITCH, NULL);
 }
 
@@ -87,7 +84,7 @@ LogCollationHostSM::freeReadBuffer()
   if (m_read_buffer) {
     if (m_read_buffer_fast_allocator_size >= 0) {
       ioBufAllocator[m_read_buffer_fast_allocator_size].free_void(m_read_buffer);
-    } else{
+    } else {
       ats_free(m_read_buffer);
     }
     m_read_buffer = 0;
@@ -109,7 +106,6 @@ LogCollationHostSM::freeReadBuffer()
 int
 LogCollationHostSM::host_handler(int event, void *data)
 {
-
   switch (m_host_state) {
   case LOG_COLL_HOST_AUTH:
     return host_auth(event, data);
@@ -123,7 +119,6 @@ LogCollationHostSM::host_handler(int event, void *data)
     ink_assert(!"unexpected state");
     return EVENT_CONT;
   }
-
 }
 
 //-------------------------------------------------------------------------
@@ -133,17 +128,15 @@ LogCollationHostSM::host_handler(int event, void *data)
 int
 LogCollationHostSM::read_handler(int event, void *data)
 {
-
   switch (m_read_state) {
   case LOG_COLL_READ_BODY:
-    return read_body(event, (VIO *) data);
+    return read_body(event, (VIO *)data);
   case LOG_COLL_READ_HDR:
-    return read_hdr(event, (VIO *) data);
+    return read_hdr(event, (VIO *)data);
   default:
     ink_assert(!"unexpected state");
     return EVENT_CONT;
   }
-
 }
 
 //-------------------------------------------------------------------------
@@ -165,7 +158,6 @@ LogCollationHostSM::host_auth(int event, void * /* data ATS_UNUSED */)
   Debug("log-coll", "[%d]host::host_auth", m_id);
 
   switch (event) {
-
   case LOG_COLL_EVENT_SWITCH:
     Debug("log-coll", "[%d]host::host_auth - SWITCH", m_id);
     m_host_state = LOG_COLL_HOST_AUTH;
@@ -176,21 +168,18 @@ LogCollationHostSM::host_auth(int event, void * /* data ATS_UNUSED */)
     {
       // compare authorization secrets
       ink_assert(m_read_buffer != NULL);
-      int diff = strncmp(m_read_buffer, Log::config->collation_secret,
-                         m_read_bytes_received);
+      int diff = strncmp(m_read_buffer, Log::config->collation_secret, m_read_bytes_received);
       freeReadBuffer();
       if (!diff) {
         Debug("log-coll", "[%d]host::host_auth - authenticated!", m_id);
         return host_recv(LOG_COLL_EVENT_SWITCH, NULL);
       } else {
         Debug("log-coll", "[%d]host::host_auth - authenticated failed!", m_id);
-        Note("[log-coll] authentication failed [%d.%d.%d.%d:%d]",
-             ((unsigned char *) (&m_client_ip))[0],
-             ((unsigned char *) (&m_client_ip))[1],
-             ((unsigned char *) (&m_client_ip))[2], ((unsigned char *) (&m_client_ip))[3], m_client_port);
+        Note("[log-coll] authentication failed [%d.%d.%d.%d:%d]", ((unsigned char *)(&m_client_ip))[0],
+             ((unsigned char *)(&m_client_ip))[1], ((unsigned char *)(&m_client_ip))[2], ((unsigned char *)(&m_client_ip))[3],
+             m_client_port);
         return host_done(LOG_COLL_EVENT_SWITCH, NULL);
       }
-
     }
 
   case LOG_COLL_EVENT_ERROR:
@@ -200,9 +189,7 @@ LogCollationHostSM::host_auth(int event, void * /* data ATS_UNUSED */)
   default:
     ink_assert(!"unexpected state");
     return EVENT_CONT;
-
   }
-
 }
 
 //-------------------------------------------------------------------------
@@ -220,10 +207,9 @@ LogCollationHostSM::host_done(int /* event ATS_UNUSED */, void * /* data ATS_UNU
     Debug("log-coll", "[%d]host::host_done - disconnecting!", m_id);
     m_client_vc->do_io_close();
     m_client_vc = 0;
-    Note("[log-coll] client disconnected [%d.%d.%d.%d:%d]",
-         ((unsigned char *) (&m_client_ip))[0],
-         ((unsigned char *) (&m_client_ip))[1],
-         ((unsigned char *) (&m_client_ip))[2], ((unsigned char *) (&m_client_ip))[3], m_client_port);
+    Note("[log-coll] client disconnected [%d.%d.%d.%d:%d]", ((unsigned char *)(&m_client_ip))[0],
+         ((unsigned char *)(&m_client_ip))[1], ((unsigned char *)(&m_client_ip))[2], ((unsigned char *)(&m_client_ip))[3],
+         m_client_port);
   }
   // free memory
   if (m_client_buffer) {
@@ -235,7 +221,6 @@ LogCollationHostSM::host_done(int /* event ATS_UNUSED */, void * /* data ATS_UNU
   // delete this state machine and return
   delete this;
   return EVENT_DONE;
-
 }
 
 //-------------------------------------------------------------------------
@@ -249,7 +234,6 @@ LogCollationHostSM::host_init(int event, void * /* data ATS_UNUSED */)
   Debug("log-coll", "[%d]host::host_init", m_id);
 
   switch (event) {
-
   case LOG_COLL_EVENT_SWITCH:
     m_host_state = LOG_COLL_HOST_INIT;
     m_pending_event = eventProcessor.schedule_imm(this);
@@ -266,9 +250,7 @@ LogCollationHostSM::host_init(int event, void * /* data ATS_UNUSED */)
   default:
     ink_assert(!"unexpected state");
     return EVENT_DONE;
-
   }
-
 }
 
 //-------------------------------------------------------------------------
@@ -282,7 +264,6 @@ LogCollationHostSM::host_recv(int event, void * /* data ATS_UNUSED */)
   Debug("log-coll", "[%d]host::host_recv", m_id);
 
   switch (event) {
-
   case LOG_COLL_EVENT_SWITCH:
     Debug("log-coll", "[%d]host::host_recv - SWITCH", m_id);
     m_host_state = LOG_COLL_HOST_RECV;
@@ -300,7 +281,7 @@ LogCollationHostSM::host_recv(int event, void * /* data ATS_UNUSED */)
 
       ink_assert(m_read_buffer != NULL);
       ink_assert(m_read_bytes_received >= (int64_t)sizeof(LogBufferHeader));
-      log_buffer_header = (LogBufferHeader *) m_read_buffer;
+      log_buffer_header = (LogBufferHeader *)m_read_buffer;
 
       // convert the buffer we just received to host order
       // TODO: We currently don't try to make the log buffers handle little vs big endian. TS-1156.
@@ -309,13 +290,15 @@ LogCollationHostSM::host_recv(int event, void * /* data ATS_UNUSED */)
       version = log_buffer_header->version;
       if (version != LOG_SEGMENT_VERSION) {
         Note("[log-coll] invalid LogBuffer received; invalid version - "
-             "buffer = %u, current = %u", version, LOG_SEGMENT_VERSION);
+             "buffer = %u, current = %u",
+             version, LOG_SEGMENT_VERSION);
         freeReadBuffer();
 
       } else {
         log_object = Log::match_logobject(log_buffer_header);
         if (!log_object) {
-          Note("[log-coll] LogObject not found with fieldlist id; " "writing LogBuffer to scrap file");
+          Note("[log-coll] LogObject not found with fieldlist id; "
+               "writing LogBuffer to scrap file");
           log_object = Log::global_scrap_object;
         }
         log_format = log_object->m_format;
@@ -327,11 +310,9 @@ LogCollationHostSM::host_recv(int event, void * /* data ATS_UNUSED */)
         //
         log_buffer = new LogBuffer(log_object, log_buffer_header);
 
-	RecIncrRawStat(log_rsb, mutex->thread_holding, log_stat_num_received_from_network_stat,
-                       log_buffer_header->entry_count);
+        RecIncrRawStat(log_rsb, mutex->thread_holding, log_stat_num_received_from_network_stat, log_buffer_header->entry_count);
 
-	RecIncrRawStat(log_rsb, mutex->thread_holding, log_stat_bytes_received_from_network_stat,
-                       log_buffer_header->byte_count);
+        RecIncrRawStat(log_rsb, mutex->thread_holding, log_stat_bytes_received_from_network_stat, log_buffer_header->byte_count);
 
         int idx = log_object->add_to_flush_queue(log_buffer);
         Log::preproc_notify[idx].signal();
@@ -345,7 +326,6 @@ LogCollationHostSM::host_recv(int event, void * /* data ATS_UNUSED */)
       m_read_buffer = 0;
 
       return host_recv(LOG_COLL_EVENT_SWITCH, NULL);
-
     }
 
   case LOG_COLL_EVENT_ERROR:
@@ -355,9 +335,7 @@ LogCollationHostSM::host_recv(int event, void * /* data ATS_UNUSED */)
   default:
     ink_assert(!"unexpected state");
     return EVENT_DONE;
-
   }
-
 }
 
 //-------------------------------------------------------------------------
@@ -376,15 +354,13 @@ LogCollationHostSM::host_recv(int event, void * /* data ATS_UNUSED */)
 int
 LogCollationHostSM::read_start()
 {
-
   Debug("log-coll", "[%d]host::read_start", m_id);
 
-  SET_HANDLER((LogCollationHostSMHandler) & LogCollationHostSM::read_handler);
+  SET_HANDLER((LogCollationHostSMHandler)&LogCollationHostSM::read_handler);
   if (m_read_buffer) {
     ink_assert(!"m_read_buffer still points to something, doh!");
   }
   return read_hdr(LOG_COLL_EVENT_SWITCH, NULL);
-
 }
 
 //-------------------------------------------------------------------------
@@ -393,22 +369,20 @@ LogCollationHostSM::read_start()
 //-------------------------------------------------------------------------
 
 int
-LogCollationHostSM::read_hdr(int event, VIO * vio)
+LogCollationHostSM::read_hdr(int event, VIO *vio)
 {
-
   Debug("log-coll", "[%d]host::read_hdr", m_id);
 
   switch (event) {
-
   case LOG_COLL_EVENT_SWITCH:
     Debug("log-coll", "[%d]host:read_hdr - SWITCH", m_id);
     m_read_state = LOG_COLL_READ_HDR;
 
     m_read_bytes_wanted = sizeof(NetMsgHeader);
     m_read_bytes_received = 0;
-    m_read_buffer = (char *) &m_net_msg_header;
+    m_read_buffer = (char *)&m_net_msg_header;
     ink_assert(m_client_vc != NULL);
-    Debug("log-coll", "[%d]host:read_hdr - do_io_read(%" PRId64")", m_id, m_read_bytes_wanted);
+    Debug("log-coll", "[%d]host:read_hdr - do_io_read(%" PRId64 ")", m_id, m_read_bytes_wanted);
     m_client_vio = m_client_vc->do_io_read(this, m_read_bytes_wanted, m_client_buffer);
     ink_assert(m_client_vio != NULL);
     return EVENT_CONT;
@@ -436,9 +410,7 @@ LogCollationHostSM::read_hdr(int event, VIO * vio)
   default:
     Debug("log-coll", "[%d]host::read_hdr - default %d", m_id, event);
     return read_done(LOG_COLL_EVENT_ERROR, NULL);
-
   }
-
 }
 
 //-------------------------------------------------------------------------
@@ -447,13 +419,11 @@ LogCollationHostSM::read_hdr(int event, VIO * vio)
 //-------------------------------------------------------------------------
 
 int
-LogCollationHostSM::read_body(int event, VIO * vio)
+LogCollationHostSM::read_body(int event, VIO *vio)
 {
-
   Debug("log-coll", "[%d]host::read_body", m_id);
 
   switch (event) {
-
   case LOG_COLL_EVENT_SWITCH:
     Debug("log-coll", "[%d]host:read_body - SWITCH", m_id);
     m_read_state = LOG_COLL_READ_BODY;
@@ -463,14 +433,14 @@ LogCollationHostSM::read_body(int event, VIO * vio)
     m_read_bytes_received = 0;
     if (m_read_bytes_wanted <= max_iobuffer_size) {
       m_read_buffer_fast_allocator_size = buffer_size_to_index(m_read_bytes_wanted);
-      m_read_buffer = (char *) ioBufAllocator[m_read_buffer_fast_allocator_size].alloc_void();
+      m_read_buffer = (char *)ioBufAllocator[m_read_buffer_fast_allocator_size].alloc_void();
     } else {
       m_read_buffer_fast_allocator_size = -1;
       m_read_buffer = (char *)ats_malloc(m_read_bytes_wanted);
     }
     ink_assert(m_read_buffer != NULL);
     ink_assert(m_client_vc != NULL);
-    Debug("log-coll", "[%d]host:read_body - do_io_read(%" PRId64")", m_id, m_read_bytes_wanted);
+    Debug("log-coll", "[%d]host:read_body - do_io_read(%" PRId64 ")", m_id, m_read_bytes_wanted);
     m_client_vio = m_client_vc->do_io_read(this, m_read_bytes_wanted, m_client_buffer);
     ink_assert(m_client_vio != NULL);
     return EVENT_CONT;
@@ -498,9 +468,7 @@ LogCollationHostSM::read_body(int event, VIO * vio)
   default:
     Debug("log-coll", "[%d]host::read_body - default %d", m_id, event);
     return read_done(LOG_COLL_EVENT_ERROR, NULL);
-
   }
-
 }
 
 //-------------------------------------------------------------------------
@@ -511,9 +479,8 @@ LogCollationHostSM::read_body(int event, VIO * vio)
 int
 LogCollationHostSM::read_done(int event, void * /* data ATS_UNUSED */)
 {
-  SET_HANDLER((LogCollationHostSMHandler) & LogCollationHostSM::host_handler);
+  SET_HANDLER((LogCollationHostSMHandler)&LogCollationHostSM::host_handler);
   return host_handler(event, NULL);
-
 }
 
 //-------------------------------------------------------------------------
@@ -521,9 +488,8 @@ LogCollationHostSM::read_done(int event, void * /* data ATS_UNUSED */)
 //-------------------------------------------------------------------------
 
 void
-LogCollationHostSM::read_partial(VIO * vio)
+LogCollationHostSM::read_partial(VIO *vio)
 {
-
   // checks
   ink_assert(vio != NULL);
   ink_assert(vio->vc_server == m_client_vc);

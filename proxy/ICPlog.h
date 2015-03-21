@@ -22,7 +22,6 @@
  */
 
 
-
 /****************************************************************************
 
   ICPlog.h
@@ -43,15 +42,10 @@
 class ICPlog
 {
 public:
-  inline ICPlog(ICPPeerReadCont::PeerReadData * s)
-  {
-    _s = s;
-  }
-   ~ICPlog()
-  {
-  }
+  inline ICPlog(ICPPeerReadCont::PeerReadData *s) { _s = s; }
+  ~ICPlog() {}
   ink_hrtime GetElapsedTime();
-  sockaddr const* GetClientIP();
+  sockaddr const *GetClientIP();
   in_port_t GetClientPort();
   SquidLogCode GetAction();
   const char *GetCode();
@@ -64,7 +58,7 @@ public:
   const char *GetContentType();
 
 private:
-  ICPPeerReadCont::PeerReadData * _s;
+  ICPPeerReadCont::PeerReadData *_s;
 };
 
 // End of ICPlog.h

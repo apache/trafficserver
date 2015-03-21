@@ -39,8 +39,7 @@
 #include <string.h>
 #include <assert.h>
 
-enum Task_t
-{
+enum Task_t {
   TASK_NONE = 0,
   TASK_DONE,
   TASK_CONNECT,
@@ -56,21 +55,18 @@ enum Task_t
   TASK_COUNT
 };
 
-enum State_t
-{
+enum State_t {
   STATE_IDLE = 0,
   STATE_DONE,
-  STATE_ERROR
+  STATE_ERROR,
 };
 
-enum Connection_t
-{
+enum Connection_t {
   CONNECTION_CLIENT,
-  CONNECTION_SERVER
+  CONNECTION_SERVER,
 };
 
-enum Scenario_t
-{
+enum Scenario_t {
   SERVER_WRITE_CLIENT_READ,
 
   SERVER_SHUTDOWN_OUTPUT_CLIENT_TRY_READ,
@@ -90,27 +86,23 @@ enum Scenario_t
   SERVER_WRITE_IMMIDIATE_SHUTDOWN_CLIENT_WRITE
 };
 
-struct State
-{
+struct State {
   State_t state;
   int tasks_count;
   Task_t tasks[100];
-  int64_t nbytes_write;             // number of bytes to write
-  intte_t nbytes_read;              // number of bytes to read
+  int64_t nbytes_write; // number of bytes to write
+  intte_t nbytes_read;  // number of bytes to read
 
-    State():state(STATE_IDLE), tasks_count(0)
-  {
-  }
+  State() : state(STATE_IDLE), tasks_count(0) {}
 };
 
-struct Conn
-{
+struct Conn {
   Connection_t connection_type;
   int listen_s;
   int s;
   struct sockaddr_in addr;
   State state;
-  //State_t            state;
+  // State_t            state;
   int state_delay_ms;
 };
 
@@ -122,22 +114,22 @@ char write_buf[10];
 char read_buf[10];
 int state_delay_ms = 0;
 
-#define IS_DONE(c) (c.state.state==STATE_DONE || c.state.state==STATE_ERROR)
-#define IS_IDLE(c) (c.state.state==STATE_IDLE)
+#define IS_DONE(c) (c.state.state == STATE_DONE || c.state.state == STATE_ERROR)
+#define IS_IDLE(c) (c.state.state == STATE_IDLE)
 
 void main_loop();
-void state_act(Conn * c);
-void state_act_task(Conn * c);
-int do_connect(Conn * from, Conn * to);
-int do_listen_setup(Conn * c, int port_number);
-int do_accept(Conn * c);
+void state_act(Conn *c);
+void state_act_task(Conn *c);
+int do_connect(Conn *from, Conn *to);
+int do_listen_setup(Conn *c, int port_number);
+int do_accept(Conn *c);
 int create_nonblocking_socket();
 int set_nonblocking_socket(int s);
 int do_shutdown(int s, Task_t task);
 int do_try_read(int s, char *buf, int length);
 int do_try_write(int s, char *buf, int length);
 void setup_scenario(Scenario_t scenario);
-void dequeue_task(Conn * c);
+void dequeue_task(Conn *c);
 ///////////////////////////////////////////////////////////
 //
 //  main()
@@ -180,7 +172,7 @@ main(int argc, char **argv)
   // set next state //
   ////////////////////
   setup_scenario(SERVER_WRITE_IMMIDIATE_SHUTDOWN_CLIENT_WRITE);
-  //setup_scenario(SERVER_WRITE_CLIENT_READ);
+  // setup_scenario(SERVER_WRITE_CLIENT_READ);
 
   main_loop();
 
@@ -212,11 +204,11 @@ main_loop()
 //
 ///////////////////////////////////////////////////////////
 void
-state_act(Conn * c)
+state_act(Conn *c)
 {
   Task_t saved_task = c->state.tasks[0];
 
-  Conn & cr = *c;
+  Conn &cr = *c;
 
   while (c->state.tasks_count > 0 && !IS_DONE(cr)) {
     if (c->state_delay_ms) {
@@ -249,7 +241,7 @@ state_act(Conn * c)
 //
 ///////////////////////////////////////////////////////////
 void
-state_act_task(Conn * c)
+state_act_task(Conn *c)
 {
   int error;
   char write_ch = 'T', read_ch;
@@ -280,16 +272,16 @@ state_act_task(Conn * c)
     if (r > 0)
       c->state.state = STATE_IDLE;
     else if (r == 0)
-      c->state.state = STATE_DONE;      // EOS
+      c->state.state = STATE_DONE; // EOS
     else if (r != -EAGAIN)
-      c->state.state = STATE_ERROR;     // error
+      c->state.state = STATE_ERROR; // error
     dequeue_task(c);
     break;
 
   case TASK_TRY_WRITE:
     r = do_try_write(c->s, &write_ch, 1);
     if (r <= 0 && r != -EAGAIN)
-      c->state.state = STATE_ERROR;     // error
+      c->state.state = STATE_ERROR; // error
     else
       c->state.state = STATE_IDLE;
     dequeue_task(c);
@@ -299,7 +291,7 @@ state_act_task(Conn * c)
   case TASK_TRY_WRITE_THEN_SHUTDOWN_BOTH:
     r = do_try_write(c->s, write_buf, c->state.nbytes_write);
     if (r <= 0 && r != -EAGAIN)
-      c->state.state = STATE_ERROR;     // error
+      c->state.state = STATE_ERROR; // error
     else {
       c->state.nbytes_write -= r;
       if (c->state.nbytes_write == 0) {
@@ -339,7 +331,7 @@ state_act_task(Conn * c)
 //  'to' must be listening
 ///////////////////////////////////////////////////////////
 int
-do_connect(Conn * from, Conn * to)
+do_connect(Conn *from, Conn *to)
 {
   assert(to->listen_s > 0);
   int error;
@@ -350,7 +342,7 @@ do_connect(Conn * from, Conn * to)
     return (from->s);
   }
   // connect
-  if (connect(from->s, (struct sockaddr *) &to->addr, sizeof(to->addr)) < 0) {
+  if (connect(from->s, (struct sockaddr *)&to->addr, sizeof(to->addr)) < 0) {
     error = -errno;
     if (error != -EINPROGRESS) {
       ::close(from->s);
@@ -371,7 +363,7 @@ do_connect(Conn * from, Conn * to)
 //
 ///////////////////////////////////////////////////////////
 int
-do_listen_setup(Conn * c, int port)
+do_listen_setup(Conn *c, int port)
 {
   int error;
 
@@ -386,7 +378,7 @@ do_listen_setup(Conn * c, int port)
     return (c->listen_s);
   }
   // bind socket to port
-  if (bind(c->listen_s, (struct sockaddr *) &c->addr, sizeof(c->addr)) < 0) {
+  if (bind(c->listen_s, (struct sockaddr *)&c->addr, sizeof(c->addr)) < 0) {
     error = -errno;
     ::close(c->listen_s);
     c->state.state = STATE_ERROR;
@@ -414,7 +406,7 @@ do_listen_setup(Conn * c, int port)
 //
 ///////////////////////////////////////////////////////////
 int
-do_accept(Conn * c)
+do_accept(Conn *c)
 {
   assert(c->listen_s > 0);
 
@@ -426,12 +418,12 @@ do_accept(Conn * c)
   FD_ZERO(&readfds);
   FD_SET(c->listen_s, &readfds);
   timeout.tv_sec = 0;
-  timeout.tv_usec = 10;         /* 0.01 ms */
+  timeout.tv_usec = 10; /* 0.01 ms */
 
 
   if (select(c->listen_s + 1, &readfds, 0, 0, &timeout) > 0) {
     addrlen = sizeof(c->addr);
-    c->s = accept(c->listen_s, (struct sockaddr *) &c->addr, &addrlen);
+    c->s = accept(c->listen_s, (struct sockaddr *)&c->addr, &addrlen);
     if (c->s < 0) {
       c->s = -errno;
       cout << "accept failed (" << c->s << ")" << endl;
@@ -535,7 +527,7 @@ do_try_read(int s, char *buf, int length)
 
   if ((r = read(s, buf, length)) < 0) {
     r = -errno;
-    if (r != -EWOULDBLOCK)      // EWOULDBLOCK == EAGAIN
+    if (r != -EWOULDBLOCK) // EWOULDBLOCK == EAGAIN
     {
       cout << "read failed (" << r << ")" << endl;
     }
@@ -626,13 +618,12 @@ setup_scenario(Scenario_t scenario)
     server_set_next_client_task[TASK_DONE] = TASK_TRY_READ;
     server.state.nbytes_write = sizeof(write_buf);
     break;
-
   }
   return;
 }
 
 void
-dequeue_task(Conn * c)
+dequeue_task(Conn *c)
 {
   if (c->state.tasks_count == 0)
     return;

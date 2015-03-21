@@ -25,7 +25,7 @@
 #include "I_Layout.h"
 #include "P_Net.h"
 
-#define PROGRAM_NAME  "traffic_sac"
+#define PROGRAM_NAME "traffic_sac"
 
 #include "LogStandalone.cc"
 
@@ -52,21 +52,18 @@
 ArgumentDescription argument_descriptions[] = {
 
 #ifdef DEBUG
-  {"error_tags", 'T', "Colon-Separated Debug Tags", "S1023", &error_tags,
-   NULL, NULL},
-  {"action_tags", 'A', "Colon-Separated Debug Tags", "S1023", &action_tags,
-   NULL, NULL},
+  {"error_tags", 'T', "Colon-Separated Debug Tags", "S1023", &error_tags, NULL, NULL},
+  {"action_tags", 'A', "Colon-Separated Debug Tags", "S1023", &action_tags, NULL, NULL},
 #endif
   HELP_ARGUMENT_DESCRIPTION(),
-  VERSION_ARGUMENT_DESCRIPTION()
-};
+  VERSION_ARGUMENT_DESCRIPTION()};
 
 /*-------------------------------------------------------------------------
   main
   -------------------------------------------------------------------------*/
 
 static void
-sac_signal_handler(int signo, siginfo_t * info, void *)
+sac_signal_handler(int signo, siginfo_t *info, void *)
 {
   if (signo == SIGHUP) {
     return;
@@ -81,8 +78,7 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
 {
   // build the application information structure
   //
-  appVersionInfo.setup(PACKAGE_NAME,PROGRAM_NAME, PACKAGE_VERSION, __DATE__,
-                       __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
+  appVersionInfo.setup(PACKAGE_NAME, PROGRAM_NAME, PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
 
   // Before accessing file system initialize Layout engine
   Layout::create();

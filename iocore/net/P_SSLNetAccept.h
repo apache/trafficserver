@@ -36,7 +36,7 @@
 
 
  ****************************************************************************/
-#if !defined (_SSLNetAccept_h_)
+#if !defined(_SSLNetAccept_h_)
 #define _SSLNetAccept_h_
 
 #include "libts.h"
@@ -50,18 +50,14 @@ class UnixNetVConnection;
 // NetAccept
 // Handles accepting connections.
 //
-struct SSLNetAccept: public NetAccept
-{
-  virtual NetProcessor * getNetProcessor() const;
+struct SSLNetAccept : public NetAccept {
+  virtual NetProcessor *getNetProcessor() const;
   virtual EventType getEtype() const;
   virtual void init_accept_per_thread();
   virtual NetAccept *clone() const;
 
-  SSLNetAccept()
-    { };
+  SSLNetAccept(){};
 
-  virtual ~SSLNetAccept()
-    { };
-
+  virtual ~SSLNetAccept(){};
 };
 #endif

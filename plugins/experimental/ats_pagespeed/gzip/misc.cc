@@ -32,7 +32,7 @@
 voidpf
 gzip_alloc(voidpf /* opaque ATS_UNUSED */, uInt items, uInt size)
 {
-  return (voidpf) TSmalloc(items * size);
+  return (voidpf)TSmalloc(items * size);
 }
 
 void
@@ -48,8 +48,8 @@ normalize_accept_encoding(TSHttpTxn /* txnp ATS_UNUSED */, TSMBuffer reqp, TSMLo
   int deflate = 0;
   int gzip = 0;
 
-  //remove the accept encoding field(s),
-  //while finding out if gzip or deflate is supported.
+  // remove the accept encoding field(s),
+  // while finding out if gzip or deflate is supported.
   while (field) {
     TSMLoc tmp;
 
@@ -63,20 +63,20 @@ normalize_accept_encoding(TSHttpTxn /* txnp ATS_UNUSED */, TSMBuffer reqp, TSMLo
         --value_count;
         val = TSMimeHdrFieldValueStringGet(reqp, hdr_loc, field, value_count, &val_len);
 
-        if (val_len == (int) strlen("gzip"))
+        if (val_len == (int)strlen("gzip"))
           gzip = !strncmp(val, "gzip", val_len);
-        else if (val_len == (int) strlen("deflate"))
+        else if (val_len == (int)strlen("deflate"))
           deflate = !strncmp(val, "deflate", val_len);
       }
     }
 
     tmp = TSMimeHdrFieldNextDup(reqp, hdr_loc, field);
-    TSMimeHdrFieldDestroy(reqp, hdr_loc, field);        //catch retval?
+    TSMimeHdrFieldDestroy(reqp, hdr_loc, field); // catch retval?
     TSHandleMLocRelease(reqp, hdr_loc, field);
     field = tmp;
   }
 
-  //append a new accept-encoding field in the header
+  // append a new accept-encoding field in the header
   if (deflate || gzip) {
     TSMimeHdrFieldCreate(reqp, hdr_loc, &field);
     TSMimeHdrFieldNameSet(reqp, hdr_loc, field, TS_MIME_FIELD_ACCEPT_ENCODING, TS_MIME_LEN_ACCEPT_ENCODING);
@@ -95,7 +95,7 @@ normalize_accept_encoding(TSHttpTxn /* txnp ATS_UNUSED */, TSMBuffer reqp, TSMLo
 }
 
 void
-hide_accept_encoding(TSHttpTxn /* txnp ATS_UNUSED */, TSMBuffer reqp, TSMLoc hdr_loc, const char * hidden_header_name)
+hide_accept_encoding(TSHttpTxn /* txnp ATS_UNUSED */, TSMBuffer reqp, TSMLoc hdr_loc, const char *hidden_header_name)
 {
   TSMLoc field = TSMimeHdrFieldFind(reqp, hdr_loc, TS_MIME_FIELD_ACCEPT_ENCODING, TS_MIME_LEN_ACCEPT_ENCODING);
   while (field) {
@@ -108,7 +108,7 @@ hide_accept_encoding(TSHttpTxn /* txnp ATS_UNUSED */, TSMBuffer reqp, TSMLoc hdr
 }
 
 void
-restore_accept_encoding(TSHttpTxn /* txnp ATS_UNUSED */, TSMBuffer reqp, TSMLoc hdr_loc, const char * hidden_header_name)
+restore_accept_encoding(TSHttpTxn /* txnp ATS_UNUSED */, TSMBuffer reqp, TSMLoc hdr_loc, const char *hidden_header_name)
 {
   TSMLoc field = TSMimeHdrFieldFind(reqp, hdr_loc, hidden_header_name, -1);
 
@@ -124,7 +124,7 @@ restore_accept_encoding(TSHttpTxn /* txnp ATS_UNUSED */, TSMBuffer reqp, TSMLoc 
 const char *
 init_hidden_header_name()
 {
-  char * hidden_header_name;
+  char *hidden_header_name;
   const char *var_name = "proxy.config.proxy_name";
   TSMgmtString result;
 
@@ -132,7 +132,7 @@ init_hidden_header_name()
     fatal("failed to get server name");
   } else {
     int hidden_header_name_len = strlen("x-accept-encoding-") + strlen(result);
-    hidden_header_name = (char *) TSmalloc(hidden_header_name_len + 1);
+    hidden_header_name = (char *)TSmalloc(hidden_header_name_len + 1);
     hidden_header_name[hidden_header_name_len] = 0;
     sprintf(hidden_header_name, "x-accept-encoding-%s", result);
   }
@@ -144,9 +144,9 @@ register_plugin()
 {
   TSPluginRegistrationInfo info;
 
-  info.plugin_name = (char*)"gzip";
-  info.vendor_name = (char*)"Apache";
-  info.support_email = (char*)"dev@trafficserver.apache.org";
+  info.plugin_name = (char *)"gzip";
+  info.vendor_name = (char *)"Apache";
+  info.support_email = (char *)"dev@trafficserver.apache.org";
 
   if (TSPluginRegister(TS_SDK_VERSION_3_0, &info) != TS_SUCCESS) {
     return 0;
@@ -157,7 +157,7 @@ register_plugin()
 const char *
 load_dictionary(const char *preload_file)
 {
-  char *dict = (char *) malloc(800000);
+  char *dict = (char *)malloc(800000);
   uLong dictId = adler32(0L, Z_NULL, 0);
   uLong *adler = &dictId;
 
@@ -182,7 +182,7 @@ load_dictionary(const char *preload_file)
   dict[i - 1] = '\0';
 
   /* TODO get the adler compute right */
-  *adler = adler32(*adler, (const Byte *) dict, sizeof(dict));
+  *adler = adler32(*adler, (const Byte *)dict, sizeof(dict));
   return dict;
 }
 

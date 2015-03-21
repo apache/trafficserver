@@ -62,7 +62,7 @@ char action_tags[1024] = "";
 char command_string[512] = "";
 
 
-//Diags *diags = NULL;
+// Diags *diags = NULL;
 DiagsConfig *diagsConfig = NULL;
 HttpBodyFactory *body_factory = NULL;
 AppVersionInfo appVersionInfo;
@@ -73,7 +73,7 @@ AppVersionInfo appVersionInfo;
 
 // Handle fatal signals by logging and core dumping ...
 static void
-logging_crash_handler(int signo, siginfo_t * info, void * ptr)
+logging_crash_handler(int signo, siginfo_t *info, void *ptr)
 {
   signal_format_siginfo(signo, info, appVersionInfo.AppStr);
   signal_crash_handler(signo, info, ptr);
@@ -128,12 +128,14 @@ initialize_process_manager()
   RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_number", appVersionInfo.BldNumStr, RECP_NON_PERSISTENT);
   RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_time", appVersionInfo.BldTimeStr, RECP_NON_PERSISTENT);
   RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_date", appVersionInfo.BldDateStr, RECP_NON_PERSISTENT);
-  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_machine", appVersionInfo.BldMachineStr, RECP_NON_PERSISTENT);
-  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_person", appVersionInfo.BldPersonStr, RECP_NON_PERSISTENT);
-//    RecRegisterStatString(RECT_PROCESS,
-//                         "proxy.process.version.server.build_compile_flags",
-//                         appVersionInfo.BldCompileFlagsStr,
-//                         RECP_NON_PERSISTENT);
+  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_machine", appVersionInfo.BldMachineStr,
+                        RECP_NON_PERSISTENT);
+  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.build_person", appVersionInfo.BldPersonStr,
+                        RECP_NON_PERSISTENT);
+  //    RecRegisterStatString(RECT_PROCESS,
+  //                         "proxy.process.version.server.build_compile_flags",
+  //                         appVersionInfo.BldCompileFlagsStr,
+  //                         RECP_NON_PERSISTENT);
 }
 
 
@@ -149,8 +151,8 @@ check_lockfile()
   char *lockfile = NULL;
 
   if (access(Layout::get()->runtimedir, R_OK | W_OK) == -1) {
-    fprintf(stderr,"unable to access() dir'%s': %d, %s\n", Layout::get()->runtimedir, errno, strerror(errno));
-    fprintf(stderr," please set correct path in env variable TS_ROOT \n");
+    fprintf(stderr, "unable to access() dir'%s': %d, %s\n", Layout::get()->runtimedir, errno, strerror(errno));
+    fprintf(stderr, " please set correct path in env variable TS_ROOT \n");
     _exit(1);
   }
   lockfile = Layout::relative_to(Layout::get()->runtimedir, SERVER_LOCK);
@@ -243,5 +245,4 @@ init_log_standalone_basic(const char *pgm_name)
   //
   setbuf(stdin, NULL);
   setbuf(stdout, NULL);
-
 }

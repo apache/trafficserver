@@ -24,14 +24,13 @@
 #include "P_DNS.h"
 
 Diags *diags;
-struct NetTesterSM:public Continuation
-{
+struct NetTesterSM : public Continuation {
   VIO *read_vio;
   IOBufferReader *reader;
   NetVConnection *vc;
   MIOBuffer *buf;
 
-    NetTesterSM(ProxyMutex * _mutex, NetVConnection * _vc):Continuation(_mutex)
+  NetTesterSM(ProxyMutex *_mutex, NetVConnection *_vc) : Continuation(_mutex)
   {
     MUTEX_TRY_LOCK(lock, mutex, _vc->thread);
     ink_release_assert(lock);
@@ -43,7 +42,8 @@ struct NetTesterSM:public Continuation
   }
 
 
-  int handle_read(int event, void *data)
+  int
+  handle_read(int event, void *data)
   {
     int r;
     char *str;
@@ -56,7 +56,7 @@ struct NetTesterSM:public Continuation
       fflush(stdout);
       break;
     case VC_EVENT_READ_COMPLETE:
-      /* FALLSTHROUGH */
+    /* FALLSTHROUGH */
     case VC_EVENT_EOS:
       r = reader->read_avail();
       str = new char[r + 10];
@@ -70,12 +70,9 @@ struct NetTesterSM:public Continuation
       break;
     default:
       ink_release_assert(!"unknown event");
-
     }
     return EVENT_CONT;
   }
-
-
 };
 
 main()

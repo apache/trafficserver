@@ -33,20 +33,18 @@
 void
 register_congest_stats()
 {
-#define CONGEST_CLEAR_DYN_STAT(x) \
-do { \
-	RecSetRawStatSum(congest_rsb, x, 0); \
-	RecSetRawStatCount(congest_rsb, x, 0); \
-} while (0);
+#define CONGEST_CLEAR_DYN_STAT(x)          \
+  do {                                     \
+    RecSetRawStatSum(congest_rsb, x, 0);   \
+    RecSetRawStatCount(congest_rsb, x, 0); \
+  } while (0);
 
-  congest_rsb = RecAllocateRawStatBlock((int) congest_num_stats);
-  RecRegisterRawStat(congest_rsb, RECT_PROCESS,
-                     "proxy.process.congestion.congested_on_conn_failures",
-                     RECD_INT, RECP_NON_PERSISTENT, (int) congested_on_F_stat, RecRawStatSyncSum);
+  congest_rsb = RecAllocateRawStatBlock((int)congest_num_stats);
+  RecRegisterRawStat(congest_rsb, RECT_PROCESS, "proxy.process.congestion.congested_on_conn_failures", RECD_INT,
+                     RECP_NON_PERSISTENT, (int)congested_on_F_stat, RecRawStatSyncSum);
   CONGEST_CLEAR_DYN_STAT(congested_on_F_stat);
 
-  RecRegisterRawStat(congest_rsb, RECT_PROCESS,
-                     "proxy.process.congestion.congested_on_max_connection",
-                     RECD_INT, RECP_NON_PERSISTENT, (int) congested_on_M_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(congest_rsb, RECT_PROCESS, "proxy.process.congestion.congested_on_max_connection", RECD_INT,
+                     RECP_NON_PERSISTENT, (int)congested_on_M_stat, RecRawStatSyncSum);
   CONGEST_CLEAR_DYN_STAT(congested_on_M_stat);
 }

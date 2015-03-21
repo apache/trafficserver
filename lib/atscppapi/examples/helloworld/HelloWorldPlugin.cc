@@ -21,16 +21,15 @@
 #include <atscppapi/GlobalPlugin.h>
 #include <atscppapi/PluginInit.h>
 
-class HelloWorldPlugin : public atscppapi::GlobalPlugin {
+class HelloWorldPlugin : public atscppapi::GlobalPlugin
+{
 public:
-  HelloWorldPlugin() {
-    std::cout << "Hello World!" << std::endl;
-  }
+  HelloWorldPlugin() { std::cout << "Hello World!" << std::endl; }
 };
 
-void TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED) {
+void
+TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
+{
   std::cout << "Hello from " << argv[0] << std::endl;
   new HelloWorldPlugin();
 }
-
-

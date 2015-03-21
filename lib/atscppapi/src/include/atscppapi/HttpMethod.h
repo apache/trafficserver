@@ -26,8 +26,8 @@
 
 #include <string>
 
-namespace atscppapi {
-
+namespace atscppapi
+{
 /**
  * An enumeration of all available Http Methods.
  */
@@ -53,7 +53,6 @@ enum HttpMethod {
  * \endcode
  */
 extern const std::string HTTP_METHOD_STRINGS[];
-
 }
 
 #endif

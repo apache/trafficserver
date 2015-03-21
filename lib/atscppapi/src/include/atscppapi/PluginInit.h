@@ -37,7 +37,10 @@ extern "C" {
  */
 void TSPluginInit(int argc, const char *argv[]);
 
-enum TsReturnCode { TS_ERROR = -1, TS_SUCCESS = 0 };
+enum TsReturnCode {
+  TS_ERROR = -1,
+  TS_SUCCESS = 0,
+};
 
 /**
  * Invoked for remap plugins - listed in remap.config. The arguments provided as @pparam
@@ -50,7 +53,6 @@ enum TsReturnCode { TS_ERROR = -1, TS_SUCCESS = 0 };
  * @param errbuf_size Not used
  */
 TsReturnCode TSRemapNewInstance(int argc, char *argv[], void **instance_handle, char *errbuf, int errbuf_size);
-
 }
 
 

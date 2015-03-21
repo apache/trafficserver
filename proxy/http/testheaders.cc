@@ -27,36 +27,37 @@
 
 #define MAX_FIELD_VALUE_SIZE 512
 
-char request1[] =
-  "GET http://people.netscape.com/jwz/hacks-1.gif HTTP/1.0\r\n"
-  "If-Modified-Since: Wednesday, 26-Feb-97 06:58:17 GMT; length=842\r\n"
-  "Referer: http://people.netscape.com/jwz/index.html\r\n"
-  "Proxy-Connection: Referer, User-Agent\r\n"
-  "Vary: If-Modified-Since, Host, Accept, Proxy-Connection, Crap\r\n"
-  "User-Agent:  Mozilla/3.01 (X11; I; Linux 2.0.28 i586)\r\n"
-  "Crappy-Field: value1-on-line-1, value2-on-line-1\r\n"
-  "Crappy-Field: value-on-line-2\r\n"
-  "Blowme: Crapshoot\r\n"
-  "Pragma: no-cache\r\n"
-  "Host: people.netscape.com\r\n" "Accept: image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, */*\r\n\r\n";
+char request1[] = "GET http://people.netscape.com/jwz/hacks-1.gif HTTP/1.0\r\n"
+                  "If-Modified-Since: Wednesday, 26-Feb-97 06:58:17 GMT; length=842\r\n"
+                  "Referer: http://people.netscape.com/jwz/index.html\r\n"
+                  "Proxy-Connection: Referer, User-Agent\r\n"
+                  "Vary: If-Modified-Since, Host, Accept, Proxy-Connection, Crap\r\n"
+                  "User-Agent:  Mozilla/3.01 (X11; I; Linux 2.0.28 i586)\r\n"
+                  "Crappy-Field: value1-on-line-1, value2-on-line-1\r\n"
+                  "Crappy-Field: value-on-line-2\r\n"
+                  "Blowme: Crapshoot\r\n"
+                  "Pragma: no-cache\r\n"
+                  "Host: people.netscape.com\r\n"
+                  "Accept: image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, */*\r\n\r\n";
 
-char response1[] =
-  "HTTP/1.0 200 !132d63600000000000000200 OK\r\n"
-  "Server: WN/1.14.6\r\n"
-  "Date: Tue, 26 Aug 1997 21:51:23 GMT\r\n"
-  "Last-modified: Fri, 25 Jul 1997 15:07:05 GMT\r\n"
-  "Content-type: text/html\r\n"
-  "Content-length: 3831\r\n" "Accept-Range: bytes, lines\r\n" "Title: General Casualty - Home Page\r\n";
+char response1[] = "HTTP/1.0 200 !132d63600000000000000200 OK\r\n"
+                   "Server: WN/1.14.6\r\n"
+                   "Date: Tue, 26 Aug 1997 21:51:23 GMT\r\n"
+                   "Last-modified: Fri, 25 Jul 1997 15:07:05 GMT\r\n"
+                   "Content-type: text/html\r\n"
+                   "Content-length: 3831\r\n"
+                   "Accept-Range: bytes, lines\r\n"
+                   "Title: General Casualty - Home Page\r\n";
 
-char response2[] =
-  "HTTP/1.0 304 Not Modified\r\n"
-  "Date: Wed, 30 Jul 1997 22:31:20 GMT\r\n"
-  "Via: 1.0 trafficserver.apache.org (Traffic-Server/1.0b [ONM])\r\n" "Server: Apache/1.1.1\r\n\r\n";
+char response2[] = "HTTP/1.0 304 Not Modified\r\n"
+                   "Date: Wed, 30 Jul 1997 22:31:20 GMT\r\n"
+                   "Via: 1.0 trafficserver.apache.org (Traffic-Server/1.0b [ONM])\r\n"
+                   "Server: Apache/1.1.1\r\n\r\n";
 
-void print_header(HttpHeader * header);
+void print_header(HttpHeader *header);
 
 void
-readin_header(HttpHeader * new_header, char *req_buffer, int length)
+readin_header(HttpHeader *new_header, char *req_buffer, int length)
 {
   int bytes_used = 0;
 
@@ -82,7 +83,7 @@ readin_header(HttpHeader * new_header, char *req_buffer, int length)
 // }
 
 inline void
-make_comma_separated_header_field_value(HttpHeader * header, const char *fieldname, char *full_str)
+make_comma_separated_header_field_value(HttpHeader *header, const char *fieldname, char *full_str)
 {
   MIMEHeaderFieldValue *hfv;
   const char *str;
@@ -111,7 +112,7 @@ test_headers()
   char str2[MAX_FIELD_VALUE_SIZE];
   char str3[MAX_FIELD_VALUE_SIZE];
 
-  req = new(HttpHeaderAllocator.alloc())HttpHeader();
+  req = new (HttpHeaderAllocator.alloc()) HttpHeader();
 
   readin_header(req, request1, sizeof(request1));
   printf("[test_headers] This is the header that was read in:\n");
@@ -119,14 +120,14 @@ test_headers()
 
   printf("[test_headers] Ok, let us see what the Proxy-Connection field is ...\n");
   printf("[test_headers] the value of Blowme is %s\n", req->mime().get_raw("Blowme", strlen("Blowme")));
-//     make_comma_separated_header_field_value(req, "Proxy-Connection", str1);
-//     printf("[test_headers] Proxy-Connection is %s\n", str1);
+  //     make_comma_separated_header_field_value(req, "Proxy-Connection", str1);
+  //     printf("[test_headers] Proxy-Connection is %s\n", str1);
 
-//     printf("[test_headers] Let us try that with crappy-field...\n");
-//     make_comma_separated_header_field_value(req, "Crappy-Field", str2);
-//     printf("[test_headers] Crappy-Field is : %s\n", str2);
+  //     printf("[test_headers] Let us try that with crappy-field...\n");
+  //     make_comma_separated_header_field_value(req, "Crappy-Field", str2);
+  //     printf("[test_headers] Crappy-Field is : %s\n", str2);
 
-//     printf("[test_headers] Let us try that with Vary, now...\n");
-//     make_comma_separated_header_field_value(req, "Vary", str3);
-//     printf("[test_headers] Vary is %s\n", str3);
+  //     printf("[test_headers] Let us try that with Vary, now...\n");
+  //     make_comma_separated_header_field_value(req, "Vary", str3);
+  //     printf("[test_headers] Vary is %s\n", str3);
 }

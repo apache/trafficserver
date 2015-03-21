@@ -40,7 +40,7 @@
 #include <stdlib.h>
 #include "ServerAPI.h"
 
-#define PSI_TAG_FORMAT  "<!--include=file%d.txt-->"
+#define PSI_TAG_FORMAT "<!--include=file%d.txt-->"
 #define PSI_TAG_MAX_SIZE 128
 #define PSI_MIME_HEADER "X-Psi: true"
 
@@ -48,19 +48,17 @@
 #define TRUE 1
 #define FALSE 0
 
-typedef struct
-{
+typedef struct {
   int status_code;
   long request_length;
   long bytes_not_sent;
   char header_response[MAX_HEADER_RESPONSE];
-  int done_sent_header;         /* flag to see if header has been sent or not */
+  int done_sent_header; /* flag to see if header has been sent or not */
   int psi;
 } RequestInfo;
 
-typedef struct
-{
-  double psi_ratio;             /* for psi_ratio */
+typedef struct {
+  double psi_ratio; /* for psi_ratio */
 } SCPlugin;
 
 SCPlugin my_plugin;
@@ -84,7 +82,7 @@ TSOptionsProcess(char *option, char *value)
 {
   if (strcmp(option, "psi_ratio") == 0) {
     fprintf(stderr, "psi ratio set to %d %%\n", atoi(value));
-    my_plugin.psi_ratio = (double) (atoi(value)) / 100.0;
+    my_plugin.psi_ratio = (double)(atoi(value)) / 100.0;
   }
 }
 
@@ -103,7 +101,7 @@ int
 TSResponsePrepare(char *req_hdr, int req_len, void **response_id)
 {
   char *len_string;
-  RequestInfo *resp_id = (RequestInfo *) malloc(sizeof(RequestInfo));
+  RequestInfo *resp_id = (RequestInfo *)malloc(sizeof(RequestInfo));
 
   resp_id->psi = generate_psibility();
 
@@ -115,12 +113,11 @@ TSResponsePrepare(char *req_hdr, int req_len, void **response_id)
     resp_id->status_code = 200;
 
     if (resp_id->psi) {
-      sprintf(resp_id->header_response, "%s\r\n%s\r\n%s%ld\r\n%s\r\n\r\n",
-              "HTTP/1.0 200 OK",
-              "Content-type: text/plain", "Content-length: ", resp_id->request_length, PSI_MIME_HEADER);
+      sprintf(resp_id->header_response, "%s\r\n%s\r\n%s%ld\r\n%s\r\n\r\n", "HTTP/1.0 200 OK", "Content-type: text/plain",
+              "Content-length: ", resp_id->request_length, PSI_MIME_HEADER);
     } else {
-      sprintf(resp_id->header_response, "%s\r\n%s\r\n%s%ld\r\n\r\n",
-              "HTTP/1.0 200 OK", "Content-type: text/plain", "Content-length: ", resp_id->request_length);
+      sprintf(resp_id->header_response, "%s\r\n%s\r\n%s%ld\r\n\r\n", "HTTP/1.0 200 OK", "Content-type: text/plain",
+              "Content-length: ", resp_id->request_length);
     }
   } else {
     resp_id->request_length = -1;
@@ -134,20 +131,18 @@ TSResponsePrepare(char *req_hdr, int req_len, void **response_id)
 
 /* put response (response header + response document) into buffer */
 void
-TSResponsePut(void **resp_id /* return */ ,
-               void *resp_buffer /* return */ ,
-               int *resp_bytes /* return */ ,
-               int resp_buffer_size, int bytes_last_response)
+TSResponsePut(void **resp_id /* return */, void *resp_buffer /* return */, int *resp_bytes /* return */, int resp_buffer_size,
+              int bytes_last_response)
 {
   int i = 0;
-  RequestInfo *rid = *((RequestInfo **) resp_id);
+  RequestInfo *rid = *((RequestInfo **)resp_id);
   int psi = 0;
   int len;
   char psi_tag[PSI_TAG_MAX_SIZE];
 
   /* copy the header into the response buffer */
   if (!rid->done_sent_header) {
-    i = sprintf((char *) resp_buffer, "%s", rid->header_response);
+    i = sprintf((char *)resp_buffer, "%s", rid->header_response);
     rid->done_sent_header = TRUE;
   }
 
@@ -162,7 +157,7 @@ TSResponsePut(void **resp_id /* return */ ,
   if (rid->status_code == 200) {
     /* buffer is not large enough to handle all content */
     if (rid->bytes_not_sent + i > resp_buffer_size) {
-      memset((void *) ((char *) resp_buffer + i), 'X', resp_buffer_size - i);
+      memset((void *)((char *)resp_buffer + i), 'X', resp_buffer_size - i);
       *resp_bytes = resp_buffer_size;
       rid->bytes_not_sent -= (resp_buffer_size - i);
     }
@@ -174,22 +169,21 @@ TSResponsePut(void **resp_id /* return */ ,
 
         /* hopefully enough space for our include command */
         if (rid->bytes_not_sent >= len) {
-          memcpy((void *) ((char *) resp_buffer + i), psi_tag, len);
+          memcpy((void *)((char *)resp_buffer + i), psi_tag, len);
           rid->bytes_not_sent -= len;
           i += len;
         }
       }
-      memset((void *) ((char *) resp_buffer + i), 'X', rid->bytes_not_sent);
-      memset((void *) ((char *) resp_buffer + i + rid->bytes_not_sent - 1), 'E', 1);
+      memset((void *)((char *)resp_buffer + i), 'X', rid->bytes_not_sent);
+      memset((void *)((char *)resp_buffer + i + rid->bytes_not_sent - 1), 'E', 1);
       *resp_bytes = rid->bytes_not_sent + i;
       rid->bytes_not_sent = 0;
-
     }
   }
   /* return NULL as the resp_id to indicate
    * if it is the last TSResponsePut call */
   if (rid->bytes_not_sent <= 0 || rid->status_code != 200) {
     free(rid);
-    *((RequestInfo **) resp_id) = NULL;
+    *((RequestInfo **)resp_id) = NULL;
   }
 }

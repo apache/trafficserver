@@ -26,7 +26,8 @@
 using namespace atscppapi;
 using std::string;
 
-namespace {
+namespace
+{
 // This is for the -T tag debugging
 // To view the debug messages ./traffic_server -T "stat_example.*"
 #define TAG "stat_example"
@@ -44,14 +45,18 @@ Stat stat;
  * This is a simple plugin that will increment a counter
  * everytime a request comes in.
  */
-class GlobalHookPlugin : public GlobalPlugin {
+class GlobalHookPlugin : public GlobalPlugin
+{
 public:
-  GlobalHookPlugin() {
+  GlobalHookPlugin()
+  {
     TS_DEBUG(TAG, "Registering a global hook HOOK_READ_REQUEST_HEADERS_POST_REMAP");
     registerHook(HOOK_READ_REQUEST_HEADERS_POST_REMAP);
   }
 
-  virtual void handleReadRequestHeadersPostRemap(Transaction &transaction) {
+  virtual void
+  handleReadRequestHeadersPostRemap(Transaction &transaction)
+  {
     TS_DEBUG(TAG, "Received a request, incrementing the counter.");
     stat.increment();
     TS_DEBUG(TAG, "Stat '%s' value = %lld", STAT_NAME.c_str(), static_cast<long long>(stat.get()));
@@ -59,7 +64,9 @@ public:
   }
 };
 
-void TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED) {
+void
+TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
+{
   TS_DEBUG(TAG, "Loaded stat_example plugin");
 
   // Since this stat is not persistent it will be initialized to 0.
@@ -68,4 +75,3 @@ void TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED
 
   new GlobalHookPlugin();
 }
-

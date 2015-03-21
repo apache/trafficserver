@@ -36,20 +36,21 @@ class ExpandingArray;
 class textBuffer;
 
 #if defined(NAME_MAX)
-#define FILE_NAME_MAX       NAME_MAX
+#define FILE_NAME_MAX NAME_MAX
 #else
-#define FILE_NAME_MAX       255
+#define FILE_NAME_MAX 255
 #endif
 
-struct fileEntry
-{
+struct fileEntry {
   // XXX Remove this arbitrary filename length limit.
   char name[FILE_NAME_MAX];
   time_t c_time;
 };
 
-enum MFresult
-{ MF_OK, MF_NO_DIR };
+enum MFresult {
+  MF_OK,
+  MF_NO_DIR,
+};
 
 // class MultiFile
 //
@@ -65,13 +66,13 @@ class MultiFile
 {
 public:
   MultiFile();
-protected:
 
-  MFresult WalkFiles(ExpandingArray * fileList);
-  void addTableEntries(ExpandingArray * fileList, textBuffer * output);
+protected:
+  MFresult WalkFiles(ExpandingArray *fileList);
+  void addTableEntries(ExpandingArray *fileList, textBuffer *output);
   char *newPathString(const char *s1, const char *s2);
   bool isManaged(const char *fileName);
-  void addSelectOptions(textBuffer * output, ExpandingArray * options);
+  void addSelectOptions(textBuffer *output, ExpandingArray *options);
   char *managedDir;
   const char *dirDescript;
 };

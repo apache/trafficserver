@@ -35,13 +35,13 @@ _TSstrdup(const char *str, int64_t length, const char *)
 }
 
 void
-_TSfree(void * ptr)
+_TSfree(void *ptr)
 {
   free(ptr);
 }
 
 void
-TSDebug(const char * tag, const char * fmt, ...)
+TSDebug(const char *tag, const char *fmt, ...)
 {
   va_list args;
 
@@ -63,22 +63,25 @@ TSError(const char *fmt, ...)
   fprintf(stderr, "\n");
 }
 
-REGRESSION_TEST(ParseExpansion)(RegressionTest * t, int /* atype ATS_UNUSED */, int * pstatus)
+REGRESSION_TEST(ParseExpansion)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
 {
   TestBox box(t, pstatus);
 
-#define EXPECT_TRUE(expression, _name, _scope, _field) do { \
-  SslHdrExpansion exp; \
-  box.check(SslHdrParseExpansion(expression, exp) == true, "'%s' failed (expected success)", (expression)); \
-  box.check(strcmp(exp.name.c_str(), _name) == 0, "'%s' expected name %s, received %s", (expression), (_name), exp.name.c_str()); \
-  box.check(exp.scope == (_scope), "'%s' expected scope 0x%x (%s), received 0x%x", (expression), (_scope), #_scope, exp.scope); \
-  box.check(exp.field == (_field), "'%s' expected field 0x%x (%s), received 0x%x", (expression), (_field), #_field, exp.field); \
-} while (0)
+#define EXPECT_TRUE(expression, _name, _scope, _field)                                                                            \
+  do {                                                                                                                            \
+    SslHdrExpansion exp;                                                                                                          \
+    box.check(SslHdrParseExpansion(expression, exp) == true, "'%s' failed (expected success)", (expression));                     \
+    box.check(strcmp(exp.name.c_str(), _name) == 0, "'%s' expected name %s, received %s", (expression), (_name),                  \
+              exp.name.c_str());                                                                                                  \
+    box.check(exp.scope == (_scope), "'%s' expected scope 0x%x (%s), received 0x%x", (expression), (_scope), #_scope, exp.scope); \
+    box.check(exp.field == (_field), "'%s' expected field 0x%x (%s), received 0x%x", (expression), (_field), #_field, exp.field); \
+  } while (0)
 
-#define EXPECT_FALSE(expression) do { \
-  SslHdrExpansion exp; \
-  box.check(SslHdrParseExpansion(expression, exp) == false, "'%s' succeeded (expected failure)", (expression)); \
-} while (0)
+#define EXPECT_FALSE(expression)                                                                                  \
+  do {                                                                                                            \
+    SslHdrExpansion exp;                                                                                          \
+    box.check(SslHdrParseExpansion(expression, exp) == false, "'%s' succeeded (expected failure)", (expression)); \
+  } while (0)
 
   box = REGRESSION_TEST_PASSED;
 
@@ -89,7 +92,8 @@ REGRESSION_TEST(ParseExpansion)(RegressionTest * t, int /* atype ATS_UNUSED */, 
   EXPECT_FALSE("missing-field-selector=client.");
 
   EXPECT_TRUE("ssl-client-cert=client.certificate", "ssl-client-cert", SSL_HEADERS_SCOPE_CLIENT, SSL_HEADERS_FIELD_CERTIFICATE);
-  EXPECT_TRUE("ssl-server-signature=server.signature", "ssl-server-signature", SSL_HEADERS_SCOPE_SERVER, SSL_HEADERS_FIELD_SIGNATURE);
+  EXPECT_TRUE("ssl-server-signature=server.signature", "ssl-server-signature", SSL_HEADERS_SCOPE_SERVER,
+              SSL_HEADERS_FIELD_SIGNATURE);
 
   EXPECT_TRUE("certificate=server.certificate", "certificate", SSL_HEADERS_SCOPE_SERVER, SSL_HEADERS_FIELD_CERTIFICATE);
   EXPECT_TRUE("subject=server.subject", "subject", SSL_HEADERS_SCOPE_SERVER, SSL_HEADERS_FIELD_SUBJECT);
@@ -143,16 +147,16 @@ REGRESSION_TEST(ParseExpansion)(RegressionTest * t, int /* atype ATS_UNUSED */, 
 // Given a PEM formatted object, remove the newlines to get what we would
 // see in a HTTP header.
 static char *
-make_pem_header(const char * pem)
+make_pem_header(const char *pem)
 {
-  char * hdr;
-  char * ptr;
+  char *hdr;
+  char *ptr;
   unsigned remain;
 
   hdr = ptr = strdup(pem);
   remain = strlen(hdr);
 
-  for (char * nl; (nl = (char *)memchr(ptr, '\n', remain)); ptr = nl) {
+  for (char *nl; (nl = (char *)memchr(ptr, '\n', remain)); ptr = nl) {
     *nl = ' ';
     remain -= nl - ptr;
   }
@@ -160,25 +164,23 @@ make_pem_header(const char * pem)
   return hdr;
 }
 
-REGRESSION_TEST(ParseX509Fields)(RegressionTest * t, int /* atype ATS_UNUSED */, int * pstatus)
+REGRESSION_TEST(ParseX509Fields)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
 {
   // A self-signed certificate for CN=test.sslheaders.trafficserver.apache.org.
-  static const char * test_certificate =
-  "-----BEGIN CERTIFICATE-----\n"
-  "MIICGzCCAYSgAwIBAgIJAN/JvtOlj/5HMA0GCSqGSIb3DQEBBQUAMDMxMTAvBgNV\n"
-  "BAMMKHRlc3Quc3NsaGVhZGVycy50cmFmZmljc2VydmVyLmFwYWNoZS5vcmcwHhcN\n"
-  "MTQwNzIzMTc1MTA4WhcNMTcwNTEyMTc1MTA4WjAzMTEwLwYDVQQDDCh0ZXN0LnNz\n"
-  "bGhlYWRlcnMudHJhZmZpY3NlcnZlci5hcGFjaGUub3JnMIGfMA0GCSqGSIb3DQEB\n"
-  "AQUAA4GNADCBiQKBgQDNuincV56iMA1E7Ss9BlNvRmUdV3An5S6vXHP/hXSVTSj+\n"
-  "3o0I7es/2noBM7UmXWTBGNjcQYzBed/QIvqM9p5Q4B7kKFTb1xBOl4EU3LHl9fzz\n"
-  "hxbZMAc2MHW5X8+eCR6K6IBu5sRuLTPvIZhg63/ffhNJTImyW2+eH8guVGd38QID\n"
-  "AQABozcwNTAzBgNVHREELDAqgih0ZXN0LnNzbGhlYWRlcnMudHJhZmZpY3NlcnZl\n"
-  "ci5hcGFjaGUub3JnMA0GCSqGSIb3DQEBBQUAA4GBACayHRw5e0iejNkigLARk9aR\n"
-  "Wiy0WFkUdffhywjnOKxEGvfZGkNQPFN+0SHk7rAm8SlztOIElSvx/y9DByn4IeSw\n"
-  "2aU6zZiZUSPi9Stg8/tWv9MvOSU/J7CHaHkWuYbfBTBNDokfqFtqY3UJ7Pn+6ybS\n"
-  "2RZzwmSjinT8GglE30JR\n"
-  "-----END CERTIFICATE-----\n"
-;
+  static const char *test_certificate = "-----BEGIN CERTIFICATE-----\n"
+                                        "MIICGzCCAYSgAwIBAgIJAN/JvtOlj/5HMA0GCSqGSIb3DQEBBQUAMDMxMTAvBgNV\n"
+                                        "BAMMKHRlc3Quc3NsaGVhZGVycy50cmFmZmljc2VydmVyLmFwYWNoZS5vcmcwHhcN\n"
+                                        "MTQwNzIzMTc1MTA4WhcNMTcwNTEyMTc1MTA4WjAzMTEwLwYDVQQDDCh0ZXN0LnNz\n"
+                                        "bGhlYWRlcnMudHJhZmZpY3NlcnZlci5hcGFjaGUub3JnMIGfMA0GCSqGSIb3DQEB\n"
+                                        "AQUAA4GNADCBiQKBgQDNuincV56iMA1E7Ss9BlNvRmUdV3An5S6vXHP/hXSVTSj+\n"
+                                        "3o0I7es/2noBM7UmXWTBGNjcQYzBed/QIvqM9p5Q4B7kKFTb1xBOl4EU3LHl9fzz\n"
+                                        "hxbZMAc2MHW5X8+eCR6K6IBu5sRuLTPvIZhg63/ffhNJTImyW2+eH8guVGd38QID\n"
+                                        "AQABozcwNTAzBgNVHREELDAqgih0ZXN0LnNzbGhlYWRlcnMudHJhZmZpY3NlcnZl\n"
+                                        "ci5hcGFjaGUub3JnMA0GCSqGSIb3DQEBBQUAA4GBACayHRw5e0iejNkigLARk9aR\n"
+                                        "Wiy0WFkUdffhywjnOKxEGvfZGkNQPFN+0SHk7rAm8SlztOIElSvx/y9DByn4IeSw\n"
+                                        "2aU6zZiZUSPi9Stg8/tWv9MvOSU/J7CHaHkWuYbfBTBNDokfqFtqY3UJ7Pn+6ybS\n"
+                                        "2RZzwmSjinT8GglE30JR\n"
+                                        "-----END CERTIFICATE-----\n";
 #if 0
   "-----BEGIN RSA PRIVATE KEY-----"
   "MIICXgIBAAKBgQDNuincV56iMA1E7Ss9BlNvRmUdV3An5S6vXHP/hXSVTSj+3o0I"
@@ -202,36 +204,37 @@ REGRESSION_TEST(ParseX509Fields)(RegressionTest * t, int /* atype ATS_UNUSED */,
 
   box = REGRESSION_TEST_PASSED;
 
-  BIO * exp = BIO_new(BIO_s_mem());
-  BIO * bio = BIO_new_mem_buf((void *)test_certificate, -1);
-  X509 * x509 = PEM_read_bio_X509(bio, NULL, 0, NULL);
+  BIO *exp = BIO_new(BIO_s_mem());
+  BIO *bio = BIO_new_mem_buf((void *)test_certificate, -1);
+  X509 *x509 = PEM_read_bio_X509(bio, NULL, 0, NULL);
 
   box.check(x509 != NULL, "failed to load the test certificate");
 
-#define EXPECT_FIELD(_field, _value) do { \
-  long len; char * ptr; \
-  SslHdrExpandX509Field(exp, x509, _field); \
-  len = BIO_get_mem_data(exp, &ptr); \
-  box.check(strncmp(_value, ptr, len) == 0, "expected '%s' for %s, received '%.*s'", _value, #_field, (int)len, ptr); \
-} while (0)
+#define EXPECT_FIELD(_field, _value)                                                                                    \
+  do {                                                                                                                  \
+    long len;                                                                                                           \
+    char *ptr;                                                                                                          \
+    SslHdrExpandX509Field(exp, x509, _field);                                                                           \
+    len = BIO_get_mem_data(exp, &ptr);                                                                                  \
+    box.check(strncmp(_value, ptr, len) == 0, "expected '%s' for %s, received '%.*s'", _value, #_field, (int)len, ptr); \
+  } while (0)
 
   // Munge the PEM certificate to what we expect in the HTTP header.
-  char * certhdr = make_pem_header(test_certificate);
+  char *certhdr = make_pem_header(test_certificate);
 
   EXPECT_FIELD(SSL_HEADERS_FIELD_NONE, "");
   EXPECT_FIELD(SSL_HEADERS_FIELD_CERTIFICATE, certhdr);
   EXPECT_FIELD(SSL_HEADERS_FIELD_SUBJECT, "CN = test.sslheaders.trafficserver.apache.org");
   EXPECT_FIELD(SSL_HEADERS_FIELD_ISSUER, "CN = test.sslheaders.trafficserver.apache.org");
   EXPECT_FIELD(SSL_HEADERS_FIELD_SERIAL, "DFC9BED3A58FFE47");
-  EXPECT_FIELD(SSL_HEADERS_FIELD_SIGNATURE,
-    "26B21D1C397B489E8CD92280B01193D6915A"
-    "2CB458591475F7E1CB08E738AC441AF7D91A"
-    "43503C537ED121E4EEB026F12973B4E20495"
-    "2BF1FF2F430729F821E4B0D9A53ACD989951"
-    "23E2F52B60F3FB56BFD32F39253F27B08768"
-    "7916B986DF05304D0E891FA85B6A637509EC"
-    "F9FEEB26D2D91673C264A38A74FC1A0944DF"
-    "4251");
+  EXPECT_FIELD(SSL_HEADERS_FIELD_SIGNATURE, "26B21D1C397B489E8CD92280B01193D6915A"
+                                            "2CB458591475F7E1CB08E738AC441AF7D91A"
+                                            "43503C537ED121E4EEB026F12973B4E20495"
+                                            "2BF1FF2F430729F821E4B0D9A53ACD989951"
+                                            "23E2F52B60F3FB56BFD32F39253F27B08768"
+                                            "7916B986DF05304D0E891FA85B6A637509EC"
+                                            "F9FEEB26D2D91673C264A38A74FC1A0944DF"
+                                            "4251");
 
   EXPECT_FIELD(SSL_HEADERS_FIELD_NOTBEFORE, "Jul 23 17:51:08 2014 GMT");
   EXPECT_FIELD(SSL_HEADERS_FIELD_NOTAFTER, "May 12 17:51:08 2017 GMT");
@@ -243,7 +246,8 @@ REGRESSION_TEST(ParseX509Fields)(RegressionTest * t, int /* atype ATS_UNUSED */,
   free(certhdr);
 }
 
-int main(void)
+int
+main(void)
 {
   SSL_library_init();
   RegressionTest::run();

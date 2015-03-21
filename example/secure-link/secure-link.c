@@ -41,7 +41,7 @@ typedef struct {
 } secure_link_info;
 
 TSRemapStatus
-TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo* rri)
+TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 {
   int i, len;
   time_t t, e;
@@ -60,22 +60,22 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo* rri)
   TSfree(s);
 
   qh = TSUrlHttpQueryGet(rri->requestBufp, rri->requestUrl, &len);
-  if(qh && len > 0) {
+  if (qh && len > 0) {
     s = (char *)TSstrndup(qh, len);
-    if((ptr = strtok_r(s, "&", &saveptr)) != NULL) {
+    if ((ptr = strtok_r(s, "&", &saveptr)) != NULL) {
       do {
-        if((val = strchr(ptr, '=')) != NULL) {
+        if ((val = strchr(ptr, '=')) != NULL) {
           *val++ = '\0';
-          if(strcmp(ptr, "st") == 0) {
+          if (strcmp(ptr, "st") == 0) {
             token = TSstrdup(val);
-          } else if(strcmp(ptr, "ex") == 0) {
+          } else if (strcmp(ptr, "ex") == 0) {
             expire = TSstrdup(val);
           }
         } else {
           TSError("Invalid parameter [%s]", ptr);
           break;
         }
-      } while((ptr = strtok_r(NULL, "&", &saveptr)) != NULL);
+      } while ((ptr = strtok_r(NULL, "&", &saveptr)) != NULL);
     } else {
       TSError("strtok didn't find a & in the query string");
       /* this is just example, so set fake params to prevent plugin crash */
@@ -88,9 +88,9 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo* rri)
   }
 
   ph = TSUrlPathGet(rri->requestBufp, rri->requestUrl, &len);
-  if(ph && len > 0) {
+  if (ph && len > 0) {
     s = TSstrndup(ph, len);
-    if((ptr = strrchr(s, '/')) != NULL) {
+    if ((ptr = strrchr(s, '/')) != NULL) {
       *++ptr = '\0';
     }
     path = TSstrdup(s);
@@ -108,19 +108,19 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo* rri)
   if (expire)
     MD5_Update(&ctx, expire, strlen(expire));
   MD5_Final(md, &ctx);
-  for(i = 0; i < MD5_DIGEST_LENGTH; i++) {
+  for (i = 0; i < MD5_DIGEST_LENGTH; i++) {
     sprintf(&hash[i * 2], "%02x", md[i]);
   }
   time(&t);
   e = strtol(expire, NULL, 16);
   i = TSREMAP_DID_REMAP;
-  if(e < t || strcmp(hash, token) != 0) {
-    if(e < t) {
+  if (e < t || strcmp(hash, token) != 0) {
+    if (e < t) {
       TSDebug(PLUGIN_NAME, "link expired: [%lu] vs [%lu]", t, e);
     } else {
       TSDebug(PLUGIN_NAME, "tokens mismatch: [%s] vs [%s]", hash, token);
     }
-    if(sli->strict) {
+    if (sli->strict) {
       TSDebug(PLUGIN_NAME, "request is DENY");
       TSHttpTxnSetHttpRetStatus(rh, TS_HTTP_STATUS_FORBIDDEN);
       i = TSREMAP_NO_REMAP;
@@ -128,8 +128,8 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo* rri)
       TSDebug(PLUGIN_NAME, "request is PASS");
     }
   }
-  if(i == TSREMAP_DID_REMAP) {
-    if(TSUrlHttpQuerySet(rri->requestBufp, rri->requestUrl, "", -1) == TS_SUCCESS) {
+  if (i == TSREMAP_DID_REMAP) {
+    if (TSUrlHttpQuerySet(rri->requestBufp, rri->requestUrl, "", -1) == TS_SUCCESS) {
       s = TSUrlStringGet(rri->requestBufp, rri->requestUrl, &len);
       TSDebug(PLUGIN_NAME, "new request string is [%.*s]", len, s);
       TSfree(s);
@@ -158,15 +158,15 @@ TSRemapNewInstance(int argc, char **argv, void **ih, char *errbuf, int errbuf_si
   sli->secret = NULL;
   sli->strict = 0;
 
-  for(i = 2; i < argc; i++) {
-    if((ptr = strchr(argv[i], ':')) != NULL) {
+  for (i = 2; i < argc; i++) {
+    if ((ptr = strchr(argv[i], ':')) != NULL) {
       *ptr++ = '\0';
-      if(strcmp(argv[i], "secret") == 0) {
-        if(sli->secret != NULL) {
+      if (strcmp(argv[i], "secret") == 0) {
+        if (sli->secret != NULL) {
           TSfree(sli->secret);
         }
         sli->secret = TSstrdup(ptr);
-      } else if(strcmp(argv[i], "policy") == 0) {
+      } else if (strcmp(argv[i], "policy") == 0) {
         sli->strict = !strcasecmp(ptr, "strict");
       } else {
         TSDebug(PLUGIN_NAME, "Unknown parameter [%s]", argv[i]);
@@ -176,7 +176,7 @@ TSRemapNewInstance(int argc, char **argv, void **ih, char *errbuf, int errbuf_si
     }
   }
 
-  if(sli->secret == NULL) {
+  if (sli->secret == NULL) {
     sli->secret = TSstrdup("");
   }
 

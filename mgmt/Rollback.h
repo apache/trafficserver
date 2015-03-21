@@ -44,33 +44,33 @@ class FileManager;
 #define INVALID_VERSION -1
 
 #if HAVE_STRUCT_STAT_ST_MTIMESPEC_TV_NSEC
-#define TS_ARCHIVE_STAT_MTIME(t)    ((t).st_mtime * 1000000000 + (t).st_mtimespec.tv_nsec)
+#define TS_ARCHIVE_STAT_MTIME(t) ((t).st_mtime * 1000000000 + (t).st_mtimespec.tv_nsec)
 #elif HAVE_STRUCT_STAT_ST_MTIM_TV_NSEC
-#define TS_ARCHIVE_STAT_MTIME(t)    ((t).st_mtime * 1000000000 + (t).st_mtim.tv_nsec)
+#define TS_ARCHIVE_STAT_MTIME(t) ((t).st_mtime * 1000000000 + (t).st_mtim.tv_nsec)
 #else
-#define TS_ARCHIVE_STAT_MTIME(t)    ((t).st_mtime * 1000000000)
+#define TS_ARCHIVE_STAT_MTIME(t) ((t).st_mtime * 1000000000)
 #endif
 
 typedef int version_t;
 
-enum RollBackCodes
-{ OK_ROLLBACK, FILE_NOT_FOUND_ROLLBACK,
-  VERSION_NOT_CURRENT_ROLLBACK, SYS_CALL_ERROR_ROLLBACK,
+enum RollBackCodes {
+  OK_ROLLBACK,
+  FILE_NOT_FOUND_ROLLBACK,
+  VERSION_NOT_CURRENT_ROLLBACK,
+  SYS_CALL_ERROR_ROLLBACK,
   INVALID_VERSION_ROLLBACK
 };
 
-enum RollBackCheckType
-{
+enum RollBackCheckType {
   ROLLBACK_CHECK_AND_UPDATE,
-  ROLLBACK_CHECK_ONLY
+  ROLLBACK_CHECK_ONLY,
 };
 
 class ExpandingArray;
 
 // Stores info about a backup version
 //   Can be put in to List.h lists
-struct versionInfo
-{
+struct versionInfo {
   version_t version;
   time_t modTime;
   LINK(versionInfo, link);
@@ -157,35 +157,38 @@ class Rollback
 {
 public:
   Rollback(const char *baseFileName, bool root_access_needed);
-   ~Rollback();
+  ~Rollback();
 
   // Manual take out of lock required
-  void acquireLock()
+  void
+  acquireLock()
   {
     ink_mutex_acquire(&fileAccessLock);
   };
-  void releaseLock()
+  void
+  releaseLock()
   {
     ink_mutex_release(&fileAccessLock);
   };
   RollBackCodes removeVersion_ml(version_t version);
   RollBackCodes revertToVersion_ml(version_t version);
-  RollBackCodes getVersion_ml(version_t version, textBuffer ** buffer);
-  RollBackCodes updateVersion_ml(textBuffer * buf, version_t basedOn,
-                                 version_t newVersion = -1, bool notifyChange = true, bool incVersion = true);
-  RollBackCodes forceUpdate_ml(textBuffer * buf, version_t newVersion = -1);
-  version_t findVersions_ml(ExpandingArray * listNames);
+  RollBackCodes getVersion_ml(version_t version, textBuffer **buffer);
+  RollBackCodes updateVersion_ml(textBuffer *buf, version_t basedOn, version_t newVersion = -1, bool notifyChange = true,
+                                 bool incVersion = true);
+  RollBackCodes forceUpdate_ml(textBuffer *buf, version_t newVersion = -1);
+  version_t findVersions_ml(ExpandingArray *listNames);
   version_t findVersions_ml(Queue<versionInfo> &q);
   time_t versionTimeStamp_ml(version_t version);
-  version_t extractVersionInfo(ExpandingArray * listNames, const char *testFileName);
+  version_t extractVersionInfo(ExpandingArray *listNames, const char *testFileName);
 
   // Automatically take out lock
   bool checkForUserUpdate(RollBackCheckType);
   RollBackCodes removeVersion(version_t version);
   RollBackCodes revertToVersion(version_t version);
-  RollBackCodes getVersion(version_t version, textBuffer ** buffer);
-  RollBackCodes updateVersion(textBuffer * buf, version_t basedOn, version_t newVersion = -1, bool notifyChange = true, bool incVersion = true);
-  RollBackCodes forceUpdate(textBuffer * buf, version_t newVersion = -1);
+  RollBackCodes getVersion(version_t version, textBuffer **buffer);
+  RollBackCodes updateVersion(textBuffer *buf, version_t basedOn, version_t newVersion = -1, bool notifyChange = true,
+                              bool incVersion = true);
+  RollBackCodes forceUpdate(textBuffer *buf, version_t newVersion = -1);
   version_t findVersions(ExpandingArray *);
   time_t versionTimeStamp(version_t version);
   int statVersion(version_t, struct stat *buf);
@@ -193,22 +196,25 @@ public:
 
   // Lock not necessary since these are only valid for a
   //  snap shot in time
-  version_t getCurrentVersion()
+  version_t
+  getCurrentVersion()
   {
     return currentVersion;
   };
-  int numberOfVersions()
+  int
+  numberOfVersions()
   {
     return numVersions;
   };
 
   // Not file based so no lock necessary
-  const char *getBaseName()
+  const char *
+  getBaseName()
   {
     return fileName;
   };
 
-  FileManager * configFiles; // Manager to notify on an update.
+  FileManager *configFiles; // Manager to notify on an update.
 
 private:
   Rollback(const Rollback &);
@@ -216,7 +222,7 @@ private:
   int closeFile(int fd, bool callSync);
   int statFile(version_t version, struct stat *buf);
   char *createPathStr(version_t version);
-  RollBackCodes internalUpdate(textBuffer * buf, version_t newVersion, bool notifyChange = true, bool incVersion = true);
+  RollBackCodes internalUpdate(textBuffer *buf, version_t newVersion, bool notifyChange = true, bool incVersion = true);
   ink_mutex fileAccessLock;
   char *fileName;
   size_t fileNameLen;
@@ -225,7 +231,7 @@ private:
   time_t fileLastModified;
   int numVersions;
   int numberBackups;
-  Queue<versionInfo> versionQ;       // stores the backup version info
+  Queue<versionInfo> versionQ; // stores the backup version info
 };
 
 // qSort comptable function to sort versionInfo*

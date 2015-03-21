@@ -57,36 +57,31 @@ enum HSS_State {
   HSS_INIT,
   HSS_ACTIVE,
   HSS_KA_CLIENT_SLAVE,
-  HSS_KA_SHARED
+  HSS_KA_SHARED,
 };
 
 enum {
   HTTP_SS_MAGIC_ALIVE = 0x0123FEED,
-  HTTP_SS_MAGIC_DEAD = 0xDEADFEED
+  HTTP_SS_MAGIC_DEAD = 0xDEADFEED,
 };
 
 class HttpServerSession : public VConnection
 {
 public:
   HttpServerSession()
-    : VConnection(NULL),
-      hostname_hash(),
-      con_id(0), transact_count(0),
-      state(HSS_INIT), to_parent_proxy(false), server_trans_stat(0),
-      private_session(false),
-      sharing_match(TS_SERVER_SESSION_SHARING_MATCH_BOTH),
-      sharing_pool(TS_SERVER_SESSION_SHARING_POOL_GLOBAL),
-      enable_origin_connection_limiting(false),
-      connection_count(NULL), read_buffer(NULL),
-      server_vc(NULL), magic(HTTP_SS_MAGIC_DEAD), buf_reader(NULL)
-    {
-      ink_zero(server_ip);
-    }
+    : VConnection(NULL), hostname_hash(), con_id(0), transact_count(0), state(HSS_INIT), to_parent_proxy(false),
+      server_trans_stat(0), private_session(false), sharing_match(TS_SERVER_SESSION_SHARING_MATCH_BOTH),
+      sharing_pool(TS_SERVER_SESSION_SHARING_POOL_GLOBAL), enable_origin_connection_limiting(false), connection_count(NULL),
+      read_buffer(NULL), server_vc(NULL), magic(HTTP_SS_MAGIC_DEAD), buf_reader(NULL)
+  {
+    ink_zero(server_ip);
+  }
 
   void destroy();
   void new_connection(NetVConnection *new_vc);
 
-  void reset_read_buffer(void)
+  void
+  reset_read_buffer(void)
   {
     ink_assert(read_buffer->_writer);
     ink_assert(buf_reader != NULL);
@@ -95,7 +90,8 @@ public:
     buf_reader = read_buffer->alloc_reader();
   }
 
-  IOBufferReader *get_reader()
+  IOBufferReader *
+  get_reader()
   {
     return buf_reader;
   };
@@ -111,7 +107,8 @@ public:
 
   void release();
   void attach_hostname(const char *hostname);
-  NetVConnection *get_netvc()
+  NetVConnection *
+  get_netvc()
   {
     return server_vc;
   };
@@ -176,7 +173,7 @@ inline void
 HttpServerSession::attach_hostname(const char *hostname)
 {
   if (CRYPTO_HASH_ZERO == hostname_hash) {
-    ink_code_md5((unsigned char *) hostname, strlen(hostname), (unsigned char *) &hostname_hash);
+    ink_code_md5((unsigned char *)hostname, strlen(hostname), (unsigned char *)&hostname_hash);
   }
 }
 #endif

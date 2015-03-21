@@ -27,20 +27,17 @@
 #include "I_Net.h"
 #include "I_VConnection.h"
 
-class SessionAccept: public Continuation
+class SessionAccept : public Continuation
 {
 public:
-  SessionAccept(ProxyMutex *amutex) : Continuation(amutex) {
-    SET_HANDLER(&SessionAccept::mainEvent);
-  }
+  SessionAccept(ProxyMutex *amutex) : Continuation(amutex) { SET_HANDLER(&SessionAccept::mainEvent); }
 
-  ~SessionAccept() {
-  }
+  ~SessionAccept() {}
 
   virtual void accept(NetVConnection *, MIOBuffer *, IOBufferReader *) = 0;
 
 private:
-  virtual int mainEvent(int event, void * netvc) = 0;
+  virtual int mainEvent(int event, void *netvc) = 0;
 };
 
 #endif /* I_SessionAccept_H_ */

@@ -29,17 +29,17 @@
 void *
 ink_memchr(const void *as, int ac, size_t an)
 {
-  unsigned char c = (unsigned char) ac;
-  unsigned char *s = (unsigned char *) as;
+  unsigned char c = (unsigned char)ac;
+  unsigned char *s = (unsigned char *)as;
 
   // initial segment
 
-  int i_len = (int)(((uintptr_t) 8 - (uintptr_t) as) & 7);
+  int i_len = (int)(((uintptr_t)8 - (uintptr_t)as) & 7);
 
   // too short to concern us
 
-  if ((int) an < i_len) {
-    for (int i = 0; i < (int) an; i++)
+  if ((int)an < i_len) {
+    for (int i = 0; i < (int)an; i++)
       if (s[i] == c)
         return &s[i];
     return 0;
@@ -67,7 +67,7 @@ ink_memchr(const void *as, int ac, size_t an)
   ib |= (ib << 16);
   unsigned int im = 0x7efefeff;
   if (i_len & 4) {
-    unsigned int ibp = *(unsigned int *) s;
+    unsigned int ibp = *(unsigned int *)s;
     unsigned int ibb = ibp ^ ib;
     ibb = ((ibb + im) ^ ~ibb) & ~im;
     if (ibb) {
@@ -84,17 +84,17 @@ ink_memchr(const void *as, int ac, size_t an)
   }
   // next 8x bytes
   uint64_t m = 0x7efefefefefefeffLL;
-  uint64_t b = ((uint64_t) ib);
+  uint64_t b = ((uint64_t)ib);
   b |= (b << 32);
-  uint64_t *p = (uint64_t *) s;
-  unsigned int n = (((unsigned int) an) - (s - (unsigned char *) as)) >> 3;
+  uint64_t *p = (uint64_t *)s;
+  unsigned int n = (((unsigned int)an) - (s - (unsigned char *)as)) >> 3;
   uint64_t *end = p + n;
   while (p < end) {
     uint64_t bp = *p;
     uint64_t bb = bp ^ b;
     bb = ((bb + m) ^ ~bb) & ~m;
     if (bb) {
-      s = (unsigned char *) p;
+      s = (unsigned char *)p;
       if (s[0] == c)
         return &s[0];
       if (s[1] == c)
@@ -117,13 +117,13 @@ ink_memchr(const void *as, int ac, size_t an)
 
   // terminal segement
 
-  i_len = an - (((unsigned char *) p) - ((unsigned char *) as));
-  s = (unsigned char *) p;
+  i_len = an - (((unsigned char *)p) - ((unsigned char *)as));
+  s = (unsigned char *)p;
 
   // n-(4..8)..n bytes
 
   if (i_len & 4) {
-    unsigned int ibp = *(unsigned int *) s;
+    unsigned int ibp = *(unsigned int *)s;
     unsigned int ibb = ibp ^ ib;
     ibb = ((ibb + im) ^ ~ibb) & ~im;
     if (ibb) {
@@ -157,7 +157,7 @@ ink_memchr(const void *as, int ac, size_t an)
 }
 
 
-#define MEMCHR(_s,_c) ink_memchr(_s,_c,strlen(_s))?:""
+#define MEMCHR(_s, _c) ink_memchr(_s, _c, strlen(_s)) ?: ""
 main()
 {
   int i = 0;

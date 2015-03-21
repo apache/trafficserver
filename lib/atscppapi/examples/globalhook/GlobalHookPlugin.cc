@@ -22,20 +22,21 @@
 
 using namespace atscppapi;
 
-class GlobalHookPlugin : public GlobalPlugin {
+class GlobalHookPlugin : public GlobalPlugin
+{
 public:
-  GlobalHookPlugin() {
-    registerHook(HOOK_READ_REQUEST_HEADERS_PRE_REMAP);
-  }
+  GlobalHookPlugin() { registerHook(HOOK_READ_REQUEST_HEADERS_PRE_REMAP); }
 
-  virtual void handleReadRequestHeadersPreRemap(Transaction &transaction) {
+  virtual void
+  handleReadRequestHeadersPreRemap(Transaction &transaction)
+  {
     std::cout << "Hello from handleReadRequesHeadersPreRemap!" << std::endl;
     transaction.resume();
   }
 };
 
-void TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED) {
+void
+TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
+{
   new GlobalHookPlugin();
 }
-
-

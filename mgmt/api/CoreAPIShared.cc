@@ -117,7 +117,7 @@ readHTTPResponse(int sock, char *buffer, int bufsize, uint64_t timeout)
     }
   }
 
-error:                         /* "Houston, we have a problem!" (Apollo 13) */
+error: /* "Houston, we have a problem!" (Apollo 13) */
   if (sock >= 0) {
     close_socket(sock);
   }
@@ -168,13 +168,12 @@ sendHTTPRequest(int sock, char *req, uint64_t timeout)
   /* everything went well */
   return TS_ERR_OKAY;
 
-error:                         /* "Houston, we have a problem!" (Apollo 13) */
+error: /* "Houston, we have a problem!" (Apollo 13) */
   if (sock >= 0) {
     close_socket(sock);
   }
   return TS_ERR_NET_WRITE;
 }
-
 
 
 /* Modified from TrafficCop.cc (open_socket) */
@@ -194,7 +193,7 @@ connectDirect(const char *host, int port, uint64_t /* timeout ATS_UNUSED */)
   }
 
   struct sockaddr_in name;
-  memset((void *) &name, 0, sizeof(sockaddr_in));
+  memset((void *)&name, 0, sizeof(sockaddr_in));
 
   int err;
 
@@ -217,10 +216,10 @@ connectDirect(const char *host, int port, uint64_t /* timeout ATS_UNUSED */)
   if (!pHostent) {
     goto error;
   }
-  memcpy((caddr_t)&(name.sin_addr), pHostent->h_addr, pHostent->h_length);
+  memcpy((caddr_t) & (name.sin_addr), pHostent->h_addr, pHostent->h_length);
 
   do {
-    err = connect(sock, (struct sockaddr *) &name, sizeof(name));
+    err = connect(sock, (struct sockaddr *)&name, sizeof(name));
   } while ((err < 0) && ((errno == EINTR) || (errno == EAGAIN)));
 
   if ((err < 0) && (errno != EINPROGRESS)) {
@@ -234,7 +233,7 @@ error:
     close_socket(sock);
   }
   return -1;
-}                               /* connectDirect */
+} /* connectDirect */
 
 /* COPIED direclty form TrafficCop.cc */
 static int

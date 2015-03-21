@@ -33,12 +33,11 @@
 
 #include "StatPages.h"
 
-#define STREQ_PREFIX(_x,_s) (!strncasecmp(_x,_s,sizeof(_s)-1))
+#define STREQ_PREFIX(_x, _s) (!strncasecmp(_x, _s, sizeof(_s) - 1))
 
 struct ShowCont;
-typedef int (ShowCont::*ShowContEventHandler) (int event, Event * data);
-struct ShowCont: public Continuation
-{
+typedef int (ShowCont::*ShowContEventHandler)(int event, Event *data);
+struct ShowCont : public Continuation {
 private:
   char *buf, *start, *ebuf;
 
@@ -46,7 +45,8 @@ public:
   Action action;
   char *sarg;
 
-  int show(const char *s, ...)
+  int
+  show(const char *s, ...)
   {
     va_list aap, va_scratch;
     ptrdiff_t avail = ebuf - buf;
@@ -61,8 +61,7 @@ public:
       ptrdiff_t bufsz = ebuf - start;
       ptrdiff_t used = buf - start;
 
-      Debug("cache_inspector", "needed %d bytes, reallocating to %d bytes",
-          (int)needed, (int)bufsz + (int)needed);
+      Debug("cache_inspector", "needed %d bytes, reallocating to %d bytes", (int)needed, (int)bufsz + (int)needed);
 
       bufsz += ROUNDUP(needed, ats_pagesize());
       start = (char *)ats_realloc(start, bufsz);
@@ -74,8 +73,7 @@ public:
       va_end(aap);
 
       if (needed >= avail) {
-        Debug("cache_inspector", "needed %d bytes, but had only %d",
-          (int)needed, (int)avail + (int)needed);
+        Debug("cache_inspector", "needed %d bytes, but had only %d", (int)needed, (int)avail + (int)needed);
         return EVENT_DONE;
       }
     }
@@ -84,9 +82,12 @@ public:
     return EVENT_CONT;
   }
 
-#define CHECK_SHOW(_x) if (_x == EVENT_DONE) return complete_error(event,e);
+#define CHECK_SHOW(_x)  \
+  if (_x == EVENT_DONE) \
+    return complete_error(event, e);
 
-  int complete(int event, Event * e)
+  int
+  complete(int event, Event *e)
   {
     CHECK_SHOW(show("</BODY>\n</HTML>\n"));
     if (!action.cancelled) {
@@ -100,7 +101,8 @@ public:
     return done(VIO::CLOSE, event, e);
   }
 
-  int complete_error(int event, Event * e)
+  int
+  complete_error(int event, Event *e)
   {
     ats_free(start);
     start = NULL;
@@ -109,25 +111,30 @@ public:
     return done(VIO::ABORT, event, e);
   }
 
-  int begin(const char *name)
+  int
+  begin(const char *name)
   {
     return show("<HTML>\n<HEAD><TITLE>%s</TITLE>\n"
-                "<BODY BGCOLOR=\"#ffffff\" FGCOLOR=\"#00ff00\">\n" "<H1>%s</H1>\n", name, name);
+                "<BODY BGCOLOR=\"#ffffff\" FGCOLOR=\"#00ff00\">\n"
+                "<H1>%s</H1>\n",
+                name, name);
   }
 
-  int showError(int event, Event * e)
+  int
+  showError(int event, Event *e)
   {
     return complete_error(event, e);
   }
 
-  virtual int done(int /* e ATS_UNUSED */, int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */)
+  virtual int
+  done(int /* e ATS_UNUSED */, int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */)
   {
     delete this;
     return EVENT_DONE;
   }
 
-  ShowCont(Continuation * c, HTTPHdr * /* h ATS_UNUSED */)
-    : Continuation(NULL), sarg(0) {
+  ShowCont(Continuation *c, HTTPHdr * /* h ATS_UNUSED */) : Continuation(NULL), sarg(0)
+  {
     size_t sz = ats_pagesize();
 
     mutex = c->mutex;
@@ -137,7 +144,8 @@ public:
     ebuf = buf + sz;
   }
 
-  ~ShowCont() {
+  ~ShowCont()
+  {
     ats_free(sarg);
     ats_free(start);
   }

@@ -32,16 +32,15 @@
   by the SAME thread. This is a trimmed down version of ProxyMutex.
 
 */
-struct RecMutex
-{
+struct RecMutex {
   size_t nthread_holding;
   ink_thread thread_holding;
   ink_mutex the_mutex;
 };
 
-int rec_mutex_init(RecMutex * m, const char *name = NULL);
-int rec_mutex_destroy(RecMutex * m);
-int rec_mutex_acquire(RecMutex * m);
-int rec_mutex_release(RecMutex * m);
+int rec_mutex_init(RecMutex *m, const char *name = NULL);
+int rec_mutex_destroy(RecMutex *m);
+int rec_mutex_acquire(RecMutex *m);
+int rec_mutex_release(RecMutex *m);
 
 #endif

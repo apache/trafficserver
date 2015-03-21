@@ -38,7 +38,7 @@
 
 // defines
 
-#define SNAP_USAGE_PERIOD         HRTIME_SECONDS(2)
+#define SNAP_USAGE_PERIOD HRTIME_SECONDS(2)
 
 
 // variables
@@ -66,99 +66,56 @@ ink_hrtime http_handler_times[MAX_HTTP_HANDLER_EVENTS];
 int http_handler_counts[MAX_HTTP_HANDLER_EVENTS];
 
 
-char snap_filename[PATH_NAME_MAX+1] = DEFAULT_SNAP_FILENAME;
+char snap_filename[PATH_NAME_MAX + 1] = DEFAULT_SNAP_FILENAME;
 
 #define DEFAULT_PERSISTENT
 
 #ifndef DEFAULT_PERSISTENT
-static int persistent_stats[] = {
-  http_incoming_requests_stat
-};
+static int persistent_stats[] = {http_incoming_requests_stat};
 #else
 static int non_persistent_stats[] = {
   ////////////////////////////
   // Start of Cluster stats
   ////////////////////////////
-  cluster_connections_open_stat,
-  cluster_connections_openned_stat,
-  cluster_con_total_time_stat,
-  cluster_ctrl_msgs_sent_stat,
-  cluster_slow_ctrl_msgs_sent_stat,
-  cluster_ctrl_msgs_recvd_stat,
-  cluster_slow_ctrl_msgs_recvd_stat,
-  cluster_ctrl_msgs_send_time_stat,
-  cluster_ctrl_msgs_recv_time_stat,
-  cluster_read_bytes_stat,
-  cluster_write_bytes_stat,
-  cluster_op_delayed_for_lock_stat,
-  cluster_connections_locked_stat,
-  cluster_connections_bumped_stat,
-  cluster_nodes_stat,
-  cluster_net_backup_stat,
-  cluster_machines_allocated_stat,
-  cluster_machines_freed_stat,
-  cluster_configuration_changes_stat,
-  cluster_delayed_reads_stat,
-  cluster_byte_bank_used_stat,
-  cluster_alloc_data_news_stat,
-  cluster_write_bb_mallocs_stat,
-  cluster_partial_reads_stat,
-  cluster_partial_writes_stat,
-  cluster_cache_outstanding_stat,
-  cluster_remote_op_timeouts_stat,
-  cluster_remote_op_reply_timeouts_stat,
-  cluster_chan_inuse_stat,
-  cluster_open_delays_stat,
-  cluster_open_delay_time_stat,
-  cluster_cache_callbacks_stat,
-  cluster_cache_callback_time_stat,
-  cluster_cache_rmt_callbacks_stat,
-  cluster_cache_rmt_callback_time_stat,
-  cluster_cache_lkrmt_callbacks_stat,
-  cluster_cache_lkrmt_callback_time_stat,
-  cluster_thread_steal_expires_stat,
-  cluster_local_connections_closed_stat,
-  cluster_local_connection_time_stat,
-  cluster_remote_connections_closed_stat,
-  cluster_remote_connection_time_stat,
-  cluster_rdmsg_assemble_time_stat,
-  cluster_ping_time_stat,
-  cluster_setdata_no_clustervc_stat,
-  cluster_setdata_no_tunnel_stat,
-  cluster_setdata_no_cachevc_stat,
-  cluster_setdata_no_cluster_stat,
-  cluster_vc_write_stall_stat,
-  cluster_no_remote_space_stat,
-  cluster_level1_bank_stat,
-  cluster_multilevel_bank_stat,
-  cluster_vc_cache_insert_lock_misses_stat,
-  cluster_vc_cache_inserts_stat,
-  cluster_vc_cache_lookup_lock_misses_stat,
-  cluster_vc_cache_lookup_hits_stat,
-  cluster_vc_cache_lookup_misses_stat,
-  cluster_vc_cache_scans_stat,
-  cluster_vc_cache_scan_lock_misses_stat,
-  cluster_vc_cache_purges_stat,
-  cluster_write_lock_misses_stat,
+  cluster_connections_open_stat, cluster_connections_openned_stat, cluster_con_total_time_stat, cluster_ctrl_msgs_sent_stat,
+  cluster_slow_ctrl_msgs_sent_stat, cluster_ctrl_msgs_recvd_stat, cluster_slow_ctrl_msgs_recvd_stat,
+  cluster_ctrl_msgs_send_time_stat, cluster_ctrl_msgs_recv_time_stat, cluster_read_bytes_stat, cluster_write_bytes_stat,
+  cluster_op_delayed_for_lock_stat, cluster_connections_locked_stat, cluster_connections_bumped_stat, cluster_nodes_stat,
+  cluster_net_backup_stat, cluster_machines_allocated_stat, cluster_machines_freed_stat, cluster_configuration_changes_stat,
+  cluster_delayed_reads_stat, cluster_byte_bank_used_stat, cluster_alloc_data_news_stat, cluster_write_bb_mallocs_stat,
+  cluster_partial_reads_stat, cluster_partial_writes_stat, cluster_cache_outstanding_stat, cluster_remote_op_timeouts_stat,
+  cluster_remote_op_reply_timeouts_stat, cluster_chan_inuse_stat, cluster_open_delays_stat, cluster_open_delay_time_stat,
+  cluster_cache_callbacks_stat, cluster_cache_callback_time_stat, cluster_cache_rmt_callbacks_stat,
+  cluster_cache_rmt_callback_time_stat, cluster_cache_lkrmt_callbacks_stat, cluster_cache_lkrmt_callback_time_stat,
+  cluster_thread_steal_expires_stat, cluster_local_connections_closed_stat, cluster_local_connection_time_stat,
+  cluster_remote_connections_closed_stat, cluster_remote_connection_time_stat, cluster_rdmsg_assemble_time_stat,
+  cluster_ping_time_stat, cluster_setdata_no_clustervc_stat, cluster_setdata_no_tunnel_stat, cluster_setdata_no_cachevc_stat,
+  cluster_setdata_no_cluster_stat, cluster_vc_write_stall_stat, cluster_no_remote_space_stat, cluster_level1_bank_stat,
+  cluster_multilevel_bank_stat, cluster_vc_cache_insert_lock_misses_stat, cluster_vc_cache_inserts_stat,
+  cluster_vc_cache_lookup_lock_misses_stat, cluster_vc_cache_lookup_hits_stat, cluster_vc_cache_lookup_misses_stat,
+  cluster_vc_cache_scans_stat, cluster_vc_cache_scan_lock_misses_stat, cluster_vc_cache_purges_stat, cluster_write_lock_misses_stat,
   /////////////////////////////////////
   // Start of Scheduled Update stats
   /////////////////////////////////////
   // DNS
-  //dns_success_time_stat
+  // dns_success_time_stat
 };
 #endif
 
-#define _HEADER \
-DynamicStatsString_t DynamicStatsStrings[] = {
-
-#define _FOOTER };
-#define _D(_x) { _x, #_x },
+#define _HEADER DynamicStatsString_t DynamicStatsStrings[] = {
+#define _FOOTER \
+  }             \
+  ;
+#define _D(_x) \
+  {            \
+    _x, #_x    \
+  }            \
+  ,
 
 #include "DynamicStats.h"
 #undef _HEADER
 #undef _FOOTER
 #undef _D
-
 
 
 // functions
@@ -230,33 +187,32 @@ read_stats_snap()
     goto Lmissmatch;
 
   // read and verify snap
-  if (socketManager.read(fd, (char *) &version_read, sizeof(version_read))
-      != sizeof(version_read))
+  if (socketManager.read(fd, (char *)&version_read, sizeof(version_read)) != sizeof(version_read))
     goto Lmissmatch;
   if (version != version_read)
     goto Lmissmatch;
   stats_size = MAX_HTTP_TRANS_STATS - NO_HTTP_TRANS_STATS + MAX_DYN_STATS - NO_DYN_STATS;
-  if (socketManager.read(fd, (char *) &count, sizeof(count)) != sizeof(count))
+  if (socketManager.read(fd, (char *)&count, sizeof(count)) != sizeof(count))
     goto Lmissmatch;
   if (count != stats_size)
     goto Lmissmatch;
 
   stats_size = MAX_HTTP_TRANS_STATS - NO_HTTP_TRANS_STATS;
   for (i = 0; i < stats_size; i++) {
-    if (socketManager.read(fd, (char *) &global_http_trans_stats[i].sum, sizeof(global_http_trans_stats[i].sum))
-        != sizeof(global_http_trans_stats[i].sum))
+    if (socketManager.read(fd, (char *)&global_http_trans_stats[i].sum, sizeof(global_http_trans_stats[i].sum)) !=
+        sizeof(global_http_trans_stats[i].sum))
       goto Lmissmatch;
-    if (socketManager.read(fd, (char *) &global_http_trans_stats[i].count, sizeof(global_http_trans_stats[i].count))
-        != sizeof(global_http_trans_stats[i].count))
+    if (socketManager.read(fd, (char *)&global_http_trans_stats[i].count, sizeof(global_http_trans_stats[i].count)) !=
+        sizeof(global_http_trans_stats[i].count))
       goto Lmissmatch;
   }
   stats_size = MAX_DYN_STATS - NO_DYN_STATS;
   for (i = 0; i < stats_size; i++) {
-    if (socketManager.read(fd, (char *) &global_dyn_stats[i].sum, sizeof(global_dyn_stats[i].sum))
-        != sizeof(global_dyn_stats[i].sum))
+    if (socketManager.read(fd, (char *)&global_dyn_stats[i].sum, sizeof(global_dyn_stats[i].sum)) !=
+        sizeof(global_dyn_stats[i].sum))
       goto Lmissmatch;
-    if (socketManager.read(fd, (char *) &global_dyn_stats[i].count, sizeof(global_dyn_stats[i].count))
-        != sizeof(global_dyn_stats[i].count))
+    if (socketManager.read(fd, (char *)&global_dyn_stats[i].count, sizeof(global_dyn_stats[i].count)) !=
+        sizeof(global_dyn_stats[i].count))
       goto Lmissmatch;
   }
   Debug("stats", "read_stats_snap: read statistics");
@@ -268,7 +224,7 @@ read_stats_snap()
 Lmissmatch:
   Note("clearing statistics");
   clear_stats();
-  //close(fd);
+  // close(fd);
   socketManager.close(fd);
 }
 
@@ -291,17 +247,17 @@ write_stats_snap()
     char *p = buf;
     int i = 0;
 
-    memcpy(p, (char *) &version, sizeof(version));
+    memcpy(p, (char *)&version, sizeof(version));
     p += sizeof(version);
-    memcpy(p, (char *) &stats_size, sizeof(stats_size));
+    memcpy(p, (char *)&stats_size, sizeof(stats_size));
     p += sizeof(stats_size);
 
     stats_size = MAX_HTTP_TRANS_STATS - NO_HTTP_TRANS_STATS;
     STAT_LOCK_ACQUIRE(&(global_http_trans_stat_lock));
     for (i = 0; i < stats_size; i++) {
-      memcpy(p, (char *) &global_http_trans_stats[i].sum, sizeof(global_http_trans_stats[i].sum));
+      memcpy(p, (char *)&global_http_trans_stats[i].sum, sizeof(global_http_trans_stats[i].sum));
       p += sizeof(global_http_trans_stats[i].sum);
-      memcpy(p, (char *) &global_http_trans_stats[i].count, sizeof(global_http_trans_stats[i].count));
+      memcpy(p, (char *)&global_http_trans_stats[i].count, sizeof(global_http_trans_stats[i].count));
       p += sizeof(global_http_trans_stats[i].count);
     }
     STAT_LOCK_RELEASE(&(global_http_trans_stat_lock));
@@ -310,12 +266,12 @@ write_stats_snap()
       // INKqa09981 (Clearing Host Database and DNS Statistics)
       ink_statval_t count, sum;
       READ_GLOBAL_DYN_STAT(i, count, sum);
-      memcpy(p, (char *) &sum, sizeof(sum));
+      memcpy(p, (char *)&sum, sizeof(sum));
       p += sizeof(sum);
-      memcpy(p, (char *) &count, sizeof(count));
+      memcpy(p, (char *)&count, sizeof(count));
       p += sizeof(count);
     }
-    memcpy(p, (char *) &version, sizeof(version));
+    memcpy(p, (char *)&version, sizeof(version));
 
     if (socketManager.write(fd, buf, buf_size) != buf_size) {
       Warning("unable to snap statistics");
@@ -329,18 +285,15 @@ write_stats_snap()
   Debug("stats", "snapped stats");
 }
 
-struct SnapStatsContinuation: public Continuation
-{
-  int mainEvent(int /* event ATS_UNUSED */, Event *e ATS_UNUSED)
+struct SnapStatsContinuation : public Continuation {
+  int
+  mainEvent(int /* event ATS_UNUSED */, Event *e ATS_UNUSED)
   {
     write_stats_snap();
     e->schedule_every(HRTIME_SECONDS(snap_stats_every));
     return EVENT_CONT;
   }
-  SnapStatsContinuation():Continuation(new_ProxyMutex())
-  {
-    SET_HANDLER(&SnapStatsContinuation::mainEvent);
-  }
+  SnapStatsContinuation() : Continuation(new_ProxyMutex()) { SET_HANDLER(&SnapStatsContinuation::mainEvent); }
 };
 
 static void
@@ -358,24 +311,21 @@ take_rusage_snap()
       rusage_snap_time = ink_get_hrtime();
     break;
   }
-  Debug("rusage", "took rusage snap %" PRId64"", rusage_snap_time);
+  Debug("rusage", "took rusage snap %" PRId64 "", rusage_snap_time);
 }
 
 struct SnapCont;
-typedef int (SnapCont::*SnapContHandler) (int, void *);
+typedef int (SnapCont::*SnapContHandler)(int, void *);
 
-struct SnapCont: public Continuation
-{
-  int mainEvent(int /* event ATS_UNUSED */, Event * e)
+struct SnapCont : public Continuation {
+  int
+  mainEvent(int /* event ATS_UNUSED */, Event *e)
   {
     take_rusage_snap();
     e->schedule_every(SNAP_USAGE_PERIOD);
     return EVENT_CONT;
   }
-  SnapCont(ProxyMutex * m):Continuation(m)
-  {
-    SET_HANDLER((SnapContHandler) & SnapCont::mainEvent);
-  }
+  SnapCont(ProxyMutex *m) : Continuation(m) { SET_HANDLER((SnapContHandler)&SnapCont::mainEvent); }
 };
 
 void
@@ -389,7 +339,7 @@ start_stats_snap()
 }
 
 static Action *
-stat_callback(Continuation * cont, HTTPHdr * header)
+stat_callback(Continuation *cont, HTTPHdr *header)
 {
   URL *url;
   int length;
@@ -441,13 +391,13 @@ stat_callback(Continuation * cont, HTTPHdr * header)
 }
 
 static Action *
-testpage_callback(Continuation * cont, HTTPHdr *)
+testpage_callback(Continuation *cont, HTTPHdr *)
 {
   const int buf_size = 64000;
   char *buffer = (char *)ats_malloc(buf_size);
 
   for (int i = 0; i < buf_size; i++) {
-    buffer[i] = (char) ('a' + (i % 26));
+    buffer[i] = (char)('a' + (i % 26));
   }
   buffer[buf_size - 1] = '\0';
 
@@ -488,7 +438,7 @@ initialize_all_global_stats()
   read_stats_snap();
   rusage_snap_mutex = new_ProxyMutex();
   take_rusage_snap();
-  take_rusage_snap();           // fill in _old as well
+  take_rusage_snap(); // fill in _old as well
 
   STAT_LOCK_INIT(&(global_http_trans_stat_lock), "Global Http Stats Lock");
 
@@ -505,11 +455,11 @@ initialize_all_global_stats()
     }
   }
 
-  // TODO: HMMMM, wtf does this do? The following is that this
-  // function does:
-  // ink_atomic_swap(&this->f_update_lock, (void *) func)
-  //
-  // pmgmt->record_data->registerUpdateLockFunc(tmp_stats_lock_function);
+// TODO: HMMMM, wtf does this do? The following is that this
+// function does:
+// ink_atomic_swap(&this->f_update_lock, (void *) func)
+//
+// pmgmt->record_data->registerUpdateLockFunc(tmp_stats_lock_function);
 
 #ifdef DEBUG
   ink_mutex_init(&http_time_lock, "Http Time Function Lock");
@@ -519,16 +469,16 @@ initialize_all_global_stats()
   clear_http_handler_times();
 }
 
-//void *
-//tmp_stats_lock_function(UpdateLockAction action)
+// void *
+// tmp_stats_lock_function(UpdateLockAction action)
 //{
 //  stats_lock_function((void *) (&global_http_trans_stat_lock), action);
 //
 //  return NULL;
 //}
 
-//void *
-//stats_lock_function(void *data, UpdateLockAction action)
+// void *
+// stats_lock_function(void *data, UpdateLockAction action)
 //{
 //  if (action == UPDATE_LOCK_ACQUIRE) {
 //    STAT_LOCK_ACQUIRE((ink_stat_lock_t *) data);
@@ -543,15 +493,15 @@ void *
 dyn_stats_int_msecs_to_float_seconds_cb(void *data, void *res)
 {
   ink_statval_t count, sum;
-  READ_DYN_STAT((long) data, count, sum);
+  READ_DYN_STAT((long)data, count, sum);
 
   float r;
   if (count == 0) {
     r = 0.0;
   } else {
-    r = ((float) sum) / 1000.0;
+    r = ((float)sum) / 1000.0;
   }
-  *(float *) res = r;
+  *(float *)res = r;
   return res;
 }
 
@@ -559,9 +509,9 @@ void *
 dyn_stats_count_cb(void *data, void *res)
 {
   ink_statval_t count, sum;
-  READ_DYN_STAT((long) data, count, sum);
+  READ_DYN_STAT((long)data, count, sum);
   (void)sum;
-  ink_atomic_swap((ink_statval_t *) res, count);
+  ink_atomic_swap((ink_statval_t *)res, count);
   return res;
 }
 
@@ -569,9 +519,9 @@ void *
 dyn_stats_sum_cb(void *data, void *res)
 {
   ink_statval_t count, sum;
-  READ_DYN_STAT((long) data, count, sum);
+  READ_DYN_STAT((long)data, count, sum);
   (void)count;
-  ink_atomic_swap((ink_statval_t *) res, sum);
+  ink_atomic_swap((ink_statval_t *)res, sum);
   return res;
 }
 
@@ -579,11 +529,11 @@ void *
 dyn_stats_avg_cb(void *data, void *res)
 {
   ink_statval_t count, sum;
-  READ_DYN_STAT((long) data, count, sum);
+  READ_DYN_STAT((long)data, count, sum);
   if (count == 0) {
-    *(float *) res = 0.0;
+    *(float *)res = 0.0;
   } else {
-    *(float *) res = (float) sum / (float) count;
+    *(float *)res = (float)sum / (float)count;
   }
   return res;
 }
@@ -592,9 +542,9 @@ void *
 dyn_stats_fsum_cb(void *data, void *res)
 {
   ink_statval_t count, sum;
-  READ_DYN_STAT((long) data, count, sum);
+  READ_DYN_STAT((long)data, count, sum);
   (void)count;
-  *(float *) res = (double) sum;
+  *(float *)res = (double)sum;
   return res;
 }
 
@@ -602,11 +552,11 @@ void *
 dyn_stats_favg_cb(void *data, void *res)
 {
   ink_statval_t count, sum;
-  READ_DYN_STAT((long) data, count, sum);
+  READ_DYN_STAT((long)data, count, sum);
   if (count == 0) {
-    *(float *) res = 0.0;
+    *(float *)res = 0.0;
   } else {
-    *(float *) res = (double) sum / (double) count;
+    *(float *)res = (double)sum / (double)count;
   }
   return res;
 }
@@ -616,14 +566,14 @@ dyn_stats_time_seconds_cb(void *data, void *res)
 {
   ink_statval_t count, sum;
   float r;
-  READ_DYN_STAT((long) data, count, sum);
+  READ_DYN_STAT((long)data, count, sum);
   if (count == 0) {
     r = 0.0;
   } else {
-    r = (float) sum / (float) count;
-    r = r / (float) HRTIME_SECOND;
+    r = (float)sum / (float)count;
+    r = r / (float)HRTIME_SECOND;
   }
-  *(float *) res = r;
+  *(float *)res = r;
   return res;
 }
 
@@ -632,14 +582,14 @@ dyn_stats_time_mseconds_cb(void *data, void *res)
 {
   ink_statval_t count, sum;
   float r;
-  READ_DYN_STAT((long) data, count, sum);
+  READ_DYN_STAT((long)data, count, sum);
   if (count == 0) {
     r = 0.0;
   } else {
-    r = (float) sum / (float) count;
-    r = r / (float) HRTIME_MSECOND;
+    r = (float)sum / (float)count;
+    r = r / (float)HRTIME_MSECOND;
   }
-  *(float *) res = r;
+  *(float *)res = r;
   return res;
 }
 
@@ -648,14 +598,14 @@ dyn_stats_time_useconds_cb(void *data, void *res)
 {
   ink_statval_t count, sum;
   float r;
-  READ_DYN_STAT((long) data, count, sum);
+  READ_DYN_STAT((long)data, count, sum);
   if (count == 0) {
     r = 0.0;
   } else {
-    r = (float) sum / (float) count;
-    r = r / (float) HRTIME_USECOND;
+    r = (float)sum / (float)count;
+    r = r / (float)HRTIME_USECOND;
   }
-  *(float *) res = r;
+  *(float *)res = r;
   return res;
 }
 
@@ -666,15 +616,15 @@ void *
 http_trans_stats_int_msecs_to_float_seconds_cb(void *data, void *res)
 {
   ink_statval_t count, sum;
-  READ_HTTP_TRANS_STAT((long) data, count, sum);
+  READ_HTTP_TRANS_STAT((long)data, count, sum);
 
   float r;
   if (count == 0) {
     r = 0.0;
   } else {
-    r = ((float) sum) / 1000.0;
+    r = ((float)sum) / 1000.0;
   }
-  *(float *) res = r;
+  *(float *)res = r;
   return res;
 }
 
@@ -682,9 +632,9 @@ void *
 http_trans_stats_count_cb(void *data, void *res)
 {
   ink_statval_t count, sum;
-  READ_HTTP_TRANS_STAT((long) data, count, sum);
+  READ_HTTP_TRANS_STAT((long)data, count, sum);
   (void)sum;
-  ink_atomic_swap((ink_statval_t *) res, count);
+  ink_atomic_swap((ink_statval_t *)res, count);
   return res;
 }
 
@@ -692,9 +642,9 @@ void *
 http_trans_stats_sum_cb(void *data, void *res)
 {
   ink_statval_t count, sum;
-  READ_HTTP_TRANS_STAT((long) data, count, sum);
+  READ_HTTP_TRANS_STAT((long)data, count, sum);
   (void)count;
-  ink_atomic_swap((ink_statval_t *) res, sum);
+  ink_atomic_swap((ink_statval_t *)res, sum);
   return res;
 }
 
@@ -702,11 +652,11 @@ void *
 http_trans_stats_avg_cb(void *data, void *res)
 {
   ink_statval_t count, sum;
-  READ_HTTP_TRANS_STAT((long) data, count, sum);
+  READ_HTTP_TRANS_STAT((long)data, count, sum);
   if (count == 0) {
-    *(float *) res = 0.0;
+    *(float *)res = 0.0;
   } else {
-    *(float *) res = (float) sum / (float) count;
+    *(float *)res = (float)sum / (float)count;
   }
   return res;
 }
@@ -715,9 +665,9 @@ void *
 http_trans_stats_fsum_cb(void *data, void *res)
 {
   ink_statval_t count, sum;
-  READ_HTTP_TRANS_STAT((long) data, count, sum);
+  READ_HTTP_TRANS_STAT((long)data, count, sum);
   (void)count;
-  *(float *) res = (double) sum;
+  *(float *)res = (double)sum;
   return res;
 }
 
@@ -725,11 +675,11 @@ void *
 http_trans_stats_favg_cb(void *data, void *res)
 {
   ink_statval_t count, sum;
-  READ_HTTP_TRANS_STAT((long) data, count, sum);
+  READ_HTTP_TRANS_STAT((long)data, count, sum);
   if (count == 0) {
-    *(float *) res = 0.0;
+    *(float *)res = 0.0;
   } else {
-    *(float *) res = (double) sum / (double) count;
+    *(float *)res = (double)sum / (double)count;
   }
   return res;
 }
@@ -739,14 +689,14 @@ http_trans_stats_time_seconds_cb(void *data, void *res)
 {
   ink_statval_t count, sum;
   float r;
-  READ_HTTP_TRANS_STAT((long) data, count, sum);
+  READ_HTTP_TRANS_STAT((long)data, count, sum);
   if (count == 0) {
     r = 0.0;
   } else {
-    r = (float) sum / (float) count;
-    r = r / (float) HRTIME_SECOND;
+    r = (float)sum / (float)count;
+    r = r / (float)HRTIME_SECOND;
   }
-  *(float *) res = r;
+  *(float *)res = r;
   return res;
 }
 
@@ -755,14 +705,14 @@ http_trans_stats_time_mseconds_cb(void *data, void *res)
 {
   ink_statval_t count, sum;
   float r;
-  READ_HTTP_TRANS_STAT((long) data, count, sum);
+  READ_HTTP_TRANS_STAT((long)data, count, sum);
   if (count == 0) {
     r = 0.0;
   } else {
-    r = (float) sum / (float) count;
-    r = r / (float) HRTIME_MSECOND;
+    r = (float)sum / (float)count;
+    r = r / (float)HRTIME_MSECOND;
   }
-  *(float *) res = r;
+  *(float *)res = r;
   return res;
 }
 
@@ -771,13 +721,13 @@ http_trans_stats_time_useconds_cb(void *data, void *res)
 {
   ink_statval_t count, sum;
   float r;
-  READ_HTTP_TRANS_STAT((long) data, count, sum);
+  READ_HTTP_TRANS_STAT((long)data, count, sum);
   if (count == 0) {
     r = 0.0;
   } else {
-    r = (float) sum / (float) count;
-    r = r / (float) HRTIME_USECOND;
+    r = (float)sum / (float)count;
+    r = r / (float)HRTIME_USECOND;
   }
-  *(float *) res = r;
+  *(float *)res = r;
   return res;
 }

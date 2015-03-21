@@ -55,9 +55,7 @@ mgmt_readline(int soc, char *buf, int maxlen)
   char c;
 
   for (n = 1; n < maxlen; n++) {
-
     if ((rc = read_socket(soc, &c, 1)) == 1) {
-
       *buf++ = c;
       if (c == '\n') {
         --buf;
@@ -69,18 +67,17 @@ mgmt_readline(int soc, char *buf, int maxlen)
         break;
       }
     } else if (rc == 0) {
-
-      if (n == 1) {             /* EOF */
+      if (n == 1) { /* EOF */
         return 0;
       } else {
         break;
       }
-    } else {                    /* Error */
+    } else { /* Error */
       return -1;
     }
   }
   return n;
-}                               /* End mgmt_readline */
+} /* End mgmt_readline */
 
 /*
  * mgmt_writeline(...)
@@ -101,14 +98,14 @@ mgmt_writeline(int soc, const char *data, int nbytes)
   nleft = nbytes;
   while (nleft > 0) {
     nwritten = write_socket(soc, tmp, nleft);
-    if (nwritten <= 0) {        /* Error or nothing written */
+    if (nwritten <= 0) { /* Error or nothing written */
       return nwritten;
     }
     nleft -= nwritten;
     tmp += nwritten;
   }
 
-  if ((n = write_socket(soc, "\n", 1)) <= 0) {      /* Terminating newline */
+  if ((n = write_socket(soc, "\n", 1)) <= 0) { /* Terminating newline */
     if (n < 0) {
       return n;
     } else {
@@ -116,8 +113,8 @@ mgmt_writeline(int soc, const char *data, int nbytes)
     }
   }
 
-  return (nleft);               /* Paranoia */
-}                               /* End mgmt_writeline */
+  return (nleft); /* Paranoia */
+} /* End mgmt_writeline */
 
 /*
  * mgmt_read_pipe()
@@ -208,7 +205,7 @@ mgmt_blockAllSigs()
 {
 #if !defined(linux)
   // Start by blocking all signals
-  sigset_t allSigs;             // Set of all signals
+  sigset_t allSigs; // Set of all signals
   sigfillset(&allSigs);
   if (ink_thread_sigsetmask(SIG_SETMASK, &allSigs, NULL) < 0) {
     perror("ink_thread_sigsetmask");
@@ -223,7 +220,7 @@ mgmt_blockAllSigs()
  * better control it.
  */
 void
-mgmt_log(FILE * log, const char *message_format, ...)
+mgmt_log(FILE *log, const char *message_format, ...)
 {
   va_list ap;
   char extended_format[4096], message[4096];
@@ -233,7 +230,6 @@ mgmt_log(FILE * log, const char *message_format, ...)
   if (diags) {
     diags->print_va(NULL, DL_Note, NULL, message_format, ap);
   } else {
-
     if (use_syslog) {
       snprintf(extended_format, sizeof(extended_format), "log ==> %s", message_format);
       vsprintf(message, extended_format, ap);
@@ -247,7 +243,7 @@ mgmt_log(FILE * log, const char *message_format, ...)
 
   va_end(ap);
   return;
-}                               /* End mgmt_log */
+} /* End mgmt_log */
 
 void
 mgmt_log(const char *message_format, ...)
@@ -259,7 +255,6 @@ mgmt_log(const char *message_format, ...)
   if (diags) {
     diags->print_va(NULL, DL_Note, NULL, message_format, ap);
   } else {
-
     if (use_syslog) {
       snprintf(extended_format, sizeof(extended_format), "log ==> %s", message_format);
       vsprintf(message, extended_format, ap);
@@ -273,14 +268,14 @@ mgmt_log(const char *message_format, ...)
 
   va_end(ap);
   return;
-}                               /* End mgmt_log */
+} /* End mgmt_log */
 
 /*
  * mgmt_log(...)
  *   Same as above, but intended for errors.
  */
 void
-mgmt_elog(FILE * log, const int lerrno, const char *message_format, ...)
+mgmt_elog(FILE *log, const int lerrno, const char *message_format, ...)
 {
   va_list ap;
   char extended_format[4096], message[4096];
@@ -313,7 +308,7 @@ mgmt_elog(FILE * log, const int lerrno, const char *message_format, ...)
   va_end(ap);
 
   return;
-}                               /* End mgmt_elog */
+} /* End mgmt_elog */
 
 void
 mgmt_elog(const int lerrno, const char *message_format, ...)
@@ -329,7 +324,6 @@ mgmt_elog(const int lerrno, const char *message_format, ...)
       diags->print(NULL, DTA(DL_Error), " (last system error %d: %s)\n", lerrno, strerror(lerrno));
     }
   } else {
-
     if (use_syslog) {
       snprintf(extended_format, sizeof(extended_format), "ERROR ==> %s", message_format);
       vsprintf(message, extended_format, ap);
@@ -349,7 +343,7 @@ mgmt_elog(const int lerrno, const char *message_format, ...)
   }
   va_end(ap);
   return;
-}                               /* End mgmt_elog */
+} /* End mgmt_elog */
 
 /*
  * mgmt_fatal(...)
@@ -357,7 +351,7 @@ mgmt_elog(const int lerrno, const char *message_format, ...)
  * asserts false.
  */
 void
-mgmt_fatal(FILE * log, const int lerrno, const char *message_format, ...)
+mgmt_fatal(FILE *log, const int lerrno, const char *message_format, ...)
 {
   va_list ap;
   char extended_format[4096], message[4096];
@@ -370,7 +364,6 @@ mgmt_fatal(FILE * log, const int lerrno, const char *message_format, ...)
       diags->print(NULL, DTA(DL_Fatal), " (last system error %d: %s)\n", lerrno, strerror(lerrno));
     }
   } else {
-
     snprintf(extended_format, sizeof(extended_format), "FATAL ==> %s", message_format);
     vsprintf(message, extended_format, ap);
 
@@ -386,14 +379,13 @@ mgmt_fatal(FILE * log, const int lerrno, const char *message_format, ...)
         syslog(LOG_ERR, " (last system error %d: %s)", lerrno, strerror(lerrno));
       }
     }
-
   }
 
   va_end(ap);
 
   mgmt_cleanup();
   _exit(1);
-}                               /* End mgmt_fatal */
+} /* End mgmt_fatal */
 
 void
 mgmt_fatal(const int lerrno, const char *message_format, ...)
@@ -409,7 +401,6 @@ mgmt_fatal(const int lerrno, const char *message_format, ...)
       diags->print(NULL, DTA(DL_Fatal), " (last system error %d: %s)\n", lerrno, strerror(lerrno));
     }
   } else {
-
     snprintf(extended_format, sizeof(extended_format), "FATAL ==> %s", message_format);
     vsprintf(message, extended_format, ap);
 
@@ -432,13 +423,15 @@ mgmt_fatal(const int lerrno, const char *message_format, ...)
 
   mgmt_cleanup();
   _exit(1);
-}                               /* End mgmt_fatal */
+} /* End mgmt_fatal */
 
 static inline int
 get_interface_mtu(int sock_fd, struct ifreq *ifr)
 {
   if (ioctl(sock_fd, SIOCGIFMTU, ifr) < 0) {
-    mgmt_log(stderr, "[getAddrForIntr] Unable to obtain MTU for " "interface '%s'", ifr->ifr_name);
+    mgmt_log(stderr, "[getAddrForIntr] Unable to obtain MTU for "
+                     "interface '%s'",
+             ifr->ifr_name);
     return 0;
   } else
 #if defined(solaris) || defined(hpux)
@@ -449,7 +442,7 @@ get_interface_mtu(int sock_fd, struct ifreq *ifr)
 }
 
 bool
-mgmt_getAddrForIntr(char *intrName, sockaddr* addr, int *mtu)
+mgmt_getAddrForIntr(char *intrName, sockaddr *addr, int *mtu)
 {
   bool found = false;
 
@@ -457,10 +450,10 @@ mgmt_getAddrForIntr(char *intrName, sockaddr* addr, int *mtu)
     return false;
   }
 
-  int fakeSocket;               // a temporary socket to pass to ioctl
-  struct ifconf ifc;            // ifconf information
-  char *ifbuf;                  // ifconf buffer
-  struct ifreq *ifr, *ifend;    // pointer to individual inferface info
+  int fakeSocket;            // a temporary socket to pass to ioctl
+  struct ifconf ifc;         // ifconf information
+  char *ifbuf;               // ifconf buffer
+  struct ifreq *ifr, *ifend; // pointer to individual inferface info
   int lastlen;
   int len;
 
@@ -475,10 +468,10 @@ mgmt_getAddrForIntr(char *intrName, sockaddr* addr, int *mtu)
   // . from Stevens, Unix Network Prog., pg 434-435
   ifbuf = 0;
   lastlen = 0;
-  len = 128 * sizeof(struct ifreq);     // initial buffer size guess
+  len = 128 * sizeof(struct ifreq); // initial buffer size guess
   for (;;) {
     ifbuf = (char *)ats_malloc(len);
-    memset(ifbuf, 0, len);      // prevent UMRs
+    memset(ifbuf, 0, len); // prevent UMRs
     ifc.ifc_len = len;
     ifc.ifc_buf = ifbuf;
     if (ioctl(fakeSocket, SIOCGIFCONF, &ifc) < 0) {
@@ -497,11 +490,11 @@ mgmt_getAddrForIntr(char *intrName, sockaddr* addr, int *mtu)
 
   found = false;
   // Loop through the list of interfaces
-  ifend = (struct ifreq *) (ifc.ifc_buf + ifc.ifc_len);
+  ifend = (struct ifreq *)(ifc.ifc_buf + ifc.ifc_len);
   for (ifr = ifc.ifc_req; ifr < ifend;) {
     if (ifr->ifr_addr.sa_family == AF_INET && strcmp(ifr->ifr_name, intrName) == 0) {
       // Get the address of the interface
-      if (ioctl(fakeSocket, SIOCGIFADDR, (char *) ifr) < 0) {
+      if (ioctl(fakeSocket, SIOCGIFADDR, (char *)ifr) < 0) {
         mgmt_log(stderr, "[getAddrForIntr] Unable obtain address for network interface %s\n", intrName);
       } else {
         // Only look at the address if it an internet address
@@ -519,16 +512,16 @@ mgmt_getAddrForIntr(char *intrName, sockaddr* addr, int *mtu)
       }
     }
 #if defined(freebsd) || defined(darwin)
-    ifr = (struct ifreq *) ((char *) &ifr->ifr_addr + ifr->ifr_addr.sa_len);
+    ifr = (struct ifreq *)((char *)&ifr->ifr_addr + ifr->ifr_addr.sa_len);
 #else
-    ifr = (struct ifreq *) (((char *) ifr) + sizeof(*ifr));
+    ifr = (struct ifreq *)(((char *)ifr) + sizeof(*ifr));
 #endif
   }
   ats_free(ifbuf);
   close(fakeSocket);
 
   return found;
-}                               /* End mgmt_getAddrForIntr */
+} /* End mgmt_getAddrForIntr */
 
 /*
  * mgmt_sortipaddrs(...)
@@ -543,7 +536,7 @@ mgmt_sortipaddrs(int num, struct in_addr **list)
 
   min = (list[0])->s_addr;
   entry = list[0];
-  while (i < num && (tmp = (struct in_addr *) list[i]) != NULL) {
+  while (i < num && (tmp = (struct in_addr *)list[i]) != NULL) {
     i++;
     if (min > tmp->s_addr) {
       min = tmp->s_addr;
@@ -551,7 +544,7 @@ mgmt_sortipaddrs(int num, struct in_addr **list)
     }
   }
   return entry;
-}                               /* End mgmt_sortipaddrs */
+} /* End mgmt_sortipaddrs */
 
 void
 mgmt_sleep_sec(int seconds)

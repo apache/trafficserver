@@ -34,140 +34,133 @@
 #include <string.h>
 #include <stdlib.h>
 
-static char* redirect_url_header = NULL;
+static char *redirect_url_header = NULL;
 static int redirect_url_header_len = 0;
 static int return_code = TS_HTTP_STATUS_NONE;
 
 static void
-handle_response (TSHttpTxn txnp, TSCont /* contp ATS_UNUSED */)
+handle_response(TSHttpTxn txnp, TSCont /* contp ATS_UNUSED */)
 {
-    TSMBuffer resp_bufp;
-    TSMLoc resp_loc;
-    TSMBuffer req_bufp;
-    TSMLoc req_loc;
-    TSMLoc redirect_url_loc;
-    TSHttpStatus status;
-    const char *redirect_url_str;
-    int redirect_url_length;
+  TSMBuffer resp_bufp;
+  TSMLoc resp_loc;
+  TSMBuffer req_bufp;
+  TSMLoc req_loc;
+  TSMLoc redirect_url_loc;
+  TSHttpStatus status;
+  const char *redirect_url_str;
+  int redirect_url_length;
 
-    if (TSHttpTxnServerRespGet (txnp, &resp_bufp, &resp_loc) != TS_SUCCESS) {
-        TSError ("couldn't retrieve server response header\n");
-    }
-    else {
-        if ( (status = TSHttpHdrStatusGet (resp_bufp, resp_loc)) == TS_HTTP_STATUS_NONE ) {
-            TSError ("couldn't retrieve status from client response header\n");
-        }
-        else {
-            if(TSHttpTxnClientReqGet (txnp, &req_bufp, &req_loc) != TS_SUCCESS) {
-                TSError ("couldn't retrieve server response header\n");
+  if (TSHttpTxnServerRespGet(txnp, &resp_bufp, &resp_loc) != TS_SUCCESS) {
+    TSError("couldn't retrieve server response header\n");
+  } else {
+    if ((status = TSHttpHdrStatusGet(resp_bufp, resp_loc)) == TS_HTTP_STATUS_NONE) {
+      TSError("couldn't retrieve status from client response header\n");
+    } else {
+      if (TSHttpTxnClientReqGet(txnp, &req_bufp, &req_loc) != TS_SUCCESS) {
+        TSError("couldn't retrieve server response header\n");
+      } else {
+        int method_len;
+        const char *method = TSHttpHdrMethodGet(req_bufp, req_loc, &method_len);
+        if ((return_code == TS_HTTP_STATUS_NONE || return_code == status) &&
+            ((strncasecmp(method, TS_HTTP_METHOD_GET, TS_HTTP_LEN_GET) == 0))) {
+          redirect_url_loc = TSMimeHdrFieldFind(resp_bufp, resp_loc, redirect_url_header, redirect_url_header_len);
+
+          if (redirect_url_loc) {
+            redirect_url_str = TSMimeHdrFieldValueStringGet(resp_bufp, resp_loc, redirect_url_loc, -1, &redirect_url_length);
+            if (redirect_url_str) {
+              if (redirect_url_length > 0) {
+                char *url = (char *)TSmalloc(redirect_url_length + 1);
+
+                TSstrlcpy(url, redirect_url_str, redirect_url_length + 1);
+                TSHttpTxnRedirectUrlSet(txnp, url, redirect_url_length);
+              }
             }
-            else {
-                int method_len;
-                const char *method = TSHttpHdrMethodGet(req_bufp, req_loc, &method_len);
-                if ((return_code == TS_HTTP_STATUS_NONE || return_code == status) && ((strncasecmp(method, TS_HTTP_METHOD_GET, TS_HTTP_LEN_GET) == 0))) {
-                  redirect_url_loc = TSMimeHdrFieldFind (resp_bufp, resp_loc, redirect_url_header, redirect_url_header_len);
-
-                    if (redirect_url_loc) {
-                        redirect_url_str = TSMimeHdrFieldValueStringGet (resp_bufp, resp_loc, redirect_url_loc, -1, &redirect_url_length);
-                        if (redirect_url_str) {
-                            if (redirect_url_length > 0) {
-                              char* url = (char*)TSmalloc(redirect_url_length+1);
-
-                              TSstrlcpy(url, redirect_url_str, redirect_url_length + 1);
-                              TSHttpTxnRedirectUrlSet(txnp, url, redirect_url_length);
-                            }
-                        }
-                        TSHandleMLocRelease (resp_bufp, resp_loc, redirect_url_loc);
-                    }
-                }
-                //TSHandleStringRelease(req_bufp, req_loc, method);
-                TSHandleMLocRelease (req_bufp, TS_NULL_MLOC, req_loc);
-            }
+            TSHandleMLocRelease(resp_bufp, resp_loc, redirect_url_loc);
+          }
         }
-        TSHandleMLocRelease (resp_bufp, TS_NULL_MLOC, resp_loc);
+        // TSHandleStringRelease(req_bufp, req_loc, method);
+        TSHandleMLocRelease(req_bufp, TS_NULL_MLOC, req_loc);
+      }
     }
-    TSHttpTxnReenable (txnp, TS_EVENT_HTTP_CONTINUE);
+    TSHandleMLocRelease(resp_bufp, TS_NULL_MLOC, resp_loc);
+  }
+  TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
 }
 
 
 static int
-plugin_main_handler (TSCont contp, TSEvent event, void *edata)
+plugin_main_handler(TSCont contp, TSEvent event, void *edata)
 {
-    switch (event)
-    {
-        case TS_EVENT_HTTP_READ_RESPONSE_HDR:
-        {
-            TSHttpTxn txnp = (TSHttpTxn) edata;
-            TSDebug( "[custom_redirect1]", "MAIN_HANDLER::TS_HTTP_READ_RESPONSE_HDR_HOOK" );
-            handle_response(txnp, contp);
-            break;
-        }
+  switch (event) {
+  case TS_EVENT_HTTP_READ_RESPONSE_HDR: {
+    TSHttpTxn txnp = (TSHttpTxn)edata;
+    TSDebug("[custom_redirect1]", "MAIN_HANDLER::TS_HTTP_READ_RESPONSE_HDR_HOOK");
+    handle_response(txnp, contp);
+    break;
+  }
 
 
-        default:
-        {
-            TSDebug( "[custom_redirect]", "default event");
-            break;
-        }
-    }
+  default: {
+    TSDebug("[custom_redirect]", "default event");
+    break;
+  }
+  }
 
-    return 0;
+  return 0;
 }
 
 bool
 isNumber(const char *str)
 {
-    for (int i=0; str[i] != '\0'; i++) {
-        if (!isdigit(str[i])) {
-            return false;
-        }
+  for (int i = 0; str[i] != '\0'; i++) {
+    if (!isdigit(str[i])) {
+      return false;
     }
-    return true;
+  }
+  return true;
 }
 
 void
-TSPluginInit (int argc, const char *argv[])
+TSPluginInit(int argc, const char *argv[])
 {
-  //TSPluginRegistrationInfo info;
+  // TSPluginRegistrationInfo info;
 
-/*
-    info.plugin_name = (char*)"";
-    info.vendor_name = (char*)"Apache Software Foundation";
-    info.support_email = (char*)"dev@trafficserver.apache.org";
-*/
-    /* This plugin supports following types of url redirect here:
-     *
-     * 1. User can specify a particular redirect-url header name in the plugin command line,
-     *    in which case plugin will just look for that header in response and redirect to it.
-     *
-     *OR:
-     * 2. User can also specify a return error code, in which case if the code matches with
-     *    the response, plugin will look for the standard "Location" header and redirect to it
-     *
-     *OR:
-     * 3. If nothing specified, plugin will assume the first case and use the default redirect-url
-     *    header name "x-redirect-url"
-    */
-    if (argc > 1) {
-        if (isNumber(argv[1])) {
-            return_code = atoi(argv[1]);
-            redirect_url_header = TSstrdup(TS_MIME_FIELD_LOCATION);
-        } else {
-            redirect_url_header = TSstrdup(argv[1]);
-        }
+  /*
+      info.plugin_name = (char*)"";
+      info.vendor_name = (char*)"Apache Software Foundation";
+      info.support_email = (char*)"dev@trafficserver.apache.org";
+  */
+  /* This plugin supports following types of url redirect here:
+   *
+   * 1. User can specify a particular redirect-url header name in the plugin command line,
+   *    in which case plugin will just look for that header in response and redirect to it.
+   *
+   *OR:
+   * 2. User can also specify a return error code, in which case if the code matches with
+   *    the response, plugin will look for the standard "Location" header and redirect to it
+   *
+   *OR:
+   * 3. If nothing specified, plugin will assume the first case and use the default redirect-url
+   *    header name "x-redirect-url"
+  */
+  if (argc > 1) {
+    if (isNumber(argv[1])) {
+      return_code = atoi(argv[1]);
+      redirect_url_header = TSstrdup(TS_MIME_FIELD_LOCATION);
+    } else {
+      redirect_url_header = TSstrdup(argv[1]);
     }
-    else {
-        // default header name is x-redirect-url
-        redirect_url_header = TSstrdup("x-redirect-url");
-        redirect_url_header_len = strlen(redirect_url_header);
-    }
-    /*
-    if (TSPluginRegister (TS_SDK_VERSION_5_2 , &info) != TS_SUCCESS) {
-        TSError ("[custom_redirect] Plugin registration failed.");
-    }
-    */
-    TSError("[custom_redirect] Plugin registered successfully.");
-    TSCont mainCont = TSContCreate(plugin_main_handler, NULL);
-    TSHttpHookAdd (TS_HTTP_READ_RESPONSE_HDR_HOOK, mainCont);
+  } else {
+    // default header name is x-redirect-url
+    redirect_url_header = TSstrdup("x-redirect-url");
+    redirect_url_header_len = strlen(redirect_url_header);
+  }
+  /*
+  if (TSPluginRegister (TS_SDK_VERSION_5_2 , &info) != TS_SUCCESS) {
+      TSError ("[custom_redirect] Plugin registration failed.");
+  }
+  */
+  TSError("[custom_redirect] Plugin registered successfully.");
+  TSCont mainCont = TSContCreate(plugin_main_handler, NULL);
+  TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, mainCont);
 }
-

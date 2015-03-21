@@ -22,7 +22,6 @@
  */
 
 
-
 #ifndef LOG_SOCK_H
 #define LOG_SOCK_H
 
@@ -38,14 +37,12 @@
 class LogSock
 {
 public:
-  enum Constant
-  {
+  enum Constant {
     LS_CONST_PACKETSIZE = 1024,
-    LS_CONST_CLUSTER_MAX_MACHINES = 256
+    LS_CONST_CLUSTER_MAX_MACHINES = 256,
   };
 
-  enum Err
-  {
+  enum Err {
     LS_ERROR_UNKNOWN = -1,
     LS_ERROR_CONNECT_TABLE_FULL = -3,
     LS_ERROR_SOCKET = -4,
@@ -59,12 +56,11 @@ public:
     LS_ERROR_READ = -12
   };
 
-  enum State
-  {
+  enum State {
     LS_STATE_UNUSED = 0,
     LS_STATE_INCOMING,
     LS_STATE_OUTGOING,
-    LS_N_STATES
+    LS_N_STATES,
   };
 
 public:
@@ -78,22 +74,24 @@ public:
 
   int listen(int accept_port, int family = AF_INET);
   int accept();
-  int connect(sockaddr const* ip);
+  int connect(sockaddr const *ip);
 
-  void close(int cid);          // this connection
-  void close();                 // all connections
+  void close(int cid); // this connection
+  void close();        // all connections
 
   int write(int cid, void *buf, int bytes);
 
   int read(int cid, void *buf, unsigned maxsize);
   void *read_alloc(int cid, int *size);
 
-  char *on_host()
+  char *
+  on_host()
   {
     return ct[0].host;
   }
 
-  int on_port()
+  int
+  on_port()
   {
     return ct[0].port;
   }
@@ -105,35 +103,33 @@ public:
   int connected_port(int cid);
 
 private:
-  struct ConnectTable
-  {
-    char *host;                 // hostname for this connection
-    int port;                   // port number for this connection
-    int sd;                     // socket descriptor for this connection
-    State state;                // state of this entry
+  struct ConnectTable {
+    char *host;  // hostname for this connection
+    int port;    // port number for this connection
+    int sd;      // socket descriptor for this connection
+    State state; // state of this entry
   };
 
-  struct MsgHeader
-  {
-    int msg_bytes;              // length of the following message
+  struct MsgHeader {
+    int msg_bytes; // length of the following message
   };
 
 private:
   bool pending_data(int *cid, int timeout_msec, bool include_connects);
   int new_cid();
   void init_cid(int cid, char *host, int port, int sd, State state);
-  int read_header(int sd, MsgHeader * header);
+  int read_header(int sd, MsgHeader *header);
   int read_body(int sd, void *buf, int bytes);
 
 private:
-  ConnectTable * ct;            // list of all connections; index 0 is
+  ConnectTable *ct; // list of all connections; index 0 is
   // the accept port.
-  bool m_accept_connections;    // do we accept new connections?
-  int m_max_connections;        // max size of all tables
+  bool m_accept_connections; // do we accept new connections?
+  int m_max_connections;     // max size of all tables
 
 private:
   LogSock(const LogSock &);
-  LogSock & operator=(const LogSock &);
+  LogSock &operator=(const LogSock &);
 };
 
 #endif

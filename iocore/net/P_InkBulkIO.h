@@ -35,18 +35,18 @@
  *  - the first 8 bits contain the character representing the device
  *  - bits 8-15 refer to the ioctl
  */
-#define INKBIO_IOC ('x' << 8)   /* 'x' to represent 'xx' */
+#define INKBIO_IOC ('x' << 8) /* 'x' to represent 'xx' */
 
-#define INKBIO_SEND      (INKBIO_IOC | 1)
-#define INKBIO_BALLOC    (INKBIO_IOC | 2)
+#define INKBIO_SEND (INKBIO_IOC | 1)
+#define INKBIO_BALLOC (INKBIO_IOC | 2)
 
 #define INKBIO_GET_STATS (INKBIO_IOC | 3)
 
-#define INKBIO_NOP       (INKBIO_IOC | 7)
-#define INKBIO_MEMCPY    (INKBIO_IOC | 8)
+#define INKBIO_NOP (INKBIO_IOC | 7)
+#define INKBIO_MEMCPY (INKBIO_IOC | 8)
 
 /* For ioctl's that are destined to the STREAMS module for getting at q ptrs */
-#define INKBIO_REGISTER   1024
+#define INKBIO_REGISTER 1024
 
 #define INKBIO_MAX_BLOCKS 512
 
@@ -63,14 +63,12 @@
 /*
  * Describes a block of BulkIO memory
  */
-struct InkBulkIOBlock
-{
-  void *ptr;                    /* where is it at */
+struct InkBulkIOBlock {
+  void *ptr; /* where is it at */
   uint32_t id;
 };
 
-typedef struct
-{
+typedef struct {
   uint32_t nextFreeIdx;
   uint32_t numFreeBlocks;
   uint32_t freeBlockId[INKBIO_MAX_BLOCKS];
@@ -80,19 +78,17 @@ typedef struct
 /*
  * Describes a packet to be sent.  Found after a request header in a request block
  */
-struct InkBulkIOPkt
-{
+struct InkBulkIOPkt {
   uint32_t blockID;
   /* Set only in the first fragment of a chain.  Contains the size of the packet */
   uint32_t pktsize;
   /* If the thing is a chain, the size of the fragment */
   uint16_t fragsize;
-  uint16_t inChain:1;
-  uint16_t reserved:15;
+  uint16_t inChain : 1;
+  uint16_t reserved : 15;
 };
 
-struct InkBulkIOAddrInfo
-{
+struct InkBulkIOAddrInfo {
   uint32_t ip;
   uint16_t port;
 };
@@ -102,8 +98,7 @@ struct InkBulkIOAddrInfo
  *   - sender, receiver: ip/port info.
  *   - list of InkBulkIOPkt terminated by a 0xffffffff
  */
-struct InkBulkIOSendtoRequest
-{
+struct InkBulkIOSendtoRequest {
   /* declarations are done so that things in a req. block are usually 4-byte aligned */
   uint16_t pktCount;
   struct InkBulkIOAddrInfo src;
@@ -120,39 +115,35 @@ struct InkBulkIOSendtoRequest
  *      terminate list by 0xffffffff
  */
 
-struct InkBulkIOSplitRequest
-{
+struct InkBulkIOSplitRequest {
   /* declarations are done so that things in a req. block are usually 4-byte
    * aligned */
   uint16_t recvCount;
   struct InkBulkIOAddrInfo src;
-  uint16_t perDestHeader;       /* boolean */
+  uint16_t perDestHeader; /* boolean */
 };
 
 /*
  * Describes a request header, part of a request block
  */
-struct InkBulkIORequest
-{
-  uint16_t reqType;             /* one of sendto or split */
-  union
-  {
+struct InkBulkIORequest {
+  uint16_t reqType; /* one of sendto or split */
+  union {
     struct InkBulkIOSendtoRequest sendto;
     struct InkBulkIOSplitRequest split;
   } request;
 };
 
 #define INKBIO_SENDTO_REQUEST 0x0a
-#define INKBIO_SPLIT_REQUEST  0xf1
+#define INKBIO_SPLIT_REQUEST 0xf1
 
 /*
  * Purposely, under specify the size; we need to leave space for the "terminating" packet.
  * Every block contains at least 1 request.
  */
-#define INKBIO_MAX_PKTS_PER_REQ_BLOCK ((INKBIO_PKT_SIZE_WO_UDPHDR - \
-					(sizeof(struct InkBulkIORequest) + sizeof(struct InkBulkIOPkt))) / \
-				       MAX((sizeof (struct InkBulkIORequest)), \
-					   (sizeof(struct InkBulkIOPkt))))
+#define INKBIO_MAX_PKTS_PER_REQ_BLOCK                                                              \
+  ((INKBIO_PKT_SIZE_WO_UDPHDR - (sizeof(struct InkBulkIORequest) + sizeof(struct InkBulkIOPkt))) / \
+   MAX((sizeof(struct InkBulkIORequest)), (sizeof(struct InkBulkIOPkt))))
 
 /*
  * Requests are just block-ids---the block id points to the inkbio-block
@@ -167,13 +158,15 @@ struct InkBulkIORequest
  * Leave space for 1 "NULL" block for the Address information.
  */
 
-#define INKBIO_MAX_SPLIT_WO_HDR_PER_SPLIT_BLOCK ((INKBIO_PKT_SIZE_WO_UDPHDR - \
-					(sizeof(struct InkBulkIORequest) + sizeof(struct InkBulkIOPkt) + sizeof(struct InkBulkIOAddrInfo))) / \
-					(sizeof(struct InkBulkIOAddrInfo)))
+#define INKBIO_MAX_SPLIT_WO_HDR_PER_SPLIT_BLOCK                                                           \
+  ((INKBIO_PKT_SIZE_WO_UDPHDR -                                                                           \
+    (sizeof(struct InkBulkIORequest) + sizeof(struct InkBulkIOPkt) + sizeof(struct InkBulkIOAddrInfo))) / \
+   (sizeof(struct InkBulkIOAddrInfo)))
 
-#define INKBIO_MAX_SPLIT_WITH_HDR_PER_SPLIT_BLOCK ((INKBIO_PKT_SIZE_WO_UDPHDR - \
-					(sizeof(struct InkBulkIORequest) + sizeof(struct InkBulkIOPkt) + sizeof(struct InkBulkIOAddrInfo))) / \
-					(sizeof(struct InkBulkIOPkt) + sizeof(struct InkBulkIOAddrInfo)))
+#define INKBIO_MAX_SPLIT_WITH_HDR_PER_SPLIT_BLOCK                                                         \
+  ((INKBIO_PKT_SIZE_WO_UDPHDR -                                                                           \
+    (sizeof(struct InkBulkIORequest) + sizeof(struct InkBulkIOPkt) + sizeof(struct InkBulkIOAddrInfo))) / \
+   (sizeof(struct InkBulkIOPkt) + sizeof(struct InkBulkIOAddrInfo)))
 
 
 #endif

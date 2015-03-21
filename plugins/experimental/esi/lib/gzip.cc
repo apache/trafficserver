@@ -31,16 +31,20 @@
 using namespace EsiLib;
 using std::string;
 
-template<typename T>
-inline void append(string &out, T data) {
+template <typename T>
+inline void
+append(string &out, T data)
+{
   for (unsigned int i = 0; i < sizeof(data); ++i) {
     out += static_cast<char>(data & 0xff);
     data = data >> 8;
   }
 }
 
-template<typename T>
-inline void extract(const char *in, T &data) {
+template <typename T>
+inline void
+extract(const char *in, T &data)
+{
   data = 0;
   for (int i = (sizeof(data) - 1); i >= 0; --i) {
     data = data << 8;
@@ -48,7 +52,9 @@ inline void extract(const char *in, T &data) {
   }
 }
 
-inline int runDeflateLoop(z_stream &zstrm, int flush, std::string &cdata) {
+inline int
+runDeflateLoop(z_stream &zstrm, int flush, std::string &cdata)
+{
   char buf[BUF_SIZE];
   int deflate_result = Z_OK;
   do {
@@ -68,14 +74,14 @@ inline int runDeflateLoop(z_stream &zstrm, int flush, std::string &cdata) {
 }
 
 bool
-EsiLib::gzip(const ByteBlockList& blocks, std::string &cdata) {
+EsiLib::gzip(const ByteBlockList &blocks, std::string &cdata)
+{
   cdata.assign(GZIP_HEADER_SIZE, 0); // reserving space for the header
   z_stream zstrm;
   zstrm.zalloc = Z_NULL;
   zstrm.zfree = Z_NULL;
   zstrm.opaque = Z_NULL;
-  if (deflateInit2(&zstrm, COMPRESSION_LEVEL, Z_DEFLATED, -MAX_WBITS,
-                   ZLIB_MEM_LEVEL, Z_DEFAULT_STRATEGY) != Z_OK) {
+  if (deflateInit2(&zstrm, COMPRESSION_LEVEL, Z_DEFLATED, -MAX_WBITS, ZLIB_MEM_LEVEL, Z_DEFAULT_STRATEGY) != Z_OK) {
     Utils::ERROR_LOG("[%s] deflateInit2 failed!", __FUNCTION__);
     return false;
   }
@@ -98,7 +104,7 @@ EsiLib::gzip(const ByteBlockList& blocks, std::string &cdata) {
     }
   }
   if (!in_data_size) {
-      zstrm.avail_in = 0; // required for the "finish" loop as no data has been given so far
+    zstrm.avail_in = 0; // required for the "finish" loop as no data has been given so far
   }
   if (deflate_result == Z_OK) {
     deflate_result = runDeflateLoop(zstrm, Z_FINISH, cdata);
@@ -118,13 +124,13 @@ EsiLib::gzip(const ByteBlockList& blocks, std::string &cdata) {
 }
 
 bool
-EsiLib::gunzip(const char *data, int data_len, BufferList &buf_list) {
+EsiLib::gunzip(const char *data, int data_len, BufferList &buf_list)
+{
   if (!data || (data_len <= (GZIP_HEADER_SIZE + GZIP_TRAILER_SIZE))) {
     Utils::ERROR_LOG("[%s] Invalid arguments: 0x%p, %d", __FUNCTION__, data, data_len);
     return false;
   }
-  if ((data[0] != MAGIC_BYTE_1) || (data[1] != MAGIC_BYTE_2) || (data[2] != Z_DEFLATED) ||
-      (data[9] != OS_TYPE)) {
+  if ((data[0] != MAGIC_BYTE_1) || (data[1] != MAGIC_BYTE_2) || (data[2] != Z_DEFLATED) || (data[9] != OS_TYPE)) {
     Utils::ERROR_LOG("[%s] Header check failed!", __FUNCTION__);
     return false;
   }
@@ -189,8 +195,8 @@ EsiLib::gunzip(const char *data, int data_len, BufferList &buf_list) {
   extract(data + data_len, orig_crc);
   extract(data + data_len + 4, orig_size);
   if ((crc != orig_crc) || (unzipped_data_size != orig_size)) {
-    Utils::ERROR_LOG("[%s] CRC/size error. Expecting (CRC, size) (0x%x, 0x%x); computed (0x%x, 0x%x)",
-                     __FUNCTION__, orig_crc, orig_size, crc, unzipped_data_size);
+    Utils::ERROR_LOG("[%s] CRC/size error. Expecting (CRC, size) (0x%x, 0x%x); computed (0x%x, 0x%x)", __FUNCTION__, orig_crc,
+                     orig_size, crc, unzipped_data_size);
     return false;
   }
   return true;

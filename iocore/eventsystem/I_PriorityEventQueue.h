@@ -29,30 +29,27 @@
 
 
 // <5ms, 10, 20, 40, 80, 160, 320, 640, 1280, 2560, 5120
-#define N_PQ_LIST        10
+#define N_PQ_LIST 10
 #define PQ_BUCKET_TIME(_i) (HRTIME_MSECONDS(5) << (_i))
 
 class EThread;
 
-struct PriorityEventQueue
-{
-
+struct PriorityEventQueue {
   Que(Event, link) after[N_PQ_LIST];
   ink_hrtime last_check_time;
   uint32_t last_check_buckets;
 
-  void enqueue(Event * e, ink_hrtime now)
+  void
+  enqueue(Event *e, ink_hrtime now)
   {
     ink_hrtime t = e->timeout_at - now;
     int i = 0;
     // equivalent but faster
-    if (t <= PQ_BUCKET_TIME(3))
-    {
+    if (t <= PQ_BUCKET_TIME(3)) {
       if (t <= PQ_BUCKET_TIME(1)) {
         if (t <= PQ_BUCKET_TIME(0)) {
           i = 0;
-        } else
-        {
+        } else {
           i = 1;
         }
       } else {
@@ -90,16 +87,18 @@ struct PriorityEventQueue
     after[i].enqueue(e);
   }
 
-  void remove(Event * e)
+  void
+  remove(Event *e)
   {
     ink_assert(e->in_the_priority_queue);
     e->in_the_priority_queue = 0;
     after[e->in_heap].remove(e);
   }
 
-  Event *dequeue_ready(ink_hrtime t)
+  Event *
+  dequeue_ready(ink_hrtime t)
   {
-    (void) t;
+    (void)t;
     Event *e = after[0].dequeue();
     if (e) {
       ink_assert(e->in_the_priority_queue);
@@ -108,9 +107,10 @@ struct PriorityEventQueue
     return e;
   }
 
-  void check_ready(ink_hrtime now, EThread * t);
+  void check_ready(ink_hrtime now, EThread *t);
 
-  ink_hrtime earliest_timeout()
+  ink_hrtime
+  earliest_timeout()
   {
     for (int i = 0; i < N_PQ_LIST; i++) {
       if (after[i].head)

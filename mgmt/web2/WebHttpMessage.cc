@@ -43,84 +43,25 @@
  ****************************************************************************/
 
 const char *const httpStatStr[] = {
-  "100 Continue\r\n",
-  "101 Switching Protocols\r\n",
-  "200 OK\r\n",
-  "201 Created\r\n",
-  "202 Accepted\r\n",
-  "203 Non-Authorative Information\r\n",
-  "204 No Content\r\n",
-  "205 Reset Content\r\n",
-  "206 Partial Content\r\n",
-  "300 Multiple Choices\r\n",
-  "301 Moved Permanently\r\n",
-  "302 Moved Temporarily\r\n",
-  "303 See Other\r\n",
-  "304 Not Modified\r\n",
-  "305 Use Proxy\r\n",
-  "400 Bad Request\r\n",
-  "401 Unauthorized\r\n",
-  "402 Payment Required\r\n",
-  "403 Forbidden\r\n",
-  "404 Not Found\r\n",
-  "500 Internal Server Error\r\n",
-  "501 Not Implemented\r\n",
-  "502 Bad Gateway\r\n",
-  "503 Service Unvailable\r\n",
-  "504 Gateway Timeout\r\n",
-  "505 HTTP Version Not Supported\r\n"
-};
+  "100 Continue\r\n", "101 Switching Protocols\r\n", "200 OK\r\n", "201 Created\r\n", "202 Accepted\r\n",
+  "203 Non-Authorative Information\r\n", "204 No Content\r\n", "205 Reset Content\r\n", "206 Partial Content\r\n",
+  "300 Multiple Choices\r\n", "301 Moved Permanently\r\n", "302 Moved Temporarily\r\n", "303 See Other\r\n", "304 Not Modified\r\n",
+  "305 Use Proxy\r\n", "400 Bad Request\r\n", "401 Unauthorized\r\n", "402 Payment Required\r\n", "403 Forbidden\r\n",
+  "404 Not Found\r\n", "500 Internal Server Error\r\n", "501 Not Implemented\r\n", "502 Bad Gateway\r\n",
+  "503 Service Unvailable\r\n", "504 Gateway Timeout\r\n", "505 HTTP Version Not Supported\r\n"};
 
-const char *const httpStatCode[] = {
-  "100",
-  "101",
-  "200",
-  "201",
-  "202",
-  "203",
-  "204",
-  "205",
-  "206",
-  "300",
-  "301",
-  "302",
-  "303",
-  "304",
-  "305",
-  "400",
-  "401",
-  "402",
-  "403",
-  "404",
-  "500",
-  "501",
-  "502",
-  "503",
-  "504",
-  "505"
-};
+const char *const httpStatCode[] = {"100", "101", "200", "201", "202", "203", "204", "205", "206", "300", "301", "302", "303",
+                                    "304", "305", "400", "401", "402", "403", "404", "500", "501", "502", "503", "504", "505"};
 
-const char *const contentTypeStr[] = {
-  "text/plain",
-  "text/html",
-  "text/css",
-  "text/unknown",
-  "image/gif",
-  "image/jpeg",
-  "image/png",
-  "application/java-vm",
-  "application/x-javascript",
-  "application/x-x509-ca-cert",
-  "application/x-ns-proxy-autoconfig",
-  "application/zip"
-};
+const char *const contentTypeStr[] = {"text/plain", "text/html", "text/css", "text/unknown", "image/gif", "image/jpeg", "image/png",
+                                      "application/java-vm", "application/x-javascript", "application/x-x509-ca-cert",
+                                      "application/x-ns-proxy-autoconfig", "application/zip"};
 
 
 // httpMessage::httpMessage()
 //
 httpMessage::httpMessage()
 {
-
   method = METHOD_NONE;
   header = NULL;
   body = NULL;
@@ -148,7 +89,6 @@ httpMessage::getLogInfo(const char **request)
 int
 httpMessage::addRequestLine(char *request)
 {
-
   const char *method_str;
   const char *scheme_str;
   const char *URI;
@@ -197,7 +137,6 @@ httpMessage::addRequestLine(char *request)
   if (scheme_str == NULL) {
     scheme = SCHEME_NONE;
   } else {
-
     if (strncasecmp(scheme_str, "HTTP", 4) == 0) {
       scheme = SCHEME_HTTP;
     } else if (strncasecmp(scheme_str, "SHTTP", 5) == 0) {
@@ -237,7 +176,6 @@ httpMessage::addRequestLine(char *request)
 void
 httpMessage::addHeader(char *hdr)
 {
-
   const char *authType;
   const char *auth;
   int len;
@@ -256,9 +194,9 @@ httpMessage::addHeader(char *hdr)
   if (strncasecmp("Content-length:", hdrName, 15) == 0) {
     conLen = atoi(hdrArg1);
   } else if (strncasecmp("Referer:", hdrName, 8) == 0) {
-      unsigned int amtToAllocate = strlen(hdrArg1);
-      referer = new char[amtToAllocate + 1];
-      ink_strlcpy(referer, hdrArg1, amtToAllocate + 1);
+    unsigned int amtToAllocate = strlen(hdrArg1);
+    referer = new char[amtToAllocate + 1];
+    ink_strlcpy(referer, hdrArg1, amtToAllocate + 1);
   } else if (strncasecmp("Content-type:", hdrName, 13) == 0) {
     unsigned int amtToAllocate = strlen(hdrArg1);
     conType_str = new char[amtToAllocate + 1];
@@ -289,7 +227,6 @@ httpMessage::addHeader(char *hdr)
 void
 httpMessage::getModDate()
 {
-
   // Since the dates have spaces in them, we have to recontruct
   //   them.  Sigh.
   int i = 1;
@@ -301,11 +238,11 @@ httpMessage::getModDate()
   Tokenizer *equalTok = NULL;
 
   // First, figure out the number of fields
-  for (i = 1; (*parser)[i] != NULL && strstr((*parser)[i++], ";") == NULL;);
+  for (i = 1; (*parser)[i] != NULL && strstr((*parser)[i++], ";") == NULL;)
+    ;
   numDateFields = i - 1;
 
   if (numDateFields > 0) {
-
     // Next, figure out the size of the string we need
     for (i = 0; i < numDateFields; i++) {
       dateSize += strlen((*parser)[i + 1]);
@@ -330,7 +267,7 @@ httpMessage::getModDate()
     }
 
     modificationTime = mime_parse_date(dateStr);
-    delete[]dateStr;
+    delete[] dateStr;
 
     // Now figure out the content length from if modified
     if (parser->count() > (unsigned)(numDateFields + 1)) {
@@ -382,11 +319,11 @@ httpMessage::addRequestBody(SocketInfo socketD)
 
 httpMessage::~httpMessage()
 {
-  delete[]body;
-  delete[]file;
-  delete[]referer;
-  delete[]conType_str;
-  delete[]authMessage;
+  delete[] body;
+  delete[] file;
+  delete[] referer;
+  delete[] conType_str;
+  delete[] authMessage;
 
   ats_free(client_request);
   delete parser;
@@ -568,7 +505,7 @@ httpResponse::setLocationURL(const char *url)
 
 
 void
-httpResponse::getLogInfo(const char **date, HttpStatus_t * statusIn, int *length)
+httpResponse::getLogInfo(const char **date, HttpStatus_t *statusIn, int *length)
 {
   *date = dateResponse;
   *statusIn = status;

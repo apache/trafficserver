@@ -42,7 +42,7 @@
   -------------------------------------------------------------------------*/
 
 void
-StrList::dump(FILE * fp)
+StrList::dump(FILE *fp)
 {
   Str *str;
 
@@ -64,23 +64,23 @@ StrList::_new_cell(const char *s, int len_not_counting_nul)
   if (cells_allocated < STRLIST_BASE_CELLS) {
     cell = &(base_cells[cells_allocated]);
   } else {
-    p = (char *) alloc(sizeof(Str) + 7);
+    p = (char *)alloc(sizeof(Str) + 7);
     if (p == NULL)
-      return (NULL);            // FIX: scale heap
-    p = (char *) ((((uintptr_t)p) + 7) & ~7);       // round up to multiple of 8
-    cell = (Str *) p;
+      return (NULL);                         // FIX: scale heap
+    p = (char *)((((uintptr_t)p) + 7) & ~7); // round up to multiple of 8
+    cell = (Str *)p;
   }
   ++cells_allocated;
 
   // are we supposed to copy the string?
   if (copy_when_adding_string) {
-    char *buf = (char *) alloc(l + 1);
+    char *buf = (char *)alloc(l + 1);
     if (buf == NULL)
-      return (NULL);            // FIX: need to grow heap!
+      return (NULL); // FIX: need to grow heap!
     memcpy(buf, s, l);
     buf[l] = '\0';
 
-    cell->str = (const char *) buf;
+    cell->str = (const char *)buf;
   } else {
     cell->str = s;
   }
@@ -114,7 +114,7 @@ StrList::overflow_heap_clean()
 }
 
 
-#define INIT_OVERFLOW_ALIGNMENT      8
+#define INIT_OVERFLOW_ALIGNMENT 8
 // XXX: This is basically INK_ALIGN_DEFAULT
 const int overflow_head_hdr_size = INK_ALIGN(sizeof(StrListOverflow), INIT_OVERFLOW_ALIGNMENT);
 
@@ -140,9 +140,8 @@ StrListOverflow::clean()
 }
 
 void *
-StrListOverflow::alloc(int size, StrListOverflow ** new_heap_ptr)
+StrListOverflow::alloc(int size, StrListOverflow **new_heap_ptr)
 {
-
   if (size > (heap_size - heap_used)) {
     int new_heap_size = heap_size * 2;
 
@@ -156,11 +155,11 @@ StrListOverflow::alloc(int size, StrListOverflow ** new_heap_ptr)
     return next->alloc(size, new_heap_ptr);
   }
 
-  char *start = ((char *) this) + overflow_head_hdr_size;
+  char *start = ((char *)this) + overflow_head_hdr_size;
   char *rval = start + heap_used;
   heap_used += size;
   ink_assert(heap_used <= heap_size);
-  return (void *) rval;
+  return (void *)rval;
 }
 
 StrListOverflow *

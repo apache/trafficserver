@@ -40,86 +40,60 @@ struct RecRawStatBlock *icp_rsb;
 void
 ICPProcessor::InitICPStatCallbacks()
 {
-  icp_rsb = RecAllocateRawStatBlock((int) icp_stat_count);
+  icp_rsb = RecAllocateRawStatBlock((int)icp_stat_count);
 
-  RecRegisterRawStat(icp_rsb, RECT_PROCESS,
-                     "proxy.process.icp.config_mgmt_callouts",
-                     RECD_INT, RECP_PERSISTENT, (int) config_mgmt_callouts_stat, RecRawStatSyncCount);
-  RecRegisterRawStat(icp_rsb, RECT_PROCESS,
-                     "proxy.process.icp.reconfig_polls",
-                     RECD_INT, RECP_PERSISTENT, (int) reconfig_polls_stat, RecRawStatSyncCount);
-  RecRegisterRawStat(icp_rsb, RECT_PROCESS,
-                     "proxy.process.icp.reconfig_events",
-                     RECD_INT, RECP_PERSISTENT, (int) reconfig_events_stat, RecRawStatSyncCount);
-  RecRegisterRawStat(icp_rsb, RECT_PROCESS,
-                     "proxy.process.icp.invalid_poll_data",
-                     RECD_INT, RECP_PERSISTENT, (int) invalid_poll_data_stat, RecRawStatSyncCount);
-  RecRegisterRawStat(icp_rsb, RECT_PROCESS,
-                     "proxy.process.icp.no_data_read",
-                     RECD_INT, RECP_PERSISTENT, (int) no_data_read_stat, RecRawStatSyncCount);
-  RecRegisterRawStat(icp_rsb, RECT_PROCESS,
-                     "proxy.process.icp.short_read", RECD_INT, RECP_PERSISTENT, (int) short_read_stat, RecRawStatSyncCount);
-  RecRegisterRawStat(icp_rsb, RECT_PROCESS,
-                     "proxy.process.icp.invalid_sender",
-                     RECD_INT, RECP_PERSISTENT, (int) invalid_sender_stat, RecRawStatSyncCount);
-  RecRegisterRawStat(icp_rsb, RECT_PROCESS,
-                     "proxy.process.icp.read_not_v2_icp",
-                     RECD_INT, RECP_PERSISTENT, (int) read_not_v2_icp_stat, RecRawStatSyncCount);
-  RecRegisterRawStat(icp_rsb, RECT_PROCESS,
-                     "proxy.process.icp.icp_remote_query_requests",
-                     RECD_INT, RECP_PERSISTENT, (int) icp_remote_query_requests_stat, RecRawStatSyncCount);
-  RecRegisterRawStat(icp_rsb, RECT_PROCESS,
-                     "proxy.process.icp.icp_remote_responses",
-                     RECD_INT, RECP_PERSISTENT, (int) icp_remote_responses_stat, RecRawStatSyncCount);
-  RecRegisterRawStat(icp_rsb, RECT_PROCESS,
-                     "proxy.process.icp.cache_lookup_success",
-                     RECD_INT, RECP_PERSISTENT, (int) icp_cache_lookup_success_stat, RecRawStatSyncCount);
-  RecRegisterRawStat(icp_rsb, RECT_PROCESS,
-                     "proxy.process.icp.cache_lookup_fail",
-                     RECD_INT, RECP_PERSISTENT, (int) icp_cache_lookup_fail_stat, RecRawStatSyncCount);
-  RecRegisterRawStat(icp_rsb, RECT_PROCESS,
-                     "proxy.process.icp.query_response_write",
-                     RECD_INT, RECP_PERSISTENT, (int) query_response_write_stat, RecRawStatSyncCount);
-  RecRegisterRawStat(icp_rsb, RECT_PROCESS,
-                     "proxy.process.icp.query_response_partial_write",
-                     RECD_INT, RECP_PERSISTENT, (int) query_response_partial_write_stat, RecRawStatSyncCount);
-  RecRegisterRawStat(icp_rsb, RECT_PROCESS,
-                     "proxy.process.icp.no_icp_request_for_response",
-                     RECD_INT, RECP_PERSISTENT, (int) no_icp_request_for_response_stat, RecRawStatSyncCount);
-  RecRegisterRawStat(icp_rsb, RECT_PROCESS,
-                     "proxy.process.icp.icp_response_request_nolock",
-                     RECD_INT, RECP_PERSISTENT, (int) icp_response_request_nolock_stat, RecRawStatSyncCount);
-  RecRegisterRawStat(icp_rsb, RECT_PROCESS,
-                     "proxy.process.icp.icp_start_icpoff",
-                     RECD_INT, RECP_PERSISTENT, (int) icp_start_icpoff_stat, RecRawStatSyncCount);
-  RecRegisterRawStat(icp_rsb, RECT_PROCESS,
-                     "proxy.process.icp.send_query_partial_write",
-                     RECD_INT, RECP_PERSISTENT, (int) send_query_partial_write_stat, RecRawStatSyncCount);
-  RecRegisterRawStat(icp_rsb, RECT_PROCESS,
-                     "proxy.process.icp.icp_queries_no_expected_replies",
-                     RECD_INT, RECP_PERSISTENT, (int) icp_queries_no_expected_replies_stat, RecRawStatSyncCount);
-  RecRegisterRawStat(icp_rsb, RECT_PROCESS,
-                     "proxy.process.icp.icp_query_hits",
-                     RECD_INT, RECP_PERSISTENT, (int) icp_query_hits_stat, RecRawStatSyncCount);
-  RecRegisterRawStat(icp_rsb, RECT_PROCESS,
-                     "proxy.process.icp.icp_query_misses",
-                     RECD_INT, RECP_PERSISTENT, (int) icp_query_misses_stat, RecRawStatSyncCount);
-  RecRegisterRawStat(icp_rsb, RECT_PROCESS,
-                     "proxy.process.icp.invalid_icp_query_response",
-                     RECD_INT, RECP_PERSISTENT, (int) invalid_icp_query_response_stat, RecRawStatSyncCount);
-  RecRegisterRawStat(icp_rsb, RECT_PROCESS,
-                     "proxy.process.icp.icp_query_requests",
-                     RECD_INT, RECP_PERSISTENT, (int) icp_query_requests_stat, RecRawStatSyncCount);
-  RecRegisterRawStat(icp_rsb, RECT_PROCESS,
-                     "proxy.process.icp.total_icp_response_time",
-                     RECD_FLOAT, RECP_PERSISTENT, (int) total_icp_response_time_stat, RecRawStatSyncMHrTimeAvg);
-  RecRegisterRawStat(icp_rsb, RECT_PROCESS,
-                     "proxy.process.icp.total_udp_send_queries",
-                     RECD_INT, RECP_PERSISTENT, (int) total_udp_send_queries_stat, RecRawStatSyncSum);
-  RecRegisterRawStat(icp_rsb, RECT_PROCESS,
-                     "proxy.process.icp.total_icp_request_time",
-                     RECD_FLOAT, RECP_PERSISTENT, (int) total_icp_request_time_stat, RecRawStatSyncMHrTimeAvg);
-
+  RecRegisterRawStat(icp_rsb, RECT_PROCESS, "proxy.process.icp.config_mgmt_callouts", RECD_INT, RECP_PERSISTENT,
+                     (int)config_mgmt_callouts_stat, RecRawStatSyncCount);
+  RecRegisterRawStat(icp_rsb, RECT_PROCESS, "proxy.process.icp.reconfig_polls", RECD_INT, RECP_PERSISTENT, (int)reconfig_polls_stat,
+                     RecRawStatSyncCount);
+  RecRegisterRawStat(icp_rsb, RECT_PROCESS, "proxy.process.icp.reconfig_events", RECD_INT, RECP_PERSISTENT,
+                     (int)reconfig_events_stat, RecRawStatSyncCount);
+  RecRegisterRawStat(icp_rsb, RECT_PROCESS, "proxy.process.icp.invalid_poll_data", RECD_INT, RECP_PERSISTENT,
+                     (int)invalid_poll_data_stat, RecRawStatSyncCount);
+  RecRegisterRawStat(icp_rsb, RECT_PROCESS, "proxy.process.icp.no_data_read", RECD_INT, RECP_PERSISTENT, (int)no_data_read_stat,
+                     RecRawStatSyncCount);
+  RecRegisterRawStat(icp_rsb, RECT_PROCESS, "proxy.process.icp.short_read", RECD_INT, RECP_PERSISTENT, (int)short_read_stat,
+                     RecRawStatSyncCount);
+  RecRegisterRawStat(icp_rsb, RECT_PROCESS, "proxy.process.icp.invalid_sender", RECD_INT, RECP_PERSISTENT, (int)invalid_sender_stat,
+                     RecRawStatSyncCount);
+  RecRegisterRawStat(icp_rsb, RECT_PROCESS, "proxy.process.icp.read_not_v2_icp", RECD_INT, RECP_PERSISTENT,
+                     (int)read_not_v2_icp_stat, RecRawStatSyncCount);
+  RecRegisterRawStat(icp_rsb, RECT_PROCESS, "proxy.process.icp.icp_remote_query_requests", RECD_INT, RECP_PERSISTENT,
+                     (int)icp_remote_query_requests_stat, RecRawStatSyncCount);
+  RecRegisterRawStat(icp_rsb, RECT_PROCESS, "proxy.process.icp.icp_remote_responses", RECD_INT, RECP_PERSISTENT,
+                     (int)icp_remote_responses_stat, RecRawStatSyncCount);
+  RecRegisterRawStat(icp_rsb, RECT_PROCESS, "proxy.process.icp.cache_lookup_success", RECD_INT, RECP_PERSISTENT,
+                     (int)icp_cache_lookup_success_stat, RecRawStatSyncCount);
+  RecRegisterRawStat(icp_rsb, RECT_PROCESS, "proxy.process.icp.cache_lookup_fail", RECD_INT, RECP_PERSISTENT,
+                     (int)icp_cache_lookup_fail_stat, RecRawStatSyncCount);
+  RecRegisterRawStat(icp_rsb, RECT_PROCESS, "proxy.process.icp.query_response_write", RECD_INT, RECP_PERSISTENT,
+                     (int)query_response_write_stat, RecRawStatSyncCount);
+  RecRegisterRawStat(icp_rsb, RECT_PROCESS, "proxy.process.icp.query_response_partial_write", RECD_INT, RECP_PERSISTENT,
+                     (int)query_response_partial_write_stat, RecRawStatSyncCount);
+  RecRegisterRawStat(icp_rsb, RECT_PROCESS, "proxy.process.icp.no_icp_request_for_response", RECD_INT, RECP_PERSISTENT,
+                     (int)no_icp_request_for_response_stat, RecRawStatSyncCount);
+  RecRegisterRawStat(icp_rsb, RECT_PROCESS, "proxy.process.icp.icp_response_request_nolock", RECD_INT, RECP_PERSISTENT,
+                     (int)icp_response_request_nolock_stat, RecRawStatSyncCount);
+  RecRegisterRawStat(icp_rsb, RECT_PROCESS, "proxy.process.icp.icp_start_icpoff", RECD_INT, RECP_PERSISTENT,
+                     (int)icp_start_icpoff_stat, RecRawStatSyncCount);
+  RecRegisterRawStat(icp_rsb, RECT_PROCESS, "proxy.process.icp.send_query_partial_write", RECD_INT, RECP_PERSISTENT,
+                     (int)send_query_partial_write_stat, RecRawStatSyncCount);
+  RecRegisterRawStat(icp_rsb, RECT_PROCESS, "proxy.process.icp.icp_queries_no_expected_replies", RECD_INT, RECP_PERSISTENT,
+                     (int)icp_queries_no_expected_replies_stat, RecRawStatSyncCount);
+  RecRegisterRawStat(icp_rsb, RECT_PROCESS, "proxy.process.icp.icp_query_hits", RECD_INT, RECP_PERSISTENT, (int)icp_query_hits_stat,
+                     RecRawStatSyncCount);
+  RecRegisterRawStat(icp_rsb, RECT_PROCESS, "proxy.process.icp.icp_query_misses", RECD_INT, RECP_PERSISTENT,
+                     (int)icp_query_misses_stat, RecRawStatSyncCount);
+  RecRegisterRawStat(icp_rsb, RECT_PROCESS, "proxy.process.icp.invalid_icp_query_response", RECD_INT, RECP_PERSISTENT,
+                     (int)invalid_icp_query_response_stat, RecRawStatSyncCount);
+  RecRegisterRawStat(icp_rsb, RECT_PROCESS, "proxy.process.icp.icp_query_requests", RECD_INT, RECP_PERSISTENT,
+                     (int)icp_query_requests_stat, RecRawStatSyncCount);
+  RecRegisterRawStat(icp_rsb, RECT_PROCESS, "proxy.process.icp.total_icp_response_time", RECD_FLOAT, RECP_PERSISTENT,
+                     (int)total_icp_response_time_stat, RecRawStatSyncMHrTimeAvg);
+  RecRegisterRawStat(icp_rsb, RECT_PROCESS, "proxy.process.icp.total_udp_send_queries", RECD_INT, RECP_PERSISTENT,
+                     (int)total_udp_send_queries_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(icp_rsb, RECT_PROCESS, "proxy.process.icp.total_icp_request_time", RECD_FLOAT, RECP_PERSISTENT,
+                     (int)total_icp_request_time_stat, RecRawStatSyncMHrTimeAvg);
 }
 
 // End of ICPStats.cc

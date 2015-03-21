@@ -38,8 +38,7 @@
  ****************************************************************************/
 
 /* define method       */
-enum Method_t
-{
+enum Method_t {
   METHOD_NONE = 0,
   METHOD_OPTIONS,
   METHOD_GET,
@@ -52,8 +51,7 @@ enum Method_t
 };
 
 /* defined http status codes constants */
-enum HttpStatus_t
-{
+enum HttpStatus_t {
   STATUS_CONTINUE = 0,
   STATUS_SWITCHING_PROTOCOL,
 
@@ -87,16 +85,14 @@ enum HttpStatus_t
 };
 
 /* define scheme type */
-enum Scheme_t
-{
+enum Scheme_t {
   SCHEME_UNKNOWN = -1,
   SCHEME_NONE = 0,
   SCHEME_HTTP,
-  SCHEME_SHTTP
+  SCHEME_SHTTP,
 };
 
-enum Content_t
-{
+enum Content_t {
   TEXT_PLAIN = 0,
   TEXT_HTML,
   TEXT_CSS,
@@ -121,50 +117,61 @@ public:
   httpMessage();
   ~httpMessage();
 
-  Method_t getMethod()
+  Method_t
+  getMethod()
   {
     return method;
   };
-  const char *getFile()
+  const char *
+  getFile()
   {
     return file;
   };
-  const char *getQuery()
+  const char *
+  getQuery()
   {
     return query;
   };
-  Scheme_t getScheme()
+  Scheme_t
+  getScheme()
   {
     return scheme;
   };
-  const char *getHeader()
+  const char *
+  getHeader()
   {
     return header;
   };
-  char *getBody()
+  char *
+  getBody()
   {
     return body;
   };
-  int getConLen()
+  int
+  getConLen()
   {
     return conLen;
   };
-  const char *getReferer()
+  const char *
+  getReferer()
   {
     if (referer != NULL) {
       return referer;
     }
     return NULL;
   };
-  const char *getContentType()
+  const char *
+  getContentType()
   {
     return conType_str;
   };
-  const char *getAuthMessage()
+  const char *
+  getAuthMessage()
   {
     return authMessage;
   };
-  time_t getModTime()
+  time_t
+  getModTime()
   {
     return modificationTime;
   };
@@ -173,14 +180,15 @@ public:
   void addHeader(char *);
   int addRequestBody(SocketInfo socketD);
 
-//  void Print();
+  //  void Print();
   void getLogInfo(const char **request);
+
 private:
   httpMessage(const httpMessage &);
   void getModDate();
   Method_t method;
   char *file;
-  //char* referer;
+  // char* referer;
   char *query;
   Scheme_t scheme;
   char *header;
@@ -192,7 +200,7 @@ private:
   Tokenizer *parser;
   time_t modificationTime;
   int modContentLength;
-  char *client_request;         // Request as the client sent it.  For logs
+  char *client_request; // Request as the client sent it.  For logs
 };
 
 class httpResponse
@@ -201,7 +209,8 @@ public:
   httpResponse();
   ~httpResponse();
 
-  void setContentType(Content_t ct)
+  void
+  setContentType(Content_t ct)
   {
     conType = ct;
   };
@@ -209,65 +218,76 @@ public:
   // stored in conType. Example: "Content-type: text/html\r\n".
   void setContentType(const char *str);
 
-  void setLength(int x)
+  void
+  setLength(int x)
   {
     conLen = x;
   };
-  int getLength()
+  int
+  getLength()
   {
     return conLen;
   };
 
-  void setStatus(HttpStatus_t s)
+  void
+  setStatus(HttpStatus_t s)
   {
     status = s;
   };
-  HttpStatus_t getStatus()
+  HttpStatus_t
+  getStatus()
   {
     return status;
   };
 
 
-  void setRefresh(int i)
+  void
+  setRefresh(int i)
   {
     refresh = i;
   };
-  int getRefresh()
+  int
+  getRefresh()
   {
     return refresh;
   };
 
-  const char *getRefreshURL()
+  const char *
+  getRefreshURL()
   {
     return refreshURL;
   };
   void setRefreshURL(const char *url);
 
-  const char *getLocationURL()
+  const char *
+  getLocationURL()
   {
     return locationURL;
   };
   void setLocationURL(const char *url);
 
   void setRealm(const char *);
-  void setLastMod(time_t lm)
+  void
+  setLastMod(time_t lm)
   {
     lastMod = lm;
   };
 
-  void setCachable(int c)
+  void
+  setCachable(int c)
   {
     if ((cachable = c) == 0) {
       lastMod = -1;
     }
   }
-  int getCachable()
+  int
+  getCachable()
   {
     return cachable;
   }
 
   int writeHdr(SocketInfo socketD);
-  void getLogInfo(const char **date, HttpStatus_t * status, int *legth);
+  void getLogInfo(const char **date, HttpStatus_t *status, int *legth);
 
 private:
   httpResponse(const httpResponse &);
@@ -281,7 +301,7 @@ private:
   char *locationURL;
   time_t lastMod;
   int cachable;
-  char *dateResponse;           // for logs
+  char *dateResponse; // for logs
 };
 
 #endif

@@ -45,9 +45,8 @@
   -------------------------------------------------------------------------*/
 
 MIMEParseResult
-HTTPHdr::parse_req(HTTPParser * parser, IOBufferReader * r, int *bytes_used, bool eof)
+HTTPHdr::parse_req(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool eof)
 {
-
   const char *start;
   const char *tmp;
   const char *end;
@@ -77,7 +76,7 @@ HTTPHdr::parse_req(HTTPParser * parser, IOBufferReader * r, int *bytes_used, boo
     m_heap->set_ronly_str_heap_end(heap_slot, tmp);
     m_heap->unlock_ronly_str_heap(heap_slot);
 
-    used = (int) (tmp - start);
+    used = (int)(tmp - start);
     r->consume(used);
     *bytes_used += used;
 
@@ -87,7 +86,7 @@ HTTPHdr::parse_req(HTTPParser * parser, IOBufferReader * r, int *bytes_used, boo
 }
 
 MIMEParseResult
-HTTPHdr::parse_resp(HTTPParser * parser, IOBufferReader * r, int *bytes_used, bool eof)
+HTTPHdr::parse_resp(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool eof)
 {
   const char *start;
   const char *tmp;
@@ -117,7 +116,7 @@ HTTPHdr::parse_resp(HTTPParser * parser, IOBufferReader * r, int *bytes_used, bo
     m_heap->set_ronly_str_heap_end(heap_slot, tmp);
     m_heap->unlock_ronly_str_heap(heap_slot);
 
-    used = (int) (tmp - start);
+    used = (int)(tmp - start);
     r->consume(used);
     *bytes_used += used;
 
@@ -144,7 +143,7 @@ HdrHeap::set_ronly_str_heap_end(int slot, const char *end)
   ink_assert(m_ronly_heap[slot].m_heap_start <= end);
   ink_assert(end <= m_ronly_heap[slot].m_heap_start + m_ronly_heap[slot].m_heap_len);
 
-  m_ronly_heap[slot].m_heap_len = (int) (end - m_ronly_heap[slot].m_heap_start);
+  m_ronly_heap[slot].m_heap_len = (int)(end - m_ronly_heap[slot].m_heap_start);
 }
 
 
@@ -159,9 +158,8 @@ HdrHeap::set_ronly_str_heap_end(int slot, const char *end)
 //      use_start specificies where we start using the block (INKqa07409)
 //
 int
-HdrHeap::attach_block(IOBufferBlock * b, const char *use_start)
+HdrHeap::attach_block(IOBufferBlock *b, const char *use_start)
 {
-
   ink_assert(m_writeable);
 
 RETRY:
@@ -173,22 +171,22 @@ RETRY:
   for (int i = 0; i < HDR_BUF_RONLY_HEAPS; i++) {
     if (m_ronly_heap[i].m_heap_start == NULL) {
       // Add block to heap in this slot
-      m_ronly_heap[i].m_heap_start = (char *) use_start;
-      m_ronly_heap[i].m_heap_len = (int) (b->end() - b->start());
+      m_ronly_heap[i].m_heap_start = (char *)use_start;
+      m_ronly_heap[i].m_heap_len = (int)(b->end() - b->start());
       m_ronly_heap[i].m_ref_count_ptr = b->data;
-//          printf("Attaching block at %X for %d in slot %d\n",
-//                 m_ronly_heap[i].m_heap_start,
-//                 m_ronly_heap[i].m_heap_len,
-//                 i);
+      //          printf("Attaching block at %X for %d in slot %d\n",
+      //                 m_ronly_heap[i].m_heap_start,
+      //                 m_ronly_heap[i].m_heap_len,
+      //                 i);
       return i;
     } else if (m_ronly_heap[i].m_heap_start == b->buf()) {
       // This block is already on the heap so just extend
       //   it's range
-      m_ronly_heap[i].m_heap_len = (int) (b->end() - b->buf());
-//          printf("Extending block at %X to %d in slot %d\n",
-//                 m_ronly_heap[i].m_heap_start,
-//                 m_ronly_heap[i].m_heap_len,
-//                 i);
+      m_ronly_heap[i].m_heap_len = (int)(b->end() - b->buf());
+      //          printf("Extending block at %X to %d in slot %d\n",
+      //                 m_ronly_heap[i].m_heap_start,
+      //                 m_ronly_heap[i].m_heap_len,
+      //                 i);
       return i;
     }
   }

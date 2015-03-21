@@ -45,15 +45,17 @@ struct NetAccept;
 //  class SSLNetProcessor
 //
 //////////////////////////////////////////////////////////////////
-struct SSLNetProcessor : public UnixNetProcessor
-{
+struct SSLNetProcessor : public UnixNetProcessor {
 public:
-
   virtual int start(int no_of_ssl_threads, size_t stacksize);
 
   void cleanup(void);
 
-  SSL_CTX *getClientSSL_CTX(void) const { return client_ctx; }
+  SSL_CTX *
+  getClientSSL_CTX(void) const
+  {
+    return client_ctx;
+  }
 
   SSLNetProcessor();
   virtual ~SSLNetProcessor();
@@ -70,12 +72,12 @@ public:
   // to be upgraded to ET_SSL for SSLNetProcessor.
   virtual void upgradeEtype(EventType &etype);
 
-  virtual NetAccept * createNetAccept();
-  virtual NetVConnection * allocate_vc(EThread *t);
+  virtual NetAccept *createNetAccept();
+  virtual NetVConnection *allocate_vc(EThread *t);
 
 private:
   SSLNetProcessor(const SSLNetProcessor &);
-  SSLNetProcessor & operator =(const SSLNetProcessor &);
+  SSLNetProcessor &operator=(const SSLNetProcessor &);
 };
 
 extern SSLNetProcessor ssl_NetProcessor;

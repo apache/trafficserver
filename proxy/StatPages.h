@@ -59,39 +59,30 @@
 //    B. Each protocol/sybsystem should have their own information.
 //       For example
 
-#define STAT_PAGE_SUCCESS           STAT_PAGES_EVENTS_START+0
-#define STAT_PAGE_FAILURE           STAT_PAGES_EVENTS_START+1
+#define STAT_PAGE_SUCCESS STAT_PAGES_EVENTS_START + 0
+#define STAT_PAGE_FAILURE STAT_PAGES_EVENTS_START + 1
 
-typedef Action *(*StatPagesFunc) (Continuation * cont, HTTPHdr * header);
+typedef Action *(*StatPagesFunc)(Continuation *cont, HTTPHdr *header);
 
-struct StatPageData
-{
+struct StatPageData {
   char *data;
   char *type;
   int length;
 
-    StatPageData():data(NULL), type(NULL), length(0)
-  {
-  }
-  StatPageData(char *adata):data(adata), type(NULL)
-  {
-    length = strlen(adata);
-  }
-  StatPageData(char *adata, int alength):data(adata), type(NULL), length(alength)
-  {
-  }
+  StatPageData() : data(NULL), type(NULL), length(0) {}
+  StatPageData(char *adata) : data(adata), type(NULL) { length = strlen(adata); }
+  StatPageData(char *adata, int alength) : data(adata), type(NULL), length(alength) {}
 };
 
-struct StatPagesManager
-{
+struct StatPagesManager {
   void init();
 
   inkcoreapi void register_http(const char *hostname, StatPagesFunc func);
 
   // Private
-  Action *handle_http(Continuation * cont, HTTPHdr * header);
-  bool is_stat_page(URL * url);
-  bool is_cache_inspector_page(URL * url);
+  Action *handle_http(Continuation *cont, HTTPHdr *header);
+  bool is_stat_page(URL *url);
+  bool is_cache_inspector_page(URL *url);
   int m_enabled;
 };
 
@@ -99,18 +90,13 @@ inkcoreapi extern StatPagesManager statPagesManager;
 
 // Stole Pete's code for formatting the page and slapped it here
 //   for easy reuse
-class BaseStatPagesHandler:public Continuation
+class BaseStatPagesHandler : public Continuation
 {
 public:
-  BaseStatPagesHandler(ProxyMutex * amutex):Continuation(amutex), response(NULL), response_size(0), response_length(0)
-  {
-  };
-  ~BaseStatPagesHandler() {
-    resp_clear();
-  };
+  BaseStatPagesHandler(ProxyMutex *amutex) : Continuation(amutex), response(NULL), response_size(0), response_length(0){};
+  ~BaseStatPagesHandler() { resp_clear(); };
 
 protected:
-
   inkcoreapi void resp_clear(void);
   inkcoreapi void resp_add(const char *fmt, ...);
   inkcoreapi void resp_add_sep(void);

@@ -34,8 +34,7 @@ static const char PLUGIN_NAME[] = "conf_remap";
 
 
 // Class to hold a set of configurations (one for each remap rule instance)
-struct RemapConfigs
-{
+struct RemapConfigs {
   struct Item {
     TSOverridableConfigKey _name;
     TSRecordDataType _type;
@@ -43,11 +42,7 @@ struct RemapConfigs
     int _data_len; // Used when data is a string
   };
 
-  RemapConfigs()
-    : _current(0)
-  {
-    memset(_items, 0, sizeof(_items));
-  };
+  RemapConfigs() : _current(0) { memset(_items, 0, sizeof(_items)); };
 
   bool parse_file(const char *filename);
   bool parse_inline(const char *arg);
@@ -58,7 +53,7 @@ struct RemapConfigs
 
 // Helper functionfor the parser
 inline TSRecordDataType
-str_to_datatype(const char* str)
+str_to_datatype(const char *str)
 {
   TSRecordDataType type = TS_RECORDDATATYPE_NULL;
 
@@ -78,7 +73,7 @@ str_to_datatype(const char* str)
 bool
 RemapConfigs::parse_inline(const char *arg)
 {
-  const char* sep;
+  const char *sep;
   std::string key;
   std::string value;
 
@@ -100,21 +95,21 @@ RemapConfigs::parse_inline(const char *arg)
   }
 
   switch (type) {
-    case TS_RECORDDATATYPE_INT:
-      _items[_current]._data.rec_int = strtoll(value.c_str(), NULL, 10);
-      break;
-    case TS_RECORDDATATYPE_STRING:
-      if (strcmp(value.c_str(), "NULL") == 0) {
-        _items[_current]._data.rec_string = NULL;
-        _items[_current]._data_len = 0;
-      } else {
-        _items[_current]._data.rec_string = TSstrdup(value.c_str());
-        _items[_current]._data_len = value.size();
-      }
-      break;
-    default:
-      TSError("%s: configuration variable '%s' is of an unsupported type", PLUGIN_NAME, key.c_str());
-      return false;
+  case TS_RECORDDATATYPE_INT:
+    _items[_current]._data.rec_int = strtoll(value.c_str(), NULL, 10);
+    break;
+  case TS_RECORDDATATYPE_STRING:
+    if (strcmp(value.c_str(), "NULL") == 0) {
+      _items[_current]._data.rec_string = NULL;
+      _items[_current]._data_len = 0;
+    } else {
+      _items[_current]._data.rec_string = TSstrdup(value.c_str());
+      _items[_current]._data_len = value.size();
+    }
+    break;
+  default:
+    TSError("%s: configuration variable '%s' is of an unsupported type", PLUGIN_NAME, key.c_str());
+    return false;
   }
 
   _items[_current]._name = name;
@@ -125,7 +120,7 @@ RemapConfigs::parse_inline(const char *arg)
 
 // Config file parser, somewhat borrowed from P_RecCore.i
 bool
-RemapConfigs::parse_file(const char* filename)
+RemapConfigs::parse_file(const char *filename)
 {
   int line_num = 0;
   TSFile file;
@@ -249,7 +244,7 @@ RemapConfigs::parse_file(const char* filename)
 // Initialize the plugin as a remap plugin.
 //
 TSReturnCode
-TSRemapInit(TSRemapInterface* api_info, char *errbuf, int errbuf_size)
+TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 {
   if (!api_info) {
     TSstrlcpy(errbuf, "[TSRemapInit] - Invalid TSRemapInterface argument", errbuf_size);
@@ -262,19 +257,19 @@ TSRemapInit(TSRemapInterface* api_info, char *errbuf, int errbuf_size)
   }
 
   TSDebug(PLUGIN_NAME, "remap plugin is successfully initialized");
-  return TS_SUCCESS;                     /* success */
+  return TS_SUCCESS; /* success */
 }
 
 
 TSReturnCode
-TSRemapNewInstance(int argc, char* argv[], void** ih, char* /* errbuf ATS_UNUSED */, int /* errbuf_size ATS_UNUSED */)
+TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSED */, int /* errbuf_size ATS_UNUSED */)
 {
   if (argc < 3) {
     TSError("Unable to create remap instance, need configuration file");
     return TS_ERROR;
   }
 
-  RemapConfigs* conf = new(RemapConfigs);
+  RemapConfigs *conf = new (RemapConfigs);
 
   for (int i = 2; i < argc; ++i) {
     if (strchr(argv[i], '=') != NULL) {
@@ -290,7 +285,7 @@ TSRemapNewInstance(int argc, char* argv[], void** ih, char* /* errbuf ATS_UNUSED
     }
   }
 
-  *ih = static_cast<void*>(conf);
+  *ih = static_cast<void *>(conf);
   return TS_SUCCESS;
 
 fail:
@@ -299,11 +294,11 @@ fail:
 }
 
 void
-TSRemapDeleteInstance(void* ih)
+TSRemapDeleteInstance(void *ih)
 {
-  RemapConfigs* conf = static_cast<RemapConfigs*>(ih);
+  RemapConfigs *conf = static_cast<RemapConfigs *>(ih);
 
-  for (int ix=0; ix < conf->_current; ++ix) {
+  for (int ix = 0; ix < conf->_current; ++ix) {
     if (TS_RECORDDATATYPE_STRING == conf->_items[ix]._type)
       TSfree(conf->_items[ix]._data.rec_string);
   }
@@ -316,17 +311,17 @@ TSRemapDeleteInstance(void* ih)
 // Main entry point when used as a remap plugin.
 //
 TSRemapStatus
-TSRemapDoRemap(void* ih, TSHttpTxn rh, TSRemapRequestInfo* /* rri ATS_UNUSED */)
+TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo * /* rri ATS_UNUSED */)
 {
   if (NULL != ih) {
-    RemapConfigs* conf = static_cast<RemapConfigs*>(ih);
+    RemapConfigs *conf = static_cast<RemapConfigs *>(ih);
     TSHttpTxn txnp = static_cast<TSHttpTxn>(rh);
 
-    for (int ix=0; ix < conf->_current; ++ix) {
+    for (int ix = 0; ix < conf->_current; ++ix) {
       switch (conf->_items[ix]._type) {
       case TS_RECORDDATATYPE_INT:
         TSHttpTxnConfigIntSet(txnp, conf->_items[ix]._name, conf->_items[ix]._data.rec_int);
-        TSDebug(PLUGIN_NAME, "Setting config id %d to %" PRId64"", conf->_items[ix]._name, conf->_items[ix]._data.rec_int);
+        TSDebug(PLUGIN_NAME, "Setting config id %d to %" PRId64 "", conf->_items[ix]._name, conf->_items[ix]._data.rec_int);
         break;
       case TS_RECORDDATATYPE_STRING:
         TSHttpTxnConfigStringSet(txnp, conf->_items[ix]._name, conf->_items[ix]._data.rec_string, conf->_items[ix]._data_len);
@@ -340,7 +335,6 @@ TSRemapDoRemap(void* ih, TSHttpTxn rh, TSRemapRequestInfo* /* rri ATS_UNUSED */)
 
   return TSREMAP_NO_REMAP; // This plugin never rewrites anything.
 }
-
 
 
 /*

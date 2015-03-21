@@ -31,16 +31,12 @@ ClassAllocator<SpdyRequest> spdyRequestAllocator("spdyRequestAllocator");
 #include "SpdyClientSession.h"
 
 static const spdylay_proto_version versmap[] = {
-  SPDYLAY_PROTO_SPDY2,    // SPDY_VERSION_2
-  SPDYLAY_PROTO_SPDY3,    // SPDY_VERSION_3
-  SPDYLAY_PROTO_SPDY3_1,  // SPDY_VERSION_3_1
+  SPDYLAY_PROTO_SPDY2,   // SPDY_VERSION_2
+  SPDYLAY_PROTO_SPDY3,   // SPDY_VERSION_3
+  SPDYLAY_PROTO_SPDY3_1, // SPDY_VERSION_3_1
 };
 
-static char const* const  npnmap[] = {
-  TS_NPN_PROTOCOL_SPDY_2,
-  TS_NPN_PROTOCOL_SPDY_3,
-  TS_NPN_PROTOCOL_SPDY_3_1
-};
+static char const *const npnmap[] = {TS_NPN_PROTOCOL_SPDY_2, TS_NPN_PROTOCOL_SPDY_3, TS_NPN_PROTOCOL_SPDY_3_1};
 
 #endif
 static int spdy_process_read(TSEvent event, SpdyClientSession *sm);
@@ -89,7 +85,7 @@ SpdyRequest::clear()
 }
 
 void
-SpdyClientSession::init(NetVConnection * netvc, spdy::SessionVersion vers)
+SpdyClientSession::init(NetVConnection *netvc, spdy::SessionVersion vers)
 {
   int r;
 
@@ -128,9 +124,9 @@ SpdyClientSession::clear()
   // SpdyRequest depends on SpdyClientSession,
   // we should delete it firstly to avoid race.
   //
-  map<int, SpdyRequest*>::iterator iter = req_map.begin();
-  map<int, SpdyRequest*>::iterator endIter = req_map.end();
-  for(; iter != endIter; ++iter) {
+  map<int, SpdyRequest *>::iterator iter = req_map.begin();
+  map<int, SpdyRequest *>::iterator endIter = req_map.end();
+  for (; iter != endIter; ++iter) {
     SpdyRequest *req = iter->second;
     if (req) {
       req->clear();
@@ -174,14 +170,13 @@ SpdyClientSession::clear()
     session = NULL;
   }
 
-  Debug("spdy-free", "****Delete SpdyClientSession[%" PRIu64 "], last event:%d" PRIu64,
-        sm_id, last_event);
+  Debug("spdy-free", "****Delete SpdyClientSession[%" PRIu64 "], last event:%d" PRIu64, sm_id, last_event);
 }
 
 void
-spdy_cs_create(NetVConnection * netvc, spdy::SessionVersion vers, MIOBuffer * iobuf, IOBufferReader * reader)
+spdy_cs_create(NetVConnection *netvc, spdy::SessionVersion vers, MIOBuffer *iobuf, IOBufferReader *reader)
 {
-  SpdyClientSession  *sm;
+  SpdyClientSession *sm;
 
   sm = spdyClientSessionAllocator.alloc();
   sm->init(netvc, vers);
@@ -199,17 +194,16 @@ int
 SpdyClientSession::state_session_start(int /* event */, void * /* edata */)
 {
   const spdylay_settings_entry entries[] = {
-    { SPDYLAY_SETTINGS_MAX_CONCURRENT_STREAMS, SPDYLAY_ID_FLAG_SETTINGS_NONE, spdy_max_concurrent_streams },
-    { SPDYLAY_SETTINGS_INITIAL_WINDOW_SIZE, SPDYLAY_ID_FLAG_SETTINGS_NONE, spdy_initial_window_size }
-  };
+    {SPDYLAY_SETTINGS_MAX_CONCURRENT_STREAMS, SPDYLAY_ID_FLAG_SETTINGS_NONE, spdy_max_concurrent_streams},
+    {SPDYLAY_SETTINGS_INITIAL_WINDOW_SIZE, SPDYLAY_ID_FLAG_SETTINGS_NONE, spdy_initial_window_size}};
   int r;
 
   if (TSIOBufferReaderAvail(this->req_reader) > 0) {
     spdy_process_read(TS_EVENT_VCONN_WRITE_READY, this);
   }
 
-  this->read_vio = (TSVIO)this->vc->do_io_read(this, INT64_MAX, reinterpret_cast<MIOBuffer *>(this->req_buffer));
-  this->write_vio = (TSVIO)this->vc->do_io_write(this, INT64_MAX, reinterpret_cast<IOBufferReader *>(this->resp_reader));
+  this->read_vio = (TSVIO) this->vc->do_io_read(this, INT64_MAX, reinterpret_cast<MIOBuffer *>(this->req_buffer));
+  this->write_vio = (TSVIO) this->vc->do_io_write(this, INT64_MAX, reinterpret_cast<IOBufferReader *>(this->resp_reader));
 
   SET_HANDLER(&SpdyClientSession::state_session_readwrite);
 
@@ -228,7 +222,7 @@ SpdyClientSession::state_session_start(int /* event */, void * /* edata */)
 }
 
 int
-SpdyClientSession::state_session_readwrite(int event, void * edata)
+SpdyClientSession::state_session_readwrite(int event, void *edata)
 {
   int ret = 0;
   bool from_fetch = false;
@@ -237,16 +231,14 @@ SpdyClientSession::state_session_readwrite(int event, void * edata)
 
   if (edata == this->read_vio) {
     Debug("spdy", "++++[READ EVENT]");
-    if (event != TS_EVENT_VCONN_READ_READY &&
-        event != TS_EVENT_VCONN_READ_COMPLETE) {
+    if (event != TS_EVENT_VCONN_READ_READY && event != TS_EVENT_VCONN_READ_COMPLETE) {
       ret = -1;
       goto out;
     }
     ret = spdy_process_read((TSEvent)event, this);
   } else if (edata == this->write_vio) {
     Debug("spdy", "----[WRITE EVENT]");
-    if (event != TS_EVENT_VCONN_WRITE_READY &&
-        event != TS_EVENT_VCONN_WRITE_COMPLETE) {
+    if (event != TS_EVENT_VCONN_WRITE_READY && event != TS_EVENT_VCONN_WRITE_COMPLETE) {
       ret = -1;
       goto out;
     }
@@ -256,8 +248,7 @@ SpdyClientSession::state_session_readwrite(int event, void * edata)
     ret = spdy_process_fetch((TSEvent)event, this, edata);
   }
 
-  Debug("spdy-event", "++++SpdyClientSession[%" PRIu64 "], EVENT:%d, ret:%d",
-        this->sm_id, event, ret);
+  Debug("spdy-event", "++++SpdyClientSession[%" PRIu64 "], EVENT:%d, ret:%d", this->sm_id, event, ret);
 out:
   if (ret) {
     this->clear();
@@ -275,7 +266,7 @@ SpdyClientSession::getPluginId() const
   return sm_id;
 }
 
-char const*
+char const *
 SpdyClientSession::getPluginTag() const
 {
   return npnmap[this->version];
@@ -298,8 +289,8 @@ spdy_process_write(TSEvent /* event ATS_UNUSED */, SpdyClientSession *sm)
   if (TSIOBufferReaderAvail(sm->resp_reader) > 0)
     TSVIOReenable(sm->write_vio);
   else {
-    Debug("spdy", "----TOTAL SEND (sm_id:%" PRIu64 ", total_size:%" PRIu64 ", total_send:%" PRId64 ")",
-          sm->sm_id, sm->total_size, TSVIONDoneGet(sm->write_vio));
+    Debug("spdy", "----TOTAL SEND (sm_id:%" PRIu64 ", total_size:%" PRIu64 ", total_send:%" PRId64 ")", sm->sm_id, sm->total_size,
+          TSVIONDoneGet(sm->write_vio));
 
     //
     // We should reenable read_vio when no data to be written,
@@ -320,7 +311,6 @@ spdy_process_fetch(TSEvent event, SpdyClientSession *sm, void *edata)
   SpdyRequest *req = (SpdyRequest *)TSFetchUserDataGet(fetch_sm);
 
   switch ((int)event) {
-
   case TS_FETCH_EVENT_EXT_HEAD_DONE:
     Debug("spdy", "----[FETCH HEADER DONE]");
     ret = spdy_process_fetch_header(event, sm, fetch_sm);
@@ -342,18 +332,18 @@ spdy_process_fetch(TSEvent event, SpdyClientSession *sm, void *edata)
     if (req->fetch_body_completed)
       ret = 0; // Ignore fetch errors after FETCH BODY DONE
     else {
-      Debug("spdy_error", "spdy_process_fetch fetch error, fetch_sm %p, ret %d for sm_id %"
-            PRId64 ", stream_id %u, req time %" PRId64 ", url %s", req->fetch_sm, ret,
-            sm->sm_id, req->stream_id, req->start_time, req->url.c_str());
+      Debug("spdy_error",
+            "spdy_process_fetch fetch error, fetch_sm %p, ret %d for sm_id %" PRId64 ", stream_id %u, req time %" PRId64 ", url %s",
+            req->fetch_sm, ret, sm->sm_id, req->stream_id, req->start_time, req->url.c_str());
       req->fetch_sm = NULL;
     }
     break;
   }
 
   if (ret) {
-    Debug("spdy_error", "spdy_process_fetch sending STATUS_500, fetch_sm %p, ret %d for sm_id %"
-          PRId64 ", stream_id %u, req time %" PRId64 ", url %s", req->fetch_sm, ret, sm->sm_id,
-          req->stream_id, req->start_time, req->url.c_str());
+    Debug("spdy_error", "spdy_process_fetch sending STATUS_500, fetch_sm %p, ret %d for sm_id %" PRId64
+                        ", stream_id %u, req time %" PRId64 ", url %s",
+          req->fetch_sm, ret, sm->sm_id, req->stream_id, req->start_time, req->url.c_str());
     spdy_prepare_status_response_and_clean_request(sm, req->stream_id, STATUS_500);
   }
 
@@ -375,13 +365,11 @@ spdy_process_fetch_header(TSEvent /*event*/, SpdyClientSession *sm, TSFetchSM fe
 
   Debug("spdy", "----spdylay_submit_syn_reply");
   if (sm->session) {
-    ret = spdylay_submit_syn_reply(sm->session,
-                                 SPDYLAY_CTRL_FLAG_NONE, req->stream_id,
-                                 spdy_nv.nv);
+    ret = spdylay_submit_syn_reply(sm->session, SPDYLAY_CTRL_FLAG_NONE, req->stream_id, spdy_nv.nv);
   } else {
     Error("spdy_process_fetch_header, sm->session NULL, sm_id %" PRId64 ", fetch_sm %p,"
-          "stream_id %d, req_time %" PRId64 ", url %s", sm->sm_id, fetch_sm, req->stream_id,
-          req->start_time, req->url.c_str());
+          "stream_id %d, req_time %" PRId64 ", url %s",
+          sm->sm_id, fetch_sm, req->stream_id, req->start_time, req->url.c_str());
   }
 
   TSVIOReenable(sm->write_vio);
@@ -389,11 +377,9 @@ spdy_process_fetch_header(TSEvent /*event*/, SpdyClientSession *sm, TSFetchSM fe
 }
 
 static ssize_t
-spdy_read_fetch_body_callback(spdylay_session * /*session*/, int32_t stream_id,
-                              uint8_t *buf, size_t length, int *eof,
+spdy_read_fetch_body_callback(spdylay_session * /*session*/, int32_t stream_id, uint8_t *buf, size_t length, int *eof,
                               spdylay_data_source *source, void *user_data)
 {
-
   static int g_call_cnt;
   int64_t already;
 
@@ -404,16 +390,14 @@ spdy_read_fetch_body_callback(spdylay_session * /*session*/, int32_t stream_id,
   // req has been deleted, ignore this data.
   //
   if (req != sm->find_request(stream_id)) {
-    Debug("spdy", "    stream_id:%d, call:%d, req has been deleted, return 0",
-          stream_id, g_call_cnt);
+    Debug("spdy", "    stream_id:%d, call:%d, req has been deleted, return 0", stream_id, g_call_cnt);
     *eof = 1;
     return 0;
   }
 
   already = TSFetchReadData(req->fetch_sm, buf, length);
 
-  Debug("spdy", "    stream_id:%d, call:%d, length:%ld, already:%" PRId64,
-        stream_id, g_call_cnt, length, already);
+  Debug("spdy", "    stream_id:%d, call:%d, length:%ld, already:%" PRId64, stream_id, g_call_cnt, length, already);
   if (is_debug_tag_set("spdy"))
     MD5_Update(&req->recv_md5, buf, already);
 
@@ -425,9 +409,8 @@ spdy_read_fetch_body_callback(spdylay_session * /*session*/, int32_t stream_id,
     if (req->event == TS_FETCH_EVENT_EXT_BODY_DONE) {
       TSHRTime end_time = TShrtime();
       SPDY_SUM_THREAD_DYN_STAT(SPDY_STAT_TOTAL_TRANSACTIONS_TIME, sm->mutex->thread_holding, end_time - req->start_time);
-      Debug("spdy", "----Request[%" PRIu64 ":%d] %s %lld %d", sm->sm_id, req->stream_id,
-            req->url.c_str(), (end_time - req->start_time)/TS_HRTIME_MSECOND,
-            req->fetch_data_len);
+      Debug("spdy", "----Request[%" PRIu64 ":%d] %s %lld %d", sm->sm_id, req->stream_id, req->url.c_str(),
+            (end_time - req->start_time) / TS_HRTIME_MSECOND, req->fetch_data_len);
       if (is_debug_tag_set("spdy")) {
         unsigned char digest[MD5_DIGEST_LENGTH];
         MD5_Final(digest, &req->recv_md5);
@@ -462,8 +445,7 @@ spdy_process_fetch_body(TSEvent event, SpdyClientSession *sm, TSFetchSM fetch_sm
   if (!req->has_submitted_data) {
     req->has_submitted_data = true;
     Debug("spdy", "----spdylay_submit_data");
-    ret = spdylay_submit_data(sm->session, req->stream_id,
-                              SPDYLAY_DATA_FLAG_FIN, &data_prd);
+    ret = spdylay_submit_data(sm->session, req->stream_id, SPDYLAY_DATA_FLAG_FIN, &data_prd);
   } else if (req->need_resume_data) {
     Debug("spdy", "----spdylay_session_resume_data");
     ret = spdylay_session_resume_data(sm->session, req->stream_id);

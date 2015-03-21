@@ -30,9 +30,8 @@
 **/
 url_mapping::url_mapping(int rank /* = 0 */)
   : from_path_len(0), fromURL(), toUrl(), homePageRedirect(false), unique(false), default_redirect_url(false),
-    optional_referer(false), negative_referer(false), wildcard_from_scheme(false),
-    tag(NULL), filter_redirect_url(NULL), referer_list(0),
-    redir_chunk_list(0), filter(NULL), _plugin_count(0), _rank(rank)
+    optional_referer(false), negative_referer(false), wildcard_from_scheme(false), tag(NULL), filter_redirect_url(NULL),
+    referer_list(0), redir_chunk_list(0), filter(NULL), _plugin_count(0), _rank(rank)
 {
   memset(_plugin_list, 0, sizeof(_plugin_list));
   memset(_instance_data, 0, sizeof(_instance_data));
@@ -43,7 +42,7 @@ url_mapping::url_mapping(int rank /* = 0 */)
  *
 **/
 bool
-url_mapping::add_plugin(remap_plugin_info* i, void* ih)
+url_mapping::add_plugin(remap_plugin_info *i, void *ih)
 {
   if (_plugin_count >= MAX_REMAP_PLUGIN_CHAIN)
     return false;
@@ -59,7 +58,7 @@ url_mapping::add_plugin(remap_plugin_info* i, void* ih)
 /**
  *
 **/
-remap_plugin_info*
+remap_plugin_info *
 url_mapping::get_plugin(unsigned int index) const
 {
   Debug("url_rewrite", "get_plugin says we have %d plugins and asking for plugin %d", _plugin_count, index);
@@ -76,7 +75,7 @@ void
 url_mapping::delete_instance(unsigned int index)
 {
   void *ih = get_instance(index);
-  remap_plugin_info* p = get_plugin(index);
+  remap_plugin_info *p = get_plugin(index);
 
   if (ih && p && p->fp_tsremap_delete_instance) {
     p->fp_tsremap_delete_instance(ih);
@@ -126,12 +125,10 @@ url_mapping::Print()
 {
   char from_url_buf[131072], to_url_buf[131072];
 
-  fromURL.string_get_buf(from_url_buf, (int) sizeof(from_url_buf));
-  toUrl.string_get_buf(to_url_buf, (int) sizeof(to_url_buf));
-  printf("\t %s %s=> %s %s <%s> [plugins %s enabled; running with %u plugins]\n", from_url_buf,
-         unique ? "(unique)" : "", to_url_buf,
-         homePageRedirect ? "(R)" : "", tag ? tag : "",
-         _plugin_count > 0 ? "are" : "not", _plugin_count);
+  fromURL.string_get_buf(from_url_buf, (int)sizeof(from_url_buf));
+  toUrl.string_get_buf(to_url_buf, (int)sizeof(to_url_buf));
+  printf("\t %s %s=> %s %s <%s> [plugins %s enabled; running with %u plugins]\n", from_url_buf, unique ? "(unique)" : "",
+         to_url_buf, homePageRedirect ? "(R)" : "", tag ? tag : "", _plugin_count > 0 ? "are" : "not", _plugin_count);
 }
 
 /**
@@ -149,7 +146,7 @@ redirect_tag_str::parse_format_redirect_url(char *url)
     for (rr = &list; *(c = url) != 0;) {
       for (type = 's'; *c; c++) {
         if (c[0] == '%') {
-          char tmp_type = (char) tolower((int) c[1]);
+          char tmp_type = (char)tolower((int)c[1]);
           if (tmp_type == 'r' || tmp_type == 'f' || tmp_type == 't' || tmp_type == 'o') {
             if (url == c)
               type = tmp_type;
@@ -169,9 +166,9 @@ redirect_tag_str::parse_format_redirect_url(char *url)
           url += 2;
         (*rr = r)->next = 0;
         rr = &(r->next);
-        //printf("\t***********'%c' - '%s'*******\n",r->type,r->chunk_str ? r->chunk_str : "<NULL>");
+        // printf("\t***********'%c' - '%s'*******\n",r->type,r->chunk_str ? r->chunk_str : "<NULL>");
       } else
-        break;                  /* memory allocation error */
+        break; /* memory allocation error */
     }
   }
   return list;
@@ -182,12 +179,7 @@ redirect_tag_str::parse_format_redirect_url(char *url)
  *
 **/
 referer_info::referer_info(char *_ref, bool *error_flag, char *errmsgbuf, int errmsgbuf_size)
-  : next(0),
-    referer(0),
-    referer_size(0),
-    any(false),
-    negative(false),
-    regx_valid(false)
+  : next(0), referer(0), referer_size(0), any(false), negative(false), regx_valid(false)
 {
   const char *error;
   int erroffset;

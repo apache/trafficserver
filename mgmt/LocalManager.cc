@@ -45,7 +45,7 @@ LocalManager::mgmtCleanup()
   // fix me for librecords
 
   if (virt_map) {
-    virt_map->rl_downAddrs();   // We are bailing done need to worry about table
+    virt_map->rl_downAddrs(); // We are bailing done need to worry about table
   }
   closelog();
   return;
@@ -123,9 +123,9 @@ LocalManager::clearStats(const char *name)
   //   cluster stats
   //
   if (name) {
-      RecResetStatRecord(name);
+    RecResetStatRecord(name);
   } else {
-      RecResetStatRecord(RECT_NULL, true);
+    RecResetStatRecord(RECT_NULL, true);
   }
 
   // If the proxy is not running, sending the signal does
@@ -167,8 +167,8 @@ LocalManager::clusterOk()
   bool found = true;
   bool result = true;
 
-  if (processRunning() == true && time(NULL) > (this->proxy_started_at + 30)
-      && this->ccom->alive_peers_count + 1 != REC_readInteger("proxy.process.cluster.nodes", &found)) {
+  if (processRunning() == true && time(NULL) > (this->proxy_started_at + 30) &&
+      this->ccom->alive_peers_count + 1 != REC_readInteger("proxy.process.cluster.nodes", &found)) {
     result = false;
   }
 
@@ -186,8 +186,7 @@ LocalManager::processRunning()
   }
 }
 
-LocalManager::LocalManager(bool proxy_on)
-  : BaseManager(), run_proxy(proxy_on), configFiles(NULL)
+LocalManager::LocalManager(bool proxy_on) : BaseManager(), run_proxy(proxy_on), configFiles(NULL)
 {
   bool found;
   ats_scoped_str rundir(RecConfigReadRuntimeDir());
@@ -223,7 +222,8 @@ LocalManager::LocalManager(bool proxy_on)
   RecHttpLoadIp("proxy.local.incoming_ip_to_bind", m_inbound_ip4, m_inbound_ip6);
 
   if (access(sysconfdir, R_OK) == -1) {
-    mgmt_elog(0, "[LocalManager::LocalManager] unable to access() directory '%s': %d, %s\n", (const char *)sysconfdir, errno, strerror(errno));
+    mgmt_elog(0, "[LocalManager::LocalManager] unable to access() directory '%s': %d, %s\n", (const char *)sysconfdir, errno,
+              strerror(errno));
     mgmt_fatal(0, "[LocalManager::LocalManager] please set the 'TS_ROOT' environment variable\n");
   }
 
@@ -232,20 +232,22 @@ LocalManager::LocalManager(bool proxy_on)
   ats_scoped_str wccp_addr_str(REC_readString("proxy.config.wccp.addr", &found));
   if (found && wccp_addr_str && *wccp_addr_str) {
     wccp_cache.setAddr(inet_addr(wccp_addr_str));
-    mgmt_log("[LocalManager::LocalManager] WCCP identifying address set to %s.\n", static_cast<char*>(wccp_addr_str));
+    mgmt_log("[LocalManager::LocalManager] WCCP identifying address set to %s.\n", static_cast<char *>(wccp_addr_str));
   }
 
   ats_scoped_str wccp_config_str(RecConfigReadConfigPath("proxy.config.wccp.services"));
   if (wccp_config_str && strlen(wccp_config_str) > 0) {
     bool located = true;
-    if (access(wccp_config_str, R_OK) == -1 ) {
+    if (access(wccp_config_str, R_OK) == -1) {
       located = false;
     }
 
     if (located) {
       wccp_cache.loadServicesFromFile(wccp_config_str);
     } else { // not located
-      mgmt_log("[LocalManager::LocalManager] WCCP service configuration file '%s' was specified but could not be found in the file system.\n", static_cast<char*>(wccp_config_str));
+      mgmt_log("[LocalManager::LocalManager] WCCP service configuration file '%s' was specified but could not be found in the file "
+               "system.\n",
+               static_cast<char *>(wccp_config_str));
     }
   }
 #endif
@@ -262,9 +264,8 @@ LocalManager::LocalManager(bool proxy_on)
 
   // coverity[fs_check_call]
   if (access(absolute_proxy_binary, R_OK | X_OK) == -1) {
-      mgmt_elog(0, "[LocalManager::LocalManager] Unable to access() '%s': %d, %s\n",
-              absolute_proxy_binary, errno, strerror(errno));
-      mgmt_fatal(0, "[LocalManager::LocalManager] please set bin path 'proxy.config.bin_path' \n");
+    mgmt_elog(0, "[LocalManager::LocalManager] Unable to access() '%s': %d, %s\n", absolute_proxy_binary, errno, strerror(errno));
+    mgmt_fatal(0, "[LocalManager::LocalManager] please set bin path 'proxy.config.bin_path' \n");
   }
 
   internal_ticker = 0;
@@ -301,14 +302,14 @@ LocalManager::initAlarm()
  *   Function initializes cluster communication structure held by local manager.
  */
 void
-LocalManager::initCCom(const AppVersionInfo& version, FileManager * configFiles, int mcport, char *addr, int rsport)
+LocalManager::initCCom(const AppVersionInfo &version, FileManager *configFiles, int mcport, char *addr, int rsport)
 {
   ats_scoped_str rundir(RecConfigReadRuntimeDir());
   bool found;
-  IpEndpoint cluster_ip;    // ip addr of the cluster interface
-  ip_text_buffer clusterAddrStr;         // cluster ip addr as a String
-  char *intrName;               // Name of the interface we are to use
-  char hostname[1024];          // hostname of this machine
+  IpEndpoint cluster_ip;         // ip addr of the cluster interface
+  ip_text_buffer clusterAddrStr; // cluster ip addr as a String
+  char *intrName;                // Name of the interface we are to use
+  char hostname[1024];           // hostname of this machine
   const char envVar[] = "PROXY_CLUSTER_ADDR=";
   char *envBuf;
 
@@ -357,7 +358,7 @@ LocalManager::initCCom(const AppVersionInfo& version, FileManager * configFiles,
 
   virt_map->appVersionInfo = version;
 
-  virt_map->downAddrs();        // Just to be safe
+  virt_map->downAddrs(); // Just to be safe
   ccom->establishChannels();
   ats_free(intrName);
 
@@ -377,7 +378,8 @@ LocalManager::initMgmtProcessServer()
 
 #if TS_HAS_WCCP
   if (wccp_cache.isConfigured()) {
-    if (0 > wccp_cache.open()) mgmt_log("Failed to open WCCP socket\n");
+    if (0 > wccp_cache.open())
+      mgmt_log("Failed to open WCCP socket\n");
   }
 #endif
 
@@ -412,7 +414,8 @@ LocalManager::pollMgmtProcessServer()
     timeout.tv_usec = process_server_timeout_msecs * 1000;
     FD_ZERO(&fdlist);
     FD_SET(process_server_sockfd, &fdlist);
-    if (watched_process_fd != -1) FD_SET(watched_process_fd, &fdlist);
+    if (watched_process_fd != -1)
+      FD_SET(watched_process_fd, &fdlist);
 
 #if TS_HAS_WCCP
     // Only run WCCP housekeeping while we have a server process.
@@ -420,26 +423,25 @@ LocalManager::pollMgmtProcessServer()
     if (wccp_fd != ts::NO_FD && watched_process_fd != ts::NO_FD) {
       wccp_cache.housekeeping();
       time_t wccp_wait = wccp_cache.waitTime();
-      if (wccp_wait < process_server_timeout_secs) timeout.tv_sec = wccp_wait;
+      if (wccp_wait < process_server_timeout_secs)
+        timeout.tv_sec = wccp_wait;
       FD_SET(wccp_cache.getSocket(), &fdlist);
     }
 #endif
 
     num = mgmt_select(FD_SETSIZE, &fdlist, NULL, NULL, &timeout);
-    if (num == 0) {             /* Have nothing */
+    if (num == 0) { /* Have nothing */
       break;
-    } else if (num > 0) {       /* Have something */
+    } else if (num > 0) { /* Have something */
 #if TS_HAS_WCCP
       if (wccp_fd != ts::NO_FD && FD_ISSET(wccp_fd, &fdlist)) {
         wccp_cache.handleMessage();
         --num;
       }
 #endif
-      if (FD_ISSET(process_server_sockfd, &fdlist)) {   /* New connection */
+      if (FD_ISSET(process_server_sockfd, &fdlist)) { /* New connection */
         int clientLen = sizeof(clientAddr);
-        int new_sockfd = mgmt_accept(process_server_sockfd,
-                                     (struct sockaddr *) &clientAddr,
-                                     &clientLen);
+        int new_sockfd = mgmt_accept(process_server_sockfd, (struct sockaddr *)&clientAddr, &clientLen);
         MgmtMessageHdr *mh;
         int data_len;
 
@@ -450,11 +452,11 @@ LocalManager::pollMgmtProcessServer()
         } else if (!processRunning()) {
           watched_process_fd = new_sockfd;
           data_len = sizeof(mgmt_sync_key);
-          mh = (MgmtMessageHdr *) alloca(sizeof(MgmtMessageHdr) + data_len);
+          mh = (MgmtMessageHdr *)alloca(sizeof(MgmtMessageHdr) + data_len);
           mh->msg_id = MGMT_EVENT_SYNC_KEY;
           mh->data_len = data_len;
-          memcpy((char *) mh + sizeof(MgmtMessageHdr), &mgmt_sync_key, data_len);
-          if (mgmt_write_pipe(new_sockfd, (char *) mh, sizeof(MgmtMessageHdr) + data_len) <= 0) {
+          memcpy((char *)mh + sizeof(MgmtMessageHdr), &mgmt_sync_key, data_len);
+          if (mgmt_write_pipe(new_sockfd, (char *)mh, sizeof(MgmtMessageHdr) + data_len) <= 0) {
             mgmt_elog(errno, "[LocalManager::pollMgmtProcessServer] Error writing sync key message!\n");
             close_socket(new_sockfd);
             watched_process_fd = watched_process_pid = -1;
@@ -472,10 +474,10 @@ LocalManager::pollMgmtProcessServer()
         char *data_raw;
 
         // read the message
-        if ((res = mgmt_read_pipe(watched_process_fd, (char *) &mh_hdr, sizeof(MgmtMessageHdr))) > 0) {
-          mh_full = (MgmtMessageHdr *) alloca(sizeof(MgmtMessageHdr) + mh_hdr.data_len);
+        if ((res = mgmt_read_pipe(watched_process_fd, (char *)&mh_hdr, sizeof(MgmtMessageHdr))) > 0) {
+          mh_full = (MgmtMessageHdr *)alloca(sizeof(MgmtMessageHdr) + mh_hdr.data_len);
           memcpy(mh_full, &mh_hdr, sizeof(MgmtMessageHdr));
-          data_raw = (char *) mh_full + sizeof(MgmtMessageHdr);
+          data_raw = (char *)mh_full + sizeof(MgmtMessageHdr);
           if ((res = mgmt_read_pipe(watched_process_fd, data_raw, mh_hdr.data_len)) > 0) {
             handleMgmtMsgFromProcesses(mh_full);
           } else if (res < 0) {
@@ -493,11 +495,12 @@ LocalManager::pollMgmtProcessServer()
 
           close_socket(watched_process_fd);
 
-          waitpid(watched_process_pid, &estatus, 0);    /* Reap child */
+          waitpid(watched_process_pid, &estatus, 0); /* Reap child */
           if (WIFSIGNALED(estatus)) {
             int sig = WTERMSIG(estatus);
             mgmt_elog(stderr, 0, "[LocalManager::pollMgmtProcessServer] "
-                      "Server Process terminated due to Sig %d: %s\n", sig, strsignal(sig));
+                                 "Server Process terminated due to Sig %d: %s\n",
+                      sig, strsignal(sig));
           }
 
           if (lmgmt->run_proxy) {
@@ -508,7 +511,7 @@ LocalManager::pollMgmtProcessServer()
           }
 
           watched_process_fd = watched_process_pid = -1;
-          if (tmp_pid != -1) {  /* Incremented after a pid: message is sent */
+          if (tmp_pid != -1) { /* Incremented after a pid: message is sent */
             proxy_running--;
           }
           proxy_started_at = -1;
@@ -516,25 +519,23 @@ LocalManager::pollMgmtProcessServer()
         }
 
         num--;
-
       }
-      ink_assert(num == 0);     /* Invariant */
+      ink_assert(num == 0); /* Invariant */
 
-    } else if (num < 0) {       /* Error */
+    } else if (num < 0) { /* Error */
       mgmt_elog(stderr, 0, "[LocalManager::pollMgmtProcessServer] select failed or was interrupted (%d)\n", errno);
     }
-
   }
 }
 
 
 void
-LocalManager::handleMgmtMsgFromProcesses(MgmtMessageHdr * mh)
+LocalManager::handleMgmtMsgFromProcesses(MgmtMessageHdr *mh)
 {
-  char *data_raw = (char *) mh + sizeof(MgmtMessageHdr);
+  char *data_raw = (char *)mh + sizeof(MgmtMessageHdr);
   switch (mh->msg_id) {
   case MGMT_SIGNAL_PID:
-    watched_process_pid = *((pid_t *) data_raw);
+    watched_process_pid = *((pid_t *)data_raw);
     lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_PROXY_PROCESS_BORN, NULL);
     proxy_running++;
     proxy_launch_pid = -1;
@@ -561,8 +562,8 @@ LocalManager::handleMgmtMsgFromProcesses(MgmtMessageHdr * mh)
      */
     break;
 
-    // FIX: This is very messy need to correlate mgmt signals and
-    // alarms better
+  // FIX: This is very messy need to correlate mgmt signals and
+  // alarms better
   case MGMT_SIGNAL_CONFIG_ERROR:
     alarm_keeper->signalAlarm(MGMT_ALARM_PROXY_CONFIG_ERROR, data_raw);
     break;
@@ -587,35 +588,34 @@ LocalManager::handleMgmtMsgFromProcesses(MgmtMessageHdr * mh)
   case MGMT_SIGNAL_CONFIG_FILE_READ:
     mgmt_log(stderr, "[LocalManager::handleMgmtMsgFromProcesses] File done '%d'\n", data_raw);
     break;
-  case MGMT_SIGNAL_PLUGIN_SET_CONFIG:
-    {
-      char var_name[256];
-      char var_value[256];
-      MgmtType stype;
-      // stype is an enum type, so cast to an int* to avoid warnings. /leif
-      int tokens = sscanf(data_raw, "%255s %d %255s", var_name, (int *) &stype, var_value);
-      if (tokens != 3) {
-        stype = MGMT_INVALID;
-      }
-      switch (stype) {
-      case MGMT_INT:
-        RecSetRecordInt(var_name, ink_atoi64(var_value));
-        break;
-      case MGMT_COUNTER:
-      case MGMT_FLOAT:
-      case MGMT_STRING:
-      case MGMT_INVALID:
-      default:
-        mgmt_elog(stderr, 0,
-                  "[LocalManager::handleMgmtMsgFromProcesses] " "Invalid plugin set-config msg '%s'\n", data_raw);
-        break;
-      }
+  case MGMT_SIGNAL_PLUGIN_SET_CONFIG: {
+    char var_name[256];
+    char var_value[256];
+    MgmtType stype;
+    // stype is an enum type, so cast to an int* to avoid warnings. /leif
+    int tokens = sscanf(data_raw, "%255s %d %255s", var_name, (int *)&stype, var_value);
+    if (tokens != 3) {
+      stype = MGMT_INVALID;
     }
-  case MGMT_SIGNAL_LOG_FILES_ROLLED:
-    {
-      Debug("lm", "Rolling logs %s", (char *) data_raw);
+    switch (stype) {
+    case MGMT_INT:
+      RecSetRecordInt(var_name, ink_atoi64(var_value));
+      break;
+    case MGMT_COUNTER:
+    case MGMT_FLOAT:
+    case MGMT_STRING:
+    case MGMT_INVALID:
+    default:
+      mgmt_elog(stderr, 0, "[LocalManager::handleMgmtMsgFromProcesses] "
+                           "Invalid plugin set-config msg '%s'\n",
+                data_raw);
       break;
     }
+  }
+  case MGMT_SIGNAL_LOG_FILES_ROLLED: {
+    Debug("lm", "Rolling logs %s", (char *)data_raw);
+    break;
+  }
   case MGMT_SIGNAL_LIBRECORDS:
     if (mh->data_len > 0) {
       executeMgmtCallback(MGMT_SIGNAL_LIBRECORDS, data_raw, mh->data_len);
@@ -623,14 +623,14 @@ LocalManager::handleMgmtMsgFromProcesses(MgmtMessageHdr * mh)
       executeMgmtCallback(MGMT_SIGNAL_LIBRECORDS, NULL, 0);
     }
     break;
-    // Congestion Control - begin
+  // Congestion Control - begin
   case MGMT_SIGNAL_HTTP_CONGESTED_SERVER:
     alarm_keeper->signalAlarm(MGMT_ALARM_PROXY_HTTP_CONGESTED_SERVER, data_raw);
     break;
   case MGMT_SIGNAL_HTTP_ALLEVIATED_SERVER:
     alarm_keeper->signalAlarm(MGMT_ALARM_PROXY_HTTP_ALLEVIATED_SERVER, data_raw);
     break;
-    // Congestion Control - end
+  // Congestion Control - end
   case MGMT_SIGNAL_SAC_SERVER_DOWN:
     alarm_keeper->signalAlarm(MGMT_ALARM_SAC_SERVER_DOWN, data_raw);
     break;
@@ -654,32 +654,32 @@ LocalManager::sendMgmtMsgToProcesses(int msg_id, const char *data_raw, int data_
 {
   MgmtMessageHdr *mh;
 
-  mh = (MgmtMessageHdr *) alloca(sizeof(MgmtMessageHdr) + data_len);
+  mh = (MgmtMessageHdr *)alloca(sizeof(MgmtMessageHdr) + data_len);
   mh->msg_id = msg_id;
   mh->data_len = data_len;
-  memcpy((char *) mh + sizeof(MgmtMessageHdr), data_raw, data_len);
+  memcpy((char *)mh + sizeof(MgmtMessageHdr), data_raw, data_len);
   sendMgmtMsgToProcesses(mh);
   return;
 }
 
 
 void
-LocalManager::sendMgmtMsgToProcesses(MgmtMessageHdr * mh)
+LocalManager::sendMgmtMsgToProcesses(MgmtMessageHdr *mh)
 {
   switch (mh->msg_id) {
-  case MGMT_EVENT_SHUTDOWN:{
-      run_proxy = false;
-      if (lmgmt->virt_map) {
-        lmgmt->virt_map->downAddrs();   /* Down all known addrs to be safe */
-      }
-      this->closeProxyPorts();
-      break;
+  case MGMT_EVENT_SHUTDOWN: {
+    run_proxy = false;
+    if (lmgmt->virt_map) {
+      lmgmt->virt_map->downAddrs(); /* Down all known addrs to be safe */
     }
+    this->closeProxyPorts();
+    break;
+  }
   case MGMT_EVENT_RESTART:
     run_proxy = true;
     listenForProxy();
     return;
-  case MGMT_EVENT_BOUNCE:      /* Just bouncing the cluster, have it exit well restart */
+  case MGMT_EVENT_BOUNCE: /* Just bouncing the cluster, have it exit well restart */
     mh->msg_id = MGMT_EVENT_SHUTDOWN;
     break;
   case MGMT_EVENT_ROLL_LOG_FILES:
@@ -692,7 +692,7 @@ LocalManager::sendMgmtMsgToProcesses(MgmtMessageHdr * mh)
     Rollback *rb;
     char *data_raw;
 
-    data_raw = (char *) mh + sizeof(MgmtMessageHdr);
+    data_raw = (char *)mh + sizeof(MgmtMessageHdr);
     fname = REC_readString(data_raw, &found);
 
     RecT rec_type;
@@ -706,7 +706,7 @@ LocalManager::sendMgmtMsgToProcesses(MgmtMessageHdr * mh)
         (strcmp(data_raw, "proxy.config.cluster.cluster_configuration") != 0) &&
         (strcmp(data_raw, "proxy.config.body_factory.template_sets_dir") != 0)) {
       mgmt_elog(stderr, 0, "[LocalManager::sendMgmtMsgToProcesses] "
-                "Invalid 'data_raw' for MGMT_EVENT_CONFIG_FILE_UPDATE\n");
+                           "Invalid 'data_raw' for MGMT_EVENT_CONFIG_FILE_UPDATE\n");
       ink_assert(false);
     }
     ats_free(fname);
@@ -714,7 +714,7 @@ LocalManager::sendMgmtMsgToProcesses(MgmtMessageHdr * mh)
   }
 
   if (watched_process_fd != -1) {
-    if (mgmt_write_pipe(watched_process_fd, (char *) mh, sizeof(MgmtMessageHdr) + mh->data_len) <= 0) {
+    if (mgmt_write_pipe(watched_process_fd, (char *)mh, sizeof(MgmtMessageHdr) + mh->data_len) <= 0) {
       // In case of Linux, sometimes when the TS dies, the connection between TS and TM
       // is not closed properly. the socket does not receive an EOF. So, the TM does
       // not detect that the connection and hence TS has gone down. Hence it still
@@ -733,12 +733,13 @@ LocalManager::sendMgmtMsgToProcesses(MgmtMessageHdr * mh)
         check_current_pid = -1;
         int lerrno = errno;
         mgmt_elog(stderr, errno, "[LocalManager::sendMgmtMsgToProcesses] Error writing message\n");
-        if (lerrno == ECONNRESET || lerrno == EPIPE) {  // Connection closed by peer or Broken pipe
+        if (lerrno == ECONNRESET || lerrno == EPIPE) { // Connection closed by peer or Broken pipe
           if ((kill(watched_process_pid, 0) < 0) && (errno == ESRCH)) {
             // TS is down
             pid_t tmp_pid = watched_process_pid;
             close_socket(watched_process_fd);
-            mgmt_elog(stderr, 0, "[LocalManager::pollMgmtProcessServer] " "Server Process has been terminated\n");
+            mgmt_elog(stderr, 0, "[LocalManager::pollMgmtProcessServer] "
+                                 "Server Process has been terminated\n");
             if (lmgmt->run_proxy) {
               mgmt_elog(0, "[Alarms::signalAlarm] Server Process was reset\n");
               lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_PROXY_PROCESS_DIED, NULL);
@@ -746,7 +747,7 @@ LocalManager::sendMgmtMsgToProcesses(MgmtMessageHdr * mh)
               mgmt_log("[TrafficManager] Server process shutdown\n");
             }
             watched_process_fd = watched_process_pid = -1;
-            if (tmp_pid != -1) {        /* Incremented after a pid: message is sent */
+            if (tmp_pid != -1) { /* Incremented after a pid: message is sent */
               proxy_running--;
             }
             proxy_started_at = -1;
@@ -754,8 +755,8 @@ LocalManager::sendMgmtMsgToProcesses(MgmtMessageHdr * mh)
             // End of TS down
           } else {
             // TS is still up, but the connection is lost
-            const char *err_msg =
-              "The TS-TM connection is broken for some reason. Either restart TS and TM or correct this error for TM to display TS statistics correctly";
+            const char *err_msg = "The TS-TM connection is broken for some reason. Either restart TS and TM or correct this error "
+                                  "for TM to display TS statistics correctly";
             lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_PROXY_SYSTEM_ERROR, err_msg);
           }
 
@@ -777,8 +778,7 @@ LocalManager::signalFileChange(const char *var_name, bool incVersion)
 {
   if (incVersion) {
     signalEvent(MGMT_EVENT_CONFIG_FILE_UPDATE, var_name);
-  }
-  else {
+  } else {
     signalEvent(MGMT_EVENT_CONFIG_FILE_UPDATE_NO_INC_VERSION, var_name);
   }
   return;
@@ -801,7 +801,7 @@ LocalManager::signalEvent(int msg_id, const char *data_raw, int data_len)
   mh = (MgmtMessageHdr *)ats_malloc(sizeof(MgmtMessageHdr) + data_len);
   mh->msg_id = msg_id;
   mh->data_len = data_len;
-  memcpy((char *) mh + sizeof(MgmtMessageHdr), data_raw, data_len);
+  memcpy((char *)mh + sizeof(MgmtMessageHdr), data_raw, data_len);
   ink_assert(enqueue(mgmt_event_queue, mh));
 
   return;
@@ -822,8 +822,8 @@ LocalManager::processEventQueue()
   while (!queue_is_empty(mgmt_event_queue)) {
     handled_by_mgmt = false;
 
-    MgmtMessageHdr *mh = (MgmtMessageHdr *) dequeue(mgmt_event_queue);
-    char *data_raw = (char *) mh + sizeof(MgmtMessageHdr);
+    MgmtMessageHdr *mh = (MgmtMessageHdr *)dequeue(mgmt_event_queue);
+    char *data_raw = (char *)mh + sizeof(MgmtMessageHdr);
 
     // check if we have a local file update
     if (mh->msg_id == MGMT_EVENT_CONFIG_FILE_UPDATE || mh->msg_id == MGMT_EVENT_CONFIG_FILE_UPDATE_NO_INC_VERSION) {
@@ -877,8 +877,7 @@ LocalManager::startProxy()
   // traffic server binary exists, check permissions
   else if (access(absolute_proxy_binary, R_OK | X_OK) < 0) {
     // Error don't have proper permissions
-    mgmt_elog(stderr, errno, "[LocalManager::startProxy] Unable to access %s due to bad permisssions \n",
-              absolute_proxy_binary);
+    mgmt_elog(stderr, errno, "[LocalManager::startProxy] Unable to access %s due to bad permisssions \n", absolute_proxy_binary);
     return false;
   }
 
@@ -901,7 +900,7 @@ LocalManager::startProxy()
       ats_scoped_str bindir(RecConfigReadBinDir());
 
       ink_filepath_make(env_prep_bin, sizeof(env_prep_bin), bindir, env_prep);
-      res = execl(env_prep_bin, env_prep_bin, (char*)NULL);
+      res = execl(env_prep_bin, env_prep_bin, (char *)NULL);
       _exit(res);
     }
   }
@@ -913,7 +912,7 @@ LocalManager::startProxy()
   {
     mgmt_elog(stderr, errno, "[LocalManager::startProxy] Unable to fork1 process\n");
     return false;
-  } else if (pid > 0) {         /* Parent */
+  } else if (pid > 0) { /* Parent */
     proxy_launch_pid = pid;
     proxy_launch_outstanding = true;
     proxy_started_at = time(NULL);
@@ -931,7 +930,7 @@ LocalManager::startProxy()
 
     // Check if we need to pass down port/fd information to
     // traffic_server by seeing if there are any open ports.
-    for ( int i = 0, limit = m_proxy_ports.length() ; !open_ports_p && i < limit ; ++i) {
+    for (int i = 0, limit = m_proxy_ports.length(); !open_ports_p && i < limit; ++i) {
       if (ts::NO_FD != m_proxy_ports[i].m_fd) {
         open_ports_p = true;
       }
@@ -941,8 +940,8 @@ LocalManager::startProxy()
       char portbuf[128];
       bool need_comma_p = false;
       real_proxy_options.append(" --httpport ", strlen(" --httpport "));
-      for ( int i = 0, limit = m_proxy_ports.length() ; i < limit ; ++i ) {
-        HttpProxyPort& p = m_proxy_ports[i];
+      for (int i = 0, limit = m_proxy_ports.length(); i < limit; ++i) {
+        HttpProxyPort &p = m_proxy_ports[i];
         if (ts::NO_FD != p.m_fd) {
           if (need_comma_p) {
             real_proxy_options.append(',');
@@ -957,8 +956,7 @@ LocalManager::startProxy()
     // NUL-terminate for the benefit of strtok and printf.
     real_proxy_options.add(0);
 
-    Debug("lm", "[LocalManager::startProxy] Launching %s with options '%s'\n",
-          absolute_proxy_binary, &real_proxy_options[0]);
+    Debug("lm", "[LocalManager::startProxy] Launching %s with options '%s'\n", absolute_proxy_binary, &real_proxy_options[0]);
 
     ink_zero(options);
     options[0] = absolute_proxy_binary;
@@ -986,9 +984,10 @@ LocalManager::startProxy()
 /** Close all open ports.
  */
 void
-LocalManager::closeProxyPorts() {
-  for ( int i = 0, n = lmgmt->m_proxy_ports.length() ; i < n ; ++i ) {
-    HttpProxyPort& p = lmgmt->m_proxy_ports[i];
+LocalManager::closeProxyPorts()
+{
+  for (int i = 0, n = lmgmt->m_proxy_ports.length(); i < n; ++i) {
+    HttpProxyPort &p = lmgmt->m_proxy_ports[i];
     if (ts::NO_FD != p.m_fd) {
       close_socket(p.m_fd);
       p.m_fd = ts::NO_FD;
@@ -1006,8 +1005,8 @@ LocalManager::listenForProxy()
     return;
 
   // We are not already bound, bind the port
-  for (int i = 0, n = lmgmt->m_proxy_ports.length() ; i < n ; ++i ) {
-    HttpProxyPort& p = lmgmt->m_proxy_ports[i];
+  for (int i = 0, n = lmgmt->m_proxy_ports.length(); i < n; ++i) {
+    HttpProxyPort &p = lmgmt->m_proxy_ports[i];
     if (ts::NO_FD == p.m_fd) {
       this->bindProxyPort(p);
     }
@@ -1020,11 +1019,10 @@ LocalManager::listenForProxy()
       backlog = config_backlog;
     }
     if ((listen(p.m_fd, backlog)) < 0) {
-      mgmt_fatal(stderr, errno, "[LocalManager::listenForProxy] Unable to listen on port: %d (%s)\n",
-                 p.m_port, ats_ip_family_name(p.m_family));
+      mgmt_fatal(stderr, errno, "[LocalManager::listenForProxy] Unable to listen on port: %d (%s)\n", p.m_port,
+                 ats_ip_family_name(p.m_family));
     }
-    mgmt_log(stderr, "[LocalManager::listenForProxy] Listening on port: %d (%s)\n", p.m_port,
-             ats_ip_family_name(p.m_family));
+    mgmt_log(stderr, "[LocalManager::listenForProxy] Listening on port: %d (%s)\n", p.m_port, ats_ip_family_name(p.m_family));
   }
   return;
 }
@@ -1035,7 +1033,7 @@ LocalManager::listenForProxy()
  *  Function binds the accept port of the proxy
  */
 void
-LocalManager::bindProxyPort(HttpProxyPort& port)
+LocalManager::bindProxyPort(HttpProxyPort &port)
 {
   int one = 1;
 
@@ -1063,7 +1061,7 @@ LocalManager::bindProxyPort(HttpProxyPort& port)
       mgmt_elog(stderr, 0, "[bindProxyPort] Unable to set socket options: %d : %s\n", port.m_port, strerror(errno));
     }
   }
-  if (setsockopt(port.m_fd, SOL_SOCKET, SO_REUSEADDR, (char *) &one, sizeof(int)) < 0) {
+  if (setsockopt(port.m_fd, SOL_SOCKET, SO_REUSEADDR, (char *)&one, sizeof(int)) < 0) {
     mgmt_elog(stderr, 0, "[bindProxyPort] Unable to set socket options: %d : %s\n", port.m_port, strerror(errno));
     _exit(1);
   }
@@ -1084,11 +1082,15 @@ LocalManager::bindProxyPort(HttpProxyPort& port)
   if (port.m_inbound_ip.isValid()) {
     ip.assign(port.m_inbound_ip);
   } else if (AF_INET6 == port.m_family) {
-    if (m_inbound_ip6.isValid()) ip.assign(m_inbound_ip6);
-    else ip.setToAnyAddr(AF_INET6);
+    if (m_inbound_ip6.isValid())
+      ip.assign(m_inbound_ip6);
+    else
+      ip.setToAnyAddr(AF_INET6);
   } else if (AF_INET == port.m_family) {
-    if (m_inbound_ip4.isValid()) ip.assign(m_inbound_ip4);
-    else ip.setToAnyAddr(AF_INET);
+    if (m_inbound_ip4.isValid())
+      ip.assign(m_inbound_ip4);
+    else
+      ip.setToAnyAddr(AF_INET);
   } else {
     mgmt_elog(stderr, 0, "[bindProxyPort] Proxy port with invalid address type %d\n", port.m_family);
     _exit(1);
@@ -1100,12 +1102,11 @@ LocalManager::bindProxyPort(HttpProxyPort& port)
   }
 
   Debug("lm", "[bindProxyPort] Successfully bound proxy port %d\n", port.m_port);
-
 }
 
 void
 LocalManager::signalAlarm(int alarm_id, const char *desc, const char *ip)
 {
   if (alarm_keeper)
-    alarm_keeper->signalAlarm((alarm_t) alarm_id, desc, ip);
+    alarm_keeper->signalAlarm((alarm_t)alarm_id, desc, ip);
 }

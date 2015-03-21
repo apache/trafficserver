@@ -27,15 +27,15 @@ static int drain = 0;
 static int manager = 0;
 
 const ArgumentDescription opts[] = {
-  { "drain", '-', "Wait for client connections to drain before restarting", "F", &drain, NULL, NULL },
-  { "manager", '-', "Restart traffic_manager as well as traffic_server", "F", &manager, NULL, NULL },
+  {"drain", '-', "Wait for client connections to drain before restarting", "F", &drain, NULL, NULL},
+  {"manager", '-', "Restart traffic_manager as well as traffic_server", "F", &manager, NULL, NULL},
 };
 
 static int
-restart(unsigned argc, const char ** argv, unsigned flags)
+restart(unsigned argc, const char **argv, unsigned flags)
 {
   TSMgmtError error;
-  const char * usage = (flags & TS_RESTART_OPT_CLUSTER) ?  "cluster restart [OPTIONS]" :  "server restart [OPTIONS]";
+  const char *usage = (flags & TS_RESTART_OPT_CLUSTER) ? "cluster restart [OPTIONS]" : "server restart [OPTIONS]";
 
   if (!CtrlProcessArguments(argc, argv, opts, countof(opts)) || n_file_arguments != 0) {
     return CtrlCommandUsage(usage, opts, countof(opts));
@@ -60,19 +60,19 @@ restart(unsigned argc, const char ** argv, unsigned flags)
 }
 
 static int
-cluster_restart(unsigned argc, const char ** argv)
+cluster_restart(unsigned argc, const char **argv)
 {
   return restart(argc, argv, TS_RESTART_OPT_CLUSTER);
 }
 
 static int
-server_restart(unsigned argc, const char ** argv)
+server_restart(unsigned argc, const char **argv)
 {
   return restart(argc, argv, TS_RESTART_OPT_NONE);
 }
 
 static int
-server_backtrace(unsigned argc, const char ** argv)
+server_backtrace(unsigned argc, const char **argv)
 {
   TSMgmtError error;
   TSString trace = NULL;
@@ -93,7 +93,7 @@ server_backtrace(unsigned argc, const char ** argv)
 }
 
 static int
-server_status(unsigned argc, const char ** argv)
+server_status(unsigned argc, const char **argv)
 {
   if (!CtrlProcessArguments(argc, argv, NULL, 0) || n_file_arguments != 0) {
     return CtrlCommandUsage("server status");
@@ -117,25 +117,23 @@ server_status(unsigned argc, const char ** argv)
 }
 
 int
-subcommand_cluster(unsigned argc, const char ** argv)
+subcommand_cluster(unsigned argc, const char **argv)
 {
-  const subcommand commands[] =
-  {
-    { cluster_restart, "restart", "Restart the Traffic Server cluster" },
-    { CtrlUnimplementedCommand, "status", "Show the cluster status" },
+  const subcommand commands[] = {
+    {cluster_restart, "restart", "Restart the Traffic Server cluster"},
+    {CtrlUnimplementedCommand, "status", "Show the cluster status"},
   };
 
   return CtrlGenericSubcommand("cluster", commands, countof(commands), argc, argv);
 }
 
 int
-subcommand_server(unsigned argc, const char ** argv)
+subcommand_server(unsigned argc, const char **argv)
 {
-  const subcommand commands[] =
-  {
-    { server_restart, "restart", "Restart Traffic Server" },
-    { server_backtrace, "backtrace", "Show a full stack trace of the traffic_server process" },
-    { server_status, "status", "Show the proxy status" },
+  const subcommand commands[] = {
+    {server_restart, "restart", "Restart Traffic Server"},
+    {server_backtrace, "backtrace", "Show a full stack trace of the traffic_server process"},
+    {server_status, "status", "Show the proxy status"},
 
     /* XXX do the 'shutdown' and 'startup' commands make sense? */
   };

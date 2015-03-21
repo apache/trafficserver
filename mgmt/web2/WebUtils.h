@@ -40,8 +40,7 @@ struct WebContext;
  *  including ssl.h right here which creates a whole bunch of
  *  nasty problem to MD5 conflicts with ink_code.h.
  */
-struct SocketInfo
-{
+struct SocketInfo {
   int fd;
   void *SSLcon; /* Currently unused */
 };

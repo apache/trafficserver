@@ -21,7 +21,7 @@
   limitations under the License.
  */
 #ifndef _ink_memory_h_
-#define	_ink_memory_h_
+#define _ink_memory_h_
 
 #include <ctype.h>
 #include <string.h>
@@ -78,46 +78,46 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif                          /* __cplusplus */
+#endif /* __cplusplus */
 
-  typedef struct iovec IOVec;
+typedef struct iovec IOVec;
 
-  void *  ats_malloc(size_t size);
-  void *  ats_calloc(size_t nelem, size_t elsize);
-  void *  ats_realloc(void *ptr, size_t size);
-  void *  ats_memalign(size_t alignment, size_t size);
-  void    ats_free(void *ptr);
-  void *  ats_free_null(void *ptr);
-  void    ats_memalign_free(void *ptr);
-  int     ats_mallopt(int param, int value);
+void *ats_malloc(size_t size);
+void *ats_calloc(size_t nelem, size_t elsize);
+void *ats_realloc(void *ptr, size_t size);
+void *ats_memalign(size_t alignment, size_t size);
+void ats_free(void *ptr);
+void *ats_free_null(void *ptr);
+void ats_memalign_free(void *ptr);
+int ats_mallopt(int param, int value);
 
-  int     ats_msync(caddr_t addr, size_t len, caddr_t end, int flags);
-  int     ats_madvise(caddr_t addr, size_t len, int flags);
-  int     ats_mlock(caddr_t addr, size_t len);
+int ats_msync(caddr_t addr, size_t len, caddr_t end, int flags);
+int ats_madvise(caddr_t addr, size_t len, int flags);
+int ats_mlock(caddr_t addr, size_t len);
 
-  static inline size_t __attribute__((const)) ats_pagesize(void)
-  {
-    static size_t page_size;
+static inline size_t __attribute__((const)) ats_pagesize(void)
+{
+  static size_t page_size;
 
-    if (page_size)
-      return page_size;
+  if (page_size)
+    return page_size;
 
 #if defined(HAVE_SYSCONF) && defined(_SC_PAGESIZE)
-    page_size = (size_t)sysconf(_SC_PAGESIZE);
+  page_size = (size_t)sysconf(_SC_PAGESIZE);
 #elif defined(HAVE_GETPAGESIZE)
-    page_size = (size_t)getpagesize()
+  page_size = (size_t)getpagesize()
 #else
-    page_size = (size_t)8192;
+  page_size = (size_t)8192;
 #endif
 
-    return page_size;
-  }
+  return page_size;
+}
 
 /* Some convenience wrappers around strdup() functionality */
 char *_xstrdup(const char *str, int length, const char *path);
 
-#define ats_strdup(p)        _xstrdup((p), -1, NULL)
-#define ats_strndup(p,n)     _xstrdup((p), n, NULL)
+#define ats_strdup(p) _xstrdup((p), -1, NULL)
+#define ats_strndup(p, n) _xstrdup((p), n, NULL)
 
 #ifdef __cplusplus
 }
@@ -127,15 +127,15 @@ char *_xstrdup(const char *str, int length, const char *path);
 
 template <typename PtrType, typename SizeType>
 static inline IOVec
-make_iovec(PtrType ptr, SizeType sz) {
-  IOVec iov = { ptr, static_cast<size_t>(sz) };
+make_iovec(PtrType ptr, SizeType sz)
+{
+  IOVec iov = {ptr, static_cast<size_t>(sz)};
   return iov;
 }
 
-template <typename PtrType, unsigned N>
-static inline IOVec
-make_iovec(PtrType (&array)[N]) {
-  IOVec iov = { &array[0], static_cast<size_t>(sizeof(array)) };
+template <typename PtrType, unsigned N> static inline IOVec make_iovec(PtrType(&array)[N])
+{
+  IOVec iov = {&array[0], static_cast<size_t>(sizeof(array))};
   return iov;
 }
 
@@ -166,8 +166,10 @@ make_iovec(PtrType (&array)[N]) {
     @endcode
 
  */
-template < typename T > inline void
-ink_zero(T& t) {
+template <typename T>
+inline void
+ink_zero(T &t)
+{
   memset(&t, 0, sizeof(t));
 }
 
@@ -232,18 +234,16 @@ ink_zero(T& t) {
 
 */
 
-template <
-  typename TRAITS ///< Traits object.
->
+template <typename TRAITS ///< Traits object.
+          >
 class ats_scoped_resource
 {
 public:
-  typedef TRAITS Traits; ///< Make template arg available.
+  typedef TRAITS Traits;                          ///< Make template arg available.
   typedef typename TRAITS::value_type value_type; ///< Import value type.
-  typedef ats_scoped_resource self; ///< Self reference type.
+  typedef ats_scoped_resource self;               ///< Self reference type.
 
 public:
-
   /// Default constructor - an empty container.
   ats_scoped_resource() : _r(Traits::initValue()) {}
 
@@ -251,19 +251,20 @@ public:
   explicit ats_scoped_resource(value_type rt) : _r(rt) {}
 
   /// Destructor.
-  ~ats_scoped_resource() {
+  ~ats_scoped_resource()
+  {
     if (Traits::isValid(_r))
       Traits::destroy(_r);
   }
 
   /// Automatic conversion to resource type.
-  operator value_type () const {
-    return _r;
-  }
+  operator value_type() const { return _r; }
   /// Explicit conversion to resource type.
   /// @note Syntactic sugar for @c static_cast<value_type>(instance). Required when passing to var arg function
   /// as automatic conversion won't be done.
-  value_type get() const {
+  value_type
+  get() const
+  {
     return _r;
   }
 
@@ -279,7 +280,9 @@ public:
 
       @return The no longer contained resource.
   */
-  value_type release() {
+  value_type
+  release()
+  {
     value_type zret = _r;
     _r = Traits::initValue();
     return zret;
@@ -291,45 +294,56 @@ public:
 
       @internal This is usually overridden in subclasses to get the return type adjusted.
   */
-  self& operator = (value_type rt) {
-    if (Traits::isValid(_r)) Traits::destroy(_r);
+  self &operator=(value_type rt)
+  {
+    if (Traits::isValid(_r))
+      Traits::destroy(_r);
     _r = rt;
     return *this;
   }
 
   /// Equality.
-  bool operator == (value_type rt) const {
-    return _r == rt;
-  }
+  bool operator==(value_type rt) const { return _r == rt; }
 
   /// Inequality.
-  bool operator != (value_type rt) const {
-    return _r != rt;
-  }
+  bool operator!=(value_type rt) const { return _r != rt; }
 
   /// Test if the contained resource is valid.
-  bool isValid() const {
+  bool
+  isValid() const
+  {
     return Traits::isValid(_r);
   }
 
 protected:
   value_type _r; ///< Resource.
 private:
-  ats_scoped_resource(self const&); ///< Copy constructor not permitted.
-  self& operator = (self const&); ///< Self assignment not permitted.
-
+  ats_scoped_resource(self const &); ///< Copy constructor not permitted.
+  self &operator=(self const &);     ///< Self assignment not permitted.
 };
 
-namespace detail {
+namespace detail
+{
 /** Traits for @c ats_scoped_resource for file descriptors.
  */
-  struct SCOPED_FD_TRAITS
+struct SCOPED_FD_TRAITS {
+  typedef int value_type;
+  static int
+  initValue()
   {
-    typedef int value_type;
-    static int initValue() { return -1; }
-    static bool isValid(int fd) { return fd >= 0; }
-    static void destroy(int fd) { close(fd); }
-  };
+    return -1;
+  }
+  static bool
+  isValid(int fd)
+  {
+    return fd >= 0;
+  }
+  static void
+  destroy(int fd)
+  {
+    close(fd);
+  }
+};
 }
 /** File descriptor as a scoped resource.
  */
@@ -337,7 +351,7 @@ class ats_scoped_fd : public ats_scoped_resource<detail::SCOPED_FD_TRAITS>
 {
 public:
   typedef ats_scoped_resource<detail::SCOPED_FD_TRAITS> super; ///< Super type.
-  typedef ats_scoped_fd self; ///< Self reference type.
+  typedef ats_scoped_fd self;                                  ///< Self reference type.
 
   /// Default constructor - an empty container.
   ats_scoped_fd() : super() {}
@@ -349,38 +363,59 @@ public:
       Any resource currently contained is destroyed.
       This object becomes the owner of @a rt.
   */
-  self& operator = (value_type rt) {
+  self &operator=(value_type rt)
+  {
     super::operator=(rt);
     return *this;
   }
-
 };
 
-namespace detail {
+namespace detail
+{
 /** Traits for @c ats_scoped_resource for pointers from @c ats_malloc.
  */
-  template <
-    typename T ///< Underlying type (not the pointer type).
-  >
-  struct SCOPED_MALLOC_TRAITS
+template <typename T ///< Underlying type (not the pointer type).
+          >
+struct SCOPED_MALLOC_TRAITS {
+  typedef T *value_type;
+  static T *
+  initValue()
   {
-    typedef T* value_type;
-    static T*  initValue() { return NULL; }
-    static bool isValid(T* t) { return 0 != t; }
-    static void destroy(T* t) { ats_free(t); }
-  };
+    return NULL;
+  }
+  static bool
+  isValid(T *t)
+  {
+    return 0 != t;
+  }
+  static void
+  destroy(T *t)
+  {
+    ats_free(t);
+  }
+};
 
-  /// Traits for @c ats_scoped_resource for objects using @c new and @c delete.
-  template <
-    typename T ///< Underlying type - not the pointer type.
-  >
-  struct SCOPED_OBJECT_TRAITS
+/// Traits for @c ats_scoped_resource for objects using @c new and @c delete.
+template <typename T ///< Underlying type - not the pointer type.
+          >
+struct SCOPED_OBJECT_TRAITS {
+  typedef T *value_type;
+  static T *
+  initValue()
   {
-    typedef T* value_type;
-    static T* initValue() { return NULL; }
-    static bool isValid(T* t) { return 0 != t; }
-    static void destroy(T* t) { delete t; }
-  };
+    return NULL;
+  }
+  static bool
+  isValid(T *t)
+  {
+    return 0 != t;
+  }
+  static void
+  destroy(T *t)
+  {
+    delete t;
+  }
+};
 }
 
 /** Specialization of @c ats_scoped_resource for strings.
@@ -388,21 +423,19 @@ namespace detail {
 */
 class ats_scoped_str : public ats_scoped_resource<detail::SCOPED_MALLOC_TRAITS<char> >
 {
- public:
+public:
   typedef ats_scoped_resource<detail::SCOPED_MALLOC_TRAITS<char> > super; ///< Super type.
-  typedef ats_scoped_str self; ///< Self reference type.
+  typedef ats_scoped_str self;                                            ///< Self reference type.
 
   /// Default constructor (no string).
-  ats_scoped_str()
-  { }
+  ats_scoped_str() {}
   /// Construct and allocate @a n bytes for a string.
-  explicit ats_scoped_str(size_t n) : super(static_cast<char*>(ats_malloc(n)))
-  { }
+  explicit ats_scoped_str(size_t n) : super(static_cast<char *>(ats_malloc(n))) {}
   /// Put string @a s in this container for cleanup.
-  explicit ats_scoped_str(char* s) : super(s)
-  { }
+  explicit ats_scoped_str(char *s) : super(s) {}
   /// Assign a string @a s to this container.
-  self& operator = (char* s) {
+  self &operator=(char *s)
+  {
     super::operator=(s);
     return *this;
   }
@@ -410,16 +443,16 @@ class ats_scoped_str : public ats_scoped_resource<detail::SCOPED_MALLOC_TRAITS<c
 
 /** Specialization of @c ats_scoped_resource for pointers allocated with @c ats_malloc.
  */
-template <
-  typename T ///< Underlying (not pointer) type.
->
+template <typename T ///< Underlying (not pointer) type.
+          >
 class ats_scoped_mem : public ats_scoped_resource<detail::SCOPED_MALLOC_TRAITS<T> >
 {
 public:
   typedef ats_scoped_resource<detail::SCOPED_MALLOC_TRAITS<T> > super; ///< Super type.
-  typedef ats_scoped_mem self; ///< Self reference.
+  typedef ats_scoped_mem self;                                         ///< Self reference.
 
-  self& operator = (T* ptr) {
+  self &operator=(T *ptr)
+  {
     super::operator=(ptr);
     return *this;
   }
@@ -429,29 +462,27 @@ public:
     This handles a pointer to an object created by @c new and destroyed by @c delete.
 */
 
-template <
-  typename T /// Underlying (not pointer) type.
->
+template <typename T /// Underlying (not pointer) type.
+          >
 class ats_scoped_obj : public ats_scoped_resource<detail::SCOPED_OBJECT_TRAITS<T> >
 {
 public:
   typedef ats_scoped_resource<detail::SCOPED_OBJECT_TRAITS<T> > super; ///< Super type.
-  typedef ats_scoped_obj self; ///< Self reference.
+  typedef ats_scoped_obj self;                                         ///< Self reference.
 
   /// Default constructor - an empty container.
   ats_scoped_obj() : super() {}
 
   /// Construct with contained resource.
-  explicit ats_scoped_obj(T* obj) : super(obj) {}
+  explicit ats_scoped_obj(T *obj) : super(obj) {}
 
-  self& operator = (T* obj) {
+  self &operator=(T *obj)
+  {
     super::operator=(obj);
     return *this;
   }
 
-  T* operator -> () const {
-    return *this;
-  }
+  T *operator->() const { return *this; }
 };
 
 /** Combine two strings as file paths.
@@ -459,25 +490,27 @@ public:
      are handled to yield exactly one separator.
      @return A newly @x ats_malloc string of the combined paths.
 */
-inline char*
-path_join (ats_scoped_str const& lhs, ats_scoped_str  const& rhs)
+inline char *
+path_join(ats_scoped_str const &lhs, ats_scoped_str const &rhs)
 {
   size_t ln = strlen(lhs);
   size_t rn = strlen(rhs);
-  char const* rptr = rhs; // May need to be modified.
+  char const *rptr = rhs; // May need to be modified.
 
-  if (ln && lhs[ln-1] == '/') --ln; // drop trailing separator.
-  if (rn && *rptr == '/') --rn, ++rptr; // drop leading separator.
+  if (ln && lhs[ln - 1] == '/')
+    --ln; // drop trailing separator.
+  if (rn && *rptr == '/')
+    --rn, ++rptr; // drop leading separator.
 
   ats_scoped_str x(ln + rn + 2);
 
   memcpy(x, lhs, ln);
   x[ln] = '/';
-  memcpy(x + ln + 1,  rptr, rn);
-  x[ln+rn+1] = 0; // terminate string.
+  memcpy(x + ln + 1, rptr, rn);
+  x[ln + rn + 1] = 0; // terminate string.
 
   return x.release();
 }
-#endif  /* __cplusplus */
+#endif /* __cplusplus */
 
 #endif

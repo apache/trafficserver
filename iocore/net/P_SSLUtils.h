@@ -40,8 +40,7 @@ struct RecRawStatBlock;
 
 typedef int ssl_error_t;
 
-enum SSL_Stats
-{
+enum SSL_Stats {
   ssl_origin_server_expired_cert_stat,
   ssl_user_agent_expired_cert_stat,
   ssl_origin_server_revoked_cert_stat,
@@ -69,7 +68,7 @@ enum SSL_Stats
   ssl_total_tickets_created_stat,
   ssl_total_tickets_verified_stat,
   ssl_total_tickets_verified_old_key_stat, // verified with old key.
-  ssl_total_ticket_keys_renewed_stat, // number of keys renewed.
+  ssl_total_ticket_keys_renewed_stat,      // number of keys renewed.
   ssl_total_tickets_not_found_stat,
   ssl_total_tickets_renewed_stat,
   ssl_total_dyn_def_tls_record_count,
@@ -100,21 +99,21 @@ enum SSL_Stats
 extern RecRawStatBlock *ssl_rsb;
 
 /* Stats should only be accessed using these macros */
-#define SSL_INCREMENT_DYN_STAT(x) RecIncrRawStat(ssl_rsb, NULL, (int) x, 1)
-#define SSL_DECREMENT_DYN_STAT(x) RecIncrRawStat(ssl_rsb, NULL, (int) x, -1)
-#define SSL_SET_COUNT_DYN_STAT(x,count) RecSetRawStatCount(ssl_rsb, x, count)
-#define SSL_INCREMENT_DYN_STAT_EX(x, y) RecIncrRawStat(ssl_rsb, NULL, (int) x, y)
-#define SSL_CLEAR_DYN_STAT(x) \
-  do { \
-    RecSetRawStatSum(ssl_rsb, (x), 0); \
+#define SSL_INCREMENT_DYN_STAT(x) RecIncrRawStat(ssl_rsb, NULL, (int)x, 1)
+#define SSL_DECREMENT_DYN_STAT(x) RecIncrRawStat(ssl_rsb, NULL, (int)x, -1)
+#define SSL_SET_COUNT_DYN_STAT(x, count) RecSetRawStatCount(ssl_rsb, x, count)
+#define SSL_INCREMENT_DYN_STAT_EX(x, y) RecIncrRawStat(ssl_rsb, NULL, (int)x, y)
+#define SSL_CLEAR_DYN_STAT(x)            \
+  do {                                   \
+    RecSetRawStatSum(ssl_rsb, (x), 0);   \
     RecSetRawStatCount(ssl_rsb, (x), 0); \
   } while (0)
 
 // Create a default SSL server context.
-SSL_CTX * SSLDefaultServerContext();
+SSL_CTX *SSLDefaultServerContext();
 
 // Create and initialize a SSL client context.
-SSL_CTX * SSLInitClientContext(const SSLConfigParams * param);
+SSL_CTX *SSLInitClientContext(const SSLConfigParams *param);
 
 // Initialize the SSL library.
 void SSLInitializeLibrary();
@@ -123,55 +122,83 @@ void SSLInitializeLibrary();
 void SSLInitializeStatistics();
 
 // Release SSL_CTX and the associated data
-void SSLReleaseContext(SSL_CTX* ctx);
+void SSLReleaseContext(SSL_CTX *ctx);
 
 // Wrapper functions to SSL I/O routines
-ssl_error_t SSLWriteBuffer(SSL * ssl, const void * buf, int64_t nbytes, int64_t& nwritten);
-ssl_error_t SSLReadBuffer(SSL * ssl, void * buf, int64_t nbytes, int64_t& nread);
+ssl_error_t SSLWriteBuffer(SSL *ssl, const void *buf, int64_t nbytes, int64_t &nwritten);
+ssl_error_t SSLReadBuffer(SSL *ssl, void *buf, int64_t nbytes, int64_t &nread);
 ssl_error_t SSLAccept(SSL *ssl);
-ssl_error_t SSLConnect(SSL * ssl);
+ssl_error_t SSLConnect(SSL *ssl);
 
 // Log an SSL error.
 #define SSLError(fmt, ...) SSLDiagnostic(DiagsMakeLocation(), false, NULL, fmt, ##__VA_ARGS__)
-#define SSLErrorVC(vc,fmt, ...) SSLDiagnostic(DiagsMakeLocation(), false, (vc), fmt, ##__VA_ARGS__)
+#define SSLErrorVC(vc, fmt, ...) SSLDiagnostic(DiagsMakeLocation(), false, (vc), fmt, ##__VA_ARGS__)
 // Log a SSL diagnostic using the "ssl" diagnostic tag.
 #define SSLDebug(fmt, ...) SSLDiagnostic(DiagsMakeLocation(), true, NULL, fmt, ##__VA_ARGS__)
 #define SSLDebugVC(vc, fmt, ...) SSLDiagnostic(DiagsMakeLocation(), true, (vc), fmt, ##__VA_ARGS__)
 
 #define SSL_CLR_ERR_INCR_DYN_STAT(vc, x, fmt, ...) \
-  do { \
-    SSLDebugVC((vc), fmt, ##__VA_ARGS__); \
-    RecIncrRawStat(ssl_rsb, NULL, (int) x, 1); \
+  do {                                             \
+    SSLDebugVC((vc), fmt, ##__VA_ARGS__);          \
+    RecIncrRawStat(ssl_rsb, NULL, (int)x, 1);      \
   } while (0)
 
-void SSLDiagnostic(const SrcLoc& loc, bool debug, SSLNetVConnection * vc, const char * fmt, ...) TS_PRINTFLIKE(4, 5);
+void SSLDiagnostic(const SrcLoc &loc, bool debug, SSLNetVConnection *vc, const char *fmt, ...) TS_PRINTFLIKE(4, 5);
 
 // Return a static string name for a SSL_ERROR constant.
-const char * SSLErrorName(int ssl_error);
+const char *SSLErrorName(int ssl_error);
 
 // Log a SSL network buffer.
-void SSLDebugBufferPrint(const char * tag, const char * buffer, unsigned buflen, const char * message);
+void SSLDebugBufferPrint(const char *tag, const char *buffer, unsigned buflen, const char *message);
 
 // Load the SSL certificate configuration.
-bool SSLParseCertificateConfiguration(const SSLConfigParams * params, SSLCertLookup * lookup);
+bool SSLParseCertificateConfiguration(const SSLConfigParams *params, SSLCertLookup *lookup);
 
-namespace ssl { namespace detail {
+namespace ssl
+{
+namespace detail
+{
   struct SCOPED_X509_TRAITS {
-    typedef X509* value_type;
-    static value_type initValue() { return NULL; }
-    static bool isValid(value_type x) { return x != NULL; }
-    static void destroy(value_type x) { X509_free(x); }
+    typedef X509 *value_type;
+    static value_type
+    initValue()
+    {
+      return NULL;
+    }
+    static bool
+    isValid(value_type x)
+    {
+      return x != NULL;
+    }
+    static void
+    destroy(value_type x)
+    {
+      X509_free(x);
+    }
   };
 
   struct SCOPED_BIO_TRAITS {
-    typedef BIO* value_type;
-    static value_type initValue() { return NULL; }
-    static bool isValid(value_type x) { return x != NULL; }
-    static void destroy(value_type x) { BIO_free(x); }
+    typedef BIO *value_type;
+    static value_type
+    initValue()
+    {
+      return NULL;
+    }
+    static bool
+    isValid(value_type x)
+    {
+      return x != NULL;
+    }
+    static void
+    destroy(value_type x)
+    {
+      BIO_free(x);
+    }
   };
-/* namespace ssl */ } /* namespace detail */ }
+/* namespace ssl */ } /* namespace detail */
+}
 
-typedef ats_scoped_resource<ssl::detail::SCOPED_X509_TRAITS>  scoped_X509;
-typedef ats_scoped_resource<ssl::detail::SCOPED_BIO_TRAITS>   scoped_BIO;
+typedef ats_scoped_resource<ssl::detail::SCOPED_X509_TRAITS> scoped_X509;
+typedef ats_scoped_resource<ssl::detail::SCOPED_BIO_TRAITS> scoped_BIO;
 
 #endif /* __P_SSLUTILS_H__ */

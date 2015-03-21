@@ -39,7 +39,7 @@
 // Timeout the Machine * this amount of time after they
 // fall out of the current configuration that are deleted.
 //
-#define MACHINE_TIMEOUT            (HRTIME_DAY*2)
+#define MACHINE_TIMEOUT (HRTIME_DAY * 2)
 
 
 //
@@ -51,12 +51,11 @@
 //
 //  Long running operations should use more sophisticated synchronization.
 //
-#define NO_RACE_DELAY                  HRTIME_HOUR      // a long long time
+#define NO_RACE_DELAY HRTIME_HOUR // a long long time
 
-struct ClusterHandler;           // Leave this a class - VC++ gets very anal  ~SR -- which version of VC++? ~igalic
+struct ClusterHandler; // Leave this a class - VC++ gets very anal  ~SR -- which version of VC++? ~igalic
 
-struct ClusterMachine: public Server
-{
+struct ClusterMachine : public Server {
   bool dead;
   char *hostname;
   int hostname_len;
@@ -87,17 +86,17 @@ struct ClusterMachine: public Server
   ClusterHandler **clusterHandlers;
 };
 
-struct MachineListElement
-{
+struct MachineListElement {
   unsigned int ip;
   int port;
 };
 
-struct MachineList
-{
+struct MachineList {
   int n;
   MachineListElement machine[1];
-  MachineListElement *find(unsigned int ip, int port = 0) {
+  MachineListElement *
+  find(unsigned int ip, int port = 0)
+  {
     for (int i = 0; i < n; i++)
       if (machine[i].ip == ip && (!port || machine[i].port == port))
         return &machine[i];
@@ -106,20 +105,20 @@ struct MachineList
 };
 
 MachineList *read_MachineList(const char *filename, int test_fd = -1);
-void free_MachineList(MachineList * l);
+void free_MachineList(MachineList *l);
 
-struct clusterConfigFile
-{
-  char *parseFile(int fd)
+struct clusterConfigFile {
+  char *
+  parseFile(int fd)
   {
-    return (char *) read_MachineList(NULL, fd);
+    return (char *)read_MachineList(NULL, fd);
   }
 };
 
 inkcoreapi ClusterMachine *this_cluster_machine();
 void create_this_cluster_machine();
 
-void free_ClusterMachine(ClusterMachine * m);
+void free_ClusterMachine(ClusterMachine *m);
 
 MachineList *the_cluster_machines_config();
 MachineList *the_cluster_config();

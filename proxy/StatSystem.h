@@ -26,7 +26,7 @@
   StatSystem.h --
   Created On          : Fri Apr 3 19:41:39 1998
  ****************************************************************************/
-#if !defined (_StatSystem_h_)
+#if !defined(_StatSystem_h_)
 #define _StatSystem_h_
 
 #include "ink_platform.h"
@@ -38,8 +38,8 @@
 
 #include "ink_apidefs.h"
 
-#define STATS_MAJOR_VERSION    6        // increment when changing the stats!
-#define DEFAULT_SNAP_FILENAME             "stats.snap"
+#define STATS_MAJOR_VERSION 6 // increment when changing the stats!
+#define DEFAULT_SNAP_FILENAME "stats.snap"
 
 /////////////////////////////////////////////////////////////
 //
@@ -52,9 +52,10 @@ public:
   TransactionMilestones()
     : ua_begin(0), ua_read_header_done(0), ua_begin_write(0), ua_close(0), server_first_connect(0), server_connect(0),
       server_connect_end(0), server_begin_write(0), server_first_read(0), server_read_header_done(0), server_close(0),
-      cache_open_read_begin(0), cache_open_read_end(0), cache_open_write_begin(0), cache_open_write_end(0),
-      dns_lookup_begin(0), dns_lookup_end(0), sm_start(0), sm_finish(0)
-      { }
+      cache_open_read_begin(0), cache_open_read_end(0), cache_open_write_begin(0), cache_open_write_end(0), dns_lookup_begin(0),
+      dns_lookup_end(0), sm_start(0), sm_finish(0)
+  {
+  }
 
 
   ////////////////////////////////////////////////////////
@@ -76,9 +77,9 @@ public:
   ink_hrtime server_first_connect;
   ink_hrtime server_connect;
   ink_hrtime server_connect_end;
-  ink_hrtime server_begin_write;            //  http only
-  ink_hrtime server_first_read; //  http only
-  ink_hrtime server_read_header_done;   //  http only
+  ink_hrtime server_begin_write;      //  http only
+  ink_hrtime server_first_read;       //  http only
+  ink_hrtime server_read_header_done; //  http only
   ink_hrtime server_close;
 
   ink_hrtime cache_open_read_begin;
@@ -120,13 +121,12 @@ public:
 //
 // Http Transaction Stats
 //
-#define _HEADER \
-typedef enum { \
-    NO_HTTP_TRANS_STATS = 0,
+#define _HEADER typedef enum { NO_HTTP_TRANS_STATS = 0,
 
-#define _FOOTER \
-    MAX_HTTP_TRANS_STATS \
-} HttpTransactionStat_t;
+#define _FOOTER        \
+  MAX_HTTP_TRANS_STATS \
+  }                    \
+  HttpTransactionStat_t;
 
 #if defined(freebsd)
 #undef _D
@@ -138,8 +138,7 @@ typedef enum { \
 #undef _FOOTER
 #undef _D
 
-struct HttpTransactionStatsString_t
-{
+struct HttpTransactionStatsString_t {
   HttpTransactionStat_t i;
   char *name;
 };
@@ -153,13 +152,12 @@ struct HttpTransactionStatsString_t
 //
 // Dynamic Stats
 //
-#define _HEADER \
-typedef enum { \
-    NO_DYN_STATS = DYN_STAT_START,
+#define _HEADER typedef enum { NO_DYN_STATS = DYN_STAT_START,
 
 #define _FOOTER \
-    MAX_DYN_STATS \
-} DynamicStat_t;
+  MAX_DYN_STATS \
+  }             \
+  DynamicStat_t;
 
 #define _D(_x) _x,
 
@@ -169,8 +167,7 @@ typedef enum { \
 #undef _FOOTER
 #undef _D
 
-struct DynamicStatsString_t
-{
+struct DynamicStatsString_t {
   DynamicStat_t i;
   const char *name;
 };
@@ -187,32 +184,23 @@ extern DynamicStatsString_t DynamicStatsStrings[];
 
 typedef int64_t ink_statval_t;
 
-struct ink_local_stat_t
-{
+struct ink_local_stat_t {
   ink_statval_t count;
   ink_statval_t value;
 };
 
-struct ink_prot_global_stat_t
-{
+struct ink_prot_global_stat_t {
   ink_stat_lock_t access_lock;
   ink_statval_t count;
   ink_statval_t sum;
 
-  ink_prot_global_stat_t()
-    : count(0), sum(0)
-  {
-    ink_mutex_init(&access_lock, "Stats Access Lock");
-  }
+  ink_prot_global_stat_t() : count(0), sum(0) { ink_mutex_init(&access_lock, "Stats Access Lock"); }
 };
 
-struct ink_unprot_global_stat_t
-{
+struct ink_unprot_global_stat_t {
   ink_statval_t count;
   ink_statval_t sum;
-    ink_unprot_global_stat_t():count(0), sum(0)
-  {
-  }
+  ink_unprot_global_stat_t() : count(0), sum(0) {}
 };
 
 
@@ -221,25 +209,25 @@ struct ink_unprot_global_stat_t
 //---------------------------------------------------------------------//
 
 // Set count and sum to 0.
-#define CLEAR_DYN_STAT(X) \
-{ \
-    ink_assert (X & DYN_STAT_MASK); \
-    CLEAR_GLOBAL_DYN_STAT(X-DYN_STAT_START); \
-}
+#define CLEAR_DYN_STAT(X)                      \
+  {                                            \
+    ink_assert(X &DYN_STAT_MASK);              \
+    CLEAR_GLOBAL_DYN_STAT(X - DYN_STAT_START); \
+  }
 
 #define DECREMENT_DYN_STAT(X) SUM_DYN_STAT(X, (ink_statval_t)-1)
 
-#define COUNT_DYN_STAT(X,C) \
-{ \
-    ink_assert (X & DYN_STAT_MASK); \
-    ADD_TO_GLOBAL_DYN_COUNT((X-DYN_STAT_START), C); \
-}
+#define COUNT_DYN_STAT(X, C)                          \
+  {                                                   \
+    ink_assert(X &DYN_STAT_MASK);                     \
+    ADD_TO_GLOBAL_DYN_COUNT((X - DYN_STAT_START), C); \
+  }
 
-#define FSUM_DYN_STAT(X, S) \
-{ \
-    ink_assert (X & DYN_STAT_MASK); \
-    ADD_TO_GLOBAL_DYN_FSUM((X-DYN_STAT_START), S); \
-}
+#define FSUM_DYN_STAT(X, S)                          \
+  {                                                  \
+    ink_assert(X &DYN_STAT_MASK);                    \
+    ADD_TO_GLOBAL_DYN_FSUM((X - DYN_STAT_START), S); \
+  }
 
 // Increment the count, sum.
 #define INCREMENT_DYN_STAT(X) SUM_DYN_STAT(X, (ink_statval_t)1)
@@ -248,127 +236,127 @@ struct ink_unprot_global_stat_t
 // Would it make sense to have three functions - a combined
 // read of the count and sum, and two more functions - one
 // to read just the count and the other to read just the sum?
-#define READ_DYN_STAT(X,C,S) \
-{ \
-    ink_assert (X & DYN_STAT_MASK); \
-    READ_GLOBAL_DYN_STAT((X-DYN_STAT_START),C,S); \
-}
+#define READ_DYN_STAT(X, C, S)                        \
+  {                                                   \
+    ink_assert(X &DYN_STAT_MASK);                     \
+    READ_GLOBAL_DYN_STAT((X - DYN_STAT_START), C, S); \
+  }
 
-#define READ_DYN_COUNT(X,C) \
-{ \
-    ink_assert (X & DYN_STAT_MASK); \
-    READ_GLOBAL_DYN_COUNT((X-DYN_STAT_START),C); \
-}
+#define READ_DYN_COUNT(X, C)                        \
+  {                                                 \
+    ink_assert(X &DYN_STAT_MASK);                   \
+    READ_GLOBAL_DYN_COUNT((X - DYN_STAT_START), C); \
+  }
 
-#define READ_DYN_SUM(X,S) \
-{ \
-    ink_assert (X & DYN_STAT_MASK); \
-    READ_GLOBAL_DYN_SUM((X-DYN_STAT_START),S); \
-}
+#define READ_DYN_SUM(X, S)                        \
+  {                                               \
+    ink_assert(X &DYN_STAT_MASK);                 \
+    READ_GLOBAL_DYN_SUM((X - DYN_STAT_START), S); \
+  }
 
 // set the stat.count to a specific value
-#define SET_DYN_COUNT(X, V) \
-{ \
-    ink_assert (X & DYN_STAT_MASK); \
-    SET_GLOBAL_DYN_COUNT((X-DYN_STAT_START), V); \
-}
+#define SET_DYN_COUNT(X, V)                        \
+  {                                                \
+    ink_assert(X &DYN_STAT_MASK);                  \
+    SET_GLOBAL_DYN_COUNT((X - DYN_STAT_START), V); \
+  }
 
 // set the stat.count stat.sum to specific values
-#define SET_DYN_STAT(X, C, S) \
-{ \
-    ink_assert (X & DYN_STAT_MASK); \
-    SET_GLOBAL_DYN_STAT((X-DYN_STAT_START), C, S); \
-}
+#define SET_DYN_STAT(X, C, S)                        \
+  {                                                  \
+    ink_assert(X &DYN_STAT_MASK);                    \
+    SET_GLOBAL_DYN_STAT((X - DYN_STAT_START), C, S); \
+  }
 
 // Add a specific value to the sum.
-#define SUM_DYN_STAT(X,S) \
-{ \
-    ink_assert (X & DYN_STAT_MASK); \
-    ADD_TO_GLOBAL_DYN_SUM((X-DYN_STAT_START), S); \
-}
+#define SUM_DYN_STAT(X, S)                          \
+  {                                                 \
+    ink_assert(X &DYN_STAT_MASK);                   \
+    ADD_TO_GLOBAL_DYN_SUM((X - DYN_STAT_START), S); \
+  }
 
 // Add a specific value to the sum.
-#define SUM_GLOBAL_DYN_STAT(X,S) \
-{ \
-    ink_assert (X & DYN_STAT_MASK); \
-    ADD_TO_GLOBAL_GLOBAL_DYN_SUM((X-DYN_STAT_START), S); \
-}
+#define SUM_GLOBAL_DYN_STAT(X, S)                          \
+  {                                                        \
+    ink_assert(X &DYN_STAT_MASK);                          \
+    ADD_TO_GLOBAL_GLOBAL_DYN_SUM((X - DYN_STAT_START), S); \
+  }
 
-#define __CLEAR_TRANS_STAT(local_stat_struct_, X) \
-{ \
-    ink_assert (!(X & DYN_STAT_MASK)); \
+#define __CLEAR_TRANS_STAT(local_stat_struct_, X)   \
+  {                                                 \
+    ink_assert(!(X & DYN_STAT_MASK));               \
     local_stat_struct_[X].count = (ink_statval_t)0; \
     local_stat_struct_[X].value = (ink_statval_t)0; \
-}
+  }
 
 #define __DECREMENT_TRANS_STAT(local_stat_struct_, X) __SUM_TRANS_STAT(local_stat_struct_, X, (ink_statval_t)-1)
 
 #define __FSUM_TRANS_STAT(local_stat_struct_, X, S) \
-{ \
-    ink_assert (!(X & DYN_STAT_MASK)); \
-    local_stat_struct_[X].count++; \
+  {                                                 \
+    ink_assert(!(X & DYN_STAT_MASK));               \
+    local_stat_struct_[X].count++;                  \
     (*(double *)&local_stat_struct_[X].value) += S; \
-}
+  }
 
 // Increment the count, sum.
 #define __INCREMENT_TRANS_STAT(local_stat_struct_, X) __SUM_TRANS_STAT(local_stat_struct_, X, (ink_statval_t)1);
 
 #define __INITIALIZE_LOCAL_STAT_STRUCT(local_stat_struct_, X) __CLEAR_TRANS_STAT(local_stat_struct_, X)
 
-#define	INITIALIZE_GLOBAL_TRANS_STATS(X) \
-{ \
-    X.count = (ink_statval_t)0; \
-    X.sum = (ink_statval_t)0; \
-}
+#define INITIALIZE_GLOBAL_TRANS_STATS(X) \
+  {                                      \
+    X.count = (ink_statval_t)0;          \
+    X.sum = (ink_statval_t)0;            \
+  }
 
 // Get the count and sum in a single lock acquire operation.
 // Would it make sense to have three functions - a combined
 // read of the count and sum, and two more functions - one
 // to read just the count and the other to read just the sum?
-#define READ_HTTP_TRANS_STAT(X,C,S) \
-{ \
-    ink_assert (!(X & DYN_STAT_MASK)); \
-    READ_GLOBAL_HTTP_TRANS_STAT(X,C,S); \
-}
+#define READ_HTTP_TRANS_STAT(X, C, S)     \
+  {                                       \
+    ink_assert(!(X & DYN_STAT_MASK));     \
+    READ_GLOBAL_HTTP_TRANS_STAT(X, C, S); \
+  }
 
 // set the stat.count to a specific value
 #define __SET_TRANS_COUNT(local_stat_struct_, X, V) \
-{ \
-    ink_assert (!(X & DYN_STAT_MASK)); \
+  {                                                 \
+    ink_assert(!(X & DYN_STAT_MASK));               \
     local_stat_struct_[X].value = (ink_statval_t)V; \
-}
+  }
 
 // set the stat.count and the stat.sum to specific values
 #define __SET_TRANS_STAT(local_stat_struct_, X, C, S) \
-{ \
-    ink_assert (!(X & DYN_STAT_MASK)); \
-    local_stat_struct_[X].value = (ink_statval_t)S; \
-}
+  {                                                   \
+    ink_assert(!(X & DYN_STAT_MASK));                 \
+    local_stat_struct_[X].value = (ink_statval_t)S;   \
+  }
 
 // Add a specific value to local stat.
 // Both ADD_TO_SUM_STAT and ADD_TO_COUNT_STAT do the same thing
 // to the local copy of the transaction stat.
-#define __SUM_TRANS_STAT(local_stat_struct_, X,S) \
-{ \
-    ink_assert (!(X & DYN_STAT_MASK)); \
-    local_stat_struct_[X].count += 1; \
-    local_stat_struct_[X].value += S; \
-}
+#define __SUM_TRANS_STAT(local_stat_struct_, X, S) \
+  {                                                \
+    ink_assert(!(X & DYN_STAT_MASK));              \
+    local_stat_struct_[X].count += 1;              \
+    local_stat_struct_[X].value += S;              \
+  }
 
-#define UPDATE_HTTP_TRANS_STATS(local_stat_struct_) \
-{ \
-    int i; \
-    STAT_LOCK_ACQUIRE(&(global_http_trans_stat_lock)); \
-    for (i=NO_HTTP_TRANS_STATS; i<MAX_HTTP_TRANS_STATS; i++) { \
-	global_http_trans_stats[i].count += local_stat_struct_[i].count; \
-	global_http_trans_stats[i].sum += local_stat_struct_[i].value; \
-    } \
-    STAT_LOCK_RELEASE(&(global_http_trans_stat_lock)); \
-}
+#define UPDATE_HTTP_TRANS_STATS(local_stat_struct_)                    \
+  {                                                                    \
+    int i;                                                             \
+    STAT_LOCK_ACQUIRE(&(global_http_trans_stat_lock));                 \
+    for (i = NO_HTTP_TRANS_STATS; i < MAX_HTTP_TRANS_STATS; i++) {     \
+      global_http_trans_stats[i].count += local_stat_struct_[i].count; \
+      global_http_trans_stats[i].sum += local_stat_struct_[i].value;   \
+    }                                                                  \
+    STAT_LOCK_RELEASE(&(global_http_trans_stat_lock));                 \
+  }
 
 #define STAT_LOCK_ACQUIRE(X) (ink_mutex_acquire(X))
 #define STAT_LOCK_RELEASE(X) (ink_mutex_release(X))
-#define STAT_LOCK_INIT(X,S) (ink_mutex_init(X,S))
+#define STAT_LOCK_INIT(X, S) (ink_mutex_init(X, S))
 
 //---------------------------------------------------------------------//
 // Internal macros to support adding, setting, reading, clearing, etc. //
@@ -381,201 +369,198 @@ struct ink_unprot_global_stat_t
 #error "Should not build with USE_THREAD_LOCAL_DYN_STATS"
 
 
-#define ADD_TO_GLOBAL_DYN_COUNT(X,C) \
-mutex->thread_holding->global_dyn_stats[X].count += (C)
+#define ADD_TO_GLOBAL_DYN_COUNT(X, C) mutex->thread_holding->global_dyn_stats[X].count += (C)
 
-#define ADD_TO_GLOBAL_DYN_SUM(X,S) \
-mutex->thread_holding->global_dyn_stats[X].count ++; \
-mutex->thread_holding->global_dyn_stats[X].sum += (S)
+#define ADD_TO_GLOBAL_DYN_SUM(X, S)                   \
+  mutex->thread_holding->global_dyn_stats[X].count++; \
+  mutex->thread_holding->global_dyn_stats[X].sum += (S)
 
-#define ADD_TO_GLOBAL_GLOBAL_DYN_SUM(X,S) \
-ink_atomic_increment(&global_dyn_stats[X].count,(ink_statval_t)1); \
-ink_atomic_increment(&global_dyn_stats[X].sum,S)
+#define ADD_TO_GLOBAL_GLOBAL_DYN_SUM(X, S)                            \
+  ink_atomic_increment(&global_dyn_stats[X].count, (ink_statval_t)1); \
+  ink_atomic_increment(&global_dyn_stats[X].sum, S)
 /*
  * global_dyn_stats[X].count ++; \
  * global_dyn_stats[X].sum += (S)
  */
 
-#define ADD_TO_GLOBAL_DYN_FSUM(X,S) \
-mutex->thread_holding->global_dyn_stats[X].count++; \
-mutex->thread_holding->global_dyn_stats[X].sum += (S)
+#define ADD_TO_GLOBAL_DYN_FSUM(X, S)                  \
+  mutex->thread_holding->global_dyn_stats[X].count++; \
+  mutex->thread_holding->global_dyn_stats[X].sum += (S)
 
 #define CLEAR_GLOBAL_DYN_STAT(X) \
-global_dyn_stats[X].count = 0; \
-global_dyn_stats[X].sum = 0
+  global_dyn_stats[X].count = 0; \
+  global_dyn_stats[X].sum = 0
 
-#define READ_GLOBAL_DYN_STAT(X,C,S) do { \
-  ink_unprot_global_stat_t _s = global_dyn_stats[X]; \
-  for (int _e = 0; _e < eventProcessor.n_ethreads ; _e++) { \
-    _s.count += eventProcessor.all_ethreads[_e]->global_dyn_stats[X].count; \
-    _s.sum += eventProcessor.all_ethreads[_e]->global_dyn_stats[X].sum; \
-  } \
-  for (int _e = 0; _e < eventProcessor.n_dthreads ; _e++) { \
-    _s.count += eventProcessor.all_dthreads[_e]->global_dyn_stats[X].count; \
-    _s.sum += eventProcessor.all_dthreads[_e]->global_dyn_stats[X].sum; \
-  } \
-  C = _s.count; \
-  S = _s.sum; \
-} while (0)
+#define READ_GLOBAL_DYN_STAT(X, C, S)                                         \
+  do {                                                                        \
+    ink_unprot_global_stat_t _s = global_dyn_stats[X];                        \
+    for (int _e = 0; _e < eventProcessor.n_ethreads; _e++) {                  \
+      _s.count += eventProcessor.all_ethreads[_e]->global_dyn_stats[X].count; \
+      _s.sum += eventProcessor.all_ethreads[_e]->global_dyn_stats[X].sum;     \
+    }                                                                         \
+    for (int _e = 0; _e < eventProcessor.n_dthreads; _e++) {                  \
+      _s.count += eventProcessor.all_dthreads[_e]->global_dyn_stats[X].count; \
+      _s.sum += eventProcessor.all_dthreads[_e]->global_dyn_stats[X].sum;     \
+    }                                                                         \
+    C = _s.count;                                                             \
+    S = _s.sum;                                                               \
+  } while (0)
 
-#define READ_GLOBAL_DYN_COUNT(X,C) do { \
-  ink_statval_t _s = global_dyn_stats[X].count; \
-  for (int _e = 0; _e < eventProcessor.n_ethreads ; _e++) \
-    _s += eventProcessor.all_ethreads[_e]->global_dyn_stats[X].count; \
-  for (int _e = 0; _e < eventProcessor.n_dthreads ; _e++) \
-    _s += eventProcessor.all_dthreads[_e]->global_dyn_stats[X].count; \
-  C = _s; \
-} while (0)
+#define READ_GLOBAL_DYN_COUNT(X, C)                                     \
+  do {                                                                  \
+    ink_statval_t _s = global_dyn_stats[X].count;                       \
+    for (int _e = 0; _e < eventProcessor.n_ethreads; _e++)              \
+      _s += eventProcessor.all_ethreads[_e]->global_dyn_stats[X].count; \
+    for (int _e = 0; _e < eventProcessor.n_dthreads; _e++)              \
+      _s += eventProcessor.all_dthreads[_e]->global_dyn_stats[X].count; \
+    C = _s;                                                             \
+  } while (0)
 
-#define READ_GLOBAL_DYN_SUM(X,S) do { \
-  ink_statval_t _s = global_dyn_stats[X].sum; \
-  for (int _e = 0; _e < eventProcessor.n_ethreads ; _e++) \
-    _s += eventProcessor.all_ethreads[_e]->global_dyn_stats[X].sum; \
-  for (int _e = 0; _e < eventProcessor.n_dthreads ; _e++) \
-    _s += eventProcessor.all_dthreads[_e]->global_dyn_stats[X].sum; \
-  S = _s; \
-} while (0)
+#define READ_GLOBAL_DYN_SUM(X, S)                                     \
+  do {                                                                \
+    ink_statval_t _s = global_dyn_stats[X].sum;                       \
+    for (int _e = 0; _e < eventProcessor.n_ethreads; _e++)            \
+      _s += eventProcessor.all_ethreads[_e]->global_dyn_stats[X].sum; \
+    for (int _e = 0; _e < eventProcessor.n_dthreads; _e++)            \
+      _s += eventProcessor.all_dthreads[_e]->global_dyn_stats[X].sum; \
+    S = _s;                                                           \
+  } while (0)
 
-#define READ_GLOBAL_HTTP_TRANS_STAT(X,C,S) \
-{ \
-    C = global_http_trans_stats[X].count; \
-    S = global_http_trans_stats[X].sum; \
-}
+#define READ_GLOBAL_HTTP_TRANS_STAT(X, C, S) \
+  {                                          \
+    C = global_http_trans_stats[X].count;    \
+    S = global_http_trans_stats[X].sum;      \
+  }
 
-#define SET_GLOBAL_DYN_COUNT(X,V) \
-global_dyn_stats[X].count = V
+#define SET_GLOBAL_DYN_COUNT(X, V) global_dyn_stats[X].count = V
 
-#define SET_GLOBAL_DYN_STAT(X,C,S) \
-global_dyn_stats[X].count = C; \
-global_dyn_stats[X].sum = S
+#define SET_GLOBAL_DYN_STAT(X, C, S) \
+  global_dyn_stats[X].count = C;     \
+  global_dyn_stats[X].sum = S
 
-#define	INITIALIZE_GLOBAL_DYN_STATS(X, T) \
-{ \
-    X.count = (ink_statval_t)0; \
-    X.sum = (ink_statval_t)0; \
-}
+#define INITIALIZE_GLOBAL_DYN_STATS(X, T) \
+  {                                       \
+    X.count = (ink_statval_t)0;           \
+    X.sum = (ink_statval_t)0;             \
+  }
 
 #else
 
-#define ADD_TO_GLOBAL_DYN_COUNT(X,C) \
-ink_atomic_increment(&global_dyn_stats[X].count,C)
+#define ADD_TO_GLOBAL_DYN_COUNT(X, C) ink_atomic_increment(&global_dyn_stats[X].count, C)
 
-#define ADD_TO_GLOBAL_DYN_SUM(X,S) \
-ink_atomic_increment(&global_dyn_stats[X].count,(ink_statval_t)1); \
-ink_atomic_increment(&global_dyn_stats[X].sum,S)
+#define ADD_TO_GLOBAL_DYN_SUM(X, S)                                   \
+  ink_atomic_increment(&global_dyn_stats[X].count, (ink_statval_t)1); \
+  ink_atomic_increment(&global_dyn_stats[X].sum, S)
 
-#define ADD_TO_GLOBAL_GLOBAL_DYN_SUM(X,S) \
-ink_atomic_increment(&global_dyn_stats[X].count,(ink_statval_t)1); \
-ink_atomic_increment(&global_dyn_stats[X].sum,S)
+#define ADD_TO_GLOBAL_GLOBAL_DYN_SUM(X, S)                            \
+  ink_atomic_increment(&global_dyn_stats[X].count, (ink_statval_t)1); \
+  ink_atomic_increment(&global_dyn_stats[X].sum, S)
 
-#define ADD_TO_GLOBAL_DYN_FSUM(X,S) \
-ink_atomic_increment(&global_dyn_stats[X].count,(ink_statval_t)1); \
-(*(double *)&global_dyn_stats[X].sum) += S
+#define ADD_TO_GLOBAL_DYN_FSUM(X, S)                                  \
+  ink_atomic_increment(&global_dyn_stats[X].count, (ink_statval_t)1); \
+  (*(double *)&global_dyn_stats[X].sum) += S
 
 #define CLEAR_GLOBAL_DYN_STAT(X) \
-global_dyn_stats[X].count = 0; \
-global_dyn_stats[X].sum = 0
+  global_dyn_stats[X].count = 0; \
+  global_dyn_stats[X].sum = 0
 
-#define READ_GLOBAL_DYN_STAT(X,C,S) \
-C = global_dyn_stats[X].count; \
-S = global_dyn_stats[X].sum
+#define READ_GLOBAL_DYN_STAT(X, C, S) \
+  C = global_dyn_stats[X].count;      \
+  S = global_dyn_stats[X].sum
 
-#define READ_GLOBAL_DYN_COUNT(X,C) \
-C = global_dyn_stats[X].count;
+#define READ_GLOBAL_DYN_COUNT(X, C) C = global_dyn_stats[X].count;
 
-#define READ_GLOBAL_DYN_SUM(X,S) \
-S = global_dyn_stats[X].sum;
+#define READ_GLOBAL_DYN_SUM(X, S) S = global_dyn_stats[X].sum;
 
-#define READ_GLOBAL_HTTP_TRANS_STAT(X,C,S) \
-{ \
-    C = global_http_trans_stats[X].count; \
-    S = global_http_trans_stats[X].sum; \
-}
+#define READ_GLOBAL_HTTP_TRANS_STAT(X, C, S) \
+  {                                          \
+    C = global_http_trans_stats[X].count;    \
+    S = global_http_trans_stats[X].sum;      \
+  }
 
-#define SET_GLOBAL_DYN_COUNT(X,V) \
-global_dyn_stats[X].count = V
+#define SET_GLOBAL_DYN_COUNT(X, V) global_dyn_stats[X].count = V
 
-#define SET_GLOBAL_DYN_STAT(X,C,S) \
-global_dyn_stats[X].count = C; \
-global_dyn_stats[X].sum = S
+#define SET_GLOBAL_DYN_STAT(X, C, S) \
+  global_dyn_stats[X].count = C;     \
+  global_dyn_stats[X].sum = S
 
-#define	INITIALIZE_GLOBAL_DYN_STATS(X, T) \
-{ \
-    X.count = (ink_statval_t)0; \
-    X.sum = (ink_statval_t)0; \
-}
+#define INITIALIZE_GLOBAL_DYN_STATS(X, T) \
+  {                                       \
+    X.count = (ink_statval_t)0;           \
+    X.sum = (ink_statval_t)0;             \
+  }
 
 #endif /* USE_THREAD_LOCAL_DYN_STATS */
 
 #else /* USE_LOCKS_FOR_DYN_STATS */
 
-#define ADD_TO_GLOBAL_DYN_COUNT(X,C) \
-{ \
+#define ADD_TO_GLOBAL_DYN_COUNT(X, C)                      \
+  {                                                        \
     STAT_LOCK_ACQUIRE(&(global_dyn_stats[X].access_lock)); \
-    global_dyn_stats[X].count += C; \
+    global_dyn_stats[X].count += C;                        \
     STAT_LOCK_RELEASE(&(global_dyn_stats[X].access_lock)); \
-}
-#define ADD_TO_GLOBAL_DYN_SUM(X,S) \
-{ \
+  }
+#define ADD_TO_GLOBAL_DYN_SUM(X, S)                        \
+  {                                                        \
     STAT_LOCK_ACQUIRE(&(global_dyn_stats[X].access_lock)); \
-    global_dyn_stats[X].count += 1; \
-    global_dyn_stats[X].sum += S; \
+    global_dyn_stats[X].count += 1;                        \
+    global_dyn_stats[X].sum += S;                          \
     STAT_LOCK_RELEASE(&(global_dyn_stats[X].access_lock)); \
-}
-#define ADD_TO_GLOBAL_GLOBAL_DYN_SUM(X,S) \
-{ \
+  }
+#define ADD_TO_GLOBAL_GLOBAL_DYN_SUM(X, S)                 \
+  {                                                        \
     STAT_LOCK_ACQUIRE(&(global_dyn_stats[X].access_lock)); \
-    global_dyn_stats[X].count += 1; \
-    global_dyn_stats[X].sum += S; \
+    global_dyn_stats[X].count += 1;                        \
+    global_dyn_stats[X].sum += S;                          \
     STAT_LOCK_RELEASE(&(global_dyn_stats[X].access_lock)); \
-}
-#define ADD_TO_GLOBAL_DYN_FSUM(X,S) \
-{ \
+  }
+#define ADD_TO_GLOBAL_DYN_FSUM(X, S)                       \
+  {                                                        \
     STAT_LOCK_ACQUIRE(&(global_dyn_stats[X].access_lock)); \
-    global_dyn_stats[X].count += (ink_statval_t)1; \
-    (*(double *)&global_dyn_stats[X].sum) += S; \
+    global_dyn_stats[X].count += (ink_statval_t)1;         \
+    (*(double *)&global_dyn_stats[X].sum) += S;            \
     STAT_LOCK_RELEASE(&(global_dyn_stats[X].access_lock)); \
-}
-#define CLEAR_GLOBAL_DYN_STAT(X) \
-{ \
+  }
+#define CLEAR_GLOBAL_DYN_STAT(X)                           \
+  {                                                        \
     STAT_LOCK_ACQUIRE(&(global_dyn_stats[X].access_lock)); \
-    global_dyn_stats[X].count = (ink_statval_t)0; \
-    global_dyn_stats[X].sum = (ink_statval_t)0; \
+    global_dyn_stats[X].count = (ink_statval_t)0;          \
+    global_dyn_stats[X].sum = (ink_statval_t)0;            \
     STAT_LOCK_RELEASE(&(global_dyn_stats[X].access_lock)); \
-}
-#define READ_GLOBAL_DYN_STAT(X,C,S) \
-{ \
+  }
+#define READ_GLOBAL_DYN_STAT(X, C, S)                      \
+  {                                                        \
     STAT_LOCK_ACQUIRE(&(global_dyn_stats[X].access_lock)); \
-    C = global_dyn_stats[X].count; \
-    S = global_dyn_stats[X].sum; \
+    C = global_dyn_stats[X].count;                         \
+    S = global_dyn_stats[X].sum;                           \
     STAT_LOCK_RELEASE(&(global_dyn_stats[X].access_lock)); \
-}
-#define READ_GLOBAL_HTTP_TRANS_STAT(X,C,S) \
-{ \
-    C = global_http_trans_stats[X].count; \
-    S = global_http_trans_stats[X].sum; \
-}
-#define SET_GLOBAL_DYN_COUNT(X,V) \
-{ \
+  }
+#define READ_GLOBAL_HTTP_TRANS_STAT(X, C, S) \
+  {                                          \
+    C = global_http_trans_stats[X].count;    \
+    S = global_http_trans_stats[X].sum;      \
+  }
+#define SET_GLOBAL_DYN_COUNT(X, V)                         \
+  {                                                        \
     STAT_LOCK_ACQUIRE(&(global_dyn_stats[X].access_lock)); \
-    global_dyn_stats[X].count = V; \
+    global_dyn_stats[X].count = V;                         \
     STAT_LOCK_RELEASE(&(global_dyn_stats[X].access_lock)); \
-}
+  }
 
-#define SET_GLOBAL_DYN_STAT(X,C,S) \
-{ \
+#define SET_GLOBAL_DYN_STAT(X, C, S)                       \
+  {                                                        \
     STAT_LOCK_ACQUIRE(&(global_dyn_stats[X].access_lock)); \
-    global_dyn_stats[X].count = C; \
-    global_dyn_stats[X].sum = S; \
+    global_dyn_stats[X].count = C;                         \
+    global_dyn_stats[X].sum = S;                           \
     STAT_LOCK_RELEASE(&(global_dyn_stats[X].access_lock)); \
-}
+  }
 
-#define	INITIALIZE_GLOBAL_DYN_STATS(X, T) \
-{ \
-    STAT_LOCK_INIT(&(X.access_lock), T); \
-    X.count = (ink_statval_t)0; \
-    X.sum = (ink_statval_t)0; \
-}
+#define INITIALIZE_GLOBAL_DYN_STATS(X, T) \
+  {                                       \
+    STAT_LOCK_INIT(&(X.access_lock), T);  \
+    X.count = (ink_statval_t)0;           \
+    X.sum = (ink_statval_t)0;             \
+  }
 
 #endif /* USE_LOCKS_FOR_DYN_STATS */
 
@@ -586,8 +571,8 @@ extern void start_stats_snap(void);
 void initialize_all_global_stats();
 
 // TODO: I don't think these are necessary any more, but double check.
-//void *tmp_stats_lock_function(UpdateLockAction action);
-//void *stats_lock_function(void *data, UpdateLockAction action);
+// void *tmp_stats_lock_function(UpdateLockAction action);
+// void *stats_lock_function(void *data, UpdateLockAction action);
 
 void *http_trans_stats_count_cb(void *data, void *res);
 void *http_trans_stats_sum_cb(void *data, void *res);

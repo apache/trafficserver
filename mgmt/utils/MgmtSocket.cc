@@ -65,7 +65,7 @@ mgmt_accept(int s, struct sockaddr *addr, int *addrlen)
 {
   int r, retries;
   for (retries = 0; retries < MGMT_MAX_TRANSIENT_ERRORS; retries++) {
-    r =::accept(s, addr, (socklen_t *) addrlen);
+    r = ::accept(s, addr, (socklen_t *)addrlen);
     if (r >= 0)
       return r;
     if (!mgmt_transient_error())
@@ -86,7 +86,7 @@ mgmt_fopen(const char *filename, const char *mode)
   for (retries = 0; retries < MGMT_MAX_TRANSIENT_ERRORS; retries++) {
     // no leak here as f will be returned if it is > 0
     // coverity[overwrite_var]
-    f =::fopen(filename, mode);
+    f = ::fopen(filename, mode);
     if (f > 0)
       return f;
     if (!mgmt_transient_error())
@@ -104,7 +104,7 @@ mgmt_open(const char *path, int oflag)
 {
   int r, retries;
   for (retries = 0; retries < MGMT_MAX_TRANSIENT_ERRORS; retries++) {
-    r =::open(path, oflag);
+    r = ::open(path, oflag);
     if (r >= 0)
       return r;
     if (!mgmt_transient_error())
@@ -122,7 +122,7 @@ mgmt_open_mode(const char *path, int oflag, mode_t mode)
 {
   int r, retries;
   for (retries = 0; retries < MGMT_MAX_TRANSIENT_ERRORS; retries++) {
-    r =::open(path, oflag, mode);
+    r = ::open(path, oflag, mode);
     if (r >= 0)
       return r;
     if (!mgmt_transient_error())
@@ -136,21 +136,21 @@ mgmt_open_mode(const char *path, int oflag, mode_t mode)
 //-------------------------------------------------------------------------
 
 int
-mgmt_select(int nfds, fd_set * readfds, fd_set * writefds, fd_set * errorfds, struct timeval *timeout)
+mgmt_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds, struct timeval *timeout)
 {
-  // Note: Linux select() has slight different semantics.  From the
-  // man page: "On Linux, timeout is modified to reflect the amount of
-  // time not slept; most other implementations do not do this."
-  // Linux select() can also return ENOMEM, so we espeically need to
-  // protect the call with the transient error retry loop.
-  // Fortunately, because of the Linux timeout handling, our
-  // mgmt_select call will still timeout correctly, rather than
-  // possibly extending our timeout period by up to
-  // MGMT_MAX_TRANSIENT_ERRORS times.
+// Note: Linux select() has slight different semantics.  From the
+// man page: "On Linux, timeout is modified to reflect the amount of
+// time not slept; most other implementations do not do this."
+// Linux select() can also return ENOMEM, so we espeically need to
+// protect the call with the transient error retry loop.
+// Fortunately, because of the Linux timeout handling, our
+// mgmt_select call will still timeout correctly, rather than
+// possibly extending our timeout period by up to
+// MGMT_MAX_TRANSIENT_ERRORS times.
 #if defined(linux)
   int r, retries;
   for (retries = 0; retries < MGMT_MAX_TRANSIENT_ERRORS; retries++) {
-    r =::select(nfds, readfds, writefds, errorfds, timeout);
+    r = ::select(nfds, readfds, writefds, errorfds, timeout);
     if (r >= 0)
       return r;
     if (!mgmt_transient_error())
@@ -158,7 +158,7 @@ mgmt_select(int nfds, fd_set * readfds, fd_set * writefds, fd_set * errorfds, st
   }
   return r;
 #else
-  return::select(nfds, readfds, writefds, errorfds, timeout);
+  return ::select(nfds, readfds, writefds, errorfds, timeout);
 #endif
 }
 
@@ -171,7 +171,7 @@ mgmt_sendto(int fd, void *buf, int len, int flags, struct sockaddr *to, int tole
 {
   int r, retries;
   for (retries = 0; retries < MGMT_MAX_TRANSIENT_ERRORS; retries++) {
-    r =::sendto(fd, (char *) buf, len, flags, to, tolen);
+    r = ::sendto(fd, (char *)buf, len, flags, to, tolen);
     if (r >= 0)
       return r;
     if (!mgmt_transient_error())
@@ -189,7 +189,7 @@ mgmt_socket(int domain, int type, int protocol)
 {
   int r, retries;
   for (retries = 0; retries < MGMT_MAX_TRANSIENT_ERRORS; retries++) {
-    r =::socket(domain, type, protocol);
+    r = ::socket(domain, type, protocol);
     if (r >= 0)
       return r;
     if (!mgmt_transient_error())
@@ -227,7 +227,7 @@ mgmt_write_timeout(int fd, int sec, int usec)
   FD_SET(fd, &writeSet);
 
   if (sec < 0 && usec < 0)
-    //blocking select; only returns when fd is ready to write
+    // blocking select; only returns when fd is ready to write
     return (mgmt_select(fd + 1, NULL, &writeSet, NULL, NULL));
   else
     return (mgmt_select(fd + 1, NULL, &writeSet, NULL, &timeout));
@@ -282,7 +282,7 @@ mgmt_has_peereid(void)
 }
 
 int
-mgmt_get_peereid(int fd, uid_t * euid, gid_t * egid)
+mgmt_get_peereid(int fd, uid_t *euid, gid_t *egid)
 {
   *euid = -1;
   *egid = -1;
@@ -292,7 +292,7 @@ mgmt_get_peereid(int fd, uid_t * euid, gid_t * egid)
   fprintf(stderr, "getpeereid -> %d (%d, %s)", err, errno, strerror(errno));
   return err;
 #elif HAVE_GETPEERUCRED
-  ucred_t * ucred;
+  ucred_t *ucred;
 
   if (getpeerucred(fd, &ucred) == -1) {
     return -1;

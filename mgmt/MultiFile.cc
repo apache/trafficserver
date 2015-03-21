@@ -56,7 +56,7 @@ MultiFile::MultiFile()
 //   Adds table entries to output from the result of WalkFiles
 //
 void
-MultiFile::addTableEntries(ExpandingArray * fileList, textBuffer * output)
+MultiFile::addTableEntries(ExpandingArray *fileList, textBuffer *output)
 {
   int numFiles = fileList->getNumEntries();
   fileEntry *current;
@@ -68,13 +68,13 @@ MultiFile::addTableEntries(ExpandingArray * fileList, textBuffer * output)
   const int dataCloseLen = strlen(dataClose);
 
   for (int i = 0; i < numFiles; i++) {
-    current = (fileEntry *) ((*fileList)[i]);
+    current = (fileEntry *)((*fileList)[i]);
 
     output->copyFrom("<tr>\n", 5);
     output->copyFrom(dataOpen, dataOpenLen);
     safeName = substituteForHTMLChars(current->name);
     output->copyFrom(safeName, strlen(safeName));
-    delete[]safeName;
+    delete[] safeName;
     output->copyFrom(dataClose, dataCloseLen);
     output->copyFrom(dataOpen, dataOpenLen);
 
@@ -85,7 +85,6 @@ MultiFile::addTableEntries(ExpandingArray * fileList, textBuffer * output)
     output->copyFrom(dataClose, dataCloseLen);
     output->copyFrom("</tr>\n", 6);
   }
-
 }
 
 // Mfresult MultiFile::WalkFiles(ExpandingArray* fileList)
@@ -95,7 +94,7 @@ MultiFile::addTableEntries(ExpandingArray * fileList, textBuffer * output)
 //
 
 MFresult
-MultiFile::WalkFiles(ExpandingArray * fileList)
+MultiFile::WalkFiles(ExpandingArray *fileList)
 {
   struct dirent *dirEntry;
   DIR *dir;
@@ -107,8 +106,7 @@ MultiFile::WalkFiles(ExpandingArray * fileList)
   fileEntry *fileListEntry;
 
   if ((dir = opendir(managedDir)) == NULL) {
-    mgmt_log(stderr, "[MultiFile::WalkFiles] Unable to open %s directory: %s: %s\n",
-             dirDescript, managedDir, strerror(errno));
+    mgmt_log(stderr, "[MultiFile::WalkFiles] Unable to open %s directory: %s: %s\n", dirDescript, managedDir, strerror(errno));
     return MF_NO_DIR;
   }
   // The fun of Solaris - readdir_r requires a buffer passed into it
@@ -127,7 +125,7 @@ MultiFile::WalkFiles(ExpandingArray * fileList)
       mgmt_log(stderr, "[MultiFile::WalkFiles] Stat of a %s failed %s: %s\n", dirDescript, fileName, strerror(errno));
     } else {
       if (stat(records_config_filePath, &records_config_fileInfo) < 0) {
-        delete[]filePath;
+        delete[] filePath;
         continue;
       }
       // Ignore ., .., and any dot files
@@ -138,8 +136,8 @@ MultiFile::WalkFiles(ExpandingArray * fileList)
         fileList->addEntry(fileListEntry);
       }
     }
-    delete[]filePath;
-    delete[]records_config_filePath;
+    delete[] filePath;
+    delete[] records_config_filePath;
   }
 
   ats_free(dirEntry);
@@ -161,7 +159,7 @@ MultiFile::isManaged(const char *fileName)
 }
 
 void
-MultiFile::addSelectOptions(textBuffer * output, ExpandingArray * options)
+MultiFile::addSelectOptions(textBuffer *output, ExpandingArray *options)
 {
   const char selectEnd[] = "</select>\n";
   const char option[] = "\t<option value='";
@@ -173,11 +171,11 @@ MultiFile::addSelectOptions(textBuffer * output, ExpandingArray * options)
 
   for (int i = 0; i < numOptions; i++) {
     output->copyFrom(option, optionLen);
-    safeCurrent = substituteForHTMLChars((char *) ((*options)[i]));
+    safeCurrent = substituteForHTMLChars((char *)((*options)[i]));
     output->copyFrom(safeCurrent, strlen(safeCurrent));
     output->copyFrom(option_end, strlen(option_end));
     output->copyFrom(safeCurrent, strlen(safeCurrent));
-    delete[]safeCurrent;
+    delete[] safeCurrent;
     output->copyFrom("\n", 1);
   }
   output->copyFrom(selectEnd, strlen(selectEnd));
@@ -193,8 +191,8 @@ MultiFile::addSelectOptions(textBuffer * output, ExpandingArray * options)
 int
 fileEntryCmpFunc(const void *e1, const void *e2)
 {
-  fileEntry *entry1 = (fileEntry *) * (void **) e1;
-  fileEntry *entry2 = (fileEntry *) * (void **) e2;
+  fileEntry *entry1 = (fileEntry *)*(void **)e1;
+  fileEntry *entry2 = (fileEntry *)*(void **)e2;
 
   if (entry1->c_time > entry2->c_time) {
     return 1;
@@ -216,8 +214,8 @@ char *
 MultiFile::newPathString(const char *s1, const char *s2)
 {
   char *newStr;
-  int  srcLen; // is the length of the src rootpath
-  int  addLen; // maximum total path length
+  int srcLen; // is the length of the src rootpath
+  int addLen; // maximum total path length
 
   // Treat null as an empty path.
   if (!s2)

@@ -32,7 +32,7 @@
  ****************************************************************************/
 
 #if !defined _Error_h_
-#define	_Error_h_
+#define _Error_h_
 
 #include "libts.h"
 #include "Diags.h"
@@ -43,26 +43,25 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-struct ErrorClass
-{
+struct ErrorClass {
   const char *filename;
   int line_number;
   const char *function_name;
 
   const char *format_string;
 
-    ErrorClass(const char *afile, int aline, const char *afunction)
-  : filename(afile), line_number(aline), function_name(afunction), format_string(NULL)
+  ErrorClass(const char *afile, int aline, const char *afunction)
+    : filename(afile), line_number(aline), function_name(afunction), format_string(NULL)
   {
   }
 
-  void operator() (const char *aformat_string ...);
+  void operator()(const char *aformat_string...);
 
-  virtual ~ ErrorClass();
+  virtual ~ErrorClass();
   virtual void raise(va_list ap, const char *prefix = NULL);
 };
 
-#if !defined (__GNUC__)
+#if !defined(__GNUC__)
 #define __FUNCTION__ NULL
 #endif
 
@@ -72,12 +71,8 @@ struct ErrorClass
 //
 //////////////////////////////////////////////////////////////////////////////
 
-struct FatalClass: public ErrorClass
-{
-  FatalClass(const char *afile, int aline, const char *afunction)
-  : ErrorClass(afile, aline, afunction)
-  {
-  }
+struct FatalClass : public ErrorClass {
+  FatalClass(const char *afile, int aline, const char *afunction) : ErrorClass(afile, aline, afunction) {}
 };
 
 
@@ -87,16 +82,12 @@ struct FatalClass: public ErrorClass
 //
 //////////////////////////////////////////////////////////////////////////////
 
-struct RequestFatalClass: public FatalClass
-{
+struct RequestFatalClass : public FatalClass {
   virtual void raise(va_list ap, const char *prefix = NULL);
-    RequestFatalClass(const char *afile, int aline, const char *afunction)
-  : FatalClass(afile, aline, afunction)
-  {
-  }
+  RequestFatalClass(const char *afile, int aline, const char *afunction) : FatalClass(afile, aline, afunction) {}
 };
 
-#define RequestFatal (*(new RequestFatalClass(__FILE__,__LINE__,__FUNCTION__)))
+#define RequestFatal (*(new RequestFatalClass(__FILE__, __LINE__, __FUNCTION__)))
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -104,16 +95,12 @@ struct RequestFatalClass: public FatalClass
 //
 //////////////////////////////////////////////////////////////////////////////
 
-struct ThreadFatalClass: public FatalClass
-{
+struct ThreadFatalClass : public FatalClass {
   virtual void raise(va_list ap, const char *prefix = NULL);
-    ThreadFatalClass(const char *afile, int aline, const char *afunction)
-  : FatalClass(afile, aline, afunction)
-  {
-  }
+  ThreadFatalClass(const char *afile, int aline, const char *afunction) : FatalClass(afile, aline, afunction) {}
 };
 
-#define ThreadFatal (*(new ThreadFatalClass(__FILE__,__LINE__,__FUNCTION__)))
+#define ThreadFatal (*(new ThreadFatalClass(__FILE__, __LINE__, __FUNCTION__)))
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -121,17 +108,12 @@ struct ThreadFatalClass: public FatalClass
 //
 //////////////////////////////////////////////////////////////////////////////
 
-struct ProcessorFatalClass: public FatalClass
-{
+struct ProcessorFatalClass : public FatalClass {
   virtual void raise(va_list ap, const char *prefix = NULL);
-    ProcessorFatalClass(const char *afile, int aline, const char *afunction)
-  : FatalClass(afile, aline, afunction)
-  {
-  }
+  ProcessorFatalClass(const char *afile, int aline, const char *afunction) : FatalClass(afile, aline, afunction) {}
 };
 
-#define ProcessorFatal \
-(*(new ProcessorFatalClass(__FILE__,__LINE__,__FUNCTION__)))
+#define ProcessorFatal (*(new ProcessorFatalClass(__FILE__, __LINE__, __FUNCTION__)))
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -139,17 +121,12 @@ struct ProcessorFatalClass: public FatalClass
 //
 //////////////////////////////////////////////////////////////////////////////
 
-struct ProcessFatalClass: public FatalClass
-{
+struct ProcessFatalClass : public FatalClass {
   virtual void raise(va_list ap, const char *prefix = NULL);
-    ProcessFatalClass(const char *afile, int aline, const char *afunction)
-  : FatalClass(afile, aline, afunction)
-  {
-  }
+  ProcessFatalClass(const char *afile, int aline, const char *afunction) : FatalClass(afile, aline, afunction) {}
 };
 
-#define ProcessFatal \
-(*(new ProcessFatalClass(__FILE__,__LINE__,__FUNCTION__)))
+#define ProcessFatal (*(new ProcessFatalClass(__FILE__, __LINE__, __FUNCTION__)))
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -158,16 +135,11 @@ struct ProcessFatalClass: public FatalClass
 //
 //////////////////////////////////////////////////////////////////////////////
 
-struct MachineFatalClass: public FatalClass
-{
+struct MachineFatalClass : public FatalClass {
   virtual void raise(va_list ap, const char *prefix = NULL);
-    MachineFatalClass(const char *afile, int aline, const char *afunction)
-  : FatalClass(afile, aline, afunction)
-  {
-  }
+  MachineFatalClass(const char *afile, int aline, const char *afunction) : FatalClass(afile, aline, afunction) {}
 };
 
-#define MachineFatal \
-(*(new MachineFatalClass(__FILE__,__LINE__,__FUNCTION__)))
+#define MachineFatal (*(new MachineFatalClass(__FILE__, __LINE__, __FUNCTION__)))
 
-#endif  /*_Error_h_*/
+#endif /*_Error_h_*/

@@ -26,9 +26,9 @@
 #ifdef ROUNDUP
 #undef ROUNDUP
 #endif
-#define ROUNDUP(x, y) ((((x)+((y)-1))/(y))*(y))
+#define ROUNDUP(x, y) ((((x) + ((y)-1)) / (y)) * (y))
 
-typedef int (NetAccept::*NetAcceptHandler) (int, void *);
+typedef int (NetAccept::*NetAcceptHandler)(int, void *);
 volatile int dummy_volatile = 0;
 int accept_till_done = 1;
 
@@ -44,7 +44,7 @@ safe_delay(int msec)
 // delaying to let some of the current connections complete
 //
 static int
-send_throttle_message(NetAccept * na)
+send_throttle_message(NetAccept *na)
 {
   struct pollfd afd;
   Connection con[100];
@@ -54,8 +54,7 @@ send_throttle_message(NetAccept * na)
   afd.events = POLLIN;
 
   int n = 0;
-  while (check_net_throttle(ACCEPT, ink_get_hrtime()) && n < THROTTLE_AT_ONCE - 1
-         && (socketManager.poll(&afd, 1, 0) > 0)) {
+  while (check_net_throttle(ACCEPT, ink_get_hrtime()) && n < THROTTLE_AT_ONCE - 1 && (socketManager.poll(&afd, 1, 0) > 0)) {
     int res = 0;
     if ((res = na->server.accept(&con[n])) < 0)
       return res;
@@ -65,8 +64,7 @@ send_throttle_message(NetAccept * na)
   int i = 0;
   for (i = 0; i < n; i++) {
     socketManager.read(con[i].fd, dummy_read_request, 4096);
-    socketManager.write(con[i].fd, unix_netProcessor.throttle_error_message,
-                        strlen(unix_netProcessor.throttle_error_message));
+    socketManager.write(con[i].fd, unix_netProcessor.throttle_error_message, strlen(unix_netProcessor.throttle_error_message));
   }
   safe_delay(NET_THROTTLE_DELAY / 2);
   for (i = 0; i < n; i++)
@@ -79,9 +77,9 @@ send_throttle_message(NetAccept * na)
 // General case network connection accept code
 //
 int
-net_accept(NetAccept * na, void *ep, bool blockable)
+net_accept(NetAccept *na, void *ep, bool blockable)
 {
-  Event *e = (Event *) ep;
+  Event *e = (Event *)ep;
   int res = 0;
   int count = 0;
   int loop = accept_till_done;
@@ -90,10 +88,10 @@ net_accept(NetAccept * na, void *ep, bool blockable)
   if (!blockable)
     if (!MUTEX_TAKE_TRY_LOCK_FOR(na->action_->mutex, e->ethread, na->action_->continuation))
       return 0;
-  //do-while for accepting all the connections
-  //added by YTS Team, yamsat
+  // do-while for accepting all the connections
+  // added by YTS Team, yamsat
   do {
-    vc = (UnixNetVConnection *) na->alloc_cache;
+    vc = (UnixNetVConnection *)na->alloc_cache;
     if (!vc) {
       vc = (UnixNetVConnection *)na->getNetProcessor()->allocate_vc(e->ethread);
       NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, 1);
@@ -122,8 +120,8 @@ net_accept(NetAccept * na, void *ep, bool blockable)
     vc->mutex = new_ProxyMutex();
     vc->action_ = *na->action_;
     vc->set_is_transparent(na->server.f_inbound_transparent);
-    vc->closed  = 0;
-    SET_CONTINUATION_HANDLER(vc, (NetVConnHandler) & UnixNetVConnection::acceptEvent);
+    vc->closed = 0;
+    SET_CONTINUATION_HANDLER(vc, (NetVConnHandler)&UnixNetVConnection::acceptEvent);
 
     if (e->ethread->is_event_type(na->etype))
       vc->handleEvent(EVENT_NONE, e);
@@ -160,7 +158,7 @@ NetAccept::init_accept_loop(const char *thr_name)
 // use it for high connection rates as well.
 //
 void
-NetAccept::init_accept(EThread * t)
+NetAccept::init_accept(EThread *t)
 {
   if (!t)
     t = eventProcessor.assign_thread(etype);
@@ -171,7 +169,7 @@ NetAccept::init_accept(EThread * t)
   }
   if (do_listen(NON_BLOCKING))
     return;
-  SET_HANDLER((NetAcceptHandler) & NetAccept::acceptEvent);
+  SET_HANDLER((NetAcceptHandler)&NetAccept::acceptEvent);
   period = ACCEPT_PERIOD;
   t->schedule_every(this, period, etype);
 }
@@ -185,9 +183,9 @@ NetAccept::init_accept_per_thread()
   if (do_listen(NON_BLOCKING))
     return;
   if (accept_fn == net_accept)
-    SET_HANDLER((NetAcceptHandler) & NetAccept::acceptFastEvent);
+    SET_HANDLER((NetAcceptHandler)&NetAccept::acceptFastEvent);
   else
-    SET_HANDLER((NetAcceptHandler) & NetAccept::acceptEvent);
+    SET_HANDLER((NetAcceptHandler)&NetAccept::acceptEvent);
   period = ACCEPT_PERIOD;
 
   NetAccept *a;
@@ -213,7 +211,6 @@ NetAccept::do_listen(bool non_blocking, bool transparent)
 
   if (server.fd != NO_FD) {
     if ((res = server.setup_fd_for_listen(non_blocking, recv_bufsize, send_bufsize, transparent))) {
-
       Warning("unable to listen on main accept port %d: errno = %d, %s", ntohs(server.accept_addr.port()), errno, strerror(errno));
       goto Lretry;
     }
@@ -233,15 +230,15 @@ NetAccept::do_listen(bool non_blocking, bool transparent)
 }
 
 int
-NetAccept::do_blocking_accept(EThread * t)
+NetAccept::do_blocking_accept(EThread *t)
 {
   int res = 0;
   int loop = accept_till_done;
   UnixNetVConnection *vc = NULL;
   Connection con;
 
-  //do-while for accepting all the connections
-  //added by YTS Team, yamsat
+  // do-while for accepting all the connections
+  // added by YTS Team, yamsat
   do {
     ink_hrtime now = ink_get_hrtime();
 
@@ -260,8 +257,8 @@ NetAccept::do_blocking_accept(EThread * t)
     if ((res = server.accept(&con)) < 0) {
     Lerror:
       int seriousness = accept_error_seriousness(res);
-      if (seriousness >= 0) {   // not so bad
-        if (!seriousness)       // bad enough to warn about
+      if (seriousness >= 0) { // not so bad
+        if (!seriousness)     // bad enough to warn about
           check_transient_accept_error(res);
         safe_delay(NET_THROTTLE_DELAY);
         return 0;
@@ -297,8 +294,8 @@ NetAccept::do_blocking_accept(EThread * t)
     vc->set_is_transparent(server.f_inbound_transparent);
     vc->mutex = new_ProxyMutex();
     vc->action_ = *action_;
-    SET_CONTINUATION_HANDLER(vc, (NetVConnHandler) & UnixNetVConnection::acceptEvent);
-    //eventProcessor.schedule_imm(vc, getEtype());
+    SET_CONTINUATION_HANDLER(vc, (NetVConnHandler)&UnixNetVConnection::acceptEvent);
+    // eventProcessor.schedule_imm(vc, getEtype());
     eventProcessor.schedule_imm_signal(vc, getEtype());
   } while (loop);
 
@@ -309,9 +306,9 @@ NetAccept::do_blocking_accept(EThread * t)
 int
 NetAccept::acceptEvent(int event, void *ep)
 {
-  (void) event;
-  Event *e = (Event *) ep;
-  //PollDescriptor *pd = get_PollDescriptor(e->ethread);
+  (void)event;
+  Event *e = (Event *)ep;
+  // PollDescriptor *pd = get_PollDescriptor(e->ethread);
   ProxyMutex *m = 0;
 
   if (action_->mutex)
@@ -327,24 +324,22 @@ NetAccept::acceptEvent(int event, void *ep)
       return EVENT_DONE;
     }
 
-    //ink_assert(ifd < 0 || event == EVENT_INTERVAL || (pd->nfds > ifd && pd->pfd[ifd].fd == server.fd));
-    //if (ifd < 0 || event == EVENT_INTERVAL || (pd->pfd[ifd].revents & (POLLIN | POLLERR | POLLHUP | POLLNVAL))) {
-    //ink_assert(!"incomplete");
-      int res;
-      if ((res = accept_fn(this, e, false)) < 0) {
-        NET_DECREMENT_DYN_STAT(net_accepts_currently_open_stat);
-        /* INKqa11179 */
-        Warning("Accept on port %d failed with error no %d",
-          ats_ip_port_host_order(&server.addr), res
-        );
-        Warning("Traffic Server may be unable to accept more network" "connections on %d",
-          ats_ip_port_host_order(&server.addr)
-        );
-        e->cancel();
-        delete this;
-        return EVENT_DONE;
-      }
-      //}
+    // ink_assert(ifd < 0 || event == EVENT_INTERVAL || (pd->nfds > ifd && pd->pfd[ifd].fd == server.fd));
+    // if (ifd < 0 || event == EVENT_INTERVAL || (pd->pfd[ifd].revents & (POLLIN | POLLERR | POLLHUP | POLLNVAL))) {
+    // ink_assert(!"incomplete");
+    int res;
+    if ((res = accept_fn(this, e, false)) < 0) {
+      NET_DECREMENT_DYN_STAT(net_accepts_currently_open_stat);
+      /* INKqa11179 */
+      Warning("Accept on port %d failed with error no %d", ats_ip_port_host_order(&server.addr), res);
+      Warning("Traffic Server may be unable to accept more network"
+              "connections on %d",
+              ats_ip_port_host_order(&server.addr));
+      e->cancel();
+      delete this;
+      return EVENT_DONE;
+    }
+    //}
   }
   return EVENT_CONT;
 }
@@ -353,9 +348,9 @@ NetAccept::acceptEvent(int event, void *ep)
 int
 NetAccept::acceptFastEvent(int event, void *ep)
 {
-  Event *e = (Event *) ep;
-  (void) event;
-  (void) e;
+  Event *e = (Event *)ep;
+  (void)event;
+  (void)e;
   int bufsz, res;
   Connection con;
 
@@ -395,7 +390,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
           }
         }
       }
-      if (sockopt_flags & 1) {  // we have to disable Nagle
+      if (sockopt_flags & 1) { // we have to disable Nagle
         safe_setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, SOCKOPT_ON, sizeof(int));
         Debug("socket", "::acceptFastEvent: setsockopt() TCP_NODELAY on socket");
       }
@@ -427,7 +422,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
 #if defined(linux)
           || res == -EPIPE
 #endif
-        ) {
+          ) {
         goto Ldone;
       } else if (accept_error_seriousness(res) >= 0) {
         check_transient_accept_error(res);
@@ -449,9 +444,9 @@ NetAccept::acceptFastEvent(int event, void *ep)
 
     vc->nh = get_NetHandler(e->ethread);
 
-    SET_CONTINUATION_HANDLER(vc, (NetVConnHandler) & UnixNetVConnection::mainEvent);
+    SET_CONTINUATION_HANDLER(vc, (NetVConnHandler)&UnixNetVConnection::mainEvent);
 
-    if (vc->ep.start(pd, vc, EVENTIO_READ|EVENTIO_WRITE) < 0) {
+    if (vc->ep.start(pd, vc, EVENTIO_READ | EVENTIO_WRITE) < 0) {
       Warning("[NetAccept::acceptFastEvent]: Error in inserting fd[%d] in kevent\n", vc->con.fd);
       close_UnixNetVConnection(vc, e->ethread);
       return EVENT_DONE;
@@ -487,14 +482,14 @@ Lerror:
 
 
 int
-NetAccept::acceptLoopEvent(int event, Event * e)
+NetAccept::acceptLoopEvent(int event, Event *e)
 {
-  (void) event;
-  (void) e;
+  (void)event;
+  (void)e;
   EThread *t = this_ethread();
 
   while (do_blocking_accept(t) >= 0)
-      ;
+    ;
 
   // Don't think this ever happens ...
   NET_DECREMENT_DYN_STAT(net_accepts_currently_open_stat);
@@ -509,19 +504,10 @@ NetAccept::acceptLoopEvent(int event, Event * e)
 //
 
 NetAccept::NetAccept()
-  : Continuation(NULL),
-    period(0),
-    alloc_cache(0),
-    ifd(-1),
-    callback_on_open(false),
-    backdoor(false),
-    recv_bufsize(0),
-    send_bufsize(0),
-    sockopt_flags(0),
-    packet_mark(0),
-    packet_tos(0),
-    etype(0)
-{ }
+  : Continuation(NULL), period(0), alloc_cache(0), ifd(-1), callback_on_open(false), backdoor(false), recv_bufsize(0),
+    send_bufsize(0), sockopt_flags(0), packet_mark(0), packet_tos(0), etype(0)
+{
+}
 
 
 //
@@ -547,7 +533,8 @@ NetAccept::clone() const
 // Virtual function allows the correct
 // etype to be used in NetAccept functions (ET_SSL
 // or ET_NET).
-EventType NetAccept::getEtype() const
+EventType
+NetAccept::getEtype() const
 {
   return etype;
 }

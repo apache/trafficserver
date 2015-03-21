@@ -28,8 +28,7 @@
 #include "SpdyClientSession.h"
 #endif
 
-SpdySessionAccept::SpdySessionAccept(spdy::SessionVersion vers)
-    : SessionAccept(new_ProxyMutex()), version(vers)
+SpdySessionAccept::SpdySessionAccept(spdy::SessionVersion vers) : SessionAccept(new_ProxyMutex()), version(vers)
 {
 #if TS_HAS_SPDY
   ink_release_assert(spdy::SESSION_VERSION_2 <= vers && vers <= spdy::SESSION_VERSION_3_1);
@@ -38,10 +37,10 @@ SpdySessionAccept::SpdySessionAccept(spdy::SessionVersion vers)
 }
 
 int
-SpdySessionAccept::mainEvent(int event, void * edata)
+SpdySessionAccept::mainEvent(int event, void *edata)
 {
   if (event == NET_EVENT_ACCEPT) {
-    NetVConnection * netvc =static_cast<NetVConnection *>(edata);
+    NetVConnection *netvc = static_cast<NetVConnection *>(edata);
 
 #if TS_HAS_SPDY
     spdy_cs_create(netvc, this->version, NULL, NULL);
@@ -58,7 +57,7 @@ SpdySessionAccept::mainEvent(int event, void * edata)
 }
 
 void
-SpdySessionAccept::accept(NetVConnection * netvc, MIOBuffer * iobuf, IOBufferReader * reader)
+SpdySessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferReader *reader)
 {
 #if TS_HAS_SPDY
   spdy_cs_create(netvc, this->version, iobuf, reader);

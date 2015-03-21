@@ -25,63 +25,70 @@
 
 using namespace atscppapi;
 
-class MultipleTransactionHookPluginsOne : public atscppapi::TransactionPlugin {
+class MultipleTransactionHookPluginsOne : public atscppapi::TransactionPlugin
+{
 public:
-  MultipleTransactionHookPluginsOne(Transaction &transaction) : TransactionPlugin(transaction) {
+  MultipleTransactionHookPluginsOne(Transaction &transaction) : TransactionPlugin(transaction)
+  {
     TransactionPlugin::registerHook(HOOK_SEND_RESPONSE_HEADERS);
     std::cout << "Constructed MultipleTransactionHookPluginsOne!" << std::endl;
   }
 
-  virtual ~MultipleTransactionHookPluginsOne() {
-    std::cout << "Destroyed MultipleTransactionHookPluginsOne!" << std::endl;
-  }
+  virtual ~MultipleTransactionHookPluginsOne() { std::cout << "Destroyed MultipleTransactionHookPluginsOne!" << std::endl; }
 
-  void handleSendResponseHeaders(Transaction &transaction) {
+  void
+  handleSendResponseHeaders(Transaction &transaction)
+  {
     std::cerr << "MultipleTransactionHookPluginsOne -- Send response headers!" << std::endl;
     transaction.resume();
   }
 };
 
-class MultipleTransactionHookPluginsTwo : public atscppapi::TransactionPlugin {
+class MultipleTransactionHookPluginsTwo : public atscppapi::TransactionPlugin
+{
 public:
-  MultipleTransactionHookPluginsTwo(Transaction &transaction) : TransactionPlugin(transaction) {
+  MultipleTransactionHookPluginsTwo(Transaction &transaction) : TransactionPlugin(transaction)
+  {
     TransactionPlugin::registerHook(HOOK_SEND_REQUEST_HEADERS);
     TransactionPlugin::registerHook(HOOK_SEND_RESPONSE_HEADERS);
     std::cout << "Constructed MultipleTransactionHookPluginsTwo!" << std::endl;
   }
 
-  virtual ~MultipleTransactionHookPluginsTwo() {
-    std::cout << "Destroyed MultipleTransactionHookPluginsTwo!" << std::endl;
-  }
+  virtual ~MultipleTransactionHookPluginsTwo() { std::cout << "Destroyed MultipleTransactionHookPluginsTwo!" << std::endl; }
 
-  void handleSendRequestHeaders(Transaction &transaction) {
+  void
+  handleSendRequestHeaders(Transaction &transaction)
+  {
     std::cout << "MultipleTransactionHookPluginsTwo -- Send request headers!" << std::endl;
     some_container_.push_back("We have transaction scoped storage in Transaction Hooks!");
     transaction.resume();
   }
 
-  void handleSendResponseHeaders(Transaction &transaction) {
-     std::cout << "MultipleTransactionHookPluginsTwo -- Send response headers!" << std::endl;
+  void
+  handleSendResponseHeaders(Transaction &transaction)
+  {
+    std::cout << "MultipleTransactionHookPluginsTwo -- Send response headers!" << std::endl;
 
-     // Demonstrate the concept of transaction scoped storage.
-     if(some_container_.size()) {
-       std::cout << some_container_.back() << std::endl;
-     }
+    // Demonstrate the concept of transaction scoped storage.
+    if (some_container_.size()) {
+      std::cout << some_container_.back() << std::endl;
+    }
 
-     transaction.resume();
-   }
+    transaction.resume();
+  }
 
 private:
   std::vector<std::string> some_container_;
 };
 
-class GlobalHookPlugin : public atscppapi::GlobalPlugin {
+class GlobalHookPlugin : public atscppapi::GlobalPlugin
+{
 public:
-  GlobalHookPlugin() {
-    GlobalPlugin::registerHook(HOOK_READ_REQUEST_HEADERS_PRE_REMAP);
-  }
+  GlobalHookPlugin() { GlobalPlugin::registerHook(HOOK_READ_REQUEST_HEADERS_PRE_REMAP); }
 
-  virtual void handleReadRequestHeadersPreRemap(Transaction &transaction) {
+  virtual void
+  handleReadRequestHeadersPreRemap(Transaction &transaction)
+  {
     std::cout << "Hello from handleReadRequesHeadersPreRemap!" << std::endl;
 
     // We need not store the addresses of the transaction plugins
@@ -95,6 +102,8 @@ public:
   }
 };
 
-void TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED) {
+void
+TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
+{
   new GlobalHookPlugin();
 }

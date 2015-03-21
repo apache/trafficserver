@@ -24,9 +24,9 @@
 #include "statement.h"
 
 void
-Statement::append(Statement* stmt)
+Statement::append(Statement *stmt)
 {
-  Statement* tmp = this;
+  Statement *tmp = this;
 
   TSReleaseAssert(stmt->_next == NULL);
   while (tmp->_next)
@@ -38,7 +38,7 @@ Statement::append(Statement* stmt)
 const ResourceIDs
 Statement::get_resource_ids() const
 {
-  const Statement* stmt = this;
+  const Statement *stmt = this;
   ResourceIDs ids = RSRC_NONE;
 
   while (stmt) {
@@ -77,7 +77,7 @@ Statement::initialize_hooks()
 
 // Parse URL qualifiers
 UrlQualifiers
-Statement::parse_url_qualifier(const std::string& q)
+Statement::parse_url_qualifier(const std::string &q)
 {
   UrlQualifiers qual = URL_QUAL_NONE;
 

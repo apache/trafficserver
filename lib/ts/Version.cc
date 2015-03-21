@@ -41,30 +41,24 @@ AppVersionInfo::AppVersionInfo()
 
 
 void
-AppVersionInfo::setup(const char *pkg_name, const char *app_name, const char *app_version,
-                      const char *build_date, const char *build_time, const char *build_machine,
-                      const char *build_person, const char *build_cflags)
+AppVersionInfo::setup(const char *pkg_name, const char *app_name, const char *app_version, const char *build_date,
+                      const char *build_time, const char *build_machine, const char *build_person, const char *build_cflags)
 {
   char month_name[8];
   int year, month, day, hour, minute, second;
   bool invalid_datetime;
 
-  static const char *months[] = {
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "???"
-  };
+  static const char *months[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "???"};
 
-  invalid_datetime =
-      sscanf(build_time, "%d:%d:%d", &hour, &minute, &second) < 3;
-  invalid_datetime |=
-      sscanf(build_date, "%3s %d %d", month_name, &day, &year) < 3;
+  invalid_datetime = sscanf(build_time, "%d:%d:%d", &hour, &minute, &second) < 3;
+  invalid_datetime |= sscanf(build_date, "%3s %d %d", month_name, &day, &year) < 3;
 
   // Jan=1, Feb=2 ... Dec=12, ???=13
   for (month = 0; month < 11; month++) {
     if (strcasecmp(months[month], month_name) == 0)
       break;
   }
-  month ++;
+  month++;
 
   ///////////////////////////////////////////
   // now construct the version information //
@@ -77,7 +71,7 @@ AppVersionInfo::setup(const char *pkg_name, const char *app_name, const char *ap
   // Otherwise take the build timestamp ("??????" if invalid).
   if (0 != strlen(BUILD_NUMBER)) {
     snprintf(BldNumStr, sizeof(BldNumStr), "%s", BUILD_NUMBER);
-  } else if (! invalid_datetime) {
+  } else if (!invalid_datetime) {
     snprintf(BldNumStr, sizeof(BldNumStr), "%02d%02d%02d", month, day, hour);
   } else {
     snprintf(BldNumStr, sizeof(BldNumStr), "??????");
@@ -113,9 +107,8 @@ AppVersionInfo::setup(const char *pkg_name, const char *app_name, const char *ap
   if (FullVersionInfoStr[0] == '\0')
     ink_strlcpy(FullVersionInfoStr, "?", sizeof(FullVersionInfoStr));
 
-  snprintf(FullVersionInfoStr, sizeof(FullVersionInfoStr),
-           "%s - %s - %s - (build # %s on %s at %s)",
-           PkgStr, AppStr, VersionStr, BldNumStr, BldDateStr, BldTimeStr);
+  snprintf(FullVersionInfoStr, sizeof(FullVersionInfoStr), "%s - %s - %s - (build # %s on %s at %s)", PkgStr, AppStr, VersionStr,
+           BldNumStr, BldDateStr, BldTimeStr);
 
   defined = 1;
 }
@@ -127,8 +120,7 @@ AppVersionInfo::setup(const char *pkg_name, const char *app_name, const char *ap
 /**
  * AppVersionInfo class test.
  */
-REGRESSION_TEST(AppVersionInfo)(RegressionTest* t, int /* atype ATS_UNUSED */,
-    int*  pstatus)
+REGRESSION_TEST(AppVersionInfo)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
 {
   *pstatus = REGRESSION_TEST_PASSED;
 
@@ -136,16 +128,13 @@ REGRESSION_TEST(AppVersionInfo)(RegressionTest* t, int /* atype ATS_UNUSED */,
 
   TestBox tb(t, pstatus);
 
-  const char * errMsgFormat = "wrong build number, expected '%s', got '%s'";
-  const char * bench[][3] =
-  {
-      // date, time, resulting build number
-      {"Oct  4 1957", "19:28:34", BUILD_NUMBER},
-      {"Oct  4 1957", "19:28:34", "100419"},
-      {"Apr  4 1957", "09:08:04", "040409"},
-      {" 4 Apr 1957", "09:08:04", "??????"},
-      {"Apr  4 1957", "09-08-04", "??????"}
-  };
+  const char *errMsgFormat = "wrong build number, expected '%s', got '%s'";
+  const char *bench[][3] = {// date, time, resulting build number
+                            {"Oct  4 1957", "19:28:34", BUILD_NUMBER},
+                            {"Oct  4 1957", "19:28:34", "100419"},
+                            {"Apr  4 1957", "09:08:04", "040409"},
+                            {" 4 Apr 1957", "09:08:04", "??????"},
+                            {"Apr  4 1957", "09-08-04", "??????"}};
 
   int benchSize = sizeof(bench) / sizeof(bench[0]);
 
@@ -154,16 +143,12 @@ REGRESSION_TEST(AppVersionInfo)(RegressionTest* t, int /* atype ATS_UNUSED */,
     // possible to change the version value from inside the regression test.
     // If not empty BUILD_NUMBER overrides any result, in this case run only
     // this test (the rest will always fail).
-    info.setup("Apache Traffic Server", "traffic_server", "5.2.1",
-        bench[0][0], bench[0][1], "build_slave", "builder", "");
-    tb.check(0 == strcmp(info.BldNumStr, bench[0][2]), errMsgFormat,
-        bench[0][2], info.BldNumStr);
+    info.setup("Apache Traffic Server", "traffic_server", "5.2.1", bench[0][0], bench[0][1], "build_slave", "builder", "");
+    tb.check(0 == strcmp(info.BldNumStr, bench[0][2]), errMsgFormat, bench[0][2], info.BldNumStr);
   } else {
     for (int i = 1; i < benchSize; i++) {
-      info.setup("Apache Traffic Server", "traffic_server", "5.2.1",
-          bench[i][0], bench[i][1], "build_slave", "builder", "");
-      tb.check(0 == strcmp(info.BldNumStr, bench[i][2]), errMsgFormat,
-          bench[i][2], info.BldNumStr);
+      info.setup("Apache Traffic Server", "traffic_server", "5.2.1", bench[i][0], bench[i][1], "build_slave", "builder", "");
+      tb.check(0 == strcmp(info.BldNumStr, bench[i][2]), errMsgFormat, bench[i][2], info.BldNumStr);
     }
   }
 }

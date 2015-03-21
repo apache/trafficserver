@@ -36,7 +36,7 @@ enum OperModifiers {
   OPER_NONE = 0,
   OPER_LAST = 1,
   OPER_NEXT = 2,
-  OPER_QSA = 4
+  OPER_QSA = 4,
 };
 
 
@@ -46,24 +46,22 @@ enum OperModifiers {
 class Operator : public Statement
 {
 public:
-  Operator()
-    : _mods(OPER_NONE)
-  {
-    TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Operator");
-  }
+  Operator() : _mods(OPER_NONE) { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Operator"); }
 
-  void do_exec(const Resources& res) const {
+  void
+  do_exec(const Resources &res) const
+  {
     exec(res);
     if (NULL != _next)
-      static_cast<Operator*>(_next)->do_exec(res);
+      static_cast<Operator *>(_next)->do_exec(res);
   }
 
   const OperModifiers get_oper_modifiers() const;
 
-  virtual void initialize(Parser& p);
+  virtual void initialize(Parser &p);
 
 protected:
-  virtual void exec(const Resources& res) const = 0;
+  virtual void exec(const Resources &res) const = 0;
 
 private:
   DISALLOW_COPY_AND_ASSIGN(Operator);
@@ -79,13 +77,9 @@ private:
 class OperatorHeaders : public Operator
 {
 public:
-  OperatorHeaders()
-    : _header("")
-  {
-    TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorHeaders");
-  }
+  OperatorHeaders() : _header("") { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorHeaders"); }
 
-  void initialize(Parser& p);
+  void initialize(Parser &p);
 
 protected:
   std::string _header;

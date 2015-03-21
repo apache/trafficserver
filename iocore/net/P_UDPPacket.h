@@ -34,27 +34,26 @@
 
 #include "I_UDPNet.h"
 
-class UDPPacketInternal:public UDPPacket
+class UDPPacketInternal : public UDPPacket
 {
-
 public:
   UDPPacketInternal();
-  virtual ~ UDPPacketInternal();
+  virtual ~UDPPacketInternal();
 
-  void append_block_internal(IOBufferBlock * block);
+  void append_block_internal(IOBufferBlock *block);
 
   virtual void free();
 
-  SLINK(UDPPacketInternal, alink);  // atomic link
+  SLINK(UDPPacketInternal, alink); // atomic link
   // packet scheduling stuff: keep it a doubly linked list
   uint64_t pktLength;
 
   int reqGenerationNum;
-  ink_hrtime delivery_time;   // when to deliver packet
+  ink_hrtime delivery_time; // when to deliver packet
 
   Ptr<IOBufferBlock> chain;
-  Continuation *cont;         // callback on error
-  UDPConnectionInternal *conn;        // connection where packet should be sent to.
+  Continuation *cont;          // callback on error
+  UDPConnectionInternal *conn; // connection where packet should be sent to.
 
   int in_the_priority_queue;
   int in_heap;
@@ -64,8 +63,7 @@ inkcoreapi extern ClassAllocator<UDPPacketInternal> udpPacketAllocator;
 
 TS_INLINE
 UDPPacketInternal::UDPPacketInternal()
-  : pktLength(0), reqGenerationNum(0), delivery_time(0), cont(NULL),
-    conn(NULL), in_the_priority_queue(0), in_heap(0)
+  : pktLength(0), reqGenerationNum(0), delivery_time(0), cont(NULL), conn(NULL), in_the_priority_queue(0), in_heap(0)
 {
   memset(&from, '\0', sizeof(from));
   memset(&to, '\0', sizeof(to));
@@ -88,12 +86,12 @@ UDPPacketInternal::free()
 }
 
 TS_INLINE void
-UDPPacket::append_block(IOBufferBlock * block)
+UDPPacket::append_block(IOBufferBlock *block)
 {
-  UDPPacketInternal *p = (UDPPacketInternal *) this;
+  UDPPacketInternal *p = (UDPPacketInternal *)this;
 
   if (block) {
-    if (p->chain) {           // append to end
+    if (p->chain) { // append to end
       IOBufferBlock *last = p->chain;
       while (last->next != NULL) {
         last = last->next;
@@ -108,7 +106,7 @@ UDPPacket::append_block(IOBufferBlock * block)
 TS_INLINE int64_t
 UDPPacket::getPktLength()
 {
-  UDPPacketInternal *p = (UDPPacketInternal *) this;
+  UDPPacketInternal *p = (UDPPacketInternal *)this;
   IOBufferBlock *b;
 
   p->pktLength = 0;
@@ -123,17 +121,17 @@ UDPPacket::getPktLength()
 TS_INLINE void
 UDPPacket::free()
 {
-  ((UDPPacketInternal *) this)->free();
+  ((UDPPacketInternal *)this)->free();
 }
 
 TS_INLINE void
-UDPPacket::setContinuation(Continuation * c)
+UDPPacket::setContinuation(Continuation *c)
 {
-  ((UDPPacketInternal *) this)->cont = c;
+  ((UDPPacketInternal *)this)->cont = c;
 }
 
 TS_INLINE void
-UDPPacket::setConnection(UDPConnection * c)
+UDPPacket::setConnection(UDPConnection *c)
 {
   /*Code reviewed by Case Larsen.  Previously, we just had
      ink_assert(!conn).  This prevents tunneling of packets
@@ -142,7 +140,7 @@ UDPPacket::setConnection(UDPConnection * c)
      assert will prevent that.  The "if" clause enables correct
      handling of the connection ref. counts in such a scenario. */
 
-  UDPConnectionInternal *&conn = ((UDPPacketInternal *) this)->conn;
+  UDPConnectionInternal *&conn = ((UDPPacketInternal *)this)->conn;
 
   if (conn) {
     if (conn == c)
@@ -150,24 +148,24 @@ UDPPacket::setConnection(UDPConnection * c)
     conn->Release();
     conn = NULL;
   }
-  conn = (UDPConnectionInternal *) c;
+  conn = (UDPConnectionInternal *)c;
   conn->AddRef();
 }
 
 TS_INLINE IOBufferBlock *
 UDPPacket::getIOBlockChain(void)
 {
-  return ((UDPPacketInternal *) this)->chain;
+  return ((UDPPacketInternal *)this)->chain;
 }
 
 TS_INLINE UDPConnection *
 UDPPacket::getConnection(void)
 {
-  return ((UDPPacketInternal *) this)->conn;
+  return ((UDPPacketInternal *)this)->conn;
 }
 
 TS_INLINE UDPPacket *
-new_UDPPacket(struct sockaddr const* to, ink_hrtime when, char *buf, int len)
+new_UDPPacket(struct sockaddr const *to, ink_hrtime when, char *buf, int len)
 {
   UDPPacketInternal *p = udpPacketAllocator.alloc();
 
@@ -188,9 +186,9 @@ new_UDPPacket(struct sockaddr const* to, ink_hrtime when, char *buf, int len)
 }
 
 TS_INLINE UDPPacket *
-new_UDPPacket(struct sockaddr const* to, ink_hrtime when, IOBufferBlock * buf, int len)
+new_UDPPacket(struct sockaddr const *to, ink_hrtime when, IOBufferBlock *buf, int len)
 {
-  (void) len;
+  (void)len;
   UDPPacketInternal *p = udpPacketAllocator.alloc();
   IOBufferBlock *body;
 
@@ -208,7 +206,7 @@ new_UDPPacket(struct sockaddr const* to, ink_hrtime when, IOBufferBlock * buf, i
 }
 
 TS_INLINE UDPPacket *
-new_UDPPacket(struct sockaddr const* to, ink_hrtime when, Ptr<IOBufferBlock> buf)
+new_UDPPacket(struct sockaddr const *to, ink_hrtime when, Ptr<IOBufferBlock> buf)
 {
   UDPPacketInternal *p = udpPacketAllocator.alloc();
 
@@ -228,7 +226,7 @@ new_UDPPacket(ink_hrtime when, Ptr<IOBufferBlock> buf)
 }
 
 TS_INLINE UDPPacket *
-new_incoming_UDPPacket(struct sockaddr * from, char *buf, int len)
+new_incoming_UDPPacket(struct sockaddr *from, char *buf, int len)
 {
   UDPPacketInternal *p = udpPacketAllocator.alloc();
 

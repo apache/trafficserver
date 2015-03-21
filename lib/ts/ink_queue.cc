@@ -67,7 +67,7 @@ inkcoreapi volatile int64_t fastalloc_mem_total = 0;
 
 // #define MEMPROTECT 1
 
-#define MEMPROTECT_SIZE  0x200
+#define MEMPROTECT_SIZE 0x200
 
 #ifdef MEMPROTECT
 static const int page_size = ats_pagesize();
@@ -77,12 +77,10 @@ ink_freelist_list *freelists = NULL;
 
 inkcoreapi volatile int64_t freelist_allocated_mem = 0;
 
-#define fl_memadd(_x_) \
-   ink_atomic_increment(&freelist_allocated_mem, (int64_t) (_x_));
+#define fl_memadd(_x_) ink_atomic_increment(&freelist_allocated_mem, (int64_t)(_x_));
 
 void
-ink_freelist_init(InkFreeList **fl, const char *name, uint32_t type_size,
-                  uint32_t chunk_size, uint32_t alignment)
+ink_freelist_init(InkFreeList **fl, const char *name, uint32_t type_size, uint32_t chunk_size, uint32_t alignment)
 {
 #if TS_USE_RECLAIMABLE_FREELIST
   return reclaimable_freelist_init(fl, name, type_size, chunk_size, alignment);
@@ -117,7 +115,8 @@ ink_freelist_init(InkFreeList **fl, const char *name, uint32_t type_size,
 }
 
 void
-ink_freelist_madvise_init(InkFreeList **fl, const char *name, uint32_t type_size, uint32_t chunk_size, uint32_t alignment, int advice)
+ink_freelist_madvise_init(InkFreeList **fl, const char *name, uint32_t type_size, uint32_t chunk_size, uint32_t alignment,
+                          int advice)
 {
   ink_freelist_init(fl, name, type_size, chunk_size, alignment);
 #if TS_USE_RECLAIMABLE_FREELIST
@@ -128,8 +127,7 @@ ink_freelist_madvise_init(InkFreeList **fl, const char *name, uint32_t type_size
 }
 
 InkFreeList *
-ink_freelist_create(const char *name, uint32_t type_size, uint32_t chunk_size,
-                    uint32_t alignment)
+ink_freelist_create(const char *name, uint32_t type_size, uint32_t chunk_size, uint32_t alignment)
 {
   InkFreeList *f;
 
@@ -145,7 +143,7 @@ int fake_global_for_ink_queue = 0;
 
 int fastmemtotal = 0;
 void *
-ink_freelist_new(InkFreeList * f)
+ink_freelist_new(InkFreeList *f)
 {
 #if TS_USE_FREELIST
 #if TS_USE_RECLAIMABLE_FREELIST
@@ -171,7 +169,7 @@ ink_freelist_new(InkFreeList * f)
 
       void *newp = NULL;
 #ifdef DEBUG
-      char *oldsbrk = (char *) sbrk(0), *newsbrk = NULL;
+      char *oldsbrk = (char *)sbrk(0), *newsbrk = NULL;
 #endif
       if (f->alignment)
         newp = ats_memalign(f->alignment, f->chunk_size * type_size);
@@ -181,21 +179,21 @@ ink_freelist_new(InkFreeList * f)
 
       fl_memadd(f->chunk_size * type_size);
 #ifdef DEBUG
-      newsbrk = (char *) sbrk(0);
+      newsbrk = (char *)sbrk(0);
       ink_atomic_increment(&fastmemtotal, newsbrk - oldsbrk);
-      /*      printf("fastmem %d, %d, %d\n", f->chunk_size * type_size,
-         newsbrk - oldsbrk, fastmemtotal); */
+/*      printf("fastmem %d, %d, %d\n", f->chunk_size * type_size,
+   newsbrk - oldsbrk, fastmemtotal); */
 #endif
       SET_FREELIST_POINTER_VERSION(item, newp, 0);
 
-      ink_atomic_increment((int *) &f->allocated, f->chunk_size);
-      ink_atomic_increment(&fastalloc_mem_total, (int64_t) f->chunk_size * f->type_size);
+      ink_atomic_increment((int *)&f->allocated, f->chunk_size);
+      ink_atomic_increment(&fastalloc_mem_total, (int64_t)f->chunk_size * f->type_size);
 
       /* free each of the new elements */
       for (i = 0; i < f->chunk_size; i++) {
-        char *a = ((char *) FREELIST_POINTER(item)) + i * type_size;
+        char *a = ((char *)FREELIST_POINTER(item)) + i * type_size;
 #ifdef DEADBEEF
-        const char str[4] = { (char) 0xde, (char) 0xad, (char) 0xbe, (char) 0xef };
+        const char str[4] = {(char)0xde, (char)0xad, (char)0xbe, (char)0xef};
         for (int j = 0; j < (int)type_size; j++)
           a[j] = str[j % 4];
 #endif
@@ -207,42 +205,38 @@ ink_freelist_new(InkFreeList * f)
             perror("mprotect");
         }
 #endif /* MEMPROTECT */
-
       }
-      ink_atomic_increment((int *) &f->used, f->chunk_size);
-      ink_atomic_increment(&fastalloc_mem_in_use, (int64_t) f->chunk_size * f->type_size);
+      ink_atomic_increment((int *)&f->used, f->chunk_size);
+      ink_atomic_increment(&fastalloc_mem_in_use, (int64_t)f->chunk_size * f->type_size);
 
     } else {
-      SET_FREELIST_POINTER_VERSION(next, *ADDRESS_OF_NEXT(TO_PTR(FREELIST_POINTER(item)), 0),
-                                   FREELIST_VERSION(item) + 1);
+      SET_FREELIST_POINTER_VERSION(next, *ADDRESS_OF_NEXT(TO_PTR(FREELIST_POINTER(item)), 0), FREELIST_VERSION(item) + 1);
 #if TS_HAS_128BIT_CAS
-       result = ink_atomic_cas((__int128_t*)&f->head.data, item.data, next.data);
+      result = ink_atomic_cas((__int128_t *)&f->head.data, item.data, next.data);
 #else
-       result = ink_atomic_cas((int64_t *) & f->head.data, item.data, next.data);
+      result = ink_atomic_cas((int64_t *)&f->head.data, item.data, next.data);
 #endif
 
 #ifdef SANITY
       if (result) {
         if (FREELIST_POINTER(item) == TO_PTR(FREELIST_POINTER(next)))
           ink_fatal("ink_freelist_new: loop detected");
-        if (((uintptr_t) (TO_PTR(FREELIST_POINTER(next)))) & 3)
+        if (((uintptr_t)(TO_PTR(FREELIST_POINTER(next)))) & 3)
           ink_fatal("ink_freelist_new: bad list");
         if (TO_PTR(FREELIST_POINTER(next)))
-          fake_global_for_ink_queue = *(int *) TO_PTR(FREELIST_POINTER(next));
+          fake_global_for_ink_queue = *(int *)TO_PTR(FREELIST_POINTER(next));
       }
 #endif /* SANITY */
-
     }
-  }
-  while (result == 0);
-  ink_assert(!((uintptr_t)TO_PTR(FREELIST_POINTER(item))&(((uintptr_t)f->alignment)-1)));
+  } while (result == 0);
+  ink_assert(!((uintptr_t)TO_PTR(FREELIST_POINTER(item)) & (((uintptr_t)f->alignment) - 1)));
 
-  ink_atomic_increment((int *) &f->used, 1);
-  ink_atomic_increment(&fastalloc_mem_in_use, (int64_t) f->type_size);
+  ink_atomic_increment((int *)&f->used, 1);
+  ink_atomic_increment(&fastalloc_mem_in_use, (int64_t)f->type_size);
 
   return TO_PTR(FREELIST_POINTER(item));
 #endif /* TS_USE_RECLAIMABLE_FREELIST */
-#else // ! TS_USE_FREELIST
+#else  // ! TS_USE_FREELIST
   void *newp = NULL;
 
   if (f->alignment)
@@ -255,26 +249,26 @@ ink_freelist_new(InkFreeList * f)
 }
 
 void
-ink_freelist_free(InkFreeList * f, void *item)
+ink_freelist_free(InkFreeList *f, void *item)
 {
 #if TS_USE_FREELIST
 #if TS_USE_RECLAIMABLE_FREELIST
   return reclaimable_freelist_free(f, item);
 #else
-  volatile void **adr_of_next = (volatile void **) ADDRESS_OF_NEXT(item, 0);
+  volatile void **adr_of_next = (volatile void **)ADDRESS_OF_NEXT(item, 0);
   head_p h;
   head_p item_pair;
   int result = 0;
 
-  // ink_assert(!((long)item&(f->alignment-1))); XXX - why is this no longer working? -bcall
+// ink_assert(!((long)item&(f->alignment-1))); XXX - why is this no longer working? -bcall
 
 #ifdef DEADBEEF
   {
-    static const char str[4] = { (char) 0xde, (char) 0xad, (char) 0xbe, (char) 0xef };
+    static const char str[4] = {(char)0xde, (char)0xad, (char)0xbe, (char)0xef};
 
     // set the entire item to DEADBEEF
     for (int j = 0; j < (int)f->type_size; j++)
-      ((char*)item)[j] = str[j % 4];
+      ((char *)item)[j] = str[j % 4];
   }
 #endif /* DEADBEEF */
 
@@ -283,23 +277,23 @@ ink_freelist_free(InkFreeList * f, void *item)
 #ifdef SANITY
     if (TO_PTR(FREELIST_POINTER(h)) == item)
       ink_fatal("ink_freelist_free: trying to free item twice");
-    if (((uintptr_t) (TO_PTR(FREELIST_POINTER(h)))) & 3)
+    if (((uintptr_t)(TO_PTR(FREELIST_POINTER(h)))) & 3)
       ink_fatal("ink_freelist_free: bad list");
     if (TO_PTR(FREELIST_POINTER(h)))
-      fake_global_for_ink_queue = *(int *) TO_PTR(FREELIST_POINTER(h));
+      fake_global_for_ink_queue = *(int *)TO_PTR(FREELIST_POINTER(h));
 #endif /* SANITY */
     *adr_of_next = FREELIST_POINTER(h);
     SET_FREELIST_POINTER_VERSION(item_pair, FROM_PTR(item), FREELIST_VERSION(h));
     INK_MEMORY_BARRIER;
 #if TS_HAS_128BIT_CAS
-       result = ink_atomic_cas((__int128_t*) & f->head, h.data, item_pair.data);
+    result = ink_atomic_cas((__int128_t *)&f->head, h.data, item_pair.data);
 #else
-       result = ink_atomic_cas((int64_t *) & f->head, h.data, item_pair.data);
+    result = ink_atomic_cas((int64_t *)&f->head, h.data, item_pair.data);
 #endif
   }
 
-  ink_atomic_increment((int *) &f->used, -1);
-  ink_atomic_increment(&fastalloc_mem_in_use, -(int64_t) f->type_size);
+  ink_atomic_increment((int *)&f->used, -1);
+  ink_atomic_increment(&fastalloc_mem_in_use, -(int64_t)f->type_size);
 #endif /* TS_USE_RECLAIMABLE_FREELIST */
 #else
   if (f->alignment)
@@ -314,23 +308,23 @@ ink_freelist_free_bulk(InkFreeList *f, void *head, void *tail, size_t num_item)
 {
 #if TS_USE_FREELIST
 #if !TS_USE_RECLAIMABLE_FREELIST
-  volatile void **adr_of_next = (volatile void **) ADDRESS_OF_NEXT(tail, 0);
+  volatile void **adr_of_next = (volatile void **)ADDRESS_OF_NEXT(tail, 0);
   head_p h;
   head_p item_pair;
   int result = 0;
 
-  // ink_assert(!((long)item&(f->alignment-1))); XXX - why is this no longer working? -bcall
+// ink_assert(!((long)item&(f->alignment-1))); XXX - why is this no longer working? -bcall
 
 #ifdef DEADBEEF
   {
-    static const char str[4] = { (char) 0xde, (char) 0xad, (char) 0xbe, (char) 0xef };
+    static const char str[4] = {(char)0xde, (char)0xad, (char)0xbe, (char)0xef};
 
     // set the entire item to DEADBEEF;
-    void* temp = head;
-    for (size_t i = 0; i<num_item; i++) {
-      for (int j = sizeof(void*); j < (int)f->type_size; j++)
-        ((char*)temp)[j] = str[j % 4];
-      *ADDRESS_OF_NEXT(temp, 0) = FROM_PTR(*ADDRESS_OF_NEXT(temp,0));
+    void *temp = head;
+    for (size_t i = 0; i < num_item; i++) {
+      for (int j = sizeof(void *); j < (int)f->type_size; j++)
+        ((char *)temp)[j] = str[j % 4];
+      *ADDRESS_OF_NEXT(temp, 0) = FROM_PTR(*ADDRESS_OF_NEXT(temp, 0));
       temp = TO_PTR(*ADDRESS_OF_NEXT(temp, 0));
     }
   }
@@ -341,32 +335,32 @@ ink_freelist_free_bulk(InkFreeList *f, void *head, void *tail, size_t num_item)
 #ifdef SANITY
     if (TO_PTR(FREELIST_POINTER(h)) == head)
       ink_fatal("ink_freelist_free: trying to free item twice");
-    if (((uintptr_t) (TO_PTR(FREELIST_POINTER(h)))) & 3)
+    if (((uintptr_t)(TO_PTR(FREELIST_POINTER(h)))) & 3)
       ink_fatal("ink_freelist_free: bad list");
     if (TO_PTR(FREELIST_POINTER(h)))
-      fake_global_for_ink_queue = *(int *) TO_PTR(FREELIST_POINTER(h));
+      fake_global_for_ink_queue = *(int *)TO_PTR(FREELIST_POINTER(h));
 #endif /* SANITY */
     *adr_of_next = FREELIST_POINTER(h);
     SET_FREELIST_POINTER_VERSION(item_pair, FROM_PTR(head), FREELIST_VERSION(h));
     INK_MEMORY_BARRIER;
 #if TS_HAS_128BIT_CAS
-       result = ink_atomic_cas((__int128_t*) & f->head, h.data, item_pair.data);
-#else /* !TS_HAS_128BIT_CAS */
-       result = ink_atomic_cas((int64_t *) & f->head, h.data, item_pair.data);
+    result = ink_atomic_cas((__int128_t *)&f->head, h.data, item_pair.data);
+#else  /* !TS_HAS_128BIT_CAS */
+    result = ink_atomic_cas((int64_t *)&f->head, h.data, item_pair.data);
 #endif /* TS_HAS_128BIT_CAS */
   }
 
-  ink_atomic_increment((int *) &f->used, -1 * num_item);
-  ink_atomic_increment(&fastalloc_mem_in_use, -(int64_t) f->type_size * num_item);
-#else /* TS_USE_RECLAIMABLE_FREELIST */
+  ink_atomic_increment((int *)&f->used, -1 * num_item);
+  ink_atomic_increment(&fastalloc_mem_in_use, -(int64_t)f->type_size * num_item);
+#else  /* TS_USE_RECLAIMABLE_FREELIST */
   // Avoid compiler warnings
   (void)f;
   (void)head;
   (void)tail;
   (void)num_item;
 #endif /* !TS_USE_RECLAIMABLE_FREELIST */
-#else /* !TS_USE_FREELIST */
-  void * item = head;
+#else  /* !TS_USE_FREELIST */
+  void *item = head;
 
   // Avoid compiler warnings
   (void)tail;
@@ -395,12 +389,12 @@ ink_freelists_snap_baseline()
     fll = fll->next;
   }
 #else // ! TS_USE_FREELIST
-  // TODO?
+// TODO?
 #endif
 }
 
 void
-ink_freelists_dump_baselinerel(FILE * f)
+ink_freelists_dump_baselinerel(FILE *f)
 {
 #if TS_USE_FREELIST
   ink_freelist_list *fll;
@@ -417,8 +411,8 @@ ink_freelists_dump_baselinerel(FILE * f)
     if (a != 0) {
       fprintf(f, " %18" PRIu64 " | %18" PRIu64 " | %7u | %10u | memory/%s\n",
               (uint64_t)(fll->fl->allocated - fll->fl->allocated_base) * (uint64_t)fll->fl->type_size,
-              (uint64_t)(fll->fl->used- fll->fl->used_base) * (uint64_t)fll->fl->type_size,
-              fll->fl->used - fll->fl->used_base, fll->fl->type_size, fll->fl->name ? fll->fl->name : "<unknown>");
+              (uint64_t)(fll->fl->used - fll->fl->used_base) * (uint64_t)fll->fl->type_size, fll->fl->used - fll->fl->used_base,
+              fll->fl->type_size, fll->fl->name ? fll->fl->name : "<unknown>");
     }
     fll = fll->next;
   }
@@ -428,7 +422,7 @@ ink_freelists_dump_baselinerel(FILE * f)
 }
 
 void
-ink_freelists_dump(FILE * f)
+ink_freelists_dump(FILE *f)
 {
 #if TS_USE_FREELIST
   ink_freelist_list *fll;
@@ -440,9 +434,9 @@ ink_freelists_dump(FILE * f)
 
   fll = freelists;
   while (fll) {
-    fprintf(f, " %18" PRIu64 " | %18" PRIu64 " | %10u | memory/%s\n",
-            (uint64_t)fll->fl->allocated * (uint64_t)fll->fl->type_size,
-            (uint64_t)fll->fl->used * (uint64_t)fll->fl->type_size, fll->fl->type_size, fll->fl->name ? fll->fl->name : "<unknown>");
+    fprintf(f, " %18" PRIu64 " | %18" PRIu64 " | %10u | memory/%s\n", (uint64_t)fll->fl->allocated * (uint64_t)fll->fl->type_size,
+            (uint64_t)fll->fl->used * (uint64_t)fll->fl->type_size, fll->fl->type_size,
+            fll->fl->name ? fll->fl->name : "<unknown>");
     fll = fll->next;
   }
 #else // ! TS_USE_FREELIST
@@ -452,7 +446,7 @@ ink_freelists_dump(FILE * f)
 
 
 void
-ink_atomiclist_init(InkAtomicList * l, const char *name, uint32_t offset_to_next)
+ink_atomiclist_init(InkAtomicList *l, const char *name, uint32_t offset_to_next)
 {
   l->name = name;
   l->offset = offset_to_next;
@@ -460,7 +454,7 @@ ink_atomiclist_init(InkAtomicList * l, const char *name, uint32_t offset_to_next
 }
 
 void *
-ink_atomiclist_pop(InkAtomicList * l)
+ink_atomiclist_pop(InkAtomicList *l)
 {
   head_p item;
   head_p next;
@@ -469,15 +463,13 @@ ink_atomiclist_pop(InkAtomicList * l)
     INK_QUEUE_LD(item, l->head);
     if (TO_PTR(FREELIST_POINTER(item)) == NULL)
       return NULL;
-    SET_FREELIST_POINTER_VERSION(next, *ADDRESS_OF_NEXT(TO_PTR(FREELIST_POINTER(item)), l->offset),
-                                 FREELIST_VERSION(item) + 1);
+    SET_FREELIST_POINTER_VERSION(next, *ADDRESS_OF_NEXT(TO_PTR(FREELIST_POINTER(item)), l->offset), FREELIST_VERSION(item) + 1);
 #if TS_HAS_128BIT_CAS
-       result = ink_atomic_cas((__int128_t*) & l->head.data, item.data, next.data);
+    result = ink_atomic_cas((__int128_t *)&l->head.data, item.data, next.data);
 #else
-       result = ink_atomic_cas((int64_t *) & l->head.data, item.data, next.data);
+    result = ink_atomic_cas((int64_t *)&l->head.data, item.data, next.data);
 #endif
-  }
-  while (result == 0);
+  } while (result == 0);
   {
     void *ret = TO_PTR(FREELIST_POINTER(item));
     *ADDRESS_OF_NEXT(ret, l->offset) = NULL;
@@ -486,7 +478,7 @@ ink_atomiclist_pop(InkAtomicList * l)
 }
 
 void *
-ink_atomiclist_popall(InkAtomicList * l)
+ink_atomiclist_popall(InkAtomicList *l)
 {
   head_p item;
   head_p next;
@@ -497,12 +489,11 @@ ink_atomiclist_popall(InkAtomicList * l)
       return NULL;
     SET_FREELIST_POINTER_VERSION(next, FROM_PTR(NULL), FREELIST_VERSION(item) + 1);
 #if TS_HAS_128BIT_CAS
-       result = ink_atomic_cas((__int128_t*) & l->head.data, item.data, next.data);
+    result = ink_atomic_cas((__int128_t *)&l->head.data, item.data, next.data);
 #else
-       result = ink_atomic_cas((int64_t *) & l->head.data, item.data, next.data);
+    result = ink_atomic_cas((int64_t *)&l->head.data, item.data, next.data);
 #endif
-  }
-  while (result == 0);
+  } while (result == 0);
   {
     void *ret = TO_PTR(FREELIST_POINTER(item));
     void *e = ret;
@@ -517,9 +508,9 @@ ink_atomiclist_popall(InkAtomicList * l)
 }
 
 void *
-ink_atomiclist_push(InkAtomicList * l, void *item)
+ink_atomiclist_push(InkAtomicList *l, void *item)
 {
-  volatile void **adr_of_next = (volatile void **) ADDRESS_OF_NEXT(item, l->offset);
+  volatile void **adr_of_next = (volatile void **)ADDRESS_OF_NEXT(item, l->offset);
   head_p head;
   head_p item_pair;
   int result = 0;
@@ -532,18 +523,17 @@ ink_atomiclist_push(InkAtomicList * l, void *item)
     SET_FREELIST_POINTER_VERSION(item_pair, FROM_PTR(item), FREELIST_VERSION(head));
     INK_MEMORY_BARRIER;
 #if TS_HAS_128BIT_CAS
-       result = ink_atomic_cas((__int128_t*) & l->head, head.data, item_pair.data);
+    result = ink_atomic_cas((__int128_t *)&l->head, head.data, item_pair.data);
 #else
-       result = ink_atomic_cas((int64_t *) & l->head, head.data, item_pair.data);
+    result = ink_atomic_cas((int64_t *)&l->head, head.data, item_pair.data);
 #endif
-  }
-  while (result == 0);
+  } while (result == 0);
 
   return TO_PTR(h);
 }
 
 void *
-ink_atomiclist_remove(InkAtomicList * l, void *item)
+ink_atomiclist_remove(InkAtomicList *l, void *item)
 {
   head_p head;
   void *prev = NULL;
@@ -559,9 +549,9 @@ ink_atomiclist_remove(InkAtomicList * l, void *item)
     head_p next;
     SET_FREELIST_POINTER_VERSION(next, item_next, FREELIST_VERSION(head) + 1);
 #if TS_HAS_128BIT_CAS
-       result = ink_atomic_cas((__int128_t*) & l->head.data, head.data, next.data);
+    result = ink_atomic_cas((__int128_t *)&l->head.data, head.data, next.data);
 #else
-       result = ink_atomic_cas((int64_t *) & l->head.data, head.data, next.data);
+    result = ink_atomic_cas((int64_t *)&l->head.data, head.data, next.data);
 #endif
 
     if (result) {

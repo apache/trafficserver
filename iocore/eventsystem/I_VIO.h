@@ -22,14 +22,15 @@
 
  */
 
-#if !defined (I_VIO_h)
+#if !defined(I_VIO_h)
 #define I_VIO_h
 
 #include "libts.h"
 #include "I_EventSystem.h"
 #if !defined(I_IOBuffer_h)
 #error "include I_IOBuffer.h"
--- -include I_IOBuffer.h
+-- -
+  include I_IOBuffer.h
 #endif
 #include "ink_apidefs.h"
   class Continuation;
@@ -73,13 +74,11 @@ class ProxyMutex;
 class VIO
 {
 public:
-  ~VIO()
-  {
-  }
+  ~VIO() {}
 
   /** Interface for the VConnection that owns this handle. */
   Continuation *get_continuation();
-  void set_continuation(Continuation * cont);
+  void set_continuation(Continuation *cont);
 
   /**
     Set nbytes to be what is current available.
@@ -103,8 +102,8 @@ public:
   /////////////////////
   // buffer settings //
   /////////////////////
-  void set_writer(MIOBuffer * writer);
-  void set_reader(IOBufferReader * reader);
+  void set_writer(MIOBuffer *writer);
+  void set_reader(IOBufferReader *reader);
   MIOBuffer *get_writer();
   IOBufferReader *get_reader();
 
@@ -145,15 +144,22 @@ public:
   VIO(int aop);
   VIO();
 
-  enum
-  {
-    NONE = 0, READ, WRITE, CLOSE, ABORT,
-    SHUTDOWN_READ, SHUTDOWN_WRITE, SHUTDOWN_READWRITE,
-    SEEK, PREAD, PWRITE, STAT
+  enum {
+    NONE = 0,
+    READ,
+    WRITE,
+    CLOSE,
+    ABORT,
+    SHUTDOWN_READ,
+    SHUTDOWN_WRITE,
+    SHUTDOWN_READWRITE,
+    SEEK,
+    PREAD,
+    PWRITE,
+    STAT,
   };
 
 public:
-
   /**
     Continuation to callback.
 
@@ -161,7 +167,7 @@ public:
     call with events for this operation.
 
   */
-  Continuation * _cont;
+  Continuation *_cont;
 
   /**
     Number of bytes to be done for this operation.

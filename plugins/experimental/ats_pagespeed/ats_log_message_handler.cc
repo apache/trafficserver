@@ -41,10 +41,11 @@
 #undef LOG
 #define LOG USING_LOG_HERE_WOULD_CAUSE_INFINITE_RECURSION
 
-namespace {
-
-bool LogMessageHandler(int severity, const char* file, int line,
-                       size_t message_start, const GoogleString& str) {
+namespace
+{
+bool
+LogMessageHandler(int severity, const char *file, int line, size_t message_start, const GoogleString &str)
+{
   GoogleString message = str;
   if (severity == logging::LOG_FATAL) {
     if (base::debug::BeingDebugged()) {
@@ -63,9 +64,7 @@ bool LogMessageHandler(int severity, const char* file, int line,
     message.resize(last_msg_character_index);
   }
 
-  TSDebug("ats-speed-vlog", "[%s] %s",
-                net_instaweb::kModPagespeedVersion,
-                message.c_str());
+  TSDebug("ats-speed-vlog", "[%s] %s", net_instaweb::kModPagespeedVersion, message.c_str());
 
   if (severity == logging::LOG_FATAL) {
     // Crash the process to generate a dump.
@@ -75,27 +74,28 @@ bool LogMessageHandler(int severity, const char* file, int line,
   return true;
 }
 
-}  // namespace
+} // namespace
 
 
-namespace net_instaweb {
+namespace net_instaweb
+{
+namespace log_message_handler
+{
+  const int kDebugLogLevel = -2;
 
-namespace log_message_handler {
+  void
+  Install()
+  {
+    logging::SetLogMessageHandler(&LogMessageHandler);
 
-
-const int kDebugLogLevel = -2;
-
-void Install() {
-  logging::SetLogMessageHandler(&LogMessageHandler);
-
-  // All VLOG(2) and higher will be displayed as DEBUG logs if the nginx log
-  // level is DEBUG.
-  // TODO(oschaaf): from config
-  //if (log->log_level >= NGX_LOG_DEBUG) {
+    // All VLOG(2) and higher will be displayed as DEBUG logs if the nginx log
+    // level is DEBUG.
+    // TODO(oschaaf): from config
+    // if (log->log_level >= NGX_LOG_DEBUG) {
     logging::SetMinLogLevel(-2);
-  //}
-}
+    //}
+  }
 
-}  // namespace log_message_handler
+} // namespace log_message_handler
 
-}  // namespace net_instaweb
+} // namespace net_instaweb

@@ -28,18 +28,22 @@ using std::endl;
 using std::list;
 using std::string;
 
-class ServerResponsePlugin : public GlobalPlugin {
+class ServerResponsePlugin : public GlobalPlugin
+{
 public:
-  ServerResponsePlugin() {
+  ServerResponsePlugin()
+  {
     registerHook(HOOK_SEND_REQUEST_HEADERS);
     registerHook(HOOK_READ_RESPONSE_HEADERS);
     registerHook(HOOK_SEND_RESPONSE_HEADERS);
   }
 
-  void handleSendRequestHeaders(Transaction &transaction) {
+  void
+  handleSendRequestHeaders(Transaction &transaction)
+  {
     // Here we can decide to abort the request to the origin (we can do this earlier too)
     // and just send the user an error page.
-    if(transaction.getClientRequest().getUrl().getQuery().find("error=1") != string::npos) {
+    if (transaction.getClientRequest().getUrl().getQuery().find("error=1") != string::npos) {
       // Give this user an error page and don't make a request to an origin.
       cout << "Sending this request an error page" << endl;
       transaction.error("This is the error response, but the response code is 500."
@@ -52,7 +56,9 @@ public:
     cout << transaction.getServerRequest().getHeaders() << endl;
   }
 
-  void handleReadResponseHeaders(Transaction &transaction) {
+  void
+  handleReadResponseHeaders(Transaction &transaction)
+  {
     cout << "Hello from handleReadResponseHeaders!" << endl;
     cout << "Server response headers are" << endl;
     Response &server_response = transaction.getServerResponse();
@@ -61,7 +67,9 @@ public:
     transaction.resume();
   }
 
-  void handleSendResponseHeaders(Transaction &transaction) {
+  void
+  handleSendResponseHeaders(Transaction &transaction)
+  {
     cout << "Hello from handleSendResponseHeaders!" << endl;
     cout << "Client response headers are" << endl;
     transaction.getClientResponse().getHeaders()["X-Foo-Header"] = "1";
@@ -75,7 +83,7 @@ public:
     // request and prevent the origin request in the first place.
     //
 
-    if(transaction.getClientRequest().getUrl().getQuery().find("redirect=1") != string::npos) {
+    if (transaction.getClientRequest().getUrl().getQuery().find("redirect=1") != string::npos) {
       cout << "Sending this guy to google." << endl;
       transaction.getClientResponse().getHeaders().append("Location", "http://www.google.com");
       transaction.getClientResponse().setStatusCode(HTTP_STATUS_MOVED_TEMPORARILY);
@@ -87,24 +95,24 @@ public:
   }
 
 private:
-  void printHeadersManual(Headers &headers) {
+  void
+  printHeadersManual(Headers &headers)
+  {
+    for (Headers::iterator header_iter = headers.begin(), header_end = headers.end(); header_iter != header_end; ++header_iter) {
+      cout << "Header " << (*header_iter).name() << ": " << endl;
 
-    for (Headers::iterator header_iter = headers.begin(), header_end = headers.end();
-         header_iter != header_end; ++header_iter) {
-
-      cout << "Header " << (*header_iter).name() <<  ": " << endl;
-
-      for (HeaderField::iterator value_iter = (*header_iter).begin(), values_end = (*header_iter).end();
-          value_iter != values_end; ++value_iter) {
+      for (HeaderField::iterator value_iter = (*header_iter).begin(), values_end = (*header_iter).end(); value_iter != values_end;
+           ++value_iter) {
         cout << "\t" << *value_iter << endl;
       }
-
     }
 
     cout << endl;
   }
 };
 
-void TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED) {
+void
+TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
+{
   new ServerResponsePlugin();
 }

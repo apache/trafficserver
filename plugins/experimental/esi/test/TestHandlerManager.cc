@@ -27,16 +27,18 @@
 using namespace EsiLib;
 
 void
-HandlerManager::loadObjects(const Utils::KeyValueMap & /* handlers ATS_UNUSED */) {
+HandlerManager::loadObjects(const Utils::KeyValueMap & /* handlers ATS_UNUSED */)
+{
 }
 
 SpecialIncludeHandler *
-HandlerManager::getHandler(Variables &esi_vars, Expression &esi_expr, HttpDataFetcher &fetcher,
-                           const std::string &id) const {
+HandlerManager::getHandler(Variables &esi_vars, Expression &esi_expr, HttpDataFetcher &fetcher, const std::string &id) const
+{
   StubIncludeHandler *handler = new StubIncludeHandler(esi_vars, esi_expr, fetcher);
   gHandlerMap[id] = handler;
   return handler;
 }
 
-HandlerManager::~HandlerManager() {
+HandlerManager::~HandlerManager()
+{
 }

@@ -39,8 +39,7 @@
 
 ClassAllocator<OneWayMultiTunnel> OneWayMultiTunnelAllocator("OneWayMultiTunnelAllocator");
 
-OneWayMultiTunnel::OneWayMultiTunnel():
-OneWayTunnel(), n_vioTargets(0), source_read_previously_completed(false)
+OneWayMultiTunnel::OneWayMultiTunnel() : OneWayTunnel(), n_vioTargets(0), source_read_previously_completed(false)
 {
 }
 
@@ -51,20 +50,20 @@ OneWayMultiTunnel::OneWayMultiTunnel_alloc()
 }
 
 void
-OneWayMultiTunnel::OneWayMultiTunnel_free(OneWayMultiTunnel * pOWT)
+OneWayMultiTunnel::OneWayMultiTunnel_free(OneWayMultiTunnel *pOWT)
 {
-
   pOWT->mutex = NULL;
   OneWayMultiTunnelAllocator.free(pOWT);
 }
 
 void
-OneWayMultiTunnel::init(VConnection * vcSource, VConnection ** vcTargets, int n_vcTargets, Continuation * aCont, int size_estimate, int64_t nbytes, bool asingle_buffer,    /* = true */
-                        bool aclose_source,     /* = false */
-                        bool aclose_targets,    /* = false */
+OneWayMultiTunnel::init(VConnection *vcSource, VConnection **vcTargets, int n_vcTargets, Continuation *aCont, int size_estimate,
+                        int64_t nbytes, bool asingle_buffer, /* = true */
+                        bool aclose_source,                  /* = false */
+                        bool aclose_targets,                 /* = false */
                         Transform_fn aManipulate_fn, int water_mark)
 {
-  mutex = aCont ? (ProxyMutex *) aCont->mutex : new_ProxyMutex();
+  mutex = aCont ? (ProxyMutex *)aCont->mutex : new_ProxyMutex();
   cont = aCont;
   manipulate_fn = aManipulate_fn;
   close_source = aclose_source;
@@ -106,15 +105,15 @@ OneWayMultiTunnel::init(VConnection * vcSource, VConnection ** vcTargets, int n_
 }
 
 void
-OneWayMultiTunnel::init(Continuation * aCont,
-                        VIO * SourceVio, VIO ** TargetVios, int n_TargetVios, bool aclose_source, bool aclose_targets)
+OneWayMultiTunnel::init(Continuation *aCont, VIO *SourceVio, VIO **TargetVios, int n_TargetVios, bool aclose_source,
+                        bool aclose_targets)
 {
-
-  mutex = aCont ? (ProxyMutex *) aCont->mutex : new_ProxyMutex();
+  mutex = aCont ? (ProxyMutex *)aCont->mutex : new_ProxyMutex();
   cont = aCont;
   single_buffer = true;
   manipulate_fn = 0;
-  n_connections = n_TargetVios + 1;;
+  n_connections = n_TargetVios + 1;
+  ;
   close_source = aclose_source;
   close_target = aclose_targets;
   // The read on the source vio may have already been completed, yet
@@ -136,7 +135,6 @@ OneWayMultiTunnel::init(Continuation * aCont,
     vioTargets[i] = TargetVios[i];
     vioTargets[i]->set_continuation(this);
   }
-
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -148,7 +146,7 @@ OneWayMultiTunnel::init(Continuation * aCont,
 int
 OneWayMultiTunnel::startEvent(int event, void *data)
 {
-  VIO *vio = (VIO *) data;
+  VIO *vio = (VIO *)data;
   int ret = VC_EVENT_DONE;
   int result = 0;
 
@@ -160,15 +158,14 @@ OneWayMultiTunnel::startEvent(int event, void *data)
   // handle the event
   //
   switch (event) {
-
-  case VC_EVENT_READ_READY:{   // SunCC uses old scoping rules
-      transform(vioSource->buffer, topOutBuffer);
-      for (int i = 0; i < n_vioTargets; i++)
-        if (vioTargets[i])
-          vioTargets[i]->reenable();
-      ret = VC_EVENT_CONT;
-      break;
-    }
+  case VC_EVENT_READ_READY: { // SunCC uses old scoping rules
+    transform(vioSource->buffer, topOutBuffer);
+    for (int i = 0; i < n_vioTargets; i++)
+      if (vioTargets[i])
+        vioTargets[i]->reenable();
+    ret = VC_EVENT_CONT;
+    break;
+  }
 
   case VC_EVENT_WRITE_READY:
     if (vioSource)
@@ -186,22 +183,22 @@ OneWayMultiTunnel::startEvent(int event, void *data)
       goto Lwrite_complete;
 
   Lread_complete:
-  case VC_EVENT_READ_COMPLETE:{// SunCC uses old scoping rules
-      // set write nbytes to the current buffer size
-      //
-      for (int i = 0; i < n_vioTargets; i++)
-        if (vioTargets[i]) {
-          vioTargets[i]->nbytes = vioTargets[i]->ndone + vioTargets[i]->buffer.reader()->read_avail();
-          vioTargets[i]->reenable();
-        }
-      close_source_vio(0);
-      ret = VC_EVENT_DONE;
-      break;
-    }
+  case VC_EVENT_READ_COMPLETE: { // SunCC uses old scoping rules
+    // set write nbytes to the current buffer size
+    //
+    for (int i = 0; i < n_vioTargets; i++)
+      if (vioTargets[i]) {
+        vioTargets[i]->nbytes = vioTargets[i]->ndone + vioTargets[i]->buffer.reader()->read_avail();
+        vioTargets[i]->reenable();
+      }
+    close_source_vio(0);
+    ret = VC_EVENT_DONE;
+    break;
+  }
 
   Lwrite_complete:
   case VC_EVENT_WRITE_COMPLETE:
-    close_target_vio(0, (VIO *) data);
+    close_target_vio(0, (VIO *)data);
     if ((n_connections == 0) || (n_connections == 1 && source_read_previously_completed))
       goto Ldone;
     else if (vioSource)
@@ -230,7 +227,7 @@ OneWayMultiTunnel::startEvent(int event, void *data)
 }
 
 void
-OneWayMultiTunnel::close_target_vio(int result, VIO * vio)
+OneWayMultiTunnel::close_target_vio(int result, VIO *vio)
 {
   for (int i = 0; i < n_vioTargets; i++) {
     VIO *v = vioTargets[i];

@@ -29,26 +29,33 @@
 #include "net/instaweb/system/public/system_server_context.h"
 #include "net/instaweb/util/public/statistics.h"
 
-namespace net_instaweb {
-
+namespace net_instaweb
+{
 class AtsRewriteOptions;
 class AtsRewriteDriverFactory;
 
-class AtsServerContext : public net_instaweb::SystemServerContext {
- public:
-  explicit AtsServerContext(AtsRewriteDriverFactory* factory);
+class AtsServerContext : public net_instaweb::SystemServerContext
+{
+public:
+  explicit AtsServerContext(AtsRewriteDriverFactory *factory);
   virtual ~AtsServerContext();
 
-  virtual bool ProxiesHtml() const {
+  virtual bool
+  ProxiesHtml() const
+  {
     return true;
   }
 
   AtsRewriteOptions *config();
-  AtsRewriteDriverFactory *ats_rewrite_driver_factory() { return ats_factory_; }
+  AtsRewriteDriverFactory *
+  ats_rewrite_driver_factory()
+  {
+    return ats_factory_;
+  }
 
- private:
+private:
   bool initialized_;
-  AtsRewriteDriverFactory* ats_factory_;
+  AtsRewriteDriverFactory *ats_factory_;
 };
 
 } /* ats_pagespeed */

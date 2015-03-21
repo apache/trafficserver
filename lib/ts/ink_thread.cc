@@ -43,9 +43,9 @@ static int64_t ink_semaphore_count = 0;
 #endif
 
 void
-ink_sem_init(ink_semaphore * sp, unsigned int count)
+ink_sem_init(ink_semaphore *sp, unsigned int count)
 {
-  // Darwin has sem_open, but not sem_init. We emulate sem_init with sem_open.
+// Darwin has sem_open, but not sem_init. We emulate sem_init with sem_open.
 #if TS_EMULATE_ANON_SEMAPHORES
   char sname[NAME_MAX];
 
@@ -63,7 +63,7 @@ ink_sem_init(ink_semaphore * sp, unsigned int count)
 }
 
 void
-ink_sem_destroy(ink_semaphore * sp)
+ink_sem_destroy(ink_semaphore *sp)
 {
 #if TS_EMULATE_ANON_SEMAPHORES
   ink_assert(sem_close(sp->get()) != -1);
@@ -73,24 +73,26 @@ ink_sem_destroy(ink_semaphore * sp)
 }
 
 void
-ink_sem_wait(ink_semaphore * sp)
+ink_sem_wait(ink_semaphore *sp)
 {
   int r;
-  while (EINTR == (r = sem_wait(sp->get())));
+  while (EINTR == (r = sem_wait(sp->get())))
+    ;
   ink_assert(!r);
 }
 
 bool
-ink_sem_trywait(ink_semaphore * sp)
+ink_sem_trywait(ink_semaphore *sp)
 {
   int r;
-  while (EINTR == (r = sem_trywait(sp->get())));
+  while (EINTR == (r = sem_trywait(sp->get())))
+    ;
   ink_assert(r == 0 || (errno == EAGAIN));
   return r == 0;
 }
 
 void
-ink_sem_post(ink_semaphore * sp)
+ink_sem_post(ink_semaphore *sp)
 {
   ink_assert(sem_post(sp->get()) != -1);
 }

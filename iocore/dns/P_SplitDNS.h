@@ -38,11 +38,9 @@
 #include "ControlMatcher.h"
 #include "P_SplitDNSProcessor.h"
 
-#undef  SPLITDNS_MODULE_VERSION
-#define SPLITDNS_MODULE_VERSION makeModuleVersion(                 \
-                                    SPLITDNS_MODULE_MAJOR_VERSION, \
-                                    SPLITDNS_MODULE_MINOR_VERSION, \
-                                    PRIVATE_MODULE_HEADER)
+#undef SPLITDNS_MODULE_VERSION
+#define SPLITDNS_MODULE_VERSION \
+  makeModuleVersion(SPLITDNS_MODULE_MAJOR_VERSION, SPLITDNS_MODULE_MINOR_VERSION, PRIVATE_MODULE_HEADER)
 
 
 #endif /* _P_SPLIT_DNS_H_ */

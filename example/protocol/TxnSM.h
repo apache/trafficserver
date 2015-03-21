@@ -26,17 +26,16 @@
 
 #include "Protocol.h"
 
-typedef int (*TxnSMHandler) (TSCont contp, TSEvent event, void *data);
+typedef int (*TxnSMHandler)(TSCont contp, TSEvent event, void *data);
 
 TSCont TxnSMCreate(TSMutex pmutex, TSVConn client_vc, int server_port);
 
 #define TXN_SM_ALIVE 0xAAAA0123
-#define TXN_SM_DEAD  0xFEE1DEAD
-#define TXN_SM_ZERO  0x00001111
+#define TXN_SM_DEAD 0xFEE1DEAD
+#define TXN_SM_ZERO 0x00001111
 
 /* The Txn State Machine */
-typedef struct _TxnSM
-{
+typedef struct _TxnSM {
   unsigned int q_magic;
 
   TSMutex q_mutex;

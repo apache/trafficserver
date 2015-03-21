@@ -61,20 +61,21 @@
 
 #if !defined(_I_EventSystem_h) && !defined(_P_EventSystem_h)
 #error "include I_EventSystem.h or P_EventSystem.h"
--- -include I_Event.h or P_Event.h
+-- - include I_Event.h or
+  P_Event.h
 #endif
 #include "libts.h"
 #include "I_ProxyAllocator.h"
-class Thread;
+  class Thread;
 class ProxyMutex;
 
 #define THREADAPI
 #define THREADAPI_RETURN_TYPE void *
-typedef THREADAPI_RETURN_TYPE(THREADAPI * ThreadFunction) (void *arg);
+typedef THREADAPI_RETURN_TYPE(THREADAPI *ThreadFunction)(void *arg);
 
 extern ProxyMutex *global_mutex;
 
-static const int MAX_THREAD_NAME_LENGTH  = 16;
+static const int MAX_THREAD_NAME_LENGTH = 16;
 static const int DEFAULT_STACKSIZE = 1048576; // 1MB
 
 
@@ -95,7 +96,6 @@ static const int DEFAULT_STACKSIZE = 1048576; // 1MB
 class Thread
 {
 public:
-
   /*-------------------------------------------*\
   | Common Interface                            |
   \*-------------------------------------------*/
@@ -120,7 +120,7 @@ public:
   // PRIVATE
   void set_specific();
   Thread();
-  virtual ~ Thread();
+  virtual ~Thread();
 
   static ink_hrtime cur_time;
   inkcoreapi static ink_thread_key thread_data_key;
@@ -146,13 +146,15 @@ public:
 private:
   // prevent unauthorized copies (Not implemented)
   Thread(const Thread &);
-  Thread & operator =(const Thread &);
+  Thread &operator=(const Thread &);
 
 public:
-  ink_thread start(const char* name, size_t stacksize=DEFAULT_STACKSIZE, ThreadFunction f=NULL, void *a=NULL);
+  ink_thread start(const char *name, size_t stacksize = DEFAULT_STACKSIZE, ThreadFunction f = NULL, void *a = NULL);
 
-  virtual void execute()
-  {  }
+  virtual void
+  execute()
+  {
+  }
 };
 
 extern ink_hrtime ink_get_hrtime();

@@ -41,37 +41,31 @@ struct LogBufferHeader;
 // LogCollationHostSM
 //-------------------------------------------------------------------------
 
-class LogCollationHostSM:public LogCollationBase, public Continuation
+class LogCollationHostSM : public LogCollationBase, public Continuation
 {
-
 public:
-
-  LogCollationHostSM(NetVConnection * client_vc);
+  LogCollationHostSM(NetVConnection *client_vc);
 
   // handlers
   int host_handler(int event, void *data);
   int read_handler(int event, void *data);
 
 private:
-
-  enum HostState
-  {
+  enum HostState {
     LOG_COLL_HOST_NULL,
     LOG_COLL_HOST_AUTH,
     LOG_COLL_HOST_DONE,
     LOG_COLL_HOST_INIT,
-    LOG_COLL_HOST_RECV
+    LOG_COLL_HOST_RECV,
   };
 
-  enum ReadState
-  {
+  enum ReadState {
     LOG_COLL_READ_NULL,
     LOG_COLL_READ_BODY,
-    LOG_COLL_READ_HDR
+    LOG_COLL_READ_HDR,
   };
 
 private:
-
   // host states
   int host_init(int event, void *data);
   int host_auth(int event, void *data);
@@ -80,15 +74,15 @@ private:
   HostState m_host_state;
 
   // read states
-  int read_hdr(int event, VIO * vio);
-  int read_body(int event, VIO * vio);
+  int read_hdr(int event, VIO *vio);
+  int read_body(int event, VIO *vio);
   int read_done(int event, void *data);
   int read_start();
   void freeReadBuffer();
   ReadState m_read_state;
 
   // helper for read states
-  void read_partial(VIO * vio);
+  void read_partial(VIO *vio);
 
   // iocore stuff
   NetVConnection *m_client_vc;
@@ -111,9 +105,8 @@ private:
   // debugging
   static int ID;
   int m_id;
-
 };
 
-typedef int (LogCollationHostSM::*LogCollationHostSMHandler) (int, void *);
+typedef int (LogCollationHostSM::*LogCollationHostSMHandler)(int, void *);
 
 #endif // LOG_COLLATION_HOST_SM_H

@@ -30,11 +30,14 @@
 #include <atscppapi/Request.h>
 #include <atscppapi/Response.h>
 
-namespace atscppapi {
-
+namespace atscppapi
+{
 // forward declarations
 struct AsyncHttpFetchState;
-namespace utils { class internal; }
+namespace utils
+{
+  class internal;
+}
 
 /**
  * @brief This class provides an implementation of AsyncProvider that
@@ -43,7 +46,8 @@ namespace utils { class internal; }
  *
  * See example async_http_fetch{,_streaming} for sample usage.
  */
-class AsyncHttpFetch : public AsyncProvider {
+class AsyncHttpFetch : public AsyncProvider
+{
 public:
   /** Deprecated. Use variant with streaming flag argument */
   AsyncHttpFetch(const std::string &url_str, HttpMethod http_method = HTTP_METHOD_GET);
@@ -53,11 +57,10 @@ public:
 
   enum StreamingFlag {
     STREAMING_DISABLED = 0,
-    STREAMING_ENABLED = 0x1
+    STREAMING_ENABLED = 0x1,
   };
 
-  AsyncHttpFetch(const std::string &url_str, StreamingFlag streaming_flag,
-                 HttpMethod http_method = HTTP_METHOD_GET);
+  AsyncHttpFetch(const std::string &url_str, StreamingFlag streaming_flag, HttpMethod http_method = HTTP_METHOD_GET);
 
   AsyncHttpFetch(const std::string &url_str, StreamingFlag streaming_flag, const std::string &request_body);
 
@@ -68,8 +71,14 @@ public:
    */
   Headers &getRequestHeaders();
 
-  enum Result { RESULT_SUCCESS = 10000, RESULT_TIMEOUT, RESULT_FAILURE, RESULT_HEADER_COMPLETE,
-                RESULT_PARTIAL_BODY, RESULT_BODY_COMPLETE };
+  enum Result {
+    RESULT_SUCCESS = 10000,
+    RESULT_TIMEOUT,
+    RESULT_FAILURE,
+    RESULT_HEADER_COMPLETE,
+    RESULT_PARTIAL_BODY,
+    RESULT_BODY_COMPLETE
+  };
 
   /**
    * Used to extract the response after request completion. Without
@@ -115,13 +124,13 @@ public:
    * Starts a HTTP fetch of the Request contained.
    */
   virtual void run();
+
 protected:
   virtual ~AsyncHttpFetch();
 
 private:
   AsyncHttpFetchState *state_;
-  void init(const std::string &url_str, HttpMethod http_method, const std::string &request_body,
-            StreamingFlag streaming_flag);
+  void init(const std::string &url_str, HttpMethod http_method, const std::string &request_body, StreamingFlag streaming_flag);
   friend class utils::internal;
 };
 

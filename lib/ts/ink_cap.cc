@@ -21,10 +21,10 @@
     limitations under the License.
 */
 
-# include "ink_config.h"
-# include "Diags.h"
-# include "ink_cap.h"
-# include "ink_thread.h"
+#include "ink_config.h"
+#include "Diags.h"
+#include "ink_cap.h"
+#include "ink_thread.h"
 
 #include <grp.h>
 
@@ -40,58 +40,51 @@
 // and if it does, it is likely that some fundamental security assumption has been violated. In that case
 // it is dangerous to continue.
 
-# if !TS_USE_POSIX_CAP
+#if !TS_USE_POSIX_CAP
 ink_mutex ElevateAccess::lock = INK_MUTEX_INIT;
 #endif
 
-#define DEBUG_CREDENTIALS(tag)  do { \
-  if (is_debug_tag_set(tag)) { \
-    uid_t uid = -1, euid = -1, suid = -1; \
-    gid_t gid = -1, egid = -1, sgid = -1; \
-    getresuid(&uid, &euid, &suid); \
-    getresgid(&gid, &egid, &sgid); \
-    Debug(tag, "uid=%ld, gid=%ld, euid=%ld, egid=%ld, suid=%ld, sgid=%ld", \
-        static_cast<long>(uid), \
-        static_cast<long>(gid), \
-        static_cast<long>(euid), \
-        static_cast<long>(egid), \
-        static_cast<long>(suid), \
-        static_cast<long>(sgid) ); \
-  } \
-} while (0)
+#define DEBUG_CREDENTIALS(tag)                                                                                               \
+  do {                                                                                                                       \
+    if (is_debug_tag_set(tag)) {                                                                                             \
+      uid_t uid = -1, euid = -1, suid = -1;                                                                                  \
+      gid_t gid = -1, egid = -1, sgid = -1;                                                                                  \
+      getresuid(&uid, &euid, &suid);                                                                                         \
+      getresgid(&gid, &egid, &sgid);                                                                                         \
+      Debug(tag, "uid=%ld, gid=%ld, euid=%ld, egid=%ld, suid=%ld, sgid=%ld", static_cast<long>(uid), static_cast<long>(gid), \
+            static_cast<long>(euid), static_cast<long>(egid), static_cast<long>(suid), static_cast<long>(sgid));             \
+    }                                                                                                                        \
+  } while (0)
 
 #if TS_USE_POSIX_CAP
 
-#define DEBUG_PRIVILEGES(tag)  do { \
-  if (is_debug_tag_set(tag)) { \
-    cap_t caps = cap_get_proc(); \
-    char* caps_text = cap_to_text(caps, NULL); \
-    Debug(tag, "caps='%s', core=%s, death signal=%d, thread=0x%llx", \
-        caps_text, \
-        is_dumpable(), \
-        death_signal(), \
-        (unsigned long long)pthread_self() ); \
-    cap_free(caps_text); \
-    cap_free(caps); \
-  } \
-} while (0)
+#define DEBUG_PRIVILEGES(tag)                                                                                    \
+  do {                                                                                                           \
+    if (is_debug_tag_set(tag)) {                                                                                 \
+      cap_t caps = cap_get_proc();                                                                               \
+      char *caps_text = cap_to_text(caps, NULL);                                                                 \
+      Debug(tag, "caps='%s', core=%s, death signal=%d, thread=0x%llx", caps_text, is_dumpable(), death_signal(), \
+            (unsigned long long)pthread_self());                                                                 \
+      cap_free(caps_text);                                                                                       \
+      cap_free(caps);                                                                                            \
+    }                                                                                                            \
+  } while (0)
 
 #else /* TS_USE_POSIX_CAP */
 
-#define DEBUG_PRIVILEGES(tag)  do { \
-  if (is_debug_tag_set(tag)) { \
-    Debug(tag, "caps='', core=%s, death signal=%d, thread=0x%llx", \
-        is_dumpable(), \
-        death_signal(), \
-        (unsigned long long)pthread_self() ); \
-  } \
-} while(0)
+#define DEBUG_PRIVILEGES(tag)                                                                       \
+  do {                                                                                              \
+    if (is_debug_tag_set(tag)) {                                                                    \
+      Debug(tag, "caps='', core=%s, death signal=%d, thread=0x%llx", is_dumpable(), death_signal(), \
+            (unsigned long long)pthread_self());                                                    \
+    }                                                                                               \
+  } while (0)
 
 #endif /* TS_USE_POSIX_CAP */
 
 #if !HAVE_GETRESUID
 static int
-getresuid(uid_t * uid, uid_t * euid, uid_t * suid)
+getresuid(uid_t *uid, uid_t *euid, uid_t *suid)
 {
   *uid = getuid();
   *euid = geteuid();
@@ -101,7 +94,7 @@ getresuid(uid_t * uid, uid_t * euid, uid_t * suid)
 
 #if !HAVE_GETRESGID
 static int
-getresgid(gid_t * gid, gid_t * egid, gid_t * sgid)
+getresgid(gid_t *gid, gid_t *egid, gid_t *sgid)
 {
   *gid = getgid();
   *egid = getegid();
@@ -145,14 +138,14 @@ death_signal()
 }
 
 void
-DebugCapabilities(char const* tag)
+DebugCapabilities(char const *tag)
 {
   DEBUG_CREDENTIALS(tag);
   DEBUG_PRIVILEGES(tag);
 }
 
 static void
-impersonate(const struct passwd * pwd, ImpersonationLevel level)
+impersonate(const struct passwd *pwd, ImpersonationLevel level)
 {
   int deathsig = death_signal();
   bool dumpable = false;
@@ -207,9 +200,9 @@ impersonate(const struct passwd * pwd, ImpersonationLevel level)
 void
 ImpersonateUserID(uid_t uid, ImpersonationLevel level)
 {
-  struct passwd * pwd;
-  struct passwd   pbuf;
-  char            buf[max_passwd_size()];
+  struct passwd *pwd;
+  struct passwd pbuf;
+  char buf[max_passwd_size()];
 
   if (getpwuid_r(uid, &pbuf, buf, sizeof(buf), &pwd) != 0) {
     Fatal("missing password database entry for UID %ld: %s", (long)uid, strerror(errno));
@@ -224,11 +217,11 @@ ImpersonateUserID(uid_t uid, ImpersonationLevel level)
 }
 
 void
-ImpersonateUser(const char * user, ImpersonationLevel level)
+ImpersonateUser(const char *user, ImpersonationLevel level)
 {
-  struct passwd * pwd;
-  struct passwd   pbuf;
-  char            buf[max_passwd_size()];
+  struct passwd *pwd;
+  struct passwd pbuf;
+  char buf[max_passwd_size()];
 
   if (*user == '#') {
     // Numeric user notation.
@@ -254,9 +247,9 @@ bool
 PreserveCapabilities()
 {
   int zret = 0;
-# if TS_USE_POSIX_CAP
+#if TS_USE_POSIX_CAP
   zret = prctl(PR_SET_KEEPCAPS, 1);
-# endif
+#endif
   Debug("privileges", "[PreserveCapabilities] zret : %d\n", zret);
   return zret == 0;
 }
@@ -266,19 +259,19 @@ bool
 RestrictCapabilities()
 {
   int zret = 0; // return value.
-# if TS_USE_POSIX_CAP
-    cap_t caps = cap_init(); // start with nothing.
-    // Capabilities we need.
-    cap_value_t perm_list[] = { CAP_NET_ADMIN, CAP_NET_BIND_SERVICE, CAP_IPC_LOCK, CAP_DAC_OVERRIDE};
-    static int const PERM_CAP_COUNT = sizeof(perm_list)/sizeof(*perm_list);
-    cap_value_t eff_list[] = { CAP_NET_ADMIN, CAP_NET_BIND_SERVICE, CAP_IPC_LOCK};
-    static int const EFF_CAP_COUNT = sizeof(eff_list)/sizeof(*eff_list);
+#if TS_USE_POSIX_CAP
+  cap_t caps = cap_init(); // start with nothing.
+  // Capabilities we need.
+  cap_value_t perm_list[] = {CAP_NET_ADMIN, CAP_NET_BIND_SERVICE, CAP_IPC_LOCK, CAP_DAC_OVERRIDE};
+  static int const PERM_CAP_COUNT = sizeof(perm_list) / sizeof(*perm_list);
+  cap_value_t eff_list[] = {CAP_NET_ADMIN, CAP_NET_BIND_SERVICE, CAP_IPC_LOCK};
+  static int const EFF_CAP_COUNT = sizeof(eff_list) / sizeof(*eff_list);
 
-    cap_set_flag(caps, CAP_PERMITTED, PERM_CAP_COUNT, perm_list, CAP_SET);
-    cap_set_flag(caps, CAP_EFFECTIVE, EFF_CAP_COUNT, eff_list, CAP_SET);
-    zret = cap_set_proc(caps);
-    cap_free(caps);
-#  endif
+  cap_set_flag(caps, CAP_PERMITTED, PERM_CAP_COUNT, perm_list, CAP_SET);
+  cap_set_flag(caps, CAP_EFFECTIVE, EFF_CAP_COUNT, eff_list, CAP_SET);
+  zret = cap_set_proc(caps);
+  cap_free(caps);
+#endif
   Debug("privileges", "[RestrictCapabilities] zret : %d\n", zret);
   return zret == 0;
 }
@@ -288,7 +281,7 @@ EnableCoreFile(bool flag)
 {
   int zret = 0;
 
-# if defined(PR_SET_DUMPABLE)
+#if defined(PR_SET_DUMPABLE)
   int state = flag ? 1 : 0;
   if (0 > (zret = prctl(PR_SET_DUMPABLE, state, 0, 0, 0))) {
     Warning("Unable to set PR_DUMPABLE : %s", strerror(errno));
@@ -296,7 +289,7 @@ EnableCoreFile(bool flag)
     zret = ENOSYS; // best guess
     Warning("Call to set PR_DUMPABLE was ineffective");
   }
-# endif  // linux check
+#endif // linux check
 
   Debug("privileges", "[EnableCoreFile] zret : %d\n", zret);
   return zret == 0;
@@ -359,8 +352,7 @@ elevateFileAccess(unsigned level, bool state)
 }
 #endif
 
-ElevateAccess::ElevateAccess(const bool state, unsigned lvl)
-  : elevated(false), saved_uid(geteuid()), level(lvl)
+ElevateAccess::ElevateAccess(const bool state, unsigned lvl) : elevated(false), saved_uid(geteuid()), level(lvl)
 {
   // XXX Squash a clang [-Wunused-private-field] warning. The right solution is probably to extract
   // the capabilities into a policy class.

@@ -66,13 +66,13 @@ FILE *fin;
 //  An instance of TestDnsStateMachine is created for each host
 //
 //////////////////////////////////////////////////////////////////////////////
-class TestDnsStateMachine:public Continuation
+class TestDnsStateMachine : public Continuation
 {
 public:
   TestDnsStateMachine(char *ahost, size_t size);
-   ~TestDnsStateMachine()
+  ~TestDnsStateMachine()
   {
-//        cout << "StateMachine::~StateMachine(). Terminating ... " << endl;
+    //        cout << "StateMachine::~StateMachine(). Terminating ... " << endl;
     return;
   }
 
@@ -80,16 +80,16 @@ public:
 
   int processEvent(int event, void *data);
 
-  enum
-  { START, DNS_LOOKUP };
+  enum {
+    START,
+    DNS_LOOKUP,
+  };
 
   int m_state;
   char host[100];
 };
 
-TestDnsStateMachine::TestDnsStateMachine(char *ahost, size_t size)
-  :
-Continuation(new_ProxyMutex())
+TestDnsStateMachine::TestDnsStateMachine(char *ahost, size_t size) : Continuation(new_ProxyMutex())
 {
   ink_strlcpy(host, ahost, size);
   m_state = START;
@@ -126,50 +126,47 @@ TestDnsStateMachine::processEvent(int event, void *data)
   int rvalue = VC_EVENT_DONE;
   void complete();
 
-//    printf("<<< state machine processEvent() called in state '%s' >>>\n",currentStateName());
+  //    printf("<<< state machine processEvent() called in state '%s' >>>\n",currentStateName());
 
   switch (m_state) {
-  case START:
-    {
-//        cout << "  started up TestDnsStateMachine" << endl;
-//        cout << "  dns lookup for <" << host << ">" <<  endl;
+  case START: {
+    //        cout << "  started up TestDnsStateMachine" << endl;
+    //        cout << "  dns lookup for <" << host << ">" <<  endl;
 
-      //
-      // asynchronously do DNS, calling <this> back when done
-      //
+    //
+    // asynchronously do DNS, calling <this> back when done
+    //
 
-      m_state = DNS_LOOKUP;
-      dnsProcessor.gethostbyname(this, host);
-      break;
+    m_state = DNS_LOOKUP;
+    dnsProcessor.gethostbyname(this, host);
+    break;
+  }
+  case DNS_LOOKUP: {
+    ink_assert(event == DNS_EVENT_LOOKUP);
+    if (!host)
+      ink_assert(!"Error - host has no value\n");
+    if (data) {
+      HostEnt *ent = (HostEnt *)data;
+      g_host_ip = ((struct in_addr *)ent->h_addr_list[0])->s_addr;
+      //        cout << "  dns lookup is done <" << g_host_ip << ">" << endl;
+      //          cout << "<" << host << "> <" << g_host_ip << ">\n";
+      fout << "<" << host << "> <" << g_host_ip << ">\n";
+      //        cout << "    finishing up" << endl;
+      //        printf("*** NOTE: We Need To Somehow Free 'this' Here!  How?\n");
+    } else {
+      fout << "<" << host << "> <>\n";
     }
-  case DNS_LOOKUP:
-    {
-      ink_assert(event == DNS_EVENT_LOOKUP);
-      if (!host)
-        ink_assert(!"Error - host has no value\n");
-      if (data) {
-        HostEnt *ent = (HostEnt *) data;
-        g_host_ip = ((struct in_addr *) ent->h_addr_list[0])->s_addr;
-//        cout << "  dns lookup is done <" << g_host_ip << ">" << endl;
-//          cout << "<" << host << "> <" << g_host_ip << ">\n";
-        fout << "<" << host << "> <" << g_host_ip << ">\n";
-//        cout << "    finishing up" << endl;
-//        printf("*** NOTE: We Need To Somehow Free 'this' Here!  How?\n");
-      } else {
-        fout << "<" << host << "> <>\n";
-      }
-      fout.flush();
-      rvalue = VC_EVENT_DONE;
-      m_state = 99;             // Some Undefined state value
-      complete();
-      delete this;
-      break;
-    }
-  default:
-    {
-      ink_assert(!"unexpected m_state");
-      break;
-    }
+    fout.flush();
+    rvalue = VC_EVENT_DONE;
+    m_state = 99; // Some Undefined state value
+    complete();
+    delete this;
+    break;
+  }
+  default: {
+    ink_assert(!"unexpected m_state");
+    break;
+  }
   }
   return (rvalue);
 }
@@ -188,17 +185,17 @@ complete()
     cumul_throughput = state_machines_finished * 1.0 * HRTIME_SECOND / (now - start_time);
     throughput = measurement_interval * 1.0 * HRTIME_SECOND / (now - last_measurement_time);
     last_measurement_time = now;
-//    cout << state_machines_finished << ": " <<
-//    "Cumul. Thrput " << cumul_throughput <<
-//    " per sec; Thrput for last " << measurement_interval << " requests: "
-//    << throughput << " per sec\n";
-//    cout.flush();
-//    fout_rate << state_machines_finished << ": " <<
-//    "Cumul. Thrput " << cumul_throughput <<
-//    " per sec; Thrput for last " << measurement_interval << " requests: "
-//    << throughput << " per sec\n";
-    fout_rate << (now - start_time) * 1.0 / HRTIME_SECOND << " " << state_machines_finished << " " << cumul_throughput
-      << " " << throughput << "\n";
+    //    cout << state_machines_finished << ": " <<
+    //    "Cumul. Thrput " << cumul_throughput <<
+    //    " per sec; Thrput for last " << measurement_interval << " requests: "
+    //    << throughput << " per sec\n";
+    //    cout.flush();
+    //    fout_rate << state_machines_finished << ": " <<
+    //    "Cumul. Thrput " << cumul_throughput <<
+    //    " per sec; Thrput for last " << measurement_interval << " requests: "
+    //    << throughput << " per sec\n";
+    fout_rate << (now - start_time) * 1.0 / HRTIME_SECOND << " " << state_machines_finished << " " << cumul_throughput << " "
+              << throughput << "\n";
     fout_rate.flush();
   }
   if (state_machines_finished == state_machines_created) {
@@ -211,7 +208,7 @@ complete()
     cout << "Dns Testing Complete\n";
     exit(0);
   }
-//  printf("%d Hosts left \n",state_machines_unfinished);
+  //  printf("%d Hosts left \n",state_machines_unfinished);
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -235,7 +232,7 @@ test()
   unlink(rate_file_name);
   printf("removing file '%s'\n", rate_misc_file_name);
   unlink(rate_misc_file_name);
-  fin = fopen(in_file_name, "r");       // STDIO OK
+  fin = fopen(in_file_name, "r"); // STDIO OK
   fout.open(out_file_name);
   fout_rate.open(rate_file_name);
   fout_rate_misc.open(rate_misc_file_name);
@@ -251,8 +248,8 @@ test()
     i++;
   }
   now = ink_get_hrtime();
-  cout << "Finished creating all Continuations at " <<
-    (now - start_time) / HRTIME_SECOND << " sec and " << (now - start_time) % HRTIME_SECOND << "nanosec\n";
+  cout << "Finished creating all Continuations at " << (now - start_time) / HRTIME_SECOND << " sec and "
+       << (now - start_time) % HRTIME_SECOND << "nanosec\n";
   fout_rate_misc << (now - start_time) * 1.0 / HRTIME_SECOND << "\n";
   fout_rate_misc.flush();
 }

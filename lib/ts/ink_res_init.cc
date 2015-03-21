@@ -90,25 +90,17 @@
 #include "ink_inet.h"
 #include "Tokenizer.h"
 
-#if !defined(isascii)           /* XXX - could be a function */
-# define isascii(c) (!(c & 0200))
+#if !defined(isascii) /* XXX - could be a function */
+#define isascii(c) (!(c & 0200))
 #endif
 
-HostResPreferenceOrder const HOST_RES_DEFAULT_PREFERENCE_ORDER = {
-  HOST_RES_PREFER_IPV4,
-  HOST_RES_PREFER_IPV6,
-  HOST_RES_PREFER_NONE
-};
+HostResPreferenceOrder const HOST_RES_DEFAULT_PREFERENCE_ORDER = {HOST_RES_PREFER_IPV4, HOST_RES_PREFER_IPV6, HOST_RES_PREFER_NONE};
 
 HostResPreferenceOrder host_res_default_preference_order;
 
-char const* const HOST_RES_PREFERENCE_STRING[N_HOST_RES_PREFERENCE] = {
-    "only", "client", "ipv4", "ipv6"
-};
+char const *const HOST_RES_PREFERENCE_STRING[N_HOST_RES_PREFERENCE] = {"only", "client", "ipv4", "ipv6"};
 
-char const* const HOST_RES_STYLE_STRING[] = {
-  "invalid", "IPv4", "IPv4 only", "IPv6", "IPv6 only"
-};
+char const *const HOST_RES_STYLE_STRING[] = {"invalid", "IPv4", "IPv4 only", "IPv6", "IPv6 only"};
 
 /*%
  * This routine is for closing the socket if a virtual circuit is used and
@@ -118,16 +110,18 @@ char const* const HOST_RES_STYLE_STRING[] = {
  * This routine is not expected to be user visible.
  */
 static void
-ink_res_nclose(ink_res_state statp) {
+ink_res_nclose(ink_res_state statp)
+{
   if (statp->_vcsock >= 0) {
-    (void) close(statp->_vcsock);
+    (void)close(statp->_vcsock);
     statp->_vcsock = -1;
     statp->_flags &= ~(INK_RES_F_VC | INK_RES_F_CONN);
   }
 }
 
 static void
-ink_res_setservers(ink_res_state statp, IpEndpoint const* set, int cnt) {
+ink_res_setservers(ink_res_state statp, IpEndpoint const *set, int cnt)
+{
   /* close open servers */
   ink_res_nclose(statp);
 
@@ -139,8 +133,8 @@ ink_res_setservers(ink_res_state statp, IpEndpoint const* set, int cnt) {
      the destination and sourcea are the same.
   */
   int nserv = 0;
-  for ( IpEndpoint const* limit = set + cnt ; nserv < INK_MAXNS && set < limit ; ++set ) {
-    IpEndpoint* dst = &statp->nsaddr_list[nserv];
+  for (IpEndpoint const *limit = set + cnt; nserv < INK_MAXNS && set < limit; ++set) {
+    IpEndpoint *dst = &statp->nsaddr_list[nserv];
 
     if (dst == set) {
       if (ats_is_ip(&set->sa))
@@ -153,9 +147,10 @@ ink_res_setservers(ink_res_state statp, IpEndpoint const* set, int cnt) {
 }
 
 int
-ink_res_getservers(ink_res_state statp, sockaddr *set, int cnt) {
+ink_res_getservers(ink_res_state statp, sockaddr *set, int cnt)
+{
   int zret = 0; // return count.
-  IpEndpoint const* src = statp->nsaddr_list;
+  IpEndpoint const *src = statp->nsaddr_list;
 
   for (int i = 0; i < statp->nscount && i < cnt; ++i, ++src) {
     if (ats_ip_copy(set, &src->sa)) {
@@ -201,7 +196,7 @@ ink_res_setoptions(ink_res_state statp, const char *options, const char *source 
       if (statp->options & INK_RES_DEBUG)
         printf(";;\ttimeout=%d\n", statp->retrans);
 #endif
-#ifdef	SOLARIS2
+#ifdef SOLARIS2
     } else if (!strncmp(cp, "retrans:", sizeof("retrans:") - 1)) {
       /*
        * For backward compatibility, 'retrans' is
@@ -209,15 +204,15 @@ ink_res_setoptions(ink_res_state statp, const char *options, const char *source 
        * without an imposed maximum.
        */
       statp->retrans = atoi(cp + sizeof("retrans:") - 1);
-    } else if (!strncmp(cp, "retry:", sizeof("retry:") - 1)){
+    } else if (!strncmp(cp, "retry:", sizeof("retry:") - 1)) {
       /*
        * For backward compatibility, 'retry' is
        * supported as an alias for 'attempts', though
        * without an imposed maximum.
        */
       statp->retry = atoi(cp + sizeof("retry:") - 1);
-#endif	/* SOLARIS2 */
-    } else if (!strncmp(cp, "attempts:", sizeof("attempts:") - 1)){
+#endif /* SOLARIS2 */
+    } else if (!strncmp(cp, "attempts:", sizeof("attempts:") - 1)) {
       i = atoi(cp + sizeof("attempts:") - 1);
       if (i <= INK_RES_MAXRETRY)
         statp->retry = i;
@@ -252,8 +247,7 @@ ink_res_setoptions(ink_res_state statp, const char *options, const char *source 
 #endif
     else if (!strncmp(cp, "dname", sizeof("dname") - 1)) {
       statp->options |= INK_RES_USE_DNAME;
-    }
-    else {
+    } else {
       /* XXX - print a warning here? */
     }
     /* skip to next run of spaces */
@@ -263,7 +257,8 @@ ink_res_setoptions(ink_res_state statp, const char *options, const char *source 
 }
 
 static unsigned
-ink_res_randomid(void) {
+ink_res_randomid(void)
+{
   struct timeval now;
 
   gettimeofday(&now, NULL);
@@ -294,14 +289,14 @@ ink_res_randomid(void) {
  * @internal This function has to be reachable by res_data.c but not publically.
  */
 int
-ink_res_init(
-  ink_res_state statp, ///< State object to update.
-  IpEndpoint const* pHostList, ///< Additional servers.
-  size_t pHostListSize, ///< # of entries in @a pHostList.
-  const char *pDefDomain, ///< Default domain (may be NULL).
-  const char *pSearchList, ///< Unknown
-  const char *pResolvConf ///< Path to configuration file.
-) {
+ink_res_init(ink_res_state statp,         ///< State object to update.
+             IpEndpoint const *pHostList, ///< Additional servers.
+             size_t pHostListSize,        ///< # of entries in @a pHostList.
+             const char *pDefDomain,      ///< Default domain (may be NULL).
+             const char *pSearchList,     ///< Unknown
+             const char *pResolvConf      ///< Path to configuration file.
+             )
+{
   FILE *fp;
   char *cp, **pp;
   int n;
@@ -328,7 +323,7 @@ ink_res_init(
   statp->qhook = NULL;
   statp->rhook = NULL;
 
-#ifdef	SOLARIS2
+#ifdef SOLARIS2
   /*
    * The old libresolv derived the defaultdomain from NIS/NIS+.
    * We want to keep this behaviour
@@ -337,8 +332,7 @@ ink_res_init(
     char buf[sizeof(statp->defdname)], *cp;
     int ret;
 
-    if ((ret = sysinfo(SI_SRPC_DOMAIN, buf, sizeof(buf))) > 0 &&
-        (unsigned int)ret <= sizeof(buf)) {
+    if ((ret = sysinfo(SI_SRPC_DOMAIN, buf, sizeof(buf))) > 0 && (unsigned int)ret <= sizeof(buf)) {
       if (buf[0] == '+')
         buf[0] = '.';
       cp = strchr(buf, '.');
@@ -346,9 +340,9 @@ ink_res_init(
       ink_strlcpy(statp->defdname, cp, sizeof(statp->defdname));
     }
   }
-#endif	/* SOLARIS2 */
+#endif /* SOLARIS2 */
 
-	/* Allow user to override the local domain definition */
+  /* Allow user to override the local domain definition */
   if ((cp = getenv("LOCALDOMAIN")) != NULL) {
     (void)ink_strlcpy(statp->defdname, cp, sizeof(statp->defdname));
     haveenv++;
@@ -364,7 +358,7 @@ ink_res_init(
     pp = statp->dnsrch;
     *pp++ = cp;
     for (n = 0; *cp && pp < statp->dnsrch + INK_MAXDNSRCH; cp++) {
-      if (*cp == '\n')	/*%< silly backwards compat */
+      if (*cp == '\n') /*%< silly backwards compat */
         break;
       else if (*cp == ' ' || *cp == '\t') {
         *cp = 0;
@@ -428,20 +422,15 @@ ink_res_init(
      we must be provided with atleast a named!
      ------------------------------------------- */
   if (pHostList) {
-    if (pHostListSize > INK_MAXNS) pHostListSize = INK_MAXNS;
-    for (
-        ; nserv < pHostListSize
-          && ats_is_ip(&pHostList[nserv].sa)
-        ; ++nserv
-    ) {
+    if (pHostListSize > INK_MAXNS)
+      pHostListSize = INK_MAXNS;
+    for (; nserv < pHostListSize && ats_is_ip(&pHostList[nserv].sa); ++nserv) {
       ats_ip_copy(&statp->nsaddr_list[nserv].sa, &pHostList[nserv].sa);
     }
   }
 
-#define	MATCH(line, name)                       \
-  (!strncmp(line, name, sizeof(name) - 1) &&    \
-   (line[sizeof(name) - 1] == ' ' ||            \
-    line[sizeof(name) - 1] == '\t'))
+#define MATCH(line, name) \
+  (!strncmp(line, name, sizeof(name) - 1) && (line[sizeof(name) - 1] == ' ' || line[sizeof(name) - 1] == '\t'))
 
   if ((fp = fopen(pResolvConf, "r")) != NULL) {
     /* read the config file */
@@ -451,7 +440,7 @@ ink_res_init(
         continue;
       /* read default domain name */
       if (MATCH(buf, "domain")) {
-        if (haveenv)	/*%< skip if have from environ */
+        if (haveenv) /*%< skip if have from environ */
           continue;
         cp = buf + sizeof("domain") - 1;
         while (*cp == ' ' || *cp == '\t')
@@ -466,7 +455,7 @@ ink_res_init(
       }
       /* set search list */
       if (MATCH(buf, "search")) {
-        if (haveenv)	/*%< skip if have from environ */
+        if (haveenv) /*%< skip if have from environ */
           continue;
         cp = buf + sizeof("search") - 1;
         while (*cp == ' ' || *cp == '\t')
@@ -512,14 +501,11 @@ ink_res_init(
         if ((*cp != '\0') && (*cp != '\n')) {
           memset(&hints, 0, sizeof(hints));
           hints.ai_family = PF_UNSPEC;
-          hints.ai_socktype = SOCK_DGRAM;	/*dummy*/
+          hints.ai_socktype = SOCK_DGRAM; /*dummy*/
           hints.ai_flags = AI_NUMERICHOST;
           sprintf(sbuf, "%d", NAMESERVER_PORT);
           if (getaddrinfo(cp, sbuf, &hints, &ai) == 0) {
-            if (ats_ip_copy(
-                &statp->nsaddr_list[nserv].sa,
-                ai->ai_addr
-            ))
+            if (ats_ip_copy(&statp->nsaddr_list[nserv].sa, ai->ai_addr))
               ++nserv;
             freeaddrinfo(ai);
           }
@@ -531,7 +517,7 @@ ink_res_init(
         continue;
       }
     }
-    (void) fclose(fp);
+    (void)fclose(fp);
   }
 
   if (nserv > 0)
@@ -554,7 +540,7 @@ ink_res_init(
     while (pp < statp->dnsrch + INK_MAXDFLSRCH) {
       if (dots < INK_LOCALDOMAINPARTS)
         break;
-      cp = strchr(cp, '.') + 1;    /*%< we know there is one */
+      cp = strchr(cp, '.') + 1; /*%< we know there is one */
       *pp++ = cp;
       dots--;
     }
@@ -579,21 +565,22 @@ ink_res_init(
 }
 
 void
-parse_host_res_preference(char const* value, HostResPreferenceOrder order) {
+parse_host_res_preference(char const *value, HostResPreferenceOrder order)
+{
   Tokenizer tokens(";/|");
   // preference from the config string.
-  int np = 0; // index in to @a m_host_res_preference
-  bool found[N_HOST_RES_PREFERENCE];  // redundancy check array
-  int n; // # of tokens
-  int i; // index
+  int np = 0;                        // index in to @a m_host_res_preference
+  bool found[N_HOST_RES_PREFERENCE]; // redundancy check array
+  int n;                             // # of tokens
+  int i;                             // index
 
   n = tokens.Initialize(value);
 
-  for ( i = 0 ; i < N_HOST_RES_PREFERENCE ; ++i )
+  for (i = 0; i < N_HOST_RES_PREFERENCE; ++i)
     found[i] = false;
 
-  for ( i = 0 ; i < n && np < N_HOST_RES_PREFERENCE_ORDER ; ++i ) {
-    char const* elt = tokens[i];
+  for (i = 0; i < n && np < N_HOST_RES_PREFERENCE_ORDER; ++i) {
+    char const *elt = tokens[i];
     // special case none/only because that terminates the sequence.
     if (0 == strcasecmp(elt, HOST_RES_PREFERENCE_STRING[HOST_RES_PREFER_NONE])) {
       found[HOST_RES_PREFER_NONE] = true;
@@ -602,7 +589,7 @@ parse_host_res_preference(char const* value, HostResPreferenceOrder order) {
     } else {
       // scan the other types
       HostResPreference ep = HOST_RES_PREFER_NONE;
-      for ( int ip = HOST_RES_PREFER_NONE + 1 ; ip < N_HOST_RES_PREFERENCE ; ++ip ) {
+      for (int ip = HOST_RES_PREFER_NONE + 1; ip < N_HOST_RES_PREFERENCE; ++ip) {
         if (0 == strcasecmp(elt, HOST_RES_PREFERENCE_STRING[ip])) {
           ep = static_cast<HostResPreference>(ip);
           break;
@@ -627,17 +614,17 @@ parse_host_res_preference(char const* value, HostResPreferenceOrder order) {
 }
 
 int
-ts_host_res_order_to_string(HostResPreferenceOrder const& order, char* out, int size)
+ts_host_res_order_to_string(HostResPreferenceOrder const &order, char *out, int size)
 {
   int zret = 0;
   bool first = true;
-  for ( int i = 0 ; i < N_HOST_RES_PREFERENCE_ORDER ; ++i ) {
+  for (int i = 0; i < N_HOST_RES_PREFERENCE_ORDER; ++i) {
     /* Note we use a semi-colon here because this must be compatible
      * with the -httpport command line option which uses comma to
      * separate port descriptors so we cannot use that to separate
      * resolution key words.
      */
-    zret += snprintf(out+zret, size-zret, "%s%s", !first ? ";" : "", HOST_RES_PREFERENCE_STRING[order[i]]);
+    zret += snprintf(out + zret, size - zret, "%s%s", !first ? ";" : "", HOST_RES_PREFERENCE_STRING[order[i]]);
     if (HOST_RES_PREFER_NONE == order[i])
       break;
     first = false;

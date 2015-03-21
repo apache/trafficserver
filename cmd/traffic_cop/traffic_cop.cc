@@ -33,35 +33,34 @@
 #include <string>
 #include <map>
 
-#if defined(linux) || defined (solaris)
+#if defined(linux) || defined(solaris)
 #include "sys/utsname.h"
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/sem.h>
 
-union semun
-{
-  int val;                      /* value for SETVAL */
-  struct semid_ds *buf;         /* buffer for IPC_STAT, IPC_SET */
-  unsigned short int *array;    /* array for GETALL, SETALL */
-  struct seminfo *__buf;        /* buffer for IPC_INFO */
+union semun {
+  int val;                   /* value for SETVAL */
+  struct semid_ds *buf;      /* buffer for IPC_STAT, IPC_SET */
+  unsigned short int *array; /* array for GETALL, SETALL */
+  struct seminfo *__buf;     /* buffer for IPC_INFO */
 };
-#endif  // linux check
+#endif // linux check
 #include <grp.h>
 
 static const int MAX_LOGIN = ink_login_name_max();
 
-#define OPTIONS_MAX     32
+#define OPTIONS_MAX 32
 #define OPTIONS_LEN_MAX 1024
 
 #ifndef WAIT_ANY
-#define WAIT_ANY (pid_t) -1
+#define WAIT_ANY (pid_t) - 1
 #endif // !WAIT_ANY
 
-#define COP_FATAL    LOG_ALERT
-#define COP_WARNING  LOG_ERR
-#define COP_DEBUG    LOG_DEBUG
-#define COP_NOTICE   LOG_NOTICE
+#define COP_FATAL LOG_ALERT
+#define COP_WARNING LOG_ERR
+#define COP_DEBUG LOG_DEBUG
+#define COP_NOTICE LOG_NOTICE
 
 static const char *runtime_dir;
 static char config_file[PATH_NAME_MAX];
@@ -83,7 +82,7 @@ static int debug_flag = false;
 static int stdout_flag = false;
 static int stop_flag = false;
 
-static char* admin_user;
+static char *admin_user;
 static uid_t admin_uid;
 static gid_t admin_gid;
 static bool admin_user_p = false;
@@ -107,18 +106,18 @@ static int manager_failures = 0;
 static int server_failures = 0;
 static int server_not_found = 0;
 
-static const int sleep_time = 10;       // 10 sec
-static const int manager_timeout = 3 * 60;      //  3 min
-static const int server_timeout = 3 * 60;       //  3 min
+static const int sleep_time = 10;          // 10 sec
+static const int manager_timeout = 3 * 60; //  3 min
+static const int server_timeout = 3 * 60;  //  3 min
 
 // traffic_manager flap detection
 #define MANAGER_FLAP_DETECTION 1
 #if defined(MANAGER_FLAP_DETECTION)
-#define MANAGER_MAX_FLAP_COUNT 3        // if flap this many times, give up for a while
-#define MANAGER_FLAP_INTERVAL_MSEC 60000        // if x number of flaps happen in this interval, declare flapping
-#define MANAGER_FLAP_RETRY_MSEC 60000   // if flapping, don't try to restart until after this retry duration
-static bool manager_flapping = false;   // is the manager flapping?
-static int manager_flap_count = 0;      // how many times has the manager flapped?
+#define MANAGER_MAX_FLAP_COUNT 3                        // if flap this many times, give up for a while
+#define MANAGER_FLAP_INTERVAL_MSEC 60000                // if x number of flaps happen in this interval, declare flapping
+#define MANAGER_FLAP_RETRY_MSEC 60000                   // if flapping, don't try to restart until after this retry duration
+static bool manager_flapping = false;                   // is the manager flapping?
+static int manager_flap_count = 0;                      // how many times has the manager flapped?
 static ink_hrtime manager_flap_interval_start_time = 0; // first time we attempted to start the manager in past little while)
 static ink_hrtime manager_flap_retry_start_time = 0;    // first time we attempted to start the manager in past little while)
 #endif
@@ -140,35 +139,39 @@ static void cop_log(int priority, const char *format, ...) TS_PRINTFLIKE(2, 3);
 
 static void get_admin_user(void);
 
-struct ConfigValue
-{
-  ConfigValue()
-    : config_type(RECT_NULL), data_type(RECD_NULL) {
-  }
+struct ConfigValue {
+  ConfigValue() : config_type(RECT_NULL), data_type(RECD_NULL) {}
 
-  ConfigValue(RecT _t, RecDataT _d, const std::string& _v)
-    : config_type(_t), data_type(_d), data_value(_v) {
-  }
+  ConfigValue(RecT _t, RecDataT _d, const std::string &_v) : config_type(_t), data_type(_d), data_value(_v) {}
 
-  RecT        config_type;
-  RecDataT    data_type;
+  RecT config_type;
+  RecDataT data_type;
   std::string data_value;
 };
 
 typedef std::map<std::string, ConfigValue> ConfigValueTable;
 static ConfigValueTable configTable;
 
-#define cop_log_trace(...) do { if (debug_flag) cop_log(COP_DEBUG, __VA_ARGS__); } while (0)
+#define cop_log_trace(...)             \
+  do {                                 \
+    if (debug_flag)                    \
+      cop_log(COP_DEBUG, __VA_ARGS__); \
+  } while (0)
 
 static const char *
 priority_name(int priority)
 {
   switch (priority) {
-    case COP_DEBUG:   return "DEBUG";
-    case COP_WARNING: return "WARNING";
-    case COP_FATAL:   return "FATAL";
-    case COP_NOTICE:  return "NOTICE";
-    default:          return "unknown";
+  case COP_DEBUG:
+    return "DEBUG";
+  case COP_WARNING:
+    return "WARNING";
+  case COP_FATAL:
+    return "FATAL";
+  case COP_NOTICE:
+    return "NOTICE";
+  default:
+    return "unknown";
   }
 }
 
@@ -200,11 +203,12 @@ cop_log(int priority, const char *format, ...)
 
 
 void
-chown_file_to_admin_user(const char *file) {
+chown_file_to_admin_user(const char *file)
+{
   if (admin_user_p) {
     if (chown(file, admin_uid, admin_gid) < 0 && errno != ENOENT) {
-      cop_log(COP_FATAL, "cop couldn't chown the file: '%s' for '%s' (%d/%d) : [%d] %s\n",
-              file, admin_user, admin_uid, admin_gid, errno, strerror(errno));
+      cop_log(COP_FATAL, "cop couldn't chown the file: '%s' for '%s' (%d/%d) : [%d] %s\n", file, admin_user, admin_uid, admin_gid,
+              errno, strerror(errno));
     }
   }
 }
@@ -240,7 +244,7 @@ sig_term(int signum)
   pid_t pid = 0;
   int status = 0;
 
-  //killsig = SIGTERM;
+  // killsig = SIGTERM;
 
   cop_log_trace("Entering sig_term(%d)\n", signum);
 
@@ -271,7 +275,7 @@ sig_term(int signum)
 
 static void
 #if defined(solaris)
-sig_fatal(int signum, siginfo_t * t, void *c)
+sig_fatal(int signum, siginfo_t *t, void *c)
 #else
 sig_fatal(int signum)
 #endif
@@ -281,9 +285,12 @@ sig_fatal(int signum)
   if (t) {
     if (t->si_code <= 0) {
       cop_log(COP_FATAL, "cop received fatal user signal [%d] from"
-              " pid [%d] uid [%d]\n", signum, (int)(t->si_pid), t->si_uid);
+                         " pid [%d] uid [%d]\n",
+              signum, (int)(t->si_pid), t->si_uid);
     } else {
-      cop_log(COP_FATAL, "cop received fatal kernel signal [%d], " "reason [%d]\n", signum, t->si_code);
+      cop_log(COP_FATAL, "cop received fatal kernel signal [%d], "
+                         "reason [%d]\n",
+              signum, t->si_code);
     }
   } else {
 #endif
@@ -298,13 +305,15 @@ sig_fatal(int signum)
 
 static void
 #if defined(solaris)
-sig_alarm_warn(int signum, siginfo_t * t, void *c)
+sig_alarm_warn(int signum, siginfo_t *t, void *c)
 #else
 sig_alarm_warn(int signum)
 #endif
 {
   cop_log_trace("Entering sig_alarm_warn(%d)\n", signum);
-  cop_log(COP_WARNING, "unable to kill traffic_server for the last" " %d seconds\n", kill_timeout);
+  cop_log(COP_WARNING, "unable to kill traffic_server for the last"
+                       " %d seconds\n",
+          kill_timeout);
 
   // Set us up for another alarm
   alarm(kill_timeout);
@@ -359,7 +368,6 @@ set_alarm_warn()
 
   sigaction(SIGALRM, &action, NULL);
   cop_log_trace("Leaving set_alarm_warn()\n");
-
 }
 
 static void
@@ -419,7 +427,7 @@ milliseconds(void)
   // Make liberal use of casting to ink_hrtime to ensure the
   //  compiler does not truncate our result
   cop_log_trace("Leaving milliseconds()\n");
-  return ((ink_hrtime) curTime.tv_sec * 1000) + ((ink_hrtime) curTime.tv_usec / 1000);
+  return ((ink_hrtime)curTime.tv_sec * 1000) + ((ink_hrtime)curTime.tv_usec / 1000);
 }
 
 static void
@@ -467,16 +475,16 @@ transient_error(int error, int wait_ms)
 }
 
 static void
-config_register_variable(RecT rec_type, RecDataT data_type, const char * name, const char * value, bool /* inc_version */)
+config_register_variable(RecT rec_type, RecDataT data_type, const char *name, const char *value, bool /* inc_version */)
 {
   configTable[std::string(name)] = ConfigValue(rec_type, data_type, value);
 }
 
 static void
-config_register_default(const RecordElement * record, void *)
+config_register_default(const RecordElement *record, void *)
 {
   if (record->type == RECT_CONFIG || record->type == RECT_LOCAL) {
-    const char * value = record->value ? record->value : ""; // splooch NULL values so std::string can swallow them
+    const char *value = record->value ? record->value : ""; // splooch NULL values so std::string can swallow them
     configTable[std::string(record->name)] = ConfigValue(record->type, record->value_type, value);
   }
 }
@@ -606,7 +614,7 @@ config_reload_records()
     exit(1);
   }
 
-  if (stat_buf.st_mtime <= last_mod) {  // no change, no need to re-read
+  if (stat_buf.st_mtime <= last_mod) { // no change, no need to re-read
     return;
   } else {
     last_mod = stat_buf.st_mtime;
@@ -843,7 +851,6 @@ poll_write(int fd, int timeout)
 static int
 open_socket(int port, const char *ip = NULL, char const *ip_to_bind = NULL)
 {
-
   int sock = 0;
   struct addrinfo hints;
   struct addrinfo *result = NULL;
@@ -871,7 +878,7 @@ open_socket(int port, const char *ip = NULL, char const *ip_to_bind = NULL)
 
   err = getaddrinfo(ip, port_str, &hints, &result);
   if (err != 0) {
-    cop_log (COP_WARNING, "(test) unable to get address info [%d %s] at ip %s, port %s\n", err, gai_strerror(err), ip, port_str);
+    cop_log(COP_WARNING, "(test) unable to get address info [%d %s] at ip %s, port %s\n", err, gai_strerror(err), ip, port_str);
     goto getaddrinfo_error;
   }
 
@@ -892,7 +899,7 @@ open_socket(int port, const char *ip = NULL, char const *ip_to_bind = NULL)
 
     err = getaddrinfo(ip_to_bind, NULL, &hints, &result_to_bind);
     if (err != 0) {
-      cop_log (COP_WARNING, "(test) unable to get address info [%d %s] at ip %s\n", err, gai_strerror(err), ip_to_bind);
+      cop_log(COP_WARNING, "(test) unable to get address info [%d %s] at ip %s\n", err, gai_strerror(err), ip_to_bind);
       freeaddrinfo(result_to_bind);
       goto error;
     }
@@ -910,13 +917,13 @@ open_socket(int port, const char *ip = NULL, char const *ip_to_bind = NULL)
       // also set REUSEADDR so that previous cop connections in the TIME_WAIT state
       // do not interfere
       if (safe_setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, SOCKOPT_ON, sizeof(int)) < 0) {
-        cop_log (COP_WARNING, "(test) unable to set REUSEADDR socket option [%d '%s']\n", errno, strerror (errno));
+        cop_log(COP_WARNING, "(test) unable to set REUSEADDR socket option [%d '%s']\n", errno, strerror(errno));
       }
     }
 #endif
 
     if (safe_bind(sock, result_to_bind->ai_addr, result_to_bind->ai_addrlen) < 0) {
-      cop_log (COP_WARNING, "(test) unable to bind socket [%d '%s']\n", errno, strerror (errno));
+      cop_log(COP_WARNING, "(test) unable to bind socket [%d '%s']\n", errno, strerror(errno));
     }
 
     freeaddrinfo(result_to_bind);
@@ -956,8 +963,8 @@ getaddrinfo_error:
 }
 
 static int
-test_port(int port, const char *request, char *buffer, int bufsize,
-          int64_t test_timeout, char const *ip = NULL, char const *ip_to_bind = NULL)
+test_port(int port, const char *request, char *buffer, int bufsize, int64_t test_timeout, char const *ip = NULL,
+          char const *ip_to_bind = NULL)
 {
   int64_t start_time, timeout;
   int sock;
@@ -1193,7 +1200,7 @@ test_mgmt_cli_port()
   TSString val = NULL;
   int ret = 0;
 
-  if (TSRecordGetString("proxy.config.manager_binary", &val) !=  TS_ERR_OKAY) {
+  if (TSRecordGetString("proxy.config.manager_binary", &val) != TS_ERR_OKAY) {
     cop_log(COP_WARNING, "(cli test) unable to retrieve manager_binary\n");
     ret = -1;
   } else {
@@ -1238,7 +1245,7 @@ test_http_port(int port, char *request, int timeout, char const *ip = NULL, char
   }
 
   if (strncmp(p, "200", 3) != 0) {
-    char pstatus[4] = { 0 };
+    char pstatus[4] = {0};
     ink_strlcpy(pstatus, p, sizeof(pstatus));
     cop_log(COP_WARNING, "(http test) received non-200 status(%s)\n", pstatus);
     return -1;
@@ -1439,9 +1446,7 @@ check_programs()
     // Spawn the manager (check for flapping manager too)
     ink_hrtime now = milliseconds();
     if (!manager_flapping) {
-      if ((manager_flap_interval_start_time == 0) ||
-          (now - manager_flap_interval_start_time > MANAGER_FLAP_INTERVAL_MSEC)
-        ) {
+      if ((manager_flap_interval_start_time == 0) || (now - manager_flap_interval_start_time > MANAGER_FLAP_INTERVAL_MSEC)) {
         // either:
         // . it's our first time through
         // . we were flapping a while ago, but we would
@@ -1452,8 +1457,7 @@ check_programs()
       }
       if (manager_flap_count >= MANAGER_MAX_FLAP_COUNT) {
         // we've flapped too many times, hold off for a while
-        cop_log(COP_WARNING, "unable to start traffic_manager, retrying in %d second(s)\n",
-                MANAGER_FLAP_RETRY_MSEC / 1000);
+        cop_log(COP_WARNING, "unable to start traffic_manager, retrying in %d second(s)\n", MANAGER_FLAP_RETRY_MSEC / 1000);
         manager_flapping = true;
         manager_flap_retry_start_time = now;
       } else {
@@ -1549,9 +1553,8 @@ check_memory()
       // 3:    >0      low     low     (bad; covered by 1)
       // 4:     0       0      high    (okay)
       // 5:     0       0      low     (bad)
-      if ((swapsize != 0 && swapfree < check_memory_min_swapfree_kb) ||
-          (swapsize == 0 && memfree < check_memory_min_memfree_kb)) {
-        cop_log(COP_WARNING, "Low memory available (swap: %dkB, mem: %dkB)\n", (int) swapfree, (int) memfree);
+      if ((swapsize != 0 && swapfree < check_memory_min_swapfree_kb) || (swapsize == 0 && memfree < check_memory_min_memfree_kb)) {
+        cop_log(COP_WARNING, "Low memory available (swap: %dkB, mem: %dkB)\n", (int)swapfree, (int)memfree);
         cop_log(COP_WARNING, "Killing '%s' and '%s'\n", manager_binary, server_binary);
         manager_failures = 0;
         safe_kill(manager_lockfile, manager_binary, true);
@@ -1594,7 +1597,7 @@ check_no_run()
 // to taking a void* and returning a void*. The change was made
 // so that we can call ink_thread_create() on this function
 // in the case of running cop as a win32 service.
-static void*
+static void *
 check(void *arg)
 {
   bool mgmt_init = false;
@@ -1615,8 +1618,7 @@ check(void *arg)
     if (child_pid > 0) {
       if (WIFEXITED(child_status) == 0) {
         // Child terminated abnormally
-        cop_log(COP_WARNING,
-                "cop received non-normal child status signal [%d %d]\n", child_pid, WEXITSTATUS(child_status));
+        cop_log(COP_WARNING, "cop received non-normal child status signal [%d %d]\n", child_pid, WEXITSTATUS(child_status));
       } else {
         // normal termination
         cop_log(COP_WARNING, "cop received child status signal [%d %d]\n", child_pid, child_status);
@@ -1704,10 +1706,10 @@ init_signals()
 
   sigaction(SIGCHLD, &action, NULL);
 
-  // Handle a bunch of fatal signals. We simply call abort() when
-  // these signals arrive in order to generate a core. There is some
-  // difficulty with generating core files when linking with libthread
-  // under solaris.
+// Handle a bunch of fatal signals. We simply call abort() when
+// these signals arrive in order to generate a core. There is some
+// difficulty with generating core files when linking with libthread
+// under solaris.
 #if defined(solaris)
   action.sa_handler = NULL;
   action.sa_sigaction = sig_fatal;
@@ -1748,7 +1750,6 @@ init_signals()
 static void
 init_lockfiles()
 {
-
   cop_log_trace("Entering init_lockfiles()\n");
   Layout::relative_to(cop_lockfile, sizeof(cop_lockfile), runtime_dir, COP_LOCK);
   Layout::relative_to(manager_lockfile, sizeof(manager_lockfile), runtime_dir, MANAGER_LOCK);
@@ -1782,8 +1783,8 @@ init_config_file()
   if (stat(config_file, &info) < 0) {
     Layout::relative_to(config_file, sizeof(config_file), config_dir, "records.config");
     if (stat(config_file, &info) < 0) {
-      cop_log(COP_FATAL, "unable to locate \"%s/records.config\" or \"%s/records.config.shadow\"\n",
-          (const char *)config_dir, (const char *)config_dir);
+      cop_log(COP_FATAL, "unable to locate \"%s/records.config\" or \"%s/records.config.shadow\"\n", (const char *)config_dir,
+              (const char *)config_dir);
       exit(1);
     }
   }
@@ -1809,7 +1810,7 @@ init()
 
   runtime_dir = config_read_runtime_dir();
   if (stat(runtime_dir, &info) < 0) {
-    cop_log(COP_FATAL, "unable to locate local state directory '%s'\n",runtime_dir);
+    cop_log(COP_FATAL, "unable to locate local state directory '%s'\n", runtime_dir);
     cop_log(COP_FATAL, " please try setting correct root path in either env variable TS_ROOT \n");
     exit(1);
   }
@@ -1821,18 +1822,17 @@ init()
 }
 
 static const ArgumentDescription argument_descriptions[] = {
-  { "debug", 'd', "Enable debug logging", "F", &debug_flag, NULL, NULL },
-  { "stdout", 'o', "Print log messages to standard output", "F", &stdout_flag, NULL, NULL },
-  { "stop", 's', "Send child processes SIGSTOP instead of SIGKILL", "F", &stop_flag, NULL, NULL },
+  {"debug", 'd', "Enable debug logging", "F", &debug_flag, NULL, NULL},
+  {"stdout", 'o', "Print log messages to standard output", "F", &stdout_flag, NULL, NULL},
+  {"stop", 's', "Send child processes SIGSTOP instead of SIGKILL", "F", &stop_flag, NULL, NULL},
   HELP_ARGUMENT_DESCRIPTION(),
-  VERSION_ARGUMENT_DESCRIPTION()
-};
+  VERSION_ARGUMENT_DESCRIPTION()};
 
 int
 main(int /* argc */, const char *argv[])
 {
   int fd;
-  appVersionInfo.setup(PACKAGE_NAME,"traffic_cop", PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
+  appVersionInfo.setup(PACKAGE_NAME, "traffic_cop", PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
 
   // Before accessing file system initialize Layout engine
   Layout::create();
@@ -1862,13 +1862,13 @@ main(int /* argc */, const char *argv[])
     int res;
     res = getpwuid_r(uid, &passwdInfo, buf, bufSize, &ppasswd);
     if (!res && ppasswd) {
-        initgroups(ppasswd->pw_name,gid);
+      initgroups(ppasswd->pw_name, gid);
     }
   }
 
-  setsid();                     // Important, thanks Vlad. :)
+  setsid(); // Important, thanks Vlad. :)
 #if (defined(freebsd) && !defined(kfreebsd)) || defined(openbsd)
-  setpgrp(0,0);
+  setpgrp(0, 0);
 #else
   setpgrp();
 #endif
@@ -1901,4 +1901,3 @@ main(int /* argc */, const char *argv[])
 
   return 0;
 }
-

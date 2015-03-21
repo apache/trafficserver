@@ -27,34 +27,29 @@
 #include <stdio.h>
 #include <string>
 
-namespace EsiLib {
-
+namespace EsiLib
+{
 #define DEBUG_TAG_MAX_SIZE 64
 
 /** class that has common private characteristics */
 class ComponentBase
 {
-
 public:
-
   typedef void (*Debug)(const char *, const char *, ...);
   typedef void (*Error)(const char *, ...);
 
 protected:
-
-  ComponentBase(const char *debug_tag, Debug debug_func, Error error_func)
-    : _debugLog(debug_func), _errorLog(error_func) {
-      snprintf(_debug_tag, sizeof(_debug_tag), "%s", debug_tag);
+  ComponentBase(const char *debug_tag, Debug debug_func, Error error_func) : _debugLog(debug_func), _errorLog(error_func)
+  {
+    snprintf(_debug_tag, sizeof(_debug_tag), "%s", debug_tag);
   };
 
   char _debug_tag[DEBUG_TAG_MAX_SIZE];
   Debug _debugLog;
   Error _errorLog;
 
-  virtual ~ComponentBase() { };
-
+  virtual ~ComponentBase(){};
 };
-
 };
 
 #endif // _ESI_COMPONENT_BASE_H

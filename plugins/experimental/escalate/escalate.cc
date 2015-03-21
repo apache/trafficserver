@@ -40,15 +40,13 @@ static int EscalateResponse(TSCont, TSEvent, void *);
 //////////////////////////////////////////////////////////////////////////////////////////
 // Hold information about the escalation / retry states for a remap rule.
 //
-struct EscalationState
-{
+struct EscalationState {
   enum RetryType {
     RETRY_URL,
-    RETRY_HOST
+    RETRY_HOST,
   };
 
-  struct RetryInfo
-  {
+  struct RetryInfo {
     RetryType type;
     std::string target;
   };
@@ -61,10 +59,7 @@ struct EscalationState
     TSContDataSet(cont, this);
   }
 
-  ~EscalationState()
-  {
-    TSContDestroy(cont);
-  }
+  ~EscalationState() { TSContDestroy(cont); }
 
   TSCont cont;
   StatusMapType status_map;
@@ -75,15 +70,15 @@ struct EscalationState
 // Main continuation for the plugin, examining an origin response for a potential retry.
 //
 static int
-EscalateResponse(TSCont cont, TSEvent event, void* edata)
+EscalateResponse(TSCont cont, TSEvent event, void *edata)
 {
   TSHttpTxn txn = (TSHttpTxn)edata;
-  EscalationState* es = static_cast<EscalationState*>(TSContDataGet(cont));
+  EscalationState *es = static_cast<EscalationState *>(TSContDataGet(cont));
   EscalationState::StatusMapType::const_iterator entry;
   TSMBuffer mbuf;
   TSMLoc hdrp, url;
   TSHttpStatus status;
-  char* url_str = NULL;
+  char *url_str = NULL;
   int url_len, tries;
 
   TSAssert(event == TS_EVENT_HTTP_READ_RESPONSE_HDR);
@@ -101,10 +96,10 @@ EscalateResponse(TSCont cont, TSEvent event, void* edata)
 
   // Next, the response status ...
   status = TSHttpHdrStatusGet(mbuf, hdrp);
-  TSHandleMLocRelease(mbuf, TS_NULL_MLOC, hdrp);  // Don't need this any more
+  TSHandleMLocRelease(mbuf, TS_NULL_MLOC, hdrp); // Don't need this any more
 
   // See if we have an escalation retry config for this response code
-  entry  = es->status_map.find((unsigned)status);
+  entry = es->status_map.find((unsigned)status);
   if (entry == es->status_map.end()) {
     goto no_action;
   }
@@ -132,24 +127,24 @@ EscalateResponse(TSCont cont, TSEvent event, void* edata)
     TSHttpTxnRedirectUrlSet(txn, url_str, url_len); // Transfers ownership
   }
 
-  // Set the transaction free ...
- no_action:
+// Set the transaction free ...
+no_action:
   TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
   return TS_EVENT_NONE;
 }
 
 
 TSReturnCode
-TSRemapInit(TSRemapInterface* /* api */, char* /* errbuf */, int /* bufsz */)
+TSRemapInit(TSRemapInterface * /* api */, char * /* errbuf */, int /* bufsz */)
 {
   return TS_SUCCESS;
 }
 
 
 TSReturnCode
-TSRemapNewInstance(int argc, char* argv[], void** instance, char* errbuf, int errbuf_size)
+TSRemapNewInstance(int argc, char *argv[], void **instance, char *errbuf, int errbuf_size)
 {
-  EscalationState* es = new EscalationState();
+  EscalationState *es = new EscalationState();
 
   // The first two arguments are the "from" and "to" URL string. We can just
   // skip those, since we only ever remap on the error path.
@@ -201,16 +196,16 @@ fail:
 
 
 void
-TSRemapDeleteInstance(void* instance)
+TSRemapDeleteInstance(void *instance)
 {
-  delete static_cast<EscalationState*>(instance);
+  delete static_cast<EscalationState *>(instance);
 }
 
 
 TSRemapStatus
-TSRemapDoRemap(void* instance, TSHttpTxn txn, TSRemapRequestInfo* /* rri */)
+TSRemapDoRemap(void *instance, TSHttpTxn txn, TSRemapRequestInfo * /* rri */)
 {
-  EscalationState* es = static_cast<EscalationState*>(instance);
+  EscalationState *es = static_cast<EscalationState *>(instance);
 
   TSHttpTxnHookAdd(txn, TS_HTTP_READ_RESPONSE_HDR_HOOK, es->cont);
   return TSREMAP_NO_REMAP;

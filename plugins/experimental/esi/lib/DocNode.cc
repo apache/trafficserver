@@ -27,26 +27,14 @@
 using std::string;
 using namespace EsiLib;
 
-const char *DocNode::type_names_[] = { "UNKNOWN",
-                                       "PRE",
-                                       "INCLUDE",
-                                       "COMMENT",
-                                       "REMOVE",
-                                       "VARS",
-                                       "CHOOSE",
-                                       "WHEN",
-                                       "OTHERWISE",
-                                       "TRY",
-                                       "ATTEMPT",
-                                       "EXCEPT",
-                                       "HTML_COMMENT",
-                                       "SPECIAL_INCLUDE"
-};
+const char *DocNode::type_names_[] = {"UNKNOWN", "PRE",       "INCLUDE", "COMMENT", "REMOVE", "VARS",         "CHOOSE",
+                                      "WHEN",    "OTHERWISE", "TRY",     "ATTEMPT", "EXCEPT", "HTML_COMMENT", "SPECIAL_INCLUDE"};
 
 // helper functions
 
 inline void
-packString(const char *str, int32_t str_len, string &buffer) {
+packString(const char *str, int32_t str_len, string &buffer)
+{
   buffer.append(reinterpret_cast<const char *>(&str_len), sizeof(str_len));
   if (str_len) {
     buffer.append(str, str_len);
@@ -54,21 +42,25 @@ packString(const char *str, int32_t str_len, string &buffer) {
 }
 
 inline void
-unpackString(const char *&packed_data, const char *&item, int32_t &item_len) {
+unpackString(const char *&packed_data, const char *&item, int32_t &item_len)
+{
   item_len = *(reinterpret_cast<const int32_t *>(packed_data));
   packed_data += sizeof(int32_t);
   item = item_len ? packed_data : 0;
   packed_data += item_len;
 }
 
-template<typename T> inline void
-unpackItem(const char *&packed_data, T &item) {
+template <typename T>
+inline void
+unpackItem(const char *&packed_data, T &item)
+{
   item = *(reinterpret_cast<const T *>(packed_data));
   packed_data += sizeof(T);
 }
 
 void
-DocNode::pack(string &buffer) const {
+DocNode::pack(string &buffer) const
+{
   int32_t orig_buf_size = buffer.size();
   buffer += DOCNODE_VERSION;
   buffer.append(sizeof(int32_t), ' '); // reserve space for length
@@ -85,7 +77,8 @@ DocNode::pack(string &buffer) const {
 }
 
 bool
-DocNode::unpack(const char *packed_data, int packed_data_len, int &node_len) {
+DocNode::unpack(const char *packed_data, int packed_data_len, int &node_len)
+{
   const char *packed_data_start = packed_data;
 
   if (!packed_data || (packed_data_len < static_cast<int>((sizeof(char) + sizeof(int32_t))))) {
@@ -93,8 +86,8 @@ DocNode::unpack(const char *packed_data, int packed_data_len, int &node_len) {
     return false;
   }
   if (*packed_data != DOCNODE_VERSION) {
-    Utils::ERROR_LOG("[%s] Version %d not in supported set (%d)",
-                     __FUNCTION__, static_cast<int>(*packed_data), static_cast<int>(DOCNODE_VERSION));
+    Utils::ERROR_LOG("[%s] Version %d not in supported set (%d)", __FUNCTION__, static_cast<int>(*packed_data),
+                     static_cast<int>(DOCNODE_VERSION));
     return false;
   }
   ++packed_data;
@@ -102,8 +95,7 @@ DocNode::unpack(const char *packed_data, int packed_data_len, int &node_len) {
   int32_t node_size;
   unpackItem(packed_data, node_size);
   if (node_size > packed_data_len) {
-    Utils::ERROR_LOG("[%s] Data size (%d) not sufficient to hold node of size %d",
-                     __FUNCTION__, packed_data_len, node_size);
+    Utils::ERROR_LOG("[%s] Data size (%d) not sufficient to hold node of size %d", __FUNCTION__, packed_data_len, node_size);
     return false;
   }
   node_len = node_size;
@@ -130,7 +122,8 @@ DocNode::unpack(const char *packed_data, int packed_data_len, int &node_len) {
 }
 
 void
-DocNodeList::packToBuffer(string &buffer) const {
+DocNodeList::packToBuffer(string &buffer) const
+{
   int32_t n_elements = size();
   buffer.append(reinterpret_cast<const char *>(&n_elements), sizeof(n_elements));
   for (DocNodeList::const_iterator iter = begin(); iter != end(); ++iter) {
@@ -139,7 +132,8 @@ DocNodeList::packToBuffer(string &buffer) const {
 }
 
 bool
-DocNodeList::unpack(const char *data, int data_len) {
+DocNodeList::unpack(const char *data, int data_len)
+{
   if (!data || (data_len < static_cast<int>(sizeof(int32_t)))) {
     Utils::ERROR_LOG("[%s] Invalid arguments", __FUNCTION__);
     return false;

@@ -50,8 +50,7 @@
 /* Instead of enumerating the stats in DynamicStats.h, each module needs
    to enumerate its stats separately and register them with librecords
    */
-enum
-{
+enum {
   http_background_fill_current_count_stat,
   http_current_client_connections_stat,
   http_current_active_client_connections_stat,
@@ -295,16 +294,16 @@ enum
 extern RecRawStatBlock *http_rsb;
 
 /* Stats should only be accessed using these macros */
-#define HTTP_INCREMENT_DYN_STAT(x) RecIncrRawStat(http_rsb, mutex->thread_holding, (int) x, 1)
-#define HTTP_DECREMENT_DYN_STAT(x) RecIncrRawStat(http_rsb, mutex->thread_holding, (int) x, -1)
-#define HTTP_SUM_DYN_STAT(x, y) RecIncrRawStat(http_rsb, mutex->thread_holding, (int) x, (int64_t) y)
+#define HTTP_INCREMENT_DYN_STAT(x) RecIncrRawStat(http_rsb, mutex->thread_holding, (int)x, 1)
+#define HTTP_DECREMENT_DYN_STAT(x) RecIncrRawStat(http_rsb, mutex->thread_holding, (int)x, -1)
+#define HTTP_SUM_DYN_STAT(x, y) RecIncrRawStat(http_rsb, mutex->thread_holding, (int)x, (int64_t)y)
 #define HTTP_SUM_GLOBAL_DYN_STAT(x, y) RecIncrGlobalRawStatSum(http_rsb, x, y)
 
-#define HTTP_CLEAR_DYN_STAT(x) \
-do { \
-        RecSetRawStatSum(http_rsb, x, 0); \
-        RecSetRawStatCount(http_rsb, x, 0); \
- } while (0);
+#define HTTP_CLEAR_DYN_STAT(x)          \
+  do {                                  \
+    RecSetRawStatSum(http_rsb, x, 0);   \
+    RecSetRawStatCount(http_rsb, x, 0); \
+  } while (0);
 
 #define HTTP_READ_DYN_SUM(x, S) RecGetRawStatSum(http_rsb, (int)x, &S) // This aggregates threads too
 #define HTTP_READ_GLOBAL_DYN_SUM(x, S) RecGetGlobalRawStatSum(http_rsb, (int)x, &S)
@@ -318,15 +317,12 @@ do { \
 // if "low" == "high" == -1 any port number is allowed
 //   (corresponds to a "*" in the config file)
 /////////////////////////////////////////////////////////////
-struct HttpConfigPortRange
-{
+struct HttpConfigPortRange {
   int low;
   int high;
   HttpConfigPortRange *next;
 
-  HttpConfigPortRange()
-    : low(0), high(0), next(0)
-  {  }
+  HttpConfigPortRange() : low(0), high(0), next(0) {}
 
   ~HttpConfigPortRange()
   {
@@ -341,45 +337,36 @@ struct HttpConfigPortRange
 // to be overridable per transaction more easily.
 struct OverridableHttpConfigParams {
   OverridableHttpConfigParams()
-    : maintain_pristine_host_hdr(1), chunking_enabled(1),
-      negative_caching_enabled(0), negative_revalidating_enabled(0), cache_when_to_revalidate(0),
-      keep_alive_enabled_in(1), keep_alive_enabled_out(1), keep_alive_post_out(1),
+    : maintain_pristine_host_hdr(1), chunking_enabled(1), negative_caching_enabled(0), negative_revalidating_enabled(0),
+      cache_when_to_revalidate(0), keep_alive_enabled_in(1), keep_alive_enabled_out(1), keep_alive_post_out(1),
       server_session_sharing_match(TS_SERVER_SESSION_SHARING_MATCH_BOTH),
-      server_session_sharing_pool(TS_SERVER_SESSION_SHARING_POOL_THREAD),
-      auth_server_session_private(1), fwd_proxy_auth_to_parent(0), insert_age_in_response(1),
-      anonymize_remove_from(0), anonymize_remove_referer(0), anonymize_remove_user_agent(0),
-      anonymize_remove_cookie(0), anonymize_remove_client_ip(0), anonymize_insert_client_ip(1),
+      server_session_sharing_pool(TS_SERVER_SESSION_SHARING_POOL_THREAD), auth_server_session_private(1),
+      fwd_proxy_auth_to_parent(0), insert_age_in_response(1), anonymize_remove_from(0), anonymize_remove_referer(0),
+      anonymize_remove_user_agent(0), anonymize_remove_cookie(0), anonymize_remove_client_ip(0), anonymize_insert_client_ip(1),
       proxy_response_server_enabled(1), proxy_response_hsts_max_age(-1), proxy_response_hsts_include_subdomains(0),
-      insert_squid_x_forwarded_for(1), send_http11_requests(1),
-      cache_http(1), cache_cluster_cache_local(0), cache_ignore_client_no_cache(1), cache_ignore_client_cc_max_age(0),
-      cache_ims_on_client_no_cache(1), cache_ignore_server_no_cache(0), cache_responses_to_cookies(1),
-      cache_ignore_auth(0), cache_urls_that_look_dynamic(1), cache_required_headers(2),
-      cache_range_lookup(1), cache_range_write(0),
-      insert_request_via_string(1), insert_response_via_string(0), doc_in_cache_skip_dns(1),
-      flow_control_enabled(0), accept_encoding_filter_enabled(0), normalize_ae_gzip(0),
-      negative_caching_lifetime(1800), negative_revalidating_lifetime(1800),
-      sock_recv_buffer_size_out(0), sock_send_buffer_size_out(0), sock_option_flag_out(0),
-      sock_packet_mark_out(0), sock_packet_tos_out(0), server_tcp_init_cwnd(0),
-      request_hdr_max_size(131072), response_hdr_max_size(131072), post_check_content_length_enabled(1),
-      cache_heuristic_min_lifetime(3600), cache_heuristic_max_lifetime(86400),
-      cache_guaranteed_min_lifetime(0), cache_guaranteed_max_lifetime(31536000), cache_max_stale_age(604800),
-      keep_alive_no_activity_timeout_in(115), keep_alive_no_activity_timeout_out(120),
-      transaction_no_activity_timeout_in(30), transaction_no_activity_timeout_out(30),
-      transaction_active_timeout_out(0), origin_max_connections(0),
-      connect_attempts_max_retries(0), connect_attempts_max_retries_dead_server(3),
-      connect_attempts_rr_retries(3), connect_attempts_timeout(30),
-      post_connect_attempts_timeout(1800), down_server_timeout(300), client_abort_threshold(10),
-      freshness_fuzz_time(240), freshness_fuzz_min_time(0),
-      max_cache_open_read_retries(-1), cache_open_read_retry_time(10), background_fill_active_timeout(60),
-      http_chunking_size(4096), flow_high_water_mark(0), flow_low_water_mark(0),
+      insert_squid_x_forwarded_for(1), send_http11_requests(1), cache_http(1), cache_cluster_cache_local(0),
+      cache_ignore_client_no_cache(1), cache_ignore_client_cc_max_age(0), cache_ims_on_client_no_cache(1),
+      cache_ignore_server_no_cache(0), cache_responses_to_cookies(1), cache_ignore_auth(0), cache_urls_that_look_dynamic(1),
+      cache_required_headers(2), cache_range_lookup(1), cache_range_write(0), insert_request_via_string(1),
+      insert_response_via_string(0), doc_in_cache_skip_dns(1), flow_control_enabled(0), accept_encoding_filter_enabled(0),
+      normalize_ae_gzip(0), negative_caching_lifetime(1800), negative_revalidating_lifetime(1800), sock_recv_buffer_size_out(0),
+      sock_send_buffer_size_out(0), sock_option_flag_out(0), sock_packet_mark_out(0), sock_packet_tos_out(0),
+      server_tcp_init_cwnd(0), request_hdr_max_size(131072), response_hdr_max_size(131072), post_check_content_length_enabled(1),
+      cache_heuristic_min_lifetime(3600), cache_heuristic_max_lifetime(86400), cache_guaranteed_min_lifetime(0),
+      cache_guaranteed_max_lifetime(31536000), cache_max_stale_age(604800), keep_alive_no_activity_timeout_in(115),
+      keep_alive_no_activity_timeout_out(120), transaction_no_activity_timeout_in(30), transaction_no_activity_timeout_out(30),
+      transaction_active_timeout_out(0), origin_max_connections(0), connect_attempts_max_retries(0),
+      connect_attempts_max_retries_dead_server(3), connect_attempts_rr_retries(3), connect_attempts_timeout(30),
+      post_connect_attempts_timeout(1800), down_server_timeout(300), client_abort_threshold(10), freshness_fuzz_time(240),
+      freshness_fuzz_min_time(0), max_cache_open_read_retries(-1), cache_open_read_retry_time(10),
+      background_fill_active_timeout(60), http_chunking_size(4096), flow_high_water_mark(0), flow_low_water_mark(0),
       default_buffer_size_index(8), default_buffer_water_mark(32768),
 
       // Strings / floats must come last
-      proxy_response_server_string(NULL), proxy_response_server_string_len(0),
-      global_user_agent_header(NULL), global_user_agent_header_size(0),
-      cache_heuristic_lm_factor(0.10), freshness_fuzz_prob(0.005),
-      background_fill_threshold(0.5)
-  { }
+      proxy_response_server_string(NULL), proxy_response_server_string_len(0), global_user_agent_header(NULL),
+      global_user_agent_header_size(0), cache_heuristic_lm_factor(0.10), freshness_fuzz_prob(0.005), background_fill_threshold(0.5)
+  {
+  }
 
   // A few rules here:
   //   1. Place all MgmtByte configs before all other configs
@@ -399,7 +386,7 @@ struct OverridableHttpConfigParams {
 
   MgmtByte keep_alive_enabled_in;
   MgmtByte keep_alive_enabled_out;
-  MgmtByte keep_alive_post_out;  // share server sessions for post
+  MgmtByte keep_alive_post_out; // share server sessions for post
 
   MgmtByte server_session_sharing_match;
   MgmtByte server_session_sharing_pool;
@@ -535,13 +522,13 @@ struct OverridableHttpConfigParams {
 
   // open read failure retries.
   MgmtInt max_cache_open_read_retries;
-  MgmtInt cache_open_read_retry_time;   // time is in mseconds
+  MgmtInt cache_open_read_retry_time; // time is in mseconds
 
   MgmtInt background_fill_active_timeout;
 
-  MgmtInt http_chunking_size; // Maximum chunk size for chunked output.
+  MgmtInt http_chunking_size;   // Maximum chunk size for chunked output.
   MgmtInt flow_high_water_mark; ///< Flow control high water mark.
-  MgmtInt flow_low_water_mark; ///< Flow control low water mark.
+  MgmtInt flow_low_water_mark;  ///< Flow control low water mark.
 
   MgmtInt default_buffer_size_index;
   MgmtInt default_buffer_water_mark;
@@ -551,13 +538,13 @@ struct OverridableHttpConfigParams {
   ///////////////////////////////////////////////////////////////////
   // Server header                                                 //
   ///////////////////////////////////////////////////////////////////
-  char *proxy_response_server_string; // This does not get free'd by us!
+  char *proxy_response_server_string;      // This does not get free'd by us!
   size_t proxy_response_server_string_len; // Updated when server_string is set.
 
   ///////////////////////////////////////////////////////////////////
   // Global User Agent header                                                 //
   ///////////////////////////////////////////////////////////////////
-  char *global_user_agent_header; // This does not get free'd by us!
+  char *global_user_agent_header;       // This does not get free'd by us!
   size_t global_user_agent_header_size; // Updated when user_agent is set.
 
   MgmtFloat cache_heuristic_lm_factor;
@@ -573,25 +560,22 @@ struct OverridableHttpConfigParams {
 // configuration parameters as they apear in the global
 // configuration file.
 /////////////////////////////////////////////////////////////
-struct HttpConfigParams:public ConfigInfo
-{
+struct HttpConfigParams : public ConfigInfo {
 public:
   HttpConfigParams();
   ~HttpConfigParams();
 
-  enum
-  {
+  enum {
     CACHE_REQUIRED_HEADERS_NONE = 0,
     CACHE_REQUIRED_HEADERS_AT_LEAST_LAST_MODIFIED = 1,
     CACHE_REQUIRED_HEADERS_CACHE_CONTROL = 2
   };
 
-  enum
-  {
+  enum {
     SEND_HTTP11_NEVER = 0,
     SEND_HTTP11_ALWAYS = 1,
     SEND_HTTP11_UPGRADE_HOSTDB = 2,
-    SEND_HTTP11_IF_REQUEST_11_AND_HOSTDB = 3
+    SEND_HTTP11_IF_REQUEST_11_AND_HOSTDB = 3,
   };
 
 public:
@@ -750,8 +734,8 @@ private:
   /////////////////////////////////////
   // operator = and copy constructor //
   /////////////////////////////////////
-    HttpConfigParams(const HttpConfigParams &);
-    HttpConfigParams & operator =(const HttpConfigParams &);
+  HttpConfigParams(const HttpConfigParams &);
+  HttpConfigParams &operator=(const HttpConfigParams &);
 };
 
 /////////////////////////////////////////////////////////////
@@ -767,12 +751,11 @@ private:
 class HttpUserAgent_RegxEntry
 {
 public:
-  typedef enum
-  {                             // for more details, please see comments in "ae_ua.config" file
+  typedef enum { // for more details, please see comments in "ae_ua.config" file
     STRTYPE_UNKNOWN = 0,
-    STRTYPE_SUBSTR_CASE,        /* .substring, .string */
-    STRTYPE_SUBSTR_NCASE,       /* .substring_ncase, .string_ncase */
-    STRTYPE_REGEXP              /* .regexp POSIX regular expression */
+    STRTYPE_SUBSTR_CASE,  /* .substring, .string */
+    STRTYPE_SUBSTR_NCASE, /* .substring_ncase, .string_ncase */
+    STRTYPE_REGEXP        /* .regexp POSIX regular expression */
   } StrType;
 
   HttpUserAgent_RegxEntry *next;
@@ -780,10 +763,10 @@ public:
   char *user_agent_str;
   bool regx_valid;
   StrType stype;
-  pcre* regx;
+  pcre *regx;
 
-    HttpUserAgent_RegxEntry();
-   ~HttpUserAgent_RegxEntry();
+  HttpUserAgent_RegxEntry();
+  ~HttpUserAgent_RegxEntry();
 
   bool create(char *refexp_str = NULL, char *errmsgbuf = NULL, int errmsgbuf_size = 0);
 };
@@ -796,7 +779,6 @@ public:
 class HttpConfig
 {
 public:
-
   static int init_aeua_filter(char *config_fname);
 
   static void startup();
@@ -804,7 +786,7 @@ public:
   static void reconfigure();
 
   inkcoreapi static HttpConfigParams *acquire();
-  inkcoreapi static void release(HttpConfigParams * params);
+  inkcoreapi static void release(HttpConfigParams *params);
 
   // dump
   static void dump_config();
@@ -833,73 +815,26 @@ extern volatile int32_t icp_dynamic_enabled;
 //
 /////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////
-inline
-HttpConfigParams::HttpConfigParams()
-  : proxy_hostname(NULL),
-    proxy_hostname_len(0),
-    server_max_connections(0),
-    origin_min_keep_alive_connections(0),
-    parent_proxy_routing_enable(0),
-    disable_ssl_parenting(0),
-    enable_url_expandomatic(0),
-    no_dns_forward_to_parent(0),
-    uncacheable_requests_bypass_parent(1),
-    no_origin_server_dns(0),
-    use_client_target_addr(0),
-    use_client_source_port(0),
-    proxy_request_via_string(NULL),
-    proxy_request_via_string_len(0),
-    proxy_response_via_string(NULL),
-    proxy_response_via_string_len(0),
-    url_expansions_string(NULL),
-    url_expansions(NULL),
-    num_url_expansions(0),
-    session_auth_cache_keep_alive_enabled(1),
-    transaction_active_timeout_in(900),
-    accept_no_activity_timeout(120),
-    parent_connect_attempts(4),
-    per_parent_connect_attempts(2),
-    parent_connect_timeout(30),
-    anonymize_other_header_list(NULL),
-    enable_http_stats(1),
-    icp_enabled(0),
-    stale_icp_enabled(0),
-    cache_vary_default_text(NULL),
-    cache_vary_default_images(NULL),
-    cache_vary_default_other(NULL),
-    max_cache_open_write_retries(1),
-    cache_enable_default_vary_headers(0),
-    cache_post_method(0),
-    connect_ports_string(NULL),
-    connect_ports(NULL),
-    push_method_enabled(0),
-    referer_filter_enabled(0),
-    referer_format_redirect(0),
-    reverse_proxy_enabled(0),
-    url_remap_required(1),
-    record_cop_page(0),
-    errors_log_error_pages(1),
-    enable_http_info(0),
-    cluster_time_delta(0),
-    redirection_enabled(0),
-    redirection_host_no_port(0),
-    number_of_redirections(1),
-    post_copy_size(2048),
-    ignore_accept_mismatch(0),
-    ignore_accept_language_mismatch(0),
-    ignore_accept_encoding_mismatch(0),
-    ignore_accept_charset_mismatch(0),
-    send_100_continue_response(0),
-    send_408_post_timeout_response(0),
-    disallow_post_100_continue(0),
-    parser_allow_non_http(1),
-    autoconf_port(0),
-    autoconf_localhost_only(0)
+inline HttpConfigParams::HttpConfigParams()
+  : proxy_hostname(NULL), proxy_hostname_len(0), server_max_connections(0), origin_min_keep_alive_connections(0),
+    parent_proxy_routing_enable(0), disable_ssl_parenting(0), enable_url_expandomatic(0), no_dns_forward_to_parent(0),
+    uncacheable_requests_bypass_parent(1), no_origin_server_dns(0), use_client_target_addr(0), use_client_source_port(0),
+    proxy_request_via_string(NULL), proxy_request_via_string_len(0), proxy_response_via_string(NULL),
+    proxy_response_via_string_len(0), url_expansions_string(NULL), url_expansions(NULL), num_url_expansions(0),
+    session_auth_cache_keep_alive_enabled(1), transaction_active_timeout_in(900), accept_no_activity_timeout(120),
+    parent_connect_attempts(4), per_parent_connect_attempts(2), parent_connect_timeout(30), anonymize_other_header_list(NULL),
+    enable_http_stats(1), icp_enabled(0), stale_icp_enabled(0), cache_vary_default_text(NULL), cache_vary_default_images(NULL),
+    cache_vary_default_other(NULL), max_cache_open_write_retries(1), cache_enable_default_vary_headers(0), cache_post_method(0),
+    connect_ports_string(NULL), connect_ports(NULL), push_method_enabled(0), referer_filter_enabled(0), referer_format_redirect(0),
+    reverse_proxy_enabled(0), url_remap_required(1), record_cop_page(0), errors_log_error_pages(1), enable_http_info(0),
+    cluster_time_delta(0), redirection_enabled(0), redirection_host_no_port(0), number_of_redirections(1), post_copy_size(2048),
+    ignore_accept_mismatch(0), ignore_accept_language_mismatch(0), ignore_accept_encoding_mismatch(0),
+    ignore_accept_charset_mismatch(0), send_100_continue_response(0), send_408_post_timeout_response(0),
+    disallow_post_100_continue(0), parser_allow_non_http(1), autoconf_port(0), autoconf_localhost_only(0)
 {
 }
 
-inline
-HttpConfigParams::~HttpConfigParams()
+inline HttpConfigParams::~HttpConfigParams()
 {
   ats_free(proxy_hostname);
   ats_free(proxy_request_via_string);

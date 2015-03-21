@@ -35,70 +35,70 @@ completionUtil::create()
   return u;
 };
 inline void
-completionUtil::destroy(Event * e)
+completionUtil::destroy(Event *e)
 {
   ink_assert(e != NULL);
-  UDPIOEvent *u = (UDPIOEvent *) e;
+  UDPIOEvent *u = (UDPIOEvent *)e;
   UDPIOEvent::free(u);
 };
 inline void
-completionUtil::setThread(Event * e, EThread * t)
+completionUtil::setThread(Event *e, EThread *t)
 {
-  UDPIOEvent *u = (UDPIOEvent *) e;
+  UDPIOEvent *u = (UDPIOEvent *)e;
   u->ethread = t;
 }
 inline void
-completionUtil::setContinuation(Event * e, Continuation * c)
+completionUtil::setContinuation(Event *e, Continuation *c)
 {
-  UDPIOEvent *u = (UDPIOEvent *) e;
-  *(Action *) u = c;
+  UDPIOEvent *u = (UDPIOEvent *)e;
+  *(Action *)u = c;
 }
 inline void *
-completionUtil::getHandle(Event * e)
+completionUtil::getHandle(Event *e)
 {
-  UDPIOEvent *u = (UDPIOEvent *) e;
+  UDPIOEvent *u = (UDPIOEvent *)e;
   return u->getHandle();
 }
 inline void
-completionUtil::setHandle(Event * e, void *handle)
+completionUtil::setHandle(Event *e, void *handle)
 {
-  UDPIOEvent *u = (UDPIOEvent *) e;
+  UDPIOEvent *u = (UDPIOEvent *)e;
   u->setHandle(handle);
 }
 inline void
-completionUtil::setInfo(Event * e, int fd, IOBufferBlock * buf, int actual, int errno_)
+completionUtil::setInfo(Event *e, int fd, IOBufferBlock *buf, int actual, int errno_)
 {
-  UDPIOEvent *u = (UDPIOEvent *) e;
+  UDPIOEvent *u = (UDPIOEvent *)e;
   u->setInfo(fd, buf, actual, errno_);
 }
 inline void
-completionUtil::setInfo(Event * e, int fd, struct msghdr *msg, int actual, int errno_)
+completionUtil::setInfo(Event *e, int fd, struct msghdr *msg, int actual, int errno_)
 {
-  UDPIOEvent *u = (UDPIOEvent *) e;
+  UDPIOEvent *u = (UDPIOEvent *)e;
   u->setInfo(fd, msg, actual, errno_);
 }
 inline int
-completionUtil::getBytesTransferred(Event * e)
+completionUtil::getBytesTransferred(Event *e)
 {
-  UDPIOEvent *u = (UDPIOEvent *) e;
+  UDPIOEvent *u = (UDPIOEvent *)e;
   return u->getBytesTransferred();
 }
 inline IOBufferBlock *
-completionUtil::getIOBufferBlock(Event * e)
+completionUtil::getIOBufferBlock(Event *e)
 {
-  UDPIOEvent *u = (UDPIOEvent *) e;
+  UDPIOEvent *u = (UDPIOEvent *)e;
   return u->getIOBufferBlock();
 }
 inline Continuation *
-completionUtil::getContinuation(Event * e)
+completionUtil::getContinuation(Event *e)
 {
-  UDPIOEvent *u = (UDPIOEvent *) e;
+  UDPIOEvent *u = (UDPIOEvent *)e;
   return u->getContinuation();
 }
 inline int
-completionUtil::getError(Event * e)
+completionUtil::getError(Event *e)
 {
-  UDPIOEvent *u = (UDPIOEvent *) e;
+  UDPIOEvent *u = (UDPIOEvent *)e;
   return u->getError();
 }
 #endif

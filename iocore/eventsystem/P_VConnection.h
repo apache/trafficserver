@@ -22,7 +22,7 @@
  */
 
 
-#if !defined (P_VConnection_h)
+#if !defined(P_VConnection_h)
 #define P_VConnection_h
 #include "I_EventSystem.h"
 
@@ -57,17 +57,13 @@ get_vc_event_name(int event)
 
 
 TS_INLINE
-VConnection::VConnection(ProxyMutex * aMutex)
-  :
-Continuation(aMutex),
-lerrno(0)
+VConnection::VConnection(ProxyMutex *aMutex) : Continuation(aMutex), lerrno(0)
 {
   SET_HANDLER(0);
 }
 
 TS_INLINE
-VConnection::~
-VConnection()
+VConnection::~VConnection()
 {
 }
 
@@ -84,7 +80,7 @@ VConnection()
 //////////////////////////////////////////////////////////////////////////////
 
 TS_INLINE VIO *
-vc_do_io_write(VConnection * vc, Continuation * cont, int64_t nbytes, MIOBuffer * buf, int64_t offset)
+vc_do_io_write(VConnection *vc, Continuation *cont, int64_t nbytes, MIOBuffer *buf, int64_t offset)
 {
   IOBufferReader *reader = buf->alloc_reader();
 
@@ -95,7 +91,7 @@ vc_do_io_write(VConnection * vc, Continuation * cont, int64_t nbytes, MIOBuffer 
 }
 
 TS_INLINE VIO *
-VConnection::do_io(int op, Continuation * c, int64_t nbytes, MIOBuffer * cb, int data)
+VConnection::do_io(int op, Continuation *c, int64_t nbytes, MIOBuffer *cb, int data)
 {
   switch (op) {
   case VIO::READ:
@@ -131,7 +127,7 @@ VConnection::reenable(VIO *)
 {
 }
 TS_INLINE void
-VConnection::reenable_re(VIO * vio)
+VConnection::reenable_re(VIO *vio)
 {
   reenable(vio);
 }

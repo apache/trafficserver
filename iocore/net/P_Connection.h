@@ -58,31 +58,30 @@ struct NetVCOptions;
 // Defines
 //
 
-#define NON_BLOCKING_CONNECT     true
-#define BLOCKING_CONNECT         false
-#define CONNECT_WITH_TCP         true
-#define CONNECT_WITH_UDP         false
-#define NON_BLOCKING             true
-#define BLOCKING                 false
-#define BIND_RANDOM_PORT         true
-#define BIND_ANY_PORT            false
-#define ENABLE_MC_LOOPBACK       true
-#define DISABLE_MC_LOOPBACK      false
-#define BC_NO_CONNECT      	 true
-#define BC_CONNECT      	 false
-#define BC_NO_BIND      	 true
-#define BC_BIND      	 	 false
+#define NON_BLOCKING_CONNECT true
+#define BLOCKING_CONNECT false
+#define CONNECT_WITH_TCP true
+#define CONNECT_WITH_UDP false
+#define NON_BLOCKING true
+#define BLOCKING false
+#define BIND_RANDOM_PORT true
+#define BIND_ANY_PORT false
+#define ENABLE_MC_LOOPBACK true
+#define DISABLE_MC_LOOPBACK false
+#define BC_NO_CONNECT true
+#define BC_CONNECT false
+#define BC_NO_BIND true
+#define BC_BIND false
 
 ///////////////////////////////////////////////////////////////////////
 //
 // Connection
 //
 ///////////////////////////////////////////////////////////////////////
-struct Connection
-{
-  SOCKET fd; ///< Socket for connection.
-  IpEndpoint addr; ///< Associated address.
-  bool is_bound; ///< Flag for already bound to a local address.
+struct Connection {
+  SOCKET fd;         ///< Socket for connection.
+  IpEndpoint addr;   ///< Associated address.
+  bool is_bound;     ///< Flag for already bound to a local address.
   bool is_connected; ///< Flag for already connected.
   int sock_type;
 
@@ -97,9 +96,8 @@ struct Connection
       @return 0 on success, -ERRNO on failure.
       @see connect
   */
-  int open(
-	   NetVCOptions const& opt = DEFAULT_OPTIONS ///< Socket options.
-	   );
+  int open(NetVCOptions const &opt = DEFAULT_OPTIONS ///< Socket options.
+           );
 
   /** Connect the socket.
 
@@ -111,34 +109,31 @@ struct Connection
       @return 0 on success, -ERRNO on failure.
       @see open
   */
-  int connect(
-           sockaddr const* to, ///< Remote address and port.
-	   NetVCOptions const& opt = DEFAULT_OPTIONS ///< Socket options
-	   );
+  int connect(sockaddr const *to,                       ///< Remote address and port.
+              NetVCOptions const &opt = DEFAULT_OPTIONS ///< Socket options
+              );
 
 
   /// Set the internal socket address struct.
   /// @internal Used only by ICP.
-  void setRemote(
-    sockaddr const* remote_addr ///< Address and port.
-  ) {
+  void
+  setRemote(sockaddr const *remote_addr ///< Address and port.
+            )
+  {
     ats_ip_copy(&addr, remote_addr);
   }
 
-  int setup_mc_send(sockaddr const* mc_addr,
-                    sockaddr const* my_addr,
-                    bool non_blocking = NON_BLOCKING,
-                    unsigned char mc_ttl = 1, bool mc_loopback = DISABLE_MC_LOOPBACK, Continuation * c = NULL);
+  int setup_mc_send(sockaddr const *mc_addr, sockaddr const *my_addr, bool non_blocking = NON_BLOCKING, unsigned char mc_ttl = 1,
+                    bool mc_loopback = DISABLE_MC_LOOPBACK, Continuation *c = NULL);
 
-  int setup_mc_receive(sockaddr const* from,
-                       sockaddr const* my_addr,
-                       bool non_blocking = NON_BLOCKING, Connection * sendchan = NULL, Continuation * c = NULL);
+  int setup_mc_receive(sockaddr const *from, sockaddr const *my_addr, bool non_blocking = NON_BLOCKING, Connection *sendchan = NULL,
+                       Continuation *c = NULL);
 
-  int close();                  // 0 on success, -errno on failure
+  int close(); // 0 on success, -errno on failure
 
-  void apply_options(NetVCOptions const& opt);
+  void apply_options(NetVCOptions const &opt);
 
-  virtual ~ Connection();
+  virtual ~Connection();
   Connection();
 
   /// Default options.
@@ -153,8 +148,7 @@ protected:
 // Server
 //
 ///////////////////////////////////////////////////////////////////////
-struct Server: public Connection
-{
+struct Server : public Connection {
   /// Client side (inbound) local IP address.
   IpEndpoint accept_addr;
 
@@ -169,7 +163,7 @@ struct Server: public Connection
   //
   int proxy_listen(bool non_blocking = false);
 
-  int accept(Connection * c);
+  int accept(Connection *c);
 
   //
   // Listen on a socket. We assume the port is in host by order, but
@@ -178,19 +172,11 @@ struct Server: public Connection
   //
 
   int listen(bool non_blocking = false, int recv_bufsize = 0, int send_bufsize = 0, bool transparent = false);
-  int setup_fd_for_listen(
-    bool non_blocking = false,
-    int recv_bufsize = 0,
-    int send_bufsize = 0,
-    bool transparent = false ///< Inbound transparent.
-  );
+  int setup_fd_for_listen(bool non_blocking = false, int recv_bufsize = 0, int send_bufsize = 0,
+                          bool transparent = false ///< Inbound transparent.
+                          );
 
-  Server()
-    : Connection()
-    , f_inbound_transparent(false)
-  {
-    ink_zero(accept_addr);
-  }
+  Server() : Connection(), f_inbound_transparent(false) { ink_zero(accept_addr); }
 };
 
 #endif /*_Connection_h*/

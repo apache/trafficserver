@@ -38,7 +38,7 @@ ProtectedQueue::ProtectedQueue()
 {
   Event e;
   ink_mutex_init(&lock, "ProtectedQueue");
-  ink_atomiclist_init(&al, "ProtectedQueue", (char *) &e.link.next - (char *) &e);
+  ink_atomiclist_init(&al, "ProtectedQueue", (char *)&e.link.next - (char *)&e);
   ink_cond_init(&might_have_data);
 }
 
@@ -66,7 +66,7 @@ ProtectedQueue::try_signal()
 
 // Called from the same thread (don't need to signal)
 TS_INLINE void
-ProtectedQueue::enqueue_local(Event * e)
+ProtectedQueue::enqueue_local(Event *e)
 {
   ink_assert(!e->in_the_prot_queue && !e->in_the_priority_queue);
   e->in_the_prot_queue = 1;
@@ -74,7 +74,7 @@ ProtectedQueue::enqueue_local(Event * e)
 }
 
 TS_INLINE void
-ProtectedQueue::remove(Event * e)
+ProtectedQueue::remove(Event *e)
 {
   ink_assert(e->in_the_prot_queue);
   if (!ink_atomiclist_remove(&al, e))

@@ -13,25 +13,25 @@ https://github.com/floodyberry/siphash
 
 #define SIP_BLOCK_SIZE 8
 
-#define ROTL64(a,b) (((a)<<(b))|((a)>>(64-b)))
+#define ROTL64(a, b) (((a) << (b)) | ((a) >> (64 - b)))
 
 #define U8TO64_LE(p) *(const uint64_t *)(p)
 
-#define SIPCOMPRESS(x0,x1,x2,x3) \
-    x0 += x1; \
-    x2 += x3; \
-    x1 = ROTL64(x1,13); \
-    x3 = ROTL64(x3,16); \
-    x1 ^= x0; \
-    x3 ^= x2; \
-    x0 = ROTL64(x0,32); \
-    x2 += x1; \
-    x0 += x3; \
-    x1 = ROTL64(x1,17); \
-    x3 = ROTL64(x3,21); \
-    x1 ^= x2; \
-    x3 ^= x0; \
-    x2 = ROTL64(x2,32);
+#define SIPCOMPRESS(x0, x1, x2, x3) \
+  x0 += x1;                         \
+  x2 += x3;                         \
+  x1 = ROTL64(x1, 13);              \
+  x3 = ROTL64(x3, 16);              \
+  x1 ^= x0;                         \
+  x3 ^= x2;                         \
+  x0 = ROTL64(x0, 32);              \
+  x2 += x1;                         \
+  x0 += x3;                         \
+  x1 = ROTL64(x1, 17);              \
+  x3 = ROTL64(x3, 21);              \
+  x1 ^= x2;                         \
+  x3 ^= x0;                         \
+  x2 = ROTL64(x2, 32);
 
 ATSHash64Sip24::ATSHash64Sip24(void)
 {
@@ -63,7 +63,7 @@ ATSHash64Sip24::update(const void *data, size_t len)
   uint8_t block_off = 0;
 
   if (!finalized) {
-    m = (unsigned char *) data;
+    m = (unsigned char *)data;
     total_len += len;
 
     if (len + block_buffer_len < SIP_BLOCK_SIZE) {
@@ -102,10 +102,10 @@ ATSHash64Sip24::final(void)
   int i;
 
   if (!finalized) {
-    last7 = (uint64_t) (total_len & 0xff) << 56;
+    last7 = (uint64_t)(total_len & 0xff) << 56;
 
     for (i = block_buffer_len - 1; i >= 0; i--) {
-      last7 |= (uint64_t) block_buffer[i] << (i * 8);
+      last7 |= (uint64_t)block_buffer[i] << (i * 8);
     }
 
     v3 ^= last7;

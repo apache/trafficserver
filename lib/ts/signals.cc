@@ -34,7 +34,7 @@ bool
 signal_check_handler(int signal, signal_handler_t handler)
 {
   struct sigaction oact;
-  void * sigact;
+  void *sigact;
 
   ink_release_assert(sigaction(signal, NULL, &oact) == 0);
   if (handler == (signal_handler_t)SIG_DFL || handler == (signal_handler_t)SIG_IGN) {
@@ -60,7 +60,7 @@ signal_check_handler(int signal, signal_handler_t handler)
 void
 check_signals(signal_handler_t handler)
 {
-  signal_check_handler(SIGPIPE, (signal_handler_t) SIG_IGN);
+  signal_check_handler(SIGPIPE, (signal_handler_t)SIG_IGN);
   signal_check_handler(SIGQUIT, handler);
   signal_check_handler(SIGHUP, handler);
   signal_check_handler(SIGTERM, handler);
@@ -99,7 +99,7 @@ signal_reset_default(int signo)
 // certain the DEC pthreads SIGPIPE bug isn't back..
 //
 static void *
-check_signal_thread(void * ptr)
+check_signal_thread(void *ptr)
 {
   signal_handler_t handler = (signal_handler_t)ptr;
   for (;;) {
@@ -153,7 +153,7 @@ signal_is_crash(int signo)
 }
 
 void
-signal_format_siginfo(int signo, siginfo_t * info, const char * msg)
+signal_format_siginfo(int signo, siginfo_t *info, const char *msg)
 {
   (void)info;
   (void)signo;
@@ -213,8 +213,7 @@ signal_register_default_handler(signal_handler_t handler)
 
   set_signal(SIGQUIT, handler);
   set_signal(SIGTERM, handler);
-  set_signal(SIGINT,  handler);
+  set_signal(SIGINT, handler);
   set_signal(SIGUSR1, handler);
   set_signal(SIGUSR2, handler);
-
 }

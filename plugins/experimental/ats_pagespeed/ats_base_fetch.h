@@ -35,42 +35,56 @@
 #include "net/instaweb/util/public/string.h"
 
 
-namespace net_instaweb {
-
+namespace net_instaweb
+{
 class AtsServerContext;
 class AbstractMutex;
 
-class AtsBaseFetch : public net_instaweb::AsyncFetch {
-
+class AtsBaseFetch : public net_instaweb::AsyncFetch
+{
 public:
   // TODO(oschaaf): change this to take the downstream buffer and vio
   // instead of AtsData*. Also, make the bytes send a property
   // of the fetch itself instead of tracking it on data.
   // Doing so, would allow us to share this with the server intercept
   // code for resources.
-  AtsBaseFetch(AtsServerContext* server_context,
-               const net_instaweb::RequestContextPtr& request_ctx,
-               TSVIO downstream_vio,
-               TSIOBuffer downstream_buffer,
-               bool is_resource_fetch);
+  AtsBaseFetch(AtsServerContext *server_context, const net_instaweb::RequestContextPtr &request_ctx, TSVIO downstream_vio,
+               TSIOBuffer downstream_buffer, bool is_resource_fetch);
 
   virtual ~AtsBaseFetch();
   void Release();
-  void set_handle_error(bool x) { handle_error_ = x; }
-  void set_is_ipro(bool x) { is_ipro_ = x; }
-  void set_ctx(TransformCtx* x) { ctx_ = x; }
-  void set_ipro_callback(void* fp) { ipro_callback_ = fp; }
- private:
-  virtual bool HandleWrite(const StringPiece& sp, net_instaweb::MessageHandler* handler);
-  virtual bool HandleFlush( net_instaweb::MessageHandler* handler);
+  void
+  set_handle_error(bool x)
+  {
+    handle_error_ = x;
+  }
+  void
+  set_is_ipro(bool x)
+  {
+    is_ipro_ = x;
+  }
+  void
+  set_ctx(TransformCtx *x)
+  {
+    ctx_ = x;
+  }
+  void
+  set_ipro_callback(void *fp)
+  {
+    ipro_callback_ = fp;
+  }
+
+private:
+  virtual bool HandleWrite(const StringPiece &sp, net_instaweb::MessageHandler *handler);
+  virtual bool HandleFlush(net_instaweb::MessageHandler *handler);
   virtual void HandleHeadersComplete();
   virtual void HandleDone(bool success);
   void Lock();
   void Unlock();
   void DecrefAndDeleteIfUnreferenced();
-  void ForwardData(const StringPiece& sp, bool reenable, bool last);
+  void ForwardData(const StringPiece &sp, bool reenable, bool last);
   GoogleString buffer_;
-  AtsServerContext* server_context_;
+  AtsServerContext *server_context_;
   bool done_called_;
   bool last_buf_sent_;
 
@@ -87,9 +101,9 @@ public:
   bool handle_error_;
   bool is_ipro_;
   // will be used by ipro to reenable the transaction on lookup completion
-  TransformCtx* ctx_;
+  TransformCtx *ctx_;
   // function pointer to ipro transform callback
-  void* ipro_callback_;
+  void *ipro_callback_;
 };
 
 } /* ats_pagespeed */

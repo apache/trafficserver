@@ -51,56 +51,73 @@
     @endcode
     @internal Need to move these to a common header.
  */
-# define TS_IP_OCTETS(x) \
-  reinterpret_cast<unsigned char const*>(&(x))[0],   \
-    reinterpret_cast<unsigned char const*>(&(x))[1], \
-    reinterpret_cast<unsigned char const*>(&(x))[2], \
-    reinterpret_cast<unsigned char const*>(&(x))[3]
+#define TS_IP_OCTETS(x)                                                                               \
+  reinterpret_cast<unsigned char const *>(&(x))[0], reinterpret_cast<unsigned char const *>(&(x))[1], \
+    reinterpret_cast<unsigned char const *>(&(x))[2], reinterpret_cast<unsigned char const *>(&(x))[3]
 
 // ----------
-ControlBase::Modifier::~Modifier() {}
-ControlBase::Modifier::Type ControlBase::Modifier::type() const { return MOD_INVALID; }
+ControlBase::Modifier::~Modifier()
+{
+}
+ControlBase::Modifier::Type
+ControlBase::Modifier::type() const
+{
+  return MOD_INVALID;
+}
 // --------------------------
-namespace {
+namespace
+{
 // ----------
 struct TimeMod : public ControlBase::Modifier {
   time_t start_time;
   time_t end_time;
 
-  static char const * const NAME;
+  static char const *const NAME;
 
   virtual Type type() const;
-  virtual char const * name() const;
-  virtual bool check(HttpRequestData* req) const;
-  virtual void print(FILE* f) const;
-  static TimeMod* make(char * value, char const ** error);
-  static const char* timeOfDayToSeconds(const char *time_str, time_t * seconds);
+  virtual char const *name() const;
+  virtual bool check(HttpRequestData *req) const;
+  virtual void print(FILE *f) const;
+  static TimeMod *make(char *value, char const **error);
+  static const char *timeOfDayToSeconds(const char *time_str, time_t *seconds);
 };
 
-char const * const TimeMod::NAME = "Time";
-ControlBase::Modifier::Type TimeMod::type() const { return MOD_TIME; }
-char const * TimeMod::name() const { return NAME; }
-
-void TimeMod::print(FILE* f) const {
-  fprintf(f, "%s=%ld-%ld  ",
-    // Have to cast because time_t can be 32 or 64 bits and the compiler
-    // will barf if format code doesn't match.
-    this->name(), static_cast<long>(start_time), static_cast<long>(end_time)
-  );
+char const *const TimeMod::NAME = "Time";
+ControlBase::Modifier::Type
+TimeMod::type() const
+{
+  return MOD_TIME;
 }
-bool TimeMod::check(HttpRequestData* req) const {
+char const *
+TimeMod::name() const
+{
+  return NAME;
+}
+
+void
+TimeMod::print(FILE *f) const
+{
+  fprintf(f, "%s=%ld-%ld  ",
+          // Have to cast because time_t can be 32 or 64 bits and the compiler
+          // will barf if format code doesn't match.
+          this->name(), static_cast<long>(start_time), static_cast<long>(end_time));
+}
+bool
+TimeMod::check(HttpRequestData *req) const
+{
   struct tm cur_time;
   time_t timeOfDay = req->xact_start;
   // Use this to account for daylight savings time.
   ink_localtime_r(&timeOfDay, &cur_time);
-  timeOfDay = cur_time.tm_hour*(60 * 60) + cur_time.tm_min*60 + cur_time.tm_sec;
+  timeOfDay = cur_time.tm_hour * (60 * 60) + cur_time.tm_min * 60 + cur_time.tm_sec;
   return start_time <= timeOfDay && timeOfDay <= end_time;
 }
 
-TimeMod*
-TimeMod::make(char * value, char const ** error) {
+TimeMod *
+TimeMod::make(char *value, char const **error)
+{
   Tokenizer rangeTok("-");
-  TimeMod* mod = 0;
+  TimeMod *mod = 0;
   TimeMod tmp;
   int num_tok;
 
@@ -109,10 +126,8 @@ TimeMod::make(char * value, char const ** error) {
     *error = "End time not specified";
   } else if (num_tok > 2) {
     *error = "Malformed time range";
-  } else if (
-    0 == (*error = timeOfDayToSeconds(rangeTok[0], &tmp.start_time))
-    && 0 == (*error = timeOfDayToSeconds(rangeTok[1], &tmp.end_time))
-  ) {
+  } else if (0 == (*error = timeOfDayToSeconds(rangeTok[0], &tmp.start_time)) &&
+             0 == (*error = timeOfDayToSeconds(rangeTok[1], &tmp.end_time))) {
     mod = new TimeMod(tmp);
   }
   return mod;
@@ -124,7 +139,8 @@ TimeMod::make(char * value, char const ** error) {
       @return 0 on success, static error string on failure.
 */
 const char *
-TimeMod::timeOfDayToSeconds(const char *time_str, time_t * seconds) {
+TimeMod::timeOfDayToSeconds(const char *time_str, time_t *seconds)
+{
   int hour = 0;
   int min = 0;
   int sec = 0;
@@ -138,15 +154,18 @@ TimeMod::timeOfDayToSeconds(const char *time_str, time_t * seconds) {
     }
   }
 
-  if (!(hour >= 0 && hour <= 23)) return "Illegal hour specification";
+  if (!(hour >= 0 && hour <= 23))
+    return "Illegal hour specification";
 
   tmp = hour * 60;
 
-  if (!(min >= 0 && min <= 59)) return "Illegal minute specification";
+  if (!(min >= 0 && min <= 59))
+    return "Illegal minute specification";
 
   tmp = (tmp + min) * 60;
 
-  if (!(sec >= 0 && sec <= 59)) return "Illegal second specification";
+  if (!(sec >= 0 && sec <= 59))
+    return "Illegal second specification";
 
   tmp += sec;
 
@@ -159,29 +178,38 @@ struct PortMod : public ControlBase::Modifier {
   int start_port;
   int end_port;
 
-  static char const * const NAME;
+  static char const *const NAME;
 
-  virtual char const * name() const;
-  virtual bool check(HttpRequestData* req) const;
-  virtual void print(FILE* f) const;
+  virtual char const *name() const;
+  virtual bool check(HttpRequestData *req) const;
+  virtual void print(FILE *f) const;
 
-  static PortMod* make(char* value, char const **error);
+  static PortMod *make(char *value, char const **error);
 };
 
-char const * const PortMod::NAME = "Port";
-char const * PortMod::name() const { return NAME; }
+char const *const PortMod::NAME = "Port";
+char const *
+PortMod::name() const
+{
+  return NAME;
+}
 
-void PortMod::print(FILE* f) const {
+void
+PortMod::print(FILE *f) const
+{
   fprintf(f, "%s=%d-%d  ", this->name(), start_port, end_port);
 }
 
-bool PortMod::check(HttpRequestData* req) const {
+bool
+PortMod::check(HttpRequestData *req) const
+{
   int port = req->hdr->port_get();
   return start_port <= port && port <= end_port;
 }
 
-PortMod*
-PortMod::make(char* value, char const ** error) {
+PortMod *
+PortMod::make(char *value, char const **error)
+{
   Tokenizer rangeTok("-");
   PortMod tmp;
   int num_tok = rangeTok.Initialize(value, SHARE_TOKS);
@@ -211,30 +239,41 @@ PortMod::make(char* value, char const ** error) {
 struct IPortMod : public ControlBase::Modifier {
   int _port;
 
-  static char const * const NAME;
+  static char const *const NAME;
 
   IPortMod(int port);
 
-  virtual char const * name() const;
-  virtual bool check(HttpRequestData* req) const;
-  virtual void print(FILE* f) const;
-  static IPortMod* make(char* value, char const ** error);
+  virtual char const *name() const;
+  virtual bool check(HttpRequestData *req) const;
+  virtual void print(FILE *f) const;
+  static IPortMod *make(char *value, char const **error);
 };
 
-char const * const IPortMod::NAME = "IPort";
-IPortMod::IPortMod(int port) : _port(port) {}
-char const * IPortMod::name() const { return NAME; }
+char const *const IPortMod::NAME = "IPort";
+IPortMod::IPortMod(int port) : _port(port)
+{
+}
+char const *
+IPortMod::name() const
+{
+  return NAME;
+}
 
-void IPortMod::print(FILE* f) const {
+void
+IPortMod::print(FILE *f) const
+{
   fprintf(f, "%s=%d  ", this->name(), _port);
 }
-bool IPortMod::check(HttpRequestData* req) const {
+bool
+IPortMod::check(HttpRequestData *req) const
+{
   return req->incoming_port == _port;
 }
 
-IPortMod*
-IPortMod::make(char* value, char const ** error) {
-  IPortMod* zret = 0;
+IPortMod *
+IPortMod::make(char *value, char const **error)
+{
+  IPortMod *zret = 0;
   int port;
   // coverity[secure_coding]
   if (sscanf(value, "%u", &port) == 1) {
@@ -248,82 +287,106 @@ IPortMod::make(char* value, char const ** error) {
 struct SrcIPMod : public ControlBase::Modifier {
   // Stored in host order because that's how they are compared.
   IpEndpoint start_addr; ///< Start address in HOST order.
-  IpEndpoint end_addr; ///< End address in HOST order.
+  IpEndpoint end_addr;   ///< End address in HOST order.
 
-  static char const * const NAME;
+  static char const *const NAME;
 
   virtual Type type() const;
-  virtual char const * name() const;
-  virtual bool check(HttpRequestData* req) const;
-  virtual void print(FILE* f) const;
-  static SrcIPMod* make(char * value, char const ** error);
+  virtual char const *name() const;
+  virtual bool check(HttpRequestData *req) const;
+  virtual void print(FILE *f) const;
+  static SrcIPMod *make(char *value, char const **error);
 };
 
-char const * const SrcIPMod::NAME = "SrcIP";
-ControlBase::Modifier::Type SrcIPMod::type() const { return MOD_SRC_IP; }
-char const * SrcIPMod::name() const { return NAME; }
+char const *const SrcIPMod::NAME = "SrcIP";
+ControlBase::Modifier::Type
+SrcIPMod::type() const
+{
+  return MOD_SRC_IP;
+}
+char const *
+SrcIPMod::name() const
+{
+  return NAME;
+}
 
-void SrcIPMod::print(FILE* f) const {
+void
+SrcIPMod::print(FILE *f) const
+{
   ip_text_buffer b1, b2;
-  fprintf(f, "%s=%s-%s  "
-    ,this->name()
-    , ats_ip_ntop(&start_addr.sa, b1, sizeof(b1))
-    , ats_ip_ntop(&end_addr.sa, b2, sizeof(b2))
-  );
+  fprintf(f, "%s=%s-%s  ", this->name(), ats_ip_ntop(&start_addr.sa, b1, sizeof(b1)), ats_ip_ntop(&end_addr.sa, b2, sizeof(b2)));
 }
-bool SrcIPMod::check(HttpRequestData* req) const {
+bool
+SrcIPMod::check(HttpRequestData *req) const
+{
   // Compare in host order
-  return ats_ip_addr_cmp(&start_addr, &req->src_ip) <= 0
-    && ats_ip_addr_cmp(&req->src_ip, &end_addr) <= 0
-    ;
+  return ats_ip_addr_cmp(&start_addr, &req->src_ip) <= 0 && ats_ip_addr_cmp(&req->src_ip, &end_addr) <= 0;
 }
-SrcIPMod*
-SrcIPMod::make(char * value, char const ** error ) {
+SrcIPMod *
+SrcIPMod::make(char *value, char const **error)
+{
   SrcIPMod tmp;
-  SrcIPMod* zret = 0;
+  SrcIPMod *zret = 0;
   *error = ExtractIpRange(value, &tmp.start_addr.sa, &tmp.end_addr.sa);
 
-  if (!*error) zret = new SrcIPMod(tmp);
+  if (!*error)
+    zret = new SrcIPMod(tmp);
   return zret;
 }
 // ----------
 struct SchemeMod : public ControlBase::Modifier {
   int _scheme; ///< Tokenized scheme.
 
-  static char const * const NAME;
+  static char const *const NAME;
 
   SchemeMod(int scheme);
 
   virtual Type type() const;
-  virtual char const * name() const;
-  virtual bool check(HttpRequestData* req) const;
-  virtual void print(FILE* f) const;
+  virtual char const *name() const;
+  virtual bool check(HttpRequestData *req) const;
+  virtual void print(FILE *f) const;
 
-  char const* getWksText() const;
+  char const *getWksText() const;
 
-  static SchemeMod* make(char * value, char const ** error);
+  static SchemeMod *make(char *value, char const **error);
 };
 
-char const * const SchemeMod::NAME = "Scheme";
+char const *const SchemeMod::NAME = "Scheme";
 
-SchemeMod::SchemeMod(int scheme) : _scheme(scheme) {}
+SchemeMod::SchemeMod(int scheme) : _scheme(scheme)
+{
+}
 
-ControlBase::Modifier::Type SchemeMod::type() const { return MOD_SCHEME; }
-char const * SchemeMod::name() const { return NAME; }
+ControlBase::Modifier::Type
+SchemeMod::type() const
+{
+  return MOD_SCHEME;
+}
 char const *
-SchemeMod::getWksText() const {
+SchemeMod::name() const
+{
+  return NAME;
+}
+char const *
+SchemeMod::getWksText() const
+{
   return hdrtoken_index_to_wks(_scheme);
 }
 
-bool SchemeMod::check(HttpRequestData* req) const {
+bool
+SchemeMod::check(HttpRequestData *req) const
+{
   return req->hdr->url_get()->scheme_get_wksidx() == _scheme;
 }
-void SchemeMod::print(FILE* f) const {
+void
+SchemeMod::print(FILE *f) const
+{
   fprintf(f, "%s=%s  ", this->name(), hdrtoken_index_to_wks(_scheme));
 }
-SchemeMod*
-SchemeMod::make(char * value, char const ** error) {
-  SchemeMod* zret = 0;
+SchemeMod *
+SchemeMod::make(char *value, char const **error)
+{
+  SchemeMod *zret = 0;
   int scheme = hdrtoken_tokenize(value, strlen(value));
   if (scheme < 0) {
     *error = "Unknown scheme";
@@ -343,23 +406,29 @@ struct TextMod : public ControlBase::Modifier {
   ~TextMod();
 
   // Calls name() which the subclass must provide.
-  virtual void print(FILE* f) const;
+  virtual void print(FILE *f) const;
 
   // Copy the given NUL-terminated string to the text buffer.
-  void set(const char * value);
-
+  void set(const char *value);
 };
 
-TextMod::TextMod() : text() {}
-TextMod::~TextMod() {
+TextMod::TextMod() : text()
+{
+}
+TextMod::~TextMod()
+{
   free(text.data());
 }
 
-void TextMod::print(FILE* f) const {
+void
+TextMod::print(FILE *f) const
+{
   fprintf(f, "%s=%*s  ", this->name(), static_cast<int>(text.size()), text.data());
 }
 
-void TextMod::set(const char * value) {
+void
+TextMod::set(const char *value)
+{
   free(this->text.data());
   this->text.set(ats_strdup(value), strlen(value));
 }
@@ -370,26 +439,33 @@ struct MultiTextMod : public ControlBase::Modifier {
   ~MultiTextMod();
 
   // Copy the value to the MultiTextMod buffer.
-  void set(char * value);
+  void set(char *value);
 
   // Calls name() which the subclass must provide.
-  virtual void print(FILE* f) const;
+  virtual void print(FILE *f) const;
 };
 
-MultiTextMod::MultiTextMod() {}
-MultiTextMod::~MultiTextMod() {
+MultiTextMod::MultiTextMod()
+{
+}
+MultiTextMod::~MultiTextMod()
+{
   text_vec.clear();
 }
 
-void MultiTextMod::print(FILE* f) const {
+void
+MultiTextMod::print(FILE *f) const
+{
   for_Vec(ts::Buffer, text_iter, this->text_vec)
-    fprintf(f, "%s=%*s ", this->name(),static_cast<int>(text_iter.size()),text_iter.data());
+    fprintf(f, "%s=%*s ", this->name(), static_cast<int>(text_iter.size()), text_iter.data());
 }
 
-void MultiTextMod::set(char * value) {
+void
+MultiTextMod::set(char *value)
+{
   Tokenizer rangeTok(",");
   int num_tok = rangeTok.Initialize(value, SHARE_TOKS);
-  for(int i = 0; i < num_tok; i++){
+  for (int i = 0; i < num_tok; i++) {
     ts::Buffer text;
     text.set(ats_strdup(rangeTok[i]), strlen(rangeTok[i]));
     this->text_vec.push_back(text);
@@ -398,116 +474,160 @@ void MultiTextMod::set(char * value) {
 
 // ----------
 struct MethodMod : public TextMod {
-  static char const * const NAME;
+  static char const *const NAME;
 
   virtual Type type() const;
-  virtual char const * name() const;
-  virtual bool check(HttpRequestData* req) const;
+  virtual char const *name() const;
+  virtual bool check(HttpRequestData *req) const;
 
-  static MethodMod* make(char * value, char const ** error);
+  static MethodMod *make(char *value, char const **error);
 };
-char const * const MethodMod::NAME = "Method";
-ControlBase::Modifier::Type MethodMod::type() const { return MOD_METHOD; }
-char const * MethodMod::name() const { return NAME; }
-bool MethodMod::check(HttpRequestData* req) const {
-  int method_len;
-  char const* method = req->hdr->method_get(&method_len);
-  return method_len >= static_cast<int>(text.size())
-    && 0 == strncasecmp(method, text.data(), text.size())
-    ;
+char const *const MethodMod::NAME = "Method";
+ControlBase::Modifier::Type
+MethodMod::type() const
+{
+  return MOD_METHOD;
 }
-MethodMod*
-MethodMod::make(char * value, char const **) {
-  MethodMod* mod = new MethodMod();
+char const *
+MethodMod::name() const
+{
+  return NAME;
+}
+bool
+MethodMod::check(HttpRequestData *req) const
+{
+  int method_len;
+  char const *method = req->hdr->method_get(&method_len);
+  return method_len >= static_cast<int>(text.size()) && 0 == strncasecmp(method, text.data(), text.size());
+}
+MethodMod *
+MethodMod::make(char *value, char const **)
+{
+  MethodMod *mod = new MethodMod();
   mod->set(value);
   return mod;
 }
 
 // ----------
 struct PrefixMod : public TextMod {
-  static char const * const NAME;
+  static char const *const NAME;
 
   virtual Type type() const;
-  virtual char const * name() const;
-  virtual bool check(HttpRequestData* req) const;
-  static PrefixMod* make(char * value, char const ** error);
+  virtual char const *name() const;
+  virtual bool check(HttpRequestData *req) const;
+  static PrefixMod *make(char *value, char const **error);
 };
 
-char const * const PrefixMod::NAME = "Prefix";
-ControlBase::Modifier::Type PrefixMod::type() const { return MOD_PREFIX; }
-char const * PrefixMod::name() const { return NAME; }
-bool PrefixMod::check(HttpRequestData* req) const {
+char const *const PrefixMod::NAME = "Prefix";
+ControlBase::Modifier::Type
+PrefixMod::type() const
+{
+  return MOD_PREFIX;
+}
+char const *
+PrefixMod::name() const
+{
+  return NAME;
+}
+bool
+PrefixMod::check(HttpRequestData *req) const
+{
   int path_len;
-  char const* path = req->hdr->url_get()->path_get(&path_len);
-  bool zret = path_len >= static_cast<int>(text.size())
-    && 0 == memcmp(path, text.data(), text.size())
-    ;
-/*
-  Debug("cache_control", "Prefix check: URL=%0.*s Mod=%0.*s Z=%s",
-    path_len, path, text.size(), text.data(),
-    zret ? "Match" : "Fail"
-  );
-*/
+  char const *path = req->hdr->url_get()->path_get(&path_len);
+  bool zret = path_len >= static_cast<int>(text.size()) && 0 == memcmp(path, text.data(), text.size());
+  /*
+    Debug("cache_control", "Prefix check: URL=%0.*s Mod=%0.*s Z=%s",
+      path_len, path, text.size(), text.data(),
+      zret ? "Match" : "Fail"
+    );
+  */
   return zret;
 }
-PrefixMod*
-PrefixMod::make(char * value, char const ** /* error ATS_UNUSED */) {
-  PrefixMod* mod = new PrefixMod();
+PrefixMod *
+PrefixMod::make(char *value, char const ** /* error ATS_UNUSED */)
+{
+  PrefixMod *mod = new PrefixMod();
   // strip leading slashes because get_path which is used later
   // doesn't include them from the URL.
-  while ('/' == *value) ++value;
+  while ('/' == *value)
+    ++value;
   mod->set(value);
   return mod;
 }
 
 // ----------
 struct SuffixMod : public MultiTextMod {
-  static char const * const NAME;
+  static char const *const NAME;
 
   virtual Type type() const;
-  virtual char const * name() const;
-  virtual bool check(HttpRequestData* req) const;
-  static SuffixMod* make(char * value, char const ** error);
+  virtual char const *name() const;
+  virtual bool check(HttpRequestData *req) const;
+  static SuffixMod *make(char *value, char const **error);
 };
-char const * const SuffixMod::NAME = "Suffix";
-ControlBase::Modifier::Type SuffixMod::type() const { return MOD_SUFFIX; }
-char const * SuffixMod::name() const { return NAME; }
-bool SuffixMod::check(HttpRequestData* req) const {
+char const *const SuffixMod::NAME = "Suffix";
+ControlBase::Modifier::Type
+SuffixMod::type() const
+{
+  return MOD_SUFFIX;
+}
+char const *
+SuffixMod::name() const
+{
+  return NAME;
+}
+bool
+SuffixMod::check(HttpRequestData *req) const
+{
   int path_len;
-  char const* path = req->hdr->url_get()->path_get(&path_len);
-  if(1 == static_cast<int>(this->text_vec.count()) && 1 == static_cast<int>(this->text_vec[0].size()) && 0 == strcmp(this->text_vec[0].data(),"*"))
+  char const *path = req->hdr->url_get()->path_get(&path_len);
+  if (1 == static_cast<int>(this->text_vec.count()) && 1 == static_cast<int>(this->text_vec[0].size()) &&
+      0 == strcmp(this->text_vec[0].data(), "*"))
     return true;
-  for_Vec(ts::Buffer, text_iter, this->text_vec){
-    if (path_len >= static_cast<int>(text_iter.size()) && 0 == strncasecmp(path + path_len - text_iter.size(), text_iter.data(), text_iter.size()))
+  for_Vec(ts::Buffer, text_iter, this->text_vec)
+  {
+    if (path_len >= static_cast<int>(text_iter.size()) &&
+        0 == strncasecmp(path + path_len - text_iter.size(), text_iter.data(), text_iter.size()))
       return true;
   }
   return false;
 }
-SuffixMod*
-SuffixMod::make(char * value, char const ** /* error ATS_UNUSED */) {
-  SuffixMod* mod = new SuffixMod();
+SuffixMod *
+SuffixMod::make(char *value, char const ** /* error ATS_UNUSED */)
+{
+  SuffixMod *mod = new SuffixMod();
   mod->set(value);
   return mod;
 }
 
 // ----------
 struct TagMod : public TextMod {
-  static char const * const NAME;
+  static char const *const NAME;
 
   virtual Type type() const;
-  virtual char const * name() const;
-  virtual bool check(HttpRequestData* req) const;
-  static TagMod* make(char * value, char const ** error);
+  virtual char const *name() const;
+  virtual bool check(HttpRequestData *req) const;
+  static TagMod *make(char *value, char const **error);
 };
-char const * const TagMod::NAME = "Tag";
-ControlBase::Modifier::Type TagMod::type() const { return MOD_TAG; }
-char const * TagMod::name() const { return NAME; }
-bool TagMod::check(HttpRequestData* req) const {
+char const *const TagMod::NAME = "Tag";
+ControlBase::Modifier::Type
+TagMod::type() const
+{
+  return MOD_TAG;
+}
+char const *
+TagMod::name() const
+{
+  return NAME;
+}
+bool
+TagMod::check(HttpRequestData *req) const
+{
   return 0 == strcmp(req->tag, text.data());
 }
-TagMod*
-TagMod::make(char * value, char const ** /* error ATS_UNUSED */) {
-  TagMod* mod = new TagMod();
+TagMod *
+TagMod::make(char *value, char const ** /* error ATS_UNUSED */)
+{
+  TagMod *mod = new TagMod();
   mod->set(value);
   return mod;
 }
@@ -515,45 +635,54 @@ TagMod::make(char * value, char const ** /* error ATS_UNUSED */) {
 // ----------
 } // anon name space
 // ------------------------------------------------
-ControlBase::~ControlBase() {
+ControlBase::~ControlBase()
+{
   this->clear();
 }
 
 void
-ControlBase::clear() {
+ControlBase::clear()
+{
   _mods.delete_and_clear();
 }
 
 // static const modifier_el default_el = { MOD_INVALID, NULL };
 
 void
-ControlBase::Print() {
+ControlBase::Print()
+{
   int n = _mods.length();
 
-  if (0 >= n) return;
+  if (0 >= n)
+    return;
 
   printf("\t\t\t");
   for (intptr_t i = 0; i < n; ++i) {
-    Modifier* cur_mod = _mods[i];
-    if (!cur_mod) printf("INVALID  ");
-    else cur_mod->print(stdout);
+    Modifier *cur_mod = _mods[i];
+    if (!cur_mod)
+      printf("INVALID  ");
+    else
+      cur_mod->print(stdout);
   }
   printf("\n");
 }
 
 char const *
-ControlBase::getSchemeModText() const {
-  char const* zret = 0;
-  Modifier* mod = this->findModOfType(Modifier::MOD_SCHEME);
-  if (mod) zret = static_cast<SchemeMod*>(mod)->getWksText();
+ControlBase::getSchemeModText() const
+{
+  char const *zret = 0;
+  Modifier *mod = this->findModOfType(Modifier::MOD_SCHEME);
+  if (mod)
+    zret = static_cast<SchemeMod *>(mod)->getWksText();
   return zret;
 }
 
 bool
-ControlBase::CheckModifiers(HttpRequestData * request_data) {
+ControlBase::CheckModifiers(HttpRequestData *request_data)
+{
   if (!request_data->hdr) {
-    //we use the same request_data for Socks as well (only IpMatcher)
-    //we just return false here
+    // we use the same request_data for Socks as well (only IpMatcher)
+    // we just return false here
     return true;
   }
 
@@ -562,8 +691,7 @@ ControlBase::CheckModifiers(HttpRequestData * request_data) {
   if (!request_data->tag && findModOfType(Modifier::MOD_TAG))
     return false;
 
-  forv_Vec(Modifier, cur_mod, _mods)
-    if (cur_mod && ! cur_mod->check(request_data)) return false;
+  forv_Vec(Modifier, cur_mod, _mods) if (cur_mod && !cur_mod->check(request_data)) return false;
 
   return true;
 }
@@ -572,25 +700,23 @@ enum mod_errors {
   ME_UNKNOWN,
   ME_PARSE_FAILED,
   ME_BAD_MOD,
-  ME_CALLEE_GENERATED
+  ME_CALLEE_GENERATED,
 };
 
 static const char *errorFormats[] = {
-  "Unknown error parsing modifier",
-  "Unable to parse modifier",
-  "Unknown modifier",
-  "Callee Generated",
+  "Unknown error parsing modifier", "Unable to parse modifier", "Unknown modifier", "Callee Generated",
 };
 
-ControlBase::Modifier*
-ControlBase::findModOfType(Modifier::Type t) const {
-  forv_Vec(Modifier, m, _mods)
-    if (m && t == m->type()) return m;
+ControlBase::Modifier *
+ControlBase::findModOfType(Modifier::Type t) const
+{
+  forv_Vec(Modifier, m, _mods) if (m && t == m->type()) return m;
   return 0;
 }
 
 const char *
-ControlBase::ProcessModifiers(matcher_line * line_info) {
+ControlBase::ProcessModifiers(matcher_line *line_info)
+{
   // Variables for error processing
   const char *errBuf = NULL;
   mod_errors err = ME_UNKNOWN;
@@ -598,7 +724,8 @@ ControlBase::ProcessModifiers(matcher_line * line_info) {
   int n_elts = line_info->num_el; // Element count for line.
 
   // No elements -> no modifiers.
-  if (0 >= n_elts) return 0;
+  if (0 >= n_elts)
+    return 0;
   // Can't have more modifiers than elements, so reasonable upper bound.
   _mods.clear();
   _mods.reserve(n_elts);
@@ -608,12 +735,13 @@ ControlBase::ProcessModifiers(matcher_line * line_info) {
   // finding all the elements. We'll track the element count so we can
   // escape if we've found all of the elements.
   for (int i = 0; n_elts && ME_UNKNOWN == err && i < MATCHER_MAX_TOKENS; ++i) {
-    Modifier* mod = 0;
+    Modifier *mod = 0;
 
-    char * label = line_info->line[0][i];
-    char * value = line_info->line[1][i];
+    char *label = line_info->line[0][i];
+    char *value = line_info->line[1][i];
 
-    if (!label) continue; // Already use.
+    if (!label)
+      continue; // Already use.
     if (!value) {
       err = ME_PARSE_FAILED;
       break;
@@ -641,7 +769,8 @@ ControlBase::ProcessModifiers(matcher_line * line_info) {
       err = ME_BAD_MOD;
     }
 
-    if (errBuf) err = ME_CALLEE_GENERATED; // Mod make failed.
+    if (errBuf)
+      err = ME_CALLEE_GENERATED; // Mod make failed.
 
     // If nothing went wrong, add the mod and bump the element count.
     if (ME_UNKNOWN == err) {

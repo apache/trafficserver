@@ -42,15 +42,15 @@
    You can create UDPConnections for asynchronous send/receive or call
    directly (inefficiently) into network layer.
  */
-class UDPNetProcessor:public Processor
+class UDPNetProcessor : public Processor
 {
 public:
   virtual int start(int n_upd_threads, size_t stacksize) = 0;
 
-  //this function was interanal intially.. this is required for public and
-  //interface probably should change.
-  bool CreateUDPSocket(int *resfd, sockaddr const* remote_addr, sockaddr* local_addr, int* local_addr_len,
-                       Action ** status, int send_bufsize = 0, int recv_bufsize = 0);
+  // this function was interanal intially.. this is required for public and
+  // interface probably should change.
+  bool CreateUDPSocket(int *resfd, sockaddr const *remote_addr, sockaddr *local_addr, int *local_addr_len, Action **status,
+                       int send_bufsize = 0, int recv_bufsize = 0);
 
   /**
      create UDPConnection
@@ -73,7 +73,7 @@ public:
      @return Action* Always returns ACTION_RESULT_DONE if socket was
      created successfuly, or ACTION_IO_ERROR if not.
   */
-  inkcoreapi Action *UDPBind(Continuation * c, sockaddr const* addr, int send_bufsize = 0, int recv_bufsize = 0);
+  inkcoreapi Action *UDPBind(Continuation *c, sockaddr const *addr, int send_bufsize = 0, int recv_bufsize = 0);
 
   // Regarding sendto_re, sendmsg_re, recvfrom_re:
   // * You may be called back on 'c' with completion or error status.
@@ -94,18 +94,16 @@ public:
   //   completionUtil::getHandle(cevent);
   // * You can get other info about the completed operation through use
   //   of the completionUtil class.
-  Action *sendto_re(Continuation * c, void *token, int fd,
-                    sockaddr const* toaddr, int toaddrlen, IOBufferBlock * buf, int len);
+  Action *sendto_re(Continuation *c, void *token, int fd, sockaddr const *toaddr, int toaddrlen, IOBufferBlock *buf, int len);
   // I/O buffers referenced by msg must be pinned by the caller until
   // continuation is called back.
-  Action *sendmsg_re(Continuation * c, void *token, int fd, struct msghdr *msg);
+  Action *sendmsg_re(Continuation *c, void *token, int fd, struct msghdr *msg);
 
-  Action *recvfrom_re(Continuation * c, void *token, int fd,
-                      sockaddr *fromaddr, socklen_t *fromaddrlen,
-                      IOBufferBlock * buf, int len, bool useReadCont = true, int timeout = 0);
+  Action *recvfrom_re(Continuation *c, void *token, int fd, sockaddr *fromaddr, socklen_t *fromaddrlen, IOBufferBlock *buf, int len,
+                      bool useReadCont = true, int timeout = 0);
 };
 
-inkcoreapi extern UDPNetProcessor & udpNet;
+inkcoreapi extern UDPNetProcessor &udpNet;
 
 #include "I_UDPPacket.h"
 #include "I_UDPConnection.h"

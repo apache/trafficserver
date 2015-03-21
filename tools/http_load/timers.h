@@ -38,14 +38,13 @@
 ** can use it for whatever, and it gets passed to the callback when the
 ** timer triggers.
 */
-typedef union
-{
+typedef union {
   void *p;
   int i;
   long l;
 } ClientData;
 
-extern ClientData JunkClientData;       /* for use when you don't care */
+extern ClientData JunkClientData; /* for use when you don't care */
 
 /* The TimerProc gets called when the timer expires.  It gets passed
 ** the ClientData associated with the timer, and a timeval in case
@@ -54,8 +53,7 @@ extern ClientData JunkClientData;       /* for use when you don't care */
 typedef void TimerProc(ClientData client_data, struct timeval *nowP);
 
 /* The Timer struct. */
-typedef struct TimerStruct
-{
+typedef struct TimerStruct {
   TimerProc *timer_proc;
   ClientData client_data;
   long msecs;
@@ -70,8 +68,7 @@ typedef struct TimerStruct
 extern void tmr_init(void);
 
 /* Set up a timer, either periodic or one-shot. Returns (Timer*) 0 on errors. */
-extern Timer *tmr_create(struct timeval *nowP, TimerProc * timer_proc, ClientData client_data,
-                         long msecs, int periodic);
+extern Timer *tmr_create(struct timeval *nowP, TimerProc *timer_proc, ClientData client_data, long msecs, int periodic);
 
 /* Returns a timeout indicating how long until the next timer triggers.  You
 ** can just put the call to this routine right in your select().  Returns
@@ -91,12 +88,12 @@ extern long tmr_mstimeout(struct timeval *nowP);
 extern void tmr_run(struct timeval *nowP);
 
 /* Reset the clock on a timer, to current time plus the original timeout. */
-extern void tmr_reset(struct timeval *nowP, Timer * timer);
+extern void tmr_reset(struct timeval *nowP, Timer *timer);
 
 /* Deschedule a timer.  Note that non-periodic timers are automatically
 ** descheduled when they run, so you don't have to call this on them.
 */
-extern void tmr_cancel(Timer * timer);
+extern void tmr_cancel(Timer *timer);
 
 /* Clean up the timers package, freeing any unused storage. */
 extern void tmr_cleanup(void);

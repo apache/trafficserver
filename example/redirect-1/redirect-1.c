@@ -35,9 +35,9 @@
 #include <stdio.h>
 #include <string.h>
 
-#  include <unistd.h>
-#  include <netinet/in.h>
-#  include <arpa/inet.h>
+#include <unistd.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 #include <ts/ts.h>
 
@@ -107,10 +107,8 @@ handle_client_lookup(TSHttpTxn txnp, TSCont contp)
    * Create the local copies of the global coupled stats:
    */
   local_requests_all = INKStatCoupledLocalAdd(local_request_outcomes, "requests.all.local", INKSTAT_TYPE_FLOAT);
-  local_requests_redirects = INKStatCoupledLocalAdd(local_request_outcomes,
-                                                    "requests.redirects.local", INKSTAT_TYPE_INT64);
-  local_requests_unchanged = INKStatCoupledLocalAdd(local_request_outcomes,
-                                                    "requests.unchanged.local", INKSTAT_TYPE_INT64);
+  local_requests_redirects = INKStatCoupledLocalAdd(local_request_outcomes, "requests.redirects.local", INKSTAT_TYPE_INT64);
+  local_requests_unchanged = INKStatCoupledLocalAdd(local_request_outcomes, "requests.unchanged.local", INKSTAT_TYPE_INT64);
 
 
   /*
@@ -122,7 +120,7 @@ handle_client_lookup(TSHttpTxn txnp, TSCont contp)
   INKStatFloatAddTo(local_requests_all, 1.0);
 
   if (TSIsDebugTagSet("redirect")) {
-    struct sockaddr const* addr = TSHttpTxnClientAddrGet(txnp);
+    struct sockaddr const *addr = TSHttpTxnClientAddrGet(txnp);
 
     if (addr) {
       socklen_t addr_size = 0;
@@ -200,7 +198,6 @@ done:
 }
 
 
-
 static void
 handle_response(TSHttpTxn txnp)
 {
@@ -215,9 +212,8 @@ handle_response(TSHttpTxn txnp)
   }
 
   TSHttpHdrStatusSet(bufp, hdr_loc, TS_HTTP_STATUS_MOVED_PERMANENTLY);
-  TSHttpHdrReasonSet(bufp, hdr_loc,
-                      TSHttpHdrReasonLookup(TS_HTTP_STATUS_MOVED_PERMANENTLY),
-                      strlen(TSHttpHdrReasonLookup(TS_HTTP_STATUS_MOVED_PERMANENTLY)));
+  TSHttpHdrReasonSet(bufp, hdr_loc, TSHttpHdrReasonLookup(TS_HTTP_STATUS_MOVED_PERMANENTLY),
+                     strlen(TSHttpHdrReasonLookup(TS_HTTP_STATUS_MOVED_PERMANENTLY)));
 
   TSMimeHdrFieldCreate(bufp, hdr_loc, &newfield_loc); /* Probably should check for errors ... */
   TSMimeHdrFieldNameSet(bufp, hdr_loc, newfield_loc, TS_MIME_FIELD_LOCATION, TS_MIME_LEN_LOCATION);
@@ -239,12 +235,10 @@ done:
 }
 
 
-
 static int
 redirect_plugin(TSCont contp, TSEvent event, void *edata)
 {
-
-  TSHttpTxn txnp = (TSHttpTxn) edata;
+  TSHttpTxn txnp = (TSHttpTxn)edata;
 
   switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR:
@@ -263,7 +257,6 @@ redirect_plugin(TSCont contp, TSEvent event, void *edata)
 
   return 0;
 }
-
 
 
 /*
@@ -291,7 +284,6 @@ init_stats(void)
   requests_all = INKStatCoupledGlobalAdd(request_outcomes, "requests.all", INKSTAT_TYPE_FLOAT);
   requests_redirects = INKStatCoupledGlobalAdd(request_outcomes, "requests.redirects", INKSTAT_TYPE_INT64);
   requests_unchanged = INKStatCoupledGlobalAdd(request_outcomes, "requests.unchanged", INKSTAT_TYPE_INT64);
-
 }
 
 /*
@@ -371,7 +363,8 @@ TSPluginInit(int argc, const char *argv[])
     TSstrlcat(uri_redirect, url_redirect, uri_len);
 
   } else {
-    TSError("Incorrect syntax in plugin.conf:  correct usage is" "redirect-1.so ip_deny url_redirect");
+    TSError("Incorrect syntax in plugin.conf:  correct usage is"
+            "redirect-1.so ip_deny url_redirect");
     return;
   }
 
@@ -381,8 +374,7 @@ TSPluginInit(int argc, const char *argv[])
   init_stats();
   TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, TSContCreate(redirect_plugin, NULL));
 
-  TSDebug("redirect_init", "block_ip is %s, url_redirect is %s, and uri_redirect is %s",
-           block_ip, url_redirect, uri_redirect);
+  TSDebug("redirect_init", "block_ip is %s, url_redirect is %s, and uri_redirect is %s", block_ip, url_redirect, uri_redirect);
   // ToDo: Should figure out how to print IPs which are IPv4 / v6.
   // TSDebug("redirect_init", "ip_deny is %ld\n", ip_deny);
 

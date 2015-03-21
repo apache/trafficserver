@@ -34,14 +34,13 @@
 #include "HdrUtils.h"
 #include "MatcherUtils.h"
 
-#define MAX_STAT_PAGES      32
+#define MAX_STAT_PAGES 32
 
 
 // Globals
 StatPagesManager statPagesManager;
 
-static struct
-{
+static struct {
   char *module;
   StatPagesFunc func;
 } stat_pages[MAX_STAT_PAGES];
@@ -65,7 +64,7 @@ StatPagesManager::register_http(const char *module, StatPagesFunc func)
 }
 
 Action *
-StatPagesManager::handle_http(Continuation * cont, HTTPHdr * header)
+StatPagesManager::handle_http(Continuation *cont, HTTPHdr *header)
 {
   URL *url = header->url_get();
 
@@ -95,7 +94,7 @@ StatPagesManager::handle_http(Continuation * cont, HTTPHdr * header)
 }
 
 bool
-StatPagesManager::is_stat_page(URL * url)
+StatPagesManager::is_stat_page(URL *url)
 {
   // This gets called from the state machine, so we should optimize here and not in caller.
   if (m_enabled <= 0)
@@ -119,7 +118,7 @@ StatPagesManager::is_stat_page(URL * url)
 }
 
 bool
-StatPagesManager::is_cache_inspector_page(URL * url)
+StatPagesManager::is_cache_inspector_page(URL *url)
 {
   int length;
   const char *h = url->host_get(&length);
@@ -136,7 +135,6 @@ StatPagesManager::is_cache_inspector_page(URL * url)
     return true;
   else
     return false;
-
 }
 
 void
@@ -193,13 +191,15 @@ BaseStatPagesHandler::resp_begin(const char *title)
   resp_clear();
   resp_add("<html>\n"
            "<head><title>%s</title></head>\n"
-           "<body text=\"#000000\" bgcolor=\"#ffffff\" link=\"#0000ee\" vlink=\"#551a8b\" alink=\"#ff0000\">\n", title);
+           "<body text=\"#000000\" bgcolor=\"#ffffff\" link=\"#0000ee\" vlink=\"#551a8b\" alink=\"#ff0000\">\n",
+           title);
 }
 
 void
 BaseStatPagesHandler::resp_end()
 {
-  resp_add("</body>\n" "</html>\n");
+  resp_add("</body>\n"
+           "</html>\n");
 }
 
 void

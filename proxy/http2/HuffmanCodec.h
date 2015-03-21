@@ -29,6 +29,6 @@
 
 void hpack_huffman_init();
 void hpack_huffman_fin();
-int64_t huffman_decode(char* dst_start, const uint8_t* src, uint32_t src_len);
+int64_t huffman_decode(char *dst_start, const uint8_t *src, uint32_t src_len);
 
 #endif /* __HPACK_Huffman_H__ */

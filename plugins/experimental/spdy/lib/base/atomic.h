@@ -24,33 +24,38 @@
 #include <thread>
 
 // Base mixin for reference-countable objects.
-struct countable
-{
-    countable() : refcnt(0) {}
-    virtual ~countable() {}
+struct countable {
+  countable() : refcnt(0) {}
+  virtual ~countable() {}
 
 private:
-    std::atomic<unsigned> refcnt;
+  std::atomic<unsigned> refcnt;
 
-    template <typename T> friend T * retain(T * ptr);
-    template <typename T> friend void release(T * ptr);
+  template <typename T> friend T *retain(T *ptr);
+  template <typename T> friend void release(T *ptr);
 };
 
 // Increment the reference count of a countable object, returning it.
-template <typename T> T * retain(T * ptr) {
-    std::atomic_fetch_add_explicit(&ptr->refcnt, 1u, std::memory_order_acq_rel);
-    return ptr;
+template <typename T>
+T *
+retain(T *ptr)
+{
+  std::atomic_fetch_add_explicit(&ptr->refcnt, 1u, std::memory_order_acq_rel);
+  return ptr;
 }
 
 // Decrement the reference count of a countable object, deleting it if it was
 // the last reference.
-template <typename T> void release(T * ptr) {
-    unsigned count = std::atomic_fetch_sub_explicit(&ptr->refcnt, 1u, std::memory_order_acq_rel);
-    // If the previous refcount was 1, then we have decremented it to 0. We
-    // want to delete in that case.
-    if (count == 1u) {
-        delete ptr;
-    }
+template <typename T>
+void
+release(T *ptr)
+{
+  unsigned count = std::atomic_fetch_sub_explicit(&ptr->refcnt, 1u, std::memory_order_acq_rel);
+  // If the previous refcount was 1, then we have decremented it to 0. We
+  // want to delete in that case.
+  if (count == 1u) {
+    delete ptr;
+  }
 }
 
 #endif /* ATOMIC_H_A14B912F_B134_4D38_8EC1_51C50EC0FBE6 */

@@ -29,11 +29,14 @@ using namespace atscppapi;
 
 #define LOG_TAG "remapplugin"
 
-class MyRemapPlugin : public RemapPlugin {
+class MyRemapPlugin : public RemapPlugin
+{
 public:
-  MyRemapPlugin(void **instance_handle) : RemapPlugin(instance_handle) { }
+  MyRemapPlugin(void **instance_handle) : RemapPlugin(instance_handle) {}
 
-  Result doRemap(const Url &map_from_url, const Url &map_to_url, Transaction &transaction, bool &redirect) {
+  Result
+  doRemap(const Url &map_from_url, const Url &map_to_url, Transaction &transaction, bool &redirect)
+  {
     Url &request_url = transaction.getClientRequest().getUrl();
     TS_DEBUG(LOG_TAG, "from URL is [%s], to URL is [%s], request URL is [%s]", map_from_url.getUrlString().c_str(),
              map_to_url.getUrlString().c_str(), request_url.getUrlString().c_str());
@@ -81,7 +84,10 @@ public:
   }
 };
 
-TsReturnCode TSRemapNewInstance(int argc ATSCPPAPI_UNUSED, char *argv[] ATSCPPAPI_UNUSED, void **instance_handle, char *errbuf ATSCPPAPI_UNUSED, int errbuf_size ATSCPPAPI_UNUSED) {
+TsReturnCode
+TSRemapNewInstance(int argc ATSCPPAPI_UNUSED, char *argv[] ATSCPPAPI_UNUSED, void **instance_handle, char *errbuf ATSCPPAPI_UNUSED,
+                   int errbuf_size ATSCPPAPI_UNUSED)
+{
   new MyRemapPlugin(instance_handle);
   return TS_SUCCESS;
 }

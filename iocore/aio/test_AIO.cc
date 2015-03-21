@@ -66,7 +66,6 @@ reconfigure_diags()
 
   // read output routing values
   for (i = 0; i < DiagsLevel_Count; i++) {
-
     c.outputs[i].to_stdout = 0;
     c.outputs[i].to_stderr = 1;
     c.outputs[i].to_syslog = 1;
@@ -89,15 +88,14 @@ reconfigure_diags()
   if (diags->base_action_tags)
     diags->activate_taglist(diags->base_action_tags, DiagsTagType_Action);
 
-  ////////////////////////////////////
-  // change the diags config values //
-  ////////////////////////////////////
+////////////////////////////////////
+// change the diags config values //
+////////////////////////////////////
 #if !defined(__GNUC__) && !defined(hpux)
   diags->config = c;
 #else
-  memcpy(((void *) &diags->config), ((void *) &c), sizeof(DiagsConfigState));
+  memcpy(((void *)&diags->config), ((void *)&c), sizeof(DiagsConfigState));
 #endif
-
 }
 
 static void
@@ -120,22 +118,26 @@ init_diags(const char *bdt, const char *bat)
   diags = new Diags(bdt, bat, diags_log_fp);
 
   if (diags_log_fp == NULL) {
-    Warning("couldn't open diags log file '%s', " "will not log to this file", diags_logpath);
+    Warning("couldn't open diags log file '%s', "
+            "will not log to this file",
+            diags_logpath);
   }
 
   Status("opened %s", diags_logpath);
   reconfigure_diags();
-
 }
 
 #define MAX_DISK_THREADS 200
 #ifdef DISK_ALIGN
-#define MIN_OFFSET       (32*1024)
+#define MIN_OFFSET (32 * 1024)
 #else
-#define MIN_OFFSET       (8*1024)
+#define MIN_OFFSET (8 * 1024)
 #endif
-enum
-{ READ_MODE, WRITE_MODE, RANDOM_READ_MODE };
+enum {
+  READ_MODE,
+  WRITE_MODE,
+  RANDOM_READ_MODE,
+};
 
 struct AIO_Device;
 volatile int n_accessors = 0;
@@ -170,8 +172,7 @@ int seq_read_size = 0;
 int seq_write_size = 0;
 int rand_read_size = 0;
 
-struct AIO_Device:public Continuation
-{
+struct AIO_Device : public Continuation {
   char *path;
   int fd;
   int id;
@@ -183,14 +184,15 @@ struct AIO_Device:public Continuation
   int hotset_idx;
   int mode;
   AIOCallback *io;
-    AIO_Device(ProxyMutex * m):Continuation(m)
+  AIO_Device(ProxyMutex *m) : Continuation(m)
   {
     hotset_idx = 0;
     io = new_AIOCallback();
     time_start = 0;
     SET_HANDLER(&AIO_Device::do_hotset);
   }
-  int select_mode(double p)
+  int
+  select_mode(double p)
   {
     if (p < real_seq_read_percent)
       return READ_MODE;
@@ -199,28 +201,30 @@ struct AIO_Device:public Continuation
     else
       return RANDOM_READ_MODE;
   };
-  void do_touch_data(off_t orig_len, off_t orig_offset)
+  void
+  do_touch_data(off_t orig_len, off_t orig_offset)
   {
     if (!touch_data)
       return;
-    unsigned int len = (unsigned int) orig_len;
-    unsigned int offset = (unsigned int) orig_offset;
+    unsigned int len = (unsigned int)orig_len;
+    unsigned int offset = (unsigned int)orig_offset;
     offset = offset % 1024;
     char *b = buf;
-    unsigned *x = (unsigned *) b;
+    unsigned *x = (unsigned *)b;
     for (unsigned j = 0; j < (len / sizeof(int)); j++) {
       x[j] = offset;
       offset = (offset + 1) % 1024;
     }
   };
-  int do_check_data(off_t orig_len, off_t orig_offset)
+  int
+  do_check_data(off_t orig_len, off_t orig_offset)
   {
     if (!touch_data)
       return 0;
-    unsigned int len = (unsigned int) orig_len;
-    unsigned int offset = (unsigned int) orig_offset;
+    unsigned int len = (unsigned int)orig_len;
+    unsigned int offset = (unsigned int)orig_offset;
     offset = offset % 1024;
-    unsigned *x = (unsigned *) buf;
+    unsigned *x = (unsigned *)buf;
     for (unsigned j = 0; j < (len / sizeof(int)); j++) {
       if (x[j] != offset)
         return 1;
@@ -228,9 +232,8 @@ struct AIO_Device:public Continuation
     }
     return 0;
   }
-  int do_hotset(int event, Event * e);
-  int do_fd(int event, Event * e);
-
+  int do_hotset(int event, Event *e);
+  int do_fd(int event, Event *e);
 };
 
 void
@@ -266,8 +269,8 @@ dump_summary(void)
   for (int i = 0; i < orig_n_accessors; i++) {
     double secs = (dev[i]->time_end - dev[i]->time_start) / 1000000000.0;
     double ops_sec = (dev[i]->seq_reads + dev[i]->seq_writes + dev[i]->rand_reads) / secs;
-    printf("%s: #sr:%d #sw:%d #rr:%d %0.1f secs %0.1f ops/sec\n",
-           dev[i]->path, dev[i]->seq_reads, dev[i]->seq_writes, dev[i]->rand_reads, secs, ops_sec);
+    printf("%s: #sr:%d #sw:%d #rr:%d %0.1f secs %0.1f ops/sec\n", dev[i]->path, dev[i]->seq_reads, dev[i]->seq_writes,
+           dev[i]->rand_reads, secs, ops_sec);
     total_secs += secs;
     total_seq_reads += dev[i]->seq_reads;
     total_seq_writes += dev[i]->seq_writes;
@@ -283,12 +286,12 @@ dump_summary(void)
   sw /= 1024.0 * 1024.0;
   float rr = (total_rand_reads * rand_read_size) / total_secs;
   rr /= 1024.0 * 1024.0;
-  printf("%f ops %0.2f mbytes/sec %0.1f ops/sec %0.1f ops/sec/disk seq_read\n",
-         total_seq_reads, sr, total_seq_reads / total_secs, total_seq_reads / total_secs / n_disk_path);
-  printf("%f ops %0.2f mbytes/sec %0.1f ops/sec %0.1f ops/sec/disk seq_write\n",
-         total_seq_writes, sw, total_seq_writes / total_secs, total_seq_writes / total_secs / n_disk_path);
-  printf("%f ops %0.2f mbytes/sec %0.1f ops/sec %0.1f ops/sec/disk rand_read\n",
-         total_rand_reads, rr, total_rand_reads / total_secs, total_rand_reads / total_secs / n_disk_path);
+  printf("%f ops %0.2f mbytes/sec %0.1f ops/sec %0.1f ops/sec/disk seq_read\n", total_seq_reads, sr, total_seq_reads / total_secs,
+         total_seq_reads / total_secs / n_disk_path);
+  printf("%f ops %0.2f mbytes/sec %0.1f ops/sec %0.1f ops/sec/disk seq_write\n", total_seq_writes, sw,
+         total_seq_writes / total_secs, total_seq_writes / total_secs / n_disk_path);
+  printf("%f ops %0.2f mbytes/sec %0.1f ops/sec %0.1f ops/sec/disk rand_read\n", total_rand_reads, rr,
+         total_rand_reads / total_secs, total_rand_reads / total_secs / n_disk_path);
   printf("%0.2f total mbytes/sec\n", sr + sw + rr);
   printf("----------------------------------------------------------\n");
 
@@ -301,7 +304,7 @@ dump_summary(void)
 int
 AIO_Device::do_hotset(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
-  off_t max_offset = ((off_t) disk_size) * 1024 * 1024;
+  off_t max_offset = ((off_t)disk_size) * 1024 * 1024;
   io->aiocb.aio_lio_opcode = LIO_WRITE;
   io->aiocb.aio_fildes = fd;
   io->aiocb.aio_offset = MIN_OFFSET + hotset_idx * max_size;
@@ -310,9 +313,8 @@ AIO_Device::do_hotset(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   if (!hotset_idx)
     fprintf(stderr, "Starting hotset document writing \n");
   if (io->aiocb.aio_offset > max_offset) {
-    fprintf(stderr,
-            "Finished hotset documents  [%d] offset [%6.0f] size [%6.0f]\n",
-            hotset_idx, (float) MIN_OFFSET, (float) max_size);
+    fprintf(stderr, "Finished hotset documents  [%d] offset [%6.0f] size [%6.0f]\n", hotset_idx, (float)MIN_OFFSET,
+            (float)max_size);
     SET_HANDLER(&AIO_Device::do_fd);
     eventProcessor.schedule_imm(this);
     return (0);
@@ -341,10 +343,10 @@ AIO_Device::do_fd(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     return 0;
   }
 
-  off_t max_offset = ((off_t) disk_size) * 1024 * 1024; // MB-GB
-  off_t max_hotset_offset = ((off_t) hotset_size) * 1024 * 1024;        // MB-GB
-  off_t seq_read_point = ((off_t) MIN_OFFSET);
-  off_t seq_write_point = ((off_t) MIN_OFFSET) + max_offset / 2 + write_after * 1024 * 1024;
+  off_t max_offset = ((off_t)disk_size) * 1024 * 1024;          // MB-GB
+  off_t max_hotset_offset = ((off_t)hotset_size) * 1024 * 1024; // MB-GB
+  off_t seq_read_point = ((off_t)MIN_OFFSET);
+  off_t seq_write_point = ((off_t)MIN_OFFSET) + max_offset / 2 + write_after * 1024 * 1024;
   seq_write_point += (id % n_disk_path) * (max_offset / (threads_per_disk * 4));
   if (seq_write_point > max_offset)
     seq_write_point = MIN_OFFSET;
@@ -352,7 +354,7 @@ AIO_Device::do_fd(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   if (io->aiocb.aio_lio_opcode == LIO_READ) {
     ink_assert(!do_check_data(io->aiocb.aio_nbytes, io->aiocb.aio_offset));
   }
-  memset((void *) buf, 0, max_size);
+  memset((void *)buf, 0, max_size);
   io->aiocb.aio_fildes = fd;
   io->aiocb.aio_buf = buf;
   io->action = this;
@@ -373,7 +375,7 @@ AIO_Device::do_fd(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     io->aiocb.aio_offset = seq_write_point;
     io->aiocb.aio_nbytes = seq_write_size;
     io->aiocb.aio_lio_opcode = LIO_WRITE;
-    do_touch_data(seq_write_size, ((int) seq_write_point) % 1024);
+    do_touch_data(seq_write_size, ((int)seq_write_point) % 1024);
     ink_assert(ink_aio_write(io) >= 0);
     seq_write_point += seq_write_size;
     seq_write_point += write_skip;
@@ -382,36 +384,36 @@ AIO_Device::do_fd(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 
     seq_writes++;
     break;
-  case RANDOM_READ_MODE:{
-      // fprintf(stderr, "random read started \n");
-      double p, f;
-      p = drand48();
-      f = drand48();
-      off_t o = 0;
-      if (f < hotset_frequency)
-        o = (off_t) p *max_hotset_offset;
-      else
-        o = (off_t) p *(max_offset - rand_read_size);
-      if (o < MIN_OFFSET)
-        o = MIN_OFFSET;
-      o = (o + (seq_read_size - 1)) & (~(seq_read_size - 1));
-      io->aiocb.aio_offset = o;
-      io->aiocb.aio_nbytes = rand_read_size;
-      io->aiocb.aio_lio_opcode = LIO_READ;
-      ink_assert(ink_aio_read(io) >= 0);
-      rand_reads++;
-      break;
-    }
+  case RANDOM_READ_MODE: {
+    // fprintf(stderr, "random read started \n");
+    double p, f;
+    p = drand48();
+    f = drand48();
+    off_t o = 0;
+    if (f < hotset_frequency)
+      o = (off_t)p * max_hotset_offset;
+    else
+      o = (off_t)p * (max_offset - rand_read_size);
+    if (o < MIN_OFFSET)
+      o = MIN_OFFSET;
+    o = (o + (seq_read_size - 1)) & (~(seq_read_size - 1));
+    io->aiocb.aio_offset = o;
+    io->aiocb.aio_nbytes = rand_read_size;
+    io->aiocb.aio_lio_opcode = LIO_READ;
+    ink_assert(ink_aio_read(io) >= 0);
+    rand_reads++;
+    break;
+  }
   }
   return 0;
 }
 
-#define PARAM(_s) \
-        else if (strcmp(field_name, #_s) == 0) { \
-            fin >> _s; \
-            cout << "reading " #_s " = "  \
-                 << _s << endl; \
-				  }
+#define PARAM(_s)                               \
+  else if (strcmp(field_name, #_s) == 0)        \
+  {                                             \
+    fin >> _s;                                  \
+    cout << "reading " #_s " = " << _s << endl; \
+  }
 
 int
 read_config(const char *config_filename)
@@ -433,23 +435,24 @@ read_config(const char *config_filename)
     if (0) {
     }
     PARAM(hotset_size)
-      PARAM(hotset_frequency)
-      PARAM(touch_data)
-      PARAM(use_lseek)
-      PARAM(write_after)
-      PARAM(write_skip)
-      PARAM(disk_size)
-      PARAM(seq_read_percent)
-      PARAM(seq_write_percent)
-      PARAM(rand_read_percent)
-      PARAM(seq_read_size)
-      PARAM(seq_write_size)
-      PARAM(rand_read_size)
-      PARAM(run_time)
-      PARAM(chains)
-      PARAM(threads_per_disk)
-      PARAM(delete_disks)
-      else if (strcmp(field_name, "disk_path") == 0) {
+    PARAM(hotset_frequency)
+    PARAM(touch_data)
+    PARAM(use_lseek)
+    PARAM(write_after)
+    PARAM(write_skip)
+    PARAM(disk_size)
+    PARAM(seq_read_percent)
+    PARAM(seq_write_percent)
+    PARAM(rand_read_percent)
+    PARAM(seq_read_size)
+    PARAM(seq_write_size)
+    PARAM(rand_read_size)
+    PARAM(run_time)
+    PARAM(chains)
+    PARAM(threads_per_disk)
+    PARAM(delete_disks)
+    else if (strcmp(field_name, "disk_path") == 0)
+    {
       assert(n_disk_path < MAX_DISK_THREADS);
       fin >> field_value;
       disk_path[n_disk_path] = strdup(field_value);
@@ -525,7 +528,7 @@ main(int /* argc ATS_UNUSED */, char *argv[])
         perror(disk_path[i]);
         exit(1);
       }
-      dev[n_accessors]->buf = (char *) valloc(max_size);
+      dev[n_accessors]->buf = (char *)valloc(max_size);
       eventProcessor.schedule_imm(dev[n_accessors]);
       n_accessors++;
     }

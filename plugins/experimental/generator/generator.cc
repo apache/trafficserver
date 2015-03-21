@@ -69,8 +69,9 @@
 #define VERROR(fmt, ...) TSError("[%s] %s: " fmt, PLUGIN, __FUNCTION__, ##__VA_ARGS__)
 #endif
 
-#define VIODEBUG(vio, fmt, ...) VDEBUG("vio=%p vio.cont=%p, vio.cont.data=%p, vio.vc=%p " fmt, \
-    (vio), TSVIOContGet(vio), TSContDataGet(TSVIOContGet(vio)), TSVIOVConnGet(vio), ##__VA_ARGS__)
+#define VIODEBUG(vio, fmt, ...)                                                                                              \
+  VDEBUG("vio=%p vio.cont=%p, vio.cont.data=%p, vio.vc=%p " fmt, (vio), TSVIOContGet(vio), TSContDataGet(TSVIOContGet(vio)), \
+         TSVIOVConnGet(vio), ##__VA_ARGS__)
 
 static TSCont TxnHook;
 static uint8_t GeneratorData[32 * 1024];
@@ -78,36 +79,35 @@ static uint8_t GeneratorData[32 * 1024];
 static int StatCountBytes = -1;
 static int StatCountResponses = -1;
 
-static int GeneratorInterceptionHook(TSCont contp, TSEvent event, void * edata);
-static int GeneratorTxnHook(TSCont contp, TSEvent event, void * edata);
+static int GeneratorInterceptionHook(TSCont contp, TSEvent event, void *edata);
+static int GeneratorTxnHook(TSCont contp, TSEvent event, void *edata);
 
 struct GeneratorRequest;
 
 union argument_type {
-  void *            ptr;
-  intptr_t          ecode;
-  TSVConn           vc;
-  TSVIO             vio;
-  TSHttpTxn         txn;
+  void *ptr;
+  intptr_t ecode;
+  TSVConn vc;
+  TSVIO vio;
+  TSHttpTxn txn;
   GeneratorRequest *grq;
 
-  argument_type(void * _p) : ptr(_p) {}
+  argument_type(void *_p) : ptr(_p) {}
 };
 
 // This structure represents the state of a streaming I/O request. Is
 // is directional (ie. either a read or a write). We need two of these
 // for each TSVConn; one to push data into the TSVConn and one to pull
 // data out.
-struct IOChannel
-{
-  TSVIO             vio;
-  TSIOBuffer        iobuf;
-  TSIOBufferReader  reader;
+struct IOChannel {
+  TSVIO vio;
+  TSIOBuffer iobuf;
+  TSIOBufferReader reader;
 
-  IOChannel() : vio(NULL), iobuf(TSIOBufferSizedCreate(TS_IOBUFFER_SIZE_INDEX_32K )), reader(TSIOBufferReaderAlloc(iobuf)) {
-  }
+  IOChannel() : vio(NULL), iobuf(TSIOBufferSizedCreate(TS_IOBUFFER_SIZE_INDEX_32K)), reader(TSIOBufferReaderAlloc(iobuf)) {}
 
-  ~IOChannel() {
+  ~IOChannel()
+  {
     if (this->reader) {
       TSIOBufferReaderFree(this->reader);
     }
@@ -117,29 +117,33 @@ struct IOChannel
     }
   }
 
-  void read(TSVConn vc, TSCont contp) {
+  void
+  read(TSVConn vc, TSCont contp)
+  {
     this->vio = TSVConnRead(vc, contp, this->iobuf, INT64_MAX);
   }
 
-  void write(TSVConn vc, TSCont contp) {
+  void
+  write(TSVConn vc, TSCont contp)
+  {
     this->vio = TSVConnWrite(vc, contp, this->reader, INT64_MAX);
   }
-
 };
 
-struct GeneratorHttpHeader
-{
+struct GeneratorHttpHeader {
   TSMBuffer buffer;
-  TSMLoc    header;
-  TSHttpParser  parser;
+  TSMLoc header;
+  TSHttpParser parser;
 
-  GeneratorHttpHeader() {
+  GeneratorHttpHeader()
+  {
     this->buffer = TSMBufferCreate();
     this->header = TSHttpHdrCreate(this->buffer);
     this->parser = TSHttpParserCreate();
   }
 
-  ~GeneratorHttpHeader() {
+  ~GeneratorHttpHeader()
+  {
     if (this->parser) {
       TSHttpParserDestroy(this->parser);
     }
@@ -150,29 +154,26 @@ struct GeneratorHttpHeader
   }
 };
 
-struct GeneratorRequest
-{
-  off_t         nbytes;     // number of bytes to generate
-  unsigned      flags;
-  IOChannel     readio;
-  IOChannel     writeio;
+struct GeneratorRequest {
+  off_t nbytes; // number of bytes to generate
+  unsigned flags;
+  IOChannel readio;
+  IOChannel writeio;
   GeneratorHttpHeader rqheader;
 
   enum {
     CACHEABLE = 0x0001,
-    ISHEAD    = 0x0002,
+    ISHEAD = 0x0002,
   };
 
-  GeneratorRequest() : nbytes(0), flags(0) {
-  }
+  GeneratorRequest() : nbytes(0), flags(0) {}
 
-  ~GeneratorRequest() {
-  }
+  ~GeneratorRequest() {}
 };
 
 // Destroy a generator request, iincluding the per-txn continuation.
 static void
-GeneratorRequestDestroy(GeneratorRequest * grq, TSVIO vio, TSCont contp)
+GeneratorRequestDestroy(GeneratorRequest *grq, TSVIO vio, TSCont contp)
 {
   if (vio) {
     TSVConnClose(TSVIOVConnGet(vio));
@@ -183,22 +184,42 @@ GeneratorRequestDestroy(GeneratorRequest * grq, TSVIO vio, TSCont contp)
 }
 
 static off_t
-GeneratorParseByteCount(const char * ptr, const char * end)
+GeneratorParseByteCount(const char *ptr, const char *end)
 {
   off_t nbytes = 0;
 
-  for (;ptr < end; ++ptr) {
+  for (; ptr < end; ++ptr) {
     switch (*ptr) {
-    case '0': nbytes = nbytes * 10 + 0; break;
-    case '1': nbytes = nbytes * 10 + 1; break;
-    case '2': nbytes = nbytes * 10 + 2; break;
-    case '3': nbytes = nbytes * 10 + 3; break;
-    case '4': nbytes = nbytes * 10 + 4; break;
-    case '5': nbytes = nbytes * 10 + 5; break;
-    case '6': nbytes = nbytes * 10 + 6; break;
-    case '7': nbytes = nbytes * 10 + 7; break;
-    case '8': nbytes = nbytes * 10 + 8; break;
-    case '9': nbytes = nbytes * 10 + 9; break;
+    case '0':
+      nbytes = nbytes * 10 + 0;
+      break;
+    case '1':
+      nbytes = nbytes * 10 + 1;
+      break;
+    case '2':
+      nbytes = nbytes * 10 + 2;
+      break;
+    case '3':
+      nbytes = nbytes * 10 + 3;
+      break;
+    case '4':
+      nbytes = nbytes * 10 + 4;
+      break;
+    case '5':
+      nbytes = nbytes * 10 + 5;
+      break;
+    case '6':
+      nbytes = nbytes * 10 + 6;
+      break;
+    case '7':
+      nbytes = nbytes * 10 + 7;
+      break;
+    case '8':
+      nbytes = nbytes * 10 + 8;
+      break;
+    case '9':
+      nbytes = nbytes * 10 + 9;
+      break;
     default:
       return -1;
     }
@@ -208,7 +229,7 @@ GeneratorParseByteCount(const char * ptr, const char * end)
 }
 
 static void
-GeneratorTimestamp(char * buf, size_t bufsz)
+GeneratorTimestamp(char *buf, size_t bufsz)
 {
   time_t now = time(NULL);
   struct tm clock;
@@ -217,7 +238,7 @@ GeneratorTimestamp(char * buf, size_t bufsz)
 }
 
 static bool
-GeneratorWriteResponseHeader(GeneratorRequest * grq, TSVConn vc, TSCont contp)
+GeneratorWriteResponseHeader(GeneratorRequest *grq, TSVConn vc, TSCont contp)
 {
   TSMLoc field;
   GeneratorHttpHeader response;
@@ -229,7 +250,7 @@ GeneratorWriteResponseHeader(GeneratorRequest * grq, TSVConn vc, TSCont contp)
   TSHttpHdrReasonSet(response.buffer, response.header, TSHttpHdrReasonLookup(TS_HTTP_STATUS_OK), -1);
 
   // Set the Content-Length header.
-  TSMimeHdrFieldCreateNamed(response.buffer, response.header, TS_MIME_FIELD_CONTENT_LENGTH, TS_MIME_LEN_CONTENT_LENGTH,  &field);
+  TSMimeHdrFieldCreateNamed(response.buffer, response.header, TS_MIME_FIELD_CONTENT_LENGTH, TS_MIME_LEN_CONTENT_LENGTH, &field);
   TSMimeHdrFieldValueInt64Set(response.buffer, response.header, field, -1 /* idx */, grq->nbytes);
   TSMimeHdrFieldAppend(response.buffer, response.header, field);
   TSHandleMLocRelease(response.buffer, response.header, field);
@@ -239,17 +260,17 @@ GeneratorWriteResponseHeader(GeneratorRequest * grq, TSVConn vc, TSCont contp)
     char datebuf[64];
 
     GeneratorTimestamp(datebuf, sizeof(datebuf));
-    TSMimeHdrFieldCreateNamed(response.buffer, response.header, TS_MIME_FIELD_CACHE_CONTROL, TS_MIME_LEN_CACHE_CONTROL,  &field);
+    TSMimeHdrFieldCreateNamed(response.buffer, response.header, TS_MIME_FIELD_CACHE_CONTROL, TS_MIME_LEN_CACHE_CONTROL, &field);
     TSMimeHdrFieldValueStringSet(response.buffer, response.header, field, -1 /* idx */, "max-age=86400, public", -1);
     TSMimeHdrFieldAppend(response.buffer, response.header, field);
     TSHandleMLocRelease(response.buffer, response.header, field);
 
-    TSMimeHdrFieldCreateNamed(response.buffer, response.header, TS_MIME_FIELD_LAST_MODIFIED, TS_MIME_LEN_LAST_MODIFIED,  &field);
+    TSMimeHdrFieldCreateNamed(response.buffer, response.header, TS_MIME_FIELD_LAST_MODIFIED, TS_MIME_LEN_LAST_MODIFIED, &field);
     TSMimeHdrFieldValueStringSet(response.buffer, response.header, field, -1 /* idx */, datebuf, -1);
     TSMimeHdrFieldAppend(response.buffer, response.header, field);
     TSHandleMLocRelease(response.buffer, response.header, field);
   } else {
-    TSMimeHdrFieldCreateNamed(response.buffer, response.header, TS_MIME_FIELD_CACHE_CONTROL, TS_MIME_LEN_CACHE_CONTROL,  &field);
+    TSMimeHdrFieldCreateNamed(response.buffer, response.header, TS_MIME_FIELD_CACHE_CONTROL, TS_MIME_LEN_CACHE_CONTROL, &field);
     TSMimeHdrFieldValueStringSet(response.buffer, response.header, field, -1 /* idx */, "private", -1);
     TSMimeHdrFieldAppend(response.buffer, response.header, field);
     TSHandleMLocRelease(response.buffer, response.header, field);
@@ -270,11 +291,11 @@ GeneratorWriteResponseHeader(GeneratorRequest * grq, TSVConn vc, TSCont contp)
 }
 
 static bool
-GeneratorParseRequest(GeneratorRequest * grq)
+GeneratorParseRequest(GeneratorRequest *grq)
 {
   TSMLoc url;
-  const char * path;
-  const char * end;
+  const char *path;
+  const char *end;
   int pathsz;
   unsigned count = 0;
 
@@ -297,7 +318,7 @@ GeneratorParseRequest(GeneratorRequest * grq)
 
   end = path + pathsz;
   while (path < end) {
-    const char * sep = path;
+    const char *sep = path;
     size_t nbytes;
 
     while (*sep != '/' && sep < end) {
@@ -306,7 +327,6 @@ GeneratorParseRequest(GeneratorRequest * grq)
 
     nbytes = std::distance(path, sep);
     if (nbytes) {
-
       VDEBUG("path component is %.*s", (int)nbytes, path);
 
       switch (count) {
@@ -351,7 +371,7 @@ fail:
 // starts with TS_EVENT_NET_ACCEPT, and then continues with
 // TSVConn events.
 static int
-GeneratorInterceptionHook(TSCont contp, TSEvent event, void * edata)
+GeneratorInterceptionHook(TSCont contp, TSEvent event, void *edata)
 {
   argument_type arg(edata);
 
@@ -362,7 +382,7 @@ GeneratorInterceptionHook(TSCont contp, TSEvent event, void * edata)
     // TS_EVENT_NET_ACCEPT will be delivered when the server intercept
     // is set up by the core. We just need to allocate a generator
     // request state and start reading the VC.
-    GeneratorRequest * grq = new GeneratorRequest();
+    GeneratorRequest *grq = new GeneratorRequest();
 
     TSStatIntIncrement(StatCountResponses, 1);
     VDEBUG("allocated server intercept generator grq=%p", grq);
@@ -396,55 +416,55 @@ GeneratorInterceptionHook(TSCont contp, TSEvent event, void * edata)
 
   case TS_EVENT_VCONN_READ_READY: {
     argument_type cdata = TSContDataGet(contp);
-    GeneratorHttpHeader& rqheader = cdata.grq->rqheader;
+    GeneratorHttpHeader &rqheader = cdata.grq->rqheader;
 
     VDEBUG("reading vio=%p vc=%p, grq=%p", arg.vio, TSVIOVConnGet(arg.vio), cdata.grq);
 
     TSIOBufferBlock blk;
-    ssize_t         consumed = 0;
-    TSParseResult   result = TS_PARSE_CONT;
+    ssize_t consumed = 0;
+    TSParseResult result = TS_PARSE_CONT;
 
     for (blk = TSIOBufferReaderStart(cdata.grq->readio.reader); blk; blk = TSIOBufferBlockNext(blk)) {
-        const char *    ptr;
-        const char *    end;
-        int64_t         nbytes;
+      const char *ptr;
+      const char *end;
+      int64_t nbytes;
 
-        ptr = TSIOBufferBlockReadStart(blk, cdata.grq->readio.reader, &nbytes);
-        if (ptr == NULL || nbytes == 0) {
-            continue;
-        }
+      ptr = TSIOBufferBlockReadStart(blk, cdata.grq->readio.reader, &nbytes);
+      if (ptr == NULL || nbytes == 0) {
+        continue;
+      }
 
-        end = ptr + nbytes;
-        result = TSHttpHdrParseReq(rqheader.parser, rqheader.buffer, rqheader.header, &ptr, end);
-        switch (result) {
-        case TS_PARSE_ERROR:
-          // If we got a bad request, just shut it down.
-          VDEBUG("bad request on grq=%p, sending an error", cdata.grq);
-          GeneratorRequestDestroy(cdata.grq, arg.vio, contp);
-          return TS_EVENT_ERROR;
+      end = ptr + nbytes;
+      result = TSHttpHdrParseReq(rqheader.parser, rqheader.buffer, rqheader.header, &ptr, end);
+      switch (result) {
+      case TS_PARSE_ERROR:
+        // If we got a bad request, just shut it down.
+        VDEBUG("bad request on grq=%p, sending an error", cdata.grq);
+        GeneratorRequestDestroy(cdata.grq, arg.vio, contp);
+        return TS_EVENT_ERROR;
 
-        case TS_PARSE_DONE:
-        case TS_PARSE_OK:
-          // Check the response.
-          VDEBUG("parsed request on grq=%p, sending a response ", cdata.grq);
-          if (GeneratorParseRequest(cdata.grq) && GeneratorWriteResponseHeader(cdata.grq, TSVIOVConnGet(arg.vio), contp)) {
-            // If this is a HEAD request, we don't need to send any bytes.
-            if (cdata.grq->flags & GeneratorRequest::ISHEAD) {
-              cdata.grq->nbytes = 0;
-            }
-            return TS_EVENT_NONE;
+      case TS_PARSE_DONE:
+      case TS_PARSE_OK:
+        // Check the response.
+        VDEBUG("parsed request on grq=%p, sending a response ", cdata.grq);
+        if (GeneratorParseRequest(cdata.grq) && GeneratorWriteResponseHeader(cdata.grq, TSVIOVConnGet(arg.vio), contp)) {
+          // If this is a HEAD request, we don't need to send any bytes.
+          if (cdata.grq->flags & GeneratorRequest::ISHEAD) {
+            cdata.grq->nbytes = 0;
           }
-
-          // We got a syntactically bad URL. It would be graceful to send
-          // a 400 response, but we are graceless and just fail the
-          // transaction.
-          GeneratorRequestDestroy(cdata.grq, arg.vio, contp);
-          return TS_EVENT_ERROR;
-
-        case TS_PARSE_CONT:
-          // We consumed the buffer we got minus the remainder.
-          consumed += (nbytes - std::distance(ptr, end));
+          return TS_EVENT_NONE;
         }
+
+        // We got a syntactically bad URL. It would be graceful to send
+        // a 400 response, but we are graceless and just fail the
+        // transaction.
+        GeneratorRequestDestroy(cdata.grq, arg.vio, contp);
+        return TS_EVENT_ERROR;
+
+      case TS_PARSE_CONT:
+        // We consumed the buffer we got minus the remainder.
+        consumed += (nbytes - std::distance(ptr, end));
+      }
     }
 
     TSReleaseAssert(result == TS_PARSE_CONT);
@@ -522,7 +542,7 @@ GeneratorInterceptionHook(TSCont contp, TSEvent event, void * edata)
 
 // Handle events that occur on the TSHttpTxn.
 static int
-GeneratorTxnHook(TSCont contp, TSEvent event, void * edata)
+GeneratorTxnHook(TSCont contp, TSEvent event, void *edata)
 {
   argument_type arg(edata);
 
@@ -558,11 +578,12 @@ GeneratorInitialize(void)
   memset(GeneratorData, 'x', sizeof(GeneratorData));
 
   if (TSStatFindName("generator.response_bytes", &StatCountBytes) == TS_ERROR) {
-    StatCountBytes = TSStatCreate("generator.response_bytes",  TS_RECORDDATATYPE_COUNTER, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
+    StatCountBytes = TSStatCreate("generator.response_bytes", TS_RECORDDATATYPE_COUNTER, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
   }
 
   if (TSStatFindName("generator.response_count", &StatCountResponses) == TS_ERROR) {
-    StatCountResponses = TSStatCreate("generator.response_count",  TS_RECORDDATATYPE_COUNTER, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_COUNT);
+    StatCountResponses =
+      TSStatCreate("generator.response_count", TS_RECORDDATATYPE_COUNTER, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_COUNT);
   }
 }
 
@@ -601,7 +622,8 @@ TSRemapDoRemap(void * /* ih */, TSHttpTxn txn, TSRemapRequestInfo * /* rri ATS_U
 }
 
 TSReturnCode
-TSRemapNewInstance(int /* argc */, char * /* argv */[], void ** ih, char * /* errbuf ATS_UNUSED */, int /* errbuf_size ATS_UNUSED */)
+TSRemapNewInstance(int /* argc */, char * /* argv */ [], void **ih, char * /* errbuf ATS_UNUSED */,
+                   int /* errbuf_size ATS_UNUSED */)
 {
   *ih = NULL;
   return TS_SUCCESS;

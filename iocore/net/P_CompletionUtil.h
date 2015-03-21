@@ -28,18 +28,18 @@ class completionUtil
 {
 public:
   static Event *create();
-  static void destroy(Event * e);
-  static void setThread(Event * e, EThread * t);
-  static void setContinuation(Event * e, Continuation * c);
-  static void *getHandle(Event * e);
-  static void setHandle(Event * e, void *handle);
-  static void setInfo(Event * e, int fd, IOBufferBlock * buf, int actual, int errno_);
-  static void setInfo(Event * e, int fd, struct msghdr *msg, int actual, int errno_);
-  static int getBytesTransferred(Event * e);
-  static IOBufferBlock *getIOBufferBlock(Event * e);
-  static Continuation *getContinuation(Event * e);
-  static int getError(Event * e);
-  static void releaseReferences(Event * e);
+  static void destroy(Event *e);
+  static void setThread(Event *e, EThread *t);
+  static void setContinuation(Event *e, Continuation *c);
+  static void *getHandle(Event *e);
+  static void setHandle(Event *e, void *handle);
+  static void setInfo(Event *e, int fd, IOBufferBlock *buf, int actual, int errno_);
+  static void setInfo(Event *e, int fd, struct msghdr *msg, int actual, int errno_);
+  static int getBytesTransferred(Event *e);
+  static IOBufferBlock *getIOBufferBlock(Event *e);
+  static Continuation *getContinuation(Event *e);
+  static int getError(Event *e);
+  static void releaseReferences(Event *e);
 };
 
 #include "P_UnixCompletionUtil.h"

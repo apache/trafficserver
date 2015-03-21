@@ -45,22 +45,19 @@
 #include "ink_mutex.h"
 #include "MgmtHashTable.h"
 
-extern "C"
-{
-  struct sockaddr_in;
+extern "C" {
+struct sockaddr_in;
 }
 
 // DG: Added NO_THR state for init in compile warning
-enum UIthr_t
-{
+enum UIthr_t {
   NO_THR = 0,
-  AUTOCONF_THR
+  AUTOCONF_THR,
 };
 
-struct serviceThr_t
-{
+struct serviceThr_t {
   ink_thread threadId;
-  int fd;                       // Client file descriptor the thread is working
+  int fd; // Client file descriptor the thread is working
   // with
   time_t startTime;
 
@@ -85,15 +82,13 @@ struct serviceThr_t
 //  since prior transactions in the system will STILL
 //  BE USING the memory pointed to.
 //
-struct WebContext
-{
+struct WebContext {
   const char *defaultFile;
   char *docRoot;
   int docRootLen;
 };
 
-struct WebInterFaceGlobals
-{
+struct WebInterFaceGlobals {
   ink_mutex serviceThrLock;
   ink_mutex submitLock;
   ink_semaphore serviceThrCount;
@@ -109,28 +104,27 @@ extern WebContext autoconfContext;
 // web2 items
 //-------------------------------------------------------------------------
 
-#define WEB_HTTP_ERR_OKAY                    0
-#define WEB_HTTP_ERR_FAIL                   -1
-#define WEB_HTTP_ERR_REQUEST_ERROR          -2
-#define WEB_HTTP_ERR_REQUEST_FATAL          -3
-#define WEB_HTTP_ERR_SESSION_EXPIRED        -4
-#define WEB_HTTP_ERR_INVALID_CFG_RULE       -5
+#define WEB_HTTP_ERR_OKAY 0
+#define WEB_HTTP_ERR_FAIL -1
+#define WEB_HTTP_ERR_REQUEST_ERROR -2
+#define WEB_HTTP_ERR_REQUEST_FATAL -3
+#define WEB_HTTP_ERR_SESSION_EXPIRED -4
+#define WEB_HTTP_ERR_INVALID_CFG_RULE -5
 
-#define WEB_HTTP_SERVER_STATE_WIN32        0x01
-#define WEB_HTTP_SERVER_STATE_UNIX         0x02
+#define WEB_HTTP_SERVER_STATE_WIN32 0x01
+#define WEB_HTTP_SERVER_STATE_UNIX 0x02
 #define WEB_HTTP_SERVER_STATE_AUTH_ENABLED 0x08
-#define WEB_HTTP_SERVER_STATE_AUTOCONF     0x20
+#define WEB_HTTP_SERVER_STATE_AUTOCONF 0x20
 
-#define WEB_HTTP_STATE_CONFIGURE           0x01 // MONITOR if bit is 0
-#define WEB_HTTP_STATE_MORE_DETAIL         0x02 // LESS_DETAIL if bit is 0
-#define WEB_HTTP_STATE_SUBMIT_WARN         0x04 // set if submission warning
-#define WEB_HTTP_STATE_SUBMIT_NOTE         0x08 // set if submission note
+#define WEB_HTTP_STATE_CONFIGURE 0x01   // MONITOR if bit is 0
+#define WEB_HTTP_STATE_MORE_DETAIL 0x02 // LESS_DETAIL if bit is 0
+#define WEB_HTTP_STATE_SUBMIT_WARN 0x04 // set if submission warning
+#define WEB_HTTP_STATE_SUBMIT_NOTE 0x08 // set if submission note
 
-#define WEB_MAX_PAGE_QUERY_LEN             (32+1)
-#define WEB_MAX_EDIT_FILE_SIZE             (32*1024)    // Some browsers limit you to this
+#define WEB_MAX_PAGE_QUERY_LEN (32 + 1)
+#define WEB_MAX_EDIT_FILE_SIZE (32 * 1024) // Some browsers limit you to this
 
-struct WebHttpConInfo
-{
+struct WebHttpConInfo {
   int fd;
   WebContext *context;
   sockaddr_in *clientInfo;

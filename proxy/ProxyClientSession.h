@@ -41,40 +41,56 @@ public:
   virtual void destroy() = 0;
   virtual void start() = 0;
 
-  virtual void new_connection(NetVConnection * new_vc, MIOBuffer * iobuf, IOBufferReader * reader, bool backdoor) = 0;
+  virtual void new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader, bool backdoor) = 0;
 
-  virtual void ssn_hook_append(TSHttpHookID id, INKContInternal * cont) {
+  virtual void
+  ssn_hook_append(TSHttpHookID id, INKContInternal *cont)
+  {
     this->api_hooks.prepend(id, cont);
   }
 
-  virtual void ssn_hook_prepend(TSHttpHookID id, INKContInternal * cont) {
+  virtual void
+  ssn_hook_prepend(TSHttpHookID id, INKContInternal *cont)
+  {
     this->api_hooks.prepend(id, cont);
   }
 
-  APIHook * ssn_hook_get(TSHttpHookID id) const {
+  APIHook *
+  ssn_hook_get(TSHttpHookID id) const
+  {
     return this->api_hooks.get(id);
   }
 
-  void * get_user_arg(unsigned ix) const {
+  void *
+  get_user_arg(unsigned ix) const
+  {
     ink_assert(ix < countof(user_args));
     return this->user_args[ix];
   }
 
-  void set_user_arg(unsigned ix, void * arg) {
+  void
+  set_user_arg(unsigned ix, void *arg)
+  {
     ink_assert(ix < countof(user_args));
     user_args[ix] = arg;
   }
 
   // Return whether debugging is enabled for this session.
-  bool debug() const {
+  bool
+  debug() const
+  {
     return this->debug_on;
   }
 
-  bool hooks_enabled() const {
+  bool
+  hooks_enabled() const
+  {
     return this->hooks_on;
   }
 
-  bool has_hooks() const {
+  bool
+  has_hooks() const
+  {
     return this->api_hooks.has_hooks() || http_global_hooks->has_hooks();
   }
 
@@ -86,7 +102,6 @@ public:
   static int64_t next_connection_id();
 
 protected:
-
   // XXX Consider using a bitwise flags variable for the following flags, so that we can make the best
   // use of internal alignment padding.
 
@@ -95,16 +110,16 @@ protected:
   bool hooks_on;
 
 private:
-  APIHookScope  api_scope;
-  TSHttpHookID  api_hookid;
-  APIHook *     api_current;
-  HttpAPIHooks  api_hooks;
-  void *        user_args[HTTP_SSN_TXN_MAX_USER_ARG];
+  APIHookScope api_scope;
+  TSHttpHookID api_hookid;
+  APIHook *api_current;
+  HttpAPIHooks api_hooks;
+  void *user_args[HTTP_SSN_TXN_MAX_USER_ARG];
 
-  ProxyClientSession(ProxyClientSession &); // noncopyable
-  ProxyClientSession& operator=(const ProxyClientSession &); // noncopyable
+  ProxyClientSession(ProxyClientSession &);                  // noncopyable
+  ProxyClientSession &operator=(const ProxyClientSession &); // noncopyable
 
-  int state_api_callout(int event, void * edata);
+  int state_api_callout(int event, void *edata);
   void handle_api_return(int event);
 
   friend void TSHttpSsnDebugSet(TSHttpSsn, int);

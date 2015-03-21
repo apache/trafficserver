@@ -25,29 +25,31 @@
 // The name of the debug request header. This should probably be configurable.
 #define X_DEBUG_HEADER "X-Debug"
 
-#define XHEADER_X_CACHE_KEY   0x0004u
-#define XHEADER_X_MILESTONES  0x0008u
-#define XHEADER_X_CACHE       0x0010u
+#define XHEADER_X_CACHE_KEY 0x0004u
+#define XHEADER_X_MILESTONES 0x0008u
+#define XHEADER_X_CACHE 0x0010u
 
 static int XArgIndex = 0;
 static TSCont XInjectHeadersCont = NULL;
 
 // Return the length of a string literal.
-template <int N> unsigned
-lengthof(const char (&)[N]) {
+template <int N>
+unsigned
+lengthof(const char(&)[N])
+{
   return N - 1;
 }
 
 static TSMLoc
-FindOrMakeHdrField(TSMBuffer buffer, TSMLoc hdr, const char * name, unsigned len)
+FindOrMakeHdrField(TSMBuffer buffer, TSMLoc hdr, const char *name, unsigned len)
 {
   TSMLoc field;
 
   field = TSMimeHdrFieldFind(buffer, hdr, name, len);
   if (field == TS_NULL_MLOC) {
-      if (TSMimeHdrFieldCreateNamed(buffer, hdr, name, len, &field) == TS_SUCCESS) {
-          TSReleaseAssert(TSMimeHdrFieldAppend(buffer, hdr, field) == TS_SUCCESS);
-      }
+    if (TSMimeHdrFieldCreateNamed(buffer, hdr, name, len, &field) == TS_SUCCESS) {
+      TSReleaseAssert(TSMimeHdrFieldAppend(buffer, hdr, field) == TS_SUCCESS);
+    }
   }
 
   return field;
@@ -59,7 +61,10 @@ InjectCacheKeyHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
   TSMLoc url = TS_NULL_MLOC;
   TSMLoc dst = TS_NULL_MLOC;
 
-  struct { char * ptr; int len; } strval = { NULL, 0 };
+  struct {
+    char *ptr;
+    int len;
+  } strval = {NULL, 0};
 
   TSDebug("xdebug", "attempting to inject X-Cache-Key header");
 
@@ -83,9 +88,7 @@ InjectCacheKeyHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
   }
 
   // Now copy the cache lookup URL into the response header.
-  TSReleaseAssert(
-    TSMimeHdrFieldValueStringInsert(buffer, hdr, dst, 0 /* idx */, strval.ptr, strval.len) == TS_SUCCESS
-  );
+  TSReleaseAssert(TSMimeHdrFieldValueStringInsert(buffer, hdr, dst, 0 /* idx */, strval.ptr, strval.len) == TS_SUCCESS);
 
 done:
   if (dst != TS_NULL_MLOC) {
@@ -105,12 +108,11 @@ InjectCacheHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
   TSMLoc dst = TS_NULL_MLOC;
   int status;
 
-  static const char * names[] =
-  {
-    "miss" ,      // TS_CACHE_LOOKUP_MISS,
-    "hit-stale",  // TS_CACHE_LOOKUP_HIT_STALE,
-    "hit-fresh",  // TS_CACHE_LOOKUP_HIT_FRESH,
-    "skipped"     // TS_CACHE_LOOKUP_SKIPPED
+  static const char *names[] = {
+    "miss",      // TS_CACHE_LOOKUP_MISS,
+    "hit-stale", // TS_CACHE_LOOKUP_HIT_STALE,
+    "hit-fresh", // TS_CACHE_LOOKUP_HIT_FRESH,
+    "skipped"    // TS_CACHE_LOOKUP_SKIPPED
   };
 
   TSDebug("xdebug", "attempting to inject X-Cache header");
@@ -123,15 +125,11 @@ InjectCacheHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
 
   if (TSHttpTxnCacheLookupStatusGet(txn, &status) == TS_ERROR) {
     // If the cache lookup hasn't happened yes, TSHttpTxnCacheLookupStatusGet will fail.
-    TSReleaseAssert(
-      TSMimeHdrFieldValueStringInsert(buffer, hdr, dst, 0 /* idx */, "none", 4) == TS_SUCCESS
-    );
+    TSReleaseAssert(TSMimeHdrFieldValueStringInsert(buffer, hdr, dst, 0 /* idx */, "none", 4) == TS_SUCCESS);
   } else {
-    const char * msg = (status < 0 || status >= (int)countof(names)) ? "unknown" : names[status];
+    const char *msg = (status < 0 || status >= (int)countof(names)) ? "unknown" : names[status];
 
-    TSReleaseAssert(
-      TSMimeHdrFieldValueStringInsert(buffer, hdr, dst, 0 /* idx */, msg, -1) == TS_SUCCESS
-    );
+    TSReleaseAssert(TSMimeHdrFieldValueStringInsert(buffer, hdr, dst, 0 /* idx */, msg, -1) == TS_SUCCESS);
   }
 
 done:
@@ -142,7 +140,7 @@ done:
 
 struct milestone {
   TSMilestonesType mstype;
-  const char * msname;
+  const char *msname;
 };
 
 static void
@@ -151,22 +149,22 @@ InjectMilestonesHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
   // The set of milestones we can publish. Some milestones happen after
   // this hook, so we skip those ...
   static const milestone milestones[] = {
-    { TS_MILESTONE_UA_BEGIN,                "UA-BEGIN" },
-    { TS_MILESTONE_UA_READ_HEADER_DONE,     "UA-READ-HEADER-DONE" },
-    { TS_MILESTONE_UA_BEGIN_WRITE,          "UA-BEGIN-WRITE" },
-    { TS_MILESTONE_SERVER_FIRST_CONNECT,    "SERVER-FIRST-CONNECT" },
-    { TS_MILESTONE_SERVER_CONNECT,          "SERVER-CONNECT" },
-    { TS_MILESTONE_SERVER_CONNECT_END,      "SERVER-CONNECT-END" },
-    { TS_MILESTONE_SERVER_BEGIN_WRITE,      "SERVER-BEGIN-WRITE" },
-    { TS_MILESTONE_SERVER_FIRST_READ,       "SERVER-FIRST-READ" },
-    { TS_MILESTONE_SERVER_READ_HEADER_DONE, "SERVER-READ-HEADER-DONE" },
-    { TS_MILESTONE_SERVER_CLOSE,            "SERVER-CLOSE" },
-    { TS_MILESTONE_CACHE_OPEN_READ_BEGIN,   "CACHE-OPEN-READ-BEGIN" },
-    { TS_MILESTONE_CACHE_OPEN_READ_END,     "CACHE-OPEN-READ-END" },
-    { TS_MILESTONE_CACHE_OPEN_WRITE_BEGIN,  "CACHE-OPEN-WRITE-BEGIN" },
-    { TS_MILESTONE_CACHE_OPEN_WRITE_END,    "CACHE-OPEN-WRITE-END" },
-    { TS_MILESTONE_DNS_LOOKUP_BEGIN,        "DNS-LOOKUP-BEGIN" },
-    { TS_MILESTONE_DNS_LOOKUP_END,          "DNS-LOOKUP-END" },
+    {TS_MILESTONE_UA_BEGIN, "UA-BEGIN"},
+    {TS_MILESTONE_UA_READ_HEADER_DONE, "UA-READ-HEADER-DONE"},
+    {TS_MILESTONE_UA_BEGIN_WRITE, "UA-BEGIN-WRITE"},
+    {TS_MILESTONE_SERVER_FIRST_CONNECT, "SERVER-FIRST-CONNECT"},
+    {TS_MILESTONE_SERVER_CONNECT, "SERVER-CONNECT"},
+    {TS_MILESTONE_SERVER_CONNECT_END, "SERVER-CONNECT-END"},
+    {TS_MILESTONE_SERVER_BEGIN_WRITE, "SERVER-BEGIN-WRITE"},
+    {TS_MILESTONE_SERVER_FIRST_READ, "SERVER-FIRST-READ"},
+    {TS_MILESTONE_SERVER_READ_HEADER_DONE, "SERVER-READ-HEADER-DONE"},
+    {TS_MILESTONE_SERVER_CLOSE, "SERVER-CLOSE"},
+    {TS_MILESTONE_CACHE_OPEN_READ_BEGIN, "CACHE-OPEN-READ-BEGIN"},
+    {TS_MILESTONE_CACHE_OPEN_READ_END, "CACHE-OPEN-READ-END"},
+    {TS_MILESTONE_CACHE_OPEN_WRITE_BEGIN, "CACHE-OPEN-WRITE-BEGIN"},
+    {TS_MILESTONE_CACHE_OPEN_WRITE_END, "CACHE-OPEN-WRITE-END"},
+    {TS_MILESTONE_DNS_LOOKUP_BEGIN, "DNS-LOOKUP-BEGIN"},
+    {TS_MILESTONE_DNS_LOOKUP_END, "DNS-LOOKUP-END"},
   };
 
   TSMLoc dst = TS_NULL_MLOC;
@@ -192,12 +190,10 @@ InjectMilestonesHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
     // state machine the request doesn't traverse.
     TSHttpTxnMilestoneGet(txn, milestones[i].mstype, &time);
     if (time > 0) {
-      double elapsed = (double) (time - epoch) / 1000000000.0;
+      double elapsed = (double)(time - epoch) / 1000000000.0;
       int len = (int)snprintf(hdrval, sizeof(hdrval), "%s=%1.9lf", milestones[i].msname, elapsed);
 
-      TSReleaseAssert(
-        TSMimeHdrFieldValueStringInsert(buffer, hdr, dst, 0 /* idx */, hdrval, len) == TS_SUCCESS
-      );
+      TSReleaseAssert(TSMimeHdrFieldValueStringInsert(buffer, hdr, dst, 0 /* idx */, hdrval, len) == TS_SUCCESS);
     }
   }
 
@@ -208,12 +204,12 @@ done:
 }
 
 static int
-XInjectResponseHeaders(TSCont /* contp */, TSEvent event, void * edata)
+XInjectResponseHeaders(TSCont /* contp */, TSEvent event, void *edata)
 {
-  TSHttpTxn   txn = (TSHttpTxn)edata;
-  intptr_t    xheaders = 0;
-  TSMBuffer   buffer;
-  TSMLoc      hdr;
+  TSHttpTxn txn = (TSHttpTxn)edata;
+  intptr_t xheaders = 0;
+  TSMBuffer buffer;
+  TSMLoc hdr;
 
   TSReleaseAssert(event == TS_EVENT_HTTP_SEND_RESPONSE_HDR);
 
@@ -246,13 +242,13 @@ done:
 // Scan the client request headers and determine which debug headers they
 // want in the response.
 static int
-XScanRequestHeaders(TSCont /* contp */, TSEvent event, void * edata)
+XScanRequestHeaders(TSCont /* contp */, TSEvent event, void *edata)
 {
-  TSHttpTxn   txn = (TSHttpTxn)edata;
-  intptr_t    xheaders = 0;
-  TSMLoc      field, next;
-  TSMBuffer   buffer;
-  TSMLoc      hdr;
+  TSHttpTxn txn = (TSHttpTxn)edata;
+  intptr_t xheaders = 0;
+  TSMLoc field, next;
+  TSMBuffer buffer;
+  TSMLoc hdr;
 
   TSReleaseAssert(event == TS_EVENT_HTTP_READ_REQUEST_HDR);
 
@@ -268,7 +264,7 @@ XScanRequestHeaders(TSCont /* contp */, TSEvent event, void * edata)
     int count = TSMimeHdrFieldValuesCount(buffer, hdr, field);
 
     for (int i = 0; i < count; ++i) {
-      const char * value;
+      const char *value;
       int vsize;
 
       value = TSMimeHdrFieldValueStringGet(buffer, hdr, field, i, &vsize);
@@ -331,13 +327,9 @@ TSPluginInit(int /* argc */, const char * /*argv */ [])
     TSError("xdebug plugin registration failed");
   }
 
-  TSReleaseAssert(
-    TSHttpArgIndexReserve("xdebug", "xdebug header requests" , &XArgIndex) == TS_SUCCESS
-  );
+  TSReleaseAssert(TSHttpArgIndexReserve("xdebug", "xdebug header requests", &XArgIndex) == TS_SUCCESS);
 
-  TSReleaseAssert(
-    XInjectHeadersCont = TSContCreate(XInjectResponseHeaders, NULL)
-  );
+  TSReleaseAssert(XInjectHeadersCont = TSContCreate(XInjectResponseHeaders, NULL));
 
   TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, TSContCreate(XScanRequestHeaders, NULL));
 }

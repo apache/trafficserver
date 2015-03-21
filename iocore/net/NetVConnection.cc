@@ -43,4 +43,3 @@ NetVConnection::cancel_OOB()
 {
   return;
 }
-

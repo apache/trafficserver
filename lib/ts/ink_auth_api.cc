@@ -28,8 +28,7 @@
 #include "ink_auth_api.h"
 
 static int s_rand_seed = time(NULL); // + s_rand_seed;
-static InkRand
-s_rand_gen(ink_rand_r((unsigned int *) &s_rand_seed) ^ (uintptr_t) &s_rand_seed);
+static InkRand s_rand_gen(ink_rand_r((unsigned int *) & s_rand_seed) ^ (uintptr_t)&s_rand_seed);
 
 inline uint32_t
 ink_get_rand_intrn()
@@ -38,14 +37,14 @@ ink_get_rand_intrn()
 }
 
 inline void
-ink_make_token_intrn(INK_AUTH_TOKEN * tok, const INK_AUTH_SEED * const *seeds, int slen)
+ink_make_token_intrn(INK_AUTH_TOKEN *tok, const INK_AUTH_SEED *const *seeds, int slen)
 {
   INK_DIGEST_CTX ctx;
   ink_code_incr_md5_init(&ctx);
   while (slen-- > 0) {
-    ink_code_incr_md5_update(&ctx, (const char *) seeds[slen]->data(), seeds[slen]->length());
+    ink_code_incr_md5_update(&ctx, (const char *)seeds[slen]->data(), seeds[slen]->length());
   }
-  ink_code_incr_md5_final((char *) &(tok->u8[0]), &ctx);
+  ink_code_incr_md5_final((char *)&(tok->u8[0]), &ctx);
 }
 
 uint32_t
@@ -55,15 +54,15 @@ ink_get_rand()
 }
 
 void
-ink_make_token(INK_AUTH_TOKEN * tok, const INK_AUTH_TOKEN & mask, const INK_AUTH_SEED * const *seeds, int slen)
+ink_make_token(INK_AUTH_TOKEN *tok, const INK_AUTH_TOKEN &mask, const INK_AUTH_SEED *const *seeds, int slen)
 {
   ink_make_token_intrn(tok, seeds, slen);
-  for (int i = 3; i >= 0; i--)  // randomize masked bits
+  for (int i = 3; i >= 0; i--) // randomize masked bits
     tok->u32[i] ^= mask.u32[i] & ink_get_rand_intrn();
 }
 
 uint32_t
-ink_make_token32(uint32_t mask, const INK_AUTH_SEED * const *seeds, int slen)
+ink_make_token32(uint32_t mask, const INK_AUTH_SEED *const *seeds, int slen)
 {
   INK_AUTH_TOKEN tok;
   ink_make_token_intrn(&tok, seeds, slen);
@@ -73,10 +72,10 @@ ink_make_token32(uint32_t mask, const INK_AUTH_SEED * const *seeds, int slen)
 }
 
 uint64_t
-ink_make_token64(uint64_t mask, const INK_AUTH_SEED * const *seeds, int slen)
+ink_make_token64(uint64_t mask, const INK_AUTH_SEED *const *seeds, int slen)
 {
   INK_AUTH_TOKEN tok;
   ink_make_token_intrn(&tok, seeds, slen);
   tok.u64[1] ^= tok.u64[0];
-  return tok.u64[1] ^ (mask & ((uint64_t) ink_get_rand_intrn() + (((uint64_t) ink_get_rand_intrn()) << 32)));
+  return tok.u64[1] ^ (mask & ((uint64_t)ink_get_rand_intrn() + (((uint64_t)ink_get_rand_intrn()) << 32)));
 }

@@ -30,8 +30,7 @@
 
 SocketManager socketManager;
 
-SocketManager::SocketManager()
-  : pagesize(ats_pagesize())
+SocketManager::SocketManager() : pagesize(ats_pagesize())
 {
 }
 
@@ -41,9 +40,9 @@ SocketManager::~SocketManager()
 }
 
 int
-SocketManager::ink_bind(int s, struct sockaddr const* name, int namelen, short Proto)
+SocketManager::ink_bind(int s, struct sockaddr const *name, int namelen, short Proto)
 {
-  (void) Proto;
+  (void)Proto;
   return safe_bind(s, name, namelen);
 }
 

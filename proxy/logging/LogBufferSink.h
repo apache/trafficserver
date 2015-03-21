@@ -44,10 +44,8 @@ public:
   //
   // return 0 if success, -1 on error.
   //
-  virtual int preproc_and_try_delete(LogBuffer * buffer) = 0;
-  virtual ~ LogBufferSink()
-  {
-  };
+  virtual int preproc_and_try_delete(LogBuffer *buffer) = 0;
+  virtual ~LogBufferSink(){};
 };
 
 #endif

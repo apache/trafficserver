@@ -38,9 +38,9 @@
 // were supposed to work, but #ifdef'ing them out of here for now.
 #ifdef NOT_USED_HERE
 static LLQrec *
-newrec(LLQ * Q)
+newrec(LLQ *Q)
 {
-  LLQrec * new_val;
+  LLQrec *new_val;
   int i;
 
   if (Q->free != NULL) {
@@ -64,7 +64,7 @@ newrec(LLQ * Q)
 
 // Not used either ...
 static void
-freerec(LLQ * Q, LLQrec * rec)
+freerec(LLQ *Q, LLQrec *rec)
 {
   rec->next = Q->free;
   Q->free = rec;
@@ -74,7 +74,7 @@ freerec(LLQ * Q, LLQrec * rec)
 LLQ *
 create_queue()
 {
-  LLQ * new_val = (LLQ *)ats_malloc(sizeof(LLQ));
+  LLQ *new_val = (LLQ *)ats_malloc(sizeof(LLQ));
 
   ink_sem_init(&(new_val->sema), 0);
   ink_mutex_init(&(new_val->mux), "LLQ::create_queue");
@@ -87,7 +87,7 @@ create_queue()
 
 // matching delete function, only for empty queue!
 void
-delete_queue(LLQ * Q)
+delete_queue(LLQ *Q)
 {
   // There seems to have been some ideas of making sure that this queue is
   // actually empty ...
@@ -100,9 +100,9 @@ delete_queue(LLQ * Q)
 }
 
 int
-enqueue(LLQ * Q, void *data)
+enqueue(LLQ *Q, void *data)
 {
-  LLQrec * new_val;
+  LLQrec *new_val;
 
   ink_mutex_acquire(&(Q->mux));
   new_val = (LLQrec *)ats_malloc(sizeof(LLQrec));
@@ -125,7 +125,7 @@ enqueue(LLQ * Q, void *data)
 }
 
 uint64_t
-queue_len(LLQ * Q)
+queue_len(LLQ *Q)
 {
   uint64_t len;
 
@@ -137,7 +137,7 @@ queue_len(LLQ * Q)
 }
 
 uint64_t
-queue_highwater(LLQ * Q)
+queue_highwater(LLQ *Q)
 {
   uint64_t highwater;
 
@@ -147,7 +147,6 @@ queue_highwater(LLQ * Q)
   /* ink_mutex_release(&(Q->mux)); */
   return highwater;
 }
-
 
 
 /*
@@ -170,7 +169,7 @@ queue_highwater(LLQ * Q)
  *---------------------------------------------------------------------------
  */
 bool
-queue_is_empty(LLQ * Q)
+queue_is_empty(LLQ *Q)
 {
   uint64_t len;
 
@@ -180,16 +179,15 @@ queue_is_empty(LLQ * Q)
 }
 
 void *
-dequeue(LLQ * Q)
+dequeue(LLQ *Q)
 {
-  LLQrec * rec;
+  LLQrec *rec;
   void *d;
   ink_sem_wait(&(Q->sema));
   ink_mutex_acquire(&(Q->mux));
 
 
   if (Q->head == NULL) {
-
     ink_mutex_release(&(Q->mux));
 
     return NULL;
@@ -202,7 +200,7 @@ dequeue(LLQ * Q)
     Q->tail = NULL;
 
   d = rec->data;
-//freerec(Q, rec);
+  // freerec(Q, rec);
   ats_free(rec);
 
   Q->len--;
@@ -210,7 +208,6 @@ dequeue(LLQ * Q)
 
   return d;
 }
-
 
 
 #ifdef LLQUEUE_MAIN
@@ -227,12 +224,12 @@ testfun(void *unused)
   do {
     scanf("%d", &num);
     if (num == 0) {
-      printf("DEQUEUE: %d\n", (int) dequeue(Q));
+      printf("DEQUEUE: %d\n", (int)dequeue(Q));
     } else if (num == -1) {
       printf("queue_is_empty: %d\n", queue_is_empty(Q));
     } else {
       printf("enqueue: %d\n", num);
-      enqueue(Q, (void *) num);
+      enqueue(Q, (void *)num);
     }
   } while (num >= -1);
 
@@ -245,7 +242,7 @@ testfun(void *unused)
 void
 main()
 {
-  assert(thr_create(NULL, 0, testfun, (void *) NULL, THR_NEW_LWP, NULL) == 0);
+  assert(thr_create(NULL, 0, testfun, (void *)NULL, THR_NEW_LWP, NULL) == 0);
   while (1) {
     ;
   }

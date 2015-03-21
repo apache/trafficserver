@@ -43,11 +43,10 @@ typedef struct _query_remap_info {
 
 
 int
-TSRemapInit(TSRemapInterface *api_info ATS_UNUSED, char *errbuf ATS_UNUSED,
-              int errbuf_size ATS_UNUSED)
+TSRemapInit(TSRemapInterface *api_info ATS_UNUSED, char *errbuf ATS_UNUSED, int errbuf_size ATS_UNUSED)
 {
   /* Called at TS startup. Nothing needed for this plugin */
-  TSDebug(PLUGIN_NAME , "remap plugin initialized");
+  TSDebug(PLUGIN_NAME, "remap plugin initialized");
   return 0;
 }
 
@@ -71,39 +70,38 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf ATS_UNUSED, i
        2: query param to hash
        3,4,... : server hostnames
   */
-  query_remap_info *qri = (query_remap_info*) TSmalloc(sizeof(query_remap_info));
+  query_remap_info *qri = (query_remap_info *)TSmalloc(sizeof(query_remap_info));
 
   qri->param_name = TSstrdup(argv[2]);
   qri->param_len = strlen(qri->param_name);
   qri->num_hosts = argc - 3;
-  qri->hosts = (char**) TSmalloc(qri->num_hosts*sizeof(char*));
+  qri->hosts = (char **)TSmalloc(qri->num_hosts * sizeof(char *));
 
-  TSDebug(PLUGIN_NAME, " - Hash using query parameter [%s] with %d hosts",
-           qri->param_name, qri->num_hosts);
+  TSDebug(PLUGIN_NAME, " - Hash using query parameter [%s] with %d hosts", qri->param_name, qri->num_hosts);
 
-  for (i=0; i < qri->num_hosts; ++i) {
-    qri->hosts[i] = TSstrdup(argv[i+3]);
+  for (i = 0; i < qri->num_hosts; ++i) {
+    qri->hosts[i] = TSstrdup(argv[i + 3]);
     TSDebug(PLUGIN_NAME, " - Host %d: %s", i, qri->hosts[i]);
   }
 
-  *ih = (void*)qri;
+  *ih = (void *)qri;
   TSDebug(PLUGIN_NAME, "created instance %p", *ih);
   return 0;
 }
 
 void
-TSRemapDeleteInstance(void* ih)
+TSRemapDeleteInstance(void *ih)
 {
   /* Release instance memory allocated in TSRemapNewInstance */
   int i;
   TSDebug(PLUGIN_NAME, "deleting instance %p", ih);
 
   if (ih) {
-    query_remap_info *qri = (query_remap_info*)ih;
+    query_remap_info *qri = (query_remap_info *)ih;
     if (qri->param_name)
       TSfree(qri->param_name);
     if (qri->hosts) {
-      for (i=0; i < qri->num_hosts; ++i) {
+      for (i = 0; i < qri->num_hosts; ++i) {
         TSfree(qri->hosts[i]);
       }
       TSfree(qri->hosts);
@@ -114,10 +112,10 @@ TSRemapDeleteInstance(void* ih)
 
 
 TSRemapStatus
-TSRemapDoRemap(void* ih, TSHttpTxn rh ATS_UNUSED, TSRemapRequestInfo *rri)
+TSRemapDoRemap(void *ih, TSHttpTxn rh ATS_UNUSED, TSRemapRequestInfo *rri)
 {
   int hostidx = -1;
-  query_remap_info *qri = (query_remap_info*)ih;
+  query_remap_info *qri = (query_remap_info *)ih;
 
   if (!qri || !rri) {
     TSError(PLUGIN_NAME "NULL private data or RRI");
@@ -125,20 +123,19 @@ TSRemapDoRemap(void* ih, TSHttpTxn rh ATS_UNUSED, TSRemapRequestInfo *rri)
   }
 
   int req_query_len;
-  const char* req_query = TSUrlHttpQueryGet(rri->requestBufp, rri->requestUrl, &req_query_len);
+  const char *req_query = TSUrlHttpQueryGet(rri->requestBufp, rri->requestUrl, &req_query_len);
 
   if (req_query && req_query_len > 0) {
     char *q, *key;
     char *s = NULL;
 
     /* make a copy of the query, as it is read only */
-    q = (char*) TSstrndup(req_query, req_query_len+1);
+    q = (char *)TSstrndup(req_query, req_query_len + 1);
 
     /* parse query parameters */
     for (key = strtok_r(q, "&", &s); key != NULL;) {
       char *val = strchr(key, '=');
-      if (val && (size_t)(val-key) == qri->param_len &&
-          !strncmp(key, qri->param_name, qri->param_len)) {
+      if (val && (size_t)(val - key) == qri->param_len && !strncmp(key, qri->param_name, qri->param_len)) {
         ++val;
         /* the param key matched the configured param_name
            hash the param value to pick a host */
@@ -154,7 +151,7 @@ TSRemapDoRemap(void* ih, TSHttpTxn rh ATS_UNUSED, TSRemapRequestInfo *rri)
     if (hostidx >= 0) {
       int req_host_len;
       /* TODO: Perhaps use TSIsDebugTagSet() before calling TSUrlHostGet()... */
-      const char* req_host = TSUrlHostGet(rri->requestBufp, rri->requestUrl, &req_host_len);
+      const char *req_host = TSUrlHostGet(rri->requestBufp, rri->requestUrl, &req_host_len);
 
       if (TSUrlHostSet(rri->requestBufp, rri->requestUrl, qri->hosts[hostidx], strlen(qri->hosts[hostidx])) != TS_SUCCESS) {
         TSDebug(PLUGIN_NAME, "Failed to modify the Host in request URL");
@@ -179,10 +176,9 @@ hash_fnv32(char *buf, size_t len)
   uint32_t hval = (uint32_t)0x811c9dc5; /* FNV1_32_INIT */
 
   for (; len > 0; --len) {
-    hval *= (uint32_t)0x01000193;  /* FNV_32_PRIME */
+    hval *= (uint32_t)0x01000193; /* FNV_32_PRIME */
     hval ^= (uint32_t)*buf++;
   }
 
   return hval;
 }
-

@@ -26,8 +26,8 @@
 #include <string.h>
 
 
-#define DEFAULT_ALLOC_SIZE   1024
-#define DEFAULT_BLOCK_SIZE   (DEFAULT_ALLOC_SIZE - (sizeof (ArenaBlock) - 8))
+#define DEFAULT_ALLOC_SIZE 1024
+#define DEFAULT_BLOCK_SIZE (DEFAULT_ALLOC_SIZE - (sizeof(ArenaBlock) - 8))
 
 
 static Allocator defaultSizeArenaBlock("ArenaBlock", DEFAULT_ALLOC_SIZE);
@@ -42,7 +42,7 @@ blk_alloc(int size)
   ArenaBlock *blk;
 
   if (size == DEFAULT_BLOCK_SIZE) {
-    blk = (ArenaBlock *) defaultSizeArenaBlock.alloc_void();
+    blk = (ArenaBlock *)defaultSizeArenaBlock.alloc_void();
   } else {
     blk = (ArenaBlock *)ats_malloc(size + sizeof(ArenaBlock) - 8);
   }
@@ -58,7 +58,7 @@ blk_alloc(int size)
   -------------------------------------------------------------------------*/
 
 static inline void
-blk_free(ArenaBlock * blk)
+blk_free(ArenaBlock *blk)
 {
   int size;
 
@@ -75,16 +75,16 @@ blk_free(ArenaBlock * blk)
   -------------------------------------------------------------------------*/
 
 static void *
-block_alloc(ArenaBlock * block, size_t size, size_t alignment)
+block_alloc(ArenaBlock *block, size_t size, size_t alignment)
 {
   char *mem;
 
   mem = block->m_water_level;
-  if (((size_t) mem) & (alignment - 1)) {
-    mem += (alignment - ((size_t) mem)) & (alignment - 1);
+  if (((size_t)mem) & (alignment - 1)) {
+    mem += (alignment - ((size_t)mem)) & (alignment - 1);
   }
 
-  if ((block->m_heap_end >= mem) && (((size_t) block->m_heap_end - (size_t) mem) >= size)) {
+  if ((block->m_heap_end >= mem) && (((size_t)block->m_heap_end - (size_t)mem) >= size)) {
     block->m_water_level = mem + size;
     return mem;
   }
@@ -110,7 +110,7 @@ Arena::alloc(size_t size, size_t alignment)
     b = b->next;
   }
 
-  block_size = (unsigned int) (size * 1.5);
+  block_size = (unsigned int)(size * 1.5);
   if (block_size < DEFAULT_BLOCK_SIZE) {
     block_size = DEFAULT_BLOCK_SIZE;
   }
@@ -137,8 +137,8 @@ Arena::free(void *mem, size_t size)
       b = b->next;
     }
 
-    if (b->m_water_level == ((char *) mem + size)) {
-      b->m_water_level = (char *) mem;
+    if (b->m_water_level == ((char *)mem + size)) {
+      b->m_water_level = (char *)mem;
     }
   }
 }

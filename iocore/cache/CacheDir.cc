@@ -26,24 +26,27 @@
 
 // #define LOOP_CHECK_MODE 1
 #ifdef LOOP_CHECK_MODE
-#define DIR_LOOP_THRESHOLD	      1000
+#define DIR_LOOP_THRESHOLD 1000
 #endif
 #include "ink_stack_trace.h"
 
-#define CACHE_INC_DIR_USED(_m) do { \
-ProxyMutex *mutex = _m; \
-CACHE_INCREMENT_DYN_STAT(cache_direntries_used_stat); \
-} while (0) \
+#define CACHE_INC_DIR_USED(_m)                            \
+  do {                                                    \
+    ProxyMutex *mutex = _m;                               \
+    CACHE_INCREMENT_DYN_STAT(cache_direntries_used_stat); \
+  } while (0)
 
-#define CACHE_DEC_DIR_USED(_m) do { \
-ProxyMutex *mutex = _m; \
-CACHE_DECREMENT_DYN_STAT(cache_direntries_used_stat); \
-} while (0) \
+#define CACHE_DEC_DIR_USED(_m)                            \
+  do {                                                    \
+    ProxyMutex *mutex = _m;                               \
+    CACHE_DECREMENT_DYN_STAT(cache_direntries_used_stat); \
+  } while (0)
 
-#define CACHE_INC_DIR_COLLISIONS(_m) do {\
-ProxyMutex *mutex = _m; \
-CACHE_INCREMENT_DYN_STAT(cache_directory_collision_count_stat); \
-} while (0);
+#define CACHE_INC_DIR_COLLISIONS(_m)                                \
+  do {                                                              \
+    ProxyMutex *mutex = _m;                                         \
+    CACHE_INCREMENT_DYN_STAT(cache_directory_collision_count_stat); \
+  } while (0);
 
 
 // Globals
@@ -83,8 +86,7 @@ OpenDir::open_write(CacheVC *cont, int allow_if_writers, int max_writers)
     }
     return 0;
   }
-  OpenDirEntry *od = THREAD_ALLOC(openDirEntryAllocator,
-                                  cont->mutex->thread_holding);
+  OpenDirEntry *od = THREAD_ALLOC(openDirEntryAllocator, cont->mutex->thread_holding);
   od->readers.head = NULL;
   od->writers.push(cont);
   od->num_writers = 1;
@@ -193,7 +195,7 @@ dir_bucket_loop_check(Dir *start_dir, Dir *seg)
       return 1;
 
     if (p2 == p1)
-      return 0;                 // we have a loop
+      return 0; // we have a loop
   }
   return 1;
 }
@@ -272,9 +274,12 @@ check_dir(Vol *d)
     Dir *seg = dir_segment(s, d);
     for (i = 0; i < d->buckets; i++) {
       Dir *b = dir_bucket(i, seg);
-      if (!(dir_bucket_length(b, s, d) >= 0)) return 0;
-      if (!(!dir_next(b) || dir_offset(b))) return 0;
-      if (!(dir_bucket_loop_check(b, seg))) return 0;
+      if (!(dir_bucket_length(b, s, d) >= 0))
+        return 0;
+      if (!(!dir_next(b) || dir_offset(b)))
+        return 0;
+      if (!(dir_bucket_loop_check(b, seg)))
+        return 0;
     }
   }
   return 1;
@@ -341,8 +346,8 @@ dir_clean_bucket(Dir *b, int s, Vol *vol)
 #endif
     if (!dir_valid(vol, e) || !dir_offset(e)) {
       if (is_debug_tag_set("dir_clean"))
-        Debug("dir_clean", "cleaning %p tag %X boffset %" PRId64 " b %p p %p l %d",
-              e, dir_tag(e), dir_offset(e), b, p, dir_bucket_length(b, s, vol));
+        Debug("dir_clean", "cleaning %p tag %X boffset %" PRId64 " b %p p %p l %d", e, dir_tag(e), dir_offset(e), b, p,
+              dir_bucket_length(b, s, vol));
       if (dir_offset(e))
         CACHE_DEC_DIR_USED(vol->mutex);
       e = dir_delete_entry(e, p, s, vol);
@@ -384,7 +389,7 @@ interim_dir_clean_bucket(Dir *b, int s, Vol *vol, int offset)
     }
     p = e;
     e = next_dir(e, seg);
-  } while(e);
+  } while (e);
 }
 
 void
@@ -416,8 +421,8 @@ dir_clean_bucket(Dir *b, int s, InterimCacheVol *d)
 #endif
     if (!dir_valid(d, e) || !dir_offset(e)) {
       if (is_debug_tag_set("dir_clean"))
-        Debug("dir_clean", "cleaning %p tag %X boffset %" PRId64 " b %p p %p l %d",
-              e, dir_tag(e), dir_offset(e), b, p, dir_bucket_length(b, s, vol));
+        Debug("dir_clean", "cleaning %p tag %X boffset %" PRId64 " b %p p %p l %d", e, dir_tag(e), dir_offset(e), b, p,
+              dir_bucket_length(b, s, vol));
       if (dir_offset(e))
         CACHE_DEC_DIR_USED(vol->mutex);
       e = dir_delete_entry(e, p, s, vol);
@@ -452,10 +457,10 @@ dir_clean_range_interimvol(off_t start, off_t end, InterimCacheVol *svol)
 
   for (int i = 0; i < vol->buckets * DIR_DEPTH * vol->segments; i++) {
     Dir *e = dir_index(vol, i);
-    if (dir_ininterim(e) && dir_get_index(e) == offset && !dir_token(e) &&
-            dir_offset(e) >= (int64_t)start && dir_offset(e) < (int64_t)end) {
+    if (dir_ininterim(e) && dir_get_index(e) == offset && !dir_token(e) && dir_offset(e) >= (int64_t)start &&
+        dir_offset(e) < (int64_t)end) {
       CACHE_DEC_DIR_USED(vol->mutex);
-      dir_set_offset(e, 0);     // delete
+      dir_set_offset(e, 0); // delete
     }
   }
 
@@ -470,7 +475,7 @@ dir_clear_range(off_t start, off_t end, Vol *vol)
     Dir *e = dir_index(vol, i);
     if (!dir_token(e) && dir_offset(e) >= (int64_t)start && dir_offset(e) < (int64_t)end) {
       CACHE_DEC_DIR_USED(vol->mutex);
-      dir_set_offset(e, 0);     // delete
+      dir_set_offset(e, 0); // delete
     }
   }
   dir_clean_vol(vol);
@@ -503,7 +508,7 @@ freelist_clean(int s, Vol *vol)
       Dir *e = dir_bucket_row(b, l);
       if (dir_head(e) && !(n++ % 10)) {
         CACHE_DEC_DIR_USED(vol->mutex);
-        dir_set_offset(e, 0);   // delete
+        dir_set_offset(e, 0); // delete
       }
     }
   }
@@ -570,7 +575,7 @@ dir_segment_accounted(int s, Vol *d, int offby, int *f, int *u, int *et, int *v,
   if (av)
     *av = agg_valid;
   if (as)
-    *as = used ? (int) (agg_size / used) : 0;
+    *as = used ? (int)(agg_size / used) : 0;
   ink_assert(d->buckets * DIR_DEPTH - (free + used + empty) <= offby);
   return d->buckets * DIR_DEPTH - (free + used + empty) <= offby;
 }
@@ -588,7 +593,7 @@ dir_free_entry(Dir *e, int s, Vol *d)
 }
 
 int
-dir_probe(CacheKey *key, Vol *d, Dir *result, Dir ** last_collision)
+dir_probe(CacheKey *key, Vol *d, Dir *result, Dir **last_collision)
 {
   ink_assert(d->mutex->thread_holding == this_ethread());
   int s = key->slice32(0) % d->segments;
@@ -624,14 +629,15 @@ Lagain:
           goto Lcont;
         }
         if (dir_valid(d, e)) {
-          DDebug("dir_probe_hit", "found %X %X vol %d bucket %d boffset %" PRId64 "", key->slice32(0), key->slice32(1), d->fd, b, dir_offset(e));
+          DDebug("dir_probe_hit", "found %X %X vol %d bucket %d boffset %" PRId64 "", key->slice32(0), key->slice32(1), d->fd, b,
+                 dir_offset(e));
           dir_assign(result, e);
           *last_collision = e;
 #if !TS_USE_INTERIM_CACHE
           ink_assert(dir_offset(e) * CACHE_BLOCK_SIZE < d->len);
 #endif
           return 1;
-        } else {                // delete the invalid entry
+        } else { // delete the invalid entry
           CACHE_DEC_DIR_USED(d->mutex);
           e = dir_delete_entry(e, p, s, d);
           continue;
@@ -642,7 +648,7 @@ Lagain:
       p = e;
       e = next_dir(e, seg);
     } while (e);
-  if (collision) {              // last collision no longer in the list, retry
+  if (collision) { // last collision no longer in the list, retry
     DDebug("cache_stats", "Incrementing dir collisions");
     CACHE_INC_DIR_COLLISIONS(d->mutex);
     collision = NULL;
@@ -706,9 +712,8 @@ Lfill:
   dir_set_tag(e, key->slice32(2));
   ink_assert(vol_offset(d, e) < (d->skip + d->len));
 #endif
-  DDebug("dir_insert",
-        "insert %p %X into vol %d bucket %d at %p tag %X %X boffset %" PRId64 "",
-         e, key->slice32(0), d->fd, bi, e, key->slice32(1), dir_tag(e), dir_offset(e));
+  DDebug("dir_insert", "insert %p %X into vol %d bucket %d at %p tag %X %X boffset %" PRId64 "", e, key->slice32(0), d->fd, bi, e,
+         key->slice32(1), dir_tag(e), dir_offset(e));
   CHECK_DIR(d);
   d->header->dirty = 1;
   CACHE_INC_DIR_USED(d->mutex);
@@ -733,7 +738,7 @@ dir_overwrite(CacheKey *key, Vol *d, Dir *dir, Dir *overwrite, bool must_overwri
   Vol *vol = d;
   CHECK_DIR(d);
 
-  ink_assert((unsigned int) dir_approx_size(dir) <= (unsigned int) (MAX_FRAG_SIZE + sizeofDoc));        // XXX - size should be unsigned
+  ink_assert((unsigned int)dir_approx_size(dir) <= (unsigned int)(MAX_FRAG_SIZE + sizeofDoc)); // XXX - size should be unsigned
 Lagain:
   // find entry to overwrite
   e = b;
@@ -784,9 +789,8 @@ Lfill:
   dir_assign_data(e, dir);
   dir_set_tag(e, t);
   ink_assert(vol_offset(d, e) < d->skip + d->len);
-  DDebug("dir_overwrite",
-        "overwrite %p %X into vol %d bucket %d at %p tag %X %X boffset %" PRId64 "",
-         e, key->slice32(0), d->fd, bi, e, t, dir_tag(e), dir_offset(e));
+  DDebug("dir_overwrite", "overwrite %p %X into vol %d bucket %d at %p tag %X %X boffset %" PRId64 "", e, key->slice32(0), d->fd,
+         bi, e, t, dir_tag(e), dir_offset(e));
   CHECK_DIR(d);
   d->header->dirty = 1;
   return res;
@@ -836,7 +840,7 @@ dir_delete(CacheKey *key, Vol *d, Dir *del)
 // Lookaside Cache
 
 int
-dir_lookaside_probe(CacheKey *key, Vol *d, Dir *result, EvacuationBlock ** eblock)
+dir_lookaside_probe(CacheKey *key, Vol *d, Dir *result, EvacuationBlock **eblock)
 {
   ink_assert(d->mutex->thread_holding == this_ethread());
   int i = key->slice32(3) % LOOKASIDE_SIZE;
@@ -861,7 +865,8 @@ int
 dir_lookaside_insert(EvacuationBlock *eblock, Vol *d, Dir *to)
 {
   CacheKey *key = &eblock->evac_frags.earliest_key;
-  DDebug("dir_lookaside", "insert %X %X, offset %d phase %d", key->slice32(0), key->slice32(1), (int) dir_offset(to), (int) dir_phase(to));
+  DDebug("dir_lookaside", "insert %X %X, offset %d phase %d", key->slice32(0), key->slice32(1), (int)dir_offset(to),
+         (int)dir_phase(to));
   ink_assert(d->mutex->thread_holding == this_ethread());
   int i = key->slice32(3) % LOOKASIDE_SIZE;
   EvacuationBlock *b = new_EvacuationBlock(d->mutex->thread_holding);
@@ -884,8 +889,8 @@ dir_lookaside_fixup(CacheKey *key, Vol *d)
   while (b) {
     if (b->evac_frags.key == *key) {
       int res = dir_overwrite(key, d, &b->new_dir, &b->dir, false);
-      DDebug("dir_lookaside", "fixup %X %X offset %" PRId64" phase %d %d",
-            key->slice32(0), key->slice32(1), dir_offset(&b->new_dir), dir_phase(&b->new_dir), res);
+      DDebug("dir_lookaside", "fixup %X %X offset %" PRId64 " phase %d %d", key->slice32(0), key->slice32(1),
+             dir_offset(&b->new_dir), dir_phase(&b->new_dir), res);
 #if TS_USE_INTERIM_CACHE == 1
       int64_t o = dir_get_offset(&b->dir), n = dir_get_offset(&b->new_dir);
 #else
@@ -911,8 +916,8 @@ dir_lookaside_cleanup(Vol *d)
     while (b) {
       if (!dir_valid(d, &b->new_dir)) {
         EvacuationBlock *nb = b->link.next;
-        DDebug("dir_lookaside", "cleanup %X %X cleaned up",
-              b->evac_frags.earliest_key.slice32(0), b->evac_frags.earliest_key.slice32(1));
+        DDebug("dir_lookaside", "cleanup %X %X cleaned up", b->evac_frags.earliest_key.slice32(0),
+               b->evac_frags.earliest_key.slice32(1));
         d->lookaside[i].remove(b);
         free_CacheVC(b->earliest_evacuator);
         free_EvacuationBlock(b, d->mutex->thread_holding);
@@ -920,7 +925,8 @@ dir_lookaside_cleanup(Vol *d)
         goto Lagain;
       }
       b = b->link.next;
-    Lagain:;
+    Lagain:
+      ;
     }
   }
 }
@@ -933,8 +939,8 @@ dir_lookaside_remove(CacheKey *key, Vol *d)
   EvacuationBlock *b = d->lookaside[i].head;
   while (b) {
     if (b->evac_frags.key == *key) {
-      DDebug("dir_lookaside", "remove %X %X offset %" PRId64" phase %d",
-            key->slice32(0), key->slice32(1), dir_offset(&b->new_dir), dir_phase(&b->new_dir));
+      DDebug("dir_lookaside", "remove %X %X offset %" PRId64 " phase %d", key->slice32(0), key->slice32(1), dir_offset(&b->new_dir),
+             dir_phase(&b->new_dir));
       d->lookaside[i].remove(b);
       free_EvacuationBlock(b, d->mutex->thread_holding);
       return;
@@ -1006,7 +1012,7 @@ sync_cache_dir_on_shutdown(void)
   char *buf = NULL;
   size_t buflen = 0;
 
-  EThread *t = (EThread *) 0xdeadbeef;
+  EThread *t = (EThread *)0xdeadbeef;
   for (int i = 0; i < gnvol; i++) {
     // the process is going down, do a blocking call
     // dont release the volume's lock, there could
@@ -1037,8 +1043,7 @@ sync_cache_dir_on_shutdown(void)
       // set write limit
       d->header->agg_pos = d->header->write_pos + d->agg_buf_pos;
 
-      int r = pwrite(d->fd, d->agg_buffer, d->agg_buf_pos,
-                     d->header->write_pos);
+      int r = pwrite(d->fd, d->agg_buffer, d->agg_buf_pos, d->header->write_pos);
       if (r != d->agg_buf_pos) {
         ink_assert(!"flusing agg buffer failed");
         continue;
@@ -1104,7 +1109,6 @@ sync_cache_dir_on_shutdown(void)
 }
 
 
-
 int
 CacheSync::mainEvent(int event, Event *e)
 {
@@ -1129,7 +1133,7 @@ Lrestart:
     return EVENT_CONT;
   }
 
-  Vol* vol = gvol[vol_idx]; // must be named "vol" to make STAT macros work.
+  Vol *vol = gvol[vol_idx]; // must be named "vol" to make STAT macros work.
 
   if (event == AIO_EVENT_DONE) {
     // AIO Thread
@@ -1150,7 +1154,8 @@ Lrestart:
       return EVENT_CONT;
     }
 
-    if (!vol->dir_sync_in_progress) start_time = ink_get_hrtime();
+    if (!vol->dir_sync_in_progress)
+      start_time = ink_get_hrtime();
 
     // recompute hit_evacuate_window
     vol->hit_evacuate_window = (vol->data_blocks * cache_config_hit_evacuate_percent) / 100;
@@ -1200,7 +1205,7 @@ Lrestart:
       vol->footer->sync_serial = vol->header->sync_serial;
 #if TS_USE_INTERIM_CACHE == 1
       for (int j = 0; j < vol->num_interim_vols; j++) {
-          vol->interim_vols[j].header->sync_serial = vol->header->sync_serial;
+        vol->interim_vols[j].header->sync_serial = vol->header->sync_serial;
       }
 #endif
       CHECK_DIR(d);
@@ -1247,11 +1252,10 @@ Ldone:
 //
 
 #define HIST_DEPTH 8
-int
-Vol::dir_check(bool /* fix ATS_UNUSED */) // TODO: we should eliminate this parameter ?
+int Vol::dir_check(bool /* fix ATS_UNUSED */) // TODO: we should eliminate this parameter ?
 {
-  int hist[HIST_DEPTH + 1] = { 0 };
-  int *shist = (int*)ats_malloc(segments * sizeof(int));
+  int hist[HIST_DEPTH + 1] = {0};
+  int *shist = (int *)ats_malloc(segments * sizeof(int));
   memset(shist, 0, segments * sizeof(int));
   int j;
   int stale = 0, full = 0, empty = 0;
@@ -1298,21 +1302,24 @@ Vol::dir_check(bool /* fix ATS_UNUSED */) // TODO: we should eliminate this para
   for (j = 0; j < HIST_DEPTH; j++) {
     printf("%8d ", hist[j]);
     if ((j % 4 == 3))
-      printf("\n" "                           ");
+      printf("\n"
+             "                           ");
   }
   printf("\n");
   printf("        Segment Fullness:  ");
   for (j = 0; j < segments; j++) {
     printf("%5d ", shist[j]);
     if ((j % 5 == 4))
-      printf("\n" "                           ");
+      printf("\n"
+             "                           ");
   }
   printf("\n");
   printf("        Freelist Fullness: ");
   for (j = 0; j < segments; j++) {
     printf("%5d ", dir_freelist_length(this, j));
     if ((j % 5 == 4))
-      printf("\n" "                           ");
+      printf("\n"
+             "                           ");
   }
   printf("\n");
   ats_free(shist);
@@ -1325,74 +1332,30 @@ Vol::dir_check(bool /* fix ATS_UNUSED */) // TODO: we should eliminate this para
 
 // permutation table
 uint8_t CacheKey_next_table[256] = {
-  21, 53, 167, 51, 255, 126, 241, 151,
-  115, 66, 155, 174, 226, 215, 80, 188,
-  12, 95, 8, 24, 162, 201, 46, 104,
-  79, 172, 39, 68, 56, 144, 142, 217,
-  101, 62, 14, 108, 120, 90, 61, 47,
-  132, 199, 110, 166, 83, 125, 57, 65,
-  19, 130, 148, 116, 228, 189, 170, 1,
-  71, 0, 252, 184, 168, 177, 88, 229,
-  242, 237, 183, 55, 13, 212, 240, 81,
-  211, 74, 195, 205, 147, 93, 30, 87,
-  86, 63, 135, 102, 233, 106, 118, 163,
-  107, 10, 243, 136, 160, 119, 43, 161,
-  206, 141, 203, 78, 175, 36, 37, 140,
-  224, 197, 185, 196, 248, 84, 122, 73,
-  152, 157, 18, 225, 219, 145, 45, 2,
-  171, 249, 173, 32, 143, 137, 69, 41,
-  35, 89, 33, 98, 179, 214, 114, 231,
-  251, 123, 180, 194, 29, 3, 178, 31,
-  192, 164, 15, 234, 26, 230, 91, 156,
-  5, 16, 23, 244, 58, 50, 4, 67,
-  134, 165, 60, 235, 250, 7, 138, 216,
-  49, 139, 191, 154, 11, 52, 239, 59,
-  111, 245, 9, 64, 25, 129, 247, 232,
-  190, 246, 109, 22, 112, 210, 221, 181,
-  92, 169, 48, 100, 193, 77, 103, 133,
-  70, 220, 207, 223, 176, 204, 76, 186,
-  200, 208, 158, 182, 227, 222, 131, 38,
-  187, 238, 6, 34, 253, 128, 146, 44,
-  94, 127, 105, 153, 113, 20, 27, 124,
-  159, 17, 72, 218, 96, 149, 213, 42,
-  28, 254, 202, 40, 117, 82, 97, 209,
-  54, 236, 121, 75, 85, 150, 99, 198,
+  21,  53,  167, 51,  255, 126, 241, 151, 115, 66,  155, 174, 226, 215, 80,  188, 12,  95,  8,   24,  162, 201, 46,  104, 79,  172,
+  39,  68,  56,  144, 142, 217, 101, 62,  14,  108, 120, 90,  61,  47,  132, 199, 110, 166, 83,  125, 57,  65,  19,  130, 148, 116,
+  228, 189, 170, 1,   71,  0,   252, 184, 168, 177, 88,  229, 242, 237, 183, 55,  13,  212, 240, 81,  211, 74,  195, 205, 147, 93,
+  30,  87,  86,  63,  135, 102, 233, 106, 118, 163, 107, 10,  243, 136, 160, 119, 43,  161, 206, 141, 203, 78,  175, 36,  37,  140,
+  224, 197, 185, 196, 248, 84,  122, 73,  152, 157, 18,  225, 219, 145, 45,  2,   171, 249, 173, 32,  143, 137, 69,  41,  35,  89,
+  33,  98,  179, 214, 114, 231, 251, 123, 180, 194, 29,  3,   178, 31,  192, 164, 15,  234, 26,  230, 91,  156, 5,   16,  23,  244,
+  58,  50,  4,   67,  134, 165, 60,  235, 250, 7,   138, 216, 49,  139, 191, 154, 11,  52,  239, 59,  111, 245, 9,   64,  25,  129,
+  247, 232, 190, 246, 109, 22,  112, 210, 221, 181, 92,  169, 48,  100, 193, 77,  103, 133, 70,  220, 207, 223, 176, 204, 76,  186,
+  200, 208, 158, 182, 227, 222, 131, 38,  187, 238, 6,   34,  253, 128, 146, 44,  94,  127, 105, 153, 113, 20,  27,  124, 159, 17,
+  72,  218, 96,  149, 213, 42,  28,  254, 202, 40,  117, 82,  97,  209, 54,  236, 121, 75,  85,  150, 99,  198,
 };
 
 // permutation table
 uint8_t CacheKey_prev_table[256] = {
-  57, 55, 119, 141, 158, 152, 218, 165,
-  18, 178, 89, 172, 16, 68, 34, 146,
-  153, 233, 114, 48, 229, 0, 187, 154,
-  19, 180, 148, 230, 240, 140, 78, 143,
-  123, 130, 219, 128, 101, 102, 215, 26,
-  243, 127, 239, 94, 223, 118, 22, 39,
-  194, 168, 157, 3, 173, 1, 248, 67,
-  28, 46, 156, 175, 162, 38, 33, 81,
-  179, 47, 9, 159, 27, 126, 200, 56,
-  234, 111, 73, 251, 206, 197, 99, 24,
-  14, 71, 245, 44, 109, 252, 80, 79,
-  62, 129, 37, 150, 192, 77, 224, 17,
-  236, 246, 131, 254, 195, 32, 83, 198,
-  23, 226, 85, 88, 35, 186, 42, 176,
-  188, 228, 134, 8, 51, 244, 86, 93,
-  36, 250, 110, 137, 231, 45, 5, 225,
-  221, 181, 49, 214, 40, 199, 160, 82,
-  91, 125, 166, 169, 103, 97, 30, 124,
-  29, 117, 222, 76, 50, 237, 253, 7,
-  112, 227, 171, 10, 151, 113, 210, 232,
-  92, 95, 20, 87, 145, 161, 43, 2,
-  60, 193, 54, 120, 25, 122, 11, 100,
-  204, 61, 142, 132, 138, 191, 211, 66,
-  59, 106, 207, 216, 15, 53, 184, 170,
-  144, 196, 139, 74, 107, 105, 255, 41,
-  208, 21, 242, 98, 205, 75, 96, 202,
-  209, 247, 189, 72, 69, 238, 133, 13,
-  167, 31, 235, 116, 201, 190, 213, 203,
-  104, 115, 12, 212, 52, 63, 149, 135,
-  183, 84, 147, 163, 249, 65, 217, 174,
-  70, 6, 64, 90, 155, 177, 185, 182,
-  108, 121, 164, 136, 58, 220, 241, 4,
+  57,  55,  119, 141, 158, 152, 218, 165, 18,  178, 89,  172, 16,  68,  34,  146, 153, 233, 114, 48,  229, 0,   187, 154, 19,  180,
+  148, 230, 240, 140, 78,  143, 123, 130, 219, 128, 101, 102, 215, 26,  243, 127, 239, 94,  223, 118, 22,  39,  194, 168, 157, 3,
+  173, 1,   248, 67,  28,  46,  156, 175, 162, 38,  33,  81,  179, 47,  9,   159, 27,  126, 200, 56,  234, 111, 73,  251, 206, 197,
+  99,  24,  14,  71,  245, 44,  109, 252, 80,  79,  62,  129, 37,  150, 192, 77,  224, 17,  236, 246, 131, 254, 195, 32,  83,  198,
+  23,  226, 85,  88,  35,  186, 42,  176, 188, 228, 134, 8,   51,  244, 86,  93,  36,  250, 110, 137, 231, 45,  5,   225, 221, 181,
+  49,  214, 40,  199, 160, 82,  91,  125, 166, 169, 103, 97,  30,  124, 29,  117, 222, 76,  50,  237, 253, 7,   112, 227, 171, 10,
+  151, 113, 210, 232, 92,  95,  20,  87,  145, 161, 43,  2,   60,  193, 54,  120, 25,  122, 11,  100, 204, 61,  142, 132, 138, 191,
+  211, 66,  59,  106, 207, 216, 15,  53,  184, 170, 144, 196, 139, 74,  107, 105, 255, 41,  208, 21,  242, 98,  205, 75,  96,  202,
+  209, 247, 189, 72,  69,  238, 133, 13,  167, 31,  235, 116, 201, 190, 213, 203, 104, 115, 12,  212, 52,  63,  149, 135, 183, 84,
+  147, 163, 249, 65,  217, 174, 70,  6,   64,  90,  155, 177, 185, 182, 108, 121, 164, 136, 58,  220, 241, 4,
 };
 
 //
@@ -1408,7 +1371,7 @@ regress_rand_init(unsigned int i)
 void
 regress_rand_CacheKey(CacheKey *key)
 {
-  unsigned int *x = (unsigned int *) key;
+  unsigned int *x = (unsigned int *)key;
   for (int i = 0; i < 4; i++)
     x[i] = next_rand(&regress_rand_seed);
 }
@@ -1417,7 +1380,7 @@ void
 dir_corrupt_bucket(Dir *b, int s, Vol *d)
 {
   // coverity[dont_call]
-  int l = ((int) (dir_bucket_length(b, s, d) * drand48()));
+  int l = ((int)(dir_bucket_length(b, s, d) * drand48()));
   Dir *e = b;
   Dir *seg = dir_segment(s, d);
   for (int i = 0; i < l; i++) {
@@ -1427,7 +1390,8 @@ dir_corrupt_bucket(Dir *b, int s, Vol *d)
   dir_set_next(e, dir_to_offset(e, seg));
 }
 
-EXCLUSIVE_REGRESSION_TEST(Cache_dir) (RegressionTest *t, int /* atype ATS_UNUSED */, int *status) {
+EXCLUSIVE_REGRESSION_TEST(Cache_dir)(RegressionTest *t, int /* atype ATS_UNUSED */, int *status)
+{
   ink_hrtime ttime;
   int ret = REGRESSION_TEST_PASSED;
 
@@ -1470,7 +1434,7 @@ EXCLUSIVE_REGRESSION_TEST(Cache_dir) (RegressionTest *t, int /* atype ATS_UNUSED
     inserted++;
   }
   rprintf(t, "inserted: %d\n", inserted);
-  if ((unsigned int) (inserted - free) > 1)
+  if ((unsigned int)(inserted - free) > 1)
     ret = REGRESSION_TEST_FAILED;
 
   // test delete
@@ -1481,7 +1445,7 @@ EXCLUSIVE_REGRESSION_TEST(Cache_dir) (RegressionTest *t, int /* atype ATS_UNUSED
   dir_clean_segment(s, d);
   int newfree = dir_freelist_length(d, s);
   rprintf(t, "newfree: %d\n", newfree);
-  if ((unsigned int) (newfree - free) > 1)
+  if ((unsigned int)(newfree - free) > 1)
     ret = REGRESSION_TEST_FAILED;
 
   // test insert-delete
@@ -1493,10 +1457,10 @@ EXCLUSIVE_REGRESSION_TEST(Cache_dir) (RegressionTest *t, int /* atype ATS_UNUSED
     dir_insert(&key, d, &dir);
   }
   uint64_t us = (ink_get_hrtime_internal() - ttime) / HRTIME_USECOND;
-  //On windows us is sometimes 0. I don't know why.
-  //printout the insert rate only if its not 0
+  // On windows us is sometimes 0. I don't know why.
+  // printout the insert rate only if its not 0
   if (us)
-    rprintf(t, "insert rate = %d / second\n", (int) ((newfree * (uint64_t) 1000000) / us));
+    rprintf(t, "insert rate = %d / second\n", (int)((newfree * (uint64_t)1000000) / us));
   regress_rand_init(13);
   ttime = ink_get_hrtime_internal();
   for (i = 0; i < newfree; i++) {
@@ -1506,10 +1470,10 @@ EXCLUSIVE_REGRESSION_TEST(Cache_dir) (RegressionTest *t, int /* atype ATS_UNUSED
       ret = REGRESSION_TEST_FAILED;
   }
   us = (ink_get_hrtime_internal() - ttime) / HRTIME_USECOND;
-  //On windows us is sometimes 0. I don't know why.
-  //printout the probe rate only if its not 0
+  // On windows us is sometimes 0. I don't know why.
+  // printout the probe rate only if its not 0
   if (us)
-    rprintf(t, "probe rate = %d / second\n", (int) ((newfree * (uint64_t) 1000000) / us));
+    rprintf(t, "probe rate = %d / second\n", (int)((newfree * (uint64_t)1000000) / us));
 
 
   for (int c = 0; c < vol_direntries(d) * 0.75; c++) {

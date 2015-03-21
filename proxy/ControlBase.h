@@ -39,7 +39,8 @@ class HttpRequestData;
 class Tokenizer;
 struct matcher_line;
 
-class ControlBase {
+class ControlBase
+{
 public:
   struct Modifier {
     enum Type {
@@ -52,41 +53,41 @@ public:
       MOD_TIME,
       MOD_SRC_IP,
       MOD_IPORT,
-      MOD_TAG
+      MOD_TAG,
     };
     /// Destructor - force virtual.
     virtual ~Modifier();
     /// Return the modifier type.
     virtual Type type() const;
     /// Return the name for the modifier type.
-    virtual char const* name() const = 0;
+    virtual char const *name() const = 0;
     /** Test if the modifier matches the request.
         @return @c true if the request is matched, @c false if not.
     */
-    virtual bool check(
-      HttpRequestData* req ///< Request to check.
-    ) const = 0;
+    virtual bool check(HttpRequestData *req ///< Request to check.
+                       ) const = 0;
     /// Print the mod information.
-    virtual void print(
-      FILE* f ///< Output stream.
-    ) const = 0;
+    virtual void print(FILE *f ///< Output stream.
+                       ) const = 0;
   };
 
   ControlBase();
   ~ControlBase();
-  const char *ProcessModifiers(matcher_line * line_info);
-  bool CheckModifiers(HttpRequestData * request_data);
-  bool CheckForMatch(HttpRequestData * request_data, int last_number);
+  const char *ProcessModifiers(matcher_line *line_info);
+  bool CheckModifiers(HttpRequestData *request_data);
+  bool CheckForMatch(HttpRequestData *request_data, int last_number);
   void Print();
   int line_num;
-  Modifier* findModOfType(Modifier::Type t) const;
+  Modifier *findModOfType(Modifier::Type t) const;
+
 protected:
   /// Get the text for the Scheme modifier, if any.
   /// @return The text if present, 0 otherwise.
   /// @internal Ugly but it's the only place external access is needed.
-  char const* getSchemeModText() const;
+  char const *getSchemeModText() const;
+
 private:
-  typedef Vec<Modifier*> Array;
+  typedef Vec<Modifier *> Array;
   Array _mods;
   const char *ProcessSrcIp(char *val, void **opaque_ptr);
   const char *ProcessTimeOfDay(char *val, void **opaque_ptr);
@@ -96,16 +97,14 @@ private:
   void clear();
 };
 
-inline
-ControlBase::ControlBase()
-  : line_num(0) {
+inline ControlBase::ControlBase() : line_num(0)
+{
 }
 
 inline bool
-ControlBase::CheckForMatch(HttpRequestData * request_data, int last_number) {
-  return (last_number<0 || last_number> this->line_num)
-    && this->CheckModifiers(request_data)
-    ;
+ControlBase::CheckForMatch(HttpRequestData *request_data, int last_number)
+{
+  return (last_number < 0 || last_number > this->line_num) && this->CheckModifiers(request_data);
 }
 
 #endif

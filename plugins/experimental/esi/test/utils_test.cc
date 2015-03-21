@@ -34,7 +34,9 @@ using std::endl;
 using std::string;
 using namespace EsiLib;
 
-void checkAttributes(const char *check_id, const AttributeList &attr_list, const char *attr_info[]) {
+void
+checkAttributes(const char *check_id, const AttributeList &attr_list, const char *attr_info[])
+{
   cout << check_id << ": checking attributes" << endl;
   AttributeList::const_iterator iter = attr_list.begin();
   for (int i = 0; attr_info[i]; i += 2, ++iter) {
@@ -48,7 +50,8 @@ void checkAttributes(const char *check_id, const AttributeList &attr_list, const
 
 pthread_key_t threadKey;
 
-int main()
+int
+main()
 {
   pthread_key_create(&threadKey, NULL);
   Utils::init(&Debug, &Error);
@@ -57,51 +60,48 @@ int main()
 
   string str1("pos=SKY spaceid=12123");
   Utils::parseAttributes(str1, attr_list);
-  const char *expected_strs1[] = { "pos", "SKY", "spaceid", "12123", 0 };
+  const char *expected_strs1[] = {"pos", "SKY", "spaceid", "12123", 0};
   checkAttributes("test1", attr_list, expected_strs1);
 
   string str2("  pos=SKY	  spaceid=12123 ");
   Utils::parseAttributes(str2, attr_list);
-  const char *expected_strs2[] = { "pos", "SKY", "spaceid", "12123", 0 };
+  const char *expected_strs2[] = {"pos", "SKY", "spaceid", "12123", 0};
   checkAttributes("test2", attr_list, expected_strs2);
 
   string str3("  pos=\"SKY\"	  spaceid=12123 ");
   Utils::parseAttributes(str3, attr_list);
-  const char *expected_strs3[] = { "pos", "SKY", "spaceid", "12123", 0 };
+  const char *expected_strs3[] = {"pos", "SKY", "spaceid", "12123", 0};
   checkAttributes("test3", attr_list, expected_strs3);
 
   string str4("  pos=\" SKY BAR \"	  spaceid=12123 blah=\"foo");
   Utils::parseAttributes(str4, attr_list);
-  const char *expected_strs4[] = { "pos", " SKY BAR ", "spaceid", "12123", 0 };
+  const char *expected_strs4[] = {"pos", " SKY BAR ", "spaceid", "12123", 0};
   checkAttributes("test4", attr_list, expected_strs4);
 
   string str5("a=\"b & xyz\"&c=d&e=f&g=h\"");
   Utils::parseAttributes(str5, attr_list, "&");
-  const char *expected_strs5[] = { "a", "b & xyz", "c", "d", "e", "f", 0 };
+  const char *expected_strs5[] = {"a", "b & xyz", "c", "d", "e", "f", 0};
   checkAttributes("test5", attr_list, expected_strs5);
 
   string str6("abcd=&");
   Utils::parseAttributes(str6, attr_list, "&");
-  const char *expected_strs6[] = { 0 };
+  const char *expected_strs6[] = {0};
   checkAttributes("test6", attr_list, expected_strs6);
 
   string str7("&& abcd=& key1=val1 &=val2&val3&&");
   Utils::parseAttributes(str7, attr_list, "&");
-  const char *expected_strs7[] = { "key1", "val1", 0 };
+  const char *expected_strs7[] = {"key1", "val1", 0};
   checkAttributes("test7", attr_list, expected_strs7);
 
   const char *escaped_sequence = "{\\\"site-attribute\\\":\\\"content=no_expandable; ajax_cert_expandable\\\"}";
   string str8("pos=\"FPM1\" spaceid=96584352 extra_mime=\"");
   str8.append(escaped_sequence);
   str8.append("\" foo=bar a=\"b\"");
-  const char *expected_strs8[] = {
-    "pos", "FPM1", "spaceid", "96584352", "extra_mime", escaped_sequence, "foo", "bar", "a", "b", 0
-  };
+  const char *expected_strs8[] = {"pos", "FPM1", "spaceid", "96584352", "extra_mime", escaped_sequence, "foo", "bar", "a", "b", 0};
   Utils::parseAttributes(str8, attr_list);
   checkAttributes("test8", attr_list, expected_strs8);
 
-  assert(Utils::unescape(escaped_sequence) ==
-         "{\"site-attribute\":\"content=no_expandable; ajax_cert_expandable\"}");
+  assert(Utils::unescape(escaped_sequence) == "{\"site-attribute\":\"content=no_expandable; ajax_cert_expandable\"}");
   assert(Utils::unescape(0) == "");
   assert(Utils::unescape("\\", 0) == "");
   assert(Utils::unescape("\\hello\"", 3) == "he");
@@ -110,10 +110,9 @@ int main()
 
   string str9("n1=v1; n2=v2;, n3=v3, ;n4=v4=extrav4");
   Utils::parseAttributes(str9, attr_list, ";,");
-  const char *expected_strs9[] = { "n1", "v1", "n2", "v2", "n3", "v3", "n4", "v4=extrav4", 0 };
+  const char *expected_strs9[] = {"n1", "v1", "n2", "v2", "n3", "v3", "n4", "v4=extrav4", 0};
   checkAttributes("test9", attr_list, expected_strs9);
 
   cout << endl << "All tests passed!" << endl;
   return 0;
 }
-

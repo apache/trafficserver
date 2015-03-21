@@ -48,18 +48,18 @@ ping_reply_ClusterFunction(ClusterHandler *ch, void *data, int len)
   //
   // Pass back the data.
   //
-  PingMessage *msg = (PingMessage *) data;
+  PingMessage *msg = (PingMessage *)data;
   msg->fn(ch, msg->data, (len - msg->sizeof_fixedlen_msg()));
 }
 
 void
-machine_list_ClusterFunction(ClusterHandler * from, void *data, int len)
+machine_list_ClusterFunction(ClusterHandler *from, void *data, int len)
 {
-  (void) from;
-  ClusterMessageHeader *mh = (ClusterMessageHeader *) data;
-  MachineListMessage *m = (MachineListMessage *) data;
+  (void)from;
+  ClusterMessageHeader *mh = (ClusterMessageHeader *)data;
+  MachineListMessage *m = (MachineListMessage *)data;
 
-  if (mh->GetMsgVersion() != MachineListMessage::MACHINE_LIST_MESSAGE_VERSION) {        ////////////////////////////////////////////////
+  if (mh->GetMsgVersion() != MachineListMessage::MACHINE_LIST_MESSAGE_VERSION) { ////////////////////////////////////////////////
     // Convert from old to current message format
     ////////////////////////////////////////////////
     ink_release_assert(!"machine_list_ClusterFunction() bad msg version");
@@ -95,10 +95,10 @@ machine_list_ClusterFunction(ClusterHandler * from, void *data, int len)
 void
 close_channel_ClusterFunction(ClusterHandler *ch, void *data, int len)
 {
-  ClusterMessageHeader *mh = (ClusterMessageHeader *) data;
-  CloseMessage *m = (CloseMessage *) data;
+  ClusterMessageHeader *mh = (ClusterMessageHeader *)data;
+  CloseMessage *m = (CloseMessage *)data;
 
-  if (mh->GetMsgVersion() != CloseMessage::CLOSE_CHAN_MESSAGE_VERSION) {        ////////////////////////////////////////////////
+  if (mh->GetMsgVersion() != CloseMessage::CLOSE_CHAN_MESSAGE_VERSION) { ////////////////////////////////////////////////
     // Convert from old to current message format
     ////////////////////////////////////////////////
     ink_release_assert(!"close_channel_ClusterFunction() bad msg version");
@@ -109,7 +109,7 @@ close_channel_ClusterFunction(ClusterHandler *ch, void *data, int len)
   //
   // Close the remote side of a VC connection (remote node is originator)
   //
-  ink_assert(len >= (int) sizeof(CloseMessage));
+  ink_assert(len >= (int)sizeof(CloseMessage));
   if (!ch || !ch->channels)
     return;
   ClusterVConnection *vc = ch->channels[m->channel];
@@ -131,27 +131,25 @@ test_ClusterFunction(ClusterHandler *ch, void *data, int len)
 }
 
 CacheVC *
-ChannelToCacheWriteVC(ClusterHandler * ch, int channel, uint32_t channel_seqno, ClusterVConnection ** cluster_vc)
+ChannelToCacheWriteVC(ClusterHandler *ch, int channel, uint32_t channel_seqno, ClusterVConnection **cluster_vc)
 {
   EThread *thread = this_ethread();
   ProxyMutex *mutex = thread->mutex;
 
   ClusterVConnection *cvc = ch->channels[channel];
-  if (!VALID_CHANNEL(cvc)
-      || (channel_seqno != cvc->token.sequence_number)
-      || (cvc->read.vio.op != VIO::READ)) {
+  if (!VALID_CHANNEL(cvc) || (channel_seqno != cvc->token.sequence_number) || (cvc->read.vio.op != VIO::READ)) {
     CLUSTER_INCREMENT_DYN_STAT(cluster_setdata_no_CLUSTERVC_STAT);
     return NULL;
   }
   // Tunneling from cluster to cache (remote write).
   // Get cache VC pointer.
 
-  OneWayTunnel *owt = (OneWayTunnel *) cvc->read.vio._cont;
+  OneWayTunnel *owt = (OneWayTunnel *)cvc->read.vio._cont;
   if (!owt) {
     CLUSTER_INCREMENT_DYN_STAT(CLUSTER_SETDATA_NO_TUNNEL_STAT);
     return NULL;
   }
-  CacheVC *cache_vc = (CacheVC *) owt->vioTarget->vc_server;
+  CacheVC *cache_vc = (CacheVC *)owt->vioTarget->vc_server;
   if (!cache_vc) {
     CLUSTER_INCREMENT_DYN_STAT(CLUSTER_SETDATA_NO_CACHEVC_STAT);
     return NULL;
@@ -176,14 +174,15 @@ set_channel_data_ClusterFunction(ClusterHandler *ch, void *tdata, int tlen)
   ic->len = tlen;
   ic->alloc_data();
 
-  data = ic->data + sizeof(int32_t);      // free_remote_data expects d+sizeof(int32_t)
+  data = ic->data + sizeof(int32_t); // free_remote_data expects d+sizeof(int32_t)
   memcpy(data, tdata, tlen);
   len = tlen;
 
-  ClusterMessageHeader *mh = (ClusterMessageHeader *) data;
-  SetChanDataMessage *m = (SetChanDataMessage *) data;
+  ClusterMessageHeader *mh = (ClusterMessageHeader *)data;
+  SetChanDataMessage *m = (SetChanDataMessage *)data;
 
-  if (mh->GetMsgVersion() != SetChanDataMessage::SET_CHANNEL_DATA_MESSAGE_VERSION) {    ////////////////////////////////////////////////
+  if (mh->GetMsgVersion() !=
+      SetChanDataMessage::SET_CHANNEL_DATA_MESSAGE_VERSION) { ////////////////////////////////////////////////
     // Convert from old to current message format
     ////////////////////////////////////////////////
     ink_release_assert(!"set_channel_data_ClusterFunction() bad msg version");
@@ -202,27 +201,25 @@ set_channel_data_ClusterFunction(ClusterHandler *ch, void *tdata, int tlen)
     }
     // Unmarshal data.
     switch (m->data_type) {
-    case CACHE_DATA_HTTP_INFO:
-      {
-        char *p = (char *) m + SetChanDataMessage::sizeof_fixedlen_msg();
+    case CACHE_DATA_HTTP_INFO: {
+      char *p = (char *)m + SetChanDataMessage::sizeof_fixedlen_msg();
 
-        IOBufferBlock *block_ref = ic->get_block();
-        res = HTTPInfo::unmarshal(p, len, block_ref);
-        ink_assert(res > 0);
+      IOBufferBlock *block_ref = ic->get_block();
+      res = HTTPInfo::unmarshal(p, len, block_ref);
+      ink_assert(res > 0);
 
-        CacheHTTPInfo h;
-        h.get_handle((char *) &m->data[0], len);
-        h.set_buffer_reference(block_ref);
-        cache_vc->set_http_info(&h);
-        ic->freeall();
-        break;
-      }
-    default:
-      {
-        ink_release_assert(!"set_channel_data_ClusterFunction bad CacheDataType");
-      }
-    }                           // End of switch
-    ++cvc->n_recv_set_data_msgs;        // note received messages
+      CacheHTTPInfo h;
+      h.get_handle((char *)&m->data[0], len);
+      h.set_buffer_reference(block_ref);
+      cache_vc->set_http_info(&h);
+      ic->freeall();
+      break;
+    }
+    default: {
+      ink_release_assert(!"set_channel_data_ClusterFunction bad CacheDataType");
+    }
+    }                            // End of switch
+    ++cvc->n_recv_set_data_msgs; // note received messages
 
   } else {
     ic->freeall();
@@ -241,7 +238,7 @@ post_setchan_send_ClusterFunction(ClusterHandler *ch, void *data, int /* len ATS
   // Decrement Cluster VC n_set_data_msgs to allow transmission of
   // initial open_write data after (n_set_data_msgs == 0).
 
-  SetChanDataMessage *m = (SetChanDataMessage *) data;
+  SetChanDataMessage *m = (SetChanDataMessage *)data;
   ClusterVConnection *cvc;
 
   if (ch) {
@@ -260,15 +257,15 @@ void
 set_channel_pin_ClusterFunction(ClusterHandler *ch, void *data, int /* len ATS_UNUSED */)
 {
   // This isn't used. /leif
-  //EThread *thread = this_ethread();
-  //ProxyMutex *mutex = thread->mutex;
+  // EThread *thread = this_ethread();
+  // ProxyMutex *mutex = thread->mutex;
 
   // We are called on the ET_CLUSTER thread.
 
-  ClusterMessageHeader *mh = (ClusterMessageHeader *) data;
-  SetChanPinMessage *m = (SetChanPinMessage *) data;
+  ClusterMessageHeader *mh = (ClusterMessageHeader *)data;
+  SetChanPinMessage *m = (SetChanPinMessage *)data;
 
-  if (mh->GetMsgVersion() != SetChanPinMessage::SET_CHANNEL_PIN_MESSAGE_VERSION) {      ////////////////////////////////////////////////
+  if (mh->GetMsgVersion() != SetChanPinMessage::SET_CHANNEL_PIN_MESSAGE_VERSION) { ////////////////////////////////////////////////
     // Convert from old to current message format
     ////////////////////////////////////////////////
     ink_release_assert(!"set_channel_pin_ClusterFunction() bad msg version");
@@ -277,7 +274,7 @@ set_channel_pin_ClusterFunction(ClusterHandler *ch, void *data, int /* len ATS_U
   if (m->NeedByteSwap())
     m->SwapBytes();
 
-  ClusterVConnection *cvc = NULL;       // Just to make GCC happy
+  ClusterVConnection *cvc = NULL; // Just to make GCC happy
   CacheVC *cache_vc;
 
   if (ch != 0) {
@@ -286,7 +283,7 @@ set_channel_pin_ClusterFunction(ClusterHandler *ch, void *data, int /* len ATS_U
       cache_vc->set_pin_in_cache(m->pin_time);
     }
     // cvc is always set in ChannelToCacheWriteVC, so need to check it
-    ++cvc->n_recv_set_data_msgs;        // note received messages
+    ++cvc->n_recv_set_data_msgs; // note received messages
   }
 }
 
@@ -301,7 +298,7 @@ post_setchan_pin_ClusterFunction(ClusterHandler *ch, void *data, int /* len ATS_
   // Decrement Cluster VC n_set_data_msgs to allow transmission of
   // initial open_write data after (n_set_data_msgs == 0).
 
-  SetChanPinMessage *m = (SetChanPinMessage *) data;
+  SetChanPinMessage *m = (SetChanPinMessage *)data;
   ClusterVConnection *cvc;
 
   if (ch) {
@@ -320,15 +317,16 @@ void
 set_channel_priority_ClusterFunction(ClusterHandler *ch, void *data, int /* len ATS_UNUSED */)
 {
   // This isn't used.
-  //EThread *thread = this_ethread();
-  //ProxyMutex *mutex = thread->mutex;
+  // EThread *thread = this_ethread();
+  // ProxyMutex *mutex = thread->mutex;
 
   // We are called on the ET_CLUSTER thread.
 
-  ClusterMessageHeader *mh = (ClusterMessageHeader *) data;
-  SetChanPriorityMessage *m = (SetChanPriorityMessage *) data;
+  ClusterMessageHeader *mh = (ClusterMessageHeader *)data;
+  SetChanPriorityMessage *m = (SetChanPriorityMessage *)data;
 
-  if (mh->GetMsgVersion() != SetChanPriorityMessage::SET_CHANNEL_PRIORITY_MESSAGE_VERSION) {    ////////////////////////////////////////////////
+  if (mh->GetMsgVersion() !=
+      SetChanPriorityMessage::SET_CHANNEL_PRIORITY_MESSAGE_VERSION) { ////////////////////////////////////////////////
     // Convert from old to current message format
     ////////////////////////////////////////////////
     ink_release_assert(!"set_channel_priority_ClusterFunction() bad msg version");
@@ -336,7 +334,7 @@ set_channel_priority_ClusterFunction(ClusterHandler *ch, void *data, int /* len 
   if (m->NeedByteSwap())
     m->SwapBytes();
 
-  ClusterVConnection *cvc = NULL;       // Just to make GCC happy
+  ClusterVConnection *cvc = NULL; // Just to make GCC happy
   CacheVC *cache_vc;
 
   if (ch != 0) {
@@ -345,7 +343,7 @@ set_channel_priority_ClusterFunction(ClusterHandler *ch, void *data, int /* len 
       cache_vc->set_disk_io_priority(m->disk_priority);
     }
     // cvc is always set in ChannelToCacheWriteVC, so need to check it
-    ++cvc->n_recv_set_data_msgs;        // note received messages
+    ++cvc->n_recv_set_data_msgs; // note received messages
   }
 }
 
@@ -361,7 +359,7 @@ post_setchan_priority_ClusterFunction(ClusterHandler *ch, void *data, int /* len
   // Decrement Cluster VC n_set_data_msgs to allow transmission of
   // initial open_write data after (n_set_data_msgs == 0).
 
-  SetChanPriorityMessage *m = (SetChanPriorityMessage *) data;
+  SetChanPriorityMessage *m = (SetChanPriorityMessage *)data;
   ClusterVConnection *cvc;
 
   if (ch) {

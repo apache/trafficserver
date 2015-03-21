@@ -31,7 +31,7 @@
 #include <GeoIP.h>
 #endif
 
-extern GeoIP* gGI;
+extern GeoIP *gGI;
 
 // See http://www.iso.org/iso/english_country_names_and_code_elements
 // Maxmind allocates 253 country codes,even though there are only 248 according to the above
@@ -42,31 +42,37 @@ static const int NUM_ISO_CODES = 253;
 class Acl
 {
 public:
-  Acl()
-    : _allow(true), _added_tokens(0)
-  { }
+  Acl() : _allow(true), _added_tokens(0) {}
 
-  virtual ~Acl()
-  { }
+  virtual ~Acl() {}
 
   // These have to be implemented for each ACL type
-  virtual void read_regex(const char* fn) = 0;
-  virtual void process_args(int argc, char* argv[]) = 0;
+  virtual void read_regex(const char *fn) = 0;
+  virtual void process_args(int argc, char *argv[]) = 0;
   virtual bool eval(TSRemapRequestInfo *rri, TSHttpTxn txnp) const = 0;
 
-  virtual void add_token(const std::string& /* str */) { ++_added_tokens; }
-  void set_allow(bool allow) { _allow = allow; }
+  virtual void
+  add_token(const std::string & /* str */)
+  {
+    ++_added_tokens;
+  }
+  void
+  set_allow(bool allow)
+  {
+    _allow = allow;
+  }
 
-  void send_html(TSHttpTxn txnp) const
+  void
+  send_html(TSHttpTxn txnp) const
   {
     if (_html.size() > 0) {
-      char* msg = TSstrdup(_html.c_str());
+      char *msg = TSstrdup(_html.c_str());
 
       TSHttpTxnErrorBodySet(txnp, msg, _html.size(), NULL); // Defaults to text/html
     }
   }
 
-  void read_html(const char* fn);
+  void read_html(const char *fn);
 
 protected:
   std::string _html;
@@ -79,15 +85,26 @@ protected:
 class RegexAcl
 {
 public:
-  RegexAcl(Acl* acl)
-    : _next(NULL), _acl(acl)
-  { }
+  RegexAcl(Acl *acl) : _next(NULL), _acl(acl) {}
 
-  const std::string& get_regex() const { return _regex_s; };
-  bool eval(TSRemapRequestInfo *rri, TSHttpTxn txnp) const { return _acl->eval(rri, txnp); }
-  RegexAcl* next() const { return _next; }
+  const std::string &
+  get_regex() const
+  {
+    return _regex_s;
+  };
+  bool
+  eval(TSRemapRequestInfo *rri, TSHttpTxn txnp) const
+  {
+    return _acl->eval(rri, txnp);
+  }
+  RegexAcl *
+  next() const
+  {
+    return _next;
+  }
 
-  bool match(const char* str, int len) const
+  bool
+  match(const char *str, int len) const
   {
     // TODO: Not 100% sure this is absolutely correct, and not sure why adding
     // PCRE_NOTEMPTY to the options doesn't work ...
@@ -96,16 +113,16 @@ public:
     return (pcre_exec(_rex, _extra, str, len, 0, PCRE_NOTEMPTY, NULL, 0) != -1);
   }
 
-  void append(RegexAcl* ra);
-  bool parse_line(const char* filename, const std::string& line, int lineno);
+  void append(RegexAcl *ra);
+  bool parse_line(const char *filename, const std::string &line, int lineno);
 
 private:
-  bool compile(const std::string& str, const char* filename, int lineno);
+  bool compile(const std::string &str, const char *filename, int lineno);
   std::string _regex_s;
-  pcre* _rex;
-  pcre_extra* _extra;
+  pcre *_rex;
+  pcre_extra *_extra;
   RegexAcl *_next;
-  Acl* _acl;
+  Acl *_acl;
 };
 
 
@@ -113,18 +130,14 @@ private:
 class CountryAcl : public Acl
 {
 public:
-  CountryAcl()
-    : _regexes(NULL)
-  {
-    memset(_iso_country_codes, 0, sizeof(_iso_country_codes));
-  }
+  CountryAcl() : _regexes(NULL) { memset(_iso_country_codes, 0, sizeof(_iso_country_codes)); }
 
-  void read_regex(const char* fn);
-  void process_args(int argc, char* argv[]);
+  void read_regex(const char *fn);
+  void process_args(int argc, char *argv[]);
   bool eval(TSRemapRequestInfo *rri, TSHttpTxn txnp) const;
-  void add_token(const std::string& str);
+  void add_token(const std::string &str);
 
 private:
   bool _iso_country_codes[NUM_ISO_CODES];
-  RegexAcl* _regexes;
+  RegexAcl *_regexes;
 };

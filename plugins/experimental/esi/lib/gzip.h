@@ -42,19 +42,21 @@ static const char OS_TYPE = 3; // Unix
 static const int BUF_SIZE = 1 << 15; // 32k buffer
 
 
-namespace EsiLib {
-
+namespace EsiLib
+{
 struct ByteBlock {
   const char *data;
   int data_len;
-  ByteBlock(const char *d = 0, int d_len = 0) : data(d), data_len(d_len) { };
+  ByteBlock(const char *d = 0, int d_len = 0) : data(d), data_len(d_len){};
 };
 
 typedef std::list<ByteBlock> ByteBlockList;
 
-bool gzip(const ByteBlockList& blocks, std::string &cdata);
+bool gzip(const ByteBlockList &blocks, std::string &cdata);
 
-inline bool gzip(const char *data, int data_len, std::string &cdata) {
+inline bool
+gzip(const char *data, int data_len, std::string &cdata)
+{
   ByteBlockList blocks;
   blocks.push_back(ByteBlock(data, data_len));
   return gzip(blocks, cdata);
@@ -63,7 +65,6 @@ inline bool gzip(const char *data, int data_len, std::string &cdata) {
 typedef std::list<std::string> BufferList;
 
 bool gunzip(const char *data, int data_len, BufferList &buf_list);
-
 }
 
 #endif // _GZIP_H

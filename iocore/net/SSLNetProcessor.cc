@@ -31,24 +31,21 @@
 // Global Data
 //
 
-SSLNetProcessor   ssl_NetProcessor;
-NetProcessor&     sslNetProcessor = ssl_NetProcessor;
-EventType         SSLNetProcessor::ET_SSL;
+SSLNetProcessor ssl_NetProcessor;
+NetProcessor &sslNetProcessor = ssl_NetProcessor;
+EventType SSLNetProcessor::ET_SSL;
 
 #ifdef HAVE_OPENSSL_OCSP_STAPLING
-struct OCSPContinuation:public Continuation
-{
-  int mainEvent(int /* event ATS_UNUSED */, Event* /* e ATS_UNUSED */)
+struct OCSPContinuation : public Continuation {
+  int
+  mainEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   {
     ocsp_update();
 
     return EVENT_CONT;
   }
 
-  OCSPContinuation():Continuation(new_ProxyMutex())
-  {
-    SET_HANDLER(&OCSPContinuation::mainEvent);
-  }
+  OCSPContinuation() : Continuation(new_ProxyMutex()) { SET_HANDLER(&OCSPContinuation::mainEvent); }
 };
 #endif /* HAVE_OPENSSL_OCSP_STAPLING */
 
@@ -68,7 +65,8 @@ SSLNetProcessor::start(int number_of_ssl_threads, size_t stacksize)
   SSLInitializeLibrary();
   SSLConfig::startup();
 
-  if (!SSLCertificateConfig::startup()) return -1;
+  if (!SSLCertificateConfig::startup())
+    return -1;
 
   // Acquire a SSLConfigParams instance *after* we start SSL up.
   SSLConfig::scoped_config params;
@@ -112,13 +110,13 @@ SSLNetProcessor::start(int number_of_ssl_threads, size_t stacksize)
 NetAccept *
 SSLNetProcessor::createNetAccept()
 {
-  return (NetAccept *) new SSLNetAccept;
+  return (NetAccept *)new SSLNetAccept;
 }
 
 // Virtual function allows etype to be upgraded to ET_SSL for SSLNetProcessor.  Does
 // nothing for NetProcessor
 void
-SSLNetProcessor::upgradeEtype(EventType & etype)
+SSLNetProcessor::upgradeEtype(EventType &etype)
 {
   if (etype == ET_NET) {
     etype = ET_SSL;
@@ -141,8 +139,7 @@ SSLNetProcessor::allocate_vc(EThread *t)
   return vc;
 }
 
-SSLNetProcessor::SSLNetProcessor()
-  : client_ctx(NULL)
+SSLNetProcessor::SSLNetProcessor() : client_ctx(NULL)
 {
 }
 

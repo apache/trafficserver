@@ -30,7 +30,7 @@
 
 // This is the core "parser", parsing rule sets
 void
-Parser::preprocess(std::vector<std::string>& tokens)
+Parser::preprocess(std::vector<std::string> &tokens)
 {
   // Special case for "conditional" values
   if (tokens[0].substr(0, 2) == "%{") {
@@ -71,7 +71,7 @@ Parser::preprocess(std::vector<std::string>& tokens)
 
   // The last token might be the "flags" section
   if (tokens.size() > 0) {
-    std::string m  = tokens[tokens.size() - 1];
+    std::string m = tokens[tokens.size() - 1];
 
     if (!m.empty() && (m[0] == '[')) {
       if (m[m.size() - 1] == ']') {
@@ -79,7 +79,7 @@ Parser::preprocess(std::vector<std::string>& tokens)
         if (m.find_first_of(',') != std::string::npos) {
           std::istringstream iss(m);
           std::string t;
-          while(getline(iss, t, ',')) {
+          while (getline(iss, t, ',')) {
             _mods.push_back(t);
           }
         } else {
@@ -95,8 +95,7 @@ Parser::preprocess(std::vector<std::string>& tokens)
 }
 
 
-Parser::Parser(const std::string& line) :
-  _cond(false), _empty(false)
+Parser::Parser(const std::string &line) : _cond(false), _empty(false)
 {
   TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Parser");
 
@@ -110,12 +109,12 @@ Parser::Parser(const std::string& line) :
 
     for (unsigned int i = 0; i < tmp.size(); i++) {
       if (tmp[i] == '\\') {
-        tmp.erase(i,1);
+        tmp.erase(i, 1);
         i++;
       }
 
       if (tmp[i] == '\"') {
-        tmp.erase(i,1);
+        tmp.erase(i, 1);
 
         if (in_quotes) {
           in_quotes = false;

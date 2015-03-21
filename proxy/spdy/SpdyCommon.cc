@@ -28,13 +28,13 @@
 spdylay_session_callbacks spdy_callbacks;
 
 // statistic names
-RecRawStatBlock* spdy_rsb; ///< Container for statistics.
+RecRawStatBlock *spdy_rsb; ///< Container for statistics.
 
-static char const * const SPDY_STAT_CURRENT_CLIENT_SESSION_NAME = "proxy.process.spdy.current_client_sessions";
-static char const * const SPDY_STAT_CURRENT_CLIENT_STREAM_NAME = "proxy.process.spdy.current_client_streams";
-static char const * const SPDY_STAT_TOTAL_CLIENT_STREAM_NAME = "proxy.process.spdy.total_client_streams";
-static char const * const SPDY_STAT_TOTAL_TRANSACTIONS_TIME_NAME = "proxy.process.spdy.total_transactions_time";
-static char const * const SPDY_STAT_TOTAL_CLIENT_CONNECTION_NAME = "proxy.process.spdy.total_client_connections";
+static char const *const SPDY_STAT_CURRENT_CLIENT_SESSION_NAME = "proxy.process.spdy.current_client_sessions";
+static char const *const SPDY_STAT_CURRENT_CLIENT_STREAM_NAME = "proxy.process.spdy.current_client_streams";
+static char const *const SPDY_STAT_TOTAL_CLIENT_STREAM_NAME = "proxy.process.spdy.total_client_streams";
+static char const *const SPDY_STAT_TOTAL_TRANSACTIONS_TIME_NAME = "proxy.process.spdy.total_transactions_time";
+static char const *const SPDY_STAT_TOTAL_CLIENT_CONNECTION_NAME = "proxy.process.spdy.total_client_connections";
 
 // Configurations
 uint32_t spdy_max_concurrent_streams = 100;
@@ -46,7 +46,7 @@ string
 http_date(time_t t)
 {
   char buf[32];
-  tm* tms = gmtime(&t); // returned struct is statically allocated.
+  tm *tms = gmtime(&t); // returned struct is statically allocated.
   size_t r = strftime(buf, sizeof(buf), "%a, %d %b %Y %H:%M:%S GMT", tms);
   return std::string(&buf[0], &buf[r]);
 }
@@ -102,7 +102,7 @@ SpdyNV::SpdyNV(TSFetchSM fetch_sm)
     valid_response = false;
   }
 
-  nv = (const char **)malloc((2*nr_fields + 5) * sizeof(char *));
+  nv = (const char **)malloc((2 * nr_fields + 5) * sizeof(char *));
   TSReleaseAssert(nv);
 
   //
@@ -118,7 +118,8 @@ SpdyNV::SpdyNV(TSFetchSM fetch_sm)
   len = sizeof(status) - i;
   len = value_len > len ? len : value_len;
   strncpy(&status[i], value, len);
-  status[len + i] = '\0';;
+  status[len + i] = '\0';
+  ;
 
   i = 0;
   nv[i++] = ":version";
@@ -171,7 +172,7 @@ SpdyNV::SpdyNV(TSFetchSM fetch_sm)
     p += value_len;
     *p++ = '\0';
 
-next:
+  next:
     next_loc = TSMimeHdrFieldNext(bufp, loc, field_loc);
     TSHandleMLocRelease(bufp, loc, field_loc);
     field_loc = next_loc;

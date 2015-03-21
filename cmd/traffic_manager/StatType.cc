@@ -36,18 +36,15 @@
 #include "ink_hrtime.h"
 #include "WebOverview.h"
 
-bool StatError = false;         // global error flag
-bool StatDebug = false;         // global debug flag
+bool StatError = false; // global error flag
+bool StatDebug = false; // global debug flag
 
 /**
  * StatExprToken()
  * ---------------
  */
 StatExprToken::StatExprToken()
-  : m_arith_symbol('\0'),
-    m_token_name(NULL),
-    m_token_type(RECD_NULL),
-    m_sum_var(false), m_node_var(true)
+  : m_arith_symbol('\0'), m_token_name(NULL), m_token_type(RECD_NULL), m_sum_var(false), m_node_var(true)
 {
   RecDataClear(RECD_NULL, &m_token_value);
   RecDataClear(RECD_NULL, &m_token_value_max);
@@ -61,7 +58,7 @@ StatExprToken::StatExprToken()
  * ---------------------
  */
 void
-StatExprToken::copy(const StatExprToken & source)
+StatExprToken::copy(const StatExprToken &source)
 {
   m_arith_symbol = source.m_arith_symbol;
 
@@ -96,7 +93,6 @@ StatExprToken::copy(const StatExprToken & source)
 void
 StatExprToken::assignTokenName(const char *name)
 {
-
   if (isdigit(name[0])) {
     // numerical constant
     m_token_name = ats_strdup("CONSTANT");
@@ -115,19 +111,19 @@ StatExprToken::assignTokenName(const char *name)
     // assign pre-defined constant in here
     // constant will be stored as RecFloat type.
     if (!strcmp(m_token_name, "CONSTANT")) {
-      m_token_value.rec_float = (RecFloat) atof(name);
+      m_token_value.rec_float = (RecFloat)atof(name);
     } else if (!strcmp(m_token_name, "$BYTES_TO_MB_SCALE")) {
-      m_token_value.rec_float = (RecFloat) BYTES_TO_MB_SCALE;
+      m_token_value.rec_float = (RecFloat)BYTES_TO_MB_SCALE;
     } else if (!strcmp(m_token_name, "$MBIT_TO_KBIT_SCALE")) {
-      m_token_value.rec_float = (RecFloat) MBIT_TO_KBIT_SCALE;
+      m_token_value.rec_float = (RecFloat)MBIT_TO_KBIT_SCALE;
     } else if (!strcmp(m_token_name, "$SECOND_TO_MILLISECOND_SCALE")) {
-      m_token_value.rec_float = (RecFloat) SECOND_TO_MILLISECOND_SCALE;
+      m_token_value.rec_float = (RecFloat)SECOND_TO_MILLISECOND_SCALE;
     } else if (!strcmp(m_token_name, "$PCT_TO_INTPCT_SCALE")) {
-      m_token_value.rec_float = (RecFloat) PCT_TO_INTPCT_SCALE;
+      m_token_value.rec_float = (RecFloat)PCT_TO_INTPCT_SCALE;
     } else if (!strcmp(m_token_name, "$HRTIME_SECOND")) {
-      m_token_value.rec_float = (RecFloat) HRTIME_SECOND;
+      m_token_value.rec_float = (RecFloat)HRTIME_SECOND;
     } else if (!strcmp(m_token_name, "$BYTES_TO_MBIT_SCALE")) {
-      m_token_value.rec_float = (RecFloat) BYTES_TO_MBIT_SCALE;
+      m_token_value.rec_float = (RecFloat)BYTES_TO_MBIT_SCALE;
     } else {
       mgmt_log(stderr, "[StatPro] ERROR: Undefined constant: %s\n", m_token_name);
       StatError = true;
@@ -146,7 +142,8 @@ StatExprToken::assignTokenName(const char *name)
  * Do some token type conversion if necessary. Return true
  * if the token type is recognizable; false otherwise.
  */
-bool StatExprToken::assignTokenType()
+bool
+StatExprToken::assignTokenType()
 {
   ink_assert(m_token_name != NULL);
   m_token_type = varType(m_token_name);
@@ -202,13 +199,13 @@ StatExprToken::precedence()
   switch (m_arith_symbol) {
   case '(':
     return 4;
-  case '^':                    // fall through
+  case '^': // fall through
   case '!':
     return 3;
-  case '*':                    // fall through
+  case '*': // fall through
   case '/':
     return 2;
-  case '+':                    // fall through
+  case '+': // fall through
   case '-':
     return 1;
   default:
@@ -225,7 +222,8 @@ StatExprToken::precedence()
  * or larger than max, then the error value is assigned. If no
  * error value is assigned, either min. or max. is assigned.
  */
-bool StatExprToken::statVarSet(RecDataT type, RecData value)
+bool
+StatExprToken::statVarSet(RecDataT type, RecData value)
 {
   RecData converted_value;
 
@@ -274,8 +272,7 @@ bool StatExprToken::statVarSet(RecDataT type, RecData value)
 
   if (RecDataCmp(m_token_type, converted_value, m_token_value_min) < 0) {
     value = m_token_value_min;
-  }
-  else if (RecDataCmp(m_token_type, converted_value, m_token_value_max) > 0) {
+  } else if (RecDataCmp(m_token_type, converted_value, m_token_value_max) > 0) {
     value = m_token_value_max;
   }
 
@@ -284,15 +281,14 @@ bool StatExprToken::statVarSet(RecDataT type, RecData value)
 
 
 /***********************************************************************
-					    	 StatExprList
+                                                 StatExprList
  **********************************************************************/
 
 /**
  * StatExprList::StatExprList()
  * ----------------------------
  */
-StatExprList::StatExprList()
- : m_size(0)
+StatExprList::StatExprList() : m_size(0)
 {
 }
 
@@ -307,7 +303,7 @@ StatExprList::clean()
   StatExprToken *temp = NULL;
 
   while ((temp = m_tokenList.dequeue())) {
-    delete(temp);
+    delete (temp);
     m_size -= 1;
   }
   ink_assert(m_size == 0);
@@ -315,7 +311,7 @@ StatExprList::clean()
 
 
 void
-StatExprList::enqueue(StatExprToken * entry)
+StatExprList::enqueue(StatExprToken *entry)
 {
   ink_assert(entry);
   m_tokenList.enqueue(entry);
@@ -324,7 +320,7 @@ StatExprList::enqueue(StatExprToken * entry)
 
 
 void
-StatExprList::push(StatExprToken * entry)
+StatExprList::push(StatExprToken *entry)
 {
   ink_assert(entry);
   m_tokenList.push(entry);
@@ -339,7 +335,7 @@ StatExprList::dequeue()
     return NULL;
   }
   m_size -= 1;
-  return (StatExprToken *) m_tokenList.dequeue();
+  return (StatExprToken *)m_tokenList.dequeue();
 }
 
 
@@ -375,7 +371,7 @@ StatExprList::first()
 
 
 StatExprToken *
-StatExprList::next(StatExprToken * current)
+StatExprList::next(StatExprToken *current)
 {
   if (!current) {
     return NULL;
@@ -392,7 +388,7 @@ StatExprList::next(StatExprToken * current)
 void
 StatExprList::print(const char *prefix)
 {
-  for (StatExprToken * token = first(); token; token = next(token)) {
+  for (StatExprToken *token = first(); token; token = next(token)) {
     token->print(prefix);
   }
 }
@@ -411,7 +407,7 @@ StatExprList::count()
 
 
 /***********************************************************************
- 					    	     StatObject
+                                                     StatObject
  **********************************************************************/
 
 
@@ -421,32 +417,16 @@ StatExprList::count()
  */
 
 StatObject::StatObject()
- : m_id(1),
-   m_debug(false),
-   m_expr_string(NULL),
-   m_node_dest(NULL),
-   m_cluster_dest(NULL),
-   m_expression(NULL),
-   m_postfix(NULL),
-   m_last_update(-1),
-   m_current_time(-1), m_update_interval(-1),
-   m_stats_max(FLT_MAX), m_stats_min(FLT_MIN),
-   m_has_max(false), m_has_min(false), m_has_delta(false)
+  : m_id(1), m_debug(false), m_expr_string(NULL), m_node_dest(NULL), m_cluster_dest(NULL), m_expression(NULL), m_postfix(NULL),
+    m_last_update(-1), m_current_time(-1), m_update_interval(-1), m_stats_max(FLT_MAX), m_stats_min(FLT_MIN), m_has_max(false),
+    m_has_min(false), m_has_delta(false)
 {
 }
 
 
 StatObject::StatObject(unsigned identifier)
-  : m_id(identifier),
-    m_debug(false),
-    m_expr_string(NULL),
-    m_node_dest(NULL),
-    m_cluster_dest(NULL),
-    m_expression(NULL),
-    m_postfix(NULL),
-    m_last_update(-1),
-    m_current_time(-1), m_update_interval(-1),
-    m_stats_max(FLT_MAX), m_stats_min(FLT_MIN),
+  : m_id(identifier), m_debug(false), m_expr_string(NULL), m_node_dest(NULL), m_cluster_dest(NULL), m_expression(NULL),
+    m_postfix(NULL), m_last_update(-1), m_current_time(-1), m_update_interval(-1), m_stats_max(FLT_MAX), m_stats_min(FLT_MIN),
     m_has_max(false), m_has_min(false), m_has_delta(false)
 {
 }
@@ -490,14 +470,12 @@ StatObject::assignDst(const char *str, bool m_node_var, bool m_sum_var)
 
   // Set max/min value
   if (m_has_max)
-    RecDataSetFromFloat(statToken->m_token_type, &statToken->m_token_value_max,
-                        m_stats_max);
+    RecDataSetFromFloat(statToken->m_token_type, &statToken->m_token_value_max, m_stats_max);
   else
     RecDataSetMax(statToken->m_token_type, &statToken->m_token_value_max);
 
   if (m_has_min)
-    RecDataSetFromFloat(statToken->m_token_type, &statToken->m_token_value_min,
-                        m_stats_min);
+    RecDataSetFromFloat(statToken->m_token_type, &statToken->m_token_value_min, m_stats_min);
   else
     RecDataSetMin(statToken->m_token_type, &statToken->m_token_value_min);
 
@@ -536,11 +514,9 @@ StatObject::assignExpr(char *str)
   m_expression = new StatExprList();
 
   while (token) {
-
     statToken = new StatExprToken();
 
     if (isOperator(token[0])) {
-
       statToken->m_arith_symbol = token[0];
       ink_assert(statToken->m_token_name == NULL);
 
@@ -549,20 +525,17 @@ StatObject::assignExpr(char *str)
       }
 
     } else {
-
       ink_assert(statToken->m_arith_symbol == '\0');
 
       // delta
       if (token[0] == '#') {
-
-        token += 1;             // skip '#'
+        token += 1; // skip '#'
         statToken->m_token_value_delta = new StatDataSamples();
-        statToken->m_token_value_delta->previous_time = (ink_hrtime) 0;
-        statToken->m_token_value_delta->current_time = (ink_hrtime) 0;
+        statToken->m_token_value_delta->previous_time = (ink_hrtime)0;
+        statToken->m_token_value_delta->current_time = (ink_hrtime)0;
         statToken->m_token_value_delta->data_type = RECD_NULL;
         RecDataClear(RECD_NULL, &statToken->m_token_value_delta->previous_value);
         RecDataClear(RECD_NULL, &statToken->m_token_value_delta->current_value);
-
       }
 
       statToken->assignTokenName(token);
@@ -570,16 +543,13 @@ StatObject::assignExpr(char *str)
       if (StatDebug) {
         Debug(MODULE_INIT, "\toperand:  ->%s<-\n", token);
       }
-
     }
 
     token = exprTok.iterNext(&exprTok_state);
     m_expression->enqueue(statToken);
-
   }
 
   infix2postfix();
-
 }
 
 
@@ -603,7 +573,7 @@ StatObject::infix2postfix()
     curToken = m_expression->dequeue();
 
     if (!isOperator(curToken->m_arith_symbol)) {
-      //printf("I2P~: enqueue %s\n", curToken->m_token_name);
+      // printf("I2P~: enqueue %s\n", curToken->m_token_name);
       m_postfix->enqueue(curToken);
 
     } else {
@@ -612,33 +582,33 @@ StatObject::infix2postfix()
       if (curToken->m_arith_symbol == '(') {
         stack.push(curToken);
       } else if (curToken->m_arith_symbol == ')') {
-        tempToken = (StatExprToken *) stack.pop();
+        tempToken = (StatExprToken *)stack.pop();
 
         while (tempToken->m_arith_symbol != '(') {
-          //printf("I2P@: enqueue %c\n", tempToken->m_arith_symbol);
+          // printf("I2P@: enqueue %c\n", tempToken->m_arith_symbol);
           m_postfix->enqueue(tempToken);
-          tempToken = (StatExprToken *) stack.pop();
+          tempToken = (StatExprToken *)stack.pop();
         }
 
         // Free up memory for ')'
-        delete(curToken);
-        delete(tempToken);
+        delete (curToken);
+        delete (tempToken);
 
       } else {
         if (stack.count() == 0) {
           stack.push(curToken);
         } else {
-          tempToken = (StatExprToken *) stack.top();
+          tempToken = (StatExprToken *)stack.top();
 
           while ((tempToken->m_arith_symbol != '(') && (tempToken->precedence() >= curToken->precedence())) {
-            tempToken = (StatExprToken *) stack.pop();  // skip the (
-            //printf("I2P$: enqueue %c\n", tempToken->m_arith_symbol);
+            tempToken = (StatExprToken *)stack.pop(); // skip the (
+            // printf("I2P$: enqueue %c\n", tempToken->m_arith_symbol);
             m_postfix->enqueue(tempToken);
             if (stack.count() == 0) {
               break;
             }
-            tempToken = (StatExprToken *) stack.top();
-          }                     // while
+            tempToken = (StatExprToken *)stack.top();
+          } // while
 
           stack.push(curToken);
         }
@@ -647,13 +617,13 @@ StatObject::infix2postfix()
   }
 
   while (stack.count() > 0) {
-    tempToken = (StatExprToken *) stack.pop();
-    //printf("I2P?: enqueue %c\n", tempToken->m_arith_symbol);
+    tempToken = (StatExprToken *)stack.pop();
+    // printf("I2P?: enqueue %c\n", tempToken->m_arith_symbol);
     m_postfix->enqueue(tempToken);
   }
 
   // dump infix expression
-  delete(m_expression);
+  delete (m_expression);
   m_expression = NULL;
 }
 
@@ -664,7 +634,8 @@ StatObject::infix2postfix()
  *
  *
  */
-RecData StatObject::NodeStatEval(RecDataT *result_type, bool cluster)
+RecData
+StatObject::NodeStatEval(RecDataT *result_type, bool cluster)
 {
   StatExprList stack;
   StatExprToken *left = NULL;
@@ -678,7 +649,7 @@ RecData StatObject::NodeStatEval(RecDataT *result_type, bool cluster)
 
   /* Express checkout lane -- Stat. object with on 1 source variable */
   if (m_postfix->count() == 1) {
-    StatExprToken * src = m_postfix->top();
+    StatExprToken *src = m_postfix->top();
 
     // in librecords, not all statistics are register at initialization
     // must assign proper type if it is undefined.
@@ -696,16 +667,13 @@ RecData StatObject::NodeStatEval(RecDataT *result_type, bool cluster)
         RecDataClear(src->m_token_type, &tempValue);
       }
     } else {
-      if (!overviewGenerator->varClusterDataFromName(src->m_token_type,
-                                                     src->m_token_name,
-                                                     &tempValue)) {
+      if (!overviewGenerator->varClusterDataFromName(src->m_token_type, src->m_token_name, &tempValue)) {
         RecDataClear(src->m_token_type, &tempValue);
       }
     }
   } else {
-
     /* standard postfix evaluation */
-    for (StatExprToken * token = m_postfix->first(); token; token = m_postfix->next(token)) {
+    for (StatExprToken *token = m_postfix->first(); token; token = m_postfix->next(token)) {
       /* carbon-copy the token. */
       curToken = new StatExprToken();
       curToken->copy(*token);
@@ -727,9 +695,9 @@ RecData StatObject::NodeStatEval(RecDataT *result_type, bool cluster)
         result = StatBinaryEval(left, curToken->m_arith_symbol, right, cluster);
 
         stack.push(result);
-        delete(curToken);
-        delete(left);
-        delete(right);
+        delete (curToken);
+        delete (left);
+        delete (right);
       }
     }
 
@@ -744,7 +712,6 @@ RecData StatObject::NodeStatEval(RecDataT *result_type, bool cluster)
   }
 
   return tempValue;
-
 }
 
 
@@ -754,7 +721,8 @@ RecData StatObject::NodeStatEval(RecDataT *result_type, bool cluster)
  *
  *
  */
-RecData StatObject::ClusterStatEval(RecDataT *result_type)
+RecData
+StatObject::ClusterStatEval(RecDataT *result_type)
 {
   /* Sanity check */
   ink_assert(m_cluster_dest && !m_cluster_dest->m_node_var);
@@ -765,9 +733,7 @@ RecData StatObject::ClusterStatEval(RecDataT *result_type)
   } else {
     RecData tempValue;
 
-    if (!overviewGenerator->varClusterDataFromName(m_node_dest->m_token_type,
-                                                   m_node_dest->m_token_name,
-                                                   &tempValue)) {
+    if (!overviewGenerator->varClusterDataFromName(m_node_dest->m_token_type, m_node_dest->m_token_name, &tempValue)) {
       *result_type = RECD_NULL;
       RecDataClear(*result_type, &tempValue);
     }
@@ -796,7 +762,7 @@ RecData StatObject::ClusterStatEval(RecDataT *result_type)
  *     otherwise simply set right->m_token_value with varFloatFromName.
  */
 void
-StatObject::setTokenValue(StatExprToken * token, bool cluster)
+StatObject::setTokenValue(StatExprToken *token, bool cluster)
 {
   if (token->m_token_name) {
     // it is NOT an intermediate value
@@ -811,36 +777,30 @@ StatObject::setTokenValue(StatExprToken * token, bool cluster)
       token->m_token_value.rec_int = (m_current_time - m_last_update);
       break;
 
-    case RECD_INT:             // fallthought
+    case RECD_INT: // fallthought
     case RECD_COUNTER:
     case RECD_FLOAT:
       if (cluster) {
-        if (!overviewGenerator->varClusterDataFromName(token->m_token_type,
-                                                       token->m_token_name,
-                                                       &(token->m_token_value)))
-        {
+        if (!overviewGenerator->varClusterDataFromName(token->m_token_type, token->m_token_name, &(token->m_token_value))) {
           RecDataClear(token->m_token_type, &token->m_token_value);
         }
       } else {
         if (token->m_token_value_delta) {
-          token->m_token_value =
-            token->m_token_value_delta->diff_value(token->m_token_name);
+          token->m_token_value = token->m_token_value_delta->diff_value(token->m_token_name);
         } else {
-          if (!varDataFromName(token->m_token_type, token->m_token_name,
-                               &(token->m_token_value))) {
+          if (!varDataFromName(token->m_token_type, token->m_token_name, &(token->m_token_value))) {
             RecDataClear(token->m_token_type, &token->m_token_value);
           }
-        }                       // delta?
-      }                         // cluster?
+        } // delta?
+      }   // cluster?
       break;
 
     default:
       if (StatDebug) {
-        Debug(MODULE, "Unrecognized token \"%s\" of type %d.\n",
-              token->m_token_name, token->m_token_type);
+        Debug(MODULE, "Unrecognized token \"%s\" of type %d.\n", token->m_token_name, token->m_token_type);
       }
-    }                           // switch
-  }                             // m_token_name?
+    } // switch
+  }   // m_token_name?
 }
 
 
@@ -855,15 +815,14 @@ StatObject::setTokenValue(StatExprToken * token, bool cluster)
  * - (3) cluster variable
  * - (4) an immediate value
  */
-StatExprToken *StatObject::StatBinaryEval(StatExprToken * left, char op,
-                                          StatExprToken * right, bool cluster)
+StatExprToken *
+StatObject::StatBinaryEval(StatExprToken *left, char op, StatExprToken *right, bool cluster)
 {
   RecData l, r;
   StatExprToken *result = new StatExprToken();
   result->m_token_type = RECD_INT;
 
-  if (left->m_token_type == RECD_NULL
-      && right->m_token_type == RECD_NULL) {
+  if (left->m_token_type == RECD_NULL && right->m_token_type == RECD_NULL) {
     return result;
   }
 
@@ -886,8 +845,7 @@ StatExprToken *StatObject::StatBinaryEval(StatExprToken * left, char op,
        * as result type. It's may lead to loss of precision when do
        * conversion, be careful!
        */
-      if (right->m_token_type == RECD_FLOAT
-          || right->m_token_type == RECD_CONST) {
+      if (right->m_token_type == RECD_FLOAT || right->m_token_type == RECD_CONST) {
         result->m_token_type = right->m_token_type;
       }
       break;
@@ -906,13 +864,12 @@ StatExprToken *StatObject::StatBinaryEval(StatExprToken * left, char op,
   RecDataClear(RECD_NULL, &l);
   RecDataClear(RECD_NULL, &r);
 
-  if (left->m_token_type == right->m_token_type ) {
+  if (left->m_token_type == right->m_token_type) {
     l = left->m_token_value;
     r = right->m_token_value;
   } else if (result->m_token_type != left->m_token_type) {
     if (left->m_token_type != RECD_NULL) {
-      ink_assert(result->m_token_type == RECD_FLOAT
-                 || result->m_token_type == RECD_CONST);
+      ink_assert(result->m_token_type == RECD_FLOAT || result->m_token_type == RECD_CONST);
 
       l.rec_float = (RecFloat)left->m_token_value.rec_int;
     }
@@ -921,8 +878,7 @@ StatExprToken *StatObject::StatBinaryEval(StatExprToken * left, char op,
   } else {
     l = left->m_token_value;
     if (right->m_token_type != RECD_NULL) {
-      ink_assert(result->m_token_type == RECD_FLOAT
-                 || result->m_token_type == RECD_CONST);
+      ink_assert(result->m_token_type == RECD_FLOAT || result->m_token_type == RECD_CONST);
 
       r.rec_float = (RecFloat)right->m_token_value.rec_int;
     }
@@ -979,11 +935,10 @@ StatExprToken *StatObject::StatBinaryEval(StatExprToken * left, char op,
 
 
 /***********************************************************************
- 					    	   StatObjectList
+                                                   StatObjectList
  **********************************************************************/
 
-StatObjectList::StatObjectList()
- : m_size(0)
+StatObjectList::StatObjectList() : m_size(0)
 {
 }
 
@@ -995,7 +950,7 @@ StatObjectList::clean()
 
   while ((temp = m_statList.dequeue())) {
     m_size -= 1;
-    delete(temp);
+    delete (temp);
   }
 
   ink_assert(m_size == 0);
@@ -1003,9 +958,9 @@ StatObjectList::clean()
 
 
 void
-StatObjectList::enqueue(StatObject * object)
+StatObjectList::enqueue(StatObject *object)
 {
-  for (StatExprToken * token = object->m_postfix->first(); token; token = object->m_postfix->next(token)) {
+  for (StatExprToken *token = object->m_postfix->first(); token; token = object->m_postfix->next(token)) {
     if (token->m_token_value_delta) {
       object->m_has_delta = true;
       break;
@@ -1025,7 +980,7 @@ StatObjectList::first()
 
 
 StatObject *
-StatObjectList::next(StatObject * current)
+StatObjectList::next(StatObject *current)
 {
   return (current->link).next;
 }
@@ -1049,7 +1004,7 @@ StatObjectList::Eval()
   RecDataClear(RECD_NULL, &tempValue);
   RecDataClear(RECD_NULL, &result);
 
-  for (StatObject * object = first(); object; object = next(object)) {
+  for (StatObject *object = first(); object; object = next(object)) {
     StatError = false;
     StatDebug = object->m_debug;
 
@@ -1080,13 +1035,14 @@ StatObjectList::Eval()
       delta = object->m_current_time - object->m_last_update;
 
       if (StatDebug) {
-        Debug(MODULE, "\tUPDATE:%" PRId64 " THRESHOLD:%" PRId64 ", DELTA:%" PRId64 "\n", object->m_update_interval, threshold, delta);
+        Debug(MODULE, "\tUPDATE:%" PRId64 " THRESHOLD:%" PRId64 ", DELTA:%" PRId64 "\n", object->m_update_interval, threshold,
+              delta);
       }
 
       /* Should we do the calculation? */
-      if ((delta > threshold) ||        /* sufficient elapsed time? */
-          (object->m_last_update == -1) ||      /*       first time?       */
-          (object->m_last_update > object->m_current_time)) {   /*wrapped */
+      if ((delta > threshold) ||                              /* sufficient elapsed time? */
+          (object->m_last_update == -1) ||                    /*       first time?       */
+          (object->m_last_update > object->m_current_time)) { /*wrapped */
 
         if (StatDebug) {
           if (delta > threshold) {
@@ -1101,7 +1057,6 @@ StatObjectList::Eval()
         }
 
         if (!object->m_has_delta) {
-
           if (StatDebug) {
             Debug(MODULE, "\tEVAL: Simple time-condition.\n");
           }
@@ -1123,8 +1078,7 @@ StatObjectList::Eval()
             Debug(MODULE, "\tEVAL: Complicated time-condition.\n");
           }
           // scroll old values
-          for (StatExprToken * token = object->m_postfix->first(); token; token = object->m_expression->next(token)) {
-
+          for (StatExprToken *token = object->m_postfix->first(); token; token = object->m_expression->next(token)) {
             // in librecords, not all statistics are register at initialization
             // must assign proper type if it is undefined.
             if (!isOperator(token->m_arith_symbol) && token->m_token_type == RECD_NULL) {
@@ -1132,8 +1086,7 @@ StatObjectList::Eval()
             }
 
             if (token->m_token_value_delta) {
-              if (!varDataFromName(token->m_token_type, token->m_token_name,
-                                   &tempValue)) {
+              if (!varDataFromName(token->m_token_type, token->m_token_name, &tempValue)) {
                 RecDataClear(RECD_NULL, &tempValue);
               }
 
@@ -1161,18 +1114,18 @@ StatObjectList::Eval()
               Debug(MODULE, "\tEVAL: Timer not expired, do nothing\n");
             }
           }
-        }                       /* delta? */
+        } /* delta? */
       } else {
         if (StatDebug) {
           Debug(MODULE, "\tEVAL: Timer not expired, nor 1st time, nor wrapped, SORRY!\n");
         }
-      }                         /* timed event */
+      } /* timed event */
     }
     count += 1;
-  }                             /* for */
+  } /* for */
 
   return count;
-}                               /* Eval() */
+} /* Eval() */
 
 
 /**
@@ -1183,7 +1136,7 @@ StatObjectList::Eval()
 void
 StatObjectList::print(const char *prefix)
 {
-  for (StatObject * object = first(); object; object = next(object)) {
+  for (StatObject *object = first(); object; object = next(object)) {
     if (StatDebug) {
       Debug(MODULE, "\n%sSTAT OBJECT#: %d\n", prefix, object->m_id);
     }

@@ -24,17 +24,17 @@
 #include "P_Cache.h"
 
 #ifdef HTTP_CACHE
-#include "HttpCacheSM.h"      //Added to get the scope of HttpCacheSM object.
+#include "HttpCacheSM.h" //Added to get the scope of HttpCacheSM object.
 #endif
 
 #define READ_WHILE_WRITER 1
 extern int cache_config_compatibility_4_2_0_fixup;
 
 Action *
-Cache::open_read(Continuation * cont, CacheKey * key, CacheFragType type, char *hostname, int host_len)
+Cache::open_read(Continuation *cont, CacheKey *key, CacheFragType type, char *hostname, int host_len)
 {
   if (!CacheProcessor::IsCacheReady(type)) {
-    cont->handleEvent(CACHE_EVENT_OPEN_READ_FAILED, (void *) -ECACHE_NOT_READY);
+    cont->handleEvent(CACHE_EVENT_OPEN_READ_FAILED, (void *)-ECACHE_NOT_READY);
     return ACTION_RESULT_DONE;
   }
   ink_assert(caches[type] == this);
@@ -67,15 +67,18 @@ Cache::open_read(Continuation * cont, CacheKey * key, CacheFragType type, char *
       goto Lwriter;
     c->dir = result;
     c->last_collision = last_collision;
-    switch(c->do_read_call(&c->key)) {
-      case EVENT_DONE: return ACTION_RESULT_DONE;
-      case EVENT_RETURN: goto Lcallreturn;
-      default: return &c->_action;
+    switch (c->do_read_call(&c->key)) {
+    case EVENT_DONE:
+      return ACTION_RESULT_DONE;
+    case EVENT_RETURN:
+      goto Lcallreturn;
+    default:
+      return &c->_action;
     }
   }
 Lmiss:
   CACHE_INCREMENT_DYN_STAT(cache_read_failure_stat);
-  cont->handleEvent(CACHE_EVENT_OPEN_READ_FAILED, (void *) -ECACHE_NO_DOC);
+  cont->handleEvent(CACHE_EVENT_OPEN_READ_FAILED, (void *)-ECACHE_NO_DOC);
   return ACTION_RESULT_DONE;
 Lwriter:
   SET_CONTINUATION_HANDLER(c, &CacheVC::openReadFromWriter);
@@ -90,12 +93,11 @@ Lcallreturn:
 
 #ifdef HTTP_CACHE
 Action *
-Cache::open_read(Continuation * cont, CacheKey * key, CacheHTTPHdr * request,
-                 CacheLookupHttpConfig * params, CacheFragType type, char *hostname, int host_len)
+Cache::open_read(Continuation *cont, CacheKey *key, CacheHTTPHdr *request, CacheLookupHttpConfig *params, CacheFragType type,
+                 char *hostname, int host_len)
 {
-
   if (!CacheProcessor::IsCacheReady(type)) {
-    cont->handleEvent(CACHE_EVENT_OPEN_READ_FAILED, (void *) -ECACHE_NOT_READY);
+    cont->handleEvent(CACHE_EVENT_OPEN_READ_FAILED, (void *)-ECACHE_NOT_READY);
     return ACTION_RESULT_DONE;
   }
   ink_assert(caches[type] == this);
@@ -133,15 +135,18 @@ Cache::open_read(Continuation * cont, CacheKey * key, CacheHTTPHdr * request,
     c->dir = c->first_dir = result;
     c->last_collision = last_collision;
     SET_CONTINUATION_HANDLER(c, &CacheVC::openReadStartHead);
-    switch(c->do_read_call(&c->key)) {
-      case EVENT_DONE: return ACTION_RESULT_DONE;
-      case EVENT_RETURN: goto Lcallreturn;
-      default: return &c->_action;
+    switch (c->do_read_call(&c->key)) {
+    case EVENT_DONE:
+      return ACTION_RESULT_DONE;
+    case EVENT_RETURN:
+      goto Lcallreturn;
+    default:
+      return &c->_action;
     }
   }
 Lmiss:
   CACHE_INCREMENT_DYN_STAT(cache_read_failure_stat);
-  cont->handleEvent(CACHE_EVENT_OPEN_READ_FAILED, (void *) -ECACHE_NO_DOC);
+  cont->handleEvent(CACHE_EVENT_OPEN_READ_FAILED, (void *)-ECACHE_NO_DOC);
   return ACTION_RESULT_DONE;
 Lwriter:
   // this is a horrible violation of the interface and should be fixed (FIXME)
@@ -158,14 +163,13 @@ Lcallreturn:
 #endif
 
 uint32_t
-CacheVC::load_http_info(CacheHTTPInfoVector* info, Doc* doc, RefCountObj * block_ptr)
+CacheVC::load_http_info(CacheHTTPInfoVector *info, Doc *doc, RefCountObj *block_ptr)
 {
   uint32_t zret = info->get_handles(doc->hdr(), doc->hlen, block_ptr);
   if (cache_config_compatibility_4_2_0_fixup && // manual override not engaged
-      ! this->f.doc_from_ram_cache && // it's already been done for ram cache fragments
-      vol->header->version.ink_major == 23 && vol->header->version.ink_minor == 0
-    ) {
-    for ( int i = info->xcount - 1 ; i >= 0 ; --i ) {
+      !this->f.doc_from_ram_cache &&            // it's already been done for ram cache fragments
+      vol->header->version.ink_major == 23 && vol->header->version.ink_minor == 0) {
+    for (int i = info->xcount - 1; i >= 0; --i) {
       info->data(i).alternate.m_alt->m_response_hdr.m_mime->recompute_accelerators_and_presence_bits();
       info->data(i).alternate.m_alt->m_request_hdr.m_mime->recompute_accelerators_and_presence_bits();
     }
@@ -174,9 +178,8 @@ CacheVC::load_http_info(CacheHTTPInfoVector* info, Doc* doc, RefCountObj * block
 }
 
 int
-CacheVC::openReadFromWriterFailure(int event, Event * e)
+CacheVC::openReadFromWriterFailure(int event, Event *e)
 {
-
   od = NULL;
   vector.clear(false);
   CACHE_INCREMENT_DYN_STAT(cache_read_failure_stat);
@@ -216,7 +219,7 @@ CacheVC::openReadChooseWriter(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSE
       vector.insert(write_vector->get(c));
     // check if all the writers who came before this reader have
     // set the http_info.
-    for (w = (CacheVC *) od->writers.head; w; w = (CacheVC *) w->opendir_link.next) {
+    for (w = (CacheVC *)od->writers.head; w; w = (CacheVC *)w->opendir_link.next) {
       if (w->start_time > start_time || w->closed < 0)
         continue;
       if (!w->closed && !cache_config_read_while_writer) {
@@ -250,7 +253,7 @@ CacheVC::openReadChooseWriter(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSE
 
     if (!vector.count()) {
       if (od->reading_vec) {
-       // the writer(s) are reading the vector, so there is probably
+        // the writer(s) are reading the vector, so there is probably
         // an old vector. Since this reader came before any of the
         // current writers, we should return the old data
         od = NULL;
@@ -265,7 +268,7 @@ CacheVC::openReadChooseWriter(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSE
     } else
       alternate_index = 0;
     CacheHTTPInfo *obj = vector.get(alternate_index);
-    for (w = (CacheVC *) od->writers.head; w; w = (CacheVC *) w->opendir_link.next) {
+    for (w = (CacheVC *)od->writers.head; w; w = (CacheVC *)w->opendir_link.next) {
       if (obj->m_alt == w->alternate.m_alt) {
         write_vc = w;
         break;
@@ -278,17 +281,15 @@ CacheVC::openReadChooseWriter(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSE
       return EVENT_RETURN;
     }
 
-    DDebug("cache_read_agg",
-          "%p: key: %X eKey: %d # alts: %d, ndx: %d, # writers: %d writer: %p",
-          this, first_key.slice32(1), write_vc->earliest_key.slice32(1),
-          vector.count(), alternate_index, od->num_writers, write_vc);
+    DDebug("cache_read_agg", "%p: key: %X eKey: %d # alts: %d, ndx: %d, # writers: %d writer: %p", this, first_key.slice32(1),
+           write_vc->earliest_key.slice32(1), vector.count(), alternate_index, od->num_writers, write_vc);
   }
-#endif //HTTP_CACHE
+#endif // HTTP_CACHE
   return EVENT_NONE;
 }
 
 int
-CacheVC::openReadFromWriter(int event, Event * e)
+CacheVC::openReadFromWriter(int event, Event *e)
 {
   if (!f.read_from_writer_called) {
     // The assignment to last_collision as NULL was
@@ -306,7 +307,7 @@ CacheVC::openReadFromWriter(int event, Event * e)
   intptr_t err = ECACHE_DOC_BUSY;
   DDebug("cache_read_agg", "%p: key: %X In openReadFromWriter", this, first_key.slice32(1));
 #ifndef READ_WHILE_WRITER
-  return openReadFromWriterFailure(CACHE_EVENT_OPEN_READ_FAILED, (Event *) -err);
+  return openReadFromWriterFailure(CACHE_EVENT_OPEN_READ_FAILED, (Event *)-err);
 #else
   if (_action.cancelled) {
     od = NULL; // only open for read so no need to close
@@ -328,7 +329,7 @@ CacheVC::openReadFromWriter(int event, Event * e)
     if (ret < 0) {
       MUTEX_RELEASE(lock);
       SET_HANDLER(&CacheVC::openReadFromWriterFailure);
-      return openReadFromWriterFailure(CACHE_EVENT_OPEN_READ_FAILED, reinterpret_cast<Event *> (ret));
+      return openReadFromWriterFailure(CACHE_EVENT_OPEN_READ_FAILED, reinterpret_cast<Event *>(ret));
     } else if (ret == EVENT_RETURN) {
       MUTEX_RELEASE(lock);
       SET_HANDLER(&CacheVC::openReadStartHead);
@@ -341,8 +342,7 @@ CacheVC::openReadFromWriter(int event, Event * e)
   } else {
     if (writer_done()) {
       MUTEX_RELEASE(lock);
-      DDebug("cache_read_agg",
-            "%p: key: %X writer %p has left, continuing as normal read", this, first_key.slice32(1), write_vc);
+      DDebug("cache_read_agg", "%p: key: %X writer %p has left, continuing as normal read", this, first_key.slice32(1), write_vc);
       od = NULL;
       write_vc = NULL;
       SET_HANDLER(&CacheVC::openReadStartHead);
@@ -357,7 +357,7 @@ CacheVC::openReadFromWriter(int event, Event * e)
   if (write_vc->closed < 0) {
     MUTEX_RELEASE(lock);
     write_vc = NULL;
-    //writer aborted, continue as if there is no writer
+    // writer aborted, continue as if there is no writer
     SET_HANDLER(&CacheVC::openReadStartHead);
     return openReadStartHead(EVENT_IMMEDIATE, 0);
   }
@@ -366,11 +366,10 @@ CacheVC::openReadFromWriter(int event, Event * e)
   if (!write_vc->closed && !write_vc->fragment) {
     if (!cache_config_read_while_writer || frag_type != CACHE_FRAG_TYPE_HTTP) {
       MUTEX_RELEASE(lock);
-      return openReadFromWriterFailure(CACHE_EVENT_OPEN_READ_FAILED, (Event *) - err);
+      return openReadFromWriterFailure(CACHE_EVENT_OPEN_READ_FAILED, (Event *)-err);
     }
-    DDebug("cache_read_agg",
-          "%p: key: %X writer: closed:%d, fragment:%d, retry: %d",
-          this, first_key.slice32(1), write_vc->closed, write_vc->fragment, writer_lock_retry);
+    DDebug("cache_read_agg", "%p: key: %X writer: closed:%d, fragment:%d, retry: %d", this, first_key.slice32(1), write_vc->closed,
+           write_vc->fragment, writer_lock_retry);
     VC_SCHED_WRITER_RETRY();
   }
 
@@ -382,14 +381,13 @@ CacheVC::openReadFromWriter(int event, Event * e)
   MUTEX_RELEASE(lock);
 
   if (!write_vc->io.ok())
-    return openReadFromWriterFailure(CACHE_EVENT_OPEN_READ_FAILED, (Event *) - err);
+    return openReadFromWriterFailure(CACHE_EVENT_OPEN_READ_FAILED, (Event *)-err);
 #ifdef HTTP_CACHE
   if (frag_type == CACHE_FRAG_TYPE_HTTP) {
-    DDebug("cache_read_agg",
-          "%p: key: %X http passed stage 1, closed: %d, frag: %d",
-          this, first_key.slice32(1), write_vc->closed, write_vc->fragment);
+    DDebug("cache_read_agg", "%p: key: %X http passed stage 1, closed: %d, frag: %d", this, first_key.slice32(1), write_vc->closed,
+           write_vc->fragment);
     if (!write_vc->alternate.valid())
-      return openReadFromWriterFailure(CACHE_EVENT_OPEN_READ_FAILED, (Event *) - err);
+      return openReadFromWriterFailure(CACHE_EVENT_OPEN_READ_FAILED, (Event *)-err);
     alternate.copy(&write_vc->alternate);
     vector.insert(&alternate);
     alternate.object_key_get(&key);
@@ -406,12 +404,12 @@ CacheVC::openReadFromWriter(int event, Event * e)
       DDebug("cache_read_agg", "%p: key: %X writer header update", this, first_key.slice32(1));
       // Update case (b) : grab doc_len from the writer's alternate
       doc_len = alternate.object_size_get();
-      if (write_vc->update_key == cod->single_doc_key &&
-          (cod->move_resident_alt || write_vc->f.rewrite_resident_alt) && write_vc->first_buf._ptr()) {
+      if (write_vc->update_key == cod->single_doc_key && (cod->move_resident_alt || write_vc->f.rewrite_resident_alt) &&
+          write_vc->first_buf._ptr()) {
         // the resident alternate is being updated and its a
         // header only update. The first_buf of the writer has the
         // document body.
-        Doc *doc = (Doc *) write_vc->first_buf->data();
+        Doc *doc = (Doc *)write_vc->first_buf->data();
         writer_buf = new_IOBufferBlock(write_vc->first_buf, doc->data_len(), doc->prefix_len());
         MUTEX_RELEASE(writer_lock);
         ink_assert(doc_len == doc->data_len());
@@ -433,7 +431,7 @@ CacheVC::openReadFromWriter(int event, Event * e)
       return openReadStartEarliest(event, e);
     }
   } else {
-#endif //HTTP_CACHE
+#endif // HTTP_CACHE
     DDebug("cache_read_agg", "%p: key: %X non-http passed stage 1", this, first_key.slice32(1));
     key = write_vc->earliest_key;
 #ifdef HTTP_CACHE
@@ -442,9 +440,8 @@ CacheVC::openReadFromWriter(int event, Event * e)
   if (write_vc->fragment) {
     doc_len = write_vc->vio.nbytes;
     last_collision = NULL;
-    DDebug("cache_read_agg",
-          "%p: key: %X closed: %d, fragment: %d, len: %d starting first fragment",
-          this, first_key.slice32(1), write_vc->closed, write_vc->fragment, (int)doc_len);
+    DDebug("cache_read_agg", "%p: key: %X closed: %d, fragment: %d, len: %d starting first fragment", this, first_key.slice32(1),
+           write_vc->closed, write_vc->fragment, (int)doc_len);
     MUTEX_RELEASE(writer_lock);
     // either a header + body update or a new document
     SET_HANDLER(&CacheVC::openReadStartEarliest);
@@ -454,7 +451,7 @@ CacheVC::openReadFromWriter(int event, Event * e)
   writer_offset = write_vc->offset;
   length = write_vc->length;
   // copy the vector
-  f.single_fragment = !write_vc->fragment;        // single fragment doc
+  f.single_fragment = !write_vc->fragment; // single fragment doc
   doc_pos = 0;
   earliest_key = write_vc->earliest_key;
   ink_assert(earliest_key == key);
@@ -466,7 +463,7 @@ CacheVC::openReadFromWriter(int event, Event * e)
   SET_HANDLER(&CacheVC::openReadFromWriterMain);
   CACHE_INCREMENT_DYN_STAT(cache_read_busy_success_stat);
   return callcont(CACHE_EVENT_OPEN_READ);
-#endif //READ_WHILE_WRITER
+#endif // READ_WHILE_WRITER
 }
 
 int
@@ -538,7 +535,7 @@ CacheVC::openReadClose(int event, Event * /* e ATS_UNUSED */)
 }
 
 int
-CacheVC::openReadReadDone(int event, Event * e)
+CacheVC::openReadReadDone(int event, Event *e)
 {
   Doc *doc = NULL;
 
@@ -554,10 +551,10 @@ CacheVC::openReadReadDone(int event, Event * e)
       dir_delete(&earliest_key, vol, &earliest_dir);
       goto Lerror;
     }
-    if (last_collision &&         // no missed lock
-        dir_valid(vol, &dir))    // object still valid
+    if (last_collision &&     // no missed lock
+        dir_valid(vol, &dir)) // object still valid
     {
-      doc = (Doc *) buf->data();
+      doc = (Doc *)buf->data();
       if (doc->magic != DOC_MAGIC) {
         char tmpstring[100];
         if (doc->magic == DOC_CORRUPT)
@@ -576,18 +573,18 @@ CacheVC::openReadReadDone(int event, Event * e)
         goto LreadMain;
 #if TS_USE_INTERIM_CACHE == 1
       else if (dir_ininterim(&dir)) {
-          dir_delete(&key, vol, &dir);
-          last_collision = NULL;
-        }
+        dir_delete(&key, vol, &dir);
+        last_collision = NULL;
+      }
 #endif
     }
 #if TS_USE_INTERIM_CACHE == 1
     if (last_collision && dir_get_offset(&dir) != dir_get_offset(last_collision))
       last_collision = 0;
-Lread:
+  Lread:
 #else
     if (last_collision && dir_offset(&dir) != dir_offset(last_collision))
-      last_collision = 0;       // object has been/is being overwritten
+      last_collision = 0; // object has been/is being overwritten
 #endif
     if (dir_probe(&key, vol, &dir, &last_collision)) {
       int ret = do_read_call(&key);
@@ -603,14 +600,12 @@ Lread:
 #else
           if (dir_offset(&dir) == dir_offset(&earliest_dir)) {
 #endif
-            DDebug("cache_read_agg", "%p: key: %X ReadRead complete: %d",
-                  this, first_key.slice32(1), (int)vio.ndone);
+            DDebug("cache_read_agg", "%p: key: %X ReadRead complete: %d", this, first_key.slice32(1), (int)vio.ndone);
             doc_len = vio.ndone;
             goto Ldone;
           }
         }
-        DDebug("cache_read_agg", "%p: key: %X ReadRead writer aborted: %d",
-              this, first_key.slice32(1), (int)vio.ndone);
+        DDebug("cache_read_agg", "%p: key: %X ReadRead writer aborted: %d", this, first_key.slice32(1), (int)vio.ndone);
         goto Lerror;
       }
       DDebug("cache_read_agg", "%p: key: %X ReadRead retrying: %d", this, first_key.slice32(1), (int)vio.ndone);
@@ -638,7 +633,7 @@ int
 CacheVC::openReadMain(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
   cancel_trigger();
-  Doc *doc = (Doc *) buf->data();
+  Doc *doc = (Doc *)buf->data();
   int64_t ntodo = vio.ntodo();
   int64_t bytes = doc->len - doc_pos;
   IOBufferBlock *b = NULL;
@@ -648,11 +643,11 @@ CacheVC::openReadMain(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
       return calluser(VC_EVENT_EOS);
     }
 #ifdef HTTP_CACHE
-    HTTPInfo::FragOffset* frags = alternate.get_frag_table();
+    HTTPInfo::FragOffset *frags = alternate.get_frag_table();
     if (is_debug_tag_set("cache_seek")) {
       char b[33], c[33];
-      Debug("cache_seek", "Seek @ %" PRId64" in %s from #%d @ %" PRId64"/%d:%s",
-            seek_to, first_key.toHexStr(b), fragment, doc_pos, doc->len, doc->key.toHexStr(c));
+      Debug("cache_seek", "Seek @ %" PRId64 " in %s from #%d @ %" PRId64 "/%d:%s", seek_to, first_key.toHexStr(b), fragment,
+            doc_pos, doc->len, doc->key.toHexStr(c));
     }
     /* Because single fragment objects can migrate to hang off an alt vector
        they can appear to the VC as multi-fragment when they are not really.
@@ -670,15 +665,13 @@ CacheVC::openReadMain(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
          more than the fragment table length, the start of the last
          fragment being the last offset in the table.
       */
-      if (fragment == 0 ||
-          seek_to < frags[fragment-1] ||
-          (fragment <= lfi && frags[fragment] <= seek_to)
-        ) {
+      if (fragment == 0 || seek_to < frags[fragment - 1] || (fragment <= lfi && frags[fragment] <= seek_to)) {
         // search from frag 0 on to find the proper frag
         while (seek_to >= next_off && target < lfi) {
           next_off = frags[++target];
         }
-        if (target == lfi && seek_to >= next_off) ++target;
+        if (target == lfi && seek_to >= next_off)
+          ++target;
       } else { // shortcut if we are in the fragment already
         target = fragment;
       }
@@ -699,13 +692,14 @@ CacheVC::openReadMain(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
         if (is_debug_tag_set("cache_seek")) {
           char target_key_str[33];
           key.toHexStr(target_key_str);
-          Debug("cache_seek", "Seek #%d @ %" PRId64" -> #%d @ %" PRId64":%s", cfi, doc_pos, target, seek_to, target_key_str);
+          Debug("cache_seek", "Seek #%d @ %" PRId64 " -> #%d @ %" PRId64 ":%s", cfi, doc_pos, target, seek_to, target_key_str);
         }
         goto Lread;
       }
     }
     doc_pos = doc->prefix_len() + seek_to;
-    if (fragment) doc_pos -= static_cast<int64_t>(frags[fragment-1]);
+    if (fragment)
+      doc_pos -= static_cast<int64_t>(frags[fragment - 1]);
     vio.ndone = 0;
     seek_to = 0;
     ntodo = vio.ntodo();
@@ -713,7 +707,7 @@ CacheVC::openReadMain(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     if (is_debug_tag_set("cache_seek")) {
       char target_key_str[33];
       key.toHexStr(target_key_str);
-      Debug("cache_seek", "Read # %d @ %" PRId64"/%d for %" PRId64, fragment, doc_pos, doc->len, bytes);
+      Debug("cache_seek", "Read # %d @ %" PRId64 "/%d for %" PRId64, fragment, doc_pos, doc->len, bytes);
     }
 #endif
   }
@@ -741,53 +735,52 @@ CacheVC::openReadMain(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
       goto Lread;
     return EVENT_CONT;
   }
-Lread: {
-    if (vio.ndone >= (int64_t)doc_len)
-      // reached the end of the document and the user still wants more
-      return calluser(VC_EVENT_EOS);
-    last_collision = 0;
-    writer_lock_retry = 0;
-    // if the state machine calls reenable on the callback from the cache,
-    // we set up a schedule_imm event. The openReadReadDone discards
-    // EVENT_IMMEDIATE events. So, we have to cancel that trigger and set
-    // a new EVENT_INTERVAL event.
-    cancel_trigger();
-    CACHE_TRY_LOCK(lock, vol->mutex, mutex->thread_holding);
-    if (!lock.is_locked()) {
-      SET_HANDLER(&CacheVC::openReadMain);
-      VC_SCHED_LOCK_RETRY();
-    }
-    if (dir_probe(&key, vol, &dir, &last_collision)) {
-      SET_HANDLER(&CacheVC::openReadReadDone);
-      int ret = do_read_call(&key);
-      if (ret == EVENT_RETURN)
-        goto Lcallreturn;
-      return EVENT_CONT;
-    } else if (write_vc) {
-      if (writer_done()) {
-        last_collision = NULL;
-        while (dir_probe(&earliest_key, vol, &dir, &last_collision)) {
-          if (dir_offset(&dir) == dir_offset(&earliest_dir)) {
-            DDebug("cache_read_agg", "%p: key: %X ReadMain complete: %d",
-                  this, first_key.slice32(1), (int)vio.ndone);
-            doc_len = vio.ndone;
-            goto Leos;
-          }
-        }
-        DDebug("cache_read_agg", "%p: key: %X ReadMain writer aborted: %d",
-              this, first_key.slice32(1), (int)vio.ndone);
-        goto Lerror;
-      }
-      DDebug("cache_read_agg", "%p: key: %X ReadMain retrying: %d", this, first_key.slice32(1), (int)vio.ndone);
-      SET_HANDLER(&CacheVC::openReadMain);
-      VC_SCHED_WRITER_RETRY();
-    }
-    if (is_action_tag_set("cache"))
-      ink_release_assert(false);
-    Warning("Document %X truncated at %d of %d, missing fragment %X", first_key.slice32(1), (int)vio.ndone, (int)doc_len, key.slice32(1));
-    // remove the directory entry
-    dir_delete(&earliest_key, vol, &earliest_dir);
+Lread : {
+  if (vio.ndone >= (int64_t)doc_len)
+    // reached the end of the document and the user still wants more
+    return calluser(VC_EVENT_EOS);
+  last_collision = 0;
+  writer_lock_retry = 0;
+  // if the state machine calls reenable on the callback from the cache,
+  // we set up a schedule_imm event. The openReadReadDone discards
+  // EVENT_IMMEDIATE events. So, we have to cancel that trigger and set
+  // a new EVENT_INTERVAL event.
+  cancel_trigger();
+  CACHE_TRY_LOCK(lock, vol->mutex, mutex->thread_holding);
+  if (!lock.is_locked()) {
+    SET_HANDLER(&CacheVC::openReadMain);
+    VC_SCHED_LOCK_RETRY();
   }
+  if (dir_probe(&key, vol, &dir, &last_collision)) {
+    SET_HANDLER(&CacheVC::openReadReadDone);
+    int ret = do_read_call(&key);
+    if (ret == EVENT_RETURN)
+      goto Lcallreturn;
+    return EVENT_CONT;
+  } else if (write_vc) {
+    if (writer_done()) {
+      last_collision = NULL;
+      while (dir_probe(&earliest_key, vol, &dir, &last_collision)) {
+        if (dir_offset(&dir) == dir_offset(&earliest_dir)) {
+          DDebug("cache_read_agg", "%p: key: %X ReadMain complete: %d", this, first_key.slice32(1), (int)vio.ndone);
+          doc_len = vio.ndone;
+          goto Leos;
+        }
+      }
+      DDebug("cache_read_agg", "%p: key: %X ReadMain writer aborted: %d", this, first_key.slice32(1), (int)vio.ndone);
+      goto Lerror;
+    }
+    DDebug("cache_read_agg", "%p: key: %X ReadMain retrying: %d", this, first_key.slice32(1), (int)vio.ndone);
+    SET_HANDLER(&CacheVC::openReadMain);
+    VC_SCHED_WRITER_RETRY();
+  }
+  if (is_action_tag_set("cache"))
+    ink_release_assert(false);
+  Warning("Document %X truncated at %d of %d, missing fragment %X", first_key.slice32(1), (int)vio.ndone, (int)doc_len,
+          key.slice32(1));
+  // remove the directory entry
+  dir_delete(&earliest_key, vol, &earliest_dir);
+}
 Lerror:
   return calluser(VC_EVENT_ERROR);
 Leos:
@@ -825,7 +818,7 @@ CacheVC::openReadStartEarliest(int /* event ATS_UNUSED */, Event * /* e ATS_UNUS
         last_collision = NULL;
       goto Lread;
     }
-    doc = (Doc *) buf->data();
+    doc = (Doc *)buf->data();
     if (doc->magic != DOC_MAGIC) {
       char tmpstring[100];
       if (is_action_tag_set("cache")) {
@@ -856,16 +849,14 @@ CacheVC::openReadStartEarliest(int /* event ATS_UNUSED */, Event * /* e ATS_UNUS
 #if TS_USE_INTERIM_CACHE == 1
         && !dir_ininterim(&dir)
 #endif
-        ) {
-      DDebug("cache_hit_evac", "dir: %" PRId64", write: %" PRId64", phase: %d",
-            dir_offset(&earliest_dir), offset_to_vol_offset(vol, vol->header->write_pos), vol->header->phase);
+          ) {
+      DDebug("cache_hit_evac", "dir: %" PRId64 ", write: %" PRId64 ", phase: %d", dir_offset(&earliest_dir),
+             offset_to_vol_offset(vol, vol->header->write_pos), vol->header->phase);
       f.hit_evacuate = 1;
     }
     goto Lsuccess;
-Lread:
-    if (dir_probe(&key, vol, &earliest_dir, &last_collision) ||
-        dir_lookaside_probe(&key, vol, &earliest_dir, NULL))
-    {
+  Lread:
+    if (dir_probe(&key, vol, &earliest_dir, &last_collision) || dir_lookaside_probe(&key, vol, &earliest_dir, NULL)) {
       dir = earliest_dir;
 #if TS_USE_INTERIM_CACHE == 1
       if (dir_ininterim(&dir) && alternate.get_frag_offset_count() > 1) {
@@ -878,13 +869,13 @@ Lread:
         goto Lcallreturn;
       return ret;
     }
-    // read has detected that alternate does not exist in the cache.
-    // rewrite the vector.
+// read has detected that alternate does not exist in the cache.
+// rewrite the vector.
 #ifdef HTTP_CACHE
     if (!f.read_from_writer_called && frag_type == CACHE_FRAG_TYPE_HTTP) {
       // don't want any writers while we are evacuating the vector
       if (!vol->open_write(this, false, 1)) {
-        Doc *doc1 = (Doc *) first_buf->data();
+        Doc *doc1 = (Doc *)first_buf->data();
         uint32_t len = this->load_http_info(write_vector, doc1);
         ink_assert(len == doc1->hlen && write_vector->count() > 0);
         write_vector->remove(alternate_index, true);
@@ -938,13 +929,13 @@ Lread:
       }
     }
 #endif
-    // open write failure - another writer, so don't modify the vector
+  // open write failure - another writer, so don't modify the vector
   Ldone:
     if (od)
       vol->close_write(this);
   }
   CACHE_INCREMENT_DYN_STAT(cache_read_failure_stat);
-  _action.continuation->handleEvent(CACHE_EVENT_OPEN_READ_FAILED, (void *) -ECACHE_NO_DOC);
+  _action.continuation->handleEvent(CACHE_EVENT_OPEN_READ_FAILED, (void *)-ECACHE_NO_DOC);
   return free_CacheVC(this);
 Lcallreturn:
   return handleEvent(AIO_EVENT_DONE, 0); // hopefully a tail call
@@ -998,7 +989,7 @@ CacheVC::openReadVecWrite(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */
   }
 
   CACHE_INCREMENT_DYN_STAT(cache_read_failure_stat);
-  _action.continuation->handleEvent(CACHE_EVENT_OPEN_READ_FAILED, (void *) -ECACHE_ALT_MISS);
+  _action.continuation->handleEvent(CACHE_EVENT_OPEN_READ_FAILED, (void *)-ECACHE_ALT_MISS);
   return free_CacheVC(this);
 Lrestart:
   SET_HANDLER(&CacheVC::openReadStartHead);
@@ -1011,7 +1002,7 @@ Lrestart:
   if you change this you might have to change that.
 */
 int
-CacheVC::openReadStartHead(int event, Event * e)
+CacheVC::openReadStartHead(int event, Event *e)
 {
   intptr_t err = ECACHE_NO_DOC;
   Doc *doc = NULL;
@@ -1041,7 +1032,7 @@ CacheVC::openReadStartHead(int event, Event * e)
 #endif
       goto Lread;
     }
-    doc = (Doc *) buf->data();
+    doc = (Doc *)buf->data();
     if (doc->magic != DOC_MAGIC) {
       char tmpstring[100];
       if (is_action_tag_set("cache")) {
@@ -1084,28 +1075,23 @@ CacheVC::openReadStartHead(int event, Event * e)
         goto Ldone;
       if ((uml = this->load_http_info(&vector, doc)) != doc->hlen) {
         if (buf) {
-          HTTPCacheAlt* alt = reinterpret_cast<HTTPCacheAlt*>(doc->hdr());
+          HTTPCacheAlt *alt = reinterpret_cast<HTTPCacheAlt *>(doc->hdr());
           int32_t alt_length = 0;
           // count should be reasonable, as vector is initialized and unlikly to be too corrupted
           // by bad disk data - count should be the number of successfully unmarshalled alts.
-          for ( int32_t i = 0 ; i < vector.count() ; ++i ) {
-            CacheHTTPInfo* info = vector.get(i);
-            if (info && info->m_alt) alt_length += info->m_alt->m_unmarshal_len;
+          for (int32_t i = 0; i < vector.count(); ++i) {
+            CacheHTTPInfo *info = vector.get(i);
+            if (info && info->m_alt)
+              alt_length += info->m_alt->m_unmarshal_len;
           }
           Note("OpenReadHead failed for cachekey %X : vector inconsistency - "
                "unmarshalled %d expecting %d in %d (base=%d, ver=%d:%d) "
                "- vector n=%d size=%d"
-               "first alt=%d[%s]"
-               , key.slice32(0)
-               , uml, doc->hlen, doc->len, sizeofDoc
-               , doc->v_major, doc->v_minor
-               , vector.count(), alt_length
-               , alt->m_magic
-               , (CACHE_ALT_MAGIC_ALIVE == alt->m_magic ? "alive"
-                  : CACHE_ALT_MAGIC_MARSHALED == alt->m_magic ? "serial"
-                  : CACHE_ALT_MAGIC_DEAD == alt->m_magic ? "dead"
-                  : "bogus")
-            );
+               "first alt=%d[%s]",
+               key.slice32(0), uml, doc->hlen, doc->len, sizeofDoc, doc->v_major, doc->v_minor, vector.count(), alt_length,
+               alt->m_magic, (CACHE_ALT_MAGIC_ALIVE == alt->m_magic ? "alive" : CACHE_ALT_MAGIC_MARSHALED == alt->m_magic ?
+                                                                      "serial" :
+                                                                      CACHE_ALT_MAGIC_DEAD == alt->m_magic ? "dead" : "bogus"));
           dir_delete(&key, vol, &dir);
         }
         err = ECACHE_BAD_META_DATA;
@@ -1131,9 +1117,9 @@ CacheVC::openReadStartHead(int event, Event * e)
       alternate.copy_shallow(alternate_tmp);
       alternate.object_key_get(&key);
       doc_len = alternate.object_size_get();
-      if (key == doc->key) {      // is this my data?
+      if (key == doc->key) { // is this my data?
         f.single_fragment = doc->single_fragment();
-        ink_assert(f.single_fragment);     // otherwise need to read earliest
+        ink_assert(f.single_fragment); // otherwise need to read earliest
         ink_assert(doc->hlen);
         doc_pos = doc->prefix_len();
         next_CacheKey(&key, &doc->key);
@@ -1150,17 +1136,15 @@ CacheVC::openReadStartHead(int event, Event * e)
     }
 
     if (is_debug_tag_set("cache_read")) { // amc debug
-      char xt[33],yt[33];
-      Debug("cache_read", "CacheReadStartHead - read %s target %s - %s %d of %" PRId64" bytes, %d fragments",
-            doc->key.toHexStr(xt), key.toHexStr(yt),
-            f.single_fragment ? "single" : "multi",
-            doc->len, doc->total_len,
+      char xt[33], yt[33];
+      Debug("cache_read", "CacheReadStartHead - read %s target %s - %s %d of %" PRId64 " bytes, %d fragments",
+            doc->key.toHexStr(xt), key.toHexStr(yt), f.single_fragment ? "single" : "multi", doc->len, doc->total_len,
 #ifdef HTTP_CACHE
             alternate.get_frag_offset_count()
 #else
             0
 #endif
-            );
+              );
     }
     // the first fragment might have been gc'ed. Make sure the first
     // fragment is there before returning CACHE_EVENT_OPEN_READ
@@ -1173,8 +1157,8 @@ CacheVC::openReadStartHead(int event, Event * e)
         && !f.read_from_interim
 #endif
         ) {
-      DDebug("cache_hit_evac", "dir: %" PRId64", write: %" PRId64", phase: %d",
-            dir_offset(&dir), offset_to_vol_offset(vol, vol->header->write_pos), vol->header->phase);
+      DDebug("cache_hit_evac", "dir: %" PRId64 ", write: %" PRId64 ", phase: %d", dir_offset(&dir),
+             offset_to_vol_offset(vol, vol->header->write_pos), vol->header->phase);
       f.hit_evacuate = 1;
     }
 
@@ -1211,10 +1195,10 @@ CacheVC::openReadStartHead(int event, Event * e)
 Ldone:
   if (!f.lookup) {
     CACHE_INCREMENT_DYN_STAT(cache_read_failure_stat);
-    _action.continuation->handleEvent(CACHE_EVENT_OPEN_READ_FAILED, (void *) -err);
+    _action.continuation->handleEvent(CACHE_EVENT_OPEN_READ_FAILED, (void *)-err);
   } else {
     CACHE_INCREMENT_DYN_STAT(cache_lookup_failure_stat);
-    _action.continuation->handleEvent(CACHE_EVENT_LOOKUP_FAILED, (void *) -err);
+    _action.continuation->handleEvent(CACHE_EVENT_LOOKUP_FAILED, (void *)-err);
   }
   return free_CacheVC(this);
 Lcallreturn:

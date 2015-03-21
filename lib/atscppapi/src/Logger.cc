@@ -40,7 +40,7 @@ using atscppapi::Logger;
 /**
  * @private
  */
-struct atscppapi::LoggerState: noncopyable  {
+struct atscppapi::LoggerState : noncopyable {
   std::string filename_;
   bool add_timestamp_;
   bool rename_file_;
@@ -50,12 +50,14 @@ struct atscppapi::LoggerState: noncopyable  {
   TSTextLogObject text_log_obj_;
   bool initialized_;
 
-  LoggerState() : add_timestamp_(false), rename_file_(false), level_(Logger::LOG_LEVEL_NO_LOG), rolling_enabled_(false),
-                  rolling_interval_seconds_(-1), text_log_obj_(NULL), initialized_(false) { };
-  ~LoggerState() { };
+  LoggerState()
+    : add_timestamp_(false), rename_file_(false), level_(Logger::LOG_LEVEL_NO_LOG), rolling_enabled_(false),
+      rolling_interval_seconds_(-1), text_log_obj_(NULL), initialized_(false){};
+  ~LoggerState(){};
 };
 
-namespace {
+namespace
+{
 // Since the TSTextLog API doesn't support override the log file sizes (I will add this to TS api at some point)
 // we will use the roll size specified by default in records.config.
 const int ROLL_ON_TIME = 1; // See RollingEnabledValues in LogConfig.h
@@ -65,11 +67,13 @@ const int ROLL_ON_TIME = 1; // See RollingEnabledValues in LogConfig.h
 /*
  * These have default values specified for add_timestamp and rename_file in Logger.h
  */
-Logger::Logger() {
+Logger::Logger()
+{
   state_ = new LoggerState();
 }
 
-Logger::~Logger() {
+Logger::~Logger()
+{
   if (state_->initialized_ && state_->text_log_obj_) {
     TSTextLogObjectDestroy(state_->text_log_obj_);
   }
@@ -80,9 +84,13 @@ Logger::~Logger() {
 /*
  * These have default values specified for rolling_enabled and rolling_interval_seconds in Logger.h
  */
-bool Logger::init(const string &file, bool add_timestamp, bool rename_file, LogLevel level, bool rolling_enabled, int rolling_interval_seconds) {
+bool
+Logger::init(const string &file, bool add_timestamp, bool rename_file, LogLevel level, bool rolling_enabled,
+             int rolling_interval_seconds)
+{
   if (state_->initialized_) {
-    LOG_ERROR("Attempt to reinitialize a logger named '%s' that's already been initialized to '%s'.", file.c_str(), state_->filename_.c_str());
+    LOG_ERROR("Attempt to reinitialize a logger named '%s' that's already been initialized to '%s'.", file.c_str(),
+              state_->filename_.c_str());
     return false;
   }
   state_->filename_ = file;
@@ -116,21 +124,27 @@ bool Logger::init(const string &file, bool add_timestamp, bool rename_file, LogL
   return result == TS_SUCCESS;
 }
 
-void Logger::setLogLevel(Logger::LogLevel level) {
+void
+Logger::setLogLevel(Logger::LogLevel level)
+{
   if (state_->initialized_) {
     state_->level_ = level;
     LOG_DEBUG("Set log level to %d for log [%s]", level, state_->filename_.c_str());
   }
 }
 
-Logger::LogLevel Logger::getLogLevel() const {
+Logger::LogLevel
+Logger::getLogLevel() const
+{
   if (!state_->initialized_) {
     LOG_ERROR("Not initialized");
   }
   return state_->level_;
 }
 
-void Logger::setRollingIntervalSeconds(int seconds) {
+void
+Logger::setRollingIntervalSeconds(int seconds)
+{
   if (state_->initialized_) {
     state_->rolling_interval_seconds_ = seconds;
     TSTextLogObjectRollingIntervalSecSet(state_->text_log_obj_, seconds);
@@ -140,14 +154,18 @@ void Logger::setRollingIntervalSeconds(int seconds) {
   }
 }
 
-int Logger::getRollingIntervalSeconds() const {
+int
+Logger::getRollingIntervalSeconds() const
+{
   if (!state_->initialized_) {
     LOG_ERROR("Not initialized");
   }
   return state_->rolling_interval_seconds_;
 }
 
-void Logger::setRollingEnabled(bool enabled) {
+void
+Logger::setRollingEnabled(bool enabled)
+{
   if (state_->initialized_) {
     state_->rolling_enabled_ = enabled;
     TSTextLogObjectRollingEnabledSet(state_->text_log_obj_, enabled ? ROLL_ON_TIME : 0);
@@ -157,14 +175,18 @@ void Logger::setRollingEnabled(bool enabled) {
   }
 }
 
-bool Logger::isRollingEnabled() const {
+bool
+Logger::isRollingEnabled() const
+{
   if (!state_->initialized_) {
     LOG_ERROR("Not initialized!");
   }
   return state_->rolling_enabled_;
 }
 
-void Logger::flush() {
+void
+Logger::flush()
+{
   if (state_->initialized_) {
     TSTextLogObjectFlush(state_->text_log_obj_);
   } else {
@@ -172,43 +194,51 @@ void Logger::flush() {
   }
 }
 
-namespace {
-const int DEFAULT_BUFFER_SIZE_FOR_VARARGS = 8*1024;
+namespace
+{
+const int DEFAULT_BUFFER_SIZE_FOR_VARARGS = 8 * 1024;
 
 // We use a macro here because varargs would be a pain to forward via a helper
 // function
-#define TS_TEXT_LOG_OBJECT_WRITE(level) \
-    char buffer[DEFAULT_BUFFER_SIZE_FOR_VARARGS]; \
-    int n; \
-    va_list ap; \
-    while (true) { \
-     va_start(ap, fmt); \
-     n = vsnprintf (&buffer[0], sizeof(buffer), fmt, ap); \
-     va_end(ap); \
-     if (n > -1 && n < static_cast<int>(sizeof(buffer))) { \
-       LOG_DEBUG("logging a " level " to '%s' with length %d", state_->filename_.c_str(), n); \
-       TSTextLogObjectWrite(state_->text_log_obj_, const_cast<char*>("[" level "] %s"), buffer); \
-     } else { \
-       LOG_ERROR("Unable to log " level " message to '%s' due to size exceeding %zu bytes", state_->filename_.c_str(), sizeof(buffer)); \
-     } \
-     return; \
-    }
+#define TS_TEXT_LOG_OBJECT_WRITE(level)                                                                               \
+  char buffer[DEFAULT_BUFFER_SIZE_FOR_VARARGS];                                                                       \
+  int n;                                                                                                              \
+  va_list ap;                                                                                                         \
+  while (true) {                                                                                                      \
+    va_start(ap, fmt);                                                                                                \
+    n = vsnprintf(&buffer[0], sizeof(buffer), fmt, ap);                                                               \
+    va_end(ap);                                                                                                       \
+    if (n > -1 && n < static_cast<int>(sizeof(buffer))) {                                                             \
+      LOG_DEBUG("logging a " level " to '%s' with length %d", state_->filename_.c_str(), n);                          \
+      TSTextLogObjectWrite(state_->text_log_obj_, const_cast<char *>("[" level "] %s"), buffer);                      \
+    } else {                                                                                                          \
+      LOG_ERROR("Unable to log " level " message to '%s' due to size exceeding %zu bytes", state_->filename_.c_str(), \
+                sizeof(buffer));                                                                                      \
+    }                                                                                                                 \
+    return;                                                                                                           \
+  }
 
 } /* end anonymous namespace */
 
-void Logger::logDebug(const char *fmt, ...) {
+void
+Logger::logDebug(const char *fmt, ...)
+{
   if (state_->level_ <= LOG_LEVEL_DEBUG) {
     TS_TEXT_LOG_OBJECT_WRITE("DEBUG");
   }
 }
 
-void Logger::logInfo(const char *fmt, ...) {
+void
+Logger::logInfo(const char *fmt, ...)
+{
   if (state_->level_ <= LOG_LEVEL_INFO) {
     TS_TEXT_LOG_OBJECT_WRITE("INFO");
   }
 }
 
-void Logger::logError(const char *fmt, ...) {
+void
+Logger::logError(const char *fmt, ...)
+{
   if (state_->level_ <= LOG_LEVEL_ERROR) {
     TS_TEXT_LOG_OBJECT_WRITE("ERROR");
   }

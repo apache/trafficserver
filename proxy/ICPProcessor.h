@@ -38,11 +38,11 @@
 //######################################################
 // State definitions for "proxy.config.icp.enabled"
 //######################################################
-#define ICP_MODE_OFF                    0
-#define ICP_MODE_RECEIVE_ONLY           1
-#define ICP_MODE_SEND_RECEIVE           2
+#define ICP_MODE_OFF 0
+#define ICP_MODE_RECEIVE_ONLY 1
+#define ICP_MODE_SEND_RECEIVE 2
 
-extern void initialize_thread_for_icp(EThread * e);
+extern void initialize_thread_for_icp(EThread *e);
 class ICPProcessor;
 
 //***************************************************************************
@@ -70,7 +70,7 @@ public:
   Action *ICPQuery(Continuation *, URL *);
 
 private:
-    ICPProcessor * _ICPpr;
+  ICPProcessor *_ICPpr;
 };
 
 extern ICPProcessorExt icpProcessor;

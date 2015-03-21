@@ -28,7 +28,7 @@
 
  */
 
-#if !defined (_I_OneWayTunnel_h_)
+#if !defined(_I_OneWayTunnel_h_)
 #define _I_OneWayTunnel_h_
 
 #include "I_EventSystem.h"
@@ -39,11 +39,11 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#define TUNNEL_TILL_DONE   INT64_MAX
+#define TUNNEL_TILL_DONE INT64_MAX
 
 #define ONE_WAY_TUNNEL_CLOSE_ALL NULL
 
-typedef void (*Transform_fn) (MIOBufferAccessor & in_buf, MIOBufferAccessor & out_buf);
+typedef void (*Transform_fn)(MIOBufferAccessor &in_buf, MIOBufferAccessor &out_buf);
 
 /**
   A generic state machine that connects two virtual conections. A
@@ -62,8 +62,7 @@ typedef void (*Transform_fn) (MIOBufferAccessor & in_buf, MIOBufferAccessor & ou
   connection which it may manipulate in any manner it sees fit.
 
 */
-struct OneWayTunnel: public Continuation
-{
+struct OneWayTunnel : public Continuation {
   //
   //  Public Interface
   //
@@ -86,9 +85,9 @@ struct OneWayTunnel: public Continuation
   /** Deallocates a OneWayTunnel object. */
   static void OneWayTunnel_free(OneWayTunnel *);
 
-  static void SetupTwoWayTunnel(OneWayTunnel * east, OneWayTunnel * west);
-    OneWayTunnel();
-    virtual ~ OneWayTunnel();
+  static void SetupTwoWayTunnel(OneWayTunnel *east, OneWayTunnel *west);
+  OneWayTunnel();
+  virtual ~OneWayTunnel();
 
   // Use One of the following init functions to start the tunnel.
   /**
@@ -122,11 +121,8 @@ struct OneWayTunnel: public Continuation
     @param water_mark watermark for the MIOBuffer used for reading.
 
   */
-  void init(VConnection * vcSource, VConnection * vcTarget, Continuation * aCont = NULL, int size_estimate = 0, // 0 = best guess
-            ProxyMutex * aMutex = NULL,
-            int64_t nbytes = TUNNEL_TILL_DONE,
-            bool asingle_buffer = true,
-            bool aclose_source = true,
+  void init(VConnection *vcSource, VConnection *vcTarget, Continuation *aCont = NULL, int size_estimate = 0, // 0 = best guess
+            ProxyMutex *aMutex = NULL, int64_t nbytes = TUNNEL_TILL_DONE, bool asingle_buffer = true, bool aclose_source = true,
             bool aclose_target = true, Transform_fn manipulate_fn = NULL, int water_mark = 0);
 
   /**
@@ -152,10 +148,8 @@ struct OneWayTunnel: public Continuation
     @param aclose_target if true, the tunnel closes vcTarget at the
       end. If aCont is not specified, this should be set to true.
   */
-  void init(VConnection * vcSource,
-            VConnection * vcTarget,
-            Continuation * aCont,
-            VIO * SourceVio, IOBufferReader * reader, bool aclose_source = true, bool aclose_target = true);
+  void init(VConnection *vcSource, VConnection *vcTarget, Continuation *aCont, VIO *SourceVio, IOBufferReader *reader,
+            bool aclose_source = true, bool aclose_target = true);
 
   /**
     Use this init function if both the read and the write sides have
@@ -174,23 +168,21 @@ struct OneWayTunnel: public Continuation
       end. If aCont is not specified, this should be set to true.
 
     */
-  void init(Continuation * aCont,
-            VIO * SourceVio, VIO * TargetVio, bool aclose_source = true, bool aclose_target = true);
+  void init(Continuation *aCont, VIO *SourceVio, VIO *TargetVio, bool aclose_source = true, bool aclose_target = true);
 
   //
   // Private
   //
-    OneWayTunnel(Continuation * aCont,
-                 Transform_fn manipulate_fn = NULL, bool aclose_source = false, bool aclose_target = false);
+  OneWayTunnel(Continuation *aCont, Transform_fn manipulate_fn = NULL, bool aclose_source = false, bool aclose_target = false);
 
   int startEvent(int event, void *data);
 
-  virtual void transform(MIOBufferAccessor & in_buf, MIOBufferAccessor & out_buf);
+  virtual void transform(MIOBufferAccessor &in_buf, MIOBufferAccessor &out_buf);
 
   /** Result is -1 for any error. */
   void close_source_vio(int result);
 
-  virtual void close_target_vio(int result, VIO * vio = ONE_WAY_TUNNEL_CLOSE_ALL);
+  virtual void close_target_vio(int result, VIO *vio = ONE_WAY_TUNNEL_CLOSE_ALL);
 
   void connection_closed(int result);
 
@@ -215,9 +207,8 @@ struct OneWayTunnel: public Continuation
   bool free_vcs;
 
 private:
-    OneWayTunnel(const OneWayTunnel &);
-    OneWayTunnel & operator =(const OneWayTunnel &);
-
+  OneWayTunnel(const OneWayTunnel &);
+  OneWayTunnel &operator=(const OneWayTunnel &);
 };
 
 #endif

@@ -32,8 +32,8 @@
 
 // #define ENABLE_TIME_TRACE
 
-#define TIME_DIST_BUCKETS               500
-#define TIME_DIST_BUCKETS_SIZE          TIME_DIST_BUCKETS+1
+#define TIME_DIST_BUCKETS 500
+#define TIME_DIST_BUCKETS_SIZE TIME_DIST_BUCKETS + 1
 
 #ifdef ENABLE_TIME_TRACE
 extern int cdb_callback_time_dist[TIME_DIST_BUCKETS_SIZE];
@@ -65,14 +65,15 @@ extern int cluster_send_events;
 #endif // ENABLE_TIME_TRACE
 
 #ifdef ENABLE_TIME_TRACE
-#define LOG_EVENT_TIME(_start_time, _time_dist, _time_cnt) do { \
-  ink_hrtime now = ink_get_hrtime(); \
-  unsigned int bucket = (now - _start_time) / HRTIME_MSECONDS(10); \
-  if (bucket > TIME_DIST_BUCKETS) \
-    bucket = TIME_DIST_BUCKETS; \
-  ink_atomic_increment(&_time_dist[bucket], 1); \
-  ink_atomic_increment(&_time_cnt, 1); \
-} while(0)
+#define LOG_EVENT_TIME(_start_time, _time_dist, _time_cnt)           \
+  do {                                                               \
+    ink_hrtime now = ink_get_hrtime();                               \
+    unsigned int bucket = (now - _start_time) / HRTIME_MSECONDS(10); \
+    if (bucket > TIME_DIST_BUCKETS)                                  \
+      bucket = TIME_DIST_BUCKETS;                                    \
+    ink_atomic_increment(&_time_dist[bucket], 1);                    \
+    ink_atomic_increment(&_time_cnt, 1);                             \
+  } while (0)
 
 #else // !ENABLE_TIME_TRACE
 #define LOG_EVENT_TIME(_start_time, _time_dist, _time_cnt)

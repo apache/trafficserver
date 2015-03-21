@@ -57,7 +57,7 @@ RecMessageAlloc(RecMessageT msg_type, int initial_size)
 //-------------------------------------------------------------------------
 
 int
-RecMessageFree(RecMessage * msg)
+RecMessageFree(RecMessage *msg)
 {
   ats_free(msg);
   return REC_ERR_OKAY;
@@ -67,7 +67,7 @@ RecMessageFree(RecMessage * msg)
 // RecMessageMarshal_Realloc
 //-------------------------------------------------------------------------
 RecMessage *
-RecMessageMarshal_Realloc(RecMessage * msg, const RecRecord * record)
+RecMessageMarshal_Realloc(RecMessage *msg, const RecRecord *record)
 {
   int msg_ele_size;
   int rec_name_len = -1;
@@ -103,49 +103,49 @@ RecMessageMarshal_Realloc(RecMessage * msg, const RecRecord * record)
   // (msg_ele_size + 7) & ~7 == 5 !!!
   // msg_ele_size = (msg_ele_size + 7) & ~7;       // 8 byte alignmenet
 
-  msg_ele_size = INK_ALIGN_DEFAULT(msg_ele_size);  // 8 byte alignmenet
+  msg_ele_size = INK_ALIGN_DEFAULT(msg_ele_size); // 8 byte alignmenet
   // get some space in our buffer
   while (msg->o_end - msg->o_write < msg_ele_size) {
     int realloc_size = (msg->o_end - msg->o_start) * 2;
     msg = (RecMessage *)ats_realloc(msg, sizeof(RecMessageHdr) + realloc_size);
     msg->o_end = msg->o_start + realloc_size;
   }
-  ele_hdr = (RecMessageEleHdr *) ((char *) msg + msg->o_write);
+  ele_hdr = (RecMessageEleHdr *)((char *)msg + msg->o_write);
   // The following memset() is pretty CPU intensive, replacing it with something
   // like the below would reduce CPU usage a fair amount. /leif.
   // *((char*)msg + msg->o_write) = 0;
-  memset((char *) msg + msg->o_write, 0, msg->o_end - msg->o_write);
+  memset((char *)msg + msg->o_write, 0, msg->o_end - msg->o_write);
   msg->o_write += msg_ele_size;
 
   // store the record
   ele_hdr->magic = REC_MESSAGE_ELE_MAGIC;
   ele_hdr->o_next = msg->o_write;
-  p = (char *) ele_hdr + sizeof(RecMessageEleHdr);
+  p = (char *)ele_hdr + sizeof(RecMessageEleHdr);
   memcpy(p, record, sizeof(RecRecord));
-  r = (RecRecord *) p;
+  r = (RecRecord *)p;
   p += sizeof(RecRecord);
   if (rec_name_len != -1) {
-    ink_assert((msg->o_end - ((uintptr_t) p - (uintptr_t) msg)) >= (uintptr_t) rec_name_len);
+    ink_assert((msg->o_end - ((uintptr_t)p - (uintptr_t)msg)) >= (uintptr_t)rec_name_len);
     memcpy(p, record->name, rec_name_len);
-    r->name = (char *) ((uintptr_t) p - (uintptr_t) r);
+    r->name = (char *)((uintptr_t)p - (uintptr_t)r);
     p += rec_name_len;
   }
   if (rec_data_str_len != -1) {
-    ink_assert((msg->o_end - ((uintptr_t) p - (uintptr_t) msg)) >= (uintptr_t) rec_data_str_len);
+    ink_assert((msg->o_end - ((uintptr_t)p - (uintptr_t)msg)) >= (uintptr_t)rec_data_str_len);
     memcpy(p, record->data.rec_string, rec_data_str_len);
-    r->data.rec_string = (char *) ((uintptr_t) p - (uintptr_t) r);
+    r->data.rec_string = (char *)((uintptr_t)p - (uintptr_t)r);
     p += rec_data_str_len;
   }
   if (rec_data_def_str_len != -1) {
-    ink_assert((msg->o_end - ((uintptr_t) p - (uintptr_t) msg)) >= (uintptr_t) rec_data_def_str_len);
+    ink_assert((msg->o_end - ((uintptr_t)p - (uintptr_t)msg)) >= (uintptr_t)rec_data_def_str_len);
     memcpy(p, record->data_default.rec_string, rec_data_def_str_len);
-    r->data_default.rec_string = (char *) ((uintptr_t) p - (uintptr_t) r);
+    r->data_default.rec_string = (char *)((uintptr_t)p - (uintptr_t)r);
     p += rec_data_def_str_len;
   }
   if (rec_cfg_chk_len != -1) {
-    ink_assert((msg->o_end - ((uintptr_t) p - (uintptr_t) msg)) >= (uintptr_t) rec_cfg_chk_len);
+    ink_assert((msg->o_end - ((uintptr_t)p - (uintptr_t)msg)) >= (uintptr_t)rec_cfg_chk_len);
     memcpy(p, record->config_meta.check_expr, rec_cfg_chk_len);
-    r->config_meta.check_expr = (char *) ((uintptr_t) p - (uintptr_t) r);
+    r->config_meta.check_expr = (char *)((uintptr_t)p - (uintptr_t)r);
   }
 
   msg->entries += 1;
@@ -158,9 +158,9 @@ RecMessageMarshal_Realloc(RecMessage * msg, const RecRecord * record)
 //-------------------------------------------------------------------------
 
 int
-RecMessageUnmarshalFirst(RecMessage * msg, RecMessageItr * itr, RecRecord ** record)
+RecMessageUnmarshalFirst(RecMessage *msg, RecMessageItr *itr, RecRecord **record)
 {
-  itr->ele_hdr = (RecMessageEleHdr *) ((char *) msg + msg->o_start);
+  itr->ele_hdr = (RecMessageEleHdr *)((char *)msg + msg->o_start);
   itr->next = 1;
 
   return RecMessageUnmarshalNext(msg, NULL, record);
@@ -171,7 +171,7 @@ RecMessageUnmarshalFirst(RecMessage * msg, RecMessageItr * itr, RecRecord ** rec
 //-------------------------------------------------------------------------
 
 int
-RecMessageUnmarshalNext(RecMessage * msg, RecMessageItr * itr, RecRecord ** record)
+RecMessageUnmarshalNext(RecMessage *msg, RecMessageItr *itr, RecRecord **record)
 {
   RecMessageEleHdr *eh;
   RecRecord *r;
@@ -180,13 +180,13 @@ RecMessageUnmarshalNext(RecMessage * msg, RecMessageItr * itr, RecRecord ** reco
     if (msg->entries == 0) {
       return REC_ERR_FAIL;
     } else {
-      eh = (RecMessageEleHdr *) ((char *) msg + msg->o_start);
+      eh = (RecMessageEleHdr *)((char *)msg + msg->o_start);
     }
   } else {
     if (itr->next >= msg->entries) {
       return REC_ERR_FAIL;
     }
-    itr->ele_hdr = (RecMessageEleHdr *) ((char *) (msg) + itr->ele_hdr->o_next);
+    itr->ele_hdr = (RecMessageEleHdr *)((char *)(msg) + itr->ele_hdr->o_next);
     itr->next += 1;
     eh = itr->ele_hdr;
   }
@@ -199,21 +199,21 @@ RecMessageUnmarshalNext(RecMessage * msg, RecMessageItr * itr, RecRecord ** reco
     return REC_ERR_FAIL;
   }
 
-  r = (RecRecord *) ((char *) eh + sizeof(RecMessageEleHdr));
+  r = (RecRecord *)((char *)eh + sizeof(RecMessageEleHdr));
 
   if (r->name) {
-    r->name = (char *) r + (intptr_t) (r->name);
+    r->name = (char *)r + (intptr_t)(r->name);
   }
   if (r->data_type == RECD_STRING) {
     if (r->data.rec_string) {
-      r->data.rec_string = (char *) r + (intptr_t) (r->data.rec_string);
+      r->data.rec_string = (char *)r + (intptr_t)(r->data.rec_string);
     }
     if (r->data_default.rec_string) {
-      r->data_default.rec_string = (char *) r + (intptr_t) (r->data_default.rec_string);
+      r->data_default.rec_string = (char *)r + (intptr_t)(r->data_default.rec_string);
     }
   }
   if (REC_TYPE_IS_CONFIG(r->rec_type) && (r->config_meta.check_expr)) {
-    r->config_meta.check_expr = (char *) r + (intptr_t) (r->config_meta.check_expr);
+    r->config_meta.check_expr = (char *)r + (intptr_t)(r->config_meta.check_expr);
   }
 
   *record = r;
@@ -244,7 +244,7 @@ RecMessageRegisterRecvCb(RecMessageRecvCb recv_cb, void *cookie)
 void *
 RecMessageRecvThis(void * /* cookie */, char *data_raw, int /* data_len */)
 {
-  RecMessage *msg = (RecMessage *) data_raw;
+  RecMessage *msg = (RecMessage *)data_raw;
   g_recv_cb(msg, msg->msg_type, g_recv_cookie);
   return NULL;
 }
@@ -264,13 +264,12 @@ RecMessageReadFromDisk(const char *fpath)
   if ((h_file = RecFileOpenR(fpath)) == REC_HANDLE_INVALID) {
     goto Lerror;
   }
-  if (RecFileRead(h_file, (char *) (&msg_hdr), sizeof(RecMessageHdr), &bytes_read) == REC_ERR_FAIL) {
+  if (RecFileRead(h_file, (char *)(&msg_hdr), sizeof(RecMessageHdr), &bytes_read) == REC_ERR_FAIL) {
     goto Lerror;
   }
   msg = (RecMessage *)ats_malloc((msg_hdr.o_end - msg_hdr.o_start) + sizeof(RecMessageHdr));
   memcpy(msg, &msg_hdr, sizeof(RecMessageHdr));
-  if (RecFileRead(h_file, (char *) (msg) + msg_hdr.o_start,
-                  msg_hdr.o_end - msg_hdr.o_start, &bytes_read) == REC_ERR_FAIL) {
+  if (RecFileRead(h_file, (char *)(msg) + msg_hdr.o_start, msg_hdr.o_end - msg_hdr.o_start, &bytes_read) == REC_ERR_FAIL) {
     goto Lerror;
   }
 
@@ -306,7 +305,7 @@ RecMessageWriteToDisk(RecMessage *msg, const char *fpath)
 
   msg_size = sizeof(RecMessageHdr) + (msg->o_write - msg->o_start);
   if ((h_file = RecFileOpenW(fpath)) != REC_HANDLE_INVALID) {
-    if (RecFileWrite(h_file, (char *) msg, msg_size, &bytes_written) == REC_ERR_FAIL) {
+    if (RecFileWrite(h_file, (char *)msg, msg_size, &bytes_written) == REC_ERR_FAIL) {
       RecFileClose(h_file);
       return REC_ERR_FAIL;
     }

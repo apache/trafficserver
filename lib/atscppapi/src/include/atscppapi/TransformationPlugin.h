@@ -28,8 +28,8 @@
 #include <atscppapi/Transaction.h>
 #include <atscppapi/TransactionPlugin.h>
 
-namespace atscppapi {
-
+namespace atscppapi
+{
 struct TransformationPluginState;
 
 /**
@@ -78,14 +78,15 @@ struct TransformationPluginState;
  * @see Type
  * @see HookType
  */
-class TransformationPlugin : public TransactionPlugin {
+class TransformationPlugin : public TransactionPlugin
+{
 public:
   /**
    * The available types of Transformations.
    */
   enum Type {
     REQUEST_TRANSFORMATION = 0, /**< Transform the Request body content */
-    RESPONSE_TRANSFORMATION /**< Transform the Response body content */
+    RESPONSE_TRANSFORMATION     /**< Transform the Response body content */
   };
 
   /**
@@ -102,7 +103,6 @@ public:
 
   virtual ~TransformationPlugin(); /**< Destructor for a TransformationPlugin */
 protected:
-
   /**
    * This method is how a TransformationPlugin will produce output for the downstream
    * transformation plugin, if you need to produce binary data this can still be
@@ -119,6 +119,7 @@ protected:
 
   /** a TransformationPlugin must implement this interface, it cannot be constructed directly */
   TransformationPlugin(Transaction &transaction, Type type);
+
 private:
   TransformationPluginState *state_; /** Internal state for a TransformationPlugin */
   size_t doProduce(const std::string &);

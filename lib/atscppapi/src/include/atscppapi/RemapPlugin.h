@@ -28,12 +28,13 @@
 #include "atscppapi/Url.h"
 #include "atscppapi/utils.h"
 
-namespace atscppapi {
-
+namespace atscppapi
+{
 /**
  * @brief Base class that remap plugins should extend.
  */
-class RemapPlugin {
+class RemapPlugin
+{
 public:
   /**
    * Constructor
@@ -42,8 +43,13 @@ public:
    */
   RemapPlugin(void **instance_handle);
 
-  enum Result { RESULT_ERROR = 0, RESULT_NO_REMAP, RESULT_DID_REMAP, RESULT_NO_REMAP_STOP,
-                RESULT_DID_REMAP_STOP };
+  enum Result {
+    RESULT_ERROR = 0,
+    RESULT_NO_REMAP,
+    RESULT_DID_REMAP,
+    RESULT_NO_REMAP_STOP,
+    RESULT_DID_REMAP_STOP,
+  };
 
   /**
    * Invoked when a request matches the remap.config line - implementation should perform the
@@ -57,14 +63,15 @@ public:
    *
    * @return Result of the remap - will dictate futher processing by the system.
    */
-  virtual Result doRemap(const Url &map_from_url ATSCPPAPI_UNUSED, const Url &map_to_url ATSCPPAPI_UNUSED, Transaction &transaction ATSCPPAPI_UNUSED,
-                         bool &redirect ATSCPPAPI_UNUSED) {
+  virtual Result
+  doRemap(const Url &map_from_url ATSCPPAPI_UNUSED, const Url &map_to_url ATSCPPAPI_UNUSED,
+          Transaction &transaction ATSCPPAPI_UNUSED, bool &redirect ATSCPPAPI_UNUSED)
+  {
     return RESULT_NO_REMAP;
   }
 
-  virtual ~RemapPlugin() { }
+  virtual ~RemapPlugin() {}
 };
-
 }
 
 #endif

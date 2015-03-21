@@ -33,7 +33,8 @@ using namespace EsiLib;
 
 const int HttpDataFetcherImpl::FETCH_EVENT_ID_BASE = 10000;
 
-inline void HttpDataFetcherImpl::_release(RequestData &req_data)
+inline void
+HttpDataFetcherImpl::_release(RequestData &req_data)
 {
   if (req_data.bufp) {
     if (req_data.hdr_loc) {
@@ -45,10 +46,8 @@ inline void HttpDataFetcherImpl::_release(RequestData &req_data)
   }
 }
 
-HttpDataFetcherImpl::HttpDataFetcherImpl(TSCont contp,sockaddr const* client_addr,
-                                         const char *debug_tag)
-  : _contp(contp), _n_pending_requests(0), _curr_event_id_base(FETCH_EVENT_ID_BASE),
-    _headers_str(""),_client_addr(client_addr)
+HttpDataFetcherImpl::HttpDataFetcherImpl(TSCont contp, sockaddr const *client_addr, const char *debug_tag)
+  : _contp(contp), _n_pending_requests(0), _curr_event_id_base(FETCH_EVENT_ID_BASE), _headers_str(""), _client_addr(client_addr)
 {
   _http_parser = TSHttpParserCreate();
   snprintf(_debug_tag, sizeof(_debug_tag), "%s", debug_tag);
@@ -64,14 +63,12 @@ bool
 HttpDataFetcherImpl::addFetchRequest(const string &url, FetchedDataProcessor *callback_obj /* = 0 */)
 {
   // do we already have a request for this?
-  std::pair<UrlToContentMap::iterator, bool> insert_result =
-    _pages.insert(UrlToContentMap::value_type(url, RequestData()));
+  std::pair<UrlToContentMap::iterator, bool> insert_result = _pages.insert(UrlToContentMap::value_type(url, RequestData()));
   if (callback_obj) {
     ((insert_result.first)->second).callback_objects.push_back(callback_obj);
   }
   if (!insert_result.second) {
-    TSDebug(_debug_tag, "[%s] Fetch request for url [%s] already added", __FUNCTION__,
-             url.data());
+    TSDebug(_debug_tag, "[%s] Fetch request for url [%s] already added", __FUNCTION__, url.data());
     return true;
   }
 
@@ -82,7 +79,7 @@ HttpDataFetcherImpl::addFetchRequest(const string &url, FetchedDataProcessor *ca
   length = sizeof("GET ") - 1 + url.length() + sizeof(" HTTP/1.0\r\n") - 1 + _headers_str.length() + sizeof("\r\n") - 1;
   if (length < (int)sizeof(buff)) {
     http_req = buff;
-  }else {
+  } else {
     http_req = (char *)malloc(length + 1);
     if (http_req == NULL) {
       TSError("[%s] malloc %d bytes fail", __FUNCTION__, length + 1);
@@ -114,9 +111,8 @@ HttpDataFetcherImpl::_isFetchEvent(TSEvent event, int &base_event_id) const
 {
   base_event_id = _getBaseEventId(event);
   if ((base_event_id < 0) || (base_event_id >= static_cast<int>(_page_entry_lookup.size()))) {
-    TSDebug(_debug_tag, "[%s] Event id %d not within fetch event id range [%d, %ld)",
-             __FUNCTION__, event, FETCH_EVENT_ID_BASE,
-             static_cast<long int>(FETCH_EVENT_ID_BASE + (_page_entry_lookup.size() * 3)));
+    TSDebug(_debug_tag, "[%s] Event id %d not within fetch event id range [%d, %ld)", __FUNCTION__, event, FETCH_EVENT_ID_BASE,
+            static_cast<long int>(FETCH_EVENT_ID_BASE + (_page_entry_lookup.size() * 3)));
     return false;
   }
   return true;
@@ -167,19 +163,16 @@ HttpDataFetcherImpl::handleFetchEvent(TSEvent event, void *edata)
     if (req_data.resp_status == TS_HTTP_STATUS_OK) {
       req_data.body_len = endptr - startptr;
       req_data.body = startptr;
-      TSDebug(_debug_tag,
-               "[%s] Inserted page data of size %d starting with [%.6s] for request [%s]", __FUNCTION__,
-               req_data.body_len, (req_data.body_len ? req_data.body : "(null)"), req_str.c_str());
+      TSDebug(_debug_tag, "[%s] Inserted page data of size %d starting with [%.6s] for request [%s]", __FUNCTION__,
+              req_data.body_len, (req_data.body_len ? req_data.body : "(null)"), req_str.c_str());
 
-      if (_checkHeaderValue(req_data.bufp, req_data.hdr_loc,
-                       TS_MIME_FIELD_CONTENT_ENCODING,
-                       TS_MIME_LEN_CONTENT_ENCODING,
-                       TS_HTTP_VALUE_GZIP, TS_HTTP_LEN_GZIP, false)) {
+      if (_checkHeaderValue(req_data.bufp, req_data.hdr_loc, TS_MIME_FIELD_CONTENT_ENCODING, TS_MIME_LEN_CONTENT_ENCODING,
+                            TS_HTTP_VALUE_GZIP, TS_HTTP_LEN_GZIP, false)) {
         BufferList buf_list;
         req_data.raw_response = "";
         if (gunzip(req_data.body, req_data.body_len, buf_list)) {
           for (BufferList::iterator iter = buf_list.begin(); iter != buf_list.end(); ++iter) {
-            req_data.raw_response.append(iter->data(),iter->size());
+            req_data.raw_response.append(iter->data(), iter->size());
           }
         } else {
           TSError("[%s] Error while gunzipping data", __FUNCTION__);
@@ -188,24 +181,22 @@ HttpDataFetcherImpl::handleFetchEvent(TSEvent event, void *edata)
         req_data.body = req_data.raw_response.data();
       }
 
-      for (CallbackObjectList::iterator list_iter = req_data.callback_objects.begin();
-           list_iter != req_data.callback_objects.end(); ++list_iter) {
+      for (CallbackObjectList::iterator list_iter = req_data.callback_objects.begin(); list_iter != req_data.callback_objects.end();
+           ++list_iter) {
         (*list_iter)->processData(req_str.data(), req_str.size(), req_data.body, req_data.body_len);
       }
 
     } else {
-      TSDebug(_debug_tag, "[%s] Received non-OK status %d for request [%s]",
-               __FUNCTION__, req_data.resp_status, req_str.data());
+      TSDebug(_debug_tag, "[%s] Received non-OK status %d for request [%s]", __FUNCTION__, req_data.resp_status, req_str.data());
 
       string empty_response = "";
-      for (CallbackObjectList::iterator list_iter = req_data.callback_objects.begin();
-           list_iter != req_data.callback_objects.end(); ++list_iter) {
-         (*list_iter)->processData(req_str.data(), req_str.size(), empty_response.data(), empty_response.size());
+      for (CallbackObjectList::iterator list_iter = req_data.callback_objects.begin(); list_iter != req_data.callback_objects.end();
+           ++list_iter) {
+        (*list_iter)->processData(req_str.data(), req_str.size(), empty_response.data(), empty_response.size());
       }
     }
   } else {
-    TSDebug(_debug_tag, "[%s] Could not parse response for request [%s]",
-             __FUNCTION__, req_str.data());
+    TSDebug(_debug_tag, "[%s] Could not parse response for request [%s]", __FUNCTION__, req_str.data());
   }
 
   if (!valid_data_received) {
@@ -217,8 +208,8 @@ HttpDataFetcherImpl::handleFetchEvent(TSEvent event, void *edata)
 }
 
 bool
-HttpDataFetcherImpl::_checkHeaderValue(TSMBuffer bufp, TSMLoc hdr_loc, const char *name, int name_len,
-                 const char *exp_value, int exp_value_len, bool prefix) const
+HttpDataFetcherImpl::_checkHeaderValue(TSMBuffer bufp, TSMLoc hdr_loc, const char *name, int name_len, const char *exp_value,
+                                       int exp_value_len, bool prefix) const
 {
   TSMLoc field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, name, name_len);
   if (!field_loc) {
@@ -234,18 +225,16 @@ HttpDataFetcherImpl::_checkHeaderValue(TSMBuffer bufp, TSMLoc hdr_loc, const cha
 
     for (int i = 0; i < n_values; ++i) {
       value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, i, &value_len);
-      if ( NULL != value && value_len ) {
+      if (NULL != value && value_len) {
         if (prefix) {
-          if ((value_len >= exp_value_len) &&
-              (strncasecmp(value, exp_value, exp_value_len) == 0)) {
+          if ((value_len >= exp_value_len) && (strncasecmp(value, exp_value, exp_value_len) == 0)) {
             retval = true;
           }
         } else if (Utils::areEqual(value, value_len, exp_value, exp_value_len)) {
           retval = true;
         }
       } else {
-        TSDebug(_debug_tag, "[%s] Error while getting value # %d of header [%.*s]", __FUNCTION__,
-                 i, name_len, name);
+        TSDebug(_debug_tag, "[%s] Error while getting value # %d of header [%.*s]", __FUNCTION__, i, name_len, name);
       }
       if (retval) {
         break;
@@ -281,8 +270,8 @@ HttpDataFetcherImpl::getData(const string &url, ResponseData &resp_data) const
   }
 
   resp_data.set(req_data.body, req_data.body_len, req_data.bufp, req_data.hdr_loc, req_data.resp_status);
-  TSDebug(_debug_tag, "[%s] Found data for URL [%s] of size %d starting with [%.5s]",
-           __FUNCTION__, url.data(), req_data.body_len, req_data.body);
+  TSDebug(_debug_tag, "[%s] Found data for URL [%s] of size %d starting with [%.5s]", __FUNCTION__, url.data(), req_data.body_len,
+          req_data.body);
   return true;
 }
 
@@ -334,12 +323,12 @@ HttpDataFetcherImpl::useHeader(const HttpHeader &header)
 
   // should not support keep-alive for async requests
   if (Utils::areEqual(header.name, header.name_len, TS_MIME_FIELD_CONNECTION, TS_MIME_LEN_CONNECTION)) {
-      return;
+    return;
   }
 
   // should not support keep-alive for async requests
   if (Utils::areEqual(header.name, header.name_len, TS_MIME_FIELD_PROXY_CONNECTION, TS_MIME_LEN_PROXY_CONNECTION)) {
-      return;
+    return;
   }
 
   _headers_str.append(header.name, header.name_len);

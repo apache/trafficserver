@@ -37,21 +37,26 @@ using std::string;
  *
  */
 
-class CustomResponseTransactionPlugin : public atscppapi::TransactionPlugin {
+class CustomResponseTransactionPlugin : public atscppapi::TransactionPlugin
+{
 public:
   CustomResponseTransactionPlugin(Transaction &transaction, HttpStatus status, const string &reason, const string &body)
-     : TransactionPlugin(transaction), status_(status), reason_(reason), body_(body) {
+    : TransactionPlugin(transaction), status_(status), reason_(reason), body_(body)
+  {
     TransactionPlugin::registerHook(HOOK_SEND_RESPONSE_HEADERS);
     transaction.error(body_); // Set the error body now, and change the status and reason later.
   }
 
-  void handleSendResponseHeaders(Transaction &transaction) {
+  void
+  handleSendResponseHeaders(Transaction &transaction)
+  {
     transaction.getClientResponse().setStatusCode(status_);
     transaction.getClientResponse().setReasonPhrase(reason_);
     transaction.resume();
   }
 
-  virtual ~CustomResponseTransactionPlugin() { }
+  virtual ~CustomResponseTransactionPlugin() {}
+
 private:
   HttpStatus status_;
   string reason_;
@@ -59,14 +64,15 @@ private:
 };
 
 
-class ClientRedirectGlobalPlugin : public GlobalPlugin {
+class ClientRedirectGlobalPlugin : public GlobalPlugin
+{
 public:
-  ClientRedirectGlobalPlugin() {
-    registerHook(HOOK_SEND_REQUEST_HEADERS);
-  }
+  ClientRedirectGlobalPlugin() { registerHook(HOOK_SEND_REQUEST_HEADERS); }
 
-  void handleSendRequestHeaders(Transaction &transaction) {
-    if(transaction.getClientRequest().getUrl().getQuery().find("custom=1") != string::npos) {
+  void
+  handleSendRequestHeaders(Transaction &transaction)
+  {
+    if (transaction.getClientRequest().getUrl().getQuery().find("custom=1") != string::npos) {
       transaction.addPlugin(new CustomResponseTransactionPlugin(transaction, HTTP_STATUS_OK, "Ok",
                                                                 "Hello! This is a custom response without making "
                                                                 "an origin request and no server intercept."));
@@ -74,9 +80,10 @@ public:
     }
     transaction.resume();
   }
-
 };
 
-void TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED) {
+void
+TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
+{
   new ClientRedirectGlobalPlugin();
 }

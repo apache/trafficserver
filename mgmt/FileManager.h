@@ -40,10 +40,9 @@
 
 class Rollback;
 
-typedef void (*FileCallbackFunc) (char *, bool);
+typedef void (*FileCallbackFunc)(char *, bool);
 
-struct callbackListable
-{
+struct callbackListable {
 public:
   FileCallbackFunc func;
   LINK(callbackListable, link);
@@ -51,16 +50,24 @@ public:
 
 // MUST match the ordering MFresult so that we can cast
 //   MFresult to SnapResult
-enum SnapResult
-{ SNAP_OK, SNAP_NO_DIR, SNAP_NOT_FOUND, SNAP_DIR_CREATE_FAILED,
-  SNAP_FILE_CREATE_FAILED, SNAP_FILE_ACCESS_FAILED,
-  SNAP_WRITE_FAILED, SNAP_REMOVE_FAILED,
-  SNAP_INVALID_SUBMISSION, SNAP_NO_NAME_GIVEN,
+enum SnapResult {
+  SNAP_OK,
+  SNAP_NO_DIR,
+  SNAP_NOT_FOUND,
+  SNAP_DIR_CREATE_FAILED,
+  SNAP_FILE_CREATE_FAILED,
+  SNAP_FILE_ACCESS_FAILED,
+  SNAP_WRITE_FAILED,
+  SNAP_REMOVE_FAILED,
+  SNAP_INVALID_SUBMISSION,
+  SNAP_NO_NAME_GIVEN,
   SNAP_ILLEGAL_NAME
 };
 
-enum lockAction_t
-{ ACQUIRE_LOCK, RELEASE_LOCK };
+enum lockAction_t {
+  ACQUIRE_LOCK,
+  RELEASE_LOCK,
+};
 class ExpandingArray;
 
 //  class FileManager
@@ -104,46 +111,46 @@ class ExpandingArray;
 //  rereadConfig() - Checks all managed files to see if they have been
 //       updated
 //
-class FileManager:public MultiFile
+class FileManager : public MultiFile
 {
 public:
   FileManager();
   ~FileManager();
   void addFile(const char *baseFileName, bool root_access_needed);
-  bool getRollbackObj(const char *baseFileName, Rollback ** rbPtr);
+  bool getRollbackObj(const char *baseFileName, Rollback **rbPtr);
   void registerCallback(FileCallbackFunc func);
   void fileChanged(const char *baseFileName, bool incVersion);
   textBuffer *filesManaged();
   void rereadConfig();
   bool isConfigStale();
-  //SnapResult takeSnap(const char* snapName);
+  // SnapResult takeSnap(const char* snapName);
   SnapResult takeSnap(const char *snapName, const char *snapDir);
-  //SnapResult restoreSnap(const char* snapName);
+  // SnapResult restoreSnap(const char* snapName);
   SnapResult restoreSnap(const char *snapName, const char *snapDir);
-  //SnapResult removeSnap(const char* snapName);
+  // SnapResult removeSnap(const char* snapName);
   SnapResult removeSnap(const char *snapName, const char *snapDir);
-  void displaySnapOption(textBuffer * output);
-  SnapResult WalkSnaps(ExpandingArray * snapList);
+  void displaySnapOption(textBuffer *output);
+  SnapResult WalkSnaps(ExpandingArray *snapList);
 
 private:
   void doRollbackLocks(lockAction_t action);
-  ink_mutex accessLock;         // Protects bindings hashtable
-  ink_mutex cbListLock;         // Protects the CallBack List
-    DLL<callbackListable> cblist;
+  ink_mutex accessLock; // Protects bindings hashtable
+  ink_mutex cbListLock; // Protects the CallBack List
+  DLL<callbackListable> cblist;
   InkHashTable *bindings;
-  //InkHashTable* g_snapshot_directory_ht;
-  SnapResult copyFile(Rollback * rb, const char *snapPath);
-  SnapResult readFile(const char *filePath, textBuffer * contents);
+  // InkHashTable* g_snapshot_directory_ht;
+  SnapResult copyFile(Rollback *rb, const char *snapPath);
+  SnapResult readFile(const char *filePath, textBuffer *contents);
   void abortRestore(const char *abortTo);
-  void createSelect(char *action, textBuffer * output, ExpandingArray * options);
-  void snapErrorResponse(char *action, SnapResult error, textBuffer * output);
-  void snapSuccessResponse(char *action, textBuffer * output);
-  void generateRestoreConfirm(char *snapName, textBuffer * output);
+  void createSelect(char *action, textBuffer *output, ExpandingArray *options);
+  void snapErrorResponse(char *action, SnapResult error, textBuffer *output);
+  void snapSuccessResponse(char *action, textBuffer *output);
+  void generateRestoreConfirm(char *snapName, textBuffer *output);
   bool checkValidName(const char *name);
 };
 
 int snapEntryCmpFunc(const void *e1, const void *e2);
 
-void initializeRegistry();      // implemented in AddConfigFilesHere.cc
+void initializeRegistry(); // implemented in AddConfigFilesHere.cc
 
 #endif

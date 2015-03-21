@@ -31,7 +31,7 @@ create_url(const char *url_string)
   char buf[4096];
   int len = 0;
   URL *url_p = new URL(url_string);
-  URL & url = *url_p;
+  URL &url = *url_p;
 
   cout << "scheme        : " << url.getScheme() << endl;
   len = url.getUserName(buf, sizeof(buf));
@@ -78,7 +78,6 @@ create_url(const char *url_string)
 
   default:
     break;
-
   }
   cout << "real length   : " << strlen(url_string) << endl;
   cout << "u-bound length: " << url.getUrlLengthUpperBound() << endl;
@@ -92,7 +91,7 @@ create_url(const char *url_string)
 }
 
 void
-test_marshal(URL * url)
+test_marshal(URL *url)
 {
   char buf[8196];
 

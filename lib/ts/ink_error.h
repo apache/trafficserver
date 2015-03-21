@@ -30,7 +30,7 @@
  ****************************************************************************/
 
 #ifndef _ink_error_h_
-#define	_ink_error_h_
+#define _ink_error_h_
 
 #include <stdarg.h>
 #include "ink_platform.h"

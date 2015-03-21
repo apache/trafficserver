@@ -28,7 +28,7 @@
 
 
  ****************************************************************************/
-#if !defined (_HttpTransactCache_h_)
+#if !defined(_HttpTransactCache_h_)
 #define _HttpTransactCache_h_
 
 #include "libts.h"
@@ -38,7 +38,7 @@ struct CacheHTTPInfoVector;
 class CacheLookupHttpConfig
 {
 public:
-  bool cache_global_user_agent_header;  // 'global' user agent flag (don't need to marshal/unmarshal)
+  bool cache_global_user_agent_header; // 'global' user agent flag (don't need to marshal/unmarshal)
   bool cache_enable_default_vary_headers;
   unsigned ignore_accept_mismatch;
   unsigned ignore_accept_language_mismatch;
@@ -50,17 +50,14 @@ public:
 
   inkcoreapi int marshal_length();
   inkcoreapi int marshal(char *buf, int length);
-  int unmarshal(Arena * arena, const char *buf, int length);
+  int unmarshal(Arena *arena, const char *buf, int length);
 
-  CacheLookupHttpConfig():
-    cache_global_user_agent_header(false),
-    cache_enable_default_vary_headers(false),
-    ignore_accept_mismatch(0),
-    ignore_accept_language_mismatch(0),
-    ignore_accept_encoding_mismatch(0),
-    ignore_accept_charset_mismatch(0),
-    cache_vary_default_text(NULL), cache_vary_default_images(NULL), cache_vary_default_other(NULL)
-  { }
+  CacheLookupHttpConfig()
+    : cache_global_user_agent_header(false), cache_enable_default_vary_headers(false), ignore_accept_mismatch(0),
+      ignore_accept_language_mismatch(0), ignore_accept_encoding_mismatch(0), ignore_accept_charset_mismatch(0),
+      cache_vary_default_text(NULL), cache_vary_default_images(NULL), cache_vary_default_other(NULL)
+  {
+  }
 
   void *operator new(size_t size, void *mem);
   void operator delete(void *mem);
@@ -70,74 +67,65 @@ extern ClassAllocator<CacheLookupHttpConfig> CacheLookupHttpConfigAllocator;
 // this is a global CacheLookupHttpConfig used to bypass SelectFromAlternates
 extern CacheLookupHttpConfig global_cache_lookup_config;
 
-inline void *
-CacheLookupHttpConfig::operator new(size_t size, void *mem)
+inline void *CacheLookupHttpConfig::operator new(size_t size, void *mem)
 {
-  (void) size;
+  (void)size;
   return mem;
 }
 
-inline void
-CacheLookupHttpConfig::operator delete(void *mem)
+inline void CacheLookupHttpConfig::operator delete(void *mem)
 {
-  CacheLookupHttpConfigAllocator.free((CacheLookupHttpConfig *) mem);
+  CacheLookupHttpConfigAllocator.free((CacheLookupHttpConfig *)mem);
 }
 
-enum Variability_t
-{
+enum Variability_t {
   VARIABILITY_NONE = 0,
   VARIABILITY_SOME,
-  VARIABILITY_ALL
+  VARIABILITY_ALL,
 };
 
-enum ContentEncoding
-{
+enum ContentEncoding {
   NO_GZIP = 0,
-  GZIP
+  GZIP,
 };
 
 
 class HttpTransactCache
 {
 public:
-
   /////////////////////////////////
   // content negotiation support //
   /////////////////////////////////
 
-  static int SelectFromAlternates(CacheHTTPInfoVector * cache_vector_data,
-                                  HTTPHdr * client_request, CacheLookupHttpConfig * cache_lookup_http_config_params);
+  static int SelectFromAlternates(CacheHTTPInfoVector *cache_vector_data, HTTPHdr *client_request,
+                                  CacheLookupHttpConfig *cache_lookup_http_config_params);
 
-  static float calculate_quality_of_match(CacheLookupHttpConfig * http_config_params, HTTPHdr * client_request, // in
-                                          HTTPHdr * obj_client_request, // in
-                                          HTTPHdr * obj_origin_server_response);        // in
+  static float calculate_quality_of_match(CacheLookupHttpConfig *http_config_params, HTTPHdr *client_request, // in
+                                          HTTPHdr *obj_client_request,                                        // in
+                                          HTTPHdr *obj_origin_server_response);                               // in
 
-  static float calculate_quality_of_accept_match(MIMEField * accept_field, MIMEField * content_field);
+  static float calculate_quality_of_accept_match(MIMEField *accept_field, MIMEField *content_field);
 
-  static float calculate_quality_of_accept_charset_match(MIMEField * accept_field,
-                                                         MIMEField * content_field,
-                                                         MIMEField * cached_accept_field = NULL);
+  static float calculate_quality_of_accept_charset_match(MIMEField *accept_field, MIMEField *content_field,
+                                                         MIMEField *cached_accept_field = NULL);
 
-  static float calculate_quality_of_accept_encoding_match(MIMEField * accept_field,
-                                                          MIMEField * content_field,
-                                                          MIMEField * cached_accept_field = NULL);
-  static ContentEncoding match_gzip(MIMEField * accept_field);
+  static float calculate_quality_of_accept_encoding_match(MIMEField *accept_field, MIMEField *content_field,
+                                                          MIMEField *cached_accept_field = NULL);
+  static ContentEncoding match_gzip(MIMEField *accept_field);
 
-  static float calculate_quality_of_accept_language_match(MIMEField * accept_field,
-                                                          MIMEField * content_field,
-                                                          MIMEField * cached_accept_field = NULL);
+  static float calculate_quality_of_accept_language_match(MIMEField *accept_field, MIMEField *content_field,
+                                                          MIMEField *cached_accept_field = NULL);
 
   ///////////////////////////////////////////////
   // variability & server negotiation routines //
   ///////////////////////////////////////////////
 
-  static Variability_t CalcVariability(CacheLookupHttpConfig * http_config_params, HTTPHdr * client_request,    // in
-                                       HTTPHdr * obj_client_request,    // in
-                                       HTTPHdr * obj_origin_server_response     // in
-    );
+  static Variability_t CalcVariability(CacheLookupHttpConfig *http_config_params, HTTPHdr *client_request, // in
+                                       HTTPHdr *obj_client_request,                                        // in
+                                       HTTPHdr *obj_origin_server_response                                 // in
+                                       );
 
-  static HTTPStatus match_response_to_request_conditionals(HTTPHdr * ua_request, HTTPHdr * c_response);
-
+  static HTTPStatus match_response_to_request_conditionals(HTTPHdr *ua_request, HTTPHdr *c_response);
 };
 
 #endif

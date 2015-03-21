@@ -53,76 +53,70 @@ clock_t start, stop;
 
 void *ink_memchr(const void *as, int ac, size_t an);
 
-#define STRLEN_TEST(_func_,_size_) \
-{ \
-    start = clock(); \
-    for (i = 0; i < cycles; i++) { \
-	iresult = _func_ (_size_); \
-    } \
-    stop = clock(); \
-    printf ("%20s\t%10s\t%1.03g usec/op\n", \
-            #_func_, #_size_, ((double)stop-start)/((double)cycles)); \
-}
+#define STRLEN_TEST(_func_, _size_)                                                                      \
+  {                                                                                                      \
+    start = clock();                                                                                     \
+    for (i = 0; i < cycles; i++) {                                                                       \
+      iresult = _func_(_size_);                                                                          \
+    }                                                                                                    \
+    stop = clock();                                                                                      \
+    printf("%20s\t%10s\t%1.03g usec/op\n", #_func_, #_size_, ((double)stop - start) / ((double)cycles)); \
+  }
 
-#define STRCHR_TEST(_func_,_size_,_chr_) \
-{ \
-    start = clock(); \
-    for (i = 0; i < cycles; i++) { \
-	sresult = _func_ (_size_,_chr_); \
-    } \
-    stop = clock(); \
-    printf ("%20s\t%10s\t%1.03g usec/op\t%s\n", \
-            #_func_, #_size_, ((double)stop-start)/((double)cycles), \
-	    (sresult)? "found" : "not found"); \
-}
+#define STRCHR_TEST(_func_, _size_, _chr_)                                                                  \
+  {                                                                                                         \
+    start = clock();                                                                                        \
+    for (i = 0; i < cycles; i++) {                                                                          \
+      sresult = _func_(_size_, _chr_);                                                                      \
+    }                                                                                                       \
+    stop = clock();                                                                                         \
+    printf("%20s\t%10s\t%1.03g usec/op\t%s\n", #_func_, #_size_, ((double)stop - start) / ((double)cycles), \
+           (sresult) ? "found" : "not found");                                                              \
+  }
 
-#define JP_MEMCHR_TEST(_func_,_size_,_chr_,_len_) \
-{ \
-    start = clock(); \
-    for (i = 0; i < cycles; i++) { \
-	sresult = (char*) ink_memchr (_size_,_chr_,_len_); \
-    } \
-    stop = clock(); \
-    printf ("%20s\t%10s\t%1.03g usec/op\t%s\n", \
-            "jp_memchr", #_size_, ((double)stop-start)/((double)cycles), \
-	    (sresult)? "found" : "not found"); \
-}
+#define JP_MEMCHR_TEST(_func_, _size_, _chr_, _len_)                                                            \
+  {                                                                                                             \
+    start = clock();                                                                                            \
+    for (i = 0; i < cycles; i++) {                                                                              \
+      sresult = (char *)ink_memchr(_size_, _chr_, _len_);                                                       \
+    }                                                                                                           \
+    stop = clock();                                                                                             \
+    printf("%20s\t%10s\t%1.03g usec/op\t%s\n", "jp_memchr", #_size_, ((double)stop - start) / ((double)cycles), \
+           (sresult) ? "found" : "not found");                                                                  \
+  }
 
-#define STRCMP_TEST(_func_,_size_,_str_) \
-{ \
-    start = clock(); \
-    for (i = 0; i < cycles; i++) { \
-	iresult = _func_ (_size_,_str_); \
-    } \
-    stop = clock(); \
-    printf ("%20s\t%10s\t%1.03g usec/op\t%s\n", \
-            #_func_, #_size_, ((double)stop-start)/((double)cycles), \
-	    (sresult)? "not matching" : "matching"); \
-}
+#define STRCMP_TEST(_func_, _size_, _str_)                                                                  \
+  {                                                                                                         \
+    start = clock();                                                                                        \
+    for (i = 0; i < cycles; i++) {                                                                          \
+      iresult = _func_(_size_, _str_);                                                                      \
+    }                                                                                                       \
+    stop = clock();                                                                                         \
+    printf("%20s\t%10s\t%1.03g usec/op\t%s\n", #_func_, #_size_, ((double)stop - start) / ((double)cycles), \
+           (sresult) ? "not matching" : "matching");                                                        \
+  }
 
-#define STRCPY_TEST(_func_,_size_) \
-{ \
-    char buf[1024]; \
-    start = clock(); \
-    for (i = 0; i < cycles; i++) { \
-	sresult = _func_ (buf,_size_); \
-    } \
-    stop = clock(); \
-    printf ("%20s\t%10s\t%1.03g usec/op\n", \
-            #_func_, #_size_, ((double)stop-start)/((double)cycles)); \
-}
+#define STRCPY_TEST(_func_, _size_)                                                                      \
+  {                                                                                                      \
+    char buf[1024];                                                                                      \
+    start = clock();                                                                                     \
+    for (i = 0; i < cycles; i++) {                                                                       \
+      sresult = _func_(buf, _size_);                                                                     \
+    }                                                                                                    \
+    stop = clock();                                                                                      \
+    printf("%20s\t%10s\t%1.03g usec/op\n", #_func_, #_size_, ((double)stop - start) / ((double)cycles)); \
+  }
 
-#define MEMCPY_TEST(_func_,_size_,_len_) \
-{ \
-    char buf[1024]; \
-    start = clock(); \
-    for (i = 0; i < cycles; i++) { \
-	sresult = (char*) _func_ (buf,_size_,_len_); \
-    } \
-    stop = clock(); \
-    printf ("%20s\t%10s\t%10s\t%1.03g usec/op\n", \
-            #_func_, #_size_, #_len_, ((double)stop-start)/((double)cycles)); \
-}
+#define MEMCPY_TEST(_func_, _size_, _len_)                                                                             \
+  {                                                                                                                    \
+    char buf[1024];                                                                                                    \
+    start = clock();                                                                                                   \
+    for (i = 0; i < cycles; i++) {                                                                                     \
+      sresult = (char *)_func_(buf, _size_, _len_);                                                                    \
+    }                                                                                                                  \
+    stop = clock();                                                                                                    \
+    printf("%20s\t%10s\t%10s\t%1.03g usec/op\n", #_func_, #_size_, #_len_, ((double)stop - start) / ((double)cycles)); \
+  }
 
 /* version from ink_string.h */
 inline char *
@@ -149,7 +143,7 @@ ink_memcpy(char *d, char *s, int len)
 inline char *
 jp_strchr(char *s, char c)
 {
-  return (char *) ink_memchr(s, c, strlen(s));
+  return (char *)ink_memchr(s, c, strlen(s));
 }
 
 void
@@ -251,17 +245,17 @@ main(int argc, char *argv[])
 void *
 ink_memchr(const void *as, int ac, size_t an)
 {
-  unsigned char c = (unsigned char) ac;
-  unsigned char *s = (unsigned char *) as;
+  unsigned char c = (unsigned char)ac;
+  unsigned char *s = (unsigned char *)as;
 
   // initial segment
 
-  int i_len = (int)(((uintptr_t) 8 - (uintptr_t) as) & 7);
+  int i_len = (int)(((uintptr_t)8 - (uintptr_t)as) & 7);
 
   // too short to concern us
 
-  if ((int) an < i_len) {
-    for (int i = 0; i < (int) an; i++)
+  if ((int)an < i_len) {
+    for (int i = 0; i < (int)an; i++)
       if (s[i] == c)
         return &s[i];
     return 0;
@@ -289,7 +283,7 @@ ink_memchr(const void *as, int ac, size_t an)
   ib |= (ib << 16);
   unsigned int im = 0x7efefeff;
   if (i_len & 4) {
-    unsigned int ibp = *(unsigned int *) s;
+    unsigned int ibp = *(unsigned int *)s;
     unsigned int ibb = ibp ^ ib;
     ibb = ((ibb + im) ^ ~ibb) & ~im;
     if (ibb) {
@@ -306,17 +300,17 @@ ink_memchr(const void *as, int ac, size_t an)
   }
   // next 8x bytes
   uint64_t m = 0x7efefefefefefeffLL;
-  uint64_t b = ((uint64_t) ib);
+  uint64_t b = ((uint64_t)ib);
   b |= (b << 32);
-  uint64_t *p = (uint64_t *) s;
-  unsigned int n = (((unsigned int) an) - (s - (unsigned char *) as)) >> 3;
+  uint64_t *p = (uint64_t *)s;
+  unsigned int n = (((unsigned int)an) - (s - (unsigned char *)as)) >> 3;
   uint64_t *end = p + n;
   while (p < end) {
     uint64_t bp = *p;
     uint64_t bb = bp ^ b;
     bb = ((bb + m) ^ ~bb) & ~m;
     if (bb) {
-      s = (unsigned char *) p;
+      s = (unsigned char *)p;
       if (s[0] == c)
         return &s[0];
       if (s[1] == c)
@@ -339,13 +333,13 @@ ink_memchr(const void *as, int ac, size_t an)
 
   // terminal segement
 
-  i_len = an - (((unsigned char *) p) - ((unsigned char *) as));
-  s = (unsigned char *) p;
+  i_len = an - (((unsigned char *)p) - ((unsigned char *)as));
+  s = (unsigned char *)p;
 
   // n-(4..8)..n bytes
 
   if (i_len & 4) {
-    unsigned int ibp = *(unsigned int *) s;
+    unsigned int ibp = *(unsigned int *)s;
     unsigned int ibb = ibp ^ ib;
     ibb = ((ibb + im) ^ ~ibb) & ~im;
     if (ibb) {

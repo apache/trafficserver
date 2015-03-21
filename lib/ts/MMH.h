@@ -22,14 +22,13 @@
  */
 
 #ifndef _MMH_h_
-#define	_MMH_h_
+#define _MMH_h_
 
 #include "ink_code.h"
 #include "ink_defs.h"
 #include "CryptoHash.h"
 
-struct MMH_CTX
-{
+struct MMH_CTX {
   uint64_t state[4];
   unsigned char buffer[32];
   int buffer_size;
@@ -39,9 +38,9 @@ struct MMH_CTX
 // signed-unsigned-const gratuitous differences brought
 // to you by history and the ANSI committee
 
-int inkcoreapi ink_code_incr_MMH_init(MMH_CTX * context);
-int inkcoreapi ink_code_incr_MMH_update(MMH_CTX * context, const char *input, int input_length);
-int inkcoreapi ink_code_incr_MMH_final(uint8_t *sixteen_byte_hash_pointer, MMH_CTX * context);
+int inkcoreapi ink_code_incr_MMH_init(MMH_CTX *context);
+int inkcoreapi ink_code_incr_MMH_update(MMH_CTX *context, const char *input, int input_length);
+int inkcoreapi ink_code_incr_MMH_final(uint8_t *sixteen_byte_hash_pointer, MMH_CTX *context);
 int inkcoreapi ink_code_MMH(unsigned char *input, int len, unsigned char *sixteen_byte_hash);
 
 /**
@@ -54,13 +53,14 @@ class MMHContext : public CryptoContext
 {
 protected:
   MMH_CTX _ctx;
+
 public:
   MMHContext();
   /// Update the hash with @a data of @a length bytes.
-  virtual bool update(void const* data, int length);
+  virtual bool update(void const *data, int length);
   /// Finalize and extract the @a hash.
-  virtual bool finalize(CryptoHash& hash);
-# if 0
+  virtual bool finalize(CryptoHash &hash);
+#if 0
   MMH & loadFromBuffer(char *MMH_buf)
   {
     int i;
@@ -113,7 +113,7 @@ public:
   {
     return ink_code_md5_stringify_fast(hex_MMH, str());
   }
-# endif
+#endif
 };
 
 #endif

@@ -37,8 +37,8 @@
 #include "ControlMatcher.h"
 #include "CongestionStats.h"
 
-#define CONGESTION_EVENT_CONGESTED_ON_M      (CONGESTION_EVENT_EVENTS_START + 1)
-#define CONGESTION_EVENT_CONGESTED_ON_F      (CONGESTION_EVENT_EVENTS_START + 2)
+#define CONGESTION_EVENT_CONGESTED_ON_M (CONGESTION_EVENT_EVENTS_START + 1)
+#define CONGESTION_EVENT_CONGESTED_ON_F (CONGESTION_EVENT_EVENTS_START + 2)
 #define CONGESTION_EVENT_CONGESTED_LIST_DONE (CONGESTION_EVENT_EVENTS_START + 3)
 #define CONGESTION_EVENT_CONTROL_LOOKUP_DONE (CONGESTION_EVENT_EVENTS_START + 4)
 
@@ -46,41 +46,42 @@ struct RequestData;
 
 extern InkRand CongestionRand;
 
-enum
-{ PER_IP, PER_HOST };
+enum {
+  PER_IP,
+  PER_HOST,
+};
 
 class CongestionControlRecord;
 
-struct CongestionControlRule
-{
+struct CongestionControlRule {
   CongestionControlRule();
   ~CongestionControlRule();
   CongestionControlRecord *record;
 };
 
-class CongestionControlRecord:public ControlBase
+class CongestionControlRecord : public ControlBase
 {
 public:
   CongestionControlRecord();
-  CongestionControlRecord(const CongestionControlRecord & rec);
-   ~CongestionControlRecord();
-  config_parse_error Init(matcher_line * line_info);
-  void UpdateMatch(CongestionControlRule * pRule, RequestData * rdata);
+  CongestionControlRecord(const CongestionControlRecord &rec);
+  ~CongestionControlRecord();
+  config_parse_error Init(matcher_line *line_info);
+  void UpdateMatch(CongestionControlRule *pRule, RequestData *rdata);
   void Print();
 
   void cleanup();
   void setdefault();
   config_parse_error validate();
 
-  int rank;                     // matching preference
-/*
- * Select the first matching rule specified in congestion.config
- * rank     Matches
- *   3       dest && prefix && port
- *   2       dest && port
- *   1       dest && prefix
- *   0       dest
- */
+  int rank; // matching preference
+            /*
+             * Select the first matching rule specified in congestion.config
+             * rank     Matches
+             *   3       dest && prefix && port
+             *   2       dest && port
+             *   1       dest && prefix
+             *   0       dest
+             */
 
   char *prefix;
   int prefix_len;
@@ -102,58 +103,36 @@ public:
   CongestionControlRecord *pRecord;
   int32_t ref_count;
 
-  void get()
+  void
+  get()
   {
     ink_atomic_increment(&ref_count, 1);
   }
-  void put()
+  void
+  put()
   {
     if (ink_atomic_increment(&ref_count, -1) == 1)
       delete this;
   }
 };
 
-inline
-CongestionControlRule::CongestionControlRule()
-  :
-record(NULL)
+inline CongestionControlRule::CongestionControlRule() : record(NULL)
 {
 }
 
-inline
-CongestionControlRule::~
-CongestionControlRule()
+inline CongestionControlRule::~CongestionControlRule()
 {
   record = NULL;
 }
 
-inline
-CongestionControlRecord::CongestionControlRecord()
-  :
-rank(0),
-prefix(NULL),
-prefix_len(0),
-port(0),
-congestion_scheme(PER_IP),
-error_page(NULL),
-max_connection_failures(5),
-fail_window(120),
-proxy_retry_interval(10),
-client_wait_interval(300),
-wait_interval_alpha(30),
-live_os_conn_timeout(60),
-live_os_conn_retries(2),
-dead_os_conn_timeout(15),
-dead_os_conn_retries(1),
-max_connection(-1),
-pRecord(NULL),
-ref_count(0)
+inline CongestionControlRecord::CongestionControlRecord()
+  : rank(0), prefix(NULL), prefix_len(0), port(0), congestion_scheme(PER_IP), error_page(NULL), max_connection_failures(5),
+    fail_window(120), proxy_retry_interval(10), client_wait_interval(300), wait_interval_alpha(30), live_os_conn_timeout(60),
+    live_os_conn_retries(2), dead_os_conn_timeout(15), dead_os_conn_retries(1), max_connection(-1), pRecord(NULL), ref_count(0)
 {
 }
 
-inline
-CongestionControlRecord::~
-CongestionControlRecord()
+inline CongestionControlRecord::~CongestionControlRecord()
 {
   cleanup();
 }
@@ -172,8 +151,7 @@ typedef unsigned short cong_hist_t;
 #define CONG_HIST_ENTRIES 17
 
 // CongestionEntry
-struct FailHistory
-{
+struct FailHistory {
   long start;
   int bin_len;
   int length;
@@ -182,22 +160,19 @@ struct FailHistory
   long last_event;
   int events;
 
-    FailHistory():start(0), bin_len(0), length(0), cur_index(0), last_event(0), events(0)
-  {
-    bzero((void *) &bins, sizeof(bins));
-  }
+  FailHistory() : start(0), bin_len(0), length(0), cur_index(0), last_event(0), events(0) { bzero((void *)&bins, sizeof(bins)); }
   void init(int window);
   void init_event(long t, int n = 1);
   int regist_event(long t, int n = 1);
-  int get_bin_events(int index)
+  int
+  get_bin_events(int index)
   {
     return bins[(index + 1 + cur_index) % CONG_HIST_ENTRIES];
   }
 };
 
 
-struct CongestionEntry: public RequestData
-{
+struct CongestionEntry : public RequestData {
   // key in the hash table;
   uint64_t m_key;
   // host info
@@ -212,41 +187,46 @@ struct CongestionEntry: public RequestData
   FailHistory m_history;
   Ptr<ProxyMutex> m_hist_lock;
   ink_hrtime m_last_congested;
-  volatile int m_congested;     //0 | 1
+  volatile int m_congested; // 0 | 1
   int m_stat_congested_conn_failures;
 
   volatile int m_M_congested;
   ink_hrtime m_last_M_congested;
 
-// State -- concorrent connections
+  // State -- concorrent connections
   int m_num_connections;
   int m_stat_congested_max_conn;
 
   // Reference count
   int m_ref_count;
 
-    CongestionEntry(const char *hostname, sockaddr const* ip, CongestionControlRecord * rule, uint64_t key);
-    CongestionEntry();
-    virtual ~ CongestionEntry();
+  CongestionEntry(const char *hostname, sockaddr const *ip, CongestionControlRecord *rule, uint64_t key);
+  CongestionEntry();
+  virtual ~CongestionEntry();
 
   /* RequestData virtural functions */
-  virtual char *get_string()
+  virtual char *
+  get_string()
   {
     return pRecord->prefix;
   }
-  virtual const char *get_host()
+  virtual const char *
+  get_host()
   {
     return m_hostname;
   }
-  virtual sockaddr const* get_ip()
+  virtual sockaddr const *
+  get_ip()
   {
     return &m_ip.sa;
   }
-  virtual const sockaddr* get_client_ip()
+  virtual const sockaddr *
+  get_client_ip()
   {
     return NULL;
   }
-  virtual RD_Type data_type(void)
+  virtual RD_Type
+  data_type(void)
   {
     return RD_CONGEST_ENTRY;
   }
@@ -275,7 +255,8 @@ struct CongestionEntry: public RequestData
   int client_retry_after();
   int connect_retries();
   int connect_timeout();
-  char *getErrorPage()
+  char *
+  getErrorPage()
   {
     return pRecord->error_page;
   }
@@ -291,16 +272,15 @@ struct CongestionEntry: public RequestData
   // CongestionEntry and CongestionControl rules interaction helper functions
   bool usefulInfo(ink_hrtime t);
   bool validate();
-  void applyNewRule(CongestionControlRecord * rule);
-  void init(CongestionControlRecord * rule);
-
+  void applyNewRule(CongestionControlRecord *rule);
+  void init(CongestionControlRecord *rule);
 };
 
-inline bool CongestionEntry::usefulInfo(ink_hrtime t)
+inline bool
+CongestionEntry::usefulInfo(ink_hrtime t)
 {
-  return (m_ref_count > 1 ||
-          m_congested != 0 ||
-          m_num_connections > 0 || (m_history.last_event + pRecord->fail_window > t && m_history.events > 0));
+  return (m_ref_count > 1 || m_congested != 0 || m_num_connections > 0 ||
+          (m_history.last_event + pRecord->fail_window > t && m_history.events > 0));
 }
 
 inline int
@@ -315,17 +295,20 @@ CongestionEntry::client_retry_after()
   return (prat + pRecord->client_wait_interval + CongestionRand.random() % pRecord->wait_interval_alpha);
 }
 
-inline bool CongestionEntry::proxy_retry(ink_hrtime t)
+inline bool
+CongestionEntry::proxy_retry(ink_hrtime t)
 {
   return ((ink_hrtime_to_sec(t) - m_history.last_event) >= pRecord->proxy_retry_interval);
 }
 
-inline bool CongestionEntry::F_congested()
+inline bool
+CongestionEntry::F_congested()
 {
   return m_congested == 1;
 }
 
-inline bool CongestionEntry::M_congested(ink_hrtime t)
+inline bool
+CongestionEntry::M_congested(ink_hrtime t)
 {
   if (pRecord->max_connection >= 0 && m_num_connections >= pRecord->max_connection) {
     if (ink_atomic_swap(&m_M_congested, 1) == 0) {
@@ -337,7 +320,8 @@ inline bool CongestionEntry::M_congested(ink_hrtime t)
   return false;
 }
 
-inline bool CongestionEntry::congested()
+inline bool
+CongestionEntry::congested()
 {
   return (F_congested() || m_M_congested == 1);
 }
@@ -375,7 +359,8 @@ CongestionEntry::stat_inc_M()
   ink_atomic_increment(&m_stat_congested_max_conn, 1);
 }
 
-inline bool CongestionEntry::compCongested()
+inline bool
+CongestionEntry::compCongested()
 {
   if (m_congested)
     return true;
@@ -409,10 +394,8 @@ CongestionEntry::clearFailHistory()
 }
 
 inline CongestionEntry::CongestionEntry()
-:m_key(0), m_hostname(NULL), pRecord(NULL),
-m_last_congested(0), m_congested(0),
-m_stat_congested_conn_failures(0),
-m_M_congested(0), m_last_M_congested(0), m_num_connections(0), m_stat_congested_max_conn(0), m_ref_count(1)
+  : m_key(0), m_hostname(NULL), pRecord(NULL), m_last_congested(0), m_congested(0), m_stat_congested_conn_failures(0),
+    m_M_congested(0), m_last_M_congested(0), m_num_connections(0), m_stat_congested_max_conn(0), m_ref_count(1)
 {
   memset(&m_ip, 0, sizeof(m_ip));
   m_hist_lock = new_ProxyMutex();
@@ -448,11 +431,11 @@ extern int congestionControlEnabled;
 extern int congestionControlLocalTime;
 
 void initCongestionControl();
-CongestionControlRecord *CongestionControlled(RequestData * rdata);
+CongestionControlRecord *CongestionControlled(RequestData *rdata);
 
-uint64_t make_key(char *hostname, int len, sockaddr const* ip, CongestionControlRecord * record);
-uint64_t make_key(char *hostname, sockaddr const* ip, CongestionControlRecord * record);
-uint64_t make_key(char *hostname, int len, sockaddr const* ip, char *prefix, int prelen, short port = 0);
+uint64_t make_key(char *hostname, int len, sockaddr const *ip, CongestionControlRecord *record);
+uint64_t make_key(char *hostname, sockaddr const *ip, CongestionControlRecord *record);
+uint64_t make_key(char *hostname, int len, sockaddr const *ip, char *prefix, int prelen, short port = 0);
 
 //----------------------------------------------------
 // the following functions are actually declared in
@@ -460,11 +443,11 @@ uint64_t make_key(char *hostname, int len, sockaddr const* ip, char *prefix, int
 // They are included here only to make the
 // editing & compiling process faster
 //----------------------------------------------------
-extern Action *get_congest_entry(Continuation * cont, HttpRequestData * data, CongestionEntry ** ppEntry);
-extern Action *get_congest_list(Continuation * cont, MIOBuffer * buffer, int format);
+extern Action *get_congest_entry(Continuation *cont, HttpRequestData *data, CongestionEntry **ppEntry);
+extern Action *get_congest_list(Continuation *cont, MIOBuffer *buffer, int format);
 
 extern void remove_congested_entry(uint64_t key);
 extern void remove_all_congested_entry(void);
-extern void remove_congested_entry(char *buf, MIOBuffer * out_buffer);
+extern void remove_congested_entry(char *buf, MIOBuffer *out_buffer);
 
 #endif /* CONGESTTION_H_ */

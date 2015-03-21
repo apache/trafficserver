@@ -32,7 +32,8 @@
 using namespace atscppapi;
 using std::string;
 
-namespace {
+namespace
+{
 Logger log;
 }
 
@@ -43,28 +44,31 @@ Logger log;
  * filename, function name, and line number of the message
  */
 
-class GlobalHookPlugin : public GlobalPlugin {
+class GlobalHookPlugin : public GlobalPlugin
+{
 public:
-  GlobalHookPlugin() {
-    memset(big_buffer_6kb_,'a', sizeof(big_buffer_6kb_));
+  GlobalHookPlugin()
+  {
+    memset(big_buffer_6kb_, 'a', sizeof(big_buffer_6kb_));
     big_buffer_6kb_[sizeof(big_buffer_6kb_) - 1] = '\0';
 
-    memset(big_buffer_14kb_,'a', sizeof(big_buffer_14kb_));
+    memset(big_buffer_14kb_, 'a', sizeof(big_buffer_14kb_));
     big_buffer_14kb_[sizeof(big_buffer_14kb_) - 1] = '\0';
 
     registerHook(HOOK_READ_REQUEST_HEADERS_POST_REMAP);
   }
 
-  virtual void handleReadRequestHeadersPostRemap(Transaction &transaction) {
+  virtual void
+  handleReadRequestHeadersPostRemap(Transaction &transaction)
+  {
     LOG_DEBUG(log, "handleReadRequestHeadersPostRemap.\n"
-        "\tRequest URL: %s\n"
-        "\tRequest Path: %s\n"
-        "\tRequest Query: %s\n"
-        "\tRequest Method: %s", transaction.getClientRequest().getUrl().getUrlString().c_str(),
-                                transaction.getClientRequest().getUrl().getPath().c_str(),
-                                transaction.getClientRequest().getUrl().getQuery().c_str(),
-                                HTTP_METHOD_STRINGS[transaction.getClientRequest().getMethod()].c_str()
-                               );
+                   "\tRequest URL: %s\n"
+                   "\tRequest Path: %s\n"
+                   "\tRequest Query: %s\n"
+                   "\tRequest Method: %s",
+              transaction.getClientRequest().getUrl().getUrlString().c_str(),
+              transaction.getClientRequest().getUrl().getPath().c_str(), transaction.getClientRequest().getUrl().getQuery().c_str(),
+              HTTP_METHOD_STRINGS[transaction.getClientRequest().getMethod()].c_str());
 
     // Next, to demonstrate how you can change logging levels:
     if (transaction.getClientRequest().getUrl().getPath() == "change_log_level") {
@@ -89,12 +93,15 @@ public:
 
     transaction.resume();
   }
+
 private:
-  char big_buffer_6kb_[6*1024];
-  char big_buffer_14kb_[14*1024];
+  char big_buffer_6kb_[6 * 1024];
+  char big_buffer_14kb_[14 * 1024];
 };
 
-void TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED) {
+void
+TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
+{
   // Create a new logger
   // This will create a log file with the name logger_example.log (since we left off
   //    the extension it will automatically add .log)
@@ -111,7 +118,7 @@ void TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED
   log.init("logger_example", true, true, Logger::LOG_LEVEL_DEBUG, true, 300);
 
   // Now that we've initialized a logger we can do all kinds of fun things on it:
-  log.setRollingEnabled(true); // already done via log.init, just an example.
+  log.setRollingEnabled(true);        // already done via log.init, just an example.
   log.setRollingIntervalSeconds(300); // already done via log.init
 
   // You have two ways to log to a logger, you can log directly on the object itself:
@@ -129,4 +136,3 @@ void TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED
 
   new GlobalHookPlugin();
 }
-

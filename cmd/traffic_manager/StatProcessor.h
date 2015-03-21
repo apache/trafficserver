@@ -55,7 +55,7 @@ typedef XML_Char xmlchar;
 #include <libxml/SAX.h>
 typedef xmlChar xmlchar;
 #else
-# error "No XML parser - please configure expat or libxml2"
+#error "No XML parser - please configure expat or libxml2"
 #endif
 
 #include <string.h>
@@ -64,13 +64,12 @@ typedef xmlChar xmlchar;
 class StatProcessor
 {
 public:
-
-  explicit StatProcessor(FileManager * configFiles);
+  explicit StatProcessor(FileManager *configFiles);
   ~StatProcessor();
 
   // Member Fuctions
   unsigned short processStat();
-  void rereadConfig(FileManager * configFiles);
+  void rereadConfig(FileManager *configFiles);
 
   LocalManager *m_lmgmt;
   overviewPage *m_overviewGenerator;

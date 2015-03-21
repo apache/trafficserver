@@ -30,40 +30,47 @@ using std::string;
 /**
  * @private
  */
-struct atscppapi::UrlState: noncopyable {
+struct atscppapi::UrlState : noncopyable {
   TSMBuffer hdr_buf_;
   TSMLoc url_loc_;
-  UrlState(TSMBuffer hdr_buf, TSMLoc url_loc) :
-      hdr_buf_(hdr_buf), url_loc_(url_loc) {
-  }
+  UrlState(TSMBuffer hdr_buf, TSMLoc url_loc) : hdr_buf_(hdr_buf), url_loc_(url_loc) {}
 };
 
-Url::Url() {
+Url::Url()
+{
   state_ = new UrlState(static_cast<TSMBuffer>(NULL), static_cast<TSMLoc>(NULL));
 }
 
-Url::Url(void *hdr_buf, void *url_loc) {
+Url::Url(void *hdr_buf, void *url_loc)
+{
   state_ = new UrlState(static_cast<TSMBuffer>(hdr_buf), static_cast<TSMLoc>(url_loc));
 }
 
-void Url::init(void *hdr_buf, void *url_loc) {
+void
+Url::init(void *hdr_buf, void *url_loc)
+{
   state_->hdr_buf_ = static_cast<TSMBuffer>(hdr_buf);
   state_->url_loc_ = static_cast<TSMLoc>(url_loc);
 }
 
-Url::~Url() {
+Url::~Url()
+{
   delete state_;
 }
 
-bool inline Url::isInitialized() const {
+bool inline Url::isInitialized() const
+{
   return state_->hdr_buf_ && state_->url_loc_;
 }
 
-void Url::reset() {
-
+void
+Url::reset()
+{
 }
 
-std::string Url::getUrlString() const {
+std::string
+Url::getUrlString() const
+{
   std::string ret_str;
   if (isInitialized()) {
     int length;
@@ -73,14 +80,16 @@ std::string Url::getUrlString() const {
       TSfree(memptr);
       LOG_DEBUG("Got URL [%s]", ret_str.c_str());
     } else {
-      LOG_ERROR("Got null/zero-length URL string; hdr_buf %p, url_loc %p, ptr %p, length %d", state_->hdr_buf_,
-                state_->url_loc_, memptr, length);
+      LOG_ERROR("Got null/zero-length URL string; hdr_buf %p, url_loc %p, ptr %p, length %d", state_->hdr_buf_, state_->url_loc_,
+                memptr, length);
     }
   }
   return ret_str;
 }
 
-std::string Url::getPath() const {
+std::string
+Url::getPath() const
+{
   std::string ret_str;
   if (isInitialized()) {
     int length;
@@ -93,7 +102,9 @@ std::string Url::getPath() const {
   return ret_str;
 }
 
-std::string Url::getQuery() const {
+std::string
+Url::getQuery() const
+{
   std::string ret_str;
   if (isInitialized()) {
     int length;
@@ -106,7 +117,9 @@ std::string Url::getQuery() const {
   return ret_str;
 }
 
-std::string Url::getScheme() const {
+std::string
+Url::getScheme() const
+{
   std::string ret_str;
   if (isInitialized()) {
     int length;
@@ -119,7 +132,9 @@ std::string Url::getScheme() const {
   return ret_str;
 }
 
-std::string Url::getHost() const {
+std::string
+Url::getHost() const
+{
   std::string ret_str;
   if (isInitialized()) {
     int length;
@@ -132,7 +147,9 @@ std::string Url::getHost() const {
   return ret_str;
 }
 
-uint16_t Url::getPort() const {
+uint16_t
+Url::getPort() const
+{
   uint16_t ret_val = 0;
   if (isInitialized()) {
     ret_val = static_cast<uint16_t>(TSUrlPortGet(state_->hdr_buf_, state_->url_loc_));
@@ -141,7 +158,9 @@ uint16_t Url::getPort() const {
   return ret_val;
 }
 
-void Url::setPath(const std::string &path) {
+void
+Url::setPath(const std::string &path)
+{
   if (!isInitialized()) {
     LOG_ERROR("Url %p not initialized", this);
     return;
@@ -154,7 +173,9 @@ void Url::setPath(const std::string &path) {
   }
 }
 
-void Url::setQuery(const std::string &query) {
+void
+Url::setQuery(const std::string &query)
+{
   if (!isInitialized()) {
     LOG_ERROR("Url %p not initialized", this);
     return;
@@ -167,9 +188,12 @@ void Url::setQuery(const std::string &query) {
   }
 }
 
-void Url::setScheme(const std::string &scheme) {
+void
+Url::setScheme(const std::string &scheme)
+{
   if (!isInitialized()) {
-    LOG_ERROR("Url %p not initialized", this);;
+    LOG_ERROR("Url %p not initialized", this);
+    ;
     return;
   }
 
@@ -180,7 +204,9 @@ void Url::setScheme(const std::string &scheme) {
   }
 }
 
-void Url::setHost(const std::string &host) {
+void
+Url::setHost(const std::string &host)
+{
   if (!isInitialized()) {
     LOG_ERROR("Url %p not initialized", this);
     return;
@@ -193,7 +219,9 @@ void Url::setHost(const std::string &host) {
   }
 }
 
-void Url::setPort(const uint16_t port) {
+void
+Url::setPort(const uint16_t port)
+{
   if (!isInitialized()) {
     LOG_ERROR("Url %p not initialized", this);
     return;

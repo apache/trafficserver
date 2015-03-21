@@ -27,10 +27,10 @@
 
 #include "libts.h"
 
-#define PROCESSOR_RECONFIGURE            0x01
-#define PROCESSOR_CHECK                  0x02
-#define PROCESSOR_FIX                    0x04
-#define PROCESSOR_IGNORE_ERRORS          0x08
+#define PROCESSOR_RECONFIGURE 0x01
+#define PROCESSOR_CHECK 0x02
+#define PROCESSOR_FIX 0x04
+#define PROCESSOR_IGNORE_ERRORS 0x08
 
 class Processor;
 class Thread;
@@ -82,7 +82,8 @@ public:
     supported.
 
   */
-  virtual void shutdown()
+  virtual void
+  shutdown()
   {
   }
 
@@ -98,10 +99,11 @@ public:
     @param stacksize The thread stack size to use for this processor.
 
   */
-  virtual int start(int number_of_threads, size_t stacksize=DEFAULT_STACKSIZE)
+  virtual int
+  start(int number_of_threads, size_t stacksize = DEFAULT_STACKSIZE)
   {
-    (void) number_of_threads;
-    (void) stacksize;
+    (void)number_of_threads;
+    (void)stacksize;
     return 0;
   }
 
@@ -111,7 +113,7 @@ protected:
 private:
   // prevent unauthorized copies (Not implemented)
   Processor(const Processor &);
-  Processor & operator =(const Processor &);
+  Processor &operator=(const Processor &);
 };
 
 #endif //_I_Processor_h_

@@ -27,24 +27,22 @@
 #include "LogPredefined.h"
 
 // predefined formats
-const char * const PreDefinedFormatInfo::squid =
+const char *const PreDefinedFormatInfo::squid =
   "%<cqtq> %<ttms> %<chi> %<crc>/%<pssc> %<psql> %<cqhm> %<cquc> %<caun> %<phr>/%<pqsn> %<psct>";
 
-const char * const PreDefinedFormatInfo::common =
-  "%<chi> - %<caun> [%<cqtn>] \"%<cqtx>\" %<pssc> %<pscl>";
+const char *const PreDefinedFormatInfo::common = "%<chi> - %<caun> [%<cqtn>] \"%<cqtx>\" %<pssc> %<pscl>";
 
-const char * const PreDefinedFormatInfo::extended =
-  "%<chi> - %<caun> [%<cqtn>] \"%<cqtx>\" %<pssc> %<pscl> "
-  "%<sssc> %<sscl> %<cqbl> %<pqbl> %<cqhl> %<pshl> %<pqhl> %<sshl> %<tts>";
+const char *const PreDefinedFormatInfo::extended = "%<chi> - %<caun> [%<cqtn>] \"%<cqtx>\" %<pssc> %<pscl> "
+                                                   "%<sssc> %<sscl> %<cqbl> %<pqbl> %<cqhl> %<pshl> %<pqhl> %<sshl> %<tts>";
 
-const char * const PreDefinedFormatInfo::extended2 =
+const char *const PreDefinedFormatInfo::extended2 =
   "%<chi> - %<caun> [%<cqtn>] \"%<cqtx>\" %<pssc> %<pscl> "
   "%<sssc> %<sscl> %<cqbl> %<pqbl> %<cqhl> %<pshl> %<pqhl> %<sshl> %<tts> %<phr> %<cfsc> %<pfsc> %<crc>";
 
 PreDefinedFormatInfo *
-MakePredefinedErrorLog(LogConfig * config)
+MakePredefinedErrorLog(LogConfig *config)
 {
-  LogFormat * fmt;
+  LogFormat *fmt;
 
   fmt = MakeTextLogFormat("error");
   config->global_format_list.add(fmt, false);
@@ -59,7 +57,7 @@ PreDefinedFormatList::PreDefinedFormatList()
 
 PreDefinedFormatList::~PreDefinedFormatList()
 {
-  PreDefinedFormatInfo * info;
+  PreDefinedFormatInfo *info;
   while (!this->formats.empty()) {
     info = this->formats.pop();
     delete info;
@@ -67,20 +65,21 @@ PreDefinedFormatList::~PreDefinedFormatList()
 }
 
 void
-PreDefinedFormatList::init(LogConfig * config)
+PreDefinedFormatList::init(LogConfig *config)
 {
-  LogFormat * fmt;
+  LogFormat *fmt;
 
-  // All these predefined formats work with log collation. They are optionally binary or ASCII, each
-  // with a different config option.
-#define make_format(is_ascii)  ((is_ascii) ? LOG_FILE_ASCII : LOG_FILE_BINARY )
+// All these predefined formats work with log collation. They are optionally binary or ASCII, each
+// with a different config option.
+#define make_format(is_ascii) ((is_ascii) ? LOG_FILE_ASCII : LOG_FILE_BINARY)
 
   fmt = new LogFormat("squid", PreDefinedFormatInfo::squid);
   config->global_format_list.add(fmt, false);
   Debug("log", "squid format added to the global format list");
 
   if (config->squid_log_enabled) {
-    this->formats.enqueue(new PreDefinedFormatInfo(fmt, config->squid_log_name, config->squid_log_header, make_format(config->squid_log_is_ascii), true));
+    this->formats.enqueue(new PreDefinedFormatInfo(fmt, config->squid_log_name, config->squid_log_header,
+                                                   make_format(config->squid_log_is_ascii), true));
   }
 
   fmt = new LogFormat("common", PreDefinedFormatInfo::common);
@@ -88,7 +87,8 @@ PreDefinedFormatList::init(LogConfig * config)
   Debug("log", "common format added to the global format list");
 
   if (config->common_log_enabled) {
-    this->formats.enqueue(new PreDefinedFormatInfo(fmt, config->common_log_name, config->common_log_header, make_format(config->common_log_is_ascii), true));
+    this->formats.enqueue(new PreDefinedFormatInfo(fmt, config->common_log_name, config->common_log_header,
+                                                   make_format(config->common_log_is_ascii), true));
   }
 
   fmt = new LogFormat("extended", PreDefinedFormatInfo::extended);
@@ -96,7 +96,8 @@ PreDefinedFormatList::init(LogConfig * config)
   Debug("log", "extended format added to the global format list");
 
   if (config->extended_log_enabled) {
-    this->formats.enqueue(new PreDefinedFormatInfo(fmt, config->extended_log_name, config->extended_log_header, make_format(config->extended_log_is_ascii), true));
+    this->formats.enqueue(new PreDefinedFormatInfo(fmt, config->extended_log_name, config->extended_log_header,
+                                                   make_format(config->extended_log_is_ascii), true));
   }
 
   fmt = new LogFormat("extended2", PreDefinedFormatInfo::extended2);
@@ -104,9 +105,9 @@ PreDefinedFormatList::init(LogConfig * config)
   Debug("log", "extended2 format added to the global format list");
 
   if (config->extended2_log_enabled) {
-    this->formats.enqueue(new PreDefinedFormatInfo(fmt, config->extended2_log_name, config->extended2_log_header, make_format(config->extended2_log_is_ascii), true));
+    this->formats.enqueue(new PreDefinedFormatInfo(fmt, config->extended2_log_name, config->extended2_log_header,
+                                                   make_format(config->extended2_log_is_ascii), true));
   }
 
 #undef make_format
 }
-

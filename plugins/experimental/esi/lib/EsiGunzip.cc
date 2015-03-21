@@ -29,18 +29,17 @@
 using std::string;
 using namespace EsiLib;
 
-EsiGunzip::EsiGunzip(const char *debug_tag,
-                           ComponentBase::Debug debug_func, ComponentBase::Error error_func)
-  : ComponentBase(debug_tag, debug_func, error_func),
-    _downstream_length(0),
-    _total_data_length(0) {
-    _init = false;
-    _success = true;
+EsiGunzip::EsiGunzip(const char *debug_tag, ComponentBase::Debug debug_func, ComponentBase::Error error_func)
+  : ComponentBase(debug_tag, debug_func, error_func), _downstream_length(0), _total_data_length(0)
+{
+  _init = false;
+  _success = true;
 }
 
 bool
-EsiGunzip::stream_finish() {
-  if(_init) {
+EsiGunzip::stream_finish()
+{
+  if (_init) {
     if (inflateEnd(&_zstrm) != Z_OK) {
       _errorLog("[%s] inflateEnd failed!", __FUNCTION__);
       _success = false;
@@ -53,12 +52,11 @@ EsiGunzip::stream_finish() {
 }
 
 bool
-EsiGunzip::stream_decode(const char *data, int data_len, std::string &udata) {
-
+EsiGunzip::stream_decode(const char *data, int data_len, std::string &udata)
+{
   BufferList buf_list;
 
-  if(!_init) {
-
+  if (!_init) {
     _zstrm.zalloc = Z_NULL;
     _zstrm.zfree = Z_NULL;
     _zstrm.opaque = Z_NULL;
@@ -73,7 +71,7 @@ EsiGunzip::stream_decode(const char *data, int data_len, std::string &udata) {
     _init = true;
   }
 
-  if(data && (data_len > 0)) {
+  if (data && (data_len > 0)) {
     _zstrm.next_in = reinterpret_cast<Bytef *>(const_cast<char *>(data));
     _zstrm.avail_in = data_len;
     char raw_buf[BUF_SIZE];
@@ -86,7 +84,7 @@ EsiGunzip::stream_decode(const char *data, int data_len, std::string &udata) {
       _zstrm.avail_out = BUF_SIZE;
       inflate_result = inflate(&_zstrm, Z_SYNC_FLUSH);
       curr_buf_size = -1;
-      if ((inflate_result == Z_OK)||(inflate_result == Z_BUF_ERROR)) {
+      if ((inflate_result == Z_OK) || (inflate_result == Z_BUF_ERROR)) {
         curr_buf_size = BUF_SIZE - _zstrm.avail_out;
       } else if (inflate_result == Z_STREAM_END) {
         curr_buf_size = BUF_SIZE - _zstrm.avail_out;
@@ -123,13 +121,10 @@ EsiGunzip::stream_decode(const char *data, int data_len, std::string &udata) {
 }
 
 
-
-EsiGunzip::~EsiGunzip() {
+EsiGunzip::~EsiGunzip()
+{
   _downstream_length = 0;
   _total_data_length = 0;
   _init = false;
   _success = true;
 }
-
-
-

@@ -25,24 +25,24 @@
 #define _I_REC_SIGNALS_H_
 
 // copy from mgmt/BaseManager.h
-#define REC_SIGNAL_PID                          0
-#define REC_SIGNAL_MACHINE_UP                   1
-#define REC_SIGNAL_MACHINE_DOWN                 2
-#define REC_SIGNAL_CONFIG_ERROR                 3
-#define REC_SIGNAL_SYSTEM_ERROR                 4
-#define REC_SIGNAL_LOG_SPACE_CRISIS             5
-#define REC_SIGNAL_CONFIG_FILE_READ             6
-#define REC_SIGNAL_CACHE_ERROR                  7
-#define REC_SIGNAL_CACHE_WARNING                8
-#define REC_SIGNAL_LOGGING_ERROR                9
-#define REC_SIGNAL_LOGGING_WARNING              10
+#define REC_SIGNAL_PID 0
+#define REC_SIGNAL_MACHINE_UP 1
+#define REC_SIGNAL_MACHINE_DOWN 2
+#define REC_SIGNAL_CONFIG_ERROR 3
+#define REC_SIGNAL_SYSTEM_ERROR 4
+#define REC_SIGNAL_LOG_SPACE_CRISIS 5
+#define REC_SIGNAL_CONFIG_FILE_READ 6
+#define REC_SIGNAL_CACHE_ERROR 7
+#define REC_SIGNAL_CACHE_WARNING 8
+#define REC_SIGNAL_LOGGING_ERROR 9
+#define REC_SIGNAL_LOGGING_WARNING 10
 // Currently unused: 11
-#define REC_SIGNAL_PLUGIN_CONFIG_REG            12
-#define REC_SIGNAL_PLUGIN_ADD_REC               13
-#define REC_SIGNAL_PLUGIN_SET_CONFIG            14
-#define REC_SIGNAL_LOG_FILES_ROLLED             15
-#define REC_SIGNAL_LIBRECORDS                   16
-#define REC_SIGNAL_HTTP_CONGESTED_SERVER        20
-#define REC_SIGNAL_HTTP_ALLEVIATED_SERVER       21
+#define REC_SIGNAL_PLUGIN_CONFIG_REG 12
+#define REC_SIGNAL_PLUGIN_ADD_REC 13
+#define REC_SIGNAL_PLUGIN_SET_CONFIG 14
+#define REC_SIGNAL_LOG_FILES_ROLLED 15
+#define REC_SIGNAL_LIBRECORDS 16
+#define REC_SIGNAL_HTTP_CONGESTED_SERVER 20
+#define REC_SIGNAL_HTTP_ALLEVIATED_SERVER 21
 
 #endif

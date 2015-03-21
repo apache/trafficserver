@@ -64,10 +64,9 @@ TSMgmtError reconnect_loop(int num_attempts);
 void *socket_test_thread(void *arg);
 void *event_poll_thread_main(void *arg);
 
-struct mgmtapi_sender : public mgmt_message_sender
-{
+struct mgmtapi_sender : public mgmt_message_sender {
   explicit mgmtapi_sender(int _fd) : fd(_fd) {}
-  virtual TSMgmtError send(void * msg, size_t msglen) const;
+  virtual TSMgmtError send(void *msg, size_t msglen) const;
 
   int fd;
 };
@@ -81,8 +80,8 @@ struct mgmtapi_sender : public mgmt_message_sender
  * Marshalling (create requests)
  *****************************************************************************/
 
-TSMgmtError send_register_all_callbacks(int fd, CallbackTable * cb_table);
-TSMgmtError send_unregister_all_callbacks(int fd, CallbackTable * cb_table);
+TSMgmtError send_register_all_callbacks(int fd, CallbackTable *cb_table);
+TSMgmtError send_unregister_all_callbacks(int fd, CallbackTable *cb_table);
 
 /*****************************************************************************
  * Un-marshalling (parse responses)

@@ -40,7 +40,7 @@ StatObjectList statObjectList;
 StatXMLTag currentTag = INVALID_TAG;
 StatObject *statObject = NULL;
 char *exprContent = NULL;
-static unsigned statCount = 0;  // global statistics object counter
+static unsigned statCount = 0; // global statistics object counter
 bool nodeVar;
 bool sumClusterVar;
 
@@ -49,13 +49,13 @@ bool sumClusterVar;
 static int
 xml_atoi(const xmlchar *nptr)
 {
-  return atoi((const char*)nptr);
+  return atoi((const char *)nptr);
 }
 
 static double
 xml_atof(const xmlchar *nptr)
 {
-  return atof((const char*)nptr);
+  return atof((const char *)nptr);
 }
 
 static int
@@ -87,45 +87,45 @@ elementStart(void * /* userData ATS_UNUSED */, const xmlchar *name, const xmlcha
     Debug(MODULE_INIT, "\nStat #: ----------------------- %d -----------------------\n", statCount);
 
     if (atts)
-     for (i = 0; atts[i]; i += 2) {
-      ink_assert(atts[i + 1]);    // Attribute comes in pairs, hopefully.
+      for (i = 0; atts[i]; i += 2) {
+        ink_assert(atts[i + 1]); // Attribute comes in pairs, hopefully.
 
-      if (!xml_strcmp(atts[i], "minimum")) {
-        statObject->m_stats_min = (MgmtFloat) xml_atof(atts[i + 1]);
-        statObject->m_has_min = true;
-      } else if (!xml_strcmp(atts[i], "maximum")) {
-        statObject->m_stats_max = (MgmtFloat) xml_atof(atts[i + 1]);
-        statObject->m_has_max = true;
-      } else if (!xml_strcmp(atts[i], "interval")) {
-        statObject->m_update_interval = (ink_hrtime) xml_atoi(atts[i + 1]);
-      } else if (!xml_strcmp(atts[i], "debug")) {
-        statObject->m_debug = (atts[i + 1] && atts[i + 1][0] == '1');
+        if (!xml_strcmp(atts[i], "minimum")) {
+          statObject->m_stats_min = (MgmtFloat)xml_atof(atts[i + 1]);
+          statObject->m_has_min = true;
+        } else if (!xml_strcmp(atts[i], "maximum")) {
+          statObject->m_stats_max = (MgmtFloat)xml_atof(atts[i + 1]);
+          statObject->m_has_max = true;
+        } else if (!xml_strcmp(atts[i], "interval")) {
+          statObject->m_update_interval = (ink_hrtime)xml_atoi(atts[i + 1]);
+        } else if (!xml_strcmp(atts[i], "debug")) {
+          statObject->m_debug = (atts[i + 1] && atts[i + 1][0] == '1');
+        }
+
+        Debug(MODULE_INIT, "\tDESTINTATION w/ attribute: %s -> %s\n", atts[i], atts[i + 1]);
       }
-
-      Debug(MODULE_INIT, "\tDESTINTATION w/ attribute: %s -> %s\n", atts[i], atts[i + 1]);
-    }
     break;
 
   case EXPR_TAG:
-    exprContent = (char*)ats_malloc(BUFSIZ * 10);
+    exprContent = (char *)ats_malloc(BUFSIZ * 10);
     memset(exprContent, 0, BUFSIZ * 10);
     break;
 
   case DST_TAG:
     nodeVar = true;
-    sumClusterVar = true;       // Should only be used with cluster variable
+    sumClusterVar = true; // Should only be used with cluster variable
 
     if (atts)
-     for (i = 0; atts[i]; i += 2) {
-      ink_assert(atts[i + 1]);    // Attribute comes in pairs, hopefully.
-      if (!xml_strcmp(atts[i], "scope")) {
-        nodeVar = (!xml_strcmp(atts[i + 1], "node") ? true : false);
-      } else if (!xml_strcmp(atts[i], "operation")) {
-        sumClusterVar = (!xml_strcmp(atts[i + 1], "sum") ? true : false);
-      }
+      for (i = 0; atts[i]; i += 2) {
+        ink_assert(atts[i + 1]); // Attribute comes in pairs, hopefully.
+        if (!xml_strcmp(atts[i], "scope")) {
+          nodeVar = (!xml_strcmp(atts[i + 1], "node") ? true : false);
+        } else if (!xml_strcmp(atts[i], "operation")) {
+          sumClusterVar = (!xml_strcmp(atts[i + 1], "sum") ? true : false);
+        }
 
-      Debug(MODULE_INIT, "\tDESTINTATION w/ attribute: %s -> %s\n", atts[i], atts[i + 1]);
-    }
+        Debug(MODULE_INIT, "\tDESTINTATION w/ attribute: %s -> %s\n", atts[i], atts[i + 1]);
+      }
 
     break;
 
@@ -140,7 +140,7 @@ elementStart(void * /* userData ATS_UNUSED */, const xmlchar *name, const xmlcha
 
 
 static void
-elementEnd(void * /* userData ATS_UNUSED */, const xmlchar */* name ATS_UNUSED */)
+elementEnd(void * /* userData ATS_UNUSED */, const xmlchar * /* name ATS_UNUSED */)
 {
   switch (currentTag) {
   case STAT_TAG:
@@ -150,7 +150,7 @@ elementEnd(void * /* userData ATS_UNUSED */, const xmlchar */* name ATS_UNUSED *
 
   case EXPR_TAG:
     statObject->assignExpr(exprContent); // This hands over ownership of exprContent
-    // fall through
+  // fall through
 
   default:
     currentTag = STAT_TAG;
@@ -160,14 +160,14 @@ elementEnd(void * /* userData ATS_UNUSED */, const xmlchar */* name ATS_UNUSED *
 
 
 static void
-charDataHandler(void * /* userData ATS_UNUSED */, const xmlchar * name, int /* len ATS_UNUSED */)
+charDataHandler(void * /* userData ATS_UNUSED */, const xmlchar *name, int /* len ATS_UNUSED */)
 {
   if (currentTag != EXPR_TAG && currentTag != DST_TAG) {
     return;
   }
 
   char content[BUFSIZ * 10];
-  if (XML_extractContent((const char*)name, content, BUFSIZ * 10) == 0) {
+  if (XML_extractContent((const char *)name, content, BUFSIZ * 10) == 0) {
     return;
   }
 
@@ -180,14 +180,14 @@ charDataHandler(void * /* userData ATS_UNUSED */, const xmlchar * name, int /* l
 }
 
 
-StatProcessor::StatProcessor(FileManager * configFiles):m_lmgmt(NULL), m_overviewGenerator(NULL)
+StatProcessor::StatProcessor(FileManager *configFiles) : m_lmgmt(NULL), m_overviewGenerator(NULL)
 {
   rereadConfig(configFiles);
 }
 
 
 void
-StatProcessor::rereadConfig(FileManager * configFiles)
+StatProcessor::rereadConfig(FileManager *configFiles)
 {
   textBuffer *fileContent = NULL;
   Rollback *fileRB = NULL;
@@ -196,7 +196,7 @@ StatProcessor::rereadConfig(FileManager * configFiles)
   int fileLen;
 
   statObjectList.clean();
-  statCount = 0;                // reset statistics counter
+  statCount = 0; // reset statistics counter
 
   int ret = configFiles->getRollbackObj(STAT_CONFIG_FILE, &fileRB);
   if (!ret) {
@@ -265,9 +265,7 @@ StatProcessor::rereadConfig(FileManager * configFiles)
 
 StatProcessor::~StatProcessor()
 {
-
   Debug(MODULE_INIT, "[StatProcessor] Destructing Statistics Processor\n");
-
 }
 
 
@@ -332,9 +330,9 @@ StatProcessor::processStat()
 
   Debug(MODULE_INIT, "[StatProcessor] Processing Statistics....\n");
 
-//    setTest();
+  //    setTest();
   statObjectList.Eval();
-//    verifyTest();
+  //    verifyTest();
 
   return (result);
 }

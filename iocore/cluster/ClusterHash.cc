@@ -53,7 +53,6 @@ bool randClusterHash = false;
 // bool randClusterHash = true;
 
 
-
 //
 // Cluster Hash Table
 //
@@ -86,7 +85,7 @@ next_rnd15(unsigned int *p)
 // Overall it is roughly linear in the number of nodes.
 //
 void
-build_hash_table_machine(ClusterConfiguration * c)
+build_hash_table_machine(ClusterConfiguration *c)
 {
   int left = CLUSTER_HASH_TABLE_SIZE;
   int m = 0;
@@ -105,8 +104,7 @@ build_hash_table_machine(ClusterConfiguration * c)
   // do a little xor folding to get it into 15 bits
   //
   for (m = 0; m < c->n_machines; m++)
-    rnd[m] = (((c->machines[m]->ip >> 15) & 0x7FFF) ^ (c->machines[m]->ip & 0x7FFF))
-      ^ (c->machines[m]->ip >> 30);
+    rnd[m] = (((c->machines[m]->ip >> 15) & 0x7FFF) ^ (c->machines[m]->ip & 0x7FFF)) ^ (c->machines[m]->ip >> 30);
 
   // Initialize the table to "empty"
   //
@@ -136,7 +134,7 @@ build_hash_table_machine(ClusterConfiguration * c)
 }
 
 static void
-build_hash_table_bucket(ClusterConfiguration * c)
+build_hash_table_bucket(ClusterConfiguration *c)
 {
   int i = 0;
   unsigned int rnd[CLUSTER_HASH_TABLE_SIZE];
@@ -166,7 +164,7 @@ build_hash_table_bucket(ClusterConfiguration * c)
 }
 
 void
-build_cluster_hash_table(ClusterConfiguration * c)
+build_cluster_hash_table(ClusterConfiguration *c)
 {
   if (machineClusterHash)
     build_hash_table_machine(c);

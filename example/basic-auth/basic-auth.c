@@ -37,15 +37,16 @@ static char base64_codes[256];
 static char *
 base64_decode(const char *input)
 {
-#define decode(A) ((unsigned int) base64_codes[(int) input[A]])
+#define decode(A) ((unsigned int)base64_codes[(int)input[A]])
 
   char *output;
   char *obuf;
   int len;
 
-  for (len = 0; (input[len] != '\0') && (input[len] != '='); len++);
+  for (len = 0; (input[len] != '\0') && (input[len] != '='); len++)
+    ;
 
-  output = obuf = (char *) TSmalloc((len * 6) / 8 + 3);
+  output = obuf = (char *)TSmalloc((len * 6) / 8 + 3);
 
   while (len > 0) {
     *output++ = decode(0) << 2 | decode(1) >> 4;
@@ -174,13 +175,12 @@ handle_response(TSHttpTxn txnp)
   }
 
   TSHttpHdrStatusSet(bufp, hdr_loc, TS_HTTP_STATUS_PROXY_AUTHENTICATION_REQUIRED);
-  TSHttpHdrReasonSet(bufp, hdr_loc,
-                      TSHttpHdrReasonLookup(TS_HTTP_STATUS_PROXY_AUTHENTICATION_REQUIRED),
-                      strlen(TSHttpHdrReasonLookup(TS_HTTP_STATUS_PROXY_AUTHENTICATION_REQUIRED)));
+  TSHttpHdrReasonSet(bufp, hdr_loc, TSHttpHdrReasonLookup(TS_HTTP_STATUS_PROXY_AUTHENTICATION_REQUIRED),
+                     strlen(TSHttpHdrReasonLookup(TS_HTTP_STATUS_PROXY_AUTHENTICATION_REQUIRED)));
 
   TSMimeHdrFieldCreate(bufp, hdr_loc, &field_loc); // Probably should check for errors
   TSMimeHdrFieldNameSet(bufp, hdr_loc, field_loc, TS_MIME_FIELD_PROXY_AUTHENTICATE, TS_MIME_LEN_PROXY_AUTHENTICATE);
-  TSMimeHdrFieldValueStringInsert(bufp, hdr_loc, field_loc, -1,  insert, len);
+  TSMimeHdrFieldValueStringInsert(bufp, hdr_loc, field_loc, -1, insert, len);
   TSMimeHdrFieldAppend(bufp, hdr_loc, field_loc);
 
   TSHandleMLocRelease(bufp, hdr_loc, field_loc);
@@ -193,7 +193,7 @@ done:
 static int
 auth_plugin(TSCont contp, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp = (TSHttpTxn) edata;
+  TSHttpTxn txnp = (TSHttpTxn)edata;
 
   switch (event) {
   case TS_EVENT_HTTP_OS_DNS:
@@ -241,4 +241,3 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
 
   TSHttpHookAdd(TS_HTTP_OS_DNS_HOOK, TSContCreate(auth_plugin, NULL));
 }
-

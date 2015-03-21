@@ -68,8 +68,8 @@ static void printUsage(void);
 extern "C" int getpwnam_r(const char *name, struct passwd *result, char *buffer, size_t buflen, struct passwd **resptr);
 #endif
 
-static StatProcessor *statProcessor;   // Statistics Processors
-static AppVersionInfo appVersionInfo;  // Build info for this application
+static StatProcessor *statProcessor;  // Statistics Processors
+static AppVersionInfo appVersionInfo; // Build info for this application
 
 static inkcoreapi DiagsConfig *diagsConfig;
 static char debug_tags[1024] = "";
@@ -86,8 +86,8 @@ static int fds_limit;
 // TODO: Use positive instead negative selection
 //       Thsis should just be #if defined(solaris)
 #if !defined(linux) && !defined(freebsd) && !defined(darwin)
-static void SignalHandler(int sig, siginfo_t * t, void *f);
-static void SignalAlrmHandler(int sig, siginfo_t * t, void *f);
+static void SignalHandler(int sig, siginfo_t *t, void *f);
+static void SignalAlrmHandler(int sig, siginfo_t *t, void *f);
 #else
 static void SignalHandler(int sig);
 static void SignalAlrmHandler(int sig);
@@ -129,11 +129,11 @@ check_lockfile()
   Lockfile server_lockfile(lockfile);
   err = server_lockfile.Open(&holding_pid);
   if (err == 1) {
-    server_lockfile.Close();    // no server running
+    server_lockfile.Close(); // no server running
   } else {
     char *reason = strerror(-err);
     if (err == 0) {
-      // TODO: Add PID_FMT_T instead duplicating code just for printing
+// TODO: Add PID_FMT_T instead duplicating code just for printing
 #if defined(solaris)
       fprintf(stderr, "FATAL: Lockfile '%s' says server already running as PID %d\n", lockfile, (int)holding_pid);
 #else
@@ -142,8 +142,7 @@ check_lockfile()
       mgmt_elog(stderr, 0, "FATAL: Lockfile '%s' says server already running as PID %d\n", lockfile, holding_pid);
     } else {
       fprintf(stderr, "FATAL: Can't open server lockfile '%s' (%s)\n", lockfile, (reason ? reason : "Unknown Reason"));
-      mgmt_elog(stderr, 0, "FATAL: Can't open server lockfile '%s' (%s)\n",
-                lockfile, (reason ? reason : "Unknown Reason"));
+      mgmt_elog(stderr, 0, "FATAL: Can't open server lockfile '%s' (%s)\n", lockfile, (reason ? reason : "Unknown Reason"));
     }
     exit(1);
   }
@@ -184,7 +183,7 @@ initSignalHandlers()
   struct sigaction sigHandler, sigChldHandler, sigAlrmHandler;
   sigset_t sigsToBlock;
 
-  // Set up the signal handler
+// Set up the signal handler
 #if !defined(linux) && !defined(freebsd) && !defined(darwin)
   sigHandler.sa_handler = NULL;
   sigHandler.sa_sigaction = SignalHandler;
@@ -202,9 +201,9 @@ initSignalHandlers()
   sigaction(SIGHUP, &sigHandler, NULL);
   sigaction(SIGUSR2, &sigHandler, NULL);
 
-  // Don't block the signal on entry to the signal
-  //   handler so we can reissue it and get a core
-  //   file in the appropriate circumstances
+// Don't block the signal on entry to the signal
+//   handler so we can reissue it and get a core
+//   file in the appropriate circumstances
 #if !defined(linux) && !defined(freebsd) && !defined(darwin)
   sigHandler.sa_flags = SA_RESETHAND | SA_SIGINFO;
 #else
@@ -282,7 +281,7 @@ init_dirs()
 static void
 chdir_root()
 {
-  const char * prefix = Layout::get()->prefix;
+  const char *prefix = Layout::get()->prefix;
 
   if (chdir(prefix) < 0) {
     mgmt_elog(0, "unable to change to root directory \"%s\" [%d '%s']\n", prefix, errno, strerror(errno));
@@ -319,26 +318,26 @@ set_process_limits(int fds_throttle)
 
     lim.rlim_cur = lim.rlim_max = static_cast<rlim_t>(maxfiles * file_max_pct);
     if (setrlimit(RLIMIT_NOFILE, &lim) == 0 && getrlimit(RLIMIT_NOFILE, &lim) == 0) {
-      fds_limit = (int) lim.rlim_cur;
-      syslog(LOG_NOTICE, "NOTE: RLIMIT_NOFILE(%d):cur(%d),max(%d)",RLIMIT_NOFILE, (int)lim.rlim_cur, (int)lim.rlim_max);
+      fds_limit = (int)lim.rlim_cur;
+      syslog(LOG_NOTICE, "NOTE: RLIMIT_NOFILE(%d):cur(%d),max(%d)", RLIMIT_NOFILE, (int)lim.rlim_cur, (int)lim.rlim_max);
     }
   }
 
   if (getrlimit(RLIMIT_NOFILE, &lim) == 0) {
-    if (fds_throttle > (int) (lim.rlim_cur + FD_THROTTLE_HEADROOM)) {
-      lim.rlim_cur = (lim.rlim_max = (rlim_t) fds_throttle);
+    if (fds_throttle > (int)(lim.rlim_cur + FD_THROTTLE_HEADROOM)) {
+      lim.rlim_cur = (lim.rlim_max = (rlim_t)fds_throttle);
       if (!setrlimit(RLIMIT_NOFILE, &lim) && !getrlimit(RLIMIT_NOFILE, &lim)) {
-        fds_limit = (int) lim.rlim_cur;
-	      syslog(LOG_NOTICE, "NOTE: RLIMIT_NOFILE(%d):cur(%d),max(%d)",RLIMIT_NOFILE, (int)lim.rlim_cur, (int)lim.rlim_max);
+        fds_limit = (int)lim.rlim_cur;
+        syslog(LOG_NOTICE, "NOTE: RLIMIT_NOFILE(%d):cur(%d),max(%d)", RLIMIT_NOFILE, (int)lim.rlim_cur, (int)lim.rlim_max);
       }
     }
   }
-
 }
 
 #if TS_HAS_WCCP
 static void
-Errata_Logger(ts::Errata const& err) {
+Errata_Logger(ts::Errata const &err)
+{
   size_t n;
   static size_t const SIZE = 4096;
   char buff[SIZE];
@@ -346,28 +345,33 @@ Errata_Logger(ts::Errata const& err) {
     ts::Errata::Code code = err.top().getCode();
     n = err.write(buff, SIZE, 1, 0, 2, "> ");
     // strip trailing newlines.
-    while (n && (buff[n-1] == '\n' || buff[n-1] == '\r'))
+    while (n && (buff[n - 1] == '\n' || buff[n - 1] == '\r'))
       buff[--n] = 0;
     // log it.
-    if (code > 1) mgmt_elog(0, "[WCCP]%s", buff);
-    else if (code > 0) mgmt_log("[WCCP]%s", buff);
-    else Debug("WCCP", "%s", buff);
+    if (code > 1)
+      mgmt_elog(0, "[WCCP]%s", buff);
+    else if (code > 0)
+      mgmt_log("[WCCP]%s", buff);
+    else
+      Debug("WCCP", "%s", buff);
   }
 }
 
 static void
-Init_Errata_Logging() {
+Init_Errata_Logging()
+{
   ts::Errata::registerSink(&Errata_Logger);
 }
 #endif
 
 static void
-millisleep(int ms) {
+millisleep(int ms)
+{
   struct timespec ts;
 
   ts.tv_sec = ms / 1000;
   ts.tv_nsec = (ms - ts.tv_sec * 1000) * 1000 * 1000;
-  nanosleep(&ts, NULL); //we use nanosleep instead of sleep because it does not interact with signals
+  nanosleep(&ts, NULL); // we use nanosleep instead of sleep because it does not interact with signals
 }
 
 int
@@ -396,7 +400,7 @@ main(int argc, char **argv)
   int cluster_mcport = -1, cluster_rsport = -1;
   // TODO: This seems completely incomplete, disabled for now
   //  int dump_config = 0, dump_process = 0, dump_node = 0, dump_cluster = 0, dump_local = 0;
-  char* proxy_port = 0;
+  char *proxy_port = 0;
   int proxy_backdoor = -1;
   char *envVar = NULL, *group_addr = NULL, *tsArgs = NULL;
   bool log_to_syslog = true;
@@ -406,8 +410,7 @@ main(int argc, char **argv)
   ink_thread webThrId;
 
   // Set up the application version info
-  appVersionInfo.setup(PACKAGE_NAME,"traffic_manager", PACKAGE_VERSION,
-                       __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
+  appVersionInfo.setup(PACKAGE_NAME, "traffic_manager", PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
   initSignalHandlers();
 
   // Process Environment Variables
@@ -427,7 +430,7 @@ main(int argc, char **argv)
     group_addr = envVar;
   }
 
-  for (int i = 1; i < argc; i++) {      /* Process command line args */
+  for (int i = 1; i < argc; i++) { /* Process command line args */
 
     if (argv[i][0] == '-') {
       if ((strcmp(argv[i], "-version") == 0) || (strcmp(argv[i], "-V") == 0)) {
@@ -440,7 +443,6 @@ main(int argc, char **argv)
       } else {
         // The rest of the options require an argument in the form of -<Flag> <val>
         if ((i + 1) < argc) {
-
           if (strcmp(argv[i], "-aconfPort") == 0) {
             ++i;
             aconf_port_arg = atoi(argv[i]);
@@ -463,7 +465,7 @@ main(int argc, char **argv)
 #endif
           } else if (strcmp(argv[i], "-path") == 0) {
             ++i;
-            //bugfixed by YTS Team, yamsat(id-59703)
+            // bugfixed by YTS Team, yamsat(id-59703)
             if ((strlen(argv[i]) > PATH_NAME_MAX)) {
               fprintf(stderr, "\n   Path exceeded the maximum allowed characters.\n");
               exit(1);
@@ -478,7 +480,7 @@ main(int argc, char **argv)
           } else if (strcmp(argv[i], "-recordsConf") == 0) {
             ++i;
             recs_conf = argv[i];
-            // TODO: This seems completely incomplete, disabled for now
+// TODO: This seems completely incomplete, disabled for now
 #if 0
           } else if (strcmp(argv[i], "-printRecords") == 0) {
             ++i;
@@ -547,9 +549,10 @@ main(int argc, char **argv)
   RecLocalInit();
   LibRecordsConfigInit();
 
-  init_dirs();// setup critical directories, needs LibRecords
+  init_dirs(); // setup critical directories, needs LibRecords
 
-  if (RecGetRecordString("proxy.config.admin.user_id", userToRunAs, sizeof(userToRunAs)) != TS_ERR_OKAY || strlen(userToRunAs) == 0) {
+  if (RecGetRecordString("proxy.config.admin.user_id", userToRunAs, sizeof(userToRunAs)) != TS_ERR_OKAY ||
+      strlen(userToRunAs) == 0) {
     mgmt_fatal(stderr, 0, "proxy.config.admin.user_id is not set\n");
   }
 
@@ -605,8 +608,8 @@ main(int argc, char **argv)
   RecSetRecordString("proxy.node.version.manager.build_date", appVersionInfo.BldDateStr);
   RecSetRecordString("proxy.node.version.manager.build_machine", appVersionInfo.BldMachineStr);
   RecSetRecordString("proxy.node.version.manager.build_person", appVersionInfo.BldPersonStr);
-//    RecSetRecordString("proxy.node.version.manager.build_compile_flags",
-//                       appVersionInfo.BldCompileFlagsStr);
+  //    RecSetRecordString("proxy.node.version.manager.build_compile_flags",
+  //                       appVersionInfo.BldCompileFlagsStr);
 
   if (log_to_syslog) {
     char sys_var[] = "proxy.config.syslog_facility";
@@ -657,7 +660,7 @@ main(int argc, char **argv)
   RecLocalStart(configFiles);
 
   /* Update cmd line overrides/environmental overrides/etc */
-  if (tsArgs) {                 /* Passed command line args for proxy */
+  if (tsArgs) { /* Passed command line args for proxy */
     ats_free(lmgmt->proxy_options);
     lmgmt->proxy_options = tsArgs;
     mgmt_log(stderr, "[main] Traffic Server Args: '%s'\n", lmgmt->proxy_options);
@@ -690,14 +693,14 @@ main(int argc, char **argv)
   in_addr_t group_addr_ip = inet_network(group_addr);
 
   if (!(min_ip < group_addr_ip && group_addr_ip < max_ip)) {
-    mgmt_fatal(0, "[TrafficManager] Multi-Cast group addr '%s' is not in the permitted range of %s\n",
-               group_addr, "224.0.1.0 - 239.255.255.255");
+    mgmt_fatal(0, "[TrafficManager] Multi-Cast group addr '%s' is not in the permitted range of %s\n", group_addr,
+               "224.0.1.0 - 239.255.255.255");
   }
 
   /* TODO: Do we really need to init cluster communication? */
-  lmgmt->initCCom(appVersionInfo, configFiles, cluster_mcport, group_addr, cluster_rsport);       /* Setup cluster communication */
+  lmgmt->initCCom(appVersionInfo, configFiles, cluster_mcport, group_addr, cluster_rsport); /* Setup cluster communication */
 
-  lmgmt->initMgmtProcessServer();       /* Setup p-to-p process server */
+  lmgmt->initMgmtProcessServer(); /* Setup p-to-p process server */
 
   // Now that we know our cluster ip address, add the
   //   UI record for this machine
@@ -711,8 +714,8 @@ main(int argc, char **argv)
   // can keep a consistent euid when create mgmtapi/eventapi unix
   // sockets in webIntr_main thread.
   //
-  webThrId = ink_thread_create(webIntr_main, NULL);     /* Spin web agent thread */
-  Debug("lm", "Created Web Agent thread (%"  PRId64 ")", (int64_t)webThrId);
+  webThrId = ink_thread_create(webIntr_main, NULL); /* Spin web agent thread */
+  Debug("lm", "Created Web Agent thread (%" PRId64 ")", (int64_t)webThrId);
 
   ticker = time(NULL);
   mgmt_log("[TrafficManager] Setup complete\n");
@@ -726,7 +729,7 @@ main(int argc, char **argv)
   RecRegisterStatInt(RECT_NODE, "proxy.node.config.restart_required.manager", 0, RECP_NON_PERSISTENT);
   RecRegisterStatInt(RECT_NODE, "proxy.node.config.restart_required.cop", 0, RECP_NON_PERSISTENT);
 
-  int sleep_time = 0; //sleep_time given in sec
+  int sleep_time = 0; // sleep_time given in sec
 
   for (;;) {
     lmgmt->processEventQueue();
@@ -746,7 +749,7 @@ main(int argc, char **argv)
       lmgmt->ccom->sendSharedData();
       lmgmt->virt_map->lt_runGambit();
     } else {
-      if (!lmgmt->run_proxy) {  /* Down if we are not going to start another immed. */
+      if (!lmgmt->run_proxy) { /* Down if we are not going to start another immed. */
         /* Proxy is not up, so no addrs should be */
         lmgmt->virt_map->downOurAddrs();
       }
@@ -793,7 +796,7 @@ main(int argc, char **argv)
     if (lmgmt->run_proxy && !lmgmt->processRunning()) { /* Make sure we still have a proxy up */
       if (sleep_time) {
         mgmt_log(stderr, "Relaunching proxy after %d sec...", sleep_time);
-        millisleep(1000 * sleep_time); //we use millisleep instead of sleep because it doesnt interfere with signals
+        millisleep(1000 * sleep_time); // we use millisleep instead of sleep because it doesnt interfere with signals
         sleep_time = (sleep_time > 30) ? 60 : sleep_time * 2;
       } else {
         sleep_time = 1;
@@ -804,7 +807,7 @@ main(int argc, char **argv)
       } else {
         just_started++;
       }
-    } else {                    /* Give the proxy a chance to fire up */
+    } else { /* Give the proxy a chance to fire up */
       just_started++;
     }
 
@@ -821,37 +824,37 @@ main(int argc, char **argv)
 #ifdef NEED_PSIGNAL
           mgmt_log(stderr, "[main] Proxy terminated due to Sig %d. Relaunching after %d sec...\n", sig, sleep_time);
 #else
-          mgmt_log(stderr, "[main] Proxy terminated due to Sig %d: %s. Relaunching after %d sec...\n", sig, strsignal(sig), sleep_time);
+          mgmt_log(stderr, "[main] Proxy terminated due to Sig %d: %s. Relaunching after %d sec...\n", sig, strsignal(sig),
+                   sleep_time);
 #endif /* NEED_PSIGNAL */
         }
       }
       mgmt_log(stderr, "[main] Proxy launch failed, retrying after %d sec...\n", sleep_time);
     }
-
   }
 
   if (statProcessor) {
-    delete(statProcessor);
+    delete (statProcessor);
   }
 
 #ifndef MGMT_SERVICE
   return 0;
 #endif
 
-}                               /* End main */
+} /* End main */
 
 #if !defined(linux) && !defined(freebsd) && !defined(darwin)
 static void
-SignalAlrmHandler(int /* sig ATS_UNUSED */, siginfo_t * t, void * /* c ATS_UNUSED */)
+SignalAlrmHandler(int /* sig ATS_UNUSED */, siginfo_t *t, void * /* c ATS_UNUSED */)
 #else
 static void
 SignalAlrmHandler(int /* sig ATS_UNUSED */)
 #endif
 {
-  /*
-     fprintf(stderr, "[TrafficManager] ==> SIGALRM received\n");
-     mgmt_elog(stderr, 0, "[TrafficManager] ==> SIGALRM received\n");
-   */
+/*
+   fprintf(stderr, "[TrafficManager] ==> SIGALRM received\n");
+   mgmt_elog(stderr, 0, "[TrafficManager] ==> SIGALRM received\n");
+ */
 #if !defined(linux) && !defined(freebsd) && !defined(darwin)
   if (t) {
     if (t->si_code <= 0) {
@@ -873,7 +876,7 @@ SignalAlrmHandler(int /* sig ATS_UNUSED */)
 
 #if !defined(linux) && !defined(freebsd) && !defined(darwin)
 static void
-SignalHandler(int sig, siginfo_t * t, void *c)
+SignalHandler(int sig, siginfo_t *t, void *c)
 #else
 static void
 SignalHandler(int sig)
@@ -909,7 +912,6 @@ SignalHandler(int sig)
   if (lmgmt && !clean) {
     clean = 1;
     if (lmgmt->watched_process_pid != -1) {
-
       if (sig == SIGTERM || sig == SIGINT) {
         kill(lmgmt->watched_process_pid, sig);
         waitpid(lmgmt->watched_process_pid, &status, 0);
@@ -940,7 +942,7 @@ SignalHandler(int sig)
   fprintf(stderr, "[TrafficManager] ==> signal2 #%d\n", sig);
   mgmt_elog(stderr, 0, "[TrafficManager] ==> signal2 #%d\n", sig);
   _exit(sig);
-}                               /* End SignalHandler */
+} /* End SignalHandler */
 
 // void SigChldHandler(int sig)
 //
@@ -995,7 +997,7 @@ printUsage()
   fprintf(stderr, "   [...] can be one+ of: [config process node cluster local all]\n");
   fprintf(stderr, "----------------------------------------------------------------------------\n");
   exit(0);
-}                               /* End printUsage */
+} /* End printUsage */
 
 void
 fileUpdated(char *fname, bool incVersion)
@@ -1071,10 +1073,9 @@ fileUpdated(char *fname, bool incVersion)
     lmgmt->signalFileChange("proxy.config.prefetch.config_file");
   } else {
     mgmt_elog(stderr, 0, "[fileUpdated] Unknown config file updated '%s'\n", fname);
-
   }
   return;
-}                               /* End fileUpdate */
+} /* End fileUpdate */
 
 #if TS_USE_POSIX_CAP
 /** Restore capabilities after user id change.
@@ -1096,16 +1097,17 @@ fileUpdated(char *fname, bool incVersion)
  */
 
 int
-restoreCapabilities() {
-  int zret = 0; // return value.
+restoreCapabilities()
+{
+  int zret = 0;                   // return value.
   cap_t cap_set = cap_get_proc(); // current capabilities
   // Make a list of the capabilities we want turned on.
   cap_value_t cap_list[] = {
-    CAP_NET_ADMIN, ///< Set socket transparency.
+    CAP_NET_ADMIN,        ///< Set socket transparency.
     CAP_NET_BIND_SERVICE, ///< Low port (e.g. 80) binding.
-    CAP_IPC_LOCK ///< Lock IPC objects.
+    CAP_IPC_LOCK          ///< Lock IPC objects.
   };
-  static int const CAP_COUNT = sizeof(cap_list)/sizeof(*cap_list);
+  static int const CAP_COUNT = sizeof(cap_list) / sizeof(*cap_list);
 
   cap_set_flag(cap_set, CAP_EFFECTIVE, CAP_COUNT, cap_list, CAP_SET);
   zret = cap_set_proc(cap_set);
@@ -1122,7 +1124,7 @@ restoreCapabilities() {
 //  If we are not root, do nothing
 //
 void
-runAsUser(const char * userName)
+runAsUser(const char *userName)
 {
   if (getuid() == 0 || geteuid() == 0) {
     ImpersonateUser(userName, IMPERSONATE_EFFECTIVE);
@@ -1132,6 +1134,5 @@ runAsUser(const char * userName)
       mgmt_elog(stderr, 0, "[runAsUser] Error: Failed to restore capabilities after switch to user %s.\n", userName);
     }
 #endif
-
   }
-}                               /* End runAsUser() */
+} /* End runAsUser() */

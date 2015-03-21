@@ -33,15 +33,13 @@
 
 #include "ink_apidefs.h"
 
-enum URLType
-{
+enum URLType {
   URL_TYPE_NONE,
   URL_TYPE_HTTP,
-  URL_TYPE_HTTPS
+  URL_TYPE_HTTPS,
 };
 
-struct URLImpl:public HdrHeapObjImpl
-{
+struct URLImpl : public HdrHeapObjImpl {
   // HdrHeapObjImpl is 4 bytes
   uint16_t m_len_scheme;
   uint16_t m_len_user;
@@ -70,11 +68,11 @@ struct URLImpl:public HdrHeapObjImpl
   // Tokenized values
   int16_t m_scheme_wks_idx;
   uint16_t m_port;
-  uint8_t m_url_type;             // e.g. HTTP
-  uint8_t m_type_code;            // RFC 1738 limits type code to 1 char
+  uint8_t m_url_type;  // e.g. HTTP
+  uint8_t m_type_code; // RFC 1738 limits type code to 1 char
   // 6 bytes
 
-  uint32_t m_clean:1;
+  uint32_t m_clean : 1;
   // 8 bytes + 1 bit, will result in padding
 
   // Marshaling Functions
@@ -91,15 +89,20 @@ struct URLImpl:public HdrHeapObjImpl
 /// @internal This just forwards on to another specific context but avoids
 /// putting that switch logic in multiple places. The working context is put
 /// in to class local storage (@a _obj) via placement @a new.
-class URLHashContext : public CryptoContext {
+class URLHashContext : public CryptoContext
+{
 public:
   URLHashContext();
   /// Update the hash with @a data of @a length bytes.
-  virtual bool update(void const* data, int length);
+  virtual bool update(void const *data, int length);
   /// Finalize and extract the @a hash.
-  virtual bool finalize(CryptoHash& hash);
+  virtual bool finalize(CryptoHash &hash);
 
-  enum HashType { UNSPECIFIED, MD5, MMH }; ///< What type of hash we really are.
+  enum HashType {
+    UNSPECIFIED,
+    MD5,
+    MMH,
+  }; ///< What type of hash we really are.
   static HashType Setting;
 
   /// Size of storage for placement @c new of hashing context.
@@ -109,12 +112,16 @@ protected:
   char _obj[OBJ_SIZE]; ///< Raw storage for instantiated context.
 };
 
-inline bool URLHashContext::update(void const* data, int length) {
-  return reinterpret_cast<CryptoContext*>(_obj)->update(data, length);
+inline bool
+URLHashContext::update(void const *data, int length)
+{
+  return reinterpret_cast<CryptoContext *>(_obj)->update(data, length);
 }
 
-inline bool URLHashContext::finalize(CryptoHash& hash) {
-  return reinterpret_cast<CryptoContext*>(_obj)->finalize(hash);
+inline bool
+URLHashContext::finalize(CryptoHash &hash)
+{
+  return reinterpret_cast<CryptoContext *>(_obj)->finalize(hash);
 }
 
 extern const char *URL_SCHEME_FILE;
@@ -192,8 +199,7 @@ void url_nuke_proxy_stuff(URLImpl *d_url);
 
 URLImpl *url_copy(URLImpl *s_url, HdrHeap *s_heap, HdrHeap *d_heap, bool inherit_strs = true);
 void url_copy_onto(URLImpl *s_url, HdrHeap *s_heap, URLImpl *d_url, HdrHeap *d_heap, bool inherit_strs = true);
-void url_copy_onto_as_server_url(URLImpl *s_url, HdrHeap *s_heap,
-                                 URLImpl *d_url, HdrHeap *d_heap, bool inherit_strs = true);
+void url_copy_onto_as_server_url(URLImpl *s_url, HdrHeap *s_heap, URLImpl *d_url, HdrHeap *d_heap, bool inherit_strs = true);
 
 int url_print(URLImpl *u, char *buf, int bufsize, int *bufindex, int *dumpoffset);
 void url_describe(HdrHeapObjImpl *raw, bool recurse);
@@ -208,8 +214,7 @@ char *url_string_get_buf(URLImpl *url, char *dstbuf, int dstbuf_size, int *lengt
 const char *url_scheme_get(URLImpl *url, int *length);
 void url_MD5_get(URLImpl *url, CryptoHash *md5);
 void url_host_MD5_get(URLImpl *url, CryptoHash *md5);
-const char *url_scheme_set(HdrHeap *heap, URLImpl *url,
-                           const char *value, int value_wks_idx, int length, bool copy_string);
+const char *url_scheme_set(HdrHeap *heap, URLImpl *url, const char *value, int value_wks_idx, int length, bool copy_string);
 
 /* Internet specific */
 void url_user_set(HdrHeap *heap, URLImpl *url, const char *value, int length, bool copy_string);
@@ -228,13 +233,12 @@ void url_query_set(HdrHeap *heap, URLImpl *url, const char *value, int length, b
 void url_fragment_set(HdrHeap *heap, URLImpl *url, const char *value, int length, bool copy_string);
 
 MIMEParseResult url_parse(HdrHeap *heap, URLImpl *url, const char **start, const char *end, bool copy_strings);
-MIMEParseResult url_parse_no_path_component_breakdown(HdrHeap *heap, URLImpl *url,
-                                                      const char **start, const char *end, bool copy_strings);
-MIMEParseResult url_parse_internet(HdrHeap *heap, URLImpl *url,
-                                   const char **start, const char *end, bool copy_strings);
+MIMEParseResult url_parse_no_path_component_breakdown(HdrHeap *heap, URLImpl *url, const char **start, const char *end,
+                                                      bool copy_strings);
+MIMEParseResult url_parse_internet(HdrHeap *heap, URLImpl *url, const char **start, const char *end, bool copy_strings);
 MIMEParseResult url_parse_http(HdrHeap *heap, URLImpl *url, const char **start, const char *end, bool copy_strings);
-MIMEParseResult url_parse_http_no_path_component_breakdown(HdrHeap *heap, URLImpl *url,
-                                                           const char **start, const char *end, bool copy_strings);
+MIMEParseResult url_parse_http_no_path_component_breakdown(HdrHeap *heap, URLImpl *url, const char **start, const char *end,
+                                                           bool copy_strings);
 
 char *url_unescapify(Arena *arena, const char *str, int length);
 
@@ -254,7 +258,7 @@ url_canonicalize_port(int type, int port)
   return (port);
 }
 
-class URL:public HdrHeapSDKHandle
+class URL : public HdrHeapSDKHandle
 {
 public:
   URLImpl *m_url_impl;
@@ -317,27 +321,23 @@ public:
   static char *unescapify(Arena *arena, const char *str, int length);
 
 private:
-
   // No gratuitous copies!
-    URL(const URL & u);
-    URL & operator =(const URL & u);
+  URL(const URL &u);
+  URL &operator=(const URL &u);
 };
 
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline
-URL::URL()
-  : m_url_impl(NULL)
+inline URL::URL() : m_url_impl(NULL)
 {
 }
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline
-URL::~URL()
+inline URL::~URL()
 {
 }
 
@@ -734,7 +734,7 @@ URL::parse(const char *str, int length)
 {
   ink_assert(valid());
   if (length < 0)
-    length = (int) strlen(str);
+    length = (int)strlen(str);
   return parse(&str, str + length);
 }
 
@@ -748,7 +748,7 @@ URL::parse_no_path_component_breakdown(const char *str, int length)
 {
   ink_assert(valid());
   if (length < 0)
-    length = (int) strlen(str);
+    length = (int)strlen(str);
   ink_assert(valid());
   return url_parse_no_path_component_breakdown(m_heap, m_url_impl, &str, str + length, true);
 }
@@ -763,4 +763,3 @@ URL::unescapify(Arena *arena, const char *str, int length)
 }
 
 #endif /* __URL_H__ */
-

@@ -27,8 +27,7 @@
 #include <climits>
 #include <cstdio>
 
-std::ostream &
-operator << (std::ostream & os, ATSConsistentHashNode & thing)
+std::ostream &operator<<(std::ostream &os, ATSConsistentHashNode &thing)
 {
   return os << thing.name;
 }
@@ -38,7 +37,7 @@ ATSConsistentHash::ATSConsistentHash(int r, ATSHash64 *h) : replicas(r), hash(h)
 }
 
 void
-ATSConsistentHash::insert(ATSConsistentHashNode * node, float weight, ATSHash64 *h)
+ATSConsistentHash::insert(ATSConsistentHashNode *node, float weight, ATSHash64 *h)
 {
   int i;
   char numstr[256];
@@ -57,7 +56,7 @@ ATSConsistentHash::insert(ATSConsistentHashNode * node, float weight, ATSHash64 
   string_stream << *node;
   std_string = string_stream.str();
 
-  for (i = 0; i < (int) roundf(replicas * weight); i++) {
+  for (i = 0; i < (int)roundf(replicas * weight); i++) {
     snprintf(numstr, 256, "%d-", i);
     thash->update(numstr, strlen(numstr));
     thash->update(std_string.c_str(), strlen(std_string.c_str()));

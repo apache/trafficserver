@@ -31,31 +31,34 @@ using namespace atscppapi;
 /**
  * @private
  */
-struct atscppapi::ClientRequestState: noncopyable {
+struct atscppapi::ClientRequestState : noncopyable {
   TSHttpTxn txn_;
   TSMBuffer pristine_hdr_buf_;
   TSMLoc pristine_url_loc_;
   Url pristine_url_;
-  ClientRequestState(TSHttpTxn txn) : txn_(txn), pristine_hdr_buf_(NULL), pristine_url_loc_(NULL) { }
+  ClientRequestState(TSHttpTxn txn) : txn_(txn), pristine_hdr_buf_(NULL), pristine_url_loc_(NULL) {}
 };
 
-atscppapi::ClientRequest::ClientRequest(void *ats_txn_handle, void *hdr_buf, void *hdr_loc) :
-    Request(hdr_buf, hdr_loc) {
+atscppapi::ClientRequest::ClientRequest(void *ats_txn_handle, void *hdr_buf, void *hdr_loc) : Request(hdr_buf, hdr_loc)
+{
   state_ = new ClientRequestState(static_cast<TSHttpTxn>(ats_txn_handle));
 }
 
-atscppapi::ClientRequest::~ClientRequest() {
+atscppapi::ClientRequest::~ClientRequest()
+{
   if (state_->pristine_url_loc_ && state_->pristine_hdr_buf_) {
     TSMLoc null_parent_loc = NULL;
-    LOG_DEBUG("Releasing pristine url loc for transaction %p; hdr_buf %p, url_loc %p", state_->txn_,
-              state_->pristine_hdr_buf_, state_->pristine_url_loc_);
+    LOG_DEBUG("Releasing pristine url loc for transaction %p; hdr_buf %p, url_loc %p", state_->txn_, state_->pristine_hdr_buf_,
+              state_->pristine_url_loc_);
     TSHandleMLocRelease(state_->pristine_hdr_buf_, null_parent_loc, state_->pristine_url_loc_);
   }
 
   delete state_;
 }
 
-const Url &atscppapi::ClientRequest::getPristineUrl() const {
+const Url &
+atscppapi::ClientRequest::getPristineUrl() const
+{
   if (!state_->pristine_url_loc_) {
     TSHttpTxnPristineUrlGet(state_->txn_, &state_->pristine_hdr_buf_, &state_->pristine_url_loc_);
 
@@ -63,8 +66,8 @@ const Url &atscppapi::ClientRequest::getPristineUrl() const {
       state_->pristine_url_.init(state_->pristine_hdr_buf_, state_->pristine_url_loc_);
       LOG_DEBUG("Pristine URL initialized");
     } else {
-      LOG_ERROR("Failed to get pristine URL for transaction %p; hdr_buf %p, url_loc %p", state_->txn_,
-                state_->pristine_hdr_buf_, state_->pristine_url_loc_);
+      LOG_ERROR("Failed to get pristine URL for transaction %p; hdr_buf %p, url_loc %p", state_->txn_, state_->pristine_hdr_buf_,
+                state_->pristine_url_loc_);
     }
   } else {
     LOG_DEBUG("Pristine URL already initialized");

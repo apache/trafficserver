@@ -65,17 +65,8 @@ create_this_cluster_machine()
 }
 
 ClusterMachine::ClusterMachine(char *ahostname, unsigned int aip, int aport)
-  : dead(false),
-    hostname(ahostname),
-    ip(aip),
-    cluster_port(aport),
-    num_connections(0),
-    now_connections(0),
-    free_connections(0),
-    rr_count(0),
-    msg_proto_major(0),
-    msg_proto_minor(0),
-    clusterHandlers(0)
+  : dead(false), hostname(ahostname), ip(aip), cluster_port(aport), num_connections(0), now_connections(0), free_connections(0),
+    rr_count(0), msg_proto_major(0), msg_proto_minor(0), clusterHandlers(0)
 {
   EThread *thread = this_ethread();
   ProxyMutex *mutex = thread->mutex;
@@ -88,9 +79,9 @@ ClusterMachine::ClusterMachine(char *ahostname, unsigned int aip, int aport)
     }
     hostname = ats_strdup(ahostname);
 
-    // If we are running if the manager, it the our ip address for
-    //   clustering from the manager, so the manager can control what
-    //   interface we cluster over.  Otherwise figure it out ourselves
+// If we are running if the manager, it the our ip address for
+//   clustering from the manager, so the manager can control what
+//   interface we cluster over.  Otherwise figure it out ourselves
 #ifdef LOCAL_CLUSTER_TEST_MODE
     ip = inet_addr("127.0.0.1");
 #else
@@ -104,32 +95,29 @@ ClusterMachine::ClusterMachine(char *ahostname, unsigned int aip, int aport)
       Debug("cluster_note", "[Machine::Machine] Cluster IP addr: %s\n", clusterIP);
       ip = inet_addr(clusterIP);
     } else {
-
       ink_gethostbyname_r_data data;
       struct hostent *r = ink_gethostbyname_r(ahostname, &data);
       if (!r) {
         Warning("unable to DNS %s: %d", ahostname, data.herrno);
         ip = 0;
       } else {
-
         // lowest IP address
 
-        ip = (unsigned int) -1; // 0xFFFFFFFF
+        ip = (unsigned int)-1; // 0xFFFFFFFF
         for (int i = 0; r->h_addr_list[i]; i++)
-          if (ip > *(unsigned int *) r->h_addr_list[i])
-            ip = *(unsigned int *) r->h_addr_list[i];
-        if (ip == (unsigned int) -1)
+          if (ip > *(unsigned int *)r->h_addr_list[i])
+            ip = *(unsigned int *)r->h_addr_list[i];
+        if (ip == (unsigned int)-1)
           ip = 0;
       }
-      //ip = htonl(ip); for the alpha!
+      // ip = htonl(ip); for the alpha!
     }
 #endif // LOCAL_CLUSTER_TEST_MODE
   } else {
-
     ip = aip;
 
     ink_gethostbyaddr_r_data data;
-    struct hostent *r = ink_gethostbyaddr_r((char *) &ip, sizeof(int), AF_INET, &data);
+    struct hostent *r = ink_gethostbyaddr_r((char *)&ip, sizeof(int), AF_INET, &data);
 
     if (r == NULL) {
       Alias32 x;
@@ -147,7 +135,8 @@ ClusterMachine::ClusterMachine(char *ahostname, unsigned int aip, int aport)
   clusterHandlers = (ClusterHandler **)ats_calloc(num_connections, sizeof(ClusterHandler *));
 }
 
-ClusterHandler *ClusterMachine::pop_ClusterHandler(int no_rr)
+ClusterHandler *
+ClusterMachine::pop_ClusterHandler(int no_rr)
 {
   int find = 0;
   int64_t now = rr_count;
@@ -170,28 +159,27 @@ ClusterMachine::~ClusterMachine()
 }
 
 struct MachineTimeoutContinuation;
-typedef int (MachineTimeoutContinuation::*McTimeoutContHandler) (int, void *);
-struct MachineTimeoutContinuation: public Continuation
-{
+typedef int (MachineTimeoutContinuation::*McTimeoutContHandler)(int, void *);
+struct MachineTimeoutContinuation : public Continuation {
   ClusterMachine *m;
-  int dieEvent(int event, Event * e)
+  int
+  dieEvent(int event, Event *e)
   {
-    (void) event;
-    (void) e;
+    (void)event;
+    (void)e;
     delete m;
     delete this;
     return EVENT_DONE;
   }
 
-  MachineTimeoutContinuation(ClusterMachine * am)
-    : Continuation(NULL), m(am)
+  MachineTimeoutContinuation(ClusterMachine *am) : Continuation(NULL), m(am)
   {
-    SET_HANDLER((McTimeoutContHandler) & MachineTimeoutContinuation::dieEvent);
+    SET_HANDLER((McTimeoutContHandler)&MachineTimeoutContinuation::dieEvent);
   }
 };
 
 void
-free_ClusterMachine(ClusterMachine * m)
+free_ClusterMachine(ClusterMachine *m)
 {
   EThread *thread = this_ethread();
   ProxyMutex *mutex = thread->mutex;
@@ -202,7 +190,7 @@ free_ClusterMachine(ClusterMachine * m)
 }
 
 void
-free_MachineList(MachineList * l)
+free_MachineList(MachineList *l)
 {
   new_Freer(l, MACHINE_TIMEOUT);
 }
@@ -238,14 +226,14 @@ read_MachineList(const char *filename, int afd)
           goto Lfail;
         *port++ = 0;
         l->machine[i].ip = inet_addr(line);
-        if (-1 == (int) l->machine[i].ip) {
+        if (-1 == (int)l->machine[i].ip) {
           if (afd == -1) {
             Warning("read machine list failure, bad ip, line %d", ln);
             return NULL;
           } else {
             char s[256];
             snprintf(s, sizeof s, "bad ip, line %d", ln);
-            return (MachineList *) ats_strdup(s);
+            return (MachineList *)ats_strdup(s);
           }
         }
         l->machine[i].port = atoi(port);
@@ -261,7 +249,7 @@ read_MachineList(const char *filename, int afd)
         } else {
           char s[256];
           snprintf(s, sizeof s, "bad port, line %d", ln);
-          return (MachineList *) ats_strdup(s);
+          return (MachineList *)ats_strdup(s);
         }
       }
     }
@@ -277,8 +265,8 @@ read_MachineList(const char *filename, int afd)
         return NULL;
       } else
         ats_free(l);
-      return (MachineList *) ats_strdup("number of machines does not match length of list\n");
+      return (MachineList *)ats_strdup("number of machines does not match length of list\n");
     }
   }
-  return (afd != -1) ? (MachineList *) NULL : l;
+  return (afd != -1) ? (MachineList *)NULL : l;
 }

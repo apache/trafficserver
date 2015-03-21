@@ -34,22 +34,22 @@
 class TransformVConnection;
 
 
-class TransformTerminus:public VConnection
+class TransformTerminus : public VConnection
 {
 public:
-  TransformTerminus(TransformVConnection * tvc);
+  TransformTerminus(TransformVConnection *tvc);
 
   int handle_event(int event, void *edata);
 
-  VIO *do_io_read(Continuation * c, int64_t nbytes, MIOBuffer * buf);
-  VIO *do_io_write(Continuation * c, int64_t nbytes, IOBufferReader * buf, bool owner = false);
+  VIO *do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf);
+  VIO *do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner = false);
   void do_io_close(int lerrno = -1);
   void do_io_shutdown(ShutdownHowTo_t howto);
 
-  void reenable(VIO * vio);
+  void reenable(VIO *vio);
 
 public:
-  TransformVConnection * m_tvc;
+  TransformVConnection *m_tvc;
   VIO m_read_vio;
   VIO m_write_vio;
   volatile int m_event_count;
@@ -59,20 +59,20 @@ public:
 };
 
 
-class TransformVConnection:public TransformVCChain
+class TransformVConnection : public TransformVCChain
 {
 public:
-  TransformVConnection(Continuation * cont, APIHook * hooks);
+  TransformVConnection(Continuation *cont, APIHook *hooks);
   ~TransformVConnection();
 
   int handle_event(int event, void *edata);
 
-  VIO *do_io_read(Continuation * c, int64_t nbytes, MIOBuffer * buf);
-  VIO *do_io_write(Continuation * c, int64_t nbytes, IOBufferReader * buf, bool owner = false);
+  VIO *do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf);
+  VIO *do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner = false);
   void do_io_close(int lerrno = -1);
   void do_io_shutdown(ShutdownHowTo_t howto);
 
-  void reenable(VIO * vio);
+  void reenable(VIO *vio);
 
   /** Compute the backlog.
       @return The actual backlog, or a value at least @a limit.
@@ -80,14 +80,14 @@ public:
   virtual uint64_t backlog(uint64_t limit = UINT64_MAX);
 
 public:
-  VConnection * m_transform;
+  VConnection *m_transform;
   Continuation *m_cont;
   TransformTerminus m_terminus;
   volatile int m_closed;
 };
 
 
-class TransformControl:public Continuation
+class TransformControl : public Continuation
 {
 public:
   TransformControl();
@@ -102,25 +102,26 @@ public:
 };
 
 
-class NullTransform:public INKVConnInternal
+class NullTransform : public INKVConnInternal
 {
 public:
-  NullTransform(ProxyMutex * mutex);
+  NullTransform(ProxyMutex *mutex);
   ~NullTransform();
 
   int handle_event(int event, void *edata);
 
 public:
-  MIOBuffer * m_output_buf;
+  MIOBuffer *m_output_buf;
   IOBufferReader *m_output_reader;
   VIO *m_output_vio;
 };
 
 
-class RangeTransform:public INKVConnInternal
+class RangeTransform : public INKVConnInternal
 {
 public:
-  RangeTransform(ProxyMutex * mutex, RangeRecord * ranges, int num_fields, HTTPHdr *transform_resp, const char * content_type, int content_type_len, int64_t content_length);
+  RangeTransform(ProxyMutex *mutex, RangeRecord *ranges, int num_fields, HTTPHdr *transform_resp, const char *content_type,
+                 int content_type_len, int64_t content_length);
   ~RangeTransform();
 
   // void parse_range_and_compare();
@@ -133,7 +134,7 @@ public:
   void calculate_output_cl();
 
 public:
-  MIOBuffer * m_output_buf;
+  MIOBuffer *m_output_buf;
   IOBufferReader *m_output_reader;
 
 
@@ -149,7 +150,6 @@ public:
   RangeRecord *m_ranges;
   int64_t m_output_cl;
   int64_t m_done;
-
 };
 
 #define PREFETCH
@@ -161,6 +161,6 @@ public:
 };
 
 extern PrefetchProcessor prefetchProcessor;
-#endif //PREFETCH
+#endif // PREFETCH
 
 #endif /* __TRANSFORM_INTERNAL_H__ */

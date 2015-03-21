@@ -27,8 +27,8 @@
 
 #include <string>
 
-namespace atscppapi {
-
+namespace atscppapi
+{
 /**
  * An enumeration of all available Http Versions.
  */
@@ -46,7 +46,6 @@ enum HttpVersion {
  * \endcode
  */
 extern const std::string HTTP_VERSION_STRINGS[];
-
 }
 
 #endif

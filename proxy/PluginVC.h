@@ -42,58 +42,51 @@
 
 class PluginVCCore;
 
-struct PluginVCState
-{
+struct PluginVCState {
   PluginVCState();
   VIO vio;
   bool shutdown;
 };
 
-inline
-PluginVCState::PluginVCState():
-vio(),
-shutdown(false)
+inline PluginVCState::PluginVCState() : vio(), shutdown(false)
 {
 }
 
-enum PluginVC_t
-{
+enum PluginVC_t {
   PLUGIN_VC_UNKNOWN,
   PLUGIN_VC_ACTIVE,
-  PLUGIN_VC_PASSIVE
+  PLUGIN_VC_PASSIVE,
 };
 
 // For the id in set_data/get_data
-enum
-{
+enum {
   PLUGIN_VC_DATA_LOCAL,
-  PLUGIN_VC_DATA_REMOTE
+  PLUGIN_VC_DATA_REMOTE,
 };
 
-enum
-{
+enum {
   PLUGIN_VC_MAGIC_ALIVE = 0xaabbccdd,
-  PLUGIN_VC_MAGIC_DEAD = 0xaabbdead
+  PLUGIN_VC_MAGIC_DEAD = 0xaabbdead,
 };
 
-class PluginVC:public NetVConnection, public PluginIdentity
+class PluginVC : public NetVConnection, public PluginIdentity
 {
   friend class PluginVCCore;
+
 public:
+  PluginVC(PluginVCCore *core_obj);
+  ~PluginVC();
 
-    PluginVC(PluginVCCore *core_obj);
-   ~PluginVC();
+  virtual VIO *do_io_read(Continuation *c = NULL, int64_t nbytes = INT64_MAX, MIOBuffer *buf = 0);
 
-  virtual VIO *do_io_read(Continuation * c = NULL, int64_t nbytes = INT64_MAX, MIOBuffer * buf = 0);
-
-  virtual VIO *do_io_write(Continuation * c = NULL, int64_t nbytes = INT64_MAX, IOBufferReader * buf = 0, bool owner = false);
+  virtual VIO *do_io_write(Continuation *c = NULL, int64_t nbytes = INT64_MAX, IOBufferReader *buf = 0, bool owner = false);
 
   virtual void do_io_close(int lerrno = -1);
   virtual void do_io_shutdown(ShutdownHowTo_t howto);
 
   // Reenable a given vio.  The public interface is through VIO::reenable
-  virtual void reenable(VIO * vio);
-  virtual void reenable_re(VIO * vio);
+  virtual void reenable(VIO *vio);
+  virtual void reenable_re(VIO *vio);
 
   // Timeouts
   virtual void set_active_timeout(ink_hrtime timeout_in);
@@ -115,18 +108,38 @@ public:
   virtual bool get_data(int id, void *data);
   virtual bool set_data(int id, void *data);
 
-  virtual PluginVC* get_other_side() { return other_side; }
+  virtual PluginVC *
+  get_other_side()
+  {
+    return other_side;
+  }
 
   //@{ @name Plugin identity.
   /// Override for @c PluginIdentity.
-  virtual char const* getPluginTag() const { return plugin_tag; }
+  virtual char const *
+  getPluginTag() const
+  {
+    return plugin_tag;
+  }
   /// Override for @c PluginIdentity.
-  virtual int64_t getPluginId() const { return plugin_id; }
+  virtual int64_t
+  getPluginId() const
+  {
+    return plugin_id;
+  }
 
   /// Setter for plugin tag.
-  virtual void setPluginTag(char const* tag) { plugin_tag = tag; }
+  virtual void
+  setPluginTag(char const *tag)
+  {
+    plugin_tag = tag;
+  }
   /// Setter for plugin id.
-  virtual void setPluginId(int64_t id) { plugin_id = id; }
+  virtual void
+  setPluginId(int64_t id)
+  {
+    plugin_id = id;
+  }
   //@}
 
   int main_handler(int event, void *data);
@@ -135,12 +148,12 @@ private:
   void process_read_side(bool);
   void process_write_side(bool);
   void process_close();
-  void process_timeout(Event ** e, int event_to_send);
+  void process_timeout(Event **e, int event_to_send);
 
-  void setup_event_cb(ink_hrtime in, Event ** e_ptr);
+  void setup_event_cb(ink_hrtime in, Event **e_ptr);
 
   void update_inactive_time();
-  int64_t transfer_bytes(MIOBuffer * transfer_to, IOBufferReader * transfer_from, int64_t act_on);
+  int64_t transfer_bytes(MIOBuffer *transfer_to, IOBufferReader *transfer_from, int64_t act_on);
 
   uint32_t magic;
   PluginVC_t vc_type;
@@ -168,20 +181,21 @@ private:
   ink_hrtime inactive_timeout_at;
   Event *inactive_event;
 
-  char const* plugin_tag;
+  char const *plugin_tag;
   int64_t plugin_id;
 };
 
-class PluginVCCore:public Continuation
+class PluginVCCore : public Continuation
 {
   friend class PluginVC;
+
 public:
-    PluginVCCore();
-   ~PluginVCCore();
+  PluginVCCore();
+  ~PluginVCCore();
 
   static PluginVCCore *alloc();
   void init();
-  void set_accept_cont(Continuation * c);
+  void set_accept_cont(Continuation *c);
 
   int state_send_accept(int event, void *data);
   int state_send_accept_failed(int event, void *data);
@@ -189,26 +203,22 @@ public:
   void attempt_delete();
 
   PluginVC *connect();
-  Action *connect_re(Continuation * c);
+  Action *connect_re(Continuation *c);
   void kill_no_connect();
 
   /// Set the active address.
-  void set_active_addr(
-                       in_addr_t ip, ///< IPv4 address in host order.
-                       int port ///< IP Port in host order.
+  void set_active_addr(in_addr_t ip, ///< IPv4 address in host order.
+                       int port      ///< IP Port in host order.
                        );
   /// Set the active address and port.
-  void set_active_addr(
-                       sockaddr const *ip ///< Address and port used.
+  void set_active_addr(sockaddr const *ip ///< Address and port used.
                        );
   /// Set the passive address.
-  void set_passive_addr(
-                        in_addr_t ip, ///< IPv4 address in host order.
-                        int port ///< IP port in host order.
+  void set_passive_addr(in_addr_t ip, ///< IPv4 address in host order.
+                        int port      ///< IP port in host order.
                         );
   /// Set the passive address.
-  void set_passive_addr(
-                        sockaddr const* ip ///< Address and port.
+  void set_passive_addr(sockaddr const *ip ///< Address and port.
                         );
 
   void set_active_data(void *data);
@@ -219,15 +229,15 @@ public:
   /// Set the plugin ID for the internal VCs.
   void set_plugin_id(int64_t id);
   /// Set the plugin tag for the internal VCs.
-  void set_plugin_tag(char const* tag);
+  void set_plugin_tag(char const *tag);
 
   // The active vc is handed to the initiator of
   //   connection.  The passive vc is handled to
   //   receiver of the connection
   PluginVC active_vc;
   PluginVC passive_vc;
-private:
 
+private:
   void destroy();
 
   Continuation *connect_to;
@@ -249,19 +259,9 @@ private:
   unsigned id;
 };
 
-inline
-PluginVCCore::PluginVCCore():
-active_vc(this),
-passive_vc(this),
-connect_to(NULL),
-connected(false),
-p_to_a_buffer(NULL),
-p_to_a_reader(NULL),
-a_to_p_buffer(NULL),
-a_to_p_reader(NULL),
-passive_data(NULL),
-active_data(NULL),
-id(0)
+inline PluginVCCore::PluginVCCore()
+  : active_vc(this), passive_vc(this), connect_to(NULL), connected(false), p_to_a_buffer(NULL), p_to_a_reader(NULL),
+    a_to_p_buffer(NULL), a_to_p_reader(NULL), passive_data(NULL), active_data(NULL), id(0)
 {
   memset(&active_addr_struct, 0, sizeof active_addr_struct);
   memset(&passive_addr_struct, 0, sizeof passive_addr_struct);

@@ -30,10 +30,9 @@
 #include "I_IOBuffer.h"
 #include "SpdyDefs.h"
 
-class SpdySessionAccept: public SessionAccept
+class SpdySessionAccept : public SessionAccept
 {
 public:
-
   explicit SpdySessionAccept(spdy::SessionVersion vers);
   ~SpdySessionAccept() {}
 
@@ -41,8 +40,8 @@ public:
 
 private:
   int mainEvent(int event, void *netvc);
-  SpdySessionAccept(const SpdySessionAccept &); // disabled
-  SpdySessionAccept& operator =(const SpdySessionAccept&); // disabled
+  SpdySessionAccept(const SpdySessionAccept &);            // disabled
+  SpdySessionAccept &operator=(const SpdySessionAccept &); // disabled
 
   spdy::SessionVersion version;
 };

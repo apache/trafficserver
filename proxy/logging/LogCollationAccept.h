@@ -26,22 +26,19 @@
 
 #include "P_EventSystem.h"
 #include "P_Net.h"
-struct LogCollationAccept: public Continuation
-{
-
+struct LogCollationAccept : public Continuation {
 public:
   LogCollationAccept(int port);
-   ~LogCollationAccept();
+  ~LogCollationAccept();
 
-  int accept_event(int event, NetVConnection * net_vc);
+  int accept_event(int event, NetVConnection *net_vc);
 
 private:
   int m_port;
   Action *m_accept_action;
   Event *m_pending_event;
-
 };
 
-typedef int (LogCollationAccept::*LogCollationAcceptHandler) (int, void *);
+typedef int (LogCollationAccept::*LogCollationAcceptHandler)(int, void *);
 
 #endif /* LOG_COLLATION_ACCEPT_H */

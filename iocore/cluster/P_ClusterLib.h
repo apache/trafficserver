@@ -53,14 +53,13 @@ extern int partial_writev(int, IOVec *, int, int);
 extern void dump_time_buckets();
 
 struct GlobalClusterPeriodicEvent;
-typedef int (GlobalClusterPeriodicEvent::*GClusterPEHandler) (int, void *);
+typedef int (GlobalClusterPeriodicEvent::*GClusterPEHandler)(int, void *);
 
-struct GlobalClusterPeriodicEvent:public Continuation
-{
+struct GlobalClusterPeriodicEvent : public Continuation {
   GlobalClusterPeriodicEvent();
   ~GlobalClusterPeriodicEvent();
   void init();
-  int calloutEvent(Event * e, void *data);
+  int calloutEvent(Event *e, void *data);
 
   // Private data
   Event *_thisCallout;

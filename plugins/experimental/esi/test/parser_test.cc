@@ -35,7 +35,9 @@ using std::endl;
 using std::string;
 using namespace EsiLib;
 
-void check_node_attr(const Attribute &attr, const char *name, const char *value) {
+void
+check_node_attr(const Attribute &attr, const char *name, const char *value)
+{
   int name_len = strlen(name);
   int value_len = strlen(value);
   assert(attr.name_len == name_len);
@@ -46,7 +48,8 @@ void check_node_attr(const Attribute &attr, const char *name, const char *value)
 
 pthread_key_t threadKey;
 
-int main()
+int
+main()
 {
   pthread_key_create(&threadKey, NULL);
   Utils::init(&Debug, &Error);
@@ -212,7 +215,7 @@ int main()
     ++list_iter;
     assert(list_iter->type == DocNode::TYPE_REMOVE);
     assert(list_iter->data_len == 0);
-    assert(list_iter->data  == 0);
+    assert(list_iter->data == 0);
     assert((list_iter->child_nodes).size() == 0);
     ++list_iter;
     assert(list_iter->type == DocNode::TYPE_PRE);
@@ -236,7 +239,7 @@ int main()
     ++list_iter;
     assert(list_iter->type == DocNode::TYPE_REMOVE);
     assert(list_iter->data_len == 0);
-    assert(list_iter->data  == 0);
+    assert(list_iter->data == 0);
     ++list_iter;
     assert(list_iter->type == DocNode::TYPE_PRE);
     assert(list_iter->data_len == 5);
@@ -275,7 +278,7 @@ int main()
     ++list_iter;
     assert(list_iter->type == DocNode::TYPE_REMOVE);
     assert(list_iter->data_len == 0);
-    assert(list_iter->data  == 0);
+    assert(list_iter->data == 0);
     ++list_iter;
     assert(list_iter->type == DocNode::TYPE_PRE);
     assert(list_iter->data_len == 5);
@@ -631,10 +634,9 @@ int main()
   {
     cout << endl << "==================== Test 30: choose tag " << endl;
     EsiParser parser("parser_test", &Debug, &Error);
-    string input_data =
-      "<esi:choose>"
-      "<esi:when test=blah><esi:include src=url /></esi:when>"
-      "</esi:choose>";
+    string input_data = "<esi:choose>"
+                        "<esi:when test=blah><esi:include src=url /></esi:when>"
+                        "</esi:choose>";
 
     DocNodeList node_list;
     assert(parser.parseChunk(input_data, node_list) == true);
@@ -695,11 +697,10 @@ int main()
   {
     cout << endl << "==================== Test 33: try tag " << endl;
     EsiParser parser("parser_test", &Debug, &Error);
-    string input_data =
-      "<esi:try>"
-      "<esi:attempt><esi:include src=url1 /></esi:attempt>"
-      "<esi:except><esi:include src=url2 /></esi:except>"
-      "</esi:try>";
+    string input_data = "<esi:try>"
+                        "<esi:attempt><esi:include src=url1 /></esi:attempt>"
+                        "<esi:except><esi:include src=url2 /></esi:except>"
+                        "</esi:try>";
 
     DocNodeList node_list;
     assert(parser.parseChunk(input_data, node_list) == true);
@@ -739,9 +740,8 @@ int main()
   {
     cout << endl << "==================== Test 34: attempt/except tags " << endl;
     EsiParser parser("parser_test", &Debug, &Error);
-    string input_data =
-      "<esi:attempt><esi:include src=url1 /></esi:attempt>"
-      "<esi:except><esi:include src=url2 /></esi:except>";
+    string input_data = "<esi:attempt><esi:include src=url1 /></esi:attempt>"
+                        "<esi:except><esi:include src=url2 /></esi:except>";
 
     DocNodeList node_list;
     assert(parser.parseChunk(input_data, node_list) == true);
@@ -849,9 +849,8 @@ int main()
   {
     cout << endl << "==================== Test 37: html comment tag " << endl;
     EsiParser parser("parser_test", &Debug, &Error);
-    string input_data =
-      "foo <esi:comment text=\"blah\"/><!--esi <p><esi:vars>Hello, $(HTTP_COOKIE{name})!</esi:vars></p>-->"
-      "<esi:include src=url /> bar";
+    string input_data = "foo <esi:comment text=\"blah\"/><!--esi <p><esi:vars>Hello, $(HTTP_COOKIE{name})!</esi:vars></p>-->"
+                        "<esi:include src=url /> bar";
 
     DocNodeList node_list;
     assert(parser.parseChunk(input_data, node_list) == true);
@@ -869,8 +868,7 @@ int main()
     ++list_iter;
     assert(list_iter->type == DocNode::TYPE_HTML_COMMENT);
     assert(list_iter->data_len == static_cast<int>(strlen("<p><esi:vars>Hello, $(HTTP_COOKIE{name})!</esi:vars></p>")));
-    assert(strncmp(list_iter->data, "<p><esi:vars>Hello, $(HTTP_COOKIE{name})!</esi:vars></p>",
-                   list_iter->data_len) == 0);
+    assert(strncmp(list_iter->data, "<p><esi:vars>Hello, $(HTTP_COOKIE{name})!</esi:vars></p>", list_iter->data_len) == 0);
     assert(list_iter->attr_list.size() == 0);
     ++list_iter;
     assert(list_iter->type == DocNode::TYPE_INCLUDE);
@@ -887,19 +885,11 @@ int main()
   {
     cout << endl << "==================== Test 38: html comment tag - partial chunks " << endl;
     EsiParser parser("parser_test", &Debug, &Error);
-    const char *lines[] = {
-      "foo ",
-      "<es",
-      "i:comment text=\"blah\"/><esi:include src=url1/>",
-      "<!--",
-      "esi <p><esi:vars>Hello, $(HTTP_COOKIE{name})!</esi:vars></p>-->",
-      "<esi:include src=url2 /><!--e",
-      "si foo--><!--esi bar-->",
-      "<!--esi blah--><esi:com",
-      "ment text=\"bleh\" /> <esi:remove> </esi:remove><!--esi bleh -->",
-      "<!--esi blooh--><esi:include src=url3/>",
-      0
-    };
+    const char *lines[] = {"foo ", "<es", "i:comment text=\"blah\"/><esi:include src=url1/>", "<!--",
+                           "esi <p><esi:vars>Hello, $(HTTP_COOKIE{name})!</esi:vars></p>-->", "<esi:include src=url2 /><!--e",
+                           "si foo--><!--esi bar-->", "<!--esi blah--><esi:com",
+                           "ment text=\"bleh\" /> <esi:remove> </esi:remove><!--esi bleh -->",
+                           "<!--esi blooh--><esi:include src=url3/>", 0};
 
     DocNodeList node_list;
     for (int i = 0; lines[i]; ++i) {
@@ -929,8 +919,7 @@ int main()
 
     assert(list_iter->type == DocNode::TYPE_HTML_COMMENT);
     assert(list_iter->data_len == static_cast<int>(strlen("<p><esi:vars>Hello, $(HTTP_COOKIE{name})!</esi:vars></p>")));
-    assert(strncmp(list_iter->data, "<p><esi:vars>Hello, $(HTTP_COOKIE{name})!</esi:vars></p>",
-                   list_iter->data_len) == 0);
+    assert(strncmp(list_iter->data, "<p><esi:vars>Hello, $(HTTP_COOKIE{name})!</esi:vars></p>", list_iter->data_len) == 0);
     assert(list_iter->attr_list.size() == 0);
     ++list_iter;
 
@@ -1080,13 +1069,12 @@ int main()
   {
     cout << endl << "===================== Test 43) choose-when" << endl;
     EsiParser parser("parser_test", &Debug, &Error);
-    string
-      input_data1("<esi:choose>"
-                  "<esi:when test=cond1>"
-                  "<esi:include src=foo />"
-                  "</esi:when>"
-                  "<esi:when test=cond2>"
-                  "<esi:include src=bar />"),
+    string input_data1("<esi:choose>"
+                       "<esi:when test=cond1>"
+                       "<esi:include src=foo />"
+                       "</esi:when>"
+                       "<esi:when test=cond2>"
+                       "<esi:include src=bar />"),
       input_data2("</esi:when>"
                   "<esi:otherwise>"
                   "<esi:include src=otherwise />"
@@ -1308,15 +1296,14 @@ int main()
   {
     cout << endl << "===================== Test 53) try block" << endl;
     EsiParser parser("parser_test", &Debug, &Error);
-    string
-      input_data1("<esi:include src=pre />"
-                  "foo"
-                  "<esi:try>\n\t  "
-                  "<esi:attempt>"
-                  "bar"
-                  "<esi:include src=attempt />"
-                  "</esi:attempt>"
-                  "\n\n\t   "),
+    string input_data1("<esi:include src=pre />"
+                       "foo"
+                       "<esi:try>\n\t  "
+                       "<esi:attempt>"
+                       "bar"
+                       "<esi:include src=attempt />"
+                       "</esi:attempt>"
+                       "\n\n\t   "),
       input_data2("<esi:except>"
                   "<esi:include src=except />"
                   "</esi:except>"

@@ -29,9 +29,9 @@
  *
  ****************************************************************************/
 
-#include "libts.h"      /* MAGIC_EDITING_TAG */
+#include "libts.h" /* MAGIC_EDITING_TAG */
 
-config_parse_error::config_parse_error(const char * fmt, ...)
+config_parse_error::config_parse_error(const char *fmt, ...)
 {
   va_list ap;
   int num;
@@ -60,7 +60,6 @@ config_parse_error::config_parse_error(const char * fmt, ...)
 char *
 readIntoBuffer(const char *file_path, const char *module_name, int *read_size_ptr)
 {
-
   int fd;
   struct stat file_info;
   char *file_buf;
@@ -83,7 +82,7 @@ readIntoBuffer(const char *file_path, const char *module_name, int *read_size_pt
   }
 
   if (file_info.st_size < 0) {
-    Error("%s Can not get correct file size for %s file : %" PRId64 "", module_name, file_path, (int64_t) file_info.st_size);
+    Error("%s Can not get correct file size for %s file : %" PRId64 "", module_name, file_path, (int64_t)file_info.st_size);
     close(fd);
     return NULL;
   }
@@ -104,8 +103,7 @@ readIntoBuffer(const char *file_path, const char *module_name, int *read_size_pt
   } else if (read_size < file_info.st_size) {
     // We don't want to signal this error on WIN32 because the sizes
     // won't match if the file contains any CR/LF sequence.
-    Error("%s Only able to read %d bytes out %d for %s file",
-          module_name, read_size, (int) file_info.st_size, file_path);
+    Error("%s Only able to read %d bytes out %d for %s file", module_name, read_size, (int)file_info.st_size, file_path);
     file_buf[read_size] = '\0';
   }
 
@@ -135,7 +133,7 @@ unescapifyStr(char *buffer)
     if (*read == '%' && *(read + 1) != '\0' && *(read + 2) != '\0') {
       subStr[0] = *(++read);
       subStr[1] = *(++read);
-      *write = (char)strtol(subStr, (char **) NULL, 16);
+      *write = (char)strtol(subStr, (char **)NULL, 16);
       read++;
       write++;
     } else if (*read == '+') {
@@ -153,14 +151,17 @@ unescapifyStr(char *buffer)
   return (write - buffer);
 }
 
-char const*
-ExtractIpRange(char* match_str, in_addr_t* min, in_addr_t* max) {
+char const *
+ExtractIpRange(char *match_str, in_addr_t *min, in_addr_t *max)
+{
   IpEndpoint ip_min, ip_max;
-  char const* zret = ExtractIpRange(match_str, &ip_min.sa, &ip_max.sa);
+  char const *zret = ExtractIpRange(match_str, &ip_min.sa, &ip_max.sa);
   if (0 == zret) { // success
     if (ats_is_ip4(&ip_min) && ats_is_ip4(&ip_max)) {
-      if (min) *min = ntohl(ats_ip4_addr_cast(&ip_min));
-      if (max) *max = ntohl(ats_ip4_addr_cast(&ip_max));
+      if (min)
+        *min = ntohl(ats_ip4_addr_cast(&ip_min));
+      if (max)
+        *max = ntohl(ats_ip4_addr_cast(&ip_max));
     } else {
       zret = "The addresses were not IPv4 addresses.";
     }
@@ -183,7 +184,7 @@ ExtractIpRange(char* match_str, in_addr_t* min, in_addr_t* max) {
 //     that describes the reason for the error.
 //
 const char *
-ExtractIpRange(char *match_str, sockaddr* addr1, sockaddr* addr2)
+ExtractIpRange(char *match_str, sockaddr *addr1, sockaddr *addr2)
 {
   Tokenizer rangeTok("-/");
   bool mask = strchr(match_str, '/') != NULL;
@@ -207,7 +208,6 @@ ExtractIpRange(char *match_str, sockaddr* addr1, sockaddr* addr2)
 
   // Handle a IP range
   if (numToks == 2) {
-
     if (mask) {
       if (!ats_is_ip4(&la1)) {
         return "Masks supported only for IPv4";
@@ -273,8 +273,7 @@ tokLine(char *buf, char **last, char cont)
       if (cont != '\0' && prev != NULL && *prev == cont) {
         *prev = ' ';
         *cur = ' ';
-      }
-      else {
+      } else {
         *cur = '\0';
         *last = cur;
         return start;
@@ -293,15 +292,7 @@ tokLine(char *buf, char **last, char cont)
   return NULL;
 }
 
-const char *matcher_type_str[] = {
-  "invalid",
-  "host",
-  "domain",
-  "ip",
-  "url_regex",
-  "url",
-  "host_regex"
-};
+const char *matcher_type_str[] = {"invalid", "host", "domain", "ip", "url_regex", "url", "host_regex"};
 
 // char* processDurationString(char* str, int* seconds)
 //
@@ -337,7 +328,6 @@ processDurationString(char *str, int *seconds)
   len = strlen(str);
   for (int i = 0; i < len; i++) {
     if (!ParseRules::is_digit(*current)) {
-
       // Make sure there is a time to proces
       if (current == s) {
         return "Malformed time";
@@ -379,7 +369,6 @@ processDurationString(char *str, int *seconds)
 
       result += (multiplier * tmp);
       s = current + 1;
-
     }
     current++;
   }
@@ -405,17 +394,11 @@ processDurationString(char *str, int *seconds)
   return NULL;
 }
 
-const matcher_tags http_dest_tags = {
-  "dest_host", "dest_domain", "dest_ip", "url_regex", "url", "host_regex", true
-};
+const matcher_tags http_dest_tags = {"dest_host", "dest_domain", "dest_ip", "url_regex", "url", "host_regex", true};
 
-const matcher_tags ip_allow_tags = {
-  NULL, NULL, "src_ip", NULL, NULL, NULL, false
-};
+const matcher_tags ip_allow_tags = {NULL, NULL, "src_ip", NULL, NULL, NULL, false};
 
-const matcher_tags socks_server_tags = {
-  NULL, NULL, "dest_ip", NULL, NULL, NULL, false
-};
+const matcher_tags socks_server_tags = {NULL, NULL, "dest_ip", NULL, NULL, NULL, false};
 
 // char* parseConfigLine(char* line, matcher_line* p_line,
 //                       const matcher_tags* tags)
@@ -427,12 +410,14 @@ const matcher_tags socks_server_tags = {
 //     a static error string is returned
 //
 const char *
-parseConfigLine(char *line, matcher_line *p_line, const matcher_tags * tags)
+parseConfigLine(char *line, matcher_line *p_line, const matcher_tags *tags)
 {
-  enum pState
-  {
-    FIND_LABEL, PARSE_LABEL,
-    PARSE_VAL, START_PARSE_VAL, CONSUME
+  enum pState {
+    FIND_LABEL,
+    PARSE_LABEL,
+    PARSE_VAL,
+    START_PARSE_VAL,
+    CONSUME,
   };
 
   pState state = FIND_LABEL;
@@ -453,7 +438,6 @@ parseConfigLine(char *line, matcher_line *p_line, const matcher_tags * tags)
   }
 
   do {
-
     switch (state) {
     case FIND_LABEL:
       if (!isspace(*s)) {
@@ -483,7 +467,6 @@ parseConfigLine(char *line, matcher_line *p_line, const matcher_tags * tags)
       } else {
         inQuote = false;
         val = s;
-
       }
 
       if (inQuote == false && (isspace(*s) || *(s + 1) == '\0')) {
@@ -531,8 +514,7 @@ parseConfigLine(char *line, matcher_line *p_line, const matcher_tags * tags)
           state = CONSUME;
           *s = '\0';
         }
-      } else if ((*s == '\\' && ParseRules::is_digit(*(s + 1)))
-                 || !ParseRules::is_char(*s)) {
+      } else if ((*s == '\\' && ParseRules::is_digit(*(s + 1))) || !ParseRules::is_char(*s)) {
         // INKqa10511
         // traffic server need to handle unicode characters
         // right now ignore the entry
@@ -555,7 +537,6 @@ parseConfigLine(char *line, matcher_line *p_line, const matcher_tags * tags)
     }
 
     if (state == CONSUME) {
-
       // See if there are any quote copy overs
       //   we've pushed into the future
       if (copyForward != NULL) {

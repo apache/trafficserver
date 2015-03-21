@@ -34,24 +34,54 @@
 class Parser
 {
 public:
-  explicit Parser(const std::string& line);
+  explicit Parser(const std::string &line);
 
-  bool empty() const { return _empty; }
-  bool is_cond() const { return _cond; }
+  bool
+  empty() const
+  {
+    return _empty;
+  }
+  bool
+  is_cond() const
+  {
+    return _cond;
+  }
 
-  bool cond_op_is(const std::string s) const { return _cond && (_op == s); }
-  bool oper_op_is(const std::string s) const { return !_cond && (_op == s); }
+  bool
+  cond_op_is(const std::string s) const
+  {
+    return _cond && (_op == s);
+  }
+  bool
+  oper_op_is(const std::string s) const
+  {
+    return !_cond && (_op == s);
+  }
 
-  const std::string& get_op() const { return _op; }
-  std::string& get_arg() { return _arg; }
-  const std::string& get_value() const { return _val; }
+  const std::string &
+  get_op() const
+  {
+    return _op;
+  }
+  std::string &
+  get_arg()
+  {
+    return _arg;
+  }
+  const std::string &
+  get_value() const
+  {
+    return _val;
+  }
 
-  bool mod_exist(const std::string m) const {
+  bool
+  mod_exist(const std::string m) const
+  {
     return (std::find(_mods.begin(), _mods.end(), m) != _mods.end());
   }
 
 private:
-  void preprocess(std::vector<std::string>& tokens);
+  void preprocess(std::vector<std::string> &tokens);
   DISALLOW_COPY_AND_ASSIGN(Parser);
 
   bool _cond;

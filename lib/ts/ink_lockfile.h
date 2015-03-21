@@ -27,34 +27,28 @@
 #include "ink_defs.h"
 #include "ink_string.h"
 
-#define COP_LOCK       "cop.lock"
-#define MANAGER_LOCK   "manager.lock"
-#define SERVER_LOCK    "server.lock"
+#define COP_LOCK "cop.lock"
+#define MANAGER_LOCK "manager.lock"
+#define SERVER_LOCK "server.lock"
 
 class Lockfile
 {
 public:
-  Lockfile(void):fd(0)
-  {
-    fname[0] = '\0';
-  }
+  Lockfile(void) : fd(0) { fname[0] = '\0'; }
 
   // coverity[uninit_member]
-  Lockfile(const char *filename):fd(0)
+  Lockfile(const char *filename) : fd(0) { ink_strlcpy(fname, filename, sizeof(fname)); }
+
+  ~Lockfile(void) {}
+
+  void
+  SetLockfileName(const char *filename)
   {
     ink_strlcpy(fname, filename, sizeof(fname));
   }
 
-  ~Lockfile(void)
-  {
-  }
-
-  void SetLockfileName(const char *filename)
-  {
-    ink_strlcpy(fname, filename, sizeof(fname));
-  }
-
-  const char *GetLockfileName(void)
+  const char *
+  GetLockfileName(void)
   {
     return fname;
   }
@@ -65,7 +59,7 @@ public:
   //   -errno on error
   //   0 if someone is holding the lock (with holding_pid set)
   //   1 if we now have a writable lock file
-  int Open(pid_t * holding_pid);
+  int Open(pid_t *holding_pid);
 
   // Get()
   //
@@ -74,7 +68,7 @@ public:
   //   -errno on error
   //   0 if someone is holding the lock (with holding_pid set)
   //   1 if we now have a writable lock file
-  int Get(pid_t * holding_pid);
+  int Get(pid_t *holding_pid);
 
   // Close()
   //

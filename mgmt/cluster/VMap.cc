@@ -49,22 +49,22 @@ vmapEnableHandler(const char *tok, RecDataT /* data_type ATS_UNUSED */, RecData 
   ink_assert(!tok);
   if (!lmgmt->virt_map->enabled)
     before = false;
-  lmgmt->virt_map->enabled = (RecInt) data.rec_int;
+  lmgmt->virt_map->enabled = (RecInt)data.rec_int;
   if (!lmgmt->virt_map->enabled && before) {
-    lmgmt->virt_map->turning_off = true;        // turing VIP from off to on
+    lmgmt->virt_map->turning_off = true; // turing VIP from off to on
     lmgmt->virt_map->downAddrs();
   }
   return 0;
-}                               /* End vmapEnableHandler */
+} /* End vmapEnableHandler */
 
 
-VMap::VMap(char *interface, unsigned long ip, ink_mutex * m)
+VMap::VMap(char *interface, unsigned long ip, ink_mutex *m)
 {
   bool found;
 
   while (!m) {
     mgmt_sleep_sec(1);
-  }                             // Wait until mutex pointer is initialized
+  } // Wait until mutex pointer is initialized
   mutex = m;
 
   our_ip = ip;
@@ -79,7 +79,7 @@ VMap::VMap(char *interface, unsigned long ip, ink_mutex * m)
 
 
   this->interface = ats_strdup(interface);
-  turning_off = false;          // we are not turning off VIP
+  turning_off = false; // we are not turning off VIP
 
   enabled = REC_readInteger("proxy.config.vmap.enabled", &found);
   /*
@@ -90,7 +90,7 @@ VMap::VMap(char *interface, unsigned long ip, ink_mutex * m)
    * Later this will be used to ping the interfaces that have virtual IP addrs
    * associated with them to detect if the interface is down.
    */
-  {                             /* First Add the cluster interface */
+  { /* First Add the cluster interface */
     RealIPInfo *tmp_realip_info;
     struct in_addr tmp_addr;
 
@@ -101,18 +101,18 @@ VMap::VMap(char *interface, unsigned long ip, ink_mutex * m)
     tmp_realip_info->mappings_for_interface = true;
 
     num_nics++;
-    ink_hash_table_insert(interface_realip_map, interface, (void *) tmp_realip_info);
+    ink_hash_table_insert(interface_realip_map, interface, (void *)tmp_realip_info);
     if (enabled) {
-      mgmt_log("[VMap::Vmap] Added cluster interface '%s' real ip: '%s' to known interfaces\n",
-               interface, inet_ntoa(tmp_realip_info->real_ip));
+      mgmt_log("[VMap::Vmap] Added cluster interface '%s' real ip: '%s' to known interfaces\n", interface,
+               inet_ntoa(tmp_realip_info->real_ip));
     }
   }
   {
     int tmp_socket;
-    struct sockaddr_in *tmp;    // a tmp ptr for addresses
-    struct ifconf ifc;          // ifconf information
-    char *ifbuf;                // ifconf buffer
-    struct ifreq *ifr, *ifend;  // pointer to individual inferface info
+    struct sockaddr_in *tmp;   // a tmp ptr for addresses
+    struct ifconf ifc;         // ifconf information
+    char *ifbuf;               // ifconf buffer
+    struct ifreq *ifr, *ifend; // pointer to individual inferface info
     int lastlen;
     int len;
 
@@ -124,10 +124,10 @@ VMap::VMap(char *interface, unsigned long ip, ink_mutex * m)
     // . from Stevens, Unix Network Prog., pg 434-435
     ifbuf = 0;
     lastlen = 0;
-    len = 128 * sizeof(struct ifreq);   // initial buffer size guess
+    len = 128 * sizeof(struct ifreq); // initial buffer size guess
     for (;;) {
       ifbuf = (char *)ats_malloc(len);
-      memset(ifbuf, 0, len);    // prevent UMRs
+      memset(ifbuf, 0, len); // prevent UMRs
       ifc.ifc_len = len;
       ifc.ifc_buf = ifbuf;
       if (ioctl(tmp_socket, SIOCGIFCONF, &ifc) < 0) {
@@ -144,13 +144,14 @@ VMap::VMap(char *interface, unsigned long ip, ink_mutex * m)
       ats_free(ifbuf);
     }
 
-    ifend = (struct ifreq *) (ifc.ifc_buf + ifc.ifc_len);
+    ifend = (struct ifreq *)(ifc.ifc_buf + ifc.ifc_len);
     // Loop through the list of interfaces
     for (ifr = ifc.ifc_req; ifr < ifend;) {
-      if (ifr->ifr_addr.sa_family == AF_INET && strcmp(ifr->ifr_name, "lo0") != 0 && !strstr(ifr->ifr_name, ":")) {     // Don't count the loopback interface
+      if (ifr->ifr_addr.sa_family == AF_INET && strcmp(ifr->ifr_name, "lo0") != 0 &&
+          !strstr(ifr->ifr_name, ":")) { // Don't count the loopback interface
 
         // Get the address of the interface
-        if (ioctl(tmp_socket, SIOCGIFADDR, (char *) ifr) < 0) {
+        if (ioctl(tmp_socket, SIOCGIFADDR, (char *)ifr) < 0) {
           mgmt_log("[VMap::VMap] Unable obtain address for network interface %s, presuming unused\n", ifr->ifr_name);
         } else {
           InkHashTableValue hash_value;
@@ -159,7 +160,7 @@ VMap::VMap(char *interface, unsigned long ip, ink_mutex * m)
           if (ifr->ifr_ifru.ifru_addr.sa_family == AF_INET) {
             RealIPInfo *tmp_realip_info;
 
-            tmp = (struct sockaddr_in *) &ifr->ifr_ifru.ifru_addr;
+            tmp = (struct sockaddr_in *)&ifr->ifr_ifru.ifru_addr;
 
             tmp_realip_info = (RealIPInfo *)ats_malloc(sizeof(RealIPInfo));
             tmp_realip_info->real_ip = tmp->sin_addr;
@@ -168,15 +169,16 @@ VMap::VMap(char *interface, unsigned long ip, ink_mutex * m)
             if (ink_hash_table_lookup(interface_realip_map, ifr->ifr_name, &hash_value) != 0) {
               if (enabled) {
                 mgmt_log("[VMap::VMap] Already added interface '%s'. Not adding for"
-                         " real IP '%s'\n", ifr->ifr_name, inet_ntoa(tmp_realip_info->real_ip));
+                         " real IP '%s'\n",
+                         ifr->ifr_name, inet_ntoa(tmp_realip_info->real_ip));
               }
               ats_free(tmp_realip_info);
             } else {
-              ink_hash_table_insert(interface_realip_map, ifr->ifr_name, (void *) tmp_realip_info);
+              ink_hash_table_insert(interface_realip_map, ifr->ifr_name, (void *)tmp_realip_info);
               num_nics++;
               if (enabled) {
-                mgmt_log("[VMap::Vmap] Added interface '%s' real ip: '%s' to known interfaces\n",
-                         ifr->ifr_name, inet_ntoa(tmp_realip_info->real_ip));
+                mgmt_log("[VMap::Vmap] Added interface '%s' real ip: '%s' to known interfaces\n", ifr->ifr_name,
+                         inet_ntoa(tmp_realip_info->real_ip));
               }
             }
           } else {
@@ -187,9 +189,9 @@ VMap::VMap(char *interface, unsigned long ip, ink_mutex * m)
         }
       }
 #if defined(freebsd) || defined(darwin)
-      ifr = (struct ifreq *) ((char *) &ifr->ifr_addr + ifr->ifr_addr.sa_len);
+      ifr = (struct ifreq *)((char *)&ifr->ifr_addr + ifr->ifr_addr.sa_len);
 #else
-      ifr = (struct ifreq *) (((char *) ifr) + sizeof(*ifr));
+      ifr = (struct ifreq *)(((char *)ifr) + sizeof(*ifr));
 #endif
     }
     ats_free(ifbuf);
@@ -208,7 +210,7 @@ VMap::VMap(char *interface, unsigned long ip, ink_mutex * m)
 
   return;
 
-}                               /* End VMap::VMap */
+} /* End VMap::VMap */
 
 
 VMap::~VMap()
@@ -221,7 +223,7 @@ VMap::~VMap()
   ink_hash_table_destroy(ext_map);
   ats_free(this->interface);
   ats_free(addr_list);
-}                               /* End VMap::~VMap */
+} /* End VMap::~VMap */
 
 
 /*
@@ -252,9 +254,9 @@ VMap::lt_runGambit()
   }
 
   ink_mutex_acquire(mutex);
-  if (lmgmt->ccom->isMaster()) {        /* Are we the cluster master? */
+  if (lmgmt->ccom->isMaster()) { /* Are we the cluster master? */
 
-    for (i = 0; i < num_addrs; i++) {   /* See if there is an unbound interface */
+    for (i = 0; i < num_addrs; i++) { /* See if there is an unbound interface */
       virtual_addr.s_addr = addr_list[i];
       ink_strlcpy(vaddr, inet_ntoa(virtual_addr), sizeof(vaddr));
       if (rl_boundAddr(vaddr) == 0) {
@@ -263,16 +265,16 @@ VMap::lt_runGambit()
       }
     }
 
-    if (i != num_addrs) {                /* Got one to map, find a candidate and map it */
+    if (i != num_addrs) { /* Got one to map, find a candidate and map it */
       real_addr.s_addr = lmgmt->ccom->lowestPeer(&no);
-      if (no != -1) {           /* Make sure we have peers to map interfaces to */
+      if (no != -1) { /* Make sure we have peers to map interfaces to */
         init = true;
       }
 
       if (init && ((no < num_interfaces) || (no == num_interfaces && real_addr.s_addr < our_ip))) {
         ink_strlcpy(raddr, inet_ntoa(real_addr), sizeof(raddr));
         rl_remote_map(vaddr, raddr);
-      } else if (!rl_map(vaddr)) {      /* We are the winner, map it to us */
+      } else if (!rl_map(vaddr)) { /* We are the winner, map it to us */
         mgmt_elog(stderr, 0, "[VMap::lt_runGambit] Map failed for vaddr: %s\n", vaddr);
       } else {
         mgmt_log(stderr, "[VMap::lt_runGambit] Map succeeded for vaddr: %s\n", vaddr);
@@ -281,7 +283,7 @@ VMap::lt_runGambit()
   }
 
 
-  for (i = 0; i < num_addrs; i++) {     /* Check for conflicts with your interfaces */
+  for (i = 0; i < num_addrs; i++) { /* Check for conflicts with your interfaces */
     virtual_addr.s_addr = addr_list[i];
     ink_strlcpy(vaddr, inet_ntoa(virtual_addr), sizeof(vaddr));
 
@@ -294,7 +296,7 @@ VMap::lt_runGambit()
 
   ink_mutex_release(mutex);
   return;
-}                               /* End VMap::lt_runGambit */
+} /* End VMap::lt_runGambit */
 
 
 /*
@@ -303,7 +305,7 @@ VMap::lt_runGambit()
  * vaddr file.
  */
 void
-VMap::lt_readAListFile(const char * fname)
+VMap::lt_readAListFile(const char *fname)
 {
   int tmp_num_addrs = 0;
   char buf[1024];
@@ -318,7 +320,7 @@ VMap::lt_readAListFile(const char * fname)
   }
 
   ink_mutex_acquire(mutex);
-  rl_downAddrs();               /* Down everything before we re-init */
+  rl_downAddrs(); /* Down everything before we re-init */
   if (id_map) {
     ink_hash_table_destroy_and_xfree_values(id_map);
   }
@@ -328,8 +330,7 @@ VMap::lt_readAListFile(const char * fname)
     // since each of the tmp_addr, tmp_interface, tmp_id has length 1024 which is not less than buf
     // so here we don't need to worry about overflow, disable coverity check for this line
     // coverity[secure_coding]
-    if (buf[0] != '#' && isascii(buf[0]) && isdigit(buf[0]) &&
-        (sscanf(buf, "%s %s %s\n", tmp_addr, tmp_interface, tmp_id) == 3)) {
+    if (buf[0] != '#' && isascii(buf[0]) && isdigit(buf[0]) && (sscanf(buf, "%s %s %s\n", tmp_addr, tmp_interface, tmp_id) == 3)) {
       tmp_num_addrs++;
     }
   }
@@ -337,7 +338,7 @@ VMap::lt_readAListFile(const char * fname)
   num_addrs = tmp_num_addrs;
   if (num_addrs) {
     addr_list = (unsigned long *)ats_malloc(sizeof(unsigned long) * num_addrs);
-  } else {                      /* Handle the case where there are no addrs in the file */
+  } else { /* Handle the case where there are no addrs in the file */
     addr_list = NULL;
     fclose(fin);
     ink_mutex_release(mutex);
@@ -358,7 +359,8 @@ VMap::lt_readAListFile(const char * fname)
       continue;
     }
     mgmt_log("[VMap::lt_readAListFile] Adding virtual address '%s' interface: '%s'"
-             " sub-interface-id '%s'\n", tmp_addr, tmp_interface, tmp_id);
+             " sub-interface-id '%s'\n",
+             tmp_addr, tmp_interface, tmp_id);
 
     addr_list[tmp_num_addrs++] = inet_addr(tmp_addr);
 
@@ -366,26 +368,27 @@ VMap::lt_readAListFile(const char * fname)
 
     ink_strlcpy(tmp_val->interface, tmp_interface, sizeof(tmp_val->interface));
     ink_strlcpy(tmp_val->sub_interface_id, tmp_id, sizeof(tmp_val->sub_interface_id));
-    ink_hash_table_insert(id_map, tmp_addr, (void *) tmp_val);
+    ink_hash_table_insert(id_map, tmp_addr, (void *)tmp_val);
 
     // we don't need to do mgmt ping stuff on NT the way its done on UNIX
     if (ink_hash_table_lookup(interface_realip_map, tmp_interface, &hash_value) != 0) {
-
-      if (!((RealIPInfo *) hash_value)->mappings_for_interface) {
-        ((RealIPInfo *) hash_value)->mappings_for_interface = true;
+      if (!((RealIPInfo *)hash_value)->mappings_for_interface) {
+        ((RealIPInfo *)hash_value)->mappings_for_interface = true;
         mgmt_log(stderr, "[VMap::lt_readAListFile] Interface '%s' marked as having potential"
-                 " virtual ips\n", tmp_interface);
+                         " virtual ips\n",
+                 tmp_interface);
       }
     } else {
       mgmt_elog(stderr, 0, "[VMap::lt_readAListFile] VIP in config file but no interface"
-                " '%s' present on node.\n", tmp_interface);
+                           " '%s' present on node.\n",
+                tmp_interface);
     }
   }
   fclose(fin);
 
   ink_mutex_release(mutex);
   return;
-}                               /* End VMap::lt_readAListFile */
+} /* End VMap::lt_readAListFile */
 
 
 /*
@@ -398,18 +401,17 @@ VMap::rl_resetSeenFlag(char *ip)
   InkHashTableEntry *entry;
   InkHashTableIteratorState iterator_state;
 
-  for (entry = ink_hash_table_iterator_first(ext_map, &iterator_state);
-       entry != NULL; entry = ink_hash_table_iterator_next(ext_map, &iterator_state)) {
-
-    char *key = (char *) ink_hash_table_entry_key(ext_map, entry);
-    bool *tmp = (bool *) ink_hash_table_entry_value(ext_map, entry);
+  for (entry = ink_hash_table_iterator_first(ext_map, &iterator_state); entry != NULL;
+       entry = ink_hash_table_iterator_next(ext_map, &iterator_state)) {
+    char *key = (char *)ink_hash_table_entry_key(ext_map, entry);
+    bool *tmp = (bool *)ink_hash_table_entry_value(ext_map, entry);
 
     if (strstr(key, ip)) {
       *tmp = false;
     }
   }
   return;
-}                               /* End VMap::rl_resetSeenFlag */
+} /* End VMap::rl_resetSeenFlag */
 
 
 /*
@@ -423,15 +425,14 @@ VMap::rl_clearUnSeen(char *ip)
   InkHashTableEntry *entry;
   InkHashTableIteratorState iterator_state;
 
-  for (entry = ink_hash_table_iterator_first(ext_map, &iterator_state);
-       entry != NULL; entry = ink_hash_table_iterator_next(ext_map, &iterator_state)) {
-
-    char *key = (char *) ink_hash_table_entry_key(ext_map, entry);
-    bool *tmp = (bool *) ink_hash_table_entry_value(ext_map, entry);
+  for (entry = ink_hash_table_iterator_first(ext_map, &iterator_state); entry != NULL;
+       entry = ink_hash_table_iterator_next(ext_map, &iterator_state)) {
+    char *key = (char *)ink_hash_table_entry_key(ext_map, entry);
+    bool *tmp = (bool *)ink_hash_table_entry_value(ext_map, entry);
 
     if (strstr(key, ip)) {
       if (!*tmp) {
-        ink_hash_table_delete(ext_map, key);    /* Safe in iterator? */
+        ink_hash_table_delete(ext_map, key); /* Safe in iterator? */
         ats_free(tmp);
       } else {
         numAddrs++;
@@ -439,7 +440,7 @@ VMap::rl_clearUnSeen(char *ip)
     }
   }
   return numAddrs;
-}                               /* End VMap::rl_clearUnSeen */
+} /* End VMap::rl_clearUnSeen */
 
 
 /*
@@ -451,7 +452,7 @@ VMap::rl_remote_map(char *virt_ip, char *real_ip)
 {
   char buf[1024], reply[4096];
 
-  snprintf((char *) buf, sizeof(buf), "map: %s", virt_ip);
+  snprintf((char *)buf, sizeof(buf), "map: %s", virt_ip);
   if (!(lmgmt->ccom->sendReliableMessage(inet_addr(real_ip), buf, strlen(buf), reply, 4096, false))) {
     mgmt_elog(stderr, errno, "[VMap::rl_remote_map] Reliable send failed\n");
     return false;
@@ -461,7 +462,7 @@ VMap::rl_remote_map(char *virt_ip, char *real_ip)
   }
   rl_map(virt_ip, real_ip);
   return true;
-}                               /* End VMap::rl_remote_map */
+} /* End VMap::rl_remote_map */
 
 
 /*
@@ -473,16 +474,16 @@ VMap::rl_remote_unmap(char *virt_ip, char *real_ip)
 {
   char buf[1024], reply[4096];
 
-  snprintf((char *) buf, sizeof(buf), "unmap: %s", virt_ip);
+  snprintf((char *)buf, sizeof(buf), "unmap: %s", virt_ip);
   if (!(lmgmt->ccom->sendReliableMessage(inet_addr(real_ip), buf, strlen(buf), reply, 4096, false))) {
     mgmt_elog(stderr, errno, "[VMap::rl_remote_unmap] Reliable send failed\n");
     return false;
-  } else if (strcmp((char *) reply, "unmap: failed") == 0) {
+  } else if (strcmp((char *)reply, "unmap: failed") == 0) {
     mgmt_log(stderr, "[VMap::rl_remote_unmap] Mapping failed\n");
     return false;
   }
   return true;
-}                               /* End VMap::rl_remote_unmap */
+} /* End VMap::rl_remote_unmap */
 
 
 /*
@@ -508,7 +509,7 @@ VMap::rl_map(char *virt_ip, char *real_ip)
   }
 
   if (ink_hash_table_lookup(tmp, buf, &hash_value) != 0) {
-    *((bool *) hash_value) = true;
+    *((bool *)hash_value) = true;
     return false;
   }
 
@@ -519,9 +520,9 @@ VMap::rl_map(char *virt_ip, char *real_ip)
     mgmt_elog(0, "[VMap::rl_map] no real ip associated with virtual ip %s, mapping to local\n", buf);
     last_map_change = time(NULL);
   }
-  ink_hash_table_insert(tmp, buf, (void *) entry);
+  ink_hash_table_insert(tmp, buf, (void *)entry);
   return true;
-}                               /* End VMap::rl_map */
+} /* End VMap::rl_map */
 
 
 bool
@@ -549,7 +550,7 @@ VMap::rl_unmap(char *virt_ip, char *real_ip)
   ink_hash_table_delete(tmp, buf);
   ats_free(hash_value);
   return true;
-}                               /* End VMap::rl_unmap */
+} /* End VMap::rl_unmap */
 
 
 /*
@@ -571,10 +572,9 @@ VMap::rl_checkConflict(char *virt_ip)
     return NULL;
   }
 
-  for (entry = ink_hash_table_iterator_first(ext_map, &iterator_state);
-       (entry != NULL && !in_ext_map); entry = ink_hash_table_iterator_next(ext_map, &iterator_state)) {
-
-    key = (char *) ink_hash_table_entry_key(ext_map, entry);
+  for (entry = ink_hash_table_iterator_first(ext_map, &iterator_state); (entry != NULL && !in_ext_map);
+       entry = ink_hash_table_iterator_next(ext_map, &iterator_state)) {
+    key = (char *)ink_hash_table_entry_key(ext_map, entry);
     if (strstr(key, virt_ip)) {
       in_ext_map = true;
     }
@@ -596,7 +596,7 @@ VMap::rl_checkConflict(char *virt_ip)
     return ats_strdup(buf2);
   }
   return NULL;
-}                               /* End VMap::rl_checkConflict */
+} /* End VMap::rl_checkConflict */
 
 
 /*
@@ -612,10 +612,9 @@ VMap::rl_checkGlobConflict(char *virt_ip)
   InkHashTableEntry *entry;
   InkHashTableIteratorState iterator_state;
 
-  for (entry = ink_hash_table_iterator_first(ext_map, &iterator_state);
-       (entry != NULL && !in_ext_map); entry = ink_hash_table_iterator_next(ext_map, &iterator_state)) {
-
-    char *key = (char *) ink_hash_table_entry_key(ext_map, entry);
+  for (entry = ink_hash_table_iterator_first(ext_map, &iterator_state); (entry != NULL && !in_ext_map);
+       entry = ink_hash_table_iterator_next(ext_map, &iterator_state)) {
+    char *key = (char *)ink_hash_table_entry_key(ext_map, entry);
     if (strstr(key, virt_ip)) {
       if (!in_ext_map) {
         in_ext_map = true;
@@ -640,7 +639,7 @@ VMap::rl_checkGlobConflict(char *virt_ip)
   }
 
   return ret;
-}                               /* End VMap::rl_checkGlobConflict */
+} /* End VMap::rl_checkGlobConflict */
 
 /*
  * remap(...)
@@ -695,7 +694,7 @@ VMap::rl_remap(char *virt_ip, char *cur_ip, char *dest_ip, int cur_naddr, int de
     }
   }
   return true;
-}                               /* End VMap::rl_remap */
+} /* End VMap::rl_remap */
 
 
 /*
@@ -714,16 +713,16 @@ VMap::rl_boundAddr(char *virt_ip)
     return 1;
   }
 
-  for (entry = ink_hash_table_iterator_first(ext_map, &iterator_state);
-       entry != NULL; entry = ink_hash_table_iterator_next(ext_map, &iterator_state)) {
-    char *key = (char *) ink_hash_table_entry_key(ext_map, entry);
+  for (entry = ink_hash_table_iterator_first(ext_map, &iterator_state); entry != NULL;
+       entry = ink_hash_table_iterator_next(ext_map, &iterator_state)) {
+    char *key = (char *)ink_hash_table_entry_key(ext_map, entry);
 
     if (strstr(key, virt_ip)) {
       return 2;
     }
   }
   return 0;
-}                               /* End VMap::rl_boundAddr */
+} /* End VMap::rl_boundAddr */
 
 
 /*
@@ -742,9 +741,9 @@ VMap::rl_boundTo(char *virt_ip)
     return our_ip;
   }
 
-  for (entry = ink_hash_table_iterator_first(ext_map, &iterator_state);
-       entry != NULL; entry = ink_hash_table_iterator_next(ext_map, &iterator_state)) {
-    char *key = (char *) ink_hash_table_entry_key(ext_map, entry);
+  for (entry = ink_hash_table_iterator_first(ext_map, &iterator_state); entry != NULL;
+       entry = ink_hash_table_iterator_next(ext_map, &iterator_state)) {
+    char *key = (char *)ink_hash_table_entry_key(ext_map, entry);
 
     if (strstr(key, virt_ip)) {
       char *buf, buf2[80];
@@ -758,7 +757,7 @@ VMap::rl_boundTo(char *virt_ip)
     }
   }
   return 0;
-}                               /* End VMap::rl_boundTo */
+} /* End VMap::rl_boundTo */
 
 
 /*
@@ -778,7 +777,7 @@ VMap::lt_constructVMapMessage(char *ip, char *message, int max)
   // Insert the standard mcast packet header
   n = ClusterCom::constructSharedPacketHeader(appVersionInfo, message, ip, max);
 
-  if (!((n + (int) strlen("type: vmap\n")) < max)) {
+  if (!((n + (int)strlen("type: vmap\n")) < max)) {
     if (max >= 1) {
       message[0] = '\0';
     }
@@ -790,14 +789,13 @@ VMap::lt_constructVMapMessage(char *ip, char *message, int max)
   bsum = n;
 
   ink_mutex_acquire(mutex);
-  for (entry = ink_hash_table_iterator_first(our_map, &iterator_state);
-       (entry != NULL && n < max); entry = ink_hash_table_iterator_next(our_map, &iterator_state)) {
-
+  for (entry = ink_hash_table_iterator_first(our_map, &iterator_state); (entry != NULL && n < max);
+       entry = ink_hash_table_iterator_next(our_map, &iterator_state)) {
     char buf[1024];
-    char *key = (char *) ink_hash_table_entry_key(our_map, entry);
+    char *key = (char *)ink_hash_table_entry_key(our_map, entry);
 
     snprintf(buf, sizeof(buf), "virt: %s\n", key);
-    if (!((n + (int) strlen(buf)) < max)) {
+    if (!((n + (int)strlen(buf)) < max)) {
       break;
     }
     ink_strlcpy(&message[n], buf, max - n);
@@ -805,8 +803,8 @@ VMap::lt_constructVMapMessage(char *ip, char *message, int max)
   }
   ink_mutex_release(mutex);
 
-  if (n == bsum) {              /* No alarms */
-    if (!((n + (int) strlen("virt: none\n")) < max)) {
+  if (n == bsum) { /* No alarms */
+    if (!((n + (int)strlen("virt: none\n")) < max)) {
       if (max >= 1) {
         message[0] = '\0';
       }
@@ -815,12 +813,11 @@ VMap::lt_constructVMapMessage(char *ip, char *message, int max)
     ink_strlcpy(&message[n], "virt: none\n", max - n);
   }
   return;
-}                               /* End VMap::constructVMapMessage */
+} /* End VMap::constructVMapMessage */
 
 void
 VMap::rl_downAddrs()
 {
-
   for (int i = 0; i < num_addrs; i++) {
     char str_addr[1024];
     struct in_addr address;
@@ -829,7 +826,7 @@ VMap::rl_downAddrs()
     rl_unmap(str_addr);
   }
   return;
-}                               /* End VMap::rl_downAddrs */
+} /* End VMap::rl_downAddrs */
 
 void
 VMap::downAddrs()
@@ -845,7 +842,7 @@ VMap::downAddrs()
   num_interfaces = 0;
   ink_mutex_release(mutex);
   return;
-}                               /* End VMap::downAddrs */
+} /* End VMap::downAddrs */
 
 
 void
@@ -856,8 +853,8 @@ VMap::downOurAddrs()
   InkHashTableIteratorState iterator_state;
 
   ink_mutex_acquire(mutex);
-  for (entry = ink_hash_table_iterator_first(our_map, &iterator_state);
-       entry != NULL; entry = ink_hash_table_iterator_next(our_map, &iterator_state)) {
+  for (entry = ink_hash_table_iterator_first(our_map, &iterator_state); entry != NULL;
+       entry = ink_hash_table_iterator_next(our_map, &iterator_state)) {
     some_address_mapped = true;
   }
 
@@ -866,15 +863,13 @@ VMap::downOurAddrs()
    * everything we know about
    */
   if (some_address_mapped) {
-
-
     for (int i = 0; i < num_addrs; i++) {
       removeAddressMapping(i);
     }
   }
   num_interfaces = 0;
   ink_mutex_release(mutex);
-}                               /* End VMap::downOurAddrs */
+} /* End VMap::downOurAddrs */
 
 /*
  * Remove a virtual address from our map

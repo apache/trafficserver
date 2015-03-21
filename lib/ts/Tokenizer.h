@@ -104,21 +104,19 @@
 
 #include "ink_apidefs.h"
 
-#define COPY_TOKS         (1u << 0)
-#define SHARE_TOKS        (1u << 1)
-#define ALLOW_EMPTY_TOKS  (1u << 2)
-#define ALLOW_SPACES      (1u << 3)
+#define COPY_TOKS (1u << 0)
+#define SHARE_TOKS (1u << 1)
+#define ALLOW_EMPTY_TOKS (1u << 2)
+#define ALLOW_SPACES (1u << 3)
 
-#define TOK_NODE_ELEMENTS  16
+#define TOK_NODE_ELEMENTS 16
 
-struct tok_node
-{
+struct tok_node {
   char *el[TOK_NODE_ELEMENTS];
   tok_node *next;
 };
 
-struct tok_iter_state
-{
+struct tok_iter_state {
   tok_node *node;
   int index;
 };
@@ -130,25 +128,29 @@ public:
   inkcoreapi ~Tokenizer();
 
   unsigned Initialize(char *str, unsigned options);
-  inkcoreapi unsigned Initialize(const char *str);   // Automatically sets option to copy
-  const char * operator[] (unsigned index) const;
+  inkcoreapi unsigned Initialize(const char *str); // Automatically sets option to copy
+  const char *operator[](unsigned index) const;
 
-  void setMaxTokens(unsigned max) {
+  void
+  setMaxTokens(unsigned max)
+  {
     maxTokens = max;
   };
 
-  unsigned getMaxTokens() const {
+  unsigned
+  getMaxTokens() const
+  {
     return maxTokens;
   };
 
   unsigned count() const;
-  void Print();                 // Debugging print out
+  void Print(); // Debugging print out
 
-  inkcoreapi const char *iterFirst(tok_iter_state * state);
-  inkcoreapi const char *iterNext(tok_iter_state * state);
+  inkcoreapi const char *iterFirst(tok_iter_state *state);
+  inkcoreapi const char *iterNext(tok_iter_state *state);
 
 private:
-  Tokenizer & operator=(const Tokenizer &);
+  Tokenizer &operator=(const Tokenizer &);
   Tokenizer(const Tokenizer &);
   int isDelimiter(char c);
   void addToken(char *startAddr, int length);

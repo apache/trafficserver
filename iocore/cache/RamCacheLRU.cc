@@ -34,7 +34,7 @@ struct RamCacheLRUEntry {
 
 #define ENTRY_OVERHEAD 128 // per-entry overhead to consider when computing sizes
 
-struct RamCacheLRU: public RamCache {
+struct RamCacheLRU : public RamCache {
   int64_t max_bytes;
   int64_t bytes;
   int64_t objects;
@@ -49,7 +49,7 @@ struct RamCacheLRU: public RamCache {
   // private
   uint16_t *seen;
   Que(RamCacheLRUEntry, lru_link) lru;
-  DList(RamCacheLRUEntry, hash_link) *bucket;
+  DList(RamCacheLRUEntry, hash_link) * bucket;
   int nbuckets;
   int ibuckets;
   Vol *vol;
@@ -57,18 +57,18 @@ struct RamCacheLRU: public RamCache {
   void resize_hashtable();
   RamCacheLRUEntry *remove(RamCacheLRUEntry *e);
 
-  RamCacheLRU():bytes(0), objects(0), seen(0), bucket(0), nbuckets(0), ibuckets(0), vol(NULL) {}
+  RamCacheLRU() : bytes(0), objects(0), seen(0), bucket(0), nbuckets(0), ibuckets(0), vol(NULL) {}
 };
 
 ClassAllocator<RamCacheLRUEntry> ramCacheLRUEntryAllocator("RamCacheLRUEntry");
 
-static const int bucket_sizes[] = {
-  127, 251, 509, 1021, 2039, 4093, 8191, 16381, 32749, 65521, 131071, 262139,
-  524287, 1048573, 2097143, 4194301, 8388593, 16777213, 33554393, 67108859,
-  134217689, 268435399, 536870909
-};
+static const int bucket_sizes[] = {127,     251,      509,      1021,     2039,      4093,      8191,     16381,
+                                   32749,   65521,    131071,   262139,   524287,    1048573,   2097143,  4194301,
+                                   8388593, 16777213, 33554393, 67108859, 134217689, 268435399, 536870909};
 
-void RamCacheLRU::resize_hashtable() {
+void
+RamCacheLRU::resize_hashtable()
+{
   int anbuckets = bucket_sizes[ibuckets];
   DDebug("ram_cache", "resize hashtable %d", anbuckets);
   int64_t s = anbuckets * sizeof(DList(RamCacheLRUEntry, hash_link));
@@ -87,13 +87,14 @@ void RamCacheLRU::resize_hashtable() {
   ats_free(seen);
   int size = bucket_sizes[ibuckets] * sizeof(uint16_t);
   if (cache_config_ram_cache_use_seen_filter) {
-    seen = (uint16_t*)ats_malloc(size);
+    seen = (uint16_t *)ats_malloc(size);
     memset(seen, 0, size);
   }
 }
 
 void
-RamCacheLRU::init(int64_t abytes, Vol *avol) {
+RamCacheLRU::init(int64_t abytes, Vol *avol)
+{
   vol = avol;
   max_bytes = abytes;
   DDebug("ram_cache", "initializing ram_cache %" PRId64 " bytes", abytes);
@@ -103,7 +104,8 @@ RamCacheLRU::init(int64_t abytes, Vol *avol) {
 }
 
 int
-RamCacheLRU::get(INK_MD5 * key, Ptr<IOBufferData> *ret_data, uint32_t auxkey1, uint32_t auxkey2) {
+RamCacheLRU::get(INK_MD5 *key, Ptr<IOBufferData> *ret_data, uint32_t auxkey1, uint32_t auxkey2)
+{
   if (!max_bytes)
     return 0;
   uint32_t i = key->slice32(3) % nbuckets;
@@ -124,7 +126,9 @@ RamCacheLRU::get(INK_MD5 * key, Ptr<IOBufferData> *ret_data, uint32_t auxkey1, u
   return 0;
 }
 
-RamCacheLRUEntry * RamCacheLRU::remove(RamCacheLRUEntry *e) {
+RamCacheLRUEntry *
+RamCacheLRU::remove(RamCacheLRUEntry *e)
+{
   RamCacheLRUEntry *ret = e->hash_link.next;
   uint32_t b = e->key.slice32(3) % nbuckets;
   bucket[b].remove(e);
@@ -139,7 +143,9 @@ RamCacheLRUEntry * RamCacheLRU::remove(RamCacheLRUEntry *e) {
 }
 
 // ignore 'copy' since we don't touch the data
-int RamCacheLRU::put(INK_MD5 *key, IOBufferData *data, uint32_t len, bool, uint32_t auxkey1, uint32_t auxkey2) {
+int
+RamCacheLRU::put(INK_MD5 *key, IOBufferData *data, uint32_t len, bool, uint32_t auxkey1, uint32_t auxkey2)
+{
   if (!max_bytes)
     return 0;
   uint32_t i = key->slice32(3) % nbuckets;
@@ -191,7 +197,9 @@ int RamCacheLRU::put(INK_MD5 *key, IOBufferData *data, uint32_t len, bool, uint3
   return 1;
 }
 
-int RamCacheLRU::fixup(INK_MD5 * key, uint32_t old_auxkey1, uint32_t old_auxkey2, uint32_t new_auxkey1, uint32_t new_auxkey2) {
+int
+RamCacheLRU::fixup(INK_MD5 *key, uint32_t old_auxkey1, uint32_t old_auxkey2, uint32_t new_auxkey1, uint32_t new_auxkey2)
+{
   if (!max_bytes)
     return 0;
   uint32_t i = key->slice32(3) % nbuckets;
@@ -207,6 +215,8 @@ int RamCacheLRU::fixup(INK_MD5 * key, uint32_t old_auxkey1, uint32_t old_auxkey2
   return 0;
 }
 
-RamCache *new_RamCacheLRU() {
+RamCache *
+new_RamCacheLRU()
+{
   return new RamCacheLRU;
 }

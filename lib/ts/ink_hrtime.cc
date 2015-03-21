@@ -56,7 +56,7 @@ int64_to_str(char *buf, unsigned int buf_size, int64_t val, unsigned int *total_
     out_buf = &buf[buf_size - 1];
   }
 
-  unsigned int num_chars = 1;   // includes eos
+  unsigned int num_chars = 1; // includes eos
   *out_buf-- = 0;
 
   if (val < 0) {
@@ -65,11 +65,11 @@ int64_to_str(char *buf, unsigned int buf_size, int64_t val, unsigned int *total_
   }
 
   if (val < 10) {
-    *out_buf-- = '0' + (char) val;
+    *out_buf-- = '0' + (char)val;
     ++num_chars;
   } else {
     do {
-      *out_buf-- = (char) (val % 10) + '0';
+      *out_buf-- = (char)(val % 10) + '0';
       val /= 10;
       ++num_chars;
     } while (val);
@@ -99,14 +99,15 @@ int64_to_str(char *buf, unsigned int buf_size, int64_t val, unsigned int *total_
         *--out_buf = pad_char;
         break;
       default:
-        for (unsigned int i = 0; i < num_padding; ++i, *--out_buf = pad_char);
+        for (unsigned int i = 0; i < num_padding; ++i, *--out_buf = pad_char)
+          ;
       }
       num_chars += num_padding;
     }
     // add minus sign if padding character is 0
     if (negative && pad_char == '0') {
       if (num_padding) {
-        *out_buf = '-';         // overwrite padding
+        *out_buf = '-'; // overwrite padding
       } else {
         *--out_buf = '-';
         ++num_chars;
@@ -154,13 +155,13 @@ squid_timestamp_to_buf(char *buf, unsigned int buf_size, long timestamp_sec, lon
   char ATS_UNUSED *ts_ms = int64_to_str(&tmp_buf[tmp_buf_size - 4], 4, ms, &num_chars_ms, 4, '0');
   ink_assert(ts_ms && num_chars_ms == 4);
 
-  unsigned int chars_to_write = num_chars_s + 3;        // no eos
+  unsigned int chars_to_write = num_chars_s + 3; // no eos
 
   if (buf_size >= chars_to_write) {
     memcpy(buf, ts_s, chars_to_write);
     res = chars_to_write;
   } else {
-    res = -((int) chars_to_write);
+    res = -((int)chars_to_write);
   }
 
   return res;
@@ -171,11 +172,11 @@ uint32_t
 init_hrtime_TCS()
 {
   int freqlen = sizeof(hrtime_freq);
-  if (sysctlbyname("machdep.tsc_freq", &hrtime_freq, (size_t *) & freqlen, NULL, 0) < 0) {
+  if (sysctlbyname("machdep.tsc_freq", &hrtime_freq, (size_t *)&freqlen, NULL, 0) < 0) {
     perror("sysctl: machdep.tsc_freq");
     exit(1);
   }
-  hrtime_freq_float = (double) 1000000000 / (double) hrtime_freq;
+  hrtime_freq_float = (double)1000000000 / (double)hrtime_freq;
   return hrtime_freq;
 }
 

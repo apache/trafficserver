@@ -34,42 +34,44 @@
 #include "net/instaweb/util/public/string.h"
 #include "net/instaweb/util/public/string_util.h"
 
-namespace net_instaweb {
+namespace net_instaweb
+{
+class AbstractMutex;
+class SharedCircularBuffer;
+class Timer;
+class Writer;
 
-  class AbstractMutex;
-  class SharedCircularBuffer;
-  class Timer;
-  class Writer;
+class AtsMessageHandler : public GoogleMessageHandler
+{
+public:
+  explicit AtsMessageHandler(AbstractMutex *mutex);
 
-  class AtsMessageHandler : public GoogleMessageHandler {
- public:
-    explicit AtsMessageHandler(AbstractMutex* mutex);
+  void set_buffer(SharedCircularBuffer *buff);
 
-    void set_buffer(SharedCircularBuffer* buff);
+  void
+  SetPidString(const int64 pid)
+  {
+    pid_string_ = StrCat("[", Integer64ToString(pid), "]");
+  }
+  // Dump contents of SharedCircularBuffer.
+  bool Dump(Writer *writer);
 
-    void SetPidString(const int64 pid) {
-      pid_string_ = StrCat("[", Integer64ToString(pid), "]");
-    }
-    // Dump contents of SharedCircularBuffer.
-    bool Dump(Writer* writer);
+protected:
+  virtual void MessageVImpl(MessageType type, const char *msg, va_list args);
 
- protected:
-    virtual void MessageVImpl(MessageType type, const char* msg, va_list args);
+  virtual void FileMessageVImpl(MessageType type, const char *filename, int line, const char *msg, va_list args);
 
-    virtual void FileMessageVImpl(MessageType type, const char* filename,
-                                  int line, const char* msg, va_list args);
+private:
+  GoogleString Format(const char *msg, va_list args);
 
- private:
-    GoogleString Format(const char* msg, va_list args);
+  scoped_ptr<AbstractMutex> mutex_;
+  GoogleString pid_string_;
+  GoogleMessageHandler handler_;
+  SharedCircularBuffer *buffer_;
 
-    scoped_ptr<AbstractMutex> mutex_;
-    GoogleString pid_string_;
-    GoogleMessageHandler handler_;
-    SharedCircularBuffer* buffer_;
+  DISALLOW_COPY_AND_ASSIGN(AtsMessageHandler);
+};
 
-    DISALLOW_COPY_AND_ASSIGN(AtsMessageHandler);
-  };
+} // namespace net_instaweb
 
-}  // namespace net_instaweb
-
-#endif  // NGX_MESSAGE_HANDLER_H_
+#endif // NGX_MESSAGE_HANDLER_H_

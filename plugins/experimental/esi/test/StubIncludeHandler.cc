@@ -34,7 +34,8 @@ const char *StubIncludeHandler::FOOTER = 0;
 int StubIncludeHandler::FOOTER_SIZE = 0;
 
 int
-StubIncludeHandler::handleInclude(const char *data, int data_len) {
+StubIncludeHandler::handleInclude(const char *data, int data_len)
+{
   if (includeResult) {
     _http_fetcher.addFetchRequest(data, data_len);
     return ++n_includes;
@@ -43,12 +44,14 @@ StubIncludeHandler::handleInclude(const char *data, int data_len) {
 }
 
 void
-StubIncludeHandler::handleParseComplete() {
+StubIncludeHandler::handleParseComplete()
+{
   parseCompleteCalled = true;
 }
 
 bool
-StubIncludeHandler::getData(int include_id, const char *&data, int &data_len) {
+StubIncludeHandler::getData(int include_id, const char *&data, int &data_len)
+{
   TestHttpDataFetcher &test_fetcher = dynamic_cast<TestHttpDataFetcher &>(_http_fetcher);
   if (test_fetcher.getReturnData()) {
     char *buf = new char[1024];
@@ -61,13 +64,15 @@ StubIncludeHandler::getData(int include_id, const char *&data, int &data_len) {
 }
 
 void
-StubIncludeHandler::getFooter(const char *&footer, int &footer_len) {
+StubIncludeHandler::getFooter(const char *&footer, int &footer_len)
+{
   footer = FOOTER;
   footer_len = FOOTER_SIZE;
 }
 
-StubIncludeHandler::~StubIncludeHandler() {
+StubIncludeHandler::~StubIncludeHandler()
+{
   for (std::list<char *>::iterator iter = heap_strings.begin(); iter != heap_strings.end(); ++iter) {
-    delete[] *iter;
+    delete[] * iter;
   }
 }

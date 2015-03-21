@@ -27,7 +27,7 @@
 
 
 static MatcherOps
-parse_matcher_op(std::string& arg)
+parse_matcher_op(std::string &arg)
 {
   switch (arg[0]) {
   case '=':
@@ -55,7 +55,7 @@ parse_matcher_op(std::string& arg)
 
 
 void
-Condition::initialize(Parser& p)
+Condition::initialize(Parser &p)
 {
   Statement::initialize(p);
 

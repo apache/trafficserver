@@ -29,7 +29,7 @@
 */
 
 #ifndef _RawHashTable_h_
-#define	_RawHashTable_h_
+#define _RawHashTable_h_
 
 #include "libts.h"
 
@@ -41,8 +41,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-typedef enum
-{
+typedef enum {
   RawHashTable_KeyType_String = InkHashTableKeyType_String,
   RawHashTable_KeyType_Word = InkHashTableKeyType_Word
 } RawHashTable_KeyType;
@@ -61,19 +60,19 @@ typedef InkHashTableIteratorState RawHashTable_IteratorState;
 class RawHashTable
 {
 private:
-  InkHashTable * ht;
+  InkHashTable *ht;
   RawHashTable_KeyType key_type;
   bool deallocate_values_on_destruct;
 
 public:
-    inkcoreapi RawHashTable(RawHashTable_KeyType key_type, bool deallocate_values_on_destruct = false);
-    virtual ~ RawHashTable();
+  inkcoreapi RawHashTable(RawHashTable_KeyType key_type, bool deallocate_values_on_destruct = false);
+  virtual ~RawHashTable();
 
   //
   // these are the simplest accessor functions
   //
 
-  bool getValue(RawHashTable_Key key, RawHashTable_Value * value_ptr);
+  bool getValue(RawHashTable_Key key, RawHashTable_Value *value_ptr);
   void setValue(RawHashTable_Key key, RawHashTable_Value value_ptr);
   bool isBound(RawHashTable_Key key);
   bool unbindKey(RawHashTable_Key key);
@@ -84,18 +83,18 @@ public:
   //
 
   RawHashTable_Binding *getCurrentBinding(RawHashTable_Key key);
-  RawHashTable_Binding *getOrCreateBinding(RawHashTable_Key key, bool * was_new = NULL);
+  RawHashTable_Binding *getOrCreateBinding(RawHashTable_Key key, bool *was_new = NULL);
 
-  void setBindingValue(RawHashTable_Binding * binding, RawHashTable_Value value);
-  RawHashTable_Key getKeyFromBinding(RawHashTable_Binding * binding);
-  RawHashTable_Value getValueFromBinding(RawHashTable_Binding * binding);
+  void setBindingValue(RawHashTable_Binding *binding, RawHashTable_Value value);
+  RawHashTable_Key getKeyFromBinding(RawHashTable_Binding *binding);
+  RawHashTable_Value getValueFromBinding(RawHashTable_Binding *binding);
 
   //
   // these functions allow you to iterate through RawHashTable bindings
   //
 
-  RawHashTable_Binding *firstBinding(RawHashTable_IteratorState * state_ptr);
-  RawHashTable_Binding *nextBinding(RawHashTable_IteratorState * state_ptr);
+  RawHashTable_Binding *firstBinding(RawHashTable_IteratorState *state_ptr);
+  RawHashTable_Binding *nextBinding(RawHashTable_IteratorState *state_ptr);
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -111,11 +110,11 @@ public:
 
 */
 inline bool
-RawHashTable::getValue(RawHashTable_Key key, RawHashTable_Value * value_ptr)
+RawHashTable::getValue(RawHashTable_Key key, RawHashTable_Value *value_ptr)
 {
   int is_bound;
 
-  is_bound = ink_hash_table_lookup(ht, (InkHashTableKey) key, (InkHashTableValue *) value_ptr);
+  is_bound = ink_hash_table_lookup(ht, (InkHashTableKey)key, (InkHashTableValue *)value_ptr);
   return (is_bound ? true : false);
 }
 
@@ -132,7 +131,7 @@ RawHashTable::getValue(RawHashTable_Key key, RawHashTable_Value * value_ptr)
 inline void
 RawHashTable::setValue(RawHashTable_Key key, RawHashTable_Value value)
 {
-  ink_hash_table_insert(ht, (InkHashTableKey) key, (InkHashTableValue) value);
+  ink_hash_table_insert(ht, (InkHashTableKey)key, (InkHashTableValue)value);
 }
 
 /**
@@ -148,7 +147,7 @@ RawHashTable::setValue(RawHashTable_Key key, RawHashTable_Value value)
 inline bool
 RawHashTable::isBound(RawHashTable_Key key)
 {
-  int status = ink_hash_table_isbound(ht, (InkHashTableKey) key);
+  int status = ink_hash_table_isbound(ht, (InkHashTableKey)key);
   return (status ? true : false);
 }
 
@@ -166,7 +165,7 @@ RawHashTable::unbindKey(RawHashTable_Key key)
 {
   int status;
 
-  status = ink_hash_table_delete(ht, (InkHashTableKey) key);
+  status = ink_hash_table_delete(ht, (InkHashTableKey)key);
   return (status ? true : false);
 }
 
@@ -180,10 +179,10 @@ RawHashTable::unbindKey(RawHashTable_Key key)
 inline void
 RawHashTable::replaceString(char *key, char *string)
 {
-//    if (key_type != RawHashTable_KeyType_String)
-//    {
-//      throw BadKeyType();
-//    }
+  //    if (key_type != RawHashTable_KeyType_String)
+  //    {
+  //      throw BadKeyType();
+  //    }
 
   ink_hash_table_replace_string(ht, key, string);
 }
@@ -199,8 +198,8 @@ RawHashTable::getCurrentBinding(RawHashTable_Key key)
 {
   InkHashTableEntry *he_ptr;
 
-  he_ptr = ink_hash_table_lookup_entry(ht, (InkHashTableKey) key);
-  return ((RawHashTable_Binding *) he_ptr);
+  he_ptr = ink_hash_table_lookup_entry(ht, (InkHashTableKey)key);
+  return ((RawHashTable_Binding *)he_ptr);
 }
 
 /**
@@ -214,14 +213,14 @@ RawHashTable::getCurrentBinding(RawHashTable_Key key)
 
 */
 inline RawHashTable_Binding *
-RawHashTable::getOrCreateBinding(RawHashTable_Key key, bool * was_new)
+RawHashTable::getOrCreateBinding(RawHashTable_Key key, bool *was_new)
 {
   int _was_new;
   InkHashTableEntry *he_ptr;
 
-  he_ptr = ink_hash_table_get_entry(ht, (InkHashTableKey) key, &_was_new);
+  he_ptr = ink_hash_table_get_entry(ht, (InkHashTableKey)key, &_was_new);
   *was_new = (_was_new ? true : false);
-  return ((RawHashTable_Binding *) he_ptr);
+  return ((RawHashTable_Binding *)he_ptr);
 }
 
 /**
@@ -235,9 +234,9 @@ RawHashTable::getOrCreateBinding(RawHashTable_Key key, bool * was_new)
 
 */
 inline void
-RawHashTable::setBindingValue(RawHashTable_Binding * binding, RawHashTable_Value value)
+RawHashTable::setBindingValue(RawHashTable_Binding *binding, RawHashTable_Value value)
 {
-  ink_hash_table_set_entry(ht, (InkHashTableEntry *) binding, (InkHashTableValue) value);
+  ink_hash_table_set_entry(ht, (InkHashTableEntry *)binding, (InkHashTableValue)value);
 }
 
 /**
@@ -245,12 +244,12 @@ RawHashTable::setBindingValue(RawHashTable_Binding * binding, RawHashTable_Value
 
 */
 inline RawHashTable_Key
-RawHashTable::getKeyFromBinding(RawHashTable_Binding * binding)
+RawHashTable::getKeyFromBinding(RawHashTable_Binding *binding)
 {
   InkHashTableKey ht_key;
 
-  ht_key = ink_hash_table_entry_key(ht, (InkHashTableEntry *) binding);
-  return ((RawHashTable_Key) ht_key);
+  ht_key = ink_hash_table_entry_key(ht, (InkHashTableEntry *)binding);
+  return ((RawHashTable_Key)ht_key);
 }
 
 /**
@@ -258,12 +257,12 @@ RawHashTable::getKeyFromBinding(RawHashTable_Binding * binding)
 
 */
 inline RawHashTable_Value
-RawHashTable::getValueFromBinding(RawHashTable_Binding * binding)
+RawHashTable::getValueFromBinding(RawHashTable_Binding *binding)
 {
   InkHashTableValue ht_value;
 
-  ht_value = ink_hash_table_entry_value(ht, (InkHashTableEntry *) binding);
-  return ((RawHashTable_Value) ht_value);
+  ht_value = ink_hash_table_entry_value(ht, (InkHashTableEntry *)binding);
+  return ((RawHashTable_Value)ht_value);
 }
 
 /**
@@ -273,25 +272,22 @@ RawHashTable::getValueFromBinding(RawHashTable_Binding * binding)
 
 */
 inline RawHashTable_Binding *
-RawHashTable::firstBinding(RawHashTable_IteratorState * state_ptr)
+RawHashTable::firstBinding(RawHashTable_IteratorState *state_ptr)
 {
   InkHashTableEntry *he_ptr;
 
-  he_ptr = ink_hash_table_iterator_first(ht, (InkHashTableIteratorState *) state_ptr);
-  return ((RawHashTable_Binding *) he_ptr);
+  he_ptr = ink_hash_table_iterator_first(ht, (InkHashTableIteratorState *)state_ptr);
+  return ((RawHashTable_Binding *)he_ptr);
 }
 
-inline
-RawHashTable::RawHashTable(RawHashTable_KeyType akey_type, bool adeallocate_values_on_destruct)
+inline RawHashTable::RawHashTable(RawHashTable_KeyType akey_type, bool adeallocate_values_on_destruct)
 {
   RawHashTable::key_type = akey_type;
   RawHashTable::deallocate_values_on_destruct = adeallocate_values_on_destruct;
-  ht = ink_hash_table_create((InkHashTableKeyType) key_type);
+  ht = ink_hash_table_create((InkHashTableKeyType)key_type);
 }
 
-inline
-RawHashTable::~
-RawHashTable()
+inline RawHashTable::~RawHashTable()
 {
   if (deallocate_values_on_destruct)
     ink_hash_table_destroy_and_free_values(ht);
@@ -306,12 +302,12 @@ RawHashTable()
 
 */
 inline RawHashTable_Binding *
-RawHashTable::nextBinding(RawHashTable_IteratorState * state_ptr)
+RawHashTable::nextBinding(RawHashTable_IteratorState *state_ptr)
 {
   InkHashTableEntry *he_ptr;
 
-  he_ptr = ink_hash_table_iterator_next(ht, (InkHashTableIteratorState *) state_ptr);
-  return ((RawHashTable_Binding *) he_ptr);
+  he_ptr = ink_hash_table_iterator_next(ht, (InkHashTableIteratorState *)state_ptr);
+  return ((RawHashTable_Binding *)he_ptr);
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -323,19 +319,19 @@ RawHashTable::nextBinding(RawHashTable_IteratorState * state_ptr)
 class RawHashTableIter
 {
 public:
-  RawHashTableIter(RawHashTable & ht);
+  RawHashTableIter(RawHashTable &ht);
   ~RawHashTableIter();
 
-  RawHashTable_Value & operator ++();   // get next
-  RawHashTable_Value & operator () () const;    // get current
-  operator  const void *() const;       // is valid
+  RawHashTable_Value &operator++();       // get next
+  RawHashTable_Value &operator()() const; // get current
+  operator const void *() const;          // is valid
 
-    RawHashTable_Value & value() const; // get current value
-  const char *key() const;      // get current key
+  RawHashTable_Value &value() const; // get current value
+  const char *key() const;           // get current key
 
 
 private:
-    RawHashTable & m_ht;
+  RawHashTable &m_ht;
   RawHashTable_Binding *m_currentBinding;
   RawHashTable_IteratorState m_hashIterState;
 };
@@ -346,29 +342,23 @@ private:
 //
 //////////////////////////////////////////////////////////////////////////////
 
-inline RawHashTable_Value &
-RawHashTableIter::operator () ()
-const
+inline RawHashTable_Value &RawHashTableIter::operator()() const
 {
   return (m_currentBinding->clientData);
 }
 
-inline RawHashTable_Value &
-RawHashTableIter::operator ++()
+inline RawHashTable_Value &RawHashTableIter::operator++()
 {
   m_currentBinding = m_ht.nextBinding(&m_hashIterState);
   return (m_currentBinding->clientData);
 }
 
-inline
-RawHashTableIter::operator  const void *()
-const
+inline RawHashTableIter::operator const void *() const
 {
   return ((m_currentBinding != 0) ? this : 0);
 }
 
-inline
-  RawHashTable_Value &
+inline RawHashTable_Value &
 RawHashTableIter::value() const
 {
   return (m_currentBinding->clientData);
@@ -380,19 +370,13 @@ RawHashTableIter::key() const
   return (m_currentBinding->key.string);
 }
 
-inline
-RawHashTableIter::RawHashTableIter(RawHashTable & ht)
-  :
-m_ht(ht),
-m_currentBinding(0)
+inline RawHashTableIter::RawHashTableIter(RawHashTable &ht) : m_ht(ht), m_currentBinding(0)
 {
   m_currentBinding = m_ht.firstBinding(&m_hashIterState);
   return;
 }
 
-inline
-RawHashTableIter::~
-RawHashTableIter()
+inline RawHashTableIter::~RawHashTableIter()
 {
   return;
 }

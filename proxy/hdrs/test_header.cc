@@ -72,32 +72,29 @@ main(int argc, char *argv[])
 static void
 test_parse_date()
 {
-  static struct
-  {
+  static struct {
     const char *fast;
     const char *slow;
-  } dates[] = {
-    {
-    "Sun, 06 Nov 1994 08:49:37 GMT", "Sunday, 06-Nov-1994 08:49:37 GMT"}, {
-    "Mon, 07 Nov 1994 08:49:37 GMT", "Monday, 07-Nov-1994 08:49:37 GMT"}, {
-    "Tue, 08 Nov 1994 08:49:37 GMT", "Tuesday, 08-Nov-1994 08:49:37 GMT"}, {
-    "Wed, 09 Nov 1994 08:49:37 GMT", "Wednesday, 09-Nov-1994 08:49:37 GMT"}, {
-    "Thu, 10 Nov 1994 08:49:37 GMT", "Thursday, 10-Nov-1994 08:49:37 GMT"}, {
-    "Fri, 11 Nov 1994 08:49:37 GMT", "Friday, 11-Nov-1994 08:49:37 GMT"}, {
-    "Sat, 11 Nov 1994 08:49:37 GMT", "Saturday, 11-Nov-1994 08:49:37 GMT"}, {
-    "Sun, 03 Jan 1999 08:49:37 GMT", "Sunday, 03-Jan-1999 08:49:37 GMT"}, {
-    "Sun, 07 Feb 1999 08:49:37 GMT", "Sunday, 07-Feb-1999 08:49:37 GMT"}, {
-    "Sun, 07 Mar 1999 08:49:37 GMT", "Sunday, 07-Mar-1999 08:49:37 GMT"}, {
-    "Sun, 04 Apr 1999 08:49:37 GMT", "Sunday, 04-Apr-1999 08:49:37 GMT"}, {
-    "Sun, 02 May 1999 08:49:37 GMT", "Sunday, 02-May-1999 08:49:37 GMT"}, {
-    "Sun, 06 Jun 1999 08:49:37 GMT", "Sunday, 06-Jun-1999 08:49:37 GMT"}, {
-    "Sun, 04 Jul 1999 08:49:37 GMT", "Sunday, 04-Jul-1999 08:49:37 GMT"}, {
-    "Sun, 01 Aug 1999 08:49:37 GMT", "Sunday, 01-Aug-1999 08:49:37 GMT"}, {
-    "Sun, 05 Sep 1999 08:49:37 GMT", "Sunday, 05-Sep-1999 08:49:37 GMT"}, {
-    "Sun, 03 Oct 1999 08:49:37 GMT", "Sunday, 03-Oct-1999 08:49:37 GMT"}, {
-    "Sun, 07 Nov 1999 08:49:37 GMT", "Sunday, 07-Nov-1999 08:49:37 GMT"}, {
-    "Sun, 05 Dec 1999 08:49:37 GMT", "Sunday, 05-Dec-1999 08:49:37 GMT"}, {
-  NULL, NULL}};
+  } dates[] = {{"Sun, 06 Nov 1994 08:49:37 GMT", "Sunday, 06-Nov-1994 08:49:37 GMT"},
+               {"Mon, 07 Nov 1994 08:49:37 GMT", "Monday, 07-Nov-1994 08:49:37 GMT"},
+               {"Tue, 08 Nov 1994 08:49:37 GMT", "Tuesday, 08-Nov-1994 08:49:37 GMT"},
+               {"Wed, 09 Nov 1994 08:49:37 GMT", "Wednesday, 09-Nov-1994 08:49:37 GMT"},
+               {"Thu, 10 Nov 1994 08:49:37 GMT", "Thursday, 10-Nov-1994 08:49:37 GMT"},
+               {"Fri, 11 Nov 1994 08:49:37 GMT", "Friday, 11-Nov-1994 08:49:37 GMT"},
+               {"Sat, 11 Nov 1994 08:49:37 GMT", "Saturday, 11-Nov-1994 08:49:37 GMT"},
+               {"Sun, 03 Jan 1999 08:49:37 GMT", "Sunday, 03-Jan-1999 08:49:37 GMT"},
+               {"Sun, 07 Feb 1999 08:49:37 GMT", "Sunday, 07-Feb-1999 08:49:37 GMT"},
+               {"Sun, 07 Mar 1999 08:49:37 GMT", "Sunday, 07-Mar-1999 08:49:37 GMT"},
+               {"Sun, 04 Apr 1999 08:49:37 GMT", "Sunday, 04-Apr-1999 08:49:37 GMT"},
+               {"Sun, 02 May 1999 08:49:37 GMT", "Sunday, 02-May-1999 08:49:37 GMT"},
+               {"Sun, 06 Jun 1999 08:49:37 GMT", "Sunday, 06-Jun-1999 08:49:37 GMT"},
+               {"Sun, 04 Jul 1999 08:49:37 GMT", "Sunday, 04-Jul-1999 08:49:37 GMT"},
+               {"Sun, 01 Aug 1999 08:49:37 GMT", "Sunday, 01-Aug-1999 08:49:37 GMT"},
+               {"Sun, 05 Sep 1999 08:49:37 GMT", "Sunday, 05-Sep-1999 08:49:37 GMT"},
+               {"Sun, 03 Oct 1999 08:49:37 GMT", "Sunday, 03-Oct-1999 08:49:37 GMT"},
+               {"Sun, 07 Nov 1999 08:49:37 GMT", "Sunday, 07-Nov-1999 08:49:37 GMT"},
+               {"Sun, 05 Dec 1999 08:49:37 GMT", "Sunday, 05-Dec-1999 08:49:37 GMT"},
+               {NULL, NULL}};
 
   int i;
   int failures = 0;
@@ -122,13 +119,8 @@ test_parse_date()
 static void
 test_format_date()
 {
-  static char *dates[] = {
-    "Sun, 06 Nov 1994 08:49:37 GMT",
-    "Sun, 03 Jan 1999 08:49:37 GMT",
-    "Sun, 05 Dec 1999 08:49:37 GMT",
-    "Tue, 25 Apr 2000 20:29:53 GMT",
-    NULL
-  };
+  static char *dates[] = {"Sun, 06 Nov 1994 08:49:37 GMT", "Sun, 03 Jan 1999 08:49:37 GMT", "Sun, 05 Dec 1999 08:49:37 GMT",
+                          "Tue, 25 Apr 2000 20:29:53 GMT", NULL};
 
   bri_box("test_format_date");
 
@@ -168,7 +160,7 @@ test_format_date()
 
   for (t = 0; t < 40 * 366 * (24 * 60 * 60); t += drand48() * (24 * 60 * 60)) {
     cftime(buffer, "%a, %d %b %Y %T %Z", &t);
-//      printf("%s\n",buffer);
+    //      printf("%s\n",buffer);
 
     t2 = mime_parse_date(buffer, buffer + strlen(buffer));
     if (t2 != t) {
@@ -201,42 +193,21 @@ test_url()
 
     "cheese://bogosity",
 
-    "some.place",
-    "some.place/",
-    "http://some.place",
-    "http://some.place/",
-    "http://some.place/path",
-    "http://some.place/path;params",
-    "http://some.place/path;params?query",
-    "http://some.place/path;params?query#fragment",
-    "http://some.place/path?query#fragment",
-    "http://some.place/path#fragment",
+    "some.place", "some.place/", "http://some.place", "http://some.place/", "http://some.place/path",
+    "http://some.place/path;params", "http://some.place/path;params?query", "http://some.place/path;params?query#fragment",
+    "http://some.place/path?query#fragment", "http://some.place/path#fragment",
 
-    "some.place:80",
-    "some.place:80/",
-    "http://some.place:80",
-    "http://some.place:80/",
+    "some.place:80", "some.place:80/", "http://some.place:80", "http://some.place:80/",
 
-    "foo@some.place:80",
-    "foo@some.place:80/",
-    "http://foo@some.place:80",
-    "http://foo@some.place:80/",
+    "foo@some.place:80", "foo@some.place:80/", "http://foo@some.place:80", "http://foo@some.place:80/",
 
-    "foo:bar@some.place:80",
-    "foo:bar@some.place:80/",
-    "http://foo:bar@some.place:80",
-    "http://foo:bar@some.place:80/",
+    "foo:bar@some.place:80", "foo:bar@some.place:80/", "http://foo:bar@some.place:80", "http://foo:bar@some.place:80/",
 
-    "foo:bar@some.place",
-    "foo:bar@some.place/",
-    "http://foo:bar@some.place",
-    "http://foo:bar@some.place/",
+    "foo:bar@some.place", "foo:bar@some.place/", "http://foo:bar@some.place", "http://foo:bar@some.place/",
 
-    "pnm://foo:bar@some.place:80/path;params?query#fragment",
-    "rtsp://foo:bar@some.place:80/path;params?query#fragment",
+    "pnm://foo:bar@some.place:80/path;params?query#fragment", "rtsp://foo:bar@some.place:80/path;params?query#fragment",
     "rtspu://foo:bar@some.place:80/path;params?query#fragment",
-    "/finance/external/cbsm/*http://cbs.marketwatch.com/archive/19990713/news/current/net.htx?source=blq/yhoo&dist=yhoo"
-  };
+    "/finance/external/cbsm/*http://cbs.marketwatch.com/archive/19990713/news/current/net.htx?source=blq/yhoo&dist=yhoo"};
   static int nstrs = sizeof(strs) / sizeof(strs[0]);
 
   int err, failed;
@@ -274,8 +245,7 @@ test_url()
     } else if (old_length == new_length - 1) {
       // Check to see if the difference is the trailing
       //   slash we add
-      if (memcmp(print_buf, strs[i], old_length) != 0 ||
-          print_buf[new_length - 1] != '/' || (strs[i])[old_length - 1] == '/') {
+      if (memcmp(print_buf, strs[i], old_length) != 0 || print_buf[new_length - 1] != '/' || (strs[i])[old_length - 1] == '/') {
         fail_text = "TRAILING SLASH";
       }
     } else {
@@ -299,23 +269,26 @@ test_url()
 static void
 test_mime()
 {
-  static const char mime[] = {
-    //        "Date: Tuesday, 08-Dec-98 20:32:17 GMT\r\n"
-    "Date: 6 Nov 1994 08:49:37 GMT\r\n"
-      "Max-Forwards: 65535\r\n"
-      "Cache-Control: private\r\n"
-      "accept: foo\r\n"
-      "accept: bar\n"
-      ": (null) field name\r\n"
-      "aCCept: \n"
-      "ACCEPT\r\n"
-      "foo: bar\r\n"
-      "foo: argh\r\n"
-      "word word: word \r\n"
-      "accept: \"fazzle, dazzle\"\r\n"
-      "accept: 1, 2, 3, 4, 5, 6, 7, 8\r\n"
-      "continuation: part1\r\n" " part2\r\n" "scooby: doo\r\n" "scooby : doo\r\n" "bar: foo\r\n" "\r\n"
-  };
+  static const char mime[] = {//        "Date: Tuesday, 08-Dec-98 20:32:17 GMT\r\n"
+                              "Date: 6 Nov 1994 08:49:37 GMT\r\n"
+                              "Max-Forwards: 65535\r\n"
+                              "Cache-Control: private\r\n"
+                              "accept: foo\r\n"
+                              "accept: bar\n"
+                              ": (null) field name\r\n"
+                              "aCCept: \n"
+                              "ACCEPT\r\n"
+                              "foo: bar\r\n"
+                              "foo: argh\r\n"
+                              "word word: word \r\n"
+                              "accept: \"fazzle, dazzle\"\r\n"
+                              "accept: 1, 2, 3, 4, 5, 6, 7, 8\r\n"
+                              "continuation: part1\r\n"
+                              " part2\r\n"
+                              "scooby: doo\r\n"
+                              "scooby : doo\r\n"
+                              "bar: foo\r\n"
+                              "\r\n"};
 
   int err;
   MIMEHdr hdr;
@@ -383,13 +356,12 @@ test_mime()
   slist_count = cc_field->value_get_comma_list(&slist); // FIX: correct usage?
 
 
-
   mime_parser_clear(&parser);
 
   hdr.print(NULL, 0, NULL, NULL);
   printf("\n");
 
-  obj_describe((HdrHeapObjImpl *) (hdr.m_mime), true);
+  obj_describe((HdrHeapObjImpl *)(hdr.m_mime), true);
 
   hdr.fields_clear();
 
@@ -400,35 +372,31 @@ test_mime()
 static void
 test_http_parser_eos_boundary_cases()
 {
-  struct
-  {
+  struct {
     char *msg;
     int expected_result;
     int expected_bytes_consumed;
-  } tests[] = {
-    {
-    "GET /index.html HTTP/1.0\r\n", PARSE_DONE, 26}, {
-    "GET /index.html HTTP/1.0\r\n\r\n***BODY****", PARSE_DONE, 28}, {
-    "GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n\r\n***BODY****", PARSE_DONE, 48}, {
-    "GET", PARSE_ERROR, 3}, {
-    "GET /index.html", PARSE_ERROR, 15}, {
-    "GET /index.html\r\n", PARSE_DONE, 17}, {
-    "GET /index.html HTTP/1.0", PARSE_ERROR, 24}, {
-    "GET /index.html HTTP/1.0\r", PARSE_ERROR, 25}, {
-    "GET /index.html HTTP/1.0\n", PARSE_DONE, 25}, {
-    "GET /index.html HTTP/1.0\n\n", PARSE_DONE, 26}, {
-    "GET /index.html HTTP/1.0\r\n\r\n", PARSE_DONE, 28}, {
-    "GET /index.html HTTP/1.0\r\nUser-Agent: foobar", PARSE_ERROR, 44}, {
-    "GET /index.html HTTP/1.0\r\nUser-Agent: foobar\n", PARSE_DONE, 45}, {
-    "GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n", PARSE_DONE, 46}, {
-    "GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n\r\n", PARSE_DONE, 48}, {
-    "GET /index.html HTTP/1.0\nUser-Agent: foobar\n", PARSE_DONE, 44}, {
-    "GET /index.html HTTP/1.0\nUser-Agent: foobar\nBoo: foo\n", PARSE_DONE, 53}, {
-    "GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n", PARSE_DONE, 46}, {
-    "GET /index.html HTTP/1.0\r\n", PARSE_DONE, 26}, {
-    "", PARSE_DONE, 0}, {
-    NULL, 0, 0}
-  };
+  } tests[] = {{"GET /index.html HTTP/1.0\r\n", PARSE_DONE, 26},
+               {"GET /index.html HTTP/1.0\r\n\r\n***BODY****", PARSE_DONE, 28},
+               {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n\r\n***BODY****", PARSE_DONE, 48},
+               {"GET", PARSE_ERROR, 3},
+               {"GET /index.html", PARSE_ERROR, 15},
+               {"GET /index.html\r\n", PARSE_DONE, 17},
+               {"GET /index.html HTTP/1.0", PARSE_ERROR, 24},
+               {"GET /index.html HTTP/1.0\r", PARSE_ERROR, 25},
+               {"GET /index.html HTTP/1.0\n", PARSE_DONE, 25},
+               {"GET /index.html HTTP/1.0\n\n", PARSE_DONE, 26},
+               {"GET /index.html HTTP/1.0\r\n\r\n", PARSE_DONE, 28},
+               {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar", PARSE_ERROR, 44},
+               {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\n", PARSE_DONE, 45},
+               {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n", PARSE_DONE, 46},
+               {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n\r\n", PARSE_DONE, 48},
+               {"GET /index.html HTTP/1.0\nUser-Agent: foobar\n", PARSE_DONE, 44},
+               {"GET /index.html HTTP/1.0\nUser-Agent: foobar\nBoo: foo\n", PARSE_DONE, 53},
+               {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n", PARSE_DONE, 46},
+               {"GET /index.html HTTP/1.0\r\n", PARSE_DONE, 26},
+               {"", PARSE_DONE, 0},
+               {NULL, 0, 0}};
 
   int i, ret, bytes_consumed;
   const char *orig_start;
@@ -446,12 +414,12 @@ test_http_parser_eos_boundary_cases()
     HTTPHdr req_hdr;
 
     start = tests[i].msg;
-    end = start + strlen(start);        // 1 character past end of string
+    end = start + strlen(start); // 1 character past end of string
 
     req_hdr.create(HTTP_TYPE_REQUEST);
 
     http_parser_clear(&parser);
-//      http_parser_init (&parser);
+    //      http_parser_init (&parser);
 
     orig_start = start;
     ret = req_hdr.parse_req(&parser, &start, end, true);
@@ -465,11 +433,11 @@ test_http_parser_eos_boundary_cases()
 
     if ((ret != tests[i].expected_result) || (bytes_consumed != tests[i].expected_bytes_consumed)) {
       ++failures;
-      printf("FAILED: test %d: retval <expected %d, got %d>, eaten <expected %d, got %d>\n\n",
-             i, tests[i].expected_result, ret, tests[i].expected_bytes_consumed, bytes_consumed);
+      printf("FAILED: test %d: retval <expected %d, got %d>, eaten <expected %d, got %d>\n\n", i, tests[i].expected_result, ret,
+             tests[i].expected_bytes_consumed, bytes_consumed);
     } else {
-      printf("SUCCESS: test %d: retval <expected %d, got %d>, eaten <expected %d, got %d>\n\n",
-             i, tests[i].expected_result, ret, tests[i].expected_bytes_consumed, bytes_consumed);
+      printf("SUCCESS: test %d: retval <expected %d, got %d>, eaten <expected %d, got %d>\n\n", i, tests[i].expected_result, ret,
+             tests[i].expected_bytes_consumed, bytes_consumed);
     }
 
     req_hdr.destroy();
@@ -493,10 +461,10 @@ test_http_aux(const char *request, const char *response)
 
   printf("   <<< MUST BE HAND-VERIFIED >>>\n\n");
 
-    /*** (1) parse the request string into req_hdr ***/
+  /*** (1) parse the request string into req_hdr ***/
 
   start = request;
-  end = start + strlen(start);  // 1 character past end of string
+  end = start + strlen(start); // 1 character past end of string
 
   http_parser_init(&parser);
 
@@ -513,14 +481,14 @@ test_http_aux(const char *request, const char *response)
   if (err == PARSE_ERROR)
     printf("  *** PARSE_ERROR ***\n");
 
-    /*** useless copy to exercise copy function ***/
+  /*** useless copy to exercise copy function ***/
 
   HTTPHdr new_hdr;
   new_hdr.create(HTTP_TYPE_REQUEST);
   new_hdr.copy(&req_hdr);
   new_hdr.destroy();
 
-    /*** (2) print out the request ***/
+  /*** (2) print out the request ***/
 
   printf("======== real request (length=%d)\n\n", strlen(request));
   printf("%s\n", request);
@@ -534,7 +502,7 @@ test_http_aux(const char *request, const char *response)
   // req_hdr.destroy ();
   // ink_release_assert(!"req_hdr.destroy() not defined");
 
-    /*** (3) parse the response string into rsp_hdr ***/
+  /*** (3) parse the response string into rsp_hdr ***/
 
   start = response;
   end = start + strlen(start);
@@ -552,7 +520,7 @@ test_http_aux(const char *request, const char *response)
 
   http_parser_clear(&parser);
 
-    /*** (4) print out the response ***/
+  /*** (4) print out the response ***/
 
   printf("\n======== real response (length=%d)\n\n", strlen(response));
   printf("%s\n", response);
@@ -577,7 +545,7 @@ test_http_aux(const char *request, const char *response)
     do {
       last_bufindex = bufindex;
       tmp = bufindex;
-      buf[0] = '#';             // make it obvious if hdr.print doesn't print anything
+      buf[0] = '#'; // make it obvious if hdr.print doesn't print anything
       err = rsp_hdr.print(buf, NNN, &bufindex, &tmp);
 
       // printf("test_header: tmp = %d  err = %d  bufindex = %d\n", tmp, err, bufindex);
@@ -604,160 +572,151 @@ test_http()
 {
   printf("   <<< MUST BE HAND-VERIFIED >>>\n\n");
 
-  static const char request0[] = {
-    "GET http://www.news.com:80/ HTTP/1.0\r\n"
-      "Proxy-Connection: Keep-Alive\r\n"
-      "User-Agent: Mozilla/4.04 [en] (X11; I; Linux 2.0.33 i586)\r\n"
-      "Pragma: no-cache\r\n"
-      "Host: www.news.com\r\n"
-      "Accept: image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, image/png, */*\r\n"
-      "Accept-Language: en\r\n"
-      "Accept-Charset: iso-8859-1, *, utf-8\r\n"
-      "Cookie: u_vid_0_0=00031ba3; s_cur_0_0=0101sisi091314775496e7d3Jx4+POyJakrMybmNOsq6XOn5bVn5Z6a4Ln5crU5M7Rxq2lm5aWpqupo20=; SC_Cnet001=Sampled; SC_Cnet002=Sampled\r\n"
-      "Client-ip: D1012148\r\n" "Foo: abcdefghijklmnopqrtu\r\n" "\r\n"
-  };
+  static const char request0[] = {"GET http://www.news.com:80/ HTTP/1.0\r\n"
+                                  "Proxy-Connection: Keep-Alive\r\n"
+                                  "User-Agent: Mozilla/4.04 [en] (X11; I; Linux 2.0.33 i586)\r\n"
+                                  "Pragma: no-cache\r\n"
+                                  "Host: www.news.com\r\n"
+                                  "Accept: image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, image/png, */*\r\n"
+                                  "Accept-Language: en\r\n"
+                                  "Accept-Charset: iso-8859-1, *, utf-8\r\n"
+                                  "Cookie: u_vid_0_0=00031ba3; "
+                                  "s_cur_0_0=0101sisi091314775496e7d3Jx4+POyJakrMybmNOsq6XOn5bVn5Z6a4Ln5crU5M7Rxq2lm5aWpqupo20=; "
+                                  "SC_Cnet001=Sampled; SC_Cnet002=Sampled\r\n"
+                                  "Client-ip: D1012148\r\n"
+                                  "Foo: abcdefghijklmnopqrtu\r\n"
+                                  "\r\n"};
 
-  static const char request09[] = {
-    "GET /index.html\r\n" "\r\n"
-  };
+  static const char request09[] = {"GET /index.html\r\n"
+                                   "\r\n"};
 
-  static const char request1[] = {
-    "GET http://people.netscape.com/jwz/hacks-1.gif HTTP/1.0\r\n"
-      "If-Modified-Since: Wednesday, 26-Feb-97 06:58:17 GMT; length=842\r\n"
-      "Referer: http://people.netscape.com/jwz/index.html\r\n"
-      "Proxy-Connection: Keep-Alive\r\n"
-      "User-Agent:  Mozilla/3.01 (X11; I; Linux 2.0.28 i586)\r\n"
-      "Pragma: no-cache\r\n"
-      "Host: people.netscape.com\r\n" "Accept: image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, */*\r\n" "\r\n"
-  };
+  static const char request1[] = {"GET http://people.netscape.com/jwz/hacks-1.gif HTTP/1.0\r\n"
+                                  "If-Modified-Since: Wednesday, 26-Feb-97 06:58:17 GMT; length=842\r\n"
+                                  "Referer: http://people.netscape.com/jwz/index.html\r\n"
+                                  "Proxy-Connection: Keep-Alive\r\n"
+                                  "User-Agent:  Mozilla/3.01 (X11; I; Linux 2.0.28 i586)\r\n"
+                                  "Pragma: no-cache\r\n"
+                                  "Host: people.netscape.com\r\n"
+                                  "Accept: image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, */*\r\n"
+                                  "\r\n"};
 
-  static const char request_no_colon[] = {
-    "GET http://people.netscape.com/jwz/hacks-1.gif HTTP/1.0\r\n"
-      "If-Modified-Since Wednesday, 26-Feb-97 06:58:17 GMT; length=842\r\n"
-      "Referer http://people.netscape.com/jwz/index.html\r\n"
-      "Proxy-Connection Keep-Alive\r\n"
-      "User-Agent  Mozilla/3.01 (X11; I; Linux 2.0.28 i586)\r\n"
-      "Pragma no-cache\r\n"
-      "Host people.netscape.com\r\n" "Accept image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, */*\r\n" "\r\n"
-  };
+  static const char request_no_colon[] = {"GET http://people.netscape.com/jwz/hacks-1.gif HTTP/1.0\r\n"
+                                          "If-Modified-Since Wednesday, 26-Feb-97 06:58:17 GMT; length=842\r\n"
+                                          "Referer http://people.netscape.com/jwz/index.html\r\n"
+                                          "Proxy-Connection Keep-Alive\r\n"
+                                          "User-Agent  Mozilla/3.01 (X11; I; Linux 2.0.28 i586)\r\n"
+                                          "Pragma no-cache\r\n"
+                                          "Host people.netscape.com\r\n"
+                                          "Accept image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, */*\r\n"
+                                          "\r\n"};
 
-  static const char request_no_val[] = {
-    "GET http://people.netscape.com/jwz/hacks-1.gif HTTP/1.0\r\n"
-      "If-Modified-Since:\r\n" "Referer:     " "Proxy-Connection:\r\n" "User-Agent:     \r\n" "Host:::\r\n" "\r\n"
-  };
+  static const char request_no_val[] = {"GET http://people.netscape.com/jwz/hacks-1.gif HTTP/1.0\r\n"
+                                        "If-Modified-Since:\r\n"
+                                        "Referer:     "
+                                        "Proxy-Connection:\r\n"
+                                        "User-Agent:     \r\n"
+                                        "Host:::\r\n"
+                                        "\r\n"};
 
-  static const char request_multi_fblock[] = {
-    "GET http://people.netscape.com/jwz/hacks-1.gif HTTP/1.0\r\n"
-      "If-Modified-Since: Wednesday, 26-Feb-97 06:58:17 GMT; length=842\r\n"
-      "Referer: http://people.netscape.com/jwz/index.html\r\n"
-      "Proxy-Connection: Keep-Alive\r\n"
-      "User-Agent:  Mozilla/3.01 (X11; I; Linux 2.0.28 i586)\r\n"
-      "Pragma: no-cache\r\n"
-      "Host: people.netscape.com\r\n"
-      "Accept: image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, */*\r\n"
-      "X-1: blah\r\n"
-      "X-2: blah\r\n"
-      "X-3: blah\r\n"
-      "X-4: blah\r\n"
-      "X-5: blah\r\n"
-      "X-6: blah\r\n"
-      "X-7: blah\r\n"
-      "X-8: blah\r\n"
-      "X-9: blah\r\n"
-      "Pragma: no-cache\r\n"
-      "X-X-1: blah\r\n"
-      "X-X-2: blah\r\n"
-      "X-X-3: blah\r\n"
-      "X-X-4: blah\r\n" "X-X-5: blah\r\n" "X-X-6: blah\r\n" "X-X-7: blah\r\n" "X-X-8: blah\r\n" "X-X-9: blah\r\n" "\r\n"
-  };
+  static const char request_multi_fblock[] = {"GET http://people.netscape.com/jwz/hacks-1.gif HTTP/1.0\r\n"
+                                              "If-Modified-Since: Wednesday, 26-Feb-97 06:58:17 GMT; length=842\r\n"
+                                              "Referer: http://people.netscape.com/jwz/index.html\r\n"
+                                              "Proxy-Connection: Keep-Alive\r\n"
+                                              "User-Agent:  Mozilla/3.01 (X11; I; Linux 2.0.28 i586)\r\n"
+                                              "Pragma: no-cache\r\n"
+                                              "Host: people.netscape.com\r\n"
+                                              "Accept: image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, */*\r\n"
+                                              "X-1: blah\r\n"
+                                              "X-2: blah\r\n"
+                                              "X-3: blah\r\n"
+                                              "X-4: blah\r\n"
+                                              "X-5: blah\r\n"
+                                              "X-6: blah\r\n"
+                                              "X-7: blah\r\n"
+                                              "X-8: blah\r\n"
+                                              "X-9: blah\r\n"
+                                              "Pragma: no-cache\r\n"
+                                              "X-X-1: blah\r\n"
+                                              "X-X-2: blah\r\n"
+                                              "X-X-3: blah\r\n"
+                                              "X-X-4: blah\r\n"
+                                              "X-X-5: blah\r\n"
+                                              "X-X-6: blah\r\n"
+                                              "X-X-7: blah\r\n"
+                                              "X-X-8: blah\r\n"
+                                              "X-X-9: blah\r\n"
+                                              "\r\n"};
 
-  static const char request_leading_space[] = {
-    " GET http://www.news.com:80/ HTTP/1.0\r\n"
-      "Proxy-Connection: Keep-Alive\r\n" "User-Agent: Mozilla/4.04 [en] (X11; I; Linux 2.0.33 i586)\r\n" "\r\n"
-  };
+  static const char request_leading_space[] = {" GET http://www.news.com:80/ HTTP/1.0\r\n"
+                                               "Proxy-Connection: Keep-Alive\r\n"
+                                               "User-Agent: Mozilla/4.04 [en] (X11; I; Linux 2.0.33 i586)\r\n"
+                                               "\r\n"};
 
-  static const char request_padding[] = {
-    "GET http://www.padding.com:80/ HTTP/1.0\r\n" "X-1: blah1\r\n"
-      //       "X-2:  blah2\r\n"
-      "X-3:   blah3\r\n"
-      //       "X-4:    blah4\r\n"
-      "X-5:     blah5\r\n"
-      //       "X-6:      blah6\r\n"
-      "X-7:       blah7\r\n"
-      //       "X-8:        blah8\r\n"
-    "X-9:         blah9\r\n" "\r\n"
-  };
+  static const char request_padding[] = {"GET http://www.padding.com:80/ HTTP/1.0\r\n"
+                                         "X-1: blah1\r\n"
+                                         //       "X-2:  blah2\r\n"
+                                         "X-3:   blah3\r\n"
+                                         //       "X-4:    blah4\r\n"
+                                         "X-5:     blah5\r\n"
+                                         //       "X-6:      blah6\r\n"
+                                         "X-7:       blah7\r\n"
+                                         //       "X-8:        blah8\r\n"
+                                         "X-9:         blah9\r\n"
+                                         "\r\n"};
 
-  static const char request_09p[] = {
-    "GET http://www.news09.com/\r\n" "\r\n"
-  };
+  static const char request_09p[] = {"GET http://www.news09.com/\r\n"
+                                     "\r\n"};
 
-  static const char request_09ht[] = {
-    "GET http://www.news09.com/ HT\r\n" "\r\n"
-  };
+  static const char request_09ht[] = {"GET http://www.news09.com/ HT\r\n"
+                                      "\r\n"};
 
-  static const char request_11[] = {
-    "GET http://www.news.com/ HTTP/1.1\r\n" "Connection: close\r\n" "\r\n"
-  };
+  static const char request_11[] = {"GET http://www.news.com/ HTTP/1.1\r\n"
+                                    "Connection: close\r\n"
+                                    "\r\n"};
 
-  static const char request_unterminated[] = {
-    "GET http://www.unterminated.com/ HTTP/1.1"
-  };
+  static const char request_unterminated[] = {"GET http://www.unterminated.com/ HTTP/1.1"};
 
-  static const char request_blank[] = {
-    "\r\n"
-  };
+  static const char request_blank[] = {"\r\n"};
 
-  static const char request_blank2[] = {
-    "\r\n" "\r\n"
-  };
+  static const char request_blank2[] = {"\r\n"
+                                        "\r\n"};
 
-  static const char request_blank3[] = {
-    "     " "\r\n"
-  };
+  static const char request_blank3[] = {"     "
+                                        "\r\n"};
 
   ////////////////////////////////////////////////////
 
-  static const char response0[] = {
-    "HTTP/1.0 200 OK\r\n"
-      "MIME-Version: 1.0\r\n"
-      "Server: WebSTAR/2.1 ID/30013\r\n"
-      "Content-Type: text/html\r\n"
-      "Content-Length: 939\r\n" "Last-Modified: Thursday, 01-Jan-04 05:00:00 GMT\r\n" "\r\n"
-  };
+  static const char response0[] = {"HTTP/1.0 200 OK\r\n"
+                                   "MIME-Version: 1.0\r\n"
+                                   "Server: WebSTAR/2.1 ID/30013\r\n"
+                                   "Content-Type: text/html\r\n"
+                                   "Content-Length: 939\r\n"
+                                   "Last-Modified: Thursday, 01-Jan-04 05:00:00 GMT\r\n"
+                                   "\r\n"};
 
-  static const char response1[] = {
-    "HTTP/1.0 200 OK\r\n"
-      "Server: Netscape-Communications/1.12\r\n"
-      "Date: Tuesday, 08-Dec-98 20:32:17 GMT\r\n" "Content-Type: text/html\r\n" "\r\n"
-  };
+  static const char response1[] = {"HTTP/1.0 200 OK\r\n"
+                                   "Server: Netscape-Communications/1.12\r\n"
+                                   "Date: Tuesday, 08-Dec-98 20:32:17 GMT\r\n"
+                                   "Content-Type: text/html\r\n"
+                                   "\r\n"};
 
-  static const char response_no_colon[] = {
-    "HTTP/1.0 200 OK\r\n"
-      "Server Netscape-Communications/1.12\r\n"
-      "Date: Tuesday, 08-Dec-98 20:32:17 GMT\r\n" "Content-Type: text/html\r\n" "\r\n"
-  };
+  static const char response_no_colon[] = {"HTTP/1.0 200 OK\r\n"
+                                           "Server Netscape-Communications/1.12\r\n"
+                                           "Date: Tuesday, 08-Dec-98 20:32:17 GMT\r\n"
+                                           "Content-Type: text/html\r\n"
+                                           "\r\n"};
 
-  static const char response_unterminated[] = {
-    "HTTP/1.0 200 OK"
-  };
+  static const char response_unterminated[] = {"HTTP/1.0 200 OK"};
 
-  static const char response09[] = {
-    ""
-  };
+  static const char response09[] = {""};
 
-  static const char response_blank[] = {
-    "\r\n"
-  };
+  static const char response_blank[] = {"\r\n"};
 
-  static const char response_blank2[] = {
-    "\r\n" "\r\n"
-  };
+  static const char response_blank2[] = {"\r\n"
+                                         "\r\n"};
 
-  static const char response_blank3[] = {
-    "     " "\r\n"
-  };
-
+  static const char response_blank3[] = {"     "
+                                         "\r\n"};
 
 
   test_http_aux(request0, response0);
@@ -790,7 +749,7 @@ test_http_mutation()
   const char base_resp[] = "HTTP/1.0 200 OK\r\n\r\n";
   const char *start, *end;
 
-    /*** (1) parse the response string into req_hdr ***/
+  /*** (1) parse the response string into req_hdr ***/
 
   start = base_resp;
   end = start + strlen(start);
@@ -811,7 +770,7 @@ test_http_mutation()
   resp_hdr.print(NULL, 0, NULL, NULL);
   printf("]\n\n");
 
-    /*** (2) add in a bunch of header fields ****/
+  /*** (2) add in a bunch of header fields ****/
   char field_name[1024];
   char field_value[1024];
   for (i = 1; i <= 100; i++) {
@@ -820,23 +779,22 @@ test_http_mutation()
     resp_hdr.value_set(field_name, strlen(field_name), field_value, strlen(field_value));
   }
 
-    /**** (3) delete all the even numbered fields *****/
+  /**** (3) delete all the even numbered fields *****/
   for (i = 2; i <= 100; i += 2) {
     sprintf(field_name, "Test%d", i);
     resp_hdr.field_delete(field_name, strlen(field_name));
   }
 
-    /***** (4) add in secondary fields for all multiples of 3 ***/
+  /***** (4) add in secondary fields for all multiples of 3 ***/
   for (i = 3; i <= 100; i += 3) {
     sprintf(field_name, "Test%d", i);
     MIMEField *f = resp_hdr.field_create(field_name, strlen(field_name));
     resp_hdr.field_attach(f);
     sprintf(field_value, "d %d %d %d %d %d", i, i, i, i, i);
     f->value_set(resp_hdr.m_heap, resp_hdr.m_mime, field_value, strlen(field_value));
-
   }
 
-    /***** (5) append all fields with multiples of 5 ***/
+  /***** (5) append all fields with multiples of 5 ***/
   for (i = 5; i <= 100; i += 5) {
     sprintf(field_name, "Test%d", i);
     sprintf(field_value, "a %d", i);
@@ -844,7 +802,7 @@ test_http_mutation()
     resp_hdr.value_append(field_name, strlen(field_name), field_value, strlen(field_value), true);
   }
 
-    /**** (6) delete all multiples of nine *****/
+  /**** (6) delete all multiples of nine *****/
   for (i = 9; i <= 100; i += 9) {
     sprintf(field_name, "Test%d", i);
     resp_hdr.field_delete(field_name, strlen(field_name));
@@ -860,16 +818,16 @@ test_http_mutation()
 }
 
 static int
-test_arena_aux(Arena * arena, int len)
+test_arena_aux(Arena *arena, int len)
 {
   char *str = arena->str_alloc(len);
   int verify_len = arena->str_length(str);
 
   if (len != verify_len) {
     printf("FAILED: reuqested %d, got %u bytes\n", len, verify_len);
-    return (1);                 // 1 error
+    return (1); // 1 error
   } else {
-    return (0);                 // no errors
+    return (0); // no errors
   }
 }
 
@@ -926,54 +884,48 @@ test_accept_language_match()
 {
   bri_box("test_accept_language_match");
 
-  struct
-  {
+  struct {
     char *content_language;
     char *accept_language;
     float Q;
     int L;
     int I;
-  } test_cases[] = {
-    {
-    "en", "*", 1.0, 1, 1}, {
-    "en", "fr", 0.0, 0, 0}, {
-    "en", "de, fr, en;q=0.7", 0.7, 2, 3}, {
-    "en-cockney", "de, fr, en;q=0.7", 0.7, 3, 3}, {
-    "en-cockney", "de, fr, en-foobar;q=0.8, en;q=0.7", 0.7, 2, 4}, {
-    "en-cockney", "de, fr, en-cockney;q=0.8, en;q=0.7", 0.8, 10, 3}, {
-    "en-cockney", "de, fr, en;q=0.8, en;q=0.7", 0.8, 2, 3}, {
-    "en-cockney", "de, fr, en;q=0.7, en;q=0.8", 0.8, 2, 4}, {
-    "en-cockney", "de, fr, en;q=0.8, en;q=0.8", 0.8, 2, 3}, {
-    "en-cockney", "de, fr, en-cockney;q=0.7, en;q=0.8", 0.7, 10, 3}, {
-    "en-cockney", "de, fr, en;q=0.8, en-cockney;q=0.7", 0.7, 10, 4}, {
-    "en-cockney", "de, fr, en-cockney;q=0.8, en;q=0.8", 0.8, 10, 3}, {
-    "en-cockney", "de, fr, en-cockney;q=0.8, en;q=0.7", 0.8, 10, 3}, {
-    "en-cockney", "de, fr, en-american", 0.0, 0, 0}, {
-    "en-cockney", "de, fr, en;q=0.8, en;q=0.8, *", 0.8, 2, 3}, {
-    "en-cockney", "de, fr, en;q=0.8, en;q=0.8, *;q=0.9", 0.8, 2, 3}, {
-    "en-foobar", "de, fr, en;q=0.8, en;q=0.8, *;q=0.9", 0.8, 2, 3}, {
-    "oo-foobar", "de, fr, en;q=0.8, en;q=0.8, *;q=0.9", 0.9, 1, 5}, {
-    "oo-foobar", "de, fr, en;q=0.8, en;q=0.8, *;q=0.9, *", 1.0, 1, 6}, {
-    "oo-foobar", "de, fr, en;q=0.8, en;q=0.8, *, *;q=0.9", 1.0, 1, 5}, {
-    "fr-belgian", "de, fr;hi-there;q=0.9, fr;q=0.8, en", 0.9, 2, 2}, {
-    "fr-belgian", "de, fr;q=0.8, fr;hi-there;q=0.9, en", 0.9, 2, 3}, {
-    NULL, NULL, 0.0}
-  };
+  } test_cases[] = {{"en", "*", 1.0, 1, 1},
+                    {"en", "fr", 0.0, 0, 0},
+                    {"en", "de, fr, en;q=0.7", 0.7, 2, 3},
+                    {"en-cockney", "de, fr, en;q=0.7", 0.7, 3, 3},
+                    {"en-cockney", "de, fr, en-foobar;q=0.8, en;q=0.7", 0.7, 2, 4},
+                    {"en-cockney", "de, fr, en-cockney;q=0.8, en;q=0.7", 0.8, 10, 3},
+                    {"en-cockney", "de, fr, en;q=0.8, en;q=0.7", 0.8, 2, 3},
+                    {"en-cockney", "de, fr, en;q=0.7, en;q=0.8", 0.8, 2, 4},
+                    {"en-cockney", "de, fr, en;q=0.8, en;q=0.8", 0.8, 2, 3},
+                    {"en-cockney", "de, fr, en-cockney;q=0.7, en;q=0.8", 0.7, 10, 3},
+                    {"en-cockney", "de, fr, en;q=0.8, en-cockney;q=0.7", 0.7, 10, 4},
+                    {"en-cockney", "de, fr, en-cockney;q=0.8, en;q=0.8", 0.8, 10, 3},
+                    {"en-cockney", "de, fr, en-cockney;q=0.8, en;q=0.7", 0.8, 10, 3},
+                    {"en-cockney", "de, fr, en-american", 0.0, 0, 0},
+                    {"en-cockney", "de, fr, en;q=0.8, en;q=0.8, *", 0.8, 2, 3},
+                    {"en-cockney", "de, fr, en;q=0.8, en;q=0.8, *;q=0.9", 0.8, 2, 3},
+                    {"en-foobar", "de, fr, en;q=0.8, en;q=0.8, *;q=0.9", 0.8, 2, 3},
+                    {"oo-foobar", "de, fr, en;q=0.8, en;q=0.8, *;q=0.9", 0.9, 1, 5},
+                    {"oo-foobar", "de, fr, en;q=0.8, en;q=0.8, *;q=0.9, *", 1.0, 1, 6},
+                    {"oo-foobar", "de, fr, en;q=0.8, en;q=0.8, *, *;q=0.9", 1.0, 1, 5},
+                    {"fr-belgian", "de, fr;hi-there;q=0.9, fr;q=0.8, en", 0.9, 2, 2},
+                    {"fr-belgian", "de, fr;q=0.8, fr;hi-there;q=0.9, en", 0.9, 2, 3},
+                    {NULL, NULL, 0.0}};
 
   int i, I, L;
   float Q;
   int failures = 0;
 
   for (i = 0; test_cases[i].accept_language; i++) {
-    Q = HttpCompat::match_accept_language(test_cases[i].content_language,
-                                          strlen(test_cases[i].content_language),
+    Q = HttpCompat::match_accept_language(test_cases[i].content_language, strlen(test_cases[i].content_language),
                                           test_cases[i].accept_language, strlen(test_cases[i].accept_language), &L, &I);
 
     if (Q != test_cases[i].Q) {
-      printf
-        ("FAILED: got { Q = %.3f; L = %d; I = %d; }, expected { Q = %.3f; L = %d; I = %d; }, from matching\n  '%s' against '%s'\n",
-         Q, L, I, test_cases[i].Q, test_cases[i].L, test_cases[i].I, test_cases[i].content_language,
-         test_cases[i].accept_language);
+      printf(
+        "FAILED: got { Q = %.3f; L = %d; I = %d; }, expected { Q = %.3f; L = %d; I = %d; }, from matching\n  '%s' against '%s'\n",
+        Q, L, I, test_cases[i].Q, test_cases[i].L, test_cases[i].I, test_cases[i].content_language, test_cases[i].accept_language);
       ++failures;
     }
   }

@@ -20,33 +20,33 @@
     limitations under the License.
  */
 
-# include <stdio.h>
-# include <unistd.h>
-# include <stdarg.h>
-# include <memory.h>
-# include <strings.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <stdarg.h>
+#include <memory.h>
+#include <strings.h>
 
-# include <getopt.h>
+#include <getopt.h>
 
-# include "Wccp.h"
+#include "Wccp.h"
 
-# include <sys/socket.h>
-# include <netinet/in.h>
-# include <arpa/inet.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
-# include <poll.h>
+#include <poll.h>
 
-# include <tsconfig/TsValue.h>
+#include <tsconfig/TsValue.h>
 
-static char const USAGE_TEXT[] =
-  "%s\n"
-  "--address IP address to bind.\n"
-  "--help Print usage and exit.\n"
-  ;
+static char const USAGE_TEXT[] = "%s\n"
+                                 "--address IP address to bind.\n"
+                                 "--help Print usage and exit.\n";
 
 static bool Ready = true;
 
-inline void Error(char const* fmt, ...) {
+inline void
+Error(char const *fmt, ...)
+{
   va_list args;
   va_start(args, fmt);
   vfprintf(stderr, fmt, args);
@@ -54,34 +54,32 @@ inline void Error(char const* fmt, ...) {
 }
 
 int
-main(int argc, char** argv) {
+main(int argc, char **argv)
+{
   wccp::Router wcp;
 
   // Reading stdin support.
   size_t in_size = 200;
-  char* in_buff = 0;
+  char *in_buff = 0;
   ssize_t in_count;
 
   // getopt return values. Selected to avoid collisions with
   // short arguments.
   static int const OPT_ADDRESS = 257; ///< Bind to IP address option.
-  static int const OPT_HELP = 258; ///< Print help message.
-  static int const OPT_MD5 = 259; ///< MD5 key.
+  static int const OPT_HELP = 258;    ///< Print help message.
+  static int const OPT_MD5 = 259;     ///< MD5 key.
 
   static option OPTIONS[] = {
-    { "address", 1, 0, OPT_ADDRESS },
-    { "md5", 1, 0, OPT_MD5 },
-    { "help", 0, 0, OPT_HELP },
-    { 0, 0, 0, 0 } // required terminator.
+    {"address", 1, 0, OPT_ADDRESS}, {"md5", 1, 0, OPT_MD5}, {"help", 0, 0, OPT_HELP}, {0, 0, 0, 0} // required terminator.
   };
 
-  in_addr ip_addr = { INADDR_ANY };
+  in_addr ip_addr = {INADDR_ANY};
 
   int zret; // getopt return.
   int zidx; // option index.
   bool fail = false;
-//  char const* text; // Scratch pointer for config access.
-  char const* FAIL_MSG = "";
+  //  char const* text; // Scratch pointer for config access.
+  char const *FAIL_MSG = "";
 
   while (-1 != (zret = getopt_long_only(argc, argv, "", OPTIONS, &zidx))) {
     switch (zret) {
@@ -110,7 +108,8 @@ main(int argc, char** argv) {
     return 1;
   }
 
-  if (!Ready) return 4;
+  if (!Ready)
+    return 4;
 
   if (0 > wcp.open(ip_addr.s_addr)) {
     fprintf(stderr, "Failed to open or bind socket.\n");
@@ -136,7 +135,7 @@ main(int argc, char** argv) {
       if (pfa[1].revents) {
         if (pfa[1].revents & POLLIN) {
           wcp.handleMessage();
-          //wcp.sendPendingMessages();
+          // wcp.sendPendingMessages();
         } else {
           fprintf(stderr, "Socket failure.\n");
           return 6;
@@ -150,8 +149,7 @@ main(int argc, char** argv) {
         }
       }
     } else { // timeout
-      //wcp.sendPendingMessages();
+      // wcp.sendPendingMessages();
     }
   }
-
 }

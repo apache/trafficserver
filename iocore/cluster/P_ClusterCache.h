@@ -62,54 +62,54 @@
 // - provides callbacks to other processors when the cluster configuration
 //   changes
 //
-#define CLUSTER_MAJOR_VERSION               3
-#define CLUSTER_MINOR_VERSION               2
+#define CLUSTER_MAJOR_VERSION 3
+#define CLUSTER_MINOR_VERSION 2
 
 // Lowest supported major/minor cluster version
-#define MIN_CLUSTER_MAJOR_VERSION	    CLUSTER_MAJOR_VERSION
-#define MIN_CLUSTER_MINOR_VERSION  	    CLUSTER_MINOR_VERSION
+#define MIN_CLUSTER_MAJOR_VERSION CLUSTER_MAJOR_VERSION
+#define MIN_CLUSTER_MINOR_VERSION CLUSTER_MINOR_VERSION
 
 
-#define DEFAULT_CLUSTER_PORT_NUMBER         0
-#define DEFAULT_NUMBER_OF_CLUSTER_THREADS   1
-#define DEFAULT_CLUSTER_HOST                ""
+#define DEFAULT_CLUSTER_PORT_NUMBER 0
+#define DEFAULT_NUMBER_OF_CLUSTER_THREADS 1
+#define DEFAULT_CLUSTER_HOST ""
 
-#define MAX_CLUSTER_SEND_LENGTH             INT_MAX
+#define MAX_CLUSTER_SEND_LENGTH INT_MAX
 
-#define CLUSTER_MAX_MACHINES                256
+#define CLUSTER_MAX_MACHINES 256
 // less than 1% disparity at 255 machines, 32707 is prime less than 2^15
-#define CLUSTER_HASH_TABLE_SIZE             32707
+#define CLUSTER_HASH_TABLE_SIZE 32707
 
 // after timeout the configuration is "dead"
-#define CLUSTER_CONFIGURATION_TIMEOUT       HRTIME_DAY
+#define CLUSTER_CONFIGURATION_TIMEOUT HRTIME_DAY
 // after zombie the configuration is deleted
-#define CLUSTER_CONFIGURATION_ZOMBIE        (HRTIME_DAY*2)
+#define CLUSTER_CONFIGURATION_ZOMBIE (HRTIME_DAY * 2)
 
 
 // the number of configurations into the past we probe for data
 // one allows a new machine to come into or fall out of the
 // cluster without loss of data.  If the data is redistributed within
 // one day, no data will be lost.
-#define CONFIGURATION_HISTORY_PROBE_DEPTH   1
+#define CONFIGURATION_HISTORY_PROBE_DEPTH 1
 
 
 // move these to a central event definition file (Event.h)
-#define CLUSTER_EVENT_CHANGE            (CLUSTER_EVENT_EVENTS_START)
-#define CLUSTER_EVENT_CONFIGURATION     (CLUSTER_EVENT_EVENTS_START+1)
-#define CLUSTER_EVENT_OPEN              (CLUSTER_EVENT_EVENTS_START+2)
-#define CLUSTER_EVENT_OPEN_EXISTS       (CLUSTER_EVENT_EVENTS_START+3)
-#define CLUSTER_EVENT_OPEN_FAILED       (CLUSTER_EVENT_EVENTS_START+4)
+#define CLUSTER_EVENT_CHANGE (CLUSTER_EVENT_EVENTS_START)
+#define CLUSTER_EVENT_CONFIGURATION (CLUSTER_EVENT_EVENTS_START + 1)
+#define CLUSTER_EVENT_OPEN (CLUSTER_EVENT_EVENTS_START + 2)
+#define CLUSTER_EVENT_OPEN_EXISTS (CLUSTER_EVENT_EVENTS_START + 3)
+#define CLUSTER_EVENT_OPEN_FAILED (CLUSTER_EVENT_EVENTS_START + 4)
 
 // internal event code
-#define CLUSTER_EVENT_STEAL_THREAD      (CLUSTER_EVENT_EVENTS_START+50)
+#define CLUSTER_EVENT_STEAL_THREAD (CLUSTER_EVENT_EVENTS_START + 50)
 
 //////////////////////////////////////////////////////////////
 // Miscellaneous byte swap routines
 //////////////////////////////////////////////////////////////
 inline void
-ats_swap16(uint16_t * d)
+ats_swap16(uint16_t *d)
 {
-  unsigned char *p = (unsigned char *) d;
+  unsigned char *p = (unsigned char *)d;
   *d = ((p[1] << 8) | p[0]);
 }
 
@@ -121,9 +121,9 @@ ats_swap16(uint16_t d)
 }
 
 inline void
-ats_swap32(uint32_t * d)
+ats_swap32(uint32_t *d)
 {
-  unsigned char *p = (unsigned char *) d;
+  unsigned char *p = (unsigned char *)d;
   *d = ((p[3] << 24) | (p[2] << 16) | (p[1] << 8) | p[0]);
 }
 
@@ -135,12 +135,11 @@ ats_swap32(uint32_t d)
 }
 
 inline void
-ats_swap64(uint64_t * d)
+ats_swap64(uint64_t *d)
 {
-  unsigned char *p = (unsigned char *) d;
-  *d = (((uint64_t) p[7] << 56) | ((uint64_t) p[6] << 48) |
-        ((uint64_t) p[5] << 40) | ((uint64_t) p[4] << 32) |
-        ((uint64_t) p[3] << 24) | ((uint64_t) p[2] << 16) | ((uint64_t) p[1] << 8) | (uint64_t) p[0]);
+  unsigned char *p = (unsigned char *)d;
+  *d = (((uint64_t)p[7] << 56) | ((uint64_t)p[6] << 48) | ((uint64_t)p[5] << 40) | ((uint64_t)p[4] << 32) | ((uint64_t)p[3] << 24) |
+        ((uint64_t)p[2] << 16) | ((uint64_t)p[1] << 8) | (uint64_t)p[0]);
 }
 
 inline uint64_t
@@ -152,17 +151,19 @@ ats_swap64(uint64_t d)
 
 //////////////////////////////////////////////////////////////
 
-struct ClusterConfiguration
-{
+struct ClusterConfiguration {
   int n_machines;
   ClusterMachine *machines[CLUSTER_MAX_MACHINES];
 
-  ClusterMachine *machine_hash(unsigned int hash_value)
+  ClusterMachine *
+  machine_hash(unsigned int hash_value)
   {
     return machines[hash_table[hash_value % CLUSTER_HASH_TABLE_SIZE]];
   }
 
-  ClusterMachine *find(unsigned int ip, int port = 0) {
+  ClusterMachine *
+  find(unsigned int ip, int port = 0)
+  {
     for (int i = 0; i < n_machines; i++)
       if (ip == machines[i]->ip && (!port || !machines[i]->cluster_port || machines[i]->cluster_port == port))
         return machines[i];
@@ -179,7 +180,7 @@ struct ClusterConfiguration
 };
 
 inline bool
-machine_in_vector(ClusterMachine * m, ClusterMachine ** mm, int len)
+machine_in_vector(ClusterMachine *m, ClusterMachine **mm, int len)
 {
   for (int i = 0; i < len; i++)
     if (m == mm[i])
@@ -195,14 +196,13 @@ machine_in_vector(ClusterMachine * m, ClusterMachine ** mm, int len)
 // Updates: probe_depth and past_probes.
 //
 inkcoreapi ClusterMachine *cluster_machine_at_depth(unsigned int hash, int *probe_depth = NULL,
-                                                    ClusterMachine ** past_probes = NULL);
+                                                    ClusterMachine **past_probes = NULL);
 
 //
 // Cluster
 //   A cluster of machines which act as a single cache.
 //
-struct Cluster
-{
+struct Cluster {
   //
   // Public Interface
   //
@@ -221,7 +221,8 @@ struct Cluster
   //       from the cluster.  (it is a pure function of the configuration)
   //   Thread-safe
   //
-  ClusterMachine *machine_hash(unsigned int hash_value)
+  ClusterMachine *
+  machine_hash(unsigned int hash_value)
   {
     return current_configuration()->machine_hash(hash_value);
   }
@@ -234,12 +235,13 @@ struct Cluster
   // calls cont->handleEvent(EVENT_CLUSTER_CHANGE);
   //   Thread-safe
   //
-  void cluster_change_callback(Continuation * cont);
+  void cluster_change_callback(Continuation *cont);
 
   // Return the current configuration
   //   Thread-safe
   //
-  ClusterConfiguration *current_configuration()
+  ClusterConfiguration *
+  current_configuration()
   {
     return configurations.head;
   }
@@ -248,7 +250,8 @@ struct Cluster
   // Use from within the cluster_change_callback.
   //   Thread-safe
   //
-  ClusterConfiguration *previous_configuration()
+  ClusterConfiguration *
+  previous_configuration()
   {
     return configurations.head->link.next;
   }
@@ -269,8 +272,7 @@ struct Cluster
 //   An token passed between nodes to represent a virtualized connection.
 //   (see ClusterProcessor::alloc_remote() and attach_remote() below)
 //
-struct ClusterVCToken
-{
+struct ClusterVCToken {
   //
   // Marshal this data to send the token across the cluster
   //
@@ -278,25 +280,29 @@ struct ClusterVCToken
   uint32_t ch_id;
   uint32_t sequence_number;
 
-  bool is_clear()
+  bool
+  is_clear()
   {
     return !ip_created;
   }
-  void clear()
+  void
+  clear()
   {
     ip_created = 0;
     sequence_number = 0;
   }
 
   ClusterVCToken(unsigned int aip = 0, unsigned int id = 0, unsigned int aseq = 0)
-:  ip_created(aip), ch_id(id), sequence_number(aseq) {
+    : ip_created(aip), ch_id(id), sequence_number(aseq)
+  {
   }
   //
   // Private
   //
   void alloc();
 
-  inline void SwapBytes()
+  inline void
+  SwapBytes()
   {
     ats_swap32(&ch_id);
     ats_swap32(&sequence_number);
@@ -308,13 +314,12 @@ struct ClusterVCToken
 //   A pointer to a procedure which can be invoked accross the cluster.
 //   This must be registered.
 //
-typedef void ClusterFunction(ClusterHandler * ch, void *data, int len);
+typedef void ClusterFunction(ClusterHandler *ch, void *data, int len);
 typedef ClusterFunction *ClusterFunctionPtr;
 
 struct ClusterVConnectionBase;
 
-struct ClusterVConnState
-{
+struct ClusterVConnState {
   //
   // Private
   //
@@ -331,8 +336,7 @@ struct ClusterVConnState
   ClusterVConnState();
 };
 
-struct ClusterVConnectionBase: public CacheVConnection
-{
+struct ClusterVConnectionBase : public CacheVConnection {
   //
   // Initiate an IO operation.
   // "data" is unused.
@@ -342,15 +346,16 @@ struct ClusterVConnectionBase: public CacheVConnection
   //                creation callback.
   //
 
-  virtual VIO *do_io_read(Continuation * c, int64_t nbytes, MIOBuffer * buf);
-  virtual VIO *do_io_write(Continuation * c, int64_t nbytes, IOBufferReader * buf, bool owner = false);
-  virtual void do_io_shutdown(ShutdownHowTo_t howto)
+  virtual VIO *do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf);
+  virtual VIO *do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner = false);
+  virtual void
+  do_io_shutdown(ShutdownHowTo_t howto)
   {
-    (void) howto;
+    (void)howto;
     ink_assert(!"shutdown of cluster connection");
   }
   virtual void do_io_close(int lerrno = -1);
-  virtual VIO* do_io_pread(Continuation*, int64_t, MIOBuffer*, int64_t);
+  virtual VIO *do_io_pread(Continuation *, int64_t, MIOBuffer *, int64_t);
 
   // Set the timeouts associated with this connection.
   // active_timeout is for the total elasped time of the connection.
@@ -450,10 +455,9 @@ ClusterVConnectionBase::cancel_inactivity_timeout()
 class ByteBankDescriptor
 {
 public:
-  ByteBankDescriptor()
-  {
-  }
-  IOBufferBlock *get_block()
+  ByteBankDescriptor() {}
+  IOBufferBlock *
+  get_block()
   {
     return block;
   }
@@ -465,23 +469,21 @@ public:
   LINK(ByteBankDescriptor, link);
 
 private:
-  Ptr<IOBufferBlock> block;  // holder of bank bytes
+  Ptr<IOBufferBlock> block; // holder of bank bytes
 };
 
-enum TypeVConnection
-{
+enum TypeVConnection {
   VC_NULL,
   VC_CLUSTER,
   VC_CLUSTER_READ,
   VC_CLUSTER_WRITE,
-  VC_CLUSTER_CLOSED
+  VC_CLUSTER_CLOSED,
 };
 
 //
 // ClusterVConnection
 //
-struct ClusterVConnection: public ClusterVConnectionBase
-{
+struct ClusterVConnection : public ClusterVConnectionBase {
   //
   // Public Interface (included from ClusterVConnectionBase)
   //
@@ -503,19 +505,19 @@ struct ClusterVConnection: public ClusterVConnectionBase
   // Private
   //
 
-  int startEvent(int event, Event * e);
-  int mainEvent(int event, Event * e);
+  int startEvent(int event, Event *e);
+  int mainEvent(int event, Event *e);
 
   // 0 on success -1 on failure
-  int start(EThread * t);       // New connect protocol
+  int start(EThread *t); // New connect protocol
 
   ClusterVConnection(int is_new_connect_read = 0);
   ~ClusterVConnection();
-  void free();                  // Destructor actions (we are using ClassAllocator)
+  void free(); // Destructor actions (we are using ClassAllocator)
 
   virtual void do_io_close(int lerrno = -1);
-  virtual VIO *do_io_read(Continuation * c, int64_t nbytes, MIOBuffer * buf);
-  virtual VIO *do_io_write(Continuation * c, int64_t nbytes, IOBufferReader * buf, bool owner = false);
+  virtual VIO *do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf);
+  virtual VIO *do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner = false);
   virtual void reenable(VIO *vio);
 
   ClusterHandler *ch;
@@ -528,7 +530,7 @@ struct ClusterVConnection: public ClusterVConnectionBase
   //     - open_local()    caller is writer
   //     - connect_local() caller is reader
   //
-  int new_connect_read;         // Data flow direction wrt origin node
+  int new_connect_read; // Data flow direction wrt origin node
   int remote_free;
   int last_local_free;
   int channel;
@@ -549,20 +551,20 @@ struct ClusterVConnection: public ClusterVConnectionBase
   void set_type(int);
   ink_hrtime start_time;
   ink_hrtime last_activity_time;
-  Queue<ByteBankDescriptor> byte_bank_q;   // done awaiting completion
-  int n_set_data_msgs;          // # pending set_data() msgs on VC
-  int n_recv_set_data_msgs;     // # set_data() msgs received on VC
-  volatile int pending_remote_fill;     // Remote fill pending on connection
-  Ptr<IOBufferBlock> read_block;   // Hold current data for open read
-  bool remote_ram_cache_hit;    // Entire object was from remote ram cache
-  bool have_all_data;           // All data in read_block
-  int initial_data_bytes;       // bytes in open_read buffer
-  Ptr<IOBufferBlock> remote_write_block;   // Write side data for remote fill
-  void *current_cont;           // Track current continuation (debug)
+  Queue<ByteBankDescriptor> byte_bank_q; // done awaiting completion
+  int n_set_data_msgs;                   // # pending set_data() msgs on VC
+  int n_recv_set_data_msgs;              // # set_data() msgs received on VC
+  volatile int pending_remote_fill;      // Remote fill pending on connection
+  Ptr<IOBufferBlock> read_block;         // Hold current data for open read
+  bool remote_ram_cache_hit;             // Entire object was from remote ram cache
+  bool have_all_data;                    // All data in read_block
+  int initial_data_bytes;                // bytes in open_read buffer
+  Ptr<IOBufferBlock> remote_write_block; // Write side data for remote fill
+  void *current_cont;                    // Track current continuation (debug)
 
-#define CLUSTER_IOV_NOT_OPEN               -2
-#define CLUSTER_IOV_NONE                   -1
-  int iov_map;                  // which iov?
+#define CLUSTER_IOV_NOT_OPEN -2
+#define CLUSTER_IOV_NONE -1
+  int iov_map; // which iov?
 
   Ptr<ProxyMutex> read_locked;
   Ptr<ProxyMutex> write_locked;
@@ -582,12 +584,20 @@ struct ClusterVConnection: public ClusterVConnectionBase
   void set_remote_fill_action(Action *);
 
   // Indicates whether a cache hit was from an peering cluster cache
-  bool is_ram_cache_hit() const { return remote_ram_cache_hit; };
-  void set_ram_cache_hit(bool remote_hit) { remote_ram_cache_hit = remote_hit; }
+  bool
+  is_ram_cache_hit() const
+  {
+    return remote_ram_cache_hit;
+  };
+  void
+  set_ram_cache_hit(bool remote_hit)
+  {
+    remote_ram_cache_hit = remote_hit;
+  }
 
   // For VC(s) established via OPEN_READ, we are passed a CacheHTTPInfo
   //  in the reply.
-  virtual bool get_data(int id, void *data);    // backward compatibility
+  virtual bool get_data(int id, void *data); // backward compatibility
   virtual void get_http_info(CacheHTTPInfo **);
   virtual int64_t get_object_size();
   virtual bool is_pread_capable();
@@ -609,17 +619,16 @@ struct ClusterVConnection: public ClusterVConnectionBase
 //
 // Cluster operation options
 //
-#define CLUSTER_OPT_STEAL             0x0001    // allow thread stealing
-#define CLUSTER_OPT_IMMEDIATE         0x0002    // require immediate response
-#define CLUSTER_OPT_ALLOW_IMMEDIATE   0x0004    // allow immediate response
-#define CLUSTER_OPT_DELAY             0x0008    // require delayed response
-#define CLUSTER_OPT_CONN_READ         0x0010    // new conn read
-#define CLUSTER_OPT_CONN_WRITE        0x0020    // new conn write
-#define CLUSTER_OPT_DATA_IS_OCONTROL  0x0040    // data in OutgoingControl
-#define CLUSTER_FUNCTION_MALLOCED     -1
+#define CLUSTER_OPT_STEAL 0x0001            // allow thread stealing
+#define CLUSTER_OPT_IMMEDIATE 0x0002        // require immediate response
+#define CLUSTER_OPT_ALLOW_IMMEDIATE 0x0004  // allow immediate response
+#define CLUSTER_OPT_DELAY 0x0008            // require delayed response
+#define CLUSTER_OPT_CONN_READ 0x0010        // new conn read
+#define CLUSTER_OPT_CONN_WRITE 0x0020       // new conn write
+#define CLUSTER_OPT_DATA_IS_OCONTROL 0x0040 // data in OutgoingControl
+#define CLUSTER_FUNCTION_MALLOCED -1
 
-struct ClusterRemoteDataHeader
-{
+struct ClusterRemoteDataHeader {
   int32_t cluster_function;
 };
 //
@@ -627,8 +636,7 @@ struct ClusterRemoteDataHeader
 //
 class ClusterAccept;
 
-struct ClusterProcessor
-{
+struct ClusterProcessor {
   //
   // Public Interface
   //
@@ -641,36 +649,35 @@ struct ClusterProcessor
 
   int invoke_remote(ClusterHandler *ch, int cluster_fn_index, void *data, int len, int options = CLUSTER_OPT_STEAL);
 
-  int invoke_remote_data(ClusterHandler *ch, int cluster_fn_index,
-                         void *data, int data_len,
-                         IOBufferBlock * buf,
-                         int logical_channel, ClusterVCToken * token,
-                         void (*bufdata_free) (void *), void *bufdata_free_arg, int options = CLUSTER_OPT_STEAL);
+  int invoke_remote_data(ClusterHandler *ch, int cluster_fn_index, void *data, int data_len, IOBufferBlock *buf,
+                         int logical_channel, ClusterVCToken *token, void (*bufdata_free)(void *), void *bufdata_free_arg,
+                         int options = CLUSTER_OPT_STEAL);
 
   // Pass the data in as a malloc'ed block to be freed by callee
-  int invoke_remote_malloced(ClusterHandler *ch, ClusterRemoteDataHeader * data, int len /* including header */ )
+  int
+  invoke_remote_malloced(ClusterHandler *ch, ClusterRemoteDataHeader *data, int len /* including header */)
   {
     return invoke_remote(ch, CLUSTER_FUNCTION_MALLOCED, data, len);
   }
   void free_remote_data(char *data, int len);
 
-  // Allocate the local side of a remote VConnection.
-  // returns a token which can be passed to the remote side
-  // through an existing link and passed to attach_remoteVC()
-  // if CLUSTER_OPT_IMMEDIATE is set, CLUSTER_DELAYED_OPEN will not be returned
-  //
-  // Options: CLUSTER_OPT_IMMEDIATE, CLUSTER_OPT_ALLOW_IMMEDIATE
-  // Returns: pointer for CLUSTER_OPT_IMMEDIATE
-  //            or CLUSTER_DELAYED_OPEN on success,
-  //          NULL on failure
-  // calls:  cont->handleEvent( CLUSTER_EVENT_OPEN, ClusterVConnection *)
-  //         on delayed success.
-  //
-  // NOTE: the CLUSTER_EVENT_OPEN may be called before "open/connect" returns
+// Allocate the local side of a remote VConnection.
+// returns a token which can be passed to the remote side
+// through an existing link and passed to attach_remoteVC()
+// if CLUSTER_OPT_IMMEDIATE is set, CLUSTER_DELAYED_OPEN will not be returned
+//
+// Options: CLUSTER_OPT_IMMEDIATE, CLUSTER_OPT_ALLOW_IMMEDIATE
+// Returns: pointer for CLUSTER_OPT_IMMEDIATE
+//            or CLUSTER_DELAYED_OPEN on success,
+//          NULL on failure
+// calls:  cont->handleEvent( CLUSTER_EVENT_OPEN, ClusterVConnection *)
+//         on delayed success.
+//
+// NOTE: the CLUSTER_EVENT_OPEN may be called before "open/connect" returns
 
-#define CLUSTER_DELAYED_OPEN       ((ClusterVConnection*)-1)
-#define CLUSTER_NODE_DOWN          ((ClusterVConnection*)-2)
-  ClusterVConnection *open_local(Continuation * cont, ClusterMachine * mp, ClusterVCToken & token, int options = 0);
+#define CLUSTER_DELAYED_OPEN ((ClusterVConnection *)-1)
+#define CLUSTER_NODE_DOWN ((ClusterVConnection *)-2)
+  ClusterVConnection *open_local(Continuation *cont, ClusterMachine *mp, ClusterVCToken &token, int options = 0);
 
   // Get the other side of a remote VConnection which was previously
   // allocated with open.
@@ -678,7 +685,7 @@ struct ClusterProcessor
   // Options: CLUSTER_OPT_IMMEDIATE, CLUSTER_OPT_ALLOW_IMMEDIATE
   // return a pointer or CLUSTER_DELAYED_OPEN success, NULL on failure
   //
-  ClusterVConnection *connect_local(Continuation * cont, ClusterVCToken * token, int channel, int options = 0);
+  ClusterVConnection *connect_local(Continuation *cont, ClusterVCToken *token, int channel, int options = 0);
   inkcoreapi bool disable_remote_cluster_ops(ClusterMachine *);
 
   //
@@ -688,7 +695,7 @@ struct ClusterProcessor
   virtual int start();
 
   ClusterProcessor();
-  virtual ~ ClusterProcessor();
+  virtual ~ClusterProcessor();
 
   //
   // Private
@@ -699,10 +706,10 @@ struct ClusterProcessor
   void connect(char *hostname, int16_t id = -1);
   void connect(unsigned int ip, int port = 0, int16_t id = -1, bool delay = false);
   // send the list of known machines to new machine
-  void send_machine_list(ClusterMachine * m);
+  void send_machine_list(ClusterMachine *m);
   void compute_cluster_mode();
   // Internal invoke_remote interface
-  int internal_invoke_remote(ClusterHandler * m, int cluster_fn, void *data, int len, int options, void *cmsg);
+  int internal_invoke_remote(ClusterHandler *m, int cluster_fn, void *data, int len, int options, void *cmsg);
 };
 
 inkcoreapi extern ClusterProcessor clusterProcessor;
@@ -718,7 +725,7 @@ this_cluster()
 // This function should be called for all threads created to
 // accept such events by the EventProcesor.
 //
-void initialize_thread_for_cluster(EThread * thread);
+void initialize_thread_for_cluster(EThread *thread);
 
 //
 // ClusterFunction Registry
@@ -750,120 +757,120 @@ extern ClusterFunction set_channel_priority_ClusterFunction;
 extern ClusterFunction post_setchan_priority_ClusterFunction;
 extern ClusterFunction default_api_ClusterFunction;
 
-struct ClusterFunctionDescriptor
-{
-  bool fMalloced;               // the function will free the data
-  bool ClusterFunc;             // Process incoming message only
+struct ClusterFunctionDescriptor {
+  bool fMalloced;   // the function will free the data
+  bool ClusterFunc; // Process incoming message only
   //   in ET_CLUSTER thread.
-  int q_priority;               // lower is higher priority
+  int q_priority; // lower is higher priority
   ClusterFunctionPtr pfn;
-  ClusterFunctionPtr post_pfn;  // msg queue/send callout
+  ClusterFunctionPtr post_pfn; // msg queue/send callout
 };
 
-#define CLUSTER_CMSG_QUEUES		2
-#define CMSG_MAX_PRI			0
-#define CMSG_LOW_PRI			(CLUSTER_CMSG_QUEUES-1)
+#define CLUSTER_CMSG_QUEUES 2
+#define CMSG_MAX_PRI 0
+#define CMSG_LOW_PRI (CLUSTER_CMSG_QUEUES - 1)
 
 #ifndef DEFINE_CLUSTER_FUNCTIONS
 extern
 #endif
-ClusterFunctionDescriptor clusterFunction[]
+  ClusterFunctionDescriptor clusterFunction[]
 #ifdef DEFINE_CLUSTER_FUNCTIONS
-  = {
-  {false, true, CMSG_LOW_PRI, test_ClusterFunction, 0},
-  {false, true, CMSG_LOW_PRI, ping_ClusterFunction, 0},
-  {false, true, CMSG_LOW_PRI, ping_reply_ClusterFunction, 0},
-  {false, true, CMSG_LOW_PRI, machine_list_ClusterFunction, 0},
-  {false, true, CMSG_LOW_PRI, close_channel_ClusterFunction, 0},
-  {false, false, CMSG_LOW_PRI, get_hostinfo_ClusterFunction, 0},    // in HostDB.cc
-  {false, false, CMSG_LOW_PRI, put_hostinfo_ClusterFunction, 0},    // in HostDB.cc
-  {false, true, CMSG_LOW_PRI, cache_lookup_ClusterFunction, 0},    // in CacheCont.cc
-  {true, true, CMSG_LOW_PRI, cache_op_malloc_ClusterFunction, 0},
-  {false, true, CMSG_LOW_PRI, cache_op_ClusterFunction, 0},
-  {false, false, CMSG_LOW_PRI, cache_op_result_ClusterFunction, 0},
-  {false, false, CMSG_LOW_PRI, 0, 0},   // OBSOLETE
-  {false, false, CMSG_LOW_PRI, 0, 0},   // OBSOLETE
-  {false, false, CMSG_LOW_PRI, 0, 0},   // OBSOLETE
-  {false, true, CMSG_MAX_PRI, set_channel_data_ClusterFunction, post_setchan_send_ClusterFunction},
-  {false, true, CMSG_MAX_PRI, set_channel_pin_ClusterFunction, post_setchan_pin_ClusterFunction},
-  {false, true, CMSG_MAX_PRI, set_channel_priority_ClusterFunction, post_setchan_priority_ClusterFunction},
-   /********************************************
-    * RESERVED for future cluster internal use *
-    ********************************************/
-  {false, false, CMSG_LOW_PRI, 0, 0},
-  {false, false, CMSG_LOW_PRI, 0, 0},
-  {false, false, CMSG_LOW_PRI, 0, 0},
-  {false, false, CMSG_LOW_PRI, 0, 0},
-  {false, false, CMSG_LOW_PRI, 0, 0},
-  {false, false, CMSG_LOW_PRI, 0, 0},
-  {false, false, CMSG_LOW_PRI, 0, 0},
-  {false, false, CMSG_LOW_PRI, 0, 0},
-  {false, false, CMSG_LOW_PRI, 0, 0},
-  {false, false, CMSG_LOW_PRI, 0, 0},
-  {false, false, CMSG_LOW_PRI, 0, 0},
-  {false, false, CMSG_LOW_PRI, 0, 0},
-  {false, false, CMSG_LOW_PRI, 0, 0},
-  {false, false, CMSG_LOW_PRI, 0, 0},
-  {false, false, CMSG_LOW_PRI, 0, 0},
-  {false, false, CMSG_LOW_PRI, 0, 0},
-  {false, false, CMSG_LOW_PRI, 0, 0},
-  {false, false, CMSG_LOW_PRI, 0, 0},
-  {false, false, CMSG_LOW_PRI, 0, 0},
-  {false, false, CMSG_LOW_PRI, 0, 0},
-  {false, false, CMSG_LOW_PRI, 0, 0},
-  {false, false, CMSG_LOW_PRI, 0, 0},
-  {false, false, CMSG_LOW_PRI, 0, 0},
-  {false, false, CMSG_LOW_PRI, 0, 0},
-  {false, false, CMSG_LOW_PRI, 0, 0},
-  {false, false, CMSG_LOW_PRI, 0, 0},
-  {false, false, CMSG_LOW_PRI, 0, 0},
-  {false, false, CMSG_LOW_PRI, 0, 0},
-  {false, false, CMSG_LOW_PRI, 0, 0},
-  {false, false, CMSG_LOW_PRI, 0, 0},
-  {false, false, CMSG_LOW_PRI, 0, 0},
-  {false, false, CMSG_LOW_PRI, 0, 0},
-  {false, false, CMSG_LOW_PRI, 0, 0},
-  {false, false, CMSG_LOW_PRI, 0, 0},
+  =
+    {
+      {false, true, CMSG_LOW_PRI, test_ClusterFunction, 0},
+      {false, true, CMSG_LOW_PRI, ping_ClusterFunction, 0},
+      {false, true, CMSG_LOW_PRI, ping_reply_ClusterFunction, 0},
+      {false, true, CMSG_LOW_PRI, machine_list_ClusterFunction, 0},
+      {false, true, CMSG_LOW_PRI, close_channel_ClusterFunction, 0},
+      {false, false, CMSG_LOW_PRI, get_hostinfo_ClusterFunction, 0}, // in HostDB.cc
+      {false, false, CMSG_LOW_PRI, put_hostinfo_ClusterFunction, 0}, // in HostDB.cc
+      {false, true, CMSG_LOW_PRI, cache_lookup_ClusterFunction, 0},  // in CacheCont.cc
+      {true, true, CMSG_LOW_PRI, cache_op_malloc_ClusterFunction, 0},
+      {false, true, CMSG_LOW_PRI, cache_op_ClusterFunction, 0},
+      {false, false, CMSG_LOW_PRI, cache_op_result_ClusterFunction, 0},
+      {false, false, CMSG_LOW_PRI, 0, 0}, // OBSOLETE
+      {false, false, CMSG_LOW_PRI, 0, 0}, // OBSOLETE
+      {false, false, CMSG_LOW_PRI, 0, 0}, // OBSOLETE
+      {false, true, CMSG_MAX_PRI, set_channel_data_ClusterFunction, post_setchan_send_ClusterFunction},
+      {false, true, CMSG_MAX_PRI, set_channel_pin_ClusterFunction, post_setchan_pin_ClusterFunction},
+      {false, true, CMSG_MAX_PRI, set_channel_priority_ClusterFunction, post_setchan_priority_ClusterFunction},
+      /********************************************
+       * RESERVED for future cluster internal use *
+       ********************************************/
+      {false, false, CMSG_LOW_PRI, 0, 0},
+      {false, false, CMSG_LOW_PRI, 0, 0},
+      {false, false, CMSG_LOW_PRI, 0, 0},
+      {false, false, CMSG_LOW_PRI, 0, 0},
+      {false, false, CMSG_LOW_PRI, 0, 0},
+      {false, false, CMSG_LOW_PRI, 0, 0},
+      {false, false, CMSG_LOW_PRI, 0, 0},
+      {false, false, CMSG_LOW_PRI, 0, 0},
+      {false, false, CMSG_LOW_PRI, 0, 0},
+      {false, false, CMSG_LOW_PRI, 0, 0},
+      {false, false, CMSG_LOW_PRI, 0, 0},
+      {false, false, CMSG_LOW_PRI, 0, 0},
+      {false, false, CMSG_LOW_PRI, 0, 0},
+      {false, false, CMSG_LOW_PRI, 0, 0},
+      {false, false, CMSG_LOW_PRI, 0, 0},
+      {false, false, CMSG_LOW_PRI, 0, 0},
+      {false, false, CMSG_LOW_PRI, 0, 0},
+      {false, false, CMSG_LOW_PRI, 0, 0},
+      {false, false, CMSG_LOW_PRI, 0, 0},
+      {false, false, CMSG_LOW_PRI, 0, 0},
+      {false, false, CMSG_LOW_PRI, 0, 0},
+      {false, false, CMSG_LOW_PRI, 0, 0},
+      {false, false, CMSG_LOW_PRI, 0, 0},
+      {false, false, CMSG_LOW_PRI, 0, 0},
+      {false, false, CMSG_LOW_PRI, 0, 0},
+      {false, false, CMSG_LOW_PRI, 0, 0},
+      {false, false, CMSG_LOW_PRI, 0, 0},
+      {false, false, CMSG_LOW_PRI, 0, 0},
+      {false, false, CMSG_LOW_PRI, 0, 0},
+      {false, false, CMSG_LOW_PRI, 0, 0},
+      {false, false, CMSG_LOW_PRI, 0, 0},
+      {false, false, CMSG_LOW_PRI, 0, 0},
+      {false, false, CMSG_LOW_PRI, 0, 0},
+      {false, false, CMSG_LOW_PRI, 0, 0},
 
-   /*********************************************
-    * RESERVED for Cluster RPC API use		*
-    *********************************************/
-  {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
-  {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
-  {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
-  {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
-  {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
-  {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
-  {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
-  {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
-  {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
-  {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
-  {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
-  {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
-  {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
-  {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
-  {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
-  {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
-  {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
-  {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
-  {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
-  {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
-  {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
-  {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
-  {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
-  {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
-  {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
-  {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
-  {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
-  {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
-  {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
-  {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0}
-  // ********** ADD NEW ENTRIES ABOVE THIS LINE ************
+      /*********************************************
+       * RESERVED for Cluster RPC API use		*
+       *********************************************/
+      {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
+      {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
+      {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
+      {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
+      {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
+      {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
+      {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
+      {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
+      {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
+      {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
+      {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
+      {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
+      {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
+      {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
+      {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
+      {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
+      {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
+      {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
+      {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
+      {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
+      {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
+      {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
+      {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
+      {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
+      {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
+      {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
+      {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
+      {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
+      {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0},
+      {true, false, CMSG_LOW_PRI, default_api_ClusterFunction, 0}
+      // ********** ADD NEW ENTRIES ABOVE THIS LINE ************
 }
 #endif
 
 ;
-extern unsigned SIZE_clusterFunction;        // clusterFunction[] entries
+extern unsigned SIZE_clusterFunction; // clusterFunction[] entries
 
 //////////////////////////////////////////////////////////////
 // Map from Cluster Function code to send queue priority
@@ -881,58 +888,58 @@ ClusterFuncToQpri(int cluster_func)
 //
 // This table had better match the above list
 //
-#define TEST_CLUSTER_FUNCTION                        0
-#define PING_CLUSTER_FUNCTION                        1
-#define PING_REPLY_CLUSTER_FUNCTION                  2
-#define MACHINE_LIST_CLUSTER_FUNCTION                3
-#define CLOSE_CHANNEL_CLUSTER_FUNCTION               4
-#define GET_HOSTINFO_CLUSTER_FUNCTION                5
-#define PUT_HOSTINFO_CLUSTER_FUNCTION                6
-#define CACHE_LOOKUP_CLUSTER_FUNCTION                7
-#define CACHE_OP_MALLOCED_CLUSTER_FUNCTION           8
-#define CACHE_OP_CLUSTER_FUNCTION                    9
-#define CACHE_OP_RESULT_CLUSTER_FUNCTION             10
-#define SET_CHANNEL_DATA_CLUSTER_FUNCTION      	     14
-#define SET_CHANNEL_PIN_CLUSTER_FUNCTION      	     15
-#define SET_CHANNEL_PRIORITY_CLUSTER_FUNCTION  	     16
+#define TEST_CLUSTER_FUNCTION 0
+#define PING_CLUSTER_FUNCTION 1
+#define PING_REPLY_CLUSTER_FUNCTION 2
+#define MACHINE_LIST_CLUSTER_FUNCTION 3
+#define CLOSE_CHANNEL_CLUSTER_FUNCTION 4
+#define GET_HOSTINFO_CLUSTER_FUNCTION 5
+#define PUT_HOSTINFO_CLUSTER_FUNCTION 6
+#define CACHE_LOOKUP_CLUSTER_FUNCTION 7
+#define CACHE_OP_MALLOCED_CLUSTER_FUNCTION 8
+#define CACHE_OP_CLUSTER_FUNCTION 9
+#define CACHE_OP_RESULT_CLUSTER_FUNCTION 10
+#define SET_CHANNEL_DATA_CLUSTER_FUNCTION 14
+#define SET_CHANNEL_PIN_CLUSTER_FUNCTION 15
+#define SET_CHANNEL_PRIORITY_CLUSTER_FUNCTION 16
 
 /********************************************
  * RESERVED for future cluster internal use *
  ********************************************/
-#define INTERNAL_RESERVED1_CLUSTER_FUNCTION  	     17
-#define INTERNAL_RESERVED2_CLUSTER_FUNCTION  	     18
-#define INTERNAL_RESERVED3_CLUSTER_FUNCTION  	     19
-#define INTERNAL_RESERVED4_CLUSTER_FUNCTION  	     20
-#define INTERNAL_RESERVED5_CLUSTER_FUNCTION  	     21
-#define INTERNAL_RESERVED6_CLUSTER_FUNCTION  	     22
-#define INTERNAL_RESERVED7_CLUSTER_FUNCTION  	     23
-#define INTERNAL_RESERVED8_CLUSTER_FUNCTION  	     24
-#define INTERNAL_RESERVED9_CLUSTER_FUNCTION  	     25
-#define INTERNAL_RESERVED10_CLUSTER_FUNCTION  	     26
-#define INTERNAL_RESERVED11_CLUSTER_FUNCTION  	     27
-#define INTERNAL_RESERVED12_CLUSTER_FUNCTION  	     28
-#define INTERNAL_RESERVED13_CLUSTER_FUNCTION  	     29
-#define INTERNAL_RESERVED14_CLUSTER_FUNCTION  	     30
-#define INTERNAL_RESERVED15_CLUSTER_FUNCTION  	     31
-#define INTERNAL_RESERVED16_CLUSTER_FUNCTION  	     32
-#define INTERNAL_RESERVED17_CLUSTER_FUNCTION  	     33
-#define INTERNAL_RESERVED18_CLUSTER_FUNCTION  	     34
-#define INTERNAL_RESERVED19_CLUSTER_FUNCTION  	     35
-#define INTERNAL_RESERVED20_CLUSTER_FUNCTION  	     36
-#define INTERNAL_RESERVED21_CLUSTER_FUNCTION  	     37
-#define INTERNAL_RESERVED22_CLUSTER_FUNCTION  	     38
-#define INTERNAL_RESERVED23_CLUSTER_FUNCTION  	     39
-#define INTERNAL_RESERVED24_CLUSTER_FUNCTION  	     40
-#define INTERNAL_RESERVED25_CLUSTER_FUNCTION  	     41
-#define INTERNAL_RESERVED26_CLUSTER_FUNCTION  	     42
-#define INTERNAL_RESERVED27_CLUSTER_FUNCTION  	     43
-#define INTERNAL_RESERVED28_CLUSTER_FUNCTION  	     44
-#define INTERNAL_RESERVED29_CLUSTER_FUNCTION  	     45
-#define INTERNAL_RESERVED30_CLUSTER_FUNCTION  	     46
-#define INTERNAL_RESERVED31_CLUSTER_FUNCTION  	     47
-#define INTERNAL_RESERVED32_CLUSTER_FUNCTION  	     48
-#define INTERNAL_RESERVED33_CLUSTER_FUNCTION  	     49
-#define INTERNAL_RESERVED34_CLUSTER_FUNCTION  	     50
+#define INTERNAL_RESERVED1_CLUSTER_FUNCTION 17
+#define INTERNAL_RESERVED2_CLUSTER_FUNCTION 18
+#define INTERNAL_RESERVED3_CLUSTER_FUNCTION 19
+#define INTERNAL_RESERVED4_CLUSTER_FUNCTION 20
+#define INTERNAL_RESERVED5_CLUSTER_FUNCTION 21
+#define INTERNAL_RESERVED6_CLUSTER_FUNCTION 22
+#define INTERNAL_RESERVED7_CLUSTER_FUNCTION 23
+#define INTERNAL_RESERVED8_CLUSTER_FUNCTION 24
+#define INTERNAL_RESERVED9_CLUSTER_FUNCTION 25
+#define INTERNAL_RESERVED10_CLUSTER_FUNCTION 26
+#define INTERNAL_RESERVED11_CLUSTER_FUNCTION 27
+#define INTERNAL_RESERVED12_CLUSTER_FUNCTION 28
+#define INTERNAL_RESERVED13_CLUSTER_FUNCTION 29
+#define INTERNAL_RESERVED14_CLUSTER_FUNCTION 30
+#define INTERNAL_RESERVED15_CLUSTER_FUNCTION 31
+#define INTERNAL_RESERVED16_CLUSTER_FUNCTION 32
+#define INTERNAL_RESERVED17_CLUSTER_FUNCTION 33
+#define INTERNAL_RESERVED18_CLUSTER_FUNCTION 34
+#define INTERNAL_RESERVED19_CLUSTER_FUNCTION 35
+#define INTERNAL_RESERVED20_CLUSTER_FUNCTION 36
+#define INTERNAL_RESERVED21_CLUSTER_FUNCTION 37
+#define INTERNAL_RESERVED22_CLUSTER_FUNCTION 38
+#define INTERNAL_RESERVED23_CLUSTER_FUNCTION 39
+#define INTERNAL_RESERVED24_CLUSTER_FUNCTION 40
+#define INTERNAL_RESERVED25_CLUSTER_FUNCTION 41
+#define INTERNAL_RESERVED26_CLUSTER_FUNCTION 42
+#define INTERNAL_RESERVED27_CLUSTER_FUNCTION 43
+#define INTERNAL_RESERVED28_CLUSTER_FUNCTION 44
+#define INTERNAL_RESERVED29_CLUSTER_FUNCTION 45
+#define INTERNAL_RESERVED30_CLUSTER_FUNCTION 46
+#define INTERNAL_RESERVED31_CLUSTER_FUNCTION 47
+#define INTERNAL_RESERVED32_CLUSTER_FUNCTION 48
+#define INTERNAL_RESERVED33_CLUSTER_FUNCTION 49
+#define INTERNAL_RESERVED34_CLUSTER_FUNCTION 50
 
 /****************************************************************************
  * Cluster RPC API definitions.						    *
@@ -945,52 +952,51 @@ ClusterFuncToQpri(int cluster_func)
 /************************************************
  * RESERVED for Wireless Group			*
  ************************************************/
-#define API_F01_CLUSTER_FUNCTION  	     	     51
-#define API_F02_CLUSTER_FUNCTION  	     	     52
-#define API_F03_CLUSTER_FUNCTION  	     	     53
-#define API_F04_CLUSTER_FUNCTION  	     	     54
-#define API_F05_CLUSTER_FUNCTION  	     	     55
-#define API_F06_CLUSTER_FUNCTION  	     	     56
-#define API_F07_CLUSTER_FUNCTION  	     	     57
-#define API_F08_CLUSTER_FUNCTION  	     	     58
-#define API_F09_CLUSTER_FUNCTION  	     	     59
-#define API_F10_CLUSTER_FUNCTION  	     	     60
+#define API_F01_CLUSTER_FUNCTION 51
+#define API_F02_CLUSTER_FUNCTION 52
+#define API_F03_CLUSTER_FUNCTION 53
+#define API_F04_CLUSTER_FUNCTION 54
+#define API_F05_CLUSTER_FUNCTION 55
+#define API_F06_CLUSTER_FUNCTION 56
+#define API_F07_CLUSTER_FUNCTION 57
+#define API_F08_CLUSTER_FUNCTION 58
+#define API_F09_CLUSTER_FUNCTION 59
+#define API_F10_CLUSTER_FUNCTION 60
 
 /************************************************
  * RESERVED for future use			*
  ************************************************/
-#define API_F11_CLUSTER_FUNCTION  	     	     61
-#define API_F12_CLUSTER_FUNCTION  	     	     62
-#define API_F13_CLUSTER_FUNCTION  	     	     63
-#define API_F14_CLUSTER_FUNCTION  	     	     64
-#define API_F15_CLUSTER_FUNCTION  	     	     65
-#define API_F16_CLUSTER_FUNCTION  	     	     66
-#define API_F17_CLUSTER_FUNCTION  	     	     67
-#define API_F18_CLUSTER_FUNCTION  	     	     68
-#define API_F19_CLUSTER_FUNCTION  	     	     69
-#define API_F20_CLUSTER_FUNCTION  	     	     70
+#define API_F11_CLUSTER_FUNCTION 61
+#define API_F12_CLUSTER_FUNCTION 62
+#define API_F13_CLUSTER_FUNCTION 63
+#define API_F14_CLUSTER_FUNCTION 64
+#define API_F15_CLUSTER_FUNCTION 65
+#define API_F16_CLUSTER_FUNCTION 66
+#define API_F17_CLUSTER_FUNCTION 67
+#define API_F18_CLUSTER_FUNCTION 68
+#define API_F19_CLUSTER_FUNCTION 69
+#define API_F20_CLUSTER_FUNCTION 70
 
-#define API_F21_CLUSTER_FUNCTION  	     	     71
-#define API_F22_CLUSTER_FUNCTION  	     	     72
-#define API_F23_CLUSTER_FUNCTION  	     	     73
-#define API_F24_CLUSTER_FUNCTION  	     	     74
-#define API_F25_CLUSTER_FUNCTION  	     	     75
-#define API_F26_CLUSTER_FUNCTION  	     	     76
-#define API_F27_CLUSTER_FUNCTION  	     	     77
-#define API_F28_CLUSTER_FUNCTION  	     	     78
-#define API_F29_CLUSTER_FUNCTION  	     	     79
-#define API_F30_CLUSTER_FUNCTION  	     	     80
+#define API_F21_CLUSTER_FUNCTION 71
+#define API_F22_CLUSTER_FUNCTION 72
+#define API_F23_CLUSTER_FUNCTION 73
+#define API_F24_CLUSTER_FUNCTION 74
+#define API_F25_CLUSTER_FUNCTION 75
+#define API_F26_CLUSTER_FUNCTION 76
+#define API_F27_CLUSTER_FUNCTION 77
+#define API_F28_CLUSTER_FUNCTION 78
+#define API_F29_CLUSTER_FUNCTION 79
+#define API_F30_CLUSTER_FUNCTION 80
 
-#define API_STARECT_CLUSTER_FUNCTION		     API_F01_CLUSTER_FUNCTION
-#define API_END_CLUSTER_FUNCTION		     API_F30_CLUSTER_FUNCTION
+#define API_STARECT_CLUSTER_FUNCTION API_F01_CLUSTER_FUNCTION
+#define API_END_CLUSTER_FUNCTION API_F30_CLUSTER_FUNCTION
 
-#define UNDEFINED_CLUSTER_FUNCTION                   0xFDEFFDEF
+#define UNDEFINED_CLUSTER_FUNCTION 0xFDEFFDEF
 
 //////////////////////////////////////////////
 // Initial cluster connect exchange message
 //////////////////////////////////////////////
-struct ClusterHelloMessage
-{
+struct ClusterHelloMessage {
   uint16_t _NativeByteOrder;
   uint16_t _major;
   uint16_t _minor;
@@ -999,12 +1005,12 @@ struct ClusterHelloMessage
   int16_t _id;
 #ifdef LOCAL_CLUSTER_TEST_MODE
   int16_t _port;
-  char _pad[114];               // pad out to 128 bytes
+  char _pad[114]; // pad out to 128 bytes
 #else
-  char _pad[116];               // pad out to 128 bytes
+  char _pad[116]; // pad out to 128 bytes
 #endif
 
-    ClusterHelloMessage():_NativeByteOrder(1)
+  ClusterHelloMessage() : _NativeByteOrder(1)
   {
     _major = CLUSTER_MAJOR_VERSION;
     _minor = CLUSTER_MINOR_VERSION;
@@ -1012,11 +1018,13 @@ struct ClusterHelloMessage
     _min_minor = MIN_CLUSTER_MINOR_VERSION;
     memset(_pad, '\0', sizeof(_pad));
   }
-  int NativeByteOrder()
+  int
+  NativeByteOrder()
   {
     return (_NativeByteOrder == 1);
   }
-  void AdjustByteOrder()
+  void
+  AdjustByteOrder()
   {
     if (!NativeByteOrder()) {
       ats_swap16(&_major);
@@ -1030,31 +1038,30 @@ struct ClusterHelloMessage
 ///////////////////////////////////////////////////////////////////
 // Cluster message header definition.
 ///////////////////////////////////////////////////////////////////
-struct ClusterMessageHeader
-{
-  uint16_t _InNativeByteOrder;    // always non-zero
-  uint16_t _MsgVersion;           // always non-zero
+struct ClusterMessageHeader {
+  uint16_t _InNativeByteOrder; // always non-zero
+  uint16_t _MsgVersion;        // always non-zero
 
-  void _init(uint16_t msg_version)
+  void
+  _init(uint16_t msg_version)
   {
     _InNativeByteOrder = 1;
     _MsgVersion = msg_version;
   }
-  ClusterMessageHeader():_InNativeByteOrder(0), _MsgVersion(0)
-  {
-  }
-  ClusterMessageHeader(uint16_t msg_version) {
-    _init(msg_version);
-  }
-  int MsgInNativeByteOrder()
+  ClusterMessageHeader() : _InNativeByteOrder(0), _MsgVersion(0) {}
+  ClusterMessageHeader(uint16_t msg_version) { _init(msg_version); }
+  int
+  MsgInNativeByteOrder()
   {
     return (_InNativeByteOrder == 1);
   }
-  int NeedByteSwap()
+  int
+  NeedByteSwap()
   {
     return (_InNativeByteOrder != 1);
   }
-  int GetMsgVersion()
+  int
+  GetMsgVersion()
   {
     if (NeedByteSwap()) {
       return ats_swap16(_MsgVersion);
@@ -1069,42 +1076,42 @@ struct ClusterMessageHeader
 //
 // cluster_ping
 //
-typedef void (*PingReturnFunction) (ClusterHandler *, void *data, int len);
+typedef void (*PingReturnFunction)(ClusterHandler *, void *data, int len);
 
-struct PingMessage:public ClusterMessageHeader
-{
-  PingReturnFunction fn;        // Note: Pointer to a func
-  char data[1];                 // start of data
+struct PingMessage : public ClusterMessageHeader {
+  PingReturnFunction fn; // Note: Pointer to a func
+  char data[1];          // start of data
 
-  enum
-  {
+  enum {
     MIN_VERSION = 1,
     MAX_VERSION = 1,
-    PING_MESSAGE_VERSION = MAX_VERSION
+    PING_MESSAGE_VERSION = MAX_VERSION,
   };
 
-    PingMessage(uint16_t vers = PING_MESSAGE_VERSION)
-:  ClusterMessageHeader(vers), fn(NULL) {
-    data[0] = '\0';
-  }
+  PingMessage(uint16_t vers = PING_MESSAGE_VERSION) : ClusterMessageHeader(vers), fn(NULL) { data[0] = '\0'; }
   /////////////////////////////////////////////////////////////////////////////
-  static int protoToVersion(int protoMajor)
+  static int
+  protoToVersion(int protoMajor)
   {
-    (void) protoMajor;
+    (void)protoMajor;
     return PING_MESSAGE_VERSION;
   }
-  static int sizeof_fixedlen_msg()
+  static int
+  sizeof_fixedlen_msg()
   {
     PingMessage *p = 0;
     // Maybe use offsetof here instead. /leif
-    return (uintptr_t) (&p->data[0]);
+    return (uintptr_t)(&p->data[0]);
   }
-  void init(uint16_t vers = PING_MESSAGE_VERSION) {
+  void
+  init(uint16_t vers = PING_MESSAGE_VERSION)
+  {
     _init(vers);
   }
-  inline void SwapBytes()
+  inline void
+  SwapBytes()
   {
-  }                             // No action, message is always reflected back
+  } // No action, message is always reflected back
   /////////////////////////////////////////////////////////////////////////////
 };
 
@@ -1115,7 +1122,7 @@ cluster_ping(ClusterHandler *ch, PingReturnFunction fn, void *data, int len)
   msg->init();
   msg->fn = fn;
   memcpy(msg->data, data, len);
-  clusterProcessor.invoke_remote(ch, PING_CLUSTER_FUNCTION, (void *) msg, (msg->sizeof_fixedlen_msg() + len));
+  clusterProcessor.invoke_remote(ch, PING_CLUSTER_FUNCTION, (void *)msg, (msg->sizeof_fixedlen_msg() + len));
 }
 
 // filled with 0's
@@ -1124,8 +1131,8 @@ extern char channel_dummy_output[DEFAULT_MAX_BUFFER_SIZE];
 //
 // Private (for testing)
 //
-ClusterConfiguration *configuration_add_machine(ClusterConfiguration * c, ClusterMachine * m);
-ClusterConfiguration *configuration_remove_machine(ClusterConfiguration * c, ClusterMachine * m);
+ClusterConfiguration *configuration_add_machine(ClusterConfiguration *c, ClusterMachine *m);
+ClusterConfiguration *configuration_remove_machine(ClusterConfiguration *c, ClusterMachine *m);
 extern bool machineClusterHash;
 extern bool boundClusterHash;
 extern bool randClusterHash;
@@ -1133,36 +1140,36 @@ extern bool randClusterHash;
 void build_cluster_hash_table(ClusterConfiguration *);
 
 inline void
-ClusterVC_enqueue_read(Queue<ClusterVConnectionBase, ClusterVConnectionBase::Link_read_link> &q, ClusterVConnectionBase * vc)
+ClusterVC_enqueue_read(Queue<ClusterVConnectionBase, ClusterVConnectionBase::Link_read_link> &q, ClusterVConnectionBase *vc)
 {
-  ClusterVConnState * cs = &vc->read;
+  ClusterVConnState *cs = &vc->read;
   ink_assert(!cs->queue);
   cs->queue = &q;
   q.enqueue(vc);
 }
 
 inline void
-ClusterVC_enqueue_write(Queue<ClusterVConnectionBase, ClusterVConnectionBase::Link_write_link> &q, ClusterVConnectionBase * vc)
+ClusterVC_enqueue_write(Queue<ClusterVConnectionBase, ClusterVConnectionBase::Link_write_link> &q, ClusterVConnectionBase *vc)
 {
-  ClusterVConnState * cs = &vc->write;
+  ClusterVConnState *cs = &vc->write;
   ink_assert(!cs->queue);
   cs->queue = &q;
   q.enqueue(vc);
 }
 
 inline void
-ClusterVC_remove_read(ClusterVConnectionBase * vc)
+ClusterVC_remove_read(ClusterVConnectionBase *vc)
 {
-  ClusterVConnState * cs = &vc->read;
+  ClusterVConnState *cs = &vc->read;
   ink_assert(cs->queue);
   ((Queue<ClusterVConnectionBase, ClusterVConnectionBase::Link_read_link> *)cs->queue)->remove(vc);
   cs->queue = NULL;
 }
 
 inline void
-ClusterVC_remove_write(ClusterVConnectionBase * vc)
+ClusterVC_remove_write(ClusterVConnectionBase *vc)
 {
-  ClusterVConnState * cs = &vc->write;
+  ClusterVConnState *cs = &vc->write;
   ink_assert(cs->queue);
   ((Queue<ClusterVConnectionBase, ClusterVConnectionBase::Link_write_link> *)cs->queue)->remove(vc);
   cs->queue = NULL;

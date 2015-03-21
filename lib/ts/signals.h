@@ -29,7 +29,7 @@
 #ifndef __SIGNALS_H__
 #define __SIGNALS_H__
 
-typedef void (*signal_handler_t)(int signo, siginfo_t * info, void * ctx);
+typedef void (*signal_handler_t)(int signo, siginfo_t *info, void *ctx);
 
 // Default crash signal handler that dumps a stack trace and exits.
 void signal_crash_handler(int, siginfo_t *, void *);

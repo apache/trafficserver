@@ -46,205 +46,114 @@
 
 static const char *_hdrtoken_strs[] = {
   // MIME Field names
-  "Accept-Charset",
-  "Accept-Encoding",
-  "Accept-Language",
-  "Accept-Ranges",
-  "Accept",
-  "Age",
-  "Allow",
-  "Approved",                   // NNTP
+  "Accept-Charset", "Accept-Encoding", "Accept-Language", "Accept-Ranges", "Accept", "Age", "Allow",
+  "Approved", // NNTP
   "Authorization",
-  "Bytes",                      // NNTP
-  "Cache-Control",
-  "Client-ip",
-  "Connection",
-  "Content-Base",
-  "Content-Encoding",
-  "Content-Language",
-  "Content-Length",
-  "Content-Location",
-  "Content-MD5",
-  "Content-Range",
-  "Content-Type",
-  "Control",                    // NNTP
-  "Cookie",
-  "Date",
-  "Distribution",               // NNTP
-  "Etag",
-  "Expect",
-  "Expires",
-  "Followup-To",                // NNTP
-  "From",
-  "Host",
-  "If-Match",
-  "If-Modified-Since",
-  "If-None-Match",
-  "If-Range",
-  "If-Unmodified-Since",
-  "Keep-Alive",
-  "Keywords",                   // NNTP
+  "Bytes", // NNTP
+  "Cache-Control", "Client-ip", "Connection", "Content-Base", "Content-Encoding", "Content-Language", "Content-Length",
+  "Content-Location", "Content-MD5", "Content-Range", "Content-Type",
+  "Control", // NNTP
+  "Cookie", "Date",
+  "Distribution", // NNTP
+  "Etag", "Expect", "Expires",
+  "Followup-To", // NNTP
+  "From", "Host", "If-Match", "If-Modified-Since", "If-None-Match", "If-Range", "If-Unmodified-Since", "Keep-Alive",
+  "Keywords", // NNTP
   "Last-Modified",
-  "Lines",                      // NNTP
-  "Location",
-  "Max-Forwards",
-  "Message-ID",                 // NNTP
+  "Lines", // NNTP
+  "Location", "Max-Forwards",
+  "Message-ID", // NNTP
   "MIME-Version",
-  "Newsgroups",                 // NNTP
-  "Organization",               // NNTP
-  "Path",                       // NNTP
-  "Pragma",
-  "Proxy-Authenticate",
-  "Proxy-Authorization",
-  "Proxy-Connection",
-  "Public",
-  "Range",
-  "References",                 // NNTP
+  "Newsgroups",   // NNTP
+  "Organization", // NNTP
+  "Path",         // NNTP
+  "Pragma", "Proxy-Authenticate", "Proxy-Authorization", "Proxy-Connection", "Public", "Range",
+  "References", // NNTP
   "Referer",
-  "Reply-To",                   // NNTP
+  "Reply-To", // NNTP
   "Retry-After",
-  "Sender",                     // NNTP
-  "Server",
-  "Set-Cookie",
-  "Subject",                    // NNTP
-  "Summary",                    // NNTP
-  "Transfer-Encoding",
-  "Upgrade",
-  "User-Agent",
-  "Vary",
-  "Via",
-  "Warning",
-  "Www-Authenticate",
-  "Xref",                       // NNTP
-  "@DataInfo",                  // Internal Hack
+  "Sender", // NNTP
+  "Server", "Set-Cookie",
+  "Subject", // NNTP
+  "Summary", // NNTP
+  "Transfer-Encoding", "Upgrade", "User-Agent", "Vary", "Via", "Warning", "Www-Authenticate",
+  "Xref",      // NNTP
+  "@DataInfo", // Internal Hack
 
   // Accept-Encoding
-  "compress",
-  "deflate",
-  "gzip",
-  "identity",
+  "compress", "deflate", "gzip", "identity",
 
   // Cache-Control flags
-  "max-age",
-  "max-stale",
-  "min-fresh",
-  "must-revalidate",
-  "no-cache",
-  "no-store",
-  "no-transform",
-  "only-if-cached",
-  "private",
-  "proxy-revalidate",
-  "s-maxage",
-  "need-revalidate-once",
+  "max-age", "max-stale", "min-fresh", "must-revalidate", "no-cache", "no-store", "no-transform", "only-if-cached", "private",
+  "proxy-revalidate", "s-maxage", "need-revalidate-once",
 
   // HTTP miscellaneous
-  "none",
-  "chunked",
-  "close",
+  "none", "chunked", "close",
 
   // WS
-  "websocket",
-  "Sec-WebSocket-Key",
-  "Sec-WebSocket-Version",
+  "websocket", "Sec-WebSocket-Key", "Sec-WebSocket-Version",
 
   // HTTP/2 cleartext
-  MIME_UPGRADE_H2C_TOKEN,
-  "HTTP2-Settings",
+  MIME_UPGRADE_H2C_TOKEN, "HTTP2-Settings",
 
   // URL schemes
-  "file",
-  "ftp",
-  "gopher",
-  "https",
-  "http",
-  "mailto",
-  "news",
-  "nntp",
-  "prospero",
-  "telnet",
-  "tunnel",
-  "wais",
-  "pnm",
-  "rtspu",
-  "rtsp",
-  "mmsu",
-  "mmst",
-  "mms",
-  "wss",
-  "ws",
+  "file", "ftp", "gopher", "https", "http", "mailto", "news", "nntp", "prospero", "telnet", "tunnel", "wais", "pnm", "rtspu",
+  "rtsp", "mmsu", "mmst", "mms", "wss", "ws",
 
   // HTTP methods
-  "CONNECT",
-  "DELETE",
-  "GET",
-  "POST",
-  "HEAD",
-  "ICP_QUERY",
-  "OPTIONS",
-  "PURGE",
-  "PUT",
-  "TRACE",
-  "PUSH",
+  "CONNECT", "DELETE", "GET", "POST", "HEAD", "ICP_QUERY", "OPTIONS", "PURGE", "PUT", "TRACE", "PUSH",
 
   // Header extensions
-  "X-ID",
-  "X-Forwarded-For",
-  "TE",
-  "Strict-Transport-Security",
-  "100-continue"
-};
+  "X-ID", "X-Forwarded-For", "TE", "Strict-Transport-Security", "100-continue"};
 
-static HdrTokenTypeBinding _hdrtoken_strs_type_initializers[] = {
-  {"file", HDRTOKEN_TYPE_SCHEME},
-  {"ftp", HDRTOKEN_TYPE_SCHEME},
-  {"gopher", HDRTOKEN_TYPE_SCHEME},
-  {"http", HDRTOKEN_TYPE_SCHEME},
-  {"https", HDRTOKEN_TYPE_SCHEME},
-  {"mailto", HDRTOKEN_TYPE_SCHEME},
-  {"news", HDRTOKEN_TYPE_SCHEME},
-  {"nntp", HDRTOKEN_TYPE_SCHEME},
-  {"prospero", HDRTOKEN_TYPE_SCHEME},
-  {"telnet", HDRTOKEN_TYPE_SCHEME},
-  {"tunnel", HDRTOKEN_TYPE_SCHEME},
-  {"wais", HDRTOKEN_TYPE_SCHEME},
-  {"pnm", HDRTOKEN_TYPE_SCHEME},
-  {"rtsp", HDRTOKEN_TYPE_SCHEME},
-  {"rtspu", HDRTOKEN_TYPE_SCHEME},
-  {"mms", HDRTOKEN_TYPE_SCHEME},
-  {"mmsu", HDRTOKEN_TYPE_SCHEME},
-  {"mmst", HDRTOKEN_TYPE_SCHEME},
-  {"wss", HDRTOKEN_TYPE_SCHEME},
-  {"ws", HDRTOKEN_TYPE_SCHEME},
+static HdrTokenTypeBinding _hdrtoken_strs_type_initializers[] = {{"file", HDRTOKEN_TYPE_SCHEME},
+                                                                 {"ftp", HDRTOKEN_TYPE_SCHEME},
+                                                                 {"gopher", HDRTOKEN_TYPE_SCHEME},
+                                                                 {"http", HDRTOKEN_TYPE_SCHEME},
+                                                                 {"https", HDRTOKEN_TYPE_SCHEME},
+                                                                 {"mailto", HDRTOKEN_TYPE_SCHEME},
+                                                                 {"news", HDRTOKEN_TYPE_SCHEME},
+                                                                 {"nntp", HDRTOKEN_TYPE_SCHEME},
+                                                                 {"prospero", HDRTOKEN_TYPE_SCHEME},
+                                                                 {"telnet", HDRTOKEN_TYPE_SCHEME},
+                                                                 {"tunnel", HDRTOKEN_TYPE_SCHEME},
+                                                                 {"wais", HDRTOKEN_TYPE_SCHEME},
+                                                                 {"pnm", HDRTOKEN_TYPE_SCHEME},
+                                                                 {"rtsp", HDRTOKEN_TYPE_SCHEME},
+                                                                 {"rtspu", HDRTOKEN_TYPE_SCHEME},
+                                                                 {"mms", HDRTOKEN_TYPE_SCHEME},
+                                                                 {"mmsu", HDRTOKEN_TYPE_SCHEME},
+                                                                 {"mmst", HDRTOKEN_TYPE_SCHEME},
+                                                                 {"wss", HDRTOKEN_TYPE_SCHEME},
+                                                                 {"ws", HDRTOKEN_TYPE_SCHEME},
 
-  {"CONNECT", HDRTOKEN_TYPE_METHOD},
-  {"DELETE", HDRTOKEN_TYPE_METHOD},
-  {"GET", HDRTOKEN_TYPE_METHOD},
-  {"HEAD", HDRTOKEN_TYPE_METHOD},
-  {"ICP_QUERY", HDRTOKEN_TYPE_METHOD},
-  {"OPTIONS", HDRTOKEN_TYPE_METHOD},
-  {"POST", HDRTOKEN_TYPE_METHOD},
-  {"PURGE", HDRTOKEN_TYPE_METHOD},
-  {"PUT", HDRTOKEN_TYPE_METHOD},
-  {"TRACE", HDRTOKEN_TYPE_METHOD},
-  {"PUSH", HDRTOKEN_TYPE_METHOD},
+                                                                 {"CONNECT", HDRTOKEN_TYPE_METHOD},
+                                                                 {"DELETE", HDRTOKEN_TYPE_METHOD},
+                                                                 {"GET", HDRTOKEN_TYPE_METHOD},
+                                                                 {"HEAD", HDRTOKEN_TYPE_METHOD},
+                                                                 {"ICP_QUERY", HDRTOKEN_TYPE_METHOD},
+                                                                 {"OPTIONS", HDRTOKEN_TYPE_METHOD},
+                                                                 {"POST", HDRTOKEN_TYPE_METHOD},
+                                                                 {"PURGE", HDRTOKEN_TYPE_METHOD},
+                                                                 {"PUT", HDRTOKEN_TYPE_METHOD},
+                                                                 {"TRACE", HDRTOKEN_TYPE_METHOD},
+                                                                 {"PUSH", HDRTOKEN_TYPE_METHOD},
 
-  {"max-age", HDRTOKEN_TYPE_CACHE_CONTROL},
-  {"max-stale", HDRTOKEN_TYPE_CACHE_CONTROL},
-  {"min-fresh", HDRTOKEN_TYPE_CACHE_CONTROL},
-  {"must-revalidate", HDRTOKEN_TYPE_CACHE_CONTROL},
-  {"no-cache", HDRTOKEN_TYPE_CACHE_CONTROL},
-  {"no-store", HDRTOKEN_TYPE_CACHE_CONTROL},
-  {"no-transform", HDRTOKEN_TYPE_CACHE_CONTROL},
-  {"only-if-cached", HDRTOKEN_TYPE_CACHE_CONTROL},
-  {"private", HDRTOKEN_TYPE_CACHE_CONTROL},
-  {"proxy-revalidate", HDRTOKEN_TYPE_CACHE_CONTROL},
-  {"public", HDRTOKEN_TYPE_CACHE_CONTROL},
-  {"s-maxage", HDRTOKEN_TYPE_CACHE_CONTROL},
-  {"need-revalidate-once", HDRTOKEN_TYPE_CACHE_CONTROL},
+                                                                 {"max-age", HDRTOKEN_TYPE_CACHE_CONTROL},
+                                                                 {"max-stale", HDRTOKEN_TYPE_CACHE_CONTROL},
+                                                                 {"min-fresh", HDRTOKEN_TYPE_CACHE_CONTROL},
+                                                                 {"must-revalidate", HDRTOKEN_TYPE_CACHE_CONTROL},
+                                                                 {"no-cache", HDRTOKEN_TYPE_CACHE_CONTROL},
+                                                                 {"no-store", HDRTOKEN_TYPE_CACHE_CONTROL},
+                                                                 {"no-transform", HDRTOKEN_TYPE_CACHE_CONTROL},
+                                                                 {"only-if-cached", HDRTOKEN_TYPE_CACHE_CONTROL},
+                                                                 {"private", HDRTOKEN_TYPE_CACHE_CONTROL},
+                                                                 {"proxy-revalidate", HDRTOKEN_TYPE_CACHE_CONTROL},
+                                                                 {"public", HDRTOKEN_TYPE_CACHE_CONTROL},
+                                                                 {"s-maxage", HDRTOKEN_TYPE_CACHE_CONTROL},
+                                                                 {"need-revalidate-once", HDRTOKEN_TYPE_CACHE_CONTROL},
 
-  {(char *) NULL, (HdrTokenType) 0}
-};
+                                                                 {(char *)NULL, (HdrTokenType)0}};
 
 
 static HdrTokenFieldInfo _hdrtoken_strs_field_initializers[] = {
@@ -296,8 +205,7 @@ static HdrTokenFieldInfo _hdrtoken_strs_field_initializers[] = {
   {"Pragma", MIME_SLOTID_PRAGMA, MIME_PRESENCE_PRAGMA, (HTIF_COMMAS | HTIF_MULTVALS)},
   {"Proxy-Authenticate", MIME_SLOTID_NONE, MIME_PRESENCE_PROXY_AUTHENTICATE, (HTIF_HOPBYHOP | HTIF_PROXYAUTH)},
   {"Proxy-Authorization", MIME_SLOTID_NONE, MIME_PRESENCE_PROXY_AUTHORIZATION, (HTIF_HOPBYHOP | HTIF_PROXYAUTH)},
-  {"Proxy-Connection", MIME_SLOTID_PROXY_CONNECTION, MIME_PRESENCE_PROXY_CONNECTION,
-   (HTIF_COMMAS | HTIF_MULTVALS | HTIF_HOPBYHOP)},
+  {"Proxy-Connection", MIME_SLOTID_PROXY_CONNECTION, MIME_PRESENCE_PROXY_CONNECTION, (HTIF_COMMAS | HTIF_MULTVALS | HTIF_HOPBYHOP)},
   {"Public", MIME_SLOTID_NONE, MIME_PRESENCE_PUBLIC, (HTIF_COMMAS | HTIF_MULTVALS)},
   {"Range", MIME_SLOTID_RANGE, MIME_PRESENCE_RANGE, (HTIF_COMMAS | HTIF_MULTVALS)},
   {"References", MIME_SLOTID_NONE, MIME_PRESENCE_NONE, HTIF_NONE},
@@ -324,20 +232,19 @@ static HdrTokenFieldInfo _hdrtoken_strs_field_initializers[] = {
   {"X-Forwarded-For", MIME_SLOTID_NONE, MIME_PRESENCE_NONE, (HTIF_COMMAS | HTIF_MULTVALS)},
   {"Sec-WebSocket-Key", MIME_SLOTID_NONE, MIME_PRESENCE_NONE, HTIF_NONE},
   {"Sec-WebSocket-Version", MIME_SLOTID_NONE, MIME_PRESENCE_NONE, HTIF_NONE},
-  {NULL, 0, 0, 0}
-};
+  {NULL, 0, 0, 0}};
 
-const char *_hdrtoken_strs_heap_f = NULL;       // storage first byte
-const char *_hdrtoken_strs_heap_l = NULL;       // storage last byte
+const char *_hdrtoken_strs_heap_f = NULL; // storage first byte
+const char *_hdrtoken_strs_heap_l = NULL; // storage last byte
 
-int hdrtoken_num_wks = SIZEOF(_hdrtoken_strs);  // # of well-known strings
+int hdrtoken_num_wks = SIZEOF(_hdrtoken_strs); // # of well-known strings
 
-const char *hdrtoken_strs[SIZEOF(_hdrtoken_strs)];      // wks_idx -> heap ptr
-int hdrtoken_str_lengths[SIZEOF(_hdrtoken_strs)];       // wks_idx -> length
-HdrTokenType hdrtoken_str_token_types[SIZEOF(_hdrtoken_strs)];  // wks_idx -> token type
-int32_t hdrtoken_str_slotids[SIZEOF(_hdrtoken_strs)];     // wks_idx -> slot id
-uint64_t hdrtoken_str_masks[SIZEOF(_hdrtoken_strs)];      // wks_idx -> presence mask
-uint32_t hdrtoken_str_flags[SIZEOF(_hdrtoken_strs)];      // wks_idx -> flags
+const char *hdrtoken_strs[SIZEOF(_hdrtoken_strs)];             // wks_idx -> heap ptr
+int hdrtoken_str_lengths[SIZEOF(_hdrtoken_strs)];              // wks_idx -> length
+HdrTokenType hdrtoken_str_token_types[SIZEOF(_hdrtoken_strs)]; // wks_idx -> token type
+int32_t hdrtoken_str_slotids[SIZEOF(_hdrtoken_strs)];          // wks_idx -> slot id
+uint64_t hdrtoken_str_masks[SIZEOF(_hdrtoken_strs)];           // wks_idx -> presence mask
+uint32_t hdrtoken_str_flags[SIZEOF(_hdrtoken_strs)];           // wks_idx -> flags
 
 DFA *hdrtoken_strs_dfa = NULL;
 
@@ -347,11 +254,10 @@ DFA *hdrtoken_strs_dfa = NULL;
  *                                                                     *
  ***********************************************************************/
 
-#define	HDRTOKEN_HASH_TABLE_SIZE	65536
-#define	HDRTOKEN_HASH_TABLE_MASK	HDRTOKEN_HASH_TABLE_SIZE-1
+#define HDRTOKEN_HASH_TABLE_SIZE 65536
+#define HDRTOKEN_HASH_TABLE_MASK HDRTOKEN_HASH_TABLE_SIZE - 1
 
-struct HdrTokenHashBucket
-{
+struct HdrTokenHashBucket {
   const char *wks;
   uint32_t hash;
 };
@@ -361,12 +267,12 @@ HdrTokenHashBucket hdrtoken_hash_table[HDRTOKEN_HASH_TABLE_SIZE];
 /**
   basic FNV hash
 **/
-#define TINY_MASK(x) (((uint32_t)1<<(x))-1)
+#define TINY_MASK(x) (((uint32_t)1 << (x)) - 1)
 
 inline uint32_t
 hash_to_slot(uint32_t hash)
 {
-  return ((hash>>15) ^ hash) & TINY_MASK(15);
+  return ((hash >> 15) ^ hash) & TINY_MASK(15);
 }
 
 inline uint32_t
@@ -383,154 +289,65 @@ hdrtoken_hash(const unsigned char *string, unsigned int length)
 
 static const char *_hdrtoken_commonly_tokenized_strs[] = {
   // MIME Field names
-  "Accept-Charset",
-  "Accept-Encoding",
-  "Accept-Language",
-  "Accept-Ranges",
-  "Accept",
-  "Age",
-  "Allow",
-  "Approved",                   // NNTP
+  "Accept-Charset", "Accept-Encoding", "Accept-Language", "Accept-Ranges", "Accept", "Age", "Allow",
+  "Approved", // NNTP
   "Authorization",
-  "Bytes",                      // NNTP
-  "Cache-Control",
-  "Client-ip",
-  "Connection",
-  "Content-Base",
-  "Content-Encoding",
-  "Content-Language",
-  "Content-Length",
-  "Content-Location",
-  "Content-MD5",
-  "Content-Range",
-  "Content-Type",
-  "Control",                    // NNTP
-  "Cookie",
-  "Date",
-  "Distribution",               // NNTP
-  "Etag",
-  "Expect",
-  "Expires",
-  "Followup-To",                // NNTP
-  "From",
-  "Host",
-  "If-Match",
-  "If-Modified-Since",
-  "If-None-Match",
-  "If-Range",
-  "If-Unmodified-Since",
-  "Keep-Alive",
-  "Keywords",                   // NNTP
+  "Bytes", // NNTP
+  "Cache-Control", "Client-ip", "Connection", "Content-Base", "Content-Encoding", "Content-Language", "Content-Length",
+  "Content-Location", "Content-MD5", "Content-Range", "Content-Type",
+  "Control", // NNTP
+  "Cookie", "Date",
+  "Distribution", // NNTP
+  "Etag", "Expect", "Expires",
+  "Followup-To", // NNTP
+  "From", "Host", "If-Match", "If-Modified-Since", "If-None-Match", "If-Range", "If-Unmodified-Since", "Keep-Alive",
+  "Keywords", // NNTP
   "Last-Modified",
-  "Lines",                      // NNTP
-  "Location",
-  "Max-Forwards",
-  "Message-ID",                 // NNTP
+  "Lines", // NNTP
+  "Location", "Max-Forwards",
+  "Message-ID", // NNTP
   "MIME-Version",
-  "Newsgroups",                 // NNTP
-  "Organization",               // NNTP
-  "Path",                       // NNTP
-  "Pragma",
-  "Proxy-Authenticate",
-  "Proxy-Authorization",
-  "Proxy-Connection",
-  "Public",
-  "Range",
-  "References",                 // NNTP
+  "Newsgroups",   // NNTP
+  "Organization", // NNTP
+  "Path",         // NNTP
+  "Pragma", "Proxy-Authenticate", "Proxy-Authorization", "Proxy-Connection", "Public", "Range",
+  "References", // NNTP
   "Referer",
-  "Reply-To",                   // NNTP
+  "Reply-To", // NNTP
   "Retry-After",
-  "Sender",                     // NNTP
-  "Server",
-  "Set-Cookie",
-  "Subject",                    // NNTP
-  "Summary",                    // NNTP
-  "Transfer-Encoding",
-  "Upgrade",
-  "User-Agent",
-  "Vary",
-  "Via",
-  "Warning",
-  "Www-Authenticate",
-  "Xref",                       // NNTP
-  "@DataInfo",                  // Internal Hack
+  "Sender", // NNTP
+  "Server", "Set-Cookie",
+  "Subject", // NNTP
+  "Summary", // NNTP
+  "Transfer-Encoding", "Upgrade", "User-Agent", "Vary", "Via", "Warning", "Www-Authenticate",
+  "Xref",      // NNTP
+  "@DataInfo", // Internal Hack
 
   // Accept-Encoding
-  "compress",
-  "deflate",
-  "gzip",
-  "identity",
+  "compress", "deflate", "gzip", "identity",
 
   // Cache-Control flags
-  "max-age",
-  "max-stale",
-  "min-fresh",
-  "must-revalidate",
-  "no-cache",
-  "no-store",
-  "no-transform",
-  "only-if-cached",
-  "private",
-  "proxy-revalidate",
-  "s-maxage",
-  "need-revalidate-once",
+  "max-age", "max-stale", "min-fresh", "must-revalidate", "no-cache", "no-store", "no-transform", "only-if-cached", "private",
+  "proxy-revalidate", "s-maxage", "need-revalidate-once",
 
   // HTTP miscellaneous
-  "none",
-  "chunked",
-  "close",
+  "none", "chunked", "close",
 
   // WS
-  "websocket",
-  "Sec-WebSocket-Key",
-  "Sec-WebSocket-Version",
+  "websocket", "Sec-WebSocket-Key", "Sec-WebSocket-Version",
 
   // HTTP/2 cleartext
-  MIME_UPGRADE_H2C_TOKEN,
-  "HTTP2-Settings",
+  MIME_UPGRADE_H2C_TOKEN, "HTTP2-Settings",
 
   // URL schemes
-  "file",
-  "ftp",
-  "gopher",
-  "https",
-  "http",
-  "mailto",
-  "news",
-  "nntp",
-  "prospero",
-  "telnet",
-  "tunnel",
-  "wais",
-  "pnm",
-  "rtspu",
-  "rtsp",
-  "mmsu",
-  "mmst",
-  "mms",
-  "wss",
-  "ws",
+  "file", "ftp", "gopher", "https", "http", "mailto", "news", "nntp", "prospero", "telnet", "tunnel", "wais", "pnm", "rtspu",
+  "rtsp", "mmsu", "mmst", "mms", "wss", "ws",
 
   // HTTP methods
-  "CONNECT",
-  "DELETE",
-  "GET",
-  "POST",
-  "HEAD",
-  "ICP_QUERY",
-  "OPTIONS",
-  "PURGE",
-  "PUT",
-  "TRACE",
-  "PUSH",
+  "CONNECT", "DELETE", "GET", "POST", "HEAD", "ICP_QUERY", "OPTIONS", "PURGE", "PUT", "TRACE", "PUSH",
 
   // Header extensions
-  "X-ID",
-  "X-Forwarded-For",
-  "TE",
-  "Strict-Transport-Security",
-  "100-continue"
-};
+  "X-ID", "X-Forwarded-For", "TE", "Strict-Transport-Security", "100-continue"};
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
@@ -544,20 +361,19 @@ hdrtoken_hash_init()
   memset(hdrtoken_hash_table, 0, sizeof(hdrtoken_hash_table));
   num_collisions = 0;
 
-  for (i = 0; i < (int) SIZEOF(_hdrtoken_commonly_tokenized_strs); i++) {
+  for (i = 0; i < (int)SIZEOF(_hdrtoken_commonly_tokenized_strs); i++) {
     // convert the common string to the well-known token
     unsigned const char *wks;
-    int wks_idx = hdrtoken_tokenize_dfa(_hdrtoken_commonly_tokenized_strs[i],
-                                        (int) strlen(_hdrtoken_commonly_tokenized_strs[i]),
-                                        (const char **) &wks);
+    int wks_idx = hdrtoken_tokenize_dfa(_hdrtoken_commonly_tokenized_strs[i], (int)strlen(_hdrtoken_commonly_tokenized_strs[i]),
+                                        (const char **)&wks);
     ink_release_assert(wks_idx >= 0);
 
     uint32_t hash = hdrtoken_hash(wks, hdrtoken_str_lengths[wks_idx]);
     uint32_t slot = hash_to_slot(hash);
 
     if (hdrtoken_hash_table[slot].wks) {
-      printf("ERROR: hdrtoken_hash_table[%u] collision: '%s' replacing '%s'\n",
-             slot, (const char*)wks, hdrtoken_hash_table[slot].wks);
+      printf("ERROR: hdrtoken_hash_table[%u] collision: '%s' replacing '%s'\n", slot, (const char *)wks,
+             hdrtoken_hash_table[slot].wks);
       ++num_collisions;
     }
     hdrtoken_hash_table[slot].wks = (const char *)wks;
@@ -598,7 +414,7 @@ hdrtoken_init()
     inited = 1;
 
     hdrtoken_strs_dfa = new DFA;
-    hdrtoken_strs_dfa->compile(_hdrtoken_strs, SIZEOF(_hdrtoken_strs), (REFlags) (RE_CASE_INSENSITIVE));
+    hdrtoken_strs_dfa->compile(_hdrtoken_strs, SIZEOF(_hdrtoken_strs), (REFlags)(RE_CASE_INSENSITIVE));
 
     // all the tokenized hdrtoken strings are placed in a special heap,
     // and each string is prepended with a HdrTokenHeapPrefix ---
@@ -608,8 +424,8 @@ hdrtoken_init()
     // other info from the prefix.
 
     int heap_size = 0;
-    for (i = 0; i < (int) SIZEOF(_hdrtoken_strs); i++) {
-      hdrtoken_str_lengths[i] = (int) strlen(_hdrtoken_strs[i]);
+    for (i = 0; i < (int)SIZEOF(_hdrtoken_strs); i++) {
+      hdrtoken_str_lengths[i] = (int)strlen(_hdrtoken_strs[i]);
       int sstr_len = snap_up_to_multiple(hdrtoken_str_lengths[i] + 1, sizeof(HdrTokenHeapPrefix));
       int packed_prefix_str_len = sizeof(HdrTokenHeapPrefix) + sstr_len;
       heap_size += packed_prefix_str_len;
@@ -618,29 +434,29 @@ hdrtoken_init()
     _hdrtoken_strs_heap_f = (const char *)ats_malloc(heap_size);
     _hdrtoken_strs_heap_l = _hdrtoken_strs_heap_f + heap_size - 1;
 
-    char *heap_ptr = (char *) _hdrtoken_strs_heap_f;
+    char *heap_ptr = (char *)_hdrtoken_strs_heap_f;
 
-    for (i = 0; i < (int) SIZEOF(_hdrtoken_strs); i++) {
+    for (i = 0; i < (int)SIZEOF(_hdrtoken_strs); i++) {
       HdrTokenHeapPrefix prefix;
 
       memset(&prefix, 0, sizeof(HdrTokenHeapPrefix));
 
       prefix.wks_idx = i;
       prefix.wks_length = hdrtoken_str_lengths[i];
-      prefix.wks_token_type = HDRTOKEN_TYPE_OTHER;      // default, can override later
-      prefix.wks_info.name = NULL;      // default, can override later
-      prefix.wks_info.slotid = MIME_SLOTID_NONE;        // default, can override later
-      prefix.wks_info.mask = TOK_64_CONST(0);   // default, can override later
-      prefix.wks_info.flags = MIME_FLAGS_MULTVALS;      // default, can override later
+      prefix.wks_token_type = HDRTOKEN_TYPE_OTHER; // default, can override later
+      prefix.wks_info.name = NULL;                 // default, can override later
+      prefix.wks_info.slotid = MIME_SLOTID_NONE;   // default, can override later
+      prefix.wks_info.mask = TOK_64_CONST(0);      // default, can override later
+      prefix.wks_info.flags = MIME_FLAGS_MULTVALS; // default, can override later
 
       int sstr_len = snap_up_to_multiple(hdrtoken_str_lengths[i] + 1, sizeof(HdrTokenHeapPrefix));
 
-      *(HdrTokenHeapPrefix *) heap_ptr = prefix;        // set string prefix
+      *(HdrTokenHeapPrefix *)heap_ptr = prefix; // set string prefix
       heap_ptr += sizeof(HdrTokenHeapPrefix);   // advance heap ptr past index
-      hdrtoken_strs[i] = heap_ptr;      // record string pointer
+      hdrtoken_strs[i] = heap_ptr;              // record string pointer
       // coverity[secure_coding]
-      ink_strlcpy((char *) hdrtoken_strs[i], _hdrtoken_strs[i], heap_size - sizeof(HdrTokenHeapPrefix));     // copy string into heap
-      heap_ptr += sstr_len;     // advance heap ptr past string
+      ink_strlcpy((char *)hdrtoken_strs[i], _hdrtoken_strs[i], heap_size - sizeof(HdrTokenHeapPrefix)); // copy string into heap
+      heap_ptr += sstr_len; // advance heap ptr past string
       heap_size -= sstr_len;
     }
 
@@ -649,10 +465,10 @@ hdrtoken_init()
       int wks_idx;
       HdrTokenHeapPrefix *prefix;
 
-      wks_idx = hdrtoken_tokenize_dfa(_hdrtoken_strs_type_initializers[i].name,
-                                      (int) strlen(_hdrtoken_strs_type_initializers[i].name));
+      wks_idx =
+        hdrtoken_tokenize_dfa(_hdrtoken_strs_type_initializers[i].name, (int)strlen(_hdrtoken_strs_type_initializers[i].name));
 
-      ink_assert((wks_idx >= 0) && (wks_idx < (int) SIZEOF(hdrtoken_strs)));
+      ink_assert((wks_idx >= 0) && (wks_idx < (int)SIZEOF(hdrtoken_strs)));
       // coverity[negative_returns]
       prefix = hdrtoken_index_to_prefix(wks_idx);
       prefix->wks_token_type = _hdrtoken_strs_type_initializers[i].type;
@@ -663,23 +479,23 @@ hdrtoken_init()
       int wks_idx;
       HdrTokenHeapPrefix *prefix;
 
-      wks_idx = hdrtoken_tokenize_dfa(_hdrtoken_strs_field_initializers[i].name,
-                                      (int) strlen(_hdrtoken_strs_field_initializers[i].name));
+      wks_idx =
+        hdrtoken_tokenize_dfa(_hdrtoken_strs_field_initializers[i].name, (int)strlen(_hdrtoken_strs_field_initializers[i].name));
 
-      ink_assert((wks_idx >= 0) && (wks_idx < (int) SIZEOF(hdrtoken_strs)));
+      ink_assert((wks_idx >= 0) && (wks_idx < (int)SIZEOF(hdrtoken_strs)));
       prefix = hdrtoken_index_to_prefix(wks_idx);
       prefix->wks_info.slotid = _hdrtoken_strs_field_initializers[i].slotid;
       prefix->wks_info.flags = _hdrtoken_strs_field_initializers[i].flags;
       prefix->wks_info.mask = _hdrtoken_strs_field_initializers[i].mask;
     }
 
-    for (i = 0; i < (int) SIZEOF(_hdrtoken_strs); i++) {
+    for (i = 0; i < (int)SIZEOF(_hdrtoken_strs); i++) {
       HdrTokenHeapPrefix *prefix = hdrtoken_index_to_prefix(i);
       prefix->wks_info.name = hdrtoken_strs[i];
-      hdrtoken_str_token_types[i] = prefix->wks_token_type;     // parallel array for speed
-      hdrtoken_str_slotids[i] = prefix->wks_info.slotid;        // parallel array for speed
-      hdrtoken_str_masks[i] = prefix->wks_info.mask;    // parallel array for speed
-      hdrtoken_str_flags[i] = prefix->wks_info.flags;   // parallel array for speed
+      hdrtoken_str_token_types[i] = prefix->wks_token_type; // parallel array for speed
+      hdrtoken_str_slotids[i] = prefix->wks_info.slotid;    // parallel array for speed
+      hdrtoken_str_masks[i] = prefix->wks_info.mask;        // parallel array for speed
+      hdrtoken_str_flags[i] = prefix->wks_info.flags;       // parallel array for speed
     }
 
     hdrtoken_hash_init();
@@ -704,7 +520,7 @@ hdrtoken_tokenize_dfa(const char *string, int string_len, const char **wks_strin
     else
       *wks_string_out = NULL;
   }
-  //printf("hdrtoken_tokenize_dfa(%d,*s) - return %d\n",string_len,string,wks_idx);
+  // printf("hdrtoken_tokenize_dfa(%d,*s) - return %d\n",string_len,string,wks_idx);
 
   return wks_idx;
 }
@@ -727,13 +543,11 @@ hdrtoken_tokenize(const char *string, int string_len, const char **wks_string_ou
     return wks_idx;
   }
 
-  uint32_t hash = hdrtoken_hash((const unsigned char *) string, (unsigned int) string_len);
+  uint32_t hash = hdrtoken_hash((const unsigned char *)string, (unsigned int)string_len);
   uint32_t slot = hash_to_slot(hash);
 
   bucket = &(hdrtoken_hash_table[slot]);
-  if ((bucket->wks != NULL) &&
-      (bucket->hash == hash) &&
-      (hdrtoken_wks_to_length(bucket->wks) == string_len)) {
+  if ((bucket->wks != NULL) && (bucket->hash == hash) && (hdrtoken_wks_to_length(bucket->wks) == string_len)) {
     wks_idx = hdrtoken_wks_to_index(bucket->wks);
     if (wks_string_out)
       *wks_string_out = bucket->wks;
@@ -751,7 +565,7 @@ const char *
 hdrtoken_string_to_wks(const char *string)
 {
   const char *wks = NULL;
-  hdrtoken_tokenize(string, (int) strlen(string), &wks);
+  hdrtoken_tokenize(string, (int)strlen(string), &wks);
   return wks;
 }
 

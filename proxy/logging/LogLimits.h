@@ -29,14 +29,13 @@
 #ifndef LOG_LIMITS_H
 #define LOG_LIMITS_H
 
-enum
-{
-  LOG_MAX_FORMAT_LINE = 2048,   /* "format:enable:..." */
+enum {
+  LOG_MAX_FORMAT_LINE = 2048, /* "format:enable:..." */
   LOG_MAX_FORMATTED_BUFFER = 20480,
   LOG_MAX_FORMATTED_LINE = 10240
 };
 
-#define LOG_KILOBYTE		((int64_t)1024)
-#define LOG_MEGABYTE		((int64_t)1048576)
+#define LOG_KILOBYTE ((int64_t)1024)
+#define LOG_MEGABYTE ((int64_t)1048576)
 
 #endif

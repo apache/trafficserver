@@ -35,7 +35,9 @@ using std::endl;
 using std::string;
 using namespace EsiLib;
 
-void check_node_attr(const Attribute &attr, const char *name, const char *value) {
+void
+check_node_attr(const Attribute &attr, const char *name, const char *value)
+{
   int name_len = strlen(name);
   int value_len = strlen(value);
   assert(attr.name_len == name_len);
@@ -44,7 +46,9 @@ void check_node_attr(const Attribute &attr, const char *name, const char *value)
   assert(strncmp(attr.value, value, value_len) == 0);
 }
 
-void checkNodeList1(const DocNodeList &node_list) {
+void
+checkNodeList1(const DocNodeList &node_list)
+{
   DocNodeList::const_iterator list_iter = node_list.begin();
   assert(list_iter->type == DocNode::TYPE_PRE);
   assert(list_iter->data_len == 4);
@@ -61,7 +65,9 @@ void checkNodeList1(const DocNodeList &node_list) {
   assert((list_iter->child_nodes).size() == 0);
 }
 
-void checkNodeList2(const DocNodeList &node_list) {
+void
+checkNodeList2(const DocNodeList &node_list)
+{
   assert(node_list.size() == 1);
   DocNodeList::const_iterator list_iter = node_list.begin(), list_iter2, list_iter3;
   assert(list_iter->type == DocNode::TYPE_CHOOSE);
@@ -144,7 +150,8 @@ void checkNodeList2(const DocNodeList &node_list) {
 
 pthread_key_t threadKey;
 
-int main()
+int
+main()
 {
   pthread_key_create(&threadKey, NULL);
   Utils::init(&Debug, &Error);
@@ -246,4 +253,3 @@ int main()
   cout << "All tests passed" << endl;
   return 0;
 }
-

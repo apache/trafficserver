@@ -19,7 +19,7 @@
 #ifndef __DEFAULT_H__
 #define __DEFAULT_H__ 1
 
-static const char* PLUGIN_NAME = "mysql_remap";
+static const char *PLUGIN_NAME = "mysql_remap";
 #define QSIZE 2048
 
 #endif // __DEFAULT_H__

@@ -42,23 +42,19 @@ class LogHost;
 // LogCollationClientSM
 //-------------------------------------------------------------------------
 
-class LogCollationClientSM:public LogCollationBase, public Continuation
+class LogCollationClientSM : public LogCollationBase, public Continuation
 {
-
 public:
-
-  LogCollationClientSM(LogHost * log_host);
+  LogCollationClientSM(LogHost *log_host);
   ~LogCollationClientSM();
 
   int client_handler(int event, void *data);
 
   // public interface (for LogFile)
-  int send(LogBuffer * log_buffer);
+  int send(LogBuffer *log_buffer);
 
 private:
-
-  enum ClientState
-  {
+  enum ClientState {
     LOG_COLL_CLIENT_AUTH,
     LOG_COLL_CLIENT_DNS,
     LOG_COLL_CLIENT_DONE,
@@ -69,23 +65,21 @@ private:
     LOG_COLL_CLIENT_SEND
   };
 
-  enum ClientFlowControl
-  {
+  enum ClientFlowControl {
     LOG_COLL_FLOW_ALLOW,
-    LOG_COLL_FLOW_DENY
+    LOG_COLL_FLOW_DENY,
   };
 
 private:
-
   // client states
-  int client_auth(int event, VIO * vio);
-  int client_dns(int event, HostDBInfo * hostdb_info);
+  int client_auth(int event, VIO *vio);
+  int client_dns(int event, HostDBInfo *hostdb_info);
   int client_done(int event, void *data);
   int client_fail(int event, void *data);
   int client_idle(int event, void *data);
   int client_init(int event, void *data);
-  int client_open(int event, NetVConnection * net_vc);
-  int client_send(int event, VIO * vio);
+  int client_open(int event, NetVConnection *net_vc);
+  int client_send(int event, VIO *vio);
   ClientState m_client_state;
 
   // support functions
@@ -117,9 +111,8 @@ private:
   // debugging
   static int ID;
   int m_id;
-
 };
 
-typedef int (LogCollationClientSM::*LogCollationClientSMHandler) (int, void *);
+typedef int (LogCollationClientSM::*LogCollationClientSMHandler)(int, void *);
 
 #endif // LOG_COLLATION_CLIENT_SM_H

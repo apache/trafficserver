@@ -25,7 +25,7 @@
  * Remap plugins class
 **/
 
-#if !defined (_REMAPPLUGINS_h_)
+#if !defined(_REMAPPLUGINS_h_)
 #define _REMAPPLUGINS_h_
 
 #include "libts.h"
@@ -40,33 +40,47 @@
 /**
  * A class that represents a queue of plugins to run
 **/
-struct RemapPlugins: public Continuation
-{
- RemapPlugins()
-   : _cur(0)
-    { }
+struct RemapPlugins : public Continuation {
+  RemapPlugins() : _cur(0) {}
 
- RemapPlugins(HttpTransact::State* s, URL* u, HTTPHdr* h, host_hdr_info* hi)
-   : _cur(0), _s(s), _request_url(u), _request_header(h), _hh_ptr(hi)
-    { }
+  RemapPlugins(HttpTransact::State *s, URL *u, HTTPHdr *h, host_hdr_info *hi)
+    : _cur(0), _s(s), _request_url(u), _request_header(h), _hh_ptr(hi)
+  {
+  }
 
   ~RemapPlugins() { _cur = 0; }
 
   // Some basic setters
-  void setState(HttpTransact::State* state) { _s = state; }
-  void setRequestUrl(URL* u) { _request_url = u; }
-  void setRequestHeader(HTTPHdr* h) {  _request_header = h; }
-  void setHostHeaderInfo(host_hdr_info* h) { _hh_ptr = h; }
+  void
+  setState(HttpTransact::State *state)
+  {
+    _s = state;
+  }
+  void
+  setRequestUrl(URL *u)
+  {
+    _request_url = u;
+  }
+  void
+  setRequestHeader(HTTPHdr *h)
+  {
+    _request_header = h;
+  }
+  void
+  setHostHeaderInfo(host_hdr_info *h)
+  {
+    _hh_ptr = h;
+  }
 
-  int run_remap(int event, Event* e);
+  int run_remap(int event, Event *e);
   int run_single_remap();
-  TSRemapStatus run_plugin(remap_plugin_info* plugin);
+  TSRemapStatus run_plugin(remap_plugin_info *plugin);
 
   Action action;
 
- private:
+private:
   unsigned int _cur;
-  HttpTransact::State * _s;
+  HttpTransact::State *_s;
   URL *_request_url;
   HTTPHdr *_request_header;
   host_hdr_info *_hh_ptr;

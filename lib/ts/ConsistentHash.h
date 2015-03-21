@@ -31,14 +31,12 @@
   Helper class to be extended to make ring nodes.
  */
 
-struct ATSConsistentHashNode
-{
+struct ATSConsistentHashNode {
   bool available;
   char *name;
 };
 
-std::ostream &
-operator<< (std::ostream & os, ATSConsistentHashNode & thing);
+std::ostream &operator<<(std::ostream &os, ATSConsistentHashNode &thing);
 
 typedef std::map<uint64_t, ATSConsistentHashNode *>::iterator ATSConsistentHashIter;
 
@@ -48,12 +46,12 @@ typedef std::map<uint64_t, ATSConsistentHashNode *>::iterator ATSConsistentHashI
   Caller is responsible for freeing ring node memory.
  */
 
-struct ATSConsistentHash
-{
+struct ATSConsistentHash {
   ATSConsistentHash(int r = 1024, ATSHash64 *h = NULL);
   void insert(ATSConsistentHashNode *node, float weight = 1.0, ATSHash64 *h = NULL);
   ATSConsistentHashNode *lookup(const char *url = NULL, ATSConsistentHashIter *i = NULL, bool *w = NULL, ATSHash64 *h = NULL);
-  ATSConsistentHashNode *lookup_available(const char *url = NULL, ATSConsistentHashIter *i = NULL, bool *w = NULL, ATSHash64 *h = NULL);
+  ATSConsistentHashNode *lookup_available(const char *url = NULL, ATSConsistentHashIter *i = NULL, bool *w = NULL,
+                                          ATSHash64 *h = NULL);
   ~ATSConsistentHash();
 
 private:

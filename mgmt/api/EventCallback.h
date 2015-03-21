@@ -46,37 +46,33 @@
 // when registering the callback function, can pass in void* data which
 // will then be passed to the callback function; need to store this data with
 // the callback in a struct
-typedef struct
-{
+typedef struct {
   TSEventSignalFunc func;
   void *data;
 } EventCallbackT;
 
 // event_call_back_l is a queue of EventCallbackT
-typedef struct
-{
+typedef struct {
   LLQ *event_callback_l[NUM_EVENTS];
   ink_mutex event_callback_lock;
 } CallbackTable;
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif /* __cplusplus */
 
 EventCallbackT *create_event_callback(TSEventSignalFunc func, void *data);
-void delete_event_callback(EventCallbackT * event_cb);
+void delete_event_callback(EventCallbackT *event_cb);
 
 CallbackTable *create_callback_table(const char *lock_name);
 
-void delete_callback_table(CallbackTable * cb_table);
+void delete_callback_table(CallbackTable *cb_table);
 
 // returns list of event_id that have at least one callback registered for it
-LLQ *get_events_with_callbacks(CallbackTable * cb_table);
+LLQ *get_events_with_callbacks(CallbackTable *cb_table);
 
-TSMgmtError cb_table_register(CallbackTable * cb_table, const char *event_name, TSEventSignalFunc func, void *data,
-                           bool * first_cb);
-TSMgmtError cb_table_unregister(CallbackTable * cb_table, const char *event_name, TSEventSignalFunc func);
+TSMgmtError cb_table_register(CallbackTable *cb_table, const char *event_name, TSEventSignalFunc func, void *data, bool *first_cb);
+TSMgmtError cb_table_unregister(CallbackTable *cb_table, const char *event_name, TSEventSignalFunc func);
 
 #ifdef __cplusplus
 }

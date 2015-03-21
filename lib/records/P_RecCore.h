@@ -51,29 +51,27 @@ extern ink_mutex g_rec_config_lock;
 // Initialization
 //-------------------------------------------------------------------------
 
-int RecCoreInit(RecModeT mode_type, Diags * diags);
+int RecCoreInit(RecModeT mode_type, Diags *diags);
 
 //-------------------------------------------------------------------------
 // Registration/Insertion
 //-------------------------------------------------------------------------
 
-RecRecord *RecRegisterStat(RecT rec_type, const char *name, RecDataT data_type,
-                           RecData data_default, RecPersistT persist_type);
+RecRecord *RecRegisterStat(RecT rec_type, const char *name, RecDataT data_type, RecData data_default, RecPersistT persist_type);
 
-RecRecord *RecRegisterConfig(RecT rec_type, const char *name, RecDataT data_type,
-                             RecData data_default, RecUpdateT update_type,
+RecRecord *RecRegisterConfig(RecT rec_type, const char *name, RecDataT data_type, RecData data_default, RecUpdateT update_type,
                              RecCheckT check_type, const char *check_regex, RecAccessT access_type = RECA_NULL);
 
-RecRecord *RecForceInsert(RecRecord * record);
+RecRecord *RecForceInsert(RecRecord *record);
 
 //-------------------------------------------------------------------------
 // Setting/Getting
 //-------------------------------------------------------------------------
 
-int RecSetRecord(RecT rec_type, const char *name, RecDataT data_type,
-                 RecData *data, RecRawStat *raw_stat, bool lock = true, bool inc_version = true);
+int RecSetRecord(RecT rec_type, const char *name, RecDataT data_type, RecData *data, RecRawStat *raw_stat, bool lock = true,
+                 bool inc_version = true);
 
-int RecGetRecord_Xmalloc(const char *name, RecDataT data_type, RecData * data, bool lock = true);
+int RecGetRecord_Xmalloc(const char *name, RecDataT data_type, RecData *data, bool lock = true);
 
 //-------------------------------------------------------------------------
 // Read/Sync to Disk
@@ -83,7 +81,7 @@ int RecReadStatsFile();
 int RecSyncStatsFile();
 int RecReadConfigFile(bool inc_version);
 int RecWriteConfigFile(textBuffer *tb);
-int RecSyncConfigToTB(textBuffer * tb, bool *inc_version = NULL);
+int RecSyncConfigToTB(textBuffer *tb, bool *inc_version = NULL);
 
 //-------------------------------------------------------------------------
 // Misc
@@ -92,15 +90,14 @@ int RecSyncConfigToTB(textBuffer * tb, bool *inc_version = NULL);
 bool i_am_the_record_owner(RecT rec_type);
 int send_push_message();
 int send_pull_message(RecMessageT msg_type);
-int send_register_message(RecRecord * record);
-int recv_message_cb(RecMessage * msg, RecMessageT msg_type, void *cookie);
+int send_register_message(RecRecord *record);
+int recv_message_cb(RecMessage *msg, RecMessageT msg_type, void *cookie);
 RecUpdateT RecExecConfigUpdateCbs(unsigned int update_required_type);
 int RecExecStatUpdateFuncs();
 int RecExecRawStatUpdateFuncs();
 
 void RecDumpRecordsHt(RecT rec_type = RECT_NULL);
 
-void
-RecDumpRecords(RecT rec_type, RecDumpEntryCb callback, void *edata);
+void RecDumpRecords(RecT rec_type, RecDumpEntryCb callback, void *edata);
 
 #endif

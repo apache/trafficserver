@@ -35,8 +35,7 @@
 
 #include "mgmtapi.h"
 
-typedef struct
-{
+typedef struct {
   int fd;
   struct sockaddr *adr;
 } ClientT;

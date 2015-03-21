@@ -29,22 +29,24 @@
 using std::string;
 using namespace EsiLib;
 
-EsiGzip::EsiGzip(const char *debug_tag,
-                           ComponentBase::Debug debug_func, ComponentBase::Error error_func)
-  : ComponentBase(debug_tag, debug_func, error_func),
-    _downstream_length(0),
-    _total_data_length(0) {
+EsiGzip::EsiGzip(const char *debug_tag, ComponentBase::Debug debug_func, ComponentBase::Error error_func)
+  : ComponentBase(debug_tag, debug_func, error_func), _downstream_length(0), _total_data_length(0)
+{
 }
 
-template<typename T>
-inline void append(string &out, T data) {
+template <typename T>
+inline void
+append(string &out, T data)
+{
   for (unsigned int i = 0; i < sizeof(data); ++i) {
     out += static_cast<char>(data & 0xff);
     data = data >> 8;
   }
 }
 
-inline int runDeflateLoop(z_stream &zstrm, int flush, std::string &cdata) {
+inline int
+runDeflateLoop(z_stream &zstrm, int flush, std::string &cdata)
+{
   char buf[BUF_SIZE];
   int deflate_result = Z_OK;
   do {
@@ -64,8 +66,9 @@ inline int runDeflateLoop(z_stream &zstrm, int flush, std::string &cdata) {
 }
 
 bool
-EsiGzip::stream_encode(const char *data, int data_len, std::string &cdata) {
-  if(_downstream_length == 0) {
+EsiGzip::stream_encode(const char *data, int data_len, std::string &cdata)
+{
+  if (_downstream_length == 0) {
     cdata.assign(GZIP_HEADER_SIZE, 0); // reserving space for the header
     cdata[0] = MAGIC_BYTE_1;
     cdata[1] = MAGIC_BYTE_2;
@@ -75,7 +78,7 @@ EsiGzip::stream_encode(const char *data, int data_len, std::string &cdata) {
     //_zstrm.zalloc = Z_NULL;
     //_zstrm.zfree = Z_NULL;
     //_zstrm.opaque = Z_NULL;
-    //if (deflateInit2(&_zstrm, COMPRESSION_LEVEL, Z_DEFLATED, -MAX_WBITS,
+    // if (deflateInit2(&_zstrm, COMPRESSION_LEVEL, Z_DEFLATED, -MAX_WBITS,
     //               ZLIB_MEM_LEVEL, Z_DEFAULT_STRATEGY) != Z_OK) {
     //  _errorLog("[%s] deflateInit2 failed!", __FUNCTION__);
     //  return false;
@@ -84,14 +87,13 @@ EsiGzip::stream_encode(const char *data, int data_len, std::string &cdata) {
     _crc = crc32(0, Z_NULL, 0);
   }
 
-    _zstrm.zalloc = Z_NULL;
-    _zstrm.zfree = Z_NULL;
-    _zstrm.opaque = Z_NULL;
-    if (deflateInit2(&_zstrm, COMPRESSION_LEVEL, Z_DEFLATED, -MAX_WBITS,
-                   ZLIB_MEM_LEVEL, Z_DEFAULT_STRATEGY) != Z_OK) {
-      _errorLog("[%s] deflateInit2 failed!", __FUNCTION__);
-      return false;
-    }
+  _zstrm.zalloc = Z_NULL;
+  _zstrm.zfree = Z_NULL;
+  _zstrm.opaque = Z_NULL;
+  if (deflateInit2(&_zstrm, COMPRESSION_LEVEL, Z_DEFLATED, -MAX_WBITS, ZLIB_MEM_LEVEL, Z_DEFAULT_STRATEGY) != Z_OK) {
+    _errorLog("[%s] deflateInit2 failed!", __FUNCTION__);
+    return false;
+  }
 
   int deflate_result = Z_OK;
   if (data && (data_len > 0)) {
@@ -110,22 +112,23 @@ EsiGzip::stream_encode(const char *data, int data_len, std::string &cdata) {
     _total_data_length += data_len;
   }
 
-    deflateEnd(&_zstrm);
+  deflateEnd(&_zstrm);
 
   return true;
 }
 
-bool EsiGzip::stream_finish(std::string &cdata, int&downstream_length) {
+bool
+EsiGzip::stream_finish(std::string &cdata, int &downstream_length)
+{
   char buf[BUF_SIZE];
 
-    _zstrm.zalloc = Z_NULL;
-    _zstrm.zfree = Z_NULL;
-    _zstrm.opaque = Z_NULL;
-    if (deflateInit2(&_zstrm, COMPRESSION_LEVEL, Z_DEFLATED, -MAX_WBITS,
-                   ZLIB_MEM_LEVEL, Z_DEFAULT_STRATEGY) != Z_OK) {
-      _errorLog("[%s] deflateInit2 failed!", __FUNCTION__);
-      return false;
-    }
+  _zstrm.zalloc = Z_NULL;
+  _zstrm.zfree = Z_NULL;
+  _zstrm.opaque = Z_NULL;
+  if (deflateInit2(&_zstrm, COMPRESSION_LEVEL, Z_DEFLATED, -MAX_WBITS, ZLIB_MEM_LEVEL, Z_DEFAULT_STRATEGY) != Z_OK) {
+    _errorLog("[%s] deflateInit2 failed!", __FUNCTION__);
+    return false;
+  }
 
   _zstrm.next_in = reinterpret_cast<Bytef *>(buf);
   _zstrm.avail_in = 0;
@@ -144,8 +147,8 @@ bool EsiGzip::stream_finish(std::string &cdata, int&downstream_length) {
   return true;
 }
 
-EsiGzip::~EsiGzip() {
+EsiGzip::~EsiGzip()
+{
   _downstream_length = 0;
   _total_data_length = 0;
 }
-

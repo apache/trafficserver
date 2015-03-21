@@ -55,13 +55,15 @@ static vector<string> HEADER_WHITELIST;
 static string COMBO_HANDLER_PATH;
 static int COMBO_HANDLER_PATH_SIZE;
 
-#define LOG_ERROR(fmt, args...) do {                                    \
-    TSError("[%s:%d] [%s] ERROR: " fmt, __FILE__, __LINE__, __FUNCTION__ , ##args ); \
-    TSDebug(DEBUG_TAG, "[%s:%d] [%s] ERROR: " fmt, __FILE__, __LINE__, __FUNCTION__ , ##args ); \
+#define LOG_ERROR(fmt, args...)                                                               \
+  do {                                                                                        \
+    TSError("[%s:%d] [%s] ERROR: " fmt, __FILE__, __LINE__, __FUNCTION__, ##args);            \
+    TSDebug(DEBUG_TAG, "[%s:%d] [%s] ERROR: " fmt, __FILE__, __LINE__, __FUNCTION__, ##args); \
   } while (0)
 
-#define LOG_DEBUG(fmt, args...) do {                                    \
-    TSDebug(DEBUG_TAG, "[%s:%d] [%s] DEBUG: " fmt, __FILE__, __LINE__, __FUNCTION__ , ##args ); \
+#define LOG_DEBUG(fmt, args...)                                                               \
+  do {                                                                                        \
+    TSDebug(DEBUG_TAG, "[%s:%d] [%s] DEBUG: " fmt, __FILE__, __LINE__, __FUNCTION__, ##args); \
   } while (0)
 
 typedef list<string> StringList;
@@ -72,8 +74,7 @@ struct ClientRequest {
   StringList file_urls;
   bool gzip_accepted;
   string defaultBucket; // default Bucket will be set to HOST header
-  ClientRequest()
-    : status(TS_HTTP_STATUS_OK), client_addr(NULL), gzip_accepted(false), defaultBucket("l") { };
+  ClientRequest() : status(TS_HTTP_STATUS_OK), client_addr(NULL), gzip_accepted(false), defaultBucket("l"){};
 };
 
 struct InterceptData {
@@ -85,10 +86,10 @@ struct InterceptData {
     TSIOBuffer buffer;
     TSIOBufferReader reader;
 
-    IoHandle()
-      : vio(0), buffer(0), reader(0) { };
+    IoHandle() : vio(0), buffer(0), reader(0){};
 
-    ~IoHandle() {
+    ~IoHandle()
+    {
       if (reader) {
         TSIOBufferReaderFree(reader);
       }
@@ -114,8 +115,9 @@ struct InterceptData {
   string gzipped_data;
 
   InterceptData(TSCont cont)
-    : net_vc(0), contp(cont), input(), output(), req_hdr_bufp(0), req_hdr_loc(0), req_hdr_parsed(false),
-      initialized(false), fetcher(0), read_complete(false), write_complete(false) {
+    : net_vc(0), contp(cont), input(), output(), req_hdr_bufp(0), req_hdr_loc(0), req_hdr_parsed(false), initialized(false),
+      fetcher(0), read_complete(false), write_complete(false)
+  {
     http_parser = TSHttpParserCreate();
   }
 
@@ -179,8 +181,7 @@ InterceptData::~InterceptData()
 // forward declarations
 static int handleReadRequestHeader(TSCont contp, TSEvent event, void *edata);
 static bool isComboHandlerRequest(TSMBuffer bufp, TSMLoc hdr_loc, TSMLoc url_loc);
-static void getClientRequest(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc hdr_loc, TSMLoc url_loc,
-                             ClientRequest &creq);
+static void getClientRequest(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc hdr_loc, TSMLoc url_loc, ClientRequest &creq);
 static void parseQueryParameters(const char *query, int query_len, ClientRequest &creq);
 static void checkGzipAcceptance(TSMBuffer bufp, TSMLoc hdr_loc, ClientRequest &creq);
 static int handleServerEvent(TSCont contp, TSEvent event, void *edata);
@@ -201,7 +202,7 @@ void
 TSPluginInit(int argc, const char *argv[])
 {
   if ((argc > 1) && (strcmp(argv[1], "-") != 0)) {
-    COMBO_HANDLER_PATH =  argv[1];
+    COMBO_HANDLER_PATH = argv[1];
     if (COMBO_HANDLER_PATH == "/") {
       COMBO_HANDLER_PATH.clear();
     } else {
@@ -342,8 +343,8 @@ isComboHandlerRequest(TSMBuffer bufp, TSMLoc hdr_loc, TSMLoc url_loc)
         LOG_ERROR("Could not get path from request URL");
         retval = false;
       } else {
-        retval = (path_len == COMBO_HANDLER_PATH_SIZE) &&
-          (strncasecmp(path, COMBO_HANDLER_PATH.c_str(), COMBO_HANDLER_PATH_SIZE) == 0);
+        retval =
+          (path_len == COMBO_HANDLER_PATH_SIZE) && (strncasecmp(path, COMBO_HANDLER_PATH.c_str(), COMBO_HANDLER_PATH_SIZE) == 0);
         LOG_DEBUG("Path [%.*s] is %s combo handler path", path_len, path, (retval ? "a" : "not a"));
       }
     }
@@ -356,7 +357,7 @@ getDefaultBucket(TSHttpTxn /* txnp ATS_UNUSED */, TSMBuffer bufp, TSMLoc hdr_obj
 {
   LOG_DEBUG("In getDefaultBucket");
   TSMLoc field_loc;
-  const char* host;
+  const char *host;
   int host_len = 0;
   bool defaultBucketFound = false;
 
@@ -369,7 +370,7 @@ getDefaultBucket(TSHttpTxn /* txnp ATS_UNUSED */, TSMBuffer bufp, TSMLoc hdr_obj
   host = TSMimeHdrFieldValueStringGet(bufp, hdr_obj, field_loc, -1, &host_len);
   if (!host || host_len <= 0) {
     LOG_ERROR("Error Extracting Host Header");
-    TSHandleMLocRelease (bufp, hdr_obj, field_loc);
+    TSHandleMLocRelease(bufp, hdr_obj, field_loc);
     return false;
   }
 
@@ -389,7 +390,7 @@ getDefaultBucket(TSHttpTxn /* txnp ATS_UNUSED */, TSMBuffer bufp, TSMLoc hdr_obj
     }
   */
 
-  TSHandleMLocRelease (bufp, hdr_obj, field_loc);
+  TSHandleMLocRelease(bufp, hdr_obj, field_loc);
 
   LOG_DEBUG("defaultBucket: %s", creq.defaultBucket.data());
   return defaultBucketFound;
@@ -406,11 +407,10 @@ getClientRequest(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc hdr_loc, TSMLoc url_loc,
     creq.status = TS_HTTP_STATUS_BAD_REQUEST;
     return;
   } else {
-    if (!getDefaultBucket(txnp, bufp, hdr_loc, creq))
-      {
-        LOG_ERROR("failed getting Default Bucket for the request");
-        return;
-      }
+    if (!getDefaultBucket(txnp, bufp, hdr_loc, creq)) {
+      LOG_ERROR("failed getting Default Bucket for the request");
+      return;
+    }
     if (query_len > MAX_QUERY_LENGTH) {
       creq.status = TS_HTTP_STATUS_BAD_REQUEST;
       LOG_ERROR("querystring too long");
@@ -453,96 +453,91 @@ parseQueryParameters(const char *query, int query_len, ClientRequest &creq)
               sig_verified = true;
             }
             if (!sig_verified) {
-              LOG_DEBUG("Signature [%.*s] on query [%.*s] is invalid", param_len - 4, param + 4,
-                        param_start_pos, query);
+              LOG_DEBUG("Signature [%.*s] on query [%.*s] is invalid", param_len - 4, param + 4, param_start_pos, query);
             }
           } else {
             LOG_DEBUG("Verification not configured; ignoring signature...");
           }
           break; // nothing useful after the signature
-      }
-      if ((param_len >= 2) && (param[0] == 'p') && (param[1] == '=')) {
-        common_prefix_size = param_len - 2;
-        common_prefix_path_size = 0;
-        if (common_prefix_size) {
-          common_prefix = param + 2;
-          for (int i = 0; i < common_prefix_size; ++i) {
-            if (common_prefix[i] == ':') {
-              common_prefix_path = common_prefix;
-              common_prefix_path_size = i;
-              ++i; // go beyond the ':'
-              common_prefix += i;
-              common_prefix_size -= i;
-              break;
+        }
+        if ((param_len >= 2) && (param[0] == 'p') && (param[1] == '=')) {
+          common_prefix_size = param_len - 2;
+          common_prefix_path_size = 0;
+          if (common_prefix_size) {
+            common_prefix = param + 2;
+            for (int i = 0; i < common_prefix_size; ++i) {
+              if (common_prefix[i] == ':') {
+                common_prefix_path = common_prefix;
+                common_prefix_path_size = i;
+                ++i; // go beyond the ':'
+                common_prefix += i;
+                common_prefix_size -= i;
+                break;
+              }
             }
           }
-        }
-        LOG_DEBUG("Common prefix is [%.*s], common prefix path is [%.*s]", common_prefix_size, common_prefix,
-                  common_prefix_path_size, common_prefix_path);
-      }
-      else {
-        if (common_prefix_path_size) {
-          if (colon_pos >= param_start_pos) { // we have a colon in this param as well?
-            LOG_ERROR("Ambiguous 'bucket': [%.*s] specified in common prefix and [%.*s] specified in "
-                      "current parameter [%.*s]", common_prefix_path_size, common_prefix_path,
-                      colon_pos - param_start_pos, param, param_len, param);
-            creq.file_urls.clear();
-            break;
-          }
-          file_url.append(common_prefix_path, common_prefix_path_size);
-        }
-        else if (colon_pos >= param_start_pos) { // we have a colon
-          if ((colon_pos == param_start_pos) || (colon_pos == (i - 1))) {
-            LOG_ERROR("Colon-separated path [%.*s] has empty part(s)", param_len, param);
-            creq.file_urls.clear();
-            break;
-          }
-          file_url.append(param, colon_pos - param_start_pos); // appending pre ':' part first
-
-          // modify these to point to the "actual" file path
-          param_start_pos = colon_pos + 1;
-          param_len = i - param_start_pos;
-          param = query + param_start_pos;
+          LOG_DEBUG("Common prefix is [%.*s], common prefix path is [%.*s]", common_prefix_size, common_prefix,
+                    common_prefix_path_size, common_prefix_path);
         } else {
-          file_url += creq.defaultBucket; // default path
+          if (common_prefix_path_size) {
+            if (colon_pos >= param_start_pos) { // we have a colon in this param as well?
+              LOG_ERROR("Ambiguous 'bucket': [%.*s] specified in common prefix and [%.*s] specified in "
+                        "current parameter [%.*s]",
+                        common_prefix_path_size, common_prefix_path, colon_pos - param_start_pos, param, param_len, param);
+              creq.file_urls.clear();
+              break;
+            }
+            file_url.append(common_prefix_path, common_prefix_path_size);
+          } else if (colon_pos >= param_start_pos) { // we have a colon
+            if ((colon_pos == param_start_pos) || (colon_pos == (i - 1))) {
+              LOG_ERROR("Colon-separated path [%.*s] has empty part(s)", param_len, param);
+              creq.file_urls.clear();
+              break;
+            }
+            file_url.append(param, colon_pos - param_start_pos); // appending pre ':' part first
+
+            // modify these to point to the "actual" file path
+            param_start_pos = colon_pos + 1;
+            param_len = i - param_start_pos;
+            param = query + param_start_pos;
+          } else {
+            file_url += creq.defaultBucket; // default path
+          }
+          file_url += '/';
+          if (common_prefix_size) {
+            file_url.append(common_prefix, common_prefix_size);
+          }
+          file_url.append(param, param_len);
+          creq.file_urls.push_back(file_url);
+          LOG_DEBUG("Added file path [%s]", file_url.c_str());
+          file_url.resize(file_base_url_size);
         }
-        file_url += '/';
-        if (common_prefix_size) {
-          file_url.append(common_prefix, common_prefix_size);
-        }
-        file_url.append(param, param_len);
-        creq.file_urls.push_back(file_url);
-        LOG_DEBUG("Added file path [%s]", file_url.c_str());
-        file_url.resize(file_base_url_size);
       }
+      param_start_pos = i + 1;
+    } else if (query[i] == ':') {
+      colon_pos = i;
     }
-    param_start_pos = i + 1;
-  } else if (query[i] == ':') {
-    colon_pos = i;
   }
-}
-if (!creq.file_urls.size()) {
-  creq.status = TS_HTTP_STATUS_BAD_REQUEST;
- } else if (SIG_KEY_NAME.size() && !sig_verified) {
-  LOG_DEBUG("Invalid/empty signature found; Need valid signature");
-  creq.status = TS_HTTP_STATUS_FORBIDDEN;
-  creq.file_urls.clear();
- }
+  if (!creq.file_urls.size()) {
+    creq.status = TS_HTTP_STATUS_BAD_REQUEST;
+  } else if (SIG_KEY_NAME.size() && !sig_verified) {
+    LOG_DEBUG("Invalid/empty signature found; Need valid signature");
+    creq.status = TS_HTTP_STATUS_FORBIDDEN;
+    creq.file_urls.clear();
+  }
 
-if (creq.file_urls.size() > MAX_FILE_COUNT) {
-  creq.status = TS_HTTP_STATUS_BAD_REQUEST;
-  LOG_ERROR("too many files in url");
-  creq.file_urls.clear();
-}
-
+  if (creq.file_urls.size() > MAX_FILE_COUNT) {
+    creq.status = TS_HTTP_STATUS_BAD_REQUEST;
+    LOG_ERROR("too many files in url");
+    creq.file_urls.clear();
+  }
 }
 
 static void
 checkGzipAcceptance(TSMBuffer bufp, TSMLoc hdr_loc, ClientRequest &creq)
 {
   creq.gzip_accepted = false;
-  TSMLoc field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_ACCEPT_ENCODING,
-                                          TS_MIME_LEN_ACCEPT_ENCODING);
+  TSMLoc field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_ACCEPT_ENCODING, TS_MIME_LEN_ACCEPT_ENCODING);
   if (field_loc != TS_NULL_MLOC) {
     const char *value;
     int value_len;
@@ -555,8 +550,7 @@ checkGzipAcceptance(TSMBuffer bufp, TSMLoc hdr_loc, ClientRequest &creq)
           creq.gzip_accepted = true;
         }
       } else {
-        LOG_DEBUG("Error while getting value # %d of header [%.*s]", i, TS_MIME_LEN_ACCEPT_ENCODING,
-                  TS_MIME_FIELD_ACCEPT_ENCODING);
+        LOG_DEBUG("Error while getting value # %d of header [%.*s]", i, TS_MIME_LEN_ACCEPT_ENCODING, TS_MIME_FIELD_ACCEPT_ENCODING);
       }
       if (creq.gzip_accepted) {
         break;
@@ -654,8 +648,7 @@ initRequestProcessing(InterceptData &int_data, void *edata, bool &write_response
   }
 
   if (int_data.creq.status == TS_HTTP_STATUS_OK) {
-    for (StringList::iterator iter = int_data.creq.file_urls.begin();
-         iter != int_data.creq.file_urls.end(); ++iter) {
+    for (StringList::iterator iter = int_data.creq.file_urls.begin(); iter != int_data.creq.file_urls.end(); ++iter) {
       if (!int_data.fetcher->addFetchRequest(*iter)) {
         LOG_ERROR("Couldn't add fetch request for URL [%s]", iter->c_str());
       } else {
@@ -687,8 +680,7 @@ readInterceptRequest(InterceptData &int_data)
     while (block != NULL) {
       data = TSIOBufferBlockReadStart(block, int_data.input.reader, &data_len);
       const char *endptr = data + data_len;
-      if (TSHttpHdrParseReq(int_data.http_parser, int_data.req_hdr_bufp, int_data.req_hdr_loc,
-                             &data, endptr) == TS_PARSE_DONE) {
+      if (TSHttpHdrParseReq(int_data.http_parser, int_data.req_hdr_bufp, int_data.req_hdr_loc, &data, endptr) == TS_PARSE_DONE) {
         int_data.read_complete = true;
       }
       consumed += data_len;
@@ -713,7 +705,7 @@ static const string OK_REPLY_LINE("HTTP/1.0 200 OK\r\n");
 static const string BAD_REQUEST_RESPONSE("HTTP/1.0 400 Bad Request\r\n\r\n");
 static const string ERROR_REPLY_RESPONSE("HTTP/1.0 500 Internal Server Error\r\n\r\n");
 static const string FORBIDDEN_RESPONSE("HTTP/1.0 403 Forbidden\r\n\r\n");
-static const char GZIP_ENCODING_FIELD[] = { "Content-Encoding: gzip\r\n" };
+static const char GZIP_ENCODING_FIELD[] = {"Content-Encoding: gzip\r\n"};
 static const int GZIP_ENCODING_FIELD_SIZE = sizeof(GZIP_ENCODING_FIELD) - 1;
 
 static bool
@@ -744,8 +736,7 @@ writeResponse(InterceptData &int_data)
     }
 
     if (resp_header_fields.size()) {
-      if (TSIOBufferWrite(int_data.output.buffer, resp_header_fields.data(),
-                           resp_header_fields.size()) == TS_ERROR) {
+      if (TSIOBufferWrite(int_data.output.buffer, resp_header_fields.data(), resp_header_fields.size()) == TS_ERROR) {
         LOG_ERROR("Error while writing additional response header fields");
         return false;
       }
@@ -793,8 +784,7 @@ prepareResponse(InterceptData &int_data, ByteBlockList &body_blocks, string &res
       flags_list[i] = 0;
     }
 
-    for (StringList::iterator iter = int_data.creq.file_urls.begin(); iter != int_data.creq.file_urls.end();
-         ++iter) {
+    for (StringList::iterator iter = int_data.creq.file_urls.begin(); iter != int_data.creq.file_urls.end(); ++iter) {
       if (int_data.fetcher->getData(*iter, resp_data) && resp_data.status == TS_HTTP_STATUS_OK) {
         body_blocks.push_back(ByteBlock(resp_data.content, resp_data.content_len));
         if (find(HEADER_WHITELIST.begin(), HEADER_WHITELIST.end(), TS_MIME_FIELD_CONTENT_TYPE) == HEADER_WHITELIST.end()) {
@@ -813,8 +803,7 @@ prepareResponse(InterceptData &int_data, ByteBlockList &body_blocks, string &res
           }
         }
 
-        field_loc = TSMimeHdrFieldFind(resp_data.bufp, resp_data.hdr_loc, TS_MIME_FIELD_EXPIRES,
-                                        TS_MIME_LEN_EXPIRES);
+        field_loc = TSMimeHdrFieldFind(resp_data.bufp, resp_data.hdr_loc, TS_MIME_FIELD_EXPIRES, TS_MIME_LEN_EXPIRES);
         if (field_loc != TS_NULL_MLOC) {
           time_t curr_field_expires_time;
           int n_values = TSMimeHdrFieldValuesCount(resp_data.bufp, resp_data.hdr_loc, field_loc);
@@ -835,7 +824,7 @@ prepareResponse(InterceptData &int_data, ByteBlockList &body_blocks, string &res
             continue;
           }
 
-          const string& header = HEADER_WHITELIST[i];
+          const string &header = HEADER_WHITELIST[i];
 
           field_loc = TSMimeHdrFieldFind(resp_data.bufp, resp_data.hdr_loc, header.c_str(), header.size());
           if (field_loc != TS_NULL_MLOC) {
@@ -876,7 +865,7 @@ prepareResponse(InterceptData &int_data, ByteBlockList &body_blocks, string &res
           int line_size = sprintf(line_buf, "Cache-Control: max-age=%d, public\r\n", max_age);
           resp_header_fields.append(line_buf, line_size);
         } else {
-          resp_header_fields.append("Cache-Control: max-age=315360000, public\r\n");  // set 10-years max-age
+          resp_header_fields.append("Cache-Control: max-age=315360000, public\r\n"); // set 10-years max-age
         }
       }
       if (find(HEADER_WHITELIST.begin(), HEADER_WHITELIST.end(), TS_MIME_FIELD_EXPIRES) == HEADER_WHITELIST.end()) {
@@ -910,8 +899,7 @@ static bool
 getContentType(TSMBuffer bufp, TSMLoc hdr_loc, string &resp_header_fields)
 {
   bool retval = false;
-  TSMLoc field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_CONTENT_TYPE,
-                                          TS_MIME_LEN_CONTENT_TYPE);
+  TSMLoc field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_CONTENT_TYPE, TS_MIME_LEN_CONTENT_TYPE);
   if (field_loc != TS_NULL_MLOC) {
     bool values_added = false;
     const char *value;
@@ -969,15 +957,14 @@ getMaxAge(TSMBuffer bufp, TSMLoc hdr_loc)
   return max_age;
 }
 
-static const char INVARIANT_FIELD_LINES[] = { "Vary: Accept-Encoding\r\n" };
+static const char INVARIANT_FIELD_LINES[] = {"Vary: Accept-Encoding\r\n"};
 static const char INVARIANT_FIELD_LINES_SIZE = sizeof(INVARIANT_FIELD_LINES) - 1;
 
 static bool
 writeStandardHeaderFields(InterceptData &int_data, int &n_bytes_written)
 {
   if (find(HEADER_WHITELIST.begin(), HEADER_WHITELIST.end(), TS_MIME_FIELD_VARY) == HEADER_WHITELIST.end()) {
-    if (TSIOBufferWrite(int_data.output.buffer, INVARIANT_FIELD_LINES,
-          INVARIANT_FIELD_LINES_SIZE) == TS_ERROR) {
+    if (TSIOBufferWrite(int_data.output.buffer, INVARIANT_FIELD_LINES, INVARIANT_FIELD_LINES_SIZE) == TS_ERROR) {
       LOG_ERROR("Error while writing invariant fields");
       return false;
     }
@@ -987,8 +974,7 @@ writeStandardHeaderFields(InterceptData &int_data, int &n_bytes_written)
   if (find(HEADER_WHITELIST.begin(), HEADER_WHITELIST.end(), TS_MIME_FIELD_LAST_MODIFIED) == HEADER_WHITELIST.end()) {
     time_t time_now = static_cast<time_t>(TShrtime() / 1000000000); // it returns nanoseconds!
     char last_modified_line[128];
-    int last_modified_line_size = strftime(last_modified_line, 128, "Last-Modified: %a, %d %b %Y %T GMT\r\n",
-        gmtime(&time_now));
+    int last_modified_line_size = strftime(last_modified_line, 128, "Last-Modified: %a, %d %b %Y %T GMT\r\n", gmtime(&time_now));
     if (TSIOBufferWrite(int_data.output.buffer, last_modified_line, last_modified_line_size) == TS_ERROR) {
       LOG_ERROR("Error while writing last-modified fields");
       return false;
@@ -1023,17 +1009,17 @@ writeErrorResponse(InterceptData &int_data, int &n_bytes_written)
 }
 
 TSRemapStatus
-TSRemapDoRemap(void* ih, TSHttpTxn rh, TSRemapRequestInfo* rri)
+TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 {
-  TSHttpTxnArgSet(rh, arg_idx, (void*)1); /* Save for later hooks */
-  return TSREMAP_NO_REMAP;  /* Continue with next remap plugin in chain */
+  TSHttpTxnArgSet(rh, arg_idx, (void *)1); /* Save for later hooks */
+  return TSREMAP_NO_REMAP;                 /* Continue with next remap plugin in chain */
 }
 
 /*
   Initialize the plugin as a remap plugin.
 */
 TSReturnCode
-TSRemapInit(TSRemapInterface* api_info, char *errbuf, int errbuf_size)
+TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 {
   if (!api_info) {
     strncpy(errbuf, "[TSRemapInit] - Invalid TSRemapInterface argument", errbuf_size - 1);
@@ -1051,8 +1037,7 @@ TSRemapInit(TSRemapInterface* api_info, char *errbuf, int errbuf_size)
 }
 
 TSReturnCode
-TSRemapNewInstance(int argc, char* argv[], void** ih, char* errbuf,
-                   int errbuf_size)
+TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_size)
 {
   *ih = NULL;
 
@@ -1062,7 +1047,7 @@ TSRemapNewInstance(int argc, char* argv[], void** ih, char* errbuf,
 
 
 void
-TSRemapDeleteInstance(void* ih)
+TSRemapDeleteInstance(void *ih)
 {
   return;
 }

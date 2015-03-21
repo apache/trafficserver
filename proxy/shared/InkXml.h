@@ -22,7 +22,6 @@
  */
 
 
-
 #ifndef INK_XML_H
 #define INK_XML_H
 
@@ -47,15 +46,17 @@ public:
   InkXmlAttr(const char *tag, const char *value);
   ~InkXmlAttr();
 
-  char *tag() const
+  char *
+  tag() const
   {
     return m_tag;
   }
-  char *value() const
+  char *
+  value() const
   {
     return m_value;
   }
-  void display(FILE * fd = stdout);
+  void display(FILE *fd = stdout);
 
 private:
   char *m_tag;
@@ -68,7 +69,7 @@ private:
   // -- member functions that are not allowed --
   InkXmlAttr();
   InkXmlAttr(const InkXmlAttr &);
-  InkXmlAttr & operator=(InkXmlAttr &);
+  InkXmlAttr &operator=(InkXmlAttr &);
 };
 
 /*-------------------------------------------------------------------------
@@ -85,19 +86,22 @@ public:
 
   void clear_tags();
   int add_tag(const char *tag, const char *value);
-  int add_attr(InkXmlAttr * attr);
+  int add_attr(InkXmlAttr *attr);
   char *tag_value(const char *tag_name);
-  void display(FILE * fd = stdout);
+  void display(FILE *fd = stdout);
 
-  char *object_name() const
+  char *
+  object_name() const
   {
     return m_object_name;
   }
-  InkXmlAttr *first() const
+  InkXmlAttr *
+  first() const
   {
     return m_tags.head;
   }
-  InkXmlAttr *next(InkXmlAttr * here) const
+  InkXmlAttr *
+  next(InkXmlAttr *here) const
   {
     return (here->link).next;
   }
@@ -111,13 +115,13 @@ public:
   LINK(InkXmlObject, link);
 
 private:
-  InkXmlObject * get_next_xml_object(int fd);
+  InkXmlObject *get_next_xml_object(int fd);
 
 private:
   // -- member functions that are not allowed --
   InkXmlObject();
   InkXmlObject(const InkXmlObject &);
-  InkXmlObject & operator=(InkXmlObject &);
+  InkXmlObject &operator=(InkXmlObject &);
 };
 
 /*-------------------------------------------------------------------------
@@ -129,7 +133,6 @@ private:
 
 class InkXmlConfigFile
 {
-
 public:
   InkXmlConfigFile(const char *config_file);
   ~InkXmlConfigFile();
@@ -139,21 +142,23 @@ public:
   int parse(int fd);
   /*                                                                     */
   int parse();
-  void add_object(InkXmlObject * object);
+  void add_object(InkXmlObject *object);
   InkXmlObject *find_object(const char *object_name);
-  void display(FILE * fd = stdout);
+  void display(FILE *fd = stdout);
 
-  InkXmlObject *first()
+  InkXmlObject *
+  first()
   {
     return m_objects.head;
   }
-  InkXmlObject *next(InkXmlObject * here)
+  InkXmlObject *
+  next(InkXmlObject *here)
   {
     return (here->link).next;
   }
 
 private:
-  InkXmlObject * get_next_xml_object(int fd);
+  InkXmlObject *get_next_xml_object(int fd);
   InkXmlObject *parse_error();
   InkXmlObject *scan_object(int fd, char token);
   InkXmlAttr *scan_attr(int fd, const char *ident);
@@ -170,29 +175,25 @@ private:
   // -- member functions that are not allowed --
   InkXmlConfigFile();
   InkXmlConfigFile(const InkXmlConfigFile &);
-  InkXmlConfigFile & operator=(InkXmlConfigFile &);
+  InkXmlConfigFile &operator=(InkXmlConfigFile &);
 };
 
 class NameList
 {
 private:
-  struct ListElem
-  {
+  struct ListElem {
     char *m_name;
     LINK(ListElem, link);
 
-    ListElem(char *name):m_name(name)
-    { }
+    ListElem(char *name) : m_name(name) {}
   };
 
 public:
-  NameList():m_count(0) {
-  }
-  ~NameList() {
-    clear();
-  }
+  NameList() : m_count(0) {}
+  ~NameList() { clear(); }
 
-  void enqueue(char *name)
+  void
+  enqueue(char *name)
   {
     ListElem *e = new ListElem(name);
 
@@ -200,7 +201,8 @@ public:
     m_count++;
   }
 
-  char *dequeue()
+  char *
+  dequeue()
   {
     char *ret = NULL;
     ListElem *e = m_list.dequeue();
@@ -213,7 +215,8 @@ public:
     return ret;
   }
 
-  void clear()
+  void
+  clear()
   {
     ListElem *e;
 
@@ -223,7 +226,8 @@ public:
     m_count = 0;
   }
 
-  unsigned count()
+  unsigned
+  count()
   {
     return m_count;
   }

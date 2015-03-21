@@ -45,7 +45,7 @@
 extern ClassAllocator<Event> eventAllocator;
 
 void
-ProtectedQueue::enqueue(Event *e , bool fast_signal)
+ProtectedQueue::enqueue(Event *e, bool fast_signal)
 {
   ink_assert(!e->in_the_prot_queue && !e->in_the_priority_queue);
   EThread *e_ethread = e->ethread;
@@ -81,7 +81,7 @@ ProtectedQueue::enqueue(Event *e , bool fast_signal)
             // convert to direct map, put each ethread (sig_e[i]) into
             // the direct map loation: sig_e[sig_e[i]->id]
             for (int i = 0; i < t; i++) {
-              EThread *cur = sig_e[i];  // put this ethread
+              EThread *cur = sig_e[i]; // put this ethread
               while (cur) {
                 EThread *next = sig_e[cur->id]; // into this location
                 if (next == cur)
@@ -106,17 +106,17 @@ ProtectedQueue::enqueue(Event *e , bool fast_signal)
 }
 
 void
-flush_signals(EThread * thr)
+flush_signals(EThread *thr)
 {
   ink_assert(this_ethread() == thr);
   int n = thr->n_ethreads_to_be_signalled;
   if (n > eventProcessor.n_ethreads)
-    n = eventProcessor.n_ethreads;      // MAX
+    n = eventProcessor.n_ethreads; // MAX
   int i;
 
-  // Since the lock is only there to prevent a race in ink_cond_timedwait
-  // the lock is taken only for a short time, thus it is unlikely that
-  // this code has any effect.
+// Since the lock is only there to prevent a race in ink_cond_timedwait
+// the lock is taken only for a short time, thus it is unlikely that
+// this code has any effect.
 #ifdef EAGER_SIGNALLING
   for (i = 0; i < n; i++) {
     // Try to signal as many threads as possible without blocking.
@@ -140,7 +140,7 @@ flush_signals(EThread * thr)
 void
 ProtectedQueue::dequeue_timed(ink_hrtime cur_time, ink_hrtime timeout, bool sleep)
 {
-  (void) cur_time;
+  (void)cur_time;
   Event *e;
   if (sleep) {
     ink_mutex_acquire(&lock);
@@ -151,7 +151,7 @@ ProtectedQueue::dequeue_timed(ink_hrtime cur_time, ink_hrtime timeout, bool slee
     ink_mutex_release(&lock);
   }
 
-  e = (Event *) ink_atomiclist_popall(&al);
+  e = (Event *)ink_atomiclist_popall(&al);
   // invert the list, to preserve order
   SLL<Event, Event::Link_link> l, t;
   t.head = e;

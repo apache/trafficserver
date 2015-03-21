@@ -24,9 +24,8 @@
 #include "P_Cache.h"
 
 Action *
-Cache::link(Continuation * cont, CacheKey * from, CacheKey * to, CacheFragType type, char *hostname, int host_len)
+Cache::link(Continuation *cont, CacheKey *from, CacheKey *to, CacheFragType type, char *hostname, int host_len)
 {
-
   if (!CacheProcessor::IsCacheReady(type)) {
     cont->handleEvent(CACHE_EVENT_LINK_FAILED, 0);
     return ACTION_RESULT_DONE;
@@ -36,14 +35,14 @@ Cache::link(Continuation * cont, CacheKey * from, CacheKey * to, CacheFragType t
 
   CacheVC *c = new_CacheVC(cont);
   c->vol = key_to_vol(from, hostname, host_len);
-  c->write_len = sizeof(*to);   // so that the earliest_key will be used
+  c->write_len = sizeof(*to); // so that the earliest_key will be used
   c->f.use_first_key = 1;
   c->first_key = *from;
   c->earliest_key = *to;
 
   c->buf = new_IOBufferData(BUFFER_SIZE_INDEX_512);
 #ifdef DEBUG
-  Doc *doc = (Doc *) c->buf->data();
+  Doc *doc = (Doc *)c->buf->data();
   memcpy(doc->data(), to, sizeof(*to)); // doublecheck
 #endif
 
@@ -72,9 +71,8 @@ Ldone:
 }
 
 Action *
-Cache::deref(Continuation * cont, CacheKey * key, CacheFragType type, char *hostname, int host_len)
+Cache::deref(Continuation *cont, CacheKey *key, CacheFragType type, char *hostname, int host_len)
 {
-
   if (!CacheProcessor::IsCacheReady(type)) {
     cont->handleEvent(CACHE_EVENT_DEREF_FAILED, 0);
     return ACTION_RESULT_DONE;
@@ -90,7 +88,7 @@ Cache::deref(Continuation * cont, CacheKey * key, CacheFragType type, char *host
     MUTEX_TRY_LOCK(lock, vol->mutex, cont->mutex->thread_holding);
     if (lock.is_locked()) {
       if (!dir_probe(key, vol, &result, &last_collision)) {
-        cont->handleEvent(CACHE_EVENT_DEREF_FAILED, (void *) -ECACHE_NO_DOC);
+        cont->handleEvent(CACHE_EVENT_DEREF_FAILED, (void *)-ECACHE_NO_DOC);
         return ACTION_RESULT_DONE;
       }
     }
@@ -107,9 +105,12 @@ Cache::deref(Continuation * cont, CacheKey * key, CacheFragType type, char *host
     }
 
     switch (c->do_read_call(&c->key)) {
-      case EVENT_DONE: return ACTION_RESULT_DONE;
-      case EVENT_RETURN: goto Lcallreturn;
-      default: return &c->_action;
+    case EVENT_DONE:
+      return ACTION_RESULT_DONE;
+    case EVENT_RETURN:
+      goto Lcallreturn;
+    default:
+      return &c->_action;
     }
   }
 Lcallreturn:
@@ -130,36 +131,36 @@ CacheVC::derefRead(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     return free_CacheVC(this);
   if (!buf)
     goto Lcollision;
-  if ((int) io.aio_result != (int) io.aiocb.aio_nbytes)
+  if ((int)io.aio_result != (int)io.aiocb.aio_nbytes)
     goto Ldone;
   if (!dir_agg_valid(vol, &dir)) {
     last_collision = NULL;
     goto Lcollision;
   }
-  doc = (Doc *) buf->data();
+  doc = (Doc *)buf->data();
   if (!(doc->first_key == key))
     goto Lcollision;
 #ifdef DEBUG
   ink_assert(!memcmp(doc->data(), &doc->key, sizeof(doc->key)));
 #endif
-  _action.continuation->handleEvent(CACHE_EVENT_DEREF, (void *) &doc->key);
+  _action.continuation->handleEvent(CACHE_EVENT_DEREF, (void *)&doc->key);
   return free_CacheVC(this);
 
-Lcollision:{
-    CACHE_TRY_LOCK(lock, vol->mutex, mutex->thread_holding);
-    if (!lock.is_locked()) {
-      mutex->thread_holding->schedule_in_local(this, HRTIME_MSECONDS(cache_config_mutex_retry_delay));
-      return EVENT_CONT;
-    }
-    if (dir_probe(&key, vol, &dir, &last_collision)) {
-      int ret = do_read_call(&first_key);
-      if (ret == EVENT_RETURN)
-        goto Lcallreturn;
-      return ret;
-    }
+Lcollision : {
+  CACHE_TRY_LOCK(lock, vol->mutex, mutex->thread_holding);
+  if (!lock.is_locked()) {
+    mutex->thread_holding->schedule_in_local(this, HRTIME_MSECONDS(cache_config_mutex_retry_delay));
+    return EVENT_CONT;
   }
+  if (dir_probe(&key, vol, &dir, &last_collision)) {
+    int ret = do_read_call(&first_key);
+    if (ret == EVENT_RETURN)
+      goto Lcallreturn;
+    return ret;
+  }
+}
 Ldone:
-  _action.continuation->handleEvent(CACHE_EVENT_DEREF_FAILED, (void *) -ECACHE_NO_DOC);
+  _action.continuation->handleEvent(CACHE_EVENT_DEREF_FAILED, (void *)-ECACHE_NO_DOC);
   return free_CacheVC(this);
 Lcallreturn:
   return handleEvent(AIO_EVENT_DONE, 0); // hopefully a tail call

@@ -19,53 +19,43 @@
 
 #include "ts_lua_util.h"
 
-typedef enum
-{
+typedef enum {
   TS_LUA_STAT_PERSISTENT = TS_STAT_PERSISTENT,
   TS_LUA_STAT_NON_PERSISTENT = TS_STAT_NON_PERSISTENT
-} TSLuaStatPersistentType; 
+} TSLuaStatPersistentType;
 
-ts_lua_var_item ts_lua_stat_persistent_vars[] = {
-  TS_LUA_MAKE_VAR_ITEM(TS_LUA_STAT_PERSISTENT),
-  TS_LUA_MAKE_VAR_ITEM(TS_LUA_STAT_NON_PERSISTENT)
-};
+ts_lua_var_item ts_lua_stat_persistent_vars[] = {TS_LUA_MAKE_VAR_ITEM(TS_LUA_STAT_PERSISTENT),
+                                                 TS_LUA_MAKE_VAR_ITEM(TS_LUA_STAT_NON_PERSISTENT)};
 
-typedef enum
-{ 
+typedef enum {
   TS_LUA_STAT_SYNC_SUM = TS_STAT_SYNC_SUM,
   TS_LUA_STAT_SYNC_COUNT = TS_STAT_SYNC_COUNT,
   TS_LUA_STAT_SYNC_AVG = TS_STAT_SYNC_AVG,
   TS_LUA_STAT_SYNC_TIMEAVG = TS_STAT_SYNC_TIMEAVG
 } TSLuaStatSyncType;
 
-ts_lua_var_item ts_lua_stat_sync_vars[] = {
-  TS_LUA_MAKE_VAR_ITEM(TS_LUA_STAT_SYNC_SUM),
-  TS_LUA_MAKE_VAR_ITEM(TS_LUA_STAT_SYNC_COUNT),
-  TS_LUA_MAKE_VAR_ITEM(TS_LUA_STAT_SYNC_AVG), 
-  TS_LUA_MAKE_VAR_ITEM(TS_LUA_STAT_SYNC_TIMEAVG)
-};
+ts_lua_var_item ts_lua_stat_sync_vars[] = {TS_LUA_MAKE_VAR_ITEM(TS_LUA_STAT_SYNC_SUM), TS_LUA_MAKE_VAR_ITEM(TS_LUA_STAT_SYNC_COUNT),
+                                           TS_LUA_MAKE_VAR_ITEM(TS_LUA_STAT_SYNC_AVG),
+                                           TS_LUA_MAKE_VAR_ITEM(TS_LUA_STAT_SYNC_TIMEAVG)};
 
-typedef enum
-{
+typedef enum {
   TS_LUA_RECORDDATATYPE_INT = TS_RECORDDATATYPE_INT,
 } TSLuaStatRecordType;
 
-ts_lua_var_item ts_lua_stat_record_vars[] = {
-  TS_LUA_MAKE_VAR_ITEM(TS_LUA_RECORDDATATYPE_INT)
-};
+ts_lua_var_item ts_lua_stat_record_vars[] = {TS_LUA_MAKE_VAR_ITEM(TS_LUA_RECORDDATATYPE_INT)};
 
-static void ts_lua_inject_stat_variables(lua_State * L);
+static void ts_lua_inject_stat_variables(lua_State *L);
 
-static int ts_lua_stat_create(lua_State * L);
-static int ts_lua_stat_find(lua_State * L);
+static int ts_lua_stat_create(lua_State *L);
+static int ts_lua_stat_find(lua_State *L);
 
-static int ts_lua_stat_increment(lua_State * L);
-static int ts_lua_stat_decrement(lua_State * L);
-static int ts_lua_stat_get_value(lua_State * L);
-static int ts_lua_stat_set_value(lua_State * L);
+static int ts_lua_stat_increment(lua_State *L);
+static int ts_lua_stat_decrement(lua_State *L);
+static int ts_lua_stat_get_value(lua_State *L);
+static int ts_lua_stat_set_value(lua_State *L);
 
 void
-ts_lua_inject_stat_api(lua_State * L)
+ts_lua_inject_stat_api(lua_State *L)
 {
   ts_lua_inject_stat_variables(L);
 
@@ -77,7 +67,7 @@ ts_lua_inject_stat_api(lua_State * L)
 }
 
 static void
-ts_lua_inject_stat_variables(lua_State * L)
+ts_lua_inject_stat_variables(lua_State *L)
 {
   size_t i;
 
@@ -98,13 +88,13 @@ ts_lua_inject_stat_variables(lua_State * L)
 }
 
 static int
-ts_lua_stat_create(lua_State * L)
+ts_lua_stat_create(lua_State *L)
 {
   const char *name;
   size_t name_len;
   int type;
   int persist;
-  int sync; 
+  int sync;
   int idp;
 
   name = luaL_checklstring(L, 1, &name_len);
@@ -112,7 +102,7 @@ ts_lua_stat_create(lua_State * L)
   if (lua_isnil(L, 2)) {
     type = TS_RECORDDATATYPE_INT;
   } else {
-    type  = luaL_checkinteger(L, 2);
+    type = luaL_checkinteger(L, 2);
   }
 
   if (lua_isnil(L, 3)) {
@@ -125,10 +115,10 @@ ts_lua_stat_create(lua_State * L)
     sync = TS_STAT_SYNC_SUM;
   } else {
     sync = luaL_checkinteger(L, 4);
-  } 
-  
-  if(name && name_len) {
-    if(TSStatFindName(name, &idp) == TS_ERROR) {
+  }
+
+  if (name && name_len) {
+    if (TSStatFindName(name, &idp) == TS_ERROR) {
       idp = TSStatCreate(name, type, persist, sync);
     }
 
@@ -152,7 +142,7 @@ ts_lua_stat_create(lua_State * L)
 }
 
 static int
-ts_lua_stat_find(lua_State * L)
+ts_lua_stat_find(lua_State *L)
 {
   const char *name;
   size_t name_len;
@@ -160,11 +150,11 @@ ts_lua_stat_find(lua_State * L)
 
   name = luaL_checklstring(L, 1, &name_len);
 
-  if(name && name_len) {
-    if(TSStatFindName(name, &idp) != TS_ERROR) { 
+  if (name && name_len) {
+    if (TSStatFindName(name, &idp) != TS_ERROR) {
       lua_newtable(L);
       lua_pushnumber(L, idp);
-      lua_setfield(L, -2, "id");  
+      lua_setfield(L, -2, "id");
 
       lua_pushcfunction(L, ts_lua_stat_increment);
       lua_setfield(L, -2, "increment");
@@ -185,7 +175,7 @@ ts_lua_stat_find(lua_State * L)
 }
 
 static int
-ts_lua_stat_increment(lua_State * L)
+ts_lua_stat_increment(lua_State *L)
 {
   int increment;
   int idp;
@@ -202,7 +192,7 @@ ts_lua_stat_increment(lua_State * L)
 }
 
 static int
-ts_lua_stat_decrement(lua_State * L)
+ts_lua_stat_decrement(lua_State *L)
 {
   int decrement;
   int idp;
@@ -219,7 +209,7 @@ ts_lua_stat_decrement(lua_State * L)
 }
 
 static int
-ts_lua_stat_get_value(lua_State * L)
+ts_lua_stat_get_value(lua_State *L)
 {
   int value;
   int idp;
@@ -236,7 +226,7 @@ ts_lua_stat_get_value(lua_State * L)
 }
 
 static int
-ts_lua_stat_set_value(lua_State * L)
+ts_lua_stat_set_value(lua_State *L)
 {
   int value;
   int idp;
@@ -251,5 +241,3 @@ ts_lua_stat_set_value(lua_State * L)
 
   return 0;
 }
-
-

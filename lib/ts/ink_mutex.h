@@ -49,12 +49,9 @@ class x_pthread_mutexattr_t
 public:
   pthread_mutexattr_t attr;
   x_pthread_mutexattr_t();
-  ~x_pthread_mutexattr_t()
-  {
-  }
+  ~x_pthread_mutexattr_t() {}
 };
-inline
-x_pthread_mutexattr_t::x_pthread_mutexattr_t()
+inline x_pthread_mutexattr_t::x_pthread_mutexattr_t()
 {
   pthread_mutexattr_init(&attr);
 #ifndef POSIX_THREAD_10031c
@@ -65,12 +62,12 @@ x_pthread_mutexattr_t::x_pthread_mutexattr_t()
 extern class x_pthread_mutexattr_t _g_mattr;
 
 static inline int
-ink_mutex_init(ink_mutex * m, const char *name)
+ink_mutex_init(ink_mutex *m, const char *name)
 {
-  (void) name;
+  (void)name;
 
 #if defined(solaris)
-  if ( pthread_mutex_init(m, NULL) != 0 ) {
+  if (pthread_mutex_init(m, NULL) != 0) {
     abort();
   }
 #else
@@ -82,13 +79,13 @@ ink_mutex_init(ink_mutex * m, const char *name)
 }
 
 static inline int
-ink_mutex_destroy(ink_mutex * m)
+ink_mutex_destroy(ink_mutex *m)
 {
   return pthread_mutex_destroy(m);
 }
 
 static inline int
-ink_mutex_acquire(ink_mutex * m)
+ink_mutex_acquire(ink_mutex *m)
 {
   if (pthread_mutex_lock(m) != 0) {
     abort();
@@ -97,7 +94,7 @@ ink_mutex_acquire(ink_mutex * m)
 }
 
 static inline int
-ink_mutex_release(ink_mutex * m)
+ink_mutex_release(ink_mutex *m)
 {
   if (pthread_mutex_unlock(m) != 0) {
     abort();
@@ -106,7 +103,7 @@ ink_mutex_release(ink_mutex * m)
 }
 
 static inline int
-ink_mutex_try_acquire(ink_mutex * m)
+ink_mutex_try_acquire(ink_mutex *m)
 {
   return pthread_mutex_trylock(m) == 0;
 }

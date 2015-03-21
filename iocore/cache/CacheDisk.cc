@@ -63,7 +63,7 @@ CacheDisk::open(char *s, off_t blocks, off_t askip, int ahw_sector_size, int fil
 
   SET_HANDLER(&CacheDisk::openStart);
   io.aiocb.aio_offset = skip;
-  io.aiocb.aio_buf = (char *) header;
+  io.aiocb.aio_buf = (char *)header;
   io.aiocb.aio_nbytes = header_len;
   io.thread = AIO_CALLBACK_THREAD_ANY;
   ink_aio_read(&io);
@@ -74,7 +74,7 @@ CacheDisk::~CacheDisk()
 {
   if (path) {
     ats_free(path);
-    for (int i = 0; i < (int) header->num_volumes; i++) {
+    for (int i = 0; i < (int)header->num_volumes; i++) {
       DiskVolBlockQueue *q = NULL;
       while (disk_vols[i] && (q = (disk_vols[i]->dpb_queue.pop()))) {
         delete q;
@@ -110,11 +110,11 @@ CacheDisk::clearDone(int event, void * /* data ATS_UNUSED */)
 {
   ink_assert(event == AIO_EVENT_DONE);
 
-  if ((size_t) io.aiocb.aio_nbytes != (size_t) io.aio_result) {
+  if ((size_t)io.aiocb.aio_nbytes != (size_t)io.aio_result) {
     Warning("Could not clear disk header for disk %s: declaring disk bad", path);
     SET_DISK_BAD(this);
   }
-//  update_header();
+  //  update_header();
 
   SET_HANDLER(&CacheDisk::openDone);
   return openDone(EVENT_IMMEDIATE, 0);
@@ -125,7 +125,7 @@ CacheDisk::openStart(int event, void * /* data ATS_UNUSED */)
 {
   ink_assert(event == AIO_EVENT_DONE);
 
-  if ((size_t) io.aiocb.aio_nbytes != (size_t) io.aio_result) {
+  if ((size_t)io.aiocb.aio_nbytes != (size_t)io.aio_result) {
     Warning("could not read disk header for disk %s: declaring disk bad", path);
     SET_DISK_BAD(this);
     SET_HANDLER(&CacheDisk::openDone);
@@ -133,7 +133,7 @@ CacheDisk::openStart(int event, void * /* data ATS_UNUSED */)
   }
 
   if (header->magic != DISK_HEADER_MAGIC || header->num_blocks != static_cast<uint64_t>(len)) {
-    uint64_t delta_3_2 =  skip - (skip >> STORE_BLOCK_SHIFT); // block count change from 3.2
+    uint64_t delta_3_2 = skip - (skip >> STORE_BLOCK_SHIFT); // block count change from 3.2
     if (static_cast<uint64_t>(len) == header->num_blocks + delta_3_2) {
       header->num_blocks += delta_3_2;
       // Only recover the space if there is a single stripe on this disk. The stripe space allocation logic can fail if
@@ -142,8 +142,8 @@ CacheDisk::openStart(int event, void * /* data ATS_UNUSED */)
       // stripe isn't the short one, the split will be different this time.
       // Further - the size is encoded in to the disk hash so if the size changes, the data is effectively lost anyway.
       // So no space recovery.
-//      if (header->num_diskvol_blks == 1)
-//        header->vol_info[0].len += delta_3_2;
+      //      if (header->num_diskvol_blks == 1)
+      //        header->vol_info[0].len += delta_3_2;
     } else {
       Warning("disk header different for disk %s: clearing the disk", path);
       SET_HANDLER(&CacheDisk::clearDone);
@@ -189,7 +189,7 @@ CacheDisk::syncDone(int event, void * /* data ATS_UNUSED */)
 {
   ink_assert(event == AIO_EVENT_DONE);
 
-  if ((size_t) io.aiocb.aio_nbytes != (size_t) io.aio_result) {
+  if ((size_t)io.aiocb.aio_nbytes != (size_t)io.aio_result) {
     Warning("Error writing disk header for disk %s:disk bad", path);
     SET_DISK_BAD(this);
     return EVENT_DONE;
@@ -215,7 +215,7 @@ CacheDisk::create_volume(int number, off_t size_in_blocks, int scheme)
   size_in_blocks = (size_in_blocks <= max_blocks) ? size_in_blocks : max_blocks;
 
   int blocks_per_vol = VOL_BLOCK_SIZE / STORE_BLOCK_SIZE;
-//  ink_assert(!(size_in_blocks % blocks_per_vol));
+  //  ink_assert(!(size_in_blocks % blocks_per_vol));
   DiskVolBlock *p = 0;
   for (; q; q = q->link.next) {
     if ((off_t)q->b->len >= size_in_blocks) {
@@ -236,7 +236,7 @@ CacheDisk::create_volume(int number, off_t size_in_blocks, int scheme)
     q = closest_match;
     p = q->b;
     q->new_block = 1;
-    ink_assert(size_in_blocks > (off_t) p->len);
+    ink_assert(size_in_blocks > (off_t)p->len);
     /* allocate in 128 megabyte chunks. The Remaining space should
        be thrown away */
     size_in_blocks = (p->len - (p->len % blocks_per_vol));
@@ -253,7 +253,7 @@ CacheDisk::create_volume(int number, off_t size_in_blocks, int scheme)
     DiskVolBlock *dpb = &header->vol_info[header->num_diskvol_blks];
     *dpb = *p;
     dpb->len -= size_in_blocks;
-    dpb->offset += ((off_t) size_in_blocks * STORE_BLOCK_SIZE);
+    dpb->offset += ((off_t)size_in_blocks * STORE_BLOCK_SIZE);
 
     DiskVolBlockQueue *new_q = new DiskVolBlockQueue();
     new_q->b = dpb;
@@ -299,7 +299,6 @@ CacheDisk::delete_volume(int number)
   unsigned int i;
   for (i = 0; i < header->num_volumes; i++) {
     if (disk_vols[i]->vol_number == number) {
-
       DiskVolBlockQueue *q;
       for (q = disk_vols[i]->dpb_queue.head; q;) {
         DiskVolBlock *p = q->b;

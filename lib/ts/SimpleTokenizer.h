@@ -112,12 +112,10 @@
 class SimpleTokenizer
 {
 public:
-
   // by default, null fields are disregarded, whitespace is trimmed left
   // and right, and input string is copied (not overwritten)
   //
-  enum
-  {
+  enum {
     CONSIDER_NULL_FIELDS = 1,
     KEEP_WHITESPACE_LEFT = 2,
     KEEP_WHITESPACE_RIGHT = 4,
@@ -127,20 +125,20 @@ public:
 
   SimpleTokenizer(char delimiter = ' ', unsigned mode = 0, char escape = '\\')
     : _data(0), _delimiter(delimiter), _mode(mode), _escape(escape), _start(0), _length(0)
-  {  }
+  {
+  }
 
   // NOTE: The input strring 's' is overwritten for mode OVERWRITE_INPUT_STRING.
   SimpleTokenizer(const char *s, char delimiter = ' ', unsigned mode = 0, char escape = '\\')
-  : _data(0), _delimiter(delimiter), _mode(mode), _escape(escape)
+    : _data(0), _delimiter(delimiter), _mode(mode), _escape(escape)
   {
     setString(s);
   }
 
-  ~SimpleTokenizer() {
-    _clearData();
-  }
+  ~SimpleTokenizer() { _clearData(); }
 
-  void setString(const char *s)
+  void
+  setString(const char *s)
   {
     _clearData();
 
@@ -155,69 +153,77 @@ public:
     //
     _data[_length++] = _delimiter;
   };
-  char *getNext(int count = 1) {
+  char *
+  getNext(int count = 1)
+  {
     return _getNext(_delimiter, false, count);
   };
-  char *getNext(char delimiter, int count = 1) {
+  char *
+  getNext(char delimiter, int count = 1)
+  {
     return _getNext(delimiter, false, count);
   }
-  char *getRest()
+  char *
+  getRest()
   {
     // there can't be more than _length tokens, so we get the rest
     // of the tokens by requesting _length of them
     //
     return _getNext(_delimiter, false, _length);
   }
-  size_t getNumTokensRemaining()
+  size_t
+  getNumTokensRemaining()
   {
     return _getNumTokensRemaining(_delimiter);
   };
-  size_t getNumTokensRemaining(char delimiter)
+  size_t
+  getNumTokensRemaining(char delimiter)
   {
     return _getNumTokensRemaining(delimiter);
   };
-  char *peekAtRestOfString()
+  char *
+  peekAtRestOfString()
   {
     _data[_length - 1] = 0;
     return (_start < _length ? &_data[_start] : &_data[_length - 1]);
   }
 
 private:
-
-  char *_data;                  // a pointer to the input data itself,
+  char *_data; // a pointer to the input data itself,
   // or to a copy of it
-  char _delimiter;              // the token delimiter
-  unsigned _mode;                    // flags that determine the
+  char _delimiter; // the token delimiter
+  unsigned _mode;  // flags that determine the
   // mode of operation
-  char _escape;                 // the escape character
-  size_t _start;                // pointer to the start of the next
+  char _escape;  // the escape character
+  size_t _start; // pointer to the start of the next
   // token
-  size_t _length;               // the length of _data
+  size_t _length; // the length of _data
 
-  void _clearData()
+  void
+  _clearData()
   {
     if (_data && !(_mode & OVERWRITE_INPUT_STRING)) {
       ats_free(_data);
     }
   }
 
-  char *_getNext(char delimiter, bool countOnly = false, int numTokens = 1) {
+  char *
+  _getNext(char delimiter, bool countOnly = false, int numTokens = 1)
+  {
     char *next = NULL;
 
     if (_start < _length) {
       // set start
       //
-      bool hasEsc = false;      // escape character seen
+      bool hasEsc = false; // escape character seen
       while (_start < _length &&
              ((!(_mode & CONSIDER_NULL_FIELDS) &&
-               (_data[_start] == delimiter &&
-                !(_start &&
-                  (_data[_start - 1] == _escape ? (hasEsc = true) : 0)))) ||
+               (_data[_start] == delimiter && !(_start && (_data[_start - 1] == _escape ? (hasEsc = true) : 0)))) ||
               (!(_mode & KEEP_WHITESPACE_LEFT) && isspace(_data[_start])))) {
         ++_start;
       }
 
-      if (_start < _length)     // data still available
+      if (_start < _length) // data still available
       {
         // update the extra delimiter just in case the function
         // is called with a different delimiter from the previous one
@@ -230,10 +236,8 @@ private:
         //
         size_t end = _start;
         int delimCount = 0;
-        while (end < _length &&
-               (_data[end] != delimiter ||
-                (end && (_data[end - 1] == _escape ? (hasEsc = true) : 0)) ||
-                ((++delimCount < numTokens) && (end < _length - 1)))) {
+        while (end < _length && (_data[end] != delimiter || (end && (_data[end - 1] == _escape ? (hasEsc = true) : 0)) ||
+                                 ((++delimCount < numTokens) && (end < _length - 1)))) {
           ++end;
         }
 
@@ -244,12 +248,14 @@ private:
         // CONSIDER_NULL_FIELDS flag is not set
         //
         if (!(_mode & CONSIDER_NULL_FIELDS)) {
-          while (_data[--end] == delimiter);
+          while (_data[--end] == delimiter)
+            ;
           ++end;
         }
 
         if (!(_mode & KEEP_WHITESPACE_RIGHT)) {
-          while (isspace(_data[--end]));
+          while (isspace(_data[--end]))
+            ;
           ++end;
         }
 
@@ -277,9 +283,10 @@ private:
     return next;
   };
 
-  size_t _getNumTokensRemaining(char delimiter)
+  size_t
+  _getNumTokensRemaining(char delimiter)
   {
-    size_t startSave = _start;  // save current position
+    size_t startSave = _start; // save current position
     size_t count = 0;
     while (_getNext(delimiter, true)) {
       ++count;

@@ -51,23 +51,23 @@ CtrlMgmtRecord::as_int() const
 }
 
 TSMgmtError
-CtrlMgmtRecord::fetch(const char * name)
+CtrlMgmtRecord::fetch(const char *name)
 {
   return TSRecordGet(name, this->ele);
 }
 
 TSMgmtError
-CtrlMgmtRecordList::match(const char * name)
+CtrlMgmtRecordList::match(const char *name)
 {
   return TSRecordGetMatchMlt(name, this->list);
 }
 
-CtrlMgmtRecordValue::CtrlMgmtRecordValue(const CtrlMgmtRecord& rec)
+CtrlMgmtRecordValue::CtrlMgmtRecordValue(const CtrlMgmtRecord &rec)
 {
   this->init(rec.ele->rec_type, rec.ele->valueT);
 }
 
-CtrlMgmtRecordValue::CtrlMgmtRecordValue(const TSRecordEle * ele)
+CtrlMgmtRecordValue::CtrlMgmtRecordValue(const TSRecordEle *ele)
 {
   this->init(ele->rec_type, ele->valueT);
 }
@@ -112,7 +112,7 @@ CtrlMgmtRecordValue::c_str() const
 }
 
 void
-CtrlMgmtError(TSMgmtError err, const char * fmt, ...)
+CtrlMgmtError(TSMgmtError err, const char *fmt, ...)
 {
   ats_scoped_str msg(TSGetErrorMessage(err));
 
@@ -128,14 +128,13 @@ CtrlMgmtError(TSMgmtError err, const char * fmt, ...)
   } else {
     fprintf(stderr, "%s: %s\n", program_name, (const char *)msg);
   }
-
 }
 
 int
-CtrlSubcommandUsage(const char * name, const subcommand * cmds, unsigned ncmds, const ArgumentDescription * desc, unsigned ndesc)
+CtrlSubcommandUsage(const char *name, const subcommand *cmds, unsigned ncmds, const ArgumentDescription *desc, unsigned ndesc)
 {
-  const char * opt = ndesc ? "[OPTIONS]" : "";
-  const char * sep = (ndesc && name) ? " " : "";
+  const char *opt = ndesc ? "[OPTIONS]" : "";
+  const char *sep = (ndesc && name) ? " " : "";
 
   fprintf(stderr, "Usage: traffic_ctl %s%s%s CMD [ARGS ...]\n\nSubcommands:\n", name ? name : "", sep, opt);
 
@@ -151,7 +150,7 @@ CtrlSubcommandUsage(const char * name, const subcommand * cmds, unsigned ncmds, 
 }
 
 int
-CtrlCommandUsage(const char * msg, const ArgumentDescription * desc, unsigned ndesc)
+CtrlCommandUsage(const char *msg, const ArgumentDescription *desc, unsigned ndesc)
 {
   fprintf(stderr, "Usage: traffic_ctl %s\n", msg);
 
@@ -163,21 +162,21 @@ CtrlCommandUsage(const char * msg, const ArgumentDescription * desc, unsigned nd
 }
 
 bool
-CtrlProcessArguments(int /* argc */, const char ** argv, const ArgumentDescription * desc, unsigned ndesc)
+CtrlProcessArguments(int /* argc */, const char **argv, const ArgumentDescription *desc, unsigned ndesc)
 {
   n_file_arguments = 0;
   return process_args_ex(&CtrlVersionInfo, desc, ndesc, argv);
 }
 
 int
-CtrlUnimplementedCommand(unsigned /* argc */, const char ** argv)
+CtrlUnimplementedCommand(unsigned /* argc */, const char **argv)
 {
   CtrlDebug("the '%s' command is not implemented", *argv);
   return CTRL_EX_UNIMPLEMENTED;
 }
 
 int
-CtrlGenericSubcommand(const char * name, const subcommand * cmds, unsigned ncmds, unsigned argc, const char ** argv)
+CtrlGenericSubcommand(const char *name, const subcommand *cmds, unsigned ncmds, unsigned argc, const char **argv)
 {
   CtrlCommandLine cmdline;
 
@@ -207,19 +206,17 @@ main(int argc, const char **argv)
   CtrlVersionInfo.setup(PACKAGE_NAME, "traffic_ctl", PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
   program_name = CtrlVersionInfo.AppStr;
 
-  ArgumentDescription argument_descriptions[] = {
-    { "debug", '-', "Enable debugging output", "F", &debug, NULL, NULL },
-    HELP_ARGUMENT_DESCRIPTION(),
-    VERSION_ARGUMENT_DESCRIPTION()
-  };
+  ArgumentDescription argument_descriptions[] = {{"debug", '-', "Enable debugging output", "F", &debug, NULL, NULL},
+                                                 HELP_ARGUMENT_DESCRIPTION(),
+                                                 VERSION_ARGUMENT_DESCRIPTION()};
 
   const subcommand commands[] = {
-    { subcommand_alarm, "alarm", "Manipulate alarms" },
-    { subcommand_cluster, "cluster", "Stop, restart and examine the cluster" },
-    { subcommand_config, "config", "Manipulate configuration records" },
-    { subcommand_metric, "metric", "Manipulate performance metrics" },
-    { subcommand_server, "server", "Stop, restart and examine the server" },
-    { subcommand_storage, "storage", "Manipulate cache storage" },
+    {subcommand_alarm, "alarm", "Manipulate alarms"},
+    {subcommand_cluster, "cluster", "Stop, restart and examine the cluster"},
+    {subcommand_config, "config", "Manipulate configuration records"},
+    {subcommand_metric, "metric", "Manipulate performance metrics"},
+    {subcommand_server, "server", "Stop, restart and examine the server"},
+    {subcommand_storage, "storage", "Manipulate cache storage"},
   };
 
   diags = new Diags("" /* tags */, "" /* actions */, stderr);

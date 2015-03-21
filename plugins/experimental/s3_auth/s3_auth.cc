@@ -44,16 +44,15 @@ static const char DATE_FMT[] = "%a, %d %b %Y %H:%M:%S %z";
 ///////////////////////////////////////////////////////////////////////////////
 // One configuration setup
 //
-int event_handler(TSCont, TSEvent, void*); // Forward declaration
+int event_handler(TSCont, TSEvent, void *); // Forward declaration
 
 class S3Config
 {
 public:
-  S3Config()
-    : _secret(NULL), _secret_len(0), _keyid(NULL), _keyid_len(0), _virt_host(false), _version(2), _cont(NULL)
+  S3Config() : _secret(NULL), _secret_len(0), _keyid(NULL), _keyid_len(0), _virt_host(false), _version(2), _cont(NULL)
   {
     _cont = TSContCreate(event_handler, NULL);
-    TSContDataSet(_cont, static_cast<void*>(this));
+    TSContDataSet(_cont, static_cast<void *>(this));
   }
 
   ~S3Config()
@@ -65,32 +64,80 @@ public:
   }
 
   // Is this configuration usable?
-  bool valid() const { return _secret && (_secret_len > 0) && _keyid && ( _keyid_len > 0) && (2 == _version); }
+  bool
+  valid() const
+  {
+    return _secret && (_secret_len > 0) && _keyid && (_keyid_len > 0) && (2 == _version);
+  }
 
   // Getters
-  bool virt_host() const { return _virt_host; }
-  const char* secret() const { return _secret; }
-  const char* keyid() const { return _keyid; }
-  int secret_len() const { return _secret_len; }
-  int keyid_len() const { return _keyid_len; }
+  bool
+  virt_host() const
+  {
+    return _virt_host;
+  }
+  const char *
+  secret() const
+  {
+    return _secret;
+  }
+  const char *
+  keyid() const
+  {
+    return _keyid;
+  }
+  int
+  secret_len() const
+  {
+    return _secret_len;
+  }
+  int
+  keyid_len() const
+  {
+    return _keyid_len;
+  }
 
   // Setters
-  void set_secret(const char* s) { TSfree(_secret); _secret = TSstrdup(s); _secret_len = strlen(s); }
-  void set_keyid(const char* s) { TSfree(_keyid); _keyid = TSstrdup(s); _keyid_len = strlen(s); }
-  void set_virt_host(bool f = true) { _virt_host = f; }
-  void set_version(const char* s) { _version = strtol(s, NULL, 10); }
+  void
+  set_secret(const char *s)
+  {
+    TSfree(_secret);
+    _secret = TSstrdup(s);
+    _secret_len = strlen(s);
+  }
+  void
+  set_keyid(const char *s)
+  {
+    TSfree(_keyid);
+    _keyid = TSstrdup(s);
+    _keyid_len = strlen(s);
+  }
+  void
+  set_virt_host(bool f = true)
+  {
+    _virt_host = f;
+  }
+  void
+  set_version(const char *s)
+  {
+    _version = strtol(s, NULL, 10);
+  }
 
   // Parse configs from an external file
-  bool parse_config(const char* config);
+  bool parse_config(const char *config);
 
   // This should be called from the remap plugin, to setup the TXN hook for
   // SEND_REQUEST_HDR, such that we always attach the appropriate S3 auth.
-  void schedule(TSHttpTxn txnp) const { TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_REQUEST_HDR_HOOK, _cont); }
+  void
+  schedule(TSHttpTxn txnp) const
+  {
+    TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_REQUEST_HDR_HOOK, _cont);
+  }
 
 private:
-  char* _secret;
+  char *_secret;
   size_t _secret_len;
-  char* _keyid;
+  char *_keyid;
   size_t _keyid_len;
   bool _virt_host;
   int _version;
@@ -99,7 +146,7 @@ private:
 
 
 bool
-S3Config::parse_config(const char* config)
+S3Config::parse_config(const char *config)
 {
   if (!config) {
     TSError("%s: called without a config file, this is broken", PLUGIN_NAME);
@@ -127,7 +174,7 @@ S3Config::parse_config(const char* config)
       pos1 = line;
       while (*pos1 && isspace(*pos1))
         ++pos1;
-      if (! *pos1 || ('#' == *pos1)) {
+      if (!*pos1 || ('#' == *pos1)) {
         continue;
       }
 
@@ -167,9 +214,7 @@ S3Config::parse_config(const char* config)
 class S3Request
 {
 public:
-  S3Request(TSHttpTxn txnp)
-    :  _txnp(txnp), _bufp(NULL), _hdr_loc(TS_NULL_MLOC), _url_loc(TS_NULL_MLOC)
-  { }
+  S3Request(TSHttpTxn txnp) : _txnp(txnp), _bufp(NULL), _hdr_loc(TS_NULL_MLOC), _url_loc(TS_NULL_MLOC) {}
 
   ~S3Request()
   {
@@ -191,7 +236,7 @@ public:
   }
 
   TSHttpStatus authorize(S3Config *s3);
-  bool set_header(const char* header, int header_len, const char* val, int val_len);
+  bool set_header(const char *header, int header_len, const char *val, int val_len);
 
 private:
   TSHttpTxn _txnp;
@@ -205,7 +250,7 @@ private:
 // remove / add sequence in case of an existing header.
 // but clean.
 bool
-S3Request::set_header(const char* header, int header_len, const char* val, int val_len)
+S3Request::set_header(const char *header, int header_len, const char *val, int val_len)
 {
   if (!header || header_len <= 0 || !val || val_len <= 0) {
     return false;
@@ -303,7 +348,7 @@ S3Request::authorize(S3Config *s3)
     host_loc = TSMimeHdrFieldFind(_bufp, _hdr_loc, TS_MIME_FIELD_HOST, TS_MIME_LEN_HOST);
     if (host_loc) {
       host = TSMimeHdrFieldValueStringGet(_bufp, _hdr_loc, host_loc, -1, &host_len);
-      host_endp = static_cast<const char*>(memchr(host, '.', host_len));
+      host_endp = static_cast<const char *>(memchr(host, '.', host_len));
     } else {
       return TS_HTTP_STATUS_INTERNAL_SERVER_ERROR;
     }
@@ -331,22 +376,22 @@ S3Request::authorize(S3Config *s3)
 
   HMAC_CTX_init(&ctx);
   HMAC_Init_ex(&ctx, s3->secret(), s3->secret_len(), EVP_sha1(), NULL);
-  HMAC_Update(&ctx, (unsigned char*)method, method_len);
-  HMAC_Update(&ctx, (unsigned char*)"\n\n\n", 3); // ToDo: This should be POST info (see above)
-  HMAC_Update(&ctx, (unsigned char*)date, date_len);
-  HMAC_Update(&ctx, (unsigned char*)"\n/", 2);
+  HMAC_Update(&ctx, (unsigned char *)method, method_len);
+  HMAC_Update(&ctx, (unsigned char *)"\n\n\n", 3); // ToDo: This should be POST info (see above)
+  HMAC_Update(&ctx, (unsigned char *)date, date_len);
+  HMAC_Update(&ctx, (unsigned char *)"\n/", 2);
 
   if (host && host_endp) {
-    HMAC_Update(&ctx, (unsigned char*)host, host_endp - host);
-    HMAC_Update(&ctx, (unsigned char*)"/", 1);
+    HMAC_Update(&ctx, (unsigned char *)host, host_endp - host);
+    HMAC_Update(&ctx, (unsigned char *)"/", 1);
   }
 
-  HMAC_Update(&ctx, (unsigned char*)path, path_len);
+  HMAC_Update(&ctx, (unsigned char *)path, path_len);
   HMAC_Final(&ctx, hmac, &hmac_len);
   HMAC_CTX_cleanup(&ctx);
 
   // Do the Base64 encoding and set the Authorization header.
-  if (TS_SUCCESS == TSBase64Encode((const char*)hmac, hmac_len, hmac_b64, sizeof(hmac_b64) - 1, &hmac_b64_len)) {
+  if (TS_SUCCESS == TSBase64Encode((const char *)hmac, hmac_len, hmac_b64, sizeof(hmac_b64) - 1, &hmac_b64_len)) {
     char auth[256]; // This is way bigger than any string we can think of.
     int auth_len = snprintf(auth, sizeof(auth), "AWS %s:%.*s", s3->keyid(), static_cast<int>(hmac_b64_len), hmac_b64);
 
@@ -366,14 +411,14 @@ S3Request::authorize(S3Config *s3)
 ///////////////////////////////////////////////////////////////////////////////
 // This is the main continuation.
 int
-event_handler(TSCont cont, TSEvent /* event */, void* edata)
+event_handler(TSCont cont, TSEvent /* event */, void *edata)
 {
   TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
   S3Request request(txnp);
   TSHttpStatus status = TS_HTTP_STATUS_INTERNAL_SERVER_ERROR;
 
   if (request.initialize()) {
-    status = request.authorize(static_cast<S3Config*>(TSContDataGet(cont)));
+    status = request.authorize(static_cast<S3Config *>(TSContDataGet(cont)));
   }
 
   if (TS_HTTP_STATUS_OK == status) {
@@ -393,7 +438,7 @@ event_handler(TSCont cont, TSEvent /* event */, void* edata)
 // Initialize the plugin.
 //
 TSReturnCode
-TSRemapInit(TSRemapInterface* api_info, char *errbuf, int errbuf_size)
+TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 {
   if (!api_info) {
     strncpy(errbuf, "[tsremap_init] - Invalid TSRemapInterface argument", errbuf_size - 1);
@@ -401,8 +446,8 @@ TSRemapInit(TSRemapInterface* api_info, char *errbuf, int errbuf_size)
   }
 
   if (api_info->tsremap_version < TSREMAP_VERSION) {
-    snprintf(errbuf, errbuf_size - 1, "[TSRemapInit] - Incorrect API version %ld.%ld",
-             api_info->tsremap_version >> 16, (api_info->tsremap_version & 0xffff));
+    snprintf(errbuf, errbuf_size - 1, "[TSRemapInit] - Incorrect API version %ld.%ld", api_info->tsremap_version >> 16,
+             (api_info->tsremap_version & 0xffff));
     return TS_ERROR;
   }
 
@@ -415,18 +460,16 @@ TSRemapInit(TSRemapInterface* api_info, char *errbuf, int errbuf_size)
 // One instance per remap.config invocation.
 //
 TSReturnCode
-TSRemapNewInstance(int argc, char* argv[], void** ih, char* /* errbuf ATS_UNUSED */, int /* errbuf_size ATS_UNUSED */)
+TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSED */, int /* errbuf_size ATS_UNUSED */)
 {
-  static const struct option longopt[] = {
-    { const_cast<char *>("access_key"), required_argument, NULL, 'a' },
-    { const_cast<char *>("config"), required_argument, NULL, 'c' },
-    { const_cast<char *>("secret_key"), required_argument, NULL, 's' },
-    { const_cast<char *>("version"), required_argument, NULL, 'v' },
-    { const_cast<char *>("virtual_host"), no_argument, NULL, 'h' },
-    { NULL, no_argument, NULL, '\0' }
-  };
+  static const struct option longopt[] = {{const_cast<char *>("access_key"), required_argument, NULL, 'a'},
+                                          {const_cast<char *>("config"), required_argument, NULL, 'c'},
+                                          {const_cast<char *>("secret_key"), required_argument, NULL, 's'},
+                                          {const_cast<char *>("version"), required_argument, NULL, 'v'},
+                                          {const_cast<char *>("virtual_host"), no_argument, NULL, 'h'},
+                                          {NULL, no_argument, NULL, '\0'}};
 
-  S3Config* s3 = new S3Config();
+  S3Config *s3 = new S3Config();
 
   // argv contains the "to" and "from" URLs. Skip the first so that the
   // second one poses as the program name.
@@ -435,7 +478,7 @@ TSRemapNewInstance(int argc, char* argv[], void** ih, char* /* errbuf ATS_UNUSED
   optind = 0;
 
   while (true) {
-    int opt = getopt_long(argc, static_cast<char * const *>(argv), "", longopt, NULL);
+    int opt = getopt_long(argc, static_cast<char *const *>(argv), "", longopt, NULL);
 
     switch (opt) {
     case 'c':
@@ -468,17 +511,17 @@ TSRemapNewInstance(int argc, char* argv[], void** ih, char* /* errbuf ATS_UNUSED
     return TS_ERROR;
   }
 
-  *ih = static_cast<void*>(s3);
-  TSDebug(PLUGIN_NAME, "New rule: secret_key=%s, access_key=%s, virtual_host=%s",
-          s3->secret(), s3->keyid(), s3->virt_host() ? "yes" : "no");
+  *ih = static_cast<void *>(s3);
+  TSDebug(PLUGIN_NAME, "New rule: secret_key=%s, access_key=%s, virtual_host=%s", s3->secret(), s3->keyid(),
+          s3->virt_host() ? "yes" : "no");
 
   return TS_SUCCESS;
 }
 
 void
-TSRemapDeleteInstance(void* ih)
+TSRemapDeleteInstance(void *ih)
 {
-  S3Config* s3 = static_cast<S3Config*>(ih);
+  S3Config *s3 = static_cast<S3Config *>(ih);
 
   delete s3;
 }
@@ -488,9 +531,9 @@ TSRemapDeleteInstance(void* ih)
 // This is the main "entry" point for the plugin, called for every request.
 //
 TSRemapStatus
-TSRemapDoRemap(void* ih, TSHttpTxn txnp, TSRemapRequestInfo */* rri */)
+TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo * /* rri */)
 {
-  S3Config* s3 = static_cast<S3Config*>(ih);
+  S3Config *s3 = static_cast<S3Config *>(ih);
 
   TSAssert(s3->valid());
   if (s3) {
@@ -509,7 +552,6 @@ TSRemapDoRemap(void* ih, TSHttpTxn txnp, TSRemapRequestInfo */* rri */)
   // This plugin actually doesn't do anything with remapping. Ever.
   return TSREMAP_NO_REMAP;
 }
-
 
 
 /*

@@ -39,34 +39,34 @@
 // Constants
 //
 
-#define MULTI_CACHE_MAX_LEVELS       3
-#define MULTI_CACHE_MAX_BUCKET_SIZE  256
-#define MULTI_CACHE_MAX_FILES        256
-#define MULTI_CACHE_PARTITIONS       64
+#define MULTI_CACHE_MAX_LEVELS 3
+#define MULTI_CACHE_MAX_BUCKET_SIZE 256
+#define MULTI_CACHE_MAX_FILES 256
+#define MULTI_CACHE_PARTITIONS 64
 
-#define MULTI_CACHE_EVENT_SYNC       MULTI_CACHE_EVENT_EVENTS_START
+#define MULTI_CACHE_EVENT_SYNC MULTI_CACHE_EVENT_EVENTS_START
 
 
 // for heap_offset() and heap_size(), indicates no data
-#define MULTI_CACHE_HEAP_NONE       -1
+#define MULTI_CACHE_HEAP_NONE -1
 
-#define MULTI_CACHE_MAGIC_NUMBER     0x0BAD2D8
+#define MULTI_CACHE_MAGIC_NUMBER 0x0BAD2D8
 
 // Update these if there is a change to MultiCacheBase
 // There is a separate HOST_DB_CACHE_[MAJOR|MINOR]_VERSION
-#define MULTI_CACHE_MAJOR_VERSION    2
-#define MULTI_CACHE_MINOR_VERSION    1
+#define MULTI_CACHE_MAJOR_VERSION 2
+#define MULTI_CACHE_MINOR_VERSION 1
 // 2.1 - IPv6 compatible
 
-#define MULTI_CACHE_HEAP_HIGH_WATER  0.8
+#define MULTI_CACHE_HEAP_HIGH_WATER 0.8
 
-#define MULTI_CACHE_HEAP_INITIAL     sizeof(uint32_t)
-#define MULTI_CACHE_HEAP_ALIGNMENT   8
+#define MULTI_CACHE_HEAP_INITIAL sizeof(uint32_t)
+#define MULTI_CACHE_HEAP_ALIGNMENT 8
 
 // unused.. possible optimization
-#define MULTI_CACHE_OFFSET_PARITION(_x)  ((_x)%MULTI_CACHE_PARTITIONS)
-#define MULTI_CACHE_OFFSET_INDEX(_x)     ((_x)/MULTI_CACHE_PARTITIONS)
-#define MULTI_CACHE_OFFSET(_p,_o)        ((_p) + (_o) * MULTI_CACHE_PARTITIONS)
+#define MULTI_CACHE_OFFSET_PARITION(_x) ((_x) % MULTI_CACHE_PARTITIONS)
+#define MULTI_CACHE_OFFSET_INDEX(_x) ((_x) / MULTI_CACHE_PARTITIONS)
+#define MULTI_CACHE_OFFSET(_p, _o) ((_p) + (_o)*MULTI_CACHE_PARTITIONS)
 
 class ProxyMutex;
 class Continuation;
@@ -80,8 +80,7 @@ class Continuation;
 // required by the templated cache operations.
 
 
-struct MultiCacheBlock
-{
+struct MultiCacheBlock {
   uint64_t tag();
   bool is_deleted();
   void set_deleted();
@@ -89,18 +88,19 @@ struct MultiCacheBlock
   void set_empty();
   void reset();
   void set_full(uint64_t folded_md5, int buckets);
-  int heap_size()
+  int
+  heap_size()
   {
     return 0;
   }
-  int *heap_offset_ptr()
+  int *
+  heap_offset_ptr()
   {
     return NULL;
   }
 };
 
-struct RebuildMC
-{
+struct RebuildMC {
   bool rebuild;
   bool check;
   bool fix;
@@ -116,8 +116,7 @@ struct RebuildMC
   int total;
 };
 
-struct MultiCacheHeader
-{
+struct MultiCacheHeader {
   unsigned int magic;
   VersionNumber version;
 
@@ -142,24 +141,21 @@ struct MultiCacheHeader
   volatile int heap_halfspace;
   volatile int heap_used[2];
 
-    MultiCacheHeader();
+  MultiCacheHeader();
 };
 
 // size of block of unsunk pointers with respect to the number of
 // elements
-#define MULTI_CACHE_UNSUNK_PTR_BLOCK_SIZE(_e)   \
-  ((_e / 8) / MULTI_CACHE_PARTITIONS)
+#define MULTI_CACHE_UNSUNK_PTR_BLOCK_SIZE(_e) ((_e / 8) / MULTI_CACHE_PARTITIONS)
 
-struct UnsunkPtr
-{
+struct UnsunkPtr {
   int offset;
-  int *poffset;                 // doubles as freelist pointer
+  int *poffset; // doubles as freelist pointer
 };
 
 struct MultiCacheBase;
 
-struct UnsunkPtrRegistry
-{
+struct UnsunkPtrRegistry {
   MultiCacheBase *mc;
   int n;
   UnsunkPtr *ptrs;
@@ -170,8 +166,8 @@ struct UnsunkPtrRegistry
   UnsunkPtr *alloc(int *p, int base = 0);
   void alloc_data();
 
-    UnsunkPtrRegistry();
-   ~UnsunkPtrRegistry();
+  UnsunkPtrRegistry();
+  ~UnsunkPtrRegistry();
 };
 
 //
@@ -183,8 +179,7 @@ struct UnsunkPtrRegistry
 // used by windows only - to keep track
 // of mapping handles
 //
-struct Unmaper
-{
+struct Unmaper {
   void *hMap;
   char *pAddr;
 };
@@ -194,8 +189,7 @@ typedef int two_ints[2];
 
 struct MultiCacheHeapGC;
 
-struct MultiCacheBase: public MultiCacheHeader
-{
+struct MultiCacheBase : public MultiCacheHeader {
   Store *store;
   char filename[PATH_NAME_MAX + 1];
   MultiCacheHeader *mapped_header;
@@ -212,7 +206,8 @@ struct MultiCacheBase: public MultiCacheHeader
 
   // interface functions
   //
-  int halfspace_size()
+  int
+  halfspace_size()
   {
     return heap_size / 2;
   }
@@ -222,89 +217,100 @@ struct MultiCacheBase: public MultiCacheHeader
   int hit_stat[MULTI_CACHE_MAX_LEVELS];
   int miss_stat;
 
-  unsigned int lowest_level_data_size()
+  unsigned int
+  lowest_level_data_size()
   {
     return (buckets + 3) / 4;
   }
-  unsigned int lowest_level(unsigned int bucket)
+  unsigned int
+  lowest_level(unsigned int bucket)
   {
-    unsigned int i = (unsigned char) lowest_level_data[bucket / 4];
+    unsigned int i = (unsigned char)lowest_level_data[bucket / 4];
     return 3 & (i >> (buckets % 4));
   }
-  void set_lowest_level(unsigned int bucket, unsigned int lowest)
+  void
+  set_lowest_level(unsigned int bucket, unsigned int lowest)
   {
-    unsigned char p = (unsigned char) lowest_level_data[bucket / 4];
+    unsigned char p = (unsigned char)lowest_level_data[bucket / 4];
     p &= ~(3 << (buckets % 4));
     p |= (lowest & 3) << (buckets % 4);
-    lowest_level_data[bucket / 4] = (char) p;
+    lowest_level_data[bucket / 4] = (char)p;
   }
 
   // Fixed point, 8 bits shifted left
   int buckets_per_partitionF8;
 
-  int partition_of_bucket(int b)
+  int
+  partition_of_bucket(int b)
   {
     return ((b << 8) + 0xFF) / buckets_per_partitionF8;
   }
-  int first_bucket_of_partition(int p)
+  int
+  first_bucket_of_partition(int p)
   {
     return ((buckets_per_partitionF8 * p) >> 8);
   }
-  int last_bucket_of_partition(int p)
+  int
+  last_bucket_of_partition(int p)
   {
     return first_bucket_of_partition(p + 1) - 1;
   }
-  int buckets_of_partition(int p)
+  int
+  buckets_of_partition(int p)
   {
     return last_bucket_of_partition(p) - first_bucket_of_partition(p) + 1;
   }
 
-  int open(Store * store, const char *config_filename,
-           char *db_filename = NULL, int db_size = -1, bool reconfigure = false, bool fix = false, bool silent = false);
+  int open(Store *store, const char *config_filename, char *db_filename = NULL, int db_size = -1, bool reconfigure = false,
+           bool fix = false, bool silent = false);
 
   // 1 for success, 0 for no config file, -1 for failure
-  int read_config(const char *config_filename, Store & store, char *fn = NULL, int *pi = NULL, int *pbuckets = NULL);
+  int read_config(const char *config_filename, Store &store, char *fn = NULL, int *pi = NULL, int *pbuckets = NULL);
   int write_config(const char *config_filename, int nominal_size, int buckets);
-  int initialize(Store * store, char *filename, int elements,
-                 int buckets = 0, unsigned int levels = 2,
-                 int level0_elements_per_bucket = 4,
-                 int level1_elements_per_bucket = 32, int level2_elements_per_bucket = 1);
+  int initialize(Store *store, char *filename, int elements, int buckets = 0, unsigned int levels = 2,
+                 int level0_elements_per_bucket = 4, int level1_elements_per_bucket = 32, int level2_elements_per_bucket = 1);
   int mmap_data(bool private_flag = false, bool zero_fill = false);
-  char *mmap_region(int blocks, int *fds, char *cur, size_t& total_length, bool private_flag, int zero_fill = 0);
+  char *mmap_region(int blocks, int *fds, char *cur, size_t &total_length, bool private_flag, int zero_fill = 0);
   int blocks_in_level(unsigned int level);
 
   bool verify_header();
 
   int unmap_data();
   void reset();
-  void clear();                 // this zeros the data
+  void clear(); // this zeros the data
   void clear_but_heap();
 
-  virtual MultiCacheBase *dup()
+  virtual MultiCacheBase *
+  dup()
   {
     ink_assert(0);
     return NULL;
   }
 
-  virtual size_t estimated_heap_bytes_per_entry() const { return 0; }
-
-  void print_info(FILE * fp);
-
-  //
-  // Rebuild the database, also perform checks, and fixups
-  // ** cannot be called on a running system **
-  // "this" must be initialized.
-  //
-#define MC_REBUILD         0
-#define MC_REBUILD_CHECK   1
-#define MC_REBUILD_FIX     2
-  int rebuild(MultiCacheBase & old, int kind = MC_REBUILD);     // 0 on success
-
-  virtual void rebuild_element(int buck, char *elem, RebuildMC & r)
+  virtual size_t
+  estimated_heap_bytes_per_entry() const
   {
-    (void) buck;
-    (void) elem;
-    (void) r;
+    return 0;
+  }
+
+  void print_info(FILE *fp);
+
+//
+// Rebuild the database, also perform checks, and fixups
+// ** cannot be called on a running system **
+// "this" must be initialized.
+//
+#define MC_REBUILD 0
+#define MC_REBUILD_CHECK 1
+#define MC_REBUILD_FIX 2
+  int rebuild(MultiCacheBase &old, int kind = MC_REBUILD); // 0 on success
+
+  virtual void
+  rebuild_element(int buck, char *elem, RebuildMC &r)
+  {
+    (void)buck;
+    (void)elem;
+    (void)r;
     ink_assert(0);
   }
 
@@ -315,13 +321,15 @@ struct MultiCacheBase: public MultiCacheHeader
   //
   int check(const char *config_filename, bool fix = false);
 
-  ProxyMutex *lock_for_bucket(int bucket)
+  ProxyMutex *
+  lock_for_bucket(int bucket)
   {
     return locks[partition_of_bucket(bucket)];
   }
-  uint64_t make_tag(uint64_t folded_md5)
+  uint64_t
+  make_tag(uint64_t folded_md5)
   {
-    uint64_t ttag = folded_md5 / (uint64_t) buckets;
+    uint64_t ttag = folded_md5 / (uint64_t)buckets;
     if (!ttag)
       return 1LL;
     // beeping gcc 2.7.2 is broken
@@ -338,17 +346,16 @@ struct MultiCacheBase: public MultiCacheHeader
   }
 
   int sync_all();
-  int sync_heap(int part);      // part varies between 0 and MULTI_CACHE_PARTITIONS
+  int sync_heap(int part); // part varies between 0 and MULTI_CACHE_PARTITIONS
   int sync_header();
   int sync_partition(int partition);
-  void sync_partitions(Continuation * cont);
+  void sync_partitions(Continuation *cont);
 
   MultiCacheBase();
-  virtual ~ MultiCacheBase() {
-    reset();
-  }
+  virtual ~MultiCacheBase() { reset(); }
 
-  virtual int get_elementsize()
+  virtual int
+  get_elementsize()
   {
     ink_assert(0);
     return 0;
@@ -366,7 +373,8 @@ struct MultiCacheBase: public MultiCacheHeader
   void *alloc(int *poffset, int size);
   void update(int *poffset, int *old_poffset);
   void *ptr(int *poffset, int partition);
-  int valid_offset(int offset)
+  int
+  valid_offset(int offset)
   {
     int max;
     if (offset < halfspace_size())
@@ -375,108 +383,121 @@ struct MultiCacheBase: public MultiCacheHeader
       max = halfspace_size() + heap_used[1];
     return offset < max;
   }
-  int valid_heap_pointer(char *p)
+  int
+  valid_heap_pointer(char *p)
   {
     if (p < heap + halfspace_size())
       return p < heap + heap_used[0];
     else
       return p < heap + halfspace_size() + heap_used[1];
   }
-  void copy_heap_data(char *src, int s, int *pi, int partition, MultiCacheHeapGC * gc);
-  int halfspace_of(int o)
+  void copy_heap_data(char *src, int s, int *pi, int partition, MultiCacheHeapGC *gc);
+  int
+  halfspace_of(int o)
   {
-    return o < halfspace_size()? 0 : 1;
+    return o < halfspace_size() ? 0 : 1;
   }
-  UnsunkPtrRegistry *fixup_heap_offsets(int partition, int before_used, UnsunkPtrRegistry * r = NULL, int base = 0);
+  UnsunkPtrRegistry *fixup_heap_offsets(int partition, int before_used, UnsunkPtrRegistry *r = NULL, int base = 0);
 
-  virtual void copy_heap(int partition, MultiCacheHeapGC * gc)
+  virtual void
+  copy_heap(int partition, MultiCacheHeapGC *gc)
   {
-    (void) partition;
-    (void) gc;
+    (void)partition;
+    (void)gc;
   }
 
   //
   // Private
   //
-  void alloc_mutexes()
+  void
+  alloc_mutexes()
   {
     for (int i = 0; i < MULTI_CACHE_PARTITIONS; i++)
       locks[i] = new_ProxyMutex();
   }
-  PtrMutex locks[MULTI_CACHE_PARTITIONS];       // 1 lock per (buckets/partitions)
+  PtrMutex locks[MULTI_CACHE_PARTITIONS]; // 1 lock per (buckets/partitions)
 };
 
-template<class C> struct MultiCache: public MultiCacheBase
-{
-  int get_elementsize()
+template <class C> struct MultiCache : public MultiCacheBase {
+  int
+  get_elementsize()
   {
     return sizeof(C);
   }
 
-  MultiCacheBase *dup()
+  MultiCacheBase *
+  dup()
   {
     return new MultiCache<C>;
   }
 
-  void rebuild_element(int buck, char *elem, RebuildMC & r);
+  void rebuild_element(int buck, char *elem, RebuildMC &r);
   // -1 is corrupt, 0 == void (do not insert), 1 is OK
-  virtual int rebuild_callout(C * c, RebuildMC & r)
+  virtual int
+  rebuild_callout(C *c, RebuildMC &r)
   {
-    (void) c;
-    (void) r;
+    (void)c;
+    (void)r;
     return 1;
   }
 
-  virtual void rebuild_insert_callout(C * c, RebuildMC & r)
+  virtual void
+  rebuild_insert_callout(C *c, RebuildMC &r)
   {
-    (void) c;
-    (void) r;
+    (void)c;
+    (void)r;
   }
 
   //
   // template operations
   //
-  int level_of_block(C * b);
-  bool match(uint64_t folded_md5, C * block);
+  int level_of_block(C *b);
+  bool match(uint64_t folded_md5, C *block);
   C *cache_bucket(uint64_t folded_md5, unsigned int level);
-  C *insert_block(uint64_t folded_md5, C * new_block, unsigned int level);
-  void flush(C * b, int bucket, unsigned int level);
-  void delete_block(C * block);
+  C *insert_block(uint64_t folded_md5, C *new_block, unsigned int level);
+  void flush(C *b, int bucket, unsigned int level);
+  void delete_block(C *block);
   C *lookup_block(uint64_t folded_md5, unsigned int level);
   void copy_heap(int paritition, MultiCacheHeapGC *);
 };
 
 inline uint64_t
-fold_md5(INK_MD5 const& md5)
+fold_md5(INK_MD5 const &md5)
 {
   return md5.fold();
 }
 
-template<class C> inline int MultiCache<C>::level_of_block(C * b)
+template <class C>
+inline int
+MultiCache<C>::level_of_block(C *b)
 {
-  if ((char *) b - data >= level_offset[1]) {
-    if ((char *) b - data >= level_offset[2])
+  if ((char *)b - data >= level_offset[1]) {
+    if ((char *)b - data >= level_offset[2])
       return 2;
     return 1;
   }
   return 0;
 }
 
-template<class C> inline C * MultiCache<C>::cache_bucket(uint64_t folded_md5, unsigned int level)
+template <class C>
+inline C *
+MultiCache<C>::cache_bucket(uint64_t folded_md5, unsigned int level)
 {
-  int bucket = (int) (folded_md5 % buckets);
+  int bucket = (int)(folded_md5 % buckets);
   char *offset = data + level_offset[level] + bucketsize[level] * bucket;
-  return (C *) offset;
+  return (C *)offset;
 }
 
 //
 // Insert an entry
 //
-template<class C> inline C * MultiCache<C>::insert_block(uint64_t folded_md5, C * new_block, unsigned int level)
+template <class C>
+inline C *
+MultiCache<C>::insert_block(uint64_t folded_md5, C *new_block, unsigned int level)
 {
   C *b = cache_bucket(folded_md5, level);
   C *block = NULL, *empty = NULL;
-  int bucket = (int) (folded_md5 % buckets);
+  int bucket = (int)(folded_md5 % buckets);
   int hits = 0;
 
   // Find the entry
@@ -537,13 +558,14 @@ Lfound:
   return block;
 }
 
-#define REBUILD_FOLDED_MD5(_cl) \
-((_cl->tag() * (uint64_t)buckets + (uint64_t)bucket))
+#define REBUILD_FOLDED_MD5(_cl) ((_cl->tag() * (uint64_t)buckets + (uint64_t)bucket))
 
 //
 // This function ejects some number of entries.
 //
-template<class C> inline void MultiCache<C>::flush(C * b, int bucket, unsigned int level)
+template <class C>
+inline void
+MultiCache<C>::flush(C *b, int bucket, unsigned int level)
 {
   C *block = NULL;
   // The comparison against the constant is redundant, but it
@@ -566,7 +588,9 @@ template<class C> inline void MultiCache<C>::flush(C * b, int bucket, unsigned i
 //
 // Match a cache line and a folded md5 key
 //
-template<class C> inline bool MultiCache<C>::match(uint64_t folded_md5, C * block)
+template <class C>
+inline bool
+MultiCache<C>::match(uint64_t folded_md5, C *block)
 {
   return block->tag() == make_tag(folded_md5);
 }
@@ -574,14 +598,16 @@ template<class C> inline bool MultiCache<C>::match(uint64_t folded_md5, C * bloc
 //
 // This code is a bit of a mess and should probably be rewritten
 //
-template<class C> inline void MultiCache<C>::delete_block(C * b)
+template <class C>
+inline void
+MultiCache<C>::delete_block(C *b)
 {
   if (b->backed) {
     unsigned int l = level_of_block(b);
     if (l < levels - 1) {
-      int bucket = (((char *) b - data) - level_offset[l]) / bucketsize[l];
-      C *x = (C *) (data + level_offset[l + 1] + bucket * bucketsize[l + 1]);
-      for (C * y = x; y < x + elements[l + 1]; y++)
+      int bucket = (((char *)b - data) - level_offset[l]) / bucketsize[l];
+      C *x = (C *)(data + level_offset[l + 1] + bucket * bucketsize[l + 1]);
+      for (C *y = x; y < x + elements[l + 1]; y++)
         if (b->tag() == y->tag())
           delete_block(y);
     }
@@ -592,7 +618,9 @@ template<class C> inline void MultiCache<C>::delete_block(C * b)
 //
 // Lookup an entry up to some level in the cache
 //
-template<class C> inline C * MultiCache<C>::lookup_block(uint64_t folded_md5, unsigned int level)
+template <class C>
+inline C *
+MultiCache<C>::lookup_block(uint64_t folded_md5, unsigned int level)
 {
   C *b = cache_bucket(folded_md5, 0);
   uint64_t tag = make_tag(folded_md5);
@@ -618,9 +646,11 @@ template<class C> inline C * MultiCache<C>::lookup_block(uint64_t folded_md5, un
   return NULL;
 }
 
-template<class C> inline void MultiCache<C>::rebuild_element(int bucket, char *elem, RebuildMC & r)
+template <class C>
+inline void
+MultiCache<C>::rebuild_element(int bucket, char *elem, RebuildMC &r)
 {
-  C *e = (C *) elem;
+  C *e = (C *)elem;
   if (!e->is_empty()) {
     r.total++;
     if (e->is_deleted())
@@ -643,20 +673,22 @@ template<class C> inline void MultiCache<C>::rebuild_element(int bucket, char *e
   }
 }
 
-template<class C> inline void MultiCache<C>::copy_heap(int partition, MultiCacheHeapGC * gc)
+template <class C>
+inline void
+MultiCache<C>::copy_heap(int partition, MultiCacheHeapGC *gc)
 {
   int b = first_bucket_of_partition(partition);
   int n = buckets_of_partition(partition);
   for (unsigned int level = 0; level < levels; level++) {
     int e = n * elements[level];
     char *d = data + level_offset[level] + b * bucketsize[level];
-    C *x = (C *) d;
+    C *x = (C *)d;
     for (int i = 0; i < e; i++) {
       int s = x[i].heap_size();
       if (s) {
         int *pi = x[i].heap_offset_ptr();
         if (pi) {
-          char *src = (char *) ptr(pi, partition);
+          char *src = (char *)ptr(pi, partition);
           if (src) {
             if (heap_halfspace) {
               if (src >= heap + halfspace_size())
@@ -672,5 +704,5 @@ template<class C> inline void MultiCache<C>::copy_heap(int partition, MultiCache
 }
 
 // store either free or in the cache, can be stolen for reconfiguration
-void stealStore(Store & s, int blocks);
+void stealStore(Store &s, int blocks);
 #endif /* _MultiCache_h_ */

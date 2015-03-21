@@ -28,19 +28,24 @@
 using namespace atscppapi;
 using std::string;
 
-Stat::Stat() : stat_id_(TS_ERROR) {
-// ATS Guarantees that stat ids will always be > 0. So we can use stat_id_ > 0 to
-// verify that this stat has been properly initialized.
+Stat::Stat() : stat_id_(TS_ERROR)
+{
+  // ATS Guarantees that stat ids will always be > 0. So we can use stat_id_ > 0 to
+  // verify that this stat has been properly initialized.
 }
 
-Stat::~Stat() {
-// we really dont have any cleanup since ATS doesn't expose a method to destroy stats
+Stat::~Stat()
+{
+  // we really dont have any cleanup since ATS doesn't expose a method to destroy stats
 }
 
-bool Stat::init(string name, Stat::SyncType type, bool persistent) {
+bool
+Stat::init(string name, Stat::SyncType type, bool persistent)
+{
   // TS_RECORDDATATYPE_INT is the only type currently supported
   // so that's why this api doesn't expose other types, TSStatSync is equivalent to StatSyncType
-  stat_id_ = TSStatCreate(name.c_str(), TS_RECORDDATATYPE_INT, persistent ?  TS_STAT_PERSISTENT : TS_STAT_NON_PERSISTENT, static_cast<TSStatSync>(type));
+  stat_id_ = TSStatCreate(name.c_str(), TS_RECORDDATATYPE_INT, persistent ? TS_STAT_PERSISTENT : TS_STAT_NON_PERSISTENT,
+                          static_cast<TSStatSync>(type));
   if (stat_id_ != TS_ERROR) {
     LOG_DEBUG("Created new stat named '%s' with stat_id = %d", name.c_str(), stat_id_);
   } else {
@@ -58,7 +63,9 @@ bool Stat::init(string name, Stat::SyncType type, bool persistent) {
   return true;
 }
 
-void Stat::set(int64_t value) {
+void
+Stat::set(int64_t value)
+{
   if (stat_id_ == TS_ERROR) {
     return;
   }
@@ -66,7 +73,9 @@ void Stat::set(int64_t value) {
   TSStatIntSet(stat_id_, value);
 }
 
-int64_t Stat::get() const {
+int64_t
+Stat::get() const
+{
   if (stat_id_ == TS_ERROR) {
     return 0;
   }
@@ -74,7 +83,9 @@ int64_t Stat::get() const {
   return TSStatIntGet(stat_id_);
 }
 
-void Stat::increment(int64_t amount) {
+void
+Stat::increment(int64_t amount)
+{
   if (stat_id_ == TS_ERROR) {
     return;
   }
@@ -82,15 +93,12 @@ void Stat::increment(int64_t amount) {
   TSStatIntIncrement(stat_id_, amount);
 }
 
-void Stat::decrement(int64_t amount) {
+void
+Stat::decrement(int64_t amount)
+{
   if (stat_id_ == TS_ERROR) {
     return;
   }
 
   TSStatIntDecrement(stat_id_, amount);
 }
-
-
-
-
-

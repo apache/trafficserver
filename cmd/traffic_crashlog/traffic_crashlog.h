@@ -49,28 +49,27 @@
 
 #define CRASHLOG_HAVE_THREADINFO 0x1u
 
-struct crashlog_target
-{
-  pid_t       pid;
-  siginfo_t   siginfo;
+struct crashlog_target {
+  pid_t pid;
+  siginfo_t siginfo;
 #if defined(__linux__)
-  ucontext_t  ucontext;
+  ucontext_t ucontext;
 #else
-  char        ucontext; // just a placeholder ...
+  char ucontext; // just a placeholder ...
 #endif
-  struct tm   timestamp;
-  unsigned    flags;
+  struct tm timestamp;
+  unsigned flags;
 };
 
-bool crashlog_write_backtrace(FILE *, const crashlog_target&);
-bool crashlog_write_regions(FILE * , const crashlog_target&);
-bool crashlog_write_exename(FILE *, const crashlog_target&);
-bool crashlog_write_uname(FILE *, const crashlog_target&);
-bool crashlog_write_datime(FILE *, const crashlog_target&);
-bool crashlog_write_procname(FILE *, const crashlog_target&);
-bool crashlog_write_procstatus(FILE *, const crashlog_target&);
-bool crashlog_write_records(FILE *, const crashlog_target&);
-bool crashlog_write_siginfo(FILE *, const crashlog_target&);
-bool crashlog_write_registers(FILE *, const crashlog_target&);
+bool crashlog_write_backtrace(FILE *, const crashlog_target &);
+bool crashlog_write_regions(FILE *, const crashlog_target &);
+bool crashlog_write_exename(FILE *, const crashlog_target &);
+bool crashlog_write_uname(FILE *, const crashlog_target &);
+bool crashlog_write_datime(FILE *, const crashlog_target &);
+bool crashlog_write_procname(FILE *, const crashlog_target &);
+bool crashlog_write_procstatus(FILE *, const crashlog_target &);
+bool crashlog_write_records(FILE *, const crashlog_target &);
+bool crashlog_write_siginfo(FILE *, const crashlog_target &);
+bool crashlog_write_registers(FILE *, const crashlog_target &);
 
 #endif /* __TRAFFIC_CRASHLOG_H__ */

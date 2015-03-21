@@ -33,7 +33,6 @@
 unsigned short
 XML_extractContent(const char *name, char *content, size_t result_len)
 {
-
   char c;
   int contentIndex = 0;
 
@@ -55,7 +54,6 @@ XML_extractContent(const char *name, char *content, size_t result_len)
   }
 
   return (strlen(content));
-
 }
 
 
@@ -66,7 +64,6 @@ XML_extractContent(const char *name, char *content, size_t result_len)
 bool
 isOperator(char c)
 {
-
   switch (c) {
   case '+':
   case '-':
@@ -78,5 +75,4 @@ isOperator(char c)
   default:
     return false;
   }
-
 }

@@ -30,23 +30,26 @@
 #include <string>
 #include <vector>
 
-namespace {
-
+namespace
+{
 size_t
-sockaddrlen(const struct sockaddr * sa)
+sockaddrlen(const struct sockaddr *sa)
 {
   switch (sa->sa_family) {
-    case AF_INET: return sizeof(struct sockaddr_in);
-    case AF_INET6: return sizeof(struct sockaddr_in6);
-    default: TSReleaseAssert(0 && "unsupported socket type");
+  case AF_INET:
+    return sizeof(struct sockaddr_in);
+  case AF_INET6:
+    return sizeof(struct sockaddr_in6);
+  default:
+    TSReleaseAssert(0 && "unsupported socket type");
   }
 }
 
 struct md5_key {
-
   md5_key() {}
 
-  md5_key(const BalancerTarget& target, unsigned i) {
+  md5_key(const BalancerTarget &target, unsigned i)
+  {
     MD5_CTX ctx;
 
     MD5_Init(&ctx);
@@ -56,9 +59,7 @@ struct md5_key {
     MD5_Final(this->key, &ctx);
   }
 
-  bool operator < (const md5_key& rhs) const {
-    return memcmp(this->key, rhs.key, sizeof(this->key)) < 0;
-  }
+  bool operator<(const md5_key &rhs) const { return memcmp(this->key, rhs.key, sizeof(this->key)) < 0; }
 
   unsigned char key[MD5_DIGEST_LENGTH];
 };
@@ -67,9 +68,9 @@ typedef void (*HashComponent)(TSHttpTxn txn, TSRemapRequestInfo *, MD5_CTX *);
 
 // Hash on the source (client) IP address.
 void
-HashTxnSrcaddr(TSHttpTxn txn, TSRemapRequestInfo *, MD5_CTX * ctx)
+HashTxnSrcaddr(TSHttpTxn txn, TSRemapRequestInfo *, MD5_CTX *ctx)
 {
-  struct sockaddr const * sa;
+  struct sockaddr const *sa;
 
   sa = TSHttpTxnClientAddrGet(txn);
   if (sa) {
@@ -80,9 +81,9 @@ HashTxnSrcaddr(TSHttpTxn txn, TSRemapRequestInfo *, MD5_CTX * ctx)
 
 // Hash on the destination (server) IP address;
 void
-HashTxnDstaddr(TSHttpTxn txn, TSRemapRequestInfo *, MD5_CTX * ctx)
+HashTxnDstaddr(TSHttpTxn txn, TSRemapRequestInfo *, MD5_CTX *ctx)
 {
-  struct sockaddr const * sa;
+  struct sockaddr const *sa;
 
   sa = TSHttpTxnIncomingAddrGet(txn);
   if (sa) {
@@ -93,9 +94,9 @@ HashTxnDstaddr(TSHttpTxn txn, TSRemapRequestInfo *, MD5_CTX * ctx)
 
 // Hash on the request URL.
 void
-HashTxnUrl(TSHttpTxn txn, TSRemapRequestInfo *, MD5_CTX * ctx)
+HashTxnUrl(TSHttpTxn txn, TSRemapRequestInfo *, MD5_CTX *ctx)
 {
-  char * url;
+  char *url;
   int len;
 
   url = TSHttpTxnEffectiveUrlStringGet(txn, &len);
@@ -109,11 +110,11 @@ HashTxnUrl(TSHttpTxn txn, TSRemapRequestInfo *, MD5_CTX * ctx)
 
 // Hash on the cache key. This is not typically set at remap time, unless by another plugin.
 void
-HashTxnKey(TSHttpTxn txn, TSRemapRequestInfo * rri , MD5_CTX * ctx)
+HashTxnKey(TSHttpTxn txn, TSRemapRequestInfo *rri, MD5_CTX *ctx)
 {
-  TSMLoc  url = TS_NULL_MLOC;
-  char *  str = NULL;
-  int     len;
+  TSMLoc url = TS_NULL_MLOC;
+  char *str = NULL;
+  int len;
 
   if (TSUrlCreate(rri->requestBufp, &url) != TS_SUCCESS) {
     goto done;
@@ -138,24 +139,27 @@ done:
   TSfree(str);
 }
 
-struct HashBalancer : public BalancerInstance
-{
+struct HashBalancer : public BalancerInstance {
   typedef std::map<md5_key, BalancerTarget> hash_ring_type;
-  typedef std::vector<HashComponent>        hash_part_type;
+  typedef std::vector<HashComponent> hash_part_type;
 
-  enum { iterations = 10 };
+  enum {
+    iterations = 10,
+  };
 
-  HashBalancer() {
-    this->hash_parts.push_back(HashTxnUrl);
-  }
+  HashBalancer() { this->hash_parts.push_back(HashTxnUrl); }
 
-  void push_target(const BalancerTarget& target) {
+  void
+  push_target(const BalancerTarget &target)
+  {
     for (unsigned i = 0; i < iterations; ++i) {
       this->hash_ring.insert(std::make_pair(md5_key(target, i), target));
     }
   }
 
-  const BalancerTarget& balance(TSHttpTxn txn, TSRemapRequestInfo * rri) {
+  const BalancerTarget &
+  balance(TSHttpTxn txn, TSRemapRequestInfo *rri)
+  {
     md5_key key;
     MD5_CTX ctx;
     hash_ring_type::const_iterator loc;
@@ -190,11 +194,11 @@ struct HashBalancer : public BalancerInstance
 } // namespace
 
 BalancerInstance *
-MakeHashBalancer(const char * options)
+MakeHashBalancer(const char *options)
 {
-  HashBalancer * hash = new HashBalancer();
-  char * opt;
-  char * tmp;
+  HashBalancer *hash = new HashBalancer();
+  char *opt;
+  char *tmp;
 
   TSDebug("balancer", "making hash balancer with options '%s'", options);
 
@@ -220,4 +224,3 @@ MakeHashBalancer(const char * options)
 
   return hash;
 }
-

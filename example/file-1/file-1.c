@@ -65,4 +65,3 @@ TSPluginInit(int argc, const char *argv[])
     TSfclose(filep);
   }
 }
-

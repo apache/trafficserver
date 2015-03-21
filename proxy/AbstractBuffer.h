@@ -28,21 +28,19 @@
 #include "libts.h"
 
 
-enum ABError
-{
+enum ABError {
   AB_ERROR_OK,
   AB_ERROR_BUSY,
   AB_ERROR_STATE,
   AB_ERROR_FULL,
-  AB_ERROR_OFFSET
+  AB_ERROR_OFFSET,
 };
 
 
 class AbstractBuffer
 {
 public:
-  enum AbstractBufferState
-  {
+  enum AbstractBufferState {
     AB_STATE_UNUSED,
     AB_STATE_INITIALIZING,
     AB_STATE_READ_WRITE,
@@ -52,60 +50,48 @@ public:
   };
 
 protected:
-  union VolatileState
-  {
-    VolatileState()
-    {
-      ival = 0;
-    }
+  union VolatileState {
+    VolatileState() { ival = 0; }
 
-    VolatileState(volatile VolatileState & vs)
-    {
-      ival = vs.ival;
-    }
+    VolatileState(volatile VolatileState &vs) { ival = vs.ival; }
 
-    VolatileState & operator =(volatile VolatileState & vs)
+    VolatileState &operator=(volatile VolatileState &vs)
     {
       ival = vs.ival;
       return *this;
     }
 
     int64_t ival;
-    struct
-    {
+    struct {
       uint16_t reader_count;
       uint16_t writer_count;
-      uint32_t offset:29;
-      uint32_t state:3;
+      uint32_t offset : 29;
+      uint32_t state : 3;
     } s;
   };
 
 public:
-  AbstractBuffer(int xsize, int xalignment)
-  : buffer(NULL), unaligned_buffer(NULL), size(xsize), alignment(xalignment)
-  {
-    clear();
-  }
-  virtual ~ AbstractBuffer() {
-    clear();
-  }
+  AbstractBuffer(int xsize, int xalignment) : buffer(NULL), unaligned_buffer(NULL), size(xsize), alignment(xalignment) { clear(); }
+  virtual ~AbstractBuffer() { clear(); }
 
-  char *data()
+  char *
+  data()
   {
     return buffer;
   }
-  char &operator [] (int idx)
+  char &operator[](int idx)
   {
     ink_assert(idx >= 0);
     ink_assert(idx < size);
     return buffer[idx];
   }
-  int offset()
+  int
+  offset()
   {
     return vs.s.offset;
   }
 
-  virtual ABError checkout_write(int *write_offset, int write_size, uint64_t retries = (uint64_t) - 1);
+  virtual ABError checkout_write(int *write_offset, int write_size, uint64_t retries = (uint64_t)-1);
   virtual ABError checkout_read(int read_offset, int read_size);
   virtual ABError checkin_write(int write_offset);
   virtual ABError checkin_read(int read_offset);
@@ -117,7 +103,7 @@ public:
   virtual void destroy();
   virtual void clear();
 
-  bool switch_state(VolatileState & old_state, VolatileState & new_state);
+  bool switch_state(VolatileState &old_state, VolatileState &new_state);
 
 public:
   volatile VolatileState vs;
@@ -134,18 +120,12 @@ public:
 class AbstractBufferReader
 {
 public:
-  AbstractBufferReader(AbstractBuffer * xbuffer, int xoffset)
-  : buffer(xbuffer), offset(xoffset)
-  {
-  }
+  AbstractBufferReader(AbstractBuffer *xbuffer, int xoffset) : buffer(xbuffer), offset(xoffset) {}
 
-   ~AbstractBufferReader()
-  {
-    buffer->checkin_read(offset);
-  }
+  ~AbstractBufferReader() { buffer->checkin_read(offset); }
 
 private:
-  AbstractBuffer * buffer;
+  AbstractBuffer *buffer;
   int offset;
 };
 
@@ -153,18 +133,12 @@ private:
 class AbstractBufferWriter
 {
 public:
-  AbstractBufferWriter(AbstractBuffer * xbuffer, int xoffset)
-  : buffer(xbuffer), offset(xoffset)
-  {
-  }
+  AbstractBufferWriter(AbstractBuffer *xbuffer, int xoffset) : buffer(xbuffer), offset(xoffset) {}
 
-   ~AbstractBufferWriter()
-  {
-    buffer->checkin_write(offset);
-  }
+  ~AbstractBufferWriter() { buffer->checkin_write(offset); }
 
 private:
-  AbstractBuffer * buffer;
+  AbstractBuffer *buffer;
   int offset;
 };
 
@@ -172,9 +146,9 @@ private:
   -------------------------------------------------------------------------*/
 
 inline bool
-AbstractBuffer::switch_state(VolatileState & old_vs, VolatileState & new_vs)
+AbstractBuffer::switch_state(VolatileState &old_vs, VolatileState &new_vs)
 {
-  if (ink_atomic_cas((int64_t *) & vs.ival, old_vs.ival, new_vs.ival)) {
+  if (ink_atomic_cas((int64_t *)&vs.ival, old_vs.ival, new_vs.ival)) {
     return true;
   }
 

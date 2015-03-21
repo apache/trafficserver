@@ -37,7 +37,7 @@
 
 
  ****************************************************************************/
-#if !defined (_UnixNetState_h_)
+#if !defined(_UnixNetState_h_)
 #define _UnixNetState_h_
 
 #include "List.h"
@@ -46,8 +46,7 @@
 class Event;
 class UnixNetVConnection;
 
-struct NetState
-{
+struct NetState {
   volatile int enabled;
   VIO vio;
   Link<UnixNetVConnection> ready_link;

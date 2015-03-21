@@ -60,10 +60,10 @@ i_am_the_record_owner(RecT rec_type)
 // sync_thr
 //-------------------------------------------------------------------------
 static void *
-sync_thr(void * data)
+sync_thr(void *data)
 {
   textBuffer *tb = new textBuffer(65536);
-  FileManager * configFiles = (FileManager *)data;
+  FileManager *configFiles = (FileManager *)data;
 
   Rollback *rb;
   bool inc_version;
@@ -83,8 +83,7 @@ sync_thr(void * data)
           }
           written = true;
         }
-      }
-      else {
+      } else {
         rb = NULL;
       }
       if (!written) {
@@ -112,7 +111,6 @@ sync_thr(void * data)
 static void *
 config_update_thr(void * /* data */)
 {
-
   while (true) {
     switch (RecExecConfigUpdateCbs(REC_LOCAL_UPDATE_REQUIRED)) {
     case RECU_RESTART_TS:
@@ -153,9 +151,10 @@ RecMessageInit()
 // RecLocalInit
 //-------------------------------------------------------------------------
 int
-RecLocalInit(Diags * _diags)
+RecLocalInit(Diags *_diags)
 {
-  static bool initialized_p = false;;
+  static bool initialized_p = false;
+  ;
 
   if (initialized_p) {
     return REC_ERR_OKAY;
@@ -208,7 +207,7 @@ RecLocalInitMessage()
 // RecLocalStart
 //-------------------------------------------------------------------------
 int
-RecLocalStart(FileManager * configFiles)
+RecLocalStart(FileManager *configFiles)
 {
   ink_thread_create(sync_thr, configFiles);
   ink_thread_create(config_update_thr, NULL);
@@ -225,9 +224,9 @@ RecRegisterManagerCb(int id, RecManagerCb _fn, void *_data)
 void
 RecSignalManager(int id, const char *, size_t)
 {
-   // Signals are messages sent across the management pipe, so by definition,
-   // you can't send a signal if you are a local process manager.
-   RecDebug(DL_Debug, "local manager dropping signal %d", id);
+  // Signals are messages sent across the management pipe, so by definition,
+  // you can't send a signal if you are a local process manager.
+  RecDebug(DL_Debug, "local manager dropping signal %d", id);
 }
 
 //-------------------------------------------------------------------------
@@ -235,7 +234,7 @@ RecSignalManager(int id, const char *, size_t)
 //-------------------------------------------------------------------------
 
 int
-RecMessageSend(RecMessage * msg)
+RecMessageSend(RecMessage *msg)
 {
   int msg_size;
 
@@ -246,9 +245,8 @@ RecMessageSend(RecMessage * msg)
   if (g_mode_type == RECM_CLIENT || g_mode_type == RECM_SERVER) {
     msg->o_end = msg->o_write;
     msg_size = sizeof(RecMessageHdr) + (msg->o_write - msg->o_start);
-    lmgmt->signalEvent(MGMT_EVENT_LIBRECORDS, (char *) msg, msg_size);
+    lmgmt->signalEvent(MGMT_EVENT_LIBRECORDS, (char *)msg, msg_size);
   }
 
   return REC_ERR_OKAY;
 }
-

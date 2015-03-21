@@ -1,6 +1,6 @@
 /** @file
 
-	Tests http scheduled functionality by requesting URLs out of a file
+        Tests http scheduled functionality by requesting URLs out of a file
 
   @section license License
 
@@ -29,11 +29,12 @@
 #define MAX_ACTIVE_REQUESTS 5
 #define MAX_TOTAL_REQUESTS 100
 
-class UpTest:public Continuation
+class UpTest : public Continuation
 {
 public:
-  UpTest(FILE * f, ProxyMutex * amutex);
+  UpTest(FILE *f, ProxyMutex *amutex);
   int main_handler(int event, void *data);
+
 private:
   void make_requests();
   int active_req;
@@ -43,10 +44,11 @@ private:
 #endif
 };
 
-UpTest::UpTest(FILE * /* f ATS_UNUSED */, ProxyMutex * amutex)
+UpTest::UpTest(FILE * /* f ATS_UNUSED */, ProxyMutex *amutex)
   : Continuation(amutex), active_req(0)
 #ifdef GO_AWAY
-  , total_req(0), file(f)
+    ,
+    total_req(0), file(f)
 #endif
 {
   SET_HANDLER(&UpTest::main_handler);
@@ -56,10 +58,9 @@ void
 UpTest::make_requests()
 {
   ink_release_assert(0);
-  // HDR FIX ME
+// HDR FIX ME
 #ifdef GO_AWAY
   while (active_req < MAX_ACTIVE_REQUESTS && file != NULL && total_req < MAX_TOTAL_REQUESTS) {
-
     char url_buf[2048];
     char req_buf[4096];
 
@@ -87,7 +88,7 @@ UpTest::make_requests()
     HttpUpdateSM *current_reader = HttpUpdateSM::allocate();
     current_reader->init();
     Action *a = current_reader->start_scheduled_update(this, test_req);
-    (void) a;
+    (void)a;
 
     active_req++;
     total_req++;
@@ -107,13 +108,11 @@ UpTest::main_handler(int event, void * /* data ATS_UNUSED */)
   make_requests();
 
   return EVENT_DONE;
-
 }
 
 void
 init_http_update_test()
 {
-
   FILE *f = fopen("urls", "r");
 
   if (f == NULL) {

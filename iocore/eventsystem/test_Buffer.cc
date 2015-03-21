@@ -25,7 +25,7 @@
 #include "I_Layout.h"
 
 #define TEST_TIME_SECOND 60
-#define TEST_THREADS     2
+#define TEST_THREADS 2
 
 Diags *diags;
 #define DIAGS_LOG_FILE "diags.log"
@@ -55,7 +55,6 @@ reconfigure_diags()
 
   // read output routing values
   for (i = 0; i < DiagsLevel_Count; i++) {
-
     c.outputs[i].to_stdout = 0;
     c.outputs[i].to_stderr = 1;
     c.outputs[i].to_syslog = 1;
@@ -78,15 +77,14 @@ reconfigure_diags()
   if (diags->base_action_tags)
     diags->activate_taglist(diags->base_action_tags, DiagsTagType_Action);
 
-  ////////////////////////////////////
-  // change the diags config values //
-  ////////////////////////////////////
+////////////////////////////////////
+// change the diags config values //
+////////////////////////////////////
 #if !defined(__GNUC__) && !defined(hpux)
   diags->config = c;
 #else
-  memcpy(((void *) &diags->config), ((void *) &c), sizeof(DiagsConfigState));
+  memcpy(((void *)&diags->config), ((void *)&c), sizeof(DiagsConfigState));
 #endif
-
 }
 
 static void
@@ -109,16 +107,17 @@ init_diags(const char *bdt, const char *bat)
   diags = new Diags(bdt, bat, diags_log_fp);
 
   if (diags_log_fp == NULL) {
-    Warning("couldn't open diags log file '%s', " "will not log to this file", diags_logpath);
+    Warning("couldn't open diags log file '%s', "
+            "will not log to this file",
+            diags_logpath);
   }
 
   Status("opened %s", diags_logpath);
   reconfigure_diags();
-
 }
 
 int
-main(int /* argc ATS_UNUSED */, const char */* argv ATS_UNUSED */[])
+main(int /* argc ATS_UNUSED */, const char * /* argv ATS_UNUSED */ [])
 {
   RecModeT mode_type = RECM_STAND_ALONE;
 
@@ -138,7 +137,7 @@ main(int /* argc ATS_UNUSED */, const char */* argv ATS_UNUSED */[])
     IOBufferReader *b2reader ATS_UNUSED = b2->alloc_reader();
     b2->fill(b2->write_avail());
 
-    //b1->write(b2reader, 2*1024);
+    // b1->write(b2reader, 2*1024);
 
     free_MIOBuffer(b2);
     free_MIOBuffer(b1);

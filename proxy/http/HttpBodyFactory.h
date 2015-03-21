@@ -68,8 +68,8 @@
 
 
 #define HTTP_BODY_TEMPLATE_MAGIC 0xB0DFAC00
-#define HTTP_BODY_SET_MAGIC      0xB0DFAC55
-#define HTTP_BODY_FACTORY_MAGIC  0xB0DFACFF
+#define HTTP_BODY_SET_MAGIC 0xB0DFAC55
+#define HTTP_BODY_FACTORY_MAGIC 0xB0DFACFF
 
 ////////////////////////////////////////////////////////////////////////
 //
@@ -90,11 +90,12 @@ public:
 
   void reset();
   int load_from_file(char *dir, char *file);
-  bool is_sane()
+  bool
+  is_sane()
   {
     return (magic == HTTP_BODY_TEMPLATE_MAGIC);
   }
-  char *build_instantiated_buffer(HttpTransact::State * context, int64_t *length_return);
+  char *build_instantiated_buffer(HttpTransact::State *context, int64_t *length_return);
 
   unsigned int magic;
   int64_t byte_count;
@@ -116,20 +117,21 @@ public:
 //
 ////////////////////////////////////////////////////////////////////////
 
-class HttpBodySet:public HttpBodySetRawData
+class HttpBodySet : public HttpBodySetRawData
 {
 public:
   HttpBodySet();
   ~HttpBodySet();
 
   int init(char *set_name, char *dir);
-  bool is_sane()
+  bool
+  is_sane()
   {
     return (magic == HTTP_BODY_SET_MAGIC);
   }
 
   HttpBodyTemplate *get_template_by_name(const char *name);
-  void set_template_by_name(const char *name, HttpBodyTemplate * t);
+  void set_template_by_name(const char *name, HttpBodyTemplate *t);
 };
 
 
@@ -156,51 +158,44 @@ public:
   ///////////////////////
   // primary user APIs //
   ///////////////////////
-  char *fabricate_with_old_api(const char *type, HttpTransact::State * context,
-                               int64_t max_buffer_length, int64_t *resulting_buffer_length,
-                               char* content_language_out_buf,
-                               size_t content_language_buf_size,
-                               char* content_type_out_buf,
-                               size_t content_type_buf_size,
-                               const char *format, va_list ap);
+  char *fabricate_with_old_api(const char *type, HttpTransact::State *context, int64_t max_buffer_length,
+                               int64_t *resulting_buffer_length, char *content_language_out_buf, size_t content_language_buf_size,
+                               char *content_type_out_buf, size_t content_type_buf_size, const char *format, va_list ap);
 
-  char *fabricate_with_old_api_build_va(const char *type, HttpTransact::State * context,
-                                        int64_t max_buffer_length, int64_t *resulting_buffer_length,
-                                        char* content_language_out_buf, size_t content_language_buf_size,
-                                        char* content_type_out_buf, size_t content_type_buf_size,
-                                        const char *format, ...)
+  char *
+  fabricate_with_old_api_build_va(const char *type, HttpTransact::State *context, int64_t max_buffer_length,
+                                  int64_t *resulting_buffer_length, char *content_language_out_buf,
+                                  size_t content_language_buf_size, char *content_type_out_buf, size_t content_type_buf_size,
+                                  const char *format, ...)
   {
-    char * msg;
+    char *msg;
     va_list ap;
 
     va_start(ap, format);
-    msg = fabricate_with_old_api(type, context, max_buffer_length, resulting_buffer_length,
-                                   content_language_out_buf, content_language_buf_size,
-                                   content_type_out_buf, content_type_buf_size, format, ap);
+    msg = fabricate_with_old_api(type, context, max_buffer_length, resulting_buffer_length, content_language_out_buf,
+                                 content_language_buf_size, content_type_out_buf, content_type_buf_size, format, ap);
     va_end(ap);
     return msg;
   }
 
-  void dump_template_tables(FILE * fp = stderr);
+  void dump_template_tables(FILE *fp = stderr);
   void reconfigure();
 
 private:
+  char *fabricate(StrList *acpt_language_list, StrList *acpt_charset_list, const char *type, HttpTransact::State *context,
+                  int64_t *resulting_buffer_length, const char **content_language_return, const char **content_charset_return,
+                  const char **set_return = NULL);
 
-  char *fabricate(StrList * acpt_language_list,
-                  StrList * acpt_charset_list,
-                  const char *type, HttpTransact::State * context,
-                  int64_t *resulting_buffer_length,
-                  const char **content_language_return,
-                  const char **content_charset_return, const char **set_return = NULL);
-
-  const char *determine_set_by_language(StrList * acpt_language_list, StrList * acpt_charset_list);
-  HttpBodyTemplate *find_template(const char *set, const char *type, HttpBodySet ** body_set_return);
-  bool is_response_suppressed(HttpTransact::State * context);
-  bool is_sane()
+  const char *determine_set_by_language(StrList *acpt_language_list, StrList *acpt_charset_list);
+  HttpBodyTemplate *find_template(const char *set, const char *type, HttpBodySet **body_set_return);
+  bool is_response_suppressed(HttpTransact::State *context);
+  bool
+  is_sane()
   {
     return (magic == HTTP_BODY_FACTORY_MAGIC);
   }
-  void sanity_check()
+  void
+  sanity_check()
   {
     ink_assert(is_sane());
   }
@@ -216,11 +211,13 @@ private:
   /////////////////////////////////////////////////
   // internal data structure concurrency control //
   /////////////////////////////////////////////////
-  void lock()
+  void
+  lock()
   {
     ink_mutex_acquire(&mutex);
   }
-  void unlock()
+  void
+  unlock()
   {
     ink_mutex_release(&mutex);
   }
@@ -228,17 +225,17 @@ private:
   /////////////////////////////////////
   // manager configuration variables //
   /////////////////////////////////////
-  int enable_customizations;    // 0:no custom,1:custom,2:language-targeted
-  bool enable_logging;          // the user wants body factory logging
-  int response_suppression_mode;        // when to suppress responses
+  int enable_customizations;     // 0:no custom,1:custom,2:language-targeted
+  bool enable_logging;           // the user wants body factory logging
+  int response_suppression_mode; // when to suppress responses
 
   ////////////////////
   // internal state //
   ////////////////////
-  unsigned int magic;           // magic for sanity checks/debugging
-  ink_mutex mutex;              // prevents reconfig/read races
-  bool callbacks_established;   // all config variables present
-  RawHashTable *table_of_sets;  // sets of template hash tables
+  unsigned int magic;          // magic for sanity checks/debugging
+  ink_mutex mutex;             // prevents reconfig/read races
+  bool callbacks_established;  // all config variables present
+  RawHashTable *table_of_sets; // sets of template hash tables
 };
 
 #endif

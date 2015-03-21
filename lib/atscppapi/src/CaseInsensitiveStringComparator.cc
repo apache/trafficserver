@@ -22,19 +22,23 @@
 
 #include "atscppapi/CaseInsensitiveStringComparator.h"
 
-namespace {
-  static char NORMALIZED_CHARACTERS[256];
-  static volatile bool normalizer_initialized(false);
+namespace
+{
+static char NORMALIZED_CHARACTERS[256];
+static volatile bool normalizer_initialized(false);
 }
 
 using atscppapi::CaseInsensitiveStringComparator;
 using std::string;
 
-bool CaseInsensitiveStringComparator::operator()(const string &lhs, const string &rhs) const {
+bool CaseInsensitiveStringComparator::operator()(const string &lhs, const string &rhs) const
+{
   return (compare(lhs, rhs) < 0);
 }
 
-int CaseInsensitiveStringComparator::compare(const string &lhs, const string &rhs) const {
+int
+CaseInsensitiveStringComparator::compare(const string &lhs, const string &rhs) const
+{
   if (!normalizer_initialized) {
     // this initialization is safe to execute in concurrent threads - hence no locking
     for (int i = 0; i < 256; ++i) {

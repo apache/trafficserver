@@ -34,9 +34,9 @@
 
 // The policy type is the first comma-separated token.
 static BalancerInstance *
-MakeBalancerInstance(const char * opt)
+MakeBalancerInstance(const char *opt)
 {
-  const char * end = strchr(opt, ',');
+  const char *end = strchr(opt, ',');
   size_t len = end ? std::distance(opt, end) : strlen(opt);
 
   if (len == lengthof("hash") && strncmp(opt, "hash", len) == 0) {
@@ -50,7 +50,7 @@ MakeBalancerInstance(const char * opt)
 }
 
 static BalancerTarget
-MakeBalancerTarget(const char * strval)
+MakeBalancerTarget(const char *strval)
 {
   BalancerTarget target = BalancerTarget();
 
@@ -66,9 +66,9 @@ MakeBalancerTarget(const char * strval)
     char namebuf[INET6_ADDRSTRLEN];
 
     target.port = ats_ip_port_host_order(&address.sa);
-    target.name =ats_ip_ntop(&address.sa, namebuf, sizeof(namebuf));
+    target.name = ats_ip_ntop(&address.sa, namebuf, sizeof(namebuf));
   } else {
-    const char * colon = strrchr(strval, ':');
+    const char *colon = strrchr(strval, ':');
 
     if (colon) {
       size_t len = std::distance(strval, colon);
@@ -99,14 +99,11 @@ TSRemapInit(TSRemapInterface * /* api */, char * /* errbuf */, int /* bufsz */)
 // One instance per remap.config invocation.
 //
 TSReturnCode
-TSRemapNewInstance(int argc, char * argv[], void ** instance, char * errbuf, int errbuf_size)
+TSRemapNewInstance(int argc, char *argv[], void **instance, char *errbuf, int errbuf_size)
 {
-  static const struct option longopt[] = {
-    { const_cast<char *>("policy"), required_argument, 0, 'p' },
-    {0, 0, 0, 0 }
-  };
+  static const struct option longopt[] = {{const_cast<char *>("policy"), required_argument, 0, 'p'}, {0, 0, 0, 0}};
 
-  BalancerInstance * balancer = NULL;
+  BalancerInstance *balancer = NULL;
 
   // The first two arguments are the "from" and "to" URL string. We need to
   // skip them, but we also require that there be an option to masquerade as
@@ -118,7 +115,7 @@ TSRemapNewInstance(int argc, char * argv[], void ** instance, char * errbuf, int
   for (;;) {
     int opt;
 
-    opt = getopt_long(argc, (char * const *)argv, "", longopt, NULL);
+    opt = getopt_long(argc, (char *const *)argv, "", longopt, NULL);
     switch (opt) {
     case 'p':
       balancer = MakeBalancerInstance(optarg);
@@ -132,7 +129,7 @@ TSRemapNewInstance(int argc, char * argv[], void ** instance, char * errbuf, int
     }
 
     if (opt == -1) {
-        break;
+      break;
     }
   }
 
@@ -158,19 +155,19 @@ TSRemapNewInstance(int argc, char * argv[], void ** instance, char * errbuf, int
 }
 
 void
-TSRemapDeleteInstance(void * instance)
+TSRemapDeleteInstance(void *instance)
 {
   delete (BalancerInstance *)instance;
 }
 
 TSRemapStatus
-TSRemapDoRemap(void * instance, TSHttpTxn txn, TSRemapRequestInfo * rri)
+TSRemapDoRemap(void *instance, TSHttpTxn txn, TSRemapRequestInfo *rri)
 {
-  BalancerInstance * balancer = (BalancerInstance *)instance;
-  const BalancerTarget& target = balancer->balance(txn, rri);
+  BalancerInstance *balancer = (BalancerInstance *)instance;
+  const BalancerTarget &target = balancer->balance(txn, rri);
 
   if (TSIsDebugTagSet("balancer")) {
-    char * url;
+    char *url;
     int len;
 
     url = TSHttpTxnEffectiveUrlStringGet(txn, &len);

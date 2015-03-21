@@ -97,10 +97,9 @@ class EThread;
   deallocate it.
 
 */
-class EventProcessor:public Processor
+class EventProcessor : public Processor
 {
 public:
-
   /**
     Spawn an additional thread for calling back the continuation. Spawns
     a dedicated thread (EThread) that calls back the continuation passed
@@ -111,7 +110,7 @@ public:
     @return event object representing the start of the thread.
 
   */
-  Event *spawn_thread(Continuation * cont, const char *thr_name, size_t stacksize = 0);
+  Event *spawn_thread(Continuation *cont, const char *thr_name, size_t stacksize = 0);
 
   /**
     Spawns a group of threads for an event type. Spawns the number of
@@ -122,7 +121,7 @@ public:
     @return EventType or thread id for the new group of threads.
 
   */
-  EventType spawn_event_threads(int n_threads, const char* et_name, size_t stacksize);
+  EventType spawn_event_threads(int n_threads, const char *et_name, size_t stacksize);
 
 
   /**
@@ -143,13 +142,12 @@ public:
       of this callback.
 
   */
-  Event *schedule_imm(Continuation * c,
-                      EventType event_type = ET_CALL, int callback_event = EVENT_IMMEDIATE, void *cookie = NULL);
+  Event *schedule_imm(Continuation *c, EventType event_type = ET_CALL, int callback_event = EVENT_IMMEDIATE, void *cookie = NULL);
   /*
     provides the same functionality as schedule_imm and also signals the thread immediately
   */
-  Event *schedule_imm_signal(Continuation * c,
-                      EventType event_type = ET_CALL, int callback_event = EVENT_IMMEDIATE, void *cookie = NULL);
+  Event *schedule_imm_signal(Continuation *c, EventType event_type = ET_CALL, int callback_event = EVENT_IMMEDIATE,
+                             void *cookie = NULL);
   /**
     Schedules the continuation on a specific thread group to receive an
     event at the given timeout. Requests the EventProcessor to schedule
@@ -170,9 +168,8 @@ public:
       this callback.
 
   */
-  Event *schedule_at(Continuation * c,
-                     ink_hrtime atimeout_at,
-                     EventType event_type = ET_CALL, int callback_event = EVENT_INTERVAL, void *cookie = NULL);
+  Event *schedule_at(Continuation *c, ink_hrtime atimeout_at, EventType event_type = ET_CALL, int callback_event = EVENT_INTERVAL,
+                     void *cookie = NULL);
 
   /**
     Schedules the continuation on a specific thread group to receive an
@@ -193,9 +190,8 @@ public:
       this callback.
 
   */
-  Event *schedule_in(Continuation * c,
-                     ink_hrtime atimeout_in,
-                     EventType event_type = ET_CALL, int callback_event = EVENT_INTERVAL, void *cookie = NULL);
+  Event *schedule_in(Continuation *c, ink_hrtime atimeout_in, EventType event_type = ET_CALL, int callback_event = EVENT_INTERVAL,
+                     void *cookie = NULL);
 
   /**
     Schedules the continuation on a specific thread group to receive
@@ -216,9 +212,8 @@ public:
       this callback.
 
   */
-  Event *schedule_every(Continuation * c,
-                        ink_hrtime aperiod,
-                        EventType event_type = ET_CALL, int callback_event = EVENT_INTERVAL, void *cookie = NULL);
+  Event *schedule_every(Continuation *c, ink_hrtime aperiod, EventType event_type = ET_CALL, int callback_event = EVENT_INTERVAL,
+                        void *cookie = NULL);
 
 
   ////////////////////////////////////////////
@@ -229,10 +224,10 @@ public:
   // from the argument e.                   //
   ////////////////////////////////////////////
 
-  Event *reschedule_imm(Event * e, int callback_event = EVENT_IMMEDIATE);
-  Event *reschedule_at(Event * e, ink_hrtime atimeout_at, int callback_event = EVENT_INTERVAL);
-  Event *reschedule_in(Event * e, ink_hrtime atimeout_in, int callback_event = EVENT_INTERVAL);
-  Event *reschedule_every(Event * e, ink_hrtime aperiod, int callback_event = EVENT_INTERVAL);
+  Event *reschedule_imm(Event *e, int callback_event = EVENT_IMMEDIATE);
+  Event *reschedule_at(Event *e, ink_hrtime atimeout_at, int callback_event = EVENT_INTERVAL);
+  Event *reschedule_in(Event *e, ink_hrtime atimeout_in, int callback_event = EVENT_INTERVAL);
+  Event *reschedule_every(Event *e, ink_hrtime aperiod, int callback_event = EVENT_INTERVAL);
 
   EventProcessor();
 
@@ -245,7 +240,7 @@ public:
     @return 0 if successful, and a negative value otherwise.
 
   */
-  int start(int n_net_threads, size_t stacksize=DEFAULT_STACKSIZE);
+  int start(int n_net_threads, size_t stacksize = DEFAULT_STACKSIZE);
 
   /**
     Stop the EventProcessor. Attempts to stop the EventProcessor and
@@ -301,20 +296,19 @@ public:
 
 private:
   // prevent unauthorized copies (Not implemented)
-    EventProcessor(const EventProcessor &);
-    EventProcessor & operator =(const EventProcessor &);
+  EventProcessor(const EventProcessor &);
+  EventProcessor &operator=(const EventProcessor &);
 
 public:
-
   /*------------------------------------------------------*\
   | Unix & non NT Interface                                |
   \*------------------------------------------------------*/
 
-  Event * schedule(Event * e, EventType etype, bool fast_signal = false);
+  Event *schedule(Event *e, EventType etype, bool fast_signal = false);
   EThread *assign_thread(EventType etype);
 
   EThread *all_dthreads[MAX_EVENT_THREADS];
-  int n_dthreads;               // No. of dedicated threads
+  int n_dthreads; // No. of dedicated threads
   volatile int thread_data_used;
 };
 

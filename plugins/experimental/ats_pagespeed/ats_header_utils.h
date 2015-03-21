@@ -32,10 +32,10 @@
 #include "net/instaweb/util/public/string_util.h"
 
 
-GoogleString get_header(TSMBuffer bufp, TSMLoc hdr_loc, const char * header_name);
-void unset_header(TSMBuffer bufp, TSMLoc hdr_loc, const char * header_name);
-void hide_accept_encoding(TSMBuffer reqp, TSMLoc hdr_loc, const char * hidden_header_name);
-void restore_accept_encoding(TSMBuffer reqp, TSMLoc hdr_loc, const char * hidden_header_name);
-void set_header(TSMBuffer bufp, TSMLoc hdr_loc, const char * header_name, const char * header_value);
+GoogleString get_header(TSMBuffer bufp, TSMLoc hdr_loc, const char *header_name);
+void unset_header(TSMBuffer bufp, TSMLoc hdr_loc, const char *header_name);
+void hide_accept_encoding(TSMBuffer reqp, TSMLoc hdr_loc, const char *hidden_header_name);
+void restore_accept_encoding(TSMBuffer reqp, TSMLoc hdr_loc, const char *hidden_header_name);
+void set_header(TSMBuffer bufp, TSMLoc hdr_loc, const char *header_name, const char *header_value);
 
 #endif //  ATS_HEADER_UTILS_H

@@ -22,7 +22,6 @@
  */
 
 
-
 #ifndef LOG_ACCESS_ICP_H
 #define LOG_ACCESS_ICP_H
 
@@ -37,13 +36,14 @@ class ICPlog;
   ICPlog class.
   -------------------------------------------------------------------------*/
 
-class LogAccessICP:public LogAccess
+class LogAccessICP : public LogAccess
 {
 public:
-  LogAccessICP(ICPlog * icp_log);
-  virtual ~ LogAccessICP();
+  LogAccessICP(ICPlog *icp_log);
+  virtual ~LogAccessICP();
 
-  LogEntryType entry_type()
+  LogEntryType
+  entry_type()
   {
     return LOG_ENTRY_ICP;
   }
@@ -51,27 +51,27 @@ public:
   //
   // client -> proxy fields
   //
-  virtual int marshal_client_host_ip(char *);   // STR
-  virtual int marshal_client_host_port(char *); // INT
-  virtual int marshal_client_auth_user_name(char *);    // STR
-  virtual int marshal_client_req_text(char *);  // STR
-  virtual int marshal_client_req_http_method(char *);   // INT
-  virtual int marshal_client_req_url(char *);   // STR
-  virtual int marshal_client_req_url_canon(char *);     // STR
+  virtual int marshal_client_host_ip(char *);         // STR
+  virtual int marshal_client_host_port(char *);       // INT
+  virtual int marshal_client_auth_user_name(char *);  // STR
+  virtual int marshal_client_req_text(char *);        // STR
+  virtual int marshal_client_req_http_method(char *); // INT
+  virtual int marshal_client_req_url(char *);         // STR
+  virtual int marshal_client_req_url_canon(char *);   // STR
 
   //
   // proxy -> client fields
   //
-  virtual int marshal_proxy_resp_content_type(char *);  // STR
-  virtual int marshal_proxy_resp_squid_len(char *);     // INT
-  virtual int marshal_proxy_resp_content_len(char *);   // INT
-  virtual int marshal_proxy_resp_status_code(char *);   // INT
-  virtual int marshal_cache_result_code(char *);        // INT
+  virtual int marshal_proxy_resp_content_type(char *); // STR
+  virtual int marshal_proxy_resp_squid_len(char *);    // INT
+  virtual int marshal_proxy_resp_content_len(char *);  // INT
+  virtual int marshal_proxy_resp_status_code(char *);  // INT
+  virtual int marshal_cache_result_code(char *);       // INT
 
   //
   // proxy -> server fields
   //
-  virtual int marshal_proxy_hierarchy_route(char *);    // INT
+  virtual int marshal_proxy_hierarchy_route(char *); // INT
 
   //
   // server -> proxy fields
@@ -85,11 +85,11 @@ public:
   virtual int marshal_transfer_time_s(char *);  // INT
 
 private:
-  ICPlog * m_icp_log;
+  ICPlog *m_icp_log;
 
   // -- member functions that are not allowed --
-  LogAccessICP(const LogAccessICP & rhs);
-  LogAccessICP & operator=(LogAccessICP & rhs);
+  LogAccessICP(const LogAccessICP &rhs);
+  LogAccessICP &operator=(LogAccessICP &rhs);
 };
 
 #endif

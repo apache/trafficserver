@@ -38,7 +38,7 @@
 #undef LOG_ERROR
 #endif
 
-#define LOG_DEBUG(fmt, ...) TS_DEBUG("atscppapi", fmt, ## __VA_ARGS__)
-#define LOG_ERROR(fmt, ...) TS_ERROR("atscppapi", fmt, ## __VA_ARGS__)
+#define LOG_DEBUG(fmt, ...) TS_DEBUG("atscppapi", fmt, ##__VA_ARGS__)
+#define LOG_ERROR(fmt, ...) TS_ERROR("atscppapi", fmt, ##__VA_ARGS__)
 
 #endif /* ATSCPPAPI_LOGGING_INTERNAL_H_ */

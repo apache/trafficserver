@@ -27,8 +27,8 @@
 #include <stdint.h>
 #include <atscppapi/noncopyable.h>
 
-namespace atscppapi {
-
+namespace atscppapi
+{
 struct UrlState;
 
 /**
@@ -42,7 +42,8 @@ struct UrlState;
  * and it can be retrieved via Request::getUrl(). A full example of this
  * is available in examples/detachedrequest/.
  */
-class Url: noncopyable {
+class Url : noncopyable
+{
 public:
   /**
    * @warning Url objects should never be constructed by the user.
@@ -135,6 +136,7 @@ public:
    * \note This method should rarely be used.
    */
   void reset();
+
 private:
   bool isInitialized() const;
   void init(void *hdr_buf, void *url_loc);
@@ -143,7 +145,6 @@ private:
   friend class ClientRequest;
   friend class RemapPlugin;
 };
-
 }
 
 #endif /* ATSCPPAPI_URL_H_ */

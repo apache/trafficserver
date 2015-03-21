@@ -28,37 +28,44 @@ using std::cerr;
 using std::endl;
 using std::string;
 
-class PostBufferTransformationPlugin : public TransformationPlugin {
+class PostBufferTransformationPlugin : public TransformationPlugin
+{
 public:
   PostBufferTransformationPlugin(Transaction &transaction)
-    : TransformationPlugin(transaction, REQUEST_TRANSFORMATION), transaction_(transaction) {
+    : TransformationPlugin(transaction, REQUEST_TRANSFORMATION), transaction_(transaction)
+  {
     buffer_.reserve(1024); // not required, this is an optimization to start the buffer at a slightly higher value.
     (void)transaction_;
   }
 
-  void consume(const string &data) {
+  void
+  consume(const string &data)
+  {
     buffer_.append(data);
   }
 
-  void handleInputComplete() {
+  void
+  handleInputComplete()
+  {
     produce(buffer_);
     setOutputComplete();
   }
 
-  virtual ~PostBufferTransformationPlugin() { }
+  virtual ~PostBufferTransformationPlugin() {}
 
 private:
   Transaction &transaction_;
   string buffer_;
 };
 
-class GlobalHookPlugin : public GlobalPlugin {
+class GlobalHookPlugin : public GlobalPlugin
+{
 public:
-  GlobalHookPlugin() {
-    registerHook(HOOK_READ_REQUEST_HEADERS_POST_REMAP);
-  }
+  GlobalHookPlugin() { registerHook(HOOK_READ_REQUEST_HEADERS_POST_REMAP); }
 
-  virtual void handleReadRequestHeadersPostRemap(Transaction &transaction) {
+  virtual void
+  handleReadRequestHeadersPostRemap(Transaction &transaction)
+  {
     cerr << "Read Request Headers Post Remap" << endl;
     cerr << "Path: " << transaction.getClientRequest().getUrl().getPath() << endl;
     cerr << "Method: " << HTTP_METHOD_STRINGS[transaction.getClientRequest().getMethod()] << endl;
@@ -70,6 +77,8 @@ public:
   }
 };
 
-void TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED) {
+void
+TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
+{
   new GlobalHookPlugin();
 }

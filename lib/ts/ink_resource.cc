@@ -27,7 +27,7 @@
 
 volatile int res_track_memory = 0; // Disabled by default
 
-std::map<const char*, Resource*> ResourceTracker::_resourceMap;
+std::map<const char *, Resource *> ResourceTracker::_resourceMap;
 ink_mutex ResourceTracker::resourceLock = PTHREAD_MUTEX_INITIALIZER;
 
 /**
@@ -36,16 +36,23 @@ ink_mutex ResourceTracker::resourceLock = PTHREAD_MUTEX_INITIALIZER;
 class Resource
 {
 public:
-  Resource(): _incrementCount(0), _decrementCount(0), _value(0) {}
+  Resource() : _incrementCount(0), _decrementCount(0), _value(0) {}
   void increment(const int64_t size);
-  int64_t getValue() const { return _value; }
+  int64_t
+  getValue() const
+  {
+    return _value;
+  }
+
 private:
   int64_t _incrementCount;
   int64_t _decrementCount;
   int64_t _value;
 };
 
-void Resource::increment(const int64_t size) {
+void
+Resource::increment(const int64_t size)
+{
   ink_atomic_increment(&_value, size);
   if (size >= 0) {
     ink_atomic_increment(&_incrementCount, 1);
@@ -55,17 +62,18 @@ void Resource::increment(const int64_t size) {
 }
 
 void
-ResourceTracker::increment(const char *name, const int64_t size) {
+ResourceTracker::increment(const char *name, const int64_t size)
+{
   Resource &resource = lookup(name);
   resource.increment(size);
 }
 
-Resource&
+Resource &
 ResourceTracker::lookup(const char *name)
 {
   Resource *resource = NULL;
   ink_mutex_acquire(&resourceLock);
-  std::map<const char*, Resource*>::iterator it = _resourceMap.find(name);
+  std::map<const char *, Resource *>::iterator it = _resourceMap.find(name);
   if (it != _resourceMap.end()) {
     resource = it->second;
   } else {
@@ -79,7 +87,8 @@ ResourceTracker::lookup(const char *name)
 }
 
 void
-ResourceTracker::dump(FILE *fd) {
+ResourceTracker::dump(FILE *fd)
+{
   if (!res_track_memory) {
     return;
   }
@@ -89,8 +98,7 @@ ResourceTracker::dump(FILE *fd) {
   if (!_resourceMap.empty()) {
     fprintf(fd, "%50s | %20s\n", "Location", "Size In-use");
     fprintf(fd, "---------------------------------------------------+------------------------\n");
-    for (std::map<const char*, Resource*>::const_iterator it = _resourceMap.begin();
-        it != _resourceMap.end(); ++it) {
+    for (std::map<const char *, Resource *>::const_iterator it = _resourceMap.begin(); it != _resourceMap.end(); ++it) {
       const Resource &resource = *it->second;
       fprintf(fd, "%50s | %20" PRId64 "\n", it->first, resource.getValue());
       total += resource.getValue();

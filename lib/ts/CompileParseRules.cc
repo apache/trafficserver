@@ -25,9 +25,9 @@
 
 #include "ParseRules.h"
 
-const unsigned int parseRulesCType[256] = { 0 };
-const char parseRulesCTypeToUpper[256] = { 0 };
-const char parseRulesCTypeToLower[256] = { 0 };
+const unsigned int parseRulesCType[256] = {0};
+const char parseRulesCTypeToUpper[256] = {0};
+const char parseRulesCTypeToLower[256] = {0};
 
 unsigned int tparseRulesCType[256];
 char tparseRulesCTypeToUpper[256];
@@ -130,7 +130,7 @@ main()
   for (c = 0; c < 256; c++) {
     fprintf(fp, "/* %3d (%c) */\t", c, (isprint(c) ? c : '?'));
     fprintf(fp, "0x%08X%c\t\t", tparseRulesCType[c], (c != 255 ? ',' : ' '));
-    fprintf(fp, "/* [%s] */\n", uint_to_binary((unsigned int) (tparseRulesCType[c])));
+    fprintf(fp, "/* [%s] */\n", uint_to_binary((unsigned int)(tparseRulesCType[c])));
   }
   fclose(fp);
   fp = fopen("ParseRulesCTypeToUpper", "w");

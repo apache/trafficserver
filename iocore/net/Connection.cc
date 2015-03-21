@@ -36,10 +36,10 @@
 // set in the OS
 // #define RECV_BUF_SIZE            (1024*64)
 // #define SEND_BUF_SIZE            (1024*64)
-#define FIRST_RANDOM_PORT        16000
-#define LAST_RANDOM_PORT         32000
+#define FIRST_RANDOM_PORT 16000
+#define LAST_RANDOM_PORT 32000
 
-#define ROUNDUP(x, y) ((((x)+((y)-1))/(y))*(y))
+#define ROUNDUP(x, y) ((((x) + ((y)-1)) / (y)) * (y))
 
 #ifndef FD_CLOEXEC
 #define FD_CLOEXEC 1
@@ -58,19 +58,13 @@ get_listen_backlog(void)
 //
 // Functions
 //
-char const*
-NetVCOptions::toString(addr_bind_style s) {
-  return ANY_ADDR == s ? "any"
-    : INTF_ADDR == s ? "interface"
-    : "foreign"
-    ;
+char const *
+NetVCOptions::toString(addr_bind_style s)
+{
+  return ANY_ADDR == s ? "any" : INTF_ADDR == s ? "interface" : "foreign";
 }
 
-Connection::Connection()
-  : fd(NO_FD)
-  , is_bound(false)
-  , is_connected(false)
-  , sock_type(0)
+Connection::Connection() : fd(NO_FD), is_bound(false), is_connected(false), sock_type(0)
 {
   memset(&addr, 0, sizeof(addr));
 }
@@ -83,7 +77,7 @@ Connection::~Connection()
 
 
 int
-Server::accept(Connection * c)
+Server::accept(Connection *c)
 {
   int res = 0;
   socklen_t sz = sizeof(c->addr);
@@ -94,10 +88,8 @@ Server::accept(Connection * c)
   c->fd = res;
   if (is_debug_tag_set("iocore_net_server")) {
     ip_port_text_buffer ipb1, ipb2;
-      Debug("iocore_net_server", "Connection accepted [Server]. %s -> %s\n"
-        , ats_ip_nptop(&c->addr, ipb2, sizeof(ipb2))
-        , ats_ip_nptop(&addr, ipb1, sizeof(ipb1))
-      );
+    Debug("iocore_net_server", "Connection accepted [Server]. %s -> %s\n", ats_ip_nptop(&c->addr, ipb2, sizeof(ipb2)),
+          ats_ip_nptop(&addr, ipb1, sizeof(ipb1)));
   }
 
 #ifdef SET_CLOSE_ON_EXEC
@@ -150,11 +142,7 @@ add_http_filter(int fd ATS_UNUSED)
 }
 
 int
-Server::setup_fd_for_listen(
-  bool non_blocking,
-  int recv_bufsize,
-  int send_bufsize,
-  bool transparent)
+Server::setup_fd_for_listen(bool non_blocking, int recv_bufsize, int send_bufsize, bool transparent)
 {
   int res = 0;
 
@@ -167,7 +155,7 @@ Server::setup_fd_for_listen(
 #ifdef SEND_BUF_SIZE
   {
     int send_buf_size = SEND_BUF_SIZE;
-    if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_SNDBUF, (char *) &send_buf_size, sizeof(int)) < 0)) {
+    if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_SNDBUF, (char *)&send_buf_size, sizeof(int)) < 0)) {
       goto Lerror;
     }
   }
@@ -176,7 +164,7 @@ Server::setup_fd_for_listen(
 #ifdef RECV_BUF_SIZE
   {
     int recv_buf_size = RECV_BUF_SIZE;
-    if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_RCVBUF, (char *) &recv_buf_size, sizeof(int))) < 0) {
+    if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_RCVBUF, (char *)&recv_buf_size, sizeof(int))) < 0) {
       goto Lerror;
     }
   }
@@ -221,7 +209,7 @@ Server::setup_fd_for_listen(
     struct linger l;
     l.l_onoff = 0;
     l.l_linger = 0;
-    if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_LINGER, (char *) &l, sizeof(l))) < 0) {
+    if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_LINGER, (char *)&l, sizeof(l))) < 0) {
       goto Lerror;
     }
   }
@@ -262,7 +250,7 @@ Server::setup_fd_for_listen(
 
 #if defined(TCP_MAXSEG)
   if (NetProcessor::accept_mss > 0) {
-    if ((res = safe_setsockopt(fd, IPPROTO_TCP, TCP_MAXSEG, (char *) &NetProcessor::accept_mss, sizeof(int))) < 0) {
+    if ((res = safe_setsockopt(fd, IPPROTO_TCP, TCP_MAXSEG, (char *)&NetProcessor::accept_mss, sizeof(int))) < 0) {
       goto Lerror;
     }
   }
@@ -323,7 +311,7 @@ Server::listen(bool non_blocking, int recv_bufsize, int send_bufsize, bool trans
   // Original just did this on port == 0.
   namelen = sizeof(addr);
   if ((res = safe_getsockname(fd, &addr.sa, &namelen))) {
-      goto Lerror;
+    goto Lerror;
   }
 
   return 0;

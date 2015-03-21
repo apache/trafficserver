@@ -30,24 +30,22 @@
 
 class EsiGunzip : private EsiLib::ComponentBase
 {
-
 public:
-
-  EsiGunzip(const char *debug_tag,
-               EsiLib::ComponentBase::Debug debug_func, EsiLib::ComponentBase::Error error_func);
+  EsiGunzip(const char *debug_tag, EsiLib::ComponentBase::Debug debug_func, EsiLib::ComponentBase::Error error_func);
 
   virtual ~EsiGunzip();
 
   bool stream_decode(const char *data, int data_len, std::string &udata);
 
-  inline bool stream_decode(std::string data, std::string &udata) {
+  inline bool
+  stream_decode(std::string data, std::string &udata)
+  {
     return stream_decode(data.data(), data.size(), udata);
   }
 
   bool stream_finish();
 
 private:
-
   int _downstream_length;
   int _total_data_length;
   z_stream _zstrm;
@@ -58,5 +56,3 @@ private:
 
 
 #endif // _ESI_GUNZIP_H
-
-

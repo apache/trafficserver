@@ -25,18 +25,18 @@
 #include <deque>
 #include <ts/ts.h>
 
-class DomainNameTree {
+class DomainNameTree
+{
 public:
-
-  class DomainNameNode {
+  class DomainNameNode
+  {
   public:
-    DomainNameNode()
-      : order(-1), payload(NULL), parent(NULL), is_wild(false)
-    { }
+    DomainNameNode() : order(-1), payload(NULL), parent(NULL), is_wild(false) {}
 
     DomainNameNode(std::string key, void *payload, int order, bool is_wild)
       : key(key), order(order), payload(payload), parent(NULL), is_wild(is_wild)
-    { }
+    {
+    }
 
     DomainNameNode *match(std::string value);
 
@@ -54,8 +54,8 @@ public:
     bool compare(std::string key, int &relative);
     // The wildcard is pruned out of the key
     bool prunedCompare(std::string key, int &relative, bool is_wild);
-    std::string key;	// The string trailing the * (if any)
-    int order;		// Track insert order for conflict resolution
+    std::string key; // The string trailing the * (if any)
+    int order;       // Track insert order for conflict resolution
     void *payload;
     std::deque<DomainNameNode *> children;
     DomainNameNode *parent;
@@ -71,12 +71,10 @@ public:
     tree_mutex = TSMutexCreate();
   }
 
-  ~DomainNameTree()
-  {
-    delete root;
-  }
+  ~DomainNameTree() { delete root; }
 
-  DomainNameNode *findBestMatch(std::string key)
+  DomainNameNode *
+  findBestMatch(std::string key)
   {
     TSMutexLock(this->tree_mutex);
     DomainNameNode *retval = this->find(key, true);
@@ -84,7 +82,8 @@ public:
     return retval;
   }
 
-  DomainNameNode *findFirstMatch(std::string key)
+  DomainNameNode *
+  findFirstMatch(std::string key)
   {
     TSMutexLock(this->tree_mutex);
     DomainNameNode *retval = this->find(key, false);

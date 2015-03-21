@@ -38,28 +38,45 @@ class RuleSet
 {
 public:
   RuleSet()
-    : next(NULL), _cond(NULL), _oper(NULL), _hook(TS_HTTP_READ_RESPONSE_HDR_HOOK), _ids(RSRC_NONE),
-      _opermods(OPER_NONE), _last(false)
-  { };
+    : next(NULL), _cond(NULL), _oper(NULL), _hook(TS_HTTP_READ_RESPONSE_HDR_HOOK), _ids(RSRC_NONE), _opermods(OPER_NONE),
+      _last(false){};
 
   // No reason to inline these
-  void append(RuleSet* rule);
+  void append(RuleSet *rule);
 
-  void add_condition(Parser& p);
-  void add_operator(Parser& p);
-  bool has_operator() const { return NULL != _oper; }
-  bool has_condition() const { return NULL != _cond; }
+  void add_condition(Parser &p);
+  void add_operator(Parser &p);
+  bool
+  has_operator() const
+  {
+    return NULL != _oper;
+  }
+  bool
+  has_condition() const
+  {
+    return NULL != _cond;
+  }
 
-  void set_hook(TSHttpHookID hook) { _hook = hook; }
-  const TSHttpHookID get_hook() const { return _hook; }
+  void
+  set_hook(TSHttpHookID hook)
+  {
+    _hook = hook;
+  }
+  const TSHttpHookID
+  get_hook() const
+  {
+    return _hook;
+  }
 
   // Inline
-  const ResourceIDs get_all_resource_ids() const
+  const ResourceIDs
+  get_all_resource_ids() const
   {
     return _ids;
   }
 
-  bool eval(const Resources& res) const
+  bool
+  eval(const Resources &res) const
   {
     if (NULL == _cond) {
       return true;
@@ -68,24 +85,26 @@ public:
     }
   }
 
-  bool last() const
+  bool
+  last() const
   {
     return _last;
   }
 
-  OperModifiers exec(const Resources& res) const
+  OperModifiers
+  exec(const Resources &res) const
   {
     _oper->do_exec(res);
     return _opermods;
   }
 
-  RuleSet* next; // Linked list
+  RuleSet *next; // Linked list
 
 private:
   DISALLOW_COPY_AND_ASSIGN(RuleSet);
 
-  Condition* _cond; // First pre-condition (linked list)
-  Operator* _oper; // First operator (linked list)
+  Condition *_cond;   // First pre-condition (linked list)
+  Operator *_oper;    // First operator (linked list)
   TSHttpHookID _hook; // Which hook is this rule for
 
   // State values (updated when conds / operators are added)

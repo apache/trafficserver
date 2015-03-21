@@ -28,7 +28,7 @@
 
 NetProcessor::AcceptOptions const NetProcessor::DEFAULT_ACCEPT_OPTIONS;
 
-NetProcessor::AcceptOptions&
+NetProcessor::AcceptOptions &
 NetProcessor::AcceptOptions::reset()
 {
   local_port = 0;
@@ -57,38 +57,37 @@ net_next_connection_number()
 {
   unsigned int res = 0;
   do {
-    res = (unsigned int)
-      ink_atomic_increment(&net_connection_number, 1);
+    res = (unsigned int)ink_atomic_increment(&net_connection_number, 1);
   } while (!res);
   return res;
 }
 
 Action *
-NetProcessor::accept(Continuation* cont, AcceptOptions const& opt)
+NetProcessor::accept(Continuation *cont, AcceptOptions const &opt)
 {
-  Debug("iocore_net_processor", "NetProcessor::accept - port %d,recv_bufsize %d, send_bufsize %d, sockopt 0x%0x",
-        opt.local_port, opt.recv_bufsize, opt.send_bufsize, opt.sockopt_flags);
+  Debug("iocore_net_processor", "NetProcessor::accept - port %d,recv_bufsize %d, send_bufsize %d, sockopt 0x%0x", opt.local_port,
+        opt.recv_bufsize, opt.send_bufsize, opt.sockopt_flags);
 
-  return ((UnixNetProcessor *) this)->accept_internal(cont, NO_FD, opt);
+  return ((UnixNetProcessor *)this)->accept_internal(cont, NO_FD, opt);
 }
 
 Action *
-NetProcessor::main_accept(Continuation *cont, SOCKET fd, AcceptOptions const& opt)
+NetProcessor::main_accept(Continuation *cont, SOCKET fd, AcceptOptions const &opt)
 {
-  UnixNetProcessor* this_unp = static_cast<UnixNetProcessor*>(this);
+  UnixNetProcessor *this_unp = static_cast<UnixNetProcessor *>(this);
   Debug("iocore_net_processor", "NetProcessor::main_accept - port %d,recv_bufsize %d, send_bufsize %d, sockopt 0x%0x",
         opt.local_port, opt.recv_bufsize, opt.send_bufsize, opt.sockopt_flags);
   return this_unp->accept_internal(cont, fd, opt);
 }
 
 Action *
-UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions const& opt)
+UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions const &opt)
 {
   EventType upgraded_etype = opt.etype; // setEtype requires non-const ref.
   EThread *thread = this_ethread();
   ProxyMutex *mutex = thread->mutex;
   int accept_threads = opt.accept_threads; // might be changed.
-  IpEndpoint accept_ip; // local binding address.
+  IpEndpoint accept_ip;                    // local binding address.
   char thr_name[MAX_THREAD_NAME_LENGTH];
 
   NetAccept *na = createNetAccept();
@@ -120,7 +119,7 @@ UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions cons
   ats_ip_copy(&na->server.accept_addr, &accept_ip);
   na->server.f_inbound_transparent = opt.f_inbound_transparent;
   if (opt.f_inbound_transparent) {
-    Debug( "http_tproxy", "Marking accept server %p on port %d as inbound transparent", na, opt.local_port);
+    Debug("http_tproxy", "Marking accept server %p on port %d as inbound transparent", na, opt.local_port);
   }
 
   int should_filter_int = 0;
@@ -143,20 +142,19 @@ UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions cons
   if (na->callback_on_open)
     na->mutex = cont->mutex;
   if (opt.frequent_accept) { // true
-    if (accept_threads > 0)  {
+    if (accept_threads > 0) {
       if (0 == na->do_listen(BLOCKING, opt.f_inbound_transparent)) {
+        for (int i = 1; i < accept_threads; ++i) {
+          NetAccept *a = na->clone();
 
-        for (int i=1; i < accept_threads; ++i) {
-          NetAccept * a = na->clone();
-
-          snprintf(thr_name, MAX_THREAD_NAME_LENGTH, "[ACCEPT %d:%d]", i-1, ats_ip_port_host_order(&accept_ip));
+          snprintf(thr_name, MAX_THREAD_NAME_LENGTH, "[ACCEPT %d:%d]", i - 1, ats_ip_port_host_order(&accept_ip));
           a->init_accept_loop(thr_name);
           Debug("iocore_net_accept", "Created accept thread #%d for port %d", i, ats_ip_port_host_order(&accept_ip));
         }
 
         // Start the "template" accept thread last.
         Debug("iocore_net_accept", "Created accept thread #%d for port %d", accept_threads, ats_ip_port_host_order(&accept_ip));
-        snprintf(thr_name, MAX_THREAD_NAME_LENGTH, "[ACCEPT %d:%d]", accept_threads-1, ats_ip_port_host_order(&accept_ip));
+        snprintf(thr_name, MAX_THREAD_NAME_LENGTH, "[ACCEPT %d:%d]", accept_threads - 1, ats_ip_port_host_order(&accept_ip));
         na->init_accept_loop(thr_name);
       }
     } else {
@@ -174,24 +172,21 @@ UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions cons
   }
 #endif
 #ifdef TCP_INIT_CWND
- int tcp_init_cwnd = 0;
- REC_ReadConfigInteger(tcp_init_cwnd, "proxy.config.http.server_tcp_init_cwnd");
- if(tcp_init_cwnd > 0) {
+  int tcp_init_cwnd = 0;
+  REC_ReadConfigInteger(tcp_init_cwnd, "proxy.config.http.server_tcp_init_cwnd");
+  if (tcp_init_cwnd > 0) {
     Debug("net", "Setting initial congestion window to %d", tcp_init_cwnd);
-    if(setsockopt(na->server.fd, IPPROTO_TCP, TCP_INIT_CWND, &tcp_init_cwnd, sizeof(int)) != 0) {
+    if (setsockopt(na->server.fd, IPPROTO_TCP, TCP_INIT_CWND, &tcp_init_cwnd, sizeof(int)) != 0) {
       Error("Cannot set initial congestion window to %d", tcp_init_cwnd);
     }
- }
+  }
 #endif
   return na->action_;
 }
 
 Action *
-UnixNetProcessor::connect_re_internal(
-  Continuation * cont,
-  sockaddr const* target,
-  NetVCOptions * opt
-) {
+UnixNetProcessor::connect_re_internal(Continuation *cont, sockaddr const *target, NetVCOptions *opt)
+{
   ProxyMutex *mutex = cont->mutex;
   EThread *t = mutex->thread_holding;
   UnixNetVConnection *vc = (UnixNetVConnection *)this->allocate_vc(t);
@@ -213,7 +208,7 @@ UnixNetProcessor::connect_re_internal(
                            */
                           !socks_conf_stuff->ip_map.contains(target))
 #endif
-    );
+                        );
   SocksEntry *socksEntry = NULL;
 
   NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, 1);
@@ -228,7 +223,7 @@ UnixNetProcessor::connect_re_internal(
     char buff[INET6_ADDRPORTSTRLEN];
     Debug("Socks", "Using Socks ip: %s\n", ats_ip_nptop(target, buff, sizeof(buff)));
     socksEntry = socksAllocator.alloc();
-    socksEntry->init(cont->mutex, vc, opt->socks_support, opt->socks_version);        /*XXXX remove last two args */
+    socksEntry->init(cont->mutex, vc, opt->socks_support, opt->socks_version); /*XXXX remove last two args */
     socksEntry->action_ = cont;
     cont = socksEntry;
     if (!ats_is_ip(&socksEntry->server_addr)) {
@@ -266,14 +261,12 @@ UnixNetProcessor::connect_re_internal(
 }
 
 Action *
-UnixNetProcessor::connect(Continuation * cont, UnixNetVConnection ** /* avc */, sockaddr const* target,
-                          NetVCOptions * opt)
+UnixNetProcessor::connect(Continuation *cont, UnixNetVConnection ** /* avc */, sockaddr const *target, NetVCOptions *opt)
 {
   return connect_re(cont, target, opt);
 }
 
-struct CheckConnect:public Continuation
-{
+struct CheckConnect : public Continuation {
   UnixNetVConnection *vc;
   Action action_;
   MIOBuffer *buf;
@@ -282,12 +275,13 @@ struct CheckConnect:public Continuation
   int recursion;
   ink_hrtime timeout;
 
-  int handle_connect(int event, Event * e)
+  int
+  handle_connect(int event, Event *e)
   {
     connect_status = event;
     switch (event) {
     case NET_EVENT_OPEN:
-      vc = (UnixNetVConnection *) e;
+      vc = (UnixNetVConnection *)e;
       Debug("iocore_net_connect", "connect Net open");
       vc->do_io_write(this, 10, /* some non-zero number just to get the poll going */
                       reader);
@@ -296,25 +290,24 @@ struct CheckConnect:public Continuation
       return EVENT_CONT;
       break;
 
-      case NET_EVENT_OPEN_FAILED:
-        Debug("iocore_net_connect", "connect Net open failed");
+    case NET_EVENT_OPEN_FAILED:
+      Debug("iocore_net_connect", "connect Net open failed");
       if (!action_.cancelled)
-        action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *) e);
+        action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *)e);
       break;
 
-      case VC_EVENT_WRITE_READY:int sl, ret;
+    case VC_EVENT_WRITE_READY:
+      int sl, ret;
       socklen_t sz;
-      if (!action_.cancelled)
-      {
+      if (!action_.cancelled) {
         sz = sizeof(int);
-          ret = getsockopt(vc->con.fd, SOL_SOCKET, SO_ERROR, (char *) &sl, &sz);
-        if (!ret && sl == 0)
-        {
+        ret = getsockopt(vc->con.fd, SOL_SOCKET, SO_ERROR, (char *)&sl, &sz);
+        if (!ret && sl == 0) {
           Debug("iocore_net_connect", "connection established");
           /* disable write on vc */
           vc->write.enabled = 0;
           vc->cancel_inactivity_timeout();
-          //write_disable(get_NetHandler(this_ethread()), vc);
+          // write_disable(get_NetHandler(this_ethread()), vc);
           /* clean up vc fields */
           vc->write.vio.nbytes = 0;
           vc->write.vio.op = VIO::NONE;
@@ -323,32 +316,31 @@ struct CheckConnect:public Continuation
 
           action_.continuation->handleEvent(NET_EVENT_OPEN, vc);
           delete this;
-            return EVENT_DONE;
+          return EVENT_DONE;
         }
       }
       vc->do_io_close();
       if (!action_.cancelled)
-        action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *) -ENET_CONNECT_FAILED);
+        action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *)-ENET_CONNECT_FAILED);
       break;
     case VC_EVENT_INACTIVITY_TIMEOUT:
       Debug("iocore_net_connect", "connect timed out");
       vc->do_io_close();
       if (!action_.cancelled)
-        action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *) -ENET_CONNECT_TIMEOUT);
+        action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *)-ENET_CONNECT_TIMEOUT);
       break;
     default:
       ink_assert(!"unknown connect event");
       if (!action_.cancelled)
-        action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *) -ENET_CONNECT_FAILED);
-
+        action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *)-ENET_CONNECT_FAILED);
     }
     if (!recursion)
       delete this;
     return EVENT_DONE;
   }
 
-  Action *connect_s(Continuation * cont, sockaddr const* target,
-                    int _timeout, NetVCOptions * opt)
+  Action *
+  connect_s(Continuation *cont, sockaddr const *target, int _timeout, NetVCOptions *opt)
   {
     action_ = cont;
     timeout = HRTIME_SECONDS(_timeout);
@@ -363,13 +355,15 @@ struct CheckConnect:public Continuation
     }
   }
 
-  CheckConnect(ProxyMutex * m = NULL):Continuation(m), connect_status(-1), recursion(0), timeout(0) {
+  CheckConnect(ProxyMutex *m = NULL) : Continuation(m), connect_status(-1), recursion(0), timeout(0)
+  {
     SET_HANDLER(&CheckConnect::handle_connect);
     buf = new_empty_MIOBuffer(1);
     reader = buf->alloc_reader();
   }
 
-  ~CheckConnect() {
+  ~CheckConnect()
+  {
     buf->dealloc_all_readers();
     buf->clear();
     free_MIOBuffer(buf);
@@ -377,14 +371,12 @@ struct CheckConnect:public Continuation
 };
 
 Action *
-NetProcessor::connect_s(Continuation * cont, sockaddr const* target,
-                        int timeout, NetVCOptions * opt)
+NetProcessor::connect_s(Continuation *cont, sockaddr const *target, int timeout, NetVCOptions *opt)
 {
   Debug("iocore_net_connect", "NetProcessor::connect_s called");
   CheckConnect *c = new CheckConnect(cont->mutex);
   return c->connect_s(cont, target, timeout, opt);
 }
-
 
 
 struct PollCont;
@@ -406,7 +398,7 @@ UnixNetProcessor::start(int, size_t)
   netthreads = eventProcessor.eventthread[etype];
   for (int i = 0; i < n_netthreads; ++i) {
     initialize_thread_for_net(netthreads[i]);
-    extern void initialize_thread_for_http_sessions(EThread *thread, int thread_index);
+    extern void initialize_thread_for_http_sessions(EThread * thread, int thread_index);
     initialize_thread_for_http_sessions(netthreads[i], i);
   }
 
@@ -419,7 +411,8 @@ UnixNetProcessor::start(int, size_t)
     socks_conf_stuff = new socks_conf_struct;
     loadSocksConfiguration(socks_conf_stuff);
     if (!socks_conf_stuff->socks_needed && socks_conf_stuff->accept_enabled) {
-      Warning("We can not have accept_enabled and socks_needed turned off" " disabling Socks accept\n");
+      Warning("We can not have accept_enabled and socks_needed turned off"
+              " disabling Socks accept\n");
       socks_conf_stuff->accept_enabled = 0;
     } else {
       // this is sslNetprocessor
@@ -436,9 +429,9 @@ UnixNetProcessor::start(int, size_t)
      } */
 
 
-/*
- * Stat pages
- */
+  /*
+   * Stat pages
+   */
   extern Action *register_ShowNet(Continuation * c, HTTPHdr * h);
   if (etype == ET_NET)
     statPagesManager.register_http("net", register_ShowNet);
@@ -469,9 +462,8 @@ UnixNetProcessor::allocate_vc(EThread *t)
   return vc;
 }
 
-struct socks_conf_struct *
-NetProcessor::socks_conf_stuff = NULL;
+struct socks_conf_struct *NetProcessor::socks_conf_stuff = NULL;
 int NetProcessor::accept_mss = 0;
 
 UnixNetProcessor unix_netProcessor;
-NetProcessor & netProcessor = unix_netProcessor;
+NetProcessor &netProcessor = unix_netProcessor;

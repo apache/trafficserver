@@ -35,7 +35,7 @@
 
 #if TS_HAS_BACKTRACE
 
-#include <execinfo.h>           /* for backtrace_symbols, etc. */
+#include <execinfo.h> /* for backtrace_symbols, etc. */
 #include <signal.h>
 
 void
@@ -63,14 +63,14 @@ ink_stack_trace_dump()
   }
 }
 
-#else  /* !TS_HAS_BACKTRACE */
+#else /* !TS_HAS_BACKTRACE */
 
 void
 ink_stack_trace_dump()
 {
   const char msg[] = "ink_stack_trace_dump not implemented on this operating system\n";
   if (write(STDERR_FILENO, msg, sizeof(msg) - 1) == -1)
-      return;
+    return;
 }
 
-#endif  /* TS_HAS_BACKTRACE */
+#endif /* TS_HAS_BACKTRACE */

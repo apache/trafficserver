@@ -23,15 +23,18 @@
 
 #include "traffic_ctl.h"
 
-struct AlarmListPolicy
-{
-  typedef char * entry_type;
+struct AlarmListPolicy {
+  typedef char *entry_type;
 
-  static void free(entry_type e) {
+  static void
+  free(entry_type e)
+  {
     TSfree(e);
   }
 
-  static entry_type cast(void * ptr) {
+  static entry_type
+  cast(void *ptr)
+  {
     return (entry_type)ptr;
   }
 };
@@ -39,7 +42,7 @@ struct AlarmListPolicy
 typedef CtrlMgmtList<AlarmListPolicy> CtrlAlarmList;
 
 static int
-alarm_list(unsigned argc, const char ** argv)
+alarm_list(unsigned argc, const char **argv)
 {
   TSMgmtError error;
   CtrlAlarmList alarms;
@@ -55,7 +58,7 @@ alarm_list(unsigned argc, const char ** argv)
   }
 
   while (!alarms.empty()) {
-    char * a = alarms.next();
+    char *a = alarms.next();
     printf("%s\n", a);
     TSfree(a);
   }
@@ -64,7 +67,7 @@ alarm_list(unsigned argc, const char ** argv)
 }
 
 static int
-alarm_clear(unsigned argc, const char ** argv)
+alarm_clear(unsigned argc, const char **argv)
 {
   TSMgmtError error;
   CtrlAlarmList alarms;
@@ -82,7 +85,7 @@ alarm_clear(unsigned argc, const char ** argv)
 
   // Now resolve them all ...
   while (!alarms.empty()) {
-    char * a = alarms.next();
+    char *a = alarms.next();
 
     error = TSEventResolve(a);
     if (error != TS_ERR_OKAY) {
@@ -98,7 +101,7 @@ alarm_clear(unsigned argc, const char ** argv)
 }
 
 static int
-alarm_resolve(unsigned argc, const char ** argv)
+alarm_resolve(unsigned argc, const char **argv)
 {
   TSMgmtError error;
   CtrlAlarmList alarms;
@@ -119,16 +122,15 @@ alarm_resolve(unsigned argc, const char ** argv)
 }
 
 int
-subcommand_alarm(unsigned argc, const char ** argv)
+subcommand_alarm(unsigned argc, const char **argv)
 {
-  const subcommand commands[] =
-  {
-    { alarm_clear, "clear", "Clear all current alarms" },
-    { alarm_list, "list", "List all current alarms" },
+  const subcommand commands[] = {
+    {alarm_clear, "clear", "Clear all current alarms"},
+    {alarm_list, "list", "List all current alarms"},
 
     // Note that we separate resolve one from resolve all for the same reasons that
     // we have "metric zero" and "metric clear".
-    { alarm_resolve, "resolve", "Resolve the listed alarms" },
+    {alarm_resolve, "resolve", "Resolve the listed alarms"},
     /* XXX describe a specific alarm? */
     /* XXX raise an alarm? */
   };

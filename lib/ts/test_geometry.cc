@@ -28,7 +28,8 @@
 // geometry of an arbitrary device file. That's useful when figuring out how ATS will
 // perceive different devices on differen operating systems.
 
-int main(int argc, const char ** argv)
+int
+main(int argc, const char **argv)
 {
   for (int i = 1; i < argc; ++i) {
     int fd;

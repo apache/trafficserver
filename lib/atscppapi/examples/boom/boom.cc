@@ -73,8 +73,8 @@
 using namespace atscppapi;
 #define TAG "boom"
 
-namespace {
-
+namespace
+{
 /// Name for the Boom invocation counter
 const std::string BOOM_COUNTER = "BOOM_COUNTER";
 
@@ -82,8 +82,7 @@ const std::string BOOM_COUNTER = "BOOM_COUNTER";
 const std::string DEFAULT_ERROR_FILE = "default"; // default.html will be searched for
 
 // Default error response TBD when the default response will be used
-const std::string DEFAULT_ERROR_RESPONSE =
-    "<html><body><h1>This page will be back soon</h1></body></html>";
+const std::string DEFAULT_ERROR_RESPONSE = "<html><body><h1>This page will be back soon</h1></body></html>";
 
 // Default HTTP status code to use after booming
 const int DEFAULT_BOOM_HTTP_STATUS_CODE = 200;
@@ -97,19 +96,22 @@ Stat boom_counter;
 // Functor that decides whether the HTTP error can be rewritten or not.
 // Rewritable codes are: 2xx, 3xx, 4xx, 5xx and 6xx.
 // 1xx is NOT rewritable!
-class IsRewritableCode: public std::unary_function<std::string, bool> { // could probably be replaced with mem_ptr_fun()..
+class IsRewritableCode : public std::unary_function<std::string, bool>
+{ // could probably be replaced with mem_ptr_fun()..
 private:
   int current_code_;
   std::string current_code_string_;
+
 public:
-  IsRewritableCode(int current_code) :
-      current_code_(current_code) {
+  IsRewritableCode(int current_code) : current_code_(current_code)
+  {
     std::ostringstream oss;
     oss << current_code_;
     current_code_string_ = oss.str();
   }
 
-  bool operator()(const std::string &code) const {
+  bool operator()(const std::string &code) const
+  {
     TS_DEBUG(TAG, "Checking if %s matches code %s", current_code_string_.c_str(), code.c_str());
     if (code == current_code_string_)
       return true;
@@ -128,7 +130,8 @@ public:
   }
 };
 
-class BoomResponseRegistry {
+class BoomResponseRegistry
+{
   // Boom error codes
   std::set<std::string> error_codes_;
 
@@ -148,13 +151,12 @@ class BoomResponseRegistry {
   std::string generic_code_from_status(int http_status);
 
 public:
-
   // Set a "catchall" global default response
-  void set_global_default_response(const std::string& global_default_response);
+  void set_global_default_response(const std::string &global_default_response);
 
   // Populate the registry lookup table with contents of files in
   // the base directory
-  void populate_error_responses(const std::string& base_directory);
+  void populate_error_responses(const std::string &base_directory);
 
   // Return custom response string for the custom code
   // Lookup logic (using 404 as example)
@@ -163,7 +165,7 @@ public:
   //  3. Check for default response (i.e. contents of "default.html")
   //  4. Check for global default response (settable through "set_global_default_response" method)
   //  5. If all else fails, return compiled in response code
-  const std::string& get_response_for_error_code(int http_status_code);
+  const std::string &get_response_for_error_code(int http_status_code);
 
   // Returns true iff either of the three conditions are true:
   // 1. Exact match for the error is registered (e.g. "404.html" for HTTP 404)
@@ -173,11 +175,12 @@ public:
   bool has_code_registered(int http_status_code);
 
   // Register error codes
-  void register_error_codes(const std::vector<std::string>& error_codes);
+  void register_error_codes(const std::vector<std::string> &error_codes);
 };
 
 
-void BoomResponseRegistry::register_error_codes(const std::vector<std::string>& error_codes)
+void
+BoomResponseRegistry::register_error_codes(const std::vector<std::string> &error_codes)
 {
   std::vector<std::string>::const_iterator i = error_codes.begin(), e = error_codes.end();
   for (; i != e; ++i) {
@@ -190,12 +193,13 @@ bool get_file_contents(std::string fileName, std::string &contents);
 
 // Examine the error file directory and populate the error_response
 // map with the file contents.
-void BoomResponseRegistry::populate_error_responses(const std::string& base_directory) {
+void
+BoomResponseRegistry::populate_error_responses(const std::string &base_directory)
+{
   base_error_directory_ = base_directory;
 
   // Make sure we have a trailing / after the base directory
-  if (!base_error_directory_.empty()
-      && base_error_directory_[base_error_directory_.length() - 1] != '/')
+  if (!base_error_directory_.empty() && base_error_directory_[base_error_directory_.length() - 1] != '/')
     base_error_directory_.append("/"); // make sure we have a trailing /
 
   // Iterate over files in the base directory.
@@ -228,11 +232,15 @@ void BoomResponseRegistry::populate_error_responses(const std::string& base_dire
   }
 }
 
-void BoomResponseRegistry::set_global_default_response(const std::string& global_default_response) {
+void
+BoomResponseRegistry::set_global_default_response(const std::string &global_default_response)
+{
   global_response_string_ = global_default_response;
 }
 
-const std::string& BoomResponseRegistry::get_response_for_error_code(int http_status_code) {
+const std::string &
+BoomResponseRegistry::get_response_for_error_code(int http_status_code)
+{
   std::string code_str = code_from_status(http_status_code);
 
   if (error_responses_.count(code_str))
@@ -249,7 +257,9 @@ const std::string& BoomResponseRegistry::get_response_for_error_code(int http_st
   return DEFAULT_ERROR_RESPONSE;
 }
 
-bool BoomResponseRegistry::has_code_registered(int http_status_code) {
+bool
+BoomResponseRegistry::has_code_registered(int http_status_code)
+{
   // Only rewritable codes are allowed.
   std::set<std::string>::iterator ii = std::find_if(error_codes_.begin(), error_codes_.end(), IsRewritableCode(http_status_code));
   if (ii == error_codes_.end())
@@ -258,7 +268,9 @@ bool BoomResponseRegistry::has_code_registered(int http_status_code) {
     return true;
 }
 
-std::string BoomResponseRegistry::generic_code_from_status(int code) {
+std::string
+BoomResponseRegistry::generic_code_from_status(int code)
+{
   if (code >= 200 && code <= 299)
     return "2xx";
   else if (code >= 300 && code <= 399)
@@ -271,7 +283,9 @@ std::string BoomResponseRegistry::generic_code_from_status(int code) {
     return "default";
 }
 
-std::string BoomResponseRegistry::code_from_status(int code) {
+std::string
+BoomResponseRegistry::code_from_status(int code)
+{
   std::ostringstream oss;
   oss << code;
   std::string code_str = oss.str();
@@ -280,18 +294,21 @@ std::string BoomResponseRegistry::code_from_status(int code) {
 
 // Transaction plugin that intercepts error and displays
 // a error page as configured
-class BoomTransactionPlugin: public TransactionPlugin {
+class BoomTransactionPlugin : public TransactionPlugin
+{
 public:
-  BoomTransactionPlugin(Transaction &transaction, HttpStatus status, const std::string &reason,
-      const std::string &body) :
-      TransactionPlugin(transaction), status_(status), reason_(reason), body_(body) {
+  BoomTransactionPlugin(Transaction &transaction, HttpStatus status, const std::string &reason, const std::string &body)
+    : TransactionPlugin(transaction), status_(status), reason_(reason), body_(body)
+  {
     TransactionPlugin::registerHook(HOOK_SEND_RESPONSE_HEADERS);
-    TS_DEBUG(TAG, "Created BoomTransaction plugin for txn=%p, status=%d, reason=%s, body length=%d",
-        transaction.getAtsHandle(), status, reason.c_str(), static_cast<int>(body.length()));
+    TS_DEBUG(TAG, "Created BoomTransaction plugin for txn=%p, status=%d, reason=%s, body length=%d", transaction.getAtsHandle(),
+             status, reason.c_str(), static_cast<int>(body.length()));
     transaction.error(body_); // Set the error body now, and change the status and reason later.
   }
 
-  void handleSendResponseHeaders(Transaction &transaction) {
+  void
+  handleSendResponseHeaders(Transaction &transaction)
+  {
     transaction.getClientResponse().setStatusCode(status_);
     transaction.getClientResponse().setReasonPhrase(reason_);
     transaction.resume();
@@ -304,7 +321,9 @@ private:
 };
 
 // Utility routine to split string by delimiter.
-void stringSplit(const std::string &in, char delim, std::vector<std::string> &res) {
+void
+stringSplit(const std::string &in, char delim, std::vector<std::string> &res)
+{
   std::istringstream ss(in);
   std::string item;
   while (std::getline(ss, item, delim)) {
@@ -314,7 +333,9 @@ void stringSplit(const std::string &in, char delim, std::vector<std::string> &re
 
 // Utility routine to read file contents into a string
 // @returns true if the file exists and has been successfully read
-bool get_file_contents(std::string fileName, std::string &contents) {
+bool
+get_file_contents(std::string fileName, std::string &contents)
+{
   if (fileName.empty()) {
     return false;
   }
@@ -337,14 +358,14 @@ bool get_file_contents(std::string fileName, std::string &contents) {
   return true;
 }
 
-class BoomGlobalPlugin: public atscppapi::GlobalPlugin {
-
+class BoomGlobalPlugin : public atscppapi::GlobalPlugin
+{
 private:
   BoomResponseRegistry *response_registry_;
 
 public:
-  BoomGlobalPlugin(BoomResponseRegistry* response_registry) :
-      response_registry_(response_registry) {
+  BoomGlobalPlugin(BoomResponseRegistry *response_registry) : response_registry_(response_registry)
+  {
     TS_DEBUG(TAG, "Creating BoomGlobalHook %p", this);
     registerHook(HOOK_READ_RESPONSE_HEADERS);
   }
@@ -356,44 +377,44 @@ private:
   BoomGlobalPlugin();
 };
 
-void BoomGlobalPlugin::handleReadResponseHeaders(Transaction &transaction) {
-    // Get response status code from the transaction
-    HttpStatus http_status_code = transaction.getServerResponse().getStatusCode();
+void
+BoomGlobalPlugin::handleReadResponseHeaders(Transaction &transaction)
+{
+  // Get response status code from the transaction
+  HttpStatus http_status_code = transaction.getServerResponse().getStatusCode();
 
-    TS_DEBUG(TAG, "Checking if response with code %d is in the registry.", http_status_code);
+  TS_DEBUG(TAG, "Checking if response with code %d is in the registry.", http_status_code);
 
-    // If the custom response for the error code is registered,
-    // attach the BoomTransactionPlugin to the transaction
-    if (response_registry_->has_code_registered(http_status_code)) {
-      // Get the original reason phrase string from the transaction
-      std::string http_reason_phrase = transaction.getServerResponse().getReasonPhrase();
+  // If the custom response for the error code is registered,
+  // attach the BoomTransactionPlugin to the transaction
+  if (response_registry_->has_code_registered(http_status_code)) {
+    // Get the original reason phrase string from the transaction
+    std::string http_reason_phrase = transaction.getServerResponse().getReasonPhrase();
 
-      TS_DEBUG(TAG, "Response has code %d which matches a registered code, TransactionPlugin will be created.", http_status_code);
-      // Increment the statistics counter
-      boom_counter.increment();
+    TS_DEBUG(TAG, "Response has code %d which matches a registered code, TransactionPlugin will be created.", http_status_code);
+    // Increment the statistics counter
+    boom_counter.increment();
 
-      // Get custom response code from the registry
-      const std::string& custom_response = response_registry_->get_response_for_error_code(
-          http_status_code);
+    // Get custom response code from the registry
+    const std::string &custom_response = response_registry_->get_response_for_error_code(http_status_code);
 
-      // Add the transaction plugin to the transaction
-      transaction.addPlugin(
-          new BoomTransactionPlugin(transaction, http_status_code, http_reason_phrase,
-              custom_response));
-      // No need to resume/error the transaction,
-      // as BoomTransactionPlugin will take care of terminating the transaction
-      return;
-    } else {
-      TS_DEBUG(TAG, "Code %d was not in the registry, transaction will be resumed", http_status_code);
-      transaction.resume();
-    }
+    // Add the transaction plugin to the transaction
+    transaction.addPlugin(new BoomTransactionPlugin(transaction, http_status_code, http_reason_phrase, custom_response));
+    // No need to resume/error the transaction,
+    // as BoomTransactionPlugin will take care of terminating the transaction
+    return;
+  } else {
+    TS_DEBUG(TAG, "Code %d was not in the registry, transaction will be resumed", http_status_code);
+    transaction.resume();
   }
+}
 
 /*
  * This is the plugin registration point
  */
-void TSPluginInit(int argc, const char *argv[]) {
-
+void
+TSPluginInit(int argc, const char *argv[])
+{
   boom_counter.init(BOOM_COUNTER);
   BoomResponseRegistry *pregistry = new BoomResponseRegistry();
 
@@ -405,7 +426,7 @@ void TSPluginInit(int argc, const char *argv[]) {
     pregistry->populate_error_responses(base_directory);
 
     std::string error_codes_argument(argv[2], strlen(argv[2]));
-    std::vector < std::string > error_codes;
+    std::vector<std::string> error_codes;
     stringSplit(error_codes_argument, ',', error_codes);
     pregistry->register_error_codes(error_codes);
   } else {
@@ -414,4 +435,3 @@ void TSPluginInit(int argc, const char *argv[]) {
 
   new BoomGlobalPlugin(pregistry);
 }
-

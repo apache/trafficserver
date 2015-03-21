@@ -85,16 +85,14 @@ ink_microseconds(int which)
 double
 ink_time_wall_seconds()
 {
-
   struct timeval s_val;
 
   gettimeofday(&s_val, 0);
-  return ((double) s_val.tv_sec + 0.000001 * s_val.tv_usec);
-}                               /* End ink_time_wall_seconds */
+  return ((double)s_val.tv_sec + 0.000001 * s_val.tv_usec);
+} /* End ink_time_wall_seconds */
 
 
-struct dtconv
-{
+struct dtconv {
   char *abbrev_month_names[12];
   char *month_names[12];
   char *abbrev_weekday_names[7];
@@ -108,14 +106,13 @@ struct dtconv
 };
 
 
-
 /*
  * The man page for cftime lies. It claims that it is thread safe.
  * Instead, it silently trashes the heap (by freeing things more than
  * once) when used in a mulithreaded program. Gack!
  */
 int
-cftime_replacement(char *s, int maxsize, const char *format, const time_t * clock)
+cftime_replacement(char *s, int maxsize, const char *format, const time_t *clock)
 {
   struct tm tm;
 
@@ -127,24 +124,22 @@ cftime_replacement(char *s, int maxsize, const char *format, const time_t * cloc
 #undef cftime
 /* Throw an error if they ever call plain-old cftime. */
 int
-cftime(char *s, char *format, const time_t * clock)
+cftime(char *s, char *format, const time_t *clock)
 {
-  (void) s;
-  (void) format;
-  (void) clock;
+  (void)s;
+  (void)format;
+  (void)clock;
   printf("ERROR cftime is not thread safe -- call cftime_replacement\n");
   ink_assert(!"cftime");
   return 0;
 }
 
-#define DAYS_OFFSET  25508
+#define DAYS_OFFSET 25508
 
 ink_time_t
-convert_tm(const struct tm * tp)
+convert_tm(const struct tm *tp)
 {
-  static const int days[12] = {
-    305, 336, -1, 30, 60, 91, 121, 152, 183, 213, 244, 274
-  };
+  static const int days[12] = {305, 336, -1, 30, 60, 91, 121, 152, 183, 213, 244, 274};
 
   ink_time_t t;
   int year;
@@ -156,8 +151,8 @@ convert_tm(const struct tm * tp)
   mday = tp->tm_mday;
 
   /* what should we do? */
-  if ((year<70) || (year> 137))
-    return (ink_time_t) UNDEFINED_TIME;
+  if ((year < 70) || (year > 137))
+    return (ink_time_t)UNDEFINED_TIME;
 
   mday += days[month];
   /* month base == march */
@@ -172,13 +167,13 @@ convert_tm(const struct tm * tp)
 }
 
 char *
-ink_ctime_r(const ink_time_t * clock, char *buf)
+ink_ctime_r(const ink_time_t *clock, char *buf)
 {
   return ctime_r(clock, buf);
 }
 
 struct tm *
-ink_localtime_r(const ink_time_t * clock, struct tm *res)
+ink_localtime_r(const ink_time_t *clock, struct tm *res)
 {
   return localtime_r(clock, res);
 }

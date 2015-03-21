@@ -42,15 +42,12 @@
  */
 class UDPPacket
 {
-
 public:
+  virtual ~UDPPacket() {}
 
-  virtual ~UDPPacket()
-  { }
-
-  virtual void free();          // fast deallocate
-  void setContinuation(Continuation * c);
-  void setConnection(UDPConnection * c);
+  virtual void free(); // fast deallocate
+  void setContinuation(Continuation *c);
+  void setConnection(UDPConnection *c);
   UDPConnection *getConnection();
   IOBufferBlock *getIOBlockChain();
   int64_t getPktLength();
@@ -60,10 +57,10 @@ public:
      @param block block chain to add.
 
    */
-  inkcoreapi void append_block(IOBufferBlock * block);
+  inkcoreapi void append_block(IOBufferBlock *block);
 
-  IpEndpoint from;    // what address came from
-  IpEndpoint to;      // what address to send to
+  IpEndpoint from; // what address came from
+  IpEndpoint to;   // what address to send to
 
   int from_size;
 
@@ -80,7 +77,7 @@ public:
    @param buf if !NULL, then len bytes copied from buf and made into packet.
    @param len # of bytes to copy from buf
  */
-extern UDPPacket *new_UDPPacket(struct sockaddr const* to, ink_hrtime when = 0, char *buf = NULL, int len = 0);
+extern UDPPacket *new_UDPPacket(struct sockaddr const *to, ink_hrtime when = 0, char *buf = NULL, int len = 0);
 /**
    Create a new packet to be sent over UDPConnection. This clones and
    makes a reference to an existing IOBufferBlock chain.
@@ -93,8 +90,7 @@ extern UDPPacket *new_UDPPacket(struct sockaddr const* to, ink_hrtime when = 0, 
    @param len # of bytes to reference from block
  */
 
-TS_INLINE UDPPacket *new_UDPPacket(struct sockaddr const* to, ink_hrtime when = 0,
-                                   IOBufferBlock * block = NULL, int len = 0);
+TS_INLINE UDPPacket *new_UDPPacket(struct sockaddr const *to, ink_hrtime when = 0, IOBufferBlock *block = NULL, int len = 0);
 /**
    Create a new packet to be sent over UDPConnection.  Packet has no
    destination or data.
@@ -105,7 +101,7 @@ extern UDPPacket *new_UDPPacket();
    Create a new packet to be delivered to application.
    Internal function only
 */
-extern UDPPacket *new_incoming_UDPPacket(struct sockaddr* from, char *buf, int len);
+extern UDPPacket *new_incoming_UDPPacket(struct sockaddr *from, char *buf, int len);
 
 //@}
 #endif //__I_UDPPACKET_H_

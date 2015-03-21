@@ -38,7 +38,6 @@ textBuffer::textBuffer(int size)
   nextAdd = NULL;
   currentSize = spaceLeft = 0;
   if (size > 0) {
-
     // Insitute a minimum size
     if (size < 1024) {
       size = 1024;
@@ -47,7 +46,7 @@ textBuffer::textBuffer(int size)
     bufferStart = (char *)ats_malloc(size);
     nextAdd = bufferStart;
     currentSize = size;
-    spaceLeft = size - 1;     // Leave room for a terminator;
+    spaceLeft = size - 1; // Leave room for a terminator;
     nextAdd[0] = '\0';
   }
 }
@@ -60,7 +59,7 @@ textBuffer::~textBuffer()
 char *
 textBuffer::release()
 {
-  char * ret = bufferStart;
+  char *ret = bufferStart;
 
   bufferStart = nextAdd = NULL;
   currentSize = spaceLeft = 0;
@@ -94,7 +93,6 @@ textBuffer::reUse()
 int
 textBuffer::copyFrom(const void *source, unsigned num_bytes)
 {
-
   // Get more space if necessary
   if (spaceLeft < num_bytes) {
     if (enlargeBuffer(num_bytes) == -1) {
@@ -128,7 +126,6 @@ textBuffer::enlargeBuffer(unsigned N)
   char *newSpace;
 
   if (spaceLeft < N) {
-
     while ((newSize - currentSize) < N) {
       newSize *= 2;
     }
@@ -137,7 +134,7 @@ textBuffer::enlargeBuffer(unsigned N)
 
     newSpace = (char *)ats_realloc(bufferStart, newSize);
     if (newSpace != NULL) {
-      nextAdd = newSpace + (unsigned) (nextAdd - bufferStart);
+      nextAdd = newSpace + (unsigned)(nextAdd - bufferStart);
       bufferStart = newSpace;
       spaceLeft += addedSize;
       currentSize = newSize;
@@ -173,7 +170,7 @@ textBuffer::rawReadFromFile(int fd)
 
   readSize = read(fd, nextAdd, spaceLeft - 1);
 
-  if (readSize == 0) {          //EOF
+  if (readSize == 0) { // EOF
     return 0;
   } else if (readSize < 0) {
     // Error on read
@@ -237,7 +234,7 @@ textBuffer::bufPtr()
 }
 
 void
-textBuffer::format(const char * fmt, ...)
+textBuffer::format(const char *fmt, ...)
 {
   va_list ap;
   bool done = false;

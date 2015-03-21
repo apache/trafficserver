@@ -33,7 +33,7 @@
 #include "P_ClusterHandler.h"
 
 inline Action *
-Cluster_lookup(Continuation * cont, CacheKey * key, CacheFragType frag_type, char *hostname, int host_len)
+Cluster_lookup(Continuation *cont, CacheKey *key, CacheFragType frag_type, char *hostname, int host_len)
 {
   // Try to send remote, if not possible, handle locally
   Action *retAct;
@@ -48,24 +48,22 @@ Cluster_lookup(Continuation * cont, CacheKey * key, CacheFragType frag_type, cha
     } else {
       // not remote, do local lookup
       CacheContinuation::cacheContAllocator_free(cc);
-      return (Action *) NULL;
+      return (Action *)NULL;
     }
   } else {
     Action a;
     a = cont;
     return CacheContinuation::callback_failure(&a, CACHE_EVENT_LOOKUP_FAILED, 0);
   }
-  return (Action *) NULL;
+  return (Action *)NULL;
 }
 
 inline Action *
-Cluster_read(ClusterMachine * owner_machine, int opcode,
-             Continuation * cont, MIOBuffer * buf,
-             CacheURL * url, CacheHTTPHdr * request,
-             CacheLookupHttpConfig * params, CacheKey * key,
-             time_t pin_in_cache, CacheFragType frag_type, char *hostname, int host_len)
+Cluster_read(ClusterMachine *owner_machine, int opcode, Continuation *cont, MIOBuffer *buf, CacheURL *url, CacheHTTPHdr *request,
+             CacheLookupHttpConfig *params, CacheKey *key, time_t pin_in_cache, CacheFragType frag_type, char *hostname,
+             int host_len)
 {
-  (void) params;
+  (void)params;
   if (clusterProcessor.disable_remote_cluster_ops(owner_machine)) {
     Action a;
     a = cont;
@@ -79,8 +77,7 @@ Cluster_read(ClusterMachine * owner_machine, int opcode,
   char *data;
 
   if (vers == CacheOpMsg_long::CACHE_OP_LONG_MESSAGE_VERSION) {
-    if ((opcode == CACHE_OPEN_READ_LONG)
-        || (opcode == CACHE_OPEN_READ_BUFFER_LONG)) {
+    if ((opcode == CACHE_OPEN_READ_LONG) || (opcode == CACHE_OPEN_READ_BUFFER_LONG)) {
       // Determine length of data to Marshal
       flen = op_to_sizeof_fixedlen_msg(opcode);
 
@@ -95,11 +92,11 @@ Cluster_read(ClusterMachine * owner_machine, int opcode,
       len += params->marshal_length();
       len += url_hlen;
 
-      if ((flen + len) > DEFAULT_MAX_BUFFER_SIZE)       // Bound marshalled data
+      if ((flen + len) > DEFAULT_MAX_BUFFER_SIZE) // Bound marshalled data
         goto err_exit;
 
       // Perform data Marshal operation
-      msg = (char *) ALLOCA_DOUBLE(flen + len);
+      msg = (char *)ALLOCA_DOUBLE(flen + len);
       data = msg + flen;
 
       int cur_len = len;
@@ -119,8 +116,7 @@ Cluster_read(ClusterMachine * owner_machine, int opcode,
       readArgs.url_md5 = &url_only_md5;
       readArgs.pin_in_cache = pin_in_cache;
       readArgs.frag_type = frag_type;
-      return CacheContinuation::do_op(cont, owner_machine, (void *) &readArgs,
-                                      opcode, (char *) msg, (flen + len), -1, buf);
+      return CacheContinuation::do_op(cont, owner_machine, (void *)&readArgs, opcode, (char *)msg, (flen + len), -1, buf);
     } else {
       // Build message if we have host data.
 
@@ -129,10 +125,10 @@ Cluster_read(ClusterMachine * owner_machine, int opcode,
         flen = op_to_sizeof_fixedlen_msg(opcode);
         len = host_len;
 
-        if ((flen + len) > DEFAULT_MAX_BUFFER_SIZE)     // Bound marshalled data
+        if ((flen + len) > DEFAULT_MAX_BUFFER_SIZE) // Bound marshalled data
           goto err_exit;
 
-        msg = (char *) ALLOCA_DOUBLE(flen + len);
+        msg = (char *)ALLOCA_DOUBLE(flen + len);
         data = msg + flen;
         memcpy(data, hostname, host_len);
 
@@ -144,8 +140,7 @@ Cluster_read(ClusterMachine * owner_machine, int opcode,
       CacheOpArgs_General readArgs;
       readArgs.url_md5 = key;
       readArgs.frag_type = frag_type;
-      return CacheContinuation::do_op(cont, owner_machine, (void *) &readArgs,
-                                      opcode, (char *) msg, (flen + len), -1, buf);
+      return CacheContinuation::do_op(cont, owner_machine, (void *)&readArgs, opcode, (char *)msg, (flen + len), -1, buf);
     }
 
   } else {
@@ -161,15 +156,12 @@ err_exit:
 }
 
 inline Action *
-Cluster_write(Continuation * cont, int expected_size,
-              MIOBuffer * buf, ClusterMachine * m,
-              INK_MD5 * url_md5, CacheFragType ft, int options,
-              time_t pin_in_cache, int opcode,
-              CacheKey * key, CacheURL * url,
-              CacheHTTPHdr * request, CacheHTTPInfo * old_info, char *hostname, int host_len)
+Cluster_write(Continuation *cont, int expected_size, MIOBuffer *buf, ClusterMachine *m, INK_MD5 *url_md5, CacheFragType ft,
+              int options, time_t pin_in_cache, int opcode, CacheKey *key, CacheURL *url, CacheHTTPHdr *request,
+              CacheHTTPInfo *old_info, char *hostname, int host_len)
 {
-  (void) key;
-  (void) request;
+  (void)key;
+  (void)request;
   if (clusterProcessor.disable_remote_cluster_ops(m)) {
     Action a;
     a = cont;
@@ -183,65 +175,62 @@ Cluster_write(Continuation * cont, int expected_size,
   int vers = CacheOpMsg_long::protoToVersion(m->msg_proto_major);
 
   switch (opcode) {
-  case CACHE_OPEN_WRITE:
-    {
-      // Build message if we have host data
-      if (host_len) {
-        // Determine length of data to Marshal
-        flen = op_to_sizeof_fixedlen_msg(CACHE_OPEN_WRITE);
-        len = host_len;
-
-        if ((flen + len) > DEFAULT_MAX_BUFFER_SIZE)     // Bound marshalled data
-          goto err_exit;
-
-        msg = (char *) ALLOCA_DOUBLE(flen + len);
-        data = msg + flen;
-
-        memcpy(data, hostname, host_len);
-      }
-      break;
-    }
-  case CACHE_OPEN_WRITE_LONG:
-    {
-      int url_hlen;
-      const char *url_hostname = url->host_get(&url_hlen);
-
+  case CACHE_OPEN_WRITE: {
+    // Build message if we have host data
+    if (host_len) {
       // Determine length of data to Marshal
-      flen = op_to_sizeof_fixedlen_msg(CACHE_OPEN_WRITE_LONG);
-      len = 0;
+      flen = op_to_sizeof_fixedlen_msg(CACHE_OPEN_WRITE);
+      len = host_len;
 
-      if (old_info == (CacheHTTPInfo *) CACHE_ALLOW_MULTIPLE_WRITES) {
-        old_info = 0;
-        allow_multiple_writes = 1;
-      }
-      if (old_info) {
-        len += old_info->marshal_length();
-      }
-      len += url_hlen;
-
-      if ((flen + len) > DEFAULT_MAX_BUFFER_SIZE)       // Bound marshalled data
+      if ((flen + len) > DEFAULT_MAX_BUFFER_SIZE) // Bound marshalled data
         goto err_exit;
 
-      // Perform data Marshal operation
-      msg = (char *) ALLOCA_DOUBLE(flen + len);
+      msg = (char *)ALLOCA_DOUBLE(flen + len);
       data = msg + flen;
 
-      if (old_info) {
-        int res = old_info->marshal(data, len);
-
-        if (res < 0) {
-          goto err_exit;
-        }
-        data += res;
-      }
-      memcpy(data, url_hostname, url_hlen);
-      break;
+      memcpy(data, hostname, host_len);
     }
-  default:
-    {
-      ink_release_assert(!"open_write_internal invalid opcode.");
-    }                           // End of case
-  }                             // End of switch
+    break;
+  }
+  case CACHE_OPEN_WRITE_LONG: {
+    int url_hlen;
+    const char *url_hostname = url->host_get(&url_hlen);
+
+    // Determine length of data to Marshal
+    flen = op_to_sizeof_fixedlen_msg(CACHE_OPEN_WRITE_LONG);
+    len = 0;
+
+    if (old_info == (CacheHTTPInfo *)CACHE_ALLOW_MULTIPLE_WRITES) {
+      old_info = 0;
+      allow_multiple_writes = 1;
+    }
+    if (old_info) {
+      len += old_info->marshal_length();
+    }
+    len += url_hlen;
+
+    if ((flen + len) > DEFAULT_MAX_BUFFER_SIZE) // Bound marshalled data
+      goto err_exit;
+
+    // Perform data Marshal operation
+    msg = (char *)ALLOCA_DOUBLE(flen + len);
+    data = msg + flen;
+
+    if (old_info) {
+      int res = old_info->marshal(data, len);
+
+      if (res < 0) {
+        goto err_exit;
+      }
+      data += res;
+    }
+    memcpy(data, url_hostname, url_hlen);
+    break;
+  }
+  default: {
+    ink_release_assert(!"open_write_internal invalid opcode.");
+  } // End of case
+  } // End of switch
 
   if (vers == CacheOpMsg_long::CACHE_OP_LONG_MESSAGE_VERSION) {
     // Do remote open_write()
@@ -253,13 +242,13 @@ Cluster_write(Continuation * cont, int expected_size,
     writeArgs.cfl_flags |= (old_info ? CFL_LOPENWRITE_HAVE_OLDINFO : 0);
     writeArgs.cfl_flags |= (allow_multiple_writes ? CFL_ALLOW_MULTIPLE_WRITES : 0);
 
-    return CacheContinuation::do_op(cont, m, (void *) &writeArgs, opcode, msg, flen + len, expected_size, buf);
+    return CacheContinuation::do_op(cont, m, (void *)&writeArgs, opcode, msg, flen + len, expected_size, buf);
   } else {
     //////////////////////////////////////////////////////////////
     // Create the specified down rev version of this message
     //////////////////////////////////////////////////////////////
     ink_release_assert(!"CacheOpMsg_long [write] bad msg version");
-    return (Action *) 0;
+    return (Action *)0;
   }
 
 err_exit:
@@ -269,8 +258,7 @@ err_exit:
 }
 
 inline Action *
-Cluster_link(ClusterMachine * m, Continuation * cont, CacheKey * from, CacheKey * to,
-             CacheFragType type, char *hostname, int host_len)
+Cluster_link(ClusterMachine *m, Continuation *cont, CacheKey *from, CacheKey *to, CacheFragType type, char *hostname, int host_len)
 {
   if (clusterProcessor.disable_remote_cluster_ops(m)) {
     Action a;
@@ -289,7 +277,7 @@ Cluster_link(ClusterMachine * m, Continuation * cont, CacheKey * from, CacheKey 
     if ((flen + len) > DEFAULT_MAX_BUFFER_SIZE) // Bound marshalled data
       goto err_exit;
 
-    char *msg = (char *) ALLOCA_DOUBLE(flen + len);
+    char *msg = (char *)ALLOCA_DOUBLE(flen + len);
     memcpy((msg + flen), hostname, host_len);
 
     // Setup args for remote link
@@ -297,7 +285,7 @@ Cluster_link(ClusterMachine * m, Continuation * cont, CacheKey * from, CacheKey 
     linkArgs.from = from;
     linkArgs.to = to;
     linkArgs.frag_type = type;
-    return CacheContinuation::do_op(cont, m, (void *) &linkArgs, CACHE_LINK, msg, (flen + len));
+    return CacheContinuation::do_op(cont, m, (void *)&linkArgs, CACHE_LINK, msg, (flen + len));
   } else {
     //////////////////////////////////////////////////////////////
     // Create the specified down rev version of this message
@@ -313,7 +301,7 @@ err_exit:
 }
 
 inline Action *
-Cluster_deref(ClusterMachine * m, Continuation * cont, CacheKey * key, CacheFragType type, char *hostname, int host_len)
+Cluster_deref(ClusterMachine *m, Continuation *cont, CacheKey *key, CacheFragType type, char *hostname, int host_len)
 {
   if (clusterProcessor.disable_remote_cluster_ops(m)) {
     Action a;
@@ -332,14 +320,14 @@ Cluster_deref(ClusterMachine * m, Continuation * cont, CacheKey * key, CacheFrag
     if ((flen + len) > DEFAULT_MAX_BUFFER_SIZE) // Bound marshalled data
       goto err_exit;
 
-    char *msg = (char *) ALLOCA_DOUBLE(flen + len);
+    char *msg = (char *)ALLOCA_DOUBLE(flen + len);
     memcpy((msg + flen), hostname, host_len);
 
     // Setup args for remote deref
     CacheOpArgs_Deref drefArgs;
     drefArgs.md5 = key;
     drefArgs.frag_type = type;
-    return CacheContinuation::do_op(cont, m, (void *) &drefArgs, CACHE_DEREF, msg, (flen + len));
+    return CacheContinuation::do_op(cont, m, (void *)&drefArgs, CACHE_DEREF, msg, (flen + len));
   } else {
     //////////////////////////////////////////////////////////////
     // Create the specified down rev version of this message
@@ -355,8 +343,8 @@ err_exit:
 }
 
 inline Action *
-Cluster_remove(ClusterMachine * m, Continuation * cont, CacheKey * key,
-               bool rm_user_agents, bool rm_link, CacheFragType frag_type, char *hostname, int host_len)
+Cluster_remove(ClusterMachine *m, Continuation *cont, CacheKey *key, bool rm_user_agents, bool rm_link, CacheFragType frag_type,
+               char *hostname, int host_len)
 {
   if (clusterProcessor.disable_remote_cluster_ops(m)) {
     Action a;
@@ -375,7 +363,7 @@ Cluster_remove(ClusterMachine * m, Continuation * cont, CacheKey * key,
     if ((flen + len) > DEFAULT_MAX_BUFFER_SIZE) // Bound marshalled data
       goto err_exit;
 
-    char *msg = (char *) ALLOCA_DOUBLE(flen + len);
+    char *msg = (char *)ALLOCA_DOUBLE(flen + len);
     memcpy((msg + flen), hostname, host_len);
 
     // Setup args for remote update
@@ -384,13 +372,13 @@ Cluster_remove(ClusterMachine * m, Continuation * cont, CacheKey * key,
     updateArgs.cfl_flags |= (rm_user_agents ? CFL_REMOVE_USER_AGENTS : 0);
     updateArgs.cfl_flags |= (rm_link ? CFL_REMOVE_LINK : 0);
     updateArgs.frag_type = frag_type;
-    return CacheContinuation::do_op(cont, m, (void *) &updateArgs, CACHE_REMOVE, msg, (flen + len));
+    return CacheContinuation::do_op(cont, m, (void *)&updateArgs, CACHE_REMOVE, msg, (flen + len));
   } else {
     //////////////////////////////////////////////////////////////
     // Create the specified down rev version of this message
     //////////////////////////////////////////////////////////////
     ink_release_assert(!"CacheOpMsg_short [CACHE_REMOVE] bad msg version");
-    return (Action *) 0;
+    return (Action *)0;
   }
 
 err_exit:

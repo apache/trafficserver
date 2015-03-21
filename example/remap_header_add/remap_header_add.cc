@@ -34,18 +34,17 @@
 #include "ts/ts.h"
 #include "ts/remap.h"
 
-struct remap_line
-{
+struct remap_line {
   int argc;
   char **argv; // store the originals
 
-  int nvc; // the number of name value pairs, should be argc - 2.
+  int nvc;     // the number of name value pairs, should be argc - 2.
   char **name; // at load we will parse out the name and values.
   char **val;
 };
 
 #define TAG "headeradd_remap"
-#define NOWARN_UNUSED __attribute__ ((unused))
+#define NOWARN_UNUSED __attribute__((unused))
 #define EXTERN extern "C"
 
 
@@ -62,7 +61,7 @@ ParseArgIntoNv(const char *arg, char **n, char **v)
   }
 
   size_t name_len = colon_pos - arg;
-  *n = (char *) TSmalloc(name_len + 1);
+  *n = (char *)TSmalloc(name_len + 1);
   memcpy(*n, arg, colon_pos - arg);
   (*n)[name_len] = '\0';
 
@@ -70,11 +69,11 @@ ParseArgIntoNv(const char *arg, char **n, char **v)
 
   // check to see if the value is quoted.
   if (val_len > 1 && colon_pos[1] == '"' && colon_pos[val_len] == '"') {
-    colon_pos++; // advance past the first quote
+    colon_pos++;  // advance past the first quote
     val_len -= 2; // don't include the trailing quote
   }
 
-  *v = (char *) TSmalloc(val_len + 1);
+  *v = (char *)TSmalloc(val_len + 1);
   memcpy(*v, colon_pos + 1, val_len);
   (*v)[val_len] = '\0';
 
@@ -90,7 +89,7 @@ TSRemapInit(NOWARN_UNUSED TSRemapInterface *api_info, NOWARN_UNUSED char *errbuf
 
 
 TSReturnCode
-TSRemapNewInstance(int argc, char* argv[], void** ih, NOWARN_UNUSED char* errbuf, NOWARN_UNUSED int errbuf_size)
+TSRemapNewInstance(int argc, char *argv[], void **ih, NOWARN_UNUSED char *errbuf, NOWARN_UNUSED int errbuf_size)
 {
   remap_line *rl = NULL;
 
@@ -103,35 +102,34 @@ TSRemapNewInstance(int argc, char* argv[], void** ih, NOWARN_UNUSED char* errbuf
 
   // print all arguments for this particular remapping
 
-  rl = (remap_line*) TSmalloc(sizeof(remap_line));
+  rl = (remap_line *)TSmalloc(sizeof(remap_line));
   rl->argc = argc;
   rl->argv = argv;
   rl->nvc = argc - 2; // the first two are the remap from and to
   if (rl->nvc) {
-    rl->name = (char**) TSmalloc(sizeof(char *) * rl->nvc);
-    rl->val = (char**) TSmalloc(sizeof(char *) * rl->nvc);
+    rl->name = (char **)TSmalloc(sizeof(char *) * rl->nvc);
+    rl->val = (char **)TSmalloc(sizeof(char *) * rl->nvc);
   }
 
   TSDebug(TAG, "NewInstance:");
   for (int i = 2; i < argc; i++) {
-    ParseArgIntoNv(argv[i], &rl->name[i-2], &rl->val[i-2]);
+    ParseArgIntoNv(argv[i], &rl->name[i - 2], &rl->val[i - 2]);
   }
 
-  *ih = (void *) rl;
+  *ih = (void *)rl;
 
   return TS_SUCCESS;
 }
 
 
 void
-TSRemapDeleteInstance(void* ih)
+TSRemapDeleteInstance(void *ih)
 {
   TSDebug(TAG, "deleting instance %p", ih);
 
   if (ih) {
-    remap_line *rl = (remap_line*)ih;
-    for (int i = 0; i < rl->nvc; ++i)
-    {
+    remap_line *rl = (remap_line *)ih;
+    for (int i = 0; i < rl->nvc; ++i) {
       TSfree(rl->name[i]);
       TSfree(rl->val[i]);
     }
@@ -144,9 +142,9 @@ TSRemapDeleteInstance(void* ih)
 
 
 TSRemapStatus
-TSRemapDoRemap(void* ih, NOWARN_UNUSED TSHttpTxn txn, NOWARN_UNUSED TSRemapRequestInfo *rri)
+TSRemapDoRemap(void *ih, NOWARN_UNUSED TSHttpTxn txn, NOWARN_UNUSED TSRemapRequestInfo *rri)
 {
-  remap_line *rl = (remap_line *) ih;
+  remap_line *rl = (remap_line *)ih;
 
   if (!rl || !rri) {
     TSError(TAG ": rl or rri is null.");
@@ -167,9 +165,9 @@ TSRemapDoRemap(void* ih, NOWARN_UNUSED TSHttpTxn txn, NOWARN_UNUSED TSRemapReque
 
     TSMLoc field_loc;
     if (TSMimeHdrFieldCreate(req_bufp, req_loc, &field_loc) == TS_SUCCESS) {
-        TSMimeHdrFieldNameSet(req_bufp, req_loc, field_loc, rl->name[i], strlen(rl->name[i]));
-        TSMimeHdrFieldAppend(req_bufp, req_loc, field_loc);
-        TSMimeHdrFieldValueStringInsert(req_bufp, req_loc, field_loc, 0,  rl->val[i], strlen(rl->val[i]));
+      TSMimeHdrFieldNameSet(req_bufp, req_loc, field_loc, rl->name[i], strlen(rl->name[i]));
+      TSMimeHdrFieldAppend(req_bufp, req_loc, field_loc);
+      TSMimeHdrFieldValueStringInsert(req_bufp, req_loc, field_loc, 0, rl->val[i], strlen(rl->val[i]));
     } else {
       TSError(TAG ": Failure on TSMimeHdrFieldCreate");
     }

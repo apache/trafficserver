@@ -58,13 +58,9 @@
   and logfile format type.  This is the common way to create a new logfile.
   -------------------------------------------------------------------------*/
 
-LogFile::LogFile(const char *name, const char *header, LogFileFormat format,
-                 uint64_t signature, size_t ascii_buffer_size, size_t max_line_size)
-  : m_file_format(format),
-    m_name(ats_strdup(name)),
-    m_header(ats_strdup(header)),
-    m_signature(signature),
-    m_meta_info(NULL),
+LogFile::LogFile(const char *name, const char *header, LogFileFormat format, uint64_t signature, size_t ascii_buffer_size,
+                 size_t max_line_size)
+  : m_file_format(format), m_name(ats_strdup(name)), m_header(ats_strdup(header)), m_signature(signature), m_meta_info(NULL),
     m_max_line_size(max_line_size)
 {
   delete m_meta_info;
@@ -85,23 +81,14 @@ LogFile::LogFile(const char *name, const char *header, LogFileFormat format,
   This (copy) contructor builds a LogFile object from another LogFile object.
   -------------------------------------------------------------------------*/
 
-LogFile::LogFile (const LogFile& copy)
-  : m_file_format (copy.m_file_format),
-    m_name  (ats_strdup (copy.m_name)),
-    m_header  (ats_strdup (copy.m_header)),
-    m_signature (copy.m_signature),
-    m_meta_info (NULL),
-    m_ascii_buffer_size (copy.m_ascii_buffer_size),
-    m_max_line_size (copy.m_max_line_size),
-    m_fd (-1),
-    m_start_time (0L),
-    m_end_time (0L),
-    m_bytes_written (0)
+LogFile::LogFile(const LogFile &copy)
+  : m_file_format(copy.m_file_format), m_name(ats_strdup(copy.m_name)), m_header(ats_strdup(copy.m_header)),
+    m_signature(copy.m_signature), m_meta_info(NULL), m_ascii_buffer_size(copy.m_ascii_buffer_size),
+    m_max_line_size(copy.m_max_line_size), m_fd(-1), m_start_time(0L), m_end_time(0L), m_bytes_written(0)
 {
-    ink_release_assert(m_ascii_buffer_size >= m_max_line_size);
+  ink_release_assert(m_ascii_buffer_size >= m_max_line_size);
 
-    Debug("log-file", "exiting LogFile copy constructor, m_name=%s, this=%p",
-          m_name, this);
+  Debug("log-file", "exiting LogFile copy constructor, m_name=%s, this=%p", m_name, this);
 }
 /*-------------------------------------------------------------------------
   LogFile::~LogFile
@@ -124,7 +111,8 @@ LogFile::~LogFile()
   Returns true if the logfile already exists; false otherwise.
   -------------------------------------------------------------------------*/
 
-bool LogFile::exists(const char *pathname)
+bool
+LogFile::exists(const char *pathname)
 {
   ink_assert(pathname != NULL);
   return (pathname && ::access(pathname, F_OK) == 0);
@@ -209,7 +197,7 @@ LogFile::open_file()
   }
 
   Debug("log-file", "attempting to open %s", m_name);
-  m_fd =::open(m_name, flags, perms);
+  m_fd = ::open(m_name, flags, perms);
 
   if (m_fd < 0) {
     // if error happened because no process is reading the pipe don't
@@ -225,12 +213,12 @@ LogFile::open_file()
 
   int e = do_filesystem_checks();
   if (e != 0) {
-    m_fd = -1;                  // reset to error condition
+    m_fd = -1; // reset to error condition
     return LOG_FILE_FILESYSTEM_CHECKS_FAILED;
   }
 
   // set m_bytes_written to force the rolling based on filesize.
-  m_bytes_written = lseek( m_fd, 0, SEEK_CUR );
+  m_bytes_written = lseek(m_fd, 0, SEEK_CUR);
 
   Debug("log-file", "LogFile %s is now open (fd=%d)", m_name, m_fd);
 
@@ -247,8 +235,7 @@ LogFile::open_file()
     }
   }
 
-  RecIncrRawStat(log_rsb, this_thread()->mutex->thread_holding,
-                 log_stat_log_files_open_stat, 1);
+  RecIncrRawStat(log_rsb, this_thread()->mutex->thread_holding, log_stat_log_files_open_stat, 1);
 
   return LOG_FILE_NO_ERROR;
 }
@@ -267,8 +254,7 @@ LogFile::close_file()
     Debug("log-file", "LogFile %s (fd=%d) is closed", m_name, m_fd);
     m_fd = -1;
 
-    RecIncrRawStat(log_rsb, this_thread()->mutex->thread_holding,
-                   log_stat_log_files_open_stat, -1);
+    RecIncrRawStat(log_rsb, this_thread()->mutex->thread_holding, log_stat_log_files_open_stat, -1);
   }
 }
 
@@ -279,15 +265,13 @@ LogFile::close_file()
   rolled logfile.  We make this determination based on the file extension.
   -------------------------------------------------------------------------*/
 
-bool LogFile::rolled_logfile(char *path)
+bool
+LogFile::rolled_logfile(char *path)
 {
-  const int
-    target_len = (int) strlen(LOGFILE_ROLLED_EXTENSION);
-  int
-    len = (int) strlen(path);
+  const int target_len = (int)strlen(LOGFILE_ROLLED_EXTENSION);
+  int len = (int)strlen(path);
   if (len > target_len) {
-    char *
-      str = &path[len - target_len];
+    char *str = &path[len - target_len];
     if (!strcmp(str, LOGFILE_ROLLED_EXTENSION)) {
       return true;
     }
@@ -392,12 +376,10 @@ LogFile::roll(long interval_start, long interval_end)
   // Now that we have our timestamp values, convert them to the proper
   // timestamp formats and create the rolled file name.
   //
-  LogUtils::timestamp_to_str((long) start, start_time_ext, 64);
-  LogUtils::timestamp_to_str((long) end, end_time_ext, 64);
-  snprintf(roll_name, MAXPATHLEN, "%s%s%s.%s-%s%s",
-               m_name,
-               LOGFILE_SEPARATOR_STRING,
-               Machine::instance()->hostname, start_time_ext, end_time_ext, LOGFILE_ROLLED_EXTENSION);
+  LogUtils::timestamp_to_str((long)start, start_time_ext, 64);
+  LogUtils::timestamp_to_str((long)end, end_time_ext, 64);
+  snprintf(roll_name, MAXPATHLEN, "%s%s%s.%s-%s%s", m_name, LOGFILE_SEPARATOR_STRING, Machine::instance()->hostname, start_time_ext,
+           end_time_ext, LOGFILE_ROLLED_EXTENSION);
 
   //
   // It may be possible that the file we want to roll into already
@@ -408,11 +390,10 @@ LogFile::roll(long interval_start, long interval_end)
   int version = 1;
   while (LogFile::exists(roll_name)) {
     Note("The rolled file %s already exists; adding version "
-         "tag %d to avoid clobbering the existing file.", roll_name, version);
-    snprintf(roll_name, MAXPATHLEN, "%s%s%s.%s-%s.%d%s",
-                 m_name,
-                 LOGFILE_SEPARATOR_STRING,
-                 Machine::instance()->hostname, start_time_ext, end_time_ext, version, LOGFILE_ROLLED_EXTENSION);
+         "tag %d to avoid clobbering the existing file.",
+         roll_name, version);
+    snprintf(roll_name, MAXPATHLEN, "%s%s%s.%s-%s.%d%s", m_name, LOGFILE_SEPARATOR_STRING, Machine::instance()->hostname,
+             start_time_ext, end_time_ext, version, LOGFILE_ROLLED_EXTENSION);
     version++;
   }
 
@@ -422,7 +403,8 @@ LogFile::roll(long interval_start, long interval_end)
 
   if (::rename(m_name, roll_name) < 0) {
     Warning("Traffic Server could not rename logfile %s to %s, error %d: "
-            "%s.", m_name, roll_name, errno, strerror(errno));
+            "%s.",
+            m_name, roll_name, errno, strerror(errno));
     return 0;
   }
   // reset m_start_time
@@ -442,7 +424,7 @@ LogFile::roll(long interval_start, long interval_end)
   and try to delete it when its reference become zero.
   -------------------------------------------------------------------------*/
 int
-LogFile::preproc_and_try_delete(LogBuffer * lb)
+LogFile::preproc_and_try_delete(LogBuffer *lb)
 {
   int ret = -1;
   LogBufferHeader *buffer_header;
@@ -455,8 +437,7 @@ LogFile::preproc_and_try_delete(LogBuffer * lb)
   ink_atomic_increment(&lb->m_references, 1);
 
   if ((buffer_header = lb->header()) == NULL) {
-    Note("Cannot write LogBuffer to LogFile %s; LogBufferHeader is NULL",
-        m_name);
+    Note("Cannot write LogBuffer to LogFile %s; LogBufferHeader is NULL", m_name);
     goto done;
   }
   if (buffer_header->entry_count == 0) {
@@ -487,11 +468,9 @@ LogFile::preproc_and_try_delete(LogBuffer * lb)
 
     ProxyMutex *mutex = this_thread()->mutex;
 
-    RecIncrRawStat(log_rsb, mutex->thread_holding, log_stat_num_flush_to_disk_stat,
-                   lb->header()->entry_count);
+    RecIncrRawStat(log_rsb, mutex->thread_holding, log_stat_num_flush_to_disk_stat, lb->header()->entry_count);
 
-    RecIncrRawStat(log_rsb, mutex->thread_holding, log_stat_bytes_flush_to_disk_stat,
-                   lb->header()->byte_count);
+    RecIncrRawStat(log_rsb, mutex->thread_holding, log_stat_bytes_flush_to_disk_stat, lb->header()->byte_count);
 
     ink_atomiclist_push(Log::flush_data_list, flush_data);
 
@@ -501,14 +480,11 @@ LogFile::preproc_and_try_delete(LogBuffer * lb)
     // LogBuffer will be deleted in flush thread
     //
     return 0;
-  }
-  else if (m_file_format == LOG_FILE_ASCII || m_file_format == LOG_FILE_PIPE) {
+  } else if (m_file_format == LOG_FILE_ASCII || m_file_format == LOG_FILE_PIPE) {
     write_ascii_logbuffer3(buffer_header);
     ret = 0;
-  }
-  else {
-    Note("Cannot write LogBuffer to LogFile %s; invalid file format: %d",
-         m_name, m_file_format);
+  } else {
+    Note("Cannot write LogBuffer to LogFile %s; invalid file format: %d", m_name, m_file_format);
   }
 
 done:
@@ -527,7 +503,7 @@ done:
   -------------------------------------------------------------------------*/
 
 int
-LogFile::write_ascii_logbuffer(LogBufferHeader * buffer_header, int fd, const char *path, const char *alt_format)
+LogFile::write_ascii_logbuffer(LogBufferHeader *buffer_header, int fd, const char *path, const char *alt_format)
 {
   ink_assert(buffer_header != NULL);
   ink_assert(fd >= 0);
@@ -546,7 +522,7 @@ LogFile::write_ascii_logbuffer(LogBufferHeader * buffer_header, int fd, const ch
 
   switch (buffer_header->version) {
   case LOG_SEGMENT_VERSION:
-    format_type = (LogFormatType) buffer_header->format_type;
+    format_type = (LogFormatType)buffer_header->format_type;
 
     fieldlist_str = buffer_header->fmt_fieldlist();
     printf_str = buffer_header->fmt_printf();
@@ -554,14 +530,14 @@ LogFile::write_ascii_logbuffer(LogBufferHeader * buffer_header, int fd, const ch
 
   default:
     Note("Invalid LogBuffer version %d in write_ascii_logbuffer; "
-         "current version is %d", buffer_header->version, LOG_SEGMENT_VERSION);
+         "current version is %d",
+         buffer_header->version, LOG_SEGMENT_VERSION);
     return 0;
   }
 
   while ((entry_header = iter.next())) {
-    fmt_line_bytes = LogBuffer::to_ascii(entry_header, format_type,
-                                         &fmt_line[0], LOG_MAX_FORMATTED_LINE,
-                                         fieldlist_str, printf_str, buffer_header->version, alt_format);
+    fmt_line_bytes = LogBuffer::to_ascii(entry_header, format_type, &fmt_line[0], LOG_MAX_FORMATTED_LINE, fieldlist_str, printf_str,
+                                         buffer_header->version, alt_format);
     ink_assert(fmt_line_bytes > 0);
 
     if (fmt_line_bytes > 0) {
@@ -576,7 +552,7 @@ LogFile::write_ascii_logbuffer(LogBufferHeader * buffer_header, int fd, const ch
       memcpy(&fmt_buf[fmt_buf_bytes], fmt_line, fmt_line_bytes);
       fmt_buf_bytes += fmt_line_bytes;
       ink_assert(fmt_buf_bytes < LOG_MAX_FORMATTED_BUFFER);
-      fmt_buf[fmt_buf_bytes] = '\n';    // keep entries separate
+      fmt_buf[fmt_buf_bytes] = '\n'; // keep entries separate
       fmt_buf_bytes += 1;
     }
   }
@@ -591,9 +567,11 @@ LogFile::write_ascii_logbuffer(LogBufferHeader * buffer_header, int fd, const ch
 }
 
 int
-LogFile::write_ascii_logbuffer3(LogBufferHeader * buffer_header, const char *alt_format)
+LogFile::write_ascii_logbuffer3(LogBufferHeader *buffer_header, const char *alt_format)
 {
-  Debug("log-file", "entering LogFile::write_ascii_logbuffer3 for %s " "(this=%p)", m_name, this);
+  Debug("log-file", "entering LogFile::write_ascii_logbuffer3 for %s "
+                    "(this=%p)",
+        m_name, this);
   ink_assert(buffer_header != NULL);
 
   ProxyMutex *mutex = this_thread()->mutex;
@@ -610,14 +588,15 @@ LogFile::write_ascii_logbuffer3(LogBufferHeader * buffer_header, const char *alt
 
   switch (buffer_header->version) {
   case LOG_SEGMENT_VERSION:
-    format_type = (LogFormatType) buffer_header->format_type;
+    format_type = (LogFormatType)buffer_header->format_type;
     fieldlist_str = buffer_header->fmt_fieldlist();
     printf_str = buffer_header->fmt_printf();
     break;
 
   default:
     Note("Invalid LogBuffer version %d in write_ascii_logbuffer; "
-         "current version is %d", buffer_header->version, LOG_SEGMENT_VERSION);
+         "current version is %d",
+         buffer_header->version, LOG_SEGMENT_VERSION);
     return 0;
   }
 
@@ -634,16 +613,11 @@ LogFile::write_ascii_logbuffer3(LogBufferHeader * buffer_header, const char *alt
     //
     do {
       if (entry_header->entry_len >= m_max_line_size) {
-        Warning("Log is too long(%" PRIu32 "), it would be truncated. max_len:%zu",
-                entry_header->entry_len, m_max_line_size);
+        Warning("Log is too long(%" PRIu32 "), it would be truncated. max_len:%zu", entry_header->entry_len, m_max_line_size);
       }
 
-      int bytes = LogBuffer::to_ascii(entry_header, format_type,
-                                      &ascii_buffer[fmt_buf_bytes],
-                                      m_max_line_size - 1,
-                                      fieldlist_str, printf_str,
-                                      buffer_header->version,
-                                      alt_format);
+      int bytes = LogBuffer::to_ascii(entry_header, format_type, &ascii_buffer[fmt_buf_bytes], m_max_line_size - 1, fieldlist_str,
+                                      printf_str, buffer_header->version, alt_format);
 
       if (bytes > 0) {
         fmt_buf_bytes += bytes;
@@ -651,16 +625,11 @@ LogFile::write_ascii_logbuffer3(LogBufferHeader * buffer_header, const char *alt
         ++fmt_buf_bytes;
         ++fmt_entry_count;
       } else {
-        Error("Failed to convert LogBuffer to ascii, have dropped (%" PRIu32 ") bytes.",
-              entry_header->entry_len);
+        Error("Failed to convert LogBuffer to ascii, have dropped (%" PRIu32 ") bytes.", entry_header->entry_len);
 
-        RecIncrRawStat(log_rsb, mutex->thread_holding,
-                       log_stat_num_lost_before_flush_to_disk_stat,
-                       fmt_entry_count);
+        RecIncrRawStat(log_rsb, mutex->thread_holding, log_stat_num_lost_before_flush_to_disk_stat, fmt_entry_count);
 
-        RecIncrRawStat(log_rsb, mutex->thread_holding,
-                       log_stat_bytes_lost_before_flush_to_disk_stat,
-                       fmt_buf_bytes);
+        RecIncrRawStat(log_rsb, mutex->thread_holding, log_stat_bytes_lost_before_flush_to_disk_stat, fmt_buf_bytes);
       }
       // if writing to a pipe, fill the buffer with a single
       // record to avoid as much as possible overflowing the
@@ -677,11 +646,9 @@ LogFile::write_ascii_logbuffer3(LogBufferHeader * buffer_header, const char *alt
     //
     LogFlushData *flush_data = new LogFlushData(this, ascii_buffer, fmt_buf_bytes);
 
-    RecIncrRawStat(log_rsb, mutex->thread_holding, log_stat_num_flush_to_disk_stat,
-                   fmt_entry_count);
+    RecIncrRawStat(log_rsb, mutex->thread_holding, log_stat_num_flush_to_disk_stat, fmt_entry_count);
 
-    RecIncrRawStat(log_rsb, mutex->thread_holding, log_stat_bytes_flush_to_disk_stat,
-                   fmt_buf_bytes);
+    RecIncrRawStat(log_rsb, mutex->thread_holding, log_stat_bytes_flush_to_disk_stat, fmt_buf_bytes);
 
     ink_atomiclist_push(Log::flush_data_list, flush_data);
 
@@ -712,23 +679,23 @@ LogFile::writeln(char *data, int len, int fd, const char *path)
     int bytes_this_write, vcnt = 1;
 
 #if defined(solaris)
-    wvec[0].iov_base = (caddr_t) data;
+    wvec[0].iov_base = (caddr_t)data;
 #else
-    wvec[0].iov_base = (void *) data;
+    wvec[0].iov_base = (void *)data;
 #endif
-    wvec[0].iov_len = (size_t) len;
+    wvec[0].iov_len = (size_t)len;
 
     if (data[len - 1] != '\n') {
 #if defined(solaris)
       wvec[1].iov_base = (caddr_t) "\n";
 #else
-      wvec[1].iov_base = (void *) "\n";
+      wvec[1].iov_base = (void *)"\n";
 #endif
-      wvec[1].iov_len = (size_t) 1;
+      wvec[1].iov_len = (size_t)1;
       vcnt++;
     }
 
-    if ((bytes_this_write = (int)::writev(fd, (const struct iovec *) wvec, vcnt)) < 0) {
+    if ((bytes_this_write = (int)::writev(fd, (const struct iovec *)wvec, vcnt)) < 0) {
       Warning("An error was encountered in writing to %s: %s.", ((path) ? path : "logfile"), strerror(errno));
     } else
       total_bytes = bytes_this_write;
@@ -781,9 +748,9 @@ LogFile::check_fd()
 }
 
 void
-LogFile::display(FILE * fd)
+LogFile::display(FILE *fd)
 {
-  fprintf(fd, "Logfile: %s, %s\n", get_name(), (is_open())? "file is open" : "file is not open");
+  fprintf(fd, "Logfile: %s, %s\n", get_name(), (is_open()) ? "file is open" : "file is not open");
 }
 
 /***************************************************************************
@@ -817,8 +784,7 @@ MetaInfo::_build_name(const char *filename)
     ink_string_concatenate_strings(_filename, ".", filename, ".meta", NULL);
   } else {
     memcpy(_filename, filename, i + 1);
-    ink_string_concatenate_strings(&_filename[i + 1], ".", &filename[i + 1]
-                                   , ".meta", NULL);
+    ink_string_concatenate_strings(&_filename[i + 1], ".", &filename[i + 1], ".meta", NULL);
   }
 }
 
@@ -840,7 +806,7 @@ MetaInfo::_read_from_file()
         if (strcmp(t, "creation_time") == 0) {
           t = tok.getNext();
           if (t) {
-            _creation_time = (time_t) ink_atoi64(t);
+            _creation_time = (time_t)ink_atoi64(t);
             _flags |= VALID_CREATION_TIME;
           }
         } else if (strcmp(t, "object_signature") == 0) {
@@ -849,8 +815,10 @@ MetaInfo::_read_from_file()
             _log_object_signature = ink_atoi64(t);
             _flags |= VALID_SIGNATURE;
             Debug("log-meta", "MetaInfo::_read_from_file\n"
-                  "\tfilename = %s\n"
-                  "\tsignature string = %s\n" "\tsignature value = %" PRIu64 "", _filename, t, _log_object_signature);
+                              "\tfilename = %s\n"
+                              "\tsignature string = %s\n"
+                              "\tsignature value = %" PRIu64 "",
+                  _filename, t, _log_object_signature);
           }
         } else if (line_number == 1) {
           ink_release_assert(!"no panda support");
@@ -873,7 +841,7 @@ MetaInfo::_write_to_file()
 
   int n;
   if (_flags & VALID_CREATION_TIME) {
-    n = snprintf(_buffer, BUF_SIZE, "creation_time = %lu\n", (unsigned long) _creation_time);
+    n = snprintf(_buffer, BUF_SIZE, "creation_time = %lu\n", (unsigned long)_creation_time);
     // TODO modify this runtime check so that it is not an assertion
     ink_release_assert(n <= BUF_SIZE);
     if (write(fd, _buffer, n) == -1) {
@@ -889,8 +857,10 @@ MetaInfo::_write_to_file()
       Warning("Could not write object_signaure");
     }
     Debug("log-meta", "MetaInfo::_write_to_file\n"
-          "\tfilename = %s\n"
-          "\tsignature value = %" PRIu64 "\n" "\tsignature string = %s", _filename, _log_object_signature, _buffer);
+                      "\tfilename = %s\n"
+                      "\tsignature value = %" PRIu64 "\n"
+                      "\tsignature string = %s",
+          _filename, _log_object_signature, _buffer);
   }
 
   close(fd);

@@ -31,7 +31,7 @@
 
 // Main expander method
 std::string
-VariableExpander::expand(const Resources& res)
+VariableExpander::expand(const Resources &res)
 {
   std::string result;
 

@@ -35,7 +35,7 @@
 //***************************************************************************
 // ClusterLoadMonitor class -- Compute cluster interconnect load metric
 //***************************************************************************
-class ClusterLoadMonitor:public Continuation
+class ClusterLoadMonitor : public Continuation
 {
 public:
   /////////////////////////////////////
@@ -52,28 +52,27 @@ public:
   static int cf_cluster_load_clear_duration;
   static int cf_cluster_load_exceed_duration;
 
-  struct cluster_load_ping_msg
-  {
+  struct cluster_load_ping_msg {
     int magicno;
     int version;
     int sequence_number;
     ink_hrtime send_time;
     ClusterLoadMonitor *monitor;
 
-    enum
-    {
+    enum {
       CL_MSG_MAGICNO = 0x12ABCDEF,
-      CL_MSG_VERSION = 1
+      CL_MSG_VERSION = 1,
     };
-      cluster_load_ping_msg(ClusterLoadMonitor * m = 0)
-  :  magicno(CL_MSG_MAGICNO), version(CL_MSG_VERSION), sequence_number(0), send_time(0), monitor(m) {
+    cluster_load_ping_msg(ClusterLoadMonitor *m = 0)
+      : magicno(CL_MSG_MAGICNO), version(CL_MSG_VERSION), sequence_number(0), send_time(0), monitor(m)
+    {
     }
   };
 
   static void cluster_load_ping_rethandler(ClusterHandler *, void *, int);
 
 public:
-  ClusterLoadMonitor(ClusterHandler * ch);
+  ClusterLoadMonitor(ClusterHandler *ch);
   void init();
   ~ClusterLoadMonitor();
   void cancel_monitor();

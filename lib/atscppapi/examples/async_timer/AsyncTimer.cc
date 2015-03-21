@@ -26,16 +26,20 @@ using std::string;
 
 #define TAG "async_timer"
 
-class TimerEventReceiver : public AsyncReceiver<AsyncTimer> {
+class TimerEventReceiver : public AsyncReceiver<AsyncTimer>
+{
 public:
   TimerEventReceiver(AsyncTimer::Type type, int period_in_ms, int initial_period_in_ms = 0, int max_instances = 0,
                      bool cancel = false)
-    : max_instances_(max_instances), instance_count_(0), type_(type), cancel_(cancel) {
+    : max_instances_(max_instances), instance_count_(0), type_(type), cancel_(cancel)
+  {
     timer_ = new AsyncTimer(type, period_in_ms, initial_period_in_ms);
     Async::execute<AsyncTimer>(this, timer_, shared_ptr<Mutex>()); // letting the system create the mutex
   }
 
-  void handleAsyncComplete(AsyncTimer &timer ATSCPPAPI_UNUSED) {
+  void
+  handleAsyncComplete(AsyncTimer &timer ATSCPPAPI_UNUSED)
+  {
     TS_DEBUG(TAG, "Got timer event in object %p!", this);
     if ((type_ == AsyncTimer::TYPE_ONE_OFF) || (max_instances_ && (++instance_count_ == max_instances_))) {
       TS_DEBUG(TAG, "Stopping timer in object %p!", this);
@@ -43,9 +47,7 @@ public:
     }
   }
 
-  ~TimerEventReceiver() {
-    delete timer_;
-  }
+  ~TimerEventReceiver() { delete timer_; }
 
 private:
   int max_instances_;
@@ -55,22 +57,21 @@ private:
   bool cancel_;
 };
 
-void TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED) {
+void
+TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
+{
   int period_in_ms = 1000;
   TimerEventReceiver *timer1 = new TimerEventReceiver(AsyncTimer::TYPE_PERIODIC, period_in_ms);
-  TS_DEBUG(TAG, "Created periodic timer %p with initial period 0, regular period %d and max instances 0", timer1,
-           period_in_ms);
+  TS_DEBUG(TAG, "Created periodic timer %p with initial period 0, regular period %d and max instances 0", timer1, period_in_ms);
 
   int initial_period_in_ms = 100;
-  TimerEventReceiver *timer2 = new TimerEventReceiver(AsyncTimer::TYPE_PERIODIC, period_in_ms,
-                                                      initial_period_in_ms);
+  TimerEventReceiver *timer2 = new TimerEventReceiver(AsyncTimer::TYPE_PERIODIC, period_in_ms, initial_period_in_ms);
   TS_DEBUG(TAG, "Created periodic timer %p with initial period %d, regular period %d and max instances 0", timer2,
            initial_period_in_ms, period_in_ms);
 
   initial_period_in_ms = 200;
   int max_instances = 10;
-  TimerEventReceiver *timer3 = new TimerEventReceiver(AsyncTimer::TYPE_PERIODIC, period_in_ms, initial_period_in_ms,
-                                                      max_instances);
+  TimerEventReceiver *timer3 = new TimerEventReceiver(AsyncTimer::TYPE_PERIODIC, period_in_ms, initial_period_in_ms, max_instances);
   TS_DEBUG(TAG, "Created periodic timer %p with initial period %d, regular period %d and max instances %d", timer3,
            initial_period_in_ms, period_in_ms, max_instances);
 
@@ -79,8 +80,8 @@ void TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED
 
   initial_period_in_ms = 0;
   max_instances = 5;
-  TimerEventReceiver *timer5 = new TimerEventReceiver(AsyncTimer::TYPE_PERIODIC, period_in_ms, initial_period_in_ms,
-                                                      max_instances, true /* cancel */);
+  TimerEventReceiver *timer5 =
+    new TimerEventReceiver(AsyncTimer::TYPE_PERIODIC, period_in_ms, initial_period_in_ms, max_instances, true /* cancel */);
   TS_DEBUG(TAG, "Created canceling timer %p with initial period %d, regular period %d and max instances %d", timer5,
            initial_period_in_ms, period_in_ms, max_instances);
 }

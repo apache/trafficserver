@@ -84,7 +84,7 @@ handle_dns(TSHttpTxn txnp, TSCont contp ATS_UNUSED)
 
   /* Allocate the string with an extra byte for the string
      terminator */
-  output_string = (char *) TSmalloc(total_avail + 1);
+  output_string = (char *)TSmalloc(total_avail + 1);
   output_len = 0;
 
   /* We need to loop over all the buffer blocks to make
@@ -135,7 +135,7 @@ done:
 static int
 hdr_plugin(TSCont contp, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp = (TSHttpTxn) edata;
+  TSHttpTxn txnp = (TSHttpTxn)edata;
 
   switch (event) {
   case TS_EVENT_HTTP_OS_DNS:
@@ -167,4 +167,3 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
 error:
   TSError("[PluginInit] Plugin not initialized");
 }
-

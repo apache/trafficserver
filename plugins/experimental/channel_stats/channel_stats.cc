@@ -29,7 +29,7 @@
 #include <sstream>
 #include <arpa/inet.h>
 #ifdef HAVE_NETINET_IN_H
-# include <netinet/in.h>
+#include <netinet/in.h>
 #endif
 
 #include <ts/ts.h>
@@ -40,8 +40,8 @@
 
 #include "debug_macros.h"
 
-#define PLUGIN_NAME     "channel_stats"
-#define PLUGIN_VERSION  "0.2"
+#define PLUGIN_NAME "channel_stats"
+#define PLUGIN_VERSION "0.2"
 
 #define MAX_SPEED 999999999
 
@@ -52,27 +52,29 @@
 static std::string api_path("_cstats");
 
 // global stats
-static uint64_t global_response_count_2xx_get = 0;  // 2XX GET response count
-static uint64_t global_response_bytes_content = 0;  // transferred bytes
+static uint64_t global_response_count_2xx_get = 0; // 2XX GET response count
+static uint64_t global_response_bytes_content = 0; // transferred bytes
 
 // channel stats
 struct channel_stat {
-  channel_stat()
-      : response_bytes_content(0),
-        response_count_2xx(0),
-        response_count_5xx(0),
-        speed_ua_bytes_per_sec_64k(0) {
+  channel_stat() : response_bytes_content(0), response_count_2xx(0), response_count_5xx(0), speed_ua_bytes_per_sec_64k(0) {}
+
+  inline void
+  increment(uint64_t rbc, uint64_t rc2, uint64_t rc5, uint64_t sbps6)
+  {
+    if (rbc)
+      __sync_fetch_and_add(&response_bytes_content, rbc);
+    if (rc2)
+      __sync_fetch_and_add(&response_count_2xx, rc2);
+    if (rc5)
+      __sync_fetch_and_add(&response_count_5xx, rc5);
+    if (sbps6)
+      __sync_fetch_and_add(&speed_ua_bytes_per_sec_64k, sbps6);
   }
 
-  inline void increment(uint64_t rbc, uint64_t rc2,
-                        uint64_t rc5, uint64_t sbps6) {
-    if (rbc) __sync_fetch_and_add(&response_bytes_content, rbc);
-    if (rc2) __sync_fetch_and_add(&response_count_2xx, rc2);
-    if (rc5) __sync_fetch_and_add(&response_count_5xx, rc5);
-    if (sbps6) __sync_fetch_and_add(&speed_ua_bytes_per_sec_64k, sbps6);
-  }
-
-  inline void debug_channel() {
+  inline void
+  debug_channel()
+  {
     debug("response.bytes.content: %" PRIu64 "", response_bytes_content);
     debug("response.count.2xx: %" PRIu64 "", response_count_2xx);
     debug("response.count.5xx: %" PRIu64 "", response_count_5xx);
@@ -92,8 +94,7 @@ static stats_map_t channel_stats;
 static TSMutex stats_map_mutex;
 
 // api Intercept Data
-typedef struct intercept_state_t
-{
+typedef struct intercept_state_t {
   TSVConn net_vc;
   TSVIO read_vio;
   TSVIO write_vio;
@@ -106,9 +107,9 @@ typedef struct intercept_state_t
   int body_written;
 
   int show_global; // default 0
-  char * channel; // default ""
-  int topn; // default -1
-  int deny; // default 0
+  char *channel;   // default ""
+  int topn;        // default -1
+  int deny;        // default 0
 } intercept_state;
 
 struct private_seg_t {
@@ -117,20 +118,16 @@ struct private_seg_t {
 };
 
 // don't put inet_addr("255.255.255.255"), see BUGS in 'man 3 inet_addr'
-static struct private_seg_t private_segs[] = {
-  {inet_addr("10.0.0.0"), inet_addr("255.0.0.0")},
-  {inet_addr("127.0.0.0"), inet_addr("255.0.0.0")},
-  {inet_addr("172.16.0.0"), inet_addr("255.240.0.0")},
-  {inet_addr("192.168.0.0"), inet_addr("255.255.0.0")}
-};
+static struct private_seg_t private_segs[] = {{inet_addr("10.0.0.0"), inet_addr("255.0.0.0")},
+                                              {inet_addr("127.0.0.0"), inet_addr("255.0.0.0")},
+                                              {inet_addr("172.16.0.0"), inet_addr("255.240.0.0")},
+                                              {inet_addr("192.168.0.0"), inet_addr("255.255.0.0")}};
 
 static int num_private_segs = sizeof(private_segs) / sizeof(private_seg_t);
 
 // all parameters are in network byte order
 static bool
-is_in_net(const in_addr_t addr,
-          const in_addr_t netaddr,
-          const in_addr_t netmask)
+is_in_net(const in_addr_t addr, const in_addr_t netaddr, const in_addr_t netmask)
 {
   return (addr & netmask) == (netaddr & netmask);
 }
@@ -157,16 +154,15 @@ static int api_handle_event(TSCont contp, TSEvent event, void *edata);
   Possible appearance: ?param=value&fake_param=value&param=value
 */
 static int
-get_query_param(const char *query, const char *param,
-                char *result, int max_length)
+get_query_param(const char *query, const char *param, char *result, int max_length)
 {
   const char *pos = 0;
 
   pos = strstr(query, param); // try to find in querystring of url
   if (pos != query) {
     // if param is not prefix of querystring
-    while (pos && *(pos - 1) != '&') { // param must be after '&'
-        pos = strstr(pos + strlen(param), param); // try next
+    while (pos && *(pos - 1) != '&') {          // param must be after '&'
+      pos = strstr(pos + strlen(param), param); // try next
     }
   }
 
@@ -206,8 +202,8 @@ has_query_param(const char *query, const char *param, int has_no_value)
   pos = strstr(query, param); // try to find in querystring of url
   if (pos != query) {
     // if param is not prefix of querystring
-    while (pos && *(pos - 1) != '&') { // param must be after '&'
-        pos = strstr(pos + strlen(param), param); // try next
+    while (pos && *(pos - 1) != '&') {          // param must be after '&'
+      pos = strstr(pos + strlen(param), param); // try next
     }
   }
 
@@ -217,23 +213,21 @@ has_query_param(const char *query, const char *param, int has_no_value)
   pos += strlen(param); // skip 'param='
 
   if (has_no_value) {
-    if (*pos == '\0' || *pos == '&') return 1;
+    if (*pos == '\0' || *pos == '&')
+      return 1;
   } else {
-    if (*pos == '=') return 1;
+    if (*pos == '=')
+      return 1;
   }
 
   return 0;
 }
 
 static void
-get_api_params(TSMBuffer   bufp,
-               TSMLoc      url_loc,
-               int *       show_global,
-               char **     channel,
-               int *       topn)
+get_api_params(TSMBuffer bufp, TSMLoc url_loc, int *show_global, char **channel, int *topn)
 {
-  const char * query; // not null-terminated, get from TS api
-  char * tmp_query = NULL; // null-terminated
+  const char *query;      // not null-terminated, get from TS api
+  char *tmp_query = NULL; // null-terminated
   int query_len = 0;
 
   *show_global = 0;
@@ -250,13 +244,13 @@ get_api_params(TSMBuffer   bufp,
     *show_global = 1;
   }
 
-  *channel = (char *) TSmalloc(query_len);
+  *channel = (char *)TSmalloc(query_len);
   if (get_query_param(tmp_query, "channel=", *channel, query_len)) {
     debug_api("found 'channel' param: %s", *channel);
   }
 
   std::stringstream ss;
-  char * tmp_topn = (char *) TSmalloc(query_len);
+  char *tmp_topn = (char *)TSmalloc(query_len);
   if (get_query_param(tmp_query, "topn=", tmp_topn, 10)) {
     if (strlen(tmp_topn) > 0) {
       ss.str(tmp_topn);
@@ -279,12 +273,12 @@ handle_read_req(TSCont /* contp ATS_UNUSED */, TSHttpTxn txnp)
   int method_length = 0;
   TSCont txn_contp;
 
-  const char * path;
+  const char *path;
   int path_len;
-  struct sockaddr * client_addr;
-  struct sockaddr_in * client_addr4;
+  struct sockaddr *client_addr;
+  struct sockaddr_in *client_addr4;
   TSCont api_contp;
-  char * client_ip;
+  char *client_ip;
   intercept_state *api_state;
 
   if (TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
@@ -302,25 +296,22 @@ handle_read_req(TSCont /* contp ATS_UNUSED */, TSHttpTxn txnp)
     goto cleanup;
 
   path = TSUrlPathGet(bufp, url_loc, &path_len);
-  if (path_len == 0 || (unsigned)path_len != api_path.length() ||
-        strncmp(api_path.c_str(), path, path_len) != 0) {
+  if (path_len == 0 || (unsigned)path_len != api_path.length() || strncmp(api_path.c_str(), path, path_len) != 0) {
     goto not_api;
   }
 
   // register our intercept
   debug_api("Intercepting request");
-  api_state = (intercept_state *) TSmalloc(sizeof(*api_state));
+  api_state = (intercept_state *)TSmalloc(sizeof(*api_state));
   memset(api_state, 0, sizeof(*api_state));
-  get_api_params(bufp, url_loc,
-                 &api_state->show_global, &api_state->channel,
-                 &api_state->topn);
+  get_api_params(bufp, url_loc, &api_state->show_global, &api_state->channel, &api_state->topn);
 
   // check private ip
-  client_addr = (struct sockaddr *) TSHttpTxnClientAddrGet(txnp);
+  client_addr = (struct sockaddr *)TSHttpTxnClientAddrGet(txnp);
   if (client_addr->sa_family == AF_INET) {
-    client_addr4 = (struct sockaddr_in *) client_addr;
+    client_addr4 = (struct sockaddr_in *)client_addr;
     if (!is_private_ip(client_addr4->sin_addr.s_addr)) {
-      client_ip = (char *) TSmalloc(INET_ADDRSTRLEN);
+      client_ip = (char *)TSmalloc(INET_ADDRSTRLEN);
       inet_ntop(AF_INET, &client_addr4->sin_addr, client_ip, INET_ADDRSTRLEN);
       debug_api("%s is not a private IP, request denied", client_ip);
       api_state->deny = 1;
@@ -331,7 +322,7 @@ handle_read_req(TSCont /* contp ATS_UNUSED */, TSHttpTxn txnp)
     api_state->deny = 1;
   }
 
-  TSSkipRemappingSet(txnp, 1); //not strictly necessary
+  TSSkipRemappingSet(txnp, 1); // not strictly necessary
 
   api_contp = TSContCreate(api_handle_event, TSMutexCreate());
   TSContDataSet(api_contp, api_state);
@@ -344,15 +335,17 @@ not_api:
   TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, txn_contp);
 
 cleanup:
-  if (url_loc) TSHandleMLocRelease(bufp, hdr_loc, url_loc);
-  if (hdr_loc) TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
+  if (url_loc)
+    TSHandleMLocRelease(bufp, hdr_loc, url_loc);
+  if (hdr_loc)
+    TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
 }
 
 static bool
 get_pristine_host(TSHttpTxn txnp, TSMBuffer bufp, std::string &host)
 {
   TSMLoc purl_loc;
-  const char * pristine_host;
+  const char *pristine_host;
   int pristine_host_len = 0;
   int pristine_port;
 
@@ -384,9 +377,7 @@ get_pristine_host(TSHttpTxn txnp, TSMBuffer bufp, std::string &host)
 }
 
 static bool
-get_channel_stat(const std::string &host,
-                 channel_stat *    &stat,
-                 int    status_code_type)
+get_channel_stat(const std::string &host, channel_stat *&stat, int status_code_type)
 {
   smap_iterator stat_it;
 
@@ -443,7 +434,7 @@ get_txn_user_speed(TSHttpTxn txnp, uint64_t body_bytes)
   if (start_time != 0 && end_time != 0 && end_time >= start_time) {
     interval_time = end_time - start_time;
   } else {
-    warning("invalid time, start: %" PRId64", end: %" PRId64"", start_time, end_time);
+    warning("invalid time, start: %" PRId64 ", end: %" PRId64 "", start_time, end_time);
     return 0;
   }
 
@@ -498,9 +489,7 @@ handle_txn_close(TSCont /* contp ATS_UNUSED */, TSHttpTxn txnp)
 
   user_speed = get_txn_user_speed(txnp, body_bytes);
 
-  stat->increment(body_bytes,
-                  status_code_type == 2 ? 1 : 0,
-                  status_code_type == 5 ? 1 : 0,
+  stat->increment(body_bytes, status_code_type == 2 ? 1 : 0, status_code_type == 5 ? 1 : 0,
                   (user_speed < 64000 && user_speed > 0) ? 1 : 0);
   stat->debug_channel();
 
@@ -509,20 +498,21 @@ cleanup:
 }
 
 static int
-handle_event(TSCont contp, TSEvent event, void *edata) {
-  TSHttpTxn txnp = (TSHttpTxn) edata;
+handle_event(TSCont contp, TSEvent event, void *edata)
+{
+  TSHttpTxn txnp = (TSHttpTxn)edata;
 
   switch (event) {
-    case TS_EVENT_HTTP_READ_REQUEST_HDR: // for global contp
-      debug("---------- new request ----------");
-      handle_read_req(contp, txnp);
-      break;
-    case TS_EVENT_HTTP_TXN_CLOSE: // for txn contp
-      handle_txn_close(contp, txnp);
-      TSContDestroy(contp);
-      break;
-    default:
-      error("unknown event for this plugin");
+  case TS_EVENT_HTTP_READ_REQUEST_HDR: // for global contp
+    debug("---------- new request ----------");
+    handle_read_req(contp, txnp);
+    break;
+  case TS_EVENT_HTTP_TXN_CLOSE: // for txn contp
+    handle_txn_close(contp, txnp);
+    TSContDestroy(contp);
+    break;
+  default:
+    error("unknown event for this plugin");
   }
 
   TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
@@ -533,7 +523,7 @@ handle_event(TSCont contp, TSEvent event, void *edata) {
 // below is api part
 
 static void
-stats_cleanup(TSCont contp, intercept_state * api_state)
+stats_cleanup(TSCont contp, intercept_state *api_state)
 {
   if (api_state->req_buffer) {
     TSIOBufferDestroy(api_state->req_buffer);
@@ -552,9 +542,8 @@ stats_cleanup(TSCont contp, intercept_state * api_state)
 }
 
 static void
-stats_process_accept(TSCont contp, intercept_state * api_state)
+stats_process_accept(TSCont contp, intercept_state *api_state)
 {
-
   api_state->req_buffer = TSIOBufferCreate();
   api_state->resp_buffer = TSIOBufferCreate();
   api_state->resp_reader = TSIOBufferReaderAlloc(api_state->resp_buffer);
@@ -562,7 +551,7 @@ stats_process_accept(TSCont contp, intercept_state * api_state)
 }
 
 static int
-stats_add_data_to_resp_buffer(const char *s, intercept_state * api_state)
+stats_add_data_to_resp_buffer(const char *s, intercept_state *api_state)
 {
   int s_len = strlen(s);
 
@@ -571,17 +560,16 @@ stats_add_data_to_resp_buffer(const char *s, intercept_state * api_state)
   return s_len;
 }
 
-static const char RESP_HEADER[] =
-  "HTTP/1.0 200 Ok\r\nContent-Type: application/json\r\nCache-Control: no-cache\r\n\r\n";
+static const char RESP_HEADER[] = "HTTP/1.0 200 Ok\r\nContent-Type: application/json\r\nCache-Control: no-cache\r\n\r\n";
 
 static int
-stats_add_resp_header(intercept_state * api_state)
+stats_add_resp_header(intercept_state *api_state)
 {
   return stats_add_data_to_resp_buffer(RESP_HEADER, api_state);
 }
 
 static void
-stats_process_read(TSCont contp, TSEvent event, intercept_state * api_state)
+stats_process_read(TSCont contp, TSEvent event, intercept_state *api_state)
 {
   debug_api("stats_process_read(%d)", event);
   if (event == TS_EVENT_VCONN_READ_READY) {
@@ -602,55 +590,56 @@ stats_process_read(TSCont contp, TSEvent event, intercept_state * api_state)
 }
 
 #define APPEND(a) api_state->output_bytes += stats_add_data_to_resp_buffer(a, api_state)
-#define APPEND_STAT(a, fmt, v) do { \
-  char b[256]; \
-  if(snprintf(b, sizeof(b), "\"%s\": \"" fmt "\",\n", a, v) < (signed)sizeof(b)) \
-    APPEND(b); \
-} while(0)
-#define APPEND_END_STAT(a, fmt, v) do { \
-  char b[256]; \
-  if(snprintf(b, sizeof(b), "\"%s\": \"" fmt "\"\n", a, v) < (signed)sizeof(b)) \
-    APPEND(b); \
-} while(0)
-#define APPEND_DICT_NAME(a) do { \
-  char b[256]; \
-  if(snprintf(b, sizeof(b), "\"%s\": {\n", a) < (signed)sizeof(b)) \
-    APPEND(b); \
-} while(0)
+#define APPEND_STAT(a, fmt, v)                                                      \
+  do {                                                                              \
+    char b[256];                                                                    \
+    if (snprintf(b, sizeof(b), "\"%s\": \"" fmt "\",\n", a, v) < (signed)sizeof(b)) \
+      APPEND(b);                                                                    \
+  } while (0)
+#define APPEND_END_STAT(a, fmt, v)                                                 \
+  do {                                                                             \
+    char b[256];                                                                   \
+    if (snprintf(b, sizeof(b), "\"%s\": \"" fmt "\"\n", a, v) < (signed)sizeof(b)) \
+      APPEND(b);                                                                   \
+  } while (0)
+#define APPEND_DICT_NAME(a)                                           \
+  do {                                                                \
+    char b[256];                                                      \
+    if (snprintf(b, sizeof(b), "\"%s\": {\n", a) < (signed)sizeof(b)) \
+      APPEND(b);                                                      \
+  } while (0)
 
 static void
 json_out_stat(TSRecordType /* rec_type ATS_UNUSED */, void *edata, int /* registered ATS_UNUSED */, const char *name,
-              TSRecordDataType data_type, TSRecordData *datum) {
-  intercept_state *api_state = (intercept_state *) edata;
+              TSRecordDataType data_type, TSRecordData *datum)
+{
+  intercept_state *api_state = (intercept_state *)edata;
 
-  switch(data_type) {
+  switch (data_type) {
   case TS_RECORDDATATYPE_COUNTER:
-    APPEND_STAT(name, "%" PRId64, datum->rec_counter); break;
+    APPEND_STAT(name, "%" PRId64, datum->rec_counter);
+    break;
   case TS_RECORDDATATYPE_INT:
-    APPEND_STAT(name, "%" PRIu64, datum->rec_int); break;
+    APPEND_STAT(name, "%" PRIu64, datum->rec_int);
+    break;
   case TS_RECORDDATATYPE_FLOAT:
-    APPEND_STAT(name, "%f", datum->rec_float); break;
+    APPEND_STAT(name, "%f", datum->rec_float);
+    break;
   case TS_RECORDDATATYPE_STRING:
-    APPEND_STAT(name, "%s", datum->rec_string); break;
+    APPEND_STAT(name, "%s", datum->rec_string);
+    break;
   default:
     debug_api("unknown type for %s: %d", name, data_type);
     break;
   }
 }
 
-template<class T>
-struct compare
-: std::binary_function<T,T,bool>
-{
-   inline bool operator()(const T& lhs, const T& rhs) {
-      return lhs.second->response_count_2xx > rhs.second->response_count_2xx;
-   }
+template <class T> struct compare : std::binary_function<T, T, bool> {
+  inline bool operator()(const T &lhs, const T &rhs) { return lhs.second->response_count_2xx > rhs.second->response_count_2xx; }
 };
 
 static void
-append_channel_stat(intercept_state * api_state,
-                    const std::string channel, channel_stat * cs,
-                    int is_last)
+append_channel_stat(intercept_state *api_state, const std::string channel, channel_stat *cs, int is_last)
 {
   APPEND_DICT_NAME(channel.c_str());
   APPEND_STAT("response.bytes.content", "%" PRIu64, cs->response_bytes_content);
@@ -664,7 +653,8 @@ append_channel_stat(intercept_state * api_state,
 }
 
 static void
-json_out_channel_stats(intercept_state * api_state) {
+json_out_channel_stats(intercept_state *api_state)
+{
   if (channel_stats.empty())
     return;
 
@@ -674,8 +664,7 @@ json_out_channel_stats(intercept_state * api_state) {
 
   debug("appending channel stats");
 
-  if (api_state->topn > -1 ||
-      (api_state->channel && strlen(api_state->channel) > 0)) {
+  if (api_state->topn > -1 || (api_state->channel && strlen(api_state->channel) > 0)) {
     // will use vector to output
 
     if (api_state->topn == 0)
@@ -685,13 +674,13 @@ json_out_channel_stats(intercept_state * api_state) {
     if (strlen(api_state->channel) > 0) {
       // filter by channel
       size_t found;
-      for (it=channel_stats.begin(); it != channel_stats.end(); it++) {
+      for (it = channel_stats.begin(); it != channel_stats.end(); it++) {
         found = it->first.find(api_state->channel);
         if (found != std::string::npos)
           stats_vec.push_back(*it);
       }
     } else {
-      for (it=channel_stats.begin(); it != channel_stats.end(); it++)
+      for (it = channel_stats.begin(); it != channel_stats.end(); it++)
         stats_vec.push_back(*it);
       /* stats_vec.assign is not safe when map is being inserted concurrently */
     }
@@ -705,8 +694,7 @@ json_out_channel_stats(intercept_state * api_state) {
         out_st = (unsigned)api_state->topn;
       else
         api_state->topn = stats_vec.size();
-      std::partial_sort(stats_vec.begin(), stats_vec.begin() + api_state->topn,
-                        stats_vec.end(), compare<data_pair>());
+      std::partial_sort(stats_vec.begin(), stats_vec.begin() + api_state->topn, stats_vec.end(), compare<data_pair>());
     } // else will output whole vector without sort
 
     stats_vec_t::size_type i;
@@ -726,7 +714,7 @@ json_out_channel_stats(intercept_state * api_state) {
 }
 
 static void
-json_out_stats(intercept_state * api_state)
+json_out_stats(intercept_state *api_state)
 {
   const char *version;
 
@@ -751,7 +739,7 @@ json_out_stats(intercept_state * api_state)
 }
 
 static void
-stats_process_write(TSCont contp, TSEvent event, intercept_state * api_state)
+stats_process_write(TSCont contp, TSEvent event, intercept_state *api_state)
 {
   if (event == TS_EVENT_VCONN_WRITE_READY) {
     if (api_state->body_written == 0) {
@@ -777,9 +765,9 @@ stats_process_write(TSCont contp, TSEvent event, intercept_state * api_state)
 static int
 api_handle_event(TSCont contp, TSEvent event, void *edata)
 {
-  intercept_state *api_state = (intercept_state *) TSContDataGet(contp);
+  intercept_state *api_state = (intercept_state *)TSContDataGet(contp);
   if (event == TS_EVENT_NET_ACCEPT) {
-    api_state->net_vc = (TSVConn) edata;
+    api_state->net_vc = (TSVConn)edata;
     stats_process_accept(contp, api_state);
   } else if (edata == api_state->read_vio) {
     stats_process_read(contp, event, api_state);

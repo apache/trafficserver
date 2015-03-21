@@ -42,9 +42,6 @@
 #define HOSTDB_MODULE_MAJOR_VERSION 2
 #define HOSTDB_MODULE_MINOR_VERSION 0
 
-#define HOSTDB_MODULE_VERSION makeModuleVersion(                 \
-                                    HOSTDB_MODULE_MAJOR_VERSION, \
-                                    HOSTDB_MODULE_MINOR_VERSION, \
-                                    PUBLIC_MODULE_HEADER)
+#define HOSTDB_MODULE_VERSION makeModuleVersion(HOSTDB_MODULE_MAJOR_VERSION, HOSTDB_MODULE_MINOR_VERSION, PUBLIC_MODULE_HEADER)
 
 #endif /* _I_HostDB_h_ */

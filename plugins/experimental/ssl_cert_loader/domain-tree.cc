@@ -53,20 +53,20 @@ DomainNameTree::DomainNameNode::prunedCompare(std::string key, int &relative, bo
       size_t loc = key.find(this->key);
 
       if (this->key == "") { // Match all
-        relative =  -1;
+        relative = -1;
         return true;
       } else if (loc != std::string::npos) {
         // node key is in search key
         if ((key.length() - this->key.length()) == loc) {
           // And node key is at the end of search key
-          relative =  -1;
+          relative = -1;
           return true;
         }
       }
     }
     if (is_wild) {
       if (key == "") { // Match all
-        relative =  1;
+        relative = 1;
         return true;
       } else {
         size_t loc = this->key.find(key);
@@ -84,7 +84,8 @@ DomainNameTree::DomainNameNode::prunedCompare(std::string key, int &relative, bo
   return false;
 }
 
-DomainNameTree::DomainNameNode *DomainNameTree::find(std::string key, bool best_match)
+DomainNameTree::DomainNameNode *
+DomainNameTree::find(std::string key, bool best_match)
 {
   DomainNameNode *retval = NULL;
   DomainNameNode *first = NULL;
@@ -92,7 +93,7 @@ DomainNameTree::DomainNameNode *DomainNameTree::find(std::string key, bool best_
   bool is_wild = false;
 
   if (star_loc != std::string::npos) {
-    key = key.substr(star_loc+1);
+    key = key.substr(star_loc + 1);
     is_wild = true;
   }
 
@@ -126,14 +127,14 @@ DomainNameTree::DomainNameNode *DomainNameTree::find(std::string key, bool best_
       endPtr = current_node->children.end();
       set_iter = true;
       if (sibPtr == endPtr) {
-        break;  // We are done
+        break; // We are done
       }
       current_node = *(sibPtr++);
     } else { // No match here.  Look at next sibling?
       // Is there another sibling to look at?
       if (set_iter && sibPtr != endPtr) {
         current_node = *(sibPtr++);
-      } else {	// No more siblings to check, give it up.
+      } else { // No more siblings to check, give it up.
         break;
       }
     }
@@ -174,17 +175,17 @@ DomainNameTree::insert(std::string key, void *payload, int order)
       new_node->children.push_back(node);
 
       // Replace the node with new_node in the child list of the parent;
-      for (std::deque<DomainNameNode *>::iterator iter = node->parent->children.begin();
-           iter != node->parent->children.end(); ++iter) {
+      for (std::deque<DomainNameNode *>::iterator iter = node->parent->children.begin(); iter != node->parent->children.end();
+           ++iter) {
         if (*(iter) == node) {
           *(iter) = new_node;
         }
       }
-      retval =  new_node;
+      retval = new_node;
     } else {
       // Will not replace in the equal case
       // Unless this is the root node
-      if (node->key == "" && node->order == 0x7fffffff){
+      if (node->key == "" && node->order == 0x7fffffff) {
         node->key = key;
         node->payload = payload;
         node->order = order;
@@ -196,4 +197,3 @@ DomainNameTree::insert(std::string key, void *payload, int order)
 
   return retval;
 }
-

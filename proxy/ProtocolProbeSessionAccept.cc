@@ -28,7 +28,7 @@
 #include "http2/HTTP2.h"
 
 static bool
-proto_is_spdy(IOBufferReader * reader)
+proto_is_spdy(IOBufferReader *reader)
 {
   // SPDY clients have to start by sending a control frame (the high bit is set). Let's assume
   // that no other protocol could possibly ever set this bit!
@@ -36,10 +36,10 @@ proto_is_spdy(IOBufferReader * reader)
 }
 
 static bool
-proto_is_http2(IOBufferReader * reader)
+proto_is_http2(IOBufferReader *reader)
 {
   char buf[HTTP2_CONNECTION_PREFACE_LEN];
-  char * end;
+  char *end;
   ptrdiff_t nbytes;
 
   end = reader->memcpy(buf, sizeof(buf), 0 /* offset */);
@@ -54,14 +54,12 @@ proto_is_http2(IOBufferReader * reader)
   return memcmp(HTTP2_CONNECTION_PREFACE, buf, nbytes) == 0;
 }
 
-struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessionAcceptEnums
-{
+struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessionAcceptEnums {
   static const size_t minimum_read_size = 1;
   static const unsigned buffer_size_index = CLIENT_CONNECTION_FIRST_READ_BUFFER_SIZE_INDEX;
-  IOBufferReader *  reader;
+  IOBufferReader *reader;
 
-  explicit
-  ProtocolProbeTrampoline(const ProtocolProbeSessionAccept * probe, ProxyMutex * mutex)
+  explicit ProtocolProbeTrampoline(const ProtocolProbeSessionAccept *probe, ProxyMutex *mutex)
     : Continuation(mutex), probeParent(probe)
   {
     this->iobuf = new_MIOBuffer(buffer_size_index);
@@ -69,11 +67,12 @@ struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessio
     SET_HANDLER(&ProtocolProbeTrampoline::ioCompletionEvent);
   }
 
-  int ioCompletionEvent(int event, void * edata)
+  int
+  ioCompletionEvent(int event, void *edata)
   {
-    VIO *             vio;
-    NetVConnection *  netvc;
-    ProtoGroupKey  key = N_PROTO_GROUPS; // use this as an invalid value.
+    VIO *vio;
+    NetVConnection *netvc;
+    ProtoGroupKey key = N_PROTO_GROUPS; // use this as an invalid value.
 
     vio = static_cast<VIO *>(edata);
     netvc = static_cast<NetVConnection *>(vio->vc_server);
@@ -124,14 +123,14 @@ struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessio
     delete this;
     return EVENT_CONT;
 
-done:
+  done:
     free_MIOBuffer(this->iobuf);
     delete this;
     return EVENT_CONT;
   }
 
-  MIOBuffer * iobuf;
-  const ProtocolProbeSessionAccept * probeParent;
+  MIOBuffer *iobuf;
+  const ProtocolProbeSessionAccept *probeParent;
 };
 
 int
@@ -140,14 +139,13 @@ ProtocolProbeSessionAccept::mainEvent(int event, void *data)
   if (event == NET_EVENT_ACCEPT) {
     ink_assert(data);
 
-    VIO * vio;
-    NetVConnection * netvc = static_cast<NetVConnection*>(data);
-    ProtocolProbeTrampoline * probe = new ProtocolProbeTrampoline(this, netvc->mutex);
+    VIO *vio;
+    NetVConnection *netvc = static_cast<NetVConnection *>(data);
+    ProtocolProbeTrampoline *probe = new ProtocolProbeTrampoline(this, netvc->mutex);
 
     // XXX we need to apply accept inactivity timeout here ...
 
-    vio = netvc->do_io_read(probe,
-		    BUFFER_SIZE_FOR_INDEX(ProtocolProbeTrampoline::buffer_size_index), probe->iobuf);
+    vio = netvc->do_io_read(probe, BUFFER_SIZE_FOR_INDEX(ProtocolProbeTrampoline::buffer_size_index), probe->iobuf);
     vio->reenable();
     return EVENT_CONT;
   }
@@ -163,7 +161,7 @@ ProtocolProbeSessionAccept::accept(NetVConnection *, MIOBuffer *, IOBufferReader
 }
 
 void
-ProtocolProbeSessionAccept::registerEndpoint(ProtoGroupKey key, SessionAccept * ap)
+ProtocolProbeSessionAccept::registerEndpoint(ProtoGroupKey key, SessionAccept *ap)
 {
   ink_release_assert(endpoint[key] == NULL);
   this->endpoint[key] = ap;

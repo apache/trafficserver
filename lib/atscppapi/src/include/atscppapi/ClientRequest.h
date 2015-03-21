@@ -26,8 +26,8 @@
 
 #include <atscppapi/Request.h>
 
-namespace atscppapi {
-
+namespace atscppapi
+{
 struct ClientRequestState;
 
 /**
@@ -35,7 +35,8 @@ struct ClientRequestState;
  * server request as it has two URLs - the pristine URL sent by the client
  * and a remapped URL created by the server.
  */
-class ClientRequest : public Request {
+class ClientRequest : public Request
+{
 public:
   /**
    * @private
@@ -50,10 +51,10 @@ public:
   const Url &getPristineUrl() const;
 
   ~ClientRequest();
+
 private:
   ClientRequestState *state_;
 };
-
 }
 
 #endif /* ATSCPPAPI_CLIENTREQUEST_H_ */

@@ -31,12 +31,15 @@
 #include "atscppapi/ClientRequest.h"
 #include "atscppapi/Response.h"
 
-namespace atscppapi {
-
+namespace atscppapi
+{
 // forward declarations
 class TransactionPlugin;
 struct TransactionState;
-namespace utils { class internal; }
+namespace utils
+{
+  class internal;
+}
 
 /**
  * @brief Transactions are the object containing all the state related to a HTTP Transaction
@@ -45,7 +48,8 @@ namespace utils { class internal; }
  * created and destroyed as they are needed. Transactions should never be saved beyond the
  * scope of the function in which they are delivered otherwise undefined behaviour will result.
  */
-class Transaction: noncopyable {
+class Transaction : noncopyable
+{
 public:
   /**
    * @brief ContextValues are a mechanism to share data between plugins using the atscppapi.
@@ -71,9 +75,10 @@ public:
    * take shared pointers you dont have to worry about the cleanup as that will happen automatically so long
    * as you dont have shared_ptrs that cannot go out of scope.
    */
-  class ContextValue {
+  class ContextValue
+  {
   public:
-    virtual ~ContextValue() { }
+    virtual ~ContextValue() {}
   };
 
   ~Transaction();
@@ -234,10 +239,10 @@ public:
    * The available types of timeouts you can set on a Transaction.
    */
   enum TimeoutType {
-    TIMEOUT_DNS = 0, /**< Timeout on DNS */
-    TIMEOUT_CONNECT, /**< Timeout on Connect */
+    TIMEOUT_DNS = 0,     /**< Timeout on DNS */
+    TIMEOUT_CONNECT,     /**< Timeout on Connect */
     TIMEOUT_NO_ACTIVITY, /**< Timeout on No Activity */
-    TIMEOUT_ACTIVE /**< Timeout with Activity */
+    TIMEOUT_ACTIVE       /**< Timeout with Activity */
   };
 
   /**
@@ -301,11 +306,11 @@ public:
   /**
    * Redirect the transaction a different @a url.
    */
-  void redirectTo(std::string const& url);
+  void redirectTo(std::string const &url);
 
 private:
-  TransactionState *state_; //!< The internal TransactionState object tied to the current Transaction
-  friend class TransactionPlugin; //!< TransactionPlugin is a friend so it can call addPlugin()
+  TransactionState *state_;          //!< The internal TransactionState object tied to the current Transaction
+  friend class TransactionPlugin;    //!< TransactionPlugin is a friend so it can call addPlugin()
   friend class TransformationPlugin; //!< TransformationPlugin is a friend so it can call addPlugin()
 
   /**

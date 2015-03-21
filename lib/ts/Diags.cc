@@ -44,7 +44,7 @@
 #include "Diags.h"
 
 int diags_on_for_plugins = 0;
-bool DiagsConfigState::enabled[2] = { false, false };
+bool DiagsConfigState::enabled[2] = {false, false};
 
 // Global, used for all diagnostics
 inkcoreapi Diags *diags = NULL;
@@ -65,7 +65,7 @@ inkcoreapi Diags *diags = NULL;
 char *
 SrcLoc::str(char *buf, int buflen) const
 {
-  const char * shortname;
+  const char *shortname;
 
   if (!this->valid() || buflen < 1)
     return (NULL);
@@ -81,8 +81,6 @@ SrcLoc::str(char *buf, int buflen) const
   buf[buflen - 1] = NUL;
   return (buf);
 }
-
-
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -103,9 +101,8 @@ SrcLoc::str(char *buf, int buflen) const
 //
 //////////////////////////////////////////////////////////////////////////////
 
-Diags::Diags(const char *bdt, const char *bat, FILE * _diags_log_fp)
-  : diags_log_fp(_diags_log_fp), magic(DIAGS_MAGIC), show_location(0),
-    base_debug_tags(NULL), base_action_tags(NULL)
+Diags::Diags(const char *bdt, const char *bat, FILE *_diags_log_fp)
+  : diags_log_fp(_diags_log_fp), magic(DIAGS_MAGIC), show_location(0), base_debug_tags(NULL), base_action_tags(NULL)
 {
   int i;
 
@@ -141,7 +138,6 @@ Diags::Diags(const char *bdt, const char *bat, FILE * _diags_log_fp)
   activated_tags[DiagsTagType_Debug] = NULL;
   activated_tags[DiagsTagType_Action] = NULL;
   prefix_str = "";
-
 }
 
 Diags::~Diags()
@@ -184,8 +180,7 @@ Diags::~Diags()
 //////////////////////////////////////////////////////////////////////////////
 
 void
-Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SrcLoc *loc,
-                const char *format_string, va_list ap) const
+Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SrcLoc *loc, const char *format_string, va_list ap) const
 {
   struct timeval tp;
   const char *s;
@@ -213,13 +208,14 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SrcLoc *loc
 
   // add the thread id
   pthread_t id = pthread_self();
-  end_of_format += snprintf(end_of_format, sizeof(format_buf), "{0x%" PRIx64 "} ", (uint64_t) id);
+  end_of_format += snprintf(end_of_format, sizeof(format_buf), "{0x%" PRIx64 "} ", (uint64_t)id);
 
   //////////////////////////////////////
   // start with the diag level prefix //
   //////////////////////////////////////
 
-  for (s = level_name(diags_level); *s; *end_of_format++ = *s++);
+  for (s = level_name(diags_level); *s; *end_of_format++ = *s++)
+    ;
   *end_of_format++ = ':';
   *end_of_format++ = ' ';
 
@@ -232,7 +228,8 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SrcLoc *loc
     lp = loc->str(buf, sizeof(buf));
     if (lp) {
       *end_of_format++ = '<';
-      for (s = lp; *s; *end_of_format++ = *s++);
+      for (s = lp; *s; *end_of_format++ = *s++)
+        ;
       *end_of_format++ = '>';
       *end_of_format++ = ' ';
     }
@@ -243,7 +240,8 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SrcLoc *loc
 
   if (debug_tag) {
     *end_of_format++ = '(';
-    for (s = debug_tag; *s; *end_of_format++ = *s++);
+    for (s = debug_tag; *s; *end_of_format++ = *s++)
+      ;
     *end_of_format++ = ')';
     *end_of_format++ = ' ';
   }
@@ -251,7 +249,8 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SrcLoc *loc
   // append original format string, and NUL terminate //
   //////////////////////////////////////////////////////
 
-  for (s = format_string; *s; *end_of_format++ = *s++);
+  for (s = format_string; *s; *end_of_format++ = *s++)
+    ;
   *end_of_format++ = NUL;
 
 
@@ -260,9 +259,9 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SrcLoc *loc
   //////////////////////////////////////////////////////////////////
 
   ink_gethrtimeofday(&tp, NULL);
-  time_t cur_clock = (time_t) tp.tv_sec;
+  time_t cur_clock = (time_t)tp.tv_sec;
   buffer = ink_ctime_r(&cur_clock, timestamp_buf);
-  snprintf(&(timestamp_buf[19]), (sizeof(timestamp_buf) - 20), ".%03d", (int) (tp.tv_usec / 1000));
+  snprintf(&(timestamp_buf[19]), (sizeof(timestamp_buf) - 20), ".%03d", (int)(tp.tv_usec / 1000));
 
   d = format_buf_w_ts;
   *d++ = '[';
@@ -273,7 +272,8 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SrcLoc *loc
 
   for (int k = 0; prefix_str[k]; k++)
     *d++ = prefix_str[k];
-  for (s = format_buf; *s; *d++ = *s++);
+  for (s = format_buf; *s; *d++ = *s++)
+    ;
   *d++ = NUL;
 
   //////////////////////////////////////
@@ -490,7 +490,7 @@ Diags::level_name(DiagsLevel dl) const
 //////////////////////////////////////////////////////////////////////////////
 
 void
-Diags::dump(FILE * fp) const
+Diags::dump(FILE *fp) const
 {
   int i;
 
@@ -501,19 +501,16 @@ Diags::dump(FILE * fp) const
   fprintf(fp, "  action default tags: '%s'\n", (base_action_tags ? base_action_tags : "NULL"));
   fprintf(fp, "  outputs:\n");
   for (i = 0; i < DiagsLevel_Count; i++) {
-    fprintf(fp, "    %10s [stdout=%d, stderr=%d, syslog=%d, diagslog=%d]\n",
-            level_name((DiagsLevel) i),
-            config.outputs[i].to_stdout,
+    fprintf(fp, "    %10s [stdout=%d, stderr=%d, syslog=%d, diagslog=%d]\n", level_name((DiagsLevel)i), config.outputs[i].to_stdout,
             config.outputs[i].to_stderr, config.outputs[i].to_syslog, config.outputs[i].to_diagslog);
   }
 }
 
 void
-Diags::log(const char *tag, DiagsLevel level,
-           const char *file, const char *func, const int line,
-           const char *format_string ...) const
+Diags::log(const char *tag, DiagsLevel level, const char *file, const char *func, const int line,
+           const char *format_string...) const
 {
-  if (! on(tag))
+  if (!on(tag))
     return;
 
   va_list ap;
@@ -528,9 +525,7 @@ Diags::log(const char *tag, DiagsLevel level,
 }
 
 void
-Diags::error_va(DiagsLevel level,
-             const char *file, const char *func, const int line,
-             const char *format_string, va_list ap) const
+Diags::error_va(DiagsLevel level, const char *file, const char *func, const int line, const char *format_string, va_list ap) const
 {
   va_list ap2;
 

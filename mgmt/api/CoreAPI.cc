@@ -131,7 +131,7 @@ DiagnosticMessage(TSDiagsT mode, const char *fmt, va_list ap)
     level = DL_Diag;
   }
 
-  if (diags) {             // check that diags is initialized
+  if (diags) { // check that diags is initialized
     diags->print_va("TSMgmtAPI", level, NULL, fmt, ap);
     va_end(ap);
   }
@@ -175,20 +175,20 @@ ProxyStateSet(TSProxyStateT state, TSCacheClearT clear)
 
   switch (state) {
   case TS_PROXY_OFF:
-    if (!ProxyShutdown())       // from WebMgmtUtils
-      goto Lerror;              // unsuccessful shutdown
+    if (!ProxyShutdown()) // from WebMgmtUtils
+      goto Lerror;        // unsuccessful shutdown
     break;
   case TS_PROXY_ON:
-    if (lmgmt->processRunning())        // already on
+    if (lmgmt->processRunning()) // already on
       break;
 
     // taken from mgmt/Main.cc when check the -tsArgs option
     // Update cmd line overrides/environmental overrides/etc
     switch (clear) {
-    case TS_CACHE_CLEAR_ON:   // traffic_server -K
+    case TS_CACHE_CLEAR_ON: // traffic_server -K
       snprintf(tsArgs, sizeof(tsArgs), "-K -M");
       break;
-    case TS_CACHE_CLEAR_HOSTDB:       // traffic_server -k
+    case TS_CACHE_CLEAR_HOSTDB: // traffic_server -k
       snprintf(tsArgs, sizeof(tsArgs), "-k -M");
       break;
     case TS_CACHE_CLEAR_OFF:
@@ -203,7 +203,7 @@ ProxyStateSet(TSProxyStateT state, TSCacheClearT clear)
       break;
     }
 
-    if (strlen(tsArgs) > 0) {   /* Passed command line args for proxy */
+    if (strlen(tsArgs) > 0) { /* Passed command line args for proxy */
       ats_free(lmgmt->proxy_options);
       lmgmt->proxy_options = ats_strdup(tsArgs);
       mgmt_log("[ProxyStateSet] Traffic Server Args: '%s'\n", lmgmt->proxy_options);
@@ -224,7 +224,7 @@ ProxyStateSet(TSProxyStateT state, TSCacheClearT clear)
   return TS_ERR_OKAY;
 
 Lerror:
-  return TS_ERR_FAIL;          /* failed to set proxy  state */
+  return TS_ERR_FAIL; /* failed to set proxy  state */
 }
 
 #if TS_USE_REMOTE_UNWINDING
@@ -239,8 +239,8 @@ typedef Vec<pid_t> threadlist;
 static threadlist
 threads_for_process(pid_t proc)
 {
-  DIR * dir = NULL;
-  struct dirent * entry = NULL;
+  DIR *dir = NULL;
+  struct dirent *entry = NULL;
 
   char path[64];
   threadlist threads;
@@ -278,12 +278,12 @@ done:
 }
 
 static void
-backtrace_for_thread(pid_t threadid, textBuffer& text)
+backtrace_for_thread(pid_t threadid, textBuffer &text)
 {
   int status;
   unw_addr_space_t addr_space = NULL;
   unw_cursor_t cursor;
-  void * ap = NULL;
+  void *ap = NULL;
   pid_t target = -1;
   unsigned level = 0;
 
@@ -296,8 +296,8 @@ backtrace_for_thread(pid_t threadid, textBuffer& text)
 
   // Wait for it to stop (XXX should be a timed wait ...)
   target = waitpid(threadid, &status, __WALL | WUNTRACED);
-  Debug("backtrace", "waited for target %ld, found PID %ld, %s",  (long)threadid, (long)target,
-      WIFSTOPPED(status) ? "STOPPED" : "???");
+  Debug("backtrace", "waited for target %ld, found PID %ld, %s", (long)threadid, (long)target,
+        WIFSTOPPED(status) ? "STOPPED" : "???");
   if (target < 0) {
     goto done;
   }
@@ -329,7 +329,7 @@ backtrace_for_thread(pid_t threadid, textBuffer& text)
 
     if (unw_get_proc_name(&cursor, buf, sizeof(buf), &offset) == 0) {
       int status;
-      char * name = abi::__cxa_demangle(buf, NULL, NULL, &status);
+      char *name = abi::__cxa_demangle(buf, NULL, NULL, &status);
       text.format("%-4u 0x%016llx %s + %p\n", level, (unsigned long long)ip, name ? name : buf, (void *)offset);
       free(name);
     } else {
@@ -353,7 +353,7 @@ done:
 }
 
 TSMgmtError
-ServerBacktrace(unsigned /* options */, char ** trace)
+ServerBacktrace(unsigned /* options */, char **trace)
 {
   *trace = NULL;
 
@@ -361,11 +361,12 @@ ServerBacktrace(unsigned /* options */, char ** trace)
   // the CAP_SYS_PTRACE capability. Even though we are the parent traffic_manager, it is not
   // traceable without privilege because the process credentials do not match.
   ElevateAccess access(true, ElevateAccess::TRACE_PRIVILEGE);
-  threadlist    threads(threads_for_process(lmgmt->watched_process_pid));
-  textBuffer    text(0);
+  threadlist threads(threads_for_process(lmgmt->watched_process_pid));
+  textBuffer text(0);
 
   Debug("backtrace", "tracing %zd threads for traffic_server PID %ld", threads.count(), (long)lmgmt->watched_process_pid);
-  for_Vec(pid_t, threadid, threads) {
+  for_Vec(pid_t, threadid, threads)
+  {
     Debug("backtrace", "tracing thread %ld", (long)threadid);
     // Get the thread name using /proc/PID/comm
     ats_scoped_fd fd;
@@ -394,7 +395,7 @@ ServerBacktrace(unsigned /* options */, char ** trace)
 #else /* TS_USE_REMOTE_UNWINDING */
 
 TSMgmtError
-ServerBacktrace(unsigned /* options */, char ** trace)
+ServerBacktrace(unsigned /* options */, char **trace)
 {
   *trace = NULL;
   return TS_ERR_NOT_SUPPORTED;
@@ -410,8 +411,8 @@ ServerBacktrace(unsigned /* options */, char ** trace)
 TSMgmtError
 Reconfigure()
 {
-  configFiles->rereadConfig();  // TM rereads
-  lmgmt->signalEvent(MGMT_EVENT_PLUGIN_CONFIG_UPDATE, "*");     // TS rereads
+  configFiles->rereadConfig();                              // TM rereads
+  lmgmt->signalEvent(MGMT_EVENT_PLUGIN_CONFIG_UPDATE, "*"); // TS rereads
   RecSetRecordInt("proxy.node.config.reconfigure_time", time(NULL));
   RecSetRecordInt("proxy.node.config.reconfigure_required", 0);
 
@@ -464,7 +465,7 @@ Bounce(unsigned options)
  * this source or CoreAPIRemote.cc yields the same set of symbols).
  */
 TSMgmtError
-StorageDeviceCmdOffline(const char * dev)
+StorageDeviceCmdOffline(const char *dev)
 {
   lmgmt->signalEvent(MGMT_EVENT_STORAGE_DEVICE_CMD_OFFLINE, dev);
   return TS_ERR_OKAY;
@@ -479,7 +480,7 @@ StorageDeviceCmdOffline(const char * dev)
  * The record info associated with rec_name will be returned in rec_ele.
  */
 TSMgmtError
-MgmtRecordGet(const char *rec_name, TSRecordEle * rec_ele)
+MgmtRecordGet(const char *rec_name, TSRecordEle *rec_ele)
 {
   RecDataT rec_type;
   char rec_val[MAX_BUF_SIZE];
@@ -500,19 +501,18 @@ MgmtRecordGet(const char *rec_name, TSRecordEle * rec_ele)
     rec_ele->rec_type = TS_REC_COUNTER;
     if (!varCounterFromName(rec_name, &(counter_val)))
       return TS_ERR_FAIL;
-    rec_ele->valueT.counter_val = (TSCounter) counter_val;
+    rec_ele->valueT.counter_val = (TSCounter)counter_val;
 
-    Debug("RecOp", "[MgmtRecordGet] Get Counter Var %s = %" PRId64"\n", rec_ele->rec_name,
-          rec_ele->valueT.counter_val);
+    Debug("RecOp", "[MgmtRecordGet] Get Counter Var %s = %" PRId64 "\n", rec_ele->rec_name, rec_ele->valueT.counter_val);
     break;
 
   case RECD_INT:
     rec_ele->rec_type = TS_REC_INT;
     if (!varIntFromName(rec_name, &(int_val)))
       return TS_ERR_FAIL;
-    rec_ele->valueT.int_val = (TSInt) int_val;
+    rec_ele->valueT.int_val = (TSInt)int_val;
 
-    Debug("RecOp", "[MgmtRecordGet] Get Int Var %s = %" PRId64"\n", rec_ele->rec_name, rec_ele->valueT.int_val);
+    Debug("RecOp", "[MgmtRecordGet] Get Int Var %s = %" PRId64 "\n", rec_ele->rec_name, rec_ele->valueT.int_val);
     break;
 
   case RECD_FLOAT:
@@ -527,7 +527,7 @@ MgmtRecordGet(const char *rec_name, TSRecordEle * rec_ele)
     if (!varStrFromName(rec_name, rec_val, MAX_BUF_SIZE))
       return TS_ERR_FAIL;
 
-    if (rec_val[0] != '\0') {   // non-NULL string value
+    if (rec_val[0] != '\0') { // non-NULL string value
       // allocate memory & duplicate string value
       str_val = ats_strdup(rec_val);
     } else {
@@ -539,7 +539,7 @@ MgmtRecordGet(const char *rec_name, TSRecordEle * rec_ele)
     Debug("RecOp", "[MgmtRecordGet] Get String Var %s = %s\n", rec_ele->rec_name, rec_ele->valueT.string_val);
     break;
 
-  default:                     // UNKOWN TYPE
+  default: // UNKOWN TYPE
     Debug("RecOp", "[MgmtRecordGet] Get Failed : %d is Unknown Var type %s\n", rec_type, rec_name);
     return TS_ERR_FAIL;
   }
@@ -577,23 +577,23 @@ determine_action_need(const char *rec_name)
     return TS_ACTION_UNDEFINED;
 
   switch (update_t) {
-  case RECU_NULL:                // default:don't know behaviour
+  case RECU_NULL: // default:don't know behaviour
     return TS_ACTION_UNDEFINED;
 
-  case RECU_DYNAMIC:             // update dynamically by rereading config files
+  case RECU_DYNAMIC: // update dynamically by rereading config files
     return TS_ACTION_RECONFIGURE;
 
-  case RECU_RESTART_TS:          // requires TS restart
+  case RECU_RESTART_TS: // requires TS restart
     return TS_ACTION_RESTART;
 
-  case RECU_RESTART_TM:          // requires TM/TS restart
+  case RECU_RESTART_TM: // requires TM/TS restart
     return TS_ACTION_RESTART;
 
-  default:                     // shouldn't get here actually
+  default: // shouldn't get here actually
     return TS_ACTION_UNDEFINED;
   }
 
-  return TS_ACTION_UNDEFINED;  // ERROR
+  return TS_ACTION_UNDEFINED; // ERROR
 }
 
 /*-------------------------------------------------------------------------
@@ -609,7 +609,7 @@ determine_action_need(const char *rec_name)
  *   and false otherwise
  */
 TSMgmtError
-MgmtRecordSet(const char *rec_name, const char *val, TSActionNeedT * action_need)
+MgmtRecordSet(const char *rec_name, const char *val, TSActionNeedT *action_need)
 {
   Debug("RecOp", "[MgmtRecordSet] Start\n");
 
@@ -634,7 +634,7 @@ MgmtRecordSet(const char *rec_name, const char *val, TSActionNeedT * action_need
  * Converts the integer value to a string and call MgmtRecordSet
  */
 TSMgmtError
-MgmtRecordSetInt(const char *rec_name, MgmtInt int_val, TSActionNeedT * action_need)
+MgmtRecordSetInt(const char *rec_name, MgmtInt int_val, TSActionNeedT *action_need)
 {
   if (!rec_name || !action_need)
     return TS_ERR_PARAMS;
@@ -654,7 +654,7 @@ MgmtRecordSetInt(const char *rec_name, MgmtInt int_val, TSActionNeedT * action_n
  * converts the counter_val to a string and uses MgmtRecordSet
  */
 TSMgmtError
-MgmtRecordSetCounter(const char *rec_name, MgmtIntCounter counter_val, TSActionNeedT * action_need)
+MgmtRecordSetCounter(const char *rec_name, MgmtIntCounter counter_val, TSActionNeedT *action_need)
 {
   if (!rec_name || !action_need)
     return TS_ERR_PARAMS;
@@ -675,7 +675,7 @@ MgmtRecordSetCounter(const char *rec_name, MgmtIntCounter counter_val, TSActionN
  * and calls MgmtRecordSet
  */
 TSMgmtError
-MgmtRecordSetFloat(const char *rec_name, MgmtFloat float_val, TSActionNeedT * action_need)
+MgmtRecordSetFloat(const char *rec_name, MgmtFloat float_val, TSActionNeedT *action_need)
 {
   if (!rec_name || !action_need)
     return TS_ERR_PARAMS;
@@ -695,7 +695,7 @@ MgmtRecordSetFloat(const char *rec_name, MgmtFloat float_val, TSActionNeedT * ac
  * The string value is copied so it's okay to free the string later
  */
 TSMgmtError
-MgmtRecordSetString(const char *rec_name, const char *string_val, TSActionNeedT * action_need)
+MgmtRecordSetString(const char *rec_name, const char *string_val, TSActionNeedT *action_need)
 {
   return MgmtRecordSet(rec_name, string_val, action_need);
 }
@@ -743,10 +743,10 @@ ReadFile(TSFileNameT file, char **text, int *size, int *version)
   old_file_lines = old_file_content->bufPtr();
   old_file_len = strlen(old_file_lines);
 
-  *text = ats_strdup(old_file_lines);      //make copy before deleting textBuffer
+  *text = ats_strdup(old_file_lines); // make copy before deleting textBuffer
   *size = old_file_len;
 
-  delete old_file_content;      // delete textBuffer
+  delete old_file_content; // delete textBuffer
 
   return TS_ERR_OKAY;
 }
@@ -780,7 +780,7 @@ WriteFile(TSFileNameT file, const char *text, int size, int version)
   mgmt_log(stderr, "[CfgFileIO::WriteFile] %s\n", fname);
   if (!(configFiles->getRollbackObj(fname, &file_rb))) {
     mgmt_log(stderr, "[CfgFileIO::WriteFile] ERROR getting rollback object\n");
-    //goto generate_error_msg;
+    // goto generate_error_msg;
   }
 
   // if version < 0 then, just use next version in sequence;
@@ -789,7 +789,7 @@ WriteFile(TSFileNameT file, const char *text, int size, int version)
     // check that the current version is equal to or less than the version
     // that wants to be written
     ver = file_rb->getCurrentVersion();
-    if (ver != version)         // trying to commit an old version
+    if (ver != version) // trying to commit an old version
       return TS_ERR_WRITE_FILE;
   }
   // use rollback object to update file with new content
@@ -824,12 +824,12 @@ WriteFile(TSFileNameT file, const char *text, int size, int version)
 TSMgmtError
 EventSignal(const char * /* event_name ATS_UNUSED */, va_list /* ap ATS_UNUSED */)
 {
-  //char *text;
-  //int id;
+  // char *text;
+  // int id;
 
-  //id = get_event_id(event_name);
-  //text = get_event_text(event_name);
-  //lmgmt->alarm_keeper->signalAlarm(id, text, NULL);
+  // id = get_event_id(event_name);
+  // text = get_event_text(event_name);
+  // lmgmt->alarm_keeper->signalAlarm(id, text, NULL);
 
   return TS_ERR_OKAY;
 }
@@ -863,7 +863,7 @@ EventResolve(const char *event_name)
  * note: returns list of local alarms at that instant of fn call (snapshot)
  */
 TSMgmtError
-ActiveEventGetMlt(LLQ * active_events)
+ActiveEventGetMlt(LLQ *active_events)
 {
   InkHashTable *event_ht;
   InkHashTableEntry *entry;
@@ -880,16 +880,15 @@ ActiveEventGetMlt(LLQ * active_events)
   event_ht = lmgmt->alarm_keeper->getLocalAlarms();
 
   // iterate through hash-table and insert event_name's into active_events list
-  for (entry = ink_hash_table_iterator_first(event_ht, &iterator_state);
-       entry != NULL; entry = ink_hash_table_iterator_next(event_ht, &iterator_state)) {
-
-    char *key = (char *) ink_hash_table_entry_key(event_ht, entry);
+  for (entry = ink_hash_table_iterator_first(event_ht, &iterator_state); entry != NULL;
+       entry = ink_hash_table_iterator_next(event_ht, &iterator_state)) {
+    char *key = (char *)ink_hash_table_entry_key(event_ht, entry);
 
     // convert key to int; insert into llQ
     event_id = ink_atoi(key);
     event_name = get_event_name(event_id);
     if (event_name) {
-      if (!enqueue(active_events, event_name))  // returns true if successful
+      if (!enqueue(active_events, event_name)) // returns true if successful
         return TS_ERR_FAIL;
     }
   }
@@ -904,7 +903,7 @@ ActiveEventGetMlt(LLQ * active_events)
  * unresolved; otherwise sets *is_current to false.
  */
 TSMgmtError
-EventIsActive(const char *event_name, bool * is_current)
+EventIsActive(const char *event_name, bool *is_current)
 {
   alarm_t a;
 
@@ -916,7 +915,7 @@ EventIsActive(const char *event_name, bool * is_current)
   if (a < 0)
     return TS_ERR_PARAMS;
   if (lmgmt->alarm_keeper->isCurrentAlarm(a))
-    *is_current = true;         // currently an event
+    *is_current = true; // currently an event
   else
     *is_current = false;
 
@@ -938,7 +937,6 @@ TSMgmtError
 EventSignalCbRegister(const char *event_name, TSEventSignalFunc func, void *data)
 {
   return cb_table_register(local_event_callbacks, event_name, func, data, NULL);
-
 }
 
 /*-------------------------------------------------------------------------
@@ -956,7 +954,7 @@ EventSignalCbUnregister(const char *event_name, TSEventSignalFunc func)
  * Snapshots
  ***************************************************************************/
 TSMgmtError
-SnapshotTake(const char * snapshot_name)
+SnapshotTake(const char *snapshot_name)
 {
   ats_scoped_str snapdir;
 
@@ -973,7 +971,7 @@ SnapshotTake(const char * snapshot_name)
 }
 
 TSMgmtError
-SnapshotRestore(const char * snapshot_name)
+SnapshotRestore(const char *snapshot_name)
 {
   ats_scoped_str snapdir;
 
@@ -990,7 +988,7 @@ SnapshotRestore(const char * snapshot_name)
 }
 
 TSMgmtError
-SnapshotRemove(const char * snapshot_name)
+SnapshotRemove(const char *snapshot_name)
 {
   ats_scoped_str snapdir;
 
@@ -1008,7 +1006,7 @@ SnapshotRemove(const char * snapshot_name)
 
 /* based on FileManager.cc::displaySnapOption() */
 TSMgmtError
-SnapshotGetMlt(LLQ * snapshots)
+SnapshotGetMlt(LLQ *snapshots)
 {
   ExpandingArray snap_list(25, true);
   SnapResult snap_result;
@@ -1021,7 +1019,7 @@ SnapshotGetMlt(LLQ * snapshots)
 
   num_snaps = snap_list.getNumEntries();
   for (int i = 0; i < num_snaps; i++) {
-    snap_name = (char *) (snap_list[i]);
+    snap_name = (char *)(snap_list[i]);
     if (snap_name)
       enqueue(snapshots, ats_strdup(snap_name));
   }

@@ -22,7 +22,6 @@
 */
 
 
-
 // This is total BS, because our libraries are riddled with cross dependencies.
 // TODO: Clean up the dependency mess, and get rid of this.
 
@@ -38,14 +37,17 @@
 
 int fds_limit = 8000;
 
-class FakeUDPNetProcessor : public UDPNetProcessor {
-  virtual int start(int, size_t) {
+class FakeUDPNetProcessor : public UDPNetProcessor
+{
+  virtual int
+  start(int, size_t)
+  {
     ink_release_assert(false);
     return 0;
   };
 } fakeUDPNet;
 
-UDPNetProcessor& udpNet = fakeUDPNet;
+UDPNetProcessor &udpNet = fakeUDPNet;
 
 ClassAllocator<UDPPacketInternal> udpPacketAllocator("udpPacketAllocator");
 
@@ -64,17 +66,18 @@ ConfigUpdateCbTable::invoke(const char * /* name ATS_UNUSED */)
   ink_release_assert(false);
 }
 
-struct Machine {  static Machine* instance(); };
-Machine* Machine::instance() {
+struct Machine {
+  static Machine *instance();
+};
+Machine *
+Machine::instance()
+{
   ink_release_assert(false);
   return NULL;
 }
 
 #include "LogCollationAccept.h"
-LogCollationAccept::LogCollationAccept(int port)
-  : Continuation(new_ProxyMutex()),
-    m_port(port),
-    m_pending_event(NULL)
+LogCollationAccept::LogCollationAccept(int port) : Continuation(new_ProxyMutex()), m_port(port), m_pending_event(NULL)
 {
 }
 LogCollationAccept::~LogCollationAccept()
@@ -82,19 +85,11 @@ LogCollationAccept::~LogCollationAccept()
 }
 
 #include "LogCollationClientSM.h"
-LogCollationClientSM::LogCollationClientSM(LogHost * log_host):
-  Continuation(new_ProxyMutex()),
-  m_host_vc(NULL),
-  m_host_vio(NULL),
-  m_auth_buffer(NULL),
-  m_auth_reader(NULL),
-  m_send_buffer(NULL),
-  m_send_reader(NULL),
-  m_pending_action(NULL),
-  m_pending_event(NULL),
-  m_abort_vio(NULL),
-  m_abort_buffer(NULL),
-  m_buffer_send_list(NULL), m_buffer_in_iocore(NULL), m_flow(LOG_COLL_FLOW_ALLOW), m_log_host(log_host), m_id(0)
+LogCollationClientSM::LogCollationClientSM(LogHost *log_host)
+  : Continuation(new_ProxyMutex()), m_host_vc(NULL), m_host_vio(NULL), m_auth_buffer(NULL), m_auth_reader(NULL),
+    m_send_buffer(NULL), m_send_reader(NULL), m_pending_action(NULL), m_pending_event(NULL), m_abort_vio(NULL),
+    m_abort_buffer(NULL), m_buffer_send_list(NULL), m_buffer_in_iocore(NULL), m_flow(LOG_COLL_FLOW_ALLOW), m_log_host(log_host),
+    m_id(0)
 {
 }
 
@@ -122,7 +117,7 @@ NetProcessor::AcceptOptions const NetProcessor::DEFAULT_ACCEPT_OPTIONS;
 DNSConnection::Options const DNSConnection::DEFAULT_OPTIONS;
 
 // TODO: This is even uglier, this actually gets called here when "defined".
-NetProcessor::AcceptOptions&
+NetProcessor::AcceptOptions &
 NetProcessor::AcceptOptions::reset()
 {
   local_port = 0;
@@ -148,7 +143,7 @@ CacheVC::handleWrite(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 }
 
 UnixNetProcessor unix_netProcessor;
-NetProcessor& netProcessor = unix_netProcessor;
+NetProcessor &netProcessor = unix_netProcessor;
 
 int
 UnixNetProcessor::start(int, size_t)
@@ -158,7 +153,7 @@ UnixNetProcessor::start(int, size_t)
 }
 
 Action *
-NetProcessor::accept(Continuation* /* cont ATS_UNUSED */, AcceptOptions const& /* opt ATS_UNUSED */)
+NetProcessor::accept(Continuation * /* cont ATS_UNUSED */, AcceptOptions const & /* opt ATS_UNUSED */)
 {
   ink_release_assert(false);
   return NULL;
@@ -166,7 +161,7 @@ NetProcessor::accept(Continuation* /* cont ATS_UNUSED */, AcceptOptions const& /
 
 Action *
 NetProcessor::main_accept(Continuation * /* cont ATS_UNUSED */, SOCKET /* fd ATS_UNUSED */,
-                          AcceptOptions const& /* opt ATS_UNUSED */)
+                          AcceptOptions const & /* opt ATS_UNUSED */)
 {
   ink_release_assert(false);
   return NULL;
@@ -174,7 +169,7 @@ NetProcessor::main_accept(Continuation * /* cont ATS_UNUSED */, SOCKET /* fd ATS
 
 Action *
 UnixNetProcessor::accept_internal(Continuation * /* cont ATS_UNUSED */, int /* fd ATS_UNUSED */,
-                                  AcceptOptions const& /* opt ATS_UNUSED */)
+                                  AcceptOptions const & /* opt ATS_UNUSED */)
 {
   ink_release_assert(false);
   return NULL;
@@ -202,4 +197,6 @@ CacheHostTable::CacheHostTable(Cache * /* c ATS_UNUSED */, CacheType /* typ ATS_
 {
 }
 
-CacheHostTable::~CacheHostTable() { }
+CacheHostTable::~CacheHostTable()
+{
+}

@@ -27,7 +27,7 @@
 
 
  ****************************************************************************/
-#if !defined (_P_DNS_h_)
+#if !defined(_P_DNS_h_)
 #define _P_DNS_h_
 
 #include "libts.h"

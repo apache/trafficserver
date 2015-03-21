@@ -33,8 +33,8 @@
 #include <ucontext.h>
 #endif
 
-static pid_t  crash_logger_pid = -1;
-static int    crash_logger_fd = NO_FD;
+static pid_t crash_logger_pid = -1;
+static int crash_logger_fd = NO_FD;
 
 static char *
 create_logger_path()
@@ -61,7 +61,7 @@ create_logger_path()
 }
 
 static bool
-check_logger_path(const char * path)
+check_logger_path(const char *path)
 {
   struct stat sbuf;
 
@@ -82,11 +82,11 @@ void
 crash_logger_init()
 {
   ats_scoped_str logger(create_logger_path());
-  const char * basename;
+  const char *basename;
 
   pid_t child;
-  int   status;
-  int   pipe[2];
+  int status;
+  int pipe[2];
 
   // Do nothing the log helper was set to NULL, or we can't find it.
   if (!logger || !check_logger_path(logger)) {
@@ -111,8 +111,7 @@ crash_logger_init()
     dup2(pipe[1], STDIN_FILENO);
     close(pipe[0]);
     close(pipe[1]);
-    ink_release_assert(execl(logger, basename,
-          "--syslog", "--wait", "--host", TS_BUILD_CANONICAL_HOST, NULL) != -1);
+    ink_release_assert(execl(logger, basename, "--syslog", "--wait", "--host", TS_BUILD_CANONICAL_HOST, NULL) != -1);
     return; // not reached.
   }
 
@@ -134,9 +133,8 @@ crash_logger_init()
 }
 
 void
-crash_logger_invoke(int signo, siginfo_t * info, void * ctx)
+crash_logger_invoke(int signo, siginfo_t *info, void *ctx)
 {
-
   if (crash_logger_pid != -1) {
     int status;
 

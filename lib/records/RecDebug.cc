@@ -30,7 +30,7 @@ static Diags *g_diags = NULL;
 // RecSetDiags
 //-------------------------------------------------------------------------
 int
-RecSetDiags(Diags * _diags)
+RecSetDiags(Diags *_diags)
 {
   // Warning! It's very dangerous to change diags on the fly!  This
   // function only exists so that we can boot-strap TM on startup.

@@ -48,54 +48,85 @@ enum UrlQualifiers {
 
 class Statement
 {
- public:
-  Statement()
-    : _next(NULL), _pdata(NULL), _rsrc(RSRC_NONE), _initialized(false), _hook(TS_HTTP_READ_RESPONSE_HDR_HOOK)
+public:
+  Statement() : _next(NULL), _pdata(NULL), _rsrc(RSRC_NONE), _initialized(false), _hook(TS_HTTP_READ_RESPONSE_HDR_HOOK)
   {
     TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Statement");
   }
 
-  virtual ~Statement() {
+  virtual ~Statement()
+  {
     TSDebug(PLUGIN_NAME_DBG, "Calling DTOR for Statement");
     free_pdata();
   }
 
   // Private data
-  void set_pdata(void* pdata) { _pdata = pdata; }
-  void* get_pdata() const { return(_pdata); }
-  virtual void free_pdata() { TSfree(_pdata); _pdata = NULL; }
+  void
+  set_pdata(void *pdata)
+  {
+    _pdata = pdata;
+  }
+  void *
+  get_pdata() const
+  {
+    return (_pdata);
+  }
+  virtual void
+  free_pdata()
+  {
+    TSfree(_pdata);
+    _pdata = NULL;
+  }
 
   // Which hook are we adding this statement to?
   bool set_hook(TSHttpHookID hook);
-  const TSHttpHookID get_hook() const { return _hook; }
+  const TSHttpHookID
+  get_hook() const
+  {
+    return _hook;
+  }
 
   // Which hooks are this "statement" applicable for? Used during parsing only.
-  void add_allowed_hook(const TSHttpHookID hook) { _allowed_hooks.push_back(hook); }
+  void
+  add_allowed_hook(const TSHttpHookID hook)
+  {
+    _allowed_hooks.push_back(hook);
+  }
 
   // Linked list.
-  void append(Statement* stmt);
+  void append(Statement *stmt);
 
   const ResourceIDs get_resource_ids() const;
 
-  virtual void initialize(Parser&) { // Parser &p
+  virtual void
+  initialize(Parser &)
+  { // Parser &p
     TSReleaseAssert(_initialized == false);
     initialize_hooks();
     _initialized = true;
   }
-  bool initialized() const { return _initialized; }
+  bool
+  initialized() const
+  {
+    return _initialized;
+  }
 
- protected:
+protected:
   virtual void initialize_hooks();
 
-  UrlQualifiers parse_url_qualifier(const std::string& q);
-  void require_resources(const ResourceIDs ids) { _rsrc = static_cast<ResourceIDs>(_rsrc | ids); }
+  UrlQualifiers parse_url_qualifier(const std::string &q);
+  void
+  require_resources(const ResourceIDs ids)
+  {
+    _rsrc = static_cast<ResourceIDs>(_rsrc | ids);
+  }
 
-  Statement* _next; // Linked list
+  Statement *_next; // Linked list
 
 private:
   DISALLOW_COPY_AND_ASSIGN(Statement);
 
-  void* _pdata;
+  void *_pdata;
   ResourceIDs _rsrc;
   bool _initialized;
   std::vector<TSHttpHookID> _allowed_hooks;
@@ -104,4 +135,3 @@ private:
 
 
 #endif // __STATEMENT_H
-

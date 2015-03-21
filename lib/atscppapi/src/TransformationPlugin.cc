@@ -39,7 +39,7 @@ using atscppapi::TransformationPlugin;
 /**
  * @private
  */
-struct atscppapi::TransformationPluginState: noncopyable {
+struct atscppapi::TransformationPluginState : noncopyable {
   TSVConn vconn_;
   Transaction &transaction_;
   TransformationPlugin &transformation_plugin_;
@@ -59,15 +59,16 @@ struct atscppapi::TransformationPluginState: noncopyable {
   std::string request_xform_output_; // in case of request xform, data produced is buffered here
 
   TransformationPluginState(atscppapi::Transaction &transaction, TransformationPlugin &transformation_plugin,
-      TransformationPlugin::Type type, TSHttpTxn txn)
-    : vconn_(NULL), transaction_(transaction), transformation_plugin_(transformation_plugin), type_(type),
-      output_vio_(NULL), txn_(txn), output_buffer_(NULL), output_buffer_reader_(NULL), bytes_written_(0),
-      input_complete_dispatched_(false) {
+                            TransformationPlugin::Type type, TSHttpTxn txn)
+    : vconn_(NULL), transaction_(transaction), transformation_plugin_(transformation_plugin), type_(type), output_vio_(NULL),
+      txn_(txn), output_buffer_(NULL), output_buffer_reader_(NULL), bytes_written_(0), input_complete_dispatched_(false)
+  {
     output_buffer_ = TSIOBufferCreate();
     output_buffer_reader_ = TSIOBufferReaderAlloc(output_buffer_);
   };
 
-  ~TransformationPluginState() {
+  ~TransformationPluginState()
+  {
     if (output_buffer_reader_) {
       TSIOBufferReaderFree(output_buffer_reader_);
       output_buffer_reader_ = NULL;
@@ -80,15 +81,19 @@ struct atscppapi::TransformationPluginState: noncopyable {
   }
 };
 
-namespace {
-
-void cleanupTransformation(TSCont contp) {
+namespace
+{
+void
+cleanupTransformation(TSCont contp)
+{
   LOG_DEBUG("Destroying transformation contp=%p", contp);
   TSContDataSet(contp, reinterpret_cast<void *>(0xDEADDEAD));
   TSContDestroy(contp);
 }
 
-int handleTransformationPluginRead(TSCont contp, TransformationPluginState *state) {
+int
+handleTransformationPluginRead(TSCont contp, TransformationPluginState *state)
+{
   // Traffic Server naming is quite confusing, in this context the write_vio
   // is actually the vio we read from.
   TSVIO write_vio = TSVConnWriteVIOGet(contp);
@@ -102,11 +107,14 @@ int handleTransformationPluginRead(TSCont contp, TransformationPluginState *stat
        * the amount of data actually in the read buffer.
        **/
       int64_t avail = TSIOBufferReaderAvail(TSVIOReaderGet(write_vio));
-      LOG_DEBUG("Transformation contp=%p write_vio=%p, to_read=%" PRId64 ", buffer reader avail=%" PRId64, contp, write_vio, to_read, avail);
+      LOG_DEBUG("Transformation contp=%p write_vio=%p, to_read=%" PRId64 ", buffer reader avail=%" PRId64, contp, write_vio,
+                to_read, avail);
 
       if (to_read > avail) {
         to_read = avail;
-        LOG_DEBUG("Transformation contp=%p write_vio=%p, to read > avail, fixing to_read to be equal to avail. to_read=%" PRId64 ", buffer reader avail=%" PRId64, contp, write_vio, to_read, avail);
+        LOG_DEBUG("Transformation contp=%p write_vio=%p, to read > avail, fixing to_read to be equal to avail. to_read=%" PRId64
+                  ", buffer reader avail=%" PRId64,
+                  contp, write_vio, to_read, avail);
       }
 
       if (to_read > 0) {
@@ -133,7 +141,7 @@ int handleTransformationPluginRead(TSCont contp, TransformationPluginState *stat
 
         /* Now call the client to tell them about data */
         if (in_data.length() > 0) {
-           state->transformation_plugin_.consume(in_data);
+          state->transformation_plugin_.consume(in_data);
         }
       }
 
@@ -141,7 +149,8 @@ int handleTransformationPluginRead(TSCont contp, TransformationPluginState *stat
       TSCont vio_cont = TSVIOContGet(write_vio); // for some reason this can occasionally be null
 
       if (TSVIONTodoGet(write_vio) > 0) {
-        LOG_DEBUG("Transformation contp=%p write_vio=%p, vio_cont=%p still has bytes left to process, todo > 0.", contp, write_vio, vio_cont);
+        LOG_DEBUG("Transformation contp=%p write_vio=%p, vio_cont=%p still has bytes left to process, todo > 0.", contp, write_vio,
+                  vio_cont);
 
         if (to_read > 0) {
           TSVIOReenable(write_vio);
@@ -152,15 +161,16 @@ int handleTransformationPluginRead(TSCont contp, TransformationPluginState *stat
           }
         }
       } else {
-        LOG_DEBUG("Transformation contp=%p write_vio=%p, vio_cont=%p has no bytes left to process, will send WRITE_COMPLETE.", contp, write_vio, vio_cont);
+        LOG_DEBUG("Transformation contp=%p write_vio=%p, vio_cont=%p has no bytes left to process, will send WRITE_COMPLETE.",
+                  contp, write_vio, vio_cont);
 
         /* Call back the write VIO continuation to let it know that we have completed the write operation. */
         if (!state->input_complete_dispatched_) {
-         state->transformation_plugin_.handleInputComplete();
-         state->input_complete_dispatched_ = true;
-         if (vio_cont && 0 != TSVIOBufferGet(write_vio)) {
-           TSContCall(vio_cont, static_cast<TSEvent>(TS_EVENT_VCONN_WRITE_COMPLETE), write_vio);
-         }
+          state->transformation_plugin_.handleInputComplete();
+          state->input_complete_dispatched_ = true;
+          if (vio_cont && 0 != TSVIOBufferGet(write_vio)) {
+            TSContCall(vio_cont, static_cast<TSEvent>(TS_EVENT_VCONN_WRITE_COMPLETE), write_vio);
+          }
         }
       }
     } else {
@@ -169,11 +179,11 @@ int handleTransformationPluginRead(TSCont contp, TransformationPluginState *stat
 
       /* Call back the write VIO continuation to let it know that we have completed the write operation. */
       if (!state->input_complete_dispatched_) {
-       state->transformation_plugin_.handleInputComplete();
-       state->input_complete_dispatched_ = true;
-       if (vio_cont && 0 != TSVIOBufferGet(write_vio)) {
-         TSContCall(vio_cont, static_cast<TSEvent>(TS_EVENT_VCONN_WRITE_COMPLETE), write_vio);
-       }
+        state->transformation_plugin_.handleInputComplete();
+        state->input_complete_dispatched_ = true;
+        if (vio_cont && 0 != TSVIOBufferGet(write_vio)) {
+          TSContCall(vio_cont, static_cast<TSEvent>(TS_EVENT_VCONN_WRITE_COMPLETE), write_vio);
+        }
       }
     }
   } else {
@@ -182,7 +192,9 @@ int handleTransformationPluginRead(TSCont contp, TransformationPluginState *stat
   return 0;
 }
 
-int handleTransformationPluginEvents(TSCont contp, TSEvent event, void *edata) {
+int
+handleTransformationPluginEvents(TSCont contp, TSEvent event, void *edata)
+{
   TransformationPluginState *state = static_cast<TransformationPluginState *>(TSContDataGet(contp));
   LOG_DEBUG("Transformation contp=%p event=%d edata=%p tshttptxn=%p", contp, event, edata, state->txn_);
 
@@ -196,8 +208,9 @@ int handleTransformationPluginEvents(TSCont contp, TSEvent event, void *edata) {
 
   if (event == TS_EVENT_VCONN_WRITE_COMPLETE) {
     TSVConn output_vconn = TSTransformOutputVConnGet(state->vconn_);
-    LOG_DEBUG("Transformation contp=%p tshttptxn=%p received WRITE_COMPLETE, shutting down outputvconn=%p ", contp, state->txn_, output_vconn);
-    TSVConnShutdown(output_vconn, 0, 1);  // The other end is done reading our output
+    LOG_DEBUG("Transformation contp=%p tshttptxn=%p received WRITE_COMPLETE, shutting down outputvconn=%p ", contp, state->txn_,
+              output_vconn);
+    TSVConnShutdown(output_vconn, 0, 1); // The other end is done reading our output
     return 0;
   } else if (event == TS_EVENT_ERROR) {
     TSVIO write_vio;
@@ -206,7 +219,8 @@ int handleTransformationPluginEvents(TSCont contp, TSEvent event, void *edata) {
      our parent transformation. */
     write_vio = TSVConnWriteVIOGet(state->vconn_);
     TSCont vio_cont = TSVIOContGet(write_vio);
-    LOG_ERROR("Transformation contp=%p tshttptxn=%p received EVENT_ERROR forwarding to write_vio=%p viocont=%p", contp, state->txn_, write_vio, vio_cont);
+    LOG_ERROR("Transformation contp=%p tshttptxn=%p received EVENT_ERROR forwarding to write_vio=%p viocont=%p", contp, state->txn_,
+              write_vio, vio_cont);
     if (vio_cont) {
       TSContCall(vio_cont, TS_EVENT_ERROR, write_vio);
     }
@@ -220,21 +234,26 @@ int handleTransformationPluginEvents(TSCont contp, TSEvent event, void *edata) {
 } /* anonymous namespace */
 
 TransformationPlugin::TransformationPlugin(Transaction &transaction, TransformationPlugin::Type type)
-  : TransactionPlugin(transaction) {
+  : TransactionPlugin(transaction)
+{
   state_ = new TransformationPluginState(transaction, *this, type, static_cast<TSHttpTxn>(transaction.getAtsHandle()));
   state_->vconn_ = TSTransformCreate(handleTransformationPluginEvents, state_->txn_);
   TSContDataSet(state_->vconn_, static_cast<void *>(state_)); // edata in a TransformationHandler is NOT a TSHttpTxn.
-  LOG_DEBUG("Creating TransformationPlugin=%p (vconn)contp=%p tshttptxn=%p transformation_type=%d", this, state_->vconn_, state_->txn_, type);
+  LOG_DEBUG("Creating TransformationPlugin=%p (vconn)contp=%p tshttptxn=%p transformation_type=%d", this, state_->vconn_,
+            state_->txn_, type);
   TSHttpTxnHookAdd(state_->txn_, utils::internal::convertInternalTransformationTypeToTsHook(type), state_->vconn_);
 }
 
-TransformationPlugin::~TransformationPlugin() {
+TransformationPlugin::~TransformationPlugin()
+{
   LOG_DEBUG("Destroying TransformationPlugin=%p", this);
   cleanupTransformation(state_->vconn_);
   delete state_;
 }
 
-size_t TransformationPlugin::doProduce(const std::string &data) {
+size_t
+TransformationPlugin::doProduce(const std::string &data)
+{
   LOG_DEBUG("TransformationPlugin=%p tshttptxn=%p producing output with length=%ld", this, state_->txn_, data.length());
   int64_t write_length = static_cast<int64_t>(data.length());
   if (!write_length) {
@@ -249,14 +268,14 @@ size_t TransformationPlugin::doProduce(const std::string &data) {
       // You always write INT64_MAX, this basically says you're not sure how much data you're going to write
       state_->output_vio_ = TSVConnWrite(output_vconn, state_->vconn_, state_->output_buffer_reader_, INT64_MAX);
     } else {
-      LOG_ERROR("TransformationPlugin=%p tshttptxn=%p output_vconn=%p cannot issue TSVConnWrite due to null output vconn.",
-          this, state_->txn_, output_vconn);
+      LOG_ERROR("TransformationPlugin=%p tshttptxn=%p output_vconn=%p cannot issue TSVConnWrite due to null output vconn.", this,
+                state_->txn_, output_vconn);
       return 0;
     }
 
     if (!state_->output_vio_) {
-      LOG_ERROR("TransformationPlugin=%p tshttptxn=%p state_->output_vio=%p, TSVConnWrite failed.",
-          this, state_->txn_, state_->output_vio_);
+      LOG_ERROR("TransformationPlugin=%p tshttptxn=%p state_->output_vio=%p, TSVConnWrite failed.", this, state_->txn_,
+                state_->output_vio_);
       return 0;
     }
   }
@@ -264,58 +283,69 @@ size_t TransformationPlugin::doProduce(const std::string &data) {
   // Finally we can copy this data into the output_buffer
   int64_t bytes_written = TSIOBufferWrite(state_->output_buffer_, data.c_str(), write_length);
   state_->bytes_written_ += bytes_written; // So we can set BytesDone on outputComplete().
-  LOG_DEBUG("TransformationPlugin=%p tshttptxn=%p write to TSIOBuffer %" PRId64 " bytes total bytes written %" PRId64, this, state_->txn_, bytes_written, state_->bytes_written_);
+  LOG_DEBUG("TransformationPlugin=%p tshttptxn=%p write to TSIOBuffer %" PRId64 " bytes total bytes written %" PRId64, this,
+            state_->txn_, bytes_written, state_->bytes_written_);
 
   // Sanity Checks
   if (bytes_written != write_length) {
-    LOG_ERROR("TransformationPlugin=%p tshttptxn=%p bytes written < expected. bytes_written=%" PRId64 " write_length=%" PRId64, this, state_->txn_, bytes_written, write_length);
+    LOG_ERROR("TransformationPlugin=%p tshttptxn=%p bytes written < expected. bytes_written=%" PRId64 " write_length=%" PRId64,
+              this, state_->txn_, bytes_written, write_length);
   }
 
   int connection_closed = TSVConnClosedGet(state_->vconn_);
-  LOG_DEBUG("TransformationPlugin=%p tshttptxn=%p vconn=%p connection_closed=%d", this, state_->txn_, state_->vconn_, connection_closed);
+  LOG_DEBUG("TransformationPlugin=%p tshttptxn=%p vconn=%p connection_closed=%d", this, state_->txn_, state_->vconn_,
+            connection_closed);
 
   if (!connection_closed) {
     TSVIOReenable(state_->output_vio_); // Wake up the downstream vio
   } else {
-    LOG_ERROR("TransformationPlugin=%p tshttptxn=%p output_vio=%p connection_closed=%d : Couldn't reenable output vio (connection closed).", this, state_->txn_, state_->output_vio_, connection_closed);
+    LOG_ERROR(
+      "TransformationPlugin=%p tshttptxn=%p output_vio=%p connection_closed=%d : Couldn't reenable output vio (connection closed).",
+      this, state_->txn_, state_->output_vio_, connection_closed);
   }
 
   return static_cast<size_t>(bytes_written);
 }
 
-size_t TransformationPlugin::produce(const std::string &data) {
+size_t
+TransformationPlugin::produce(const std::string &data)
+{
   if (state_->type_ == REQUEST_TRANSFORMATION) {
     state_->request_xform_output_.append(data);
     return data.size();
-  }
-  else {
+  } else {
     return doProduce(data);
   }
 }
 
-size_t TransformationPlugin::setOutputComplete() {
+size_t
+TransformationPlugin::setOutputComplete()
+{
   if (state_->type_ == REQUEST_TRANSFORMATION) {
     doProduce(state_->request_xform_output_);
   }
 
   int connection_closed = TSVConnClosedGet(state_->vconn_);
-  LOG_DEBUG("OutputComplete TransformationPlugin=%p tshttptxn=%p vconn=%p connection_closed=%d, total bytes written=%" PRId64, this, state_->txn_, state_->vconn_, connection_closed,state_->bytes_written_);
+  LOG_DEBUG("OutputComplete TransformationPlugin=%p tshttptxn=%p vconn=%p connection_closed=%d, total bytes written=%" PRId64, this,
+            state_->txn_, state_->vconn_, connection_closed, state_->bytes_written_);
 
   if (!connection_closed && !state_->output_vio_) {
-      LOG_DEBUG("TransformationPlugin=%p tshttptxn=%p output complete without writing any data, initiating write of 0 bytes.", this, state_->txn_);
+    LOG_DEBUG("TransformationPlugin=%p tshttptxn=%p output complete without writing any data, initiating write of 0 bytes.", this,
+              state_->txn_);
 
-      // We're done without ever outputting anything, to correctly
-      // clean up we'll initiate a write then immeidately set it to 0 bytes done.
-      state_->output_vio_ = TSVConnWrite(TSTransformOutputVConnGet(state_->vconn_), state_->vconn_, state_->output_buffer_reader_, 0);
+    // We're done without ever outputting anything, to correctly
+    // clean up we'll initiate a write then immeidately set it to 0 bytes done.
+    state_->output_vio_ = TSVConnWrite(TSTransformOutputVConnGet(state_->vconn_), state_->vconn_, state_->output_buffer_reader_, 0);
 
-      if (state_->output_vio_) {
-        TSVIONDoneSet(state_->output_vio_, 0);
-        TSVIOReenable(state_->output_vio_); // Wake up the downstream vio
-      } else {
-        LOG_ERROR("TransformationPlugin=%p tshttptxn=%p unable to reenable output_vio=%p because VConnWrite failed.", this, state_->txn_, state_->output_vio_);
-      }
+    if (state_->output_vio_) {
+      TSVIONDoneSet(state_->output_vio_, 0);
+      TSVIOReenable(state_->output_vio_); // Wake up the downstream vio
+    } else {
+      LOG_ERROR("TransformationPlugin=%p tshttptxn=%p unable to reenable output_vio=%p because VConnWrite failed.", this,
+                state_->txn_, state_->output_vio_);
+    }
 
-      return 0;
+    return 0;
   }
 
   if (!connection_closed) {
@@ -326,10 +356,12 @@ size_t TransformationPlugin::setOutputComplete() {
       TSVIONBytesSet(state_->output_vio_, state_->bytes_written_);
       TSVIOReenable(state_->output_vio_); // Wake up the downstream vio
     } else {
-      LOG_ERROR("TransformationPlugin=%p tshttptxn=%p unable to reenable output_vio=%p connection was closed=%d.", this, state_->txn_, state_->output_vio_, connection_closed);
+      LOG_ERROR("TransformationPlugin=%p tshttptxn=%p unable to reenable output_vio=%p connection was closed=%d.", this,
+                state_->txn_, state_->output_vio_, connection_closed);
     }
   } else {
-    LOG_ERROR("TransformationPlugin=%p tshttptxn=%p unable to reenable output_vio=%p connection was closed=%d.", this, state_->txn_, state_->output_vio_, connection_closed);
+    LOG_ERROR("TransformationPlugin=%p tshttptxn=%p unable to reenable output_vio=%p connection was closed=%d.", this, state_->txn_,
+              state_->output_vio_, connection_closed);
   }
 
   return state_->bytes_written_;

@@ -28,7 +28,9 @@
 
 static const int LINE_SIZE = 1024 * 1024;
 
-void Debug(const char *tag, const char *fmt, ...) {
+void
+Debug(const char *tag, const char *fmt, ...)
+{
   char buf[LINE_SIZE];
   va_list ap;
   va_start(ap, fmt);
@@ -37,7 +39,9 @@ void Debug(const char *tag, const char *fmt, ...) {
   va_end(ap);
 }
 
-void Error(const char *fmt, ...) {
+void
+Error(const char *fmt, ...)
+{
   char buf[LINE_SIZE];
   va_list ap;
   va_start(ap, fmt);

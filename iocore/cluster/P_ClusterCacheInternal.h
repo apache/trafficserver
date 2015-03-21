@@ -34,22 +34,22 @@
 //
 // Compilation Options
 //
-#define CACHE_USE_OPEN_VIO              0       // EXPERIMENTAL: not fully tested
-#define DO_REPLICATION                  0       // EXPERIMENTAL: not fully tested
+#define CACHE_USE_OPEN_VIO 0 // EXPERIMENTAL: not fully tested
+#define DO_REPLICATION 0     // EXPERIMENTAL: not fully tested
 
 //
 // Constants
 //
-#define META_DATA_FAST_ALLOC_LIMIT      1
-#define CACHE_CLUSTER_TIMEOUT           HRTIME_MSECONDS(5000)
-#define CACHE_RETRY_PERIOD              HRTIME_MSECONDS(10)
-#define REMOTE_CONNECT_HASH             (16 * 1024)
+#define META_DATA_FAST_ALLOC_LIMIT 1
+#define CACHE_CLUSTER_TIMEOUT HRTIME_MSECONDS(5000)
+#define CACHE_RETRY_PERIOD HRTIME_MSECONDS(10)
+#define REMOTE_CONNECT_HASH (16 * 1024)
 
 //
 // Macros
 //
-#define FOLDHASH(_ip,_seq) (_seq % REMOTE_CONNECT_HASH)
-#define ALIGN_DOUBLE(_p)   ((((uintptr_t) (_p)) + 7) & ~7)
+#define FOLDHASH(_ip, _seq) (_seq % REMOTE_CONNECT_HASH)
+#define ALIGN_DOUBLE(_p) ((((uintptr_t)(_p)) + 7) & ~7)
 #define ALLOCA_DOUBLE(_sz) ALIGN_DOUBLE(alloca((_sz) + 8))
 
 
@@ -60,7 +60,7 @@
 //#define TEST(_x) _x
 
 //#define TTEST(_x)
-//fprintf(stderr, _x " at: %d\n",
+// fprintf(stderr, _x " at: %d\n",
 //      ((unsigned int)(ink_get_hrtime()/HRTIME_MSECOND)) % 1000)
 #define TTEST(_x)
 
@@ -78,20 +78,18 @@ extern int ET_CLUSTER;
 // object.  Note, if the owning machine goes down the local machine
 // will be probed anyway.
 //
-#define PROBE_LOCAL_CACHE_FIRST        DO_REPLICATION
-#define PROBE_LOCAL_CACHE_LAST         false
+#define PROBE_LOCAL_CACHE_FIRST DO_REPLICATION
+#define PROBE_LOCAL_CACHE_LAST false
 
 //
 // This continuation handles all cache cluster traffic, on both
 // sides (state machine client and cache server)
 //
 struct CacheContinuation;
-typedef int (CacheContinuation::*CacheContHandler) (int, void *);
-struct CacheContinuation:public Continuation
-{
-  enum
-  {
-    MagicNo = 0x92183123
+typedef int (CacheContinuation::*CacheContHandler)(int, void *);
+struct CacheContinuation : public Continuation {
+  enum {
+    MagicNo = 0x92183123,
   };
   int magicno;
   void *callback_data;
@@ -107,11 +105,11 @@ struct CacheContinuation:public Continuation
   ClusterHandler *ch;
   VConnection *cache_vc;
   bool cache_read;
-  int result;                   // return event code
-  int result_error;             // error code associated with event
+  int result;       // return event code
+  int result_error; // error code associated with event
   ClusterVCToken token;
   unsigned int seq_number;
-  uint16_t cfl_flags;             // Request flags; see CFL_XXX defines
+  uint16_t cfl_flags; // Request flags; see CFL_XXX defines
   CacheFragType frag_type;
   int nbytes;
   unsigned int target_ip;
@@ -119,7 +117,7 @@ struct CacheContinuation:public Continuation
   bool request_purge;
   bool local_lookup_only;
   bool no_reply_message;
-  bool request_timeout;         // timeout occurred before
+  bool request_timeout; // timeout occurred before
   //   op complete
   bool expect_cache_callback;
 
@@ -132,7 +130,7 @@ struct CacheContinuation:public Continuation
 
   // setMsgBufferLen(), allocMsgBuffer() and freeMsgBuffer() data
 
-    Ptr<IOBufferData> rw_buf_msg;
+  Ptr<IOBufferData> rw_buf_msg;
   int rw_buf_msg_len;
 
   // open data
@@ -144,16 +142,16 @@ struct CacheContinuation:public Continuation
 
   // Readahead on open read specific data
 
-  int caller_buf_freebytes;     // remote bufsize for
+  int caller_buf_freebytes; // remote bufsize for
   //  initial data
   VIO *readahead_vio;
   IOBufferReader *readahead_reader;
-    Ptr<IOBufferBlock> readahead_data;
-  bool have_all_data;           // all object data in response
+  Ptr<IOBufferBlock> readahead_data;
+  bool have_all_data; // all object data in response
 
   CacheHTTPInfo cache_vc_info;
   OneWayTunnel *tunnel;
-    Ptr<ProxyMutex> tunnel_mutex;
+  Ptr<ProxyMutex> tunnel_mutex;
   CacheContinuation *tunnel_cont;
   bool tunnel_closed;
   Action *cache_action;
@@ -167,7 +165,7 @@ struct CacheContinuation:public Continuation
   CacheLookupHttpConfig *ic_params;
   CacheHTTPInfo ic_old_info;
   CacheHTTPInfo ic_new_info;
-    Ptr<IOBufferData> ic_hostname;
+  Ptr<IOBufferData> ic_hostname;
   int ic_hostname_len;
 
   // debugging
@@ -175,28 +173,30 @@ struct CacheContinuation:public Continuation
 
   int lookupEvent(int event, void *d);
   int probeLookupEvent(int event, void *d);
-  int remoteOpEvent(int event, Event * e);
+  int remoteOpEvent(int event, Event *e);
   int replyLookupEvent(int event, void *d);
-  int replyOpEvent(int event, VConnection * vc);
-  int handleReplyEvent(int event, Event * e);
-  int callbackEvent(int event, Event * e);
-  int setupVCdataRead(int event, VConnection * vc);
-  int VCdataRead(int event, VIO * target_vio);
+  int replyOpEvent(int event, VConnection *vc);
+  int handleReplyEvent(int event, Event *e);
+  int callbackEvent(int event, Event *e);
+  int setupVCdataRead(int event, VConnection *vc);
+  int VCdataRead(int event, VIO *target_vio);
   int setupReadWriteVC(int, VConnection *);
   ClusterVConnection *lookupOpenWriteVC();
   int lookupOpenWriteVCEvent(int, Event *);
-  int localVCsetupEvent(int event, ClusterVConnection * vc);
+  int localVCsetupEvent(int event, ClusterVConnection *vc);
   void insert_cache_callback_user(ClusterVConnection *, int, void *);
   int insertCallbackEvent(int, Event *);
   void callback_user(int result, void *d);
   void defer_callback_result(int result, void *d);
-  int callbackResultEvent(int event, Event * e);
+  int callbackResultEvent(int event, Event *e);
   void setupReadBufTunnel(VConnection *, VConnection *);
   int tunnelClosedEvent(int event, void *);
   int remove_and_delete(int, Event *);
 
 
-  inline void setMsgBufferLen(int l, IOBufferData * b = 0) {
+  inline void
+  setMsgBufferLen(int l, IOBufferData *b = 0)
+  {
     ink_assert(rw_buf_msg == 0);
     ink_assert(rw_buf_msg_len == 0);
 
@@ -204,12 +204,14 @@ struct CacheContinuation:public Continuation
     rw_buf_msg_len = l;
   }
 
-  inline int getMsgBufferLen()
+  inline int
+  getMsgBufferLen()
   {
     return rw_buf_msg_len;
   }
 
-  inline void allocMsgBuffer()
+  inline void
+  allocMsgBuffer()
   {
     ink_assert(rw_buf_msg == 0);
     ink_assert(rw_buf_msg_len);
@@ -220,18 +222,21 @@ struct CacheContinuation:public Continuation
     }
   }
 
-  inline char *getMsgBuffer()
+  inline char *
+  getMsgBuffer()
   {
     ink_assert(rw_buf_msg);
     return rw_buf_msg->data();
   }
 
-  inline IOBufferData *getMsgBufferIOBData()
+  inline IOBufferData *
+  getMsgBufferIOBData()
   {
     return rw_buf_msg;
   }
 
-  inline void freeMsgBuffer()
+  inline void
+  freeMsgBuffer()
   {
     if (rw_buf_msg) {
       rw_buf_msg = 0;
@@ -239,7 +244,8 @@ struct CacheContinuation:public Continuation
     }
   }
 
-  inline void free()
+  inline void
+  free()
   {
     token.clear();
 
@@ -271,52 +277,22 @@ struct CacheContinuation:public Continuation
     ic_hostname = 0;
   }
 
-CacheContinuation():
-  Continuation(NULL),
-    magicno(MagicNo),
-    callback_data(0),
-    callback_data_2(0),
-    timeout(0),
-    target_machine(0),
-    probe_depth(0),
-    start_time(0),
-    cache_read(false),
-    result(0),
-    result_error(0),
-    seq_number(0),
-    cfl_flags(0),
-    frag_type(CACHE_FRAG_TYPE_NONE),
-    nbytes(0),
-    target_ip(0),
-    request_opcode(0),
-    request_purge(false),
-    local_lookup_only(0),
-    no_reply_message(0),
-    request_timeout(0),
-    expect_cache_callback(true),
-    use_deferred_callback(0),
-    pin_in_cache(0),
-    rw_buf_msg_len(0),
-    read_cluster_vc(0),
-    write_cluster_vc(0),
-    cluster_vc_channel(0),
-    caller_buf_freebytes(0),
-    readahead_vio(0),
-    readahead_reader(0),
-    have_all_data(false),
-    cache_vc_info(),
-    tunnel(0),
-    tunnel_cont(0),
-    tunnel_closed(0),
-    lookup_open_write_vc_event(0),
-    ic_arena(),
-    ic_request(),
-    ic_response(), ic_params(0), ic_old_info(), ic_new_info(), ic_hostname_len(0), cache_op_ClusterFunction(0) {
+  CacheContinuation()
+    : Continuation(NULL), magicno(MagicNo), callback_data(0), callback_data_2(0), timeout(0), target_machine(0), probe_depth(0),
+      start_time(0), cache_read(false), result(0), result_error(0), seq_number(0), cfl_flags(0), frag_type(CACHE_FRAG_TYPE_NONE),
+      nbytes(0), target_ip(0), request_opcode(0), request_purge(false), local_lookup_only(0), no_reply_message(0),
+      request_timeout(0), expect_cache_callback(true), use_deferred_callback(0), pin_in_cache(0), rw_buf_msg_len(0),
+      read_cluster_vc(0), write_cluster_vc(0), cluster_vc_channel(0), caller_buf_freebytes(0), readahead_vio(0),
+      readahead_reader(0), have_all_data(false), cache_vc_info(), tunnel(0), tunnel_cont(0), tunnel_closed(0),
+      lookup_open_write_vc_event(0), ic_arena(), ic_request(), ic_response(), ic_params(0), ic_old_info(), ic_new_info(),
+      ic_hostname_len(0), cache_op_ClusterFunction(0)
+  {
     token.clear();
-    SET_HANDLER((CacheContHandler) & CacheContinuation::remoteOpEvent);
+    SET_HANDLER((CacheContHandler)&CacheContinuation::remoteOpEvent);
   }
 
-  inline static bool is_ClusterThread(EThread * et)
+  inline static bool
+  is_ClusterThread(EThread *et)
   {
     int etype = ET_CLUSTER;
     int i;
@@ -332,13 +308,12 @@ CacheContinuation():
   static int init();
   static CacheContinuation *cacheContAllocator_alloc();
   static void cacheContAllocator_free(CacheContinuation *);
-  inkcoreapi static Action *callback_failure(Action *, int, int, CacheContinuation * this_cc = 0);
+  inkcoreapi static Action *callback_failure(Action *, int, int, CacheContinuation *this_cc = 0);
   static Action *do_remote_lookup(Continuation *, CacheKey *, CacheContinuation *, CacheFragType, char *, int);
-  inkcoreapi static Action *do_op(Continuation *, ClusterMachine *, void *, int, char *, int,
-                                  int nbytes = -1, MIOBuffer * b = 0);
-  static int setup_local_vc(char *data, int data_len, CacheContinuation * cc, ClusterMachine * mp, Action **);
+  inkcoreapi static Action *do_op(Continuation *, ClusterMachine *, void *, int, char *, int, int nbytes = -1, MIOBuffer *b = 0);
+  static int setup_local_vc(char *data, int data_len, CacheContinuation *cc, ClusterMachine *mp, Action **);
   static void disposeOfDataBuffer(void *buf);
-  static int handleDisposeEvent(int event, CacheContinuation * cc);
+  static int handleDisposeEvent(int event, CacheContinuation *cc);
   static int32_t getObjectSize(VConnection *, int, CacheHTTPInfo *);
 };
 
@@ -348,82 +323,76 @@ CacheContinuation():
 
 // Bit definitions for cfl_flags.
 // Note: Limited to 16 bits
-#define CFL_OVERWRITE_ON_WRITE 		(1 << 1)
-#define CFL_REMOVE_USER_AGENTS 		(1 << 2)
-#define CFL_REMOVE_LINK 		(1 << 3)
-#define CFL_LOPENWRITE_HAVE_OLDINFO	(1 << 4)
-#define CFL_ALLOW_MULTIPLE_WRITES       (1 << 5)
-#define CFL_MAX 			(1 << 15)
+#define CFL_OVERWRITE_ON_WRITE (1 << 1)
+#define CFL_REMOVE_USER_AGENTS (1 << 2)
+#define CFL_REMOVE_LINK (1 << 3)
+#define CFL_LOPENWRITE_HAVE_OLDINFO (1 << 4)
+#define CFL_ALLOW_MULTIPLE_WRITES (1 << 5)
+#define CFL_MAX (1 << 15)
 
-struct CacheOpArgs_General
-{
+struct CacheOpArgs_General {
   INK_MD5 *url_md5;
-  time_t pin_in_cache;          // open_write() specific arg
+  time_t pin_in_cache; // open_write() specific arg
   CacheFragType frag_type;
   uint16_t cfl_flags;
 
-    CacheOpArgs_General():url_md5(NULL), pin_in_cache(0), frag_type(CACHE_FRAG_TYPE_NONE), cfl_flags(0)
-  {
-  }
+  CacheOpArgs_General() : url_md5(NULL), pin_in_cache(0), frag_type(CACHE_FRAG_TYPE_NONE), cfl_flags(0) {}
 };
 
-struct CacheOpArgs_Link
-{
+struct CacheOpArgs_Link {
   INK_MD5 *from;
   INK_MD5 *to;
-  uint16_t cfl_flags;             // see CFL_XXX defines
+  uint16_t cfl_flags; // see CFL_XXX defines
   CacheFragType frag_type;
 
-    CacheOpArgs_Link():from(NULL), to(NULL), cfl_flags(0), frag_type(CACHE_FRAG_TYPE_NONE)
-  {
-  }
+  CacheOpArgs_Link() : from(NULL), to(NULL), cfl_flags(0), frag_type(CACHE_FRAG_TYPE_NONE) {}
 };
 
-struct CacheOpArgs_Deref
-{
+struct CacheOpArgs_Deref {
   INK_MD5 *md5;
-  uint16_t cfl_flags;             // see CFL_XXX defines
+  uint16_t cfl_flags; // see CFL_XXX defines
   CacheFragType frag_type;
 
-    CacheOpArgs_Deref():md5(NULL), cfl_flags(0), frag_type(CACHE_FRAG_TYPE_NONE)
-  {
-  }
+  CacheOpArgs_Deref() : md5(NULL), cfl_flags(0), frag_type(CACHE_FRAG_TYPE_NONE) {}
 };
 
 ///////////////////////////////////
 // Over the wire message formats //
 ///////////////////////////////////
-struct CacheLookupMsg:public ClusterMessageHeader
-{
+struct CacheLookupMsg : public ClusterMessageHeader {
   INK_MD5 url_md5;
   uint32_t seq_number;
   uint32_t frag_type;
   Alias32 moi;
-  enum
-  {
+  enum {
     MIN_VERSION = 1,
     MAX_VERSION = 1,
-    CACHE_LOOKUP_MESSAGE_VERSION = MAX_VERSION
+    CACHE_LOOKUP_MESSAGE_VERSION = MAX_VERSION,
   };
-  CacheLookupMsg(uint16_t vers = CACHE_LOOKUP_MESSAGE_VERSION):
-  ClusterMessageHeader(vers), seq_number(0), frag_type(0) {
+  CacheLookupMsg(uint16_t vers = CACHE_LOOKUP_MESSAGE_VERSION) : ClusterMessageHeader(vers), seq_number(0), frag_type(0)
+  {
     moi.u32 = 0;
   }
 
   //////////////////////////////////////////////////////////////////////////
-  static int protoToVersion(int protoMajor)
+  static int
+  protoToVersion(int protoMajor)
   {
-    (void) protoMajor;
+    (void)protoMajor;
     return CACHE_LOOKUP_MESSAGE_VERSION;
   }
-  static int sizeof_fixedlen_msg()
+  static int
+  sizeof_fixedlen_msg()
   {
-    return (int) ALIGN_DOUBLE(offsetof(CacheLookupMsg, moi));
+    return (int)ALIGN_DOUBLE(offsetof(CacheLookupMsg, moi));
   }
-  void init(uint16_t vers = CACHE_LOOKUP_MESSAGE_VERSION) {
+  void
+  init(uint16_t vers = CACHE_LOOKUP_MESSAGE_VERSION)
+  {
     _init(vers);
   }
-  inline void SwapBytes()
+  inline void
+  SwapBytes()
   {
     if (NeedByteSwap()) {
       ink_release_assert(!"No byte swap for INK_MD5");
@@ -434,45 +403,49 @@ struct CacheLookupMsg:public ClusterMessageHeader
   //////////////////////////////////////////////////////////////////////////
 };
 
-struct CacheOpMsg_long:public ClusterMessageHeader
-{
+struct CacheOpMsg_long : public ClusterMessageHeader {
   uint8_t opcode;
   uint8_t frag_type;
-  uint16_t cfl_flags;             // see CFL_XXX defines
+  uint16_t cfl_flags; // see CFL_XXX defines
   INK_MD5 url_md5;
   uint32_t seq_number;
   uint32_t nbytes;
-  uint32_t data;                  // used by open_write()
-  int32_t channel;                // used by open interfaces
+  uint32_t data;   // used by open_write()
+  int32_t channel; // used by open interfaces
   ClusterVCToken token;
-  int32_t buffer_size;            // used by open read interface
+  int32_t buffer_size; // used by open read interface
   Alias32 moi;
-  enum
-  {
+  enum {
     MIN_VERSION = 1,
     MAX_VERSION = 1,
-    CACHE_OP_LONG_MESSAGE_VERSION = MAX_VERSION
+    CACHE_OP_LONG_MESSAGE_VERSION = MAX_VERSION,
   };
-  CacheOpMsg_long(uint16_t vers = CACHE_OP_LONG_MESSAGE_VERSION):
-  ClusterMessageHeader(vers),
-    opcode(0), frag_type(0), cfl_flags(0), seq_number(0), nbytes(0), data(0), channel(0), buffer_size(0) {
+  CacheOpMsg_long(uint16_t vers = CACHE_OP_LONG_MESSAGE_VERSION)
+    : ClusterMessageHeader(vers), opcode(0), frag_type(0), cfl_flags(0), seq_number(0), nbytes(0), data(0), channel(0),
+      buffer_size(0)
+  {
     moi.u32 = 0;
   }
 
   //////////////////////////////////////////////////////////////////////////
-  static int protoToVersion(int protoMajor)
+  static int
+  protoToVersion(int protoMajor)
   {
-    (void) protoMajor;
+    (void)protoMajor;
     return CACHE_OP_LONG_MESSAGE_VERSION;
   }
-  static int sizeof_fixedlen_msg()
+  static int
+  sizeof_fixedlen_msg()
   {
-    return (int) ALIGN_DOUBLE(offsetof(CacheOpMsg_long, moi));
+    return (int)ALIGN_DOUBLE(offsetof(CacheOpMsg_long, moi));
   }
-  void init(uint16_t vers = CACHE_OP_LONG_MESSAGE_VERSION) {
+  void
+  init(uint16_t vers = CACHE_OP_LONG_MESSAGE_VERSION)
+  {
     _init(vers);
   }
-  inline void SwapBytes()
+  inline void
+  SwapBytes()
   {
     if (NeedByteSwap()) {
       ink_release_assert(!"No byte swap for INK_MD5");
@@ -480,56 +453,60 @@ struct CacheOpMsg_long:public ClusterMessageHeader
       ats_swap32(&seq_number);
       ats_swap32(&nbytes);
       ats_swap32(&data);
-      ats_swap32((uint32_t *) & channel);
+      ats_swap32((uint32_t *)&channel);
       token.SwapBytes();
-      ats_swap32((uint32_t *) & buffer_size);
-      ats_swap32((uint32_t *) & frag_type);
+      ats_swap32((uint32_t *)&buffer_size);
+      ats_swap32((uint32_t *)&frag_type);
     }
   }
   //////////////////////////////////////////////////////////////////////////
 };
 
-struct CacheOpMsg_short:public ClusterMessageHeader
-{
+struct CacheOpMsg_short : public ClusterMessageHeader {
   uint8_t opcode;
-  uint8_t frag_type;              // currently used by open_write() (low level)
-  uint16_t cfl_flags;             // see CFL_XXX defines
+  uint8_t frag_type;  // currently used by open_write() (low level)
+  uint16_t cfl_flags; // see CFL_XXX defines
   INK_MD5 md5;
   uint32_t seq_number;
   uint32_t nbytes;
-  uint32_t data;                  // currently used by open_write() (low level)
-  int32_t channel;                // used by open interfaces
-  ClusterVCToken token;         // used by open interfaces
-  int32_t buffer_size;            // used by open read interface
+  uint32_t data;        // currently used by open_write() (low level)
+  int32_t channel;      // used by open interfaces
+  ClusterVCToken token; // used by open interfaces
+  int32_t buffer_size;  // used by open read interface
 
   // Variable portion of message
   Alias32 moi;
-  enum
-  {
+  enum {
     MIN_VERSION = 1,
     MAX_VERSION = 1,
-    CACHE_OP_SHORT_MESSAGE_VERSION = MAX_VERSION
+    CACHE_OP_SHORT_MESSAGE_VERSION = MAX_VERSION,
   };
-  CacheOpMsg_short(uint16_t vers = CACHE_OP_SHORT_MESSAGE_VERSION):
-  ClusterMessageHeader(vers),
-    opcode(0), frag_type(0), cfl_flags(0), seq_number(0), nbytes(0), data(0), channel(0), buffer_size(0) {
+  CacheOpMsg_short(uint16_t vers = CACHE_OP_SHORT_MESSAGE_VERSION)
+    : ClusterMessageHeader(vers), opcode(0), frag_type(0), cfl_flags(0), seq_number(0), nbytes(0), data(0), channel(0),
+      buffer_size(0)
+  {
     moi.u32 = 0;
   }
 
   //////////////////////////////////////////////////////////////////////////
-  static int protoToVersion(int protoMajor)
+  static int
+  protoToVersion(int protoMajor)
   {
-    (void) protoMajor;
+    (void)protoMajor;
     return CACHE_OP_SHORT_MESSAGE_VERSION;
   }
-  static int sizeof_fixedlen_msg()
+  static int
+  sizeof_fixedlen_msg()
   {
-    return (int) ALIGN_DOUBLE(offsetof(CacheOpMsg_short, moi));
+    return (int)ALIGN_DOUBLE(offsetof(CacheOpMsg_short, moi));
   }
-  void init(uint16_t vers = CACHE_OP_SHORT_MESSAGE_VERSION) {
+  void
+  init(uint16_t vers = CACHE_OP_SHORT_MESSAGE_VERSION)
+  {
     _init(vers);
   }
-  inline void SwapBytes()
+  inline void
+  SwapBytes()
   {
     if (NeedByteSwap()) {
       ink_release_assert(!"No byte swap for INK_MD5");
@@ -538,8 +515,8 @@ struct CacheOpMsg_short:public ClusterMessageHeader
       ats_swap32(&nbytes);
       ats_swap32(&data);
       if (opcode == CACHE_OPEN_READ) {
-        ats_swap32((uint32_t *) & buffer_size);
-        ats_swap32((uint32_t *) & channel);
+        ats_swap32((uint32_t *)&buffer_size);
+        ats_swap32((uint32_t *)&channel);
         token.SwapBytes();
       }
     }
@@ -547,39 +524,43 @@ struct CacheOpMsg_short:public ClusterMessageHeader
   //////////////////////////////////////////////////////////////////////////
 };
 
-struct CacheOpMsg_short_2:public ClusterMessageHeader
-{
+struct CacheOpMsg_short_2 : public ClusterMessageHeader {
   uint8_t opcode;
   uint8_t frag_type;
-  uint16_t cfl_flags;             // see CFL_XXX defines
+  uint16_t cfl_flags; // see CFL_XXX defines
   INK_MD5 md5_1;
   INK_MD5 md5_2;
   uint32_t seq_number;
   Alias32 moi;
-  enum
-  {
+  enum {
     MIN_VERSION = 1,
     MAX_VERSION = 1,
-    CACHE_OP_SHORT_2_MESSAGE_VERSION = MAX_VERSION
+    CACHE_OP_SHORT_2_MESSAGE_VERSION = MAX_VERSION,
   };
   CacheOpMsg_short_2(uint16_t vers = CACHE_OP_SHORT_2_MESSAGE_VERSION)
-    :  ClusterMessageHeader(vers), opcode(0), frag_type(0), cfl_flags(0), seq_number(0) {
+    : ClusterMessageHeader(vers), opcode(0), frag_type(0), cfl_flags(0), seq_number(0)
+  {
     moi.u32 = 0;
   }
   //////////////////////////////////////////////////////////////////////////
-  static int protoToVersion(int protoMajor)
+  static int
+  protoToVersion(int protoMajor)
   {
-    (void) protoMajor;
+    (void)protoMajor;
     return CACHE_OP_SHORT_2_MESSAGE_VERSION;
   }
-  static int sizeof_fixedlen_msg()
+  static int
+  sizeof_fixedlen_msg()
   {
-    return (int) ALIGN_DOUBLE(offsetof(CacheOpMsg_short_2, moi));
+    return (int)ALIGN_DOUBLE(offsetof(CacheOpMsg_short_2, moi));
   }
-  void init(uint16_t vers = CACHE_OP_SHORT_2_MESSAGE_VERSION) {
+  void
+  init(uint16_t vers = CACHE_OP_SHORT_2_MESSAGE_VERSION)
+  {
     _init(vers);
   }
-  inline void SwapBytes()
+  inline void
+  SwapBytes()
   {
     if (NeedByteSwap()) {
       ink_release_assert(!"No byte swap for MD5_1");
@@ -591,42 +572,46 @@ struct CacheOpMsg_short_2:public ClusterMessageHeader
   //////////////////////////////////////////////////////////////////////////
 };
 
-struct CacheOpReplyMsg:public ClusterMessageHeader
-{
+struct CacheOpReplyMsg : public ClusterMessageHeader {
   uint32_t seq_number;
   int32_t result;
   ClusterVCToken token;
-  bool is_ram_cache_hit;          // Entire object was from ram cache
-  Alias32 moi;                 // Used by CACHE_OPEN_READ & CACHE_LINK reply
-  enum
-  {
+  bool is_ram_cache_hit; // Entire object was from ram cache
+  Alias32 moi;           // Used by CACHE_OPEN_READ & CACHE_LINK reply
+  enum {
     MIN_VERSION = 1,
     MAX_VERSION = 1,
-    CACHE_OP_REPLY_MESSAGE_VERSION = MAX_VERSION
+    CACHE_OP_REPLY_MESSAGE_VERSION = MAX_VERSION,
   };
   CacheOpReplyMsg(uint16_t vers = CACHE_OP_REPLY_MESSAGE_VERSION)
-    : ClusterMessageHeader(vers), seq_number(0), result(0), is_ram_cache_hit(false) {
+    : ClusterMessageHeader(vers), seq_number(0), result(0), is_ram_cache_hit(false)
+  {
     moi.u32 = 0;
   }
 
   //////////////////////////////////////////////////////////////////////////
-  static int protoToVersion(int protoMajor)
+  static int
+  protoToVersion(int protoMajor)
   {
-    (void) protoMajor;
+    (void)protoMajor;
     return CACHE_OP_REPLY_MESSAGE_VERSION;
   }
-  static int sizeof_fixedlen_msg()
+  static int
+  sizeof_fixedlen_msg()
   {
-    return (int) ALIGN_DOUBLE(offsetof(CacheOpReplyMsg, moi));
+    return (int)ALIGN_DOUBLE(offsetof(CacheOpReplyMsg, moi));
   }
-  void init(uint16_t vers = CACHE_OP_REPLY_MESSAGE_VERSION) {
+  void
+  init(uint16_t vers = CACHE_OP_REPLY_MESSAGE_VERSION)
+  {
     _init(vers);
   }
-  inline void SwapBytes()
+  inline void
+  SwapBytes()
   {
     if (NeedByteSwap()) {
       ats_swap32(&seq_number);
-      ats_swap32((uint32_t *) & result);
+      ats_swap32((uint32_t *)&result);
       token.SwapBytes();
     }
   }
@@ -643,44 +628,37 @@ inline int
 op_to_sizeof_fixedlen_msg(int op)
 {
   switch (op) {
-  case CACHE_LOOKUP_OP:
-    {
-      return CacheLookupMsg::sizeof_fixedlen_msg();
-    }
+  case CACHE_LOOKUP_OP: {
+    return CacheLookupMsg::sizeof_fixedlen_msg();
+  }
   case CACHE_OPEN_WRITE_BUFFER:
-  case CACHE_OPEN_WRITE_BUFFER_LONG:
-    {
-      ink_release_assert(!"op_to_sizeof_fixedlen_msg() op not supported");
-      return 0;
-    }
+  case CACHE_OPEN_WRITE_BUFFER_LONG: {
+    ink_release_assert(!"op_to_sizeof_fixedlen_msg() op not supported");
+    return 0;
+  }
   case CACHE_OPEN_WRITE:
   case CACHE_OPEN_READ:
-  case CACHE_OPEN_READ_BUFFER:
-    {
-      return CacheOpMsg_short::sizeof_fixedlen_msg();
-    }
+  case CACHE_OPEN_READ_BUFFER: {
+    return CacheOpMsg_short::sizeof_fixedlen_msg();
+  }
   case CACHE_OPEN_READ_LONG:
   case CACHE_OPEN_READ_BUFFER_LONG:
-  case CACHE_OPEN_WRITE_LONG:
-    {
-      return CacheOpMsg_long::sizeof_fixedlen_msg();
-    }
+  case CACHE_OPEN_WRITE_LONG: {
+    return CacheOpMsg_long::sizeof_fixedlen_msg();
+  }
   case CACHE_UPDATE:
   case CACHE_REMOVE:
-  case CACHE_DEREF:
-    {
-      return CacheOpMsg_short::sizeof_fixedlen_msg();
-    }
-  case CACHE_LINK:
-    {
-      return CacheOpMsg_short_2::sizeof_fixedlen_msg();
-    }
-  default:
-    {
-      ink_release_assert(!"op_to_sizeof_fixedlen_msg() unknown op");
-      return 0;
-    }
-  }                             // End of switch
+  case CACHE_DEREF: {
+    return CacheOpMsg_short::sizeof_fixedlen_msg();
+  }
+  case CACHE_LINK: {
+    return CacheOpMsg_short_2::sizeof_fixedlen_msg();
+  }
+  default: {
+    ink_release_assert(!"op_to_sizeof_fixedlen_msg() unknown op");
+    return 0;
+  }
+  } // End of switch
 }
 
 //////////////////////////////////////////////////////////////////////////////

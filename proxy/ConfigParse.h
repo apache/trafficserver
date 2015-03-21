@@ -31,11 +31,11 @@
  *
  ****************************************************************************/
 
-char *parseStorageFile(FILE * fp);
+char *parseStorageFile(FILE *fp);
 char *parseStorageFile(int fd);
-//char *SocksParser(FILE * fp);
-//char *SocksParser(int fd);
-char *parseRemapFile(FILE * fp);
+// char *SocksParser(FILE * fp);
+// char *SocksParser(int fd);
+char *parseRemapFile(FILE *fp);
 char *parseRemapFile(int fd);
 
 #endif

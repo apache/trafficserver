@@ -104,9 +104,9 @@ const char *
 HttpDebugNames::get_event_name(int event)
 {
   switch (event) {
-    /////////////////////////
-    // VCONNECTION  EVENTS //
-    /////////////////////////
+  /////////////////////////
+  // VCONNECTION  EVENTS //
+  /////////////////////////
   case VC_EVENT_NONE:
     return ("VC_EVENT_NONE");
   case VC_EVENT_IMMEDIATE:
@@ -131,9 +131,9 @@ HttpDebugNames::get_event_name(int event)
     return ("VC_EVENT_INTERVAL");
 
 
-    /////////////////
-    // NET  EVENTS //
-    /////////////////
+  /////////////////
+  // NET  EVENTS //
+  /////////////////
   case NET_EVENT_OPEN:
     return ("NET_EVENT_OPEN");
   case NET_EVENT_ACCEPT:
@@ -141,18 +141,18 @@ HttpDebugNames::get_event_name(int event)
   case NET_EVENT_OPEN_FAILED:
     return ("NET_EVENT_OPEN_FAILED");
 
-    ////////////////////
-    // HOSTDB  EVENTS //
-    ////////////////////
+  ////////////////////
+  // HOSTDB  EVENTS //
+  ////////////////////
   case EVENT_HOST_DB_LOOKUP:
     return ("EVENT_HOST_DB_LOOKUP");
 
   case EVENT_HOST_DB_GET_RESPONSE:
     return ("EVENT_HOST_DB_GET_RESPONSE");
 
-    ////////////////////
-    // HOSTDB  EVENTS //
-    ////////////////////
+  ////////////////////
+  // HOSTDB  EVENTS //
+  ////////////////////
   case EVENT_SRV_LOOKUP:
     return ("EVENT_SRV_LOOKUP");
 
@@ -163,15 +163,15 @@ HttpDebugNames::get_event_name(int event)
     return ("EVENT_SRV_GET_RESPONSE");
 
 
-    ////////////////////
-    // DNS     EVENTS //
-    ////////////////////
+  ////////////////////
+  // DNS     EVENTS //
+  ////////////////////
   case DNS_EVENT_LOOKUP:
     return ("DNS_EVENT_LOOKUP");
 
-    ////////////////////
-    // CACHE   EVENTS //
-    ////////////////////
+  ////////////////////
+  // CACHE   EVENTS //
+  ////////////////////
 
   case CACHE_EVENT_LOOKUP:
     return ("CACHE_EVENT_LOOKUP");
@@ -202,9 +202,9 @@ HttpDebugNames::get_event_name(int event)
   case TRANSFORM_READ_READY:
     return ("TRANSFORM_READ_READY");
 
-    /////////////////////////
-    //  HttpTunnel Events //
-    /////////////////////////
+  /////////////////////////
+  //  HttpTunnel Events //
+  /////////////////////////
   case HTTP_TUNNEL_EVENT_DONE:
     return ("HTTP_TUNNEL_EVENT_DONE");
   case HTTP_TUNNEL_EVENT_PRECOMPLETE:
@@ -212,33 +212,33 @@ HttpDebugNames::get_event_name(int event)
   case HTTP_TUNNEL_EVENT_CONSUMER_DETACH:
     return ("HTTP_TUNNEL_EVENT_CONSUMER_DETACH");
 
-    //////////////////////////
-    //  ICP Events
-    //////////////////////////
+  //////////////////////////
+  //  ICP Events
+  //////////////////////////
   case ICP_LOOKUP_FOUND:
     return ("ICP_LOOKUP_FOUND");
   case ICP_LOOKUP_FAILED:
     return ("ICP_LOOKUP_FAILED");
 
-    //////////////////////////////
-    //  CongestionControl Events
-    //////////////////////////////
+  //////////////////////////////
+  //  CongestionControl Events
+  //////////////////////////////
   case CONGESTION_EVENT_CONGESTED_ON_F:
     return ("CONGESTION_EVENT_CONGESTED_ON_F");
   case CONGESTION_EVENT_CONGESTED_ON_M:
     return ("CONGESTION_EVENT_CONGESTED_ON_M");
 
-    //////////////////////////////
-    //  Plugin Events
-    //////////////////////////////
+  //////////////////////////////
+  //  Plugin Events
+  //////////////////////////////
   case HTTP_API_CONTINUE:
     return ("HTTP_API_CONTINUE");
   case HTTP_API_ERROR:
     return ("HTTP_API_ERROR");
 
-    ///////////////////////////////
-    //  Scheduled Update Events
-    ///////////////////////////////
+  ///////////////////////////////
+  //  Scheduled Update Events
+  ///////////////////////////////
   case HTTP_SCH_UPDATE_EVENT_WRITTEN:
     return "HTTP_SCH_UPDATE_EVENT_WRITTEN";
   case HTTP_SCH_UPDATE_EVENT_UPDATED:
@@ -251,7 +251,6 @@ HttpDebugNames::get_event_name(int event)
     return "HTTP_SCH_UPDATE_EVENT_ERROR";
   case HTTP_SCH_UPDATE_EVENT_NO_ACTION:
     return "HTTP_SCH_UPDATE_EVENT_NO_ACTION";
-
   }
 
   return ("unknown event");

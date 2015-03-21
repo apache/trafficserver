@@ -27,7 +27,7 @@
 
 #include "utils.h"
 #include <string>
-#include <memory>               // placement new
+#include <memory> // placement new
 #include <limits>
 #include <cstring>
 #include <cstdlib>
@@ -43,7 +43,7 @@ using std::strlen;
 
 struct AuthRequestContext;
 
-typedef bool(*AuthRequestTransform) (AuthRequestContext* auth);
+typedef bool (*AuthRequestTransform)(AuthRequestContext *auth);
 
 const static int MAX_HOST_LENGTH = 4096;
 
@@ -54,125 +54,111 @@ static int AuthTaggedRequestArg = -1;
 
 static TSCont AuthOsDnsContinuation;
 
-struct AuthOptions
-{
+struct AuthOptions {
   std::string hostname;
   int hostport;
   AuthRequestTransform transform;
   bool force;
 
-  AuthOptions():
-    hostport(-1), transform(NULL), force(false)
-  { }
+  AuthOptions() : hostport(-1), transform(NULL), force(false) {}
 
-  ~AuthOptions()
-  {
-  }
+  ~AuthOptions() {}
 };
 
 // Global options; used when we are in global authorization mode.
-static AuthOptions* AuthGlobalOptions;
+static AuthOptions *AuthGlobalOptions;
 
 // Generic state handler callback. This should handle the event, and return a
 // new event. The return value controls the subsequent state transition:
 //      TS_EVENT_CONTINUE   Continue the state machine, returning to the ATS event loop
 //      TS_EVENT_NONE       Stop processing (because a nested dispatch occurred)
 //      Anything else       Continue the state machine with this event
-typedef TSEvent (*StateHandler) (struct AuthRequestContext*, void* edata);
+typedef TSEvent (*StateHandler)(struct AuthRequestContext *, void *edata);
 
-struct StateTransition
-{
+struct StateTransition {
   TSEvent event;
   StateHandler handler;
-  const StateTransition* next;
+  const StateTransition *next;
 };
 
-static TSEvent StateAuthProxyConnect(AuthRequestContext*, void*);
-static TSEvent StateAuthProxyWriteComplete(AuthRequestContext*, void*);
-static TSEvent StateUnauthorized(AuthRequestContext*, void*);
-static TSEvent StateAuthorized(AuthRequestContext*, void*);
+static TSEvent StateAuthProxyConnect(AuthRequestContext *, void *);
+static TSEvent StateAuthProxyWriteComplete(AuthRequestContext *, void *);
+static TSEvent StateUnauthorized(AuthRequestContext *, void *);
+static TSEvent StateAuthorized(AuthRequestContext *, void *);
 
-static TSEvent StateAuthProxyReadHeaders(AuthRequestContext*, void*);
-static TSEvent StateAuthProxyCompleteHeaders(AuthRequestContext*, void*);
-static TSEvent StateAuthProxyReadContent(AuthRequestContext*, void*);
-static TSEvent StateAuthProxyCompleteContent(AuthRequestContext*, void*);
+static TSEvent StateAuthProxyReadHeaders(AuthRequestContext *, void *);
+static TSEvent StateAuthProxyCompleteHeaders(AuthRequestContext *, void *);
+static TSEvent StateAuthProxyReadContent(AuthRequestContext *, void *);
+static TSEvent StateAuthProxyCompleteContent(AuthRequestContext *, void *);
 
-static TSEvent StateAuthProxySendResponse(AuthRequestContext*, void*);
+static TSEvent StateAuthProxySendResponse(AuthRequestContext *, void *);
 
 // Trampoline state that just returns TS_EVENT_CONTINUE. We need this to be
 // able to transition between state tables when we are in a loop.
 static TSEvent
-StateContinue(AuthRequestContext*, void*)
+StateContinue(AuthRequestContext *, void *)
 {
   return TS_EVENT_CONTINUE;
 }
 
 // State table for sending the auth proxy response to the client.
-static const StateTransition StateTableSendResponse[] = {
-  { TS_EVENT_HTTP_SEND_RESPONSE_HDR, StateAuthProxySendResponse, NULL },
-  { TS_EVENT_NONE, NULL, NULL }
-};
+static const StateTransition StateTableSendResponse[] = {{TS_EVENT_HTTP_SEND_RESPONSE_HDR, StateAuthProxySendResponse, NULL},
+                                                         {TS_EVENT_NONE, NULL, NULL}};
 
 // State table for reading the proxy response body content.
 static const StateTransition StateTableProxyReadContent[] = {
-  { TS_EVENT_VCONN_READ_READY, StateAuthProxyReadContent, StateTableProxyReadContent },
-  { TS_EVENT_VCONN_READ_COMPLETE, StateAuthProxyReadContent, StateTableProxyReadContent },
-  { TS_EVENT_VCONN_EOS, StateAuthProxyCompleteContent, StateTableProxyReadContent },
-  { TS_EVENT_HTTP_SEND_RESPONSE_HDR, StateContinue, StateTableSendResponse },
-  { TS_EVENT_ERROR, StateUnauthorized, NULL },
-  { TS_EVENT_IMMEDIATE, StateAuthorized, NULL },
-  { TS_EVENT_NONE, NULL, NULL }
-};
+  {TS_EVENT_VCONN_READ_READY, StateAuthProxyReadContent, StateTableProxyReadContent},
+  {TS_EVENT_VCONN_READ_COMPLETE, StateAuthProxyReadContent, StateTableProxyReadContent},
+  {TS_EVENT_VCONN_EOS, StateAuthProxyCompleteContent, StateTableProxyReadContent},
+  {TS_EVENT_HTTP_SEND_RESPONSE_HDR, StateContinue, StateTableSendResponse},
+  {TS_EVENT_ERROR, StateUnauthorized, NULL},
+  {TS_EVENT_IMMEDIATE, StateAuthorized, NULL},
+  {TS_EVENT_NONE, NULL, NULL}};
 
 // State table for reading the auth proxy response header.
 static const StateTransition StateTableProxyReadHeader[] = {
-  { TS_EVENT_VCONN_READ_READY, StateAuthProxyReadHeaders, StateTableProxyReadHeader },
-  { TS_EVENT_VCONN_READ_COMPLETE, StateAuthProxyReadHeaders, StateTableProxyReadHeader },
-  { TS_EVENT_HTTP_READ_REQUEST_HDR, StateAuthProxyCompleteHeaders, StateTableProxyReadHeader },
-  { TS_EVENT_HTTP_SEND_RESPONSE_HDR, StateContinue, StateTableSendResponse },
-  { TS_EVENT_HTTP_CONTINUE, StateAuthProxyReadContent, StateTableProxyReadContent },
-  { TS_EVENT_VCONN_EOS, StateUnauthorized, NULL },        // XXX Should we check headers on EOS?
-  { TS_EVENT_ERROR, StateUnauthorized, NULL },
-  { TS_EVENT_IMMEDIATE, StateAuthorized, NULL },
-  { TS_EVENT_NONE, NULL, NULL }
-};
+  {TS_EVENT_VCONN_READ_READY, StateAuthProxyReadHeaders, StateTableProxyReadHeader},
+  {TS_EVENT_VCONN_READ_COMPLETE, StateAuthProxyReadHeaders, StateTableProxyReadHeader},
+  {TS_EVENT_HTTP_READ_REQUEST_HDR, StateAuthProxyCompleteHeaders, StateTableProxyReadHeader},
+  {TS_EVENT_HTTP_SEND_RESPONSE_HDR, StateContinue, StateTableSendResponse},
+  {TS_EVENT_HTTP_CONTINUE, StateAuthProxyReadContent, StateTableProxyReadContent},
+  {TS_EVENT_VCONN_EOS, StateUnauthorized, NULL}, // XXX Should we check headers on EOS?
+  {TS_EVENT_ERROR, StateUnauthorized, NULL},
+  {TS_EVENT_IMMEDIATE, StateAuthorized, NULL},
+  {TS_EVENT_NONE, NULL, NULL}};
 
 // State table for sending the request to the auth proxy.
 static const StateTransition StateTableProxyRequest[] = {
-  { TS_EVENT_VCONN_WRITE_COMPLETE, StateAuthProxyWriteComplete, StateTableProxyReadHeader },
-  { TS_EVENT_ERROR, StateUnauthorized, NULL },
-  { TS_EVENT_NONE, NULL, NULL }
-};
+  {TS_EVENT_VCONN_WRITE_COMPLETE, StateAuthProxyWriteComplete, StateTableProxyReadHeader},
+  {TS_EVENT_ERROR, StateUnauthorized, NULL},
+  {TS_EVENT_NONE, NULL, NULL}};
 
 // Initial state table.
-static const StateTransition StateTableInit[] = {
-  { TS_EVENT_HTTP_POST_REMAP, StateAuthProxyConnect, StateTableProxyRequest },
-  { TS_EVENT_ERROR, StateUnauthorized, NULL },
-  { TS_EVENT_NONE, NULL, NULL }
-};
+static const StateTransition StateTableInit[] = {{TS_EVENT_HTTP_POST_REMAP, StateAuthProxyConnect, StateTableProxyRequest},
+                                                 {TS_EVENT_ERROR, StateUnauthorized, NULL},
+                                                 {TS_EVENT_NONE, NULL, NULL}};
 
-struct AuthRequestContext
-{
-  TSHttpTxn txn;                        // Original client transaction we are authorizing.
-  TSCont cont;                          // Continuation for this state machine.
-  TSVConn vconn;                        // Virtual connection to the auth proxy.
-  TSHttpParser hparser;                 // HTTP response header parser.
-  HttpHeader rheader;                   // HTTP response header.
+struct AuthRequestContext {
+  TSHttpTxn txn;        // Original client transaction we are authorizing.
+  TSCont cont;          // Continuation for this state machine.
+  TSVConn vconn;        // Virtual connection to the auth proxy.
+  TSHttpParser hparser; // HTTP response header parser.
+  HttpHeader rheader;   // HTTP response header.
   HttpIoBuffer iobuf;
-  const char* method;                   // Client request method (e.g. GET)
+  const char *method; // Client request method (e.g. GET)
   bool read_body;
 
-  const StateTransition* state;
+  const StateTransition *state;
 
   AuthRequestContext()
-    : txn(NULL), cont(NULL), vconn(NULL), hparser(TSHttpParserCreate()), rheader(),
-      iobuf(TS_IOBUFFER_SIZE_INDEX_4K), method(NULL), read_body(true), state(NULL)
+    : txn(NULL), cont(NULL), vconn(NULL), hparser(TSHttpParserCreate()), rheader(), iobuf(TS_IOBUFFER_SIZE_INDEX_4K), method(NULL),
+      read_body(true), state(NULL)
   {
     this->cont = TSContCreate(dispatch, TSMutexCreate());
     TSContDataSet(this->cont, this);
   }
 
-   ~AuthRequestContext()
+  ~AuthRequestContext()
   {
     TSContDataSet(this->cont, NULL);
     TSContDestroy(this->cont);
@@ -182,29 +168,29 @@ struct AuthRequestContext
     }
   }
 
-  const AuthOptions*
+  const AuthOptions *
   options() const
   {
-    AuthOptions* opt;
+    AuthOptions *opt;
 
-    opt = (AuthOptions*) TSHttpTxnArgGet(this->txn, AuthTaggedRequestArg);
+    opt = (AuthOptions *)TSHttpTxnArgGet(this->txn, AuthTaggedRequestArg);
     return opt ? opt : AuthGlobalOptions;
   }
 
-  static AuthRequestContext* allocate();
-  static void destroy(AuthRequestContext*);
-  static int dispatch(TSCont, TSEvent, void*);
+  static AuthRequestContext *allocate();
+  static void destroy(AuthRequestContext *);
+  static int dispatch(TSCont, TSEvent, void *);
 };
 
-AuthRequestContext*
+AuthRequestContext *
 AuthRequestContext::allocate()
 {
-  void* ptr = TSmalloc(sizeof(AuthRequestContext));
-  return new(ptr) AuthRequestContext();
+  void *ptr = TSmalloc(sizeof(AuthRequestContext));
+  return new (ptr) AuthRequestContext();
 }
 
 void
-AuthRequestContext::destroy(AuthRequestContext* auth)
+AuthRequestContext::destroy(AuthRequestContext *auth)
 {
   if (auth) {
     auth->~AuthRequestContext();
@@ -213,10 +199,10 @@ AuthRequestContext::destroy(AuthRequestContext* auth)
 }
 
 int
-AuthRequestContext::dispatch(TSCont cont, TSEvent event, void* edata)
+AuthRequestContext::dispatch(TSCont cont, TSEvent event, void *edata)
 {
-  AuthRequestContext* auth = (AuthRequestContext*)TSContDataGet(cont);
-  const StateTransition* s;
+  AuthRequestContext *auth = (AuthRequestContext *)TSContDataGet(cont);
+  const StateTransition *s;
 
 pump:
   for (s = auth->state; s && s->event; ++s) {
@@ -255,13 +241,13 @@ pump:
 }
 
 // Return whether the client request was a HEAD request.
-const char*
+const char *
 AuthRequestGetMethod(TSHttpTxn txn)
 {
   TSMBuffer mbuf;
   TSMLoc mhdr;
   int len;
-  const char* method;
+  const char *method;
 
   TSReleaseAssert(TSHttpTxnClientReqGet(txn, &mbuf, &mhdr) == TS_SUCCESS);
 
@@ -273,7 +259,7 @@ AuthRequestGetMethod(TSHttpTxn txn)
 
 // Chain the response header hook to send the proxy's authorization response.
 static void
-AuthChainAuthorizationResponse(AuthRequestContext* auth)
+AuthChainAuthorizationResponse(AuthRequestContext *auth)
 {
   if (auth->vconn) {
     TSVConnClose(auth->vconn);
@@ -286,7 +272,7 @@ AuthChainAuthorizationResponse(AuthRequestContext* auth)
 
 // Transform the client request into a HEAD request and write it out.
 static bool
-AuthWriteHeadRequest(AuthRequestContext* auth)
+AuthWriteHeadRequest(AuthRequestContext *auth)
 {
   HttpHeader rq;
   TSMBuffer mbuf;
@@ -321,7 +307,7 @@ AuthWriteHeadRequest(AuthRequestContext* auth)
 // for example of the authentication service is a caching proxy which might not
 // cache HEAD requests.
 static bool
-AuthWriteRangeRequest(AuthRequestContext* auth)
+AuthWriteRangeRequest(AuthRequestContext *auth)
 {
   HttpHeader rq;
   TSMBuffer mbuf;
@@ -357,9 +343,9 @@ AuthWriteRangeRequest(AuthRequestContext* auth)
 // Transform the client request into a form that the auth proxy can consume and
 // write it out.
 static bool
-AuthWriteRedirectedRequest(AuthRequestContext* auth)
+AuthWriteRedirectedRequest(AuthRequestContext *auth)
 {
-  const AuthOptions* options = auth->options();
+  const AuthOptions *options = auth->options();
   HttpHeader rq;
   TSMBuffer mbuf;
   TSMLoc mhdr;
@@ -404,10 +390,10 @@ AuthWriteRedirectedRequest(AuthRequestContext* auth)
 }
 
 static TSEvent
-StateAuthProxyConnect(AuthRequestContext* auth, void* /* edata ATS_UNUSED */)
+StateAuthProxyConnect(AuthRequestContext *auth, void * /* edata ATS_UNUSED */)
 {
-  const AuthOptions* options = auth->options();
-  struct sockaddr const* ip = TSHttpTxnClientAddrGet(auth->txn);
+  const AuthOptions *options = auth->options();
+  struct sockaddr const *ip = TSHttpTxnClientAddrGet(auth->txn);
 
   TSReleaseAssert(ip); // We must have a client IP.
 
@@ -429,7 +415,7 @@ StateAuthProxyConnect(AuthRequestContext* auth, void* /* edata ATS_UNUSED */)
 }
 
 static TSEvent
-StateAuthProxyCompleteHeaders(AuthRequestContext* auth, void* /* edata ATS_UNUSED */ )
+StateAuthProxyCompleteHeaders(AuthRequestContext *auth, void * /* edata ATS_UNUSED */)
 {
   TSHttpStatus status;
   unsigned nbytes;
@@ -437,7 +423,7 @@ StateAuthProxyCompleteHeaders(AuthRequestContext* auth, void* /* edata ATS_UNUSE
   HttpDebugHeader(auth->rheader.buffer, auth->rheader.header);
 
   status = TSHttpHdrStatusGet(auth->rheader.buffer, auth->rheader.header);
-  AuthLogDebug("authorization proxy returned status %d", (int) status);
+  AuthLogDebug("authorization proxy returned status %d", (int)status);
 
   // Authorize the original request on a 2xx response.
   if (status >= 200 && status < 300) {
@@ -467,7 +453,7 @@ StateAuthProxyCompleteHeaders(AuthRequestContext* auth, void* /* edata ATS_UNUSE
 }
 
 static TSEvent
-StateAuthProxySendResponse(AuthRequestContext* auth, void* /* edata ATS_UNUSED */ )
+StateAuthProxySendResponse(AuthRequestContext *auth, void * /* edata ATS_UNUSED */)
 {
   TSMBuffer mbuf;
   TSMLoc mhdr;
@@ -502,17 +488,17 @@ StateAuthProxySendResponse(AuthRequestContext* auth, void* /* edata ATS_UNUSED *
 }
 
 static TSEvent
-StateAuthProxyReadHeaders(AuthRequestContext* auth, void* /* edata ATS_UNUSED */ )
+StateAuthProxyReadHeaders(AuthRequestContext *auth, void * /* edata ATS_UNUSED */)
 {
   TSIOBufferBlock blk;
   ssize_t consumed = 0;
   bool complete = false;
 
-  AuthLogDebug("reading header data, %u bytes available", (unsigned) TSIOBufferReaderAvail(auth->iobuf.reader));
+  AuthLogDebug("reading header data, %u bytes available", (unsigned)TSIOBufferReaderAvail(auth->iobuf.reader));
 
   for (blk = TSIOBufferReaderStart(auth->iobuf.reader); blk; blk = TSIOBufferBlockNext(blk)) {
-    const char* ptr;
-    const char* end;
+    const char *ptr;
+    const char *end;
     int64_t nbytes;
     TSParseResult result;
 
@@ -542,8 +528,7 @@ StateAuthProxyReadHeaders(AuthRequestContext* auth, void* /* edata ATS_UNUSED */
     }
   }
 
-  AuthLogDebug("consuming %u bytes, %u remain",
-               (unsigned) consumed, (unsigned) TSIOBufferReaderAvail(auth->iobuf.reader));
+  AuthLogDebug("consuming %u bytes, %u remain", (unsigned)consumed, (unsigned)TSIOBufferReaderAvail(auth->iobuf.reader));
   TSIOBufferReaderConsume(auth->iobuf.reader, consumed);
 
   // If the headers are complete, send a completion event.
@@ -551,12 +536,12 @@ StateAuthProxyReadHeaders(AuthRequestContext* auth, void* /* edata ATS_UNUSED */
 }
 
 static TSEvent
-StateAuthProxyWriteComplete(AuthRequestContext* auth, void* /* edata ATS_UNUSED */ )
+StateAuthProxyWriteComplete(AuthRequestContext *auth, void * /* edata ATS_UNUSED */)
 {
   // We finished writing the auth proxy request. Kick off a read to get the response.
   auth->iobuf.reset();
 
-  TSVConnRead(auth->vconn, auth->cont, auth->iobuf.buffer, std::numeric_limits < int64_t >::max());
+  TSVConnRead(auth->vconn, auth->cont, auth->iobuf.buffer, std::numeric_limits<int64_t>::max());
 
   // XXX Do we need to keep the read and write VIOs and close them?
 
@@ -564,7 +549,7 @@ StateAuthProxyWriteComplete(AuthRequestContext* auth, void* /* edata ATS_UNUSED 
 }
 
 static TSEvent
-StateAuthProxyReadContent(AuthRequestContext* auth, void* /* edata ATS_UNUSED */ )
+StateAuthProxyReadContent(AuthRequestContext *auth, void * /* edata ATS_UNUSED */)
 {
   unsigned needed;
   int64_t avail = 0;
@@ -572,7 +557,7 @@ StateAuthProxyReadContent(AuthRequestContext* auth, void* /* edata ATS_UNUSED */
   avail = TSIOBufferReaderAvail(auth->iobuf.reader);
   needed = HttpGetContentLength(auth->rheader.buffer, auth->rheader.header);
 
-  AuthLogDebug("we have %u of %u needed bytes", (unsigned) avail, needed);
+  AuthLogDebug("we have %u of %u needed bytes", (unsigned)avail, needed);
 
   if (avail >= needed) {
     // OK, we have what we need. Let's respond to the client request.
@@ -584,7 +569,7 @@ StateAuthProxyReadContent(AuthRequestContext* auth, void* /* edata ATS_UNUSED */
 }
 
 static TSEvent
-StateAuthProxyCompleteContent(AuthRequestContext* auth, void* /* edata ATS_UNUSED */ )
+StateAuthProxyCompleteContent(AuthRequestContext *auth, void * /* edata ATS_UNUSED */)
 {
   unsigned needed;
   int64_t avail;
@@ -592,7 +577,7 @@ StateAuthProxyCompleteContent(AuthRequestContext* auth, void* /* edata ATS_UNUSE
   avail = TSIOBufferReaderAvail(auth->iobuf.reader);
   needed = HttpGetContentLength(auth->rheader.buffer, auth->rheader.header);
 
-  AuthLogDebug("we have %u of %u needed bytes", (unsigned) avail, needed);
+  AuthLogDebug("we have %u of %u needed bytes", (unsigned)avail, needed);
 
   if (avail >= needed) {
     // OK, we have what we need. Let's respond to the client request.
@@ -605,7 +590,7 @@ StateAuthProxyCompleteContent(AuthRequestContext* auth, void* /* edata ATS_UNUSE
 
 // Terminal state. Force a 403 Forbidden response.
 static TSEvent
-StateUnauthorized(AuthRequestContext* auth, void*)
+StateUnauthorized(AuthRequestContext *auth, void *)
 {
   static const char msg[] = "authorization denied\n";
 
@@ -618,9 +603,9 @@ StateUnauthorized(AuthRequestContext* auth, void*)
 
 // Terminal state. Allow the original request to proceed.
 static TSEvent
-StateAuthorized(AuthRequestContext* auth, void*)
+StateAuthorized(AuthRequestContext *auth, void *)
 {
-  const AuthOptions* options = auth->options();
+  const AuthOptions *options = auth->options();
 
   AuthLogDebug("request authorized");
 
@@ -643,12 +628,12 @@ AuthRequestIsTagged(TSHttpTxn txn)
 }
 
 static int
-AuthProxyGlobalHook(TSCont /* cont ATS_UNUSED */ , TSEvent event, void* edata)
+AuthProxyGlobalHook(TSCont /* cont ATS_UNUSED */, TSEvent event, void *edata)
 {
-  AuthRequestContext* auth;
+  AuthRequestContext *auth;
   TSHttpTxn txn = (TSHttpTxn)edata;
 
-  AuthLogDebug("handling event=%d edata=%p", (int) event, edata);
+  AuthLogDebug("handling event=%d edata=%p", (int)event, edata);
 
   switch (event) {
   case TS_EVENT_HTTP_POST_REMAP:
@@ -675,29 +660,26 @@ AuthProxyGlobalHook(TSCont /* cont ATS_UNUSED */ , TSEvent event, void* edata)
       auth->txn = txn;
       return AuthRequestContext::dispatch(auth->cont, event, edata);
     }
-    // fallthru
+  // fallthru
 
   default:
     return TS_EVENT_NONE;
   }
-
 }
 
-static AuthOptions*
-AuthParseOptions(int argc, const char** argv)
+static AuthOptions *
+AuthParseOptions(int argc, const char **argv)
 {
   // The const_cast<> here is magic to work around a flaw in the definition of struct option
   // on some platforms (e.g. Solaris / Illumos). On sane platforms (e.g. linux), it'll get
   // automatically casted back to the const char*, as the struct is defined in <getopt.h>.
-  static const struct option longopt[] = {
-    { const_cast<char*>("auth-host"), required_argument, 0, 'h' },
-    { const_cast<char*>("auth-port"), required_argument, 0, 'p' },
-    { const_cast<char*>("auth-transform"), required_argument, 0, 't' },
-    { const_cast<char*>("force-cacheability"), no_argument, 0, 'c' },
-    { 0, 0, 0, 0 }
-  };
+  static const struct option longopt[] = {{const_cast<char *>("auth-host"), required_argument, 0, 'h'},
+                                          {const_cast<char *>("auth-port"), required_argument, 0, 'p'},
+                                          {const_cast<char *>("auth-transform"), required_argument, 0, 't'},
+                                          {const_cast<char *>("force-cacheability"), no_argument, 0, 'c'},
+                                          {0, 0, 0, 0}};
 
-  AuthOptions* options = AuthNew<AuthOptions>();
+  AuthOptions *options = AuthNew<AuthOptions>();
 
   options->transform = AuthWriteRedirectedRequest;
 
@@ -709,7 +691,7 @@ AuthParseOptions(int argc, const char** argv)
   for (;;) {
     int opt;
 
-    opt = getopt_long(argc, (char* const *) argv, "", longopt, NULL);
+    opt = getopt_long(argc, (char *const *)argv, "", longopt, NULL);
     switch (opt) {
     case 'h':
       options->hostname = optarg;
@@ -749,7 +731,7 @@ AuthParseOptions(int argc, const char** argv)
 #undef LONGOPT_OPTION_CAST
 
 void
-TSPluginInit(int argc, const char* argv[])
+TSPluginInit(int argc, const char *argv[])
 {
   TSPluginRegistrationInfo info;
 
@@ -761,8 +743,7 @@ TSPluginInit(int argc, const char* argv[])
     AuthLogError("plugin registration failed");
   }
 
-  TSReleaseAssert(TSHttpArgIndexReserve("AuthProxy", "AuthProxy authorization tag", &AuthTaggedRequestArg) ==
-                  TS_SUCCESS);
+  TSReleaseAssert(TSHttpArgIndexReserve("AuthProxy", "AuthProxy authorization tag", &AuthTaggedRequestArg) == TS_SUCCESS);
 
   AuthOsDnsContinuation = TSContCreate(AuthProxyGlobalHook, NULL);
   AuthGlobalOptions = AuthParseOptions(argc, argv);
@@ -773,19 +754,18 @@ TSPluginInit(int argc, const char* argv[])
 }
 
 TSReturnCode
-TSRemapInit(TSRemapInterface* /* api ATS_UNUSED */, char* /* err ATS_UNUSED */, int /* errsz ATS_UNUSED */)
+TSRemapInit(TSRemapInterface * /* api ATS_UNUSED */, char * /* err ATS_UNUSED */, int /* errsz ATS_UNUSED */)
 {
-  TSReleaseAssert(TSHttpArgIndexReserve("AuthProxy", "AuthProxy authorization tag", &AuthTaggedRequestArg) ==
-                  TS_SUCCESS);
+  TSReleaseAssert(TSHttpArgIndexReserve("AuthProxy", "AuthProxy authorization tag", &AuthTaggedRequestArg) == TS_SUCCESS);
 
   AuthOsDnsContinuation = TSContCreate(AuthProxyGlobalHook, NULL);
   return TS_SUCCESS;
 }
 
 TSReturnCode
-TSRemapNewInstance(int argc, char* argv[], void** instance, char* /* err ATS_UNUSED */ , int /* errsz ATS_UNUSED */ )
+TSRemapNewInstance(int argc, char *argv[], void **instance, char * /* err ATS_UNUSED */, int /* errsz ATS_UNUSED */)
 {
-  AuthOptions* options;
+  AuthOptions *options;
 
   AuthLogDebug("using authorization proxy for remapping %s -> %s", argv[0], argv[1]);
 
@@ -794,23 +774,23 @@ TSRemapNewInstance(int argc, char* argv[], void** instance, char* /* err ATS_UNU
   // argv[0], so we increment the argument indexes by 1 rather than by 2.
   argc--;
   argv++;
-  options = AuthParseOptions(argc, (const char**) argv);
+  options = AuthParseOptions(argc, (const char **)argv);
 
   *instance = options;
   return TS_SUCCESS;
 }
 
 void
-TSRemapDeleteInstance(void* instance)
+TSRemapDeleteInstance(void *instance)
 {
-  AuthOptions* options = (AuthOptions* ) instance;
+  AuthOptions *options = (AuthOptions *)instance;
   AuthDelete(options);
 }
 
 TSRemapStatus
-TSRemapDoRemap(void* instance, TSHttpTxn txn, TSRemapRequestInfo* /* rri ATS_UNUSED */ )
+TSRemapDoRemap(void *instance, TSHttpTxn txn, TSRemapRequestInfo * /* rri ATS_UNUSED */)
 {
-  AuthOptions* options = (AuthOptions*) instance;
+  AuthOptions *options = (AuthOptions *)instance;
 
   TSHttpTxnArgSet(txn, AuthTaggedRequestArg, options);
   TSHttpTxnHookAdd(txn, TS_HTTP_POST_REMAP_HOOK, AuthOsDnsContinuation);

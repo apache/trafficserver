@@ -22,18 +22,18 @@
 extern "C" int
 TSIsDebugTagSet(const char *)
 {
-    return 1;
+  return 1;
 }
 
 extern "C" void
-TSDebug(const char * tag, const char * fmt, ...)
+TSDebug(const char *tag, const char *fmt, ...)
 {
-    if (TSIsDebugTagSet(tag)) {
-        va_list args;
-        va_start(args, fmt);
-        vfprintf(stderr, fmt, args);
-        va_end(args);
-    }
+  if (TSIsDebugTagSet(tag)) {
+    va_list args;
+    va_start(args, fmt);
+    vfprintf(stderr, fmt, args);
+    va_end(args);
+  }
 }
 
 /* vim: set sw=4 ts=4 tw=79 et : */

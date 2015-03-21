@@ -29,30 +29,48 @@
 #include "net/instaweb/util/public/scoped_ptr.h"
 #include "net/instaweb/rewriter/public/process_context.h"
 
-namespace net_instaweb {
-
+namespace net_instaweb
+{
 class AtsRewriteDriverFactory;
 class ProxyFetchFactory;
 class AtsServerContext;
 
-class AtsProcessContext : ProcessContext {
- public:
+class AtsProcessContext : ProcessContext
+{
+public:
   explicit AtsProcessContext();
   virtual ~AtsProcessContext();
 
   // TODO(oschaaf): const correctness
-  MessageHandler* message_handler() { return message_handler_.get(); }
-  AtsRewriteDriverFactory* driver_factory() { return driver_factory_.get(); }
-  ProxyFetchFactory* proxy_fetch_factory() { return proxy_fetch_factory_.get(); }
-  AtsServerContext* server_context() { return server_context_; }
- private:
+  MessageHandler *
+  message_handler()
+  {
+    return message_handler_.get();
+  }
+  AtsRewriteDriverFactory *
+  driver_factory()
+  {
+    return driver_factory_.get();
+  }
+  ProxyFetchFactory *
+  proxy_fetch_factory()
+  {
+    return proxy_fetch_factory_.get();
+  }
+  AtsServerContext *
+  server_context()
+  {
+    return server_context_;
+  }
+
+private:
   scoped_ptr<MessageHandler> message_handler_;
   scoped_ptr<AtsRewriteDriverFactory> driver_factory_;
   scoped_ptr<ProxyFetchFactory> proxy_fetch_factory_;
-  AtsServerContext* server_context_;
+  AtsServerContext *server_context_;
 };
 
 
-}  // namespace net_instaweb
+} // namespace net_instaweb
 
 #endif // ATS_PROCESS_CONTEXT_H_

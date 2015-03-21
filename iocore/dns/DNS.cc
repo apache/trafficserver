@@ -28,11 +28,11 @@
 #include "I_SplitDNS.h"
 #endif
 
-#define SRV_COST    (RRFIXEDSZ+0)
-#define SRV_WEIGHT  (RRFIXEDSZ+2)
-#define SRV_PORT    (RRFIXEDSZ+4)
-#define SRV_SERVER  (RRFIXEDSZ+6)
-#define SRV_FIXEDSZ (RRFIXEDSZ+6)
+#define SRV_COST (RRFIXEDSZ + 0)
+#define SRV_WEIGHT (RRFIXEDSZ + 2)
+#define SRV_PORT (RRFIXEDSZ + 4)
+#define SRV_SERVER (RRFIXEDSZ + 6)
+#define SRV_FIXEDSZ (RRFIXEDSZ + 6)
 
 EventType ET_DNS = ET_CALL;
 
@@ -56,14 +56,19 @@ char *dns_local_ipv6 = NULL;
 char *dns_local_ipv4 = NULL;
 int dns_thread = 0;
 int dns_prefer_ipv6 = 0;
-namespace {
-  // Currently only used for A and AAAA.
-  inline char const* QtypeName(int qtype) {
-    return T_AAAA == qtype ? "AAAA" : T_A == qtype ? "A" : "*";
-  }
-  inline bool is_addr_query(int qtype) {
-    return qtype == T_A || qtype == T_AAAA;
-  }
+namespace
+{
+// Currently only used for A and AAAA.
+inline char const *
+QtypeName(int qtype)
+{
+  return T_AAAA == qtype ? "AAAA" : T_A == qtype ? "A" : "*";
+}
+inline bool
+is_addr_query(int qtype)
+{
+  return qtype == T_A || qtype == T_AAAA;
+}
 }
 
 DNSProcessor dnsProcessor;
@@ -90,73 +95,77 @@ static int attempt_num_entries = 1;
 char try_server_names[DEFAULT_NUM_TRY_SERVER][MAXDNAME];
 
 static inline char *
-strnchr(char *s, char c, int len) {
+strnchr(char *s, char c, int len)
+{
   while (*s && *s != c && len)
     ++s, --len;
-  return *s == c ? s : (char *) NULL;
+  return *s == c ? s : (char *)NULL;
 }
 
 static inline uint16_t
-ink_get16(const uint8_t *src) {
+ink_get16(const uint8_t *src)
+{
   uint16_t dst;
 
   NS_GET16(dst, src);
   return dst;
 }
 
-void HostEnt::free() {
+void
+HostEnt::free()
+{
   dnsBufAllocator.free(this);
 }
 
 void
 make_ipv4_ptr(in_addr_t addr, char *buffer)
 {
-    char *p = buffer;
-    uint8_t const* u = reinterpret_cast<uint8_t*>(&addr);
+  char *p = buffer;
+  uint8_t const *u = reinterpret_cast<uint8_t *>(&addr);
 
-    if (u[3] > 99)
-      *p++ = (u[3] / 100) + '0';
-    if (u[3] > 9)
-      *p++ = ((u[3] / 10) % 10) + '0';
-    *p++ = u[3] % 10 + '0';
-    *p++ = '.';
-    if (u[2] > 99)
-      *p++ = (u[2] / 100) + '0';
-    if (u[2] > 9)
-      *p++ = ((u[2] / 10) % 10) + '0';
-    *p++ = u[2] % 10 + '0';
-    *p++ = '.';
-    if (u[1] > 99)
-      *p++ = (u[1] / 100) + '0';
-    if (u[1] > 9)
-      *p++ = ((u[1] / 10) % 10) + '0';
-    *p++ = u[1] % 10 + '0';
-    *p++ = '.';
-    if (u[0] > 99)
-      *p++ = (u[0] / 100) + '0';
-    if (u[0] > 9)
-      *p++ = ((u[0] / 10) % 10) + '0';
-    *p++ = u[0] % 10 + '0';
-    *p++ = '.';
-    ink_strlcpy(p, "in-addr.arpa", MAXDNAME - (p - buffer + 1));
+  if (u[3] > 99)
+    *p++ = (u[3] / 100) + '0';
+  if (u[3] > 9)
+    *p++ = ((u[3] / 10) % 10) + '0';
+  *p++ = u[3] % 10 + '0';
+  *p++ = '.';
+  if (u[2] > 99)
+    *p++ = (u[2] / 100) + '0';
+  if (u[2] > 9)
+    *p++ = ((u[2] / 10) % 10) + '0';
+  *p++ = u[2] % 10 + '0';
+  *p++ = '.';
+  if (u[1] > 99)
+    *p++ = (u[1] / 100) + '0';
+  if (u[1] > 9)
+    *p++ = ((u[1] / 10) % 10) + '0';
+  *p++ = u[1] % 10 + '0';
+  *p++ = '.';
+  if (u[0] > 99)
+    *p++ = (u[0] / 100) + '0';
+  if (u[0] > 9)
+    *p++ = ((u[0] / 10) % 10) + '0';
+  *p++ = u[0] % 10 + '0';
+  *p++ = '.';
+  ink_strlcpy(p, "in-addr.arpa", MAXDNAME - (p - buffer + 1));
 }
 
 void
-make_ipv6_ptr(in6_addr const* addr, char *buffer)
+make_ipv6_ptr(in6_addr const *addr, char *buffer)
 {
-    const char hex_digit[] = "0123456789abcdef";
-    char *p = buffer;
-    uint8_t const* src = addr->s6_addr;
-    int i;
+  const char hex_digit[] = "0123456789abcdef";
+  char *p = buffer;
+  uint8_t const *src = addr->s6_addr;
+  int i;
 
-    for (i = TS_IP6_SIZE-1 ; i >= 0; --i) {
-        *p++ = hex_digit[src[i] & 0x0f];
-        *p++ = '.';
-        *p++ = hex_digit[src[i] >> 4];
-        *p++ = '.';
-    }
+  for (i = TS_IP6_SIZE - 1; i >= 0; --i) {
+    *p++ = hex_digit[src[i] & 0x0f];
+    *p++ = '.';
+    *p++ = hex_digit[src[i] >> 4];
+    *p++ = '.';
+  }
 
-    ink_strlcpy(p, "ip6.arpa", MAXDNAME - (p - buffer + 1));
+  ink_strlcpy(p, "ip6.arpa", MAXDNAME - (p - buffer + 1));
 }
 
 //  Public functions
@@ -164,7 +173,8 @@ make_ipv6_ptr(in6_addr const* addr, char *buffer)
 //  See documentation is header files and Memos
 //
 int
-DNSProcessor::start(int, size_t stacksize) {
+DNSProcessor::start(int, size_t stacksize)
+{
   //
   // Read configuration
   //
@@ -192,10 +202,10 @@ DNSProcessor::start(int, size_t stacksize) {
   }
   thread = eventProcessor.eventthread[ET_DNS][0];
 
-  dns_failover_try_period = dns_timeout + 1;    // Modify the "default" accordingly
+  dns_failover_try_period = dns_timeout + 1; // Modify the "default" accordingly
 
   if (SplitDNSConfig::gsplit_dns_enabled) {
-    //reconfigure after threads start
+    // reconfigure after threads start
     SplitDNSConfig::reconfigure();
   }
 
@@ -207,7 +217,7 @@ DNSProcessor::start(int, size_t stacksize) {
 }
 
 void
-DNSProcessor::open(sockaddr const* target)
+DNSProcessor::open(sockaddr const *target)
 {
   DNSHandler *h = new DNSHandler;
 
@@ -246,23 +256,25 @@ DNSProcessor::dns_init()
     int i;
     char *last;
     char *ns_list = ats_strdup(dns_ns_list);
-    char *ns = (char *) strtok_r(ns_list, " ,;\t\r", &last);
+    char *ns = (char *)strtok_r(ns_list, " ,;\t\r", &last);
 
-    for (i = 0, nserv = 0 ; (i < MAX_NAMED) && ns ; ++i) {
+    for (i = 0, nserv = 0; (i < MAX_NAMED) && ns; ++i) {
       Debug("dns", "Nameserver list - parsing \"%s\"\n", ns);
       bool err = false;
       int prt = DOMAIN_SERVICE_PORT;
-      char* colon = 0; // where the port colon is.
+      char *colon = 0; // where the port colon is.
       // Check for IPv6 notation.
       if ('[' == *ns) {
-        char* ndx = strchr(ns+1, ']');
+        char *ndx = strchr(ns + 1, ']');
         if (ndx) {
-          if (':' == ndx[1]) colon = ndx+1;
+          if (':' == ndx[1])
+            colon = ndx + 1;
         } else {
           err = true;
           Warning("Unmatched '[' in address for nameserver '%s', discarding.", ns);
         }
-      } else colon = strchr(ns, ':');
+      } else
+        colon = strchr(ns, ':');
 
       if (!err && colon) {
         *colon = '\0';
@@ -285,13 +297,11 @@ DNSProcessor::dns_init()
 
         ats_ip_port_cast(&nameserver[nserv].sa) = htons(prt);
 
-        Debug("dns", "Adding nameserver %s to nameserver list",
-          ats_ip_nptop(&nameserver[nserv].sa, buff, sizeof(buff))
-        );
+        Debug("dns", "Adding nameserver %s to nameserver list", ats_ip_nptop(&nameserver[nserv].sa, buff, sizeof(buff)));
         ++nserv;
       }
 
-      ns = (char *) strtok_r(NULL, " ,;\t\r", &last);
+      ns = (char *)strtok_r(NULL, " ,;\t\r", &last);
     }
     ats_free(ns_list);
   }
@@ -334,11 +344,10 @@ DNSProcessor::dns_init()
 inline int
 ink_dn_expand(const u_char *msg, const u_char *eom, const u_char *comp_dn, u_char *exp_dn, int length)
 {
-  return::dn_expand((unsigned char *) msg, (unsigned char *) eom, (unsigned char *) comp_dn, (char *) exp_dn, length);
+  return ::dn_expand((unsigned char *)msg, (unsigned char *)eom, (unsigned char *)comp_dn, (char *)exp_dn, length);
 }
 
-DNSProcessor::DNSProcessor()
-  : thread(NULL), handler(NULL)
+DNSProcessor::DNSProcessor() : thread(NULL), handler(NULL)
 {
   ink_zero(l_res);
   ink_zero(local_ipv6);
@@ -346,20 +355,17 @@ DNSProcessor::DNSProcessor()
 }
 
 void
-DNSEntry::init(const char *x, int len, int qtype_arg, Continuation* acont,
-               DNSProcessor::Options const& opt)
+DNSEntry::init(const char *x, int len, int qtype_arg, Continuation *acont, DNSProcessor::Options const &opt)
 {
   qtype = qtype_arg;
   host_res_style = opt.host_res_style;
   if (is_addr_query(qtype)) {
-      // adjust things based on family preference.
-      if (HOST_RES_IPV4 == host_res_style ||
-          HOST_RES_IPV4_ONLY == host_res_style) {
-          qtype = T_A;
-      } else if (HOST_RES_IPV6 == host_res_style ||
-                 HOST_RES_IPV6_ONLY == host_res_style) {
-          qtype = T_AAAA;
-      }
+    // adjust things based on family preference.
+    if (HOST_RES_IPV4 == host_res_style || HOST_RES_IPV4_ONLY == host_res_style) {
+      qtype = T_A;
+    } else if (HOST_RES_IPV6 == host_res_style || HOST_RES_IPV6_ONLY == host_res_style) {
+      qtype = T_AAAA;
+    }
   }
   submit_time = ink_get_hrtime();
   action = acont;
@@ -389,8 +395,8 @@ DNSEntry::init(const char *x, int len, int qtype_arg, Continuation* acont,
       qname_len = ink_strlcpy(qname, x, MAXDNAME);
       orig_qname_len = qname_len;
     }
-  } else {                    //T_PTR
-    IpAddr const* ip = reinterpret_cast<IpAddr const*>(x);
+  } else { // T_PTR
+    IpAddr const *ip = reinterpret_cast<IpAddr const *>(x);
     if (ip->isIp6())
       make_ipv6_ptr(&ip->_addr._ip6, qname);
     else if (ip->isIp4())
@@ -399,7 +405,7 @@ DNSEntry::init(const char *x, int len, int qtype_arg, Continuation* acont,
       ink_assert(!"T_PTR query to DNS must be IP address.");
   }
 
-  SET_HANDLER((DNSEntryHandler) & DNSEntry::mainEvent);
+  SET_HANDLER((DNSEntryHandler)&DNSEntry::mainEvent);
 }
 
 /**
@@ -408,7 +414,7 @@ DNSEntry::init(const char *x, int len, int qtype_arg, Continuation* acont,
 
 */
 void
-DNSHandler::open_con(sockaddr const* target, bool failed, int icon)
+DNSHandler::open_con(sockaddr const *target, bool failed, int icon)
 {
   ip_port_text_buffer ip_text;
   PollDescriptor *pd = get_PollDescriptor(dnsProcessor.thread);
@@ -421,20 +427,18 @@ DNSHandler::open_con(sockaddr const* target, bool failed, int icon)
 
   Debug("dns", "open_con: opening connection %s", ats_ip_nptop(target, ip_text, sizeof ip_text));
 
-  if (con[icon].fd != NO_FD) {  // Remove old FD from epoll fd
+  if (con[icon].fd != NO_FD) { // Remove old FD from epoll fd
     con[icon].eio.stop();
     con[icon].close();
   }
 
-  if (con[icon].connect(
-      target, DNSConnection::Options()
-        .setNonBlockingConnect(true)
-        .setNonBlockingIo(true)
-        .setUseTcp(false)
-        .setBindRandomPort(true)
-        .setLocalIpv6(&local_ipv6.sa)
-        .setLocalIpv4(&local_ipv4.sa)
-    ) < 0) {
+  if (con[icon].connect(target, DNSConnection::Options()
+                                  .setNonBlockingConnect(true)
+                                  .setNonBlockingIo(true)
+                                  .setUseTcp(false)
+                                  .setBindRandomPort(true)
+                                  .setLocalIpv6(&local_ipv6.sa)
+                                  .setLocalIpv4(&local_ipv4.sa)) < 0) {
     Debug("dns", "opening connection %s FAILED for %d", ip_text, icon);
     if (!failed) {
       if (dns_ns_rr)
@@ -455,7 +459,8 @@ DNSHandler::open_con(sockaddr const* target, bool failed, int icon)
 }
 
 void
-DNSHandler::validate_ip() {
+DNSHandler::validate_ip()
+{
   if (!ip.isValid()) {
     // Invalid, switch to default.
     // seems that res_init always sets m_res.nscount to at least 1!
@@ -497,10 +502,7 @@ DNSHandler::startEvent(int /* event ATS_UNUSED */, Event *e)
         if (ats_is_ip(sa)) {
           open_con(sa, false, n_con);
           ++n_con;
-          Debug("dns_pas", "opened connection to %s, n_con = %d",
-            ats_ip_nptop(sa, buff, sizeof(buff)),
-            n_con
-          );
+          Debug("dns_pas", "opened connection to %s, n_con = %d", ats_ip_nptop(sa, buff, sizeof(buff)), n_con);
         }
       }
       dns_ns_rr_init_down = 0;
@@ -512,7 +514,7 @@ DNSHandler::startEvent(int /* event ATS_UNUSED */, Event *e)
 
     return EVENT_CONT;
   } else {
-    ink_assert(false);          // I.e. this should never really happen
+    ink_assert(false); // I.e. this should never really happen
     return EVENT_DONE;
   }
 }
@@ -529,7 +531,7 @@ DNSHandler::startEvent_sdns(int /* event ATS_UNUSED */, Event *e)
 
   SET_HANDLER(&DNSHandler::mainEvent);
   open_con(&ip.sa, false, n_con);
-  ++n_con;                      // TODO should n_con be zeroed?
+  ++n_con; // TODO should n_con be zeroed?
 
   e->schedule_every(DNS_PERIOD);
   return EVENT_CONT;
@@ -538,9 +540,7 @@ DNSHandler::startEvent_sdns(int /* event ATS_UNUSED */, Event *e)
 static inline int
 _ink_res_mkquery(ink_res_state res, char *qname, int qtype, char *buffer)
 {
-  int r = ink_res_mkquery(res, QUERY, qname, C_IN, qtype,
-                          NULL, 0, NULL, (unsigned char *) buffer,
-                          MAX_DNS_PACKET_LEN);
+  int r = ink_res_mkquery(res, QUERY, qname, C_IN, qtype, NULL, 0, NULL, (unsigned char *)buffer, MAX_DNS_PACKET_LEN);
   return r;
 }
 
@@ -568,7 +568,7 @@ DNSHandler::retry_named(int ndx, ink_hrtime t, bool reopen)
   int r = _ink_res_mkquery(m_res, try_server_names[try_servers], T_A, buffer);
   try_servers = (try_servers + 1) % countof(try_server_names);
   ink_assert(r >= 0);
-  if (r >= 0) {                 // looking for a bounce
+  if (r >= 0) { // looking for a bounce
     int res = socketManager.send(con[ndx].fd, buffer, r, 0);
     Debug("dns", "ping result = %d", res);
   }
@@ -596,7 +596,7 @@ DNSHandler::try_primary_named(bool reopen)
     else
       try_servers = (try_servers + 1) % countof(try_server_names);
     ink_assert(r >= 0);
-    if (r >= 0) {               // looking for a bounce
+    if (r >= 0) { // looking for a bounce
       int res = socketManager.send(con[0].fd, buffer, r, 0);
       Debug("dns", "ping result = %d", res);
     }
@@ -607,13 +607,13 @@ DNSHandler::try_primary_named(bool reopen)
 void
 DNSHandler::switch_named(int ndx)
 {
-  for (DNSEntry *e = entries.head; e; e = (DNSEntry *) e->link.next) {
+  for (DNSEntry *e = entries.head; e; e = (DNSEntry *)e->link.next) {
     e->written_flag = 0;
     if (e->retries < dns_retries)
-      ++(e->retries);           // give them another chance
+      ++(e->retries); // give them another chance
   }
   in_flight = 0;
-  received_one(ndx);            // reset failover counters
+  received_one(ndx); // reset failover counters
 }
 
 /** Fail over to another name server. */
@@ -628,19 +628,18 @@ DNSHandler::failover()
 
     if (max_nscount > MAX_NAMED)
       max_nscount = MAX_NAMED;
-    sockaddr const* old_addr = &m_res->nsaddr_list[name_server].sa;
+    sockaddr const *old_addr = &m_res->nsaddr_list[name_server].sa;
     name_server = (name_server + 1) % max_nscount;
     Debug("dns", "failover: failing over to name_server=%d", name_server);
 
     IpEndpoint target;
     ats_ip_copy(&target.sa, &m_res->nsaddr_list[name_server].sa);
 
-    Warning("failover: connection to DNS server %s lost, move to %s",
-      ats_ip_ntop(old_addr, buff1, sizeof(buff1)),
-      ats_ip_ntop(&target.sa, buff2, sizeof(buff2))
-    );
+    Warning("failover: connection to DNS server %s lost, move to %s", ats_ip_ntop(old_addr, buff1, sizeof(buff1)),
+            ats_ip_ntop(&target.sa, buff2, sizeof(buff2)));
 
-    if (!target.isValid()) target.setToLoopback(AF_INET);
+    if (!target.isValid())
+      target.setToLoopback(AF_INET);
 
     open_con(&target.sa, true, name_server);
     if (n_con <= name_server)
@@ -648,9 +647,7 @@ DNSHandler::failover()
     switch_named(name_server);
   } else {
     ip_text_buffer buff;
-    Warning("failover: connection to DNS server %s lost, retrying",
-      ats_ip_ntop(&ip.sa, buff, sizeof(buff))
-    );
+    Warning("failover: connection to DNS server %s lost, retrying", ats_ip_ntop(&ip.sa, buff, sizeof(buff)));
   }
 }
 
@@ -664,9 +661,7 @@ DNSHandler::rr_failure(int ndx)
     // mark this nameserver as down
     Debug("dns", "rr_failure: Marking nameserver %d as down", ndx);
     ns_down[ndx] = 1;
-    Warning("connection to DNS server %s lost, marking as down",
-      ats_ip_ntop(&m_res->nsaddr_list[ndx].sa, buff, sizeof(buff))
-    );
+    Warning("connection to DNS server %s lost, marking as down", ats_ip_ntop(&m_res->nsaddr_list[ndx].sa, buff, sizeof(buff)));
   }
 
   int nscount = m_res->nscount;
@@ -687,20 +682,20 @@ DNSHandler::rr_failure(int ndx)
     Warning("connection to all DNS servers lost, retrying");
     // actual retries will be done in retry_named called from mainEvent
     // mark any outstanding requests as not sent for later retry
-    for (DNSEntry *e = entries.head; e; e = (DNSEntry *) e->link.next) {
+    for (DNSEntry *e = entries.head; e; e = (DNSEntry *)e->link.next) {
       e->written_flag = 0;
       if (e->retries < dns_retries)
-        ++(e->retries);         // give them another chance
+        ++(e->retries); // give them another chance
       --in_flight;
       DNS_DECREMENT_DYN_STAT(dns_in_flight_stat);
     }
   } else {
     // move outstanding requests that were sent to this nameserver to another
-    for (DNSEntry *e = entries.head; e; e = (DNSEntry *) e->link.next) {
+    for (DNSEntry *e = entries.head; e; e = (DNSEntry *)e->link.next) {
       if (e->which_ns == ndx) {
         e->written_flag = 0;
         if (e->retries < dns_retries)
-          ++(e->retries);       // give them another chance
+          ++(e->retries); // give them another chance
         --in_flight;
         DNS_DECREMENT_DYN_STAT(dns_in_flight_stat);
       }
@@ -708,16 +703,21 @@ DNSHandler::rr_failure(int ndx)
   }
 }
 
-static inline unsigned int get_rcode(char* buff) {
-  return reinterpret_cast<HEADER*>(buff)->rcode;
+static inline unsigned int
+get_rcode(char *buff)
+{
+  return reinterpret_cast<HEADER *>(buff)->rcode;
 }
 
-static inline unsigned int get_rcode(HostEnt* ent) {
-  return get_rcode(reinterpret_cast<char*>(ent));
+static inline unsigned int
+get_rcode(HostEnt *ent)
+{
+  return get_rcode(reinterpret_cast<char *>(ent));
 }
 
 static bool
-good_rcode(char *buff) {
+good_rcode(char *buff)
+{
   unsigned int r = get_rcode(buff);
   return NOERROR == r || NXDOMAIN == r;
 }
@@ -729,7 +729,7 @@ DNSHandler::recv_dns(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   DNSConnection *dnsc = NULL;
   ip_text_buffer ipbuff1, ipbuff2;
 
-  while ((dnsc = (DNSConnection *) triggered.dequeue())) {
+  while ((dnsc = (DNSConnection *)triggered.dequeue())) {
     while (1) {
       IpEndpoint from_ip;
       socklen_t from_length = sizeof(from_ip);
@@ -753,10 +753,8 @@ DNSHandler::recv_dns(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 
       // verify that this response came from the correct server
       if (!ats_ip_addr_eq(&dnsc->ip.sa, &from_ip.sa)) {
-        Warning("unexpected DNS response from %s (expected %s)",
-          ats_ip_ntop(&from_ip.sa, ipbuff1, sizeof ipbuff1),
-          ats_ip_ntop(&dnsc->ip.sa, ipbuff2, sizeof ipbuff2)
-        );
+        Warning("unexpected DNS response from %s (expected %s)", ats_ip_ntop(&from_ip.sa, ipbuff1, sizeof ipbuff1),
+                ats_ip_ntop(&dnsc->ip.sa, ipbuff2, sizeof ipbuff2));
         continue;
       }
       hostent_cache = 0;
@@ -768,8 +766,7 @@ DNSHandler::recv_dns(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
           received_one(dnsc->num);
           if (ns_down[dnsc->num]) {
             Warning("connection to DNS server %s restored",
-              ats_ip_ntop(&m_res->nsaddr_list[dnsc->num].sa, ipbuff1, sizeof ipbuff1)
-            );
+                    ats_ip_ntop(&m_res->nsaddr_list[dnsc->num].sa, ipbuff1, sizeof ipbuff1));
             ns_down[dnsc->num] = 0;
           }
         }
@@ -831,7 +828,7 @@ DNSHandler::mainEvent(int event, Event *e)
         try_primary_named(false);
         ++failover_soon_number[name_server];
       }
-    } else if (name_server)     // not on the primary named
+    } else if (name_server) // not on the primary named
       try_primary_named(true);
   }
 
@@ -845,7 +842,7 @@ DNSHandler::mainEvent(int event, Event *e)
 inline static DNSEntry *
 get_dns(DNSHandler *h, uint16_t id)
 {
-  for (DNSEntry *e = h->entries.head; e; e = (DNSEntry *) e->link.next) {
+  for (DNSEntry *e = h->entries.head; e; e = (DNSEntry *)e->link.next) {
     if (e->once_written_flag) {
       for (int j = 0; j < MAX_DNS_RETRIES; j++) {
         if (e->id[j] == id) {
@@ -855,7 +852,8 @@ get_dns(DNSHandler *h, uint16_t id)
         }
       }
     }
-  Lnext:;
+  Lnext:
+    ;
   }
   return NULL;
 }
@@ -864,7 +862,7 @@ get_dns(DNSHandler *h, uint16_t id)
 inline static DNSEntry *
 get_entry(DNSHandler *h, char *qname, int qtype)
 {
-  for (DNSEntry *e = h->entries.head; e; e = (DNSEntry *) e->link.next) {
+  for (DNSEntry *e = h->entries.head; e; e = (DNSEntry *)e->link.next) {
     if (e->qtype == qtype) {
       if (is_addr_query(qtype)) {
         if (!strcmp(qname, e->qname))
@@ -893,7 +891,7 @@ write_dns(DNSHandler *h)
   if (h->in_flight < dns_max_dns_in_flight) {
     DNSEntry *e = h->entries.head;
     while (e) {
-      DNSEntry *n = (DNSEntry *) e->link.next;
+      DNSEntry *n = (DNSEntry *)e->link.next;
       if (!e->written_flag) {
         if (dns_ns_rr) {
           int ns_start = h->name_server;
@@ -918,19 +916,19 @@ DNSHandler::get_query_id()
   uint16_t q1, q2;
   q2 = q1 = (uint16_t)(generator.random() & 0xFFFF);
   if (query_id_in_use(q2)) {
-    uint16_t i = q2>>6;
+    uint16_t i = q2 >> 6;
     while (qid_in_flight[i] == UINT64_MAX) {
-      if (++i ==  sizeof(qid_in_flight)/sizeof(uint64_t)) {
+      if (++i == sizeof(qid_in_flight) / sizeof(uint64_t)) {
         i = 0;
       }
-      if (i == q1>>6) {
+      if (i == q1 >> 6) {
         Error("[iocore_dns] get_query_id: Exhausted all DNS query ids");
         return q1;
       }
     }
     i <<= 6;
     q2 &= 0x3F;
-    while (query_id_in_use(i+q2)) {
+    while (query_id_in_use(i + q2)) {
       ++q2;
       q2 &= 0x3F;
       if (q2 == (q1 & 0x3F)) {
@@ -970,7 +968,7 @@ write_dns_event(DNSHandler *h, DNSEntry *e)
   uint16_t i = h->get_query_id();
   blob._h.id = htons(i);
   if (e->id[dns_retries - e->retries] >= 0) {
-    //clear previous id in case named was switched or domain was expanded
+    // clear previous id in case named was switched or domain was expanded
     h->release_query_id(e->id[dns_retries - e->retries]);
   }
   e->id[dns_retries - e->retries] = i;
@@ -1001,7 +999,7 @@ write_dns_event(DNSHandler *h, DNSEntry *e)
     e->timeout->cancel();
 
   if (h->txn_lookup_timeout) {
-    e->timeout = h->mutex->thread_holding->schedule_in(e, HRTIME_MSECONDS(h->txn_lookup_timeout));      //this is in msec
+    e->timeout = h->mutex->thread_holding->schedule_in(e, HRTIME_MSECONDS(h->txn_lookup_timeout)); // this is in msec
   } else {
     e->timeout = h->mutex->thread_holding->schedule_in(e, HRTIME_SECONDS(dns_timeout));
   }
@@ -1015,9 +1013,9 @@ write_dns_event(DNSHandler *h, DNSEntry *e)
 int
 DNSEntry::delayEvent(int event, Event *e)
 {
-  (void) event;
+  (void)event;
   if (dnsProcessor.handler) {
-    SET_HANDLER((DNSEntryHandler) & DNSEntry::mainEvent);
+    SET_HANDLER((DNSEntryHandler)&DNSEntry::mainEvent);
     return handleEvent(EVENT_IMMEDIATE, e);
   }
   e->schedule_in(DNS_DELAY_PERIOD);
@@ -1032,46 +1030,45 @@ DNSEntry::mainEvent(int event, Event *e)
   default:
     ink_assert(!"bad case");
     return EVENT_DONE;
-  case EVENT_IMMEDIATE:{
-      if (!dnsH)
-        dnsH = dnsProcessor.handler;
-      if (!dnsH) {
-        Debug("dns", "handler not found, retrying...");
-        SET_HANDLER((DNSEntryHandler) & DNSEntry::delayEvent);
-        return handleEvent(event, e);
-      }
-
-      // trailing '.' indicates no domain expansion
-      if (dns_search && ('.' != qname[orig_qname_len - 1])) {
-        domains = dnsH->m_res->dnsrch;
-        // start domain expansion straight away
-        // if lookup name has no '.'
-        if (domains && !strnchr(qname, '.', MAXDNAME)) {
-          qname[orig_qname_len] = '.';
-          qname_len = orig_qname_len + 1 + ink_strlcpy(qname + orig_qname_len + 1, *domains,
-                                                       MAXDNAME - (orig_qname_len + 1));
-          ++domains;
-        }
-      } else {
-        domains = NULL;
-      }
-      Debug("dns", "enqueing query %s", qname);
-      DNSEntry *dup = get_entry(dnsH, qname, qtype);
-      if (dup) {
-        Debug("dns", "collapsing NS request");
-        dup->dups.enqueue(this);
-      } else {
-        Debug("dns", "adding first to collapsing queue");
-        dnsH->entries.enqueue(this);
-        write_dns(dnsH);
-      }
-      return EVENT_DONE;
+  case EVENT_IMMEDIATE: {
+    if (!dnsH)
+      dnsH = dnsProcessor.handler;
+    if (!dnsH) {
+      Debug("dns", "handler not found, retrying...");
+      SET_HANDLER((DNSEntryHandler)&DNSEntry::delayEvent);
+      return handleEvent(event, e);
     }
+
+    // trailing '.' indicates no domain expansion
+    if (dns_search && ('.' != qname[orig_qname_len - 1])) {
+      domains = dnsH->m_res->dnsrch;
+      // start domain expansion straight away
+      // if lookup name has no '.'
+      if (domains && !strnchr(qname, '.', MAXDNAME)) {
+        qname[orig_qname_len] = '.';
+        qname_len = orig_qname_len + 1 + ink_strlcpy(qname + orig_qname_len + 1, *domains, MAXDNAME - (orig_qname_len + 1));
+        ++domains;
+      }
+    } else {
+      domains = NULL;
+    }
+    Debug("dns", "enqueing query %s", qname);
+    DNSEntry *dup = get_entry(dnsH, qname, qtype);
+    if (dup) {
+      Debug("dns", "collapsing NS request");
+      dup->dups.enqueue(this);
+    } else {
+      Debug("dns", "adding first to collapsing queue");
+      dnsH->entries.enqueue(this);
+      write_dns(dnsH);
+    }
+    return EVENT_DONE;
+  }
   case EVENT_INTERVAL:
     Debug("dns", "timeout for query %s", qname);
     if (dnsH->txn_lookup_timeout) {
       timeout = NULL;
-      dns_result(dnsH, this, result_ent, false);        //do not retry -- we are over TXN timeout on DNS alone!
+      dns_result(dnsH, this, result_ent, false); // do not retry -- we are over TXN timeout on DNS alone!
       return EVENT_DONE;
     }
     if (written_flag) {
@@ -1087,7 +1084,7 @@ DNSEntry::mainEvent(int event, Event *e)
 }
 
 Action *
-DNSProcessor::getby(const char *x, int len, int type, Continuation *cont, Options const& opt)
+DNSProcessor::getby(const char *x, int len, int type, Continuation *cont, Options const &opt)
 {
   Debug("dns", "received query %s type = %d, timeout = %d", x, type, opt.timeout);
   if (type == T_SRV) {
@@ -1109,7 +1106,8 @@ DNSProcessor::getby(const char *x, int len, int type, Continuation *cont, Option
   is a retry-able and we have retries left.
 */
 static void
-dns_result(DNSHandler *h, DNSEntry *e, HostEnt *ent, bool retry) {
+dns_result(DNSHandler *h, DNSEntry *e, HostEnt *ent, bool retry)
+{
   ProxyMutex *mutex = h->mutex;
   bool cancelled = (e->action.cancelled ? true : false);
 
@@ -1132,8 +1130,8 @@ dns_result(DNSHandler *h, DNSEntry *e, HostEnt *ent, bool retry) {
           Debug("dns", "domain too large %.*s + %s", e->orig_qname_len, e->qname, *e->domains);
         } else {
           e->qname[e->orig_qname_len] = '.';
-          e->qname_len = e->orig_qname_len + 1 + ink_strlcpy(e->qname + e->orig_qname_len + 1, *e->domains,
-                                                             MAXDNAME - (e->orig_qname_len + 1));
+          e->qname_len =
+            e->orig_qname_len + 1 + ink_strlcpy(e->qname + e->orig_qname_len + 1, *e->domains, MAXDNAME - (e->orig_qname_len + 1));
           ++(e->domains);
           e->retries = dns_retries;
           Debug("dns", "new name = %s retries = %d", e->qname, e->retries);
@@ -1171,8 +1169,8 @@ dns_result(DNSHandler *h, DNSEntry *e, HostEnt *ent, bool retry) {
   if (is_debug_tag_set("dns")) {
     if (is_addr_query(e->qtype)) {
       ip_text_buffer buff;
-      char const* ptr = "<none>";
-      char const* result = "FAIL";
+      char const *ptr = "<none>";
+      char const *result = "FAIL";
       if (ent) {
         result = "SUCCESS";
         ptr = inet_ntop(e->qtype == T_AAAA ? AF_INET6 : AF_INET, ent->ent.h_addr_list[0], buff, sizeof(buff));
@@ -1280,8 +1278,8 @@ static bool
 dns_process(DNSHandler *handler, HostEnt *buf, int len)
 {
   ProxyMutex *mutex = handler->mutex;
-  HEADER *h = (HEADER *) (buf->buf);
-  DNSEntry *e = get_dns(handler, (uint16_t) ntohs(h->id));
+  HEADER *h = (HEADER *)(buf->buf);
+  DNSEntry *e = get_dns(handler, (uint16_t)ntohs(h->id));
   bool retry = false;
   bool server_ok = true;
   uint32_t temp_ttl = 0;
@@ -1290,8 +1288,8 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
   // Do we have an entry for this id?
   //
   if (!e || !e->written_flag) {
-    Debug("dns", "unknown DNS id = %u", (uint16_t) ntohs(h->id));
-    return false;               // cannot count this as a success
+    Debug("dns", "unknown DNS id = %u", (uint16_t)ntohs(h->id));
+    return false; // cannot count this as a success
   }
   //
   // It is no longer in flight
@@ -1308,28 +1306,27 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
     default:
       Warning("Unknown DNS error %d for [%s]", h->rcode, e->qname);
       retry = true;
-      server_ok = false;        // could be server problems
+      server_ok = false; // could be server problems
       goto Lerror;
-    case SERVFAIL:             // recoverable error
+    case SERVFAIL: // recoverable error
       retry = true;
-    case FORMERR:              // unrecoverable errors
+    case FORMERR: // unrecoverable errors
     case REFUSED:
     case NOTIMP:
       Debug("dns", "DNS error %d for [%s]", h->rcode, e->qname);
-      server_ok = false;        // could be server problems
+      server_ok = false; // could be server problems
       goto Lerror;
     case NOERROR:
     case NXDOMAIN:
-    case 6:                    // YXDOMAIN
-    case 7:                    // YXRRSET
-    case 8:                    // NOTAUTH
-    case 9:                    // NOTAUTH
-    case 10:                   // NOTZONE
+    case 6:  // YXDOMAIN
+    case 7:  // YXRRSET
+    case 8:  // NOTAUTH
+    case 9:  // NOTAUTH
+    case 10: // NOTZONE
       Debug("dns", "DNS error %d for [%s]", h->rcode, e->qname);
       goto Lerror;
     }
   } else {
-
     //
     // Initialize local data
     //
@@ -1340,19 +1337,19 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
     int ancount = ntohs(h->ancount);
     unsigned char *bp = buf->hostbuf;
     int buflen = sizeof(buf->hostbuf);
-    u_char *cp = ((u_char *) h) + HFIXEDSZ;
-    u_char *eom = (u_char *) h + len;
+    u_char *cp = ((u_char *)h) + HFIXEDSZ;
+    u_char *eom = (u_char *)h + len;
     int n;
     ink_assert(buf->srv_hosts.srv_host_count == 0 && buf->srv_hosts.srv_hosts_length == 0);
     buf->srv_hosts.srv_host_count = 0;
     buf->srv_hosts.srv_hosts_length = 0;
-    unsigned& num_srv = buf->srv_hosts.srv_host_count;
+    unsigned &num_srv = buf->srv_hosts.srv_host_count;
     int rname_len = -1;
 
     //
     // Expand name
     //
-    if ((n = ink_dn_expand((u_char *) h, eom, cp, bp, buflen)) < 0)
+    if ((n = ink_dn_expand((u_char *)h, eom, cp, bp, buflen)) < 0)
       goto Lerror;
 
     // Should we validate the query name?
@@ -1361,14 +1358,14 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
       int rlen = strlen((char *)bp);
 
       rname_len = rlen; // Save for later use
-      if ((qlen > 0) && ('.' == e->qname[qlen-1]))
+      if ((qlen > 0) && ('.' == e->qname[qlen - 1]))
         --qlen;
-      if ((rlen > 0) && ('.' == bp[rlen-1]))
+      if ((rlen > 0) && ('.' == bp[rlen - 1]))
         --rlen;
       // TODO: At some point, we might want to care about the case here, and use an algorithm
       // to randomly pick upper case characters in the query, and validate the response with
       // case sensitivity.
-      if ((qlen != rlen) || (strncasecmp(e->qname, (const char*)bp, qlen) != 0)) {
+      if ((qlen != rlen) || (strncasecmp(e->qname, (const char *)bp, qlen) != 0)) {
         // Bad mojo, forged?
         Warning("received DNS response with query name of '%s', but response query name is '%s'", e->qname, bp);
         goto Lerror;
@@ -1383,7 +1380,7 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
         n = strlen((char *)bp) + 1;
       else
         n = rname_len + 1;
-      buf->ent.h_name = (char *) bp;
+      buf->ent.h_name = (char *)bp;
       bp += n;
       buflen -= n;
     }
@@ -1391,10 +1388,10 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
     // Configure HostEnt data structure
     //
     u_char **ap = buf->host_aliases;
-    buf->ent.h_aliases = (char **) buf->host_aliases;
-    u_char **hap = (u_char **) buf->h_addr_ptrs;
+    buf->ent.h_aliases = (char **)buf->host_aliases;
+    u_char **hap = (u_char **)buf->h_addr_ptrs;
     *hap = NULL;
-    buf->ent.h_addr_list = (char **) buf->h_addr_ptrs;
+    buf->ent.h_addr_list = (char **)buf->h_addr_ptrs;
 
     //
     // INKqa10938: For customer (i.e. USPS) with closed environment, need to
@@ -1423,7 +1420,7 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
     /* added for SRV support [ebalsa]
        this skips the query section (qdcount)
      */
-    unsigned char *here = (unsigned char *) buf->buf + HFIXEDSZ;
+    unsigned char *here = (unsigned char *)buf->buf + HFIXEDSZ;
     if (e->qtype == T_SRV) {
       for (int ctr = ntohs(h->qdcount); ctr > 0; ctr--) {
         int strlen = dn_skipname(here, eom);
@@ -1436,7 +1433,7 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
     int answer = false, error = false;
 
     while (ancount-- > 0 && cp < eom && !error) {
-      n = ink_dn_expand((u_char *) h, eom, cp, bp, buflen);
+      n = ink_dn_expand((u_char *)h, eom, cp, bp, buflen);
       if (n < 0) {
         ++error;
         break;
@@ -1444,7 +1441,7 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
       cp += n;
       short int type;
       NS_GET16(type, cp);
-      cp += NS_INT16SZ;  // NS_GET16(cls, cp);
+      cp += NS_INT16SZ;       // NS_GET16(cls, cp);
       NS_GET32(temp_ttl, cp); // NOTE: this is not a "long" but 32-bits (from nameser_compat.h)
       if ((temp_ttl < buf->ttl) || (buf->ttl == 0))
         buf->ttl = temp_ttl;
@@ -1456,22 +1453,22 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
       if (is_addr_query(e->qtype) && type == T_CNAME) {
         if (ap >= &buf->host_aliases[DNS_MAX_ALIASES - 1])
           continue;
-        n = ink_dn_expand((u_char *) h, eom, cp, tbuf, sizeof(tbuf));
+        n = ink_dn_expand((u_char *)h, eom, cp, tbuf, sizeof(tbuf));
         if (n < 0) {
           ++error;
           break;
         }
         cp += n;
-        *ap++ = (unsigned char *) bp;
-        n = strlen((char *) bp) + 1;
+        *ap++ = (unsigned char *)bp;
+        n = strlen((char *)bp) + 1;
         bp += n;
         buflen -= n;
-        n = strlen((char *) tbuf) + 1;
+        n = strlen((char *)tbuf) + 1;
         if (n > buflen) {
           ++error;
           break;
         }
-        ink_strlcpy((char *) bp, (char *) tbuf, buflen);
+        ink_strlcpy((char *)bp, (char *)tbuf, buflen);
         bp += n;
         buflen -= n;
         Debug("dns", "received cname = %s", tbuf);
@@ -1485,35 +1482,35 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
       // Decode names
       //
       if (type == T_PTR) {
-        n = ink_dn_expand((u_char *) h, eom, cp, bp, buflen);
+        n = ink_dn_expand((u_char *)h, eom, cp, bp, buflen);
         if (n < 0) {
           ++error;
           break;
         }
         cp += n;
         if (!answer) {
-          buf->ent.h_name = (char *) bp;
+          buf->ent.h_name = (char *)bp;
           Debug("dns", "received PTR name = %s", bp);
-          n = strlen((char *) bp) + 1;
+          n = strlen((char *)bp) + 1;
           bp += n;
           buflen -= n;
         } else if (ap < &buf->host_aliases[DNS_MAX_ALIASES - 1]) {
           *ap++ = bp;
           Debug("dns", "received PTR alias = %s", bp);
-          n = strlen((char *) bp) + 1;
+          n = strlen((char *)bp) + 1;
           bp += n;
           buflen -= n;
         }
       } else if (type == T_SRV) {
         if (num_srv >= HOST_DB_MAX_ROUND_ROBIN_INFO)
           break;
-        cp = here;              /* hack */
+        cp = here; /* hack */
         int strlen = dn_skipname(cp, eom);
         cp += strlen;
         const unsigned char *srv_off = cp;
         cp += SRV_FIXEDSZ;
         cp += dn_skipname(cp, eom);
-        here = cp;              /* hack */
+        here = cp; /* hack */
         SRV *srv = &buf->srv_hosts.hosts[num_srv];
         int r = ink_ns_name_ntop(srv_off + SRV_SERVER, srv->host, MAXDNAME);
         if (r <= 0) {
@@ -1522,14 +1519,13 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
           goto Lerror;
         }
         Debug("dns_srv", "Discovered SRV record [from NS lookup] with cost:%d weight:%d port:%d with host:%s",
-            ink_get16(srv_off + SRV_COST),
-            ink_get16(srv_off + SRV_WEIGHT), ink_get16(srv_off + SRV_PORT), srv->host);
+              ink_get16(srv_off + SRV_COST), ink_get16(srv_off + SRV_WEIGHT), ink_get16(srv_off + SRV_PORT), srv->host);
 
         srv->port = ink_get16(srv_off + SRV_PORT);
         srv->priority = ink_get16(srv_off + SRV_COST);
         srv->weight = ink_get16(srv_off + SRV_WEIGHT);
         srv->host_len = r;
-        srv->host[r-1] = '\0';
+        srv->host[r - 1] = '\0';
         srv->key = makeHostHash(srv->host);
 
         if (srv->host[0] != '\0')
@@ -1547,27 +1543,26 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
           int nn;
           buf->ent.h_length = n;
           buf->ent.h_addrtype = T_A == type ? AF_INET : AF_INET6;
-          buf->ent.h_name = (char *) bp;
-          nn = strlen((char *) bp) + 1;
+          buf->ent.h_name = (char *)bp;
+          nn = strlen((char *)bp) + 1;
           Debug("dns", "received %s name = %s", QtypeName(type), bp);
           bp += nn;
           buflen -= nn;
         }
         // attempt to use the original buffer (if it is word aligned)
-        if (!(((uintptr_t) cp) % sizeof(unsigned int))) {
+        if (!(((uintptr_t)cp) % sizeof(unsigned int))) {
           *hap++ = cp;
           cp += n;
         } else {
           ip_text_buffer ip_string;
-          bp = (unsigned char *) align_pointer_forward(bp, sizeof(int));
+          bp = (unsigned char *)align_pointer_forward(bp, sizeof(int));
           if (bp + n >= buf->hostbuf + DNS_HOSTBUF_SIZE) {
             ++error;
             break;
           }
           memcpy((*hap++ = bp), cp, n);
           Debug("dns", "received %s = %s", QtypeName(type),
-            inet_ntop(T_AAAA == type ? AF_INET6 : AF_INET, bp, ip_string, sizeof(ip_string))
-          );
+                inet_ntop(T_AAAA == type ? AF_INET6 : AF_INET, bp, ip_string, sizeof(ip_string)));
           bp += n;
           cp += n;
         }
@@ -1584,14 +1579,15 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
       //
       if (!buf->ent.h_name) {
         Debug("dns", "inserting name = %s", e->qname);
-        ink_strlcpy((char *) bp, e->qname, sizeof(buf->hostbuf) - (bp - buf->hostbuf));
-        buf->ent.h_name = (char *) bp;
+        ink_strlcpy((char *)bp, e->qname, sizeof(buf->hostbuf) - (bp - buf->hostbuf));
+        buf->ent.h_name = (char *)bp;
       }
       dns_result(handler, e, buf, retry);
       return server_ok;
     }
   }
-Lerror:;
+Lerror:
+  ;
   DNS_INCREMENT_DYN_STAT(dns_lookup_fail_stat);
   dns_result(handler, e, NULL, retry);
   return server_ok;
@@ -1614,55 +1610,45 @@ ink_dns_init(ModuleVersion v)
   init_called = 1;
   // do one time stuff
   // create a stat block for HostDBStats
-  dns_rsb = RecAllocateRawStatBlock((int) DNS_Stat_Count);
+  dns_rsb = RecAllocateRawStatBlock((int)DNS_Stat_Count);
 
   //
   // Register statistics callbacks
   //
-  RecRegisterRawStat(dns_rsb, RECT_PROCESS,
-                     "proxy.process.dns.total_dns_lookups",
-                     RECD_INT, RECP_PERSISTENT, (int) dns_total_lookups_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(dns_rsb, RECT_PROCESS, "proxy.process.dns.total_dns_lookups", RECD_INT, RECP_PERSISTENT,
+                     (int)dns_total_lookups_stat, RecRawStatSyncSum);
 
-  RecRegisterRawStat(dns_rsb, RECT_PROCESS,
-                     "proxy.process.dns.lookup_avg_time",
-                     RECD_INT, RECP_PERSISTENT, (int) dns_response_time_stat, RecRawStatSyncHrTimeAvg);
+  RecRegisterRawStat(dns_rsb, RECT_PROCESS, "proxy.process.dns.lookup_avg_time", RECD_INT, RECP_PERSISTENT,
+                     (int)dns_response_time_stat, RecRawStatSyncHrTimeAvg);
 
-  RecRegisterRawStat(dns_rsb, RECT_PROCESS,
-                     "proxy.process.dns.success_avg_time",
-                     RECD_INT, RECP_NON_PERSISTENT, (int) dns_success_time_stat, RecRawStatSyncHrTimeAvg);
+  RecRegisterRawStat(dns_rsb, RECT_PROCESS, "proxy.process.dns.success_avg_time", RECD_INT, RECP_NON_PERSISTENT,
+                     (int)dns_success_time_stat, RecRawStatSyncHrTimeAvg);
 
-  RecRegisterRawStat(dns_rsb, RECT_PROCESS,
-                     "proxy.process.dns.lookup_successes",
-                     RECD_INT, RECP_PERSISTENT, (int) dns_lookup_success_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(dns_rsb, RECT_PROCESS, "proxy.process.dns.lookup_successes", RECD_INT, RECP_PERSISTENT,
+                     (int)dns_lookup_success_stat, RecRawStatSyncSum);
 
-  RecRegisterRawStat(dns_rsb, RECT_PROCESS,
-                     "proxy.process.dns.fail_avg_time",
-                     RECD_INT, RECP_PERSISTENT, (int) dns_fail_time_stat, RecRawStatSyncHrTimeAvg);
+  RecRegisterRawStat(dns_rsb, RECT_PROCESS, "proxy.process.dns.fail_avg_time", RECD_INT, RECP_PERSISTENT, (int)dns_fail_time_stat,
+                     RecRawStatSyncHrTimeAvg);
 
-  RecRegisterRawStat(dns_rsb, RECT_PROCESS,
-                     "proxy.process.dns.lookup_failures",
-                     RECD_INT, RECP_PERSISTENT, (int) dns_lookup_fail_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(dns_rsb, RECT_PROCESS, "proxy.process.dns.lookup_failures", RECD_INT, RECP_PERSISTENT,
+                     (int)dns_lookup_fail_stat, RecRawStatSyncSum);
 
-  RecRegisterRawStat(dns_rsb, RECT_PROCESS,
-                     "proxy.process.dns.retries", RECD_INT, RECP_PERSISTENT, (int) dns_retries_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(dns_rsb, RECT_PROCESS, "proxy.process.dns.retries", RECD_INT, RECP_PERSISTENT, (int)dns_retries_stat,
+                     RecRawStatSyncSum);
 
-  RecRegisterRawStat(dns_rsb, RECT_PROCESS,
-                     "proxy.process.dns.max_retries_exceeded",
-                     RECD_INT, RECP_PERSISTENT, (int) dns_max_retries_exceeded_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(dns_rsb, RECT_PROCESS, "proxy.process.dns.max_retries_exceeded", RECD_INT, RECP_PERSISTENT,
+                     (int)dns_max_retries_exceeded_stat, RecRawStatSyncSum);
 
-  RecRegisterRawStat(dns_rsb, RECT_PROCESS,
-                     "proxy.process.dns.in_flight",
-                     RECD_INT, RECP_NON_PERSISTENT, (int) dns_in_flight_stat, RecRawStatSyncSum);
-
+  RecRegisterRawStat(dns_rsb, RECT_PROCESS, "proxy.process.dns.in_flight", RECD_INT, RECP_NON_PERSISTENT, (int)dns_in_flight_stat,
+                     RecRawStatSyncSum);
 }
 
 
 #ifdef TS_HAS_TESTS
 struct DNSRegressionContinuation;
-typedef int (DNSRegressionContinuation::*DNSRegContHandler) (int, void *);
+typedef int (DNSRegressionContinuation::*DNSRegContHandler)(int, void *);
 
-struct DNSRegressionContinuation: public Continuation
-{
+struct DNSRegressionContinuation : public Continuation {
   int hosts;
   const char **hostnames;
   int type;
@@ -1672,21 +1658,22 @@ struct DNSRegressionContinuation: public Continuation
   int i;
   RegressionTest *test;
 
-  int mainEvent(int event, HostEnt *he)
+  int
+  mainEvent(int event, HostEnt *he)
   {
-    (void) event;
+    (void)event;
     if (event == DNS_EVENT_LOOKUP) {
       if (he) {
         struct in_addr in;
         ++found;
-        in.s_addr = *(unsigned int *) he->ent.h_addr_list[0];
+        in.s_addr = *(unsigned int *)he->ent.h_addr_list[0];
         rprintf(test, "host %s [%s] = %s\n", hostnames[i - 1], he->ent.h_name, inet_ntoa(in));
       } else {
         rprintf(test, "host %s not found\n", hostnames[i - 1]);
       }
     }
     if (i < hosts) {
-        dnsProcessor.gethostbyname(this, hostnames[i], DNSProcessor::Options().setHostResStyle(HOST_RES_IPV4_ONLY));
+      dnsProcessor.gethostbyname(this, hostnames[i], DNSProcessor::Options().setHostResStyle(HOST_RES_IPV4_ONLY));
       ++i;
       return EVENT_CONT;
     } else {
@@ -1699,22 +1686,18 @@ struct DNSRegressionContinuation: public Continuation
   }
 
   DNSRegressionContinuation(int ahosts, int atofind, const char **ahostnames, RegressionTest *t, int atype, int *astatus)
-   :  Continuation(new_ProxyMutex()), hosts(ahosts), hostnames(ahostnames), type(atype),
-      status(astatus), found(0), tofind(atofind), i(0), test(t) {
-    SET_HANDLER((DNSRegContHandler) & DNSRegressionContinuation::mainEvent);
+    : Continuation(new_ProxyMutex()), hosts(ahosts), hostnames(ahostnames), type(atype), status(astatus), found(0), tofind(atofind),
+      i(0), test(t)
+  {
+    SET_HANDLER((DNSRegContHandler)&DNSRegressionContinuation::mainEvent);
   }
 };
 
-static const char *dns_test_hosts[] = {
-  "www.apple.com",
-  "www.ibm.com",
-  "www.microsoft.com",
-  "www.coke.com"
-};
+static const char *dns_test_hosts[] = {"www.apple.com", "www.ibm.com", "www.microsoft.com", "www.coke.com"};
 
-REGRESSION_TEST(DNS) (RegressionTest *t, int atype, int *pstatus) {
-  eventProcessor.schedule_in(new DNSRegressionContinuation(4, 4, dns_test_hosts, t, atype, pstatus),
-                             HRTIME_SECONDS(1));
+REGRESSION_TEST(DNS)(RegressionTest *t, int atype, int *pstatus)
+{
+  eventProcessor.schedule_in(new DNSRegressionContinuation(4, 4, dns_test_hosts, t, atype, pstatus), HRTIME_SECONDS(1));
 }
 
 #endif

@@ -46,12 +46,11 @@ static SLL<SSLNextProtocolAccept> ssl_plugin_acceptors;
 static Ptr<ProxyMutex> ssl_plugin_mutex;
 
 bool
-ssl_register_protocol(const char * protocol, Continuation * contp)
+ssl_register_protocol(const char *protocol, Continuation *contp)
 {
   MUTEX_LOCK(lock, ssl_plugin_mutex, this_ethread());
 
-  for (SSLNextProtocolAccept * ssl = ssl_plugin_acceptors.head;
-        ssl; ssl = ssl_plugin_acceptors.next(ssl)) {
+  for (SSLNextProtocolAccept *ssl = ssl_plugin_acceptors.head; ssl; ssl = ssl_plugin_acceptors.next(ssl)) {
     if (!ssl->registerEndpoint(protocol, contp)) {
       return false;
     }
@@ -61,12 +60,11 @@ ssl_register_protocol(const char * protocol, Continuation * contp)
 }
 
 bool
-ssl_unregister_protocol(const char * protocol, Continuation * contp)
+ssl_unregister_protocol(const char *protocol, Continuation *contp)
 {
   MUTEX_LOCK(lock, ssl_plugin_mutex, this_ethread());
 
-  for (SSLNextProtocolAccept * ssl = ssl_plugin_acceptors.head;
-        ssl; ssl = ssl_plugin_acceptors.next(ssl)) {
+  for (SSLNextProtocolAccept *ssl = ssl_plugin_acceptors.head; ssl; ssl = ssl_plugin_acceptors.next(ssl)) {
     // Ignore possible failure because we want to try to unregister
     // from all SSL ports.
     ssl->unregisterEndpoint(protocol, contp);
@@ -89,15 +87,12 @@ ssl_unregister_protocol(const char * protocol, Continuation * contp)
 */
 struct HttpProxyAcceptor {
   /// Accept continuation.
-  Continuation* _accept;
+  Continuation *_accept;
   /// Options for @c NetProcessor.
   NetProcessor::AcceptOptions _net_opt;
 
   /// Default constructor.
-  HttpProxyAcceptor()
-    : _accept(0)
-    {
-    }
+  HttpProxyAcceptor() : _accept(0) {}
 };
 
 /** Global acceptors.
@@ -113,7 +108,7 @@ Vec<HttpProxyAcceptor> HttpProxyAcceptors;
 
 // Called from InkAPI.cc
 NetProcessor::AcceptOptions
-make_net_accept_options(const HttpProxyPort& port, unsigned nthreads)
+make_net_accept_options(const HttpProxyPort &port, unsigned nthreads)
 {
   NetProcessor::AcceptOptions net;
 
@@ -135,10 +130,10 @@ make_net_accept_options(const HttpProxyPort& port, unsigned nthreads)
 }
 
 static void
-MakeHttpProxyAcceptor(HttpProxyAcceptor& acceptor, HttpProxyPort& port, unsigned nthreads)
+MakeHttpProxyAcceptor(HttpProxyAcceptor &acceptor, HttpProxyPort &port, unsigned nthreads)
 {
-  NetProcessor::AcceptOptions& net_opt = acceptor._net_opt;
-  HttpSessionAccept::Options         accept_opt;
+  NetProcessor::AcceptOptions &net_opt = acceptor._net_opt;
+  HttpSessionAccept::Options accept_opt;
 
   net_opt = make_net_accept_options(port, nthreads);
   REC_ReadConfigInteger(net_opt.recv_bufsize, "proxy.config.net.sock_recv_buffer_size_in");
@@ -208,7 +203,7 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor& acceptor, HttpProxyPort& port, unsigned
       ssl->registerEndpoint(TS_NPN_PROTOCOL_HTTP_1_1, http);
     }
 
-    // SPDY
+// SPDY
 #if TS_HAS_SPDY
     if (port.m_session_protocol_preference.contains(TS_NPN_PROTOCOL_INDEX_SPDY_3)) {
       ssl->registerEndpoint(TS_NPN_PROTOCOL_SPDY_3, new SpdySessionAccept(spdy::SESSION_VERSION_3));
@@ -242,7 +237,7 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor& acceptor, HttpProxyPort& port, unsigned
 void
 init_HttpProxyServer(int n_accept_threads)
 {
-  HttpProxyPort::Group& proxy_ports = HttpProxyPort::global();
+  HttpProxyPort::Group &proxy_ports = HttpProxyPort::global();
 
   init_reverse_proxy();
   httpSessionManager.init();
@@ -261,7 +256,7 @@ init_HttpProxyServer(int n_accept_threads)
     plugin_http_accept->mutex = new_ProxyMutex();
   }
   // Same as plugin_http_accept except outbound transparent.
-  if (! plugin_http_transparent_accept) {
+  if (!plugin_http_transparent_accept) {
     HttpSessionAccept::Options ha_opt;
     ha_opt.setOutboundTransparent(true);
     plugin_http_transparent_accept = new HttpSessionAccept(ha_opt);
@@ -273,17 +268,16 @@ init_HttpProxyServer(int n_accept_threads)
   }
 
   // Do the configuration defined ports.
-  for ( int i = 0 , n = proxy_ports.length() ; i < n ; ++i ) {
+  for (int i = 0, n = proxy_ports.length(); i < n; ++i) {
     MakeHttpProxyAcceptor(HttpProxyAcceptors.add(), proxy_ports[i], n_accept_threads);
   }
-
 }
 
 void
 start_HttpProxyServer()
 {
   static bool called_once = false;
-  HttpProxyPort::Group& proxy_ports = HttpProxyPort::global();
+  HttpProxyPort::Group &proxy_ports = HttpProxyPort::global();
 
   ///////////////////////////////////
   // start accepting connections   //
@@ -292,13 +286,13 @@ start_HttpProxyServer()
   ink_assert(!called_once);
   ink_assert(proxy_ports.length() == HttpProxyAcceptors.length());
 
-  for ( int i = 0 , n = proxy_ports.length() ; i < n ; ++i ) {
-    HttpProxyAcceptor& acceptor = HttpProxyAcceptors[i];
-    HttpProxyPort& port = proxy_ports[i];
+  for (int i = 0, n = proxy_ports.length(); i < n; ++i) {
+    HttpProxyAcceptor &acceptor = HttpProxyAcceptors[i];
+    HttpProxyPort &port = proxy_ports[i];
     if (port.isSSL()) {
       if (NULL == sslNetProcessor.main_accept(acceptor._accept, port.m_fd, acceptor._net_opt))
         return;
-    } else if (! port.isPlugin()) {
+    } else if (!port.isPlugin()) {
       if (NULL == netProcessor.main_accept(acceptor._accept, port.m_fd, acceptor._net_opt))
         return;
     }
@@ -313,12 +307,11 @@ start_HttpProxyServer()
 #endif
 
   // Alert plugins that connections will be accepted.
-  APIHook* hook = lifecycle_hooks->get(TS_LIFECYCLE_PORTS_READY_HOOK);
+  APIHook *hook = lifecycle_hooks->get(TS_LIFECYCLE_PORTS_READY_HOOK);
   while (hook) {
     hook->invoke(TS_EVENT_LIFECYCLE_PORTS_READY, NULL);
     hook = hook->next();
   }
-
 }
 
 void

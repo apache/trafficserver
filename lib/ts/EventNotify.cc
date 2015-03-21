@@ -109,8 +109,7 @@ EventNotify::wait(void)
 #endif
 }
 
-int
-EventNotify::timedwait(int timeout) // milliseconds
+int EventNotify::timedwait(int timeout) // milliseconds
 {
 #ifdef HAVE_EVENTFD
   ssize_t nr, nr_fd = 0;
@@ -151,7 +150,7 @@ void
 EventNotify::lock(void)
 {
 #ifdef HAVE_EVENTFD
-  // do nothing
+// do nothing
 #else
   ink_mutex_acquire(&m_mutex);
 #endif
@@ -171,7 +170,7 @@ void
 EventNotify::unlock(void)
 {
 #ifdef HAVE_EVENTFD
-  // do nothing
+// do nothing
 #else
   ink_mutex_release(&m_mutex);
 #endif

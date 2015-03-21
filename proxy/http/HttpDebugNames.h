@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#if !defined (_HttpDebugNames_h_)
+#if !defined(_HttpDebugNames_h_)
 #define _HttpDebugNames_h_
 
 #include "HttpTransact.h"

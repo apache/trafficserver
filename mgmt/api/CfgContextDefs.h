@@ -45,14 +45,14 @@
 
 #define NUM_SEC_SPECS 8
 
-#define DELIMITER            '#'
-#define DELIMITER_STR        "#"
-#define RANGE_DELIMITER      '-'
-#define RANGE_DELIMITER_STR  "- "
-#define CIDR_DELIMITER       '/'
-#define CIDR_DELIMITER_STR   "/"
-#define IP_END_DELIMITER     "#"
-#define LIST_DELIMITER       ", "
+#define DELIMITER '#'
+#define DELIMITER_STR "#"
+#define RANGE_DELIMITER '-'
+#define RANGE_DELIMITER_STR "- "
+#define CIDR_DELIMITER '/'
+#define CIDR_DELIMITER_STR "/"
+#define IP_END_DELIMITER "#"
+#define LIST_DELIMITER ", "
 
 /* Each opaque List handle in the mgmtapi should have
  * a corresponding typedef here. Using LLQ's to implement the
@@ -65,8 +65,7 @@ typedef LLQ StringList;
 
 /* INKCommentEle only used internally by the CfgContext */
 /* should this be defined in CfgContextUtils.h ?? */
-typedef struct
-{
+typedef struct {
   TSCfgEle cfg_ele;
   char *comment;
 } INKCommentEle;

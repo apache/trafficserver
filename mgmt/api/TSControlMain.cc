@@ -41,11 +41,11 @@
 #include "CoreAPIShared.h"
 #include "NetworkUtilsLocal.h"
 
-#define TIMEOUT_SECS 1         // the num secs for select timeout
+#define TIMEOUT_SECS 1 // the num secs for select timeout
 
-static InkHashTable *accepted_con;     // a list of all accepted client connections
+static InkHashTable *accepted_con; // a list of all accepted client connections
 
-static TSMgmtError handle_control_message(int fd, void * msg, size_t msglen);
+static TSMgmtError handle_control_message(int fd, void *msg, size_t msglen);
 
 /*********************************************************************
  * create_client
@@ -72,7 +72,7 @@ create_client()
  * output:
  *********************************************************************/
 static void
-delete_client(ClientT * client)
+delete_client(ClientT *client)
 {
   if (client) {
     ats_free(client->adr);
@@ -90,13 +90,13 @@ delete_client(ClientT * client)
  * output:
  *********************************************************************/
 static void
-remove_client(ClientT * client, InkHashTable * table)
+remove_client(ClientT *client, InkHashTable *table)
 {
   // close client socket
-  close_socket(client->fd);       // close client socket
+  close_socket(client->fd); // close client socket
 
   // remove client binding from hash table
-  ink_hash_table_delete(table, (char *) &client->fd);
+  ink_hash_table_delete(table, (char *)&client->fd);
 
   // free ClientT
   delete_client(client);
@@ -118,9 +118,9 @@ ts_ctrl_main(void *arg)
 {
   int ret;
   int *socket_fd;
-  int con_socket_fd;            // main socket for listening to new connections
+  int con_socket_fd; // main socket for listening to new connections
 
-  socket_fd = (int *) arg;
+  socket_fd = (int *)arg;
   con_socket_fd = *socket_fd;
 
   // initialize queue for accepted con
@@ -130,13 +130,13 @@ ts_ctrl_main(void *arg)
   }
 
   // now we can start listening, accepting connections and servicing requests
-  int new_con_fd;               // new socket fd when accept connection
+  int new_con_fd; // new socket fd when accept connection
 
-  fd_set selectFDs;             // for select call
-  InkHashTableEntry *con_entry; // used to obtain client connection info
-  ClientT *client_entry;        // an entry of fd to alarms mapping
-  InkHashTableIteratorState con_state;  // used to iterate through hash table
-  int fds_ready;                // stores return value for select
+  fd_set selectFDs;                    // for select call
+  InkHashTableEntry *con_entry;        // used to obtain client connection info
+  ClientT *client_entry;               // an entry of fd to alarms mapping
+  InkHashTableIteratorState con_state; // used to iterate through hash table
+  int fds_ready;                       // stores return value for select
   struct timeval timeout;
   int addr_len = (sizeof(struct sockaddr));
 
@@ -150,15 +150,15 @@ ts_ctrl_main(void *arg)
 
     if (con_socket_fd >= 0) {
       FD_SET(con_socket_fd, &selectFDs);
-      //Debug("ts_main", "[ts_ctrl_main] add fd %d to select set\n", con_socket_fd);
+      // Debug("ts_main", "[ts_ctrl_main] add fd %d to select set\n", con_socket_fd);
     }
     // see if there are more fd to set
     con_entry = ink_hash_table_iterator_first(accepted_con, &con_state);
 
     // iterate through all entries in hash table
     while (con_entry) {
-      client_entry = (ClientT *) ink_hash_table_entry_value(accepted_con, con_entry);
-      if (client_entry->fd >= 0) {    // add fd to select set
+      client_entry = (ClientT *)ink_hash_table_entry_value(accepted_con, con_entry);
+      if (client_entry->fd >= 0) { // add fd to select set
         FD_SET(client_entry->fd, &selectFDs);
         Debug("ts_main", "[ts_ctrl_main] add fd %d to select set\n", client_entry->fd);
       }
@@ -166,7 +166,7 @@ ts_ctrl_main(void *arg)
     }
 
     // select call - timeout is set so we can check events at regular intervals
-    fds_ready = mgmt_select(FD_SETSIZE, &selectFDs, (fd_set *) NULL, (fd_set *) NULL, &timeout);
+    fds_ready = mgmt_select(FD_SETSIZE, &selectFDs, (fd_set *)NULL, (fd_set *)NULL, &timeout);
 
     // check if have any connections or requests
     if (fds_ready > 0) {
@@ -179,24 +179,24 @@ ts_ctrl_main(void *arg)
         if (!new_client_con) {
           // return TS_ERR_SYS_CALL; WHAT TO DO? just keep going
           Debug("ts_main", "[ts_ctrl_main] can't allocate new ClientT\n");
-        } else {                // accept connection
+        } else { // accept connection
           new_con_fd = mgmt_accept(con_socket_fd, new_client_con->adr, &addr_len);
           new_client_con->fd = new_con_fd;
-          ink_hash_table_insert(accepted_con, (char *) &new_client_con->fd, new_client_con);
+          ink_hash_table_insert(accepted_con, (char *)&new_client_con->fd, new_client_con);
           Debug("ts_main", "[ts_ctrl_main] Add new client connection \n");
         }
-      }                         // end if(new_con_fd >= 0 && FD_ISSET(new_con_fd, &selectFDs))
+      } // end if(new_con_fd >= 0 && FD_ISSET(new_con_fd, &selectFDs))
 
       // some other file descriptor; for each one, service request
-      if (fds_ready > 0) {      // RECEIVED A REQUEST from remote API client
+      if (fds_ready > 0) { // RECEIVED A REQUEST from remote API client
         // see if there are more fd to set - iterate through all entries in hash table
         con_entry = ink_hash_table_iterator_first(accepted_con, &con_state);
         while (con_entry) {
           Debug("ts_main", "[ts_ctrl_main] We have a remote client request!\n");
-          client_entry = (ClientT *) ink_hash_table_entry_value(accepted_con, con_entry);
+          client_entry = (ClientT *)ink_hash_table_entry_value(accepted_con, con_entry);
           // got information; check
           if (client_entry->fd && FD_ISSET(client_entry->fd, &selectFDs)) {
-            void * req = NULL;
+            void *req = NULL;
             size_t reqlen;
 
             ret = preprocess_msg(client_entry->fd, &req, &reqlen);
@@ -222,15 +222,15 @@ ts_ctrl_main(void *arg)
               continue;
             }
 
-          }                     // end if(client_entry->fd && FD_ISSET(client_entry->fd, &selectFDs))
+          } // end if(client_entry->fd && FD_ISSET(client_entry->fd, &selectFDs))
 
           con_entry = ink_hash_table_iterator_next(accepted_con, &con_state);
-        }                       // end while (con_entry)
-      }                         // end if (fds_ready > 0)
+        } // end while (con_entry)
+      }   // end if (fds_ready > 0)
 
-    }                           // end if (fds_ready > 0)
+    } // end if (fds_ready > 0)
 
-  }                             // end while (1)
+  } // end while (1)
 
   // if we get here something's wrong, just clean up
   Debug("ts_main", "[ts_ctrl_main] CLOSING AND SHUTTING DOWN OPERATIONS\n");
@@ -239,12 +239,12 @@ ts_ctrl_main(void *arg)
   // iterate through hash table; close client socket connections and remove entry
   con_entry = ink_hash_table_iterator_first(accepted_con, &con_state);
   while (con_entry) {
-    client_entry = (ClientT *) ink_hash_table_entry_value(accepted_con, con_entry);
+    client_entry = (ClientT *)ink_hash_table_entry_value(accepted_con, con_entry);
     if (client_entry->fd >= 0) {
-      close_socket(client_entry->fd);     // close socket
+      close_socket(client_entry->fd); // close socket
     }
-    ink_hash_table_delete(accepted_con, (char *) &client_entry->fd);  // remove binding
-    delete_client(client_entry);        // free ClientT
+    ink_hash_table_delete(accepted_con, (char *)&client_entry->fd); // remove binding
+    delete_client(client_entry);                                    // free ClientT
     con_entry = ink_hash_table_iterator_next(accepted_con, &con_state);
   }
   // all entries should be removed and freed already
@@ -263,7 +263,7 @@ ts_ctrl_main(void *arg)
  */
 
 static TSMgmtError
-marshall_rec_data(RecDataT rec_type, const RecData& rec_data, MgmtMarshallData& data)
+marshall_rec_data(RecDataT rec_type, const RecData &rec_data, MgmtMarshallData &data)
 {
   switch (rec_type) {
   case RECD_INT:
@@ -288,7 +288,7 @@ marshall_rec_data(RecDataT rec_type, const RecData& rec_data, MgmtMarshallData& 
       data.len = countof("NULL");
     }
     break;
-  default:                     // invalid record type
+  default: // invalid record type
     return TS_ERR_FAIL;
   }
 
@@ -296,12 +296,12 @@ marshall_rec_data(RecDataT rec_type, const RecData& rec_data, MgmtMarshallData& 
 }
 
 static TSMgmtError
-send_record_get_response(int fd, TSRecordT rec_type, const char * rec_name, const void * rec_data, size_t data_len)
+send_record_get_response(int fd, TSRecordT rec_type, const char *rec_name, const void *rec_data, size_t data_len)
 {
   MgmtMarshallInt err = TS_ERR_OKAY;
   MgmtMarshallInt type = rec_type;
   MgmtMarshallString name = const_cast<MgmtMarshallString>(rec_name);
-  MgmtMarshallData value = { const_cast<void *>(rec_data), data_len };
+  MgmtMarshallData value = {const_cast<void *>(rec_data), data_len};
 
   return send_mgmt_response(fd, RECORD_GET, &err, &type, &name, &value);
 }
@@ -317,7 +317,7 @@ send_record_get_response(int fd, TSRecordT rec_type, const char * rec_name, cons
  * note:
  *************************************************************************/
 static TSMgmtError
-handle_record_get(int fd, void * req, size_t reqlen)
+handle_record_get(int fd, void *req, size_t reqlen)
 {
   TSMgmtError ret;
   TSRecordEle *ele;
@@ -346,7 +346,7 @@ handle_record_get(int fd, void * req, size_t reqlen)
   // create and send reply back to client
   switch (ele->rec_type) {
   case TS_REC_INT:
-    ret = send_record_get_response(fd, ele->rec_type, ele->rec_name,  &(ele->valueT.int_val), sizeof(TSInt));
+    ret = send_record_get_response(fd, ele->rec_type, ele->rec_name, &(ele->valueT.int_val), sizeof(TSInt));
     break;
   case TS_REC_COUNTER:
     ret = send_record_get_response(fd, ele->rec_type, ele->rec_name, &(ele->valueT.counter_val), sizeof(TSCounter));
@@ -362,7 +362,7 @@ handle_record_get(int fd, void * req, size_t reqlen)
       ret = send_record_get_response(fd, ele->rec_type, ele->rec_name, "NULL", countof("NULL"));
     }
     break;
-  default:                     // invalid record type
+  default: // invalid record type
     ret = TS_ERR_FAIL;
   }
 
@@ -373,14 +373,14 @@ done:
 
 struct record_match_state {
   TSMgmtError err;
-  int         fd;
-  DFA         regex;
+  int fd;
+  DFA regex;
 };
 
 static void
 send_record_match(RecT /* rec_type */, void *edata, int /* registered */, const char *name, int data_type, RecData *rec_val)
 {
-  record_match_state *match = (record_match_state *)edata ;
+  record_match_state *match = (record_match_state *)edata;
 
   if (match->err != TS_ERR_OKAY) {
     return;
@@ -413,7 +413,7 @@ send_record_match(RecT /* rec_type */, void *edata, int /* registered */, const 
 }
 
 static TSMgmtError
-handle_record_match(int fd, void * req, size_t reqlen)
+handle_record_match(int fd, void *req, size_t reqlen)
 {
   TSMgmtError ret;
   record_match_state match;
@@ -458,7 +458,7 @@ handle_record_match(int fd, void * req, size_t reqlen)
  * note: request format = <record name>DELIMITER<record_value>
  *************************************************************************/
 static TSMgmtError
-handle_record_set(int fd, void * req, size_t reqlen)
+handle_record_set(int fd, void *req, size_t reqlen)
 {
   TSMgmtError ret;
   TSActionNeedT action = TS_ACTION_UNDEFINED;
@@ -497,7 +497,7 @@ fail:
  * note: None
  *************************************************************************/
 static TSMgmtError
-handle_file_read(int fd, void * req, size_t reqlen)
+handle_file_read(int fd, void *req, size_t reqlen)
 {
   int size, version;
   char *text;
@@ -507,7 +507,7 @@ handle_file_read(int fd, void * req, size_t reqlen)
 
   MgmtMarshallInt err;
   MgmtMarshallInt vers = 0;
-  MgmtMarshallData data = { NULL, 0 };
+  MgmtMarshallData data = {NULL, 0};
 
   err = recv_mgmt_request(req, reqlen, FILE_READ, &optype, &fid);
   if (err != TS_ERR_OKAY) {
@@ -515,7 +515,7 @@ handle_file_read(int fd, void * req, size_t reqlen)
   }
 
   // make CoreAPI call on Traffic Manager side
-  err = ReadFile((TSFileNameT)fid , &text, &size, &version);
+  err = ReadFile((TSFileNameT)fid, &text, &size, &version);
   if (err == TS_ERR_OKAY) {
     vers = version;
     data.ptr = text;
@@ -524,7 +524,7 @@ handle_file_read(int fd, void * req, size_t reqlen)
 
   err = send_mgmt_response(fd, FILE_READ, &err, &vers, &data);
 
-  ats_free(text);                // free memory allocated by ReadFile
+  ats_free(text); // free memory allocated by ReadFile
   return (TSMgmtError)err;
 }
 
@@ -536,14 +536,14 @@ handle_file_read(int fd, void * req, size_t reqlen)
  * note: None
  *************************************************************************/
 static TSMgmtError
-handle_file_write(int fd, void * req, size_t reqlen)
+handle_file_write(int fd, void *req, size_t reqlen)
 {
-  MgmtMarshallInt   optype;
-  MgmtMarshallInt   fid;
-  MgmtMarshallInt   vers;
-  MgmtMarshallData  data = { NULL, 0 };
+  MgmtMarshallInt optype;
+  MgmtMarshallInt fid;
+  MgmtMarshallInt vers;
+  MgmtMarshallData data = {NULL, 0};
 
-  MgmtMarshallInt   err;
+  MgmtMarshallInt err;
 
   err = recv_mgmt_request(req, reqlen, FILE_WRITE, &optype, &fid, &vers, &data);
   if (err != TS_ERR_OKAY) {
@@ -571,7 +571,7 @@ done:
  * note: None
  *************************************************************************/
 static TSMgmtError
-handle_proxy_state_get(int fd, void * req, size_t reqlen)
+handle_proxy_state_get(int fd, void *req, size_t reqlen)
 {
   MgmtMarshallInt optype;
   MgmtMarshallInt err;
@@ -593,7 +593,7 @@ handle_proxy_state_get(int fd, void * req, size_t reqlen)
  * note: None
  *************************************************************************/
 static TSMgmtError
-handle_proxy_state_set(int fd, void * req, size_t reqlen)
+handle_proxy_state_set(int fd, void *req, size_t reqlen)
 {
   MgmtMarshallInt optype;
   MgmtMarshallInt state;
@@ -618,7 +618,7 @@ handle_proxy_state_set(int fd, void * req, size_t reqlen)
  * note: None
  *************************************************************************/
 static TSMgmtError
-handle_reconfigure(int fd, void * req, size_t reqlen)
+handle_reconfigure(int fd, void *req, size_t reqlen)
 {
   MgmtMarshallInt err;
   MgmtMarshallInt optype;
@@ -639,7 +639,7 @@ handle_reconfigure(int fd, void * req, size_t reqlen)
  * note: None
  *************************************************************************/
 static TSMgmtError
-handle_restart(int fd, void * req, size_t reqlen)
+handle_restart(int fd, void *req, size_t reqlen)
 {
   MgmtMarshallInt optype;
   MgmtMarshallInt options;
@@ -648,9 +648,15 @@ handle_restart(int fd, void * req, size_t reqlen)
   err = recv_mgmt_request(req, reqlen, RESTART, &optype, &options);
   if (err == TS_ERR_OKAY) {
     switch (optype) {
-    case BOUNCE: err = Bounce(options); break;
-    case RESTART: err = Restart(options); break;
-    default: err = TS_ERR_PARAMS; break;
+    case BOUNCE:
+      err = Bounce(options);
+      break;
+    case RESTART:
+      err = Restart(options);
+      break;
+    default:
+      err = TS_ERR_PARAMS;
+      break;
     }
   }
 
@@ -665,7 +671,7 @@ handle_restart(int fd, void * req, size_t reqlen)
  * note: None
  *************************************************************************/
 static TSMgmtError
-handle_storage_device_cmd_offline(int fd, void * req, size_t reqlen)
+handle_storage_device_cmd_offline(int fd, void *req, size_t reqlen)
 {
   MgmtMarshallInt optype;
   MgmtMarshallString name = NULL;
@@ -688,7 +694,7 @@ handle_storage_device_cmd_offline(int fd, void * req, size_t reqlen)
  * note: the req should be the event name
  *************************************************************************/
 static TSMgmtError
-handle_event_resolve(int fd, void * req, size_t reqlen)
+handle_event_resolve(int fd, void *req, size_t reqlen)
 {
   MgmtMarshallInt optype;
   MgmtMarshallString name = NULL;
@@ -711,7 +717,7 @@ handle_event_resolve(int fd, void * req, size_t reqlen)
  * note: the req should be the event name
  *************************************************************************/
 static TSMgmtError
-handle_event_get_mlt(int fd, void * req, size_t reqlen)
+handle_event_get_mlt(int fd, void *req, size_t reqlen)
 {
   LLQ *event_list = create_queue();
   char buf[MAX_BUF_SIZE];
@@ -736,14 +742,14 @@ handle_event_get_mlt(int fd, void * req, size_t reqlen)
   // iterate through list and put into a delimited string list
   memset(buf, 0, MAX_BUF_SIZE);
   while (!queue_is_empty(event_list)) {
-    event_name = (char *) dequeue(event_list);
+    event_name = (char *)dequeue(event_list);
     if (event_name) {
       snprintf(buf + buf_pos, (MAX_BUF_SIZE - buf_pos), "%s%c", event_name, REMOTE_DELIM);
       buf_pos += (strlen(event_name) + 1);
-      ats_free(event_name);        //free the llq entry
+      ats_free(event_name); // free the llq entry
     }
   }
-  buf[buf_pos] = '\0';          //end the string
+  buf[buf_pos] = '\0'; // end the string
 
   // Point the send list to the filled buffer.
   list = buf;
@@ -761,7 +767,7 @@ done:
  * note: the req should be the event name
  *************************************************************************/
 static TSMgmtError
-handle_event_active(int fd, void * req, size_t reqlen)
+handle_event_active(int fd, void *req, size_t reqlen)
 {
   bool active;
   MgmtMarshallInt optype;
@@ -797,7 +803,7 @@ done:
  * output: TS_ERR_xx
  *************************************************************************/
 static TSMgmtError
-handle_snapshot(int fd, void * req, size_t reqlen)
+handle_snapshot(int fd, void *req, size_t reqlen)
 {
   MgmtMarshallInt optype;
   MgmtMarshallString name = NULL;
@@ -843,7 +849,7 @@ done:
  * note: the req should be the event name
  *************************************************************************/
 static TSMgmtError
-handle_snapshot_get_mlt(int fd, void * req, size_t reqlen)
+handle_snapshot_get_mlt(int fd, void *req, size_t reqlen)
 {
   LLQ *snap_list = create_queue();
   char buf[MAX_BUF_SIZE];
@@ -868,14 +874,14 @@ handle_snapshot_get_mlt(int fd, void * req, size_t reqlen)
   // iterate through list and put into a delimited string list
   memset(buf, 0, MAX_BUF_SIZE);
   while (!queue_is_empty(snap_list)) {
-    snap_name = (char *) dequeue(snap_list);
+    snap_name = (char *)dequeue(snap_list);
     if (snap_name) {
       snprintf(buf + buf_pos, (MAX_BUF_SIZE - buf_pos), "%s%c", snap_name, REMOTE_DELIM);
       buf_pos += (strlen(snap_name) + 1);
-      ats_free(snap_name);         //free the llq entry
+      ats_free(snap_name); // free the llq entry
     }
   }
-  buf[buf_pos] = '\0';          //end the string
+  buf[buf_pos] = '\0'; // end the string
 
   // Point the send list to the filled buffer.
   list = buf;
@@ -892,7 +898,7 @@ done:
  * output: TS_ERR_xx
  *************************************************************************/
 static TSMgmtError
-handle_diags(int /* fd */, void * req, size_t reqlen)
+handle_diags(int /* fd */, void *req, size_t reqlen)
 {
   TSMgmtError ret;
   DiagsLevel level;
@@ -936,7 +942,7 @@ handle_diags(int /* fd */, void * req, size_t reqlen)
     level = DL_Emergency;
     break;
   default:
-    level = DL_Diag;            //default value should be Diag not UNDEFINED
+    level = DL_Diag; // default value should be Diag not UNDEFINED
   }
 
   if (diags) {
@@ -954,7 +960,7 @@ handle_diags(int /* fd */, void * req, size_t reqlen)
  * output: TS_ERR_xx
  *************************************************************************/
 static TSMgmtError
-handle_stats_reset(int fd, void * req, size_t reqlen)
+handle_stats_reset(int fd, void *req, size_t reqlen)
 {
   MgmtMarshallInt optype;
   MgmtMarshallString name = NULL;
@@ -977,7 +983,7 @@ handle_stats_reset(int fd, void * req, size_t reqlen)
  * output: TS_ERR_xx. There is no response message.
  *************************************************************************/
 static TSMgmtError
-handle_api_ping(int /* fd */, void * req, size_t reqlen)
+handle_api_ping(int /* fd */, void *req, size_t reqlen)
 {
   MgmtMarshallInt optype;
   MgmtMarshallInt stamp;
@@ -986,7 +992,7 @@ handle_api_ping(int /* fd */, void * req, size_t reqlen)
 }
 
 static TSMgmtError
-handle_server_backtrace(int fd, void * req, size_t reqlen)
+handle_server_backtrace(int fd, void *req, size_t reqlen)
 {
   MgmtMarshallInt optype;
   MgmtMarshallInt options;
@@ -1005,25 +1011,25 @@ handle_server_backtrace(int fd, void * req, size_t reqlen)
 }
 
 static void
-send_record_describe(const RecRecord * rec, void * ptr)
+send_record_describe(const RecRecord *rec, void *ptr)
 {
-  MgmtMarshallString  rec_name = const_cast<char *>(rec->name);
-  MgmtMarshallData    rec_value = { NULL, 0 };
-  MgmtMarshallData    rec_default = { NULL, 0 };
-  MgmtMarshallInt     rec_type = rec->data_type;
-  MgmtMarshallInt     rec_class = rec->rec_type;
-  MgmtMarshallInt     rec_version = rec->version;
-  MgmtMarshallInt     rec_rsb = rec->rsb_id;
-  MgmtMarshallInt     rec_order = rec->order;
-  MgmtMarshallInt     rec_access = rec->config_meta.access_type;
-  MgmtMarshallInt     rec_update = rec->config_meta.update_required;
-  MgmtMarshallInt     rec_updatetype = rec->config_meta.update_type;
-  MgmtMarshallInt     rec_checktype = rec->config_meta.check_type;
-  MgmtMarshallString  rec_checkexpr = rec->config_meta.check_expr;
+  MgmtMarshallString rec_name = const_cast<char *>(rec->name);
+  MgmtMarshallData rec_value = {NULL, 0};
+  MgmtMarshallData rec_default = {NULL, 0};
+  MgmtMarshallInt rec_type = rec->data_type;
+  MgmtMarshallInt rec_class = rec->rec_type;
+  MgmtMarshallInt rec_version = rec->version;
+  MgmtMarshallInt rec_rsb = rec->rsb_id;
+  MgmtMarshallInt rec_order = rec->order;
+  MgmtMarshallInt rec_access = rec->config_meta.access_type;
+  MgmtMarshallInt rec_update = rec->config_meta.update_required;
+  MgmtMarshallInt rec_updatetype = rec->config_meta.update_type;
+  MgmtMarshallInt rec_checktype = rec->config_meta.check_type;
+  MgmtMarshallString rec_checkexpr = rec->config_meta.check_expr;
 
-  MgmtMarshallInt     err = TS_ERR_OKAY;
+  MgmtMarshallInt err = TS_ERR_OKAY;
 
-  int * fderr = (int *)ptr;
+  int *fderr = (int *)ptr;
 
   // We only describe config variables (for now).
   if (!REC_TYPE_IS_CONFIG(rec->rec_type)) {
@@ -1032,11 +1038,20 @@ send_record_describe(const RecRecord * rec, void * ptr)
   }
 
   switch (rec_type) {
-  case RECD_INT: rec_type = TS_REC_INT; break;
-  case RECD_FLOAT: rec_type = TS_REC_FLOAT; break;
-  case RECD_STRING: rec_type = TS_REC_STRING; break;
-  case RECD_COUNTER: rec_type = TS_REC_COUNTER; break;
-  default: rec_type = TS_REC_UNDEFINED;
+  case RECD_INT:
+    rec_type = TS_REC_INT;
+    break;
+  case RECD_FLOAT:
+    rec_type = TS_REC_FLOAT;
+    break;
+  case RECD_STRING:
+    rec_type = TS_REC_STRING;
+    break;
+  case RECD_COUNTER:
+    rec_type = TS_REC_COUNTER;
+    break;
+  default:
+    rec_type = TS_REC_UNDEFINED;
   }
 
   err = marshall_rec_data(rec->data_type, rec->data, rec_value);
@@ -1049,16 +1064,16 @@ send_record_describe(const RecRecord * rec, void * ptr)
     goto done;
   }
 
-  err = send_mgmt_response(*fderr, RECORD_DESCRIBE_CONFIG, &err,
-    &rec_name, &rec_value, &rec_default, &rec_type, &rec_class, &rec_version, &rec_rsb, &rec_order,
-    &rec_access, &rec_update, &rec_updatetype, &rec_checktype, &rec_checkexpr);
+  err = send_mgmt_response(*fderr, RECORD_DESCRIBE_CONFIG, &err, &rec_name, &rec_value, &rec_default, &rec_type, &rec_class,
+                           &rec_version, &rec_rsb, &rec_order, &rec_access, &rec_update, &rec_updatetype, &rec_checktype,
+                           &rec_checkexpr);
 
 done:
   *fderr = err;
 }
 
 static TSMgmtError
-handle_record_describe(int fd, void * req, size_t reqlen)
+handle_record_describe(int fd, void *req, size_t reqlen)
 {
   TSMgmtError ret;
   MgmtMarshallInt optype;
@@ -1092,48 +1107,46 @@ done:
   return ret;
 }
 
-struct control_message_handler
-{
+struct control_message_handler {
   unsigned flags;
   TSMgmtError (*handler)(int, void *, size_t);
 };
 
 static const control_message_handler handlers[] = {
-  /* FILE_READ                  */ { MGMT_API_PRIVILEGED, handle_file_read },
-  /* FILE_WRITE                 */ { MGMT_API_PRIVILEGED, handle_file_write },
-  /* RECORD_SET                 */ { MGMT_API_PRIVILEGED, handle_record_set },
-  /* RECORD_GET                 */ { 0, handle_record_get },
-  /* PROXY_STATE_GET            */ { 0, handle_proxy_state_get },
-  /* PROXY_STATE_SET            */ { MGMT_API_PRIVILEGED, handle_proxy_state_set },
-  /* RECONFIGURE                */ { MGMT_API_PRIVILEGED, handle_reconfigure },
-  /* RESTART                    */ { MGMT_API_PRIVILEGED, handle_restart },
-  /* BOUNCE                     */ { MGMT_API_PRIVILEGED, handle_restart },
-  /* EVENT_RESOLVE              */ { MGMT_API_PRIVILEGED, handle_event_resolve },
-  /* EVENT_GET_MLT              */ { 0, handle_event_get_mlt },
-  /* EVENT_ACTIVE               */ { 0, handle_event_active },
-  /* EVENT_REG_CALLBACK         */ { 0, NULL },
-  /* EVENT_UNREG_CALLBACK       */ { 0, NULL },
-  /* EVENT_NOTIFY               */ { 0, NULL },
-  /* SNAPSHOT_TAKE              */ { MGMT_API_PRIVILEGED, handle_snapshot },
-  /* SNAPSHOT_RESTORE           */ { MGMT_API_PRIVILEGED, handle_snapshot },
-  /* SNAPSHOT_REMOVE            */ { MGMT_API_PRIVILEGED, handle_snapshot },
-  /* SNAPSHOT_GET_MLT           */ { 0, handle_snapshot_get_mlt },
-  /* DIAGS                      */ { MGMT_API_PRIVILEGED, handle_diags },
-  /* STATS_RESET_NODE           */ { MGMT_API_PRIVILEGED, handle_stats_reset },
-  /* STATS_RESET_CLUSTER        */ { MGMT_API_PRIVILEGED, handle_stats_reset },
-  /* STORAGE_DEVICE_CMD_OFFLINE */ { MGMT_API_PRIVILEGED, handle_storage_device_cmd_offline },
-  /* RECORD_MATCH_GET           */ { 0, handle_record_match },
-  /* API_PING                   */ { 0, handle_api_ping },
-  /* SERVER_BACKTRACE           */ { MGMT_API_PRIVILEGED, handle_server_backtrace },
-  /* RECORD_DESCRIBE_CONFIG     */ { 0, handle_record_describe }
-};
+  /* FILE_READ                  */ {MGMT_API_PRIVILEGED, handle_file_read},
+  /* FILE_WRITE                 */ {MGMT_API_PRIVILEGED, handle_file_write},
+  /* RECORD_SET                 */ {MGMT_API_PRIVILEGED, handle_record_set},
+  /* RECORD_GET                 */ {0, handle_record_get},
+  /* PROXY_STATE_GET            */ {0, handle_proxy_state_get},
+  /* PROXY_STATE_SET            */ {MGMT_API_PRIVILEGED, handle_proxy_state_set},
+  /* RECONFIGURE                */ {MGMT_API_PRIVILEGED, handle_reconfigure},
+  /* RESTART                    */ {MGMT_API_PRIVILEGED, handle_restart},
+  /* BOUNCE                     */ {MGMT_API_PRIVILEGED, handle_restart},
+  /* EVENT_RESOLVE              */ {MGMT_API_PRIVILEGED, handle_event_resolve},
+  /* EVENT_GET_MLT              */ {0, handle_event_get_mlt},
+  /* EVENT_ACTIVE               */ {0, handle_event_active},
+  /* EVENT_REG_CALLBACK         */ {0, NULL},
+  /* EVENT_UNREG_CALLBACK       */ {0, NULL},
+  /* EVENT_NOTIFY               */ {0, NULL},
+  /* SNAPSHOT_TAKE              */ {MGMT_API_PRIVILEGED, handle_snapshot},
+  /* SNAPSHOT_RESTORE           */ {MGMT_API_PRIVILEGED, handle_snapshot},
+  /* SNAPSHOT_REMOVE            */ {MGMT_API_PRIVILEGED, handle_snapshot},
+  /* SNAPSHOT_GET_MLT           */ {0, handle_snapshot_get_mlt},
+  /* DIAGS                      */ {MGMT_API_PRIVILEGED, handle_diags},
+  /* STATS_RESET_NODE           */ {MGMT_API_PRIVILEGED, handle_stats_reset},
+  /* STATS_RESET_CLUSTER        */ {MGMT_API_PRIVILEGED, handle_stats_reset},
+  /* STORAGE_DEVICE_CMD_OFFLINE */ {MGMT_API_PRIVILEGED, handle_storage_device_cmd_offline},
+  /* RECORD_MATCH_GET           */ {0, handle_record_match},
+  /* API_PING                   */ {0, handle_api_ping},
+  /* SERVER_BACKTRACE           */ {MGMT_API_PRIVILEGED, handle_server_backtrace},
+  /* RECORD_DESCRIBE_CONFIG     */ {0, handle_record_describe}};
 
 // This should use countof(), but we need a constexpr :-/
-#define NUM_OP_HANDLERS (sizeof(handlers)/sizeof(handlers[0]))
+#define NUM_OP_HANDLERS (sizeof(handlers) / sizeof(handlers[0]))
 extern char __msg_handler_static_assert[NUM_OP_HANDLERS == MGMT_OPERATION_TYPE_MAX ? 0 : -1];
 
 static TSMgmtError
-handle_control_message(int fd, void * req, size_t reqlen)
+handle_control_message(int fd, void *req, size_t reqlen)
 {
   OpType optype = extract_mgmt_request_optype(req, reqlen);
   TSMgmtError error;

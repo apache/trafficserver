@@ -27,8 +27,8 @@
 #include <atscppapi/noncopyable.h>
 #include <string>
 
-namespace atscppapi {
-
+namespace atscppapi
+{
 struct HeadersState;
 struct HeaderFieldIteratorState;
 struct HeaderFieldValueIteratorState;
@@ -41,67 +41,69 @@ class Response;
  * Because header field names must be case insensitive this allows easy case insentive comparisons of names.
  *
  */
-class HeaderFieldName {
- private:
-   std::string name_;
- public:
-   typedef std::string::size_type size_type;
+class HeaderFieldName
+{
+private:
+  std::string name_;
 
-   /**
-    * Constructor: build a new HeaderField name with the given string
+public:
+  typedef std::string::size_type size_type;
+
+  /**
+   * Constructor: build a new HeaderField name with the given string
+   */
+  HeaderFieldName(const std::string &name);
+
+  /**
+   * std::string conversion
+   * @return a string which is this HeaderFieldName
+   */
+  operator std::string();
+
+  /**
+    * const char * conversion
+    * @return a const char * which is this HeaderFieldName
     */
-   HeaderFieldName(const std::string &name);
+  operator const char *();
 
-   /**
-    * std::string conversion
-    * @return a string which is this HeaderFieldName
-    */
-   operator std::string();
+  /**
+   * @return the length of this HeaderFieldName
+   */
+  size_type length();
 
-   /**
-     * const char * conversion
-     * @return a const char * which is this HeaderFieldName
-     */
-   operator const char*();
+  /**
+   * @return a string which is this HeaderFieldName
+   */
+  std::string str();
 
-   /**
-    * @return the length of this HeaderFieldName
-    */
-   size_type length();
+  /**
+   * @return a const char * which points to the name of this HeaderFIeldName
+   */
+  const char *c_str();
 
-   /**
-    * @return a string which is this HeaderFieldName
-    */
-   std::string str();
+  /**
+   * Case insensitive comparison of this HeaderFieldName
+   * @return true if the two strings are equal.
+   */
+  bool operator==(const char *field_name);
 
-   /**
-    * @return a const char * which points to the name of this HeaderFIeldName
-    */
-   const char *c_str();
-
-   /**
+  /**
     * Case insensitive comparison of this HeaderFieldName
     * @return true if the two strings are equal.
     */
-   bool operator==(const char *field_name);
+  bool operator==(const std::string &field_name);
 
-   /**
-     * Case insensitive comparison of this HeaderFieldName
-     * @return true if the two strings are equal.
-     */
-   bool operator==(const std::string &field_name);
+  /**
+    * Case insensitive comparison of this HeaderFieldName
+    * @return true if the two strings are not equal.
+    */
+  bool operator!=(const char *field_name);
 
-   /**
-     * Case insensitive comparison of this HeaderFieldName
-     * @return true if the two strings are not equal.
-     */
-   bool operator!=(const char *field_name);
-
-   /**
-     * Case insensitive comparison of this HeaderFieldName
-     * @return true if the two strings are not equal.
-     */
-   bool operator!=(const std::string &field_name);
+  /**
+    * Case insensitive comparison of this HeaderFieldName
+    * @return true if the two strings are not equal.
+    */
+  bool operator!=(const std::string &field_name);
 };
 
 class HeaderField;
@@ -111,58 +113,59 @@ class HeaderField;
  */
 class header_field_value_iterator : public std::iterator<std::forward_iterator_tag, int>
 {
-  private:
-    HeaderFieldValueIteratorState *state_;
-  public:
-    /**
-      * Constructor for header_field_value_iterator, this shouldn't need to be used directly.
-      * @param bufp the TSMBuffer associated with the headers
-      * @param mloc the TSMLoc associated with the headers.
-      * @param field_loc the TSMLoc assocated with the field.
-      * @param index the index of the value in the HeaderField
-      * @warning This shouldn't need to be used directly!
-      */
-    header_field_value_iterator(void *bufp, void *hdr_loc, void *field_loc, int index);
+private:
+  HeaderFieldValueIteratorState *state_;
 
-    /**
-      * Copy Constructor for header_field_value_iterator, this shouldn't need to be used directly.
-      * @param header_field_value_iterator an existing iterator to copy
-      * @warning This shouldn't need to be used directly!
-      */
-    header_field_value_iterator(const header_field_value_iterator& it);
-    ~header_field_value_iterator();
+public:
+  /**
+    * Constructor for header_field_value_iterator, this shouldn't need to be used directly.
+    * @param bufp the TSMBuffer associated with the headers
+    * @param mloc the TSMLoc associated with the headers.
+    * @param field_loc the TSMLoc assocated with the field.
+    * @param index the index of the value in the HeaderField
+    * @warning This shouldn't need to be used directly!
+    */
+  header_field_value_iterator(void *bufp, void *hdr_loc, void *field_loc, int index);
 
-    /**
-     * Dereference this iterator into a string (get the value pointed to by this iterator)
-     * @return a string which is the value pointed to by this iterator
-     */
-    std::string operator*();
+  /**
+    * Copy Constructor for header_field_value_iterator, this shouldn't need to be used directly.
+    * @param header_field_value_iterator an existing iterator to copy
+    * @warning This shouldn't need to be used directly!
+    */
+  header_field_value_iterator(const header_field_value_iterator &it);
+  ~header_field_value_iterator();
 
-    /**
-     * Advance the iterator to the next header field value
-     * @return a reference to a the next iterator
-     */
-    header_field_value_iterator& operator++();
+  /**
+   * Dereference this iterator into a string (get the value pointed to by this iterator)
+   * @return a string which is the value pointed to by this iterator
+   */
+  std::string operator*();
 
-    /**
-     * Advance the current iterator to the next header field
-     * @return a new iterator which points to the next element
-     */
-    header_field_value_iterator operator++(int);
+  /**
+   * Advance the iterator to the next header field value
+   * @return a reference to a the next iterator
+   */
+  header_field_value_iterator &operator++();
 
-    /**
-     * Compare two iterators returning true if they are equal
-     * @return true if two iterators are equal
-     */
-    bool operator==(const header_field_value_iterator& rhs) const;
+  /**
+   * Advance the current iterator to the next header field
+   * @return a new iterator which points to the next element
+   */
+  header_field_value_iterator operator++(int);
 
-    /**
-     * Compare two iterators returning true if they are NOT equal
-     * @return true if two iterators are not equal.
-     */
-    bool operator!=(const header_field_value_iterator& rhs) const;
+  /**
+   * Compare two iterators returning true if they are equal
+   * @return true if two iterators are equal
+   */
+  bool operator==(const header_field_value_iterator &rhs) const;
 
-    friend class HeaderField;
+  /**
+   * Compare two iterators returning true if they are NOT equal
+   * @return true if two iterators are not equal.
+   */
+  bool operator!=(const header_field_value_iterator &rhs) const;
+
+  friend class HeaderField;
 };
 
 /**
@@ -170,69 +173,71 @@ class header_field_value_iterator : public std::iterator<std::forward_iterator_t
  */
 class header_field_iterator : public std::iterator<std::forward_iterator_tag, int>
 {
-  private:
-    HeaderFieldIteratorState *state_;
-    header_field_iterator(void *hdr_buf, void *hdr_loc, void *field_loc);
-  public:
-    ~header_field_iterator();
+private:
+  HeaderFieldIteratorState *state_;
+  header_field_iterator(void *hdr_buf, void *hdr_loc, void *field_loc);
 
-    /**
-      * Copy Constructor for header_field_iterator, this shouldn't need to be used directly.
-      * @param header_field_iterator: for constructing the iterator.
-      * @warning This shouldn't need to be used directly!
-     */
-    header_field_iterator(const header_field_iterator& it);
+public:
+  ~header_field_iterator();
 
-    header_field_iterator &operator=(const header_field_iterator &rhs);
+  /**
+    * Copy Constructor for header_field_iterator, this shouldn't need to be used directly.
+    * @param header_field_iterator: for constructing the iterator.
+    * @warning This shouldn't need to be used directly!
+   */
+  header_field_iterator(const header_field_iterator &it);
 
-    /**
-     * Advance the iterator to the next header field
-     * @return a reference to a the next iterator
-     */
-    header_field_iterator& operator++();
+  header_field_iterator &operator=(const header_field_iterator &rhs);
 
-    /**
-     * Advance the current iterator to the next header field
-     * @return a new iterator which points to the next element
-     */
-    header_field_iterator operator++(int);
+  /**
+   * Advance the iterator to the next header field
+   * @return a reference to a the next iterator
+   */
+  header_field_iterator &operator++();
 
-    /**
-     * Advance the iterator to the next header field with the same name
-     * @return a reference to a the next iterator
-     */
-    header_field_iterator& nextDup();
+  /**
+   * Advance the current iterator to the next header field
+   * @return a new iterator which points to the next element
+   */
+  header_field_iterator operator++(int);
 
-    /**
-     * Comparison operator, compare two iterators
-     * @return true if the two iterators point to the same HeaderField
-     */
-    bool operator==(const header_field_iterator& rhs) const;
+  /**
+   * Advance the iterator to the next header field with the same name
+   * @return a reference to a the next iterator
+   */
+  header_field_iterator &nextDup();
 
-    /**
-     * Inequality Operator, compare two iterators
-     * @return false if the two iterators are the same.
-     */
-    bool operator!=(const header_field_iterator& rhs) const;
+  /**
+   * Comparison operator, compare two iterators
+   * @return true if the two iterators point to the same HeaderField
+   */
+  bool operator==(const header_field_iterator &rhs) const;
 
-    /**
-     * Dereference an iterator
-     * @return a HeaderField pointed to by this iterator
-     */
-    HeaderField operator*();
+  /**
+   * Inequality Operator, compare two iterators
+   * @return false if the two iterators are the same.
+   */
+  bool operator!=(const header_field_iterator &rhs) const;
 
-    friend class HeaderField;
-    friend class Headers;
+  /**
+   * Dereference an iterator
+   * @return a HeaderField pointed to by this iterator
+   */
+  HeaderField operator*();
+
+  friend class HeaderField;
+  friend class Headers;
 };
 
 /**
  * @brief A HeaderField is a class that contains the header field name and all of the values.
  * @note You may have several HeaderFields with the same name for a given set of Headers.
  */
-class HeaderField {
+class HeaderField
+{
 private:
   header_field_iterator iter_;
-  HeaderField(header_field_iterator iter) : iter_(iter) { }
+  HeaderField(header_field_iterator iter) : iter_(iter) {}
 
 public:
   typedef unsigned int size_type;
@@ -350,7 +355,7 @@ public:
    * @note This is a case insensitive comparison.
    * @return true if the name is NOT equal (case insensitive comparison).
    */
-  bool operator!=(const std::string &field_name) const ;
+  bool operator!=(const std::string &field_name) const;
 
   /**
    * Set the VALUES of the header field to the given value string
@@ -379,7 +384,7 @@ public:
     * Get a string representing all the header field's values
     * @return a string representation of all the header fields
     */
-  friend std::ostream& operator<<(std::ostream& os, HeaderField& obj);
+  friend std::ostream &operator<<(std::ostream &os, HeaderField &obj);
 
   /**
     * Get a string representing all the header field's values.
@@ -393,7 +398,8 @@ public:
 /**
  * @brief Encapsulates the headers portion of a request or response.
  */
-class Headers: noncopyable {
+class Headers : noncopyable
+{
 public:
   /**
    * Constructor for Headers. This creates a "detached" headers, i.e., not tied to any transaction.
@@ -404,7 +410,8 @@ public:
    * Constructor for Headers, this shouldn't be used directly unless you're trying to mix the C++ and C apis.
    * @param bufp the TSMBuffer associated with the headers
    * @param mloc the TSMLoc associated with the headers.
-   * @warning This should only be used if you're mixing the C++ and C apis, it will be constructed automatically if using only the C++ api.
+   * @warning This should only be used if you're mixing the C++ and C apis, it will be constructed automatically if using only the
+   * C++ api.
    */
   Headers(void *bufp, void *mloc);
 
@@ -585,16 +592,16 @@ public:
     */
   std::string wireStr();
 
-  friend std::ostream& operator<<(std::ostream &os, Headers &obj);
+  friend std::ostream &operator<<(std::ostream &os, Headers &obj);
 
   ~Headers();
+
 private:
   HeadersState *state_;
   friend class Request;
   friend class ClientRequest;
   friend class Response;
 };
-
 }
 
 #endif

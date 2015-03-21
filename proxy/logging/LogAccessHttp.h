@@ -22,7 +22,6 @@
  */
 
 
-
 #ifndef LOG_ACCESS_HTTP_H
 #define LOG_ACCESS_HTTP_H
 
@@ -40,14 +39,15 @@ class URL;
   HttpStateMachineGet class.
   -------------------------------------------------------------------------*/
 
-class LogAccessHttp:public LogAccess
+class LogAccessHttp : public LogAccess
 {
 public:
-  LogAccessHttp(HttpSM * sm);
-  virtual ~ LogAccessHttp();
+  LogAccessHttp(HttpSM *sm);
+  virtual ~LogAccessHttp();
 
   void init();
-  LogEntryType entry_type()
+  LogEntryType
+  entry_type()
   {
     return LOG_ENTRY_HTTP;
   }
@@ -55,22 +55,22 @@ public:
   //
   // client -> proxy fields
   //
-  virtual int marshal_client_host_ip(char *);   // STR
-  virtual int marshal_client_host_port(char *); // INT
-  virtual int marshal_client_auth_user_name(char *);    // STR
-  virtual int marshal_client_req_text(char *);  // STR
-  virtual int marshal_client_req_http_method(char *);   // INT
-  virtual int marshal_client_req_url(char *);   // STR
-  virtual int marshal_client_req_url_canon(char *);     // STR
-  virtual int marshal_client_req_unmapped_url_canon(char *);    // STR
-  virtual int marshal_client_req_unmapped_url_path(char *);     // STR
-  virtual int marshal_client_req_unmapped_url_host(char *);     // STR
-  virtual int marshal_client_req_url_path(char *);      // STR
-  virtual int marshal_client_req_url_scheme(char *);    // STR
-  virtual int marshal_client_req_http_version(char *);  // INT
-  virtual int marshal_client_req_header_len(char *);    // INT
-  virtual int marshal_client_req_body_len(char *);      // INT
-  virtual int marshal_client_finish_status_code(char *);        // INT
+  virtual int marshal_client_host_ip(char *);                // STR
+  virtual int marshal_client_host_port(char *);              // INT
+  virtual int marshal_client_auth_user_name(char *);         // STR
+  virtual int marshal_client_req_text(char *);               // STR
+  virtual int marshal_client_req_http_method(char *);        // INT
+  virtual int marshal_client_req_url(char *);                // STR
+  virtual int marshal_client_req_url_canon(char *);          // STR
+  virtual int marshal_client_req_unmapped_url_canon(char *); // STR
+  virtual int marshal_client_req_unmapped_url_path(char *);  // STR
+  virtual int marshal_client_req_unmapped_url_host(char *);  // STR
+  virtual int marshal_client_req_url_path(char *);           // STR
+  virtual int marshal_client_req_url_scheme(char *);         // STR
+  virtual int marshal_client_req_http_version(char *);       // INT
+  virtual int marshal_client_req_header_len(char *);         // INT
+  virtual int marshal_client_req_body_len(char *);           // INT
+  virtual int marshal_client_finish_status_code(char *);     // INT
 
   //
   // proxy -> client fields
@@ -87,18 +87,18 @@ public:
   //
   // proxy -> server fields
   //
-  virtual int marshal_proxy_req_header_len(char *);     // INT
-  virtual int marshal_proxy_req_body_len(char *);       // INT
-  virtual int marshal_proxy_req_server_name(char *);    // STR
-  virtual int marshal_proxy_req_server_ip(char *);      // INT
-  virtual int marshal_proxy_hierarchy_route(char *);    // INT
-  virtual int marshal_proxy_host_port(char *);          // INT
+  virtual int marshal_proxy_req_header_len(char *);  // INT
+  virtual int marshal_proxy_req_body_len(char *);    // INT
+  virtual int marshal_proxy_req_server_name(char *); // STR
+  virtual int marshal_proxy_req_server_ip(char *);   // INT
+  virtual int marshal_proxy_hierarchy_route(char *); // INT
+  virtual int marshal_proxy_host_port(char *);       // INT
 
   //
   // server -> proxy fields
   //
-  virtual int marshal_server_host_ip(char *);   // INT
-  virtual int marshal_server_host_name(char *); // STR
+  virtual int marshal_server_host_ip(char *);           // INT
+  virtual int marshal_server_host_name(char *);         // STR
   virtual int marshal_server_resp_status_code(char *);  // INT
   virtual int marshal_server_resp_content_len(char *);  // INT
   virtual int marshal_server_resp_header_len(char *);   // INT
@@ -117,22 +117,22 @@ public:
   //
   // congestion control client_retry_after_time
   //
-  virtual int marshal_client_retry_after_time(char *);  // INT
+  virtual int marshal_client_retry_after_time(char *); // INT
 
   //
   // cache write fields
   //
-  virtual int marshal_cache_write_code(char *); // INT
-  virtual int marshal_cache_write_transform_code(char *);       // INT
+  virtual int marshal_cache_write_code(char *);           // INT
+  virtual int marshal_cache_write_transform_code(char *); // INT
 
   //
   // other fields
   //
-  virtual int marshal_transfer_time_ms(char *); // INT
-  virtual int marshal_transfer_time_s(char *);  // INT
-  virtual int marshal_file_size(char *); // INT
-  virtual int marshal_plugin_identity_id(char *);    // INT
-  virtual int marshal_plugin_identity_tag(char *);    // STR
+  virtual int marshal_transfer_time_ms(char *);    // INT
+  virtual int marshal_transfer_time_s(char *);     // INT
+  virtual int marshal_file_size(char *);           // INT
+  virtual int marshal_plugin_identity_id(char *);  // INT
+  virtual int marshal_plugin_identity_tag(char *); // STR
 
   //
   // named fields from within a http header
@@ -140,15 +140,15 @@ public:
   virtual int marshal_http_header_field(LogField::Container container, char *field, char *buf);
   virtual int marshal_http_header_field_escapify(LogField::Container container, char *field, char *buf);
 
-  virtual void set_client_req_url(char *, int);        // STR
-  virtual void set_client_req_url_canon(char *, int);  // STR
+  virtual void set_client_req_url(char *, int);                // STR
+  virtual void set_client_req_url_canon(char *, int);          // STR
   virtual void set_client_req_unmapped_url_canon(char *, int); // STR
   virtual void set_client_req_unmapped_url_path(char *, int);  // STR
   virtual void set_client_req_unmapped_url_host(char *, int);  // STR
-  virtual void set_client_req_url_path(char *, int);   // STR
+  virtual void set_client_req_url_path(char *, int);           // STR
 
 private:
-  HttpSM * m_http_sm;
+  HttpSM *m_http_sm;
 
   Arena m_arena;
   //  URL *m_url;
@@ -169,7 +169,7 @@ private:
   int m_client_req_unmapped_url_path_len;
   char *m_client_req_unmapped_url_host_str;
   int m_client_req_unmapped_url_host_len;
-  char const*m_client_req_url_path_str;
+  char const *m_client_req_url_path_str;
   int m_client_req_url_path_len;
   char *m_proxy_resp_content_type_str;
   int m_proxy_resp_content_type_len;
@@ -178,8 +178,8 @@ private:
   void validate_unmapped_url_path(void);
 
   // -- member functions that are not allowed --
-  LogAccessHttp(const LogAccessHttp & rhs);
-  LogAccessHttp & operator=(LogAccessHttp & rhs);
+  LogAccessHttp(const LogAccessHttp &rhs);
+  LogAccessHttp &operator=(LogAccessHttp &rhs);
 };
 
 #endif

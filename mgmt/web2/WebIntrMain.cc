@@ -42,22 +42,21 @@
 #include "MgmtSocket.h"
 #include "NetworkUtilsRemote.h"
 
-//INKqa09866
+// INKqa09866
 #include "TSControlMain.h"
 #include "EventControlMain.h"
 
 #if !defined(linux)
 // Solaris header files forget this one
-extern "C"
-{
-  int usleep(unsigned int useconds);
+extern "C" {
+int usleep(unsigned int useconds);
 }
 #endif
 
 typedef int fd;
 static RecInt autoconf_localhost_only = 1;
 
-#define SOCKET_TIMEOUT 10*60
+#define SOCKET_TIMEOUT 10 * 60
 
 
 WebInterFaceGlobals wGlobals;
@@ -89,9 +88,8 @@ int aconf_port_arg = -1;
 //    returns 1 if something is missing
 //
 int
-checkWebContext(WebContext * wctx, const char *desc)
+checkWebContext(WebContext *wctx, const char *desc)
 {
-
   struct stat fInfo;
   textBuffer defaultFile(256);
 
@@ -101,8 +99,7 @@ checkWebContext(WebContext * wctx, const char *desc)
   }
 
   if (stat(wctx->docRoot, &fInfo) < 0) {
-    mgmt_log(stderr, "[checkWebContext] Unable to access document root '%s' for %s : %s\n",
-             wctx->docRoot, desc, strerror(errno));
+    mgmt_log(stderr, "[checkWebContext] Unable to access document root '%s' for %s : %s\n", wctx->docRoot, desc, strerror(errno));
     return 1;
   }
 
@@ -167,11 +164,11 @@ newTcpSocket(int port)
   }
 
   // Allow for immediate re-binding to port
-  if (setsockopt(socketFD, SOL_SOCKET, SO_REUSEADDR, (char *) &one, sizeof(int)) < 0) {
+  if (setsockopt(socketFD, SOL_SOCKET, SO_REUSEADDR, (char *)&one, sizeof(int)) < 0) {
     mgmt_fatal(stderr, errno, "[newTcpSocket] Unable to set socket options.\n");
   }
   // Bind the port to the socket
-  if (bind(socketFD, (sockaddr *) & socketInfo, sizeof(socketInfo)) < 0) {
+  if (bind(socketFD, (sockaddr *)&socketInfo, sizeof(socketInfo)) < 0) {
     mgmt_elog(stderr, 0, "[newTcpSocket] Unable to bind port %d to socket: %s\n", port, strerror(errno));
     close_socket(socketFD);
     return -1;
@@ -211,8 +208,7 @@ serviceThrReaper(void * /* arg ATS_UNUSED */)
     for (int i = 0; i < MAX_SERVICE_THREADS; i++) {
       if (wGlobals.serviceThrArray[i].threadId != 0) {
         if (wGlobals.serviceThrArray[i].waitingForJoin == true) {
-
-          //fprintf(stderr, "Joining on thread %d in slot %d\n",
+          // fprintf(stderr, "Joining on thread %d in slot %d\n",
           //       wGlobals.serviceThrArray[i].threadId, i);
 
           // Join on threads that have exited so we recycle their thrIds and
@@ -235,14 +231,14 @@ serviceThrReaper(void * /* arg ATS_UNUSED */)
 
     for (int j = 0; j < numJoined; j++) {
       ink_sem_post(&wGlobals.serviceThrCount);
-      ink_atomic_increment((int32_t *) & numServiceThr, -1);
+      ink_atomic_increment((int32_t *)&numServiceThr, -1);
     }
 
     usleep(300000);
   }
 
   return NULL;
-}                               // END serviceThrReaper()
+} // END serviceThrReaper()
 
 static bool
 api_socket_is_restricted()
@@ -263,22 +259,22 @@ api_socket_is_restricted()
 void *
 webIntr_main(void *)
 {
-  fd socketFD = -1;             // FD for incoming HTTP connections
-  fd autoconfFD = -1;           // FD for incoming autoconf connections
-  fd clientFD = -1;             // FD for accepted connections
-  fd mgmtapiFD = -1;            // FD for the api interface to issue commands
-  fd eventapiFD = -1;           // FD for the api and clients to handle event callbacks
+  fd socketFD = -1;   // FD for incoming HTTP connections
+  fd autoconfFD = -1; // FD for incoming autoconf connections
+  fd clientFD = -1;   // FD for accepted connections
+  fd mgmtapiFD = -1;  // FD for the api interface to issue commands
+  fd eventapiFD = -1; // FD for the api and clients to handle event callbacks
 
   // dg: added init to get rid of compiler warnings
-  fd acceptFD = 0;              // FD that is ready for accept
-  UIthr_t serviceThr = NO_THR;  // type for new service thread
+  fd acceptFD = 0;             // FD that is ready for accept
+  UIthr_t serviceThr = NO_THR; // type for new service thread
 
-  struct sockaddr_in *clientInfo;       // Info about client connection
-  ink_thread thrId;             // ID of service thread we just spawned
-  fd_set selectFDs;             // FD set passed to select
-  int publicPort = -1;          // Port for incoming autoconf connections
+  struct sockaddr_in *clientInfo; // Info about client connection
+  ink_thread thrId;               // ID of service thread we just spawned
+  fd_set selectFDs;               // FD set passed to select
+  int publicPort = -1;            // Port for incoming autoconf connections
 #if !defined(linux)
-  sigset_t allSigs;             // Set of all signals
+  sigset_t allSigs; // Set of all signals
 #endif
   char pacFailMsg[] = "Auto-Configuration Service Failed to Initialize";
   //  char gphFailMsg[] = "Dynamic Graph Service Failed to Initialize";
@@ -329,7 +325,7 @@ webIntr_main(void *)
     publicPort = aconf_port_arg;
   } else {
     found = (RecGetRecordInt("proxy.config.admin.autoconf_port", &tempInt) == REC_ERR_OKAY);
-    publicPort = (int) tempInt;
+    publicPort = (int)tempInt;
     ink_assert(found);
   }
   Debug("ui", "[WebIntrMain] Starting Client AutoConfig Server on Port %d", publicPort);
@@ -347,8 +343,8 @@ webIntr_main(void *)
       ats_free(autoconfContext.docRoot);
       autoconfContext.docRoot = RecConfigReadConfigDir();
       if ((err = stat(autoconfContext.docRoot, &s)) < 0) {
-        mgmt_elog(0, "[WebIntrMain] unable to stat() directory '%s': %d %d, %s\n",
-                autoconfContext.docRoot, err, errno, strerror(errno));
+        mgmt_elog(0, "[WebIntrMain] unable to stat() directory '%s': %d %d, %s\n", autoconfContext.docRoot, err, errno,
+                  strerror(errno));
         mgmt_elog(0, "[WebIntrMain] please set the 'TS_ROOT' environment variable\n");
         mgmt_fatal(stderr, 0, "[WebIntrMain] No Client AutoConf Root\n");
       }
@@ -416,7 +412,7 @@ webIntr_main(void *)
     }
 
     // TODO: Should we check return value?
-    mgmt_select(FD_SETSIZE, &selectFDs, (fd_set *) NULL, (fd_set *) NULL, NULL);
+    mgmt_select(FD_SETSIZE, &selectFDs, (fd_set *)NULL, (fd_set *)NULL, NULL);
 
     if (autoconfFD >= 0 && FD_ISSET(autoconfFD, &selectFDs)) {
       acceptFD = autoconfFD;
@@ -425,18 +421,18 @@ webIntr_main(void *)
       ink_assert(!"[webIntrMain] Error on mgmt_select()\n");
     }
     ink_sem_wait(&wGlobals.serviceThrCount);
-    ink_atomic_increment((int32_t *) & numServiceThr, 1);
+    ink_atomic_increment((int32_t *)&numServiceThr, 1);
 
     // coverity[alloc_fn]
     clientInfo = (struct sockaddr_in *)ats_malloc(sizeof(struct sockaddr_in));
     addrLen = sizeof(struct sockaddr_in);
 
     // coverity[noescape]
-    if ((clientFD = mgmt_accept(acceptFD, (sockaddr *) clientInfo, &addrLen)) < 0) {
+    if ((clientFD = mgmt_accept(acceptFD, (sockaddr *)clientInfo, &addrLen)) < 0) {
       mgmt_log(stderr, "[WebIntrMain]: %s%s\n", "Accept on incoming connection failed: ", strerror(errno));
       ink_sem_post(&wGlobals.serviceThrCount);
-      ink_atomic_increment((int32_t *) & numServiceThr, -1);
-    } else {                    // Accept succeeded
+      ink_atomic_increment((int32_t *)&numServiceThr, -1);
+    } else { // Accept succeeded
       if (safe_setsockopt(clientFD, IPPROTO_TCP, TCP_NODELAY, SOCKOPT_ON, sizeof(int)) < 0) {
         mgmt_log(stderr, "[WebIntrMain]Failed to set sock options: %s\n", strerror(errno));
       }
@@ -445,14 +441,13 @@ webIntr_main(void *)
       ink_mutex_acquire(&wGlobals.serviceThrLock);
 
       // If this a web manager, make sure that it is from an allowed ip addr
-      if (serviceThr == AUTOCONF_THR && autoconf_localhost_only != 0 &&
-          strcmp(inet_ntoa(clientInfo->sin_addr), "127.0.0.1") != 0) {
+      if (serviceThr == AUTOCONF_THR && autoconf_localhost_only != 0 && strcmp(inet_ntoa(clientInfo->sin_addr), "127.0.0.1") != 0) {
         mgmt_log("WARNING: connect by disallowed client %s, closing\n", inet_ntoa(clientInfo->sin_addr));
         ink_sem_post(&wGlobals.serviceThrCount);
-        ink_atomic_increment((int32_t *) & numServiceThr, -1);
+        ink_atomic_increment((int32_t *)&numServiceThr, -1);
         ats_free(clientInfo);
         close_socket(clientFD);
-      } else {                  // IP is allowed
+      } else { // IP is allowed
 
         for (i = 0; i < MAX_SERVICE_THREADS; i++) {
           if (wGlobals.serviceThrArray[i].threadId == 0) {
@@ -475,7 +470,7 @@ webIntr_main(void *)
               wGlobals.serviceThrArray[i].fd = -1;
               close_socket(clientFD);
               ink_sem_post(&wGlobals.serviceThrCount);
-              ink_atomic_increment((int32_t *) & numServiceThr, -1);
+              ink_atomic_increment((int32_t *)&numServiceThr, -1);
             }
 
             break;
@@ -488,8 +483,8 @@ webIntr_main(void *)
 
       ink_mutex_release(&wGlobals.serviceThrLock);
     }
-  }                             // end while(1)
-  ink_release_assert(!"impossible");    // should never get here
+  }                                  // end while(1)
+  ink_release_assert(!"impossible"); // should never get here
   return NULL;
 }
 
@@ -500,14 +495,14 @@ webIntr_main(void *)
 void *
 serviceThrMain(void *info)
 {
-  serviceThr_t *threadInfo = (serviceThr_t *) info;
+  serviceThr_t *threadInfo = (serviceThr_t *)info;
   WebHttpConInfo httpInfo;
 
   lmgmt->syslogThrInit();
 
   // Do our work
   switch (threadInfo->type) {
-  case NO_THR:                 // dg: added to handle init value
+  case NO_THR: // dg: added to handle init value
     ink_assert(false);
     break;
   case AUTOCONF_THR:
@@ -534,5 +529,5 @@ serviceThrMain(void *info)
 
   // Call exit so that we properly release system resources
   ink_thread_exit(NULL);
-  return NULL;                  // No Warning
+  return NULL; // No Warning
 }

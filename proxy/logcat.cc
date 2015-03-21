@@ -24,8 +24,8 @@
 #include "libts.h"
 #include "I_Layout.h"
 
-#define PROGRAM_NAME        "traffic_logcat"
-#define MAX_LOGBUFFER_SIZE  65536
+#define PROGRAM_NAME "traffic_logcat"
+#define MAX_LOGBUFFER_SIZE 65536
 
 #include <poll.h>
 
@@ -68,8 +68,7 @@ static const ArgumentDescription argument_descriptions[] = {
   {"overwrite_output", 'w', "Overwrite existing output file(s)", "T", &overwrite_existing_file, NULL, NULL},
   {"elf2", '2', "Convert to Extended2 Logging Format", "T", &elf2_flag, NULL, NULL},
   HELP_ARGUMENT_DESCRIPTION(),
-  VERSION_ARGUMENT_DESCRIPTION()
-};
+  VERSION_ARGUMENT_DESCRIPTION()};
 
 static int
 process_file(int in_fd, int out_fd)
@@ -89,7 +88,7 @@ process_file(int in_fd, int out_fd)
     //
     unsigned first_read_size = sizeof(uint32_t) + sizeof(uint32_t);
     unsigned header_size = sizeof(LogBufferHeader);
-    LogBufferHeader *header = (LogBufferHeader *) & buffer[0];
+    LogBufferHeader *header = (LogBufferHeader *)&buffer[0];
 
     nread = read(in_fd, buffer, first_read_size);
     if (!nread || nread == EOF)
@@ -149,7 +148,7 @@ process_file(int in_fd, int out_fd)
     // see if there is an alternate format request from the command
     // line
     //
-    const char * alt_format = NULL;
+    const char *alt_format = NULL;
     if (squid_flag)
       alt_format = PreDefinedFormatInfo::squid;
     if (clf_flag)
@@ -182,7 +181,8 @@ open_output_file(char *output_file)
         file_desc = -1;
       }
     } else {
-      fprintf(stderr, "Error, output file %s already exists.\n" "Select a different filename or use the -w flag\n",
+      fprintf(stderr, "Error, output file %s already exists.\n"
+                      "Select a different filename or use the -w flag\n",
               output_file);
       file_desc = -1;
     }
@@ -208,17 +208,15 @@ open_output_file(char *output_file)
 int
 main(int /* argc ATS_UNUSED */, const char *argv[])
 {
-  enum
-  {
+  enum {
     NO_ERROR = 0,
     CMD_LINE_OPTION_ERROR = 1,
-    DATA_PROCESSING_ERROR = 2
+    DATA_PROCESSING_ERROR = 2,
   };
 
   // build the application information structure
   //
-  appVersionInfo.setup(PACKAGE_NAME,PROGRAM_NAME, PACKAGE_VERSION, __DATE__,
-                       __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
+  appVersionInfo.setup(PACKAGE_NAME, PROGRAM_NAME, PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
 
   // Before accessing file system initialize Layout engine
   Layout::create();
@@ -273,9 +271,10 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
           // change .blog to .log
           //
           int n = strlen(file_arguments[i]);
-          int copy_len = (n >= bin_ext_len ? (strcmp(&file_arguments[i][n - bin_ext_len],
-                                                     LOG_FILE_BINARY_OBJECT_FILENAME_EXTENSION) ==
-                                              0 ? n - bin_ext_len : n) : n);
+          int copy_len =
+            (n >= bin_ext_len ?
+               (strcmp(&file_arguments[i][n - bin_ext_len], LOG_FILE_BINARY_OBJECT_FILENAME_EXTENSION) == 0 ? n - bin_ext_len : n) :
+               n);
 
           char *out_filename = (char *)ats_malloc(copy_len + ascii_ext_len + 1);
 
@@ -302,7 +301,7 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
           if (!follow_flag)
             break;
           else
-            usleep(10000);      // This avoids burning CPU, using poll() would have been nice, but doesn't work I think.
+            usleep(10000); // This avoids burning CPU, using poll() would have been nice, but doesn't work I think.
         }
       }
     }

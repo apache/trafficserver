@@ -65,9 +65,8 @@ create_event_callback(TSEventSignalFunc func, void *data)
  *        dynamically allocated
  **********************************************************************/
 void
-delete_event_callback(EventCallbackT * event_cb)
+delete_event_callback(EventCallbackT *event_cb)
 {
-
   ats_free(event_cb);
   return;
 }
@@ -104,7 +103,7 @@ create_callback_table(const char *lock_name)
  * notes: doesn't free pointers to functions
  **********************************************************************/
 void
-delete_callback_table(CallbackTable * cb_table)
+delete_callback_table(CallbackTable *cb_table)
 {
   EventCallbackT *event_cb;
 
@@ -116,7 +115,7 @@ delete_callback_table(CallbackTable * cb_table)
     if (cb_table->event_callback_l[i]) {
       // remove and delete each EventCallbackT for that event
       while (!queue_is_empty(cb_table->event_callback_l[i])) {
-        event_cb = (EventCallbackT *) dequeue(cb_table->event_callback_l[i]);
+        event_cb = (EventCallbackT *)dequeue(cb_table->event_callback_l[i]);
         delete_event_callback(event_cb);
       }
 
@@ -127,7 +126,7 @@ delete_callback_table(CallbackTable * cb_table)
   // release lock
   ink_mutex_release(&cb_table->event_callback_lock);
 
-  //destroy lock
+  // destroy lock
   ink_mutex_destroy(&cb_table->event_callback_lock);
 
   ats_free(cb_table);
@@ -146,16 +145,16 @@ delete_callback_table(CallbackTable * cb_table)
  * notes:
  **********************************************************************/
 LLQ *
-get_events_with_callbacks(CallbackTable * cb_table)
+get_events_with_callbacks(CallbackTable *cb_table)
 {
   LLQ *cb_ev_list;
-  bool all_events = true;       //set to false if at least one event doesn't have registered callback
+  bool all_events = true; // set to false if at least one event doesn't have registered callback
 
   cb_ev_list = create_queue();
   for (int i = 0; i < NUM_EVENTS; i++) {
     if (!cb_table->event_callback_l[i]) {
       all_events = false;
-      continue;                 // no callbacks registered
+      continue; // no callbacks registered
     }
 
     enqueue(cb_ev_list, &i);
@@ -182,11 +181,11 @@ get_events_with_callbacks(CallbackTable * cb_table)
  * notes:
  **********************************************************************/
 TSMgmtError
-cb_table_register(CallbackTable * cb_table, const char *event_name, TSEventSignalFunc func, void *data, bool * first_cb)
+cb_table_register(CallbackTable *cb_table, const char *event_name, TSEventSignalFunc func, void *data, bool *first_cb)
 {
   bool first_time = 0;
   int id;
-  EventCallbackT *event_cb;     // create new EventCallbackT EACH TIME enqueue
+  EventCallbackT *event_cb; // create new EventCallbackT EACH TIME enqueue
 
   // the data and event_name can be NULL
   if (func == NULL || !cb_table)
@@ -195,8 +194,8 @@ cb_table_register(CallbackTable * cb_table, const char *event_name, TSEventSigna
   ink_mutex_acquire(&(cb_table->event_callback_lock));
 
   // got lock, add it
-  if (event_name == NULL) {     // register for all alarms
-    //printf("[EventSignalCbRegister] Register callback for all alarms\n");
+  if (event_name == NULL) { // register for all alarms
+    // printf("[EventSignalCbRegister] Register callback for all alarms\n");
     for (int i = 0; i < NUM_EVENTS; i++) {
       if (!cb_table->event_callback_l[i]) {
         cb_table->event_callback_l[i] = create_queue();
@@ -211,8 +210,8 @@ cb_table_register(CallbackTable * cb_table, const char *event_name, TSEventSigna
       event_cb = create_event_callback(func, data);
       enqueue(cb_table->event_callback_l[i], event_cb);
     }
-  } else {                      // register callback for specific alarm
-    //printf("[EventSignalCbRegister] Register callback for %s\n", event_name);
+  } else { // register callback for specific alarm
+    // printf("[EventSignalCbRegister] Register callback for %s\n", event_name);
     id = get_event_id(event_name);
     if (!cb_table->event_callback_l[id]) {
       cb_table->event_callback_l[id] = create_queue();
@@ -251,7 +250,7 @@ cb_table_register(CallbackTable * cb_table, const char *event_name, TSEventSigna
  * notes:
  **********************************************************************/
 TSMgmtError
-cb_table_unregister(CallbackTable * cb_table, const char *event_name, TSEventSignalFunc func)
+cb_table_unregister(CallbackTable *cb_table, const char *event_name, TSEventSignalFunc func)
 {
   TSEventSignalFunc cb_fun;
   EventCallbackT *event_cb;
@@ -259,28 +258,28 @@ cb_table_unregister(CallbackTable * cb_table, const char *event_name, TSEventSig
   ink_mutex_acquire(&cb_table->event_callback_lock);
 
   // got lock, add it
-  if (event_name == NULL) {     // unregister the callback for ALL EVENTS
+  if (event_name == NULL) { // unregister the callback for ALL EVENTS
     // for each event
     for (int i = 0; i < NUM_EVENTS; i++) {
-      if (!cb_table->event_callback_l[i])       // this event has no callbacks
+      if (!cb_table->event_callback_l[i]) // this event has no callbacks
         continue;
 
       // func == NULL means unregister all functions associated with alarm
       if (func == NULL) {
         while (!queue_is_empty(cb_table->event_callback_l[i])) {
-          event_cb = (EventCallbackT *) dequeue(cb_table->event_callback_l[i]);
+          event_cb = (EventCallbackT *)dequeue(cb_table->event_callback_l[i]);
           delete_event_callback(event_cb);
         }
         // clean up queue and set to NULL
         delete_queue(cb_table->event_callback_l[i]);
         cb_table->event_callback_l[i] = NULL;
-      } else {                  // only remove the func passed in
+      } else { // only remove the func passed in
         int queue_depth;
 
         queue_depth = queue_len(cb_table->event_callback_l[i]);
         // remove this function
         for (int j = 0; j < queue_depth; j++) {
-          event_cb = (EventCallbackT *) dequeue(cb_table->event_callback_l[i]);
+          event_cb = (EventCallbackT *)dequeue(cb_table->event_callback_l[i]);
           cb_fun = event_cb->func;
 
           // the pointers are the same so don't enqueue the fn back on
@@ -298,7 +297,7 @@ cb_table_unregister(CallbackTable * cb_table, const char *event_name, TSEventSig
           cb_table->event_callback_l[i] = NULL;
         }
       }
-    }                           // end for (int i = 0; i < NUM_EVENTS; i++) {
+    } // end for (int i = 0; i < NUM_EVENTS; i++) {
   } else {
     // unregister for specific event
     int id = get_event_id(event_name);
@@ -309,7 +308,7 @@ cb_table_unregister(CallbackTable * cb_table, const char *event_name, TSEventSig
       // func == NULL means unregister all functions associated with alarm
       if (func == NULL) {
         while (!queue_is_empty(cb_table->event_callback_l[id])) {
-          event_cb = (EventCallbackT *) dequeue(cb_table->event_callback_l[id]);
+          event_cb = (EventCallbackT *)dequeue(cb_table->event_callback_l[id]);
           delete_event_callback(event_cb);
         }
 
@@ -319,7 +318,7 @@ cb_table_unregister(CallbackTable * cb_table, const char *event_name, TSEventSig
       } else {
         // remove this function
         for (int j = 0; j < queue_depth; j++) {
-          event_cb = (EventCallbackT *) dequeue(cb_table->event_callback_l[id]);
+          event_cb = (EventCallbackT *)dequeue(cb_table->event_callback_l[id]);
           cb_fun = event_cb->func;
 
           // the pointers are the same
@@ -336,7 +335,7 @@ cb_table_unregister(CallbackTable * cb_table, const char *event_name, TSEventSig
           delete_queue(cb_table->event_callback_l[id]);
           cb_table->event_callback_l[id] = NULL;
         }
-      }                         // end if NULL else
+      } // end if NULL else
     }
   }
 

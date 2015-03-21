@@ -25,26 +25,25 @@
 #include "HttpTransact.h"
 #include "HttpSM.h"
 
-void forceLinkRegressionHttpTransact()
+void
+forceLinkRegressionHttpTransact()
 {
 }
 
 static void
 init_sm(HttpSM *sm)
 {
-
   sm->init();
   sm->t_state.hdr_info.client_request.create(HTTP_TYPE_REQUEST, NULL);
-
 }
 
 static void
-setup_client_request(HttpSM * sm, const char * scheme, const char * request)
+setup_client_request(HttpSM *sm, const char *scheme, const char *request)
 {
   init_sm(sm);
 
-  MIOBuffer * read_buffer = new_MIOBuffer(HTTP_HEADER_BUFFER_SIZE_INDEX);
-  IOBufferReader * buffer_reader = read_buffer->alloc_reader();
+  MIOBuffer *read_buffer = new_MIOBuffer(HTTP_HEADER_BUFFER_SIZE_INDEX);
+  IOBufferReader *buffer_reader = read_buffer->alloc_reader();
   read_buffer->write(request, strlen(request));
 
   HTTPParser httpParser;
@@ -69,38 +68,35 @@ REGRESSION_TEST(HttpTransact_is_request_valid)(RegressionTest *t, int /* level *
   HttpSM sm;
   *pstatus = REGRESSION_TEST_PASSED;
 
-  struct
-  {
+  struct {
     const char *scheme;
     const char *req;
     bool result;
-  } requests[] = {
-    // missing host header
-    { "http", "GET / HTTP/1.1\r\n\r\n", false},
-    // good get request
-    { "http", "GET / HTTP/1.1\r\nHost: abc.com\r\n\r\n", true},
-    // good trace request
-    { "http", "TRACE / HTTP/1.1\r\nHost: abc.com\r\n\r\n", true},
-    // content len < 0
-    { "http", "POST / HTTP/1.1\r\nHost: abc.com\r\nContent-Length: -1\r\n\r\n", false},
-    { "http", "PUSH / HTTP/1.1\r\nHost: abc.com\r\nContent-Length: -1\r\n\r\n", false},
-    { "http", "PUT / HTTP/1.1\r\nHost: abc.com\r\nContent-Length: -1\r\n\r\n", false},
-    // valid content len
-    { "http", "POST / HTTP/1.1\r\nHost: abc.com\r\nContent-Length: 10\r\n\r\n", true},
-    { "http", "PUSH / HTTP/1.1\r\nHost: abc.com\r\nContent-Length: 10\r\n\r\n", true},
-    { "http", "PUT / HTTP/1.1\r\nHost: abc.com\r\nContent-Length: 10\r\n\r\n", true},
-    // Content Length missing
-    { "http", "POST / HTTP/1.1\r\nHost: abc.com\r\n\r\n", false},
-    { "http", "PUSH / HTTP/1.1\r\nHost: abc.com\r\n\r\n", false},
-    { "http", "PUT / HTTP/1.1\r\nHost: abc.com\r\n\r\n", false},
-    { NULL, NULL, false}
-  };
+  } requests[] = {// missing host header
+                  {"http", "GET / HTTP/1.1\r\n\r\n", false},
+                  // good get request
+                  {"http", "GET / HTTP/1.1\r\nHost: abc.com\r\n\r\n", true},
+                  // good trace request
+                  {"http", "TRACE / HTTP/1.1\r\nHost: abc.com\r\n\r\n", true},
+                  // content len < 0
+                  {"http", "POST / HTTP/1.1\r\nHost: abc.com\r\nContent-Length: -1\r\n\r\n", false},
+                  {"http", "PUSH / HTTP/1.1\r\nHost: abc.com\r\nContent-Length: -1\r\n\r\n", false},
+                  {"http", "PUT / HTTP/1.1\r\nHost: abc.com\r\nContent-Length: -1\r\n\r\n", false},
+                  // valid content len
+                  {"http", "POST / HTTP/1.1\r\nHost: abc.com\r\nContent-Length: 10\r\n\r\n", true},
+                  {"http", "PUSH / HTTP/1.1\r\nHost: abc.com\r\nContent-Length: 10\r\n\r\n", true},
+                  {"http", "PUT / HTTP/1.1\r\nHost: abc.com\r\nContent-Length: 10\r\n\r\n", true},
+                  // Content Length missing
+                  {"http", "POST / HTTP/1.1\r\nHost: abc.com\r\n\r\n", false},
+                  {"http", "PUSH / HTTP/1.1\r\nHost: abc.com\r\n\r\n", false},
+                  {"http", "PUT / HTTP/1.1\r\nHost: abc.com\r\n\r\n", false},
+                  {NULL, NULL, false}};
   for (int i = 0; requests[i].req; i++) {
     setup_client_request(&sm, requests[i].scheme, requests[i].req);
 
     if (requests[i].result != transaction.is_request_valid(&sm.t_state, &sm.t_state.hdr_info.client_request)) {
-      rprintf(t, "HttpTransact::is_request_valid - failed for request = '%s'.  Expected result was %s request\n",
-              requests[i].req,(requests[i].result ? "valid" :"invalid") );
+      rprintf(t, "HttpTransact::is_request_valid - failed for request = '%s'.  Expected result was %s request\n", requests[i].req,
+              (requests[i].result ? "valid" : "invalid"));
       *pstatus = REGRESSION_TEST_FAILED;
     }
   }
@@ -112,28 +108,24 @@ REGRESSION_TEST(HttpTransact_handle_trace_and_options_requests)(RegressionTest *
   HttpSM sm;
   *pstatus = REGRESSION_TEST_PASSED;
 
-  struct
-  {
+  struct {
     const char *scheme;
     const char *req;
     bool result;
-  } requests[] = {
-    // good trace request
-    { "http", "TRACE www.abc.com/ HTTP/1.1\r\nHost: abc.com\r\nMax-Forwards: 0\r\n\r\n", true},
-    { NULL, NULL, false}
-  };
+  } requests[] = {// good trace request
+                  {"http", "TRACE www.abc.com/ HTTP/1.1\r\nHost: abc.com\r\nMax-Forwards: 0\r\n\r\n", true},
+                  {NULL, NULL, false}};
   for (int i = 0; requests[i].req; i++) {
     setup_client_request(&sm, requests[i].scheme, requests[i].req);
 
     if (requests[i].result != transaction.is_request_valid(&sm.t_state, &sm.t_state.hdr_info.client_request)) {
-      rprintf(t, "HttpTransact::is_request_valid - failed for request = '%s'.  Expected result was %s request\n",
-              requests[i].req,(requests[i].result ? "valid" :"invalid") );
+      rprintf(t, "HttpTransact::is_request_valid - failed for request = '%s'.  Expected result was %s request\n", requests[i].req,
+              (requests[i].result ? "valid" : "invalid"));
       *pstatus = REGRESSION_TEST_FAILED;
     }
-    if (requests[i].result != transaction.handle_trace_and_options_requests(&sm.t_state,
-        &sm.t_state.hdr_info.client_request)) {
+    if (requests[i].result != transaction.handle_trace_and_options_requests(&sm.t_state, &sm.t_state.hdr_info.client_request)) {
       rprintf(t, "HttpTransact::handle_trace_and_options - failed for request = '%s'.  Expected result was %s request\n",
-              requests[i].req,(requests[i].result ? "true" :"false") );
+              requests[i].req, (requests[i].result ? "true" : "false"));
       *pstatus = REGRESSION_TEST_FAILED;
     }
   }
@@ -144,4 +136,3 @@ REGRESSION_TEST(HttpTransact_handle_request)(RegressionTest * /* t */, int /* le
   // To be added..
   *pstatus = REGRESSION_TEST_PASSED;
 }
-

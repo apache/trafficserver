@@ -39,12 +39,11 @@
 #include "ts/ts.h"
 #include "ink_defs.h"
 
-#define TS_NULL_MUTEX      NULL
-#define STATE_BUFFER_DATA   0
-#define STATE_OUTPUT_DATA   1
+#define TS_NULL_MUTEX NULL
+#define STATE_BUFFER_DATA 0
+#define STATE_OUTPUT_DATA 1
 
-typedef struct
-{
+typedef struct {
   int state;
   TSVIO output_vio;
   TSIOBuffer output_buffer;
@@ -56,7 +55,7 @@ my_data_alloc()
 {
   MyData *data;
 
-  data = (MyData *) TSmalloc(sizeof(MyData));
+  data = (MyData *)TSmalloc(sizeof(MyData));
   data->state = STATE_BUFFER_DATA;
   data->output_vio = NULL;
   data->output_buffer = NULL;
@@ -66,7 +65,7 @@ my_data_alloc()
 }
 
 static void
-my_data_destroy(MyData * data)
+my_data_destroy(MyData *data)
 {
   if (data) {
     if (data->output_buffer) {
@@ -77,7 +76,7 @@ my_data_destroy(MyData * data)
 }
 
 static int
-handle_buffering(TSCont contp, MyData * data)
+handle_buffering(TSCont contp, MyData *data)
 {
   TSVIO write_vio;
   int towrite;
@@ -160,7 +159,7 @@ handle_buffering(TSCont contp, MyData * data)
 }
 
 static int
-handle_output(TSCont contp, MyData * data)
+handle_output(TSCont contp, MyData *data)
 {
   /* Check to see if we need to initiate the output operation. */
   if (!data->output_vio) {
@@ -169,8 +168,7 @@ handle_output(TSCont contp, MyData * data)
     /* Get the output connection where we'll write data to. */
     output_conn = TSTransformOutputVConnGet(contp);
 
-    data->output_vio =
-      TSVConnWrite(output_conn, contp, data->output_reader, TSIOBufferReaderAvail(data->output_reader));
+    data->output_vio = TSVConnWrite(output_conn, contp, data->output_reader, TSIOBufferReaderAvail(data->output_reader));
 
     TSAssert(data->output_vio);
   }
@@ -220,19 +218,19 @@ bnull_transform(TSCont contp, TSEvent event, void *edata ATS_UNUSED)
     TSContDestroy(contp);
   } else {
     switch (event) {
-    case TS_EVENT_ERROR:{
-        TSVIO write_vio;
+    case TS_EVENT_ERROR: {
+      TSVIO write_vio;
 
-        /* Get the write VIO for the write operation that was
-           performed on ourself. This VIO contains the continuation of
-           our parent transformation. */
-        write_vio = TSVConnWriteVIOGet(contp);
+      /* Get the write VIO for the write operation that was
+         performed on ourself. This VIO contains the continuation of
+         our parent transformation. */
+      write_vio = TSVConnWriteVIOGet(contp);
 
-        /* Call back the write VIO continuation to let it know that we
-           have completed the write operation. */
-        TSContCall(TSVIOContGet(write_vio), TS_EVENT_ERROR, write_vio);
-        break;
-      }
+      /* Call back the write VIO continuation to let it know that we
+         have completed the write operation. */
+      TSContCall(TSVIOContGet(write_vio), TS_EVENT_ERROR, write_vio);
+      break;
+    }
 
     case TS_EVENT_VCONN_WRITE_COMPLETE:
       /* When our output connection says that it has finished
@@ -271,7 +269,8 @@ transformable(TSHttpTxn txnp)
   retv = (resp_status == TS_HTTP_STATUS_OK);
 
   if (TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc) == TS_ERROR) {
-    TSError("[bnull-transform] Error releasing MLOC while checking " "header status\n");
+    TSError("[bnull-transform] Error releasing MLOC while checking "
+            "header status\n");
   }
 
   return retv;
@@ -290,7 +289,7 @@ transform_add(TSHttpTxn txnp)
 static int
 transform_plugin(TSCont contp ATS_UNUSED, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp = (TSHttpTxn) edata;
+  TSHttpTxn txnp = (TSHttpTxn)edata;
 
   switch (event) {
   case TS_EVENT_HTTP_READ_RESPONSE_HDR:

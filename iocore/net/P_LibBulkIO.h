@@ -43,8 +43,7 @@
 
 #include "P_InkBulkIO.h"
 
-struct InkBulkIOState
-{
+struct InkBulkIOState {
   int biofd;
   void *sharedBuffer;
   int sharedBufferSize;
@@ -53,15 +52,13 @@ struct InkBulkIOState
   int numBlocks;
 };
 
-struct InkBulkIOSplit
-{
+struct InkBulkIOSplit {
   char *header;
   int nbytes;
   struct InkBulkIOAddrInfo dest;
 };
 
-struct InkBulkIOAggregator
-{
+struct InkBulkIOAggregator {
   InkBulkIOAggregator()
   {
     metaReqCount = 0;
@@ -74,7 +71,6 @@ struct InkBulkIOAggregator
     reqblockInfo.ptr = NULL;
     reqblockInfo.id = 0xffffffff;
     reqblockPktPtr = NULL;
-
   };
   struct InkBulkIOBlock metablockInfo;
   // Location where the next req. block id should be stuffed in the meta block.
@@ -86,7 +82,8 @@ struct InkBulkIOAggregator
   // # of fragments in the last request.
   uint32_t lastReqFragCount;
   struct InkBulkIORequest *lastReq;
-  void ResetLastRequestInfo()
+  void
+  ResetLastRequestInfo()
   {
     lastReqFragCount = 0;
     lastReq = NULL;
@@ -94,14 +91,16 @@ struct InkBulkIOAggregator
     reqblockInfo.id = 0xffffffff;
     reqblockPktPtr = NULL;
   };
-  void ResetMetaBlockInfo()
+  void
+  ResetMetaBlockInfo()
   {
     metaReqCount = 0;
     metablockInfo.ptr = NULL;
     metablockInfo.id = 0xffffffff;
     metablockReqPtr = NULL;
   };
-  bool AppendLastRequest()
+  bool
+  AppendLastRequest()
   {
     if (metaReqCount >= INKBIO_MAX_REQS_PER_REQ_BLOCK)
       return false;
@@ -111,42 +110,44 @@ struct InkBulkIOAggregator
     metaReqCount++;
     return true;
   };
-  void TerminateMetaBlock()
+  void
+  TerminateMetaBlock()
   {
     *metablockReqPtr = 0xffffffff;
   };
-  void TerminateLastRequest()
+  void
+  TerminateLastRequest()
   {
     reqblockPktPtr->blockID = 0xffffffff;
     reqblockPktPtr->pktsize = 0xffff;
     reqblockPktPtr->inChain = 0;
     reqblockPktPtr->reserved = 0;
   };
-  void InitMetaBlock()
+  void
+  InitMetaBlock()
   {
-    metablockReqPtr = (uint32_t *) metablockInfo.ptr;
+    metablockReqPtr = (uint32_t *)metablockInfo.ptr;
     metaReqCount = 0;
   };
-  void InitSendtoReqBlock()
+  void
+  InitSendtoReqBlock()
   {
-    reqblockPktPtr = (struct InkBulkIOPkt *)
-      ((caddr_t) reqblockInfo.ptr + sizeof(InkBulkIORequest));
-    lastReq = (struct InkBulkIORequest *) reqblockInfo.ptr;
+    reqblockPktPtr = (struct InkBulkIOPkt *)((caddr_t)reqblockInfo.ptr + sizeof(InkBulkIORequest));
+    lastReq = (struct InkBulkIORequest *)reqblockInfo.ptr;
     lastReq->reqType = INKBIO_SENDTO_REQUEST;
     lastReq->request.sendto.pktCount = 0;
     lastReqFragCount = 0;
   };
-  void InitSplitReqBlock()
+  void
+  InitSplitReqBlock()
   {
-    reqblockPktPtr = (struct InkBulkIOPkt *)
-      ((caddr_t) reqblockInfo.ptr + sizeof(InkBulkIORequest));
-    lastReq = (struct InkBulkIORequest *) reqblockInfo.ptr;
+    reqblockPktPtr = (struct InkBulkIOPkt *)((caddr_t)reqblockInfo.ptr + sizeof(InkBulkIORequest));
+    lastReq = (struct InkBulkIORequest *)reqblockInfo.ptr;
     lastReq->reqType = INKBIO_SPLIT_REQUEST;
     lastReq->request.split.recvCount = 0;
     lastReq->request.split.perDestHeader = 0;
     lastReqFragCount = 0;
   };
-
 };
 
 /*
@@ -157,14 +158,13 @@ void BulkIOClose(struct InkBulkIOState *bioCookie);
 
 int BulkIOBlkAlloc(struct InkBulkIOState *bioCookie, int blkCount, struct InkBulkIOBlock *bioResult);
 
-int BulkIOAddPkt(struct InkBulkIOState *bioCookie,
-                 struct InkBulkIOAggregator *bioAggregator, UDPPacketInternal * pkt, int sourcePort);
+int BulkIOAddPkt(struct InkBulkIOState *bioCookie, struct InkBulkIOAggregator *bioAggregator, UDPPacketInternal *pkt,
+                 int sourcePort);
 
-int BulkIOSplitPkt(struct InkBulkIOState *bioCookie,
-                   struct InkBulkIOAggregator *bioAggregator, UDPPacketInternal * pkt, int sourcePort);
+int BulkIOSplitPkt(struct InkBulkIOState *bioCookie, struct InkBulkIOAggregator *bioAggregator, UDPPacketInternal *pkt,
+                   int sourcePort);
 
-int BulkIOAppendToReqBlock(struct InkBulkIOState *bioCookie,
-                           struct InkBulkIOAggregator *bioAggregator, Ptr<IOBufferBlock> pkt);
+int BulkIOAppendToReqBlock(struct InkBulkIOState *bioCookie, struct InkBulkIOAggregator *bioAggregator, Ptr<IOBufferBlock> pkt);
 
 void BulkIORequestComplete(struct InkBulkIOState *bioCookie, struct InkBulkIOAggregator *bioAggregator);
 

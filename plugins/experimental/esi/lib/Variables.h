@@ -32,26 +32,29 @@
 #include "StringHash.h"
 #include "HttpHeader.h"
 
-namespace EsiLib {
-
-class Variables : private ComponentBase {
-
+namespace EsiLib
+{
+class Variables : private ComponentBase
+{
 public:
-
   Variables(const char *debug_tag, ComponentBase::Debug debug_func, ComponentBase::Error error_func)
-    : ComponentBase(debug_tag, debug_func, error_func), _headers_parsed(false), _query_string(""),
-      _query_string_parsed(false), _cookie_jar_created(false) { };
+    : ComponentBase(debug_tag, debug_func, error_func), _headers_parsed(false), _query_string(""), _query_string_parsed(false),
+      _cookie_jar_created(false){};
 
   /** currently 'host', 'referer', 'accept-language', 'cookie' and 'user-agent' headers are parsed */
   void populate(const HttpHeader &header);
 
-  void populate(const HttpHeaderList &headers) {
+  void
+  populate(const HttpHeaderList &headers)
+  {
     for (HttpHeaderList::const_iterator iter = headers.begin(); iter != headers.end(); ++iter) {
       populate(*iter);
     }
   };
 
-  void populate(const char *query_string, int query_string_len = -1) {
+  void
+  populate(const char *query_string, int query_string_len = -1)
+  {
     if (query_string && (query_string_len != 0)) {
       if (query_string_len == -1) {
         query_string_len = strlen(query_string);
@@ -69,7 +72,9 @@ public:
   const std::string &getValue(const std::string &name) const;
 
   /** convenient alternative for method above */
-  const std::string &getValue(const char *name, int name_len = -1) const {
+  const std::string &
+  getValue(const char *name, int name_len = -1) const
+  {
     if (!name) {
       return EMPTY_STRING;
     }
@@ -87,9 +92,8 @@ public:
   virtual ~Variables() { _releaseCookieJar(); };
 
 private:
-
-  Variables(const Variables&); // non-copyable
-  Variables& operator=(const Variables&); // non-copyable
+  Variables(const Variables &);            // non-copyable
+  Variables &operator=(const Variables &); // non-copyable
 
   static const std::string EMPTY_STRING;
   static const std::string TRUE_STRING;
@@ -97,11 +101,19 @@ private:
   static const std::string VERSION_STRING;
   static const std::string PLATFORM_STRING;
 
-  enum SimpleHeader { HTTP_HOST = 0, HTTP_REFERER = 1 };
-  static const std::string SIMPLE_HEADERS[];  // indices should map to enum values above
+  enum SimpleHeader {
+    HTTP_HOST = 0,
+    HTTP_REFERER = 1,
+  };
+  static const std::string SIMPLE_HEADERS[]; // indices should map to enum values above
 
-  enum SpecialHeader { HTTP_ACCEPT_LANGUAGE = 0, HTTP_COOKIE = 1, HTTP_USER_AGENT = 2, QUERY_STRING = 3 };
-  static const std::string SPECIAL_HEADERS[];  // indices should map to enum values above
+  enum SpecialHeader {
+    HTTP_ACCEPT_LANGUAGE = 0,
+    HTTP_COOKIE = 1,
+    HTTP_USER_AGENT = 2,
+    QUERY_STRING = 3,
+  };
+  static const std::string SPECIAL_HEADERS[]; // indices should map to enum values above
 
   // normalized versions of the headers above; indices should correspond correctly
   static const std::string NORM_SIMPLE_HEADERS[];
@@ -115,8 +127,8 @@ private:
 
   inline std::string &_toUpperCase(std::string &str) const;
   inline int _searchHeaders(const std::string headers[], const char *name, int name_len) const;
-  bool _parseDictVariable(const std::string &variable, const char *&header, int &header_len,
-                                 const char *&attr, int &attr_len) const;
+  bool _parseDictVariable(const std::string &variable, const char *&header, int &header_len, const char *&attr,
+                          int &attr_len) const;
   void _parseCookieString(const char *str, int str_len);
   void _parseUserAgentString(const char *str, int str_len);
   void _parseAcceptLangString(const char *str, int str_len);
@@ -144,7 +156,9 @@ private:
 
   void _parseSubCookies();
 
-  inline void _releaseCookieJar() {
+  inline void
+  _releaseCookieJar()
+  {
     if (_cookie_jar_created) {
       _sub_cookies.clear();
       _cookie_jar_created = false;
@@ -153,9 +167,7 @@ private:
 
   mutable std::string _cached_sub_cookie_value;
   const std::string &_getSubCookieValue(const std::string &cookie_str, size_t cookie_part_divider) const;
-
 };
-
 };
 
 #endif // _ESI_VARIABLES_H

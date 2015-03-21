@@ -19,7 +19,7 @@
 #include "ts_lua_string.h"
 
 u_char *
-ts_lua_hex_dump(u_char * dst, u_char * src, size_t len)
+ts_lua_hex_dump(u_char *dst, u_char *src, size_t len)
 {
   static u_char hex[] = "0123456789abcdef";
 

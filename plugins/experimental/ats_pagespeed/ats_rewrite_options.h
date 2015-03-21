@@ -36,68 +36,62 @@
 //#include "ats_configuration.h"
 
 
-namespace net_instaweb {
-
+namespace net_instaweb
+{
 class ThreadSystem;
 
 struct global_settings {
   global_settings()
-  : info_urls_local_only(true)
-  , use_native_fetcher(false)
-      , use_per_vhost_statistics(true)
-      , message_buffer_size(1024*128)
-      , shm_cache_size_kb(0)
-      //, rate_limit_background_fetches(true)
-      //, force_caching(false)
-      //, list_outstanding_urls_on_error(false)
-      //, track_original_content_length(false)
+    : info_urls_local_only(true), use_native_fetcher(false), use_per_vhost_statistics(true), message_buffer_size(1024 * 128),
+      shm_cache_size_kb(0)
+  //, rate_limit_background_fetches(true)
+  //, force_caching(false)
+  //, list_outstanding_urls_on_error(false)
+  //, track_original_content_length(false)
   {
   }
   bool info_urls_local_only;
   bool use_native_fetcher;
   bool use_per_vhost_statistics;
   int message_buffer_size;
-  //bool rate_limit_background_fetches;
-  //bool force_caching;
-  //bool list_outstanding_urls_on_error;
-  //bool track_original_content_length;
+  // bool rate_limit_background_fetches;
+  // bool force_caching;
+  // bool list_outstanding_urls_on_error;
+  // bool track_original_content_length;
   int shm_cache_size_kb;
 };
 
 
-class AtsRewriteOptions : public SystemRewriteOptions {
- public:
-    // See rewrite_options::Initialize and ::Terminate
-    static void Initialize();
-    static void Terminate();
+class AtsRewriteOptions : public SystemRewriteOptions
+{
+public:
+  // See rewrite_options::Initialize and ::Terminate
+  static void Initialize();
+  static void Terminate();
 
-    AtsRewriteOptions(ThreadSystem* thread_system);
-    virtual ~AtsRewriteOptions() {
-    }
+  AtsRewriteOptions(ThreadSystem *thread_system);
+  virtual ~AtsRewriteOptions() {}
 
-    const char* ParseAndSetOptions(
-        std::vector<std::string> args, MessageHandler* handler, global_settings& global_config);
+  const char *ParseAndSetOptions(std::vector<std::string> args, MessageHandler *handler, global_settings &global_config);
 
-    virtual AtsRewriteOptions* Clone() const;
-    OptionSettingResult ParseAndSetOptions0(
-        StringPiece directive, GoogleString* msg, MessageHandler* handler);
+  virtual AtsRewriteOptions *Clone() const;
+  OptionSettingResult ParseAndSetOptions0(StringPiece directive, GoogleString *msg, MessageHandler *handler);
 
-    virtual OptionSettingResult ParseAndSetOptionFromName1(
-        StringPiece name, StringPiece arg,
-        GoogleString* msg, MessageHandler* handler);
+  virtual OptionSettingResult ParseAndSetOptionFromName1(StringPiece name, StringPiece arg, GoogleString *msg,
+                                                         MessageHandler *handler);
 
 
- private:
-    bool SetBoolFlag(bool* v, StringPiece arg);
-    static Properties* ats_properties_;
-    static void AddProperties();
-    void Init();
+private:
+  bool SetBoolFlag(bool *v, StringPiece arg);
+  static Properties *ats_properties_;
+  static void AddProperties();
+  void Init();
 
-    bool IsDirective(StringPiece config_directive, StringPiece compare_directive);
+  bool IsDirective(StringPiece config_directive, StringPiece compare_directive);
 
-    DISALLOW_COPY_AND_ASSIGN(AtsRewriteOptions);
-  };
+  DISALLOW_COPY_AND_ASSIGN(AtsRewriteOptions);
+};
 
 } // namespace net_instaweb
 
-#endif  // ATS_REWRITE_OPTIONS_H_
+#endif // ATS_REWRITE_OPTIONS_H_

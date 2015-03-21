@@ -36,36 +36,36 @@ class Exception
 {
 };
 
-class OSException:public Exception
+class OSException : public Exception
 {
 };
 
-class IOException:public OSException
+class IOException : public OSException
 {
 };
 
-class FileOpenException:public IOException
+class FileOpenException : public IOException
 {
 };
-class FileStatException:public IOException
+class FileStatException : public IOException
 {
 };
-class FileSeekException:public IOException
+class FileSeekException : public IOException
 {
 };
-class FileReadException:public IOException
+class FileReadException : public IOException
 {
 };
-class FileWriteException:public IOException
+class FileWriteException : public IOException
 {
 };
-class FileCloseException:public IOException
+class FileCloseException : public IOException
 {
 };
 
-class MemoryMapException:public OSException
+class MemoryMapException : public OSException
 {
 };
-class MemoryUnmapException:public OSException
+class MemoryUnmapException : public OSException
 {
 };

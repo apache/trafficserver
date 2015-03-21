@@ -28,31 +28,20 @@
 ****************************************************************************/
 
 #include "P_Cluster.h"
-int
-  ClusterLoadMonitor::cf_monitor_enabled;
-int
-  ClusterLoadMonitor::cf_ping_message_send_msec_interval;
-int
-  ClusterLoadMonitor::cf_num_ping_response_buckets;
-int
-  ClusterLoadMonitor::cf_msecs_per_ping_response_bucket;
-int
-  ClusterLoadMonitor::cf_ping_latency_threshold_msecs;
-int
-  ClusterLoadMonitor::cf_cluster_load_compute_msec_interval;
-int
-  ClusterLoadMonitor::cf_cluster_periodic_msec_interval;
-int
-  ClusterLoadMonitor::cf_ping_history_buf_length;
-int
-  ClusterLoadMonitor::cf_cluster_load_clear_duration;
-int
-  ClusterLoadMonitor::cf_cluster_load_exceed_duration;
+int ClusterLoadMonitor::cf_monitor_enabled;
+int ClusterLoadMonitor::cf_ping_message_send_msec_interval;
+int ClusterLoadMonitor::cf_num_ping_response_buckets;
+int ClusterLoadMonitor::cf_msecs_per_ping_response_bucket;
+int ClusterLoadMonitor::cf_ping_latency_threshold_msecs;
+int ClusterLoadMonitor::cf_cluster_load_compute_msec_interval;
+int ClusterLoadMonitor::cf_cluster_periodic_msec_interval;
+int ClusterLoadMonitor::cf_ping_history_buf_length;
+int ClusterLoadMonitor::cf_cluster_load_clear_duration;
+int ClusterLoadMonitor::cf_cluster_load_exceed_duration;
 
-ClusterLoadMonitor::ClusterLoadMonitor(ClusterHandler * ch)
-:Continuation(0), ch(ch), ping_history_buf_head(0),
-periodic_action(0), cluster_overloaded(0), cancel_periodic(0),
-cluster_load_msg_sequence_number(0), cluster_load_msg_start_sequence_number(0)
+ClusterLoadMonitor::ClusterLoadMonitor(ClusterHandler *ch)
+  : Continuation(0), ch(ch), ping_history_buf_head(0), periodic_action(0), cluster_overloaded(0), cancel_periodic(0),
+    cluster_load_msg_sequence_number(0), cluster_load_msg_start_sequence_number(0)
 {
   mutex = this->ch->mutex;
   SET_HANDLER(&ClusterLoadMonitor::cluster_load_periodic);
@@ -69,8 +58,7 @@ cluster_load_msg_sequence_number(0), cluster_load_msg_start_sequence_number(0)
   ping_latency_threshold_msecs = cf_ping_latency_threshold_msecs ? cf_ping_latency_threshold_msecs : 500;
   Debug("cluster_monitor", "ping_latency_threshold_msecs=%d", ping_latency_threshold_msecs);
 
-  cluster_load_compute_msec_interval =
-    cf_cluster_load_compute_msec_interval ? cf_cluster_load_compute_msec_interval : 5000;
+  cluster_load_compute_msec_interval = cf_cluster_load_compute_msec_interval ? cf_cluster_load_compute_msec_interval : 5000;
   Debug("cluster_monitor", "cluster_load_compute_msec_interval=%d", cluster_load_compute_msec_interval);
 
   cluster_periodic_msec_interval = cf_cluster_periodic_msec_interval ? cf_cluster_periodic_msec_interval : 100;
@@ -87,11 +75,11 @@ cluster_load_msg_sequence_number(0), cluster_load_msg_start_sequence_number(0)
 
   int nbytes = sizeof(int) * num_ping_response_buckets;
   ping_response_buckets = (int *)ats_malloc(nbytes);
-  memset((char *) ping_response_buckets, 0, nbytes);
+  memset((char *)ping_response_buckets, 0, nbytes);
 
   nbytes = sizeof(ink_hrtime) * ping_history_buf_length;
   ping_response_history_buf = (ink_hrtime *)ats_malloc(nbytes);
-  memset((char *) ping_response_history_buf, 0, nbytes);
+  memset((char *)ping_response_history_buf, 0, nbytes);
 
   last_ping_message_sent = HRTIME_SECONDS(0);
   last_cluster_load_compute = HRTIME_SECONDS(0);
@@ -131,7 +119,8 @@ ClusterLoadMonitor::cancel_monitor()
     cancel_periodic = 1;
 }
 
-bool ClusterLoadMonitor::is_cluster_overloaded()
+bool
+ClusterLoadMonitor::is_cluster_overloaded()
 {
   return (cluster_overloaded ? true : false);
 }
@@ -191,11 +180,9 @@ ClusterLoadMonitor::compute_cluster_load()
   end = start;
 
   if (cluster_overloaded) {
-    end -= (cluster_load_clear_duration <= ping_history_buf_length ?
-            cluster_load_clear_duration : ping_history_buf_length);
+    end -= (cluster_load_clear_duration <= ping_history_buf_length ? cluster_load_clear_duration : ping_history_buf_length);
   } else {
-    end -= (cluster_load_exceed_duration <= ping_history_buf_length ?
-            cluster_load_exceed_duration : ping_history_buf_length);
+    end -= (cluster_load_exceed_duration <= ping_history_buf_length ? cluster_load_exceed_duration : ping_history_buf_length);
   }
   if (end < 0)
     end += ping_history_buf_length;
@@ -218,21 +205,19 @@ ClusterLoadMonitor::compute_cluster_load()
     if (threshold_exceeded && (threshold_clear == 0))
       cluster_overloaded = 1;
   }
-  Debug("cluster_monitor",
-        "[%u.%u.%u.%u] overload=%d, clear=%d, exceed=%d, latency=%d",
-        DOT_SEPARATED(this->ch->machine->ip), cluster_overloaded, threshold_clear, threshold_exceeded, n_bucket);
+  Debug("cluster_monitor", "[%u.%u.%u.%u] overload=%d, clear=%d, exceed=%d, latency=%d", DOT_SEPARATED(this->ch->machine->ip),
+        cluster_overloaded, threshold_clear, threshold_exceeded, n_bucket);
 }
 
 void
 ClusterLoadMonitor::note_ping_response_time(ink_hrtime response_time, int sequence_number)
 {
 #ifdef CLUSTER_TOMCAT
-  ProxyMutex *mutex = this->ch->mutex;     // hack for stats
+  ProxyMutex *mutex = this->ch->mutex; // hack for stats
 #endif
 
   CLUSTER_SUM_DYN_STAT(CLUSTER_PING_TIME_STAT, response_time);
-  int bucket = (int)
-    (response_time / HRTIME_MSECONDS(msecs_per_ping_response_bucket));
+  int bucket = (int)(response_time / HRTIME_MSECONDS(msecs_per_ping_response_bucket));
   Debug("cluster_monitor_ping", "[%u.%u.%u.%u] ping: %d %d", DOT_SEPARATED(this->ch->machine->ip), bucket, sequence_number);
 
   if (bucket >= num_ping_response_buckets)
@@ -241,14 +226,13 @@ ClusterLoadMonitor::note_ping_response_time(ink_hrtime response_time, int sequen
 }
 
 void
-ClusterLoadMonitor::recv_cluster_load_msg(cluster_load_ping_msg * m)
+ClusterLoadMonitor::recv_cluster_load_msg(cluster_load_ping_msg *m)
 {
   // We have received back our ping message.
   ink_hrtime now = ink_get_hrtime();
 
-  if ((now >= m->send_time)
-      && ((m->sequence_number >= cluster_load_msg_start_sequence_number)
-          && (m->sequence_number < cluster_load_msg_sequence_number))) {
+  if ((now >= m->send_time) &&
+      ((m->sequence_number >= cluster_load_msg_start_sequence_number) && (m->sequence_number < cluster_load_msg_sequence_number))) {
     // Valid message, note response time.
     note_ping_response_time(now - m->send_time, m->sequence_number);
   }
@@ -263,10 +247,10 @@ ClusterLoadMonitor::cluster_load_ping_rethandler(ClusterHandler *ch, void *data,
   if (ch) {
     if (len == sizeof(struct cluster_load_ping_msg)) {
       struct cluster_load_ping_msg m;
-      memcpy((void *) &m, data, len);   // unmarshal
+      memcpy((void *)&m, data, len); // unmarshal
 
-      if (m.monitor && (m.magicno == cluster_load_ping_msg::CL_MSG_MAGICNO)
-          && (m.version == cluster_load_ping_msg::CL_MSG_VERSION)) {
+      if (m.monitor && (m.magicno == cluster_load_ping_msg::CL_MSG_MAGICNO) &&
+          (m.version == cluster_load_ping_msg::CL_MSG_VERSION)) {
         m.monitor->recv_cluster_load_msg(&m);
       }
     }
@@ -282,7 +266,7 @@ ClusterLoadMonitor::send_cluster_load_msg(ink_hrtime current_time)
 
   m.sequence_number = cluster_load_msg_sequence_number++;
   m.send_time = current_time;
-  cluster_ping(ch, cluster_load_ping_rethandler, (void *) &m, sizeof(m));
+  cluster_ping(ch, cluster_load_ping_rethandler, (void *)&m, sizeof(m));
 }
 
 int

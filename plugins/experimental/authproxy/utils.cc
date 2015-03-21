@@ -27,14 +27,13 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-const void*
-SockaddrGetAddress(const sockaddr* saddr)
+const void *
+SockaddrGetAddress(const sockaddr *saddr)
 {
-  union
-  {
-    const sockaddr* sa;
-    const sockaddr_in* sin;
-    const sockaddr_in6* sin6;
+  union {
+    const sockaddr *sa;
+    const sockaddr_in *sin;
+    const sockaddr_in6 *sin6;
   } addr;
 
   addr.sa = saddr;
@@ -47,13 +46,12 @@ SockaddrGetAddress(const sockaddr* saddr)
 }
 
 uint16_t
-SockaddrGetPort(const sockaddr* saddr)
+SockaddrGetPort(const sockaddr *saddr)
 {
-  union
-  {
-    const sockaddr* sa;
-    const sockaddr_in* sin;
-    const sockaddr_in6* sin6;
+  union {
+    const sockaddr *sa;
+    const sockaddr_in *sin;
+    const sockaddr_in6 *sin6;
   } addr;
 
   addr.sa = saddr;
@@ -71,21 +69,20 @@ HttpDebugHeader(TSMBuffer mbuf, TSMLoc mhdr)
   HttpIoBuffer iobuf;
   int64_t nbytes;
   int64_t avail;
-  const char* ptr;
+  const char *ptr;
   TSIOBufferBlock blk;
 
   TSHttpHdrPrint(mbuf, mhdr, iobuf.buffer);
 
   blk = TSIOBufferReaderStart(iobuf.reader);
   avail = TSIOBufferBlockReadAvail(blk, iobuf.reader);
-  ptr = (const char*) TSIOBufferBlockReadStart(blk, iobuf.reader, &nbytes);
+  ptr = (const char *)TSIOBufferBlockReadStart(blk, iobuf.reader, &nbytes);
 
-  AuthLogDebug("http request (%u of %u bytes):\n%*.*s",
-               (unsigned) nbytes, (unsigned) avail, (int) nbytes, (int) nbytes, ptr);
+  AuthLogDebug("http request (%u of %u bytes):\n%*.*s", (unsigned)nbytes, (unsigned)avail, (int)nbytes, (int)nbytes, ptr);
 }
 
 void
-HttpSetMimeHeader(TSMBuffer mbuf, TSMLoc mhdr, const char* name, unsigned value)
+HttpSetMimeHeader(TSMBuffer mbuf, TSMLoc mhdr, const char *name, unsigned value)
 {
   TSMLoc mloc;
 
@@ -96,14 +93,14 @@ HttpSetMimeHeader(TSMBuffer mbuf, TSMLoc mhdr, const char* name, unsigned value)
     TSReleaseAssert(TSMimeHdrFieldValuesClear(mbuf, mhdr, mloc) == TS_SUCCESS);
   }
 
-  TSReleaseAssert(TSMimeHdrFieldValueUintInsert(mbuf, mhdr, mloc, 0 /* index */ , value) == TS_SUCCESS);
+  TSReleaseAssert(TSMimeHdrFieldValueUintInsert(mbuf, mhdr, mloc, 0 /* index */, value) == TS_SUCCESS);
   TSReleaseAssert(TSMimeHdrFieldAppend(mbuf, mhdr, mloc) == TS_SUCCESS);
 
   TSHandleMLocRelease(mbuf, mhdr, mloc);
 }
 
 void
-HttpSetMimeHeader(TSMBuffer mbuf, TSMLoc mhdr, const char* name, const char* value)
+HttpSetMimeHeader(TSMBuffer mbuf, TSMLoc mhdr, const char *name, const char *value)
 {
   TSMLoc mloc;
 
@@ -114,7 +111,7 @@ HttpSetMimeHeader(TSMBuffer mbuf, TSMLoc mhdr, const char* name, const char* val
     TSReleaseAssert(TSMimeHdrFieldValuesClear(mbuf, mhdr, mloc) == TS_SUCCESS);
   }
 
-  TSReleaseAssert(TSMimeHdrFieldValueStringInsert(mbuf, mhdr, mloc, 0 /* index */ , value, -1) == TS_SUCCESS);
+  TSReleaseAssert(TSMimeHdrFieldValueStringInsert(mbuf, mhdr, mloc, 0 /* index */, value, -1) == TS_SUCCESS);
   TSReleaseAssert(TSMimeHdrFieldAppend(mbuf, mhdr, mloc) == TS_SUCCESS);
 
   TSHandleMLocRelease(mbuf, mhdr, mloc);
@@ -128,7 +125,7 @@ HttpGetContentLength(TSMBuffer mbuf, TSMLoc mhdr)
 
   mloc = TSMimeHdrFieldFind(mbuf, mhdr, TS_MIME_FIELD_CONTENT_LENGTH, -1);
   if (mloc != TS_NULL_MLOC) {
-    value = TSMimeHdrFieldValueUintGet(mbuf, mhdr, mloc, 0 /* index */ );
+    value = TSMimeHdrFieldValueUintGet(mbuf, mhdr, mloc, 0 /* index */);
   }
 
   TSHandleMLocRelease(mbuf, mhdr, mloc);
@@ -143,10 +140,10 @@ HttpIsChunkedEncoding(TSMBuffer mbuf, TSMLoc mhdr)
 
   mloc = TSMimeHdrFieldFind(mbuf, mhdr, TS_MIME_FIELD_TRANSFER_ENCODING, -1);
   if (mloc != TS_NULL_MLOC) {
-    const char* str;
+    const char *str;
     int len;
 
-    str = TSMimeHdrFieldValueStringGet(mbuf, mhdr, mloc, -1 /* index */ , &len);
+    str = TSMimeHdrFieldValueStringGet(mbuf, mhdr, mloc, -1 /* index */, &len);
     if (str && len) {
       ischunked = (strncmp("chunked", str, len) == 0);
     }
@@ -157,9 +154,9 @@ HttpIsChunkedEncoding(TSMBuffer mbuf, TSMLoc mhdr)
 }
 
 bool
-HttpGetOriginHost(TSMBuffer mbuf, TSMLoc mhdr, char* name, size_t namelen)
+HttpGetOriginHost(TSMBuffer mbuf, TSMLoc mhdr, char *name, size_t namelen)
 {
-  const char* host;
+  const char *host;
   int len;
   TSMLoc mloc;
 
@@ -167,12 +164,12 @@ HttpGetOriginHost(TSMBuffer mbuf, TSMLoc mhdr, char* name, size_t namelen)
   // depends on whether pristine_host_hdr is set.
   mloc = TSMimeHdrFieldFind(mbuf, mhdr, TS_MIME_FIELD_HOST, -1);
   if (mloc != TS_NULL_MLOC) {
-    host = TSMimeHdrFieldValueStringGet(mbuf, mhdr, mloc, -1 /* index */ , &len);
+    host = TSMimeHdrFieldValueStringGet(mbuf, mhdr, mloc, -1 /* index */, &len);
     TSHandleMLocRelease(mbuf, mhdr, mloc);
 
     if (host) {
       AuthLogDebug("using origin %.*s from host header", len, host);
-      len = std::min(len, (int) namelen - 1);
+      len = std::min(len, (int)namelen - 1);
       memcpy(name, host, len);
       name[len] = '\0';
       return true;
@@ -186,7 +183,7 @@ HttpGetOriginHost(TSMBuffer mbuf, TSMLoc mhdr, char* name, size_t namelen)
 
     if (host) {
       AuthLogDebug("using origin %.*s from request URL", len, host);
-      len = std::min(len, (int) namelen - 1);
+      len = std::min(len, (int)namelen - 1);
       memcpy(name, host, len);
       name[len] = '\0';
       return true;

@@ -32,12 +32,11 @@
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-ABError AbstractBuffer::checkout_write(int *write_offset, int write_size, uint64_t retries)
+ABError
+AbstractBuffer::checkout_write(int *write_offset, int write_size, uint64_t retries)
 {
-  VolatileState
-    old_vs;
-  VolatileState
-    new_vs;
+  VolatileState old_vs;
+  VolatileState new_vs;
 
   write_size = INK_ALIGN(write_size, alignment);
 
@@ -61,7 +60,7 @@ ABError AbstractBuffer::checkout_write(int *write_offset, int write_size, uint64
       return AB_ERROR_STATE;
     }
 
-    if ((uint32_t) (new_vs.s.offset + write_size) > (uint32_t) size) {
+    if ((uint32_t)(new_vs.s.offset + write_size) > (uint32_t)size) {
       new_vs.s.state = AB_STATE_READ_ONLY;
       if (switch_state(old_vs, new_vs)) {
         vs_history[AB_STATE_READ_ONLY] = old_vs;
@@ -86,23 +85,21 @@ ABError AbstractBuffer::checkout_write(int *write_offset, int write_size, uint64
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-ABError AbstractBuffer::checkout_read(int read_offset, int read_size)
+ABError
+AbstractBuffer::checkout_read(int read_offset, int read_size)
 {
-  VolatileState
-    old_vs;
-  VolatileState
-    new_vs;
+  VolatileState old_vs;
+  VolatileState new_vs;
 
   do {
     old_vs = vs;
     new_vs = old_vs;
 
-    if ((new_vs.s.state != AB_STATE_READ_WRITE) &&
-        (new_vs.s.state != AB_STATE_READ_ONLY) && (new_vs.s.state != AB_STATE_FLUSH)) {
+    if ((new_vs.s.state != AB_STATE_READ_WRITE) && (new_vs.s.state != AB_STATE_READ_ONLY) && (new_vs.s.state != AB_STATE_FLUSH)) {
       return AB_ERROR_STATE;
     }
 
-    if ((uint32_t) (read_offset + read_size) > new_vs.s.offset) {
+    if ((uint32_t)(read_offset + read_size) > new_vs.s.offset) {
       return AB_ERROR_OFFSET;
     }
 
@@ -115,12 +112,11 @@ ABError AbstractBuffer::checkout_read(int read_offset, int read_size)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-ABError AbstractBuffer::checkin_write(int write_offset)
+ABError
+AbstractBuffer::checkin_write(int write_offset)
 {
-  VolatileState
-    old_vs;
-  VolatileState
-    new_vs;
+  VolatileState old_vs;
+  VolatileState new_vs;
 
   do {
     old_vs = vs;
@@ -128,7 +124,7 @@ ABError AbstractBuffer::checkin_write(int write_offset)
 
     ink_assert(new_vs.s.writer_count > 0);
     ink_assert((new_vs.s.state == AB_STATE_READ_WRITE) || (new_vs.s.state == AB_STATE_READ_ONLY));
-    ink_assert((uint32_t) write_offset < new_vs.s.offset);
+    ink_assert((uint32_t)write_offset < new_vs.s.offset);
 
     new_vs.s.writer_count -= 1;
   } while (!switch_state(old_vs, new_vs));
@@ -154,12 +150,11 @@ ABError AbstractBuffer::checkin_write(int write_offset)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-ABError AbstractBuffer::checkin_read(int read_offset)
+ABError
+AbstractBuffer::checkin_read(int read_offset)
 {
-  VolatileState
-    old_vs;
-  VolatileState
-    new_vs;
+  VolatileState old_vs;
+  VolatileState new_vs;
 
   do {
     old_vs = vs;
@@ -167,7 +162,7 @@ ABError AbstractBuffer::checkin_read(int read_offset)
 
     ink_assert(new_vs.s.reader_count > 0);
     ink_assert(new_vs.s.state != AB_STATE_UNUSED);
-    ink_assert((uint32_t) read_offset < new_vs.s.offset);
+    ink_assert((uint32_t)read_offset < new_vs.s.offset);
 
     new_vs.s.reader_count -= 1;
   } while (!switch_state(old_vs, new_vs));
@@ -191,7 +186,7 @@ AbstractBuffer::initialize()
 
   if (!unaligned_buffer) {
     unaligned_buffer = new char[size + 511];
-    buffer = (char *) align_pointer_forward(unaligned_buffer, 512);
+    buffer = (char *)align_pointer_forward(unaligned_buffer, 512);
   }
 
   vs_history[AB_STATE_READ_WRITE] = vs;
@@ -240,7 +235,6 @@ AbstractBuffer::flush()
 void
 AbstractBuffer::flush_complete()
 {
-
   VolatileState old_vs;
   VolatileState new_vs;
 
@@ -289,7 +283,7 @@ void
 AbstractBuffer::clear()
 {
   if (unaligned_buffer) {
-    delete[]unaligned_buffer;
+    delete[] unaligned_buffer;
   }
   unaligned_buffer = buffer = NULL;
 

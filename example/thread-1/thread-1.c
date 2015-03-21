@@ -40,7 +40,7 @@
 static void *
 reenable_txn(void *data)
 {
-  TSHttpTxn txnp = (TSHttpTxn) data;
+  TSHttpTxn txnp = (TSHttpTxn)data;
   TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
   return NULL;
 }
@@ -50,10 +50,10 @@ thread_plugin(TSCont contp ATS_UNUSED, TSEvent event, void *edata)
 {
   switch (event) {
   case TS_EVENT_HTTP_OS_DNS:
-      /**
-       * Check if the thread has been created successfully or not.
-       * If the thread has not been created successfully, assert.
-       */
+    /**
+     * Check if the thread has been created successfully or not.
+     * If the thread has not been created successfully, assert.
+     */
     if (!TSThreadCreate(reenable_txn, edata)) {
       TSReleaseAssert(!"Failure in thread creation");
     }

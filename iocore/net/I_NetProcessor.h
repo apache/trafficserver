@@ -38,7 +38,7 @@ struct NetVCOptions;
   state machine.
 
 */
-class NetProcessor:public Processor
+class NetProcessor : public Processor
 {
 public:
   /** Options for @c accept.
@@ -61,8 +61,8 @@ public:
     /// Event type to generate on accept.
     EventType etype;
     /** If @c true, the continuation is called back with
-	@c NET_EVENT_ACCEPT_SUCCEED
-	or @c NET_EVENT_ACCEPT_FAILED on success and failure resp.
+        @c NET_EVENT_ACCEPT_SUCCEED
+        or @c NET_EVENT_ACCEPT_FAILED on success and failure resp.
     */
     bool f_callback_on_open;
     /** Accept only on the loopback address.
@@ -87,11 +87,11 @@ public:
     uint32_t packet_tos;
 
     /** Transparency on client (user agent) connection.
-	@internal This is irrelevant at a socket level (since inbound
-	transparency must be set up when the listen socket is created)
-	but it's critical that the connection handling logic knows
-	whether the inbound (client / user agent) connection is
-	transparent.
+        @internal This is irrelevant at a socket level (since inbound
+        transparency must be set up when the listen socket is created)
+        but it's critical that the connection handling logic knows
+        whether the inbound (client / user agent) connection is
+        transparent.
     */
     bool f_inbound_transparent;
 
@@ -99,7 +99,7 @@ public:
     /// Instance is constructed with default values.
     AcceptOptions() { this->reset(); }
     /// Reset all values to defaults.
-    self& reset();
+    self &reset();
   };
 
   /**
@@ -123,10 +123,7 @@ public:
     @return Action, that can be cancelled to cancel the accept. The
       port becomes free immediately.
    */
-  inkcoreapi virtual Action * accept(
-    Continuation * cont,
-    AcceptOptions const& opt = DEFAULT_ACCEPT_OPTIONS
-  );
+  inkcoreapi virtual Action *accept(Continuation *cont, AcceptOptions const &opt = DEFAULT_ACCEPT_OPTIONS);
 
   /**
     Accepts incoming connections on port. Accept connections on port.
@@ -152,11 +149,7 @@ public:
       port becomes free immediately.
 
   */
-  virtual Action *main_accept(
-    Continuation * cont,
-    SOCKET listen_socket_in,
-    AcceptOptions const& opt = DEFAULT_ACCEPT_OPTIONS
-  );
+  virtual Action *main_accept(Continuation *cont, SOCKET listen_socket_in, AcceptOptions const &opt = DEFAULT_ACCEPT_OPTIONS);
 
   /**
     Open a NetVConnection for connection oriented I/O. Connects
@@ -179,11 +172,7 @@ public:
 
   */
 
-  inkcoreapi Action *connect_re(
-    Continuation * cont,
-    sockaddr const* addr,
-    NetVCOptions * options = NULL
-  );
+  inkcoreapi Action *connect_re(Continuation *cont, sockaddr const *addr, NetVCOptions *options = NULL);
 
   /**
     Open a NetVConnection for connection oriented I/O. This call
@@ -204,12 +193,7 @@ public:
     @see connect_re()
 
   */
-  Action *connect_s(
-    Continuation * cont,
-    sockaddr const* addr,
-    int timeout = NET_CONNECT_TIMEOUT,
-    NetVCOptions * opts = NULL
-  );
+  Action *connect_s(Continuation *cont, sockaddr const *addr, int timeout = NET_CONNECT_TIMEOUT, NetVCOptions *opts = NULL);
 
   /**
     Starts the Netprocessor. This has to be called before doing any
@@ -224,13 +208,10 @@ public:
   inkcoreapi virtual NetVConnection *allocate_vc(EThread *) = 0;
 
   /** Private constructor. */
-  NetProcessor()
-  {
-  };
+  NetProcessor(){};
 
   /** Private destructor. */
-  virtual ~ NetProcessor() {
-  };
+  virtual ~NetProcessor(){};
 
   /** This is MSS for connections we accept (client connections). */
   static int accept_mss;
@@ -255,17 +236,16 @@ public:
   static AcceptOptions const DEFAULT_ACCEPT_OPTIONS;
 
 private:
-
   /** @note Not implemented. */
-  virtual int stop()
+  virtual int
+  stop()
   {
     ink_release_assert(!"NetProcessor::stop not implemented");
     return 1;
   }
 
   NetProcessor(const NetProcessor &);
-  NetProcessor & operator =(const NetProcessor &);
-
+  NetProcessor &operator=(const NetProcessor &);
 };
 
 
@@ -280,7 +260,7 @@ private:
   @endcode
 
 */
-extern inkcoreapi NetProcessor& netProcessor;
+extern inkcoreapi NetProcessor &netProcessor;
 
 /**
   Global netProcessor singleton object for making ssl enabled net
@@ -289,6 +269,6 @@ extern inkcoreapi NetProcessor& netProcessor;
   over ssl.
 
 */
-extern inkcoreapi NetProcessor& sslNetProcessor;
+extern inkcoreapi NetProcessor &sslNetProcessor;
 
 #endif

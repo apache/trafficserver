@@ -50,8 +50,8 @@
 #include "MgmtMarshall.h"
 
 // forward declarations
-static TSMgmtError send_and_parse_list(OpType op, LLQ * list);
-static TSMgmtError mgmt_record_set(const char *rec_name, const char *rec_val, TSActionNeedT * action_need);
+static TSMgmtError send_and_parse_list(OpType op, LLQ *list);
+static TSMgmtError mgmt_record_set(const char *rec_name, const char *rec_val, TSActionNeedT *action_need);
 
 // global variables
 // need to store the thread id associated with socket_test_thread
@@ -73,7 +73,7 @@ TSInitOptionT ts_init_options;
  * parameter
  */
 static TSMgmtError
-send_and_parse_list(OpType op, LLQ * list)
+send_and_parse_list(OpType op, LLQ *list)
 {
   TSMgmtError ret;
   const char *tok;
@@ -82,7 +82,7 @@ send_and_parse_list(OpType op, LLQ * list)
 
   MgmtMarshallInt optype = op;
   MgmtMarshallInt err;
-  MgmtMarshallData reply = { NULL, 0 };
+  MgmtMarshallData reply = {NULL, 0};
   MgmtMarshallString strval = NULL;
 
   if (!list) {
@@ -114,7 +114,7 @@ send_and_parse_list(OpType op, LLQ * list)
   tokens.Initialize(strval, COPY_TOKS);
   tok = tokens.iterFirst(&i_state);
   while (tok != NULL) {
-    enqueue(list, ats_strdup(tok));        // add token to LLQ
+    enqueue(list, ats_strdup(tok)); // add token to LLQ
     tok = tokens.iterNext(&i_state);
   }
 
@@ -138,7 +138,7 @@ done:
  * void*. Just read out the string from socket and pass it MgmtRecordSet.
  */
 static TSMgmtError
-mgmt_record_set(const char *rec_name, const char *rec_val, TSActionNeedT * action_need)
+mgmt_record_set(const char *rec_name, const char *rec_val, TSActionNeedT *action_need)
 {
   TSMgmtError ret;
 
@@ -146,7 +146,7 @@ mgmt_record_set(const char *rec_name, const char *rec_val, TSActionNeedT * actio
   MgmtMarshallString name = const_cast<MgmtMarshallString>(rec_name);
   MgmtMarshallString value = const_cast<MgmtMarshallString>(rec_val);
 
-  MgmtMarshallData reply = { NULL, 0 };
+  MgmtMarshallData reply = {NULL, 0};
   MgmtMarshallInt err;
   MgmtMarshallInt action = TS_ACTION_UNDEFINED;
 
@@ -240,7 +240,6 @@ END:
   }
 
   return err;
-
 }
 
 // does clean up for remote API client; destroy structures and disconnects
@@ -279,7 +278,7 @@ Terminate()
   // Clear operation
   ts_test_thread = static_cast<ink_thread>(NULL);
   ts_event_thread = static_cast<ink_thread>(NULL);
-  set_socket_paths(NULL);       // clear the socket_path
+  set_socket_paths(NULL); // clear the socket_path
 
   return TS_ERR_OKAY;
 }
@@ -300,7 +299,7 @@ DiagnosticMessage(TSDiagsT mode, const char *fmt, va_list ap)
   // format the diag message now so it can be sent
   // vsnprintf does not compile on DEC
   vsnprintf(diag_msg, MAX_BUF_SIZE - 1, fmt, ap);
-  (void) MGMTAPI_SEND_MESSAGE(main_socket_fd, DIAGS, &optype, &level, &msg);
+  (void)MGMTAPI_SEND_MESSAGE(main_socket_fd, DIAGS, &optype, &level, &msg);
 }
 
 /***************************************************************************
@@ -311,7 +310,7 @@ ProxyStateGet()
 {
   TSMgmtError ret;
   MgmtMarshallInt optype = PROXY_STATE_GET;
-  MgmtMarshallData reply = { NULL, 0 };
+  MgmtMarshallData reply = {NULL, 0};
   MgmtMarshallInt err;
   MgmtMarshallInt state;
 
@@ -348,14 +347,14 @@ ProxyStateSet(TSProxyStateT state, TSCacheClearT clear)
 }
 
 TSMgmtError
-ServerBacktrace(unsigned options, char ** trace)
+ServerBacktrace(unsigned options, char **trace)
 {
   ink_release_assert(trace != NULL);
   TSMgmtError ret;
   MgmtMarshallInt optype = SERVER_BACKTRACE;
   MgmtMarshallInt err;
   MgmtMarshallInt flags = options;
-  MgmtMarshallData reply = { NULL, 0 };
+  MgmtMarshallData reply = {NULL, 0};
   MgmtMarshallString strval = NULL;
 
   ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, SERVER_BACKTRACE, &optype, &flags);
@@ -450,7 +449,7 @@ Bounce(unsigned options)
  * Disable a storage device.
  */
 TSMgmtError
-StorageDeviceCmdOffline(char const* dev)
+StorageDeviceCmdOffline(char const *dev)
 {
   TSMgmtError ret;
   MgmtMarshallInt optype = STORAGE_DEVICE_CMD_OFFLINE;
@@ -465,7 +464,7 @@ StorageDeviceCmdOffline(char const* dev)
  ***************************************************************************/
 
 static void
-mgmt_record_convert_value(TSRecordT rec_type, const MgmtMarshallData& data, TSRecordValueT& value)
+mgmt_record_convert_value(TSRecordT rec_type, const MgmtMarshallData &data, TSRecordValueT &value)
 {
   // convert the record value to appropriate type
   if (data.ptr) {
@@ -493,15 +492,15 @@ mgmt_record_convert_value(TSRecordT rec_type, const MgmtMarshallData& data, TSRe
 }
 
 static TSMgmtError
-mgmt_record_get_reply(OpType op, TSRecordEle * rec_ele)
+mgmt_record_get_reply(OpType op, TSRecordEle *rec_ele)
 {
   TSMgmtError ret;
 
-  MgmtMarshallData reply = { NULL, 0 };
+  MgmtMarshallData reply = {NULL, 0};
   MgmtMarshallInt err;
   MgmtMarshallInt type;
   MgmtMarshallString name = NULL;
-  MgmtMarshallData value = { NULL, 0 };
+  MgmtMarshallData value = {NULL, 0};
 
   ink_zero(*rec_ele);
   rec_ele->rec_type = TS_REC_UNDEFINED;
@@ -536,7 +535,7 @@ done:
 // note that the record value is being sent as chunk of memory, regardless of
 // record type; it's not being converted to a string!!
 TSMgmtError
-MgmtRecordGet(const char *rec_name, TSRecordEle * rec_ele)
+MgmtRecordGet(const char *rec_name, TSRecordEle *rec_ele)
 {
   TSMgmtError ret;
   MgmtMarshallInt optype = RECORD_GET;
@@ -552,14 +551,14 @@ MgmtRecordGet(const char *rec_name, TSRecordEle * rec_ele)
 }
 
 TSMgmtError
-MgmtConfigRecordDescribe(const char *rec_name, unsigned options, TSConfigRecordDescription * val)
+MgmtConfigRecordDescribe(const char *rec_name, unsigned options, TSConfigRecordDescription *val)
 {
   TSMgmtError ret;
   MgmtMarshallInt optype = RECORD_DESCRIBE_CONFIG;
   MgmtMarshallInt flags = options;
   MgmtMarshallString record = const_cast<MgmtMarshallString>(rec_name);
 
-  MgmtMarshallData reply = { NULL, 0 };
+  MgmtMarshallData reply = {NULL, 0};
 
   // create and send request
   ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, RECORD_DESCRIBE_CONFIG, &optype, &record, &flags);
@@ -574,8 +573,8 @@ MgmtConfigRecordDescribe(const char *rec_name, unsigned options, TSConfigRecordD
     MgmtMarshallInt err;
     MgmtMarshallString name = NULL;
     MgmtMarshallString expr = NULL;
-    MgmtMarshallData value = { NULL, 0 };
-    MgmtMarshallData deflt = { NULL, 0 };
+    MgmtMarshallData value = {NULL, 0};
+    MgmtMarshallData deflt = {NULL, 0};
 
     MgmtMarshallInt rtype;
     MgmtMarshallInt rclass;
@@ -587,8 +586,8 @@ MgmtConfigRecordDescribe(const char *rec_name, unsigned options, TSConfigRecordD
     MgmtMarshallInt updatetype;
     MgmtMarshallInt checktype;
 
-    ret = recv_mgmt_response(reply.ptr, reply.len, RECORD_DESCRIBE_CONFIG, &err, &name, &value, &deflt, &rtype,
-        &rclass, &version, &rsb, &order, &access, &update, &updatetype, &checktype, &expr);
+    ret = recv_mgmt_response(reply.ptr, reply.len, RECORD_DESCRIBE_CONFIG, &err, &name, &value, &deflt, &rtype, &rclass, &version,
+                             &rsb, &order, &access, &update, &updatetype, &checktype, &expr);
 
     ats_free(reply.ptr);
 
@@ -616,7 +615,7 @@ MgmtConfigRecordDescribe(const char *rec_name, unsigned options, TSConfigRecordD
     mgmt_record_convert_value(val->rec_type, value, val->rec_value);
     mgmt_record_convert_value(val->rec_type, deflt, val->rec_default);
 
-done:
+  done:
     ats_free(name);
     ats_free(expr);
     ats_free(value.ptr);
@@ -628,10 +627,10 @@ done:
 }
 
 TSMgmtError
-MgmtRecordGetMatching(const char * regex, TSList rec_vals)
+MgmtRecordGetMatching(const char *regex, TSList rec_vals)
 {
-  TSMgmtError       ret;
-  TSRecordEle * rec_ele;
+  TSMgmtError ret;
+  TSRecordEle *rec_ele;
 
   MgmtMarshallInt optype = RECORD_MATCH_GET;
   MgmtMarshallString record = const_cast<MgmtMarshallString>(regex);
@@ -661,22 +660,22 @@ MgmtRecordGetMatching(const char * regex, TSList rec_vals)
       break;
     }
 
-    enqueue((LLQ *) rec_vals, rec_ele);
+    enqueue((LLQ *)rec_vals, rec_ele);
   }
 
   return TS_ERR_OKAY;
 
 fail:
 
-  for (rec_ele = (TSRecordEle *) dequeue((LLQ *) rec_vals); rec_ele; rec_ele = (TSRecordEle *) dequeue((LLQ *) rec_vals)) {
-      TSRecordEleDestroy(rec_ele);
+  for (rec_ele = (TSRecordEle *)dequeue((LLQ *)rec_vals); rec_ele; rec_ele = (TSRecordEle *)dequeue((LLQ *)rec_vals)) {
+    TSRecordEleDestroy(rec_ele);
   }
 
   return ret;
 }
 
 TSMgmtError
-MgmtRecordSet(const char *rec_name, const char *val, TSActionNeedT * action_need)
+MgmtRecordSet(const char *rec_name, const char *val, TSActionNeedT *action_need)
 {
   TSMgmtError ret;
 
@@ -690,7 +689,7 @@ MgmtRecordSet(const char *rec_name, const char *val, TSActionNeedT * action_need
 // first convert the MgmtInt into a string
 // NOTE: use long long, not just long, MgmtInt = int64_t
 TSMgmtError
-MgmtRecordSetInt(const char *rec_name, MgmtInt int_val, TSActionNeedT * action_need)
+MgmtRecordSetInt(const char *rec_name, MgmtInt int_val, TSActionNeedT *action_need)
 {
   char str_val[MAX_RECORD_SIZE];
   TSMgmtError ret;
@@ -707,7 +706,7 @@ MgmtRecordSetInt(const char *rec_name, MgmtInt int_val, TSActionNeedT * action_n
 
 // first convert the MgmtIntCounter into a string
 TSMgmtError
-MgmtRecordSetCounter(const char *rec_name, MgmtIntCounter counter_val, TSActionNeedT * action_need)
+MgmtRecordSetCounter(const char *rec_name, MgmtIntCounter counter_val, TSActionNeedT *action_need)
 {
   char str_val[MAX_RECORD_SIZE];
   TSMgmtError ret;
@@ -724,7 +723,7 @@ MgmtRecordSetCounter(const char *rec_name, MgmtIntCounter counter_val, TSActionN
 
 // first convert the MgmtFloat into string
 TSMgmtError
-MgmtRecordSetFloat(const char *rec_name, MgmtFloat float_val, TSActionNeedT * action_need)
+MgmtRecordSetFloat(const char *rec_name, MgmtFloat float_val, TSActionNeedT *action_need)
 {
   char str_val[MAX_RECORD_SIZE];
   TSMgmtError ret;
@@ -738,7 +737,7 @@ MgmtRecordSetFloat(const char *rec_name, MgmtFloat float_val, TSActionNeedT * ac
 }
 
 TSMgmtError
-MgmtRecordSetString(const char *rec_name, const char *string_val, TSActionNeedT * action_need)
+MgmtRecordSetString(const char *rec_name, const char *string_val, TSActionNeedT *action_need)
 {
   TSMgmtError ret;
 
@@ -772,10 +771,10 @@ ReadFile(TSFileNameT file, char **text, int *size, int *version)
   MgmtMarshallInt optype = FILE_READ;
   MgmtMarshallInt fid = file;
 
-  MgmtMarshallData reply = { NULL, 0 };
+  MgmtMarshallData reply = {NULL, 0};
   MgmtMarshallInt err;
   MgmtMarshallInt vers;
-  MgmtMarshallData data = { NULL, 0 };
+  MgmtMarshallData data = {NULL, 0};
 
   *text = NULL;
   *size = *version = 0;
@@ -805,7 +804,6 @@ ReadFile(TSFileNameT file, char **text, int *size, int *version)
   *text = (char *)data.ptr;
   *size = (int)data.len;
   return TS_ERR_OKAY;
-
 }
 
 /*-------------------------------------------------------------------------
@@ -823,14 +821,14 @@ ReadFile(TSFileNameT file, char **text, int *size, int *version)
  * Traffic Manager.
  */
 TSMgmtError
-WriteFile(TSFileNameT file, const char * text, int size, int version)
+WriteFile(TSFileNameT file, const char *text, int size, int version)
 {
   TSMgmtError ret;
 
   MgmtMarshallInt optype = FILE_WRITE;
   MgmtMarshallInt fid = file;
   MgmtMarshallInt vers = version;
-  MgmtMarshallData data = { (void *)text, (size_t)size };
+  MgmtMarshallData data = {(void *)text, (size_t)size};
 
   ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, FILE_WRITE, &optype, &fid, &vers, &data);
   return (ret == TS_ERR_OKAY) ? parse_generic_response(FILE_WRITE, main_socket_fd) : ret;
@@ -845,7 +843,7 @@ WriteFile(TSFileNameT file, const char * text, int size, int version)
  * LAN - need to implement
  */
 TSMgmtError
-EventSignal(const char */* event_name ATS_UNUSED */, va_list /* ap ATS_UNUSED */)
+EventSignal(const char * /* event_name ATS_UNUSED */, va_list /* ap ATS_UNUSED */)
 {
   return TS_ERR_FAIL;
 }
@@ -858,7 +856,7 @@ EventSignal(const char */* event_name ATS_UNUSED */, va_list /* ap ATS_UNUSED */
  *          not the event id
  */
 TSMgmtError
-EventResolve(const char * event_name)
+EventResolve(const char *event_name)
 {
   TSMgmtError ret;
   MgmtMarshallInt optype = EVENT_RESOLVE;
@@ -878,7 +876,7 @@ EventResolve(const char * event_name)
  * note:    list of event names returned in network msg which must be tokenized
  */
 TSMgmtError
-ActiveEventGetMlt(LLQ * active_events)
+ActiveEventGetMlt(LLQ *active_events)
 {
   if (!active_events)
     return TS_ERR_PARAMS;
@@ -892,13 +890,13 @@ ActiveEventGetMlt(LLQ * active_events)
  * determines if the event_name is active; sets result in is_current
  */
 TSMgmtError
-EventIsActive(const char * event_name, bool * is_current)
+EventIsActive(const char *event_name, bool *is_current)
 {
   TSMgmtError ret;
   MgmtMarshallInt optype = EVENT_ACTIVE;
   MgmtMarshallString name = const_cast<MgmtMarshallString>(event_name);
 
-  MgmtMarshallData reply = { NULL, 0 };
+  MgmtMarshallData reply = {NULL, 0};
   MgmtMarshallInt err;
   MgmtMarshallInt bval;
 
@@ -937,7 +935,7 @@ EventIsActive(const char * event_name, bool * is_current)
  * which events have remote callbacks registered on it.
  */
 TSMgmtError
-EventSignalCbRegister(const char * event_name, TSEventSignalFunc func, void * data)
+EventSignalCbRegister(const char *event_name, TSEventSignalFunc func, void *data)
 {
   bool first_time = false;
   TSMgmtError ret;
@@ -979,7 +977,7 @@ EventSignalCbRegister(const char * event_name, TSEventSignalFunc func, void * da
  *                     specified
  */
 TSMgmtError
-EventSignalCbUnregister(const char * event_name, TSEventSignalFunc func)
+EventSignalCbUnregister(const char *event_name, TSEventSignalFunc func)
 {
   TSMgmtError err;
 
@@ -1004,7 +1002,7 @@ EventSignalCbUnregister(const char * event_name, TSEventSignalFunc func)
  * Snapshots
  ***************************************************************************/
 static TSMgmtError
-snapshot_message(OpType op, const char * snapshot_name)
+snapshot_message(OpType op, const char *snapshot_name)
 {
   TSMgmtError ret;
   MgmtMarshallInt optype = op;
@@ -1018,7 +1016,7 @@ snapshot_message(OpType op, const char * snapshot_name)
 }
 
 TSMgmtError
-SnapshotTake(const char * snapshot_name)
+SnapshotTake(const char *snapshot_name)
 {
   return snapshot_message(SNAPSHOT_TAKE, snapshot_name);
 }
@@ -1036,7 +1034,7 @@ SnapshotRemove(const char *snapshot_name)
 }
 
 TSMgmtError
-SnapshotGetMlt(LLQ * snapshots)
+SnapshotGetMlt(LLQ *snapshots)
 {
   if (!snapshots)
     return TS_ERR_PARAMS;
@@ -1045,7 +1043,7 @@ SnapshotGetMlt(LLQ * snapshots)
 }
 
 TSMgmtError
-StatsReset(bool cluster, const char * stat_name)
+StatsReset(bool cluster, const char *stat_name)
 {
   TSMgmtError ret;
   OpType op = cluster ? STATS_RESET_CLUSTER : STATS_RESET_NODE;

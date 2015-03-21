@@ -27,8 +27,8 @@
 
 #include <atscppapi/Plugin.h>
 
-namespace atscppapi {
-
+namespace atscppapi
+{
 struct GlobalPluginState;
 
 /**
@@ -56,7 +56,8 @@ struct GlobalPluginState;
  * \endcode
  * @see Plugin
  */
-class GlobalPlugin : public Plugin {
+class GlobalPlugin : public Plugin
+{
 public:
   /**
    * registerHook is the mechanism used to attach a global hook.
@@ -71,6 +72,7 @@ public:
    */
   void registerHook(Plugin::HookType);
   virtual ~GlobalPlugin();
+
 protected:
   /**
    * Constructor.
@@ -80,6 +82,7 @@ protected:
    *                                     when other plugins create requests). Defaults to false.
    */
   GlobalPlugin(bool ignore_internal_transactions = false);
+
 private:
   GlobalPluginState *state_; /**< Internal state tied to a GlobalPlugin */
 };

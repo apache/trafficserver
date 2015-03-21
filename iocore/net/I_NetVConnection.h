@@ -33,8 +33,8 @@
 #include "I_Socks.h"
 #include <ts/apidefs.h>
 
-#define CONNECT_SUCCESS   1
-#define CONNECT_FAILURE   0
+#define CONNECT_SUCCESS 1
+#define CONNECT_FAILURE 0
 
 #define SSL_EVENT_SERVER 0
 #define SSL_EVENT_CLIENT 1
@@ -60,7 +60,7 @@ struct NetVCOptions {
   /// Values for valid IP protocols.
   enum ip_protocol_t {
     USE_TCP, ///< TCP protocol.
-    USE_UDP ///< UDP protocol.
+    USE_UDP  ///< UDP protocol.
   };
 
   /// IP (TCP or UDP) protocol to use on socket.
@@ -104,8 +104,8 @@ struct NetVCOptions {
       @see addr_binding
    */
   enum addr_bind_style {
-    ANY_ADDR, ///< Bind to any available local address (don't care, default).
-    INTF_ADDR, ///< Bind to interface address in @a local_addr.
+    ANY_ADDR,    ///< Bind to any available local address (don't care, default).
+    INTF_ADDR,   ///< Bind to interface address in @a local_addr.
     FOREIGN_ADDR ///< Bind to foreign address in @a local_addr.
   };
 
@@ -168,20 +168,19 @@ struct NetVCOptions {
   /// Reset all values to defaults.
   void reset();
 
-  void set_sock_param(int _recv_bufsize, int _send_bufsize, unsigned long _opt_flags,
-                      unsigned long _packet_mark = 0, unsigned long _packet_tos = 0);
+  void set_sock_param(int _recv_bufsize, int _send_bufsize, unsigned long _opt_flags, unsigned long _packet_mark = 0,
+                      unsigned long _packet_tos = 0);
 
-  NetVCOptions() {
-    reset();
-  }
+  NetVCOptions() { reset(); }
 
-  ~NetVCOptions() {
-  }
+  ~NetVCOptions() {}
 
   /** Set the SNI server name.
       A local copy is made of @a name.
   */
-  self& set_sni_servername(const char * name, size_t len) {
+  self &
+  set_sni_servername(const char *name, size_t len)
+  {
     IpEndpoint ip;
 
     // Literal IPv4 and IPv6 addresses are not permitted in "HostName".(rfc6066#section-3)
@@ -193,12 +192,13 @@ struct NetVCOptions {
     return *this;
   }
 
-  self& operator=(self const& that) {
+  self &operator=(self const &that)
+  {
     if (&that != this) {
       sni_servername = NULL; // release any current name.
       memcpy(this, &that, sizeof(self));
       if (that.sni_servername) {
-	sni_servername.release(); // otherwise we'll free the source string.
+        sni_servername.release(); // otherwise we'll free the source string.
         this->sni_servername = ats_strdup(that.sni_servername);
       }
     }
@@ -208,11 +208,11 @@ struct NetVCOptions {
   /// @name Debugging
   //@{
   /// Convert @a s to its string equivalent.
-  static char const* toString(addr_bind_style s);
+  static char const *toString(addr_bind_style s);
   //@}
 
 private:
-  NetVCOptions(const NetVCOptions&);
+  NetVCOptions(const NetVCOptions &);
 };
 
 /**
@@ -223,10 +223,9 @@ private:
   stream IO to be done based on a single read or write call.
 
 */
-class NetVConnection:public VConnection
+class NetVConnection : public VConnection
 {
 public:
-
   /**
      Initiates read. Thread safe, may be called when not handling
      an event from the NetVConnection, or the NetVConnection creation
@@ -251,7 +250,7 @@ public:
     @return vio
 
   */
-  virtual VIO * do_io_read(Continuation * c, int64_t nbytes, MIOBuffer * buf) = 0;
+  virtual VIO *do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf) = 0;
 
   /**
     Initiates write. Thread-safe, may be called when not handling
@@ -287,7 +286,7 @@ public:
     @return vio pointer
 
   */
-  virtual VIO *do_io_write(Continuation * c, int64_t nbytes, IOBufferReader * buf, bool owner = false) = 0;
+  virtual VIO *do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner = false) = 0;
 
   /**
     Closes the vconnection. A state machine MUST call do_io_close()
@@ -339,7 +338,7 @@ public:
     @param len length of the message.
 
   */
-  virtual Action *send_OOB(Continuation * cont, char *buf, int len);
+  virtual Action *send_OOB(Continuation *cont, char *buf, int len);
 
   /**
     Cancels a scheduled send_OOB. Part of the message could have
@@ -452,7 +451,7 @@ public:
   virtual void trapWriteBufferEmpty(int event = VC_EVENT_WRITE_READY);
 
   /** Returns local sockaddr storage. */
-  sockaddr const* get_local_addr();
+  sockaddr const *get_local_addr();
 
   /** Returns local ip.
       @deprecated get_local_addr() should be used instead for AF_INET6 compatibility.
@@ -464,7 +463,7 @@ public:
   uint16_t get_local_port();
 
   /** Returns remote sockaddr storage. */
-  sockaddr const* get_remote_addr();
+  sockaddr const *get_remote_addr();
 
   /** Returns remote ip.
       @deprecated get_remote_addr() should be used instead for AF_INET6 compatibility.
@@ -484,18 +483,18 @@ public:
   // Private
   //
 
-  //The following variable used to obtain host addr when transparency
-  //is enabled by SocksProxy
+  // The following variable used to obtain host addr when transparency
+  // is enabled by SocksProxy
   SocksAddrType socks_addr;
 
   unsigned int attributes;
   EThread *thread;
 
   /// PRIVATE: The public interface is VIO::reenable()
-  virtual void reenable(VIO * vio) = 0;
+  virtual void reenable(VIO *vio) = 0;
 
   /// PRIVATE: The public interface is VIO::reenable()
-  virtual void reenable_re(VIO * vio) = 0;
+  virtual void reenable_re(VIO *vio) = 0;
 
   /// PRIVATE
   virtual ~NetVConnection() {}
@@ -521,26 +520,34 @@ public:
   virtual void set_remote_addr() = 0;
 
   // for InkAPI
-  bool get_is_internal_request() const {
+  bool
+  get_is_internal_request() const
+  {
     return is_internal_request;
   }
 
-  void set_is_internal_request(bool val = false) {
+  void
+  set_is_internal_request(bool val = false)
+  {
     is_internal_request = val;
   }
 
   /// Get the transparency state.
-  bool get_is_transparent() const {
+  bool
+  get_is_transparent() const
+  {
     return is_transparent;
   }
   /// Set the transparency state.
-  void set_is_transparent(bool state = true) {
+  void
+  set_is_transparent(bool state = true)
+  {
     is_transparent = state;
   }
 
 private:
   NetVConnection(const NetVConnection &);
-  NetVConnection & operator =(const NetVConnection &);
+  NetVConnection &operator=(const NetVConnection &);
 
 protected:
   IpEndpoint local_addr;
@@ -556,16 +563,9 @@ protected:
   int write_buffer_empty_event;
 };
 
-inline
-NetVConnection::NetVConnection():
-  VConnection(NULL),
-  attributes(0),
-  thread(NULL),
-  got_local_addr(0),
-  got_remote_addr(0),
-  is_internal_request(false),
-  is_transparent(false),
-  write_buffer_empty_event(0)
+inline NetVConnection::NetVConnection()
+  : VConnection(NULL), attributes(0), thread(NULL), got_local_addr(0), got_remote_addr(0), is_internal_request(false),
+    is_transparent(false), write_buffer_empty_event(0)
 {
   ink_zero(local_addr);
   ink_zero(remote_addr);

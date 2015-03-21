@@ -26,14 +26,13 @@
 
 namespace spdy
 {
-  /// Internal implementation version.
-  /// These map to the SPDY version handled.
-  enum SessionVersion
-  {
-    SESSION_VERSION_2 = 0,
-    SESSION_VERSION_3,
-    SESSION_VERSION_3_1
-  };
+/// Internal implementation version.
+/// These map to the SPDY version handled.
+enum SessionVersion {
+  SESSION_VERSION_2 = 0,
+  SESSION_VERSION_3,
+  SESSION_VERSION_3_1,
+};
 }
 
 #endif

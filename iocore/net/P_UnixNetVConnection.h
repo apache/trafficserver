@@ -70,8 +70,8 @@ NetVCOptions::reset()
 }
 
 TS_INLINE void
-NetVCOptions::set_sock_param(int _recv_bufsize, int _send_bufsize, unsigned long _opt_flags,
-                             unsigned long _packet_mark, unsigned long _packet_tos)
+NetVCOptions::set_sock_param(int _recv_bufsize, int _send_bufsize, unsigned long _opt_flags, unsigned long _packet_mark,
+                             unsigned long _packet_tos)
 {
   socket_recv_bufsize = _recv_bufsize;
   socket_send_bufsize = _send_bufsize;
@@ -80,8 +80,7 @@ NetVCOptions::set_sock_param(int _recv_bufsize, int _send_bufsize, unsigned long
   packet_tos = _packet_tos;
 }
 
-struct OOB_callback:public Continuation
-{
+struct OOB_callback : public Continuation {
   char *data;
   int length;
   Event *trigger;
@@ -89,19 +88,18 @@ struct OOB_callback:public Continuation
   Continuation *server_cont;
   int retry_OOB_send(int, Event *);
 
-    OOB_callback(ProxyMutex *m, NetVConnection *vc, Continuation *cont,
-                 char *buf, int len):Continuation(m), data(buf), length(len), trigger(0)
+  OOB_callback(ProxyMutex *m, NetVConnection *vc, Continuation *cont, char *buf, int len)
+    : Continuation(m), data(buf), length(len), trigger(0)
   {
-    server_vc = (UnixNetVConnection *) vc;
+    server_vc = (UnixNetVConnection *)vc;
     server_cont = cont;
     SET_HANDLER(&OOB_callback::retry_OOB_send);
   }
 };
 
-class UnixNetVConnection:public NetVConnection
+class UnixNetVConnection : public NetVConnection
 {
 public:
-
   virtual VIO *do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf);
   virtual VIO *do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner = false);
 
@@ -110,11 +108,27 @@ public:
   virtual Action *send_OOB(Continuation *cont, char *buf, int len);
   virtual void cancel_OOB();
 
-  virtual void setSSLHandshakeWantsRead(bool /* flag */) { return; }
-  virtual bool getSSLHandshakeWantsRead() { return false; }
-  virtual void setSSLHandshakeWantsWrite(bool /* flag */) { return; }
+  virtual void
+  setSSLHandshakeWantsRead(bool /* flag */)
+  {
+    return;
+  }
+  virtual bool
+  getSSLHandshakeWantsRead()
+  {
+    return false;
+  }
+  virtual void
+  setSSLHandshakeWantsWrite(bool /* flag */)
+  {
+    return;
+  }
 
-  virtual bool getSSLHandshakeWantsWrite() { return false; }
+  virtual bool
+  getSSLHandshakeWantsWrite()
+  {
+    return false;
+  }
 
   virtual void do_io_close(int lerrno = -1);
   virtual void do_io_shutdown(ShutdownHowTo_t howto);
@@ -144,7 +158,7 @@ public:
 
   virtual SOCKET get_socket();
 
-  virtual ~ UnixNetVConnection();
+  virtual ~UnixNetVConnection();
 
   /////////////////////////////////////////////////////////////////
   // instances of UnixNetVConnection should be allocated         //
@@ -155,10 +169,9 @@ public:
 
 private:
   UnixNetVConnection(const NetVConnection &);
-  UnixNetVConnection & operator =(const NetVConnection &);
+  UnixNetVConnection &operator=(const NetVConnection &);
 
 public:
-
   /////////////////////////
   // UNIX implementation //
   /////////////////////////
@@ -169,24 +182,31 @@ public:
   // these are not part of the pure virtual interface.  They were
   // added to reduce the amount of duplicate code in classes inherited
   // from NetVConnection (SSL).
-  virtual int sslStartHandShake(int event, int &err) {
-    (void) event;
-    (void) err;
+  virtual int
+  sslStartHandShake(int event, int &err)
+  {
+    (void)event;
+    (void)err;
     return EVENT_ERROR;
   }
-  virtual bool getSSLHandShakeComplete() {
+  virtual bool
+  getSSLHandShakeComplete()
+  {
     return (true);
   }
-  virtual bool getSSLClientConnection()
+  virtual bool
+  getSSLClientConnection()
   {
     return (false);
   }
-  virtual void setSSLClientConnection(bool state)
+  virtual void
+  setSSLClientConnection(bool state)
   {
-    (void) state;
+    (void)state;
   }
   virtual void net_read_io(NetHandler *nh, EThread *lthread);
-  virtual int64_t load_buffer_and_write(int64_t towrite, int64_t &wattempted, int64_t &total_written, MIOBufferAccessor & buf, int &needs);
+  virtual int64_t load_buffer_and_write(int64_t towrite, int64_t &wattempted, int64_t &total_written, MIOBufferAccessor &buf,
+                                        int &needs);
   void readDisable(NetHandler *nh);
   void readSignalError(NetHandler *nh, int err);
   int readSignalDone(int event, NetHandler *nh);
@@ -222,15 +242,13 @@ public:
   // amc - what is this for? Why not use remote_addr or con.addr?
   IpEndpoint server_addr; /// Server address and port.
 
-  union
-  {
+  union {
     unsigned int flags;
-#define NET_VC_SHUTDOWN_READ  1
+#define NET_VC_SHUTDOWN_READ 1
 #define NET_VC_SHUTDOWN_WRITE 2
-    struct
-    {
-      unsigned int got_local_addr:1;
-      unsigned int shutdown:2;
+    struct {
+      unsigned int got_local_addr : 1;
+      unsigned int shutdown : 2;
     } f;
   };
 
@@ -254,12 +272,12 @@ public:
   virtual int set_tcp_init_cwnd(int init_cwnd);
   virtual void apply_options();
 
-  friend void write_to_net_io(NetHandler*, UnixNetVConnection*, EThread*);
+  friend void write_to_net_io(NetHandler *, UnixNetVConnection *, EThread *);
 };
 
 extern ClassAllocator<UnixNetVConnection> netVCAllocator;
 
-typedef int (UnixNetVConnection::*NetVConnHandler) (int, void *);
+typedef int (UnixNetVConnection::*NetVConnHandler)(int, void *);
 
 
 TS_INLINE void
@@ -385,17 +403,20 @@ UnixNetVConnection::set_tcp_init_cwnd(int init_cwnd)
 #endif
 }
 
-TS_INLINE UnixNetVConnection::~UnixNetVConnection() { }
+TS_INLINE UnixNetVConnection::~UnixNetVConnection()
+{
+}
 
 TS_INLINE SOCKET
-UnixNetVConnection::get_socket() {
+UnixNetVConnection::get_socket()
+{
   return con.fd;
 }
 
 // declarations for local use (within the net module)
 
-void close_UnixNetVConnection(UnixNetVConnection * vc, EThread * t);
-void write_to_net(NetHandler * nh, UnixNetVConnection * vc, EThread * thread);
-void write_to_net_io(NetHandler * nh, UnixNetVConnection * vc, EThread * thread);
+void close_UnixNetVConnection(UnixNetVConnection *vc, EThread *t);
+void write_to_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread);
+void write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread);
 
 #endif

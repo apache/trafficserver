@@ -31,17 +31,15 @@
 #include <ts/IpMap.h>
 #endif
 
-enum
-{
-  //types of events for Socks auth handlers
+enum {
+  // types of events for Socks auth handlers
   SOCKS_AUTH_OPEN,
   SOCKS_AUTH_WRITE_COMPLETE,
   SOCKS_AUTH_READ_COMPLETE,
   SOCKS_AUTH_FILL_WRITE_BUF
 };
 
-struct socks_conf_struct
-{
+struct socks_conf_struct {
   int socks_needed;
   int server_connect_timeout;
   int socks_timeout;
@@ -52,7 +50,7 @@ struct socks_conf_struct
   int per_server_connection_attempts;
   int connection_attempts;
 
-  //the following ports are used by SocksProxy
+  // the following ports are used by SocksProxy
   int accept_enabled;
   int accept_port;
   unsigned short http_port;
@@ -65,13 +63,14 @@ struct socks_conf_struct
   IpEndpoint server_addr;
 #endif
 
-    socks_conf_struct():socks_needed(0), server_connect_timeout(0), socks_timeout(100), default_version(5),
-    user_name_n_passwd(NULL), user_name_n_passwd_len(0),
-    per_server_connection_attempts(1), connection_attempts(0), accept_enabled(0), accept_port(0), http_port(1080)
+  socks_conf_struct()
+    : socks_needed(0), server_connect_timeout(0), socks_timeout(100), default_version(5), user_name_n_passwd(NULL),
+      user_name_n_passwd_len(0), per_server_connection_attempts(1), connection_attempts(0), accept_enabled(0), accept_port(0),
+      http_port(1080)
   {
-# if !defined(SOCKS_WITH_TS)
+#if !defined(SOCKS_WITH_TS)
     memset(&server_addr, 0, sizeof(server_addr));
-# endif
+#endif
   }
 };
 
@@ -79,20 +78,20 @@ extern struct socks_conf_struct *g_socks_conf_stuff;
 
 void start_SocksProxy(int port);
 
-int loadSocksAuthInfo(int fd, socks_conf_struct * socks_stuff);
+int loadSocksAuthInfo(int fd, socks_conf_struct *socks_stuff);
 
 // umm.. the following typedef should take _its own_ type as one of the args
 // not possible with C
 // Right now just use a generic fn ptr and hide casting in an inline fn.
-typedef int (*SocksAuthHandler) (int event, unsigned char *buf, void (**h_ptr) (void));
+typedef int (*SocksAuthHandler)(int event, unsigned char *buf, void (**h_ptr)(void));
 
 TS_INLINE int
-invokeSocksAuthHandler(SocksAuthHandler & h, int arg1, unsigned char *arg2)
+invokeSocksAuthHandler(SocksAuthHandler &h, int arg1, unsigned char *arg2)
 {
-  return (h) (arg1, arg2, (void (**)(void)) (&h));
+  return (h)(arg1, arg2, (void (**)(void))(&h));
 }
 
-void loadSocksConfiguration(socks_conf_struct * socks_conf_stuff);
+void loadSocksConfiguration(socks_conf_struct *socks_conf_stuff);
 int socks5BasicAuthHandler(int event, unsigned char *p, void (**)(void));
 int socks5PasswdAuthHandler(int event, unsigned char *p, void (**)(void));
 int socks5ServerAuthHandler(int event, unsigned char *p, void (**)(void));
@@ -100,10 +99,7 @@ int socks5ServerAuthHandler(int event, unsigned char *p, void (**)(void));
 class UnixNetVConnection;
 typedef UnixNetVConnection SocksNetVC;
 
-struct SocksEntry:public Continuation
-{
-
-
+struct SocksEntry : public Continuation {
   MIOBuffer *buf;
   IOBufferReader *reader;
 
@@ -127,28 +123,28 @@ struct SocksEntry:public Continuation
   unsigned char socks_cmd;
 
 #ifdef SOCKS_WITH_TS
-  //socks server selection:
+  // socks server selection:
   ParentConfigParams *server_params;
-  HttpRequestData req_data;     //We dont use any http specific fields.
+  HttpRequestData req_data; // We dont use any http specific fields.
   ParentResult server_result;
 #endif
 
   int startEvent(int event, void *data);
   int mainEvent(int event, void *data);
   void findServer();
-  void init(ProxyMutex * m, SocksNetVC * netvc, unsigned char socks_support, unsigned char ver);
+  void init(ProxyMutex *m, SocksNetVC *netvc, unsigned char socks_support, unsigned char ver);
   void free();
 
-    SocksEntry():Continuation(NULL), netVConnection(0),
-    nattempts(0),
-    lerrno(0), timeout(0), version(5), write_done(false), auth_handler(NULL), socks_cmd(NORMAL_SOCKS)
+  SocksEntry()
+    : Continuation(NULL), netVConnection(0), nattempts(0), lerrno(0), timeout(0), version(5), write_done(false), auth_handler(NULL),
+      socks_cmd(NORMAL_SOCKS)
   {
     memset(&target_addr, 0, sizeof(target_addr));
     memset(&server_addr, 0, sizeof(server_addr));
   }
 };
 
-typedef int (SocksEntry::*SocksEntryHandler) (int, void *);
+typedef int (SocksEntry::*SocksEntryHandler)(int, void *);
 
 extern ClassAllocator<SocksEntry> socksAllocator;
 

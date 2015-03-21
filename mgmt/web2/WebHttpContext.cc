@@ -42,9 +42,8 @@
 //-------------------------------------------------------------------------
 
 WebHttpContext *
-WebHttpContextCreate(WebHttpConInfo * whci)
+WebHttpContextCreate(WebHttpConInfo *whci)
 {
-
   WebHttpContext *whc = (WebHttpContext *)ats_malloc(sizeof(WebHttpContext));
 
   // memset to 0; note strings are zero'd too
@@ -71,7 +70,6 @@ WebHttpContextCreate(WebHttpConInfo * whci)
   }
 
   return whc;
-
 }
 
 //-------------------------------------------------------------------------
@@ -79,19 +77,19 @@ WebHttpContextCreate(WebHttpConInfo * whci)
 //-------------------------------------------------------------------------
 
 void
-WebHttpContextDestroy(WebHttpContext * whc)
+WebHttpContextDestroy(WebHttpContext *whc)
 {
   if (whc) {
     if (whc->request)
-      delete(whc->request);
+      delete (whc->request);
     if (whc->response_hdr)
-      delete(whc->response_hdr);
+      delete (whc->response_hdr);
     if (whc->response_bdy)
-      delete(whc->response_bdy);
+      delete (whc->response_bdy);
     if (whc->submit_warn)
-      delete(whc->submit_warn);
+      delete (whc->submit_warn);
     if (whc->submit_note)
-      delete(whc->submit_note);
+      delete (whc->submit_note);
     if (whc->query_data_ht)
       ink_hash_table_destroy_and_xfree_values(whc->query_data_ht);
     if (whc->post_data_ht)

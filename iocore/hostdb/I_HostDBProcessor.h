@@ -28,15 +28,15 @@
 #include "SRV.h"
 
 // Event returned on a lookup
-#define EVENT_HOST_DB_LOOKUP                 (HOSTDB_EVENT_EVENTS_START+0)
-#define EVENT_HOST_DB_IP_REMOVED             (HOSTDB_EVENT_EVENTS_START+1)
-#define EVENT_HOST_DB_GET_RESPONSE           (HOSTDB_EVENT_EVENTS_START+2)
+#define EVENT_HOST_DB_LOOKUP (HOSTDB_EVENT_EVENTS_START + 0)
+#define EVENT_HOST_DB_IP_REMOVED (HOSTDB_EVENT_EVENTS_START + 1)
+#define EVENT_HOST_DB_GET_RESPONSE (HOSTDB_EVENT_EVENTS_START + 2)
 
-#define EVENT_SRV_LOOKUP                 (SRV_EVENT_EVENTS_START+0)
-#define EVENT_SRV_IP_REMOVED             (SRV_EVENT_EVENTS_START+1)
-#define EVENT_SRV_GET_RESPONSE           (SRV_EVENT_EVENTS_START+2)
+#define EVENT_SRV_LOOKUP (SRV_EVENT_EVENTS_START + 0)
+#define EVENT_SRV_IP_REMOVED (SRV_EVENT_EVENTS_START + 1)
+#define EVENT_SRV_GET_RESPONSE (SRV_EVENT_EVENTS_START + 2)
 
-#define HOST_DB_MAX_ROUND_ROBIN_INFO         16
+#define HOST_DB_MAX_ROUND_ROBIN_INFO 16
 
 #define HOST_DB_SRV_PREFIX "_http._tcp."
 //
@@ -85,10 +85,8 @@ makeHostHash(const char *string)
 // is treated as opacque by the database.
 //
 
-union HostDBApplicationInfo
-{
-  struct application_data_allotment
-  {
+union HostDBApplicationInfo {
+  struct application_data_allotment {
     unsigned int application1;
     unsigned int application2;
   } allotment;
@@ -106,55 +104,62 @@ union HostDBApplicationInfo
   // fail_count         - Number of times we tried and    //
   //                       and failed to contact the host //
   //////////////////////////////////////////////////////////
-  struct http_server_attr
-  {
-    unsigned int http_version:3;
-    unsigned int pipeline_max:7;
-    unsigned int keepalive_timeout:6;
-    unsigned int fail_count:8;
-    unsigned int unused1:8;
-    unsigned int last_failure:32;
+  struct http_server_attr {
+    unsigned int http_version : 3;
+    unsigned int pipeline_max : 7;
+    unsigned int keepalive_timeout : 6;
+    unsigned int fail_count : 8;
+    unsigned int unused1 : 8;
+    unsigned int last_failure : 32;
   } http_data;
 
-  enum HttpVersion_t
-  {
+  enum HttpVersion_t {
     HTTP_VERSION_UNDEFINED = 0,
     HTTP_VERSION_09 = 1,
     HTTP_VERSION_10 = 2,
-    HTTP_VERSION_11 = 3
+    HTTP_VERSION_11 = 3,
   };
 
-  struct application_data_rr
-  {
+  struct application_data_rr {
     int offset;
   } rr;
 };
 
 struct HostDBRoundRobin;
 
-struct SRVInfo
-{
-  unsigned int srv_offset:16;
-  unsigned int srv_weight:16;
-  unsigned int srv_priority:16;
-  unsigned int srv_port:16;
+struct SRVInfo {
+  unsigned int srv_offset : 16;
+  unsigned int srv_weight : 16;
+  unsigned int srv_priority : 16;
+  unsigned int srv_port : 16;
   unsigned int key;
 };
 
-struct HostDBInfo
-{
+struct HostDBInfo {
   /** Internal IP address data.
       This is at least large enough to hold an IPv6 address.
   */
-  sockaddr* ip()  { return &data.ip.sa; }
-  sockaddr const* ip() const { return &data.ip.sa; }
+  sockaddr *
+  ip()
+  {
+    return &data.ip.sa;
+  }
+  sockaddr const *
+  ip() const
+  {
+    return &data.ip.sa;
+  }
 
   char *hostname();
   char *srvname(HostDBRoundRobin *rr);
   HostDBRoundRobin *rr();
 
   /** Indicate that the HostDBInfo is BAD and should be deleted. */
-  void bad() { full = 0; }
+  void
+  bad()
+  {
+    full = 0;
+  }
 
   /**
     Application specific data. NOTE: We need an integral number of these
@@ -164,36 +169,45 @@ struct HostDBInfo
   */
   HostDBApplicationInfo app;
 
-  unsigned int ip_interval()
+  unsigned int
+  ip_interval()
   {
     return (hostdb_current_interval - ip_timestamp) & 0x7FFFFFFF;
   }
 
-  int ip_time_remaining()
+  int
+  ip_time_remaining()
   {
     return static_cast<int>(ip_timeout_interval) - static_cast<int>(this->ip_interval());
   }
 
-  bool is_ip_stale() {
-    return ip_timeout_interval >= 2 * hostdb_ip_stale_interval &&
-      ip_interval() >= hostdb_ip_stale_interval
-      ;
+  bool
+  is_ip_stale()
+  {
+    return ip_timeout_interval >= 2 * hostdb_ip_stale_interval && ip_interval() >= hostdb_ip_stale_interval;
   }
 
-  bool is_ip_timeout() {
+  bool
+  is_ip_timeout()
+  {
     return ip_timeout_interval && ip_interval() >= ip_timeout_interval;
   }
 
-  bool is_ip_fail_timeout() {
+  bool
+  is_ip_fail_timeout()
+  {
     return ip_interval() >= hostdb_ip_fail_timeout_interval;
   }
 
-  void refresh_ip()
+  void
+  refresh_ip()
   {
     ip_timestamp = hostdb_current_interval;
   }
 
-  bool serve_stale_but_revalidate() {
+  bool
+  serve_stale_but_revalidate()
+  {
     // the option is disabled
     if (hostdb_serve_stale_but_revalidate <= 0)
       return false;
@@ -202,8 +216,8 @@ struct HostDBInfo
     // hostdb_serve_stale_but_revalidate == number of seconds
     // ip_interval() is the number of seconds between now() and when the entry was inserted
     if ((ip_timeout_interval + hostdb_serve_stale_but_revalidate) > ip_interval()) {
-      Debug("hostdb", "serving stale entry %d | %d | %d as requested by config",
-            ip_timeout_interval, hostdb_serve_stale_but_revalidate, ip_interval());
+      Debug("hostdb", "serving stale entry %d | %d | %d as requested by config", ip_timeout_interval,
+            hostdb_serve_stale_but_revalidate, ip_interval());
       return true;
     }
     // otherwise, the entry is too old
@@ -216,7 +230,7 @@ struct HostDBInfo
   //
 
   union {
-    IpEndpoint ip; ///< IP address / port data.
+    IpEndpoint ip;       ///< IP address / port data.
     int hostname_offset; ///< Some hostname thing.
     SRVInfo srv;
   } data;
@@ -226,24 +240,28 @@ struct HostDBInfo
   // if this is 0 then no timeout.
   unsigned int ip_timeout_interval;
 
-  unsigned int full:1;
-  unsigned int backed:1;        // duplicated in lower level
-  unsigned int deleted:1;
-  unsigned int hits:3;
+  unsigned int full : 1;
+  unsigned int backed : 1; // duplicated in lower level
+  unsigned int deleted : 1;
+  unsigned int hits : 3;
 
-  unsigned int is_srv:1; // steal a bit from ip_timeout_interval
-  unsigned int round_robin:1;
-  unsigned int reverse_dns:1;
+  unsigned int is_srv : 1; // steal a bit from ip_timeout_interval
+  unsigned int round_robin : 1;
+  unsigned int reverse_dns : 1;
 
-  unsigned int md5_low_low:24;
+  unsigned int md5_low_low : 24;
   unsigned int md5_low;
 
   uint64_t md5_high;
 
-  bool failed() {
+  bool
+  failed()
+  {
     return !((is_srv && data.srv.srv_offset) || (reverse_dns && data.hostname_offset) || ats_is_ip(ip()));
   }
-  void set_failed() {
+  void
+  set_failed()
+  {
     if (is_srv)
       data.srv.srv_offset = 0;
     else if (reverse_dns)
@@ -252,12 +270,25 @@ struct HostDBInfo
       ats_ip_invalidate(ip());
   }
 
-  void set_deleted() { deleted = 1; }
-  bool is_deleted() const { return deleted; }
+  void
+  set_deleted()
+  {
+    deleted = 1;
+  }
+  bool
+  is_deleted() const
+  {
+    return deleted;
+  }
 
-  bool is_empty() const { return !full; }
+  bool
+  is_empty() const
+  {
+    return !full;
+  }
 
-  void set_empty()
+  void
+  set_empty()
   {
     full = 0;
     md5_high = 0;
@@ -265,18 +296,20 @@ struct HostDBInfo
     md5_low_low = 0;
   }
 
-  void set_full(uint64_t folded_md5, int buckets)
+  void
+  set_full(uint64_t folded_md5, int buckets)
   {
     uint64_t ttag = folded_md5 / buckets;
 
     if (!ttag)
       ttag = 1;
-    md5_low_low = (unsigned int) ttag;
-    md5_low = (unsigned int) (ttag >> 24);
+    md5_low_low = (unsigned int)ttag;
+    md5_low = (unsigned int)(ttag >> 24);
     full = 1;
   }
 
-  void reset()
+  void
+  reset()
   {
     ats_ip_invalidate(ip());
     app.allotment.application1 = 0;
@@ -289,7 +322,9 @@ struct HostDBInfo
     is_srv = 0;
   }
 
-  uint64_t tag() {
+  uint64_t
+  tag()
+  {
     uint64_t f = md5_low;
     return (f << 24) + md5_low_low;
   }
@@ -300,8 +335,7 @@ struct HostDBInfo
 };
 
 
-struct HostDBRoundRobin
-{
+struct HostDBRoundRobin {
   /** Total number (to compute space used). */
   short rrcount;
 
@@ -316,7 +350,8 @@ struct HostDBRoundRobin
 
   // Return the allocation size of a HostDBRoundRobin struct suitable for storing
   // "count" HostDBInfo records.
-  static unsigned size(unsigned count, unsigned srv_len = 0)
+  static unsigned
+  size(unsigned count, unsigned srv_len = 0)
   {
     ink_assert(count > 0);
     return INK_ALIGN((sizeof(HostDBRoundRobin) + (count * sizeof(HostDBInfo)) + srv_len), 8);
@@ -325,34 +360,30 @@ struct HostDBRoundRobin
   /** Find the index of @a addr in member @a info.
       @return The index if found, -1 if not found.
   */
-  int index_of(sockaddr const* addr);
-  HostDBInfo *find_ip(sockaddr const* addr);
+  int index_of(sockaddr const *addr);
+  HostDBInfo *find_ip(sockaddr const *addr);
   // Find the srv target
   HostDBInfo *find_target(const char *target);
   /** Select the next entry after @a addr.
       @note If @a addr isn't an address in the round robin nothing is updated.
       @return The selected entry or @c NULL if @a addr wasn't present.
    */
-  HostDBInfo* select_next(sockaddr const* addr);
-  HostDBInfo *select_best_http(sockaddr const* client_ip, ink_time_t now, int32_t fail_window);
+  HostDBInfo *select_next(sockaddr const *addr);
+  HostDBInfo *select_best_http(sockaddr const *client_ip, ink_time_t now, int32_t fail_window);
   HostDBInfo *select_best_srv(char *target, InkRand *rand, ink_time_t now, int32_t fail_window);
-  HostDBRoundRobin()
-    : rrcount(0), good(0), current(0), length(0), timed_rr_ctime(0)
-  { }
-
+  HostDBRoundRobin() : rrcount(0), good(0), current(0), length(0), timed_rr_ctime(0) {}
 };
 
 struct HostDBCache;
 
 // Prototype for inline completion functionf or
 //  getbyname_imm()
-typedef void (Continuation::*process_hostdb_info_pfn) (HostDBInfo * r);
-typedef void (Continuation::*process_srv_info_pfn) (HostDBInfo * r);
+typedef void (Continuation::*process_hostdb_info_pfn)(HostDBInfo *r);
+typedef void (Continuation::*process_srv_info_pfn)(HostDBInfo *r);
 
 
 /** The Host Databse access interface. */
-struct HostDBProcessor: public Processor
-{
+struct HostDBProcessor : public Processor {
   friend struct HostDBSyncer;
   // Public Interface
 
@@ -364,8 +395,8 @@ struct HostDBProcessor: public Processor
   //       cache.  The HostDBInfo * becomes invalid when the callback returns.
   //       The HostDBInfo may be changed during the callback.
 
-  enum
-  { HOSTDB_DO_NOT_FORCE_DNS = 0,
+  enum {
+    HOSTDB_DO_NOT_FORCE_DNS = 0,
     HOSTDB_ROUND_ROBIN = 0,
     HOSTDB_FORCE_DNS_RELOAD = 1,
     HOSTDB_FORCE_DNS_ALWAYS = 2,
@@ -374,40 +405,40 @@ struct HostDBProcessor: public Processor
 
   /// Optional parameters for getby...
   struct Options {
-    typedef Options self; ///< Self reference type.
-    int port; ///< Target service port (default 0 -> don't care)
-    int flags; ///< Processing flags (default HOSTDB_DO_NOT_FORCE_DNS)
-    int timeout; ///< Timeout value (default 0 -> default timeout)
+    typedef Options self;        ///< Self reference type.
+    int port;                    ///< Target service port (default 0 -> don't care)
+    int flags;                   ///< Processing flags (default HOSTDB_DO_NOT_FORCE_DNS)
+    int timeout;                 ///< Timeout value (default 0 -> default timeout)
     HostResStyle host_res_style; ///< How to query host (default HOST_RES_IPV4)
 
-    Options() : port(0), flags(HOSTDB_DO_NOT_FORCE_DNS), timeout(0), host_res_style(HOST_RES_IPV4)
-    { }
+    Options() : port(0), flags(HOSTDB_DO_NOT_FORCE_DNS), timeout(0), host_res_style(HOST_RES_IPV4) {}
 
     /// Set the flags.
-    self& setFlags(int f) { flags = f; return *this; }
+    self &
+    setFlags(int f)
+    {
+      flags = f;
+      return *this;
+    }
   };
 
   /// Default options.
   static Options const DEFAULT_OPTIONS;
 
-  HostDBProcessor()
-  { }
+  HostDBProcessor() {}
 
-  inkcoreapi Action *getbyname_re(Continuation * cont, const char *hostname, int len, Options const& opt = DEFAULT_OPTIONS);
+  inkcoreapi Action *getbyname_re(Continuation *cont, const char *hostname, int len, Options const &opt = DEFAULT_OPTIONS);
 
-  Action *getSRVbyname_imm(Continuation * cont, process_srv_info_pfn process_srv_info, const char *hostname, int len, Options const& opt = DEFAULT_OPTIONS);
+  Action *getSRVbyname_imm(Continuation *cont, process_srv_info_pfn process_srv_info, const char *hostname, int len,
+                           Options const &opt = DEFAULT_OPTIONS);
 
-  Action *getbyname_imm(
-    Continuation * cont,
-    process_hostdb_info_pfn process_hostdb_info,
-    const char *hostname,
-    int len,
-    Options const& opt = DEFAULT_OPTIONS
-  );
+  Action *getbyname_imm(Continuation *cont, process_hostdb_info_pfn process_hostdb_info, const char *hostname, int len,
+                        Options const &opt = DEFAULT_OPTIONS);
 
 
   /** Lookup Hostinfo by addr */
-  Action *getbyaddr_re(Continuation * cont, sockaddr const* aip)
+  Action *
+  getbyaddr_re(Continuation *cont, sockaddr const *aip)
   {
     return getby(cont, NULL, 0, aip, false, HOST_RES_NONE, 0);
   }
@@ -428,18 +459,22 @@ struct HostDBProcessor: public Processor
 #endif
 
   /** Set the application information (fire-and-forget). */
-  void setbyname_appinfo(char *hostname, int len, int port, HostDBApplicationInfo * app)
+  void
+  setbyname_appinfo(char *hostname, int len, int port, HostDBApplicationInfo *app)
   {
     sockaddr_in addr;
     ats_ip4_set(&addr, INADDR_ANY, port);
     setby(hostname, len, ats_ip_sa_cast(&addr), app);
   }
 
-  void setbyaddr_appinfo(sockaddr const* addr, HostDBApplicationInfo * app) {
+  void
+  setbyaddr_appinfo(sockaddr const *addr, HostDBApplicationInfo *app)
+  {
     this->setby(0, 0, addr, app);
   }
 
-  void setbyaddr_appinfo(in_addr_t ip, HostDBApplicationInfo * app)
+  void
+  setbyaddr_appinfo(in_addr_t ip, HostDBApplicationInfo *app)
   {
     sockaddr_in addr;
     ats_ip4_set(&addr, ip);
@@ -458,29 +493,24 @@ struct HostDBProcessor: public Processor
 
   // Private
   HostDBCache *cache();
+
 private:
-  Action *getby(
-    Continuation * cont,
-    const char *hostname, int len,
-    sockaddr const* ip,
-    bool aforce_dns, HostResStyle host_res_style, int timeout
-  );
+  Action *getby(Continuation *cont, const char *hostname, int len, sockaddr const *ip, bool aforce_dns, HostResStyle host_res_style,
+                int timeout);
+
 public:
   /** Set something.
       @a aip can carry address and / or port information. If setting just
       by a port value, the address should be set to INADDR_ANY which is of
       type IPv4.
    */
-  void setby(
-    const char *hostname, ///< Hostname.
-    int len, ///< Length of hostname.
-    sockaddr const* aip, ///< Address and/or port.
-    HostDBApplicationInfo * app ///< I don't know.
-  );
+  void setby(const char *hostname,      ///< Hostname.
+             int len,                   ///< Length of hostname.
+             sockaddr const *aip,       ///< Address and/or port.
+             HostDBApplicationInfo *app ///< I don't know.
+             );
 
-  void setby_srv(const char *hostname, int len, const char *target,
-      HostDBApplicationInfo * app);
-
+  void setby_srv(const char *hostname, int len, const char *target, HostDBApplicationInfo *app);
 };
 
 void run_HostDBTest();

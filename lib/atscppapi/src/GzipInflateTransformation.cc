@@ -33,7 +33,8 @@ using namespace atscppapi::transformations;
 using std::string;
 using std::vector;
 
-namespace {
+namespace
+{
 const int WINDOW_BITS = 31; // Always use 31 for gzip.
 unsigned int INFLATE_SCALE_FACTOR = 6;
 }
@@ -41,15 +42,15 @@ unsigned int INFLATE_SCALE_FACTOR = 6;
 /**
  * @private
  */
-struct atscppapi::transformations::GzipInflateTransformationState: noncopyable {
+struct atscppapi::transformations::GzipInflateTransformationState : noncopyable {
   z_stream z_stream_;
   bool z_stream_initialized_;
   int64_t bytes_produced_;
   TransformationPlugin::Type transformation_type_;
 
-  GzipInflateTransformationState(TransformationPlugin::Type type) :
-        z_stream_initialized_(false), bytes_produced_(0), transformation_type_(type) {
-
+  GzipInflateTransformationState(TransformationPlugin::Type type)
+    : z_stream_initialized_(false), bytes_produced_(0), transformation_type_(type)
+  {
     memset(&z_stream_, 0, sizeof(z_stream_));
 
     int err = inflateInit2(&z_stream_, WINDOW_BITS);
@@ -60,7 +61,8 @@ struct atscppapi::transformations::GzipInflateTransformationState: noncopyable {
     }
   };
 
-  ~GzipInflateTransformationState() {
+  ~GzipInflateTransformationState()
+  {
     if (z_stream_initialized_) {
       int err = inflateEnd(&z_stream_);
       if (Z_OK != err && Z_STREAM_END != err) {
@@ -71,15 +73,20 @@ struct atscppapi::transformations::GzipInflateTransformationState: noncopyable {
 };
 
 
-GzipInflateTransformation::GzipInflateTransformation(Transaction &transaction, TransformationPlugin::Type type) : TransformationPlugin(transaction, type) {
+GzipInflateTransformation::GzipInflateTransformation(Transaction &transaction, TransformationPlugin::Type type)
+  : TransformationPlugin(transaction, type)
+{
   state_ = new GzipInflateTransformationState(type);
 }
 
-GzipInflateTransformation::~GzipInflateTransformation() {
+GzipInflateTransformation::~GzipInflateTransformation()
+{
   delete state_;
 }
 
-void GzipInflateTransformation::consume(const string &data) {
+void
+GzipInflateTransformation::consume(const string &data)
+{
   if (data.size() == 0) {
     return;
   }
@@ -110,24 +117,25 @@ void GzipInflateTransformation::consume(const string &data) {
     err = inflate(&state_->z_stream_, Z_SYNC_FLUSH);
 
     if (err != Z_OK && err != Z_STREAM_END) {
-     LOG_ERROR("Iteration %d: Inflate failed with error '%d'", iteration, err);
-     state_->z_stream_.next_out = NULL;
-     return;
+      LOG_ERROR("Iteration %d: Inflate failed with error '%d'", iteration, err);
+      state_->z_stream_.next_out = NULL;
+      return;
     }
 
-    LOG_DEBUG("Iteration %d: Gzip inflated a total of %d bytes, producingOutput...", iteration, (inflate_block_size - state_->z_stream_.avail_out));
+    LOG_DEBUG("Iteration %d: Gzip inflated a total of %d bytes, producingOutput...", iteration,
+              (inflate_block_size - state_->z_stream_.avail_out));
     produce(string(&buffer[0], (inflate_block_size - state_->z_stream_.avail_out)));
     state_->bytes_produced_ += (inflate_block_size - state_->z_stream_.avail_out);
   }
   state_->z_stream_.next_out = NULL;
 }
 
-void GzipInflateTransformation::handleInputComplete() {
+void
+GzipInflateTransformation::handleInputComplete()
+{
   int64_t bytes_written = setOutputComplete();
   if (state_->bytes_produced_ != bytes_written) {
-    LOG_ERROR("Gzip bytes produced sanity check failed, inflated bytes = %" PRId64 " != written bytes = %" PRId64, state_->bytes_produced_, bytes_written);
+    LOG_ERROR("Gzip bytes produced sanity check failed, inflated bytes = %" PRId64 " != written bytes = %" PRId64,
+              state_->bytes_produced_, bytes_written);
   }
 }
-
-
-

@@ -30,9 +30,10 @@
 #include <ts/ts.h>
 
 int
-CallbackHandler(TSCont this, TSEvent id, void* no_data) {
-  (void) this;
-  (void) no_data;
+CallbackHandler(TSCont this, TSEvent id, void *no_data)
+{
+  (void)this;
+  (void)no_data;
   switch (id) {
   case TS_EVENT_LIFECYCLE_PORTS_INITIALIZED:
     TSDebug("lifecycle-plugin", "Proxy ports initialized");
@@ -67,9 +68,7 @@ CheckVersion()
 
     /* Need at least TS 3.3.5 */
     if (major_ts_version > 3 ||
-	(major_ts_version == 3 &&
-	 (minor_ts_version > 3 ||
-	  (minor_ts_version == 3 && patch_ts_version >= 5)))) {
+        (major_ts_version == 3 && (minor_ts_version > 3 || (minor_ts_version == 3 && patch_ts_version >= 5)))) {
       result = 1;
     }
   }
@@ -95,7 +94,8 @@ TSPluginInit(int argc, const char *argv[])
   }
 
   if (!CheckVersion()) {
-    TSError("[lifecycle-plugin] Plugin requires Traffic Server 3.3.5 " "or later\n");
+    TSError("[lifecycle-plugin] Plugin requires Traffic Server 3.3.5 "
+            "or later\n");
     goto Lerror;
   }
 

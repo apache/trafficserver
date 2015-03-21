@@ -41,15 +41,15 @@
 
 #define DebugHttpSsn(fmt, ...) DebugSsn(this, "http_cs", fmt, __VA_ARGS__)
 
-#define STATE_ENTER(state_name, event, vio) do { \
-    /*ink_assert (magic == HTTP_SM_MAGIC_ALIVE);  REMEMBER (event, NULL, reentrancy_count); */ \
-  DebugHttpSsn("[%" PRId64 "] [%s, %s]", con_id, #state_name, HttpDebugNames::get_event_name(event)); \
-} while(0)
+#define STATE_ENTER(state_name, event, vio)                                                             \
+  do {                                                                                                  \
+    /*ink_assert (magic == HTTP_SM_MAGIC_ALIVE);  REMEMBER (event, NULL, reentrancy_count); */          \
+    DebugHttpSsn("[%" PRId64 "] [%s, %s]", con_id, #state_name, HttpDebugNames::get_event_name(event)); \
+  } while (0)
 
-enum
-{
+enum {
   HTTP_CS_MAGIC_ALIVE = 0x0123F00D,
-  HTTP_CS_MAGIC_DEAD = 0xDEADF00D
+  HTTP_CS_MAGIC_DEAD = 0xDEADF00D,
 };
 
 // We have debugging list that we can use to find stuck
@@ -60,14 +60,10 @@ ink_mutex debug_cs_list_mutex;
 ClassAllocator<HttpClientSession> httpClientSessionAllocator("httpClientSessionAllocator");
 
 HttpClientSession::HttpClientSession()
-  : con_id(0), client_vc(NULL), magic(HTTP_CS_MAGIC_DEAD),
-    transact_count(0), tcp_init_cwnd_set(false),
-    half_close(false), conn_decrease(false), upgrade_to_h2c(false),
-    bound_ss(NULL),read_buffer(NULL), current_reader(NULL),
-    read_state(HCS_INIT), ka_vio(NULL), slave_ka_vio(NULL),
-    outbound_port(0), f_outbound_transparent(false),
-    host_res_style(HOST_RES_IPV4), acl_record(NULL),
-    m_active(false)
+  : con_id(0), client_vc(NULL), magic(HTTP_CS_MAGIC_DEAD), transact_count(0), tcp_init_cwnd_set(false), half_close(false),
+    conn_decrease(false), upgrade_to_h2c(false), bound_ss(NULL), read_buffer(NULL), current_reader(NULL), read_state(HCS_INIT),
+    ka_vio(NULL), slave_ka_vio(NULL), outbound_port(0), f_outbound_transparent(false), host_res_style(HOST_RES_IPV4),
+    acl_record(NULL), m_active(false)
 {
 }
 
@@ -102,7 +98,7 @@ HttpClientSession::destroy()
 }
 
 void
-HttpClientSession::ssn_hook_append(TSHttpHookID id, INKContInternal * cont)
+HttpClientSession::ssn_hook_append(TSHttpHookID id, INKContInternal *cont)
 {
   ProxyClientSession::ssn_hook_append(id, cont);
   if (current_reader) {
@@ -111,7 +107,7 @@ HttpClientSession::ssn_hook_append(TSHttpHookID id, INKContInternal * cont)
 }
 
 void
-HttpClientSession::ssn_hook_prepend(TSHttpHookID id, INKContInternal * cont)
+HttpClientSession::ssn_hook_prepend(TSHttpHookID id, INKContInternal *cont)
 {
   ProxyClientSession::ssn_hook_prepend(id, cont);
   if (current_reader) {
@@ -123,7 +119,7 @@ void
 HttpClientSession::new_transaction()
 {
   ink_assert(current_reader == NULL);
-  PluginIdentity* pi = dynamic_cast<PluginIdentity*>(client_vc);
+  PluginIdentity *pi = dynamic_cast<PluginIdentity *>(client_vc);
 
   // Defensive programming, make sure nothing persists across
   // connection re-use
@@ -146,7 +142,7 @@ HttpClientSession::new_transaction()
 }
 
 void
-HttpClientSession::new_connection(NetVConnection * new_vc, MIOBuffer * iobuf, IOBufferReader * reader, bool backdoor)
+HttpClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader, bool backdoor)
 {
   ink_assert(new_vc != NULL);
   ink_assert(client_vc == NULL);
@@ -176,17 +172,17 @@ HttpClientSession::new_connection(NetVConnection * new_vc, MIOBuffer * iobuf, IO
   // check what type of socket address we just accepted
   // by looking at the address family value of sockaddr_storage
   // and logging to stat system
-  switch(new_vc->get_remote_addr()->sa_family) {
-    case AF_INET:
-      HTTP_INCREMENT_DYN_STAT(http_total_client_connections_ipv4_stat);
+  switch (new_vc->get_remote_addr()->sa_family) {
+  case AF_INET:
+    HTTP_INCREMENT_DYN_STAT(http_total_client_connections_ipv4_stat);
     break;
-    case AF_INET6:
-      HTTP_INCREMENT_DYN_STAT(http_total_client_connections_ipv6_stat);
+  case AF_INET6:
+    HTTP_INCREMENT_DYN_STAT(http_total_client_connections_ipv6_stat);
     break;
-    default:
-      // don't do anything if the address family is not ipv4 or ipv6
-      // (there are many other address families in <sys/socket.h>
-      // but we don't have a need to report on all the others today)
+  default:
+    // don't do anything if the address family is not ipv4 or ipv6
+    // (there are many other address families in <sys/socket.h>
+    // but we don't have a need to report on all the others today)
     break;
   }
 
@@ -213,18 +209,18 @@ HttpClientSession::new_connection(NetVConnection * new_vc, MIOBuffer * iobuf, IO
 }
 
 VIO *
-HttpClientSession::do_io_read(Continuation * c, int64_t nbytes, MIOBuffer * buf)
+HttpClientSession::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
 {
   return client_vc->do_io_read(c, nbytes, buf);
 }
 
 VIO *
-HttpClientSession::do_io_write(Continuation * c, int64_t nbytes, IOBufferReader * buf, bool owner)
+HttpClientSession::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner)
 {
   /* conditionally set the tcp initial congestion window
      before our first write. */
   DebugHttpSsn("tcp_init_cwnd_set %d\n", (int)tcp_init_cwnd_set);
-  if(!tcp_init_cwnd_set) {
+  if (!tcp_init_cwnd_set) {
     tcp_init_cwnd_set = true;
     set_tcp_init_cwnd();
   }
@@ -236,8 +232,9 @@ HttpClientSession::set_tcp_init_cwnd()
 {
   int desired_tcp_init_cwnd = current_reader->t_state.txn_conf->server_tcp_init_cwnd;
   DebugHttpSsn("desired TCP congestion window is %d\n", desired_tcp_init_cwnd);
-  if(desired_tcp_init_cwnd == 0) return;
-  if(get_netvc()->set_tcp_init_cwnd(desired_tcp_init_cwnd) != 0)
+  if (desired_tcp_init_cwnd == 0)
+    return;
+  if (get_netvc()->set_tcp_init_cwnd(desired_tcp_init_cwnd) != 0)
     DebugHttpSsn("set_tcp_init_cwnd(%d) failed", desired_tcp_init_cwnd);
 }
 
@@ -250,7 +247,6 @@ HttpClientSession::do_io_shutdown(ShutdownHowTo_t howto)
 void
 HttpClientSession::do_io_close(int alerrno)
 {
-
   if (read_state == HCS_ACTIVE_READER) {
     HTTP_DECREMENT_DYN_STAT(http_current_client_transactions_stat);
     if (m_active) {
@@ -298,7 +294,7 @@ HttpClientSession::do_io_close(int alerrno)
   } else {
     read_state = HCS_CLOSED;
     if (upgrade_to_h2c) {
-      Http2ClientSession * h2_session = http2ClientSessionAllocator.alloc();
+      Http2ClientSession *h2_session = http2ClientSessionAllocator.alloc();
       h2_session->set_upgrade_context(&current_reader->t_state.hdr_info.client_request);
       h2_session->new_connection(client_vc, NULL, NULL, false /* backdoor */);
       // TODO Consider about handling HTTP/1 hooks and stats
@@ -317,7 +313,6 @@ HttpClientSession::do_io_close(int alerrno)
 int
 HttpClientSession::state_wait_for_close(int event, void *data)
 {
-
   STATE_ENTER(&HttpClientSession::state_wait_for_close, event, data);
 
   ink_assert(data == ka_vio);
@@ -346,7 +341,6 @@ HttpClientSession::state_wait_for_close(int event, void *data)
 int
 HttpClientSession::state_slave_keep_alive(int event, void *data)
 {
-
   STATE_ENTER(&HttpClientSession::state_slave_keep_alive, event, data);
 
   ink_assert(data == slave_ka_vio);
@@ -357,7 +351,7 @@ HttpClientSession::state_slave_keep_alive(int event, void *data)
   case VC_EVENT_READ_COMPLETE:
     // These events are bogus
     ink_assert(0);
-    /* Fall Through */
+  /* Fall Through */
   case VC_EVENT_ERROR:
   case VC_EVENT_READ_READY:
   case VC_EVENT_EOS:
@@ -382,7 +376,6 @@ HttpClientSession::state_slave_keep_alive(int event, void *data)
 int
 HttpClientSession::state_keep_alive(int event, void *data)
 {
-
   // Route the event.  It is either for client vc or
   //  the origin server slave vc
   if (data && data == slave_ka_vio) {
@@ -415,7 +408,7 @@ HttpClientSession::state_keep_alive(int event, void *data)
   default:
     // These events are bogus
     ink_assert(0);
-    // Fall through
+  // Fall through
   case VC_EVENT_ERROR:
   case VC_EVENT_ACTIVE_TIMEOUT:
   case VC_EVENT_INACTIVITY_TIMEOUT:
@@ -427,13 +420,13 @@ HttpClientSession::state_keep_alive(int event, void *data)
   return 0;
 }
 void
-HttpClientSession::reenable(VIO * vio)
+HttpClientSession::reenable(VIO *vio)
 {
   client_vc->reenable(vio);
 }
 
 void
-HttpClientSession::attach_server_session(HttpServerSession * ssession, bool transaction_done)
+HttpClientSession::attach_server_session(HttpServerSession *ssession, bool transaction_done)
 {
   if (ssession) {
     ink_assert(bound_ss == NULL);
@@ -459,8 +452,8 @@ HttpClientSession::attach_server_session(HttpServerSession * ssession, bool tran
     ssession->do_io_write(this, 0, NULL);
 
     if (transaction_done) {
-      ssession->get_netvc()->
-        set_inactivity_timeout(HRTIME_SECONDS(current_reader->t_state.txn_conf->keep_alive_no_activity_timeout_out));
+      ssession->get_netvc()->set_inactivity_timeout(
+        HRTIME_SECONDS(current_reader->t_state.txn_conf->keep_alive_no_activity_timeout_out));
       ssession->get_netvc()->cancel_active_timeout();
     } else {
       // we are serving from the cache - this could take a while.
@@ -475,7 +468,7 @@ HttpClientSession::attach_server_session(HttpServerSession * ssession, bool tran
 }
 
 void
-HttpClientSession::release(IOBufferReader * r)
+HttpClientSession::release(IOBufferReader *r)
 {
   ink_assert(read_state == HCS_ACTIVE_READER);
   ink_assert(current_reader != NULL);

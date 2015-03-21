@@ -28,10 +28,10 @@
 int
 main()
 {
-  InkXmlAttr *    a1 = new InkXmlAttr("Name", "Matt");
-  InkXmlAttr *    a2 = new InkXmlAttr("Title", "Engineer");
-  InkXmlAttr *    a3 = new InkXmlAttr("Company", "Inktomi");
-  InkXmlObject *  o1 = new InkXmlObject("Employee");
+  InkXmlAttr *a1 = new InkXmlAttr("Name", "Matt");
+  InkXmlAttr *a2 = new InkXmlAttr("Title", "Engineer");
+  InkXmlAttr *a3 = new InkXmlAttr("Company", "Inktomi");
+  InkXmlObject *o1 = new InkXmlObject("Employee");
 
   ink_release_assert(strcmp(o1->object_name(), "Employee") == 0);
 

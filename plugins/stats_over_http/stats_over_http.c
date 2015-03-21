@@ -39,14 +39,13 @@
 #define PLUGIN_NAME "stats_over_http"
 
 /* global holding the path used for access to this JSON data */
-static const char* url_path = "_stats";
+static const char *url_path = "_stats";
 static int url_path_len;
 
 static bool integer_counters = false;
 static bool wrap_counters = false;
 
-typedef struct stats_state_t
-{
+typedef struct stats_state_t {
   TSVConn net_vc;
   TSVIO read_vio;
   TSVIO write_vio;
@@ -60,7 +59,7 @@ typedef struct stats_state_t
 } stats_state;
 
 static void
-stats_cleanup(TSCont contp, stats_state * my_state)
+stats_cleanup(TSCont contp, stats_state *my_state)
 {
   if (my_state->req_buffer) {
     TSIOBufferDestroy(my_state->req_buffer);
@@ -77,9 +76,8 @@ stats_cleanup(TSCont contp, stats_state * my_state)
 }
 
 static void
-stats_process_accept(TSCont contp, stats_state * my_state)
+stats_process_accept(TSCont contp, stats_state *my_state)
 {
-
   my_state->req_buffer = TSIOBufferCreate();
   my_state->resp_buffer = TSIOBufferCreate();
   my_state->resp_reader = TSIOBufferReaderAlloc(my_state->resp_buffer);
@@ -87,7 +85,7 @@ stats_process_accept(TSCont contp, stats_state * my_state)
 }
 
 static int
-stats_add_data_to_resp_buffer(const char *s, stats_state * my_state)
+stats_add_data_to_resp_buffer(const char *s, stats_state *my_state)
 {
   int s_len = strlen(s);
 
@@ -96,17 +94,16 @@ stats_add_data_to_resp_buffer(const char *s, stats_state * my_state)
   return s_len;
 }
 
-static const char RESP_HEADER[] =
-  "HTTP/1.0 200 Ok\r\nContent-Type: text/javascript\r\nCache-Control: no-cache\r\n\r\n";
+static const char RESP_HEADER[] = "HTTP/1.0 200 Ok\r\nContent-Type: text/javascript\r\nCache-Control: no-cache\r\n\r\n";
 
 static int
-stats_add_resp_header(stats_state * my_state)
+stats_add_resp_header(stats_state *my_state)
 {
   return stats_add_data_to_resp_buffer(RESP_HEADER, my_state);
 }
 
 static void
-stats_process_read(TSCont contp, TSEvent event, stats_state * my_state)
+stats_process_read(TSCont contp, TSEvent event, stats_state *my_state)
 {
   TSDebug(PLUGIN_NAME, "stats_process_read(%d)", event);
   if (event == TS_EVENT_VCONN_READ_READY) {
@@ -127,19 +124,25 @@ stats_process_read(TSCont contp, TSEvent event, stats_state * my_state)
 }
 
 #define APPEND(a) my_state->output_bytes += stats_add_data_to_resp_buffer(a, my_state)
-#define APPEND_STAT(a, fmt, v) do { \
-  char b[256]; \
-  if(snprintf(b, sizeof(b), "\"%s\": \"" fmt "\",\n", a, v) < sizeof(b)) \
-    APPEND(b); \
-} while(0)
-#define APPEND_STAT_NUMERIC(a, fmt, v) do { \
-  char b[256]; \
-  if (integer_counters) { \
-    if (snprintf(b, sizeof(b), "\"%s\": " fmt ",\n", a, v) < sizeof(b)) { APPEND(b); } \
-  } else { \
-    if (snprintf(b, sizeof(b), "\"%s\": \"" fmt "\",\n", a, v) < sizeof(b)) { APPEND(b); } \
-  } \
-} while(0)
+#define APPEND_STAT(a, fmt, v)                                              \
+  do {                                                                      \
+    char b[256];                                                            \
+    if (snprintf(b, sizeof(b), "\"%s\": \"" fmt "\",\n", a, v) < sizeof(b)) \
+      APPEND(b);                                                            \
+  } while (0)
+#define APPEND_STAT_NUMERIC(a, fmt, v)                                          \
+  do {                                                                          \
+    char b[256];                                                                \
+    if (integer_counters) {                                                     \
+      if (snprintf(b, sizeof(b), "\"%s\": " fmt ",\n", a, v) < sizeof(b)) {     \
+        APPEND(b);                                                              \
+      }                                                                         \
+    } else {                                                                    \
+      if (snprintf(b, sizeof(b), "\"%s\": \"" fmt "\",\n", a, v) < sizeof(b)) { \
+        APPEND(b);                                                              \
+      }                                                                         \
+    }                                                                           \
+  } while (0)
 
 // This wraps uint64_t values to the int64_t range to fit into a Java long. Java 8 has an unsigned long which
 // can interoperate with a full uint64_t, but it's unlikely that much of the ecosystem supports that yet.
@@ -154,27 +157,31 @@ wrap_unsigned_counter(uint64_t value)
 }
 
 static void
-json_out_stat(TSRecordType rec_type ATS_UNUSED, void *edata, int registered ATS_UNUSED,
-              const char *name, TSRecordDataType data_type,
-              TSRecordData *datum) {
+json_out_stat(TSRecordType rec_type ATS_UNUSED, void *edata, int registered ATS_UNUSED, const char *name,
+              TSRecordDataType data_type, TSRecordData *datum)
+{
   stats_state *my_state = edata;
 
-  switch(data_type) {
+  switch (data_type) {
   case TS_RECORDDATATYPE_COUNTER:
-    APPEND_STAT_NUMERIC(name, "%" PRIu64, wrap_unsigned_counter(datum->rec_counter)); break;
+    APPEND_STAT_NUMERIC(name, "%" PRIu64, wrap_unsigned_counter(datum->rec_counter));
+    break;
   case TS_RECORDDATATYPE_INT:
-    APPEND_STAT_NUMERIC(name, "%" PRIu64, wrap_unsigned_counter(datum->rec_int)); break;
+    APPEND_STAT_NUMERIC(name, "%" PRIu64, wrap_unsigned_counter(datum->rec_int));
+    break;
   case TS_RECORDDATATYPE_FLOAT:
-    APPEND_STAT_NUMERIC(name, "%f", datum->rec_float); break;
+    APPEND_STAT_NUMERIC(name, "%f", datum->rec_float);
+    break;
   case TS_RECORDDATATYPE_STRING:
-    APPEND_STAT(name, "%s", datum->rec_string); break;
+    APPEND_STAT(name, "%s", datum->rec_string);
+    break;
   default:
     TSDebug(PLUGIN_NAME, "unknown type for %s: %d", name, data_type);
     break;
   }
 }
 static void
-json_out_stats(stats_state * my_state)
+json_out_stats(stats_state *my_state)
 {
   const char *version;
   APPEND("{ \"global\": {\n");
@@ -188,7 +195,7 @@ json_out_stats(stats_state * my_state)
 }
 
 static void
-stats_process_write(TSCont contp, TSEvent event, stats_state * my_state)
+stats_process_write(TSCont contp, TSEvent event, stats_state *my_state)
 {
   if (event == TS_EVENT_VCONN_WRITE_READY) {
     if (my_state->body_written == 0) {
@@ -212,7 +219,7 @@ stats_dostuff(TSCont contp, TSEvent event, void *edata)
 {
   stats_state *my_state = TSContDataGet(contp);
   if (event == TS_EVENT_NET_ACCEPT) {
-    my_state->net_vc = (TSVConn) edata;
+    my_state->net_vc = (TSVConn)edata;
     stats_process_accept(contp, my_state);
   } else if (edata == my_state->read_vio) {
     stats_process_read(contp, event, my_state);
@@ -229,7 +236,7 @@ stats_origin(TSCont contp ATS_UNUSED, TSEvent event ATS_UNUSED, void *edata)
 {
   TSCont icontp;
   stats_state *my_state;
-  TSHttpTxn txnp = (TSHttpTxn) edata;
+  TSHttpTxn txnp = (TSHttpTxn)edata;
   TSMBuffer reqp;
   TSMLoc hdr_loc = NULL, url_loc = NULL;
   TSEvent reenable = TS_EVENT_HTTP_CONTINUE;
@@ -243,30 +250,32 @@ stats_origin(TSCont contp ATS_UNUSED, TSEvent event ATS_UNUSED, void *edata)
     goto cleanup;
 
   int path_len = 0;
-  const char* path = TSUrlPathGet(reqp,url_loc,&path_len);
-  TSDebug(PLUGIN_NAME, "Path: %.*s", path_len,path);
+  const char *path = TSUrlPathGet(reqp, url_loc, &path_len);
+  TSDebug(PLUGIN_NAME, "Path: %.*s", path_len, path);
 
-  if (! (path_len != 0 && path_len == url_path_len  && !memcmp(path,url_path,url_path_len)) ) {
+  if (!(path_len != 0 && path_len == url_path_len && !memcmp(path, url_path, url_path_len))) {
     goto notforme;
   }
 
-  TSSkipRemappingSet(txnp,1); //not strictly necessary, but speed is everything these days
+  TSSkipRemappingSet(txnp, 1); // not strictly necessary, but speed is everything these days
 
   /* This is us -- register our intercept */
   TSDebug(PLUGIN_NAME, "Intercepting request");
 
   icontp = TSContCreate(stats_dostuff, TSMutexCreate());
-  my_state = (stats_state *) TSmalloc(sizeof(*my_state));
+  my_state = (stats_state *)TSmalloc(sizeof(*my_state));
   memset(my_state, 0, sizeof(*my_state));
   TSContDataSet(icontp, my_state);
   TSHttpTxnIntercept(icontp, txnp);
   goto cleanup;
 
- notforme:
+notforme:
 
- cleanup:
-  if(url_loc) TSHandleMLocRelease(reqp, hdr_loc, url_loc);
-  if(hdr_loc) TSHandleMLocRelease(reqp, TS_NULL_MLOC, hdr_loc);
+cleanup:
+  if (url_loc)
+    TSHandleMLocRelease(reqp, hdr_loc, url_loc);
+  if (hdr_loc)
+    TSHandleMLocRelease(reqp, TS_NULL_MLOC, hdr_loc);
 
   TSHttpTxnReenable(txnp, reenable);
   return 0;
@@ -278,11 +287,9 @@ TSPluginInit(int argc, const char *argv[])
   TSPluginRegistrationInfo info;
 
   static const char usage[] = PLUGIN_NAME ".so [--integer-counters] [PATH]";
-  static const struct option longopts[] = {
-    { (char *)("integer-counters"), required_argument, NULL, 'i' },
-    { (char *)("wrap-counters"), required_argument, NULL, 'w' },
-    { NULL, 0, NULL, 0 }
-  };
+  static const struct option longopts[] = {{(char *)("integer-counters"), required_argument, NULL, 'i'},
+                                           {(char *)("wrap-counters"), required_argument, NULL, 'w'},
+                                           {NULL, 0, NULL, 0}};
 
   info.plugin_name = PLUGIN_NAME;
   info.vendor_name = "Apache Software Foundation";
@@ -294,7 +301,7 @@ TSPluginInit(int argc, const char *argv[])
 
   optind = 0;
   for (;;) {
-    switch (getopt_long(argc, (char * const *)argv, "iw", longopts, NULL)) {
+    switch (getopt_long(argc, (char *const *)argv, "iw", longopts, NULL)) {
     case 'i':
       integer_counters = true;
       break;
@@ -302,9 +309,9 @@ TSPluginInit(int argc, const char *argv[])
       wrap_counters = true;
       break;
     case -1:
-        goto init;
+      goto init;
     default:
-        TSError("[%s] usage: %s", PLUGIN_NAME, usage);
+      TSError("[%s] usage: %s", PLUGIN_NAME, usage);
     }
   }
 

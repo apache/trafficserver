@@ -28,9 +28,9 @@
 #include "Error.h"
 
 void
-HttpSessionAccept::accept(NetVConnection * netvc, MIOBuffer * iobuf, IOBufferReader * reader)
+HttpSessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferReader *reader)
 {
-  sockaddr const* client_ip = netvc->get_remote_addr();
+  sockaddr const *client_ip = netvc->get_remote_addr();
   const AclRecord *acl_record = NULL;
   ip_port_text_buffer ipb;
   IpAllow::scoped_config ipallow;
@@ -56,8 +56,8 @@ HttpSessionAccept::accept(NetVConnection * netvc, MIOBuffer * iobuf, IOBufferRea
 
 
   if (is_debug_tag_set("http_seq")) {
-    Debug("http_seq", "[HttpSessionAccept:mainEvent %p] accepted connection from %s transport type = %d",
-           netvc, ats_ip_nptop(client_ip, ipb, sizeof(ipb)), netvc->attributes);
+    Debug("http_seq", "[HttpSessionAccept:mainEvent %p] accepted connection from %s transport type = %d", netvc,
+          ats_ip_nptop(client_ip, ipb, sizeof(ipb)), netvc->attributes);
   }
 
   HttpClientSession *new_session = THREAD_ALLOC_INIT(httpClientSessionAllocator, this_ethread());
@@ -90,7 +90,7 @@ HttpSessionAccept::mainEvent(int event, void *data)
   /////////////////
   // EVENT_ERROR //
   /////////////////
-  if (((long) data) == -ECONNABORTED) {
+  if (((long)data) == -ECONNABORTED) {
     /////////////////////////////////////////////////
     // Under Solaris, when accept() fails and sets //
     // errno to EPROTO, it means the client has    //

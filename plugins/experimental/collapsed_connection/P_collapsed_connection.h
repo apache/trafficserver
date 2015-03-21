@@ -29,16 +29,15 @@
 #ifndef ATS_COLLAPSED_CONNECTION_PLUGIN_H_
 #define ATS_COLLAPSED_CONNECTION_PLUGIN_H_
 
-#define PLUGIN_NAME     "collapsed_connection"
-#define PLUGIN_VENDOR   "Apache Software Foundation"
-#define PLUGIN_SUPPORT  "dev@trafficserver.apache.org"
+#define PLUGIN_NAME "collapsed_connection"
+#define PLUGIN_VENDOR "Apache Software Foundation"
+#define PLUGIN_SUPPORT "dev@trafficserver.apache.org"
 
-#define DEFAULT_INSERT_LOCK_RETRY_TIME  10
-#define DEFAULT_MAX_LOCK_RETRY_TIMEOUT  2000
-#define DEFAULT_KEEP_PASS_RECORD_TIME   5000
+#define DEFAULT_INSERT_LOCK_RETRY_TIME 10
+#define DEFAULT_MAX_LOCK_RETRY_TIMEOUT 2000
+#define DEFAULT_KEEP_PASS_RECORD_TIME 5000
 
-typedef enum
-{
+typedef enum {
   CcEnabled,
   CcRequiredHeader,
   CcInsertLockRetryTime,
@@ -46,8 +45,7 @@ typedef enum
   CcKeepPassRecordTime,
 } CcConfigKey;
 
-typedef enum
-{
+typedef enum {
   CC_NONE,
   CC_LOCKED,
   CC_INSERT,
@@ -57,8 +55,7 @@ typedef enum
   CC_DONE,
 } CcTxnState;
 
-struct PassRecord
-{
+struct PassRecord {
   int64_t timeout;
   uint32_t hash_key;
 };
@@ -66,8 +63,7 @@ struct PassRecord
 typedef std::map<uint32_t, int8_t> UintMap;
 typedef std::list<PassRecord> UsecList;
 
-typedef struct
-{
+typedef struct {
   bool enabled;
   TSMgmtString required_header;
   int required_header_len;
@@ -76,8 +72,7 @@ typedef struct
   TSMgmtInt keep_pass_record_time;
 } CcPluginConfig;
 
-typedef struct
-{
+typedef struct {
   UintMap *active_hash_map;
   TSMutex mutex;
   uint64_t seq_id;
@@ -97,8 +92,7 @@ typedef struct
   int max_keep_pass_entries;
 } CcPluginData;
 
-typedef struct
-{
+typedef struct {
   uint64_t seq_id;
   TSHttpTxn txnp;
   TSCont contp;
@@ -108,8 +102,7 @@ typedef struct
   TSHRTime wait_time;
 } CcTxnData;
 
-typedef struct
-{
+typedef struct {
   TSEvent event;
   CcTxnData *txn_data;
 } TryLockData;

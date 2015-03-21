@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
- /***************************************/
+/***************************************/
 /****************************************************************************
  *
  *  WebHttp.cc - code to process requests, and create responses
@@ -52,14 +52,14 @@
 #define DIR_MODE S_IRWXU
 #define FILE_MODE S_IRWXU
 
-#define MAX_ARGS         10
-#define MAX_TMP_BUF_LEN  1024
+#define MAX_ARGS 10
+#define MAX_TMP_BUF_LEN 1024
 
 //-------------------------------------------------------------------------
 // types
 //-------------------------------------------------------------------------
 
-typedef int (*WebHttpHandler) (WebHttpContext * whc, const char *file);
+typedef int (*WebHttpHandler)(WebHttpContext *whc, const char *file);
 
 //-------------------------------------------------------------------------
 // globals
@@ -93,7 +93,7 @@ static InkHashTable *g_file_bindings_ht = 0;
 //-------------------------------------------------------------------------
 
 static int
-handle_synthetic(WebHttpContext * whc, const char * /* file ATS_UNUSED */)
+handle_synthetic(WebHttpContext *whc, const char * /* file ATS_UNUSED */)
 {
   char buffer[28];
   char cur = 'a';
@@ -116,7 +116,7 @@ handle_synthetic(WebHttpContext * whc, const char * /* file ATS_UNUSED */)
 //-------------------------------------------------------------------------
 
 static int
-handle_default(WebHttpContext * whc, const char *file)
+handle_default(WebHttpContext *whc, const char *file)
 {
   char *doc_root_file;
   int file_size;
@@ -195,7 +195,7 @@ handle_default(WebHttpContext * whc, const char *file)
 
   // open the requested file
   if ((h_file = WebFileOpenR(doc_root_file)) == WEB_HANDLE_INVALID) {
-    //could not find file
+    // could not find file
     ats_free(doc_root_file);
     response_hdr->setStatus(STATUS_NOT_FOUND);
     WebHttpSetErrorResponse(whc, STATUS_NOT_FOUND);
@@ -226,7 +226,8 @@ handle_default(WebHttpContext * whc, const char *file)
     // fetch the file from disk to memory
     response_hdr->setStatus(STATUS_OK);
     response_hdr->setLength(file_size);
-    while (response_bdy->rawReadFromFile(h_file) > 0);
+    while (response_bdy->rawReadFromFile(h_file) > 0)
+      ;
   }
   // set the document last-modified header
   response_hdr->setLastMod(file_date_gmt);
@@ -235,7 +236,6 @@ handle_default(WebHttpContext * whc, const char *file)
   ats_free(doc_root_file);
 
   return WEB_HTTP_ERR_OKAY;
-
 }
 
 
@@ -243,10 +243,10 @@ handle_default(WebHttpContext * whc, const char *file)
 // read_request
 //-------------------------------------------------------------------------
 int
-read_request(WebHttpContext * whc)
+read_request(WebHttpContext *whc)
 {
   const int buffer_size = 2048;
-  char *buffer = (char *) alloca(buffer_size);
+  char *buffer = (char *)alloca(buffer_size);
 
   httpMessage *request = whc->request;
   httpResponse *response_hdr = whc->response_hdr;
@@ -302,12 +302,12 @@ read_request(WebHttpContext * whc)
     return WEB_HTTP_ERR_REQUEST_ERROR;
   }
 
-  // Drain read channel: In the case of Linux, OS sends reset to the
-  // socket if we close it when there is data left on it ot be read
-  // (in compliance with TCP). This causes problems with the "POST"
-  // method. (for example with update.html). With IE, we found ending
-  // "\r\n" were not read.  The following work around is to read all
-  // that is left in the socket before closing it.
+// Drain read channel: In the case of Linux, OS sends reset to the
+// socket if we close it when there is data left on it ot be read
+// (in compliance with TCP). This causes problems with the "POST"
+// method. (for example with update.html). With IE, we found ending
+// "\r\n" were not read.  The following work around is to read all
+// that is left in the socket before closing it.
 #define MAX_DRAIN_BYTES 32
   // INKqa11524: If the user is malicious and keeps sending us data,
   // we'll go into an infinite spin here.  Fix is to only drain up
@@ -329,7 +329,7 @@ read_request(WebHttpContext * whc)
 //-------------------------------------------------------------------------
 
 int
-write_response(WebHttpContext * whc)
+write_response(WebHttpContext *whc)
 {
   char *buf_p;
   int bytes_to_write;
@@ -364,20 +364,20 @@ write_response(WebHttpContext * whc)
 //-------------------------------------------------------------------------
 
 int
-process_query(WebHttpContext * whc)
+process_query(WebHttpContext *whc)
 {
   int err;
   InkHashTable *ht;
   char *value;
   // processFormSubmission will substituteUnsafeChars()
-  if ((ht = processFormSubmission((char *) (whc->request->getQuery()))) != NULL) {
+  if ((ht = processFormSubmission((char *)(whc->request->getQuery()))) != NULL) {
     whc->query_data_ht = ht;
     // extract some basic info for easier access later
-    if (ink_hash_table_lookup(ht, "mode", (void **) &value)) {
+    if (ink_hash_table_lookup(ht, "mode", (void **)&value)) {
       if (strcmp(value, "1") == 0)
         whc->request_state |= WEB_HTTP_STATE_CONFIGURE;
     }
-    if (ink_hash_table_lookup(ht, "detail", (void **) &value)) {
+    if (ink_hash_table_lookup(ht, "detail", (void **)&value)) {
       if (strcmp(value, "more") == 0)
         whc->request_state |= WEB_HTTP_STATE_MORE_DETAIL;
     }
@@ -392,7 +392,7 @@ process_query(WebHttpContext * whc)
 // process_post
 //-------------------------------------------------------------------------
 int
-process_post(WebHttpContext * whc)
+process_post(WebHttpContext *whc)
 {
   int err;
   InkHashTable *ht;
@@ -429,7 +429,7 @@ signal_handler_init()
   // incoming traffic is shutdown on the connection and thread should
   // exit normally
   sigset_t sigsToBlock;
-  // FreeBSD and Linux use SIGUSR1 internally in the threads library
+// FreeBSD and Linux use SIGUSR1 internally in the threads library
 #if !defined(linux) && !defined(freebsd) && !defined(darwin)
   // Set up the handler for SIGUSR1
   struct sigaction sigHandler;
@@ -467,7 +467,7 @@ WebHttpInit()
 
   // initialize file bindings
   g_file_bindings_ht = ink_hash_table_create(InkHashTableKeyType_String);
-  ink_hash_table_insert(g_file_bindings_ht, "/synthetic.txt", (void *) handle_synthetic);
+  ink_hash_table_insert(g_file_bindings_ht, "/synthetic.txt", (void *)handle_synthetic);
 }
 
 //-------------------------------------------------------------------------
@@ -476,7 +476,7 @@ WebHttpInit()
 // Handles http requests across the web management port
 //-------------------------------------------------------------------------
 void
-WebHttpHandleConnection(WebHttpConInfo * whci)
+WebHttpHandleConnection(WebHttpConInfo *whci)
 {
   int err = WEB_HTTP_ERR_OKAY;
   WebHttpContext *whc;
@@ -497,15 +497,14 @@ WebHttpHandleConnection(WebHttpConInfo * whci)
     goto Lerror_switch;
 
   // get our file information
-  file = (char *) (whc->request->getFile());
+  file = (char *)(whc->request->getFile());
   if (strcmp("/", file) == 0) {
-    file = (char *) (whc->default_file);
+    file = (char *)(whc->default_file);
   }
 
   Debug("web2", "[WebHttpHandleConnection] request file: %s", file);
 
   if (whc->server_state & WEB_HTTP_SERVER_STATE_AUTOCONF) {
-
     // security concern: special treatment if we're handling a request
     // on the autoconf port.  can't have users downloading arbitrary
     // files under the config directory!
@@ -521,7 +520,7 @@ WebHttpHandleConnection(WebHttpConInfo * whci)
   process_query(whc);
 
   // Lookup file handler
-  if (!ink_hash_table_lookup(g_file_bindings_ht, file, (void **) &handler)) {
+  if (!ink_hash_table_lookup(g_file_bindings_ht, file, (void **)&handler)) {
     extn = file;
     while (*extn != '\0')
       extn++;
@@ -585,7 +584,7 @@ Ltransaction_close:
 //-------------------------------------------------------------------------
 
 void
-WebHttpSetErrorResponse(WebHttpContext * whc, HttpStatus_t error)
+WebHttpSetErrorResponse(WebHttpContext *whc, HttpStatus_t error)
 {
   //-----------------------------------------------------------------------
   // FIXME: HARD-CODED HTML HELL!!!
@@ -612,7 +611,7 @@ WebHttpSetErrorResponse(WebHttpContext * whc, HttpStatus_t error)
 //-------------------------------------------------------------------------
 
 char *
-WebHttpAddDocRoot_Xmalloc(WebHttpContext * whc, const char *file, int file_len)
+WebHttpAddDocRoot_Xmalloc(WebHttpContext *whc, const char *file, int file_len)
 {
   char *doc_root_file = (char *)ats_malloc(file_len + whc->doc_root_len + 1);
 

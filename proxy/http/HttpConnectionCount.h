@@ -37,7 +37,9 @@ public:
    * Static method to get the instance of the class
    * @return Returns a pointer to the instance of the class
    */
-  static ConnectionCount *getInstance() {
+  static ConnectionCount *
+  getInstance()
+  {
     return &_connectionCount;
   }
 
@@ -46,7 +48,9 @@ public:
    * @param ip IP address of the host
    * @return Number of connections
    */
-  int getCount(const IpEndpoint& addr) {
+  int
+  getCount(const IpEndpoint &addr)
+  {
     ink_mutex_acquire(&_mutex);
     int count = _hostCount.get(ConnAddr(addr));
     ink_mutex_release(&_mutex);
@@ -58,7 +62,9 @@ public:
    * @param ip IP address of the host
    * @param delta Default is +1, can be set to negative to decrement
    */
-  void incrementCount(const IpEndpoint& addr, const int delta = 1) {
+  void
+  incrementCount(const IpEndpoint &addr, const int delta = 1)
+  {
     ConnAddr caddr(addr);
     ink_mutex_acquire(&_mutex);
     int count = _hostCount.get(caddr);
@@ -70,23 +76,34 @@ public:
     IpEndpoint _addr;
 
     ConnAddr() { ink_zero(_addr); }
-    ConnAddr(int x) { ink_release_assert(x == 0); ink_zero(_addr); }
-    ConnAddr(const IpEndpoint& addr) : _addr(addr) { }
+    ConnAddr(int x)
+    {
+      ink_release_assert(x == 0);
+      ink_zero(_addr);
+    }
+    ConnAddr(const IpEndpoint &addr) : _addr(addr) {}
     operator bool() { return ats_is_ip(&_addr); }
   };
 
-  class ConnAddrHashFns {
+  class ConnAddrHashFns
+  {
   public:
-      static uintptr_t hash(ConnAddr& addr) { return (uintptr_t) ats_ip_hash(&addr._addr.sa); }
-      static int equal(ConnAddr& a, ConnAddr& b) { return ats_ip_addr_eq(&a._addr, &b._addr); }
+    static uintptr_t
+    hash(ConnAddr &addr)
+    {
+      return (uintptr_t)ats_ip_hash(&addr._addr.sa);
+    }
+    static int
+    equal(ConnAddr &a, ConnAddr &b)
+    {
+      return ats_ip_addr_eq(&a._addr, &b._addr);
+    }
   };
 
 private:
   // Hide the constructor and copy constructor
-  ConnectionCount() {
-    ink_mutex_init(&_mutex, "ConnectionCountMutex");
-  }
-  ConnectionCount(const ConnectionCount & /* x ATS_UNUSED */) { }
+  ConnectionCount() { ink_mutex_init(&_mutex, "ConnectionCountMutex"); }
+  ConnectionCount(const ConnectionCount & /* x ATS_UNUSED */) {}
 
   static ConnectionCount _connectionCount;
   HashMap<ConnAddr, ConnAddrHashFns, int> _hostCount;

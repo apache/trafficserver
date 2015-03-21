@@ -31,25 +31,25 @@
 
 // Note that you should provide the class to use here, but we'll store
 // pointers to such objects internally.
-template<typename T>
-class Trie
+template <typename T> class Trie
 {
 public:
-  Trie()
-    {
-      m_root.Clear();
-    }
+  Trie() { m_root.Clear(); }
 
   // will return false for duplicates; key should be NULL-terminated
   // if key_len is defaulted to -1
   bool Insert(const char *key, T *value, int rank, int key_len = -1);
 
   // will return false if not found; else value_ptr will point to found value
-  T* Search(const char *key, int key_len = -1) const;
+  T *Search(const char *key, int key_len = -1) const;
   void Clear();
   void Print();
 
-  bool Empty() const { return m_value_list.empty(); }
+  bool
+  Empty() const
+  {
+    return m_value_list.empty();
+  }
 
   virtual ~Trie() { Clear(); }
 
@@ -59,11 +59,13 @@ private:
   class Node
   {
   public:
-    T* value;
+    T *value;
     bool occupied;
     int rank;
 
-    void Clear() {
+    void
+    Clear()
+    {
       value = NULL;
       occupied = false;
       rank = 0;
@@ -71,11 +73,17 @@ private:
     }
 
     void Print(const char *debug_tag) const;
-    inline Node* GetChild(char index) const { return children[static_cast<unsigned char>(index)]; }
-    inline Node* AllocateChild(char index) {
-      Node * &child = children[static_cast<unsigned char>(index)];
+    inline Node *
+    GetChild(char index) const
+    {
+      return children[static_cast<unsigned char>(index)];
+    }
+    inline Node *
+    AllocateChild(char index)
+    {
+      Node *&child = children[static_cast<unsigned char>(index)];
       ink_assert(child == NULL);
-      child = static_cast<Node*>(ats_malloc(sizeof(Node)));
+      child = static_cast<Node *>(ats_malloc(sizeof(Node)));
       child->Clear();
       return child;
     }
@@ -92,25 +100,24 @@ private:
 
   // make copy-constructor and assignment operator private
   // till we properly implement them
-  Trie(const Trie<T> &rhs) { };
-  Trie &operator =(const Trie<T> &rhs) { return *this; }
+  Trie(const Trie<T> &rhs){};
+  Trie &operator=(const Trie<T> &rhs) { return *this; }
 };
 
-template<typename T>
+template <typename T>
 void
 Trie<T>::_CheckArgs(const char *key, int &key_len) const
 {
   if (!key) {
     key_len = 0;
-  }
-  else if (key_len == -1) {
+  } else if (key_len == -1) {
     key_len = strlen(key);
   }
 }
 
-template<typename T>
+template <typename T>
 bool
-Trie<T>::Insert(const char *key, T* value, int rank, int key_len /* = -1 */)
+Trie<T>::Insert(const char *key, T *value, int rank, int key_len /* = -1 */)
 {
   _CheckArgs(key, key_len);
 
@@ -154,8 +161,8 @@ Trie<T>::Insert(const char *key, T* value, int rank, int key_len /* = -1 */)
   return true;
 }
 
-template<typename T>
-T*
+template <typename T>
+T *
 Trie<T>::Search(const char *key, int key_len /* = -1 */) const
 {
   _CheckArgs(key, key_len);
@@ -190,7 +197,7 @@ Trie<T>::Search(const char *key, int key_len /* = -1 */) const
 }
 
 
-template<typename T>
+template <typename T>
 void
 Trie<T>::_Clear(Node *node)
 {
@@ -205,11 +212,11 @@ Trie<T>::_Clear(Node *node)
   }
 }
 
-template<typename T>
+template <typename T>
 void
 Trie<T>::Clear()
 {
-  T* iter;
+  T *iter;
   while (NULL != (iter = m_value_list.pop()))
     delete iter;
 
@@ -217,15 +224,15 @@ Trie<T>::Clear()
   m_root.Clear();
 }
 
-template<typename T>
+template <typename T>
 void
-Trie<T>::Print() {
+Trie<T>::Print()
+{
   // The class we contain must provide a ::Print() method.
-  forl_LL(T, iter, m_value_list)
-    iter->Print();
+  forl_LL(T, iter, m_value_list) iter->Print();
 }
 
-template<typename T>
+template <typename T>
 void
 Trie<T>::Node::Print(const char *debug_tag) const
 {

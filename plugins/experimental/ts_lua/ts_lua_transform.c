@@ -20,7 +20,7 @@
 #include "ts_lua_util.h"
 
 
-static int ts_lua_transform_handler(TSCont contp, ts_lua_transform_ctx * transform_ctx);
+static int ts_lua_transform_handler(TSCont contp, ts_lua_transform_ctx *transform_ctx);
 
 
 int
@@ -28,7 +28,7 @@ ts_lua_transform_entry(TSCont contp, TSEvent event, void *edata ATS_UNUSED)
 {
   TSVIO input_vio;
 
-  ts_lua_transform_ctx *transform_ctx = (ts_lua_transform_ctx *) TSContDataGet(contp);
+  ts_lua_transform_ctx *transform_ctx = (ts_lua_transform_ctx *)TSContDataGet(contp);
 
   if (TSVConnClosedGet(contp)) {
     TSContDestroy(contp);
@@ -37,7 +37,6 @@ ts_lua_transform_entry(TSCont contp, TSEvent event, void *edata ATS_UNUSED)
   }
 
   switch (event) {
-
   case TS_EVENT_ERROR:
     input_vio = TSVConnWriteVIOGet(contp);
     TSContCall(TSVIOContGet(input_vio), TS_EVENT_ERROR, input_vio);
@@ -57,7 +56,7 @@ ts_lua_transform_entry(TSCont contp, TSEvent event, void *edata ATS_UNUSED)
 }
 
 static int
-ts_lua_transform_handler(TSCont contp, ts_lua_transform_ctx * transform_ctx)
+ts_lua_transform_handler(TSCont contp, ts_lua_transform_ctx *transform_ctx)
 {
   TSVConn output_conn;
   TSVIO input_vio;
@@ -114,20 +113,20 @@ ts_lua_transform_handler(TSCont contp, ts_lua_transform_ctx * transform_ctx)
     start = TSIOBufferBlockReadStart(blk, input_reader, &blk_len);
 
     lua_pushlightuserdata(L, transform_ctx);
-    lua_rawget(L, LUA_GLOBALSINDEX);    /* push function */
+    lua_rawget(L, LUA_GLOBALSINDEX); /* push function */
 
     if (towrite > blk_len) {
-      lua_pushlstring(L, start, (size_t) blk_len);
+      lua_pushlstring(L, start, (size_t)blk_len);
       towrite -= blk_len;
     } else {
-      lua_pushlstring(L, start, (size_t) towrite);
+      lua_pushlstring(L, start, (size_t)towrite);
       towrite = 0;
     }
 
     if (!towrite && eos) {
-      lua_pushinteger(L, 1);    /* second param, not finish */
+      lua_pushinteger(L, 1); /* second param, not finish */
     } else {
-      lua_pushinteger(L, 0);    /* second param, not finish */
+      lua_pushinteger(L, 0); /* second param, not finish */
     }
 
     if (lua_pcall(L, 2, 2, 0)) {
@@ -144,7 +143,7 @@ ts_lua_transform_handler(TSCont contp, ts_lua_transform_ctx * transform_ctx)
 
     lua_pop(L, 2);
 
-    if (ret || (eos && !towrite)) {     // EOS
+    if (ret || (eos && !towrite)) { // EOS
       eos = 1;
       break;
     }

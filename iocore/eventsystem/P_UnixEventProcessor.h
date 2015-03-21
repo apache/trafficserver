@@ -29,11 +29,7 @@ const int LOAD_BALANCE_INTERVAL = 1;
 
 
 TS_INLINE
-EventProcessor::EventProcessor():
-n_ethreads(0),
-n_thread_groups(0),
-n_dthreads(0),
-thread_data_used(0)
+EventProcessor::EventProcessor() : n_ethreads(0), n_thread_groups(0), n_dthreads(0), thread_data_used(0)
 {
   memset(all_ethreads, 0, sizeof(all_ethreads));
   memset(all_dthreads, 0, sizeof(all_dthreads));
@@ -46,7 +42,7 @@ EventProcessor::allocate(int size)
 {
   static off_t start = INK_ALIGN(offsetof(EThread, thread_private), 16);
   static off_t loss = start - offsetof(EThread, thread_private);
-  size = INK_ALIGN(size, 16);       // 16 byte alignment
+  size = INK_ALIGN(size, 16); // 16 byte alignment
 
   int old;
   do {
@@ -55,7 +51,7 @@ EventProcessor::allocate(int size)
       return -1;
   } while (!ink_atomic_cas(&thread_data_used, old, old + size));
 
-  return (off_t) (old + start);
+  return (off_t)(old + start);
 }
 
 TS_INLINE EThread *
@@ -72,7 +68,7 @@ EventProcessor::assign_thread(EventType etype)
 }
 
 TS_INLINE Event *
-EventProcessor::schedule(Event * e, EventType etype, bool fast_signal)
+EventProcessor::schedule(Event *e, EventType etype, bool fast_signal)
 {
   ink_assert(etype < MAX_EVENT_TYPES);
   e->ethread = assign_thread(etype);
@@ -86,7 +82,7 @@ EventProcessor::schedule(Event * e, EventType etype, bool fast_signal)
 
 
 TS_INLINE Event *
-EventProcessor::schedule_imm_signal(Continuation * cont, EventType et, int callback_event, void *cookie)
+EventProcessor::schedule_imm_signal(Continuation *cont, EventType et, int callback_event, void *cookie)
 {
   Event *e = eventAllocator.alloc();
 
@@ -100,7 +96,7 @@ EventProcessor::schedule_imm_signal(Continuation * cont, EventType et, int callb
 }
 
 TS_INLINE Event *
-EventProcessor::schedule_imm(Continuation * cont, EventType et, int callback_event, void *cookie)
+EventProcessor::schedule_imm(Continuation *cont, EventType et, int callback_event, void *cookie)
 {
   Event *e = eventAllocator.alloc();
 
@@ -114,7 +110,7 @@ EventProcessor::schedule_imm(Continuation * cont, EventType et, int callback_eve
 }
 
 TS_INLINE Event *
-EventProcessor::schedule_at(Continuation * cont, ink_hrtime t, EventType et, int callback_event, void *cookie)
+EventProcessor::schedule_at(Continuation *cont, ink_hrtime t, EventType et, int callback_event, void *cookie)
 {
   Event *e = eventAllocator.alloc();
 
@@ -126,7 +122,7 @@ EventProcessor::schedule_at(Continuation * cont, ink_hrtime t, EventType et, int
 }
 
 TS_INLINE Event *
-EventProcessor::schedule_in(Continuation * cont, ink_hrtime t, EventType et, int callback_event, void *cookie)
+EventProcessor::schedule_in(Continuation *cont, ink_hrtime t, EventType et, int callback_event, void *cookie)
 {
   Event *e = eventAllocator.alloc();
 
@@ -137,7 +133,7 @@ EventProcessor::schedule_in(Continuation * cont, ink_hrtime t, EventType et, int
 }
 
 TS_INLINE Event *
-EventProcessor::schedule_every(Continuation * cont, ink_hrtime t, EventType et, int callback_event, void *cookie)
+EventProcessor::schedule_every(Continuation *cont, ink_hrtime t, EventType et, int callback_event, void *cookie)
 {
   Event *e = eventAllocator.alloc();
 

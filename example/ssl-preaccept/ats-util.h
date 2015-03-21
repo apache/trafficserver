@@ -21,10 +21,10 @@
   limitations under the License.
  */
 
-# if !defined(_ats_util_h)
-# define _ats_util_h
+#if !defined(_ats_util_h)
+#define _ats_util_h
 
-# if defined(__cplusplus)
+#if defined(__cplusplus)
 /** Set data to zero.
 
     Calls @c memset on @a t with a value of zero and a length of @c
@@ -52,12 +52,13 @@
     @endcode
 
  */
-template < typename T > inline void
-ink_zero(
-	 T& t ///< Object to zero.
-	 ) {
+template <typename T>
+inline void
+ink_zero(T &t ///< Object to zero.
+         )
+{
   memset(&t, 0, sizeof(t));
 }
-# endif  /* __cplusplus */
+#endif /* __cplusplus */
 
-# endif // ats-util.h
+#endif // ats-util.h

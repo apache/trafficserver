@@ -45,9 +45,9 @@ struct InterceptCtx {
     TSVIO vio;
     TSIOBuffer buffer;
     TSIOBufferReader reader;
-    IoHandle()
-      : vio(0), buffer(0), reader(0) { };
-    ~IoHandle() {
+    IoHandle() : vio(0), buffer(0), reader(0){};
+    ~IoHandle()
+    {
       if (reader) {
         TSIOBufferReaderFree(reader);
       }
@@ -67,10 +67,11 @@ struct InterceptCtx {
   TSMLoc req_hdr_loc;
   bool req_hdr_parsed;
   bool initialized;
-  TransformCtx* request_context;
+  TransformCtx *request_context;
   InterceptCtx(TSCont cont)
     : net_vc(0), contp(cont), input(), output(), body(""), req_content_len(0), req_hdr_bufp(0), req_hdr_loc(0),
-      req_hdr_parsed(false), initialized(false) {
+      req_hdr_parsed(false), initialized(false)
+  {
     http_parser = TSHttpParserCreate();
   }
 
@@ -78,7 +79,8 @@ struct InterceptCtx {
 
   void setupWrite();
 
-  ~InterceptCtx() {
+  ~InterceptCtx()
+  {
     TSDebug(DEBUG_TAG, "[%s] Destroying continuation data", __FUNCTION__);
     TSHttpParserDestroy(http_parser);
     if (req_hdr_loc) {
@@ -118,7 +120,8 @@ InterceptCtx::init(TSVConn vconn)
 }
 
 void
-InterceptCtx::setupWrite() {
+InterceptCtx::setupWrite()
+{
   TSAssert(output.buffer == 0);
   output.buffer = TSIOBufferCreate();
   output.reader = TSIOBufferReaderAlloc(output.buffer);
@@ -126,18 +129,20 @@ InterceptCtx::setupWrite() {
 }
 
 // Parses out query params from the request.
-void ps_query_params_handler(StringPiece unparsed_uri, StringPiece* data) {
+void
+ps_query_params_handler(StringPiece unparsed_uri, StringPiece *data)
+{
   stringpiece_ssize_type question_mark_index = unparsed_uri.find("?");
   if (question_mark_index == StringPiece::npos) {
     *data = "";
   } else {
-    *data = unparsed_uri.substr(
-        question_mark_index+1, unparsed_uri.size() - (question_mark_index+1));
+    *data = unparsed_uri.substr(question_mark_index + 1, unparsed_uri.size() - (question_mark_index + 1));
   }
 }
 
 static bool
-handleRead(InterceptCtx *cont_data, bool &read_complete) {
+handleRead(InterceptCtx *cont_data, bool &read_complete)
+{
   int avail = TSIOBufferReaderAvail(cont_data->input.reader);
   if (avail == TS_ERROR) {
     TSError("[%s] Error while getting number of bytes available", __FUNCTION__);
@@ -155,11 +160,11 @@ handleRead(InterceptCtx *cont_data, bool &read_complete) {
       data = TSIOBufferBlockReadStart(block, cont_data->input.reader, &data_len);
       if (!cont_data->req_hdr_parsed) {
         const char *endptr = data + data_len;
-        if (TSHttpHdrParseReq(cont_data->http_parser, cont_data->req_hdr_bufp, cont_data->req_hdr_loc,
-                               &data, endptr) == TS_PARSE_DONE) {
+        if (TSHttpHdrParseReq(cont_data->http_parser, cont_data->req_hdr_bufp, cont_data->req_hdr_loc, &data, endptr) ==
+            TS_PARSE_DONE) {
           TSDebug(DEBUG_TAG, "[%s] Parsed header", __FUNCTION__);
-          TSMLoc content_len_loc = TSMimeHdrFieldFind(cont_data->req_hdr_bufp, cont_data->req_hdr_loc,
-                                                        TS_MIME_FIELD_CONTENT_LENGTH, -1);
+          TSMLoc content_len_loc =
+            TSMimeHdrFieldFind(cont_data->req_hdr_bufp, cont_data->req_hdr_loc, TS_MIME_FIELD_CONTENT_LENGTH, -1);
 
           /*if (!content_len_loc) {
             TSError("[%s] Error while searching content length header [%s]",
@@ -174,8 +179,8 @@ handleRead(InterceptCtx *cont_data, bool &read_complete) {
           if (!content_len_loc) {
             cont_data->req_content_len = 0;
           } else {
-            cont_data->req_content_len = TSMimeHdrFieldValueIntGet(cont_data->req_hdr_bufp, cont_data->req_hdr_loc,
-                                         content_len_loc, 0);
+            cont_data->req_content_len =
+              TSMimeHdrFieldValueIntGet(cont_data->req_hdr_bufp, cont_data->req_hdr_loc, content_len_loc, 0);
             TSHandleMLocRelease(cont_data->req_hdr_bufp, cont_data->req_hdr_loc, content_len_loc);
           }
           TSDebug(DEBUG_TAG, "[%s] Got content length as %d", __FUNCTION__, cont_data->req_content_len);
@@ -190,7 +195,7 @@ handleRead(InterceptCtx *cont_data, bool &read_complete) {
           cont_data->req_hdr_parsed = true;
         }
       } else {
-        //TSDebug(DEBUG_TAG, "[%s] Appending %" PRId64" bytes to body", __FUNCTION__, data_len);
+        // TSDebug(DEBUG_TAG, "[%s] Appending %" PRId64" bytes to body", __FUNCTION__, data_len);
         cont_data->body.append(data, data_len);
       }
       consumed += data_len;
@@ -210,15 +215,16 @@ handleRead(InterceptCtx *cont_data, bool &read_complete) {
     read_complete = true;
   } else {
     read_complete = false;
-    TSDebug(DEBUG_TAG, "[%s] Reenabling input vio as %ld bytes still need to be read",
-             __FUNCTION__, static_cast<long int>(cont_data->req_content_len - cont_data->body.size()));
+    TSDebug(DEBUG_TAG, "[%s] Reenabling input vio as %ld bytes still need to be read", __FUNCTION__,
+            static_cast<long int>(cont_data->req_content_len - cont_data->body.size()));
     TSVIOReenable(cont_data->input.vio);
   }
   return true;
 }
 
 static bool
-processRequest(InterceptCtx *cont_data) {
+processRequest(InterceptCtx *cont_data)
+{
   // OS: Looks like on 5.x we sometimes receive read complete / EOS events twice,
   // which needs looking into. Probably this intercept is doing something it shouldn't
   if (cont_data->output.buffer) {
@@ -228,39 +234,32 @@ processRequest(InterceptCtx *cont_data) {
   string reply_header("HTTP/1.1 204 No Content\r\n");
   int body_size = static_cast<int>(cont_data->body.size());
   if (cont_data->req_content_len != body_size) {
-    TSError("[%s] Read only %d bytes of body; expecting %d bytes", __FUNCTION__, body_size,
-             cont_data->req_content_len);
+    TSError("[%s] Read only %d bytes of body; expecting %d bytes", __FUNCTION__, body_size, cont_data->req_content_len);
   }
 
   char buf[64];
-  //snprintf(buf, 64, "%s: %d\r\n\r\n", TS_MIME_FIELD_CONTENT_LENGTH, body_size);
+  // snprintf(buf, 64, "%s: %d\r\n\r\n", TS_MIME_FIELD_CONTENT_LENGTH, body_size);
   snprintf(buf, 64, "%s: %d\r\n\r\n", TS_MIME_FIELD_CONTENT_LENGTH, 0);
   reply_header.append(buf);
   reply_header.append("Cache-Control: max-age=0, no-cache");
-  //TSError("[%s] reply header: \n%s", __FUNCTION__, reply_header.data());
+  // TSError("[%s] reply header: \n%s", __FUNCTION__, reply_header.data());
 
   StringPiece query_param_beacon_data;
   ps_query_params_handler(cont_data->request_context->url_string->c_str(), &query_param_beacon_data);
 
-  GoogleString beacon_data = net_instaweb::StrCat(
-      query_param_beacon_data, "&", cont_data->body);
-  ServerContext* server_context = cont_data->request_context->server_context;
+  GoogleString beacon_data = net_instaweb::StrCat(query_param_beacon_data, "&", cont_data->body);
+  ServerContext *server_context = cont_data->request_context->server_context;
 
-  SystemRequestContext* system_request_context =
-      new SystemRequestContext(server_context->thread_system()->NewMutex(),
-                               server_context->timer(),
-			       // TODO(oschaaf): determine these for real.
-			       "www.foo.com",
-                               80,
-                               "127.0.0.1");
+  SystemRequestContext *system_request_context =
+    new SystemRequestContext(server_context->thread_system()->NewMutex(), server_context->timer(),
+                             // TODO(oschaaf): determine these for real.
+                             "www.foo.com", 80, "127.0.0.1");
 
-  if (!server_context->HandleBeacon(
-          beacon_data,
-            cont_data->request_context->user_agent->c_str(),
-          net_instaweb::RequestContextPtr(system_request_context))) {
+  if (!server_context->HandleBeacon(beacon_data, cont_data->request_context->user_agent->c_str(),
+                                    net_instaweb::RequestContextPtr(system_request_context))) {
     TSError("Beacon handling failure!");
   } else {
-    TSDebug(DEBUG_TAG,  "Beacon post data processed OK: [%s]", beacon_data.c_str());
+    TSDebug(DEBUG_TAG, "Beacon post data processed OK: [%s]", beacon_data.c_str());
   }
 
   cont_data->setupWrite();
@@ -282,8 +281,9 @@ processRequest(InterceptCtx *cont_data) {
 }
 
 static int
-txn_intercept(TSCont contp, TSEvent event, void *edata) {
-    TSDebug(DEBUG_TAG, "[%s] Received event: %d", __FUNCTION__, (int)event);
+txn_intercept(TSCont contp, TSEvent event, void *edata)
+{
+  TSDebug(DEBUG_TAG, "[%s] Received event: %d", __FUNCTION__, (int)event);
 
   InterceptCtx *cont_data = static_cast<InterceptCtx *>(TSContDataGet(contp));
   bool read_complete = false;
@@ -301,7 +301,7 @@ txn_intercept(TSCont contp, TSEvent event, void *edata) {
     TSDebug(DEBUG_TAG, "[%s] Received read ready event", __FUNCTION__);
     if (!handleRead(cont_data, read_complete)) {
       TSError("[%s] Error while reading from input vio", __FUNCTION__);
-      //return 0;
+      // return 0;
       read_complete = true;
     }
     break;
@@ -349,7 +349,8 @@ txn_intercept(TSCont contp, TSEvent event, void *edata) {
 }
 
 bool
-hook_beacon_intercept(TSHttpTxn txnp) {
+hook_beacon_intercept(TSHttpTxn txnp)
+{
   TSCont contp = TSContCreate(txn_intercept, TSMutexCreate());
   if (!contp) {
     TSError("[%s] Could not create intercept request", __FUNCTION__);

@@ -31,23 +31,23 @@
  ****************************************************************************/
 
 #ifndef _STATTYPE_H_
-#define	_STATTYPE_H_
+#define _STATTYPE_H_
 
 #include "StatXML.h"
 #include "WebMgmtUtils.h"
 
-#define BYTES_TO_MBIT_SCALE (8/1000000.0)
+#define BYTES_TO_MBIT_SCALE (8 / 1000000.0)
 
 /* Structs used in Average Statistics calculations */
-struct StatDataSamples
-{
+struct StatDataSamples {
   ink_hrtime previous_time;
   ink_hrtime current_time;
   RecDataT data_type;
   RecData previous_value;
   RecData current_value;
 
-  RecData diff_value(const char *name)
+  RecData
+  diff_value(const char *name)
   {
     RecData tmp;
 
@@ -62,7 +62,8 @@ struct StatDataSamples
       return tmp;
     }
   }
-  ink_hrtime diff_time()
+  ink_hrtime
+  diff_time()
   {
     return (current_time - previous_time);
   }
@@ -73,8 +74,8 @@ struct StatDataSamples
 #define inline
 #endif
 
-#define MODULE      "StatPro"   // Statistics processor debug tag
-#define MODULE_INIT "StatProInit"       // Statistics processor debug tag
+#define MODULE "StatPro"          // Statistics processor debug tag
+#define MODULE_INIT "StatProInit" // Statistics processor debug tag
 
 /***************************************************************
  *                       StatExprToken
@@ -85,9 +86,7 @@ struct StatDataSamples
  ***************************************************************/
 class StatExprToken
 {
-
 public:
-
   char m_arith_symbol;
   char *m_token_name;
   RecDataT m_token_type;
@@ -107,10 +106,7 @@ public:
 
   LINK(StatExprToken, link);
   StatExprToken();
-  inline ~ StatExprToken()
-  {
-    clean();
-  };
+  inline ~StatExprToken() { clean(); };
   void clean();
 
   bool statVarSet(RecDataT, RecData);
@@ -123,14 +119,9 @@ public:
  **/
 class StatExprList
 {
-
 public:
-
   StatExprList();
-  inline ~ StatExprList()
-  {
-    clean();
-  };
+  inline ~StatExprList() { clean(); };
   void clean();
 
   void enqueue(StatExprToken *);
@@ -144,7 +135,6 @@ public:
   void print(const char *);
 
 private:
-
   size_t m_size;
   Queue<StatExprToken> m_tokenList;
 };
@@ -156,12 +146,10 @@ private:
  ***************************************************************/
 class StatObject
 {
-
 public:
-
   unsigned m_id;
   bool m_debug;
-  char *m_expr_string;          /* for debugging using only */
+  char *m_expr_string; /* for debugging using only */
   StatExprToken *m_node_dest;
   StatExprToken *m_cluster_dest;
   StatExprList *m_expression;
@@ -179,10 +167,7 @@ public:
   // Member functions
   StatObject();
   StatObject(unsigned);
-  inline ~ StatObject()
-  {
-    clean();
-  };
+  inline ~StatObject() { clean(); };
   void clean();
   void assignDst(const char *, bool, bool);
   void assignExpr(char *);
@@ -193,7 +178,6 @@ public:
   void setTokenValue(StatExprToken *, bool cluster = false);
 
 private:
-
   void infix2postfix();
 };
 
@@ -204,26 +188,20 @@ private:
  **/
 class StatObjectList
 {
-
 public:
-
   // Member functions
   StatObjectList();
-  inline ~ StatObjectList()
-  {
-    clean();
-  };
+  inline ~StatObjectList() { clean(); };
   void clean();
-  void enqueue(StatObject * object);
+  void enqueue(StatObject *object);
   StatObject *first();
-  StatObject *next(StatObject * current);
+  StatObject *next(StatObject *current);
   void print(const char *prefix = "");
-  short Eval();                 // return the number of statistics object processed
+  short Eval(); // return the number of statistics object processed
 
   size_t m_size;
 
 private:
-
   Queue<StatObject> m_statList;
 };
 

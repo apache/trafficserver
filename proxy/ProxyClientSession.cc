@@ -27,8 +27,7 @@
 
 static int64_t next_cs_id = 0;
 
-ProxyClientSession::ProxyClientSession()
-    : VConnection(NULL), debug_on(false), hooks_on(true)
+ProxyClientSession::ProxyClientSession() : VConnection(NULL), debug_on(false), hooks_on(true)
 {
   ink_zero(this->user_args);
 }
@@ -40,28 +39,29 @@ ProxyClientSession::next_connection_id()
 }
 
 static const TSEvent eventmap[TS_HTTP_LAST_HOOK + 1] = {
-  TS_EVENT_HTTP_READ_REQUEST_HDR,       // TS_HTTP_READ_REQUEST_HDR_HOOK
-  TS_EVENT_HTTP_OS_DNS,                 // TS_HTTP_OS_DNS_HOOK
-  TS_EVENT_HTTP_SEND_REQUEST_HDR,       // TS_HTTP_SEND_REQUEST_HDR_HOOK
-  TS_EVENT_HTTP_READ_CACHE_HDR,         // TS_HTTP_READ_CACHE_HDR_HOOK
-  TS_EVENT_HTTP_READ_RESPONSE_HDR,      // TS_HTTP_READ_RESPONSE_HDR_HOOK
-  TS_EVENT_HTTP_SEND_RESPONSE_HDR,      // TS_HTTP_SEND_RESPONSE_HDR_HOOK
-  TS_EVENT_HTTP_REQUEST_TRANSFORM,      // TS_HTTP_REQUEST_TRANSFORM_HOOK
-  TS_EVENT_HTTP_RESPONSE_TRANSFORM,     // TS_HTTP_RESPONSE_TRANSFORM_HOOK
-  TS_EVENT_HTTP_SELECT_ALT,             // TS_HTTP_SELECT_ALT_HOOK
-  TS_EVENT_HTTP_TXN_START,              // TS_HTTP_TXN_START_HOOK
-  TS_EVENT_HTTP_TXN_CLOSE,              // TS_HTTP_TXN_CLOSE_HOOK
-  TS_EVENT_HTTP_SSN_START,              // TS_HTTP_SSN_START_HOOK
-  TS_EVENT_HTTP_SSN_CLOSE,              // TS_HTTP_SSN_CLOSE_HOOK
-  TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE,  // TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK
-  TS_EVENT_HTTP_PRE_REMAP,              // TS_HTTP_PRE_REMAP_HOOK
-  TS_EVENT_HTTP_POST_REMAP,             // TS_HTTP_POST_REMAP_HOOK
-  TS_EVENT_NONE,                        // TS_HTTP_RESPONSE_CLIENT_HOOK
-  TS_EVENT_NONE,                        // TS_HTTP_LAST_HOOK
+  TS_EVENT_HTTP_READ_REQUEST_HDR,      // TS_HTTP_READ_REQUEST_HDR_HOOK
+  TS_EVENT_HTTP_OS_DNS,                // TS_HTTP_OS_DNS_HOOK
+  TS_EVENT_HTTP_SEND_REQUEST_HDR,      // TS_HTTP_SEND_REQUEST_HDR_HOOK
+  TS_EVENT_HTTP_READ_CACHE_HDR,        // TS_HTTP_READ_CACHE_HDR_HOOK
+  TS_EVENT_HTTP_READ_RESPONSE_HDR,     // TS_HTTP_READ_RESPONSE_HDR_HOOK
+  TS_EVENT_HTTP_SEND_RESPONSE_HDR,     // TS_HTTP_SEND_RESPONSE_HDR_HOOK
+  TS_EVENT_HTTP_REQUEST_TRANSFORM,     // TS_HTTP_REQUEST_TRANSFORM_HOOK
+  TS_EVENT_HTTP_RESPONSE_TRANSFORM,    // TS_HTTP_RESPONSE_TRANSFORM_HOOK
+  TS_EVENT_HTTP_SELECT_ALT,            // TS_HTTP_SELECT_ALT_HOOK
+  TS_EVENT_HTTP_TXN_START,             // TS_HTTP_TXN_START_HOOK
+  TS_EVENT_HTTP_TXN_CLOSE,             // TS_HTTP_TXN_CLOSE_HOOK
+  TS_EVENT_HTTP_SSN_START,             // TS_HTTP_SSN_START_HOOK
+  TS_EVENT_HTTP_SSN_CLOSE,             // TS_HTTP_SSN_CLOSE_HOOK
+  TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE, // TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK
+  TS_EVENT_HTTP_PRE_REMAP,             // TS_HTTP_PRE_REMAP_HOOK
+  TS_EVENT_HTTP_POST_REMAP,            // TS_HTTP_POST_REMAP_HOOK
+  TS_EVENT_NONE,                       // TS_HTTP_RESPONSE_CLIENT_HOOK
+  TS_EVENT_NONE,                       // TS_HTTP_LAST_HOOK
 };
 
 static bool
-is_valid_hook(TSHttpHookID hookid) {
+is_valid_hook(TSHttpHookID hookid)
+{
   return (hookid >= 0) && (hookid < TS_HTTP_LAST_HOOK);
 }
 
@@ -91,8 +91,8 @@ ProxyClientSession::state_api_callout(int event, void * /* data ATS_UNUSED */)
       }
 
       if (this->api_current) {
-        bool            plugin_lock = false;
-        APIHook *       hook = this->api_current;
+        bool plugin_lock = false;
+        APIHook *hook = this->api_current;
         Ptr<ProxyMutex> plugin_mutex;
 
         if (hook->m_cont->mutex) {

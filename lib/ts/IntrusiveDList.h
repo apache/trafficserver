@@ -1,5 +1,5 @@
-# if ! defined(TS_INTRUSIVE_DOUBLE_LIST_HEADER)
-# define TS_INTRUSIVE_DOUBLE_LIST_HEADER
+#if !defined(TS_INTRUSIVE_DOUBLE_LIST_HEADER)
+#define TS_INTRUSIVE_DOUBLE_LIST_HEADER
 
 /** @file
 
@@ -43,7 +43,7 @@
  */
 
 /// FreeBSD doesn't like just declaring the tag struct we need so we have to include the file.
-# include <iterator>
+#include <iterator>
 
 /** Intrusive doubly linked list container.
 
@@ -94,53 +94,61 @@
     which seems very wrong to me.
 
   */
-template <
-  typename T, ///< Type of list element.
-  T* (T::*N), ///< Member to use for pointer to next element.
-  T* (T::*P)  ///< Member to use for pointer to previous element.
-> class IntrusiveDList {
+template <typename T, ///< Type of list element.
+          T *(T::*N), ///< Member to use for pointer to next element.
+          T *(T::*P)  ///< Member to use for pointer to previous element.
+          >
+class IntrusiveDList
+{
   friend class iterator;
+
 public:
   typedef IntrusiveDList self; ///< Self reference type.
-  typedef T element_type; ///< Type of list element.
-  /** STL style iterator for access to elements.
-   */
-  class iterator {
+  typedef T element_type;      ///< Type of list element.
+                               /** STL style iterator for access to elements.
+                                */
+  class iterator
+  {
     friend class IntrusiveDList;
+
   public:
-    typedef iterator self; ///< Self reference type.
-    typedef T value_type; ///< Referenced type for iterator.
+    typedef iterator self;       ///< Self reference type.
+    typedef T value_type;        ///< Referenced type for iterator.
     typedef int difference_type; ///< Distance type.
-    typedef T* pointer; ///< Pointer to referent.
-    typedef T& reference; ///< Reference to referent.
+    typedef T *pointer;          ///< Pointer to referent.
+    typedef T &reference;        ///< Reference to referent.
     typedef std::bidirectional_iterator_tag iterator_category;
 
     /// Default constructor.
     iterator() : _list(0), _elt(0) {}
     /// Equality test.
     /// @return @c true if @c this and @a that refer to the same object.
-    bool operator==(self const& that) const {
-      return _list == that._list && _elt == that._elt;
-    }
+    bool operator==(self const &that) const { return _list == that._list && _elt == that._elt; }
     /// Pre-increment.
     /// Move to the next element in the list.
     /// @return The iterator.
-    self& operator++() {
-      if (_elt) _elt = _elt->*N;
+    self &operator++()
+    {
+      if (_elt)
+        _elt = _elt->*N;
       return *this;
     }
     /// Pre-decrement.
     /// Move to the previous element in the list.
     /// @return The iterator.
-    self& operator--() {
-      if (_elt) _elt = _elt->*P;
-      else if (_list) _elt = _list->_tail;
+    self &operator--()
+    {
+      if (_elt)
+        _elt = _elt->*P;
+      else if (_list)
+        _elt = _list->_tail;
       return *this;
     }
     /// Post-increment.
     /// Move to the next element in the list.
     /// @return The iterator value before the increment.
-    self operator++(int) {
+    self operator++(int)
+    {
       self tmp(*this);
       ++*this;
       return tmp;
@@ -148,71 +156,88 @@ public:
     /// Post-decrement.
     /// Move to the previous element in the list.
     /// @return The iterator value before the decrement.
-    self operator--(int) {
+    self operator--(int)
+    {
       self tmp(*this);
       ++*this;
       return tmp;
     }
     /// Inequality test.
     /// @return @c true if @c this and @a do not refer to the same object.
-    bool operator!=(self const& that) const { return !(*this == that); }
+    bool operator!=(self const &that) const { return !(*this == that); }
     /// Dereference.
     /// @return A reference to the referent.
     reference operator*() { return *_elt; }
     /// Dereference.
     /// @return A pointer to the referent.
     pointer operator->() { return _elt; }
+
   protected:
-    IntrusiveDList* _list; ///< List for this iterator.
-    T* _elt; ///< Referenced element.
+    IntrusiveDList *_list; ///< List for this iterator.
+    T *_elt;               ///< Referenced element.
     /// Internal constructor for containers.
-    iterator(
-      IntrusiveDList* container, ///< Container for iteration.
-      T* elt ///< Initial referent
-    ) : _list(container), _elt(elt) {
+    iterator(IntrusiveDList *container, ///< Container for iteration.
+             T *elt                     ///< Initial referent
+             )
+      : _list(container), _elt(elt)
+    {
     }
   };
 
   /// Default constructor (empty list).
-  IntrusiveDList() : _head(0), _tail(0), _count(0) { }
+  IntrusiveDList() : _head(0), _tail(0), _count(0) {}
   /// Empty check.
   /// @return @c true if the list is empty.
-  bool isEmpty() const { return 0 == _head; }
+  bool
+  isEmpty() const
+  {
+    return 0 == _head;
+  }
   /// Add @a elt as the first element in the list.
   /// @return This container.
-  self& prepend(
-    T* elt ///< Element to add.
-  ) {
+  self &
+  prepend(T *elt ///< Element to add.
+          )
+  {
     elt->*N = _head;
     elt->*P = 0;
-    if (_head) _head->*P = elt;
+    if (_head)
+      _head->*P = elt;
     _head = elt;
-    if (! _tail) _tail = _head; // empty to non-empty transition
+    if (!_tail)
+      _tail = _head; // empty to non-empty transition
     ++_count;
     return *this;
   }
   /// Add @elt as the last element in the list.
   /// @return This container.
-  self& append(
-    T* elt ///< Element to add.
-  ) {
+  self &
+  append(T *elt ///< Element to add.
+         )
+  {
     elt->*N = 0;
     elt->*P = _tail;
-    if (_tail) _tail->*N = elt;
+    if (_tail)
+      _tail->*N = elt;
     _tail = elt;
-    if (! _head) _head = _tail; // empty to non-empty transition
+    if (!_head)
+      _head = _tail; // empty to non-empty transition
     ++_count;
     return *this;
   }
   /// Remove the first element of the list.
   /// @return A poiner to the removed item, or @c NULL if the list was empty.
-  T* takeHead() {
-    T* zret = 0;
+  T *
+  takeHead()
+  {
+    T *zret = 0;
     if (_head) {
       zret = _head;
       _head = _head->*N;
-      if (_head) _head->*P = 0;
-      else _tail = 0; // non-empty to empty transition.
+      if (_head)
+        _head->*P = 0;
+      else
+        _tail = 0;  // non-empty to empty transition.
       zret->*N = 0; // erase traces of list.
       zret->*P = 0;
       --_count;
@@ -221,13 +246,17 @@ public:
   }
   /// Remove the last element of the list.
   /// @return A poiner to the removed item, or @c NULL if the list was empty.
-  T* takeTail() {
-    T* zret = 0;
+  T *
+  takeTail()
+  {
+    T *zret = 0;
     if (_tail) {
       zret = _tail;
       _tail = _tail->*P = 0;
-      if (_tail) _tail->*N = 0;
-      else _head = 0; // non-empty to empty transition.
+      if (_tail)
+        _tail->*N = 0;
+      else
+        _head = 0;  // non-empty to empty transition.
       zret->*N = 0; // erase traces of list.
       zret->*P = 0;
       --_count;
@@ -238,16 +267,19 @@ public:
   /// The caller is responsible for ensuring @a target is in this list
   /// and @a elt is not in a list.
   /// @return This list.
-  self& insertAfter(
-    T* target, ///< Target element in list.
-    T* elt ///< Element to insert.
-  ) {
+  self &
+  insertAfter(T *target, ///< Target element in list.
+              T *elt     ///< Element to insert.
+              )
+  {
     // Should assert that !(elt->*N || elt->*P)
     elt->*N = target->*N;
     elt->*P = target;
     target->*N = elt;
-    if (elt->*N) elt->*N->*P = elt;
-    if (target == _tail) _tail = elt;
+    if (elt->*N)
+      elt->*N->*P = elt;
+    if (target == _tail)
+      _tail = elt;
     ++_count;
     return *this;
   }
@@ -255,28 +287,36 @@ public:
   /// The caller is responsible for ensuring @a target is in this list
   /// and @a elt is not in a list.
   /// @return This list.
-  self& insertBefore(
-    T* target, ///< Target element in list.
-    T* elt ///< Element to insert.
-  ) {
+  self &
+  insertBefore(T *target, ///< Target element in list.
+               T *elt     ///< Element to insert.
+               )
+  {
     // Should assert that !(elt->*N || elt->*P)
     elt->*P = target->*P;
     elt->*N = target;
     target->*P = elt;
-    if (elt->*P) elt->*P->*N = elt;
-    if (target == _head) _head = elt;
+    if (elt->*P)
+      elt->*P->*N = elt;
+    if (target == _head)
+      _head = elt;
     ++_count;
     return *this;
   }
   /// Take @a elt out of this list.
   /// @return This list.
-  self& take(
-    T* elt ///< Element to remove.
-  ) {
-    if (elt->*P) elt->*P->*N = elt->*N;
-    if (elt->*N) elt->*N->*P = elt->*P;
-    if (elt == _head) _head = elt->*N;
-    if (elt == _tail) _tail = elt->*P;
+  self &
+  take(T *elt ///< Element to remove.
+       )
+  {
+    if (elt->*P)
+      elt->*P->*N = elt->*N;
+    if (elt->*N)
+      elt->*N->*P = elt->*P;
+    if (elt == _head)
+      _head = elt->*N;
+    if (elt == _tail)
+      _tail = elt->*P;
     elt->*P = elt->*N = 0;
     --_count;
     return *this;
@@ -284,23 +324,49 @@ public:
   /// Remove all elements.
   /// @note @b No memory management is done!
   /// @return This container.
-  self& clear() { _head = _tail = 0; _count = 0; return *this; }
+  self &
+  clear()
+  {
+    _head = _tail = 0;
+    _count = 0;
+    return *this;
+  }
   /// @return Number of elements in the list.
-  size_t getCount() const { return _count; }
+  size_t
+  getCount() const
+  {
+    return _count;
+  }
 
   /// Get an iterator to the first element.
-  iterator begin() { return iterator(this, _head); }
+  iterator
+  begin()
+  {
+    return iterator(this, _head);
+  }
   /// Get an iterator to past the last element.
-  iterator end() { return iterator(this, 0); }
+  iterator
+  end()
+  {
+    return iterator(this, 0);
+  }
   /// Get the first element.
-  T* getHead() { return _head; }
+  T *
+  getHead()
+  {
+    return _head;
+  }
   /// Get the last element.
-  T* getTail() { return _tail; }
+  T *
+  getTail()
+  {
+    return _tail;
+  }
+
 protected:
-  T* _head; ///< First element in list.
-  T* _tail; ///< Last element in list.
+  T *_head;      ///< First element in list.
+  T *_tail;      ///< Last element in list.
   size_t _count; ///< # of elements in list.
 };
 
-# endif // TS_INTRUSIVE_DOUBLE_LIST_HEADER
-
+#endif // TS_INTRUSIVE_DOUBLE_LIST_HEADER

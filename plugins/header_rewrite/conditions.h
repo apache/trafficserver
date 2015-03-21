@@ -42,15 +42,18 @@
 class ConditionTrue : public Condition
 {
 public:
-  ConditionTrue()
+  ConditionTrue() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionTrue"); }
+
+  void
+  append_value(std::string &s, const Resources & /* res ATS_UNUSED */)
   {
-    TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionTrue");
+    s += "TRUE";
   }
 
-  void append_value(std::string& s, const Resources& /* res ATS_UNUSED */) { s += "TRUE";  }
-
 protected:
-  bool eval(const Resources& /* res ATS_UNUSED */) {
+  bool
+  eval(const Resources & /* res ATS_UNUSED */)
+  {
     TSDebug(PLUGIN_NAME, "Evaluating TRUE()");
     return true;
   }
@@ -64,14 +67,17 @@ private:
 class ConditionFalse : public Condition
 {
 public:
-  ConditionFalse()
+  ConditionFalse() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionFalse"); }
+  void
+  append_value(std::string &s, const Resources & /* res ATS_UNUSED */)
   {
-    TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionFalse");
+    s += "FALSE";
   }
-  void append_value(std::string& s, const Resources& /* res ATS_UNUSED */) { s += "FALSE"; }
 
 protected:
-  bool eval(const Resources& /* res ATS_UNUSED */) {
+  bool
+  eval(const Resources & /* res ATS_UNUSED */)
+  {
     TSDebug(PLUGIN_NAME, "Evaluating FALSE()");
     return false;
   }
@@ -85,15 +91,12 @@ private:
 class ConditionStatus : public Condition
 {
 public:
-  ConditionStatus()
-  {
-    TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionStatus");
-  }
-  void initialize(Parser& p);
-  void append_value(std::string& s, const Resources& res);
+  ConditionStatus() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionStatus"); }
+  void initialize(Parser &p);
+  void append_value(std::string &s, const Resources &res);
 
 protected:
-  bool eval(const Resources& res);
+  bool eval(const Resources &res);
   void initialize_hooks(); // Return status only valid in certain hooks
 
 private:
@@ -105,15 +108,12 @@ private:
 class ConditionMethod : public Condition
 {
 public:
-  ConditionMethod()
-  {
-    TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionMethod");
-  }
-  void initialize(Parser& p);
-  void append_value(std::string& s, const Resources& res);
+  ConditionMethod() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionMethod"); }
+  void initialize(Parser &p);
+  void append_value(std::string &s, const Resources &res);
 
 protected:
-  bool eval(const Resources& res);
+  bool eval(const Resources &res);
 
 private:
   DISALLOW_COPY_AND_ASSIGN(ConditionMethod);
@@ -124,16 +124,12 @@ private:
 class ConditionRandom : public Condition
 {
 public:
-  ConditionRandom()
-    : _seed(0), _max(0)
-  {
-    TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionRandom");
-  }
-  void initialize(Parser& p);
-  void append_value(std::string& s, const Resources& res);
+  ConditionRandom() : _seed(0), _max(0) { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionRandom"); }
+  void initialize(Parser &p);
+  void append_value(std::string &s, const Resources &res);
 
 protected:
-  bool eval(const Resources& res);
+  bool eval(const Resources &res);
 
 private:
   DISALLOW_COPY_AND_ASSIGN(ConditionRandom);
@@ -147,16 +143,12 @@ private:
 class ConditionAccess : public Condition
 {
 public:
-  ConditionAccess()
-    : _next(0), _last(false)
-  {
-    TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionAccess");
-  }
-  void initialize(Parser& p);
-  void append_value(std::string& s, const Resources& res);
+  ConditionAccess() : _next(0), _last(false) { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionAccess"); }
+  void initialize(Parser &p);
+  void append_value(std::string &s, const Resources &res);
 
 protected:
-  bool eval(const Resources& res);
+  bool eval(const Resources &res);
 
 private:
   DISALLOW_COPY_AND_ASSIGN(ConditionAccess);
@@ -167,18 +159,15 @@ private:
 
 
 // cookie(name)
-class ConditionCookie: public Condition
+class ConditionCookie : public Condition
 {
 public:
-  ConditionCookie()
-  {
-    TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionCookie");
-  }
-  void initialize(Parser& p);
-  void append_value(std::string& s, const Resources& res);
+  ConditionCookie() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionCookie"); }
+  void initialize(Parser &p);
+  void append_value(std::string &s, const Resources &res);
 
 protected:
-  bool eval(const Resources& res);
+  bool eval(const Resources &res);
 
 private:
   DISALLOW_COPY_AND_ASSIGN(ConditionCookie);
@@ -186,8 +175,7 @@ private:
   // Nginx-style cookie parsing:
   //   nginx/src/http/ngx_http_parse.c:ngx_http_parse_multi_header_lines()
   inline int
-  get_cookie_value(const char *buf, int buf_len, const char *name, int name_len,
-        const char **value, int *value_len)
+  get_cookie_value(const char *buf, int buf_len, const char *name, int name_len, const char **value, int *value_len)
   {
     const char *start, *last, *end;
 
@@ -202,24 +190,30 @@ private:
       if (strncasecmp(start, name, name_len) != 0)
         goto skip;
 
-      for (start += name_len; start < end && *start == ' '; start++);
+      for (start += name_len; start < end && *start == ' '; start++)
+        ;
 
       if (start == end || *start++ != '=')
         goto skip;
 
-      while (start < end && *start == ' ') { start++; }
-      for (last = start; last < end && *last != ';'; last++);
+      while (start < end && *start == ' ') {
+        start++;
+      }
+      for (last = start; last < end && *last != ';'; last++)
+        ;
 
       *value_len = last - start;
       *value = start;
       return TS_SUCCESS;
-skip:
+    skip:
       while (start < end) {
         char ch = *start++;
         if (ch == ';' || ch == ',')
           break;
       }
-      while (start < end && *start == ' ') { start++; }
+      while (start < end && *start == ' ') {
+        start++;
+      }
     }
     return TS_ERROR;
   };
@@ -229,17 +223,16 @@ skip:
 class ConditionHeader : public Condition
 {
 public:
-  explicit ConditionHeader(bool client = false)
-    : _client(client)
+  explicit ConditionHeader(bool client = false) : _client(client)
   {
     TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionHeader, client %d", client);
   };
 
-  void initialize(Parser& p);
-  void append_value(std::string& s, const Resources& res);
+  void initialize(Parser &p);
+  void append_value(std::string &s, const Resources &res);
 
 protected:
-  bool eval(const Resources& res);
+  bool eval(const Resources &res);
 
 private:
   DISALLOW_COPY_AND_ASSIGN(ConditionHeader);
@@ -251,16 +244,13 @@ private:
 class ConditionPath : public Condition
 {
 public:
-  explicit ConditionPath()
-  {
-    TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionPath");
-  };
+  explicit ConditionPath() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionPath"); };
 
-  void initialize(Parser& p);
-  void append_value(std::string& s, const Resources& res);
+  void initialize(Parser &p);
+  void append_value(std::string &s, const Resources &res);
 
 protected:
-  bool eval(const Resources& res);
+  bool eval(const Resources &res);
 
 private:
   DISALLOW_COPY_AND_ASSIGN(ConditionPath);
@@ -271,20 +261,16 @@ private:
 class ConditionQuery : public Condition
 {
 public:
-  explicit ConditionQuery()
-  {
-    TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionQuery");
-  };
+  explicit ConditionQuery() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionQuery"); };
 
-  void initialize(Parser& p);
-  void append_value(std::string& s, const Resources& res);
+  void initialize(Parser &p);
+  void append_value(std::string &s, const Resources &res);
 
 protected:
-  bool eval(const Resources& res);
+  bool eval(const Resources &res);
 
 private:
   DISALLOW_COPY_AND_ASSIGN(ConditionQuery);
-
 };
 
 
@@ -292,18 +278,17 @@ private:
 class ConditionUrl : public Condition
 {
 public:
-  explicit ConditionUrl(bool client = false)
-    : _url_qual(URL_QUAL_NONE), _client(client)
+  explicit ConditionUrl(bool client = false) : _url_qual(URL_QUAL_NONE), _client(client)
   {
     TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionUrl");
   };
 
-  void initialize(Parser& p);
-  void set_qualifier(const std::string& q);
-  void append_value(std::string& s, const Resources& res);
+  void initialize(Parser &p);
+  void set_qualifier(const std::string &q);
+  void append_value(std::string &s, const Resources &res);
 
 protected:
-  bool eval(const Resources& res);
+  bool eval(const Resources &res);
 
 private:
   DISALLOW_COPY_AND_ASSIGN(ConditionUrl);
@@ -318,31 +303,31 @@ class ConditionDBM : public Condition
 {
 public:
   ConditionDBM()
-    :
-    //_dbm(NULL),
+    : //_dbm(NULL),
       _file("")
   {
     _mutex = TSMutexCreate();
     TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionDBM");
   }
 
-  ~ConditionDBM() {
+  ~ConditionDBM()
+  {
     // if (_dbm) {
     //   mdbm_close(_dbm);
     //   _dbm = NULL;
     // }
   }
 
-  void initialize(Parser& p);
-  void append_value(std::string& s, const Resources& res);
+  void initialize(Parser &p);
+  void append_value(std::string &s, const Resources &res);
 
 protected:
-  bool eval(const Resources& res);
+  bool eval(const Resources &res);
 
 private:
   DISALLOW_COPY_AND_ASSIGN(ConditionDBM);
 
-  //MDBM* _dbm;
+  // MDBM* _dbm;
   std::string _file;
   Value _key;
   TSMutex _mutex;
@@ -351,7 +336,10 @@ private:
 class ConditionInternalTransaction : public Condition
 {
 public:
-  void append_value(std::string &/* s ATS_UNUSED */, const Resources &/* res ATS_UNUSED */) { }
+  void
+  append_value(std::string & /* s ATS_UNUSED */, const Resources & /* res ATS_UNUSED */)
+  {
+  }
 
 protected:
   bool eval(const Resources &res);
@@ -360,7 +348,7 @@ protected:
 class ConditionClientIp : public Condition
 {
 public:
-  void initialize(Parser& p);
+  void initialize(Parser &p);
   void append_value(std::string &s, const Resources &res);
 
 protected:
@@ -370,12 +358,9 @@ protected:
 class ConditionIncomingPort : public Condition
 {
 public:
-  ConditionIncomingPort()
-  {
-    TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionIncomingPort");
-  }
+  ConditionIncomingPort() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionIncomingPort"); }
 
-  void initialize(Parser& p);
+  void initialize(Parser &p);
   void append_value(std::string &s, const Resources &res);
 
 protected:

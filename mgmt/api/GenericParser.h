@@ -33,10 +33,10 @@
 #include "ink_assert.h"
 #include "Tokenizer.h"
 #include "List.h"
-#include "mgmtapi.h"         // INKFileNameT
+#include "mgmtapi.h" // INKFileNameT
 
-#define MIN_CONFIG_TOKEN       1
-#define MAX_CONFIG_TOKEN       30
+#define MIN_CONFIG_TOKEN 1
+#define MAX_CONFIG_TOKEN 30
 
 /***************************************************************************
  * Token
@@ -49,7 +49,7 @@ class Token
 public:
   Token();
   Token(char *);
-   ~Token();
+  ~Token();
   void setName(const char *);
   void setValue(const char *);
   void appendValue(const char *);
@@ -78,25 +78,30 @@ public:
   /**
    * Queue method
    */
-  inline Token *first()
+  inline Token *
+  first()
   {
     return m_nameList.head;
   };
-  inline Token *last()
+  inline Token *
+  last()
   {
     return m_nameList.tail;
   };
-  inline void enqueue(Token * entry)
+  inline void
+  enqueue(Token *entry)
   {
     length++;
     m_nameList.enqueue(entry);
   };
-  inline Token *dequeue()
+  inline Token *
+  dequeue()
   {
     length--;
-    return (Token *) m_nameList.dequeue();
+    return (Token *)m_nameList.dequeue();
   };
-  inline void remove(Token * entry)
+  inline void
+  remove(Token *entry)
   {
     length--;
     m_nameList.remove(entry);
@@ -104,20 +109,24 @@ public:
   /**
    * Stack method
    */
-  inline Token *top()
+  inline Token *
+  top()
   {
     return m_nameList.tail;
   };
-  inline Token *bottom()
+  inline Token *
+  bottom()
   {
     return m_nameList.head;
   };
-  inline void push(Token * entry)
+  inline void
+  push(Token *entry)
   {
     length++;
     m_nameList.push(entry);
   };
-  inline Token *pop()
+  inline Token *
+  pop()
   {
     length--;
     return m_nameList.pop();
@@ -125,16 +134,18 @@ public:
   /**
    * General method
    */
-  inline void insert(Token * newNode, Token * current)
+  inline void
+  insert(Token *newNode, Token *current)
   {
     m_nameList.insert(newNode, current);
   };
-  inline Token *next(Token * current)
+  inline Token *
+  next(Token *current)
   {
     return (current->link).next;
   };
 
-  void Print();                 /* debugging use only */
+  void Print(); /* debugging use only */
 
 private:
   Queue<Token> m_nameList;
@@ -152,24 +163,28 @@ private:
 class Rule
 {
 public:
-  TokenList * tokenList;
+  TokenList *tokenList;
 
-  inline TSFileNameT getFiletype()
+  inline TSFileNameT
+  getFiletype()
   {
     return m_filetype;
   };
   void setRuleStr(const char *);
-  inline char *getRuleStr()
+  inline char *
+  getRuleStr()
   {
     return m_ruleStr;
   };
   void setComment(const char *);
-  inline char *getComment()
+  inline char *
+  getComment()
   {
     return m_comment;
   };
   void setErrorHint(const char *);
-  inline char *getErrorHint()
+  inline char *
+  getErrorHint()
   {
     return m_errorHint;
   };
@@ -180,8 +195,8 @@ public:
   TokenList *parse(const char *buf, TSFileNameT filetype);
 
   LINK(Rule, link);
-private:
 
+private:
   TSFileNameT m_filetype;
   char *m_filename;
   char *m_ruleStr;
@@ -189,7 +204,8 @@ private:
   char *m_errorHint;
 
   TokenList *cacheParse(char *rule, unsigned short minNumToken = MIN_CONFIG_TOKEN, unsigned short maxNumToken = MAX_CONFIG_TOKEN);
-  TokenList *congestionParse(char *rule, unsigned short minNumToken = MIN_CONFIG_TOKEN, unsigned short maxNumToken = MAX_CONFIG_TOKEN);
+  TokenList *congestionParse(char *rule, unsigned short minNumToken = MIN_CONFIG_TOKEN,
+                             unsigned short maxNumToken = MAX_CONFIG_TOKEN);
   TokenList *icpParse(char *rule, unsigned short minNumToken = MIN_CONFIG_TOKEN, unsigned short maxNumToken = MAX_CONFIG_TOKEN);
   TokenList *parentParse(char *rule);
   TokenList *remapParse(char *rule);
@@ -220,9 +236,7 @@ private:
  ***************************************************************************/
 class RuleList
 {
-
 public:
-
   RuleList();
   ~RuleList();
 
@@ -231,45 +245,53 @@ public:
   /**
    * Queue method
    */
-  inline Rule *first()
+  inline Rule *
+  first()
   {
     return m_lineList.head;
   }
-  inline Rule *last()
+  inline Rule *
+  last()
   {
     return m_lineList.tail;
   }
-  inline void enqueue(Rule * entry)
+  inline void
+  enqueue(Rule *entry)
   {
     if (!entry->getComment()) {
       length++;
     }
     m_lineList.enqueue(entry);
   }
-  inline Rule *dequeue()
+  inline Rule *
+  dequeue()
   {
     length--;
-    return (Rule *) m_lineList.dequeue();
+    return (Rule *)m_lineList.dequeue();
   }
   /**
    * Stack method
    */
-  inline Rule *top()
+  inline Rule *
+  top()
   {
     return m_lineList.tail;
   }
-  inline Rule *bottom()
+  inline Rule *
+  bottom()
   {
     return m_lineList.head;
   }
-  inline void push(Rule * entry)
+  inline void
+  push(Rule *entry)
   {
     if (!entry->getComment()) {
       length++;
     }
     m_lineList.push(entry);
   }
-  inline Rule *pop()
+  inline Rule *
+  pop()
   {
     length--;
     return m_lineList.pop();
@@ -277,15 +299,17 @@ public:
   /**
    * General method
    */
-  inline Rule *next(Rule * current)
+  inline Rule *
+  next(Rule *current)
   {
     return (current->link).next;
   }
-  inline void insert(Rule * newNode, Rule * current)
+  inline void
+  insert(Rule *newNode, Rule *current)
   {
     m_lineList.insert(newNode, current);
   }
-  void Print();                 /* debugging use only */
+  void Print(); /* debugging use only */
   void parse(char *buf, TSFileNameT filetype);
   void parse(char *buf, const char *filename);
 
@@ -298,7 +322,7 @@ private:
 /*****************************************************************************************
  * General Routines
  *****************************************************************************************/
-//char *strtrim(char *);
+// char *strtrim(char *);
 const char *strtrim(const char *, char chr = ' ');
 
 #endif /* _GENERIC_PARSER_H_ */

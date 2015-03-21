@@ -48,83 +48,79 @@ register_net_stats()
   //
   // Register statistics
   //
-  RecRegisterRawStat(net_rsb, RECT_PROCESS, "proxy.process.net.net_handler_run",
-                     RECD_INT, RECP_PERSISTENT, (int) net_handler_run_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(net_rsb, RECT_PROCESS, "proxy.process.net.net_handler_run", RECD_INT, RECP_PERSISTENT,
+                     (int)net_handler_run_stat, RecRawStatSyncSum);
   NET_CLEAR_DYN_STAT(net_handler_run_stat);
 
-  RecRegisterRawStat(net_rsb, RECT_PROCESS, "proxy.process.net.read_bytes",
-                     RECD_INT, RECP_PERSISTENT, (int) net_read_bytes_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(net_rsb, RECT_PROCESS, "proxy.process.net.read_bytes", RECD_INT, RECP_PERSISTENT, (int)net_read_bytes_stat,
+                     RecRawStatSyncSum);
 
-  RecRegisterRawStat(net_rsb, RECT_PROCESS, "proxy.process.net.write_bytes",
-                     RECD_INT, RECP_PERSISTENT, (int) net_write_bytes_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(net_rsb, RECT_PROCESS, "proxy.process.net.write_bytes", RECD_INT, RECP_PERSISTENT, (int)net_write_bytes_stat,
+                     RecRawStatSyncSum);
 
-  RecRegisterRawStat(net_rsb, RECT_PROCESS, "proxy.process.net.connections_currently_open",
-                     RECD_INT, RECP_NON_PERSISTENT, (int) net_connections_currently_open_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(net_rsb, RECT_PROCESS, "proxy.process.net.connections_currently_open", RECD_INT, RECP_NON_PERSISTENT,
+                     (int)net_connections_currently_open_stat, RecRawStatSyncSum);
   NET_CLEAR_DYN_STAT(net_connections_currently_open_stat);
 
-  RecRegisterRawStat(net_rsb, RECT_PROCESS, "proxy.process.net.accepts_currently_open",
-                     RECD_INT, RECP_NON_PERSISTENT, (int) net_accepts_currently_open_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(net_rsb, RECT_PROCESS, "proxy.process.net.accepts_currently_open", RECD_INT, RECP_NON_PERSISTENT,
+                     (int)net_accepts_currently_open_stat, RecRawStatSyncSum);
   NET_CLEAR_DYN_STAT(net_accepts_currently_open_stat);
 
-  RecRegisterRawStat(net_rsb, RECT_PROCESS, "proxy.process.net.calls_to_readfromnet",
-                     RECD_INT, RECP_PERSISTENT, (int) net_calls_to_readfromnet_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(net_rsb, RECT_PROCESS, "proxy.process.net.calls_to_readfromnet", RECD_INT, RECP_PERSISTENT,
+                     (int)net_calls_to_readfromnet_stat, RecRawStatSyncSum);
   NET_CLEAR_DYN_STAT(net_calls_to_readfromnet_stat);
 
-  RecRegisterRawStat(net_rsb, RECT_PROCESS, "proxy.process.net.calls_to_readfromnet_afterpoll",
-                     RECD_INT, RECP_PERSISTENT, (int) net_calls_to_readfromnet_afterpoll_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(net_rsb, RECT_PROCESS, "proxy.process.net.calls_to_readfromnet_afterpoll", RECD_INT, RECP_PERSISTENT,
+                     (int)net_calls_to_readfromnet_afterpoll_stat, RecRawStatSyncSum);
   NET_CLEAR_DYN_STAT(net_calls_to_readfromnet_afterpoll_stat);
 
-  RecRegisterRawStat(net_rsb, RECT_PROCESS, "proxy.process.net.calls_to_read",
-                     RECD_INT, RECP_PERSISTENT, (int) net_calls_to_read_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(net_rsb, RECT_PROCESS, "proxy.process.net.calls_to_read", RECD_INT, RECP_PERSISTENT,
+                     (int)net_calls_to_read_stat, RecRawStatSyncSum);
   NET_CLEAR_DYN_STAT(net_calls_to_read_stat);
 
-  RecRegisterRawStat(net_rsb, RECT_PROCESS, "proxy.process.net.calls_to_read_nodata",
-                     RECD_INT, RECP_PERSISTENT, (int) net_calls_to_read_nodata_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(net_rsb, RECT_PROCESS, "proxy.process.net.calls_to_read_nodata", RECD_INT, RECP_PERSISTENT,
+                     (int)net_calls_to_read_nodata_stat, RecRawStatSyncSum);
   NET_CLEAR_DYN_STAT(net_calls_to_read_nodata_stat);
 
-  RecRegisterRawStat(net_rsb, RECT_PROCESS, "proxy.process.net.calls_to_writetonet",
-                     RECD_INT, RECP_PERSISTENT, (int) net_calls_to_writetonet_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(net_rsb, RECT_PROCESS, "proxy.process.net.calls_to_writetonet", RECD_INT, RECP_PERSISTENT,
+                     (int)net_calls_to_writetonet_stat, RecRawStatSyncSum);
   NET_CLEAR_DYN_STAT(net_calls_to_writetonet_stat);
 
-  RecRegisterRawStat(net_rsb, RECT_PROCESS, "proxy.process.net.calls_to_writetonet_afterpoll",
-                     RECD_INT, RECP_PERSISTENT, (int) net_calls_to_writetonet_afterpoll_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(net_rsb, RECT_PROCESS, "proxy.process.net.calls_to_writetonet_afterpoll", RECD_INT, RECP_PERSISTENT,
+                     (int)net_calls_to_writetonet_afterpoll_stat, RecRawStatSyncSum);
   NET_CLEAR_DYN_STAT(net_calls_to_writetonet_afterpoll_stat);
 
-  RecRegisterRawStat(net_rsb, RECT_PROCESS, "proxy.process.net.calls_to_write",
-                     RECD_INT, RECP_PERSISTENT, (int) net_calls_to_write_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(net_rsb, RECT_PROCESS, "proxy.process.net.calls_to_write", RECD_INT, RECP_PERSISTENT,
+                     (int)net_calls_to_write_stat, RecRawStatSyncSum);
   NET_CLEAR_DYN_STAT(net_calls_to_write_stat);
 
-  RecRegisterRawStat(net_rsb, RECT_PROCESS, "proxy.process.net.calls_to_write_nodata",
-                     RECD_INT, RECP_PERSISTENT, (int) net_calls_to_write_nodata_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(net_rsb, RECT_PROCESS, "proxy.process.net.calls_to_write_nodata", RECD_INT, RECP_PERSISTENT,
+                     (int)net_calls_to_write_nodata_stat, RecRawStatSyncSum);
   NET_CLEAR_DYN_STAT(net_calls_to_write_nodata_stat);
 
-  RecRegisterRawStat(net_rsb, RECT_PROCESS, "proxy.process.socks.connections_successful",
-                     RECD_INT, RECP_PERSISTENT, (int) socks_connections_successful_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(net_rsb, RECT_PROCESS, "proxy.process.socks.connections_successful", RECD_INT, RECP_PERSISTENT,
+                     (int)socks_connections_successful_stat, RecRawStatSyncSum);
 
-  RecRegisterRawStat(net_rsb, RECT_PROCESS, "proxy.process.socks.connections_unsuccessful",
-                     RECD_INT, RECP_PERSISTENT, (int) socks_connections_unsuccessful_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(net_rsb, RECT_PROCESS, "proxy.process.socks.connections_unsuccessful", RECD_INT, RECP_PERSISTENT,
+                     (int)socks_connections_unsuccessful_stat, RecRawStatSyncSum);
 
-  RecRegisterRawStat(net_rsb, RECT_PROCESS, "proxy.process.socks.connections_currently_open",
-                     RECD_INT, RECP_NON_PERSISTENT, (int) socks_connections_currently_open_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(net_rsb, RECT_PROCESS, "proxy.process.socks.connections_currently_open", RECD_INT, RECP_NON_PERSISTENT,
+                     (int)socks_connections_currently_open_stat, RecRawStatSyncSum);
   NET_CLEAR_DYN_STAT(socks_connections_currently_open_stat);
 
-  RecRegisterRawStat(net_rsb, RECT_PROCESS, "proxy.process.net.inactivity_cop_lock_acquire_failure",
-                     RECD_INT, RECP_PERSISTENT, (int) inactivity_cop_lock_acquire_failure_stat,
-                     RecRawStatSyncSum);
+  RecRegisterRawStat(net_rsb, RECT_PROCESS, "proxy.process.net.inactivity_cop_lock_acquire_failure", RECD_INT, RECP_PERSISTENT,
+                     (int)inactivity_cop_lock_acquire_failure_stat, RecRawStatSyncSum);
 
-  RecRegisterRawStat(net_rsb, RECT_PROCESS, "proxy.process.net.dynamic_keep_alive_timeout_in_total",
-                     RECD_INT, RECP_NON_PERSISTENT, (int) keep_alive_lru_timeout_total_stat,
-                     RecRawStatSyncSum);
+  RecRegisterRawStat(net_rsb, RECT_PROCESS, "proxy.process.net.dynamic_keep_alive_timeout_in_total", RECD_INT, RECP_NON_PERSISTENT,
+                     (int)keep_alive_lru_timeout_total_stat, RecRawStatSyncSum);
   NET_CLEAR_DYN_STAT(keep_alive_lru_timeout_total_stat);
 
-  RecRegisterRawStat(net_rsb, RECT_PROCESS, "proxy.process.net.dynamic_keep_alive_timeout_in_count",
-                     RECD_INT, RECP_NON_PERSISTENT, (int) keep_alive_lru_timeout_count_stat,
-                     RecRawStatSyncSum);
+  RecRegisterRawStat(net_rsb, RECT_PROCESS, "proxy.process.net.dynamic_keep_alive_timeout_in_count", RECD_INT, RECP_NON_PERSISTENT,
+                     (int)keep_alive_lru_timeout_count_stat, RecRawStatSyncSum);
   NET_CLEAR_DYN_STAT(keep_alive_lru_timeout_count_stat);
 
-  RecRegisterRawStat(net_rsb, RECT_PROCESS, "proxy.process.net.default_inactivity_timeout_applied",
-                     RECD_INT, RECP_NON_PERSISTENT, (int) default_inactivity_timeout_stat,
-                     RecRawStatSyncSum);
+  RecRegisterRawStat(net_rsb, RECT_PROCESS, "proxy.process.net.default_inactivity_timeout_applied", RECD_INT, RECP_NON_PERSISTENT,
+                     (int)default_inactivity_timeout_stat, RecRawStatSyncSum);
   NET_CLEAR_DYN_STAT(default_inactivity_timeout_stat);
 }
 
@@ -137,7 +133,7 @@ ink_net_init(ModuleVersion version)
   if (!init_called) {
     // do one time stuff
     // create a stat block for NetStats
-    net_rsb = RecAllocateRawStatBlock((int) Net_Stat_Count);
+    net_rsb = RecAllocateRawStatBlock((int)Net_Stat_Count);
     configure_net();
     register_net_stats();
   }

@@ -47,7 +47,6 @@ UDPClientTestInit()
   fprintf(fp, "UDPClient Init called\n");
   fclose(fp);
   INKUDPBind(cont, ip, 9999);
-
 }
 
 int
@@ -67,18 +66,17 @@ UDPClient_handle_callbacks(TSCont cont, TSEvent event, void *e)
   fp = fopen("UDPAPI.dbg", "a+");
 
   switch (event) {
-
   case TS_NET_EVENT_DATAGRAM_OPEN:
-    UDPConn = (INKUDPConn) e;
+    UDPConn = (INKUDPConn)e;
     INKUDPRecvFrom(cont, UDPConn);
     INKUDPSendTo(cont, UDPConn, destIp, destPort, sendBuff, strlen(sendBuff));
-    fprintf(fp, "sent %s\n.", (const char *) sendBuff);
+    fprintf(fp, "sent %s\n.", (const char *)sendBuff);
 
     break;
 
   case TS_NET_EVENT_DATAGRAM_READ_READY:
     fprintf(fp, "read ready called\n.");
-    packetQueue = (INKUDPacketQueue) e;
+    packetQueue = (INKUDPacketQueue)e;
 
     while ((packet = INKUDPPacketGet(packetQueue)) != NULL) {
       recvBuffBlock = INKUDPPacketBufferBlockGet(packet);
@@ -89,12 +87,11 @@ UDPClient_handle_callbacks(TSCont cont, TSEvent event, void *e)
       buf = TSIOBufferBlockReadStart(recvBuffBlock, reader, &avail);
 
       if (avail > 0) {
-
         for (int i = 0; i < avail; i++)
           fprintf(fp, "%c", *(buf + i));
 
 
-        memcpy((char *) &recvBuff + total_len, buf, avail);
+        memcpy((char *)&recvBuff + total_len, buf, avail);
         TSIOBufferReaderConsume(reader, avail);
         total_len += avail;
       }
@@ -109,7 +106,6 @@ UDPClient_handle_callbacks(TSCont cont, TSEvent event, void *e)
 
   case TS_NET_EVENT_DATAGRAM_WRITE_COMPLETE:
     break;
-
   }
   fclose(fp);
   return TS_EVENT_CONTINUE;

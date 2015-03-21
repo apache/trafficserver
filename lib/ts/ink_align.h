@@ -25,7 +25,7 @@
 #ifndef _ink_align_h_
 #define _ink_align_h_
 
-# include "ink_time.h"
+#include "ink_time.h"
 
 union Alias32 {
   uint8_t byte[4];
@@ -48,8 +48,7 @@ union Alias64 {
 
 #define INK_MIN_ALIGN 8
 /* INK_ALIGN() is only to be used to align on a power of 2 boundary */
-#define INK_ALIGN(size, boundary) \
-    (((size) + ((boundary) - 1)) & ~((boundary) - 1))
+#define INK_ALIGN(size, boundary) (((size) + ((boundary)-1)) & ~((boundary)-1))
 
 /** Default alignment */
 #define INK_ALIGN_DEFAULT(size) INK_ALIGN(size, INK_MIN_ALIGN)
@@ -60,13 +59,13 @@ union Alias64 {
 static inline void *
 align_pointer_forward(const void *pointer_, size_t alignment)
 {
-  char *pointer = (char *) pointer_;
+  char *pointer = (char *)pointer_;
   //
   // Round up alignment..
   //
-  pointer = (char *) INK_ALIGN((ptrdiff_t) pointer, alignment);
+  pointer = (char *)INK_ALIGN((ptrdiff_t)pointer, alignment);
 
-  return (void *) pointer;
+  return (void *)pointer;
 }
 
 //
@@ -76,8 +75,8 @@ align_pointer_forward(const void *pointer_, size_t alignment)
 static inline void *
 align_pointer_forward_and_zero(const void *pointer_, size_t alignment)
 {
-  char *pointer = (char *) pointer_;
-  char *aligned = (char *) INK_ALIGN((ptrdiff_t) pointer, alignment);
+  char *pointer = (char *)pointer_;
+  char *aligned = (char *)INK_ALIGN((ptrdiff_t)pointer, alignment);
   //
   // Fill the skippings..
   //
@@ -86,7 +85,7 @@ align_pointer_forward_and_zero(const void *pointer_, size_t alignment)
     pointer++;
   }
 
-  return (void *) aligned;
+  return (void *)aligned;
 }
 
 //

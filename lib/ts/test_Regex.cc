@@ -34,17 +34,12 @@ typedef struct {
 } test_t;
 
 static const test_t test_data[] = {
-  {"^foo", {{"foo", true},
-            {"bar", false},
-            {"foobar", true},
-            {"foobarbaz", true}}},
-  {"foo$", {{"foo", true},
-            {"bar", false},
-            {"foobar", false},
-            {"foobarbaz", false}}},
+  {"^foo", {{"foo", true}, {"bar", false}, {"foobar", true}, {"foobarbaz", true}}},
+  {"foo$", {{"foo", true}, {"bar", false}, {"foobar", false}, {"foobarbaz", false}}},
 };
 
-static void test_basic()
+static void
+test_basic()
 {
   for (unsigned int i = 0; i < countof(test_data); i++) {
     Regex r;
@@ -58,7 +53,8 @@ static void test_basic()
   }
 }
 
-int main(int /* argc ATS_UNUSED */, char **/* argv ATS_UNUSED */)
+int
+main(int /* argc ATS_UNUSED */, char ** /* argv ATS_UNUSED */)
 {
   test_basic();
   printf("test_Regex PASSED\n");

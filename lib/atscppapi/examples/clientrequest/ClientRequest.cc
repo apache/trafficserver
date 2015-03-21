@@ -28,16 +28,20 @@ using std::endl;
 using std::list;
 using std::string;
 
-class GlobalHookPlugin : public GlobalPlugin {
+class GlobalHookPlugin : public GlobalPlugin
+{
 public:
-  GlobalHookPlugin() {
+  GlobalHookPlugin()
+  {
     registerHook(HOOK_READ_REQUEST_HEADERS_PRE_REMAP);
     registerHook(HOOK_READ_REQUEST_HEADERS_POST_REMAP);
     registerHook(HOOK_SEND_REQUEST_HEADERS);
   }
 
 
-  void handleReadRequestHeadersPreRemap(Transaction &transaction) {
+  void
+  handleReadRequestHeadersPreRemap(Transaction &transaction)
+  {
     cout << "Hello from handleReadRequesHeadersPreRemap!" << endl;
 
     ClientRequest &client_request = transaction.getClientRequest();
@@ -61,7 +65,9 @@ public:
   }
 
 
-  void handleReadRequestHeadersPostRemap(Transaction &transaction) {
+  void
+  handleReadRequestHeadersPostRemap(Transaction &transaction)
+  {
     cout << "Hello from handleReadRequesHeadersPostRemap!" << endl;
 
     ClientRequest &client_request = transaction.getClientRequest();
@@ -79,7 +85,7 @@ public:
     Headers &client_request_headers = client_request.getHeaders();
 
     Headers::iterator ii = client_request_headers.find("AccepT-EncodinG");
-    if(ii != client_request_headers.end()) {
+    if (ii != client_request_headers.end()) {
       cout << "Deleting accept-encoding header" << endl;
       client_request_headers.erase("AccepT-EnCoDing"); // Case Insensitive
     }
@@ -92,8 +98,8 @@ public:
     cout << "Adding a new accept type accept header" << endl;
     client_request_headers.append("accept", "text/blah");
 
-    for (Headers::iterator header_iter = client_request_headers.begin(),
-           header_end = client_request_headers.end(); header_iter != header_end; ++header_iter) {
+    for (Headers::iterator header_iter = client_request_headers.begin(), header_end = client_request_headers.end();
+         header_iter != header_end; ++header_iter) {
       cout << (*header_iter).str() << endl;
     }
 
@@ -105,13 +111,17 @@ public:
      */
     cout << "Joining on a non-existant header gives: " << client_request_headers.values("i_dont_exist") << endl;
     cout << "Joining the accept encoding header gives: " << client_request_headers.values("accept-encoding") << endl;
-    cout << "Joining the accept encoding header with space gives: " << client_request_headers.values("accept-encoding", ' ') << endl;
-    cout << "Joining the accept encoding header with long join string gives: " << client_request_headers.values("accept-encoding", "--join-string--") << endl;
+    cout << "Joining the accept encoding header with space gives: " << client_request_headers.values("accept-encoding", ' ')
+         << endl;
+    cout << "Joining the accept encoding header with long join string gives: "
+         << client_request_headers.values("accept-encoding", "--join-string--") << endl;
 
     transaction.resume();
   }
 
-  void handleSendRequestHeaders(Transaction &transaction) {
+  void
+  handleSendRequestHeaders(Transaction &transaction)
+  {
     cout << "Hello from handleSendRequestHeaders!" << endl;
     cout << "---------------------IP INFORMATION-----------------" << endl;
     cout << "Server Address: " << utils::getIpPortString(transaction.getServerAddress()) << endl;
@@ -120,9 +130,10 @@ public:
     cout << "Next Hop Address: " << utils::getIpPortString(transaction.getNextHopAddress()) << endl;
     transaction.resume();
   }
-
 };
 
-void TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED) {
+void
+TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
+{
   new GlobalHookPlugin();
 }

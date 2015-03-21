@@ -48,7 +48,7 @@
 #include <sys/stat.h>
 
 static void
-add_field(HttpHeader * h, const char *name, const char *value)
+add_field(HttpHeader *h, const char *name, const char *value)
 {
   h->m_header_fields.set_raw_header_field(name, value);
 }
@@ -59,7 +59,7 @@ add_field(HttpHeader * h, const char *name, const char *value)
 //
 /////////////////////////////////////////////////////////////
 static void
-test_add_fields(HttpHeader * h)
+test_add_fields(HttpHeader *h)
 {
   char long_accept_header[2048];
   memset(long_accept_header, 'B', sizeof(long_accept_header));
@@ -130,8 +130,12 @@ void
 test_url()
 {
   test_url_parse("http://charm.example.com  ");
-  test_url_parse
-    ("http://webchat16.wbs.net:6666?private=herbalessences&color=4&volume=0&tagline=&picture=&home_page=hi@there.&ignore=edheldinruth+taz0069+speezman&back=&Room=Hot_Tub&handle=cagou67&mu=893e159ef7fe0ddb022c655cc1c30abd33d4ae6d90d22f8a&last_read_para=&npo=&fsection=input&chatmode=push&reqtype=input&InputText=Sweetie%2C+do+you+have+time+to+go+to+a+private+room..if+not+I%27m+just+going+to+have+to+change+to+normal+mode...let+me+know%3F%3F/");
+  test_url_parse("http://"
+                 "webchat16.wbs.net:6666?private=herbalessences&color=4&volume=0&tagline=&picture=&home_page=hi@there.&ignore="
+                 "edheldinruth+taz0069+speezman&back=&Room=Hot_Tub&handle=cagou67&mu="
+                 "893e159ef7fe0ddb022c655cc1c30abd33d4ae6d90d22f8a&last_read_para=&npo=&fsection=input&chatmode=push&reqtype=input&"
+                 "InputText=Sweetie%2C+do+you+have+time+to+go+to+a+private+room..if+not+I%27m+just+going+to+have+to+change+to+"
+                 "normal+mode...let+me+know%3F%3F/");
 
   return;
 }
@@ -161,9 +165,14 @@ test_header_tokenizer_run(const char *buf, HttpMessageType_t message_type)
 void
 test_header_tokenizer()
 {
-  test_header_tokenizer_run
-    ("GET http://webchat16.wbs.net:6666?private=herbalessences&color=4&volume=0&tagline=&picture=&home_page=hi@there.&ignore=edheldinruth+taz0069+speezman&back=&Room=Hot_Tub&handle=cagou67&mu=893e159ef7fe0ddb022c655cc1c30abd33d4ae6d90d22f8a&last_read_para=&npo=&fsection=input&chatmode=push&reqtype=input&InputText=Sweetie%2C+do+you+have+time+to+go+to+a+private+room..if+not+I%27m+just+going+to+have+to+change+to+normal+mode...let+me+know%3F%3F/ HTTP/1.0\r\n",
-     HTTP_MESSAGE_TYPE_REQUEST);
+  test_header_tokenizer_run("GET "
+                            "http://"
+                            "webchat16.wbs.net:6666?private=herbalessences&color=4&volume=0&tagline=&picture=&home_page=hi@there.&"
+                            "ignore=edheldinruth+taz0069+speezman&back=&Room=Hot_Tub&handle=cagou67&mu="
+                            "893e159ef7fe0ddb022c655cc1c30abd33d4ae6d90d22f8a&last_read_para=&npo=&fsection=input&chatmode=push&"
+                            "reqtype=input&InputText=Sweetie%2C+do+you+have+time+to+go+to+a+private+room..if+not+I%27m+just+going+"
+                            "to+have+to+change+to+normal+mode...let+me+know%3F%3F/ HTTP/1.0\r\n",
+                            HTTP_MESSAGE_TYPE_REQUEST);
 
   return;
 }

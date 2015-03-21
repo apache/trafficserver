@@ -36,8 +36,9 @@
 // This plugin supports both global mode as well as per-remap mode activation
 //////////////////////////////////////////////////////////////////////////////////
 
-#define UNUSED __attribute__ ((unused))
-static char UNUSED rcsId__header_normalize_cc[] = "@(#) $Id: header_normalize.cc 218 2014-11-11 01:29:16Z sudheerv $ built on " __DATE__ " " __TIME__;
+#define UNUSED __attribute__((unused))
+static char UNUSED rcsId__header_normalize_cc[] =
+  "@(#) $Id: header_normalize.cc 218 2014-11-11 01:29:16Z sudheerv $ built on " __DATE__ " " __TIME__;
 
 
 #include <sys/time.h>
@@ -56,9 +57,9 @@ using namespace std;
 ///////////////////////////////////////////////////////////////////////////////
 // Some constants.
 //
-const char* PLUGIN_NAME = "header_normalize";
+const char *PLUGIN_NAME = "header_normalize";
 
-std::map<std::string, std::string, std::less<std::string> >  hdrMap;
+std::map<std::string, std::string, std::less<std::string> > hdrMap;
 
 static void
 buildHdrMap()
@@ -153,8 +154,8 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
     return TS_ERROR;
   }
   if (api_info->tsremap_version < TSREMAP_VERSION) {
-    snprintf(errbuf, errbuf_size - 1, "[tsremap_init] - Incorrect API version %ld.%ld",
-             api_info->tsremap_version >> 16, (api_info->tsremap_version & 0xffff));
+    snprintf(errbuf, errbuf_size - 1, "[tsremap_init] - Incorrect API version %ld.%ld", api_info->tsremap_version >> 16,
+             (api_info->tsremap_version & 0xffff));
     return TS_ERROR;
   }
   buildHdrMap();
@@ -179,8 +180,7 @@ TSRemapDelteInstance(void * /* ih */)
 static int
 read_request_hook(TSCont /* contp */, TSEvent /* event */, void *edata)
 {
-
-  TSHttpTxn rh = (TSHttpTxn) edata;
+  TSHttpTxn rh = (TSHttpTxn)edata;
 
   TSMLoc hdr, next_hdr;
   TSMBuffer hdr_bufp;
@@ -194,19 +194,19 @@ read_request_hook(TSCont /* contp */, TSEvent /* event */, void *edata)
 
     for (int i = 0; i < n_mime_headers; ++i) {
       if (hdr == NULL)
-	break;
+        break;
       next_hdr = TSMimeHdrFieldNext(hdr_bufp, req_hdrs, hdr);
       int old_hdr_len;
-      const char* old_hdr_name = TSMimeHdrFieldNameGet(hdr_bufp, req_hdrs, hdr, &old_hdr_len);
+      const char *old_hdr_name = TSMimeHdrFieldNameGet(hdr_bufp, req_hdrs, hdr, &old_hdr_len);
 
       // TSMimeHdrFieldNameGet returns the MIME_FIELD_NAME
       // for all MIME hdrs, which is always in Camel Case
       if (islower(old_hdr_name[0])) {
-         TSDebug(PLUGIN_NAME, "*** non MIME Hdr %s, leaving it for now", old_hdr_name);
+        TSDebug(PLUGIN_NAME, "*** non MIME Hdr %s, leaving it for now", old_hdr_name);
 
-         TSHandleMLocRelease(hdr_bufp, req_hdrs, hdr);
-         hdr = next_hdr;
-	 continue;
+        TSHandleMLocRelease(hdr_bufp, req_hdrs, hdr);
+        hdr = next_hdr;
+        continue;
       }
 
       int hdr_value_len = 0;
@@ -215,7 +215,7 @@ read_request_hook(TSCont /* contp */, TSEvent /* event */, void *edata)
       // hdr returned by TSMimeHdrFieldNameGet is already
       // in camel case, just destroy the lowercase spdy header
       // and replace it with TSMimeHdrFieldNameGet
-      char* new_hdr_name = (char*)old_hdr_name;
+      char *new_hdr_name = (char *)old_hdr_name;
       if (new_hdr_name) {
         TSMLoc new_hdr_loc;
         TSReturnCode rval = TSMimeHdrFieldCreateNamed(hdr_bufp, req_hdrs, new_hdr_name, old_hdr_len, &new_hdr_loc);
@@ -229,7 +229,7 @@ read_request_hook(TSCont /* contp */, TSEvent /* event */, void *edata)
 
         TSMimeHdrFieldDestroy(hdr_bufp, req_hdrs, hdr);
       } else {
-          TSDebug(PLUGIN_NAME, "*** can't find hdr %s in hdrMap", old_hdr_name);
+        TSDebug(PLUGIN_NAME, "*** can't find hdr %s in hdrMap", old_hdr_name);
       }
 
       TSHandleMLocRelease(hdr_bufp, req_hdrs, hdr);
@@ -258,7 +258,7 @@ TSPluginInit(int /* argc */, const char * /* argv[] */)
 // This is the main "entry" point for the plugin, called for every request.
 //
 TSRemapStatus
-TSRemapDoRemap (void * /* ih */, TSHttpTxn rh, TSRemapRequestInfo * /* rri */)
+TSRemapDoRemap(void * /* ih */, TSHttpTxn rh, TSRemapRequestInfo * /* rri */)
 {
   read_request_hook(NULL, TS_EVENT_HTTP_READ_REQUEST_HDR, rh);
   return TSREMAP_DID_REMAP;

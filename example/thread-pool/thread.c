@@ -22,7 +22,6 @@
  */
 
 
-
 #include <stdio.h>
 #include <pthread.h>
 #include "ts/ts.h"
@@ -30,7 +29,7 @@
 #include "thread.h"
 #include "ink_defs.h"
 
-#define DBGTAG  "xthread"
+#define DBGTAG "xthread"
 
 struct timespec tp1;
 struct timespec tp2;
@@ -42,16 +41,16 @@ static pthread_mutex_t cond_mutex;
 
 
 void
-init_queue(Queue * q)
+init_queue(Queue *q)
 {
-  q->head = NULL;               /* Pointer on head cell */
-  q->tail = NULL;               /* Pointer on tail cell */
-  q->nb_elem = 0;               /* Nb elem in the queue */
+  q->head = NULL; /* Pointer on head cell */
+  q->tail = NULL; /* Pointer on tail cell */
+  q->nb_elem = 0; /* Nb elem in the queue */
   q->mutex = TSMutexCreate();
 }
 
 void
-add_to_queue(Queue * q, void *data)
+add_to_queue(Queue *q, void *data)
 {
   Cell *new_cell;
   int n;
@@ -86,14 +85,13 @@ add_to_queue(Queue * q, void *data)
 }
 
 void *
-remove_from_queue(Queue * q)
+remove_from_queue(Queue *q)
 {
   void *data = NULL;
   Cell *remove_cell;
 
   TSMutexLock(q->mutex);
   if (q->nb_elem > 0) {
-
     remove_cell = q->head;
     TSAssert(remove_cell->magic == MAGIC_ALIVE);
 
@@ -110,14 +108,13 @@ remove_from_queue(Queue * q)
     remove_cell->magic = MAGIC_DEAD;
     TSfree(remove_cell);
     q->nb_elem--;
-
   }
   TSMutexUnlock(q->mutex);
   return data;
 }
 
 int
-get_nbelem_queue(Queue * q)
+get_nbelem_queue(Queue *q)
 {
   int nb;
   TSMutexLock(q->mutex);
@@ -141,7 +138,7 @@ job_create(TSCont contp, ExecFunc func, void *data)
 }
 
 void
-job_delete(Job * job)
+job_delete(Job *job)
 {
   job->magic = MAGIC_DEAD;
   TSfree(job);
@@ -187,4 +184,3 @@ thread_loop(void *arg ATS_UNUSED)
     }
   }
 }
-

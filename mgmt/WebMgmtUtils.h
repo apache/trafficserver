@@ -72,9 +72,9 @@ bool varStrFromName(const char *varName, char *bufVal, int bufLen);
 bool varSetFromStr(const char *varName, const char *value);
 
 // Converts where applicable to specified type
-bool varIntFromName(const char *varName, RecInt * value);
-bool varFloatFromName(const char *varName, RecFloat * value);
-bool varCounterFromName(const char *varName, RecCounter * value);
+bool varIntFromName(const char *varName, RecInt *value);
+bool varFloatFromName(const char *varName, RecFloat *value);
+bool varCounterFromName(const char *varName, RecCounter *value);
 bool varDataFromName(RecDataT varType, const char *varName, RecData *value);
 
 // No conversion done.  varName must represnt a value of the appropriate
@@ -104,7 +104,7 @@ int setHostnameVar();
 void appendDefaultDomain(char *hostname, int bufLength);
 
 // Some scaling constants
-#define BYTES_TO_MB_SCALE (1/(1024*1024.0))
+#define BYTES_TO_MB_SCALE (1 / (1024 * 1024.0))
 #define MBIT_TO_KBIT_SCALE (1000.0)
 #define SECOND_TO_MILLISECOND_SCALE (1000.0)
 #define PCT_TO_INTPCT_SCALE (100.0)
@@ -118,7 +118,7 @@ bool recordRestartCheck(const char *varName);
 void fileCheckSum(char *buffer, int size, char *checksum, const size_t checksumSize);
 
 // file management
-int getFilesInDirectory(char *managedDir, ExpandingArray * fileList);
+int getFilesInDirectory(char *managedDir, ExpandingArray *fileList);
 char *newPathString(const char *s1, const char *s2);
 
 #endif

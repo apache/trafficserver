@@ -27,16 +27,20 @@
 #include <atscppapi/HttpVersion.h>
 #include <atscppapi/HttpStatus.h>
 
-namespace atscppapi {
-
+namespace atscppapi
+{
 // forward declarations
 struct ResponseState;
-namespace utils { class internal; }
+namespace utils
+{
+  class internal;
+}
 
 /**
  * @brief Encapsulates a response.
  */
-class Response: noncopyable {
+class Response : noncopyable
+{
 public:
   Response();
 
@@ -59,13 +63,13 @@ public:
   Headers &getHeaders() const;
 
   ~Response();
+
 private:
   ResponseState *state_;
   void init(void *hdr_buf, void *hdr_loc);
   friend class Transaction;
   friend class utils::internal;
 };
-
 }
 
 #endif

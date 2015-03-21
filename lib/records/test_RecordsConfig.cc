@@ -30,7 +30,6 @@
 void
 RecordsConfigRegister()
 {
-
   RecRegisterConfigString(RECT_CONFIG, "proxy.config.parse_test_2a", NULL, RECU_DYNAMIC, RECC_NULL, NULL);
   RecRegisterConfigString(RECT_CONFIG, "proxy.config.parse_test_2b", NULL, RECU_DYNAMIC, RECC_NULL, NULL);
   RecRegisterConfigString(RECT_CONFIG, "proxy.config.parse_test_3a", NULL, RECU_DYNAMIC, RECC_NULL, NULL);
@@ -40,12 +39,9 @@ RecordsConfigRegister()
 
   RecRegisterConfigString(RECT_CONFIG, "proxy.config.cb_test_1", "cb_test_1__original", RECU_DYNAMIC, RECC_NULL, NULL);
   RecRegisterConfigString(RECT_CONFIG, "proxy.config.cb_test_2", "cb_test_2__original", RECU_DYNAMIC, RECC_NULL, NULL);
-  RecRegisterConfigString(RECT_CONFIG, "proxy.config.local.cb_test_1", "cb_test_1__original", RECU_DYNAMIC, RECC_NULL,
-                          NULL);
-  RecRegisterConfigString(RECT_CONFIG, "proxy.config.local.cb_test_2", "cb_test_2__original", RECU_DYNAMIC, RECC_NULL,
-                          NULL);
-  RecRegisterConfigString(RECT_CONFIG, "proxy.config.local.cb_test_3", "cb_test_3__original", RECU_DYNAMIC, RECC_NULL,
-                          NULL);
+  RecRegisterConfigString(RECT_CONFIG, "proxy.config.local.cb_test_1", "cb_test_1__original", RECU_DYNAMIC, RECC_NULL, NULL);
+  RecRegisterConfigString(RECT_CONFIG, "proxy.config.local.cb_test_2", "cb_test_2__original", RECU_DYNAMIC, RECC_NULL, NULL);
+  RecRegisterConfigString(RECT_CONFIG, "proxy.config.local.cb_test_3", "cb_test_3__original", RECU_DYNAMIC, RECC_NULL, NULL);
   RecRegisterConfigInt(RECT_CONFIG, "proxy.config.link_test_1", 0, RECU_DYNAMIC, RECC_NULL, NULL);
   RecRegisterConfigFloat(RECT_CONFIG, "proxy.config.link_test_2", 0.0f, RECU_DYNAMIC, RECC_NULL, NULL);
   RecRegisterConfigCounter(RECT_CONFIG, "proxy.config.link_test_3", 0, RECU_DYNAMIC, RECC_NULL, NULL);
@@ -56,5 +52,4 @@ RecordsConfigRegister()
   RecRegisterStatInt(RECT_NODE, "proxy.node.cb_test_int", 0, RECP_NON_PERSISTENT);
   RecRegisterStatFloat(RECT_NODE, "proxy.node.cb_test_float", 0.0f, RECP_NON_PERSISTENT);
   RecRegisterStatCounter(RECT_NODE, "proxy.node.cb_test_count", 0, RECP_NON_PERSISTENT);
-
 }

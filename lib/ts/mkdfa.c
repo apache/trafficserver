@@ -27,29 +27,26 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define SIZEOF(t) (sizeof (t) / (sizeof ((t)[0])))
+#define SIZEOF(t) (sizeof(t) / (sizeof((t)[0])))
 
 
 typedef struct _info_t info_t;
 typedef struct _state_t state_t;
 typedef struct _transition_t transition_t;
 
-struct _info_t
-{
+struct _info_t {
   const char *name;
   const char *value;
   int namelen;
 };
 
-struct _state_t
-{
+struct _state_t {
   int num;
   const char *value;
   transition_t *transitions;
 };
 
-struct _transition_t
-{
+struct _transition_t {
   int value;
   state_t *state;
   transition_t *next;
@@ -269,7 +266,7 @@ mkstate()
 {
   state_t *state;
 
-  state = (state_t *) malloc(sizeof(state_t));
+  state = (state_t *)malloc(sizeof(state_t));
   state->num = state_count++;
   state->value = NULL;
   state->transitions = NULL;
@@ -282,7 +279,7 @@ mktransition()
 {
   transition_t *transition;
 
-  transition = (transition_t *) malloc(sizeof(transition_t));
+  transition = (transition_t *)malloc(sizeof(transition_t));
   transition->value = 0;
   transition->state = NULL;
   transition->next = NULL;
@@ -291,7 +288,7 @@ mktransition()
 }
 
 void
-prstate(state_t * state)
+prstate(state_t *state)
 {
   transition_t *transitions;
 
@@ -315,7 +312,7 @@ prstate(state_t * state)
 }
 
 void
-add_states(state_t * state, info_t * info, int pos)
+add_states(state_t *state, info_t *info, int pos)
 {
   transition_t *transitions;
 
@@ -378,7 +375,7 @@ prtable(const char *type, const char *name, int *table, int size)
 }
 
 int
-mkmap(state_t * state)
+mkmap(state_t *state)
 {
   static int count = 1;
 
@@ -401,7 +398,7 @@ mkmap(state_t * state)
 }
 
 void
-mkaccept(state_t * state, const char *defvalue)
+mkaccept(state_t *state, const char *defvalue)
 {
   transition_t *transitions;
 
@@ -418,11 +415,11 @@ mkaccept(state_t * state, const char *defvalue)
 }
 
 void
-mkprefix(state_t * state, char *prefix, int length)
+mkprefix(state_t *state, char *prefix, int length)
 {
   transition_t *transitions;
 
-  prefixtbl[state->num] = (char *) malloc(sizeof(char) * (length + 1));
+  prefixtbl[state->num] = (char *)malloc(sizeof(char) * (length + 1));
   strncpy(prefixtbl[state->num], prefix, length);
   prefixtbl[state->num][length] = '\0';
 
@@ -435,7 +432,7 @@ mkprefix(state_t * state, char *prefix, int length)
 }
 
 int
-checkbase(state_t * state, int base)
+checkbase(state_t *state, int base)
 {
   transition_t *transitions;
 
@@ -450,7 +447,7 @@ checkbase(state_t * state, int base)
 }
 
 void
-mktranstables(state_t * state)
+mktranstables(state_t *state)
 {
   transition_t *transitions;
   int base;
@@ -483,14 +480,14 @@ mktranstables(state_t * state)
 }
 
 void
-mktables(state_t * state, const char *defvalue, int useprefix)
+mktables(state_t *state, const char *defvalue, int useprefix)
 {
   char prefix[1024];
   int char_count;
   int i;
 
   /* make the character map */
-  map = (int *) malloc(sizeof(int) * 256);
+  map = (int *)malloc(sizeof(int) * 256);
   for (i = 0; i < 256; i++)
     map[i] = 0;
 
@@ -500,7 +497,7 @@ mktables(state_t * state, const char *defvalue, int useprefix)
   printf("\n");
 
   /* make the accept state table */
-  accepttbl = (const char **) malloc(sizeof(const char *) * state_count);
+  accepttbl = (const char **)malloc(sizeof(const char *) * state_count);
   for (i = 0; i < state_count; i++)
     accepttbl[i] = NULL;
 
@@ -517,7 +514,7 @@ mktables(state_t * state, const char *defvalue, int useprefix)
 
   /* make the prefix table */
   if (useprefix) {
-    prefixtbl = (char **) malloc(sizeof(char *) * state_count);
+    prefixtbl = (char **)malloc(sizeof(char *) * state_count);
     for (i = 0; i < state_count; i++)
       prefixtbl[i] = NULL;
 
@@ -535,9 +532,9 @@ mktables(state_t * state, const char *defvalue, int useprefix)
 
   /* make the state transition tables */
 
-  basetbl = (int *) malloc(sizeof(int) * state_count);
-  nexttbl = (int *) malloc(sizeof(int) * (state_count + char_count));
-  checktbl = (int *) malloc(sizeof(int) * (state_count + char_count));
+  basetbl = (int *)malloc(sizeof(int) * state_count);
+  nexttbl = (int *)malloc(sizeof(int) * (state_count + char_count));
+  checktbl = (int *)malloc(sizeof(int) * (state_count + char_count));
 
   for (i = 0; i < state_count; i++) {
     basetbl[i] = -1;
@@ -568,7 +565,7 @@ rundfa(const char *buf, int length)
   end = buf + length;
 
   while (buf != end) {
-    ch = map[(int) *buf++];
+    ch = map[(int)*buf++];
 
     tmp = basetbl[state] + ch;
     if (checktbl[tmp] != state)
@@ -580,7 +577,7 @@ rundfa(const char *buf, int length)
 }
 
 void
-mkdfa(info_t * infos, int ninfos, int useprefix, int debug)
+mkdfa(info_t *infos, int ninfos, int useprefix, int debug)
 {
   /*
      static const char *names[] =

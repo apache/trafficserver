@@ -36,7 +36,7 @@ enum MatcherOps {
   MATCH_EQUAL,
   MATCH_LESS_THEN,
   MATCH_GREATER_THEN,
-  MATCH_REGULAR_EXPRESSION
+  MATCH_REGULAR_EXPRESSION,
 };
 
 
@@ -46,11 +46,7 @@ enum MatcherOps {
 class Matcher
 {
 public:
-  explicit Matcher(const MatcherOps op)
-    : _pdata(NULL), _op(op)
-  {
-    TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Matcher");
-  }
+  explicit Matcher(const MatcherOps op) : _pdata(NULL), _op(op) { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Matcher"); }
 
   virtual ~Matcher()
   {
@@ -58,12 +54,25 @@ public:
     free_pdata();
   }
 
-  void set_pdata(void* pdata) { _pdata = pdata; }
-  void* get_pdata() const { return _pdata; }
-  virtual void free_pdata() { TSfree(_pdata); _pdata = NULL; }
+  void
+  set_pdata(void *pdata)
+  {
+    _pdata = pdata;
+  }
+  void *
+  get_pdata() const
+  {
+    return _pdata;
+  }
+  virtual void
+  free_pdata()
+  {
+    TSfree(_pdata);
+    _pdata = NULL;
+  }
 
 protected:
-  void* _pdata;
+  void *_pdata;
   const MatcherOps _op;
 
 private:
@@ -71,39 +80,51 @@ private:
 };
 
 // Template class to match on various types of data
-template<class T>
-class Matchers : public Matcher
+template <class T> class Matchers : public Matcher
 {
 public:
-  explicit Matchers<T>(const MatcherOps op)
-  : Matcher(op)
-  { }
+  explicit Matchers<T>(const MatcherOps op) : Matcher(op) {}
 
   // Getters / setters
-  const T get() const { return _data; };
+  const T
+  get() const
+  {
+    return _data;
+  };
 
-  void setRegex(const std::string /* data ATS_UNUSED */)
+  void
+  setRegex(const std::string /* data ATS_UNUSED */)
   {
     if (!helper.setRegexMatch(_data)) {
-      std::cout<<"Invalid regex:failed to precompile"<<std::endl;
+      std::cout << "Invalid regex:failed to precompile" << std::endl;
       abort();
     }
-    TSDebug(PLUGIN_NAME,"Regex precompiled successfully");
+    TSDebug(PLUGIN_NAME, "Regex precompiled successfully");
   }
 
-  void setRegex(const unsigned int /* t ATS_UNUSED */) { return; }
-  void setRegex(const TSHttpStatus /* t ATS_UNUSED */) { return; }
+  void
+  setRegex(const unsigned int /* t ATS_UNUSED */)
+  {
+    return;
+  }
+  void
+  setRegex(const TSHttpStatus /* t ATS_UNUSED */)
+  {
+    return;
+  }
 
-  void set (const T d)
+  void
+  set(const T d)
   {
     _data = d;
-    if(_op == MATCH_REGULAR_EXPRESSION)
+    if (_op == MATCH_REGULAR_EXPRESSION)
       setRegex(d);
   }
 
   // Evaluate this matcher
   bool
-  test(const T t) const {
+  test(const T t) const
+  {
     switch (_op) {
     case MATCH_EQUAL:
       return test_eq(t);
@@ -126,43 +147,49 @@ public:
 
 private:
   // For basic types
-  bool test_eq(const T t) const
+  bool
+  test_eq(const T t) const
   {
     // std::cout << "Testing: " << t << " == " << _data << std::endl;
     return t == _data;
   }
-  bool test_lt(const T t) const
+  bool
+  test_lt(const T t) const
   {
     // std::cout << "Testing: " << t << " < " << _data << std::endl;
     return t < _data;
   }
-  bool test_gt(const T t) const
+  bool
+  test_gt(const T t) const
   {
     // std::cout << "Testing: " << t << " > " << _data << std::endl;
     return t > _data;
   }
 
-  bool test_reg(const unsigned int /* t ATS_UNUSED */) const
+  bool
+  test_reg(const unsigned int /* t ATS_UNUSED */) const
   {
     // Not supported
     return false;
   }
 
-  bool test_reg(const TSHttpStatus /* t ATS_UNUSED */) const
+  bool
+  test_reg(const TSHttpStatus /* t ATS_UNUSED */) const
   {
-   // Not supported
-   return false;
- }
+    // Not supported
+    return false;
+  }
 
-  bool test_reg(const std::string t) const
+  bool
+  test_reg(const std::string t) const
   {
-      TSDebug(PLUGIN_NAME, "Test regular expression %s : %s", _data.c_str(), t.c_str());
-          int ovector[OVECCOUNT];
-          if (helper.regexMatch(t.c_str(), t.length(), ovector) > 0) {
-              TSDebug(PLUGIN_NAME, "Successfully found regular expression match");
-              return true;
+    TSDebug(PLUGIN_NAME, "Test regular expression %s : %s", _data.c_str(), t.c_str());
+    int ovector[OVECCOUNT];
+    if (helper.regexMatch(t.c_str(), t.length(), ovector) > 0) {
+      TSDebug(PLUGIN_NAME, "Successfully found regular expression match");
+      return true;
     }
-      return false;
+    return false;
   }
   T _data;
   regexHelper helper;

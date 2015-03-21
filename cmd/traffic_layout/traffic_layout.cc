@@ -28,13 +28,10 @@
 #include "I_RecProcess.h"
 #include "RecordsConfig.h"
 
-const ArgumentDescription argument_descriptions[] = {
-  HELP_ARGUMENT_DESCRIPTION(),
-  VERSION_ARGUMENT_DESCRIPTION()
-};
+const ArgumentDescription argument_descriptions[] = {HELP_ARGUMENT_DESCRIPTION(), VERSION_ARGUMENT_DESCRIPTION()};
 
 static void
-printvar(const char * name, char * val)
+printvar(const char *name, char *val)
 {
   printf("%s: %s\n", name, val);
   ats_free(val);
@@ -45,8 +42,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 {
   AppVersionInfo appVersionInfo;
 
-  appVersionInfo.setup(PACKAGE_NAME, "traffic_layout", PACKAGE_VERSION,
-          __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
+  appVersionInfo.setup(PACKAGE_NAME, "traffic_layout", PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
 
   // Process command line arguments and dump into variables
   process_args(&appVersionInfo, argument_descriptions, countof(argument_descriptions), argv);

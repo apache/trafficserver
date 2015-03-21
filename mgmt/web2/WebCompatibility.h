@@ -51,20 +51,18 @@ typedef int WebHandle;
 //-------------------------------------------------------------------------
 
 #if defined(freebsd)
-//extern "C" struct hostent *gethostbyaddr_r(const char *addr, int length, int type,
+// extern "C" struct hostent *gethostbyaddr_r(const char *addr, int length, int type,
 //                                  struct hostent *result, char *buffer, int buflen, int *h_errnop);
 #endif
 
 #if defined(solaris)
-extern "C"
-{
-  struct hostent *gethostbyaddr_r(const char *addr,
-                                  int length, int type, struct hostent *result,
-                                  char *buffer, int buflen, int *h_errnop);
+extern "C" {
+struct hostent *gethostbyaddr_r(const char *addr, int length, int type, struct hostent *result, char *buffer, int buflen,
+                                int *h_errnop);
 }
 #endif
 
-char *WebGetHostname_Xmalloc(sockaddr_in * client_info);
+char *WebGetHostname_Xmalloc(sockaddr_in *client_info);
 
 //-------------------------------------------------------------------------
 // WebFile

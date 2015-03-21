@@ -39,10 +39,9 @@
 #include "WebHttpMessage.h"
 #include "WebUtils.h"
 
-struct WebHttpContext
-{
-  uint32_t request_state;         // client request state
-  uint32_t server_state;          // bit-mask of enabled server features
+struct WebHttpContext {
+  uint32_t request_state;       // client request state
+  uint32_t server_state;        // bit-mask of enabled server features
   httpMessage *request;         // client request
   httpResponse *response_hdr;   // server response headers
   textBuffer *response_bdy;     // server repsonse body
@@ -55,15 +54,15 @@ struct WebHttpContext
   sockaddr_in *client_info;     // client conection information
   SocketInfo si;                // socket information
 
-  char *top_level_render_file;  // top-level file to render
-  char *cache_query_result;     // cache inspector query result
+  char *top_level_render_file; // top-level file to render
+  char *cache_query_result;    // cache inspector query result
 
-  const char *default_file;     // default file
-  const char *doc_root;         // document root
-  int doc_root_len;             // length of doc_root
+  const char *default_file; // default file
+  const char *doc_root;     // document root
+  int doc_root_len;         // length of doc_root
 };
 
-WebHttpContext *WebHttpContextCreate(WebHttpConInfo * whci);
-void WebHttpContextDestroy(WebHttpContext * whc);
+WebHttpContext *WebHttpContextCreate(WebHttpConInfo *whci);
+void WebHttpContextDestroy(WebHttpContext *whc);
 
 #endif // _WEB_HTTP_CONTEXT_H_

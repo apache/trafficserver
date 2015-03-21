@@ -24,25 +24,26 @@
 #define AuthLogError(fmt, ...) TSError(fmt, ##__VA_ARGS__)
 
 template <typename T>
-T* AuthNew()
+T *
+AuthNew()
 {
-  return new(TSmalloc(sizeof(T))) T();
+  return new (TSmalloc(sizeof(T))) T();
 }
 
 template <typename T>
 void
-AuthDelete(T* ptr)
+AuthDelete(T *ptr)
 {
   ptr->~T();
   TSfree(ptr);
 }
 
-struct HttpIoBuffer
-{
+struct HttpIoBuffer {
   TSIOBuffer buffer;
   TSIOBufferReader reader;
 
-  explicit HttpIoBuffer(TSIOBufferSizeIndex size = TS_IOBUFFER_SIZE_INDEX_32K) {
+  explicit HttpIoBuffer(TSIOBufferSizeIndex size = TS_IOBUFFER_SIZE_INDEX_32K)
+  {
     this->buffer = TSIOBufferSizedCreate(size);
     this->reader = TSIOBufferReaderAlloc(this->buffer);
   }
@@ -53,28 +54,28 @@ struct HttpIoBuffer
     TSIOBufferDestroy(this->buffer);
   }
 
-  void reset(TSIOBufferSizeIndex size = TS_IOBUFFER_SIZE_INDEX_32K) {
+  void
+  reset(TSIOBufferSizeIndex size = TS_IOBUFFER_SIZE_INDEX_32K)
+  {
     TSIOBufferReaderFree(this->reader);
     TSIOBufferDestroy(this->buffer);
     this->buffer = TSIOBufferSizedCreate(size);
     this->reader = TSIOBufferReaderAlloc(this->buffer);
   }
 
-  void consume(size_t nbytes)
+  void
+  consume(size_t nbytes)
   {
     TSIOBufferReaderConsume(this->reader, nbytes);
   }
 
 private:
-  HttpIoBuffer(const HttpIoBuffer &);   //delete
-  HttpIoBuffer & operator=(const HttpIoBuffer &);       //delete
+  HttpIoBuffer(const HttpIoBuffer &);            // delete
+  HttpIoBuffer &operator=(const HttpIoBuffer &); // delete
 };
 
-struct HttpHeader
-{
-  HttpHeader()
-    : buffer(TSMBufferCreate()), header(TSHttpHdrCreate(buffer))
-  { }
+struct HttpHeader {
+  HttpHeader() : buffer(TSMBufferCreate()), header(TSHttpHdrCreate(buffer)) {}
 
   ~HttpHeader()
   {
@@ -88,8 +89,8 @@ struct HttpHeader
   TSMLoc header;
 
 private:
-  HttpHeader(const HttpHeader &);       // delete
-  HttpHeader & operator=(const HttpHeader &);   // delete
+  HttpHeader(const HttpHeader &);            // delete
+  HttpHeader &operator=(const HttpHeader &); // delete
 };
 
 // Return true if the given HTTP header specified chunked transfer encoding.
@@ -110,8 +111,8 @@ bool HttpGetOriginHost(TSMBuffer mbuf, TSMLoc mhdr, char *name, size_t namelen);
 void HttpDebugHeader(TSMBuffer mbuf, TSMLoc mhdr);
 
 // Return the sockaddr port (if any);
-uint16_t SockaddrGetPort(const sockaddr * saddr);
+uint16_t SockaddrGetPort(const sockaddr *saddr);
 // Return a pointer to the sockaddr address.
-const void *SockaddrGetAddress(const sockaddr * saddr);
+const void *SockaddrGetAddress(const sockaddr *saddr);
 
 // vim: set ts=4 sw=4 et :

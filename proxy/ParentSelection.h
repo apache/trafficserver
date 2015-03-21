@@ -50,10 +50,12 @@ struct matcher_line;
 struct ParentResult;
 class ParentRecord;
 
-enum ParentResultType
-{
-  PARENT_UNDEFINED, PARENT_DIRECT,
-  PARENT_SPECIFIED, PARENT_AGENT, PARENT_FAIL
+enum ParentResultType {
+  PARENT_UNDEFINED,
+  PARENT_DIRECT,
+  PARENT_SPECIFIED,
+  PARENT_AGENT,
+  PARENT_FAIL,
 };
 
 typedef ControlMatcher<ParentRecord, ParentResult> P_table;
@@ -61,12 +63,13 @@ typedef ControlMatcher<ParentRecord, ParentResult> P_table;
 //
 // API to outside world
 //
-struct ParentResult
-{
+struct ParentResult {
   ParentResult()
-    : r(PARENT_UNDEFINED), hostname(NULL), port(0), line_number(0), epoch(NULL), rec(NULL),
-      last_parent(0), start_parent(0), wrap_around(false), retry(false)
-  { memset(foundParents, 0, sizeof(foundParents)); };
+    : r(PARENT_UNDEFINED), hostname(NULL), port(0), line_number(0), epoch(NULL), rec(NULL), last_parent(0), start_parent(0),
+      wrap_around(false), retry(false)
+  {
+    memset(foundParents, 0, sizeof(foundParents));
+  };
 
   // For outside consumption
   ParentResultType r;
@@ -76,21 +79,20 @@ struct ParentResult
   // Internal use only
   //   Not to be modified by HTTP
   int line_number;
-  P_table *epoch;               // A pointer to the table used.
+  P_table *epoch; // A pointer to the table used.
   ParentRecord *rec;
   uint32_t last_parent;
   uint32_t start_parent;
   bool wrap_around;
   bool retry;
-  //Arena *a;
+  // Arena *a;
   ATSConsistentHashIter chashIter;
   bool foundParents[MAX_PARENTS];
 };
 
 class HttpRequestData;
 
-struct ParentConfigParams:public ConfigInfo
-{
+struct ParentConfigParams : public ConfigInfo {
   ParentConfigParams();
   ~ParentConfigParams();
 
@@ -139,15 +141,22 @@ struct ParentConfigParams:public ConfigInfo
   int32_t DNS_ParentOnly;
 };
 
-struct ParentConfig
-{
+struct ParentConfig {
 public:
   static void startup();
   static void reconfigure();
   static void print();
 
-  inkcoreapi static ParentConfigParams *acquire() { return (ParentConfigParams *) configProcessor.get(ParentConfig::m_id); }
-  inkcoreapi static void release(ParentConfigParams *params) { configProcessor.release(ParentConfig::m_id, params); }
+  inkcoreapi static ParentConfigParams *
+  acquire()
+  {
+    return (ParentConfigParams *)configProcessor.get(ParentConfig::m_id);
+  }
+  inkcoreapi static void
+  release(ParentConfigParams *params)
+  {
+    configProcessor.release(ParentConfig::m_id, params);
+  }
 
 
   static int m_id;
@@ -161,24 +170,22 @@ public:
 //
 //    A record for an invidual parent
 //
-struct pRecord : ATSConsistentHashNode
-{
+struct pRecord : ATSConsistentHashNode {
   char hostname[MAXDNAME + 1];
   int port;
   time_t failedAt;
   int failCount;
   int32_t upAt;
-  const char *scheme;           // for which parent matches (if any)
+  const char *scheme; // for which parent matches (if any)
   int idx;
   float weight;
 };
 
-enum ParentRR_t
-{
+enum ParentRR_t {
   P_NO_ROUND_ROBIN = 0,
   P_STRICT_ROUND_ROBIN,
   P_HASH_ROUND_ROBIN,
-  P_CONSISTENT_HASH
+  P_CONSISTENT_HASH,
 };
 
 // class ParentRecord : public ControlBase
@@ -186,12 +193,10 @@ enum ParentRR_t
 //   A record for a configuration line in the parent.config
 //    file
 //
-class ParentRecord: public ControlBase
+class ParentRecord : public ControlBase
 {
 public:
-  ParentRecord()
-    : parents(NULL), num_parents(0), round_robin(P_NO_ROUND_ROBIN), rr_next(0), go_direct(true), chash(NULL)
-  { }
+  ParentRecord() : parents(NULL), num_parents(0), round_robin(P_NO_ROUND_ROBIN), rr_next(0), go_direct(true), chash(NULL) {}
 
   ~ParentRecord();
 
@@ -203,10 +208,14 @@ public:
   pRecord *parents;
   int num_parents;
 
-  bool bypass_ok() const { return go_direct; }
+  bool
+  bypass_ok() const
+  {
+    return go_direct;
+  }
 
   const char *scheme;
-  //private:
+  // private:
   const char *ProcessParents(char *val);
   void buildConsistentHash(void);
   ParentRR_t round_robin;
@@ -223,7 +232,7 @@ int parentSelection_CB(const char *name, RecDataT data_type, RecData data, void 
 
 // Unit Test Functions
 void show_result(ParentResult *aParentResult);
-void br(HttpRequestData *h, const char *os_hostname, sockaddr const* dest_ip = NULL);       // short for build request
+void br(HttpRequestData *h, const char *os_hostname, sockaddr const *dest_ip = NULL); // short for build request
 int verify(ParentResult *r, ParentResultType e, const char *h, int p);
 
 /*
@@ -236,14 +245,21 @@ int verify(ParentResult *r, ParentResultType e, const char *h, int p);
   All the members in ParentConfig are static. Right now
   we will duplicate the code for these static functions.
 */
-struct SocksServerConfig
-{
+struct SocksServerConfig {
   static void startup();
   static void reconfigure();
   static void print();
 
-  static ParentConfigParams *acquire() { return (ParentConfigParams *) configProcessor.get(SocksServerConfig::m_id); }
-  static void release(ParentConfigParams *params) { configProcessor.release(SocksServerConfig::m_id, params); }
+  static ParentConfigParams *
+  acquire()
+  {
+    return (ParentConfigParams *)configProcessor.get(SocksServerConfig::m_id);
+  }
+  static void
+  release(ParentConfigParams *params)
+  {
+    configProcessor.release(SocksServerConfig::m_id, params);
+  }
 
   static int m_id;
 };

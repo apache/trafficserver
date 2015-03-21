@@ -47,7 +47,7 @@ InkXmlAttr::~InkXmlAttr()
 }
 
 void
-InkXmlAttr::display(FILE * fd)
+InkXmlAttr::display(FILE *fd)
 {
   fprintf(fd, "    <%s,%s>\n", m_tag, m_value);
 }
@@ -88,12 +88,12 @@ InkXmlObject::add_tag(const char *tag, const char *value)
 }
 
 int
-InkXmlObject::add_attr(InkXmlAttr * attr)
+InkXmlObject::add_attr(InkXmlAttr *attr)
 {
   ink_assert(attr != NULL);
 
   if (!m_dup_attrs_allowed) {
-    for (InkXmlAttr * a = first(); a; a = next(a)) {
+    for (InkXmlAttr *a = first(); a; a = next(a)) {
       if (!strcmp(a->tag(), attr->tag())) {
         Debug("xml", "tag %s already exists & dups not allowed", attr->tag());
         return -1;
@@ -109,7 +109,7 @@ InkXmlObject::tag_value(const char *tag_name)
 {
   ink_assert(tag_name != NULL);
 
-  for (InkXmlAttr * a = first(); a; a = next(a)) {
+  for (InkXmlAttr *a = first(); a; a = next(a)) {
     if (!strcmp(a->tag(), tag_name)) {
       return a->value();
     }
@@ -118,10 +118,10 @@ InkXmlObject::tag_value(const char *tag_name)
 }
 
 void
-InkXmlObject::display(FILE * fd)
+InkXmlObject::display(FILE *fd)
 {
   fprintf(fd, "<%s>\n", m_object_name);
-  for (InkXmlAttr * a = first(); a; a = next(a)) {
+  for (InkXmlAttr *a = first(); a; a = next(a)) {
     a->display(fd);
   }
 }
@@ -130,9 +130,7 @@ InkXmlObject::display(FILE * fd)
   InkXmlConfigFile
   -------------------------------------------------------------------------*/
 
-InkXmlConfigFile::InkXmlConfigFile(const char *config_file):
-m_line(0),
-m_col(0)
+InkXmlConfigFile::InkXmlConfigFile(const char *config_file) : m_line(0), m_col(0)
 {
   m_config_file = ats_strdup(config_file);
 }
@@ -179,7 +177,7 @@ InkXmlConfigFile::parse()
   ink_assert(m_config_file != NULL);
   Debug("xml", "Parsing XML config file %s ...", m_config_file);
 
-  int fd =::open(m_config_file, O_RDONLY);
+  int fd = ::open(m_config_file, O_RDONLY);
   if (fd < 0) {
     Debug("xml", "Error opening %s: %d, %s", m_config_file, fd, strerror(errno));
     return -1;
@@ -201,7 +199,7 @@ InkXmlConfigFile::parse()
 InkXmlObject *
 InkXmlConfigFile::find_object(const char *object_name)
 {
-  for (InkXmlObject * obj = first(); obj; obj = next(obj)) {
+  for (InkXmlObject *obj = first(); obj; obj = next(obj)) {
     if (!strcmp(object_name, obj->object_name())) {
       return obj;
     }
@@ -210,7 +208,7 @@ InkXmlConfigFile::find_object(const char *object_name)
 }
 
 void
-InkXmlConfigFile::display(FILE * fd)
+InkXmlConfigFile::display(FILE *fd)
 {
   size_t i;
 
@@ -221,14 +219,14 @@ InkXmlConfigFile::display(FILE * fd)
   for (i = 0; i < strlen(m_config_file) + 13; i++)
     fputc('-', fd);
   fprintf(fd, "\n");
-  for (InkXmlObject * obj = first(); obj; obj = next(obj)) {
+  for (InkXmlObject *obj = first(); obj; obj = next(obj)) {
     obj->display(fd);
     fprintf(fd, "\n");
   }
 }
 
 void
-InkXmlConfigFile::add_object(InkXmlObject * object)
+InkXmlConfigFile::add_object(InkXmlObject *object)
 {
   ink_assert(object != NULL);
   m_objects.enqueue(object);
@@ -251,7 +249,6 @@ InkXmlConfigFile::get_next_xml_object(int fd)
 
   while ((token = next_token(fd)) != EOF) {
     switch (token) {
-
     case '<':
       start_object = true;
       break;
@@ -282,7 +279,7 @@ InkXmlConfigFile::parse_error()
   return NULL;
 }
 
-#define BAD_ATTR ((InkXmlAttr*)1)
+#define BAD_ATTR ((InkXmlAttr *)1)
 
 InkXmlObject *
 InkXmlConfigFile::scan_object(int fd, char token)
@@ -464,7 +461,7 @@ InkXmlConfigFile::scan_comment(int fd)
   // this routine is called when we're just past a "<!" in the file.  we
   // need to skip until we find the matching '>'.
 
-  int lt_stack = 1;             // we've already seen one '<' character
+  int lt_stack = 1; // we've already seen one '<' character
   char token;
   while ((token = next_token(fd)) != EOF) {
     switch (token) {

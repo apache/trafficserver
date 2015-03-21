@@ -49,12 +49,12 @@ static HdrStrHeap str_proto_heap;
   -------------------------------------------------------------------------*/
 
 void
-obj_describe(HdrHeapObjImpl * obj, bool recurse)
+obj_describe(HdrHeapObjImpl *obj, bool recurse)
 {
-  static const char *obj_names[] = { "EMPTY", "RAW", "URL", "HTTP_HEADER", "MIME_HEADER", "FIELD_BLOCK" };
+  static const char *obj_names[] = {"EMPTY", "RAW", "URL", "HTTP_HEADER", "MIME_HEADER", "FIELD_BLOCK"};
 
-  Debug("http", "%s %p: [T: %d, L: %4d, OBJFLAGS: %X]  ",
-        obj_names[obj->m_type], obj, obj->m_type, obj->m_length, obj->m_obj_flags);
+  Debug("http", "%s %p: [T: %d, L: %4d, OBJFLAGS: %X]  ", obj_names[obj->m_type], obj, obj->m_type, obj->m_length,
+        obj->m_obj_flags);
 
   extern void url_describe(HdrHeapObjImpl * obj, bool recurse);
   extern void http_hdr_describe(HdrHeapObjImpl * obj, bool recurse);
@@ -89,7 +89,7 @@ obj_describe(HdrHeapObjImpl * obj, bool recurse)
 inline void
 HdrHeap::init()
 {
-  m_data_start = m_free_start = ((char *) this) + HDR_HEAP_HDR_SIZE;
+  m_data_start = m_free_start = ((char *)this) + HDR_HEAP_HDR_SIZE;
   m_magic = HDR_BUF_MAGIC_ALIVE;
   m_writeable = true;
 
@@ -123,10 +123,10 @@ new_HdrHeap(int size)
     h = (HdrHeap *)ats_malloc(size);
   }
 
-//    Debug("hdrs", "Allocated header heap in size %d", size);
+  //    Debug("hdrs", "Allocated header heap in size %d", size);
 
   // Patch vritual function table ptr
-  *((void **) h) = *((void **) &proto_heap);
+  *((void **)h) = *((void **)&proto_heap);
 
   h->m_size = size;
   h->init();
@@ -150,18 +150,18 @@ new_HdrStrHeap(int requested_size)
     alloc_size = HDR_STR_HEAP_DEFAULT_SIZE;
     sh = (HdrStrHeap *)(THREAD_ALLOC(strHeapAllocator, this_ethread()));
   } else {
-    alloc_size = ROUND(alloc_size, HDR_STR_HEAP_DEFAULT_SIZE*2);
+    alloc_size = ROUND(alloc_size, HDR_STR_HEAP_DEFAULT_SIZE * 2);
     sh = (HdrStrHeap *)ats_malloc(alloc_size);
   }
 
-//    Debug("hdrs", "Allocated string heap in size %d", alloc_size);
+  //    Debug("hdrs", "Allocated string heap in size %d", alloc_size);
 
   // Patch virtual function table ptr
-  *((void **) sh) = *((void **) &str_proto_heap);
+  *((void **)sh) = *((void **)&str_proto_heap);
 
   sh->m_heap_size = alloc_size;
   sh->m_free_size = alloc_size - STR_HEAP_HDR_SIZE;
-  sh->m_free_start = ((char *) sh) + STR_HEAP_HDR_SIZE;
+  sh->m_free_start = ((char *)sh) + STR_HEAP_HDR_SIZE;
   sh->m_refcount = 0;
 
   ink_assert(sh->m_free_size > 0);
@@ -206,17 +206,16 @@ HdrHeap::allocate_obj(int nbytes, int type)
 
 
   while (1) {
-    if ((unsigned) nbytes <= (h->m_free_size)) {
+    if ((unsigned)nbytes <= (h->m_free_size)) {
       new_space = h->m_free_start;
       h->m_free_start += nbytes;
       h->m_free_size -= nbytes;
 
-      obj = (HdrHeapObjImpl *) new_space;
+      obj = (HdrHeapObjImpl *)new_space;
       obj_init_header(obj, type, nbytes, 0);
       ink_assert(obj_is_aligned(obj));
 
       return obj;
-
     }
 
     if (h->m_next == NULL) {
@@ -232,7 +231,7 @@ HdrHeap::allocate_obj(int nbytes, int type)
 }
 
 void
-HdrHeap::deallocate_obj(HdrHeapObjImpl * obj)
+HdrHeap::deallocate_obj(HdrHeapObjImpl *obj)
 {
   ink_assert(m_writeable);
   obj->m_type = HDR_HEAP_OBJ_EMPTY;
@@ -288,7 +287,6 @@ FAILED:
   //  the heaps
   coalesce_str_heaps();
   goto RETRY;
-
 }
 
 // char* HdrHeap::expand_str(const char* old_str, int old_len, int new_len)
@@ -339,10 +337,10 @@ HdrHeap::demote_rw_str_heap()
     if (m_ronly_heap[i].m_heap_start == NULL) {
       // We've found a slot
       m_ronly_heap[i].m_ref_count_ptr = m_read_write_heap;
-      m_ronly_heap[i].m_heap_start = (char *) m_read_write_heap.m_ptr;
+      m_ronly_heap[i].m_heap_start = (char *)m_read_write_heap.m_ptr;
       m_ronly_heap[i].m_heap_len = m_read_write_heap->m_heap_size - m_read_write_heap->m_free_size;
 
-//          Debug("hdrs", "Demoted rw heap of %d size", m_read_write_heap->m_heap_size);
+      //          Debug("hdrs", "Demoted rw heap of %d size", m_read_write_heap->m_heap_size);
       m_read_write_heap = NULL;
       return 0;
     }
@@ -397,9 +395,9 @@ HdrHeap::coalesce_str_heaps(int incoming_size)
 }
 
 void
-HdrHeap::evacuate_from_str_heaps(HdrStrHeap * new_heap)
+HdrHeap::evacuate_from_str_heaps(HdrStrHeap *new_heap)
 {
-//    printf("Str Evac\n");
+  //    printf("Str Evac\n");
   // Loop over the objects in heap and call the evacuation
   //  function in each one
   HdrHeap *h = this;
@@ -409,20 +407,20 @@ HdrHeap::evacuate_from_str_heaps(HdrStrHeap * new_heap)
     char *data = h->m_data_start;
 
     while (data < h->m_free_start) {
-      HdrHeapObjImpl *obj = (HdrHeapObjImpl *) data;
+      HdrHeapObjImpl *obj = (HdrHeapObjImpl *)data;
 
       switch (obj->m_type) {
       case HDR_HEAP_OBJ_URL:
-        ((URLImpl *) obj)->move_strings(new_heap);
+        ((URLImpl *)obj)->move_strings(new_heap);
         break;
       case HDR_HEAP_OBJ_HTTP_HEADER:
-        ((HTTPHdrImpl *) obj)->move_strings(new_heap);
+        ((HTTPHdrImpl *)obj)->move_strings(new_heap);
         break;
       case HDR_HEAP_OBJ_MIME_HEADER:
-        ((MIMEHdrImpl *) obj)->move_strings(new_heap);
+        ((MIMEHdrImpl *)obj)->move_strings(new_heap);
         break;
       case HDR_HEAP_OBJ_FIELD_BLOCK:
-        ((MIMEFieldBlockImpl *) obj)->move_strings(new_heap);
+        ((MIMEFieldBlockImpl *)obj)->move_strings(new_heap);
         break;
       case HDR_HEAP_OBJ_EMPTY:
       case HDR_HEAP_OBJ_RAW:
@@ -436,7 +434,6 @@ HdrHeap::evacuate_from_str_heaps(HdrStrHeap * new_heap)
     }
 
     h = h->m_next;
-
   }
 }
 
@@ -449,20 +446,20 @@ HdrHeap::required_space_for_evacuation()
     char *data = h->m_data_start;
 
     while (data < h->m_free_start) {
-      HdrHeapObjImpl *obj = (HdrHeapObjImpl *) data;
+      HdrHeapObjImpl *obj = (HdrHeapObjImpl *)data;
 
       switch (obj->m_type) {
       case HDR_HEAP_OBJ_URL:
-        ret += ((URLImpl *) obj)->strings_length();
+        ret += ((URLImpl *)obj)->strings_length();
         break;
       case HDR_HEAP_OBJ_HTTP_HEADER:
-        ret += ((HTTPHdrImpl *) obj)->strings_length();
+        ret += ((HTTPHdrImpl *)obj)->strings_length();
         break;
       case HDR_HEAP_OBJ_MIME_HEADER:
-        ret += ((MIMEHdrImpl *) obj)->strings_length();
+        ret += ((MIMEHdrImpl *)obj)->strings_length();
         break;
       case HDR_HEAP_OBJ_FIELD_BLOCK:
-        ret += ((MIMEFieldBlockImpl *) obj)->strings_length();
+        ret += ((MIMEFieldBlockImpl *)obj)->strings_length();
         break;
       case HDR_HEAP_OBJ_EMPTY:
       case HDR_HEAP_OBJ_RAW:
@@ -486,7 +483,7 @@ HdrHeap::sanity_check_strs()
 
   // Build up a string check table
   if (m_read_write_heap) {
-    heaps[num_heaps].start = ((char *) m_read_write_heap.m_ptr) + sizeof(HdrStrHeap);
+    heaps[num_heaps].start = ((char *)m_read_write_heap.m_ptr) + sizeof(HdrStrHeap);
 
     int heap_size = m_read_write_heap->m_heap_size - (sizeof(HdrStrHeap) + m_read_write_heap->m_free_size);
 
@@ -511,20 +508,20 @@ HdrHeap::sanity_check_strs()
     char *data = h->m_data_start;
 
     while (data < h->m_free_start) {
-      HdrHeapObjImpl *obj = (HdrHeapObjImpl *) data;
+      HdrHeapObjImpl *obj = (HdrHeapObjImpl *)data;
 
       switch (obj->m_type) {
       case HDR_HEAP_OBJ_URL:
-        ((URLImpl *) obj)->check_strings(heaps, num_heaps);
+        ((URLImpl *)obj)->check_strings(heaps, num_heaps);
         break;
       case HDR_HEAP_OBJ_HTTP_HEADER:
-        ((HTTPHdrImpl *) obj)->check_strings(heaps, num_heaps);
+        ((HTTPHdrImpl *)obj)->check_strings(heaps, num_heaps);
         break;
       case HDR_HEAP_OBJ_MIME_HEADER:
-        ((MIMEHdrImpl *) obj)->check_strings(heaps, num_heaps);
+        ((MIMEHdrImpl *)obj)->check_strings(heaps, num_heaps);
         break;
       case HDR_HEAP_OBJ_FIELD_BLOCK:
-        ((MIMEFieldBlockImpl *) obj)->check_strings(heaps, num_heaps);
+        ((MIMEFieldBlockImpl *)obj)->check_strings(heaps, num_heaps);
         break;
       case HDR_HEAP_OBJ_EMPTY:
       case HDR_HEAP_OBJ_RAW:
@@ -538,7 +535,6 @@ HdrHeap::sanity_check_strs()
     }
 
     h = h->m_next;
-
   }
 }
 
@@ -560,7 +556,7 @@ HdrHeap::marshal_length()
   HdrHeap *h = this;
 
   while (h) {
-    len += (int) (h->m_free_start - h->m_data_start);
+    len += (int)(h->m_free_start - h->m_data_start);
     h = h->m_next;
   }
 
@@ -588,14 +584,14 @@ compute_checksum(void *buf, int len)
   uint32_t cksum = 0;
 
   while (len > 4) {
-    cksum += *((uint32_t *) buf);
-    buf = ((char *) buf) + 4;
+    cksum += *((uint32_t *)buf);
+    buf = ((char *)buf) + 4;
     len -= 4;
   }
 
   if (len > 0) {
     uint32_t tmp = 0;
-    memcpy((char *) &tmp, buf, len);
+    memcpy((char *)&tmp, buf, len);
     cksum += tmp;
   }
 
@@ -617,9 +613,9 @@ compute_checksum(void *buf, int len)
 int
 HdrHeap::marshal(char *buf, int len)
 {
-  ink_assert((((uintptr_t) buf) & HDR_PTR_ALIGNMENT_MASK) == 0);
+  ink_assert((((uintptr_t)buf) & HDR_PTR_ALIGNMENT_MASK) == 0);
 
-  HdrHeap *marshal_hdr = (HdrHeap *) buf;
+  HdrHeap *marshal_hdr = (HdrHeap *)buf;
   char *b = buf + HDR_HEAP_HDR_SIZE;
 
   // Variables for the ptr translation table
@@ -643,7 +639,7 @@ HdrHeap::marshal(char *buf, int len)
   HdrHeap *unmarshal_hdr = this;
 
   do {
-    int copy_size = (int) (unmarshal_hdr->m_free_start - unmarshal_hdr->m_data_start);
+    int copy_size = (int)(unmarshal_hdr->m_free_start - unmarshal_hdr->m_data_start);
 
     if (copy_size > len) {
       goto Failed;
@@ -652,7 +648,7 @@ HdrHeap::marshal(char *buf, int len)
 
     // Expand ptr xlation table if necessary - shameless hackery
     if (ptr_heaps >= ptr_xl_size) {
-      MarshalXlate *tmp_xl = (MarshalXlate *) alloca(sizeof(MarshalXlate) * ptr_xl_size * 2);
+      MarshalXlate *tmp_xl = (MarshalXlate *)alloca(sizeof(MarshalXlate) * ptr_xl_size * 2);
       memcpy(tmp_xl, ptr_xlation, sizeof(MarshalXlate) * ptr_xl_size);
       ptr_xlation = tmp_xl;
       ptr_xl_size *= 2;
@@ -674,7 +670,7 @@ HdrHeap::marshal(char *buf, int len)
   // Now that we've got the pointer blocks marshaled
   //  we can fill in the header on marshalled block
   marshal_hdr->m_free_start = NULL;
-  marshal_hdr->m_data_start = (char *) HDR_HEAP_HDR_SIZE;       // offset
+  marshal_hdr->m_data_start = (char *)HDR_HEAP_HDR_SIZE; // offset
   marshal_hdr->m_magic = HDR_BUF_MAGIC_MARSHALED;
   marshal_hdr->m_writeable = false;
   marshal_hdr->m_size = ptr_heap_size + HDR_HEAP_HDR_SIZE;
@@ -684,7 +680,7 @@ HdrHeap::marshal(char *buf, int len)
   marshal_hdr->m_lost_string_space = this->m_lost_string_space;
 
   // We'have one read-only string heap after marshalling
-  marshal_hdr->m_ronly_heap[0].m_heap_start = (char *)(intptr_t)marshal_hdr->m_size;     // offset
+  marshal_hdr->m_ronly_heap[0].m_heap_start = (char *)(intptr_t)marshal_hdr->m_size; // offset
   marshal_hdr->m_ronly_heap[0].m_ref_count_ptr.m_ptr = NULL;
 
   for (int i = 1; i < HDR_BUF_RONLY_HEAPS; i++)
@@ -702,7 +698,7 @@ HdrHeap::marshal(char *buf, int len)
   MarshalXlate str_xlation[HDR_BUF_RONLY_HEAPS + 1];
 
   if (m_read_write_heap) {
-    char *copy_start = ((char *) m_read_write_heap.m_ptr) + sizeof(HdrStrHeap);
+    char *copy_start = ((char *)m_read_write_heap.m_ptr) + sizeof(HdrStrHeap);
     int nto_copy = m_read_write_heap->m_heap_size - (sizeof(HdrStrHeap) + m_read_write_heap->m_free_size);
 
     if (nto_copy > len) {
@@ -751,31 +747,31 @@ HdrHeap::marshal(char *buf, int len)
   //    and call the object marshal function to patch live
   //    strings pointers & live object pointers to offsets
   {
-    char *obj_data = ((char *) marshal_hdr) + HDR_HEAP_HDR_SIZE;
-    char *mheap_end = ((char *) marshal_hdr) + marshal_hdr->m_size;
+    char *obj_data = ((char *)marshal_hdr) + HDR_HEAP_HDR_SIZE;
+    char *mheap_end = ((char *)marshal_hdr) + marshal_hdr->m_size;
 
     while (obj_data < mheap_end) {
-      HdrHeapObjImpl *obj = (HdrHeapObjImpl *) obj_data;
+      HdrHeapObjImpl *obj = (HdrHeapObjImpl *)obj_data;
       ink_assert(obj_is_aligned(obj));
 
       switch (obj->m_type) {
       case HDR_HEAP_OBJ_URL:
-        if (((URLImpl *) obj)->marshal(str_xlation, str_heaps) < 0) {
+        if (((URLImpl *)obj)->marshal(str_xlation, str_heaps) < 0) {
           goto Failed;
         }
         break;
       case HDR_HEAP_OBJ_HTTP_HEADER:
-        if (((HTTPHdrImpl *) obj)->marshal(ptr_xlation, ptr_heaps, str_xlation, str_heaps) < 0) {
+        if (((HTTPHdrImpl *)obj)->marshal(ptr_xlation, ptr_heaps, str_xlation, str_heaps) < 0) {
           goto Failed;
         }
         break;
       case HDR_HEAP_OBJ_FIELD_BLOCK:
-        if (((MIMEFieldBlockImpl *) obj)->marshal(ptr_xlation, ptr_heaps, str_xlation, str_heaps) < 0) {
+        if (((MIMEFieldBlockImpl *)obj)->marshal(ptr_xlation, ptr_heaps, str_xlation, str_heaps) < 0) {
           goto Failed;
         }
         break;
       case HDR_HEAP_OBJ_MIME_HEADER:
-        if (((MIMEHdrImpl *) obj)->marshal(ptr_xlation, ptr_heaps, str_xlation, str_heaps)) {
+        if (((MIMEHdrImpl *)obj)->marshal(ptr_xlation, ptr_heaps, str_xlation, str_heaps)) {
           goto Failed;
         }
         break;
@@ -804,7 +800,7 @@ HdrHeap::marshal(char *buf, int len)
 #ifdef HDR_HEAP_CHECKSUMS
   {
     uint32_t chksum = compute_checksum(buf, used);
-    marshal_hdr->m_free_start = (char *) chksum;
+    marshal_hdr->m_free_start = (char *)chksum;
   }
 #endif
 
@@ -828,7 +824,7 @@ HdrHeap::check_marshalled(uint32_t buf_length)
     return false;
   }
 
-  if (this->m_size < (uint32_t) HDR_HEAP_HDR_SIZE) {
+  if (this->m_size < (uint32_t)HDR_HEAP_HDR_SIZE) {
     return false;
   }
 
@@ -836,7 +832,7 @@ HdrHeap::check_marshalled(uint32_t buf_length)
     return false;
   }
 
-  if ((uintptr_t) (this->m_size + m_ronly_heap[0].m_heap_start) > buf_length) {
+  if ((uintptr_t)(this->m_size + m_ronly_heap[0].m_heap_start) > buf_length) {
     return false;
   }
 
@@ -869,7 +865,7 @@ HdrHeap::check_marshalled(uint32_t buf_length)
 //     management policy
 //
 int
-HdrHeap::unmarshal(int buf_length, int obj_type, HdrHeapObjImpl ** found_obj, RefCountObj * block_ref)
+HdrHeap::unmarshal(int buf_length, int obj_type, HdrHeapObjImpl **found_obj, RefCountObj *block_ref)
 {
   bool obj_found = false;
 
@@ -886,10 +882,10 @@ HdrHeap::unmarshal(int buf_length, int obj_type, HdrHeapObjImpl ** found_obj, Re
   }
 #ifdef HDR_HEAP_CHECKSUMS
   if (m_free_start != NULL) {
-    uint32_t stored_sum = (uint32_t) m_free_start;
+    uint32_t stored_sum = (uint32_t)m_free_start;
     m_free_start = NULL;
     int sum_len = ROUND(unmarshal_size, HDR_PTR_SIZE);
-    uint32_t new_sum = compute_checksum((void *) this, sum_len);
+    uint32_t new_sum = compute_checksum((void *)this, sum_len);
 
     if (stored_sum != new_sum) {
       fprintf(stderr, "WARNING: Unmarshal checksum comparison failed\n");
@@ -912,9 +908,9 @@ HdrHeap::unmarshal(int buf_length, int obj_type, HdrHeapObjImpl ** found_obj, Re
   ink_assert(m_free_start == NULL);
 
   // Convert Heap offsets to pointers
-  m_data_start = ((char *) this) + (intptr_t) m_data_start;
-  m_free_start = ((char *) this) + m_size;
-  m_ronly_heap[0].m_heap_start = ((char *) this) + (intptr_t) m_ronly_heap[0].m_heap_start;
+  m_data_start = ((char *)this) + (intptr_t)m_data_start;
+  m_free_start = ((char *)this) + m_size;
+  m_ronly_heap[0].m_heap_start = ((char *)this) + (intptr_t)m_ronly_heap[0].m_heap_start;
 
   // Crazy Invarient - If we are sitting in a ref counted block,
   //   the HdrHeap lifetime is externally determined.  Whoever
@@ -935,33 +931,32 @@ HdrHeap::unmarshal(int buf_length, int obj_type, HdrHeapObjImpl ** found_obj, Re
   intptr_t offset = (intptr_t) this;
 
   while (obj_data < m_free_start) {
-    HdrHeapObjImpl *obj = (HdrHeapObjImpl *) obj_data;
+    HdrHeapObjImpl *obj = (HdrHeapObjImpl *)obj_data;
     ink_assert(obj_is_aligned(obj));
 
-    if (obj->m_type == (unsigned) obj_type && obj_found == false) {
+    if (obj->m_type == (unsigned)obj_type && obj_found == false) {
       *found_obj = obj;
     }
 
     switch (obj->m_type) {
     case HDR_HEAP_OBJ_HTTP_HEADER:
-      ((HTTPHdrImpl *) obj)->unmarshal(offset);
+      ((HTTPHdrImpl *)obj)->unmarshal(offset);
       break;
     case HDR_HEAP_OBJ_URL:
-      ((URLImpl *) obj)->unmarshal(offset);
+      ((URLImpl *)obj)->unmarshal(offset);
       break;
     case HDR_HEAP_OBJ_FIELD_BLOCK:
-      ((MIMEFieldBlockImpl *) obj)->unmarshal(offset);
+      ((MIMEFieldBlockImpl *)obj)->unmarshal(offset);
       break;
     case HDR_HEAP_OBJ_MIME_HEADER:
-      ((MIMEHdrImpl *) obj)->unmarshal(offset);
+      ((MIMEHdrImpl *)obj)->unmarshal(offset);
       break;
     case HDR_HEAP_OBJ_EMPTY:
       // Nothing to do
       break;
     default:
-      fprintf(stderr,
-              "WARNING: Unmarshal failed due to unknow obj type %d after %d bytes",
-              (int) obj->m_type, (int)(obj_data - (char *) this));
+      fprintf(stderr, "WARNING: Unmarshal failed due to unknow obj type %d after %d bytes", (int)obj->m_type,
+              (int)(obj_data - (char *)this));
       dump_heap(unmarshal_size);
       return -1;
     }
@@ -976,7 +971,7 @@ HdrHeap::unmarshal(int buf_length, int obj_type, HdrHeapObjImpl ** found_obj, Re
 }
 
 inline int
-HdrHeap::attach_str_heap(char *h_start, int h_len, RefCountObj * h_ref_obj, int *index)
+HdrHeap::attach_str_heap(char *h_start, int h_len, RefCountObj *h_ref_obj, int *index)
 {
   // Loop over existing entries to see if this one is already present
   for (int z = 0; z < *index; z++) {
@@ -1013,10 +1008,10 @@ HdrHeap::attach_str_heap(char *h_start, int h_len, RefCountObj * h_ref_obj, int 
 //     string heaps
 //
 void
-HdrHeap::inherit_string_heaps(const HdrHeap * inherit_from)
+HdrHeap::inherit_string_heaps(const HdrHeap *inherit_from)
 {
   // if heaps are the same, this is a no-op
-  if (inherit_from == (const HdrHeap *) this)
+  if (inherit_from == (const HdrHeap *)this)
     return;
 
   int index, result;
@@ -1067,17 +1062,16 @@ HdrHeap::inherit_string_heaps(const HdrHeap * inherit_from)
   } else {
     // Copy over read/write string heap if it exists
     if (inherit_from->m_read_write_heap) {
-      int str_size = inherit_from->m_read_write_heap->m_heap_size -
-        STR_HEAP_HDR_SIZE - inherit_from->m_read_write_heap->m_free_size;
-      result = attach_str_heap(((char *) inherit_from->m_read_write_heap.m_ptr) + STR_HEAP_HDR_SIZE,
-                               str_size, inherit_from->m_read_write_heap, &first_free);
+      int str_size =
+        inherit_from->m_read_write_heap->m_heap_size - STR_HEAP_HDR_SIZE - inherit_from->m_read_write_heap->m_free_size;
+      result = attach_str_heap(((char *)inherit_from->m_read_write_heap.m_ptr) + STR_HEAP_HDR_SIZE, str_size,
+                               inherit_from->m_read_write_heap, &first_free);
       ink_release_assert(result != 0);
     }
     // Copy over read only string heaps
     for (int i = 0; i < HDR_BUF_RONLY_HEAPS; i++) {
       if (inherit_from->m_ronly_heap[i].m_heap_start) {
-        result = attach_str_heap(inherit_from->m_ronly_heap[i].m_heap_start,
-                                 inherit_from->m_ronly_heap[i].m_heap_len,
+        result = attach_str_heap(inherit_from->m_ronly_heap[i].m_heap_start, inherit_from->m_ronly_heap[i].m_heap_len,
                                  inherit_from->m_ronly_heap[i].m_ref_count_ptr.m_ptr, &first_free);
         ink_release_assert(result != 0);
       }
@@ -1096,26 +1090,26 @@ void
 HdrHeap::dump_heap(int len)
 {
   int count = 0;
-  char *tmp = (char *) this;
+  char *tmp = (char *)this;
   char *end;
   uint32_t content;
 
   if (len < 0) {
     len = m_size;
   }
-  end = ((char *) this) + len;
+  end = ((char *)this) + len;
 
-  fprintf(stderr, "---- Dumping header heap @ 0x%" PRIx64 " - len %d ------", (uint64_t) ((ptrdiff_t) this), len);
+  fprintf(stderr, "---- Dumping header heap @ 0x%" PRIx64 " - len %d ------", (uint64_t)((ptrdiff_t) this), len);
 
   while (tmp < end) {
     if (count % 4 == 0) {
-      fprintf(stderr, "\n0x%" PRIx64 ": ", (uint64_t) ((ptrdiff_t) tmp));
+      fprintf(stderr, "\n0x%" PRIx64 ": ", (uint64_t)((ptrdiff_t)tmp));
     }
     count++;
 
     // Load the content
     if (end - tmp > 4) {
-      content = *((uint32_t *) tmp);
+      content = *((uint32_t *)tmp);
     } else {
       // Less than 4 bytes available so just
       //   grab the bytes we need
@@ -1151,7 +1145,7 @@ HdrStrHeap::allocate(int nbytes)
 {
   char *new_space;
 
-  if (m_free_size >= (unsigned) nbytes) {
+  if (m_free_size >= (unsigned)nbytes) {
     new_space = m_free_start;
     m_free_start += nbytes;
     m_free_size -= nbytes;
@@ -1171,8 +1165,8 @@ HdrStrHeap::expand(char *ptr, int old_size, int new_size)
 {
   unsigned int expand_size = new_size - old_size;
 
-  ink_assert(ptr >= ((char *) this) + STR_HEAP_HDR_SIZE);
-  ink_assert(ptr < ((char *) this) + m_heap_size);
+  ink_assert(ptr >= ((char *)this) + STR_HEAP_HDR_SIZE);
+  ink_assert(ptr < ((char *)this) + m_heap_size);
 
   if (ptr + old_size == m_free_start && expand_size <= m_free_size) {
     m_free_start += expand_size;
@@ -1184,7 +1178,6 @@ HdrStrHeap::expand(char *ptr, int old_size, int new_size)
 }
 
 
-
 StrHeapDesc::StrHeapDesc()
 {
   m_heap_start = NULL;
@@ -1192,15 +1185,15 @@ StrHeapDesc::StrHeapDesc()
   m_locked = false;
 }
 
-struct StrTest
-{
+struct StrTest {
   char *ptr;
   int len;
 };
 
 #if TS_HAS_TESTS
 #include <ts/TestBox.h>
-REGRESSION_TEST(HdrHeap_Coalesce)(RegressionTest* t, int /* atype ATS_UNUSED */, int*  pstatus) {
+REGRESSION_TEST(HdrHeap_Coalesce)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
+{
   *pstatus = REGRESSION_TEST_PASSED;
   /*
    * This test is designed to test numerous pieces of the HdrHeaps including allocations,
@@ -1211,7 +1204,7 @@ REGRESSION_TEST(HdrHeap_Coalesce)(RegressionTest* t, int /* atype ATS_UNUSED */,
   size_t next_rw_heap_size = HDR_STR_HEAP_DEFAULT_SIZE;
   size_t next_required_overflow_size = next_rw_heap_size - STR_HEAP_HDR_SIZE;
   char buf[next_required_overflow_size];
-  for(unsigned int i = 0; i < sizeof(buf); ++i) {
+  for (unsigned int i = 0; i < sizeof(buf); ++i) {
     buf[i] = ('a' + (i % 26));
   }
 
@@ -1220,10 +1213,10 @@ REGRESSION_TEST(HdrHeap_Coalesce)(RegressionTest* t, int /* atype ATS_UNUSED */,
   URLImpl *url = url_create(heap);
 
   tb.check(heap->m_read_write_heap.m_ptr == NULL, "Checking that we have no rw heap.");
-  url_path_set(heap,url, buf, next_required_overflow_size, true);
+  url_path_set(heap, url, buf, next_required_overflow_size, true);
   tb.check(heap->m_read_write_heap->m_free_size == 0, "Checking that we've completely consumed the rw heap");
   for (int i = 0; i < HDR_BUF_RONLY_HEAPS; ++i) {
-    tb.check(heap->m_ronly_heap[i].m_heap_start == (char*)NULL, "Checking ronly_heap[%d] is NULL", i);
+    tb.check(heap->m_ronly_heap[i].m_heap_start == (char *)NULL, "Checking ronly_heap[%d] is NULL", i);
   }
 
   // Now we have no ronly heaps in use and a completely full rwheap, so we will test that
@@ -1232,14 +1225,15 @@ REGRESSION_TEST(HdrHeap_Coalesce)(RegressionTest* t, int /* atype ATS_UNUSED */,
     next_rw_heap_size = 2 * heap->m_read_write_heap->m_heap_size;
     next_required_overflow_size = next_rw_heap_size - STR_HEAP_HDR_SIZE;
     char buf2[next_required_overflow_size];
-    for(unsigned int i = 0; i < sizeof(buf2); ++i) {
+    for (unsigned int i = 0; i < sizeof(buf2); ++i) {
       buf2[i] = ('a' + (i % 26));
     }
 
     URLImpl *url2 = url_create(heap);
-    url_path_set(heap,url2,buf2,next_required_overflow_size, true);
+    url_path_set(heap, url2, buf2, next_required_overflow_size, true);
 
-    tb.check(heap->m_read_write_heap->m_heap_size == (uint32_t)next_rw_heap_size, "Checking the current rw heap is %d bytes", (int)next_rw_heap_size);
+    tb.check(heap->m_read_write_heap->m_heap_size == (uint32_t)next_rw_heap_size, "Checking the current rw heap is %d bytes",
+             (int)next_rw_heap_size);
     tb.check(heap->m_read_write_heap->m_free_size == 0, "Checking that we've completely consumed the rw heap");
     tb.check(heap->m_ronly_heap[ronly_heap].m_heap_start != NULL, "Checking that we properly demoted the previous rw heap");
     for (int i = ronly_heap + 1; i < HDR_BUF_RONLY_HEAPS; ++i) {
@@ -1249,24 +1243,25 @@ REGRESSION_TEST(HdrHeap_Coalesce)(RegressionTest* t, int /* atype ATS_UNUSED */,
 
   // We will rerun these checks after we introduce a non-copied string to make sure we didn't already coalesce
   for (int i = 0; i < HDR_BUF_RONLY_HEAPS; ++i) {
-    tb.check(heap->m_ronly_heap[i].m_heap_start != (char*)NULL, "Pre non-copied string: Checking ronly_heap[%d] is NOT NULL", i);
+    tb.check(heap->m_ronly_heap[i].m_heap_start != (char *)NULL, "Pre non-copied string: Checking ronly_heap[%d] is NOT NULL", i);
   }
 
   // Now if we add a url object that contains only non-copied strings it shouldn't affect the size of the rwheap
   // since it doesn't require allocating any storage on this heap.
   char buf3[next_required_overflow_size];
-  for(unsigned int i = 0; i < sizeof(buf); ++i) {
+  for (unsigned int i = 0; i < sizeof(buf); ++i) {
     buf3[i] = ('a' + (i % 26));
   }
 
   URLImpl *aliased_str_url = url_create(heap);
   url_path_set(heap, aliased_str_url, buf3, next_required_overflow_size, false); // don't copy this string
-  tb.check(aliased_str_url->m_len_path == next_required_overflow_size, "Checking that the aliased string shows having proper length");
+  tb.check(aliased_str_url->m_len_path == next_required_overflow_size,
+           "Checking that the aliased string shows having proper length");
   tb.check(aliased_str_url->m_ptr_path == buf3, "Checking that the aliased string is correctly pointing at buf");
 
 
   for (int i = 0; i < HDR_BUF_RONLY_HEAPS; ++i) {
-    tb.check(heap->m_ronly_heap[i].m_heap_start != (char*)NULL, "Post non-copied string: Checking ronly_heap[%d] is NOT NULL", i);
+    tb.check(heap->m_ronly_heap[i].m_heap_start != (char *)NULL, "Post non-copied string: Checking ronly_heap[%d] is NOT NULL", i);
   }
   tb.check(heap->m_read_write_heap->m_free_size == 0, "Checking that we've completely consumed the rw heap");
   tb.check(heap->m_next == NULL, "Checking that we dont have any chained heaps");
@@ -1283,9 +1278,12 @@ REGRESSION_TEST(HdrHeap_Coalesce)(RegressionTest* t, int /* atype ATS_UNUSED */,
 
   // Now we need to validate that aliased_str_url has a path that isn't NULL, if it's NULL then the
   // coalesce is broken and didn't properly determine the size, if it's not null then everything worked as expected.
-  tb.check(aliased_str_url->m_len_path == next_required_overflow_size, "Checking that the aliased string shows having proper length");
-  tb.check(aliased_str_url->m_ptr_path != NULL, "Checking that the aliased string was properly moved during coalsece and evacuation");
-  tb.check(aliased_str_url->m_ptr_path != buf3, "Checking that the aliased string was properly moved during coalsece and evacuation (not pointing at buf3)");
+  tb.check(aliased_str_url->m_len_path == next_required_overflow_size,
+           "Checking that the aliased string shows having proper length");
+  tb.check(aliased_str_url->m_ptr_path != NULL,
+           "Checking that the aliased string was properly moved during coalsece and evacuation");
+  tb.check(aliased_str_url->m_ptr_path != buf3,
+           "Checking that the aliased string was properly moved during coalsece and evacuation (not pointing at buf3)");
 
   // Clean up
   heap->destroy();

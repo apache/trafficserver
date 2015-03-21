@@ -70,19 +70,21 @@ LogFormat::setup(const char *name, const char *format_str, unsigned interval_sec
     m_format_str = (char *)ats_malloc(m_format_str_size);
     ink_strlcpy(m_format_str, format_str, m_format_str_size);
     if (m_tagging_on) {
-      Note("Log tagging enabled, adding %%<phn> field at the end of " "format %s", name);
+      Note("Log tagging enabled, adding %%<phn> field at the end of "
+           "format %s",
+           name);
       ink_strlcat(m_format_str, tag, m_format_str_size);
     };
 
     char *printf_str = NULL;
     char *fieldlist_str = NULL;
-    int nfields = parse_format_string(m_format_str, &printf_str,
-                                      &fieldlist_str);
+    int nfields = parse_format_string(m_format_str, &printf_str, &fieldlist_str);
     if (nfields > (m_tagging_on ? 1 : 0)) {
       init_variables(name, fieldlist_str, printf_str, interval_sec);
     } else {
       Note("Format %s encountered an error parsing the symbol string "
-           "\"%s\", symbol string contains no fields", ((name) ? name : "no-name"), format_str);
+           "\"%s\", symbol string contains no fields",
+           ((name) ? name : "no-name"), format_str);
       m_valid = false;
     }
 
@@ -102,7 +104,8 @@ LogFormat::setup(const char *name, const char *format_str, unsigned interval_sec
   LogFormat::id_from_name
   -------------------------------------------------------------------------*/
 
-int32_t LogFormat::id_from_name(const char *name)
+int32_t
+LogFormat::id_from_name(const char *name)
 {
   int32_t id = 0;
   if (name) {
@@ -114,9 +117,9 @@ int32_t LogFormat::id_from_name(const char *name)
      * This problem is only known to occur on Linux which
      * is a 32-bit OS.
      */
-    id = (int32_t) hash.fold() & 0x7fffffff;
+    id = (int32_t)hash.fold() & 0x7fffffff;
 #else
-    id = (int32_t) hash.fold();
+    id = (int32_t)hash.fold();
 #endif
   }
   return id;
@@ -134,7 +137,8 @@ LogFormat::init_variables(const char *name, const char *fieldlist_str, const cha
   if (m_field_count == 0) {
     m_valid = false;
   } else if (m_aggregate && !interval_sec) {
-    Note("Format for aggregate operators but no interval " "was specified");
+    Note("Format for aggregate operators but no interval "
+         "was specified");
     m_valid = false;
   } else {
     if (m_aggregate) {
@@ -179,18 +183,8 @@ LogFormat::init_variables(const char *name, const char *fieldlist_str, const cha
   -------------------------------------------------------------------------*/
 
 LogFormat::LogFormat(const char *name, const char *format_str, unsigned interval_sec)
-  : m_interval_sec(0),
-    m_interval_next(0),
-    m_agg_marshal_space(NULL),
-    m_valid(false),
-    m_name_str(NULL),
-    m_name_id(0),
-    m_fieldlist_str(NULL),
-    m_fieldlist_id(0),
-    m_field_count(0),
-    m_printf_str(NULL),
-    m_aggregate(false),
-    m_format_str(NULL)
+  : m_interval_sec(0), m_interval_next(0), m_agg_marshal_space(NULL), m_valid(false), m_name_str(NULL), m_name_id(0),
+    m_fieldlist_str(NULL), m_fieldlist_id(0), m_field_count(0), m_printf_str(NULL), m_aggregate(false), m_format_str(NULL)
 {
   setup(name, format_str, interval_sec);
 
@@ -208,18 +202,8 @@ LogFormat::LogFormat(const char *name, const char *format_str, unsigned interval
 // delete this.
 //
 LogFormat::LogFormat(const char *name, const char *fieldlist_str, const char *printf_str, unsigned interval_sec)
-  : m_interval_sec(0),
-    m_interval_next(0),
-    m_agg_marshal_space(NULL),
-    m_valid(false),
-    m_name_str(NULL),
-    m_name_id(0),
-    m_fieldlist_str(NULL),
-    m_fieldlist_id(0),
-    m_field_count(0),
-    m_printf_str(NULL),
-    m_aggregate(false),
-    m_format_str(NULL)
+  : m_interval_sec(0), m_interval_next(0), m_agg_marshal_space(NULL), m_valid(false), m_name_str(NULL), m_name_id(0),
+    m_fieldlist_str(NULL), m_fieldlist_id(0), m_field_count(0), m_printf_str(NULL), m_aggregate(false), m_format_str(NULL)
 {
   init_variables(name, fieldlist_str, printf_str, interval_sec);
   m_format_type = LOG_FORMAT_CUSTOM;
@@ -231,19 +215,9 @@ LogFormat::LogFormat(const char *name, const char *fieldlist_str, const char *pr
   This is the copy ctor, needed for copying lists of Format objects.
   -------------------------------------------------------------------------*/
 
-LogFormat::LogFormat(const LogFormat & rhs)
-  : m_interval_sec(0),
-    m_interval_next(0),
-    m_agg_marshal_space(NULL),
-    m_valid(rhs.m_valid),
-    m_name_str(NULL),
-    m_name_id(0),
-    m_fieldlist_str(NULL),
-    m_fieldlist_id(0),
-    m_field_count(0),
-    m_printf_str(NULL),
-    m_aggregate(false),
-    m_format_str(NULL),
+LogFormat::LogFormat(const LogFormat &rhs)
+  : m_interval_sec(0), m_interval_next(0), m_agg_marshal_space(NULL), m_valid(rhs.m_valid), m_name_str(NULL), m_name_id(0),
+    m_fieldlist_str(NULL), m_fieldlist_id(0), m_field_count(0), m_printf_str(NULL), m_aggregate(false), m_format_str(NULL),
     m_format_type(rhs.m_format_type)
 {
   if (m_valid) {
@@ -283,7 +257,7 @@ LogFormat::~LogFormat()
   -------------------------------------------------------------------------*/
 
 LogFormat *
-LogFormat::format_from_specification(char *spec, char **file_name, char **file_header, LogFileFormat * file_type)
+LogFormat::format_from_specification(char *spec, char **file_name, char **file_header, LogFileFormat *file_type)
 {
   LogFormat *format;
   char *token;
@@ -473,7 +447,9 @@ LogFormat::parse_symbol_string(const char *symbol_string, LogFieldList *field_li
             f = Log::global_field_list.find_by_symbol(name);
           }
           if (!f) {
-            Note("Invalid field symbol %s used in aggregate " "operation", name);
+            Note("Invalid field symbol %s used in aggregate "
+                 "operation",
+                 name);
           } else if (f->type() != LogField::sINT) {
             Note("Only single integer field types may be aggregated");
           } else {
@@ -486,7 +462,9 @@ LogFormat::parse_symbol_string(const char *symbol_string, LogFieldList *field_li
           }
         }
       } else {
-        Note("Invalid aggregate field specification: no trailing " "')' in %s", symbol);
+        Note("Invalid aggregate field specification: no trailing "
+             "')' in %s",
+             symbol);
       }
     }
     //
@@ -498,8 +476,8 @@ LogFormat::parse_symbol_string(const char *symbol_string, LogFieldList *field_li
       char *name_end = strchr(symbol, '}');
       if (name_end != NULL) {
         name = symbol + 1;
-        *name_end = 0;          // changes '}' to '\0'
-        sym = name_end + 1;     // start of container symbol
+        *name_end = 0;      // changes '}' to '\0'
+        sym = name_end + 1; // start of container symbol
         LogSlice slice(sym);
         Debug("log-format", "Name = %s, symbol = %s", name, sym);
         container = LogField::valid_container_name(sym);
@@ -510,15 +488,16 @@ LogFormat::parse_symbol_string(const char *symbol_string, LogFieldList *field_li
           ink_assert(f != NULL);
           if (slice.m_enable) {
             f->m_slice = slice;
-            Debug("log-slice", "symbol = %s, [%d:%d]", sym,
-                  f->m_slice.m_start, f->m_slice.m_end);
+            Debug("log-slice", "symbol = %s, [%d:%d]", sym, f->m_slice.m_start, f->m_slice.m_end);
           }
           field_list->add(f, false);
           field_count++;
           Debug("log-format", "Container field {%s}%s added", name, sym);
         }
       } else {
-        Note("Invalid container field specification: no trailing " "'}' in %s", symbol);
+        Note("Invalid container field specification: no trailing "
+             "'}' in %s",
+             symbol);
       }
     }
     //
@@ -532,14 +511,15 @@ LogFormat::parse_symbol_string(const char *symbol_string, LogFieldList *field_li
         LogField *cpy = new LogField(*f);
         if (slice.m_enable) {
           cpy->m_slice = slice;
-          Debug("log-slice", "symbol = %s, [%d:%d]", symbol,
-                cpy->m_slice.m_start, cpy->m_slice.m_end);
+          Debug("log-slice", "symbol = %s, [%d:%d]", symbol, cpy->m_slice.m_start, cpy->m_slice.m_end);
         }
         field_list->add(cpy, false);
         field_count++;
         Debug("log-format", "Regular field %s added", symbol);
       } else {
-        Note("The log format symbol %s was not found in the " "list of known symbols.", symbol);
+        Note("The log format symbol %s was not found in the "
+             "list of known symbols.",
+             symbol);
       }
     }
 
@@ -591,8 +571,7 @@ LogFormat::parse_escape_string(const char *str, int len)
   c = (unsigned char)str[start + 3];
 
   if (isdigit(a) && isdigit(b) && isdigit(b)) {
-
-    sum = (a - '0')*64 + (b - '0')*8 + (c - '0');
+    sum = (a - '0') * 64 + (b - '0') * 8 + (c - '0');
 
     if (sum == 0 || sum >= 255) {
       Warning("Octal escape sequence out of range: \\%c%c%c, treat it as normal string\n", a, b, c);
@@ -612,7 +591,7 @@ LogFormat::parse_escape_string(const char *str, int len)
     else
       j = toupper(c) - 'A' + 10;
 
-    sum = i*16 + j;
+    sum = i * 16 + j;
 
     if (sum == 0 || sum >= 255) {
       Warning("Hex escape sequence out of range: \\%c%c%c, treat it as normal string\n", a, b, c);
@@ -738,8 +717,7 @@ LogFormat::parse_format_string(const char *format_str, char **printf_str, char *
   (*fields_str)[fields_pos] = '\0';
   (*printf_str)[printf_pos] = '\0';
 
-  Debug("log-format", "LogFormat::parse_format_string: field_count=%d, \"%s\", \"%s\"", field_count, *fields_str,
-        *printf_str);
+  Debug("log-format", "LogFormat::parse_format_string: field_count=%d, \"%s\", \"%s\"", field_count, *fields_str, *printf_str);
   return field_count;
 }
 
@@ -750,16 +728,9 @@ LogFormat::parse_format_string(const char *format_str, char **printf_str, char *
   -------------------------------------------------------------------------*/
 
 void
-LogFormat::display(FILE * fd)
+LogFormat::display(FILE *fd)
 {
-  static const char *types[] = {
-    "SQUID_LOG",
-    "COMMON_LOG",
-    "EXTENDED_LOG",
-    "EXTENDED2_LOG",
-    "LOG_FORMAT_CUSTOM",
-    "LOG_FORMAT_TEXT"
-  };
+  static const char *types[] = {"SQUID_LOG", "COMMON_LOG", "EXTENDED_LOG", "EXTENDED2_LOG", "LOG_FORMAT_CUSTOM", "LOG_FORMAT_TEXT"};
 
   fprintf(fd, "--------------------------------------------------------\n");
   fprintf(fd, "Format : %s (%s) (%p), %u fields.\n", m_name_str, types[m_format_type], this, m_field_count);
@@ -774,14 +745,15 @@ LogFormat::display(FILE * fd)
 }
 
 void
-LogFormat::displayAsXML(FILE * fd)
+LogFormat::displayAsXML(FILE *fd)
 {
   if (valid()) {
-    fprintf(fd,
-            "<LogFormat>\n"
-            "  <Name     = \"%s\"/>\n"
-            "  <Format   = \"%s\"/>\n"
-            "  <Interval = \"%ld\"/>\n" "</LogFormat>\n", m_name_str, m_format_str, m_interval_sec);
+    fprintf(fd, "<LogFormat>\n"
+                "  <Name     = \"%s\"/>\n"
+                "  <Format   = \"%s\"/>\n"
+                "  <Interval = \"%ld\"/>\n"
+                "</LogFormat>\n",
+            m_name_str, m_format_str, m_interval_sec);
   } else {
     fprintf(fd, "INVALID FORMAT\n");
   }
@@ -810,7 +782,7 @@ LogFormatList::clear()
 }
 
 void
-LogFormatList::add(LogFormat * format, bool copy)
+LogFormatList::add(LogFormat *format, bool copy)
 {
   ink_assert(format != NULL);
 
@@ -824,7 +796,7 @@ LogFormatList::add(LogFormat * format, bool copy)
 LogFormat *
 LogFormatList::find_by_name(const char *name) const
 {
-  for (LogFormat * f = first(); f; f = next(f)) {
+  for (LogFormat *f = first(); f; f = next(f)) {
     if (!strcmp(f->name(), name)) {
       return f;
     }
@@ -836,16 +808,16 @@ unsigned
 LogFormatList::count()
 {
   unsigned cnt = 0;
-  for (LogFormat * f = first(); f; f = next(f)) {
+  for (LogFormat *f = first(); f; f = next(f)) {
     cnt++;
   }
   return cnt;
 }
 
 void
-LogFormatList::display(FILE * fd)
+LogFormatList::display(FILE *fd)
 {
-  for (LogFormat * f = first(); f; f = next(f)) {
+  for (LogFormat *f = first(); f; f = next(f)) {
     f->display(fd);
   }
 }

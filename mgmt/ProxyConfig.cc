@@ -32,21 +32,21 @@ ConfigProcessor configProcessor;
 void *
 config_int_cb(void *data, void *value)
 {
-  *(int *) data = *(int64_t *) value;
+  *(int *)data = *(int64_t *)value;
   return NULL;
 }
 
 void *
 config_float_cb(void *data, void *value)
 {
-  *(float *) data = *(float *) value;
+  *(float *)data = *(float *)value;
   return NULL;
 }
 
 void *
 config_long_long_cb(void *data, void *value)
 {
-  *(int64_t *) data = *(int64_t *) value;
+  *(int64_t *)data = *(int64_t *)value;
   return NULL;
 }
 
@@ -66,13 +66,12 @@ config_long_long_cb(void *data, void *value)
 void *
 config_string_alloc_cb(void *data, void *value)
 {
-  char *_ss = (char *) value;
+  char *_ss = (char *)value;
   char *_new_value = 0;
 
 //#define DEBUG_CONFIG_STRING_UPDATE
-#if defined (DEBUG_CONFIG_STRING_UPDATE)
-  printf("config callback [new, old] = [%s : %s]\n",
-         (_ss) ? (_ss) : (""), (*(char **) data) ? (*(char **) data) : (""));
+#if defined(DEBUG_CONFIG_STRING_UPDATE)
+  printf("config callback [new, old] = [%s : %s]\n", (_ss) ? (_ss) : (""), (*(char **)data) ? (*(char **)data) : (""));
 #endif
   int len = -1;
   if (_ss) {
@@ -81,8 +80,8 @@ config_string_alloc_cb(void *data, void *value)
     memcpy(_new_value, _ss, len + 1);
   }
 
-  char *_temp2 = *(char **) data;
-  *(char **) data = _new_value;
+  char *_temp2 = *(char **)data;
+  *(char **)data = _new_value;
 
   // free old data
   if (_temp2 != 0)
@@ -92,16 +91,16 @@ config_string_alloc_cb(void *data, void *value)
 }
 
 
-class ConfigInfoReleaser:public Continuation
+class ConfigInfoReleaser : public Continuation
 {
 public:
-  ConfigInfoReleaser(unsigned int id, ConfigInfo * info)
-    : Continuation(new_ProxyMutex()), m_id(id), m_info(info)
+  ConfigInfoReleaser(unsigned int id, ConfigInfo *info) : Continuation(new_ProxyMutex()), m_id(id), m_info(info)
   {
     SET_HANDLER(&ConfigInfoReleaser::handle_event);
   }
 
-  int handle_event(int /* event ATS_UNUSED */, void * /* edata ATS_UNUSED */)
+  int
+  handle_event(int /* event ATS_UNUSED */, void * /* edata ATS_UNUSED */)
   {
     configProcessor.release(m_id, m_info);
     delete this;
@@ -114,8 +113,7 @@ public:
 };
 
 
-ConfigProcessor::ConfigProcessor()
-  : ninfos(0)
+ConfigProcessor::ConfigProcessor() : ninfos(0)
 {
   int i;
 
@@ -125,13 +123,13 @@ ConfigProcessor::ConfigProcessor()
 }
 
 unsigned int
-ConfigProcessor::set(unsigned int id, ConfigInfo * info, unsigned timeout_secs)
+ConfigProcessor::set(unsigned int id, ConfigInfo *info, unsigned timeout_secs)
 {
   ConfigInfo *old_info;
   int idx;
 
   if (id == 0) {
-    id = ink_atomic_increment((int *) &ninfos, 1) + 1;
+    id = ink_atomic_increment((int *)&ninfos, 1) + 1;
     ink_assert(id != 0);
     ink_assert(id <= MAX_CONFIGS);
   }
@@ -190,7 +188,7 @@ ConfigProcessor::get(unsigned int id)
 }
 
 void
-ConfigProcessor::release(unsigned int id, ConfigInfo * info)
+ConfigProcessor::release(unsigned int id, ConfigInfo *info)
 {
   int idx;
 
@@ -214,25 +212,22 @@ ConfigProcessor::release(unsigned int id, ConfigInfo * info)
 #if TS_HAS_TESTS
 
 enum {
-  REGRESSION_CONFIG_FIRST   = 1,   // last config in a sequence
-  REGRESSION_CONFIG_LAST    = 2,   // last config in a sequence
-  REGRESSION_CONFIG_SINGLE  = 4, // single-owner config
+  REGRESSION_CONFIG_FIRST = 1,  // last config in a sequence
+  REGRESSION_CONFIG_LAST = 2,   // last config in a sequence
+  REGRESSION_CONFIG_SINGLE = 4, // single-owner config
 };
 
-struct RegressionConfig : public ConfigInfo
-{
+struct RegressionConfig : public ConfigInfo {
   static volatile int nobjects; // count of outstanding RegressionConfig objects (not-reentrant)
 
   // DeferredCall is a simple function call wrapper that defers itself until the RegressionConfig
   // object count drops below the specified count.
-  template <typename CallType>
-  struct DeferredCall : public Continuation
-  {
-    DeferredCall(int _r, CallType _c) : remain(_r), call(_c) {
-      SET_HANDLER(&DeferredCall::handleEvent);
-    }
+  template <typename CallType> struct DeferredCall : public Continuation {
+    DeferredCall(int _r, CallType _c) : remain(_r), call(_c) { SET_HANDLER(&DeferredCall::handleEvent); }
 
-    int handleEvent(int event ATS_UNUSED, Event * e) {
+    int
+    handleEvent(int event ATS_UNUSED, Event *e)
+    {
       if (RegressionConfig::nobjects > this->remain) {
         e->schedule_in(HRTIME_MSECONDS(500));
         return EVENT_CONT;
@@ -243,17 +238,19 @@ struct RegressionConfig : public ConfigInfo
       return EVENT_DONE;
     }
 
-    int       remain; // Number of remaining RegressionConfig objects to wait for.
-    CallType  call;
+    int remain; // Number of remaining RegressionConfig objects to wait for.
+    CallType call;
   };
 
   template <typename CallType>
-  static void defer(int count, CallType call) {
-      eventProcessor.schedule_in(new RegressionConfig::DeferredCall<CallType>(count, call), HRTIME_MSECONDS(500));
+  static void
+  defer(int count, CallType call)
+  {
+    eventProcessor.schedule_in(new RegressionConfig::DeferredCall<CallType>(count, call), HRTIME_MSECONDS(500));
   }
 
-  RegressionConfig(RegressionTest * r, int * ps, unsigned f)
-      : test(r), pstatus(ps), flags(f) {
+  RegressionConfig(RegressionTest *r, int *ps, unsigned f) : test(r), pstatus(ps), flags(f)
+  {
     if (this->flags & REGRESSION_CONFIG_SINGLE) {
       TestBox box(this->test, this->pstatus);
       box.check(this->refcount() == 1, "invalid refcount %d (should be 1)", this->refcount());
@@ -262,7 +259,8 @@ struct RegressionConfig : public ConfigInfo
     ink_atomic_increment(&nobjects, 1);
   }
 
-  ~RegressionConfig() {
+  ~RegressionConfig()
+  {
     TestBox box(this->test, this->pstatus);
 
     box.check(this->refcount() == 0, "invalid refcount %d (should be 0)", this->refcount());
@@ -278,31 +276,29 @@ struct RegressionConfig : public ConfigInfo
     ink_atomic_increment(&nobjects, -1);
   }
 
-  RegressionTest * test;
-  int *     pstatus;
-  unsigned  flags;
+  RegressionTest *test;
+  int *pstatus;
+  unsigned flags;
 };
 
 volatile int RegressionConfig::nobjects = 0;
 
-struct ProxyConfig_Set_Completion
-{
-  ProxyConfig_Set_Completion(int _id, RegressionConfig * _c)
-    : configid(_id), config(_c) {
-  }
+struct ProxyConfig_Set_Completion {
+  ProxyConfig_Set_Completion(int _id, RegressionConfig *_c) : configid(_id), config(_c) {}
 
-  void operator() (void) const {
+  void operator()(void) const
+  {
     // Push one more RegressionConfig to force the LAST-tagged one to get destroyed.
     rprintf(config->test, "setting LAST config object %p\n", config);
     configProcessor.set(configid, config, 1);
   }
 
   int configid;
-  RegressionConfig * config;
+  RegressionConfig *config;
 };
 
 // Test that ConfigProcessor::set() correctly releases the old ConfigInfo after a timeout.
-EXCLUSIVE_REGRESSION_TEST(ProxyConfig_Set)(RegressionTest * test, int /* atype ATS_UNUSED */, int * pstatus)
+EXCLUSIVE_REGRESSION_TEST(ProxyConfig_Set)(RegressionTest *test, int /* atype ATS_UNUSED */, int *pstatus)
 {
   int configid = 0;
 
@@ -321,27 +317,25 @@ EXCLUSIVE_REGRESSION_TEST(ProxyConfig_Set)(RegressionTest * test, int /* atype A
   RegressionConfig::defer(2, ProxyConfig_Set_Completion(configid, new RegressionConfig(test, pstatus, 0)));
 }
 
-struct ProxyConfig_Release_Completion
-{
-  ProxyConfig_Release_Completion(int _id, RegressionConfig * _c)
-    : configid(_id), config(_c) {
-  }
+struct ProxyConfig_Release_Completion {
+  ProxyConfig_Release_Completion(int _id, RegressionConfig *_c) : configid(_id), config(_c) {}
 
-  void operator() (void) const {
+  void operator()(void) const
+  {
     // Release the reference count. Since we were keeping this alive, it should be the last to die.
     configProcessor.release(configid, config);
   }
 
   int configid;
-  RegressionConfig * config;
+  RegressionConfig *config;
 };
 
 // Test that ConfigProcessor::release() correctly releases the old ConfigInfo across an implicit
 // release timeout.
-EXCLUSIVE_REGRESSION_TEST(ProxyConfig_Release)(RegressionTest * test, int /* atype ATS_UNUSED */, int * pstatus)
+EXCLUSIVE_REGRESSION_TEST(ProxyConfig_Release)(RegressionTest *test, int /* atype ATS_UNUSED */, int *pstatus)
 {
   int configid = 0;
-  RegressionConfig * config;
+  RegressionConfig *config;
 
   *pstatus = REGRESSION_TEST_INPROGRESS;
   RegressionConfig::nobjects = 0;

@@ -35,15 +35,16 @@ ComponentBase::Error Utils::ERROR_LOG(0);
 using std::string;
 
 void
-Utils::init(ComponentBase::Debug debug_func, ComponentBase::Error error_func) {
+Utils::init(ComponentBase::Debug debug_func, ComponentBase::Error error_func)
+{
   DEBUG_LOG = debug_func;
   ERROR_LOG = error_func;
 }
 
 bool
-Utils::getAttribute(const string &data, const string &attr, size_t curr_pos, size_t end_pos,
-                    Attribute &attr_info,
-                    size_t *term_pos /* = 0 */, char terminator /* = 0 */) {
+Utils::getAttribute(const string &data, const string &attr, size_t curr_pos, size_t end_pos, Attribute &attr_info,
+                    size_t *term_pos /* = 0 */, char terminator /* = 0 */)
+{
   size_t attr_start = data.find(attr, curr_pos);
   if (attr_start >= end_pos) {
     ERROR_LOG("[%s] Tag has no [%.*s] attribute", __FUNCTION__, attr.size(), attr.data());
@@ -77,8 +78,7 @@ Utils::getAttribute(const string &data, const string &attr, size_t curr_pos, siz
     if (data[i] == '"') {
       quoted = true;
       in_quoted_part = !in_quoted_part;
-    }
-    else if (data[i] == ' ') {
+    } else if (data[i] == ' ') {
       if (!in_quoted_part) {
         break;
       }
@@ -88,8 +88,8 @@ Utils::getAttribute(const string &data, const string &attr, size_t curr_pos, siz
   }
   const char *data_start_ptr = data.data();
   if (in_quoted_part) {
-    ERROR_LOG("[%s] Unterminated quote in value for attribute [%.*s] starting at [%.10s]",
-              __FUNCTION__, attr.size(), attr.data(), data_start_ptr + curr_pos);
+    ERROR_LOG("[%s] Unterminated quote in value for attribute [%.*s] starting at [%.10s]", __FUNCTION__, attr.size(), attr.data(),
+              data_start_ptr + curr_pos);
     return false;
   }
   if (terminator && term_pos) {
@@ -111,7 +111,8 @@ Utils::getAttribute(const string &data, const string &attr, size_t curr_pos, siz
 }
 
 void
-Utils::parseKeyValueConfig(const std::list<string> &lines, KeyValueMap &kvMap) {
+Utils::parseKeyValueConfig(const std::list<string> &lines, KeyValueMap &kvMap)
+{
   string key, value;
   std::istringstream iss;
   for (std::list<string>::const_iterator list_iter = lines.begin(); list_iter != lines.end(); ++list_iter) {
@@ -135,13 +136,13 @@ Utils::parseKeyValueConfig(const std::list<string> &lines, KeyValueMap &kvMap) {
 }
 
 void
-Utils::parseAttributes(const char *data, int data_len, AttributeList &attr_list,
-                       const char *pair_separators /* = " " */) {
+Utils::parseAttributes(const char *data, int data_len, AttributeList &attr_list, const char *pair_separators /* = " " */)
+{
   attr_list.clear();
   if (!data || (data_len <= 0)) {
     return;
   }
-  char separator_lookup[256] = { 0 };
+  char separator_lookup[256] = {0};
   int i;
   for (i = 0; pair_separators[i]; ++i) {
     separator_lookup[static_cast<unsigned int>(pair_separators[i])] = 1;
@@ -149,8 +150,8 @@ Utils::parseAttributes(const char *data, int data_len, AttributeList &attr_list,
   Attribute attr;
   bool inside_quotes = false, end_of_attribute;
   bool escape_on = false;
-  for (i = 0; (i < data_len) && ((isspace(data[i]) || separator_lookup[static_cast<unsigned int>(data[i])]));
-       ++i);
+  for (i = 0; (i < data_len) && ((isspace(data[i]) || separator_lookup[static_cast<unsigned int>(data[i])])); ++i)
+    ;
   attr.name = data + i;
   attr.value = 0;
   for (; i <= data_len; ++i) {
@@ -171,14 +172,14 @@ Utils::parseAttributes(const char *data, int data_len, AttributeList &attr_list,
             attr.value_len -= 2;
           }
           if (attr.name_len && attr.value_len) {
-            DEBUG_LOG(DEBUG_TAG, "[%s] Added attribute with name [%.*s] and value [%.*s]",
-                      __FUNCTION__, attr.name_len, attr.name, attr.value_len, attr.value);
+            DEBUG_LOG(DEBUG_TAG, "[%s] Added attribute with name [%.*s] and value [%.*s]", __FUNCTION__, attr.name_len, attr.name,
+                      attr.value_len, attr.value);
             attr_list.push_back(attr);
           } // else ignore empty name/value
-        } // else ignore attribute with no value
-      } // else ignore variable with unterminated quotes
-      for(; (i < data_len) && ((isspace(data[i]) || separator_lookup[static_cast<unsigned int>(data[i])]));
-          ++i);
+        }   // else ignore attribute with no value
+      }     // else ignore variable with unterminated quotes
+      for (; (i < data_len) && ((isspace(data[i]) || separator_lookup[static_cast<unsigned int>(data[i])])); ++i)
+        ;
       attr.name = data + i;
       attr.value = 0;
       inside_quotes = false;

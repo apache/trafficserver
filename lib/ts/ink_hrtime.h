@@ -28,7 +28,7 @@
   This file contains code supporting the Inktomi high-resolution timer.
 **************************************************************************/
 
-#if !defined (_ink_hrtime_h_)
+#if !defined(_ink_hrtime_h_)
 #define _ink_hrtime_h_
 
 #include "ink_config.h"
@@ -39,7 +39,8 @@
 typedef int64_t ink_hrtime;
 
 int squid_timestamp_to_buf(char *buf, unsigned int buf_size, long timestamp_sec, long timestamp_usec);
-char *int64_to_str(char *buf, unsigned int buf_size, int64_t val, unsigned int *total_chars, unsigned int req_width=0, char pad_char='0');
+char *int64_to_str(char *buf, unsigned int buf_size, int64_t val, unsigned int *total_chars, unsigned int req_width = 0,
+                   char pad_char = '0');
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -54,14 +55,14 @@ static inline ink_hrtime
 hrtime_rdtsc()
 {
   ink_hrtime rv;
-  asm volatile (".byte 0x0f, 0x31":"=A" (rv));
+  asm volatile(".byte 0x0f, 0x31" : "=A"(rv));
   return (rv);
 }
 static inline uint64_t
 get_hrtime_rdtsc()
 {
   // do it fixed point if you have better hardware support
-  return (uint64_t) (hrtime_freq_float * hrtime_rdtsc());
+  return (uint64_t)(hrtime_freq_float * hrtime_rdtsc());
 }
 #endif
 
@@ -71,20 +72,20 @@ get_hrtime_rdtsc()
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#define HRTIME_FOREVER  (10*HRTIME_DECADE)
-#define HRTIME_DECADE   (10*HRTIME_YEAR)
-#define HRTIME_YEAR     (365*HRTIME_DAY+HRTIME_DAY/4)
-#define HRTIME_WEEK     (7*HRTIME_DAY)
-#define HRTIME_DAY      (24*HRTIME_HOUR)
-#define HRTIME_HOUR     (60*HRTIME_MINUTE)
-#define HRTIME_MINUTE   (60*HRTIME_SECOND)
-#define HRTIME_SECOND   (1000*HRTIME_MSECOND)
-#define HRTIME_MSECOND  (1000*HRTIME_USECOND)
-#define HRTIME_USECOND  (1000*HRTIME_NSECOND)
-#define HRTIME_NSECOND	(1LL)
+#define HRTIME_FOREVER (10 * HRTIME_DECADE)
+#define HRTIME_DECADE (10 * HRTIME_YEAR)
+#define HRTIME_YEAR (365 * HRTIME_DAY + HRTIME_DAY / 4)
+#define HRTIME_WEEK (7 * HRTIME_DAY)
+#define HRTIME_DAY (24 * HRTIME_HOUR)
+#define HRTIME_HOUR (60 * HRTIME_MINUTE)
+#define HRTIME_MINUTE (60 * HRTIME_SECOND)
+#define HRTIME_SECOND (1000 * HRTIME_MSECOND)
+#define HRTIME_MSECOND (1000 * HRTIME_USECOND)
+#define HRTIME_USECOND (1000 * HRTIME_NSECOND)
+#define HRTIME_NSECOND (1LL)
 
-#define HRTIME_APPROX_SECONDS(_x) ((_x)>>30)    // off by 7.3%
-#define HRTIME_APPROX_FACTOR      (((float)(1<<30))/(((float)HRTIME_SECOND)))
+#define HRTIME_APPROX_SECONDS(_x) ((_x) >> 30) // off by 7.3%
+#define HRTIME_APPROX_FACTOR (((float)(1 << 30)) / (((float)HRTIME_SECOND)))
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -94,12 +95,12 @@ get_hrtime_rdtsc()
 
 // simple macros
 
-#define HRTIME_YEARS(_x)    ((_x)*HRTIME_YEAR)
-#define HRTIME_WEEKS(_x)    ((_x)*HRTIME_WEEK)
-#define HRTIME_DAYS(_x)     ((_x)*HRTIME_DAY)
-#define HRTIME_HOURS(_x)    ((_x)*HRTIME_HOUR)
-#define HRTIME_MINUTES(_x)  ((_x)*HRTIME_MINUTE)
-#define HRTIME_SECONDS(_x)  ((_x)*HRTIME_SECOND)
+#define HRTIME_YEARS(_x) ((_x)*HRTIME_YEAR)
+#define HRTIME_WEEKS(_x) ((_x)*HRTIME_WEEK)
+#define HRTIME_DAYS(_x) ((_x)*HRTIME_DAY)
+#define HRTIME_HOURS(_x) ((_x)*HRTIME_HOUR)
+#define HRTIME_MINUTES(_x) ((_x)*HRTIME_MINUTE)
+#define HRTIME_SECONDS(_x) ((_x)*HRTIME_SECOND)
 #define HRTIME_MSECONDS(_x) ((_x)*HRTIME_MSECOND)
 #define HRTIME_USECONDS(_x) ((_x)*HRTIME_USECOND)
 #define HRTIME_NSECONDS(_x) ((_x)*HRTIME_NSECOND)
@@ -148,13 +149,13 @@ ink_hrtime_from_nsec(unsigned int nsec)
 }
 
 static inline ink_hrtime
-ink_hrtime_from_timespec(const struct timespec * ts)
+ink_hrtime_from_timespec(const struct timespec *ts)
 {
   return ink_hrtime_from_sec(ts->tv_sec) + ink_hrtime_from_nsec(ts->tv_nsec);
 }
 
 static inline ink_hrtime
-ink_hrtime_from_timeval(const struct timeval * tv)
+ink_hrtime_from_timeval(const struct timeval *tv)
 {
   return ink_hrtime_from_sec(tv->tv_sec) + ink_hrtime_from_usec(tv->tv_usec);
 }
@@ -168,42 +169,42 @@ ink_hrtime_from_timeval(const struct timeval * tv)
 static inline ink_hrtime
 ink_hrtime_to_years(ink_hrtime t)
 {
-  return ((ink_hrtime) (t / HRTIME_YEAR));
+  return ((ink_hrtime)(t / HRTIME_YEAR));
 }
 static inline ink_hrtime
 ink_hrtime_to_weeks(ink_hrtime t)
 {
-  return ((ink_hrtime) (t / HRTIME_WEEK));
+  return ((ink_hrtime)(t / HRTIME_WEEK));
 }
 static inline ink_hrtime
 ink_hrtime_to_days(ink_hrtime t)
 {
-  return ((ink_hrtime) (t / HRTIME_DAY));
+  return ((ink_hrtime)(t / HRTIME_DAY));
 }
 static inline ink_hrtime
 ink_hrtime_to_mins(ink_hrtime t)
 {
-  return ((ink_hrtime) (t / HRTIME_MINUTE));
+  return ((ink_hrtime)(t / HRTIME_MINUTE));
 }
 static inline ink_hrtime
 ink_hrtime_to_sec(ink_hrtime t)
 {
-  return ((ink_hrtime) (t / HRTIME_SECOND));
+  return ((ink_hrtime)(t / HRTIME_SECOND));
 }
 static inline ink_hrtime
 ink_hrtime_to_msec(ink_hrtime t)
 {
-  return ((ink_hrtime) (t / HRTIME_MSECOND));
+  return ((ink_hrtime)(t / HRTIME_MSECOND));
 }
 static inline ink_hrtime
 ink_hrtime_to_usec(ink_hrtime t)
 {
-  return ((ink_hrtime) (t / HRTIME_USECOND));
+  return ((ink_hrtime)(t / HRTIME_USECOND));
 }
 static inline ink_hrtime
 ink_hrtime_to_nsec(ink_hrtime t)
 {
-  return ((ink_hrtime) (t / HRTIME_NSECOND));
+  return ((ink_hrtime)(t / HRTIME_NSECOND));
 }
 
 static inline struct timespec
@@ -247,7 +248,7 @@ ink_hrtime_to_timeval2(ink_hrtime t, struct timeval *tv)
 static inline ink_hrtime
 ink_get_hrtime_internal()
 {
-#if defined (USE_TIME_STAMP_COUNTER_HRTIME)
+#if defined(USE_TIME_STAMP_COUNTER_HRTIME)
   return get_hrtime_rdtsc();
 #elif defined(freebsd)
   timespec ts;
@@ -277,7 +278,6 @@ ink_get_based_hrtime_internal()
 }
 
 
-
 static inline struct timeval
 ink_gettimeofday()
 {
@@ -293,13 +293,13 @@ ink_gethrtimeofday(struct timeval *tp, void *)
 static inline int
 ink_time()
 {
-  return (int) ink_hrtime_to_sec(ink_get_based_hrtime_internal());
+  return (int)ink_hrtime_to_sec(ink_get_based_hrtime_internal());
 }
 
 static inline int
 ink_hrtime_diff_msec(ink_hrtime t1, ink_hrtime t2)
 {
-  return (int) ink_hrtime_to_msec(t1 - t2);
+  return (int)ink_hrtime_to_msec(t1 - t2);
 }
 
 static inline ink_hrtime

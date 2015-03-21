@@ -41,8 +41,7 @@
 class HttpClientSession;
 class HttpSM;
 
-void
-initialize_thread_for_http_sessions(EThread *thread, int thread_index);
+void initialize_thread_for_http_sessions(EThread *thread, int thread_index);
 
 /** A pool of server sessions.
 
@@ -53,7 +52,7 @@ initialize_thread_for_http_sessions(EThread *thread, int thread_index);
     sessions. The I/O callback will have only the NetVC and thence the remote IP address for the
     closed session and we need to be able find it based on that.
 */
-class ServerSessionPool: public Continuation
+class ServerSessionPool : public Continuation
 {
 public:
   /// Default constructor.
@@ -61,40 +60,64 @@ public:
   ServerSessionPool();
   /// Handle events from server sessions.
   int eventHandler(int event, void *data);
- protected:
+
+protected:
   /// Interface class for IP map.
-  struct IPHashing
-  {
+  struct IPHashing {
     typedef uint32_t ID;
-    typedef sockaddr const* Key;
+    typedef sockaddr const *Key;
     typedef HttpServerSession Value;
     typedef DList(HttpServerSession, ip_hash_link) ListHead;
 
-    static ID hash(Key key) { return ats_ip_hash(key); }
-    static Key key(Value const* value) { return &value->server_ip.sa; }
-    static bool equal(Key lhs, Key rhs) { return ats_ip_addr_port_eq(lhs, rhs); }
+    static ID
+    hash(Key key)
+    {
+      return ats_ip_hash(key);
+    }
+    static Key
+    key(Value const *value)
+    {
+      return &value->server_ip.sa;
+    }
+    static bool
+    equal(Key lhs, Key rhs)
+    {
+      return ats_ip_addr_port_eq(lhs, rhs);
+    }
   };
 
   /// Interface class for FQDN map.
-  struct HostHashing
-  {
+  struct HostHashing {
     typedef uint64_t ID;
-    typedef INK_MD5 const& Key;
+    typedef INK_MD5 const &Key;
     typedef HttpServerSession Value;
     typedef DList(HttpServerSession, host_hash_link) ListHead;
 
-    static ID hash(Key key) { return key.fold(); }
-    static Key key(Value const* value) { return value->hostname_hash; }
-    static bool equal(Key lhs, Key rhs) { return lhs == rhs; }
+    static ID
+    hash(Key key)
+    {
+      return key.fold();
+    }
+    static Key
+    key(Value const *value)
+    {
+      return value->hostname_hash;
+    }
+    static bool
+    equal(Key lhs, Key rhs)
+    {
+      return lhs == rhs;
+    }
   };
 
-  typedef TSHashTable<IPHashing> IPHashTable; ///< Sessions by IP address.
+  typedef TSHashTable<IPHashing> IPHashTable;     ///< Sessions by IP address.
   typedef TSHashTable<HostHashing> HostHashTable; ///< Sessions by host name.
 
 public:
   /** Check if a session matches address and host name.
    */
-  static bool match(HttpServerSession* ss, sockaddr const* addr, INK_MD5 const& host_hash, TSServerSessionSharingMatchType match_style);
+  static bool match(HttpServerSession *ss, sockaddr const *addr, INK_MD5 const &host_hash,
+                    TSServerSessionSharingMatchType match_style);
 
   /** Get a session from the pool.
 
@@ -103,10 +126,10 @@ public:
 
       @return A pointer to the session or @c NULL if not matching session was found.
   */
-  HttpServerSession* acquireSession(sockaddr const* addr, INK_MD5 const& host_hash, TSServerSessionSharingMatchType match_style);
+  HttpServerSession *acquireSession(sockaddr const *addr, INK_MD5 const &host_hash, TSServerSessionSharingMatchType match_style);
   /** Release a session to to pool.
    */
-  void releaseSession(HttpServerSession* ss);
+  void releaseSession(HttpServerSession *ss);
 
   /// Close all sessions and then clear the table.
   void purge();
@@ -117,24 +140,21 @@ public:
   HostHashTable m_host_pool;
 };
 
-enum HSMresult_t
-{
+enum HSMresult_t {
   HSM_DONE,
   HSM_RETRY,
-  HSM_NOT_FOUND
+  HSM_NOT_FOUND,
 };
 
 class HttpSessionManager
 {
 public:
-  HttpSessionManager() : m_g_pool(NULL)
-  { }
+  HttpSessionManager() : m_g_pool(NULL) {}
 
-  ~HttpSessionManager()
-  { }
+  ~HttpSessionManager() {}
 
-  HSMresult_t acquire_session(Continuation *cont, sockaddr const* addr, const char *hostname,
-                              HttpClientSession *ua_session, HttpSM *sm);
+  HSMresult_t acquire_session(Continuation *cont, sockaddr const *addr, const char *hostname, HttpClientSession *ua_session,
+                              HttpSM *sm);
   HSMresult_t release_session(HttpServerSession *to_release);
   void purge_keepalives();
   void init();
@@ -143,7 +163,7 @@ public:
 private:
   /// Global pool, used if not per thread pools.
   /// @internal We delay creating this because the session manager is created during global statics init.
-  ServerSessionPool* m_g_pool;
+  ServerSessionPool *m_g_pool;
 };
 
 extern HttpSessionManager httpSessionManager;

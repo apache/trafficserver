@@ -31,20 +31,20 @@
 #include "ComponentBase.h"
 #include "Variables.h"
 
-namespace EsiLib {
-
-class Expression : private ComponentBase {
-
+namespace EsiLib
+{
+class Expression : private ComponentBase
+{
 public:
-
-  Expression(const char *debug_tag, ComponentBase::Debug debug_func, ComponentBase::Error error_func,
-             Variables &variables);
+  Expression(const char *debug_tag, ComponentBase::Debug debug_func, ComponentBase::Error error_func, Variables &variables);
 
   /** substitutes variables (if any) in given expression */
   const std::string &expand(const char *expr, int expr_len = -1);
 
   /** convenient alternative for method above */
-  const std::string &expand(const std::string &expr) {
+  const std::string &
+  expand(const std::string &expr)
+  {
     return expand(expr.data(), expr.size());
   }
 
@@ -52,14 +52,15 @@ public:
   bool evaluate(const char *expr, int expr_len = -1);
 
   /** convenient alternative for method above */
-  bool evaluate(const std::string &expr) {
+  bool
+  evaluate(const std::string &expr)
+  {
     return evaluate(expr.data(), expr.size());
   }
 
-  virtual ~Expression() { };
+  virtual ~Expression(){};
 
 private:
-
   static const std::string EMPTY_STRING;
   static const std::string TRUE_STRING;
 
@@ -67,12 +68,23 @@ private:
   std::string _value;
 
   // these are arranged in parse priority format indices correspond to op strings array
-  enum Operator { OP_EQ, OP_NEQ, OP_LTEQ, OP_GTEQ, OP_LT, OP_GT, OP_NOT, OP_OR, OP_AND, N_OPERATORS };
+  enum Operator {
+    OP_EQ,
+    OP_NEQ,
+    OP_LTEQ,
+    OP_GTEQ,
+    OP_LT,
+    OP_GT,
+    OP_NOT,
+    OP_OR,
+    OP_AND,
+    N_OPERATORS,
+  };
 
   struct OperatorString {
     const char *str;
     int str_len;
-    OperatorString(const char *s = 0, int s_len = -1) : str(s), str_len(s_len) { };
+    OperatorString(const char *s = 0, int s_len = -1) : str(s), str_len(s_len){};
   };
 
   static const OperatorString OPERATOR_STRINGS[N_OPERATORS];
@@ -83,12 +95,16 @@ private:
 
   inline int _findOperator(const char *expr, int expr_len, Operator &op) const;
 
-  inline bool _isBinaryOperator(Operator &op) const {
-    return ((op == OP_EQ) || (op == OP_NEQ) || (op == OP_LT) || (op == OP_GT) ||
-            (op == OP_LTEQ) || (op == OP_GTEQ) || (op == OP_OR) || (op == OP_AND));
+  inline bool
+  _isBinaryOperator(Operator &op) const
+  {
+    return ((op == OP_EQ) || (op == OP_NEQ) || (op == OP_LT) || (op == OP_GT) || (op == OP_LTEQ) || (op == OP_GTEQ) ||
+            (op == OP_OR) || (op == OP_AND));
   }
 
-  inline bool _convert(const std::string &str, double &value) {
+  inline bool
+  _convert(const std::string &str, double &value)
+  {
     size_t str_size = str.size();
     if (str_size) {
       char *endp;
@@ -102,7 +118,6 @@ private:
 
   inline bool _evalSimpleExpr(const char *expr, int expr_len);
 };
-
 };
 
 #endif // _ESI_EXPRESSION_H

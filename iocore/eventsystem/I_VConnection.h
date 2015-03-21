@@ -22,52 +22,53 @@
 
  */
 
-#if !defined (_I_VConnection_h_)
+#if !defined(_I_VConnection_h_)
 #define _I_VConnection_h_
 
 #include "libts.h"
 #include "I_EventSystem.h"
 #if !defined(I_VIO_h)
 #error "include I_VIO.h"
--- -include I_VIO.h
+-- -
+  include I_VIO.h
 #endif
 
 //
 // Data Types
 //
-#define VCONNECTION_CACHE_DATA_BASE     0
-#define VCONNECTION_NET_DATA_BASE       100
-#define VCONNECTION_API_DATA_BASE       200
+#define VCONNECTION_CACHE_DATA_BASE 0
+#define VCONNECTION_NET_DATA_BASE 100
+#define VCONNECTION_API_DATA_BASE 200
 
 //
 // Event signals
 //
 
-#define VC_EVENT_NONE                    EVENT_NONE
+#define VC_EVENT_NONE EVENT_NONE
 
 /** When a Continuation is first scheduled on a processor. */
-#define VC_EVENT_IMMEDIATE               EVENT_IMMEDIATE
+#define VC_EVENT_IMMEDIATE EVENT_IMMEDIATE
 
-#define	VC_EVENT_READ_READY              VC_EVENT_EVENTS_START
+#define VC_EVENT_READ_READY VC_EVENT_EVENTS_START
 
 /**
   Any data in the accociated buffer *will be written* when the
   Continuation returns.
 
 */
-#define	VC_EVENT_WRITE_READY             (VC_EVENT_EVENTS_START+1)
+#define VC_EVENT_WRITE_READY (VC_EVENT_EVENTS_START + 1)
 
-#define	VC_EVENT_READ_COMPLETE           (VC_EVENT_EVENTS_START+2)
-#define	VC_EVENT_WRITE_COMPLETE          (VC_EVENT_EVENTS_START+3)
+#define VC_EVENT_READ_COMPLETE (VC_EVENT_EVENTS_START + 2)
+#define VC_EVENT_WRITE_COMPLETE (VC_EVENT_EVENTS_START + 3)
 
 /**
   No more data (end of stream). It should be interpreted by a
   protocol engine as either a COMPLETE or ERROR.
 
 */
-#define	VC_EVENT_EOS                     (VC_EVENT_EVENTS_START+4)
+#define VC_EVENT_EOS (VC_EVENT_EVENTS_START + 4)
 
-#define	VC_EVENT_ERROR                   EVENT_ERROR
+#define VC_EVENT_ERROR EVENT_ERROR
 
 /**
   VC_EVENT_INACTIVITY_TIMEOUT indiates that the operation (read or write) has:
@@ -79,16 +80,16 @@
        (for a write, no data has been written to the connection)
 
 */
-#define	VC_EVENT_INACTIVITY_TIMEOUT      (VC_EVENT_EVENTS_START+5)
+#define VC_EVENT_INACTIVITY_TIMEOUT (VC_EVENT_EVENTS_START + 5)
 
 /**
   Total time for some operation has been exeeded, regardless of any
   intermediate progress.
 
 */
-#define	VC_EVENT_ACTIVE_TIMEOUT          (VC_EVENT_EVENTS_START+6)
+#define VC_EVENT_ACTIVE_TIMEOUT (VC_EVENT_EVENTS_START + 6)
 
-#define	VC_EVENT_OOB_COMPLETE            (VC_EVENT_EVENTS_START+7)
+#define VC_EVENT_OOB_COMPLETE (VC_EVENT_EVENTS_START + 7)
 
 //
 // Event names
@@ -107,26 +108,24 @@
 //
 // Event return codes
 //
-#define VC_EVENT_DONE                CONTINUATION_DONE
-#define VC_EVENT_CONT                CONTINUATION_CONT
+#define VC_EVENT_DONE CONTINUATION_DONE
+#define VC_EVENT_CONT CONTINUATION_CONT
 
-//////////////////////////////////////////////////////////////////////////////
-//
-//      Support Data Structures
-//
-//////////////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////////////
+  //
+  //      Support Data Structures
+  //
+  //////////////////////////////////////////////////////////////////////////////
 
-/** Used in VConnection::shutdown(). */
-enum ShutdownHowTo_t
-{
-  IO_SHUTDOWN_READ = 0,
-  IO_SHUTDOWN_WRITE,
-  IO_SHUTDOWN_READWRITE
-};
+  /** Used in VConnection::shutdown(). */
+  enum ShutdownHowTo_t {
+    IO_SHUTDOWN_READ = 0,
+    IO_SHUTDOWN_WRITE,
+    IO_SHUTDOWN_READWRITE
+  };
 
 /** Used in VConnection::get_data(). */
-enum TSApiDataType
-{
+enum TSApiDataType {
   TS_API_DATA_READ_VIO = VCONNECTION_API_DATA_BASE,
   TS_API_DATA_WRITE_VIO,
   TS_API_DATA_OUTPUT_VC,
@@ -134,7 +133,7 @@ enum TSApiDataType
 };
 
 extern "C" {
-    typedef struct tsapi_vio* TSVIO;
+typedef struct tsapi_vio *TSVIO;
 }
 
 /**
@@ -147,11 +146,10 @@ extern "C" {
   It is also a Continuation that is called back from processors.
 
 */
-class VConnection:public Continuation
+class VConnection : public Continuation
 {
 public:
-
-  virtual ~ VConnection();
+  virtual ~VConnection();
 
   /**
     Read data from the VConnection.
@@ -249,8 +247,7 @@ public:
     @return VIO representing the scheduled IO operation.
 
   */
-  virtual VIO *do_io_write(Continuation *c = NULL,
-                           int64_t nbytes = INT64_MAX, IOBufferReader *buf = 0, bool owner = false) = 0;
+  virtual VIO *do_io_write(Continuation *c = NULL, int64_t nbytes = INT64_MAX, IOBufferReader *buf = 0, bool owner = false) = 0;
 
   /**
     Indicate that the VConnection is no longer needed.
@@ -312,7 +309,7 @@ public:
   */
   virtual void do_io_shutdown(ShutdownHowTo_t howto) = 0;
 
-    VConnection(ProxyMutex *aMutex);
+  VConnection(ProxyMutex *aMutex);
 
   /** @deprecated */
   VIO *do_io(int op, Continuation *c = NULL, int64_t nbytes = INT64_MAX, MIOBuffer *buf = 0, int data = 0);
@@ -339,10 +336,11 @@ public:
     @return True if the oparation is successful.
 
   */
-  virtual bool get_data(int id, void *data)
+  virtual bool
+  get_data(int id, void *data)
   {
-    (void) id;
-    (void) data;
+    (void)id;
+    (void)data;
     return false;
   }
 
@@ -359,15 +357,15 @@ public:
     @return True if the oparation is successful.
 
   */
-  virtual bool set_data(int id, void *data)
+  virtual bool
+  set_data(int id, void *data)
   {
-    (void) id;
-    (void) data;
+    (void)id;
+    (void)data;
     return false;
   }
 
 public:
-
   /**
     The error code from the last error.
 
@@ -378,25 +376,34 @@ public:
   int lerrno;
 };
 
-struct DummyVConnection: public VConnection
-{
-  virtual VIO *do_io_write(Continuation * /* c ATS_UNUSED */, int64_t /* nbytes ATS_UNUSED */, IOBufferReader * /* buf ATS_UNUSED */, bool /* owner ATS_UNUSED */) {
-    ink_assert(!"VConnection::do_io_write -- " "cannot use default implementation");
-    return NULL;
-  }
-  virtual VIO *do_io_read(Continuation * /* c ATS_UNUSED */, int64_t /* nbytes ATS_UNUSED */, MIOBuffer * /* buf ATS_UNUSED */) {
-    ink_assert(!"VConnection::do_io_read -- " "cannot use default implementation");
-    return NULL;
-  }
-  virtual void do_io_close(int /* alerrno ATS_UNUSED */) {
-    ink_assert(!"VConnection::do_io_close -- " "cannot use default implementation");
-  }
-  virtual void do_io_shutdown(ShutdownHowTo_t /* howto ATS_UNUSED */ )
+struct DummyVConnection : public VConnection {
+  virtual VIO *
+  do_io_write(Continuation * /* c ATS_UNUSED */, int64_t /* nbytes ATS_UNUSED */, IOBufferReader * /* buf ATS_UNUSED */,
+              bool /* owner ATS_UNUSED */)
   {
-    ink_assert(!"VConnection::do_io_shutdown -- " "cannot use default implementation");
+    ink_assert(!"VConnection::do_io_write -- "
+                "cannot use default implementation");
+    return NULL;
   }
-DummyVConnection(ProxyMutex *m):VConnection(m) {
+  virtual VIO *
+  do_io_read(Continuation * /* c ATS_UNUSED */, int64_t /* nbytes ATS_UNUSED */, MIOBuffer * /* buf ATS_UNUSED */)
+  {
+    ink_assert(!"VConnection::do_io_read -- "
+                "cannot use default implementation");
+    return NULL;
   }
+  virtual void
+  do_io_close(int /* alerrno ATS_UNUSED */)
+  {
+    ink_assert(!"VConnection::do_io_close -- "
+                "cannot use default implementation");
+  }
+  virtual void do_io_shutdown(ShutdownHowTo_t /* howto ATS_UNUSED */)
+  {
+    ink_assert(!"VConnection::do_io_shutdown -- "
+                "cannot use default implementation");
+  }
+  DummyVConnection(ProxyMutex *m) : VConnection(m) {}
 };
 
 #endif /*_I_VConnection_h_*/

@@ -38,32 +38,22 @@
 
 using namespace net_instaweb;
 
-struct InterceptCtx
-{
+struct InterceptCtx {
   TSVConn vconn;
   TSIOBuffer req_buffer;
   TSIOBufferReader req_reader;
   TSIOBuffer resp_buffer;
   TSIOBufferReader resp_reader;
-  GoogleString* response;
-  TransformCtx* request_ctx;
-  RequestHeaders* request_headers;
+  GoogleString *response;
+  TransformCtx *request_ctx;
+  RequestHeaders *request_headers;
 
   InterceptCtx()
-      : vconn(NULL)
-      , req_buffer(NULL)
-      , req_reader(NULL)
-      , resp_buffer(NULL)
-      , resp_reader(NULL)
-      , response( new GoogleString() )
-      , request_ctx(NULL)
-      , request_headers(NULL)
-  {
-  };
+    : vconn(NULL), req_buffer(NULL), req_reader(NULL), resp_buffer(NULL), resp_reader(NULL), response(new GoogleString()),
+      request_ctx(NULL), request_headers(NULL){};
 };
 
 void setup_resource_intercept();
-static int
-resource_intercept(TSCont cont, TSEvent event, void *edata);
+static int resource_intercept(TSCont cont, TSEvent event, void *edata);
 
 #endif // ATS_INTERCEPT_H

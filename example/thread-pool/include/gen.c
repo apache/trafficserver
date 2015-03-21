@@ -36,5 +36,4 @@ main(int argc, char *argv[])
   for (i = 0; i < atoi(argv[1]); i++) {
     printf("%d", i % 10);
   }
-
 }

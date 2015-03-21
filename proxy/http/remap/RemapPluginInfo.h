@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#if !defined (_REMAPPLUGININFO_h_)
+#if !defined(_REMAPPLUGININFO_h_)
 #define _REMAPPLUGININFO_h_
 #include "libts.h"
 #include "api/ts/ts.h"
@@ -42,17 +42,17 @@ class url_mapping;
 class remap_plugin_info
 {
 public:
-  typedef TSReturnCode _tsremap_init(TSRemapInterface* api_info, char* errbuf, int errbuf_size);
+  typedef TSReturnCode _tsremap_init(TSRemapInterface *api_info, char *errbuf, int errbuf_size);
   typedef void _tsremap_done(void);
-  typedef TSReturnCode _tsremap_new_instance(int argc, char* argv[], void** ih, char* errbuf, int errbuf_size);
-  typedef void _tsremap_delete_instance(void*);
-  typedef TSRemapStatus _tsremap_do_remap(void* ih, TSHttpTxn rh, TSRemapRequestInfo* rri);
-  typedef void _tsremap_os_response(void* ih, TSHttpTxn rh, int os_response_type);
+  typedef TSReturnCode _tsremap_new_instance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_size);
+  typedef void _tsremap_delete_instance(void *);
+  typedef TSRemapStatus _tsremap_do_remap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri);
+  typedef void _tsremap_os_response(void *ih, TSHttpTxn rh, int os_response_type);
 
   remap_plugin_info *next;
   char *path;
   int path_size;
-  void *dlh;                    /* "handle" for the dynamic library */
+  void *dlh; /* "handle" for the dynamic library */
   _tsremap_init *fp_tsremap_init;
   _tsremap_done *fp_tsremap_done;
   _tsremap_new_instance *fp_tsremap_new_instance;
@@ -64,7 +64,7 @@ public:
   ~remap_plugin_info();
 
   remap_plugin_info *find_by_path(char *_path);
-  void add_to_list(remap_plugin_info * pi);
+  void add_to_list(remap_plugin_info *pi);
   void delete_my_list();
 };
 
@@ -73,8 +73,7 @@ public:
  * struct host_hdr_info;
  * Used to store info about host header
 **/
-struct host_hdr_info
-{
+struct host_hdr_info {
   const char *request_host;
   int host_len;
   int request_port;
