@@ -54,6 +54,7 @@ cmd/traffic_top/traffic_top
 cmd/traffic_manager/traffic_manager
 cmd/traffic_layout/traffic_layout
 cmd/traffic_via/traffic_via
+cmd/traffic_wccp/traffic_wccp
 
 lib/ts/ink_autoconf.h
 lib/ts/ink_autoconf.h.in
@@ -83,6 +84,7 @@ proxy/config/records.config.default
 proxy/config/storage.config.default
 plugins/experimental/esi/*_test
 plugins/experimental/spdy/zstream_test
+plugins/experimental/sslheaders/test_sslheaders
 
 mgmt/api/traffic_api_cli_remote
 mgmt/tools/traffic_mcast_snoop
