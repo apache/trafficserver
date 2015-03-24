@@ -875,7 +875,7 @@ specific domains.
 
    Allows you to return a 405 Method Not Supported with Posts also
    containing an Expect: 100-continue.
-   
+
    When a Post w/ Expect: 100-continue is blocked the stat
    proxy.process.http.disallowed_post_100_continue will be incremented.
 
@@ -2322,9 +2322,9 @@ SSL Termination
   This configuration specifies the lifetime of SSL session cache
   entries in seconds. If it is ``0``, then the SSL library will use
   a default value, typically 300 seconds. Note: This option has no affect
-  when using the Traffic Server session cache (option ``2`` in 
+  when using the Traffic Server session cache (option ``2`` in
   ``proxy.config.ssl.session_cache``)
-  
+
 .. ts:cv:: CONFIG proxy.config.ssl.session_cache.auto_clear INT 1
 
   This will set the OpenSSL auto clear flag. Auto clear is enabled by
@@ -2345,7 +2345,7 @@ SSL Termination
 
 	This configuration specifies the behavior of the Traffic Server SSL session
 	cache implementation during lock contention on each bucket:
-	
+
 	- ``0`` = (default) Don't skip session caching when bucket lock is contented.
 
 	- ``1`` = Don't use the SSL session cache for this connection during lock contention.
