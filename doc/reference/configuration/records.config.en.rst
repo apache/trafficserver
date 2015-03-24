@@ -1628,6 +1628,12 @@ hostname to ``host_x.y.com``.
 HostDB
 ======
 
+.. ts:cv:: CONFIG proxy.config.hostdb.lookup_timeout INT 120
+   :metric: seconds
+   :reloadable:
+
+   Time to wait for a DNS response in seconds.
+
 .. ts:cv:: CONFIG proxy.config.hostdb.serve_stale_for INT
    :metric: seconds
    :reloadable:
