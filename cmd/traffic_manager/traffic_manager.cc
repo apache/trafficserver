@@ -76,7 +76,7 @@ static char debug_tags[1024] = "";
 static char action_tags[1024] = "";
 static bool proxy_on = true;
 
-static char mgmt_path[PATH_NAME_MAX + 1];
+static char mgmt_path[PATH_NAME_MAX];
 
 // By default, set the current directory as base
 static const char *recs_conf = "records.config";

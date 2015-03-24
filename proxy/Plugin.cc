@@ -73,7 +73,7 @@ PluginRegInfo::~PluginRegInfo()
 static bool
 plugin_load(int argc, char *argv[], bool validateOnly)
 {
-  char path[PATH_NAME_MAX + 1];
+  char path[PATH_NAME_MAX];
   init_func_t init;
 
   if (argc < 1) {

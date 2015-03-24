@@ -66,7 +66,7 @@ ink_hrtime http_handler_times[MAX_HTTP_HANDLER_EVENTS];
 int http_handler_counts[MAX_HTTP_HANDLER_EVENTS];
 
 
-char snap_filename[PATH_NAME_MAX + 1] = DEFAULT_SNAP_FILENAME;
+char snap_filename[PATH_NAME_MAX] = DEFAULT_SNAP_FILENAME;
 
 #define DEFAULT_PERSISTENT
 
@@ -420,7 +420,7 @@ void
 initialize_all_global_stats()
 {
   int istat, i;
-  char snap_file[PATH_NAME_MAX + 1];
+  char snap_file[PATH_NAME_MAX];
   ats_scoped_str rundir(RecConfigReadRuntimeDir());
 
   if (access(rundir, R_OK | W_OK) == -1) {

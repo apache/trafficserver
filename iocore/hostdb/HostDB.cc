@@ -58,9 +58,9 @@ unsigned int hostdb_serve_stale_but_revalidate = 0;
 unsigned int hostdb_hostfile_check_interval = 86400; // 1 day
 unsigned int hostdb_hostfile_update_timestamp = 0;
 unsigned int hostdb_hostfile_check_timestamp = 0;
-char hostdb_filename[PATH_NAME_MAX + 1] = DEFAULT_HOST_DB_FILENAME;
+char hostdb_filename[PATH_NAME_MAX] = DEFAULT_HOST_DB_FILENAME;
 int hostdb_size = DEFAULT_HOST_DB_SIZE;
-char hostdb_hostfile_path[PATH_NAME_MAX + 1] = "";
+char hostdb_hostfile_path[PATH_NAME_MAX] = "";
 int hostdb_sync_frequency = 120;
 int hostdb_srv_enabled = 0;
 int hostdb_disable_reverse_lookup = 0;
@@ -413,7 +413,7 @@ HostDBCache::start(int flags)
 {
   Store *hostDBStore;
   Span *hostDBSpan;
-  char storage_path[PATH_NAME_MAX + 1];
+  char storage_path[PATH_NAME_MAX];
   int storage_size = 33554432; // 32MB default
 
   bool reconfigure = ((flags & PROCESSOR_RECONFIGURE) ? true : false);
@@ -425,10 +425,10 @@ HostDBCache::start(int flags)
   // Command line overrides manager configuration.
   //
   REC_ReadConfigInt32(hostdb_enable, "proxy.config.hostdb");
-  REC_ReadConfigString(hostdb_filename, "proxy.config.hostdb.filename", PATH_NAME_MAX);
+  REC_ReadConfigString(hostdb_filename, "proxy.config.hostdb.filename", sizeof(hostdb_filename));
   REC_ReadConfigInt32(hostdb_size, "proxy.config.hostdb.size");
   REC_ReadConfigInt32(hostdb_srv_enabled, "proxy.config.srv_enabled");
-  REC_ReadConfigString(storage_path, "proxy.config.hostdb.storage_path", PATH_NAME_MAX);
+  REC_ReadConfigString(storage_path, "proxy.config.hostdb.storage_path", sizeof(storage_path));
   REC_ReadConfigInt32(storage_size, "proxy.config.hostdb.storage_size");
 
   // If proxy.config.hostdb.storage_path is not set, use the local state dir. If it is set to
@@ -2124,9 +2124,9 @@ HostDBContinuation::backgroundEvent(int /* event ATS_UNUSED */, Event * /* e ATS
     struct stat info;
     char path[sizeof(hostdb_hostfile_path)];
 
-    REC_ReadConfigString(path, "proxy.config.hostdb.host_file.path", PATH_NAME_MAX);
+    REC_ReadConfigString(path, "proxy.config.hostdb.host_file.path", sizeof(path));
     if (0 != strcasecmp(hostdb_hostfile_path, path)) {
-      Debug("amc", "Update host file '%s' <- '%s'", path, hostdb_hostfile_path);
+      Debug("hostdb", "Update host file '%s' <- '%s'", path, hostdb_hostfile_path);
       // path to hostfile changed
       hostdb_hostfile_update_timestamp = 0; // never updated from this file
       memcpy(hostdb_hostfile_path, path, sizeof(hostdb_hostfile_path));

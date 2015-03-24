@@ -191,7 +191,7 @@ struct MultiCacheHeapGC;
 
 struct MultiCacheBase : public MultiCacheHeader {
   Store *store;
-  char filename[PATH_NAME_MAX + 1];
+  char filename[PATH_NAME_MAX];
   MultiCacheHeader *mapped_header;
 
   MultiCacheHeader header_snap;

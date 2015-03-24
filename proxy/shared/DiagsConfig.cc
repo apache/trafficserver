@@ -266,7 +266,7 @@ DiagsConfig::RegisterDiagConfig()
 
 DiagsConfig::DiagsConfig(const char *filename, const char *tags, const char *actions, bool use_records)
 {
-  char diags_logpath[PATH_NAME_MAX + 1];
+  char diags_logpath[PATH_NAME_MAX];
   ats_scoped_str logpath;
 
   callbacks_established = false;

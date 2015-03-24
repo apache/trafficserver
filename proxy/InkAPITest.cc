@@ -891,7 +891,7 @@ REGRESSION_TEST(SDK_API_TSfopen)(RegressionTest *test, int /* atype ATS_UNUSED *
 {
   *pstatus = REGRESSION_TEST_INPROGRESS;
 
-  char write_file_name[PATH_NAME_MAX + 1];
+  char write_file_name[PATH_NAME_MAX];
 
   TSFile source_read_file; // existing file
   TSFile write_file;       // to be created

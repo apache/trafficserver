@@ -1101,7 +1101,7 @@ REC_readString(const char *name, bool *found, bool lock)
 char *
 RecConfigReadConfigDir()
 {
-  char buf[PATH_NAME_MAX + 1];
+  char buf[PATH_NAME_MAX];
 
   buf[0] = '\0';
   RecGetRecordString("proxy.config.config_dir", buf, PATH_NAME_MAX);
@@ -1118,7 +1118,7 @@ RecConfigReadConfigDir()
 char *
 RecConfigReadRuntimeDir()
 {
-  char buf[PATH_NAME_MAX + 1];
+  char buf[PATH_NAME_MAX];
 
   buf[0] = '\0';
   RecGetRecordString("proxy.config.local_state_dir", buf, PATH_NAME_MAX);
@@ -1135,7 +1135,7 @@ RecConfigReadRuntimeDir()
 char *
 RecConfigReadLogDir()
 {
-  char buf[PATH_NAME_MAX + 1];
+  char buf[PATH_NAME_MAX];
 
   buf[0] = '\0';
   RecGetRecordString("proxy.config.log.logfile_dir", buf, PATH_NAME_MAX);
@@ -1152,7 +1152,7 @@ RecConfigReadLogDir()
 char *
 RecConfigReadBinDir()
 {
-  char buf[PATH_NAME_MAX + 1];
+  char buf[PATH_NAME_MAX];
 
   buf[0] = '\0';
   RecGetRecordString("proxy.config.bin_path", buf, PATH_NAME_MAX);
@@ -1182,7 +1182,7 @@ RecConfigReadConfigPath(const char *file_variable, const char *default_value)
 
   // If the file name is in a configuration variable, look it up first ...
   if (file_variable) {
-    char buf[PATH_NAME_MAX + 1];
+    char buf[PATH_NAME_MAX];
 
     buf[0] = '\0';
     RecGetRecordString(file_variable, buf, PATH_NAME_MAX);
@@ -1205,7 +1205,7 @@ RecConfigReadConfigPath(const char *file_variable, const char *default_value)
 char *
 RecConfigReadPrefixPath(const char *file_variable, const char *default_value)
 {
-  char buf[PATH_NAME_MAX + 1];
+  char buf[PATH_NAME_MAX];
 
   // If the file name is in a configuration variable, look it up first ...
   if (file_variable) {

@@ -57,7 +57,7 @@ extern unsigned int hostdb_ip_timeout_interval;
 extern unsigned int hostdb_ip_fail_timeout_interval;
 extern int hostdb_size;
 extern int hostdb_srv_enabled;
-extern char hostdb_filename[PATH_NAME_MAX + 1];
+extern char hostdb_filename[PATH_NAME_MAX];
 
 // extern int hostdb_timestamp;
 extern int hostdb_sync_frequency;

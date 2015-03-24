@@ -309,7 +309,7 @@ MultiCacheBase::mmap_data(bool private_flag, bool zero_fill)
   for (unsigned i = 0; i < store->n_disks; i++) {
     Span *ds = store->disk[i];
     for (unsigned j = 0; j < store->disk[i]->paths(); j++) {
-      char path[PATH_NAME_MAX + 1];
+      char path[PATH_NAME_MAX];
       Span *d = ds->nth(j);
       int r = d->path(filename, NULL, path, PATH_NAME_MAX);
       if (r < 0) {
@@ -503,7 +503,7 @@ MultiCacheBase::read_config(const char *config_filename, Store &s, char *fn, int
 {
   int scratch;
   ats_scoped_str rundir(RecConfigReadRuntimeDir());
-  char p[PATH_NAME_MAX + 1], buf[256];
+  char p[PATH_NAME_MAX], buf[256];
 
   Layout::relative_to(p, sizeof(p), rundir, config_filename);
 
@@ -539,7 +539,7 @@ int
 MultiCacheBase::write_config(const char *config_filename, int nominal_size, int abuckets)
 {
   ats_scoped_str rundir(RecConfigReadRuntimeDir());
-  char p[PATH_NAME_MAX + 1], buf[256];
+  char p[PATH_NAME_MAX], buf[256];
   int fd, retcode = -1;
 
   Layout::relative_to(p, sizeof(p), rundir, config_filename);

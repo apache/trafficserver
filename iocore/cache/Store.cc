@@ -275,7 +275,7 @@ Span::~Span()
 static int
 get_int64(int fd, int64_t &data)
 {
-  char buf[PATH_NAME_MAX + 1];
+  char buf[PATH_NAME_MAX];
   if (ink_file_fd_readline(fd, PATH_NAME_MAX, buf) <= 0)
     return (-1);
   // the above line will guarantee buf to be no longer than PATH_NAME_MAX
@@ -438,7 +438,7 @@ Lfail:
 const char *
 Store::read_interim_config()
 {
-  char p[PATH_NAME_MAX + 1];
+  char p[PATH_NAME_MAX];
   Span *sd = NULL;
   Span *ns;
   int interim_store = 0;
@@ -842,7 +842,7 @@ Store::write(int fd, const char *name) const
 int
 Span::read(int fd)
 {
-  char buf[PATH_NAME_MAX + 1], p[PATH_NAME_MAX + 1];
+  char buf[PATH_NAME_MAX], p[PATH_NAME_MAX];
 
   if (ink_file_fd_readline(fd, PATH_NAME_MAX, buf) <= 0)
     return (-1);
@@ -888,8 +888,8 @@ int
 Store::read(int fd, char *aname)
 {
   char *name = aname;
-  char tname[PATH_NAME_MAX + 1];
-  char buf[PATH_NAME_MAX + 1];
+  char tname[PATH_NAME_MAX];
+  char buf[PATH_NAME_MAX];
   if (!aname)
     name = tname;
 
@@ -973,7 +973,7 @@ Store::clear(char *filename, bool clear_dirs)
   for (unsigned i = 0; i < n_disks; i++) {
     Span *ds = disk[i];
     for (unsigned j = 0; j < disk[i]->paths(); j++) {
-      char path[PATH_NAME_MAX + 1];
+      char path[PATH_NAME_MAX];
       Span *d = ds->nth(j);
       if (!clear_dirs && !d->file_pathname)
         continue;

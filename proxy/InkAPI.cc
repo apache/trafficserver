@@ -1759,7 +1759,7 @@ TSTrafficServerVersionGetPatch()
 const char *
 TSPluginDirGet(void)
 {
-  static char path[PATH_NAME_MAX + 1] = "";
+  static char path[PATH_NAME_MAX] = "";
 
   if (*path == '\0') {
     char *plugin_dir = RecConfigReadPrefixPath("proxy.config.plugin.plugin_dir");
