@@ -27,29 +27,57 @@ import helpers
 import tsqa.test_cases
 
 
-class TestHostDBFailedDNS(tsqa.test_cases.DynamicHTTPEndpointCase, helpers.EnvironmentCase):
+class TestHostDBPartiallyFailedDNS(helpers.EnvironmentCase):
     '''
-    Tests for how hostdb handles when there is no reachable resolver
+    Tests for how hostdb handles when there is one failed and one working resolver
     '''
     @classmethod
     def setUpEnv(cls, env):
-        cls.configs['remap.config'].add_line('map / http://some_nonexistant_domain:{0}/'.format(cls.http_endpoint.address[1]))
-
         resolv_conf_path = os.path.join(env.layout.prefix, 'resolv.conf')
 
         cls.configs['records.config']['CONFIG'].update({
             'proxy.config.http.response_server_enabled': 2,  # only add server headers when there weren't any
             'proxy.config.hostdb.lookup_timeout': 1,
             'proxy.config.dns.resolv_conf': resolv_conf_path,
+            'proxy.config.url_remap.remap_required': 0,
 
         })
 
         with open(resolv_conf_path, 'w') as fh:
-            fh.write('nameserver 1.1.1.1\n')  # some non-existant nameserver
+            fh.write('nameserver 1.1.1.0\n')  # some non-existant nameserver
+            fh.write('nameserver 8.8.8.8\n')  # some REAL nameserver
+
+    def test_working(self):
+        start = time.time()
+        ret = requests.get('http://trafficserver.readthedocs.org',
+                           proxies=self.proxies,
+                           )
+        self.assertLess(time.time() - start, self.configs['records.config']['CONFIG']['proxy.config.hostdb.lookup_timeout'])
+        self.assertEqual(ret.status_code, 200)
+
+
+class TestHostDBFailedDNS(helpers.EnvironmentCase):
+    '''
+    Tests for how hostdb handles when there is no reachable resolver
+    '''
+    @classmethod
+    def setUpEnv(cls, env):
+        resolv_conf_path = os.path.join(env.layout.prefix, 'resolv.conf')
+
+        cls.configs['records.config']['CONFIG'].update({
+            'proxy.config.http.response_server_enabled': 2,  # only add server headers when there weren't any
+            'proxy.config.hostdb.lookup_timeout': 1,
+            'proxy.config.dns.resolv_conf': resolv_conf_path,
+            'proxy.config.url_remap.remap_required': 0,
+
+        })
+
+        with open(resolv_conf_path, 'w') as fh:
+            fh.write('nameserver 1.1.1.0\n')  # some non-existant nameserver
 
     def test_lookup_timeout(self):
         start = time.time()
-        ret = requests.get(self.endpoint_url('/test'),
+        ret = requests.get('http://some_nonexistant_domain',
                            proxies=self.proxies,
                            )
         self.assertGreater(time.time() - start, self.configs['records.config']['CONFIG']['proxy.config.hostdb.lookup_timeout'])
