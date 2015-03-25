@@ -16,7 +16,7 @@ Changes with Apache Traffic Server 5.3.0
   *) [TS-3452] Better debug messages for SSL_ERROR_SSL errors.
 
   *) [TS-3439] Chunked responses don't honor keep-alive.
- 
+
   *) [TS-3342] Non-standard method in bad request can cause crash.
 
   *) [TS-3331] negative responses cached even when headers indicate otherwise.
@@ -45,7 +45,7 @@ Changes with Apache Traffic Server 5.3.0
 
   *) [TS-3415] Http/2 sending FIN stream too early.
 
-  *) [TS-3414] Add new TS API TSHttpTxnOutgoingAddrGet 
+  *) [TS-3414] Add new TS API TSHttpTxnOutgoingAddrGet.
 
   *) [TS-3421] Add a "-t range" option for proxyauth plugin, which similar to
    the "head" requests, except it asks for a Range: bytes=0-0.
