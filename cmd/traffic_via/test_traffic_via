@@ -28,3 +28,5 @@ while read f ; do
     ./traffic_via "$name" > "$tmpfile" 2>&1 || true
     diff -u "$tmpfile" "$srcdir/tests/$name"
 done
+
+rm -f $tmpfile
