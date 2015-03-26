@@ -766,14 +766,10 @@ void
 SSLNetVConnection::do_io_close(int lerrno)
 {
   if (this->ssl != NULL && sslHandShakeComplete) {
-    int new_shutdown_mode = 0, shutdown_mode = 0;
-    if (this->lerrno < 0) {
-      new_shutdown_mode = SSL_SENT_SHUTDOWN|SSL_RECEIVED_SHUTDOWN;
-    } else {
-      shutdown_mode = SSL_get_shutdown(ssl);
-      Debug("ssl-shutdown", "previous shutdown state 0x%x", shutdown_mode);
-      new_shutdown_mode = shutdown_mode | SSL_RECEIVED_SHUTDOWN;
-    }
+    int shutdown_mode = SSL_get_shutdown(ssl);
+    Debug("ssl-shutdown", "previous shutdown state 0x%x", shutdown_mode);
+    int new_shutdown_mode = shutdown_mode | SSL_RECEIVED_SHUTDOWN;
+
     if (new_shutdown_mode != shutdown_mode) {
       // We do not need to sit around and wait for the client's close-notify if
       // they have not already sent it.  We will still be standards compliant
