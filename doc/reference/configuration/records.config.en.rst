@@ -1556,7 +1556,35 @@ Customizable User Response Pages
 
 .. ts:cv:: CONFIG proxy.config.http_ui_enabled INT 0
 
-   Enable the user interface page.
+   Specifies which http UI endpoints to allow within :file:`remap.config`:
+
+   -  ``0`` = disable all http UI endpoints
+   -  ``1`` = enable only cache endpoints
+   -  ``2`` = enable only stats endpoints
+   -  ``3`` = enable all http UI endpoints
+
+   To enable any enpoint there needs to be an entry in :file:`remap.config` which
+   specifically enables it. Such a line would look like: ::
+
+        map / http://{stat}
+
+   The following are the cache endpoints:
+
+   - ``cache`` = UI to interact with the cache
+
+   The following are the stats endpoints:
+
+   - ``cache-internal`` = statistics about cache evacuation and volumes
+   - ``hostdb`` = lookups against the hostdb
+   - ``http`` = HTTPSM details, this endpoint is also gated by `proxy.config.http.enable_http_info`
+   - ``net`` = lookup and listing of open connections
+   - ``stat`` = list of all records.config options and metrics
+   - ``test`` = test callback page
+
+.. ts:cv:: CONFIG proxy.config.http.enable_http_info INT 0
+
+   Enables (``1``) or disables (``0``) access to an endpoint within `proxy.config.http_ui_enabled`
+   which shows details about inflight transactions (HttpSM).
 
 DNS
 ===
