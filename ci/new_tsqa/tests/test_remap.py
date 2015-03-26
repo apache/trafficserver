@@ -27,9 +27,7 @@ import tsqa.endpoint
 
 log = logging.getLogger(__name__)
 
-unittest = tsqa.utils.import_unittest()
-
-class TestRemapHTTP(helpers.EnvironmentCase):
+class TestRemapHTTP(tsqa.test_cases.DynamicHTTPEndpointCase, helpers.EnvironmentCase):
     @classmethod
     def setUpEnv(cls, env):
         cls.configs['records.config']['CONFIG'].update({
@@ -37,14 +35,19 @@ class TestRemapHTTP(helpers.EnvironmentCase):
             'proxy.config.diags.debug.tags': 'url.*',
         })
 
-        # test with a httpbin running on localhost and port 8000
-        cls.configs['remap.config'].add_line('map http://www.example.com http://127.0.0.1:8000/\n');
-        cls.configs['remap.config'].add_line('map http://www.example.com:8080 http://127.0.0.1:8000/\n');
+        cls.configs['remap.config'].add_line(
+            'map http://www.example.com http://127.0.0.1:{0}'.format(cls.http_endpoint.address[1]));
+        cls.configs['remap.config'].add_line(
+            'map http://www.example.com:8080 http://127.0.0.1:{0}'.format(cls.http_endpoint.address[1]));
+
+        def hello(request):
+            return 'hello'
+        cls.http_endpoint.add_handler('/', hello)
 
     def test_remap_http(self):
         s = requests.Session()
         http_port = self.configs['records.config']['CONFIG']['proxy.config.http.server_ports']
-        url = 'http://127.0.0.1:{0}/get'.format(http_port)
+        url = 'http://127.0.0.1:{0}/'.format(http_port)
 
         ret = s.get(url)
         self.assertEqual(ret.status_code, 404)
@@ -69,7 +72,7 @@ class TestRemapHTTP(helpers.EnvironmentCase):
         ret = s.get(url)
         self.assertEqual(ret.status_code, 404)
 
-class TestRemapHTTPS(helpers.EnvironmentCase):
+class TestRemapHTTPS(tsqa.test_cases.DynamicHTTPEndpointCase, helpers.EnvironmentCase):
     @classmethod
     def setUpEnv(cls, env):
         # set an SSL port to ATS
@@ -80,18 +83,24 @@ class TestRemapHTTPS(helpers.EnvironmentCase):
             'proxy.config.diags.debug.tags': 'url.*'
         })
 
-        # test with a httpbin running on localhost and port 8000
-        cls.configs['remap.config'].add_line('map https://www.example.com http://127.0.0.1:8000/\n');
-        cls.configs['remap.config'].add_line('map https://www.example.com:4443 http://127.0.0.1:8000/\n');
+        cls.configs['remap.config'].add_line(
+                'map https://www.example.com http://127.0.0.1:{0}'.format(cls.http_endpoint.address[1]));
+        cls.configs['remap.config'].add_line(
+                'map https://www.example.com:4443 http://127.0.0.1:{0}'.format(cls.http_endpoint.address[1]));
         # configure SSL multicert
-        cls.configs['ssl_multicert.config'].add_line('dest_ip=* ssl_cert_name={0}'.format(helpers.tests_file_path('rsa_keys/www.example.com.pem')))
+        cls.configs['ssl_multicert.config'].add_line(
+                'dest_ip=* ssl_cert_name={0}'.format(helpers.tests_file_path('rsa_keys/www.example.com.pem')))
+
+        def hello(request):
+            return 'hello'
+        cls.http_endpoint.add_handler('/', hello)
 
     def test_remap_https(self):
         s = requests.Session()
-        url = 'https://127.0.0.1:{0}/get'.format(self.ssl_port)
+        url = 'https://127.0.0.1:{0}/'.format(self.ssl_port)
 
         # We lack of SNI support in requests module, so we do not verify SSL certificate here.
-        #ret = s.get(url, verify=(helpers.tests_file_path('certs/ca.crt')))
+        # ret = s.get(url, verify=(helpers.tests_file_path('certs/ca.crt')))
         ret = s.get(url, verify=False)
         self.assertEqual(ret.status_code, 404)
 
@@ -114,6 +123,3 @@ class TestRemapHTTPS(helpers.EnvironmentCase):
         s.headers.update({'Host': 'www.example.com:1234'})
         ret = s.get(url)
         self.assertEqual(ret.status_code, 404)
- 
-if __name__ == '__main__':
-    unittest.main()
