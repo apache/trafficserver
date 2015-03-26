@@ -762,6 +762,43 @@ SSLNetVConnection::SSLNetVConnection()
 {
 }
 
+void 
+SSLNetVConnection::do_io_close(int lerrno)
+{
+  if (this->ssl != NULL && sslHandShakeComplete) {
+    int new_shutdown_mode = 0, shutdown_mode = 0;
+    if (this->lerrno < 0) {
+      new_shutdown_mode = SSL_SENT_SHUTDOWN|SSL_RECEIVED_SHUTDOWN;
+    } else {
+      shutdown_mode = SSL_get_shutdown(ssl);
+      Debug("ssl-shutdown", "previous shutdown state 0x%x", shutdown_mode);
+      new_shutdown_mode = shutdown_mode | SSL_RECEIVED_SHUTDOWN;
+    }
+    if (new_shutdown_mode != shutdown_mode) {
+      // We do not need to sit around and wait for the client's close-notify if
+      // they have not already sent it.  We will still be standards compliant
+      Debug("ssl-shutdown", "new SSL_set_shutdown 0x%x", new_shutdown_mode);
+      SSL_set_shutdown(ssl, new_shutdown_mode);
+    }
+
+    // If the peer has already sent a FIN, don't bother with the shutdown
+    // They will just send us a RST for our troubles
+    // This test is not foolproof.  The client's fin could be on the wire 
+    // at the same time we send the close-notify.  If so, the client will likely
+    // send RST anyway
+    char c;
+    ssize_t x = recv(this->con.fd, &c, 1, MSG_PEEK);
+    // x < 0 means error.  x == 0 means fin sent
+    if (x != 0) {
+      // Send the close-notify
+      int ret = SSL_shutdown(ssl);
+      Debug("ssl-shutdown", "SSL_shutdown %s", (ret)?"success":"failed");
+    }
+  }
+  // Go on and do the unix socket cleanups
+  super::do_io_close(lerrno);
+}
+
 void
 SSLNetVConnection::free(EThread *t)
 {
@@ -780,8 +817,6 @@ SSLNetVConnection::free(EThread *t)
   closed = 0;
   ink_assert(con.fd == NO_FD);
   if (ssl != NULL) {
-    /*if (sslHandShakeComplete)
-       SSL_set_shutdown(ssl, SSL_SENT_SHUTDOWN|SSL_RECEIVED_SHUTDOWN); */
     SSL_free(ssl);
     ssl = NULL;
   }

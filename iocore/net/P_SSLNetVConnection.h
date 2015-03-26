@@ -113,6 +113,7 @@ public:
   virtual int64_t load_buffer_and_write(int64_t towrite, int64_t &wattempted, int64_t &total_written, MIOBufferAccessor &buf,
                                         int &needs);
   void registerNextProtocolSet(const SSLNextProtocolSet *);
+  virtual void do_io_close(int lerrno = -1);
 
   ////////////////////////////////////////////////////////////
   // Instances of NetVConnection should be allocated        //

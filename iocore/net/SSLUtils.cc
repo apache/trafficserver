@@ -1238,8 +1238,6 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config &sslMu
   SSL_CTX_set_options(ctx, SSL_OP_SAFARI_ECDHE_ECDSA_BUG);
 #endif
 
-  SSL_CTX_set_quiet_shutdown(ctx, 1);
-
   // pass phrase dialog configuration
   passphrase_cb_userdata ud(params, sslMultCertSettings.dialog, sslMultCertSettings.first_cert, sslMultCertSettings.key);
 
