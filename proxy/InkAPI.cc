@@ -8789,7 +8789,7 @@ TSVConnReenable(TSVConn vconn)
     EThread *eth = this_ethread();
     bool reschedule = eth != ssl_vc->thread;
 
-    if (!reschedule) { 
+    if (!reschedule) {
       // We use the VC mutex so we don't need to reschedule again if we
       // can't get the lock. For this reason we need to execute the
       // callback on the VC thread or it doesn't work (not sure why -
