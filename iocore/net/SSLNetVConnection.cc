@@ -762,7 +762,7 @@ SSLNetVConnection::SSLNetVConnection()
 {
 }
 
-void 
+void
 SSLNetVConnection::do_io_close(int lerrno)
 {
   if (this->ssl != NULL && sslHandShakeComplete) {
@@ -779,7 +779,7 @@ SSLNetVConnection::do_io_close(int lerrno)
 
     // If the peer has already sent a FIN, don't bother with the shutdown
     // They will just send us a RST for our troubles
-    // This test is not foolproof.  The client's fin could be on the wire 
+    // This test is not foolproof.  The client's fin could be on the wire
     // at the same time we send the close-notify.  If so, the client will likely
     // send RST anyway
     char c;
@@ -788,7 +788,7 @@ SSLNetVConnection::do_io_close(int lerrno)
     if (x != 0) {
       // Send the close-notify
       int ret = SSL_shutdown(ssl);
-      Debug("ssl-shutdown", "SSL_shutdown %s", (ret)?"success":"failed");
+      Debug("ssl-shutdown", "SSL_shutdown %s", (ret) ? "success" : "failed");
     }
   }
   // Go on and do the unix socket cleanups
