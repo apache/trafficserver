@@ -8787,16 +8787,22 @@ TSVConnReenable(TSVConn vconn)
   // We really only deal with a SSLNetVConnection at the moment
   if (ssl_vc != NULL) {
     EThread *eth = this_ethread();
+    bool reschedule = eth != ssl_vc->thread;
 
-    // We use the VC mutex so we don't need to reschedule again if we
-    // can't get the lock. For this reason we need to execute the
-    // callback on the VC thread or it doesn't work (not sure why -
-    // deadlock or it ends up interacting with the wrong NetHandler).
-    MUTEX_TRY_LOCK(trylock, ssl_vc->mutex, eth);
-    if (!trylock.is_locked()) {
+    if (!reschedule) { 
+      // We use the VC mutex so we don't need to reschedule again if we
+      // can't get the lock. For this reason we need to execute the
+      // callback on the VC thread or it doesn't work (not sure why -
+      // deadlock or it ends up interacting with the wrong NetHandler).
+      MUTEX_TRY_LOCK(trylock, ssl_vc->mutex, eth);
+      if (trylock.is_locked()) {
+        ssl_vc->reenable(ssl_vc->nh);
+      } else {
+        reschedule = true;
+      }
+    }
+    if (reschedule) {
       ssl_vc->thread->schedule_imm(new TSSslCallback(ssl_vc));
-    } else {
-      ssl_vc->reenable(ssl_vc->nh);
     }
   }
 }
