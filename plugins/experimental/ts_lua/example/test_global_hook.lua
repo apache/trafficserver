@@ -68,11 +68,11 @@ function do_global_cache_lookup_complete()
     return 0
 end
 
-function do_global_select_alt()
-    ts.debug('select_alt')
-
-    return 0
-end
+--function do_global_select_alt()
+--    ts.debug('select_alt')
+--
+--    return 0
+--end
 
 function do_global_read_cache()
     ts.debug('read_cache')

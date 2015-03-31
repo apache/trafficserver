@@ -15,31 +15,37 @@
 --  limitations under the License.
 
 
-local APPEND_DATA = 'TAIL\n'
+function send_response()
+    ts.client_response.header['Rhost'] = ts.ctx['rhost']
+    ts.sleep(1)
 
-function append_transform(data, eos)
-    if ts.ctx['len_set'] == nil then
-        local sz = ts.http.resp_transform.get_upstream_bytes()
+    return 0
+end
 
-        if sz ~= TS_LUA_INT64_MAX then
-            ts.http.resp_transform.set_downstream_bytes(sz + string.len(APPEND_DATA))
-        end
-
-        ts.ctx['len_set'] = true
+function read_response()
+    local rs = ts.server_response.header['Server']
+    if rs ~= nil then
+        ts.server_response.header['Rserver'] = string.reverse(rs)
     end
 
-    if eos == 1 then
-        return data .. APPEND_DATA, eos
+    ts.sleep(1)
 
-    else
-        return data, eos
-    end
+    return 0
 end
 
 
 function do_remap()
-    ts.hook(TS_LUA_RESPONSE_TRANSFORM, append_transform)
-    ts.http.resp_cache_transformed(0)
-    ts.http.resp_cache_untransformed(1)
+    local req_host = ts.client_request.header.Host
+
+    if req_host == nil then
+        return 0
+    end
+
+    ts.ctx['rhost'] = string.reverse(req_host)
+
+    ts.hook(TS_LUA_HOOK_READ_RESPONSE_HDR, read_response)
+    ts.hook(TS_LUA_HOOK_SEND_RESPONSE_HDR, send_response)
+
     return 0
 end
+

@@ -16,13 +16,33 @@
   limitations under the License.
 */
 
-
-#ifndef _TS_LUA_HTTP_INTERCEPT_H
-#define _TS_LUA_HTTP_INTERCEPT_H
+#ifndef _TS_LUA_FETCH_H
+#define _TS_LUA_FETCH_H
 
 #include "ts_lua_common.h"
 
-void ts_lua_inject_http_intercept_api(lua_State *L);
-void ts_lua_inject_intercept_api(lua_State *L);
+struct fetch_multi_info;
+
+typedef struct {
+  TSCont contp;
+  struct fetch_multi_info *fmi;
+
+  TSIOBuffer buffer;
+  TSIOBufferReader reader;
+  TSFetchSM fch;
+
+  int over : 1;
+  int failed : 1;
+} ts_lua_fetch_info;
+
+typedef struct fetch_multi_info {
+  TSCont contp; // should be destroyed only in cleanup
+  int multi;    // invoke from ts.fetch_multi
+  int total;
+  int done;
+  ts_lua_fetch_info fiv[0];
+} ts_lua_fetch_multi_info;
+
+void ts_lua_inject_fetch_api(lua_State *L);
 
 #endif

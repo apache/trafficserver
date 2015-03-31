@@ -1480,6 +1480,19 @@ We will get the response like this:
 
 `TOP <#ts-lua-plugin>`_
 
+Number constants
+----------------------
+**context:** global
+
+::
+
+    TS_LUA_INT64_MAX (9223372036854775808)
+    TS_LUA_INT64_MIN (-9223372036854775808L)
+
+These constants are usually used in transform handler.
+
+`TOP <#ts-lua-plugin>`_
+
 ts.http.resp_cache_transformed
 ------------------------------
 **syntax:** *ts.http.resp_cache_transformed(BOOL)*
@@ -1493,11 +1506,7 @@ Here is an example:
 ::
 
     function upper_transform(data, eos)
-        if eos == 1 then
-            return string.upper(data)..'S.H.E.\n', eos
-        else
-            return string.upper(data), eos
-        end
+        return string.upper(data), eos
     end
 
     function do_remap()
@@ -1524,11 +1533,7 @@ Here is an example:
 ::
 
     function upper_transform(data, eos)
-        if eos == 1 then
-            return string.upper(data)..'S.H.E.\n', eos
-        else
-            return string.upper(data), eos
-        end
+        return string.upper(data), eos
     end
 
     function do_remap()
@@ -1538,6 +1543,61 @@ Here is an example:
     end
 
 This function is usually called after we hook TS_LUA_RESPONSE_TRANSFORM.
+
+
+`TOP <#ts-lua-plugin>`_
+
+ts.http.resp_transform.get_upstream_bytes
+-----------------------------------------
+**syntax:** *ts.http.resp_transform.get_upstream_bytes()*
+
+**context:** transform handler
+
+**description**: This function can be used to retrive the total bytes to be received from the upstream. If we got
+chunked response body from origin server, TS_LUA_INT64_MAX will be returned.
+
+Here is an example:
+
+::
+
+    local APPEND_DATA = 'TAIL\n'
+
+    function append_transform(data, eos)
+        if ts.ctx['len_set'] == nil then
+            local sz = ts.http.resp_transform.get_upstream_bytes()
+            if sz ~= TS_LUA_INT64_MAX then
+                ts.http.resp_transform.set_downstream_bytes(sz + string.len(APPEND_DATA))
+            end
+
+            ts.ctx['len_set'] = true
+        end
+
+        if eos == 1 then
+            return data .. APPEND_DATA, eos
+        else
+            return data, eos
+        end
+    end
+
+    function do_remap()
+        ts.hook(TS_LUA_RESPONSE_TRANSFORM, append_transform)
+        ts.http.resp_cache_transformed(0)
+        ts.http.resp_cache_untransformed(1)
+        return 0
+    end
+
+`TOP <#ts-lua-plugin>`_
+
+ts.http.resp_transform.set_downstream_bytes
+-----------------------------------------
+**syntax:** *ts.http.resp_transform.set_downstream_bytes(NUMBER)*
+
+**context:** transform handler
+
+**description**: This function can be used to set the total bytes to be sent to the downstream.
+
+Sometimes we want to set Content-Length header in client_response, and this function should be called before any real
+data is returned from the transform handler.
 
 
 `TOP <#ts-lua-plugin>`_
@@ -1566,9 +1626,9 @@ ts.http.is_internal_request
 ---------------------------
 **syntax:** *ts.http.is_internal_request()*
 
-** context:** do_remap or do_global_* or later
+**context:** do_remap or do_global_* or later
 
-** description**: This function can be used to tell is a request is internal or not
+**description:** This function can be used to tell is a request is internal or not
 
 Here is an example:
 
@@ -1792,16 +1852,103 @@ Here is an example:
 
 `TOP <#ts-lua-plugin>`_
 
-ts.intercept
+ts.fetch
+-----------
+**syntax:** *res = ts.fetch(url, table?)*
+
+**context:** after do_remap
+
+**description:** Issues a synchronous but still non-block http request with the ``url`` and the optional ``table``.
+
+Returns a Lua table with serveral slots (res.status, res.header, res.body, and res.truncated).
+
+``res.status`` holds the response status code.
+
+``res.header`` holds the response header table.
+
+``res.body`` holds the response body which may be truncated, you need to check res.truncated to see if the data is
+truncated. 
+
+Here is a basic example:
+
+::
+
+    function post_remap()
+        local url = string.format('http://%s/foo.txt', ts.ctx['host'])
+        local res = ts.fetch(url)
+        if res.status == 200 then
+            print(res.body)
+        end
+    end
+
+    function do_remap()
+        local inner = ts.http.is_internal_request()
+        if inner ~= 0 then
+            return 0
+        end
+        local host = ts.client_request.header['Host']
+        ts.ctx['host'] = host
+        ts.hook(TS_LUA_HOOK_POST_REMAP, post_remap)
+    end
+
+We can set the optional table with serveral members:
+
+``header`` holds the request header table.
+
+``method`` holds the request method. The default method is 'GET'.
+
+``cliaddr`` holds the request client address in ip:port form. The default cliaddr is '127.0.0.1:33333'
+
+Issuing a post request:
+
+::
+
+    res = ts.fetch('http://xx.com/foo', {method = 'POST', body = 'hello world'})
+
+`TOP <#ts-lua-plugin>`_
+
+ts.fetch_multi
 ------------
-**syntax:** *ts.intercept(FUNCTION)*
+**syntax:** *vec = ts.fetch_multi({{url, table?}, {url, table?}, ...})*
+
+**context:** after do_remap
+
+Just like `ts.fetch`, but supports multiple http requests running in parallel.
+
+This function will fetch all the urls specified by the input table and return a table which contain all the results in
+the same order.
+
+Here is an example:
+
+::
+
+    local vec = ts.fetch_multi({
+                    {'http://xx.com/slayer'},
+                    {'http://xx.com/am', {cliaddr = '192.168.1.19:35423'}},
+                    {'http://xx.com/naga', {method = 'POST', body = 'hello world'}},
+                })
+
+    for i = 1, #(vec) do
+        print(vec[i].status)
+    end
+
+
+`TOP <#ts-lua-plugin>`_
+
+
+ts.http.intercept
+------------
+**syntax:** *ts.http.intercept(FUNCTION, param1?, param2?, ...)*
 
 **context:** do_remap or do_global_*
 
-**description:** Intercepts the client request and processes it in FUNCTION.
+**description:** Intercepts the client request and processes it in FUNCTION with optional params.
 
 We should construct the response for the client request, and the request will not be processed by other modules, like
 hostdb, cache, origin server...
+
+Intercept FUNCTION will be executed in a new lua_thread, so we can delivery optional params from old lua_thread to new
+lua_thread if needed.
 
 Here is an example:
 
@@ -1809,7 +1956,7 @@ Here is an example:
 
     require 'os'
 
-    function send_data()
+    function send_data(dstr)
         local nt = os.time()..' Zheng.\n'
         local resp =  'HTTP/1.0 200 OK\r\n' ..
                       'Server: ATS/3.2.0\r\n' ..
@@ -1820,11 +1967,12 @@ Here is an example:
                       'Cache-Control: max-age=7200\r\n' ..
                       'Accept-Ranges: bytes\r\n\r\n' ..
                       nt
+        print(dstr)
         ts.say(resp)
     end
 
     function do_remap()
-        ts.http.intercept(send_data)
+        ts.http.intercept(send_data, 'hello world')
         return 0
     end
 
@@ -1845,6 +1993,72 @@ Then we will get the response like this:
 
     1395145392 Zheng.
 
+
+`TOP <#ts-lua-plugin>`_
+
+ts.http.server_intercept
+------------
+**syntax:** *ts.http.server_intercept(FUNCTION, param1?, param2?, ...)*
+
+**context:** do_remap or do_global_*
+
+**description:** Intercepts the server request and acts as the origin server.
+
+Just like ts.http.intercept, but this function will intercept the server request, and we can acts as the origin server
+in `FUNCTION`.
+
+Here is an example:
+
+::
+
+    require 'os'
+
+    function process_combo(host)
+        local url1 = string.format('http://%s/css/1.css', host)
+        local url2 = string.format('http://%s/css/2.css', host)
+        local url3 = string.format('http://%s/css/3.css', host)
+
+        local hdr = {
+            ['Host'] = host,
+            ['User-Agent'] = 'blur blur',
+        }
+
+        local ct = {
+            header = hdr,
+            method = 'GET'
+        }
+
+        local arr = ts.fetch_multi(
+                {
+                    {url1, ct},
+                    {url2, ct},
+                    {url3, ct},
+                })
+
+        local ctype = arr[1].header['Content-Type']
+        local body = arr[1].body .. arr[2].body .. arr[3].body
+
+        local resp =  'HTTP/1.1 200 OK\r\n' ..
+                      'Server: ATS/5.2.0\r\n' ..
+                      'Last-Modified: ' .. os.date("%a, %d %b %Y %H:%M:%S GMT", os.time()) .. '\r\n' ..
+                      'Cache-Control: max-age=7200\r\n' ..
+                      'Accept-Ranges: bytes\r\n' ..
+                      'Content-Type: ' .. ctype .. '\r\n' ..
+                      'Content-Length: ' .. string.format('%d', string.len(body)) .. '\r\n\r\n' ..
+                      body
+
+        ts.say(resp)
+    end
+
+    function do_remap()
+        local inner =  ts.http.is_internal_request()
+        if inner ~= 0 then
+            return 0
+        end
+
+        local h = ts.client_request.header['Host']
+        ts.http.server_intercept(process_combo, h)
+    end
 
 `TOP <#ts-lua-plugin>`_
 
@@ -1926,7 +2140,7 @@ ts.sleep
 --------
 **syntax:** *ts.sleep(sec)*
 
-**context:** *intercept or server_intercept*
+**context:** *after do_remap*
 
 **description:** Sleeps for the specified seconds without blocking.
 
@@ -1936,79 +2150,18 @@ Here is an example:
 
 ::
 
-    require 'os'
-
-    function send_data()
-        local nt = os.time()..' Zheng.\n'
-        local resp =  'HTTP/1.0 200 OK\r\n' ..
-                      'Server: ATS/3.2.0\r\n' ..
-                      'Content-Type: text/plain\r\n' ..
-                      'Content-Length: ' .. string.format('%d', string.len(nt)) .. '\r\n\r\n' ..
-                      nt
+    function send_response()
         ts.sleep(3)
-        ts.say(resp)
+    end
+
+    function read_response()
+        ts.sleep(3)
     end
 
     function do_remap()
-        ts.http.intercept(send_data)
-        return 0
+        ts.hook(TS_LUA_HOOK_READ_RESPONSE_HDR, read_response)
+        ts.hook(TS_LUA_HOOK_SEND_RESPONSE_HDR, send_response)
     end
-
-`TOP <#ts-lua-plugin>`_
-
-ts.server_intercept
--------------------
-**syntax:** *ts.server_intercept(FUNCTION)*
-
-**context:** do_remap or do_global_*
-
-**description:** Intercepts the server request and acts as the origin server.
-
-We should construct the response for the server request, so the request will be processed within FUNCTION in case of
-miss for the cache lookup.
-
-Here is an example:
-
-::
-
-    require 'os'
-
-    function send_data()
-        local nt = os.time()..' Zheng.\n'
-        local resp =  'HTTP/1.0 200 OK\r\n' ..
-                      'Server: ATS/3.2.0\r\n' ..
-                      'Content-Type: text/plain\r\n' ..
-                      'Content-Length: ' .. string.format('%d', string.len(nt)) .. '\r\n' ..
-                      'Last-Modified: ' .. os.date("%a, %d %b %Y %H:%M:%S GMT", os.time()) .. '\r\n' ..
-                      'Connection: keep-alive\r\n' ..
-                      'Cache-Control: max-age=7200\r\n' ..
-                      'Accept-Ranges: bytes\r\n\r\n' ..
-                      nt
-        ts.say(resp)
-    end
-
-    function do_remap()
-        ts.http.server_intercept(send_data)
-        return 0
-    end
-
-Then we will get the response like this:
-
-::
-
-    HTTP/1.1 200 OK
-    Server: ATS/5.0.0
-    Content-Type: text/plain
-    Content-Length: 18
-    Last-Modified: Tue, 18 Mar 2014 08:23:12 GMT
-    Cache-Control: max-age=7200
-    Accept-Ranges: bytes
-    Date: Tue, 18 Mar 2014 12:23:12 GMT
-    Age: 1890
-    Connection: keep-alive
-
-    1395145392 Zheng.
-
 
 `TOP <#ts-lua-plugin>`_
 
@@ -2464,9 +2617,8 @@ be returned with 4 functions to increment, decrement, get and set the value. Tha
 
 Todo
 ====
-* ts.fetch
 * ts.cache_xxx
-* `support lua-5.2 <https://github.com/portl4t/ts-lua/wiki/support-Lua-5.2>`_
+* protocol
 
 Currently when we use ts_lua as a global plugin, each global hook is using a separate lua state for the same
 transaction. This can be wasteful. Also the state cannot be reused for the same transaction across the global hooks. The

@@ -17,12 +17,9 @@
 */
 
 
-#ifndef _TS_LUA_HTTP_INTERCEPT_H
-#define _TS_LUA_HTTP_INTERCEPT_H
+#ifndef _TS_LUA_CONSTANT_H
+#define _TS_LUA_CONSTANT_H
 
-#include "ts_lua_common.h"
-
-void ts_lua_inject_http_intercept_api(lua_State *L);
-void ts_lua_inject_intercept_api(lua_State *L);
+void ts_lua_inject_constant_api(lua_State *L);
 
 #endif

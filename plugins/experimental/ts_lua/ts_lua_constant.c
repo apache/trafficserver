@@ -17,12 +17,25 @@
 */
 
 
-#ifndef _TS_LUA_HTTP_INTERCEPT_H
-#define _TS_LUA_HTTP_INTERCEPT_H
+#include <stdint.h>
+#include <stdio.h>
+#include <lua.h>
 
-#include "ts_lua_common.h"
+static void ts_lua_inject_number_variables(lua_State *L);
 
-void ts_lua_inject_http_intercept_api(lua_State *L);
-void ts_lua_inject_intercept_api(lua_State *L);
 
-#endif
+void
+ts_lua_inject_constant_api(lua_State *L)
+{
+  ts_lua_inject_number_variables(L);
+}
+
+static void
+ts_lua_inject_number_variables(lua_State *L)
+{
+  lua_pushinteger(L, INT64_MAX);
+  lua_setglobal(L, "TS_LUA_INT64_MAX");
+
+  lua_pushinteger(L, INT64_MIN);
+  lua_setglobal(L, "TS_LUA_INT64_MIN");
+}

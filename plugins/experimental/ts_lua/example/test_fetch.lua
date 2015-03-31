@@ -15,31 +15,38 @@
 --  limitations under the License.
 
 
-local APPEND_DATA = 'TAIL\n'
-
-function append_transform(data, eos)
-    if ts.ctx['len_set'] == nil then
-        local sz = ts.http.resp_transform.get_upstream_bytes()
-
-        if sz ~= TS_LUA_INT64_MAX then
-            ts.http.resp_transform.set_downstream_bytes(sz + string.len(APPEND_DATA))
-        end
-
-        ts.ctx['len_set'] = true
+function send_response()
+    if ts.ctx['flen'] ~= nil then
+        ts.client_response.header['Flen'] = ts.ctx['flen']
     end
+end
 
-    if eos == 1 then
-        return data .. APPEND_DATA, eos
+function post_remap()
+    local url = string.format('http://%s/foo.txt', ts.ctx['host'])
+    local hdr = {
+        ['Host'] = ts.ctx['host'],
+        ['User-Agent'] = 'dummy',
+    }
 
-    else
-        return data, eos
+    local res = ts.fetch(url, {method = 'GET', header=hdr})
+
+    if res.status == 200 then
+        ts.ctx['flen'] = string.len(res.body)
+        print(res.body)
     end
 end
 
 
 function do_remap()
-    ts.hook(TS_LUA_RESPONSE_TRANSFORM, append_transform)
-    ts.http.resp_cache_transformed(0)
-    ts.http.resp_cache_untransformed(1)
-    return 0
+    local inner = ts.http.is_internal_request()
+    if inner ~= 0 then
+        return 0
+    end
+
+    local host = ts.client_request.header['Host']
+    ts.ctx['host'] = host
+
+    ts.hook(TS_LUA_HOOK_POST_REMAP, post_remap)
+    ts.hook(TS_LUA_HOOK_SEND_RESPONSE_HDR, send_response)
 end
+
