@@ -114,12 +114,6 @@ The following list describes Traffic Server custom logging fields.
 ``chp``
     The port number of the client's host machine.
 
-.. _cps:
-
-``cps``
-    Client Protocol Stack, the output would be the conjunction of
-    protocol names in the stack spliced with '+', such as "TLS+SPDY".
-
 .. _cqbl:
 
 ``cqbl``
