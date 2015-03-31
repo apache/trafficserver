@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-3470] traffic_server --help segfaults when SPDY is enabled.
+
   *) [TS-1611] Async request suport in lua plugin.
 
   *) [TS-3456] SSL blind tunnel sometimes not created.
