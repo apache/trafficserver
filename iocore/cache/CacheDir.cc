@@ -1247,12 +1247,13 @@ Ldone:
   goto Lrestart;
 }
 
-namespace {
-  int
-  compare_ushort(void const* a, void const* b)
-  {
-    return *static_cast<unsigned short const*>(a) - *static_cast<unsigned short const*>(b);
-  }
+namespace
+{
+int
+compare_ushort(void const *a, void const *b)
+{
+  return *static_cast<unsigned short const *>(a) - *static_cast<unsigned short const *>(b);
+}
 }
 
 
@@ -1264,7 +1265,7 @@ namespace {
 int Vol::dir_check(bool /* fix ATS_UNUSED */) // TODO: we should eliminate this parameter ?
 {
   static int const SEGMENT_HISTOGRAM_WIDTH = 16;
-  int hist[SEGMENT_HISTOGRAM_WIDTH + 1] = { 0 };
+  int hist[SEGMENT_HISTOGRAM_WIDTH + 1] = {0};
   unsigned short chain_tag[MAX_ENTRIES_PER_SEGMENT];
   int32_t chain_mark[MAX_ENTRIES_PER_SEGMENT];
   uint64_t total_buckets = buckets * segments;
@@ -1302,7 +1303,7 @@ int Vol::dir_check(bool /* fix ATS_UNUSED */) // TODO: we should eliminate this 
       // Walk the chain starting in this bucket
       int chain_idx = 0;
       int mark = 0;
-      for ( Dir* e = root ; e ; e = next_dir(e, seg) ) {
+      for (Dir *e = root; e; e = next_dir(e, seg)) {
         if (!dir_offset(e)) { // this should only happen on the first dir in a bucket
           ++seg_empty;
         } else {
@@ -1317,7 +1318,8 @@ int Vol::dir_check(bool /* fix ATS_UNUSED */) // TODO: we should eliminate this 
             chain_mark[e_idx] = mark;
           }
 
-          if (dir_head(e)) ++head;
+          if (dir_head(e))
+            ++head;
 
           if (!dir_valid(this, e)) {
             ++seg_stale;
@@ -1336,8 +1338,9 @@ int Vol::dir_check(bool /* fix ATS_UNUSED */) // TODO: we should eliminate this 
         unsigned short last;
         qsort(chain_tag, h, sizeof(chain_tag[0]), &compare_ushort);
         last = chain_tag[0];
-        for ( int k = 1 ; k < h ; ++k ) {
-          if (last == chain_tag[k]) ++seg_dups;
+        for (int k = 1; k < h; ++k) {
+          if (last == chain_tag[k])
+            ++seg_dups;
           last = chain_tag[k];
         }
       }
@@ -1353,17 +1356,14 @@ int Vol::dir_check(bool /* fix ATS_UNUSED */) // TODO: we should eliminate this 
     max_chain_length = std::max(max_chain_length, seg_chain_max);
     bytes_in_use += seg_bytes_in_use;
 
-    printf("  - Segment-%d: full:%d stale:%d empty:%d bytes-used:%d chain-count:%d chain-max:%d chain-avg:%.2f chain-dups:%d\n"
-           , s, seg_full, seg_stale, seg_empty, seg_bytes_in_use
-           , seg_chains, seg_chain_max, seg_chains ? static_cast<float>(seg_full+seg_stale)/seg_chains : 0.0, seg_dups
-      );
+    printf("  - Segment-%d: full:%d stale:%d empty:%d bytes-used:%d chain-count:%d chain-max:%d chain-avg:%.2f chain-dups:%d\n", s,
+           seg_full, seg_stale, seg_empty, seg_bytes_in_use, seg_chains, seg_chain_max,
+           seg_chains ? static_cast<float>(seg_full + seg_stale) / seg_chains : 0.0, seg_dups);
   }
 
   int chain_count = total_buckets - empty;
-  printf("  - Stripe: full:%d stale:%d empty:%d free:%d chain-count:%d chain-max:%d chain-avg:%.2f\n"
-         , full, stale, empty, free, chain_count, max_chain_length
-         , chain_count ? static_cast<float>(full + stale)/chain_count : 0
-    );
+  printf("  - Stripe: full:%d stale:%d empty:%d free:%d chain-count:%d chain-max:%d chain-avg:%.2f\n", full, stale, empty, free,
+         chain_count, max_chain_length, chain_count ? static_cast<float>(full + stale) / chain_count : 0);
 
   printf("    Chain lengths:  ");
   for (j = 0; j < SEGMENT_HISTOGRAM_WIDTH; ++j)
@@ -1374,8 +1374,8 @@ int Vol::dir_check(bool /* fix ATS_UNUSED */) // TODO: we should eliminate this 
   printf("    Total Size:      %" PRIu64 "\n", (uint64_t)len);
   printf("    Bytes in Use:    %" PRIu64 "\n", bytes_in_use);
   printf("    Objects:         %d\n", head);
-  printf("    Average Size:    %" PRIu64 "\n", head ? (bytes_in_use/head) : 0);
-  printf("    Write Position:  %" PRIu64 "\n", (uint64_t) (header->write_pos - skip - start));
+  printf("    Average Size:    %" PRIu64 "\n", head ? (bytes_in_use / head) : 0);
+  printf("    Write Position:  %" PRIu64 "\n", (uint64_t)(header->write_pos - skip - start));
   printf("    Phase:           %d\n", (int)!!header->phase);
   ink_ctime_r(&header->create_time, tt);
   tt[strlen(tt) - 1] = 0;
