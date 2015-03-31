@@ -666,9 +666,9 @@ CacheProcessor::start_internal(int flags)
           struct stat sbuf;
           diskok = 0;
           if (-1 == fstat(fd, &sbuf)) {
-            fprintf(stderr, "Failed to stat cache file for directory %s", path)
+            fprintf(stderr, "Failed to stat cache file for directory %s\n", path)
           } else if (blocks != sbuf.st_size / STORE_BLOCK_SIZE) {
-            fprintf(stderr, "Cache file for directory %s is %" PRId64 " bytes, expected %" PRId64, path, sbuf.st_size,
+            fprintf(stderr, "Cache file for directory %s is %" PRId64 " bytes, expected %" PRId64 "\n", path, sbuf.st_size,
                     blocks * STORE_BLOCK_SIZE);
           } else {
             diskok = 1;
@@ -760,7 +760,7 @@ CacheProcessor::start_internal(int flags)
 
     if (fd >= 0) {
       if (!sd->file_pathname) {
-        if (check) {
+        if (!check) {
           if (ftruncate(fd, ((uint64_t)blocks) * STORE_BLOCK_SIZE) < 0) {
             Warning("unable to truncate cache file '%s' to %d blocks", path, blocks);
             diskok = 0;
@@ -769,9 +769,9 @@ CacheProcessor::start_internal(int flags)
           struct stat sbuf;
           diskok = 0;
           if (-1 == fstat(fd, &sbuf)) {
-            fprintf(stderr, "Failed to stat cache file for directory %s", path);
+            fprintf(stderr, "Failed to stat cache file for directory %s\n", path);
           } else if (blocks != sbuf.st_size / STORE_BLOCK_SIZE) {
-            fprintf(stderr, "Cache file for directory %s is %" PRId64 " bytes, expected %" PRId64, path, sbuf.st_size,
+            fprintf(stderr, "Cache file for directory %s is %" PRId64 " bytes, expected %" PRId64 "\n", path, sbuf.st_size,
                     blocks * static_cast<int64_t>(STORE_BLOCK_SIZE));
           } else {
             diskok = 1;
