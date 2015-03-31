@@ -323,5 +323,5 @@ usage(const ArgumentDescription *argument_descriptions, unsigned n_argument_desc
     }
     fprintf(stderr, " %s\n", argument_descriptions[i].description);
   }
-  exit(EX_USAGE);
+  _exit(EX_USAGE);
 }
