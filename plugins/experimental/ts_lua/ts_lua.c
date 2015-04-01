@@ -165,7 +165,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 
   ts_lua_set_cont_info(L, NULL);
   if (lua_pcall(L, 0, 1, 0) != 0) {
-    ee("lua_pcall failed: %s", lua_tostring(L, -1));
+    TSError("lua_pcall failed: %s", lua_tostring(L, -1));
     ret = TSREMAP_NO_REMAP;
 
   } else {

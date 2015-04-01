@@ -84,11 +84,6 @@
     X, #X                       \
   }
 
-#define ee(...)                              \
-  fprintf(stderr, "Lua *** %s: ", __func__); \
-  fprintf(stderr, __VA_ARGS__);              \
-  fprintf(stderr, " @%s:%d\n", __FILE__, __LINE__)
-
 /* for http config or cntl var */
 typedef struct {
   int nvar;

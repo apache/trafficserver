@@ -762,7 +762,7 @@ ts_lua_http_cont_handler(TSCont contp, TSEvent ev, void *edata)
     break;
 
   default: // coroutine failed
-    ee("lua_resume failed: %s", lua_tostring(L, -1));
+    TSError("lua_resume failed: %s", lua_tostring(L, -1));
     rc = -1;
     lua_pop(L, 1);
     break;

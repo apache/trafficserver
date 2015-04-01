@@ -52,7 +52,7 @@ ts_lua_transform_entry(TSCont contp, TSEvent ev, void *edata)
 
   case TS_LUA_EVENT_COROUTINE_CONT:
     n = (intptr_t)edata;
-
+  /* FALL THROUGH */
   case TS_EVENT_VCONN_WRITE_READY:
   default:
     ts_lua_transform_handler(contp, transform_ctx, event, n);
@@ -189,7 +189,7 @@ ts_lua_transform_handler(TSCont contp, ts_lua_http_transform_ctx *transform_ctx,
       break;
 
     default: // coroutine failed
-      ee("lua_resume failed: %s", lua_tostring(L, -1));
+      TSError("lua_resume failed: %s", lua_tostring(L, -1));
       ret = 1;
       res = NULL;
       res_len = 0;
