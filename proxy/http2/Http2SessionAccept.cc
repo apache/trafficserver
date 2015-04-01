@@ -40,7 +40,7 @@ Http2SessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferRead
 {
   // XXX we need to refactor the ACL checks from HttpSessionAccept so that we can invoke them here, and also in
   // the SPDY protocol layer ...
-  Warning("skipping access control checks for HTTP/2 connection");
+  // Warning("skipping access control checks for HTTP/2 connection");
 
   netvc->attributes = this->options.transport_type;
 
