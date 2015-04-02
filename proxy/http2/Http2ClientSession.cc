@@ -116,7 +116,7 @@ Http2ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   DebugHttp2Ssn("session born, netvc %p", this->client_vc);
 
   this->read_buffer = iobuf ? iobuf : new_MIOBuffer(HTTP2_HEADER_BUFFER_SIZE_INDEX);
-  this->read_buffer->water_mark = HTTP2_MAX_FRAME_SIZE;
+  this->read_buffer->water_mark = connection_state.server_settings.get(HTTP2_SETTINGS_MAX_FRAME_SIZE);
   this->sm_reader = reader ? reader : this->read_buffer->alloc_reader();
 
   this->write_buffer = new_MIOBuffer(HTTP2_HEADER_BUFFER_SIZE_INDEX);
@@ -316,12 +316,13 @@ Http2ClientSession::state_start_frame_read(int event, void *edata)
 
     this->sm_reader->consume(nbytes);
 
-    if (!http2_frame_header_is_valid(this->current_hdr)) {
+    if (!http2_frame_header_is_valid(this->current_hdr,
+                                     this->connection_state.server_settings.get(HTTP2_SETTINGS_MAX_FRAME_SIZE))) {
       // XXX nuke it with HTTP2_ERROR_PROTOCOL_ERROR!
     }
 
     // If we know up front that the payload is too long, nuke this connection.
-    if (this->current_hdr.length > this->connection_state.client_settings.get(HTTP2_SETTINGS_MAX_FRAME_SIZE)) {
+    if (this->current_hdr.length > this->connection_state.server_settings.get(HTTP2_SETTINGS_MAX_FRAME_SIZE)) {
       MUTEX_LOCK(lock, this->connection_state.mutex, this_ethread());
       if (!this->connection_state.is_state_closed()) {
         this->connection_state.send_goaway_frame(this->current_hdr.streamid, HTTP2_ERROR_FRAME_SIZE_ERROR);

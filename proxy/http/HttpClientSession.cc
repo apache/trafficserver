@@ -295,6 +295,7 @@ HttpClientSession::do_io_close(int alerrno)
     read_state = HCS_CLOSED;
     if (upgrade_to_h2c) {
       Http2ClientSession *h2_session = http2ClientSessionAllocator.alloc();
+
       h2_session->set_upgrade_context(&current_reader->t_state.hdr_info.client_request);
       h2_session->new_connection(client_vc, NULL, NULL, false /* backdoor */);
       // TODO Consider about handling HTTP/1 hooks and stats

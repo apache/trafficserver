@@ -50,12 +50,13 @@ const size_t HTTP2_GOAWAY_LEN = 8;
 const size_t HTTP2_WINDOW_UPDATE_LEN = 4;
 const size_t HTTP2_SETTINGS_PARAMETER_LEN = 6;
 
-// SETTINGS initial values
-const uint32_t HTTP2_HEADER_TABLE_SIZE = 4096;
-const uint32_t HTTP2_ENABLE_PUSH = 0; // Server Push is NOT supported
+// SETTINGS initial values. NOTE: These should not be modified
+// unless the protocol changes! Do not change this thinking you
+// are changing server defaults. that is done via RecordsConfig.cc
 const uint32_t HTTP2_MAX_CONCURRENT_STREAMS = 100;
 const uint32_t HTTP2_INITIAL_WINDOW_SIZE = 65535;
 const uint32_t HTTP2_MAX_FRAME_SIZE = 16384;
+const uint32_t HTTP2_HEADER_TABLE_SIZE = 4096;
 const uint32_t HTTP2_MAX_HEADER_LIST_SIZE = UINT_MAX;
 
 // 6.9.1 The Flow Control Window
@@ -261,7 +262,7 @@ bool http2_write_goaway(const Http2Goaway &, IOVec);
 
 bool http2_write_window_update(const uint32_t new_size, const IOVec &);
 
-bool http2_frame_header_is_valid(const Http2FrameHeader &);
+bool http2_frame_header_is_valid(const Http2FrameHeader &, unsigned);
 
 bool http2_settings_parameter_is_valid(const Http2SettingsParameter &);
 
@@ -284,5 +285,21 @@ MIMEParseResult convert_from_2_to_1_1_header(HTTPHdr *);
 int64_t http2_write_psuedo_headers(HTTPHdr *, uint8_t *, uint64_t, Http2DynamicTable &);
 
 int64_t http2_write_header_fragment(HTTPHdr *, MIMEFieldIter &, uint8_t *, uint64_t, Http2DynamicTable &, bool &);
+
+
+// Not sure where else to put this, but figure this is as good of a start as anything else.
+// Right now, only the static init() is available, which sets up some basic librecords
+// dependencies.
+class Http2
+{
+public:
+  static uint32_t max_concurrent_streams;
+  static uint32_t initial_window_size;
+  static uint32_t max_frame_size;
+  static uint32_t header_table_size;
+  static uint32_t max_header_list_size;
+
+  static void init();
+};
 
 #endif /* __HTTP2_H__ */

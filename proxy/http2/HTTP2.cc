@@ -25,6 +25,7 @@
 #include "HPACK.h"
 #include "HuffmanCodec.h"
 #include "ink_assert.h"
+#include "I_RecCore.h"
 
 const char *const HTTP2_CONNECTION_PREFACE = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n";
 static size_t HPACK_LEN_STATUS_VALUE_STR = 3;
@@ -106,13 +107,13 @@ http2_are_frame_flags_valid(uint8_t ftype, uint8_t fflags)
 }
 
 bool
-http2_frame_header_is_valid(const Http2FrameHeader &hdr)
+http2_frame_header_is_valid(const Http2FrameHeader &hdr, unsigned max_frame_size)
 {
   if (hdr.type >= HTTP2_FRAME_TYPE_MAX) {
     return false;
   }
 
-  if (hdr.length > HTTP2_MAX_FRAME_SIZE) {
+  if (hdr.length > max_frame_size) {
     return false;
   }
 
@@ -739,6 +740,24 @@ http2_parse_header_fragment(HTTPHdr *hdr, IOVec iov, Http2DynamicTable &dynamic_
   // Parsing all headers is done
   return cursor - buf_start;
 }
+
+// Initialize this subsystem with librecords configs (for now)
+uint32_t Http2::max_concurrent_streams = 100;
+uint32_t Http2::initial_window_size = 1048576;
+uint32_t Http2::max_frame_size = 16384;
+uint32_t Http2::header_table_size = 4096;
+uint32_t Http2::max_header_list_size = 4294967295;
+
+void
+Http2::init()
+{
+  REC_EstablishStaticConfigInt32U(max_concurrent_streams, "proxy.config.http2.max_concurrent_streams_in");
+  REC_EstablishStaticConfigInt32U(initial_window_size, "proxy.config.http2.initial_window_size_in");
+  REC_EstablishStaticConfigInt32U(max_frame_size, "proxy.config.http2.max_frame_size");
+  REC_EstablishStaticConfigInt32U(header_table_size, "proxy.config.http2.header_table_size");
+  REC_EstablishStaticConfigInt32U(max_header_list_size, "proxy.config.http2.max_header_list_size");
+}
+
 
 #if TS_HAS_TESTS
 
