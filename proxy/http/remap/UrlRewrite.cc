@@ -891,6 +891,13 @@ UrlRewrite::_regexMappingLookup(RegexMappingList &regex_mappings, URL *request_u
   int request_path_len, reg_map_path_len;
   const char *request_path = request_url->path_get(&request_path_len), *reg_map_path;
 
+  // If the scheme is empty (e.g. because of a CONNECT method), guess it based on port
+  // This is equivalent to the logic in UrlMappingPathIndex::_GetTrie().
+  if (request_scheme_len == 0) {
+    request_scheme = request_port == 80 ? URL_SCHEME_HTTP : URL_SCHEME_HTTPS;
+    request_scheme_len = hdrtoken_wks_to_length(request_scheme);
+  }
+
   // Loop over the entire linked list, or until we're satisfied
   forl_LL(RegexMapping, list_iter, regex_mappings)
   {
