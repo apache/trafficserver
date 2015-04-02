@@ -2488,6 +2488,42 @@ ICP Configuration
 
    Specifies the timeout used for ICP queries.
 
+HTTP/2 Configuration
+====================
+
+
+.. ts:cv:: CONFIG proxy.config.http2.max_concurrent_streams_in INT 100
+   :reloadable:
+
+   The maximum number of concurrent streams per inbound connection.
+
+   .. note:: Reloading this value affects only new HTTP/2 connections, not the
+	     ones already established.
+
+.. ts:cv:: CONFIG proxy.config.http2.initial_window_size_in INT 65536
+   :reloadable:
+
+   The initial window size for inbound connections.
+
+.. ts:cv:: CONFIG proxy.config.http2.max_frame_size INT 16384
+   :reloadable:
+
+   Indicates the size of the largest frame payload that the sender is willing
+   to receive.
+
+.. ts:cv:: CONFIG proxy.config.http2.header_table_size INT 4096
+   :reloadable:
+
+   The maximum size of the header compression table used to decode header
+   blocks.
+
+.. ts:cv:: CONFIG proxy.config.http2.max_header_list_size INT 4294967295
+   :reloadable:
+
+   This advisory setting informs a peer of the maximum size of header list
+   that the sender is prepared to accept blocks. The default value, which is
+   the unsigned int maximum value in Traffic Server, implies unlimited size.
+
 SPDY Configuration
 ==================
 
@@ -2511,7 +2547,8 @@ SPDY Configuration
 
    The maximum number of concurrent streams per inbound connection.
 
-   .. note:: Reloading this value affects only new SPDY connections, not existing connects.
+   .. note:: Reloading this value affects only new SPDY connections, not the
+	     ones already established..
 
 Scheduled Update Configuration
 ==============================

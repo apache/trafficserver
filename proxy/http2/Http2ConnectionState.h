@@ -35,14 +35,25 @@ class Http2ConnectionSettings
 public:
   Http2ConnectionSettings()
   {
-    // 6.5.2.  Defined SETTINGS Parameters
-    // TODO these values should be configurable.
-    settings[indexof(HTTP2_SETTINGS_HEADER_TABLE_SIZE)] = HTTP2_HEADER_TABLE_SIZE;
-    settings[indexof(HTTP2_SETTINGS_ENABLE_PUSH)] = HTTP2_ENABLE_PUSH;
+    // 6.5.2.  Defined SETTINGS Parameters. These should generally not be modified,
+    // only if the protocol changes should these change.
+    settings[indexof(HTTP2_SETTINGS_ENABLE_PUSH)] = 0; // Disabled for now
+
     settings[indexof(HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS)] = HTTP2_MAX_CONCURRENT_STREAMS;
     settings[indexof(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE)] = HTTP2_INITIAL_WINDOW_SIZE;
     settings[indexof(HTTP2_SETTINGS_MAX_FRAME_SIZE)] = HTTP2_MAX_FRAME_SIZE;
+    settings[indexof(HTTP2_SETTINGS_HEADER_TABLE_SIZE)] = HTTP2_HEADER_TABLE_SIZE;
     settings[indexof(HTTP2_SETTINGS_MAX_HEADER_LIST_SIZE)] = HTTP2_MAX_HEADER_LIST_SIZE;
+  }
+
+  void
+  settings_from_configs()
+  {
+    settings[indexof(HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS)] = Http2::max_concurrent_streams;
+    settings[indexof(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE)] = Http2::initial_window_size;
+    settings[indexof(HTTP2_SETTINGS_MAX_FRAME_SIZE)] = Http2::max_frame_size;
+    settings[indexof(HTTP2_SETTINGS_HEADER_TABLE_SIZE)] = Http2::header_table_size;
+    settings[indexof(HTTP2_SETTINGS_MAX_HEADER_LIST_SIZE)] = Http2::max_header_list_size;
   }
 
   unsigned
@@ -85,7 +96,7 @@ class Http2ConnectionState;
 class Http2Stream
 {
 public:
-  Http2Stream(Http2StreamId sid = 0, ssize_t initial_rwnd = HTTP2_INITIAL_WINDOW_SIZE)
+  Http2Stream(Http2StreamId sid = 0, ssize_t initial_rwnd = Http2::initial_window_size)
     : client_rwnd(initial_rwnd), server_rwnd(initial_rwnd), _id(sid), _state(HTTP2_STREAM_STATE_IDLE), _fetch_sm(NULL),
       body_done(false), data_length(0)
   {
@@ -177,7 +188,7 @@ class Http2ConnectionState : public Continuation
 {
 public:
   Http2ConnectionState()
-    : Continuation(NULL), ua_session(NULL), client_rwnd(HTTP2_INITIAL_WINDOW_SIZE), server_rwnd(HTTP2_INITIAL_WINDOW_SIZE),
+    : Continuation(NULL), ua_session(NULL), client_rwnd(Http2::initial_window_size), server_rwnd(Http2::initial_window_size),
       stream_list(), latest_streamid(0), continued_id(0)
   {
     SET_HANDLER(&Http2ConnectionState::main_event_handler);
@@ -199,6 +210,9 @@ public:
 
     continued_buffer.iov_base = NULL;
     continued_buffer.iov_len = 0;
+
+    // Load the server settings from the records.config / RecordsConfig.cc settings.
+    server_settings.settings_from_configs();
   }
 
   void

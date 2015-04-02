@@ -89,6 +89,7 @@ extern "C" int plock(int);
 #include "RemapProcessor.h"
 #include "I_Tasks.h"
 #include "InkAPIInternal.h"
+#include "HTTP2.h"
 
 #include <ts/ink_cap.h>
 
@@ -1685,6 +1686,10 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     extern int spdy_config_load();
     spdy_config_load(); // must be before HttpProxyPort init.
 #endif
+
+    // Initialize HTTP/2
+    Http2::init();
+
     // Load HTTP port data. getNumSSLThreads depends on this.
     if (!HttpProxyPort::loadValue(http_accept_port_descriptor))
       HttpProxyPort::loadConfig();
