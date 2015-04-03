@@ -99,7 +99,7 @@ submodules:
 	git submodule update --init
 
 clang-format:
-	for f in `find . -iname \*.[ch] -o -iname \*.cc | fgrep -v -e lib/ck -e lib/luajit -e lib/tsconfig`; do \
+	for f in `find $(top_srcdir) -iname \*.[ch] -o -iname \*.cc | fgrep -v -e lib/ck -e lib/luajit -e lib/tsconfig`; do \
 	  echo $$f; clang-format -i $$f; done
 
 help:
