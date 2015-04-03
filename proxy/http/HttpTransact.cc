@@ -5588,10 +5588,10 @@ HttpTransact::initialize_state_variables_from_request(State *s, HTTPHdr *obsolet
   memset(&s->request_data.dest_ip, 0, sizeof(s->request_data.dest_ip));
   if (s->state_machine->ua_session) {
     s->request_data.incoming_port = s->state_machine->ua_session->get_netvc()->get_local_port();
+    s->request_data.internal_txn = s->state_machine->ua_session->get_netvc()->get_is_internal_request();
   }
   s->request_data.xact_start = s->client_request_time;
   s->request_data.api_info = &s->api_info;
-  s->request_data.internal_txn = s->state_machine->ua_session->get_netvc()->get_is_internal_request();
 
   /////////////////////////////////////////////
   // Do dns lookup for the host. We need     //
