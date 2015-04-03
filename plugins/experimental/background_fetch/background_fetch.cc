@@ -334,16 +334,13 @@ static int cont_bg_fetch(TSCont contp, TSEvent event, void *edata);
 
 struct BGFetchData {
   BGFetchData(BGFetchConfig *cfg = gConfig)
-    : hdr_loc(TS_NULL_MLOC), url_loc(TS_NULL_MLOC), vc(NULL), _bytes(0), _cont(NULL), _config(cfg), _scheduled(0)
+    : hdr_loc(TS_NULL_MLOC), url_loc(TS_NULL_MLOC), vc(NULL), _bytes(0), _cont(NULL), _config(cfg)
   {
     mbuf = TSMBufferCreate();
   }
 
   ~BGFetchData()
   {
-    if (_scheduled) {
-      release_url();
-    }
 
     TSHandleMLocRelease(mbuf, TS_NULL_MLOC, hdr_loc);
     TSHandleMLocRelease(mbuf, TS_NULL_MLOC, url_loc);
@@ -358,8 +355,10 @@ struct BGFetchData {
 
     // If we got schedule, also clean that up
     if (_cont) {
-      TSContDestroy(_cont);
+      release_url();
 
+      TSContDestroy(_cont);
+      _cont = NULL;
       TSIOBufferReaderFree(req_io_buf_reader);
       TSIOBufferDestroy(req_io_buf);
       TSIOBufferReaderFree(resp_io_buf_reader);
@@ -409,7 +408,6 @@ private:
   int64_t _bytes;
   TSCont _cont;
   BGFetchConfig *_config;
-  bool _scheduled;
 };
 
 
@@ -496,7 +494,6 @@ BGFetchData::schedule()
 
   // Schedule
   TSContSchedule(_cont, 0, TS_THREAD_POOL_NET);
-  _scheduled = true;
 }
 
 
