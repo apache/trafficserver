@@ -303,6 +303,12 @@ Network
    `proxy.process.net.default_inactivity_timeout_applied` metric
    is incremented.
 
+.. ts:cv:: CONFIG proxy.config.net.inactivity_check_frequency INT 1
+
+   How frequent (in seconds) to check for inactive connections. If you deal
+   with a lot of concurrent connections, increasing this setting can reduce
+   pressure on the system.
+
 .. ts:cv:: LOCAL proxy.local.incoming_ip_to_bind STRING 0.0.0.0 [::]
 
    Controls the global default IP addresses to which to bind proxy server ports. The value is a space separated list of IP addresses, one per supported IP address family (currently IPv4 and IPv6).
