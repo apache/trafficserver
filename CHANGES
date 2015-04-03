@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.0
 
+  *) [TS-3491] background_fetch: Only release URL if we were scheduled.
+
   *) [TS-2709] ATS does not send close-notify on shutdown. Confuses some clients.
 
   *) [TS-3467] Cleanup tmp files created from traffic_via tests.
