@@ -294,7 +294,7 @@ public:
     }
     TSMutexUnlock(_lock);
 
-    TSDebug (PLUGIN_NAME, "BGFetchConfig.acquire(): ret = %d, url = %s\n", ret, url.c_str());
+    TSDebug(PLUGIN_NAME, "BGFetchConfig.acquire(): ret = %d, url = %s\n", ret, url.c_str());
 
     return ret;
   }
@@ -341,7 +341,6 @@ struct BGFetchData {
 
   ~BGFetchData()
   {
-
     TSHandleMLocRelease(mbuf, TS_NULL_MLOC, hdr_loc);
     TSHandleMLocRelease(mbuf, TS_NULL_MLOC, url_loc);
 
