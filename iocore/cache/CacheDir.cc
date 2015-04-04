@@ -1313,7 +1313,7 @@ int Vol::dir_check(bool /* fix ATS_UNUSED */) // TODO: we should eliminate this 
           if (chain_mark[e_idx] == mark) {
             printf("    - Cycle of length %d detected for bucket %d\n", h, b);
           } else if (chain_mark[e_idx] >= 0) {
-            printf("    - Entry %" PRIu64 " is in chain %d and %d", e - seg, chain_mark[e_idx], mark);
+            printf("    - Entry %d is in chain %d and %d", e_idx, chain_mark[e_idx], mark);
           } else {
             chain_mark[e_idx] = mark;
           }
