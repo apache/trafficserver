@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.0
 
+  *) [TS-3482] Fill the first SETTINGS frame correctly.
+   Author: Masakazu Kitajo <m4sk17@gmail.com>
+
   *) [TS-3479] Remove verbose Warning() from HTTP/2 connections.
 
   *) [TS-3470] traffic_server --help segfaults when SPDY is enabled.
