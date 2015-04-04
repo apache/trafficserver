@@ -609,8 +609,8 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
       param.id = id;
       param.value = server_settings.get(id);
       http2_write_settings(param, iov);
-      iov.iov_base = reinterpret_cast<uint8_t*>(iov.iov_base) + HTTP2_SETTINGS_PARAMETER_LEN;
-      iov.iov_len  -= HTTP2_SETTINGS_PARAMETER_LEN;
+      iov.iov_base = reinterpret_cast<uint8_t *>(iov.iov_base) + HTTP2_SETTINGS_PARAMETER_LEN;
+      iov.iov_len -= HTTP2_SETTINGS_PARAMETER_LEN;
     }
 
     settings.finalize(HTTP2_SETTINGS_PARAMETER_LEN * (HTTP2_SETTINGS_MAX - 1));
