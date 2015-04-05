@@ -690,15 +690,24 @@ http2_parse_header_fragment(HTTPHdr *hdr, IOVec iov, Http2DynamicTable &dynamic_
     int name_len = 0;
     const char *name = field->name_get(&name_len);
 
-    // ':' started header name is only allowed for psuedo headers
+    // ':' started header name is only allowed for pseudo headers
     if (hdr->fields_count() >= 4 && (name_len <= 0 || name[0] == ':')) {
       // Decoded header field is invalid
       return HPACK_ERROR_HTTP2_PROTOCOL_ERROR;
     }
 
+    // :path pseudo header MUST NOT empty for http or https URIs
+    if (name_len == HPACK_LEN_PATH && strncmp(name, HPACK_VALUE_PATH, name_len) == 0) {
+      int value_len = 0;
+      field->value_get(&value_len);
+      if (value_len == 0) {
+        return HPACK_ERROR_HTTP2_PROTOCOL_ERROR;
+      }
+    }
+
     // when The TE header field is received, it MUST NOT contain any
     // value other than "trailers".
-    if (name_len == MIME_LEN_TE && strncmp(name, MIME_FIELD_TE, name_len) == 0) {
+    if (static_cast<unsigned>(name_len) == MIME_LEN_TE && strncmp(name, MIME_FIELD_TE, name_len) == 0) {
       int value_len = 0;
       const char *value = field->value_get(&value_len);
       char trailers[] = "trailers";
