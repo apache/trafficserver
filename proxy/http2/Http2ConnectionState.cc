@@ -616,6 +616,12 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
     settings.finalize(HTTP2_SETTINGS_PARAMETER_LEN * (HTTP2_SETTINGS_MAX - 1));
     this->ua_session->handleEvent(HTTP2_SESSION_EVENT_XMIT, &settings);
 
+    // TODO: 65535 is the initial window size comes from the HTTP2 spec.
+    //       It should be defined in somewhere.
+    if (server_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE) > 65535) {
+      send_window_update_frame(0, server_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE) - 65535);
+    }
+
     return 0;
   }
 
