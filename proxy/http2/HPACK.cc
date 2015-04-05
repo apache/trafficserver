@@ -530,7 +530,7 @@ decode_string(Arena &arena, char **str, uint32_t &str_length, const uint8_t *buf
   int64_t len = 0;
 
   len = decode_integer(encoded_string_len, p, buf_end, 7);
-  if (len == HPACK_ERROR_COMPRESSION_ERROR || encoded_string_len == 0)
+  if (len == HPACK_ERROR_COMPRESSION_ERROR)
     return HPACK_ERROR_COMPRESSION_ERROR;
   p += len;
 
