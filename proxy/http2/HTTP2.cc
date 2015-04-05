@@ -707,7 +707,7 @@ http2_parse_header_fragment(HTTPHdr *hdr, IOVec iov, Http2DynamicTable &dynamic_
 
     // when The TE header field is received, it MUST NOT contain any
     // value other than "trailers".
-    if (static_cast<unsigned>(name_len) == MIME_LEN_TE && strncmp(name, MIME_FIELD_TE, name_len) == 0) {
+    if (name_len == MIME_LEN_TE && strncmp(name, MIME_FIELD_TE, name_len) == 0) {
       int value_len = 0;
       const char *value = field->value_get(&value_len);
       char trailers[] = "trailers";
