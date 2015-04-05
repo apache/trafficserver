@@ -697,7 +697,7 @@ http2_parse_header_fragment(HTTPHdr *hdr, IOVec iov, Http2DynamicTable &dynamic_
     }
 
     // :path pseudo header MUST NOT empty for http or https URIs
-    if (name_len == HPACK_LEN_PATH && strncmp(name, HPACK_VALUE_PATH, name_len) == 0) {
+    if (static_cast<unsigned>(name_len) == HPACK_LEN_PATH && strncmp(name, HPACK_VALUE_PATH, name_len) == 0) {
       int value_len = 0;
       field->value_get(&value_len);
       if (value_len == 0) {
