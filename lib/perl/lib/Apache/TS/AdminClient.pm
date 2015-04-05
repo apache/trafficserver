@@ -348,7 +348,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.cache.select_alternate
  proxy.config.cache.storage_filename
  proxy.config.cache.threads_per_disk
- proxy.config.cache.url_hash_method
  proxy.config.cache.mutex_retry_delay
  proxy.config.cluster.cluster_configuration
  proxy.config.cluster.cluster_load_clear_duration

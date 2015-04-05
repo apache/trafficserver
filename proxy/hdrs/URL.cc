@@ -92,8 +92,9 @@ int URL_LEN_MMS;
 int URL_LEN_MMSU;
 int URL_LEN_MMST;
 
-int url_hash_method = 0;
-
+// Whether we should implement url_MD5_get() using url_MD5_get_fast(). Note that
+// url_MD5_get_fast() does NOT produce the same result as url_MD5_get_general().
+static int url_hash_method = 0;
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
