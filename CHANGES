@@ -1,11 +1,14 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
-  *) TS-3495: Accept empty header field value.
-   Author: Masakazu Kitajo <m4sk17@gmail.com>
+  *) [TS-3493] Grow window sizes as part of HTTP session setup.
+   Author: Masakazu Kitajo <m4sk17@gmail.com>.
+
+  *) [TS-3495] Accept empty header field value.
+   Author: Masakazu Kitajo <m4sk17@gmail.com>.
 
   *) [TS-3482] Fill the first SETTINGS frame correctly.
-   Author: Masakazu Kitajo <m4sk17@gmail.com>
+   Author: Masakazu Kitajo <m4sk17@gmail.com>.
 
   *) [TS-3491] background_fetch: Only release URL if we were scheduled.
 
