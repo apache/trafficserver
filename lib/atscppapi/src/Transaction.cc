@@ -128,7 +128,7 @@ Transaction::setErrorBody(const std::string &page)
 bool
 Transaction::isInternalRequest() const
 {
-  return TSHttpIsInternalRequest(state_->txn_) == TS_SUCCESS;
+  return TSHttpTxnIsInternal(state_->txn_) == TS_SUCCESS;
 }
 
 void *
