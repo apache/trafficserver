@@ -270,7 +270,7 @@ public:
 
   ~BGFetchConfig()
   {
-    // ToDo: Destroy mutex ? TS-1432
+	TSMutexDestroy(_lock);	
   }
 
   void
