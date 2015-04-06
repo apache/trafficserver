@@ -1656,8 +1656,13 @@ tsapi void TSFetchUrl(const char *request, int request_len, struct sockaddr cons
 tsapi void TSFetchPages(TSFetchUrlParams_t *params);
 
 /* Check if HTTP State machine is internal or not */
-tsapi TSReturnCode TSHttpIsInternalRequest(TSHttpTxn txnp);
-tsapi TSReturnCode TSHttpIsInternalSession(TSHttpSsn ssnp);
+/** @deprecated to be renamed as TSHttpTxnIsInternal **/
+tsapi TS_DEPRECATED TSReturnCode TSHttpIsInternalRequest(TSHttpTxn txnp);
+/** @deprecated to be renamed as TSHttpSsnIsInternal **/
+tsapi TS_DEPRECATED TSReturnCode TSHttpIsInternalSession(TSHttpSsn ssnp);
+
+tsapi TSReturnCode TSHttpTxnIsInternal(TSHttpTxn txnp);
+tsapi TSReturnCode TSHttpSsnIsInternal(TSHttpSsn ssnp);
 
 /* --------------------------------------------------------------------------
    HTTP alternate selection */

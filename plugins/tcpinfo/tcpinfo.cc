@@ -206,7 +206,7 @@ tcp_info_hook(TSCont contp, TSEvent event, void *edata)
   }
 
   // Don't try to sample internal requests. TCP metrics for loopback are not interesting.
-  if (TSHttpIsInternalSession(ssnp) == TS_SUCCESS) {
+  if (TSHttpSsnIsInternal(ssnp) == TS_SUCCESS) {
     goto done;
   }
 

@@ -501,7 +501,7 @@ ConditionCookie::eval(const Resources &res)
 bool
 ConditionInternalTransaction::eval(const Resources &res)
 {
-  return TSHttpIsInternalRequest(res.txnp) == TS_SUCCESS;
+  return TSHttpTxnIsInternal(res.txnp) == TS_SUCCESS;
 }
 
 void

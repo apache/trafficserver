@@ -798,7 +798,7 @@ static bool
 is_background_fetch_allowed(TSHttpTxn txnp, BgFetchRuleMap *ri)
 {
   TSDebug(PLUGIN_NAME, "Testing: request is internal?");
-  if (TSHttpIsInternalRequest(txnp) == TS_SUCCESS) {
+  if (TSHttpTxnIsInternal(txnp) == TS_SUCCESS) {
     return false;
   }
 

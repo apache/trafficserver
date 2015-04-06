@@ -290,7 +290,7 @@ ts_lua_http_is_internal_request(lua_State *L)
 
   http_ctx = ts_lua_get_http_ctx(L);
 
-  ret = TSHttpIsInternalRequest(http_ctx->txnp);
+  ret = TSHttpTxnIsInternal(http_ctx->txnp);
 
   if (ret == TS_SUCCESS) {
     lua_pushnumber(L, 1);

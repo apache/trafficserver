@@ -473,7 +473,7 @@ main_plugin(TSCont cont, TSEvent event, void *edata)
   // Is this the proper event?
   case TS_EVENT_HTTP_READ_REQUEST_HDR:
 
-    if (TSHttpIsInternalRequest(txn) != TS_SUCCESS) {
+    if (TSHttpTxnIsInternal(txn) != TS_SUCCESS) {
       TSDebug(PLUGIN_NAME, "External Request");
       plugin_config = (config_t *)TSContDataGet(cont);
       state = TSmalloc(sizeof(StateInfo));
