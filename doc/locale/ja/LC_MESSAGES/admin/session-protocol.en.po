@@ -13,18 +13,21 @@ msgstr ""
 
 #: ../../admin/session-protocol.en.rst:4
 msgid "Session Protocol"
-msgstr ""
+msgstr "セッションプロトコル"
 
 #: ../../admin/session-protocol.en.rst:23
 msgid ""
 "Traffic Server supports some session level protocols in place of, or on top "
 "of."
 msgstr ""
+"Traffic Server は HTTP の中もしくは上でいくつかのセッションレベルプロトコルを"
+"サポートしています。"
 
 #: ../../admin/session-protocol.en.rst:24
 msgid ""
 "HTTP. These can be provided by a plugin (see :ref:`new-protocol-plugins`) or"
 msgstr ""
+"これらはプラグイン ( :ref:`new-protocol-plugins` を参照 ) もしくは "
 
 #: ../../admin/session-protocol.en.rst:25
 msgid ""
@@ -32,6 +35,10 @@ msgid ""
 "chromium.org/spdy>`_ protocol is the only one currently supported, but it "
 "is planned to support HTTP 2 when that is finalized."
 msgstr ""
+"Traffic Server に直接サポートされることによって提供されます。"
+"`SPDY <http://www.chromium.org/spdy>`_ プロトコルは現在サポートされている"
+"唯一のプロトコルですが、HTTP2 の仕様が決まった際にはそのサポートも計画されて"
+"います。"
 
 #: ../../admin/session-protocol.en.rst:29
 msgid ""
@@ -39,38 +46,42 @@ msgid ""
 "<https://technotes.googlecode.com/git/nextprotoneg.html>`_ names. The core "
 "supported names are:"
 msgstr ""
+"セッションプロトコルは "
+"`NPN <https://technotes.googlecode.com/git/nextprotoneg.html>`_ での名称を"
+"元にした明示的な名称によって指定されます。直接サポートされている名称は"
+"下記のとおりです。"
 
 #: ../../admin/session-protocol.en.rst:33
 msgid "``http/0.9``"
-msgstr ""
+msgstr "``http/0.9``"
 
 #: ../../admin/session-protocol.en.rst:34
 msgid "``http/1.0``"
-msgstr ""
+msgstr "``http/1.0``"
 
 #: ../../admin/session-protocol.en.rst:35
 msgid "``http/1.1``"
-msgstr ""
+msgstr "``http/1.1``"
 
 #: ../../admin/session-protocol.en.rst:36
 msgid "``http/2``"
-msgstr ""
+msgstr "``http/2``"
 
 #: ../../admin/session-protocol.en.rst:37
 msgid "``spdy/1``"
-msgstr ""
+msgstr "``spdy/1``"
 
 #: ../../admin/session-protocol.en.rst:38
 msgid "``spdy/2``"
-msgstr ""
+msgstr "``spdy/2``"
 
 #: ../../admin/session-protocol.en.rst:39
 msgid "``spdy/3``"
-msgstr ""
+msgstr "``spdy/3``"
 
 #: ../../admin/session-protocol.en.rst:40
 msgid "``spdy/3.1``"
-msgstr ""
+msgstr "``spdy/3.1``"
 
 #: ../../admin/session-protocol.en.rst:42
 msgid ""
@@ -78,6 +89,9 @@ msgid ""
 "future use. Both ``spdy/1`` and ``spdy/2`` are obsolete, but are include "
 "for completeness."
 msgstr ""
+"``http/2`` の値は現在機能しませんが、将来使用するために含められています。"
+"``spdy/1`` と ``spdy/2`` はどちらも古いですが、完全性のために"
+"含められています。"
 
 #: ../../admin/session-protocol.en.rst:46
 msgid ""
@@ -85,18 +99,21 @@ msgid ""
 "values. For convenience some pseudo-values are defined in terms of these "
 "fundamental protocols:"
 msgstr ""
+"プロキシーポート上でサポートされるセッションプロトコルはこれらの値の"
+"サブセットになります。利便性のためにいくつかの擬似的な値が下記の基本的な"
+"プロトコルとして定義されています。"
 
 #: ../../admin/session-protocol.en.rst:50
 msgid "``http`` means ``http/0.9``, ``http/1.0``, and ``http/1.1``"
-msgstr ""
+msgstr "``http`` は ``http/0.9`` 、``http/1.0`` 、 ``http/1.1`` を意味します。"
 
 #: ../../admin/session-protocol.en.rst:51
 msgid "``spdy`` means ``spdy/3`` and ``spdy/3.1``."
-msgstr ""
+msgstr "``spdy`` は ``spdy/3`` と ``spdy/3.1`` を意味します。"
 
 #: ../../admin/session-protocol.en.rst:52
 msgid "``http2`` means ``http/2``"
-msgstr ""
+msgstr "``http2`` は ``http/2`` を意味します。"
 
 #: ../../admin/session-protocol.en.rst:54
 msgid ""
@@ -107,3 +124,9 @@ msgid ""
 "protocol is being used by the client. If the detected protocol is not "
 "supported for that proxy port the connection is dropped."
 msgstr ""
+"それぞれのプロキシーポートでサポートするセッションプロトコルは "
+":ts:cv:`proxy.config.http.server_ports` で設定可能です。TLS が有効な接続では、"
+"この設定は NPN でどのプロトコルを提示するかを制御します。プロトコル"
+"スニッフィングは非 TLS のプロキシーポートでクライアントによってどの"
+"プロトコルが使われているかを判定するためのものです。もし検出された"
+"プロトコルがそのプロキシーポートで対応されていない場合、接続は破棄されます。"
