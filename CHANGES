@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-3450]: rename header_rewrite condition INTERNAL-TRANSACTION as INTERNAL-TXN
+    in-line with the changes in [TS-3449]
+
   *) [TS-3449]: Deprecate TSHttpIsInternalRequest and TSHttpIsInternalSession
     and replace them with TSHttpTxnIsInternal, TSHttpSsnIsInternal respectively
 
