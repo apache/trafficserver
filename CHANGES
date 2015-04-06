@@ -1,5 +1,7 @@
                                                          -*- coding: utf-8 -*-
-Changes with Apache Traffic Server 6.0.0
+Changes with Apache Traffic Server 6.0.0 
+  *) [TS-3449]: Deprecate TSHttpIsInternalRequest and TSHttpIsInternalSession
+    and replace them with TSHttpTxnIsInternal, TSHttpSsnIsInternal respectively
 
   *) [TS-3475] Add a few records.config options for controlling the HTTP/2
    SETTINGS. Thanks to Masakazu for all the reviews and additions.
