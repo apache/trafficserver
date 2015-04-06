@@ -1,5 +1,6 @@
                                                          -*- coding: utf-8 -*-
-Changes with Apache Traffic Server 6.0.0 
+Changes with Apache Traffic Server 6.0.0
+
   *) [TS-3449]: Deprecate TSHttpIsInternalRequest and TSHttpIsInternalSession
     and replace them with TSHttpTxnIsInternal, TSHttpSsnIsInternal respectively
 
