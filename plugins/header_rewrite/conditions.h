@@ -333,7 +333,7 @@ private:
   TSMutex _mutex;
 };
 
-class ConditionInternalTransaction : public Condition
+class ConditionInternalTxn : public Condition
 {
 public:
   void

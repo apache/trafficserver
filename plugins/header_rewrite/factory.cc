@@ -111,6 +111,8 @@ condition_factory(const std::string &cond)
     c = new ConditionDBM();
   } else if (c_name == "INTERNAL-TRANSACTION") {
     c = new ConditionInternalTransaction();
+  } else if (c_name == "INTERNAL-TXN") {
+    c = new ConditionInternalTxn();
   } else if (c_name == "CLIENT-IP") {
     c = new ConditionClientIp();
   } else if (c_name == "INCOMING-PORT") {
