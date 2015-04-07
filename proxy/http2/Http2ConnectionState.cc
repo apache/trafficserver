@@ -713,13 +713,16 @@ Http2ConnectionState::create_stream(Http2StreamId new_id)
   // Endpoints MUST NOT exceed the limit set by their peer.  An endpoint
   // that receives a HEADERS frame that causes their advertised concurrent
   // stream limit to be exceeded MUST treat this as a stream error.
-  if (new_id >= client_settings.get(HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS)) {
+  if (client_streams_count >= client_settings.get(HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS)) {
     return NULL;
   }
 
   Http2Stream *new_stream = new Http2Stream(new_id, client_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE));
   stream_list.push(new_stream);
   latest_streamid = new_id;
+
+  ink_assert(client_streams_count < UINT32_MAX);
+  ++client_streams_count;
 
   return new_stream;
 }
@@ -759,6 +762,7 @@ Http2ConnectionState::cleanup_streams()
     delete s;
     s = next;
   }
+  client_streams_count = 0;
 }
 
 void
@@ -792,6 +796,9 @@ Http2ConnectionState::delete_stream(Http2Stream *stream)
 {
   stream_list.remove(stream);
   delete stream;
+
+  ink_assert(client_streams_count > 0);
+  --client_streams_count;
 }
 
 void

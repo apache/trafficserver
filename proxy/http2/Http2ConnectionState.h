@@ -189,7 +189,7 @@ class Http2ConnectionState : public Continuation
 public:
   Http2ConnectionState()
     : Continuation(NULL), ua_session(NULL), client_rwnd(Http2::initial_window_size), server_rwnd(Http2::initial_window_size),
-      stream_list(), latest_streamid(0), continued_id(0)
+      stream_list(), latest_streamid(0), client_streams_count(0), continued_id(0)
   {
     SET_HANDLER(&Http2ConnectionState::main_event_handler);
   }
@@ -276,6 +276,9 @@ private:
 
   DLL<Http2Stream> stream_list;
   Http2StreamId latest_streamid;
+
+  // Counter for current acive streams which is started by client
+  uint32_t client_streams_count;
 
   // The buffer used for storing incomplete fragments of a header field which consists of multiple frames.
   Http2StreamId continued_id;
