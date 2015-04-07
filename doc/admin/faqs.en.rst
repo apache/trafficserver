@@ -377,7 +377,7 @@ Traffic Line commands do not execute under the following conditions:
 .. XXX: this is wrong
 
     You should always start and stop Traffic Server with the
-    :program:`trafficserver start`` and :program:`trafficserver stop` commands to ensure
+    :program:`trafficserver start` and :program:`trafficserver stop` commands to ensure
     that all the processes start and stop correctly. For more information,
     refer to :ref:`getting-started`.
 
