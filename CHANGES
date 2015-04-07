@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.1
 
+  *) [TS-3504] Only read "proxy.config.cache.ram_cache.use_seen_filter" once.
+    Do not set up a callback.
+
 
 Changes with Apache Traffic Server 5.3.0
 
