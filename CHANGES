@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-3504] Only read "proxy.config.cache.ram_cache.use_seen_filter" once.
+    Do not set up a callback.
+
   *) [TS-3503] Add ua_first_read to milestones to track when the first byte was
     read from the client
 
