@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-3503] Add ua_first_read to milestones to track when the first byte was
+    read from the client
+
   *) [TS-3450]: rename header_rewrite condition INTERNAL-TRANSACTION as INTERNAL-TXN
     in-line with the changes in [TS-3449]
 
