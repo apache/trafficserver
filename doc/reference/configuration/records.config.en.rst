@@ -53,6 +53,9 @@ A variable marked as ``Reloadable`` can be updated via the command::
 
    traffic_line -x
 
+A variable marked as ``Overwritable`` can be changed on a per-remap basis using plugins
+(like the :ref:`conf-remap-plugin`).
+
 ``INT`` type configurations are expressed as any normal integer,
 e.g. *32768*. They can also be expressed using more human readable values
 using standard prefixes, e.g. *32K*. The following prefixes are supported
@@ -140,7 +143,7 @@ System Variables
 
    The name of the product.
 
-.. ts:cv:: CONFIG proxy.config.proxy_name STRING ``build_machine``
+.. ts:cv:: CONFIG proxy.config.proxy_name STRING build_machine
    :reloadable:
 
    The name of the Traffic Server node.
@@ -389,6 +392,7 @@ this be local"
    Set the interface to use for cluster communications.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.cluster_cache_local INT 0
+   :overwritable:
 
    This turns on the local caching of objects in cluster mode. The point of
    this is to allow for popular or **hot** content to be cached on all nodes
@@ -627,6 +631,7 @@ Supports both wildcards ('\*') and ranges ("0-1023").
 
 .. ts:cv:: CONFIG proxy.config.http.insert_request_via_str INT 1
    :reloadable:
+   :overwritable:
 
    Set how the ``Via`` field is handled on a request to the origin server.
 
@@ -645,6 +650,7 @@ Value Effect
 
 .. ts:cv:: CONFIG proxy.config.http.insert_response_via_str INT 0
    :reloadable:
+   :overwritable:
 
    Set how the ``Via`` field is handled on the response to the client.
 
@@ -671,6 +677,7 @@ Value Effect
 
 .. ts:cv:: CONFIG proxy.config.http.response_server_enabled INT 1
    :reloadable:
+   :overwritable:
 
    You can specify one of the following:
 
@@ -680,6 +687,7 @@ Value Effect
 
 .. ts:cv:: CONFIG proxy.config.http.insert_age_in_response INT 1
    :reloadable:
+   :overwritable:
 
    This option specifies whether Traffic Server should insert an ``Age`` header in the response. The Age field value is the cache's
    estimate of the amount of time since the response was generated or revalidated by the origin server.
@@ -689,6 +697,7 @@ Value Effect
 
 .. ts:cv:: CONFIG proxy.config.http.response_server_str STRING ATS/
    :reloadable:
+   :overwritable:
 
    The Server: string that ATS will insert in a response header (if requested, see above). Note that the current version number is
    always appended to this string.
@@ -702,6 +711,7 @@ Value Effect
 
 .. ts:cv:: CONFIG proxy.config.http.chunking_enabled INT 1
    :reloadable:
+   :overwritable:
 
    Specifies whether Traffic Sever can generate a chunked response:
 
@@ -721,6 +731,7 @@ Value Effect
 
 .. ts:cv:: CONFIG proxy.config.http.send_http11_requests INT 1
    :reloadable:
+   :overwritable:
 
    Specifies when and how Traffic Sever uses HTTP/1.1 to communicate with the origin server
 
@@ -871,10 +882,12 @@ enabling it and then use identity URL mappings to re-disable it for
 specific domains.
 
 .. ts:cv:: CONFIG proxy.config.http.keep_alive_enabled_in  INT 1
+   :overwritable:
 
    Enables (``1``) or disables (``0``) incoming keep-alive connections.
 
 .. ts:cv:: CONFIG proxy.config.http.keep_alive_enabled_out  INT 1
+   :overwritable:
 
    Enables (``1``) or disables (``0``) outgoing keep-alive connections.
 
@@ -884,6 +897,7 @@ specific domains.
         :ts:cv:`proxy.config.http.server_max_connections`.
 
 .. ts:cv:: CONFIG proxy.config.http.keep_alive_post_out  INT 1
+   :overwritable:
 
    Controls wether new POST requests re-use keep-alive sessions (``1``) or
    create new connections per request (``0``).
@@ -936,6 +950,7 @@ Parent Proxy Configuration
 
 .. ts:cv:: CONFIG proxy.config.http.forward.proxy_auth_to_parent INT 0
    :reloadable:
+   :overwritable:
 
    Configures Traffic Server to send proxy authentication headers on to the parent cache.
 
@@ -949,6 +964,7 @@ HTTP Connection Timeouts
 
 .. ts:cv:: CONFIG proxy.config.http.keep_alive_no_activity_timeout_in INT 115
    :reloadable:
+   :overwritable:
 
    Specifies how long Traffic Server keeps connections to clients open for a
    subsequent request after a transaction ends. A value of ``0`` will disable
@@ -956,6 +972,7 @@ HTTP Connection Timeouts
 
 .. ts:cv:: CONFIG proxy.config.http.keep_alive_no_activity_timeout_out INT 120
    :reloadable:
+   :overwritable:
 
    Specifies how long Traffic Server keeps connections to origin servers open
    for a subsequent transfer of data after a transaction ends. A value of
@@ -963,11 +980,13 @@ HTTP Connection Timeouts
 
 .. ts:cv:: CONFIG proxy.config.http.transaction_no_activity_timeout_in INT 30
    :reloadable:
+   :overwritable:
 
    Specifies how long Traffic Server keeps connections to clients open if a transaction stalls.
 
 .. ts:cv:: CONFIG proxy.config.http.transaction_no_activity_timeout_out INT 30
    :reloadable:
+   :overwritable:
 
    Specifies how long Traffic Server keeps connections to origin servers open if the transaction stalls.
 
@@ -981,6 +1000,7 @@ The value of ``0`` specifies that there is no timeout.
 
 .. ts:cv:: CONFIG proxy.config.http.transaction_active_timeout_out INT 0
    :reloadable:
+   :overwritable:
 
    The maximum amount of time Traffic Server waits for fulfillment of a connection request to an origin server. If Traffic Server does not
    complete the transfer to the origin server before this timeout expires, then Traffic Server terminates the connection request.
@@ -994,11 +1014,13 @@ The default value of ``0`` specifies that there is no timeout.
 
 .. ts:cv:: CONFIG proxy.config.http.background_fill_active_timeout INT 0
    :reloadable:
+   :overwritable:
 
    Specifies how long Traffic Server continues a background fill before giving up and dropping the origin server connection.
 
 .. ts:cv:: CONFIG proxy.config.http.background_fill_completed_threshold FLOAT 0.0
    :reloadable:
+   :overwritable:
 
    The proportion of total document size already transferred when a client aborts at which the proxy continues fetching the document
    from the origin server to get it into the cache (a **background fill**).
@@ -1008,6 +1030,7 @@ Origin Server Connect Attempts
 
 .. ts:cv:: CONFIG proxy.config.http.connect_attempts_max_retries INT 6
    :reloadable:
+   :overwritable:
 
    The maximum number of connection retries Traffic Server can make when the origin server is not responding.
    Each retry attempt lasts for `proxy.config.http.connect_attempts_timeout`_ seconds.  Once the maximum number of retries is
@@ -1016,6 +1039,7 @@ Origin Server Connect Attempts
 
 .. ts:cv:: CONFIG proxy.config.http.connect_attempts_max_retries_dead_server INT 3
    :reloadable:
+   :overwritable:
 
    Maximum number of connection retries Traffic Server can make while an origin is marked dead.  Typically this value is smaller than
    `proxy.config.http.connect_attempts_max_retries`_ so an error is returned to the client faster and also to reduce the load on the dead origin.
@@ -1033,6 +1057,7 @@ Origin Server Connect Attempts
 
 .. ts:cv:: CONFIG proxy.config.http.origin_max_connections INT 0
    :reloadable:
+   :overwritable:
 
    Limits the number of socket connections per origin server to the value specified. To enable, set to one (``1``).
 
@@ -1046,28 +1071,33 @@ Origin Server Connect Attempts
 
 .. ts:cv:: CONFIG proxy.config.http.connect_attempts_rr_retries INT 3
    :reloadable:
+   :overwritable:
 
    The maximum number of failed connection attempts allowed before a round-robin entry is marked as 'down' if a server
    has round-robin DNS entries.
 
 .. ts:cv:: CONFIG proxy.config.http.connect_attempts_timeout INT 30
    :reloadable:
+   :overwritable:
 
    The timeout value (in seconds) for **time to first byte** for an origin server connection.
 
 .. ts:cv:: CONFIG proxy.config.http.post_connect_attempts_timeout INT 1800
    :reloadable:
+   :overwritable:
 
    The timeout value (in seconds) for an origin server connection when the client request is a ``POST`` or ``PUT``
    request.
 
 .. ts:cv:: CONFIG proxy.config.http.down_server.cache_time INT 300
    :reloadable:
+   :overwritable:
 
    Specifies how long (in seconds) Traffic Server remembers that an origin server was unreachable.
 
 .. ts:cv:: CONFIG proxy.config.http.down_server.abort_threshold INT 10
    :reloadable:
+   :overwritable:
 
    The number of seconds before Traffic Server marks an origin server as unavailable after a client abandons a request
    because the origin server was too slow in sending the response header.
@@ -1086,17 +1116,20 @@ Congestion Control
    congested origin server later. Refer to :ref:`using-congestion-control`.
 
 .. ts:cv:: CONFIG proxy.config.http.flow_control.enabled INT 0
+   :overwritable:
 
    Transaction buffering / flow control is enabled if this is set to a non-zero value. Otherwise no flow control is done.
 
 .. ts:cv:: CONFIG proxy.config.http.flow_control.high_water INT 0
    :metric: bytes
+   :overwritable:
 
    The high water mark for transaction buffer control. External source I/O is halted when the total buffer space in use
    by the transaction exceeds this value.
 
 .. ts:cv:: CONFIG proxy.config.http.flow_control.low_water INT 0
    :metric: bytes
+   :overwritable:
 
    The low water mark for transaction buffer control. External source I/O is resumed when the total buffer space in use
    by the transaction is no more than this value.
@@ -1106,6 +1139,7 @@ Negative Response Caching
 
 .. ts:cv:: CONFIG proxy.config.http.negative_caching_enabled INT 0
    :reloadable:
+   :overwritable:
 
    When enabled (``1``), Traffic Server caches negative responses (such as ``404 Not Found``) when a requested page does
    not exist. The next time a client requests the same page, Traffic Server serves the negative response directly from
@@ -1131,15 +1165,17 @@ Negative Response Caching
    :ts:cv:`proxy.config.http.negative_caching_lifetime`.
 
 .. ts:cv:: CONFIG proxy.config.http.negative_caching_lifetime INT 1800
+   :overwritable:
 
    How long (in seconds) Traffic Server keeps the negative responses  valid in cache. This value only affects negative
-   responses that do have explicit ``Expires:`` or ``Cache-Control:`` lifetimes set by the server.
+   responses that do NOT have explicit ``Expires:`` or ``Cache-Control:`` lifetimes set by the server.
 
 Proxy User Variables
 ====================
 
 .. ts:cv:: CONFIG proxy.config.http.anonymize_remove_from INT 0
    :reloadable:
+   :overwritable:
 
    When enabled (``1``), Traffic Server removes the ``From`` header to protect the privacy of your users.
 
@@ -1150,21 +1186,25 @@ Proxy User Variables
 
 .. ts:cv:: CONFIG proxy.config.http.anonymize_remove_user_agent INT 0
    :reloadable:
+   :overwritable:
 
    When enabled (``1``), Traffic Server removes the ``User-agent`` header to protect the privacy of your site and users.
 
 .. ts:cv:: CONFIG proxy.config.http.anonymize_remove_cookie INT 0
    :reloadable:
+   :overwritable:
 
    When enabled (``1``), Traffic Server removes the ``Cookie`` header to protect the privacy of your site and users.
 
 .. ts:cv:: CONFIG proxy.config.http.anonymize_remove_client_ip INT 0
    :reloadable:
+   :overwritable:
 
    When enabled (``1``), Traffic Server removes ``Client-IP`` headers for more privacy.
 
 .. ts:cv:: CONFIG proxy.config.http.anonymize_insert_client_ip INT 1
    :reloadable:
+   :overwritable:
 
    When enabled (``1``), Traffic Server inserts ``Client-IP`` headers to retain the client IP address.
 
@@ -1175,11 +1215,13 @@ Proxy User Variables
 
 .. ts:cv:: CONFIG proxy.config.http.insert_squid_x_forwarded_for INT 1
    :reloadable:
+   :overwritable:
 
    When enabled (``1``), Traffic Server adds the client IP address to the ``X-Forwarded-For`` header.
 
 .. ts:cv:: CONFIG proxy.config.http.normalize_ae_gzip INT 1
    :reloadable:
+   :overwritable:
 
    Enable (``1``) to normalize all ``Accept-Encoding:`` headers to one of the following:
 
@@ -1241,6 +1283,7 @@ Cache Control
 
 .. ts:cv:: CONFIG proxy.config.http.cache.http INT 1
    :reloadable:
+   :overwritable:
 
    Enables (``1``) or disables (``0``) caching of HTTP requests.
 
@@ -1254,21 +1297,25 @@ Cache Control
 
 .. ts:cv:: CONFIG proxy.config.http.cache.ignore_client_no_cache INT 1
    :reloadable:
+   :overwritable:
 
    When enabled (``1``), Traffic Server ignores client requests to bypass the cache.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.ims_on_client_no_cache INT 1
    :reloadable:
+   :overwritable:
 
    When enabled (``1``), Traffic Server issues a conditional request to the origin server if an incoming request has a ``No-Cache`` header.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.ignore_server_no_cache INT 0
    :reloadable:
+   :overwritable:
 
    When enabled (``1``), Traffic Server ignores origin server requests to bypass the cache.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.cache_responses_to_cookies INT 1
    :reloadable:
+   :overwritable:
 
    Specifies how cookies are cached:
 
@@ -1278,15 +1325,17 @@ Cache Control
    -  ``3`` = cache for all but text content-types
 
 .. ts:cv:: CONFIG proxy.config.http.cache.ignore_authentication INT 0
+   :overwritable:
 
    When enabled (``1``), Traffic Server ignores ``WWW-Authentication`` headers in responses ``WWW-Authentication`` headers are removed and
    not cached.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.cache_urls_that_look_dynamic INT 1
    :reloadable:
+   :overwritable:
 
-   Enables (``1``) or disables (``0``) caching of URLs that look dynamic, i.e.: URLs that end in *``.asp``* or contain a question
-   mark (*``?``*), a semicolon (*``;``*), or *``cgi``*. For a full list, please refer to
+   Enables (``1``) or disables (``0``) caching of URLs that look dynamic, i.e.: URLs that end in ``.asp`` or contain a question
+   mark (``?``), a semicolon (``;``), or ``cgi``. For a full list, please refer to
    `HttpTransact::url_looks_dynamic </link/to/doxygen>`_
 
 .. ts:cv:: CONFIG proxy.config.http.cache.enable_default_vary_headers INT 0
@@ -1296,6 +1345,7 @@ Cache Control
 
 .. ts:cv:: CONFIG proxy.config.http.cache.when_to_revalidate INT 0
    :reloadable:
+   :overwritable:
 
    Specifies when to revalidate content:
 
@@ -1312,6 +1362,7 @@ Cache Control
 
 .. ts:cv:: CONFIG proxy.config.http.cache.required_headers INT 2
    :reloadable:
+   :overwritable:
 
    The type of headers required in a request for the request to be cacheable.
 
@@ -1321,14 +1372,17 @@ Cache Control
 
 .. ts:cv:: CONFIG proxy.config.http.cache.max_stale_age INT 604800
    :reloadable:
+   :overwritable:
 
    The maximum age allowed for a stale response before it cannot be cached.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.range.lookup INT 1
+   :overwritable:
 
    When enabled (``1``), Traffic Server looks up range requests in the cache.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.range.write INT 0
+   :overwritable:
 
    When enabled (``1``), Traffic Server will attempt to write (lock) the URL
    to cache. This is rarely useful (at the moment), since it'll only be able
@@ -1401,6 +1455,7 @@ Cache Control
 
 .. ts:cv:: CONFIG proxy.config.http.cache.ignore_client_cc_max_age INT 1
    :reloadable:
+   :overwritable:
 
    When enabled (``1``), Traffic Server ignores any ``Cache-Control:
    max-age`` headers from the client. This technically violates the HTTP RFC,
@@ -1500,35 +1555,41 @@ Heuristic Expiration
 
 .. ts:cv:: CONFIG proxy.config.http.cache.heuristic_min_lifetime INT 3600
    :reloadable:
+   :overwritable:
 
    The minimum amount of time an HTTP object without an expiration date can remain fresh in the cache before is
    considered to be stale.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.heuristic_max_lifetime INT 86400
    :reloadable:
+   :overwritable:
 
    The maximum amount of time an HTTP object without an expiration date can remain fresh in the cache before is
    considered to be stale.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.heuristic_lm_factor FLOAT 0.10
    :reloadable:
+   :overwritable:
 
    The aging factor for freshness computations. Traffic Server stores an object for this percentage of the time that
    elapsed since it last changed.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.fuzz.time INT 240
    :reloadable:
+   :overwritable:
 
    How often Traffic Server checks for an early refresh, during the period before the document stale time. The interval
    specified must be in seconds. See :ref:`fuzzy-revalidation`
 
 .. ts:cv:: CONFIG proxy.config.http.cache.fuzz.probability FLOAT 0.005
    :reloadable:
+   :overwritable:
 
    The probability that a refresh is made on a document during the specified fuzz time.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.fuzz.min_time INT 0
    :reloadable:
+   :overwritable:
 
    Handles requests with a TTL less than fuzz.time – it allows for different times to evaluate the probability of revalidation for small TTLs and big TTLs. Objects with small TTLs will start "rolling the revalidation dice" near the fuzz.min_time, while objects with large TTLs would start at fuzz.time. A logarithmic like function between determines the revalidation evaluation start time (which will be between fuzz.min_time and fuzz.time). As the object gets closer to expiring, the window start becomes more likely. By default this setting is not enabled, but should be enabled anytime you have objects with small TTLs. The default value is ``0``.
 
@@ -1654,7 +1715,7 @@ hostname to ``host_x.y.com``.
 .. note::
 
    If the variable :ts:cv:`proxy.config.http.enable_url_expandomatic` is set to ``1`` (the default value), then you do not have to
-   add *``www.``* and *``.com``* to this list because Traffic Server automatically tries www. and .com after trying the values
+   add ``www.`` and ``.com`` to this list because Traffic Server automatically tries www. and .com after trying the values
    you've specified.
 
 .. ts:cv:: CONFIG proxy.config.dns.resolv_conf STRING /etc/resolv.conf
@@ -2241,6 +2302,7 @@ URL Remap Rules
 
 .. ts:cv:: CONFIG proxy.config.url_remap.pristine_host_hdr INT 0
    :reloadable:
+   :overwritable:
 
    Set this variable to ``1`` if you want to retain the client host
    header in a request during remapping.
@@ -2748,15 +2810,18 @@ Sockets
        keepalive options above.
 
 .. ts:cv:: CONFIG proxy.config.net.sock_send_buffer_size_out INT 0
+   :overwritable:
 
    Sets the send buffer size for connections from Traffic Server to the origin server.
 
 .. ts:cv:: CONFIG proxy.config.net.sock_recv_buffer_size_out INT 0
+   :overwritable:
 
    Sets the receive buffer size for connections from Traffic Server to
    the origin server.
 
 .. ts:cv:: CONFIG proxy.config.net.sock_option_flag_out INT 0x1
+   :overwritable:
 
    Turns different options "on" for the origin server socket:::
 
@@ -2787,6 +2852,7 @@ Sockets
    .. seealso:: `Traffic Shaping`_
 
 .. ts:cv:: CONFIG proxy.config.net.sock_packet_mark_out INT 0x0
+   :overwritable:
 
    Set the packet mark on traffic destined for the origin
    (the packets that make up an origin request).
@@ -2801,6 +2867,7 @@ Sockets
    .. seealso:: `Traffic Shaping`_
 
 .. ts:cv:: CONFIG proxy.config.net.sock_packet_tos_out INT 0x0
+   :overwritable:
 
    Set the ToS/DiffServ Field on packets sent to the origin
    (the packets that make up an origin request).
