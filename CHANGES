@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.0
 
+  *) [TS-3480] Large stream id cause PROTOCOL_ERROR.
+   Author: Ryo Okubo <rokubo@yahoo-corp.jp>.
+
   *) TS-3495: Accept empty header field value.
    Author: Masakazu Kitajo <m4sk17@gmail.com>
 
