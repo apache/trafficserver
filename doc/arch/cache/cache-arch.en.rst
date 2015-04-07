@@ -535,7 +535,7 @@ extraneous bytes.
 
 The computation of the approximate size of the fragment is defined as::
 
-  ( *size* + 1 ) * 2 ^ ( ``CACHE_BLOCK_SHIFT`` + 3 * *big* )
+  ( *size* + 1 ) * 2 ^ ( CACHE_BLOCK_SHIFT + 3 * *big* )
 
 Where ``CACHE_BLOCK_SHIFT`` is the bit width of the size of a basic cache
 block (9, corresponding to a sector size of 512). Therefore the value with

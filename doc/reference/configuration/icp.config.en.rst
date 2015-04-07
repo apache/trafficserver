@@ -41,42 +41,42 @@ information for a single ICP peer in the following format::
 
 Each field is described in the following list.
 
-*``host``* {#host}
+``host``
     The hostname of the ICP peer.
 
     This field is optional; if you do not specify the hostname of the
     ICP peer, you must specify the IP address.
 
-*``host_IP``* {#host_IP}
+``host_IP``
     The IP address of the ICP peer.
 
     This field is optional; if you do not specify the IP address of the
     ICP peer, you must specify the hostname.
 
-*``ctype``* {#ctype}
+``ctype``
     Use the following options:
 
     -  1 to indicate an ICP parent cache
     -  2 to indicate an ICP sibling cache
 
-*``proxy_port``* {#proxy_port}
+``proxy_port``
     The port number of the TCP port used by the ICP peer for proxy
     communication.
 
-*``icp_port``* {#icp_port}
+``icp_port``
     The port number of the UDP port used by the ICP peer for ICP
     communication.
 
-*``MC_on``* {#mc_on}
+``MC_on``
     Enable or disable MultiCast:
 
     -  0 if multicast is disabled
     -  1 if multicast is enabled
 
-*``MC_ip``* {#mc_ip}
+``MC_ip``
     The MultiCast IP address.
 
-*``MC_ttl``* {#mc_ttl}
+``MC_ttl``
     The multicast time to live. Use the following options:
 
     -  1 if IP multicast datagrams will not be forwarded beyond a single
