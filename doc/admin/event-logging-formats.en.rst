@@ -44,7 +44,7 @@ The following list describes Traffic Server custom logging fields.
     ``Accept-Language:`` field in client request headers.
 
     .. note::
-        ecqh is the escaped version of this map
+        ecqh is the urlencoded version of this map
 
 .. _pqh:
 
@@ -54,7 +54,7 @@ The following list describes Traffic Server custom logging fields.
     the ``Authorization:`` field in proxy request headers.
 
     .. note::
-        epqh is the escaped version of this map
+        epqh is the urlencoded version of this map
 
 .. _psh:
 
@@ -64,7 +64,7 @@ The following list describes Traffic Server custom logging fields.
     ``Retry-After:`` field in proxy response headers.
 
     .. note::
-        epsh is the escaped version of this map
+        epsh is the urlencoded version of this map
 
 .. _ssh:
 
@@ -74,7 +74,7 @@ The following list describes Traffic Server custom logging fields.
     server response headers.
 
     .. note::
-        essh is the escaped version of this map
+        essh is the urlencoded version of this map
 
 .. _cssh:
 
@@ -84,7 +84,7 @@ The following list describes Traffic Server custom logging fields.
     the cached server response headers.
 
     .. note::
-        ecssh is the escaped version of this map
+        ecssh is the urlencoded version of this map
 
 .. _caun:
 
