@@ -16,31 +16,37 @@
   limitations under the License.
 */
 
-
-//////////////////////////////////////////////////////////////////////////////////////////////
-//
-// Main entry points for the plugin hooks etc.
-//
 #include <ts/ts.h>
 #include <ts/remap.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
+#include <getopt.h>
 
 #include "lulu.h"
 
+//////////////////////////////////////////////////////////////////////////////////////////////
+// Note that all options for all policies has to go here. Not particularly pretty...
+//
+static const struct option longopt[] = {{const_cast<char *>("policy"), required_argument, NULL, 'p'},
+                                        {const_cast<char *>("chance"), required_argument, NULL, 'c'},
+                                        {NULL, no_argument, NULL, '\0'}};
 
-// Virtual base class for all policies
+
+//////////////////////////////////////////////////////////////////////////////////////////////
+// Virtual base class for all policies.
+//
 class PromotionPolicy
 {
 public:
   virtual ~PromotionPolicy(){};
-  virtual bool parseArguments(int argc, char *argv[]) = 0;
+  virtual bool parseOption(int opt, char *optarg) = 0;
   virtual bool doPromote(TSHttpTxn txnp) const = 0;
 
-  const char *
+  virtual const char *
   getPolicyName() const
   {
-    return _policy_name;
+    return "virtual";
   }
 
   void
@@ -49,20 +55,19 @@ public:
     TSDebug(PLUGIN_NAME, "Usage: @plugin=%s.so @pparam=%s @pparam=<n>%%", PLUGIN_NAME, getPolicyName());
     TSError("Usage: @plugin=%s.so @pparam=%s @pparam=<n>%%", PLUGIN_NAME, getPolicyName());
   }
-
-private:
-  const char *_policy_name = "virtual";
 };
 
 
+//////////////////////////////////////////////////////////////////////////////////////////////
 // This is the simplest of all policies, just give each request a (small)
 // percentage chance to be promoted to cache. Usage:
 //
-//   @plugin=cache_promot.so @pparam=chance @pparam=10%
-class ChancePolicy : public PromotionPolicy
+//   @plugin=cache_promote.so @pparam=--policy=statistical @pparam=--chance=10%
+//
+class StatisticalPolicy : public PromotionPolicy
 {
 public:
-  ChancePolicy() : _percent(0.0)
+  StatisticalPolicy() : _chance(0.0)
   {
     // This doesn't have to be perfect, since this is just statistical sampling.
     // coverity[dont_call]
@@ -70,40 +75,43 @@ public:
   }
 
   bool
-  parseArguments(int argc, char *argv[])
+  parseOption(int opt, char *optarg)
   {
-    if (4 != argc) {
-      usage();
+    switch (opt) {
+    case 'c':
+      _chance = strtof(optarg, NULL) / 100.0;
+      break;
+    default:
+      // All other options are unsupported for this policy
       return false;
     }
 
-    _percent = strtof(argv[3], NULL) / 100.0;
-    if (_percent < 0 || _percent > 1) {
-      usage();
-      return false;
-    }
-
-    TSDebug(PLUGIN_NAME, "created remap rule, with chance policy of %s (%f)", argv[3], _percent);
     return true;
   }
-
 
   bool doPromote(TSHttpTxn /* txnp ATS_UNUSED */) const
   {
     double r = drand48();
 
-    TSDebug(PLUGIN_NAME, "evaluating ChancePolicy::doPromote(), %f > %f ?", _percent, r);
+    TSDebug(PLUGIN_NAME, "evaluating StatisticalPolicy::doPromote(), %f > %f ?", _chance, r);
     // coverity[dont_call]
-    return _percent > r;
+    return _chance > r;
+  }
+
+  const char *
+  getPolicyName() const
+  {
+    return "statistical";
   }
 
 private:
-  float _percent;
-  const char *_policy_name = "chance";
+  float _chance;
 };
 
 
-// This holds the configuration for a remap rule
+//////////////////////////////////////////////////////////////////////////////////////////////
+// This holds the configuration for a remap rule, as well as parses the configurations.
+//
 class PromotionConfig
 {
 public:
@@ -121,22 +129,34 @@ public:
   bool
   factory(int argc, char *argv[])
   {
-    if (argc < 3) {
-      TSError("Unable to create remap instance, need a percentage parameter");
-      return false;
-    }
+    while (true) {
+      int opt = getopt_long(argc, (char *const *)argv, "pc", longopt, NULL);
 
-    if (0 == strncasecmp(argv[2], "chance", 6)) {
-      _policy = new ChancePolicy();
-    } else {
-      TSError("Unknown policy: %s", argv[2]);
-      return false;
-    }
-
-    if (!_policy->parseArguments(argc, argv)) {
-      delete _policy;
-      _policy = NULL;
-      return false;
+      if (opt == -1) {
+        break;
+      } else if (opt == 'p') {
+        if (0 == strncasecmp(optarg, "statistical", 11)) {
+          _policy = new StatisticalPolicy();
+        } else {
+          TSError("Unknown policy --policy=%s", optarg);
+          return false;
+        }
+        if (_policy) {
+          TSDebug(PLUGIN_NAME, "created remap with cache promotion policy = %s", _policy->getPolicyName());
+        }
+      } else {
+        if (_policy) {
+          if (!_policy->parseOption(opt, optarg)) {
+            TSError("The specified policy (%s) does not support the -%c option", _policy->getPolicyName(), opt);
+            delete _policy;
+            _policy = NULL;
+            return false;
+          }
+        } else {
+          TSError("The --policy=<n> parameter must come first on the remap configuration");
+          return false;
+        }
+      }
     }
 
     return true;
@@ -223,11 +243,17 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf */, int /
   PromotionConfig *config = new PromotionConfig;
   TSCont contp = TSContCreate(cont_handle_policy, TSMutexCreate());
 
-  config->factory(argc, argv);
-  TSContDataSet(contp, static_cast<void *>(config));
-  *ih = static_cast<void *>(contp);
+  --argc;
+  ++argv;
+  optind = 0;
+  if (config->factory(argc, argv)) {
+    TSContDataSet(contp, static_cast<void *>(config));
+    *ih = static_cast<void *>(contp);
 
-  return TS_SUCCESS;
+    return TS_SUCCESS;
+  }
+
+  return TS_ERROR;
 }
 
 void
