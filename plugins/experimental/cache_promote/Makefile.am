@@ -14,37 +14,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-SUBDIRS = \
- authproxy \
- background_fetch \
- balancer \
- buffer_upload \
- cache_promote \
- channel_stats \
- collapsed_connection \
- custom_redirect \
- epic \
- escalate \
- esi \
- generator \
- geoip_acl \
- header_normalize \
- healthchecks \
- hipes \
- metalink \
- regex_revalidate \
- remap_stats \
- s3_auth \
- ssl_cert_loader \
- sslheaders \
- stale_while_revalidate \
- url_sig \
- xdebug
+include $(top_srcdir)/build/plugins.mk
 
-if HAS_MYSQL
-  SUBDIRS += mysql_remap
-endif
-
-if BUILD_LUAJIT
-  SUBDIRS += ts_lua
-endif
+pkglib_LTLIBRARIES = cache_promote.la
+cache_promote_la_SOURCES = cache_promote.cc
+cache_promote_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
