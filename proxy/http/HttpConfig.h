@@ -288,6 +288,28 @@ enum {
   https_incoming_requests_stat,
   https_total_client_connections_stat,
 
+  // milestone timing statistics in milliseconds
+  http_ua_begin_time_stat,
+  http_ua_first_read_time_stat,
+  http_ua_read_header_done_time_stat,
+  http_ua_begin_write_time_stat,
+  http_ua_close_time_stat,
+  http_server_first_connect_time_stat,
+  http_server_connect_time_stat,
+  http_server_connect_end_time_stat,
+  http_server_begin_write_time_stat,
+  http_server_first_read_time_stat,
+  http_server_read_header_done_time_stat,
+  http_server_close_time_stat,
+  http_cache_open_read_begin_time_stat,
+  http_cache_open_read_end_time_stat,
+  http_cache_open_write_begin_time_stat,
+  http_cache_open_write_end_time_stat,
+  http_dns_lookup_begin_time_stat,
+  http_dns_lookup_end_time_stat,
+  http_sm_start_time_stat,
+  http_sm_finish_time_stat,
+
   http_stat_count
 };
 

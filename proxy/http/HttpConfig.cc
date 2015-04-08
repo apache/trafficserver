@@ -854,6 +854,48 @@ register_stat_callbacks()
                      (int)https_incoming_requests_stat, RecRawStatSyncCount);
   RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.https.total_client_connections", RECD_COUNTER, RECP_PERSISTENT,
                      (int)https_total_client_connections_stat, RecRawStatSyncCount);
+
+  // milestones
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.milestone.ua_begin", RECD_COUNTER, RECP_PERSISTENT,
+                     (int)http_ua_begin_time_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.milestone.ua_first_read", RECD_COUNTER, RECP_PERSISTENT,
+                     (int)http_ua_first_read_time_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.milestone.ua_read_header_done", RECD_COUNTER, RECP_PERSISTENT,
+                     (int)http_ua_read_header_done_time_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.milestone.ua_begin_write", RECD_COUNTER, RECP_PERSISTENT,
+                     (int)http_ua_begin_write_time_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.milestone.ua_close", RECD_COUNTER, RECP_PERSISTENT,
+                     (int)http_ua_close_time_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.milestone.server_first_connect", RECD_COUNTER, RECP_PERSISTENT,
+                     (int)http_server_first_connect_time_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.milestone.server_connect", RECD_COUNTER, RECP_PERSISTENT,
+                     (int)http_server_connect_time_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.milestone.server_connect_end", RECD_COUNTER, RECP_PERSISTENT,
+                     (int)http_server_connect_end_time_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.milestone.server_begin_write", RECD_COUNTER, RECP_PERSISTENT,
+                     (int)http_server_begin_write_time_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.milestone.server_first_read", RECD_COUNTER, RECP_PERSISTENT,
+                     (int)http_server_first_read_time_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.milestone.server_read_header_done", RECD_COUNTER, RECP_PERSISTENT,
+                     (int)http_server_read_header_done_time_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.milestone.server_close", RECD_COUNTER, RECP_PERSISTENT,
+                     (int)http_server_close_time_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.milestone.cache_open_read_begin", RECD_COUNTER, RECP_PERSISTENT,
+                     (int)http_cache_open_read_begin_time_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.milestone.cache_open_read_end", RECD_COUNTER, RECP_PERSISTENT,
+                     (int)http_cache_open_read_end_time_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.milestone.cache_open_write_begin", RECD_COUNTER, RECP_PERSISTENT,
+                     (int)http_cache_open_write_begin_time_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.milestone.cache_open_write_end", RECD_COUNTER, RECP_PERSISTENT,
+                     (int)http_cache_open_write_end_time_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.milestone.dns_lookup_begin", RECD_COUNTER, RECP_PERSISTENT,
+                     (int)http_dns_lookup_begin_time_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.milestone.dns_lookup_end", RECD_COUNTER, RECP_PERSISTENT,
+                     (int)http_dns_lookup_end_time_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.milestone.sm_start", RECD_COUNTER, RECP_PERSISTENT,
+                     (int)http_sm_start_time_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.milestone.sm_finish", RECD_COUNTER, RECP_PERSISTENT,
+                     (int)http_sm_finish_time_stat, RecRawStatSyncSum);
 }
 
 

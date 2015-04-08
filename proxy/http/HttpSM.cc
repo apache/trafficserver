@@ -98,30 +98,6 @@ static const int len_100_continue_response = strlen(str_100_continue_response);
 static const char *str_408_request_timeout_response = "HTTP/1.1 408 Request Timeout\r\nConnection: close\r\n\r\n";
 static const int len_408_request_timeout_response = strlen(str_408_request_timeout_response);
 
-/**
- * Takes two milestones and returns the difference.
- * @param start The start time
- * @param end The end time
- * @return A double that is the time in seconds
- */
-static double
-milestone_difference(const ink_hrtime start, const ink_hrtime end)
-{
-  if (end == 0) {
-    return -1;
-  }
-  return (double)(end - start) / 1000000000;
-}
-
-static double
-milestone_difference_msec(const ink_hrtime start, const ink_hrtime end)
-{
-  if (end == 0) {
-    return -1;
-  }
-  return (double)(end - start) / 1000000;
-}
-
 void
 HttpSM::_make_scatter_list(HttpSM *prototype)
 {
@@ -6655,10 +6631,10 @@ HttpSM::update_stats()
   }
 #endif
 
-  HttpTransact::update_size_and_time_stats(&t_state, total_time, ua_write_time, os_read_time, client_request_hdr_bytes,
-                                           client_request_body_bytes, client_response_hdr_bytes, client_response_body_bytes,
-                                           server_request_hdr_bytes, server_request_body_bytes, server_response_hdr_bytes,
-                                           server_response_body_bytes, pushed_response_hdr_bytes, pushed_response_body_bytes);
+  HttpTransact::update_size_and_time_stats(
+    &t_state, total_time, ua_write_time, os_read_time, client_request_hdr_bytes, client_request_body_bytes,
+    client_response_hdr_bytes, client_response_body_bytes, server_request_hdr_bytes, server_request_body_bytes,
+    server_response_hdr_bytes, server_response_body_bytes, pushed_response_hdr_bytes, pushed_response_body_bytes, milestones);
   /*
       if (is_action_tag_set("http_handler_times")) {
           print_all_http_handler_times();

@@ -104,6 +104,14 @@ public:
   // ink_hrtime  cache_write_end;
 };
 
+/**
+ * Takes two milestones and returns the difference.
+ * @param start The start time
+ * @param end The end time
+ * @return A double that is the time in seconds
+ */
+double milestone_difference(const ink_hrtime start, const ink_hrtime end);
+int64_t milestone_difference_msec(const ink_hrtime start, const ink_hrtime end);
 
 // Modularization Project: Build w/o thread-local-dyn-stats
 // temporarily until we switch over to librecords.  Revert to old

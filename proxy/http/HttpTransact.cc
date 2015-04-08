@@ -8647,7 +8647,7 @@ HttpTransact::update_size_and_time_stats(State *s, ink_hrtime total_time, ink_hr
                                          int64_t user_agent_response_body_size, int origin_server_request_header_size,
                                          int64_t origin_server_request_body_size, int origin_server_response_header_size,
                                          int64_t origin_server_response_body_size, int pushed_response_header_size,
-                                         int64_t pushed_response_body_size)
+                                         int64_t pushed_response_body_size, const TransactionMilestones &milestones)
 {
   int64_t user_agent_request_size = user_agent_request_header_size + user_agent_request_body_size;
   int64_t user_agent_response_size = user_agent_response_header_size + user_agent_response_body_size;
@@ -8783,9 +8783,80 @@ HttpTransact::update_size_and_time_stats(State *s, ink_hrtime total_time, ink_hr
     origin_server_connection_speed(s, origin_server_read_time, origin_server_response_size);
   }
 
-  return;
+  printf("%lld\n", milestone_difference_msec(milestones.sm_start, milestones.sm_finish));
+  // update milestones stats
+  if (http_ua_begin_time_stat) {
+    HTTP_SUM_TRANS_STAT(http_ua_begin_time_stat, milestone_difference_msec(milestones.sm_start, milestones.ua_begin))
+  }
+  if (http_ua_first_read_time_stat) {
+    HTTP_SUM_TRANS_STAT(http_ua_first_read_time_stat, milestone_difference_msec(milestones.sm_start, milestones.ua_first_read))
+  }
+  if (http_ua_read_header_done_time_stat) {
+    HTTP_SUM_TRANS_STAT(http_ua_read_header_done_time_stat,
+                        milestone_difference_msec(milestones.sm_start, milestones.ua_read_header_done))
+  }
+  if (http_ua_begin_write_time_stat) {
+    HTTP_SUM_TRANS_STAT(http_ua_begin_write_time_stat, milestone_difference_msec(milestones.sm_start, milestones.ua_begin_write))
+  }
+  if (http_ua_close_time_stat) {
+    HTTP_SUM_TRANS_STAT(http_ua_close_time_stat, milestone_difference_msec(milestones.sm_start, milestones.ua_close))
+  }
+  if (http_server_first_connect_time_stat) {
+    HTTP_SUM_TRANS_STAT(http_server_first_connect_time_stat,
+                        milestone_difference_msec(milestones.sm_start, milestones.server_first_connect))
+  }
+  if (http_server_connect_time_stat) {
+    HTTP_SUM_TRANS_STAT(http_server_connect_time_stat, milestone_difference_msec(milestones.sm_start, milestones.server_connect))
+  }
+  if (http_server_connect_end_time_stat) {
+    HTTP_SUM_TRANS_STAT(http_server_connect_end_time_stat,
+                        milestone_difference_msec(milestones.sm_start, milestones.server_connect_end))
+  }
+  if (http_server_begin_write_time_stat) {
+    HTTP_SUM_TRANS_STAT(http_server_begin_write_time_stat,
+                        milestone_difference_msec(milestones.sm_start, milestones.server_begin_write))
+  }
+  if (http_server_first_read_time_stat) {
+    HTTP_SUM_TRANS_STAT(http_server_first_read_time_stat,
+                        milestone_difference_msec(milestones.sm_start, milestones.server_first_read))
+  }
+  if (http_server_read_header_done_time_stat) {
+    HTTP_SUM_TRANS_STAT(http_server_read_header_done_time_stat,
+                        milestone_difference_msec(milestones.sm_start, milestones.server_read_header_done))
+  }
+  if (http_server_close_time_stat) {
+    HTTP_SUM_TRANS_STAT(http_server_close_time_stat, milestone_difference_msec(milestones.sm_start, milestones.server_close))
+  }
+  if (http_cache_open_read_begin_time_stat) {
+    HTTP_SUM_TRANS_STAT(http_cache_open_read_begin_time_stat,
+                        milestone_difference_msec(milestones.sm_start, milestones.cache_open_read_begin))
+  }
+  if (http_cache_open_read_end_time_stat) {
+    HTTP_SUM_TRANS_STAT(http_cache_open_read_end_time_stat,
+                        milestone_difference_msec(milestones.sm_start, milestones.cache_open_read_end))
+  }
+  if (http_cache_open_write_begin_time_stat) {
+    HTTP_SUM_TRANS_STAT(http_cache_open_write_begin_time_stat,
+                        milestone_difference_msec(milestones.sm_start, milestones.cache_open_write_begin))
+  }
+  if (http_cache_open_write_end_time_stat) {
+    HTTP_SUM_TRANS_STAT(http_cache_open_write_end_time_stat,
+                        milestone_difference_msec(milestones.sm_start, milestones.cache_open_write_end))
+  }
+  if (http_dns_lookup_begin_time_stat) {
+    HTTP_SUM_TRANS_STAT(http_dns_lookup_begin_time_stat,
+                        milestone_difference_msec(milestones.sm_start, milestones.dns_lookup_begin))
+  }
+  if (http_dns_lookup_end_time_stat) {
+    HTTP_SUM_TRANS_STAT(http_dns_lookup_end_time_stat, milestone_difference_msec(milestones.sm_start, milestones.dns_lookup_end))
+  }
+  if (http_sm_start_time_stat) {
+    HTTP_SUM_TRANS_STAT(http_sm_start_time_stat, milestone_difference_msec(milestones.sm_start, milestones.sm_start))
+  }
+  if (http_sm_finish_time_stat) {
+    HTTP_SUM_TRANS_STAT(http_sm_finish_time_stat, milestone_difference_msec(milestones.sm_start, milestones.sm_finish))
+  }
 }
-
 
 // void HttpTransact::add_new_stat_block(State* s)
 //
