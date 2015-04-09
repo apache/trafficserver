@@ -28,4 +28,4 @@ Synopsis
 
 Description
 -----------
-Get the socket descriptor for the server socket in :arg:`fdp` for the transaction :arg:`txnp`. 
+Get the socket descriptor for the server socket in :arg:`fdp` for the transaction :arg:`txnp`.
