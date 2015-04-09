@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-3500] Fix TSHttpTxnPristineUrlGet to return client request's url
+               when pristine url is not populated
+
   *) [TS-3514] Atomic check for gcc >4.1 breaks with gcc 5.0
    Author: Marcin Juszkiewicz <mjuszkiewicz@redhat.com>
 
