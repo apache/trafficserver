@@ -8783,7 +8783,6 @@ HttpTransact::update_size_and_time_stats(State *s, ink_hrtime total_time, ink_hr
     origin_server_connection_speed(s, origin_server_read_time, origin_server_response_size);
   }
 
-  printf("%lld\n", milestone_difference_msec(milestones.sm_start, milestones.sm_finish));
   // update milestones stats
   if (http_ua_begin_time_stat) {
     HTTP_SUM_TRANS_STAT(http_ua_begin_time_stat, milestone_difference_msec(milestones.sm_start, milestones.ua_begin))
