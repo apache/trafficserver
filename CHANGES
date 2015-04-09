@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-3514] Atomic check for gcc >4.1 breaks with gcc 5.0
+   Author: Marcin Juszkiewicz <mjuszkiewicz@redhat.com>
+
   *) [TS-3507] Add stats for the milestones
 
   *) [TS-3480] Large stream id cause PROTOCOL_ERROR.
