@@ -7006,6 +7006,29 @@ TSHttpTxnClientFdGet(TSHttpTxn txnp, int *fdp)
   return TSHttpSsnClientFdGet(ssnp, fdp);
 }
 
+TSReturnCode
+TSHttpTxnServerFdGet(TSHttpTxn txnp, int *fdp)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void*)fdp) == TS_SUCCESS);
+
+  HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
+  *fdp = -1;
+
+  HttpServerSession *ss = sm->get_server_session();
+  if (ss == NULL) {
+    return TS_ERROR;
+  }
+
+  NetVConnection *vc = ss->get_netvc();
+  if (vc == NULL) {
+    return TS_ERROR;
+  }
+
+  *fdp = vc->get_socket();
+  return TS_SUCCESS;
+}
+
 /* Matcher Utils */
 char *
 TSMatcherReadIntoBuffer(char *file_name, int *file_len)
