@@ -4570,8 +4570,14 @@ TSHttpTxnPristineUrlGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *url_loc)
     *(reinterpret_cast<HTTPHdr **>(bufp)) = hptr;
     *url_loc = (TSMLoc)sm->t_state.pristine_url.m_url_impl;
 
-    if ((sdk_sanity_check_mbuffer(*bufp) == TS_SUCCESS) && (*url_loc))
-      return TS_SUCCESS;
+    if (sdk_sanity_check_mbuffer(*bufp) == TS_SUCCESS) {
+      if (*url_loc == NULL) {
+        *url_loc = (TSMLoc)hptr->m_http->u.req.m_url_impl;
+      }
+      if (*url_loc) {
+        return TS_SUCCESS;
+      }
+    }
   }
   return TS_ERROR;
 }

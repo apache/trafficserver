@@ -682,6 +682,8 @@ HttpTransact::StartRemapRequest(State *s)
   if (s->api_skip_all_remapping) {
     Debug("http_trans", "API request to skip remapping");
 
+    s->hdr_info.client_request.set_url_target_from_host_field();
+
     if (s->is_upgrade_request && s->post_remap_upgrade_return_point) {
       TRANSACT_RETURN(SM_ACTION_POST_REMAP_SKIP, s->post_remap_upgrade_return_point);
     }
