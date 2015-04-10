@@ -1316,8 +1316,7 @@ cache_op_ClusterFunction(ClusterHandler *ch, void *data, int len)
     }
 
     Cache *call_cache = caches[c->frag_type];
-    Action *a = call_cache->remove(c, &key, c->frag_type, !!(c->cfl_flags & CFL_REMOVE_USER_AGENTS),
-                                   !!(c->cfl_flags & CFL_REMOVE_LINK), hostname, host_len);
+    Action *a = call_cache->remove(c, &key, c->frag_type, hostname, host_len);
     if (a != ACTION_RESULT_DONE) {
       c->cache_action = a;
     }

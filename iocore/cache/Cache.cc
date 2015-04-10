@@ -1247,7 +1247,7 @@ CacheProcessor::open_write(Continuation *cont, CacheKey *key, bool cluster_cache
 
 Action *
 CacheProcessor::remove(Continuation *cont, CacheKey *key, bool cluster_cache_local ATS_UNUSED, CacheFragType frag_type,
-                       bool rm_user_agents, bool rm_link, char *hostname, int host_len)
+                       const char *hostname, int host_len)
 {
   Debug("cache_remove", "[CacheProcessor::remove] Issuing cache delete for %u", cache_hash(*key));
 #ifdef CLUSTER_CACHE
@@ -1255,11 +1255,11 @@ CacheProcessor::remove(Continuation *cont, CacheKey *key, bool cluster_cache_loc
     ClusterMachine *m = cluster_machine_at_depth(cache_hash(*key));
 
     if (m) {
-      return Cluster_remove(m, cont, key, rm_user_agents, rm_link, frag_type, hostname, host_len);
+      return Cluster_remove(m, cont, key, frag_type, hostname, host_len);
     }
   }
 #endif
-  return caches[frag_type]->remove(cont, key, frag_type, rm_user_agents, rm_link, hostname, host_len);
+  return caches[frag_type]->remove(cont, key, frag_type, hostname, host_len);
 }
 
 #if 0
@@ -3101,8 +3101,7 @@ Lfree:
 }
 
 Action *
-Cache::remove(Continuation *cont, const CacheKey *key, CacheFragType type, bool /* user_agents ATS_UNUSED */,
-              bool /* link ATS_UNUSED */, const char *hostname, int host_len)
+Cache::remove(Continuation *cont, const CacheKey *key, CacheFragType type, const char *hostname, int host_len)
 {
   if (!CacheProcessor::IsCacheReady(type)) {
     if (cont)
@@ -3839,12 +3838,12 @@ CacheProcessor::remove(Continuation *cont, CacheURL *url, bool cluster_cache_loc
 #ifdef CLUSTER_CACHE
   if (cache_clustering_enabled > 0 && !cluster_cache_local) {
     // Remove from cluster
-    return remove(cont, &id, cluster_cache_local, frag_type, true, false, const_cast<char *>(hostname), len);
+    return remove(cont, &id, cluster_cache_local, frag_type, hostname, len);
   }
 #endif
 
   // Remove from local cache only.
-  return caches[frag_type]->remove(cont, &id, frag_type, true, false, const_cast<char *>(hostname), len);
+  return caches[frag_type]->remove(cont, &id, frag_type, hostname, len);
 }
 
 CacheDisk *

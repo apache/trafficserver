@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-3581] Remove unused parameters from Cache::remove().
+
   *) [TS-3568] We can now assume unordered_map is always available, just need
    to detect the appropriate compiler flags. This modifies the AC module too
    only check for unordered_map though, since otherwise we'd never get the

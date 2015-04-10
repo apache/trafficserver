@@ -1028,7 +1028,7 @@ struct Cache {
   inkcoreapi Action *open_write(Continuation *cont, const CacheKey *key, CacheFragType frag_type, int options = 0,
                                 time_t pin_in_cache = (time_t)0, const char *hostname = 0, int host_len = 0);
   inkcoreapi Action *remove(Continuation *cont, const CacheKey *key, CacheFragType type = CACHE_FRAG_TYPE_HTTP,
-                            bool user_agents = true, bool link = false, const char *hostname = 0, int host_len = 0);
+                            const char *hostname = 0, int host_len = 0);
   Action *scan(Continuation *cont, const char *hostname = 0, int host_len = 0, int KB_per_second = 2500);
 
 #ifdef HTTP_CACHE
