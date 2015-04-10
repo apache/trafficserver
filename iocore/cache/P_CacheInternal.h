@@ -1032,15 +1032,15 @@ struct Cache {
   Action *scan(Continuation *cont, const char *hostname = 0, int host_len = 0, int KB_per_second = 2500);
 
 #ifdef HTTP_CACHE
-  Action *lookup(Continuation *cont, URL *url, CacheFragType type);
+  Action *lookup(Continuation *cont, CacheURL *url, CacheFragType type);
   inkcoreapi Action *open_read(Continuation *cont, const CacheKey *key, CacheHTTPHdr *request, CacheLookupHttpConfig *params,
                                CacheFragType type, const char *hostname, int host_len);
-  Action *open_read(Continuation *cont, URL *url, CacheHTTPHdr *request, CacheLookupHttpConfig *params, CacheFragType type);
+  Action *open_read(Continuation *cont, CacheURL *url, CacheHTTPHdr *request, CacheLookupHttpConfig *params, CacheFragType type);
   Action *open_write(Continuation *cont, const CacheKey *key, CacheHTTPInfo *old_info, time_t pin_in_cache = (time_t)0,
                      const CacheKey *key1 = NULL, CacheFragType type = CACHE_FRAG_TYPE_HTTP, const char *hostname = 0, int host_len = 0);
-  Action *open_write(Continuation *cont, URL *url, CacheHTTPHdr *request, CacheHTTPInfo *old_info, time_t pin_in_cache = (time_t)0,
+  Action *open_write(Continuation *cont, CacheURL *url, CacheHTTPHdr *request, CacheHTTPInfo *old_info, time_t pin_in_cache = (time_t)0,
                      CacheFragType type = CACHE_FRAG_TYPE_HTTP);
-  static void generate_key(INK_MD5 *md5, URL *url);
+  static void generate_key(INK_MD5 *md5, CacheURL *url);
 #endif
 
   Action *link(Continuation *cont, const CacheKey *from, const CacheKey *to, CacheFragType type, const char *hostname, int host_len);
@@ -1075,7 +1075,7 @@ Cache::open_read(Continuation *cont, CacheURL *url, CacheHTTPHdr *request, Cache
 }
 
 TS_INLINE void
-Cache::generate_key(INK_MD5 *md5, URL *url)
+Cache::generate_key(INK_MD5 *md5, CacheURL *url)
 {
   url->hash_get(md5);
 }

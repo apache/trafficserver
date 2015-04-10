@@ -1246,7 +1246,7 @@ scan(Continuation *cont, char *hostname = 0, int host_len = 0, int KB_per_second
 
 #ifdef HTTP_CACHE
 Action *
-CacheProcessor::lookup(Continuation *cont, URL *url, bool cluster_cache_local, bool local_only, CacheFragType frag_type)
+CacheProcessor::lookup(Continuation *cont, CacheURL *url, bool cluster_cache_local, bool local_only, CacheFragType frag_type)
 {
   (void)local_only;
   INK_MD5 md5;
@@ -3787,7 +3787,7 @@ ink_cache_init(ModuleVersion v)
 
 //----------------------------------------------------------------------------
 Action *
-CacheProcessor::open_read(Continuation *cont, URL *url, bool cluster_cache_local, CacheHTTPHdr *request,
+CacheProcessor::open_read(Continuation *cont, CacheURL *url, bool cluster_cache_local, CacheHTTPHdr *request,
                           CacheLookupHttpConfig *params, time_t pin_in_cache, CacheFragType type)
 {
 #ifdef CLUSTER_CACHE
@@ -3802,7 +3802,7 @@ CacheProcessor::open_read(Continuation *cont, URL *url, bool cluster_cache_local
 
 //----------------------------------------------------------------------------
 Action *
-CacheProcessor::open_write(Continuation *cont, int expected_size, URL *url, bool cluster_cache_local, CacheHTTPHdr *request,
+CacheProcessor::open_write(Continuation *cont, int expected_size, CacheURL *url, bool cluster_cache_local, CacheHTTPHdr *request,
                            CacheHTTPInfo *old_info, time_t pin_in_cache, CacheFragType type)
 {
 #ifdef CLUSTER_CACHE
@@ -3827,7 +3827,7 @@ CacheProcessor::open_write(Continuation *cont, int expected_size, URL *url, bool
 // Note: this should not be called from from the cluster processor, or bad
 // recursion could occur. This is merely a convenience wrapper.
 Action *
-CacheProcessor::remove(Continuation *cont, URL *url, bool cluster_cache_local, CacheFragType frag_type)
+CacheProcessor::remove(Continuation *cont, CacheURL *url, bool cluster_cache_local, CacheFragType frag_type)
 {
   CryptoHash id;
   int len = 0;
