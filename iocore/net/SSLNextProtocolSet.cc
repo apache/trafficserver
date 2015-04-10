@@ -52,6 +52,7 @@ create_npn_advertisement(const SSLNextProtocolSet::NextProtocolEndpoint::list_ty
   *len = 0;
 
   for (ep = endpoints.head; ep != NULL; ep = endpoints.next(ep)) {
+    ink_release_assert((strlen(ep->protocol) > 0));
     *len += (strlen(ep->protocol) + 1);
   }
 
@@ -62,7 +63,6 @@ create_npn_advertisement(const SSLNextProtocolSet::NextProtocolEndpoint::list_ty
 
   for (ep = endpoints.head; ep != NULL; ep = endpoints.next(ep)) {
     Debug("ssl", "advertising protocol %s", ep->protocol);
-    ink_release_assert((strlen(ep->protocol) > 0));
     advertised = append_protocol(ep->protocol, advertised);
   }
 
