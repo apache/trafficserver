@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-3515] Use pcrejit (Regex class) for regex_map
+
   *) [TS-3500] Fix TSHttpTxnPristineUrlGet to return client request's url
                when pristine url is not populated
 
