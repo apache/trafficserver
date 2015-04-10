@@ -2626,7 +2626,7 @@ Sockets
 
    Sets the receive buffer size for connections from the client to Traffic Server.
 
-.. ts:cv:: CONFIG proxy.config.net.sock_option_flag_in INT 0x0
+.. ts:cv:: CONFIG proxy.config.net.sock_option_flag_in INT 0x5
 
    Turns different options "on" for the socket handling client connections:::
 
