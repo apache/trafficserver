@@ -2664,8 +2664,7 @@ Sockets
        keepalive options above.
 
         When SO_LINGER is enabled, the linger timeout time is set
-        to 0. This is useful when ATS and origin server were installed
-        This is useful when Traffic Server and the origin server
+        to 0. This is useful when Traffic Server and the origin server
         are co-located and large numbers of sockets are retained
         in the TIME_WAIT state.
 
