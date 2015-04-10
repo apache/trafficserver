@@ -929,8 +929,7 @@ UrlRewrite::_regexMappingLookup(RegexMappingList &regex_mappings, URL *request_u
 
     int matches_info[MAX_REGEX_SUBS * 3];
     int match_result = list_iter->regular_expression.exec(request_host, request_host_len, matches_info, countof(matches_info));
-    //    int match_result = pcre_exec(list_iter->re, list_iter->re_extra, request_host, request_host_len, 0, 0, matches_info,
-    //                                 (sizeof(matches_info) / sizeof(int)));
+
     if (match_result > 0) {
       Debug("url_rewrite_regex", "Request URL host [%.*s] matched regex in mapping of rank %d "
                                  "with %d possible substitutions",

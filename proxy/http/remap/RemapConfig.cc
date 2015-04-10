@@ -800,10 +800,15 @@ process_regex_mapping_config(const char *from_host_lower, url_mapping *new_mappi
   }
 
   captures = reg_map->regular_expression.get_capture_count();
-  if (captures >= UrlRewrite::MAX_REGEX_SUBS) { // off by one for $0 (implicit capture)
-    Error("regex has %d capturing subpatterns (including entire regex); Max allowed: %d", captures + 1, UrlRewrite::MAX_REGEX_SUBS);
-    return -1;
+  if (captures == -1) {
+    Warning("pcre_fullinfo failed!");
+    goto lFail;
   }
+  if (captures >= UrlRewrite::MAX_REGEX_SUBS) { // off by one for $0 (implicit capture)
+    Warning("regex has %d capturing subpatterns (including entire regex); Max allowed: %d", captures + 1, UrlRewrite::MAX_REGEX_SUBS);
+    goto lFail;
+  }
+
   to_host = new_mapping->toUrl.host_get(&to_host_len);
   for (int i = 0; i < (to_host_len - 1); ++i) {
     if (to_host[i] == '$') {

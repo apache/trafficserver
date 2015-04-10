@@ -42,7 +42,7 @@ class Regex
 {
 public:
   Regex() : regex(NULL), regex_extra(NULL) {}
-  bool compile(const char *pattern, const unsigned flags = 0, const int max_captures = 10);
+  bool compile(const char *pattern, const unsigned flags = 0);
   // It is safe to call exec() concurrently on the same object instance
   bool exec(const char *str);
   bool exec(const char *str, int length);

@@ -48,7 +48,7 @@ get_jit_stack(void *data ATS_UNUSED)
 #endif
 
 bool
-Regex::compile(const char *pattern, const unsigned flags, const int max_captures)
+Regex::compile(const char *pattern, const unsigned flags)
 {
   const char *error;
   int erroffset;
