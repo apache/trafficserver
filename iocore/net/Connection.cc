@@ -31,8 +31,6 @@
 
 #include "P_Net.h"
 
-#define SET_TCP_NO_DELAY
-#define SET_NO_LINGER
 // set in the OS
 // #define RECV_BUF_SIZE            (1024*64)
 // #define SEND_BUF_SIZE            (1024*64)
@@ -101,11 +99,6 @@ Server::accept(Connection *c)
 #ifdef SEND_BUF_SIZE
   socketManager.set_sndbuf_size(c->fd, SEND_BUF_SIZE);
 #endif
-#ifdef SET_SO_KEEPALIVE
-  // enables 2 hour inactivity probes, also may fix IRIX FIN_WAIT_2 leak
-  if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, SOCKOPT_ON, sizeof(int))) < 0)
-    goto Lerror;
-#endif
 
   return 0;
 
@@ -145,6 +138,8 @@ int
 Server::setup_fd_for_listen(bool non_blocking, int recv_bufsize, int send_bufsize, bool transparent)
 {
   int res = 0;
+  int sockopt_flag_in;
+  REC_ReadConfigInteger(sockopt_flag_in, "proxy.config.net.sock_option_flag_in");
 
   ink_assert(fd != NO_FD);
 
@@ -204,16 +199,15 @@ Server::setup_fd_for_listen(bool non_blocking, int recv_bufsize, int send_bufsiz
   }
 #endif
 
-#ifdef SET_NO_LINGER
   {
     struct linger l;
     l.l_onoff = 0;
     l.l_linger = 0;
-    if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_LINGER, (char *)&l, sizeof(l))) < 0) {
+    if ((sockopt_flag_in & NetVCOptions::SOCK_OPT_LINGER_ON) &&
+        (res = safe_setsockopt(fd, SOL_SOCKET, SO_LINGER, (char *)&l, sizeof(l))) < 0) {
       goto Lerror;
     }
   }
-#endif
 
   if (ats_is_ip6(&addr) && (res = safe_setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, SOCKOPT_ON, sizeof(int))) < 0) {
     goto Lerror;
@@ -223,18 +217,16 @@ Server::setup_fd_for_listen(bool non_blocking, int recv_bufsize, int send_bufsiz
     goto Lerror;
   }
 
-#ifdef SET_TCP_NO_DELAY
-  if ((res = safe_setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, SOCKOPT_ON, sizeof(int))) < 0) {
+  if ((sockopt_flag_in & NetVCOptions::SOCK_OPT_NO_DELAY) &&
+      (res = safe_setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, SOCKOPT_ON, sizeof(int))) < 0) {
     goto Lerror;
   }
-#endif
 
-#ifdef SET_SO_KEEPALIVE
   // enables 2 hour inactivity probes, also may fix IRIX FIN_WAIT_2 leak
-  if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, SOCKOPT_ON, sizeof(int))) < 0) {
+  if ((sockopt_flag_in & NetVCOptions::SOCK_OPT_KEEP_ALIVE) &&
+      (res = safe_setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, SOCKOPT_ON, sizeof(int))) < 0) {
     goto Lerror;
   }
-#endif
 
   if (transparent) {
 #if TS_USE_TPROXY
