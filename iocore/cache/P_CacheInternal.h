@@ -1272,12 +1272,6 @@ CacheProcessor::IsCacheReady(CacheFragType type)
   return (bool)(cache_ready & (1 << type));
 }
 
-TS_INLINE Cache *
-local_cache()
-{
-  return theCache;
-}
-
 LINK_DEFINITION(CacheVC, opendir_link)
 
 #endif /* _P_CACHE_INTERNAL_H__ */
