@@ -52,7 +52,7 @@ class TestRegressions(helpers.EnvironmentCase):
 
     def test_regressions(self):
         cmd = [os.path.join(self.environment.layout.bindir, 'traffic_server'), '-R', '1']
-        tsqa.utils.run_sync_command(cmd, stdout=sys.stdout, stderr=subprocess.STDOUT)
+        tsqa.utils.run_sync_command(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
 class TestRegressionsReclaimableFreelist(TestRegressions):
     '''
