@@ -67,8 +67,7 @@ Regex::compile(const char *pattern, const unsigned flags)
   }
 
   regex = pcre_compile(pattern, options, &error, &erroffset, NULL);
-  if (error || regex == NULL) {
-    Error("pcre_compile failed pattern has error starting at: %s", error + erroffset);
+  if (error) {
     regex = NULL;
     return false;
   }
@@ -78,10 +77,6 @@ Regex::compile(const char *pattern, const unsigned flags)
 #endif
 
   regex_extra = pcre_study(regex, study_opts, &error);
-  if ((regex_extra == NULL) && (error != NULL)) {
-    Error("pcre_study failed with error: %s", error);
-    return false;
-  }
 
 #ifdef PCRE_CONFIG_JIT
   if (regex_extra)
@@ -96,7 +91,6 @@ Regex::get_capture_count()
 {
   int captures = -1;
   if (pcre_fullinfo(regex, regex_extra, PCRE_INFO_CAPTURECOUNT, &captures) != 0) {
-    Error("pcre_fullinfo failed!");
     return -1;
   }
 
