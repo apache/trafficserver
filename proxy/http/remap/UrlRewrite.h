@@ -73,8 +73,7 @@ public:
 
   struct RegexMapping {
     url_mapping *url_map;
-    pcre *re;
-    pcre_extra *re_extra;
+    Regex regular_expression;
 
     // we store the host-string-to-substitute here; if a match is found,
     // the substitutions are made and the resulting url is stored

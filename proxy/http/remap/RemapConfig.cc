@@ -784,9 +784,8 @@ process_regex_mapping_config(const char *from_host_lower, url_mapping *new_mappi
   int to_host_len;
   int substitution_id;
   int substitution_count = 0;
+  int captures;
 
-  reg_map->re = NULL;
-  reg_map->re_extra = NULL;
   reg_map->to_url_host_template = NULL;
   reg_map->to_url_host_template_len = 0;
   reg_map->n_substitutions = 0;
@@ -795,29 +794,16 @@ process_regex_mapping_config(const char *from_host_lower, url_mapping *new_mappi
 
   // using from_host_lower (and not new_mapping->fromURL.host_get())
   // as this one will be NULL-terminated (required by pcre_compile)
-  reg_map->re = pcre_compile(from_host_lower, 0, &str, &str_index, NULL);
-  if (reg_map->re == NULL) {
-    Warning("pcre_compile failed! Regex has error starting at %s", from_host_lower + str_index);
+  if (reg_map->regular_expression.compile(from_host_lower) == false) {
+    Warning("pcre_compile failed! Regex has error starting at %s", from_host_lower);
     goto lFail;
   }
 
-  reg_map->re_extra = pcre_study(reg_map->re, 0, &str);
-  if ((reg_map->re_extra == NULL) && (str != NULL)) {
-    Warning("pcre_study failed with message [%s]", str);
-    goto lFail;
+  captures = reg_map->regular_expression.get_capture_count();
+  if (captures >= UrlRewrite::MAX_REGEX_SUBS) { // off by one for $0 (implicit capture)
+    Error("regex has %d capturing subpatterns (including entire regex); Max allowed: %d", captures + 1, UrlRewrite::MAX_REGEX_SUBS);
+    return -1;
   }
-
-  int n_captures;
-  if (pcre_fullinfo(reg_map->re, reg_map->re_extra, PCRE_INFO_CAPTURECOUNT, &n_captures) != 0) {
-    Warning("pcre_fullinfo failed!");
-    goto lFail;
-  }
-  if (n_captures >= UrlRewrite::MAX_REGEX_SUBS) { // off by one for $0 (implicit capture)
-    Warning("Regex has %d capturing subpatterns (including entire regex); Max allowed: %d", n_captures + 1,
-            UrlRewrite::MAX_REGEX_SUBS);
-    goto lFail;
-  }
-
   to_host = new_mapping->toUrl.host_get(&to_host_len);
   for (int i = 0; i < (to_host_len - 1); ++i) {
     if (to_host[i] == '$') {
@@ -826,7 +812,7 @@ process_regex_mapping_config(const char *from_host_lower, url_mapping *new_mappi
         goto lFail;
       }
       substitution_id = to_host[i + 1] - '0';
-      if ((substitution_id < 0) || (substitution_id > n_captures)) {
+      if ((substitution_id < 0) || (substitution_id > captures)) {
         Warning("Substitution id [%c] has no corresponding capture pattern in regex [%s]", to_host[i + 1], from_host_lower);
         goto lFail;
       }
@@ -847,14 +833,6 @@ process_regex_mapping_config(const char *from_host_lower, url_mapping *new_mappi
   return true;
 
 lFail:
-  if (reg_map->re) {
-    pcre_free(reg_map->re);
-    reg_map->re = NULL;
-  }
-  if (reg_map->re_extra) {
-    pcre_free(reg_map->re_extra);
-    reg_map->re_extra = NULL;
-  }
   if (reg_map->to_url_host_template) {
     ats_free(reg_map->to_url_host_template);
     reg_map->to_url_host_template = NULL;

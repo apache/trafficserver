@@ -48,7 +48,7 @@ get_jit_stack(void *data ATS_UNUSED)
 #endif
 
 bool
-Regex::compile(const char *pattern, unsigned flags)
+Regex::compile(const char *pattern, const unsigned flags, const int max_captures)
 {
   const char *error;
   int erroffset;
@@ -67,7 +67,8 @@ Regex::compile(const char *pattern, unsigned flags)
   }
 
   regex = pcre_compile(pattern, options, &error, &erroffset, NULL);
-  if (error) {
+  if (error || regex == NULL) {
+    Error("pcre_compile failed pattern has error starting at: %s", error + erroffset);
     regex = NULL;
     return false;
   }
@@ -77,6 +78,10 @@ Regex::compile(const char *pattern, unsigned flags)
 #endif
 
   regex_extra = pcre_study(regex, study_opts, &error);
+  if ((regex_extra == NULL) && (error != NULL)) {
+    Error("pcre_study failed with error: %s", error);
+    return false;
+  }
 
 #ifdef PCRE_CONFIG_JIT
   if (regex_extra)
@@ -84,6 +89,18 @@ Regex::compile(const char *pattern, unsigned flags)
 #endif
 
   return true;
+}
+
+int
+Regex::get_capture_count()
+{
+  int captures = -1;
+  if (pcre_fullinfo(regex, regex_extra, PCRE_INFO_CAPTURECOUNT, &captures) != 0) {
+    Error("pcre_fullinfo failed!");
+    return -1;
+  }
+
+  return captures;
 }
 
 bool
@@ -95,9 +112,16 @@ Regex::exec(const char *str)
 bool
 Regex::exec(const char *str, int length)
 {
-  int ovector[30], rv;
+  int ovector[30];
+  return exec(str, length, ovector, countof(ovector));
+}
 
-  rv = pcre_exec(regex, regex_extra, str, length, 0, 0, ovector, countof(ovector));
+bool
+Regex::exec(const char *str, int length, int *ovector, int ovecsize)
+{
+  int rv;
+
+  rv = pcre_exec(regex, regex_extra, str, length, 0, 0, ovector, ovecsize);
   return rv > 0 ? true : false;
 }
 
