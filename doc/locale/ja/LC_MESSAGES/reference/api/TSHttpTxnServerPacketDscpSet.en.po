@@ -1,0 +1,46 @@
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2015-04-12 01:21+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ../../reference/api/TSHttpTxnServerPacketDscpSet.en.rst:18
+msgid "TSHttpTxnServerPacketDscpSet"
+msgstr ""
+
+#: ../../reference/api/TSHttpTxnServerPacketDscpSet.en.rst:20
+msgid "Change packet DSCP for the server side connection."
+msgstr ""
+
+#: ../../reference/api/TSHttpTxnServerPacketDscpSet.en.rst:24
+msgid "Synopsis"
+msgstr ""
+
+#: ../../reference/api/TSHttpTxnServerPacketDscpSet.en.rst:26
+msgid "`#include <ts/ts.h>`"
+msgstr ""
+
+#: ../../reference/api/TSHttpTxnServerPacketDscpSet.en.rst:32
+msgid "Description"
+msgstr ""
+
+#: ../../reference/api/TSHttpTxnServerPacketDscpSet.en.rst:36
+msgid ""
+"The change takes effect immediately, if no OS connection has been made, "
+"then this sets the mark that will be used IF an OS connection is established"
+msgstr ""
+
+#: ../../reference/api/TSHttpTxnServerPacketDscpSet.en.rst:42
+msgid "See Also"
+msgstr ""
+
+#: ../../reference/api/TSHttpTxnServerPacketDscpSet.en.rst:44
+msgid "`Traffic Shaping`_"
+msgstr ""

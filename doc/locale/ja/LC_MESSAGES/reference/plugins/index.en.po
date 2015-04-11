@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -76,11 +75,19 @@ msgid ""
 "Plugins that are considered experimental are located in the `plugins/"
 "experimental <https://git-wip-us.apache.org/repos/asf?p=trafficserver.git;"
 "a=tree;f=plugins/experimental;hb=HEAD>`_ directory of the Apache Traffic "
-"Server source tree. Exmperimental plugins can be compiled by passing the `--"
+"Server source tree. Experimental plugins can be compiled by passing the `--"
 "enable-experimental-plugins` option to `configure`::"
 msgstr ""
-"実験的なプラグインです。 Apache Traffic Server ソースツリーの `plugins/"
-"experimental <https://git-wip-us.apache.org/repos/asf?p=trafficserver.git;"
-"a=tree;f=plugins/experimental;hb=HEAD>`_ ディレクトリにあります。実験的プラ"
-"グインは `configure` を実行する際に `--enable-experimental-plugins` オプショ"
-"ンをつけることでコンパイルされます。"
+
+#~ msgid ""
+#~ "Plugins that are considered experimental are located in the `plugins/"
+#~ "experimental <https://git-wip-us.apache.org/repos/asf?p=trafficserver."
+#~ "git;a=tree;f=plugins/experimental;hb=HEAD>`_ directory of the Apache "
+#~ "Traffic Server source tree. Exmperimental plugins can be compiled by "
+#~ "passing the `--enable-experimental-plugins` option to `configure`::"
+#~ msgstr ""
+#~ "実験的なプラグインです。 Apache Traffic Server ソースツリーの `plugins/"
+#~ "experimental <https://git-wip-us.apache.org/repos/asf?p=trafficserver."
+#~ "git;a=tree;f=plugins/experimental;hb=HEAD>`_ ディレクトリにあります。実験"
+#~ "的プラグインは `configure` を実行する際に `--enable-experimental-"
+#~ "plugins` オプションをつけることでコンパイルされます。"

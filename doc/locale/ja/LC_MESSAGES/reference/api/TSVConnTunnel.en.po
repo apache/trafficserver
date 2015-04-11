@@ -30,12 +30,13 @@ msgstr ""
 #: ../../reference/api/TSVConnTunnel.en.rst:32
 msgid ""
 "Set the SSL connection :arg:`svc` to convert to a blind tunnel.  Can be "
-"called from the TS_VCONN_PRE_ACCEPT_HOOK or the TS_SSL_SNI_HOOK."
+"called from the TS_VCONN_PRE_ACCEPT_HOOK or the TS_SSL_SNI_HOOK/"
+"TS_SSL_CERT_HOOK."
 msgstr ""
 
 #: ../../reference/api/TSVConnTunnel.en.rst:34
 msgid ""
-"For this to work from the TS_SSL_SNI_HOOK, the openSSL patch must be "
-"applied which adds the ability to break out of the SSL_accept processing by "
-"returning SSL_TLSEXT_ERR_READ_AGAIN."
+"For this to work from the TS_SSL_SNI_HOOK/TS_SSL_CERT_HOOK, either the "
+"server must be running openssl 1.0.2 or a version of openssl 1.0.1 with the "
+"appropriate patch installed."
 msgstr ""

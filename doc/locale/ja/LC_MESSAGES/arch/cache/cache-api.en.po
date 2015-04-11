@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -30,34 +29,35 @@ msgstr ""
 msgid "Cache Related API functions"
 msgstr ""
 
-#: ../../arch/cache/cache-api.en.rst:26
-msgid ""
-"Set a *flag* that marks a request as cacheable. This is a positive override "
-"only, setting *flag* to 0 restores the default behavior, it does not force "
-"the request to be uncacheable."
-msgstr ""
-
-#: ../../arch/cache/cache-api.en.rst:30
-msgid ""
-"Set the cache key for the transaction *txnp* as the string pointed at by "
-"*url* of *length* characters. It need not be ``null`` terminated. This "
-"should be called from ``TS_HTTP_READ_REQUEST_HDR_HOOK`` which is before "
-"cache lookup but late enough that the HTTP request header is available."
-msgstr ""
-
-#: ../../arch/cache/cache-api.en.rst:34
+#: ../../arch/cache/cache-api.en.rst:39
 msgid "Cache Internals"
 msgstr ""
 
-#: ../../arch/cache/cache-api.en.rst:38
+#: ../../arch/cache/cache-api.en.rst:26
 msgid ""
-"A preprocessor macro which computes the maximum size of a fragment based on "
-"the value of *big*. This is computed as if the argument where the value of "
-"the *big* field in a struct :cpp:class:`Dir`."
+"Set a flag that marks a request as cacheable. This is a positive override "
+"only, setting :c:arg:``flag`` to ``0`` restores the default behavior, it "
+"does not force the request to be uncacheable."
 msgstr ""
 
-#: ../../arch/cache/cache-api.en.rst:42
+#: ../../arch/cache/cache-api.en.rst:32
+msgid ""
+"Set the cache key for the transaction :c:arg:``txnp`` as the string pointed "
+"at by :c:arg:``url`` of :c:arg:``length`` characters. It need not be NUL-"
+"terminated. This should be called from ``TS_HTTP_READ_REQUEST_HDR_HOOK`` "
+"which is before cache lookup but late enough that the HTTP request header "
+"is available."
+msgstr ""
+
+#: ../../arch/cache/cache-api.en.rst:43
+msgid ""
+"A preprocessor macro which computes the maximum size of a fragment based on "
+"the value of :cpp:arg:``big``. This is computed as if the argument where "
+"the value of the :cpp:arg:``big`` field in a struct :cpp:class:`Dir`."
+msgstr ""
+
+#: ../../arch/cache/cache-api.en.rst:49
 msgid ""
 "A preprocessor macro which computes the block size multiplier for a struct :"
-"cpp:class:`Dir` where *big* is the *big* field value."
+"cpp:class:`Dir` where :cpp:arg:``big`` is the :cpp:arg:``big`` field value."
 msgstr ""

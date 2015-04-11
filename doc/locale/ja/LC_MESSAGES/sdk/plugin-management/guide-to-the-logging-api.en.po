@@ -42,13 +42,6 @@ msgstr ""
 msgid "The logging API enables you to:"
 msgstr ""
 
-#: ../../sdk/plugin-management/guide-to-the-logging-api.en.rst:56
-msgid ""
-"The steps below show how the logging API is used in the ``blacklist-1.c`` "
-"sample plugin. For the complete source code, see the `*Sample Source Code* "
-"<App_SampleSourceCode.html>`__ appendix."
-msgstr ""
-
 #: ../../sdk/plugin-management/guide-to-the-logging-api.en.rst:60
 msgid "A new log file is defined as a global variable."
 msgstr ""
@@ -57,7 +50,7 @@ msgstr ""
 msgid "In ``TSPluginInit``, a new log object is allocated:"
 msgstr ""
 
-#: ../../sdk/plugin-management/guide-to-the-logging-api.en.rst:72
+#: ../../sdk/plugin-management/guide-to-the-logging-api.en.rst:73
 msgid ""
 "The new log is named ``blacklist.log``. Each entry written to the log will "
 "have a timestamp. The ``NULL`` argument specifies that the new log does not "
@@ -66,13 +59,13 @@ msgid ""
 "to ``TS_LOG_ERROR_NO_ERROR``."
 msgstr ""
 
-#: ../../sdk/plugin-management/guide-to-the-logging-api.en.rst:78
+#: ../../sdk/plugin-management/guide-to-the-logging-api.en.rst:79
 msgid ""
 "After creating the log, the plugin makes sure that the log was created "
 "successfully:"
 msgstr ""
 
-#: ../../sdk/plugin-management/guide-to-the-logging-api.en.rst:87
+#: ../../sdk/plugin-management/guide-to-the-logging-api.en.rst:88
 msgid ""
 "The ``blacklist-1`` plugin matches the host portion of the URL (in each "
 "client request) with a list of blacklisted sites (stored in the array "
@@ -133,18 +126,25 @@ msgid ""
 "`TSTextLogObjectRollingSizeMbSet`"
 msgstr ""
 
-#: ../../sdk/plugin-management/guide-to-the-logging-api.en.rst:96
+#: ../../sdk/plugin-management/guide-to-the-logging-api.en.rst:97
 msgid ""
 "If the host matches one of the blacklisted sites (such as ``sites[i]``), "
 "then the plugin writes a blacklist entry to ``blacklist.log``:"
 msgstr ""
 
-#: ../../sdk/plugin-management/guide-to-the-logging-api.en.rst:105
+#: ../../sdk/plugin-management/guide-to-the-logging-api.en.rst:106
 msgid "The format of the log entry is as follows:"
 msgstr ""
 
-#: ../../sdk/plugin-management/guide-to-the-logging-api.en.rst:111
+#: ../../sdk/plugin-management/guide-to-the-logging-api.en.rst:112
 msgid ""
 "The log is not flushed or destroyed in the ``blacklist-1`` plugin - it "
 "lives for the life of the plugin."
+msgstr ""
+
+#: ../../sdk/plugin-management/guide-to-the-logging-api.en.rst:56
+msgid ""
+"The steps below show how the logging API is used in the ``blacklist-1.c`` "
+"sample plugin. For the complete source code, see the :doc:`*Sample Source "
+"Code* <../sample-source-code.en>` appendix."
 msgstr ""

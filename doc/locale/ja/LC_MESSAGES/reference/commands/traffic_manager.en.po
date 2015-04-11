@@ -36,3 +36,25 @@ msgstr ""
 #: ../../reference/commands/traffic_manager.en.rst:45
 msgid "Environment"
 msgstr ""
+
+#: ../../reference/commands/traffic_manager.en.rst:53
+msgid "Signals"
+msgstr ""
+
+#: ../../reference/commands/traffic_manager.en.rst:56
+msgid "SIGHUP"
+msgstr ""
+
+#: ../../reference/commands/traffic_manager.en.rst:56
+msgid ""
+"This signal causes a reconfiguration event, equivalent to running :program:"
+"`traffic_line -x`."
+msgstr ""
+
+#: ../../reference/commands/traffic_manager.en.rst:59
+msgid "See also"
+msgstr ""
+
+#: ../../reference/commands/traffic_manager.en.rst:61
+msgid ":manpage:`traffic_line(8)`"
+msgstr ""

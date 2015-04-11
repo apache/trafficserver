@@ -154,84 +154,84 @@ msgstr ""
 msgid "A client IP address."
 msgstr ""
 
-#: ../../reference/configuration/cache.config.en.rst:114
+#: ../../reference/configuration/cache.config.en.rst:121
 msgid "The following list shows possible actions and their allowed values."
 msgstr ""
 
-#: ../../reference/configuration/cache.config.en.rst:131
+#: ../../reference/configuration/cache.config.en.rst:138
 msgid "``action``"
 msgstr ""
 
-#: ../../reference/configuration/cache.config.en.rst:120
+#: ../../reference/configuration/cache.config.en.rst:127
 msgid "One of the following values:"
 msgstr ""
 
-#: ../../reference/configuration/cache.config.en.rst:122
+#: ../../reference/configuration/cache.config.en.rst:129
 msgid ""
 "``never-cache`` configures Traffic Server to never cache specified objects."
 msgstr ""
 
-#: ../../reference/configuration/cache.config.en.rst:124
+#: ../../reference/configuration/cache.config.en.rst:131
 msgid ""
 "``ignore-no-cache`` configures Traffic Server to ignore all ``Cache-"
 "Control: no-cache`` headers."
 msgstr ""
 
-#: ../../reference/configuration/cache.config.en.rst:126
+#: ../../reference/configuration/cache.config.en.rst:133
 msgid ""
 "``ignore-client-no-cache`` configures Traffic Server to ignore ``Cache-"
 "Control: no-cache`` headers from client requests."
 msgstr ""
 
-#: ../../reference/configuration/cache.config.en.rst:128
+#: ../../reference/configuration/cache.config.en.rst:135
 msgid ""
 "``ignore-server-no-cache`` configures Traffic Server to ignore ``Cache-"
 "Control: no-cache`` headers from origin server responses."
 msgstr ""
 
-#: ../../reference/configuration/cache.config.en.rst:130
+#: ../../reference/configuration/cache.config.en.rst:137
 msgid ""
 "``cluster-cache-local`` configures the cluster cache to allow for this "
 "content to be stored locally on every cluster node."
 msgstr ""
 
-#: ../../reference/configuration/cache.config.en.rst:161
+#: ../../reference/configuration/cache.config.en.rst:168
 msgid "``pin-in-cache``"
 msgstr ""
 
-#: ../../reference/configuration/cache.config.en.rst:157
+#: ../../reference/configuration/cache.config.en.rst:164
 msgid "``d`` for days; for example: 2d"
 msgstr ""
 
-#: ../../reference/configuration/cache.config.en.rst:158
+#: ../../reference/configuration/cache.config.en.rst:165
 msgid "``h`` for hours; for example: 10h"
 msgstr ""
 
-#: ../../reference/configuration/cache.config.en.rst:159
+#: ../../reference/configuration/cache.config.en.rst:166
 msgid "``m`` for minutes; for example: 5m"
 msgstr ""
 
-#: ../../reference/configuration/cache.config.en.rst:160
+#: ../../reference/configuration/cache.config.en.rst:167
 msgid "``s`` for seconds; for example: 20s"
 msgstr ""
 
-#: ../../reference/configuration/cache.config.en.rst:161
+#: ../../reference/configuration/cache.config.en.rst:168
 msgid "mixed units; for example: 1h15m20s"
 msgstr ""
 
-#: ../../reference/configuration/cache.config.en.rst:167
+#: ../../reference/configuration/cache.config.en.rst:174
 msgid "``revalidate``"
 msgstr ""
 
-#: ../../reference/configuration/cache.config.en.rst:175
+#: ../../reference/configuration/cache.config.en.rst:182
 msgid "``ttl-in-cache``"
 msgstr ""
 
-#: ../../reference/configuration/cache.config.en.rst:178
+#: ../../reference/configuration/cache.config.en.rst:185
 msgid "Examples"
 msgstr ""
 
-#: ../../reference/configuration/cache.config.en.rst:180
+#: ../../reference/configuration/cache.config.en.rst:187
 msgid ""
 "The following example configures Traffic Server to revalidate ``gif`` and "
 "``jpeg`` objects in the domain ``mydomain.com`` every 6 hours, and all "
@@ -239,11 +239,11 @@ msgid ""
 "order listed. ::"
 msgstr ""
 
-#: ../../reference/configuration/cache.config.en.rst:141
+#: ../../reference/configuration/cache.config.en.rst:148
 msgid "``cache-responses-to-cookies``"
 msgstr ""
 
-#: ../../reference/configuration/cache.config.en.rst:146
+#: ../../reference/configuration/cache.config.en.rst:153
 msgid ""
 "Preserves objects in cache, preventing them from being overwritten. Does "
 "not affect objects that are determined not to be cacheable. This setting "
@@ -254,20 +254,20 @@ msgid ""
 "object it would replace could be overwritten."
 msgstr ""
 
-#: ../../reference/configuration/cache.config.en.rst:154
+#: ../../reference/configuration/cache.config.en.rst:161
 msgid ""
 "The value is the amount of time you want to keep the object(s) in the "
 "cache. The following time formats are allowed:"
 msgstr ""
 
-#: ../../reference/configuration/cache.config.en.rst:166
+#: ../../reference/configuration/cache.config.en.rst:173
 msgid ""
 "For objects that are in cache, overrides the the amount of time the "
 "object(s) are to be considered fresh. Use the same time formats as ``pin-in-"
 "cache``."
 msgstr ""
 
-#: ../../reference/configuration/cache.config.en.rst:172
+#: ../../reference/configuration/cache.config.en.rst:179
 msgid ""
 "Forces object(s) to become cached, as if they had a Cache-Control: max-age:"
 "<time> header. Can be overruled by requests with cookies. The value is the "
@@ -276,25 +276,18 @@ msgid ""
 "revalidate."
 msgstr ""
 
-#: ../../reference/configuration/cache.config.en.rst:189
+#: ../../reference/configuration/cache.config.en.rst:196
 msgid ""
 "Force a specific regex to be in cache between 7-11pm of the server's time "
 "for 26hours. ::"
 msgstr ""
 
-#: ../../reference/configuration/cache.config.en.rst:193
+#: ../../reference/configuration/cache.config.en.rst:200
 msgid "Prevent objects from being evicted from cache:"
 msgstr ""
 
-#: ../../reference/configuration/cache.config.en.rst:195
+#: ../../reference/configuration/cache.config.en.rst:202
 msgid "url_regex=example.com/game/.* pin-in-cache=1h"
-msgstr ""
-
-#: ../../reference/configuration/cache.config.en.rst:24
-msgid ""
-"The :file:`cache.config` file (by default, located in ``/opt/trafficserver/"
-"etc/trafficserver/``) defines how Traffic Server caches web objects. You "
-"can add caching rules to specify the following:"
 msgstr ""
 
 #: ../../reference/configuration/cache.config.en.rst:28
@@ -313,10 +306,28 @@ msgstr ""
 msgid "Whether to ignore no-cache directives from the server"
 msgstr ""
 
-#: ../../reference/configuration/cache.config.en.rst:136
+#: ../../reference/configuration/cache.config.en.rst:143
 msgid ""
 "Change the style of caching with regard to cookies. This effectively "
 "overrides the configuration parameter :ts:cv:`proxy.config.http.cache."
 "cache_responses_to_cookies` and uses the same values with the same "
 "semantics. The override happens only for requests that match."
+msgstr ""
+
+#: ../../reference/configuration/cache.config.en.rst:24
+msgid ""
+"The :file:`cache.config` file (by default, located in ``/usr/local/etc/"
+"trafficserver/``) defines how Traffic Server caches web objects. You can "
+"add caching rules to specify the following:"
+msgstr ""
+
+#: ../../reference/configuration/cache.config.en.rst:119
+msgid "``internal``"
+msgstr ""
+
+#: ../../reference/configuration/cache.config.en.rst:117
+msgid ""
+"A boolean value, ``true`` or ``false``, specifying if the rule should match "
+"(or not match) a transaction originating from an internal API. This is "
+"useful to differentiate transaction originating from an ATS plugin."
 msgstr ""

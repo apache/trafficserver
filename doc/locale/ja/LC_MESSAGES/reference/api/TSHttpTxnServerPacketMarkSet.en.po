@@ -41,6 +41,6 @@ msgstr ""
 msgid "See Also"
 msgstr ""
 
-#: ../../reference/api/TSHttpTxnServerPacketMarkSet.en.rst:44
-msgid "`Traffic Shaping`_"
+#: ../../reference/api/TSHttpTxnServerPacketMarkSet.en.rst:46
+msgid ":ts:cv:`proxy.config.net.sock_packet_mark_out` and TS-1090"
 msgstr ""

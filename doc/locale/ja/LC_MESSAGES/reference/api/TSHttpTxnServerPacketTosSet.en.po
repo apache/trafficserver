@@ -48,6 +48,6 @@ msgstr ""
 msgid "See Also"
 msgstr ""
 
-#: ../../reference/api/TSHttpTxnServerPacketTosSet.en.rst:48
-msgid "`Traffic Shaping`_"
+#: ../../reference/api/TSHttpTxnServerPacketTosSet.en.rst:50
+msgid ":ts:cv:`proxy.config.net.sock_packet_tos_out` and TS-1090"
 msgstr ""

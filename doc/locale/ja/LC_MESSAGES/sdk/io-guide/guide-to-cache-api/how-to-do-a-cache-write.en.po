@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -30,13 +29,6 @@ msgstr ""
 msgid "How to Do a Cache Write"
 msgstr ""
 
-#: ../../sdk/io-guide/guide-to-cache-api/how-to-do-a-cache-write.en.rst:21
-msgid ""
-"Use ``TSCacheWrite`` to write to a cache (see the `sample Protocol plugin "
-"<../../new-protocol-plugins#AboutSampleProtocol>`__). Possible callback "
-"events include:"
-msgstr ""
-
 #: ../../sdk/io-guide/guide-to-cache-api/how-to-do-a-cache-write.en.rst:25
 msgid ""
 "``TS_EVENT_CACHE_WRITE_READ`` - indicates the lookup was successful. The "
@@ -50,4 +42,10 @@ msgid ""
 "continuation is currently writing to this location in the cache. Data "
 "payload for this event indicates the possible reason for the write failing "
 "(``TSCacheError``)."
+msgstr ""
+
+#: ../../sdk/io-guide/guide-to-cache-api/how-to-do-a-cache-write.en.rst:21
+msgid ""
+"Use ``TSCacheWrite`` to write to a cache (see the :ref:`sample Protocol "
+"plugin <about-the-sample-protocol>`). Possible callback events include:"
 msgstr ""

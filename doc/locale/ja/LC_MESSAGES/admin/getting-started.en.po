@@ -29,20 +29,6 @@ msgstr ""
 msgid "Getting Started"
 msgstr "はじめに"
 
-#: ../../admin/getting-started.en.rst:50
-msgid ""
-"If your distribution does not come with a prepackaged Traffic Server, "
-"please go to `downloads </downloads>`_ to choose the version that you "
-"consider most appropriate for yourself. If you want to really be on the "
-"bleeding edge you can clone our `git repository <https://git-wip-us.apache."
-"org/repos/asf/trafficserver.git>`_."
-msgstr ""
-"お使いのディストリビューションが Traffic Server をあらかじめパッケージしてい"
-"ない場合、 `downloads </downloads>`_ へ行き、最も適切だと考えられるバージョ"
-"ンを選んでください。最先端のものが本当に欲しい場合は `git repository "
-"<https://git-wip-us.apache.org/repos/asf/trafficserver.git>`_ をクローンして"
-"ください。"
-
 #: ../../admin/getting-started.en.rst:64
 msgid "Building Traffic Server"
 msgstr "Traffic Server のビルド"
@@ -103,25 +89,25 @@ msgstr "autoconf"
 msgid "automake"
 msgstr "automake"
 
-#: ../../admin/getting-started.en.rst:146
+#: ../../admin/getting-started.en.rst:171
 msgid "Start Traffic Server"
 msgstr "Traffic Server を起動する"
 
-#: ../../admin/getting-started.en.rst:158
+#: ../../admin/getting-started.en.rst:183
 msgid "Start Traffic Line"
 msgstr "Traffic Line を使用する"
 
-#: ../../admin/getting-started.en.rst:165
+#: ../../admin/getting-started.en.rst:190
 msgid "Traffic Line commands take the following form::"
 msgstr "Traffic Line コマンドは次のようなフォームを受け取ります。"
 
-#: ../../admin/getting-started.en.rst:169
+#: ../../admin/getting-started.en.rst:194
 msgid "For a list of :program:`traffic_line` commands, enter::"
 msgstr ""
 ":program:`traffic_line` のコマンドのリストを見るにはこのように実行してくださ"
 "い。"
 
-#: ../../admin/getting-started.en.rst:181
+#: ../../admin/getting-started.en.rst:206
 msgid "Stop Traffic Server"
 msgstr "Traffic Server を停止する"
 
@@ -140,15 +126,6 @@ msgstr ""
 msgid ""
 "A complete version number is made of a version-triplet: ``MAJOR.MINOR."
 "PATCH``."
-msgstr ""
-
-#: ../../admin/getting-started.en.rst:35
-msgid ""
-"As of v4.0.0, there are no longer any development (or unstable) releases. "
-"All releases are considered stable and ready for production use. Releases "
-"within a major version are always upgrade compatible. More details are "
-"available on the `New Release Processes <https://cwiki.apache.org/"
-"confluence/display/TS/New+Release+Processes>`_ wiki page."
 msgstr ""
 
 #: ../../admin/getting-started.en.rst:42
@@ -255,12 +232,12 @@ msgid ""
 "layout. ::"
 msgstr ""
 
-#: ../../admin/getting-started.en.rst:141
+#: ../../admin/getting-started.en.rst:166
 msgid ""
 "You are now ready to configure and run your Traffic Server installation."
 msgstr ""
 
-#: ../../admin/getting-started.en.rst:148
+#: ../../admin/getting-started.en.rst:173
 msgid ""
 "To start Traffic Server manually, issue the ``trafficserver`` command, "
 "passing in the subcommand ``start``. This command starts all the processes "
@@ -268,7 +245,7 @@ msgid ""
 "control, and monitor the health of the Traffic Server system. ::"
 msgstr ""
 
-#: ../../admin/getting-started.en.rst:160
+#: ../../admin/getting-started.en.rst:185
 msgid ""
 "Traffic Line provides a quick way of viewing Traffic Server statistics and "
 "configuring the Traffic Server system via a command-line interface. To "
@@ -276,7 +253,7 @@ msgid ""
 "`traffic_line`."
 msgstr ""
 
-#: ../../admin/getting-started.en.rst:173
+#: ../../admin/getting-started.en.rst:198
 msgid ""
 "Please note that :program:`traffic_line`, while a fine tool for an "
 "administrator, is a poor choice for automation, especially that of "
@@ -284,7 +261,7 @@ msgid ""
 "more efficiently and effectively."
 msgstr ""
 
-#: ../../admin/getting-started.en.rst:183
+#: ../../admin/getting-started.en.rst:208
 msgid ""
 "To stop Traffic Server, always use the :program:`trafficserver` command, "
 "passing in the attribute ``stop``. This command stops all the Traffic "
@@ -292,6 +269,63 @@ msgid ""
 "and :program:`traffic_cop`). Do not manually stop processes, as this can "
 "lead to unpredictable results. ::"
 msgstr ""
+
+#: ../../admin/getting-started.en.rst:35
+msgid ""
+"As of v4.0.0, there are no longer any development (or unstable) releases. "
+"All releases are considered stable and ready for production use. Releases "
+"within a major version are always upgrade compatible. More details are "
+"available on the `New Release Processes <https://cwiki.apache.org/"
+"confluence/display/TS/Release+Process>`_ wiki page."
+msgstr ""
+
+#: ../../admin/getting-started.en.rst:50
+msgid ""
+"If your distribution does not come with a prepackaged Traffic Server, "
+"please go to `downloads <https://trafficserver.apache.org/downloads>`_ to "
+"choose the version that you consider most appropriate for yourself. If you "
+"want to really be on the bleeding edge you can clone our `git repository "
+"<https://git-wip-us.apache.org/repos/asf/trafficserver.git>`_."
+msgstr ""
+
+#: ../../admin/getting-started.en.rst:144
+msgid "Building Traffic Server with SPDY"
+msgstr ""
+
+#: ../../admin/getting-started.en.rst:146
+msgid ""
+"Traffic Server v5.0.x and above support SPDY. The following instructions "
+"demonstrate building a fresh Traffic Server with SPDY enabled from Git "
+"sources."
+msgstr ""
+
+#: ../../admin/getting-started.en.rst:149
+msgid "Clone the spdylay Git repository from tatsuhiro. ::"
+msgstr ""
+
+#: ../../admin/getting-started.en.rst:153
+msgid ""
+"The below steps will build spdylay library and set the PKG_CONFIG_PATH ::"
+msgstr ""
+
+#: ../../admin/getting-started.en.rst:161
+msgid ""
+"Finally, you can build trafficserver following the steps in the previous "
+"section along with an additional option --enable-spdy as below  ::"
+msgstr ""
+
+#~ msgid ""
+#~ "If your distribution does not come with a prepackaged Traffic Server, "
+#~ "please go to `downloads </downloads>`_ to choose the version that you "
+#~ "consider most appropriate for yourself. If you want to really be on the "
+#~ "bleeding edge you can clone our `git repository <https://git-wip-us."
+#~ "apache.org/repos/asf/trafficserver.git>`_."
+#~ msgstr ""
+#~ "お使いのディストリビューションが Traffic Server をあらかじめパッケージし"
+#~ "ていない場合、 `downloads </downloads>`_ へ行き、最も適切だと考えられる"
+#~ "バージョンを選んでください。最先端のものが本当に欲しい場合は `git "
+#~ "repository <https://git-wip-us.apache.org/repos/asf/trafficserver.git>`_ "
+#~ "をクローンしてください。"
 
 #~ msgid "Before you start"
 #~ msgstr "始める前に"

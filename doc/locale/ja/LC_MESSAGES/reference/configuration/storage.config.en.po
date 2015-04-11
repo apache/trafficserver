@@ -223,15 +223,6 @@ msgstr ""
 "これらの設定を適用するには、:manpage:`udevadm(8)` で再読み込みを行ってくださ"
 "い::"
 
-#: ../../reference/configuration/storage.config.en.rst:24
-msgid ""
-"The :file:`storage.config` file (by default, located in ``/opt/"
-"trafficserver/etc/trafficserver/``) lists all the files, directories, and/"
-"or hard disk partitions that make up the Traffic Server cache. After you "
-"modify the :file:`storage.config` file the new settings will not be "
-"effective until Traffic Server is restarted."
-msgstr ""
-
 #: ../../reference/configuration/storage.config.en.rst:32
 msgid ""
 "The format of the :file:`storage.config` file is a series of lines of the "
@@ -312,6 +303,15 @@ msgstr ""
 msgid ""
 "If this is not sufficient then the :arg:`id` argument should be used to "
 "create a more permanent assignment table. An example would be::"
+msgstr ""
+
+#: ../../reference/configuration/storage.config.en.rst:24
+msgid ""
+"The :file:`storage.config` file (by default, located in ``/usr/local/etc/"
+"trafficserver/``) lists all the files, directories, and/or hard disk "
+"partitions that make up the Traffic Server cache. After you modify the :"
+"file:`storage.config` file the new settings will not be effective until "
+"Traffic Server is restarted."
 msgstr ""
 
 #~ msgid "The format of the :file:`storage.config` file is::"

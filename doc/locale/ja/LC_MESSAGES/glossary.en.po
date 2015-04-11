@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -282,3 +281,49 @@ msgstr ""
 "各 :term:`キャッシュストライプ` は同じ数のバケットを持つ全てのセグメントの"
 "セットを持ちます。セグメントはフリーリストとハッシュバケットポインタのサイズ"
 "を最小限にするため管理できます。"
+
+#: ../../glossary.en.rst:121
+msgid "cache partition"
+msgstr ""
+
+#: ../../glossary.en.rst:105
+msgid "fresh"
+msgstr ""
+
+#: ../../glossary.en.rst:107
+msgid ""
+"The state of a :term:`cache object` which can be served directly from the "
+"the cache in response to client requests. Fresh objects have not met or "
+"passed their :term:`origin server` defined expiration time, nor have they "
+"reached the algorithmically determined :term:`stale` age."
+msgstr ""
+
+#: ../../glossary.en.rst:102
+msgid "object store"
+msgstr ""
+
+#: ../../glossary.en.rst:104
+msgid "The database of :term:`cache objects <cache object>`."
+msgstr ""
+
+#: ../../glossary.en.rst:117
+msgid "origin server"
+msgstr ""
+
+#: ../../glossary.en.rst:119
+msgid ""
+"An HTTP server which provides the original source of content being cached "
+"by Traffic Server."
+msgstr ""
+
+#: ../../glossary.en.rst:111
+msgid "stale"
+msgstr ""
+
+#: ../../glossary.en.rst:113
+msgid ""
+"The state of a :term:`cache object` which is not yet expired, but has "
+"reached an algorithmically determined age at which the :term:`origin "
+"server` will be contacted to :term:`revalidate <revalidation>` the "
+"freshness of the object. Contrast with :term:`fresh`."
+msgstr ""

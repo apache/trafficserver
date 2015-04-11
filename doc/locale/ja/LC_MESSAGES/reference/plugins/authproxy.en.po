@@ -67,7 +67,7 @@ msgid ""
 "``200 OK``, the incoming request is allowed to proceed."
 msgstr ""
 
-#: ../../reference/plugins/authproxy.en.rst:58
+#: ../../reference/plugins/authproxy.en.rst:64
 msgid ""
 "If the transform type is ``redirect`` then the incoming request is sent to "
 "the authorization service designated by the `--auth-host` and `--auth-port` "
@@ -75,7 +75,7 @@ msgid ""
 "proceed."
 msgstr ""
 
-#: ../../reference/plugins/authproxy.en.rst:63
+#: ../../reference/plugins/authproxy.en.rst:69
 msgid ""
 "When the authorization service responds with a status other than 200 OK, "
 "that response is returned to the client as the response to the incoming "
@@ -84,19 +84,19 @@ msgid ""
 "returned to the client."
 msgstr ""
 
-#: ../../reference/plugins/authproxy.en.rst:70
+#: ../../reference/plugins/authproxy.en.rst:76
 msgid ""
 "The name or address of the authorization host. This is only used by the "
 "``redirect`` transform."
 msgstr ""
 
-#: ../../reference/plugins/authproxy.en.rst:74
+#: ../../reference/plugins/authproxy.en.rst:80
 msgid ""
 "The TCP port of the authorization host. This is only used by the "
 "``redirect`` transform."
 msgstr ""
 
-#: ../../reference/plugins/authproxy.en.rst:78
+#: ../../reference/plugins/authproxy.en.rst:84
 msgid ""
 "If this options is set, the plugin will allow Traffic Server to cache the "
 "result of authorized requests. In the normal case, requests with "
@@ -105,18 +105,18 @@ msgid ""
 "on the request."
 msgstr ""
 
-#: ../../reference/plugins/authproxy.en.rst:85
+#: ../../reference/plugins/authproxy.en.rst:91
 msgid "Examples"
 msgstr ""
 
-#: ../../reference/plugins/authproxy.en.rst:87
+#: ../../reference/plugins/authproxy.en.rst:93
 msgid ""
 "In this example, the authentication is performed by converting the incoming "
 "HTTP request to a `HEAD` request and sending that to the origin server "
 "`origin.internal.com`::"
 msgstr ""
 
-#: ../../reference/plugins/authproxy.en.rst:97
+#: ../../reference/plugins/authproxy.en.rst:103
 msgid ""
 "In this example, the request is directed to a local authentication server "
 "that authorizes the request based on internal policy rules::"
@@ -130,4 +130,13 @@ msgid ""
 "not have the same Host header as the request from the client. It could be "
 "added using the ``header_rewrite`` plugin (set-header Host \"pristine_host."
 "example.com\")."
+msgstr ""
+
+#: ../../reference/plugins/authproxy.en.rst:58
+msgid ""
+"If the transform type is ``range``, then the incoming request is "
+"transformed to a Range request asking for 0 bytes. Other than that, the "
+"behavior is identical to the ``head`` option above. This type of Range "
+"request is useful when the upstream destination is a cache, and it's not "
+"able to cache HEAD requests."
 msgstr ""

@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -26,11 +25,11 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../../arch/cache/cache-data-structures.en.rst:19
+#: ../../arch/cache/cache-data-structures.en.rst:21
 msgid "Cache Data Structures"
 msgstr "キャッシュデータ構造"
 
-#: ../../arch/cache/cache-data-structures.en.rst:25
+#: ../../arch/cache/cache-data-structures.en.rst:27
 msgid ""
 "An open directory entry. It contains all the information of a :cpp:class:"
 "`Dir` plus additional information from the first :cpp:class:`Doc`."
@@ -38,19 +37,11 @@ msgstr ""
 "オープンされたディレクトリエントリ。 :cpp:class:`Dir` と、それに加えて 先頭"
 "の :cpp:class:`Doc` の全情報を含みます。"
 
-#: ../../arch/cache/cache-data-structures.en.rst:29
+#: ../../arch/cache/cache-data-structures.en.rst:32
 msgid "A virtual connection class which accepts input for writing to cache."
 msgstr "キャッシュへ書込む入力を受け付ける仮想接続クラス。"
 
-#: ../../arch/cache/cache-data-structures.en.rst:33
-msgid "Do the initial read for a cached object."
-msgstr "キャッシュされたオブジェクトの初回の読込みを実行します。"
-
-#: ../../arch/cache/cache-data-structures.en.rst:37
-msgid "Do the initial read for an alternate of an object."
-msgstr "オブジェクトの代替の初回の読込みを実行します。"
-
-#: ../../arch/cache/cache-data-structures.en.rst:41
+#: ../../arch/cache/cache-data-structures.en.rst:44
 msgid ""
 "Data transfer driver. This contains a set of *producers*. Each producer is "
 "connected to one or more *consumers*. The tunnel handles events and buffers "
@@ -66,11 +57,11 @@ msgstr ""
 "シンク(|TS| の外へデータを移動するもの)のためにコピーが実行されるため、可能"
 "な限り参照カウントバッファに維持されます。"
 
-#: ../../arch/cache/cache-data-structures.en.rst:45
+#: ../../arch/cache/cache-data-structures.en.rst:53
 msgid "Holds the data from a line in :file:`cache.config`."
 msgstr ":file:`cache.config` のある行からデータを保持します。"
 
-#: ../../arch/cache/cache-data-structures.en.rst:49
+#: ../../arch/cache/cache-data-structures.en.rst:57
 msgid ""
 "Defined in |P-CacheHttp.h|_. This is an array of :cpp:class:`HTTPInfo` "
 "objects and serves as the respository of information about alternates of an "
@@ -80,12 +71,12 @@ msgstr ""
 "配列であり、オブジェクトの代替に関する情報のリポジトリとして提供します。それ"
 "はキャッシュ内のオブジェクトのメタデータ部分に配置されます。"
 
-#: ../../arch/cache/cache-data-structures.en.rst:53
 #: ../../arch/cache/cache-data-structures.en.rst:63
+#: ../../arch/cache/cache-data-structures.en.rst:75
 msgid "Defined in |HTTP.h|_."
 msgstr "|HTTP.h|_ で定義されます。"
 
-#: ../../arch/cache/cache-data-structures.en.rst:55
+#: ../../arch/cache/cache-data-structures.en.rst:65
 msgid ""
 "This class is a wrapper for :cpp:class:`HTTPCacheAlt`. It provides the "
 "external API for accessing data in the wrapped class. It contains only a "
@@ -95,43 +86,23 @@ msgstr ""
 "のデータへのアクセスのための外部 API を提供します。ラップされたクラスのイン"
 "スタンスへのポインター(``NULL`` の可能性がある)のみ保持します。"
 
-#: ../../arch/cache/cache-data-structures.en.rst:59
+#: ../../arch/cache/cache-data-structures.en.rst:71
 msgid "A typedef for :cpp:class:`HTTPInfo`."
 msgstr ":cpp:class:`HTTPInfo` の typedef 。"
 
-#: ../../arch/cache/cache-data-structures.en.rst:65
-msgid ""
-"This is the metadata for a single alternate for a cached object. In "
-"contains among other data"
-msgstr ""
-"キャッシュオブジェクトの単一の代替のメタデータです。下記の他データを含みま"
-"す。"
-
-#: ../../arch/cache/cache-data-structures.en.rst:67
+#: ../../arch/cache/cache-data-structures.en.rst:80
 msgid "The key for the earliest ``Doc`` of the alternate."
 msgstr "代替の earliest ``Doc`` のキー。"
 
-#: ../../arch/cache/cache-data-structures.en.rst:68
+#: ../../arch/cache/cache-data-structures.en.rst:82
 msgid "The request and response headers."
 msgstr "リクエストヘッダとレスポンスヘッダ。"
 
-#: ../../arch/cache/cache-data-structures.en.rst:69
-msgid "The fragment offset table. [#]_"
-msgstr "フラグメントオフセットテーブル。 [#]_"
-
-#: ../../arch/cache/cache-data-structures.en.rst:70
-msgid "Timestamps for request and response from origin server."
-msgstr "オリジンサーバからのリクエストとレスポンスのタイムスタンプ。"
-
-#: ../../arch/cache/cache-data-structures.en.rst:74
+#: ../../arch/cache/cache-data-structures.en.rst:90
 msgid "Record for evacuation."
 msgstr "退避のためのレコード。"
 
-#: ../../arch/cache/cache-data-structures.en.rst:78
-msgid "This represents a storage unit inside a cache volume."
-msgstr "キャッシュボリューム内においてストレージユニットを表します。"
-
-#: ../../arch/cache/cache-data-structures.en.rst:82
+#: ../../arch/cache/cache-data-structures.en.rst:98
 msgid ""
 "The number of segments in the volume. This will be roughly the total number "
 "of entries divided by the number of entries in a segment. It will be "
@@ -140,7 +111,7 @@ msgstr ""
 "ボリュームのセグメント数。セグメント内のエントリ数で分割されたエントリのおお"
 "よその合計数。全エントリをカバーするように丸め込まれます。"
 
-#: ../../arch/cache/cache-data-structures.en.rst:86
+#: ../../arch/cache/cache-data-structures.en.rst:104
 msgid ""
 "The number of buckets in the volume. This will be roughly the number of "
 "entries in a segment divided by ``DIR_DEPTH``. For currently defined values "
@@ -151,7 +122,7 @@ msgstr ""
 "エントリ数。現在は約 16,384 (2^16 / 4) で定義されます。バケットはインデック"
 "スハッシュの対象として使用されます。"
 
-#: ../../arch/cache/cache-data-structures.en.rst:90
+#: ../../arch/cache/cache-data-structures.en.rst:111
 msgid ""
 "Array of of :cpp:class:`EvacuationBlock` buckets. This is sized so there is "
 "one bucket for every evacuation span."
@@ -159,47 +130,33 @@ msgstr ""
 ":cpp:class:`EvacuationBlock` バケットの配列。これは、退避スパンごとに一つの"
 "バケットを持つようなサイズになります。"
 
-#: ../../arch/cache/cache-data-structures.en.rst:94
+#: ../../arch/cache/cache-data-structures.en.rst:116
 msgid "Length of stripe in bytes."
 msgstr "バイト単位のストライプ長。"
 
-#: ../../arch/cache/cache-data-structures.en.rst:98
-msgid ""
-"Start an evacuation if there is any :cpp:class:`EvacuationBlock` in the "
-"range from *low* to *high*. Return 0 if no evacuation was started, non-zero "
-"otherwise."
-msgstr ""
-"*low* から *high* の範囲に任意の :cpp:class:`EvacuationBlock` がある場合、退"
-"避を開始します。退避が開始されなかった場合は 0 を、それ以外は非 0 を返しま"
-"す。"
-
-#: ../../arch/cache/cache-data-structures.en.rst:102
-msgid "A cache volume as described in :file:`volume.config`."
-msgstr ":file:`volume.config` で記述されるキャッシュボリューム。"
-
-#: ../../arch/cache/cache-data-structures.en.rst:106
+#: ../../arch/cache/cache-data-structures.en.rst:130
 msgid "Defined in |P-CacheVol.h|_."
 msgstr "|P-CacheVol.h|_ で定義されます。"
 
-#: ../../arch/cache/cache-data-structures.en.rst:110
+#: ../../arch/cache/cache-data-structures.en.rst:134
 msgid "Validity check value. Set to ``DOC_MAGIC`` for a valid document."
 msgstr ""
 "正当性チェック値。正当なドキュメントには ``DOC_MAGIC`` が設定されます。"
 
-#: ../../arch/cache/cache-data-structures.en.rst:114
+#: ../../arch/cache/cache-data-structures.en.rst:138
 msgid ""
 "The length of this segment including the header length, fragment table, and "
 "this structure."
 msgstr ""
 "ヘッダ長、フラグメントテーブル、この構造体を含む、このセグメントの長さ。"
 
-#: ../../arch/cache/cache-data-structures.en.rst:118
+#: ../../arch/cache/cache-data-structures.en.rst:143
 msgid ""
 "Total length of the entire document not including meta data but including "
 "headers."
 msgstr "メタデータを含まない、ヘッダを含むドキュメント全体の長さ。"
 
-#: ../../arch/cache/cache-data-structures.en.rst:122
+#: ../../arch/cache/cache-data-structures.en.rst:148
 msgid ""
 "First index key in the document (the index key used to locate this object "
 "in the volume index)."
@@ -207,7 +164,7 @@ msgstr ""
 "ドキュメントの最初のインデックスキー。（インデックスキーはボリュームインデッ"
 "クスにおいてこのオブジェクトを見つけるのに使用されます。)"
 
-#: ../../arch/cache/cache-data-structures.en.rst:126
+#: ../../arch/cache/cache-data-structures.en.rst:153
 msgid ""
 "The index key for this fragment. Fragment keys are computationally chained "
 "so that the key for the next and previous fragments can be computed from "
@@ -216,21 +173,13 @@ msgstr ""
 "このフラグメントのインデックスキー。前後のフラグメントのキーがこのキーから計"
 "算出来るように、フラグメントキーは計算的に繋がっています。"
 
-#: ../../arch/cache/cache-data-structures.en.rst:130
+#: ../../arch/cache/cache-data-structures.en.rst:159
 msgid ""
 "Document header (metadata) length. This is not the length of the HTTP "
 "headers."
 msgstr "ドキュメントヘッダ(メタデータ)長。 HTTP ヘッダの長さではありません。"
 
-#: ../../arch/cache/cache-data-structures.en.rst:134
-msgid ""
-"Fragment type. Currently only `CACHE_FRAG_TYPE_HTTP` is used. Other types "
-"may be used for cache extensions if those are ever used / implemented."
-msgstr ""
-"フラグメントタイプ。現在、 `CACHE_FRAG_TYPE_HTTP` のみ使用されます。キャッ"
-"シュ拡張がいつか使用/実装されれば、他のタイプが使用されるかもしれません。"
-
-#: ../../arch/cache/cache-data-structures.en.rst:138
+#: ../../arch/cache/cache-data-structures.en.rst:169
 msgid ""
 "Fragment table length, if any. Only the first ``Doc`` in an object should "
 "contain a fragment table."
@@ -238,51 +187,148 @@ msgstr ""
 "もしあるなら、フラグメントテーブル長。オブジェクトの、先頭の ``Doc`` のみが"
 "フラグメントテーブルを持つべきです。"
 
-#: ../../arch/cache/cache-data-structures.en.rst:140
-msgid ""
-"The fragment table is a list of offsets relative to the HTTP content (not "
-"counting metadata or HTTP headers). Each offset is the byte offset of the "
-"first byte in the fragment. The first element in the table is the second "
-"fragment (what would be index 1 for an array). The offset for the first "
-"fragment is of course always zero and so not stored. The purpose of this is "
-"to enable a fast seek for range requests - given the first ``Doc`` the "
-"fragment containing the first byte in the range can be computed and loaded "
-"directly without further disk access."
-msgstr ""
-"フラグメントテーブルは、 HTTP コンテンツ(メタデータや HTTP ヘッダは含みませ"
-"ん)に関係したオフセットのリストです。各オフセットは、フラグメントの最初のバ"
-"イトのバイトオフセットです。テーブルの最初の要素は、二番目のフラグメントで"
-"す。(配列のインデックス 1 となるでしょう) 最初のフラグメントのオフセットはも"
-"ちろん常にゼロであり、保存されません。この目的は、レンジリクエストの高速な検"
-"索を可能にすることです。先頭の ``Doc`` が指定されると、範囲の最初のバイトを"
-"含むフラグメントはそれ以上のディスクアクセス無しに、直接計算して読み込むこと"
-"ができます。"
-
-#: ../../arch/cache/cache-data-structures.en.rst:142
+#: ../../arch/cache/cache-data-structures.en.rst:181
 msgid "Removed as of version 3.3.0."
 msgstr "バージョン 3.3.0 で削除されました。"
 
-#: ../../arch/cache/cache-data-structures.en.rst:146
-#: ../../arch/cache/cache-data-structures.en.rst:150
+#: ../../arch/cache/cache-data-structures.en.rst:185
+#: ../../arch/cache/cache-data-structures.en.rst:189
+#: ../../arch/cache/cache-data-structures.en.rst:197
 msgid "Unknown."
 msgstr "不明。"
 
-#: ../../arch/cache/cache-data-structures.en.rst:154
+#: ../../arch/cache/cache-data-structures.en.rst:193
 msgid "Flag and timer for pinned objects."
 msgstr "ピン留めされたオブジェクトのフラグとタイマー。"
 
-#: ../../arch/cache/cache-data-structures.en.rst:158
-msgid "Unknown. (A checksum of some sort)"
-msgstr "不明。(何らかのチェックサム)"
-
-#: ../../arch/cache/cache-data-structures.en.rst:163
+#: ../../arch/cache/cache-data-structures.en.rst:202
 msgid "Footnotes"
 msgstr "脚注"
 
-#: ../../arch/cache/cache-data-structures.en.rst:164
+#: ../../arch/cache/cache-data-structures.en.rst:205
 msgid ""
 "Changed in version 3.2.0. This previously resided in the first ``Doc`` but "
 "that caused different alternates to share the same fragment table."
 msgstr ""
 "バージョン 3.2.0 で変更されました。以前は先頭の ``Doc`` 内で持ちましたが、同"
 "一フラグメントテーブルを共有するために異なる代替を引き起こしました。"
+
+#: ../../arch/cache/cache-data-structures.en.rst:36
+msgid "Performs the initial read for a cached object."
+msgstr ""
+
+#: ../../arch/cache/cache-data-structures.en.rst:40
+msgid "Performs the initial read for an :term:`alternate` of an object."
+msgstr ""
+
+#: ../../arch/cache/cache-data-structures.en.rst:77
+msgid ""
+"This is the metadata for a single :term:`alternate` for a cached object. It "
+"contains, among other data, the following:"
+msgstr ""
+
+#: ../../arch/cache/cache-data-structures.en.rst:84
+msgid "The fragment offset table.[#fragment-offset-table]_"
+msgstr ""
+
+#: ../../arch/cache/cache-data-structures.en.rst:86
+msgid "Timestamps for request and response from :term:`origin server`."
+msgstr ""
+
+#: ../../arch/cache/cache-data-structures.en.rst:94
+msgid "This represents a :term:`storage unit` inside a :term:`cache volume`."
+msgstr ""
+
+#: ../../arch/cache/cache-data-structures.en.rst:120
+msgid ""
+"Start an evacuation if there is any :cpp:class:`EvacuationBlock` in the "
+"range from :arg:`low` to :arg:`high`. Return ``0`` if no evacuation was "
+"started, non-zero otherwise."
+msgstr ""
+
+#: ../../arch/cache/cache-data-structures.en.rst:126
+msgid "A :term:`cache volume` as described in :file:`volume.config`."
+msgstr ""
+
+#: ../../arch/cache/cache-data-structures.en.rst:164
+msgid ""
+"Fragment type. Currently only ``CACHE_FRAG_TYPE_HTTP`` is used. Other types "
+"may be used for cache extensions if those are ever implemented."
+msgstr ""
+
+#: ../../arch/cache/cache-data-structures.en.rst:172
+msgid ""
+"The fragment table is a list of offsets relative to the HTTP content (not "
+"counting metadata or HTTP headers). Each offset is the byte offset of the "
+"first byte in the fragment. The first element in the table is the second "
+"fragment (what would be index 1 for an array). The offset for the first "
+"fragment is of course always zero and so not stored. The purpose of this is "
+"to enable a fast seek for range requests. Given the first ``Doc`` the "
+"fragment containing the first byte in the range can be computed and loaded "
+"directly without further disk access."
+msgstr ""
+
+#~ msgid "Do the initial read for a cached object."
+#~ msgstr "キャッシュされたオブジェクトの初回の読込みを実行します。"
+
+#~ msgid "Do the initial read for an alternate of an object."
+#~ msgstr "オブジェクトの代替の初回の読込みを実行します。"
+
+#~ msgid ""
+#~ "This is the metadata for a single alternate for a cached object. In "
+#~ "contains among other data"
+#~ msgstr ""
+#~ "キャッシュオブジェクトの単一の代替のメタデータです。下記の他データを含み"
+#~ "ます。"
+
+#~ msgid "The fragment offset table. [#]_"
+#~ msgstr "フラグメントオフセットテーブル。 [#]_"
+
+#~ msgid "Timestamps for request and response from origin server."
+#~ msgstr "オリジンサーバからのリクエストとレスポンスのタイムスタンプ。"
+
+#~ msgid "This represents a storage unit inside a cache volume."
+#~ msgstr "キャッシュボリューム内においてストレージユニットを表します。"
+
+#~ msgid ""
+#~ "Start an evacuation if there is any :cpp:class:`EvacuationBlock` in the "
+#~ "range from *low* to *high*. Return 0 if no evacuation was started, non-"
+#~ "zero otherwise."
+#~ msgstr ""
+#~ "*low* から *high* の範囲に任意の :cpp:class:`EvacuationBlock` がある場"
+#~ "合、退避を開始します。退避が開始されなかった場合は 0 を、それ以外は非 0 "
+#~ "を返します。"
+
+#~ msgid "A cache volume as described in :file:`volume.config`."
+#~ msgstr ":file:`volume.config` で記述されるキャッシュボリューム。"
+
+#~ msgid ""
+#~ "Fragment type. Currently only `CACHE_FRAG_TYPE_HTTP` is used. Other "
+#~ "types may be used for cache extensions if those are ever used / "
+#~ "implemented."
+#~ msgstr ""
+#~ "フラグメントタイプ。現在、 `CACHE_FRAG_TYPE_HTTP` のみ使用されます。"
+#~ "キャッシュ拡張がいつか使用/実装されれば、他のタイプが使用されるかもしれま"
+#~ "せん。"
+
+#~ msgid ""
+#~ "The fragment table is a list of offsets relative to the HTTP content "
+#~ "(not counting metadata or HTTP headers). Each offset is the byte offset "
+#~ "of the first byte in the fragment. The first element in the table is the "
+#~ "second fragment (what would be index 1 for an array). The offset for the "
+#~ "first fragment is of course always zero and so not stored. The purpose "
+#~ "of this is to enable a fast seek for range requests - given the first "
+#~ "``Doc`` the fragment containing the first byte in the range can be "
+#~ "computed and loaded directly without further disk access."
+#~ msgstr ""
+#~ "フラグメントテーブルは、 HTTP コンテンツ(メタデータや HTTP ヘッダは含みま"
+#~ "せん)に関係したオフセットのリストです。各オフセットは、フラグメントの最初"
+#~ "のバイトのバイトオフセットです。テーブルの最初の要素は、二番目のフラグメ"
+#~ "ントです。(配列のインデックス 1 となるでしょう) 最初のフラグメントのオフ"
+#~ "セットはもちろん常にゼロであり、保存されません。この目的は、レンジリクエ"
+#~ "ストの高速な検索を可能にすることです。先頭の ``Doc`` が指定されると、範囲"
+#~ "の最初のバイトを含むフラグメントはそれ以上のディスクアクセス無しに、直接"
+#~ "計算して読み込むことができます。"
+
+#~ msgid "Unknown. (A checksum of some sort)"
+#~ msgstr "不明。(何らかのチェックサム)"
