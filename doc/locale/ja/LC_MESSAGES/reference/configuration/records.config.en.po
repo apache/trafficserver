@@ -4156,37 +4156,45 @@ msgstr ""
 
 #: ../../reference/configuration/records.config.en.rst:2492
 msgid "HTTP/2 Configuration"
-msgstr ""
+msgstr "HTTP/2 の設定"
 
 #: ../../reference/configuration/records.config.en.rst:2497
 msgid ""
 "Enable the experimental HTTP/2 feature. This implements most of the "
 "specifications, with the one big exception being server PUSH."
 msgstr ""
+"実験的な HTTP/2 機能を有効にします。この実装はサーバプッシュを除くほぼすべて"
+"の仕様を実装しています。"
 
 #: ../../reference/configuration/records.config.en.rst:2500
 msgid ""
 "This configuration will be eliminated for v6.0.0, where HTTP/2 is enabled "
 "by default and controlled via the ports configuration."
 msgstr ""
+"この設定は v6.0.0 で削除され、HTTP/2 はデフォルトで有効となり、ポート設定"
+"によって制御されるようになります。"
 
 #: ../../reference/configuration/records.config.en.rst:2508
 msgid ""
 "Reloading this value affects only new HTTP/2 connections, not the ones "
 "already established."
 msgstr ""
+"この値の再読み込みは新しい HTTP/2 のコネクションでのみ適用され、 すでに確率"
+"したコネクションには適用されません。"
 
 #: ../../reference/configuration/records.config.en.rst:2519
 msgid ""
 "Indicates the size of the largest frame payload that the sender is willing "
 "to receive."
 msgstr ""
+"Traffic Server が受け取るフレームに含まれるペイロードの最大許容サイズです。"
 
 #: ../../reference/configuration/records.config.en.rst:2525
 msgid ""
 "The maximum size of the header compression table used to decode header "
 "blocks."
 msgstr ""
+"ヘッダーブロックのデコードに使用されるヘッダー圧縮テーブルの最大サイズです。"
 
 #: ../../reference/configuration/records.config.en.rst:2531
 msgid ""
@@ -4194,12 +4202,16 @@ msgid ""
 "that the sender is prepared to accept blocks. The default value, which is "
 "the unsigned int maximum value in Traffic Server, implies unlimited size."
 msgstr ""
+"許容するヘッダーリストの最大数です。デフォルト値は暗黙的に無制限を意味し、"
+"Traffic Server では unsigned int の最大値になっています。"
 
 #: ../../reference/configuration/records.config.en.rst:2558
 msgid ""
 "Reloading this value affects only new SPDY connections, not the ones "
 "already established.."
 msgstr ""
+"この値の再読み込みは新しい SPDY のコネクションでのみ適用され、 すでに確率"
+"したコネクションには適用されません。"
 
 #: ../../reference/configuration/records.config.en.rst:2639
 #: ../../reference/configuration/records.config.en.rst:2662
