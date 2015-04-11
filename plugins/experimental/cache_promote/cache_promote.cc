@@ -22,6 +22,17 @@
 #include <string.h>
 #include <unistd.h>
 #include <getopt.h>
+#include <openssl/sha.h>
+
+#include <string>
+#include <list>
+
+// TODO: We should eliminate this when we have unordered_map on all supported platforms
+#if HAVE_UNORDERED_MAP
+#include <unordered_map>
+#else
+#include <map>
+#endif
 
 #include "lulu.h"
 
@@ -29,57 +40,193 @@
 // Note that all options for all policies has to go here. Not particularly pretty...
 //
 static const struct option longopt[] = {{const_cast<char *>("policy"), required_argument, NULL, 'p'},
-                                        {const_cast<char *>("chance"), required_argument, NULL, 'c'},
+                                        // This is for both Chance and LRU (optional) policy
+                                        {const_cast<char *>("sample"), required_argument, NULL, 's'},
+                                        // For the LRU policy
+                                        {const_cast<char *>("buckets"), required_argument, NULL, 'b'},
+                                        {const_cast<char *>("hits"), required_argument, NULL, 'h'},
+                                        // EOF
                                         {NULL, no_argument, NULL, '\0'}};
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////
-// Virtual base class for all policies.
+// Abstract base class for all policies.
 //
 class PromotionPolicy
 {
 public:
-  virtual ~PromotionPolicy(){};
-  virtual bool parseOption(int opt, char *optarg) = 0;
-  virtual bool doPromote(TSHttpTxn txnp) const = 0;
-
-  virtual const char *
-  getPolicyName() const
+  PromotionPolicy() : _sample(0.0)
   {
-    return "virtual";
+    // This doesn't have to be perfect, since this is just chance sampling.
+    // coverity[dont_call]
+    srand48((long)time(NULL));
   }
 
   void
-  usage()
+  setSample(char *s)
   {
-    TSDebug(PLUGIN_NAME, "Usage: @plugin=%s.so @pparam=%s @pparam=<n>%%", PLUGIN_NAME, getPolicyName());
-    TSError("Usage: @plugin=%s.so @pparam=%s @pparam=<n>%%", PLUGIN_NAME, getPolicyName());
+    _sample = strtof(s, NULL) / 100.0;
   }
+
+  float
+  getSample() const
+  {
+    return _sample;
+  }
+
+  bool
+  doSample() const
+  {
+    if (_sample > 0) {
+      // coverity[dont_call]
+      double r = drand48();
+
+      if (_sample > r) {
+        TSDebug(PLUGIN_NAME, "checking sampling, is %f > %f? Yes!", _sample, r);
+      } else {
+        TSDebug(PLUGIN_NAME, "checking sampling, is %f > %f? No!", _sample, r);
+        return false;
+      }
+    }
+    return true;
+  }
+
+  virtual ~PromotionPolicy(){};
+
+  virtual bool
+  parseOption(int opt, char *optarg)
+  {
+    return false;
+  }
+
+  // These are pure virtual
+  virtual bool doPromote(TSHttpTxn txnp) = 0;
+  virtual const char *policyName() const = 0;
+  virtual void usage() const = 0;
+
+private:
+  float _sample;
 };
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 // This is the simplest of all policies, just give each request a (small)
-// percentage chance to be promoted to cache. Usage:
+// percentage chance to be promoted to cache.
 //
-//   @plugin=cache_promote.so @pparam=--policy=statistical @pparam=--chance=10%
-//
-class StatisticalPolicy : public PromotionPolicy
+class ChancePolicy : public PromotionPolicy
 {
 public:
-  StatisticalPolicy() : _chance(0.0)
+  bool doPromote(TSHttpTxn /* txnp ATS_UNUSED */)
   {
-    // This doesn't have to be perfect, since this is just statistical sampling.
+    TSDebug(PLUGIN_NAME, "ChancePolicy::doPromote(%f)", getSample());
+    return true;
+  }
+
+  void
+  usage() const
+  {
+    TSError(PLUGIN_NAME, "Usage: @plugin=%s.so @pparam=--policy=chance @pparam=--sample=<x>%", PLUGIN_NAME);
+  }
+
+  const char *
+  policyName() const
+  {
+    return "chance";
+  }
+};
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////
+// The LRU based policy keeps track of <bucket> number of URLs, with a counter for each slot.
+// Objects are not promoted unless the counter reaches <hits> before it gets evicted. An
+// optional <chance> parameter can be used to sample hits, this can reduce contention and
+// churning in the LRU as well.
+//
+class LRUHash
+{
+  friend struct LRUHashHasher;
+
+public:
+  LRUHash() { TSDebug(PLUGIN_NAME, "In LRUHash()"); }
+
+  ~LRUHash() { TSDebug(PLUGIN_NAME, "In ~LRUHash()"); }
+
+  LRUHash &operator=(const LRUHash &h)
+  {
+    TSDebug(PLUGIN_NAME, "copying an LRUHash object");
+    memcpy(_hash, h._hash, sizeof(_hash));
+    return *this;
+  }
+
+  void
+  init(char *data, int len)
+  {
+    SHA_CTX sha;
+
+    SHA1_Init(&sha);
+    SHA1_Update(&sha, data, len);
+    SHA1_Final(_hash, &sha);
+  }
+
+private:
+  u_char _hash[SHA_DIGEST_LENGTH];
+};
+
+struct LRUHashHasher {
+  bool operator()(const LRUHash *s1, const LRUHash *s2) const { return 0 == memcmp(s1->_hash, s2->_hash, sizeof(LRUHash::_hash)); }
+
+  size_t operator()(const LRUHash *s) const { return *((size_t *)s->_hash) ^ *((size_t *)(s->_hash + 9)); }
+};
+
+typedef std::pair<LRUHash, unsigned> LRUEntry;
+typedef std::list<LRUEntry> LRUList;
+
+static LRUEntry NULL_LRU_ENTRY = {}; // Used to create an "empty" new LRUEntry
+
+// TODO: We should eliminate this when we have unordered_map on all supported platforms.
+#if HAVE_UNORDERED_MAP
+#include <unordered_map>
+typedef std::unordered_map<const LRUHash *, LRUList::iterator, LRUHashHasher, LRUHashHasher> LRUMap;
+#else
+#include <map>
+typedef std::map<LRUHash *, LRUList::iterator> LRUMap;
+#endif
+
+class LRUPolicy : public PromotionPolicy
+{
+public:
+  LRUPolicy() : PromotionPolicy(), _buckets(0), _hits(0)
+  {
+    // This doesn't have to be perfect, since this is just chance sampling.
     // coverity[dont_call]
-    srand48((long)time(NULL));
+    srand48((long)time(NULL) ^ (long)getpid() ^ (long)getppid());
+    _map.reserve(_buckets);
+    _lock = TSMutexCreate();
+  }
+
+  ~LRUPolicy()
+  {
+    TSDebug(PLUGIN_NAME, "deleting LRUPolicy object");
+    TSMutexLock(_lock);
+
+    _map.clear();
+    _list.clear();
+    _freelist.clear();
+
+    TSMutexUnlock(_lock);
+
+    // ToDo: Destroy mutex ? TS-1432
   }
 
   bool
   parseOption(int opt, char *optarg)
   {
     switch (opt) {
-    case 'c':
-      _chance = strtof(optarg, NULL) / 100.0;
+    case 'b':
+      _buckets = static_cast<unsigned>(strtol(optarg, NULL, 10));
+      break;
+    case 'h':
+      _hits = static_cast<unsigned>(strtol(optarg, NULL, 10));
       break;
     default:
       // All other options are unsupported for this policy
@@ -89,23 +236,77 @@ public:
     return true;
   }
 
-  bool doPromote(TSHttpTxn /* txnp ATS_UNUSED */) const
+  bool
+  doPromote(TSHttpTxn txnp)
   {
-    double r = drand48();
+    LRUHash hash;
+    LRUMap::iterator map_it;
+    int url_len = 0;
+    char *url = TSHttpTxnEffectiveUrlStringGet(txnp, &url_len);
+    bool ret = false;
 
-    TSDebug(PLUGIN_NAME, "evaluating StatisticalPolicy::doPromote(), %f > %f ?", _chance, r);
-    // coverity[dont_call]
-    return _chance > r;
+    TSDebug(PLUGIN_NAME, "LRUPolicy::doPromote(%.*s ...)", url_len > 30 ? 30 : url_len, url);
+    hash.init(url, url_len);
+
+    // We have to hold the lock across all list and hash access / updates
+    TSMutexLock(_lock);
+
+    map_it = _map.find(&hash);
+    if (_map.end() != map_it) {
+      // We have an entry in the URL
+      if (++(map_it->second->second) >= _hits) {
+        // Promoted! Cleanup the LRU, and signal success. Save the promoted entry on the freelist.
+        TSDebug(PLUGIN_NAME, "saving the LRUEntry to the freelist");
+        _freelist.splice(_freelist.begin(), _list, map_it->second);
+        _map.erase(map_it->first);
+        ret = true;
+      } else {
+        // It's still not promoted, make sure it's moved to the front of the list
+        _list.splice(_list.begin(), _list, map_it->second);
+      }
+    } else {
+      // New LRU entry for the URL, try to repurpose the list entry as much as possible
+      if (_list.size() >= _buckets) {
+        TSDebug(PLUGIN_NAME, "repurposing last LRUHash entry");
+        _list.splice(_list.begin(), _list, --_list.end());
+        _map.erase(&(_list.begin()->first));
+      } else if (_freelist.size() > 0) {
+        TSDebug(PLUGIN_NAME, "reusing LRUEntry from freelist");
+        _list.splice(_list.begin(), _freelist, _freelist.begin());
+      } else {
+        TSDebug(PLUGIN_NAME, "creating new LRUEntry");
+        _list.push_front(NULL_LRU_ENTRY);
+      }
+      // Update the "new" LRUEntry and add it to the hash
+      _list.begin()->first = hash;
+      _list.begin()->second = 1;
+      _map[&(_list.begin()->first)] = _list.begin();
+    }
+
+    TSMutexUnlock(_lock);
+
+    return ret;
+  }
+
+  void
+  usage() const
+  {
+    TSError(PLUGIN_NAME, "Usage: @plugin=%s.so @pparam=--policy=lru @pparam=--buckets=<n> --hits=<m> --sample=<x>", PLUGIN_NAME);
   }
 
   const char *
-  getPolicyName() const
+  policyName() const
   {
-    return "statistical";
+    return "LRU";
   }
 
 private:
-  float _chance;
+  unsigned _buckets;
+  unsigned _hits;
+  // For the LRU
+  TSMutex _lock;
+  LRUMap _map;
+  LRUList _list, _freelist;
 };
 
 
@@ -115,11 +316,11 @@ private:
 class PromotionConfig
 {
 public:
-  PromotionConfig() : _policy(NULL){};
+  PromotionConfig() : _policy(NULL) {}
 
   ~PromotionConfig() { delete _policy; }
 
-  const PromotionPolicy *
+  PromotionPolicy *
   getPolicy() const
   {
     return _policy;
@@ -130,27 +331,34 @@ public:
   factory(int argc, char *argv[])
   {
     while (true) {
-      int opt = getopt_long(argc, (char *const *)argv, "pc", longopt, NULL);
+      int opt = getopt_long(argc, (char *const *)argv, "psbh", longopt, NULL);
 
       if (opt == -1) {
         break;
       } else if (opt == 'p') {
-        if (0 == strncasecmp(optarg, "statistical", 11)) {
-          _policy = new StatisticalPolicy();
+        if (0 == strncasecmp(optarg, "chance", 6)) {
+          _policy = new ChancePolicy();
+        } else if (0 == strncasecmp(optarg, "lru", 3)) {
+          _policy = new LRUPolicy();
         } else {
           TSError("Unknown policy --policy=%s", optarg);
           return false;
         }
         if (_policy) {
-          TSDebug(PLUGIN_NAME, "created remap with cache promotion policy = %s", _policy->getPolicyName());
+          TSDebug(PLUGIN_NAME, "created remap with cache promotion policy = %s", _policy->policyName());
         }
       } else {
         if (_policy) {
-          if (!_policy->parseOption(opt, optarg)) {
-            TSError("The specified policy (%s) does not support the -%c option", _policy->getPolicyName(), opt);
-            delete _policy;
-            _policy = NULL;
-            return false;
+          // The --sample (-s) option is allowed for all configs, but only after --policy is specified.
+          if (opt == 's') {
+            _policy->setSample(optarg);
+          } else {
+            if (!_policy->parseOption(opt, optarg)) {
+              TSError("The specified policy (%s) does not support the -%c option", _policy->policyName(), opt);
+              delete _policy;
+              _policy = NULL;
+              return false;
+            }
           }
         } else {
           TSError("The --policy=<n> parameter must come first on the remap configuration");
@@ -167,43 +375,49 @@ private:
 };
 
 
-//////////////////////////////////////////////////////////////////////////////
-// Main "plugin", a TXN hook in the TS_HTTP_READ_CACHE_HDR_HOOK. Unless the
-// policy allows caching, we will turn off the cache from here on for the TXN.
+//////////////////////////////////////////////////////////////////////////////////////////////
+// Main "plugin", a TXN hook in the TS_HTTP_READ_CACHE_HDR_HOOK. Unless the policy allows
+// caching, we will turn off the cache from here on for the TXN.
+//
+// NOTE: This is not optimal, the goal was to handle this before we lock the URL in the
+// cache. However, that does not work. Hence, for now, we also schedule the continuation
+// for READ_RESPONSE_HDR such that we can turn off  the actual cache write.
 //
 static int
 cont_handle_policy(TSCont contp, TSEvent event, void *edata)
 {
-  // ToDo: If we want to support per-remap configurations, we have to pass along the data here
   TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
   PromotionConfig *config = static_cast<PromotionConfig *>(TSContDataGet(contp));
   int obj_status;
 
   switch (event) {
+  // Main HOOK
   case TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE:
     if (TS_ERROR != TSHttpTxnCacheLookupStatusGet(txnp, &obj_status)) {
       switch (obj_status) {
       case TS_CACHE_LOOKUP_MISS:
       case TS_CACHE_LOOKUP_SKIPPED:
-        if (!config->getPolicy()->doPromote(txnp)) {
+        if (config->getPolicy()->doSample() && config->getPolicy()->doPromote(txnp)) {
+          TSDebug(PLUGIN_NAME, "cache-status is %d, and leaving cache on (promoted)", obj_status);
+        } else {
           TSDebug(PLUGIN_NAME, "cache-status is %d, and turning off the cache (not promoted)", obj_status);
           TSHttpTxnHookAdd(txnp, TS_HTTP_READ_RESPONSE_HDR_HOOK, contp);
-        } else {
-          TSDebug(PLUGIN_NAME, "cache-status is %d, and leaving cache on (promoted)", obj_status);
         }
         break;
       default:
         // Do nothing, just let it handle the lookup.
-        TSDebug(PLUGIN_NAME, "cache hit, so leaving it alone");
+        TSDebug(PLUGIN_NAME, "cache-status is %d (hit), nothing to do", obj_status);
         break;
       }
     }
     break;
 
+  // Temporaray hack, to deal with the fact that we can turn off the cache earlier
   case TS_EVENT_HTTP_READ_RESPONSE_HDR:
     TSHttpTxnServerRespNoStoreSet(txnp, 1);
     break;
 
+  // Should not happen
   default:
     TSDebug(PLUGIN_NAME, "Unhandled event %d", (int)event);
     break;
@@ -215,7 +429,7 @@ cont_handle_policy(TSCont contp, TSEvent event, void *edata)
 }
 
 
-///////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////
 // Initialize the plugin as a remap plugin.
 //
 TSReturnCode
@@ -267,7 +481,7 @@ TSRemapDeleteInstance(void *ih)
 }
 
 
-///////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////
 // Schedule the cache-read continuation for this remap rule.
 //
 TSRemapStatus
