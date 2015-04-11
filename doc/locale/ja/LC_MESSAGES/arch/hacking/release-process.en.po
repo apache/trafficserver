@@ -11,15 +11,8 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../../arch/hacking/release-process.en.rst:21
+#: ../../arch/hacking/release-process.en.rst:20
 msgid "Traffic Server Release Process"
-msgstr ""
-
-#: ../../arch/hacking/release-process.en.rst:23
-msgid ""
-"Managing release is easiest in an environment that is as clean as possible. "
-"For this reason cloning the code base in to a new directory for the release "
-"process is recommended."
 msgstr ""
 
 #: ../../arch/hacking/release-process.en.rst:27
@@ -30,28 +23,28 @@ msgstr ""
 msgid "A system for git and building."
 msgstr ""
 
-#: ../../arch/hacking/release-process.en.rst:30
+#: ../../arch/hacking/release-process.en.rst:31
 msgid ""
 "A cryptographic key that has been signed by at least two other PMC members. "
 "This should be preferentially associated with your ``apache.org`` email "
 "address but that is not required."
 msgstr ""
 
-#: ../../arch/hacking/release-process.en.rst:36
+#: ../../arch/hacking/release-process.en.rst:38
 msgid "Release Candidate"
 msgstr ""
 
-#: ../../arch/hacking/release-process.en.rst:38
+#: ../../arch/hacking/release-process.en.rst:40
 msgid ""
 "The first step in a release is making a release candidate. This is "
 "distributed to the community for validation before the actual release."
 msgstr ""
 
-#: ../../arch/hacking/release-process.en.rst:41
+#: ../../arch/hacking/release-process.en.rst:44
 msgid "Document"
 msgstr ""
 
-#: ../../arch/hacking/release-process.en.rst:43
+#: ../../arch/hacking/release-process.en.rst:46
 msgid ""
 "Gather up information about the changes for the release. The ``CHANGES`` "
 "file is a good starting point. You may also want to check the commits since "
@@ -59,7 +52,7 @@ msgid ""
 "important changes since the last release."
 msgstr ""
 
-#: ../../arch/hacking/release-process.en.rst:47
+#: ../../arch/hacking/release-process.en.rst:51
 msgid ""
 "Create or update a page on the Wiki for the release. If it is a major or "
 "minor release it should have its own page. Use the previous release page as "
@@ -67,7 +60,7 @@ msgid ""
 "corresponding release page."
 msgstr ""
 
-#: ../../arch/hacking/release-process.en.rst:51
+#: ../../arch/hacking/release-process.en.rst:56
 msgid ""
 "Write an announcement for the release. This will contain much of the same "
 "information that is on the Wiki page but more concisely. Check the `mailing "
@@ -75,37 +68,141 @@ msgid ""
 ">`_ for examples to use as a base."
 msgstr ""
 
-#: ../../arch/hacking/release-process.en.rst:55
+#: ../../arch/hacking/release-process.en.rst:62
 msgid "Build"
 msgstr ""
 
-#: ../../arch/hacking/release-process.en.rst:57
+#: ../../arch/hacking/release-process.en.rst:64
 msgid "Go to the top level source directory."
 msgstr ""
 
-#: ../../arch/hacking/release-process.en.rst:59
+#: ../../arch/hacking/release-process.en.rst:66
 msgid ""
 "Check the version in ``configure.ac``. There are two values near the top "
 "that need to be set, ``TS_VERSION_S`` and ``TS_VERSION_N``. These are the "
 "release version number in different encodings."
 msgstr ""
 
-#: ../../arch/hacking/release-process.en.rst:61
-msgid ""
-"Check the variable ``RC`` in the top level ``Makefile.am``. This should be "
-"the point release value. This needs to be changed for every release "
-"candidate. The first release candidate is 0 (zero)."
-msgstr ""
-
-#: ../../arch/hacking/release-process.en.rst:63
+#: ../../arch/hacking/release-process.en.rst:74
 msgid "Execute the following commands to make the distribution files. ::"
 msgstr ""
 
-#: ../../arch/hacking/release-process.en.rst:69
+#: ../../arch/hacking/release-process.en.rst:91
+msgid "Distribute"
+msgstr ""
+
+#: ../../arch/hacking/release-process.en.rst:108
+msgid "Official Release"
+msgstr ""
+
+#: ../../arch/hacking/release-process.en.rst:110
+msgid "Build the distribution files with the command ::"
+msgstr ""
+
+#: ../../arch/hacking/release-process.en.rst:114
 msgid ""
-"This will create the distribution files and sign them using your key. "
-"Expect to be prompted twice for your passphrase unless you use an ssh key "
-"agent. If you have multiple keys you will need to set the default "
+"Be sure to not have changed anything since the release candidate was built "
+"so the checksums are identical. This will create a signed git tag of the "
+"form ``X.Y.Z`` and produce the distribution files. Push the tag to the ASF "
+"repository with the command ::"
+msgstr ""
+
+#: ../../arch/hacking/release-process.en.rst:121
+msgid ""
+"This presumes ``origin`` is the name for the ASF remote repository which is "
+"correct if you originally clone from the ASF repository."
+msgstr ""
+
+#: ../../arch/hacking/release-process.en.rst:124
+msgid ""
+"The distribution files must be added to an SVN repository. This can be "
+"accessed with the command::"
+msgstr ""
+
+#: ../../arch/hacking/release-process.en.rst:129
+msgid ""
+"All four of the distribution files go here. If you are making a point "
+"release then you should also remove the distribution files for the previous "
+"release. Allow 24 hours for the files to be distributed through the ASF "
+"infrastructure."
+msgstr ""
+
+#: ../../arch/hacking/release-process.en.rst:133
+msgid ""
+"The Traffic Server website must be updated. This is an SVN repository which "
+"you can access with ::"
+msgstr ""
+
+#: ../../arch/hacking/release-process.en.rst:138
+msgid "The files of interest are in the ``content`` directory."
+msgstr ""
+
+#: ../../arch/hacking/release-process.en.rst:142
+msgid "``index.html``"
+msgstr ""
+
+#: ../../arch/hacking/release-process.en.rst:141
+msgid ""
+"This is the front page. The places to edit here are any security "
+"announcements at the top and the \"News\" section."
+msgstr ""
+
+#: ../../arch/hacking/release-process.en.rst:145
+msgid "``downloads.en.mdtext``"
+msgstr ""
+
+#: ../../arch/hacking/release-process.en.rst:145
+msgid "Update the downloads page to point to the new download objects."
+msgstr ""
+
+#: ../../arch/hacking/release-process.en.rst:147
+msgid "After making changes, commit them and then run ::"
+msgstr ""
+
+#: ../../arch/hacking/release-process.en.rst:153
+msgid ""
+"If needed, update the Wiki page for the release to point at the release "
+"distribution files."
+msgstr ""
+
+#: ../../arch/hacking/release-process.en.rst:164
+msgid ""
+"The ``STATUS`` file for master and for the release branch to include this "
+"version."
+msgstr ""
+
+#: ../../arch/hacking/release-process.en.rst:166
+msgid "The ``CHANGES`` file to have a header for the next version."
+msgstr ""
+
+#: ../../arch/hacking/release-process.en.rst:168
+msgid "``configure.ac`` to be set to the next version."
+msgstr ""
+
+#: ../../arch/hacking/release-process.en.rst:170
+msgid ""
+"In the top level ``Makefile.am`` change ``RC`` to have the value ``0``."
+msgstr ""
+
+#: ../../arch/hacking/release-process.en.rst:22
+msgid ""
+"Managing a release is easiest in an environment that is as clean as "
+"possible. For this reason, cloning the code base in to a new directory for "
+"the release process is recommended."
+msgstr ""
+
+#: ../../arch/hacking/release-process.en.rst:70
+msgid ""
+"Check the variable ``RC`` in the top level ``Makefile.am``. This should be "
+"the point release value. This needs to be changed for every release "
+"candidate. The first release candidate is ``0`` (zero)."
+msgstr ""
+
+#: ../../arch/hacking/release-process.en.rst:80
+msgid ""
+"These steps will create the distribution files and sign them using your "
+"key. Expect to be prompted twice for your passphrase unless you use an ssh "
+"key agent. If you have multiple keys you will need to set the default "
 "appropriately beforehand, as no option will be provided to select the "
 "signing key. The files should have names that start with ``trafficserver-X."
 "Y.Z-rcA.tar.bz2`` where ``X.Y.Z`` is the version and ``A`` is the release "
@@ -114,137 +211,40 @@ msgid ""
 "will also create a signed git tag of the form ``X.Y.Z-rcA``."
 msgstr ""
 
-#: ../../arch/hacking/release-process.en.rst:76
-msgid "Distribute"
-msgstr ""
-
-#: ../../arch/hacking/release-process.en.rst:78
+#: ../../arch/hacking/release-process.en.rst:93
 msgid ""
 "The release candidate files should be uploaded to some public storage. Your "
-"personal storage on ``people.apach.org`` is a reasonable location to use."
+"personal storage on *people.apach.org* is a reasonable location to use."
 msgstr ""
 
-#: ../../arch/hacking/release-process.en.rst:81
+#: ../../arch/hacking/release-process.en.rst:96
 msgid ""
-"Send the release candiate announcement to the ``users`` and ``dev`` "
-"mailinging lists, noting that it is a release *candidate* and providing a "
-"link to the distribution files you uploaded. This announcement should also "
-"call for a vote on the candidate, generally with a 72 hours time limit."
+"Send the release candiate announcement to the *users* and *dev* mailinging "
+"lists, noting that it is a release *candidate* and providing a link to the "
+"distribution files you uploaded. This announcement should also call for a "
+"vote on the candidate, generally with a 72 hours time limit."
 msgstr ""
 
-#: ../../arch/hacking/release-process.en.rst:85
+#: ../../arch/hacking/release-process.en.rst:101
 msgid ""
 "If the voting was successful (at least three \"+1\" votes and no \"-1\" "
-"votes) proceed to :ref:`release-management-official-release`. Otherwise "
+"votes), proceed to :ref:`release-management-official-release`. Otherwise, "
 "repeat the :ref:`release-management-release-candidate` process."
 msgstr ""
 
-#: ../../arch/hacking/release-process.en.rst:91
-msgid "Official Release"
+#: ../../arch/hacking/release-process.en.rst:151
+msgid "On the ``people.apache.org`` host."
 msgstr ""
 
-#: ../../arch/hacking/release-process.en.rst:93
-msgid "Build the distribution files with the command ::"
-msgstr ""
-
-#: ../../arch/hacking/release-process.en.rst:97
+#: ../../arch/hacking/release-process.en.rst:156
 msgid ""
-"Be sure to not have changed anything since the release candidate was built "
-"so the checksums are identical. This will create a signed git tag of the "
-"form ``X.Y.Z`` and produce the distribution files. Push the tag to the ASF "
-"repository with the command ::"
-msgstr ""
-
-#: ../../arch/hacking/release-process.en.rst:103
-msgid ""
-"This presumes ``origin`` is the name for the ASF remote repository which is "
-"correct if you originally clone from the ASF repository."
-msgstr ""
-
-#: ../../arch/hacking/release-process.en.rst:106
-msgid ""
-"The distribution files must be added to an SVN repository. This can be "
-"accessed with the command::"
-msgstr ""
-
-#: ../../arch/hacking/release-process.en.rst:110
-msgid ""
-"All four of the distribution files go here. If you are making a point "
-"release then you should also remove the distribution files for the previous "
-"release. Allow 24 hours for the files to be distributed through the ASF "
-"infrastructure."
-msgstr ""
-
-#: ../../arch/hacking/release-process.en.rst:113
-msgid ""
-"The Traffic Server website must be updated. This is an SVN repository which "
-"you can access with ::"
-msgstr ""
-
-#: ../../arch/hacking/release-process.en.rst:117
-msgid "The files of interest are in the ``content`` directory."
-msgstr ""
-
-#: ../../arch/hacking/release-process.en.rst:119
-msgid "``index.html``"
-msgstr ""
-
-#: ../../arch/hacking/release-process.en.rst:120
-msgid ""
-"This is the front page. The places to edit here are any security "
-"announcements at the top and the \"News\" section."
-msgstr ""
-
-#: ../../arch/hacking/release-process.en.rst:122
-msgid "``downloads.en.mdtext``"
-msgstr ""
-
-#: ../../arch/hacking/release-process.en.rst:122
-msgid "Update the downloads page to point to the new download objects."
-msgstr ""
-
-#: ../../arch/hacking/release-process.en.rst:124
-msgid "After making changes, commit them and then run ::"
-msgstr ""
-
-#: ../../arch/hacking/release-process.en.rst:128
-msgid "on the ``people.apache.org`` host."
-msgstr ""
-
-#: ../../arch/hacking/release-process.en.rst:130
-msgid ""
-"If needed, update the Wiki page for the release to point at the release "
-"distribution files."
-msgstr ""
-
-#: ../../arch/hacking/release-process.en.rst:132
-msgid ""
-"Update the announcement if needed to refer to the release distribution "
+"Update the announcement, if needed, to refer to the release distribution "
 "files and remove the comments concerning the release candidate. This "
-"announcement should be sent to the ``users`` and ``dev`` mailing lists. It "
+"announcement should be sent to the *users* and *dev* mailing lists. It "
 "should also be sent to the ASF announcement list, which must be done using "
 "an ``apache.org`` email address."
 msgstr ""
 
-#: ../../arch/hacking/release-process.en.rst:134
-msgid "Finally, update various files after the release."
-msgstr ""
-
-#: ../../arch/hacking/release-process.en.rst:136
-msgid ""
-"The ``STATUS`` file for master and for the release branch to include this "
-"version."
-msgstr ""
-
-#: ../../arch/hacking/release-process.en.rst:137
-msgid "The ``CHANGES`` file to have a header for the next version."
-msgstr ""
-
-#: ../../arch/hacking/release-process.en.rst:138
-msgid "``configure.ac`` to be set to the next version."
-msgstr ""
-
-#: ../../arch/hacking/release-process.en.rst:139
-msgid ""
-"In the top level ``Makefile.am`` change ``RC`` to have the value ``0``."
+#: ../../arch/hacking/release-process.en.rst:162
+msgid "Finally, update various files after the release:"
 msgstr ""

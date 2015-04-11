@@ -63,15 +63,6 @@ msgid ""
 "equivalent."
 msgstr ""
 
-#: ../../sdk/http-headers/mime-headers.en.rst:54
-msgid ""
-"The MIME header data structure is a parsed version of a standard Internet "
-"MIME header. The MIME header data structure is similar to the URL data "
-"structure (see `URLs <urls>`__). The actual data is stored in a marshal "
-"buffer; the MIME header functions operate on a marshal buffer and a "
-"location (``TSMLoc``) within the buffer."
-msgstr ""
-
 #: ../../sdk/http-headers/mime-headers.en.rst:60
 msgid ""
 "After a call to ``TSMimeHdrFieldDestroy``, ``TSMimeHdrFieldRemove``, or "
@@ -862,4 +853,13 @@ msgid ""
 "system locates the MIME header associated with that HTTP header and "
 "executes the corresponding MIME header operations specified by the "
 "functions (see the example in the description of :c:func:`TSMimeHdrCopy`)."
+msgstr ""
+
+#: ../../sdk/http-headers/mime-headers.en.rst:54
+msgid ""
+"The MIME header data structure is a parsed version of a standard Internet "
+"MIME header. The MIME header data structure is similar to the URL data "
+"structure (see :doc:`URLs <urls.en>`). The actual data is stored in a "
+"marshal buffer; the MIME header functions operate on a marshal buffer and a "
+"location (``TSMLoc``) within the buffer."
 msgstr ""

@@ -39,7 +39,7 @@ msgstr ""
 msgid "Implementation Status"
 msgstr ""
 
-#: ../../reference/plugins/metalink.en.rst:118
+#: ../../reference/plugins/metalink.en.rst:119
 msgid ""
 "Metalinks contain whole file hashes as described in Section 6, and MUST "
 "include SHA-256, as specified in [FIPS-180-3]."
@@ -76,7 +76,7 @@ msgid ""
 "download the file again."
 msgstr ""
 
-#: ../../reference/plugins/metalink.en.rst:89
+#: ../../reference/plugins/metalink.en.rst:90
 msgid ""
 "To check if the cache already contains content that matches a digest, the "
 "plugin must call :c:func:`TSCacheRead` with the digest as the key, read the "
@@ -85,7 +85,7 @@ msgid ""
 "improved."
 msgstr ""
 
-#: ../../reference/plugins/metalink.en.rst:95
+#: ../../reference/plugins/metalink.en.rst:96
 msgid ""
 "An early version of the plugin scanned :mailheader:`Link: <...>; "
 "rel=duplicate` headers.  If the URL in the :mailheader:`Location: ...` "
@@ -100,7 +100,7 @@ msgid ""
 "in :mailheader:`Link: <...>; rel=duplicate` headers."
 msgstr ""
 
-#: ../../reference/plugins/metalink.en.rst:108
+#: ../../reference/plugins/metalink.en.rst:109
 msgid ""
 "The :mailheader:`Digest: SHA-256=...` header is also more efficient than :"
 "mailheader:`Link: <...>; rel=duplicate` headers because it involves a "
@@ -109,7 +109,7 @@ msgid ""
 "MUST be ignored:"
 msgstr ""
 
-#: ../../reference/plugins/metalink.en.rst:114
+#: ../../reference/plugins/metalink.en.rst:115
 msgid ""
 "If Instance Digests are not provided by the Metalink servers, the :"
 "mailheader:`Link` header fields pertaining to this specification MUST be "
@@ -156,11 +156,12 @@ msgstr ""
 
 #: ../../reference/plugins/metalink.en.rst:81
 msgid ""
-"The plugin implements the :c:data:`TS_HTTP_READ_RESPONSE_HDR_HOOK` hook and "
-"`a null transformation`_ to compute the SHA-256 digest for content as it's "
-"added to the cache.  It uses SHA256_Init(), SHA256_Update(), and "
-"SHA256_Final() from OpenSSL to compute the digest, then it uses :c:func:"
-"`TSCacheWrite` to associate the digest with the request URL.  This adds a "
-"new cache object where the key is the digest and the object is the request "
-"URL."
+"The plugin implements the :c:data:`TS_HTTP_READ_RESPONSE_HDR_HOOK` hook "
+"and :doc:`a null transformation <../../sdk/http-transformation-plugin/"
+"sample-null-transformation-plugin.en>` to compute the SHA-256 digest for "
+"content as it's added to the cache.  It uses SHA256_Init(), "
+"SHA256_Update(), and SHA256_Final() from OpenSSL to compute the digest, "
+"then it uses :c:func:`TSCacheWrite` to associate the digest with the "
+"request URL.  This adds a new cache object where the key is the digest and "
+"the object is the request URL."
 msgstr ""

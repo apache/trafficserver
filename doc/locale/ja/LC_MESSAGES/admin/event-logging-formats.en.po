@@ -51,7 +51,7 @@ msgstr "カスタムログギングフィールド"
 msgid "The following list describes Traffic Server custom logging fields."
 msgstr "次のリストは Traffic Server のカスタムロギングフィールドの説明です。"
 
-#: ../../admin/event-logging-formats.en.rst:44
+#: ../../admin/event-logging-formats.en.rst:47
 msgid "``{HTTP header field name}cqh``"
 msgstr "``{HTTP header field name}cqh``"
 
@@ -65,11 +65,11 @@ msgstr ""
 "す。例えば ``%<{Accept-Language}cqh>`` はクライアントリクエストヘッダーの "
 "``Accept-Language:`` フィールドを記録します。"
 
-#: ../../admin/event-logging-formats.en.rst:51
+#: ../../admin/event-logging-formats.en.rst:57
 msgid "``{HTTP header field name}pqh``"
 msgstr "``{HTTP header field name}pqh``"
 
-#: ../../admin/event-logging-formats.en.rst:49
+#: ../../admin/event-logging-formats.en.rst:52
 msgid ""
 "Logs the information in the requested field of the proxy request HTTP "
 "header. For example, ``%<{Authorization}pqh>`` logs the ``Authorization:`` "
@@ -79,11 +79,11 @@ msgstr ""
 "す。例えば ``%<{Authorization}pqh>`` はプロキシーリクエストヘッダー内の "
 "``Authorization:`` フィールドを記録します。"
 
-#: ../../admin/event-logging-formats.en.rst:58
+#: ../../admin/event-logging-formats.en.rst:67
 msgid "``{HTTP header field name}psh``"
 msgstr "``{HTTP header field name}psh``"
 
-#: ../../admin/event-logging-formats.en.rst:56
+#: ../../admin/event-logging-formats.en.rst:62
 msgid ""
 "Logs the information in the requested field of the proxy response HTTP "
 "header. For example, ``%<{Retry-After}psh>`` logs the ``Retry-After:`` "
@@ -93,11 +93,11 @@ msgstr ""
 "す。例えば ``%<{Retry-After}psh>`` はプロキシーレスポンスヘッダーの ``Retry-"
 "After:`` フィールドを記録します。"
 
-#: ../../admin/event-logging-formats.en.rst:65
+#: ../../admin/event-logging-formats.en.rst:77
 msgid "``{HTTP header field name}ssh``"
 msgstr "``{HTTP header field name}ssh``"
 
-#: ../../admin/event-logging-formats.en.rst:63
+#: ../../admin/event-logging-formats.en.rst:72
 msgid ""
 "Logs the information in the requested field of the server response HTTP "
 "header. For example, ``%<{Age}ssh>`` logs the ``Age:`` field in server "
@@ -107,12 +107,12 @@ msgstr ""
 "す。例えば ``%<{Age}ssh>`` はサーバーレスポンスヘッダーの ``Age:`` フィール"
 "ドを記録します。"
 
-#: ../../admin/event-logging-formats.en.rst:71
-#: ../../admin/event-logging-formats.en.rst:545
+#: ../../admin/event-logging-formats.en.rst:93
+#: ../../admin/event-logging-formats.en.rst:570
 msgid "``caun``"
 msgstr "``caun``"
 
-#: ../../admin/event-logging-formats.en.rst:70
+#: ../../admin/event-logging-formats.en.rst:92
 msgid ""
 "The client authenticated username; result of the RFC931/ident lookup of the "
 "client username."
@@ -120,12 +120,12 @@ msgstr ""
 "クライアントの認証されたユーザー名で、RFC931/ident lookup の結果のクライアン"
 "トユーザー名です。"
 
-#: ../../admin/event-logging-formats.en.rst:78
-#: ../../admin/event-logging-formats.en.rst:560
+#: ../../admin/event-logging-formats.en.rst:100
+#: ../../admin/event-logging-formats.en.rst:585
 msgid "``cfsc``"
 msgstr "``cfsc``"
 
-#: ../../admin/event-logging-formats.en.rst:76
+#: ../../admin/event-logging-formats.en.rst:98
 msgid ""
 "The client finish status code; specifies whether the client request to "
 "Traffic Server was successfully completed (``FIN``) or interrupted "
@@ -135,29 +135,29 @@ msgstr ""
 "トが正しく完了した (``FIN``) もしくは中断された (``INTR``) のどちらかが記述"
 "されます。"
 
-#: ../../admin/event-logging-formats.en.rst:83
-#: ../../admin/event-logging-formats.en.rst:544
+#: ../../admin/event-logging-formats.en.rst:105
+#: ../../admin/event-logging-formats.en.rst:569
 msgid "``chi``"
 msgstr "``chi``"
 
-#: ../../admin/event-logging-formats.en.rst:83
+#: ../../admin/event-logging-formats.en.rst:105
 msgid "The IP address of the client's host machine."
 msgstr "クライアントのホストマシンの IP アドレス。"
 
-#: ../../admin/event-logging-formats.en.rst:88
+#: ../../admin/event-logging-formats.en.rst:110
 msgid "``chih``"
 msgstr "``chih``"
 
-#: ../../admin/event-logging-formats.en.rst:88
+#: ../../admin/event-logging-formats.en.rst:110
 msgid "The IP address of the client's host machine in hexadecimal."
 msgstr "16 進数表記でのクライアントのホストマシンの IP アドレス。"
 
-#: ../../admin/event-logging-formats.en.rst:105
-#: ../../admin/event-logging-formats.en.rst:552
+#: ../../admin/event-logging-formats.en.rst:121
+#: ../../admin/event-logging-formats.en.rst:577
 msgid "``cqbl``"
 msgstr "``cqbl``"
 
-#: ../../admin/event-logging-formats.en.rst:104
+#: ../../admin/event-logging-formats.en.rst:120
 msgid ""
 "The client request transfer length; the body length in the client request "
 "to Traffic Server (in bytes)."
@@ -165,12 +165,12 @@ msgstr ""
 "クライアントリクエストの転送長、Traffic Server へのクライアントリクエストの"
 "ボディの長さです。( byte 単位 )"
 
-#: ../../admin/event-logging-formats.en.rst:111
-#: ../../admin/event-logging-formats.en.rst:554
+#: ../../admin/event-logging-formats.en.rst:127
+#: ../../admin/event-logging-formats.en.rst:579
 msgid "``cqhl``"
 msgstr "``cqhl``"
 
-#: ../../admin/event-logging-formats.en.rst:110
+#: ../../admin/event-logging-formats.en.rst:126
 msgid ""
 "The client request header length; the header length in the client request "
 "to Traffic Server."
@@ -178,11 +178,11 @@ msgstr ""
 "クライアントリクエストヘッダーの長さ。Traffic Server へのクライアントリクエ"
 "ストのヘッダーの長さです。"
 
-#: ../../admin/event-logging-formats.en.rst:117
+#: ../../admin/event-logging-formats.en.rst:133
 msgid "``cqhm``"
 msgstr "``cqhm``"
 
-#: ../../admin/event-logging-formats.en.rst:116
+#: ../../admin/event-logging-formats.en.rst:132
 msgid ""
 "The HTTP method in the client request to Traffic Server: ``GET``, ``POST``, "
 "and so on (subset of ``cqtx``)."
@@ -190,19 +190,19 @@ msgstr ""
 "Traffic Server へのクライアントリクエストの HTTP メソッド。``GET`` や "
 "``POST`` やその他のものです。( ``cqtx`` のサブセット )"
 
-#: ../../admin/event-logging-formats.en.rst:122
+#: ../../admin/event-logging-formats.en.rst:138
 msgid "``cqhv``"
 msgstr "``cqhv``"
 
-#: ../../admin/event-logging-formats.en.rst:122
+#: ../../admin/event-logging-formats.en.rst:138
 msgid "The client request HTTP version."
 msgstr "クライアントリクエストの HTTP バージョン。"
 
-#: ../../admin/event-logging-formats.en.rst:129
+#: ../../admin/event-logging-formats.en.rst:145
 msgid "``cqtd``"
 msgstr "``cqtd``"
 
-#: ../../admin/event-logging-formats.en.rst:127
+#: ../../admin/event-logging-formats.en.rst:143
 msgid ""
 "The client request timestamp. Specifies the date of the client request in "
 "the format yyyy-mm-dd, where yyyy is the 4-digit year, mm is the 2-digit "
@@ -212,11 +212,11 @@ msgstr ""
 "mm-dd のフォーマットで記述します。。yyyy は 4 桁で年、mm は 2 桁で月、dd は "
 "2 桁で日を表します。"
 
-#: ../../admin/event-logging-formats.en.rst:135
+#: ../../admin/event-logging-formats.en.rst:151
 msgid "``cqtn``"
 msgstr "``cqtn``"
 
-#: ../../admin/event-logging-formats.en.rst:134
+#: ../../admin/event-logging-formats.en.rst:150
 msgid ""
 "The client request timestamp; date and time of the client's request (in the "
 "Netscape timestamp format)."
@@ -224,19 +224,19 @@ msgstr ""
 "クライアントリクエストのタイムスタンプ。クライアントのリクエストの"
 "( Netscape タイムスタンプフォーマットでの) 日付と時間。"
 
-#: ../../admin/event-logging-formats.en.rst:140
+#: ../../admin/event-logging-formats.en.rst:156
 msgid "``cqtq``"
 msgstr "``cqtq``"
 
-#: ../../admin/event-logging-formats.en.rst:140
+#: ../../admin/event-logging-formats.en.rst:156
 msgid "The client request timestamp, with millisecond resolution."
 msgstr "ミリ秒精度のクライアントリクエストのタイムスタンプ。"
 
-#: ../../admin/event-logging-formats.en.rst:147
+#: ../../admin/event-logging-formats.en.rst:163
 msgid "``cqts``"
 msgstr "``cqts``"
 
-#: ../../admin/event-logging-formats.en.rst:145
+#: ../../admin/event-logging-formats.en.rst:161
 msgid ""
 "The client-request timestamp in Squid format; the time of the client "
 "request since January 1, 1970 UTC. Time is expressed in seconds, with "
@@ -245,11 +245,11 @@ msgstr ""
 "Squid フォーマットでのクライアントリクエストのタイムスタンプ。 1970 年 1 月 "
 "1 日からのクライアントリクエストの時間。時間は秒単位で、ミリ秒の精度です。"
 
-#: ../../admin/event-logging-formats.en.rst:155
+#: ../../admin/event-logging-formats.en.rst:171
 msgid "``cqtt``"
 msgstr "``cqtt``"
 
-#: ../../admin/event-logging-formats.en.rst:152
+#: ../../admin/event-logging-formats.en.rst:168
 msgid ""
 "The client request timestamp. The time of the client request in the format "
 "hh:mm:ss, where hh is the two-digit hour in 24-hour format, mm is the two-"
@@ -260,19 +260,19 @@ msgstr ""
 "でのクライアントリクエストの時間で、hh は 2 桁の 24 時間表記で、mm は 2 桁の"
 "分の値、ss は 2 桁の秒の値です。(例 16:01:19)"
 
-#: ../../admin/event-logging-formats.en.rst:166
+#: ../../admin/event-logging-formats.en.rst:182
 msgid "``cqtx``"
 msgstr "``cqtx``"
 
-#: ../../admin/event-logging-formats.en.rst:160
+#: ../../admin/event-logging-formats.en.rst:176
 msgid "The full HTTP client request text, minus headers; for example, ::"
 msgstr "ヘッダーを除く HTTP クライアントリクエストテキストの全て。例えば"
 
-#: ../../admin/event-logging-formats.en.rst:176
+#: ../../admin/event-logging-formats.en.rst:192
 msgid "``cqu``"
 msgstr "``cqu``"
 
-#: ../../admin/event-logging-formats.en.rst:171
+#: ../../admin/event-logging-formats.en.rst:187
 msgid ""
 "The universal resource identifier (URI) of the request from client to "
 "Traffic Server (subset of ``cqtx`` )."
@@ -280,11 +280,11 @@ msgstr ""
 "Traffic Server へのクライアントからのリクエストの universal resource "
 "identifier (URI) (``cqtx`` のサブセット)"
 
-#: ../../admin/event-logging-formats.en.rst:187
+#: ../../admin/event-logging-formats.en.rst:203
 msgid "``cquc``"
 msgstr "``cquc``"
 
-#: ../../admin/event-logging-formats.en.rst:181
+#: ../../admin/event-logging-formats.en.rst:197
 msgid ""
 "The client request canonical URL. This differs from ``cqu`` in that blanks "
 "(and other characters that might not be parsed by log analysis tools) are "
@@ -295,15 +295,15 @@ msgstr ""
 "ツールでパースされないかもしれない文字 ) がエスケープシーケンスに置換されて"
 "いることです。"
 
-#: ../../admin/event-logging-formats.en.rst:187
+#: ../../admin/event-logging-formats.en.rst:203
 msgid "See `cquuc`_."
 msgstr "`cquuc`_ を参照してください。"
 
-#: ../../admin/event-logging-formats.en.rst:197
+#: ../../admin/event-logging-formats.en.rst:213
 msgid "``cqup``"
 msgstr "``cqup``"
 
-#: ../../admin/event-logging-formats.en.rst:192
+#: ../../admin/event-logging-formats.en.rst:208
 msgid ""
 "The client request URL path; specifies the argument portion of the URL "
 "(everything after the host). For example, if the URL is ``http://www."
@@ -313,23 +313,23 @@ msgstr ""
 "述します。例えば URL が ``http://www.company.com/images/x.gif`` であれば、こ"
 "のフィールドは ``/images/x.gif`` と表示されます。"
 
-#: ../../admin/event-logging-formats.en.rst:197
+#: ../../admin/event-logging-formats.en.rst:213
 msgid "See `cquup`_."
 msgstr "`cquup`_　を参照してください。"
 
-#: ../../admin/event-logging-formats.en.rst:202
+#: ../../admin/event-logging-formats.en.rst:218
 msgid "``cqus``"
 msgstr "``cqus``"
 
-#: ../../admin/event-logging-formats.en.rst:202
+#: ../../admin/event-logging-formats.en.rst:218
 msgid "The client request URL scheme."
 msgstr "クライアントリクエスト URL のスキーム。"
 
-#: ../../admin/event-logging-formats.en.rst:208
+#: ../../admin/event-logging-formats.en.rst:224
 msgid "``cquuc``"
 msgstr "``cquuc``"
 
-#: ../../admin/event-logging-formats.en.rst:207
+#: ../../admin/event-logging-formats.en.rst:223
 msgid ""
 "The client request unmapped URL canonical. This field records a URL before "
 "it is remapped (reverse proxy mode)."
@@ -337,11 +337,11 @@ msgstr ""
 "クライアントリクエストのマップされていない正規化 URL。このフィールドは リ"
 "マップされる前の URL を記録します。( リバースプロキシーモード )"
 
-#: ../../admin/event-logging-formats.en.rst:214
+#: ../../admin/event-logging-formats.en.rst:230
 msgid "``cquup``"
 msgstr "``cquup``"
 
-#: ../../admin/event-logging-formats.en.rst:213
+#: ../../admin/event-logging-formats.en.rst:229
 msgid ""
 "The client request unmapped URL path. This field records a URL path before "
 "it is remapped (reverse proxy mode)."
@@ -349,11 +349,11 @@ msgstr ""
 "クライアントリクエストのマップされていない URL パス。このフィールドはリマッ"
 "プされる前の URL パスを記録します。( リバースプロキシーモード )"
 
-#: ../../admin/event-logging-formats.en.rst:220
+#: ../../admin/event-logging-formats.en.rst:236
 msgid "``cquuh``"
 msgstr "``cquuh``"
 
-#: ../../admin/event-logging-formats.en.rst:219
+#: ../../admin/event-logging-formats.en.rst:235
 msgid ""
 "The client request unmapped URL host. This field records a URL's host "
 "before it is remapped (reverse proxy mode)."
@@ -361,21 +361,21 @@ msgstr ""
 "クライアントリクエストのマップされていない URL ホスト。このフィールドはリ"
 "マップされる前の URL のホストを記録します。( リバースプロキシーモード )"
 
-#: ../../admin/event-logging-formats.en.rst:225
+#: ../../admin/event-logging-formats.en.rst:241
 msgid "``crat``"
 msgstr "``crat``"
 
-#: ../../admin/event-logging-formats.en.rst:225
+#: ../../admin/event-logging-formats.en.rst:241
 msgid "The Retry-After time in seconds, if specified by the origin server."
 msgstr ""
 "オリジンサーバーによって指定されている場合、秒単位の Retry-After 時間。"
 
-#: ../../admin/event-logging-formats.en.rst:231
-#: ../../admin/event-logging-formats.en.rst:562
+#: ../../admin/event-logging-formats.en.rst:247
+#: ../../admin/event-logging-formats.en.rst:587
 msgid "``crc``"
 msgstr "``crc``"
 
-#: ../../admin/event-logging-formats.en.rst:230
+#: ../../admin/event-logging-formats.en.rst:246
 msgid ""
 "The cache result code; specifies how the cache responded to the request "
 "(``HIT``, ``MISS``, and so on)."
@@ -383,22 +383,22 @@ msgstr ""
 "キャッシュ結果コード。どんなキャッシュをリクエストへ返したかを記述します。"
 "( ``HIT`` や ``MISS`` やその他 )"
 
-#: ../../admin/event-logging-formats.en.rst:237
+#: ../../admin/event-logging-formats.en.rst:262
 msgid "``csscl``"
 msgstr "``csscl``"
 
-#: ../../admin/event-logging-formats.en.rst:236
+#: ../../admin/event-logging-formats.en.rst:261
 msgid ""
 "The cached response length (in bytes) from origin server to Traffic Server."
 msgstr ""
 "キャッシュしたオリジンサーバーから Traffic Server へのレスポンスの長さ。"
 "( byte 単位 )"
 
-#: ../../admin/event-logging-formats.en.rst:243
+#: ../../admin/event-logging-formats.en.rst:268
 msgid "``csshl``"
 msgstr "``csshl``"
 
-#: ../../admin/event-logging-formats.en.rst:242
+#: ../../admin/event-logging-formats.en.rst:267
 msgid ""
 "The cached header length in the origin server response to Traffic Server "
 "(in bytes)."
@@ -406,58 +406,58 @@ msgstr ""
 "キャッシュしたオリジンサーバーから Traffic Server へのヘッダーの長さ。"
 "( byte 単位 )"
 
-#: ../../admin/event-logging-formats.en.rst:248
+#: ../../admin/event-logging-formats.en.rst:273
 msgid "``csshv``"
 msgstr "``csshv``"
 
-#: ../../admin/event-logging-formats.en.rst:248
+#: ../../admin/event-logging-formats.en.rst:273
 msgid "The cached server response HTTP version (1.0, 1.1, etc.)."
 msgstr "キャッシュしたサーバーレスポンス HTTP バージョン。( 1.0 や 1.1 等 )"
 
-#: ../../admin/event-logging-formats.en.rst:254
+#: ../../admin/event-logging-formats.en.rst:279
 msgid "``csssc``"
 msgstr "``csssc``"
 
-#: ../../admin/event-logging-formats.en.rst:253
+#: ../../admin/event-logging-formats.en.rst:278
 msgid ""
 "The cached HTTP response status code from origin server to Traffic Server."
 msgstr ""
 "キャッシュしたオリジンサーバーから Traffic Server への HTTP レスポンスステー"
 "タスコード。"
 
-#: ../../admin/event-logging-formats.en.rst:259
+#: ../../admin/event-logging-formats.en.rst:284
 msgid "``cwr``"
 msgstr "``cwr``"
 
-#: ../../admin/event-logging-formats.en.rst:259
+#: ../../admin/event-logging-formats.en.rst:284
 msgid ""
 "The cache write result (``-``, ``WL_MISS``, ``INTR```, ``ERR`` or ``FIN``)"
 msgstr ""
 "キャッシュ書き込み結果。( ``-``、 ``WL_MISS``、 ``INTR```、 ``ERR`` または "
 "``FIN`` )"
 
-#: ../../admin/event-logging-formats.en.rst:264
+#: ../../admin/event-logging-formats.en.rst:289
 msgid "``cwtr``"
 msgstr "``cwtr``"
 
-#: ../../admin/event-logging-formats.en.rst:264
+#: ../../admin/event-logging-formats.en.rst:289
 msgid "The cache write transform result"
 msgstr "キャッシュ書き込みトランスフォーム結果。"
 
-#: ../../admin/event-logging-formats.en.rst:269
+#: ../../admin/event-logging-formats.en.rst:294
 msgid "``fsiz``"
 msgstr "``fsiz``"
 
-#: ../../admin/event-logging-formats.en.rst:269
+#: ../../admin/event-logging-formats.en.rst:294
 msgid "The size of the file (*n* bytes) as seen by the origin server."
 msgstr "オリジンサーバーから見えるファイルサイズ。( *n* バイト )"
 
-#: ../../admin/event-logging-formats.en.rst:276
-#: ../../admin/event-logging-formats.en.rst:561
+#: ../../admin/event-logging-formats.en.rst:301
+#: ../../admin/event-logging-formats.en.rst:586
 msgid "``pfsc``"
 msgstr "``pfsc``"
 
-#: ../../admin/event-logging-formats.en.rst:274
+#: ../../admin/event-logging-formats.en.rst:299
 msgid ""
 "The proxy finish status code; specifies whether the Traffic Server request "
 "to the origin server was successfully completed (``FIN``), interrupted "
@@ -467,34 +467,34 @@ msgstr ""
 "エストが正常に完了した (``FIN``) もしくは中断された (``INTR``) かタイムアウ"
 "トした (``TIMEOUT``) かどうか。"
 
-#: ../../admin/event-logging-formats.en.rst:282
+#: ../../admin/event-logging-formats.en.rst:307
 msgid "``phn``"
 msgstr "``phn``"
 
-#: ../../admin/event-logging-formats.en.rst:281
+#: ../../admin/event-logging-formats.en.rst:306
 msgid ""
 "The hostname of the Traffic Server that generated the log entry in collated "
 "log files."
 msgstr ""
 "ログファイルに収集されるログエントリーを生成した Traffic Server のホスト名。"
 
-#: ../../admin/event-logging-formats.en.rst:288
+#: ../../admin/event-logging-formats.en.rst:313
 msgid "``phi``"
 msgstr "``phi``"
 
-#: ../../admin/event-logging-formats.en.rst:287
+#: ../../admin/event-logging-formats.en.rst:312
 msgid ""
 "The IP of the Traffic Server that generated the log entry in collated log "
 "files."
 msgstr ""
 "ログファイルに収集されるログエントリーを生成した Traffic Server の IP。"
 
-#: ../../admin/event-logging-formats.en.rst:294
-#: ../../admin/event-logging-formats.en.rst:559
+#: ../../admin/event-logging-formats.en.rst:319
+#: ../../admin/event-logging-formats.en.rst:584
 msgid "``phr``"
 msgstr "``phr``"
 
-#: ../../admin/event-logging-formats.en.rst:293
+#: ../../admin/event-logging-formats.en.rst:318
 msgid ""
 "The proxy hierarchy route; the route Traffic Server used to retrieve the "
 "object."
@@ -502,12 +502,12 @@ msgstr ""
 "プロキシー階層の経路。Traffic Server がオプジェクトを検索するために使用した"
 "経路。"
 
-#: ../../admin/event-logging-formats.en.rst:315
-#: ../../admin/event-logging-formats.en.rst:553
+#: ../../admin/event-logging-formats.en.rst:340
+#: ../../admin/event-logging-formats.en.rst:578
 msgid "``pqbl``"
 msgstr "``pqbl``"
 
-#: ../../admin/event-logging-formats.en.rst:314
+#: ../../admin/event-logging-formats.en.rst:339
 msgid ""
 "The proxy request transfer length; the body length in Traffic Server's "
 "request to the origin server."
@@ -515,12 +515,12 @@ msgstr ""
 "プロキシーリクエスト転送長。Traffic Server からオリジンサーバーへのリクエス"
 "トのボディの長さ。"
 
-#: ../../admin/event-logging-formats.en.rst:321
-#: ../../admin/event-logging-formats.en.rst:556
+#: ../../admin/event-logging-formats.en.rst:346
+#: ../../admin/event-logging-formats.en.rst:581
 msgid "``pqhl``"
 msgstr "``pqhl``"
 
-#: ../../admin/event-logging-formats.en.rst:320
+#: ../../admin/event-logging-formats.en.rst:345
 msgid ""
 "The proxy request header length; the header length in Traffic Server's "
 "request to the origin server."
@@ -528,11 +528,11 @@ msgstr ""
 "プロキシーリクエストヘッダーの長さ。Traffic Server からオリジンサーバーへの"
 "リクエストのヘッダーの長さ。"
 
-#: ../../admin/event-logging-formats.en.rst:327
+#: ../../admin/event-logging-formats.en.rst:352
 msgid "``pqsi``"
 msgstr "``pqsi``"
 
-#: ../../admin/event-logging-formats.en.rst:326
+#: ../../admin/event-logging-formats.en.rst:351
 msgid ""
 "The proxy request server IP address (0 on cache hits and parent-ip for "
 "requests to parent proxies)."
@@ -540,30 +540,30 @@ msgstr ""
 "プロキシーリクエストサーバー IP アドレス。( キャッシュヒットした場合と親プロ"
 "キシーへのリクエストのペアレント IP は 0 )"
 
-#: ../../admin/event-logging-formats.en.rst:333
+#: ../../admin/event-logging-formats.en.rst:358
 msgid "``pqsn``"
 msgstr "``pqsn``"
 
-#: ../../admin/event-logging-formats.en.rst:332
+#: ../../admin/event-logging-formats.en.rst:357
 msgid ""
 "The proxy request server name; the name of the server that fulfilled the "
 "request."
 msgstr "プロキシーリクエストサーバー名。リクエストを満たしたサーバーの名前。"
 
-#: ../../admin/event-logging-formats.en.rst:338
-#: ../../admin/event-logging-formats.en.rst:549
+#: ../../admin/event-logging-formats.en.rst:363
+#: ../../admin/event-logging-formats.en.rst:574
 msgid "``pscl``"
 msgstr "``pscl``"
 
-#: ../../admin/event-logging-formats.en.rst:338
+#: ../../admin/event-logging-formats.en.rst:363
 msgid "The length of the Traffic Server response to the client (in bytes)."
 msgstr "Traffic Server からクライアントへのレスポンスの長さ。( byte 単位 )"
 
-#: ../../admin/event-logging-formats.en.rst:344
+#: ../../admin/event-logging-formats.en.rst:369
 msgid "``psct``"
 msgstr "``psct``"
 
-#: ../../admin/event-logging-formats.en.rst:343
+#: ../../admin/event-logging-formats.en.rst:368
 msgid ""
 "The content type of the document from server response header: (for example, "
 "``img/gif`` )."
@@ -571,20 +571,20 @@ msgstr ""
 "サーバーレスポンスヘッダーのドキュメントのコンテンツタイプ。( 例えば ``img/"
 "gif`` )"
 
-#: ../../admin/event-logging-formats.en.rst:349
-#: ../../admin/event-logging-formats.en.rst:555
+#: ../../admin/event-logging-formats.en.rst:374
+#: ../../admin/event-logging-formats.en.rst:580
 msgid "``pshl``"
 msgstr "``pshl``"
 
-#: ../../admin/event-logging-formats.en.rst:349
+#: ../../admin/event-logging-formats.en.rst:374
 msgid "The header length in Traffic Server's response to the client."
 msgstr "Traffic Server からクライアントへのレスポンスのヘッダーの長さ。"
 
-#: ../../admin/event-logging-formats.en.rst:355
+#: ../../admin/event-logging-formats.en.rst:380
 msgid "``psql``"
 msgstr "``psql``"
 
-#: ../../admin/event-logging-formats.en.rst:354
+#: ../../admin/event-logging-formats.en.rst:379
 msgid ""
 "The proxy response transfer length in Squid format (includes header and "
 "content length)."
@@ -592,20 +592,20 @@ msgstr ""
 "Squid フォーマットでのプロキシーレスポンス転送長。( ヘッダーとコンテンツの長"
 "さを含む )"
 
-#: ../../admin/event-logging-formats.en.rst:360
-#: ../../admin/event-logging-formats.en.rst:548
+#: ../../admin/event-logging-formats.en.rst:385
+#: ../../admin/event-logging-formats.en.rst:573
 msgid "``pssc``"
 msgstr "``pssc``"
 
-#: ../../admin/event-logging-formats.en.rst:360
+#: ../../admin/event-logging-formats.en.rst:385
 msgid "The HTTP response status code from Traffic Server to the client."
 msgstr "Traffic Server からクライアントへの HTTP レスポンスステータスコード。"
 
-#: ../../admin/event-logging-formats.en.rst:373
+#: ../../admin/event-logging-formats.en.rst:398
 msgid "``shi``"
 msgstr "``shi``"
 
-#: ../../admin/event-logging-formats.en.rst:365
+#: ../../admin/event-logging-formats.en.rst:390
 msgid ""
 "The IP address resolved from the DNS name lookup of the host in the "
 "request. For hosts with multiple IP addresses, this field records the IP "
@@ -615,52 +615,52 @@ msgstr ""
 "数の IP アドレスを持つホストの場合、このフィールドは特定の DNS ルックアップ"
 "により解決された IP アドレスを記録します。"
 
-#: ../../admin/event-logging-formats.en.rst:378
+#: ../../admin/event-logging-formats.en.rst:403
 msgid "``shn``"
 msgstr "``shn``"
 
-#: ../../admin/event-logging-formats.en.rst:378
+#: ../../admin/event-logging-formats.en.rst:403
 msgid "The hostname of the origin server."
 msgstr "オリジンサーバーのホスト名。"
 
-#: ../../admin/event-logging-formats.en.rst:383
-#: ../../admin/event-logging-formats.en.rst:551
+#: ../../admin/event-logging-formats.en.rst:408
+#: ../../admin/event-logging-formats.en.rst:576
 msgid "``sscl``"
 msgstr "``sscl``"
 
-#: ../../admin/event-logging-formats.en.rst:383
+#: ../../admin/event-logging-formats.en.rst:408
 msgid "The response length (in bytes) from origin server to Traffic Server."
 msgstr ""
 "オリジンサーバーから Traffic Server へのレスポンスの長さ。( byte 単位 )"
 
-#: ../../admin/event-logging-formats.en.rst:388
-#: ../../admin/event-logging-formats.en.rst:557
+#: ../../admin/event-logging-formats.en.rst:413
+#: ../../admin/event-logging-formats.en.rst:582
 msgid "``sshl``"
 msgstr "``sshl``"
 
-#: ../../admin/event-logging-formats.en.rst:393
+#: ../../admin/event-logging-formats.en.rst:418
 msgid "``sshv``"
 msgstr "``sshv``"
 
-#: ../../admin/event-logging-formats.en.rst:393
+#: ../../admin/event-logging-formats.en.rst:418
 msgid "The server response HTTP version (1.0, 1.1, etc.)."
 msgstr "サーバーレスポンス HTTP バージョン。( 1.0、1.1 等 )"
 
-#: ../../admin/event-logging-formats.en.rst:398
-#: ../../admin/event-logging-formats.en.rst:550
+#: ../../admin/event-logging-formats.en.rst:423
+#: ../../admin/event-logging-formats.en.rst:575
 msgid "``sssc``"
 msgstr "``sssc``"
 
-#: ../../admin/event-logging-formats.en.rst:398
+#: ../../admin/event-logging-formats.en.rst:423
 msgid "The HTTP response status code from origin server to Traffic Server."
 msgstr ""
 "オリジンサーバーから Traffic Server への HTTP レスポンスステータスコード。"
 
-#: ../../admin/event-logging-formats.en.rst:434
+#: ../../admin/event-logging-formats.en.rst:459
 msgid "``ttms``"
 msgstr "``ttms``"
 
-#: ../../admin/event-logging-formats.en.rst:431
+#: ../../admin/event-logging-formats.en.rst:456
 msgid ""
 "The time Traffic Server spends processing the client request; the number of "
 "milliseconds between the time the client establishes the connection with "
@@ -671,19 +671,19 @@ msgstr ""
 "ントが Traffic Server とコネクションを確立した時間から Traffic Server がクラ"
 "イアントにレスポンスブロックの最後のバイトを送り返した時間までのミリ秒の数。"
 
-#: ../../admin/event-logging-formats.en.rst:439
+#: ../../admin/event-logging-formats.en.rst:464
 msgid "``ttmsh``"
 msgstr "``ttmsh``"
 
-#: ../../admin/event-logging-formats.en.rst:439
+#: ../../admin/event-logging-formats.en.rst:464
 msgid "Same as ``ttms`` but in hexadecimal."
 msgstr "``ttms`` と同様だが 16 進法表記。"
 
-#: ../../admin/event-logging-formats.en.rst:452
+#: ../../admin/event-logging-formats.en.rst:477
 msgid "``ttmsf``"
 msgstr "``ttmsf``"
 
-#: ../../admin/event-logging-formats.en.rst:444
+#: ../../admin/event-logging-formats.en.rst:469
 msgid ""
 "The time Traffic Server spends processing the client request as a "
 "fractional number of seconds. Time is specified in millisecond resolution; "
@@ -696,7 +696,7 @@ msgstr ""
 "てフォーマットして出力する代わりに、秒単位の少数精度の浮動小数点数でフォー"
 "マットして表示します。"
 
-#: ../../admin/event-logging-formats.en.rst:450
+#: ../../admin/event-logging-formats.en.rst:475
 msgid ""
 "For example: if the time is 1500 milliseconds, then this field displays 1.5 "
 "while the ``ttms`` field displays 1500 and the ``tts`` field displays 1."
@@ -704,12 +704,12 @@ msgstr ""
 "例: 時間が 1500 ミリ秒の場合、このフィールドは 1.5 と表示します。一方 "
 "``ttms`` フィールドは 1500 、 ``tts`` は 1 と表示します。"
 
-#: ../../admin/event-logging-formats.en.rst:460
-#: ../../admin/event-logging-formats.en.rst:558
+#: ../../admin/event-logging-formats.en.rst:485
+#: ../../admin/event-logging-formats.en.rst:583
 msgid "``tts``"
 msgstr "``tts``"
 
-#: ../../admin/event-logging-formats.en.rst:457
+#: ../../admin/event-logging-formats.en.rst:482
 msgid ""
 "The time Traffic Server spends processing the client request; the number of "
 "seconds between the time at which the client establishes the connection "
@@ -720,11 +720,11 @@ msgstr ""
 "ントが Traffic Server とコネクションを確立した時間から、Traffic Server がク"
 "ライアントにレスポンスの最後の byte を返した時間の間の秒数。"
 
-#: ../../admin/event-logging-formats.en.rst:465
+#: ../../admin/event-logging-formats.en.rst:490
 msgid "Logging Format Cross-Reference"
 msgstr "ログフォーマットクロスリファレンス"
 
-#: ../../admin/event-logging-formats.en.rst:467
+#: ../../admin/event-logging-formats.en.rst:492
 msgid ""
 "The following sections illustrate the correspondence between Traffic Server "
 "logging fields and standard logging fields for the Squid and Netscape "
@@ -733,33 +733,33 @@ msgstr ""
 "次の章では Traffic Server のロギングフィールドと Squid と Netdcape フォー"
 "マットの標準ロギングフィールドの対応を解説します。"
 
-#: ../../admin/event-logging-formats.en.rst:472
+#: ../../admin/event-logging-formats.en.rst:497
 msgid "Squid Logging Formats"
 msgstr "Squid ロギングフォーマット"
 
-#: ../../admin/event-logging-formats.en.rst:474
+#: ../../admin/event-logging-formats.en.rst:499
 msgid ""
 "The following is a list of the Squid logging fields and the corresponding "
 "logging field symbols."
 msgstr ""
 "下記は Squid ロギングフィールドと対応するロギングフィールド記号の表です。"
 
-#: ../../admin/event-logging-formats.en.rst:478
+#: ../../admin/event-logging-formats.en.rst:503
 msgid "Squid"
 msgstr "Squid"
 
-#: ../../admin/event-logging-formats.en.rst:478
-#: ../../admin/event-logging-formats.en.rst:499
-#: ../../admin/event-logging-formats.en.rst:516
-#: ../../admin/event-logging-formats.en.rst:542
+#: ../../admin/event-logging-formats.en.rst:503
+#: ../../admin/event-logging-formats.en.rst:524
+#: ../../admin/event-logging-formats.en.rst:541
+#: ../../admin/event-logging-formats.en.rst:567
 msgid "Field Symbols"
 msgstr "フィールド記号"
 
-#: ../../admin/event-logging-formats.en.rst:493
+#: ../../admin/event-logging-formats.en.rst:518
 msgid "Netscape Common Logging Formats"
 msgstr "Netscape Common ロギングフォーマット"
 
-#: ../../admin/event-logging-formats.en.rst:495
+#: ../../admin/event-logging-formats.en.rst:520
 msgid ""
 "The following is a list of the Netscape Common logging fields and the "
 "corresponding Traffic Server logging field symbols."
@@ -767,47 +767,47 @@ msgstr ""
 "下記は Netscape Common ロギングフィールドと対応する Traffic Server ロギング"
 "フィールド記号の表です。"
 
-#: ../../admin/event-logging-formats.en.rst:499
+#: ../../admin/event-logging-formats.en.rst:524
 msgid "Netscape Common"
 msgstr "Netscape Common"
 
-#: ../../admin/event-logging-formats.en.rst:544
+#: ../../admin/event-logging-formats.en.rst:569
 msgid "``host``"
 msgstr "``host``"
 
-#: ../../admin/event-logging-formats.en.rst:545
+#: ../../admin/event-logging-formats.en.rst:570
 msgid "``usr``"
 msgstr "``usr``"
 
-#: ../../admin/event-logging-formats.en.rst:546
+#: ../../admin/event-logging-formats.en.rst:571
 msgid "``[time]``"
 msgstr "``[time]``"
 
-#: ../../admin/event-logging-formats.en.rst:546
+#: ../../admin/event-logging-formats.en.rst:571
 msgid "``[cqtn]``"
 msgstr "``[cqtn]``"
 
-#: ../../admin/event-logging-formats.en.rst:547
+#: ../../admin/event-logging-formats.en.rst:572
 msgid "``\"req\"``"
 msgstr "``\"req\"``"
 
-#: ../../admin/event-logging-formats.en.rst:547
+#: ../../admin/event-logging-formats.en.rst:572
 msgid "``\"cqtx\"``"
 msgstr "``\"cqtx\"``"
 
-#: ../../admin/event-logging-formats.en.rst:548
+#: ../../admin/event-logging-formats.en.rst:573
 msgid "``s1``"
 msgstr "``s1``"
 
-#: ../../admin/event-logging-formats.en.rst:549
+#: ../../admin/event-logging-formats.en.rst:574
 msgid "``c1``"
 msgstr "``c1``"
 
-#: ../../admin/event-logging-formats.en.rst:510
+#: ../../admin/event-logging-formats.en.rst:535
 msgid "Netscape Extended Logging Formats"
 msgstr "Netscape Extended ロギングフォーマット"
 
-#: ../../admin/event-logging-formats.en.rst:512
+#: ../../admin/event-logging-formats.en.rst:537
 msgid ""
 "The following table lists the Netscape Extended logging fields and the "
 "corresponding Traffic Server logging field symbols."
@@ -815,51 +815,51 @@ msgstr ""
 "下記は Netscape Extended ロギングフォーマットフィールドと対応する Traffic "
 "Server ロギングフィールド記号の表です。"
 
-#: ../../admin/event-logging-formats.en.rst:516
+#: ../../admin/event-logging-formats.en.rst:541
 msgid "Netscape Extended"
 msgstr "Netscape Extended"
 
-#: ../../admin/event-logging-formats.en.rst:550
+#: ../../admin/event-logging-formats.en.rst:575
 msgid "``s2``"
 msgstr "``s2``"
 
-#: ../../admin/event-logging-formats.en.rst:551
+#: ../../admin/event-logging-formats.en.rst:576
 msgid "``c2``"
 msgstr "``c2``"
 
-#: ../../admin/event-logging-formats.en.rst:552
+#: ../../admin/event-logging-formats.en.rst:577
 msgid "``b1``"
 msgstr "``b1``"
 
-#: ../../admin/event-logging-formats.en.rst:553
+#: ../../admin/event-logging-formats.en.rst:578
 msgid "``b2``"
 msgstr "``b2``"
 
-#: ../../admin/event-logging-formats.en.rst:554
+#: ../../admin/event-logging-formats.en.rst:579
 msgid "``h1``"
 msgstr "``h1``"
 
-#: ../../admin/event-logging-formats.en.rst:555
+#: ../../admin/event-logging-formats.en.rst:580
 msgid "``h2``"
 msgstr "``h2``"
 
-#: ../../admin/event-logging-formats.en.rst:556
+#: ../../admin/event-logging-formats.en.rst:581
 msgid "``h3``"
 msgstr "``h3``"
 
-#: ../../admin/event-logging-formats.en.rst:557
+#: ../../admin/event-logging-formats.en.rst:582
 msgid "``h4``"
 msgstr "``h4``"
 
-#: ../../admin/event-logging-formats.en.rst:558
+#: ../../admin/event-logging-formats.en.rst:583
 msgid "``xt``"
 msgstr "``xt``"
 
-#: ../../admin/event-logging-formats.en.rst:536
+#: ../../admin/event-logging-formats.en.rst:561
 msgid "Netscape Extended-2 Logging Formats"
 msgstr "Netscape Extended-2 ロギングフォーマット"
 
-#: ../../admin/event-logging-formats.en.rst:538
+#: ../../admin/event-logging-formats.en.rst:563
 msgid ""
 "The following is a list of the Netscape Extended-2 logging fields and the "
 "corresponding Traffic Server logging field symbols."
@@ -867,79 +867,67 @@ msgstr ""
 "下記は Netscape Extended-2 ロギングフィールドと対応する Traffic Server ロギ"
 "ングフィールド記号の表です。"
 
-#: ../../admin/event-logging-formats.en.rst:542
+#: ../../admin/event-logging-formats.en.rst:567
 msgid "Netscape Extended-2"
 msgstr "Netscape Extended-2"
 
-#: ../../admin/event-logging-formats.en.rst:559
+#: ../../admin/event-logging-formats.en.rst:584
 msgid "``route``"
 msgstr "``route``"
 
-#: ../../admin/event-logging-formats.en.rst:560
+#: ../../admin/event-logging-formats.en.rst:585
 msgid "``pfs``"
 msgstr "``pfs``"
 
-#: ../../admin/event-logging-formats.en.rst:561
+#: ../../admin/event-logging-formats.en.rst:586
 msgid "``ss``"
 msgstr "``ss``"
 
-#: ../../admin/event-logging-formats.en.rst:93
+#: ../../admin/event-logging-formats.en.rst:115
 msgid "``chp``"
 msgstr "``chp``"
 
-#: ../../admin/event-logging-formats.en.rst:93
+#: ../../admin/event-logging-formats.en.rst:115
 msgid "The port number of the client's host machine."
 msgstr "クライアントのホストマシンのポート番号。"
 
-#: ../../admin/event-logging-formats.en.rst:99
-msgid "``cps``"
-msgstr "``cps``"
-
-#: ../../admin/event-logging-formats.en.rst:98
-msgid ""
-"Client Protocol Stack, the output would be the conjunction of protocol "
-"names in the stack spliced with '+', such as \"TLS+SPDY\"."
-msgstr ""
-"クライアントのプロトコルスタック。出力はスタックのプロトコル名 '+' でつなぎ"
-"合わせたもので、\"TLS+SPDY\" のようになります。"
-
-#: ../../admin/event-logging-formats.en.rst:164
-#: ../../admin/event-logging-formats.en.rst:174
+#: ../../admin/event-logging-formats.en.rst:180
+#: ../../admin/event-logging-formats.en.rst:190
 msgid ""
 "In reverse proxy mode, Traffic Server logs the rewritten/mapped URL "
 "(according to the rules in :file:`remap.config`), _not_ the pristine/"
 "unmapped URL."
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:299
+#: ../../admin/event-logging-formats.en.rst:324
 msgid "``php``"
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:299
+#: ../../admin/event-logging-formats.en.rst:324
 msgid "The TCP port number that Traffic Server served this request from."
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:304
+#: ../../admin/event-logging-formats.en.rst:329
 msgid "``piid``"
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:304
+#: ../../admin/event-logging-formats.en.rst:329
 msgid ""
 "The plugin ID for the transaction. This is set for plugin driven "
 "transactions via :c:func:`TSHttpConnectWithPluginId`."
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:309
+#: ../../admin/event-logging-formats.en.rst:334
 msgid "``pitag``"
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:309
+#: ../../admin/event-logging-formats.en.rst:334
 msgid ""
 "The plugin tag for the transaction. This is set for plugin driven "
 "transactions via :c:func:`TSHttpConnectWithPluginId`."
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:369
+#: ../../admin/event-logging-formats.en.rst:394
 msgid ""
 "This can be misleading for cached documents. For example: if the first "
 "request was a cache miss and came from *IP1* for server *S* and the second "
@@ -947,261 +935,383 @@ msgid ""
 "log entry for the second request will show *IP2*."
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:388
+#: ../../admin/event-logging-formats.en.rst:413
 msgid ""
 "The header length (in bytes) in the origin server response to Traffic "
 "Server."
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:405
+#: ../../admin/event-logging-formats.en.rst:430
 msgid "``stms``"
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:403
+#: ../../admin/event-logging-formats.en.rst:428
 msgid ""
 "The time spent accessing the origin (in milliseconds); the time is measured "
 "from the time the connection with the origin is established to the time the "
 "connection is closed."
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:410
+#: ../../admin/event-logging-formats.en.rst:435
 msgid "``stmsh``"
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:410
+#: ../../admin/event-logging-formats.en.rst:435
 msgid "Same as ``stms`` but in hexadecimal."
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:421
+#: ../../admin/event-logging-formats.en.rst:446
 msgid "``stmsf``"
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:415
+#: ../../admin/event-logging-formats.en.rst:440
 msgid ""
 "The time Traffic Server spends accessing the origin as a fractional number "
 "of seconds. That is, the time is formated as a floating-point number, "
 "instead of an integer as in ``stms``."
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:419
+#: ../../admin/event-logging-formats.en.rst:444
 msgid ""
 "For example: if the time is 1500 milliseconds, then this field displays 1.5 "
 "while the ``stms`` field displays 1500 and the ``sts`` field displays 1."
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:426
+#: ../../admin/event-logging-formats.en.rst:451
 msgid "``sts``"
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:426
+#: ../../admin/event-logging-formats.en.rst:451
 msgid "The time Traffic Server spends accessing the origin, in seconds."
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:480
+#: ../../admin/event-logging-formats.en.rst:505
 msgid "time"
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:480
+#: ../../admin/event-logging-formats.en.rst:505
 msgid "`cqts`_"
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:481
+#: ../../admin/event-logging-formats.en.rst:506
 msgid "elapsed"
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:481
+#: ../../admin/event-logging-formats.en.rst:506
 msgid "`ttms`_"
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:482
+#: ../../admin/event-logging-formats.en.rst:507
 msgid "client"
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:482
-#: ../../admin/event-logging-formats.en.rst:501
-#: ../../admin/event-logging-formats.en.rst:518
+#: ../../admin/event-logging-formats.en.rst:507
+#: ../../admin/event-logging-formats.en.rst:526
+#: ../../admin/event-logging-formats.en.rst:543
 msgid "`chi`_"
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:483
+#: ../../admin/event-logging-formats.en.rst:508
 msgid "action/code"
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:483
+#: ../../admin/event-logging-formats.en.rst:508
 msgid "`crc`_/`pssc`_"
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:484
+#: ../../admin/event-logging-formats.en.rst:509
 msgid "size"
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:484
+#: ../../admin/event-logging-formats.en.rst:509
 msgid "`psql`_"
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:485
+#: ../../admin/event-logging-formats.en.rst:510
 msgid "method"
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:485
+#: ../../admin/event-logging-formats.en.rst:510
 msgid "`cqhm`_"
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:486
+#: ../../admin/event-logging-formats.en.rst:511
 msgid "url"
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:486
+#: ../../admin/event-logging-formats.en.rst:511
 msgid "`cquc`_"
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:487
+#: ../../admin/event-logging-formats.en.rst:512
 msgid "ident"
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:487
-#: ../../admin/event-logging-formats.en.rst:502
-#: ../../admin/event-logging-formats.en.rst:519
+#: ../../admin/event-logging-formats.en.rst:512
+#: ../../admin/event-logging-formats.en.rst:527
+#: ../../admin/event-logging-formats.en.rst:544
 msgid "`caun`_"
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:488
+#: ../../admin/event-logging-formats.en.rst:513
 msgid "hierarchy/from"
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:488
+#: ../../admin/event-logging-formats.en.rst:513
 msgid "`phr`_/`pqsn`_"
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:489
+#: ../../admin/event-logging-formats.en.rst:514
 msgid "content"
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:489
+#: ../../admin/event-logging-formats.en.rst:514
 msgid "`psct`_"
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:501
-#: ../../admin/event-logging-formats.en.rst:518
+#: ../../admin/event-logging-formats.en.rst:526
+#: ../../admin/event-logging-formats.en.rst:543
 msgid "host"
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:502
-#: ../../admin/event-logging-formats.en.rst:519
+#: ../../admin/event-logging-formats.en.rst:527
+#: ../../admin/event-logging-formats.en.rst:544
 msgid "usr"
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:503
-#: ../../admin/event-logging-formats.en.rst:520
+#: ../../admin/event-logging-formats.en.rst:528
+#: ../../admin/event-logging-formats.en.rst:545
 msgid "[time]"
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:503
-#: ../../admin/event-logging-formats.en.rst:520
+#: ../../admin/event-logging-formats.en.rst:528
+#: ../../admin/event-logging-formats.en.rst:545
 msgid "[`cqtn`_]"
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:504
-#: ../../admin/event-logging-formats.en.rst:521
+#: ../../admin/event-logging-formats.en.rst:529
+#: ../../admin/event-logging-formats.en.rst:546
 msgid "\"req\""
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:504
-#: ../../admin/event-logging-formats.en.rst:521
+#: ../../admin/event-logging-formats.en.rst:529
+#: ../../admin/event-logging-formats.en.rst:546
 msgid "\"`cqtx`_\""
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:505
-#: ../../admin/event-logging-formats.en.rst:522
+#: ../../admin/event-logging-formats.en.rst:530
+#: ../../admin/event-logging-formats.en.rst:547
 msgid "s1"
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:505
-#: ../../admin/event-logging-formats.en.rst:522
+#: ../../admin/event-logging-formats.en.rst:530
+#: ../../admin/event-logging-formats.en.rst:547
 msgid "`pssc`_"
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:506
-#: ../../admin/event-logging-formats.en.rst:523
+#: ../../admin/event-logging-formats.en.rst:531
+#: ../../admin/event-logging-formats.en.rst:548
 msgid "c1"
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:506
-#: ../../admin/event-logging-formats.en.rst:523
+#: ../../admin/event-logging-formats.en.rst:531
+#: ../../admin/event-logging-formats.en.rst:548
 msgid "`pscl`_"
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:524
+#: ../../admin/event-logging-formats.en.rst:549
 msgid "s2"
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:524
+#: ../../admin/event-logging-formats.en.rst:549
 msgid "`sssc`_"
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:525
+#: ../../admin/event-logging-formats.en.rst:550
 msgid "c2"
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:525
+#: ../../admin/event-logging-formats.en.rst:550
 msgid "`sscl`_"
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:526
+#: ../../admin/event-logging-formats.en.rst:551
 msgid "b1"
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:526
+#: ../../admin/event-logging-formats.en.rst:551
 msgid "`cqbl`_"
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:527
+#: ../../admin/event-logging-formats.en.rst:552
 msgid "b2"
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:527
+#: ../../admin/event-logging-formats.en.rst:552
 msgid "`pqbl`_"
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:528
+#: ../../admin/event-logging-formats.en.rst:553
 msgid "h1"
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:528
+#: ../../admin/event-logging-formats.en.rst:553
 msgid "`cqhl`_"
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:529
+#: ../../admin/event-logging-formats.en.rst:554
 msgid "h2"
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:529
+#: ../../admin/event-logging-formats.en.rst:554
 msgid "`pshl`_"
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:530
+#: ../../admin/event-logging-formats.en.rst:555
 msgid "h3"
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:530
+#: ../../admin/event-logging-formats.en.rst:555
 msgid "`pqhl`_"
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:531
+#: ../../admin/event-logging-formats.en.rst:556
 msgid "h4"
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:531
+#: ../../admin/event-logging-formats.en.rst:556
 msgid "`sshl`_"
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:532
+#: ../../admin/event-logging-formats.en.rst:557
 msgid "xt"
 msgstr ""
 
-#: ../../admin/event-logging-formats.en.rst:532
+#: ../../admin/event-logging-formats.en.rst:557
 msgid "`tts`_"
 msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:47
+msgid "ecqh is the urlencoded version of this map"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:57
+msgid "epqh is the urlencoded version of this map"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:67
+msgid "epsh is the urlencoded version of this map"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:77
+msgid "essh is the urlencoded version of this map"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:87
+msgid "``{HTTP header field name}cssh``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:82
+msgid ""
+"Logs the information in the requested field of the cached server response "
+"HTTP header. For example, ``%<{Age}cssh>`` logs the ``Age:`` field in the "
+"cached server response headers."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:87
+msgid "ecssh is the urlencoded version of this map"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:256
+msgid "``chm``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:252
+msgid ""
+"The cache hit-miss status, specifying which level of the cache this was "
+"served out of. This is useful for example to show whether it was a RAM "
+"cache vs disk cache hit. Future versions of the cache will support more "
+"levels, but right now it only supports RAM (``HIT_RAM``) vs rotational disk "
+"(``HIT_DISK``)."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:593
+msgid "Log Field Slicing"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:595
+msgid ""
+"It is sometimes desirable to slice a log field to limit the length of a "
+"given log field's output."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:598
+msgid "Log Field slicing can be specified as below:"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:600
+msgid "``%<field[start:end]>`` ``%<{field}container[start:end]>``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:603
+msgid "Omitting the slice notation defaults to the entire log field."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:605
+msgid ""
+"Slice notation only applies to a log field that is of type string and can "
+"not be applied to ip/timestamp which are converted to string from integer."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:609
+msgid "The below slice specifiers are allowed."
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:611
+msgid "``[start:end]``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:612
+msgid "Log field value from start through end-1"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:613
+msgid "``[start:]``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:614
+msgid "Log field value from start through the rest of the string"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:615
+msgid "``[:end]``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:616
+msgid "Log field value from the beginning through end-1"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:618
+msgid "``[:]``"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:618
+msgid "Default - entire Log field"
+msgstr ""
+
+#: ../../admin/event-logging-formats.en.rst:620
+msgid "Some examples below ::"
+msgstr ""
+
+#~ msgid "``cps``"
+#~ msgstr "``cps``"
+
+#~ msgid ""
+#~ "Client Protocol Stack, the output would be the conjunction of protocol "
+#~ "names in the stack spliced with '+', such as \"TLS+SPDY\"."
+#~ msgstr ""
+#~ "クライアントのプロトコルスタック。出力はスタックのプロトコル名 '+' でつな"
+#~ "ぎ合わせたもので、\"TLS+SPDY\" のようになります。"
 
 #~ msgid ""
 #~ "In reverse proxy mode, Traffic Server logs the rewritten/mapped URL "

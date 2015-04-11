@@ -15,14 +15,6 @@ msgstr ""
 msgid "Epic Plugin"
 msgstr ""
 
-#: ../../reference/plugins/epic.en.rst:23
-msgid ""
-"The `Epic` plugin emits Traffic Server metrics in a format that is consumed "
-"tby the `Epic Network Monitoring System <https://code.google.com/p/epicnms/"
-">`.  It is a global plugin that is installed by adding it to the :file:"
-"`plugin.config` file."
-msgstr ""
-
 #: ../../reference/plugins/epic.en.rst:29
 msgid "Plugin Options"
 msgstr ""
@@ -49,4 +41,12 @@ msgid ""
 "so it is not possible to programmatically determine whether a metrics can "
 "be rate converted. The plugin contains a static list of metrics that should "
 "not be rate converted (gauges in Epic terminilogy)."
+msgstr ""
+
+#: ../../reference/plugins/epic.en.rst:23
+msgid ""
+"The `Epic` plugin emits Traffic Server metrics in a format that is consumed "
+"by the `Epic Network Monitoring System <https://code.google.com/p/epicnms/"
+">`_.  It is a global plugin that is installed by adding it to the :file:"
+"`plugin.config` file."
 msgstr ""

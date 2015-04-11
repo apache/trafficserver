@@ -279,23 +279,11 @@ msgstr "Administration Tools"
 msgid "Traffic Server offers the following administration options:"
 msgstr "Traffic Server は次の管理オプションを提供しています。"
 
-#: ../../admin/index.en.rst:258
-msgid ""
-"Various configuration files enable you to configure Traffic Server through "
-"a simple file-editing and signal-handling interface. Any changes you make "
-"through Traffic Line or Traffic Shell are automatically made to the "
-"configuration files as well."
-msgstr ""
-"様々な設定ファイルはシンプルなファイル編集とシグナルハンドリングインター"
-"フェースを通して、Traffic Server を設定することを可能とします。Traffic Line "
-"か Traffic Shell を通じたどのような変更でも自動的に設定ファイルに書き込まれ"
-"ます。"
-
-#: ../../admin/index.en.rst:268
+#: ../../admin/index.en.rst:264
 msgid "Traffic Analysis Options"
 msgstr "Traffic Analysis Options"
 
-#: ../../admin/index.en.rst:270
+#: ../../admin/index.en.rst:266
 msgid ""
 "Traffic Server provides several options for network traffic analysis and "
 "monitoring:"
@@ -303,15 +291,7 @@ msgstr ""
 "Traffic Server はネットワークトラフィックの分析と監視のためのいくつかのオプ"
 "ションを提供しています。"
 
-#: ../../admin/index.en.rst:273
-msgid ""
-"Traffic Line and Traffic Shell enable you to collect and process statistics "
-"obtained from network traffic information."
-msgstr ""
-"Traffic Line と Traffic Shell はネットワークトラフィック情報から入手した統計"
-"情報を集めて処理することを可能にします。"
-
-#: ../../admin/index.en.rst:285
+#: ../../admin/index.en.rst:281
 msgid ""
 "Traffic Server supports several standard log file formats, such as Squid "
 "and Netscape, and its own custom format. You can analyze the standard "
@@ -325,7 +305,7 @@ msgstr ""
 "けるために、特定のプロトコルやホストの情報を含むようにログファイルを分割する"
 "ことができます。"
 
-#: ../../admin/index.en.rst:291
+#: ../../admin/index.en.rst:287
 msgid ""
 "Traffic analysis options are described in more detail in :ref:`monitoring-"
 "traffic`."
@@ -333,7 +313,7 @@ msgstr ""
 "トラフィック分析オプションは :ref:`monitoring-traffic` により詳しく書かれて"
 "います。"
 
-#: ../../admin/index.en.rst:293
+#: ../../admin/index.en.rst:289
 msgid ""
 "Traffic Server logging options are described in :ref:`working-with-log-"
 "files`."
@@ -341,11 +321,11 @@ msgstr ""
 "Traffic Server ロギングオプションは :ref:`working-with-log-files` に書かれて"
 "います。"
 
-#: ../../admin/index.en.rst:296
+#: ../../admin/index.en.rst:292
 msgid "Traffic Server Security Options"
 msgstr "Traffic Server Security Options"
 
-#: ../../admin/index.en.rst:298
+#: ../../admin/index.en.rst:294
 msgid ""
 "Traffic Server provides numerous options that enable you to establish "
 "secure communication between the Traffic Server system and other computers "
@@ -355,11 +335,11 @@ msgstr ""
 "セキュアな通信を確立することを可能にする多数のオプションを提供しています。セ"
 "キュリティオプションを使うことによって、次のことが可能です。"
 
-#: ../../admin/index.en.rst:303
+#: ../../admin/index.en.rst:299
 msgid "Control client access to the Traffic Server proxy cache."
 msgstr "Traffic Server プロキシーキャッシュにアクセスするクライアントの管理"
 
-#: ../../admin/index.en.rst:305
+#: ../../admin/index.en.rst:301
 msgid ""
 "Configure Traffic Server to use multiple DNS servers to match your site's "
 "security configuration. For example, Traffic Server can use different DNS "
@@ -374,7 +354,7 @@ msgstr ""
 "とができます。これは透過的にインターネット上の外部サイトにアクセスすることを"
 "提供しつつ、インターナルネットワーク設定をセキュアに保つことを可能にします。"
 
-#: ../../admin/index.en.rst:312
+#: ../../admin/index.en.rst:308
 msgid ""
 "Configure Traffic Server to verify that clients are authenticated before "
 "they can access content from the Traffic Server cache."
@@ -382,7 +362,7 @@ msgstr ""
 "クライアントが Traffic Server キャッシュからコンテンツにアクセスできるように"
 "なる前に、クライアントが認証されていることを検証する Traffic Server 設定"
 
-#: ../../admin/index.en.rst:315
+#: ../../admin/index.en.rst:311
 msgid ""
 "Secure connections in reverse proxy mode between a client and Traffic "
 "Server, and Traffic Server and the origin server, using the SSL termination "
@@ -392,11 +372,11 @@ msgstr ""
 "クライアントと Traffic Server 間と Traffic Server とオリジンサーバー間の安全"
 "な接続"
 
-#: ../../admin/index.en.rst:319
+#: ../../admin/index.en.rst:315
 msgid "Control access via SSL (Secure Sockets Layer)."
 msgstr "SSL (Secure Socket Layer) によるアクセスの管理"
 
-#: ../../admin/index.en.rst:321
+#: ../../admin/index.en.rst:317
 msgid ""
 "Traffic Server security options are described in more detail in :ref:"
 "`security-options`."
@@ -404,7 +384,7 @@ msgstr ""
 "Traffic Server セキュリティオプションは :ref:`security-options` に詳しく述べ"
 "られています。"
 
-#: ../../admin/index.en.rst:325
+#: ../../admin/index.en.rst:321
 msgid "Tuning Traffic Server"
 msgstr "Traffic Server のチューニング"
 
@@ -597,17 +577,7 @@ msgstr ""
 "設定することもできます。Traffic Line によって独立したコマンドや一連のコマン"
 "ドのスクリプトをシェルで実行することができます。"
 
-#: ../../admin/index.en.rst:254
-msgid ""
-"The Traffic Shell (:program:`traffic_shell`) command-line interface is an "
-"additional command-line tool that enables you to execute individual "
-"commands that monitor and configure the Traffic Server system."
-msgstr ""
-"Traffic Shell (:program:`traffic_shell`) コマンドラインインターフェイスは追"
-"加のコマンドラインツールで、Traffic Server システムを監視したり設定したりす"
-"る独立したコマンドを実行することができます。"
-
-#: ../../admin/index.en.rst:263
+#: ../../admin/index.en.rst:259
 msgid ""
 "Finally, there is a clean C API which can be put to good use from a "
 "multitude of languages. The Traffic Server Admin Client demonstrates this "
@@ -616,7 +586,7 @@ msgstr ""
 "最後に、多くの言語から使うことのできるクリーンな C API があります。 Traffic "
 "Server Admin Client は Perl でこのことを示しています。"
 
-#: ../../admin/index.en.rst:276
+#: ../../admin/index.en.rst:272
 msgid ""
 "Transaction logging enables you to record information (in a log file) about "
 "every request Traffic Server receives and every error it detects. By "
@@ -636,7 +606,7 @@ msgstr ""
 "えば Traffic Server が再起動したときや、クラスターコミュニケーションがタイム"
 "アウトしたときなどです。"
 
-#: ../../admin/index.en.rst:327
+#: ../../admin/index.en.rst:323
 msgid ""
 "Finally, this last chapter on :ref:`performance-tuning` discusses the vast "
 "number of options that allow administrators to optimally tune Apache "
@@ -645,3 +615,44 @@ msgstr ""
 "最後に、この最終章 :ref:`performance-tuning` では管理者が Apache Traffic "
 "Server を最大限のパフォーマンスを発揮するように最適なチューニングをするため"
 "の膨大な数のオプションについて論じます。"
+
+#: ../../admin/index.en.rst:254
+msgid ""
+"Various configuration files enable you to configure Traffic Server through "
+"a simple file-editing and signal-handling interface. Any changes you make "
+"through Traffic Line is automatically made to the configuration files as "
+"well."
+msgstr ""
+
+#: ../../admin/index.en.rst:269
+msgid ""
+"Traffic Line enables you to collect and process statistics obtained from "
+"network traffic information."
+msgstr ""
+
+#~ msgid ""
+#~ "Various configuration files enable you to configure Traffic Server "
+#~ "through a simple file-editing and signal-handling interface. Any changes "
+#~ "you make through Traffic Line or Traffic Shell are automatically made to "
+#~ "the configuration files as well."
+#~ msgstr ""
+#~ "様々な設定ファイルはシンプルなファイル編集とシグナルハンドリングインター"
+#~ "フェースを通して、Traffic Server を設定することを可能とします。Traffic "
+#~ "Line か Traffic Shell を通じたどのような変更でも自動的に設定ファイルに書"
+#~ "き込まれます。"
+
+#~ msgid ""
+#~ "Traffic Line and Traffic Shell enable you to collect and process "
+#~ "statistics obtained from network traffic information."
+#~ msgstr ""
+#~ "Traffic Line と Traffic Shell はネットワークトラフィック情報から入手した"
+#~ "統計情報を集めて処理することを可能にします。"
+
+#~ msgid ""
+#~ "The Traffic Shell (:program:`traffic_shell`) command-line interface is "
+#~ "an additional command-line tool that enables you to execute individual "
+#~ "commands that monitor and configure the Traffic Server system."
+#~ msgstr ""
+#~ "Traffic Shell (:program:`traffic_shell`) コマンドラインインターフェイスは"
+#~ "追加のコマンドラインツールで、Traffic Server システムを監視したり設定した"
+#~ "りする独立したコマンドを実行することができます。"

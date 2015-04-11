@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -189,15 +188,6 @@ msgstr ":ts:cv:`proxy.config.reverse_proxy.enabled` ``1``"
 msgid ":ts:cv:`proxy.config.url_remap.remap_required` ``0``"
 msgstr ":ts:cv:`proxy.config.url_remap.remap_required` ``0``"
 
-#: ../../admin/transparent-proxy/bridge.en.rst:134
-msgid ""
-"You may also need to set :ts:cv:`proxy.config.cluster.ethernet_interface` "
-"to \"br0\" (the name of the bridge interface from the `<Bridge Commands>`_)."
-msgstr ""
-":ts:cv:`proxy.config.cluster.ethernet_interface` を \"br0\" に設定する必要も"
-"あります。( ブリッジインターフェースの名前は `<Bridge Commands>`_ からとって"
-"ください。)"
-
 #: ../../admin/transparent-proxy/bridge.en.rst:138
 msgid "Additional troubleshooting"
 msgstr "追加のトラブルシューティング"
@@ -296,3 +286,18 @@ msgstr ""
 msgid ""
 "This can setting can be persisted by putting it in ``/etc/sysctl.conf``: ::"
 msgstr "この設定は ``/etc/sysctl.conf`` に書くことで恒久的にできます。"
+
+#: ../../admin/transparent-proxy/bridge.en.rst:134
+msgid ""
+"You may also need to set :ts:cv:`proxy.config.cluster.ethernet_interface` "
+"to \"br0\" (the name of the bridge interface from the Bridge Commands)."
+msgstr ""
+
+#~ msgid ""
+#~ "You may also need to set :ts:cv:`proxy.config.cluster."
+#~ "ethernet_interface` to \"br0\" (the name of the bridge interface from "
+#~ "the `<Bridge Commands>`_)."
+#~ msgstr ""
+#~ ":ts:cv:`proxy.config.cluster.ethernet_interface` を \"br0\" に設定する必"
+#~ "要もあります。( ブリッジインターフェースの名前は `<Bridge Commands>`_ か"
+#~ "らとってください。)"

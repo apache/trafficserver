@@ -575,19 +575,5 @@ msgstr ""
 #: ../../reference/configuration/logs_xml.config.en.rst:344
 msgid ""
 "The following is an example of a ``LogFilter`` that will cause the value of "
-"passwd field be wiped in cquc"
-msgstr ""
-
-#: ../../reference/configuration/logs_xml.config.en.rst:349
-msgid "<LogFilter>"
-msgstr ""
-
-#: ../../reference/configuration/logs_xml.config.en.rst:348
-msgid ""
-"<Name = \"wipe_password\"/> <Condition = \"cquc CONTAIN passwd\"/> <Action "
-"= \"WIPE_FIELD_VALUE\"/>"
-msgstr ""
-
-#: ../../reference/configuration/logs_xml.config.en.rst:351
-msgid "</LogFilter>"
+"passwd field be wiped in ``cquc`` ::"
 msgstr ""

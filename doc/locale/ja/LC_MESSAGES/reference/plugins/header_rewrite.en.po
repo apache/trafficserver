@@ -51,55 +51,47 @@ msgid ""
 "is to use per remap rules in remap.config::"
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:40
-msgid ""
-"In the second example, hooks which are not to be executed during the remap "
-"phase (the default) causes a transaction hook to be instantiated and used "
-"at a later time. This allows you to setup e.g. a rule that gets executed "
-"during the origin response header parsing, using READ_RESPONSE_HDR_HOOK."
-msgstr ""
-
-#: ../../reference/plugins/header_rewrite.en.rst:50
+#: ../../reference/plugins/header_rewrite.en.rst:55
 msgid "Operators"
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:52
+#: ../../reference/plugins/header_rewrite.en.rst:57
 msgid "The following operators are available::"
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:68
+#: ../../reference/plugins/header_rewrite.en.rst:73
 msgid "Where qual is one of the support URL qualifiers::"
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:75
+#: ../../reference/plugins/header_rewrite.en.rst:82
 msgid "For example (as a remap rule)::"
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:81
+#: ../../reference/plugins/header_rewrite.en.rst:88
 msgid "Operator flags"
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:90
+#: ../../reference/plugins/header_rewrite.en.rst:97
 msgid "Variable expansion"
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:91
+#: ../../reference/plugins/header_rewrite.en.rst:98
 msgid ""
 "Currently only limited variable expansion is supported in add-header. "
 "Supported substitutions include::"
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:102
+#: ../../reference/plugins/header_rewrite.en.rst:109
 msgid "Conditions"
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:103
+#: ../../reference/plugins/header_rewrite.en.rst:110
 msgid ""
 "The conditions are used as qualifiers: The operators specified will only be "
 "evaluated if the condition(s) are met::"
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:123
+#: ../../reference/plugins/header_rewrite.en.rst:132
 msgid ""
 "The difference between HEADER and CLIENT-HEADER is that HEADER adapts to "
 "the hook it's running in, whereas CLIENT-HEADER always applies to the "
@@ -107,76 +99,88 @@ msgid ""
 "if no other conditions are specified."
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:128
+#: ../../reference/plugins/header_rewrite.en.rst:137
 msgid ""
 "These conditions have to be first in a ruleset, and you can only have one "
 "in each rule. This implies that a new hook condition starts a new rule as "
 "well.::"
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:137
+#: ../../reference/plugins/header_rewrite.en.rst:146
 msgid ""
 "For remap.config plugin instanations, the default hook is named "
 "REMAP_PSEUDO_HOOK. This can be useful if you are mixing other hooks in a "
 "configuration, but being the default it is also optional."
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:143
+#: ../../reference/plugins/header_rewrite.en.rst:152
 msgid "Condition flags"
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:155
+#: ../../reference/plugins/header_rewrite.en.rst:164
 msgid "Operands to conditions"
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:163
+#: ../../reference/plugins/header_rewrite.en.rst:172
 msgid "The absence of a \"matcher\" means value exists)."
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:166
+#: ../../reference/plugins/header_rewrite.en.rst:175
 msgid "Values"
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:167
+#: ../../reference/plugins/header_rewrite.en.rst:176
 msgid "Setting e.g. a header with a value can take the following formats:"
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:169
+#: ../../reference/plugins/header_rewrite.en.rst:178
 msgid "Any of the cond definitions, that extracts a value from the request"
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:170
+#: ../../reference/plugins/header_rewrite.en.rst:179
 msgid "$N 0 <= N <= 9, as grouped in a regular expression"
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:171
+#: ../../reference/plugins/header_rewrite.en.rst:180
 msgid "string (which can contain the above)"
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:172
+#: ../../reference/plugins/header_rewrite.en.rst:181
 msgid "null"
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:175
+#: ../../reference/plugins/header_rewrite.en.rst:184
 msgid "Examples"
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:83
+#: ../../reference/plugins/header_rewrite.en.rst:90
 msgid ""
 "The operator flags are optional, and must not contain whitespaces inside "
 "the brackets. Currently, only one flag is supported::"
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:145
+#: ../../reference/plugins/header_rewrite.en.rst:154
 msgid ""
 "The condition flags are optional, and you can combine more than one into a "
 "comma separated list of flags. Note that whitespaces are not allowed inside "
 "the brackets::"
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:45
+#: ../../reference/plugins/header_rewrite.en.rst:50
 msgid ""
 "Configuration filenames without an absolute paths are searched for in the "
 "default configuration directory. This is typically where your main "
 "configuration files are, e.g. ``/usr/local/etc/trafficserver``."
+msgstr ""
+
+#: ../../reference/plugins/header_rewrite.en.rst:40
+msgid ""
+"In the second example, hooks which are not to be executed during the remap "
+"phase (the default) causes a transaction hook to be instantiated and used "
+"at a later time. This allows you to setup e.g. a rule that gets executed "
+"during the origin response header parsing, using READ_RESPONSE_HDR_HOOK. "
+"Note that inorder to setup the plugin with rules that are not to be "
+"executed during the remap phase (e.g. SEND_REQUEST_HDR_HOOK, "
+"READ_RESPONSE_HDR_HOOK etc), global hooks must be setup via the below entry "
+"in plugin.config ::"
 msgstr ""

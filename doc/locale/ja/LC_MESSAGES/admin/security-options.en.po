@@ -130,12 +130,6 @@ msgstr ""
 "Traffic Server が Traffic Server とオリジンサーバーの間で SSL ターミネーショ"
 "ンを使用するように設定するには、次のことを行わなければなりません"
 
-#: ../../admin/security-options.en.rst:28
-msgid ""
-"Traffic Server can be confgiured to allow only certain clients to use the "
-"proxy cache."
-msgstr ""
-
 #: ../../admin/security-options.en.rst:31
 msgid ""
 "Add a line to :file:`ip_allow.config` for each IP address or range of IP "
@@ -373,6 +367,44 @@ msgid ""
 "Server configuration in :file:`records.config` using the settings :ts:cv:"
 "`proxy.config.ssl.client.CA.cert.path` and :ts:cv:`proxy.config.ssl.client."
 "CA.cert.filename`. ::"
+msgstr ""
+
+#: ../../admin/security-options.en.rst:28
+msgid ""
+"Traffic Server can be configured to allow only certain clients to use the "
+"proxy cache."
+msgstr ""
+
+#: ../../admin/security-options.en.rst:264
+msgid "Rotating TLS Session Ticket Keys"
+msgstr ""
+
+#: ../../admin/security-options.en.rst:266
+msgid ""
+"TLS sessions can be resumed through session tickets which are encrypted "
+"with a session ticket key and stored on clients. For better security, the "
+"ticket keys can be rotated periodically, say, every 24 hours. The ticket "
+"keys are stored in a ticket key file as a reverse queue in 48-byte chunks."
+msgstr ""
+
+#: ../../admin/security-options.en.rst:271
+msgid ""
+"Generate a new ticket key and push it to the beginning of the ticket key "
+"file."
+msgstr ""
+
+#: ../../admin/security-options.en.rst:273
+msgid "*Optional*: Delete the last ticket key from the ticket key file."
+msgstr ""
+
+#: ../../admin/security-options.en.rst:275
+msgid ""
+"Touch :file:`ssl_multicert.config` to indicate that the SSL configuration "
+"is stale."
+msgstr ""
+
+#: ../../admin/security-options.en.rst:277
+msgid "Run the command :option:`traffic_line -x` to apply the new ticket key."
 msgstr ""
 
 #~ msgid "Traffic Server provides a number of security features."

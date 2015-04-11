@@ -36,27 +36,24 @@ msgstr ""
 
 #: ../../reference/api/TSVConnReenable.en.rst:33
 msgid ""
-"If the server running Traffic Server has the appropriate openSSL patch "
-"installed, the SNI callback can return ``SSL_TLSEXT_ERR_READ_AGAIN`` to "
-"stop the SSL handshake processing.  This results in ``SSL_accept`` "
-"returning ``SSL_ERROR_WANT_SNI_RESOLVE`` before completing the SSL "
-"handshake (only the client hello message will have been received).  "
+"If the server is running openssl 1.0.1 with the appropraite patch installed "
+"or it is running openssl 1.0.2, the plugin writer can pause SSL handshake "
+"processing by not reenabling the connection.  Without the openSSL patch or "
+"running an openssl version older than 1.0.2, the handshake processing in "
+"``SSL_accept`` will not be stopped even if the SNI callback does not "
+"reenable the connection."
+msgstr ""
+
+#: ../../reference/api/TSVConnReenable.en.rst:35
+msgid ""
 "Additional processing could reenable the virtual connection causing the "
 "``SSL_accept`` to be called again to complete the handshake exchange.  In "
 "the case of a blind tunnel conversion, the SSL handshake will never be "
 "completed by Traffic Server."
 msgstr ""
 
-#: ../../reference/api/TSVConnReenable.en.rst:35
-msgid ""
-"The plugin callbacks can halt the SSL handshake processing by not "
-"reenabling the connection (i.e., by not calling :c:func:"
-"`TSSslVConnReenable`).  If a plugin SNI callback does not reenable the "
-"connection, the global callback will return ``SSL_TLSEXT_ERR_READ_AGAIN``."
-msgstr ""
-
 #: ../../reference/api/TSVConnReenable.en.rst:37
 msgid ""
-"Without the openSSL patch, the handshake processing in ``SSL_accept`` will "
-"not be stopped even if the SNI callback does not reenable the connection."
+"This call does appropriate locking and scheduling, so it is safe to call "
+"from another thread."
 msgstr ""

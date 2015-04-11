@@ -110,22 +110,11 @@ msgstr ""
 "敗すると、ワイルドカードによる証明書のマッチが試されます。いずれにもマッチし"
 "ない場合、初回の証明書の選択がそのまま有効となります。"
 
-#: ../../reference/configuration/ssl_multicert.config.en.rst:150
-msgid ""
-"In all cases, Traffic Server attempts to select the most specific match. An "
-"address specification that contains a port number will take precedence over "
-"a specification that does not contain a port number. A specific certificate "
-"subject will take precedence over a wildcard certificate."
-msgstr ""
-"すべてのケースで、Traffic Server は最も適切なものを選択します。ポート番号を"
-"を含むアドレス指定は、ポート番号を含まない指定に先立って行われます。具体的な"
-"証明サブジェクトはワイルドカードによる証明に先立って使用されます。"
-
-#: ../../reference/configuration/ssl_multicert.config.en.rst:157
+#: ../../reference/configuration/ssl_multicert.config.en.rst:158
 msgid "Examples"
 msgstr "例"
 
-#: ../../reference/configuration/ssl_multicert.config.en.rst:159
+#: ../../reference/configuration/ssl_multicert.config.en.rst:160
 msgid ""
 "The following example configures Traffic Server to use the SSL certificate "
 "``server.pem`` for all requests to the IP address 111.11.11.1 and the SSL "
@@ -141,7 +130,7 @@ msgstr ""
 "ミネートされます。秘密鍵は証明書に含まれているので、秘密鍵の名前は指定されて"
 "いません。"
 
-#: ../../reference/configuration/ssl_multicert.config.en.rst:191
+#: ../../reference/configuration/ssl_multicert.config.en.rst:192
 msgid ""
 "The following example configures Traffic Server to use the SSL certificate "
 "``server.pem`` and the private key ``serverKey.pem`` for all requests to "
@@ -165,7 +154,7 @@ msgstr ""
 "ていない場合、内部セッションチケットキーが生成されます。キーは Traffic "
 "Server が起動されるたびに毎回異なります。"
 
-#: ../../reference/configuration/ssl_multicert.config.en.rst:200
+#: ../../reference/configuration/ssl_multicert.config.en.rst:201
 msgid ""
 "The following example configures Traffic Server to use the SSL certificate "
 "``server.pem`` for all requests to the IP address 111.11.11.1. Session "
@@ -219,7 +208,7 @@ msgstr ""
 "レーズを渡す前にシステムが攻撃者によって汚染されていないことを確かめることで"
 "す。"
 
-#: ../../reference/configuration/ssl_multicert.config.en.rst:209
+#: ../../reference/configuration/ssl_multicert.config.en.rst:210
 msgid ""
 "The following example configures Traffic Server to use the SSL certificate "
 "``server.pem`` and disable session tickets for all requests to the IP "
@@ -229,7 +218,7 @@ msgstr ""
 "で SSL 証明書 ``server.pem`` を 使用し、セッションチケットを無効化するように"
 "設定しています。"
 
-#: ../../reference/configuration/ssl_multicert.config.en.rst:217
+#: ../../reference/configuration/ssl_multicert.config.en.rst:218
 msgid ""
 "The following examples configure Traffic Server to use the SSL certificate "
 "``server.pem`` which includes an encrypted private key. The external "
@@ -350,14 +339,14 @@ msgstr ""
 msgid "ssl_key_dialog=builtin|\"exec:/path/to/program [args]\" (optional)"
 msgstr ""
 
-#: ../../reference/configuration/ssl_multicert.config.en.rst:173
+#: ../../reference/configuration/ssl_multicert.config.en.rst:174
 msgid ""
 "The following example configures Traffic Server to use the ECDSA "
 "certificate chain ``ecdsa.pem`` or RSA certificate chain ``rsa.pem`` for "
 "all requests."
 msgstr ""
 
-#: ../../reference/configuration/ssl_multicert.config.en.rst:181
+#: ../../reference/configuration/ssl_multicert.config.en.rst:182
 msgid ""
 "The following example configures Traffic Server to use the ECDSA "
 "certificate chain ``ecdsa.pem`` or RSA certificate chain ``rsa.pem`` for "
@@ -365,6 +354,27 @@ msgid ""
 "Note that the number of files in ssl_key_name must match the files in "
 "ssl_cert_name, and they should be presented in the same order."
 msgstr ""
+
+#: ../../reference/configuration/ssl_multicert.config.en.rst:150
+msgid ""
+"In all cases, Traffic Server attempts to select the most specific match. An "
+"address specification that contains a port number will take precedence over "
+"a specification that does not contain a port number. A specific certificate "
+"subject will take precedence over a wildcard certificate. In the case of "
+"multiple matching certificates the first match will be returned to non-SNI "
+"capable clients."
+msgstr ""
+
+#~ msgid ""
+#~ "In all cases, Traffic Server attempts to select the most specific match. "
+#~ "An address specification that contains a port number will take "
+#~ "precedence over a specification that does not contain a port number. A "
+#~ "specific certificate subject will take precedence over a wildcard "
+#~ "certificate."
+#~ msgstr ""
+#~ "すべてのケースで、Traffic Server は最も適切なものを選択します。ポート番号"
+#~ "をを含むアドレス指定は、ポート番号を含まない指定に先立って行われます。具"
+#~ "体的な証明サブジェクトはワイルドカードによる証明に先立って使用されます。"
 
 #~ msgid "dest_ip=ADDRESS"
 #~ msgstr "dest_ip=ADDRESS"

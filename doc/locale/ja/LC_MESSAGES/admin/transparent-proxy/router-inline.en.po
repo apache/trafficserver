@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -129,30 +128,32 @@ msgstr ""
 "Traffic Server を設定するために次の値を :file:`records.config` に設定してく"
 "ださい。"
 
-#: ../../admin/transparent-proxy/router-inline.en.rst:78
-msgid "``proxy.config.http.server_port``"
-msgstr "``proxy.config.http.server_port``"
-
-#: ../../admin/transparent-proxy/router-inline.en.rst:81
-msgid "``STRING`` Default: ``=``"
-msgstr "``STRING`` デフォルト: ``=``"
-
-#: ../../admin/transparent-proxy/router-inline.en.rst:86
+#: ../../admin/transparent-proxy/router-inline.en.rst:82
 msgid "``proxy.config.reverse_proxy.enabled``"
 msgstr "``proxy.config.reverse_proxy.enabled``"
 
-#: ../../admin/transparent-proxy/router-inline.en.rst:85
+#: ../../admin/transparent-proxy/router-inline.en.rst:81
 msgid "``INT`` Default: ``1``"
 msgstr "``INT`` デフォルト: ``1``"
 
-#: ../../admin/transparent-proxy/router-inline.en.rst:90
+#: ../../admin/transparent-proxy/router-inline.en.rst:86
 msgid "``proxy.config.url_remap.remap_required``"
 msgstr "``proxy.config.url_remap.remap_required``"
 
-#: ../../admin/transparent-proxy/router-inline.en.rst:89
+#: ../../admin/transparent-proxy/router-inline.en.rst:85
 msgid "``INT`` Default: ``0``"
 msgstr "``INT`` デフォルト: ``0``"
 
 #: ../../admin/transparent-proxy/router-inline.en.rst:77
 msgid "``STRING`` Default: *value from* ``--on-port``"
 msgstr "``STRING`` デフォルト: ``--on-port`` *の値*"
+
+#: ../../admin/transparent-proxy/router-inline.en.rst:78
+msgid "``proxy.config.http.server_ports``"
+msgstr ""
+
+#~ msgid "``proxy.config.http.server_port``"
+#~ msgstr "``proxy.config.http.server_port``"
+
+#~ msgid "``STRING`` Default: ``=``"
+#~ msgstr "``STRING`` デフォルト: ``=``"

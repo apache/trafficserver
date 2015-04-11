@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -30,7 +29,7 @@ msgstr ""
 msgid "WCCP Configuration"
 msgstr "WCCP 設定"
 
-#: ../../admin/transparent-proxy/wccp-configuration.en.rst:25
+#: ../../admin/transparent-proxy/wccp-configuration.en.rst:26
 msgid ""
 "`WCCP <http://cio.cisco.com/en/US/docs/ios/12_0t/12_0t3/feature/guide/wccp."
 "html>`_ is de-facto semi-standard used by routers to redirect network "
@@ -43,7 +42,7 @@ msgstr ""
 "スタンダードです。Cisco™ から公式にサポートされているようには見えないもの"
 "の、多くの Cisco のルーターで利用可能です。WCCP の主な利益は次のとおりです。"
 
-#: ../../admin/transparent-proxy/wccp-configuration.en.rst:33
+#: ../../admin/transparent-proxy/wccp-configuration.en.rst:34
 msgid ""
 "WCCP fails open so that if the Traffic Server machine fails, it is bypassed "
 "and users continue to have Internet access."
@@ -51,7 +50,7 @@ msgstr ""
 "Traffic Server マシンが失敗するように WCCP がオープンに失敗すると、それはバ"
 "イパスされユーザーはインターネットへのアクセスを継続できます。"
 
-#: ../../admin/transparent-proxy/wccp-configuration.en.rst:42
+#: ../../admin/transparent-proxy/wccp-configuration.en.rst:43
 msgid ""
 "Because the router serves as the inline network element, Traffic Server "
 "must run on a separate host. This host can be located anywhere as long as "
@@ -63,7 +62,7 @@ msgstr ""
 "ワークセグメント上にあるか Traffic Server のホストとルーターとの間で GRE ト"
 "ンネルが維持可能であればどこに置くこともできます。"
 
-#: ../../admin/transparent-proxy/wccp-configuration.en.rst:47
+#: ../../admin/transparent-proxy/wccp-configuration.en.rst:48
 msgid ""
 "|important| This document presumes that the router is already properly "
 "configured to handle traffic between the clients and the origin servers. If "
@@ -76,11 +75,11 @@ msgstr ""
 "でない場合は、WCCP を使うよう Traffic Server を設定する前に確認してくださ"
 "い。設定がおかしくなった際に元に戻すのも良い心がけです。"
 
-#: ../../admin/transparent-proxy/wccp-configuration.en.rst:54
+#: ../../admin/transparent-proxy/wccp-configuration.en.rst:55
 msgid "Configuration overview"
 msgstr "設定の概要"
 
-#: ../../admin/transparent-proxy/wccp-configuration.en.rst:56
+#: ../../admin/transparent-proxy/wccp-configuration.en.rst:57
 msgid ""
 "Setting WCCP is a three step process, first configuring the router, the "
 "Traffic Server host, and Traffic Server."
@@ -88,7 +87,7 @@ msgstr ""
 "WCCP の設定は、ルーターの設定、Traffic Server ホスト、そして Traffic Server "
 "の 3 ステップです。"
 
-#: ../../admin/transparent-proxy/wccp-configuration.en.rst:59
+#: ../../admin/transparent-proxy/wccp-configuration.en.rst:60
 msgid ""
 "|image1| The router will **not** respond to WCCP protocol packets unless "
 "explicitly configured to do so. Via WCCP, the router can be made to perform "
@@ -102,7 +101,7 @@ msgstr ""
 "事実上、positive heartbeat cutoff によりポリシールーティングのだいたいの形を"
 "制御する方法として振る舞います。"
 
-#: ../../admin/transparent-proxy/wccp-configuration.en.rst:65
+#: ../../admin/transparent-proxy/wccp-configuration.en.rst:66
 msgid ""
 "The Traffic Server host system must also be configured using ``iptables`` "
 "to accept connections on foreign addresses. This is done roughly the same "
@@ -112,7 +111,7 @@ msgstr ""
 "``iptables`` を使うようにも設定されなかれば成りません。これは標準的な透過性"
 "の使用とだいたい同じ方法で行えます。"
 
-#: ../../admin/transparent-proxy/wccp-configuration.en.rst:69
+#: ../../admin/transparent-proxy/wccp-configuration.en.rst:70
 msgid ""
 "Finally Traffic Server itself must be configured for transparency and use "
 "of WCCP. The former is again very similar to the standard use, while WCCP "
@@ -124,13 +123,13 @@ msgstr ""
 "化していて分離された設定ファイルを使用しますが、:file:`records.config` ファ"
 "イルにより参照されます。"
 
-#: ../../admin/transparent-proxy/wccp-configuration.en.rst:74
+#: ../../admin/transparent-proxy/wccp-configuration.en.rst:75
 msgid ""
 "The primary concern for configuration in which of three basic topologies "
 "are to be used."
 msgstr "三種類のどの基本トポロジーが使用されるかによる設定における主な懸念。"
 
-#: ../../admin/transparent-proxy/wccp-configuration.en.rst:77
+#: ../../admin/transparent-proxy/wccp-configuration.en.rst:78
 msgid ""
 "Dedicated -- Traffic Server traffic goes over an interface that is not used "
 "for client nor origin server traffic."
@@ -138,7 +137,7 @@ msgstr ""
 "専用 -- Traffic Server のトラフィックがクライアントにもオリジンサーバーのト"
 "ラフィックにも使われていないインターフェースに渡ります。"
 
-#: ../../admin/transparent-proxy/wccp-configuration.en.rst:79
+#: ../../admin/transparent-proxy/wccp-configuration.en.rst:80
 msgid ""
 "Shared -- Traffic Server traffic shares an interface with client or server "
 "traffic."
@@ -146,25 +145,17 @@ msgstr ""
 "共有 -- Traffic Server のトラッフィクがクライアントまたはサーバーのトラ"
 "フィックとインターフェースを共有します。"
 
-#: ../../admin/transparent-proxy/wccp-configuration.en.rst:81
+#: ../../admin/transparent-proxy/wccp-configuration.en.rst:82
 msgid "Inside Shared -- Traffic Server and client traffic share an interface."
 msgstr ""
 "内部共有 -- Traffic Server とクライアントのトラフィックがインターフェースを"
 "共有します。"
 
-#: ../../admin/transparent-proxy/wccp-configuration.en.rst:83
-msgid ""
-"`Outside Shared <wccp-outside-shared.html>`_ -- Traffic Server and origin "
-"server traffic share an interface."
-msgstr ""
-"`外部共有 <wccp-outside-shared.html>`_ -- Traffic Server とオリジンサーバー"
-"のトラフィックがインターフェースを共有します。"
-
-#: ../../admin/transparent-proxy/wccp-configuration.en.rst:92
+#: ../../admin/transparent-proxy/wccp-configuration.en.rst:93
 msgid "Shared interface issues"
 msgstr "共有インターフェースの課題"
 
-#: ../../admin/transparent-proxy/wccp-configuration.en.rst:94
+#: ../../admin/transparent-proxy/wccp-configuration.en.rst:95
 msgid ""
 "A shared interface topology has additional issues compared to a dedicated "
 "topology that must be handled. Such a topology is required if the router "
@@ -178,15 +169,15 @@ msgstr ""
 "ている場合でもその使用を妨げるものはありませんが、これらの追加の課題があるの"
 "で通常はそのようなケースでしか使用されません。"
 
-#: ../../admin/transparent-proxy/wccp-configuration.en.rst:110
+#: ../../admin/transparent-proxy/wccp-configuration.en.rst:111
 msgid "Frequently encountered problems"
 msgstr "よくぶつかる問題"
 
-#: ../../admin/transparent-proxy/wccp-configuration.en.rst:113
+#: ../../admin/transparent-proxy/wccp-configuration.en.rst:114
 msgid "MTU and fragmentation"
 msgstr "MTU と断片化"
 
-#: ../../admin/transparent-proxy/wccp-configuration.en.rst:115
+#: ../../admin/transparent-proxy/wccp-configuration.en.rst:116
 msgid ""
 "In most cases the basic configuration using a tunnel in any topology can "
 "fail due to issues with fragmentation. The socket logic is unable to know "
@@ -207,11 +198,11 @@ msgstr ""
 "するために物理インターフェース上の MTU を使用するのでそれを変更することで簡"
 "単に解決することはできません。"
 
-#: ../../admin/transparent-proxy/wccp-configuration.en.rst:126
+#: ../../admin/transparent-proxy/wccp-configuration.en.rst:127
 msgid "References"
 msgstr "参考文献"
 
-#: ../../admin/transparent-proxy/wccp-configuration.en.rst:128
+#: ../../admin/transparent-proxy/wccp-configuration.en.rst:129
 msgid ""
 "`WCCP Router Configuration Commands - IOS 12.2 <http://www.cisco.com/en/US/"
 "docs/ios/12_2/configfun/command/reference/frf018.html>`_"
@@ -219,7 +210,7 @@ msgstr ""
 "`WCCP Router Configuration Commands - IOS 12.2 <http://www.cisco.com/en/US/"
 "docs/ios/12_2/configfun/command/reference/frf018.html>`_"
 
-#: ../../admin/transparent-proxy/wccp-configuration.en.rst:139
+#: ../../admin/transparent-proxy/wccp-configuration.en.rst:140
 msgid ""
 "Server side transparency should also be used, but it is not as significant. "
 "In its absence, however, origin servers may see the source address of "
@@ -234,18 +225,18 @@ msgstr ""
 "しょう。また、サーバー側の透過性を持たない主な理由は、Traffic Server ホスト"
 "が動かなくなったときに使えなくなるクライアントのアドレスを隠すためです。"
 
-#: ../../admin/transparent-proxy/wccp-configuration.en.rst:147
+#: ../../admin/transparent-proxy/wccp-configuration.en.rst:148
 msgid "If your router has only one interface, it's hardly a *router*."
 msgstr ""
 "ルーターが一つのインターフェースしかもっていないなら、それはまったく\\ *ルー"
 "ター*\\ ではありません。"
 
-#: ../../admin/transparent-proxy/wccp-configuration.en.rst:150
+#: ../../admin/transparent-proxy/wccp-configuration.en.rst:151
 msgid ""
 "This is not fundamentally impossible, as the packets are distinct in layer"
 msgstr "パケットはレイヤー内では別々なので、本質的には不可能ではありません。"
 
-#: ../../admin/transparent-proxy/wccp-configuration.en.rst:36
+#: ../../admin/transparent-proxy/wccp-configuration.en.rst:37
 msgid ""
 "Use of WCCP only makes sense for client side transparency [1]_ because if "
 "the clients are explicitly proxied by Traffic Server there's no benefit to "
@@ -259,7 +250,7 @@ msgstr ""
 "のみ意味をなします [1]_ 。ルーター上のルーティングテーブルを明示的なプロキ"
 "シーのために調整すると良いでしょう。"
 
-#: ../../admin/transparent-proxy/wccp-configuration.en.rst:86
+#: ../../admin/transparent-proxy/wccp-configuration.en.rst:87
 msgid ""
 "In general the dedicated topology is preferred. However, if the router has "
 "only two interfaces one of the shared topologies will be required [2]_ "
@@ -271,7 +262,7 @@ msgstr ""
 "ます [2]_ 。特定のトポロジーでのより詳細な設定情報については上記のリンクをク"
 "リックしてください。"
 
-#: ../../admin/transparent-proxy/wccp-configuration.en.rst:100
+#: ../../admin/transparent-proxy/wccp-configuration.en.rst:101
 msgid ""
 "The basic concept for a shared interface is to use a tunnel to simulate the "
 "dedicated interface case. This enables the packets to be distinguished at "
@@ -291,10 +282,23 @@ msgstr ""
 "Traffic Server のためにシミュレートされたインターフェースとして使用できま"
 "す。"
 
-#: ../../admin/transparent-proxy/wccp-configuration.en.rst:31
+#: ../../admin/transparent-proxy/wccp-configuration.en.rst:32
 msgid ""
 "If already have a router that supports WCCP inline you do not have to "
 "change your network topology."
 msgstr ""
 "もしすでに WCCP インラインに対応したルーターを持っているのならネットワークト"
 "ポロジを変更する必要はありません。"
+
+#: ../../admin/transparent-proxy/wccp-configuration.en.rst:84
+msgid ""
+"Outside Shared -- Traffic Server and origin server traffic share an "
+"interface."
+msgstr ""
+
+#~ msgid ""
+#~ "`Outside Shared <wccp-outside-shared.html>`_ -- Traffic Server and "
+#~ "origin server traffic share an interface."
+#~ msgstr ""
+#~ "`外部共有 <wccp-outside-shared.html>`_ -- Traffic Server とオリジンサー"
+#~ "バーのトラフィックがインターフェースを共有します。"

@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -30,15 +29,6 @@ msgstr ""
 msgid "Net Vconnections"
 msgstr ""
 
-#: ../../sdk/io-guide/net-vconnections.en.rst:21
-msgid ""
-"A **network** **vconnection** (or*\\* netvconnection*\\ \\*) is a wrapper "
-"around a TCP socket that enables the socket to work within the Traffic "
-"Server vconnection framework. See `vconnections <index.en."
-"html#Vconnections>`__ for more information about the Traffic Server "
-"abstraction for doing asynchronous IO."
-msgstr ""
-
 #: ../../sdk/io-guide/net-vconnections.en.rst:27
 msgid "The netvconnection functions are listed below:"
 msgstr ""
@@ -49,4 +39,12 @@ msgstr ""
 
 #: ../../sdk/io-guide/net-vconnections.en.rst:30
 msgid "[dox %TSNetConnect%] in [dox :src\\_file]"
+msgstr ""
+
+#: ../../sdk/io-guide/net-vconnections.en.rst:21
+msgid ""
+"A **network vconnection** (or *netvconnection*) is a wrapper around a TCP "
+"socket that enables the socket to work within the Traffic Server "
+"vconnection framework. See :ref:`vconnections <sdk-vconnections>` for more "
+"information about the Traffic Server abstraction for doing asynchronous IO."
 msgstr ""

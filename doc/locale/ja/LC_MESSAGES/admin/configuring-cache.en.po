@@ -51,19 +51,11 @@ msgstr ""
 msgid "You can perform the following cache configuration tasks:"
 msgstr "次のキャッシュ設定作業を行うことができます。"
 
-#: ../../admin/configuring-cache.en.rst:53
-msgid ""
-"Change the total amount of disk space allocated to the cache: refer to "
-"`Changing Cache Capacity`_."
-msgstr ""
-"キャッシュに割り当てられたディスク領域の総量を変更する: `キャッシュキャパシ"
-"ティの変更`_ を参照。"
-
-#: ../../admin/configuring-cache.en.rst:64
+#: ../../admin/configuring-cache.en.rst:68
 msgid "The RAM Cache"
 msgstr "RAM キャッシュ"
 
-#: ../../admin/configuring-cache.en.rst:66
+#: ../../admin/configuring-cache.en.rst:70
 msgid ""
 "Traffic Server maintains a small RAM cache of extremely popular objects. "
 "This RAM cache serves the most popular objects as quickly as possible and "
@@ -77,26 +69,11 @@ msgstr ""
 "ref:`changing-the-size-of-the-ram-cache` で説明されているように、必要に応じ"
 "て RAM キャッシュのサイズを設定できます。"
 
-#: ../../admin/configuring-cache.en.rst:108
+#: ../../admin/configuring-cache.en.rst:111
 msgid "Changing the Size of the RAM Cache"
 msgstr "RAM キャッシュのサイズの変更"
 
-#: ../../admin/configuring-cache.en.rst:110
-msgid ""
-"Traffic Server provides a dedicated RAM cache for fast retrieval of popular "
-"small objects. The default RAM cache size is automatically calculated based "
-"on the number and size of the cache partitions you have configured. If "
-"you've partitioned your cache according to protocol and/or hosts, then the "
-"size of the RAM cache for each partition is proportional to the size of "
-"that partition."
-msgstr ""
-"Traffic Server は人気のある小さなオブジェクトを速く取得するために専用の RAM "
-"キャッシュを提供します。デフォルトの RAM キャッシュサイズは設定したキャッ"
-"シュパーティションの数とサイズをもとに自動的に計算されます。キャッシュをプロ"
-"トコルと/もしくはホストで区分けした場合、各パーティションの RAM キャッシュの"
-"サイズはそのパーティションのサイズに比例します。"
-
-#: ../../admin/configuring-cache.en.rst:117
+#: ../../admin/configuring-cache.en.rst:120
 msgid ""
 "You can increase the RAM cache size for better cache hit performance. "
 "However, if you increase the size of the RAM cache and observe a decrease "
@@ -110,17 +87,17 @@ msgstr ""
 "ネットワークリソース用により多くのメモリーを必要としている可能性があります。"
 "この場合は、RAM キャッシュのサイズを元の値に戻すべきです。"
 
-#: ../../admin/configuring-cache.en.rst:124
+#: ../../admin/configuring-cache.en.rst:127
 msgid "To change the RAM cache size:"
 msgstr "RAM キャッシュサイズを変更するには:"
 
-#: ../../admin/configuring-cache.en.rst:126
-#: ../../admin/configuring-cache.en.rst:148
-#: ../../admin/configuring-cache.en.rst:160
+#: ../../admin/configuring-cache.en.rst:129
+#: ../../admin/configuring-cache.en.rst:153
+#: ../../admin/configuring-cache.en.rst:168
 msgid "Stop Traffic Server."
 msgstr "Traffic Server を停止"
 
-#: ../../admin/configuring-cache.en.rst:131
+#: ../../admin/configuring-cache.en.rst:136
 msgid ""
 "Restart Traffic Server. If you increase the RAM cache to a size of 1GB or "
 "more, then restart with the :program:`trafficserver` command (refer to :ref:"
@@ -130,11 +107,11 @@ msgstr ""
 "program:`trafficserver` コマンドで再起動してください (:ref:`start-traffic-"
 "server` を参照 ) 。"
 
-#: ../../admin/configuring-cache.en.rst:136
+#: ../../admin/configuring-cache.en.rst:141
 msgid "Changing Cache Capacity"
 msgstr "キャッシュキャパシティの変更"
 
-#: ../../admin/configuring-cache.en.rst:138
+#: ../../admin/configuring-cache.en.rst:143
 msgid ""
 "You can increase or reduce the total amount of disk space allocated to the "
 "cache without clearing the content. To check the size of the cache (in "
@@ -146,15 +123,15 @@ msgstr ""
 "には、:option:`traffic_line -r` ``proxy.process.cache.bytes_total`` コマンド"
 "を実行してください。"
 
-#: ../../admin/configuring-cache.en.rst:143
+#: ../../admin/configuring-cache.en.rst:148
 msgid "Increasing Cache Capacity"
 msgstr "キャッシュキャパシティの増加"
 
-#: ../../admin/configuring-cache.en.rst:149
+#: ../../admin/configuring-cache.en.rst:155
 msgid "Add hardware, if necessary."
 msgstr "必要であればハードウェアを追加。"
 
-#: ../../admin/configuring-cache.en.rst:150
+#: ../../admin/configuring-cache.en.rst:157
 msgid ""
 "Edit :file:`storage.config` to increase the amount of disk space allocated "
 "to the cache on existing disks or describe the new hardware you are adding."
@@ -162,21 +139,21 @@ msgstr ""
 "既存のディスクに割り当てられたディスクスペースの総量を増加させるため、もしく"
 "は追加した新しいハードウェアを記載するために :file:`storage.config` を編集。"
 
-#: ../../admin/configuring-cache.en.rst:152
-#: ../../admin/configuring-cache.en.rst:164
-#: ../../admin/configuring-cache.en.rst:193
+#: ../../admin/configuring-cache.en.rst:160
+#: ../../admin/configuring-cache.en.rst:175
+#: ../../admin/configuring-cache.en.rst:205
 msgid "Restart Traffic Server."
 msgstr "Traffic Server を再起動。"
 
-#: ../../admin/configuring-cache.en.rst:155
+#: ../../admin/configuring-cache.en.rst:163
 msgid "Reducing Cache Capacity"
 msgstr "キャッシュキャパシティの削減"
 
-#: ../../admin/configuring-cache.en.rst:161
+#: ../../admin/configuring-cache.en.rst:170
 msgid "Remove hardware, if necessary."
 msgstr "必要であればハードウェアを取り外す。"
 
-#: ../../admin/configuring-cache.en.rst:162
+#: ../../admin/configuring-cache.en.rst:172
 msgid ""
 "Edit :file:`storage.config` to reduce the amount of disk space allocated to "
 "the cache on existing disks or delete the reference to the hardware you're "
@@ -186,51 +163,30 @@ msgstr ""
 "取り除いたハードウェアへの参照を削除するために :file:`storage.config` を編"
 "集。"
 
-#: ../../admin/configuring-cache.en.rst:166
+#: ../../admin/configuring-cache.en.rst:177
 msgid ""
 "In :file:`storage.config`, a formatted or raw disk must be at least 128 MB."
 msgstr ""
 ":file:`storage.config` で、フォーマットされた、もしくは raw ディスクは少なく"
 "とも 128 MB なければなりません。"
 
-#: ../../admin/configuring-cache.en.rst:171
+#: ../../admin/configuring-cache.en.rst:182
 msgid "Partitioning the Cache"
 msgstr "キャッシュの区分け"
 
-#: ../../admin/configuring-cache.en.rst:173
-msgid ""
-"You can manage your cache space more efficiently and restrict disk usage by "
-"creating cache volumes with different sizes for specific protocols. You can "
-"further configure these volumes to store data from specific origin servers "
-"and/or domains. The volume configuration must be the same on all nodes in "
-"a :ref:`cluster <traffic-server-cluster>`."
-msgstr ""
-"キャッシュ領域をより効率的に管理し、特定のプロトコル用に異なるサイズでキャッ"
-"シュボリュームを作成することでディスクの使用量を制限することができます。その"
-"うえ特定のオリジンサーバーと/もしくはドメインからのデータを格納するためにこ"
-"れらのボリュームを設定することができます。このボリューム設定は :ref:`クラス"
-"ター <traffic-server-cluster>`\\ 内のすべてのノードで同じでなければなりませ"
-"ん。"
-
-#: ../../admin/configuring-cache.en.rst:180
+#: ../../admin/configuring-cache.en.rst:191
 msgid "Creating Cache Partitions for Specific Protocols"
 msgstr "特定のプロトコル用のキャッシュパーティションの作成"
 
-#: ../../admin/configuring-cache.en.rst:189
+#: ../../admin/configuring-cache.en.rst:198
 msgid "To partition the cache according to protocol:"
 msgstr "プロトコルによってキャッシュを区分けするには"
 
-#: ../../admin/configuring-cache.en.rst:191
-msgid ""
-"Enter a line in the :file:`volume.config` file for each volume you want to "
-"create"
-msgstr ":file:`volume.config` ファイルに作成したいボリュームごとに一行入力。"
-
-#: ../../admin/configuring-cache.en.rst:196
+#: ../../admin/configuring-cache.en.rst:212
 msgid "Making Changes to Partition Sizes and Protocols"
 msgstr "パーティションサイズとプロトコルを変更する"
 
-#: ../../admin/configuring-cache.en.rst:198
+#: ../../admin/configuring-cache.en.rst:214
 msgid ""
 "After you've configured your cache volumes based on protocol, you can make "
 "changes to the configuration at any time. Before making changes, note the "
@@ -239,7 +195,7 @@ msgstr ""
 "プロトコルによってキャッシュボリュームを設定した後、いつでもその設定を変更す"
 "ることができます。変更を行う前に次のことに注意してください。"
 
-#: ../../admin/configuring-cache.en.rst:202
+#: ../../admin/configuring-cache.en.rst:218
 msgid ""
 "You must stop Traffic Server before you change the cache volume size and "
 "protocol assignment."
@@ -247,7 +203,7 @@ msgstr ""
 "キャッシュボリュームのサイズとプロトコルの割り当てを変更する前に Traffic "
 "Server を停止しなければなりません。"
 
-#: ../../admin/configuring-cache.en.rst:204
+#: ../../admin/configuring-cache.en.rst:221
 msgid ""
 "When you increase the size of a volume, the contents of the volume are "
 "*not* deleted. However, when you reduce the size of a volume, the contents "
@@ -257,7 +213,7 @@ msgstr ""
 "*\\ 。しかし、ボリュームサイズを削減する際には、ボリュームのコンテンツは削除"
 "され\\ *ます*\\ 。"
 
-#: ../../admin/configuring-cache.en.rst:207
+#: ../../admin/configuring-cache.en.rst:225
 msgid ""
 "When you change the volume number, the volume is deleted and then "
 "recreated, even if the size and protocol type remain the same."
@@ -265,7 +221,7 @@ msgstr ""
 "ボリューム数を変更する際は、サイズやプロトコルタイプが同じままであってもボ"
 "リュームは削除され再作成されます。"
 
-#: ../../admin/configuring-cache.en.rst:209
+#: ../../admin/configuring-cache.en.rst:228
 msgid ""
 "When you add new disks to your Traffic Server node, volume sizes specified "
 "in percentages will increase proportionately."
@@ -273,15 +229,15 @@ msgstr ""
 "Traffic Server のノードに新しいディスクを追加する際は、割合で指定されたボ"
 "リュームサイズは比例して増加します。"
 
-#: ../../admin/configuring-cache.en.rst:216
+#: ../../admin/configuring-cache.en.rst:236
 msgid "Partitioning the Cache According to Origin Server or Domain"
 msgstr "オリジンサーバーもしくはドメインによってキャッシュを区分けする"
 
-#: ../../admin/configuring-cache.en.rst:241
+#: ../../admin/configuring-cache.en.rst:261
 msgid "To partition the cache according to hostname and domain:"
 msgstr "ホスト名とドメインによってキャッシュを区分けするには:"
 
-#: ../../admin/configuring-cache.en.rst:243
+#: ../../admin/configuring-cache.en.rst:263
 msgid ""
 "Configure the cache volumes according to size and protocol, as described in "
 "`Creating Cache Partitions for Specific Protocols`_."
@@ -289,7 +245,7 @@ msgstr ""
 "`特定のプロトコル用のキャッシュパーティションの作成`_\\ で説明したように、サ"
 "イズとプロトコルによってキャッシュボリュームを設定。"
 
-#: ../../admin/configuring-cache.en.rst:245
+#: ../../admin/configuring-cache.en.rst:265
 msgid ""
 "Create a separate volume based on protocol for each host and domain, as "
 "well as an additional generic partition to use for content that does not "
@@ -300,7 +256,7 @@ msgstr ""
 "ションの追加と同様に、各ホストとドメイン用にプロトコルを基に分割したボリュー"
 "ムを作成。ボリュームは同じサイズである必要はありません。"
 
-#: ../../admin/configuring-cache.en.rst:251
+#: ../../admin/configuring-cache.en.rst:271
 msgid ""
 "Assign a generic volume to use for content that does not belong to any of "
 "the origin servers or domains listed in the file. If all volumes for a "
@@ -313,18 +269,18 @@ msgstr ""
 "リュームが壊れた場合、Traffic Server は :file:`hosting.config` によるオリジ"
 "ンサーバーのコンテンツを格納するために汎用ボリュームも使用します。"
 
-#: ../../admin/configuring-cache.en.rst:256
-#: ../../admin/configuring-cache.en.rst:269
+#: ../../admin/configuring-cache.en.rst:276
+#: ../../admin/configuring-cache.en.rst:289
 msgid ""
 "Run the command :option:`traffic_ctl config reload` to apply the configuration "
 "changes."
 msgstr "設定の変更を適用するために :option:`traffic_line -x` を実行。"
 
-#: ../../admin/configuring-cache.en.rst:260
+#: ../../admin/configuring-cache.en.rst:280
 msgid "Configuring the Cache Object Size Limit"
 msgstr "キャッシュオブジェクトのサイズ制限を設定"
 
-#: ../../admin/configuring-cache.en.rst:262
+#: ../../admin/configuring-cache.en.rst:282
 msgid ""
 "By default, Traffic Server allows objects of any size to be cached. You can "
 "change the default behavior and specify a size limit for objects in the "
@@ -334,15 +290,15 @@ msgstr ""
 "ることを許しています。次の手順により、このデフォルトの振る舞いを変更して"
 "キャッシュ内のオブジェクトのサイズを制限する指定が行えます。"
 
-#: ../../admin/configuring-cache.en.rst:275
+#: ../../admin/configuring-cache.en.rst:295
 msgid "Clearing the Cache"
 msgstr "キャッシュのクリア"
 
-#: ../../admin/configuring-cache.en.rst:282
+#: ../../admin/configuring-cache.en.rst:302
 msgid "To clear the cache:"
 msgstr "キャッシュをクリアするには:"
 
-#: ../../admin/configuring-cache.en.rst:289
+#: ../../admin/configuring-cache.en.rst:309
 msgid ""
 "The ``clear`` command deletes all data in the object store and the host "
 "database. Traffic Server does not prompt you to confirm the deletion."
@@ -350,11 +306,11 @@ msgstr ""
 "``clear`` コマンドはオブジェクトストアとホストデータベース内のすべてのデータ"
 "を削除します。Traffic Server は削除の確認を促しません。"
 
-#: ../../admin/configuring-cache.en.rst:296
+#: ../../admin/configuring-cache.en.rst:316
 msgid "Removing an Object From the Cache"
 msgstr "キャッシュからオブジェクトを削除する"
 
-#: ../../admin/configuring-cache.en.rst:298
+#: ../../admin/configuring-cache.en.rst:318
 msgid ""
 "Traffic Server accepts the custom HTTP request method ``PURGE`` when "
 "removing a specific object from cache. If the object is found in the cache "
@@ -367,7 +323,7 @@ msgstr ""
 "HTTP メッセージで応答します。そうでない場合は、``404 File Not Found`` メッ"
 "セージが返されます。"
 
-#: ../../admin/configuring-cache.en.rst:309
+#: ../../admin/configuring-cache.en.rst:329
 msgid ""
 "In the following example, Traffic Server is running on the domain ``example."
 "com`` and you want to remove the image ``remove_me.jpg`` from cache. "
@@ -379,19 +335,19 @@ msgstr ""
 "フォルトでは ``PURGE`` リクエストは他のどの IP からも許されていないので、"
 "localhost からデーモンに接続します。 ::"
 
-#: ../../admin/configuring-cache.en.rst:339
+#: ../../admin/configuring-cache.en.rst:359
 msgid "Inspecting the Cache"
 msgstr "キャッシュの検査"
 
-#: ../../admin/configuring-cache.en.rst:350
+#: ../../admin/configuring-cache.en.rst:370
 msgid "Accessing the Cache Inspector Utility"
 msgstr "キャッシュ検査ユーティリティにアクセスする"
 
-#: ../../admin/configuring-cache.en.rst:354
+#: ../../admin/configuring-cache.en.rst:374
 msgid "Set :ts:cv:`proxy.config.http_ui_enabled` to ``1``."
 msgstr ":ts:cv:`proxy.config.http_ui_enabled` を ``1`` に設定。"
 
-#: ../../admin/configuring-cache.en.rst:355
+#: ../../admin/configuring-cache.en.rst:375
 msgid ""
 "To access the cache inspector in reverse proxy mode, you must add a remap "
 "rule to :file:`remap.config` to expose the URL. This should be restricted "
@@ -420,38 +376,11 @@ msgstr ""
 "ブラウザーを開き、Traffic Server をプロキシーサーバーとして使うように設定。"
 "次の URL を入力。"
 
-#: ../../admin/configuring-cache.en.rst:23
-msgid ""
-"The Traffic Server cache consists of a high-speed object database called "
-"the *object store* that indexes objects according to URLs and their "
-"associated headers."
-msgstr ""
-
-#: ../../admin/configuring-cache.en.rst:33
-msgid ""
-"The Traffic Server cache consists of a high-speed object database called "
-"the *object store*. The object store indexes objects according to URLs and "
-"associated headers. This enables Traffic Server to store, retrieve, and "
-"serve not only web pages, but also parts of web pages - which provides "
-"optimum bandwidth savings. Using sophisticated object management, the "
-"object store can cache alternate versions of the same object (versions may "
-"differ because of dissimilar language or encoding types). It can also "
-"efficiently store very small and very large documents, thereby minimizing "
-"wasted space. When the cache is full, Traffic Server removes stale data to "
-"ensure the most requested objects are kept readily available and fresh."
-msgstr ""
-
-#: ../../admin/configuring-cache.en.rst:55
-msgid ""
-"Partition the cache by reserving cache disk space for specific protocols "
-"and origin servers/domains; refer to `Partitioning the Cache`_."
-msgstr ""
-
-#: ../../admin/configuring-cache.en.rst:57
+#: ../../admin/configuring-cache.en.rst:60
 msgid "Delete all data in the cache; refer to `Clearing the Cache`_."
 msgstr ""
 
-#: ../../admin/configuring-cache.en.rst:58
+#: ../../admin/configuring-cache.en.rst:62
 msgid ""
 "Override cache directives for a requested domain name, regex on a url, "
 "hostname or ip, with extra filters for time, port, method of the request, "
@@ -459,7 +388,7 @@ msgid ""
 "cache directives, etc. These are configured in :file:`cache.config`."
 msgstr ""
 
-#: ../../admin/configuring-cache.en.rst:72
+#: ../../admin/configuring-cache.en.rst:76
 msgid ""
 "The RAM cache supports two cache eviction algorithms, a regular *LRU* "
 "(Least Recently Used) and the more advanced *CLFUS* (Clocked Least "
@@ -469,7 +398,7 @@ msgid ""
 "cache.ram_cache.algorithm`."
 msgstr ""
 
-#: ../../admin/configuring-cache.en.rst:79
+#: ../../admin/configuring-cache.en.rst:83
 msgid ""
 "Both the *LRU* and *CLFUS* RAM caches support a configuration to increase "
 "scan resistance. In a typical *LRU*, if you request all possible objects in "
@@ -478,96 +407,77 @@ msgid ""
 "add some resistance against this problem."
 msgstr ""
 
-#: ../../admin/configuring-cache.en.rst:85
-msgid ""
-"In addition, *CLFUS* also supports compressing in the RAM cache itself. "
-"This can be useful for content which is not compressed by itself (e.g. "
-"images). This should not be confused with ``Content-Encoding: gzip``, this "
-"feature is only thereto save space internally in the RAM cache itself. As "
-"such, it is completely transparent to the User-Agent. The RAM cache "
-"compression is enabled with the option :ts:cv:`proxy.config.cache.ram_cache."
-"compress`."
-msgstr ""
-
-#: ../../admin/configuring-cache.en.rst:93
+#: ../../admin/configuring-cache.en.rst:97
 msgid "Possible values are:"
 msgstr ""
 
-#: ../../admin/configuring-cache.en.rst:96
+#: ../../admin/configuring-cache.en.rst:100
 msgid "Value"
 msgstr ""
 
-#: ../../admin/configuring-cache.en.rst:96
+#: ../../admin/configuring-cache.en.rst:100
 msgid "Meaning"
 msgstr ""
 
-#: ../../admin/configuring-cache.en.rst:98
+#: ../../admin/configuring-cache.en.rst:102
 msgid "0"
 msgstr ""
 
-#: ../../admin/configuring-cache.en.rst:98
+#: ../../admin/configuring-cache.en.rst:102
 msgid "No compression (*default*)"
 msgstr ""
 
-#: ../../admin/configuring-cache.en.rst:99
+#: ../../admin/configuring-cache.en.rst:103
 msgid "1"
 msgstr ""
 
-#: ../../admin/configuring-cache.en.rst:99
+#: ../../admin/configuring-cache.en.rst:103
 msgid "*fastlz* compression"
 msgstr ""
 
-#: ../../admin/configuring-cache.en.rst:100
+#: ../../admin/configuring-cache.en.rst:104
 msgid "2"
 msgstr ""
 
-#: ../../admin/configuring-cache.en.rst:100
+#: ../../admin/configuring-cache.en.rst:104
 msgid "*libz* compression"
 msgstr ""
 
-#: ../../admin/configuring-cache.en.rst:101
+#: ../../admin/configuring-cache.en.rst:105
 msgid "3"
 msgstr ""
 
-#: ../../admin/configuring-cache.en.rst:101
+#: ../../admin/configuring-cache.en.rst:105
 msgid "*liblzma* compression"
 msgstr ""
 
-#: ../../admin/configuring-cache.en.rst:127
+#: ../../admin/configuring-cache.en.rst:131
 msgid ""
 "Set the variable :ts:cv:`proxy.config.cache.ram_cache.size` to specify the "
 "size of the RAM cache. The default value of ``-1`` means that the RAM cache "
 "is automatically sized at approximately 1MB per gigabyte of disk."
 msgstr ""
 
-#: ../../admin/configuring-cache.en.rst:145
+#: ../../admin/configuring-cache.en.rst:150
 msgid ""
 "To increase the total amount of disk space allocated to the cache on "
 "existing disks, or to add new disks to a Traffic Server node:"
 msgstr ""
 
-#: ../../admin/configuring-cache.en.rst:157
+#: ../../admin/configuring-cache.en.rst:165
 msgid ""
 "To reduce the total amount of disk space allocated to the cache on an "
 "existing disk, or to remove disks from a Traffic Server node:"
 msgstr ""
 
-#: ../../admin/configuring-cache.en.rst:182
-msgid ""
-"You can create separate volumes for your cache that vary in size to store "
-"content according to protocol. This ensures that a certain amount of disk "
-"space is always available for a particular protocol. Traffic Server "
-"currently supports the ``http`` partition type for HTTP objects."
-msgstr ""
-
-#: ../../admin/configuring-cache.en.rst:211
+#: ../../admin/configuring-cache.en.rst:231
 msgid ""
 "Substantial changes to volume sizes can result in disk fragmentation, which "
 "affects performance and cache hit rate. You should clear the cache before "
 "making many changes to cache volume sizes (refer to `Clearing the Cache`_)."
 msgstr ""
 
-#: ../../admin/configuring-cache.en.rst:220
+#: ../../admin/configuring-cache.en.rst:240
 msgid ""
 "After you have partitioned the cache according to size and protocol, you "
 "can assign the volumes you created to specific origin servers and/or "
@@ -583,7 +493,7 @@ msgid ""
 "proxy-only mode."
 msgstr ""
 
-#: ../../admin/configuring-cache.en.rst:235
+#: ../../admin/configuring-cache.en.rst:255
 msgid ""
 "You do not need to stop Traffic Server before you assign volumes to "
 "particular hosts or domains. However, this type of configuration is time-"
@@ -591,20 +501,20 @@ msgid ""
 "configure partition assignment during periods of low traffic."
 msgstr ""
 
-#: ../../admin/configuring-cache.en.rst:249
+#: ../../admin/configuring-cache.en.rst:269
 msgid ""
 "Enter a line in the :file:`hosting.config` file to allocate the volume(s) "
 "used for each origin server and/or domain."
 msgstr ""
 
-#: ../../admin/configuring-cache.en.rst:266
+#: ../../admin/configuring-cache.en.rst:286
 msgid ""
 "Set :ts:cv:`proxy.config.cache.max_doc_size` to specify the maximum size in "
 "bytes allowed for objects in the cache. A setting of ``0`` (zero) will "
 "permit cache objects to be unlimited in size."
 msgstr ""
 
-#: ../../admin/configuring-cache.en.rst:277
+#: ../../admin/configuring-cache.en.rst:297
 msgid ""
 "When you clear the cache, you remove all data from the entire cache - "
 "including data in the host database. You should clear the cache before "
@@ -612,39 +522,39 @@ msgid ""
 "cannot clear the cache when Traffic Server is running."
 msgstr ""
 
-#: ../../admin/configuring-cache.en.rst:284
+#: ../../admin/configuring-cache.en.rst:304
 msgid "Stop Traffic Server (see :ref:`stop-traffic-server`)"
 msgstr ""
 
-#: ../../admin/configuring-cache.en.rst:285
+#: ../../admin/configuring-cache.en.rst:305
 msgid "Enter the following command to clear the cache::"
 msgstr ""
 
-#: ../../admin/configuring-cache.en.rst:293
+#: ../../admin/configuring-cache.en.rst:313
 msgid "Restart Traffic Server (see :ref:`start-traffic-server`)."
 msgstr ""
 
-#: ../../admin/configuring-cache.en.rst:306
+#: ../../admin/configuring-cache.en.rst:326
 msgid ""
 "By default, the PURGE request method is only processed if received on the "
 "localhost interface."
 msgstr ""
 
-#: ../../admin/configuring-cache.en.rst:328
+#: ../../admin/configuring-cache.en.rst:348
 msgid ""
 "The next time Traffic Server receives a request for the removed object, it "
 "will contact the origin server to retrieve a new copy, which will replace "
 "the previously cached version in Traffic Server."
 msgstr ""
 
-#: ../../admin/configuring-cache.en.rst:332
+#: ../../admin/configuring-cache.en.rst:352
 msgid ""
 "This procedure only removes an object from a specific Traffic Server cache. "
 "Users may still see the old (removed) content if it was cached by "
 "intermediary caches or by the end-users' web browser."
 msgstr ""
 
-#: ../../admin/configuring-cache.en.rst:341
+#: ../../admin/configuring-cache.en.rst:361
 msgid ""
 "Traffic Server provides a Cache Inspector utility that enables you to view, "
 "delete, and invalidate URLs in the cache (HTTP only). The Cache Inspector "
@@ -655,35 +565,35 @@ msgid ""
 "client-access-to-cache`."
 msgstr ""
 
-#: ../../admin/configuring-cache.en.rst:352
+#: ../../admin/configuring-cache.en.rst:372
 msgid "To access the Cache Inspector utility:"
 msgstr ""
 
-#: ../../admin/configuring-cache.en.rst:362
+#: ../../admin/configuring-cache.en.rst:382
 msgid ""
 "Reload the Traffic Server configuration by running :option:`traffic_line -"
 "x`."
 msgstr ""
 
-#: ../../admin/configuring-cache.en.rst:368
+#: ../../admin/configuring-cache.en.rst:388
 msgid "You will now be presented with the Cache Inspector interface."
 msgstr ""
 
-#: ../../admin/configuring-cache.en.rst:371
+#: ../../admin/configuring-cache.en.rst:391
 msgid "Using the Cache Inspector Utility"
 msgstr ""
 
-#: ../../admin/configuring-cache.en.rst:373
+#: ../../admin/configuring-cache.en.rst:393
 msgid ""
 "The Cache Inspector Utility provides several options that enable you to "
 "view and delete the contents of your cache."
 msgstr ""
 
-#: ../../admin/configuring-cache.en.rst:380
+#: ../../admin/configuring-cache.en.rst:400
 msgid "Lookup URL"
 msgstr ""
 
-#: ../../admin/configuring-cache.en.rst:377
+#: ../../admin/configuring-cache.en.rst:397
 msgid ""
 "Search for a particular URL in the cache. When Traffic Server finds the URL "
 "in the cache, it will display details of the object that corresponds to the "
@@ -691,39 +601,39 @@ msgid ""
 "URL from the cache will be presented."
 msgstr ""
 
-#: ../../admin/configuring-cache.en.rst:384
+#: ../../admin/configuring-cache.en.rst:404
 msgid "Delete URL"
 msgstr ""
 
-#: ../../admin/configuring-cache.en.rst:383
+#: ../../admin/configuring-cache.en.rst:403
 msgid ""
 "Delete the object from the cache which corresponds to the given URL. "
 "Success or failure will be indicated after a delete has been attempted."
 msgstr ""
 
-#: ../../admin/configuring-cache.en.rst:387
+#: ../../admin/configuring-cache.en.rst:407
 msgid "Regex Lookup"
 msgstr ""
 
-#: ../../admin/configuring-cache.en.rst:387
+#: ../../admin/configuring-cache.en.rst:407
 msgid "Search URLs within the cache using one or more regular expressions."
 msgstr ""
 
-#: ../../admin/configuring-cache.en.rst:391
+#: ../../admin/configuring-cache.en.rst:411
 msgid "Regex Delete"
 msgstr ""
 
-#: ../../admin/configuring-cache.en.rst:390
+#: ../../admin/configuring-cache.en.rst:410
 msgid ""
 "Deletes all objects from the cache which match the provided regular "
 "expressions."
 msgstr ""
 
-#: ../../admin/configuring-cache.en.rst:397
+#: ../../admin/configuring-cache.en.rst:417
 msgid "Regex Invalidate"
 msgstr ""
 
-#: ../../admin/configuring-cache.en.rst:394
+#: ../../admin/configuring-cache.en.rst:414
 msgid ""
 "Marks any objects in the cache which match the given regular expressions as "
 "stale. Traffic Server will contact the relevant origin server(s) to confirm "
@@ -731,12 +641,136 @@ msgid ""
 "if necessary."
 msgstr ""
 
-#: ../../admin/configuring-cache.en.rst:401
+#: ../../admin/configuring-cache.en.rst:421
 msgid ""
 "Only one administrator should delete and invalidate cache entries from the "
 "Cache Inspector at any point in time. Changes made by multiple "
 "administrators at the same time can lead to unpredictable results."
 msgstr ""
+
+#: ../../admin/configuring-cache.en.rst:23
+msgid ""
+"The Traffic Server cache consists of a high-speed object database called "
+"the :term:`object store` that indexes :term:`cache objects <cache object>` "
+"according to URLs and their associated headers."
+msgstr ""
+
+#: ../../admin/configuring-cache.en.rst:33
+msgid ""
+"The Traffic Server cache consists of a high-speed object database called "
+"the :term:`object store`. The object store indexes :term:`cache objects "
+"<cache object>` according to URLs and associated headers. This enables "
+"Traffic Server to store, retrieve, and serve not only web pages, but also "
+"parts of web pages - which provides optimum bandwidth savings. Using "
+"sophisticated object management, the object store can cache :term:"
+"`alternate` versions of the same object (versions may differ because of "
+"dissimilar language or encoding types). It can also efficiently store very "
+"small and very large documents, thereby minimizing wasted space. When the "
+"cache is full, Traffic Server removes :term:`stale` data to ensure the most "
+"requested objects are kept readily available and fresh."
+msgstr ""
+
+#: ../../admin/configuring-cache.en.rst:53
+msgid ""
+"Change the total amount of disk space allocated to the cache; refer to "
+"`Changing Cache Capacity`_."
+msgstr ""
+
+#: ../../admin/configuring-cache.en.rst:56
+msgid ""
+"Partition the cache by reserving cache disk space for specific protocols "
+"and :term:`origin servers/domains <origin server>`; refer to `Partitioning "
+"the Cache`_."
+msgstr ""
+
+#: ../../admin/configuring-cache.en.rst:89
+msgid ""
+"In addition, *CLFUS* also supports compressing in the RAM cache itself. "
+"This can be useful for content which is not compressed by itself (e.g. "
+"images). This should not be confused with ``Content-Encoding: gzip``, this "
+"feature is only present to save space internally in the RAM cache itself. "
+"As such, it is completely transparent to the User-Agent. The RAM cache "
+"compression is enabled with the option :ts:cv:`proxy.config.cache.ram_cache."
+"compress`."
+msgstr ""
+
+#: ../../admin/configuring-cache.en.rst:113
+msgid ""
+"Traffic Server provides a dedicated RAM cache for fast retrieval of popular "
+"small objects. The default RAM cache size is automatically calculated based "
+"on the number and size of the :term:`cache partitions <cache partition>` "
+"you have configured. If you've partitioned your cache according to protocol "
+"and/or hosts, then the size of the RAM cache for each partition is "
+"proportional to the size of that partition."
+msgstr ""
+
+#: ../../admin/configuring-cache.en.rst:184
+msgid ""
+"You can manage your cache space more efficiently and restrict disk usage by "
+"creating :term:`cache volumes <cache volume>` with different sizes for "
+"specific protocols. You can further configure these volumes to store data "
+"from specific :term:`origin servers <origin server>` and/or domains. The "
+"volume configuration must be the same on all nodes in a :ref:`cluster "
+"<traffic-server-cluster>`."
+msgstr ""
+
+#: ../../admin/configuring-cache.en.rst:193
+msgid ""
+"You can create separate :term:`volumes <cache volume>` for your cache that "
+"vary in size to store content according to protocol. This ensures that a "
+"certain amount of disk space is always available for a particular protocol. "
+"Traffic Server currently supports only the ``http`` partition type."
+msgstr ""
+
+#: ../../admin/configuring-cache.en.rst:200
+msgid ""
+"Enter a line in :file:`volume.config` for each volume you want to create. ::"
+msgstr ""
+
+#: ../../admin/configuring-cache.en.rst:209
+msgid "Volume definitions must be the same across all nodes in a cluster."
+msgstr ""
+
+#~ msgid ""
+#~ "Change the total amount of disk space allocated to the cache: refer to "
+#~ "`Changing Cache Capacity`_."
+#~ msgstr ""
+#~ "キャッシュに割り当てられたディスク領域の総量を変更する: `キャッシュキャパ"
+#~ "シティの変更`_ を参照。"
+
+#~ msgid ""
+#~ "Traffic Server provides a dedicated RAM cache for fast retrieval of "
+#~ "popular small objects. The default RAM cache size is automatically "
+#~ "calculated based on the number and size of the cache partitions you have "
+#~ "configured. If you've partitioned your cache according to protocol and/"
+#~ "or hosts, then the size of the RAM cache for each partition is "
+#~ "proportional to the size of that partition."
+#~ msgstr ""
+#~ "Traffic Server は人気のある小さなオブジェクトを速く取得するために専用の "
+#~ "RAM キャッシュを提供します。デフォルトの RAM キャッシュサイズは設定した"
+#~ "キャッシュパーティションの数とサイズをもとに自動的に計算されます。キャッ"
+#~ "シュをプロトコルと/もしくはホストで区分けした場合、各パーティションの "
+#~ "RAM キャッシュのサイズはそのパーティションのサイズに比例します。"
+
+#~ msgid ""
+#~ "You can manage your cache space more efficiently and restrict disk usage "
+#~ "by creating cache volumes with different sizes for specific protocols. "
+#~ "You can further configure these volumes to store data from specific "
+#~ "origin servers and/or domains. The volume configuration must be the same "
+#~ "on all nodes in a :ref:`cluster <traffic-server-cluster>`."
+#~ msgstr ""
+#~ "キャッシュ領域をより効率的に管理し、特定のプロトコル用に異なるサイズで"
+#~ "キャッシュボリュームを作成することでディスクの使用量を制限することができ"
+#~ "ます。そのうえ特定のオリジンサーバーと/もしくはドメインからのデータを格納"
+#~ "するためにこれらのボリュームを設定することができます。このボリューム設定"
+#~ "は :ref:`クラスター <traffic-server-cluster>`\\ 内のすべてのノードで同じ"
+#~ "でなければなりません。"
+
+#~ msgid ""
+#~ "Enter a line in the :file:`volume.config` file for each volume you want "
+#~ "to create"
+#~ msgstr ""
+#~ ":file:`volume.config` ファイルに作成したいボリュームごとに一行入力。"
 
 #~ msgid ""
 #~ "The Traffic Server cache consists of a high-speed object database called "

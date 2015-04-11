@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -40,9 +39,9 @@ msgstr ""
 #: ../../sdk/header-based-plugin-examples/blacklist-plugin/working-with-http-header-functions.en.rst:56
 msgid ""
 "To access the host header, the plugin must first get the client request, "
-"retrieve the URL portion, and then obtain the host header. See `HTTP "
-"Headers <../../http-headers>`__ for more information about these calls. See "
-"`Release Marshal Buffer Handles <../../http-headers/guide-to-trafficserver-"
-"http-header-system/release-marshal-buffer-handles>`__ for guidelines on "
-"using ``TSHandleMLocRelease``."
+"retrieve the URL portion, and then obtain the host header. See :doc:`HTTP "
+"Headers <../../http-headers.en>` for more information about these calls. "
+"See :doc:`Release Marshal Buffer Handles <../../http-headers/guide-to-"
+"trafficserver-http-header-system/release-marshal-buffer-handles.en>` for "
+"guidelines on using ``TSHandleMLocRelease``."
 msgstr ""

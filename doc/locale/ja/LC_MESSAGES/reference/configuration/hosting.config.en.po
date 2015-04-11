@@ -109,19 +109,19 @@ msgid ""
 "in partitions 3 and 4."
 msgstr ""
 
-#: ../../reference/configuration/hosting.config.en.rst:24
-msgid ""
-"The :file:`hosting.config` file (by default, located in ``/opt/"
-"trafficserver/etc/trafficserver/``) you to assign cache partitions to "
-"specific origin servers and/or domains so that you can manage cache space "
-"efficiently and restrict disk usage. For step-by-step instructions on "
-"partitioning the cache according to origin servers and/or domains, refer to "
-"`Partitioning the Cache <../configuring-cache#PartitoningCache>`_."
-msgstr ""
-
 #: ../../reference/configuration/hosting.config.en.rst:31
 msgid ""
 "Before you can assign cache partitions to specific origin servers and/or "
 "domains, you must first partition your cache according to size and protocol "
 "in the :file:`volume.config` file."
+msgstr ""
+
+#: ../../reference/configuration/hosting.config.en.rst:24
+msgid ""
+"The :file:`hosting.config` file (by default, located in ``/usr/local/etc/"
+"trafficserver/``) you to assign cache partitions to specific origin servers "
+"and/or domains so that you can manage cache space efficiently and restrict "
+"disk usage. For step-by-step instructions on partitioning the cache "
+"according to origin servers and/or domains, refer to :ref:`partitioning-the-"
+"cache`."
 msgstr ""

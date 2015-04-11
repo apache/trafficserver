@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -41,16 +40,6 @@ msgid ""
 "``static int function_name (TSCont contp, TSEvent event, void *edata)``"
 msgstr ""
 
-#: ../../sdk/header-based-plugin-examples/blacklist-plugin/accessing-the-transaction-being-processed.en.rst:26
-msgid ""
-"In general, the return value of the handler function is not used. The "
-"continuation argument is the continuation being called back, the event is "
-"the event being sent to the continuation, and the data pointed to by ``void "
-"*edata`` depends on the type of event. The data types for each event type "
-"are listed in `Writing Handler Functions <../../continuations/writing-"
-"handler-functions>`__"
-msgstr ""
-
 #: ../../sdk/header-based-plugin-examples/blacklist-plugin/accessing-the-transaction-being-processed.en.rst:33
 msgid ""
 "The key here is that if the event is an HTTP transaction event, then the "
@@ -65,4 +54,14 @@ msgid ""
 "For example: when the origin server DNS lookup event is sent, "
 "``blacklist_plugin`` can call ``handle_dns``\\ and pass ``txnp`` as an "
 "argument."
+msgstr ""
+
+#: ../../sdk/header-based-plugin-examples/blacklist-plugin/accessing-the-transaction-being-processed.en.rst:26
+msgid ""
+"In general, the return value of the handler function is not used. The "
+"continuation argument is the continuation being called back, the event is "
+"the event being sent to the continuation, and the data pointed to by ``void "
+"*edata`` depends on the type of event. The data types for each event type "
+"are listed in :doc:`Writing Handler Functions <../../continuations/writing-"
+"handler-functions.en>`"
 msgstr ""
