@@ -849,7 +849,7 @@ case $host_os_def in
     ])
 
     AS_IF([test "x$ax_cv_c_compiler_vendor" = "xclang"], [
-      common_opt="-pipe -Wall -Qunused-arguments -Wno-deprecated-declarations"
+      common_opt="-pipe -Wall -Wno-deprecated-declarations -Qunused-arguments"
       debug_opt="-ggdb3 $common_opt -Qunused-arguments"
       release_opt="-g $common_opt $optimizing_flags -fno-strict-aliasing -Qunused-arguments"
       cxx_opt="-Wno-invalid-offsetof"
@@ -895,10 +895,10 @@ case $host_os_def in
 
   freebsd|kfreebsd)
     AS_IF([test "x$ax_cv_c_compiler_vendor" = "xclang"], [
-      common_opt="-pipe -Wall -Wno-deprecated-declarations"
+      common_opt="-pipe -Wall -Wno-deprecated-declarations -Qunused-arguments"
       debug_opt="-ggdb3 $common_opt"
       release_opt="-g $common_opt $optimizing_flags -fno-strict-aliasing"
-      cxx_opt="-Wno-invalid-offsetof -Qunused-arguments"
+      cxx_opt="-Wno-invalid-offsetof"
       luajit_cflags="-Wno-parentheses-equality -Wno-tautological-compare"
     ])
 
