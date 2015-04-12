@@ -897,7 +897,7 @@ case $host_os_def in
     AS_IF([test "x$ax_cv_c_compiler_vendor" = "xclang"], [
       common_opt="-pipe -Wall -Wno-deprecated-declarations"
       debug_opt="-ggdb3 $common_opt"
-      release_opt="-g $common_opt $optimizing_flags -feliminate-unused-debug-symbols -fno-strict-aliasing"
+      release_opt="-g $common_opt $optimizing_flags -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof -Qunused-arguments"
       luajit_cflags="-Wno-parentheses-equality -Wno-tautological-compare"
     ])
@@ -1946,6 +1946,7 @@ AS_IF([test "x$enable_experimental_plugins" = xyes], [
     plugins/experimental/balancer/Makefile
     plugins/experimental/buffer_upload/Makefile
     plugins/experimental/channel_stats/Makefile
+    plugins/experimental/cache_promote/Makefile
     plugins/experimental/collapsed_connection/Makefile
     plugins/experimental/custom_redirect/Makefile
     plugins/experimental/epic/Makefile
