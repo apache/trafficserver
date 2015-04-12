@@ -38,6 +38,10 @@
  */
 #include "ink_autoconf.h"
 
+// Helper macro to convert integer defines into string literals
+#define _TS_STR(x) #x
+#define TS_STR(x) _TS_STR(x)
+
 #define BUILD_MACHINE                  "@build_machine@"
 #define BUILD_PERSON                   "@build_person@"
 #define BUILD_GROUP                    "@build_group@"
