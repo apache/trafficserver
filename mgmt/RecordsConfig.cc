@@ -111,17 +111,17 @@ static const RecordElement RecordsConfig[] =
   ,
   // Traffic Server Execution threads configuration
   // By default Traffic Server set number of execution threads equal to total CPUs
-  {RECT_CONFIG, "proxy.config.exec_thread.autoconfig", RECD_INT, "1", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-65535]", RECA_READ_ONLY}
+  {RECT_CONFIG, "proxy.config.exec_thread.autoconfig", RECD_INT, "1", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-1]", RECA_READ_ONLY}
   ,
   {RECT_CONFIG, "proxy.config.exec_thread.autoconfig.scale", RECD_FLOAT, "1.5", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_READ_ONLY}
   ,
-  {RECT_CONFIG, "proxy.config.exec_thread.limit", RECD_INT, "2", RECU_RESTART_TS, RR_NULL, RECC_INT, "[1-1024]", RECA_READ_ONLY}
+  {RECT_CONFIG, "proxy.config.exec_thread.limit", RECD_INT, "2", RECU_RESTART_TS, RR_NULL, RECC_INT, "[1-" TS_STR(TS_MAX_NUMBER_EVENT_THREADS) "]", RECA_READ_ONLY}
   ,
   {RECT_CONFIG, "proxy.config.exec_thread.affinity", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-4]", RECA_READ_ONLY}
   ,
-  {RECT_CONFIG, "proxy.config.accept_threads", RECD_INT, "1", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-1]", RECA_READ_ONLY}
+  {RECT_CONFIG, "proxy.config.accept_threads", RECD_INT, "1", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-" TS_STR(TS_MAX_NUMBER_EVENT_THREADS) "]", RECA_READ_ONLY}
   ,
-  {RECT_CONFIG, "proxy.config.task_threads", RECD_INT, "2", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-99999]", RECA_READ_ONLY}
+  {RECT_CONFIG, "proxy.config.task_threads", RECD_INT, "2", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-" TS_STR(TS_MAX_NUMBER_EVENT_THREADS) "]", RECA_READ_ONLY}
   ,
   {RECT_CONFIG, "proxy.config.thread.default.stacksize", RECD_INT, "1048576", RECU_RESTART_TS, RR_NULL, RECC_INT, "[131072-104857600]", RECA_READ_ONLY}
   ,
