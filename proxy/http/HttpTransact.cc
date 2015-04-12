@@ -3409,7 +3409,7 @@ HttpTransact::handle_response_from_icp_suggested_host(State *s)
       }
       return;
     }
-    ink_assert(&s->hdr_info.server_request);
+    ink_assert(s->hdr_info.server_request.valid());
     s->next_action = how_to_open_connection(s);
     if (s->current.server == &s->server_info && s->next_hop_scheme == URL_WKSIDX_HTTP) {
       HttpTransactHeaders::remove_host_name_from_url(&s->hdr_info.server_request);

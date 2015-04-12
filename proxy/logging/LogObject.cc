@@ -94,7 +94,7 @@ LogObject::LogObject(const LogFormat *format, const char *log_dir, const char *b
     m_rolling_interval_sec(rolling_interval_sec), m_rolling_offset_hr(rolling_offset_hr), m_rolling_size_mb(rolling_size_mb),
     m_last_roll_time(0), m_buffer_manager_idx(0)
 {
-  ink_assert(format != NULL);
+  ink_release_assert(format);
   m_format = new LogFormat(*format);
   m_buffer_manager = new LogBufferManager[m_flush_threads];
 
