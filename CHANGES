@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.0
 
+  *) [TS-3516] Fix various compile warnings with latest versions of clang.
+
   *) [TS-3489] Not able to set more than 1 accept thread per port and cleaned
    other thread configurable ranges
 
