@@ -131,10 +131,10 @@ static InkHashTable *ssl_cipher_name_table = NULL;
  * may use pthreads and openssl without confusing us here. (TS-2271).
  */
 
-static unsigned long
-SSL_pthreads_thread_id()
+static void
+SSL_pthreads_thread_id(CRYPTO_THREADID* id)
 {
-  return (unsigned long)pthread_self();
+  CRYPTO_THREADID_set_numeric(id, (unsigned long)pthread_self());
 }
 
 static void
@@ -782,7 +782,7 @@ SSLInitializeLibrary()
     }
 
     CRYPTO_set_locking_callback(SSL_locking_callback);
-    CRYPTO_set_id_callback(SSL_pthreads_thread_id);
+    CRYPTO_THREADID_set_callback(SSL_pthreads_thread_id);
   }
 
 #ifdef SSL_CTX_set_tlsext_ticket_key_cb
@@ -1066,7 +1066,7 @@ SSLDiagnostic(const SrcLoc &loc, bool debug, SSLNetVConnection *vc, const char *
     ats_ip_ntop(vc->get_remote_addr(), ip_buf, sizeof(ip_buf));
   }
 
-  es = CRYPTO_thread_id();
+  es = (unsigned long)pthread_self();
   while ((l = ERR_get_error_line_data(&file, &line, &data, &flags)) != 0) {
     if (debug) {
       if (unlikely(diags->on())) {
@@ -1220,7 +1220,7 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config &sslMu
   ats_scoped_str completeServerCertPath;
   SSL_CTX *ctx = SSLDefaultServerContext();
   EVP_MD_CTX digest;
-  STACK_OF(X509_NAME) * ca_list;
+  STACK_OF(X509_NAME) * ca_list = NULL;
   unsigned char hash_buf[EVP_MAX_MD_SIZE];
   unsigned int hash_len = 0;
   char const *setting_cert = sslMultCertSettings.cert.get();
@@ -1409,8 +1409,14 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config &sslMu
     SSL_CTX_set_verify_depth(ctx, params->verify_depth); // might want to make configurable at some point.
   }
 
-  ca_list = SSL_load_client_CA_file(params->serverCACertFilename);
-  SSL_CTX_set_client_CA_list(ctx, ca_list);
+  // Set the list of CA's to send to client if we ask for a client
+  // certificate
+  if (params->serverCACertFilename) {
+    ca_list = SSL_load_client_CA_file(params->serverCACertFilename);
+    if (ca_list) {
+      SSL_CTX_set_client_CA_list(ctx, ca_list);
+    }
+  }
   EVP_MD_CTX_init(&digest);
 
   if (EVP_DigestInit_ex(&digest, evp_md_func, NULL) == 0) {

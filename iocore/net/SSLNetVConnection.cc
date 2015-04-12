@@ -27,9 +27,11 @@
 #include "P_SSLUtils.h"
 #include "InkAPIInternal.h" // Added to include the ssl_hook definitions
 
+#if !TS_USE_SET_RBIO
 // Defined in SSLInternal.c, should probably make a separate include
 // file for this at some point
-void SSL_set_rbio(SSLNetVConnection *sslvc, BIO *rbio);
+void SSL_set_rbio(SSL *ssl, BIO *rbio);
+#endif
 
 #define SSL_READ_ERROR_NONE 0
 #define SSL_READ_ERROR 1
@@ -368,7 +370,7 @@ SSLNetVConnection::read_raw_data()
   // Must be reset on each read
   BIO *rbio = BIO_new_mem_buf(start, this->handShakeBioStored);
   BIO_set_mem_eof_return(rbio, -1);
-  SSL_set_rbio(this, rbio);
+  SSL_set_rbio(this->ssl, rbio);
 
   return r;
 }
@@ -525,7 +527,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
         // Must be reset on each read
         BIO *rbio = BIO_new_mem_buf(start, this->handShakeBioStored);
         BIO_set_mem_eof_return(rbio, -1);
-        SSL_set_rbio(this, rbio);
+        SSL_set_rbio(this->ssl, rbio);
       }
     }
   }
