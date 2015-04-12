@@ -2508,7 +2508,7 @@ HTTP/2 Configuration
    .. note:: Reloading this value affects only new HTTP/2 connections, not the
 	     ones already established.
 
-.. ts:cv:: CONFIG proxy.config.http2.initial_window_size_in INT 65536
+.. ts:cv:: CONFIG proxy.config.http2.initial_window_size_in INT 1048576
    :reloadable:
 
    The initial window size for inbound connections.
