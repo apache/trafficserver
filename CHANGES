@@ -1,16 +1,19 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-3489] Not able to set more than 1 accept thread per port and cleaned
+   other thread configurable ranges
+
   *) [TS-3516] Fix various compile warnings with latest versions of clang.
 
-  *) [TS-3438]: Assert if npn protocol is invalid (empty string)
+  *) [TS-3438] Assert if npn protocol is invalid (empty string)
 
-  *) [TS-3501]: Support configuring socket options for client sockets
+  *) [TS-3501] Support configuring socket options for client sockets
 
   *) [TS-3515] Use pcrejit (Regex class) for regex_map
 
   *) [TS-3500] Fix TSHttpTxnPristineUrlGet to return client request's url
-               when pristine url is not populated
+   when pristine url is not populated
 
   *) [TS-3514] Atomic check for gcc >4.1 breaks with gcc 5.0
    Author: Marcin Juszkiewicz <mjuszkiewicz@redhat.com>
@@ -21,17 +24,17 @@ Changes with Apache Traffic Server 6.0.0
    Author: Ryo Okubo <rokubo@yahoo-corp.jp>.
 
   *) [TS-3504] Only read "proxy.config.cache.ram_cache.use_seen_filter" once.
-    Do not set up a callback.
+   Do not set up a callback.
 
   *) [TS-3503] Add ua_first_read to milestones to track when the first byte
-    was read from the client.
+   was read from the client.
 
   *) [TS-3450]: rename header_rewrite condition INTERNAL-TRANSACTION as
-    INTERNAL-TXN in-line with the changes in [TS-3449].
+   INTERNAL-TXN in-line with the changes in [TS-3449].
 
   *) [TS-3449]: Deprecate TSHttpIsInternalRequest and TSHttpIsInternalSession
-    and replace them with TSHttpTxnIsInternal, TSHttpSsnIsInternal
-    respectively.
+   and replace them with TSHttpTxnIsInternal, TSHttpSsnIsInternal
+   respectively.
 
   *) [TS-3475] Add a few records.config options for controlling the HTTP/2
    SETTINGS. Thanks to Masakazu for all the reviews and additions.
