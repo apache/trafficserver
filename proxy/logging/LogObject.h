@@ -102,7 +102,7 @@ public:
 
   LogObject(const LogFormat *format, const char *log_dir, const char *basename, LogFileFormat file_format, const char *header,
             Log::RollingEnabledValues rolling_enabled, int flush_threads, int rolling_interval_sec = 0, int rolling_offset_hr = 0,
-            int rolling_size_mb = 0, bool auto_created = false) TS_NONNULL(2 /* format is required */);
+            int rolling_size_mb = 0, bool auto_created = false);
   LogObject(LogObject &);
   virtual ~LogObject();
 
