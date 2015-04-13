@@ -134,11 +134,21 @@ class TestRSA(helpers.EnvironmentCase, CertSelectionMixin):
         })
 
         # configure SSL multicert
-        cls.configs['ssl_multicert.config'].add_line('dest_ip=127.0.0.2 ssl_cert_name={0} ssl_ca_name={1}'.format(helpers.tests_file_path('rsa_keys/www.example.com.pem'), helpers.tests_file_path('rsa_keys/intermediate.crt')))
-        cls.configs['ssl_multicert.config'].add_line('dest_ip=127.0.0.2 ssl_cert_name={0}'.format(helpers.tests_file_path('rsa_keys/www.test.com.pem')))
+        cls.configs['ssl_multicert.config'].add_line('dest_ip=127.0.0.2 ssl_cert_name={0} ssl_ca_name={1}'.format(
+            helpers.tests_file_path('rsa_keys/www.example.com.pem'),
+            helpers.tests_file_path('rsa_keys/intermediate.crt'),
+            ))
+        cls.configs['ssl_multicert.config'].add_line('dest_ip=127.0.0.2 ssl_cert_name={0}'.format(
+            helpers.tests_file_path('rsa_keys/www.test.com.pem'),
+            ))
 
-        cls.configs['ssl_multicert.config'].add_line('dest_ip=* ssl_cert_name={0} ssl_ca_name={1}'.format(helpers.tests_file_path('rsa_keys/www.example.com.pem'), helpers.tests_file_path('rsa_keys/intermediate.crt')))
-        cls.configs['ssl_multicert.config'].add_line('dest_ip=* ssl_cert_name={0}'.format(helpers.tests_file_path('rsa_keys/www.test.com.pem')))
+        cls.configs['ssl_multicert.config'].add_line('dest_ip=* ssl_cert_name={0} ssl_ca_name={1}'.format(
+            helpers.tests_file_path('rsa_keys/www.example.com.pem'),
+            helpers.tests_file_path('rsa_keys/intermediate.crt'),
+            ))
+        cls.configs['ssl_multicert.config'].add_line('dest_ip=* ssl_cert_name={0}'.format(
+            helpers.tests_file_path('rsa_keys/www.test.com.pem'),
+            ))
 
     def test_rsa(self):
         addr = ('127.0.0.1', self.ssl_port)
@@ -174,11 +184,21 @@ class TestECDSA(helpers.EnvironmentCase, CertSelectionMixin):
         })
 
         # configure SSL multicert
-        cls.configs['ssl_multicert.config'].add_line('dest_ip=127.0.0.2 ssl_cert_name={0} ssl_ca_name={1}'.format(helpers.tests_file_path('ec_keys/www.example.com.pem'), helpers.tests_file_path('ec_keys/intermediate.crt')))
-        cls.configs['ssl_multicert.config'].add_line('dest_ip=127.0.0.2 ssl_cert_name={0}'.format(helpers.tests_file_path('ec_keys/www.test.com.pem')))
+        cls.configs['ssl_multicert.config'].add_line('dest_ip=127.0.0.2 ssl_cert_name={0} ssl_ca_name={1}'.format(
+            helpers.tests_file_path('ec_keys/www.example.com.pem'),
+            helpers.tests_file_path('ec_keys/intermediate.crt'),
+            ))
+        cls.configs['ssl_multicert.config'].add_line('dest_ip=127.0.0.2 ssl_cert_name={0}'.format(
+            helpers.tests_file_path('ec_keys/www.test.com.pem'),
+            ))
 
-        cls.configs['ssl_multicert.config'].add_line('dest_ip=* ssl_cert_name={0} ssl_ca_name={1}'.format(helpers.tests_file_path('ec_keys/www.example.com.pem'), helpers.tests_file_path('ec_keys/intermediate.crt')))
-        cls.configs['ssl_multicert.config'].add_line('dest_ip=* ssl_cert_name={0}'.format(helpers.tests_file_path('ec_keys/www.test.com.pem')))
+        cls.configs['ssl_multicert.config'].add_line('dest_ip=* ssl_cert_name={0} ssl_ca_name={1}'.format(
+            helpers.tests_file_path('ec_keys/www.example.com.pem'),
+            helpers.tests_file_path('ec_keys/intermediate.crt'),
+            ))
+        cls.configs['ssl_multicert.config'].add_line('dest_ip=* ssl_cert_name={0}'.format(
+            helpers.tests_file_path('ec_keys/www.test.com.pem'),
+            ))
 
     def test_rsa(self):
         addr = ('127.0.0.1', self.ssl_port)
