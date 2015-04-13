@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.0
 
+  *) [TS-3513] HTTP/2 core dump. Fixed problem with cursor not advancing
+   during parsing
+
   *) [TS-3514] Atomic check for gcc >4.1 breaks with gcc 5.0
    Author: Marcin Juszkiewicz <mjuszkiewicz@redhat.com>
 
