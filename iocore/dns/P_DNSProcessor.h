@@ -229,7 +229,7 @@ struct DNSHandler : public Continuation {
     ++failover_number[name_server];
     Debug("dns", "sent_one: failover_number for resolver %d is %d", name_server, failover_number[name_server]);
     if (failover_number[name_server] >= dns_failover_number && !crossed_failover_number[name_server])
-      crossed_failover_number[name_server] = ink_get_hrtime();
+      crossed_failover_number[name_server] = Thread::ink_get_hrtime();
   }
 
   bool
@@ -238,16 +238,16 @@ struct DNSHandler : public Continuation {
     if (is_debug_tag_set("dns")) {
       Debug("dns", "failover_now: Considering immediate failover, target time is %" PRId64 "",
             (ink_hrtime)HRTIME_SECONDS(dns_failover_period));
-      Debug("dns", "\tdelta time is %" PRId64 "", (ink_get_hrtime() - crossed_failover_number[i]));
+      Debug("dns", "\tdelta time is %" PRId64 "", (Thread::ink_get_hrtime() - crossed_failover_number[i]));
     }
-    return (crossed_failover_number[i] && ((ink_get_hrtime() - crossed_failover_number[i]) > HRTIME_SECONDS(dns_failover_period)));
+    return (crossed_failover_number[i] && ((Thread::ink_get_hrtime() - crossed_failover_number[i]) > HRTIME_SECONDS(dns_failover_period)));
   }
 
   bool
   failover_soon(int i)
   {
     return (crossed_failover_number[i] &&
-            ((ink_get_hrtime() - crossed_failover_number[i]) >
+            ((Thread::ink_get_hrtime() - crossed_failover_number[i]) >
              (HRTIME_SECONDS(dns_failover_try_period + failover_soon_number[i] * FAILOVER_SOON_RETRY))));
   }
 

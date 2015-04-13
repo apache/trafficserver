@@ -59,7 +59,7 @@ public:
   check_inactivity(int event, Event *e)
   {
     (void)event;
-    ink_hrtime now = ink_get_hrtime();
+    ink_hrtime now = Thread::ink_get_hrtime();
     NetHandler &nh = *get_NetHandler(this_ethread());
     total_connections_in = 0;
     // Copy the list and use pop() to catch any closes caused by callbacks.

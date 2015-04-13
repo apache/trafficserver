@@ -128,7 +128,7 @@ static long congestEntryGCTime = 0;
 void
 preCongestEntryGC(void)
 {
-  congestEntryGCTime = (long)ink_hrtime_to_sec(ink_get_hrtime());
+  congestEntryGCTime = (long)ink_hrtime_to_sec(Thread::ink_get_hrtime());
 }
 
 // if the entry contains useful info, return false -- keep it
@@ -315,7 +315,7 @@ CongestionDBCont::GC(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
       {
         MUTEX_TRY_LOCK(lock, bucket_mutex, this_ethread());
         if (lock.is_locked()) {
-          ink_hrtime now = ink_get_hrtime();
+          ink_hrtime now = Thread::ink_get_hrtime();
           now = ink_hrtime_to_sec(now);
           theCongestionDB->RunTodoList(CDBC_pid);
           Iter it;

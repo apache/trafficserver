@@ -352,7 +352,7 @@ TSVIOMutexGet(TSVIO viop)
 ink_hrtime
 INKBasedTimeGet()
 {
-  return ink_get_based_hrtime();
+  return Thread::ink_get_based_hrtime();
 }
 
 /* UDP Connection Interface */

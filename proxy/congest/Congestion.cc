@@ -618,7 +618,7 @@ CongestionEntry::sprint(char *buf, int buflen, int format)
   ink_hrtime timestamp = 0;
   char state;
   if (pRecord->max_connection >= 0 && m_num_connections >= pRecord->max_connection) {
-    timestamp = ink_hrtime_to_sec(ink_get_hrtime());
+    timestamp = ink_hrtime_to_sec(Thread::ink_get_hrtime());
     state = 'M';
   } else {
     timestamp = m_last_congested;

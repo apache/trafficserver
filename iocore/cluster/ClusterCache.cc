@@ -393,7 +393,7 @@ CacheContinuation::do_op(Continuation *c, ClusterMachine *mp, void *args, int us
     cc->mutex = c->mutex;
     cc->action = c;
     cc->action.cancelled = false;
-    cc->start_time = ink_get_hrtime();
+    cc->start_time = Thread::ink_get_hrtime();
     cc->from = mp;
     cc->result = op_failure(opcode);
     SET_CONTINUATION_HANDLER(cc, (CacheContHandler)&CacheContinuation::remoteOpEvent);
@@ -832,7 +832,7 @@ CacheContinuation::localVCsetupEvent(int event, ClusterVConnection *vc)
   } else if (((event == CLUSTER_EVENT_OPEN) || (event == CLUSTER_EVENT_OPEN_EXISTS)) &&
              (((ptrdiff_t)timeout & (ptrdiff_t)1) == 0)) {
     ink_hrtime now;
-    now = ink_get_hrtime();
+    now = Thread::ink_get_hrtime();
     CLUSTER_SUM_DYN_STAT(CLUSTER_OPEN_DELAY_TIME_STAT, now - start_time);
     LOG_EVENT_TIME(start_time, open_delay_time_dist, open_delay_events);
     if (read_op) {
@@ -1046,7 +1046,7 @@ cache_op_ClusterFunction(ClusterHandler *ch, void *data, int len)
   MUTEX_TRY_LOCK(lock, c->mutex, this_ethread());
   c->request_opcode = opcode;
   c->token.clear();
-  c->start_time = ink_get_hrtime();
+  c->start_time = Thread::ink_get_hrtime();
   c->ch = ch;
   SET_CONTINUATION_HANDLER(c, (CacheContHandler)&CacheContinuation::replyOpEvent);
 
@@ -1556,7 +1556,7 @@ CacheContinuation::replyOpEvent(int event, VConnection *cvc)
   ink_assert(magicno == (int)MagicNo);
   Debug("cache_proto", "replyOpEvent(this=%p,event=%d,VC=%p)", this, event, cvc);
   ink_hrtime now;
-  now = ink_get_hrtime();
+  now = Thread::ink_get_hrtime();
   CLUSTER_SUM_DYN_STAT(CLUSTER_CACHE_CALLBACK_TIME_STAT, now - start_time);
   LOG_EVENT_TIME(start_time, callback_time_dist, cache_callbacks);
   ink_release_assert(expect_cache_callback);
@@ -1992,7 +1992,7 @@ cache_op_result_ClusterFunction(ClusterHandler *ch, void *d, int l)
     c->seq_number = msg->seq_number;
     c->target_ip = ch->machine->ip;
     SET_CONTINUATION_HANDLER(c, (CacheContHandler)&CacheContinuation::handleReplyEvent);
-    c->start_time = ink_get_hrtime();
+    c->start_time = Thread::ink_get_hrtime();
     c->result = msg->result;
     if (event_is_open(msg->result))
       c->token = msg->token;
@@ -2094,11 +2094,11 @@ CacheContinuation::remoteOpEvent(int event_code, Event *e)
         res = rmsg->result;
       }
       if ((res == CACHE_EVENT_LOOKUP) || (res == CACHE_EVENT_LOOKUP_FAILED)) {
-        now = ink_get_hrtime();
+        now = Thread::ink_get_hrtime();
         CLUSTER_SUM_DYN_STAT(CLUSTER_CACHE_LKRMT_CALLBACK_TIME_STAT, now - start_time);
         LOG_EVENT_TIME(start_time, lkrmt_callback_time_dist, lkrmt_cache_callbacks);
       } else {
-        now = ink_get_hrtime();
+        now = Thread::ink_get_hrtime();
         CLUSTER_SUM_DYN_STAT(CLUSTER_CACHE_RMT_CALLBACK_TIME_STAT, now - start_time);
         LOG_EVENT_TIME(start_time, rmt_callback_time_dist, rmt_cache_callbacks);
       }
@@ -2445,7 +2445,7 @@ CacheContinuation::do_remote_lookup(Continuation *cont, CacheKey *key, CacheCont
   c->url_md5 = msg->url_md5;
   c->action.cancelled = false;
   c->action = cont;
-  c->start_time = ink_get_hrtime();
+  c->start_time = Thread::ink_get_hrtime();
   SET_CONTINUATION_HANDLER(c, (CacheContHandler)&CacheContinuation::remoteOpEvent);
   c->result = CACHE_EVENT_LOOKUP_FAILED;
 
@@ -2562,7 +2562,7 @@ int
 CacheContinuation::replyLookupEvent(int event, void * /* d ATS_UNUSED */)
 {
   ink_hrtime now;
-  now = ink_get_hrtime();
+  now = Thread::ink_get_hrtime();
   CLUSTER_SUM_DYN_STAT(CLUSTER_CACHE_CALLBACK_TIME_STAT, now - start_time);
   LOG_EVENT_TIME(start_time, callback_time_dist, cache_callbacks);
 

@@ -523,7 +523,7 @@ UpdateEntry::ComputeScheduleTime()
     }
   }
 
-  ht = ink_get_based_hrtime();
+  ht = Thread::ink_get_based_hrtime();
   cur_time = ht / HRTIME_SECOND;
 
   if (!_start_time) {
@@ -1250,7 +1250,7 @@ UpdateScheduler::ScheduleEvent(int event, void *e)
   // Scan entry list and schedule expired updates
   ///////////////////////////////////////////////////////
 
-  ink_hrtime ht = ink_get_based_hrtime();
+  ink_hrtime ht = Thread::ink_get_based_hrtime();
   time_t cur_time = ht / HRTIME_SECOND;
   Queue<UpdateEntry> no_action_q;
   int time_expired;
