@@ -105,11 +105,11 @@ Thread::start(const char *name, size_t stacksize, ThreadFunction f, void *a)
 ink_hrtime
 Thread::ink_get_hrtime()
 {
-	return Thread::cur_time;
+  return Thread::cur_time;
 }
 
 ink_hrtime
 Thread::ink_get_based_hrtime()
 {
-	return Thread::cur_time;
+  return Thread::cur_time;
 }
