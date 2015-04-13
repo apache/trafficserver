@@ -44,6 +44,21 @@ class CertSelectionMixin(object):
         sock.do_handshake()
         return sock.get_peer_certificate()
 
+    def _get_cert_chain(self, addr, sni_name=None, ciphers=None):
+        '''
+        Return the certificate chain for addr. Optionally sending sni_name
+        '''
+        ctx = SSL.Context(SSL.TLSv1_2_METHOD)
+        # Set up client
+        sock = SSL.Connection(ctx, socket.socket(socket.AF_INET, socket.SOCK_STREAM))
+        sock.connect(addr)
+        if sni_name is not None:
+            sock.set_tlsext_host_name(sni_name)
+        if ciphers is not None:
+            ctx.set_cipher_list(ciphers)
+        sock.do_handshake()
+        return sock.get_peer_cert_chain()
+
     def test_star_ordering(self):
         '''
         We should be served the first match, since we aren't sending SNI headers
@@ -82,6 +97,20 @@ class CertSelectionMixin(object):
         cert = self._get_cert(addr, sni_name='www.example.com')
         self.assertEqual(cert.get_subject().commonName.decode(), 'www.example.com')
 
+    def _intermediate_ca_t(self, cipher):
+        # send a request that *should* get an intermediate CA
+        addr = ('127.0.0.1', self.ssl_port)
+        cert_chain = self._get_cert_chain(addr, ciphers=CIPHER_MAP[cipher])
+        self.assertEqual(len(cert_chain), 2)
+        self.assertEqual(cert_chain[0].get_subject().commonName.decode(), 'www.example.com')
+        self.assertEqual(cert_chain[1].get_subject().commonName.decode(), 'intermediate')
+
+        # send a request that shouldn't get an intermediate CA
+        addr = ('127.0.0.1', self.ssl_port)
+        cert_chain = self._get_cert_chain(addr, ciphers=CIPHER_MAP[cipher], sni_name='www.test.com')
+        self.assertEqual(len(cert_chain), 1)
+        self.assertEqual(cert_chain[0].get_subject().commonName.decode(), 'www.test.com')
+
 
 class TestRSA(helpers.EnvironmentCase, CertSelectionMixin):
     '''
@@ -99,10 +128,10 @@ class TestRSA(helpers.EnvironmentCase, CertSelectionMixin):
         })
 
         # configure SSL multicert
-        cls.configs['ssl_multicert.config'].add_line('dest_ip=127.0.0.2 ssl_cert_name={0}'.format(helpers.tests_file_path('rsa_keys/www.example.com.pem')))
+        cls.configs['ssl_multicert.config'].add_line('dest_ip=127.0.0.2 ssl_cert_name={0} ssl_ca_name={1}'.format(helpers.tests_file_path('rsa_keys/www.example.com.pem'), helpers.tests_file_path('rsa_keys/intermediate.crt')))
         cls.configs['ssl_multicert.config'].add_line('dest_ip=127.0.0.2 ssl_cert_name={0}'.format(helpers.tests_file_path('rsa_keys/www.test.com.pem')))
 
-        cls.configs['ssl_multicert.config'].add_line('dest_ip=* ssl_cert_name={0}'.format(helpers.tests_file_path('rsa_keys/www.example.com.pem')))
+        cls.configs['ssl_multicert.config'].add_line('dest_ip=* ssl_cert_name={0} ssl_ca_name={1}'.format(helpers.tests_file_path('rsa_keys/www.example.com.pem'), helpers.tests_file_path('rsa_keys/intermediate.crt')))
         cls.configs['ssl_multicert.config'].add_line('dest_ip=* ssl_cert_name={0}'.format(helpers.tests_file_path('rsa_keys/www.test.com.pem')))
 
     def test_rsa(self):
@@ -115,6 +144,13 @@ class TestRSA(helpers.EnvironmentCase, CertSelectionMixin):
         with self.assertRaises(Exception):
             cert = self._get_cert(addr, ciphers=CIPHER_MAP['ecdsa'])
             self.assertEqual(cert.get_subject().commonName.decode(), 'www.example.com')
+
+    def test_intermediate_ca_rsa(self):
+        self._intermediate_ca_t('rsa')
+
+    def test_intermediate_ca_ecdsa(self):
+        with self.assertRaises(Exception):
+            self._intermediate_ca_t('ecdsa')
 
 class TestECDSA(helpers.EnvironmentCase, CertSelectionMixin):
     '''
