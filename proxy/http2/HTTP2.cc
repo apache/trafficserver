@@ -629,10 +629,10 @@ http2_write_header_fragment(HTTPHdr *in, MIMEFieldIter &field_iter, uint8_t *out
 int64_t
 http2_parse_header_fragment(HTTPHdr *hdr, IOVec iov, Http2DynamicTable &dynamic_table, bool cont)
 {
-  uint8_t *buf_start = (uint8_t *)iov.iov_base;
-  uint8_t *buf_end = (uint8_t *)iov.iov_base + iov.iov_len;
+  const uint8_t *buf_start = (uint8_t *)iov.iov_base;
+  const uint8_t *buf_end = buf_start + iov.iov_len;
 
-  uint8_t *cursor = buf_start;
+  uint8_t *cursor = (uint8_t *)iov.iov_base; // place the cursor at the start
   HdrHeap *heap = hdr->m_heap;
   HTTPHdrImpl *hh = hdr->m_http;
 
