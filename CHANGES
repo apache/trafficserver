@@ -1,7 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
-  *) [TS-3520]: Fix logging core dump due to invalid unmapped url length/buffer
+  *) [TS-3519] HTTP/2 seeing a lot of GOAWAY frames being sent
+
+  *) [TS-3520] Fix logging core dump due to invalid unmapped url length/buffer
 
   *) [TS-3489] Not able to set more than 1 accept thread per port and cleaned
    other thread configurable ranges
