@@ -284,7 +284,7 @@ rcv_rst_stream_frame(Http2ClientSession &cs, Http2ConnectionState &cstate, const
   DebugSsn(&cs, "http2_cs", "[%" PRId64 "] Received RST_STREAM frame.", cs.connection_id());
 
   Http2Stream *stream = cstate.find_stream(frame.header().streamid);
-  if (stream == NULL) {
+  if (frame.header().streamid == 0) {
     return HTTP2_ERROR_PROTOCOL_ERROR;
   }
 
@@ -292,7 +292,7 @@ rcv_rst_stream_frame(Http2ClientSession &cs, Http2ConnectionState &cstate, const
     return HTTP2_ERROR_FRAME_SIZE_ERROR;
   }
 
-  if (!stream->change_state(frame.header().type, frame.header().flags)) {
+  if (stream != NULL && !stream->change_state(frame.header().type, frame.header().flags)) {
     // If a RST_STREAM frame identifying an idle stream is received, the
     // recipient MUST treat this as a connection error of type PROTOCOL_ERROR.
     return HTTP2_ERROR_PROTOCOL_ERROR;
@@ -306,7 +306,9 @@ rcv_rst_stream_frame(Http2ClientSession &cs, Http2ConnectionState &cstate, const
 
   DebugSsn(&cs, "http2_cs", "[%" PRId64 "] RST_STREAM: Stream ID: %u, Error Code: %u)", cs.connection_id(), stream->get_id(),
            rst_stream.error_code);
-  cstate.delete_stream(stream);
+  if (stream != NULL) {
+    cstate.delete_stream(stream);
+  }
 
   return HTTP2_ERROR_NO_ERROR;
 }
