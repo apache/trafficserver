@@ -1524,6 +1524,16 @@ all the different user-agent versions of documents it encounters.
 
    The header on which Traffic Server varies for anything other than text and images.
 
+.. ts:cv:: CONFIG proxy.config.http.cache.open_read_retry_time INT 10
+   :reloadable:
+
+    The number of milliseconds a cacheable request will wait before requesting the object from cache if an equivalent request is in flight.
+
+.. ts:cv:: CONFIG proxy.config.http.cache.max_open_read_retries INT -1
+   :reloadable:
+
+    The number of times to attempt fetching an object from cache if there was an equivalent request in flight.
+
 Customizable User Response Pages
 ================================
 
