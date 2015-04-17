@@ -304,9 +304,9 @@ rcv_rst_stream_frame(Http2ClientSession &cs, Http2ConnectionState &cstate, const
     return HTTP2_ERROR_PROTOCOL_ERROR;
   }
 
-  DebugSsn(&cs, "http2_cs", "[%" PRId64 "] RST_STREAM: Stream ID: %u, Error Code: %u)", cs.connection_id(), stream->get_id(),
-           rst_stream.error_code);
   if (stream != NULL) {
+    DebugSsn(&cs, "http2_cs", "[%" PRId64 "] RST_STREAM: Stream ID: %u, Error Code: %u)", cs.connection_id(), stream->get_id(),
+             rst_stream.error_code);
     cstate.delete_stream(stream);
   }
 
