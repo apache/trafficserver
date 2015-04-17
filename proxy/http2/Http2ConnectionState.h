@@ -105,7 +105,7 @@ public:
 
   ~Http2Stream()
   {
-    _req_header.clear();
+    _req_header.destroy();
 
     if (_fetch_sm) {
       _fetch_sm->ext_destroy();
