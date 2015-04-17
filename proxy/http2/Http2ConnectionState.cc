@@ -653,7 +653,7 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
 
     if (error != HTTP2_ERROR_NO_ERROR) {
       this->send_goaway_frame(last_streamid, error);
-
+      cleanup_streams();
       // XXX We need to think a bit harder about how to coordinate the client session and the
       // protocol connection. At this point, the protocol is shutting down, but there's no way
       // to tell that to the client session. Perhaps this could be solved by implementing the
