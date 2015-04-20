@@ -271,7 +271,7 @@ PluginVC::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *abuffer, 
 
   // Note: we set vio.op last because process_write_side looks at it to
   //  tell if the VConnection is active.
-  write_state.vio.mutex = c->mutex;
+  write_state.vio.mutex = c != NULL ? c->mutex : this->mutex;
   write_state.vio._cont = c;
   write_state.vio.nbytes = nbytes;
   write_state.vio.ndone = 0;
