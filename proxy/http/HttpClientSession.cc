@@ -220,7 +220,8 @@ HttpClientSession::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *
   /* conditionally set the tcp initial congestion window
      before our first write. */
   DebugHttpSsn("tcp_init_cwnd_set %d\n", (int)tcp_init_cwnd_set);
-  if (!tcp_init_cwnd_set) {
+  // Checking c to avoid clang detected NULL derference path
+  if (c && !tcp_init_cwnd_set) {
     tcp_init_cwnd_set = true;
     set_tcp_init_cwnd();
   }
