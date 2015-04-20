@@ -493,6 +493,9 @@ HttpClientSession::release(IOBufferReader *r)
 
   HTTP_DECREMENT_DYN_STAT(http_current_client_transactions_stat);
 
+  // Clean up the write VIO in case of inactivity timeout
+  this->do_io_write(NULL, 0, NULL);
+
   // Check to see there is remaining data in the
   //  buffer.  If there is, spin up a new state
   //  machine to process it.  Otherwise, issue an

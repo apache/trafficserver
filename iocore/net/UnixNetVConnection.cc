@@ -166,7 +166,8 @@ static inline int
 write_signal_and_update(int event, UnixNetVConnection *vc)
 {
   vc->recursion++;
-  vc->write.vio._cont->handleEvent(event, &vc->write.vio);
+  if (NULL != vc->write.vio._cont)
+    vc->write.vio._cont->handleEvent(event, &vc->write.vio);
   if (!--vc->recursion && vc->closed) {
     /* BZ  31932 */
     ink_assert(vc->thread == this_ethread());
@@ -592,7 +593,7 @@ UnixNetVConnection::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader 
 {
   ink_assert(!closed);
   write.vio.op = VIO::WRITE;
-  write.vio.mutex = c->mutex;
+  write.vio.mutex = c ? c->mutex : this->mutex;
   write.vio._cont = c;
   write.vio.nbytes = nbytes;
   write.vio.ndone = 0;
