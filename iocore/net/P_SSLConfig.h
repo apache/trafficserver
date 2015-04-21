@@ -66,6 +66,7 @@ struct SSLConfigParams : public ConfigInfo {
   char *dhparamsFile;
   char *cipherSuite;
   char *client_cipherSuite;
+  int configExitOnLoadError;
   int clientCertLevel;
   int verify_depth;
   int ssl_session_cache; // SSL_SESSION_CACHE_MODE

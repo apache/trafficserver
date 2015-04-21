@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.0
 
+  *) [TS-3529] Add config option to allow ATS to start even if certificate files are bad.
+
   *) [TS-3522] Segfault due to inactivity_cop.
 
   *) [TS-3530] HTTP/2 memory leak with headers and more...
