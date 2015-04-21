@@ -819,6 +819,10 @@ HttpTransact::EndRemapRequest(State *s)
       TRANSACT_RETURN(SM_ACTION_INTERNAL_CACHE_NOOP, NULL);
     }
 
+    if (!s->http_config_param->url_remap_required && !incoming_request->is_target_in_url()) {
+      s->hdr_info.client_request.set_url_target_from_host_field();
+    }
+
     /////////////////////////////////////////////////////////
     // check for: (1) reverse proxy is on, and no URL host //
     /////////////////////////////////////////////////////////
