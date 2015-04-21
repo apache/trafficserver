@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-3523]: Proxy urls with no matching remap rules, when remap_required
+               is disabled, regardless of reverse_proxy_enabled setting
+
   *) [TS-3522] Segfault due to inactivity_cop.
 
   *) [TS-3530] HTTP/2 memory leak with headers and more...
