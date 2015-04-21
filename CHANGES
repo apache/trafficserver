@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-3529] Add config option to allow ATS to start even if certificate files are bad.
+
   *) [TS-3523]: Proxy urls with no matching remap rules, when remap_required
                is disabled, regardless of reverse_proxy_enabled setting
 

@@ -231,6 +231,7 @@ SSLConfigParams::initialize()
   ats_free(serverCertRelativePath);
 
   configFilePath = RecConfigReadConfigPath("proxy.config.ssl.server.multicert.filename");
+  REC_ReadConfigInteger(configExitOnLoadError, "proxy.config.ssl.server.multicert.exit_on_load_fail");
 
   REC_ReadConfigStringAlloc(ssl_server_private_key_path, "proxy.config.ssl.server.private_key.path");
   set_paths_helper(ssl_server_private_key_path, NULL, &serverKeyPathOnly, NULL);
@@ -324,12 +325,17 @@ SSLCertificateConfig::startup()
 {
   sslCertUpdate = new ConfigUpdateHandler<SSLCertificateConfig>();
   sslCertUpdate->attach("proxy.config.ssl.server.multicert.filename");
+  sslCertUpdate->attach("proxy.config.ssl.server.multicert.exit_on_load_fail");
   sslCertUpdate->attach("proxy.config.ssl.server.ticket_key.filename");
   sslCertUpdate->attach("proxy.config.ssl.server.cert.path");
   sslCertUpdate->attach("proxy.config.ssl.server.private_key.path");
   sslCertUpdate->attach("proxy.config.ssl.server.cert_chain.filename");
 
-  if (!reconfigure()) {
+  // Exit if there are problems on the certificate loading and the
+  // proxy.config.ssl.server.multicert.exit_on_load_fail is true
+  SSLConfigParams *params = SSLConfig::acquire();
+  if (!reconfigure() && params->configExitOnLoadError) {
+    Error("Problems loading ssl certificate file, %s.  Exiting.", params->configFilePath);
     _exit(1);
   }
   return true;
@@ -351,11 +357,9 @@ SSLCertificateConfig::reconfigure()
   }
 
   SSLParseCertificateConfiguration(params, lookup);
-  if (lookup->is_valid) {
-    configid = configProcessor.set(configid, lookup);
-  } else {
+  configid = configProcessor.set(configid, lookup);
+  if (!lookup->is_valid) {
     retStatus = false;
-    delete lookup;
   }
 
   return retStatus;
