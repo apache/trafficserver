@@ -7010,7 +7010,7 @@ TSReturnCode
 TSHttpTxnServerFdGet(TSHttpTxn txnp, int *fdp)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
-  sdk_assert(sdk_sanity_check_null_ptr((void*)fdp) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void *)fdp) == TS_SUCCESS);
 
   HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
   *fdp = -1;
