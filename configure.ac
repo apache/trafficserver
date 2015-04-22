@@ -505,6 +505,19 @@ AC_ARG_ENABLE([luajit],
 AC_MSG_RESULT([$enable_luajit])
 AM_CONDITIONAL([BUILD_LUAJIT], [ test "x${enable_luajit}" = "xyes" ])
 
+
+#
+# Check if we should allow builds on 32-bit platforms
+#
+AC_MSG_CHECKING([whether to allow 32-bit builds])
+AC_ARG_ENABLE([32bit-build],
+  [AS_HELP_STRING([--enable-32bit-build],[allow 32bit builds])],
+  [],
+  [enable_32bit=no]
+)
+AC_MSG_RESULT([$enable_32bit])
+
+
 #
 # Installation directories
 # For each var the following is evaluated
@@ -935,7 +948,7 @@ case $host_os_def in
     ])
 esac
 
-AS_IF([test x"$enable_coverage" = xyes], [
+AS_IF([test x"$enable_coverage" = "xyes"], [
   # Map per-compiler code coverage instrumentation flags.  Note that
   # we don't test whether the compiler actually support these options
   # (we don't do that in general). The user is expected to use a modern,
@@ -953,7 +966,7 @@ AS_IF([test x"$enable_coverage" = xyes], [
 
 # Only add -Werror if the user has requested it. We enable this by default for
 # development, disable it by default for release.
-AS_IF([test x"$enable_werror" = xyes], [
+AS_IF([test x"$enable_werror" = "xyes"], [
   TS_ADDTO(release_opt, -Werror)
   TS_ADDTO(debug_opt, -Werror)
 ])
@@ -990,12 +1003,22 @@ else
   TS_ADDTO(CXXFLAGS, [${cxx_oflag_opt}])
 fi
 
-# Checks for pointer size
+# Checks for pointer size.
+# TODO: Later this is irrelevant, and we should just bail on 32-bit platforms always
 AC_CHECK_SIZEOF([void*])
 if test "x$ac_cv_sizeof_voidp" == "x"; then
   AC_ERROR([Cannot determine size of void*])
 fi
 AC_SUBST(ac_cv_sizeof_voidp)
+
+# Right now, 32-bit platform is a build error, unless we've forced it with --enable-32bit-build
+if test "${ac_cv_sizeof_voidp}" = "4"; then
+   AS_IF([test x"$enable_32bit_build" = "xyes"], [
+     AC_MSG_NOTICE([Explicitly building on a 32-bit platform, this might be unsupported soon!])
+   ], [
+     AC_ERROR([You are trying to build on a 32-bit platform, which is unsupported.])
+   ])
+fi
 
 
 #
@@ -1674,17 +1697,17 @@ AC_CHECK_MEMBER([struct sockaddr.sa_len], [], [], [#include <netinet/in.h>])
 AC_CHECK_MEMBER([struct sockaddr_in.sin_len], [], [], [#include <netinet/in.h>])
 AC_CHECK_MEMBER([struct sockaddr_in6.sin6_len], [], [], [#include <netinet/in.h>])
 
-if test "x${ac_cv_member_struct_sockaddr_sa_len}" = xyes; then
+if test "x${ac_cv_member_struct_sockaddr_sa_len}" = "xyes"; then
     AC_DEFINE(HAVE_STRUCT_SOCKADDR_SA_LEN, 1,
             [Whether struct sockaddr_in has the sa_len member])
 fi
 
-if test "x${ac_cv_member_struct_sockaddr_in_sin_len}" = xyes ; then
+if test "x${ac_cv_member_struct_sockaddr_in_sin_len}" = "xyes"; then
 AC_DEFINE(HAVE_STRUCT_SOCKADDR_IN_SIN_LEN, 1,
             [Whether struct sockaddr_in has the sin_len member])
 fi
 
-if test "x${ac_cv_member_struct_sockaddr_in6_sin6_len}" = xyes; then
+if test "x${ac_cv_member_struct_sockaddr_in6_sin6_len}" = "xyes"; then
     AC_DEFINE(HAVE_STRUCT_SOCKADDR_IN6_SIN6_LEN, 1,
             [Whether struct sockaddr_in6 has the sin6_len member])
 fi
@@ -1812,7 +1835,7 @@ AC_CHECK_TYPE([struct tcp_info],
 )
 
 # See if we can build the remap_stats plugin
-AS_IF([test "x$enable_experimental_plugins" = xyes],
+AS_IF([test "x$enable_experimental_plugins" = "xyes"],
   [
     AC_CHECK_HEADERS([search.h])
     AS_IF([test "x$ac_cv_header_search_h" = "xyes"],
@@ -1938,7 +1961,7 @@ AC_CHECK_LIB([mysqlclient],[mysql_info],[AC_SUBST([LIB_MYSQLCLIENT],["-lmysqlcli
 AC_SUBST(has_mysql)
 AM_CONDITIONAL([HAS_MYSQL], [ test "x${has_mysql}" = "x1" ])
 
-AS_IF([test "x$enable_experimental_plugins" = xyes], [  
+AS_IF([test "x$enable_experimental_plugins" = "xyes"], [
   AC_CONFIG_FILES([
     plugins/experimental/Makefile
     plugins/experimental/authproxy/Makefile
@@ -1970,7 +1993,7 @@ AS_IF([test "x$enable_experimental_plugins" = xyes], [
     plugins/experimental/xdebug/Makefile
 ])])
 
-AS_IF([test "x$enable_cppapi" = xyes], [
+AS_IF([test "x$enable_cppapi" = "xyes"], [
   AC_CONFIG_FILES([
   lib/atscppapi/Makefile
   lib/atscppapi/examples/Makefile
