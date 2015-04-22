@@ -299,7 +299,7 @@ mgmt_get_peereid(int fd, uid_t *euid, gid_t *egid)
   }
 
   *euid = ucred_geteuid(ucred);
-  *guid = ucred_getegid(ucred);
+  *egid = ucred_getegid(ucred);
   ucred_free(ucred);
   return 0;
 #elif TS_HAS_SO_PEERCRED
