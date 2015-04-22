@@ -28,16 +28,14 @@
 
 // need to keep syncronized with TSSDKVersion
 //   in ts/ts.h.in
-typedef enum
-{
+typedef enum {
   PLUGIN_SDK_VERSION_UNKNOWN = -1,
   PLUGIN_SDK_VERSION_2_0,
   PLUGIN_SDK_VERSION_3_0,
   PLUGIN_SDK_VERSION_4_0
 } PluginSDKVersion;
 
-struct PluginRegInfo
-{
+struct PluginRegInfo {
   PluginRegInfo();
   ~PluginRegInfo();
 

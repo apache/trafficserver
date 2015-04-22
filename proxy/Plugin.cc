@@ -51,9 +51,10 @@ DLL<PluginRegInfo> plugin_reg_list;
 PluginRegInfo *plugin_reg_current = NULL;
 
 PluginRegInfo::PluginRegInfo()
-  : plugin_registered(false), plugin_path(NULL), sdk_version(PLUGIN_SDK_VERSION_UNKNOWN),
-    plugin_name(NULL), vendor_name(NULL), support_email(NULL)
-{ }
+  : plugin_registered(false), plugin_path(NULL), sdk_version(PLUGIN_SDK_VERSION_UNKNOWN), plugin_name(NULL), vendor_name(NULL),
+    support_email(NULL)
+{
+}
 
 static bool
 plugin_load(int argc, char *argv[], bool validateOnly)
@@ -101,7 +102,7 @@ plugin_load(int argc, char *argv[], bool validateOnly)
     plugin_reg_current = new PluginRegInfo;
     plugin_reg_current->plugin_path = ats_strdup(path);
 
-    init = (init_func_t) dlsym(handle, "TSPluginInit");
+    init = (init_func_t)dlsym(handle, "TSPluginInit");
     if (!init) {
       if (validateOnly) {
         return false;

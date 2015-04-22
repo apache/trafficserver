@@ -1784,7 +1784,7 @@ TSPluginRegister(TSSDKVersion sdk_version, TSPluginRegistrationInfo *plugin_info
   if (!plugin_reg_current)
     return TS_ERROR;
 
-  sdk_assert(sdk_sanity_check_null_ptr((void*) plugin_info) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void *)plugin_info) == TS_SUCCESS);
 
   plugin_reg_current->plugin_registered = true;
 
