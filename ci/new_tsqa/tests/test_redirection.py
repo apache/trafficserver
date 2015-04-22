@@ -15,24 +15,19 @@
 #  limitations under the License.
 
 import requests
-import logging
-
 import helpers
-
 import tsqa.test_cases
 import tsqa.utils
 import tsqa.endpoint
 
-log = logging.getLogger(__name__)
-
-class TestRedirection(helpers.EnvironmentCase):
+class TestRedirection(helpers.EnvironmentCase, tsqa.test_cases.HTTPBinCase):
     @classmethod
     def setUpEnv(cls, env):
         cls.configs['records.config']['CONFIG'].update({
             'proxy.config.http.redirection_enabled': 1,
             'proxy.config.http.number_of_redirections': 10
         })
-        cls.configs['remap.config'].add_line('map / http://httpbin.org');
+        cls.configs['remap.config'].add_line('map / http://127.0.0.1:{0}'.format(cls.http_endpoint.address[1]))
 
     def test_redirection(self):
         server_ports = self.configs['records.config']['CONFIG']['proxy.config.http.server_ports']
