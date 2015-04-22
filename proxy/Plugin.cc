@@ -51,7 +51,8 @@ DLL<PluginRegInfo> plugin_reg_list;
 PluginRegInfo *plugin_reg_current = NULL;
 
 PluginRegInfo::PluginRegInfo()
-  : plugin_registered(false), plugin_path(NULL), plugin_name(NULL), vendor_name(NULL), support_email(NULL), dlh(NULL)
+  : plugin_registered(false), plugin_path(NULL),
+    plugin_name(NULL), vendor_name(NULL), support_email(NULL)
 {
 }
 
@@ -66,14 +67,13 @@ PluginRegInfo::~PluginRegInfo()
   ats_free(this->plugin_name);
   ats_free(this->vendor_name);
   ats_free(this->support_email);
-  if (dlh)
-    dlclose(dlh);
 }
 
 static bool
 plugin_load(int argc, char *argv[], bool validateOnly)
 {
-  char path[PATH_NAME_MAX];
+  char path[PATH_NAME_MAX + 1];
+  void *handle;
   init_func_t init;
 
   if (argc < 1) {
@@ -100,7 +100,7 @@ plugin_load(int argc, char *argv[], bool validateOnly)
     ElevateAccess access(elevate_access != 0);
 #endif /* TS_USE_POSIX_CAP */
 
-    void *handle = dlopen(path, RTLD_NOW);
+    handle = dlopen(path, RTLD_NOW);
     if (!handle) {
       if (validateOnly) {
         return false;
@@ -113,11 +113,9 @@ plugin_load(int argc, char *argv[], bool validateOnly)
     ink_assert(plugin_reg_current == NULL);
     plugin_reg_current = new PluginRegInfo;
     plugin_reg_current->plugin_path = ats_strdup(path);
-    plugin_reg_current->dlh = handle;
 
-    init = (init_func_t)dlsym(plugin_reg_current->dlh, "TSPluginInit");
+    init = (init_func_t) dlsym(handle, "TSPluginInit");
     if (!init) {
-      delete plugin_reg_current;
       if (validateOnly) {
         return false;
       }
