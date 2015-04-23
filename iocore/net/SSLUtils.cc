@@ -267,7 +267,7 @@ set_context_cert(SSL *ssl)
 {
   SSL_CTX *ctx = NULL;
   SSLCertContext *cc = NULL;
-  SSLCertLookup *lookup = SSLCertificateConfig::acquire();
+  SSLCertificateConfig::scoped_config lookup;
   const char *servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
   SSLNetVConnection *netvc = (SSLNetVConnection *)SSL_get_app_data(ssl);
   bool found = true;
@@ -326,7 +326,6 @@ set_context_cert(SSL *ssl)
     goto done;
   }
 done:
-  SSLCertificateConfig::release(lookup);
   return retval;
 }
 
@@ -1886,7 +1885,7 @@ static int
 ssl_callback_session_ticket(SSL *ssl, unsigned char *keyname, unsigned char *iv, EVP_CIPHER_CTX *cipher_ctx, HMAC_CTX *hctx,
                             int enc)
 {
-  SSLCertLookup *lookup = SSLCertificateConfig::acquire();
+  SSLCertificateConfig::scoped_config lookup;
   SSLNetVConnection *netvc = (SSLNetVConnection *)SSL_get_app_data(ssl);
 
   // Get the IP address to look up the keyblock
@@ -1901,6 +1900,7 @@ ssl_callback_session_ticket(SSL *ssl, unsigned char *keyname, unsigned char *iv,
   if (cc == NULL || cc->keyblock == NULL) {
     // No, key specified.  Must fail out at this point.
     // Alternatively we could generate a random key
+    
     return -1;
   }
   ssl_ticket_key_block *keyblock = cc->keyblock;
