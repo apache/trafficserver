@@ -28,3 +28,26 @@ Synopsis
 
 Description
 -----------
+
+Get the current cache key URL, also referred to as the lookup URL. This must
+be stored in a properly allocated URL object, typically created with a
+:c:func:`TSUrlCreate()`.
+
+
+TSHttpTxnCacheLookupUrlSet
+==========================
+
+Synopsis
+--------
+
+`#include <ts/ts.h>`
+
+.. c:function:: TSReturnCode TSHttpTxnCacheLookupUrlSet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc offset)
+
+
+Description
+-----------
+
+Set the current cache key URL, also referred to as the lookup URL. This must
+be stored in a properly allocated URL object, typically created with a
+:c:func:`TSUrlCreate()` or :c:func:`TSUrlClone()`.
