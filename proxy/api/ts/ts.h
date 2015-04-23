@@ -1358,7 +1358,7 @@ tsapi struct sockaddr const *TSHttpTxnNextHopAddrGet(TSHttpTxn txnp);
 tsapi TSReturnCode TSHttpTxnClientFdGet(TSHttpTxn txnp, int *fdp);
 tsapi TSReturnCode TSHttpTxnOutgoingAddrSet(TSHttpTxn txnp, struct sockaddr const *addr);
 tsapi TSReturnCode TSHttpTxnOutgoingTransparencySet(TSHttpTxn txnp, int flag);
-tsapi TSReturnCode TSHttpTxnServerFdGet(TSHttpTxn txnp, int* fdp);
+tsapi TSReturnCode TSHttpTxnServerFdGet(TSHttpTxn txnp, int *fdp);
 
 /* TS-1008: the above TXN calls for the Client conn should work with SSN */
 tsapi struct sockaddr const *TSHttpSsnClientAddrGet(TSHttpSsn ssnp);
