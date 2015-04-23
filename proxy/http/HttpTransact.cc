@@ -6006,6 +6006,10 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
     return false;
   }
 
+  // the plugin may decide we don't want to cache the response
+  if (s->api_server_response_no_store) {
+    return false;
+  }
   // if method is not GET or HEAD, do not cache.
   // Note: POST is also cacheable with Expires or Cache-control.
   // but due to INKqa11567, we are not caching POST responses.
@@ -6024,7 +6028,7 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
   if (!(is_request_cache_lookupable(s))) {
     DebugTxn("http_trans", "[is_response_cacheable] "
                            "request is not cache lookupable, response is not cachable");
-    return (false);
+    return false;
   }
   // already has a fresh copy in the cache
   if (s->range_setup == RANGE_NOT_HANDLED)
@@ -6036,13 +6040,13 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
       do_cookies_prevent_caching((int)s->txn_conf->cache_responses_to_cookies, request, response)) {
     DebugTxn("http_trans", "[is_response_cacheable] "
                            "response has uncachable cookies, response is not cachable");
-    return (false);
+    return false;
   }
   // if server spits back a WWW-Authenticate
   if ((s->txn_conf->cache_ignore_auth) == 0 && response->presence(MIME_PRESENCE_WWW_AUTHENTICATE)) {
     DebugTxn("http_trans", "[is_response_cacheable] "
                            "response has WWW-Authenticate, response is not cachable");
-    return (false);
+    return false;
   }
   // does server explicitly forbid storing?
   // If OS forbids storing but a ttl is set, allow caching
@@ -6050,7 +6054,7 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
       (s->cache_control.ttl_in_cache <= 0)) {
     DebugTxn("http_trans", "[is_response_cacheable] server does not permit storing and config file does not "
                            "indicate that server directive should be ignored");
-    return (false);
+    return false;
   }
   // DebugTxn("http_trans", "[is_response_cacheable] server permits storing");
 
@@ -6061,7 +6065,7 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
       (s->cache_control.never_cache)) {
     DebugTxn("http_trans", "[is_response_cacheable] config doesn't allow storing, and cache control does not "
                            "say to ignore no-cache and does not specify never-cache or a ttl");
-    return (false);
+    return false;
   }
   // DebugTxn("http_trans", "[is_response_cacheable] config permits storing");
 
@@ -6069,7 +6073,7 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
   if (!s->cache_info.directives.does_client_permit_storing && !s->cache_control.ignore_client_no_cache) {
     DebugTxn("http_trans", "[is_response_cacheable] client does not permit storing, "
                            "and cache control does not say to ignore client no-cache");
-    return (false);
+    return false;
   }
   DebugTxn("http_trans", "[is_response_cacheable] client permits storing");
 
@@ -6098,7 +6102,7 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
                                  "last_modified, expires, or max-age is required");
 
           s->squid_codes.hit_miss_code = ((response->get_date() == 0) ? (SQUID_MISS_HTTP_NO_DLE) : (SQUID_MISS_HTTP_NO_LE));
-          return (false);
+          return false;
         }
         break;
 
@@ -6106,7 +6110,7 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
         if (!response->presence(MIME_PRESENCE_EXPIRES) && !(response->get_cooked_cc_mask() & cc_mask)) {
           DebugTxn("http_trans", "[is_response_cacheable] "
                                  "expires header or max-age is required");
-          return (false);
+          return false;
         }
         break;
 
@@ -6177,10 +6181,7 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
       return false;
     }
   }
-  // the plugin may decide we don't want to cache the response
-  if (s->api_server_response_no_store) {
-    return (false);
-  }
+
   // default cacheability
   if (!s->txn_conf->negative_caching_enabled) {
     if ((response_code == HTTP_STATUS_OK) || (response_code == HTTP_STATUS_NOT_MODIFIED) ||
