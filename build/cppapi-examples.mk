@@ -1,4 +1,3 @@
-#
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -15,16 +14,13 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-AM_CPPFLAGS = -I$(top_srcdir)/lib/atscppapi/src/include -Wno-unused-variable
+# atscppapi-examples.mk: Common automake build variables for atscppapi plugin examples.
 
-target=TransactionHookPlugin.so
+TS_PLUGIN_CPPFLAGS = -I$(top_srcdir)/lib/atscppapi/src/include -Wno-unused-variable
+
+LDADD = libatscppapi.la
+TS_PLUGIN_LDFLAGS = -module -avoid-version -shared
+
+AM_CPPFLAGS = $(TS_PLUGIN_CPPFLAGS)
 pkglibdir = ${pkglibexecdir}
-pkglib_LTLIBRARIES = TransactionHookPlugin.la
-TransactionHookPlugin_la_SOURCES = TransactionHookPlugin.cc
-TransactionHookPlugin_la_LDFLAGS = -module -avoid-version -shared -L$(top_srcdir)/lib/atscppapi/src/ -latscppapi
 
-all:
-	ln -sf .libs/$(target)
-
-clean-local:
-	rm -f $(target)
