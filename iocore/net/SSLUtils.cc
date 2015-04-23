@@ -1900,7 +1900,7 @@ ssl_callback_session_ticket(SSL *ssl, unsigned char *keyname, unsigned char *iv,
   if (cc == NULL || cc->keyblock == NULL) {
     // No, key specified.  Must fail out at this point.
     // Alternatively we could generate a random key
-    
+
     return -1;
   }
   ssl_ticket_key_block *keyblock = cc->keyblock;
