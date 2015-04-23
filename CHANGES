@@ -3,6 +3,8 @@ Changes with Apache Traffic Server 5.3.0
 
   *) [TS-3533] Revert commits that break unregistered plugin loading.
 
+  *) [TS-3551] Fix LogUtils.cc compile on Illumos.
+
   *) [TS-3548] Fix psiginfo usage on Illumos.
 
   *) [TS-3529] Add config option to allow ATS to start even if certificate files are bad.
