@@ -66,6 +66,7 @@ struct SSLCertContext {
   explicit SSLCertContext(SSL_CTX *c) : ctx(c), opt(OPT_NONE), keyblock(NULL) {}
   SSLCertContext(SSL_CTX *c, Option o) : ctx(c), opt(o), keyblock(NULL) {}
   SSLCertContext(SSL_CTX *c, Option o, ssl_ticket_key_block *kb) : ctx(c), opt(o), keyblock(kb) {}
+  void release();
 
   SSL_CTX *ctx;                   ///< openSSL context.
   Option opt;                     ///< Special handling option.
@@ -107,5 +108,8 @@ struct SSLCertLookup : public ConfigInfo {
   SSLCertLookup();
   virtual ~SSLCertLookup();
 };
+
+void ticket_block_free(void *ptr);
+ssl_ticket_key_block *ticket_block_alloc(unsigned count);
 
 #endif /* __P_SSLCERTLOOKUP_H__ */

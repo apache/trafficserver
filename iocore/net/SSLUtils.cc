@@ -116,35 +116,9 @@ static int ssl_callback_session_ticket(SSL *, unsigned char *, unsigned char *, 
 
 #if HAVE_OPENSSL_SESSION_TICKETS
 static int ssl_session_ticket_index = -1;
-
-
-// Zero out and free the heap space allocated for ticket keys to avoid leaking secrets.
-// The first several bytes stores the number of keys and the rest stores the ticket keys.
-static void
-ticket_block_free(void *ptr)
-{
-  if (ptr) {
-    ssl_ticket_key_block *key_block_ptr = (ssl_ticket_key_block *)ptr;
-    unsigned num_ticket_keys = key_block_ptr->num_keys;
-    memset(ptr, 0, sizeof(ssl_ticket_key_block) + num_ticket_keys * sizeof(ssl_ticket_key_t));
-  }
-  ats_free(ptr);
-}
-
-static ssl_ticket_key_block *
-ticket_block_alloc(unsigned count)
-{
-  ssl_ticket_key_block *ptr;
-  size_t nbytes = sizeof(ssl_ticket_key_block) + count * sizeof(ssl_ticket_key_t);
-
-  ptr = (ssl_ticket_key_block *)ats_malloc(nbytes);
-  memset(ptr, 0, nbytes);
-  ptr->num_keys = count;
-
-  return ptr;
-}
-
 #endif
+
+
 static pthread_mutex_t *mutex_buf = NULL;
 static bool open_ssl_initialized = false;
 
@@ -267,7 +241,7 @@ set_context_cert(SSL *ssl)
 {
   SSL_CTX *ctx = NULL;
   SSLCertContext *cc = NULL;
-  SSLCertLookup *lookup = SSLCertificateConfig::acquire();
+  SSLCertificateConfig::scoped_config lookup;
   const char *servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
   SSLNetVConnection *netvc = (SSLNetVConnection *)SSL_get_app_data(ssl);
   bool found = true;
@@ -326,7 +300,6 @@ set_context_cert(SSL *ssl)
     goto done;
   }
 done:
-  SSLCertificateConfig::release(lookup);
   return retval;
 }
 
@@ -1682,6 +1655,14 @@ ssl_store_ssl_context(const SSLConfigParams *params, SSLCertLookup *lookup, cons
       }
     }
   }
+  if (!inserted) {
+#if HAVE_OPENSSL_SESSION_TICKETS
+    if (keyblock != NULL) {
+      ticket_block_free(keyblock);
+    }
+#endif
+  }
+
 
 #if defined(SSL_OP_NO_TICKET)
   // Session tickets are enabled by default. Disable if explicitly requested.
@@ -1721,11 +1702,6 @@ ssl_store_ssl_context(const SSLConfigParams *params, SSLCertLookup *lookup, cons
     }
   }
   if (!inserted) {
-#if HAVE_OPENSSL_SESSION_TICKETS
-    if (keyblock != NULL) {
-      ticket_block_free(keyblock);
-    }
-#endif
     if (ctx != NULL) {
       SSL_CTX_free(ctx);
       ctx = NULL;
@@ -1886,7 +1862,7 @@ static int
 ssl_callback_session_ticket(SSL *ssl, unsigned char *keyname, unsigned char *iv, EVP_CIPHER_CTX *cipher_ctx, HMAC_CTX *hctx,
                             int enc)
 {
-  SSLCertLookup *lookup = SSLCertificateConfig::acquire();
+  SSLCertificateConfig::scoped_config lookup;
   SSLNetVConnection *netvc = (SSLNetVConnection *)SSL_get_app_data(ssl);
 
   // Get the IP address to look up the keyblock
@@ -1901,6 +1877,7 @@ ssl_callback_session_ticket(SSL *ssl, unsigned char *keyname, unsigned char *iv,
   if (cc == NULL || cc->keyblock == NULL) {
     // No, key specified.  Must fail out at this point.
     // Alternatively we could generate a random key
+
     return -1;
   }
   ssl_ticket_key_block *keyblock = cc->keyblock;
