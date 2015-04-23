@@ -47,12 +47,9 @@
 
 #if TS_HAS_JEMALLOC
 #include <jemalloc/jemalloc.h>
-/* TODO: Should this have a value ? */
-#define ATS_MMAP_MAX 0
 #else
 #if HAVE_MALLOC_H
 #include <malloc.h>
-#define ATS_MMAP_MAX M_MMAP_MAX
 #endif // ! HAVE_MALLOC_H
 #endif // ! TS_HAS_JEMALLOC
 
