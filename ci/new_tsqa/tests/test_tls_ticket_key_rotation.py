@@ -60,9 +60,9 @@ class TestTLSTicketKeyRotation(helpers.EnvironmentCase):
 
         # configure SSL multicert
 
-        cls.configs['ssl_multicert.config'].add_line('dest_ip=* ssl_cert_name={0} ssl_key_name={1} ticket_key_name={2}'.format(helpers.tests_file_path('rsa_keys/server.crt'), helpers.tests_file_path('rsa_keys/server.key'), helpers.tests_file_path('rsa_keys/ssl_ticket.key')))
+        cls.configs['ssl_multicert.config'].add_line('dest_ip=* ssl_cert_name={0} ssl_key_name={1} ticket_key_name={2}'.format(helpers.tests_file_path('rsa_keys/ca.crt'), helpers.tests_file_path('rsa_keys/ca.key'), helpers.tests_file_path('rsa_keys/ssl_ticket.key')))
 
-    def _get_cert(self, addr):
+    def start_connection(self, addr):
         '''
         Return the certificate for addr.
         '''
@@ -71,14 +71,13 @@ class TestTLSTicketKeyRotation(helpers.EnvironmentCase):
         sock = SSL.Connection(ctx, socket.socket(socket.AF_INET, socket.SOCK_STREAM))
         sock.connect(addr)
         sock.do_handshake()
-        return sock.get_peer_certificate()
 
     def test_tls_ticket_resumption(self):
         '''
         Make sure the new ticket key is loaded
         '''
         addr = ('127.0.0.1', self.ssl_port)
-        self._get_cert(addr)
+        self.start_connection(addr)
 
         # openssl s_client -connect 127.0.0.1:443 -tls1 < /dev/null
         sess = os.path.join(self.environment.layout.logdir, 'sess')
@@ -92,7 +91,7 @@ class TestTLSTicketKeyRotation(helpers.EnvironmentCase):
             if text.startswith("TLS session ticket:"):
                 ticket_exists = True
                 break
-        self.assertTrue(ticket_exists)
+        self.assertTrue(ticket_exists, "Sesssion tickets are not received")
 
         # check whether the session has been reused
         reused = False
@@ -103,7 +102,7 @@ class TestTLSTicketKeyRotation(helpers.EnvironmentCase):
             if text.startswith("Reused, TLSv1/SSLv3,"):
                 reused = True
                 break
-        self.assertTrue(reused)
+        self.assertTrue(reused, "TLS session was not reused!")
 
         # negative test case. The session is not reused.
         reused = False
@@ -114,14 +113,14 @@ class TestTLSTicketKeyRotation(helpers.EnvironmentCase):
             if text.startswith("Reused, TLSv1/SSLv3,"):
                 reused = True
                 break
-        self.assertFalse(reused)
+        self.assertFalse(reused, "TLS session has been reused!")
 
     def test_tls_ticket_rotation(self):
         '''
         Make sure the new ticket key is loaded
         '''
         addr = ('127.0.0.1', self.ssl_port)
-        self._get_cert(addr)
+        self.start_connection(addr)
 
         '''
         openssl s_client -connect server_ip:ssl_port -tls1 < /dev/null
@@ -149,10 +148,9 @@ class TestTLSTicketKeyRotation(helpers.EnvironmentCase):
                 break
             except Exception:
                 ++count
-                # If we have waited more than 30 seconds and the command still failed, quit here.
+                # If we have tried 30 times and the command still failed, quit here.
                 if count > 30:
-                    self.assertTrue(False)
-                time.sleep(1)
+                    self.assertTrue(False, "Failed to get the number of renewed keys!")
 
         signal_cmd = os.path.join(self.environment.layout.bindir, 'traffic_line') + ' -x'
         tsqa.utils.run_sync_command(signal_cmd, stdout=subprocess.PIPE, shell=True)
@@ -168,8 +166,7 @@ class TestTLSTicketKeyRotation(helpers.EnvironmentCase):
             except Exception:
                 ++count
                 if count > 30:
-                    self.assertTrue(False)
-                time.sleep(1)
+                    self.assertTrue(False, "Failed to get the number of renewed keys!")
 
         # the number of ticket keys renewed has been increased.
         self.assertNotEqual(old_renewed, cur_renewed)
