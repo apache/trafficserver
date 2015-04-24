@@ -223,7 +223,7 @@ You can create global hook as well
 
     ts.hook(TS_LUA_HOOK_READ_REQUEST_HDR, do_some_work)
 
-Or you can do it this way
+    Or you can do it this way
 
     ts.hook(TS_LUA_HOOK_READ_REQUEST_HDR, 
         function()
@@ -1589,7 +1589,7 @@ Here is an example:
 `TOP <#ts-lua-plugin>`_
 
 ts.http.resp_transform.set_downstream_bytes
------------------------------------------
+-------------------------------------------
 **syntax:** *ts.http.resp_transform.set_downstream_bytes(NUMBER)*
 
 **context:** transform handler
@@ -1603,7 +1603,7 @@ data is returned from the transform handler.
 `TOP <#ts-lua-plugin>`_
 
 ts.http.skip_remapping_set
--------------------------
+--------------------------
 **syntax:** *ts.http.skip_remapping_set(BOOL)*
 
 **context:** do_global_read_request
@@ -1772,7 +1772,7 @@ Here is an example:
 `TOP <#ts-lua-plugin>`_
 
 ts.base64_encode
------------
+----------------
 **syntax:** *value = ts.base64_encode(str)*
 
 **context:** global
@@ -1792,7 +1792,7 @@ Here is an example:
 `TOP <#ts-lua-plugin>`_
 
 ts.base64_decode
------------
+----------------
 **syntax:** *value = ts.base64_decode(str)*
 
 **context:** global
@@ -1813,7 +1813,7 @@ Here is an example:
 `TOP <#ts-lua-plugin>`_
 
 ts.escape_uri
------------
+-------------
 **syntax:** *value = ts.escape_uri(str)*
 
 **context:** global
@@ -1832,7 +1832,7 @@ Here is an example:
 `TOP <#ts-lua-plugin>`_
 
 ts.unescape_uri
------------
+---------------
 **syntax:** *value = ts.unescape_uri(str)*
 
 **context:** global
@@ -1908,7 +1908,7 @@ Issuing a post request:
 `TOP <#ts-lua-plugin>`_
 
 ts.fetch_multi
-------------
+--------------
 **syntax:** *vec = ts.fetch_multi({{url, table?}, {url, table?}, ...})*
 
 **context:** after do_remap
@@ -1937,7 +1937,7 @@ Here is an example:
 
 
 ts.http.intercept
-------------
+-----------------
 **syntax:** *ts.http.intercept(FUNCTION, param1?, param2?, ...)*
 
 **context:** do_remap or do_global_*
@@ -1997,7 +1997,7 @@ Then we will get the response like this:
 `TOP <#ts-lua-plugin>`_
 
 ts.http.server_intercept
-------------
+------------------------
 **syntax:** *ts.http.server_intercept(FUNCTION, param1?, param2?, ...)*
 
 **context:** do_remap or do_global_*
@@ -2350,7 +2350,7 @@ Timeout constants
 `TOP <#ts-lua-plugin>`_
 
 ts.http.client_packet_mark_set
-----------------------
+------------------------------
 **syntax:** *ts.http.client_packet_mark_set(NUMBER)*
 
 **context:** do_remap or do_global_* or later.
@@ -2369,7 +2369,7 @@ Here is an example:
 `TOP <#ts-lua-plugin>`_
 
 ts.http.server_packet_mark_set
--------------------------
+------------------------------
 **syntax:** *ts.http.server_packet_mark_set(NUMBER)*
 
 **context:** do_remap or do_global_* or later.
@@ -2380,7 +2380,7 @@ ts.http.server_packet_mark_set
 `TOP <#ts-lua-plugin>`_
 
 ts.http.client_packet_tos_set
--------------------------
+-----------------------------
 **syntax:** *ts.http.client_packet_tos_set(NUMBER)*
 
 **context:** do_remap or do_global_* or later.
@@ -2391,7 +2391,7 @@ ts.http.client_packet_tos_set
 `TOP <#ts-lua-plugin>`_
 
 ts.http.server_packet_tos_set
--------------------------
+-----------------------------
 **syntax:** *ts.http.server_packet_tos_set(NUMBER)*
 
 **context:** do_remap or do_global_* or later.
@@ -2402,7 +2402,7 @@ ts.http.server_packet_tos_set
 `TOP <#ts-lua-plugin>`_
 
 ts.http.client_packet_dscp_set
--------------------------
+------------------------------
 **syntax:** *ts.http.client_packet_dscp_set(NUMBER)*
 
 **context:** do_remap or do_global_* or later.
@@ -2413,7 +2413,7 @@ ts.http.client_packet_dscp_set
 `TOP <#ts-lua-plugin>`_
 
 ts.http.server_packet_dscp_set
--------------------------
+------------------------------
 **syntax:** *ts.http.server_packet_dscp_set(NUMBER)*
 
 **context:** do_remap or do_global_* or later.
@@ -2473,7 +2473,7 @@ Http control channel constants
 `TOP <#ts-lua-plugin>`_
 
 ts.http.milestone_get
-----------------
+---------------------
 **syntax:** *val = ts.http.milestone_get(MILESTONE_TYPE)*
 
 **context:** do_remap or do_global_* or later.
