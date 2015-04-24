@@ -358,15 +358,18 @@ SSLCertificateConfig::reconfigure()
   }
 
   SSLParseCertificateConfiguration(params, lookup);
-  // If there are errors in the certificate configs and we had wanted to exit on error
-  // we won't want to reset the config
-  if (lookup->is_valid || !params->configExitOnLoadError) {
-    configid = configProcessor.set(configid, lookup);
-  }
 
   if (!lookup->is_valid) {
     retStatus = false;
   }
+  // If there are errors in the certificate configs and we had wanted to exit on error
+  // we won't want to reset the config
+  if (lookup->is_valid || !params->configExitOnLoadError) {
+    configid = configProcessor.set(configid, lookup);
+  } else {
+    delete lookup;
+  }
+
   return retStatus;
 }
 
