@@ -23,6 +23,7 @@ import time
 import logging
 import json
 import threading
+import uuid
 
 import helpers
 
@@ -45,6 +46,7 @@ class ChunkedHandler(SocketServer.BaseRequestHandler):
 
     def handle(self):
         # Receive the data in small chunks and retransmit it
+        conn_id = uuid.uuid4().hex
         while True:
             data = self.request.recv(4096).strip()
             if data:
@@ -67,6 +69,7 @@ class ChunkedHandler(SocketServer.BaseRequestHandler):
                     close = json.loads(uri_parts[2])
 
             resp = ('HTTP/1.1 200 OK\r\n'
+                    'X-Conn-Id: ' + str(conn_id) + '\r\n'
                     'Transfer-Encoding: chunked\r\n'
                     '\r\n')
             self.request.sendall(resp)
@@ -79,8 +82,6 @@ class ChunkedHandler(SocketServer.BaseRequestHandler):
                 self.request.sendall('lkfjasd;lfjas;d')
 
             time.sleep(2)
-            self.request.close()
-            return
 
 class TestChunked(helpers.EnvironmentCase):
     @classmethod
@@ -110,16 +111,23 @@ class TestChunked(helpers.EnvironmentCase):
         '''
         Test that the origin does in fact support keepalive
         '''
-        url = 'http://127.0.0.1:{0}/'.format(self.port)
-        self.assertEqual(requests.get(url).text, '01234')
+        with requests.Session() as s:
+            url = 'http://127.0.0.1:{0}/'.format(self.port)
+            ret = s.get(url)
+            conn_id = ret.headers['x-conn-id']
+            self.assertEqual(ret.text, '01234')
 
-        url = 'http://127.0.0.1:{0}/2'.format(self.port)
-        self.assertEqual(requests.get(url).text, '01')
+            url = 'http://127.0.0.1:{0}/2'.format(self.port)
+            ret = s.get(url)
+            self.assertEqual(ret.text, '01')
+            self.assertEqual(ret.headers['x-conn-id'], conn_id)
 
-        url = 'http://127.0.0.1:{0}/2/1'.format(self.port)
-        start = time.time()
-        self.assertEqual(requests.get(url).text, '01')
-        self.assertTrue(time.time() - start > 2)
+            url = 'http://127.0.0.1:{0}/2/1'.format(self.port)
+            start = time.time()
+            ret = s.get(url)
+            self.assertEqual(ret.text, '01')
+            self.assertEqual(ret.headers['x-conn-id'], conn_id)
+            self.assertTrue(time.time() - start > 2)
 
     def test_chunked_basic(self):
         url = 'http://127.0.0.1:{0}'.format(self.port)
@@ -131,6 +139,7 @@ class TestChunked(helpers.EnvironmentCase):
     def test_chunked_keepalive(self):
         url = 'http://127.0.0.1:{0}'.format(self.port)
         ret = requests.get(url, proxies=self.proxies)
+        conn_id = ret.headers['x-conn-id']
         self.assertEqual(ret.status_code, 200)
         self.assertEqual(ret.text.strip(), '01234')
 
@@ -139,6 +148,7 @@ class TestChunked(helpers.EnvironmentCase):
         ret = requests.get(url, proxies=self.proxies)
         self.assertEqual(ret.status_code, 200)
         self.assertEqual(ret.text.strip(), '01234')
+        self.assertEqual(conn_id, ret.headers['x-conn-id'])
 
     def test_chunked_bad_close(self):
         url = 'http://127.0.0.1:{0}/5/0.1/false'.format(self.port)
