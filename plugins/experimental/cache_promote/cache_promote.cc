@@ -22,6 +22,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <getopt.h>
+#include <stdlib.h>
 #include <openssl/sha.h>
 
 #include <string>
