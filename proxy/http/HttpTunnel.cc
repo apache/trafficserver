@@ -37,6 +37,8 @@
 #include "HttpDebugNames.h"
 #include "ParseRules.h"
 
+#define ID_VAL sm->get_uuid()
+
 static const int min_block_transfer_bytes = 256;
 static char const *const CHUNK_HEADER_FMT = "%" PRIx64 "\r\n";
 // This should be as small as possible because it will only hold the
@@ -626,7 +628,7 @@ HttpTunnel::add_producer(VConnection *vc, int64_t nbytes_arg, IOBufferReader *re
 {
   HttpTunnelProducer *p;
 
-  Debug("http_tunnel", "[%" PRId64 "] adding producer '%s'", sm->sm_id, name_arg);
+  Debug("http_tunnel", ID_FMT "adding producer '%s'", ID_VAL, name_arg);
 
   ink_assert(reader_start->mbuf);
   if ((p = alloc_producer()) != NULL) {
@@ -681,7 +683,7 @@ HttpTunnelConsumer *
 HttpTunnel::add_consumer(VConnection *vc, VConnection *producer, HttpConsumerHandler sm_handler, HttpTunnelType_t vc_type,
                          const char *name_arg, int64_t skip_bytes)
 {
-  Debug("http_tunnel", "[%" PRId64 "] adding consumer '%s'", sm->sm_id, name_arg);
+  Debug("http_tunnel", ID_FMT "adding consumer '%s'", ID_VAL, name_arg);
 
   // Find the producer entry
   HttpTunnelProducer *p = get_producer(producer);
@@ -690,7 +692,7 @@ HttpTunnel::add_consumer(VConnection *vc, VConnection *producer, HttpConsumerHan
   // Check to see if the producer terminated
   //  without sending all of its data
   if (p->alive == false && p->read_success == false) {
-    Debug("http_tunnel", "[%" PRId64 "] consumer '%s' not added due to producer failure", sm->sm_id, name_arg);
+    Debug("http_tunnel", ID_FMT "consumer '%s' not added due to producer failure", ID_VAL, name_arg);
     return NULL;
   }
   // Initialize the consumer structure
@@ -727,7 +729,7 @@ HttpTunnel::chain(HttpTunnelConsumer *c, HttpTunnelProducer *p)
 void
 HttpTunnel::tunnel_run(HttpTunnelProducer *p_arg)
 {
-  Debug("http_tunnel", "tunnel_run started, p_arg is %s", p_arg ? "provided" : "NULL");
+  Debug("http_tunnel", ID_FMT "tunnel_run started, p_arg is %s", ID_VAL, p_arg ? "provided" : "NULL");
 
   if (p_arg) {
     producer_run(p_arg);
@@ -814,8 +816,8 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
       p->chunked_handler.chunked_buffer->write(p->buffer_start, p->chunked_handler.skip_bytes);
     } else if (p->do_dechunking) {
       // bz57413
-      Debug("http_tunnel", "[producer_run] do_dechunking p->chunked_handler.chunked_reader->read_avail() = %" PRId64 "",
-            p->chunked_handler.chunked_reader->read_avail());
+      Debug("http_tunnel", ID_FMT "[producer_run] do_dechunking p->chunked_handler.chunked_reader->read_avail() = %" PRId64 "",
+            ID_VAL, p->chunked_handler.chunked_reader->read_avail());
 
       // initialize a reader to dechunked buffer start before writing to keep ref count
       dechunked_buffer_start = p->chunked_handler.dechunked_buffer->alloc_reader();
@@ -825,7 +827,8 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
       if (!transform_consumer) {
         p->chunked_handler.dechunked_buffer->write(p->buffer_start, p->chunked_handler.skip_bytes);
 
-        Debug("http_tunnel", "[producer_run] do_dechunking::Copied header of size %" PRId64 "", p->chunked_handler.skip_bytes);
+        Debug("http_tunnel", ID_FMT "[producer_run] do_dechunking::Copied header of size %" PRId64 "",
+          ID_VAL, p->chunked_handler.skip_bytes);
       }
     }
   }
@@ -923,13 +926,13 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
   // Allocate and copy partial POST data to buffers. Check for the various parameters
   // including the maximum configured post data size
   if (p->alive && sm->t_state.method == HTTP_WKSIDX_POST && sm->enable_redirection && (p->vc_type == HT_HTTP_CLIENT)) {
-    Debug("http_redirect", "[HttpTunnel::producer_run] client post: %" PRId64 " max size: %" PRId64 "",
-          p->buffer_start->read_avail(), HttpConfig::m_master.post_copy_size);
+    Debug("http_redirect", ID_FMT "[HttpTunnel::producer_run] client post: %" PRId64 " max size: %" PRId64 "",
+          ID_VAL, p->buffer_start->read_avail(), HttpConfig::m_master.post_copy_size);
 
     // (note that since we are not dechunking POST, this is the chunked size if chunked)
     if (p->buffer_start->read_avail() > HttpConfig::m_master.post_copy_size) {
-      Debug("http_redirect", "[HttpTunnel::producer_handler] post exceeds buffer limit, buffer_avail=%" PRId64 " limit=%" PRId64 "",
-            p->buffer_start->read_avail(), HttpConfig::m_master.post_copy_size);
+      Debug("http_redirect", ID_FMT "[HttpTunnel::producer_handler] post exceeds buffer limit, buffer_avail=%" PRId64 " limit=%" PRId64 "",
+            ID_VAL, p->buffer_start->read_avail(), HttpConfig::m_master.post_copy_size);
       sm->enable_redirection = false;
     } else {
       // allocate post buffers with a new reader. The reader will be freed when p->read_buffer is freed
@@ -952,12 +955,12 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
 
     // bz57413
     // If there is no transformation plugin, then we didn't add the header, hence no need to consume it
-    Debug("http_tunnel", "[producer_run] do_dechunking p->chunked_handler.chunked_reader->read_avail() = %" PRId64 "",
-          p->chunked_handler.chunked_reader->read_avail());
+    Debug("http_tunnel", ID_FMT "[producer_run] do_dechunking p->chunked_handler.chunked_reader->read_avail() = %" PRId64 "",
+          ID_VAL, p->chunked_handler.chunked_reader->read_avail());
     if (!transform_consumer && (p->chunked_handler.chunked_reader->read_avail() >= p->chunked_handler.skip_bytes)) {
       p->chunked_handler.chunked_reader->consume(p->chunked_handler.skip_bytes);
-      Debug("http_tunnel", "[producer_run] do_dechunking p->chunked_handler.skip_bytes = %" PRId64 "",
-            p->chunked_handler.skip_bytes);
+      Debug("http_tunnel", ID_FMT "[producer_run] do_dechunking p->chunked_handler.skip_bytes = %" PRId64 "",
+            ID_VAL, p->chunked_handler.skip_bytes);
     }
     // if(p->chunked_handler.chunked_reader->read_avail() > 0)
     // p->chunked_handler.chunked_reader->consume(
@@ -985,7 +988,7 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
       p->alive = false;
       p->read_success = true;
       p->handler_state = HTTP_SM_POST_SUCCESS;
-      Debug("http_tunnel", "[%" PRId64 "] [tunnel_run] producer already done", sm->sm_id);
+      Debug("http_tunnel", ID_FMT "[tunnel_run] producer already done", ID_VAL);
       producer_handler(HTTP_TUNNEL_EVENT_PRECOMPLETE, p);
     } else {
       if (read_start_pos > 0) {
@@ -1007,7 +1010,7 @@ HttpTunnel::producer_handler_dechunked(int event, HttpTunnelProducer *p)
 {
   ink_assert(p->do_chunking);
 
-  Debug("http_tunnel", "[%" PRId64 "] producer_handler_dechunked [%s %s]", sm->sm_id, p->name,
+  Debug("http_tunnel", ID_FMT "producer_handler_dechunked [%s %s]", ID_VAL, p->name,
         HttpDebugNames::get_event_name(event));
 
   // We only interested in translating certain events
@@ -1038,7 +1041,7 @@ HttpTunnel::producer_handler_chunked(int event, HttpTunnelProducer *p)
 {
   ink_assert(p->do_dechunking || p->do_chunked_passthru);
 
-  Debug("http_tunnel", "[%" PRId64 "] producer_handler_chunked [%s %s]", sm->sm_id, p->name, HttpDebugNames::get_event_name(event));
+  Debug("http_tunnel", ID_FMT "producer_handler_chunked [%s %s]", ID_VAL, p->name, HttpDebugNames::get_event_name(event));
 
   // We only interested in translating certain events
   switch (event) {
@@ -1058,7 +1061,7 @@ HttpTunnel::producer_handler_chunked(int event, HttpTunnelProducer *p)
   // If we couldn't understand the encoding, return
   //   an error
   if (p->chunked_handler.state == ChunkedHandler::CHUNK_READ_ERROR) {
-    Debug("http_tunnel", "[%" PRId64 "] producer_handler_chunked [%s chunk decoding error]", sm->sm_id, p->name);
+    Debug("http_tunnel", ID_FMT "producer_handler_chunked [%s chunk decoding error]", ID_VAL, p->name);
     p->chunked_handler.truncation = true;
     // FIX ME: we return EOS here since it will cause the
     //  the client to be reenabled.  ERROR makes more
@@ -1103,7 +1106,7 @@ HttpTunnel::producer_handler(int event, HttpTunnelProducer *p)
   HttpProducerHandler jump_point;
   bool sm_callback = false;
 
-  Debug("http_tunnel", "[%" PRId64 "] producer_handler [%s %s]", sm->sm_id, p->name, HttpDebugNames::get_event_name(event));
+  Debug("http_tunnel", ID_FMT "producer_handler [%s %s]", ID_VAL, p->name, HttpDebugNames::get_event_name(event));
 
   // Handle chunking/dechunking/chunked-passthrough if necessary.
   if (p->do_chunking) {
@@ -1127,13 +1130,13 @@ HttpTunnel::producer_handler(int event, HttpTunnelProducer *p)
   // the maximum configured post data size
   if (sm->t_state.method == HTTP_WKSIDX_POST && sm->enable_redirection &&
       (event == VC_EVENT_READ_READY || event == VC_EVENT_READ_COMPLETE) && (p->vc_type == HT_HTTP_CLIENT)) {
-    Debug("http_redirect", "[HttpTunnel::producer_handler] [%s %s]", p->name, HttpDebugNames::get_event_name(event));
+    Debug("http_redirect", ID_FMT "[HttpTunnel::producer_handler] [%s %s]", ID_VAL, p->name, HttpDebugNames::get_event_name(event));
 
     if ((postbuf->postdata_copy_buffer_start->read_avail() + postbuf->ua_buffer_reader->read_avail()) >
         HttpConfig::m_master.post_copy_size) {
-      Debug("http_redirect", "[HttpTunnel::producer_handler] post exceeds buffer limit, buffer_avail=%" PRId64
+      Debug("http_redirect", ID_FMT "[HttpTunnel::producer_handler] post exceeds buffer limit, buffer_avail=%" PRId64
                              " reader_avail=%" PRId64 " limit=%" PRId64 "",
-            postbuf->postdata_copy_buffer_start->read_avail(), postbuf->ua_buffer_reader->read_avail(),
+            ID_VAL, postbuf->postdata_copy_buffer_start->read_avail(), postbuf->ua_buffer_reader->read_avail(),
             HttpConfig::m_master.post_copy_size);
       deallocate_redirect_postdata_buffers();
       sm->enable_redirection = false;
@@ -1142,7 +1145,8 @@ HttpTunnel::producer_handler(int event, HttpTunnelProducer *p)
     }
   } // end of added logic for partial copy of POST
 
-  Debug("http_redirect", "[HttpTunnel::producer_handler] enable_redirection: [%d %d %d] event: %d", p->alive == true,
+  Debug("http_redirect", ID_FMT "[HttpTunnel::producer_handler] enable_redirection: [%d %d %d] event: %d",
+        ID_VAL, p->alive == true,
         sm->enable_redirection, (p->self_consumer && p->self_consumer->alive == true), event);
   ink_assert(p->alive == true || event == HTTP_TUNNEL_EVENT_PRECOMPLETE || event == VC_EVENT_EOS || sm->enable_redirection ||
              (p->self_consumer && p->self_consumer->alive == true));
@@ -1251,7 +1255,7 @@ HttpTunnel::consumer_reenable(HttpTunnelConsumer *c)
 
     if (backlog >= flow_state.high_water) {
       if (is_debug_tag_set("http_tunnel"))
-        Debug("http_tunnel", "Throttle   %p %" PRId64 " / %" PRId64, p, backlog, p->backlog());
+        Debug("http_tunnel", ID_FMT "Throttle   %p %" PRId64 " / %" PRId64, ID_VAL, p, backlog, p->backlog());
       p->throttle(); // p becomes srcp for future calls to this method
     } else {
       if (srcp && srcp->alive && c->is_sink()) {
@@ -1264,7 +1268,7 @@ HttpTunnel::consumer_reenable(HttpTunnelConsumer *c)
           backlog = srcp->backlog(flow_state.low_water);
         if (backlog < flow_state.low_water) {
           if (is_debug_tag_set("http_tunnel"))
-            Debug("http_tunnel", "Unthrottle %p %" PRId64 " / %" PRId64, p, backlog, p->backlog());
+            Debug("http_tunnel", ID_FMT "Unthrottle %p %" PRId64 " / %" PRId64, ID_VAL, p, backlog, p->backlog());
           srcp->unthrottle();
           srcp->read_vio->reenable();
           // Kick source producer to get flow ... well, flowing.
@@ -1303,7 +1307,7 @@ HttpTunnel::consumer_handler(int event, HttpTunnelConsumer *c)
   HttpConsumerHandler jump_point;
   HttpTunnelProducer *p = c->producer;
 
-  Debug("http_tunnel", "[%" PRId64 "] consumer_handler [%s %s]", sm->sm_id, c->name, HttpDebugNames::get_event_name(event));
+  Debug("http_tunnel", ID_FMT "consumer_handler [%s %s]", ID_VAL, c->name, HttpDebugNames::get_event_name(event));
 
   ink_assert(c->alive == true);
 
@@ -1363,7 +1367,8 @@ HttpTunnel::consumer_handler(int event, HttpTunnelConsumer *c)
     // [amc] I don't think this happens but we'll leave a debug trap
     // here just in case.
     if (p->is_throttled())
-      Debug("http_tunnel", "Special event %s on %p with flow control on", HttpDebugNames::get_event_name(event), p);
+      Debug("http_tunnel", ID_FMT "Special event %s on %p with flow control on",
+        ID_VAL, HttpDebugNames::get_event_name(event), p);
     break;
 
   case VC_EVENT_READ_READY:
@@ -1616,8 +1621,8 @@ void
 HttpTunnel::copy_partial_post_data()
 {
   postbuf->postdata_copy_buffer->write(postbuf->ua_buffer_reader);
-  Debug("http_redirect", "[HttpTunnel::copy_partial_post_data] wrote %" PRId64 " bytes to buffers %" PRId64 "",
-        postbuf->ua_buffer_reader->read_avail(), postbuf->postdata_copy_buffer_start->read_avail());
+  Debug("http_redirect", ID_FMT "[HttpTunnel::copy_partial_post_data] wrote %" PRId64 " bytes to buffers %" PRId64 "",
+        ID_VAL, postbuf->ua_buffer_reader->read_avail(), postbuf->postdata_copy_buffer_start->read_avail());
   postbuf->ua_buffer_reader->consume(postbuf->ua_buffer_reader->read_avail());
 }
 
@@ -1641,7 +1646,7 @@ HttpTunnel::allocate_redirect_postdata_buffers(IOBufferReader *ua_reader)
 {
   int64_t alloc_index = buffer_size_to_index(sm->t_state.hdr_info.request_content_length);
 
-  Debug("http_redirect", "[HttpTunnel::allocate_postdata_buffers]");
+  Debug("http_redirect", ID_FMT "[HttpTunnel::allocate_postdata_buffers]", ID_VAL);
 
   // TODO: This is uncool, shouldn't this use the class allocator or proxy allocator ?
   // If fixed, obviously also fix the deallocator.
@@ -1666,7 +1671,7 @@ HttpTunnel::allocate_redirect_postdata_buffers(IOBufferReader *ua_reader)
 void
 HttpTunnel::deallocate_redirect_postdata_buffers()
 {
-  Debug("http_redirect", "[HttpTunnel::deallocate_postdata_copy_buffers]");
+  Debug("http_redirect", ID_FMT "[HttpTunnel::deallocate_postdata_copy_buffers]", ID_VAL);
 
   if (postbuf != NULL) {
     if (postbuf->postdata_producer_buffer != NULL) {

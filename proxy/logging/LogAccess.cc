@@ -867,6 +867,19 @@ LogAccess::marshal_ip(char *dest, sockaddr const *ip)
   return INK_ALIGN_DEFAULT(len);
 }
 
+#ifdef TS_HAS_UUID
+/*-------------------------------------------------------------------------
+  LogAccess::marshal_proxy_uuid
+
+  Marshal a transaction UUID.
+  -------------------------------------------------------------------------*/
+int
+LogAccess::marshal_proxy_uuid(char *buf)
+{
+  DEFAULT_STR_FIELD;
+}
+#endif
+
 inline int
 LogAccess::unmarshal_with_map(int64_t code, char *dest, int len, Ptr<LogFieldAliasMap> map, const char *msg)
 {

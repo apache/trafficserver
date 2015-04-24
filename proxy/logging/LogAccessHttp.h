@@ -72,6 +72,10 @@ public:
   virtual int marshal_client_req_body_len(char *);           // INT
   virtual int marshal_client_finish_status_code(char *);     // INT
 
+  #ifdef TS_HAS_UUID
+  virtual int marshal_proxy_uuid(char *);
+  #endif
+
   //
   // proxy -> client fields
   //
@@ -173,6 +177,7 @@ private:
   int m_client_req_url_path_len;
   char *m_proxy_resp_content_type_str;
   int m_proxy_resp_content_type_len;
+  const char *m_proxy_uuid_str;
 
   void validate_unmapped_url(void);
   void validate_unmapped_url_path(void);

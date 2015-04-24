@@ -264,6 +264,9 @@ public:
   //
   inkcoreapi virtual int marshal_http_header_field(LogField::Container container, char *field, char *buf);
   inkcoreapi virtual int marshal_http_header_field_escapify(LogField::Container container, char *field, char *buf);
+#ifdef TS_HAS_UUID
+  inkcoreapi virtual int marshal_proxy_uuid(char *); // STR
+#endif
 
   //
   // named records.config int variables

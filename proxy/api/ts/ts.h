@@ -2384,6 +2384,17 @@ tsapi const char *TSHttpHookNameLookup(TSHttpHookID hook);
 */
 tsapi const char *TSHttpEventNameLookup(TSEvent event);
 
+/**
+   Returns a unique identifier for a request (if proxy.config.http.use_uuid is set).
+
+   @param txnp The Transaction Handler.
+
+   @return The transactions'unique identifier if proxy.config.http.use_uuid
+   is set, an empty string otherwise. If the transaction handler is
+   invalid, "ERROR" is returned.
+ */
+tsapi const char* TSHttpTxnGetUUID(TSHttpTxn txnp);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
