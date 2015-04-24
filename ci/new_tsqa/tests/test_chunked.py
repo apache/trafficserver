@@ -24,6 +24,7 @@ import logging
 import json
 import threading
 import uuid
+import socket
 
 import helpers
 
@@ -99,13 +100,15 @@ class TestChunked(helpers.EnvironmentCase):
         t.start()
         cls.configs['remap.config'].add_line('map / http://127.0.0.1:{0}/'.format(cls.port))
 
-        cls.configs['records.config']['CONFIG']['proxy.config.http.connect_attempts_timeout'] = 5
-        cls.configs['records.config']['CONFIG']['proxy.config.http.connect_attempts_max_retries'] = 0
-
-        cls.configs['records.config']['CONFIG']['proxy.config.http.keep_alive_enabled_in'] = 1
-        cls.configs['records.config']['CONFIG']['proxy.config.http.keep_alive_enabled_out'] = 0
-        cls.configs['records.config']['CONFIG']['proxy.config.exec_thread.limit'] = 1
-        cls.configs['records.config']['CONFIG']['proxy.config.exec_thread.autoconfig'] = 0
+        cls.configs['records.config']['CONFIG'].update({
+            'proxy.config.http.connect_attempts_timeout': 5,
+            'proxy.config.http.connect_attempts_max_retries': 0,
+            'proxy.config.http.keep_alive_enabled_in': 1,
+            'proxy.config.http.keep_alive_enabled_out': 1,
+            'proxy.config.exec_thread.limit': 1,
+            'proxy.config.exec_thread.autoconfig': 0,
+            'proxy.config.http.chunking_enabled': 1,
+        })
 
     def test_chunked_origin(self):
         '''
@@ -136,7 +139,7 @@ class TestChunked(helpers.EnvironmentCase):
         self.assertEqual(ret.text.strip(), '01234')
 
     # TODO: fix keepalive with chunked responses
-    def test_chunked_keepalive(self):
+    def test_chunked_keepalive_server(self):
         url = 'http://127.0.0.1:{0}'.format(self.port)
         ret = requests.get(url, proxies=self.proxies)
         conn_id = ret.headers['x-conn-id']
@@ -149,6 +152,25 @@ class TestChunked(helpers.EnvironmentCase):
         self.assertEqual(ret.status_code, 200)
         self.assertEqual(ret.text.strip(), '01234')
         self.assertEqual(conn_id, ret.headers['x-conn-id'])
+
+    def test_chunked_keepalive_client(self):
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect(('127.0.0.1', int(self.configs['records.config']['CONFIG']['proxy.config.http.server_ports'])))
+
+        request = ('GET / HTTP/1.1\r\n'
+                   'Host: 127.0.0.1\r\n'
+                   '\r\n')
+        for x in xrange(1, 10):
+            s.send(request)
+            resp = ''
+            while True:
+                response = s.recv(4096)
+                if '0\r\n\r\n' in response:
+                    break
+                else:
+                    resp += response
+            for x in xrange(0, 4):
+                self.assertIn('1\r\n{0}\r\n'.format(x), resp)
 
     def test_chunked_bad_close(self):
         url = 'http://127.0.0.1:{0}/5/0.1/false'.format(self.port)
