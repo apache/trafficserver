@@ -265,10 +265,8 @@ one of the following options:
 *Traffic Server considers all HTTP objects in the cache to be fresh:*
     Never revalidate HTTP objects in the cache with the origin server.
 
-*Traffic Server considers all HTTP objects without* ``Expires`` *or*
-``Cache-control`` *headers to be stale:*
-    Revalidate all HTTP objects without ``Expires`` or
-    ``Cache-Control`` headers.
+*Traffic Server considers all HTTP objects without* ``Expires`` *or* ``Cache-control`` *headers to be stale:*
+    Revalidate all HTTP objects without ``Expires`` or ``Cache-Control`` headers.
 
 To configure how Traffic Server revalidates objects in the cache, you
 can set specific revalidation rules in :file:`cache.config`.
@@ -317,7 +315,7 @@ performance of this feature.
 Traffic Server also provides a *Force Immediate Update* option that
 enables you to update URLs immediately without waiting for the specified
 update time to occur. You can use this option to test your scheduled
-update configuration. Refer to `Forcing an Immediate Update`_.
+update configuration. Refer to `Forcing Immediate Updates`_.
 
 Configuring the Scheduled Update Option
 ---------------------------------------
@@ -685,16 +683,16 @@ of alternate versions of an object allowed in the cache.
 Configuring How Traffic Server Caches Alternates
 ------------------------------------------------
 
-To configure how Traffic Server caches alternates::
+To configure how Traffic Server caches alternates:
 
-1. Edit the following variables in :file:`records.config`:
+#. Edit the following variables in :file:`records.config`:
 
    -  :ts:cv:`proxy.config.http.cache.enable_default_vary_headers`
    -  :ts:cv:`proxy.config.http.cache.vary_default_text`
    -  :ts:cv:`proxy.config.http.cache.vary_default_images`
    -  :ts:cv:`proxy.config.http.cache.vary_default_other`
 
-2. Run the command :option:`traffic_line -x` to apply the configuration changes.
+#. Run the command :option:`traffic_line -x` to apply the configuration changes.
 
 .. note::
 
