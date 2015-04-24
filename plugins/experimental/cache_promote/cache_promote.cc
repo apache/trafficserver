@@ -34,7 +34,7 @@
 #include <map>
 #endif
 
-#include "lulu.h"
+static const char *PLUGIN_NAME = "cache_promote";
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 // Note that all options for all policies has to go here. Not particularly pretty...
@@ -173,7 +173,7 @@ private:
 };
 
 struct LRUHashHasher {
-  bool operator()(const LRUHash *s1, const LRUHash *s2) const { return 0 == memcmp(s1->_hash, s2->_hash, sizeof(LRUHash::_hash)); }
+  bool operator()(const LRUHash *s1, const LRUHash *s2) const { return 0 == memcmp(s1->_hash, s2->_hash, sizeof(s2->_hash)); }
 
   size_t operator()(const LRUHash *s) const { return *((size_t *)s->_hash) ^ *((size_t *)(s->_hash + 9)); }
 };
@@ -181,7 +181,7 @@ struct LRUHashHasher {
 typedef std::pair<LRUHash, unsigned> LRUEntry;
 typedef std::list<LRUEntry> LRUList;
 
-static LRUEntry NULL_LRU_ENTRY = {}; // Used to create an "empty" new LRUEntry
+static LRUEntry NULL_LRU_ENTRY; // Used to create an "empty" new LRUEntry
 
 // TODO: We should eliminate this when we have unordered_map on all supported platforms.
 #if HAVE_UNORDERED_MAP
@@ -195,12 +195,14 @@ typedef std::map<LRUHash *, LRUList::iterator> LRUMap;
 class LRUPolicy : public PromotionPolicy
 {
 public:
-  LRUPolicy() : PromotionPolicy(), _buckets(0), _hits(0)
+  LRUPolicy() : PromotionPolicy(), _buckets(1000), _hits(10)
   {
     // This doesn't have to be perfect, since this is just chance sampling.
     // coverity[dont_call]
     srand48((long)time(NULL) ^ (long)getpid() ^ (long)getppid());
+#if HAVE_UNORDERED_MAP
     _map.reserve(_buckets);
+#endif
     _lock = TSMutexCreate();
   }
 
@@ -330,6 +332,7 @@ public:
   bool
   factory(int argc, char *argv[])
   {
+    optind = 0;
     while (true) {
       int opt = getopt_long(argc, (char *const *)argv, "psbh", longopt, NULL);
 
@@ -459,7 +462,6 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf */, int /
 
   --argc;
   ++argv;
-  optind = 0;
   if (config->factory(argc, argv)) {
     TSContDataSet(contp, static_cast<void *>(config));
     *ih = static_cast<void *>(contp);
