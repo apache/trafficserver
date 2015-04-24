@@ -1,0 +1,163 @@
+Certificate:
+    Data:
+        Version: 3 (0x2)
+        Serial Number: 16648335155746229684 (0xe70ac49e13e6cdb4)
+    Signature Algorithm: sha1WithRSAEncryption
+        Issuer: DC=com, DC=example/mail=ATS@example.com, CN=Test Intermediate CA
+        Validity
+            Not Before: Apr 24 08:49:50 2015 GMT
+            Not After : Apr 23 08:49:50 2016 GMT
+        Subject: DC=com, DC=example/mail=ATS@example.com, CN=www.example.com
+        Subject Public Key Info:
+            Public Key Algorithm: rsaEncryption
+                Public-Key: (2048 bit)
+                Modulus:
+                    00:db:17:30:73:ec:d9:0b:10:89:80:68:cb:fc:91:
+                    62:78:4f:59:eb:8d:bc:3c:9c:37:94:e0:1c:1c:ed:
+                    1b:29:34:59:8c:6c:3d:d2:f4:7f:35:10:54:e9:92:
+                    41:c4:a2:25:4d:8c:5e:e5:65:5f:81:fe:16:60:52:
+                    cb:47:11:f9:a9:80:7d:18:dd:d2:f1:38:5b:41:dc:
+                    e0:0e:e7:00:2f:da:1c:6a:11:4c:e0:e8:d7:7a:c7:
+                    ba:48:30:70:24:51:5b:50:5b:07:7b:89:1c:e2:91:
+                    a4:95:48:fe:63:23:c6:c5:ec:7e:a6:3c:1c:5d:9d:
+                    3b:d8:ab:2a:3b:83:fd:c7:34:ed:dd:1a:a3:14:ba:
+                    85:12:92:01:fb:5e:3a:74:fa:16:bc:4a:7d:2a:35:
+                    36:66:98:35:9e:68:88:bb:41:d4:a6:00:31:2f:fe:
+                    4a:e0:11:6c:e3:04:fb:eb:f7:16:dc:c8:f7:30:c7:
+                    03:13:7b:62:a7:c6:fa:b2:fe:45:3f:06:5d:c8:cd:
+                    9b:7f:d0:1e:3e:35:ed:b8:66:d0:32:9e:73:34:b6:
+                    01:5a:d6:90:c6:ac:c9:91:1a:c2:e6:04:b3:c8:a0:
+                    1a:34:92:16:79:3e:2e:92:d8:a2:41:d5:db:e4:17:
+                    51:da:ec:2d:b9:83:e3:93:72:b8:29:20:a0:62:57:
+                    f4:89
+                Exponent: 65537 (0x10001)
+        X509v3 extensions:
+            X509v3 Certificate Policies: 
+                Policy: X509v3 Any Policy
+
+            X509v3 Subject Key Identifier: 
+                D2:1C:AB:D3:C2:63:03:D6:7A:B9:FF:40:72:F3:01:0A:40:D4:85:65
+            X509v3 Authority Key Identifier: 
+                keyid:8A:97:BF:5D:B4:EE:53:4B:5C:FE:E4:47:DB:93:42:76:26:A4:C7:F9
+                DirName:/DC=com/DC=example/CN=Test Certifying CA
+                serial:B0:35:43:DE:E7:FA:36:DA
+
+            X509v3 Key Usage: critical
+                Digital Signature, Non Repudiation, Key Encipherment, Data Encipherment, Key Agreement, Certificate Sign, CRL Sign, Encipher Only, Decipher Only
+            X509v3 Subject Alternative Name: 
+                DNS:*.example.com, DNS:example.com
+            X509v3 Basic Constraints: 
+                CA:FALSE
+            Netscape Comment: 
+                Testing Certificate for www.example.com
+    Signature Algorithm: sha1WithRSAEncryption
+         20:4e:9d:ec:f0:dd:0d:75:16:00:31:d9:19:e8:40:3e:1a:c2:
+         ac:1b:d9:5e:4e:d9:14:ce:9d:e2:ea:c9:49:f3:cd:39:31:0a:
+         7f:1a:77:36:2e:7a:d1:77:ce:93:76:a4:09:64:73:1b:18:28:
+         af:3a:d1:02:68:59:2f:72:75:11:3c:4c:4d:8e:6a:1d:db:1b:
+         95:5d:86:59:1f:35:6b:1b:b0:bd:c2:f6:45:15:96:40:96:b6:
+         64:45:61:bb:80:13:f0:b5:72:36:d7:ce:55:02:f9:ef:f8:e7:
+         d5:7b:a8:c1:7d:8e:74:d4:0b:ba:11:5d:79:f0:fa:16:b5:3c:
+         11:18:f3:4c:12:c7:e6:c6:00:4b:b5:1e:62:00:a7:ad:15:21:
+         fb:fd:fe:c2:34:0b:6b:ba:a9:e0:fa:59:26:fe:7b:b3:43:49:
+         95:f4:a7:2a:4d:99:67:f9:99:c7:c5:21:de:e8:59:5e:8a:19:
+         68:d3:6a:de:e2:1c:de:8c:51:59:cf:8b:01:cd:da:b1:68:b2:
+         72:f0:08:a1:29:5c:4e:c0:88:62:6e:aa:7c:7e:d6:94:f8:77:
+         12:85:85:22:50:98:9b:94:66:e1:fd:53:f3:69:e1:ef:db:78:
+         5e:99:f9:a1:82:38:0f:87:1f:01:28:7f:4f:c7:3a:04:15:e1:
+         68:56:c0:b6
+Certificate:
+    Data:
+        Version: 3 (0x2)
+        Serial Number: 16648335155746229684 (0xe70ac49e13e6cdb4)
+    Signature Algorithm: sha1WithRSAEncryption
+        Issuer: DC=com, DC=example/mail=ATS@example.com, CN=Test Intermediate CA
+        Validity
+            Not Before: Apr 24 08:49:50 2015 GMT
+            Not After : Apr 23 08:49:50 2016 GMT
+        Subject: DC=com, DC=example/mail=ATS@example.com, CN=www.example.com
+        Subject Public Key Info:
+            Public Key Algorithm: rsaEncryption
+                Public-Key: (2048 bit)
+                Modulus:
+                    00:db:17:30:73:ec:d9:0b:10:89:80:68:cb:fc:91:
+                    62:78:4f:59:eb:8d:bc:3c:9c:37:94:e0:1c:1c:ed:
+                    1b:29:34:59:8c:6c:3d:d2:f4:7f:35:10:54:e9:92:
+                    41:c4:a2:25:4d:8c:5e:e5:65:5f:81:fe:16:60:52:
+                    cb:47:11:f9:a9:80:7d:18:dd:d2:f1:38:5b:41:dc:
+                    e0:0e:e7:00:2f:da:1c:6a:11:4c:e0:e8:d7:7a:c7:
+                    ba:48:30:70:24:51:5b:50:5b:07:7b:89:1c:e2:91:
+                    a4:95:48:fe:63:23:c6:c5:ec:7e:a6:3c:1c:5d:9d:
+                    3b:d8:ab:2a:3b:83:fd:c7:34:ed:dd:1a:a3:14:ba:
+                    85:12:92:01:fb:5e:3a:74:fa:16:bc:4a:7d:2a:35:
+                    36:66:98:35:9e:68:88:bb:41:d4:a6:00:31:2f:fe:
+                    4a:e0:11:6c:e3:04:fb:eb:f7:16:dc:c8:f7:30:c7:
+                    03:13:7b:62:a7:c6:fa:b2:fe:45:3f:06:5d:c8:cd:
+                    9b:7f:d0:1e:3e:35:ed:b8:66:d0:32:9e:73:34:b6:
+                    01:5a:d6:90:c6:ac:c9:91:1a:c2:e6:04:b3:c8:a0:
+                    1a:34:92:16:79:3e:2e:92:d8:a2:41:d5:db:e4:17:
+                    51:da:ec:2d:b9:83:e3:93:72:b8:29:20:a0:62:57:
+                    f4:89
+                Exponent: 65537 (0x10001)
+        X509v3 extensions:
+            X509v3 Certificate Policies: 
+                Policy: X509v3 Any Policy
+
+            X509v3 Subject Key Identifier: 
+                D2:1C:AB:D3:C2:63:03:D6:7A:B9:FF:40:72:F3:01:0A:40:D4:85:65
+            X509v3 Authority Key Identifier: 
+                keyid:8A:97:BF:5D:B4:EE:53:4B:5C:FE:E4:47:DB:93:42:76:26:A4:C7:F9
+                DirName:/DC=com/DC=example/CN=Test Certifying CA
+                serial:B0:35:43:DE:E7:FA:36:DA
+
+            X509v3 Key Usage: critical
+                Digital Signature, Non Repudiation, Key Encipherment, Data Encipherment, Key Agreement, Certificate Sign, CRL Sign, Encipher Only, Decipher Only
+            X509v3 Subject Alternative Name: 
+                DNS:*.example.com, DNS:example.com
+            X509v3 Basic Constraints: 
+                CA:FALSE
+            Netscape Comment: 
+                Testing Certificate for www.example.com
+    Signature Algorithm: sha1WithRSAEncryption
+         20:4e:9d:ec:f0:dd:0d:75:16:00:31:d9:19:e8:40:3e:1a:c2:
+         ac:1b:d9:5e:4e:d9:14:ce:9d:e2:ea:c9:49:f3:cd:39:31:0a:
+         7f:1a:77:36:2e:7a:d1:77:ce:93:76:a4:09:64:73:1b:18:28:
+         af:3a:d1:02:68:59:2f:72:75:11:3c:4c:4d:8e:6a:1d:db:1b:
+         95:5d:86:59:1f:35:6b:1b:b0:bd:c2:f6:45:15:96:40:96:b6:
+         64:45:61:bb:80:13:f0:b5:72:36:d7:ce:55:02:f9:ef:f8:e7:
+         d5:7b:a8:c1:7d:8e:74:d4:0b:ba:11:5d:79:f0:fa:16:b5:3c:
+         11:18:f3:4c:12:c7:e6:c6:00:4b:b5:1e:62:00:a7:ad:15:21:
+         fb:fd:fe:c2:34:0b:6b:ba:a9:e0:fa:59:26:fe:7b:b3:43:49:
+         95:f4:a7:2a:4d:99:67:f9:99:c7:c5:21:de:e8:59:5e:8a:19:
+         68:d3:6a:de:e2:1c:de:8c:51:59:cf:8b:01:cd:da:b1:68:b2:
+         72:f0:08:a1:29:5c:4e:c0:88:62:6e:aa:7c:7e:d6:94:f8:77:
+         12:85:85:22:50:98:9b:94:66:e1:fd:53:f3:69:e1:ef:db:78:
+         5e:99:f9:a1:82:38:0f:87:1f:01:28:7f:4f:c7:3a:04:15:e1:
+         68:56:c0:b6
+-----BEGIN CERTIFICATE-----
+MIIEijCCA3KgAwIBAgIJAOcKxJ4T5s20MA0GCSqGSIb3DQEBBQUAMG4xEzARBgoJ
+kiaJk/IsZAEZFgNjb20xFzAVBgoJkiaJk/IsZAEZFgdleGFtcGxlMR8wHQYKCZIm
+iZPyLGQBAxQPQVRTQGV4YW1wbGUuY29tMR0wGwYDVQQDExRUZXN0IEludGVybWVk
+aWF0ZSBDQTAeFw0xNTA0MjQwODQ5NTBaFw0xNjA0MjMwODQ5NTBaMGkxEzARBgoJ
+kiaJk/IsZAEZFgNjb20xFzAVBgoJkiaJk/IsZAEZFgdleGFtcGxlMR8wHQYKCZIm
+iZPyLGQBAxQPQVRTQGV4YW1wbGUuY29tMRgwFgYDVQQDEw93d3cuZXhhbXBsZS5j
+b20wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDbFzBz7NkLEImAaMv8
+kWJ4T1nrjbw8nDeU4Bwc7RspNFmMbD3S9H81EFTpkkHEoiVNjF7lZV+B/hZgUstH
+EfmpgH0Y3dLxOFtB3OAO5wAv2hxqEUzg6Nd6x7pIMHAkUVtQWwd7iRzikaSVSP5j
+I8bF7H6mPBxdnTvYqyo7g/3HNO3dGqMUuoUSkgH7Xjp0+ha8Sn0qNTZmmDWeaIi7
+QdSmADEv/krgEWzjBPvr9xbcyPcwxwMTe2Knxvqy/kU/Bl3IzZt/0B4+Ne24ZtAy
+nnM0tgFa1pDGrMmRGsLmBLPIoBo0khZ5Pi6S2KJB1dvkF1Ha7C25g+OTcrgpIKBi
+V/SJAgMBAAGjggEuMIIBKjARBgNVHSAECjAIMAYGBFUdIAAwHQYDVR0OBBYEFNIc
+q9PCYwPWern/QHLzAQpA1IVlMHsGA1UdIwR0MHKAFIqXv1207lNLXP7kR9uTQnYm
+pMf5oU+kTTBLMRMwEQYKCZImiZPyLGQBGRYDY29tMRcwFQYKCZImiZPyLGQBGRYH
+ZXhhbXBsZTEbMBkGA1UEAxMSVGVzdCBDZXJ0aWZ5aW5nIENBggkAsDVD3uf6Ntow
+DwYDVR0PAQH/BAUDAwf/gDAlBgNVHREEHjAcgg0qLmV4YW1wbGUuY29tggtleGFt
+cGxlLmNvbTAJBgNVHRMEAjAAMDYGCWCGSAGG+EIBDQQpFidUZXN0aW5nIENlcnRp
+ZmljYXRlIGZvciB3d3cuZXhhbXBsZS5jb20wDQYJKoZIhvcNAQEFBQADggEBACBO
+nezw3Q11FgAx2RnoQD4awqwb2V5O2RTOneLqyUnzzTkxCn8adzYuetF3zpN2pAlk
+cxsYKK860QJoWS9ydRE8TE2Oah3bG5VdhlkfNWsbsL3C9kUVlkCWtmRFYbuAE/C1
+cjbXzlUC+e/459V7qMF9jnTUC7oRXXnw+ha1PBEY80wSx+bGAEu1HmIAp60VIfv9
+/sI0C2u6qeD6WSb+e7NDSZX0pypNmWf5mcfFId7oWV6KGWjTat7iHN6MUVnPiwHN
+2rFosnLwCKEpXE7AiGJuqnx+1pT4dxKFhSJQmJuUZuH9U/Np4e/beF6Z+aGCOA+H
+HwEof0/HOgQV4WhWwLY=
+-----END CERTIFICATE-----
