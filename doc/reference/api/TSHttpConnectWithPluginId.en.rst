@@ -69,10 +69,10 @@ to internal mechanisms. Data is read and written to the connection
 virtual connection.
 
 .. note:: This function only opens the connection - to drive the
-transaction an actual HTTP request must be sent and the HTTP response
-handled. The transaction is handled as a standard HTTP transaction
-and all of the standard configuration options and plugins will
-operate on it.
+ transaction an actual HTTP request must be sent and the HTTP response
+ handled. The transaction is handled as a standard HTTP transaction
+ and all of the standard configuration options and plugins will
+ operate on it.
 
 The combination of tag and id is intended to enable correlation in
 log post processing. The tag identifies the connection as related

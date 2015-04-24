@@ -20,8 +20,8 @@ Session Protocol
    specific language governing permissions and limitations
    under the License.
 
-Traffic Server supports some session level protocols in place of, or on top of.
- HTTP. These can be provided by a plugin (see :ref:`new-protocol-plugins`) or
+Traffic Server supports some session level protocols in place of, or on top of
+HTTP. These can be provided by a plugin (see :ref:`new-protocol-plugins`) or
 be one that is supported directly by Traffic Server. The
 `SPDY <http://www.chromium.org/spdy>`_ protocol is the only one currently
 supported, but it is planned to support HTTP 2 when that is finalized.

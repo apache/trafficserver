@@ -223,7 +223,7 @@ You can create global hook as well
 
     ts.hook(TS_LUA_HOOK_READ_REQUEST_HDR, do_some_work)
 
-Or you can do it this way
+    Or you can do it this way
 
     ts.hook(TS_LUA_HOOK_READ_REQUEST_HDR, 
         function()
