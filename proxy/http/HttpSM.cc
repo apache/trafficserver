@@ -7485,6 +7485,7 @@ HttpSM::redirect_request(const char *redirect_url, const int redirect_len)
       if (!noPortInHost) {
         char port_buf[6]; // handle upto 5 digit port
         buf[host_len++] = ':';
+        buf[host_len] = '\0';
 
         host_len += ink_small_itoa(port, port_buf, sizeof(port_buf));
         ink_strlcat(buf, port_buf, sizeof(buf));
@@ -7521,6 +7522,7 @@ HttpSM::redirect_request(const char *redirect_url, const int redirect_len)
         if (!noPortInHost) {
           char port_buf[6]; // handle upto 5 digit port
           buf[origHostPort_len++] = ':';
+          buf[origHostPort_len] = '\0';
           origHostPort_len += ink_small_itoa(origPort, port_buf, sizeof(port_buf));
           ink_strlcat(buf, port_buf, sizeof(buf));
         }

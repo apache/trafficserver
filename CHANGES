@@ -1,6 +1,17 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-3554] Memory leak on ssl_multicert.config reload.
+
+  *) [TS-3551] Fix LogUtils.cc compile on Illumos.
+
+  *) [TS-3548] Fix psiginfo usage on Illumos.
+
+  *) [TS-3529] Add config option to allow ATS to start even if certificate files are bad.
+
+  *) [TS-3523]: Proxy urls with no matching remap rules, when remap_required
+               is disabled, regardless of reverse_proxy_enabled setting
+
   *) [TS-3522] Segfault due to inactivity_cop.
 
   *) [TS-3530] HTTP/2 memory leak with headers and more...

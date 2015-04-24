@@ -220,7 +220,7 @@ A value of ``0`` means no signal will be sent.
 
 .. ts:cv:: CONFIG proxy.config.exec_thread.limit INT 2
 
-   *XXX* What does this do?
+   The number of threads Traffic Server will create if `proxy.config.exec_thread.autoconfig` is set to `0`, otherwise this option is ignored.
 
 .. ts:cv:: CONFIG proxy.config.accept_threads INT 1
 

@@ -805,7 +805,8 @@ process_regex_mapping_config(const char *from_host_lower, url_mapping *new_mappi
     goto lFail;
   }
   if (captures >= UrlRewrite::MAX_REGEX_SUBS) { // off by one for $0 (implicit capture)
-    Warning("regex has %d capturing subpatterns (including entire regex); Max allowed: %d", captures + 1, UrlRewrite::MAX_REGEX_SUBS);
+    Warning("regex has %d capturing subpatterns (including entire regex); Max allowed: %d", captures + 1,
+            UrlRewrite::MAX_REGEX_SUBS);
     goto lFail;
   }
 

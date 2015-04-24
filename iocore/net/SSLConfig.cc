@@ -72,6 +72,7 @@ SSLConfigParams::SSLConfigParams()
   ssl_session_cache_skip_on_contention = 0;
   ssl_session_cache_timeout = 0;
   ssl_session_cache_auto_clear = 1;
+  configExitOnLoadError = 0;
 }
 
 SSLConfigParams::~SSLConfigParams()
@@ -231,6 +232,7 @@ SSLConfigParams::initialize()
   ats_free(serverCertRelativePath);
 
   configFilePath = RecConfigReadConfigPath("proxy.config.ssl.server.multicert.filename");
+  REC_ReadConfigInteger(configExitOnLoadError, "proxy.config.ssl.server.multicert.exit_on_load_fail");
 
   REC_ReadConfigStringAlloc(ssl_server_private_key_path, "proxy.config.ssl.server.private_key.path");
   set_paths_helper(ssl_server_private_key_path, NULL, &serverKeyPathOnly, NULL);
@@ -324,12 +326,17 @@ SSLCertificateConfig::startup()
 {
   sslCertUpdate = new ConfigUpdateHandler<SSLCertificateConfig>();
   sslCertUpdate->attach("proxy.config.ssl.server.multicert.filename");
+  sslCertUpdate->attach("proxy.config.ssl.server.multicert.exit_on_load_fail");
   sslCertUpdate->attach("proxy.config.ssl.server.ticket_key.filename");
   sslCertUpdate->attach("proxy.config.ssl.server.cert.path");
   sslCertUpdate->attach("proxy.config.ssl.server.private_key.path");
   sslCertUpdate->attach("proxy.config.ssl.server.cert_chain.filename");
 
-  if (!reconfigure()) {
+  // Exit if there are problems on the certificate loading and the
+  // proxy.config.ssl.server.multicert.exit_on_load_fail is true
+  SSLConfig::scoped_config params;
+  if (!reconfigure() && params->configExitOnLoadError) {
+    Error("Problems loading ssl certificate file, %s.  Exiting.", params->configFilePath);
     _exit(1);
   }
   return true;
@@ -351,13 +358,15 @@ SSLCertificateConfig::reconfigure()
   }
 
   SSLParseCertificateConfiguration(params, lookup);
-  if (lookup->is_valid) {
+  // If there are errors in the certificate configs and we had wanted to exit on error
+  // we won't want to reset the config
+  if (lookup->is_valid || !params->configExitOnLoadError) {
     configid = configProcessor.set(configid, lookup);
-  } else {
-    retStatus = false;
-    delete lookup;
   }
 
+  if (!lookup->is_valid) {
+    retStatus = false;
+  }
   return retStatus;
 }
 
