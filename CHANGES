@@ -1,6 +1,10 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-3505] New plugin, cache_promote, which allows for policy based
+   control on when a object should be allowed into the cache. Two policies are
+   currently implemented: an LRU and a pure chance ("random") policy.
+
   *) [TS-3554] Memory leak on ssl_multicert.config reload.
 
   *) [TS-3551] Fix LogUtils.cc compile on Illumos.
