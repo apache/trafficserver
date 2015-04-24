@@ -14,37 +14,37 @@ Changes with Apache Traffic Server 6.0.0
   *) [TS-3529] Add config option to allow ATS to start even if certificate files are bad.
 
   *) [TS-3523]: Proxy urls with no matching remap rules, when remap_required
-               is disabled, regardless of reverse_proxy_enabled setting
+   is disabled, regardless of reverse_proxy_enabled setting.
 
   *) [TS-3522] Segfault due to inactivity_cop.
 
-  *) [TS-3530] HTTP/2 memory leak with headers and more...
+  *) [TS-3530] HTTP/2 memory leak with headers and more.
 
-  *) [TS-3519] HTTP/2 seeing a lot of GOAWAY frames being sent
+  *) [TS-3519] HTTP/2 seeing a lot of GOAWAY frames being sent.
 
-  *) [TS-3520] Fix logging core dump due to invalid unmapped url length/buffer
+  *) [TS-3520] Fix logging core dump due to invalid unmapped url length/buffer.
 
   *) [TS-3489] Not able to set more than 1 accept thread per port and cleaned
-   other thread configurable ranges
+   other thread configurable ranges.
 
   *) [TS-3516] Fix various compile warnings with latest versions of clang.
 
-  *) [TS-3438] Assert if npn protocol is invalid (empty string)
+  *) [TS-3438] Assert if NPN protocol is invalid (empty string).
 
-  *) [TS-3501] Support configuring socket options for client sockets
+  *) [TS-3501] Support configuring socket options for client sockets.
 
-  *) [TS-3515] Use pcrejit (Regex class) for regex_map
+  *) [TS-3515] Use pcrejit (Regex class) for regex_map.
 
   *) [TS-3500] Fix TSHttpTxnPristineUrlGet to return client request's url
-   when pristine url is not populated
+   when pristine url is not populated.
 
   *) [TS-3513] HTTP/2 core dump. Fixed problem with cursor not advancing
-   during parsing
+   during parsing.
 
-  *) [TS-3514] Atomic check for gcc >4.1 breaks with gcc 5.0
+  *) [TS-3514] Atomic check for gcc >4.1 breaks with gcc 5.0.
    Author: Marcin Juszkiewicz <mjuszkiewicz@redhat.com>
 
-  *) [TS-3507] Add stats for the milestones
+  *) [TS-3507] Add stats for the milestones.
 
   *) [TS-3480] Large stream id cause PROTOCOL_ERROR.
    Author: Ryo Okubo <rokubo@yahoo-corp.jp>.
