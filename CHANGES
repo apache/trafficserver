@@ -1,8 +1,11 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-3552] Move the check for the api_server_response_no_store flag
+   earlier.
+
   *) [TS-3545] Make traffic_line and traffic_ctl more verbose. Add message
-   when setting config options that don't require a restart
+   when setting config options that don't require a restart.
 
   *) [TS-3505] New plugin, cache_promote, which allows for policy based
    control on when a object should be allowed into the cache. Two policies are
