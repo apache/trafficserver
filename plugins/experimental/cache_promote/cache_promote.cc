@@ -459,6 +459,7 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf */, int /* errbuf_size */)
 {
+  // coverity[RESOURCE_LEAK];
   PromotionConfig *config = new PromotionConfig;
   TSCont contp = TSContCreate(cont_handle_policy, TSMutexCreate());
 
