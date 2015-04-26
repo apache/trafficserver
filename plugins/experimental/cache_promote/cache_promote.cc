@@ -197,16 +197,7 @@ typedef std::map<LRUHash *, LRUList::iterator> LRUMap;
 class LRUPolicy : public PromotionPolicy
 {
 public:
-  LRUPolicy() : PromotionPolicy(), _buckets(1000), _hits(10)
-  {
-    // This doesn't have to be perfect, since this is just chance sampling.
-    // coverity[dont_call]
-    srand48((long)time(NULL) ^ (long)getpid() ^ (long)getppid());
-#if HAVE_UNORDERED_MAP
-    _map.reserve(_buckets);
-#endif
-    _lock = TSMutexCreate();
-  }
+  LRUPolicy() : PromotionPolicy(), _buckets(1000), _hits(10), _lock(TSMutexCreate()) {}
 
   ~LRUPolicy()
   {
@@ -237,6 +228,13 @@ public:
       return false;
     }
 
+    // This doesn't have to be perfect, since this is just chance sampling.
+    // coverity[dont_call]
+    srand48((long)time(NULL) ^ (long)getpid() ^ (long)getppid());
+#if HAVE_UNORDERED_MAP
+    _map.reserve(_buckets);
+#endif
+
     return true;
   }
 
@@ -257,7 +255,7 @@ public:
 
     map_it = _map.find(&hash);
     if (_map.end() != map_it) {
-      // We have an entry in the URL
+      // We have an entry in the LRU
       if (++(map_it->second->second) >= _hits) {
         // Promoted! Cleanup the LRU, and signal success. Save the promoted entry on the freelist.
         TSDebug(PLUGIN_NAME, "saving the LRUEntry to the freelist");
