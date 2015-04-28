@@ -5078,6 +5078,7 @@ HttpSM::handle_post_failure()
   t_state.current.server->keep_alive = HTTP_NO_KEEPALIVE;
 
   if (server_buffer_reader->read_avail() > 0) {
+    tunnel.deallocate_buffers();
     tunnel.reset();
     // There's data from the server so try to read the header
     setup_server_read_response_header();
