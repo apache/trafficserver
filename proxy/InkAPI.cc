@@ -7607,6 +7607,9 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   case TS_CONFIG_HTTP_KEEP_ALIVE_POST_OUT:
     ret = &overridableHttpConfig->keep_alive_post_out;
     break;
+  case TS_CONFIG_HTTP_AUTH_SERVER_SESSION_PRIVATE:
+    ret = &overridableHttpConfig->auth_server_session_private;
+    break;
   case TS_CONFIG_HTTP_SHARE_SERVER_SESSIONS:
     ink_assert("Deprecated config key value - TS_CONFIG_HTTP_SHARE_SERVER_SESSIONS");
     //    ret = &overridableHttpConfig->share_server_sessions;
@@ -8384,6 +8387,10 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
     case 'l':
       if (0 == strncmp(name, "proxy.config.http.server_session_sharing.pool", length))
         cnf = TS_CONFIG_HTTP_SERVER_SESSION_SHARING_POOL;
+      break;
+    case 'e':
+      if (0 == strncmp(name, "proxy.config.http.auth_server_session_private", length))
+        cnf = TS_CONFIG_HTTP_AUTH_SERVER_SESSION_PRIVATE;
       break;
     }
     break;

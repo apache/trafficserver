@@ -7170,6 +7170,7 @@ const char *SDK_Overridable_Configs[TS_CONFIG_LAST_ENTRY] = {
   "proxy.config.url_remap.pristine_host_hdr", "proxy.config.http.chunking_enabled", "proxy.config.http.negative_caching_enabled",
   "proxy.config.http.negative_caching_lifetime", "proxy.config.http.cache.when_to_revalidate",
   "proxy.config.http.keep_alive_enabled_in", "proxy.config.http.keep_alive_enabled_out", "proxy.config.http.keep_alive_post_out",
+  "proxy.config.http.auth_server_session_private",
   "proxy.config.http.share_server_sessions", "proxy.config.http.server_session_sharing.pool",
   "proxy.config.http.server_session_sharing.match", "proxy.config.net.sock_recv_buffer_size_out",
   "proxy.config.net.sock_send_buffer_size_out", "proxy.config.net.sock_option_flag_out",
