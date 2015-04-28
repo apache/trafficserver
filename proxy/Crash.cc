@@ -111,6 +111,14 @@ crash_logger_init()
     dup2(pipe[1], STDIN_FILENO);
     close(pipe[0]);
     close(pipe[1]);
+
+    // Starting after stderr, keep closing file descriptors until we run out.
+    for (int fd = STDERR_FILENO + 1; fd; ++fd) {
+      if (close(fd) == -1) {
+        break;
+      }
+    }
+
     ink_release_assert(execl(logger, basename, "--syslog", "--wait", "--host", TS_BUILD_CANONICAL_HOST, NULL) != -1);
     return; // not reached.
   }

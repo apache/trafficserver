@@ -1,7 +1,11 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-3539] Close excess file descriptors in crash log helper.
+
   *) [TS-3576] Remove the need for FIPS locking for OpenSSL
+
+  *) [TS-3538]: Perform server certificate validity check.
 
   *) [TS-3575] Fix connection leak.
 
