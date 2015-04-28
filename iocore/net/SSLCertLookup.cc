@@ -265,7 +265,7 @@ SSLContextStorage::~SSLContextStorage()
   for (unsigned i = 0; i < this->ctx_store.length(); ++i) {
     if (this->ctx_store[i].ctx != last_ctx) {
       last_ctx = this->ctx_store[i].ctx;
-      SSLReleaseContext(this->ctx_store[i].ctx);
+      this->ctx_store[i].release();
     }
   }
 

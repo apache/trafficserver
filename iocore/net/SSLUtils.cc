@@ -131,6 +131,18 @@ ticket_block_free(void *ptr)
   ats_free(ptr);
 }
 
+void SSLCertContext::release()
+{
+  if (keyblock) {
+    ticket_block_free(keyblock);
+    keyblock = NULL;
+  }
+  if (ctx) {
+    SSL_CTX_free(ctx);
+    ctx = NULL;
+  }
+}
+
 static ssl_ticket_key_block *
 ticket_block_alloc(unsigned count)
 {
@@ -1681,6 +1693,14 @@ ssl_store_ssl_context(const SSLConfigParams *params, SSLCertLookup *lookup, cons
       }
     }
   }
+  if (!inserted) {
+#if HAVE_OPENSSL_SESSION_TICKETS
+    if (keyblock != NULL) {
+      ticket_block_free(keyblock);
+    }
+#endif
+  }
+
 
 #if defined(SSL_OP_NO_TICKET)
   // Session tickets are enabled by default. Disable if explicitly requested.
@@ -1720,11 +1740,6 @@ ssl_store_ssl_context(const SSLConfigParams *params, SSLCertLookup *lookup, cons
     }
   }
   if (!inserted) {
-#if HAVE_OPENSSL_SESSION_TICKETS
-    if (keyblock != NULL) {
-      ticket_block_free(keyblock);
-    }
-#endif
     if (ctx != NULL) {
       SSL_CTX_free(ctx);
       ctx = NULL;
