@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-3561] Call TSMutexDestroy in a couple of plugins, now that its
+   available.
+
   *) [TS-3558] Fix proxy.config.http.auth_server_session_private
 
   *) [TS-3552] Move the check for the api_server_response_no_store flag
