@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.0
 
+  *) [TS-3558] Fix proxy.config.http.auth_server_session_private
+
   *) [TS-3533] Revert commits that break unregistered plugin loading.
 
   *) [TS-3551] Fix LogUtils.cc compile on Illumos.
