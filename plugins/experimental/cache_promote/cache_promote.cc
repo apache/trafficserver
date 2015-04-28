@@ -209,8 +209,7 @@ public:
     _freelist.clear();
 
     TSMutexUnlock(_lock);
-
-    // ToDo: Destroy mutex ? TS-1432
+    TSMutexDestroy(_lock);
   }
 
   bool
