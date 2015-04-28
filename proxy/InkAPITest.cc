@@ -7170,7 +7170,6 @@ const char *SDK_Overridable_Configs[TS_CONFIG_LAST_ENTRY] = {
   "proxy.config.url_remap.pristine_host_hdr", "proxy.config.http.chunking_enabled", "proxy.config.http.negative_caching_enabled",
   "proxy.config.http.negative_caching_lifetime", "proxy.config.http.cache.when_to_revalidate",
   "proxy.config.http.keep_alive_enabled_in", "proxy.config.http.keep_alive_enabled_out", "proxy.config.http.keep_alive_post_out",
-  "proxy.config.http.auth_server_session_private",
   "proxy.config.http.share_server_sessions", "proxy.config.http.server_session_sharing.pool",
   "proxy.config.http.server_session_sharing.match", "proxy.config.net.sock_recv_buffer_size_out",
   "proxy.config.net.sock_send_buffer_size_out", "proxy.config.net.sock_option_flag_out",
@@ -7207,6 +7206,7 @@ const char *SDK_Overridable_Configs[TS_CONFIG_LAST_ENTRY] = {
   "proxy.config.ssl.hsts_max_age", "proxy.config.ssl.hsts_include_subdomains", "proxy.config.http.cache.open_read_retry_time",
   "proxy.config.http.cache.max_open_read_retries", "proxy.config.http.cache.range.write",
   "proxy.config.http.post.check.content_length.enabled", "proxy.config.http.global_user_agent_header",
+  "proxy.config.http.auth_server_session_private"
 };
 
 REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS)(RegressionTest *test, int /* atype ATS_UNUSED */, int *pstatus)
