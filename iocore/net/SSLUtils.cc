@@ -116,47 +116,9 @@ static int ssl_callback_session_ticket(SSL *, unsigned char *, unsigned char *, 
 
 #if HAVE_OPENSSL_SESSION_TICKETS
 static int ssl_session_ticket_index = -1;
-
-
-// Zero out and free the heap space allocated for ticket keys to avoid leaking secrets.
-// The first several bytes stores the number of keys and the rest stores the ticket keys.
-static void
-ticket_block_free(void *ptr)
-{
-  if (ptr) {
-    ssl_ticket_key_block *key_block_ptr = (ssl_ticket_key_block *)ptr;
-    unsigned num_ticket_keys = key_block_ptr->num_keys;
-    memset(ptr, 0, sizeof(ssl_ticket_key_block) + num_ticket_keys * sizeof(ssl_ticket_key_t));
-  }
-  ats_free(ptr);
-}
-
-void SSLCertContext::release()
-{
-  if (keyblock) {
-    ticket_block_free(keyblock);
-    keyblock = NULL;
-  }
-  if (ctx) {
-    SSL_CTX_free(ctx);
-    ctx = NULL;
-  }
-}
-
-static ssl_ticket_key_block *
-ticket_block_alloc(unsigned count)
-{
-  ssl_ticket_key_block *ptr;
-  size_t nbytes = sizeof(ssl_ticket_key_block) + count * sizeof(ssl_ticket_key_t);
-
-  ptr = (ssl_ticket_key_block *)ats_malloc(nbytes);
-  memset(ptr, 0, nbytes);
-  ptr->num_keys = count;
-
-  return ptr;
-}
-
 #endif
+
+
 static pthread_mutex_t *mutex_buf = NULL;
 static bool open_ssl_initialized = false;
 

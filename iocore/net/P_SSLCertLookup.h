@@ -109,4 +109,7 @@ struct SSLCertLookup : public ConfigInfo {
   virtual ~SSLCertLookup();
 };
 
+void ticket_block_free(void *ptr);
+ssl_ticket_key_block *ticket_block_alloc(unsigned count);
+
 #endif /* __P_SSLCERTLOOKUP_H__ */
