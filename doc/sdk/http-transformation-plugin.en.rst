@@ -75,9 +75,9 @@ Every ``VConnection`` has an associated *input VIO* and an associated
 *output VIO*. When ``VConnection``\ s are transferring data to one
 another, one ``VConnection``'s input ``VIO`` is another
 ``VConnection``'s output ``VIO``. A ``VConnection``'s input ``VIO`` is
-also called its **write ``VIO``** because the input ``VIO`` refers to a
-write operation performed on the ``VConnection`` itself. Similarly, the
-outpt ``VIO`` is also called the **read ``VIO``**. For transformations,
+also called its **read ``VIO``** because the input ``VIO`` refers to a
+read operation performed on the ``VConnection`` itself. Similarly, the
+outpt ``VIO`` is also called the **write ``VIO``**. For transformations,
 which are designed to pass data in one direction, you can picture the
 relationship between the transformation ``VConnection`` and its
 ``VIO``\ s as follows:
