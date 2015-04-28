@@ -728,6 +728,12 @@ Value Effect
    Note that setting this parameter to (``2``) will not work correctly unless
    the dedicated SSL threads are disabled (:ts:cv:`proxy.config.ssl.number.threads`
    is set to (``-1``)).
+   
+.. ts:cv:: CONFIG proxy.config.http.auth_server_session_private INT 1
+
+   If enabled (``1``) anytime a request contains a (``Authorization``), (``Proxy-Authorization``)
+   or (``Www-Authenticate``) header the connection will be closed and not reused. This marks
+   the connection as private. When disabled (``0``) the connection will be available for reuse.
 
 .. ts:cv:: CONFIG proxy.config.http.server_session_sharing.match STRING both
 
