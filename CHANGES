@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-3564]: Check if cache is enabled before setting DO_WRITE action
+                during 3xx redirect follow, to prevent seg fault
+
   *) [TS-2490] Allow traffic_cop to wait longer during traffic_server startup
 
   *) [TS-3536] Fix memory leak in post processing.
