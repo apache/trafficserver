@@ -1939,7 +1939,9 @@ HttpTransact::DecideCacheLookup(State *s)
     // for redirect, we skipped cache lookup to do the automatic redirection
     if (s->redirect_info.redirect_in_process) {
       // without calling out the CACHE_LOOKUP_COMPLETE_HOOK
-      s->cache_info.action = CACHE_DO_WRITE;
+      if (s->txn_conf->cache_http) {
+        s->cache_info.action = CACHE_DO_WRITE;
+      }
       LookupSkipOpenServer(s);
     } else {
       // calling out CACHE_LOOKUP_COMPLETE_HOOK even when the cache
@@ -3904,8 +3906,9 @@ HttpTransact::handle_forward_server_connection_open(State *s)
         break;
       default:
         DebugTxn("http_trans", "[hfsco] redirect in progress, non-3xx response, setting cache_do_write");
-        if (cw_vc)
+        if (cw_vc && s->txn_conf->cache_http) {
           s->cache_info.action = CACHE_DO_WRITE;
+        }
         break;
       }
     }
