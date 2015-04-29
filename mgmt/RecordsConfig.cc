@@ -84,6 +84,8 @@ static const RecordElement RecordsConfig[] =
   ,                             // needed by traffic_cop
   {RECT_CONFIG, "proxy.config.cop.linux_min_memfree_kb", RECD_INT, "0", RECU_NULL, RR_REQUIRED, RECC_NULL, NULL, RECA_NULL}
   ,                             // needed by traffic_cop
+  {RECT_CONFIG, "proxy.config.cop.init_sleep_time", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, "[0-900]", RECA_NULL}
+  ,
   //# 0 = disable (seconds)
   {RECT_CONFIG, "proxy.config.dump_mem_info_frequency", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,

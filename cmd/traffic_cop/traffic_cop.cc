@@ -107,6 +107,7 @@ static int server_failures = 0;
 static int server_not_found = 0;
 
 static const int sleep_time = 10;          // 10 sec
+static int init_sleep_time  = sleep_time;  // 10 sec
 static const int manager_timeout = 3 * 60; //  3 min
 static const int server_timeout = 3 * 60;  //  3 min
 
@@ -653,6 +654,7 @@ config_reload_records()
   config_read_int("proxy.config.admin.autoconf_port", &autoconf_port, true);
   config_read_int("proxy.config.cluster.rsport", &rs_port, true);
   config_read_int("proxy.config.lm.sem_id", &sem_id, true);
+  config_read_int("proxy.config.cop.init_sleep_time", &init_sleep_time, true);
 
 #if defined(linux)
   // TS-1075 : auto-port ::connect DoS on high traffic linux systems
@@ -1348,6 +1350,10 @@ heartbeat_server()
       //   if it is taking too long to kill the server
       //
       safe_kill(server_lockfile, server_binary, false);
+      // Allow a configurable longer sleep init time
+      // to load very large remap files
+      cop_log_trace("performing additional sleep for %d sec during init", init_sleep_time);
+      millisleep(init_sleep_time * 1000);
     }
   } else {
     if (server_failures)
@@ -1651,6 +1657,11 @@ check(void *arg)
       ats_scoped_str runtimedir(config_read_runtime_dir());
       TSInit(runtimedir, static_cast<TSInitOptionT>(TS_MGMT_OPT_NO_EVENTS));
       mgmt_init = true;
+
+      // Allow a configurable longer sleep init time
+      // to load very large remap files
+      cop_log_trace("performing additional sleep for %d sec during init", init_sleep_time);
+      millisleep(init_sleep_time * 1000);
     }
   }
 
