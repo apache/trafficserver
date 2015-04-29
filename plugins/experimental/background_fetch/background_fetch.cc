@@ -640,13 +640,24 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo * /* rri */)
     return TSREMAP_NO_REMAP;
   }
 
-  BgFetchConfig *config = static_cast<BgFetchConfig *>(ih);
+  TSMBuffer bufp;
+  TSMLoc req_hdrs;
 
-  config->acquire(); // Inc refcount
-  TSHttpTxnHookAdd(txnp, TS_HTTP_READ_RESPONSE_HDR_HOOK, config->getCont());
-  TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, config->getCont());
+  if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &bufp, &req_hdrs)) {
+    TSMLoc field_loc = TSMimeHdrFieldFind(bufp, req_hdrs, TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE);
 
-  TSDebug(PLUGIN_NAME, "background fetch TSRemapDoRemap...");
+    if (field_loc) {
+      BgFetchConfig *config = static_cast<BgFetchConfig *>(ih);
+
+      config->acquire(); // Inc refcount
+      TSHttpTxnHookAdd(txnp, TS_HTTP_READ_RESPONSE_HDR_HOOK, config->getCont());
+      TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, config->getCont());
+
+      TSDebug(PLUGIN_NAME, "background fetch TSRemapDoRemap...");
+      TSHandleMLocRelease(bufp, req_hdrs, field_loc);
+    }
+    TSHandleMLocRelease(bufp, TS_NULL_MLOC, req_hdrs);
+  }
 
   return TSREMAP_NO_REMAP;
 }
