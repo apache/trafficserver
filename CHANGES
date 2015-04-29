@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-2490] Allow traffic_cop to wait longer during traffic_server startup
+
   *) [TS-3536] Fix memory leak in post processing.
 
   *) [TS-3561] Call TSMutexDestroy in a couple of plugins, now that its
