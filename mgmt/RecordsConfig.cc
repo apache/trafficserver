@@ -649,6 +649,13 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.http.cache.max_open_write_retries", RECD_INT, "1", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
+  //       #  open_write_fail_action has 3 options:
+  //       #
+  //       #  0 - default. disable cache and goto origin
+  //       #  1 - return error if cache miss
+  //       #  2 - serve stale until proxy.config.http.cache.max_stale_age, then goto origin, if refresh_miss
+  {RECT_CONFIG, "proxy.config.http.cache.open_write_fail_action", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  ,
   //       #  when_to_revalidate has 4 options:
   //       #
   //       #  0 - default. use use cache directives or heuristic

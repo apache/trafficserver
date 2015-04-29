@@ -301,6 +301,13 @@ public:
     TOTAL_CACHE_ACTION_TYPES
   };
 
+  enum CacheOpenWriteFailAction_t {
+    CACHE_OPEN_WRITE_FAIL_DEFAULT = 0,
+    CACHE_OPEN_WRITE_FAIL_ERROR_ON_MISS = 1,
+    CACHE_OPEN_WRITE_FAIL_STALE_OR_REVALIDATE = 2,
+    TOTAL_OPEN_WRITE_FAIL_ACTION_TYPES
+  };
+
   enum CacheWriteLock_t {
     CACHE_WL_INIT,
     CACHE_WL_SUCCESS,
@@ -796,6 +803,7 @@ public:
     DNSLookupInfo dns_info;
     RedirectInfo redirect_info;
     unsigned int updated_server_version;
+    unsigned int cache_open_write_fail_action;
     bool is_revalidation_necessary; // Added to check if revalidation is necessary - YTS Team, yamsat
     bool request_will_not_selfloop; // To determine if process done - YTS Team, yamsat
     ConnectionAttributes client_info;
@@ -960,8 +968,8 @@ public:
     // Constructor
     State()
       : m_magic(HTTP_TRANSACT_MAGIC_ALIVE), state_machine(NULL), http_config_param(NULL), force_dns(false),
-        updated_server_version(HostDBApplicationInfo::HTTP_VERSION_UNDEFINED), is_revalidation_necessary(false),
-        request_will_not_selfloop(false), // YTS Team, yamsat
+        updated_server_version(HostDBApplicationInfo::HTTP_VERSION_UNDEFINED), cache_open_write_fail_action(0),
+        is_revalidation_necessary(false), request_will_not_selfloop(false), // YTS Team, yamsat
         source(SOURCE_NONE), pre_transform_source(SOURCE_NONE), req_flavor(REQ_FLAVOR_FWDPROXY), pending_work(NULL),
         cdn_saved_next_action(SM_ACTION_UNDEFINED), cdn_saved_transact_return_point(NULL), cdn_remap_complete(false),
         first_dns_lookup(true), parent_params(NULL), cache_lookup_result(CACHE_LOOKUP_NONE), backdoor_request(false),
