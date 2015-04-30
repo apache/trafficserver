@@ -439,6 +439,11 @@ Log::init_fields()
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cqhl", field);
 
+  field = new LogField("cache_lookup_url_canonical", "cluc", LogField::STRING, &LogAccess::marshal_cache_lookup_url_canon,
+                       (LogField::UnmarshalFunc) & LogAccess::unmarshal_str);
+  global_field_list.add(field, false);
+  ink_hash_table_insert(field_symbol_hash, "cluc", field);
+
   field = new LogField("client_req_body_len", "cqbl", LogField::sINT, &LogAccess::marshal_client_req_body_len,
                        &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
