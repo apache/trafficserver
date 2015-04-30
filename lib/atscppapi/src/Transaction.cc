@@ -303,6 +303,29 @@ Transaction::setTimeout(Transaction::TimeoutType type, int time_ms)
   }
 }
 
+
+Transaction::CacheStatus
+Transaction::getCacheStatus() {
+  int obj_status = TS_ERROR;
+
+  if (TSHttpTxnCacheLookupStatusGet(state_->txn_, &obj_status) == TS_ERROR) {
+    return CACHE_LOOKUP_NONE;
+  }
+
+  switch (obj_status) {
+  case TS_CACHE_LOOKUP_MISS:
+    return CACHE_LOOKUP_MISS;
+  case TS_CACHE_LOOKUP_HIT_STALE:
+    return CACHE_LOOKUP_HIT_STALE;
+  case TS_CACHE_LOOKUP_HIT_FRESH:
+    return CACHE_LOOKUP_HIT_FRESH;
+  case TS_CACHE_LOOKUP_SKIPPED:
+    return CACHE_LOOKUP_SKIPED;
+  default:
+    return CACHE_LOOKUP_NONE;
+  }
+}
+
 void
 Transaction::redirectTo(std::string const &url)
 {
