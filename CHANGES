@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-3575]: Fix connection leak.
+
   *) [TS-3538]: Perform server certificate validity check.
 
   *) [TS-3549]: Configurable option to avoid thundering herd problem 
