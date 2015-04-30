@@ -68,11 +68,7 @@ enum AllocType {
   CONSTANT,
 };
 
-#if TS_USE_RECLAIMABLE_FREELIST
-#define DEFAULT_BUFFER_NUMBER 64
-#else
 #define DEFAULT_BUFFER_NUMBER 128
-#endif
 #define DEFAULT_HUGE_BUFFER_NUMBER 32
 #define MAX_MIOBUFFER_READERS 5
 #define DEFAULT_BUFFER_ALIGNMENT 8192 // should be disk/page size
