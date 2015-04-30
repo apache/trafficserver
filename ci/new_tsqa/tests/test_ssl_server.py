@@ -22,11 +22,9 @@ import tsqa.utils
 import tsqa.test_cases
 import tsqa.endpoint
 
-unittest = tsqa.utils.import_unittest()
-
-class TestSSLServer(helpers.EnvironmentCase, tsqa.test_cases.HTTPBinCase):
+class TestSSLTermination(helpers.EnvironmentCase, tsqa.test_cases.HTTPBinCase):
     '''
-    Tests for SSL between client and ATS (as server)
+    Test for SSL Termination (client verify ATS certificate)
     '''
     @classmethod
     def setUpEnv(cls, env):
@@ -43,14 +41,44 @@ class TestSSLServer(helpers.EnvironmentCase, tsqa.test_cases.HTTPBinCase):
 
         # configure SSL multicert
         cls.configs['ssl_multicert.config'].add_line('dest_ip=* ssl_cert_name={0} ssl_ca_name={1}'.format(
-            helpers.tests_file_path('rsa_keys2/www.example.com.pem'),
-            helpers.tests_file_path('rsa_keys2/chain.crt'),
+            helpers.tests_file_path('rsa_keys/www.example.com.pem'),
+            helpers.tests_file_path('rsa_keys/ca.chain.crt'),
             ))
 
     def test_ssl_termination(self):
         r = requests.get('https://www.example.com:{0}/get'.format(self.ssl_port),
-                verify=helpers.tests_file_path('rsa_keys2/ca.crt'))
+                verify=helpers.tests_file_path('rsa_keys/ca.crt'))
         self.assertEqual(r.status_code, 200)
 
-if __name__ == '__main__':
-    unittest.main()
+class TestSSLVerifyClient(helpers.EnvironmentCase, tsqa.test_cases.HTTPBinCase):
+    '''
+    Test for ATS verify client certificate
+    '''
+    @classmethod
+    def setUpEnv(cls, env):
+        # add an SSL port to ATS
+        cls.ssl_port = tsqa.utils.bind_unused_port()[1]
+        cls.configs['records.config']['CONFIG']['proxy.config.http.server_ports'] += ' {0}:ssl'.format(cls.ssl_port)
+        cls.configs['records.config']['CONFIG'].update({
+            'proxy.config.diags.debug.enabled': 1,
+            'proxy.config.diags.debug.tags': 'ssl',
+        })
+
+        # configure verify client certificate
+        cls.configs['records.config']['CONFIG']['proxy.config.ssl.client.certification_level'] = 2
+        cls.configs['records.config']['CONFIG']['proxy.config.ssl.CA.cert.filename'] = helpers.tests_file_path('rsa_keys/ca.chain.crt')
+
+        # configure remap
+        cls.configs['remap.config'].add_line('map / http://127.0.0.1:{0}'.format(cls.http_endpoint.address[1]))
+
+        # configure SSL multicert
+        cls.configs['ssl_multicert.config'].add_line('dest_ip=* ssl_cert_name={0} ssl_ca_name={1}'.format(
+            helpers.tests_file_path('rsa_keys/www.example.com.pem'),
+            helpers.tests_file_path('rsa_keys/ca.chain.crt'),
+            ))
+
+    def test_ssl_verify_client(self):
+        r = requests.get('https://www.example.com:{0}/get'.format(self.ssl_port),
+                verify=helpers.tests_file_path('rsa_keys/ca.crt'),
+                cert=helpers.tests_file_path('rsa_keys/www.example.org.pem'))
+        self.assertEqual(r.status_code, 200)
