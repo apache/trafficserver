@@ -77,22 +77,16 @@ class KeepAliveInMixin(object):
         return request
 
     def _aux_KA_working_path_connid(self, protocol, headers=None):
-        # connect tcp
-        s = self._get_socket()
-
-        request = ('GET / HTTP/1.1\r\n'
-                   'Host: foobar.com\r\n')
-        request += self._headers_to_str(headers)
-        request += '\r\n'
-
-        for x in xrange(1, 10):
-            s.send(request)
-            response = s.recv(4096)
-            # cheat, since we know what the body should have
-            if '\r\n\r\n' not in response:
-                response += s.recv(4096)
-            self.assertIn('HTTP/1.1 200 OK', response)
-            self.assertIn('hello', response)
+        with requests.Session() as s:
+            url = '{0}://127.0.0.1:{1}/'.format(protocol, int(self.configs['records.config']['CONFIG']['proxy.config.http.server_ports']))
+            conn_id = None
+            for x in xrange(1, 10):
+                ret = requests.get(url)
+                self.assertEqual(ret.status_code, 200)
+                if conn_id is None:
+                    conn_id = ret.text
+                else:
+                    self.assertEqual(ret.text, conn_id)
 
     def _aux_working_path(self, protocol, headers=None):
         # connect tcp
