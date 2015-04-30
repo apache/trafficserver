@@ -28,7 +28,7 @@ int thread_freelist_low_watermark = 32;
 void *
 thread_alloc(Allocator &a, ProxyAllocator &l)
 {
-#if TS_USE_FREELIST && !TS_USE_RECLAIMABLE_FREELIST
+#if TS_USE_FREELIST
   if (l.freelist) {
     void *v = (void *)l.freelist;
     l.freelist = *(void **)l.freelist;
@@ -44,9 +44,7 @@ thread_alloc(Allocator &a, ProxyAllocator &l)
 void
 thread_freeup(Allocator &a, ProxyAllocator &l)
 {
-#if !TS_USE_RECLAIMABLE_FREELIST
   void *head = (void *)l.freelist;
-#endif
   void *tail = (void *)l.freelist;
   size_t count = 0;
   while (l.freelist && l.allocated > thread_freelist_low_watermark) {
@@ -54,11 +52,8 @@ thread_freeup(Allocator &a, ProxyAllocator &l)
     l.freelist = *(void **)l.freelist;
     --(l.allocated);
     ++count;
-#if TS_USE_RECLAIMABLE_FREELIST
-    a.free_void(tail);
-#endif
   }
-#if !TS_USE_RECLAIMABLE_FREELIST
+
   if (unlikely(count == 1)) {
     a.free_void(tail);
   } else if (count > 0) {
@@ -66,5 +61,4 @@ thread_freeup(Allocator &a, ProxyAllocator &l)
   }
 
   ink_assert(l.allocated >= thread_freelist_low_watermark);
-#endif
 }

@@ -368,26 +368,6 @@ TS_ARG_ENABLE_VAR([use], [freelist])
 AC_SUBST(use_freelist)
 
 #
-# The original InkFreeList memory pool could not reclaim itself
-# automatically. We can use '--enable-reclaimable-freelist' option
-# to enable the reclaiming feature. This option is effective only
-# when freelist is enable.
-#
-if test "x${enable_freelist}" = "xyes"; then
-  AC_MSG_CHECKING([whether to enable reclaimable freelist])
-  AC_ARG_ENABLE([reclaimable-freelist],
-                [AS_HELP_STRING([--enable-reclaimable-freelist],
-                                [enable reclaimable freelist support (effective only when freelist is enabled)])],
-                [],
-                [enable_reclaimable_freelist="no"])
-  AC_MSG_RESULT([$enable_reclaimable_freelist])
-else
-  enable_reclaimable_freelist="no"
-fi
-TS_ARG_ENABLE_VAR([use], [reclaimable_freelist])
-AC_SUBST(use_reclaimable_freelist)
-
-#
 # Options for SPDY
 #
 AC_MSG_CHECKING([whether to enable spdy])
