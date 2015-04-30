@@ -46,6 +46,7 @@ class EnvironmentCase(tsqa.test_cases.EnvironmentCase):
                                                  default_configure={'enable-example-plugins': None,
                                                                     'enable-test-tools': None,
                                                                     'disable-dependency-tracking': None,
+                                                                    'enable-ccache': None,
                                                                     },
                                                  )
         # TODO: figure out a way to determine why the build didn't fail and
