@@ -19,7 +19,7 @@
 # Run all the TSQA tests.
 TSQA_LAYOUT_DIR="${WORKSPACE}/${BUILD_NUMBER}"
 cd "${WORKSPACE}/src/ci/tsqa" || exit 2
-make test
+make test "TSQA_LAYOUT_DIR=${TSQA_LAYOUT_DIR}"
 status=$?
 
 # Exit with proper status
