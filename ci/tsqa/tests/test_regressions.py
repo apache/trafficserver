@@ -54,23 +54,6 @@ class TestRegressions(helpers.EnvironmentCase):
         cmd = [os.path.join(self.environment.layout.bindir, 'traffic_server'), '-R', '1']
         tsqa.utils.run_sync_command(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
-class TestRegressionsReclaimableFreelist(TestRegressions):
-    '''
-    Run the built-in traffic_server regression test suite with
-    --enable-reclaimable-freelist.
-    '''
-    environment_factory = {
-        'configure': { 'enable-reclaimable-freelist': None },
-    }
-
-class TestRegressionsInterimCache(TestRegressions):
-    '''
-    Run the built-in traffic_server regression test suite with
-    --enable-interim-cache.
-    '''
-    environment_factory = {
-        'configure': { 'enable-interim-cache': None },
-    }
 
 class TestRegressionsLinuxNativeAIO(TestRegressions):
     '''
