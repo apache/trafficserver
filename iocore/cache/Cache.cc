@@ -88,9 +88,6 @@ static int enable_cache_empty_http_doc = 0;
 int cache_config_compatibility_4_2_0_fixup = 1;
 #endif
 
-#if TS_USE_INTERIM_CACHE == 1
-int migrate_threshold = 2;
-#endif
 
 // Globals
 
@@ -114,21 +111,12 @@ int CacheProcessor::auto_clear_flag = 0;
 CacheProcessor cacheProcessor;
 Vol **gvol = NULL;
 volatile int gnvol = 0;
-#if TS_USE_INTERIM_CACHE == 1
-CacheDisk **g_interim_disks = NULL;
-int gn_interim_disks = 0;
-int good_interim_disks = 0;
-uint64_t total_cache_size = 0;
-#endif
 ClassAllocator<CacheVC> cacheVConnectionAllocator("cacheVConnection");
 ClassAllocator<EvacuationBlock> evacuationBlockAllocator("evacuationBlock");
 ClassAllocator<CacheRemoveCont> cacheRemoveContAllocator("cacheRemoveCont");
 ClassAllocator<EvacuationKey> evacuationKeyAllocator("evacuationKey");
 int CacheVC::size_to_init = -1;
 CacheKey zero_key;
-#if TS_USE_INTERIM_CACHE == 1
-ClassAllocator<MigrateToInterimCache> migrateToInterimCacheAllocator("migrateToInterimCache");
-#endif
 
 struct VolInitInfo {
   off_t recover_pos;
@@ -545,10 +533,6 @@ Vol::begin_read(CacheVC *cont)
   // no need for evacuation as the entire document is already in memory
   if (cont->f.single_fragment)
     return 0;
-#if TS_USE_INTERIM_CACHE == 1
-  if (dir_ininterim(&cont->earliest_dir))
-    return 0;
-#endif
   int i = dir_evac_bucket(&cont->earliest_dir);
   EvacuationBlock *b;
   for (b = evacuate[i].head; b; b = b->link.next) {
@@ -642,99 +626,7 @@ CacheProcessor::start_internal(int flags)
   start_done = 0;
   int diskok = 1;
   Span *sd;
-#if TS_USE_INTERIM_CACHE == 1
-  gn_interim_disks = theCacheStore.n_interim_disks;
-  g_interim_disks = (CacheDisk **)ats_malloc(gn_interim_disks * sizeof(CacheDisk *));
 
-  gn_interim_disks = 0;
-
-  for (int i = 0; i < theCacheStore.n_interim_disks; i++) {
-    sd = theCacheStore.interim_disk[i];
-    char path[PATH_MAX];
-    int opts = O_RDWR;
-    ink_strlcpy(path, sd->pathname, sizeof(path));
-    if (!sd->file_pathname) {
-#if !defined(_WIN32)
-      if (config_volumes.num_http_volumes && config_volumes.num_stream_volumes) {
-        Warning("It is suggested that you use raw disks if streaming and http are in the same cache");
-      }
-#endif
-      ink_strlcat(path, "/cache.db", sizeof(path));
-      opts |= O_CREAT;
-    }
-
-#ifdef O_DIRECT
-    opts |= O_DIRECT;
-#endif
-
-#ifdef O_DSYNC
-    opts |= O_DSYNC;
-#endif
-    if (check) {
-      opts &= ~O_CREAT;
-      opts |= O_RDONLY;
-    }
-
-    int fd = open(path, opts, 0644);
-    int64_t blocks = sd->blocks;
-    if (fd > 0) {
-      if (!sd->file_pathname) {
-        if (!check) {
-          if (ftruncate(fd, blocks * STORE_BLOCK_SIZE) < 0) {
-            Warning("unable to truncate cache file '%s' to %" PRId64 " blocks", path, blocks);
-            diskok = 0;
-          }
-        } else { // read-only mode
-          struct stat sbuf;
-          diskok = 0;
-          if (-1 == fstat(fd, &sbuf)) {
-            fprintf(stderr, "Failed to stat cache file for directory %s\n", path);
-          } else if (blocks != sbuf.st_size / STORE_BLOCK_SIZE) {
-            fprintf(stderr, "Cache file for directory %s is %" PRId64 " bytes, expected %" PRId64 "\n", path, sbuf.st_size,
-                    blocks * STORE_BLOCK_SIZE);
-          } else {
-            diskok = 1;
-          }
-        }
-      }
-      if (diskok) {
-        CacheDisk *disk = new CacheDisk();
-        if (check)
-          disk->read_only_p = true;
-        Debug("cache_hosting", "interim Disk: %d, blocks: %" PRId64 "", gn_interim_disks, blocks);
-        int sector_size = sd->hw_sector_size;
-        if (sector_size < cache_config_force_sector_size)
-          sector_size = cache_config_force_sector_size;
-        if (sd->hw_sector_size <= 0 || sector_size > STORE_BLOCK_SIZE) {
-          Note("resetting hardware sector size from %d to %d", sector_size, STORE_BLOCK_SIZE);
-          sector_size = STORE_BLOCK_SIZE;
-        }
-        off_t skip = ROUND_TO_STORE_BLOCK(
-          (sd->offset * STORE_BLOCK_SIZE < START_POS ? START_POS + sd->alignment : sd->offset * STORE_BLOCK_SIZE));
-        blocks = blocks - (skip >> STORE_BLOCK_SHIFT);
-        disk->path = ats_strdup(path);
-        disk->hw_sector_size = sector_size;
-        disk->fd = fd;
-        disk->skip = skip;
-        disk->start = skip;
-        /* we can't use fractions of store blocks. */
-        disk->len = blocks;
-        disk->io.aiocb.aio_fildes = fd;
-        disk->io.aiocb.aio_reqprio = 0;
-        disk->io.action = disk;
-        disk->io.thread = AIO_CALLBACK_THREAD_ANY;
-        g_interim_disks[gn_interim_disks++] = disk;
-      }
-    } else
-      Warning("cache unable to open '%s': %s", path, strerror(errno));
-  }
-
-  if (gn_interim_disks == 0) {
-    Warning("unable to open cache disk(s): InterimCache Cache Disabled\n");
-  }
-  good_interim_disks = gn_interim_disks;
-  diskok = 1;
-#endif
   /* read the config file and create the data structures corresponding
      to the file */
   gndisks = theCacheStore.n_disks;
@@ -744,11 +636,6 @@ CacheProcessor::start_internal(int flags)
   ink_aio_set_callback(new AIO_Callback_handler());
 
   config_volumes.read_config_file();
-#if TS_USE_INTERIM_CACHE == 1
-  total_cache_size = 0;
-  for (unsigned i = 0; i < theCacheStore.n_disks; i++)
-    total_cache_size += theCacheStore.disk[i]->blocks;
-#endif
   for (unsigned i = 0; i < theCacheStore.n_disks; i++) {
     sd = theCacheStore.disk[i];
     char path[PATH_NAME_MAX];
@@ -1048,9 +935,6 @@ CacheProcessor::cacheInitialized()
         for (i = 0; i < gnvol; i++) {
           vol = gvol[i];
           gvol[i]->ram_cache->init(vol_dirlen(vol) * DEFAULT_RAM_CACHE_MULTIPLIER, vol);
-#if TS_USE_INTERIM_CACHE == 1
-          gvol[i]->history.init(1 << 20, 2097143);
-#endif
           ram_cache_bytes += vol_dirlen(gvol[i]);
           Debug("cache_init", "CacheProcessor::cacheInitialized - ram_cache_bytes = %" PRId64 " = %" PRId64 "Mb", ram_cache_bytes,
                 ram_cache_bytes / (1024 * 1024));
@@ -1109,9 +993,6 @@ CacheProcessor::cacheInitialized()
           }
           Debug("cache_init", "CacheProcessor::cacheInitialized[%d] - ram_cache_bytes = %" PRId64 " = %" PRId64 "Mb", i,
                 ram_cache_bytes, ram_cache_bytes / (1024 * 1024));
-#if TS_USE_INTERIM_CACHE == 1
-          gvol[i]->history.init(1 << 20, 2097143);
-#endif
           vol_total_cache_bytes = gvol[i]->len - vol_dirlen(gvol[i]);
           total_cache_bytes += vol_total_cache_bytes;
           CACHE_VOL_SUM_DYN_STAT(cache_bytes_total_stat, vol_total_cache_bytes);
@@ -1381,23 +1262,6 @@ vol_init_dir(Vol *d)
   }
 }
 
-#if TS_USE_INTERIM_CACHE == 1
-void
-interimvol_clear_init(InterimCacheVol *d)
-{
-  memset(d->header, 0, sizeof(InterimVolHeaderFooter));
-  d->header->magic = VOL_MAGIC;
-  d->header->version.ink_major = CACHE_DB_MAJOR_VERSION;
-  d->header->version.ink_minor = CACHE_DB_MINOR_VERSION;
-  d->header->agg_pos = d->header->write_pos = d->start;
-  d->header->last_write_pos = d->header->write_pos;
-  d->header->phase = 0;
-  d->header->cycle = 0;
-  d->header->create_time = time(NULL);
-  d->header->dirty = 0;
-  d->sector_size = d->header->sector_size = d->disk->hw_sector_size;
-}
-#endif
 
 void
 vol_clear_init(Vol *d)
@@ -1417,11 +1281,6 @@ vol_clear_init(Vol *d)
   d->sector_size = d->header->sector_size = d->disk->hw_sector_size;
   *d->footer = *d->header;
 
-#if TS_USE_INTERIM_CACHE == 1
-  for (int i = 0; i < d->num_interim_vols; i++) {
-    interimvol_clear_init(&(d->interim_vols[i]));
-  }
-#endif
 }
 
 int
@@ -1500,18 +1359,6 @@ Vol::init(char *s, off_t blocks, off_t dir_skip, bool clear)
   header = (VolHeaderFooter *)raw_dir;
   footer = (VolHeaderFooter *)(raw_dir + vol_dirlen(this) - ROUND_TO_STORE_BLOCK(sizeof(VolHeaderFooter)));
 
-#if TS_USE_INTERIM_CACHE == 1
-  num_interim_vols = good_interim_disks;
-  ink_assert(num_interim_vols >= 0 && num_interim_vols <= 8);
-  for (int i = 0; i < num_interim_vols; i++) {
-    double r = (double)blocks / total_cache_size;
-    off_t vlen = off_t(r * g_interim_disks[i]->len * STORE_BLOCK_SIZE);
-    vlen = (vlen / STORE_BLOCK_SIZE) * STORE_BLOCK_SIZE;
-    off_t start = ink_atomic_increment(&g_interim_disks[i]->skip, vlen);
-    interim_vols[i].init(start, vlen, g_interim_disks[i], this, &(this->header->interim_header[i]));
-    ink_assert(interim_vols[i].start + interim_vols[i].len <= g_interim_disks[i]->len * STORE_BLOCK_SIZE);
-  }
-#endif
 
   if (clear) {
     Note("clearing cache directory '%s'", hash_text.get());
@@ -1602,20 +1449,9 @@ Vol::handle_dir_read(int event, void *data)
 
   sector_size = header->sector_size;
 
-#if TS_USE_INTERIM_CACHE == 1
-  if (num_interim_vols > 0) {
-    interim_done = 0;
-    for (int i = 0; i < num_interim_vols; i++) {
-      interim_vols[i].recover_data();
-    }
-  } else {
-#endif
 
     return this->recover_data();
 
-#if TS_USE_INTERIM_CACHE == 1
-  }
-#endif
 
   return EVENT_CONT;
 }
@@ -1997,216 +1833,6 @@ Vol::dir_init_done(int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */)
   }
 }
 
-#if TS_USE_INTERIM_CACHE == 1
-int
-InterimCacheVol::recover_data()
-{
-  io.aiocb.aio_fildes = fd;
-  io.action = this;
-  io.thread = AIO_CALLBACK_THREAD_ANY;
-  io.then = 0;
-
-  SET_HANDLER(&InterimCacheVol::handle_recover_from_data);
-  return handle_recover_from_data(EVENT_IMMEDIATE, 0);
-}
-
-int
-InterimCacheVol::handle_recover_from_data(int event, void *data)
-{
-  (void)data;
-  uint32_t got_len = 0;
-  uint32_t max_sync_serial = header->sync_serial;
-  char *s, *e;
-  int ndone, offset;
-
-  if (event == EVENT_IMMEDIATE) {
-    if (header->magic != VOL_MAGIC || header->version.ink_major != CACHE_DB_MAJOR_VERSION) {
-      Warning("bad header in cache directory for '%s', clearing", hash_text.get());
-      goto Lclear;
-    } else if (header->sync_serial == 0) {
-      io.aiocb.aio_buf = NULL;
-      goto Lfinish;
-    }
-
-    // initialize
-    recover_wrapped = 0;
-    last_sync_serial = 0;
-    last_write_serial = 0;
-    recover_pos = header->last_write_pos;
-    if (recover_pos >= skip + len) {
-      recover_wrapped = 1;
-      recover_pos = start;
-    }
-
-    io.aiocb.aio_buf = (char *)ats_memalign(sysconf(_SC_PAGESIZE), RECOVERY_SIZE);
-    io.aiocb.aio_nbytes = RECOVERY_SIZE;
-    if ((off_t)(recover_pos + io.aiocb.aio_nbytes) > (off_t)(skip + len))
-      io.aiocb.aio_nbytes = (skip + len) - recover_pos;
-
-  } else if (event == AIO_EVENT_DONE) {
-    if ((size_t)io.aiocb.aio_nbytes != (size_t)io.aio_result) {
-      Warning("disk read error on recover '%s', clearing", hash_text.get());
-      goto Lclear;
-    }
-
-    if (io.aiocb.aio_offset == header->last_write_pos) {
-      uint32_t to_check = header->write_pos - header->last_write_pos;
-      ink_assert(to_check && to_check < (uint32_t)io.aiocb.aio_nbytes);
-      uint32_t done = 0;
-      s = (char *)io.aiocb.aio_buf;
-      while (done < to_check) {
-        Doc *doc = (Doc *)(s + done);
-        if (doc->magic != DOC_MAGIC || doc->write_serial > header->write_serial) {
-          Warning("no valid directory found while recovering '%s', clearing", hash_text.get());
-          goto Lclear;
-        }
-        done += round_to_approx_size(doc->len);
-        if (doc->sync_serial > last_write_serial)
-          last_sync_serial = doc->sync_serial;
-      }
-      ink_assert(done == to_check);
-
-      got_len = io.aiocb.aio_nbytes - done;
-      recover_pos += io.aiocb.aio_nbytes;
-      s = (char *)io.aiocb.aio_buf + done;
-      e = s + got_len;
-    } else {
-      got_len = io.aiocb.aio_nbytes;
-      recover_pos += io.aiocb.aio_nbytes;
-      s = (char *)io.aiocb.aio_buf;
-      e = s + got_len;
-    }
-  }
-
-  // examine what we got
-  if (got_len) {
-    Doc *doc = NULL;
-
-    if (recover_wrapped && start == io.aiocb.aio_offset) {
-      doc = (Doc *)s;
-      if (doc->magic != DOC_MAGIC || doc->write_serial < last_write_serial) {
-        recover_pos = skip + len - EVACUATION_SIZE;
-        goto Ldone;
-      }
-    }
-
-    while (s < e) {
-      doc = (Doc *)s;
-
-      if (doc->magic != DOC_MAGIC || doc->sync_serial != last_sync_serial) {
-        if (doc->magic == DOC_MAGIC) {
-          if (doc->sync_serial > header->sync_serial)
-            max_sync_serial = doc->sync_serial;
-
-          if (doc->sync_serial > last_sync_serial && doc->sync_serial <= header->sync_serial + 1) {
-            last_sync_serial = doc->sync_serial;
-            s += round_to_approx_size(doc->len);
-            continue;
-
-          } else if (recover_pos - (e - s) > (skip + len) - AGG_SIZE) {
-            recover_wrapped = 1;
-            recover_pos = start;
-            io.aiocb.aio_nbytes = RECOVERY_SIZE;
-            break;
-          }
-
-          recover_pos -= e - s;
-          goto Ldone;
-
-        } else {
-          recover_pos -= e - s;
-          if (recover_pos > (skip + len) - AGG_SIZE) {
-            recover_wrapped = 1;
-            recover_pos = start;
-            io.aiocb.aio_nbytes = RECOVERY_SIZE;
-            break;
-          }
-
-          goto Ldone;
-        }
-      }
-
-      last_write_serial = doc->write_serial;
-      s += round_to_approx_size(doc->len);
-    }
-
-    if (s >= e) {
-      if (s > e)
-        s -= round_to_approx_size(doc->len);
-
-      recover_pos -= e - s;
-      if (recover_pos >= skip + len)
-        recover_pos = start;
-
-      io.aiocb.aio_nbytes = RECOVERY_SIZE;
-      if ((off_t)(recover_pos + io.aiocb.aio_nbytes) > (off_t)(skip + len))
-        io.aiocb.aio_nbytes = (skip + len) - recover_pos;
-    }
-  }
-
-  if (recover_pos == prev_recover_pos)
-    goto Lclear;
-
-  prev_recover_pos = recover_pos;
-  io.aiocb.aio_offset = recover_pos;
-  ink_assert(ink_aio_read(&io));
-  return EVENT_CONT;
-
-Ldone : {
-  if (recover_pos == header->write_pos && recover_wrapped) {
-    goto Lfinish;
-  }
-
-  recover_pos += EVACUATION_SIZE;
-  if (recover_pos < header->write_pos && (recover_pos + EVACUATION_SIZE >= header->write_pos)) {
-    Debug("cache_init", "Head Pos: %" PRIu64 ", Rec Pos: %" PRIu64 ", Wrapped:%d", header->write_pos, recover_pos, recover_wrapped);
-    Warning("no valid directory found while recovering '%s', clearing", hash_text.get());
-    goto Lclear;
-  }
-
-  if (recover_pos > skip + len)
-    recover_pos -= skip + len;
-
-  uint32_t next_sync_serial = max_sync_serial + 1;
-  if (!(header->sync_serial & 1) == !(next_sync_serial & 1))
-    next_sync_serial++;
-
-  off_t clear_start = offset_to_vol_offset(this, header->write_pos);
-  off_t clear_end = offset_to_vol_offset(this, recover_pos);
-
-  if (clear_start <= clear_end)
-    dir_clean_range_interimvol(clear_start, clear_end, this);
-  else {
-    dir_clean_range_interimvol(clear_end, DIR_OFFSET_MAX, this);
-    dir_clean_range_interimvol(1, clear_start, this);
-  }
-
-  header->sync_serial = next_sync_serial;
-
-  goto Lfinish;
-}
-
-Lclear:
-
-  interimvol_clear_init(this);
-  offset = this - vol->interim_vols;
-  clear_interimvol_dir(vol, offset); // remove this interimvol dir
-
-Lfinish:
-
-  free((char *)io.aiocb.aio_buf);
-  io.aiocb.aio_buf = NULL;
-
-  set_io_not_in_progress();
-
-  ndone = ink_atomic_increment(&vol->interim_done, 1);
-  if (ndone == vol->num_interim_vols - 1) { // all interim finished
-    return vol->recover_data();
-  }
-
-  return EVENT_CONT;
-}
-#endif
 
 // explicit pair for random table in build_vol_hash_table
 struct rtable_pair {
@@ -2418,27 +2044,6 @@ AIO_Callback_handler::handle_disk_failure(int /* event ATS_UNUSED */, void *data
     return EVENT_DONE;
   int disk_no = 0;
   AIOCallback *cb = (AIOCallback *)data;
-#if TS_USE_INTERIM_CACHE == 1
-  for (; disk_no < gn_interim_disks; disk_no++) {
-    CacheDisk *d = g_interim_disks[disk_no];
-
-    if (d->fd == cb->aiocb.aio_fildes) {
-      char message[256];
-
-      d->num_errors++;
-      if (!DISK_BAD(d)) {
-        snprintf(message, sizeof(message), "Error accessing Disk %s [%d/%d]", d->path, d->num_errors, cache_config_max_disk_errors);
-        Warning("%s", message);
-        RecSignalManager(REC_SIGNAL_CACHE_WARNING, message);
-      } else if (!DISK_BAD_SIGNALLED(d)) {
-        snprintf(message, sizeof(message), "too many errors [%d] accessing disk %s: declaring disk bad", d->num_errors, d->path);
-        Warning("%s", message);
-        RecSignalManager(REC_SIGNAL_CACHE_ERROR, message);
-        good_interim_disks--;
-      }
-    }
-  }
-#endif
 
   for (; disk_no < gndisks; disk_no++) {
     CacheDisk *d = gdisks[disk_no];
@@ -2758,48 +2363,7 @@ CacheVC::handleReadDone(int event, Event *e)
           okay = 0;
         }
       }
-#if TS_USE_INTERIM_CACHE == 1
-      ink_assert(vol->num_interim_vols >= good_interim_disks);
-      if (mts && !f.doc_from_ram_cache) {
-        int indx;
-        do {
-          indx = vol->interim_index++ % vol->num_interim_vols;
-        } while (good_interim_disks > 0 && DISK_BAD(vol->interim_vols[indx].disk));
-
-        if (good_interim_disks) {
-          if (f.write_into_interim) {
-            mts->interim_vol = interim_vol = &vol->interim_vols[indx];
-            mts->agg_len = interim_vol->round_to_approx_size(doc->len);
-            if (vol->sector_size != interim_vol->sector_size) {
-              dir_set_approx_size(&mts->dir, mts->agg_len);
-            }
-          }
-          if (f.transistor) {
-            mts->interim_vol = interim_vol;
-            mts->agg_len = interim_vol->round_to_approx_size(doc->len);
-            ink_assert(mts->agg_len == dir_approx_size(&mts->dir));
-          }
-
-          if (!interim_vol->is_io_in_progress()) {
-            mts->buf = buf;
-            mts->copy = false;
-            interim_vol->agg.enqueue(mts);
-            interim_vol->aggWrite(event, e);
-          } else {
-            mts->buf = new_IOBufferData(iobuffer_size_to_index(mts->agg_len, MAX_BUFFER_SIZE_INDEX), MEMALIGNED);
-            mts->copy = true;
-            memcpy(mts->buf->data(), buf->data(), doc->len);
-            interim_vol->agg.enqueue(mts);
-          }
-        } else {
-          vol->set_migrate_failed(mts);
-          migrateToInterimCacheAllocator.free(mts);
-        }
-        mts = NULL;
-      }
-#else
       (void)e; // Avoid compiler warnings
-#endif
       bool http_copy_hdr = false;
 #ifdef HTTP_CACHE
       http_copy_hdr =
@@ -2821,31 +2385,15 @@ CacheVC::handleReadDone(int event, Event *e)
         cutoff_check = ((!doc_len && (int64_t)doc->total_len < cache_config_ram_cache_cutoff) ||
                         (doc_len && (int64_t)doc_len < cache_config_ram_cache_cutoff) || !cache_config_ram_cache_cutoff);
         if (cutoff_check && !f.doc_from_ram_cache) {
-#if TS_USE_INTERIM_CACHE == 1
-          if (!f.ram_fixup) {
-            uint64_t o = dir_get_offset(&dir);
-            vol->ram_cache->put(read_key, buf, doc->len, http_copy_hdr, (uint32_t)(o >> 32), (uint32_t)o);
-          } else {
-            vol->ram_cache->put(read_key, buf, doc->len, http_copy_hdr, (uint32_t)(dir_off >> 32), (uint32_t)dir_off);
-          }
-#else
           uint64_t o = dir_offset(&dir);
           vol->ram_cache->put(read_key, buf, doc->len, http_copy_hdr, (uint32_t)(o >> 32), (uint32_t)o);
-#endif
         }
         if (!doc_len) {
           // keep a pointer to it. In case the state machine decides to
           // update this document, we don't have to read it back in memory
           // again
           vol->first_fragment_key = *read_key;
-#if TS_USE_INTERIM_CACHE == 1
-          if (!f.ram_fixup)
-            vol->first_fragment_offset = dir_get_offset(&dir);
-          else
-            vol->first_fragment_offset = dir_off;
-#else
           vol->first_fragment_offset = dir_offset(&dir);
-#endif
           vol->first_fragment_data = buf;
         }
       } // end VIO::READ check
@@ -2855,18 +2403,8 @@ CacheVC::handleReadDone(int event, Event *e)
         unmarshal_helper(doc, buf, okay);
 #endif
     } // end io.ok() check
-#if TS_USE_INTERIM_CACHE == 1
-  Ldone:
-    if (mts) {
-      vol->set_migrate_failed(mts);
-      migrateToInterimCacheAllocator.free(mts);
-      mts = NULL;
-    }
-  }
-#else
   }
 Ldone:
-#endif
   POP_HANDLER;
   return handleEvent(AIO_EVENT_DONE, 0);
 }
@@ -2881,57 +2419,16 @@ CacheVC::handleRead(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 
   // check ram cache
   ink_assert(vol->mutex->thread_holding == this_ethread());
-#if TS_USE_INTERIM_CACHE == 1
-  uint64_t o = dir_get_offset(&dir);
-  if (f.read_from_interim && mts && mts->rewrite) {
-    goto LinterimRead;
-  }
-#else
   int64_t o = dir_offset(&dir);
-#endif
   if (vol->ram_cache->get(read_key, &buf, (uint32_t)(o >> 32), (uint32_t)o)) {
     goto LramHit;
   }
 
 // check if it was read in the last open_read call
-#if TS_USE_INTERIM_CACHE == 1
-  if (*read_key == vol->first_fragment_key && dir_get_offset(&dir) == vol->first_fragment_offset) {
-#else
   if (*read_key == vol->first_fragment_key && dir_offset(&dir) == vol->first_fragment_offset) {
-#endif
     buf = vol->first_fragment_data;
     goto LmemHit;
   }
-#if TS_USE_INTERIM_CACHE == 1
-LinterimRead:
-  if (f.read_from_interim) {
-    if (dir_agg_buf_valid(interim_vol, &dir)) {
-      int interim_agg_offset = vol_offset(interim_vol, &dir) - interim_vol->header->write_pos;
-      buf = new_IOBufferData(iobuffer_size_to_index(io.aiocb.aio_nbytes, MAX_BUFFER_SIZE_INDEX), MEMALIGNED);
-      ink_assert((interim_agg_offset + io.aiocb.aio_nbytes) <= (unsigned)interim_vol->agg_buf_pos);
-      char *doc = buf->data();
-      char *agg = interim_vol->agg_buffer + interim_agg_offset;
-      memcpy(doc, agg, io.aiocb.aio_nbytes);
-      io.aio_result = io.aiocb.aio_nbytes;
-      SET_HANDLER(&CacheVC::handleReadDone);
-      return EVENT_RETURN;
-    }
-
-    io.aiocb.aio_fildes = interim_vol->fd;
-    io.aiocb.aio_offset = vol_offset(interim_vol, &dir);
-    if ((off_t)(io.aiocb.aio_offset + io.aiocb.aio_nbytes) > (off_t)(interim_vol->skip + interim_vol->len))
-      io.aiocb.aio_nbytes = interim_vol->skip + interim_vol->len - io.aiocb.aio_offset;
-    buf = new_IOBufferData(iobuffer_size_to_index(io.aiocb.aio_nbytes, MAX_BUFFER_SIZE_INDEX), MEMALIGNED);
-    io.aiocb.aio_buf = buf->data();
-    io.action = this;
-    io.thread = mutex->thread_holding->tt == DEDICATED ? AIO_CALLBACK_THREAD_ANY : mutex->thread_holding;
-
-    SET_HANDLER(&CacheVC::handleReadDone);
-    ink_assert(ink_aio_read(&io) >= 0);
-    CACHE_DEBUG_INCREMENT_DYN_STAT(cache_pread_count_stat);
-    return EVENT_CONT;
-  }
-#endif
   // see if its in the aggregation buffer
   if (dir_agg_buf_valid(vol, &dir)) {
     int agg_offset = vol_offset(vol, &dir) - vol->header->write_pos;
@@ -2970,13 +2467,6 @@ LramHit : {
 LmemHit:
   f.doc_from_ram_cache = true;
   io.aio_result = io.aiocb.aio_nbytes;
-#if TS_USE_INTERIM_CACHE == 1
-  if (mts) { // for hit from memory, not migrate
-    vol->set_migrate_failed(mts);
-    migrateToInterimCacheAllocator.free(mts);
-    mts = NULL;
-  }
-#endif
   POP_HANDLER;
   return EVENT_RETURN; // allow the caller to release the volume lock
 }
@@ -3064,13 +2554,6 @@ CacheVC::removeEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   Lcollision:
     // check for collision
     if (dir_probe(&key, vol, &dir, &last_collision) > 0) {
-#if TS_USE_INTERIM_CACHE == 1
-      if (dir_ininterim(&dir)) {
-        dir_delete(&key, vol, &dir);
-        last_collision = NULL;
-        goto Lcollision;
-      }
-#endif
       int ret = do_read_call(&key);
       if (ret == EVENT_RETURN)
         goto Lread;
@@ -3630,11 +3113,6 @@ register_cache_stats(RecRawStatBlock *rsb, const char *prefix)
   REG_INT("read.active", cache_read_active_stat);
   REG_INT("read.success", cache_read_success_stat);
   REG_INT("read.failure", cache_read_failure_stat);
-#if TS_USE_INTERIM_CACHE == 1
-  REG_INT("interim.read.success", cache_interim_read_success_stat);
-  REG_INT("disk.read.success", cache_disk_read_success_stat);
-  REG_INT("ram.read.success", cache_ram_read_success_stat);
-#endif
   REG_INT("write.active", cache_write_active_stat);
   REG_INT("write.success", cache_write_success_stat);
   REG_INT("write.failure", cache_write_failure_stat);
@@ -3732,10 +3210,6 @@ ink_cache_init(ModuleVersion v)
   REC_EstablishStaticConfigInt32(cache_config_compatibility_4_2_0_fixup, "proxy.config.cache.http.compatibility.4-2-0-fixup");
 #endif
 
-#if TS_USE_INTERIM_CACHE == 1
-  REC_EstablishStaticConfigInt32(migrate_threshold, "proxy.config.cache.interim.migrate_threshold");
-  Debug("cache_init", "proxy.config.cache.migrate_threshold = %d", migrate_threshold);
-#endif
 
   REC_EstablishStaticConfigInt32(cache_config_max_disk_errors, "proxy.config.cache.max_disk_errors");
   Debug("cache_init", "proxy.config.cache.max_disk_errors = %d", cache_config_max_disk_errors);
@@ -3767,13 +3241,6 @@ ink_cache_init(ModuleVersion v)
     Warning("no cache disks specified in %s: cache disabled\n", (const char *)path);
     // exit(1);
   }
-#if TS_USE_INTERIM_CACHE == 1
-  else {
-    theCacheStore.read_interim_config();
-    if (theCacheStore.n_interim_disks == 0)
-      Warning("no interim disks specified in %s: \n", "proxy.config.cache.interim.storage");
-  }
-#endif
 }
 
 //----------------------------------------------------------------------------

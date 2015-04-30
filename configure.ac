@@ -264,20 +264,6 @@ TS_ARG_ENABLE_VAR([has],[wccp])
 AC_SUBST(has_wccp)
 AM_CONDITIONAL([BUILD_WCCP], [test 0 -ne $has_wccp])
 
-#
-# InterimCache
-#
-AC_MSG_CHECKING([whether to enable interim cache support])
-AC_ARG_ENABLE([interim_cache],
-  [AS_HELP_STRING([--enable-interim-cache],[enable interim cache])],
-  [],
-  [enable_interim_cache=no]
-)
-AC_MSG_RESULT([$enable_interim_cache])
-TS_ARG_ENABLE_VAR([has],[interim_cache])
-AC_SUBST(has_interim_cache)
-AM_CONDITIONAL([BUILD_INTERIM_CACHE], [test 0 -ne $has_interim_cache])
-
 # Google profiler
 AC_MSG_CHECKING([whether to enable profiler])
 AC_ARG_WITH([profiler],
@@ -473,7 +459,7 @@ AC_MSG_RESULT([$enable_cppapi])
 AM_CONDITIONAL([ENABLE_CPPAPI], [ test "x${enable_cppapi}" = "xyes" ])
 
 #
-# Disable LuaJIT? This is a interrim option, when Lua becomes part of the core
+# Disable LuaJIT? This is a interim option, when Lua becomes part of the core
 # requirements, we will remove this option.
 #
 AC_MSG_CHECKING([whether to disable LuaJIT])

@@ -70,10 +70,6 @@ span_file_typename(mode_t st_mode)
 Ptr<ProxyMutex> tmp_p;
 Store::Store()
   : n_disks(0), disk(NULL)
-#if TS_USE_INTERIM_CACHE == 1
-    ,
-    n_interim_disks(0), interim_disk(NULL)
-#endif
 {
 }
 
@@ -434,50 +430,6 @@ Lfail:
   return err;
 }
 
-#if TS_USE_INTERIM_CACHE == 1
-const char *
-Store::read_interim_config()
-{
-  char p[PATH_NAME_MAX];
-  Span *sd = NULL;
-  Span *ns;
-  int interim_store = 0;
-  REC_ReadConfigString(p, "proxy.config.cache.interim.storage", PATH_NAME_MAX);
-
-  char *n = p;
-  int sz = strlen(p);
-
-  const char *err = NULL;
-  for (int len = 0; n < p + sz; n += len + 1) {
-    char *e = strpbrk(n, " \t\n");
-    len = e ? e - n : strlen(n);
-    n[len] = '\0';
-    ns = new Span;
-    if ((err = ns->init(n, -1))) {
-      RecSignalWarning(REC_SIGNAL_SYSTEM_ERROR, "could not initialize storage \"%s\" [%s]", n, err);
-      Debug("cache_init", "Store::read_interim_config - could not initialize storage \"%s\" [%s]", n, err);
-      delete ns;
-      continue;
-    }
-    ns->link.next = sd;
-    sd = ns;
-    interim_store++;
-  }
-
-  n_interim_disks = interim_store;
-  interim_disk = (Span **)ats_malloc(interim_store * sizeof(Span *));
-  {
-    int i = 0;
-    while (sd) {
-      ns = sd;
-      sd = sd->link.next;
-      ns->link.next = NULL;
-      interim_disk[i++] = ns;
-    }
-  }
-  return NULL;
-}
-#endif
 
 int
 Store::write_config_data(int fd) const
