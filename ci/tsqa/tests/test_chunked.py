@@ -17,7 +17,6 @@ Test chunked request/responses
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import os
 import requests
 import time
 import logging
@@ -34,6 +33,8 @@ import tsqa.endpoint
 log = logging.getLogger(__name__)
 
 import SocketServer
+
+
 class ChunkedHandler(SocketServer.BaseRequestHandler):
     """
     A subclass of RequestHandler which return chunked encoding optionally
@@ -85,6 +86,7 @@ class ChunkedHandler(SocketServer.BaseRequestHandler):
                 self.request.sendall('lkfjasd;lfjas;d')
 
             time.sleep(2)
+
 
 class TestChunked(helpers.EnvironmentCase):
     @classmethod
@@ -193,4 +195,4 @@ class TestChunked(helpers.EnvironmentCase):
     def test_chunked_bad_close(self):
         url = 'http://127.0.0.1:{0}/5/0.1/false'.format(self.port)
         with self.assertRaises(socket.timeout):
-            ret = requests.get(url, proxies=self.proxies, timeout=2)
+            requests.get(url, proxies=self.proxies, timeout=2)

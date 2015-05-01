@@ -19,9 +19,6 @@ Run the built-in regression tests with experimental build configurations.
 #  limitations under the License.
 
 import os
-import sys
-import requests
-import time
 import subprocess
 import logging
 
@@ -30,6 +27,7 @@ import tsqa.test_cases
 import tsqa.utils
 
 log = logging.getLogger(__name__)
+
 
 class TestRegressions(helpers.EnvironmentCase):
     '''
@@ -61,5 +59,5 @@ class TestRegressionsLinuxNativeAIO(TestRegressions):
     --enable-linux-native-aio.
     '''
     environment_factory = {
-        'configure': { 'enable-linux-native-aio': None },
+        'configure': {'enable-linux-native-aio': None},
     }

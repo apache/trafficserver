@@ -24,8 +24,6 @@ import time
 
 import helpers
 
-import tsqa.test_cases
-
 
 class TestHostDBPartiallyFailedDNS(helpers.EnvironmentCase):
     '''
@@ -83,4 +81,3 @@ class TestHostDBFailedDNS(helpers.EnvironmentCase):
         self.assertGreater(time.time() - start, self.configs['records.config']['CONFIG']['proxy.config.hostdb.lookup_timeout'])
         self.assertEqual(ret.status_code, 502)
         self.assertIn('ATS', ret.headers['server'])
-

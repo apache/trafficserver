@@ -20,6 +20,7 @@ import tsqa.test_cases
 import tsqa.utils
 import tsqa.endpoint
 
+
 class TestRedirection(helpers.EnvironmentCase, tsqa.test_cases.HTTPBinCase):
     @classmethod
     def setUpEnv(cls, env):

@@ -22,6 +22,7 @@ import tsqa.utils
 
 unittest = tsqa.utils.import_unittest()
 
+
 # TODO: check that the given path is relative
 def tests_file_path(path):
     '''
@@ -29,6 +30,7 @@ def tests_file_path(path):
     '''
     base = os.path.realpath(os.path.join(__file__, '..', '..', 'files'))
     return os.path.join(base, path)
+
 
 class EnvironmentCase(tsqa.test_cases.EnvironmentCase):
     '''

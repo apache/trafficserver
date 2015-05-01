@@ -14,9 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import os
 import requests
-import time
 import logging
 
 import helpers
@@ -27,6 +25,7 @@ import tsqa.endpoint
 
 log = logging.getLogger(__name__)
 
+
 class TestRemapHTTP(tsqa.test_cases.DynamicHTTPEndpointCase, helpers.EnvironmentCase):
     @classmethod
     def setUpEnv(cls, env):
@@ -36,9 +35,11 @@ class TestRemapHTTP(tsqa.test_cases.DynamicHTTPEndpointCase, helpers.Environment
         })
 
         cls.configs['remap.config'].add_line(
-            'map http://www.example.com http://127.0.0.1:{0}'.format(cls.http_endpoint.address[1]));
+            'map http://www.example.com http://127.0.0.1:{0}'.format(cls.http_endpoint.address[1])
+        )
         cls.configs['remap.config'].add_line(
-            'map http://www.example.com:8080 http://127.0.0.1:{0}'.format(cls.http_endpoint.address[1]));
+            'map http://www.example.com:8080 http://127.0.0.1:{0}'.format(cls.http_endpoint.address[1])
+        )
 
         def hello(request):
             return 'hello'
@@ -72,6 +73,7 @@ class TestRemapHTTP(tsqa.test_cases.DynamicHTTPEndpointCase, helpers.Environment
         ret = s.get(url)
         self.assertEqual(ret.status_code, 404)
 
+
 class TestRemapHTTPS(tsqa.test_cases.DynamicHTTPEndpointCase, helpers.EnvironmentCase):
     @classmethod
     def setUpEnv(cls, env):
@@ -84,12 +86,15 @@ class TestRemapHTTPS(tsqa.test_cases.DynamicHTTPEndpointCase, helpers.Environmen
         })
 
         cls.configs['remap.config'].add_line(
-                'map https://www.example.com http://127.0.0.1:{0}'.format(cls.http_endpoint.address[1]));
+            'map https://www.example.com http://127.0.0.1:{0}'.format(cls.http_endpoint.address[1])
+        )
         cls.configs['remap.config'].add_line(
-                'map https://www.example.com:4443 http://127.0.0.1:{0}'.format(cls.http_endpoint.address[1]));
+            'map https://www.example.com:4443 http://127.0.0.1:{0}'.format(cls.http_endpoint.address[1])
+        )
         # configure SSL multicert
         cls.configs['ssl_multicert.config'].add_line(
-                'dest_ip=* ssl_cert_name={0}'.format(helpers.tests_file_path('rsa_keys/www.example.com.pem')))
+            'dest_ip=* ssl_cert_name={0}'.format(helpers.tests_file_path('rsa_keys/www.example.com.pem'))
+        )
 
         def hello(request):
             return 'hello'
