@@ -77,11 +77,13 @@ class KeepAliveInMixin(object):
         return request
 
     def _aux_KA_working_path_connid(self, protocol, headers=None):
+        if headers is None:
+            headers = {}
         with requests.Session() as s:
             url = '{0}://127.0.0.1:{1}/'.format(protocol, int(self.configs['records.config']['CONFIG']['proxy.config.http.server_ports']))
             conn_id = None
             for x in xrange(1, 10):
-                ret = requests.get(url)
+                ret = requests.get(url, headers=headers)
                 self.assertEqual(ret.status_code, 200)
                 if conn_id is None:
                     conn_id = ret.text
@@ -438,6 +440,7 @@ class TestKeepAlive_Authorization_private(helpers.EnvironmentCase, BasicTestsOut
         '''Tests that keepalive works through ATS to origin via https.'''
         with self.assertRaises(AssertionError):
             self._aux_KA_working_path_connid("http", headers={'Authorization': 'Foo'})
+
 
 
 class TestKeepAlive_Authorization_no_private(helpers.EnvironmentCase, BasicTestsOutMixin, KeepAliveInMixin):
