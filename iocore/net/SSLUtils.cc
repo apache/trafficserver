@@ -143,6 +143,7 @@ SSL_locking_callback(int mode, int type, const char *file, int line)
   ink_assert(type < CRYPTO_num_locks());
 
 #ifdef OPENSSL_FIPS
+  // don't need to lock for FIPS if it has POSTed and we are not going to change the mode on the fly
   if (type == CRYPTO_LOCK_FIPS || type == CRYPTO_LOCK_FIPS2) {
     return;
   }
@@ -766,6 +767,8 @@ SSLInitializeLibrary()
     SSL_library_init();
 
 #ifdef OPENSSL_FIPS
+    // calling FIPS_mode_set() will force FIPS to POST (Power On Self Test)
+    // After POST we don't have to lock for FIPS
     int mode = FIPS_mode();
     FIPS_mode_set(mode);
     Debug("ssl", "FIPS_mode: %d", mode);
