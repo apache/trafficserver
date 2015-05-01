@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.0
 
+  *) [TS-3531] Ignore blank lines in the plugin config file.
+
   *) [TS-3573] Fix connection leak.
 
   *) [TS-3558] Fix proxy.config.http.auth_server_session_private
