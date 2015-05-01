@@ -107,8 +107,12 @@ log_tcp_info(Config *config, const char *event_name, TSHttpSsn ssnp)
 
   TSReleaseAssert(config->log != NULL);
 
-  if (TSHttpSsnClientFdGet(ssnp, &fd) != TS_SUCCESS) {
-    TSDebug("tcpinfo", "error getting the client socket fd");
+  if (ssnp != NULL && (TSHttpSsnClientFdGet(ssnp, &fd) != TS_SUCCESS || fd <= 0)) {
+    TSDebug("tcpinfo", "error getting the client socket fd from ssn");
+    return;
+  }
+  if (ssnp == NULL) {
+    TSDebug("tcpinfo", "ssn is not specified");
     return;
   }
 

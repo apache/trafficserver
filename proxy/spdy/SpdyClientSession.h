@@ -29,6 +29,7 @@
 #include "SpdyCallbacks.h"
 #include <openssl/md5.h>
 #include "Plugin.h"
+#include "ProxyClientSession.h"
 
 class SpdyClientSession;
 typedef int (*SpdyClientSessionHandler)(TSCont contp, TSEvent event, void *data);
@@ -87,15 +88,57 @@ public:
 
 extern ClassAllocator<SpdyRequest> spdyRequestAllocator;
 
-class SpdyClientSession : public Continuation, public PluginIdentity
+// class SpdyClientSession : public Continuation, public PluginIdentity
+class SpdyClientSession : public ProxyClientSession
 {
 public:
-  SpdyClientSession() : Continuation(NULL) {}
+  typedef ProxyClientSession super; ///< Parent type.
+  SpdyClientSession() {}
 
   ~SpdyClientSession() { clear(); }
 
-  void init(NetVConnection *netvc, spdy::SessionVersion vers);
+  void init(NetVConnection *netvc);
   void clear();
+  void destroy();
+
+  static SpdyClientSession *alloc();
+
+  VIO *
+  do_io_read(Continuation *, int64_t, MIOBuffer *)
+  {
+    // Due to spdylay, SPDY does not exercise do_io_read
+    ink_release_assert(false);
+    return NULL;
+  }
+  VIO *
+  do_io_write(Continuation *, int64_t, IOBufferReader *, bool)
+  {
+    // Due to spdylay, SPDY does not exercise do_io_write
+    ink_release_assert(false);
+    return NULL;
+  }
+  void
+  start()
+  {
+    ink_release_assert(false);
+  }
+  void do_io_close(int lerrno = -1);
+  void
+  do_io_shutdown(ShutdownHowTo_t howto)
+  {
+    ink_release_assert(false);
+  }
+  NetVConnection *
+  get_netvc() const
+  {
+    return vc;
+  }
+  void
+  release_netvc()
+  {
+    vc = NULL;
+  }
+  void new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader, bool backdoor);
 
   int64_t sm_id;
   spdy::SessionVersion version;
@@ -147,6 +190,5 @@ private:
   int state_session_readwrite(int event, void *edata);
 };
 
-void spdy_cs_create(NetVConnection *netvc, spdy::SessionVersion vers, MIOBuffer *iobuf, IOBufferReader *reader);
 
 #endif

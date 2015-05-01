@@ -93,7 +93,7 @@ HttpClientSession::destroy()
     conn_decrease = false;
   }
 
-  ProxyClientSession::cleanup();
+  super::destroy();
   THREAD_FREE(this, httpClientSessionAllocator, this_thread());
 }
 
@@ -299,11 +299,11 @@ HttpClientSession::do_io_close(int alerrno)
 
       h2_session->set_upgrade_context(&current_reader->t_state.hdr_info.client_request);
       h2_session->new_connection(client_vc, NULL, NULL, false /* backdoor */);
+      // Handed over control of the VC to the new H2 session, don't clean it up
+      this->release_netvc();
       // TODO Consider about handling HTTP/1 hooks and stats
     } else {
-      client_vc->do_io_close(alerrno);
       DebugHttpSsn("[%" PRId64 "] session closed", con_id);
-      client_vc = NULL;
     }
     HTTP_SUM_DYN_STAT(http_transactions_per_client_con, transact_count);
     HTTP_DECREMENT_DYN_STAT(http_current_client_connections_stat);
