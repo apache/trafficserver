@@ -182,7 +182,7 @@ class TestOriginServerConnectAttempts(helpers.EnvironmentCase):
     # TODO: FIX THIS!!! The test is correct, ATS isn't!
     # we should fail in this case-- or at least have a config which lets you control
     # TODO: remove once TS-3440 is resolved
-    @unittest.expectedFailure
+    @helpers.unittest.expectedFailure
     def test_partial_response_origin(self):
         '''
         Verify that we get 504s from origins that return a partial_response
