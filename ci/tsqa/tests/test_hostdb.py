@@ -37,7 +37,7 @@ class TestHostDBPartiallyFailedDNS(helpers.EnvironmentCase):
 
         cls.configs['records.config']['CONFIG'].update({
             'proxy.config.http.response_server_enabled': 2,  # only add server headers when there weren't any
-            'proxy.config.hostdb.lookup_timeout': 1,
+            'proxy.config.hostdb.lookup_timeout': 2,
             'proxy.config.dns.resolv_conf': resolv_conf_path,
             'proxy.config.url_remap.remap_required': 0,
 
@@ -66,7 +66,7 @@ class TestHostDBFailedDNS(helpers.EnvironmentCase):
 
         cls.configs['records.config']['CONFIG'].update({
             'proxy.config.http.response_server_enabled': 2,  # only add server headers when there weren't any
-            'proxy.config.hostdb.lookup_timeout': 1,
+            'proxy.config.hostdb.lookup_timeout': 2,
             'proxy.config.dns.resolv_conf': resolv_conf_path,
             'proxy.config.url_remap.remap_required': 0,
 
