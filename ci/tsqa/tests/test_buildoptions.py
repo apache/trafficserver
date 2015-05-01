@@ -31,31 +31,39 @@ import tsqa.utils
 
 log = logging.getLogger(__name__)
 
+
 class TestBuildOption(helpers.EnvironmentCase):
     '''
     Run the built-in traffic_server regression test suite.
     '''
-
     def test_buildoption(self):
         pass
+
 
 class TestBuildOptionFastSDK(TestBuildOption):
     '''Build with --enable-fast-sdk'''
     environment_factory = { 'configure': { 'enable-fast-sdk': None }, }
 
+
 class TestBuildOptionDisableDiags(TestBuildOption):
     '''Build with --disable-diags'''
     environment_factory = { 'configure': { 'disable-diags': None }, }
+
 
 class TestBuildOptionDisableTests(TestBuildOption):
     '''Build with --disable-tests'''
     environment_factory = { 'configure': { 'disable-tests': None }, }
 
+
 class TestBuildOptionEnableStaticProxy(TestBuildOption):
     '''Build with --enable-static-proxy'''
     environment_factory = { 'configure': { 'enable-static-proxy': None }, }
+
 
 class TestBuildOptionEnableCxxApi(TestBuildOption):
     '''Build with --enable-cppapi'''
     environment_factory = { 'configure': { 'enable-cppapi': None }, }
 
+    @classmethod
+    def setUpClass(cls):
+        raise helpers.unittest.SkipTest('Skip until atscppapi supports out of tree builds')
