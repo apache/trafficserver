@@ -192,5 +192,5 @@ class TestChunked(helpers.EnvironmentCase):
 
     def test_chunked_bad_close(self):
         url = 'http://127.0.0.1:{0}/5/0.1/false'.format(self.port)
-        with self.assertRaises(requests.exceptions.ConnectionError):
+        with self.assertRaises(socket.timeout):
             ret = requests.get(url, proxies=self.proxies, timeout=2)
