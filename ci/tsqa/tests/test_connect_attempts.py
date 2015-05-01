@@ -57,7 +57,7 @@ def thread_delayed_accept_after_connect(sock):
                 'HTTP/1.1 200 OK\r\n'
                 'Content-Length: {body_len}\r\n'
                 'Content-Type: text/html; charset=UTF-8\r\n'
-                'Connection: close\r\n\r\n{body}'.format(body_len=len(str(requests)), body=requests)
+                'Connection: close\r\n\r\n{body}'.format(body_len=len(str(num_requests)), body=num_requests)
             ))
             connection.close()
             num_requests += 1
@@ -71,10 +71,10 @@ def thread_delayed_accept_after_connect(sock):
 def thread_reset_after_accept(sock):
     sock.listen(0)
     first = True
-    requests = 0
+    num_requests = 0
     while True:
         connection, addr = sock.accept()
-        requests += 1
+        num_requests += 1
         if first:
             first = False
             connection.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, struct.pack('ii', 1, 0))
@@ -84,7 +84,7 @@ def thread_reset_after_accept(sock):
                 'HTTP/1.1 200 OK\r\n'
                 'Content-Length: {body_len}\r\n'
                 'Content-Type: text/html; charset=UTF-8\r\n'
-                'Connection: close\r\n\r\n{body}'.format(body_len=len(str(requests)), body=requests)
+                'Connection: close\r\n\r\n{body}'.format(body_len=len(str(num_requests)), body=num_requests)
             ))
             connection.close()
 
@@ -92,10 +92,10 @@ def thread_reset_after_accept(sock):
 def thread_partial_response(sock):
     sock.listen(0)
     first = True
-    requests = 0
+    num_requests = 0
     while True:
         connection, addr = sock.accept()
-        requests += 1
+        num_requests += 1
         if first:
             connection.send('HTTP/1.1 200 OK\r\n')
             connection.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, struct.pack('ii', 1, 0))
@@ -106,7 +106,7 @@ def thread_partial_response(sock):
                 'HTTP/1.1 200 OK\r\n'
                 'Content-Length: {body_len}\r\n'
                 'Content-Type: text/html; charset=UTF-8\r\n'
-                'Connection: close\r\n\r\n{body}'.format(body_len=len(str(requests)), body=requests)
+                'Connection: close\r\n\r\n{body}'.format(body_len=len(str(num_requests)), body=num_requests)
             ))
             connection.close()
 
@@ -212,4 +212,5 @@ class TestOriginServerConnectAttempts(helpers.EnvironmentCase):
         # make sure it worked
         self.assertEqual(ret.status_code, 200)
         # make sure its not the first one (otherwise the test messed up somehow)
+        print ret.text
         self.assertGreater(int(ret.text), 0)
