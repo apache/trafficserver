@@ -5,13 +5,13 @@ Changes with Apache Traffic Server 6.0.0
 
   *) [TS-3576] Remove the need for FIPS locking for OpenSSL
 
-  *) [TS-3538]: Perform server certificate validity check.
+  *) [TS-3538] Perform server certificate validity check.
 
   *) [TS-3575] Fix connection leak.
 
   *) [TS-3538] Perform server certificate validity check.
 
-  *) [TS-3549] Configurable option to avoid thundering herd problem 
+  *) [TS-3549] Configurable option to avoid thundering herd problem
    for multiple concurrent requests. The initial POC patch for this
    solution came from Justin Laue. This patch will further be
    improved with a few more changes to possibly support SWR feature in
@@ -121,7 +121,6 @@ Changes with Apache Traffic Server 6.0.0
   *) [TS-1611] Async request suport in lua plugin.
 
   *) [TS-3456] SSL blind tunnel sometimes not created.
-
 
 Changes with Apache Traffic Server 5.3.0
 
@@ -408,7 +407,6 @@ Changes with Apache Traffic Server 5.3.0
 
   *) [TS-1570] Remap doesn't reject request with extract characters after port
      in Host header. Author: Cynthia Gu <czhenggu@linkedin.com>
-
 
 Changes with Apache Traffic Server 5.2.0
 
