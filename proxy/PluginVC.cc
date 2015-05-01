@@ -879,7 +879,8 @@ PluginVC::remove_from_keep_alive_lru()
 SOCKET
 PluginVC::get_socket()
 {
-  return 0;
+  // Return an invalid file descriptor
+  return -1;
 }
 
 void

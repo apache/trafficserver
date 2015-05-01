@@ -22,6 +22,7 @@
  */
 
 #include "SpdyClientSession.h"
+#include "SpdySessionAccept.h"
 #include "I_Net.h"
 
 static ClassAllocator<SpdyClientSession> spdyClientSessionAllocator("spdyClientSessionAllocator");
@@ -174,12 +175,20 @@ SpdyClientSession::clear()
 }
 
 void
-spdy_cs_create(NetVConnection *netvc, spdy::SessionVersion vers, MIOBuffer *iobuf, IOBufferReader *reader)
+SpdyClientSession::new_connection(const SessionAccept *accept_obj, NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader, bool backdoor)
 {
-  SpdyClientSession *sm;
+  // SPDY for the backdoor connections? Let's not deal woth that yet.
+  ink_release_assert(backdoor == false);
 
-  sm = spdyClientSessionAllocator.alloc();
-  sm->init(netvc, vers);
+  const SpdySessionAccept *spdy_accept = dynamic_cast<const SpdySessionAccept *>(accept_obj);
+  ink_assert(spdy_accept);
+  spdy::SessionVersion vers;
+  if (spdy_accept) {
+    vers = spdy_accept->getVersion();
+  }
+  SpdyClientSession *sm = this;
+
+  sm->init(new_vc, vers);
 
   sm->req_buffer = iobuf ? reinterpret_cast<TSIOBuffer>(iobuf) : TSIOBufferCreate();
   sm->req_reader = reader ? reinterpret_cast<TSIOBufferReader>(reader) : TSIOBufferReaderAlloc(sm->req_buffer);
@@ -251,13 +260,26 @@ SpdyClientSession::state_session_readwrite(int event, void *edata)
   Debug("spdy-event", "++++SpdyClientSession[%" PRIu64 "], EVENT:%d, ret:%d", this->sm_id, event, ret);
 out:
   if (ret) {
-    this->clear();
-    spdyClientSessionAllocator.free(this);
+    this->do_io_close();
   } else if (!from_fetch) {
     this->vc->set_inactivity_timeout(HRTIME_SECONDS(spdy_no_activity_timeout_in));
   }
 
   return EVENT_CONT;
+}
+
+void
+SpdyClientSession::destroy()
+{
+    this->clear();
+    spdyClientSessionAllocator.free(this);
+}
+
+
+SpdyClientSession *
+SpdyClientSession::alloc()
+{
+  return spdyClientSessionAllocator.alloc();
 }
 
 int64_t
@@ -271,7 +293,6 @@ SpdyClientSession::getPluginTag() const
 {
   return npnmap[this->version];
 }
-
 
 static int
 spdy_process_read(TSEvent /* event ATS_UNUSED */, SpdyClientSession *sm)
@@ -454,4 +475,12 @@ spdy_process_fetch_body(TSEvent event, SpdyClientSession *sm, TSFetchSM fetch_sm
 
   TSVIOReenable(sm->write_vio);
   return ret;
+}
+
+void
+SpdyClientSession::do_io_close(int alertno)
+{
+  // The object will be cleaned up from within ProxyClientSession::handle_api_return
+  // This way, the object will still be alive for any SSN_CLOSE hooks
+  do_api_callout(TS_HTTP_SSN_CLOSE_HOOK);
 }

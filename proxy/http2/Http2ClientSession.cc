@@ -72,9 +72,11 @@ Http2ClientSession::destroy()
 
   this->connection_state.destroy();
 
+  super::destroy();
+
   free_MIOBuffer(this->read_buffer);
-  ProxyClientSession::cleanup();
   http2ClientSessionAllocator.free(this);
+
 }
 
 void
@@ -101,7 +103,7 @@ Http2ClientSession::start()
 }
 
 void
-Http2ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader, bool backdoor)
+Http2ClientSession::new_connection(const SessionAccept * /*accept_obj */, NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader, bool backdoor)
 {
   // HTTP/2 for the backdoor connections? Let's not deal woth that yet.
   ink_release_assert(backdoor == false);
@@ -190,8 +192,6 @@ Http2ClientSession::do_io_close(int alerrno)
 
   send_connection_event(&this->connection_state, HTTP2_SESSION_EVENT_FINI, this);
 
-  this->client_vc->do_io_close(alerrno);
-  this->client_vc = NULL;
 
   do_api_callout(TS_HTTP_SSN_CLOSE_HOOK);
 }

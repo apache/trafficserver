@@ -37,6 +37,7 @@ public:
   ~SpdySessionAccept() {}
 
   void accept(NetVConnection *, MIOBuffer *, IOBufferReader *);
+  spdy::SessionVersion getVersion() const { return version; }
 
 private:
   int mainEvent(int event, void *netvc);

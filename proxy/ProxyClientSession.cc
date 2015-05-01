@@ -66,7 +66,7 @@ is_valid_hook(TSHttpHookID hookid)
 }
 
 void
-ProxyClientSession::cleanup()
+ProxyClientSession::destroy()
 {
   this->api_hooks.clear();
   this->mutex.clear();
@@ -168,8 +168,15 @@ ProxyClientSession::handle_api_return(int event)
     }
     break;
   case TS_HTTP_SSN_CLOSE_HOOK:
+  {
+    NetVConnection *vc = this->get_netvc();
+    if (vc) {
+      vc->do_io_close();
+      this->release_netvc();
+    }
     this->destroy();
     break;
+  }
   default:
     Fatal("received invalid session hook %s (%d)", HttpDebugNames::get_api_hook_name(hookid), hookid);
     break;

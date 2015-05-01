@@ -94,7 +94,7 @@ union const_sockaddr_ptr {
 #if TCPI_PLUGIN_SUPPORTED
 
 static void
-log_tcp_info(Config *config, const char *event_name, TSHttpSsn ssnp)
+log_tcp_info(Config *config, const char *event_name, TSHttpSsn ssnp, TSHttpTxn txnp)
 {
   char client_str[INET6_ADDRSTRLEN];
   char server_str[INET6_ADDRSTRLEN];
@@ -107,8 +107,16 @@ log_tcp_info(Config *config, const char *event_name, TSHttpSsn ssnp)
 
   TSReleaseAssert(config->log != NULL);
 
-  if (TSHttpSsnClientFdGet(ssnp, &fd) != TS_SUCCESS) {
-    TSDebug("tcpinfo", "error getting the client socket fd");
+  if (ssnp != NULL && TSHttpSsnClientFdGet(ssnp, &fd) != TS_SUCCESS || fd <= 0) {
+    TSDebug("tcpinfo", "error getting the client socket fd from ssn");
+    return;
+  }
+  if (txnp != NULL && TSHttpTxnClientFdGet(txnp, &fd) != TS_SUCCESS || fd <= 0) {
+    TSDebug("tcpinfo", "error getting the client socket fd from txn");
+    return;
+  }
+  if (txnp == NULL && ssnp == NULL) {
+    TSDebug("tcpinfo", "neither ssn nor txn are specified");
     return;
   }
 
@@ -206,9 +214,11 @@ tcp_info_hook(TSCont contp, TSEvent event, void *edata)
   }
 
   // Don't try to sample internal requests. TCP metrics for loopback are not interesting.
-  if (TSHttpSsnIsInternal(ssnp) == TS_SUCCESS) {
-    goto done;
-  }
+  //  Traffic via HTTP2 and SPDY show up as internal, so we must skip
+  //  this check for now.
+  // if (TSHttpSsnIsInternal(ssnp) == TS_SUCCESS) {
+  //  goto done;
+  //}
 
   // no need to run rand if we are always going log (100%)
   if (config->sample < 1000) {
@@ -219,7 +229,7 @@ tcp_info_hook(TSCont contp, TSEvent event, void *edata)
 
   if (random < config->sample) {
     TSDebug("tcpinfo", "sampling TCP metrics for %s event", event_name);
-    log_tcp_info(config, event_name, ssnp);
+    log_tcp_info(config, event_name, ssnp, txnp);
   }
 
 done:

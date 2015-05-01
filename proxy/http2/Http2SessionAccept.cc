@@ -55,7 +55,7 @@ Http2SessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferRead
   // XXX Allocate a Http2ClientSession
   Http2ClientSession *new_session = http2ClientSessionAllocator.alloc();
 
-  new_session->new_connection(netvc, iobuf, reader, false /* backdoor */);
+  new_session->new_connection(this, netvc, iobuf, reader, false /* backdoor */);
 }
 
 int

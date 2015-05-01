@@ -50,6 +50,7 @@ class SecurityContext;
 class HttpClientSession : public ProxyClientSession
 {
 public:
+  typedef ProxyClientSession super; ///< Parent type.
   HttpClientSession();
 
   // Implement ProxyClientSession interface.
@@ -61,7 +62,7 @@ public:
     new_transaction();
   }
 
-  void new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader, bool backdoor);
+  void new_connection(const SessionAccept *, NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader, bool backdoor);
 
   // Implement VConnection interface.
   virtual VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = 0);
@@ -89,11 +90,12 @@ public:
     return half_close;
   };
   virtual void release(IOBufferReader *r);
-  NetVConnection *
+  virtual NetVConnection *
   get_netvc() const
   {
     return client_vc;
   };
+  virtual void release_netvc() { client_vc = NULL; }
 
   virtual void attach_server_session(HttpServerSession *ssession, bool transaction_done = true);
   HttpServerSession *
