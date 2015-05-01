@@ -335,7 +335,6 @@ spdy_process_fetch(TSEvent event, SpdyClientSession *sm, void *edata)
       Debug("spdy_error",
             "spdy_process_fetch fetch error, fetch_sm %p, ret %d for sm_id %" PRId64 ", stream_id %u, req time %" PRId64 ", url %s",
             req->fetch_sm, ret, sm->sm_id, req->stream_id, req->start_time, req->url.c_str());
-      req->fetch_sm = NULL;
     }
     break;
   }

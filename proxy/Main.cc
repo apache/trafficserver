@@ -956,12 +956,12 @@ adjust_sys_settings(void)
   rlim_t maxfiles;
 
 // TODO: I think we might be able to get rid of this?
-#if defined(ATS_MMAP_MAX)
+#if defined(M_MMAP_MAX)
   int mmap_max = -1;
 
   REC_ReadConfigInteger(mmap_max, "proxy.config.system.mmap_max");
   if (mmap_max >= 0)
-    ats_mallopt(ATS_MMAP_MAX, mmap_max);
+    ats_mallopt(M_MMAP_MAX, mmap_max);
 #endif
 
   maxfiles = ink_get_max_files();

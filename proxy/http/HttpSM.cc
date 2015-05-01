@@ -292,7 +292,7 @@ HttpSM::HttpSM()
     enable_redirection(false), redirect_url(NULL), redirect_url_len(0), redirection_tries(0), transfered_bytes(0),
     post_failed(false), debug_on(false), plugin_tunnel_type(HTTP_NO_PLUGIN_TUNNEL), plugin_tunnel(NULL), reentrancy_count(0),
     history_pos(0), tunnel(), ua_entry(NULL), ua_session(NULL), background_fill(BACKGROUND_FILL_NONE), ua_raw_buffer_reader(NULL),
-    server_entry(NULL), server_session(NULL), shared_session_retries(0), server_buffer_reader(NULL), transform_info(),
+    server_entry(NULL), server_session(NULL), will_be_private_ss(false), shared_session_retries(0), server_buffer_reader(NULL), transform_info(),
     post_transform_info(), has_active_plugin_agents(false), second_cache_sm(NULL), default_handler(NULL), pending_action(NULL),
     historical_action(NULL), last_action(HttpTransact::SM_ACTION_UNDEFINED),
     // TODO:  Now that bodies can be empty, should the body counters be set to -1 ? TS-2213
@@ -2364,9 +2364,20 @@ HttpSM::state_cache_open_write(int event, void *data)
   case CACHE_EVENT_OPEN_WRITE_FAILED:
     // Failed on the write lock and retrying the vector
     //  for reading
-    t_state.cache_info.write_lock_state = HttpTransact::CACHE_WL_FAIL;
-    break;
-
+    if (t_state.http_config_param->cache_open_write_fail_action ==
+        HttpTransact::CACHE_OPEN_WRITE_FAIL_DEFAULT) {
+      t_state.cache_info.write_lock_state = HttpTransact::CACHE_WL_FAIL;
+      break;
+    } else {
+      t_state.cache_open_write_fail_action = t_state.http_config_param->cache_open_write_fail_action;
+      if (!t_state.cache_info.object_read) {
+        // cache miss, set wl_state to fail
+        t_state.cache_info.write_lock_state = HttpTransact::CACHE_WL_FAIL;
+        break;
+      }
+    }
+    // INTENTIONAL FALL THROUGH
+    // Allow for stale object to be served
   case CACHE_EVENT_OPEN_READ:
     // The write vector was locked and the cache_sm retried
     // and got the read vector again.
@@ -4569,6 +4580,32 @@ HttpSM::do_http_server_open(bool raw)
   // to do this but as far I can tell the code that prevented keep-alive if
   // there is a request body has been removed.
 
+  // If we are sending authorizations headers, mark the connection private
+  //
+  // We do this here because it means that we will not waste a connection from the pool if we already
+  // know that the session will be private. This is overridable meaning that if a plugin later decides
+  // it shouldn't be private it can still be returned to a shared pool.
+  //
+  if (t_state.txn_conf->auth_server_session_private == 1 &&
+      t_state.hdr_info.server_request.presence(MIME_PRESENCE_AUTHORIZATION | MIME_PRESENCE_PROXY_AUTHORIZATION |
+                                               MIME_PRESENCE_WWW_AUTHENTICATE)) {
+    DebugSM("http_ss_auth", "Setting server session to private for authorization header");
+    will_be_private_ss = true;
+  }
+
+  if (t_state.method == HTTP_WKSIDX_POST || t_state.method == HTTP_WKSIDX_PUT) {
+     // don't share the session if keep-alive for post is not on
+     if (t_state.txn_conf->keep_alive_post_out == 0) {
+       DebugSM("http_ss", "Setting server session to private because of keep-alive post out");
+       will_be_private_ss = true;
+     }
+  }
+
+  // If there is already an attached server session mark it as private.
+  if (server_session != NULL && will_be_private_ss) {
+    set_server_session_private(true);
+  }
+
   if (raw == false && TS_SERVER_SESSION_SHARING_MATCH_NONE != t_state.txn_conf->server_session_sharing_match &&
       (t_state.txn_conf->keep_alive_post_out == 1 || t_state.hdr_info.request_content_length == 0) && !is_private() &&
       ua_session != NULL) {
@@ -5052,6 +5089,7 @@ HttpSM::handle_post_failure()
   t_state.current.server->keep_alive = HTTP_NO_KEEPALIVE;
 
   if (server_buffer_reader->read_avail() > 0) {
+    tunnel.deallocate_buffers();
     tunnel.reset();
     // There's data from the server so try to read the header
     setup_server_read_response_header();
@@ -5581,13 +5619,6 @@ HttpSM::attach_server_session(HttpServerSession *s)
 
   if (t_state.method == HTTP_WKSIDX_POST || t_state.method == HTTP_WKSIDX_PUT) {
     connect_timeout = t_state.txn_conf->post_connect_attempts_timeout;
-
-    // don't share the session if keep-alive for post is not on
-    if (t_state.txn_conf->keep_alive_post_out == 0) {
-      DebugSM("http_ss", "Setting server session to private because of keep-alive post out");
-      set_server_session_private(true);
-    }
-
   } else if (t_state.current.server == &t_state.parent_info) {
     connect_timeout = t_state.http_config_param->parent_connect_timeout;
   } else {
@@ -5608,7 +5639,7 @@ HttpSM::attach_server_session(HttpServerSession *s)
     server_session->get_netvc()->set_active_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_active_timeout_out));
   }
 
-  if (plugin_tunnel_type != HTTP_NO_PLUGIN_TUNNEL) {
+  if (plugin_tunnel_type != HTTP_NO_PLUGIN_TUNNEL || will_be_private_ss) {
     DebugSM("http_ss", "Setting server session to private");
     set_server_session_private(true);
   }
@@ -5652,13 +5683,6 @@ HttpSM::setup_server_send_request()
     server_request_body_bytes = msg_len;
   }
 
-  // If we are sending authorizations headers, mark the connection private
-  if (t_state.txn_conf->auth_server_session_private == 1 &&
-      t_state.hdr_info.server_request.presence(MIME_PRESENCE_AUTHORIZATION | MIME_PRESENCE_PROXY_AUTHORIZATION |
-                                               MIME_PRESENCE_WWW_AUTHENTICATE)) {
-    DebugSM("http_ss", "Setting server session to private for authorization header");
-    set_server_session_private(true);
-  }
   milestones.server_begin_write = ink_get_hrtime();
   server_entry->write_vio = server_entry->vc->do_io_write(this, hdr_length, buf_start);
 }
@@ -7602,6 +7626,8 @@ HttpSM::is_private()
     HttpServerSession *ss = ua_session->get_server_session();
     if (ss) {
       res = ss->private_session;
+    } else if (will_be_private_ss) {
+      res = will_be_private_ss;
     }
   }
   return res;

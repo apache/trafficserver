@@ -232,7 +232,7 @@ config_set(unsigned argc, const char **argv)
     printf("set %s, restart required\n", file_arguments[0]);
     break;
   case TS_ACTION_RECONFIGURE:
-    // printf("Set %s, reconfiguration required\n", file_arguments[0]);
+    printf("set %s, please wait 10 seconds for traffic server to sync configuration, restart is not required\n", file_arguments[0]);
     break;
   case TS_ACTION_DYNAMIC:
   default:

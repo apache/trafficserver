@@ -116,35 +116,9 @@ static int ssl_callback_session_ticket(SSL *, unsigned char *, unsigned char *, 
 
 #if HAVE_OPENSSL_SESSION_TICKETS
 static int ssl_session_ticket_index = -1;
-
-
-// Zero out and free the heap space allocated for ticket keys to avoid leaking secrets.
-// The first several bytes stores the number of keys and the rest stores the ticket keys.
-static void
-ticket_block_free(void *ptr)
-{
-  if (ptr) {
-    ssl_ticket_key_block *key_block_ptr = (ssl_ticket_key_block *)ptr;
-    unsigned num_ticket_keys = key_block_ptr->num_keys;
-    memset(ptr, 0, sizeof(ssl_ticket_key_block) + num_ticket_keys * sizeof(ssl_ticket_key_t));
-  }
-  ats_free(ptr);
-}
-
-static ssl_ticket_key_block *
-ticket_block_alloc(unsigned count)
-{
-  ssl_ticket_key_block *ptr;
-  size_t nbytes = sizeof(ssl_ticket_key_block) + count * sizeof(ssl_ticket_key_t);
-
-  ptr = (ssl_ticket_key_block *)ats_malloc(nbytes);
-  memset(ptr, 0, nbytes);
-  ptr->num_keys = count;
-
-  return ptr;
-}
-
 #endif
+
+
 static pthread_mutex_t *mutex_buf = NULL;
 static bool open_ssl_initialized = false;
 
@@ -163,9 +137,17 @@ SSL_pthreads_thread_id()
 }
 
 static void
-SSL_locking_callback(int mode, int type, const char * /* file ATS_UNUSED */, int /* line ATS_UNUSED */)
+SSL_locking_callback(int mode, int type, const char *file, int line)
 {
+  Debug("ssl_lock", "file: %s line: %d type: %d", file, line, type);
   ink_assert(type < CRYPTO_num_locks());
+
+#ifdef OPENSSL_FIPS
+  // don't need to lock for FIPS if it has POSTed and we are not going to change the mode on the fly
+  if (type == CRYPTO_LOCK_FIPS || type == CRYPTO_LOCK_FIPS2) {
+    return;
+  }
+#endif
 
   if (mode & CRYPTO_LOCK) {
     pthread_mutex_lock(&mutex_buf[type]);
@@ -176,6 +158,7 @@ SSL_locking_callback(int mode, int type, const char * /* file ATS_UNUSED */, int
     ink_assert(0);
   }
 }
+
 
 static bool
 SSL_CTX_add_extra_chain_cert_file(SSL_CTX *ctx, const char *chainfile)
@@ -267,7 +250,7 @@ set_context_cert(SSL *ssl)
 {
   SSL_CTX *ctx = NULL;
   SSLCertContext *cc = NULL;
-  SSLCertLookup *lookup = SSLCertificateConfig::acquire();
+  SSLCertificateConfig::scoped_config lookup;
   const char *servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
   SSLNetVConnection *netvc = (SSLNetVConnection *)SSL_get_app_data(ssl);
   bool found = true;
@@ -326,7 +309,6 @@ set_context_cert(SSL *ssl)
     goto done;
   }
 done:
-  SSLCertificateConfig::release(lookup);
   return retval;
 }
 
@@ -784,6 +766,14 @@ SSLInitializeLibrary()
     SSL_load_error_strings();
     SSL_library_init();
 
+#ifdef OPENSSL_FIPS
+    // calling FIPS_mode_set() will force FIPS to POST (Power On Self Test)
+    // After POST we don't have to lock for FIPS
+    int mode = FIPS_mode();
+    FIPS_mode_set(mode);
+    Debug("ssl", "FIPS_mode: %d", mode);
+#endif
+
     mutex_buf = (pthread_mutex_t *)OPENSSL_malloc(CRYPTO_num_locks() * sizeof(pthread_mutex_t));
 
     for (int i = 0; i < CRYPTO_num_locks(); i++) {
@@ -1174,6 +1164,74 @@ SSLPrivateKeyHandler(SSL_CTX *ctx, const SSLConfigParams *params, const ats_scop
 
   return true;
 }
+
+static int
+SSLCheckServerCertNow(const char *certFilename)
+{
+BIO    *bioFP = NULL;
+X509   *myCert;
+int    timeCmpValue;
+time_t currentTime;
+
+// SSLCheckServerCertNow() -  returns 0 on OK or negative value on failure
+// and update log as appropriate.
+// Will check:
+// - if file exists, and has read permissions 
+// - for truncation or other PEM read fail 
+// - current time is between notBefore and notAfter dates of certificate
+// if anything is not kosher, a negative value is returned and appropriate error logged.
+
+    if ((!certFilename) || (!(*certFilename))) { 
+        return -2;
+    }
+
+    if ((bioFP = BIO_new(BIO_s_file())) == NULL) {
+        Error("BIO_new() failed for server certificate check.  Out of memory?");
+        return -1;
+    }
+
+    if (BIO_read_filename(bioFP, certFilename) <= 0) {
+        // file not found, or not accessible due to permissions
+        Error("Can't open server certificate file: \"%s\"\n",certFilename);
+        BIO_free(bioFP);
+        return -2;
+    }
+
+    myCert = PEM_read_bio_X509(bioFP, NULL, 0, NULL);
+    BIO_free(bioFP);
+    if (! myCert) {
+        // a truncated certificate would fall into here 
+        Error("Error during server certificate PEM read. Is this a PEM format certificate?: \"%s\"\n",certFilename);
+        return -3;
+    }
+
+    time(&currentTime);
+    if (!(timeCmpValue = X509_cmp_time(X509_get_notBefore(myCert), &currentTime))) {
+        // an error occured parsing the time, which we'll call a bogosity 
+        Error("Error occured while parsing server certificate notBefore time.");
+        return -3;
+    } else if ( 0 < timeCmpValue) {
+        // cert contains a date before the notBefore
+        Error("Server certificate notBefore date is in the future - INVALID CERTIFICATE: %s",certFilename);
+        return -4;
+    }
+
+    if (!(timeCmpValue = X509_cmp_time(X509_get_notAfter(myCert), &currentTime))) {
+        // an error occured parsing the time, which we'll call a bogosity 
+        Error("Error occured while parsing server certificate notAfter time.");
+        return -3;
+    } else if ( 0 > timeCmpValue) {
+        // cert is expired
+        Error("Server certificate EXPIRED - INVALID CERTIFICATE: %s",certFilename);
+        return -5;
+    }
+
+    Debug("ssl","Server certificate passed accessibility and date checks: \"%s\"",certFilename);
+    return 0; // all good 
+
+} /* CheckServerCertNow() */
+
+
 
 SSL_CTX *
 SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config &sslMultCertSettings)
@@ -1651,6 +1709,14 @@ ssl_store_ssl_context(const SSLConfigParams *params, SSLCertLookup *lookup, cons
     certpath = NULL;
   }
 
+  if (0 > SSLCheckServerCertNow((const char *) certpath)) {
+    /* At this point, we know cert is bad, and we've already printed a 
+       descriptive reason as to why cert is bad to the log file */
+    Debug("ssl", "Marking certificate as NOT VALID: %s", 
+		(certpath) ? (const char *)certpath : "(null)" );
+    lookup->is_valid = false; 
+  }
+
   // Load the session ticket key if session tickets are not disabled and we have key name.
   if (sslMultCertSettings.session_ticket_enabled != 0 && sslMultCertSettings.ticket_key_filename) {
     ats_scoped_str ticket_key_path(Layout::relative_to(params->serverCertPathOnly, sslMultCertSettings.ticket_key_filename));
@@ -1682,6 +1748,14 @@ ssl_store_ssl_context(const SSLConfigParams *params, SSLCertLookup *lookup, cons
       }
     }
   }
+  if (!inserted) {
+#if HAVE_OPENSSL_SESSION_TICKETS
+    if (keyblock != NULL) {
+      ticket_block_free(keyblock);
+    }
+#endif
+  }
+
 
 #if defined(SSL_OP_NO_TICKET)
   // Session tickets are enabled by default. Disable if explicitly requested.
@@ -1721,11 +1795,6 @@ ssl_store_ssl_context(const SSLConfigParams *params, SSLCertLookup *lookup, cons
     }
   }
   if (!inserted) {
-#if HAVE_OPENSSL_SESSION_TICKETS
-    if (keyblock != NULL) {
-      ticket_block_free(keyblock);
-    }
-#endif
     if (ctx != NULL) {
       SSL_CTX_free(ctx);
       ctx = NULL;
@@ -1886,7 +1955,7 @@ static int
 ssl_callback_session_ticket(SSL *ssl, unsigned char *keyname, unsigned char *iv, EVP_CIPHER_CTX *cipher_ctx, HMAC_CTX *hctx,
                             int enc)
 {
-  SSLCertLookup *lookup = SSLCertificateConfig::acquire();
+  SSLCertificateConfig::scoped_config lookup;
   SSLNetVConnection *netvc = (SSLNetVConnection *)SSL_get_app_data(ssl);
 
   // Get the IP address to look up the keyblock
@@ -1901,6 +1970,7 @@ ssl_callback_session_ticket(SSL *ssl, unsigned char *keyname, unsigned char *iv,
   if (cc == NULL || cc->keyblock == NULL) {
     // No, key specified.  Must fail out at this point.
     // Alternatively we could generate a random key
+
     return -1;
   }
   ssl_ticket_key_block *keyblock = cc->keyblock;

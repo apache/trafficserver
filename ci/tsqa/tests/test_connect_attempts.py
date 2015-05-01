@@ -27,19 +27,16 @@ import threading
 
 import helpers
 
-import tsqa.test_cases
-import tsqa.utils
-import tsqa.endpoint
-
 log = logging.getLogger(__name__)
 
 
 def thread_die_on_connect(sock):
     sock.listen(0)
     # poll
-    read_sock = select.select([sock], [], [])
+    select.select([sock], [], [])
     # exit
     sock.close()
+
 
 def thread_delayed_accept_after_connect(sock):
     '''
@@ -49,19 +46,21 @@ def thread_delayed_accept_after_connect(sock):
     '''
     sock.listen(0)
     sleep_time = 2
-    requests = 0
+    num_requests = 0
     # poll
     while True:
-        read_sock = select.select([sock], [], [])
+        select.select([sock], [], [])
         time.sleep(sleep_time)
         try:
             connection, addr = sock.accept()
-            connection.send(('HTTP/1.1 200 OK\r\n'
-                    'Content-Length: {body_len}\r\n'
-                    'Content-Type: text/html; charset=UTF-8\r\n'
-                    'Connection: close\r\n\r\n{body}'.format(body_len=len(str(requests)), body=requests)))
+            connection.send((
+                'HTTP/1.1 200 OK\r\n'
+                'Content-Length: {body_len}\r\n'
+                'Content-Type: text/html; charset=UTF-8\r\n'
+                'Connection: close\r\n\r\n{body}'.format(body_len=len(str(num_requests)), body=num_requests)
+            ))
             connection.close()
-            requests += 1
+            num_requests += 1
         except Exception as e:
             print 'connection died!', e
             pass
@@ -72,40 +71,44 @@ def thread_delayed_accept_after_connect(sock):
 def thread_reset_after_accept(sock):
     sock.listen(0)
     first = True
-    requests = 0
+    num_requests = 0
     while True:
         connection, addr = sock.accept()
-        requests += 1
+        num_requests += 1
         if first:
             first = False
             connection.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, struct.pack('ii', 1, 0))
             connection.close()
         else:
-            connection.send(('HTTP/1.1 200 OK\r\n'
-                    'Content-Length: {body_len}\r\n'
-                    'Content-Type: text/html; charset=UTF-8\r\n'
-                    'Connection: close\r\n\r\n{body}'.format(body_len=len(str(requests)), body=requests)))
+            connection.send((
+                'HTTP/1.1 200 OK\r\n'
+                'Content-Length: {body_len}\r\n'
+                'Content-Type: text/html; charset=UTF-8\r\n'
+                'Connection: close\r\n\r\n{body}'.format(body_len=len(str(num_requests)), body=num_requests)
+            ))
             connection.close()
+
 
 def thread_partial_response(sock):
     sock.listen(0)
     first = True
-    requests = 0
+    num_requests = 0
     while True:
         connection, addr = sock.accept()
-        requests += 1
+        num_requests += 1
         if first:
             connection.send('HTTP/1.1 200 OK\r\n')
             connection.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, struct.pack('ii', 1, 0))
             connection.close()
             first = False
         else:
-            connection.send(('HTTP/1.1 200 OK\r\n'
-                    'Content-Length: {body_len}\r\n'
-                    'Content-Type: text/html; charset=UTF-8\r\n'
-                    'Connection: close\r\n\r\n{body}'.format(body_len=len(str(requests)), body=requests)))
+            connection.send((
+                'HTTP/1.1 200 OK\r\n'
+                'Content-Length: {body_len}\r\n'
+                'Content-Type: text/html; charset=UTF-8\r\n'
+                'Connection: close\r\n\r\n{body}'.format(body_len=len(str(num_requests)), body=num_requests)
+            ))
             connection.close()
-
 
 
 class TestOriginServerConnectAttempts(helpers.EnvironmentCase):
@@ -116,6 +119,7 @@ class TestOriginServerConnectAttempts(helpers.EnvironmentCase):
         This includes everything pre-daemon start
         '''
         cls.sock_map = {}
+
         def _add_sock(name):
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.bind(('127.0.0.1', 0))
@@ -181,6 +185,8 @@ class TestOriginServerConnectAttempts(helpers.EnvironmentCase):
 
     # TODO: FIX THIS!!! The test is correct, ATS isn't!
     # we should fail in this case-- or at least have a config which lets you control
+    # TODO: remove once TS-3440 is resolved
+    @helpers.unittest.expectedFailure
     def test_partial_response_origin(self):
         '''
         Verify that we get 504s from origins that return a partial_response
@@ -206,4 +212,5 @@ class TestOriginServerConnectAttempts(helpers.EnvironmentCase):
         # make sure it worked
         self.assertEqual(ret.status_code, 200)
         # make sure its not the first one (otherwise the test messed up somehow)
+        print ret.text
         self.assertGreater(int(ret.text), 0)

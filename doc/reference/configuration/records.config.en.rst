@@ -197,6 +197,15 @@ A value of ``0`` means no signal will be sent.
    prevent the system from hanging. This configuration variable applies if
    swap is enabled in Linux 2.2 only.
 
+.. ts:cv:: CONFIG proxy.config.cop.init_sleep_time INT 0
+
+   The minimum amount of addtional duration allowed before Traffic Server detects
+   that the :program:`traffic_server` is not responsive and attempts a restart
+   during startup. This configuration variable allows Traffic Server a longer init
+   time to load potentially large configuration files such as remap config. Note that
+   this applies only during startup of Traffic Server and does not apply to the run
+   time heartbeat checking.
+
 .. ts:cv:: CONFIG proxy.config.output.logfile  STRING traffic.out
 
    The name and location of the file that contains warnings, status messages, and error messages produced by the Traffic Server
@@ -728,6 +737,12 @@ Value Effect
    Note that setting this parameter to (``2``) will not work correctly unless
    the dedicated SSL threads are disabled (:ts:cv:`proxy.config.ssl.number.threads`
    is set to (``-1``)).
+   
+.. ts:cv:: CONFIG proxy.config.http.auth_server_session_private INT 1
+
+   If enabled (``1``) anytime a request contains a (``Authorization``), (``Proxy-Authorization``)
+   or (``Www-Authenticate``) header the connection will be closed and not reused. This marks
+   the connection as private. When disabled (``0``) the connection will be available for reuse.
 
 .. ts:cv:: CONFIG proxy.config.http.server_session_sharing.match STRING both
 

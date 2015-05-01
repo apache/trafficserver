@@ -1,42 +1,84 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-3539] Close excess file descriptors in crash log helper.
+
+  *) [TS-3576] Remove the need for FIPS locking for OpenSSL
+
+  *) [TS-3538] Perform server certificate validity check.
+
+  *) [TS-3575] Fix connection leak.
+
+  *) [TS-3538] Perform server certificate validity check.
+
+  *) [TS-3549] Configurable option to avoid thundering herd problem
+   for multiple concurrent requests. The initial POC patch for this
+   solution came from Justin Laue. This patch will further be
+   improved with a few more changes to possibly support SWR feature in
+   the core.
+
+  *) [TS-3564] Check if cache is enabled before setting DO_WRITE action
+   during 3xx redirect follow, to prevent seg fault
+
+  *) [TS-2490] Allow traffic_cop to wait longer during traffic_server startup
+
+  *) [TS-3536] Fix memory leak in post processing.
+
+  *) [TS-3561] Call TSMutexDestroy in a couple of plugins, now that its
+   available.
+
+  *) [TS-3558] Fix proxy.config.http.auth_server_session_private
+
+  *) [TS-3552] Move the check for the api_server_response_no_store flag
+   earlier.
+
+  *) [TS-3545] Make traffic_line and traffic_ctl more verbose. Add message
+   when setting config options that don't require a restart.
+
+  *) [TS-3505] New plugin, cache_promote, which allows for policy based
+   control on when a object should be allowed into the cache. Two policies are
+   currently implemented: an LRU and a pure chance ("random") policy.
+
+  *) [TS-3554] Memory leak on ssl_multicert.config reload.
+
+  *) [TS-3551] Fix LogUtils.cc compile on Illumos.
+
   *) [TS-3548] Fix psiginfo usage on Illumos.
 
   *) [TS-3529] Add config option to allow ATS to start even if certificate files are bad.
 
   *) [TS-3523]: Proxy urls with no matching remap rules, when remap_required
-               is disabled, regardless of reverse_proxy_enabled setting
+   is disabled, regardless of reverse_proxy_enabled setting.
 
   *) [TS-3522] Segfault due to inactivity_cop.
 
-  *) [TS-3530] HTTP/2 memory leak with headers and more...
+  *) [TS-3530] HTTP/2 memory leak with headers and more.
 
-  *) [TS-3519] HTTP/2 seeing a lot of GOAWAY frames being sent
+  *) [TS-3519] HTTP/2 seeing a lot of GOAWAY frames being sent.
 
-  *) [TS-3520] Fix logging core dump due to invalid unmapped url length/buffer
+  *) [TS-3520] Fix logging core dump due to invalid unmapped url length/buffer.
 
   *) [TS-3489] Not able to set more than 1 accept thread per port and cleaned
-   other thread configurable ranges
+   other thread configurable ranges.
 
   *) [TS-3516] Fix various compile warnings with latest versions of clang.
 
-  *) [TS-3438] Assert if npn protocol is invalid (empty string)
+  *) [TS-3438] Assert if NPN protocol is invalid (empty string).
 
-  *) [TS-3501] Support configuring socket options for client sockets
+  *) [TS-3501] Support configuring socket options for client sockets.
 
-  *) [TS-3515] Use pcrejit (Regex class) for regex_map
+  *) [TS-3515] Use pcrejit (Regex class) for regex_map.
 
   *) [TS-3500] Fix TSHttpTxnPristineUrlGet to return client request's url
-   when pristine url is not populated
+   when pristine url is not populated.
 
   *) [TS-3513] HTTP/2 core dump. Fixed problem with cursor not advancing
-   during parsing
+   during parsing.
 
-  *) [TS-3514] Atomic check for gcc >4.1 breaks with gcc 5.0
+  *) [TS-3514] Atomic check for gcc >4.1 breaks with gcc 5.0.
    Author: Marcin Juszkiewicz <mjuszkiewicz@redhat.com>
 
-  *) [TS-3507] Add stats for the milestones
+  *) [TS-3507] Add stats for the milestones.
 
   *) [TS-3480] Large stream id cause PROTOCOL_ERROR.
    Author: Ryo Okubo <rokubo@yahoo-corp.jp>.
@@ -79,7 +121,6 @@ Changes with Apache Traffic Server 6.0.0
   *) [TS-1611] Async request suport in lua plugin.
 
   *) [TS-3456] SSL blind tunnel sometimes not created.
-
 
 Changes with Apache Traffic Server 5.3.0
 
@@ -366,7 +407,6 @@ Changes with Apache Traffic Server 5.3.0
 
   *) [TS-1570] Remap doesn't reject request with extract characters after port
      in Host header. Author: Cynthia Gu <czhenggu@linkedin.com>
-
 
 Changes with Apache Traffic Server 5.2.0
 
