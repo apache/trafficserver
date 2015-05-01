@@ -1,18 +1,20 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
-  *) [TS-3575]: Fix connection leak.
+  *) [TS-3576] Remove the need for FIPS locking for OpenSSL
 
-  *) [TS-3538]: Perform server certificate validity check.
+  *) [TS-3575] Fix connection leak.
 
-  *) [TS-3549]: Configurable option to avoid thundering herd problem 
-     for multiple concurrent requests. The initial POC patch for this
-     solution came from Justin Laue. This patch will further be
-     improved with a few more changes to possibly support SWR feature in
-     the core.
+  *) [TS-3538] Perform server certificate validity check.
 
-  *) [TS-3564]: Check if cache is enabled before setting DO_WRITE action
-                during 3xx redirect follow, to prevent seg fault
+  *) [TS-3549] Configurable option to avoid thundering herd problem 
+   for multiple concurrent requests. The initial POC patch for this
+   solution came from Justin Laue. This patch will further be
+   improved with a few more changes to possibly support SWR feature in
+   the core.
+
+  *) [TS-3564] Check if cache is enabled before setting DO_WRITE action
+   during 3xx redirect follow, to prevent seg fault
 
   *) [TS-2490] Allow traffic_cop to wait longer during traffic_server startup
 
