@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-3392] Fix static initialization order, for OSX.
+   Author: Bin Zeng <bzeng@linkedin.com>
+
   *) [TS-3537] Make 32-bit platforms build error, overridable with
    --enable-32bit-build.
 
