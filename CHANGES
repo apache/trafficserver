@@ -1,11 +1,14 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
-  *) [TS-3531] Ignore blank lines in the plugin config file
+  *) [TS-3537] Make 32-bit platforms build error, overridable with
+   --enable-32bit-build.
+
+  *) [TS-3531] Ignore blank lines in the plugin config file.
 
   *) [TS-3539] Close excess file descriptors in crash log helper.
 
-  *) [TS-3576] Remove the need for FIPS locking for OpenSSL
+  *) [TS-3576] Remove the need for FIPS locking for OpenSSL.
 
   *) [TS-3538] Perform server certificate validity check.
 
