@@ -159,7 +159,7 @@ ticket_block_alloc(unsigned count)
   return ptr;
 }
 
-void 
+void
 SSLCertContext::release()
 {
   if (keyblock) {

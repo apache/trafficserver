@@ -77,7 +77,7 @@ static const char *_hdrtoken_strs[] = {
   "Subject", // NNTP
   "Summary", // NNTP
   "Transfer-Encoding", "Upgrade", "User-Agent", "Vary", "Via", "Warning", "Www-Authenticate",
-  "Xref",      // NNTP
+  "Xref",          // NNTP
   "@Ats-Internal", // Internal Hack
 
   // Accept-Encoding
@@ -319,7 +319,7 @@ static const char *_hdrtoken_commonly_tokenized_strs[] = {
   "Subject", // NNTP
   "Summary", // NNTP
   "Transfer-Encoding", "Upgrade", "User-Agent", "Vary", "Via", "Warning", "Www-Authenticate",
-  "Xref",      // NNTP
+  "Xref",          // NNTP
   "@Ats-Internal", // Internal Hack
 
   // Accept-Encoding

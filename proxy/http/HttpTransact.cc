@@ -2913,10 +2913,9 @@ HttpTransact::handle_cache_write_lock(State *s)
     if (s->cache_open_write_fail_action & CACHE_OPEN_WRITE_FAIL_ERROR_ON_MISS) {
       DebugTxn("http_error", "cache_open_write_fail_action, cache miss, return error");
       s->cache_info.write_status = CACHE_WRITE_ERROR;
-      build_error_response(s, HTTP_STATUS_BAD_GATEWAY, "Connection Failed", "connect#failed_connect",
-                           NULL);
+      build_error_response(s, HTTP_STATUS_BAD_GATEWAY, "Connection Failed", "connect#failed_connect", NULL);
       MIMEField *ats_field;
-      HTTPHdr* header = &(s->hdr_info.client_response);
+      HTTPHdr *header = &(s->hdr_info.client_response);
 
       if ((ats_field = header->field_find(MIME_FIELD_ATS_INTERNAL, MIME_LEN_ATS_INTERNAL)) == NULL) {
         if (likely((ats_field = header->field_create(MIME_FIELD_ATS_INTERNAL, MIME_LEN_ATS_INTERNAL)) != NULL))

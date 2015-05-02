@@ -268,10 +268,7 @@ class BGFetchConfig
 public:
   BGFetchConfig() : log(NULL) { _lock = TSMutexCreate(); }
 
-  ~BGFetchConfig()
-  {
-    TSMutexDestroy(_lock);
-  }
+  ~BGFetchConfig() { TSMutexDestroy(_lock); }
 
   void
   create_log(const char *log_name)

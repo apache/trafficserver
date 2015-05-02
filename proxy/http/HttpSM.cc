@@ -292,9 +292,9 @@ HttpSM::HttpSM()
     enable_redirection(false), redirect_url(NULL), redirect_url_len(0), redirection_tries(0), transfered_bytes(0),
     post_failed(false), debug_on(false), plugin_tunnel_type(HTTP_NO_PLUGIN_TUNNEL), plugin_tunnel(NULL), reentrancy_count(0),
     history_pos(0), tunnel(), ua_entry(NULL), ua_session(NULL), background_fill(BACKGROUND_FILL_NONE), ua_raw_buffer_reader(NULL),
-    server_entry(NULL), server_session(NULL), will_be_private_ss(false), shared_session_retries(0), server_buffer_reader(NULL), transform_info(),
-    post_transform_info(), has_active_plugin_agents(false), second_cache_sm(NULL), default_handler(NULL), pending_action(NULL),
-    historical_action(NULL), last_action(HttpTransact::SM_ACTION_UNDEFINED),
+    server_entry(NULL), server_session(NULL), will_be_private_ss(false), shared_session_retries(0), server_buffer_reader(NULL),
+    transform_info(), post_transform_info(), has_active_plugin_agents(false), second_cache_sm(NULL), default_handler(NULL),
+    pending_action(NULL), historical_action(NULL), last_action(HttpTransact::SM_ACTION_UNDEFINED),
     // TODO:  Now that bodies can be empty, should the body counters be set to -1 ? TS-2213
     client_request_hdr_bytes(0), client_request_body_bytes(0), server_request_hdr_bytes(0), server_request_body_bytes(0),
     server_response_hdr_bytes(0), server_response_body_bytes(0), client_response_hdr_bytes(0), client_response_body_bytes(0),
@@ -2364,8 +2364,7 @@ HttpSM::state_cache_open_write(int event, void *data)
   case CACHE_EVENT_OPEN_WRITE_FAILED:
     // Failed on the write lock and retrying the vector
     //  for reading
-    if (t_state.http_config_param->cache_open_write_fail_action ==
-        HttpTransact::CACHE_OPEN_WRITE_FAIL_DEFAULT) {
+    if (t_state.http_config_param->cache_open_write_fail_action == HttpTransact::CACHE_OPEN_WRITE_FAIL_DEFAULT) {
       t_state.cache_info.write_lock_state = HttpTransact::CACHE_WL_FAIL;
       break;
     } else {
@@ -2376,8 +2375,8 @@ HttpSM::state_cache_open_write(int event, void *data)
         break;
       }
     }
-    // INTENTIONAL FALL THROUGH
-    // Allow for stale object to be served
+  // INTENTIONAL FALL THROUGH
+  // Allow for stale object to be served
   case CACHE_EVENT_OPEN_READ:
     // The write vector was locked and the cache_sm retried
     // and got the read vector again.
@@ -4594,11 +4593,11 @@ HttpSM::do_http_server_open(bool raw)
   }
 
   if (t_state.method == HTTP_WKSIDX_POST || t_state.method == HTTP_WKSIDX_PUT) {
-     // don't share the session if keep-alive for post is not on
-     if (t_state.txn_conf->keep_alive_post_out == 0) {
-       DebugSM("http_ss", "Setting server session to private because of keep-alive post out");
-       will_be_private_ss = true;
-     }
+    // don't share the session if keep-alive for post is not on
+    if (t_state.txn_conf->keep_alive_post_out == 0) {
+      DebugSM("http_ss", "Setting server session to private because of keep-alive post out");
+      will_be_private_ss = true;
+    }
   }
 
   // If there is already an attached server session mark it as private.

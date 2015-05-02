@@ -107,7 +107,7 @@ static int server_failures = 0;
 static int server_not_found = 0;
 
 static const int sleep_time = 10;          // 10 sec
-static int init_sleep_time  = sleep_time;  // 10 sec
+static int init_sleep_time = sleep_time;   // 10 sec
 static const int manager_timeout = 3 * 60; //  3 min
 static const int server_timeout = 3 * 60;  //  3 min
 

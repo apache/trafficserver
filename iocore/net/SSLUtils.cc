@@ -1168,69 +1168,68 @@ SSLPrivateKeyHandler(SSL_CTX *ctx, const SSLConfigParams *params, const ats_scop
 static int
 SSLCheckServerCertNow(const char *certFilename)
 {
-BIO    *bioFP = NULL;
-X509   *myCert;
-int    timeCmpValue;
-time_t currentTime;
+  BIO *bioFP = NULL;
+  X509 *myCert;
+  int timeCmpValue;
+  time_t currentTime;
 
-// SSLCheckServerCertNow() -  returns 0 on OK or negative value on failure
-// and update log as appropriate.
-// Will check:
-// - if file exists, and has read permissions 
-// - for truncation or other PEM read fail 
-// - current time is between notBefore and notAfter dates of certificate
-// if anything is not kosher, a negative value is returned and appropriate error logged.
+  // SSLCheckServerCertNow() -  returns 0 on OK or negative value on failure
+  // and update log as appropriate.
+  // Will check:
+  // - if file exists, and has read permissions
+  // - for truncation or other PEM read fail
+  // - current time is between notBefore and notAfter dates of certificate
+  // if anything is not kosher, a negative value is returned and appropriate error logged.
 
-    if ((!certFilename) || (!(*certFilename))) { 
-        return -2;
-    }
+  if ((!certFilename) || (!(*certFilename))) {
+    return -2;
+  }
 
-    if ((bioFP = BIO_new(BIO_s_file())) == NULL) {
-        Error("BIO_new() failed for server certificate check.  Out of memory?");
-        return -1;
-    }
+  if ((bioFP = BIO_new(BIO_s_file())) == NULL) {
+    Error("BIO_new() failed for server certificate check.  Out of memory?");
+    return -1;
+  }
 
-    if (BIO_read_filename(bioFP, certFilename) <= 0) {
-        // file not found, or not accessible due to permissions
-        Error("Can't open server certificate file: \"%s\"\n",certFilename);
-        BIO_free(bioFP);
-        return -2;
-    }
-
-    myCert = PEM_read_bio_X509(bioFP, NULL, 0, NULL);
+  if (BIO_read_filename(bioFP, certFilename) <= 0) {
+    // file not found, or not accessible due to permissions
+    Error("Can't open server certificate file: \"%s\"\n", certFilename);
     BIO_free(bioFP);
-    if (! myCert) {
-        // a truncated certificate would fall into here 
-        Error("Error during server certificate PEM read. Is this a PEM format certificate?: \"%s\"\n",certFilename);
-        return -3;
-    }
+    return -2;
+  }
 
-    time(&currentTime);
-    if (!(timeCmpValue = X509_cmp_time(X509_get_notBefore(myCert), &currentTime))) {
-        // an error occured parsing the time, which we'll call a bogosity 
-        Error("Error occured while parsing server certificate notBefore time.");
-        return -3;
-    } else if ( 0 < timeCmpValue) {
-        // cert contains a date before the notBefore
-        Error("Server certificate notBefore date is in the future - INVALID CERTIFICATE: %s",certFilename);
-        return -4;
-    }
+  myCert = PEM_read_bio_X509(bioFP, NULL, 0, NULL);
+  BIO_free(bioFP);
+  if (!myCert) {
+    // a truncated certificate would fall into here
+    Error("Error during server certificate PEM read. Is this a PEM format certificate?: \"%s\"\n", certFilename);
+    return -3;
+  }
 
-    if (!(timeCmpValue = X509_cmp_time(X509_get_notAfter(myCert), &currentTime))) {
-        // an error occured parsing the time, which we'll call a bogosity 
-        Error("Error occured while parsing server certificate notAfter time.");
-        return -3;
-    } else if ( 0 > timeCmpValue) {
-        // cert is expired
-        Error("Server certificate EXPIRED - INVALID CERTIFICATE: %s",certFilename);
-        return -5;
-    }
+  time(&currentTime);
+  if (!(timeCmpValue = X509_cmp_time(X509_get_notBefore(myCert), &currentTime))) {
+    // an error occured parsing the time, which we'll call a bogosity
+    Error("Error occured while parsing server certificate notBefore time.");
+    return -3;
+  } else if (0 < timeCmpValue) {
+    // cert contains a date before the notBefore
+    Error("Server certificate notBefore date is in the future - INVALID CERTIFICATE: %s", certFilename);
+    return -4;
+  }
 
-    Debug("ssl","Server certificate passed accessibility and date checks: \"%s\"",certFilename);
-    return 0; // all good 
+  if (!(timeCmpValue = X509_cmp_time(X509_get_notAfter(myCert), &currentTime))) {
+    // an error occured parsing the time, which we'll call a bogosity
+    Error("Error occured while parsing server certificate notAfter time.");
+    return -3;
+  } else if (0 > timeCmpValue) {
+    // cert is expired
+    Error("Server certificate EXPIRED - INVALID CERTIFICATE: %s", certFilename);
+    return -5;
+  }
+
+  Debug("ssl", "Server certificate passed accessibility and date checks: \"%s\"", certFilename);
+  return 0; // all good
 
 } /* CheckServerCertNow() */
-
 
 
 SSL_CTX *
@@ -1709,12 +1708,11 @@ ssl_store_ssl_context(const SSLConfigParams *params, SSLCertLookup *lookup, cons
     certpath = NULL;
   }
 
-  if (0 > SSLCheckServerCertNow((const char *) certpath)) {
-    /* At this point, we know cert is bad, and we've already printed a 
+  if (0 > SSLCheckServerCertNow((const char *)certpath)) {
+    /* At this point, we know cert is bad, and we've already printed a
        descriptive reason as to why cert is bad to the log file */
-    Debug("ssl", "Marking certificate as NOT VALID: %s", 
-		(certpath) ? (const char *)certpath : "(null)" );
-    lookup->is_valid = false; 
+    Debug("ssl", "Marking certificate as NOT VALID: %s", (certpath) ? (const char *)certpath : "(null)");
+    lookup->is_valid = false;
   }
 
   // Load the session ticket key if session tickets are not disabled and we have key name.

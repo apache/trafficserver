@@ -305,7 +305,8 @@ Transaction::setTimeout(Transaction::TimeoutType type, int time_ms)
 
 
 Transaction::CacheStatus
-Transaction::getCacheStatus() {
+Transaction::getCacheStatus()
+{
   int obj_status = TS_ERROR;
 
   if (TSHttpTxnCacheLookupStatusGet(state_->txn_, &obj_status) == TS_ERROR) {
