@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-3484] Make inactivity_cop frequency (schedule) configurable,
+   proxy.config.net.inactivity_check_frequency.
+
   *) [TS-3392] Fix static initialization order, for OSX.
    Author: Bin Zeng <bzeng@linkedin.com>
 
