@@ -263,6 +263,32 @@ cache_stats_bytes_used_cb(const char *name, RecDataT data_type, RecData *data, R
   return 1;
 }
 
+#ifdef CLUSTER_CACHE
+static Action *
+open_read_internal(int opcode, Continuation *cont, MIOBuffer *buf, CacheURL *url, CacheHTTPHdr *request,
+                   CacheLookupHttpConfig *params, CacheKey *key, time_t pin_in_cache, CacheFragType frag_type, char *hostname,
+                   int host_len)
+{
+  INK_MD5 url_md5;
+  if ((opcode == CACHE_OPEN_READ_LONG) || (opcode == CACHE_OPEN_READ_BUFFER_LONG)) {
+    Cache::generate_key(&url_md5, url);
+  } else {
+    url_md5 = *key;
+  }
+  ClusterMachine *m = cluster_machine_at_depth(cache_hash(url_md5));
+
+  if (m) {
+    return Cluster_read(m, opcode, cont, buf, url, request, params, key, pin_in_cache, frag_type, hostname, host_len);
+  } else {
+    if ((opcode == CACHE_OPEN_READ_LONG) || (opcode == CACHE_OPEN_READ_BUFFER_LONG)) {
+      return caches[frag_type]->open_read(cont, &url_md5, request, params, frag_type, hostname, host_len);
+    } else {
+      return caches[frag_type]->open_read(cont, key, frag_type, hostname, host_len);
+    }
+  }
+}
+#endif
+
 static int
 validate_rww(int new_value)
 {
@@ -1257,33 +1283,6 @@ CacheProcessor::lookup(Continuation *cont, CacheURL *url, bool cluster_cache_loc
   return lookup(cont, &md5, cluster_cache_local, local_only, frag_type, (char *)hostname, host_len);
 }
 
-#endif
-
-
-#ifdef CLUSTER_CACHE
-Action *
-CacheProcessor::open_read_internal(int opcode, Continuation *cont, MIOBuffer *buf, CacheURL *url, CacheHTTPHdr *request,
-                                   CacheLookupHttpConfig *params, CacheKey *key, time_t pin_in_cache, CacheFragType frag_type,
-                                   char *hostname, int host_len)
-{
-  INK_MD5 url_md5;
-  if ((opcode == CACHE_OPEN_READ_LONG) || (opcode == CACHE_OPEN_READ_BUFFER_LONG)) {
-    Cache::generate_key(&url_md5, url);
-  } else {
-    url_md5 = *key;
-  }
-  ClusterMachine *m = cluster_machine_at_depth(cache_hash(url_md5));
-
-  if (m) {
-    return Cluster_read(m, opcode, cont, buf, url, request, params, key, pin_in_cache, frag_type, hostname, host_len);
-  } else {
-    if ((opcode == CACHE_OPEN_READ_LONG) || (opcode == CACHE_OPEN_READ_BUFFER_LONG)) {
-      return caches[frag_type]->open_read(cont, &url_md5, request, params, frag_type, hostname, host_len);
-    } else {
-      return caches[frag_type]->open_read(cont, key, frag_type, hostname, host_len);
-    }
-  }
-}
 #endif
 
 #ifdef CLUSTER_CACHE

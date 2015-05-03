@@ -96,9 +96,6 @@ struct CacheProcessor : public Processor {
   Action *open_write(Continuation *cont, int expected_size, CacheURL *url, bool cluster_cache_local, CacheHTTPHdr *request,
                      CacheHTTPInfo *old_info, time_t pin_in_cache = (time_t)0, CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP);
   Action *remove(Continuation *cont, CacheURL *url, bool cluster_cache_local, CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP);
-
-  Action *open_read_internal(int, Continuation *, MIOBuffer *, CacheURL *, CacheHTTPHdr *, CacheLookupHttpConfig *, CacheKey *,
-                             time_t, CacheFragType type, char *hostname, int host_len);
 #endif
   Action *link(Continuation *cont, CacheKey *from, CacheKey *to, bool cluster_cache_local,
                CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP, char *hostname = 0, int host_len = 0);
