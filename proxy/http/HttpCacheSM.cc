@@ -145,7 +145,7 @@ HttpCacheSM::state_cache_open_read(int event, void *data)
                         "retrying cache open read...",
           master_sm->sm_id, open_read_tries);
 
-    do_cache_open_read();
+    do_cache_open_read(cache_key);
     break;
 
   default:
@@ -200,7 +200,7 @@ HttpCacheSM::do_schedule_in()
 }
 
 Action *
-HttpCacheSM::do_cache_open_read()
+HttpCacheSM::do_cache_open_read(const HttpCacheKey &key)
 {
   open_read_tries++;
   ink_assert(pending_action == NULL);
@@ -211,7 +211,7 @@ HttpCacheSM::do_cache_open_read()
   }
   // Initialising read-while-write-inprogress flag
   this->readwhilewrite_inprogress = false;
-  Action *action_handle = cacheProcessor.open_read(this, this->lookup_url, master_sm->t_state.cache_control.cluster_cache_local,
+  Action *action_handle = cacheProcessor.open_read(this, &key, master_sm->t_state.cache_control.cluster_cache_local,
                                                    this->read_request_hdr, this->read_config, this->read_pin_in_cache);
 
   if (action_handle != ACTION_RESULT_DONE) {
@@ -230,10 +230,11 @@ HttpCacheSM::do_cache_open_read()
 }
 
 Action *
-HttpCacheSM::open_read(URL *url, HTTPHdr *hdr, CacheLookupHttpConfig *params, time_t pin_in_cache)
+HttpCacheSM::open_read(const HttpCacheKey *key, URL *url, HTTPHdr *hdr, CacheLookupHttpConfig *params, time_t pin_in_cache)
 {
   Action *act_return;
 
+  cache_key = *key;
   lookup_url = url;
   read_request_hdr = hdr;
   read_config = params;
@@ -244,7 +245,7 @@ HttpCacheSM::open_read(URL *url, HTTPHdr *hdr, CacheLookupHttpConfig *params, ti
   lookup_max_recursive++;
   current_lookup_level++;
   open_read_cb = false;
-  act_return = do_cache_open_read();
+  act_return = do_cache_open_read(cache_key);
   // the following logic is based on the assumption that the secnod
   // lookup won't happen if the HttpSM hasn't been called back for the
   // first lookup
@@ -267,7 +268,8 @@ HttpCacheSM::open_read(URL *url, HTTPHdr *hdr, CacheLookupHttpConfig *params, ti
 }
 
 Action *
-HttpCacheSM::open_write(URL *url, HTTPHdr *request, CacheHTTPInfo *old_info, time_t pin_in_cache, bool retry, bool allow_multiple)
+HttpCacheSM::open_write(const HttpCacheKey *key, URL *url, HTTPHdr *request, CacheHTTPInfo *old_info, time_t pin_in_cache,
+                        bool retry, bool allow_multiple)
 {
   SET_HANDLER(&HttpCacheSM::state_cache_open_write);
   ink_assert(pending_action == NULL);
@@ -297,7 +299,7 @@ HttpCacheSM::open_write(URL *url, HTTPHdr *request, CacheHTTPInfo *old_info, tim
   }
 
   Action *action_handle =
-    cacheProcessor.open_write(this, 0, url, master_sm->t_state.cache_control.cluster_cache_local, request,
+    cacheProcessor.open_write(this, 0, key, master_sm->t_state.cache_control.cluster_cache_local, request,
                               // INKqa11166
                               allow_multiple ? (CacheHTTPInfo *)CACHE_ALLOW_MULTIPLE_WRITES : old_info, pin_in_cache);
 

@@ -177,7 +177,7 @@ getCacheControl(CacheControlResult *result, HttpRequestData *rdata, OverridableH
 }
 
 bool
-getClusterCacheLocal(URL *url, char * /* hostname ATS_UNUSED */)
+getClusterCacheLocal(URL *url)
 {
   HttpRequestData rdata;
   CacheControlResult result;

@@ -1033,16 +1033,13 @@ struct Cache {
   Action *scan(Continuation *cont, const char *hostname = 0, int host_len = 0, int KB_per_second = 2500);
 
 #ifdef HTTP_CACHE
-  Action *lookup(Continuation *cont, CacheURL *url, CacheFragType type);
-  inkcoreapi Action *open_read(Continuation *cont, const CacheKey *key, CacheHTTPHdr *request, CacheLookupHttpConfig *params,
-                               CacheFragType type, const char *hostname, int host_len);
-  Action *open_read(Continuation *cont, CacheURL *url, CacheHTTPHdr *request, CacheLookupHttpConfig *params, CacheFragType type);
+  Action *open_read(Continuation *cont, const CacheKey *key, CacheHTTPHdr *request, CacheLookupHttpConfig *params,
+                    CacheFragType type, const char *hostname, int host_len);
   Action *open_write(Continuation *cont, const CacheKey *key, CacheHTTPInfo *old_info, time_t pin_in_cache = (time_t)0,
                      const CacheKey *key1 = NULL, CacheFragType type = CACHE_FRAG_TYPE_HTTP, const char *hostname = 0,
                      int host_len = 0);
-  Action *open_write(Continuation *cont, CacheURL *url, CacheHTTPHdr *request, CacheHTTPInfo *old_info,
-                     time_t pin_in_cache = (time_t)0, CacheFragType type = CACHE_FRAG_TYPE_HTTP);
   static void generate_key(INK_MD5 *md5, CacheURL *url);
+  static void generate_key(HttpCacheKey *md5, CacheURL *url, cache_generation_t generation = -1);
 #endif
 
   Action *link(Continuation *cont, const CacheKey *from, const CacheKey *to, CacheFragType type, const char *hostname,
@@ -1067,15 +1064,6 @@ extern Cache *theStreamCache;
 inkcoreapi extern Cache *caches[NUM_CACHE_FRAG_TYPES];
 
 #ifdef HTTP_CACHE
-TS_INLINE Action *
-Cache::open_read(Continuation *cont, CacheURL *url, CacheHTTPHdr *request, CacheLookupHttpConfig *params, CacheFragType type)
-{
-  INK_MD5 md5;
-  int len;
-  url->hash_get(&md5);
-  const char *hostname = url->host_get(&len);
-  return open_read(cont, &md5, request, params, type, hostname, len);
-}
 
 TS_INLINE void
 Cache::generate_key(INK_MD5 *md5, CacheURL *url)
@@ -1083,22 +1071,17 @@ Cache::generate_key(INK_MD5 *md5, CacheURL *url)
   url->hash_get(md5);
 }
 
-TS_INLINE Action *
-Cache::open_write(Continuation *cont, CacheURL *url, CacheHTTPHdr *request, CacheHTTPInfo *old_info, time_t pin_in_cache,
-                  CacheFragType type)
+TS_INLINE void
+Cache::generate_key(HttpCacheKey *key, CacheURL *url, cache_generation_t generation)
 {
-  (void)request;
-  INK_MD5 url_md5;
-  url->hash_get(&url_md5);
-  int len;
-  const char *hostname = url->host_get(&len);
-
-  return open_write(cont, &url_md5, old_info, pin_in_cache, NULL, type, hostname, len);
+  key->hostname = url->host_get(&key->hostlen);
+  url->hash_get(&key->hash, generation);
 }
+
 #endif
 
 TS_INLINE unsigned int
-cache_hash(INK_MD5 &md5)
+cache_hash(const INK_MD5 &md5)
 {
   uint64_t f = md5.fold();
   unsigned int mhash = (unsigned int)(f >> 32);

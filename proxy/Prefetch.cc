@@ -1446,12 +1446,16 @@ PrefetchBlaster::handleEvent(int event, void *data)
 
   switch (event) {
   case EVENT_IMMEDIATE: {
+    HttpCacheKey key;
+
     // Here, we need to decide if we need to prefetch based on whether it
     // is in the cache or not.
 
     // if (cache_lookup_necessary) do:
     initCacheLookupConfig();
-    cacheProcessor.open_read(this, request->url_get(), false, request, &cache_lookup_config, 0);
+
+    Cache::generate_key(&key, request->url_get()); // XXX choose a cache generation number ...
+    cacheProcessor.open_read(this, &key, false, request, &cache_lookup_config, 0);
 
     break;
   }

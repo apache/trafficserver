@@ -117,6 +117,24 @@ enum CacheFragType {
 };
 
 typedef CryptoHash CacheKey;
+
+struct HttpCacheKey {
+  uint64_t
+  slice64(int i) const
+  {
+    return hash.slice64(i);
+  }
+  uint32_t
+  slice32(int i) const
+  {
+    return hash.slice32(i);
+  }
+
+  int hostlen;
+  const char *hostname;
+  CacheKey hash;
+};
+
 #define CACHE_ALLOW_MULTIPLE_WRITES 1
 #define CACHE_EXPECTED_SIZE 32768
 
