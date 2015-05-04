@@ -285,7 +285,7 @@ struct OpenDir : public Continuation {
 
   int open_write(CacheVC *c, int allow_if_writers, int max_writers);
   int close_write(CacheVC *c);
-  OpenDirEntry *open_read(CryptoHash *key);
+  OpenDirEntry *open_read(const CryptoHash *key);
   int signal_readers(int event, Event *e);
 
   OpenDir();
@@ -311,16 +311,16 @@ struct CacheSync : public Continuation {
 // Global Functions
 
 void vol_init_dir(Vol *d);
-int dir_token_probe(CacheKey *, Vol *, Dir *);
-int dir_probe(CacheKey *, Vol *, Dir *, Dir **);
-int dir_insert(CacheKey *key, Vol *d, Dir *to_part);
-int dir_overwrite(CacheKey *key, Vol *d, Dir *to_part, Dir *overwrite, bool must_overwrite = true);
-int dir_delete(CacheKey *key, Vol *d, Dir *del);
-int dir_lookaside_probe(CacheKey *key, Vol *d, Dir *result, EvacuationBlock **eblock);
+int dir_token_probe(const CacheKey *, Vol *, Dir *);
+int dir_probe(const CacheKey *, Vol *, Dir *, Dir **);
+int dir_insert(const CacheKey *key, Vol *d, Dir *to_part);
+int dir_overwrite(const CacheKey *key, Vol *d, Dir *to_part, Dir *overwrite, bool must_overwrite = true);
+int dir_delete(const CacheKey *key, Vol *d, Dir *del);
+int dir_lookaside_probe(const CacheKey *key, Vol *d, Dir *result, EvacuationBlock **eblock);
 int dir_lookaside_insert(EvacuationBlock *b, Vol *d, Dir *to);
-int dir_lookaside_fixup(CacheKey *key, Vol *d);
+int dir_lookaside_fixup(const CacheKey *key, Vol *d);
 void dir_lookaside_cleanup(Vol *d);
-void dir_lookaside_remove(CacheKey *key, Vol *d);
+void dir_lookaside_remove(const CacheKey *key, Vol *d);
 void dir_free_entry(Dir *e, int s, Vol *d);
 void dir_sync_init();
 int check_dir(Vol *d);
@@ -340,7 +340,7 @@ extern Dir empty_dir;
 #define dir_in_seg(_s, _i) ((Dir *)(((char *)(_s)) + (SIZEOF_DIR * (_i))))
 
 TS_INLINE bool
-dir_compare_tag(Dir *e, CacheKey *key)
+dir_compare_tag(const Dir *e, const CacheKey *key)
 {
   return (dir_tag(e) == DIR_MASK_TAG(key->slice32(2)));
 }
@@ -364,7 +364,7 @@ next_dir(Dir *d, Dir *seg)
   return dir_from_offset(i, seg);
 }
 TS_INLINE int64_t
-dir_to_offset(Dir *d, Dir *seg)
+dir_to_offset(const Dir *d, const Dir *seg)
 {
 #if DIR_DEPTH < 5
   return (((char *)d) - ((char *)seg)) / SIZEOF_DIR;

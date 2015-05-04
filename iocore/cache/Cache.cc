@@ -2982,7 +2982,7 @@ LmemHit:
 }
 
 Action *
-Cache::lookup(Continuation *cont, CacheKey *key, CacheFragType type, char const *hostname, int host_len)
+Cache::lookup(Continuation *cont, const CacheKey *key, CacheFragType type, char const *hostname, int host_len)
 {
   if (!CacheProcessor::IsCacheReady(type)) {
     cont->handleEvent(CACHE_EVENT_LOOKUP_FAILED, 0);
@@ -3102,8 +3102,8 @@ Lfree:
 }
 
 Action *
-Cache::remove(Continuation *cont, CacheKey *key, CacheFragType type, bool /* user_agents ATS_UNUSED */, bool /* link ATS_UNUSED */,
-              char *hostname, int host_len)
+Cache::remove(Continuation *cont, const CacheKey *key, CacheFragType type, bool /* user_agents ATS_UNUSED */, bool /* link ATS_UNUSED */,
+              const char *hostname, int host_len)
 {
   if (!CacheProcessor::IsCacheReady(type)) {
     if (cont)
@@ -3580,7 +3580,7 @@ rebuild_host_table(Cache *cache)
 
 // if generic_host_rec.vols == NULL, what do we do???
 Vol *
-Cache::key_to_vol(CacheKey *key, char const *hostname, int host_len)
+Cache::key_to_vol(const CacheKey *key, char const *hostname, int host_len)
 {
   uint32_t h = (key->slice32(2) >> DIR_TAG_WIDTH) % VOL_HASH_TABLE_SIZE;
   unsigned short *hash_table = hosttable->gen_host_rec.vol_hash_table;
