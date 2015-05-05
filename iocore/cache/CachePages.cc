@@ -431,6 +431,8 @@ int
 ShowCache::lookup_url(int event, Event *e)
 {
   char header_str[300];
+  HttpCacheKey key;
+  cache_generation_t generation = -1;
 
   snprintf(header_str, sizeof(header_str), "<font color=red>%s</font>", show_cache_urlstrs[0]);
   CHECK_SHOW(begin(header_str));
@@ -439,8 +441,8 @@ ShowCache::lookup_url(int event, Event *e)
   s = show_cache_urlstrs[0];
   url.parse(&s, s + strlen(s));
 
-  HttpCacheKey key;
-  Cache::generate_key(&key, &url); // XXX choose a cache generation number ...
+  RecGetRecordInt("proxy.config.http.cache.generation", &generation);
+  Cache::generate_key(&key, &url, generation);
 
   SET_HANDLER(&ShowCache::handleCacheEvent);
   Action *lookup_result =
