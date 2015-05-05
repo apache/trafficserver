@@ -631,7 +631,6 @@ HttpSM::add_cache_sm()
   if (second_cache_sm == NULL) {
     second_cache_sm = new HttpCacheSM;
     second_cache_sm->init(this, mutex);
-    second_cache_sm->set_lookup_url(cache_sm.get_lookup_url());
     if (t_state.cache_info.object_read != NULL) {
       second_cache_sm->cache_read_vc = cache_sm.cache_read_vc;
       cache_sm.cache_read_vc = NULL;
