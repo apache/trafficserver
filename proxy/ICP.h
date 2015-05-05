@@ -288,6 +288,11 @@ public:
   {
     return _default_reply_port;
   }
+  inline cache_generation_t
+  ICPCacheGeneration() const
+  {
+    return _cache_generation;
+  }
 
 private:
   //---------------------------------------------------------
@@ -302,6 +307,7 @@ private:
   int _stale_lookup;
   int _reply_to_unknown_peer;
   int _default_reply_port;
+  int64_t _cache_generation;
 };
 
 //----------------------------------------------------------------

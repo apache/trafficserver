@@ -454,12 +454,13 @@ ICPPeerReadCont::ICPPeerQueryCont(int /* event ATS_UNUSED */, Event * /* e ATS_U
   SET_HANDLER((ICPPeerReadContHandler)&ICPPeerReadCont::ICPPeerQueryEvent);
   if (_state->_rICPmsg->un.query.URL && *_state->_rICPmsg->un.query.URL) {
     HttpCacheKey key;
+    ICPConfigData *cfg = _ICPpr->GetConfig()->globalConfig();
 
-    Cache::generate_key(&key, &_state->_cachelookupURL); // XXX choose a cache generation number ...
+    Cache::generate_key(&key, &_state->_cachelookupURL, cfg->ICPCacheGeneration());
     _state->_queryResult = ~CACHE_EVENT_LOOKUP_FAILED;
     _start_time = ink_get_hrtime();
 
-    if (pluginFreshnessCalcFunc && _ICPpr->GetConfig()->globalConfig()->ICPStaleLookup()) {
+    if (pluginFreshnessCalcFunc && cfg->ICPStaleLookup()) {
       //////////////////////////////////////////////////////////////
       // Note: _cache_lookup_local is ignored in this case, since
       //       cache clustering is not used with stale lookup.

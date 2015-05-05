@@ -392,6 +392,8 @@ ICPConfiguration::ICPConfiguration() : _icp_config_callouts(0)
   ICP_EstablishStaticConfigInteger(_icp_cdata_current->_stale_lookup, "proxy.config.icp.stale_icp_enabled");
   ICP_EstablishStaticConfigInteger(_icp_cdata_current->_reply_to_unknown_peer, "proxy.config.icp.reply_to_unknown_peer");
   ICP_EstablishStaticConfigInteger(_icp_cdata_current->_default_reply_port, "proxy.config.icp.default_reply_port");
+  REC_EstablishStaticConfigInteger(_icp_cdata_current->_cache_generation, "proxy.config.http.cache.generation");
+
   UpdateGlobalConfig(); // sync working copy with current
 
   //**********************************************************
