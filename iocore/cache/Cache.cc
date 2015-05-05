@@ -3102,8 +3102,8 @@ Lfree:
 }
 
 Action *
-Cache::remove(Continuation *cont, const CacheKey *key, CacheFragType type, bool /* user_agents ATS_UNUSED */, bool /* link ATS_UNUSED */,
-              const char *hostname, int host_len)
+Cache::remove(Continuation *cont, const CacheKey *key, CacheFragType type, bool /* user_agents ATS_UNUSED */,
+              bool /* link ATS_UNUSED */, const char *hostname, int host_len)
 {
   if (!CacheProcessor::IsCacheReady(type)) {
     if (cont)

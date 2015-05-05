@@ -1027,8 +1027,8 @@ struct Cache {
   inkcoreapi Action *open_read(Continuation *cont, const CacheKey *key, CacheFragType type, const char *hostname, int len);
   inkcoreapi Action *open_write(Continuation *cont, const CacheKey *key, CacheFragType frag_type, int options = 0,
                                 time_t pin_in_cache = (time_t)0, const char *hostname = 0, int host_len = 0);
-  inkcoreapi Action *remove(Continuation *cont, const CacheKey *key, CacheFragType type = CACHE_FRAG_TYPE_HTTP, bool user_agents = true,
-                            bool link = false, const char *hostname = 0, int host_len = 0);
+  inkcoreapi Action *remove(Continuation *cont, const CacheKey *key, CacheFragType type = CACHE_FRAG_TYPE_HTTP,
+                            bool user_agents = true, bool link = false, const char *hostname = 0, int host_len = 0);
   Action *scan(Continuation *cont, const char *hostname = 0, int host_len = 0, int KB_per_second = 2500);
 
 #ifdef HTTP_CACHE
@@ -1037,13 +1037,15 @@ struct Cache {
                                CacheFragType type, const char *hostname, int host_len);
   Action *open_read(Continuation *cont, CacheURL *url, CacheHTTPHdr *request, CacheLookupHttpConfig *params, CacheFragType type);
   Action *open_write(Continuation *cont, const CacheKey *key, CacheHTTPInfo *old_info, time_t pin_in_cache = (time_t)0,
-                     const CacheKey *key1 = NULL, CacheFragType type = CACHE_FRAG_TYPE_HTTP, const char *hostname = 0, int host_len = 0);
-  Action *open_write(Continuation *cont, CacheURL *url, CacheHTTPHdr *request, CacheHTTPInfo *old_info, time_t pin_in_cache = (time_t)0,
-                     CacheFragType type = CACHE_FRAG_TYPE_HTTP);
+                     const CacheKey *key1 = NULL, CacheFragType type = CACHE_FRAG_TYPE_HTTP, const char *hostname = 0,
+                     int host_len = 0);
+  Action *open_write(Continuation *cont, CacheURL *url, CacheHTTPHdr *request, CacheHTTPInfo *old_info,
+                     time_t pin_in_cache = (time_t)0, CacheFragType type = CACHE_FRAG_TYPE_HTTP);
   static void generate_key(INK_MD5 *md5, CacheURL *url);
 #endif
 
-  Action *link(Continuation *cont, const CacheKey *from, const CacheKey *to, CacheFragType type, const char *hostname, int host_len);
+  Action *link(Continuation *cont, const CacheKey *from, const CacheKey *to, CacheFragType type, const char *hostname,
+               int host_len);
   Action *deref(Continuation *cont, const CacheKey *key, CacheFragType type, const char *hostname, int host_len);
 
   void vol_initialized(bool result);

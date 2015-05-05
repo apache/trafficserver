@@ -1605,8 +1605,8 @@ CacheVC::openWriteStartBegin(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED
 
 // main entry point for writing of of non-http documents
 Action *
-Cache::open_write(Continuation *cont, const CacheKey *key, CacheFragType frag_type, int options, time_t apin_in_cache, const char *hostname,
-                  int host_len)
+Cache::open_write(Continuation *cont, const CacheKey *key, CacheFragType frag_type, int options, time_t apin_in_cache,
+                  const char *hostname, int host_len)
 {
   if (!CacheProcessor::IsCacheReady(frag_type)) {
     cont->handleEvent(CACHE_EVENT_OPEN_WRITE_FAILED, (void *)-ECACHE_NOT_READY);
@@ -1673,8 +1673,8 @@ Cache::open_write(Continuation *cont, const CacheKey *key, CacheFragType frag_ty
 #ifdef HTTP_CACHE
 // main entry point for writing of http documents
 Action *
-Cache::open_write(Continuation *cont, const CacheKey *key, CacheHTTPInfo *info, time_t apin_in_cache, const CacheKey * /* key1 ATS_UNUSED */,
-                  CacheFragType type, const char *hostname, int host_len)
+Cache::open_write(Continuation *cont, const CacheKey *key, CacheHTTPInfo *info, time_t apin_in_cache,
+                  const CacheKey * /* key1 ATS_UNUSED */, CacheFragType type, const char *hostname, int host_len)
 {
   if (!CacheProcessor::IsCacheReady(type)) {
     cont->handleEvent(CACHE_EVENT_OPEN_WRITE_FAILED, (void *)-ECACHE_NOT_READY);
