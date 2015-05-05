@@ -452,6 +452,26 @@ UrlRewrite::PerformACLFiltering(HttpTransact::State *s, url_mapping *map)
         }
       }
 
+      if (match && rp->dst_ip_valid) {
+        Debug("url_rewrite", "match was true and we have specified a dst_ip field");
+        match = false;
+        for (int j = 0; j < rp->dst_ip_cnt && !match; j++) {
+          IpEndpoint incoming_addr;
+          incoming_addr.assign(s->state_machine->ua_session->get_netvc()->get_local_addr());
+
+          bool in_range = rp->dst_ip_array[j].contains(incoming_addr);
+          if (rp->dst_ip_array[j].invert) {
+            if (!in_range) {
+              match = true;
+            }
+          } else {
+            if (in_range) {
+              match = true;
+            }
+          }
+        }
+      }
+
       if (rp->internal) {
         match = s->state_machine->ua_session->get_netvc()->get_is_internal_request();
         Debug("url_rewrite", "%s an internal request", match ? "matched" : "didn't match");
