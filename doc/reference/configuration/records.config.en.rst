@@ -2639,6 +2639,74 @@ Plug-in Configuration
    on a dedicated thread pool, freeing the network threads to service
    additional requests.
 
+SOCKS Processor
+===============
+
+.. ts:cv::  CONFIG proxy.config.socks.socks_needed INT 0
+
+   Enables (``1``) or disables (``0``) the SOCKS processor
+
+.. ts:cv::  CONFIG proxy.config.socks.socks_version INT 4
+
+   Specifies the SOCKS version (``4``) or (``5``)
+
+.. ts:cv::  CONFIG proxy.config.socks.socks_config_file STRING socks.config
+
+   The socks_onfig file allows you to specify ranges of IP addresses
+   that will not be relayed to the SOCKS server. It can also be used
+   to configure AUTH information for SOCKSv5 servers.
+
+.. ts:cv::  CONFIG proxy.config.socks.socks_timeout INT 100
+
+   The activity timeout value (in seconds) for SOCKS server connections.
+
+.. ts:cv::  CONFIG proxy.config.socks.server_connect_timeout INT 10
+
+   The timeout value (in seconds) for SOCKS server connection attempts.
+
+.. ts:cv::  CONFIG proxy.config.socks.per_server_connection_attempts INT 1
+
+    The total number of connection attempts allowed per SOCKS server,
+    if multiple servers are used.
+
+.. ts:cv::  CONFIG proxy.config.socks.connection_attempts INT 4
+
+   The total number of connection attempts allowed to a SOCKS server
+   Traffic Server bypasses the server or fails the request
+
+.. ts:cv::  CONFIG proxy.config.socks.server_retry_timeout INT 300
+
+   The timeout value (in seconds) for SOCKS server connection retry attempts.
+
+.. ts:cv::  CONFIG proxy.config.socks.default_servers STRING
+
+   Default list of SOCKS servers and their ports.
+
+.. ts:cv::  CONFIG proxy.config.socks.server_retry_time INT 300
+
+   The amount of time allowed between connection retries to a SOCKS
+   server that is unavailable.
+
+.. ts:cv::  CONFIG proxy.config.socks.server_fail_threshold INT 2
+
+   The number of times the connection to the SOCKS server can fail
+   before Traffic Server considers the server unavailable.
+
+.. ts:cv::  CONFIG proxy.config.socks.accept_enabled INT 0
+
+   Enables (1) or disables (0) the SOCKS proxy option. As a SOCKS
+   proxy, Traffic Server receives SOCKS traffic (usually on port
+   1080) and forwards all requests directly to the SOCKS server.
+
+.. ts:cv::  CONFIG proxy.config.socks.accept_port INT 1080
+
+   Specifies the port on which Traffic Server accepts SOCKS traffic.
+
+.. ts:cv::  CONFIG proxy.config.socks.http_port INT 80
+
+   Specifies the port on which Traffic Server accepts HTTP proxy requests
+   over SOCKS connections..
+
 Sockets
 =======
 
