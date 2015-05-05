@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-3029]: Fix spdy related seg fault in production, due to resetting
+                req->fetch_sm to null
+
   *) [TS-2513] Missing SOCKS documentation
 
   *) [TS-3582] Add @dst_ip to remap filters
