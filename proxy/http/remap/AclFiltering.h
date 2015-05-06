@@ -35,7 +35,7 @@
 // ACL like filtering defs (per one remap rule)
 
 static int const ACL_FILTER_MAX_SRC_IP = 128;
-static int const ACL_FILTER_MAX_DST_IP = 8;
+static int const ACL_FILTER_MAX_IN_IP = 8;
 static int const ACL_FILTER_MAX_ARGV = 512;
 
 struct src_ip_info_t {
@@ -72,7 +72,7 @@ public:
   char *filter_name;           // optional filter name
   unsigned int allow_flag : 1, // action allow deny
     src_ip_valid : 1,          // src_ip range valid
-    dst_ip_valid : 1,
+    in_ip_valid : 1,
     active_queue_flag : 1,     // filter is in active state (used by .useflt directive)
     internal : 1;              // filter internal HTTP requests
 
@@ -91,9 +91,9 @@ public:
   int src_ip_cnt; // how many valid src_ip rules we have
   src_ip_info_t src_ip_array[ACL_FILTER_MAX_SRC_IP];
 
-  // dst_ip
-  int dst_ip_cnt; // how many valid dst_ip rules we have
-  src_ip_info_t dst_ip_array[ACL_FILTER_MAX_DST_IP];
+  // in_ip
+  int in_ip_cnt; // how many valid dst_ip rules we have
+  src_ip_info_t in_ip_array[ACL_FILTER_MAX_IN_IP];
 
   acl_filter_rule();
   ~acl_filter_rule();

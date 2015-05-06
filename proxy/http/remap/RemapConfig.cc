@@ -470,10 +470,10 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int arg
       }
     }
 
-    if (ul & REMAP_OPTFLG_DST_IP) { /* "dst_ip=" option */
-      if (rule->dst_ip_cnt >= ACL_FILTER_MAX_DST_IP) {
-        Debug("url_rewrite", "[validate_filter_args] Too many \"dst_ip=\" filters");
-        snprintf(errStrBuf, errStrBufSize, "Defined more than %d \"dst_ip=\" filters!", ACL_FILTER_MAX_DST_IP);
+    if (ul & REMAP_OPTFLG_IN_IP) { /* "dst_ip=" option */
+      if (rule->in_ip_cnt >= ACL_FILTER_MAX_IN_IP) {
+        Debug("url_rewrite", "[validate_filter_args] Too many \"in_ip=\" filters");
+        snprintf(errStrBuf, errStrBufSize, "Defined more than %d \"in_ip=\" filters!", ACL_FILTER_MAX_IN_IP);
         errStrBuf[errStrBufSize - 1] = 0;
         if (new_rule_flg) {
           delete rule;
@@ -481,7 +481,7 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int arg
         }
         return (const char *)errStrBuf;
       }
-      ipi = &rule->dst_ip_array[rule->dst_ip_cnt];
+      ipi = &rule->in_ip_array[rule->in_ip_cnt];
       if (ul & REMAP_OPTFLG_INVERT)
         ipi->invert = true;
       ink_strlcpy(tmpbuf, argptr, sizeof(tmpbuf));
@@ -496,16 +496,16 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int arg
         }
         return (const char *)errStrBuf;
       }
-      for (j = 0; j < rule->dst_ip_cnt; j++) {
-        if (rule->dst_ip_array[j].start == ipi->start && rule->dst_ip_array[j].end == ipi->end) {
+      for (j = 0; j < rule->in_ip_cnt; j++) {
+        if (rule->in_ip_array[j].start == ipi->start && rule->in_ip_array[j].end == ipi->end) {
           ipi->reset();
           ipi = NULL;
           break; /* we have the same src_ip in the list */
         }
       }
       if (ipi) {
-        rule->dst_ip_cnt++;
-        rule->dst_ip_valid = 1;
+        rule->in_ip_cnt++;
+        rule->in_ip_valid = 1;
       }
     }
 
@@ -581,18 +581,18 @@ remap_check_option(const char **argv, int argc, unsigned long findmode, int *_re
         if (argptr)
           *argptr = &argv[i][7];
         ret_flags |= REMAP_OPTFLG_SRC_IP;
-      } else if (!strncasecmp(argv[i], "dst_ip=~", 8)) {
-        if ((findmode & REMAP_OPTFLG_DST_IP) != 0)
-          idx = i;
-        if (argptr)
-          *argptr = &argv[i][8];
-        ret_flags |= (REMAP_OPTFLG_DST_IP | REMAP_OPTFLG_INVERT);
-      } else if (!strncasecmp(argv[i], "dst_ip=", 7)) {
-        if ((findmode & REMAP_OPTFLG_DST_IP) != 0)
+      } else if (!strncasecmp(argv[i], "in_ip=~", 7)) {
+        if ((findmode & REMAP_OPTFLG_IN_IP) != 0)
           idx = i;
         if (argptr)
           *argptr = &argv[i][7];
-        ret_flags |= REMAP_OPTFLG_DST_IP;
+        ret_flags |= (REMAP_OPTFLG_IN_IP | REMAP_OPTFLG_INVERT);
+      } else if (!strncasecmp(argv[i], "in_ip=", 6)) {
+        if ((findmode & REMAP_OPTFLG_IN_IP) != 0)
+          idx = i;
+        if (argptr)
+          *argptr = &argv[i][6];
+        ret_flags |= REMAP_OPTFLG_IN_IP;
       } else if (!strncasecmp(argv[i], "action=", 7)) {
         if ((findmode & REMAP_OPTFLG_ACTION) != 0)
           idx = i;
