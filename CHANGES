@@ -6,7 +6,7 @@ Changes with Apache Traffic Server 6.0.0
 
   *) [TS-2513] Missing SOCKS documentation
 
-  *) [TS-3582] Add @dst_ip to remap filters
+  *) [TS-3582] Add @in_ip to remap filters
 
   *) [TS-3484] Make inactivity_cop frequency (schedule) configurable,
    proxy.config.net.inactivity_check_frequency.
