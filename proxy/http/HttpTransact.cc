@@ -1357,11 +1357,17 @@ HttpTransact::HandleRequest(State *s)
       s->parent_params->ParentTable->hostMatch) {
     s->force_dns = 1;
   }
-  // YTS Team, yamsat Plugin
-  // Doing a Cache Lookup in case of a Redirection to ensure that
-  // the newly requested object is not in the CACHE
-  if (s->txn_conf->cache_http && s->redirect_info.redirect_in_process && s->state_machine->enable_redirection) {
-    TRANSACT_RETURN(SM_ACTION_CACHE_LOOKUP, NULL);
+  /* A redirect means we need to check some things again.
+     If the cache is enabled then we need to check the new (redirected) request against the cache.
+     If not, then we need to at least do DNS again to guarantee we are using the correct IP address
+     (if the host changed). Note DNS comes after cache lookup so in both cases we do the DNS.
+  */
+  if (s->redirect_info.redirect_in_process && s->state_machine->enable_redirection) {
+    if (s->txn_conf->cache_http) {
+      TRANSACT_RETURN(SM_ACTION_CACHE_LOOKUP, NULL);
+    } else {
+      TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, OSDNSLookup); // effectively s->force_dns
+    }
   }
 
 
