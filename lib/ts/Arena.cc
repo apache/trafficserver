@@ -21,6 +21,7 @@
   limitations under the License.
  */
 
+#include "ink_mutex.h"
 #include "libts.h"
 #include <assert.h>
 #include <string.h>
@@ -29,6 +30,8 @@
 #define DEFAULT_ALLOC_SIZE 1024
 #define DEFAULT_BLOCK_SIZE (DEFAULT_ALLOC_SIZE - (sizeof(ArenaBlock) - 8))
 
+// Define the _g_mattr first to avoid static initialization order fiasco.
+x_pthread_mutexattr_t _g_mattr;
 
 static Allocator defaultSizeArenaBlock("ArenaBlock", DEFAULT_ALLOC_SIZE);
 

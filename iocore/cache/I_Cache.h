@@ -88,14 +88,14 @@ struct CacheProcessor : public Processor {
                             char *hostname = 0, int host_len = 0);
   Action *scan(Continuation *cont, char *hostname = 0, int host_len = 0, int KB_per_second = SCAN_KB_PER_SECOND);
 #ifdef HTTP_CACHE
-  Action *lookup(Continuation *cont, URL *url, bool cluster_cache_local, bool local_only = false,
+  Action *lookup(Continuation *cont, CacheURL *url, bool cluster_cache_local, bool local_only = false,
                  CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP);
-  inkcoreapi Action *open_read(Continuation *cont, URL *url, bool cluster_cache_local, CacheHTTPHdr *request,
+  inkcoreapi Action *open_read(Continuation *cont, CacheURL *url, bool cluster_cache_local, CacheHTTPHdr *request,
                                CacheLookupHttpConfig *params, time_t pin_in_cache = (time_t)0,
                                CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP);
-  Action *open_write(Continuation *cont, int expected_size, URL *url, bool cluster_cache_local, CacheHTTPHdr *request,
+  Action *open_write(Continuation *cont, int expected_size, CacheURL *url, bool cluster_cache_local, CacheHTTPHdr *request,
                      CacheHTTPInfo *old_info, time_t pin_in_cache = (time_t)0, CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP);
-  Action *remove(Continuation *cont, URL *url, bool cluster_cache_local, CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP);
+  Action *remove(Continuation *cont, CacheURL *url, bool cluster_cache_local, CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP);
 
   Action *open_read_internal(int, Continuation *, MIOBuffer *, CacheURL *, CacheHTTPHdr *, CacheLookupHttpConfig *, CacheKey *,
                              time_t, CacheFragType type, char *hostname, int host_len);

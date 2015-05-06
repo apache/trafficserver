@@ -372,7 +372,6 @@ hdrtoken_wks_to_flags(const char *wks)
 #define MIME_PRESENCE_UNUSED_5 (TOK_64_CONST(1) << 60)
 
 #define MIME_PRESENCE_XREF (TOK_64_CONST(1) << 61)
-#define MIME_PRESENCE_INT_DATA_INFO (TOK_64_CONST(1) << 62)
 
 #define MIME_PRESENCE_NONE TOK_64_CONST(0)
 #define MIME_PRESENCE_ALL ~(TOK_64_CONST(0))

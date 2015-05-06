@@ -20,7 +20,7 @@ VIRTUALENV_DIR = virtualenv
 
 # Run all tests.
 test: $(VIRTUALENV_DIR)
-	@source $(VIRTUALENV_DIR)/bin/activate && $(VIRTUALENV_DIR)/bin/nosetests -sv --logging-level=INFO
+	$(VIRTUALENV_DIR)/bin/nosetests --with-xunit -sv --logging-level=INFO
 
 # Scan and list the tests.
 list: $(VIRTUALENV_DIR)

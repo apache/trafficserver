@@ -14,12 +14,12 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import logging
 from OpenSSL import SSL
 import socket
 
 import helpers
 import tsqa.utils
+unittest = tsqa.utils.import_unittest()
 
 # some ciphers to test with
 CIPHER_MAP = {
@@ -137,18 +137,18 @@ class TestRSA(helpers.EnvironmentCase, CertSelectionMixin):
         cls.configs['ssl_multicert.config'].add_line('dest_ip=127.0.0.2 ssl_cert_name={0} ssl_ca_name={1}'.format(
             helpers.tests_file_path('rsa_keys/www.example.com.pem'),
             helpers.tests_file_path('rsa_keys/intermediate.crt'),
-            ))
+        ))
         cls.configs['ssl_multicert.config'].add_line('dest_ip=127.0.0.2 ssl_cert_name={0}'.format(
             helpers.tests_file_path('rsa_keys/www.test.com.pem'),
-            ))
+        ))
 
         cls.configs['ssl_multicert.config'].add_line('dest_ip=* ssl_cert_name={0} ssl_ca_name={1}'.format(
             helpers.tests_file_path('rsa_keys/www.example.com.pem'),
             helpers.tests_file_path('rsa_keys/intermediate.crt'),
-            ))
+        ))
         cls.configs['ssl_multicert.config'].add_line('dest_ip=* ssl_cert_name={0}'.format(
             helpers.tests_file_path('rsa_keys/www.test.com.pem'),
-            ))
+        ))
 
     def test_rsa(self):
         addr = ('127.0.0.1', self.ssl_port)
@@ -167,6 +167,7 @@ class TestRSA(helpers.EnvironmentCase, CertSelectionMixin):
     def test_intermediate_ca_ecdsa(self):
         with self.assertRaises(Exception):
             self._intermediate_ca_t('ecdsa')
+
 
 class TestECDSA(helpers.EnvironmentCase, CertSelectionMixin):
     '''
@@ -187,18 +188,18 @@ class TestECDSA(helpers.EnvironmentCase, CertSelectionMixin):
         cls.configs['ssl_multicert.config'].add_line('dest_ip=127.0.0.2 ssl_cert_name={0} ssl_ca_name={1}'.format(
             helpers.tests_file_path('ec_keys/www.example.com.pem'),
             helpers.tests_file_path('ec_keys/intermediate.crt'),
-            ))
+        ))
         cls.configs['ssl_multicert.config'].add_line('dest_ip=127.0.0.2 ssl_cert_name={0}'.format(
             helpers.tests_file_path('ec_keys/www.test.com.pem'),
-            ))
+        ))
 
         cls.configs['ssl_multicert.config'].add_line('dest_ip=* ssl_cert_name={0} ssl_ca_name={1}'.format(
             helpers.tests_file_path('ec_keys/www.example.com.pem'),
             helpers.tests_file_path('ec_keys/intermediate.crt'),
-            ))
+        ))
         cls.configs['ssl_multicert.config'].add_line('dest_ip=* ssl_cert_name={0}'.format(
             helpers.tests_file_path('ec_keys/www.test.com.pem'),
-            ))
+        ))
 
     def test_rsa(self):
         addr = ('127.0.0.1', self.ssl_port)
@@ -217,6 +218,7 @@ class TestECDSA(helpers.EnvironmentCase, CertSelectionMixin):
 
     def test_intermediate_ca_ecdsa(self):
         self._intermediate_ca_t('ecdsa')
+
 
 class TestMix(helpers.EnvironmentCase, CertSelectionMixin):
     '''
@@ -239,22 +241,22 @@ class TestMix(helpers.EnvironmentCase, CertSelectionMixin):
             helpers.tests_file_path('ec_keys/www.example.com.pem'),
             helpers.tests_file_path('rsa_keys/intermediate.crt'),
             helpers.tests_file_path('ec_keys/intermediate.crt'),
-            ))
+        ))
         cls.configs['ssl_multicert.config'].add_line('dest_ip=127.0.0.2 ssl_cert_name={0},{1}'.format(
             helpers.tests_file_path('rsa_keys/www.test.com.pem'),
             helpers.tests_file_path('ec_keys/www.test.com.pem'),
-            ))
+        ))
 
         cls.configs['ssl_multicert.config'].add_line('dest_ip=* ssl_cert_name={0},{1} ssl_ca_name={2},{3}'.format(
             helpers.tests_file_path('rsa_keys/www.example.com.pem'),
             helpers.tests_file_path('ec_keys/www.example.com.pem'),
             helpers.tests_file_path('rsa_keys/intermediate.crt'),
             helpers.tests_file_path('ec_keys/intermediate.crt'),
-            ))
+        ))
         cls.configs['ssl_multicert.config'].add_line('dest_ip=* ssl_cert_name={0},{1}'.format(
             helpers.tests_file_path('rsa_keys/www.test.com.pem'),
             helpers.tests_file_path('ec_keys/www.test.com.pem'),
-            ))
+        ))
 
     def test_rsa(self):
         addr = ('127.0.0.1', self.ssl_port)
@@ -266,8 +268,12 @@ class TestMix(helpers.EnvironmentCase, CertSelectionMixin):
         cert = self._get_cert(addr, ciphers=CIPHER_MAP['ecdsa'])
         self.assertEqual(cert.get_subject().commonName.decode(), 'www.example.com')
 
+    # TODO: remove once TS-3518 is resolved
+    @unittest.expectedFailure
     def test_intermediate_ca_rsa(self):
         self._intermediate_ca_t('rsa')
 
+    # TODO: remove once TS-3518 is resolved
+    @unittest.expectedFailure
     def test_intermediate_ca_ecdsa(self):
         self._intermediate_ca_t('ecdsa')

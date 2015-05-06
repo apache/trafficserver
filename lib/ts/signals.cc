@@ -159,7 +159,7 @@ signal_format_siginfo(int signo, siginfo_t *info, const char *msg)
   (void)signo;
 
 #if HAVE_PSIGINFO
-  psiginfo(info, msg);
+  psiginfo(info, const_cast<char *>(msg));
 #elif HAVE_PSIGNAL
   psignal(signo, msg);
 #else

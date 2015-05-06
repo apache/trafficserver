@@ -1,5 +1,3 @@
-#! /usr/bin/env bash
-
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -16,26 +14,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-TSQA_TSXS=${TSQA_TSXS:-/opt/ats/bin/tsxs}
-TSQA_TESTNAME=$(basename $0)
-source $(dirname $0)/functions
+include $(top_srcdir)/build/plugins.mk
 
-# This test verifies that we can start Traffic Server in the test root. It is primarily
-# intended as a trivial payload to test the TSQA harness.
-check() {
-
-  msg waiting ...
-  sleep 2
-}
-
-bootstrap
-
-# If Traffic Server is not up, bring it up ...
-alive cop || startup || fatal unable to start Traffic Server
-trap shutdown 0 EXIT
-
-check
-
-exit $TSQA_FAIL
-
-# vim: set sw=2 ts=2 et :
+pkglib_LTLIBRARIES = cache_promote.la
+cache_promote_la_SOURCES = cache_promote.cc
+cache_promote_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)

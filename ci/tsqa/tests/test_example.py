@@ -30,18 +30,19 @@ import tsqa.utils
 
 # TODO: for some reason subclasses of subclasses of TestCase don't work with the
 # decorator
-#@helpers.unittest.skip('Not running TestNoOp, as it is a NoOp test')
+# @helpers.unittest.skip('Not running TestNoOp, as it is a NoOp test')
+
+
 class TestNoOp(helpers.EnvironmentCase):
     '''
     This is purely a documentation test
     '''
     # you can set configure/environment options for the source build here
     environment_factory = {
-        'configure': {# A value of None means that the argument has no value
-                      'enable-spdy': None,
-                      # if there is a value it will be converted to --key=value
-                      'with-max-api-stats': 2048,
-                      },
+        'configure': {
+            'enable-spdy': None,  # A value of None means that the argument has no value
+            'with-max-api-stats': 2048,  # if there is a value it will be converted to --key=value
+        },
         'env': None,
     }
 
@@ -122,6 +123,7 @@ class TestBootstrap(helpers.EnvironmentCase):
 
 class TestServerIntercept(helpers.EnvironmentCase, tsqa.test_cases.DynamicHTTPEndpointCase):
     endpoint_port = 60000
+
     @classmethod
     def setUpEnv(cls, env):
         cls.configs['remap.config'].add_line('map / http://127.0.0.1:{0}'.format(cls.endpoint_port))
@@ -131,7 +133,6 @@ class TestServerIntercept(helpers.EnvironmentCase, tsqa.test_cases.DynamicHTTPEn
         def hello(request):
             return 'hello'
         cls.http_endpoint.add_handler('/', hello)
-
 
     def test_basic_intercept(self):
         for _ in xrange(0, 10):
@@ -154,6 +155,7 @@ class TestLogs(helpers.EnvironmentCase):
             'proxy.config.log.hostname': 'test',
             'proxy.config.log.search_top_sites': 1,
         })
+
     def test_logs_exist(self):
         # send some requests
         for x in xrange(0, 10):

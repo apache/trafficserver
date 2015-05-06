@@ -27,6 +27,4 @@
 #include "stdio.h"
 #include "ink_mutex.h"
 
-x_pthread_mutexattr_t _g_mattr;
-
 ink_mutex __global_death = PTHREAD_MUTEX_INITIALIZER;

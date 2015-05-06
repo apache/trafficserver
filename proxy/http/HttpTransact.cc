@@ -1357,11 +1357,17 @@ HttpTransact::HandleRequest(State *s)
       s->parent_params->ParentTable->hostMatch) {
     s->force_dns = 1;
   }
-  // YTS Team, yamsat Plugin
-  // Doing a Cache Lookup in case of a Redirection to ensure that
-  // the newly requested object is not in the CACHE
-  if (s->txn_conf->cache_http && s->redirect_info.redirect_in_process && s->state_machine->enable_redirection) {
-    TRANSACT_RETURN(SM_ACTION_CACHE_LOOKUP, NULL);
+  /* A redirect means we need to check some things again.
+     If the cache is enabled then we need to check the new (redirected) request against the cache.
+     If not, then we need to at least do DNS again to guarantee we are using the correct IP address
+     (if the host changed). Note DNS comes after cache lookup so in both cases we do the DNS.
+  */
+  if (s->redirect_info.redirect_in_process && s->state_machine->enable_redirection) {
+    if (s->txn_conf->cache_http) {
+      TRANSACT_RETURN(SM_ACTION_CACHE_LOOKUP, NULL);
+    } else {
+      TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, OSDNSLookup); // effectively s->force_dns
+    }
   }
 
 
@@ -1939,7 +1945,9 @@ HttpTransact::DecideCacheLookup(State *s)
     // for redirect, we skipped cache lookup to do the automatic redirection
     if (s->redirect_info.redirect_in_process) {
       // without calling out the CACHE_LOOKUP_COMPLETE_HOOK
-      s->cache_info.action = CACHE_DO_WRITE;
+      if (s->txn_conf->cache_http) {
+        s->cache_info.action = CACHE_DO_WRITE;
+      }
       LookupSkipOpenServer(s);
     } else {
       // calling out CACHE_LOOKUP_COMPLETE_HOOK even when the cache
@@ -2908,8 +2916,30 @@ HttpTransact::handle_cache_write_lock(State *s)
     // No write lock, ignore the cache and proxy only;
     // FIX: Should just serve from cache if this is a revalidate
     s->cache_info.action = CACHE_DO_NO_ACTION;
-    s->cache_info.write_status = CACHE_WRITE_LOCK_MISS;
-    remove_ims = true;
+    if (s->cache_open_write_fail_action & CACHE_OPEN_WRITE_FAIL_ERROR_ON_MISS) {
+      DebugTxn("http_error", "cache_open_write_fail_action, cache miss, return error");
+      s->cache_info.write_status = CACHE_WRITE_ERROR;
+      build_error_response(s, HTTP_STATUS_BAD_GATEWAY, "Connection Failed", "connect#failed_connect", NULL);
+      MIMEField *ats_field;
+      HTTPHdr *header = &(s->hdr_info.client_response);
+
+      if ((ats_field = header->field_find(MIME_FIELD_ATS_INTERNAL, MIME_LEN_ATS_INTERNAL)) == NULL) {
+        if (likely((ats_field = header->field_create(MIME_FIELD_ATS_INTERNAL, MIME_LEN_ATS_INTERNAL)) != NULL))
+          header->field_attach(ats_field);
+      }
+      if (likely(ats_field)) {
+        Debug("http_error", "Adding Ats-Internal-Messages: %d", CACHE_WL_FAIL);
+        header->field_value_set_int(ats_field, CACHE_WL_FAIL);
+      } else {
+        Debug("http_error", "failed to add Ats-Internal-Messages: %d", CACHE_WL_FAIL);
+      }
+
+      TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, NULL);
+      return;
+    } else {
+      s->cache_info.write_status = CACHE_WRITE_LOCK_MISS;
+      remove_ims = true;
+    }
     break;
   case CACHE_WL_READ_RETRY:
     //  Write failed but retried and got a vector to read
@@ -3904,8 +3934,9 @@ HttpTransact::handle_forward_server_connection_open(State *s)
         break;
       default:
         DebugTxn("http_trans", "[hfsco] redirect in progress, non-3xx response, setting cache_do_write");
-        if (cw_vc)
+        if (cw_vc && s->txn_conf->cache_http) {
           s->cache_info.action = CACHE_DO_WRITE;
+        }
         break;
       }
     }
@@ -6006,6 +6037,10 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
     return false;
   }
 
+  // the plugin may decide we don't want to cache the response
+  if (s->api_server_response_no_store) {
+    return false;
+  }
   // if method is not GET or HEAD, do not cache.
   // Note: POST is also cacheable with Expires or Cache-control.
   // but due to INKqa11567, we are not caching POST responses.
@@ -6024,7 +6059,7 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
   if (!(is_request_cache_lookupable(s))) {
     DebugTxn("http_trans", "[is_response_cacheable] "
                            "request is not cache lookupable, response is not cachable");
-    return (false);
+    return false;
   }
   // already has a fresh copy in the cache
   if (s->range_setup == RANGE_NOT_HANDLED)
@@ -6036,13 +6071,13 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
       do_cookies_prevent_caching((int)s->txn_conf->cache_responses_to_cookies, request, response)) {
     DebugTxn("http_trans", "[is_response_cacheable] "
                            "response has uncachable cookies, response is not cachable");
-    return (false);
+    return false;
   }
   // if server spits back a WWW-Authenticate
   if ((s->txn_conf->cache_ignore_auth) == 0 && response->presence(MIME_PRESENCE_WWW_AUTHENTICATE)) {
     DebugTxn("http_trans", "[is_response_cacheable] "
                            "response has WWW-Authenticate, response is not cachable");
-    return (false);
+    return false;
   }
   // does server explicitly forbid storing?
   // If OS forbids storing but a ttl is set, allow caching
@@ -6050,7 +6085,7 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
       (s->cache_control.ttl_in_cache <= 0)) {
     DebugTxn("http_trans", "[is_response_cacheable] server does not permit storing and config file does not "
                            "indicate that server directive should be ignored");
-    return (false);
+    return false;
   }
   // DebugTxn("http_trans", "[is_response_cacheable] server permits storing");
 
@@ -6061,7 +6096,7 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
       (s->cache_control.never_cache)) {
     DebugTxn("http_trans", "[is_response_cacheable] config doesn't allow storing, and cache control does not "
                            "say to ignore no-cache and does not specify never-cache or a ttl");
-    return (false);
+    return false;
   }
   // DebugTxn("http_trans", "[is_response_cacheable] config permits storing");
 
@@ -6069,7 +6104,7 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
   if (!s->cache_info.directives.does_client_permit_storing && !s->cache_control.ignore_client_no_cache) {
     DebugTxn("http_trans", "[is_response_cacheable] client does not permit storing, "
                            "and cache control does not say to ignore client no-cache");
-    return (false);
+    return false;
   }
   DebugTxn("http_trans", "[is_response_cacheable] client permits storing");
 
@@ -6098,7 +6133,7 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
                                  "last_modified, expires, or max-age is required");
 
           s->squid_codes.hit_miss_code = ((response->get_date() == 0) ? (SQUID_MISS_HTTP_NO_DLE) : (SQUID_MISS_HTTP_NO_LE));
-          return (false);
+          return false;
         }
         break;
 
@@ -6106,7 +6141,7 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
         if (!response->presence(MIME_PRESENCE_EXPIRES) && !(response->get_cooked_cc_mask() & cc_mask)) {
           DebugTxn("http_trans", "[is_response_cacheable] "
                                  "expires header or max-age is required");
-          return (false);
+          return false;
         }
         break;
 
@@ -6177,10 +6212,7 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
       return false;
     }
   }
-  // the plugin may decide we don't want to cache the response
-  if (s->api_server_response_no_store) {
-    return (false);
-  }
+
   // default cacheability
   if (!s->txn_conf->negative_caching_enabled) {
     if ((response_code == HTTP_STATUS_OK) || (response_code == HTTP_STATUS_NOT_MODIFIED) ||
@@ -7227,6 +7259,13 @@ HttpTransact::what_is_document_freshness(State *s, HTTPHdr *client_request, HTTP
   ;
   uint32_t cc_mask, cooked_cc_mask;
   uint32_t os_specifies_revalidate;
+
+  if (s->cache_open_write_fail_action & CACHE_OPEN_WRITE_FAIL_STALE_OR_REVALIDATE) {
+    if (is_stale_cache_response_returnable(s)) {
+      DebugTxn("http_match", "[what_is_document_freshness] cache_serve_stale_on_write_lock_fail, return FRESH");
+      return (FRESHNESS_FRESH);
+    }
+  }
 
   //////////////////////////////////////////////////////
   // If config file has a ttl-in-cache field set,     //

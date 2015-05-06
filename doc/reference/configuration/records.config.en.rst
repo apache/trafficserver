@@ -197,6 +197,15 @@ A value of ``0`` means no signal will be sent.
    prevent the system from hanging. This configuration variable applies if
    swap is enabled in Linux 2.2 only.
 
+.. ts:cv:: CONFIG proxy.config.cop.init_sleep_time INT 0
+
+   The minimum amount of addtional duration allowed before Traffic Server detects
+   that the :program:`traffic_server` is not responsive and attempts a restart
+   during startup. This configuration variable allows Traffic Server a longer init
+   time to load potentially large configuration files such as remap config. Note that
+   this applies only during startup of Traffic Server and does not apply to the run
+   time heartbeat checking.
+
 .. ts:cv:: CONFIG proxy.config.output.logfile  STRING traffic.out
 
    The name and location of the file that contains warnings, status messages, and error messages produced by the Traffic Server
@@ -293,6 +302,12 @@ Network
    by the HTTP state machine. When this timeout is applied, the
    `proxy.process.net.default_inactivity_timeout_applied` metric
    is incremented.
+
+.. ts:cv:: CONFIG proxy.config.net.inactivity_check_frequency INT 1
+
+   How frequent (in seconds) to check for inactive connections. If you deal
+   with a lot of concurrent connections, increasing this setting can reduce
+   pressure on the system.
 
 .. ts:cv:: LOCAL proxy.local.incoming_ip_to_bind STRING 0.0.0.0 [::]
 
@@ -728,6 +743,12 @@ Value Effect
    Note that setting this parameter to (``2``) will not work correctly unless
    the dedicated SSL threads are disabled (:ts:cv:`proxy.config.ssl.number.threads`
    is set to (``-1``)).
+
+.. ts:cv:: CONFIG proxy.config.http.auth_server_session_private INT 1
+
+   If enabled (``1``) anytime a request contains a (``Authorization``), (``Proxy-Authorization``)
+   or (``Www-Authenticate``) header the connection will be closed and not reused. This marks
+   the connection as private. When disabled (``0``) the connection will be available for reuse.
 
 .. ts:cv:: CONFIG proxy.config.http.server_session_sharing.match STRING both
 
@@ -2617,6 +2638,74 @@ Plug-in Configuration
    Setting this variable to causes remap processing to take place
    on a dedicated thread pool, freeing the network threads to service
    additional requests.
+
+SOCKS Processor
+===============
+
+.. ts:cv::  CONFIG proxy.config.socks.socks_needed INT 0
+
+   Enables (``1``) or disables (``0``) the SOCKS processor
+
+.. ts:cv::  CONFIG proxy.config.socks.socks_version INT 4
+
+   Specifies the SOCKS version (``4``) or (``5``)
+
+.. ts:cv::  CONFIG proxy.config.socks.socks_config_file STRING socks.config
+
+   The socks_onfig file allows you to specify ranges of IP addresses
+   that will not be relayed to the SOCKS server. It can also be used
+   to configure AUTH information for SOCKSv5 servers.
+
+.. ts:cv::  CONFIG proxy.config.socks.socks_timeout INT 100
+
+   The activity timeout value (in seconds) for SOCKS server connections.
+
+.. ts:cv::  CONFIG proxy.config.socks.server_connect_timeout INT 10
+
+   The timeout value (in seconds) for SOCKS server connection attempts.
+
+.. ts:cv::  CONFIG proxy.config.socks.per_server_connection_attempts INT 1
+
+    The total number of connection attempts allowed per SOCKS server,
+    if multiple servers are used.
+
+.. ts:cv::  CONFIG proxy.config.socks.connection_attempts INT 4
+
+   The total number of connection attempts allowed to a SOCKS server
+   Traffic Server bypasses the server or fails the request
+
+.. ts:cv::  CONFIG proxy.config.socks.server_retry_timeout INT 300
+
+   The timeout value (in seconds) for SOCKS server connection retry attempts.
+
+.. ts:cv::  CONFIG proxy.config.socks.default_servers STRING
+
+   Default list of SOCKS servers and their ports.
+
+.. ts:cv::  CONFIG proxy.config.socks.server_retry_time INT 300
+
+   The amount of time allowed between connection retries to a SOCKS
+   server that is unavailable.
+
+.. ts:cv::  CONFIG proxy.config.socks.server_fail_threshold INT 2
+
+   The number of times the connection to the SOCKS server can fail
+   before Traffic Server considers the server unavailable.
+
+.. ts:cv::  CONFIG proxy.config.socks.accept_enabled INT 0
+
+   Enables (1) or disables (0) the SOCKS proxy option. As a SOCKS
+   proxy, Traffic Server receives SOCKS traffic (usually on port
+   1080) and forwards all requests directly to the SOCKS server.
+
+.. ts:cv::  CONFIG proxy.config.socks.accept_port INT 1080
+
+   Specifies the port on which Traffic Server accepts SOCKS traffic.
+
+.. ts:cv::  CONFIG proxy.config.socks.http_port INT 80
+
+   Specifies the port on which Traffic Server accepts HTTP proxy requests
+   over SOCKS connections..
 
 Sockets
 =======

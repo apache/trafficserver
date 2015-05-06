@@ -24,7 +24,7 @@
 #include "P_Cache.h"
 
 Action *
-Cache::link(Continuation *cont, CacheKey *from, CacheKey *to, CacheFragType type, char *hostname, int host_len)
+Cache::link(Continuation *cont, const CacheKey *from, const CacheKey *to, CacheFragType type, const char *hostname, int host_len)
 {
   if (!CacheProcessor::IsCacheReady(type)) {
     cont->handleEvent(CACHE_EVENT_LINK_FAILED, 0);
@@ -71,7 +71,7 @@ Ldone:
 }
 
 Action *
-Cache::deref(Continuation *cont, CacheKey *key, CacheFragType type, char *hostname, int host_len)
+Cache::deref(Continuation *cont, const CacheKey *key, CacheFragType type, const char *hostname, int host_len)
 {
   if (!CacheProcessor::IsCacheReady(type)) {
     cont->handleEvent(CACHE_EVENT_DEREF_FAILED, 0);

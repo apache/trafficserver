@@ -1246,7 +1246,7 @@ scan(Continuation *cont, char *hostname = 0, int host_len = 0, int KB_per_second
 
 #ifdef HTTP_CACHE
 Action *
-CacheProcessor::lookup(Continuation *cont, URL *url, bool cluster_cache_local, bool local_only, CacheFragType frag_type)
+CacheProcessor::lookup(Continuation *cont, CacheURL *url, bool cluster_cache_local, bool local_only, CacheFragType frag_type)
 {
   (void)local_only;
   INK_MD5 md5;
@@ -2982,7 +2982,7 @@ LmemHit:
 }
 
 Action *
-Cache::lookup(Continuation *cont, CacheKey *key, CacheFragType type, char const *hostname, int host_len)
+Cache::lookup(Continuation *cont, const CacheKey *key, CacheFragType type, char const *hostname, int host_len)
 {
   if (!CacheProcessor::IsCacheReady(type)) {
     cont->handleEvent(CACHE_EVENT_LOOKUP_FAILED, 0);
@@ -3102,8 +3102,8 @@ Lfree:
 }
 
 Action *
-Cache::remove(Continuation *cont, CacheKey *key, CacheFragType type, bool /* user_agents ATS_UNUSED */, bool /* link ATS_UNUSED */,
-              char *hostname, int host_len)
+Cache::remove(Continuation *cont, const CacheKey *key, CacheFragType type, bool /* user_agents ATS_UNUSED */,
+              bool /* link ATS_UNUSED */, const char *hostname, int host_len)
 {
   if (!CacheProcessor::IsCacheReady(type)) {
     if (cont)
@@ -3580,7 +3580,7 @@ rebuild_host_table(Cache *cache)
 
 // if generic_host_rec.vols == NULL, what do we do???
 Vol *
-Cache::key_to_vol(CacheKey *key, char const *hostname, int host_len)
+Cache::key_to_vol(const CacheKey *key, char const *hostname, int host_len)
 {
   uint32_t h = (key->slice32(2) >> DIR_TAG_WIDTH) % VOL_HASH_TABLE_SIZE;
   unsigned short *hash_table = hosttable->gen_host_rec.vol_hash_table;
@@ -3787,7 +3787,7 @@ ink_cache_init(ModuleVersion v)
 
 //----------------------------------------------------------------------------
 Action *
-CacheProcessor::open_read(Continuation *cont, URL *url, bool cluster_cache_local, CacheHTTPHdr *request,
+CacheProcessor::open_read(Continuation *cont, CacheURL *url, bool cluster_cache_local, CacheHTTPHdr *request,
                           CacheLookupHttpConfig *params, time_t pin_in_cache, CacheFragType type)
 {
 #ifdef CLUSTER_CACHE
@@ -3802,7 +3802,7 @@ CacheProcessor::open_read(Continuation *cont, URL *url, bool cluster_cache_local
 
 //----------------------------------------------------------------------------
 Action *
-CacheProcessor::open_write(Continuation *cont, int expected_size, URL *url, bool cluster_cache_local, CacheHTTPHdr *request,
+CacheProcessor::open_write(Continuation *cont, int expected_size, CacheURL *url, bool cluster_cache_local, CacheHTTPHdr *request,
                            CacheHTTPInfo *old_info, time_t pin_in_cache, CacheFragType type)
 {
 #ifdef CLUSTER_CACHE
@@ -3827,7 +3827,7 @@ CacheProcessor::open_write(Continuation *cont, int expected_size, URL *url, bool
 // Note: this should not be called from from the cluster processor, or bad
 // recursion could occur. This is merely a convenience wrapper.
 Action *
-CacheProcessor::remove(Continuation *cont, URL *url, bool cluster_cache_local, CacheFragType frag_type)
+CacheProcessor::remove(Continuation *cont, CacheURL *url, bool cluster_cache_local, CacheFragType frag_type)
 {
   CryptoHash id;
   int len = 0;

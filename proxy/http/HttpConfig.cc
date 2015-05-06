@@ -987,6 +987,8 @@ HttpConfig::startup()
   http_config_enum_read("proxy.config.http.server_session_sharing.match", SessionSharingMatchStrings,
                         c.oride.server_session_sharing_match);
 
+  HttpEstablishStaticConfigByte(c.oride.auth_server_session_private, "proxy.config.http.auth_server_session_private");
+
   HttpEstablishStaticConfigByte(c.oride.keep_alive_post_out, "proxy.config.http.keep_alive_post_out");
 
   HttpEstablishStaticConfigLongLong(c.oride.keep_alive_no_activity_timeout_in,
@@ -1096,6 +1098,7 @@ HttpConfig::startup()
   HttpEstablishStaticConfigByte(c.send_408_post_timeout_response, "proxy.config.http.send_408_post_timeout_response");
   HttpEstablishStaticConfigByte(c.disallow_post_100_continue, "proxy.config.http.disallow_post_100_continue");
   HttpEstablishStaticConfigByte(c.parser_allow_non_http, "proxy.config.http.parse.allow_non_http");
+  HttpEstablishStaticConfigLongLong(c.cache_open_write_fail_action, "proxy.config.http.cache.open_write_fail_action");
 
   HttpEstablishStaticConfigByte(c.oride.cache_when_to_revalidate, "proxy.config.http.cache.when_to_revalidate");
   HttpEstablishStaticConfigByte(c.oride.cache_required_headers, "proxy.config.http.cache.required_headers");
@@ -1232,6 +1235,8 @@ HttpConfig::reconfigure()
   params->oride.keep_alive_enabled_in = INT_TO_BOOL(m_master.oride.keep_alive_enabled_in);
   params->oride.keep_alive_enabled_out = INT_TO_BOOL(m_master.oride.keep_alive_enabled_out);
   params->oride.chunking_enabled = INT_TO_BOOL(m_master.oride.chunking_enabled);
+  params->oride.auth_server_session_private = INT_TO_BOOL(m_master.oride.auth_server_session_private);
+
   params->oride.http_chunking_size = m_master.oride.http_chunking_size;
 
   params->oride.post_check_content_length_enabled = INT_TO_BOOL(m_master.oride.post_check_content_length_enabled);
@@ -1353,6 +1358,7 @@ HttpConfig::reconfigure()
   params->send_408_post_timeout_response = INT_TO_BOOL(m_master.send_408_post_timeout_response);
   params->disallow_post_100_continue = INT_TO_BOOL(m_master.disallow_post_100_continue);
   params->parser_allow_non_http = INT_TO_BOOL(m_master.parser_allow_non_http);
+  params->cache_open_write_fail_action = m_master.cache_open_write_fail_action;
 
   params->oride.cache_when_to_revalidate = m_master.oride.cache_when_to_revalidate;
 

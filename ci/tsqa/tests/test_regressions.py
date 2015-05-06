@@ -19,9 +19,6 @@ Run the built-in regression tests with experimental build configurations.
 #  limitations under the License.
 
 import os
-import sys
-import requests
-import time
 import subprocess
 import logging
 
@@ -30,6 +27,7 @@ import tsqa.test_cases
 import tsqa.utils
 
 log = logging.getLogger(__name__)
+
 
 class TestRegressions(helpers.EnvironmentCase):
     '''
@@ -54,23 +52,6 @@ class TestRegressions(helpers.EnvironmentCase):
         cmd = [os.path.join(self.environment.layout.bindir, 'traffic_server'), '-R', '1']
         tsqa.utils.run_sync_command(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
-class TestRegressionsReclaimableFreelist(TestRegressions):
-    '''
-    Run the built-in traffic_server regression test suite with
-    --enable-reclaimable-freelist.
-    '''
-    environment_factory = {
-        'configure': { 'enable-reclaimable-freelist': None },
-    }
-
-class TestRegressionsInterimCache(TestRegressions):
-    '''
-    Run the built-in traffic_server regression test suite with
-    --enable-interim-cache.
-    '''
-    environment_factory = {
-        'configure': { 'enable-interim-cache': None },
-    }
 
 class TestRegressionsLinuxNativeAIO(TestRegressions):
     '''
@@ -78,5 +59,5 @@ class TestRegressionsLinuxNativeAIO(TestRegressions):
     --enable-linux-native-aio.
     '''
     environment_factory = {
-        'configure': { 'enable-linux-native-aio': None },
+        'configure': {'enable-linux-native-aio': None},
     }

@@ -316,6 +316,13 @@ protected:
 
   HttpVCTableEntry *server_entry;
   HttpServerSession *server_session;
+
+  /* Because we don't want to take a session from a shared pool if we know that it will be private,
+   * but we cannot set it to private until we have an attached server session.
+   * So we use this variable to indicate that
+   * we should create a new connection and then once we attach the session we'll mark it as private.
+   */
+  bool will_be_private_ss;
   int shared_session_retries;
   IOBufferReader *server_buffer_reader;
   void remove_server_entry();
@@ -624,7 +631,6 @@ HttpSM::add_cache_sm()
   if (second_cache_sm == NULL) {
     second_cache_sm = new HttpCacheSM;
     second_cache_sm->init(this, mutex);
-    second_cache_sm->set_lookup_url(cache_sm.get_lookup_url());
     if (t_state.cache_info.object_read != NULL) {
       second_cache_sm->cache_read_vc = cache_sm.cache_read_vc;
       cache_sm.cache_read_vc = NULL;

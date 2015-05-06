@@ -255,6 +255,19 @@ public:
   void setTimeout(TimeoutType type, int time_ms);
 
   /**
+   * Represents different states of an object served out of the cache
+   */
+  enum CacheStatus {
+    CACHE_LOOKUP_MISS = 0,  /**< The object was not found in the cache */
+    CACHE_LOOKUP_HIT_STALE, /**< The object was found in cache but stale */
+    CACHE_LOOKUP_HIT_FRESH, /**< The object was found in cache and was fresh */
+    CACHE_LOOKUP_SKIPED,    /**< Cache lookup was not performed */
+    CACHE_LOOKUP_NONE
+  };
+
+  CacheStatus getCacheStatus();
+
+  /**
    * Returns the TSHttpTxn related to the current Transaction
    *
    * @return a void * which can be cast back to a TSHttpTxn.

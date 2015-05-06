@@ -31,7 +31,7 @@
 extern int cache_config_compatibility_4_2_0_fixup;
 
 Action *
-Cache::open_read(Continuation *cont, CacheKey *key, CacheFragType type, char *hostname, int host_len)
+Cache::open_read(Continuation *cont, const CacheKey *key, CacheFragType type, const char *hostname, int host_len)
 {
   if (!CacheProcessor::IsCacheReady(type)) {
     cont->handleEvent(CACHE_EVENT_OPEN_READ_FAILED, (void *)-ECACHE_NOT_READY);
@@ -93,8 +93,8 @@ Lcallreturn:
 
 #ifdef HTTP_CACHE
 Action *
-Cache::open_read(Continuation *cont, CacheKey *key, CacheHTTPHdr *request, CacheLookupHttpConfig *params, CacheFragType type,
-                 char *hostname, int host_len)
+Cache::open_read(Continuation *cont, const CacheKey *key, CacheHTTPHdr *request, CacheLookupHttpConfig *params, CacheFragType type,
+                 const char *hostname, int host_len)
 {
   if (!CacheProcessor::IsCacheReady(type)) {
     cont->handleEvent(CACHE_EVENT_OPEN_READ_FAILED, (void *)-ECACHE_NOT_READY);

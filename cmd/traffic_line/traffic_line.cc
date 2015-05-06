@@ -282,7 +282,7 @@ handleArgInvocation()
         printf("Set %s, restart required\n", SetVar);
         break;
       case TS_ACTION_RECONFIGURE:
-        // printf("Set %s, reconfiguration required\n", SetVar);
+        printf("Set %s, please wait 10 seconds for traffic server to sync configuration, restart is not required\n", SetVar);
         break;
       case TS_ACTION_DYNAMIC:
       default:
