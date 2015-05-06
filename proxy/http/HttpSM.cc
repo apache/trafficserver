@@ -6709,6 +6709,7 @@ HttpSM::update_stats()
           "url: %s "
           "status: %d "
           "unique id: %s "
+          "redirection_tries: %d "
           "bytes: %" PRId64 " "
           "fd: %d "
           "client state: %d "
@@ -6727,7 +6728,7 @@ HttpSM::update_stats()
           "ua_close: %.3f "
           "sm_finish: %.3f",
           sm_id, client_ip, ats_ip_port_host_order(&t_state.client_info.addr), url_string, status, unique_id_string,
-          client_response_body_bytes, fd, t_state.client_info.state, t_state.server_info.state,
+          redirection_tries, client_response_body_bytes, fd, t_state.client_info.state, t_state.server_info.state,
           milestone_difference(milestones.sm_start, milestones.ua_begin),
           milestone_difference(milestones.sm_start, milestones.ua_first_read),
           milestone_difference(milestones.sm_start, milestones.ua_read_header_done),
