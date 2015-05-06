@@ -393,14 +393,14 @@ Examples
     map http://foo.example.com/  http://foo.example.com/ @action=deny @src_ip=1.2.3.4
     map http://foo.example.com/  http://foo.example.com/ @action=allow @src_ip=127.0.0.1
     
-    map http://foo.example.com/  http://foo.example.com/ @action=allow @src_ip=10.5.2.1 @dst_ip=72.209.23.4
+    map http://foo.example.com/  http://foo.example.com/ @action=allow @src_ip=10.5.2.1 @in_ip=72.209.23.4
 
     map http://foo.example.com/  http://foo.example.com/ @action=allow @src_ip=127.0.0.1 @method=post @method=get @method=head
 
 Note that these Acl filters will return a 403 response if the resource is restricted.
 
-The difference between ``@src_ip`` and ``@dst_ip`` is that the ``@src_ip`` is the client
-ip and the ``dst_ip`` is the ip address the client is connecting to (the incoming address).
+The difference between ``@src_ip`` and ``@in_ip`` is that the ``@src_ip`` is the client
+ip and the ``in_ip`` is the ip address the client is connecting to (the incoming address).
 
 Named Filters
 =============
