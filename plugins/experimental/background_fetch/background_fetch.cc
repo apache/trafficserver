@@ -874,7 +874,7 @@ is_background_fetch_allowed(TSHttpTxn txnp, BgFetchRuleMap *ri)
 // there could be other plugins that modifies the response after us.
 //
 static int
-cont_handle_response(TSCont contp, TSEvent /* event ATS_UNUSED */, void *edata)
+cont_handle_response(TSCont contp, TSEvent event, void *edata)
 {
   // ToDo: If we want to support per-remap configurations, we have to pass along the data here
   TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
