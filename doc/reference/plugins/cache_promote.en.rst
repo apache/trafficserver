@@ -30,7 +30,7 @@ All configuration is done via :file:`remap.config`, and the following options
 are available:
 
     --policy   The promotion policy. `lru` and `chance` are supported
-    --chance   The sampling rate for the request to be considered
+    --sample   The sampling rate for the request to be considered
 
 For the `lru` plugin, the following options are also available:
 
