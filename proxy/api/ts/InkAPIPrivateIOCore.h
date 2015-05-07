@@ -107,42 +107,9 @@ public:
  *   We now take out the mutex on each call to ensure it is
  *   held for the entire duration of the IOCore call
  ***************************************************************/
-
-//
-// FORCE_PLUGIN_MUTEX -- define 'UNSAFE_FORCE_MUTEX' if you
-// do *not* want the locking macro to be thread safe.
-// Otherwise, access during 'null-mutex' case will be serialized
-// in a locking manner (too bad for the net threads).
-//
-
-
-#define UNSAFE_FORCE_MUTEX
-
-#ifdef UNSAFE_FORCE_MUTEX
-#define LOCK_MONGO_MUTEX
-#define UNLOCK_MONGO_MUTEX
-#define MUX_WARNING(p)                                                            \
-  TSDebug("sdk", "(SDK) null mutex detected in critical region (mutex created)"); \
-  TSDebug("sdk", "(SDK) please create continuation [%p] with mutex", (p));
-#else
-static ink_mutex big_mux;
-
-#define MUX_WARNING(p) 1
-#define LOCK_MONGO_MUTEX ink_mutex_acquire(&big_mux)
-#define UNLOCK_MONGO_MUTEX ink_mutex_release(&big_mux)
-#endif
-
-#define FORCE_PLUGIN_MUTEX(_c)                         \
-  bool do_warn = false;                                \
-  LOCK_MONGO_MUTEX;                                    \
-  if (((INKContInternal *)_c)->mutex == NULL) {        \
-    ((INKContInternal *)_c)->mutex = new_ProxyMutex(); \
-    do_warn = true;                                    \
-  }                                                    \
-  UNLOCK_MONGO_MUTEX;                                  \
-  if (do_warn)                                         \
-    MUX_WARNING(_c);                                   \
-  MUTEX_LOCK(ml, ((INKContInternal *)_c)->mutex, this_ethread());
+#define FORCE_PLUGIN_SCOPED_MUTEX(_c)         \
+  sdk_assert(((INKContInternal *)_c)->mutex); \
+  SCOPED_MUTEX_LOCK(ml, ((INKContInternal *)_c)->mutex, this_ethread());
 
 #ifdef __cplusplus
 extern "C" {

@@ -1344,10 +1344,6 @@ api_init()
   if (init) {
     init = 0;
 
-#ifndef UNSAFE_FORCE_MUTEX
-    ink_mutex_init(&big_mux, "APIMongoMutex");
-#endif
-
     /* URL schemes */
     TS_URL_SCHEME_FILE = URL_SCHEME_FILE;
     TS_URL_SCHEME_FTP = URL_SCHEME_FTP;
@@ -4246,8 +4242,6 @@ TSContSchedule(TSCont contp, ink_hrtime timeout, TSThreadPool tp)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
 
-  FORCE_PLUGIN_MUTEX(contp);
-
   INKContInternal *i = (INKContInternal *)contp;
   TSAction action;
 
@@ -4299,8 +4293,6 @@ TSAction
 TSContScheduleEvery(TSCont contp, ink_hrtime every, TSThreadPool tp)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
-
-  FORCE_PLUGIN_MUTEX(contp);
 
   INKContInternal *i = (INKContInternal *)contp;
   TSAction action;
