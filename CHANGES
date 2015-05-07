@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-3588]: Fix continuation leak in background_fetch in remap mode
+
   *) [TS-3029]: Fix spdy related seg fault in production, due to resetting
                 req->fetch_sm to null
 
