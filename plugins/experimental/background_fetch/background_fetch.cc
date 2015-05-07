@@ -62,30 +62,42 @@ typedef std::map<uint32_t, BgFetchRuleStruct> BgFetchRuleMap;
 class BgFetchRulesConfig
 {
 public:
-  BgFetchRulesConfig() : _ref_count(0), _cont(NULL), _bgFetchRuleMap(NULL) {};
+  BgFetchRulesConfig() : _ref_count(0), _cont(NULL), _bgFetchRuleMap(NULL){};
 
-  void incrRefCount() {
+  void
+  incrRefCount()
+  {
     ink_atomic_increment(&_ref_count, 1);
   }
 
-  void decrRefCount() {
+  void
+  decrRefCount()
+  {
     if (1 >= ink_atomic_decrement(&_ref_count, 1))
       delete this;
   }
 
-  void setRuleMap(BgFetchRuleMap *ruleMap) {
+  void
+  setRuleMap(BgFetchRuleMap *ruleMap)
+  {
     _bgFetchRuleMap = ruleMap;
   }
 
-  BgFetchRuleMap* getRuleMap() const {
+  BgFetchRuleMap *
+  getRuleMap() const
+  {
     return _bgFetchRuleMap;
   }
 
-  void setCont(TSCont cont) {
+  void
+  setCont(TSCont cont)
+  {
     _cont = cont;
   }
 
-  TSCont getCont() const {
+  TSCont
+  getCont() const
+  {
     return _cont;
   }
 
@@ -1056,7 +1068,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo * /* rri */)
 
   TSDebug(PLUGIN_NAME, "background fetch TSRemapDoRemap...");
 
-  BgFetchRulesConfig *rulesConf = static_cast<BgFetchRulesConfig*> (ih);
+  BgFetchRulesConfig *rulesConf = static_cast<BgFetchRulesConfig *>(ih);
   rulesConf->incrRefCount();
   TSHttpTxnHookAdd(txnp, TS_HTTP_READ_RESPONSE_HDR_HOOK, rulesConf->getCont());
   TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, rulesConf->getCont());
