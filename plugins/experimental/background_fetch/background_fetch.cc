@@ -32,6 +32,7 @@
 
 #include "ts/ts.h"
 #include "ts/remap.h"
+#include "ink_atomic.h"
 #include "ink_defs.h"
 
 #include <string>
@@ -57,6 +58,52 @@ typedef struct {
 } BgFetchRuleStruct;
 
 typedef std::map<uint32_t, BgFetchRuleStruct> BgFetchRuleMap;
+
+class BgFetchRulesConfig
+{
+public:
+  BgFetchRulesConfig() : _ref_count(0), _cont(NULL), _bgFetchRuleMap(NULL) {};
+
+  void incrRefCount() {
+    ink_atomic_increment(&_ref_count, 1);
+  }
+
+  void decrRefCount() {
+    if (1 >= ink_atomic_decrement(&_ref_count, 1))
+      delete this;
+  }
+
+  void setRuleMap(BgFetchRuleMap *ruleMap) {
+    _bgFetchRuleMap = ruleMap;
+  }
+
+  BgFetchRuleMap* getRuleMap() const {
+    return _bgFetchRuleMap;
+  }
+
+  void setCont(TSCont cont) {
+    _cont = cont;
+  }
+
+  TSCont getCont() const {
+    return _cont;
+  }
+
+private:
+  ~BgFetchRulesConfig()
+  {
+    if (_bgFetchRuleMap) {
+      delete _bgFetchRuleMap;
+    }
+    if (_cont) {
+      TSContDestroy(_cont);
+    }
+  }
+
+  volatile int _ref_count;
+  TSCont _cont;
+  BgFetchRuleMap *_bgFetchRuleMap;
+};
 
 // Global config, if we don't have a remap specific config.
 static BgFetchRuleMap gBgFetchRuleMap;
@@ -831,7 +878,8 @@ cont_handle_response(TSCont contp, TSEvent /* event ATS_UNUSED */, void *edata)
 {
   // ToDo: If we want to support per-remap configurations, we have to pass along the data here
   TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
-  BgFetchRuleMap *ri = static_cast<BgFetchRuleMap *>(TSContDataGet(contp));
+  BgFetchRulesConfig *rc = static_cast<BgFetchRulesConfig *>(TSContDataGet(contp));
+  BgFetchRuleMap *ri = rc->getRuleMap();
 
   if (ri == NULL) {
     // something wrong..
@@ -839,27 +887,37 @@ cont_handle_response(TSCont contp, TSEvent /* event ATS_UNUSED */, void *edata)
     ri = &gBgFetchRuleMap;
   }
 
-  if (is_background_fetch_allowed(txnp, ri)) {
-    TSMBuffer response;
-    TSMLoc resp_hdr;
+  switch (event) {
+  case TS_EVENT_HTTP_READ_RESPONSE_HDR:
+    if (is_background_fetch_allowed(txnp, ri)) {
+      TSMBuffer response;
+      TSMLoc resp_hdr;
 
-    if (TS_SUCCESS == TSHttpTxnServerRespGet(txnp, &response, &resp_hdr)) {
-      // ToDo: Check the MIME type first, to see if it's a type we care about.
-      // ToDo: Such MIME types should probably be per remap rule.
+      if (TS_SUCCESS == TSHttpTxnServerRespGet(txnp, &response, &resp_hdr)) {
+        // ToDo: Check the MIME type first, to see if it's a type we care about.
+        // ToDo: Such MIME types should probably be per remap rule.
 
-      // 2. Only deal with 206 responses from Origin
-      TSDebug(PLUGIN_NAME, "Testing: response is 206?");
-      if (TS_HTTP_STATUS_PARTIAL_CONTENT == TSHttpHdrStatusGet(response, resp_hdr)) {
-        // Everything looks good so far, add a TXN hook for SEND_RESPONSE_HDR
-        TSCont contp = TSContCreate(cont_check_cacheable, NULL);
+        // 2. Only deal with 206 responses from Origin
+        TSDebug(PLUGIN_NAME, "Testing: response is 206?");
+        if (TS_HTTP_STATUS_PARTIAL_CONTENT == TSHttpHdrStatusGet(response, resp_hdr)) {
+          // Everything looks good so far, add a TXN hook for SEND_RESPONSE_HDR
+          TSCont contp = TSContCreate(cont_check_cacheable, NULL);
 
-        TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, contp);
+          TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, contp);
+        }
+        // Release the response MLoc
+        TSHandleMLocRelease(response, TS_NULL_MLOC, resp_hdr);
       }
-      // Release the response MLoc
-      TSHandleMLocRelease(response, TS_NULL_MLOC, resp_hdr);
     }
+    break;
+  case TS_EVENT_HTTP_TXN_CLOSE:
+    rc->decrRefCount();
+    break;
+  default:
+    TSError("%s: unknown event for this plugin", PLUGIN_NAME);
+    TSDebug(PLUGIN_NAME, "unknown event for this plugin");
+    break;
   }
-
   // Reenable and continue with the state machine.
   TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
   return 0;
@@ -907,8 +965,11 @@ TSPluginInit(int argc, const char *argv[])
 
   TSDebug(PLUGIN_NAME, "Initialized");
 
+  BgFetchRulesConfig *rulesConf = new BgFetchRulesConfig();
   TSCont cont = TSContCreate(cont_handle_response, NULL);
-  TSContDataSet(cont, static_cast<void *>(&gBgFetchRuleMap));
+  rulesConf->setRuleMap(&gBgFetchRuleMap);
+  rulesConf->setCont(cont);
+  TSContDataSet(cont, static_cast<void *>(rulesConf));
   TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, cont);
 }
 
@@ -963,7 +1024,14 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf */, int /
 
   read_config(fileName, ri);
 
-  *ih = (void *)ri;
+  BgFetchRulesConfig *rulesConf = new BgFetchRulesConfig();
+  TSCont cont = TSContCreate(cont_handle_response, NULL);
+  rulesConf->setRuleMap(ri);
+  rulesConf->setCont(cont);
+  rulesConf->incrRefCount();
+  TSContDataSet(cont, static_cast<void *>(rulesConf));
+
+  *ih = (void *)rulesConf;
 
   return TS_SUCCESS;
 }
@@ -971,8 +1039,8 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf */, int /
 void
 TSRemapDeleteInstance(void *ih)
 {
-  BgFetchRuleMap *ri = static_cast<BgFetchRuleMap *>(ih);
-  delete ri;
+  BgFetchRulesConfig *ri = static_cast<BgFetchRulesConfig *>(ih);
+  ri->decrRefCount();
 }
 
 
@@ -988,9 +1056,10 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo * /* rri */)
 
   TSDebug(PLUGIN_NAME, "background fetch TSRemapDoRemap...");
 
-  TSCont cont = TSContCreate(cont_handle_response, NULL);
-  TSContDataSet(cont, static_cast<void *>(ih));
-  TSHttpTxnHookAdd(txnp, TS_HTTP_READ_RESPONSE_HDR_HOOK, cont);
+  BgFetchRulesConfig *rulesConf = static_cast<BgFetchRulesConfig*> (ih);
+  rulesConf->incrRefCount();
+  TSHttpTxnHookAdd(txnp, TS_HTTP_READ_RESPONSE_HDR_HOOK, rulesConf->getCont());
+  TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, rulesConf->getCont());
 
   return TSREMAP_NO_REMAP;
 }
