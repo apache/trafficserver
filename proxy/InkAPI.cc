@@ -4327,7 +4327,7 @@ TSHttpSchedule(TSCont contp, TSHttpTxn txnp, ink_hrtime timeout)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
 
-  FORCE_PLUGIN_MUTEX(contp);
+  FORCE_PLUGIN_SCOPED_MUTEX(contp);
 
   INKContInternal *i = (INKContInternal *)contp;
 
@@ -6363,7 +6363,7 @@ TSVConnRead(TSVConn connp, TSCont contp, TSIOBuffer bufp, int64_t nbytes)
   sdk_assert(sdk_sanity_check_iocore_structure(bufp) == TS_SUCCESS);
   sdk_assert(nbytes >= 0);
 
-  FORCE_PLUGIN_MUTEX(contp);
+  FORCE_PLUGIN_SCOPED_MUTEX(contp);
   VConnection *vc = (VConnection *)connp;
 
   return reinterpret_cast<TSVIO>(vc->do_io(VIO::READ, (INKContInternal *)contp, nbytes, (MIOBuffer *)bufp));
@@ -6377,7 +6377,7 @@ TSVConnWrite(TSVConn connp, TSCont contp, TSIOBufferReader readerp, int64_t nbyt
   sdk_assert(sdk_sanity_check_iocore_structure(readerp) == TS_SUCCESS);
   sdk_assert(nbytes >= 0);
 
-  FORCE_PLUGIN_MUTEX(contp);
+  FORCE_PLUGIN_SCOPED_MUTEX(contp);
   VConnection *vc = (VConnection *)connp;
 
   return reinterpret_cast<TSVIO>(vc->do_io_write((INKContInternal *)contp, nbytes, (IOBufferReader *)readerp));
@@ -6553,7 +6553,7 @@ TSNetConnect(TSCont contp, sockaddr const *addr)
   sdk_assert(sdk_sanity_check_continuation(contp) == TS_SUCCESS);
   sdk_assert(ats_is_ip(addr));
 
-  FORCE_PLUGIN_MUTEX(contp);
+  FORCE_PLUGIN_SCOPED_MUTEX(contp);
 
   return reinterpret_cast<TSAction>(netProcessor.connect_re(reinterpret_cast<INKContInternal *>(contp), addr));
 }
@@ -6570,7 +6570,7 @@ TSNetConnectTransparent(TSCont contp, sockaddr const *client_addr, sockaddr cons
   opt.local_ip.assign(client_addr);
   opt.local_port = ats_ip_port_host_order(client_addr);
 
-  FORCE_PLUGIN_MUTEX(contp);
+  FORCE_PLUGIN_SCOPED_MUTEX(contp);
 
   return reinterpret_cast<TSAction>(netProcessor.connect_re(reinterpret_cast<INKContInternal *>(contp), server_addr, &opt));
 }
@@ -6586,7 +6586,7 @@ TSNetAccept(TSCont contp, int port, int domain, int accept_threads)
 
   // TODO: Does this imply that only one "accept thread" could be
   // doing an accept at any time?
-  FORCE_PLUGIN_MUTEX(contp);
+  FORCE_PLUGIN_SCOPED_MUTEX(contp);
 
   // If it's not IPv6, force to IPv4.
   opt.ip_family = domain == AF_INET6 ? AF_INET6 : AF_INET;
@@ -6632,7 +6632,7 @@ TSHostLookup(TSCont contp, const char *hostname, size_t namelen)
   sdk_assert(sdk_sanity_check_null_ptr((void *)hostname) == TS_SUCCESS);
   sdk_assert(namelen > 0);
 
-  FORCE_PLUGIN_MUTEX(contp);
+  FORCE_PLUGIN_SCOPED_MUTEX(contp);
 
   INKContInternal *i = (INKContInternal *)contp;
   return (TSAction)hostDBProcessor.getbyname_re(i, hostname, namelen);
@@ -6691,7 +6691,7 @@ TSCacheRead(TSCont contp, TSCacheKey key)
   sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_cachekey(key) == TS_SUCCESS);
 
-  FORCE_PLUGIN_MUTEX(contp);
+  FORCE_PLUGIN_SCOPED_MUTEX(contp);
 
   CacheInfo *info = (CacheInfo *)key;
   Continuation *i = (INKContInternal *)contp;
@@ -6705,7 +6705,7 @@ TSCacheWrite(TSCont contp, TSCacheKey key)
   sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_cachekey(key) == TS_SUCCESS);
 
-  FORCE_PLUGIN_MUTEX(contp);
+  FORCE_PLUGIN_SCOPED_MUTEX(contp);
 
   CacheInfo *info = (CacheInfo *)key;
   Continuation *i = (INKContInternal *)contp;
@@ -6720,7 +6720,7 @@ TSCacheRemove(TSCont contp, TSCacheKey key)
   sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_cachekey(key) == TS_SUCCESS);
 
-  FORCE_PLUGIN_MUTEX(contp);
+  FORCE_PLUGIN_SCOPED_MUTEX(contp);
 
   CacheInfo *info = (CacheInfo *)key;
   INKContInternal *i = (INKContInternal *)contp;
@@ -6734,7 +6734,7 @@ TSCacheScan(TSCont contp, TSCacheKey key, int KB_per_second)
   sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
   // NOTE: key can be NULl here, so don't check for it.
 
-  FORCE_PLUGIN_MUTEX(contp);
+  FORCE_PLUGIN_SCOPED_MUTEX(contp);
 
   INKContInternal *i = (INKContInternal *)contp;
 

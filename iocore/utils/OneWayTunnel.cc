@@ -139,7 +139,7 @@ OneWayTunnel::init(VConnection *vcSource, VConnection *vcTarget, Continuation *a
 
   buf1->water_mark = water_mark;
 
-  MUTEX_LOCK(lock, mutex, this_ethread());
+  SCOPED_MUTEX_LOCK(lock, mutex, this_ethread());
   vioSource = vcSource->do_io_read(this, nbytes, buf1);
   vioTarget = vcTarget->do_io_write(this, nbytes, buf2->alloc_reader(), 0);
   ink_assert(vioSource && vioTarget);
@@ -168,7 +168,7 @@ OneWayTunnel::init(VConnection *vcSource, VConnection *vcTarget, Continuation *a
   SET_HANDLER(&OneWayTunnel::startEvent);
 
   SourceVio->set_continuation(this);
-  MUTEX_LOCK(lock, mutex, this_ethread());
+  SCOPED_MUTEX_LOCK(lock, mutex, this_ethread());
   vioSource = SourceVio;
 
   vioTarget = vcTarget->do_io_write(this, TUNNEL_TILL_DONE, reader, 0);

@@ -495,7 +495,7 @@ aio_thread_main(void *arg)
       op->link.next = NULL;
       op->mutex = op->action.mutex;
       if (op->thread == AIO_CALLBACK_THREAD_AIO) {
-        MUTEX_LOCK(lock, op->mutex, thr_info->mutex->thread_holding);
+        SCOPED_MUTEX_LOCK(lock, op->mutex, thr_info->mutex->thread_holding);
         if (!op->action.cancelled)
           op->action.continuation->handleEvent(AIO_EVENT_DONE, op);
       } else if (op->thread == AIO_CALLBACK_THREAD_ANY)
