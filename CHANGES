@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-3592] Set cacheurl default config location to config directory.
+
   *) [TS-3590]: Mark H2 fetch streams as non-internal requests
 
   *) [TS-3370] header_rewrite plugin uses dead continuation.
