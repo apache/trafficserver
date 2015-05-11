@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-3562] background_fetch: refactor some code, elimiante the std::map
+   for rules, split things out into manageable sub-modules.
+
   *) [TS-3592] Set cacheurl default config location to config directory.
 
   *) [TS-3590]: Mark H2 fetch streams as non-internal requests
