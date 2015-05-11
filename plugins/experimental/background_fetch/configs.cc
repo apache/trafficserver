@@ -100,7 +100,7 @@ BgFetchConfig::readConfig(const char *config_file)
             }
             BgFetchRule *r = new BgFetchRule(exclude, cfg_name, cfg_value);
 
-            if (NULL == _rules) {
+            if (NULL == cur) {
               _rules = r;
             } else {
               cur->chain(r);
