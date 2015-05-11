@@ -520,3 +520,44 @@ ConditionIncomingPort::append_value(std::string &s, const Resources &res)
   s += oss.str();
   TSDebug(PLUGIN_NAME, "Appending %d to evaluation value -> %s", port, s.c_str());
 }
+
+// ConditionTransactCount
+void
+ConditionTransactCount::initialize(Parser& p)
+{
+  Condition::initialize(p);
+
+  Matchers<std::string>* match = new Matchers<std::string>(_cond_op);
+  match->set(p.get_arg());
+
+  _matcher = match;
+}
+
+bool
+ConditionTransactCount::eval(const Resources& res)
+{
+  std::string s;
+
+  append_value(s, res);
+  bool rval = static_cast<const Matchers<std::string>*>(_matcher)->test(s);
+  TSDebug(PLUGIN_NAME, "Evaluating TXN-COUNT(): %s: rval: %d", s.c_str(), rval);
+  return rval;
+}
+
+void
+ConditionTransactCount::append_value(std::string& s, const Resources& res)
+{
+  TSHttpSsn ssn = TSHttpTxnSsnGet(res.txnp);
+  int count;
+  char value[6];
+  int length;
+
+  if (ssn) {
+    count = TSHttpSsnTransactionCount(ssn);  
+    length = ink_fast_itoa(count, value, sizeof(value));
+    if (length > 0) {
+      TSDebug(PLUGIN_NAME, "Appending TXN-COUNT(%s) to evaluation value -> %.*s", _qualifier.c_str(), length, value);
+      s.append(value, length);
+    }
+  }
+}
