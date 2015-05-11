@@ -126,7 +126,8 @@ only be evaluated if the condition(s) are met::
   cond %{URL:option-name}                       [condition_flags]
   cond %{FROM-URL:option-name}                  [condition_flags]
   cond %{TO-URL:option-name}                    [condition_flags]
-  
+  cond %{TXN-COUNT}                             [condition_flags]
+
 The difference between HEADER and CLIENT-HEADER is that HEADER adapts to the
 hook it's running in, whereas CLIENT-HEADER always applies to the client
 request header. The %{TRUE} condition is also the default condition if no

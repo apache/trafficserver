@@ -24,7 +24,6 @@ header_rewrite_la_SOURCES = \
   factory.cc \
   header_rewrite.cc \
   lulu.cc \
-  matcher.cc \
   operator.cc \
   operators.cc \
   parser.cc \

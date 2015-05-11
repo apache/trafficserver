@@ -614,3 +614,47 @@ ConditionIncomingPort::append_value(std::string &s, const Resources &res)
   s += oss.str();
   TSDebug(PLUGIN_NAME, "Appending %d to evaluation value -> %s", port, s.c_str());
 }
+
+// ConditionTransactCount
+void
+ConditionTransactCount::initialize(Parser& p)
+{
+  Condition::initialize(p);
+
+  MatcherType* match = new MatcherType(_cond_op);
+  std::string const& arg = p.get_arg();
+  match->set(strtol(arg.c_str(), NULL, 10));
+
+  _matcher = match;
+}
+
+bool
+ConditionTransactCount::eval(const Resources& res)
+{
+  TSHttpSsn ssn = TSHttpTxnSsnGet(res.txnp);
+  bool rval = false;
+  if (ssn) {
+    int n = TSHttpSsnTransactionCount(ssn);
+    rval = static_cast<MatcherType*>(_matcher)->test(n);
+    TSDebug(PLUGIN_NAME, "Evaluating TXN-COUNT(): %d: rval: %s", n, rval ? "true" : "false");
+  } else {
+    TSDebug(PLUGIN_NAME, "Evaluation TXN-COUNT(): No session found, returning false");
+  }
+  return rval;
+}
+
+void
+ConditionTransactCount::append_value(std::string& s, Resources const& res)
+{
+  TSHttpSsn ssn = TSHttpTxnSsnGet(res.txnp);
+  
+  if (ssn) {
+    char value[32]; // enough for UINT64_MAX
+    int count = TSHttpSsnTransactionCount(ssn);
+    int length = ink_fast_itoa(count, value, sizeof(value));
+    if (length > 0) {
+      TSDebug(PLUGIN_NAME, "Appending TXN-COUNT %s to evaluation value %.*s", _qualifier.c_str(), length, value);
+      s.append(value, length);
+    }
+  }
+}
