@@ -26,6 +26,7 @@
 #include <cstring>
 
 #include "ts/ts.h"
+#include "ts/ink_string.h"
 
 #include "condition.h"
 #include "matcher.h"
@@ -364,6 +365,25 @@ protected:
 
 private:
   DISALLOW_COPY_AND_ASSIGN(ConditionIncomingPort);
+};
+
+//Transact Count
+class ConditionTransactCount : public Condition
+{
+  public:
+    ConditionTransactCount()
+    {
+      TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionTransactCount");
+    }
+
+  void initialize(Parser& p);
+  void append_value(std::string &s, const Resources &res);
+
+protected:
+  bool eval(const Resources &res);
+
+private:
+  DISALLOW_COPY_AND_ASSIGN(ConditionTransactCount);
 };
 
 #endif // __CONDITIONS_H
