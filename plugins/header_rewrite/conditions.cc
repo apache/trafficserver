@@ -379,10 +379,6 @@ ConditionUrl::eval(const Resources &res)
       // res._rri->requestBufp and res.client_bufp are the same if it is at the remap hook
       TSDebug(PLUGIN_NAME, "   Using the request url");
       url = res._rri->requestUrl;
-      TSMLoc tmp_url = NULL;
-      TSHttpHdrUrlGet(res.client_bufp, res.client_hdr_loc, &tmp_url);
-      assert(tmp_url == url);
-      TSDebug(PLUGIN_NAME, "url %p tmp_url: %p", url, tmp_url);
     } else if (_type == FROM) {
       TSDebug(PLUGIN_NAME, "   Using the from url");
       url = res._rri->mapFromUrl;
