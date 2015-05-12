@@ -7098,7 +7098,7 @@ HttpTransact::calculate_document_freshness_limit(State *s, HTTPHdr *response, ti
       freshness_limit = (int)response->get_cooked_cc_max_age();
       DebugTxn("http_match", "calculate_document_freshness_limit --- max_age set, freshness_limit = %d", freshness_limit);
     }
-    freshness_limit = min(max(0, freshness_limit), NUM_SECONDS_IN_ONE_YEAR);
+    freshness_limit = min(max(0, freshness_limit), (int)s->txn_conf->cache_guaranteed_max_lifetime);
   } else {
     date_set = last_modified_set = false;
 
@@ -7135,7 +7135,7 @@ HttpTransact::calculate_document_freshness_limit(State *s, HTTPHdr *response, ti
       DebugTxn("http_match", "calculate_document_freshness_limit --- Expires: %" PRId64 ", Date: %" PRId64 ", freshness_limit = %d",
                (int64_t)expires_value, (int64_t)date_value, freshness_limit);
 
-      freshness_limit = min(max(0, freshness_limit), NUM_SECONDS_IN_ONE_YEAR);
+      freshness_limit = min(max(0, freshness_limit), (int)s->txn_conf->cache_guaranteed_max_lifetime);
     } else {
       last_modified_value = 0;
       if (response->presence(MIME_PRESENCE_LAST_MODIFIED)) {
@@ -7172,7 +7172,7 @@ HttpTransact::calculate_document_freshness_limit(State *s, HTTPHdr *response, ti
 
   // The freshness limit must always fall within the min and max guaranteed bounds.
   min_freshness_bounds = max((MgmtInt)0, s->txn_conf->cache_guaranteed_min_lifetime);
-  max_freshness_bounds = min((MgmtInt)NUM_SECONDS_IN_ONE_YEAR, s->txn_conf->cache_guaranteed_max_lifetime);
+  max_freshness_bounds = s->txn_conf->cache_guaranteed_max_lifetime;
 
   // Heuristic freshness can be more strict.
   if (*heuristic) {
@@ -7205,7 +7205,7 @@ HttpTransact::calculate_document_freshness_limit(State *s, HTTPHdr *response, ti
 int
 HttpTransact::calculate_freshness_fuzz(State *s, int fresh_limit)
 {
-  static double LOG_YEAR = log10((double)NUM_SECONDS_IN_ONE_YEAR);
+  static double LOG_YEAR = log10((double)s->txn_conf->cache_guaranteed_max_lifetime);
   const uint32_t granularity = 1000;
   int result = 0;
 
@@ -7308,7 +7308,7 @@ HttpTransact::what_is_document_freshness(State *s, HTTPHdr *client_request, HTTP
   if (s->txn_conf->freshness_fuzz_time >= 0) {
     fresh_limit = fresh_limit - calculate_freshness_fuzz(s, fresh_limit);
     fresh_limit = max(0, fresh_limit);
-    fresh_limit = min(NUM_SECONDS_IN_ONE_YEAR, fresh_limit);
+    fresh_limit = min((int)s->txn_conf->cache_guaranteed_max_lifetime, fresh_limit);
   }
 
   current_age = HttpTransactHeaders::calculate_document_age(s->request_sent_time, s->response_received_time, cached_obj_response,
@@ -7316,9 +7316,9 @@ HttpTransact::what_is_document_freshness(State *s, HTTPHdr *client_request, HTTP
 
   // Overflow ?
   if (current_age < 0)
-    current_age = NUM_SECONDS_IN_ONE_YEAR; // TODO: Should we make a new "max age" define?
+    current_age = s->txn_conf->cache_guaranteed_max_lifetime;
   else
-    current_age = min((time_t)NUM_SECONDS_IN_ONE_YEAR, current_age);
+    current_age = min((time_t)s->txn_conf->cache_guaranteed_max_lifetime, current_age);
 
   DebugTxn("http_match", "[what_is_document_freshness] fresh_limit:  %d  current_age: %" PRId64, fresh_limit, (int64_t)current_age);
 

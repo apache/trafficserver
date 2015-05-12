@@ -46,7 +46,6 @@
 #include "congest/Congestion.h"
 
 #define MAX_DNS_LOOKUPS 2
-#define NUM_SECONDS_IN_ONE_YEAR (31536000) // (365L * 24L * 3600L)
 
 #define HTTP_RELEASE_ASSERT(X) ink_release_assert(X)
 // #define ink_cluster_time(X) time(X)
