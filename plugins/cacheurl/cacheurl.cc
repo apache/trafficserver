@@ -42,6 +42,7 @@
 #define TOKENCOUNT 10
 #define OVECOUNT 30
 #define PLUGIN_NAME "cacheurl"
+#define DEFAULT_CONFIG "cacheurl.config"
 
 struct regex_info {
   pcre *re;          /* Compiled regular expression */
@@ -213,10 +214,10 @@ load_config_file(const char *config_file)
   regex_info *info = 0;
 
   if (config_file == NULL) {
-    /* Default config file of plugins/cacheurl.config */
-    path = TSPluginDirGet();
-    path += "/cacheurl.config";
-  } else if (*config_file != '/') {
+    config_file = DEFAULT_CONFIG;
+  }
+
+  if (*config_file != '/') {
     // Relative paths are relative to the config directory
     path = TSConfigDirGet();
     path += "/";

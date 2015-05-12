@@ -23,6 +23,8 @@ two external depencies (below package names are for RHEL/Centos):
     - python-virtualenv
     - libcffi-devel
 
+Run ``sudo make bootstrap`` to install the TSQA dependencies.
+
 Once these two packages are available you simply need to run "make test" in this
 directory to run all tests.
 

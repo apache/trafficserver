@@ -45,7 +45,8 @@ class EnvironmentCase(tsqa.test_cases.EnvironmentCase):
         TMP_DIR = os.path.join(tempfile.gettempdir(), 'tsqa')
         ef = tsqa.environment.EnvironmentFactory(SOURCE_DIR,
                                                  os.path.join(TMP_DIR, 'base_envs'),
-                                                 default_configure={'enable-example-plugins': None,
+                                                 default_configure={'enable-experimental-plugins': None,
+                                                                    'enable-example-plugins': None,
                                                                     'enable-test-tools': None,
                                                                     'disable-dependency-tracking': None,
                                                                     'enable-ccache': None,

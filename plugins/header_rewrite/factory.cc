@@ -103,10 +103,14 @@ condition_factory(const std::string &cond)
     c = new ConditionHeader(true);
   } else if (c_name == "QUERY") {
     c = new ConditionQuery();
-  } else if (c_name == "URL") { // This condition adapts to the hook
-    c = new ConditionUrl();
-  } else if (c_name == "CLIENT-URL") {
-    c = new ConditionUrl(true);
+  } else if (c_name == "CLIENT-URL") { // This condition adapts to the hook
+    c = new ConditionUrl(ConditionUrl::CLIENT);
+  } else if (c_name == "URL") {
+    c = new ConditionUrl(ConditionUrl::URL);
+  } else if (c_name == "FROM-URL") {
+    c = new ConditionUrl(ConditionUrl::FROM);
+  } else if (c_name == "TO-URL") {
+    c = new ConditionUrl(ConditionUrl::TO);
   } else if (c_name == "DBM") {
     c = new ConditionDBM();
   } else if (c_name == "INTERNAL-TRANSACTION") {

@@ -337,8 +337,13 @@ ConditionQuery::eval(const Resources &res)
 
 // ConditionUrl: request or response header. TODO: This is not finished, at all!!!
 void
-ConditionUrl::initialize(Parser & /* p ATS_UNUSED */)
+ConditionUrl::initialize(Parser &p)
 {
+  Condition::initialize(p);
+
+  Matchers<std::string> *match = new Matchers<std::string>(_cond_op);
+  match->set(p.get_arg());
+  _matcher = match;
 }
 
 
@@ -358,11 +363,62 @@ ConditionUrl::append_value(std::string & /* s ATS_UNUSED */, const Resources & /
 
 
 bool
-ConditionUrl::eval(const Resources & /* res ATS_UNUSED */)
+ConditionUrl::eval(const Resources &res)
 {
-  bool ret = false;
+  TSDebug(PLUGIN_NAME, "ConditionUrl::eval");
+  TSMLoc url = NULL;
+  TSMBuffer bufp = NULL;
+  std::string s;
 
-  return ret;
+  TSDebug(PLUGIN_NAME, "res.bufp %p res.client_bufp: %p res._rri->requestBufp: %p", res.bufp, res.client_bufp,
+          res._rri->requestBufp);
+  if (res._rri != NULL) {
+    // called at the remap hook
+    bufp = res._rri->requestBufp;
+    if (_type == URL || _type == CLIENT) {
+      // res._rri->requestBufp and res.client_bufp are the same if it is at the remap hook
+      TSDebug(PLUGIN_NAME, "   Using the request url");
+      url = res._rri->requestUrl;
+      TSMLoc tmp_url = NULL;
+      TSHttpHdrUrlGet(res.client_bufp, res.client_hdr_loc, &tmp_url);
+      assert(tmp_url == url);
+      TSDebug(PLUGIN_NAME, "url %p tmp_url: %p", url, tmp_url);
+    } else if (_type == FROM) {
+      TSDebug(PLUGIN_NAME, "   Using the from url");
+      url = res._rri->mapFromUrl;
+    } else if (_type == TO) {
+      TSDebug(PLUGIN_NAME, "   Using the to url");
+      url = res._rri->mapToUrl;
+    } else {
+      TSError("header_rewrite: Invalid option value");
+      return false;
+    }
+  } else {
+    TSMLoc hdr_loc = NULL;
+    if (_type == CLIENT) {
+      bufp = res.client_bufp;
+      hdr_loc = res.client_hdr_loc;
+    } else if (_type == URL) {
+      bufp = res.bufp;
+      hdr_loc = res.hdr_loc;
+    } else {
+      TSError("header_rewrite: Rule not supported at this hook");
+      return false;
+    }
+    if (TSHttpHdrUrlGet(bufp, hdr_loc, &url) != TS_SUCCESS) {
+      TSError("header_rewrite: Error getting the URL");
+      return false;
+    }
+  }
+
+  if (_url_qual == URL_QUAL_HOST) {
+    int host_len = 0;
+    const char *host = TSUrlHostGet(bufp, url, &host_len);
+    s.append(host, host_len);
+    TSDebug(PLUGIN_NAME, "   Host to match is: %.*s", host_len, host);
+  }
+
+  return static_cast<const Matchers<std::string> *>(_matcher)->test(s);
 }
 
 
