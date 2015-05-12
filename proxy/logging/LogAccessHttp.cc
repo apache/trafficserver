@@ -249,6 +249,22 @@ LogAccessHttp::marshal_client_host_port(char *buf)
   return INK_MIN_ALIGN;
 }
 
+#ifdef TS_HAS_UUID
+int
+LogAccessHttp::marshal_proxy_uuid(char *buf)
+{
+  const char *str = m_http_sm->get_uuid();
+  const int   len = strlen(str);
+
+  if (buf) {
+    marshal_str(buf, str, len);
+  }
+
+  return len;
+}
+#endif
+
+
 /*-------------------------------------------------------------------------
   user authenticated to the proxy (RFC931)
   -------------------------------------------------------------------------*/

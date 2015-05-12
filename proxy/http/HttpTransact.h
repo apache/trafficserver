@@ -82,7 +82,7 @@
 #define TRANSACT_SETUP_RETURN(n, r) \
   s->next_action = n;               \
   s->transact_return_point = r;     \
-  DebugSpecific((s->state_machine && s->state_machine->debug_on), "http_trans", "Next action %s; %s", #n, #r);
+  DebugSpecific((s->state_machine && s->state_machine->debug_on), "http_trans", ID_FMT "Next action %s; %s", ID_VAL, #n, #r);
 
 #define TRANSACT_RETURN(n, r) \
   TRANSACT_SETUP_RETURN(n, r) \
@@ -1289,7 +1289,8 @@ is_response_body_precluded(HTTPStatus status_code, int method)
   }
 }
 
-inkcoreapi extern ink_time_t ink_cluster_time(void);
+//inkcoreapi extern ink_time_t ink_cluster_time(void * s);
+inkcoreapi extern ink_time_t ink_cluster_time();
 
 inline void
 HttpTransact::update_stat(State *s, int stat, ink_statval_t increment)

@@ -44,6 +44,19 @@
 #include "HdrUtils.h"
 //#include "AuthHttpAdapter.h"
 
+#ifdef TS_HAS_UUID
+  #ifdef HAS_BOOST_UUID
+    #include <boost/uuid/uuid.hpp>
+    #include <boost/uuid/uuid_generators.hpp>
+    #include <boost/uuid/uuid_io.hpp>
+
+  #elif defined(HAS_OSSP_UUID)
+    #include <uuid.h>
+  #endif
+#endif
+
+#define ID_FMT "[%s]: "
+
 /* Enable LAZY_BUF_ALLOC to delay allocation of buffers until they
  * are actually required.
  * Enabling LAZY_BUF_ALLOC, stop Http code from allocation space
@@ -343,6 +356,7 @@ protected:
   Continuation *schedule_cont;
 
   HTTPParser http_parser;
+
   void start_sub_sm();
 
   int main_handler(int event, void *data);
@@ -541,6 +555,19 @@ public:
 
 public:
   bool set_server_session_private(bool private_session);
+
+#ifdef TS_HAS_UUID
+protected:
+  char uuid[64]; // Actually only 57 are needed,
+                 // but to keep the padding, it's
+                 // better to use 64.
+
+  inline void init_uuid();
+  inline void setup_uuid();
+
+public:
+    const char *get_uuid(void) const { return static_cast<const char*>(uuid); };
+#endif
 };
 
 // Function to get the cache_sm object - YTS Team, yamsat

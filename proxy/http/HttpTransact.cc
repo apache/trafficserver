@@ -65,6 +65,8 @@ static char range_type[] = "multipart/byteranges; boundary=RANGE_SEPARATOR";
 
 #define DebugTxn(tag, ...) DebugSpecific((s->state_machine->debug_on), tag, __VA_ARGS__)
 
+#define ID_VAL s->state_machine->get_uuid()
+
 extern HttpBodyFactory *body_factory;
 
 static const char local_host_ip_str[] = "127.0.0.1";
@@ -224,7 +226,7 @@ find_server_and_update_current_info(HttpTransact::State *s)
     // we are assuming both child and parent have similar configuration
     // with respect to whether a request is cacheable or not.
     // For example, the cache_urls_that_look_dynamic variable.
-    DebugTxn("http_trans", "request not cacheable, so bypass parent");
+    DebugTxn("http_trans", ID_FMT "request not cacheable, so bypass parent", ID_VAL);
     s->parent_result.r = PARENT_DIRECT;
   } else {
     switch (s->parent_result.r) {
@@ -507,8 +509,8 @@ how_to_open_connection(HttpTransact::State *s)
 void
 HttpTransact::BadRequest(State *s)
 {
-  DebugTxn("http_trans", "[BadRequest]"
-                         "parser marked request bad");
+  DebugTxn("http_trans", ID_FMT "[BadRequest]"
+                         "parser marked request bad", ID_VAL);
   bootstrap_state_variables_from_request(s, &s->hdr_info.client_request);
   build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Invalid HTTP Request", "request#syntax_error", NULL);
   TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, NULL);
@@ -522,7 +524,7 @@ HttpTransact::HandleBlindTunnel(State *s)
   // IpEndpoint dest_addr;
   // ip_text_buffer new_host;
 
-  DebugTxn("http_trans", "[HttpTransact::HandleBlindTunnel]");
+  DebugTxn("http_trans", ID_FMT "[HttpTransact::HandleBlindTunnel]", ID_VAL);
 
   // We've received a request on a port which we blind forward
   //  For logging purposes we create a fake request
@@ -550,7 +552,7 @@ HttpTransact::HandleBlindTunnel(State *s)
   if (is_debug_tag_set("http_trans")) {
     int host_len;
     const char *host = s->hdr_info.client_request.url_get()->host_get(&host_len);
-    DebugTxn("http_trans", "[HandleBlindTunnel] destination set to %.*s:%d", host_len, host,
+    DebugTxn("http_trans", ID_FMT "[HandleBlindTunnel] destination set to %.*s:%d", ID_VAL, host_len, host,
              s->hdr_info.client_request.url_get()->port_get());
   }
   // Now we need to run the url remapping engine to find the where
@@ -660,7 +662,7 @@ HttpTransact::perform_accept_encoding_filtering(State *s)
        then the server SHOULD use the "identity" content-coding, unless it has additional information that
        a different content-coding is meaningful to the client." */
     if (ua_match) {
-      DebugTxn("http_trans", "HttpTransact::ModifyRequest, insert identity Accept-Encoding");
+      DebugTxn("http_trans", ID_FMT "HttpTransact::ModifyRequest, insert identity Accept-Encoding", ID_VAL);
       accept_field = client_request->field_find(MIME_FIELD_ACCEPT_ENCODING, MIME_LEN_ACCEPT_ENCODING);
       if (!accept_field) {
         accept_field = client_request->field_create(MIME_FIELD_ACCEPT_ENCODING, MIME_LEN_ACCEPT_ENCODING);
@@ -680,7 +682,7 @@ void
 HttpTransact::StartRemapRequest(State *s)
 {
   if (s->api_skip_all_remapping) {
-    Debug("http_trans", "API request to skip remapping");
+    Debug("http_trans", ID_FMT "API request to skip remapping", ID_VAL);
 
     s->hdr_info.client_request.set_url_target_from_host_field();
 
@@ -691,7 +693,7 @@ HttpTransact::StartRemapRequest(State *s)
     TRANSACT_RETURN(SM_ACTION_POST_REMAP_SKIP, HttpTransact::HandleRequest);
   }
 
-  DebugTxn("http_trans", "START HttpTransact::StartRemapRequest");
+  DebugTxn("http_trans", ID_FMT "START HttpTransact::StartRemapRequest", ID_VAL);
 
   /**
    * Check for URL remappings before checking request
@@ -733,7 +735,7 @@ HttpTransact::StartRemapRequest(State *s)
   /////////////////////////////////////////////////////////////////
 
   if (is_debug_tag_set("http_chdr_describe") || is_debug_tag_set("http_trans")) {
-    DebugTxn("http_trans", "Before Remapping:");
+    DebugTxn("http_trans", ID_FMT "Before Remapping:", ID_VAL);
     obj_describe(s->hdr_info.client_request.m_http, 1);
   }
 
@@ -745,27 +747,27 @@ HttpTransact::StartRemapRequest(State *s)
     }
   }
 
-  DebugTxn("http_trans", "END HttpTransact::StartRemapRequest");
+  DebugTxn("http_trans", ID_FMT "END HttpTransact::StartRemapRequest", ID_VAL);
   TRANSACT_RETURN(SM_ACTION_API_PRE_REMAP, HttpTransact::PerformRemap);
 }
 
 void
 HttpTransact::PerformRemap(State *s)
 {
-  DebugTxn("http_trans", "Inside PerformRemap");
+  DebugTxn("http_trans", ID_FMT "Inside PerformRemap", ID_VAL);
   TRANSACT_RETURN(SM_ACTION_REMAP_REQUEST, HttpTransact::EndRemapRequest);
 }
 
 void
 HttpTransact::EndRemapRequest(State *s)
 {
-  DebugTxn("http_trans", "START HttpTransact::EndRemapRequest");
+  DebugTxn("http_trans", ID_FMT "START HttpTransact::EndRemapRequest", ID_VAL);
 
   HTTPHdr *incoming_request = &s->hdr_info.client_request;
   int method = incoming_request->method_get_wksidx();
   int host_len;
   const char *host = incoming_request->host_get(&host_len);
-  DebugTxn("http_trans", "EndRemapRequest host is %.*s", host_len, host);
+  DebugTxn("http_trans", ID_FMT "EndRemapRequest host is %.*s", ID_VAL, host_len, host);
 
   ////////////////////////////////////////////////////////////////
   // if we got back a URL to redirect to, vector the user there //
@@ -815,7 +817,7 @@ HttpTransact::EndRemapRequest(State *s)
      * Or those successfully remapped rules might be redirected
      **/
     if (handleIfRedirect(s)) {
-      DebugTxn("http_trans", "END HttpTransact::RemapRequest");
+      DebugTxn("http_trans", ID_FMT "END HttpTransact::RemapRequest", ID_VAL);
       TRANSACT_RETURN(SM_ACTION_INTERNAL_CACHE_NOOP, NULL);
     }
 
@@ -874,7 +876,7 @@ HttpTransact::EndRemapRequest(State *s)
 
 done:
   if (is_debug_tag_set("http_chdr_describe") || is_debug_tag_set("http_trans") || is_debug_tag_set("url_rewrite")) {
-    DebugTxn("http_trans", "After Remapping:");
+    DebugTxn("http_trans", ID_FMT "After Remapping:", ID_VAL);
     obj_describe(s->hdr_info.client_request.m_http, 1);
   }
 
@@ -887,12 +889,12 @@ done:
     otherwise, 502/404 the request right now. /eric
   */
   if (!s->reverse_proxy && s->state_machine->plugin_tunnel_type == HTTP_NO_PLUGIN_TUNNEL) {
-    DebugTxn("http_trans", "END HttpTransact::EndRemapRequest");
+    DebugTxn("http_trans", ID_FMT "END HttpTransact::EndRemapRequest", ID_VAL);
     HTTP_INCREMENT_TRANS_STAT(http_invalid_client_requests_stat);
     TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, NULL);
   } else {
     s->hdr_info.client_response.clear(); // anything previously set is invalid from this point forward
-    DebugTxn("http_trans", "END HttpTransact::EndRemapRequest");
+    DebugTxn("http_trans", ID_FMT "END HttpTransact::EndRemapRequest", ID_VAL);
 
     if (s->is_upgrade_request && s->post_remap_upgrade_return_point) {
       TRANSACT_RETURN(SM_ACTION_API_POST_REMAP, s->post_remap_upgrade_return_point);
@@ -1083,7 +1085,7 @@ HttpTransact::ModifyRequest(State *s)
   const char *hostname;
   HTTPHdr &request = s->hdr_info.client_request;
 
-  DebugTxn("http_trans", "START HttpTransact::ModifyRequest");
+  DebugTxn("http_trans", ID_FMT "START HttpTransact::ModifyRequest", ID_VAL);
 
   // Initialize the state vars necessary to sending error responses
   bootstrap_state_variables_from_request(s, &request);
@@ -1159,10 +1161,10 @@ HttpTransact::ModifyRequest(State *s)
     if (ae_field) {
       if (HttpTransactCache::match_gzip(ae_field) == GZIP) {
         s->hdr_info.client_request.field_value_set(ae_field, "gzip", 4);
-        DebugTxn("http_trans", "[ModifyRequest] normalized Accept-Encoding to gzip");
+        DebugTxn("http_trans", ID_FMT "[ModifyRequest] normalized Accept-Encoding to gzip", ID_VAL);
       } else {
         s->hdr_info.client_request.field_delete(ae_field);
-        DebugTxn("http_trans", "[ModifyRequest] removed non-gzip Accept-Encoding");
+        DebugTxn("http_trans", ID_FMT "[ModifyRequest] removed non-gzip Accept-Encoding", ID_VAL);
       }
     }
   }
@@ -1174,12 +1176,12 @@ HttpTransact::ModifyRequest(State *s)
     perform_accept_encoding_filtering(s);
   }
 
-  DebugTxn("http_trans", "END HttpTransact::ModifyRequest");
+  DebugTxn("http_trans", ID_FMT "END HttpTransact::ModifyRequest", ID_VAL);
 
-  DebugTxn("http_trans", "Checking if transaction wants to upgrade");
+  DebugTxn("http_trans", ID_FMT "Checking if transaction wants to upgrade", ID_VAL);
   if (handle_upgrade_request(s)) {
     // everything should be handled by the upgrade handler.
-    DebugTxn("http_trans", "Transaction will be upgraded by the appropriate upgrade handler.");
+    DebugTxn("http_trans", ID_FMT "Transaction will be upgraded by the appropriate upgrade handler.", ID_VAL);
     return;
   }
 
@@ -1220,7 +1222,7 @@ HttpTransact::handleIfRedirect(State *s)
 void
 HttpTransact::HandleRequest(State *s)
 {
-  DebugTxn("http_trans", "START HttpTransact::HandleRequest");
+  DebugTxn("http_trans", ID_FMT "START HttpTransact::HandleRequest", ID_VAL);
 
   ink_assert(!s->hdr_info.server_request.valid());
 
@@ -1236,12 +1238,12 @@ HttpTransact::HandleRequest(State *s)
 
   if (!(is_request_valid(s, &s->hdr_info.client_request))) {
     HTTP_INCREMENT_TRANS_STAT(http_invalid_client_requests_stat);
-    DebugTxn("http_seq", "[HttpTransact::HandleRequest] request invalid.");
+    DebugTxn("http_seq", ID_FMT "[HttpTransact::HandleRequest] request invalid.", ID_VAL);
     s->next_action = SM_ACTION_SEND_ERROR_CACHE_NOOP;
     //  s->next_action = HttpTransact::PROXY_INTERNAL_CACHE_NOOP;
     return;
   }
-  DebugTxn("http_seq", "[HttpTransact::HandleRequest] request valid.");
+  DebugTxn("http_seq", ID_FMT "[HttpTransact::HandleRequest] request valid.", ID_VAL);
 
   if (is_debug_tag_set("http_chdr_describe")) {
     obj_describe(s->hdr_info.client_request.m_http, 1);
@@ -1262,7 +1264,7 @@ HttpTransact::HandleRequest(State *s)
       expect_hdr_val = expect->value_get(&expect_hdr_val_len);
       if (ptr_len_casecmp(expect_hdr_val, expect_hdr_val_len, HTTP_VALUE_100_CONTINUE, HTTP_LEN_100_CONTINUE) == 0) {
         // Let's error out this request.
-        DebugTxn("http_trans", "Client sent a post expect: 100-continue, sending 405.");
+        DebugTxn("http_trans", ID_FMT "Client sent a post expect: 100-continue, sending 405.", ID_VAL);
         HTTP_INCREMENT_TRANS_STAT(disallowed_post_100_continue);
         build_error_response(s, HTTP_STATUS_METHOD_NOT_ALLOWED, "Method Not Allowed", "request#method_unsupported", NULL);
         TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, NULL);
@@ -1427,7 +1429,7 @@ HttpTransact::setup_plugin_request_intercept(State *s)
 void
 HttpTransact::HandleApiErrorJump(State *s)
 {
-  DebugTxn("http_trans", "[HttpTransact::HandleApiErrorJump]");
+  DebugTxn("http_trans", ID_FMT "[HttpTransact::HandleApiErrorJump]", ID_VAL);
 
   // since the READ_REQUEST_HDR_HOOK is processed before
   //   we examine the request, returning TS_EVENT_ERROR will cause
@@ -1488,7 +1490,7 @@ HttpTransact::PPDNSLookup(State *s)
 {
   ++s->dns_info.attempts;
 
-  DebugTxn("http_trans", "[HttpTransact::PPDNSLookup] This was attempt %d", s->dns_info.attempts);
+  DebugTxn("http_trans", ID_FMT "[HttpTransact::PPDNSLookup] This was attempt %d", ID_VAL, s->dns_info.attempts);
 
   ink_assert(s->dns_info.looking_up == PARENT_PROXY);
   if (!s->dns_info.lookup_success) {
@@ -1512,7 +1514,7 @@ HttpTransact::PPDNSLookup(State *s)
     s->parent_info.dns_round_robin = s->host_db_info.round_robin;
 
     char addrbuf[INET6_ADDRSTRLEN];
-    DebugTxn("http_trans", "[PPDNSLookup] DNS lookup for sm_id[%" PRId64 "] successful IP: %s", s->state_machine->sm_id,
+    DebugTxn("http_trans", ID_FMT "[PPDNSLookup] DNS lookup for sm_id[%" PRId64 "] successful IP: %s", ID_VAL, s->state_machine->sm_id,
              ats_ip_ntop(&s->parent_info.addr.sa, addrbuf, sizeof(addrbuf)));
   }
 
@@ -1568,8 +1570,8 @@ HttpTransact::ReDNSRoundRobin(State *s)
     s->server_info.dns_round_robin = s->host_db_info.round_robin;
 
     char addrbuf[INET6_ADDRSTRLEN];
-    DebugTxn("http_trans", "[ReDNSRoundRobin] DNS lookup for O.S. successful IP: %s",
-             ats_ip_ntop(&s->server_info.addr.sa, addrbuf, sizeof(addrbuf)));
+    DebugTxn("http_trans", ID_FMT "[ReDNSRoundRobin] DNS lookup for O.S. successful IP: %s",
+             ID_VAL, ats_ip_ntop(&s->server_info.addr.sa, addrbuf, sizeof(addrbuf)));
 
     s->next_action = how_to_open_connection(s);
   } else {
@@ -1617,7 +1619,7 @@ HttpTransact::OSDNSLookup(State *s)
   static int max_dns_lookups = 3 + s->http_config_param->num_url_expansions;
   ++s->dns_info.attempts;
 
-  DebugTxn("http_trans", "[HttpTransact::OSDNSLookup] This was attempt %d", s->dns_info.attempts);
+  DebugTxn("http_trans", ID_FMT "[HttpTransact::OSDNSLookup] This was attempt %d", ID_VAL, s->dns_info.attempts);
 
   ink_assert(s->dns_info.looking_up == ORIGIN_SERVER);
 
@@ -1627,7 +1629,7 @@ HttpTransact::OSDNSLookup(State *s)
   // Check if this procedure is already done - YTS Team, yamsat
   if (!s->request_will_not_selfloop) {
     if (will_this_request_self_loop(s)) {
-      DebugTxn("http_trans", "[OSDNSLookup] request will selfloop - bailing out");
+      DebugTxn("http_trans", ID_FMT "[OSDNSLookup] request will selfloop - bailing out", ID_VAL);
       SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
       TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, NULL);
     }
@@ -1651,19 +1653,19 @@ HttpTransact::OSDNSLookup(State *s)
         // No HostDB data, just keep on with the CTA.
         s->dns_info.lookup_success = true;
         s->dns_info.os_addr_style = DNSLookupInfo::OS_ADDR_USE_CLIENT;
-        DebugTxn("http_seq", "[HttpTransact::OSDNSLookup] DNS lookup unsuccessful reverting to force client target address use");
+        DebugTxn("http_seq", ID_FMT "[HttpTransact::OSDNSLookup] DNS lookup unsuccessful reverting to force client target address use", ID_VAL);
       } else {
         if (host_name_expansion == EXPANSION_NOT_ALLOWED) {
           // config file doesn't allow automatic expansion of host names
           HTTP_RELEASE_ASSERT(!(s->http_config_param->enable_url_expandomatic));
-          DebugTxn("http_seq", "[HttpTransact::OSDNSLookup] DNS Lookup unsuccessful");
+          DebugTxn("http_seq", ID_FMT "[HttpTransact::OSDNSLookup] DNS Lookup unsuccessful", ID_VAL);
         } else if (host_name_expansion == EXPANSION_FAILED) {
           // not able to expand the hostname. dns lookup failed
-          DebugTxn("http_seq", "[HttpTransact::OSDNSLookup] DNS Lookup unsuccessful");
+          DebugTxn("http_seq", ID_FMT "[HttpTransact::OSDNSLookup] DNS Lookup unsuccessful", ID_VAL);
         } else if (host_name_expansion == DNS_ATTEMPTS_EXHAUSTED) {
           // retry attempts exhausted --- can't find dns entry for this host name
           HTTP_RELEASE_ASSERT(s->dns_info.attempts >= max_dns_lookups);
-          DebugTxn("http_seq", "[HttpTransact::OSDNSLookup] DNS Lookup unsuccessful");
+          DebugTxn("http_seq", ID_FMT "[HttpTransact::OSDNSLookup] DNS Lookup unsuccessful", ID_VAL);
         }
         // output the DNS failure error message
         SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
@@ -1680,7 +1682,7 @@ HttpTransact::OSDNSLookup(State *s)
   }
   // ok, so the dns lookup succeeded
   ink_assert(s->dns_info.lookup_success);
-  DebugTxn("http_seq", "[HttpTransact::OSDNSLookup] DNS Lookup successful");
+  DebugTxn("http_seq", ID_FMT "[HttpTransact::OSDNSLookup] DNS Lookup successful", ID_VAL);
 
   if (DNSLookupInfo::OS_ADDR_TRY_HOSTDB == s->dns_info.os_addr_style) {
     // We've backed off from a client supplied address and found some
@@ -1712,9 +1714,9 @@ HttpTransact::OSDNSLookup(State *s)
   s->server_info.dns_round_robin = s->host_db_info.round_robin;
 
   char addrbuf[INET6_ADDRSTRLEN];
-  DebugTxn("http_trans", "[OSDNSLookup] DNS lookup for O.S. successful "
+  DebugTxn("http_trans", ID_FMT "[OSDNSLookup] DNS lookup for O.S. successful "
                          "IP: %s",
-           ats_ip_ntop(&s->server_info.addr.sa, addrbuf, sizeof(addrbuf)));
+           ID_VAL, ats_ip_ntop(&s->server_info.addr.sa, addrbuf, sizeof(addrbuf)));
 
   // so the dns lookup was a success, but the lookup succeeded on
   // a hostname which was expanded by the traffic server. we should
@@ -1729,8 +1731,8 @@ HttpTransact::OSDNSLookup(State *s)
   // [amc] Also don't redirect if we backed off using HostDB instead of CTA.
   if (s->dns_info.attempts == max_dns_lookups && s->dns_info.looking_up == ORIGIN_SERVER &&
       DNSLookupInfo::OS_ADDR_USE_CLIENT != s->dns_info.os_addr_style) {
-    DebugTxn("http_trans", "[OSDNSLookup] DNS name resolution on expansion");
-    DebugTxn("http_seq", "[OSDNSLookup] DNS name resolution on expansion - returning");
+    DebugTxn("http_trans", ID_FMT "[OSDNSLookup] DNS name resolution on expansion", ID_VAL);
+    DebugTxn("http_seq", ID_FMT "[OSDNSLookup] DNS name resolution on expansion - returning", ID_VAL);
     build_redirect_response(s);
     // s->cache_info.action = CACHE_DO_NO_ACTION;
     TRANSACT_RETURN(SM_ACTION_INTERNAL_CACHE_NOOP, NULL);
@@ -1744,14 +1746,14 @@ HttpTransact::OSDNSLookup(State *s)
   // Should we skip the StartAccessControl()? why?
 
   if (s->cdn_remap_complete) {
-    DebugTxn("cdn", "This is a late DNS lookup.  We are going to the OS, "
-                    "not to HandleFiltering.");
+    DebugTxn("cdn", ID_FMT "This is a late DNS lookup.  We are going to the OS, "
+                    "not to HandleFiltering.", ID_VAL);
     ink_assert(s->cdn_saved_next_action == SM_ACTION_ORIGIN_SERVER_OPEN ||
                s->cdn_saved_next_action == SM_ACTION_ORIGIN_SERVER_RAW_OPEN);
-    DebugTxn("cdn", "outgoing version -- (pre  conversion) %d", s->hdr_info.server_request.m_http->m_version);
+    DebugTxn("cdn", ID_FMT "outgoing version -- (pre  conversion) %d", ID_VAL, s->hdr_info.server_request.m_http->m_version);
     (&s->hdr_info.server_request)->version_set(HTTPVersion(1, 1));
     HttpTransactHeaders::convert_request(s->current.server->http_version, &s->hdr_info.server_request);
-    DebugTxn("cdn", "outgoing version -- (post conversion) %d", s->hdr_info.server_request.m_http->m_version);
+    DebugTxn("cdn", ID_FMT "outgoing version -- (post conversion) %d", ID_VAL, s->hdr_info.server_request.m_http->m_version);
     TRANSACT_RETURN(s->cdn_saved_next_action, NULL);
   } else if (DNSLookupInfo::OS_ADDR_USE_CLIENT == s->dns_info.os_addr_style ||
              DNSLookupInfo::OS_ADDR_USE_HOSTDB == s->dns_info.os_addr_style) {
@@ -1836,8 +1838,8 @@ HttpTransact::HandleFiltering(State *s)
   if (s->method == HTTP_WKSIDX_PUSH && s->http_config_param->push_method_enabled == 0) {
     // config file says this request is not authorized.
     // send back error response to client.
-    DebugTxn("http_trans", "[HandleFiltering] access denied.");
-    DebugTxn("http_seq", "[HttpTransact::HandleFiltering] Access Denied.");
+    DebugTxn("http_trans", ID_FMT "[HandleFiltering] access denied.", ID_VAL);
+    DebugTxn("http_seq", ID_FMT "[HttpTransact::HandleFiltering] Access Denied.", ID_VAL);
 
     SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
     // adding a comment so that cvs recognizes that I added a space in the text below
@@ -1846,7 +1848,7 @@ HttpTransact::HandleFiltering(State *s)
     TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, NULL);
   }
 
-  DebugTxn("http_seq", "[HttpTransact::HandleFiltering] Request Authorized.");
+  DebugTxn("http_seq", ID_FMT "[HttpTransact::HandleFiltering] Request Authorized.", ID_VAL);
   //////////////////////////////////////////////////////////////
   // ok, the config file says that the request is authorized. //
   //////////////////////////////////////////////////////////////
@@ -1886,8 +1888,8 @@ HttpTransact::DecideCacheLookup(State *s)
 
   // now decide whether the cache can even be looked up.
   if (s->cache_info.action == CACHE_DO_LOOKUP) {
-    DebugTxn("http_trans", "[DecideCacheLookup] Will do cache lookup.");
-    DebugTxn("http_seq", "[DecideCacheLookup] Will do cache lookup");
+    DebugTxn("http_trans", ID_FMT "[DecideCacheLookup] Will do cache lookup.", ID_VAL);
+    DebugTxn("http_seq", ID_FMT "[DecideCacheLookup] Will do cache lookup", ID_VAL);
     ink_assert(s->current.mode != TUNNELLING_PROXY);
 
     if (s->cache_info.lookup_url == NULL) {
@@ -1934,8 +1936,8 @@ HttpTransact::DecideCacheLookup(State *s)
   } else {
     ink_assert(s->cache_info.action != CACHE_DO_LOOKUP && s->cache_info.action != CACHE_DO_SERVE);
 
-    DebugTxn("http_trans", "[DecideCacheLookup] Will NOT do cache lookup.");
-    DebugTxn("http_seq", "[DecideCacheLookup] Will NOT do cache lookup");
+    DebugTxn("http_trans", ID_FMT "[DecideCacheLookup] Will NOT do cache lookup.", ID_VAL);
+    DebugTxn("http_seq", ID_FMT "[DecideCacheLookup] Will NOT do cache lookup", ID_VAL);
     // If this is a push request, we need send an error because
     //   since what ever was sent is not cachable
     if (s->method == HTTP_WKSIDX_PUSH) {
@@ -2144,7 +2146,7 @@ HttpTransact::HandlePushError(State *s, const char *reason)
 void
 HttpTransact::HandleCacheOpenRead(State *s)
 {
-  DebugTxn("http_trans", "[HttpTransact::HandleCacheOpenRead]");
+  DebugTxn("http_trans", ID_FMT "[HttpTransact::HandleCacheOpenRead]", ID_VAL);
 
   SET_VIA_STRING(VIA_DETAIL_CACHE_TYPE, VIA_DETAIL_CACHE);
 
@@ -2174,7 +2176,7 @@ HttpTransact::HandleCacheOpenRead(State *s)
     HandleCacheOpenReadPush(s, read_successful);
   } else if (read_successful == false) {
     // cache miss
-    DebugTxn("http_trans", "CacheOpenRead -- miss");
+    DebugTxn("http_trans", ID_FMT "CacheOpenRead -- miss", ID_VAL);
     SET_VIA_STRING(VIA_DETAIL_CACHE_LOOKUP, VIA_DETAIL_MISS_NOT_CACHED);
     // StartAccessControl(s);
     if (s->force_dns) {
@@ -2185,7 +2187,7 @@ HttpTransact::HandleCacheOpenRead(State *s)
     }
   } else {
     // cache hit
-    DebugTxn("http_trans", "CacheOpenRead -- hit");
+    DebugTxn("http_trans", ID_FMT "CacheOpenRead -- hit", ID_VAL);
     TRANSACT_RETURN(SM_ACTION_API_READ_CACHE_HDR, HandleCacheOpenReadHitFreshness);
   }
 
@@ -2236,10 +2238,10 @@ HttpTransact::issue_revalidate(State *s)
     // action should be when the response is received.
     if (does_method_require_cache_copy_deletion(s->http_config_param, s->method)) {
       s->cache_info.action = CACHE_PREPARE_TO_DELETE;
-      DebugTxn("http_seq", "[HttpTransact::issue_revalidate] cache action: DELETE");
+      DebugTxn("http_seq", ID_FMT "[HttpTransact::issue_revalidate] cache action: DELETE", ID_VAL);
     } else {
       s->cache_info.action = CACHE_PREPARE_TO_UPDATE;
-      DebugTxn("http_seq", "[HttpTransact::issue_revalidate] cache action: UPDATE");
+      DebugTxn("http_seq", ID_FMT "[HttpTransact::issue_revalidate] cache action: UPDATE", ID_VAL);
     }
   } else {
     // We've looped back around due to missing the write lock
@@ -2263,7 +2265,7 @@ HttpTransact::issue_revalidate(State *s)
   bool no_cache_in_request = false;
 
   if (s->hdr_info.client_request.is_pragma_no_cache_set() || s->hdr_info.client_request.is_cache_control_set(HTTP_VALUE_NO_CACHE)) {
-    DebugTxn("http_trans", "[issue_revalidate] no-cache header directive in request, folks");
+    DebugTxn("http_trans", ID_FMT "[issue_revalidate] no-cache header directive in request, folks", ID_VAL);
     no_cache_in_request = true;
   }
 
@@ -2271,7 +2273,7 @@ HttpTransact::issue_revalidate(State *s)
       (!(s->hdr_info.client_request.presence(MIME_PRESENCE_IF_NONE_MATCH))) && (no_cache_in_request == true) &&
       (!s->txn_conf->cache_ims_on_client_no_cache) && (s->www_auth_content == CACHE_AUTH_NONE)) {
     DebugTxn("http_trans",
-             "[issue_revalidate] Can not make this a conditional request. This is the force update of the cached copy case");
+             ID_FMT "[issue_revalidate] Can not make this a conditional request. This is the force update of the cached copy case", ID_VAL);
     // set cache action to update. response will be a 200 or error,
     // causing cached copy to be replaced (if 200).
     s->cache_info.action = CACHE_PREPARE_TO_UPDATE;
@@ -2321,8 +2323,8 @@ HttpTransact::issue_revalidate(State *s)
   case HTTP_STATUS_GONE: // 410
   /* fall through */
   default:
-    DebugTxn("http_trans", "[issue_revalidate] cached response is"
-                           "not a 200 response so no conditionalization.");
+    DebugTxn("http_trans", ID_FMT "[issue_revalidate] cached response is"
+                           "not a 200 response so no conditionalization.", ID_VAL);
     s->cache_info.action = CACHE_PREPARE_TO_UPDATE;
     break;
   case HTTP_STATUS_PARTIAL_CONTENT:
@@ -2338,10 +2340,10 @@ HttpTransact::HandleCacheOpenReadHitFreshness(State *s)
   CacheHTTPInfo *&obj = s->cache_info.object_read;
 
   ink_release_assert((s->request_sent_time == UNDEFINED_TIME) && (s->response_received_time == UNDEFINED_TIME));
-  DebugTxn("http_seq", "[HttpTransact::HandleCacheOpenReadHitFreshness] Hit in cache");
+  DebugTxn("http_seq", ID_FMT "[HttpTransact::HandleCacheOpenReadHitFreshness] Hit in cache", ID_VAL);
 
   if (delete_all_document_alternates_and_return(s, true)) {
-    DebugTxn("http_trans", "[HandleCacheOpenReadHitFreshness] Delete and return");
+    DebugTxn("http_trans", ID_FMT "[HandleCacheOpenReadHitFreshness] Delete and return", ID_VAL);
     s->cache_info.action = CACHE_DO_DELETE;
     s->next_action = HttpTransact::SM_ACTION_INTERNAL_CACHE_DELETE;
     return;
@@ -2360,8 +2362,8 @@ HttpTransact::HandleCacheOpenReadHitFreshness(State *s)
 
   ink_assert(s->request_sent_time <= s->response_received_time);
 
-  DebugTxn("http_trans", "[HandleCacheOpenReadHitFreshness] request_sent_time      : %" PRId64, (int64_t)s->request_sent_time);
-  DebugTxn("http_trans", "[HandleCacheOpenReadHitFreshness] response_received_time : %" PRId64, (int64_t)s->response_received_time);
+  DebugTxn("http_trans", ID_FMT "[HandleCacheOpenReadHitFreshness] request_sent_time      : %" PRId64, ID_VAL, (int64_t)s->request_sent_time);
+  DebugTxn("http_trans", ID_FMT "[HandleCacheOpenReadHitFreshness] response_received_time : %" PRId64, ID_VAL, (int64_t)s->response_received_time);
   // if the plugin has already decided the freshness, we don't need to
   // do it again
   if (s->cache_lookup_result == HttpTransact::CACHE_LOOKUP_NONE) {
@@ -2370,18 +2372,18 @@ HttpTransact::HandleCacheOpenReadHitFreshness(State *s)
     Freshness_t freshness = what_is_document_freshness(s, &s->hdr_info.client_request, obj->response_get());
     switch (freshness) {
     case FRESHNESS_FRESH:
-      DebugTxn("http_seq", "[HttpTransact::HandleCacheOpenReadHitFreshness] "
-                           "Fresh copy");
+      DebugTxn("http_seq", ID_FMT "[HttpTransact::HandleCacheOpenReadHitFreshness] "
+                           "Fresh copy", ID_VAL);
       s->cache_lookup_result = HttpTransact::CACHE_LOOKUP_HIT_FRESH;
       break;
     case FRESHNESS_WARNING:
-      DebugTxn("http_seq", "[HttpTransact::HandleCacheOpenReadHitFreshness] "
-                           "Heuristic-based Fresh copy");
+      DebugTxn("http_seq", ID_FMT "[HttpTransact::HandleCacheOpenReadHitFreshness] "
+                           "Heuristic-based Fresh copy", ID_VAL);
       s->cache_lookup_result = HttpTransact::CACHE_LOOKUP_HIT_WARNING;
       break;
     case FRESHNESS_STALE:
-      DebugTxn("http_seq", "[HttpTransact::HandleCacheOpenReadHitFreshness] "
-                           "Stale in cache");
+      DebugTxn("http_seq", ID_FMT "[HttpTransact::HandleCacheOpenReadHitFreshness] "
+                           "Stale in cache", ID_VAL);
       s->cache_lookup_result = HttpTransact::CACHE_LOOKUP_HIT_STALE;
       s->is_revalidation_necessary = true; // to identify a revalidation occurrence
       break;
@@ -2447,24 +2449,24 @@ HttpTransact::need_to_revalidate(State *s)
 
   switch (authentication_needed) {
   case AUTHENTICATION_SUCCESS:
-    DebugTxn("http_seq", "[HttpTransact::HandleCacheOpenReadHit] "
-                         "Authentication not needed");
+    DebugTxn("http_seq", ID_FMT "[HttpTransact::HandleCacheOpenReadHit] "
+                         "Authentication not needed", ID_VAL);
     needs_authenticate = false;
     break;
   case AUTHENTICATION_MUST_REVALIDATE:
     SET_VIA_STRING(VIA_DETAIL_CACHE_LOOKUP, VIA_DETAIL_MISS_METHOD);
-    DebugTxn("http_seq", "[HttpTransact::HandleCacheOpenReadHit] "
-                         "Authentication needed");
+    DebugTxn("http_seq", ID_FMT "[HttpTransact::HandleCacheOpenReadHit] "
+                         "Authentication needed", ID_VAL);
     needs_authenticate = true;
     break;
   case AUTHENTICATION_MUST_PROXY:
-    DebugTxn("http_seq", "[HttpTransact::HandleCacheOpenReadHit] "
-                         "Authentication needed");
+    DebugTxn("http_seq", ID_FMT "[HttpTransact::HandleCacheOpenReadHit] "
+                         "Authentication needed", ID_VAL);
     needs_authenticate = true;
     break;
   case AUTHENTICATION_CACHE_AUTH:
-    DebugTxn("http_seq", "[HttpTransact::HandleCacheOpenReadHit] "
-                         "Authentication needed for cache_auth_content");
+    DebugTxn("http_seq", ID_FMT "[HttpTransact::HandleCacheOpenReadHit] "
+                         "Authentication needed for cache_auth_content", ID_VAL);
     needs_authenticate = false;
     needs_cache_auth = true;
     break;
@@ -2543,24 +2545,24 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
 
   switch (authentication_needed) {
   case AUTHENTICATION_SUCCESS:
-    DebugTxn("http_seq", "[HttpTransact::HandleCacheOpenReadHit] "
-                         "Authentication not needed");
+    DebugTxn("http_seq", ID_FMT "[HttpTransact::HandleCacheOpenReadHit] "
+                         "Authentication not needed", ID_VAL);
     needs_authenticate = false;
     break;
   case AUTHENTICATION_MUST_REVALIDATE:
     SET_VIA_STRING(VIA_DETAIL_CACHE_LOOKUP, VIA_DETAIL_MISS_METHOD);
-    DebugTxn("http_seq", "[HttpTransact::HandleCacheOpenReadHit] "
-                         "Authentication needed");
+    DebugTxn("http_seq", ID_FMT "[HttpTransact::HandleCacheOpenReadHit] "
+                         "Authentication needed", ID_VAL);
     needs_authenticate = true;
     break;
   case AUTHENTICATION_MUST_PROXY:
-    DebugTxn("http_seq", "[HttpTransact::HandleCacheOpenReadHit] "
-                         "Authentication needed");
+    DebugTxn("http_seq", ID_FMT "[HttpTransact::HandleCacheOpenReadHit] "
+                         "Authentication needed", ID_VAL);
     HandleCacheOpenReadMiss(s);
     return;
   case AUTHENTICATION_CACHE_AUTH:
-    DebugTxn("http_seq", "[HttpTransact::HandleCacheOpenReadHit] "
-                         "Authentication needed for cache_auth_content");
+    DebugTxn("http_seq", ID_FMT "[HttpTransact::HandleCacheOpenReadHit] "
+                         "Authentication needed for cache_auth_content", ID_VAL);
     needs_authenticate = false;
     needs_cache_auth = true;
     break;
@@ -2605,23 +2607,23 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
     send_revalidate = true;
   }
 
-  DebugTxn("http_trans", "CacheOpenRead --- needs_auth          = %d", needs_authenticate);
-  DebugTxn("http_trans", "CacheOpenRead --- needs_revalidate    = %d", needs_revalidate);
-  DebugTxn("http_trans", "CacheOpenRead --- response_returnable = %d", response_returnable);
-  DebugTxn("http_trans", "CacheOpenRead --- needs_cache_auth    = %d", needs_cache_auth);
-  DebugTxn("http_trans", "CacheOpenRead --- send_revalidate    = %d", send_revalidate);
+  DebugTxn("http_trans", ID_FMT "CacheOpenRead --- needs_auth          = %d", ID_VAL, needs_authenticate);
+  DebugTxn("http_trans", ID_FMT "CacheOpenRead --- needs_revalidate    = %d", ID_VAL, needs_revalidate);
+  DebugTxn("http_trans", ID_FMT "CacheOpenRead --- response_returnable = %d", ID_VAL, response_returnable);
+  DebugTxn("http_trans", ID_FMT "CacheOpenRead --- needs_cache_auth    = %d", ID_VAL, needs_cache_auth);
+  DebugTxn("http_trans", ID_FMT "CacheOpenRead --- send_revalidate    = %d", ID_VAL, send_revalidate);
   if (send_revalidate) {
-    DebugTxn("http_trans", "CacheOpenRead --- HIT-STALE");
+    DebugTxn("http_trans", ID_FMT "CacheOpenRead --- HIT-STALE", ID_VAL);
     s->dns_info.attempts = 0;
 
-    DebugTxn("http_seq", "[HttpTransact::HandleCacheOpenReadHit] "
-                         "Revalidate document with server");
+    DebugTxn("http_seq", ID_FMT "[HttpTransact::HandleCacheOpenReadHit] "
+                         "Revalidate document with server", ID_VAL);
 
     if (s->http_config_param->icp_enabled && icp_dynamic_enabled && s->http_config_param->stale_icp_enabled &&
         needs_authenticate == false && needs_cache_auth == false && !s->hdr_info.client_request.is_pragma_no_cache_set() &&
         !s->hdr_info.client_request.is_cache_control_set(HTTP_VALUE_NO_CACHE)) {
-      DebugTxn("http_trans", "[HandleCacheOpenReadHit] ICP is configured"
-                             " and no no-cache in request; checking ICP for a STALE hit");
+      DebugTxn("http_trans", ID_FMT "[HandleCacheOpenReadHit] ICP is configured"
+                             " and no no-cache in request; checking ICP for a STALE hit", ID_VAL);
 
       s->stale_icp_lookup = true;
 
@@ -2652,13 +2654,13 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
           is_stale_cache_response_returnable(s) == true) {
         server_up = false;
         update_current_info(&s->current, NULL, UNDEFINED_LOOKUP, 0);
-        DebugTxn("http_trans", "CacheOpenReadHit - server_down, returning stale document");
+        DebugTxn("http_trans", ID_FMT "CacheOpenReadHit - server_down, returning stale document", ID_VAL);
       }
     }
 
     if (server_up || s->stale_icp_lookup) {
       bool check_hostdb = get_ka_info_from_config(s, s->current.server);
-      DebugTxn("http_trans", "CacheOpenReadHit - check_hostdb %d", check_hostdb);
+      DebugTxn("http_trans", ID_FMT "CacheOpenReadHit - check_hostdb %d", ID_VAL, check_hostdb);
       if (!s->stale_icp_lookup && (check_hostdb || !ats_is_ip(&s->current.server->addr))) {
         //        ink_release_assert(s->current.request_to == PARENT_PROXY ||
         //                    s->http_config_param->no_dns_forward_to_parent != 0);
@@ -2685,7 +2687,7 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
         }
       }
 
-      DebugTxn("http_trans", "CacheOpenReadHit - version %d", s->current.server->http_version.m_version);
+      DebugTxn("http_trans", ID_FMT "CacheOpenReadHit - version %d", ID_VAL, s->current.server->http_version.m_version);
       build_request(s, &s->hdr_info.client_request, &s->hdr_info.server_request, s->current.server->http_version);
 
       issue_revalidate(s);
@@ -2724,9 +2726,9 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
   //
   ink_assert((send_revalidate == true && server_up == false) || (send_revalidate == false && server_up == true));
 
-  DebugTxn("http_trans", "CacheOpenRead --- HIT-FRESH");
-  DebugTxn("http_seq", "[HttpTransact::HandleCacheOpenReadHit] "
-                       "Serve from cache");
+  DebugTxn("http_trans", ID_FMT "CacheOpenRead --- HIT-FRESH", ID_VAL);
+  DebugTxn("http_seq", ID_FMT "[HttpTransact::HandleCacheOpenReadHit] "
+                       "Serve from cache", ID_VAL);
 
   // ToDo: Should support other levels of cache hits here, but the cache does not support it (yet)
   if (SQUID_HIT_RAM == s->cache_info.hit_miss_code) {
@@ -2793,7 +2795,7 @@ HttpTransact::build_response_from_cache(State *s, HTTPWarningCode warning_code)
   case HTTP_STATUS_NOT_MODIFIED:
     // A IMS or INM GET client request with conditions being met
     // by the cached response.  Send back a NOT MODIFIED response.
-    DebugTxn("http_trans", "[build_response_from_cache] Not modified");
+    DebugTxn("http_trans", ID_FMT "[build_response_from_cache] Not modified", ID_VAL);
     SET_VIA_STRING(VIA_DETAIL_CACHE_LOOKUP, VIA_DETAIL_HIT_CONDITIONAL);
 
     build_response(s, cached_response, &s->hdr_info.client_response, s->client_info.http_version, client_response_code);
@@ -2804,7 +2806,7 @@ HttpTransact::build_response_from_cache(State *s, HTTPWarningCode warning_code)
   case HTTP_STATUS_PRECONDITION_FAILED:
     // A conditional request with conditions not being met by the cached
     // response.  Send back a PRECONDITION FAILED response.
-    DebugTxn("http_trans", "[build_response_from_cache] Precondition Failed");
+    DebugTxn("http_trans", ID_FMT "[build_response_from_cache] Precondition Failed", ID_VAL);
     SET_VIA_STRING(VIA_DETAIL_CACHE_LOOKUP, VIA_DETAIL_MISS_CONDITIONAL);
 
     build_response(s, &s->hdr_info.client_response, s->client_info.http_version, client_response_code);
@@ -2822,7 +2824,7 @@ HttpTransact::build_response_from_cache(State *s, HTTPWarningCode warning_code)
     SET_VIA_STRING(VIA_DETAIL_CACHE_LOOKUP, VIA_DETAIL_HIT_SERVED);
     if (s->method == HTTP_WKSIDX_GET || s->api_resp_cacheable == true) {
       // send back the full document to the client.
-      DebugTxn("http_trans", "[build_response_from_cache] Match! Serving full document.");
+      DebugTxn("http_trans", ID_FMT "[build_response_from_cache] Match! Serving full document.", ID_VAL);
       s->cache_info.action = CACHE_DO_SERVE;
 
       // Check if cached response supports Range. If it does, append
@@ -2840,7 +2842,7 @@ HttpTransact::build_response_from_cache(State *s, HTTPWarningCode warning_code)
           // or if the range can't be satisfied from the cache
           // In that case we fetch the entire source so it's OK to switch
           // this late.
-          DebugTxn("http_seq", "[HttpTransact::HandleCacheOpenReadHit] Out-of-order Range request - tunneling");
+          DebugTxn("http_seq", ID_FMT "[HttpTransact::HandleCacheOpenReadHit] Out-of-order Range request - tunneling", ID_VAL);
           s->cache_info.action = CACHE_DO_NO_ACTION;
           if (s->force_dns) {
             HandleCacheOpenReadMiss(s); // DNS is already completed no need of doing DNS
@@ -2862,7 +2864,7 @@ HttpTransact::build_response_from_cache(State *s, HTTPWarningCode warning_code)
     }
     // If the client request is a HEAD, then serve the header from cache.
     else if (s->method == HTTP_WKSIDX_HEAD) {
-      DebugTxn("http_trans", "[build_response_from_cache] Match! Serving header only.");
+      DebugTxn("http_trans", ID_FMT "[build_response_from_cache] Match! Serving header only.", ID_VAL);
 
       build_response(s, cached_response, &s->hdr_info.client_response, s->client_info.http_version);
       s->cache_info.action = CACHE_DO_NO_ACTION;
@@ -2871,7 +2873,7 @@ HttpTransact::build_response_from_cache(State *s, HTTPWarningCode warning_code)
       // We handled the request but it's not GET or HEAD (eg. DELETE),
       // and server is not reacheable: 502
       //
-      DebugTxn("http_trans", "[build_response_from_cache] No match! Connection failed.");
+      DebugTxn("http_trans", ID_FMT "[build_response_from_cache] No match! Connection failed.", ID_VAL);
       build_error_response(s, HTTP_STATUS_BAD_GATEWAY, "Connection Failed", "connect#failed_connect", NULL);
       s->cache_info.action = CACHE_DO_NO_ACTION;
       s->next_action = SM_ACTION_INTERNAL_CACHE_NOOP;
@@ -3024,12 +3026,12 @@ HttpTransact::handle_cache_write_lock(State *s)
 void
 HttpTransact::HandleCacheOpenReadMiss(State *s)
 {
-  DebugTxn("http_trans", "[HandleCacheOpenReadMiss] --- MISS");
-  DebugTxn("http_seq", "[HttpTransact::HandleCacheOpenReadMiss] "
-                       "Miss in cache");
+  DebugTxn("http_trans", ID_FMT "[HandleCacheOpenReadMiss] --- MISS", ID_VAL);
+  DebugTxn("http_seq", ID_FMT "[HttpTransact::HandleCacheOpenReadMiss] "
+                       "Miss in cache", ID_VAL);
 
   if (delete_all_document_alternates_and_return(s, false)) {
-    DebugTxn("http_trans", "[HandleCacheOpenReadMiss] Delete and return");
+    DebugTxn("http_trans", ID_FMT "[HandleCacheOpenReadMiss] Delete and return", ID_VAL);
     s->cache_info.action = CACHE_DO_NO_ACTION;
     s->next_action = SM_ACTION_INTERNAL_CACHE_NOOP;
     return;
@@ -3068,8 +3070,8 @@ HttpTransact::HandleCacheOpenReadMiss(State *s)
   // if ICP is enabled and above test indicates that request
   // does not have a no-cache, issue icp query to sibling cache.
   if (s->http_config_param->icp_enabled && icp_dynamic_enabled != 0 && (no_cache_in_request == false)) {
-    DebugTxn("http_trans", "[HandleCacheOpenReadMiss] "
-                           "ICP is configured and no no-cache in request; checking ICP");
+    DebugTxn("http_trans", ID_FMT "[HandleCacheOpenReadMiss] "
+                           "ICP is configured and no no-cache in request; checking ICP", ID_VAL);
     s->next_action = SM_ACTION_ICP_QUERY;
     return;
   }
@@ -3125,7 +3127,7 @@ HttpTransact::HandleICPLookup(State *s)
   SET_VIA_STRING(VIA_DETAIL_CACHE_TYPE, VIA_DETAIL_ICP);
   if (s->icp_lookup_success == true) {
     HTTP_INCREMENT_TRANS_STAT(http_icp_suggested_lookups_stat);
-    DebugTxn("http_trans", "[HandleICPLookup] Success, sending request to icp suggested host.");
+    DebugTxn("http_trans", ID_FMT "[HandleICPLookup] Success, sending request to icp suggested host.", ID_VAL);
     ats_ip4_set(&s->icp_info.addr, s->icp_ip_result.sin_addr.s_addr);
     s->icp_info.port = ntohs(s->icp_ip_result.sin_port);
 
@@ -3152,7 +3154,7 @@ HttpTransact::HandleICPLookup(State *s)
     s->next_hop_scheme = URL_WKSIDX_HTTP;
   } else {
     SET_VIA_STRING(VIA_DETAIL_CACHE_LOOKUP, VIA_DETAIL_MISS_NOT_CACHED);
-    DebugTxn("http_trans", "[HandleICPLookup] Failure, sending request to forward server.");
+    DebugTxn("http_trans", ID_FMT "[HandleICPLookup] Failure, sending request to forward server.", ID_VAL);
     s->parent_info.name = NULL;
     ink_zero(s->parent_info.addr);
 
@@ -3197,7 +3199,7 @@ HttpTransact::HandleICPLookup(State *s)
 void
 HttpTransact::OriginServerRawOpen(State *s)
 {
-  DebugTxn("http_trans", "[HttpTransact::OriginServerRawOpen]");
+  DebugTxn("http_trans", ID_FMT "[HttpTransact::OriginServerRawOpen]", ID_VAL);
 
   switch (s->current.state) {
   case STATE_UNDEFINED:
@@ -3219,7 +3221,7 @@ HttpTransact::OriginServerRawOpen(State *s)
   case CONNECTION_ALIVE:
     build_response(s, &s->hdr_info.client_response, s->client_info.http_version, HTTP_STATUS_OK);
 
-    DebugTxn("http_trans", "[OriginServerRawOpen] connection alive. next action is ssl_tunnel");
+    DebugTxn("http_trans", ID_FMT "[OriginServerRawOpen] connection alive. next action is ssl_tunnel", ID_VAL);
     s->next_action = SM_ACTION_SSL_TUNNEL;
     break;
   default:
@@ -3255,15 +3257,15 @@ HttpTransact::OriginServerRawOpen(State *s)
 void
 HttpTransact::HandleResponse(State *s)
 {
-  DebugTxn("http_trans", "[HttpTransact::HandleResponse]");
-  DebugTxn("http_seq", "[HttpTransact::HandleResponse] Response received");
+  DebugTxn("http_trans", ID_FMT "[HttpTransact::HandleResponse]", ID_VAL);
+  DebugTxn("http_seq", ID_FMT "[HttpTransact::HandleResponse] Response received", ID_VAL);
 
   s->source = SOURCE_HTTP_ORIGIN_SERVER;
   s->response_received_time = ink_cluster_time();
   ink_assert(s->response_received_time >= s->request_sent_time);
   s->current.now = s->response_received_time;
 
-  DebugTxn("http_trans", "[HandleResponse] response_received_time: %" PRId64, (int64_t)s->response_received_time);
+  DebugTxn("http_trans", ID_FMT "[HandleResponse] response_received_time: %" PRId64, ID_VAL, (int64_t)s->response_received_time);
   if (!s->cop_test_page)
     DUMP_HEADER("http_hdrs", &s->hdr_info.server_response, s->state_machine_id, "Incoming O.S. Response");
 
@@ -3279,9 +3281,9 @@ HttpTransact::HandleResponse(State *s)
   }
 
   if (!is_response_valid(s, &s->hdr_info.server_response)) {
-    DebugTxn("http_seq", "[HttpTransact::HandleResponse] Response not valid");
+    DebugTxn("http_seq", ID_FMT "[HttpTransact::HandleResponse] Response not valid", ID_VAL);
   } else {
-    DebugTxn("http_seq", "[HttpTransact::HandleResponse] Response valid");
+    DebugTxn("http_seq", ID_FMT "[HttpTransact::HandleResponse] Response valid", ID_VAL);
     initialize_state_variables_from_response(s, &s->hdr_info.server_response);
   }
 
@@ -3413,18 +3415,18 @@ HttpTransact::HandleStatPage(State *s)
 void
 HttpTransact::handle_response_from_icp_suggested_host(State *s)
 {
-  DebugTxn("http_trans", "[handle_response_from_icp_suggested_host] (hrfish)");
+  DebugTxn("http_trans", ID_FMT "[handle_response_from_icp_suggested_host] (hrfish)", ID_VAL);
   HTTP_RELEASE_ASSERT(s->current.server == &s->icp_info);
 
   s->icp_info.state = s->current.state;
   switch (s->current.state) {
   case CONNECTION_ALIVE:
-    DebugTxn("http_trans", "[hrfish] connection alive");
+    DebugTxn("http_trans", ID_FMT "[hrfish] connection alive", ID_VAL);
     SET_VIA_STRING(VIA_DETAIL_ICP_CONNECT, VIA_DETAIL_ICP_SUCCESS);
     handle_forward_server_connection_open(s);
     break;
   default:
-    DebugTxn("http_trans", "[hrfish] connection not alive");
+    DebugTxn("http_trans", ID_FMT "[hrfish] connection not alive", ID_VAL);
     SET_VIA_STRING(VIA_DETAIL_ICP_CONNECT, VIA_DETAIL_ICP_FAILURE);
 
     // If the request is not retryable, bail
@@ -3474,13 +3476,13 @@ HttpTransact::handle_response_from_icp_suggested_host(State *s)
 void
 HttpTransact::handle_response_from_parent(State *s)
 {
-  DebugTxn("http_trans", "[handle_response_from_parent] (hrfp)");
+  DebugTxn("http_trans", ID_FMT "[handle_response_from_parent] (hrfp)", ID_VAL);
   HTTP_RELEASE_ASSERT(s->current.server == &s->parent_info);
 
   s->parent_info.state = s->current.state;
   switch (s->current.state) {
   case CONNECTION_ALIVE:
-    DebugTxn("http_trans", "[hrfp] connection alive");
+    DebugTxn("http_trans", ID_FMT "[hrfp] connection alive", ID_VAL);
     s->current.server->connect_result = 0;
     SET_VIA_STRING(VIA_DETAIL_PP_CONNECT, VIA_DETAIL_PP_SUCCESS);
     if (s->parent_result.retry) {
@@ -3490,7 +3492,7 @@ HttpTransact::handle_response_from_parent(State *s)
     break;
   default: {
     LookingUp_t next_lookup = UNDEFINED_LOOKUP;
-    DebugTxn("http_trans", "[hrfp] connection not alive");
+    DebugTxn("http_trans", ID_FMT "[hrfp] connection not alive", ID_VAL);
     SET_VIA_STRING(VIA_DETAIL_PP_CONNECT, VIA_DETAIL_PP_FAILURE);
 
     ink_assert(s->hdr_info.server_request.valid());
@@ -3498,7 +3500,7 @@ HttpTransact::handle_response_from_parent(State *s)
     s->current.server->connect_result = ENOTCONN;
 
     char addrbuf[INET6_ADDRSTRLEN];
-    DebugTxn("http_trans", "[%d] failed to connect to parent %s", s->current.attempts,
+    DebugTxn("http_trans", ID_FMT "[%d] failed to connect to parent %s", ID_VAL, s->current.attempts,
              ats_ip_ntop(&s->current.server->addr.sa, addrbuf, sizeof(addrbuf)));
 
     // If the request is not retryable, just give up!
@@ -3516,11 +3518,11 @@ HttpTransact::handle_response_from_parent(State *s)
       if ((s->current.attempts - 1) % s->http_config_param->per_parent_connect_attempts != 0) {
         // No we are not done with this parent so retry
         s->next_action = how_to_open_connection(s);
-        DebugTxn("http_trans", "%s Retrying parent for attempt %d, max %" PRId64, "[handle_response_from_parent]",
-                 s->current.attempts, s->http_config_param->per_parent_connect_attempts);
+        DebugTxn("http_trans", ID_FMT "%s Retrying parent for attempt %d, max %" PRId64, "[handle_response_from_parent]",
+                 ID_VAL, s->current.attempts, s->http_config_param->per_parent_connect_attempts);
         return;
       } else {
-        DebugTxn("http_trans", "%s %d per parent attempts exhausted", "[handle_response_from_parent]", s->current.attempts);
+        DebugTxn("http_trans", ID_FMT "%s %d per parent attempts exhausted", "[handle_response_from_parent]", ID_VAL, s->current.attempts);
 
         // Only mark the parent down if we failed to connect
         //  to the parent otherwise slow origin servers cause
@@ -3534,7 +3536,7 @@ HttpTransact::handle_response_from_parent(State *s)
     } else {
       // Done trying parents... fail over to origin server if that is
       //   appropriate
-      DebugTxn("http_trans", "[handle_response_from_parent] Error. No more retries.");
+      DebugTxn("http_trans", ID_FMT "[handle_response_from_parent] Error. No more retries.", ID_VAL);
       s->parent_params->markParentDown(&s->parent_result);
       s->parent_result.r = PARENT_FAIL;
       next_lookup = find_server_and_update_current_info(s);
@@ -3590,7 +3592,7 @@ HttpTransact::handle_response_from_parent(State *s)
 void
 HttpTransact::handle_response_from_server(State *s)
 {
-  DebugTxn("http_trans", "[handle_response_from_server] (hrfs)");
+  DebugTxn("http_trans", ID_FMT "[handle_response_from_server] (hrfs)", ID_VAL);
   HTTP_RELEASE_ASSERT(s->current.server == &s->server_info);
   int max_connect_retries = 0;
 
@@ -3602,14 +3604,14 @@ HttpTransact::handle_response_from_server(State *s)
 
   switch (s->current.state) {
   case CONNECTION_ALIVE:
-    DebugTxn("http_trans", "[hrfs] connection alive");
+    DebugTxn("http_trans", ID_FMT "[hrfs] connection alive", ID_VAL);
     SET_VIA_STRING(VIA_DETAIL_SERVER_CONNECT, VIA_DETAIL_SERVER_SUCCESS);
     s->current.server->clear_connect_fail();
     handle_forward_server_connection_open(s);
     break;
   case CONGEST_CONTROL_CONGESTED_ON_F:
   case CONGEST_CONTROL_CONGESTED_ON_M:
-    DebugTxn("http_trans", "[handle_response_from_server] Error. congestion control -- congested.");
+    DebugTxn("http_trans", ID_FMT "[handle_response_from_server] Error. congestion control -- congested.", ID_VAL);
     SET_VIA_STRING(VIA_DETAIL_SERVER_CONNECT, VIA_DETAIL_SERVER_FAILURE);
     s->current.server->set_connect_fail(EUSERS); // too many users
     handle_server_connection_not_open(s);
@@ -3662,18 +3664,18 @@ HttpTransact::handle_response_from_server(State *s)
         return;
       } else {
         retry_server_connection_not_open(s, s->current.state, max_connect_retries);
-        DebugTxn("http_trans", "[handle_response_from_server] Error. Retrying...");
+        DebugTxn("http_trans", ID_FMT "[handle_response_from_server] Error. Retrying...", ID_VAL);
         s->next_action = how_to_open_connection(s);
         return;
       }
     } else {
-      DebugTxn("http_trans", "[handle_response_from_server] Error. No more retries.");
+      DebugTxn("http_trans", ID_FMT "[handle_response_from_server] Error. No more retries.", ID_VAL);
       SET_VIA_STRING(VIA_DETAIL_SERVER_CONNECT, VIA_DETAIL_SERVER_FAILURE);
       handle_server_connection_not_open(s);
     }
     break;
   case ACTIVE_TIMEOUT:
-    DebugTxn("http_trans", "[hrfs] connection not alive");
+    DebugTxn("http_trans", ID_FMT "[hrfs] connection not alive", ID_VAL);
     SET_VIA_STRING(VIA_DETAIL_SERVER_CONNECT, VIA_DETAIL_SERVER_FAILURE);
     s->current.server->set_connect_fail(ETIMEDOUT);
     handle_server_connection_not_open(s);
@@ -3704,16 +3706,16 @@ HttpTransact::delete_server_rr_entry(State *s, int max_retries)
 {
   char addrbuf[INET6_ADDRSTRLEN];
 
-  DebugTxn("http_trans", "[%d] failed to connect to %s", s->current.attempts,
+  DebugTxn("http_trans", ID_FMT "[%d] failed to connect to %s", ID_VAL, s->current.attempts,
            ats_ip_ntop(&s->current.server->addr.sa, addrbuf, sizeof(addrbuf)));
-  DebugTxn("http_trans", "[delete_server_rr_entry] marking rr entry "
-                         "down and finding next one");
+  DebugTxn("http_trans", ID_FMT "[delete_server_rr_entry] marking rr entry "
+                         "down and finding next one", ID_VAL);
   ink_assert(s->current.server->had_connect_fail());
   ink_assert(s->current.request_to == ORIGIN_SERVER);
   ink_assert(s->current.server == &s->server_info);
   update_dns_info(&s->dns_info, &s->current, 0, &s->arena);
   s->current.attempts++;
-  DebugTxn("http_trans", "[delete_server_rr_entry] attempts now: %d, max: %d", s->current.attempts, max_retries);
+  DebugTxn("http_trans", ID_FMT "[delete_server_rr_entry] attempts now: %d, max: %d", ID_VAL, s->current.attempts, max_retries);
   TRANSACT_RETURN(SM_ACTION_ORIGIN_SERVER_RR_MARK_DOWN, ReDNSRoundRobin);
 }
 
@@ -3740,7 +3742,7 @@ HttpTransact::retry_server_connection_not_open(State *s, ServerState_t conn_stat
 
   char *url_string = s->hdr_info.client_request.url_string_get(&s->arena);
 
-  DebugTxn("http_trans", "[%d] failed to connect [%d] to %s", s->current.attempts, conn_state,
+  DebugTxn("http_trans", ID_FMT "[%d] failed to connect [%d] to %s", ID_VAL, s->current.attempts, conn_state,
            ats_ip_ntop(&s->current.server->addr.sa, addrbuf, sizeof(addrbuf)));
 
   //////////////////////////////////////////
@@ -3761,7 +3763,7 @@ HttpTransact::retry_server_connection_not_open(State *s, ServerState_t conn_stat
   s->current.server->keep_alive = HTTP_NO_KEEPALIVE;
   s->current.attempts++;
 
-  DebugTxn("http_trans", "[retry_server_connection_not_open] attempts now: %d, max: %d", s->current.attempts, max_retries);
+  DebugTxn("http_trans", ID_FMT "[retry_server_connection_not_open] attempts now: %d, max: %d", ID_VAL, s->current.attempts, max_retries);
 
   return;
 }
@@ -3781,8 +3783,8 @@ HttpTransact::handle_server_connection_not_open(State *s)
 {
   bool serve_from_cache = false;
 
-  DebugTxn("http_trans", "[handle_server_connection_not_open] (hscno)");
-  DebugTxn("http_seq", "[HttpTransact::handle_server_connection_not_open] ");
+  DebugTxn("http_trans", ID_FMT "[handle_server_connection_not_open] (hscno)", ID_VAL);
+  DebugTxn("http_seq", ID_FMT "[HttpTransact::handle_server_connection_not_open] ", ID_VAL);
   ink_assert(s->current.state != CONNECTION_ALIVE);
   ink_assert(s->current.server->had_connect_fail());
 
@@ -3834,7 +3836,7 @@ HttpTransact::handle_server_connection_not_open(State *s)
     ink_assert(s->cache_info.action == CACHE_DO_UPDATE);
     ink_assert(s->internal_msg_buffer == NULL);
 
-    DebugTxn("http_trans", "[hscno] serving stale doc to client");
+    DebugTxn("http_trans", ID_FMT "[hscno] serving stale doc to client", ID_VAL);
     build_response_from_cache(s, HTTP_WARNING_CODE_REVALIDATION_FAILED);
   } else {
     handle_server_died(s);
@@ -3863,12 +3865,12 @@ HttpTransact::handle_server_connection_not_open(State *s)
 void
 HttpTransact::handle_forward_server_connection_open(State *s)
 {
-  DebugTxn("http_trans", "[handle_forward_server_connection_open] (hfsco)");
-  DebugTxn("http_seq", "[HttpTransact::handle_server_connection_open] ");
+  DebugTxn("http_trans", ID_FMT "[handle_forward_server_connection_open] (hfsco)", ID_VAL);
+  DebugTxn("http_seq", ID_FMT "[HttpTransact::handle_server_connection_open] ", ID_VAL);
   ink_release_assert(s->current.state == CONNECTION_ALIVE);
 
   if (s->hdr_info.server_response.version_get() == HTTPVersion(0, 9)) {
-    DebugTxn("http_trans", "[hfsco] server sent 0.9 response, reading...");
+    DebugTxn("http_trans", ID_FMT "[hfsco] server sent 0.9 response, reading...", ID_VAL);
     build_response(s, &s->hdr_info.client_response, s->client_info.http_version, HTTP_STATUS_OK, "Connection Established");
 
     s->client_info.keep_alive = HTTP_NO_KEEPALIVE;
@@ -3933,7 +3935,7 @@ HttpTransact::handle_forward_server_connection_open(State *s)
       case HTTP_STATUS_TEMPORARY_REDIRECT: // 307
         break;
       default:
-        DebugTxn("http_trans", "[hfsco] redirect in progress, non-3xx response, setting cache_do_write");
+        DebugTxn("http_trans", ID_FMT "[hfsco] redirect in progress, non-3xx response, setting cache_do_write", ID_VAL);
         if (cw_vc && s->txn_conf->cache_http) {
           s->cache_info.action = CACHE_DO_WRITE;
         }
@@ -3948,7 +3950,7 @@ HttpTransact::handle_forward_server_connection_open(State *s)
   case CACHE_DO_UPDATE:
   /* fall through */
   case CACHE_DO_DELETE:
-    DebugTxn("http_trans", "[hfsco] cache action: %s", HttpDebugNames::get_cache_action_name(s->cache_info.action));
+    DebugTxn("http_trans", ID_FMT "[hfsco] cache action: %s", ID_VAL, HttpDebugNames::get_cache_action_name(s->cache_info.action));
     handle_cache_operation_on_forward_server_response(s);
     break;
   case CACHE_PREPARE_TO_DELETE:
@@ -3969,7 +3971,7 @@ HttpTransact::handle_forward_server_connection_open(State *s)
   /* fall through */
   default:
     // Just tunnel?
-    DebugTxn("http_trans", "[hfsco] cache action: %s", HttpDebugNames::get_cache_action_name(s->cache_info.action));
+    DebugTxn("http_trans", ID_FMT "[hfsco] cache action: %s", ID_VAL, HttpDebugNames::get_cache_action_name(s->cache_info.action));
     handle_no_cache_operation_on_forward_server_response(s);
     break;
   }
@@ -4068,8 +4070,8 @@ HttpTransact::build_response_copy(State *s, HTTPHdr *base_response, HTTPHdr *out
 void
 HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
 {
-  DebugTxn("http_trans", "[handle_cache_operation_on_forward_server_response] (hcoofsr)");
-  DebugTxn("http_seq", "[handle_cache_operation_on_forward_server_response]");
+  DebugTxn("http_trans", ID_FMT "[handle_cache_operation_on_forward_server_response] (hcoofsr)", ID_VAL);
+  DebugTxn("http_seq", ID_FMT "[handle_cache_operation_on_forward_server_response]", ID_VAL);
 
   HTTPHdr *base_response = NULL;
   HTTPStatus server_response_code = HTTP_STATUS_NONE;
@@ -4078,7 +4080,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
   bool cacheable = false;
 
   cacheable = is_response_cacheable(s, &s->hdr_info.client_request, &s->hdr_info.server_response);
-  DebugTxn("http_trans", "[hcoofsr] response %s cacheable", cacheable ? "is" : "is not");
+  DebugTxn("http_trans", ID_FMT "[hcoofsr] response %s cacheable", ID_VAL, cacheable ? "is" : "is not");
 
   // set the correct next action, cache action, response code, and base response
 
@@ -4095,7 +4097,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
       ink_assert(s->cache_info.object_read);
       base_response = s->cache_info.object_read->response_get();
       s->cache_info.action = CACHE_DO_SERVE;
-      DebugTxn("http_trans", "[hcoofsr] not merging, cache action changed to: %s",
+      DebugTxn("http_trans", ID_FMT "[hcoofsr] not merging, cache action changed to: %s", ID_VAL,
                HttpDebugNames::get_cache_action_name(s->cache_info.action));
       s->next_action = SM_ACTION_SERVE_FROM_CACHE;
       client_response_code = base_response->status_get();
@@ -4175,7 +4177,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
       // bogus response from server. deal by tunnelling to client.
       // server should not have sent back a 304 because our request
       // should not have been an conditional.
-      DebugTxn("http_trans", "[hcoofsr] 304 for non-conditional request");
+      DebugTxn("http_trans", ID_FMT "[hcoofsr] 304 for non-conditional request", ID_VAL);
       s->cache_info.action = CACHE_DO_NO_ACTION;
       s->next_action = SM_ACTION_INTERNAL_CACHE_NOOP;
       client_response_code = s->hdr_info.server_response.status_get();
@@ -4220,7 +4222,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
     return;
 
   default:
-    DebugTxn("http_trans", "[hcoofsr] response code: %d", server_response_code);
+    DebugTxn("http_trans", ID_FMT "[hcoofsr] response code: %d", ID_VAL, server_response_code);
     SET_VIA_STRING(VIA_SERVER_RESULT, VIA_SERVER_SERVED);
     SET_VIA_STRING(VIA_PROXY_RESULT, VIA_PROXY_SERVED);
 
@@ -4234,7 +4236,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
          server_response_code == HTTP_STATUS_BAD_GATEWAY || server_response_code == HTTP_STATUS_SERVICE_UNAVAILABLE) &&
         s->cache_info.action == CACHE_DO_UPDATE && s->txn_conf->negative_revalidating_enabled &&
         is_stale_cache_response_returnable(s)) {
-      DebugTxn("http_trans", "[hcoofsr] negative revalidating: revalidate stale object and serve from cache");
+      DebugTxn("http_trans", ID_FMT "[hcoofsr] negative revalidating: revalidate stale object and serve from cache", ID_VAL);
 
       s->cache_info.object_store.create();
       s->cache_info.object_store.request_set(&s->hdr_info.client_request);
@@ -4308,8 +4310,8 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
       ink_assert(s->cache_info.object_read);
       base_response = s->cache_info.object_read->response_get();
       s->cache_info.action = CACHE_DO_SERVE;
-      DebugTxn("http_trans", "[hcoofsr] ignoring server response, "
-                             "cache action changed to: %s",
+      DebugTxn("http_trans", ID_FMT "[hcoofsr] ignoring server response, "
+                             "cache action changed to: %s", ID_VAL,
                HttpDebugNames::get_cache_action_name(s->cache_info.action));
       s->next_action = SM_ACTION_SERVE_FROM_CACHE;
       client_response_code = base_response->status_get();
@@ -4370,8 +4372,8 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
         client_response_code =
           HttpTransactCache::match_response_to_request_conditionals(&s->hdr_info.client_request, &s->hdr_info.server_response);
 
-        DebugTxn("http_trans", "[hcoofsr] conditional request, 200 "
-                               "response, send back 304 if possible [crc=%d]",
+        DebugTxn("http_trans", ID_FMT "[hcoofsr] conditional request, 200 "
+                               "response, send back 304 if possible [crc=%d]", ID_VAL,
                  client_response_code);
         if ((client_response_code == HTTP_STATUS_NOT_MODIFIED) || (client_response_code == HTTP_STATUS_PRECONDITION_FAILED)) {
           switch (s->cache_info.action) {
@@ -4403,12 +4405,12 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
   case CACHE_DO_SERVE_AND_DELETE:
   // fall through
   case CACHE_DO_DELETE:
-    DebugTxn("http_trans", "[hcoofsr] delete cached copy");
+    DebugTxn("http_trans", ID_FMT "[hcoofsr] delete cached copy", ID_VAL);
     SET_VIA_STRING(VIA_CACHE_FILL_ACTION, VIA_CACHE_DELETED);
     HTTP_INCREMENT_TRANS_STAT(http_cache_deletes_stat);
     break;
   case CACHE_DO_WRITE:
-    DebugTxn("http_trans", "[hcoofsr] cache write");
+    DebugTxn("http_trans", ID_FMT "[hcoofsr] cache write", ID_VAL);
     SET_VIA_STRING(VIA_CACHE_FILL_ACTION, VIA_CACHE_WRITTEN);
     HTTP_INCREMENT_TRANS_STAT(http_cache_writes_stat);
     break;
@@ -4417,7 +4419,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
   case CACHE_DO_UPDATE:
   // fall through
   case CACHE_DO_REPLACE:
-    DebugTxn("http_trans", "[hcoofsr] cache update/replace");
+    DebugTxn("http_trans", ID_FMT "[hcoofsr] cache update/replace", ID_VAL);
     SET_VIA_STRING(VIA_CACHE_FILL_ACTION, VIA_CACHE_UPDATED);
     HTTP_INCREMENT_TRANS_STAT(http_cache_updates_stat);
     break;
@@ -4428,7 +4430,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
   if ((client_response_code == HTTP_STATUS_NOT_MODIFIED) && (s->cache_info.action != CACHE_DO_NO_ACTION)) {
     /* ink_assert(GET_VIA_STRING(VIA_CLIENT_REQUEST)
        != VIA_CLIENT_SIMPLE); */
-    DebugTxn("http_trans", "[hcoofsr] Client request was conditional");
+    DebugTxn("http_trans", ID_FMT "[hcoofsr] Client request was conditional", ID_VAL);
     SET_VIA_STRING(VIA_CLIENT_REQUEST, VIA_CLIENT_IMS);
     SET_VIA_STRING(VIA_PROXY_RESULT, VIA_PROXY_NOT_MODIFIED);
   } else {
@@ -4442,7 +4444,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
 
   // first update the cached object
   if ((s->cache_info.action == CACHE_DO_UPDATE) || (s->cache_info.action == CACHE_DO_SERVE_AND_UPDATE)) {
-    DebugTxn("http_trans", "[hcoofsr] merge and update cached copy");
+    DebugTxn("http_trans", ID_FMT "[hcoofsr] merge and update cached copy", ID_VAL);
     merge_and_update_headers_for_cache_update(s);
     base_response = s->cache_info.object_store.response_get();
     // unset Cache-control: "need-revalidate-once" (if it's set)
@@ -4522,22 +4524,22 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
 void
 HttpTransact::handle_no_cache_operation_on_forward_server_response(State *s)
 {
-  DebugTxn("http_trans", "[handle_no_cache_operation_on_forward_server_response] (hncoofsr)");
-  DebugTxn("http_seq", "[handle_no_cache_operation_on_forward_server_response]");
+  DebugTxn("http_trans", ID_FMT "[handle_no_cache_operation_on_forward_server_response] (hncoofsr)", ID_VAL);
+  DebugTxn("http_seq", ID_FMT "[handle_no_cache_operation_on_forward_server_response]", ID_VAL);
 
   bool keep_alive = s->current.server->keep_alive == HTTP_KEEPALIVE;
   const char *warn_text = NULL;
 
   switch (s->hdr_info.server_response.status_get()) {
   case HTTP_STATUS_OK:
-    DebugTxn("http_trans", "[hncoofsr] server sent back 200");
+    DebugTxn("http_trans", ID_FMT "[hncoofsr] server sent back 200", ID_VAL);
     SET_VIA_STRING(VIA_SERVER_RESULT, VIA_SERVER_SERVED);
     SET_VIA_STRING(VIA_PROXY_RESULT, VIA_PROXY_SERVED);
     if (s->method == HTTP_WKSIDX_CONNECT) {
-      DebugTxn("http_trans", "[hncoofsr] next action is SSL_TUNNEL");
+      DebugTxn("http_trans", ID_FMT "[hncoofsr] next action is SSL_TUNNEL", ID_VAL);
       s->next_action = SM_ACTION_SSL_TUNNEL;
     } else {
-      DebugTxn("http_trans", "[hncoofsr] next action will be OS_READ_CACHE_NOOP");
+      DebugTxn("http_trans", ID_FMT "[hncoofsr] next action will be OS_READ_CACHE_NOOP", ID_VAL);
 
       ink_assert(s->cache_info.action == CACHE_DO_NO_ACTION);
       s->next_action = SM_ACTION_SERVER_READ;
@@ -4547,7 +4549,7 @@ HttpTransact::handle_no_cache_operation_on_forward_server_response(State *s)
     }
     break;
   case HTTP_STATUS_NOT_MODIFIED:
-    DebugTxn("http_trans", "[hncoofsr] server sent back 304. IMS from client?");
+    DebugTxn("http_trans", ID_FMT "[hncoofsr] server sent back 304. IMS from client?", ID_VAL);
     SET_VIA_STRING(VIA_SERVER_RESULT, VIA_SERVER_NOT_MODIFIED);
     SET_VIA_STRING(VIA_PROXY_RESULT, VIA_PROXY_NOT_MODIFIED);
 
@@ -4582,7 +4584,7 @@ HttpTransact::handle_no_cache_operation_on_forward_server_response(State *s)
     s->next_action = SM_ACTION_SERVER_READ;
     break;
   default:
-    DebugTxn("http_trans", "[hncoofsr] server sent back something other than 100,304,200");
+    DebugTxn("http_trans", ID_FMT "[hncoofsr] server sent back something other than 100,304,200", ID_VAL);
     /* Default behavior is to pass-through response to the client */
 
     ink_assert(s->cache_info.action == CACHE_DO_NO_ACTION);
@@ -5010,7 +5012,7 @@ HttpTransact::get_ka_info_from_config(State *s, ConnectionAttributes *server_inf
   bool check_hostdb = false;
 
   if (server_info->http_version > HTTPVersion(0, 9)) {
-    DebugTxn("http_trans", "get_ka_info_from_config, version already set server_info->http_version %d",
+    DebugTxn("http_trans", ID_FMT "get_ka_info_from_config, version already set server_info->http_version %d", ID_VAL,
              server_info->http_version.m_version);
     return false;
   }
@@ -5037,7 +5039,7 @@ HttpTransact::get_ka_info_from_config(State *s, ConnectionAttributes *server_inf
     server_info->http_version = HTTPVersion(1, 1);
     break;
   }
-  DebugTxn("http_trans", "get_ka_info_from_config, server_info->http_version %d, check_hostdb %d",
+  DebugTxn("http_trans", ID_FMT "get_ka_info_from_config, server_info->http_version %d, check_hostdb %d", ID_VAL,
            server_info->http_version.m_version, check_hostdb);
 
   // Set keep_alive info based on the records.config setting
@@ -5134,11 +5136,11 @@ HttpTransact::add_client_ip_to_outgoing_request(State *s, HTTPHdr *request)
   ////////////////////////////////////////////////////////////////
   if ((s->txn_conf->anonymize_insert_client_ip) && (!s->txn_conf->anonymize_remove_client_ip)) {
     bool client_ip_set = request->presence(MIME_PRESENCE_CLIENT_IP);
-    DebugTxn("http_trans", "client_ip_set = %d", client_ip_set);
+    DebugTxn("http_trans", ID_FMT "client_ip_set = %d", ID_VAL, client_ip_set);
 
     if (!client_ip_set && ip_string_size > 0) {
       request->value_set(MIME_FIELD_CLIENT_IP, MIME_LEN_CLIENT_IP, ip_string, ip_string_size);
-      DebugTxn("http_trans", "inserted request header 'Client-ip: %s'", ip_string);
+      DebugTxn("http_trans", ID_FMT "inserted request header 'Client-ip: %s'", ID_VAL, ip_string);
     }
   }
 
@@ -5158,8 +5160,8 @@ HttpTransact::add_client_ip_to_outgoing_request(State *s, HTTPHdr *request)
       } else {
         request->value_set(MIME_FIELD_X_FORWARDED_FOR, MIME_LEN_X_FORWARDED_FOR, ip_string, ip_string_size);
       }
-      DebugTxn("http_trans", "[add_client_ip_to_outgoing_request] Appended connecting client's "
-                             "(%s) to the X-Forwards header",
+      DebugTxn("http_trans", ID_FMT "[add_client_ip_to_outgoing_request] Appended connecting client's "
+                             "(%s) to the X-Forwards header", ID_VAL,
                ip_string);
     }
   }
@@ -5229,7 +5231,7 @@ HttpTransact::check_request_validity(State *s, HTTPHdr *incoming_hdr)
     int64_t length = incoming_hdr->get_content_length();
     s->hdr_info.request_content_length = (length >= 0) ? length : HTTP_UNDEFINED_CL; // content length less than zero is invalid
 
-    DebugTxn("http_trans", "[init_stat_vars_from_req] set req cont length to %" PRId64, s->hdr_info.request_content_length);
+    DebugTxn("http_trans", ID_FMT "[init_stat_vars_from_req] set req cont length to %" PRId64, ID_VAL, s->hdr_info.request_content_length);
 
   } else {
     s->hdr_info.request_content_length = 0;
@@ -5349,11 +5351,11 @@ HttpTransact::check_response_validity(State *s, HTTPHdr *incoming_hdr)
       //                          date_value, date_string ? date_string : "(null)");
       //          }
 
-      DebugTxn("http_trans", "[check_response_validity] Bogus date in response");
+      DebugTxn("http_trans", ID_FMT "[check_response_validity] Bogus date in response", ID_VAL);
       return BOGUS_OR_NO_DATE_IN_RESPONSE;
     }
   } else {
-    DebugTxn("http_trans", "[check_response_validity] No date in response");
+    DebugTxn("http_trans", ID_FMT "[check_response_validity] No date in response", ID_VAL);
     return BOGUS_OR_NO_DATE_IN_RESPONSE;
   }
 #endif
@@ -5420,7 +5422,7 @@ HttpTransact::handle_trace_and_options_requests(State *s, HTTPHdr *incoming_hdr)
     // if max-forward is 0 the request must not //
     // be forwarded to the origin server.       //
     //////////////////////////////////////////////
-    DebugTxn("http_trans", "[handle_trace] max-forwards: 0, building response...");
+    DebugTxn("http_trans", ID_FMT "[handle_trace] max-forwards: 0, building response...", ID_VAL);
     SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
     build_response(s, &s->hdr_info.client_response, s->client_info.http_version, HTTP_STATUS_OK);
 
@@ -5429,7 +5431,7 @@ HttpTransact::handle_trace_and_options_requests(State *s, HTTPHdr *incoming_hdr)
     // the request header as the body.    //
     ////////////////////////////////////////
     if (s->method == HTTP_WKSIDX_TRACE) {
-      DebugTxn("http_trans", "[handle_trace] inserting request in body.");
+      DebugTxn("http_trans", ID_FMT "[handle_trace] inserting request in body.", ID_VAL);
       int req_length = incoming_hdr->length_get();
       HTTP_RELEASE_ASSERT(req_length > 0);
 
@@ -5457,7 +5459,7 @@ HttpTransact::handle_trace_and_options_requests(State *s, HTTPHdr *incoming_hdr)
       s->hdr_info.client_response.set_content_length(used);
     } else {
       // For OPTIONS request insert supported methods in ALLOW field
-      DebugTxn("http_trans", "[handle_options] inserting methods in Allow.");
+      DebugTxn("http_trans", ID_FMT "[handle_options] inserting methods in Allow.", ID_VAL);
       HttpTransactHeaders::insert_supported_methods_in_response(&s->hdr_info.client_response, s->scheme);
     }
     return true;
@@ -5469,7 +5471,7 @@ HttpTransact::handle_trace_and_options_requests(State *s, HTTPHdr *incoming_hdr)
     }
 
     --max_forwards;
-    DebugTxn("http_trans", "[handle_trace_options] Decrementing max_forwards to %d", max_forwards);
+    DebugTxn("http_trans", ID_FMT "[handle_trace_options] Decrementing max_forwards to %d", ID_VAL, max_forwards);
     incoming_hdr->set_max_forwards(max_forwards);
 
     // Trace and Options requests should not be looked up in cache.
@@ -5566,12 +5568,12 @@ HttpTransact::initialize_state_variables_from_request(State *s, HTTPHdr *obsolet
   // you'll need to force the next hop to be https.
   if (s->is_websocket) {
     if (s->next_hop_scheme == URL_WKSIDX_WS) {
-      DebugTxn("http_trans", "Switching WS next hop scheme to http.");
+      DebugTxn("http_trans", ID_FMT "Switching WS next hop scheme to http.", ID_VAL);
       s->next_hop_scheme = URL_WKSIDX_HTTP;
       s->scheme = URL_WKSIDX_HTTP;
       // s->request_data.hdr->url_get()->scheme_set(URL_SCHEME_HTTP, URL_LEN_HTTP);
     } else if (s->next_hop_scheme == URL_WKSIDX_WSS) {
-      DebugTxn("http_trans", "Switching WSS next hop scheme to https.");
+      DebugTxn("http_trans", ID_FMT "Switching WSS next hop scheme to https.", ID_VAL);
       s->next_hop_scheme = URL_WKSIDX_HTTPS;
       s->scheme = URL_WKSIDX_HTTPS;
       // s->request_data.hdr->url_get()->scheme_set(URL_SCHEME_HTTPS, URL_LEN_HTTPS);
@@ -5817,8 +5819,8 @@ HttpTransact::is_stale_cache_response_returnable(State *s)
   cc_mask = (MIME_COOKED_MASK_CC_MUST_REVALIDATE | MIME_COOKED_MASK_CC_PROXY_REVALIDATE | MIME_COOKED_MASK_CC_NEED_REVALIDATE_ONCE |
              MIME_COOKED_MASK_CC_NO_CACHE | MIME_COOKED_MASK_CC_NO_STORE | MIME_COOKED_MASK_CC_S_MAXAGE);
   if ((cached_response->get_cooked_cc_mask() & cc_mask) || cached_response->is_pragma_no_cache_set()) {
-    DebugTxn("http_trans", "[is_stale_cache_response_returnable] "
-                           "document headers prevent serving stale");
+    DebugTxn("http_trans", ID_FMT "[is_stale_cache_response_returnable] "
+                           "document headers prevent serving stale", ID_VAL);
     return false;
   }
   // See how old the document really is.  We don't want create a
@@ -5828,8 +5830,8 @@ HttpTransact::is_stale_cache_response_returnable(State *s)
                                                                    cached_response, cached_response->get_date(), s->current.now);
   // Negative age is overflow
   if ((current_age < 0) || (current_age > s->txn_conf->cache_max_stale_age)) {
-    DebugTxn("http_trans", "[is_stale_cache_response_returnable] "
-                           "document age is too large %" PRId64,
+    DebugTxn("http_trans", ID_FMT "[is_stale_cache_response_returnable] "
+                           "document age is too large %" PRId64, ID_VAL,
              (int64_t)current_age);
     return false;
   }
@@ -5837,12 +5839,12 @@ HttpTransact::is_stale_cache_response_returnable(State *s)
   Authentication_t auth_needed = AuthenticationNeeded(s->txn_conf, &s->hdr_info.client_request, cached_response);
 
   if (auth_needed != AUTHENTICATION_SUCCESS) {
-    DebugTxn("http_trans", "[is_stale_cache_response_returnable] "
-                           "authorization prevent serving stale");
+    DebugTxn("http_trans", ID_FMT "[is_stale_cache_response_returnable] "
+                           "authorization prevent serving stale", ID_VAL);
     return false;
   }
 
-  DebugTxn("http_trans", "[is_stale_cache_response_returnable] can serve stale");
+  DebugTxn("http_trans", ID_FMT "[is_stale_cache_response_returnable] can serve stale", ID_VAL);
   return true;
 }
 
@@ -6032,8 +6034,8 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
   // of other trafficserver clients. The flag is set in the
   // process_host_db_info method
   if (!s->dns_info.lookup_validated && s->client_info.is_transparent) {
-    DebugTxn("http_trans", "[is_response_cacheable] "
-                           "Lookup not validated.  Possible DNS cache poison.  Don't cache");
+    DebugTxn("http_trans", ID_FMT "[is_response_cacheable] "
+                           "Lookup not validated.  Possible DNS cache poison.  Don't cache", ID_VAL);
     return false;
   }
 
@@ -6048,8 +6050,8 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
   // be served to a GET url1 request, but we just match URL not method.
   int req_method = request->method_get_wksidx();
   if (!(HttpTransactHeaders::is_method_cacheable(s->http_config_param, req_method)) && s->api_req_cacheable == false) {
-    DebugTxn("http_trans", "[is_response_cacheable] "
-                           "only GET, and some HEAD and POST are cachable");
+    DebugTxn("http_trans", ID_FMT "[is_response_cacheable] "
+                           "only GET, and some HEAD and POST are cachable", ID_VAL);
     return false;
   }
   // DebugTxn("http_trans", "[is_response_cacheable] method is cacheable");
@@ -6057,9 +6059,15 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
   // should not be cached (same subsequent requests will not be
   // looked up, either, so why cache this).
   if (!(is_request_cache_lookupable(s))) {
+<<<<<<< HEAD
     DebugTxn("http_trans", "[is_response_cacheable] "
                            "request is not cache lookupable, response is not cachable");
     return false;
+=======
+    DebugTxn("http_trans", ID_FMT "[is_response_cacheable] "
+                           "request is not cache lookupable, response is not cachable", ID_VAL);
+    return (false);
+>>>>>>> UUID: Using string format only, more msgs.
   }
   // already has a fresh copy in the cache
   if (s->range_setup == RANGE_NOT_HANDLED)
@@ -6069,6 +6077,7 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
   // If there are cookies in response but a ttl is set, allow caching
   if ((s->cache_control.ttl_in_cache <= 0) &&
       do_cookies_prevent_caching((int)s->txn_conf->cache_responses_to_cookies, request, response)) {
+<<<<<<< HEAD
     DebugTxn("http_trans", "[is_response_cacheable] "
                            "response has uncachable cookies, response is not cachable");
     return false;
@@ -6078,14 +6087,31 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
     DebugTxn("http_trans", "[is_response_cacheable] "
                            "response has WWW-Authenticate, response is not cachable");
     return false;
+=======
+    DebugTxn("http_trans", ID_FMT "[is_response_cacheable] "
+                           "response has uncachable cookies, response is not cachable", ID_VAL);
+    return (false);
+  }
+  // if server spits back a WWW-Authenticate
+  if ((s->txn_conf->cache_ignore_auth) == 0 && response->presence(MIME_PRESENCE_WWW_AUTHENTICATE)) {
+    DebugTxn("http_trans", ID_FMT "[is_response_cacheable] "
+                           "response has WWW-Authenticate, response is not cachable", ID_VAL);
+    return (false);
+>>>>>>> UUID: Using string format only, more msgs.
   }
   // does server explicitly forbid storing?
   // If OS forbids storing but a ttl is set, allow caching
   if (!s->cache_info.directives.does_server_permit_storing && !s->cache_control.ignore_server_no_cache &&
       (s->cache_control.ttl_in_cache <= 0)) {
+<<<<<<< HEAD
     DebugTxn("http_trans", "[is_response_cacheable] server does not permit storing and config file does not "
                            "indicate that server directive should be ignored");
     return false;
+=======
+    DebugTxn("http_trans", ID_FMT "[is_response_cacheable] server does not permit storing and config file does not "
+                           "indicate that server directive should be ignored", ID_VAL);
+    return (false);
+>>>>>>> UUID: Using string format only, more msgs.
   }
   // DebugTxn("http_trans", "[is_response_cacheable] server permits storing");
 
@@ -6094,19 +6120,31 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
   if ((!s->cache_info.directives.does_config_permit_storing && !s->cache_control.ignore_server_no_cache &&
        (s->cache_control.ttl_in_cache <= 0)) ||
       (s->cache_control.never_cache)) {
+<<<<<<< HEAD
     DebugTxn("http_trans", "[is_response_cacheable] config doesn't allow storing, and cache control does not "
                            "say to ignore no-cache and does not specify never-cache or a ttl");
     return false;
+=======
+    DebugTxn("http_trans", ID_FMT "[is_response_cacheable] config doesn't allow storing, and cache control does not "
+                           "say to ignore no-cache and does not specify never-cache or a ttl", ID_VAL);
+    return (false);
+>>>>>>> UUID: Using string format only, more msgs.
   }
   // DebugTxn("http_trans", "[is_response_cacheable] config permits storing");
 
   // does client explicitly forbid storing?
   if (!s->cache_info.directives.does_client_permit_storing && !s->cache_control.ignore_client_no_cache) {
+<<<<<<< HEAD
     DebugTxn("http_trans", "[is_response_cacheable] client does not permit storing, "
                            "and cache control does not say to ignore client no-cache");
     return false;
+=======
+    DebugTxn("http_trans", ID_FMT "[is_response_cacheable] client does not permit storing, "
+                           "and cache control does not say to ignore client no-cache", ID_VAL);
+    return (false);
+>>>>>>> UUID: Using string format only, more msgs.
   }
-  DebugTxn("http_trans", "[is_response_cacheable] client permits storing");
+  DebugTxn("http_trans", ID_FMT "[is_response_cacheable] client permits storing", ID_VAL);
 
   HTTPStatus response_code = response->status_get();
 
@@ -6122,15 +6160,15 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
       // and we are configured to not cache without them.
       switch (s->txn_conf->cache_required_headers) {
       case HttpConfigParams::CACHE_REQUIRED_HEADERS_NONE:
-        DebugTxn("http_trans", "[is_response_cacheable] "
-                               "no response headers required");
+        DebugTxn("http_trans", ID_FMT "[is_response_cacheable] "
+                               "no response headers required", ID_VAL);
         break;
 
       case HttpConfigParams::CACHE_REQUIRED_HEADERS_AT_LEAST_LAST_MODIFIED:
         if (!response->presence(MIME_PRESENCE_EXPIRES) && !(response->get_cooked_cc_mask() & cc_mask) &&
             !response->get_last_modified()) {
-          DebugTxn("http_trans", "[is_response_cacheable] "
-                                 "last_modified, expires, or max-age is required");
+          DebugTxn("http_trans", ID_FMT "[is_response_cacheable] "
+                                 "last_modified, expires, or max-age is required", ID_VAL);
 
           s->squid_codes.hit_miss_code = ((response->get_date() == 0) ? (SQUID_MISS_HTTP_NO_DLE) : (SQUID_MISS_HTTP_NO_LE));
           return false;
@@ -6139,9 +6177,15 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
 
       case HttpConfigParams::CACHE_REQUIRED_HEADERS_CACHE_CONTROL:
         if (!response->presence(MIME_PRESENCE_EXPIRES) && !(response->get_cooked_cc_mask() & cc_mask)) {
+<<<<<<< HEAD
           DebugTxn("http_trans", "[is_response_cacheable] "
                                  "expires header or max-age is required");
           return false;
+=======
+          DebugTxn("http_trans", ID_FMT "[is_response_cacheable] "
+                                 "expires header or max-age is required", ID_VAL);
+          return (false);
+>>>>>>> UUID: Using string format only, more msgs.
         }
         break;
 
@@ -6152,9 +6196,9 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
   }
   // do not cache partial content - Range response
   if (response_code == HTTP_STATUS_PARTIAL_CONTENT || response_code == HTTP_STATUS_RANGE_NOT_SATISFIABLE) {
-    DebugTxn("http_trans", "[is_response_cacheable] "
+    DebugTxn("http_trans", ID_FMT "[is_response_cacheable] "
                            "response code %d - don't cache",
-             response_code);
+             ID_VAL, response_code);
     return false;
   }
 
@@ -6162,7 +6206,7 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
   int indicator;
   indicator = response_cacheable_indicated_by_cc(response);
   if (indicator > 0) { // cacheable indicated by cache control header
-    DebugTxn("http_trans", "[is_response_cacheable] YES by response cache control");
+    DebugTxn("http_trans", ID_FMT "[is_response_cacheable] YES by response cache control", ID_VAL);
     // even if it is authenticated, this is cacheable based on regular rules
     s->www_auth_content = CACHE_AUTH_NONE;
     return true;
@@ -6172,9 +6216,9 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
     // Cache-Control headers to prevent caching
     if (s->cache_control.ttl_in_cache > 0) {
       DebugTxn("http_trans",
-               "[is_response_cacheable] Cache-control header directives in response overridden by ttl in cache.config");
+               ID_FMT "[is_response_cacheable] Cache-control header directives in response overridden by ttl in cache.config", ID_VAL);
     } else if (!s->cache_control.ignore_server_no_cache) {
-      DebugTxn("http_trans", "[is_response_cacheable] NO by response cache control");
+      DebugTxn("http_trans", ID_FMT "[is_response_cacheable] NO by response cache control", ID_VAL);
       return false;
     }
   }
@@ -6194,21 +6238,21 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
   // s->www_auth_content == CACHE_AUTH_STALE silently continues
 
   if (response->presence(MIME_PRESENCE_EXPIRES)) {
-    DebugTxn("http_trans", "[is_response_cacheable] YES response w/ Expires");
+    DebugTxn("http_trans", ID_FMT "[is_response_cacheable] YES response w/ Expires", ID_VAL);
     return true;
   }
   // if it's a 302 or 307 and no positive indicator from cache-control, reject
   if (response_code == HTTP_STATUS_MOVED_TEMPORARILY || response_code == HTTP_STATUS_TEMPORARY_REDIRECT) {
-    DebugTxn("http_trans", "[is_response_cacheable] cache-control or expires header is required for 302");
+    DebugTxn("http_trans", ID_FMT "[is_response_cacheable] cache-control or expires header is required for 302", ID_VAL);
     return false;
   }
   // if it's a POST request and no positive indicator from cache-control
   if (req_method == HTTP_WKSIDX_POST) {
     // allow caching for a POST requests w/o Expires but with a ttl
     if (s->cache_control.ttl_in_cache > 0) {
-      DebugTxn("http_trans", "[is_response_cacheable] POST method with a TTL");
+      DebugTxn("http_trans", ID_FMT "[is_response_cacheable] POST method with a TTL", ID_VAL);
     } else {
-      DebugTxn("http_trans", "[is_response_cacheable] NO POST w/o Expires or CC");
+      DebugTxn("http_trans", ID_FMT "[is_response_cacheable] NO POST w/o Expires or CC", ID_VAL);
       return false;
     }
   }
@@ -6218,10 +6262,10 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
     if ((response_code == HTTP_STATUS_OK) || (response_code == HTTP_STATUS_NOT_MODIFIED) ||
         (response_code == HTTP_STATUS_NON_AUTHORITATIVE_INFORMATION) || (response_code == HTTP_STATUS_MOVED_PERMANENTLY) ||
         (response_code == HTTP_STATUS_MULTIPLE_CHOICES) || (response_code == HTTP_STATUS_GONE)) {
-      DebugTxn("http_trans", "[is_response_cacheable] YES by default ");
+      DebugTxn("http_trans", ID_FMT "[is_response_cacheable] YES by default ", ID_VAL);
       return true;
     } else {
-      DebugTxn("http_trans", "[is_response_cacheable] NO by default");
+      DebugTxn("http_trans", ID_FMT "[is_response_cacheable] NO by default", ID_VAL);
       return false;
     }
   }
@@ -6266,12 +6310,12 @@ HttpTransact::is_request_valid(State *s, HTTPHdr *incoming_request)
   incoming_error = check_request_validity(s, incoming_request);
   switch (incoming_error) {
   case NO_REQUEST_HEADER_ERROR:
-    DebugTxn("http_trans", "[is_request_valid]"
-                           "no request header errors");
+    DebugTxn("http_trans", ID_FMT "[is_request_valid]"
+                           "no request header errors", ID_VAL);
     break;
   case FAILED_PROXY_AUTHORIZATION:
-    DebugTxn("http_trans", "[is_request_valid]"
-                           "failed proxy authorization");
+    DebugTxn("http_trans", ID_FMT "[is_request_valid]"
+                           "failed proxy authorization", ID_VAL);
     SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
     build_error_response(s, HTTP_STATUS_PROXY_AUTHENTICATION_REQUIRED, "Proxy Authentication Required",
                          "access#proxy_auth_required", NULL);
@@ -6279,8 +6323,8 @@ HttpTransact::is_request_valid(State *s, HTTPHdr *incoming_request)
   case NON_EXISTANT_REQUEST_HEADER:
   /* fall through */
   case BAD_HTTP_HEADER_SYNTAX: {
-    DebugTxn("http_trans", "[is_request_valid]"
-                           "non-existant/bad header");
+    DebugTxn("http_trans", ID_FMT "[is_request_valid]"
+                           "non-existant/bad header", ID_VAL);
     SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
     build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Invalid HTTP Request", "request#syntax_error", NULL);
     return false;
@@ -6303,7 +6347,7 @@ HttpTransact::is_request_valid(State *s, HTTPHdr *incoming_request)
     //      determine the cases should be hidden behind the method.   //
     ////////////////////////////////////////////////////////////////////
 
-    DebugTxn("http_trans", "[is_request_valid] missing host field");
+    DebugTxn("http_trans", ID_FMT "[is_request_valid] missing host field", ID_VAL);
     SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
     if (s->http_config_param->reverse_proxy_enabled) { // host header missing and reverse proxy on
       build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Host Header Required", "request#no_host", NULL);
@@ -6315,41 +6359,41 @@ HttpTransact::is_request_valid(State *s, HTTPHdr *incoming_request)
     return false;
   case SCHEME_NOT_SUPPORTED:
   case NO_REQUEST_SCHEME: {
-    DebugTxn("http_trans", "[is_request_valid] unsupported "
-                           "or missing request scheme");
+    DebugTxn("http_trans", ID_FMT "[is_request_valid] unsupported "
+                           "or missing request scheme", ID_VAL);
     SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
     build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Unsupported URL Scheme", "request#scheme_unsupported", NULL);
     return false;
   }
   /* fall through */
   case METHOD_NOT_SUPPORTED:
-    DebugTxn("http_trans", "[is_request_valid]"
-                           "unsupported method");
+    DebugTxn("http_trans", ID_FMT "[is_request_valid]"
+                           "unsupported method", ID_VAL);
     s->current.mode = TUNNELLING_PROXY;
     return true;
   case BAD_CONNECT_PORT:
     int port;
     port = url ? url->port_get() : 0;
-    DebugTxn("http_trans", "[is_request_valid]"
+    DebugTxn("http_trans", ID_FMT "[is_request_valid]"
                            "%d is an invalid connect port",
-             port);
+             ID_VAL, port);
     SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
     build_error_response(s, HTTP_STATUS_FORBIDDEN, "Tunnel Forbidden", "access#connect_forbidden", NULL);
     return false;
   case NO_POST_CONTENT_LENGTH: {
-    DebugTxn("http_trans", "[is_request_valid] post request without content length");
+    DebugTxn("http_trans", ID_FMT "[is_request_valid] post request without content length", ID_VAL);
     SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
     build_error_response(s, HTTP_STATUS_LENGTH_REQUIRED, "Content Length Required", "request#no_content_length", NULL);
     return false;
   }
   case UNACCEPTABLE_TE_REQUIRED: {
-    DebugTxn("http_trans", "[is_request_valid] TE required is unacceptable.");
+    DebugTxn("http_trans", ID_FMT "[is_request_valid] TE required is unacceptable.", ID_VAL);
     SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
     build_error_response(s, HTTP_STATUS_NOT_ACCEPTABLE, "Transcoding Not Available", "transcoding#unsupported", NULL);
     return false;
   }
   case INVALID_POST_CONTENT_LENGTH: {
-    DebugTxn("http_trans", "[is_request_valid] post request with negative content length value");
+    DebugTxn("http_trans", ID_FMT "[is_request_valid] post request with negative content length value", ID_VAL);
     SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
     build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Invalid Content Length", "request#invalid_content_length", NULL);
     return false;
@@ -6410,39 +6454,39 @@ HttpTransact::is_response_valid(State *s, HTTPHdr *incoming_response)
     return true;
 #endif
   case NO_RESPONSE_HEADER_ERROR:
-    DebugTxn("http_trans", "[is_response_valid] No errors in response");
+    DebugTxn("http_trans", ID_FMT "[is_response_valid] No errors in response", ID_VAL);
     return true;
 
   case MISSING_REASON_PHRASE:
-    DebugTxn("http_trans", "[is_response_valid] Response Error: Missing reason phrase - allowing");
+    DebugTxn("http_trans", ID_FMT "[is_response_valid] Response Error: Missing reason phrase - allowing", ID_VAL);
     return true;
 
   case STATUS_CODE_SERVER_ERROR:
-    DebugTxn("http_trans", "[is_response_valid] Response Error: Origin Server returned 500 - allowing");
+    DebugTxn("http_trans", ID_FMT "[is_response_valid] Response Error: Origin Server returned 500 - allowing", ID_VAL);
     return true;
 
   case CONNECTION_OPEN_FAILED:
-    DebugTxn("http_trans", "[is_response_valid] Response Error: connection open failed");
+    DebugTxn("http_trans", ID_FMT "[is_response_valid] Response Error: connection open failed", ID_VAL);
     s->current.state = CONNECTION_ERROR;
     return false;
 
   case NON_EXISTANT_RESPONSE_HEADER:
-    DebugTxn("http_trans", "[is_response_valid] Response Error: No response header");
+    DebugTxn("http_trans", ID_FMT "[is_response_valid] Response Error: No response header", ID_VAL);
     s->current.state = BAD_INCOMING_RESPONSE;
     return false;
 
   case NOT_A_RESPONSE_HEADER:
-    DebugTxn("http_trans", "[is_response_valid] Response Error: Not a response header");
+    DebugTxn("http_trans", ID_FMT "[is_response_valid] Response Error: Not a response header", ID_VAL);
     s->current.state = BAD_INCOMING_RESPONSE;
     return false;
 
   case MISSING_STATUS_CODE:
-    DebugTxn("http_trans", "[is_response_valid] Response Error: Missing status code");
+    DebugTxn("http_trans", ID_FMT "[is_response_valid] Response Error: Missing status code", ID_VAL);
     s->current.state = BAD_INCOMING_RESPONSE;
     return false;
 
   default:
-    DebugTxn("http_trans", "[is_response_valid] Errors in response");
+    DebugTxn("http_trans", ID_FMT "[is_response_valid] Errors in response", ID_VAL);
     s->current.state = BAD_INCOMING_RESPONSE;
     return false;
   }
@@ -6656,8 +6700,8 @@ HttpTransact::handle_content_length_header(State *s, HTTPHdr *header, HTTPHdr *b
         else if ((int64_t)s->cache_info.object_read->object_size_get() == cl) {
           s->hdr_info.trust_response_cl = true;
         } else {
-          DebugTxn("http_trans", "Content Length header and cache object size mismatch."
-                                 "Disabling keep-alive");
+          DebugTxn("http_trans", ID_FMT "Content Length header and cache object size mismatch."
+                                 "Disabling keep-alive", ID_VAL);
           s->hdr_info.trust_response_cl = false;
         }
         break;
@@ -6681,7 +6725,7 @@ HttpTransact::handle_content_length_header(State *s, HTTPHdr *header, HTTPHdr *b
       header->field_delete(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH);
       s->hdr_info.trust_response_cl = false;
     }
-    Debug("http_trans", "[handle_content_length_header] RESPONSE cont len in hdr is %" PRId64, header->get_content_length());
+    Debug("http_trans", ID_FMT "[handle_content_length_header] RESPONSE cont len in hdr is %" PRId64, ID_VAL, header->get_content_length());
   } else {
     // No content length header
     if (s->source == SOURCE_CACHE) {
@@ -6861,7 +6905,7 @@ HttpTransact::handle_response_keep_alive_headers(State *s, HTTPVersion ver, HTTP
   if (s->is_upgrade_request && heads->status_get() == HTTP_STATUS_SWITCHING_PROTOCOL && s->source == SOURCE_HTTP_ORIGIN_SERVER) {
     s->client_info.keep_alive = HTTP_NO_KEEPALIVE;
     if (s->is_websocket) {
-      DebugTxn("http_trans", "transaction successfully upgraded to websockets.");
+      DebugTxn("http_trans", ID_FMT "transaction successfully upgraded to websockets.", ID_VAL);
       // s->transparent_passthrough = true;
       heads->value_set(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION, MIME_FIELD_UPGRADE, MIME_LEN_UPGRADE);
       heads->value_set(MIME_FIELD_UPGRADE, MIME_LEN_UPGRADE, "websocket", 9);
@@ -7002,9 +7046,9 @@ HttpTransact::delete_all_document_alternates_and_return(State *s, bool cache_hit
     }
 
     if (s->method == HTTP_WKSIDX_PURGE || (valid_max_forwards && max_forwards <= 0)) {
-      DebugTxn("http_trans", "[delete_all_document_alternates_and_return] "
+      DebugTxn("http_trans", ID_FMT "[delete_all_document_alternates_and_return] "
                              "DELETE with Max-Forwards: %d",
-               max_forwards);
+               ID_VAL, max_forwards);
 
       SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
 
@@ -7020,9 +7064,9 @@ HttpTransact::delete_all_document_alternates_and_return(State *s, bool cache_hit
     } else {
       if (valid_max_forwards) {
         --max_forwards;
-        DebugTxn("http_trans", "[delete_all_document_alternates_and_return] "
+        DebugTxn("http_trans", ID_FMT "[delete_all_document_alternates_and_return] "
                                "Decrementing max_forwards to %d",
-                 max_forwards);
+                 ID_VAL, max_forwards);
         s->hdr_info.client_request.value_set_int(MIME_FIELD_MAX_FORWARDS, MIME_LEN_MAX_FORWARDS, max_forwards);
       }
     }
@@ -7093,10 +7137,10 @@ HttpTransact::calculate_document_freshness_limit(State *s, HTTPHdr *response, ti
   if (cc_mask & (MIME_COOKED_MASK_CC_S_MAXAGE | MIME_COOKED_MASK_CC_MAX_AGE)) {
     if (cc_mask & MIME_COOKED_MASK_CC_S_MAXAGE) {
       freshness_limit = (int)response->get_cooked_cc_s_maxage();
-      DebugTxn("http_match", "calculate_document_freshness_limit --- s_max_age set, freshness_limit = %d", freshness_limit);
+      DebugTxn("http_match", ID_FMT "calculate_document_freshness_limit --- s_max_age set, freshness_limit = %d", ID_VAL, freshness_limit);
     } else if (cc_mask & MIME_COOKED_MASK_CC_MAX_AGE) {
       freshness_limit = (int)response->get_cooked_cc_max_age();
-      DebugTxn("http_match", "calculate_document_freshness_limit --- max_age set, freshness_limit = %d", freshness_limit);
+      DebugTxn("http_match", ID_FMT "calculate_document_freshness_limit --- max_age set, freshness_limit = %d", ID_VAL, freshness_limit);
     }
     freshness_limit = min(max(0, freshness_limit), NUM_SECONDS_IN_ONE_YEAR);
   } else {
@@ -7116,8 +7160,8 @@ HttpTransact::calculate_document_freshness_limit(State *s, HTTPHdr *response, ti
     } else {
       date_value = s->request_sent_time;
       DebugTxn("http_match",
-               "calculate_document_freshness_limit --- Expires header = %" PRId64 " no date, using sent time %" PRId64,
-               (int64_t)expires_value, (int64_t)date_value);
+               ID_FMT "calculate_document_freshness_limit --- Expires header = %" PRId64 " no date, using sent time %" PRId64,
+               ID_VAL, (int64_t)expires_value, (int64_t)date_value);
     }
     ink_assert(date_value > 0);
 
@@ -7128,12 +7172,12 @@ HttpTransact::calculate_document_freshness_limit(State *s, HTTPHdr *response, ti
     if (expires_set && !cache_sm.is_readwhilewrite_inprogress()) {
       if (expires_value == UNDEFINED_TIME || expires_value <= date_value) {
         expires_value = date_value;
-        DebugTxn("http_match", "calculate_document_freshness_limit --- no expires, using date %" PRId64, (int64_t)expires_value);
+        DebugTxn("http_match", ID_FMT "calculate_document_freshness_limit --- no expires, using date %" PRId64, ID_VAL, (int64_t)expires_value);
       }
       freshness_limit = (int)(expires_value - date_value);
 
-      DebugTxn("http_match", "calculate_document_freshness_limit --- Expires: %" PRId64 ", Date: %" PRId64 ", freshness_limit = %d",
-               (int64_t)expires_value, (int64_t)date_value, freshness_limit);
+      DebugTxn("http_match", ID_FMT "calculate_document_freshness_limit --- Expires: %" PRId64 ", Date: %" PRId64 ", freshness_limit = %d",
+               ID_VAL, (int64_t)expires_value, (int64_t)date_value, freshness_limit);
 
       freshness_limit = min(max(0, freshness_limit), NUM_SECONDS_IN_ONE_YEAR);
     } else {
@@ -7141,15 +7185,15 @@ HttpTransact::calculate_document_freshness_limit(State *s, HTTPHdr *response, ti
       if (response->presence(MIME_PRESENCE_LAST_MODIFIED)) {
         last_modified_set = true;
         last_modified_value = response->get_last_modified();
-        DebugTxn("http_match", "calculate_document_freshness_limit --- Last Modified header = %" PRId64,
-                 (int64_t)last_modified_value);
+        DebugTxn("http_match", ID_FMT "calculate_document_freshness_limit --- Last Modified header = %" PRId64,
+                 ID_VAL, (int64_t)last_modified_value);
 
         if (last_modified_value == UNDEFINED_TIME) {
           last_modified_set = false;
         } else if (last_modified_value > date_value) {
           last_modified_value = date_value;
-          DebugTxn("http_match", "calculate_document_freshness_limit --- no last-modified, using sent time %" PRId64,
-                   (int64_t)last_modified_value);
+          DebugTxn("http_match", ID_FMT "calculate_document_freshness_limit --- no last-modified, using sent time %" PRId64,
+                   ID_VAL, (int64_t)last_modified_value);
         }
       }
 
@@ -7160,12 +7204,12 @@ HttpTransact::calculate_document_freshness_limit(State *s, HTTPHdr *response, ti
         ink_time_t time_since_last_modify = date_value - last_modified_value;
         int h_freshness = (int)(time_since_last_modify * f);
         freshness_limit = max(h_freshness, 0);
-        DebugTxn("http_match", "calculate_document_freshness_limit --- heuristic: date=%" PRId64 ", lm=%" PRId64
+        DebugTxn("http_match", ID_FMT "calculate_document_freshness_limit --- heuristic: date=%" PRId64 ", lm=%" PRId64
                                ", time_since_last_modify=%" PRId64 ", f=%g, freshness_limit = %d",
-                 (int64_t)date_value, (int64_t)last_modified_value, (int64_t)time_since_last_modify, f, freshness_limit);
+                 ID_VAL, (int64_t)date_value, (int64_t)last_modified_value, (int64_t)time_since_last_modify, f, freshness_limit);
       } else {
         freshness_limit = s->txn_conf->cache_heuristic_min_lifetime;
-        DebugTxn("http_match", "calculate_document_freshness_limit --- heuristic: freshness_limit = %d", freshness_limit);
+        DebugTxn("http_match", ID_FMT "calculate_document_freshness_limit --- heuristic: freshness_limit = %d", ID_VAL, freshness_limit);
       }
     }
   }
@@ -7185,7 +7229,7 @@ HttpTransact::calculate_document_freshness_limit(State *s, HTTPHdr *response, ti
   if (freshness_limit < min_freshness_bounds)
     freshness_limit = min_freshness_bounds;
 
-  DebugTxn("http_match", "calculate_document_freshness_limit --- final freshness_limit = %d", freshness_limit);
+  DebugTxn("http_match", ID_FMT "calculate_document_freshness_limit --- final freshness_limit = %d", ID_VAL, freshness_limit);
 
   return (freshness_limit);
 }
@@ -7223,10 +7267,10 @@ HttpTransact::calculate_freshness_fuzz(State *s, int fresh_limit)
                             (int)rint(s->txn_conf->freshness_fuzz_time *
                                       log10((double)(fresh_limit - s->txn_conf->freshness_fuzz_min_time) / LOG_YEAR)));
       result = min(fresh_small, fresh_large);
-      DebugTxn("http_match", "calculate_freshness_fuzz using min/max --- freshness fuzz = %d", result);
+      DebugTxn("http_match", ID_FMT "calculate_freshness_fuzz using min/max --- freshness fuzz = %d", ID_VAL, result);
     } else {
       result = s->txn_conf->freshness_fuzz_time;
-      DebugTxn("http_match", "calculate_freshness_fuzz --- freshness fuzz = %d", result);
+      DebugTxn("http_match", ID_FMT "calculate_freshness_fuzz --- freshness fuzz = %d", ID_VAL, result);
     }
   }
 
@@ -7277,8 +7321,8 @@ HttpTransact::what_is_document_freshness(State *s, HTTPHdr *client_request, HTTP
     // but for how long it has been stored in the cache (resident time)
     int resident_time = s->current.now - s->response_received_time;
 
-    DebugTxn("http_match", "[..._document_freshness] ttl-in-cache = %d, resident time = %d", s->cache_control.ttl_in_cache,
-             resident_time);
+    DebugTxn("http_match", ID_FMT "[..._document_freshness] ttl-in-cache = %d, resident time = %d",
+      ID_VAL, s->cache_control.ttl_in_cache, resident_time);
     if (resident_time > s->cache_control.ttl_in_cache) {
       return (FRESHNESS_STALE);
     } else {
@@ -7294,8 +7338,8 @@ HttpTransact::what_is_document_freshness(State *s, HTTPHdr *client_request, HTTP
   // Check to see if the server forces revalidation
 
   if ((cooked_cc_mask & cc_mask) && s->cache_control.revalidate_after <= 0) {
-    DebugTxn("http_match", "[what_is_document_freshness] document stale due to "
-                           "server must-revalidate");
+    DebugTxn("http_match", ID_FMT "[what_is_document_freshness] document stale due to "
+                           "server must-revalidate", ID_VAL);
     return FRESHNESS_STALE;
   }
 
@@ -7320,7 +7364,7 @@ HttpTransact::what_is_document_freshness(State *s, HTTPHdr *client_request, HTTP
   else
     current_age = min((time_t)NUM_SECONDS_IN_ONE_YEAR, current_age);
 
-  DebugTxn("http_match", "[what_is_document_freshness] fresh_limit:  %d  current_age: %" PRId64, fresh_limit, (int64_t)current_age);
+  DebugTxn("http_match", ID_FMT "[what_is_document_freshness] fresh_limit:  %d  current_age: %" PRId64, ID_VAL, fresh_limit, (int64_t)current_age);
 
   /////////////////////////////////////////////////////////
   // did the admin override the expiration calculations? //
@@ -7335,22 +7379,22 @@ HttpTransact::what_is_document_freshness(State *s, HTTPHdr *client_request, HTTP
     switch (s->txn_conf->cache_when_to_revalidate) {
     case 1: // Stale if heuristic
       if (heuristic) {
-        DebugTxn("http_match", "[what_is_document_freshness] config requires FRESHNESS_STALE because heuristic calculation");
+        DebugTxn("http_match", ID_FMT "[what_is_document_freshness] config requires FRESHNESS_STALE because heuristic calculation", ID_VAL);
         return (FRESHNESS_STALE);
       }
       break;
     case 2: // Always stale
-      DebugTxn("http_match", "[what_is_document_freshness] config "
-                             "specifies always FRESHNESS_STALE");
+      DebugTxn("http_match", ID_FMT "[what_is_document_freshness] config "
+                             "specifies always FRESHNESS_STALE", ID_VAL);
       return (FRESHNESS_STALE);
     case 3: // Never stale
-      DebugTxn("http_match", "[what_is_document_freshness] config "
-                             "specifies always FRESHNESS_FRESH");
+      DebugTxn("http_match", ID_FMT "[what_is_document_freshness] config "
+                             "specifies always FRESHNESS_FRESH", ID_VAL);
       return (FRESHNESS_FRESH);
     case 4: // Stale if IMS
       if (client_request->presence(MIME_PRESENCE_IF_MODIFIED_SINCE)) {
-        DebugTxn("http_match", "[what_is_document_freshness] config "
-                               "specifies FRESHNESS_STALE if IMS present");
+        DebugTxn("http_match", ID_FMT "[what_is_document_freshness] config "
+                               "specifies FRESHNESS_STALE if IMS present", ID_VAL);
         return (FRESHNESS_STALE);
       }
     default: // Bad config, ignore
@@ -7367,7 +7411,7 @@ HttpTransact::what_is_document_freshness(State *s, HTTPHdr *client_request, HTTP
   //     max-stale:      (current_age <= fresh_limit + max_stale)     //
   //////////////////////////////////////////////////////////////////////
   age_limit = fresh_limit; // basic constraint
-  DebugTxn("http_match", "[..._document_freshness] initial age limit: %d", age_limit);
+  DebugTxn("http_match", ID_FMT "[..._document_freshness] initial age limit: %d", ID_VAL, age_limit);
 
   cooked_cc_mask = client_request->get_cooked_cc_mask();
   cc_mask = (MIME_COOKED_MASK_CC_MAX_STALE | MIME_COOKED_MASK_CC_MIN_FRESH | MIME_COOKED_MASK_CC_MAX_AGE);
@@ -7377,8 +7421,8 @@ HttpTransact::what_is_document_freshness(State *s, HTTPHdr *client_request, HTTP
     /////////////////////////////////////////////////
     if (cooked_cc_mask & MIME_COOKED_MASK_CC_MAX_STALE) {
       if (os_specifies_revalidate) {
-        DebugTxn("http_match", "[...document_freshness] OS specifies revalidation; "
-                               "ignoring client's max-stale request...");
+        DebugTxn("http_match", ID_FMT "[...document_freshness] OS specifies revalidation; "
+                               "ignoring client's max-stale request...", ID_VAL);
       } else {
         int max_stale_val = client_request->get_cooked_cc_max_stale();
 
@@ -7386,7 +7430,7 @@ HttpTransact::what_is_document_freshness(State *s, HTTPHdr *client_request, HTTP
           age_limit += max_stale_val;
         else
           age_limit = max_stale_val;
-        DebugTxn("http_match", "[..._document_freshness] max-stale set, age limit: %d", age_limit);
+        DebugTxn("http_match", ID_FMT "[..._document_freshness] max-stale set, age limit: %d", ID_VAL, age_limit);
       }
     }
     /////////////////////////////////////////////////////
@@ -7394,7 +7438,7 @@ HttpTransact::what_is_document_freshness(State *s, HTTPHdr *client_request, HTTP
     /////////////////////////////////////////////////////
     if (cooked_cc_mask & MIME_COOKED_MASK_CC_MIN_FRESH) {
       age_limit = min(age_limit, fresh_limit - client_request->get_cooked_cc_min_fresh());
-      DebugTxn("http_match", "[..._document_freshness] min_fresh set, age limit: %d", age_limit);
+      DebugTxn("http_match", ID_FMT "[..._document_freshness] min_fresh set, age limit: %d", ID_VAL, age_limit);
     }
     ///////////////////////////////////////////////////
     // if max-age set, constrain the freshness limit //
@@ -7404,7 +7448,7 @@ HttpTransact::what_is_document_freshness(State *s, HTTPHdr *client_request, HTTP
       if (age_val == 0)
         do_revalidate = true;
       age_limit = min(age_limit, age_val);
-      DebugTxn("http_match", "[..._document_freshness] min_fresh set, age limit: %d", age_limit);
+      DebugTxn("http_match", ID_FMT "[..._document_freshness] min_fresh set, age limit: %d", ID_VAL, age_limit);
     }
   }
   /////////////////////////////////////////////////////////
@@ -7418,34 +7462,34 @@ HttpTransact::what_is_document_freshness(State *s, HTTPHdr *client_request, HTTP
     // if instead the revalidate_after overrides all other variables
     age_limit = s->cache_control.revalidate_after;
 
-    DebugTxn("http_match", "[..._document_freshness] revalidate_after set, age limit: %d", age_limit);
+    DebugTxn("http_match", ID_FMT "[..._document_freshness] revalidate_after set, age limit: %d", ID_VAL, age_limit);
   }
 
-  DebugTxn("http_match", "document_freshness --- current_age = %" PRId64, (int64_t)current_age);
-  DebugTxn("http_match", "document_freshness --- age_limit   = %d", age_limit);
-  DebugTxn("http_match", "document_freshness --- fresh_limit = %d", fresh_limit);
-  DebugTxn("http_seq", "document_freshness --- current_age = %" PRId64, (int64_t)current_age);
-  DebugTxn("http_seq", "document_freshness --- age_limit   = %d", age_limit);
-  DebugTxn("http_seq", "document_freshness --- fresh_limit = %d", fresh_limit);
+  DebugTxn("http_match", ID_FMT "document_freshness --- current_age = %" PRId64, ID_VAL, (int64_t)current_age);
+  DebugTxn("http_match", ID_FMT "document_freshness --- age_limit   = %d", ID_VAL, age_limit);
+  DebugTxn("http_match", ID_FMT "document_freshness --- fresh_limit = %d", ID_VAL, fresh_limit);
+  DebugTxn("http_seq", ID_FMT "document_freshness --- current_age = %" PRId64, ID_VAL, (int64_t)current_age);
+  DebugTxn("http_seq", ID_FMT "document_freshness --- age_limit   = %d", ID_VAL, age_limit);
+  DebugTxn("http_seq", ID_FMT "document_freshness --- fresh_limit = %d", ID_VAL, fresh_limit);
   ///////////////////////////////////////////
   // now, see if the age is "fresh enough" //
   ///////////////////////////////////////////
 
   if (do_revalidate || current_age > age_limit) { // client-modified limit
-    DebugTxn("http_match", "[..._document_freshness] document needs revalidate/too old; "
-                           "returning FRESHNESS_STALE");
+    DebugTxn("http_match", ID_FMT "[..._document_freshness] document needs revalidate/too old; "
+                           "returning FRESHNESS_STALE", ID_VAL);
     return (FRESHNESS_STALE);
   } else if (current_age > fresh_limit) { // original limit
     if (os_specifies_revalidate) {
-      DebugTxn("http_match", "[..._document_freshness] document is stale and OS specifies revalidation; "
-                             "returning FRESHNESS_STALE");
+      DebugTxn("http_match", ID_FMT "[..._document_freshness] document is stale and OS specifies revalidation; "
+                             "returning FRESHNESS_STALE", ID_VAL);
       return (FRESHNESS_STALE);
     }
-    DebugTxn("http_match", "[..._document_freshness] document is stale but no revalidation explicitly required; "
-                           "returning FRESHNESS_WARNING");
+    DebugTxn("http_match", ID_FMT "[..._document_freshness] document is stale but no revalidation explicitly required; "
+                           "returning FRESHNESS_WARNING", ID_VAL);
     return (FRESHNESS_WARNING);
   } else {
-    DebugTxn("http_match", "[..._document_freshness] document is fresh; returning FRESHNESS_FRESH");
+    DebugTxn("http_match", ID_FMT "[..._document_freshness] document is fresh; returning FRESHNESS_FRESH", ID_VAL);
     return (FRESHNESS_FRESH);
   }
 }
@@ -7738,14 +7782,14 @@ HttpTransact::build_request(State *s, HTTPHdr *base_request, HTTPHdr *outgoing_r
 
   if (s->current.server == &s->server_info && (s->next_hop_scheme == URL_WKSIDX_HTTP || s->next_hop_scheme == URL_WKSIDX_HTTPS ||
                                                s->next_hop_scheme == URL_WKSIDX_WS || s->next_hop_scheme == URL_WKSIDX_WSS)) {
-    DebugTxn("http_trans", "[build_request] removing host name from url");
+    DebugTxn("http_trans", ID_FMT "[build_request] removing host name from url", ID_VAL);
     HttpTransactHeaders::remove_host_name_from_url(outgoing_request);
   }
 
   // If we're going to a parent proxy, make sure we pass host and port
   // in the URL even if we didn't get them (e.g. transparent proxy)
   if (s->current.request_to == PARENT_PROXY && !outgoing_request->is_target_in_url()) {
-    DebugTxn("http_trans", "[build_request] adding target to URL for parent proxy");
+    DebugTxn("http_trans", ID_FMT "[build_request] adding target to URL for parent proxy", ID_VAL);
 
     // No worry about HTTP/0.9 because we reject forward proxy requests that
     // don't have a host anywhere.
@@ -7760,23 +7804,23 @@ HttpTransact::build_request(State *s, HTTPHdr *base_request, HTTPHdr *outgoing_r
   if (s->current.mode == GENERIC_PROXY) {
     if (is_request_likely_cacheable(s, base_request)) {
       if (s->txn_conf->cache_when_to_revalidate != 4) {
-        DebugTxn("http_trans", "[build_request] "
-                               "request like cacheable and conditional headers removed");
+        DebugTxn("http_trans", ID_FMT "[build_request] "
+                               "request like cacheable and conditional headers removed", ID_VAL);
         HttpTransactHeaders::remove_conditional_headers(outgoing_request);
       } else
-        DebugTxn("http_trans", "[build_request] "
-                               "request like cacheable but keep conditional headers");
+        DebugTxn("http_trans", ID_FMT "[build_request] "
+                               "request like cacheable but keep conditional headers", ID_VAL);
     } else {
       // In this case, we send a conditional request
       // instead of the normal non-conditional request.
-      DebugTxn("http_trans", "[build_request] "
-                             "request not like cacheable and conditional headers not removed");
+      DebugTxn("http_trans", ID_FMT "[build_request] "
+                             "request not like cacheable and conditional headers not removed", ID_VAL);
     }
   }
 
   if (s->http_config_param->send_100_continue_response) {
     HttpTransactHeaders::remove_100_continue_headers(s, outgoing_request);
-    DebugTxn("http_trans", "[build_request] request expect 100-continue headers removed");
+    DebugTxn("http_trans", ID_FMT "[build_request] request expect 100-continue headers removed", ID_VAL);
   }
 
   s->request_sent_time = ink_cluster_time();
@@ -7785,7 +7829,7 @@ HttpTransact::build_request(State *s, HTTPHdr *base_request, HTTPHdr *outgoing_r
   ink_assert(s->request_sent_time >= s->response_received_time);
 
 
-  DebugTxn("http_trans", "[build_request] request_sent_time: %" PRId64, (int64_t)s->request_sent_time);
+  DebugTxn("http_trans", ID_FMT "[build_request] request_sent_time: %" PRId64, ID_VAL, (int64_t)s->request_sent_time);
   if (!s->cop_test_page)
     DUMP_HEADER("http_hdrs", outgoing_request, s->state_machine_id, "Proxy's Request");
 
@@ -8163,7 +8207,7 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
 void
 HttpTransact::build_redirect_response(State *s)
 {
-  DebugTxn("http_redirect", "[HttpTransact::build_redirect_response]");
+  DebugTxn("http_redirect", ID_FMT "[HttpTransact::build_redirect_response]", ID_VAL);
   URL *u;
   const char *old_host;
   int old_host_len;
@@ -8266,8 +8310,10 @@ HttpTransact::get_error_string(int erno)
 }
 
 ink_time_t
-ink_cluster_time(void)
+// ink_cluster_time(void * vpsm)
+ink_cluster_time()
 {
+  // HttpSM *sm = static_cast<HttpSM*>(vpsm);
   int highest_delta;
 
 #ifdef DEBUG
@@ -8288,6 +8334,7 @@ ink_cluster_time(void)
   //      highest_delta = 0L;
   //     }
 
+  // Debug("http_trans", ID_FMT "[ink_cluster_time] local: %" PRId64 ", highest_delta: %d, cluster: %" PRId64, sm->get_uuid(), (int64_t)local_time,
   Debug("http_trans", "[ink_cluster_time] local: %" PRId64 ", highest_delta: %d, cluster: %" PRId64, (int64_t)local_time,
         highest_delta, (int64_t)(local_time + (ink_time_t)highest_delta));
 
@@ -8917,7 +8964,7 @@ HttpTransact::add_new_stat_block(State *s)
   new_block->init();
   s->current_stats->next = new_block;
   s->current_stats = new_block;
-  DebugTxn("http_trans", "Adding new large stat block");
+  DebugTxn("http_trans", ID_FMT "Adding new large stat block", ID_VAL);
 }
 
 
@@ -8982,7 +9029,7 @@ HttpTransact::change_response_header_because_of_range_request(State *s, HTTPHdr 
   MIMEField *field;
   char *reason_phrase;
 
-  Debug("http_trans", "Partial content requested, re-calculating content-length");
+  Debug("http_trans", ID_FMT "Partial content requested, re-calculating content-length", ID_VAL);
 
   header->status_set(HTTP_STATUS_PARTIAL_CONTENT);
   reason_phrase = (char *)(http_hdr_reason_lookup(HTTP_STATUS_PARTIAL_CONTENT));

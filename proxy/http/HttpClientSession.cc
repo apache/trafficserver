@@ -129,7 +129,7 @@ HttpClientSession::new_transaction()
   current_reader = HttpSM::allocate();
   current_reader->init();
   transact_count++;
-  DebugHttpSsn("[%" PRId64 "] Starting transaction %d using sm [%" PRId64 "]", con_id, transact_count, current_reader->sm_id);
+  DebugHttpSsn("[%" PRId64 "] Starting transaction %d using sm " ID_FMT, con_id, transact_count, current_reader->get_uuid());
 
   client_vc->remove_from_keep_alive_lru();
   current_reader->attach_client_session(this, sm_reader);
@@ -476,7 +476,7 @@ HttpClientSession::release(IOBufferReader *r)
   ink_assert(current_reader != NULL);
   MgmtInt ka_in = current_reader->t_state.txn_conf->keep_alive_no_activity_timeout_in;
 
-  DebugHttpSsn("[%" PRId64 "] session released by sm [%" PRId64 "]", con_id, current_reader->sm_id);
+  DebugHttpSsn("[%" PRId64 "] session released by sm " ID_FMT, con_id, current_reader->get_uuid());
   current_reader = NULL;
 
   // handling potential keep-alive here

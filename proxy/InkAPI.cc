@@ -8866,3 +8866,14 @@ TSVConnReenable(TSVConn vconn)
     }
   }
 }
+
+const char*
+TSHttpTxnGetUUID(TSHttpTxn txnp)
+{
+  HttpSM * sm = (HttpSM *) txnp;
+
+  if ( txnp == NULL || sm->magic != HTTP_SM_MAGIC_ALIVE )
+    return "ERROR";
+
+  return sm->get_uuid();
+}
