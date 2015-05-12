@@ -880,7 +880,7 @@ SOCKET
 PluginVC::get_socket()
 {
   // Return an invalid file descriptor
-  return -1;
+  return ts::NO_FD;
 }
 
 void

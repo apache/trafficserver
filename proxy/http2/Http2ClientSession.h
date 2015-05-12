@@ -154,7 +154,7 @@ public:
   // Implement ProxyClientSession interface.
   void start();
   virtual void destroy();
-  void new_connection(const SessionAccept *, NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader, bool backdoor);
+  void new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader, bool backdoor);
 
   // Implement VConnection interface.
   VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = 0);

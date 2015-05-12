@@ -97,7 +97,7 @@ public:
 
   ~SpdyClientSession() { clear(); }
 
-  void init(NetVConnection *netvc, spdy::SessionVersion vers);
+  void init(NetVConnection *netvc);
   void clear();
   void destroy();
 
@@ -126,7 +126,7 @@ public:
   }
   NetVConnection * get_netvc() const { return vc; }
   void release_netvc() { vc = NULL; }
-  void new_connection(const SessionAccept *, NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader, bool backdoor);
+  void new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader, bool backdoor);
 
   int64_t sm_id;
   spdy::SessionVersion version;

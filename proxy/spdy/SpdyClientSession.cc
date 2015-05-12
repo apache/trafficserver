@@ -86,16 +86,15 @@ SpdyRequest::clear()
 }
 
 void
-SpdyClientSession::init(NetVConnection *netvc, spdy::SessionVersion vers)
+SpdyClientSession::init(NetVConnection *netvc)
 {
   int r;
 
   this->mutex = new_ProxyMutex();
   this->vc = netvc;
   this->req_map.clear();
-  this->version = vers;
 
-  r = spdylay_session_server_new(&session, versmap[vers], &spdy_callbacks, this);
+  r = spdylay_session_server_new(&session, versmap[this->version], &spdy_callbacks, this);
 
   // A bit ugly but we need a thread and I don't want to wait until the
   // session start event in case of a time out generating a decrement
@@ -175,20 +174,14 @@ SpdyClientSession::clear()
 }
 
 void
-SpdyClientSession::new_connection(const SessionAccept *accept_obj, NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader, bool backdoor)
+SpdyClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader, bool backdoor)
 {
   // SPDY for the backdoor connections? Let's not deal woth that yet.
   ink_release_assert(backdoor == false);
 
-  const SpdySessionAccept *spdy_accept = dynamic_cast<const SpdySessionAccept *>(accept_obj);
-  ink_assert(spdy_accept);
-  spdy::SessionVersion vers;
-  if (spdy_accept) {
-    vers = spdy_accept->getVersion();
-  }
   SpdyClientSession *sm = this;
 
-  sm->init(new_vc, vers);
+  sm->init(new_vc);
 
   sm->req_buffer = iobuf ? reinterpret_cast<TSIOBuffer>(iobuf) : TSIOBufferCreate();
   sm->req_reader = reader ? reinterpret_cast<TSIOBufferReader>(reader) : TSIOBufferReaderAlloc(sm->req_buffer);

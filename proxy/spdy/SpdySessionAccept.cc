@@ -44,7 +44,8 @@ SpdySessionAccept::mainEvent(int event, void *edata)
 
 #if TS_HAS_SPDY
     SpdyClientSession *sm = SpdyClientSession::alloc();
-    sm->new_connection(this, netvc, NULL, NULL, false);
+    sm->version = this->version;
+    sm->new_connection(netvc, NULL, NULL, false);
 #else
     Error("accepted a SPDY session, but SPDY support is not available");
     netvc->do_io_close();
@@ -62,7 +63,8 @@ SpdySessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferReade
 {
 #if TS_HAS_SPDY
   SpdyClientSession *sm = SpdyClientSession::alloc();
-  sm->new_connection(this, netvc, iobuf, reader, false);
+  sm->version = this->version;
+  sm->new_connection(netvc, iobuf, reader, false);
 #else
   (void)netvc;
   (void)iobuf;

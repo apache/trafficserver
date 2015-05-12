@@ -41,7 +41,7 @@ public:
   virtual void destroy();
   virtual void start() = 0;
 
-  virtual void new_connection(const SessionAccept *accept_obj, NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader, bool backdoor) = 0;
+  virtual void new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader, bool backdoor) = 0;
 
   virtual void
   ssn_hook_append(TSHttpHookID id, INKContInternal *cont)

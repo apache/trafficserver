@@ -103,7 +103,7 @@ Http2ClientSession::start()
 }
 
 void
-Http2ClientSession::new_connection(const SessionAccept * /*accept_obj */, NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader, bool backdoor)
+Http2ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader, bool backdoor)
 {
   // HTTP/2 for the backdoor connections? Let's not deal woth that yet.
   ink_release_assert(backdoor == false);
