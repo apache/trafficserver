@@ -5,9 +5,9 @@
   to you under the Apache License, Version 2.0 (the
   "License"); you may not use this file except in compliance
   with the License.  You may obtain a copy of the License at
- 
+
    http://www.apache.org/licenses/LICENSE-2.0
- 
+
   Unless required by applicable law or agreed to in writing,
   software distributed under the License is distributed on an
   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -37,7 +37,7 @@ Format
 Each line in the icp.config file contains the name and configuration
 information for a single ICP peer in the following format::
 
-    host : host_IP : peer_type : proxy_port : icp_port : MC_on : MC_IP : MC_TTL :
+    host : host_IP : ctype : proxy_port : icp_port : MC_on : MC_IP : MC_TTL :
 
 Each field is described in the following list.
 
@@ -58,6 +58,7 @@ Each field is described in the following list.
 
     -  1 to indicate an ICP parent cache
     -  2 to indicate an ICP sibling cache
+    -  3 to indicate an ICP local cache
 
 ``proxy_port``
     The port number of the TCP port used by the ICP peer for proxy
@@ -96,4 +97,3 @@ one parent, and one sibling.
     localhost:0.0.0.0:3:8080:3130:0:0.0.0.0:1
     host1:123.12.1.23:1:8080:3131:0:0.0.0.0:1
     host2:123.12.1.24:2:8080:3131:0:0.0.0.0:1
-
