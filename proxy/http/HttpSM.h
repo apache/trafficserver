@@ -191,8 +191,6 @@ public:
   static HttpSM *allocate();
   HttpCacheSM &get_cache_sm();      // Added to get the object of CacheSM YTS Team, yamsat
   HttpVCTableEntry *get_ua_entry(); // Added to get the ua_entry pointer  - YTS-TEAM
-  static void _instantiate_func(HttpSM *prototype, HttpSM *new_instance);
-  static void _make_scatter_list(HttpSM *prototype);
 
   void init();
 

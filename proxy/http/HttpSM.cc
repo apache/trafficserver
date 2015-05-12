@@ -71,24 +71,6 @@ extern int cache_config_read_while_writer;
 DLL<HttpSM> debug_sm_list;
 ink_mutex debug_sm_list_mutex;
 
-//  _instantiate_func is called from the fast allocator to initialize
-//  newly-allocated HttpSM objects.  By default, the fast allocators
-//  just memcpys the entire prototype object, but this function does
-//  sparse initialization, not copying dead space for history.
-//
-//  Most of the content of in the prototype object consists of zeroes.
-//  To take advantage of that, a "scatter list" is constructed of
-//  the non-zero words, and those values are scattered onto the
-//  new object after first zeroing out the object (except for dead space).
-//
-//  make_scatter_list should be called only once (during static
-//  initialization, since it isn't thread safe).
-
-#define MAX_SCATTER_LEN (sizeof(HttpSM) / sizeof(uint32_t) + 1)
-static uint32_t val[MAX_SCATTER_LEN];
-static uint16_t to[MAX_SCATTER_LEN];
-static int scat_count = 0;
-
 static const int sub_header_size = sizeof("Content-type: ") - 1 + 2 + sizeof("Content-range: bytes ") - 1 + 4;
 static const int boundary_size = 2 + sizeof("RANGE_SEPARATOR") - 1 + 2;
 
@@ -133,48 +115,8 @@ milestone_update_api_time(TransactionMilestones &milestones, ink_hrtime &api_tim
 }
 }
 
-void
-HttpSM::_make_scatter_list(HttpSM *prototype)
-{
-  int j;
-  int total_len = sizeof(HttpSM);
 
-  uint32_t *p = (uint32_t *)prototype;
-  int n = total_len / sizeof(uint32_t);
-  scat_count = 0;
-  for (j = 0; j < n; j++) {
-    if (p[j]) {
-      to[scat_count] = j;
-      val[scat_count] = p[j];
-      scat_count++;
-    }
-  }
-}
-
-void
-HttpSM::_instantiate_func(HttpSM *prototype, HttpSM *new_instance)
-{
-  int history_len = sizeof(prototype->history);
-  int total_len = sizeof(HttpSM);
-  int pre_history_len = (char *)(&(prototype->history)) - (char *)prototype;
-  int post_history_len = total_len - history_len - pre_history_len;
-  int post_offset = pre_history_len + history_len;
-  int j;
-
-  memset(((char *)new_instance), 0, pre_history_len);
-  memset(((char *)new_instance) + post_offset, 0, post_history_len);
-
-  uint32_t *pd = (uint32_t *)new_instance;
-
-  for (j = 0; j < scat_count; j++) {
-    pd[to[j]] = val[j];
-  }
-
-  ink_assert((memcmp((char *)new_instance, (char *)prototype, pre_history_len) == 0) &&
-             (memcmp(((char *)new_instance) + post_offset, ((char *)prototype) + post_offset, post_history_len) == 0));
-}
-
-SparseClassAllocator<HttpSM> httpSMAllocator("httpSMAllocator", 128, 16, HttpSM::_instantiate_func);
+ClassAllocator<HttpSM> httpSMAllocator("httpSMAllocator");
 
 #define HTTP_INCREMENT_TRANS_STAT(X) HttpTransact::update_stat(&t_state, X, 1);
 
@@ -337,16 +279,9 @@ HttpSM::HttpSM()
     plugin_tag(0), plugin_id(0), hooks_set(false), cur_hook_id(TS_HTTP_LAST_HOOK), cur_hook(NULL), cur_hooks(0),
     callout_state(HTTP_API_NO_CALLOUT), terminate_sm(false), kill_this_async_done(false), parse_range_done(false)
 {
-  static int scatter_init = 0;
-
   memset(&history, 0, sizeof(history));
   memset(&vc_table, 0, sizeof(vc_table));
   memset(&http_parser, 0, sizeof(http_parser));
-
-  if (!scatter_init) {
-    _make_scatter_list(this);
-    scatter_init = 1;
-  }
 }
 
 void
