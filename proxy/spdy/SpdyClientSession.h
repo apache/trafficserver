@@ -55,7 +55,7 @@ public:
   void clear();
 
   void
-  append_nv(char **nv)
+  append_nv(const char *const *nv)
   {
     for (int i = 0; nv[i]; i += 2) {
       headers.push_back(make_pair(nv[i], nv[i + 1]));
