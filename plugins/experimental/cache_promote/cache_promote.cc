@@ -461,7 +461,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf */, int /
   --argc;
   ++argv;
   if (config->factory(argc, argv)) {
-    TSCont contp = TSContCreate(cont_handle_policy, TSMutexCreate());
+    TSCont contp = TSContCreate(cont_handle_policy, NULL);
 
     TSContDataSet(contp, static_cast<void *>(config));
     *ih = static_cast<void *>(contp);
