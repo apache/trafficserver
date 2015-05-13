@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.1
 
+  *) [TS-3600] Missing break; statement in background_fetch plugin.
+
   *) [TS-3590] Mark H2 fetch streams as non-internal requests.
 
   *) [TS-3504] Only read "proxy.config.cache.ram_cache.use_seen_filter" once.

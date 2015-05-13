@@ -578,6 +578,7 @@ cont_bg_fetch(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
       delete data;
       TSError("%s: failed to connect to internal process, major malfunction", PLUGIN_NAME);
     }
+    break;
 
   case TS_EVENT_VCONN_WRITE_COMPLETE:
     TSDebug(PLUGIN_NAME, "Write Complete");
