@@ -370,8 +370,6 @@ ConditionUrl::eval(const Resources &res)
   TSMBuffer bufp = NULL;
   std::string s;
 
-  TSDebug(PLUGIN_NAME, "res.bufp %p res.client_bufp: %p res._rri->requestBufp: %p", res.bufp, res.client_bufp,
-          res._rri->requestBufp);
   if (res._rri != NULL) {
     // called at the remap hook
     bufp = res._rri->requestBufp;

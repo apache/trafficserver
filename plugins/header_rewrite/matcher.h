@@ -83,7 +83,7 @@ private:
 template <class T> class Matchers : public Matcher
 {
 public:
-  explicit Matchers<T>(const MatcherOps op) : Matcher(op) {}
+  explicit Matchers<T>(const MatcherOps op) : Matcher(op), _data() {}
 
   // Getters / setters
   const T
