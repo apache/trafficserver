@@ -588,44 +588,12 @@ AX_COMPILER_VENDOR
 CFLAGS="${_ts_saved_CFLAGS}"
 CXXFLAGS="${_ts_saved_CXXFLAGS}"
 
-# AX_CXX_COMPILE_STDCXX_11 requires the current language to be C++.
+# These tests requires C++
 AC_LANG_PUSH([C++])
 
-AX_CXX_COMPILE_STDCXX_11( [noext], [enable_cxx_11_support=yes], [
-  enable_cxx_11_support=no
-  AC_MSG_NOTICE([disabling features that depend on C++11 support])
-])
+AX_CXX_COMPILE_STDCXX_11([noext],[mandatory])
 
-AM_CONDITIONAL([BUILD_HAVE_CXX_11], [ test "x${enable_cxx_11_support}" = "xyes" ])
-if test "x${enable_cxx_11_support}" = "xyes" ; then
-  AC_DEFINE(HAVE_CXX_11, 1, [Whether the compiler support C++11])
-fi
-
-# While we are in C++ mode, check for the GNU hash_map extension.
-AC_CHECK_HEADERS([unordered_map unordered_set], [], [],
-[[#ifdef HAVE_UNORDERED_MAP
-#include <unordered_map>
-#endif
-]])
-
-AC_MSG_CHECKING([for <ext/hash_map>])
-AC_COMPILE_IFELSE([
-  AC_LANG_PROGRAM([
-    #include <string>
-    #include <ext/hash_map>
-    ], [
-     __gnu_cxx::hash_map<std::string, std::string> map;
-  ])],
-  [ have_gnu_cxx_hash_map=yes ],
-  [ have_gnu_cxx_hash_map=no ]
-)
-
-AC_MSG_RESULT([$have_gnu_cxx_hash_map])
-if test "x${have_gnu_cxx_hash_map}" = "xyes" ; then
-  AC_DEFINE(HAVE_GNU_CXX_HASH_MAP, 1, [whether __gnu_cxx::hash_map is available])
-fi
-
-# And check for std::shared_ptr vs std::tr1::shared_ptr
+# And check for std::shared_ptr vs std::tr1::shared_ptr. For the CPPLIB
 AC_MSG_CHECKING([for std::shared_ptr])
 AC_COMPILE_IFELSE([
   AC_LANG_PROGRAM([

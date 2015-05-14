@@ -28,6 +28,7 @@
 #include <getopt.h>
 
 #include <string>
+#include <unordered_map>
 
 #include "ts/ts.h"
 #include "ts/remap.h"
@@ -35,14 +36,6 @@
 #include "rules.h"
 #include "configs.h"
 
-// Some wonkiness around compiler version and the unordered map (hash)
-#if HAVE_UNORDERED_MAP
-#include <unordered_map>
-typedef std::unordered_map<std::string, bool> OutstandingRequests;
-#else
-#include <map>
-typedef std::map<std::string, bool> OutstandingRequests;
-#endif
 
 // Global config, if we don't have a remap specific config.
 static BgFetchConfig *gConfig;
@@ -52,6 +45,8 @@ static BgFetchConfig *gConfig;
 // Hold the global ackground fetch state. This is currently shared across all
 // configurations, as a singleton. ToDo: Would it ever make sense to do this
 // per remap rule? Probably not.
+typedef std::unordered_map<std::string, bool> OutstandingRequests;
+
 class BgFetchState
 {
 public:

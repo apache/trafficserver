@@ -16,8 +16,6 @@
   limitations under the License.
 */
 
-#include <ts/ts.h>
-#include <ts/remap.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -27,14 +25,13 @@
 #include <openssl/sha.h>
 
 #include <string>
+#include <unordered_map>
 #include <list>
 
-// TODO: We should eliminate this when we have unordered_map on all supported platforms
-#if HAVE_UNORDERED_MAP
-#include <unordered_map>
-#else
-#include <map>
-#endif
+#include "ts/ts.h"
+#include "ts/remap.h"
+#include "ink_config.h"
+
 
 static const char *PLUGIN_NAME = "cache_promote";
 
@@ -182,17 +179,9 @@ struct LRUHashHasher {
 
 typedef std::pair<LRUHash, unsigned> LRUEntry;
 typedef std::list<LRUEntry> LRUList;
+typedef std::unordered_map<const LRUHash *, LRUList::iterator, LRUHashHasher, LRUHashHasher> LRUMap;
 
 static LRUEntry NULL_LRU_ENTRY; // Used to create an "empty" new LRUEntry
-
-// TODO: We should eliminate this when we have unordered_map on all supported platforms.
-#if HAVE_UNORDERED_MAP
-#include <unordered_map>
-typedef std::unordered_map<const LRUHash *, LRUList::iterator, LRUHashHasher, LRUHashHasher> LRUMap;
-#else
-#include <map>
-typedef std::map<LRUHash *, LRUList::iterator> LRUMap;
-#endif
 
 class LRUPolicy : public PromotionPolicy
 {
@@ -230,9 +219,6 @@ public:
     // This doesn't have to be perfect, since this is just chance sampling.
     // coverity[dont_call]
     srand48((long)time(NULL) ^ (long)getpid() ^ (long)getppid());
-#if HAVE_UNORDERED_MAP
-    _map.reserve(_buckets);
-#endif
 
     return true;
   }
@@ -263,6 +249,7 @@ public:
         ret = true;
       } else {
         // It's still not promoted, make sure it's moved to the front of the list
+        TSDebug(PLUGIN_NAME, "still not promoted, got %d hits so far", map_it->second->second);
         _list.splice(_list.begin(), _list, map_it->second);
       }
     } else {
@@ -491,10 +478,11 @@ TSRemapStatus
 TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo * /* ATS_UNUSED rri */)
 {
   if (NULL == ih) {
-    TSDebug(PLUGIN_NAME, "No ACLs configured, this is probably a plugin bug");
+    TSDebug(PLUGIN_NAME, "No promotion rules configured, this is probably a plugin bug");
   } else {
     TSCont contp = static_cast<TSCont>(ih);
 
+    TSDebug(PLUGIN_NAME, "scheduling a TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK hook");
     TSHttpTxnHookAdd(rh, TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, contp);
   }
 
