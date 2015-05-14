@@ -85,6 +85,10 @@
 
 #include <dirent.h>
 
+#ifndef INT64_MIN
+#define INT64_MAX (9223372036854775807LL)
+#endif
+
 using namespace net_instaweb;
 
 static AtsProcessContext *ats_process_context;
