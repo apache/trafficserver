@@ -452,7 +452,7 @@ UnixNetProcessor::allocate_vc(EThread *t)
   UnixNetVConnection *vc;
 
   if (t) {
-    vc = THREAD_ALLOC(netVCAllocator, t);
+    vc = THREAD_ALLOC_INIT(netVCAllocator, t);
   } else {
     if (likely(vc = netVCAllocator.alloc())) {
       vc->from_accept_thread = true;
