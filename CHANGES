@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-3604] Transparent Mode does not work when accept_threads set to 0.
+
   *) [TS-3597] TLS can fail accecpt / handshake when accept thread is turned off.
 
   *) [TS-3603] Debug Assert due to missing lock when accept_threads are disabled.

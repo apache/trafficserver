@@ -158,7 +158,7 @@ NetAccept::init_accept_loop(const char *thr_name)
 // use it for high connection rates as well.
 //
 void
-NetAccept::init_accept(EThread *t)
+NetAccept::init_accept(EThread *t, bool isTransparent)
 {
   if (!t)
     t = eventProcessor.assign_thread(etype);
@@ -167,7 +167,7 @@ NetAccept::init_accept(EThread *t)
     action_->continuation->mutex = t->mutex;
     action_->mutex = t->mutex;
   }
-  if (do_listen(NON_BLOCKING))
+  if (do_listen(NON_BLOCKING, isTransparent))
     return;
   SET_HANDLER((NetAcceptHandler)&NetAccept::acceptEvent);
   period = ACCEPT_PERIOD;
@@ -176,11 +176,11 @@ NetAccept::init_accept(EThread *t)
 
 
 void
-NetAccept::init_accept_per_thread()
+NetAccept::init_accept_per_thread(bool isTransparent)
 {
   int i, n;
 
-  if (do_listen(NON_BLOCKING))
+  if (do_listen(NON_BLOCKING, isTransparent))
     return;
   if (accept_fn == net_accept)
     SET_HANDLER((NetAcceptHandler)&NetAccept::acceptFastEvent);

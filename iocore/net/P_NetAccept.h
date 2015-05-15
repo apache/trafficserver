@@ -99,8 +99,8 @@ struct NetAccept : public Continuation {
   virtual NetProcessor *getNetProcessor() const;
 
   void init_accept_loop(const char *);
-  virtual void init_accept(EThread *t = NULL);
-  virtual void init_accept_per_thread();
+  virtual void init_accept(EThread *t = NULL, bool isTransparent = false);
+  virtual void init_accept_per_thread(bool isTransparent);
   virtual NetAccept *clone() const;
   // 0 == success
   int do_listen(bool non_blocking, bool transparent = false);
