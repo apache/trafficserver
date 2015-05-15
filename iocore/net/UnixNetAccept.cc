@@ -461,9 +461,11 @@ NetAccept::acceptFastEvent(int event, void *ep)
     vc->nh->read_ready_list.enqueue(vc);
 #endif
 
-    if (!action_->cancelled)
+    if (!action_->cancelled) {
+      // We must be holding the lock already to do later do_io_read's
+      MUTEX_LOCK(lock, vc->mutex, e->ethread);
       action_->continuation->handleEvent(NET_EVENT_ACCEPT, vc);
-    else
+    } else
       close_UnixNetVConnection(vc, e->ethread);
   } while (loop);
 

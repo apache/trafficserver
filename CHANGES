@@ -1,6 +1,10 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.1
 
+  *) [TS-3603] Debug Assert due to missing lock when accept_threads are disabled.
+
+  *) [TS-3597] TLS can fail accecpt / handshake when accept thread is turned off.
+
   *) [TS-3600] Missing break; statement in background_fetch plugin.
 
   *) [TS-3590] Mark H2 fetch streams as non-internal requests.

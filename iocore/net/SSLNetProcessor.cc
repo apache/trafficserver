@@ -129,7 +129,7 @@ SSLNetProcessor::allocate_vc(EThread *t)
   SSLNetVConnection *vc;
 
   if (t) {
-    vc = THREAD_ALLOC(sslNetVCAllocator, t);
+    vc = THREAD_ALLOC_INIT(sslNetVCAllocator, t);
   } else {
     if (likely(vc = sslNetVCAllocator.alloc())) {
       vc->from_accept_thread = true;
