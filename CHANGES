@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-3605] Fix interim cache build error.
+   Author: Oknet Xu <computer_xu@sina.com>
+
   *) [TS-3602] Remove old SPDY plugin.
 
   *) [TS-3600] Missing break; statement in background_fetch plugin.
