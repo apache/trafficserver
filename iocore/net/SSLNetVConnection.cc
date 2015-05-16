@@ -1095,8 +1095,10 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
       SSL_INCREMENT_DYN_STAT(ssl_sni_name_set_failure);
     }
   }
+
 #endif
 
+  SSL_set_ex_data(ssl, get_ssl_client_data_index(), this);
   ssl_error_t ssl_error = SSLConnect(ssl);
   switch (ssl_error) {
   case SSL_ERROR_NONE:
@@ -1155,6 +1157,8 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
   case SSL_ERROR_SSL:
   default:
     err = errno;
+    // FIXME -- This triggers a retry on cases of cert validation errors....
+    Debug("ssl", "SSLNetVConnection::sslClientHandShakeEvent, SSL_ERROR_SSL");
     SSL_CLR_ERR_INCR_DYN_STAT(this, ssl_error_ssl, "SSLNetVConnection::sslClientHandShakeEvent, SSL_ERROR_SSL errno=%d", errno);
     return EVENT_ERROR;
     break;
