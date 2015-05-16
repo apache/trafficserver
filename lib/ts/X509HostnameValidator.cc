@@ -47,7 +47,7 @@ find_wildcard_in_hostname(const unsigned char *p, size_t len, bool idna_subject)
   size_t i = 0;
   // Minimum wildcard length *.a.b
   if (len < 5) {
-    return nullptr;
+    return NULL;
   }
 
   int wildcard_pos = -1;
@@ -61,7 +61,7 @@ find_wildcard_in_hostname(const unsigned char *p, size_t len, bool idna_subject)
   }
   // Final dot minimal pos is a.b.xxxxxx
   if (final_dot_pos < 3)
-    return nullptr;
+    return NULL;
 
   for (i = 0; i < final_dot_pos; i++) {
     /*
@@ -92,7 +92,7 @@ find_wildcard_in_hostname(const unsigned char *p, size_t len, bool idna_subject)
       break;
     }
   }
-  return nullptr;
+  return NULL;
 }
 
 
@@ -176,7 +176,7 @@ equal_wildcard(const unsigned char *pattern, size_t pattern_len, const unsigned 
   if (subject_len > 5 && subject[0] != '.')
     wildcard = find_wildcard_in_hostname(pattern, pattern_len, is_idna);
 
-  if (wildcard == nullptr)
+  if (wildcard == NULL)
     return equal_nocase(pattern, pattern_len, subject, subject_len);
   return wildcard_match(pattern, wildcard - pattern, wildcard + 1, (pattern + pattern_len) - wildcard - 1, subject, subject_len);
 }

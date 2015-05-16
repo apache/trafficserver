@@ -99,7 +99,7 @@ REGRESSION_TEST(CN_match)(RegressionTest *t, int /* atype ATS_UNUSED */, int *ps
   box.check(x != NULL, "failed to load the test certificate");
   box.check(validate_hostname(x, (unsigned char *)test_certificate_cn_name, false, &matching) == true, "Hostname should match");
   box.check(strcmp(test_certificate_cn_name, matching) == 0, "Return hostname doesn't match lookup");
-  box.check(validate_hostname(x, (unsigned char *)test_certificate_cn_name + 1, false, nullptr) == false,
+  box.check(validate_hostname(x, (unsigned char *)test_certificate_cn_name + 1, false, NULL) == false,
             "Hostname shouldn't match");
 }
 
@@ -110,11 +110,11 @@ REGRESSION_TEST(bad_wildcard_SANs)(RegressionTest *t, int /* atype ATS_UNUSED */
   box = REGRESSION_TEST_PASSED;
   X509 *x = load_cert_from_string(test_certificate_bad_sans);
   box.check(x != NULL, "failed to load the test certificate");
-  box.check(validate_hostname(x, (unsigned char *)"something.or.other", false, nullptr) == false, "Hostname shouldn't match");
-  box.check(validate_hostname(x, (unsigned char *)"a.b.c", false, nullptr) == false, "Hostname shouldn't match");
-  box.check(validate_hostname(x, (unsigned char *)"0.0.0.0", true, nullptr) == false, "Hostname shouldn't match");
-  box.check(validate_hostname(x, (unsigned char *)"......", true, nullptr) == false, "Hostname shouldn't match");
-  box.check(validate_hostname(x, (unsigned char *)"a.b", true, nullptr) == false, "Hostname shouldn't match");
+  box.check(validate_hostname(x, (unsigned char *)"something.or.other", false, NULL) == false, "Hostname shouldn't match");
+  box.check(validate_hostname(x, (unsigned char *)"a.b.c", false, NULL) == false, "Hostname shouldn't match");
+  box.check(validate_hostname(x, (unsigned char *)"0.0.0.0", true, NULL) == false, "Hostname shouldn't match");
+  box.check(validate_hostname(x, (unsigned char *)"......", true, NULL) == false, "Hostname shouldn't match");
+  box.check(validate_hostname(x, (unsigned char *)"a.b", true, NULL) == false, "Hostname shouldn't match");
 }
 
 REGRESSION_TEST(wildcard_SAN_and_CN)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
@@ -131,7 +131,7 @@ REGRESSION_TEST(wildcard_SAN_and_CN)(RegressionTest *t, int /* atype ATS_UNUSED 
   box.check(validate_hostname(x, (unsigned char *)"a.trafficserver.org", false, &matching) == true, "Hostname should match");
   box.check(strcmp("*.trafficserver.org", matching) == 0, "Return hostname doesn't match lookup");
 
-  box.check(validate_hostname(x, (unsigned char *)"a.*.trafficserver.org", false, nullptr) == false, "Hostname shouldn't match");
+  box.check(validate_hostname(x, (unsigned char *)"a.*.trafficserver.org", false, NULL) == false, "Hostname shouldn't match");
 }
 
 REGRESSION_TEST(IDNA_hostnames)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
@@ -164,8 +164,8 @@ REGRESSION_TEST(middle_label_match)(RegressionTest *t, int /* atype ATS_UNUSED *
             "Hostname should match");
   box.check(strcmp("*bar.trafficserver.net", matching) == 0, "Return hostname doesn't match lookup");
 
-  box.check(validate_hostname(x, (unsigned char *)"a.bar.trafficserver.net", false, nullptr) == false, "Hostname shouldn't match");
-  box.check(validate_hostname(x, (unsigned char *)"foo.bar.trafficserver.net", false, nullptr) == false,
+  box.check(validate_hostname(x, (unsigned char *)"a.bar.trafficserver.net", false, NULL) == false, "Hostname shouldn't match");
+  box.check(validate_hostname(x, (unsigned char *)"foo.bar.trafficserver.net", false, NULL) == false,
             "Hostname shouldn't match");
 }
 

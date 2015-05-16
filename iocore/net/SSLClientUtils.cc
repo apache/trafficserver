@@ -71,10 +71,10 @@ verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
    */
   ssl = static_cast<SSL *>(X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx()));
   SSLNetVConnection *netvc = static_cast<SSLNetVConnection *>(SSL_get_ex_data(ssl, ssl_client_data_index));
-  if (netvc != nullptr) {
+  if (netvc != NULL) {
     // Match SNI if present
     if (netvc->options.sni_servername) {
-      char *matched_name = nullptr;
+      char *matched_name = NULL;
       if (validate_hostname(cert, reinterpret_cast<unsigned char *>(netvc->options.sni_servername.get()), false, &matched_name)) {
         SSLDebug("Hostname %s verified OK, matched %s", netvc->options.sni_servername.get(), matched_name);
         ats_free(matched_name);
@@ -86,7 +86,7 @@ verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
     else {
       char buff[INET6_ADDRSTRLEN];
       ats_ip_ntop(netvc->server_addr, buff, INET6_ADDRSTRLEN);
-      if (validate_hostname(cert, reinterpret_cast<unsigned char *>(buff), true, nullptr)) {
+      if (validate_hostname(cert, reinterpret_cast<unsigned char *>(buff), true, NULL)) {
         SSLDebug("IP %s verified OK", buff);
         return preverify_ok;
       }
@@ -172,7 +172,7 @@ SSLInitClientContext(const SSLConfigParams *params)
 
   // Reserve an application data index for SSL verify callback. Since it's always called within the NetVC
   // context there's no need for allocating - we can simply save a ptr to the NetVC
-  ssl_client_data_index = SSL_get_ex_new_index(0, (void *)"NetVC index", nullptr, nullptr, nullptr);
+  ssl_client_data_index = SSL_get_ex_new_index(0, (void *)"NetVC index", NULL, NULL, NULL);
 
   if (SSLConfigParams::init_ssl_ctx_cb) {
     SSLConfigParams::init_ssl_ctx_cb(client_ctx, false);
