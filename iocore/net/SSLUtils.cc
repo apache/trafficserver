@@ -1166,10 +1166,8 @@ SSLPrivateKeyHandler(SSL_CTX *ctx, const SSLConfigParams *params, const ats_scop
 }
 
 static int
-SSLCheckServerCertNow(const char *certFilename)
+SSLCheckServerCertNow(X509 *myCert, char *certname)
 {
-  BIO *bioFP = NULL;
-  X509 *myCert;
   int timeCmpValue;
   time_t currentTime;
 
@@ -1181,27 +1179,9 @@ SSLCheckServerCertNow(const char *certFilename)
   // - current time is between notBefore and notAfter dates of certificate
   // if anything is not kosher, a negative value is returned and appropriate error logged.
 
-  if ((!certFilename) || (!(*certFilename))) {
-    return -2;
-  }
-
-  if ((bioFP = BIO_new(BIO_s_file())) == NULL) {
-    Error("BIO_new() failed for server certificate check.  Out of memory?");
-    return -1;
-  }
-
-  if (BIO_read_filename(bioFP, certFilename) <= 0) {
-    // file not found, or not accessible due to permissions
-    Error("Can't open server certificate file: \"%s\"\n", certFilename);
-    BIO_free(bioFP);
-    return -2;
-  }
-
-  myCert = PEM_read_bio_X509(bioFP, NULL, 0, NULL);
-  BIO_free(bioFP);
   if (!myCert) {
     // a truncated certificate would fall into here
-    Error("Error during server certificate PEM read. Is this a PEM format certificate?: \"%s\"\n", certFilename);
+    Error("Checking NULL certificate from %s", certname);
     return -3;
   }
 
@@ -1212,7 +1192,7 @@ SSLCheckServerCertNow(const char *certFilename)
     return -3;
   } else if (0 < timeCmpValue) {
     // cert contains a date before the notBefore
-    Error("Server certificate notBefore date is in the future - INVALID CERTIFICATE: %s", certFilename);
+    Error("Server certificate notBefore date is in the future - INVALID CERTIFICATE");
     return -4;
   }
 
@@ -1222,11 +1202,11 @@ SSLCheckServerCertNow(const char *certFilename)
     return -3;
   } else if (0 > timeCmpValue) {
     // cert is expired
-    Error("Server certificate EXPIRED - INVALID CERTIFICATE: %s", certFilename);
+    Error("Server certificate EXPIRED - INVALID CERTIFICATE");
     return -5;
   }
 
-  Debug("ssl", "Server certificate passed accessibility and date checks: \"%s\"", certFilename);
+  Debug("ssl", "Server certificate passed accessibility and date checks");
   return 0; // all good
 
 } /* CheckServerCertNow() */
@@ -1482,16 +1462,13 @@ asn1_strdup(ASN1_STRING *s)
 // table aliases for subject CN and subjectAltNames DNS without wildcard,
 // insert trie aliases for those with wildcard.
 static bool
-ssl_index_certificate(SSLCertLookup *lookup, SSLCertContext const &cc, const char *certfile)
+ssl_index_certificate(SSLCertLookup *lookup, SSLCertContext const &cc, X509 *cert, char *certname)
 {
   X509_NAME *subject = NULL;
-  X509 *cert;
-  scoped_BIO bio(BIO_new_file(certfile, "r"));
   bool inserted = false;
 
-  cert = PEM_read_bio_X509_AUX(bio.get(), NULL, NULL, NULL);
   if (NULL == cert) {
-    Error("Failed to load certificate from file %s", certfile);
+    Error("Failed to load certificate %s", certname);
     lookup->is_valid = false;
     return false;
   }
@@ -1511,7 +1488,7 @@ ssl_index_certificate(SSLCertLookup *lookup, SSLCertContext const &cc, const cha
       ASN1_STRING *cn = X509_NAME_ENTRY_get_data(e);
       subj_name = asn1_strdup(cn);
 
-      Debug("ssl", "mapping '%s' to certificate %s", (const char *)subj_name, certfile);
+      Debug("ssl", "mapping '%s' to certificate %s", (const char *)subj_name, certname);
       if (lookup->insert(subj_name, cc) >= 0)
         inserted = true;
     }
@@ -1530,7 +1507,7 @@ ssl_index_certificate(SSLCertLookup *lookup, SSLCertContext const &cc, const cha
         ats_scoped_str dns(asn1_strdup(name->d.dNSName));
         // only try to insert if the alternate name is not the main name
         if (strcmp(dns, subj_name) != 0) {
-          Debug("ssl", "mapping '%s' to certificate %s", (const char *)dns, certfile);
+          Debug("ssl", "mapping '%s' to certificates %s", (const char *)dns, certname);
           if (lookup->insert(dns, cc) >= 0)
             inserted = true;
         }
@@ -1540,7 +1517,6 @@ ssl_index_certificate(SSLCertLookup *lookup, SSLCertContext const &cc, const cha
     GENERAL_NAMES_free(names);
   }
 #endif // HAVE_OPENSSL_TS_H
-  X509_free(cert);
   return inserted;
 }
 
@@ -1597,6 +1573,7 @@ ssl_store_ssl_context(const SSLConfigParams *params, SSLCertLookup *lookup, cons
   ats_scoped_str session_key_path;
   ssl_ticket_key_block *keyblock = NULL;
   bool inserted = false;
+  scoped_X509 myCert;
 
   if (!ctx) {
     lookup->is_valid = false;
@@ -1621,7 +1598,11 @@ ssl_store_ssl_context(const SSLConfigParams *params, SSLCertLookup *lookup, cons
     certpath = NULL;
   }
 
-  if (0 > SSLCheckServerCertNow((const char *)certpath)) {
+  scoped_BIO bio(BIO_new_file(certpath, "r"));
+  if (bio) {
+    myCert = PEM_read_bio_X509(bio, NULL, 0, NULL);
+  }
+  if (!myCert || 0 > SSLCheckServerCertNow(myCert, certpath)) {
     /* At this point, we know cert is bad, and we've already printed a
        descriptive reason as to why cert is bad to the log file */
     Debug("ssl", "Marking certificate as NOT VALID: %s", (certpath) ? (const char *)certpath : "(null)");
@@ -1680,7 +1661,7 @@ ssl_store_ssl_context(const SSLConfigParams *params, SSLCertLookup *lookup, cons
   if (SSLConfigParams::ssl_ocsp_enabled) {
     Debug("ssl", "ssl ocsp stapling is enabled");
     SSL_CTX_set_tlsext_status_cb(ctx, ssl_callback_ocsp_stapling);
-    if (!ssl_stapling_init_cert(ctx, (const char *)certpath)) {
+    if (!ssl_stapling_init_cert(ctx, myCert, certpath)) {
       Warning("fail to configure SSL_CTX for OCSP Stapling info for certificate at %s", (const char *)certpath);
     }
   } else {
@@ -1696,7 +1677,7 @@ ssl_store_ssl_context(const SSLConfigParams *params, SSLCertLookup *lookup, cons
   // this code is updated to reconfigure the SSL certificates, it will need some sort of
   // refcounting or alternate way of avoiding double frees.
   Debug("ssl", "importing SNI names from %s", (const char *)certpath);
-  if (certpath != NULL && ssl_index_certificate(lookup, SSLCertContext(ctx, sslMultCertSettings.opt), certpath)) {
+  if (myCert != NULL && ssl_index_certificate(lookup, SSLCertContext(ctx, sslMultCertSettings.opt), myCert, certpath)) {
     inserted = true;
   }
 

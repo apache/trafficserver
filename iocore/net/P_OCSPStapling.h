@@ -28,7 +28,7 @@
 #ifdef SSL_CTX_set_tlsext_status_cb
 #define HAVE_OPENSSL_OCSP_STAPLING 1
 void ssl_stapling_ex_init();
-bool ssl_stapling_init_cert(SSL_CTX *ctx, const char *certfile);
+bool ssl_stapling_init_cert(SSL_CTX *ctx, X509 *cert, char *certname);
 void ocsp_update();
 int ssl_callback_ocsp_stapling(SSL *);
 #endif /* SSL_CTX_set_tlsext_status_cb */
