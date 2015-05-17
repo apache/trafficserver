@@ -161,8 +161,7 @@ ConfigProcessor::set(unsigned int id, ConfigInfo *info, unsigned timeout_secs)
     // The ConfigInfoReleaser now takes our refcount, but
     // someother thread might also have one ...
     ink_assert(old_info->refcount() > 0);
-    configProcessor.release(id, old_info);
-    //eventProcessor.schedule_in(new ConfigInfoReleaser(id, old_info), HRTIME_SECONDS(timeout_secs));
+    eventProcessor.schedule_in(new ConfigInfoReleaser(id, old_info), HRTIME_SECONDS(timeout_secs));
   }
 
   return id;
