@@ -33,6 +33,7 @@
 #include "MIME.h"
 #include "HTTP.h"
 #include "HttpClientSession.h"
+#include "Http2ClientSession.h"
 #include "HttpServerSession.h"
 #include "HttpSM.h"
 #include "HttpConfig.h"
@@ -6990,7 +6991,8 @@ TSHttpSsnClientFdGet(TSHttpSsn ssnp, int *fdp)
 {
   sdk_assert(sdk_sanity_check_null_ptr((void *)fdp) == TS_SUCCESS);
 
-  HttpClientSession *cs = (HttpClientSession *)ssnp;
+  VConnection *basecs = reinterpret_cast<VConnection *>(ssnp);
+  ProxyClientSession *cs = dynamic_cast<ProxyClientSession *>(basecs);
 
   if (cs == NULL)
     return TS_ERROR;

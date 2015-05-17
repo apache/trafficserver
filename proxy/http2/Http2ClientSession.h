@@ -146,13 +146,14 @@ private:
 class Http2ClientSession : public ProxyClientSession
 {
 public:
+  typedef ProxyClientSession super; ///< Parent type.
   Http2ClientSession();
 
   typedef int (Http2ClientSession::*SessionHandler)(int, void *);
 
   // Implement ProxyClientSession interface.
   void start();
-  void destroy();
+  virtual void destroy();
   void new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader, bool backdoor);
 
   // Implement VConnection interface.
@@ -161,6 +162,11 @@ public:
   void do_io_close(int lerrno = -1);
   void do_io_shutdown(ShutdownHowTo_t howto);
   void reenable(VIO *vio);
+  virtual NetVConnection * get_netvc() const
+  {
+    return client_vc;
+  };
+  virtual void release_netvc() { client_vc = NULL; }
 
   int64_t
   connection_id() const
