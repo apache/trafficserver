@@ -256,7 +256,9 @@ SSLConfigParams::initialize()
   SSLConfigParams::session_cache_skip_on_lock_contention = ssl_session_cache_skip_on_contention;
   SSLConfigParams::session_cache_number_buckets = ssl_session_cache_num_buckets;
 
-  session_cache = new SSLSessionCache();
+  if (ssl_session_cache == SSL_SESSION_CACHE_MODE_SERVER_ATS_IMPL) {
+    session_cache = new SSLSessionCache();
+  }
 
   // SSL record size
   REC_EstablishStaticConfigInt32(ssl_maxrecord, "proxy.config.ssl.max_record_size");

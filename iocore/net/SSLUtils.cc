@@ -39,6 +39,7 @@
 #include <openssl/bn.h>
 #include <unistd.h>
 #include <termios.h>
+#include "ts/Vec.h"
 
 #if HAVE_OPENSSL_EVP_H
 #include <openssl/evp.h>
@@ -1188,11 +1189,11 @@ SSLCheckServerCertNow(X509 *myCert, char *certname)
   time(&currentTime);
   if (!(timeCmpValue = X509_cmp_time(X509_get_notBefore(myCert), &currentTime))) {
     // an error occured parsing the time, which we'll call a bogosity
-    Error("Error occured while parsing server certificate notBefore time.");
+    Error("Error occured while parsing server certificate notBefore time. %s", certname);
     return -3;
   } else if (0 < timeCmpValue) {
     // cert contains a date before the notBefore
-    Error("Server certificate notBefore date is in the future - INVALID CERTIFICATE");
+    Error("Server certificate notBefore date is in the future - INVALID CERTIFICATE %s", certname);
     return -4;
   }
 
@@ -1202,18 +1203,18 @@ SSLCheckServerCertNow(X509 *myCert, char *certname)
     return -3;
   } else if (0 > timeCmpValue) {
     // cert is expired
-    Error("Server certificate EXPIRED - INVALID CERTIFICATE");
+    Error("Server certificate EXPIRED - INVALID CERTIFICATE %s", certname);
     return -5;
   }
 
-  Debug("ssl", "Server certificate passed accessibility and date checks");
+  Debug("ssl", "Server certificate %s passed accessibility and date checks", certname);
   return 0; // all good
 
 } /* CheckServerCertNow() */
 
 
 SSL_CTX *
-SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config &sslMultCertSettings)
+SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config &sslMultCertSettings, Vec<X509 *> &certList)
 {
   int server_verify_client;
   ats_scoped_str completeServerCertPath;
@@ -1306,12 +1307,39 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config &sslMu
       Error("the number of certificates in ssl_cert_name and ssl_key_name doesn't match");
       goto fail;
     }
+    SimpleTokenizer ca_tok("", SSL_CERT_SEPARATE_DELIM);
+    if (sslMultCertSettings.ca) {
+      ca_tok.setString(sslMultCertSettings.ca);
+      if (cert_tok.getNumTokensRemaining() != ca_tok.getNumTokensRemaining()) {
+        Error("the number of certificates in ssl_cert_name and ssl_ca_name doesn't match");
+        goto fail;
+      }
+    }
 
     for (const char *certname = cert_tok.getNext(); certname; certname = cert_tok.getNext()) {
       completeServerCertPath = Layout::relative_to(params->serverCertPathOnly, certname);
-      if (SSL_CTX_use_certificate_chain_file(ctx, completeServerCertPath) <= 0) {
+      scoped_BIO bio(BIO_new_file(completeServerCertPath, "r"));
+      X509 *cert = NULL;
+      if (bio) {
+        cert = PEM_read_bio_X509(bio.get(), NULL, 0, NULL);
+      }
+      if (!bio || !cert) {
         SSLError("failed to load certificate chain from %s", (const char *)completeServerCertPath);
         goto fail;
+      }
+      if (!SSL_CTX_use_certificate(ctx, cert)) {
+        SSLError("Failed to assign cert from %s to SSL_CTX", (const char *)completeServerCertPath);
+        X509_free(cert);
+        goto fail;
+      }
+      certList.push_back(cert);
+      // Load up any additional chain certificates
+      X509 *ca;
+      while ((ca = PEM_read_bio_X509(bio.get(), NULL, 0, NULL))) {
+        if (!SSL_CTX_add_extra_chain_cert(ctx, ca)) {
+          X509_free(ca);
+          goto fail;
+        }
       }
 
       const char *keyPath = key_tok.getNext();
@@ -1331,7 +1359,7 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config &sslMu
 
     // Now, load any additional certificate chains specified in this entry.
     if (sslMultCertSettings.ca) {
-      ats_scoped_str completeServerCertChainPath(Layout::relative_to(params->serverCertPathOnly, sslMultCertSettings.ca));
+      ats_scoped_str completeServerCertChainPath(Layout::relative_to(params->serverCertPathOnly, ca_tok.getNext()));
       if (!SSL_CTX_add_extra_chain_cert_file(ctx, completeServerCertChainPath)) {
         SSLError("failed to load certificate chain from %s", (const char *)completeServerCertChainPath);
         goto fail;
@@ -1444,6 +1472,9 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config &sslMu
 fail:
   SSL_CLEAR_PW_REFERENCES(ud, ctx)
   SSL_CTX_free(ctx);
+  for (unsigned int i = 0; i < certList.length(); i++) {
+    X509_free(certList[i]);
+  }
 
   return NULL;
 }
@@ -1568,12 +1599,10 @@ ssl_set_handshake_callbacks(SSL_CTX *ctx)
 static SSL_CTX *
 ssl_store_ssl_context(const SSLConfigParams *params, SSLCertLookup *lookup, const ssl_user_config &sslMultCertSettings)
 {
-  SSL_CTX *ctx = SSLInitServerContext(params, sslMultCertSettings);
-  ats_scoped_str certpath;
-  ats_scoped_str session_key_path;
+  Vec<X509 *> cert_list;
+  SSL_CTX *ctx = SSLInitServerContext(params, sslMultCertSettings, cert_list);
   ssl_ticket_key_block *keyblock = NULL;
   bool inserted = false;
-  scoped_X509 myCert;
 
   if (!ctx) {
     lookup->is_valid = false;
@@ -1592,21 +1621,15 @@ ssl_store_ssl_context(const SSLConfigParams *params, SSLCertLookup *lookup, cons
 #if TS_USE_TLS_ALPN
   SSL_CTX_set_alpn_select_cb(ctx, SSLNetVConnection::select_next_protocol, NULL);
 #endif /* TS_USE_TLS_ALPN */
-  if (sslMultCertSettings.first_cert) {
-    certpath = Layout::relative_to(params->serverCertPathOnly, sslMultCertSettings.first_cert);
-  } else {
-    certpath = NULL;
-  }
+  char *certname = sslMultCertSettings.cert.get();
 
-  scoped_BIO bio(BIO_new_file(certpath, "r"));
-  if (bio) {
-    myCert = PEM_read_bio_X509(bio, NULL, 0, NULL);
-  }
-  if (!myCert || 0 > SSLCheckServerCertNow(myCert, certpath)) {
-    /* At this point, we know cert is bad, and we've already printed a
-       descriptive reason as to why cert is bad to the log file */
-    Debug("ssl", "Marking certificate as NOT VALID: %s", (certpath) ? (const char *)certpath : "(null)");
-    lookup->is_valid = false;
+  for (unsigned i = 0; i < cert_list.length(); ++i) {
+    if (0 > SSLCheckServerCertNow(cert_list[i], certname)) {
+      /* At this point, we know cert is bad, and we've already printed a
+         descriptive reason as to why cert is bad to the log file */
+      Debug("ssl", "Marking certificate as NOT VALID: %s", (certname) ? (const char *)certname : "(null)");
+      lookup->is_valid = false;
+    }
   }
 
   // Load the session ticket key if session tickets are not disabled and we have key name.
@@ -1630,8 +1653,8 @@ ssl_store_ssl_context(const SSLConfigParams *params, SSLCertLookup *lookup, cons
       IpEndpoint ep;
 
       if (ats_ip_pton(sslMultCertSettings.addr, &ep) == 0) {
-        Debug("ssl", "mapping '%s' to certificate %s", (const char *)sslMultCertSettings.addr, (const char *)certpath);
-        if (certpath != NULL && lookup->insert(ep, SSLCertContext(ctx, sslMultCertSettings.opt, keyblock)) >= 0) {
+        Debug("ssl", "mapping '%s' to certificate %s", (const char *)sslMultCertSettings.addr, (const char *)certname);
+        if (certname != NULL && lookup->insert(ep, SSLCertContext(ctx, sslMultCertSettings.opt, keyblock)) >= 0) {
           inserted = true;
         }
       } else {
@@ -1661,8 +1684,10 @@ ssl_store_ssl_context(const SSLConfigParams *params, SSLCertLookup *lookup, cons
   if (SSLConfigParams::ssl_ocsp_enabled) {
     Debug("ssl", "ssl ocsp stapling is enabled");
     SSL_CTX_set_tlsext_status_cb(ctx, ssl_callback_ocsp_stapling);
-    if (!ssl_stapling_init_cert(ctx, myCert, certpath)) {
-      Warning("fail to configure SSL_CTX for OCSP Stapling info for certificate at %s", (const char *)certpath);
+    for (unsigned i = 0; i < cert_list.length(); ++i) {
+      if (!ssl_stapling_init_cert(ctx, cert_list[i], certname)) {
+        Warning("fail to configure SSL_CTX for OCSP Stapling info for certificate at %s", (const char *)certname);
+      }
     }
   } else {
     Debug("ssl", "ssl ocsp stapling is disabled");
@@ -1676,9 +1701,11 @@ ssl_store_ssl_context(const SSLConfigParams *params, SSLCertLookup *lookup, cons
   // Insert additional mappings. Note that this maps multiple keys to the same value, so when
   // this code is updated to reconfigure the SSL certificates, it will need some sort of
   // refcounting or alternate way of avoiding double frees.
-  Debug("ssl", "importing SNI names from %s", (const char *)certpath);
-  if (myCert != NULL && ssl_index_certificate(lookup, SSLCertContext(ctx, sslMultCertSettings.opt), myCert, certpath)) {
-    inserted = true;
+  Debug("ssl", "importing SNI names from %s", (const char *)certname);
+  for (unsigned i = 0; i < cert_list.length(); ++i) {
+    if (ssl_index_certificate(lookup, SSLCertContext(ctx, sslMultCertSettings.opt), cert_list[i], certname)) {
+      inserted = true;
+    }
   }
 
   if (inserted) {
@@ -1691,6 +1718,9 @@ ssl_store_ssl_context(const SSLConfigParams *params, SSLCertLookup *lookup, cons
       SSL_CTX_free(ctx);
       ctx = NULL;
     }
+  }
+  for (unsigned int i = 0; i < cert_list.length(); i++) {
+    X509_free(cert_list[i]);
   }
   return ctx;
 }
