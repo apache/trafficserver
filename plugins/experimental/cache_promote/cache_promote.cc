@@ -232,8 +232,14 @@ public:
     char *url = TSHttpTxnEffectiveUrlStringGet(txnp, &url_len);
     bool ret = false;
 
+    // Generally shouldn't happen ...
+    if (!url) {
+      return false;
+    }
+
     TSDebug(PLUGIN_NAME, "LRUPolicy::doPromote(%.*s ...)", url_len > 30 ? 30 : url_len, url);
     hash.init(url, url_len);
+    TSfree(url);
 
     // We have to hold the lock across all list and hash access / updates
     TSMutexLock(_lock);
