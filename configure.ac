@@ -801,8 +801,6 @@ AS_IF([test "x${has_optimizer_flags}" = "xno"],
         ]
 )
 
-AM_CONDITIONAL([BUILD_HAVE_LIBCXX], [ false ])
-
 case $host_os_def in
   linux)
     AS_IF([test "x$ax_cv_c_compiler_vendor" = "xintel"], [
@@ -860,9 +858,6 @@ case $host_os_def in
     ], [
       AC_MSG_WARN([clang is the only supported compiler on Darwin])
     ])
-
-    # Darwin needs to use libc++ for any C++11 code.
-    AM_CONDITIONAL([BUILD_HAVE_LIBCXX], [ true ])
 
     # NOTE: This seems semi-kludgy, but useful for MacPorts I think.
     AS_IF([test -d /opt/local/include], [
