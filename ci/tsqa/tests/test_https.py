@@ -268,12 +268,8 @@ class TestMix(helpers.EnvironmentCase, CertSelectionMixin):
         cert = self._get_cert(addr, ciphers=CIPHER_MAP['ecdsa'])
         self.assertEqual(cert.get_subject().commonName.decode(), 'www.example.com')
 
-    # TODO: remove once TS-3518 is resolved
-    @unittest.expectedFailure
     def test_intermediate_ca_rsa(self):
         self._intermediate_ca_t('rsa')
 
-    # TODO: remove once TS-3518 is resolved
-    @unittest.expectedFailure
     def test_intermediate_ca_ecdsa(self):
         self._intermediate_ca_t('ecdsa')
