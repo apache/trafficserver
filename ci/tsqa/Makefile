@@ -14,30 +14,43 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-.PHONY: test clean update
+.PHONY: test list clean update bootstrap
 
 VIRTUALENV_DIR = virtualenv
 
 # Run all tests.
 test: $(VIRTUALENV_DIR)
-	$(VIRTUALENV_DIR)/bin/nosetests --with-xunit -sv --logging-level=INFO
+	@. $(VIRTUALENV_DIR)/bin/activate && $(VIRTUALENV_DIR)/bin/nosetests --with-xunit -sv --logging-level=INFO
 
 # Scan and list the tests.
 list: $(VIRTUALENV_DIR)
-	@source $(VIRTUALENV_DIR)/bin/activate && $(VIRTUALENV_DIR)/bin/nosetests -v --collect-only
+	@. $(VIRTUALENV_DIR)/bin/activate && $(VIRTUALENV_DIR)/bin/nosetests -sv --collect-only
 
 # Construct the virtualenv.
-$(VIRTUALENV_DIR):
+$(VIRTUALENV_DIR): $(VIRTUALENV_DIR)/.done
+
+$(VIRTUALENV_DIR)/.done:
 	@if [ ! -d $(VIRTUALENV_DIR) ]; then\
 		virtualenv $(VIRTUALENV_DIR);\
 	fi
-	@# Update the virtualenv with your dep libraries
-	source $(VIRTUALENV_DIR)/bin/activate && $(VIRTUALENV_DIR)/bin/pip install -r requirements.txt
+	$(MAKE) update
 	@echo "Virtualenv ready!"
 
 # Update the virtualenv with the latest TSQA package and dependencies.
-update: $(VIRTUALENV_DIR)
-	source $(VIRTUALENV_DIR)/bin/activate && $(VIRTUALENV_DIR)/bin/pip install --upgrade -r requirements.txt
+update:
+	@rm -f $(VIRTUALENV_DIR)/.done
+	@. $(VIRTUALENV_DIR)/bin/activate && \
+		$(VIRTUALENV_DIR)/bin/pip install --upgrade -r requirements.txt && \
+		touch $(VIRTUALENV_DIR)/.done
+
+# Install TSQA bootstrap dependencies.
+bootstrap:
+	@if [ -e /etc/debian_version ]; then \
+		apt-get install -y python-pip python-virtualenv python-dev libffi-dev ; \
+	fi
+	@if [ -e /etc/redhat-release ]; then \
+		yum install -y python-pip python-virtualenv python-devel libcffi-devel ; \
+	fi
 
 clean:
 	rm -rf virtualenv

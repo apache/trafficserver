@@ -1,4 +1,4 @@
-/** @file
+/**
 
   @section license License
 
@@ -24,6 +24,7 @@
 
 #include "ink_config.h"
 #include "Diags.h"
+#include "P_SSLClientUtils.h"
 
 #define OPENSSL_THREAD_DEFINES
 #include <openssl/opensslconf.h>
@@ -111,9 +112,6 @@ extern RecRawStatBlock *ssl_rsb;
 
 // Create a default SSL server context.
 SSL_CTX *SSLDefaultServerContext();
-
-// Create and initialize a SSL client context.
-SSL_CTX *SSLInitClientContext(const SSLConfigParams *param);
 
 // Initialize the SSL library.
 void SSLInitializeLibrary();

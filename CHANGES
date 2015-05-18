@@ -1,12 +1,52 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-3578] Rearrange ProxyClientSession so VC is available in close session hook
+
+  *) [TS-3610] Loading reads certificate from file multiple times.
+
+  *) [TS-3608] Client side SSL does not validate upstream hostname
+
+  *) [TS-3604] Transparent Mode does not work when accept_threads set to 0.
+
+  *) [TS-3597] TLS can fail accecpt / handshake when accept thread is turned off.
+
+  *) [TS-3603] Debug Assert due to missing lock when accept_threads are disabled.
+
+  *) [TS-3605] Fix interim cache build error.
+   Author: Oknet Xu <computer_xu@sina.com>
+
+  *) [TS-3602] Remove old SPDY plugin.
+
+  *) [TS-3600] Missing break; statement in background_fetch plugin.
+
+  *) [TS-3436] Add API milestones.
+
+  *) [TS-3584] Turn off keep alive for HTTP request headers created from SPDY
+   and H2.
+
+  *) [TS-2609] Header rewrite plugin *URL:HOST condition.
+
+  *) [TS-3565] Only start up the continuation from DoRemap if the request has
+   a Range: header.
+
+  *) [TS-3562] background_fetch: refactor some code, elimiante the std::map
+   for rules, split things out into manageable sub-modules.
+
+  *) [TS-3592] Set cacheurl default config location to config directory.
+
+  *) [TS-3590]: Mark H2 fetch streams as non-internal requests.
+
+  *) [TS-3370] header_rewrite plugin uses dead continuation.
+
+  *) [TS-3588]: Fix continuation leak in background_fetch in remap mode.
+
   *) [TS-3029]: Fix spdy related seg fault in production, due to resetting
-                req->fetch_sm to null
+   req->fetch_sm to null.
 
-  *) [TS-2513] Missing SOCKS documentation
+  *) [TS-2513] Missing SOCKS documentation.
 
-  *) [TS-3582] Add @in_ip to remap filters
+  *) [TS-3582] Add @in_ip to remap filters.
 
   *) [TS-3484] Make inactivity_cop frequency (schedule) configurable,
    proxy.config.net.inactivity_check_frequency.

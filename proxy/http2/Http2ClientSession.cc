@@ -72,8 +72,9 @@ Http2ClientSession::destroy()
 
   this->connection_state.destroy();
 
+  super::destroy();
+
   free_MIOBuffer(this->read_buffer);
-  ProxyClientSession::cleanup();
   http2ClientSessionAllocator.free(this);
 }
 
@@ -190,8 +191,6 @@ Http2ClientSession::do_io_close(int alerrno)
 
   send_connection_event(&this->connection_state, HTTP2_SESSION_EVENT_FINI, this);
 
-  this->client_vc->do_io_close(alerrno);
-  this->client_vc = NULL;
 
   do_api_callout(TS_HTTP_SSN_CLOSE_HOOK);
 }

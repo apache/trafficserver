@@ -666,7 +666,7 @@ CacheProcessor::start_internal(int flags)
           struct stat sbuf;
           diskok = 0;
           if (-1 == fstat(fd, &sbuf)) {
-            fprintf(stderr, "Failed to stat cache file for directory %s\n", path)
+            fprintf(stderr, "Failed to stat cache file for directory %s\n", path);
           } else if (blocks != sbuf.st_size / STORE_BLOCK_SIZE) {
             fprintf(stderr, "Cache file for directory %s is %" PRId64 " bytes, expected %" PRId64 "\n", path, sbuf.st_size,
                     blocks * STORE_BLOCK_SIZE);

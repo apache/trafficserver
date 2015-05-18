@@ -48,11 +48,7 @@ static const int DICT_ENTRY_MAX = 2048;
 // to make it work, the name must be different then downstream proxies though
 // otherwise the downstream will restore the accept encoding header
 
-enum transform_state {
-  transform_state_initialized,
-  transform_state_output,
-  transform_state_finished,
-};
+enum transform_state { transform_state_initialized, transform_state_output, transform_state_finished };
 
 typedef struct {
   TSHttpTxn txn;

@@ -158,10 +158,10 @@ UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions cons
         na->init_accept_loop(thr_name);
       }
     } else {
-      na->init_accept_per_thread();
+      na->init_accept_per_thread(opt.f_inbound_transparent);
     }
   } else {
-    na->init_accept();
+    na->init_accept(NULL, opt.f_inbound_transparent);
   }
 
 #ifdef TCP_DEFER_ACCEPT
@@ -452,7 +452,7 @@ UnixNetProcessor::allocate_vc(EThread *t)
   UnixNetVConnection *vc;
 
   if (t) {
-    vc = THREAD_ALLOC(netVCAllocator, t);
+    vc = THREAD_ALLOC_INIT(netVCAllocator, t);
   } else {
     if (likely(vc = netVCAllocator.alloc())) {
       vc->from_accept_thread = true;

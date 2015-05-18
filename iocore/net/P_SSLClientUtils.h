@@ -19,19 +19,21 @@
   limitations under the License.
  */
 
-#ifndef __P_OCSPSTAPLING_H__
-#define __P_OCSPSTAPLING_H__
+#ifndef IOCORE_NET_P_SSLCLIENTUTILS_H_
+#define IOCORE_NET_P_SSLCLIENTUTILS_H_
 
+#include "ink_config.h"
+#include "Diags.h"
+#include "P_SSLUtils.h"
+#include "P_SSLConfig.h"
+
+#include <openssl/opensslconf.h>
 #include <openssl/ssl.h>
 
-#ifdef sk_OPENSSL_STRING_pop
-#ifdef SSL_CTX_set_tlsext_status_cb
-#define HAVE_OPENSSL_OCSP_STAPLING 1
-void ssl_stapling_ex_init();
-bool ssl_stapling_init_cert(SSL_CTX *ctx, X509 *cert, char *certname);
-void ocsp_update();
-int ssl_callback_ocsp_stapling(SSL *);
-#endif /* SSL_CTX_set_tlsext_status_cb */
-#endif /* sk_OPENSSL_STRING_pop */
+// Create and initialize a SSL client context.
+SSL_CTX *SSLInitClientContext(const struct SSLConfigParams *param);
 
-#endif /* __P_OCSPSTAPLING_H__ */
+// Returns the index used to store our data on the SSL
+int get_ssl_client_data_index();
+
+#endif /* IOCORE_NET_P_SSLCLIENTUTILS_H_ */

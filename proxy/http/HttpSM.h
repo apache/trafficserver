@@ -496,6 +496,7 @@ public:
   int pushed_response_hdr_bytes;
   int64_t pushed_response_body_bytes;
   TransactionMilestones milestones;
+  ink_hrtime api_timer;
   // The next two enable plugins to tag the state machine for
   // the purposes of logging so the instances can be correlated
   // with the source plugin.

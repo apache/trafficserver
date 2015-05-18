@@ -32,6 +32,8 @@
 #include "net/instaweb/util/public/string.h"
 #include "net/instaweb/util/public/string_util.h"
 
+#include "net/instaweb/http/public/request_context.h"
+
 namespace net_instaweb
 {
 class AtsBaseFetch;
@@ -48,11 +50,7 @@ class ServerContext;
 
 } // namespace net_instaweb
 
-enum transform_state {
-  transform_state_initialized,
-  transform_state_output,
-  transform_state_finished,
-};
+enum transform_state { transform_state_initialized, transform_state_output, transform_state_finished };
 
 typedef struct {
   TSHttpTxn txn;
@@ -94,15 +92,13 @@ TransformCtx *get_transaction_context(TSHttpTxn txnp);
 void ats_ctx_destroy(TransformCtx *ctx);
 bool cache_hit(TSHttpTxn txnp);
 
-bool ps_determine_options(net_instaweb::ServerContext *server_context,
-                          // Directory-specific options, usually null.  They've already been rebased off
-                          // of the global options as part of the configuration process.
-                          net_instaweb::RewriteOptions *directory_options, net_instaweb::RequestHeaders *request_headers,
+bool ps_determine_options(net_instaweb::ServerContext *server_context, net_instaweb::RequestHeaders *request_headers,
                           net_instaweb::ResponseHeaders *response_headers, net_instaweb::RewriteOptions **options,
-                          net_instaweb::GoogleUrl *url);
+                          net_instaweb::RequestContextPtr request_context, net_instaweb::GoogleUrl *url,
+                          GoogleString *pagespeed_query_params, GoogleString *pagespeed_option_cookies, bool html_rewrite);
 
 void copy_request_headers_to_psol(TSMBuffer bufp, TSMLoc hdr_loc, net_instaweb::RequestHeaders *psol_headers);
 // You will own options returned by this:
-net_instaweb::AtsRewriteOptions *get_host_options(const StringPiece &host);
+net_instaweb::AtsRewriteOptions *get_host_options(const StringPiece &host, net_instaweb::ServerContext *server_context);
 
 #endif /* ATS_PAGESPEED_H_ */
