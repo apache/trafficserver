@@ -1,4 +1,4 @@
-Traffic Server 4.2 STATUS:                                              -*-text-*-
+Traffic Server 5.3 STATUS:                                              -*-text-*-
 Last modified at [$Date$]
 
 The current version of this file can be found at:
@@ -8,13 +8,16 @@ The current version of this file can be found at:
 
 Release history:
 
-    5.2.0           : Released on Jan 8th, 2014
-    5.1.2	    : Released on Dec 15th, 2014
+    5.3.0           : Released on May 13th, 2015
+    5.2.1           : Released on Mar 30th, 2015
+    5.2.0           : Released on Jan 8th, 2015
+    5.1.2           : Released on Dec 15th, 2014
     5.1.1           : Released on Oct 31st, 2014
     5.1.0           : Released on Sep 18th, 2014
     5.0.1           : Released on Jul 23rd, 2014
     5.0.0           : Released on Jun 17th, 2014
 
+    4.2.3           : Released on Feb 3rd, 2015
     4.2.2           : Released on Sep 4th, 2014
     4.2.1.1         : Released on Jul 23rd, 2014
     4.2.1           : Released on Apr 29th, 2014
