@@ -1,17 +1,22 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
-  *) [TS-3578] Rearrange ProxyClientSession so VC is available in close session hook
+  *) [TS-3601] cache_promote: Eliminate unnecessary mutex for txn handler.
+
+  *) [TS-3578] Rearrange ProxyClientSession so VC is available in close
+   session hook.
 
   *) [TS-3610] Loading reads certificate from file multiple times.
 
-  *) [TS-3608] Client side SSL does not validate upstream hostname
+  *) [TS-3608] Client side SSL does not validate upstream hostname.
 
   *) [TS-3604] Transparent Mode does not work when accept_threads set to 0.
 
-  *) [TS-3597] TLS can fail accecpt / handshake when accept thread is turned off.
+  *) [TS-3597] TLS can fail accecpt / handshake when accept thread is turned
+   off.
 
-  *) [TS-3603] Debug Assert due to missing lock when accept_threads are disabled.
+  *) [TS-3603] Debug Assert due to missing lock when accept_threads are
+   disabled.
 
   *) [TS-3605] Fix interim cache build error.
    Author: Oknet Xu <computer_xu@sina.com>
