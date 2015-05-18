@@ -535,8 +535,8 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo * /* rri */)
 {
   S3Config *s3 = static_cast<S3Config *>(ih);
 
-  TSAssert(s3->valid());
   if (s3) {
+    TSAssert(s3->valid());
     // Now schedule the continuation to update the URL when going to origin.
     // Note that in most cases, this is a No-Op, assuming you have reasonable
     // cache hit ratio. However, the scheduling is next to free (very cheap).
@@ -552,19 +552,3 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo * /* rri */)
   // This plugin actually doesn't do anything with remapping. Ever.
   return TSREMAP_NO_REMAP;
 }
-
-
-/*
-  local variables:
-  mode: C++
-  indent-tabs-mode: nil
-  c-basic-offset: 2
-  c-comment-only-line-offset: 0
-  c-file-offsets: ((statement-block-intro . +)
-  (label . 0)
-  (statement-cont . +)
-  (innamespace . 0))
-  end:
-
-  Indent with: /usr/bin/indent -ncs -nut -npcs -l 120 logstats.cc
-*/
