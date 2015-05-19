@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-3618] Crashes in traffic_cop on shutdown / restart
+
   *) [TS-3617] cache_promote leaks the URL string.
 
   *) [TS-3581] Remove unused parameters from Cache::remove().
