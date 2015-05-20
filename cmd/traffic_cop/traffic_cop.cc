@@ -830,7 +830,7 @@ poll_read_or_write(int fd, int timeout, int inorout)
 
   do {
     if (sig_term_received) {
-          exit(0);
+      exit(0);
     }
 
     err = poll(&info, 1, timeout);
