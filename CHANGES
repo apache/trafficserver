@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
   
+  *) [TS-3616] Eliminate BUILD_HAVE_LIBCXX.
+
   *) [TS-3622]: Add a bound to read_while_writer retries with a config setting
 
   *) [TS-3618] Crashes in traffic_cop on shutdown / restart
