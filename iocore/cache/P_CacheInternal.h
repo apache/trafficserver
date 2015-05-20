@@ -226,6 +226,7 @@ extern int cache_config_hit_evacuate_size_limit;
 extern int cache_config_force_sector_size;
 extern int cache_config_target_fragment_size;
 extern int cache_config_mutex_retry_delay;
+extern int cache_config_read_while_writer_max_retries;
 #if TS_USE_INTERIM_CACHE == 1
 extern int good_interim_disks;
 #endif

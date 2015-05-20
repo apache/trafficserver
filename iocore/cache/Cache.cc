@@ -78,6 +78,7 @@ int cache_config_enable_checksum = 0;
 int cache_config_alt_rewrite_max_size = 4096;
 int cache_config_read_while_writer = 0;
 int cache_config_mutex_retry_delay = 2;
+int cache_config_read_while_writer_max_retries = 10;
 #ifdef HTTP_CACHE
 static int enable_cache_empty_http_doc = 0;
 /// Fix up a specific known problem with the 4.2.0 release.
@@ -3521,6 +3522,9 @@ ink_cache_init(ModuleVersion v)
 
   REC_EstablishStaticConfigInt32(cache_config_mutex_retry_delay, "proxy.config.cache.mutex_retry_delay");
   Debug("cache_init", "proxy.config.cache.mutex_retry_delay = %dms", cache_config_mutex_retry_delay);
+
+  REC_EstablishStaticConfigInt32(cache_config_read_while_writer_max_retries, "proxy.config.cache.read_while_writer.max_retries");
+  Debug("cache_init", "proxy.config.cache.read_while_writer.max_retries = %d", cache_config_read_while_writer_max_retries);
 
   REC_EstablishStaticConfigInt32(cache_config_hit_evacuate_percent, "proxy.config.cache.hit_evacuate_percent");
   Debug("cache_init", "proxy.config.cache.hit_evacuate_percent = %d", cache_config_hit_evacuate_percent);
