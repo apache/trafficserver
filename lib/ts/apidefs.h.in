@@ -46,6 +46,7 @@
 #include <stdint.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <openssl/ssl.h>
 
 #ifndef tsapi
 #define tsapi
@@ -277,7 +278,8 @@ typedef enum {
   TS_VCONN_PRE_ACCEPT_HOOK = TS_SSL_FIRST_HOOK,
   TS_SSL_SNI_HOOK,
   TS_SSL_CERT_HOOK = TS_SSL_SNI_HOOK,
-  TS_SSL_LAST_HOOK = TS_SSL_CERT_HOOK,
+  TS_SSL_SESSION_HOOK,
+  TS_SSL_LAST_HOOK = TS_SSL_SESSION_HOOK,
   TS_HTTP_LAST_HOOK
 } TSHttpHookID;
 #define TS_HTTP_READ_REQUEST_PRE_REMAP_HOOK TS_HTTP_PRE_REMAP_HOOK /* backwards compat */
@@ -409,6 +411,10 @@ typedef enum {
 
   /* EVENT 1200 for internal use */
   TS_EVENT_INTERNAL_1200 = 1200,
+
+  TS_EVENT_SESSION_GET = 2000,
+  TS_EVENT_SESSION_NEW = 2001,
+  TS_EVENT_SESSION_REMOVE = 2002,
 
   /* EVENT 3900 is corresponding to event AIO_EVENT_DONE defined in I_AIO.h */
   TS_AIO_EVENT_DONE = 3900,
@@ -764,6 +770,7 @@ typedef struct tsapi_config *TSConfig;
 typedef struct tsapi_cont *TSCont;
 typedef struct tsapi_cont *TSVConn; /* a VConn is really a specialized TSCont */
 typedef struct tsapi_ssl_context *TSSslContext;
+typedef struct tsapi_ssl_session *TSSslSession;
 typedef struct tsapi_action *TSAction;
 typedef struct tsapi_iobuffer *TSIOBuffer;
 typedef struct tsapi_iobufferdata *TSIOBufferData;
@@ -792,6 +799,11 @@ typedef struct TSFetchUrlParams {
   TSFetchWakeUpOptions options;
   struct TSFetchUrlParams *next;
 } TSFetchUrlParams_t;
+
+typedef struct TSSslSessionID {
+  size_t len;
+  unsigned char bytes[SSL_MAX_SSL_SESSION_ID_LENGTH];
+} TSSslSessionID_t;
 
 /* --------------------------------------------------------------------------
    Init */

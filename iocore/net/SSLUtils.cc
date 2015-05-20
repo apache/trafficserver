@@ -27,6 +27,7 @@
 #include "ink_cap.h"
 #include "P_OCSPStapling.h"
 #include "SSLSessionCache.h"
+#include "InkAPIInternal.h" // Added to include the ssl_hook definitions
 
 #include <string>
 #include <openssl/err.h>
@@ -190,6 +191,7 @@ static SSL_SESSION *
 ssl_get_cached_session(SSL *ssl, unsigned char *id, int len, int *copy)
 {
   SSLSessionID sid(id, len);
+  //SSLNetVConnection *netvc = (SSLNetVConnection *)SSL_get_app_data(ssl);
 
   *copy = 0;
   if (diags->tag_activated("ssl.session_cache")) {
@@ -198,13 +200,17 @@ ssl_get_cached_session(SSL *ssl, unsigned char *id, int len, int *copy)
     Debug("ssl.session_cache.get", "ssl_get_cached_session cached session '%s' context %p", printable_buf, SSL_get_SSL_CTX(ssl));
   }
 
-  SSL_SESSION *session = NULL;
-
-  if (session_cache->getSession(sid, &session)) {
-    return session;
+  APIHook *hook = ssl_hooks->get(TS_SSL_SESSION_INTERNAL_HOOK);
+  while (hook) {
+    hook->invoke(TS_EVENT_SESSION_GET, &sid);
+    hook = hook->m_link.next;
   }
 
-  return NULL;
+  SSL_SESSION *session = NULL;
+  if (!session_cache->getSession(sid, &session)) {
+    session = NULL;
+  }
+  return session;
 }
 
 static int
@@ -213,6 +219,7 @@ ssl_new_cached_session(SSL *ssl, SSL_SESSION *sess)
   unsigned int len = 0;
   const unsigned char *id = SSL_SESSION_get_id(sess, &len);
   SSLSessionID sid(id, len);
+
 
   if (diags->tag_activated("ssl.session_cache")) {
     char printable_buf[(len * 2) + 1];
@@ -223,6 +230,13 @@ ssl_new_cached_session(SSL *ssl, SSL_SESSION *sess)
 
   SSL_INCREMENT_DYN_STAT(ssl_session_cache_new_session);
   session_cache->insertSession(sid, sess);
+
+  // Call hook after new session is created
+  APIHook *hook = ssl_hooks->get(TS_SSL_SESSION_INTERNAL_HOOK);
+  while (hook) {
+    hook->invoke(TS_EVENT_SESSION_NEW, &sid);
+    hook = hook->m_link.next;
+  }
 
   return 0;
 }
@@ -235,6 +249,13 @@ ssl_rm_cached_session(SSL_CTX *ctx, SSL_SESSION *sess)
   unsigned int len = 0;
   const unsigned char *id = SSL_SESSION_get_id(sess, &len);
   SSLSessionID sid(id, len);
+
+  // Call hook before session is removed
+  APIHook *hook = ssl_hooks->get(TS_SSL_SESSION_INTERNAL_HOOK);
+  while (hook) {
+    hook->invoke(TS_EVENT_SESSION_REMOVE, &sid);
+    hook = hook->m_link.next;
+  }
 
   if (diags->tag_activated("ssl.session_cache")) {
     char printable_buf[(len * 2) + 1];

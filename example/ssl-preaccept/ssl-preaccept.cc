@@ -28,8 +28,8 @@
 #include <stdio.h>
 #include <memory.h>
 #include <inttypes.h>
-#include <ts/ts.h>
 #include <tsconfig/TsValue.h>
+#include <ts/ts.h>
 #include <ts/ink_inet.h>
 #include <getopt.h>
 

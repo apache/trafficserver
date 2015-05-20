@@ -50,8 +50,22 @@ SSLSessionCache::~SSLSessionCache()
 }
 
 bool
-SSLSessionCache::getSession(const SSLSessionID &sid, SSL_SESSION **sess) const
+SSLSessionCache::getSessionBuffer(const TSSslSessionID &session_id, char *buffer, int &len, int &true_len) const
 {
+  const SSLSessionID &sid = reinterpret_cast<const SSLSessionID &>(session_id); 
+  uint64_t hash = sid.hash();
+  uint64_t target_bucket = hash % nbuckets;
+  SSLSessionBucket *bucket = &session_bucket[target_bucket];
+  bool ret = false;
+
+  ret = bucket->getSessionBuffer(sid, buffer, len, true_len);
+  return ret;
+}
+
+bool
+SSLSessionCache::getSession(const TSSslSessionID &session_id, SSL_SESSION **sess, bool keep_stat) const
+{
+  const SSLSessionID &sid = reinterpret_cast<const SSLSessionID &>(session_id); 
   uint64_t hash = sid.hash();
   uint64_t target_bucket = hash % nbuckets;
   SSLSessionBucket *bucket = &session_bucket[target_bucket];
@@ -66,17 +80,20 @@ SSLSessionCache::getSession(const SSLSessionID &sid, SSL_SESSION **sess) const
 
   ret = bucket->getSession(sid, sess);
 
-  if (ret)
-    SSL_INCREMENT_DYN_STAT(ssl_session_cache_hit);
-  else
-    SSL_INCREMENT_DYN_STAT(ssl_session_cache_miss);
+  if (keep_stat) {
+    if (ret)
+      SSL_INCREMENT_DYN_STAT(ssl_session_cache_hit);
+    else
+      SSL_INCREMENT_DYN_STAT(ssl_session_cache_miss);
+  }
 
   return ret;
 }
 
 void
-SSLSessionCache::removeSession(const SSLSessionID &sid)
+SSLSessionCache::removeSession(const TSSslSessionID &session_id)
 {
+  const SSLSessionID &sid = reinterpret_cast<const SSLSessionID &>(session_id); 
   uint64_t hash = sid.hash();
   uint64_t target_bucket = hash % nbuckets;
   SSLSessionBucket *bucket = &session_bucket[target_bucket];
@@ -93,8 +110,9 @@ SSLSessionCache::removeSession(const SSLSessionID &sid)
 }
 
 void
-SSLSessionCache::insertSession(const SSLSessionID &sid, SSL_SESSION *sess)
+SSLSessionCache::insertSession(const TSSslSessionID &session_id, SSL_SESSION *sess)
 {
+  const SSLSessionID &sid = reinterpret_cast<const SSLSessionID &>(session_id); 
   uint64_t hash = sid.hash();
   uint64_t target_bucket = hash % nbuckets;
   SSLSessionBucket *bucket = &session_bucket[target_bucket];
@@ -151,6 +169,36 @@ SSLSessionBucket::insertSession(const SSLSessionID &id, SSL_SESSION *sess)
   queue.enqueue(ssl_session.release());
 
   PRINT_BUCKET("insertSession after")
+}
+
+bool
+SSLSessionBucket::getSessionBuffer(const SSLSessionID &id, char *buffer, int &len, int &true_len)
+{
+  MUTEX_TRY_LOCK(lock, mutex, this_ethread());
+  if (!lock.is_locked()) {
+    SSL_INCREMENT_DYN_STAT(ssl_session_cache_lock_contention);
+    if (SSLConfigParams::session_cache_skip_on_lock_contention)
+      return false;
+
+    lock.acquire(this_ethread());
+  }
+
+  // We work backwards because that's the most likely place we'll find our session...
+  SSLSession *node = queue.tail;
+  while (node) {
+    if (node->session_id == id) {
+      true_len = node->len_asn1_data;
+      if (buffer) {
+        const unsigned char *loc = reinterpret_cast<const unsigned char *>(node->asn1_data->data());
+        if (true_len < len) 
+          len = true_len;  
+        memcpy(buffer, loc, len);
+        return true;
+      }
+    }
+    node = node->link.prev;
+  }
+  return false;
 }
 
 bool
