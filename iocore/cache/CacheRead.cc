@@ -364,7 +364,8 @@ CacheVC::openReadFromWriter(int event, Event *e)
   // allow reading from unclosed writer for http requests only.
   ink_assert(frag_type == CACHE_FRAG_TYPE_HTTP || write_vc->closed);
   if (!write_vc->closed && !write_vc->fragment) {
-    if (!cache_config_read_while_writer || frag_type != CACHE_FRAG_TYPE_HTTP) {
+    if (!cache_config_read_while_writer || frag_type != CACHE_FRAG_TYPE_HTTP ||
+        writer_lock_retry >= cache_config_read_while_writer_max_retries) {
       MUTEX_RELEASE(lock);
       return openReadFromWriterFailure(CACHE_EVENT_OPEN_READ_FAILED, (Event *)-err);
     }
