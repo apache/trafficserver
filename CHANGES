@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
   
+  *) [TS-2080] Remove arbitrary 1 year max age limit on the cache, use
+   the existing configuration option properly.
+
   *) [TS-2151] Eliminate the Sparse class allocator, just use the normal one
    for HttpSM.
 
