@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.2
 
+  *) [TS-3618] Crashes in traffic_cop on shutdown / restart.
+
   *) [TS-3823] Fix ASAN build support.
 
   *) [TS-3824] Fix #include of pcre for a couple of plugins.
