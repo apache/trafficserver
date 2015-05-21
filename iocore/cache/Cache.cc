@@ -681,12 +681,12 @@ CacheProcessor::start_internal(int flags)
     }
 
     int fd = open(path, opts, 0644);
-    int blocks = sd->blocks;
+    int64_t blocks = sd->blocks;
     if (fd > 0) {
       if (!sd->file_pathname) {
         if (!check) {
-          if (ftruncate(fd, ((uint64_t)blocks) * STORE_BLOCK_SIZE) < 0) {
-            Warning("unable to truncate cache file '%s' to %d blocks", path, blocks);
+          if (ftruncate(fd, blocks * STORE_BLOCK_SIZE) < 0) {
+            Warning("unable to truncate cache file '%s' to %" PRId64 " blocks", path, blocks);
             diskok = 0;
           }
         } else { // read-only mode
@@ -706,7 +706,7 @@ CacheProcessor::start_internal(int flags)
         CacheDisk *disk = new CacheDisk();
         if (check)
           disk->read_only_p = true;
-        Debug("cache_hosting", "interim Disk: %d, blocks: %d", gn_interim_disks, blocks);
+        Debug("cache_hosting", "interim Disk: %d, blocks: %" PRId64 "", gn_interim_disks, blocks);
         int sector_size = sd->hw_sector_size;
         if (sector_size < cache_config_force_sector_size)
           sector_size = cache_config_force_sector_size;
@@ -780,7 +780,7 @@ CacheProcessor::start_internal(int flags)
     }
 
     int fd = open(path, opts, 0644);
-    int blocks = sd->blocks;
+    int64_t blocks = sd->blocks;
 
     if (fd < 0 && (opts & O_CREAT)) // Try without O_DIRECT if this is a file on filesystem, e.g. tmpfs.
       fd = open(path, DEFAULT_CACHE_OPTIONS | O_CREAT, 0644);
@@ -788,8 +788,8 @@ CacheProcessor::start_internal(int flags)
     if (fd >= 0) {
       if (!sd->file_pathname) {
         if (!check) {
-          if (ftruncate(fd, ((uint64_t)blocks) * STORE_BLOCK_SIZE) < 0) {
-            Warning("unable to truncate cache file '%s' to %d blocks", path, blocks);
+          if (ftruncate(fd, blocks * STORE_BLOCK_SIZE) < 0) {
+            Warning("unable to truncate cache file '%s' to %" PRId64 " blocks", path, blocks);
             diskok = 0;
           }
         } else { // read-only mode checks
@@ -815,7 +815,7 @@ CacheProcessor::start_internal(int flags)
         if (sd->hash_base_string)
           gdisks[gndisks]->hash_base_string = ats_strdup(sd->hash_base_string);
 
-        Debug("cache_hosting", "Disk: %d, blocks: %d", gndisks, blocks);
+        Debug("cache_hosting", "Disk: %d, blocks: %" PRId64 "", gndisks, blocks);
 
         if (sector_size < cache_config_force_sector_size) {
           sector_size = cache_config_force_sector_size;
