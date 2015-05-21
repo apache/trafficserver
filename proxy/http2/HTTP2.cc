@@ -529,6 +529,8 @@ convert_from_2_to_1_1_header(HTTPHdr *headers)
   headers->field_delete(MIME_FIELD_TRANSFER_ENCODING, MIME_LEN_TRANSFER_ENCODING);
   headers->field_delete(MIME_FIELD_UPGRADE, MIME_LEN_UPGRADE);
 
+  headers->value_set(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION, HTTP_VALUE_CLOSE, HTTP_LEN_CLOSE);
+
   return PARSE_DONE;
 }
 

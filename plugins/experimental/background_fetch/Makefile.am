@@ -17,5 +17,5 @@
 include $(top_srcdir)/build/plugins.mk
 
 pkglib_LTLIBRARIES = background_fetch.la
-background_fetch_la_SOURCES = background_fetch.cc
+background_fetch_la_SOURCES = background_fetch.cc headers.cc rules.cc configs.cc
 background_fetch_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)

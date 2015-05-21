@@ -41,11 +41,8 @@ In the second example, hooks which are not to be executed during the remap
 phase (the default) causes a transaction hook to be instantiated and used
 at a later time. This allows you to setup e.g. a rule that gets executed
 during the origin response header parsing, using READ_RESPONSE_HDR_HOOK.
-Note that inorder to setup the plugin with rules that are not to be executed
-during the remap phase (e.g. SEND_REQUEST_HDR_HOOK, READ_RESPONSE_HDR_HOOK etc),
-global hooks must be setup via the below entry in plugin.config ::
-
-  header_rewrite.so
+Note that the remap mode of the plugin can only execute rules on hooks that
+occur at remap phase or later (e.g. SEND_REQUEST_HDR_HOOK, READ_RESPONSE_HDR_HOOK etc),
 
 Configuration filenames without an absolute paths are searched for in the
 default configuration directory. This is typically where your main
@@ -119,16 +116,17 @@ only be evaluated if the condition(s) are met::
   cond %{COOKIE:cookie-name} operand            [condition_flags]
   cond %{CLIENT-HEADER:header-name} operand     [condition_flags]
   cond %{PROTOCOL} operand                      [condition_flags]
-  cond %{HOST} operand                          [condition_flags]
-  cond %{TOHOST} operand                        [condition_flags]
-  cond %{FROMHOST} operand                      [condition_flags]
   cond %{PATH} operand                          [condition_flags]
   cond %{QUERY} operand                         [condition_flags]
   cond %{INTERNAL-TRANSACTION}                  [condition_flags]
   cond %{CLIENT-IP}                             [condition_flags]
   cond %{INCOMING-PORT}                         [condition_flags]
   cond %{METHOD}                                [condition_flags]
-
+  cond %{CLIENT-URL:option-name}                [condition_flags]
+  cond %{URL:option-name}                       [condition_flags]
+  cond %{FROM-URL:option-name}                  [condition_flags]
+  cond %{TO-URL:option-name}                    [condition_flags]
+  
 The difference between HEADER and CLIENT-HEADER is that HEADER adapts to the
 hook it's running in, whereas CLIENT-HEADER always applies to the client
 request header. The %{TRUE} condition is also the default condition if no
@@ -146,6 +144,19 @@ each rule. This implies that a new hook condition starts a new rule as well.::
 For remap.config plugin instanations, the default hook is named
 REMAP_PSEUDO_HOOK. This can be useful if you are mixing other hooks in a
 configuration, but being the default it is also optional.
+
+CLIENT-URL, URL, URL-FROM, and URL-TO
+-------------------------
+URL adapts to the hook it's running in and CLIENT-URL will always give you
+the client URL.  FROM-URL and TO-URL are from the remap rule that matched and
+can only be used if the plugin is a being run as a remap plugin.  An option
+is required to match that section of the URL.
+
+Supported Option Names:
+   HOST
+   
+Example:
+   cond %{URL:HOST} =www.example.com
 
 ---------------
 Condition flags

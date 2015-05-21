@@ -133,6 +133,45 @@ private:
   int store(SSLCertContext const &cc);
 };
 
+// Zero out and free the heap space allocated for ticket keys to avoid leaking secrets.
+// The first several bytes stores the number of keys and the rest stores the ticket keys.
+void
+ticket_block_free(void *ptr)
+{
+  if (ptr) {
+    ssl_ticket_key_block *key_block_ptr = (ssl_ticket_key_block *)ptr;
+    unsigned num_ticket_keys = key_block_ptr->num_keys;
+    memset(ptr, 0, sizeof(ssl_ticket_key_block) + num_ticket_keys * sizeof(ssl_ticket_key_t));
+  }
+  ats_free(ptr);
+}
+
+ssl_ticket_key_block *
+ticket_block_alloc(unsigned count)
+{
+  ssl_ticket_key_block *ptr;
+  size_t nbytes = sizeof(ssl_ticket_key_block) + count * sizeof(ssl_ticket_key_t);
+
+  ptr = (ssl_ticket_key_block *)ats_malloc(nbytes);
+  memset(ptr, 0, nbytes);
+  ptr->num_keys = count;
+
+  return ptr;
+}
+
+void
+SSLCertContext::release()
+{
+  if (keyblock) {
+    ticket_block_free(keyblock);
+    keyblock = NULL;
+  }
+  if (ctx) {
+    SSL_CTX_free(ctx);
+    ctx = NULL;
+  }
+}
+
 SSLCertLookup::SSLCertLookup() : ssl_storage(new SSLContextStorage()), ssl_default(NULL), is_valid(true)
 {
 }
@@ -265,7 +304,7 @@ SSLContextStorage::~SSLContextStorage()
   for (unsigned i = 0; i < this->ctx_store.length(); ++i) {
     if (this->ctx_store[i].ctx != last_ctx) {
       last_ctx = this->ctx_store[i].ctx;
-      SSLReleaseContext(this->ctx_store[i].ctx);
+      this->ctx_store[i].release();
     }
   }
 

@@ -28,7 +28,7 @@
 #define SCAN_WRITER_LOCK_MAX_RETRY 5
 
 Action *
-Cache::scan(Continuation *cont, char *hostname, int host_len, int KB_per_second)
+Cache::scan(Continuation *cont, const char *hostname, int host_len, int KB_per_second)
 {
   Debug("cache_scan_truss", "inside scan");
   if (!CacheProcessor::IsCacheReady(CACHE_FRAG_TYPE_HTTP)) {
@@ -39,7 +39,7 @@ Cache::scan(Continuation *cont, char *hostname, int host_len, int KB_per_second)
   CacheVC *c = new_CacheVC(cont);
   c->vol = NULL;
   /* do we need to make a copy */
-  c->hostname = hostname;
+  c->hostname = const_cast<char *>(hostname);
   c->host_len = host_len;
   c->base_stat = cache_scan_active_stat;
   c->buf = new_IOBufferData(BUFFER_SIZE_FOR_XMALLOC(SCAN_BUF_SIZE), MEMALIGNED);
@@ -304,7 +304,7 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
         ink_assert(hostinfo_copied);
         SET_HANDLER(&CacheVC::scanRemoveDone);
         // force remove even if there is a writer
-        cacheProcessor.remove(this, &doc->first_key, true, CACHE_FRAG_TYPE_HTTP, true, false, (char *)hname, hlen);
+        cacheProcessor.remove(this, &doc->first_key, true, CACHE_FRAG_TYPE_HTTP, hname, hlen);
         return EVENT_CONT;
       } else {
         offset = (char *)doc - buf->data();

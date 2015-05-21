@@ -191,8 +191,6 @@ public:
   static HttpSM *allocate();
   HttpCacheSM &get_cache_sm();      // Added to get the object of CacheSM YTS Team, yamsat
   HttpVCTableEntry *get_ua_entry(); // Added to get the ua_entry pointer  - YTS-TEAM
-  static void _instantiate_func(HttpSM *prototype, HttpSM *new_instance);
-  static void _make_scatter_list(HttpSM *prototype);
 
   void init();
 
@@ -316,6 +314,13 @@ protected:
 
   HttpVCTableEntry *server_entry;
   HttpServerSession *server_session;
+
+  /* Because we don't want to take a session from a shared pool if we know that it will be private,
+   * but we cannot set it to private until we have an attached server session.
+   * So we use this variable to indicate that
+   * we should create a new connection and then once we attach the session we'll mark it as private.
+   */
+  bool will_be_private_ss;
   int shared_session_retries;
   IOBufferReader *server_buffer_reader;
   void remove_server_entry();
@@ -489,6 +494,7 @@ public:
   int pushed_response_hdr_bytes;
   int64_t pushed_response_body_bytes;
   TransactionMilestones milestones;
+  ink_hrtime api_timer;
   // The next two enable plugins to tag the state machine for
   // the purposes of logging so the instances can be correlated
   // with the source plugin.
@@ -553,7 +559,7 @@ HttpSM::get_ua_entry()
 inline HttpSM *
 HttpSM::allocate()
 {
-  extern SparseClassAllocator<HttpSM> httpSMAllocator;
+  extern ClassAllocator<HttpSM> httpSMAllocator;
   return httpSMAllocator.alloc();
 }
 
@@ -624,7 +630,6 @@ HttpSM::add_cache_sm()
   if (second_cache_sm == NULL) {
     second_cache_sm = new HttpCacheSM;
     second_cache_sm->init(this, mutex);
-    second_cache_sm->set_lookup_url(cache_sm.get_lookup_url());
     if (t_state.cache_info.object_read != NULL) {
       second_cache_sm->cache_read_vc = cache_sm.cache_read_vc;
       cache_sm.cache_read_vc = NULL;

@@ -46,6 +46,10 @@ acl_filter_rule::reset(void)
     src_ip_array[i].reset();
   }
   src_ip_valid = 0;
+  for (i = (in_ip_cnt = 0); i < ACL_FILTER_MAX_IN_IP; i++) {
+    in_ip_array[i].reset();
+  }
+  in_ip_valid = 0;
   internal = 0;
 }
 
@@ -92,9 +96,9 @@ acl_filter_rule::print(void)
 {
   int i;
   printf("-----------------------------------------------------------------------------------------\n");
-  printf("Filter \"%s\" status: allow_flag=%s, src_ip_valid=%s, internal=%s, active_queue_flag=%d\n",
+  printf("Filter \"%s\" status: allow_flag=%s, src_ip_valid=%s, in_ip_valid=%s, internal=%s, active_queue_flag=%d\n",
          filter_name ? filter_name : "<NONAME>", allow_flag ? "true" : "false", src_ip_valid ? "true" : "false",
-         internal ? "true" : "false", (int)active_queue_flag);
+         in_ip_valid ? "true" : "false", internal ? "true" : "false", (int)active_queue_flag);
   printf("standard methods=");
   for (i = 0; i < HTTP_WKSIDX_METHODS_CNT; i++) {
     if (standard_method_lookup[i]) {
@@ -111,6 +115,13 @@ acl_filter_rule::print(void)
     ip_text_buffer b1, b2;
     printf("%s - %s", ats_ip_ntop(&src_ip_array[i].start.sa, b1, sizeof(b1)), ats_ip_ntop(&src_ip_array[i].end.sa, b2, sizeof(b2)));
   }
+  printf("\n");
+  printf("in_ip_cnt=%d\n", in_ip_cnt);
+  for (i = 0; i < in_ip_cnt; i++) {
+    ip_text_buffer b1, b2;
+    printf("%s - %s", ats_ip_ntop(&in_ip_array[i].start.sa, b1, sizeof(b1)), ats_ip_ntop(&in_ip_array[i].end.sa, b2, sizeof(b2)));
+  }
+  printf("\n");
   for (i = 0; i < argc; i++) {
     printf("argv[%d] = \"%s\"\n", i, argv[i]);
   }

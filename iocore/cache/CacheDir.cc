@@ -148,7 +148,7 @@ OpenDir::close_write(CacheVC *cont)
 }
 
 OpenDirEntry *
-OpenDir::open_read(INK_MD5 *key)
+OpenDir::open_read(const CryptoHash *key)
 {
   unsigned int h = key->slice32(0);
   int b = h % OPEN_DIR_BUCKETS;
@@ -593,7 +593,7 @@ dir_free_entry(Dir *e, int s, Vol *d)
 }
 
 int
-dir_probe(CacheKey *key, Vol *d, Dir *result, Dir **last_collision)
+dir_probe(const CacheKey *key, Vol *d, Dir *result, Dir **last_collision)
 {
   ink_assert(d->mutex->thread_holding == this_ethread());
   int s = key->slice32(0) % d->segments;
@@ -660,7 +660,7 @@ Lagain:
 }
 
 int
-dir_insert(CacheKey *key, Vol *d, Dir *to_part)
+dir_insert(const CacheKey *key, Vol *d, Dir *to_part)
 {
   ink_assert(d->mutex->thread_holding == this_ethread());
   int s = key->slice32(0) % d->segments, l;
@@ -721,7 +721,7 @@ Lfill:
 }
 
 int
-dir_overwrite(CacheKey *key, Vol *d, Dir *dir, Dir *overwrite, bool must_overwrite)
+dir_overwrite(const CacheKey *key, Vol *d, Dir *dir, Dir *overwrite, bool must_overwrite)
 {
   ink_assert(d->mutex->thread_holding == this_ethread());
   int s = key->slice32(0) % d->segments, l;
@@ -797,7 +797,7 @@ Lfill:
 }
 
 int
-dir_delete(CacheKey *key, Vol *d, Dir *del)
+dir_delete(const CacheKey *key, Vol *d, Dir *del)
 {
   ink_assert(d->mutex->thread_holding == this_ethread());
   int s = key->slice32(0) % d->segments;
@@ -840,7 +840,7 @@ dir_delete(CacheKey *key, Vol *d, Dir *del)
 // Lookaside Cache
 
 int
-dir_lookaside_probe(CacheKey *key, Vol *d, Dir *result, EvacuationBlock **eblock)
+dir_lookaside_probe(const CacheKey *key, Vol *d, Dir *result, EvacuationBlock **eblock)
 {
   ink_assert(d->mutex->thread_holding == this_ethread());
   int i = key->slice32(3) % LOOKASIDE_SIZE;
@@ -881,7 +881,7 @@ dir_lookaside_insert(EvacuationBlock *eblock, Vol *d, Dir *to)
 }
 
 int
-dir_lookaside_fixup(CacheKey *key, Vol *d)
+dir_lookaside_fixup(const CacheKey *key, Vol *d)
 {
   ink_assert(d->mutex->thread_holding == this_ethread());
   int i = key->slice32(3) % LOOKASIDE_SIZE;
@@ -932,7 +932,7 @@ dir_lookaside_cleanup(Vol *d)
 }
 
 void
-dir_lookaside_remove(CacheKey *key, Vol *d)
+dir_lookaside_remove(const CacheKey *key, Vol *d)
 {
   ink_assert(d->mutex->thread_holding == this_ethread());
   int i = key->slice32(3) % LOOKASIDE_SIZE;
@@ -1429,8 +1429,8 @@ regress_rand_init(unsigned int i)
   regress_rand_seed = i;
 }
 
-void
-regress_rand_CacheKey(CacheKey *key)
+static void
+regress_rand_CacheKey(const CacheKey *key)
 {
   unsigned int *x = (unsigned int *)key;
   for (int i = 0; i < 4; i++)

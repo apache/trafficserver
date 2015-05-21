@@ -544,7 +544,7 @@ struct Vol : public Continuation {
   int begin_read_lock(CacheVC *cont);
   // unused read-write interlock code
   // currently http handles a write-lock failure by retrying the read
-  OpenDirEntry *open_read(CryptoHash *key);
+  OpenDirEntry *open_read(const CryptoHash *key);
   OpenDirEntry *open_read_lock(CryptoHash *key, EThread *t);
   int close_read(CacheVC *cont);
   int close_read_lock(CacheVC *cont);
@@ -865,7 +865,7 @@ free_EvacuationBlock(EvacuationBlock *b, EThread *t)
 }
 
 TS_INLINE OpenDirEntry *
-Vol::open_read(CryptoHash *key)
+Vol::open_read(const CryptoHash *key)
 {
   return open_dir.open_read(key);
 }

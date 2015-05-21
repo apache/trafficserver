@@ -22,11 +22,6 @@ noinst_LTLIBRARIES = libmysql_remap.la
 AM_CPPFLAGS += \
   -I$(srcdir)/lib
 
-if BUILD_HAVE_LIBCXX
-AM_CXXFLAGS += -stdlib=libc++
-endif
-
-
 mysql_remap_la_SOURCES = mysql_remap.cc
 
 libmysql_remap_la_SOURCES = \

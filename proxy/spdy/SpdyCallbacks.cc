@@ -297,6 +297,8 @@ spdy_process_syn_stream_frame(SpdyClientSession *sm, SpdyRequest *req)
   spdy_fetcher_launch(req);
 }
 
+static char const *const no_keep_alive[] = {"Connection", "close", NULL};
+
 void
 spdy_on_ctrl_recv_callback(spdylay_session *session, spdylay_frame_type type, spdylay_frame *frame, void *user_data)
 {
@@ -312,6 +314,7 @@ spdy_on_ctrl_recv_callback(spdylay_session *session, spdylay_frame_type type, sp
     req = spdyRequestAllocator.alloc();
     req->init(sm, stream_id);
     req->append_nv(frame->syn_stream.nv);
+    req->append_nv(no_keep_alive);
     sm->req_map[stream_id] = req;
     sm->vc->add_to_keep_alive_lru();
     spdy_process_syn_stream_frame(sm, req);

@@ -61,6 +61,8 @@ public:
     (void)event;
     ink_hrtime now = ink_get_hrtime();
     NetHandler &nh = *get_NetHandler(this_ethread());
+
+    Debug("inactivity_cop_check", "Checking inactivity on Thread-ID #%d", this_ethread()->id);
     total_connections_in = 0;
     // Copy the list and use pop() to catch any closes caused by callbacks.
     forl_LL(UnixNetVConnection, vc, nh.open_list)
@@ -367,7 +369,10 @@ initialize_thread_for_net(EThread *thread)
 
 #ifndef INACTIVITY_TIMEOUT
   InactivityCop *inactivityCop = new InactivityCop(get_NetHandler(thread)->mutex);
-  thread->schedule_every(inactivityCop, HRTIME_SECONDS(1));
+  int cop_freq = 1;
+
+  REC_ReadConfigInteger(cop_freq, "proxy.config.net.inactivity_check_frequency");
+  thread->schedule_every(inactivityCop, HRTIME_SECONDS(cop_freq));
 #endif
 
   thread->signal_hook = net_signal_hook_function;

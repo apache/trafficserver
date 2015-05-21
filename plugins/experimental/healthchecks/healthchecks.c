@@ -108,19 +108,15 @@ typedef struct HCState_t {
 static void
 reload_status_file(HCFileInfo *info, HCFileData *data)
 {
-  struct stat buf;
+  FILE *fd;
 
   memset(data, 0, sizeof(HCFileData));
-  if (!stat(info->fname, &buf)) {
-    FILE *fd;
-
-    if (NULL != (fd = fopen(info->fname, "r"))) {
-      data->exists = 1;
-      do {
-        data->b_len = fread(data->body, 1, MAX_BODY_LEN, fd);
-      } while (!feof(fd)); /*  Only save the last 16KB of the file ... */
-      fclose(fd);
-    }
+  if (NULL != (fd = fopen(info->fname, "r"))) {
+    data->exists = 1;
+    do {
+      data->b_len = fread(data->body, 1, MAX_BODY_LEN, fd);
+    } while (!feof(fd)); /*  Only save the last 16KB of the file ... */
+    fclose(fd);
   }
 }
 

@@ -38,7 +38,7 @@ class ProxyClientSession : public VConnection
 public:
   ProxyClientSession();
 
-  virtual void destroy() = 0;
+  virtual void destroy();
   virtual void start() = 0;
 
   virtual void new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader, bool backdoor) = 0;
@@ -54,6 +54,9 @@ public:
   {
     this->api_hooks.prepend(id, cont);
   }
+
+  virtual NetVConnection *get_netvc() const = 0;
+  virtual void release_netvc() = 0;
 
   APIHook *
   ssn_hook_get(TSHttpHookID id) const
@@ -96,8 +99,6 @@ public:
 
   // Initiate an API hook invocation.
   void do_api_callout(TSHttpHookID id);
-
-  void cleanup();
 
   static int64_t next_connection_id();
 

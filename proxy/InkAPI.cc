@@ -33,6 +33,7 @@
 #include "MIME.h"
 #include "HTTP.h"
 #include "HttpClientSession.h"
+#include "Http2ClientSession.h"
 #include "HttpServerSession.h"
 #include "HttpSM.h"
 #include "HttpConfig.h"
@@ -5984,6 +5985,12 @@ TSHttpTxnMilestoneGet(TSHttpTxn txnp, TSMilestonesType milestone, ink_hrtime *ti
   case TS_MILESTONE_SM_FINISH:
     *time = sm->milestones.sm_finish;
     break;
+  case TS_MILESTONE_PLUGIN_ACTIVE:
+    *time = sm->milestones.plugin_active;
+    break;
+  case TS_MILESTONE_PLUGIN_TOTAL:
+    *time = sm->milestones.plugin_total;
+    break;
   default:
     *time = -1;
     ret = TS_ERROR;
@@ -6702,7 +6709,7 @@ TSCacheRemove(TSCont contp, TSCacheKey key)
   CacheInfo *info = (CacheInfo *)key;
   INKContInternal *i = (INKContInternal *)contp;
 
-  return (TSAction)cacheProcessor.remove(i, &info->cache_key, true, info->frag_type, true, false, info->hostname, info->len);
+  return (TSAction)cacheProcessor.remove(i, &info->cache_key, true, info->frag_type, info->hostname, info->len);
 }
 
 TSAction
@@ -6984,7 +6991,8 @@ TSHttpSsnClientFdGet(TSHttpSsn ssnp, int *fdp)
 {
   sdk_assert(sdk_sanity_check_null_ptr((void *)fdp) == TS_SUCCESS);
 
-  HttpClientSession *cs = (HttpClientSession *)ssnp;
+  VConnection *basecs = reinterpret_cast<VConnection *>(ssnp);
+  ProxyClientSession *cs = dynamic_cast<ProxyClientSession *>(basecs);
 
   if (cs == NULL)
     return TS_ERROR;
@@ -7659,6 +7667,9 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
     break;
   case TS_CONFIG_HTTP_KEEP_ALIVE_POST_OUT:
     ret = &overridableHttpConfig->keep_alive_post_out;
+    break;
+  case TS_CONFIG_HTTP_AUTH_SERVER_SESSION_PRIVATE:
+    ret = &overridableHttpConfig->auth_server_session_private;
     break;
   case TS_CONFIG_HTTP_SHARE_SERVER_SESSIONS:
     ink_assert("Deprecated config key value - TS_CONFIG_HTTP_SHARE_SERVER_SESSIONS");
@@ -8437,6 +8448,10 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
     case 'l':
       if (0 == strncmp(name, "proxy.config.http.server_session_sharing.pool", length))
         cnf = TS_CONFIG_HTTP_SERVER_SESSION_SHARING_POOL;
+      break;
+    case 'e':
+      if (0 == strncmp(name, "proxy.config.http.auth_server_session_private", length))
+        cnf = TS_CONFIG_HTTP_AUTH_SERVER_SESSION_PRIVATE;
       break;
     }
     break;

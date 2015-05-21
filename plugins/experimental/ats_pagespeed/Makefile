@@ -61,11 +61,11 @@ PSOL_LIBS = $(PAGESPEED_OUT)pagespeed_automatic.a
 
 all: psol gzip/gzip.so ats_pagespeed.so
 
-1.8.31.4.tar.gz:
-	wget --no-check-certificate https://dl.google.com/dl/page-speed/psol/1.8.31.4.tar.gz
+1.9.32.3.tar.gz:
+	wget --no-check-certificate https://dl.google.com/dl/page-speed/psol/1.9.32.3.tar.gz
 
-psol/: 1.8.31.4.tar.gz
-	tar -xzvf 1.8.31.4.tar.gz
+psol/: 1.9.32.3.tar.gz
+	tar -xzvf 1.9.32.3.tar.gz
 
 gzip/gzip.so:
 	cd gzip && make

@@ -33,6 +33,10 @@
 
 #include "libts.h"
 
+// This is needed since txn_conf->cache_guaranteed_max_lifetime is currently not
+// readily available in the cache. ToDo: We should fix this with TS-1919
+static const time_t CacheHighAgeWatermark = UINT_MAX;
+
 struct CacheHTTPInfoVector;
 
 class CacheLookupHttpConfig

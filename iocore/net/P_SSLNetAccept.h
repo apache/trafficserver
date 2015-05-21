@@ -53,7 +53,7 @@ class UnixNetVConnection;
 struct SSLNetAccept : public NetAccept {
   virtual NetProcessor *getNetProcessor() const;
   virtual EventType getEtype() const;
-  virtual void init_accept_per_thread();
+  virtual void init_accept_per_thread(bool isTransparent);
   virtual NetAccept *clone() const;
 
   SSLNetAccept(){};

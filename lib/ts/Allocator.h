@@ -201,51 +201,5 @@ public:
   } proto;
 };
 
-/**
-  Allocator for space class, a class with a lot of uninitialized
-  space/members. It uses an instantiate function do initialization
-  of objects. This is particularly useful if most of the space in
-  the objects does not need to be initialized. The initialization function passed
-  can be used to initialize a few fields selectively. Using
-  ClassAllocator for space objects would unnecessarily initialized
-  all of the members.
-
-*/
-template <class C> class SparseClassAllocator : public ClassAllocator<C>
-{
-public:
-  /** Allocates objects of the templated type. */
-  C *
-  alloc()
-  {
-    void *ptr = ink_freelist_new(this->fl);
-
-    if (!_instantiate) {
-      memcpy(ptr, (void *)&this->proto.typeObject, sizeof(C));
-    } else
-      (*_instantiate)((C *)&this->proto.typeObject, (C *)ptr);
-    return (C *)ptr;
-  }
-
-
-  /**
-    Create a new class specific SparseClassAllocator.
-
-    @param name some identifying name, used for mem tracking purposes.
-    @param chunk_size number of units to be allocated if free pool is empty.
-    @param alignment of objects must be a power of 2.
-    @param instantiate_func
-
-  */
-  SparseClassAllocator(const char *name, unsigned int chunk_size = 128, unsigned int alignment = 16,
-                       void (*instantiate_func)(C *proto, C *instance) = NULL)
-    : ClassAllocator<C>(name, chunk_size, alignment)
-  {
-    _instantiate = instantiate_func; // NULL by default
-  }
-
-private:
-  void (*_instantiate)(C *proto, C *instance);
-};
 
 #endif // _Allocator_h_

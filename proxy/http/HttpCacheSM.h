@@ -141,16 +141,6 @@ public:
     close_read();
     abort_write();
   }
-  inline URL *
-  get_lookup_url()
-  {
-    return lookup_url;
-  }
-  inline void
-  set_lookup_url(URL *url)
-  {
-    lookup_url = url;
-  }
 
 private:
   void do_schedule_in();

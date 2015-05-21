@@ -16,40 +16,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-# This does intentionally not run the regressions, it's primarily a "build" test
-
-# Test if we should enable CPPAPI (only 5.0 and later for now)
-enable_cppapi="--enable-cppapi"
-test "${JOB_NAME#*-4.2.x}" != "${JOB_NAME}" && enable_cppapi=""
-
-# Where do we run this?
-TS_PREFIX="/opt/jenkins/${JOB_NAME}"
-TSQA_TSXS=${TS_PREFIX}/bin/tsxs; export TSQA_TSXS
-
-cd "${WORKSPACE}/src"
-
-rm -rf ${TS_PREFIX}
-
-# This needs to be added back when we resolve all debug build issues
-autoreconf -fi
-./configure \
-    --prefix=${TS_PREFIX} \
-    --enable-debug \
-    --enable-ccache \
-    --enable-werror \
-    --enable-experimental-plugins \
-    --enable-test-tools \
-    ${enable_cppapi}
-
-${ATS_MAKE} -j8
-${ATS_MAKE} install
-${ATS_MAKE} distclean
-
-# Run all the TSQA tests. We skip a couple since they can not succeed from the CI
-cd ci/tsqa || exit 2
-rm -rf /tmp/test-*.[0-9]*
-./run_all.sh -e test-multicert-loading -e test-privilege-elevation
+# Run all the TSQA tests.
+TSQA_LAYOUT_DIR="${WORKSPACE}/${BUILD_NUMBER}"
+cd "${WORKSPACE}/src/ci/tsqa" || exit 2
+make test "TSQA_LAYOUT_DIR=${TSQA_LAYOUT_DIR}"
 status=$?
 
-# Exit with proper status, right now there's only one test, but still
+# Exit with proper status
 exit $status

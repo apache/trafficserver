@@ -39,6 +39,7 @@
 #include <openssl/bn.h>
 #include <unistd.h>
 #include <termios.h>
+#include "ts/Vec.h"
 
 #if HAVE_OPENSSL_EVP_H
 #include <openssl/evp.h>
@@ -116,35 +117,9 @@ static int ssl_callback_session_ticket(SSL *, unsigned char *, unsigned char *, 
 
 #if HAVE_OPENSSL_SESSION_TICKETS
 static int ssl_session_ticket_index = -1;
-
-
-// Zero out and free the heap space allocated for ticket keys to avoid leaking secrets.
-// The first several bytes stores the number of keys and the rest stores the ticket keys.
-static void
-ticket_block_free(void *ptr)
-{
-  if (ptr) {
-    ssl_ticket_key_block *key_block_ptr = (ssl_ticket_key_block *)ptr;
-    unsigned num_ticket_keys = key_block_ptr->num_keys;
-    memset(ptr, 0, sizeof(ssl_ticket_key_block) + num_ticket_keys * sizeof(ssl_ticket_key_t));
-  }
-  ats_free(ptr);
-}
-
-static ssl_ticket_key_block *
-ticket_block_alloc(unsigned count)
-{
-  ssl_ticket_key_block *ptr;
-  size_t nbytes = sizeof(ssl_ticket_key_block) + count * sizeof(ssl_ticket_key_t);
-
-  ptr = (ssl_ticket_key_block *)ats_malloc(nbytes);
-  memset(ptr, 0, nbytes);
-  ptr->num_keys = count;
-
-  return ptr;
-}
-
 #endif
+
+
 static pthread_mutex_t *mutex_buf = NULL;
 static bool open_ssl_initialized = false;
 
@@ -163,9 +138,17 @@ SSL_pthreads_thread_id()
 }
 
 static void
-SSL_locking_callback(int mode, int type, const char * /* file ATS_UNUSED */, int /* line ATS_UNUSED */)
+SSL_locking_callback(int mode, int type, const char *file, int line)
 {
+  Debug("ssl_lock", "file: %s line: %d type: %d", file, line, type);
   ink_assert(type < CRYPTO_num_locks());
+
+#ifdef OPENSSL_FIPS
+  // don't need to lock for FIPS if it has POSTed and we are not going to change the mode on the fly
+  if (type == CRYPTO_LOCK_FIPS || type == CRYPTO_LOCK_FIPS2) {
+    return;
+  }
+#endif
 
   if (mode & CRYPTO_LOCK) {
     pthread_mutex_lock(&mutex_buf[type]);
@@ -176,6 +159,7 @@ SSL_locking_callback(int mode, int type, const char * /* file ATS_UNUSED */, int
     ink_assert(0);
   }
 }
+
 
 static bool
 SSL_CTX_add_extra_chain_cert_file(SSL_CTX *ctx, const char *chainfile)
@@ -267,7 +251,7 @@ set_context_cert(SSL *ssl)
 {
   SSL_CTX *ctx = NULL;
   SSLCertContext *cc = NULL;
-  SSLCertLookup *lookup = SSLCertificateConfig::acquire();
+  SSLCertificateConfig::scoped_config lookup;
   const char *servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
   SSLNetVConnection *netvc = (SSLNetVConnection *)SSL_get_app_data(ssl);
   bool found = true;
@@ -326,7 +310,6 @@ set_context_cert(SSL *ssl)
     goto done;
   }
 done:
-  SSLCertificateConfig::release(lookup);
   return retval;
 }
 
@@ -784,6 +767,14 @@ SSLInitializeLibrary()
     SSL_load_error_strings();
     SSL_library_init();
 
+#ifdef OPENSSL_FIPS
+    // calling FIPS_mode_set() will force FIPS to POST (Power On Self Test)
+    // After POST we don't have to lock for FIPS
+    int mode = FIPS_mode();
+    FIPS_mode_set(mode);
+    Debug("ssl", "FIPS_mode: %d", mode);
+#endif
+
     mutex_buf = (pthread_mutex_t *)OPENSSL_malloc(CRYPTO_num_locks() * sizeof(pthread_mutex_t));
 
     for (int i = 0; i < CRYPTO_num_locks(); i++) {
@@ -1175,8 +1166,55 @@ SSLPrivateKeyHandler(SSL_CTX *ctx, const SSLConfigParams *params, const ats_scop
   return true;
 }
 
+static int
+SSLCheckServerCertNow(X509 *myCert, char *certname)
+{
+  int timeCmpValue;
+  time_t currentTime;
+
+  // SSLCheckServerCertNow() -  returns 0 on OK or negative value on failure
+  // and update log as appropriate.
+  // Will check:
+  // - if file exists, and has read permissions
+  // - for truncation or other PEM read fail
+  // - current time is between notBefore and notAfter dates of certificate
+  // if anything is not kosher, a negative value is returned and appropriate error logged.
+
+  if (!myCert) {
+    // a truncated certificate would fall into here
+    Error("Checking NULL certificate from %s", certname);
+    return -3;
+  }
+
+  time(&currentTime);
+  if (!(timeCmpValue = X509_cmp_time(X509_get_notBefore(myCert), &currentTime))) {
+    // an error occured parsing the time, which we'll call a bogosity
+    Error("Error occured while parsing server certificate notBefore time. %s", certname);
+    return -3;
+  } else if (0 < timeCmpValue) {
+    // cert contains a date before the notBefore
+    Error("Server certificate notBefore date is in the future - INVALID CERTIFICATE %s", certname);
+    return -4;
+  }
+
+  if (!(timeCmpValue = X509_cmp_time(X509_get_notAfter(myCert), &currentTime))) {
+    // an error occured parsing the time, which we'll call a bogosity
+    Error("Error occured while parsing server certificate notAfter time.");
+    return -3;
+  } else if (0 > timeCmpValue) {
+    // cert is expired
+    Error("Server certificate EXPIRED - INVALID CERTIFICATE %s", certname);
+    return -5;
+  }
+
+  Debug("ssl", "Server certificate %s passed accessibility and date checks", certname);
+  return 0; // all good
+
+} /* CheckServerCertNow() */
+
+
 SSL_CTX *
-SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config &sslMultCertSettings)
+SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config &sslMultCertSettings, Vec<X509 *> &certList)
 {
   int server_verify_client;
   ats_scoped_str completeServerCertPath;
@@ -1269,12 +1307,39 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config &sslMu
       Error("the number of certificates in ssl_cert_name and ssl_key_name doesn't match");
       goto fail;
     }
+    SimpleTokenizer ca_tok("", SSL_CERT_SEPARATE_DELIM);
+    if (sslMultCertSettings.ca) {
+      ca_tok.setString(sslMultCertSettings.ca);
+      if (cert_tok.getNumTokensRemaining() != ca_tok.getNumTokensRemaining()) {
+        Error("the number of certificates in ssl_cert_name and ssl_ca_name doesn't match");
+        goto fail;
+      }
+    }
 
     for (const char *certname = cert_tok.getNext(); certname; certname = cert_tok.getNext()) {
       completeServerCertPath = Layout::relative_to(params->serverCertPathOnly, certname);
-      if (SSL_CTX_use_certificate_chain_file(ctx, completeServerCertPath) <= 0) {
+      scoped_BIO bio(BIO_new_file(completeServerCertPath, "r"));
+      X509 *cert = NULL;
+      if (bio) {
+        cert = PEM_read_bio_X509(bio.get(), NULL, 0, NULL);
+      }
+      if (!bio || !cert) {
         SSLError("failed to load certificate chain from %s", (const char *)completeServerCertPath);
         goto fail;
+      }
+      if (!SSL_CTX_use_certificate(ctx, cert)) {
+        SSLError("Failed to assign cert from %s to SSL_CTX", (const char *)completeServerCertPath);
+        X509_free(cert);
+        goto fail;
+      }
+      certList.push_back(cert);
+      // Load up any additional chain certificates
+      X509 *ca;
+      while ((ca = PEM_read_bio_X509(bio.get(), NULL, 0, NULL))) {
+        if (!SSL_CTX_add_extra_chain_cert(ctx, ca)) {
+          X509_free(ca);
+          goto fail;
+        }
       }
 
       const char *keyPath = key_tok.getNext();
@@ -1294,7 +1359,7 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config &sslMu
 
     // Now, load any additional certificate chains specified in this entry.
     if (sslMultCertSettings.ca) {
-      ats_scoped_str completeServerCertChainPath(Layout::relative_to(params->serverCertPathOnly, sslMultCertSettings.ca));
+      ats_scoped_str completeServerCertChainPath(Layout::relative_to(params->serverCertPathOnly, ca_tok.getNext()));
       if (!SSL_CTX_add_extra_chain_cert_file(ctx, completeServerCertChainPath)) {
         SSLError("failed to load certificate chain from %s", (const char *)completeServerCertChainPath);
         goto fail;
@@ -1407,95 +1472,11 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config &sslMu
 fail:
   SSL_CLEAR_PW_REFERENCES(ud, ctx)
   SSL_CTX_free(ctx);
+  for (unsigned int i = 0; i < certList.length(); i++) {
+    X509_free(certList[i]);
+  }
 
   return NULL;
-}
-
-SSL_CTX *
-SSLInitClientContext(const SSLConfigParams *params)
-{
-  ink_ssl_method_t meth = NULL;
-  SSL_CTX *client_ctx = NULL;
-  char *clientKeyPtr = NULL;
-
-  // Note that we do not call RAND_seed() explicitly here, we depend on OpenSSL
-  // to do the seeding of the PRNG for us. This is the case for all platforms that
-  // has /dev/urandom for example.
-
-  meth = SSLv23_client_method();
-  client_ctx = SSL_CTX_new(meth);
-
-  // disable selected protocols
-  SSL_CTX_set_options(client_ctx, params->ssl_ctx_options);
-  if (!client_ctx) {
-    SSLError("cannot create new client context");
-    _exit(1);
-  }
-
-  if (params->ssl_client_ctx_protocols) {
-    SSL_CTX_set_options(client_ctx, params->ssl_client_ctx_protocols);
-  }
-  if (params->client_cipherSuite != NULL) {
-    if (!SSL_CTX_set_cipher_list(client_ctx, params->client_cipherSuite)) {
-      SSLError("invalid client cipher suite in records.config");
-      goto fail;
-    }
-  }
-
-  // if no path is given for the client private key,
-  // assume it is contained in the client certificate file.
-  clientKeyPtr = params->clientKeyPath;
-  if (clientKeyPtr == NULL) {
-    clientKeyPtr = params->clientCertPath;
-  }
-
-  if (params->clientCertPath != 0) {
-    if (!SSL_CTX_use_certificate_chain_file(client_ctx, params->clientCertPath)) {
-      SSLError("failed to load client certificate from %s", params->clientCertPath);
-      goto fail;
-    }
-
-    if (!SSL_CTX_use_PrivateKey_file(client_ctx, clientKeyPtr, SSL_FILETYPE_PEM)) {
-      SSLError("failed to load client private key file from %s", clientKeyPtr);
-      goto fail;
-    }
-
-    if (!SSL_CTX_check_private_key(client_ctx)) {
-      SSLError("client private key (%s) does not match the certificate public key (%s)", clientKeyPtr, params->clientCertPath);
-      goto fail;
-    }
-  }
-
-  if (params->clientVerify) {
-    int client_verify_server;
-
-    client_verify_server = params->clientVerify ? SSL_VERIFY_PEER : SSL_VERIFY_NONE;
-    SSL_CTX_set_verify(client_ctx, client_verify_server, NULL);
-    SSL_CTX_set_verify_depth(client_ctx, params->client_verify_depth);
-
-    if (params->clientCACertFilename != NULL && params->clientCACertPath != NULL) {
-      if (!SSL_CTX_load_verify_locations(client_ctx, params->clientCACertFilename, params->clientCACertPath)) {
-        SSLError("invalid client CA Certificate file (%s) or CA Certificate path (%s)", params->clientCACertFilename,
-                 params->clientCACertPath);
-        goto fail;
-      }
-    }
-
-    if (!SSL_CTX_set_default_verify_paths(client_ctx)) {
-      SSLError("failed to set the default verify paths");
-      goto fail;
-    }
-  }
-
-  if (SSLConfigParams::init_ssl_ctx_cb) {
-    SSLConfigParams::init_ssl_ctx_cb(client_ctx, false);
-  }
-
-  return client_ctx;
-
-fail:
-  SSL_CTX_free(client_ctx);
-  _exit(1);
 }
 
 static char *
@@ -1512,16 +1493,13 @@ asn1_strdup(ASN1_STRING *s)
 // table aliases for subject CN and subjectAltNames DNS without wildcard,
 // insert trie aliases for those with wildcard.
 static bool
-ssl_index_certificate(SSLCertLookup *lookup, SSLCertContext const &cc, const char *certfile)
+ssl_index_certificate(SSLCertLookup *lookup, SSLCertContext const &cc, X509 *cert, char *certname)
 {
   X509_NAME *subject = NULL;
-  X509 *cert;
-  scoped_BIO bio(BIO_new_file(certfile, "r"));
   bool inserted = false;
 
-  cert = PEM_read_bio_X509_AUX(bio.get(), NULL, NULL, NULL);
   if (NULL == cert) {
-    Error("Failed to load certificate from file %s", certfile);
+    Error("Failed to load certificate %s", certname);
     lookup->is_valid = false;
     return false;
   }
@@ -1541,7 +1519,7 @@ ssl_index_certificate(SSLCertLookup *lookup, SSLCertContext const &cc, const cha
       ASN1_STRING *cn = X509_NAME_ENTRY_get_data(e);
       subj_name = asn1_strdup(cn);
 
-      Debug("ssl", "mapping '%s' to certificate %s", (const char *)subj_name, certfile);
+      Debug("ssl", "mapping '%s' to certificate %s", (const char *)subj_name, certname);
       if (lookup->insert(subj_name, cc) >= 0)
         inserted = true;
     }
@@ -1560,7 +1538,7 @@ ssl_index_certificate(SSLCertLookup *lookup, SSLCertContext const &cc, const cha
         ats_scoped_str dns(asn1_strdup(name->d.dNSName));
         // only try to insert if the alternate name is not the main name
         if (strcmp(dns, subj_name) != 0) {
-          Debug("ssl", "mapping '%s' to certificate %s", (const char *)dns, certfile);
+          Debug("ssl", "mapping '%s' to certificates %s", (const char *)dns, certname);
           if (lookup->insert(dns, cc) >= 0)
             inserted = true;
         }
@@ -1570,7 +1548,6 @@ ssl_index_certificate(SSLCertLookup *lookup, SSLCertContext const &cc, const cha
     GENERAL_NAMES_free(names);
   }
 #endif // HAVE_OPENSSL_TS_H
-  X509_free(cert);
   return inserted;
 }
 
@@ -1622,9 +1599,8 @@ ssl_set_handshake_callbacks(SSL_CTX *ctx)
 static SSL_CTX *
 ssl_store_ssl_context(const SSLConfigParams *params, SSLCertLookup *lookup, const ssl_user_config &sslMultCertSettings)
 {
-  SSL_CTX *ctx = SSLInitServerContext(params, sslMultCertSettings);
-  ats_scoped_str certpath;
-  ats_scoped_str session_key_path;
+  Vec<X509 *> cert_list;
+  SSL_CTX *ctx = SSLInitServerContext(params, sslMultCertSettings, cert_list);
   ssl_ticket_key_block *keyblock = NULL;
   bool inserted = false;
 
@@ -1645,10 +1621,15 @@ ssl_store_ssl_context(const SSLConfigParams *params, SSLCertLookup *lookup, cons
 #if TS_USE_TLS_ALPN
   SSL_CTX_set_alpn_select_cb(ctx, SSLNetVConnection::select_next_protocol, NULL);
 #endif /* TS_USE_TLS_ALPN */
-  if (sslMultCertSettings.first_cert) {
-    certpath = Layout::relative_to(params->serverCertPathOnly, sslMultCertSettings.first_cert);
-  } else {
-    certpath = NULL;
+  char *certname = sslMultCertSettings.cert.get();
+
+  for (unsigned i = 0; i < cert_list.length(); ++i) {
+    if (0 > SSLCheckServerCertNow(cert_list[i], certname)) {
+      /* At this point, we know cert is bad, and we've already printed a
+         descriptive reason as to why cert is bad to the log file */
+      Debug("ssl", "Marking certificate as NOT VALID: %s", (certname) ? (const char *)certname : "(null)");
+      lookup->is_valid = false;
+    }
   }
 
   // Load the session ticket key if session tickets are not disabled and we have key name.
@@ -1672,8 +1653,8 @@ ssl_store_ssl_context(const SSLConfigParams *params, SSLCertLookup *lookup, cons
       IpEndpoint ep;
 
       if (ats_ip_pton(sslMultCertSettings.addr, &ep) == 0) {
-        Debug("ssl", "mapping '%s' to certificate %s", (const char *)sslMultCertSettings.addr, (const char *)certpath);
-        if (certpath != NULL && lookup->insert(ep, SSLCertContext(ctx, sslMultCertSettings.opt, keyblock)) >= 0) {
+        Debug("ssl", "mapping '%s' to certificate %s", (const char *)sslMultCertSettings.addr, (const char *)certname);
+        if (certname != NULL && lookup->insert(ep, SSLCertContext(ctx, sslMultCertSettings.opt, keyblock)) >= 0) {
           inserted = true;
         }
       } else {
@@ -1682,6 +1663,14 @@ ssl_store_ssl_context(const SSLConfigParams *params, SSLCertLookup *lookup, cons
       }
     }
   }
+  if (!inserted) {
+#if HAVE_OPENSSL_SESSION_TICKETS
+    if (keyblock != NULL) {
+      ticket_block_free(keyblock);
+    }
+#endif
+  }
+
 
 #if defined(SSL_OP_NO_TICKET)
   // Session tickets are enabled by default. Disable if explicitly requested.
@@ -1695,8 +1684,10 @@ ssl_store_ssl_context(const SSLConfigParams *params, SSLCertLookup *lookup, cons
   if (SSLConfigParams::ssl_ocsp_enabled) {
     Debug("ssl", "ssl ocsp stapling is enabled");
     SSL_CTX_set_tlsext_status_cb(ctx, ssl_callback_ocsp_stapling);
-    if (!ssl_stapling_init_cert(ctx, (const char *)certpath)) {
-      Warning("fail to configure SSL_CTX for OCSP Stapling info for certificate at %s", (const char *)certpath);
+    for (unsigned i = 0; i < cert_list.length(); ++i) {
+      if (!ssl_stapling_init_cert(ctx, cert_list[i], certname)) {
+        Warning("fail to configure SSL_CTX for OCSP Stapling info for certificate at %s", (const char *)certname);
+      }
     }
   } else {
     Debug("ssl", "ssl ocsp stapling is disabled");
@@ -1710,9 +1701,11 @@ ssl_store_ssl_context(const SSLConfigParams *params, SSLCertLookup *lookup, cons
   // Insert additional mappings. Note that this maps multiple keys to the same value, so when
   // this code is updated to reconfigure the SSL certificates, it will need some sort of
   // refcounting or alternate way of avoiding double frees.
-  Debug("ssl", "importing SNI names from %s", (const char *)certpath);
-  if (certpath != NULL && ssl_index_certificate(lookup, SSLCertContext(ctx, sslMultCertSettings.opt), certpath)) {
-    inserted = true;
+  Debug("ssl", "importing SNI names from %s", (const char *)certname);
+  for (unsigned i = 0; i < cert_list.length(); ++i) {
+    if (ssl_index_certificate(lookup, SSLCertContext(ctx, sslMultCertSettings.opt), cert_list[i], certname)) {
+      inserted = true;
+    }
   }
 
   if (inserted) {
@@ -1721,15 +1714,13 @@ ssl_store_ssl_context(const SSLConfigParams *params, SSLCertLookup *lookup, cons
     }
   }
   if (!inserted) {
-#if HAVE_OPENSSL_SESSION_TICKETS
-    if (keyblock != NULL) {
-      ticket_block_free(keyblock);
-    }
-#endif
     if (ctx != NULL) {
       SSL_CTX_free(ctx);
       ctx = NULL;
     }
+  }
+  for (unsigned int i = 0; i < cert_list.length(); i++) {
+    X509_free(cert_list[i]);
   }
   return ctx;
 }
@@ -1886,7 +1877,7 @@ static int
 ssl_callback_session_ticket(SSL *ssl, unsigned char *keyname, unsigned char *iv, EVP_CIPHER_CTX *cipher_ctx, HMAC_CTX *hctx,
                             int enc)
 {
-  SSLCertLookup *lookup = SSLCertificateConfig::acquire();
+  SSLCertificateConfig::scoped_config lookup;
   SSLNetVConnection *netvc = (SSLNetVConnection *)SSL_get_app_data(ssl);
 
   // Get the IP address to look up the keyblock
@@ -1901,6 +1892,7 @@ ssl_callback_session_ticket(SSL *ssl, unsigned char *keyname, unsigned char *iv,
   if (cc == NULL || cc->keyblock == NULL) {
     // No, key specified.  Must fail out at this point.
     // Alternatively we could generate a random key
+
     return -1;
   }
   ssl_ticket_key_block *keyblock = cc->keyblock;
@@ -1969,7 +1961,7 @@ SSLWriteBuffer(SSL *ssl, const void *buf, int64_t nbytes, int64_t &nwritten)
     return SSL_ERROR_NONE;
   }
   int ssl_error = SSL_get_error(ssl, ret);
-  if (ssl_error == SSL_ERROR_SSL) {
+  if (ssl_error == SSL_ERROR_SSL && is_debug_tag_set("ssl.error.write")) {
     char buf[512];
     unsigned long e = ERR_peek_last_error();
     ERR_error_string_n(e, buf, sizeof(buf));
@@ -1993,7 +1985,7 @@ SSLReadBuffer(SSL *ssl, void *buf, int64_t nbytes, int64_t &nread)
     return SSL_ERROR_NONE;
   }
   int ssl_error = SSL_get_error(ssl, ret);
-  if (ssl_error == SSL_ERROR_SSL) {
+  if (ssl_error == SSL_ERROR_SSL && is_debug_tag_set("ssl.error.read")) {
     char buf[512];
     unsigned long e = ERR_peek_last_error();
     ERR_error_string_n(e, buf, sizeof(buf));
@@ -2012,7 +2004,7 @@ SSLAccept(SSL *ssl)
     return SSL_ERROR_NONE;
   }
   int ssl_error = SSL_get_error(ssl, ret);
-  if (ssl_error == SSL_ERROR_SSL) {
+  if (ssl_error == SSL_ERROR_SSL && is_debug_tag_set("ssl.error.accept")) {
     char buf[512];
     unsigned long e = ERR_peek_last_error();
     ERR_error_string_n(e, buf, sizeof(buf));
@@ -2031,7 +2023,7 @@ SSLConnect(SSL *ssl)
     return SSL_ERROR_NONE;
   }
   int ssl_error = SSL_get_error(ssl, ret);
-  if (ssl_error == SSL_ERROR_SSL) {
+  if (ssl_error == SSL_ERROR_SSL && is_debug_tag_set("ssl.error.connect")) {
     char buf[512];
     unsigned long e = ERR_peek_last_error();
     ERR_error_string_n(e, buf, sizeof(buf));

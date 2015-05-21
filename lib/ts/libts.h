@@ -105,5 +105,6 @@
 #include "HostLookup.h"
 #include "InkErrno.h"
 #include "Vec.h"
+#include "X509HostnameValidator.h"
 
 #endif /*_inktomiplus_h_*/

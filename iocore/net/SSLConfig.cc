@@ -72,6 +72,7 @@ SSLConfigParams::SSLConfigParams()
   ssl_session_cache_skip_on_contention = 0;
   ssl_session_cache_timeout = 0;
   ssl_session_cache_auto_clear = 1;
+  configExitOnLoadError = 0;
 }
 
 SSLConfigParams::~SSLConfigParams()
@@ -255,7 +256,9 @@ SSLConfigParams::initialize()
   SSLConfigParams::session_cache_skip_on_lock_contention = ssl_session_cache_skip_on_contention;
   SSLConfigParams::session_cache_number_buckets = ssl_session_cache_num_buckets;
 
-  session_cache = new SSLSessionCache();
+  if (ssl_session_cache == SSL_SESSION_CACHE_MODE_SERVER_ATS_IMPL) {
+    session_cache = new SSLSessionCache();
+  }
 
   // SSL record size
   REC_EstablishStaticConfigInt32(ssl_maxrecord, "proxy.config.ssl.max_record_size");
@@ -333,7 +336,7 @@ SSLCertificateConfig::startup()
 
   // Exit if there are problems on the certificate loading and the
   // proxy.config.ssl.server.multicert.exit_on_load_fail is true
-  SSLConfigParams *params = SSLConfig::acquire();
+  SSLConfig::scoped_config params;
   if (!reconfigure() && params->configExitOnLoadError) {
     Error("Problems loading ssl certificate file, %s.  Exiting.", params->configFilePath);
     _exit(1);
@@ -357,9 +360,16 @@ SSLCertificateConfig::reconfigure()
   }
 
   SSLParseCertificateConfiguration(params, lookup);
-  configid = configProcessor.set(configid, lookup);
+
   if (!lookup->is_valid) {
     retStatus = false;
+  }
+  // If there are errors in the certificate configs and we had wanted to exit on error
+  // we won't want to reset the config
+  if (lookup->is_valid || !params->configExitOnLoadError) {
+    configid = configProcessor.set(configid, lookup);
+  } else {
+    delete lookup;
   }
 
   return retStatus;

@@ -56,3 +56,5 @@ port\.h
 ^TsConfigGrammar[.][ch]$
 ^luajit$
 ^ck$
+^.*crt$
+^.*key$
