@@ -81,7 +81,6 @@ static int coresig = 0;
 static int debug_flag = false;
 static int stdout_flag = false;
 static int stop_flag = false;
-static volatile int sig_term_received = 0;
 
 static char *admin_user;
 static uid_t admin_uid;
@@ -272,7 +271,7 @@ sig_term(int signum)
     child_status = status;
   }
   cop_log_trace("Leaving sig_term(%d), exiting traffic_cop\n", signum);
-  sig_term_received = 1;
+  exit(0);
 }
 
 static void
@@ -829,15 +828,7 @@ poll_read_or_write(int fd, int timeout, int inorout)
   info.revents = 0;
 
   do {
-    if (sig_term_received) {
-          exit(0);
-    }
-
     err = poll(&info, 1, timeout);
-
-    if (sig_term_received) {
-      exit(0);
-    }
   } while ((err < 0) && (transient_error(errno, TRANSIENT_ERROR_WAIT_MS)));
 
   if ((err > 0) && (info.revents & inorout)) {
