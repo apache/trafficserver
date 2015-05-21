@@ -271,7 +271,7 @@ sig_term(int signum)
     child_status = status;
   }
   cop_log_trace("Leaving sig_term(%d), exiting traffic_cop\n", signum);
-  exit(0);
+  _exit(0);
 }
 
 static void
