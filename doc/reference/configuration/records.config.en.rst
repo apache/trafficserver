@@ -1204,6 +1204,14 @@ Security
        a filtering rule in the ip_allow.config file to allow only certain
        machines to push content into the cache.
 
+.. ts:cv:: CONFIG proxy.config.http.max_post_size INT 0
+   :reloadable:
+
+   This feature is disabled by default with a value of (``0``), any positive
+   value will limit the size of post bodies. If a request is received with a
+   post body larger than this limit the response will be terminated with
+   413 - Request Entity Too Large and logged accordingly.
+
 Cache Control
 =============
 
