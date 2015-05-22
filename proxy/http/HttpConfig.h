@@ -228,6 +228,7 @@ enum {
   http_ua_msecs_counts_other_unclassified_stat,
 
   disallowed_post_100_continue,
+  http_post_body_too_large,
 
   http_total_x_redirect_stat,
 
@@ -744,6 +745,7 @@ public:
   MgmtByte disallow_post_100_continue;
   MgmtByte parser_allow_non_http;
   MgmtInt cache_open_write_fail_action;
+  MgmtInt max_post_size;
 
   OverridableHttpConfigParams oride;
 
@@ -853,7 +855,7 @@ inline HttpConfigParams::HttpConfigParams()
     cluster_time_delta(0), redirection_enabled(0), redirection_host_no_port(0), number_of_redirections(1), post_copy_size(2048),
     ignore_accept_mismatch(0), ignore_accept_language_mismatch(0), ignore_accept_encoding_mismatch(0),
     ignore_accept_charset_mismatch(0), send_100_continue_response(0), send_408_post_timeout_response(0),
-    disallow_post_100_continue(0), parser_allow_non_http(1), cache_open_write_fail_action(0), autoconf_port(0),
+    disallow_post_100_continue(0), parser_allow_non_http(1), cache_open_write_fail_action(0), max_post_size(0), autoconf_port(0),
     autoconf_localhost_only(0)
 {
 }

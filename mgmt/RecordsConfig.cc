@@ -482,7 +482,8 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.http.auth_server_session_private", RECD_INT, "1", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
-
+  {RECT_CONFIG, "proxy.config.http.max_post_size", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "^[0-9]+$", RECA_NULL}
+  ,
   //        ##############################
   //        # parent proxy configuration #
   //        ##############################

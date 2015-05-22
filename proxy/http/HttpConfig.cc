@@ -854,7 +854,9 @@ register_stat_callbacks()
                      (int)https_incoming_requests_stat, RecRawStatSyncCount);
   RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.https.total_client_connections", RECD_COUNTER, RECP_PERSISTENT,
                      (int)https_total_client_connections_stat, RecRawStatSyncCount);
-
+  RecRegisterRawStat(http_rsb, RECT_PROCESS,
+                     "proxy.process.http.post_body_too_large",
+                     RECD_COUNTER, RECP_PERSISTENT, (int) http_post_body_too_large, RecRawStatSyncCount);
   // milestones
   RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.milestone.ua_begin", RECD_COUNTER, RECP_PERSISTENT,
                      (int)http_ua_begin_time_stat, RecRawStatSyncSum);
@@ -1146,6 +1148,8 @@ HttpConfig::startup()
   // Stat Page Info
   HttpEstablishStaticConfigByte(c.enable_http_info, "proxy.config.http.enable_http_info");
 
+  HttpEstablishStaticConfigLongLong(c.max_post_size, "proxy.config.http.max_post_size");
+
   //##############################################################################
   //#
   //# Redirection
@@ -1361,6 +1365,7 @@ HttpConfig::reconfigure()
   params->cache_open_write_fail_action = m_master.cache_open_write_fail_action;
 
   params->oride.cache_when_to_revalidate = m_master.oride.cache_when_to_revalidate;
+  params->max_post_size = m_master.max_post_size;
 
   params->oride.cache_required_headers = m_master.oride.cache_required_headers;
   params->oride.cache_range_lookup = INT_TO_BOOL(m_master.oride.cache_range_lookup);
