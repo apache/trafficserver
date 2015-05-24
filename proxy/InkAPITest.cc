@@ -5018,8 +5018,8 @@ REGRESSION_TEST(SDK_API_TSMimeHdrParse)(RegressionTest *test, int /* atype ATS_U
 REGRESSION_TEST(SDK_API_TSUrlParse)(RegressionTest *test, int /* atype ATS_UNUSED */, int *pstatus)
 {
   static char const *const urls[] = {
-    "file:///test.dat;ab?abc=def#abc", "http://www.example.com", "http://abc:def@www.example.com", "http://www.example.com:3426",
-    "http://abc:def@www.example.com:3426", "http://www.example.com/homepage.cgi",
+    "file:///test.dat;ab?abc=def#abc", "http://www.example.com/", "http://abc:def@www.example.com/", "http://www.example.com:3426/",
+    "http://abc:def@www.example.com:3426/", "http://www.example.com/homepage.cgi",
     "http://www.example.com/homepage.cgi;ab?abc=def#abc", "http://abc:def@www.example.com:3426/homepage.cgi;ab?abc=def#abc",
     "https://abc:def@www.example.com:3426/homepage.cgi;ab?abc=def#abc",
     "ftp://abc:def@www.example.com:3426/homepage.cgi;ab?abc=def#abc",
@@ -5057,7 +5057,7 @@ REGRESSION_TEST(SDK_API_TSUrlParse)(RegressionTest *test, int /* atype ATS_UNUSE
       }
     } else {
       start = url;
-      end = url + strlen(url) + 1;
+      end = url + strlen(url);
       if ((retval = TSUrlParse(bufp, url_loc, &start, end)) == TS_PARSE_ERROR) {
         SDK_RPRINT(test, "TSUrlParse", url, TC_FAIL, "TSUrlParse returns TS_PARSE_ERROR");
       } else {
