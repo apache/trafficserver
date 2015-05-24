@@ -44,7 +44,7 @@ during the origin response header parsing, using READ_RESPONSE_HDR_HOOK.
 Note that the remap mode of the plugin can only execute rules on hooks that
 occur at remap phase or later (e.g. SEND_REQUEST_HDR_HOOK, READ_RESPONSE_HDR_HOOK etc),
 
-Configuration filenames without an absolute paths are searched for in the
+Configuration filenames without an absolute path are searched for in the
 default configuration directory. This is typically where your main
 configuration files are, e.g. ``/usr/local/etc/trafficserver``.
 
@@ -163,7 +163,7 @@ Condition flags
 ---------------
 
 The condition flags are optional, and you can combine more than one into
-a comma separated list of flags. Note that whitespaces are not allowed inside
+a comma-separated list of flags. Note that whitespaces are not allowed inside
 the brackets::
 
   [NC]  Not case sensitive condition (when applicable) [NOT IMPLEMENTED!]
@@ -180,7 +180,7 @@ Operands to conditions
   >string   # lexically greater
   =string   # lexically equal
 
-The absence of a "matcher" means value exists).
+The absence of a "matcher" means value exists.
 
 Values
 ------
