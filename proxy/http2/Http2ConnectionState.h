@@ -59,22 +59,16 @@ public:
   unsigned
   get(Http2SettingsIdentifier id) const
   {
-    ink_assert(id <= HTTP2_SETTINGS_MAX - 1);
+    ink_assert(id < HTTP2_SETTINGS_MAX);
 
-    if (id > HTTP2_SETTINGS_MAX - 1) {
-      return 0;
-    }
     return this->settings[indexof(id)];
   }
 
   unsigned
   set(Http2SettingsIdentifier id, unsigned value)
   {
-    ink_assert(id <= HTTP2_SETTINGS_MAX - 1);
+    ink_assert(id < HTTP2_SETTINGS_MAX);
 
-    if (id > HTTP2_SETTINGS_MAX - 1) {
-      return 0;
-    }
     return this->settings[indexof(id)] = value;
   }
 
@@ -83,7 +77,7 @@ private:
   static unsigned
   indexof(Http2SettingsIdentifier id)
   {
-    ink_assert(id <= HTTP2_SETTINGS_MAX - 1);
+    ink_assert(id < HTTP2_SETTINGS_MAX);
 
     return id - 1;
   }
