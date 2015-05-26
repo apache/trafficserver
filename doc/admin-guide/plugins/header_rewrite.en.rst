@@ -215,6 +215,31 @@ Per-Mapping`_ above.
 The ``<part>`` allows the operand to match against just a component of the URL,
 as documented in `URL Parts`_ below.
 
+GEO
+~~~
+::
+    cond %{GEO:<part>} <operand>
+
+Perform a GeoIP lookup of the client-IP, using a 3rd party library and
+DB. Currently only the MaxMind GeoIP API is supported. The default is to
+do a Country lookup, but the following qualifiers are supported:
+
+    %{GEO:COUNTRY}      The country code (e.g. "US")
+    %{GEO:COUNTRY-ISO}  The country ISO code (e.g. 225)
+    %{GEO:ASN}          The AS number for the provider network (e.g. 7922)
+    %{GEO:ASN-NAME}     A descriptive string of the AS provider
+
+These operators can be used both as conditionals, as well as values for
+setting headers. For example::
+
+    cond %{SEND_RESPONSE_HDR_HOOK} [AND]
+    cond %${GEO:COUNTRY} =US
+        set-header ATS-Geo-Country %{GEO:COUNTRY}
+        set-header ATS-Geo-Country-ISO %{GEO:COUNTRY-ISO}
+        set-header ATS-Geo-ASN %{GEO:ASN}
+        set-header ATS-Geo-ASN-NAME %{GEO:ASN-NAME}
+
+
 HEADER
 ~~~~~~
 ::
@@ -268,7 +293,7 @@ NOW
 ~~~
 ::
 
-   cond %{NOW} >1453484915
+    cond %{NOW:<part>} <operand>
 
 This is the current time, in the local timezone as set on the machine,
 typically GMC. Without any further qualifiers, this is the time in seconds
@@ -276,13 +301,13 @@ since EPOCH aka Unix time. Qualifiers can be used to give various other
 values, such as year, month etc.
 ::
 
-   %{NOW:YEAR}      Current year (e.g. 2016)
-   %{NOW:MONTH}     Current month (0-11, 0 == January)
-   %{NOW:DAY}       Current day of the month (1-31)
-   %{NOW:HOUR}      Current hour (0-23, in the 24h system)
-   %{NOW:MIN}       Current minute (0-59}
-   %{NOW:WEEKDAY}   Current weekday (0-6, 0 == Sunday)
-   %{NOW:YEARDAY}   Current day of the year (0-365, 0 == Jan 1st)
+    %{NOW:YEAR}      Current year (e.g. 2016)
+    %{NOW:MONTH}     Current month (0-11, 0 == January)
+    %{NOW:DAY}       Current day of the month (1-31)
+    %{NOW:HOUR}      Current hour (0-23, in the 24h system)
+    %{NOW:MIN}       Current minute (0-59}
+    %{NOW:WEEKDAY}   Current weekday (0-6, 0 == Sunday)
+    %{NOW:YEARDAY}   Current day of the year (0-365, 0 == Jan 1st)
 
 PATH
 ~~~~

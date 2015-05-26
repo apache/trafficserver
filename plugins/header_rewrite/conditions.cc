@@ -22,6 +22,7 @@
 #include <sys/time.h>
 #include <unistd.h>
 #include <arpa/inet.h>
+#include <ctype.h>
 #include <sstream>
 
 #include "ts/ts.h"
@@ -708,4 +709,217 @@ ConditionNow::eval(const Resources &res)
   TSDebug(PLUGIN_NAME, "Evaluating NOW() -> %" PRId64, now);
 
   return static_cast<const Matchers<int64_t> *>(_matcher)->test(now);
+}
+
+
+// ConditionGeo: Geo-based information (integer). See ConditionGeoCountry for the string version.
+const char *
+ConditionGeo::get_geo_string(const sockaddr *addr)
+{
+  const char *ret = NULL;
+  int v = 4;
+
+  switch (_geo_qual) {
+  // Country database
+  case GEO_QUAL_COUNTRY:
+    switch (addr->sa_family) {
+    case AF_INET:
+      if (gGeoIP[GEOIP_COUNTRY_EDITION]) {
+        uint32_t ip = ntohl(reinterpret_cast<const struct sockaddr_in *>(addr)->sin_addr.s_addr);
+
+        ret = GeoIP_country_code_by_ipnum(gGeoIP[GEOIP_COUNTRY_EDITION], ip);
+      }
+      break;
+    case AF_INET6: {
+      if (gGeoIP[GEOIP_COUNTRY_EDITION_V6]) {
+        geoipv6_t ip = reinterpret_cast<const struct sockaddr_in6 *>(addr)->sin6_addr;
+
+        v = 6;
+        ret = GeoIP_country_code_by_ipnum_v6(gGeoIP[GEOIP_COUNTRY_EDITION_V6], ip);
+      }
+    } break;
+    default:
+      break;
+    }
+    TSDebug(PLUGIN_NAME, "eval(): Client IPv%d seems to come from Country: %s", v, ret);
+    break;
+
+  // ASN database
+  case GEO_QUAL_ASN_NAME:
+    switch (addr->sa_family) {
+    case AF_INET:
+      if (gGeoIP[GEOIP_ASNUM_EDITION]) {
+        uint32_t ip = ntohl(reinterpret_cast<const struct sockaddr_in *>(addr)->sin_addr.s_addr);
+
+        ret = GeoIP_name_by_ipnum(gGeoIP[GEOIP_ASNUM_EDITION], ip);
+      }
+      break;
+    case AF_INET6: {
+      if (gGeoIP[GEOIP_ASNUM_EDITION_V6]) {
+        geoipv6_t ip = reinterpret_cast<const struct sockaddr_in6 *>(addr)->sin6_addr;
+
+        v = 6;
+        ret = GeoIP_name_by_ipnum_v6(gGeoIP[GEOIP_ASNUM_EDITION_V6], ip);
+      }
+    } break;
+    default:
+      break;
+    }
+    TSDebug(PLUGIN_NAME, "eval(): Client IPv%d seems to come from ASN Name: %s", v, ret);
+    break;
+
+  default:
+    break;
+  }
+
+  return ret ? ret : "(unknown)";
+}
+
+int64_t
+ConditionGeo::get_geo_int(const sockaddr *addr)
+{
+  int64_t ret = -1;
+  int v = 4;
+
+  switch (_geo_qual) {
+  // Country Databse
+  case GEO_QUAL_COUNTRY_ISO:
+    switch (addr->sa_family) {
+    case AF_INET:
+      if (gGeoIP[GEOIP_COUNTRY_EDITION]) {
+        uint32_t ip = ntohl(reinterpret_cast<const struct sockaddr_in *>(addr)->sin_addr.s_addr);
+
+        ret = GeoIP_id_by_ipnum(gGeoIP[GEOIP_COUNTRY_EDITION], ip);
+      }
+      break;
+    case AF_INET6: {
+      if (gGeoIP[GEOIP_COUNTRY_EDITION_V6]) {
+        geoipv6_t ip = reinterpret_cast<const struct sockaddr_in6 *>(addr)->sin6_addr;
+
+        v = 6;
+        ret = GeoIP_id_by_ipnum_v6(gGeoIP[GEOIP_COUNTRY_EDITION_V6], ip);
+      }
+    } break;
+    default:
+      break;
+    }
+    TSDebug(PLUGIN_NAME, "eval(): Client IPv%d seems to come from Country ISO: %" PRId64, v, ret);
+    break;
+
+  case GEO_QUAL_ASN: {
+    const char *asn_name = NULL;
+
+    switch (addr->sa_family) {
+    case AF_INET:
+      if (gGeoIP[GEOIP_ASNUM_EDITION]) {
+        uint32_t ip = ntohl(reinterpret_cast<const struct sockaddr_in *>(addr)->sin_addr.s_addr);
+
+        asn_name = GeoIP_name_by_ipnum(gGeoIP[GEOIP_ASNUM_EDITION], ip);
+      }
+      break;
+    case AF_INET6:
+      if (gGeoIP[GEOIP_ASNUM_EDITION_V6]) {
+        geoipv6_t ip = reinterpret_cast<const struct sockaddr_in6 *>(addr)->sin6_addr;
+
+        v = 6;
+        asn_name = GeoIP_name_by_ipnum_v6(gGeoIP[GEOIP_ASNUM_EDITION_V6], ip);
+      }
+      break;
+    }
+    if (asn_name) {
+      // This is a little odd, but the strings returned are e.g. "AS1234 Acme Inc"
+      while (*asn_name && !(isdigit(*asn_name))) {
+        ++asn_name;
+      }
+      ret = strtol(asn_name, NULL, 10);
+    }
+  }
+    TSDebug(PLUGIN_NAME, "eval(): Client IPv%d seems to come from ASN #: %" PRId64, v, ret);
+    break;
+
+  // Likely shouldn't trip, should we assert?
+  default:
+    break;
+  }
+
+  return ret;
+}
+
+void
+ConditionGeo::initialize(Parser &p)
+{
+  Condition::initialize(p);
+
+  if (is_int_type()) {
+    Matchers<int64_t> *match = new Matchers<int64_t>(_cond_op);
+
+    match->set(static_cast<int64_t>(strtol(p.get_arg().c_str(), NULL, 10)));
+    _matcher = match;
+  } else {
+    // The default is to have a string matcher
+    Matchers<std::string> *match = new Matchers<std::string>(_cond_op);
+
+    match->set(p.get_arg());
+    _matcher = match;
+  }
+}
+
+void
+ConditionGeo::set_qualifier(const std::string &q)
+{
+  Condition::set_qualifier(q);
+
+  TSDebug(PLUGIN_NAME, "\tParsing %%{GEO:%s} qualifier", q.c_str());
+
+  if (q == "COUNTRY") {
+    _geo_qual = GEO_QUAL_COUNTRY;
+    is_int_type(false);
+  } else if (q == "COUNTRY-ISO") {
+    _geo_qual = GEO_QUAL_COUNTRY_ISO;
+    is_int_type(true);
+  } else if (q == "ASN") {
+    _geo_qual = GEO_QUAL_ASN;
+    is_int_type(true);
+  } else if (q == "ASN-NAME") {
+    _geo_qual = GEO_QUAL_ASN_NAME;
+    is_int_type(false);
+  } else {
+    TSError("[%s] Unknown Geo qualifier: %s", PLUGIN_NAME, q.c_str());
+  }
+}
+
+void
+ConditionGeo::append_value(std::string &s, const Resources &res)
+{
+  std::ostringstream oss;
+
+  if (is_int_type()) {
+    oss << get_geo_int(TSHttpTxnClientAddrGet(res.txnp));
+    s += oss.str();
+    TSDebug(PLUGIN_NAME, "Appending GEO() to evaluation value -> %s", s.c_str());
+  } else {
+    oss << get_geo_string(TSHttpTxnClientAddrGet(res.txnp));
+    s += oss.str();
+    TSDebug(PLUGIN_NAME, "Appending GEO() to evaluation value -> %s", s.c_str());
+  }
+}
+
+bool
+ConditionGeo::eval(const Resources &res)
+{
+  if (is_int_type()) {
+    int64_t geo = get_geo_int(TSHttpTxnClientAddrGet(res.txnp));
+
+    TSDebug(PLUGIN_NAME, "Evaluating GEO() -> %" PRId64, geo);
+
+    return static_cast<const Matchers<int64_t> *>(_matcher)->test(geo);
+  } else {
+    std::string s;
+
+    append_value(s, res);
+    bool rval = static_cast<const Matchers<std::string> *>(_matcher)->test(s);
+
+    TSDebug(PLUGIN_NAME, "Evaluating GEO(): %s - rval: %d", s.c_str(), rval);
+    return rval;
+  }
 }

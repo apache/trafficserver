@@ -31,8 +31,9 @@ header_rewrite_la_SOURCES = \
   resources.cc \
   ruleset.cc \
   statement.cc
-  
+
 header_rewrite_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
+header_rewrite_la_LIBADD = $(GEO_LIBS)
 
 bin_PROGRAMS = header_rewrite_test
 header_rewrite_test_SOURCES = parser.cc header_rewrite_test.cc

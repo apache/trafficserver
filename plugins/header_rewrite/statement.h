@@ -58,6 +58,13 @@ enum NowQualifiers {
   NOW_QUAL_YEARDAY
 };
 
+enum GeoQualifiers {
+  GEO_QUAL_COUNTRY,
+  GEO_QUAL_COUNTRY_ISO,
+  GEO_QUAL_ASN,
+  GEO_QUAL_ASN_NAME,
+};
+
 
 class Statement
 {
@@ -128,6 +135,7 @@ protected:
   virtual void initialize_hooks();
 
   UrlQualifiers parse_url_qualifier(const std::string &q) const;
+
   NowQualifiers parse_now_qualifier(const std::string &q) const;
   int64_t get_now_qualified(NowQualifiers qual) const;
 
