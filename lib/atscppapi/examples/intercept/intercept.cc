@@ -55,6 +55,7 @@ public:
 void
 TSPluginInit(int /* argc ATS_UNUSED */, const char * /* argv ATS_UNUSED */ [])
 {
+  RegisterGlobalPlugin("CPP_Example_Intercept", "apache", "dev@trafficserver.apache.org");
   new InterceptInstaller();
 }
 

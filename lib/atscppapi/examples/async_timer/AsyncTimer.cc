@@ -60,6 +60,7 @@ private:
 void
 TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
 {
+  RegisterGlobalPlugin("CPP_Example_AsyncTimer", "apache", "dev@trafficserver.apache.org");
   int period_in_ms = 1000;
   TimerEventReceiver *timer1 = new TimerEventReceiver(AsyncTimer::TYPE_PERIODIC, period_in_ms);
   TS_DEBUG(TAG, "Created periodic timer %p with initial period 0, regular period %d and max instances 0", timer1, period_in_ms);

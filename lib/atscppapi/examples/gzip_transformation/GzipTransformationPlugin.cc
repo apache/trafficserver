@@ -192,6 +192,7 @@ public:
 void
 TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
 {
+  RegisterGlobalPlugin("CPP_Example_GzipTransformation", "apache", "dev@trafficserver.apache.org");
   TS_DEBUG(TAG, "TSPluginInit");
   new GlobalHookPlugin();
 }

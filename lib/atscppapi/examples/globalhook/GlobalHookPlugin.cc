@@ -19,8 +19,10 @@
 #include <iostream>
 #include <atscppapi/GlobalPlugin.h>
 #include <atscppapi/PluginInit.h>
+//#include<../ts/Diags.h>
 
 using namespace atscppapi;
+using namespace std;
 
 class GlobalHookPlugin : public GlobalPlugin
 {
@@ -38,5 +40,7 @@ public:
 void
 TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
 {
+  RegisterGlobalPlugin("CPP_Example_GlobalHookPplugin", "apache", "dev@trafficserver.apache.org");
+  std::cout << "Hello from " << argv[0] << std::endl;
   new GlobalHookPlugin();
 }

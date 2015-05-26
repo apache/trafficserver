@@ -84,7 +84,7 @@ public:
   }
 };
 
-TsReturnCode
+TSReturnCode
 TSRemapNewInstance(int argc ATSCPPAPI_UNUSED, char *argv[] ATSCPPAPI_UNUSED, void **instance_handle, char *errbuf ATSCPPAPI_UNUSED,
                    int errbuf_size ATSCPPAPI_UNUSED)
 {
