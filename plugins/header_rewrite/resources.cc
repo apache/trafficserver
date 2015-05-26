@@ -24,6 +24,7 @@
 #include "resources.h"
 #include "lulu.h"
 
+
 // Collect all resources
 void
 Resources::gather(const ResourceIDs ids, TSHttpHookID hook)
