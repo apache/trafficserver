@@ -37,6 +37,14 @@
 
 .. _InkAPITest.cc: https://github.com/apache/trafficserver/blob/master/proxy/api/InkAPITest.cc
 
+.. |ts_lua_http_config.c| replace:: ``ts_lua_http_config.c``
+
+.. _ts_lua_http_config.c: https://github.com/apache/trafficserver/blob/master/plugins/experimental/ts_lua/ts_lua_http_config.c
+
+.. |TSHttpOverridableConfig.en.rst| replace:: ``TSHttpOverridableConfig.en.rst``
+
+.. _TSHttpOverridableConfig.en.rst: https://github.com/apache/trafficserver/blob/master/doc/reference/api/TSHttpOverridableConfig.en.rst
+
 .. Referenced enumeration values
 
 .. |RECU_DYNAMIC| replace:: ``RECU_DYNAMIC``
@@ -322,3 +330,6 @@ required for generic access:
 #. Update the testing logic in |InkAPITest.cc|_ by adding the string name of the
    configuration variable to the ``SDK_Overridable_Configs`` array.
 
+#. Update the Lua plugin enumeration ``TSLuaOverridableConfigKey`` in |ts_lua_http_config.c|_.
+
+#. Update the documentation of :ref:`ts-overridable-config` in |TSHttpOverridableConfig.en.rst|_.
