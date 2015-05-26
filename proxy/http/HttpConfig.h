@@ -383,7 +383,7 @@ struct OverridableHttpConfigParams {
       post_connect_attempts_timeout(1800), down_server_timeout(300), client_abort_threshold(10), freshness_fuzz_time(240),
       freshness_fuzz_min_time(0), max_cache_open_read_retries(-1), cache_open_read_retry_time(10),
       background_fill_active_timeout(60), http_chunking_size(4096), flow_high_water_mark(0), flow_low_water_mark(0),
-      default_buffer_size_index(8), default_buffer_water_mark(32768),
+      default_buffer_size_index(8), default_buffer_water_mark(32768), slow_log_threshold(0), // !@#
 
       // Strings / floats must come last
       proxy_response_server_string(NULL), proxy_response_server_string_len(0), global_user_agent_header(NULL),
@@ -554,8 +554,8 @@ struct OverridableHttpConfigParams {
   MgmtInt flow_low_water_mark;  ///< Flow control low water mark.
 
   MgmtInt default_buffer_size_index;
-  MgmtInt default_buffer_water_mark;
-
+  MgmtInt default_buffer_water_mark;  
+  MgmtInt slow_log_threshold;// !@#
   // IMPORTANT: Here comes all strings / floats configs.
 
   ///////////////////////////////////////////////////////////////////
@@ -708,7 +708,7 @@ public:
   // Error Reporting //
   /////////////////////
   MgmtByte errors_log_error_pages;
-  MgmtInt slow_log_threshold;
+  //MgmtInt slow_log_threshold;  !@#
 
   MgmtByte enable_http_info;
 

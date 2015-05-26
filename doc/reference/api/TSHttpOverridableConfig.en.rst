@@ -135,6 +135,7 @@ The following configurations (from ``records.config``) are overridable.
 |   :ts:cv:`proxy.config.http.accept_encoding_filter_enabled`
 |   :ts:cv:`proxy.config.http.cache.range.write`
 |   :ts:cv:`proxy.config.http.global_user_agent_header`
+|   :ts:cv:`proxy.config.http.slow.log.threshold`
 
 Examples
 ========
