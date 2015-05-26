@@ -1253,8 +1253,10 @@ HttpTransact::HandleRequest(State *s)
   initialize_state_variables_from_request(s, &s->hdr_info.client_request);
 
   // The following code is configurable to allow a user to control the max post size (TS-3631)
-  if (s->http_config_param->max_post_size > 0 && s->hdr_info.request_content_length > 0 && s->hdr_info.request_content_length > s->http_config_param->max_post_size) {
-    DebugTxn("http_trans", "Max post size %" PRId64 " Client tried to post a body that was too large.", s->http_config_param->max_post_size);
+  if (s->http_config_param->max_post_size > 0 && s->hdr_info.request_content_length > 0 &&
+      s->hdr_info.request_content_length > s->http_config_param->max_post_size) {
+    DebugTxn("http_trans", "Max post size %" PRId64 " Client tried to post a body that was too large.",
+             s->http_config_param->max_post_size);
     HTTP_INCREMENT_TRANS_STAT(http_post_body_too_large);
     bootstrap_state_variables_from_request(s, &s->hdr_info.client_request);
     build_error_response(s, HTTP_STATUS_REQUEST_ENTITY_TOO_LARGE, "Request Entity Too Large", "request#entity_too_large", NULL);
