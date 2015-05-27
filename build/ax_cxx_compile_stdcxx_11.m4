@@ -52,15 +52,9 @@ AC_DEFUN([AX_CXX_COMPILE_STDCXX_11], [dnl
         [$2], [optional], [ax_cxx_compile_cxx11_required=false],
         [m4_fatal([invalid second argument `$2' to AX_CXX_COMPILE_STDCXX_11])])
   AC_LANG_PUSH([C++])dnl
+
+# We now require either -std=c++11 or -std=c++0x, so don't test without either
   ac_success=no
-  AC_CACHE_CHECK(whether $CXX supports C++11 features by default,
-  ax_cv_cxx_compile_cxx11,
-  [AC_COMPILE_IFELSE([AC_LANG_SOURCE([_AX_CXX_COMPILE_STDCXX_11_testbody])],
-    [ax_cv_cxx_compile_cxx11=yes],
-    [ax_cv_cxx_compile_cxx11=no])])
-  if test x$ax_cv_cxx_compile_cxx11 = xyes; then
-    ac_success=yes
-  fi
 
   m4_if([$1], [noext], [], [dnl
   if test x$ac_success = xno; then
