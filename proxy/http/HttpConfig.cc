@@ -192,7 +192,7 @@ http_server_session_sharing_cb(char const *name, RecDataT dtype, RecData data, v
   bool valid_p = true;
   HttpConfigParams *c = static_cast<HttpConfigParams *>(cookie);
 
-  if (0 == strcasecmp("proxy.config.http.server_session_sharing.pool", name)) {
+  if (0 == strcasecmp("proxy.config.http.server_session_sharing.match", name)) {
     MgmtByte &match = c->oride.server_session_sharing_match;
     if (RECD_INT == dtype) {
       match = static_cast<TSServerSessionSharingMatchType>(data.rec_int);
@@ -201,7 +201,7 @@ http_server_session_sharing_cb(char const *name, RecDataT dtype, RecData data, v
     } else {
       valid_p = false;
     }
-  } else if (0 == strcasecmp("proxy.config.http.server_session_sharing.match", name)) {
+  } else if (0 == strcasecmp("proxy.config.http.server_session_sharing.pool", name)) {
     MgmtByte &match = c->oride.server_session_sharing_pool;
     if (RECD_INT == dtype) {
       match = static_cast<TSServerSessionSharingPoolType>(data.rec_int);
@@ -973,12 +973,6 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.oride.flow_high_water_mark, "proxy.config.http.flow_control.high_water");
   HttpEstablishStaticConfigLongLong(c.oride.flow_low_water_mark, "proxy.config.http.flow_control.low_water");
   HttpEstablishStaticConfigByte(c.oride.post_check_content_length_enabled, "proxy.config.http.post.check.content_length.enabled");
-  // HttpEstablishStaticConfigByte(c.oride.share_server_sessions, "proxy.config.http.share_server_sessions");
-
-  // 4.2 Backwards compatibility
-  RecRegisterConfigUpdateCb("proxy.config.http.share_server_sessions", &http_server_session_sharing_cb, &c);
-  http_config_share_server_sessions_read_bc(&c);
-  // end 4.2 BC
 
   // [amc] This is a bit of a mess, need to figure out to make this cleaner.
   RecRegisterConfigUpdateCb("proxy.config.http.server_session_sharing.pool", &http_server_session_sharing_cb, &c);
@@ -987,6 +981,11 @@ HttpConfig::startup()
   RecRegisterConfigUpdateCb("proxy.config.http.server_session_sharing.match", &http_server_session_sharing_cb, &c);
   http_config_enum_read("proxy.config.http.server_session_sharing.match", SessionSharingMatchStrings,
                         c.oride.server_session_sharing_match);
+
+  // 4.2 Backwards compatibility - read this *after* the new server_session_sharing settings
+  RecRegisterConfigUpdateCb("proxy.config.http.share_server_sessions", &http_server_session_sharing_cb, &c);
+  http_config_share_server_sessions_read_bc(&c);
+  // end 4.2 BC
 
   HttpEstablishStaticConfigByte(c.oride.auth_server_session_private, "proxy.config.http.auth_server_session_private");
 
