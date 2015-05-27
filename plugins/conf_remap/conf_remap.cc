@@ -270,7 +270,6 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
   }
 
   RemapConfigs *conf = new (RemapConfigs);
-
   for (int i = 2; i < argc; ++i) {
     if (strchr(argv[i], '=') != NULL) {
       // Parse as an inline key=value pair ...
@@ -313,6 +312,7 @@ TSRemapDeleteInstance(void *ih)
 TSRemapStatus
 TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo * /* rri ATS_UNUSED */)
 {
+    
   if (NULL != ih) {
     RemapConfigs *conf = static_cast<RemapConfigs *>(ih);
     TSHttpTxn txnp = static_cast<TSHttpTxn>(rh);
