@@ -7949,7 +7949,7 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
     typ = OVERRIDABLE_TYPE_STRING;
     ret = &overridableHttpConfig->global_user_agent_header;
     break;
-  case TS_CONFIG_HTTP_SLOW_LOG_THRESHOLD: //!@#
+  case TS_CONFIG_HTTP_SLOW_LOG_THRESHOLD:
     typ = OVERRIDABLE_TYPE_INT;
     ret = &overridableHttpConfig->slow_log_threshold;
     break;
@@ -8237,7 +8237,7 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
       if (!strncmp(name, "proxy.config.net.sock_packet_tos_out", length))
         cnf = TS_CONFIG_NET_SOCK_PACKET_TOS_OUT;
       break;
-    case 'd': // !@#
+    case 'd':
       if (!strncmp(name, "proxy.config.http.slow.log.threshold", length))
         cnf = TS_CONFIG_HTTP_SLOW_LOG_THRESHOLD;
       break;
