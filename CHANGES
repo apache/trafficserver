@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
   
+  *) [TS-3642]: fix reading of proxy.config.http.share_server_sessions
+
   *) [TS-3631] Add config option to limit post size 
  
   *) [TS-3628] Unable to use disks larger than 16T
