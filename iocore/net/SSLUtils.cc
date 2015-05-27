@@ -140,7 +140,7 @@ SSL_pthreads_thread_id()
 static void
 SSL_locking_callback(int mode, int type, const char *file, int line)
 {
-  Debug("ssl_lock", "file: %s line: %d type: %d", file, line, type);
+  Debug("v_ssl_lock", "file: %s line: %d type: %d", file, line, type);
   ink_assert(type < CRYPTO_num_locks());
 
 #ifdef OPENSSL_FIPS
