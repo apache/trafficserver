@@ -49,6 +49,11 @@ values. If :func:`TSTextLogObjectRollingEnabledSet` is never called,
 the log object takes it's log rolling mode from the global
 :ts:cv:`proxy.config.log.rolling_enabled` setting.
 
+It's also important to call :func:`TSTextLogObjectRollingEnabledSet` before
+any of the other APIs that modifies the rolling object. This is due to the
+fact that this API dictates which rolling mode should be used, and therefore
+affects further modifications of the logging object.
+
 See also
 ========
 
