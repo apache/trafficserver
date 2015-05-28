@@ -1,11 +1,11 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
   
-  *) [TS-3642]: fix reading of proxy.config.http.share_server_sessions
+  *) [TS-3642]: fix reading of proxy.config.http.share_server_sessions.
 
-  *) [TS-3631] Add config option to limit post size 
+  *) [TS-3631] Add config option to limit post size.
  
-  *) [TS-3628] Unable to use disks larger than 16T
+  *) [TS-3628] Unable to use disks larger than 16T.
 
   *) [TS-2080] Remove arbitrary 1 year max age limit on the cache, use
    the existing configuration option properly.
