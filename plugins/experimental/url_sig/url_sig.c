@@ -91,7 +91,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
     return TS_ERROR;
   }
 
-  char line[260];
+  char line[300];
   int line_no = 0;
   int keynum;
 
@@ -115,8 +115,10 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
     pos = strchr(value, '\n'); // remove the new line, terminate the string
     if (pos != NULL) {
       *pos = '\0';
-    } else {
-      snprintf(errbuf, errbuf_size - 1, "[TSRemapNewInstance] - Maximum line (%d) exceeded on line %d.", MAX_KEY_LEN, line_no);
+    }
+    if (pos == NULL || strlen(value) >= MAX_KEY_LEN) {
+      snprintf(errbuf, errbuf_size - 1, "[TSRemapNewInstance] - Maximum key length (%d) exceeded on line %d.", MAX_KEY_LEN - 1,
+               line_no);
       fclose(file);
       free_cfg(cfg);
       return TS_ERROR;
@@ -139,7 +141,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
         free_cfg(cfg);
         return TS_ERROR;
       }
-      strcpy(&cfg->keys[keynum][0], value);
+      strncpy(&cfg->keys[keynum][0], value, MAX_KEY_LEN - 1);
     } else if (strncmp(line, "error_url", 9) == 0) {
       if (atoi(value)) {
         cfg->err_status = atoi(value);
