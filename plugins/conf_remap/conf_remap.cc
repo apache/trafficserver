@@ -270,7 +270,6 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
   }
 
   RemapConfigs *conf = new (RemapConfigs);
-
   for (int i = 2; i < argc; ++i) {
     if (strchr(argv[i], '=') != NULL) {
       // Parse as an inline key=value pair ...
