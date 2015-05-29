@@ -8628,7 +8628,7 @@ TSMgmtStringCreate(TSRecordType rec_type, const char *name, const TSMgmtString d
   if (check_regex == NULL && check_type != TS_RECORDCHECK_NULL)
     return TS_ERROR;
   if (REC_ERR_OKAY != RecRegisterConfigString((enum RecT)rec_type, name, data_default, (enum RecUpdateT)update_type,
-                                              (enum RecCheckT)check_type, check_regex, (enum RecAccessT)access_type))
+                                              (enum RecCheckT)check_type, check_regex, REC_SRC_API, (enum RecAccessT)access_type))
     return TS_ERROR;
 
   return TS_SUCCESS;
@@ -8641,7 +8641,7 @@ TSMgmtIntCreate(TSRecordType rec_type, const char *name, TSMgmtInt data_default,
   if (check_regex == NULL && check_type != TS_RECORDCHECK_NULL)
     return TS_ERROR;
   if (REC_ERR_OKAY != RecRegisterConfigInt((enum RecT)rec_type, name, (RecInt)data_default, (enum RecUpdateT)update_type,
-                                           (enum RecCheckT)check_type, check_regex, (enum RecAccessT)access_type))
+                                           (enum RecCheckT)check_type, check_regex, REC_SRC_API, (enum RecAccessT)access_type))
     return TS_ERROR;
 
   return TS_SUCCESS;

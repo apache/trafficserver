@@ -97,13 +97,13 @@ static const struct NetCmdOperation responses[] = {
   /* RECORD_MATCH_GET           */ {4, {MGMT_MARSHALL_INT, MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING, MGMT_MARSHALL_DATA}},
   /* API_PING                   */ {0, {}}, // no reply
   /* SERVER_BACKTRACE           */ {2, {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING}},
-  /* RECORD_DESCRIBE_CONFIG     */ {14,
+  /* RECORD_DESCRIBE_CONFIG     */ {15,
                                     {MGMT_MARSHALL_INT /* status */, MGMT_MARSHALL_STRING /* name */,
                                      MGMT_MARSHALL_DATA /* value */, MGMT_MARSHALL_DATA /* default */, MGMT_MARSHALL_INT /* type */,
                                      MGMT_MARSHALL_INT /* class */, MGMT_MARSHALL_INT /* version */, MGMT_MARSHALL_INT /* rsb */,
                                      MGMT_MARSHALL_INT /* order */, MGMT_MARSHALL_INT /* access */, MGMT_MARSHALL_INT /* update */,
                                      MGMT_MARSHALL_INT /* updatetype */, MGMT_MARSHALL_INT /* checktype */,
-                                     MGMT_MARSHALL_STRING /* checkexpr */}},
+                                     MGMT_MARSHALL_INT /* source */, MGMT_MARSHALL_STRING /* checkexpr */}},
 };
 
 #define GETCMD(ops, optype, cmd)                                       \
@@ -236,11 +236,11 @@ send_mgmt_error(int fd, OpType optype, TSMgmtError error)
     return send_mgmt_response(fd, optype, &ecode, &intval, &strval, &dataval);
 
   case RECORD_DESCRIBE_CONFIG:
-    ink_release_assert(responses[optype].nfields == 14);
+    ink_release_assert(responses[optype].nfields == 15);
     return send_mgmt_response(fd, optype, &ecode, &strval /* name */, &dataval /* value */, &dataval /* default */,
                               &intval /* type */, &intval /* class */, &intval /* version */, &intval /* rsb */,
                               &intval /* order */, &intval /* access */, &intval /* update */, &intval /* updatetype */,
-                              &intval /* checktype */, &strval /* checkexpr */);
+                              &intval /* checktype */, &intval /* source */, &strval /* checkexpr */);
 
   case EVENT_REG_CALLBACK:
   case EVENT_UNREG_CALLBACK:

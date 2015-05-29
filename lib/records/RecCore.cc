@@ -39,7 +39,8 @@ int g_num_records = 0;
 // register_record
 //-------------------------------------------------------------------------
 static RecRecord *
-register_record(RecT rec_type, const char *name, RecDataT data_type, RecData data_default, RecPersistT persist_type)
+register_record(RecT rec_type, const char *name, RecDataT data_type, RecData data_default, RecPersistT persist_type,
+                bool *updated_p = NULL)
 {
   RecRecord *r = NULL;
 
@@ -48,6 +49,8 @@ register_record(RecT rec_type, const char *name, RecDataT data_type, RecData dat
     ink_release_assert(r->data_type == data_type);
     // Note: do not set r->data as we want to keep the previous value
     RecDataSet(r->data_type, &(r->data_default), &(data_default));
+    if (updated_p)
+      *updated_p = true;
   } else {
     if ((r = RecAlloc(rec_type, name, data_type)) == NULL) {
       return NULL;
@@ -60,6 +63,8 @@ register_record(RecT rec_type, const char *name, RecDataT data_type, RecData dat
     if (REC_TYPE_IS_STAT(r->rec_type)) {
       r->stat_meta.persist_type = persist_type;
     }
+    if (updated_p)
+      *updated_p = false;
   }
 
   // we're now registered
@@ -780,11 +785,13 @@ RecRegisterStat(RecT rec_type, const char *name, RecDataT data_type, RecData dat
 //-------------------------------------------------------------------------
 RecRecord *
 RecRegisterConfig(RecT rec_type, const char *name, RecDataT data_type, RecData data_default, RecUpdateT update_type,
-                  RecCheckT check_type, const char *check_expr, RecAccessT access_type)
+                  RecCheckT check_type, const char *check_expr, RecSourceT source, RecAccessT access_type)
 {
   RecRecord *r;
+  bool updated_p;
+
   ink_rwlock_wrlock(&g_records_rwlock);
-  if ((r = register_record(rec_type, name, data_type, data_default, RECP_NULL)) != NULL) {
+  if ((r = register_record(rec_type, name, data_type, data_default, RECP_NULL, &updated_p)) != NULL) {
     // Note: do not modify 'record->config_meta.update_required'
     r->config_meta.update_type = update_type;
     r->config_meta.check_type = check_type;
@@ -794,6 +801,8 @@ RecRegisterConfig(RecT rec_type, const char *name, RecDataT data_type, RecData d
     r->config_meta.check_expr = ats_strdup(check_expr);
     r->config_meta.update_cb_list = NULL;
     r->config_meta.access_type = access_type;
+    if (!updated_p)
+      r->config_meta.source = source;
   }
   ink_rwlock_unlock(&g_records_rwlock);
 
