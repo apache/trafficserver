@@ -117,6 +117,21 @@ rec_checkof(int rec_checktype)
   }
 }
 
+static const char *
+rec_sourceof(int rec_source)
+{
+  switch (rec_source) {
+  case REC_SOURCE_DEFAULT:
+    return "built in default";
+  case REC_SOURCE_EXPLICIT:
+    return "administratively set";
+  case REC_SOURCE_ENV:
+    return "environment";
+  default:
+    return "unknown";
+  }
+}
+
 static std::string
 timestr(time_t tm)
 {
@@ -191,6 +206,7 @@ config_describe(unsigned argc, const char **argv)
     printf("%-16s: %s\n", "Access Control ", rec_accessof(desc.rec_access));
     printf("%-16s: %s\n", "Update Type", rec_updateof(desc.rec_updatetype));
     printf("%-16s: 0x%" PRIx64 "\n", "Update Status", desc.rec_update);
+    printf("%-16s: %s\n", "Source", rec_sourceof(desc.rec_source));
 
     if (strlen(desc.rec_checkexpr)) {
       printf("%-16s: %s, '%s'\n", "Syntax Check", rec_checkof(desc.rec_checktype), desc.rec_checkexpr);

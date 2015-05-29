@@ -419,6 +419,7 @@ typedef struct {
   TSInt rec_update;     /* update_required bitmask */
   TSInt rec_updatetype; /* update type (RecUpdateT) */
   TSInt rec_checktype;  /* syntax check type (RecCheckT) */
+  TSInt rec_source;     /* source of data */
   char *rec_checkexpr;  /* syntax check expression */
 } TSConfigRecordDescription;
 

@@ -1025,6 +1025,7 @@ send_record_describe(const RecRecord *rec, void *ptr)
   MgmtMarshallInt rec_update = rec->config_meta.update_required;
   MgmtMarshallInt rec_updatetype = rec->config_meta.update_type;
   MgmtMarshallInt rec_checktype = rec->config_meta.check_type;
+  MgmtMarshallInt rec_source = rec->config_meta.source;
   MgmtMarshallString rec_checkexpr = rec->config_meta.check_expr;
 
   MgmtMarshallInt err = TS_ERR_OKAY;
@@ -1066,7 +1067,7 @@ send_record_describe(const RecRecord *rec, void *ptr)
 
   err = send_mgmt_response(*fderr, RECORD_DESCRIBE_CONFIG, &err, &rec_name, &rec_value, &rec_default, &rec_type, &rec_class,
                            &rec_version, &rec_rsb, &rec_order, &rec_access, &rec_update, &rec_updatetype, &rec_checktype,
-                           &rec_checkexpr);
+                           &rec_source, &rec_checkexpr);
 
 done:
   *fderr = err;
