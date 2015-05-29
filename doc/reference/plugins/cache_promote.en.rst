@@ -44,11 +44,11 @@ Examples
 --------
 
     map http://cdn.example.com/ http://some-server.example.com \
-      @plugin=cache_promote.so @pparam=--policy=chance --chance=10%
+      @plugin=cache_promote.so @pparam=--policy=chance --sample=10%
 
     map http://cdn.example.com/ http://some-server.example.com \
       @plugin=cache_promote.so @pparam=--policy=lru \
       @pparam=--hits=10 @pparam=--buckets=10000
 
-Note that the `--chance` option is available for all policies, and when used
+Note that the `--sample` option is available for all policies, and when used
 to reduce pressure on the under heavy load.
