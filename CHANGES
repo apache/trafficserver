@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.2
 
+  *) [TS-3650] Track source of configuration values.
+
 
 Changes with Apache Traffic Server 5.3.1
 

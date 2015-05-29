@@ -42,7 +42,7 @@ override_record(const RecordElement *record, void *)
         // of the record. It sends a set message to the local manager. This can cause
         // "interesting" results if you are trying to override configuration values
         // early in startup (before we have synced with the local manager).
-        RecSetRecord(record->type, record->name, record->value_type, &data, NULL, false);
+        RecSetRecord(record->type, record->name, record->value_type, &data, NULL, REC_SOURCE_ENV, false);
         RecDataClear(record->value_type, &data);
       }
     }
@@ -83,6 +83,7 @@ initialize_record(const RecordElement *record, void *)
   if (REC_TYPE_IS_CONFIG(type)) {
     const char *value = RecConfigOverrideFromEnvironment(record->name, record->value);
     RecData data = {0};
+    RecSourceT source = value == record->value ? REC_SOURCE_DEFAULT : REC_SOURCE_ENV;
 
     // If you specify a consistency check, you have to specify a regex expression. We abort here
     // so that this breaks QA completely.
@@ -94,19 +95,19 @@ initialize_record(const RecordElement *record, void *)
 
     switch (record->value_type) {
     case RECD_INT:
-      RecRegisterConfigInt(type, record->name, data.rec_int, update, check, record->regex, access);
+      RecRegisterConfigInt(type, record->name, data.rec_int, update, check, record->regex, source, access);
       break;
 
     case RECD_FLOAT:
-      RecRegisterConfigFloat(type, record->name, data.rec_float, update, check, record->regex, access);
+      RecRegisterConfigFloat(type, record->name, data.rec_float, update, check, record->regex, source, access);
       break;
 
     case RECD_STRING:
-      RecRegisterConfigString(type, record->name, data.rec_string, update, check, record->regex, access);
+      RecRegisterConfigString(type, record->name, data.rec_string, update, check, record->regex, source, access);
       break;
 
     case RECD_COUNTER:
-      RecRegisterConfigCounter(type, record->name, data.rec_counter, update, check, record->regex, access);
+      RecRegisterConfigCounter(type, record->name, data.rec_counter, update, check, record->regex, source, access);
       break;
 
     default:
