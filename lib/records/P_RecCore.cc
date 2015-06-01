@@ -195,9 +195,9 @@ recv_message_cb(RecMessage *msg, RecMessageT msg_type, void * /* cookie */)
     if (RecMessageUnmarshalFirst(msg, &itr, &r) != REC_ERR_FAIL) {
       do {
         if (REC_TYPE_IS_STAT(r->rec_type)) {
-          RecSetRecord(r->rec_type, r->name, r->data_type, &(r->data), &(r->stat_meta.data_raw), REC_SRC_API);
+          RecSetRecord(r->rec_type, r->name, r->data_type, &(r->data), &(r->stat_meta.data_raw), REC_SOURCE_EXPLICIT);
         } else {
-          RecSetRecord(r->rec_type, r->name, r->data_type, &(r->data), NULL, REC_SRC_API);
+          RecSetRecord(r->rec_type, r->name, r->data_type, &(r->data), NULL, REC_SOURCE_EXPLICIT);
         }
       } while (RecMessageUnmarshalNext(msg, &itr, &r) != REC_ERR_FAIL);
     }
@@ -211,7 +211,7 @@ recv_message_cb(RecMessage *msg, RecMessageT msg_type, void * /* cookie */)
         if (REC_TYPE_IS_STAT(r->rec_type)) {
           RecResetStatRecord(r->name);
         } else {
-          RecSetRecord(r->rec_type, r->name, r->data_type, &(r->data), NULL, REC_SRC_API);
+          RecSetRecord(r->rec_type, r->name, r->data_type, &(r->data), NULL, REC_SOURCE_EXPLICIT);
         }
       } while (RecMessageUnmarshalNext(msg, &itr, &r) != REC_ERR_FAIL);
     }
@@ -225,7 +225,7 @@ recv_message_cb(RecMessage *msg, RecMessageT msg_type, void * /* cookie */)
           RecRegisterStat(r->rec_type, r->name, r->data_type, r->data_default, r->stat_meta.persist_type);
         } else if (REC_TYPE_IS_CONFIG(r->rec_type)) {
           RecRegisterConfig(r->rec_type, r->name, r->data_type, r->data_default, r->config_meta.update_type,
-                            r->config_meta.check_type, r->config_meta.check_expr, REC_SRC_API, r->config_meta.access_type);
+                            r->config_meta.check_type, r->config_meta.check_expr, REC_SOURCE_EXPLICIT, r->config_meta.access_type);
         }
       } while (RecMessageUnmarshalNext(msg, &itr, &r) != REC_ERR_FAIL);
     }
@@ -543,7 +543,7 @@ RecReadStatsFile()
         // not registered yet. Either way, it's ok to just set the persisted value and keep going.
         if (RecGetRecordPersistenceType(r->name, &persist_type, false /* lock */) != REC_ERR_OKAY) {
           RecDebug(DL_Debug, "restoring value for persisted stat '%s'", r->name);
-          RecSetRecord(r->rec_type, r->name, r->data_type, &(r->data), &(r->stat_meta.data_raw), REC_SRC_FILE, false);
+          RecSetRecord(r->rec_type, r->name, r->data_type, &(r->data), &(r->stat_meta.data_raw), REC_SOURCE_EXPLICIT, false);
           continue;
         }
 
@@ -562,7 +562,7 @@ RecReadStatsFile()
         }
 
         RecDebug(DL_Debug, "restoring value for persisted stat '%s'", r->name);
-        RecSetRecord(r->rec_type, r->name, r->data_type, &(r->data), &(r->stat_meta.data_raw), REC_SRC_FILE, false);
+        RecSetRecord(r->rec_type, r->name, r->data_type, &(r->data), &(r->stat_meta.data_raw), REC_SOURCE_EXPLICIT, false);
       } while (RecMessageUnmarshalNext(m, &itr, &r) != REC_ERR_FAIL);
     }
   }

@@ -121,16 +121,12 @@ static const char *
 rec_sourceof(int rec_source)
 {
   switch (rec_source) {
-  case REC_SRC_DEFAULT:
+  case REC_SOURCE_DEFAULT:
     return "built in default";
-  case REC_SRC_FILE:
-    return "config file";
-  case REC_SRC_ENV:
+  case REC_SOURCE_EXPLICIT:
+    return "administratively set";
+  case REC_SOURCE_ENV:
     return "environment";
-  case REC_SRC_API:
-    return "API";
-  case REC_SRC_CLUSTER:
-    return "cluster";
   default:
     return "unknown";
   }

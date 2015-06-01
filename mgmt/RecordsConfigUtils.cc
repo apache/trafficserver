@@ -42,7 +42,7 @@ override_record(const RecordElement *record, void *)
         // of the record. It sends a set message to the local manager. This can cause
         // "interesting" results if you are trying to override configuration values
         // early in startup (before we have synced with the local manager).
-        RecSetRecord(record->type, record->name, record->value_type, &data, NULL, REC_SRC_ENV, false);
+        RecSetRecord(record->type, record->name, record->value_type, &data, NULL, REC_SOURCE_ENV, false);
         RecDataClear(record->value_type, &data);
       }
     }
@@ -83,7 +83,7 @@ initialize_record(const RecordElement *record, void *)
   if (REC_TYPE_IS_CONFIG(type)) {
     const char *value = RecConfigOverrideFromEnvironment(record->name, record->value);
     RecData data = {0};
-    RecSourceT source = value == record->value ? REC_SRC_DEFAULT : REC_SRC_ENV;
+    RecSourceT source = value == record->value ? REC_SOURCE_DEFAULT : REC_SOURCE_ENV;
 
     // If you specify a consistency check, you have to specify a regex expression. We abort here
     // so that this breaks QA completely.
