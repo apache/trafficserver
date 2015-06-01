@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.1
 
+  *) [TS-3649] url_sig: fix for crasher related to key index.
+   Author: Gancho Tenev <gttenev@gmail.com>
+
   *) [TS-3632] Add OPENSSL_INCLUDE and OPENSSL_LIBS in Makefile.am.
 
   *) [TS-3603] Debug Assert due to missing lock when accept_threads are disabled.
