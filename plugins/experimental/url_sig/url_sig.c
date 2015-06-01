@@ -328,7 +328,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   if (p != NULL) {
     p += strlen(KIN_QSTRING) + 1;
     keyindex = atoi(p);
-    if (keyindex == -1) {
+    if (keyindex < 0 || keyindex >= MAX_KEY_NUM || 0 == cfg->keys[keyindex][0]) {
       err_log(url, "Invalid key index.");
       goto deny;
     }
