@@ -6638,9 +6638,9 @@ transform_hook_handler(TSCont contp, TSEvent event, void *edata)
       synclient_txn_delete(data->browser3);
       synclient_txn_delete(data->browser4);
 
+      TSContDataSet(contp, NULL);
       data->magic = MAGIC_DEAD;
       TSfree(data);
-      TSContDataSet(contp, NULL);
     }
     break;
 
