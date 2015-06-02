@@ -64,8 +64,7 @@ proxy, i.e. a connection initiated by the proxy to an origin server
 
 In most situations these two types of transparency are combined, but that is
 not required. Traffic Server supports transparency independently on the two
-sides. `Half-Transparency Use Cases <half-transparency-use-cases>`_ provides
-additional detail.
+sides. 
 
 .. important::
 
@@ -82,7 +81,7 @@ additional detail.
     in some cases ``ebtables``.
 
 Standard build procedures should work for transparency support but if
-not consult these :ref:`more detailed instructions <building-ats-for-transparency>`
+not consult these :ref:`more detailed instructions <building-ats-for-transparency>`.
 
 Transparency is configured per server port, not globally. This is done
 via the configuration values :ts:cv:`proxy.config.http.server_ports`.
