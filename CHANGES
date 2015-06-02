@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-3655] Forget to close netvc in regression test.
+
   *) [TS-3632] Add OPENSSL_INCLUDE and OPENSSL_LIBS in Makefile.am.
 
   *) [TS-3653] Add the ability to exclude by regex to url_sig plugin.
