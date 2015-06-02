@@ -249,7 +249,7 @@ REGRESSION_TEST(SDK_API_TSConfig)(RegressionTest *test, int /* atype ATS_UNUSED 
 //////////////////////////////////////////////
 
 struct SDK_NetVConn_Params {
-  SDK_NetVConn_Params(const char *_a, RegressionTest *_t, int *_p) : buffer(NULL), api(_a), port(0), test(_t), pstatus(_p)
+  SDK_NetVConn_Params(const char *_a, RegressionTest *_t, int *_p) : buffer(NULL), api(_a), port(0), test(_t), pstatus(_p), vc(NULL)
   {
     this->status.client = this->status.server = REGRESSION_TEST_INPROGRESS;
   }
@@ -259,6 +259,9 @@ struct SDK_NetVConn_Params {
     if (this->buffer) {
       TSIOBufferDestroy(this->buffer);
     }
+    if (this->vc) {
+      TSVConnClose(this->vc);
+    }
   }
 
   TSIOBuffer buffer;
@@ -266,6 +269,7 @@ struct SDK_NetVConn_Params {
   unsigned short port;
   RegressionTest *test;
   int *pstatus;
+  TSVConn vc;
   struct {
     int client;
     int server;
@@ -281,6 +285,7 @@ server_handler(TSCont contp, TSEvent event, void *data)
     // Kick off a read so that we can receive an EOS event.
     SDK_RPRINT(params->test, params->api, "ServerEvent NET_ACCEPT", TC_PASS, "ok");
     params->buffer = TSIOBufferCreate();
+    params->vc = (TSVConn)data;
     TSVConnRead((TSVConn)data, contp, params->buffer, 100);
   } else if (event == TS_EVENT_VCONN_EOS) {
     // The server end of the test passes if it receives an EOF event. This means that it must have
