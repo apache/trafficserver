@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-3661] keep cache_sm active during 3xx redirect follow to allow
+     for caching the final response.
+
   *) [TS-3158] Convert traffic_manager to use standard argument processing.
 
   *) [TS-3655] Forget to close netvc in regression test.
