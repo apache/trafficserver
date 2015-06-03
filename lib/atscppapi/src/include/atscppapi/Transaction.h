@@ -30,7 +30,8 @@
 #include "atscppapi/shared_ptr.h"
 #include "atscppapi/ClientRequest.h"
 #include "atscppapi/Response.h"
-
+//#include <ts/ts.h> //!@#
+#include <../ts/apidefs.h> //!@#
 namespace atscppapi
 {
 // forward declarations
@@ -320,7 +321,18 @@ public:
    * Redirect the transaction a different @a url.
    */
   void redirectTo(std::string const &url);
-
+  //TSHttpTxnConfigIntGet
+  // TSHttpTxnConfigFloatSet
+    //TSHttpTxnConfigFloatGet
+    //TSHttpTxnConfigStringSet
+    //TSHttpTxnConfigStringGet
+  bool configIntSet(TSOverridableConfigKey conf, int value); //!@#  
+  bool configIntGet(TSOverridableConfigKey conf, int* value); //!@#  
+  bool configFloatSet(TSOverridableConfigKey conf, float value);
+  bool configFloatGet(TSOverridableConfigKey conf, float* value);
+  bool configStringSet(TSOverridableConfigKey conf, char* value,int length);
+  bool configStringGet(TSOverridableConfigKey conf,const char** value, int* length);
+  //bool TSHttpTxnConfigFind
 private:
   TransactionState *state_;          //!< The internal TransactionState object tied to the current Transaction
   friend class TransactionPlugin;    //!< TransactionPlugin is a friend so it can call addPlugin()
