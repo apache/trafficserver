@@ -1544,7 +1544,6 @@ HttpSM::handle_api_return()
   case HttpTransact::SM_ACTION_REDIRECT_READ: {
     // Clean up from any communication with previous servers
     release_server_session();
-    cache_sm.close_write();
     // tunnel.deallocate_redirect_postdata_buffers();
 
     call_transact_and_set_next_state(HttpTransact::HandleRequest);
@@ -7081,7 +7080,7 @@ HttpSM::set_next_state()
   }
 
   case HttpTransact::SM_ACTION_CACHE_ISSUE_WRITE: {
-    ink_assert(cache_sm.cache_write_vc == NULL);
+    ink_assert((cache_sm.cache_write_vc == NULL) || t_state.redirect_info.redirect_in_process);
     HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_cache_open_write);
 
     do_cache_prepare_write();
