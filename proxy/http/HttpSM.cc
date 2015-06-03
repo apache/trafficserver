@@ -1804,14 +1804,6 @@ HttpSM::state_read_server_response_header(int event, void *data)
     t_state.transact_return_point = HttpTransact::HandleResponse;
     t_state.api_next_action = HttpTransact::SM_ACTION_API_READ_RESPONSE_HDR;
 
-    // if exceeded limit deallocate postdata buffers and disable redirection
-    if (enable_redirection && (redirection_tries < HttpConfig::m_master.number_of_redirections)) {
-      ++redirection_tries;
-    } else {
-      tunnel.deallocate_redirect_postdata_buffers();
-      enable_redirection = false;
-    }
-
     do_api_callout();
     break;
   case PARSE_CONT:
@@ -3401,8 +3393,6 @@ HttpSM::tunnel_handler_for_partial_post(int event, void * /* data ATS_UNUSED */)
   STATE_ENTER(&HttpSM::tunnel_handler_for_partial_post, event);
   tunnel.deallocate_buffers();
   tunnel.reset();
-
-  tunnel.allocate_redirect_postdata_producer_buffer();
 
   t_state.redirect_info.redirect_in_process = false;
 
@@ -5303,17 +5293,20 @@ HttpSM::do_setup_post_tunnel(HttpVC_t to_vc_type)
   // if redirect_in_process and redirection is enabled add static producer
 
   if (t_state.redirect_info.redirect_in_process && enable_redirection &&
-      (tunnel.postbuf && tunnel.postbuf->postdata_copy_buffer_start != NULL && tunnel.postbuf->postdata_producer_buffer != NULL)) {
+      (tunnel.postbuf && tunnel.postbuf->postdata_copy_buffer_start != NULL)) {
     post_redirect = true;
     // copy the post data into a new producer buffer for static producer
-    tunnel.postbuf->postdata_producer_buffer->write(tunnel.postbuf->postdata_copy_buffer_start);
-    int64_t post_bytes = tunnel.postbuf->postdata_producer_reader->read_avail();
+    int64_t alloc_index = buffer_size_to_index(t_state.hdr_info.request_content_length);
+    MIOBuffer *postdata_producer_buffer = new_MIOBuffer(alloc_index);
+    IOBufferReader *postdata_producer_reader = postdata_producer_buffer->alloc_reader();
+    postdata_producer_buffer->write(tunnel.postbuf->postdata_copy_buffer_start);
+    int64_t post_bytes = postdata_producer_reader->read_avail();
     transfered_bytes = post_bytes;
-    p = tunnel.add_producer(HTTP_TUNNEL_STATIC_PRODUCER, post_bytes, tunnel.postbuf->postdata_producer_reader,
+    p = tunnel.add_producer(HTTP_TUNNEL_STATIC_PRODUCER, post_bytes, postdata_producer_reader,
                             (HttpProducerHandler)NULL, HT_STATIC, "redirect static agent post");
     // the tunnel has taken over the buffer and will free it
-    tunnel.postbuf->postdata_producer_buffer = NULL;
-    tunnel.postbuf->postdata_producer_reader = NULL;
+    postdata_producer_buffer = NULL;
+    postdata_producer_reader = NULL;
   } else {
     int64_t alloc_index;
     // content length is undefined, use default buffer size
@@ -5342,6 +5335,8 @@ HttpSM::do_setup_post_tunnel(HttpVC_t to_vc_type)
     ua_buffer_reader->consume(client_request_body_bytes);
     p = tunnel.add_producer(ua_entry->vc, post_bytes - transfered_bytes, buf_start, &HttpSM::tunnel_handler_post_ua, HT_HTTP_CLIENT,
                             "user agent post");
+    post_buffer = NULL;
+    buf_start = NULL;
   }
   ua_entry->in_tunnel = true;
 
@@ -7287,8 +7282,10 @@ void
 HttpSM::do_redirect()
 {
   DebugSM("http_redirect", "[HttpSM::do_redirect]");
-  if (!enable_redirection || redirection_tries >= HttpConfig::m_master.number_of_redirections) {
+  // if exceeded limit deallocate postdata buffers and disable redirection
+  if (!enable_redirection || (redirection_tries++ >= HttpConfig::m_master.number_of_redirections)) {
     tunnel.deallocate_redirect_postdata_buffers();
+    enable_redirection = false;
     return;
   }
 
