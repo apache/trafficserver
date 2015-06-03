@@ -43,8 +43,8 @@ static char const *const npnmap[] = {TS_NPN_PROTOCOL_SPDY_2, TS_NPN_PROTOCOL_SPD
 static int spdy_process_read(TSEvent event, SpdyClientSession *sm);
 static int spdy_process_write(TSEvent event, SpdyClientSession *sm);
 static int spdy_process_fetch(TSEvent event, SpdyClientSession *sm, void *edata);
-static int spdy_process_fetch_header(TSEvent event, SpdyClientSession *sm, TSFetchSM fetch_sm);
-static int spdy_process_fetch_body(TSEvent event, SpdyClientSession *sm, TSFetchSM fetch_sm);
+static int spdy_process_fetch_header(TSEvent event, SpdyClientSession *sm, TSFetchSM fetch_sm, SpdyRequest *req);
+static int spdy_process_fetch_body(TSEvent event, SpdyClientSession *sm, TSFetchSM fetch_sm, SpdyRequest *req);
 static uint64_t g_sm_id = 1;
 
 void
@@ -322,23 +322,29 @@ spdy_process_fetch(TSEvent event, SpdyClientSession *sm, void *edata)
 {
   int ret = -1;
   TSFetchSM fetch_sm = (TSFetchSM)edata;
-  SpdyRequest *req = (SpdyRequest *)TSFetchUserDataGet(fetch_sm);
+  // Must use intptr_t here otherwise get compiler complaints about losing precision in the cast
+  intptr_t stream_id = (intptr_t)TSFetchUserDataGet(fetch_sm);
+  SpdyRequest *req = sm->find_request(stream_id);
+  if (!req) {
+    Warning("spdy_process_fetch: stream_id=%d already gone", stream_id);
+    return ret;
+  }
 
   switch ((int)event) {
   case TS_FETCH_EVENT_EXT_HEAD_DONE:
     Debug("spdy", "----[FETCH HEADER DONE]");
-    ret = spdy_process_fetch_header(event, sm, fetch_sm);
+    ret = spdy_process_fetch_header(event, sm, fetch_sm, req);
     break;
 
   case TS_FETCH_EVENT_EXT_BODY_READY:
     Debug("spdy", "----[FETCH BODY READY]");
-    ret = spdy_process_fetch_body(event, sm, fetch_sm);
+    ret = spdy_process_fetch_body(event, sm, fetch_sm, req);
     break;
 
   case TS_FETCH_EVENT_EXT_BODY_DONE:
     Debug("spdy", "----[FETCH BODY DONE]");
     req->fetch_body_completed = true;
-    ret = spdy_process_fetch_body(event, sm, fetch_sm);
+    ret = spdy_process_fetch_body(event, sm, fetch_sm, req);
     break;
 
   default:
@@ -364,10 +370,9 @@ spdy_process_fetch(TSEvent event, SpdyClientSession *sm, void *edata)
 }
 
 static int
-spdy_process_fetch_header(TSEvent /*event*/, SpdyClientSession *sm, TSFetchSM fetch_sm)
+spdy_process_fetch_header(TSEvent /*event*/, SpdyClientSession *sm, TSFetchSM fetch_sm, SpdyRequest *req)
 {
   int ret = -1;
-  SpdyRequest *req = (SpdyRequest *)TSFetchUserDataGet(fetch_sm);
 
   SpdyNV spdy_nv(fetch_sm);
 
@@ -445,11 +450,10 @@ spdy_read_fetch_body_callback(spdylay_session * /*session*/, int32_t stream_id, 
 }
 
 static int
-spdy_process_fetch_body(TSEvent event, SpdyClientSession *sm, TSFetchSM fetch_sm)
+spdy_process_fetch_body(TSEvent event, SpdyClientSession *sm, TSFetchSM fetch_sm, SpdyRequest *req)
 {
   int ret = 0;
   spdylay_data_provider data_prd;
-  SpdyRequest *req = (SpdyRequest *)TSFetchUserDataGet(fetch_sm);
   req->event = event;
 
   data_prd.source.ptr = (void *)req;
