@@ -1878,7 +1878,7 @@ HttpTransact::DecideCacheLookup(State *s)
     s->cache_info.action = CACHE_DO_NO_ACTION;
     s->current.mode = GENERIC_PROXY;
   } else {
-    if (is_request_cache_lookupable(s)) {
+    if (is_request_cache_lookupable(s) && !s->is_upgrade_request) {
       s->cache_info.action = CACHE_DO_LOOKUP;
       s->current.mode = GENERIC_PROXY;
     } else {
