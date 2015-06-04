@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.1
 
+  *) [TS-3667] Make SSL Handhake read correctly handle EOF and error cases.
+
   *) [TS-3554] Memory leak on ssl_multicert.config reload.
 
   *) [TS-3649] url_sig: fix for crasher related to key index.

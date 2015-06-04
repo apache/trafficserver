@@ -347,11 +347,6 @@ SSLNetVConnection::read_raw_data()
     if (r <= 0) {
       if (r == -EAGAIN || r == -ENOTCONN) {
         NET_INCREMENT_DYN_STAT(net_calls_to_read_nodata_stat);
-        return r;
-      }
-
-      if (!r || r == -ECONNRESET) {
-        return r;
       }
       return r;
     }
@@ -959,7 +954,22 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
   if (BIO_eof(SSL_get_rbio(this->ssl))) { // No more data in the buffer
     // Read from socket to fill in the BIO buffer with the
     // raw handshake data before calling the ssl accept calls.
-    this->read_raw_data();
+    int retval = this->read_raw_data();
+    if (retval < 0) {
+      if (retval == -EAGAIN) {
+        // No data at the moment, hang tight
+        SSLDebugVC(this, "SSL handshake: EAGAIN");
+        return SSL_HANDSHAKE_WANT_READ;
+      } else {
+        // An error, make us go away
+        SSLDebugVC(this, "SSL handshake error: read_retval=%d", retval);
+        return EVENT_ERROR;
+      }
+    } else if (retval == 0) {
+      // EOF, go away, we stopped in the handshake
+      SSLDebugVC(this, "SSL handshake error: EOF");
+      return EVENT_ERROR;
+    }
   }
 
   ssl_error_t ssl_error = SSLAccept(ssl);
