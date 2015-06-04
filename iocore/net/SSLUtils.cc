@@ -132,7 +132,7 @@ static InkHashTable *ssl_cipher_name_table = NULL;
  */
 
 static void
-SSL_pthreads_thread_id(CRYPTO_THREADID* id)
+SSL_pthreads_thread_id(CRYPTO_THREADID *id)
 {
   CRYPTO_THREADID_set_numeric(id, (unsigned long)pthread_self());
 }
@@ -1220,7 +1220,7 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config &sslMu
   ats_scoped_str completeServerCertPath;
   SSL_CTX *ctx = SSLDefaultServerContext();
   EVP_MD_CTX digest;
-  STACK_OF(X509_NAME) * ca_list = NULL;
+  STACK_OF(X509_NAME) *ca_list = NULL;
   unsigned char hash_buf[EVP_MAX_MD_SIZE];
   unsigned int hash_len = 0;
   char const *setting_cert = sslMultCertSettings.cert.get();
