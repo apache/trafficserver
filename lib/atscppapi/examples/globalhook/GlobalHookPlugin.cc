@@ -19,24 +19,30 @@
 #include <iostream>
 #include <atscppapi/GlobalPlugin.h>
 #include <atscppapi/PluginInit.h>
-
+#include<../ts/Diags.h>
 using namespace atscppapi;
 
 class GlobalHookPlugin : public GlobalPlugin
 {
 public:
   GlobalHookPlugin() { registerHook(HOOK_READ_REQUEST_HEADERS_PRE_REMAP); }
-
+  
   virtual void
   handleReadRequestHeadersPreRemap(Transaction &transaction)
-  {
-    std::cout << "Hello from handleReadRequesHeadersPreRemap!" << std::endl;
-    transaction.resume();
+  {    
+    std::cout << "Hello from handleReadRequesHeadersPreRemap!" << std::endl;      
+    transaction.resume();       
   }
 };
 
 void
 TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
 {
+  TSPluginRegistrationInfo info;
+  std::cout << "Hello from " << argv[0] << std::endl;
+  info.plugin_name=const_cast<char*>("GH plugin1");
+  info.vendor_name=const_cast<char*>("GH plugin2");
+  info.support_email=const_cast<char*>("GH plugin3");
+  TSPluginRegister(TS_SDK_VERSION_3_0, &info);
   new GlobalHookPlugin();
 }
