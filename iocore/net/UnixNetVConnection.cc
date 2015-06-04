@@ -411,16 +411,14 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
     if (ret == EVENT_ERROR) {
       vc->write.triggered = 0;
       write_signal_error(nh, vc, err);
-    } else if (ret == SSL_HANDSHAKE_WANT_READ || ret == SSL_HANDSHAKE_WANT_ACCEPT || ret == SSL_HANDSHAKE_WANT_CONNECT ||
-               ret == SSL_HANDSHAKE_WANT_WRITE) {
+    } else if (ret == SSL_HANDSHAKE_WANT_READ || ret == SSL_HANDSHAKE_WANT_ACCEPT) {
       vc->read.triggered = 0;
       nh->read_ready_list.remove(vc);
+      read_reschedule(nh, vc);
+    } else if (ret == SSL_HANDSHAKE_WANT_CONNECT || ret == SSL_HANDSHAKE_WANT_WRITE) {
       vc->write.triggered = 0;
       nh->write_ready_list.remove(vc);
-      if (ret == SSL_HANDSHAKE_WANT_READ || ret == SSL_HANDSHAKE_WANT_ACCEPT)
-        read_reschedule(nh, vc);
-      else
-        write_reschedule(nh, vc);
+      write_reschedule(nh, vc);
     } else if (ret == EVENT_DONE) {
       vc->write.triggered = 1;
       if (vc->write.enabled)
