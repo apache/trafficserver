@@ -40,7 +40,7 @@ public:
     Url &request_url = transaction.getClientRequest().getUrl();
     TS_DEBUG(LOG_TAG, "from URL is [%s], to URL is [%s], request URL is [%s]", map_from_url.getUrlString().c_str(),
              map_to_url.getUrlString().c_str(), request_url.getUrlString().c_str());
-    const string &query = request_url.getQuery();
+    const string &query = request_url.getQuery();  
     string query_param_raw;
     map<string, string> query_params;
     std::istringstream iss(query);
@@ -84,7 +84,7 @@ public:
   }
 };
 
-TsReturnCode
+TSReturnCode //!@#
 TSRemapNewInstance(int argc ATSCPPAPI_UNUSED, char *argv[] ATSCPPAPI_UNUSED, void **instance_handle, char *errbuf ATSCPPAPI_UNUSED,
                    int errbuf_size ATSCPPAPI_UNUSED)
 {

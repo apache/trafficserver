@@ -96,8 +96,8 @@ Transaction::~Transaction()
   }
   delete state_;
 }
-//TSHttpTxnConfigIntSet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtInt value) !@#
-bool Transaction::configIntSet(TSOverridableConfigKey conf, int value) //!@#
+
+bool Transaction::configIntSet(TSOverridableConfigKey conf, int value) 
 {
     //txn,conf,value
     TSReturnCode res=TSHttpTxnConfigIntSet(state_->txn_,conf,(TSMgmtInt)value);
@@ -109,7 +109,7 @@ bool Transaction::configIntGet(TSOverridableConfigKey conf, int *value)
     return (res==TS_SUCCESS);
 }
 
-bool Transaction::configFloatSet(TSOverridableConfigKey conf, float value) //!@#
+bool Transaction::configFloatSet(TSOverridableConfigKey conf, float value) 
 {
     //txn,conf,value
     TSReturnCode res=TSHttpTxnConfigFloatSet(state_->txn_,conf,(TSMgmtFloat)value);
@@ -121,18 +121,22 @@ bool Transaction::configFloatGet(TSOverridableConfigKey conf, float *value)
     return (res==TS_SUCCESS);
 }
 
-bool Transaction::configStringSet(TSOverridableConfigKey conf, char* value,int length) //!@#
+bool Transaction::configStringSet(TSOverridableConfigKey conf, char* value,int length) 
 {
     //txn,conf,value
     TSReturnCode res=TSHttpTxnConfigStringSet(state_->txn_,conf,(TSMgmtString)value,length);
     return (res==TS_SUCCESS);
 }
-bool Transaction::configStringGet(TSOverridableConfigKey conf,const char** value, int* length) //!@#
+bool Transaction::configStringGet(TSOverridableConfigKey conf,const char** value, int* length) 
 {
     TSReturnCode res=TSHttpTxnConfigStringGet(state_->txn_, conf, value,length);
     return (res==TS_SUCCESS);
 }
-
+bool Transaction::configFind(const char *name, int length, TSOverridableConfigKey *conf, TSRecordDataType *type)
+{
+    TSReturnCode res=TSHttpTxnConfigFind(name,length,conf,type);
+    return (res==TS_SUCCESS);
+}
 void
 Transaction::resume()
 {
