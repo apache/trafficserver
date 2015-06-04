@@ -69,6 +69,10 @@ SpdyRequest::clear()
   SPDY_DECREMENT_THREAD_DYN_STAT(SPDY_STAT_CURRENT_CLIENT_STREAM_COUNT, spdy_sm->mutex->thread_holding);
 
   if (fetch_sm) {
+    // Clear the UserData just in case fetch_sm's
+    // death is delayed.  Don't want freed requests 
+    // showing up in callbacks
+    TSFetchUserDataSet(fetch_sm, NULL);
     TSFetchDestroy(fetch_sm);
     fetch_sm = NULL;
   }
@@ -322,11 +326,9 @@ spdy_process_fetch(TSEvent event, SpdyClientSession *sm, void *edata)
 {
   int ret = -1;
   TSFetchSM fetch_sm = (TSFetchSM)edata;
-  // Must use intptr_t here otherwise get compiler complaints about losing precision in the cast
-  intptr_t stream_id = (intptr_t)TSFetchUserDataGet(fetch_sm);
-  SpdyRequest *req = sm->find_request(stream_id);
+  SpdyRequest *req = (SpdyRequest *)TSFetchUserDataGet(fetch_sm);
   if (!req) {
-    Warning("spdy_process_fetch: stream_id=%d already gone", stream_id);
+    Warning("spdy_process_fetch: stream already gone");
     return ret;
   }
 

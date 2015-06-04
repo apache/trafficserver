@@ -188,7 +188,7 @@ spdy_fetcher_launch(SpdyRequest *req)
   fetch_flags |= TS_FETCH_FLAGS_NOT_INTERNAL_REQUEST;
 
   req->fetch_sm = TSFetchCreate((TSCont)sm, req->method.c_str(), url.c_str(), req->version.c_str(), client_addr, fetch_flags);
-  TSFetchUserDataSet(req->fetch_sm, (void *)req->stream_id);
+  TSFetchUserDataSet(req->fetch_sm, (void *)req);
 
   //
   // Set header list
