@@ -20,16 +20,23 @@
 #include <iostream>
 #include <atscppapi/GlobalPlugin.h>
 #include <atscppapi/PluginInit.h>
-
+#include <../../../../proxy/api/ts/ts.h>
 class HelloWorldPlugin : public atscppapi::GlobalPlugin
 {
 public:
-  HelloWorldPlugin() { std::cout << "Hello World!" << std::endl; }
+  HelloWorldPlugin() { 
+      std::cout << "Hello World!" << std::endl;
+  }
 };
 
 void
 TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
 {
+    TSPluginRegistrationInfo info;
   std::cout << "Hello from " << argv[0] << std::endl;
+  info.plugin_name=const_cast<char*>("Hello WOrld1");
+  info.vendor_name=const_cast<char*>("Hello WOrld2");
+  info.support_email=const_cast<char*>("Hello WOrld3");
+  TSPluginRegister(TS_SDK_VERSION_3_0, &info);
   new HelloWorldPlugin();
 }
