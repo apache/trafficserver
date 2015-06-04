@@ -70,7 +70,7 @@ SpdyRequest::clear()
 
   if (fetch_sm) {
     // Clear the UserData just in case fetch_sm's
-    // death is delayed.  Don't want freed requests 
+    // death is delayed.  Don't want freed requests
     // showing up in callbacks
     TSFetchUserDataSet(fetch_sm, NULL);
     TSFetchDestroy(fetch_sm);

@@ -75,7 +75,7 @@ static char debug_tags[1024] = "";
 static char action_tags[1024] = "";
 static bool proxy_off = false;
 
-static const char * mgmt_path = NULL;
+static const char *mgmt_path = NULL;
 
 // By default, set the current directory as base
 static const char *recs_conf = "records.config";
@@ -380,11 +380,10 @@ main(int argc, const char **argv)
 
   // Before accessing file system initialize Layout engine
   Layout::create();
-  mgmt_path =  Layout::get()->sysconfdir;
+  mgmt_path = Layout::get()->sysconfdir;
 
   // Set up the application version info
-  appVersionInfo.setup(PACKAGE_NAME,"traffic_manager", PACKAGE_VERSION,
-                       __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
+  appVersionInfo.setup(PACKAGE_NAME, "traffic_manager", PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
 
   bool found = false;
   int just_started = 0;
@@ -401,21 +400,21 @@ main(int argc, const char **argv)
   ink_thread webThrId;
 
   ArgumentDescription argument_descriptions[] = {
-    { "proxyOff", '-', "Disable proxy", "F", &proxy_off, NULL, NULL },
-    { "aconfPort", '-', "Autoconf port", "I", &aconf_port_arg, "MGMT_ACONF_PORT", NULL },
-    { "clusterMCPort", '-', "Cluster multicast port", "I", &cluster_mcport , "MGMT_CLUSTER_MC_PORT", NULL },
-    { "clusterRSPort", '-', "Cluster reliable service port", "I", &cluster_rsport , "MGMT_CLUSTER_RS_PORT", NULL },
-    { "groupAddr", '-', "Multicast group address", "S*", &group_addr, "MGMT_GROUP_ADDR", NULL },
-    { "path", '-', "Path to the management socket", "S*", &mgmt_path, NULL, NULL },
-    { "recordsConf", '-', "Path to records.config", "S*", &recs_conf, NULL, NULL },
-    { "tsArgs", '-', "Additional arguments for traffic_server", "S*", &tsArgs, NULL, NULL },
-    { "proxyPort", '-', "HTTP port descriptor", "S*", &proxy_port, NULL, NULL },
-    { "proxyBackDoor", '-', "Management port", "I", &proxy_backdoor, NULL, NULL },
+    {"proxyOff", '-', "Disable proxy", "F", &proxy_off, NULL, NULL},
+    {"aconfPort", '-', "Autoconf port", "I", &aconf_port_arg, "MGMT_ACONF_PORT", NULL},
+    {"clusterMCPort", '-', "Cluster multicast port", "I", &cluster_mcport, "MGMT_CLUSTER_MC_PORT", NULL},
+    {"clusterRSPort", '-', "Cluster reliable service port", "I", &cluster_rsport, "MGMT_CLUSTER_RS_PORT", NULL},
+    {"groupAddr", '-', "Multicast group address", "S*", &group_addr, "MGMT_GROUP_ADDR", NULL},
+    {"path", '-', "Path to the management socket", "S*", &mgmt_path, NULL, NULL},
+    {"recordsConf", '-', "Path to records.config", "S*", &recs_conf, NULL, NULL},
+    {"tsArgs", '-', "Additional arguments for traffic_server", "S*", &tsArgs, NULL, NULL},
+    {"proxyPort", '-', "HTTP port descriptor", "S*", &proxy_port, NULL, NULL},
+    {"proxyBackDoor", '-', "Management port", "I", &proxy_backdoor, NULL, NULL},
 #if TS_USE_DIAGS
-    { "debug", 'T', "Vertical-bar-separated Debug Tags", "S1023", debug_tags, NULL, NULL},
-    { "action", 'B', "Vertical-bar-separated Behavior Tags", "S1023", action_tags, NULL, NULL},
+    {"debug", 'T', "Vertical-bar-separated Debug Tags", "S1023", debug_tags, NULL, NULL},
+    {"action", 'B', "Vertical-bar-separated Behavior Tags", "S1023", action_tags, NULL, NULL},
 #endif
-    { "nosyslog", '-', "Do not log to syslog", "F", &disable_syslog, NULL, NULL },
+    {"nosyslog", '-', "Do not log to syslog", "F", &disable_syslog, NULL, NULL},
     HELP_ARGUMENT_DESCRIPTION(),
     VERSION_ARGUMENT_DESCRIPTION()
   };
