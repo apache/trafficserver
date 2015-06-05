@@ -959,13 +959,13 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
     int retval = this->read_raw_data();
     if (retval < 0) {
       if (retval == -EAGAIN) {
-         // No data at the moment, hang tight
-         SSLDebugVC(this, "SSL handshake: EAGAIN");
-         return SSL_HANDSHAKE_WANT_READ;
+        // No data at the moment, hang tight
+        SSLDebugVC(this, "SSL handshake: EAGAIN");
+        return SSL_HANDSHAKE_WANT_READ;
       } else {
-         // An error, make us go away
-         SSLDebugVC(this, "SSL handshake error: read_retval=%d", retval);
-         return EVENT_ERROR;
+        // An error, make us go away
+        SSLDebugVC(this, "SSL handshake error: read_retval=%d", retval);
+        return EVENT_ERROR;
       }
     } else if (retval == 0) {
       // EOF, go away, we stopped in the handshake
