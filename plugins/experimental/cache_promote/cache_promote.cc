@@ -383,27 +383,32 @@ cont_handle_policy(TSCont contp, TSEvent event, void *edata)
 {
   TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
   PromotionConfig *config = static_cast<PromotionConfig *>(TSContDataGet(contp));
-  int obj_status;
 
   switch (event) {
   // Main HOOK
   case TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE:
-    if (TS_ERROR != TSHttpTxnCacheLookupStatusGet(txnp, &obj_status)) {
-      switch (obj_status) {
-      case TS_CACHE_LOOKUP_MISS:
-      case TS_CACHE_LOOKUP_SKIPPED:
-        if (config->getPolicy()->doSample() && config->getPolicy()->doPromote(txnp)) {
-          TSDebug(PLUGIN_NAME, "cache-status is %d, and leaving cache on (promoted)", obj_status);
-        } else {
-          TSDebug(PLUGIN_NAME, "cache-status is %d, and turning off the cache (not promoted)", obj_status);
-          TSHttpTxnHookAdd(txnp, TS_HTTP_READ_RESPONSE_HDR_HOOK, contp);
+    if (TS_SUCCESS != TSHttpTxnIsInternal(txnp)) {
+      int obj_status;
+
+      if (TS_ERROR != TSHttpTxnCacheLookupStatusGet(txnp, &obj_status)) {
+        switch (obj_status) {
+        case TS_CACHE_LOOKUP_MISS:
+        case TS_CACHE_LOOKUP_SKIPPED:
+          if (config->getPolicy()->doSample() && config->getPolicy()->doPromote(txnp)) {
+            TSDebug(PLUGIN_NAME, "cache-status is %d, and leaving cache on (promoted)", obj_status);
+          } else {
+            TSDebug(PLUGIN_NAME, "cache-status is %d, and turning off the cache (not promoted)", obj_status);
+            TSHttpTxnHookAdd(txnp, TS_HTTP_READ_RESPONSE_HDR_HOOK, contp);
+          }
+          break;
+        default:
+          // Do nothing, just let it handle the lookup.
+          TSDebug(PLUGIN_NAME, "cache-status is %d (hit), nothing to do", obj_status);
+          break;
         }
-        break;
-      default:
-        // Do nothing, just let it handle the lookup.
-        TSDebug(PLUGIN_NAME, "cache-status is %d (hit), nothing to do", obj_status);
-        break;
       }
+    } else {
+      TSDebug(PLUGIN_NAME, "Request is an internal (plugin) request, implicitly promoted");
     }
     break;
 
