@@ -6625,17 +6625,6 @@ HttpSM::update_stats()
     os_read_time = -1;
   }
 
-// TS-2032: This code is never used, but leaving it here in case we want to add these
-// to the metrics code.
-#if 0
-  ink_hrtime cache_lookup_time;
-  if (milestones.cache_open_read_end != 0 && milestones.cache_open_read_begin != 0) {
-    cache_lookup_time = milestones.cache_open_read_end - milestones.cache_open_read_begin;
-  } else {
-    cache_lookup_time = -1;
-  }
-#endif
-
   HttpTransact::update_size_and_time_stats(
     &t_state, total_time, ua_write_time, os_read_time, client_request_hdr_bytes, client_request_body_bytes,
     client_response_hdr_bytes, client_response_body_bytes, server_request_hdr_bytes, server_request_body_bytes,
