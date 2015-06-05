@@ -30,7 +30,7 @@
 #include "atscppapi/shared_ptr.h"
 #include "atscppapi/ClientRequest.h"
 #include "atscppapi/Response.h"
-#include <../ts/apidefs.h> 
+#include <../ts/apidefs.h>
 namespace atscppapi
 {
 // forward declarations
@@ -320,15 +320,15 @@ public:
    * Redirect the transaction a different @a url.
    */
   void redirectTo(std::string const &url);
-  
-  bool configIntSet(TSOverridableConfigKey conf, int value);   
-  bool configIntGet(TSOverridableConfigKey conf, int* value);   
+
+  bool configIntSet(TSOverridableConfigKey conf, int value);
+  bool configIntGet(TSOverridableConfigKey conf, int* value);
   bool configFloatSet(TSOverridableConfigKey conf, float value);
   bool configFloatGet(TSOverridableConfigKey conf, float* value);
-  bool configStringSet(TSOverridableConfigKey conf, char* value,int length);
-  bool configStringGet(TSOverridableConfigKey conf,const char** value, int* length);
+  bool configStringSet(TSOverridableConfigKey conf, std::string value,int length);
+  bool configStringGet(TSOverridableConfigKey conf,std::string* value, int* length);
   bool configFind(const char *name, int length, TSOverridableConfigKey *conf, TSRecordDataType *type);
-  
+
 private:
   TransactionState *state_;          //!< The internal TransactionState object tied to the current Transaction
   friend class TransactionPlugin;    //!< TransactionPlugin is a friend so it can call addPlugin()

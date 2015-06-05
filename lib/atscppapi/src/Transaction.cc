@@ -25,7 +25,6 @@
 #include <cstring>
 #include <map>
 #include <string>
-//#include <ts/ts.h>
 #include <ink_memory.h>
 #include "atscppapi/shared_ptr.h"
 #include "logging_internal.h"
@@ -97,46 +96,42 @@ Transaction::~Transaction()
   delete state_;
 }
 
-bool Transaction::configIntSet(TSOverridableConfigKey conf, int value) 
+bool Transaction::configIntSet(TSOverridableConfigKey conf, int value)
 {
-    //txn,conf,value
-    TSReturnCode res=TSHttpTxnConfigIntSet(state_->txn_,conf,(TSMgmtInt)value);
-    return (res==TS_SUCCESS);
+    return (TS_SUCCESS==TSHttpTxnConfigIntSet(state_->txn_,conf,(TSMgmtInt)value));
 }
 bool Transaction::configIntGet(TSOverridableConfigKey conf, int *value)
 {
-    TSReturnCode res=TSHttpTxnConfigIntGet(state_->txn_, conf, (TSMgmtInt*)value);
-    return (res==TS_SUCCESS);
+    return (TS_SUCCESS==TSHttpTxnConfigIntGet(state_->txn_, conf, (TSMgmtInt*)value));
 }
 
-bool Transaction::configFloatSet(TSOverridableConfigKey conf, float value) 
+bool Transaction::configFloatSet(TSOverridableConfigKey conf, float value)
 {
-    //txn,conf,value
-    TSReturnCode res=TSHttpTxnConfigFloatSet(state_->txn_,conf,(TSMgmtFloat)value);
-    return (res==TS_SUCCESS);
+    return (TS_SUCCESS==TSHttpTxnConfigFloatSet(state_->txn_,conf,(TSMgmtFloat)value));
 }
+
 bool Transaction::configFloatGet(TSOverridableConfigKey conf, float *value)
 {
-    TSReturnCode res=TSHttpTxnConfigFloatGet(state_->txn_, conf, value);
-    return (res==TS_SUCCESS);
+    return (TS_SUCCESS==TSHttpTxnConfigFloatGet(state_->txn_, conf, value));
 }
 
-bool Transaction::configStringSet(TSOverridableConfigKey conf, char* value,int length) 
+bool Transaction::configStringSet(TSOverridableConfigKey conf, std::string value,int length)
 {
-    //txn,conf,value
-    TSReturnCode res=TSHttpTxnConfigStringSet(state_->txn_,conf,(TSMgmtString)value,length);
-    return (res==TS_SUCCESS);
+    return (TS_SUCCESS==TSHttpTxnConfigStringSet(state_->txn_,conf,(TSMgmtString)value.c_str(),length));
 }
-bool Transaction::configStringGet(TSOverridableConfigKey conf,const char** value, int* length) 
+
+bool Transaction::configStringGet(TSOverridableConfigKey conf,std::string* value, int* length)
 {
-    TSReturnCode res=TSHttpTxnConfigStringGet(state_->txn_, conf, value,length);
-    return (res==TS_SUCCESS);
+   const char* svalue;
+   svalue=value->c_str();
+   return (TS_SUCCESS==TSHttpTxnConfigStringGet(state_->txn_, conf, &svalue,length));
 }
+
 bool Transaction::configFind(const char *name, int length, TSOverridableConfigKey *conf, TSRecordDataType *type)
 {
-    TSReturnCode res=TSHttpTxnConfigFind(name,length,conf,type);
-    return (res==TS_SUCCESS);
+    return (TS_SUCCESS==TSHttpTxnConfigFind(name,length,conf,type));
 }
+
 void
 Transaction::resume()
 {

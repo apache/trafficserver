@@ -23,10 +23,8 @@
 #pragma once
 #ifndef ATSCPPAPI_PLUGININIT_H_
 #define ATSCPPAPI_PLUGININIT_H_
-
+#include <../ts/apidefs.h>
 #include <atscppapi/utils.h>
-#include<../ts/apidefs.h> 
-#include <../../../../proxy/api/ts/ts.h>
 extern "C" {
 
 /**
@@ -37,12 +35,6 @@ extern "C" {
  * @param argv Array of pointers pointing to arguments
  */
 void TSPluginInit(int argc, const char *argv[]);
-
-//enum TsReturnCode {
-//  TS_ERROR = -1,
-//  TS_SUCCESS = 0,
-//}; 
-
 /**
  * Invoked for remap plugins - listed in remap.config. The arguments provided as @pparam
  * in the remap.config line are provided in this invocation.
