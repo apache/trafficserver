@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-2032] Eliminate remnant code for milestone for cache-lookup times.
+   Author: John Rushford <John_Rushford@cable.comcast.com>
+
   *) [TS-3382] Add support for CRYPTO_THREADID to support openssl 1.1
 
   *) [TS-3378] SpdyRequest used after free()
