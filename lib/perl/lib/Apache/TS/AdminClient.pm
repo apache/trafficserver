@@ -615,13 +615,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.log.rolling_offset_hr
  proxy.config.log.rolling_size_mb
  proxy.config.log.sampling_frequency
- proxy.config.log.search_log_enabled
- proxy.config.log.search_log_filters
- proxy.config.log.search_rolling_interval_sec
- proxy.config.log.search_server_ip_addr
- proxy.config.log.search_server_port
- proxy.config.log.search_top_sites
- proxy.config.log.search_url_filter
  proxy.config.log.separate_host_logs
  proxy.config.log.separate_icp_logs
  proxy.config.log.space_used_frequency

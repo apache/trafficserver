@@ -204,16 +204,6 @@ public:
   bool auto_delete_rolled_files;
   bool custom_logs_enabled;
 
-  bool search_log_enabled;
-  int search_rolling_interval_sec;
-  unsigned int search_server_ip_addr;
-  int search_server_port;
-  int search_top_sites;
-  char *search_log_filters;
-  char *search_url_filter;
-  char *search_log_file_one;
-  char *search_log_file_two;
-
   int sampling_frequency;
   int file_stat_frequency;
   int space_used_frequency;
@@ -235,7 +225,7 @@ public:
   char *collation_secret;
 
 private:
-  void read_xml_log_config(int from_memory);
+  void read_xml_log_config();
   char **read_log_hosts_file(size_t *nhosts);
 
   void setup_default_values();
@@ -246,8 +236,6 @@ private:
                                       const char *filt_name = 0, bool force_extension = false);
   void create_predefined_objects_with_filter(const PreDefinedFormatList &pre_def_info_list, size_t nfilters, LogFilter **filters,
                                              const char *filt_name = 0, bool force_extension = false);
-
-  void add_filters_to_search_log_object(const char *format_name);
 
 private:
   // if true, use max_space_mb_for_orphan_logs to determine the amount
