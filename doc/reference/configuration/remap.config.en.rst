@@ -21,6 +21,8 @@ remap.config
 
 .. configfile:: remap.config
 
+.. include:: ../../common.defs
+
 .. toctree::
    :maxdepth: 2
 
