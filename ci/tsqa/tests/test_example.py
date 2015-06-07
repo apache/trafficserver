@@ -153,7 +153,6 @@ class TestLogs(helpers.EnvironmentCase):
             'proxy.config.diags.debug.tags': 'log-.*',
             'proxy.config.diags.debug.enabled': 1,
             'proxy.config.log.hostname': 'test',
-            'proxy.config.log.search_top_sites': 1,
         })
 
     def test_logs_exist(self):
