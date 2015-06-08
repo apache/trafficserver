@@ -313,7 +313,6 @@ typedef enum {
   TS_FNAME_SOCKS,           /* socks.config */
   TS_FNAME_SPLIT_DNS,       /* splitdns.config */
   TS_FNAME_STORAGE,         /* storage.config */
-  TS_FNAME_UPDATE_URL,      /* update.config */
   TS_FNAME_VADDRS,          /* vaddrs.config */
   TS_FNAME_VSCAN,           /* vscan.config */
   TS_FNAME_VS_TRUSTED_HOST, /* trusted-host.config */
@@ -354,10 +353,9 @@ typedef enum {
   TS_SOCKS_BYPASS, /* socks.config */
   TS_SOCKS_AUTH,
   TS_SOCKS_MULTIPLE,
-  TS_SPLIT_DNS,  /* splitdns.config */
-  TS_STORAGE,    /* storage.config */
-  TS_UPDATE_URL, /* update.config */
-  TS_VADDRS,     /* vaddrs.config */
+  TS_SPLIT_DNS, /* splitdns.config */
+  TS_STORAGE,   /* storage.config */
+  TS_VADDRS,    /* vaddrs.config */
   TS_TYPE_UNDEFINED,
   TS_TYPE_COMMENT /* for internal use only */
 } TSRuleTypeT;
@@ -678,16 +676,6 @@ typedef struct {
   int size;       /* size of the named pathname (in bytes); optional if raw disk partitions */
 } TSStorageEle;
 
-/* update.config */
-typedef struct {
-  TSCfgEle cfg_ele;
-  char *url;            /* url to update (HTTP based URLs) */
-  TSStringList headers; /* list of headers, separated by semicolons (can be NULL) */
-  int offset_hour;      /* offset hour to start update; must be 00-23 hrs  */
-  int interval;         /* in secs, frequency of updates starting at offset_hour */
-  int recursion_depth;  /* starting at given URL, the depth to which referenced URLs are recursively updated */
-} TSUpdateEle;
-
 /* vaddrs.config */
 typedef struct {
   TSCfgEle cfg_ele;
@@ -848,8 +836,6 @@ tsapi TSSplitDnsEle *TSSplitDnsEleCreate();
 tsapi void TSSplitDnsEleDestroy(TSSplitDnsEle *ele);
 tsapi TSStorageEle *TSStorageEleCreate();
 tsapi void TSStorageEleDestroy(TSStorageEle *ele);
-tsapi TSUpdateEle *TSUpdateEleCreate();
-tsapi void TSUpdateEleDestroy(TSUpdateEle *ele);
 tsapi TSVirtIpAddrEle *TSVirtIpAddrEleCreate();
 tsapi void TSVirtIpAddrEleDestroy(TSVirtIpAddrEle *ele);
 /*--- Ele helper operations -------------------------------------*/

@@ -897,9 +897,6 @@ fileUpdated(char *fname, bool incVersion)
   } else if (strcmp(fname, "icp.config") == 0) {
     lmgmt->signalFileChange("proxy.config.icp.icp_configuration");
 
-  } else if (strcmp(fname, "update.config") == 0) {
-    lmgmt->signalFileChange("proxy.config.update.update_configuration");
-
   } else if (strcmp(fname, "volume.config") == 0) {
     mgmt_log(stderr, "[fileUpdated] volume.config changed, need restart\n");
 

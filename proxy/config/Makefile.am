@@ -44,7 +44,6 @@ dist_sysconf_DATA =	\
   splitdns.config.default \
   ssl_multicert.config.default \
   stats.config.xml.default \
-  update.config.default \
   vaddrs.config.default
 
 install-exec-hook:

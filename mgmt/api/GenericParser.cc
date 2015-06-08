@@ -216,8 +216,6 @@ Rule::parse(const char *const_rule, TSFileNameT filetype)
     return splitdnsParse(rule);
   case TS_FNAME_STORAGE: /* storage.config */
     return storageParse(rule);
-  case TS_FNAME_UPDATE_URL: /* update.config */
-    return updateParse(rule);
   case TS_FNAME_VADDRS: /* vaddrs.config */
     return vaddrsParse(rule);
   default:
@@ -943,8 +941,6 @@ RuleList::parse(char *fileBuf, const char *filename)
     m_filetype = TS_FNAME_SOCKS; /* socks.config */
   } else if (strstr(filename, "splitdns.config")) {
     m_filetype = TS_FNAME_SPLIT_DNS; /* splitdns.config */
-  } else if (strstr(filename, "update.config")) {
-    m_filetype = TS_FNAME_UPDATE_URL; /* update.config */
   } else if (strstr(filename, "vaddrs.config")) {
     m_filetype = TS_FNAME_VADDRS; /* vaddrs.config */
   } else if (strstr(filename, "plugin.config")) {

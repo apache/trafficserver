@@ -493,32 +493,6 @@ private:
 };
 
 
-/* update.config       *******************************************/
-class UpdateObj : public CfgEleObj
-{
-public:
-  UpdateObj(TSUpdateEle *ele);
-  UpdateObj(TokenList *tokens);
-  ~UpdateObj();
-
-  virtual char *formatEleToRule();
-  virtual bool isValid();
-  virtual TSCfgEle *getCfgEleCopy();
-  virtual TSCfgEle *
-  getCfgEle()
-  {
-    return (TSCfgEle *)m_ele;
-  }
-  virtual TSRuleTypeT
-  getRuleType()
-  {
-    return m_ele->cfg_ele.type;
-  }
-
-private:
-  TSUpdateEle *m_ele;
-};
-
 /* vaddrs.config       *******************************************/
 class VirtIpAddrObj : public CfgEleObj
 {

@@ -700,35 +700,6 @@ sub show_remap {
 }
 
 
-# Command: show:scheduled-update
-#
-sub show_scheduled_update {
-  my $param = shift || "";
-
-  if ($param eq "") {
-    my $enabled = get_on_off("proxy.config.update.enabled");
-    my $retry_count = get_int("proxy.config.update.retry_count");
-    my $retry_interval = get_int("proxy.config.update.retry_interval");
-    my $concurrent_updates = get_int("proxy.config.update.concurrent_updates");
-    my $force = get_on_off("proxy.config.update.force");
-    
-    print <<__EOF
-Scheduled Update ------------- $enabled
-Update Error Retry Count ----- $retry_count
-Update Error Retry Interval -- $retry_interval s
-Maximum Concurrent Updates --- $concurrent_updates
-Force Immediate Update ------- $force
-__EOF
-  } elsif ($param eq "rules") {
-    print "update.config rules\n";
-    print "-------------------\n";
-    print_config("update.config");
-  } else {
-    param_die($param, "show:scheduled-update");
-  }
-}
-
-
 # Command: show:security
 #
 sub show_security {

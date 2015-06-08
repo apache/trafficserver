@@ -723,14 +723,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.udp.free_cancelled_pkts_sec
  proxy.config.udp.periodic_cleanup
  proxy.config.udp.send_retries
- proxy.config.update.concurrent_updates
- proxy.config.update.enabled
- proxy.config.update.force
- proxy.config.update.max_update_state_machines
- proxy.config.update.memory_use_mb
- proxy.config.update.retry_count
- proxy.config.update.retry_interval
- proxy.config.update.update_configuration
  proxy.config.url_remap.default_to_server_pac
  proxy.config.url_remap.default_to_server_pac_port
  proxy.config.url_remap.filename

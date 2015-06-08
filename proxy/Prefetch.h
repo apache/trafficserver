@@ -29,7 +29,6 @@
 
 #ifdef PREFETCH
 
-#include "Update.h"
 #include "api/ts/experimental.h"
 
 class BlasterUrlList;
