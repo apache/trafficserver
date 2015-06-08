@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-3368] Mark traffic_line as deprecated.
+
   *) [TS-3668] cache_promote: Make cache promotion explicit for internal
    requests. This helps when e.g. background_fetch is used together with this
    plugin.
