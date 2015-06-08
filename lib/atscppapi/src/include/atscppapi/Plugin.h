@@ -169,7 +169,7 @@ protected:
 extern const std::string HOOK_TYPE_STRINGS[];
 extern "C"
 {
-    extern void TSRegisterPlugin(std::string name, std::string vendor, std::string email);
+     void TSRegisterPlugin(std::string name, std::string vendor, std::string email);
 }
 
 } /* atscppapi */

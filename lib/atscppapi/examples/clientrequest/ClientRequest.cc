@@ -135,5 +135,6 @@ public:
 void
 TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
 {
+  atscppapi::TSRegisterPlugin( std::string("CPP_Example_ClientRequest"),  std::string("apache"),  std::string("info@example.com"));
   new GlobalHookPlugin();
 }

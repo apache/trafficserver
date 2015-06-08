@@ -115,21 +115,27 @@ bool Transaction::configFloatGet(TSOverridableConfigKey conf, float *value)
     return (TS_SUCCESS==TSHttpTxnConfigFloatGet(state_->txn_, conf, value));
 }
 
-bool Transaction::configStringSet(TSOverridableConfigKey conf, std::string value,int length)
+bool Transaction::configStringSet(TSOverridableConfigKey conf, std::string const& value,int length)
 {
     return (TS_SUCCESS==TSHttpTxnConfigStringSet(state_->txn_,conf,(TSMgmtString)value.c_str(),length));
 }
 
-bool Transaction::configStringGet(TSOverridableConfigKey conf,std::string* value, int* length)
+bool Transaction::configStringGet(TSOverridableConfigKey conf,std::string& value, int* length)
 {
    const char* svalue;
-   svalue=value->c_str();
-   return (TS_SUCCESS==TSHttpTxnConfigStringGet(state_->txn_, conf, &svalue,length));
+   TSReturnCode res=TSHttpTxnConfigStringGet(state_->txn_, conf, &svalue,length);
+   if(res==TS_SUCCESS)
+   {
+      value.assign(svalue);
+      return true;
+   }
+   else
+       return false;
 }
 
-bool Transaction::configFind(const char *name, int length, TSOverridableConfigKey *conf, TSRecordDataType *type)
+bool Transaction::configFind(std::string const& name, int length, TSOverridableConfigKey *conf, TSRecordDataType *type)
 {
-    return (TS_SUCCESS==TSHttpTxnConfigFind(name,length,conf,type));
+    return (TS_SUCCESS==TSHttpTxnConfigFind(name.c_str(),length,conf,type));
 }
 
 void
