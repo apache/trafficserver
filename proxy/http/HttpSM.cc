@@ -6648,7 +6648,7 @@ HttpSM::update_stats()
 
 
   // print slow requests if the threshold is set (> 0) and if we are over the time threshold
-   if (t_state.txn_conf->slow_log_threshold != 0 && ink_hrtime_from_msec(t_state.txn_conf->slow_log_threshold) < total_time) {
+  if (t_state.txn_conf->slow_log_threshold != 0 && ink_hrtime_from_msec(t_state.txn_conf->slow_log_threshold) < total_time) {
     URL *url = t_state.hdr_info.client_request.url_get();
     char url_string[256] = "";
     int offset = 0;
