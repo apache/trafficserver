@@ -140,11 +140,11 @@ The following list shows the possible actions and their allowed values.
        turn. For example: machine ``proxy1`` serves the first request,
        ``proxy2`` serves the second request, and so on.
     -  ``false`` - Round robin selection does not occur.
-    -  ``consistent_hash`` - consistent hash of the url so that one parent 
-       is chosen for a given url. If a parent is down, the traffic that 
+    -  ``consistent_hash`` - consistent hash of the url so that one parent
+       is chosen for a given url. If a parent is down, the traffic that
        would go to the down parent is rehashed amongst the remaining parents.
-       The other traffic is unaffected. Once the downed parent becomes 
-       available, the traffic distribution returns to the pre-down 
+       The other traffic is unaffected. Once the downed parent becomes
+       available, the traffic distribution returns to the pre-down
        state.
 
 .. _parent-config-format-go-direct:
