@@ -19,19 +19,17 @@
 #include <iostream>
 #include <atscppapi/GlobalPlugin.h>
 #include <atscppapi/PluginInit.h>
-
 using namespace atscppapi;
-using namespace std;
 class GlobalHookPlugin : public GlobalPlugin
 {
 public:
   GlobalHookPlugin() { registerHook(HOOK_READ_REQUEST_HEADERS_PRE_REMAP); }
-
+  
   virtual void
   handleReadRequestHeadersPreRemap(Transaction &transaction)
-  {
-    std::cout << "Hello from handleReadRequesHeadersPreRemap!" << std::endl;
-    transaction.resume();
+  {    
+    std::cout << "Hello from handleReadRequesHeadersPreRemap!" << std::endl;      
+    transaction.resume();       
   }
 };
 
