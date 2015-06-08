@@ -170,8 +170,6 @@ traffic_server_SOURCES = \
   Plugin.h \
   PluginVC.cc \
   PluginVC.h \
-  Prefetch.cc \
-  Prefetch.h \
   ProtocolProbeSessionAccept.cc \
   ProtocolProbeSessionAccept.h \
   ProxyClientSession.cc \
@@ -292,7 +290,6 @@ traffic_sac_SOURCES = \
   PluginVC.cc \
   AbstractBuffer.cc \
   Transform.cc \
-  Prefetch.cc \
   ProtocolProbeSessionAccept.cc \
   ProtocolProbeSessionAccept.h \
   ProxyClientSession.cc \
