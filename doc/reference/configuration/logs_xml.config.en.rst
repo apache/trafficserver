@@ -54,7 +54,7 @@ The following list shows ``LogFormat`` specifications.
     Required
     Valid format names include any name except ``squid``, ``common``,
     ``extended``, or ``extended2``, which are pre-defined formats. There
-    is no default for this tag.
+    is no default for this tag. The format object needs to be above the the LogObject object.
 
 .. _LogFormat-Format:
 
