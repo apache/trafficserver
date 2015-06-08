@@ -308,7 +308,8 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   TSMgmtError status;
 
   // build the application information structure
-  appVersionInfo.setup(PACKAGE_NAME, "traffic_line", PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
+  appVersionInfo.setup(PACKAGE_NAME, "traffic_line [DEPRECATED]", PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON,
+                       "");
 
   program_name = appVersionInfo.AppStr;
 
