@@ -19,6 +19,12 @@
 traffic_line
 ============
 
+.. note::
+
+   This utility is deprecated as of v6.0.0, and replaced with
+   :program:`traffic_ctl`. You should change your tools / scripts to use this
+   new application instead.
+
 Synopsis
 ========
 
