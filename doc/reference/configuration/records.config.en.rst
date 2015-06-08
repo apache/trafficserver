@@ -1756,7 +1756,7 @@ hostname to ``host_x.y.com``.
 HostDB
 ======
 
-.. ts:cv:: CONFIG proxy.config.hostdb.lookup_timeout INT 120
+.. ts:cv:: CONFIG proxy.config.hostdb.lookup_timeout INT 30
    :metric: seconds
    :reloadable:
 
