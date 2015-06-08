@@ -1123,9 +1123,7 @@ sync_cache_dir_on_shutdown(void)
       ats_free_hugepage(buf, buflen);
     else
       ats_memalign_free(buf);
-    buflen = 0;
     buf = NULL;
-    buf_huge = false;
   }
 }
 
