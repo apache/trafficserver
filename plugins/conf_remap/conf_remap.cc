@@ -312,7 +312,6 @@ TSRemapDeleteInstance(void *ih)
 TSRemapStatus
 TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo * /* rri ATS_UNUSED */)
 {
-
   if (NULL != ih) {
     RemapConfigs *conf = static_cast<RemapConfigs *>(ih);
     TSHttpTxn txnp = static_cast<TSHttpTxn>(rh);

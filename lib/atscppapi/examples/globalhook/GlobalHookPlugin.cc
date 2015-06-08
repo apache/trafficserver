@@ -24,12 +24,12 @@ class GlobalHookPlugin : public GlobalPlugin
 {
 public:
   GlobalHookPlugin() { registerHook(HOOK_READ_REQUEST_HEADERS_PRE_REMAP); }
-  
+
   virtual void
   handleReadRequestHeadersPreRemap(Transaction &transaction)
-  {    
-    std::cout << "Hello from handleReadRequesHeadersPreRemap!" << std::endl;      
-    transaction.resume();       
+  {
+    std::cout << "Hello from handleReadRequesHeadersPreRemap!" << std::endl;
+    transaction.resume();
   }
 };
 
@@ -37,6 +37,6 @@ void
 TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
 {
   atscppapi::TSRegisterPlugin( std::string("CPP_Example_GlobalHookPplugin"),  std::string("apache"),  std::string("info@example.com"));
-  std::cout << "Hello from " << argv[0] << std::endl;  
+  std::cout << "Hello from " << argv[0] << std::endl;
   new GlobalHookPlugin();
 }
