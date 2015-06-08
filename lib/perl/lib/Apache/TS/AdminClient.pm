@@ -645,18 +645,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.ping.npacks_to_trans
  proxy.config.ping.timeout_sec
  proxy.config.plugin.plugin_dir
- proxy.config.prefetch.child_port
- proxy.config.prefetch.config_file
- proxy.config.prefetch.default_data_proto
- proxy.config.prefetch.default_url_proto
- proxy.config.prefetch.keepalive_timeout
- proxy.config.prefetch.max_object_size
- proxy.config.prefetch.max_recursion
- proxy.config.prefetch.prefetch_enabled
- proxy.config.prefetch.push_cached_objects
- proxy.config.prefetch.redirection
- proxy.config.prefetch.url_buffer_size
- proxy.config.prefetch.url_buffer_timeout
  proxy.config.process_manager.enable_mgmt_port
  proxy.config.process_manager.mgmt_port
  proxy.config.process_manager.timeout

@@ -83,6 +83,5 @@ ssl_sni_whitelist_la_SOURCES = ssl-sni-whitelist/ssl-sni-whitelist.cc
 
 # The following examples do not build:
 #
-# prefetch_eg1_la_SOURCES = prefetch/prefetch-plugin-eg1.c
 # redirect_1_la_SOURCES = redirect-1/redirect-1.c
 # session_1_la_SOURCES = session-1/session-1.c
