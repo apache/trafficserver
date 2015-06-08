@@ -71,6 +71,7 @@ public:
 void
 TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
 {
+  atscppapi::TSRegisterPlugin( std::string("CPP_Example_InternalTransactionHandling"),  std::string("apache"),  std::string("info@example.com"));
   TS_DEBUG(TAG, "Loaded async_http_fetch_example plugin");
   new AllTransactionsGlobalPlugin();
   new NoInternalTransactionsGlobalPlugin();

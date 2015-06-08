@@ -19,9 +19,7 @@
 #include <iostream>
 #include <atscppapi/GlobalPlugin.h>
 #include <atscppapi/PluginInit.h>
-
 using namespace atscppapi;
-
 class GlobalHookPlugin : public GlobalPlugin
 {
 public:
@@ -38,5 +36,7 @@ public:
 void
 TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
 {
+  atscppapi::TSRegisterPlugin( std::string("CPP_Example_GlobalHookPplugin"),  std::string("apache"),  std::string("info@example.com"));
+  std::cout << "Hello from " << argv[0] << std::endl;
   new GlobalHookPlugin();
 }

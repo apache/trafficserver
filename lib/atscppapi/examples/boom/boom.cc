@@ -415,6 +415,7 @@ BoomGlobalPlugin::handleReadResponseHeaders(Transaction &transaction)
 void
 TSPluginInit(int argc, const char *argv[])
 {
+  atscppapi::TSRegisterPlugin( std::string("CPP_Example_Boom"),  std::string("apache"),  std::string("info@example.com"));
   boom_counter.init(BOOM_COUNTER);
   BoomResponseRegistry *pregistry = new BoomResponseRegistry();
 
