@@ -1931,6 +1931,7 @@ AS_IF([test "x$enable_experimental_plugins" = "xyes"], [
     plugins/experimental/background_fetch/Makefile
     plugins/experimental/balancer/Makefile
     plugins/experimental/buffer_upload/Makefile
+    plugins/experimental/cache_range_requests/Makefile
     plugins/experimental/channel_stats/Makefile
     plugins/experimental/cache_promote/Makefile
     plugins/experimental/collapsed_connection/Makefile
