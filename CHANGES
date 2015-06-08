@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-3122] Add support for hugepages on Linux.
+
   *) [TS-2032] Eliminate remnant code for milestone for cache-lookup times.
    Author: John Rushford <John_Rushford@cable.comcast.com>
 

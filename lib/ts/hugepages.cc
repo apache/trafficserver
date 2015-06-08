@@ -25,6 +25,8 @@
 #include "ink_align.h"
 
 #define DEBUG_TAG "hugepages"
+
+#ifdef MAP_HUGETLB
 #define MEMINFO_PATH "/proc/meminfo"
 #define LINE_SIZE 256
 #define TOKEN "Hugepagesize:"
@@ -32,6 +34,7 @@
 
 static int hugepage_size = -1;
 static bool hugepage_enabled;
+#endif
 
 size_t
 ats_hugepage_size(void)
