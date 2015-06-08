@@ -47,3 +47,7 @@ endif
 if BUILD_LUAJIT
   SUBDIRS += ts_lua
 endif
+
+if HAS_PSOL
+    SUBDIRS += ats_pagespeed
+endif

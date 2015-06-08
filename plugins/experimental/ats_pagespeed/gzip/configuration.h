@@ -35,7 +35,6 @@ class HostConfiguration
 {
 public: // todo -> only configuration should be able to construct hostconfig
   explicit HostConfiguration(const std::string &host) : host_(host), enabled_(true), cache_(true), remove_accept_encoding_(false) {}
-
   inline bool
   enabled()
   {

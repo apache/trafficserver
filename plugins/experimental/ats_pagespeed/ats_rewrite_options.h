@@ -71,7 +71,6 @@ public:
 
   AtsRewriteOptions(ThreadSystem *thread_system);
   virtual ~AtsRewriteOptions() {}
-
   const char *ParseAndSetOptions(std::vector<std::string> args, MessageHandler *handler, global_settings &global_config);
 
   virtual AtsRewriteOptions *Clone() const;

@@ -899,8 +899,7 @@ transform_plugin(TSCont contp, TSEvent event, void *edata)
     if (ctx != NULL) {
       bool is_owned = TSHttpTxnArgGet(txn, TXN_INDEX_OWNED_ARG) == &TXN_INDEX_OWNED_ARG_SET
                       // TODO(oschaaf): rewrite this.
-                      &&
-                      !ctx->serve_in_place;
+                      && !ctx->serve_in_place;
       if (is_owned) {
         ats_ctx_destroy(ctx);
       }

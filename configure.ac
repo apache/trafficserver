@@ -1941,9 +1941,34 @@ AC_CHECK_LIB([mysqlclient],[mysql_info],[AC_SUBST([LIB_MYSQLCLIENT],["-lmysqlcli
 AC_SUBST(has_mysql)
 AM_CONDITIONAL([HAS_MYSQL], [ test "x${has_mysql}" = "x1" ])
 
+AS_IF([test "x${host_os_def}" = "xlinux"], [
+    AC_SUBST([ATS_PAGESPEED_OS], ["linux"])
+  ], [
+    AC_SUBST([ATS_PAGESPEED_OS], ["unknown_os"])
+])
+AS_IF([test "x${host_cpu}" = "xx86_64" -o "x${host_cpu}" = "xamd64"], [
+    AC_SUBST([ATS_PAGESPEED_ARCH], ["x64"])
+  ], [
+    AC_SUBST([ATS_PAGESPEED_ARCH], ["ia32"])
+])
+# Configure path to Google PageSpeed Optimization Libraries home (PSOL)
+AC_MSG_CHECKING([for psol])
+AC_ARG_WITH([psol],
+  [AC_HELP_STRING([--with-psol=DIR], [path to PageSpeed Optimization Libraries home])],
+  [
+  PSOL_HOME="${withval}"
+  AM_CONDITIONAL([HAS_PSOL], true )
+  AC_MSG_RESULT("${withval}")
+  ], [
+  AM_CONDITIONAL([HAS_PSOL], false )
+  AC_MSG_RESULT(no)
+  ])
+AC_SUBST(PSOL_HOME)
+
 AS_IF([test "x$enable_experimental_plugins" = xyes], [  
   AC_CONFIG_FILES([
     plugins/experimental/Makefile
+    plugins/experimental/ats_pagespeed/Makefile
     plugins/experimental/authproxy/Makefile
     plugins/experimental/background_fetch/Makefile
     plugins/experimental/balancer/Makefile
