@@ -1352,37 +1352,6 @@ TSStorageEleDestroy(TSStorageEle *ele)
 }
 
 /*-------------------------------------------------------------
- * TSUpdateEle
- *-------------------------------------------------------------*/
-TSUpdateEle *
-TSUpdateEleCreate()
-{
-  TSUpdateEle *ele = (TSUpdateEle *)ats_malloc(sizeof(TSUpdateEle));
-
-  ele->cfg_ele.type = TS_UPDATE_URL;
-  ele->cfg_ele.error = TS_ERR_OKAY;
-  ele->url = NULL;
-  ele->headers = TS_INVALID_LIST;
-  ele->offset_hour = -1;
-  ele->interval = -1;
-  ele->recursion_depth = 0;
-
-  return ele;
-}
-
-void
-TSUpdateEleDestroy(TSUpdateEle *ele)
-{
-  if (ele) {
-    ats_free(ele->url);
-    if (ele->headers)
-      TSStringListDestroy(ele->headers);
-    ats_free(ele);
-  }
-  return;
-}
-
-/*-------------------------------------------------------------
  * TSVirtIpAddrEle
  *-------------------------------------------------------------*/
 TSVirtIpAddrEle *

@@ -152,7 +152,6 @@ public:
   int64_t m_done;
 };
 
-#define PREFETCH
 #ifdef PREFETCH
 class PrefetchProcessor
 {

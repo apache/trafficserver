@@ -759,20 +759,6 @@ print_storage_ele(TSStorageEle *ele)
 }
 
 void
-print_update_ele(TSUpdateEle *ele)
-{
-  if (!ele) {
-    printf("can't print ele\n");
-    return;
-  }
-
-  printf("url: %s\n", ele->url);
-  printf("headers: ");
-  print_string_list(ele->headers);
-  printf("%d: %d: %d\n", ele->offset_hour, ele->interval, ele->recursion_depth);
-}
-
-void
 print_vaddrs_ele(TSVirtIpAddrEle *ele)
 {
   if (!ele) {
@@ -840,9 +826,6 @@ print_ele_list(TSFileNameT file, TSCfgContext ctx)
       break;
     case TS_FNAME_STORAGE:
       print_storage_ele((TSStorageEle *)ele);
-      break;
-    case TS_FNAME_UPDATE_URL:
-      print_update_ele((TSUpdateEle *)ele);
       break;
     case TS_FNAME_VADDRS:
       print_vaddrs_ele((TSVirtIpAddrEle *)ele);
@@ -1548,8 +1531,6 @@ test_cfg_context_get(char *args)
     file = TS_FNAME_STORAGE;
   } else if (strcmp(name, "splitdns.config") == 0) {
     file = TS_FNAME_SPLIT_DNS;
-  } else if (strcmp(name, "update.config") == 0) {
-    file = TS_FNAME_UPDATE_URL;
   } else if (strcmp(name, "vaddrs.config") == 0) {
     file = TS_FNAME_VADDRS;
   } else {
@@ -1617,8 +1598,6 @@ test_cfg_context_move(char *args)
     file = TS_FNAME_STORAGE;
   } else if (strcmp(name, "splitdns.config") == 0) {
     file = TS_FNAME_SPLIT_DNS;
-  } else if (strcmp(name, "update.config") == 0) {
-    file = TS_FNAME_UPDATE_URL;
   } else if (strcmp(name, "vaddrs.config") == 0) {
     file = TS_FNAME_VADDRS;
   } else {

@@ -2659,40 +2659,6 @@ SPDY Configuration
    .. note:: Reloading this value affects only new SPDY connections, not the
 	     ones already established..
 
-Scheduled Update Configuration
-==============================
-
-.. ts:cv:: CONFIG proxy.config.update.enabled INT 0
-
-   Enables (``1``) or disables (``0``) the Scheduled Update option.
-
-.. ts:cv:: CONFIG proxy.config.update.force INT 0
-   :reloadable:
-
-   Enables (``1``) or disables (``0``) a force immediate update. When
-   enabled, Traffic Server overrides the scheduling expiration time for
-   all scheduled update entries and initiates updates until this option
-   is disabled.
-
-.. ts:cv:: CONFIG proxy.config.update.retry_count INT 10
-   :reloadable:
-
-   Specifies the number of times Traffic Server can retry the scheduled
-   update of a URL in the event of failure.
-
-.. ts:cv:: CONFIG proxy.config.update.retry_interval INT 2
-   :reloadable:
-
-   Specifies the delay (in seconds) between each scheduled update retry
-   for a URL in the event of failure.
-
-.. ts:cv:: CONFIG proxy.config.update.concurrent_updates INT 100
-   :reloadable:
-
-   Specifies the maximum simultaneous update requests allowed at any
-   time. This option prevents the scheduled update process from
-   overburdening the host.
-
 Plug-in Configuration
 =====================
 

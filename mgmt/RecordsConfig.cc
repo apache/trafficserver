@@ -1400,26 +1400,6 @@ static const RecordElement RecordsConfig[] =
   ,
 
   //##############################################################################
-  //# Scheduled Update Configuration
-  //##############################################################################
-  {RECT_CONFIG, "proxy.config.update.enabled", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.update.update_configuration", RECD_STRING, "update.config", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.update.force", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.update.retry_count", RECD_INT, "10", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.update.retry_interval", RECD_INT, "2", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.update.concurrent_updates", RECD_INT, "100", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.update.max_update_state_machines", RECD_INT, "500", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.update.memory_use_mb", RECD_INT, "50", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
-
-  //##############################################################################
   //# Plug-in Configuration
   //##############################################################################
   //# Directory in which to find plugins

@@ -185,9 +185,7 @@ traffic_server_SOURCES = \
   StatSystem.h \
   Transform.cc \
   Transform.h \
-  TransformInternal.h \
-  Update.cc \
-  Update.h
+  TransformInternal.h
 
 if BUILD_TESTS
 traffic_server_SOURCES +=  \
@@ -299,7 +297,6 @@ traffic_sac_SOURCES = \
   ProtocolProbeSessionAccept.h \
   ProxyClientSession.cc \
   ProxyClientSession.h \
-  Update.cc \
   Plugin.cc \
   InkAPI.cc \
   FetchSM.cc \

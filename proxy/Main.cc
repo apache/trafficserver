@@ -84,7 +84,6 @@ extern "C" int plock(int);
 #include "Plugin.h"
 #include "DiagsConfig.h"
 #include "CoreUtils.h"
-#include "Update.h"
 #include "congest/Congestion.h"
 #include "RemapProcessor.h"
 #include "I_Tasks.h"
@@ -1788,11 +1787,6 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     if (netProcessor.socks_conf_stuff->accept_enabled) {
       start_SocksProxy(netProcessor.socks_conf_stuff->accept_port);
     }
-
-    ///////////////////////////////////////////
-    // Initialize Scheduled Update subsystem
-    ///////////////////////////////////////////
-    updateManager.start();
 
     pmgmt->registerMgmtCallback(MGMT_EVENT_SHUTDOWN, mgmt_restart_shutdown_callback, NULL);
     pmgmt->registerMgmtCallback(MGMT_EVENT_RESTART, mgmt_restart_shutdown_callback, NULL);
