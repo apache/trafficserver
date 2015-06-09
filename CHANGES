@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.1
 
+  *) [TS-3665] Redirect logic causing debug asserts.
+
   *) [TS-3661] keep cache_sm active during 3xx redirect follow to allow
    for caching the final response.
 
