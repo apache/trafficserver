@@ -164,7 +164,7 @@ static void
 handle_client_send_response(TSHttpTxn txnp)
 {
   bool partial_content_reason = false;
-  char *p, *reason;
+  char *p;
   int length;
   TSMBuffer response;
   TSMLoc resp_hdr;
@@ -177,13 +177,11 @@ handle_client_send_response(TSHttpTxn txnp)
     TSHttpStatus status = TSHttpHdrStatusGet(response, resp_hdr);
     // a cached result will have a TS_HTTP_OK with a 'Partial Content' reason
     if ((p = (char *)TSHttpHdrReasonGet(response, resp_hdr, &length)) != NULL) {
-      reason = TSstrndup(p, length + 1);
-      reason[length] = '\0';
-      if (strncasecmp(reason, "Partial Content", length) == 0) {
+      if ((length == 15) && (0 == strncasecmp(p, "Partial Content", length))) {
         partial_content_reason = true;
       }
     }
-    TSDebug(PLUGIN_NAME, "status %d %s", status, reason);
+    TSDebug(PLUGIN_NAME, "status %d %.*s", status, length, p);
     if (TS_HTTP_STATUS_OK == status && partial_content_reason) {
       TSDebug(PLUGIN_NAME, "handle_client_send_response (): Got TS_HTTP_STATUS_OK.");
       TSHttpHdrStatusSet(response, resp_hdr, TS_HTTP_STATUS_PARTIAL_CONTENT);
@@ -191,7 +189,6 @@ handle_client_send_response(TSHttpTxn txnp)
     }
   }
   TSHandleMLocRelease(response, resp_hdr, NULL);
-  TSfree(reason);
   TSDebug(PLUGIN_NAME, "End of handle_client_send_response ()");
 }
 

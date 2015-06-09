@@ -3152,8 +3152,7 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer *c)
   if (close_connection) {
     // If the client could be pipelining, we need to set the ua_session into half close mode
 
-    if (t_state.client_info.pipeline_possible == true && c->producer->vc_type != HT_STATIC &&
-        event == VC_EVENT_WRITE_COMPLETE) {
+    if (t_state.client_info.pipeline_possible == true && c->producer->vc_type != HT_STATIC && event == VC_EVENT_WRITE_COMPLETE) {
       ua_session->set_half_close_flag();
     }
 
