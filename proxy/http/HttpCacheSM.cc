@@ -106,7 +106,11 @@ HttpCacheSM::state_cache_open_read(int event, void *data)
   switch (event) {
   case CACHE_EVENT_OPEN_READ:
     HTTP_INCREMENT_DYN_STAT(http_current_cache_connections_stat);
-    ink_assert(cache_read_vc == NULL);
+    ink_assert((cache_read_vc == NULL) || master_sm->t_state.redirect_info.redirect_in_process);
+    if (cache_read_vc) {
+      // redirect follow in progress, close the previous cache_read_vc
+      close_read();
+    }
     open_read_cb = true;
     cache_read_vc = (CacheVConnection *)data;
     master_sm->handleEvent(event, data);
@@ -267,7 +271,7 @@ HttpCacheSM::open_write(URL *url, HTTPHdr *request, CacheHTTPInfo *old_info, tim
 {
   SET_HANDLER(&HttpCacheSM::state_cache_open_write);
   ink_assert(pending_action == NULL);
-  ink_assert(cache_write_vc == NULL);
+  ink_assert((cache_write_vc == NULL) || master_sm->t_state.redirect_info.redirect_in_process);
   // INKqa12119
   open_write_cb = false;
   open_write_tries++;
