@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-3167] Eliminate the prefetch feature, although leave the code
+   ifdef'ed out.
+
   *) [TS-3634] Replace auto_ptr with ats_scoped_object.
 
   *) [TS-3543] Remove update.config and related features, this also disables
