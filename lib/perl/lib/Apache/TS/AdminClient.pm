@@ -709,7 +709,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.url_remap.filename
  proxy.config.url_remap.pristine_host_hdr
  proxy.config.url_remap.remap_required
- proxy.config.user_name
  proxy.config.vmap.addr_file
  proxy.config.vmap.down_up_timeout
  proxy.config.vmap.enabled
