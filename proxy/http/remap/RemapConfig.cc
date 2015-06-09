@@ -28,6 +28,7 @@
 #include "HTTP.h"
 #include "libts.h"
 #include "ink_cap.h"
+#include "ink_file.h"
 
 #define modulePrefix "[ReverseProxy]"
 
@@ -235,6 +236,51 @@ parse_deactivate_directive(const char *directive, BUILD_TABLE_INFO *bti, char *e
   return NULL;
 }
 
+static void
+free_directory_list(int n_entries, struct dirent **entrylist)
+{
+  for (int i = 0; i < n_entries; ++i) {
+    free(entrylist[i]);
+  }
+
+  free(entrylist);
+}
+
+static const char *
+parse_remap_fragment(const char *path, BUILD_TABLE_INFO *bti, char *errbuf, size_t errbufsize)
+{
+  // We need to create a new bti so that we don't clobber any state in the parent parse, but we want
+  // to keep the ACL rules from the parent because ACLs must be global across the full set of config
+  // files.
+  BUILD_TABLE_INFO nbti;
+  bool success;
+
+  if (access(path, R_OK) == -1) {
+    snprintf(errbuf, errbufsize, "%s: %s", path, strerror(errno));
+    return (const char *)errbuf;
+  }
+
+  nbti.rules_list = bti->rules_list;
+  nbti.rewrite = bti->rewrite;
+
+  // XXX at this point, we need to register the included file(s) with the management subsystem
+  // so that we can correctly reload them when they change. Otherwise, the operator will have to
+  // touch remap.config before reloading the configuration.
+
+  Debug("url_rewrite", "[%s] including remap configuration from %s", __func__, (const char *)path);
+  success = remap_parse_config_bti(path, &nbti);
+
+  // The sub-parse might have updated the rules list, so push it up to the parent parse.
+  bti->rules_list = nbti.rules_list;
+
+  if (!success) {
+    snprintf(errbuf, errbufsize, "failed to parse included file %s", path);
+    return (const char *)errbuf;
+  }
+
+  return NULL;
+}
+
 static const char *
 parse_include_directive(const char *directive, BUILD_TABLE_INFO *bti, char *errbuf, size_t errbufsize)
 {
@@ -245,38 +291,49 @@ parse_include_directive(const char *directive, BUILD_TABLE_INFO *bti, char *errb
   }
 
   for (unsigned i = 1; i < (unsigned)bti->paramc; ++i) {
-    // We need to create a new bti so that we don't clobber any state in the parent parse, but we want
-    // to keep the ACL rules from the parent because ACLs must be global across the full set of config
-    // files.
-    BUILD_TABLE_INFO nbti;
     ats_scoped_str path;
-    bool success;
+    const char *errmsg = NULL;
 
     // The included path is relative to SYSCONFDIR, just like remap.config is.
     path = RecConfigReadConfigPath(NULL, bti->paramv[i]);
 
-    // XXX including directories is not supported (yet!).
     if (ink_file_is_directory(path)) {
-      snprintf(errbuf, errbufsize, "included path %s is a directory", bti->paramv[i]);
-      return (const char *)errbuf;
+      struct dirent **entrylist;
+      int n_entries;
+
+      n_entries = scandir(path, &entrylist, NULL, alphasort);
+      if (n_entries == -1) {
+        snprintf(errbuf, errbufsize, "failed to open %s: %s", path.get(), strerror(errno));
+        return (const char *)errbuf;
+      }
+
+      for (int j = 0; j < n_entries; ++j) {
+        ats_scoped_str subpath;
+
+        if (isdot(entrylist[j]->d_name) || isdotdot(entrylist[j]->d_name)) {
+          continue;
+        }
+
+        subpath = Layout::relative_to(path, entrylist[j]->d_name);
+
+        if (ink_file_is_directory(subpath)) {
+          continue;
+        }
+
+        errmsg = parse_remap_fragment(subpath, bti, errbuf, errbufsize);
+        if (errmsg != NULL) {
+          break;
+        }
+      }
+
+      free_directory_list(n_entries, entrylist);
+
+    } else {
+      errmsg = parse_remap_fragment(path, bti, errbuf, errbufsize);
     }
 
-    nbti.rules_list = bti->rules_list;
-    nbti.rewrite = bti->rewrite;
-
-    // XXX at this point, we need to register the included file(s) with the management subsystem
-    // so that we can correctly reload them when they change. Otherwise, the operator will have to
-    // touch remap.config before reloading the configuration.
-
-    Debug("url_rewrite", "[%s] including remap configuration from %s", __func__, (const char *)path);
-    success = remap_parse_config_bti(path, &nbti);
-
-    // The sub-parse might have updated the rules list, so push it up to the parent parse.
-    bti->rules_list = nbti.rules_list;
-
-    if (!success) {
-      snprintf(errbuf, errbufsize, "failed to parse included file %s", bti->paramv[i]);
-      return (const char *)errbuf;
+    if (errmsg) {
+      return errmsg;
     }
   }
 
