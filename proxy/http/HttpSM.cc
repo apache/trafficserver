@@ -1544,7 +1544,6 @@ HttpSM::handle_api_return()
   case HttpTransact::SM_ACTION_REDIRECT_READ: {
     // Clean up from any communication with previous servers
     release_server_session();
-    // tunnel.deallocate_redirect_postdata_buffers();
 
     call_transact_and_set_next_state(HttpTransact::HandleRequest);
     break;
@@ -4434,7 +4433,6 @@ HttpSM::do_cache_prepare_action(HttpCacheSM *c_sm, CacheHTTPInfo *object_read_in
   bool restore_client_request = false;
 
   ink_assert(!pending_action);
-  ink_assert(c_sm->cache_write_vc == NULL);
 
   if (t_state.api_lock_url == HttpTransact::LOCK_URL_FIRST) {
     if (t_state.redirect_info.redirect_in_process) {
