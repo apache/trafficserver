@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-2325] Support .include directories in remap.config.
+   Author: Masakazu Kitajo <m4sk17@gmail.com>
+
   *) [TS-3662] Caching range requests plugin.
 
   *) [TS-3368] Mark traffic_line as deprecated.
