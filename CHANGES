@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-3640] Drupal auth fails over SPDY.
+
   *) [TS-3674] bug fix on ts_lua plugin for adding package path.
 
   *) [TS-2325] Support .include directories in remap.config.
