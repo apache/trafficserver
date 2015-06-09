@@ -2351,7 +2351,7 @@ SSL Termination
        authenticated during the SSL handshake. Clients without a
        certificate are not allowed to access Traffic Server.
 
-.. ts:cv:: CONFIG proxy.config.ssl.number.threads INT 0
+.. ts:cv:: CONFIG proxy.config.ssl.number.threads INT -1
 
    Sets the number of SSL threads to use, this defaults to 0 (autoconfigure).
 
