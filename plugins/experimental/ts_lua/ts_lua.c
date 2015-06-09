@@ -88,6 +88,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
   }
 
   memset(conf, 0, sizeof(ts_lua_instance_conf));
+  conf->remap = 1;
 
   if (fn) {
     snprintf(conf->script, TS_LUA_MAX_SCRIPT_FNAME_LENGTH, "%s", argv[2]);
@@ -383,6 +384,7 @@ TSPluginInit(int argc, const char *argv[])
     return;
   }
   memset(conf, 0, sizeof(ts_lua_instance_conf));
+  conf->remap = 0;
 
   snprintf(conf->script, TS_LUA_MAX_SCRIPT_FNAME_LENGTH, "%s", argv[1]);
 
