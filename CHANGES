@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-2244] Remove legacy proxy.config.log.search_log_enabled and related
+   features / config.
+
   *) [TS-3167] Eliminate the prefetch feature, although leave the code
    ifdef'ed out.
 
