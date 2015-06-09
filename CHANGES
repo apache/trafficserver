@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-3462] Reduce the HostDB lookup timeout to 30s.
+
   *) [TS-3045] Change the default TLS threads setting to -1.
 
   *) [TS-2244] Remove legacy proxy.config.log.search_log_enabled and related
