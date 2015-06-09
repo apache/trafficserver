@@ -71,9 +71,13 @@ public:
   unsigned
   set(Http2SettingsIdentifier id, unsigned value)
   {
-    ink_assert(id < HTTP2_SETTINGS_MAX);
+    if (id < HTTP2_SETTINGS_MAX) {
+      return this->settings[indexof(id)] = value;
+    } else {
+      ink_assert(!"Bad Settings Identifier");
+    }
 
-    return this->settings[indexof(id)] = value;
+    return 0;
   }
 
 private:
