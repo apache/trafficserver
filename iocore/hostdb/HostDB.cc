@@ -388,7 +388,7 @@ int
 HostDBSyncer::sync_event(int, void *)
 {
   SET_HANDLER(&HostDBSyncer::wait_event);
-  start_time = Thread::ink_get_hrtime();
+  start_time = Thread::get_hrtime();
   hostDBProcessor.cache()->sync_partitions(this);
   return EVENT_DONE;
 }
@@ -397,7 +397,7 @@ HostDBSyncer::sync_event(int, void *)
 int
 HostDBSyncer::wait_event(int, void *)
 {
-  ink_hrtime next_sync = HRTIME_SECONDS(hostdb_sync_frequency) - (Thread::ink_get_hrtime() - start_time);
+  ink_hrtime next_sync = HRTIME_SECONDS(hostdb_sync_frequency) - (Thread::get_hrtime() - start_time);
 
   SET_HANDLER(&HostDBSyncer::sync_event);
   if (next_sync > HRTIME_MSECONDS(100))
@@ -524,7 +524,7 @@ HostDBProcessor::start(int, size_t)
   //
   // Set up hostdb_current_interval
   //
-  hostdb_current_interval = (unsigned int)(Thread::ink_get_based_hrtime() / HOST_DB_TIMEOUT_INTERVAL);
+  hostdb_current_interval = (unsigned int)(Thread::get_based_hrtime() / HOST_DB_TIMEOUT_INTERVAL);
 
   HostDBContinuation *b = hostDBContAllocator.alloc();
   SET_CONTINUATION_HANDLER(b, (HostDBContHandler)&HostDBContinuation::backgroundEvent);

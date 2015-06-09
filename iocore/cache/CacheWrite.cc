@@ -166,7 +166,7 @@ CacheVC::updateVector(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
    - total_len. The total number of bytes for the document so far.
      Doc->total_len and alternate's total len is set to this value.
    - first_key. Doc's first_key is set to this value.
-   - pin_in_cache. Doc's pinned value is set to this + Thread::ink_get_hrtime().
+   - pin_in_cache. Doc's pinned value is set to this + Thread::get_hrtime().
    - earliest_key. If f.use_first_key, Doc's key is set to this value.
    - key. If !f.use_first_key, Doc's key is set to this value.
    - blocks. Used only if write_len is set. Data to be written
@@ -615,7 +615,7 @@ Vol::evacuateDocReadDone(int event, Event *e)
   }
   if (!b)
     goto Ldone;
-  if ((b->f.pinned && !b->readers) && doc->pinned < (uint32_t)(Thread::ink_get_based_hrtime() / HRTIME_SECOND))
+  if ((b->f.pinned && !b->readers) && doc->pinned < (uint32_t)(Thread::get_based_hrtime() / HRTIME_SECOND))
     goto Ldone;
 
   if (dir_head(&b->dir) && b->f.evacuate_head) {
@@ -752,7 +752,7 @@ agg_copy(char *p, CacheVC *vc)
     doc->checksum = DOC_NO_CHECKSUM;
     if (vc->pin_in_cache) {
       dir_set_pinned(&vc->dir, 1);
-      doc->pinned = (uint32_t)(Thread::ink_get_based_hrtime() / HRTIME_SECOND) + vc->pin_in_cache;
+      doc->pinned = (uint32_t)(Thread::get_based_hrtime() / HRTIME_SECOND) + vc->pin_in_cache;
     } else {
       dir_set_pinned(&vc->dir, 0);
       doc->pinned = 0;

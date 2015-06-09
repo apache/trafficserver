@@ -592,7 +592,7 @@ cmd_check_internal(char * /* cmd ATS_UNUSED */, bool fix = false)
 
   printf("%s\n\n", n);
 
-  hostdb_current_interval = (Thread::ink_get_based_hrtime() / HRTIME_MINUTE);
+  hostdb_current_interval = (Thread::get_based_hrtime() / HRTIME_MINUTE);
 
 #if 0
   printf("Host Database\n");

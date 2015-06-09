@@ -1174,7 +1174,7 @@ public:
   inline void
   SetRequestStartTime()
   {
-    _start_time = Thread::ink_get_hrtime();
+    _start_time = Thread::get_hrtime();
   }
   inline ink_hrtime
   GetRequestStartTime()

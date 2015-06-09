@@ -244,7 +244,7 @@ net_connections_to_throttle(ThrottleType t)
 TS_INLINE void
 check_shedding_warning()
 {
-  ink_hrtime t = Thread::ink_get_hrtime();
+  ink_hrtime t = Thread::get_hrtime();
   if (t - last_shedding_warning > NET_THROTTLE_MESSAGE_EVERY) {
     last_shedding_warning = t;
     RecSignalWarning(REC_SIGNAL_SYSTEM_ERROR, "number of connections reaching shedding limit");
@@ -274,7 +274,7 @@ check_net_throttle(ThrottleType t, ink_hrtime now)
 TS_INLINE void
 check_throttle_warning()
 {
-  ink_hrtime t = Thread::ink_get_hrtime();
+  ink_hrtime t = Thread::get_hrtime();
   if (t - last_throttle_warning > NET_THROTTLE_MESSAGE_EVERY) {
     last_throttle_warning = t;
     RecSignalWarning(REC_SIGNAL_SYSTEM_ERROR, "too many connections, throttling");
@@ -299,7 +299,7 @@ check_emergency_throttle(Connection &con)
   int emergency = fds_limit - EMERGENCY_THROTTLE;
   if (fd > emergency) {
     int over = fd - emergency;
-    emergency_throttle_time = Thread::ink_get_hrtime() + (over * over) * HRTIME_SECOND;
+    emergency_throttle_time = Thread::get_hrtime() + (over * over) * HRTIME_SECOND;
     RecSignalWarning(REC_SIGNAL_SYSTEM_ERROR, "too many open file descriptors, emergency throttling");
     int hyper_emergency = fds_limit - HYPER_EMERGENCY_THROTTLE;
     if (fd > hyper_emergency)
@@ -372,7 +372,7 @@ accept_error_seriousness(int res)
 TS_INLINE void
 check_transient_accept_error(int res)
 {
-  ink_hrtime t = Thread::ink_get_hrtime();
+  ink_hrtime t = Thread::get_hrtime();
   if (!last_transient_accept_error || t - last_transient_accept_error > TRANSIENT_ACCEPT_ERROR_MESSAGE_EVERY) {
     last_transient_accept_error = t;
     Warning("accept thread received transient error: errno = %d", -res);

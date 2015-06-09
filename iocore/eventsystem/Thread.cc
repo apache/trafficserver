@@ -103,13 +103,13 @@ Thread::start(const char *name, size_t stacksize, ThreadFunction f, void *a)
 }
 
 ink_hrtime
-Thread::ink_get_hrtime()
+Thread::get_hrtime()
 {
   return Thread::cur_time;
 }
 
 ink_hrtime
-Thread::ink_get_based_hrtime()
+Thread::get_based_hrtime()
 {
   return Thread::cur_time;
 }

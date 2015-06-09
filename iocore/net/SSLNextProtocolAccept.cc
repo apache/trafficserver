@@ -117,7 +117,7 @@ SSLNextProtocolAccept::mainEvent(int event, void *edata)
 {
   SSLNetVConnection *netvc = ssl_netvc_cast(event, edata);
 
-  netvc->sslHandshakeBeginTime = Thread::ink_get_hrtime();
+  netvc->sslHandshakeBeginTime = Thread::get_hrtime();
   Debug("ssl", "[SSLNextProtocolAccept:mainEvent] event %d netvc %p", event, netvc);
 
   switch (event) {
