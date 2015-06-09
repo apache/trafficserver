@@ -97,6 +97,8 @@ typedef struct {
 
   int _first : 1; // create current instance for 1st ts_lua_main_ctx
   int _last : 1;  // create current instance for the last ts_lua_main_ctx
+
+  int remap;
 } ts_lua_instance_conf;
 
 
