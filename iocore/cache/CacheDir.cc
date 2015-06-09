@@ -1085,6 +1085,7 @@ sync_cache_dir_on_shutdown(void)
           ats_free_hugepage(buf, buflen);
         else
           ats_memalign_free(buf);
+        buf = NULL;
       }
       buflen = dirlen;
       if (ats_hugepage_enabled()) {
@@ -1215,6 +1216,7 @@ Lrestart:
             ats_free_hugepage(buf, buflen);
           else
             ats_memalign_free(buf);
+          buf = NULL;
         }
         buflen = dirlen;
         if (ats_hugepage_enabled()) {
