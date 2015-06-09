@@ -3144,8 +3144,7 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer *c)
   if (close_connection) {
     // If the client could be pipelining, we need to set the ua_session into half close mode
 
-    if (t_state.client_info.pipeline_possible == true && c->producer->vc_type != HT_STATIC &&
-        event == VC_EVENT_WRITE_COMPLETE) {
+    if (t_state.client_info.pipeline_possible == true && c->producer->vc_type != HT_STATIC && event == VC_EVENT_WRITE_COMPLETE) {
       ua_session->set_half_close_flag();
     }
 
@@ -5302,8 +5301,8 @@ HttpSM::do_setup_post_tunnel(HttpVC_t to_vc_type)
     postdata_producer_buffer->write(tunnel.postbuf->postdata_copy_buffer_start);
     int64_t post_bytes = postdata_producer_reader->read_avail();
     transfered_bytes = post_bytes;
-    p = tunnel.add_producer(HTTP_TUNNEL_STATIC_PRODUCER, post_bytes, postdata_producer_reader,
-                            (HttpProducerHandler)NULL, HT_STATIC, "redirect static agent post");
+    p = tunnel.add_producer(HTTP_TUNNEL_STATIC_PRODUCER, post_bytes, postdata_producer_reader, (HttpProducerHandler)NULL, HT_STATIC,
+                            "redirect static agent post");
     // the tunnel has taken over the buffer and will free it
     postdata_producer_buffer = NULL;
     postdata_producer_reader = NULL;

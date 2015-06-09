@@ -260,9 +260,7 @@ struct HttpTunnelProducer {
 class PostDataBuffers
 {
 public:
-  PostDataBuffers()
-    : postdata_copy_buffer(NULL), postdata_copy_buffer_start(NULL),
-      ua_buffer_reader(NULL)
+  PostDataBuffers() : postdata_copy_buffer(NULL), postdata_copy_buffer_start(NULL), ua_buffer_reader(NULL)
   {
     Debug("http_redirect", "[PostDataBuffers::PostDataBuffers]");
   }
