@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-3543] Remove update.config and related features, this also disables
+   prefetch.
+
   *) [TS-3665] Redirect logic causing debug asserts.
 
   *) [TS-3640] Drupal auth fails over SPDY.
