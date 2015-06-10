@@ -1252,6 +1252,20 @@ HttpTransact::HandleRequest(State *s)
   // client keep-alive, cache action, etc.
   initialize_state_variables_from_request(s, &s->hdr_info.client_request);
 
+
+  // The following chunk of code will limit the maximum number of websocket connections (TS-3659)
+  if (s->is_upgrade_request && s->is_websocket && s->http_config_param->max_websocket_connections >= 0) {
+    int64_t val = 0;
+    HTTP_READ_DYN_SUM(http_websocket_current_active_client_connections_stat, val);
+    if (val >= s->http_config_param->max_websocket_connections) {
+      s->is_websocket = false; // unset to avoid screwing up stats.
+      DebugTxn("http_trans", "Rejecting websocket connection because the limit has been exceeded");
+      bootstrap_state_variables_from_request(s, &s->hdr_info.client_request);
+      build_error_response(s, HTTP_STATUS_SERVICE_UNAVAILABLE, "WebSocket Connection Limit Exceeded", NULL, NULL);
+      TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, NULL);
+    }
+  }
+
   // The following code is configurable to allow a user to control the max post size (TS-3631)
   if (s->http_config_param->max_post_size > 0 && s->hdr_info.request_content_length > 0 &&
       s->hdr_info.request_content_length > s->http_config_param->max_post_size) {

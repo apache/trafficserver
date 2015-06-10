@@ -934,6 +934,7 @@ HttpConfig::startup()
 #endif
 
   HttpEstablishStaticConfigLongLong(c.server_max_connections, "proxy.config.http.server_max_connections");
+  HttpEstablishStaticConfigLongLong(c.max_websocket_connections, "proxy.config.http.websocket.max_number_of_connections");
   HttpEstablishStaticConfigLongLong(c.oride.server_tcp_init_cwnd, "proxy.config.http.server_tcp_init_cwnd");
   HttpEstablishStaticConfigLongLong(c.oride.origin_max_connections, "proxy.config.http.origin_max_connections");
   HttpEstablishStaticConfigLongLong(c.origin_min_keep_alive_connections, "proxy.config.http.origin_min_keep_alive_connections");
@@ -1209,6 +1210,7 @@ HttpConfig::reconfigure()
   params->disable_ssl_parenting = INT_TO_BOOL(m_master.disable_ssl_parenting);
 
   params->server_max_connections = m_master.server_max_connections;
+  params->max_websocket_connections = m_master.max_websocket_connections;
   params->oride.server_tcp_init_cwnd = m_master.oride.server_tcp_init_cwnd;
   params->oride.origin_max_connections = m_master.oride.origin_max_connections;
   params->origin_min_keep_alive_connections = m_master.origin_min_keep_alive_connections;

@@ -611,6 +611,7 @@ public:
   MgmtInt server_max_connections;
   MgmtInt origin_min_keep_alive_connections; // TODO: This one really ought to be overridable, but difficult right now.
   MgmtInt attach_server_session_to_client;
+  MgmtInt max_websocket_connections;
 
   MgmtByte parent_proxy_routing_enable;
   MgmtByte disable_ssl_parenting;
@@ -839,7 +840,7 @@ extern volatile int32_t icp_dynamic_enabled;
 /////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////
 inline HttpConfigParams::HttpConfigParams()
-  : proxy_hostname(NULL), proxy_hostname_len(0), server_max_connections(0), origin_min_keep_alive_connections(0),
+  : proxy_hostname(NULL), proxy_hostname_len(0), server_max_connections(0), origin_min_keep_alive_connections(0), max_websocket_connections(-1),
     parent_proxy_routing_enable(0), disable_ssl_parenting(0), enable_url_expandomatic(0), no_dns_forward_to_parent(0),
     uncacheable_requests_bypass_parent(1), no_origin_server_dns(0), use_client_target_addr(0), use_client_source_port(0),
     proxy_request_via_string(NULL), proxy_request_via_string_len(0), proxy_response_via_string(NULL),
