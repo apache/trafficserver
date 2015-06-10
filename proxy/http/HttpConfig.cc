@@ -1159,7 +1159,6 @@ HttpConfig::startup()
 
   // Local Manager
   HttpEstablishStaticConfigLongLong(c.autoconf_port, "proxy.config.admin.autoconf_port");
-  HttpEstablishStaticConfigByte(c.autoconf_localhost_only, "proxy.config.admin.autoconf.localhost_only");
 
   // Cluster time delta gets it own callback since it needs
   //  to use ink_atomic_swap
@@ -1417,7 +1416,6 @@ HttpConfig::reconfigure()
 
   // Local Manager
   params->autoconf_port = m_master.autoconf_port;
-  params->autoconf_localhost_only = m_master.autoconf_localhost_only;
 
   m_id = configProcessor.set(m_id, params);
 

@@ -25,7 +25,6 @@
 #include "LocalManager.h"
 #include "Rollback.h"
 #include "WebMgmtUtils.h"
-#include "WebGlobals.h"
 #include "MgmtUtils.h"
 #include "ExpandingArray.h"
 #include "MgmtSocket.h"

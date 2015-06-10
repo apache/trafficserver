@@ -20,11 +20,6 @@ Store.cc
 near identical code. Often you will read the same confused comment in three
 places, see for instance: http://issues.apache.org/jira/browse/TS-1707
 
-Web2
-====
-``mgmt/web2`` is very old, very broken, very deeply infested code that needs
-to be removed as it is no longer appropriate, or functional.
-Please see https://issues.apache.org/jira/browse/TS-641 for further refernece.
 
 Java
 ====

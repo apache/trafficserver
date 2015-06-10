@@ -709,11 +709,10 @@ HttpTransact::StartRemapRequest(State *s)
 
   const char syntxt[] = "synthetic.txt";
 
-  s->cop_test_page =
-    (ptr_len_cmp(host, host_len, local_host_ip_str, sizeof(local_host_ip_str) - 1) == 0) &&
-    (ptr_len_cmp(path, path_len, syntxt, sizeof(syntxt) - 1) == 0) && port == s->http_config_param->autoconf_port &&
-    s->method == HTTP_WKSIDX_GET && s->orig_scheme == URL_WKSIDX_HTTP &&
-    (!s->http_config_param->autoconf_localhost_only || ats_ip4_addr_cast(&s->client_info.addr.sa) == htonl(INADDR_LOOPBACK));
+  s->cop_test_page = (ptr_len_cmp(host, host_len, local_host_ip_str, sizeof(local_host_ip_str) - 1) == 0) &&
+                     (ptr_len_cmp(path, path_len, syntxt, sizeof(syntxt) - 1) == 0) &&
+                     port == s->http_config_param->autoconf_port && s->method == HTTP_WKSIDX_GET &&
+                     s->orig_scheme == URL_WKSIDX_HTTP && ats_ip4_addr_cast(&s->client_info.addr.sa) == htonl(INADDR_LOOPBACK);
 
   //////////////////////////////////////////////////////////////////
   // FIX: this logic seems awfully convoluted and hard to follow; //

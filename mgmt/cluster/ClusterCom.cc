@@ -65,8 +65,6 @@ drainIncomingChannel_broadcast(void *arg)
     mgmt_sleep_sec(1);
   }
 
-  lmgmt->syslogThrInit();
-
   for (;;) { /* Loop draining mgmt network channels */
     int nevents = 0;
 
@@ -155,8 +153,6 @@ drainIncomingChannel(void *arg)
   while (lmgmt->ccom != ccom || !lmgmt->ccom->init) {
     mgmt_sleep_sec(1);
   }
-
-  lmgmt->syslogThrInit();
 
   for (;;) { /* Loop draining mgmt network channels */
     ink_zero(message);

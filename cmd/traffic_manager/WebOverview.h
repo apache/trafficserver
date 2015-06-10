@@ -26,12 +26,9 @@
 
 #include "ink_hash_table.h"
 #include "ink_mutex.h"
-#include "WebGlobals.h"
 #include "TextBuffer.h"
 #include "List.h"
 
-#include "WebHttpContext.h"
-#include "WebHttpMessage.h"
 #include "ExpandingArray.h"
 #include "ClusterCom.h"
 
@@ -107,7 +104,6 @@ public:
   void checkForUpdates();
   char *resolvePeerHostname(const char *peerIP);
   char *resolvePeerHostname_ml(const char *peerIP);
-  int getClusterHosts(ExpandingArray *hosts);
   MgmtInt readInteger(const char *nodeName, const char *name, bool *found = NULL);
   MgmtFloat readFloat(const char *nodeName, const char *name, bool *found = NULL);
   MgmtString readString(const char *nodeName, const char *name, bool *found = NULL);
@@ -126,7 +122,6 @@ private:
   void addLoadBar(textBuffer *output, MgmtInt load);
   void sortHosts();
   bool moreInfoButton(const char *submission, textBuffer *output);
-  void addHostPanel(WebHttpContext *whc, overviewRecord *host);
 
   // Private variables
   InkHashTable *nodeRecords;  // container for overviewRecords

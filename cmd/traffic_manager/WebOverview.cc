@@ -30,8 +30,8 @@
 
 #include "libts.h"
 
+#include "MgmtDefs.h"
 #include "WebOverview.h"
-#include "WebGlobals.h"
 #include "WebMgmtUtils.h"
 
 #include "LocalManager.h"
@@ -393,31 +393,6 @@ overviewPage::addSelfRecord()
   sortRecords.addEntry(newRec);
   numHosts++;
   ink_mutex_release(&accessLock);
-}
-
-// int overviewPage::getClusterHosts(Expanding Array* hosts)
-//
-//   The names of all the cluster members are inserted
-//     into parameter hosts.  The callee is responsible
-//     for freeing the strings
-//
-int
-overviewPage::getClusterHosts(ExpandingArray *hosts)
-{
-  int number = 0;
-
-  overviewRecord *current;
-
-  ink_mutex_acquire(&accessLock);
-  number = sortRecords.getNumEntries();
-
-  for (int i = 0; i < number; i++) {
-    current = (overviewRecord *)sortRecords[i];
-    hosts->addEntry(ats_strdup(current->hostname));
-  }
-
-  ink_mutex_release(&accessLock);
-  return number;
 }
 
 // overviewRecord* overviewPage::findNodeByName(const char* nodeName)

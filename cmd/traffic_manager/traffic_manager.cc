@@ -21,32 +21,31 @@
   limitations under the License.
  */
 
-#include "libts.h"
 #include "ink_sys_control.h"
 #include "ink_cap.h"
 
-#include "MgmtUtils.h"
 #include "WebMgmtUtils.h"
-#include "WebIntrMain.h"
-#include "WebOverview.h"
+#include "NetworkUtilsRemote.h"
 #include "ClusterCom.h"
 #include "VMap.h"
 #include "FileManager.h"
 #include "I_Layout.h"
 #include "I_Version.h"
-#include "Diags.h"
 #include "DiagsConfig.h"
-#include "URL.h"
-#include "MIME.h"
 #include "HTTP.h"
 #include "CoreAPI.h"
+
+#include "LocalManager.h"
+#include "TSControlMain.h"
+#include "EventControlMain.h"
+
+#include "MgmtHandlers.h"
 
 // Needs LibRecordsConfigInit()
 #include "RecordsConfig.h"
 
 #include "StatProcessor.h"
 #include "P_RecLocal.h"
-#include "P_RecCore.h"
 
 #if TS_USE_POSIX_CAP
 #include <sys/capability.h>
@@ -397,7 +396,7 @@ main(int argc, const char **argv)
   char userToRunAs[MAX_LOGIN + 1];
   RecInt fds_throttle = -1;
   time_t ticker;
-  ink_thread webThrId;
+  ink_thread synthThrId;
 
   ArgumentDescription argument_descriptions[] = {
     {"proxyOff", '-', "Disable proxy", "F", &proxy_off, NULL, NULL},
@@ -487,11 +486,6 @@ main(int argc, const char **argv)
 
   if (diags) {
     delete diagsConfig;
-    // diagsConfig->reconfigure_diags(); INKqa11968
-    /*
-       delete diags;
-       diags = new Diags(debug_tags,action_tags);
-     */
   }
   // INKqa11968: need to set up callbacks and diags data structures
   // using configuration in records.config
@@ -512,8 +506,6 @@ main(int argc, const char **argv)
   RecSetRecordString("proxy.node.version.manager.build_date", appVersionInfo.BldDateStr);
   RecSetRecordString("proxy.node.version.manager.build_machine", appVersionInfo.BldMachineStr);
   RecSetRecordString("proxy.node.version.manager.build_person", appVersionInfo.BldPersonStr);
-  //    RecSetRecordString("proxy.node.version.manager.build_compile_flags",
-  //                       appVersionInfo.BldCompileFlagsStr);
 
   if (!disable_syslog) {
     char sys_var[] = "proxy.config.syslog_facility";
@@ -609,17 +601,46 @@ main(int argc, const char **argv)
   // Now that we know our cluster ip address, add the
   //   UI record for this machine
   overviewGenerator->addSelfRecord();
-
   lmgmt->listenForProxy();
 
   //
   // As listenForProxy() may change/restore euid, we should put
-  // the creation of webIntr_main thread after it. So that we
+  // the creation of mgmt_synthetic_main thread after it. So that we
   // can keep a consistent euid when create mgmtapi/eventapi unix
-  // sockets in webIntr_main thread.
+  // sockets in mgmt_synthetic_main thread.
   //
-  webThrId = ink_thread_create(webIntr_main, NULL); /* Spin web agent thread */
-  Debug("lm", "Created Web Agent thread (%" PRId64 ")", (int64_t)webThrId);
+  synthThrId = ink_thread_create(mgmt_synthetic_main, NULL); /* Spin web agent thread */
+  Debug("lm", "Created Web Agent thread (%" PRId64 ")", (int64_t)synthThrId);
+
+  // Setup the API and event sockets
+  ats_scoped_str rundir(RecConfigReadRuntimeDir());
+  ats_scoped_str apisock(Layout::relative_to(rundir, MGMTAPI_MGMT_SOCKET_NAME));
+  ats_scoped_str eventsock(Layout::relative_to(rundir, MGMTAPI_EVENT_SOCKET_NAME));
+
+  mode_t oldmask = umask(0);
+  mode_t newmode = api_socket_is_restricted() ? 00700 : 00777;
+
+  int mgmtapiFD = -1;  // FD for the api interface to issue commands
+  int eventapiFD = -1; // FD for the api and clients to handle event callbacks
+  char mgmtapiFailMsg[] = "Traffic server management API service Interface Failed to Initialize.";
+
+  mgmtapiFD = bind_unix_domain_socket(apisock, newmode);
+  if (mgmtapiFD == -1) {
+    mgmt_log(stderr, "[WebIntrMain] Unable to set up socket for handling management API calls. API socket path = %s\n",
+             (const char *)apisock);
+    lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_WEB_ERROR, mgmtapiFailMsg);
+  }
+
+  eventapiFD = bind_unix_domain_socket(eventsock, newmode);
+  if (eventapiFD == -1) {
+    mgmt_log(stderr, "[WebIntrMain] Unable to set up so for handling management API event calls. Event Socket path: %s\n",
+             (const char *)eventsock);
+  }
+
+  umask(oldmask);
+  ink_thread_create(ts_ctrl_main, &mgmtapiFD);
+  ink_thread_create(event_callback_main, &eventapiFD);
+
 
   ticker = time(NULL);
   mgmt_log("[TrafficManager] Setup complete\n");

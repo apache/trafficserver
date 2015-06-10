@@ -1867,7 +1867,6 @@ AC_CONFIG_FILES([
   mgmt/api/include/Makefile
   mgmt/cluster/Makefile
   mgmt/utils/Makefile
-  mgmt/web2/Makefile
   plugins/Makefile
   plugins/cacheurl/Makefile
   plugins/conf_remap/Makefile

@@ -310,10 +310,7 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.accept_threads
  proxy.config.task_threads
  proxy.config.admin.admin_user
- proxy.config.admin.autoconf.localhost_only
- proxy.config.admin.autoconf.pac_filename
  proxy.config.admin.autoconf_port
- proxy.config.admin.autoconf.doc_root
  proxy.config.admin.cli_path
  proxy.config.admin.number_config_bak
  proxy.config.admin.user_id
