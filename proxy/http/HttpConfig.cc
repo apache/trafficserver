@@ -1158,7 +1158,7 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.post_copy_size, "proxy.config.http.post_copy_size");
 
   // Local Manager
-  HttpEstablishStaticConfigLongLong(c.autoconf_port, "proxy.config.admin.autoconf_port");
+  HttpEstablishStaticConfigLongLong(c.synthetic_port, "proxy.config.admin.synthetic_port");
 
   // Cluster time delta gets it own callback since it needs
   //  to use ink_atomic_swap
@@ -1415,7 +1415,7 @@ HttpConfig::reconfigure()
   params->post_copy_size = m_master.post_copy_size;
 
   // Local Manager
-  params->autoconf_port = m_master.autoconf_port;
+  params->synthetic_port = m_master.synthetic_port;
 
   m_id = configProcessor.set(m_id, params);
 

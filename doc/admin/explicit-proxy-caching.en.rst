@@ -63,17 +63,6 @@ specify (in their browser settings) the URL from which the PAC file is
 loaded. You can store a PAC file on Traffic Server (or on any server in
 your network) and then provide the URL for this file to your clients.
 
-If you want to store a PAC file on the Traffic Server system, you
-must perform the following configuration:
-
--  Either copy an existing PAC file into the Traffic Server ``config``
-   directory or enter a script that defines the proxy server
-   configuration settings in the ``proxy.pac`` file provided. The file
-   is empty by default. A sample script is provided in `Sample PAC
-   File`_.
--  Specify the port Traffic Server uses to serve the PAC file. The
-   default port is 8083, see :ts:cv:`proxy.config.admin.autoconf_port`.
-
 Sample PAC File
 ---------------
 

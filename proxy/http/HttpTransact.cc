@@ -711,7 +711,7 @@ HttpTransact::StartRemapRequest(State *s)
 
   s->cop_test_page = (ptr_len_cmp(host, host_len, local_host_ip_str, sizeof(local_host_ip_str) - 1) == 0) &&
                      (ptr_len_cmp(path, path_len, syntxt, sizeof(syntxt) - 1) == 0) &&
-                     port == s->http_config_param->autoconf_port && s->method == HTTP_WKSIDX_GET &&
+                     port == s->http_config_param->synthetic_port && s->method == HTTP_WKSIDX_GET &&
                      s->orig_scheme == URL_WKSIDX_HTTP && ats_ip4_addr_cast(&s->client_info.addr.sa) == htonl(INADDR_LOOPBACK);
 
   //////////////////////////////////////////////////////////////////

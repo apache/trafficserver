@@ -103,12 +103,6 @@ Clients may be configured to use the default ``8080`` port on your Traffic Serve
 host as a proxy. This will result in all requests from that client browser being
 issued through the single forward proxy as configured.
 
-Alternatively, you may configure clients to use the more dynamic
-:ts:cv:`proxy.config.url_remap.default_to_server_pac` port, which will deliver a
-Javascript based PAC configuration to the client. This permits you to configure
-rules on which proxy servers are used for various types of requests, or to allow
-some requests to bypass proxies all together.
-
 Security Considerations
 =======================
 

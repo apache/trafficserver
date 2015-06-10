@@ -232,7 +232,7 @@ mgmt_synthetic_main(void *)
   if (aconf_port_arg > 0) {
     publicPort = aconf_port_arg;
   } else {
-    found = (RecGetRecordInt("proxy.config.admin.autoconf_port", &tempInt) == REC_ERR_OKAY);
+    found = (RecGetRecordInt("proxy.config.admin.synthetic_port", &tempInt) == REC_ERR_OKAY);
     ink_release_assert(found);
     publicPort = (int)tempInt;
   }

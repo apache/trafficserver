@@ -69,17 +69,6 @@ msgstr ""
 msgid "This request, then is translated by the proxy to::"
 msgstr "このリクエストはプロキシーによって次のように変換されます。::"
 
-#: ../../admin/forward-proxy.en.rst:44
-msgid ""
-"Apache Traffic Server offers two ways to User Agents: They can either be "
-"pointed directly to the default ``8080`` port. Alternatively, they can be "
-"pointed to the more dynamic :ts:cv:`proxy.config.url_remap."
-"default_to_server_pac`"
-msgstr ""
-"Apache Traffic Server はユーザーエージェントに二通りの方法を提供します。どち"
-"らもデフォルトの ``8080`` ポートを直接指定できます。あるいは、より動的にも指"
-"定できます。:ts:cv:`proxy.config.url_remap.default_to_server_pac`"
-
 #: ../../admin/forward-proxy.en.rst:48
 msgid ""
 "This port will then serve a JavaScript like configuration that User Agents "

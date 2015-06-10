@@ -250,7 +250,9 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.cluster.log_bogus_mc_msgs", RECD_INT, "1", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.admin.autoconf_port", RECD_INT, "8083", RECU_RESTART_TM, RR_REQUIRED, RECC_INT, "[0-65535]", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.admin.synthetic_port", RECD_INT, "8083", RECU_RESTART_TM, RR_REQUIRED, RECC_INT, "[0-65535]", RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.admin.autoconf.localhost_only", RECD_INT, "1", RECU_RESTART_TM, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.admin.admin_user", RECD_STRING, "admin", RECU_DYNAMIC, RR_REQUIRED, RECC_STR, ".+", RECA_NO_ACCESS}
   ,
@@ -1206,17 +1208,11 @@ static const RecordElement RecordsConfig[] =
   //##############################################################################
   {RECT_CONFIG, "proxy.config.reverse_proxy.enabled", RECD_INT, "1", RECU_DYNAMIC, RR_REQUIRED, RECC_INT, "[0-1]", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.url_remap.default_to_server_pac", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.url_remap.default_to_server_pac_port", RECD_INT, "-1", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
   {RECT_CONFIG, "proxy.config.url_remap.filename", RECD_STRING, "remap.config", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.url_remap.remap_required", RECD_INT, "1", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.url_remap.pristine_host_hdr", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.url_remap.handle_backdoor_urls", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
 
   //##############################################################################

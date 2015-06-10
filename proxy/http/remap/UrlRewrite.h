@@ -106,7 +106,6 @@ public:
   };
 
   void PerformACLFiltering(HttpTransact::State *s, url_mapping *mapping);
-  url_mapping *SetupPacMapping(); // manager proxy-autconfig mapping
   url_mapping *SetupBackdoorMapping();
   void PrintStore(MappingsStore &store);
 
@@ -163,12 +162,9 @@ public:
 
   int nohost_rules;
   int reverse_proxy;
-  int backdoor_enabled;
 
-  // Vars for PAC mapping
-  int mgmt_autoconf_port;
-  int default_to_pac;
-  int default_to_pac_port;
+  // Vars for synthetic health checks
+  int mgmt_synthetic_port;
 
   char *ts_name; // Used to send redirects when no host info
 

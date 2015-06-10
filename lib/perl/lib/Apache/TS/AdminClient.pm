@@ -310,7 +310,7 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.accept_threads
  proxy.config.task_threads
  proxy.config.admin.admin_user
- proxy.config.admin.autoconf_port
+ proxy.config.admin.synthetic_port
  proxy.config.admin.cli_path
  proxy.config.admin.number_config_bak
  proxy.config.admin.user_id
@@ -701,8 +701,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.udp.free_cancelled_pkts_sec
  proxy.config.udp.periodic_cleanup
  proxy.config.udp.send_retries
- proxy.config.url_remap.default_to_server_pac
- proxy.config.url_remap.default_to_server_pac_port
  proxy.config.url_remap.filename
  proxy.config.url_remap.pristine_host_hdr
  proxy.config.url_remap.remap_required

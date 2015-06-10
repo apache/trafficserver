@@ -417,9 +417,9 @@ Local Manager
 
    The semaphore ID for the local manager.
 
-.. ts:cv:: CONFIG proxy.config.admin.autoconf_port INT 8083
+.. ts:cv:: CONFIG proxy.config.admin.synthetic_port INT 8083
 
-   The autoconfiguration port.
+   The synthetic healthcheck port.
 
 .. ts:cv:: CONFIG proxy.config.admin.number_config_bak INT 3
 
@@ -2282,29 +2282,6 @@ URL Remap Rules
 .. ts:cv:: CONFIG proxy.config.url_remap.filename STRING remap.config
 
    Sets the name of the :file:`remap.config` file.
-
-.. ts:cv:: CONFIG proxy.config.url_remap.default_to_server_pac INT 0
-   :reloadable:
-
-   Enables (``1``) or disables (``0``) requests for a PAC file on the proxy
-   service port (8080 by default) to be redirected to the PAC
-   port. For this type of redirection to work, the variable
-   `proxy.config.reverse_proxy.enabled`_ must be set to ``1``.
-
-.. ts:cv:: CONFIG proxy.config.url_remap.default_to_server_pac_port INT -1
-   :reloadable:
-
-   Sets the PAC port so that PAC requests made to the Traffic Server
-   proxy service port are redirected this port. ``-1`` is the default
-   setting that sets the PAC port to the autoconfiguration port (the
-   default autoconfiguration port is 8083). This variable can be used
-   together with the `proxy.config.url_remap.default_to_server_pac`_
-   variable to get a PAC file from a different port. You must create
-   and run a process that serves a PAC file on this port. For example:
-   if you create a Perl script that listens on port 9000 and writes a
-   PAC file in response to any request, then you can set this variable
-   to ``9000``. Browsers that request the PAC file from a proxy server
-   on port 8080 will get the PAC file served by the Perl script.
 
 .. ts:cv:: CONFIG proxy.config.url_remap.remap_required INT 1
    :reloadable:
