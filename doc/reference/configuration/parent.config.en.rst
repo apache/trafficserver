@@ -50,7 +50,7 @@ allowed values.
 .. _parent-config-format-dest-domain:
 
 ``dest_domain``
-    A requested domain name.
+    A requested domain name, and its subdomains.
 
 .. _parent-config-format-dest-host:
 
