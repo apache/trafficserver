@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-3682] Change default for proxy.config.admin.api.restricted to '0'.
+
   *) [TS-3659] Add config to limit max number of websocket connections
 
   *) [TS-3462] Reduce the HostDB lookup timeout to 30s.
