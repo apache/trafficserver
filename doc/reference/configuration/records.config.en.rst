@@ -1134,6 +1134,11 @@ Congestion Control
    The low water mark for transaction buffer control. External source I/O is resumed when the total buffer space in use
    by the transaction is no more than this value.
 
+.. ts:cv:: CONFIG proxy.config.http.websocket.max_number_of_connections INT -1
+   :reloadable:
+
+   When enabled >= (``0``), Traffic Server will enforce a maximum number of simultaneous websocket connections.
+
 Negative Response Caching
 =========================
 
