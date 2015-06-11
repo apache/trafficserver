@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-3466] Remove unused proxy.config.user_name config.
+
   *) [TS-3524] Add a new log tag, %<cluc>, which is the cache lookup URL
    (cache key).
 
