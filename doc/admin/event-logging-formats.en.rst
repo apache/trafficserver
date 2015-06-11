@@ -235,6 +235,12 @@ The following list describes Traffic Server custom logging fields.
     The client request unmapped URL host. This field records a URL's
     host before it is remapped (reverse proxy mode).
 
+.. _cluc:
+
+``cluc``
+    The cache lookup URL, or cache key, for the client request. This URL is
+    canonicalized as well.
+
 .. _crat:
 
 ``crat``
