@@ -700,7 +700,15 @@ HttpSM::state_read_client_request_header(int event, void *data)
   case PARSE_DONE:
     DebugSM("http", "[%" PRId64 "] done parsing client request header", sm_id);
 
-    if (t_state.http_config_param->send_100_continue_response) {
+    if (ua_session->m_active == false) {
+      ua_session->m_active = true;
+      HTTP_INCREMENT_DYN_STAT(http_current_active_client_connections_stat);
+    }
+
+    if (t_state.hdr_info.client_request.version_get() == HTTPVersion(1, 1) &&
+        (t_state.hdr_info.client_request.method_get_wksidx() == HTTP_WKSIDX_POST ||
+         t_state.hdr_info.client_request.method_get_wksidx() == HTTP_WKSIDX_PUT) &&
+        t_state.http_config_param->send_100_continue_response) {
       int len = 0;
       const char *expect = t_state.hdr_info.client_request.value_get(MIME_FIELD_EXPECT, MIME_LEN_EXPECT, &len);
       // When receive an "Expect: 100-continue" request from client, ATS sends a "100 Continue" response to client
@@ -720,10 +728,6 @@ HttpSM::state_read_client_request_header(int event, void *data)
       }
     }
 
-    if (ua_session->m_active == false) {
-      ua_session->m_active = true;
-      HTTP_INCREMENT_DYN_STAT(http_current_active_client_connections_stat);
-    }
     if (t_state.hdr_info.client_request.method_get_wksidx() == HTTP_WKSIDX_TRACE ||
         (t_state.hdr_info.request_content_length == 0 && t_state.client_info.transfer_encoding != HttpTransact::CHUNKED_ENCODING)) {
       // Enable further IO to watch for client aborts
