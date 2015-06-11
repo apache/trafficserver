@@ -2429,7 +2429,7 @@ test_url_print(TSMBuffer bufp, TSMLoc hdr_loc)
   output_buffer = TSIOBufferCreate();
 
   if (!output_buffer) {
-    TSError("couldn't allocate IOBuffer\n");
+    TSError("[InkAPITest] couldn't allocate IOBuffer");
   }
 
   reader = TSIOBufferReaderAlloc(output_buffer);
@@ -4305,7 +4305,7 @@ convert_http_hdr_to_string(TSMBuffer bufp, TSMLoc hdr_loc)
   output_buffer = TSIOBufferCreate();
 
   if (!output_buffer) {
-    TSError("couldn't allocate IOBuffer\n");
+    TSError("[InkAPITest] couldn't allocate IOBuffer");
   }
 
   reader = TSIOBufferReaderAlloc(output_buffer);
@@ -4513,7 +4513,7 @@ convert_mime_hdr_to_string(TSMBuffer bufp, TSMLoc hdr_loc)
   output_buffer = TSIOBufferCreate();
 
   if (!output_buffer) {
-    TSError("couldn't allocate IOBuffer\n");
+    TSError("[InkAPITest] couldn't allocate IOBuffer");
   }
 
   reader = TSIOBufferReaderAlloc(output_buffer);

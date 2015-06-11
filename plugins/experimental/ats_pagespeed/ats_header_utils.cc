@@ -90,7 +90,7 @@ set_header(TSMBuffer bufp, TSMLoc hdr_loc, const char *header_name, const char *
       TSMimeHdrFieldAppend(bufp, hdr_loc, field_loc);
       TSMimeHdrFieldValueStringSet(bufp, hdr_loc, field_loc, -1, header_value, -1);
     } else {
-      TSError("field creation error for field [%s]", header_name);
+      TSError("[ats_header_utils] Field creation error for field [%s]", header_name);
       return;
     }
   }

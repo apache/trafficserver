@@ -173,7 +173,7 @@ TSPluginInit(int argc, const char *argv[])
 
   TSDebug(PLUGIN_NAME, "about to init memcached\n");
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError("memcached_remap: plugin registration failed.\n");
+    TSError("[memcached_remap] Plugin registration failed.\n");
     return;
   }
 
@@ -207,13 +207,13 @@ TSPluginInit(int argc, const char *argv[])
 
   servers = memcached_server_list_append(NULL, "localhost", 11211, &rc);
   if (rc != MEMCACHED_SUCCESS) {
-    TSError("memcached_remap: plugin registration failed while adding servers.\n");
+    TSError("[memcached_remap] Plugin registration failed while adding servers.\n");
     return;
   }
 
   rc = memcached_server_push(memc, servers);
   if (rc != MEMCACHED_SUCCESS) {
-    TSError("memcached_remap: plugin registration failed while adding to pool.\n");
+    TSError("[memcached_remap] Plugin registration failed while adding to pool.\n");
     return;
   }
 

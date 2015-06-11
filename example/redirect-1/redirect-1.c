@@ -139,19 +139,19 @@ handle_client_lookup(TSHttpTxn txnp, TSCont contp)
   }
 
   if (TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
-    TSError("couldn't retrieve client request header\n");
+    TSError("[redirect-1] Couldn't retrieve client request header");
     goto done;
   }
 
   if (TSHttpHdrUrlGet(bufp, hdr_loc, &url_loc) != TS_SUCCESS) {
-    TSError("couldn't retrieve request url\n");
+    TSError("[redirect-1] Couldn't retrieve request url");
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     goto done;
   }
 
   host = TSUrlHostGet(bufp, url_loc, &host_length);
   if (!host) {
-    TSError("couldn't retrieve request hostname\n");
+    TSError("[redirect-1] Couldn't retrieve request hostname");
     TSHandleMLocRelease(bufp, hdr_loc, url_loc);
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     goto done;
@@ -207,7 +207,7 @@ handle_response(TSHttpTxn txnp)
   char *tmp_body;
 
   if (TSHttpTxnClientRespGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
-    TSError("couldn't retrieve client response header\n");
+    TSError("[redirect-1] Couldn't retrieve client response header");
     goto done;
   }
 
@@ -346,7 +346,7 @@ TSPluginInit(int argc, const char *argv[])
   info.support_email = "ts-api-support@MyCompany.com";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError("Plugin registration failed.\n");
+    TSError("[redirect-1] Plugin registration failed.");
   }
 
   if (argc == 3) {
@@ -363,7 +363,7 @@ TSPluginInit(int argc, const char *argv[])
     TSstrlcat(uri_redirect, url_redirect, uri_len);
 
   } else {
-    TSError("Incorrect syntax in plugin.conf:  correct usage is"
+    TSError("[redirect-1] Incorrect syntax in plugin.conf:  correct usage is"
             "redirect-1.so ip_deny url_redirect");
     return;
   }

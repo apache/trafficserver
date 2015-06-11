@@ -146,7 +146,7 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
   info.support_email = (char *)"";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError("Plugin registration failed. \n");
+    TSError("[remap] Plugin registration failed.");
   }
   TSDebug("debug-remap", "TSPluginInit: Remap plugin started\n");
 }

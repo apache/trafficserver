@@ -60,7 +60,7 @@ operator_factory(const std::string &op)
   } else if (op == "set-conn-dscp") {
     o = new OperatorSetConnDSCP();
   } else {
-    TSError("%s: unknown operator: %s", PLUGIN_NAME, op.c_str());
+    TSError("[%s] Unknown operator: %s", PLUGIN_NAME, op.c_str());
     return NULL;
   }
 
@@ -126,7 +126,7 @@ condition_factory(const std::string &cond)
   } else if (c_name == "TXN-COUNT") {
     c = new ConditionTransactCount();
   } else {
-    TSError("%s: unknown condition: %s", PLUGIN_NAME, c_name.c_str());
+    TSError("[%s] Unknown condition: %s", PLUGIN_NAME, c_name.c_str());
     return NULL;
   }
 

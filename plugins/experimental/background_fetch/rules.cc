@@ -41,7 +41,7 @@ check_client_ip_configured(TSHttpTxn txnp, const char *cfg_ip)
   } else if (AF_INET6 == client_ip->sa_family) {
     inet_ntop(AF_INET6, &(reinterpret_cast<const sockaddr_in6 *>(client_ip)->sin6_addr), ip_buf, INET6_ADDRSTRLEN);
   } else {
-    TSError("%s: unknown family %d", PLUGIN_NAME, client_ip->sa_family);
+    TSError("[%s] Unknown family %d", PLUGIN_NAME, client_ip->sa_family);
     return false;
   }
 
@@ -65,7 +65,7 @@ check_content_length(const uint32_t len, const char *cfg_val)
   } else if (cfg_val[0] == '>') {
     return (len >= cfg_cont_len);
   } else {
-    TSError("%s: invalid content length condition %c", PLUGIN_NAME, cfg_val[0]);
+    TSError("[%s] Invalid content length condition %c", PLUGIN_NAME, cfg_val[0]);
     return false;
   }
 }
@@ -110,7 +110,7 @@ check_field_configured(TSHttpTxn txnp, const char *field_name, const char *cfg_v
       }
       TSHandleMLocRelease(hdr_bufp, TS_NULL_MLOC, hdr_loc);
     } else {
-      TSError("%s: Failed to get resp headers", PLUGIN_NAME);
+      TSError("[%s] Failed to get resp headers", PLUGIN_NAME);
     }
     return hdr_found;
   }
@@ -142,7 +142,7 @@ check_field_configured(TSHttpTxn txnp, const char *field_name, const char *cfg_v
     }
     TSHandleMLocRelease(hdr_bufp, TS_NULL_MLOC, hdr_loc);
   } else {
-    TSError("%s: Failed to get resp headers", PLUGIN_NAME);
+    TSError("[%s] Failed to get resp headers", PLUGIN_NAME);
   }
 
   return hdr_found;

@@ -188,7 +188,7 @@ SslHdrParseOptions(int argc, const char **argv)
       } else if (strcmp(optarg, "both") == 0) {
         hdr->attach = SSL_HEADERS_ATTACH_BOTH;
       } else {
-        TSError("%s: invalid attach option '%s'", PLUGIN_NAME, optarg);
+        TSError("[%s] Invalid attach option '%s'", PLUGIN_NAME, optarg);
         return NULL;
       }
 

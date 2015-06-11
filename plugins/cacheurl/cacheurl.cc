@@ -87,7 +87,7 @@ regex_substitute(char **buf, char *str, regex_info *info)
     case PCRE_ERROR_NOMATCH:
       break;
     default:
-      TSError("[%s] Matching error: %d\n", PLUGIN_NAME, matchcount);
+      TSError("[%s] Matching error: %d", PLUGIN_NAME, matchcount);
       break;
     }
     return 0;
@@ -96,7 +96,7 @@ regex_substitute(char **buf, char *str, regex_info *info)
   /* Verify the replacement has the right number of matching groups */
   for (i = 0; i < info->tokcount; i++) {
     if (info->tokens[i] >= matchcount) {
-      TSError("[%s] Invalid reference int replacement: $%d\n", PLUGIN_NAME, info->tokens[i]);
+      TSError("[%s] Invalid reference int replacement: $%d", PLUGIN_NAME, info->tokens[i]);
       return 0;
     }
   }
@@ -143,7 +143,7 @@ regex_compile(regex_info **buf, char *pattern, char *replacement)
   /* Precompile the regular expression */
   info->re = pcre_compile(pattern, 0, &reerror, &reerroffset, NULL);
   if (!info->re) {
-    TSError("[%s] Compilation of regex '%s' failed at char %d: %s\n", PLUGIN_NAME, pattern, reerroffset, reerror);
+    TSError("[%s] Compilation of regex '%s' failed at char %d: %s", PLUGIN_NAME, pattern, reerroffset, reerror);
     status = 0;
   }
 
@@ -156,12 +156,12 @@ regex_compile(regex_info **buf, char *pattern, char *replacement)
       if (replacement[i] == '$') {
         if (tokcount >= TOKENCOUNT) {
           TSError("[%s] Error: too many tokens in replacement "
-                  "string: %s\n",
+                  "string: %s",
                   PLUGIN_NAME, replacement);
           status = 0;
           break;
         } else if (replacement[i + 1] < '0' || replacement[i + 1] > '9') {
-          TSError("[%s] Error: Invalid replacement token $%c in %s: should be $0 - $9\n", PLUGIN_NAME, replacement[i + 1],
+          TSError("[%s] Error: Invalid replacement token $%c in %s: should be $0 - $9", PLUGIN_NAME, replacement[i + 1],
                   replacement);
           status = 0;
           break;
@@ -231,7 +231,7 @@ load_config_file(const char *config_file)
   fh = TSfopen(path.c_str(), "r");
 
   if (!fh) {
-    TSError("[%s] Unable to open %s. No patterns will be loaded\n", PLUGIN_NAME, path.c_str());
+    TSError("[%s] Unable to open %s. No patterns will be loaded", PLUGIN_NAME, path.c_str());
     return NULL;
   }
 
@@ -261,7 +261,7 @@ load_config_file(const char *config_file)
       spstart = strstr(buffer, "\t");
     }
     if (!spstart) {
-      TSError("[%s] ERROR: Invalid format on line %d. Skipping\n", PLUGIN_NAME, lineno);
+      TSError("[%s] ERROR: Invalid format on line %d. Skipping", PLUGIN_NAME, lineno);
       TSfclose(fh);
       return NULL;
     }
@@ -272,7 +272,7 @@ load_config_file(const char *config_file)
     }
     if (*spend == 0) {
       /* We reached the end of the string without any non-whitepace */
-      TSError("[%s] ERROR: Invalid format on line %d. Skipping\n", PLUGIN_NAME, lineno);
+      TSError("[%s] ERROR: Invalid format on line %d. Skipping", PLUGIN_NAME, lineno);
       TSfclose(fh);
       return NULL;
     }
@@ -284,7 +284,7 @@ load_config_file(const char *config_file)
     TSDebug(PLUGIN_NAME, "Adding pattern/replacement pair: '%s' -> '%s'", buffer, spend);
     retval = regex_compile(&info, buffer, spend);
     if (!retval) {
-      TSError("[%s] Error precompiling regex/replacement. Skipping.\n", PLUGIN_NAME);
+      TSError("[%s] Error precompiling regex/replacement. Skipping.", PLUGIN_NAME);
       TSfclose(fh);
       return NULL;
     }
@@ -294,7 +294,7 @@ load_config_file(const char *config_file)
   TSfclose(fh);
 
   if (prl->pr.empty()) {
-    TSError("[%s] No regular expressions loaded.\n", PLUGIN_NAME);
+    TSError("[%s] No regular expressions loaded.", PLUGIN_NAME);
   }
 
   TSDebug(PLUGIN_NAME, "loaded %u regexes", (unsigned)prl->pr.size());
@@ -312,7 +312,7 @@ rewrite_cacheurl(pr_list *prl, TSHttpTxn txnp)
 
   url = TSHttpTxnEffectiveUrlStringGet(txnp, &url_length);
   if (!url) {
-    TSError("[%s] couldn't retrieve request url\n", PLUGIN_NAME);
+    TSError("[%s] couldn't retrieve request url", PLUGIN_NAME);
     ok = 0;
   }
 
@@ -328,7 +328,7 @@ rewrite_cacheurl(pr_list *prl, TSHttpTxn txnp)
       TSDebug(PLUGIN_NAME, "Rewriting cache URL for %s to %s", url, newurl);
       if (TSCacheUrlSet(txnp, newurl, strlen(newurl)) != TS_SUCCESS) {
         TSError("[%s] Unable to modify cache url from "
-                "%s to %s\n",
+                "%s to %s",
                 PLUGIN_NAME, url, newurl);
         ok = 0;
       }
@@ -371,8 +371,8 @@ handle_hook(TSCont contp, TSEvent event, void *edata)
 static void
 initialization_error(const char *msg)
 {
-  TSError("[%s] %s\n", PLUGIN_NAME, msg);
-  TSError("[%s] Unable to initialize plugin (disabled).\n", PLUGIN_NAME);
+  TSError("[%s] %s", PLUGIN_NAME, msg);
+  TSError("[%s] Unable to initialize plugin (disabled).", PLUGIN_NAME);
 }
 
 TSReturnCode

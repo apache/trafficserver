@@ -897,7 +897,7 @@ transformable(TSHttpTxn txnp)
 
   field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_CONTENT_TYPE, -1);
   if (field_loc == TS_NULL_MLOC) {
-    TSError("[transformable] Error while searching Content-Type field");
+    TSError("[psi] Unable to search Content-Type field");
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     return 0;
   }
@@ -998,7 +998,7 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
   info.support_email = "";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError("Plugin registration failed.\n");
+    TSError("[psi] Plugin registration failed.");
   }
 
   /* Initialize the psi directory = <plugin_path>/include */
@@ -1007,7 +1007,7 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
   /* create an TSTextLogObject to log any psi include */
   retval = TSTextLogObjectCreate("psi", TS_LOG_MODE_ADD_TIMESTAMP, &log);
   if (retval == TS_ERROR) {
-    TSError("Failed creating log for psi plugin");
+    TSError("[psi] Failed creating log for psi plugin");
     log = NULL;
   }
 
@@ -1019,7 +1019,7 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
     char *thread_name = (char *)TSmalloc(64);
     sprintf(thread_name, "Thread[%d]", i);
     if (!TSThreadCreate((TSThreadFunc)thread_loop, thread_name)) {
-      TSError("[TSPluginInit] Error while creating threads");
+      TSError("[psi] Failed creating threads");
       return;
     }
   }

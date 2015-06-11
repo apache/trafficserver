@@ -82,13 +82,13 @@ protocol_init(int accept_port, int server_port ATS_UNUSED)
   /* create customized log */
   ret_val = TSTextLogObjectCreate("protocol", TS_LOG_MODE_ADD_TIMESTAMP, &protocol_plugin_log);
   if (ret_val != TS_SUCCESS) {
-    TSError("failed to create log");
+    TSError("[protocol] Failed to create log");
   }
 
   /* format of the log entries, for caching_status, 1 for HIT and 0 for MISS */
   ret_val = TSTextLogObjectWrite(protocol_plugin_log, "timestamp filename servername caching_status\n\n");
   if (ret_val != TS_SUCCESS) {
-    TSError("failed to write into log");
+    TSError("[protocol] Failed to write into log");
   }
 
   contp = TSContCreate(accept_handler, TSMutexCreate());
@@ -112,7 +112,8 @@ TSPluginInit(int argc, const char *argv[])
   info.support_email = "ts-api-support@MyCompany.com";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError("[PluginInit] Plugin registration failed.\n");
+    TSError("[protocol] Plugin registration failed.");
+
     goto error;
   }
 
@@ -150,5 +151,5 @@ TSPluginInit(int argc, const char *argv[])
   protocol_init(accept_port, server_port);
 
 error:
-  TSError("[PluginInit] Plugin not initialized");
+  TSError("[protocol] Plugin not initialized");
 }

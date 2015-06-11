@@ -51,7 +51,7 @@
 //#define LOG_SET_FUNCTION_NAME(NAME) const char * FUNCTION_NAME = NAME
 #define LOG_ERROR(API_NAME)                                                                                              \
   {                                                                                                                      \
-    TSError("%s: %s %s %s File %s, line number %d", PLUGIN_NAME, API_NAME, "APIFAIL", __FUNCTION__, __FILE__, __LINE__); \
+    TSError("[%s] %s %s %s File %s, line number %d", PLUGIN_NAME, API_NAME, "APIFAIL", __FUNCTION__, __FILE__, __LINE__); \
   }
 #define LOG_ERROR_AND_RETURN(API_NAME) \
   {                                    \
@@ -936,17 +936,17 @@ create_directory()
   struct dirent *d;
 
   if (getcwd(cwd, 4096) == NULL) {
-    TSError("getcwd fails");
+    TSError("[buffer_upload] getcwd fails");
     return 0;
   }
 
   if (chdir(uconfig->base_dir) < 0) {
     if (mkdir(uconfig->base_dir, S_IRWXU | S_IRWXG | S_IRWXO) < 0) {
-      TSError("Unable to enter or create %s", uconfig->base_dir);
+      TSError("[buffer_upload] Unable to enter or create %s", uconfig->base_dir);
       goto error_out;
     }
     if (chdir(uconfig->base_dir) < 0) {
-      TSError("Unable enter %s", uconfig->base_dir);
+      TSError("[buffer_upload] Unable enter %s", uconfig->base_dir);
       goto error_out;
     }
   }
@@ -954,11 +954,11 @@ create_directory()
     snprintf(str, 10, "%02X", i);
     if (chdir(str) < 0) {
       if (mkdir(str, S_IRWXU | S_IRWXG | S_IRWXO) < 0) {
-        TSError("Unable to enter or create %s/%s", uconfig->base_dir, str);
+        TSError("[buffer_upload] Unable to enter or create %s/%s", uconfig->base_dir, str);
         goto error_out;
       }
       if (chdir(str) < 0) {
-        TSError("Unable to enter %s/%s", uconfig->base_dir, str);
+        TSError("[buffer_upload] Unable to enter %s/%s", uconfig->base_dir, str);
         goto error_out;
       }
     }
@@ -1003,7 +1003,7 @@ load_urls(char *filename)
   for (i = 0; i < 2; i++) {
     if ((file = TSfopen(filename, "r")) == NULL) {
       TSfree(url_buf);
-      TSError("Fail to open %s", filename);
+      TSError("[buffer_upload] Fail to open %s", filename);
       return;
     }
     if (i == 0) { // first round
@@ -1052,7 +1052,7 @@ parse_config_line(char *line, const struct config_val_ul *cv)
           int iv = strtol(tok, &end, 10);
           if (end && *end == '\0') {
             *((int *)cv->val) = iv;
-            TSError("Parsed int config value %s : %d", cv->str, iv);
+            TSError("[buffer_upload] Parsed int config value %s : %d", cv->str, iv);
             TSDebug(DEBUG_TAG, "Parsed int config value %s : %d", cv->str, iv);
           }
           break;
@@ -1062,7 +1062,7 @@ parse_config_line(char *line, const struct config_val_ul *cv)
           unsigned int uiv = strtoul(tok, &end, 10);
           if (end && *end == '\0') {
             *((unsigned int *)cv->val) = uiv;
-            TSError("Parsed uint config value %s : %u", cv->str, uiv);
+            TSError("[buffer_upload] Parsed uint config value %s : %u", cv->str, uiv);
             TSDebug(DEBUG_TAG, "Parsed uint config value %s : %u", cv->str, uiv);
           }
           break;
@@ -1072,7 +1072,7 @@ parse_config_line(char *line, const struct config_val_ul *cv)
           long lv = strtol(tok, &end, 10);
           if (end && *end == '\0') {
             *((long *)cv->val) = lv;
-            TSError("Parsed long config value %s : %ld", cv->str, lv);
+            TSError("[buffer_upload] Parsed long config value %s : %ld", cv->str, lv);
             TSDebug(DEBUG_TAG, "Parsed long config value %s : %ld", cv->str, lv);
           }
           break;
@@ -1082,7 +1082,7 @@ parse_config_line(char *line, const struct config_val_ul *cv)
           unsigned long ulv = strtoul(tok, &end, 10);
           if (end && *end == '\0') {
             *((unsigned long *)cv->val) = ulv;
-            TSError("Parsed ulong config value %s : %lu", cv->str, ulv);
+            TSError("[buffer_upload] Parsed ulong config value %s : %lu", cv->str, ulv);
             TSDebug(DEBUG_TAG, "Parsed ulong config value %s : %lu", cv->str, ulv);
           }
           break;
@@ -1092,7 +1092,7 @@ parse_config_line(char *line, const struct config_val_ul *cv)
           if (len > 0) {
             *((char **)cv->val) = (char *)TSmalloc(len + 1);
             strcpy(*((char **)cv->val), tok);
-            TSError("Parsed string config value %s : %s", cv->str, tok);
+            TSError("[buffer_upload] Parsed string config value %s : %s", cv->str, tok);
             TSDebug(DEBUG_TAG, "Parsed string config value %s : %s", cv->str, tok);
           }
           break;
@@ -1104,7 +1104,7 @@ parse_config_line(char *line, const struct config_val_ul *cv)
               *((bool *)cv->val) = true;
             else
               *((bool *)cv->val) = false;
-            TSError("Parsed bool config value %s : %d", cv->str, *((bool *)cv->val));
+            TSError("[buffer_upload] Parsed bool config value %s : %d", cv->str, *((bool *)cv->val));
             TSDebug(DEBUG_TAG, "Parsed bool config value %s : %d", cv->str, *((bool *)cv->val));
           }
           break;
@@ -1158,7 +1158,7 @@ read_upload_config(const char *file_name)
     }
     TSfclose(conf_file);
   } else {
-    TSError("Failed to open upload config file %s", file_name);
+    TSError("[buffer_upload] Failed to open upload config file %s", file_name);
     // if fail to open config file, use the default config
   }
 
@@ -1201,15 +1201,15 @@ TSPluginInit(int argc, const char *argv[])
 
   if (!read_upload_config(conf_filename) || !uconfig) {
     if (argc > 1) {
-      TSError("Failed to read upload config %s\n", argv[1]);
+      TSError("[buffer_upload] Failed to read upload config %s", argv[1]);
     } else {
-      TSError("No config file specified. Specify conf file in plugin.conf: "
-              "'buffer_upload.so /path/to/upload.conf'\n");
+      TSError("[buffer_upload] No config file specified. Specify conf file in plugin.conf: "
+              "'buffer_upload.so /path/to/upload.conf'");
     }
   }
   // set the num of threads for disk AIO
   if (TSAIOThreadNumSet(uconfig->thread_num) == TS_ERROR) {
-    TSError("Failed to set thread number.");
+    TSError("[buffer_upload] Failed to set thread number.");
   }
 
   TSDebug(DEBUG_TAG, "uconfig->url_list_file: %s", uconfig->url_list_file);
@@ -1223,12 +1223,12 @@ TSPluginInit(int argc, const char *argv[])
   info.support_email = const_cast<char *>("dev@trafficserver.apache.org");
 
   if (uconfig->use_disk_buffer && !create_directory()) {
-    TSError("Directory creation failed.");
+    TSError("[buffer_upload] Directory creation failed.");
     uconfig->use_disk_buffer = 0;
   }
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError("Plugin registration failed.");
+    TSError("[buffer_upload] Plugin registration failed.");
   }
 
   /* create the statistic variables */

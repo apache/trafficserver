@@ -270,7 +270,7 @@ transformable(TSHttpTxn txnp)
 
   if (TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc) == TS_ERROR) {
     TSError("[bnull-transform] Error releasing MLOC while checking "
-            "header status\n");
+            "header status");
   }
 
   return retv;
@@ -316,7 +316,8 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
   info.support_email = "ts-api-support@MyCompany.com";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError("[bnull-transform] Plugin registration failed.\n");
+    TSError("[bnull-transform] Plugin registration failed.");
+
     goto Lerror;
   }
 
@@ -327,5 +328,5 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
   return;
 
 Lerror:
-  TSError("[bnull-transform] Plugin disabled\n");
+  TSError("[bnull-transform] Plugin disabled");
 }

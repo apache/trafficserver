@@ -63,7 +63,7 @@ MakeRoundRobinBalancer(const char *options)
   if (options) {
     options = tmp = strdup(options);
     while ((opt = strsep(&tmp, ",")) != NULL) {
-      TSError("balancer: ignoring invalid round robin field '%s'", opt);
+      TSError("[balancer] Ignoring invalid round robin field '%s'", opt);
     }
 
     free((void *)options);

@@ -179,7 +179,7 @@ AtsBaseFetch::HandleDone(bool success)
     TSMBuffer reqp;
     TSMLoc req_hdr_loc;
     if (TSHttpTxnClientReqGet(ctx->txn, &reqp, &req_hdr_loc) != TS_SUCCESS) {
-      TSError("Error TSHttpTxnClientReqGet for resource!");
+      TSError("[ats_base_fetch] Error TSHttpTxnClientReqGet for resource!");
       ctx_ = NULL;
       DecrefAndDeleteIfUnreferenced();
       TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
