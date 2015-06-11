@@ -1,6 +1,20 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-3684] Support TSHttpTxnServerRespNoStoreSet in ts_lua plugin.
+
+  *) [TS-3466] Remove unused proxy.config.user_name config.
+
+  *) [TS-3524] Add a new log tag, %<cluc>, which is the cache lookup URL
+   (cache key).
+
+  *) [TS-3542] Remove the reclaimable freelist feature, it will be replaced
+   with a buddy allocation scheme.
+
+  *) [TS-3682] Change default for proxy.config.admin.api.restricted to '0'.
+
+  *) [TS-3659] Add config to limit max number of websocket connections
+
   *) [TS-3462] Reduce the HostDB lookup timeout to 30s.
 
   *) [TS-3045] Change the default TLS threads setting to -1.

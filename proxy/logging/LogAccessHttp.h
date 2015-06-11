@@ -128,11 +128,12 @@ public:
   //
   // other fields
   //
-  virtual int marshal_transfer_time_ms(char *);    // INT
-  virtual int marshal_transfer_time_s(char *);     // INT
-  virtual int marshal_file_size(char *);           // INT
-  virtual int marshal_plugin_identity_id(char *);  // INT
-  virtual int marshal_plugin_identity_tag(char *); // STR
+  virtual int marshal_transfer_time_ms(char *);       // INT
+  virtual int marshal_transfer_time_s(char *);        // INT
+  virtual int marshal_file_size(char *);              // INT
+  virtual int marshal_plugin_identity_id(char *);     // INT
+  virtual int marshal_plugin_identity_tag(char *);    // STR
+  virtual int marshal_cache_lookup_url_canon(char *); // STR
 
   //
   // named fields from within a http header
@@ -173,9 +174,13 @@ private:
   int m_client_req_url_path_len;
   char *m_proxy_resp_content_type_str;
   int m_proxy_resp_content_type_len;
+  char *m_cache_lookup_url_canon_str;
+  int m_cache_lookup_url_canon_len;
 
   void validate_unmapped_url(void);
   void validate_unmapped_url_path(void);
+
+  void validate_lookup_url(void);
 
   // -- member functions that are not allowed --
   LogAccessHttp(const LogAccessHttp &rhs);

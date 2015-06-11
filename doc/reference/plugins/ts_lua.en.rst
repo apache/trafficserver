@@ -670,6 +670,25 @@ Here is an example:
 
 `TOP <#ts-lua-plugin>`_
 
+ts.http.set_server_resp_no_store
+--------------------------------
+**syntax:** *ts.http.set_server_resp_no_store(status)*
+
+**context:** do_global_read_response
+
+**description:** This function can be used to signal ATS to not store the response in cache
+
+Here is an example:
+
+::
+
+    function do_global_read_response()
+        ts.http.set_server_resp_no_store(1)
+        return 0
+    end
+
+`TOP <#ts-lua-plugin>`_
+
 ts.http.set_resp
 ----------------
 **syntax:** *ts.http.set_resp(CODE, BODY)*
@@ -2513,6 +2532,8 @@ Milestone constants
     TS_LUA_MILESTONE_DNS_LOOKUP_END
     TS_LUA_MILESTONE_SM_START
     TS_LUA_MILESTONE_SM_FINISH
+    TS_LUA_MILESTONE_PLUGIN_ACTIVE
+    TS_LUA_MILESTONE_PLUGIN_TOTAL
 
 
 `TOP <#ts-lua-plugin>`_

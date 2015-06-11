@@ -829,6 +829,7 @@ print_ele_list(TSFileNameT file, TSCfgContext ctx)
       break;
     case TS_FNAME_VADDRS:
       print_vaddrs_ele((TSVirtIpAddrEle *)ele);
+      break;
     default:
       printf("[print_ele_list] invalid file type \n");
       return;
