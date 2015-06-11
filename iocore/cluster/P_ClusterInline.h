@@ -343,8 +343,7 @@ err_exit:
 }
 
 inline Action *
-Cluster_remove(ClusterMachine *m, Continuation *cont, CacheKey *key, bool rm_user_agents, bool rm_link, CacheFragType frag_type,
-               char *hostname, int host_len)
+Cluster_remove(ClusterMachine *m, Continuation *cont, CacheKey *key, CacheFragType frag_type, const char *hostname, int host_len)
 {
   if (clusterProcessor.disable_remote_cluster_ops(m)) {
     Action a;
@@ -368,9 +367,8 @@ Cluster_remove(ClusterMachine *m, Continuation *cont, CacheKey *key, bool rm_use
 
     // Setup args for remote update
     CacheOpArgs_General updateArgs;
+    ink_zero(updateArgs);
     updateArgs.url_md5 = key;
-    updateArgs.cfl_flags |= (rm_user_agents ? CFL_REMOVE_USER_AGENTS : 0);
-    updateArgs.cfl_flags |= (rm_link ? CFL_REMOVE_LINK : 0);
     updateArgs.frag_type = frag_type;
     return CacheContinuation::do_op(cont, m, (void *)&updateArgs, CACHE_REMOVE, msg, (flen + len));
   } else {

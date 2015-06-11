@@ -284,7 +284,7 @@ rcv_rst_stream_frame(Http2ClientSession &cs, Http2ConnectionState &cstate, const
   DebugSsn(&cs, "http2_cs", "[%" PRId64 "] Received RST_STREAM frame.", cs.connection_id());
 
   Http2Stream *stream = cstate.find_stream(frame.header().streamid);
-  if (stream == NULL) {
+  if (frame.header().streamid == 0) {
     return HTTP2_ERROR_PROTOCOL_ERROR;
   }
 
@@ -292,7 +292,7 @@ rcv_rst_stream_frame(Http2ClientSession &cs, Http2ConnectionState &cstate, const
     return HTTP2_ERROR_FRAME_SIZE_ERROR;
   }
 
-  if (!stream->change_state(frame.header().type, frame.header().flags)) {
+  if (stream != NULL && !stream->change_state(frame.header().type, frame.header().flags)) {
     // If a RST_STREAM frame identifying an idle stream is received, the
     // recipient MUST treat this as a connection error of type PROTOCOL_ERROR.
     return HTTP2_ERROR_PROTOCOL_ERROR;
@@ -304,9 +304,11 @@ rcv_rst_stream_frame(Http2ClientSession &cs, Http2ConnectionState &cstate, const
     return HTTP2_ERROR_PROTOCOL_ERROR;
   }
 
-  DebugSsn(&cs, "http2_cs", "[%" PRId64 "] RST_STREAM: Stream ID: %u, Error Code: %u)", cs.connection_id(), stream->get_id(),
-           rst_stream.error_code);
-  cstate.delete_stream(stream);
+  if (stream != NULL) {
+    DebugSsn(&cs, "http2_cs", "[%" PRId64 "] RST_STREAM: Stream ID: %u, Error Code: %u)", cs.connection_id(), stream->get_id(),
+             rst_stream.error_code);
+    cstate.delete_stream(stream);
+  }
 
   return HTTP2_ERROR_NO_ERROR;
 }
@@ -651,7 +653,7 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
 
     if (error != HTTP2_ERROR_NO_ERROR) {
       this->send_goaway_frame(last_streamid, error);
-
+      cleanup_streams();
       // XXX We need to think a bit harder about how to coordinate the client session and the
       // protocol connection. At this point, the protocol is shutting down, but there's no way
       // to tell that to the client session. Perhaps this could be solved by implementing the
@@ -1003,7 +1005,7 @@ Http2Stream::init_fetcher(Http2ConnectionState &cstate)
   // Initialize FetchSM
   _fetch_sm = FetchSMAllocator.alloc();
   _fetch_sm->ext_init((Continuation *)cstate.ua_session, method, url, HTTP2_FETCHING_HTTP_VERSION,
-                      cstate.ua_session->get_client_addr(), TS_FETCH_FLAGS_DECHUNK);
+                      cstate.ua_session->get_client_addr(), (TS_FETCH_FLAGS_DECHUNK | TS_FETCH_FLAGS_NOT_INTERNAL_REQUEST));
 
   // Set request header
   MIMEFieldIter fiter;

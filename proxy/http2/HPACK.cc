@@ -534,7 +534,7 @@ decode_string(Arena &arena, char **str, uint32_t &str_length, const uint8_t *buf
     return HPACK_ERROR_COMPRESSION_ERROR;
   p += len;
 
-  if (encoded_string_len > HEADER_FIELD_LIMIT_LENGTH || buf_start + encoded_string_len >= buf_end) {
+  if (encoded_string_len > HEADER_FIELD_LIMIT_LENGTH || (p + encoded_string_len) > buf_end) {
     return HPACK_ERROR_COMPRESSION_ERROR;
   }
 

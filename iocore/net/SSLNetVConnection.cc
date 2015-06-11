@@ -27,9 +27,11 @@
 #include "P_SSLUtils.h"
 #include "InkAPIInternal.h" // Added to include the ssl_hook definitions
 
+#if !TS_USE_SET_RBIO
 // Defined in SSLInternal.c, should probably make a separate include
 // file for this at some point
-void SSL_set_rbio(SSLNetVConnection *sslvc, BIO *rbio);
+void SSL_set_rbio(SSL *ssl, BIO *rbio);
+#endif
 
 #define SSL_READ_ERROR_NONE 0
 #define SSL_READ_ERROR 1
@@ -347,11 +349,6 @@ SSLNetVConnection::read_raw_data()
     if (r <= 0) {
       if (r == -EAGAIN || r == -ENOTCONN) {
         NET_INCREMENT_DYN_STAT(net_calls_to_read_nodata_stat);
-        return r;
-      }
-
-      if (!r || r == -ECONNRESET) {
-        return r;
       }
       return r;
     }
@@ -368,7 +365,7 @@ SSLNetVConnection::read_raw_data()
   // Must be reset on each read
   BIO *rbio = BIO_new_mem_buf(start, this->handShakeBioStored);
   BIO_set_mem_eof_return(rbio, -1);
-  SSL_set_rbio(this, rbio);
+  SSL_set_rbio(this->ssl, rbio);
 
   return r;
 }
@@ -525,7 +522,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
         // Must be reset on each read
         BIO *rbio = BIO_new_mem_buf(start, this->handShakeBioStored);
         BIO_set_mem_eof_return(rbio, -1);
-        SSL_set_rbio(this, rbio);
+        SSL_set_rbio(this->ssl, rbio);
       }
     }
   }
@@ -959,7 +956,22 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
   if (BIO_eof(SSL_get_rbio(this->ssl))) { // No more data in the buffer
     // Read from socket to fill in the BIO buffer with the
     // raw handshake data before calling the ssl accept calls.
-    this->read_raw_data();
+    int retval = this->read_raw_data();
+    if (retval < 0) {
+      if (retval == -EAGAIN) {
+        // No data at the moment, hang tight
+        SSLDebugVC(this, "SSL handshake: EAGAIN");
+        return SSL_HANDSHAKE_WANT_READ;
+      } else {
+        // An error, make us go away
+        SSLDebugVC(this, "SSL handshake error: read_retval=%d", retval);
+        return EVENT_ERROR;
+      }
+    } else if (retval == 0) {
+      // EOF, go away, we stopped in the handshake
+      SSLDebugVC(this, "SSL handshake error: EOF");
+      return EVENT_ERROR;
+    }
   }
 
   ssl_error_t ssl_error = SSLAccept(ssl);
@@ -1095,8 +1107,10 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
       SSL_INCREMENT_DYN_STAT(ssl_sni_name_set_failure);
     }
   }
+
 #endif
 
+  SSL_set_ex_data(ssl, get_ssl_client_data_index(), this);
   ssl_error_t ssl_error = SSLConnect(ssl);
   switch (ssl_error) {
   case SSL_ERROR_NONE:
@@ -1155,6 +1169,8 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
   case SSL_ERROR_SSL:
   default:
     err = errno;
+    // FIXME -- This triggers a retry on cases of cert validation errors....
+    Debug("ssl", "SSLNetVConnection::sslClientHandShakeEvent, SSL_ERROR_SSL");
     SSL_CLR_ERR_INCR_DYN_STAT(this, ssl_error_ssl, "SSLNetVConnection::sslClientHandShakeEvent, SSL_ERROR_SSL errno=%d", errno);
     return EVENT_ERROR;
     break;

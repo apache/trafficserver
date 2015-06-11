@@ -228,6 +228,7 @@ enum {
   http_ua_msecs_counts_other_unclassified_stat,
 
   disallowed_post_100_continue,
+  http_post_body_too_large,
 
   http_total_x_redirect_stat,
 
@@ -382,7 +383,7 @@ struct OverridableHttpConfigParams {
       post_connect_attempts_timeout(1800), down_server_timeout(300), client_abort_threshold(10), freshness_fuzz_time(240),
       freshness_fuzz_min_time(0), max_cache_open_read_retries(-1), cache_open_read_retry_time(10),
       background_fill_active_timeout(60), http_chunking_size(4096), flow_high_water_mark(0), flow_low_water_mark(0),
-      default_buffer_size_index(8), default_buffer_water_mark(32768),
+      default_buffer_size_index(8), default_buffer_water_mark(32768), slow_log_threshold(0),
 
       // Strings / floats must come last
       proxy_response_server_string(NULL), proxy_response_server_string_len(0), global_user_agent_header(NULL),
@@ -554,7 +555,7 @@ struct OverridableHttpConfigParams {
 
   MgmtInt default_buffer_size_index;
   MgmtInt default_buffer_water_mark;
-
+  MgmtInt slow_log_threshold;
   // IMPORTANT: Here comes all strings / floats configs.
 
   ///////////////////////////////////////////////////////////////////
@@ -610,6 +611,7 @@ public:
   MgmtInt server_max_connections;
   MgmtInt origin_min_keep_alive_connections; // TODO: This one really ought to be overridable, but difficult right now.
   MgmtInt attach_server_session_to_client;
+  MgmtInt max_websocket_connections;
 
   MgmtByte parent_proxy_routing_enable;
   MgmtByte disable_ssl_parenting;
@@ -707,8 +709,6 @@ public:
   // Error Reporting //
   /////////////////////
   MgmtByte errors_log_error_pages;
-  MgmtInt slow_log_threshold;
-
   MgmtByte enable_http_info;
 
   // Cluster time delta is not a config variable,
@@ -743,6 +743,8 @@ public:
   MgmtByte send_408_post_timeout_response;
   MgmtByte disallow_post_100_continue;
   MgmtByte parser_allow_non_http;
+  MgmtInt cache_open_write_fail_action;
+  MgmtInt max_post_size;
 
   OverridableHttpConfigParams oride;
 
@@ -839,9 +841,9 @@ extern volatile int32_t icp_dynamic_enabled;
 /////////////////////////////////////////////////////////////
 inline HttpConfigParams::HttpConfigParams()
   : proxy_hostname(NULL), proxy_hostname_len(0), server_max_connections(0), origin_min_keep_alive_connections(0),
-    parent_proxy_routing_enable(0), disable_ssl_parenting(0), enable_url_expandomatic(0), no_dns_forward_to_parent(0),
-    uncacheable_requests_bypass_parent(1), no_origin_server_dns(0), use_client_target_addr(0), use_client_source_port(0),
-    proxy_request_via_string(NULL), proxy_request_via_string_len(0), proxy_response_via_string(NULL),
+    max_websocket_connections(-1), parent_proxy_routing_enable(0), disable_ssl_parenting(0), enable_url_expandomatic(0),
+    no_dns_forward_to_parent(0), uncacheable_requests_bypass_parent(1), no_origin_server_dns(0), use_client_target_addr(0),
+    use_client_source_port(0), proxy_request_via_string(NULL), proxy_request_via_string_len(0), proxy_response_via_string(NULL),
     proxy_response_via_string_len(0), url_expansions_string(NULL), url_expansions(NULL), num_url_expansions(0),
     session_auth_cache_keep_alive_enabled(1), transaction_active_timeout_in(900), accept_no_activity_timeout(120),
     parent_connect_attempts(4), per_parent_connect_attempts(2), parent_connect_timeout(30), anonymize_other_header_list(NULL),
@@ -852,7 +854,8 @@ inline HttpConfigParams::HttpConfigParams()
     cluster_time_delta(0), redirection_enabled(0), redirection_host_no_port(0), number_of_redirections(1), post_copy_size(2048),
     ignore_accept_mismatch(0), ignore_accept_language_mismatch(0), ignore_accept_encoding_mismatch(0),
     ignore_accept_charset_mismatch(0), send_100_continue_response(0), send_408_post_timeout_response(0),
-    disallow_post_100_continue(0), parser_allow_non_http(1), autoconf_port(0), autoconf_localhost_only(0)
+    disallow_post_100_continue(0), parser_allow_non_http(1), cache_open_write_fail_action(0), max_post_size(0), autoconf_port(0),
+    autoconf_localhost_only(0)
 {
 }
 

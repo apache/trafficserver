@@ -189,7 +189,6 @@ TSRemapEle *copy_remap_ele(TSRemapEle *ele);
 TSSocksEle *copy_socks_ele(TSSocksEle *ele);
 TSSplitDnsEle *copy_split_dns_ele(TSSplitDnsEle *ele);
 TSStorageEle *copy_storage_ele(TSStorageEle *ele);
-TSUpdateEle *copy_update_ele(TSUpdateEle *ele);
 TSVirtIpAddrEle *copy_virt_ip_addr_ele(TSVirtIpAddrEle *ele);
 INKCommentEle *copy_comment_ele(INKCommentEle *ele);
 

@@ -249,7 +249,7 @@ REGRESSION_TEST(SDK_API_TSConfig)(RegressionTest *test, int /* atype ATS_UNUSED 
 //////////////////////////////////////////////
 
 struct SDK_NetVConn_Params {
-  SDK_NetVConn_Params(const char *_a, RegressionTest *_t, int *_p) : buffer(NULL), api(_a), port(0), test(_t), pstatus(_p)
+  SDK_NetVConn_Params(const char *_a, RegressionTest *_t, int *_p) : buffer(NULL), api(_a), port(0), test(_t), pstatus(_p), vc(NULL)
   {
     this->status.client = this->status.server = REGRESSION_TEST_INPROGRESS;
   }
@@ -259,6 +259,9 @@ struct SDK_NetVConn_Params {
     if (this->buffer) {
       TSIOBufferDestroy(this->buffer);
     }
+    if (this->vc) {
+      TSVConnClose(this->vc);
+    }
   }
 
   TSIOBuffer buffer;
@@ -266,6 +269,7 @@ struct SDK_NetVConn_Params {
   unsigned short port;
   RegressionTest *test;
   int *pstatus;
+  TSVConn vc;
   struct {
     int client;
     int server;
@@ -281,6 +285,7 @@ server_handler(TSCont contp, TSEvent event, void *data)
     // Kick off a read so that we can receive an EOS event.
     SDK_RPRINT(params->test, params->api, "ServerEvent NET_ACCEPT", TC_PASS, "ok");
     params->buffer = TSIOBufferCreate();
+    params->vc = (TSVConn)data;
     TSVConnRead((TSVConn)data, contp, params->buffer, 100);
   } else if (event == TS_EVENT_VCONN_EOS) {
     // The server end of the test passes if it receives an EOF event. This means that it must have
@@ -5018,8 +5023,8 @@ REGRESSION_TEST(SDK_API_TSMimeHdrParse)(RegressionTest *test, int /* atype ATS_U
 REGRESSION_TEST(SDK_API_TSUrlParse)(RegressionTest *test, int /* atype ATS_UNUSED */, int *pstatus)
 {
   static char const *const urls[] = {
-    "file:///test.dat;ab?abc=def#abc", "http://www.example.com", "http://abc:def@www.example.com", "http://www.example.com:3426",
-    "http://abc:def@www.example.com:3426", "http://www.example.com/homepage.cgi",
+    "file:///test.dat;ab?abc=def#abc", "http://www.example.com/", "http://abc:def@www.example.com/", "http://www.example.com:3426/",
+    "http://abc:def@www.example.com:3426/", "http://www.example.com/homepage.cgi",
     "http://www.example.com/homepage.cgi;ab?abc=def#abc", "http://abc:def@www.example.com:3426/homepage.cgi;ab?abc=def#abc",
     "https://abc:def@www.example.com:3426/homepage.cgi;ab?abc=def#abc",
     "ftp://abc:def@www.example.com:3426/homepage.cgi;ab?abc=def#abc",
@@ -5057,7 +5062,7 @@ REGRESSION_TEST(SDK_API_TSUrlParse)(RegressionTest *test, int /* atype ATS_UNUSE
       }
     } else {
       start = url;
-      end = url + strlen(url) + 1;
+      end = url + strlen(url);
       if ((retval = TSUrlParse(bufp, url_loc, &start, end)) == TS_PARSE_ERROR) {
         SDK_RPRINT(test, "TSUrlParse", url, TC_FAIL, "TSUrlParse returns TS_PARSE_ERROR");
       } else {
@@ -6633,9 +6638,9 @@ transform_hook_handler(TSCont contp, TSEvent event, void *edata)
       synclient_txn_delete(data->browser3);
       synclient_txn_delete(data->browser4);
 
+      TSContDataSet(contp, NULL);
       data->magic = MAGIC_DEAD;
       TSfree(data);
-      TSContDataSet(contp, NULL);
     }
     break;
 
@@ -7206,7 +7211,7 @@ const char *SDK_Overridable_Configs[TS_CONFIG_LAST_ENTRY] = {
   "proxy.config.ssl.hsts_max_age", "proxy.config.ssl.hsts_include_subdomains", "proxy.config.http.cache.open_read_retry_time",
   "proxy.config.http.cache.max_open_read_retries", "proxy.config.http.cache.range.write",
   "proxy.config.http.post.check.content_length.enabled", "proxy.config.http.global_user_agent_header",
-};
+  "proxy.config.http.auth_server_session_private", "proxy.config.http.slow.log.threshold"};
 
 REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS)(RegressionTest *test, int /* atype ATS_UNUSED */, int *pstatus)
 {

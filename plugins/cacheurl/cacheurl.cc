@@ -28,8 +28,8 @@
 #include "ts/ts.h"
 #include "ts/remap.h"
 #include "ink_defs.h"
+#include "ink_memory.h"
 
-#include <memory>
 #include <string>
 #include <vector>
 
@@ -42,6 +42,7 @@
 #define TOKENCOUNT 10
 #define OVECOUNT 30
 #define PLUGIN_NAME "cacheurl"
+#define DEFAULT_CONFIG "cacheurl.config"
 
 struct regex_info {
   pcre *re;          /* Compiled regular expression */
@@ -204,7 +205,7 @@ load_config_file(const char *config_file)
   char buffer[1024];
   std::string path;
   TSFile fh;
-  std::auto_ptr<pr_list> prl(new pr_list());
+  ats_scoped_obj<pr_list> prl(new pr_list());
 
   /* locations in a config file line, end of line, split start, split end */
   char *eol, *spstart, *spend;
@@ -213,10 +214,10 @@ load_config_file(const char *config_file)
   regex_info *info = 0;
 
   if (config_file == NULL) {
-    /* Default config file of plugins/cacheurl.config */
-    path = TSPluginDirGet();
-    path += "/cacheurl.config";
-  } else if (*config_file != '/') {
+    config_file = DEFAULT_CONFIG;
+  }
+
+  if (*config_file != '/') {
     // Relative paths are relative to the config directory
     path = TSConfigDirGet();
     path += "/";
@@ -236,17 +237,23 @@ load_config_file(const char *config_file)
 
   while (TSfgets(fh, buffer, sizeof(buffer) - 1)) {
     lineno++;
-    if (*buffer == '#') {
-      /* # Comments, only at line beginning */
+
+    // make sure line was not bigger than buffer
+    if ((eol = strchr(buffer, '\n')) == NULL && (eol = strstr(buffer, "\r\n")) == NULL) {
+      // Malformed line - skip
+      TSError("%s: config line too long, did not get a good line in cfg, skipping, line: %s", PLUGIN_NAME, buffer);
+      memset(buffer, 0, sizeof(buffer));
       continue;
-    }
-    eol = strstr(buffer, "\n");
-    if (eol) {
-      *eol = 0; /* Terminate string at newline */
     } else {
-      /* Malformed line - skip */
+      *eol = 0;
+    }
+    // make sure line has something useful on it
+    // or allow # Comments, only at line beginning
+    if (eol - buffer < 2 || buffer[0] == '#') {
+      memset(buffer, 0, sizeof(buffer));
       continue;
     }
+
     /* Split line into two parts based on whitespace */
     /* Find first whitespace */
     spstart = strstr(buffer, " ");
@@ -434,6 +441,7 @@ TSPluginInit(int argc, const char *argv[])
   info.support_email = (char *)"dev@trafficserver.apache.org";
 
   if (TSPluginRegister(TS_SDK_VERSION_3_0, &info) != TS_SUCCESS) {
+    TSDebug(PLUGIN_NAME, "ERROR, Plugin registration failed");
     initialization_error("Plugin registration failed.");
     return;
   }
@@ -444,5 +452,9 @@ TSPluginInit(int argc, const char *argv[])
     /* Store the pattern replacement list in the continuation */
     TSContDataSet(contp, prl);
     TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, contp);
+  } else {
+    TSDebug(PLUGIN_NAME, "ERROR, Plugin config load failed.");
+    initialization_error("Plugin config load failed.");
+    return;
   }
 }

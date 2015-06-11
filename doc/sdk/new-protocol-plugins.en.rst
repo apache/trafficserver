@@ -226,29 +226,29 @@ The steps below describe the flow of execution illustrated in :ref:`"How
 Transaction State Machines are Implemented in the Protocol
 Plugin" <ImplementTransStMachine>`.
 
-1. The handler for the TSM, (called **``main_handler``** in the Protocol
+1. The handler for the TSM, (called ``main_handler`` in the Protocol
    plugin) receives events from the TSM.
 
-2. **``main_handler``** examines the state of the transaction-in
+2. ``main_handler`` examines the state of the transaction-in
    particular, it examines the current handler.
 
-3. **``main_handler``** calls the **``current_handler``** (which is one
+3. ``main_handler`` calls the ``current_handler`` (which is one
    of the state handler functions), and then passes the current event to
-   **``current_handler``**. In :ref:`the image
+   ``current_handler``. In :ref:`the image
    below <ImplementTransStMachine>` below, the current handler is
-   called **``state2_handler``**.
+   called ``state2_handler``.
 
-4. The **``current_handler``** handles the event and updates the data.
+4. The ``current_handler`` handles the event and updates the data.
    In :ref:`the image below <ImplementTransStMachine>` below, the state is
-   changed from **``state2``** to **``state3``** (and the current
-   handler is changed from **``state2_handler``** to
-   **``state3_handler``**). The next time **``main_handler``** receives
-   an event, it will be processed by **``state3_handler``**.
+   changed from ``state2`` to ``state3`` (and the current
+   handler is changed from ``state2_handler`` to
+   ``state3_handler``). The next time ``main_handler`` receives
+   an event, it will be processed by ``state3_handler``.
 
-5. **``state2_handler``** arranges the next callback of the TSM.
+5. ``state2_handler`` arranges the next callback of the TSM.
    Typically, it gives Traffic Server additional work to do (such as
    writing a file to cache) so that it can progress to the next state.
-   The TSM (**``main_handler``**) then waits for the next event to
+   The TSM (``main_handler``) then waits for the next event to
    arrive from Traffic Server.
 
 **How Transaction State Machines are Implemented in the Protocol
@@ -280,93 +280,93 @@ typical transaction.
     two: a client accept port and a server port) and runs an
     initialization routine, ``init``.
 
-2.  The **``init``** function (in ``Protocol.c``) creates the plugin's
-    log file using **``TSTextLogObjectCreate``**.
+2.  The ``init`` function (in ``Protocol.c``) creates the plugin's
+    log file using ``TSTextLogObjectCreate``.
 
-3.  The **``init``** function creates the accept state machine using
-    **``AcceptCreate``**. The code for **``AcceptCreate``** is in the
+3.  The ``init`` function creates the accept state machine using
+    ``AcceptCreate``. The code for ``AcceptCreate`` is in the
     ``Accept.c`` file.
 
 4.  The accept state machine, like the transaction state machine, keeps
     track of its state with a data structure. This data structure,
-    **``Accept``**, is defined in the ``Accept.h`` file. State data in
-    **``AcceptCreate``** is associated with the new accept state machine
-    via **``TSContDataSet``**.
+    ``Accept``, is defined in the ``Accept.h`` file. State data in
+    ``AcceptCreate`` is associated with the new accept state machine
+    via ``TSContDataSet``.
 
-5.  The **``init``** function arranges the callback of the accept state
+5.  The ``init`` function arranges the callback of the accept state
     machine when there is a network connection by using
-    **``TSNetAccept``**.
+    ``TSNetAccept``.
 
-6.  The handler for the accept state machine is **``accept_event``** in
+6.  The handler for the accept state machine is ``accept_event`` in
     the ``Accept.c`` file. When Traffic Server's Net Processor sends
-    **``TS_EVENT_NET_ACCEPT``** to the accept state machine,
-    **``accept_event``** creates a transaction state machine
-    (**``txn_sm``**) by calling **``TxnSMCreate``**. Notice that
-    **``accept_event``** creates a mutex for the transaction state
+    ``TS_EVENT_NET_ACCEPT`` to the accept state machine,
+    ``accept_event`` creates a transaction state machine
+    (``txn_sm``) by calling ``TxnSMCreate``. Notice that
+    ``accept_event`` creates a mutex for the transaction state
     machine, since each transaction state machine has its own mutex.
 
-7.  The **``TxnSMCreate``** function is in the ``TxnSM.c`` file. The
+7.  The ``TxnSMCreate`` function is in the ``TxnSM.c`` file. The
     first thing it does is initialize the transaction's data, which is
     of type ``TxnSM`` (as defined in ``TxnSM.h``). Notice that the
-    current handler (**``q_current_handler``**) is set to
-    **``state_start``**.
+    current handler (``q_current_handler``) is set to
+    ``state_start``.
 
-8.  **``TxnSMCreate``** then creates a transaction state machine using
-    **``TSContCreate``**. The handler for the transaction state machine
-    is **``main_handler``**, which is in the ``TxnSM.c`` file.
+8.  ``TxnSMCreate`` then creates a transaction state machine using
+    ``TSContCreate``. The handler for the transaction state machine
+    is ``main_handler``, which is in the ``TxnSM.c`` file.
 
-9.  When **``accept_event``** receives **``TS_EVENT_NET_ACCEPT``**, it
+9.  When ``accept_event`` receives ``TS_EVENT_NET_ACCEPT``, it
     calls the transaction state machine (
-    **``TSContCall (txn_sm, 0, NULL);``** ). The event passed to
-    **``main_handler``** is ``0`` (**``TS_EVENT_NONE``**).
+    ``TSContCall (txn_sm, 0, NULL);`` ). The event passed to
+    ``main_handler`` is ``0`` (``TS_EVENT_NONE``).
 
-10. The first thing **``main_handler``** does is examine the current
-    **``txn_sm``** state by calling **``TSContDataGet``**. The state is
-    **``state_start``**.
+10. The first thing ``main_handler`` does is examine the current
+    ``txn_sm`` state by calling ``TSContDataGet``. The state is
+    ``state_start``.
 
-11. **``main_handler``** then invokes the handler for
-    **``state_start``** by using the function pointer
-    **``TxnSMHandler``** (as defined in ``TxnSM.h``).
+11. ``main_handler`` then invokes the handler for
+    ``state_start`` by using the function pointer
+    ``TxnSMHandler`` (as defined in ``TxnSM.h``).
 
-12. The **``state_start``** handler function (in the ``TxnSM.c`` file)
+12. The ``state_start`` handler function (in the ``TxnSM.c`` file)
     is handed an event (at this stage, the event is
-    **``TS_EVENT_NET_ACCEPT``**) and a client vconnection.
-    **``state_start``** checks to see if this client vconnection is
-    closed; if it is not, then **``state_start``** attempts to read data
-    from the client vconnection into an **``TSIOBuffer``**
-    (**``state_start``** is handling the event it receives).
+    ``TS_EVENT_NET_ACCEPT``) and a client vconnection.
+    ``state_start`` checks to see if this client vconnection is
+    closed; if it is not, then ``state_start`` attempts to read data
+    from the client vconnection into an ``TSIOBuffer``
+    (``state_start`` is handling the event it receives).
 
-13. **``state_start``** changes the current handler to
-    **``state_interface_with_client``** (that is, it updates the state
+13. ``state_start`` changes the current handler to
+    ``state_interface_with_client`` (that is, it updates the state
     of the transaction to the next state).
 
-14. **``state_start``** initiates a read of the client vconnection
+14. ``state_start`` initiates a read of the client vconnection
     (arranges for Traffic Server to send
-    **``TS_EVENT_VCONN_READ_READY``** events to the TSM) by calling
-    **``TSVConnRead``**.
+    ``TS_EVENT_VCONN_READ_READY`` events to the TSM) by calling
+    ``TSVConnRead``.
 
-15. **``state_interface_with_client``** is activated by the next event
+15. ``state_interface_with_client`` is activated by the next event
     from Traffic Server. It checks for errors and examines the read VIO
-    for the read operation initiated by **``TSVConnRead``**.
+    for the read operation initiated by ``TSVConnRead``.
 
-16. If the read VIO is the **``client_read_VIO``** (which we are
+16. If the read VIO is the ``client_read_VIO`` (which we are
     expecting at this stage in the transaction), then
-    **``state_interface_with_client``** updates the state to
-    **``state_read_request_from_client``** .
+    ``state_interface_with_client`` updates the state to
+    ``state_read_request_from_client`` .
 
-17. **``state_read_request_from_client``** handles actual
-    **``TS_EVENT_READ_READY``** events and reads the client request.
+17. ``state_read_request_from_client`` handles actual
+    ``TS_EVENT_READ_READY`` events and reads the client request.
 
-18. **``state_read_request_from_client``** parses the client request.
+18. ``state_read_request_from_client`` parses the client request.
 
-19. **``state_read_request_from_client``** updates the current state to
-    the next state, **``state_handle_cache_lookup``** .
+19. ``state_read_request_from_client`` updates the current state to
+    the next state, ``state_handle_cache_lookup`` .
 
-20. **``state_read_request_from_client``** arranges for Traffic Server
+20. ``state_read_request_from_client`` arranges for Traffic Server
     to call back the TSM with the next set of events (initiating the
-    cache lookup) by calling **``TSCacheRead``**.
+    cache lookup) by calling ``TSCacheRead``.
 
-21. When the **``TSCacheRead``** sends the TSM either
-    **``TS_EVENT_OPEN_READ``** (a cache hit) or
-    **``TS_EVENT_OPEN_READ_FAILED``** (a cache miss),
-    **``main_handler``** calls **``state_handle_cache_lookup``**.
+21. When the ``TSCacheRead`` sends the TSM either
+    ``TS_EVENT_OPEN_READ`` (a cache hit) or
+    ``TS_EVENT_OPEN_READ_FAILED`` (a cache miss),
+    ``main_handler`` calls ``state_handle_cache_lookup``.

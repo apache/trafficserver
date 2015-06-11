@@ -85,6 +85,10 @@
 
 #include <dirent.h>
 
+#ifndef INT64_MIN
+#define INT64_MAX (9223372036854775807LL)
+#endif
+
 using namespace net_instaweb;
 
 static AtsProcessContext *ats_process_context;
@@ -205,40 +209,56 @@ ats_ctx_destroy(TransformCtx *ctx)
   TSfree(ctx);
 }
 
+// Wrapper around GetQueryOptions()
 RewriteOptions *
-ps_determine_request_options(ServerContext *server_context, RequestHeaders *request_headers, ResponseHeaders *response_headers,
-                             GoogleUrl *url)
+ps_determine_request_options(const RewriteOptions *domain_options, /* may be null */
+                             RequestHeaders *request_headers, ResponseHeaders *response_headers, RequestContextPtr request_context,
+                             ServerContext *server_context, GoogleUrl *url, GoogleString *pagespeed_query_params,
+                             GoogleString *pagespeed_option_cookies)
 {
-  // Stripping ModPagespeed query params before the property cache lookup to
-  // make cache key consistent for both lookup and storing in cache.
-  //
   // Sets option from request headers and url.
   RewriteQuery rewrite_query;
-  if (!server_context->GetQueryOptions(url, request_headers, response_headers, &rewrite_query)) {
+  if (!server_context->GetQueryOptions(request_context, domain_options, url, request_headers, response_headers, &rewrite_query)) {
     // Failed to parse query params or request headers.  Treat this as if there
     // were no query params given.
-    TSError("ps_route rerquest: parsing headers or query params failed.");
+    TSError("ps_route request: parsing headers or query params failed.");
     return NULL;
   }
+
+  *pagespeed_query_params = rewrite_query.pagespeed_query_params().ToEscapedString();
+  *pagespeed_option_cookies = rewrite_query.pagespeed_option_cookies().ToEscapedString();
 
   // Will be NULL if there aren't any options set with query params or in
   // headers.
   return rewrite_query.ReleaseOptions();
 }
 
+// There are many sources of options:
+//  - the request (query parameters, headers, and cookies)
+//  - location block
+//  - global server options
+//  - experiment framework
+// Consider them all, returning appropriate options for this request, of which
+// the caller takes ownership.  If the only applicable options are global,
+// set options to NULL so we can use server_context->global_options().
 bool
-ps_determine_options(ServerContext *server_context,
-                     // Directory-specific options, usually null.  They've already been rebased off
-                     // of the global options as part of the configuration process.
-                     RewriteOptions *directory_options, RequestHeaders *request_headers, ResponseHeaders *response_headers,
-                     RewriteOptions **options, GoogleUrl *url)
+ps_determine_options(ServerContext *server_context, RequestHeaders *request_headers, ResponseHeaders *response_headers,
+                     RewriteOptions **options, RequestContextPtr request_context, GoogleUrl *url,
+                     GoogleString *pagespeed_query_params, GoogleString *pagespeed_option_cookies, bool html_rewrite)
 {
   // Global options for this server.  Never null.
   RewriteOptions *global_options = server_context->global_options();
 
+  // TODO(oschaaf): we don't have directory_options right now. But if we did,
+  // we'd need to take them into account here.
+  RewriteOptions *directory_options = NULL;
+
   // Request-specific options, nearly always null.  If set they need to be
   // rebased on the directory options or the global options.
-  RewriteOptions *request_options = ps_determine_request_options(server_context, request_headers, response_headers, url);
+  // TODO(oschaaf): domain options..
+  RewriteOptions *request_options =
+    ps_determine_request_options(NULL /*domain options*/, request_headers, response_headers, request_context, server_context, url,
+                                 pagespeed_query_params, pagespeed_option_cookies);
 
   // Because the caller takes ownership of any options we return, the only
   // situation in which we can avoid allocating a new RewriteOptions is if the
@@ -406,15 +426,16 @@ get_override_expiry(const StringPiece &host)
 }
 
 AtsRewriteOptions *
-get_host_options(const StringPiece &host)
+get_host_options(const StringPiece &host, ServerContext *server_context)
 {
   TSMutexLock(config_mutex);
-  AtsRewriteOptions *r = NULL;
+  AtsRewriteOptions *r = (AtsRewriteOptions *)server_context->global_options()->Clone();
   AtsHostConfig *hc = config->Find(host.data(), host.size());
   if (hc->options() != NULL) {
     // We return a clone here to avoid having to thing about
     // configuration reloads and outstanding options
-    r = hc->options()->Clone();
+    hc->options()->ClearSignatureWithCaution();
+    r->Merge(*hc->options());
   }
   TSMutexUnlock(config_mutex);
   return r;
@@ -475,32 +496,51 @@ ats_transform_init(TSCont contp, TransformCtx *ctx)
   // TODO(oschaaf): fix host/ip(?)
   SystemRequestContext *system_request_context =
     new SystemRequestContext(server_context->thread_system()->NewMutex(), server_context->timer(), "www.foo.com", 80, "127.0.0.1");
+  RequestContextPtr rptr(system_request_context);
+  ctx->base_fetch = new AtsBaseFetch(server_context, rptr, ctx->downstream_vio, ctx->downstream_buffer, false);
 
-  ctx->base_fetch =
-    new AtsBaseFetch(server_context, RequestContextPtr(system_request_context), ctx->downstream_vio, ctx->downstream_buffer, false);
-
-
-  RewriteOptions *options = NULL;
+  ResponseHeaders response_headers;
   RequestHeaders *request_headers = new RequestHeaders();
   ctx->base_fetch->SetRequestHeadersTakingOwnership(request_headers);
   copy_request_headers_to_psol(reqp, req_hdr_loc, request_headers);
 
   TSHttpStatus status = TSHttpHdrStatusGet(bufp, hdr_loc);
-  // TODO(oschaaf): http version
-  ctx->base_fetch->response_headers()->set_status_code(status);
-  copy_response_headers_to_psol(bufp, hdr_loc, ctx->base_fetch->response_headers());
-  ctx->base_fetch->response_headers()->ComputeCaching();
-  const char *host = ctx->gurl->HostAndPort().as_string().c_str();
-  // request_headers->Lookup1(HttpAttributes::kHost);
-  if (host != NULL && strlen(host) > 0) {
-    ctx->options = get_host_options(host);
-  }
-  bool ok =
-    ps_determine_options(server_context, ctx->options, request_headers, ctx->base_fetch->response_headers(), &options, ctx->gurl);
+  copy_response_headers_to_psol(bufp, hdr_loc, &response_headers);
 
+  std::string host = ctx->gurl->HostAndPort().as_string();
+  RewriteOptions *options = NULL;
+  if (host.size() > 0) {
+    options = get_host_options(host.c_str(), server_context);
+    if (options != NULL) {
+      server_context->message_handler()->Message(kInfo, "request options found \r\n");
+    }
+  }
+  if (options == NULL) {
+    options = server_context->global_options()->Clone();
+  }
+
+  server_context->message_handler()->Message(kInfo, "request options:\r\n[%s]", options->OptionsToString().c_str());
+
+  /*
+  RewriteOptions* options = NULL;
+  GoogleString pagespeed_query_params;
+  GoogleString pagespeed_option_cookies;
+  bool ok = ps_determine_options(server_context,
+                                 ctx->base_fetch->request_headers(),
+                                 &response_headers,
+                                 &options,
+                                 rptr,
+                                 ctx->gurl,
+                                 &pagespeed_query_params,
+                                 &pagespeed_option_cookies,
+                                 true);
+  */
+
+
+  // TODO(oschaaf): use the determined option/query params
   // Take ownership of custom_options.
   scoped_ptr<RewriteOptions> custom_options(options);
-
+  /*
   if (!ok) {
     TSError("Failure while determining request options for psol");
     options = server_context->global_options();
@@ -508,7 +548,7 @@ ats_transform_init(TSCont contp, TransformCtx *ctx)
     // ps_determine_options modified url, removing any ModPagespeedFoo=Bar query
     // parameters.  Keep url_string in sync with url.
     ctx->gurl->Spec().CopyToString(ctx->url_string);
-  }
+    }*/
 
   RewriteDriver *driver;
   if (custom_options.get() == NULL) {
@@ -516,9 +556,16 @@ ats_transform_init(TSCont contp, TransformCtx *ctx)
   } else {
     driver = server_context->NewCustomRewriteDriver(custom_options.release(), ctx->base_fetch->request_context());
   }
+  rptr->set_options(driver->options()->ComputeHttpOptions());
+  // TODO(oschaaf): http version
+  ctx->base_fetch->response_headers()->set_status_code(status);
+  copy_response_headers_to_psol(bufp, hdr_loc, ctx->base_fetch->response_headers());
+  ctx->base_fetch->response_headers()->ComputeCaching();
 
   driver->SetUserAgent(ctx->user_agent->c_str());
   driver->SetRequestHeaders(*request_headers);
+  // driver->set_pagespeed_query_params(pagespeed_query_params);
+  // driver->set_pagespeed_option_cookies(pagespeed_option_cookies);
 
   bool page_callback_added = false;
   scoped_ptr<ProxyFetchPropertyCallbackCollector> property_callback(ProxyFetchFactory::InitiatePropertyCacheLookup(
@@ -787,12 +834,11 @@ handle_read_request_header(TSHttpTxn txnp)
           // TODO(oschaaf): fix host/ip(?)
           SystemRequestContext *system_request_context = new SystemRequestContext(
             server_context->thread_system()->NewMutex(), server_context->timer(), "www.foo.com", 80, "127.0.0.1");
+          RequestContextPtr rptr(system_request_context);
 
-          ctx->base_fetch = new AtsBaseFetch(server_context, RequestContextPtr(system_request_context), ctx->downstream_vio,
-                                             ctx->downstream_buffer, false);
+          ctx->base_fetch = new AtsBaseFetch(server_context, rptr, ctx->downstream_vio, ctx->downstream_buffer, false);
 
 
-          RewriteOptions *options = NULL;
           RequestHeaders *request_headers = new RequestHeaders();
           ctx->base_fetch->SetRequestHeadersTakingOwnership(request_headers);
           copy_request_headers_to_psol(reqp, hdr_loc, request_headers);
@@ -802,26 +848,36 @@ handle_read_request_header(TSHttpTxn txnp)
           // ctx->base_fetch->response_headers()->set_status_code(status);
           // copy_response_headers_to_psol(bufp, hdr_loc, ctx->base_fetch->response_headers());
           // ctx->base_fetch->response_headers()->ComputeCaching();
-          const char *host = ctx->gurl->HostAndPort().as_string().c_str();
+          std::string host = ctx->gurl->HostAndPort().as_string();
           // request_headers->Lookup1(HttpAttributes::kHost);
-          if (host != NULL && strlen(host) > 0) {
-            ctx->options = get_host_options(host);
+          RewriteOptions *options = NULL;
+          if (host.size() > 0) {
+            options = get_host_options(host.c_str(), server_context);
           }
-          bool ok = ps_determine_options(server_context, ctx->options, request_headers, ctx->base_fetch->response_headers(),
-                                         &options, ctx->gurl);
+          if (options == NULL) {
+            options = server_context->global_options()->Clone();
+          }
 
+
+          // GoogleString pagespeed_query_params;
+          // GoogleString pagespeed_option_cookies;
+          // bool ok = ps_determine_options(server_context,
+          //                               ctx->base_fetch->request_headers(),
+          //                               NULL /*ResponseHeaders* */,
+          //                               &options,
+          //                               rptr,
+          //                              ctx->gurl,
+          //                               &pagespeed_query_params,
+          //                               &pagespeed_option_cookies,
+          //                               false /*html rewrite*/);
           // Take ownership of custom_options.
           scoped_ptr<RewriteOptions> custom_options(options);
 
-          if (!ok) {
-            TSError("Failure while determining request options for psol");
-            options = server_context->global_options();
-          } else {
-            // ps_determine_options modified url, removing any ModPagespeedFoo=Bar query
-            // parameters.  Keep url_string in sync with url.
-            ctx->gurl->Spec().CopyToString(ctx->url_string);
-          }
+          // ps_determine_options modified url, removing any ModPagespeedFoo=Bar query
+          // parameters.  Keep url_string in sync with url.
+          // ctx->gurl->Spec().CopyToString(ctx->url_string);
 
+          rptr->set_options(options->ComputeHttpOptions());
           if (options->in_place_rewriting_enabled() && options->enabled() && options->IsAllowed(ctx->gurl->Spec())) {
             RewriteDriver *driver;
             if (custom_options.get() == NULL) {
@@ -834,6 +890,8 @@ handle_read_request_header(TSHttpTxn txnp)
               driver->SetUserAgent(ctx->user_agent->c_str());
             }
             driver->SetRequestHeaders(*ctx->base_fetch->request_headers());
+            // driver->set_pagespeed_query_params(pagespeed_query_params);
+            // driver->set_pagespeed_option_cookies(pagespeed_option_cookies);
             ctx->driver = driver;
             ctx->server_context->message_handler()->Message(kInfo, "Trying to serve rewritten resource in-place: %s",
                                                             ctx->url_string->c_str());
@@ -841,6 +899,7 @@ handle_read_request_header(TSHttpTxn txnp)
             ctx->in_place = true;
             ctx->base_fetch->set_handle_error(false);
             ctx->base_fetch->set_is_ipro(true);
+
             // ctx->driver->FetchInPlaceResource(
             //    *ctx->gurl, false /* proxy_mode */, ctx->base_fetch);
           }
@@ -1036,14 +1095,15 @@ transform_plugin(TSCont contp, TSEvent event, void *edata)
       // (or at least a note that it cannot be cached stored there).
       // We do that using an Apache output filter.
       // TODO(oschaaf): fix host/ip(?)
-      SystemRequestContext *system_request_context = new SystemRequestContext(
-        ctx->server_context->thread_system()->NewMutex(), ctx->server_context->timer(), "www.foo.com", 80, "127.0.0.1");
+      RequestContextPtr system_request_context(new SystemRequestContext(
+        ctx->server_context->thread_system()->NewMutex(), ctx->server_context->timer(), "www.foo.com", 80, "127.0.0.1"));
 
-      ctx->recorder = new InPlaceResourceRecorder(
-        RequestContextPtr(system_request_context), cache_url, ctx->driver->CacheFragment(), request_headers.GetProperties(),
-        options->respect_vary(), options->ipro_max_response_bytes(), options->ipro_max_concurrent_recordings(),
-        options->implicit_cache_ttl_ms(), ctx->server_context->http_cache(), ctx->server_context->statistics(),
-        ctx->server_context->message_handler());
+      system_request_context->set_options(options->ComputeHttpOptions());
+
+      ctx->recorder = new InPlaceResourceRecorder(system_request_context, cache_url, ctx->driver->CacheFragment(),
+                                                  request_headers.GetProperties(), options->ipro_max_response_bytes(),
+                                                  options->ipro_max_concurrent_recordings(), ctx->server_context->http_cache(),
+                                                  ctx->server_context->statistics(), ctx->server_context->message_handler());
       // TODO(oschaaf): does this make sense for ats? perhaps we don't need it.
       ctx->ipro_response_headers = new ResponseHeaders();
       ctx->ipro_response_headers->set_status_code(status);

@@ -481,11 +481,11 @@ test_RamCache(RegressionTest *t, RamCache *cache)
 
   for (int l = 0; l < 10; l++) {
     for (int i = 0; i < 200; i++) {
-      IOBufferData *d = new IOBufferData;
+      IOBufferData *d = new (ats_malloc(sizeof(IOBufferData))) IOBufferData;
       INK_MD5 md5;
 
       d->alloc(BUFFER_SIZE_INDEX_16K);
-      data.push_back(Ptr<IOBufferData>(d));
+      data.push_back(make_ptr(d));
       md5.u64[0] = ((uint64_t)i << 32) + i;
       md5.u64[1] = ((uint64_t)i << 32) + i;
       cache->put(&md5, data[i], 1 << 15);

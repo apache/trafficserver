@@ -71,24 +71,6 @@ extern int cache_config_read_while_writer;
 DLL<HttpSM> debug_sm_list;
 ink_mutex debug_sm_list_mutex;
 
-//  _instantiate_func is called from the fast allocator to initialize
-//  newly-allocated HttpSM objects.  By default, the fast allocators
-//  just memcpys the entire prototype object, but this function does
-//  sparse initialization, not copying dead space for history.
-//
-//  Most of the content of in the prototype object consists of zeroes.
-//  To take advantage of that, a "scatter list" is constructed of
-//  the non-zero words, and those values are scattered onto the
-//  new object after first zeroing out the object (except for dead space).
-//
-//  make_scatter_list should be called only once (during static
-//  initialization, since it isn't thread safe).
-
-#define MAX_SCATTER_LEN (sizeof(HttpSM) / sizeof(uint32_t) + 1)
-static uint32_t val[MAX_SCATTER_LEN];
-static uint16_t to[MAX_SCATTER_LEN];
-static int scat_count = 0;
-
 static const int sub_header_size = sizeof("Content-type: ") - 1 + 2 + sizeof("Content-range: bytes ") - 1 + 4;
 static const int boundary_size = 2 + sizeof("RANGE_SEPARATOR") - 1 + 2;
 
@@ -98,48 +80,43 @@ static const int len_100_continue_response = strlen(str_100_continue_response);
 static const char *str_408_request_timeout_response = "HTTP/1.1 408 Request Timeout\r\nConnection: close\r\n\r\n";
 static const int len_408_request_timeout_response = strlen(str_408_request_timeout_response);
 
-void
-HttpSM::_make_scatter_list(HttpSM *prototype)
+namespace
 {
-  int j;
-  int total_len = sizeof(HttpSM);
+/// Update the milestone state given the milestones and timer.
+inline void
+milestone_update_api_time(TransactionMilestones &milestones, ink_hrtime &api_timer)
+{
+  // Bit of funkiness - we set @a api_timer to be the negative value when we're tracking
+  // non-active API time. In that case we need to make a note of it and flip the value back
+  // to positive.
+  if (api_timer) {
+    ink_hrtime delta;
+    bool active = api_timer >= 0;
+    if (!active)
+      api_timer = -api_timer;
+    delta = ink_get_hrtime() - api_timer;
+    api_timer = 0;
+    // Exactly zero is a problem because we want to signal *something* happened
+    // vs. no API activity at all. This can happen when the API time is less than
+    // the HR timer resolution, so in fact we're understating the time even with
+    // this tweak.
+    if (0 == delta)
+      ++delta;
 
-  uint32_t *p = (uint32_t *)prototype;
-  int n = total_len / sizeof(uint32_t);
-  scat_count = 0;
-  for (j = 0; j < n; j++) {
-    if (p[j]) {
-      to[scat_count] = j;
-      val[scat_count] = p[j];
-      scat_count++;
+    if (0 == milestones.plugin_total)
+      milestones.plugin_total = milestones.sm_start;
+    milestones.plugin_total += delta;
+    if (active) {
+      if (0 == milestones.plugin_active)
+        milestones.plugin_active = milestones.sm_start;
+      milestones.plugin_active += delta;
     }
   }
 }
-
-void
-HttpSM::_instantiate_func(HttpSM *prototype, HttpSM *new_instance)
-{
-  int history_len = sizeof(prototype->history);
-  int total_len = sizeof(HttpSM);
-  int pre_history_len = (char *)(&(prototype->history)) - (char *)prototype;
-  int post_history_len = total_len - history_len - pre_history_len;
-  int post_offset = pre_history_len + history_len;
-  int j;
-
-  memset(((char *)new_instance), 0, pre_history_len);
-  memset(((char *)new_instance) + post_offset, 0, post_history_len);
-
-  uint32_t *pd = (uint32_t *)new_instance;
-
-  for (j = 0; j < scat_count; j++) {
-    pd[to[j]] = val[j];
-  }
-
-  ink_assert((memcmp((char *)new_instance, (char *)prototype, pre_history_len) == 0) &&
-             (memcmp(((char *)new_instance) + post_offset, ((char *)prototype) + post_offset, post_history_len) == 0));
 }
 
-SparseClassAllocator<HttpSM> httpSMAllocator("httpSMAllocator", 128, 16, HttpSM::_instantiate_func);
+
+ClassAllocator<HttpSM> httpSMAllocator("httpSMAllocator");
 
 #define HTTP_INCREMENT_TRANS_STAT(X) HttpTransact::update_stat(&t_state, X, 1);
 
@@ -292,9 +269,9 @@ HttpSM::HttpSM()
     enable_redirection(false), redirect_url(NULL), redirect_url_len(0), redirection_tries(0), transfered_bytes(0),
     post_failed(false), debug_on(false), plugin_tunnel_type(HTTP_NO_PLUGIN_TUNNEL), plugin_tunnel(NULL), reentrancy_count(0),
     history_pos(0), tunnel(), ua_entry(NULL), ua_session(NULL), background_fill(BACKGROUND_FILL_NONE), ua_raw_buffer_reader(NULL),
-    server_entry(NULL), server_session(NULL), shared_session_retries(0), server_buffer_reader(NULL), transform_info(),
-    post_transform_info(), has_active_plugin_agents(false), second_cache_sm(NULL), default_handler(NULL), pending_action(NULL),
-    historical_action(NULL), last_action(HttpTransact::SM_ACTION_UNDEFINED),
+    server_entry(NULL), server_session(NULL), will_be_private_ss(false), shared_session_retries(0), server_buffer_reader(NULL),
+    transform_info(), post_transform_info(), has_active_plugin_agents(false), second_cache_sm(NULL), default_handler(NULL),
+    pending_action(NULL), historical_action(NULL), last_action(HttpTransact::SM_ACTION_UNDEFINED),
     // TODO:  Now that bodies can be empty, should the body counters be set to -1 ? TS-2213
     client_request_hdr_bytes(0), client_request_body_bytes(0), server_request_hdr_bytes(0), server_request_body_bytes(0),
     server_response_hdr_bytes(0), server_response_body_bytes(0), client_response_hdr_bytes(0), client_response_body_bytes(0),
@@ -302,16 +279,9 @@ HttpSM::HttpSM()
     plugin_tag(0), plugin_id(0), hooks_set(false), cur_hook_id(TS_HTTP_LAST_HOOK), cur_hook(NULL), cur_hooks(0),
     callout_state(HTTP_API_NO_CALLOUT), terminate_sm(false), kill_this_async_done(false), parse_range_done(false)
 {
-  static int scatter_init = 0;
-
   memset(&history, 0, sizeof(history));
   memset(&vc_table, 0, sizeof(vc_table));
   memset(&http_parser, 0, sizeof(http_parser));
-
-  if (!scatter_init) {
-    _make_scatter_list(this);
-    scatter_init = 1;
-  }
 }
 
 void
@@ -1247,6 +1217,8 @@ HttpSM::state_api_callback(int event, void *data)
   ink_assert(reentrancy_count >= 0);
   reentrancy_count++;
 
+  milestone_update_api_time(milestones, api_timer);
+
   STATE_ENTER(&HttpSM::state_api_callback, event);
 
   state_api_callout(event, data);
@@ -1294,6 +1266,7 @@ HttpSM::state_api_callout(int event, void *data)
   case EVENT_INTERVAL:
     ink_assert(pending_action == data);
     pending_action = NULL;
+    milestone_update_api_time(milestones, api_timer);
   // FALLTHROUGH
   case EVENT_NONE:
   case HTTP_API_CONTINUE:
@@ -1340,6 +1313,7 @@ HttpSM::state_api_callout(int event, void *data)
           plugin_lock = MUTEX_TAKE_TRY_LOCK(cur_hook->m_cont->mutex, mutex->thread_holding);
 
           if (!plugin_lock) {
+            api_timer = -ink_get_hrtime();
             HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_api_callout);
             ink_assert(pending_action == NULL);
             pending_action = mutex->thread_holding->schedule_in(this, HRTIME_MSECONDS(10));
@@ -1355,7 +1329,15 @@ HttpSM::state_api_callout(int event, void *data)
         APIHook *hook = cur_hook;
         cur_hook = cur_hook->next();
 
+        api_timer = ink_get_hrtime();
         hook->invoke(TS_EVENT_HTTP_READ_REQUEST_HDR + cur_hook_id, this);
+        if (api_timer > 0) {
+          milestone_update_api_time(milestones, api_timer);
+          api_timer = -ink_get_hrtime(); // set in order to track non-active callout duration
+          // which means that if we get back from the invoke with api_timer < 0 we're already
+          // tracking a non-complete callout from a chain so just let it ride. It will get cleaned
+          // up in state_api_callback.
+        }
 
         if (plugin_lock) {
           Mutex_unlock(plugin_mutex, mutex->thread_holding);
@@ -1424,6 +1406,7 @@ HttpSM::state_api_callout(int event, void *data)
   // Now that we're completed with the api state and figured out what
   //   to do next, do it
   callout_state = HTTP_API_NO_CALLOUT;
+  api_timer = 0;
   switch (api_next) {
   case API_RETURN_CONTINUE:
     if (t_state.api_next_action == HttpTransact::SM_ACTION_API_SEND_RESPONSE_HDR) {
@@ -1561,8 +1544,6 @@ HttpSM::handle_api_return()
   case HttpTransact::SM_ACTION_REDIRECT_READ: {
     // Clean up from any communication with previous servers
     release_server_session();
-    cache_sm.close_write();
-    // tunnel.deallocate_redirect_postdata_buffers();
 
     call_transact_and_set_next_state(HttpTransact::HandleRequest);
     break;
@@ -2364,9 +2345,19 @@ HttpSM::state_cache_open_write(int event, void *data)
   case CACHE_EVENT_OPEN_WRITE_FAILED:
     // Failed on the write lock and retrying the vector
     //  for reading
-    t_state.cache_info.write_lock_state = HttpTransact::CACHE_WL_FAIL;
-    break;
-
+    if (t_state.http_config_param->cache_open_write_fail_action == HttpTransact::CACHE_OPEN_WRITE_FAIL_DEFAULT) {
+      t_state.cache_info.write_lock_state = HttpTransact::CACHE_WL_FAIL;
+      break;
+    } else {
+      t_state.cache_open_write_fail_action = t_state.http_config_param->cache_open_write_fail_action;
+      if (!t_state.cache_info.object_read) {
+        // cache miss, set wl_state to fail
+        t_state.cache_info.write_lock_state = HttpTransact::CACHE_WL_FAIL;
+        break;
+      }
+    }
+  // INTENTIONAL FALL THROUGH
+  // Allow for stale object to be served
   case CACHE_EVENT_OPEN_READ:
     // The write vector was locked and the cache_sm retried
     // and got the read vector again.
@@ -3159,19 +3150,9 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer *c)
 
   ink_assert(ua_entry->vc == c->vc);
   if (close_connection) {
-    // If the client could be pipelining or is doing a POST, we need to
-    //   set the ua_session into half close mode
+    // If the client could be pipelining, we need to set the ua_session into half close mode
 
-    // only external POSTs should be subject to this logic; ruling out internal POSTs here
-    bool is_eligible_post_request = (t_state.method == HTTP_WKSIDX_POST);
-    if (is_eligible_post_request) {
-      NetVConnection *vc = ua_session->get_netvc();
-      if (vc) {
-        is_eligible_post_request = vc->get_is_internal_request() ? false : true;
-      }
-    }
-    if ((is_eligible_post_request || t_state.client_info.pipeline_possible == true) && c->producer->vc_type != HT_STATIC &&
-        event == VC_EVENT_WRITE_COMPLETE) {
+    if (t_state.client_info.pipeline_possible == true && c->producer->vc_type != HT_STATIC && event == VC_EVENT_WRITE_COMPLETE) {
       ua_session->set_half_close_flag();
     }
 
@@ -4451,7 +4432,6 @@ HttpSM::do_cache_prepare_action(HttpCacheSM *c_sm, CacheHTTPInfo *object_read_in
   bool restore_client_request = false;
 
   ink_assert(!pending_action);
-  ink_assert(c_sm->cache_write_vc == NULL);
 
   if (t_state.api_lock_url == HttpTransact::LOCK_URL_FIRST) {
     if (t_state.redirect_info.redirect_in_process) {
@@ -4568,6 +4548,32 @@ HttpSM::do_http_server_open(bool raw)
   // gets to us, we should open a new connection for POST.  I believe TS used
   // to do this but as far I can tell the code that prevented keep-alive if
   // there is a request body has been removed.
+
+  // If we are sending authorizations headers, mark the connection private
+  //
+  // We do this here because it means that we will not waste a connection from the pool if we already
+  // know that the session will be private. This is overridable meaning that if a plugin later decides
+  // it shouldn't be private it can still be returned to a shared pool.
+  //
+  if (t_state.txn_conf->auth_server_session_private == 1 &&
+      t_state.hdr_info.server_request.presence(MIME_PRESENCE_AUTHORIZATION | MIME_PRESENCE_PROXY_AUTHORIZATION |
+                                               MIME_PRESENCE_WWW_AUTHENTICATE)) {
+    DebugSM("http_ss_auth", "Setting server session to private for authorization header");
+    will_be_private_ss = true;
+  }
+
+  if (t_state.method == HTTP_WKSIDX_POST || t_state.method == HTTP_WKSIDX_PUT) {
+    // don't share the session if keep-alive for post is not on
+    if (t_state.txn_conf->keep_alive_post_out == 0) {
+      DebugSM("http_ss", "Setting server session to private because of keep-alive post out");
+      will_be_private_ss = true;
+    }
+  }
+
+  // If there is already an attached server session mark it as private.
+  if (server_session != NULL && will_be_private_ss) {
+    set_server_session_private(true);
+  }
 
   if (raw == false && TS_SERVER_SESSION_SHARING_MATCH_NONE != t_state.txn_conf->server_session_sharing_match &&
       (t_state.txn_conf->keep_alive_post_out == 1 || t_state.hdr_info.request_content_length == 0) && !is_private() &&
@@ -5052,6 +5058,7 @@ HttpSM::handle_post_failure()
   t_state.current.server->keep_alive = HTTP_NO_KEEPALIVE;
 
   if (server_buffer_reader->read_avail() > 0) {
+    tunnel.deallocate_buffers();
     tunnel.reset();
     // There's data from the server so try to read the header
     setup_server_read_response_header();
@@ -5581,13 +5588,6 @@ HttpSM::attach_server_session(HttpServerSession *s)
 
   if (t_state.method == HTTP_WKSIDX_POST || t_state.method == HTTP_WKSIDX_PUT) {
     connect_timeout = t_state.txn_conf->post_connect_attempts_timeout;
-
-    // don't share the session if keep-alive for post is not on
-    if (t_state.txn_conf->keep_alive_post_out == 0) {
-      DebugSM("http_ss", "Setting server session to private because of keep-alive post out");
-      set_server_session_private(true);
-    }
-
   } else if (t_state.current.server == &t_state.parent_info) {
     connect_timeout = t_state.http_config_param->parent_connect_timeout;
   } else {
@@ -5608,7 +5608,7 @@ HttpSM::attach_server_session(HttpServerSession *s)
     server_session->get_netvc()->set_active_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_active_timeout_out));
   }
 
-  if (plugin_tunnel_type != HTTP_NO_PLUGIN_TUNNEL) {
+  if (plugin_tunnel_type != HTTP_NO_PLUGIN_TUNNEL || will_be_private_ss) {
     DebugSM("http_ss", "Setting server session to private");
     set_server_session_private(true);
   }
@@ -5652,13 +5652,6 @@ HttpSM::setup_server_send_request()
     server_request_body_bytes = msg_len;
   }
 
-  // If we are sending authorizations headers, mark the connection private
-  if (t_state.txn_conf->auth_server_session_private == 1 &&
-      t_state.hdr_info.server_request.presence(MIME_PRESENCE_AUTHORIZATION | MIME_PRESENCE_PROXY_AUTHORIZATION |
-                                               MIME_PRESENCE_WWW_AUTHENTICATE)) {
-    DebugSM("http_ss", "Setting server session to private for authorization header");
-    set_server_session_private(true);
-  }
   milestones.server_begin_write = Thread::get_hrtime();
   server_entry->write_vio = server_entry->vc->do_io_write(this, hdr_length, buf_start);
 }
@@ -6620,17 +6613,6 @@ HttpSM::update_stats()
     os_read_time = -1;
   }
 
-// TS-2032: This code is never used, but leaving it here in case we want to add these
-// to the metrics code.
-#if 0
-  ink_hrtime cache_lookup_time;
-  if (milestones.cache_open_read_end != 0 && milestones.cache_open_read_begin != 0) {
-    cache_lookup_time = milestones.cache_open_read_end - milestones.cache_open_read_begin;
-  } else {
-    cache_lookup_time = -1;
-  }
-#endif
-
   HttpTransact::update_size_and_time_stats(
     &t_state, total_time, ua_write_time, os_read_time, client_request_hdr_bytes, client_request_body_bytes,
     client_response_hdr_bytes, client_response_body_bytes, server_request_hdr_bytes, server_request_body_bytes,
@@ -6643,8 +6625,7 @@ HttpSM::update_stats()
 
 
   // print slow requests if the threshold is set (> 0) and if we are over the time threshold
-  if (t_state.http_config_param->slow_log_threshold != 0 &&
-      ink_hrtime_from_msec(t_state.http_config_param->slow_log_threshold) < total_time) {
+  if (t_state.txn_conf->slow_log_threshold != 0 && ink_hrtime_from_msec(t_state.txn_conf->slow_log_threshold) < total_time) {
     URL *url = t_state.hdr_info.client_request.url_get();
     char url_string[256] = "";
     int offset = 0;
@@ -6686,6 +6667,7 @@ HttpSM::update_stats()
           "url: %s "
           "status: %d "
           "unique id: %s "
+          "redirection_tries: %d "
           "bytes: %" PRId64 " "
           "fd: %d "
           "client state: %d "
@@ -6702,9 +6684,11 @@ HttpSM::update_stats()
           "server_read_header_done: %.3f "
           "server_close: %.3f "
           "ua_close: %.3f "
-          "sm_finish: %.3f",
+          "sm_finish: %.3f "
+          "plugin_active: %.3f "
+          "plugin_total: %.3f",
           sm_id, client_ip, ats_ip_port_host_order(&t_state.client_info.addr), url_string, status, unique_id_string,
-          client_response_body_bytes, fd, t_state.client_info.state, t_state.server_info.state,
+          redirection_tries, client_response_body_bytes, fd, t_state.client_info.state, t_state.server_info.state,
           milestone_difference(milestones.sm_start, milestones.ua_begin),
           milestone_difference(milestones.sm_start, milestones.ua_first_read),
           milestone_difference(milestones.sm_start, milestones.ua_read_header_done),
@@ -6717,7 +6701,9 @@ HttpSM::update_stats()
           milestone_difference(milestones.sm_start, milestones.server_read_header_done),
           milestone_difference(milestones.sm_start, milestones.server_close),
           milestone_difference(milestones.sm_start, milestones.ua_close),
-          milestone_difference(milestones.sm_start, milestones.sm_finish));
+          milestone_difference(milestones.sm_start, milestones.sm_finish),
+          milestone_difference(milestones.sm_start, milestones.plugin_active),
+          milestone_difference(milestones.sm_start, milestones.plugin_total));
   }
 }
 
@@ -7071,7 +7057,7 @@ HttpSM::set_next_state()
   }
 
   case HttpTransact::SM_ACTION_CACHE_ISSUE_WRITE: {
-    ink_assert(cache_sm.cache_write_vc == NULL);
+    ink_assert((cache_sm.cache_write_vc == NULL) || t_state.redirect_info.redirect_in_process);
     HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_cache_open_write);
 
     do_cache_prepare_write();
@@ -7485,6 +7471,7 @@ HttpSM::redirect_request(const char *redirect_url, const int redirect_len)
       if (!noPortInHost) {
         char port_buf[6]; // handle upto 5 digit port
         buf[host_len++] = ':';
+        buf[host_len] = '\0';
 
         host_len += ink_small_itoa(port, port_buf, sizeof(port_buf));
         ink_strlcat(buf, port_buf, sizeof(buf));
@@ -7521,6 +7508,7 @@ HttpSM::redirect_request(const char *redirect_url, const int redirect_len)
         if (!noPortInHost) {
           char port_buf[6]; // handle upto 5 digit port
           buf[origHostPort_len++] = ':';
+          buf[origHostPort_len] = '\0';
           origHostPort_len += ink_small_itoa(origPort, port_buf, sizeof(port_buf));
           ink_strlcat(buf, port_buf, sizeof(buf));
         }
@@ -7600,6 +7588,8 @@ HttpSM::is_private()
     HttpServerSession *ss = ua_session->get_server_session();
     if (ss) {
       res = ss->private_session;
+    } else if (will_be_private_ss) {
+      res = will_be_private_ss;
     }
   }
   return res;

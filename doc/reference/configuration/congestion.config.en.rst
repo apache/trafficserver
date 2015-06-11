@@ -55,16 +55,16 @@ file. Traffic Server recognizes three space-delimited tags::
 The following list shows possible primary destinations with allowed
 values.
 
-*``dest_domain``* {#dest_domain}
+``dest_domain``
     A requested domain name.
 
-*``dest_host``* {#dest_host}
+``dest_host``
     A requested hostname.
 
-*``dest_ip``* {#dest_ip}
+``dest_ip``
     A requested IP address.
 
-*``url_regex``* {#url_regex}
+``url_regex``
     A regular expression (regex) to be found in a URL.
 
 The secondary specifiers are optional in the congestion.config file. The
@@ -72,72 +72,72 @@ following list shows possible secondary specifiers with allowed values.
 You can use more than one secondary specifier in a rule; however, you
 cannot repeat a secondary specifier.
 
-*``port``* {#port}
+``port``
     A requested URL port or range of ports.
 
-*``prefix``* {#prefix}
+``prefix``
     A prefix in the path part of a URL.
 
 The following list shows the possible tags and their allowed values.
 
-*``max_connection_failures``* {#max_connection_failures}
+``max_connection_failures``
     Default: ``5``
     The maximum number of connection failures allowed within the fail
     window described below before Traffic Server marks the origin server
     as congested.
 
-*``fail_window``* {#fail_window}
+``fail_window``
     Default: ``120`` seconds.
     The time period during which the maximum number of connection
     failures can occur before Traffic Server marks the origin server as
     congested.
 
-*``proxy_retry_interval``* {#proxy_retry_interval}
+``proxy_retry_interval``
     Default: ``10`` seconds.
     The number of seconds that Traffic Server waits before contacting a
     congested origin server again.
 
-*``client_wait_interval``* {#client_wait_interval}
+``client_wait_interval``
     Default: ``300`` seconds.
     The number of seconds that the client is advised to wait before
     retrying the congested origin server.
 
-*``wait_interval_alpha``* {#wait_interval_alpha}
+``wait_interval_alpha``
     Default: ``30`` seconds
     The upper limit for a random number that is added to the wait
     interval.
 
-*``live_os_conn_timeout``* {#live_os_conn_timeout}
+``live_os_conn_timeout``
     Default: ``60`` seconds.
     The connection timeout to the live (uncongested) origin server. If a
     client stops a request before the timeout occurs, then Traffic
     Server does not record a connection failure.
 
-*``live_os_conn_retries``* {#live_os_conn_retries}
+``live_os_conn_retries``
     Default: ``2``
     The maximum number of retries allowed to the live (uncongested)
     origin server.
 
-*``dead_os_conn_timeout``* {#dead_os_conn_timeout}
+``dead_os_conn_timeout``
     Default: ``15`` seconds.
     The connection timeout to the congested origin server.
 
-*``dead_os_conn_retries``* {#dead_os_conn_retries}
+``dead_os_conn_retries``
     Default: ``1``
     The maximum number of retries allowed to the congested origin
     server.
 
-*``max_connection``* {#max_connection}
+``max_connection``
     Default: ``-1``
     The maximum number of connections allowed from Traffic Server to the
     origin server.
 
-*``error_page``* {#error_page}
+``error_page``
     Default: ``"congestion#retryAfter"``
     The error page sent to the client when a server is congested. You
     must enclose the value in quotes;
 
-*:file:`congestion.config`* {#congestion_scheme}
+``congestion_scheme``
     Default: ``"per_ip"``
     Specifies if Traffic Server applies the rule on a per-host
     (``"per_host"``) or per-IP basis (``"per_ip"``). You must enclose

@@ -21,7 +21,7 @@ library_includedir=$(includedir)/ts
 library_include_HEADERS = apidefs.h
 
 noinst_PROGRAMS = mkdfa CompileParseRules
-check_PROGRAMS = test_arena test_atomic test_freelist test_geometry test_List test_Map test_Regex test_Vec
+check_PROGRAMS = test_arena test_atomic test_freelist test_geometry test_List test_Map test_Regex test_Vec test_X509HostnameValidator
 TESTS = $(check_PROGRAMS)
 
 AM_CPPFLAGS = -I$(top_srcdir)/lib
@@ -107,6 +107,8 @@ libtsutil_la_SOURCES = \
   defalloc.h \
   fastlz.c \
   fastlz.h \
+  hugepages.cc \
+  hugepages.h \
   ink_aiocb.h \
   ink_align.h \
   ink_apidefs.h \
@@ -146,8 +148,6 @@ libtsutil_la_SOURCES = \
   ink_platform.h \
   ink_queue.cc \
   ink_queue.h \
-  ink_queue_ext.cc \
-  ink_queue_ext.h \
   ink_queue_utils.cc \
   ink_rand.cc \
   ink_rand.h \
@@ -180,7 +180,9 @@ libtsutil_la_SOURCES = \
   llqueue.cc \
   lockfile.cc \
   signals.cc \
-  signals.h
+  signals.h \
+  X509HostnameValidator.cc \
+  X509HostnameValidator.h
 
 #test_UNUSED_SOURCES = \
 #  load_http_hdr.cc \
@@ -226,6 +228,10 @@ test_Vec_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
 test_geometry_SOURCES = test_geometry.cc
 test_geometry_LDADD = libtsutil.la @LIBTCL@ @LIBPCRE@
 test_geometry_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
+
+test_X509HostnameValidator_SOURCES = test_X509HostnameValidator.cc
+test_X509HostnameValidator_LDADD = libtsutil.la @LIBTCL@ @LIBPCRE@ @OPENSSL_LIBS@
+test_X509HostnameValidator_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
 
 CompileParseRules_SOURCES = CompileParseRules.cc
 

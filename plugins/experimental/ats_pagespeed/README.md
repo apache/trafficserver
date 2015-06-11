@@ -3,7 +3,7 @@
 
 Apache Traffic Server web content optimization plugin powered by Google PageSpeed
 
-http://www.atsspeed.com/
+http://www.atspagespeed.com/
 
 To build, a simple 'make' should work. Use 'sudo make install' to install.
 Optionally, patching ATS with ethread.patch helps with eliminating latency that 
@@ -26,6 +26,11 @@ That folder is monitored, and changes to files in there are picked
 up immediately. A sample configuration:
 
 ```
+# Base configuration for the module, all host-specific configuration
+# will inherit. 
+pagespeed RewriteLevel CoreFilters
+# Mandatory FileCachePath setting. The path must exist and be read/write for the traffic_server process.
+pagespeed FileCachePath /tmp/ats_pagespeed/
 # [host]
 [192.168.185.185]
 # Force traffic server to cache all origin responses
@@ -41,12 +46,8 @@ pagespeed EnableFilters prioritize_critical_css,rewrite_css
 pagespeed EnableFilters combine_javascript,combine_css
 ```
 
-It also expects this in records.config from ATS to function:
-`CONFIG proxy.config.url_remap.pristine_host_hdr INT 0`
-
 You can view debug output of the plugin using `traffic_server -T ".*speed.*"`
 
-The current state compiles against PSOL 1.7.30.4-beta.
-Please note the this plugin will generate asserts when build against
-the debug version of mps (option->Merge from a different thread).
+The current state compiles against PSOL 1.9.32.3-stable
+
 

@@ -384,7 +384,7 @@ main_stats_page(Stats &stats)
 int
 main(int argc, char **argv)
 {
-  int sleep_time = 5000;
+  int sleep_time = 6000;
   bool absolute = false;
   int opt;
   while ((opt = getopt(argc, argv, "s:")) != -1) {

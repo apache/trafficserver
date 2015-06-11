@@ -120,40 +120,49 @@ resource_intercept(TSCont cont, TSEvent event, void *edata)
       AtsServerContext *server_context = intercept_ctx->request_ctx->server_context;
 
       // TODO:(oschaaf) host/port
-      SystemRequestContext *system_request_context =
-        new SystemRequestContext(server_context->thread_system()->NewMutex(), server_context->timer(),
-                                 "www.foo.com", // TODO(oschaaf): compute these
-                                 80, "127.0.0.1");
+      RequestContextPtr system_request_context(new SystemRequestContext(server_context->thread_system()->NewMutex(),
+                                                                        server_context->timer(),
+                                                                        "www.foo.com", // TODO(oschaaf): compute these
+                                                                        80, "127.0.0.1"));
 
-      intercept_ctx->request_ctx->base_fetch = new AtsBaseFetch(server_context, RequestContextPtr(system_request_context),
-                                                                downstream_vio, intercept_ctx->resp_buffer, true);
+      intercept_ctx->request_ctx->base_fetch =
+        new AtsBaseFetch(server_context, system_request_context, downstream_vio, intercept_ctx->resp_buffer, true);
       intercept_ctx->request_ctx->base_fetch->set_request_headers(intercept_ctx->request_headers);
 
+      std::string host = intercept_ctx->request_ctx->gurl->HostAndPort().as_string();
       RewriteOptions *options = NULL;
-
-      // const char* host = intercept_ctx->request_headers->Lookup1(HttpAttributes::kHost);
-      const char *host = intercept_ctx->request_ctx->gurl->HostAndPort().as_string().c_str();
-      if (host != NULL && strlen(host) > 0) {
-        intercept_ctx->request_ctx->options = get_host_options(host);
+      if (host.size() > 0) {
+        options = get_host_options(host.c_str(), server_context);
+      }
+      if (options == NULL) {
+        options = server_context->global_options()->Clone();
       }
 
-      // TODO(oschaaf): directory options should be coming from configuration!
-      bool ok = ps_determine_options(
-        server_context, intercept_ctx->request_ctx->options, intercept_ctx->request_ctx->base_fetch->request_headers(),
-        intercept_ctx->request_ctx->base_fetch->response_headers(), &options, intercept_ctx->request_ctx->gurl);
 
-      // Take ownership of custom_options.
-      scoped_ptr<RewriteOptions> custom_options(options);
-
+      /*        GoogleString pagespeed_query_params;
+      GoogleString pagespeed_option_cookies;
+      bool ok = ps_determine_options(server_context,
+                                     intercept_ctx->request_ctx->base_fetch->request_headers(),
+                                     NULL //intercept_ctx->request_ctx->base_fetch->response_headers()//,
+                                     &options,
+                                     system_request_context,
+                                     intercept_ctx->request_ctx->gurl,
+                                     &pagespeed_query_params,
+                                     &pagespeed_option_cookies,
+                                     false );
       if (!ok) {
         TSError("Failure while determining request options for psol resource");
-        // options = server_context->global_options();
-      } else {
-        // ps_determine_options modified url, removing any ModPagespeedFoo=Bar query
-        // parameters.  Keep url_string in sync with url.
-        // TODO(oschaaf): we really should determine if we have to do the lookup
-        intercept_ctx->request_ctx->gurl->Spec().CopyToString(intercept_ctx->request_ctx->url_string);
+        options = server_context->global_options()->Clone();
+      } else if (options == NULL) {
+        options = server_context->global_options()->Clone();
       }
+    */
+      scoped_ptr<RewriteOptions> custom_options(options);
+
+
+      // TODO(oschaaf): directory options should be coming from configuration!
+      // TODO(oschaaf): do we need to sync the url?
+      system_request_context->set_options(options->ComputeHttpOptions());
 
       // The url we have here is already checked for IsWebValid()
       net_instaweb::ResourceFetch::Start(GoogleUrl(*intercept_ctx->request_ctx->url_string),
@@ -233,7 +242,7 @@ read_cache_header_callback(TSCont cont, TSEvent event, void *edata)
   // This is because I realised too late that the intercepts
   // are able to outlive the transaction, which I hacked
   // to work.
-  if (TSHttpTxnIsInternal(txn) == TS_SUCCESS) {
+  if (TSHttpIsInternalRequest(txn) == TS_SUCCESS) {
     ats_ctx_destroy(ctx);
     TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
     return 0;

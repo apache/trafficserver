@@ -529,6 +529,8 @@ convert_from_2_to_1_1_header(HTTPHdr *headers)
   headers->field_delete(MIME_FIELD_TRANSFER_ENCODING, MIME_LEN_TRANSFER_ENCODING);
   headers->field_delete(MIME_FIELD_UPGRADE, MIME_LEN_UPGRADE);
 
+  headers->value_set(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION, HTTP_VALUE_CLOSE, HTTP_LEN_CLOSE);
+
   return PARSE_DONE;
 }
 
@@ -629,10 +631,10 @@ http2_write_header_fragment(HTTPHdr *in, MIMEFieldIter &field_iter, uint8_t *out
 int64_t
 http2_parse_header_fragment(HTTPHdr *hdr, IOVec iov, Http2DynamicTable &dynamic_table, bool cont)
 {
-  uint8_t *buf_start = (uint8_t *)iov.iov_base;
-  uint8_t *buf_end = (uint8_t *)iov.iov_base + iov.iov_len;
+  const uint8_t *buf_start = (uint8_t *)iov.iov_base;
+  const uint8_t *buf_end = buf_start + iov.iov_len;
 
-  uint8_t *cursor = buf_start;
+  uint8_t *cursor = (uint8_t *)iov.iov_base; // place the cursor at the start
   HdrHeap *heap = hdr->m_heap;
   HTTPHdrImpl *hh = hdr->m_http;
 

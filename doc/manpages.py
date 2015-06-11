@@ -48,7 +48,6 @@ man_pages = [
   ('reference/configuration/splitdns.config.en', 'splitdns.config', u'Traffic Server split DNS configuration file', None, '5'),
   ('reference/configuration/ssl_multicert.config.en', 'ssl_multicert.config', u'Traffic Server SSL certificate configuration file', None, '5'),
   ('reference/configuration/storage.config.en', 'storage.config', u'Traffic Server cache storage configuration file', None, '5'),
-  ('reference/configuration/update.config.en', 'update.config', u'Traffic Server automated update configuration file', None, '5'),
   ('reference/configuration/volume.config.en', 'volume.config', u'Traffic Server cache volume configuration file', None, '5'),
 
 ]

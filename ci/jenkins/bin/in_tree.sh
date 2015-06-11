@@ -31,7 +31,6 @@ autoreconf -fi
     --enable-experimental-plugins \
     --enable-example-plugins \
     --enable-test-tools \
-    --enable-reclaimable-freelist \
     --enable-wccp \
     ${enable_cppapi} \
     CORES=2

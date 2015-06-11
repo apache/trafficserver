@@ -31,6 +31,12 @@
 #include <limits.h>
 #include <ctype.h>
 
+#ifdef HAVE_PCRE_PCRE_H
+#include <pcre/pcre.h>
+#else
+#include <pcre.h>
+#endif
+
 #include <ts/ts.h>
 #include <ts/remap.h>
 
@@ -40,13 +46,26 @@ struct config {
   TSHttpStatus err_status;
   char *err_url;
   char keys[MAX_KEY_NUM][MAX_KEY_LEN];
+  pcre *regex;
+  pcre_extra *regex_extra;
 };
 
-void
+static void
 free_cfg(struct config *cfg)
 {
   TSError("Cleaning up...");
   TSfree(cfg->err_url);
+
+  if (cfg->regex_extra)
+#ifndef PCRE_STUDY_JIT_COMPILE
+    pcre_free(cfg->regex_extra);
+#else
+    pcre_free_study(cfg->regex_extra);
+#endif
+
+  if (cfg->regex)
+    pcre_free(cfg->regex);
+
   TSfree(cfg);
 }
 
@@ -91,7 +110,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
     return TS_ERROR;
   }
 
-  char line[260];
+  char line[300];
   int line_no = 0;
   int keynum;
 
@@ -115,8 +134,10 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
     pos = strchr(value, '\n'); // remove the new line, terminate the string
     if (pos != NULL) {
       *pos = '\0';
-    } else {
-      snprintf(errbuf, errbuf_size - 1, "[TSRemapNewInstance] - Maximum line (%d) exceeded on line %d.", MAX_KEY_LEN, line_no);
+    }
+    if (pos == NULL || strlen(value) >= MAX_KEY_LEN) {
+      snprintf(errbuf, errbuf_size - 1, "[TSRemapNewInstance] - Maximum key length (%d) exceeded on line %d.", MAX_KEY_LEN - 1,
+               line_no);
       fclose(file);
       free_cfg(cfg);
       return TS_ERROR;
@@ -139,7 +160,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
         free_cfg(cfg);
         return TS_ERROR;
       }
-      strcpy(&cfg->keys[keynum][0], value);
+      strncpy(&cfg->keys[keynum][0], value, MAX_KEY_LEN - 1);
     } else if (strncmp(line, "error_url", 9) == 0) {
       if (atoi(value)) {
         cfg->err_status = atoi(value);
@@ -147,16 +168,30 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
       value += 3;
       while (isspace(*value))
         value++;
-      //                      if (strncmp(value, "http://", strlen("http://")) != 0) {
-      //                              snprintf(errbuf, errbuf_size - 1,
-      //                                              "[TSRemapNewInstance] - Invalid config, err_status == 302, but err_url does
-      //                                              not start with \"http://\"");
-      //                              return TS_ERROR;
-      //                      }
       if (cfg->err_status == TS_HTTP_STATUS_MOVED_TEMPORARILY)
         cfg->err_url = TSstrndup(value, strlen(value));
       else
         cfg->err_url = NULL;
+    } else if (strncmp(line, "excl_regex", 10) == 0) {
+      // compile and study regex
+      const char *errptr;
+      int erroffset, options = 0;
+
+      if (cfg->regex) {
+        TSDebug(PLUGIN_NAME, "Skipping duplicate excl_regex");
+        continue;
+      }
+
+      cfg->regex = pcre_compile(value, options, &errptr, &erroffset, NULL);
+      if (cfg->regex == NULL) {
+        TSDebug(PLUGIN_NAME, "Regex compilation failed with error (%s) at character %d.", errptr, erroffset);
+      } else {
+#ifdef PCRE_STUDY_JIT_COMPILE
+        options = PCRE_STUDY_JIT_COMPILE;
+#endif
+        cfg->regex_extra = pcre_study(
+          cfg->regex, options, &errptr); // We do not need to check the error here because we can still run without the studying?
+      }
     } else {
       TSError("Error parsing line %d of file %s (%s).", line_no, config_file, line);
     }
@@ -198,7 +233,7 @@ TSRemapDeleteInstance(void *ih)
   free_cfg((struct config *)ih);
 }
 
-void
+static void
 err_log(char *url, char *msg)
 {
   if (msg && url) {
@@ -255,6 +290,24 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   TSDebug(PLUGIN_NAME, "%s", url);
 
   query = strstr(url, "?");
+
+  if (cfg->regex) {
+    int offset = 0, options = 0;
+    int ovector[30];
+    int len = url_len;
+    char *anchor = strstr(url, "#");
+    if (query && !anchor) {
+      len -= (query - url);
+    } else if (anchor && !query) {
+      len -= (anchor - url);
+    } else if (anchor && query) {
+      len -= ((query < anchor ? query : anchor) - url);
+    }
+    if (pcre_exec(cfg->regex, cfg->regex_extra, url, len, offset, options, ovector, 30) >= 0) {
+      goto allow;
+    }
+  }
+
   if (query == NULL) {
     err_log(url, "Has no query string.");
     goto deny;
@@ -328,7 +381,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   if (p != NULL) {
     p += strlen(KIN_QSTRING) + 1;
     keyindex = atoi(p);
-    if (keyindex == -1) {
+    if (keyindex < 0 || keyindex >= MAX_KEY_NUM || 0 == cfg->keys[keyindex][0]) {
       err_log(url, "Invalid key index.");
       goto deny;
     }

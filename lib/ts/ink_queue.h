@@ -144,12 +144,6 @@ typedef union {
 #error "unsupported processor"
 #endif
 
-#if TS_USE_RECLAIMABLE_FREELIST
-extern float cfg_reclaim_factor;
-extern int64_t cfg_max_overage;
-extern int64_t cfg_enable_reclaim;
-extern int64_t cfg_debug_filter;
-#else
 struct _InkFreeList {
   volatile head_p head;
   const char *name;
@@ -161,7 +155,6 @@ struct _InkFreeList {
 inkcoreapi extern volatile int64_t fastalloc_mem_in_use;
 inkcoreapi extern volatile int64_t fastalloc_mem_total;
 inkcoreapi extern volatile int64_t freelist_allocated_mem;
-#endif
 
 typedef struct _InkFreeList InkFreeList, *PInkFreeList;
 typedef struct _ink_freelist_list {

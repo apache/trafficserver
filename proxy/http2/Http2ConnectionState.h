@@ -59,23 +59,25 @@ public:
   unsigned
   get(Http2SettingsIdentifier id) const
   {
-    ink_assert(id <= HTTP2_SETTINGS_MAX - 1);
-
-    if (id > HTTP2_SETTINGS_MAX - 1) {
-      return 0;
+    if (id < HTTP2_SETTINGS_MAX) {
+      return this->settings[indexof(id)];
+    } else {
+      ink_assert(!"Bad Settings Identifier");
     }
-    return this->settings[indexof(id)];
+
+    return 0;
   }
 
   unsigned
   set(Http2SettingsIdentifier id, unsigned value)
   {
-    ink_assert(id <= HTTP2_SETTINGS_MAX - 1);
-
-    if (id > HTTP2_SETTINGS_MAX - 1) {
-      return 0;
+    if (id < HTTP2_SETTINGS_MAX) {
+      return this->settings[indexof(id)] = value;
+    } else {
+      ink_assert(!"Bad Settings Identifier");
     }
-    return this->settings[indexof(id)] = value;
+
+    return 0;
   }
 
 private:
@@ -83,7 +85,7 @@ private:
   static unsigned
   indexof(Http2SettingsIdentifier id)
   {
-    ink_assert(id <= HTTP2_SETTINGS_MAX - 1);
+    ink_assert(id < HTTP2_SETTINGS_MAX);
 
     return id - 1;
   }
@@ -105,7 +107,7 @@ public:
 
   ~Http2Stream()
   {
-    _req_header.clear();
+    _req_header.destroy();
 
     if (_fetch_sm) {
       _fetch_sm->ext_destroy();

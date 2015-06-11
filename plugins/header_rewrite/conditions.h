@@ -278,7 +278,10 @@ private:
 class ConditionUrl : public Condition
 {
 public:
-  explicit ConditionUrl(bool client = false) : _url_qual(URL_QUAL_NONE), _client(client)
+  enum UrlType { CLIENT, URL, FROM, TO };
+
+
+  explicit ConditionUrl(const UrlType type) : _url_qual(URL_QUAL_NONE), _type(type)
   {
     TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionUrl");
   };
@@ -294,7 +297,7 @@ private:
   DISALLOW_COPY_AND_ASSIGN(ConditionUrl);
 
   UrlQualifiers _url_qual;
-  bool _client;
+  UrlType _type;
 };
 
 

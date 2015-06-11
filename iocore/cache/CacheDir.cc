@@ -24,6 +24,8 @@
 
 #include "P_Cache.h"
 
+#include "hugepages.h"
+
 // #define LOOP_CHECK_MODE 1
 #ifdef LOOP_CHECK_MODE
 #define DIR_LOOP_THRESHOLD 1000
@@ -148,7 +150,7 @@ OpenDir::close_write(CacheVC *cont)
 }
 
 OpenDirEntry *
-OpenDir::open_read(INK_MD5 *key)
+OpenDir::open_read(const CryptoHash *key)
 {
   unsigned int h = key->slice32(0);
   int b = h % OPEN_DIR_BUCKETS;
@@ -593,7 +595,7 @@ dir_free_entry(Dir *e, int s, Vol *d)
 }
 
 int
-dir_probe(CacheKey *key, Vol *d, Dir *result, Dir **last_collision)
+dir_probe(const CacheKey *key, Vol *d, Dir *result, Dir **last_collision)
 {
   ink_assert(d->mutex->thread_holding == this_ethread());
   int s = key->slice32(0) % d->segments;
@@ -660,7 +662,7 @@ Lagain:
 }
 
 int
-dir_insert(CacheKey *key, Vol *d, Dir *to_part)
+dir_insert(const CacheKey *key, Vol *d, Dir *to_part)
 {
   ink_assert(d->mutex->thread_holding == this_ethread());
   int s = key->slice32(0) % d->segments, l;
@@ -721,7 +723,7 @@ Lfill:
 }
 
 int
-dir_overwrite(CacheKey *key, Vol *d, Dir *dir, Dir *overwrite, bool must_overwrite)
+dir_overwrite(const CacheKey *key, Vol *d, Dir *dir, Dir *overwrite, bool must_overwrite)
 {
   ink_assert(d->mutex->thread_holding == this_ethread());
   int s = key->slice32(0) % d->segments, l;
@@ -797,7 +799,7 @@ Lfill:
 }
 
 int
-dir_delete(CacheKey *key, Vol *d, Dir *del)
+dir_delete(const CacheKey *key, Vol *d, Dir *del)
 {
   ink_assert(d->mutex->thread_holding == this_ethread());
   int s = key->slice32(0) % d->segments;
@@ -840,7 +842,7 @@ dir_delete(CacheKey *key, Vol *d, Dir *del)
 // Lookaside Cache
 
 int
-dir_lookaside_probe(CacheKey *key, Vol *d, Dir *result, EvacuationBlock **eblock)
+dir_lookaside_probe(const CacheKey *key, Vol *d, Dir *result, EvacuationBlock **eblock)
 {
   ink_assert(d->mutex->thread_holding == this_ethread());
   int i = key->slice32(3) % LOOKASIDE_SIZE;
@@ -881,7 +883,7 @@ dir_lookaside_insert(EvacuationBlock *eblock, Vol *d, Dir *to)
 }
 
 int
-dir_lookaside_fixup(CacheKey *key, Vol *d)
+dir_lookaside_fixup(const CacheKey *key, Vol *d)
 {
   ink_assert(d->mutex->thread_holding == this_ethread());
   int i = key->slice32(3) % LOOKASIDE_SIZE;
@@ -932,7 +934,7 @@ dir_lookaside_cleanup(Vol *d)
 }
 
 void
-dir_lookaside_remove(CacheKey *key, Vol *d)
+dir_lookaside_remove(const CacheKey *key, Vol *d)
 {
   ink_assert(d->mutex->thread_holding == this_ethread());
   int i = key->slice32(3) % LOOKASIDE_SIZE;
@@ -1011,6 +1013,7 @@ sync_cache_dir_on_shutdown(void)
   Debug("cache_dir_sync", "sync started");
   char *buf = NULL;
   size_t buflen = 0;
+  bool buf_huge = false;
 
   EThread *t = (EThread *)0xdeadbeef;
   for (int i = 0; i < gnvol; i++) {
@@ -1077,10 +1080,22 @@ sync_cache_dir_on_shutdown(void)
 #endif
 
     if (buflen < dirlen) {
-      if (buf)
-        ats_memalign_free(buf);
-      buf = (char *)ats_memalign(ats_pagesize(), dirlen);
+      if (buf) {
+        if (buf_huge)
+          ats_free_hugepage(buf, buflen);
+        else
+          ats_memalign_free(buf);
+        buf = NULL;
+      }
       buflen = dirlen;
+      if (ats_hugepage_enabled()) {
+        buf = (char *)ats_alloc_hugepage(buflen);
+        buf_huge = true;
+      }
+      if (buf == NULL) {
+        buf = (char *)ats_memalign(ats_pagesize(), buflen);
+        buf_huge = false;
+      }
     }
 
     if (!d->dir_sync_in_progress) {
@@ -1104,8 +1119,13 @@ sync_cache_dir_on_shutdown(void)
     Debug("cache_dir_sync", "done syncing dir for vol %s", d->hash_text.get());
   }
   Debug("cache_dir_sync", "sync done");
-  if (buf)
-    ats_memalign_free(buf);
+  if (buf) {
+    if (buf_huge)
+      ats_free_hugepage(buf, buflen);
+    else
+      ats_memalign_free(buf);
+    buf = NULL;
+  }
 }
 
 
@@ -1120,11 +1140,6 @@ CacheSync::mainEvent(int event, Event *e)
 Lrestart:
   if (vol_idx >= gnvol) {
     vol_idx = 0;
-    if (buf) {
-      ats_memalign_free(buf);
-      buf = 0;
-      buflen = 0;
-    }
     Debug("cache_dir_sync", "sync done");
     if (event == EVENT_INTERVAL)
       trigger = e->ethread->schedule_in(this, HRTIME_SECONDS(cache_config_dir_sync_frequency));
@@ -1196,10 +1211,22 @@ Lrestart:
       Debug("cache_dir_sync", "pos: %" PRIu64 " Dir %s dirty...syncing to disk", vol->header->write_pos, vol->hash_text.get());
       vol->header->dirty = 0;
       if (buflen < dirlen) {
-        if (buf)
-          ats_memalign_free(buf);
-        buf = (char *)ats_memalign(ats_pagesize(), dirlen);
+        if (buf) {
+          if (buf_huge)
+            ats_free_hugepage(buf, buflen);
+          else
+            ats_memalign_free(buf);
+          buf = NULL;
+        }
         buflen = dirlen;
+        if (ats_hugepage_enabled()) {
+          buf = (char *)ats_alloc_hugepage(buflen);
+          buf_huge = true;
+        }
+        if (buf == NULL) {
+          buf = (char *)ats_memalign(ats_pagesize(), buflen);
+          buf_huge = false;
+        }
       }
       vol->header->sync_serial++;
       vol->footer->sync_serial = vol->header->sync_serial;
@@ -1429,8 +1456,8 @@ regress_rand_init(unsigned int i)
   regress_rand_seed = i;
 }
 
-void
-regress_rand_CacheKey(CacheKey *key)
+static void
+regress_rand_CacheKey(const CacheKey *key)
 {
   unsigned int *x = (unsigned int *)key;
   for (int i = 0; i < 4; i++)

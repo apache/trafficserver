@@ -324,8 +324,8 @@ struct CacheContinuation : public Continuation {
 // Bit definitions for cfl_flags.
 // Note: Limited to 16 bits
 #define CFL_OVERWRITE_ON_WRITE (1 << 1)
-#define CFL_REMOVE_USER_AGENTS (1 << 2)
-#define CFL_REMOVE_LINK (1 << 3)
+#define CFL_REMOVE_USER_AGENTS (1 << 2) // Historical, now unused
+#define CFL_REMOVE_LINK (1 << 3)        // Historical, now unused
 #define CFL_LOPENWRITE_HAVE_OLDINFO (1 << 4)
 #define CFL_ALLOW_MULTIPLE_WRITES (1 << 5)
 #define CFL_MAX (1 << 15)

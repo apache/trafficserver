@@ -56,6 +56,7 @@ sub displayStat($) {
 
     printf("%25s %10.2f %10.2f %10.2f %10.2f %10.2f %10.2f %10.2f\n", $key, $total, $count, $mean, $median, $p95th, $min, $max);
   }
+  print "NOTE: Times are in seconds\n";
 }
 
 {

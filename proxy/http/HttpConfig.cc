@@ -192,7 +192,7 @@ http_server_session_sharing_cb(char const *name, RecDataT dtype, RecData data, v
   bool valid_p = true;
   HttpConfigParams *c = static_cast<HttpConfigParams *>(cookie);
 
-  if (0 == strcasecmp("proxy.config.http.server_session_sharing.pool", name)) {
+  if (0 == strcasecmp("proxy.config.http.server_session_sharing.match", name)) {
     MgmtByte &match = c->oride.server_session_sharing_match;
     if (RECD_INT == dtype) {
       match = static_cast<TSServerSessionSharingMatchType>(data.rec_int);
@@ -201,7 +201,7 @@ http_server_session_sharing_cb(char const *name, RecDataT dtype, RecData data, v
     } else {
       valid_p = false;
     }
-  } else if (0 == strcasecmp("proxy.config.http.server_session_sharing.match", name)) {
+  } else if (0 == strcasecmp("proxy.config.http.server_session_sharing.pool", name)) {
     MgmtByte &match = c->oride.server_session_sharing_pool;
     if (RECD_INT == dtype) {
       match = static_cast<TSServerSessionSharingPoolType>(data.rec_int);
@@ -854,7 +854,8 @@ register_stat_callbacks()
                      (int)https_incoming_requests_stat, RecRawStatSyncCount);
   RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.https.total_client_connections", RECD_COUNTER, RECP_PERSISTENT,
                      (int)https_total_client_connections_stat, RecRawStatSyncCount);
-
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.post_body_too_large", RECD_COUNTER, RECP_PERSISTENT,
+                     (int)http_post_body_too_large, RecRawStatSyncCount);
   // milestones
   RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.milestone.ua_begin", RECD_COUNTER, RECP_PERSISTENT,
                      (int)http_ua_begin_time_stat, RecRawStatSyncSum);
@@ -925,14 +926,8 @@ HttpConfig::startup()
   RecHttpLoadIp("proxy.local.incoming_ip_to_bind", c.inbound_ip4, c.inbound_ip6);
   RecHttpLoadIp("proxy.local.outgoing_ip_to_bind", c.outbound_ip4, c.outbound_ip6);
 
-#if TS_USE_RECLAIMABLE_FREELIST
-  HttpEstablishStaticConfigLongLong(cfg_debug_filter, "proxy.config.allocator.debug_filter");
-  HttpEstablishStaticConfigLongLong(cfg_enable_reclaim, "proxy.config.allocator.enable_reclaim");
-  HttpEstablishStaticConfigLongLong(cfg_max_overage, "proxy.config.allocator.max_overage");
-  HttpEstablishStaticConfigFloat(cfg_reclaim_factor, "proxy.config.allocator.reclaim_factor");
-#endif
-
   HttpEstablishStaticConfigLongLong(c.server_max_connections, "proxy.config.http.server_max_connections");
+  HttpEstablishStaticConfigLongLong(c.max_websocket_connections, "proxy.config.http.websocket.max_number_of_connections");
   HttpEstablishStaticConfigLongLong(c.oride.server_tcp_init_cwnd, "proxy.config.http.server_tcp_init_cwnd");
   HttpEstablishStaticConfigLongLong(c.oride.origin_max_connections, "proxy.config.http.origin_max_connections");
   HttpEstablishStaticConfigLongLong(c.origin_min_keep_alive_connections, "proxy.config.http.origin_min_keep_alive_connections");
@@ -972,12 +967,6 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.oride.flow_high_water_mark, "proxy.config.http.flow_control.high_water");
   HttpEstablishStaticConfigLongLong(c.oride.flow_low_water_mark, "proxy.config.http.flow_control.low_water");
   HttpEstablishStaticConfigByte(c.oride.post_check_content_length_enabled, "proxy.config.http.post.check.content_length.enabled");
-  // HttpEstablishStaticConfigByte(c.oride.share_server_sessions, "proxy.config.http.share_server_sessions");
-
-  // 4.2 Backwards compatibility
-  RecRegisterConfigUpdateCb("proxy.config.http.share_server_sessions", &http_server_session_sharing_cb, &c);
-  http_config_share_server_sessions_read_bc(&c);
-  // end 4.2 BC
 
   // [amc] This is a bit of a mess, need to figure out to make this cleaner.
   RecRegisterConfigUpdateCb("proxy.config.http.server_session_sharing.pool", &http_server_session_sharing_cb, &c);
@@ -986,6 +975,13 @@ HttpConfig::startup()
   RecRegisterConfigUpdateCb("proxy.config.http.server_session_sharing.match", &http_server_session_sharing_cb, &c);
   http_config_enum_read("proxy.config.http.server_session_sharing.match", SessionSharingMatchStrings,
                         c.oride.server_session_sharing_match);
+
+  // 4.2 Backwards compatibility - read this *after* the new server_session_sharing settings
+  RecRegisterConfigUpdateCb("proxy.config.http.share_server_sessions", &http_server_session_sharing_cb, &c);
+  http_config_share_server_sessions_read_bc(&c);
+  // end 4.2 BC
+
+  HttpEstablishStaticConfigByte(c.oride.auth_server_session_private, "proxy.config.http.auth_server_session_private");
 
   HttpEstablishStaticConfigByte(c.oride.keep_alive_post_out, "proxy.config.http.keep_alive_post_out");
 
@@ -1096,6 +1092,7 @@ HttpConfig::startup()
   HttpEstablishStaticConfigByte(c.send_408_post_timeout_response, "proxy.config.http.send_408_post_timeout_response");
   HttpEstablishStaticConfigByte(c.disallow_post_100_continue, "proxy.config.http.disallow_post_100_continue");
   HttpEstablishStaticConfigByte(c.parser_allow_non_http, "proxy.config.http.parse.allow_non_http");
+  HttpEstablishStaticConfigLongLong(c.cache_open_write_fail_action, "proxy.config.http.cache.open_write_fail_action");
 
   HttpEstablishStaticConfigByte(c.oride.cache_when_to_revalidate, "proxy.config.http.cache.when_to_revalidate");
   HttpEstablishStaticConfigByte(c.oride.cache_required_headers, "proxy.config.http.cache.required_headers");
@@ -1117,7 +1114,7 @@ HttpConfig::startup()
 
   HttpEstablishStaticConfigByte(c.errors_log_error_pages, "proxy.config.http.errors.log_error_pages");
 
-  HttpEstablishStaticConfigLongLong(c.slow_log_threshold, "proxy.config.http.slow.log.threshold");
+  HttpEstablishStaticConfigLongLong(c.oride.slow_log_threshold, "proxy.config.http.slow.log.threshold");
 
   HttpEstablishStaticConfigByte(c.record_cop_page, "proxy.config.http.record_heartbeat");
 
@@ -1142,6 +1139,8 @@ HttpConfig::startup()
 
   // Stat Page Info
   HttpEstablishStaticConfigByte(c.enable_http_info, "proxy.config.http.enable_http_info");
+
+  HttpEstablishStaticConfigLongLong(c.max_post_size, "proxy.config.http.max_post_size");
 
   //##############################################################################
   //#
@@ -1204,6 +1203,7 @@ HttpConfig::reconfigure()
   params->disable_ssl_parenting = INT_TO_BOOL(m_master.disable_ssl_parenting);
 
   params->server_max_connections = m_master.server_max_connections;
+  params->max_websocket_connections = m_master.max_websocket_connections;
   params->oride.server_tcp_init_cwnd = m_master.oride.server_tcp_init_cwnd;
   params->oride.origin_max_connections = m_master.oride.origin_max_connections;
   params->origin_min_keep_alive_connections = m_master.origin_min_keep_alive_connections;
@@ -1232,6 +1232,8 @@ HttpConfig::reconfigure()
   params->oride.keep_alive_enabled_in = INT_TO_BOOL(m_master.oride.keep_alive_enabled_in);
   params->oride.keep_alive_enabled_out = INT_TO_BOOL(m_master.oride.keep_alive_enabled_out);
   params->oride.chunking_enabled = INT_TO_BOOL(m_master.oride.chunking_enabled);
+  params->oride.auth_server_session_private = INT_TO_BOOL(m_master.oride.auth_server_session_private);
+
   params->oride.http_chunking_size = m_master.oride.http_chunking_size;
 
   params->oride.post_check_content_length_enabled = INT_TO_BOOL(m_master.oride.post_check_content_length_enabled);
@@ -1353,8 +1355,10 @@ HttpConfig::reconfigure()
   params->send_408_post_timeout_response = INT_TO_BOOL(m_master.send_408_post_timeout_response);
   params->disallow_post_100_continue = INT_TO_BOOL(m_master.disallow_post_100_continue);
   params->parser_allow_non_http = INT_TO_BOOL(m_master.parser_allow_non_http);
+  params->cache_open_write_fail_action = m_master.cache_open_write_fail_action;
 
   params->oride.cache_when_to_revalidate = m_master.oride.cache_when_to_revalidate;
+  params->max_post_size = m_master.max_post_size;
 
   params->oride.cache_required_headers = m_master.oride.cache_required_headers;
   params->oride.cache_range_lookup = INT_TO_BOOL(m_master.oride.cache_range_lookup);
@@ -1371,7 +1375,7 @@ HttpConfig::reconfigure()
   params->reverse_proxy_enabled = INT_TO_BOOL(m_master.reverse_proxy_enabled);
   params->url_remap_required = INT_TO_BOOL(m_master.url_remap_required);
   params->errors_log_error_pages = INT_TO_BOOL(m_master.errors_log_error_pages);
-  params->slow_log_threshold = m_master.slow_log_threshold;
+  params->oride.slow_log_threshold = m_master.oride.slow_log_threshold;
   params->record_cop_page = INT_TO_BOOL(m_master.record_cop_page);
   params->oride.send_http11_requests = m_master.oride.send_http11_requests;
   params->oride.doc_in_cache_skip_dns = INT_TO_BOOL(m_master.oride.doc_in_cache_skip_dns);

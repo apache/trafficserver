@@ -752,7 +752,7 @@ attach_pvc_plugin(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
         TSDebug(DEBUG_TAG, "Adding host to request url: %s", replacement_host_str);
 
         const char *colon = strchr(replacement_host_str, ':');
-        if (colon != NULL && colon + 1 != NULL) {
+        if (colon != NULL && colon[1] != '\0') {
           int length = 0;
           const char *scheme = TSUrlSchemeGet(req_bufp, url_loc, &length);
           int port_str_val = atoi(colon + 1);

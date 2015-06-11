@@ -35,12 +35,12 @@
 #include "P_SSLNetVConnection.h"
 
 void
-SSL_set_rbio(SSLNetVConnection *sslvc, BIO *rbio)
+SSL_set_rbio(SSL *ssl, BIO *rbio)
 {
-  if (sslvc->ssl->rbio != NULL) {
-    BIO_free(sslvc->ssl->rbio);
+  if (ssl->rbio != NULL) {
+    BIO_free(ssl->rbio);
   }
-  sslvc->ssl->rbio = rbio;
+  ssl->rbio = rbio;
 }
 
 #endif

@@ -50,5 +50,4 @@
 #define USIG_HMAC_SHA1 1
 #define USIG_HMAC_MD5 2
 
-
 #endif /* URL_SIG_H_ */

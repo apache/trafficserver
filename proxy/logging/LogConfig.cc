@@ -123,28 +123,6 @@ LogConfig::setup_default_values()
 
   custom_logs_enabled = false;
 
-  /* The default values for the search log                         */
-
-  search_log_enabled = false;
-  /* Comma separated filter names. These Filetrs are defined in    */
-  /* log_xml.config file. One such filter defines to reject URLs   */
-  /* with .gif extension. These filters are added to search log    */
-  /* object.                                                       */
-  search_log_filters = NULL;
-  search_rolling_interval_sec = 86400; // 24 hours
-  search_server_ip_addr = 0;
-  search_server_port = 8080;
-  search_top_sites = 100;
-  /* Comma separated filter names. These Filetrs are defined in    */
-  /* records.config or thru UI. These are applied to the search log*/
-  /* while parsing to generate top 'n' site summary file. The URLs */
-  /* containing these strings will not be parsed.                  */
-  search_url_filter = NULL;
-  /* Logging system captures all the URLs in this log file.        */
-  search_log_file_one = ats_strdup("search_log1");
-  /* Logging system captures only cache miss URLs to this log file.*/
-  search_log_file_two = ats_strdup("search_log2");
-
   sampling_frequency = 1;
   file_stat_frequency = 16;
   space_used_frequency = 900;
@@ -441,61 +419,6 @@ LogConfig::read_configuration_variables()
   if (val > 0) {
     max_line_size = val;
   }
-
-  /* The following variables are initialized after reading the     */
-  /* variable values from records.config                           */
-
-  val = (int)REC_ConfigReadInteger("proxy.config.log.search_log_enabled");
-  if (Log::logging_mode == Log::LOG_MODE_FULL)
-    search_log_enabled = (val > 0);
-
-  /*                                                               */
-  /* The following collects the filter names to be added to search */
-  /* log object. User can define the filter to exclude URLs with   */
-  /* certain file extensions from being logged.                    */
-  /*                                                               */
-  ptr = REC_ConfigReadString("proxy.config.log.search_log_filters");
-  if (ptr != NULL) {
-    search_log_filters = ptr;
-  }
-
-  /*                                                               */
-  /* This filter information is used while parsing the search log  */
-  /* to generate top 'n' site sorted URL summary file.             */
-  /* This log file contains top 'n' number of frequently accessed  */
-  /* sites. This file is sent to search server mentioned by the    */
-  /* pair ip-address & port.                                       */
-  /*                                                               */
-  ptr = REC_ConfigReadString("proxy.config.log.search_url_filter");
-  if (ptr != NULL) {
-    search_url_filter = ptr;
-  }
-
-  val = (int)REC_ConfigReadInteger("proxy.config.log.search_top_sites");
-  if (val > 0) {
-    search_top_sites = val;
-  }
-
-  ptr = REC_ConfigReadString("proxy.config.log.search_server_ip_addr");
-  if (ptr != NULL) {
-    unsigned int ipaddr;
-    ipaddr = inet_addr(ptr);
-    if (ipaddr > 0) {
-      search_server_ip_addr = ipaddr;
-    } else
-      search_server_ip_addr = 0;
-  }
-
-  val = (int)REC_ConfigReadInteger("proxy.config.log.search_server_port");
-  if (val > 0) {
-    search_server_port = val;
-  }
-
-  /*  Rolling interval is taken care in LogObject.                 */
-  val = (int)REC_ConfigReadInteger("proxy.config.log.search_rolling_interval_sec");
-  if (val > 0) {
-    search_rolling_interval_sec = val;
-  }
 }
 
 /*-------------------------------------------------------------------------
@@ -544,8 +467,6 @@ LogConfig::~LogConfig()
   ats_free(extended2_log_header);
   ats_free(collation_host);
   ats_free(collation_secret);
-  ats_free(search_log_file_one);
-  ats_free(search_log_file_two);
   ats_free(m_dir_entry);
 }
 
@@ -735,33 +656,6 @@ LogConfig::display(FILE *fd)
 
   fprintf(fd, "************ Global Format List (%u formats) ************\n", global_format_list.count());
   global_format_list.display(fd);
-}
-
-/*                                                               */
-/* The user defined filters are added to the search_one          */
-/* log object. These filters are defined to filter the images    */
-/* and vedio file etc., URLs. These filters depends on the       */
-/* end-user's search requirements.                               */
-/*                                                               */
-void
-LogConfig::add_filters_to_search_log_object(const char *format_name)
-{
-  LogObject *obj;
-
-  obj = log_object_manager.find_by_format_name(format_name);
-
-  /* Apply the user defined filters on to newly created LogObject */
-  SimpleTokenizer tok(search_log_filters, ',');
-  char *filter_name;
-  while (filter_name = tok.getNext(), filter_name != 0) {
-    LogFilter *f;
-    f = global_filter_list.find_by_name(filter_name);
-    if (!f) {
-      Warning("Filter %s not in the global filter list; cannot add to this LogObject", filter_name);
-    } else {
-      obj->add_filter(f);
-    }
-  }
 }
 
 //-----------------------------------------------------------------------------
@@ -1017,33 +911,11 @@ LogConfig::setup_log_objects()
 
   global_filter_list.clear();
 
-  /*                                                               */
-  /* create search Log Objects here.                               */
-  /* The following creates the search_one, search_two log objects  */
-  /* For search_one log object user defines filters in xml config  */
-  /* file. The names of these filters have to be given in          */
-  /* records.config file                                           */
-  /*                                                               */
-  if (search_log_enabled) {
-    Debug("log", "creating search log object");
-    /* Read xml configuration for search log from memory.            */
-    read_xml_log_config(1);
-  }
-
   if (custom_logs_enabled) {
     /* Read xml configuration from logs_xml.config file.             */
-    read_xml_log_config(0);
+    read_xml_log_config();
   }
 
-  /*                                                               */
-  /* Add the user defined filters to search_one log object.        */
-  /*                                                               */
-  if (search_log_enabled) {
-    if (search_log_filters) {
-      add_filters_to_search_log_object("m_search_one");
-      add_filters_to_search_log_object("m_search_two");
-    }
-  }
   // open local pipes so readers can see them
   //
   log_object_manager.open_local_pipes();
@@ -1097,9 +969,7 @@ LogConfig::register_config_callbacks()
     "proxy.config.log.rolling_enabled", "proxy.config.log.rolling_interval_sec", "proxy.config.log.rolling_offset_hr",
     "proxy.config.log.rolling_size_mb", "proxy.config.log.auto_delete_rolled_files", "proxy.config.log.custom_logs_enabled",
     "proxy.config.log.xml_config_file", "proxy.config.log.hosts_config_file", "proxy.config.log.sampling_frequency",
-    "proxy.config.log.file_stat_frequency", "proxy.config.log.space_used_frequency", "proxy.config.log.search_rolling_interval_sec",
-    "proxy.config.log.search_log_enabled", "proxy.config.log.search_top_sites", "proxy.config.log.search_server_ip_addr",
-    "proxy.config.log.search_server_port", "proxy.config.log.search_url_filter",
+    "proxy.config.log.file_stat_frequency", "proxy.config.log.space_used_frequency",
   };
 
 
@@ -1472,101 +1342,25 @@ LogConfig::update_space_used()
 
   This is a new routine for reading the XML-based log config file.
   -------------------------------------------------------------------------*/
-
-static char xml_config_buffer[] = "<LogFilter> \
-                                  <Name = \"reject_gif\"/> \
-                                  <Action = \"REJECT\"/> \
-                                  <Condition = \"cqup CASE_INSENSITIVE_CONTAIN .gif\"/> \
-                                  </LogFilter>\
-                                              \
-                                  <LogFilter> \
-                                  <Name = \"reject_jpg\"/> \
-                                  <Action = \"REJECT\"/> \
-                                  <Condition = \"cqup CASE_INSENSITIVE_CONTAIN .jpg\"/> \
-                                  </LogFilter>\
-                                              \
-                                  <LogFilter> \
-                                  <Name      = \"only_cache_miss\"/> \
-                                  <Action    = \"ACCEPT\"/> \
-                                  <Condition = \"crc MATCH TCP_MISS\"/> \
-                                  </LogFilter> \
-                                              \
-                                  <LogFormat> \
-                                  <Name = \"m_search_one\"/> \
-                                  <Format = \"%%<cquc> %%<cqtt>\"/> \
-                                  </LogFormat> \
-                                               \
-                                  <LogFormat> \
-                                  <Name = \"m_search_two\"/> \
-                                  <Format = \"%%<cquc> %%<crc>\"/> \
-                                  </LogFormat> \
-                                               \
-                                  <LogObject> \
-                                  <Filename = \"search_log1\"/> \
-                                  <Format = \"m_search_one\"/> \
-                                  <Filters = \"reject_gif\", \"reject_jpg\"/> \
-                                  <RollingIntervalSec = \"%d\"/> \
-                                  </LogObject> \
-                                               \
-                                  <LogObject> \
-                                  <Filename = \"search_log2\"/> \
-                                  <Format = \"m_search_two\"/> \
-                                  <Filters = \"reject_gif\", \"reject_jpg\", \"only_cache_miss\"/> \
-                                  <RollingIntervalSec = \"%d\"/> \
-                                  </LogObject>";
 void
-LogConfig::read_xml_log_config(int from_memory)
+LogConfig::read_xml_log_config()
 {
   ats_scoped_str config_path;
 
-  if (!from_memory) {
-    config_path = RecConfigReadConfigPath("proxy.config.log.xml_config_file", "logs_xml.config");
-  }
-
+  config_path = RecConfigReadConfigPath("proxy.config.log.xml_config_file", "logs_xml.config");
   InkXmlConfigFile log_config(config_path ? (const char *)config_path : "memory://builtin");
 
-  if (!from_memory) {
-    Debug("log-config", "Reading log config file %s", (const char *)config_path);
-    Debug("xml", "%s is an XML-based config file", (const char *)config_path);
+  Debug("log-config", "Reading log config file %s", (const char *)config_path);
+  Debug("xml", "%s is an XML-based config file", (const char *)config_path);
 
-    if (log_config.parse() < 0) {
-      Note("Error parsing log config file %s; ensure that it is XML-based", (const char *)config_path);
-      return;
-    }
-
-    if (is_debug_tag_set("xml")) {
-      log_config.display();
-    }
-  } else {
-    int filedes[2];
-    int nbytes = sizeof(xml_config_buffer);
-    const size_t ptr_size = nbytes + 20;
-    char *ptr = (char *)ats_malloc(ptr_size);
-
-    if (pipe(filedes) != 0) {
-      Note("xml parsing: Error in Opening a pipe");
-      ats_free(ptr);
-      return;
-    }
-
-    snprintf(ptr, ptr_size, xml_config_buffer, search_rolling_interval_sec, search_rolling_interval_sec);
-    nbytes = strlen(ptr);
-    if (write(filedes[1], ptr, nbytes) != nbytes) {
-      Note("Error in writing to pipe.");
-      ats_free(ptr);
-      close(filedes[1]);
-      close(filedes[0]);
-      return;
-    }
-    ats_free(ptr);
-    close(filedes[1]);
-
-    if (log_config.parse(filedes[0]) < 0) {
-      Note("Error parsing log config info from memory.");
-      return;
-    }
+  if (log_config.parse() < 0) {
+    Note("Error parsing log config file %s; ensure that it is XML-based", (const char *)config_path);
+    return;
   }
 
+  if (is_debug_tag_set("xml")) {
+    log_config.display();
+  }
 
   //
   // At this point, the XMl file has been parsed into a list of

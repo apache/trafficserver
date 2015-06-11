@@ -103,17 +103,14 @@ stapling_get_issuer(SSL_CTX *ssl_ctx, X509 *x)
 }
 
 bool
-ssl_stapling_init_cert(SSL_CTX *ctx, const char *certfile)
+ssl_stapling_init_cert(SSL_CTX *ctx, X509 *cert, char *certname)
 {
   certinfo *cinf;
-  scoped_X509 cert;
   scoped_X509 issuer;
   STACK_OF(OPENSSL_STRING) *aia = NULL;
-  scoped_BIO bio(BIO_new_file(certfile, "r"));
 
-  cert = PEM_read_bio_X509_AUX(bio.get(), NULL, NULL, NULL);
   if (!cert) {
-    Debug("ssl", "can not read cert from certfile %s!", certfile);
+    Debug("ssl", "Null cert passed in");
     return false;
   }
 
@@ -141,7 +138,7 @@ ssl_stapling_init_cert(SSL_CTX *ctx, const char *certfile)
 
   issuer = stapling_get_issuer(ctx, cert);
   if (issuer == NULL) {
-    Debug("ssl", "can not get issuer certificate!");
+    Debug("ssl", "cannot get issuer certificate from %s!", certname);
     return false;
   }
 
@@ -154,7 +151,7 @@ ssl_stapling_init_cert(SSL_CTX *ctx, const char *certfile)
   if (aia)
     cinf->uri = sk_OPENSSL_STRING_pop(aia);
   if (!cinf->uri) {
-    Debug("ssl", "no responder URI");
+    Debug("ssl", "no responder URI in %s", certname);
   }
   if (aia)
     X509_email_free(aia);

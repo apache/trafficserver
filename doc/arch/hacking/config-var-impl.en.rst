@@ -25,9 +25,9 @@
 
 .. _RecordsConfig.cc: https://github.com/apache/trafficserver/blob/master/mgmt/RecordsConfig.cc
 
-.. |ts.h.in| replace:: ``ts.h.in``
+.. |apidefs.h.in| replace:: ``apidefs.h.in``
 
-.. _ts.h.in: https://github.com/apache/trafficserver/blob/master/proxy/api/ts/ts.h.in
+.. _apidefs.h.in: https://github.com/apache/trafficserver/blob/master/lib/ts/apidefs.h.in
 
 .. |InkAPI.cc| replace:: ``InkAPI.cc``
 
@@ -36,6 +36,14 @@
 .. |InkAPITest.cc| replace:: ``InkAPITest.cc``
 
 .. _InkAPITest.cc: https://github.com/apache/trafficserver/blob/master/proxy/api/InkAPITest.cc
+
+.. |ts_lua_http_config.c| replace:: ``ts_lua_http_config.c``
+
+.. _ts_lua_http_config.c: https://github.com/apache/trafficserver/blob/master/plugins/experimental/ts_lua/ts_lua_http_config.c
+
+.. |TSHttpOverridableConfig.en.rst| replace:: ``TSHttpOverridableConfig.en.rst``
+
+.. _TSHttpOverridableConfig.en.rst: https://github.com/apache/trafficserver/blob/master/doc/reference/api/TSHttpOverridableConfig.en.rst
 
 .. Referenced enumeration values
 
@@ -303,14 +311,13 @@ Overridable Variables
 HTTP related variables that are changeable per transaction are stored in the
 ``OverridableHttpConfigParams`` structure, an instance of which is the ``oride``
 member of ``HTTPConfigParams`` and therefore the points in the previous section
-still apply. The only difference for that is the further ``.oride`` in the
-structure references.
+still apply. The only difference for that is the further ``.oride`` member specifier in the structure references.
 
 The variable is required to be accessible from the transaction API. In addition
 to any custom API functions used to access the value, the following items are
 required for generic access:
 
-#. Add a value to the ``TSOverridableConfigKey`` enumeration in |ts.h.in|_.
+#. Add a value to the ``TSOverridableConfigKey`` enumeration in |apidefs.h.in|_.
 
 #. Augment the ``TSHttpTxnConfigFind`` function to return this enumeration value
    when given the name of the configuration variable. Be sure to count the
@@ -323,3 +330,6 @@ required for generic access:
 #. Update the testing logic in |InkAPITest.cc|_ by adding the string name of the
    configuration variable to the ``SDK_Overridable_Configs`` array.
 
+#. Update the Lua plugin enumeration ``TSLuaOverridableConfigKey`` in |ts_lua_http_config.c|_.
+
+#. Update the documentation of :ref:`ts-overridable-config` in |TSHttpOverridableConfig.en.rst|_.

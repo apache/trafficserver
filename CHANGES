@@ -1,24 +1,253 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-3684] Support TSHttpTxnServerRespNoStoreSet in ts_lua plugin.
+
+  *) [TS-3466] Remove unused proxy.config.user_name config.
+
+  *) [TS-3524] Add a new log tag, %<cluc>, which is the cache lookup URL
+   (cache key).
+
+  *) [TS-3542] Remove the reclaimable freelist feature, it will be replaced
+   with a buddy allocation scheme.
+
+  *) [TS-3682] Change default for proxy.config.admin.api.restricted to '0'.
+
+  *) [TS-3659] Add config to limit max number of websocket connections
+
+  *) [TS-3462] Reduce the HostDB lookup timeout to 30s.
+
+  *) [TS-3045] Change the default TLS threads setting to -1.
+
+  *) [TS-2244] Remove legacy proxy.config.log.search_log_enabled and related
+   features / config.
+
+  *) [TS-3167] Eliminate the prefetch feature, although leave the code
+   ifdef'ed out.
+
+  *) [TS-3634] Replace auto_ptr with ats_scoped_object.
+
+  *) [TS-3543] Remove update.config and related features, this also disables
+   prefetch.
+
+  *) [TS-3665] Redirect logic causing debug asserts.
+
+  *) [TS-3640] Drupal auth fails over SPDY.
+
+  *) [TS-3674] bug fix on ts_lua plugin for adding package path.
+
+  *) [TS-2325] Support .include directories in remap.config.
+   Author: Masakazu Kitajo <m4sk17@gmail.com>
+
+  *) [TS-3662] Caching range requests plugin.
+
+  *) [TS-3368] Mark traffic_line as deprecated.
+
+  *) [TS-3668] cache_promote: Make cache promotion explicit for internal
+   requests. This helps when e.g. background_fetch is used together with this
+   plugin.
+
+  *) [TS-3122] Add support for hugepages on Linux.
+
+  *) [TS-2032] Eliminate remnant code for milestone for cache-lookup times.
+   Author: John Rushford <John_Rushford@cable.comcast.com>
+
+  *) [TS-3382] Add support for CRYPTO_THREADID to support openssl 1.1
+
+  *) [TS-3378] SpdyRequest used after free()
+
+  *) [TS-3664] WebSockets attempts a cache lookup and blocks on multiple requests
+
+  *) [TS-3661] keep cache_sm active during 3xx redirect follow to allow
+     for caching the final response.
+
+  *) [TS-3158] Convert traffic_manager to use standard argument processing.
+
+  *) [TS-3655] Forget to close netvc in regression test.
+
+  *) [TS-3632] Add OPENSSL_INCLUDE and OPENSSL_LIBS in Makefile.am.
+
+  *) [TS-3653] Add the ability to exclude by regex to url_sig plugin.
+
+  *) [TS-3649] url_sig: fix for crasher related to key index.
+   Author: Gancho Tenev <gttenev@gmail.com>
+
+  *) [TS-3560] Make proxy.config.http.slow.log.threshold overridable.
+
+  *) [TS-3635] Fix some ASAN memory issues.
+
+  *) [TS-3642] Fix reading of proxy.config.http.share_server_sessions.
+
+  *) [TS-3631] Add config option to limit post size.
+
+  *) [TS-3628] Unable to use disks larger than 16T.
+
+  *) [TS-2080] Remove arbitrary 1 year max age limit on the cache, use
+   the existing configuration option properly.
+
+  *) [TS-2151] Eliminate the Sparse class allocator, just use the normal one
+   for HttpSM.
+
+  *) [TS-3615] s3_auth: move the validity assertion to the correct place.
+
+  *) [TS-3616] Eliminate BUILD_HAVE_LIBCXX.
+
+  *) [TS-3622] Add a bound to read_while_writer retries with a config
+   setting.
+
+  *) [TS-3618] Crashes in traffic_cop on shutdown / restart.
+
+  *) [TS-3617] cache_promote leaks the URL string.
+
+  *) [TS-3581] Remove unused parameters from Cache::remove().
+
+  *) [TS-3568] We can now assume unordered_map is always available, just need
+   to detect the appropriate compiler flags. This modifies the AC module too
+   only check for unordered_map though, since otherwise we'd never get the
+   appropriate flags for various older platforms.
+
+  *) [TS-3601] cache_promote: Eliminate unnecessary mutex for txn handler.
+
+  *) [TS-3578] Rearrange ProxyClientSession so VC is available in close
+   session hook.
+
+  *) [TS-3610] Loading reads certificate from file multiple times.
+
+  *) [TS-3608] Client side SSL does not validate upstream hostname.
+
+  *) [TS-3604] Transparent Mode does not work when accept_threads set to 0.
+
+  *) [TS-3597] TLS can fail accecpt / handshake when accept thread is turned
+   off.
+
+  *) [TS-3603] Debug Assert due to missing lock when accept_threads are
+   disabled.
+
+  *) [TS-3605] Fix interim cache build error.
+   Author: Oknet Xu <computer_xu@sina.com>
+
+  *) [TS-3602] Remove old SPDY plugin.
+
+  *) [TS-3600] Missing break; statement in background_fetch plugin.
+
+  *) [TS-3436] Add API milestones.
+
+  *) [TS-3584] Turn off keep alive for HTTP request headers created from SPDY
+   and H2.
+
+  *) [TS-2609] Header rewrite plugin *URL:HOST condition.
+
+  *) [TS-3565] Only start up the continuation from DoRemap if the request has
+   a Range: header.
+
+  *) [TS-3562] background_fetch: refactor some code, elimiante the std::map
+   for rules, split things out into manageable sub-modules.
+
+  *) [TS-3592] Set cacheurl default config location to config directory.
+
+  *) [TS-3590] Mark H2 fetch streams as non-internal requests.
+
+  *) [TS-3370] header_rewrite plugin uses dead continuation.
+
+  *) [TS-3588] Fix continuation leak in background_fetch in remap mode.
+
+  *) [TS-3029] Fix spdy related seg fault in production, due to resetting
+   req->fetch_sm to null.
+
+  *) [TS-2513] Missing SOCKS documentation.
+
+  *) [TS-3582] Add @in_ip to remap filters.
+
+  *) [TS-3484] Make inactivity_cop frequency (schedule) configurable,
+   proxy.config.net.inactivity_check_frequency.
+
+  *) [TS-3392] Fix static initialization order, for OSX.
+   Author: Bin Zeng <bzeng@linkedin.com>
+
+  *) [TS-3537] Make 32-bit platforms build error, overridable with
+   --enable-32bit-build.
+
+  *) [TS-3531] Ignore blank lines in the plugin config file.
+
+  *) [TS-3539] Close excess file descriptors in crash log helper.
+
+  *) [TS-3576] Remove the need for FIPS locking for OpenSSL.
+
+  *) [TS-3538] Perform server certificate validity check.
+
+  *) [TS-3575] Fix connection leak.
+
+  *) [TS-3538] Perform server certificate validity check.
+
+  *) [TS-3549] Configurable option to avoid thundering herd problem
+   for multiple concurrent requests. The initial POC patch for this
+   solution came from Justin Laue. This patch will further be
+   improved with a few more changes to possibly support SWR feature in
+   the core.
+
+  *) [TS-3564] Check if cache is enabled before setting DO_WRITE action
+   during 3xx redirect follow, to prevent seg fault
+
+  *) [TS-2490] Allow traffic_cop to wait longer during traffic_server startup
+
+  *) [TS-3536] Fix memory leak in post processing.
+
+  *) [TS-3561] Call TSMutexDestroy in a couple of plugins, now that its
+   available.
+
+  *) [TS-3558] Fix proxy.config.http.auth_server_session_private
+
+  *) [TS-3552] Move the check for the api_server_response_no_store flag
+   earlier.
+
+  *) [TS-3545] Make traffic_line and traffic_ctl more verbose. Add message
+   when setting config options that don't require a restart.
+
+  *) [TS-3505] New plugin, cache_promote, which allows for policy based
+   control on when a object should be allowed into the cache. Two policies are
+   currently implemented: an LRU and a pure chance ("random") policy.
+
+  *) [TS-3554] Memory leak on ssl_multicert.config reload.
+
+  *) [TS-3551] Fix LogUtils.cc compile on Illumos.
+
+  *) [TS-3548] Fix psiginfo usage on Illumos.
+
+  *) [TS-3529] Add config option to allow ATS to start even if certificate
+   files are bad.
+
+  *) [TS-3523] Proxy urls with no matching remap rules, when remap_required
+   is disabled, regardless of reverse_proxy_enabled setting.
+
+  *) [TS-3522] Segfault due to inactivity_cop.
+
+  *) [TS-3530] HTTP/2 memory leak with headers and more.
+
+  *) [TS-3519] HTTP/2 seeing a lot of GOAWAY frames being sent.
+
+  *) [TS-3520] Fix logging core dump due to invalid unmapped url length/buffer.
+
   *) [TS-3489] Not able to set more than 1 accept thread per port and cleaned
-   other thread configurable ranges
+   other thread configurable ranges.
 
   *) [TS-3516] Fix various compile warnings with latest versions of clang.
 
-  *) [TS-3438] Assert if npn protocol is invalid (empty string)
+  *) [TS-3438] Assert if NPN protocol is invalid (empty string).
 
-  *) [TS-3501] Support configuring socket options for client sockets
+  *) [TS-3501] Support configuring socket options for client sockets.
 
-  *) [TS-3515] Use pcrejit (Regex class) for regex_map
+  *) [TS-3515] Use pcrejit (Regex class) for regex_map.
 
   *) [TS-3500] Fix TSHttpTxnPristineUrlGet to return client request's url
-   when pristine url is not populated
+   when pristine url is not populated.
 
-  *) [TS-3514] Atomic check for gcc >4.1 breaks with gcc 5.0
+  *) [TS-3513] HTTP/2 core dump. Fixed problem with cursor not advancing
+   during parsing.
+
+  *) [TS-3514] Atomic check for gcc >4.1 breaks with gcc 5.0.
    Author: Marcin Juszkiewicz <mjuszkiewicz@redhat.com>
 
-  *) [TS-3507] Add stats for the milestones
+  *) [TS-3507] Add stats for the milestones.
 
   *) [TS-3480] Large stream id cause PROTOCOL_ERROR.
    Author: Ryo Okubo <rokubo@yahoo-corp.jp>.
@@ -29,10 +258,10 @@ Changes with Apache Traffic Server 6.0.0
   *) [TS-3503] Add ua_first_read to milestones to track when the first byte
    was read from the client.
 
-  *) [TS-3450]: rename header_rewrite condition INTERNAL-TRANSACTION as
+  *) [TS-3450] rename header_rewrite condition INTERNAL-TRANSACTION as
    INTERNAL-TXN in-line with the changes in [TS-3449].
 
-  *) [TS-3449]: Deprecate TSHttpIsInternalRequest and TSHttpIsInternalSession
+  *) [TS-3449] Deprecate TSHttpIsInternalRequest and TSHttpIsInternalSession
    and replace them with TSHttpTxnIsInternal, TSHttpSsnIsInternal
    respectively.
 
@@ -62,12 +291,12 @@ Changes with Apache Traffic Server 6.0.0
 
   *) [TS-3456] SSL blind tunnel sometimes not created.
 
-
 Changes with Apache Traffic Server 5.3.0
 
   *) [TS-3468] Make command 'check' work usefully.
 
-  *) [TS-2709] ATS does not send close-notify on shutdown. Confuses some clients.
+  *) [TS-2709] ATS does not send close-notify on shutdown. Confuses some
+   clients.
 
   *) [TS-3467] Cleanup tmp files created from traffic_via tests.
 
@@ -87,7 +316,8 @@ Changes with Apache Traffic Server 5.3.0
 
   *) [TS-3342] Non-standard method in bad request can cause crash.
 
-  *) [TS-3331] negative responses cached even when headers indicate otherwise.
+  *) [TS-3331] negative responses cached even when headers indicate
+   otherwise.
 
   *) [TS-3417] Add MADV_DONTDUMP capability.
 
@@ -107,7 +337,8 @@ Changes with Apache Traffic Server 5.3.0
 
   *) [TS-3424] SSL Failed: decryption failed or bad record mac.
 
-  *) [TS-3425] include conditional headers in origin request, on no cache store
+  *) [TS-3425] Include conditional headers in origin request, on no cache
+   store.
 
   *) [TS-2515] Add statistics for stripe wrap and cache sync.
 
@@ -261,8 +492,8 @@ Changes with Apache Traffic Server 5.3.0
 
   *) [TS-3316] Fix the build for 32 bit architectures.
 
-  *) [TS-3100] Extend tr-pass to allow malformed HTTP GET requested to be blind
-   tunneled.
+  *) [TS-3100] Extend tr-pass to allow malformed HTTP GET requested to be
+   blind tunneled.
 
   *) [TS-3140] Traffic Server asserts during response redirect.
 
@@ -347,8 +578,7 @@ Changes with Apache Traffic Server 5.3.0
      Author: Cynthia Gu <czhenggu@linkedin.com>
 
   *) [TS-1570] Remap doesn't reject request with extract characters after port
-     in Host header. Author: Cynthia Gu <czhenggu@linkedin.com>
-
+   in Host header. Author: Cynthia Gu <czhenggu@linkedin.com>
 
 Changes with Apache Traffic Server 5.2.0
 

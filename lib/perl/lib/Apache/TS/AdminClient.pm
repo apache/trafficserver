@@ -615,13 +615,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.log.rolling_offset_hr
  proxy.config.log.rolling_size_mb
  proxy.config.log.sampling_frequency
- proxy.config.log.search_log_enabled
- proxy.config.log.search_log_filters
- proxy.config.log.search_rolling_interval_sec
- proxy.config.log.search_server_ip_addr
- proxy.config.log.search_server_port
- proxy.config.log.search_top_sites
- proxy.config.log.search_url_filter
  proxy.config.log.separate_host_logs
  proxy.config.log.separate_icp_logs
  proxy.config.log.space_used_frequency
@@ -645,18 +638,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.ping.npacks_to_trans
  proxy.config.ping.timeout_sec
  proxy.config.plugin.plugin_dir
- proxy.config.prefetch.child_port
- proxy.config.prefetch.config_file
- proxy.config.prefetch.default_data_proto
- proxy.config.prefetch.default_url_proto
- proxy.config.prefetch.keepalive_timeout
- proxy.config.prefetch.max_object_size
- proxy.config.prefetch.max_recursion
- proxy.config.prefetch.prefetch_enabled
- proxy.config.prefetch.push_cached_objects
- proxy.config.prefetch.redirection
- proxy.config.prefetch.url_buffer_size
- proxy.config.prefetch.url_buffer_timeout
  proxy.config.process_manager.enable_mgmt_port
  proxy.config.process_manager.mgmt_port
  proxy.config.process_manager.timeout
@@ -723,20 +704,11 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.udp.free_cancelled_pkts_sec
  proxy.config.udp.periodic_cleanup
  proxy.config.udp.send_retries
- proxy.config.update.concurrent_updates
- proxy.config.update.enabled
- proxy.config.update.force
- proxy.config.update.max_update_state_machines
- proxy.config.update.memory_use_mb
- proxy.config.update.retry_count
- proxy.config.update.retry_interval
- proxy.config.update.update_configuration
  proxy.config.url_remap.default_to_server_pac
  proxy.config.url_remap.default_to_server_pac_port
  proxy.config.url_remap.filename
  proxy.config.url_remap.pristine_host_hdr
  proxy.config.url_remap.remap_required
- proxy.config.user_name
  proxy.config.vmap.addr_file
  proxy.config.vmap.down_up_timeout
  proxy.config.vmap.enabled

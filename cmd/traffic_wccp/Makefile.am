@@ -22,7 +22,8 @@ AM_CPPFLAGS = $(iocore_include_dirs) \
   -I$(top_srcdir)/lib \
   -I$(top_srcdir)/lib/records \
   -I$(top_srcdir)/lib/ts \
-  -I$(top_srcdir)/lib/wccp
+  -I$(top_srcdir)/lib/wccp \
+  @OPENSSL_INCLUDES@
 
 AM_LDFLAGS = \
   @EXTRA_CXX_LDFLAGS@ \
@@ -37,5 +38,5 @@ traffic_wccp_SOURCES = \
 traffic_wccp_LDADD = \
   $(top_builddir)/lib/tsconfig/libtsconfig.la \
   $(top_builddir)/lib/wccp/libwccp.a \
-  $(top_builddir)/lib/ts/libtsutil.la
-
+  $(top_builddir)/lib/ts/libtsutil.la \
+  @OPENSSL_LIBS@

@@ -28,7 +28,6 @@ mkdir -p BUILDS && cd BUILDS
     --enable-experimental-plugins \
     --enable-example-plugins \
     --enable-test-tools \
-    --enable-reclaimable-freelist \
     --enable-wccp \
     CORES=2
 

@@ -78,7 +78,6 @@ initializeRegistry()
   configFiles->addFile("ip_allow.config", false);
   configFiles->addFile("parent.config", false);
   configFiles->addFile("remap.config", false);
-  configFiles->addFile("update.config", false);
   configFiles->addFile("volume.config", false);
   configFiles->addFile("hosting.config", false);
   configFiles->addFile("congestion.config", false);
@@ -86,6 +85,5 @@ initializeRegistry()
   configFiles->addFile("splitdns.config", false);
   configFiles->addFile("ssl_multicert.config", false);
   configFiles->addFile("stats.config.xml", false);
-  configFiles->addFile("prefetch.config", false);
   configFiles->registerCallback(testcall);
 }

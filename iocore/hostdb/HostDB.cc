@@ -46,7 +46,7 @@ int hostdb_enable = true;
 int hostdb_migrate_on_demand = true;
 int hostdb_cluster = false;
 int hostdb_cluster_round_robin = false;
-int hostdb_lookup_timeout = 120;
+int hostdb_lookup_timeout = 30;
 int hostdb_insert_timeout = 160;
 int hostdb_re_dns_on_reload = false;
 int hostdb_ttl_mode = TTL_OBEY;
@@ -1888,10 +1888,11 @@ HostDBContinuation::do_dns()
       return;
     }
   }
-  if (hostdb_lookup_timeout)
+  if (hostdb_lookup_timeout) {
     timeout = mutex->thread_holding->schedule_in(this, HRTIME_SECONDS(hostdb_lookup_timeout));
-  else
+  } else {
     timeout = NULL;
+  }
   if (set_check_pending_dns()) {
     DNSProcessor::Options opt;
     opt.timeout = dns_lookup_timeout;

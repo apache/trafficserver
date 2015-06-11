@@ -145,7 +145,7 @@ const char *MIME_FIELD_VIA;
 const char *MIME_FIELD_WARNING;
 const char *MIME_FIELD_WWW_AUTHENTICATE;
 const char *MIME_FIELD_XREF;
-const char *MIME_FIELD_INT_DATA_INFO;
+const char *MIME_FIELD_ATS_INTERNAL;
 const char *MIME_FIELD_X_ID;
 const char *MIME_FIELD_X_FORWARDED_FOR;
 const char *MIME_FIELD_SEC_WEBSOCKET_KEY;
@@ -260,7 +260,7 @@ int MIME_LEN_VIA;
 int MIME_LEN_WARNING;
 int MIME_LEN_WWW_AUTHENTICATE;
 int MIME_LEN_XREF;
-int MIME_LEN_INT_DATA_INFO;
+int MIME_LEN_ATS_INTERNAL;
 int MIME_LEN_X_ID;
 int MIME_LEN_X_FORWARDED_FOR;
 int MIME_LEN_SEC_WEBSOCKET_KEY;
@@ -338,7 +338,7 @@ int MIME_WKSIDX_VIA;
 int MIME_WKSIDX_WARNING;
 int MIME_WKSIDX_WWW_AUTHENTICATE;
 int MIME_WKSIDX_XREF;
-int MIME_WKSIDX_INT_DATA_INFO;
+int MIME_WKSIDX_ATS_INTERNAL;
 int MIME_WKSIDX_X_ID;
 int MIME_WKSIDX_X_FORWARDED_FOR;
 int MIME_WKSIDX_SEC_WEBSOCKET_KEY;
@@ -712,7 +712,7 @@ mime_init()
     MIME_FIELD_WARNING = hdrtoken_string_to_wks("Warning");
     MIME_FIELD_WWW_AUTHENTICATE = hdrtoken_string_to_wks("Www-Authenticate");
     MIME_FIELD_XREF = hdrtoken_string_to_wks("Xref");
-    MIME_FIELD_INT_DATA_INFO = hdrtoken_string_to_wks("@DataInfo");
+    MIME_FIELD_ATS_INTERNAL = hdrtoken_string_to_wks("@Ats-Internal");
     MIME_FIELD_X_ID = hdrtoken_string_to_wks("X-ID");
     MIME_FIELD_X_FORWARDED_FOR = hdrtoken_string_to_wks("X-Forwarded-For");
 
@@ -793,7 +793,7 @@ mime_init()
     MIME_LEN_WARNING = hdrtoken_wks_to_length(MIME_FIELD_WARNING);
     MIME_LEN_WWW_AUTHENTICATE = hdrtoken_wks_to_length(MIME_FIELD_WWW_AUTHENTICATE);
     MIME_LEN_XREF = hdrtoken_wks_to_length(MIME_FIELD_XREF);
-    MIME_LEN_INT_DATA_INFO = hdrtoken_wks_to_length(MIME_FIELD_INT_DATA_INFO);
+    MIME_LEN_ATS_INTERNAL = hdrtoken_wks_to_length(MIME_FIELD_ATS_INTERNAL);
     MIME_LEN_X_ID = hdrtoken_wks_to_length(MIME_FIELD_X_ID);
     MIME_LEN_X_FORWARDED_FOR = hdrtoken_wks_to_length(MIME_FIELD_X_FORWARDED_FOR);
 

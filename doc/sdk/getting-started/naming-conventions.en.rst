@@ -25,14 +25,14 @@ The Traffic Server API adheres to the following naming conventions:
    ``TS_EVENT_NONE``,\ ``TSMutex``, and ``TSContCreate``
 
 -  Enumerated values are always written in all uppercase letters.
-   **Examples**: *``TS_EVENT_NONE``* and *``TS_VC_CLOSE_ABORT``*
+   **Examples**: ``TS_EVENT_NONE`` and ``TS_VC_CLOSE_ABORT``
 
 -  Constant values are all uppercase; enumerated values can be seen as a
    subset of constants. **Examples**: ``TS_URL_SCHEME_FILE`` and
    ``TS_MIME_FIELD_ACCEPT``
 
 -  The names of defined types are mixed-case. **Examples**:
-   *``TSHttpSsn``* and *``TSHttpTxn``*
+   ``TSHttpSsn`` and ``TSHttpTxn``
 
 -  Function names are mixed-case. **Examples**: ``TSUrlCreate`` and
    ``TSContDestroy``

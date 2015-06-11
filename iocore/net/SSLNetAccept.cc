@@ -40,12 +40,12 @@ SSLNetAccept::getNetProcessor() const
 }
 
 void
-SSLNetAccept::init_accept_per_thread()
+SSLNetAccept::init_accept_per_thread(bool isTransparent)
 {
   int i, n;
   NetAccept *a;
 
-  if (do_listen(NON_BLOCKING))
+  if (do_listen(NON_BLOCKING, isTransparent))
     return;
   if (accept_fn == net_accept)
     SET_HANDLER((SSLNetAcceptHandler)&SSLNetAccept::acceptFastEvent);

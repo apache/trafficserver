@@ -1424,8 +1424,6 @@ filename_to_string(TSFileNameT file)
     return "splitdns.config";
   case TS_FNAME_STORAGE:
     return "storage.config";
-  case TS_FNAME_UPDATE_URL:
-    return "update.config";
   case TS_FNAME_VADDRS:
     return "vaddrs.config";
   default: /* no such config file */
@@ -1936,9 +1934,6 @@ create_ele_obj_from_rule_node(Rule *rule)
   case TS_STORAGE:
     ele = (CfgEleObj *)new StorageObj(token_list);
     break;
-  case TS_UPDATE_URL: /* update.config */
-    ele = (CfgEleObj *)new UpdateObj(token_list);
-    break;
   case TS_VADDRS: /* vaddrs.config */
     ele = (CfgEleObj *)new VirtIpAddrObj(token_list);
     break;
@@ -2034,10 +2029,6 @@ create_ele_obj_from_ele(TSCfgEle *ele)
 
   case TS_STORAGE: /* storage.config */
     ele_obj = (CfgEleObj *)new StorageObj((TSStorageEle *)ele);
-    break;
-
-  case TS_UPDATE_URL: /* update.config */
-    ele_obj = (CfgEleObj *)new UpdateObj((TSUpdateEle *)ele);
     break;
 
   case TS_VADDRS: /* vaddrs.config */
@@ -2165,9 +2156,6 @@ get_rule_type(TokenList *token_list, TSFileNameT file)
 
   case TS_FNAME_STORAGE: /* storage.config */
     return TS_STORAGE;
-
-  case TS_FNAME_UPDATE_URL: /* update.config */
-    return TS_UPDATE_URL;
 
   case TS_FNAME_VADDRS: /* vaddrs.config */
     return TS_VADDRS;
@@ -2749,28 +2737,6 @@ copy_storage_ele(TSStorageEle *ele)
   if (ele->pathname)
     nele->pathname = ats_strdup(ele->pathname);
   nele->size = ele->size;
-
-  return nele;
-}
-
-TSUpdateEle *
-copy_update_ele(TSUpdateEle *ele)
-{
-  if (!ele) {
-    return NULL;
-  }
-
-  TSUpdateEle *nele = TSUpdateEleCreate();
-  if (!nele)
-    return NULL;
-
-  copy_cfg_ele(&(ele->cfg_ele), &(nele->cfg_ele));
-  if (ele->url)
-    nele->url = ats_strdup(ele->url);
-  nele->headers = copy_string_list(ele->headers);
-  nele->offset_hour = ele->offset_hour;
-  nele->interval = ele->interval;
-  nele->recursion_depth = ele->recursion_depth;
 
   return nele;
 }

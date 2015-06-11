@@ -271,7 +271,7 @@ PluginVC::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *abuffer, 
 
   // Note: we set vio.op last because process_write_side looks at it to
   //  tell if the VConnection is active.
-  write_state.vio.mutex = c->mutex;
+  write_state.vio.mutex = c ? c->mutex : this->mutex;
   write_state.vio._cont = c;
   write_state.vio.nbytes = nbytes;
   write_state.vio.ndone = 0;
@@ -879,7 +879,8 @@ PluginVC::remove_from_keep_alive_lru()
 SOCKET
 PluginVC::get_socket()
 {
-  return 0;
+  // Return an invalid file descriptor
+  return ts::NO_FD;
 }
 
 void

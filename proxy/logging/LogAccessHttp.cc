@@ -54,7 +54,8 @@ LogAccessHttp::LogAccessHttp(HttpSM *sm)
     m_client_req_url_canon_len(0), m_client_req_unmapped_url_canon_str(NULL), m_client_req_unmapped_url_canon_len(-1),
     m_client_req_unmapped_url_path_str(NULL), m_client_req_unmapped_url_path_len(-1), m_client_req_unmapped_url_host_str(NULL),
     m_client_req_unmapped_url_host_len(-1), m_client_req_url_path_str(NULL), m_client_req_url_path_len(0),
-    m_proxy_resp_content_type_str(NULL), m_proxy_resp_content_type_len(0)
+    m_proxy_resp_content_type_str(NULL), m_proxy_resp_content_type_len(0), m_cache_lookup_url_canon_str(NULL),
+    m_cache_lookup_url_canon_len(0)
 {
   ink_assert(m_http_sm != NULL);
 }
@@ -238,6 +239,22 @@ LogAccessHttp::marshal_client_host_ip(char *buf)
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
+int
+LogAccessHttp::marshal_cache_lookup_url_canon(char *buf)
+{
+  int len = INK_MIN_ALIGN;
+
+  validate_lookup_url();
+  len = round_strlen(m_cache_lookup_url_canon_len + 1); // +1 for eos
+  if (buf) {
+    marshal_mem(buf, m_cache_lookup_url_canon_str, m_cache_lookup_url_canon_len, len);
+  }
+
+  return len;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
 
 int
 LogAccessHttp::marshal_client_host_port(char *buf)
@@ -334,6 +351,27 @@ LogAccessHttp::validate_unmapped_url_path(void)
 
 
 /*-------------------------------------------------------------------------
+  Private utility function to validate m_cache_lookup_url_canon_str &
+  m_cache_lookup__url_canon_len fields.
+  -------------------------------------------------------------------------*/
+void
+LogAccessHttp::validate_lookup_url(void)
+{
+  if (m_cache_lookup_url_canon_len < 0) {
+    if (m_http_sm->t_state.cache_info.lookup_url_storage.valid()) {
+      int lookup_url_len;
+      char *lookup_url = m_http_sm->t_state.cache_info.lookup_url_storage.string_get_ref(&lookup_url_len);
+
+      if (lookup_url && lookup_url[0] != 0) {
+        m_cache_lookup_url_canon_str = LogUtils::escapify_url(&m_arena, lookup_url, lookup_url_len, &m_cache_lookup_url_canon_len);
+      }
+    } else {
+      m_cache_lookup_url_canon_len = 0;
+    }
+  }
+}
+
+/*-------------------------------------------------------------------------
   This is the method, url, and version all rolled into one.  Use the
   respective marshalling routines to do the job.
   -------------------------------------------------------------------------*/
@@ -419,7 +457,7 @@ LogAccessHttp::marshal_client_req_unmapped_url_canon(char *buf)
   int len = INK_MIN_ALIGN;
 
   validate_unmapped_url();
-  if (0 == m_client_req_unmapped_url_canon_len) {
+  if (0 >= m_client_req_unmapped_url_canon_len) {
     // If the unmapped URL isn't populated, we'll fall back to the original
     // client URL. This helps for example server intercepts to continue to
     // log the requests, even when there is no remap rule for it.
@@ -445,7 +483,7 @@ LogAccessHttp::marshal_client_req_unmapped_url_path(char *buf)
   validate_unmapped_url();
   validate_unmapped_url_path();
 
-  if (0 == m_client_req_unmapped_url_path_len) {
+  if (0 >= m_client_req_unmapped_url_path_len) {
     len = marshal_client_req_url_path(buf);
   } else {
     len = round_strlen(m_client_req_unmapped_url_path_len + 1); // +1 for eos

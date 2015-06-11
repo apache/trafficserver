@@ -84,7 +84,7 @@ incomplete.
 
 :program:`traffic_crashlog` may generate a crash log containing information you
 would rather not share outside your organization. Please examine the crash log
-carefully before posting it in a publc forum.
+carefully before posting it in a public forum.
 
 See also
 ========

@@ -54,7 +54,7 @@ The following list shows ``LogFormat`` specifications.
     Required
     Valid format names include any name except ``squid``, ``common``,
     ``extended``, or ``extended2``, which are pre-defined formats. There
-    is no default for this tag.
+    is no default for this tag. The format object needs to be above the the LogObject object.
 
 .. _LogFormat-Format:
 
@@ -171,7 +171,7 @@ The following list shows the ``LogObject`` specifications.
     Valid format names include the predefined logging formats:
     ``squid``, ``common``, ``extended``, and ``extended2``, as well as
     any previously-defined custom log formats. There is no default for
-    this tag.
+    this tag. The format object needs to be above the the LogObject object.
 
 ``<Filename = "file_name"/>``
     Required
@@ -220,7 +220,8 @@ The following list shows the ``LogObject`` specifications.
     Optional
     A comma-separated list of names of any previously-defined log
     filters. If more than one filter is specified, then all filters must
-    accept a record for the record to be logged.
+    accept a record for the record to be logged. The filters need
+    to be above the LogObject object.
 
 ``<Protocols = "list_of_valid_protocols"/>``
     Optional

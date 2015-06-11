@@ -170,8 +170,6 @@ traffic_server_SOURCES = \
   Plugin.h \
   PluginVC.cc \
   PluginVC.h \
-  Prefetch.cc \
-  Prefetch.h \
   ProtocolProbeSessionAccept.cc \
   ProtocolProbeSessionAccept.h \
   ProxyClientSession.cc \
@@ -185,9 +183,7 @@ traffic_server_SOURCES = \
   StatSystem.h \
   Transform.cc \
   Transform.h \
-  TransformInternal.h \
-  Update.cc \
-  Update.h
+  TransformInternal.h
 
 if BUILD_TESTS
 traffic_server_SOURCES +=  \
@@ -294,12 +290,10 @@ traffic_sac_SOURCES = \
   PluginVC.cc \
   AbstractBuffer.cc \
   Transform.cc \
-  Prefetch.cc \
   ProtocolProbeSessionAccept.cc \
   ProtocolProbeSessionAccept.h \
   ProxyClientSession.cc \
   ProxyClientSession.h \
-  Update.cc \
   Plugin.cc \
   InkAPI.cc \
   FetchSM.cc \
