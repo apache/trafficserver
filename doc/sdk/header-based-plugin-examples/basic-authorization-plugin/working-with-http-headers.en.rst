@@ -35,7 +35,7 @@ check the ``Proxy-Authorization`` field. The ``handle_dns`` routine uses
         char *user, *password;
 
         if (!TSHttpTxnClientReqGet (txnp, &bufp, &hdr_loc)) {
-            TSError ("couldn't retrieve client request header\n");
+            TSError ("[basic_authorization] Couldn't retrieve client request header");
             goto done;
         }
 
@@ -50,14 +50,14 @@ are present and valid:
 
     val = TSMimeHdrFieldValueStringGet (bufp, hdr_loc, field_loc, -1, &authval_length);
     if (!val) {
-        TSError ("no value in Proxy-Authorization field\n");
+        TSError ("[basic_authorization] No value in Proxy-Authorization field");
         TSHandleMLocRelease (bufp, hdr_loc, field_loc);
         TSHandleMLocRelease (bufp, TS_NULL_MLOC, hdr_loc);
         goto done;
     }
 
     if (strncmp (val, "Basic", 5) != 0) {
-        TSError ("no Basic auth type in Proxy-Authorization\n");
+        TSError ("[basic_authorization] No Basic auth type in Proxy-Authorization");
         TSHandleMLocRelease (bufp, hdr_loc, field_loc);
         TSHandleMLocRelease (bufp, TS_NULL_MLOC, hdr_loc);
         goto done;
@@ -71,7 +71,7 @@ are present and valid:
     user = base64_decode (val);
     password = strchr (user, ':');
     if (!password) {
-        TSError ("no password in authorization information\n");
+        TSError ("[basic_authorization] No password in authorization information");
         TSfree (user);
         TSHandleMLocRelease (bufp, hdr_loc, field_loc);
         TSHandleMLocRelease (bufp, TS_NULL_MLOC, hdr_loc);
@@ -81,7 +81,7 @@ are present and valid:
     password += 1;
 
     if (!authorized (user, password)) {
-        TSError ("%s:%s not authorized\n", user, password);
+        TSError ("[basic_authorization] %s:%s not authorized", user, password);
         TSfree (user);
         TSHandleMLocRelease (bufp, hdr_loc, field_loc);
         TSHandleMLocRelease (bufp, TS_NULL_MLOC, hdr_loc);

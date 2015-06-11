@@ -93,7 +93,7 @@ Load_Config_File()
 {
   ts::Rv<Configuration> cv = Configuration::loadFromPath(ConfigPath.c_str());
   if (!cv.isOK()) {
-    TSError(PCP "Failed to parse %s as TSConfig format", ConfigPath.c_str());
+    TSError("[ssl_preaccept] Failed to parse %s as TSConfig format", ConfigPath.c_str());
     return -1;
   }
   Config = cv;
@@ -105,7 +105,7 @@ Load_Configuration()
 {
   int ret = Load_Config_File();
   if (ret != 0) {
-    TSError(PCP "Failed to load the config file, check debug output for errata");
+    TSError("[ssl_preaccept] Failed to load the config file, check debug output for errata");
   }
 
   // Still need to use the file
@@ -184,20 +184,20 @@ TSPluginInit(int argc, const char *argv[])
   }
 
   if (TS_SUCCESS != TSPluginRegister(TS_SDK_VERSION_2_0, &info)) {
-    TSError(PCP "registration failed.");
+    TSError("[ssl_preaccept] Registration failed.");
   } else if (TSTrafficServerVersionGetMajor() < 2) {
-    TSError(PCP "requires Traffic Server 2.0 or later.");
+    TSError("[ssl_preaccept] Requires Traffic Server 2.0 or later.");
   } else if (0 > Load_Configuration()) {
-    TSError(PCP "Failed to load config file.");
+    TSError("[ssl_preaccept] Failed to load config file.");
   } else if (0 == (cb_pa = TSContCreate(&CB_Pre_Accept, TSMutexCreate()))) {
-    TSError(PCP "Failed to pre-accept callback.");
+    TSError("[ssl_preaccept] Failed to pre-accept callback.");
   } else {
     TSHttpHookAdd(TS_VCONN_PRE_ACCEPT_HOOK, cb_pa);
     success = true;
   }
 
   if (!success) {
-    TSError(PCP "not initialized");
+    TSError("[ssl_preaccept] Not initialized");
   }
   TSDebug(PN, "Plugin %s", success ? "online" : "offline");
 

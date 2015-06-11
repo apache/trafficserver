@@ -215,7 +215,7 @@ MakeHashBalancer(const char *options)
       } else if (strcmp(opt, "dstaddr") == 0) {
         hash->hash_parts.push_back(HashTxnDstaddr);
       } else {
-        TSError("balancer: ignoring invalid hash field '%s'", opt);
+        TSError("[balancer] Ignoring invalid hash field '%s'", opt);
       }
     }
 

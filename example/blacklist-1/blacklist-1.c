@@ -75,19 +75,19 @@ handle_dns(TSHttpTxn txnp, TSCont contp)
   int host_length;
 
   if (TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
-    TSError("couldn't retrieve client request header\n");
+    TSError("[blacklist-1] Couldn't retrieve client request header");
     goto done;
   }
 
   if (TSHttpHdrUrlGet(bufp, hdr_loc, &url_loc) != TS_SUCCESS) {
-    TSError("couldn't retrieve request url\n");
+    TSError("[blacklist-1] Couldn't retrieve request url");
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     goto done;
   }
 
   host = TSUrlHostGet(bufp, url_loc, &host_length);
   if (!host) {
-    TSError("couldn't retrieve request hostname\n");
+    TSError("[blacklist-1] Couldn't retrieve request hostname");
     TSHandleMLocRelease(bufp, hdr_loc, url_loc);
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     goto done;
@@ -138,7 +138,7 @@ handle_response(TSHttpTxn txnp, TSCont contp ATS_UNUSED)
   int url_length;
 
   if (TSHttpTxnClientRespGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
-    TSError("couldn't retrieve client response header\n");
+    TSError("[blacklist-1] Couldn't retrieve client response header");
     goto done;
   }
 
@@ -147,13 +147,13 @@ handle_response(TSHttpTxn txnp, TSCont contp ATS_UNUSED)
                      strlen(TSHttpHdrReasonLookup(TS_HTTP_STATUS_FORBIDDEN)));
 
   if (TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
-    TSError("couldn't retrieve client request header\n");
+    TSError("[blacklist-1] Couldn't retrieve client request header");
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     goto done;
   }
 
   if (TSHttpHdrUrlGet(bufp, hdr_loc, &url_loc) != TS_SUCCESS) {
-    TSError("couldn't retrieve request url\n");
+    TSError("[blacklist-1] Couldn't retrieve request url");
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     goto done;
   }
@@ -214,8 +214,8 @@ read_blacklist(TSCont contp)
 
     TSfclose(file);
   } else {
-    TSError("unable to open %s\n", blacklist_file);
-    TSError("all sites will be allowed\n");
+    TSError("[blacklist-1] Unable to open %s", blacklist_file);
+    TSError("[blacklist-1] All sites will be allowed");
   }
 
   TSMutexUnlock(sites_mutex);
@@ -316,7 +316,7 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
   info.support_email = "ts-api-support@MyCompany.com";
 
   if (TSPluginRegister(TS_SDK_VERSION_3_0, &info) != TS_SUCCESS) {
-    TSError("Plugin registration failed.\n");
+    TSError("[blacklist-1] Plugin registration failed.");
   }
 
   /* create an TSTextLogObject to log blacklisted requests to */

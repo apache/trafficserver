@@ -129,7 +129,7 @@ RulesConfig::parse_config(const std::string fname, TSHttpHookID default_hook)
   int lineno = 0;
 
   if (0 == fname.size()) {
-    TSError("%s: no config filename provided", PLUGIN_NAME);
+    TSError("[%s] no config filename provided", PLUGIN_NAME);
     return false;
   }
 
@@ -142,7 +142,7 @@ RulesConfig::parse_config(const std::string fname, TSHttpHookID default_hook)
 
   f.open(filename.c_str(), std::ios::in);
   if (!f.is_open()) {
-    TSError("%s: unable to open %s", PLUGIN_NAME, filename.c_str());
+    TSError("[%s] unable to open %s", PLUGIN_NAME, filename.c_str());
     return false;
   }
 
@@ -253,7 +253,7 @@ cont_rewrite_headers(TSCont contp, TSEvent event, void *edata)
     conf->release();
     break;
   default:
-    TSError("%s: unknown event for this plugin", PLUGIN_NAME);
+    TSError("[%s] unknown event for this plugin", PLUGIN_NAME);
     TSDebug(PLUGIN_NAME, "unknown event for this plugin");
     break;
   }
@@ -296,7 +296,7 @@ TSPluginInit(int argc, const char *argv[])
   info.support_email = (char *)"dev@trafficserver.apache.org";
 
   if (TS_SUCCESS != TSPluginRegister(TS_SDK_VERSION_3_0, &info)) {
-    TSError("%s: plugin registration failed.\n", PLUGIN_NAME);
+    TSError("[%s] plugin registration failed.", PLUGIN_NAME);
   }
 
   // Parse the global config file(s). All rules are just appended
@@ -314,7 +314,7 @@ TSPluginInit(int argc, const char *argv[])
       TSDebug(PLUGIN_NAME, "Succesfully loaded global config file %s", argv[i]);
       got_config = true;
     } else {
-      TSError("header_rewrite: failed to parse configuration file %s", argv[i]);
+      TSError("[header_rewrite] failed to parse configuration file %s", argv[i]);
     }
   }
 
@@ -330,7 +330,7 @@ TSPluginInit(int argc, const char *argv[])
     }
   } else {
     // Didn't get anything, nuke it.
-    TSError("%s: failed to parse configuration file", PLUGIN_NAME);
+    TSError("[%s] failed to parse configuration file", PLUGIN_NAME);
     conf->release();
   }
 }
@@ -369,7 +369,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
   TSDebug(PLUGIN_NAME, "Instantiating a new remap.config plugin rule");
 
   if (argc < 3) {
-    TSError("%s: Unable to create remap instance, need config file", PLUGIN_NAME);
+    TSError("[%s] Unable to create remap instance, need config file", PLUGIN_NAME);
     return TS_ERROR;
   }
 
@@ -380,7 +380,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
   for (int i = 2; i < argc; ++i) {
     TSDebug(PLUGIN_NAME, "Loading remap configuration file %s", argv[i]);
     if (!conf->parse_config(argv[i], TS_REMAP_PSEUDO_HOOK)) {
-      TSError("%s: Unable to create remap instance", PLUGIN_NAME);
+      TSError("[%s] Unable to create remap instance", PLUGIN_NAME);
       return TS_ERROR;
     } else {
       TSDebug(PLUGIN_NAME, "Succesfully loaded remap config file %s", argv[i]);

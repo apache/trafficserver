@@ -59,7 +59,7 @@ handle_dns(TSHttpTxn txnp, TSCont contp ATS_UNUSED)
 
   if (TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
     TSDebug(DEBUG_TAG, "couldn't retrieve client request header");
-    TSError("couldn't retrieve client request header\n");
+    TSError("[output_header] Couldn't retrieve client request header");
     goto done;
   }
 
@@ -73,7 +73,7 @@ handle_dns(TSHttpTxn txnp, TSCont contp ATS_UNUSED)
 
   if (TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc) == TS_ERROR) {
     TSDebug(DEBUG_TAG, "non-fatal: error releasing MLoc");
-    TSError("non-fatal: error releasing MLoc\n");
+    TSError("[output_header] non-fatal: Couldn't release MLoc");
   }
 
   /* Find out how the big the complete header is by
@@ -158,12 +158,12 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
   info.support_email = "ts-api-support@MyCompany.com";
 
   if (TSPluginRegister(TS_SDK_VERSION_3_0, &info) != TS_SUCCESS) {
-    TSError("[PluginInit] Plugin registration failed.\n");
+    TSError("[output_header] Plugin registration failed.");
     goto error;
   }
 
   TSHttpHookAdd(TS_HTTP_OS_DNS_HOOK, TSContCreate(hdr_plugin, NULL));
 
 error:
-  TSError("[PluginInit] Plugin not initialized");
+  TSError("[output_header] Plugin not initialized");
 }

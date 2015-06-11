@@ -60,7 +60,7 @@ ts_lua_log_object_creat(lua_State *L)
   log_name = luaL_checklstring(L, -2, &name_len);
 
   if (lua_isnil(L, 3)) {
-    TSError("no log name!!");
+    TSError("[ts_lua] No log name!!");
     return -1;
   } else {
     log_mode = luaL_checknumber(L, 3);
@@ -69,7 +69,7 @@ ts_lua_log_object_creat(lua_State *L)
   error = TSTextLogObjectCreate(log_name, log_mode, &log);
 
   if (!log || error == TS_ERROR) {
-    TSError("creat log error <%s>", log_name);
+    TSError("[ts_lua] Unable to create log <%s>", log_name);
     return -1;
   }
   return 0;
@@ -92,7 +92,7 @@ ts_lua_log_object_write(lua_State *L)
   if (log) {
     TSTextLogObjectWrite(log, (char *)text, NULL);
   } else {
-    TSError("[%s] log is not exsited!", __FUNCTION__);
+    TSError("[ts_lua][%s] log is not exsited!", __FUNCTION__);
   }
 
   return 0;
@@ -109,7 +109,7 @@ static int
 ts_lua_log_object_destroy(lua_State *L ATS_UNUSED)
 {
   if (TSTextLogObjectDestroy(log) != TS_SUCCESS)
-    TSError("[%s] TSTextLogObjectDestroy error!", __FUNCTION__);
+    TSError("[ts_lua][%s] TSTextLogObjectDestroy error!", __FUNCTION__);
 
   return 0;
 }

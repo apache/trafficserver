@@ -166,7 +166,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 
   ts_lua_set_cont_info(L, NULL);
   if (lua_pcall(L, 0, 1, 0) != 0) {
-    TSError("lua_pcall failed: %s", lua_tostring(L, -1));
+    TSError("[ts_lua] lua_pcall failed: %s", lua_tostring(L, -1));
     ret = TSREMAP_NO_REMAP;
 
   } else {
@@ -317,7 +317,7 @@ globalHookHandler(TSCont contp, TSEvent event ATS_UNUSED, void *edata)
   ts_lua_set_cont_info(l, NULL);
 
   if (lua_pcall(l, 0, 1, 0) != 0) {
-    TSError("lua_pcall failed: %s", lua_tostring(l, -1));
+    TSError("[ts_lua] lua_pcall failed: %s", lua_tostring(l, -1));
   }
 
   ret = lua_tointeger(l, -1);
@@ -353,7 +353,7 @@ TSPluginInit(int argc, const char *argv[])
   info.support_email = "dev@trafficserver.apache.org";
 
   if (TSPluginRegister(TS_SDK_VERSION_3_0, &info) != TS_SUCCESS) {
-    TSError("Plugin registration failed. \n");
+    TSError("[ts_lua] Plugin registration failed. \n");
   }
 
   int ret = 0;
@@ -369,18 +369,18 @@ TSPluginInit(int argc, const char *argv[])
   }
 
   if (argc < 2) {
-    TSError("[%s] lua script file required !!", __FUNCTION__);
+    TSError("[ts_lua][%s] lua script file required !!", __FUNCTION__);
     return;
   }
 
   if (strlen(argv[1]) >= TS_LUA_MAX_SCRIPT_FNAME_LENGTH - 16) {
-    TSError("[%s] lua script file name too long !!", __FUNCTION__);
+    TSError("[ts_lua][%s] lua script file name too long !!", __FUNCTION__);
     return;
   }
 
   ts_lua_instance_conf *conf = TSmalloc(sizeof(ts_lua_instance_conf));
   if (!conf) {
-    TSError("[%s] TSmalloc failed !!", __FUNCTION__);
+    TSError("[ts_lua][%s] TSmalloc failed !!", __FUNCTION__);
     return;
   }
   memset(conf, 0, sizeof(ts_lua_instance_conf));
@@ -397,13 +397,13 @@ TSPluginInit(int argc, const char *argv[])
 
   if (ret != 0) {
     TSError(errbuf, NULL);
-    TSError("[%s] ts_lua_add_module failed", __FUNCTION__);
+    TSError("[ts_lua][%s] ts_lua_add_module failed", __FUNCTION__);
     return;
   }
 
   TSCont global_contp = TSContCreate(globalHookHandler, NULL);
   if (!global_contp) {
-    TSError("[%s] could not create transaction start continuation", __FUNCTION__);
+    TSError("[ts_lua][%s] could not create transaction start continuation", __FUNCTION__);
     return;
   }
   TSContDataSet(global_contp, conf);

@@ -137,7 +137,7 @@ transform_destroy(TSCont contp)
 
     TSfree(data);
   } else {
-    TSError("Unable to get Continuation's Data. TSContDataGet returns NULL");
+    TSError("[server_transform] Unable to get Continuation's Data. TSContDataGet returns NULL");
   }
 
   TSContDestroy(contp);
@@ -179,7 +179,7 @@ transform_connect(TSCont contp, TransformData *data)
       data->input_reader = tempReader;
     }
   } else {
-    TSError("TSIOBufferReaderAvail returns TS_ERROR");
+    TSError("[server_transform] TSIOBufferReaderAvail returns TS_ERROR");
     return 0;
   }
 
@@ -210,7 +210,7 @@ transform_write(TSCont contp, TransformData *data)
   if (content_length >= 0) {
     data->server_vio = TSVConnWrite(data->server_vc, contp, TSIOBufferReaderClone(data->input_reader), content_length);
   } else {
-    TSError("TSIOBufferReaderAvail returns TS_ERROR");
+    TSError("[server_transform] TSIOBufferReaderAvail returns TS_ERROR");
   }
   return 0;
 }
@@ -225,7 +225,7 @@ transform_read_status(TSCont contp, TransformData *data)
   if (data->output_reader != NULL) {
     data->server_vio = TSVConnRead(data->server_vc, contp, data->output_buf, sizeof(int));
   } else {
-    TSError("Error in Allocating a Reader to output buffer. TSIOBufferReaderAlloc returns NULL");
+    TSError("[server_transform] Error in Allocating a Reader to output buffer. TSIOBufferReaderAlloc returns NULL");
   }
 
   return 0;
@@ -243,11 +243,11 @@ transform_read(TSCont contp, TransformData *data)
   data->server_vio = TSVConnRead(data->server_vc, contp, data->output_buf, data->content_length);
   data->output_vc = TSTransformOutputVConnGet((TSVConn)contp);
   if (data->output_vc == NULL) {
-    TSError("TSTransformOutputVConnGet returns NULL");
+    TSError("[server_transform] TSTransformOutputVConnGet returns NULL");
   } else {
     data->output_vio = TSVConnWrite(data->output_vc, contp, data->output_reader, data->content_length);
     if (data->output_vio == NULL) {
-      TSError("TSVConnWrite returns NULL");
+      TSError("[server_transform] TSVConnWrite returns NULL");
     }
   }
 
@@ -274,11 +274,11 @@ transform_bypass(TSCont contp, TransformData *data)
   TSIOBufferReaderConsume(data->input_reader, sizeof(int));
   data->output_vc = TSTransformOutputVConnGet((TSVConn)contp);
   if (data->output_vc == NULL) {
-    TSError("TSTransformOutputVConnGet returns NULL");
+    TSError("[server_transform] TSTransformOutputVConnGet returns NULL");
   } else {
     data->output_vio = TSVConnWrite(data->output_vc, contp, data->input_reader, TSIOBufferReaderAvail(data->input_reader));
     if (data->output_vio == NULL) {
-      TSError("TSVConnWrite returns NULL");
+      TSError("[server_transform] TSVConnWrite returns NULL");
     }
   }
   return 1;
@@ -515,7 +515,7 @@ transform_handler(TSCont contp, TSEvent event, void *edata)
 
     data = (TransformData *)TSContDataGet(contp);
     if (data == NULL) {
-      TSError("Didn't get Continuation's Data. Ignoring Event..");
+      TSError("[server_transform] Didn't get Continuation's Data. Ignoring Event..");
       return 0;
     }
     TSDebug("strans", "transform handler event [%d], data->state = [%d]", event, data->state);
@@ -583,19 +583,19 @@ server_response_ok(TSHttpTxn txnp)
   TSHttpStatus resp_status;
 
   if (TSHttpTxnServerRespGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
-    TSError("Unable to get handle to Server Response");
+    TSError("[server_transform] Unable to get handle to Server Response");
     return 0;
   }
 
   resp_status = TSHttpHdrStatusGet(bufp, hdr_loc);
   if (TS_HTTP_STATUS_OK == resp_status) {
     if (TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc) != TS_SUCCESS) {
-      TSError("Unable to release handle to server request");
+      TSError("[server_transform] Unable to release handle to server request");
     }
     return 1;
   } else {
     if (TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc) != TS_SUCCESS) {
-      TSError("Unable to release handle to server request");
+      TSError("[server_transform] Unable to release handle to server request");
     }
     return 0;
   }
@@ -643,7 +643,7 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
   info.support_email = "ts-api-support@MyCompany.com";
 
   if (TSPluginRegister(TS_SDK_VERSION_3_0, &info) != TS_SUCCESS) {
-    TSError("Plugin registration failed.\n");
+    TSError("[server_transform] Plugin registration failed.");
   }
 
   /* connect to the echo port on localhost */

@@ -352,7 +352,7 @@ consume_resource(TSCont cont, TSEvent event ATS_UNUSED, void *edata ATS_UNUSED)
     TSContDestroy(cont);
     break;
   default:
-    TSError("Unknown event %d.", event);
+    TSError("[stale_while_revalidate] Unknown event %d.", event);
     break;
   }
 
@@ -616,7 +616,7 @@ TSPluginInit(int argc, const char *argv[])
   info.support_email = "dev@trafficserver.apache.org";
 
   if (TSPluginRegister(TS_SDK_VERSION_3_0, &info) != TS_SUCCESS) {
-    TSError("Plugin registration failed.\n");
+    TSError("[stale_while_revalidate] Plugin registration failed.\n");
     return;
   } else {
     TSDebug(PLUGIN_NAME, "Plugin registration succeeded.\n");

@@ -1,3 +1,4 @@
+
 /** @file
 
     A brief file description
@@ -153,7 +154,7 @@ AtsConfig::Parse(const char *path)
   AtsHostConfig *current_host_configuration = host_configurations_[0];
 
   if (pathstring.empty()) {
-    TSError("Empty path passed in AtsConfig::Parse");
+    TSError("[ats_config] Empty path passed in AtsConfig::Parse");
     return false;
   }
 
@@ -165,7 +166,7 @@ AtsConfig::Parse(const char *path)
   f.open(path, std::ios::in);
 
   if (!f.is_open()) {
-    TSError("could not open file [%s], skip", path);
+    TSError("[ats_config] Could not open file [%s], skip", path);
     return false;
   }
 

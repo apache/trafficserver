@@ -89,13 +89,13 @@ TSPluginInit(int argc, const char *argv[])
   info.support_email = "ts-api-support@MyCompany.com";
 
   if (TSPluginRegister(TS_SDK_VERSION_3_0, &info) != TS_SUCCESS) {
-    TSError("[lifecycle-plugin] Plugin registration failed.\n");
+    TSError("[lifecycle-plugin] Plugin registration failed.");
     goto Lerror;
   }
 
   if (!CheckVersion()) {
     TSError("[lifecycle-plugin] Plugin requires Traffic Server 3.3.5 "
-            "or later\n");
+            "or later");
     goto Lerror;
   }
 
@@ -110,5 +110,5 @@ TSPluginInit(int argc, const char *argv[])
   return;
 
 Lerror:
-  TSError("[amc-tranform] Unable to initialize plugin (disabled).\n");
+  TSError("[lifecycle-plugin] Unable to initialize plugin (disabled).");
 }

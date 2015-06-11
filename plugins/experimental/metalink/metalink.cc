@@ -120,7 +120,7 @@ cache_open_write(TSCont contp, void *edata)
   TSCacheKeyDestroy(data->key);
 
   if (TSHttpTxnClientReqGet(data->txnp, &req_bufp, &hdr_loc) != TS_SUCCESS) {
-    TSError("Couldn't retrieve client request header");
+    TSError("[metalink] Couldn't retrieve client request header");
 
     TSContDestroy(contp);
 
@@ -773,7 +773,7 @@ http_send_response_hdr(TSCont contp, void *edata)
   data->txnp = (TSHttpTxn)edata;
 
   if (TSHttpTxnClientRespGet(data->txnp, &data->resp_bufp, &data->hdr_loc) != TS_SUCCESS) {
-    TSError("Couldn't retrieve client response header");
+    TSError("[metalink] Couldn't retrieve client response header");
 
     TSHttpTxnReenable(data->txnp, TS_EVENT_HTTP_CONTINUE);
     TSfree(data);
@@ -910,7 +910,7 @@ TSPluginInit(int /* argc ATS_UNUSED */, const char * /* argv ATS_UNUSED */ [])
   info.support_email = (char *)"dev@trafficserver.apache.org";
 
   if (TSPluginRegister(TS_SDK_VERSION_3_0, &info) != TS_SUCCESS) {
-    TSError("Plugin registration failed");
+    TSError("[metalink] Plugin registration failed");
   }
 
   TSCont contp = TSContCreate(handler, NULL);

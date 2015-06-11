@@ -108,7 +108,7 @@ modify the request host:
       query_remap_info *qri = (query_remap_info*)ih;
         
       if (!qri) {
-        TSError("NULL ihandle");
+        TSError("[remap] NULL ihandle");
         return 0;
       }
           

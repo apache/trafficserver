@@ -54,7 +54,7 @@ Load_Config_File()
 {
   ts::Rv<Configuration> cv = Configuration::loadFromPath(ConfigPath.c_str());
   if (!cv.isOK()) {
-    TSError(PCP "Failed to parse %s as TSConfig format", ConfigPath.c_str());
+    TSError("[ssl_sni] Failed to parse %s as TSConfig format", ConfigPath.c_str());
     return -1;
   }
   Config = cv;
@@ -66,7 +66,7 @@ Load_Configuration()
 {
   int ret = Load_Config_File();
   if (ret != 0) {
-    TSError(PCP "Failed to load the config file, check debug output for errata");
+    TSError("[ssl_sni] Failed to load the config file, check debug output for errata");
   }
 
   return 0;
@@ -155,20 +155,20 @@ TSPluginInit(int argc, const char *argv[])
   }
 
   if (TS_SUCCESS != TSPluginRegister(TS_SDK_VERSION_2_0, &info)) {
-    TSError(PCP "registration failed.");
+    TSError("[ssl_sni] Registration failed.");
   } else if (TSTrafficServerVersionGetMajor() < 2) {
-    TSError(PCP "requires Traffic Server 2.0 or later.");
+    TSError("[ssl_sni] Requires Traffic Server 2.0 or later.");
   } else if (0 > Load_Configuration()) {
-    TSError(PCP "Failed to load config file.");
+    TSError("[ssl_sni] Failed to load config file.");
   } else if (0 == (cb_cert = TSContCreate(&CB_servername, TSMutexCreate()))) {
-    TSError(PCP "Failed to create cert callback.");
+    TSError("[ssl_sni] Failed to create cert callback.");
   } else {
     TSHttpHookAdd(TS_SSL_CERT_HOOK, cb_cert);
     success = true;
   }
 
   if (!success) {
-    TSError(PCP "not initialized");
+    TSError("[ssl_sni] Not initialized");
   }
   TSDebug(PN, "Plugin %s", success ? "online" : "offline");
 
@@ -180,7 +180,7 @@ TSPluginInit(int argc, const char *argv[])
 void
 TSPluginInit(int, const char *[])
 {
-  TSError(PCP "requires TLS SNI which is not available.");
+  TSError("[ssl_sni] Requires TLS SNI which is not available.");
 }
 
 #endif // TS_USE_TLS_SNI

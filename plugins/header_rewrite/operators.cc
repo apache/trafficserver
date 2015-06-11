@@ -38,7 +38,7 @@ OperatorSetConfig::initialize(Parser &p)
     _value.set_value(p.get_value());
   } else {
     _key = TS_CONFIG_NULL;
-    TSError("%s: no such records config: %s", PLUGIN_NAME, _config.c_str());
+    TSError("[%s] no such records config: %s", PLUGIN_NAME, _config.c_str());
   }
 }
 
@@ -64,7 +64,7 @@ OperatorSetConfig::exec(const Resources &res) const
       }
       break;
     default:
-      TSError("%s: unknown data type, whut?", PLUGIN_NAME);
+      TSError("[%s] unknown data type, whut?", PLUGIN_NAME);
       break;
     }
   }
@@ -80,7 +80,7 @@ OperatorSetStatus::initialize(Parser &p)
   _status.set_value(p.get_arg());
 
   if (NULL == (_reason = TSHttpHdrReasonLookup((TSHttpStatus)_status.get_int_value()))) {
-    TSError("%s: unknown status %d", PLUGIN_NAME, _status.get_int_value());
+    TSError("[%s] unknown status %d", PLUGIN_NAME, _status.get_int_value());
     _reason_len = 0;
   } else {
     _reason_len = strlen(_reason);
@@ -278,7 +278,7 @@ OperatorSetRedirect::initialize(Parser &p)
 
   if ((_status.get_int_value() != (int)TS_HTTP_STATUS_MOVED_PERMANENTLY) &&
       (_status.get_int_value() != (int)TS_HTTP_STATUS_MOVED_TEMPORARILY)) {
-    TSError("%s: unsupported redirect status %d", PLUGIN_NAME, _status.get_int_value());
+    TSError("[%s] unsupported redirect status %d", PLUGIN_NAME, _status.get_int_value());
   }
 
   require_resources(RSRC_SERVER_RESPONSE_HEADERS);
@@ -358,7 +358,7 @@ OperatorSetTimeoutOut::initialize(Parser &p)
     _type = TO_OUT_DNS;
   } else {
     _type = TO_OUT_UNDEFINED;
-    TSError("%s: unsupported timeout qualifier: %s", PLUGIN_NAME, p.get_arg().c_str());
+    TSError("[%s] unsupported timeout qualifier: %s", PLUGIN_NAME, p.get_arg().c_str());
   }
 
   _timeout.set_value(p.get_value());
@@ -389,7 +389,7 @@ OperatorSetTimeoutOut::exec(const Resources &res) const
     TSHttpTxnDNSTimeoutSet(res.txnp, _timeout.get_int_value());
     break;
   default:
-    TSError("%s: unsupported timeout", PLUGIN_NAME);
+    TSError("[%s] unsupported timeout", PLUGIN_NAME);
     break;
   }
 }
@@ -543,7 +543,7 @@ OperatorCounter::initialize(Parser &p)
 
   // Sanity
   if (_counter_name.length() == 0) {
-    TSError("%s: counter name is empty", PLUGIN_NAME);
+    TSError("[%s] counter name is empty", PLUGIN_NAME);
     return;
   }
 
@@ -551,7 +551,7 @@ OperatorCounter::initialize(Parser &p)
   if (TSStatFindName(_counter_name.c_str(), &_counter) == TS_ERROR) {
     _counter = TSStatCreate(_counter_name.c_str(), TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_COUNT);
     if (_counter == TS_ERROR) {
-      TSError("%s: TSStatCreate() failed. Can't create counter: %s", PLUGIN_NAME, _counter_name.c_str());
+      TSError("[%s] TSStatCreate() failed. Can't create counter: %s", PLUGIN_NAME, _counter_name.c_str());
       return;
     }
     TSDebug(PLUGIN_NAME, "OperatorCounter::initialize(%s) created counter with id: %d", _counter_name.c_str(), _counter);

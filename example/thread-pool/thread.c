@@ -79,7 +79,7 @@ add_to_queue(Queue *q, void *data)
     TSMutexUnlock(q->mutex);
 
     if (n > MAX_JOBS_ALARM) {
-      TSError("Warning:Too many jobs in plugin thread pool queue (%d). Maximum allowed is %d", n, MAX_JOBS_ALARM);
+      TSError("[thread] Warning:Too many jobs in plugin thread pool queue (%d). Maximum allowed is %d", n, MAX_JOBS_ALARM);
     }
   }
 }

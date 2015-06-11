@@ -51,7 +51,7 @@ Parser::preprocess(std::vector<std::string> &tokens)
       else
         _arg = "";
     } else {
-      TSError("%s: conditions must be embraced in %%{}", PLUGIN_NAME);
+      TSError("[%s] conditions must be embraced in %%{}", PLUGIN_NAME);
       return;
     }
   } else {
@@ -87,7 +87,7 @@ Parser::preprocess(std::vector<std::string> &tokens)
         }
       } else {
         // Syntax error
-        TSError("%s: mods have to be embraced in []", PLUGIN_NAME);
+        TSError("[%s] mods have to be embraced in []", PLUGIN_NAME);
         return;
       }
     }
