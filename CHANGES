@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-3524] Add a new log tag, %<cluc>, which is the cache lookup URL
+   (cache key).
+
   *) [TS-3542] Remove the reclaimable freelist feature, it will be replaced
    with a buddy allocation scheme.
 
