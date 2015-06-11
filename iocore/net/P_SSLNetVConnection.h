@@ -107,6 +107,16 @@ public:
   {
     sslClientConnection = state;
   };
+  virtual void
+  setSSLSessionCacheHit(bool state)
+  {
+    sslSessionCacheHit = state;
+  };
+  virtual bool
+  getSSLSessionCacheHit()
+  {
+    return sslSessionCacheHit;
+  };
   int sslServerHandShakeEvent(int &err);
   int sslClientHandShakeEvent(int &err);
   virtual void net_read_io(NetHandler *nh, EThread *lthread);
@@ -214,6 +224,7 @@ private:
   bool sslHandShakeComplete;
   bool sslClientConnection;
   bool sslClientRenegotiationAbort;
+  bool sslSessionCacheHit;
   MIOBuffer *handShakeBuffer;
   IOBufferReader *handShakeHolder;
   IOBufferReader *handShakeReader;
