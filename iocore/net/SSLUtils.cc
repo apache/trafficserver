@@ -187,6 +187,9 @@ SSL_CTX_add_extra_chain_cert_file(SSL_CTX *ctx, const char *chainfile)
 }
 
 
+int SSL_session_timed_out(SSL_SESSION *session);
+static void ssl_rm_cached_session(SSL_CTX *ctx, SSL_SESSION *sess);
+
 static SSL_SESSION *
 ssl_get_cached_session(SSL *ssl, unsigned char *id, int len, int *copy)
 {
@@ -209,6 +212,12 @@ ssl_get_cached_session(SSL *ssl, unsigned char *id, int len, int *copy)
   SSL_SESSION *session = NULL;
   if (!session_cache->getSession(sid, &session)) {
     session = NULL;
+  // Double check the timeout
+  } else if (session && SSL_session_timed_out(session)) {
+    // Due to bug in openssl, the timeout is checked, but only removed
+    // from the openssl built-in hash table.  The external remove cb is not called
+    ssl_rm_cached_session(SSL_get_SSL_CTX(ssl), session);
+    return NULL;
   }
   return session;
 }
