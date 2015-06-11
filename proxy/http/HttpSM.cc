@@ -94,7 +94,7 @@ milestone_update_api_time(TransactionMilestones &milestones, ink_hrtime &api_tim
     bool active = api_timer >= 0;
     if (!active)
       api_timer = -api_timer;
-    delta = ink_get_hrtime() - api_timer;
+    delta = Thread::get_hrtime() - api_timer;
     api_timer = 0;
     // Exactly zero is a problem because we want to signal *something* happened
     // vs. no API activity at all. This can happen when the API time is less than
@@ -1313,7 +1313,7 @@ HttpSM::state_api_callout(int event, void *data)
           plugin_lock = MUTEX_TAKE_TRY_LOCK(cur_hook->m_cont->mutex, mutex->thread_holding);
 
           if (!plugin_lock) {
-            api_timer = -ink_get_hrtime();
+            api_timer = -Thread::get_hrtime();
             HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_api_callout);
             ink_assert(pending_action == NULL);
             pending_action = mutex->thread_holding->schedule_in(this, HRTIME_MSECONDS(10));
@@ -1329,11 +1329,11 @@ HttpSM::state_api_callout(int event, void *data)
         APIHook *hook = cur_hook;
         cur_hook = cur_hook->next();
 
-        api_timer = ink_get_hrtime();
+        api_timer = Thread::get_hrtime();
         hook->invoke(TS_EVENT_HTTP_READ_REQUEST_HDR + cur_hook_id, this);
         if (api_timer > 0) {
           milestone_update_api_time(milestones, api_timer);
-          api_timer = -ink_get_hrtime(); // set in order to track non-active callout duration
+          api_timer = -Thread::get_hrtime(); // set in order to track non-active callout duration
           // which means that if we get back from the invoke with api_timer < 0 we're already
           // tracking a non-complete callout from a chain so just let it ride. It will get cleaned
           // up in state_api_callback.
