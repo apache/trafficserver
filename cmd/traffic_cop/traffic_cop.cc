@@ -132,9 +132,6 @@ static int child_pid = 0;
 static int child_status = 0;
 static int sem_id = 11452;
 
-// manager API is initialized
-static bool mgmt_init = false;
-
 AppVersionInfo appVersionInfo;
 
 static char const localhost[] = "127.0.0.1";
@@ -1207,7 +1204,6 @@ test_mgmt_cli_port()
 
   if (TSRecordGetString("proxy.config.manager_binary", &val) != TS_ERR_OKAY) {
     cop_log(COP_WARNING, "(cli test) unable to retrieve manager_binary\n");
-    mgmt_init = false;
     ret = -1;
   } else {
     if (strcmp(val, manager_binary) != 0) {
@@ -1610,6 +1606,7 @@ check_no_run()
 static void *
 check(void *arg)
 {
+  bool mgmt_init = false;
   cop_log_trace("Entering check()\n");
 
   for (;;) {
@@ -1658,10 +1655,7 @@ check(void *arg)
     // We do this after the first round of checks, since the first "check" will spawn traffic_manager
     if (!mgmt_init) {
       ats_scoped_str runtimedir(config_read_runtime_dir());
-
-      cop_log(COP_DEBUG, "initializing manager API\n");
       TSInit(runtimedir, static_cast<TSInitOptionT>(TS_MGMT_OPT_NO_EVENTS));
-
       mgmt_init = true;
 
       // Allow a configurable longer sleep init time
