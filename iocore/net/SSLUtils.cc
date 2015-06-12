@@ -205,7 +205,7 @@ ssl_get_cached_session(SSL *ssl, unsigned char *id, int len, int *copy)
 
   APIHook *hook = ssl_hooks->get(TS_SSL_SESSION_INTERNAL_HOOK);
   while (hook) {
-    hook->invoke(TS_EVENT_SESSION_GET, &sid);
+    hook->invoke(TS_EVENT_SSL_SESSION_GET, &sid);
     hook = hook->m_link.next;
   }
 
@@ -243,7 +243,7 @@ ssl_new_cached_session(SSL *ssl, SSL_SESSION *sess)
   // Call hook after new session is created
   APIHook *hook = ssl_hooks->get(TS_SSL_SESSION_INTERNAL_HOOK);
   while (hook) {
-    hook->invoke(TS_EVENT_SESSION_NEW, &sid);
+    hook->invoke(TS_EVENT_SSL_SESSION_NEW, &sid);
     hook = hook->m_link.next;
   }
 
@@ -262,7 +262,7 @@ ssl_rm_cached_session(SSL_CTX *ctx, SSL_SESSION *sess)
   // Call hook before session is removed
   APIHook *hook = ssl_hooks->get(TS_SSL_SESSION_INTERNAL_HOOK);
   while (hook) {
-    hook->invoke(TS_EVENT_SESSION_REMOVE, &sid);
+    hook->invoke(TS_EVENT_SSL_SESSION_REMOVE, &sid);
     hook = hook->m_link.next;
   }
 

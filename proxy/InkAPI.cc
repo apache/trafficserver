@@ -8916,7 +8916,7 @@ TSSslSessionGetBuffer(const TSSslSessionID *session_id, char *buffer, int *len_p
 {
   int true_len = 0;
   if (session_id && len_ptr) {
-    session_cache->getSessionBuffer(*session_id, buffer, *len_ptr, true_len);
+    true_len = session_cache->getSessionBuffer(*session_id, buffer, *len_ptr);
   }
   return true_len;
 }

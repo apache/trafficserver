@@ -128,7 +128,7 @@ public:
   ~SSLSessionBucket();
   void insertSession(const SSLSessionID &, SSL_SESSION *ctx);
   bool getSession(const SSLSessionID &, SSL_SESSION **ctx);
-  bool getSessionBuffer(const SSLSessionID &, char *buffer, int &len, int &true_len);
+  int getSessionBuffer(const SSLSessionID &, char *buffer, int &len);
   void removeSession(const SSLSessionID &);
 
 private:
@@ -144,7 +144,7 @@ class SSLSessionCache
 {
 public:
   bool getSession(const TSSslSessionID &sid, SSL_SESSION **sess, bool keep_stat = true) const;
-  bool getSessionBuffer(const TSSslSessionID &sid, char *buffer, int &len, int &true_len) const;
+  int getSessionBuffer(const TSSslSessionID &sid, char *buffer, int &len) const;
   void insertSession(const TSSslSessionID &sid, SSL_SESSION *sess);
   void removeSession(const TSSslSessionID &sid);
   SSLSessionCache();

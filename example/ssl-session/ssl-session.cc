@@ -60,9 +60,9 @@ CB_session(TSCont /* contp */, TSEvent event, void *edata)
     strcat(buffer, val);
   } 
   TSDebug("skh", buffer);
-  if (event == TS_EVENT_SESSION_GET) {
+  if (event == TS_EVENT_SSL_SESSION_GET) {
     // Could update a stat or a last used timestamp
-  } else if (event == TS_EVENT_SESSION_NEW) {
+  } else if (event == TS_EVENT_SSL_SESSION_NEW) {
     // Turn around and fetch it again
     TSSslSession session2 = TSSslSessionGet(session);
     if (session2) {
@@ -74,7 +74,7 @@ CB_session(TSCont /* contp */, TSEvent event, void *edata)
     } else {
       TSDebug("skh", "CB_session failed to get session");
     }
-  } else if (event == TS_EVENT_SESSION_REMOVE) {
+  } else if (event == TS_EVENT_SSL_SESSION_REMOVE) {
     TSSslSession session2 = TSSslSessionGet(session);
     if (session2) {
       TSDebug("skh", "CB_session got removing session");
