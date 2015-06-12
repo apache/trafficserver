@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-2512] Deprecate the channel_stats plugin.
+
   *) [TS-3687] ATS Session Cache should remove expired sessions.
 
   *) [TS-3453] Confusion of handling SSL events in write_to_net_io in UnixNetVConnection.cc
