@@ -2002,97 +2002,26 @@ Logging Configuration
 
    Enables (``1``) or disables (``0``) custom logging.
 
-.. ts:cv:: CONFIG proxy.config.log.squid_log_enabled INT 1
-   :reloadable:
+.. note::
+    The following defaults (with the format``CONFIG proxy.config.log.[format].[default]`` have been removed from ``records.config``.
+    They can be accessed by editing :file:`logs_xml.config`.
 
-   Enables (``1``) or disables (``0``) the `squid log file format
-   <../working-log-files/log-formats#SquidFormat>`_.
+    - ``log_enabled`` INT 1
+        Enables (``1``) or disables (``0``) the file format.
 
-.. ts:cv:: CONFIG proxy.config.log.squid_log_is_ascii INT 0
-   :reloadable:
+    - ``log_is_ascii`` INT 0
+        The log file type:
+           - ``1`` = ASCII
+           - ``0`` = binary
 
-   The squid log file type:
+    - ``log_name`` STRING [format]
+        The filename (ex. :ref:`squid log <log-formats-squid-format>`).
 
-   -  ``1`` = ASCII
-   -  ``0`` = binary
+    - ``log_header_ STRING NULL
+        The file header text (ex. :ref:`squid log <log-formats-squid-format>`).
 
-.. ts:cv:: CONFIG proxy.config.log.squid_log_name STRING squid
-   :reloadable:
-
-   The  :ref:`squid log <log-formats-squid-format>` filename.
-
-.. ts:cv:: CONFIG proxy.config.log.squid_log_header STRING NULL
-
-   The :ref:`squid log <log-formats-squid-format>` file header text.
-
-.. ts:cv:: CONFIG proxy.config.log.common_log_enabled INT 0
-   :reloadable:
-
-   Enables (``1``) or disables (``0``) the :ref:`Netscape common log file format <admin-log-formats-netscape-common>`.
-
-.. ts:cv:: CONFIG proxy.config.log.common_log_is_ascii INT 1
-   :reloadable:
-
-   The :ref:`Netscape common log <admin-log-formats-netscape-common>` file type:
-
-   -  ``1`` = ASCII
-   -  ``0`` = binary
-
-.. ts:cv:: CONFIG proxy.config.log.common_log_name STRING common
-   :reloadable:
-
-   The :ref:`Netscape common log <admin-log-formats-netscape-common>` filename.
-
-.. ts:cv:: CONFIG proxy.config.log.common_log_header STRING NULL
-   :reloadable:
-
-   The :ref:`Netscape common log <admin-log-formats-netscape-common>` file header text.
-
-.. ts:cv:: CONFIG proxy.config.log.extended_log_enabled INT 0
-   :reloadable:
-
-   Enables (``1``) or disables (``0``) the `Netscape extended log file format
-   <../working-log-files/log-formats#NetscapeFormats>`_.
-
-.. ts:cv:: CONFIG proxy.config.log.extended_log_is_ascii INT 0
-
-   The :ref:`Netscape extended log <admin-log-formats-netscape-extended>` file type:
-
-   -  ``1`` = ASCII
-   -  ``0`` = binary
-
-.. ts:cv:: CONFIG proxy.config.log.extended_log_name STRING extended
-
-   The :ref:`Netscape extended log <admin-log-formats-netscape-extended>` filename.
-
-.. ts:cv:: CONFIG proxy.config.log.extended_log_header STRING NULL
-   :reloadable:
-
-   The :ref:`Netscape extended log <admin-log-formats-netscape-extended>` file header text.
-
-.. ts:cv:: CONFIG proxy.config.log.extended2_log_enabled INT 0
-   :reloadable:
-
-   Enables (``1``) or disables (``0``) the `Netscape Extended-2 log file
-   format <../working-log-files/log-formats#NetscapeFormats>`_.
-
-.. ts:cv:: CONFIG proxy.config.log.extended2_log_is_ascii INT 1
-   :reloadable:
-
-   The :ref:`Netscape Extended-2 log <admin-log-formats-netscape-extended2>` file type:
-
-   -  ``1`` = ASCII
-   -  ``0`` = binary
-
-.. ts:cv:: CONFIG proxy.config.log.extended2_log_name STRING extended2
-   :reloadable:
-
-   The :ref:`Netscape Extended-2 log <admin-log-formats-netscape-extended2>` filename.
-
-.. ts:cv:: CONFIG proxy.config.log.extended2_log_header STRING NULL
-   :reloadable:
-
-   The :ref:`Netscape Extended-2 log <admin-log-formats-netscape-extended2>` file header text.
+    The format can be either ``squid`` (Squid Format), ``common`` (Netscape Common),  ``extended`` (Netscape Extended), 
+    or  ``extended2`` (Netscape Extended-2).
 
 .. ts:cv:: CONFIG proxy.config.log.separate_icp_logs INT 0
    :reloadable:

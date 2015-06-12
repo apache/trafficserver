@@ -387,3 +387,38 @@ simply create a <LogObject> that uses this format.
   <Name = "squid_seconds_only_timestamp"/>
   <Format = "%<cqts> %<ttms> %<chi> %<crc>/%<pssc> %<psql> %<cqhm> %<cquc> %<caun> %<phr>/%<pqsn> %<psct>"/>
 </LogFormat>
+
+
+<!------------------------------------------------------------------------
+
+Squid, Common, Extended, Extended2 Formats
+--------------------------------------------------
+
+The following <LogFormat> formats are formerly built-in log-formats.
+-------------------------------------------------------------------------->
+
+<LogFormat>
+  <Name = "squid"/>
+  <Format = "%<cqtq> %<ttms> %<chi> %<crc>/%<pssc> %<psql> %<cqhm> %<cquc> %<caun> %<phr>/%<pqsn> %<psct>"/>
+</LogFormat>
+
+<LogFormat>
+  <Name = "common"/>
+  <Format = "%<chi> - %<caun> [%<cqtn>] \"%<cqtx>\" %<pssc> %<pscl>"/>
+</LogFormat>
+
+<LogFormat>
+  <Name = "extended"/>
+  <Format = "%<chi> - %<caun> [%<cqtn>] \"%<cqtx>\" %<pssc> %<pscl> %<sssc> %<sscl> %<cqbl> %<pqbl> %<cqhl> %<pshl> %<pqhl> %<sshl> %<tts>"/>
+</LogFormat>
+
+<LogFormat>
+  <Name = "extended2"/>
+  <Format = "%<chi> - %<caun> [%<cqtn>] \"%<cqtx>\" %<pssc> %<pscl> %<sssc> %<sscl> %<cqbl> %<pqbl> %<cqhl> %<pshl> %<pqhl> %<sshl> %<tts> %<phr> %<cfsc> %<pfsc> %<crc>"/>
+</LogFormat>
+
+<LogObject>
+    <Format = "squid"/>
+    <Filename = "squid"/>
+    <Mode = "binary"/>
+</LogObject>

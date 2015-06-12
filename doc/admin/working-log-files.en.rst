@@ -222,37 +222,18 @@ analyzed with a wide variety of off-the-shelf log-analysis packages. You
 should use one of the standard event log formats unless you need
 information that these formats do not provide. Refer to `Using the Custom Format`_.
 
-Set standard log file format options by following the steps below:
+#. Log formats are now configured and enabled via :file:`logs_xml.config`. 
+   Here are four example log formats, which match with the previous configurations (set formerly in :file:`records.config`). 
+   -  :ts:cv: [format]_log_enabled
+   -  :ts:cv: [format]_is_ascii
+   -  :ts:cv: [format]_name
+   -  :ts:cv: [format]_header
 
-#. In the :file:`records.config` file, edit the following variables
+The [format] specified can be squid (Squid), common (Netscape Common),
+extended (Netscape Extended), or extended2 (Netscape Extended 2).
 
-#. Edit the following variables to use the Squid format:
-
-   -  :ts:cv:`proxy.config.log.squid_log_enabled`
-   -  :ts:cv:`proxy.config.log.squid_log_is_ascii`
-   -  :ts:cv:`proxy.config.log.squid_log_name`
-   -  :ts:cv:`proxy.config.log.squid_log_header`
-
-#. To use the Netscape Common format, edit the following variables:
-
-   -  :ts:cv:`proxy.config.log.common_log_enabled`
-   -  :ts:cv:`proxy.config.log.common_log_is_ascii`
-   -  :ts:cv:`proxy.config.log.common_log_name`
-   -  :ts:cv:`proxy.config.log.common_log_header`
-
-#. To use the Netscape Extended format, edit the following variables:
-
-   -  :ts:cv:`proxy.config.log.extended_log_enabled`
-   -  :ts:cv:`proxy.config.log.extended_log_is_ascii`
-   -  :ts:cv:`proxy.config.log.extended_log_name`
-   -  :ts:cv:`proxy.config.log.extended_log_header`
-
-#. To use the Netscape Extended-2 format, edit the following variables:
-
-   -  :ts:cv:`proxy.config.log.extended2_log_enabled`
-   -  :ts:cv:`proxy.config.log.extended2_log_is_ascii`
-   -  :ts:cv:`proxy.config.log.extended2_log_name`
-   -  :ts:cv:`proxy.config.log.extended2_log_header`
+Note that the squid log object is created by default, and will be used if logging is enabled. 
+Users can use any number of log formats and create any number of log objects via the XML config.
 
 #. Run the command :option:`traffic_line -x` to apply the configuration
    changes.
