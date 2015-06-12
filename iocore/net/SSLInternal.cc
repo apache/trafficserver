@@ -43,4 +43,9 @@ SSL_set_rbio(SSL *ssl, BIO *rbio)
   ssl->rbio = rbio;
 }
 
+int 
+SSL_session_timed_out(SSL_SESSION *session) {
+  return session->timeout < (long)(time(NULL) - session->time);
+}
+
 #endif

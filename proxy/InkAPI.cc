@@ -8898,3 +8898,54 @@ TSVConnReenable(TSVConn vconn)
     }
   }
 }
+
+extern SSLSessionCache *session_cache; // declared extern in P_SSLConfig.h
+
+TSSslSession
+TSSslSessionGet(const TSSslSessionID *session_id)
+{
+  SSL_SESSION *session = NULL;
+  if (session_id) {
+    session_cache->getSession(*session_id, &session, false);
+  }
+  return reinterpret_cast<TSSslSession>(session);
+}
+
+int
+TSSslSessionGetBuffer(const TSSslSessionID *session_id, char *buffer, int *len_ptr)
+{
+  int true_len = 0;
+  if (session_id && len_ptr) {
+    true_len = session_cache->getSessionBuffer(*session_id, buffer, *len_ptr);
+  }
+  return true_len;
+}
+
+TSReturnCode
+TSSslSessionInsert(const TSSslSessionID *session_id, TSSslSession add_session)
+{
+  if (session_id) {
+    SSL_SESSION *session = reinterpret_cast<SSL_SESSION *>(add_session);
+    // Remove the old one if it is there
+    session_cache->removeSession(*session_id);
+
+    session_cache->insertSession(*session_id, session);
+    // insertSession returns void, assume all went well
+    return TS_SUCCESS;
+  } else {
+    return TS_ERROR;
+  }
+}
+
+TSReturnCode
+TSSslSessionRemove(const TSSslSessionID *session_id)
+{
+  if (session_id) {
+    session_cache->removeSession(*session_id);
+    // removeSession returns void, assume all went well
+    return TS_SUCCESS;
+  } else {
+    return TS_ERROR;
+  }
+}
+

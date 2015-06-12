@@ -31,26 +31,23 @@
 #include "libts.h"
 #include "P_SSLUtils.h"
 #include "RbTree.h"
+#include "ts/apidefs.h"
 #include <openssl/ssl.h>
 
 #define SSL_MAX_SESSION_SIZE 256
 
-struct SSLSessionID {
-  char bytes[SSL_MAX_SSL_SESSION_ID_LENGTH];
-  size_t len;
+struct SSLSessionID: public TSSslSessionID {
 
-  SSLSessionID(const unsigned char *s, size_t l) : len(l)
+  SSLSessionID(const unsigned char *s, size_t l)
   {
-    ink_release_assert(l <= sizeof(bytes));
+    len = l;
     memcpy(bytes, s, l);
   }
 
   SSLSessionID(const SSLSessionID &other)
   {
-    if (other.len)
-      memcpy(bytes, other.bytes, other.len);
-
-    len = other.len;
+    this->len = other.len;
+    memcpy(this->bytes, other.bytes, other.len);
   }
 
   bool operator<(const SSLSessionID &other) const
@@ -101,7 +98,7 @@ struct SSLSessionID {
   {
     // because the session ids should be uniformly random let's just use the upper 64 bits as the hash.
     if (len >= sizeof(uint64_t))
-      return *reinterpret_cast<uint64_t *>(const_cast<char *>(bytes));
+      return *reinterpret_cast<uint64_t *>(const_cast<unsigned char *>(bytes));
     else if (len)
       return static_cast<uint64_t>(bytes[0]);
     else
@@ -131,6 +128,7 @@ public:
   ~SSLSessionBucket();
   void insertSession(const SSLSessionID &, SSL_SESSION *ctx);
   bool getSession(const SSLSessionID &, SSL_SESSION **ctx);
+  int getSessionBuffer(const SSLSessionID &, char *buffer, int &len);
   void removeSession(const SSLSessionID &);
 
 private:
@@ -145,9 +143,10 @@ private:
 class SSLSessionCache
 {
 public:
-  bool getSession(const SSLSessionID &sid, SSL_SESSION **sess) const;
-  void insertSession(const SSLSessionID &sid, SSL_SESSION *sess);
-  void removeSession(const SSLSessionID &sid);
+  bool getSession(const TSSslSessionID &sid, SSL_SESSION **sess, bool keep_stat = true) const;
+  int getSessionBuffer(const TSSslSessionID &sid, char *buffer, int &len) const;
+  void insertSession(const TSSslSessionID &sid, SSL_SESSION *sess);
+  void removeSession(const TSSslSessionID &sid);
   SSLSessionCache();
   ~SSLSessionCache();
 

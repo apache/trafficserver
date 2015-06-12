@@ -44,6 +44,7 @@ plugins = \
   remap_header_add.la \
   ssl-sni.la \
   ssl-sni-whitelist.la \
+  ssl-session.la \
   thread-1.la \
   version.la
 
@@ -80,6 +81,7 @@ secure_link_la_SOURCES = secure-link/secure-link.c
 ssl_preaccept_la_SOURCES = ssl-preaccept/ssl-preaccept.cc 
 ssl_sni_la_SOURCES = ssl-sni/ssl-sni.cc 
 ssl_sni_whitelist_la_SOURCES = ssl-sni-whitelist/ssl-sni-whitelist.cc 
+ssl_session_la_SOURCES = ssl-session/ssl-session.cc
 
 # The following examples do not build:
 #

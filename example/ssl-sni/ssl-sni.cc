@@ -29,10 +29,10 @@
 #include <stdio.h>
 #include <memory.h>
 #include <inttypes.h>
-#include <ts/ts.h>
 #include <ink_config.h>
 #include <tsconfig/TsValue.h>
 #include <openssl/ssl.h>
+#include <ts/ts.h>
 #include <getopt.h>
 
 using ts::config::Configuration;

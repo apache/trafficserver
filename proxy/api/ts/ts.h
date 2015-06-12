@@ -1229,6 +1229,10 @@ tsapi TSSslContext TSSslContextFindByName(const char *name);
 tsapi TSSslContext TSSslContextFindByAddr(struct sockaddr const *);
 // Returns 1 if the sslp argument refers to a SSL connection
 tsapi int TSVConnIsSsl(TSVConn sslp);
+tsapi TSSslSession TSSslSessionGet(const TSSslSessionID_t *session_id);
+tsapi int TSSslSessionGetBuffer(const TSSslSessionID_t *session_id, char *buffer, int *len_ptr);
+tsapi TSReturnCode TSSslSessionInsert(const TSSslSessionID_t *session_id, TSSslSession add_session);
+tsapi TSReturnCode TSSslSessionRemove(const TSSslSessionID_t *session_id);
 
 /* --------------------------------------------------------------------------
    HTTP transactions */
