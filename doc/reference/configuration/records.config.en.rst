@@ -897,10 +897,6 @@ specific domains.
    Controls wether new POST requests re-use keep-alive sessions (``1``) or
    create new connections per request (``0``).
 
-.. ts:cv:: CONFIG proxy.config.http.send_408_post_timeout_response INT 0
-
-   Controls wether POST timeout sends a HTTP status 408 response (``1``)
-
 .. ts:cv:: CONFIG proxy.config.http.disallow_post_100_continue INT 0
 
    Allows you to return a 405 Method Not Supported with Posts also

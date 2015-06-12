@@ -2610,7 +2610,7 @@ HttpSM::tunnel_handler_post(int event, void *data)
         ua_entry->write_buffer = NULL;
       }
     }
-    if (t_state.http_config_param->send_408_post_timeout_response && p->handler_state == HTTP_SM_POST_UA_FAIL) {
+    if (p->handler_state == HTTP_SM_POST_UA_FAIL) {
       Debug("http_tunnel", "cleanup tunnel in tunnel_handler_post");
       hsm_release_assert(ua_entry->in_tunnel == true);
       ink_assert((event == VC_EVENT_WRITE_COMPLETE) || (event == VC_EVENT_EOS));
@@ -3306,7 +3306,7 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer *p)
   switch (event) {
   case VC_EVENT_INACTIVITY_TIMEOUT:
   case VC_EVENT_ACTIVE_TIMEOUT:
-    if (t_state.http_config_param->send_408_post_timeout_response && client_response_hdr_bytes == 0) {
+    if (client_response_hdr_bytes == 0) {
       p->handler_state = HTTP_SM_POST_UA_FAIL;
       set_ua_abort(HttpTransact::ABORTED, event);
 
