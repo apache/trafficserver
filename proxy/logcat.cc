@@ -149,15 +149,6 @@ process_file(int in_fd, int out_fd)
     // line
     //
     const char *alt_format = NULL;
-    if (squid_flag)
-      alt_format = PreDefinedFormatInfo::squid;
-    if (clf_flag)
-      alt_format = PreDefinedFormatInfo::common;
-    if (elf_flag)
-      alt_format = PreDefinedFormatInfo::extended;
-    if (elf2_flag)
-      alt_format = PreDefinedFormatInfo::extended2;
-
     // convert the buffer to ascii entries and place onto stdout
     //
     if (header->fmt_fieldlist()) {

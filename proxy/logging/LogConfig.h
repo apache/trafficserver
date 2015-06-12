@@ -181,14 +181,6 @@ public:
   int max_space_mb_for_orphan_logs;
   int max_space_mb_headroom;
   int logfile_perm;
-  bool squid_log_enabled;
-  bool squid_log_is_ascii;
-  bool common_log_enabled;
-  bool common_log_is_ascii;
-  bool extended_log_enabled;
-  bool extended_log_is_ascii;
-  bool extended2_log_enabled;
-  bool extended2_log_is_ascii;
   bool separate_icp_logs;
   bool separate_host_logs;
   int collation_mode;
@@ -213,14 +205,6 @@ public:
 
   char *hostname;
   char *logfile_dir;
-  char *squid_log_name;
-  char *squid_log_header;
-  char *common_log_name;
-  char *common_log_header;
-  char *extended_log_name;
-  char *extended_log_header;
-  char *extended2_log_name;
-  char *extended2_log_header;
   char *collation_host;
   char *collation_secret;
 

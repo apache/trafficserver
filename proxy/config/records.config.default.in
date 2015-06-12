@@ -142,8 +142,6 @@ CONFIG proxy.config.cache.min_average_object_size INT 8000
 CONFIG proxy.config.log.logging_enabled INT 3
 CONFIG proxy.config.log.max_space_mb_for_logs INT 25000
 CONFIG proxy.config.log.max_space_mb_headroom INT 1000
-CONFIG proxy.config.log.squid_log_enabled INT 1
-CONFIG proxy.config.log.squid_log_is_ascii INT 0
 CONFIG proxy.config.log.rolling_enabled INT 1
 CONFIG proxy.config.log.rolling_interval_sec INT 86400
 CONFIG proxy.config.log.rolling_size_mb INT 10

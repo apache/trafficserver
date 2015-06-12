@@ -85,26 +85,6 @@ LogConfig::setup_default_values()
   separate_icp_logs = 1;
   separate_host_logs = false;
 
-  squid_log_enabled = true;
-  squid_log_is_ascii = true;
-  squid_log_name = ats_strdup("squid");
-  squid_log_header = NULL;
-
-  common_log_enabled = false;
-  common_log_is_ascii = true;
-  common_log_name = ats_strdup("common");
-  common_log_header = NULL;
-
-  extended_log_enabled = false;
-  extended_log_is_ascii = true;
-  extended_log_name = ats_strdup("extended");
-  extended_log_header = NULL;
-
-  extended2_log_enabled = false;
-  extended2_log_is_ascii = true;
-  extended2_log_name = ats_strdup("extended2");
-  extended2_log_header = NULL;
-
   collation_mode = Log::NO_COLLATION;
   collation_host = ats_strdup("none");
   collation_port = 0;
@@ -236,84 +216,6 @@ LogConfig::read_configuration_variables()
   //   "proxy.config.log.<format>_log_name" STRING
   //   "proxy.config.log.<format>_log_header" STRING
   //
-
-
-  // SQUID
-  val = (int)REC_ConfigReadInteger("proxy.config.log.squid_log_enabled");
-  squid_log_enabled = (val > 0);
-
-  val = (int)REC_ConfigReadInteger("proxy.config.log.squid_log_is_ascii");
-  squid_log_is_ascii = (val > 0);
-
-  ptr = REC_ConfigReadString("proxy.config.log.squid_log_name");
-  if (ptr != NULL) {
-    ats_free(squid_log_name);
-    squid_log_name = ptr;
-  }
-
-  ptr = REC_ConfigReadString("proxy.config.log.squid_log_header");
-  if (ptr != NULL) {
-    ats_free(squid_log_header);
-    squid_log_header = ptr;
-  }
-
-  // COMMON
-  val = (int)REC_ConfigReadInteger("proxy.config.log.common_log_enabled");
-  common_log_enabled = (val > 0);
-
-  val = (int)REC_ConfigReadInteger("proxy.config.log.common_log_is_ascii");
-  common_log_is_ascii = (val > 0);
-
-  ptr = REC_ConfigReadString("proxy.config.log.common_log_name");
-  if (ptr != NULL) {
-    ats_free(common_log_name);
-    common_log_name = ptr;
-  }
-
-  ptr = REC_ConfigReadString("proxy.config.log.common_log_header");
-  if (ptr != NULL) {
-    ats_free(common_log_header);
-    common_log_header = ptr;
-  }
-
-  // EXTENDED
-  val = (int)REC_ConfigReadInteger("proxy.config.log.extended_log_enabled");
-  extended_log_enabled = (val > 0);
-
-  val = (int)REC_ConfigReadInteger("proxy.config.log.extended_log_is_ascii");
-  extended_log_is_ascii = (val > 0);
-
-  ptr = REC_ConfigReadString("proxy.config.log.extended_log_name");
-  if (ptr != NULL) {
-    ats_free(extended_log_name);
-    extended_log_name = ptr;
-  }
-
-  ptr = REC_ConfigReadString("proxy.config.log.extended_log_header");
-  if (ptr != NULL) {
-    ats_free(extended_log_header);
-    extended_log_header = ptr;
-  }
-
-  // EXTENDED2
-  val = (int)REC_ConfigReadInteger("proxy.config.log.extended2_log_enabled");
-  extended2_log_enabled = (val > 0);
-
-  val = (int)REC_ConfigReadInteger("proxy.config.log.extended2_log_is_ascii");
-  extended2_log_is_ascii = (val > 0);
-
-  ptr = REC_ConfigReadString("proxy.config.log.extended2_log_name");
-  if (ptr != NULL) {
-    ats_free(extended2_log_name);
-    extended2_log_name = ptr;
-  }
-
-  ptr = REC_ConfigReadString("proxy.config.log.extended2_log_header");
-  if (ptr != NULL) {
-    ats_free(extended2_log_header);
-    extended2_log_header = ptr;
-  }
-
 
   // SPLITTING
   // 0 means no splitting
@@ -457,14 +359,6 @@ LogConfig::~LogConfig()
 
   ats_free(hostname);
   ats_free(logfile_dir);
-  ats_free(squid_log_name);
-  ats_free(squid_log_header);
-  ats_free(common_log_name);
-  ats_free(common_log_header);
-  ats_free(extended_log_name);
-  ats_free(extended_log_header);
-  ats_free(extended2_log_name);
-  ats_free(extended2_log_header);
   ats_free(collation_host);
   ats_free(collation_secret);
   ats_free(m_dir_entry);
@@ -614,22 +508,6 @@ LogConfig::display(FILE *fd)
   fprintf(fd, "   hostname = %s\n", hostname);
   fprintf(fd, "   logfile_dir = %s\n", logfile_dir);
   fprintf(fd, "   logfile_perm = 0%o\n", logfile_perm);
-  fprintf(fd, "   squid_log_enabled = %d\n", squid_log_enabled);
-  fprintf(fd, "   squid_log_is_ascii = %d\n", squid_log_is_ascii);
-  fprintf(fd, "   squid_log_name = %s\n", squid_log_name);
-  fprintf(fd, "   squid_log_header = %s\n", squid_log_header ? squid_log_header : "<no header defined>");
-  fprintf(fd, "   common_log_enabled = %d\n", common_log_enabled);
-  fprintf(fd, "   common_log_is_ascii = %d\n", common_log_is_ascii);
-  fprintf(fd, "   common_log_name = %s\n", common_log_name);
-  fprintf(fd, "   common_log_header = %s\n", common_log_header ? common_log_header : "<no header defined>");
-  fprintf(fd, "   extended_log_enabled = %d\n", extended_log_enabled);
-  fprintf(fd, "   extended_log_is_ascii = %d\n", extended_log_is_ascii);
-  fprintf(fd, "   extended_log_name = %s\n", extended_log_name);
-  fprintf(fd, "   extended_log_header = %s\n", extended_log_header ? extended_log_header : "<no header defined>");
-  fprintf(fd, "   extended2_log_enabled = %d\n", extended2_log_enabled);
-  fprintf(fd, "   extended2_log_is_ascii = %d\n", extended2_log_is_ascii);
-  fprintf(fd, "   extended2_log_name = %s\n", extended2_log_name);
-  fprintf(fd, "   extended2_log_header = %s\n", extended2_log_header ? extended2_log_header : "<no header defined>");
   fprintf(fd, "   separate_icp_logs = %d\n", separate_icp_logs);
   fprintf(fd, "   separate_host_logs = %d\n", separate_host_logs);
   fprintf(fd, "   collation_mode = %d\n", collation_mode);
@@ -862,8 +740,6 @@ LogConfig::split_by_hostname(const PreDefinedFormatList &predef, LogFilter *reje
 //
 // Upon return from this function:
 // - global_object_list has the aforementioned objects
-// - global_format_list has all the pre-determined log formats (e.g. squid,
-//   common, etc.)
 // - global_filter_list has all custom filters
 //   Note that the filters necessary to do log splitting for the pre defined
 //   format are kept private (e.g., they do not go to the global_filter_list).
@@ -957,13 +833,8 @@ LogConfig::register_config_callbacks()
   static const char *names[] = {
     "proxy.config.log.log_buffer_size", "proxy.config.log.max_secs_per_buffer", "proxy.config.log.max_space_mb_for_logs",
     "proxy.config.log.max_space_mb_for_orphan_logs", "proxy.config.log.max_space_mb_headroom", "proxy.config.log.logfile_perm",
-    "proxy.config.log.hostname", "proxy.config.log.logfile_dir", "proxy.config.log.squid_log_enabled",
-    "proxy.config.log.squid_log_is_ascii", "proxy.config.log.squid_log_name", "proxy.config.log.squid_log_header",
-    "proxy.config.log.common_log_enabled", "proxy.config.log.common_log_is_ascii", "proxy.config.log.common_log_name",
-    "proxy.config.log.common_log_header", "proxy.config.log.extended_log_enabled", "proxy.config.log.extended_log_is_ascii",
-    "proxy.config.log.extended_log_name", "proxy.config.log.extended_log_header", "proxy.config.log.extended2_log_enabled",
-    "proxy.config.log.extended2_log_is_ascii", "proxy.config.log.extended2_log_name", "proxy.config.log.extended2_log_header",
-    "proxy.config.log.separate_icp_logs", "proxy.config.log.separate_host_logs", "proxy.local.log.collation_mode",
+    "proxy.config.log.hostname", "proxy.config.log.logfile_dir", "proxy.config.log.separate_icp_logs", 
+    "proxy.config.log.separate_host_logs", "proxy.local.log.collation_mode",
     "proxy.config.log.collation_host", "proxy.config.log.collation_port", "proxy.config.log.collation_host_tagged",
     "proxy.config.log.collation_secret", "proxy.config.log.collation_retry_sec", "proxy.config.log.collation_max_send_buffers",
     "proxy.config.log.rolling_enabled", "proxy.config.log.rolling_interval_sec", "proxy.config.log.rolling_offset_hr",

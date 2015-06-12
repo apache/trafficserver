@@ -44,10 +44,6 @@ struct PreDefinedFormatInfo {
   {
   }
 
-  static const char *const squid;
-  static const char *const common;
-  static const char *const extended;
-  static const char *const extended2;
 };
 
 typedef Queue<PreDefinedFormatInfo> PreDefinedFormatInfoList;
