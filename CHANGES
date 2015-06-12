@@ -1,6 +1,10 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-3569] Replace UNSAFE_FORCE_MUTEX with an sdk_assert, and relax mutex
+   requirements on Schedule(). Also rename MUTEX_LOCK to SCOPED_MUTEX_LOCK, to
+   be more descriptive.
+
   *) [TS-436] Added documentation for hardware sector size support.
 
   *) [TS-3555] Add a new API TSHttpTxnCacheLookupUrlSet().
