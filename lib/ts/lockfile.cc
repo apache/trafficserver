@@ -241,6 +241,7 @@ Lockfile::KillGroup(int sig, int initial_sig, const char *pname)
   int err;
   pid_t pid;
   pid_t holding_pid;
+  pid_t self = getpid();
 
   err = Open(&holding_pid);
   if (err == 1) // success getting the lock file
@@ -252,12 +253,19 @@ Lockfile::KillGroup(int sig, int initial_sig, const char *pname)
       pid = getpgid(holding_pid);
     } while ((pid < 0) && (errno == EINTR));
 
-    if ((pid < 0) || (pid == getpid()))
+    if ((pid < 0) || (pid == self)) {
+      // Error getting process group,
+      // or we are the group's owner.
+      // Let's kill just holding_pid
       pid = holding_pid;
-
-    if (pid != 0) {
+    } else if (pid != self) {
+      // We managed to get holding_pid's process group
+      // and this group is not ours.
       // This way, we kill the process_group:
       pid = -pid;
+    }
+
+    if (pid != 0) {
       // In order to get core files from each process, please
       // set your core_pattern appropriately.
       lockfile_kill_internal(holding_pid, initial_sig, pid, pname, sig);

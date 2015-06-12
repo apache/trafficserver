@@ -862,7 +862,7 @@ Http2ConnectionState::send_data_frame(FetchSM *fetch_sm)
     }
 
     // xmit event
-    MUTEX_LOCK(lock, this->ua_session->mutex, this_ethread());
+    SCOPED_MUTEX_LOCK(lock, this->ua_session->mutex, this_ethread());
     this->ua_session->handleEvent(HTTP2_SESSION_EVENT_XMIT, &data);
 
     if (flags & HTTP2_FLAGS_DATA_END_STREAM) {
@@ -917,7 +917,7 @@ Http2ConnectionState::send_headers_frame(FetchSM *fetch_sm)
     headers.finalize(payload_length);
 
     // xmit event
-    MUTEX_LOCK(lock, this->ua_session->mutex, this_ethread());
+    SCOPED_MUTEX_LOCK(lock, this->ua_session->mutex, this_ethread());
     this->ua_session->handleEvent(HTTP2_SESSION_EVENT_XMIT, &headers);
   } while (cont);
 }
@@ -932,7 +932,7 @@ Http2ConnectionState::send_rst_stream_frame(Http2StreamId id, Http2ErrorCode ec)
   rst_stream.finalize(HTTP2_RST_STREAM_LEN);
 
   // xmit event
-  MUTEX_LOCK(lock, this->ua_session->mutex, this_ethread());
+  SCOPED_MUTEX_LOCK(lock, this->ua_session->mutex, this_ethread());
   this->ua_session->handleEvent(HTTP2_SESSION_EVENT_XMIT, &rst_stream);
 }
 
@@ -946,7 +946,7 @@ Http2ConnectionState::send_ping_frame(Http2StreamId id, uint8_t flag, const uint
   ping.finalize(HTTP2_PING_LEN);
 
   // xmit event
-  MUTEX_LOCK(lock, this->ua_session->mutex, this_ethread());
+  SCOPED_MUTEX_LOCK(lock, this->ua_session->mutex, this_ethread());
   this->ua_session->handleEvent(HTTP2_SESSION_EVENT_XMIT, &ping);
 }
 
@@ -966,7 +966,7 @@ Http2ConnectionState::send_goaway_frame(Http2StreamId id, Http2ErrorCode ec)
   frame.finalize(HTTP2_GOAWAY_LEN);
 
   // xmit event
-  MUTEX_LOCK(lock, this->ua_session->mutex, this_ethread());
+  SCOPED_MUTEX_LOCK(lock, this->ua_session->mutex, this_ethread());
   this->ua_session->handleEvent(HTTP2_SESSION_EVENT_XMIT, &frame);
 
   handleEvent(HTTP2_SESSION_EVENT_FINI, NULL);
@@ -982,7 +982,7 @@ Http2ConnectionState::send_window_update_frame(Http2StreamId id, uint32_t size)
   window_update.finalize(sizeof(uint32_t));
 
   // xmit event
-  MUTEX_LOCK(lock, this->ua_session->mutex, this_ethread());
+  SCOPED_MUTEX_LOCK(lock, this->ua_session->mutex, this_ethread());
   this->ua_session->handleEvent(HTTP2_SESSION_EVENT_XMIT, &window_update);
 }
 

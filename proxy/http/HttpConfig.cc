@@ -1089,7 +1089,6 @@ HttpConfig::startup()
   HttpEstablishStaticConfigByte(c.ignore_accept_charset_mismatch, "proxy.config.http.cache.ignore_accept_charset_mismatch");
 
   HttpEstablishStaticConfigByte(c.send_100_continue_response, "proxy.config.http.send_100_continue_response");
-  HttpEstablishStaticConfigByte(c.send_408_post_timeout_response, "proxy.config.http.send_408_post_timeout_response");
   HttpEstablishStaticConfigByte(c.disallow_post_100_continue, "proxy.config.http.disallow_post_100_continue");
   HttpEstablishStaticConfigByte(c.parser_allow_non_http, "proxy.config.http.parse.allow_non_http");
   HttpEstablishStaticConfigLongLong(c.cache_open_write_fail_action, "proxy.config.http.cache.open_write_fail_action");
@@ -1352,7 +1351,6 @@ HttpConfig::reconfigure()
   params->ignore_accept_charset_mismatch = m_master.ignore_accept_charset_mismatch;
 
   params->send_100_continue_response = INT_TO_BOOL(m_master.send_100_continue_response);
-  params->send_408_post_timeout_response = INT_TO_BOOL(m_master.send_408_post_timeout_response);
   params->disallow_post_100_continue = INT_TO_BOOL(m_master.disallow_post_100_continue);
   params->parser_allow_non_http = INT_TO_BOOL(m_master.parser_allow_non_http);
   params->cache_open_write_fail_action = m_master.cache_open_write_fail_action;

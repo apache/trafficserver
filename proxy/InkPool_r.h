@@ -34,21 +34,21 @@ public:
 
   virtual ~InkStaticPool_r()
   {
-    MUTEX_LOCK(lock, mutex, this_ethread());
+    SCOPED_MUTEX_LOCK(lock, mutex, this_ethread());
     cleanUp();
   }
 
   C *
   get()
   {
-    MUTEX_LOCK(lock, mutex, this_ethread());
+    SCOPED_MUTEX_LOCK(lock, mutex, this_ethread());
     return (InkStaticPool<C>::get());
   }
 
   bool
   put(C *newObj)
   {
-    MUTEX_LOCK(lock, mutex, this_ethread());
+    SCOPED_MUTEX_LOCK(lock, mutex, this_ethread());
     return (InkStaticPool<C>::put(newObj));
   }
 

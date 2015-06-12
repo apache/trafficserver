@@ -49,9 +49,9 @@
 
 */
 #ifdef DEBUG
-#define MUTEX_LOCK(_l, _m, _t) MutexLock _l(DiagsMakeLocation(), NULL, _m, _t)
+#define SCOPED_MUTEX_LOCK(_l, _m, _t) MutexLock _l(DiagsMakeLocation(), NULL, _m, _t)
 #else
-#define MUTEX_LOCK(_l, _m, _t) MutexLock _l(_m, _t)
+#define SCOPED_MUTEX_LOCK(_l, _m, _t) MutexLock _l(_m, _t)
 #endif // DEBUG
 
 #ifdef DEBUG

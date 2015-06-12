@@ -60,7 +60,7 @@ HttpUpdateSM::start_scheduled_update(Continuation *cont, HTTPHdr *request)
 {
   // Use passed continuation's mutex for this state machine
   this->mutex = cont->mutex;
-  MUTEX_LOCK(lock, this->mutex, this_ethread());
+  SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
 
   // Set up the Action
   cb_cont = cont;

@@ -105,7 +105,7 @@ net_accept(NetAccept *na, void *ep, bool blockable)
         if (!blockable)
           na->action_->continuation->handleEvent(EVENT_ERROR, (void *)(intptr_t)res);
         else {
-          MUTEX_LOCK(lock, na->action_->mutex, e->ethread);
+          SCOPED_MUTEX_LOCK(lock, na->action_->mutex, e->ethread);
           na->action_->continuation->handleEvent(EVENT_ERROR, (void *)(intptr_t)res);
         }
       }
@@ -264,9 +264,8 @@ NetAccept::do_blocking_accept(EThread *t)
         return 0;
       }
       if (!action_->cancelled) {
-        MUTEX_LOCK(lock, action_->mutex, t);
+        SCOPED_MUTEX_LOCK(lock, action_->mutex, t);
         action_->continuation->handleEvent(EVENT_ERROR, (void *)(intptr_t)res);
-        MUTEX_UNTAKE_LOCK(action_->mutex, t);
         Warning("accept thread received fatal error: errno = %d", errno);
       }
       return -1;
@@ -463,7 +462,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
 
     if (!action_->cancelled) {
       // We must be holding the lock already to do later do_io_read's
-      MUTEX_LOCK(lock, vc->mutex, e->ethread);
+      SCOPED_MUTEX_LOCK(lock, vc->mutex, e->ethread);
       action_->continuation->handleEvent(NET_EVENT_ACCEPT, vc);
     } else
       close_UnixNetVConnection(vc, e->ethread);

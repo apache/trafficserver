@@ -1618,7 +1618,7 @@ Cache::open_write(Continuation *cont, const CacheKey *key, CacheFragType frag_ty
   intptr_t res = 0;
   CacheVC *c = new_CacheVC(cont);
   ProxyMutex *mutex = cont->mutex;
-  MUTEX_LOCK(lock, c->mutex, this_ethread());
+  SCOPED_MUTEX_LOCK(lock, c->mutex, this_ethread());
   c->vio.op = VIO::WRITE;
   c->base_stat = cache_write_active_stat;
   c->vol = key_to_vol(key, hostname, host_len);

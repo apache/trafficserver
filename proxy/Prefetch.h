@@ -262,7 +262,7 @@ PrefetchUrlBlaster::init(PrefetchUrlEntry *list_head, TSPrefetchBlastData const 
   url_head = list_head;
   blast = u_bd;
 
-  MUTEX_LOCK(lock, mutex, this_ethread());
+  SCOPED_MUTEX_LOCK(lock, mutex, this_ethread());
 
   udpUrlBlaster(SIMPLE_EVENT_EVENTS_START, NULL);
 }

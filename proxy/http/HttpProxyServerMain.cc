@@ -48,7 +48,7 @@ static Ptr<ProxyMutex> ssl_plugin_mutex;
 bool
 ssl_register_protocol(const char *protocol, Continuation *contp)
 {
-  MUTEX_LOCK(lock, ssl_plugin_mutex, this_ethread());
+  SCOPED_MUTEX_LOCK(lock, ssl_plugin_mutex, this_ethread());
 
   for (SSLNextProtocolAccept *ssl = ssl_plugin_acceptors.head; ssl; ssl = ssl_plugin_acceptors.next(ssl)) {
     if (!ssl->registerEndpoint(protocol, contp)) {
@@ -62,7 +62,7 @@ ssl_register_protocol(const char *protocol, Continuation *contp)
 bool
 ssl_unregister_protocol(const char *protocol, Continuation *contp)
 {
-  MUTEX_LOCK(lock, ssl_plugin_mutex, this_ethread());
+  SCOPED_MUTEX_LOCK(lock, ssl_plugin_mutex, this_ethread());
 
   for (SSLNextProtocolAccept *ssl = ssl_plugin_acceptors.head; ssl; ssl = ssl_plugin_acceptors.next(ssl)) {
     // Ignore possible failure because we want to try to unregister
@@ -223,7 +223,7 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor &acceptor, HttpProxyPort &port, unsigned
       ssl->registerEndpoint(TS_NPN_PROTOCOL_HTTP_2_0, acc);
     }
 
-    MUTEX_LOCK(lock, ssl_plugin_mutex, this_ethread());
+    SCOPED_MUTEX_LOCK(lock, ssl_plugin_mutex, this_ethread());
     ssl_plugin_acceptors.push(ssl);
 
     acceptor._accept = ssl;
