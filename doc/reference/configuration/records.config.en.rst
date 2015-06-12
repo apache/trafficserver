@@ -1281,15 +1281,23 @@ Cache Control
 
    Forces the use of a specific hardware sector size, 4096, for all disks.
 
-   SSDs and "advanced format” drives claim a sector size of 512; however, it is safe to force a higher size than the hardware supports natively as we count atomicity in 512 byte increments.
+   SSDs and "advanced format” drives claim a sector size of 512; however, it is safe to force a higher
+   size than the hardware supports natively as we count atomicity in 512 byte increments.
 
-   4096-sized drives formatted for Windows will have partitions aligned on 63 512-byte sector boundaries, so they will be unaligned. There are workarounds, but you need to do some research on your particular drive. Some drives have a one-time option to switch the partition boundary, while others might require reformatting or repartitioning.
+   4096-sized drives formatted for Windows will have partitions aligned on 63 512-byte sector boundaries,
+   so they will be unaligned. There are workarounds, but you need to do some research on your particular
+   drive. Some drives have a one-time option to switch the partition boundary, while others might require
+   reformatting or repartitioning.
 
-   To be safe in Linux, you could just use the entire drive: ``/dev/sdb`` instead of ``/dev/sdb1`` and Traffic Server will do the right thing. Misaligned partitions on Linux are auto-detected. 
+   To be safe in Linux, you could just use the entire drive: ``/dev/sdb`` instead of ``/dev/sdb1`` and
+   Traffic Server will do the right thing. Misaligned partitions on Linux are auto-detected.
 
-   For example: If ``/sys/block/sda/sda1/alignment_offset`` is non-zero, ATS will offset reads/writes to that disk by that alignment. If Linux knows about any existing partition misalignments, ATS will compensate.
+   For example: If ``/sys/block/sda/sda1/alignment_offset`` is non-zero, ATS will offset reads/writes to
+   that disk by that alignment. If Linux knows about any existing partition misalignments, ATS will compensate.
 
-   Partitions formatted to support hardware sector size of more than 512 (e.g. 4096) will result in all objects stored in the cache to be integral multiples of 4096 bytes, which will result in some waste for small files.
+   Partitions formatted to support hardware sector size of more than 512 (e.g. 4096) will result in all
+   objects stored in the cache to be integral multiples of 4096 bytes, which will result in some waste for
+   small files.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.http INT 1
    :reloadable:
