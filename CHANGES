@@ -1,6 +1,10 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-3126]: Remove the config setting that controls sending of HTTP status
+     response (408) on a POST failure (e.g timeout) and make the sending of 408
+     default.
+
   *) [TS-2512] Deprecate the channel_stats plugin.
 
   *) [TS-3687] ATS Session Cache should remove expired sessions.
