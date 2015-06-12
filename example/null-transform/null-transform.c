@@ -322,5 +322,5 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
   return;
 
 Lerror:
-  TSError("[null-tranform] Unable to initialize plugin (disabled).");
+  TSError("[null-transform] Unable to initialize plugin (disabled).");
 }
