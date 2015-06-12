@@ -110,7 +110,7 @@ This example logs the simple TCP information to ``tcp-metrics.log``
 at the start of a TCP connection and once for each HTTP
 transaction thereafter::
 
-  tcp_info.so --log-file=tcp-metrics --log-level=1 --hooks=ssn_start,txn_start
+  tcpinfo.so --log-file=tcp-metrics --log-level=1 --hooks=ssn_start,txn_start
 
 The file ``tcp-metrics.log`` will contain the following log format::
 
