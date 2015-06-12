@@ -33,17 +33,10 @@
 # Examples: Using O_DIRECT on disks (Linux kernel >= 2.6.3,
 # FreeBSD > 5.3)
 #	
-<<<<<<< HEAD
 #      /dev/disc/by-id/[Insert_ID_Here_12345]         		# Linux
 #      /dev/disc/by-path/[Insert-Path-Here:12:34:56-1.0.0.0]	# Linux
 #
 #      /dev/ada1            					# FreeBSD
-=======
-#      /dev/disc/by-id/[Insert_ID_Here_12345]             		# Linux
-#	   /dev/disc/by-path/[Insert-Path-Here:12:34:56-1.0.0.0]	# Linux
-#
-#      /dev/ada1            									# FreeBSD
->>>>>>> a26dbd8... TS-667: Changed disk device paths to include id/path.
 #
 # Note that disks are identified by id or path. This is to prevent changes
 # by the kernel (which could occur if a disk was simply described as /dev/sda, sdb, etc).
