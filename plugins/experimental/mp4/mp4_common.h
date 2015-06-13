@@ -34,7 +34,7 @@
 class IOHandle
 {
 public:
-  IOHandle(): vio(NULL), buffer(NULL), reader(NULL) { };
+  IOHandle() : vio(NULL), buffer(NULL), reader(NULL){};
 
   ~IOHandle()
   {
@@ -50,17 +50,16 @@ public:
   }
 
 public:
-  TSVIO               vio;
-  TSIOBuffer          buffer;
-  TSIOBufferReader    reader;
+  TSVIO vio;
+  TSIOBuffer buffer;
+  TSIOBufferReader reader;
 };
 
 class Mp4TransformContext
 {
 public:
   Mp4TransformContext(float offset, int64_t cl)
-    : total(0), tail(0), pos(0), content_length(0),
-      parse_over(false), raw_transform(false)
+    : total(0), tail(0), pos(0), content_length(0), parse_over(false), raw_transform(false)
   {
     res_buffer = TSIOBufferCreate();
     res_reader = TSIOBufferReaderAlloc(res_buffer);
@@ -86,27 +85,26 @@ public:
   }
 
 public:
-  IOHandle            output;
-  Mp4Meta             mm;
-  int64_t             total;
-  int64_t             tail;
-  int64_t             pos;
-  int64_t             content_length;
-  int64_t             meta_length;
+  IOHandle output;
+  Mp4Meta mm;
+  int64_t total;
+  int64_t tail;
+  int64_t pos;
+  int64_t content_length;
+  int64_t meta_length;
 
-  TSIOBuffer          res_buffer;
-  TSIOBufferReader    res_reader;
-  TSIOBufferReader    dup_reader;
+  TSIOBuffer res_buffer;
+  TSIOBufferReader res_reader;
+  TSIOBufferReader dup_reader;
 
-  bool                parse_over;
-  bool                raw_transform;
+  bool parse_over;
+  bool raw_transform;
 };
 
 class Mp4Context
 {
 public:
-  Mp4Context(float s)
-    : start(s), cl(0), mtc(NULL), transform_added(false) { };
+  Mp4Context(float s) : start(s), cl(0), mtc(NULL), transform_added(false){};
 
   ~Mp4Context()
   {
@@ -117,12 +115,12 @@ public:
   }
 
 public:
-  float       start;
-  int64_t     cl;
+  float start;
+  int64_t cl;
 
   Mp4TransformContext *mtc;
 
-  bool        transform_added;
+  bool transform_added;
 };
 
 #endif

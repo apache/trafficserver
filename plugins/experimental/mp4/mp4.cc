@@ -19,7 +19,7 @@
 #include "mp4_common.h"
 
 
-static char * ts_arg(const char *param, size_t param_len, const char *key, size_t key_len, size_t *val_len);
+static char *ts_arg(const char *param, size_t param_len, const char *key, size_t key_len, size_t *val_len);
 static int mp4_handler(TSCont contp, TSEvent event, void *edata);
 static void mp4_cache_lookup_complete(Mp4Context *mc, TSHttpTxn txnp);
 static void mp4_read_response(Mp4Context *mc, TSHttpTxn txnp);
@@ -46,7 +46,7 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 }
 
 TSReturnCode
-TSRemapNewInstance(int argc, char** /* argv ATS_UNUSED */, void** ih, char* errbuf, int errbuf_size)
+TSRemapNewInstance(int argc, char ** /* argv ATS_UNUSED */, void **ih, char *errbuf, int errbuf_size)
 {
   if (argc > 2) {
     snprintf(errbuf, errbuf_size, "[TSRemapNewInstance] - Argument should be removed");
@@ -57,26 +57,26 @@ TSRemapNewInstance(int argc, char** /* argv ATS_UNUSED */, void** ih, char* errb
 }
 
 void
-TSRemapDeleteInstance(void* /* ih ATS_UNUSED */)
+TSRemapDeleteInstance(void * /* ih ATS_UNUSED */)
 {
   return;
 }
 
 TSRemapStatus
-TSRemapDoRemap(void* /* ih ATS_UNUSED */, TSHttpTxn rh, TSRemapRequestInfo *rri)
+TSRemapDoRemap(void * /* ih ATS_UNUSED */, TSHttpTxn rh, TSRemapRequestInfo *rri)
 {
-  const char          *method, *query, *path;
-  int                 method_len, query_len, path_len;
-  size_t              val_len;
-  const char          *val;
-  int                 ret;
-  float               start;
-  char                buf[1024];
-  int                 buf_len;
-  int                 left, right;
-  TSMLoc              ae_field, range_field;
-  TSCont              contp;
-  Mp4Context          *mc;
+  const char *method, *query, *path;
+  int method_len, query_len, path_len;
+  size_t val_len;
+  const char *val;
+  int ret;
+  float start;
+  char buf[1024];
+  int buf_len;
+  int left, right;
+  TSMLoc ae_field, range_field;
+  TSCont contp;
+  Mp4Context *mc;
 
   method = TSHttpHdrMethodGet(rri->requestBufp, rri->requestHdrp, &method_len);
   if (method != TS_HTTP_METHOD_GET) {
@@ -96,7 +96,7 @@ TSRemapDoRemap(void* /* ih ATS_UNUSED */, TSHttpTxn rh, TSRemapRequestInfo *rri)
   start = 0;
   query = TSUrlHttpQueryGet(rri->requestBufp, rri->requestUrl, &query_len);
 
-  val = ts_arg(query, query_len, "start", sizeof("start")-1, &val_len);
+  val = ts_arg(query, query_len, "start", sizeof("start") - 1, &val_len);
   if (val != NULL) {
     ret = sscanf(val, "%f", &start);
     if (ret != 1)
@@ -108,7 +108,7 @@ TSRemapDoRemap(void* /* ih ATS_UNUSED */, TSHttpTxn rh, TSRemapRequestInfo *rri)
 
   } else if (start < 0) {
     TSHttpTxnSetHttpRetStatus(rh, TS_HTTP_STATUS_BAD_REQUEST);
-    TSHttpTxnErrorBodySet(rh, TSstrdup("Invalid request."), sizeof("Invalid request.")-1, NULL);
+    TSHttpTxnErrorBodySet(rh, TSstrdup("Invalid request."), sizeof("Invalid request.") - 1, NULL);
   }
 
   // reset args
@@ -123,20 +123,18 @@ TSRemapDoRemap(void* /* ih ATS_UNUSED */, TSHttpTxn rh, TSRemapRequestInfo *rri)
     right--;
   }
 
-  buf_len = sprintf(buf, "%.*s%.*s", left, query, right, query+query_len-right);
+  buf_len = sprintf(buf, "%.*s%.*s", left, query, right, query + query_len - right);
   TSUrlHttpQuerySet(rri->requestBufp, rri->requestUrl, buf, buf_len);
 
   // remove Accept-Encoding
-  ae_field = TSMimeHdrFieldFind(rri->requestBufp, rri->requestHdrp,
-      TS_MIME_FIELD_ACCEPT_ENCODING, TS_MIME_LEN_ACCEPT_ENCODING);
+  ae_field = TSMimeHdrFieldFind(rri->requestBufp, rri->requestHdrp, TS_MIME_FIELD_ACCEPT_ENCODING, TS_MIME_LEN_ACCEPT_ENCODING);
   if (ae_field) {
     TSMimeHdrFieldDestroy(rri->requestBufp, rri->requestHdrp, ae_field);
     TSHandleMLocRelease(rri->requestBufp, rri->requestHdrp, ae_field);
   }
 
   // remove Range
-  range_field = TSMimeHdrFieldFind(rri->requestBufp, rri->requestHdrp,
-      TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE);
+  range_field = TSMimeHdrFieldFind(rri->requestBufp, rri->requestHdrp, TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE);
   if (range_field) {
     TSMimeHdrFieldDestroy(rri->requestBufp, rri->requestHdrp, range_field);
     TSHandleMLocRelease(rri->requestBufp, rri->requestHdrp, range_field);
@@ -155,29 +153,28 @@ TSRemapDoRemap(void* /* ih ATS_UNUSED */, TSHttpTxn rh, TSRemapRequestInfo *rri)
 static int
 mp4_handler(TSCont contp, TSEvent event, void *edata)
 {
-  TSHttpTxn       txnp;
-  Mp4Context      *mc;
+  TSHttpTxn txnp;
+  Mp4Context *mc;
 
   txnp = (TSHttpTxn)edata;
-  mc = (Mp4Context*)TSContDataGet(contp);
+  mc = (Mp4Context *)TSContDataGet(contp);
 
   switch (event) {
+  case TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE:
+    mp4_cache_lookup_complete(mc, txnp);
+    break;
 
-    case TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE:
-      mp4_cache_lookup_complete(mc, txnp);
-      break;
+  case TS_EVENT_HTTP_READ_RESPONSE_HDR:
+    mp4_read_response(mc, txnp);
+    break;
 
-    case TS_EVENT_HTTP_READ_RESPONSE_HDR:
-      mp4_read_response(mc, txnp);
-      break;
+  case TS_EVENT_HTTP_TXN_CLOSE:
+    delete mc;
+    TSContDestroy(contp);
+    break;
 
-    case TS_EVENT_HTTP_TXN_CLOSE:
-      delete mc;
-      TSContDestroy(contp);
-      break;
-
-    default:
-      break;
+  default:
+    break;
   }
 
   TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
@@ -187,12 +184,12 @@ mp4_handler(TSCont contp, TSEvent event, void *edata)
 static void
 mp4_cache_lookup_complete(Mp4Context *mc, TSHttpTxn txnp)
 {
-  TSMBuffer       bufp;
-  TSMLoc          hdrp;
-  TSMLoc          cl_field;
-  TSHttpStatus    code;
-  int             obj_status;
-  int64_t         n;
+  TSMBuffer bufp;
+  TSMLoc hdrp;
+  TSMLoc cl_field;
+  TSHttpStatus code;
+  int obj_status;
+  int64_t n;
 
   if (TSHttpTxnCacheLookupStatusGet(txnp, &obj_status) == TS_ERROR) {
     TSError("[%s] Couldn't get cache status of object", __FUNCTION__);
@@ -234,11 +231,11 @@ release:
 static void
 mp4_read_response(Mp4Context *mc, TSHttpTxn txnp)
 {
-  TSMBuffer       bufp;
-  TSMLoc          hdrp;
-  TSMLoc          cl_field;
-  TSHttpStatus    status;
-  int64_t         n;
+  TSMBuffer bufp;
+  TSMLoc hdrp;
+  TSMLoc cl_field;
+  TSHttpStatus status;
+  int64_t n;
 
   if (TSHttpTxnServerRespGet(txnp, &bufp, &hdrp) != TS_SUCCESS) {
     TSError("[%s] could not get request os data", __FUNCTION__);
@@ -270,7 +267,7 @@ release:
 static void
 mp4_add_transform(Mp4Context *mc, TSHttpTxn txnp)
 {
-  TSVConn     connp;
+  TSVConn connp;
 
   if (mc->transform_added)
     return;
@@ -288,10 +285,10 @@ mp4_add_transform(Mp4Context *mc, TSHttpTxn txnp)
 }
 
 static int
-mp4_transform_entry(TSCont contp, TSEvent event, void* /* edata ATS_UNUSED */)
+mp4_transform_entry(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
 {
-  TSVIO        input_vio;
-  Mp4Context   *mc = (Mp4Context*)TSContDataGet(contp);
+  TSVIO input_vio;
+  Mp4Context *mc = (Mp4Context *)TSContDataGet(contp);
 
   if (TSVConnClosedGet(contp)) {
     TSContDestroy(contp);
@@ -299,20 +296,19 @@ mp4_transform_entry(TSCont contp, TSEvent event, void* /* edata ATS_UNUSED */)
   }
 
   switch (event) {
+  case TS_EVENT_ERROR:
+    input_vio = TSVConnWriteVIOGet(contp);
+    TSContCall(TSVIOContGet(input_vio), TS_EVENT_ERROR, input_vio);
+    break;
 
-    case TS_EVENT_ERROR:
-      input_vio = TSVConnWriteVIOGet(contp);
-      TSContCall(TSVIOContGet(input_vio), TS_EVENT_ERROR, input_vio);
-      break;
+  case TS_EVENT_VCONN_WRITE_COMPLETE:
+    TSVConnShutdown(TSTransformOutputVConnGet(contp), 0, 1);
+    break;
 
-    case TS_EVENT_VCONN_WRITE_COMPLETE:
-      TSVConnShutdown(TSTransformOutputVConnGet(contp), 0, 1);
-      break;
-
-    case TS_EVENT_VCONN_WRITE_READY:
-    default:
-      mp4_transform_handler(contp, mc);
-      break;
+  case TS_EVENT_VCONN_WRITE_READY:
+  default:
+    mp4_transform_handler(contp, mc);
+    break;
   }
 
   return 0;
@@ -321,12 +317,12 @@ mp4_transform_entry(TSCont contp, TSEvent event, void* /* edata ATS_UNUSED */)
 static int
 mp4_transform_handler(TSCont contp, Mp4Context *mc)
 {
-  TSVConn             output_conn;
-  TSVIO               input_vio;
-  TSIOBufferReader    input_reader;
-  int64_t             avail, toread, need, upstream_done;
-  int                 ret;
-  bool                write_down;
+  TSVConn output_conn;
+  TSVIO input_vio;
+  TSIOBufferReader input_reader;
+  int64_t avail, toread, need, upstream_done;
+  int ret;
+  bool write_down;
   Mp4TransformContext *mtc;
 
   mtc = mc->mtc;
@@ -354,7 +350,6 @@ mp4_transform_handler(TSCont contp, Mp4Context *mc)
   write_down = false;
 
   if (!mtc->parse_over) {
-
     ret = mp4_parse_meta(mtc, toread <= 0);
     if (ret == 0)
       goto trans;
@@ -383,7 +378,6 @@ mp4_transform_handler(TSCont contp, Mp4Context *mc)
     }
 
   } else {
-
     // copy the new meta data
     if (mtc->total < mtc->meta_length) {
       TSIOBufferCopy(mtc->output.buffer, mtc->mm.out_handle.reader, mtc->meta_length, 0);
@@ -439,11 +433,11 @@ trans:
 static int
 mp4_parse_meta(Mp4TransformContext *mtc, bool body_complete)
 {
-  int                 ret;
-  int64_t             avail, bytes;
-  TSIOBufferBlock     blk;
-  const char          *data;
-  Mp4Meta             *mm;
+  int ret;
+  int64_t avail, bytes;
+  TSIOBufferBlock blk;
+  const char *data;
+  Mp4Meta *mm;
 
   mm = &mtc->mm;
 
@@ -463,7 +457,7 @@ mp4_parse_meta(Mp4TransformContext *mtc, bool body_complete)
 
   ret = mm->parse_meta(body_complete);
 
-  if (ret > 0) {                      // meta success
+  if (ret > 0) { // meta success
     mtc->tail = mm->start_pos;
     mtc->content_length = mm->content_length;
     mtc->meta_length = TSIOBufferReaderAvail(mm->out_handle.reader);
@@ -480,8 +474,8 @@ mp4_parse_meta(Mp4TransformContext *mtc, bool body_complete)
 static char *
 ts_arg(const char *param, size_t param_len, const char *key, size_t key_len, size_t *val_len)
 {
-  const char  *p, *last;
-  const char  *val;
+  const char *p, *last;
+  const char *val;
 
   *val_len = 0;
 
@@ -491,25 +485,23 @@ ts_arg(const char *param, size_t param_len, const char *key, size_t key_len, siz
   p = param;
   last = p + param_len;
 
-  for ( ; p < last; p++) {
-
-    p = (char*)memmem(p, last-p, key, key_len);
+  for (; p < last; p++) {
+    p = (char *)memmem(p, last - p, key, key_len);
 
     if (p == NULL)
       return NULL;
 
     if ((p == param || *(p - 1) == '&') && *(p + key_len) == '=') {
-
       val = p + key_len + 1;
 
-      p = (char*)memchr(p, '&', last-p);
+      p = (char *)memchr(p, '&', last - p);
 
       if (p == NULL)
         p = param + param_len;
 
       *val_len = p - val;
 
-      return (char*)val;
+      return (char *)val;
     }
   }
 
