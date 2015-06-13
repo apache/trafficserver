@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-667] Update docs to explain how to use alternate disk paths.
+
   *) [TS-3455]: Fix debug assert in parent proxy scenario.
 
   *) [TS-3126]: Remove the config setting that controls sending of HTTP status

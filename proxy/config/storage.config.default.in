@@ -32,7 +32,7 @@
 #
 # Examples: Using O_DIRECT on disks (Linux kernel >= 2.6.3,
 # FreeBSD > 5.3)
-#	
+#
 #      /dev/disc/by-id/[Insert_ID_Here_12345]         		# Linux
 #      /dev/disc/by-path/[Insert-Path-Here:12:34:56-1.0.0.0]	# Linux
 #

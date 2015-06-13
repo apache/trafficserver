@@ -137,9 +137,11 @@ Linux Example
     directory structure. As noted for the :ref:`assignment-table` the path used for the disk can effect
     the cache if it changes. This can be ameloriated in some cases by using one of the alternate paths
     in via ``/dev/disk``. Note that if the ``by-id`` or ``by-path`` style is used, replacing a failed drive will cause
-    that path to change because the new drive will have a different physical ID or path. The original hash string can be kept by adding :arg:`id` or :arg:`path` with the original path to the storage line. 
+    that path to change because the new drive will have a different physical ID or path. The original hash string can
+    be kept by adding :arg:`id` or :arg:`path` with the original path to the storage line.
 
-    If this is not sufficient then the :arg:`id` or :arg:`path` argument should be used to create a more permanent assignment table. An example would be::
+    If this is not sufficient then the :arg:`id` or :arg:`path` argument should be used to create a more permanent
+    assignment table. An example would be::
 
        /dev/sde id=cache.disk.0
        /dev/sdg id=cache.disk.1
