@@ -1023,7 +1023,6 @@ Mp4Meta::mp4_update_stts_atom(Mp4Trak *trak)
     if (start_time < (uint64_t)count * duration) {
       pass = (uint32_t)(start_time / duration);
       start_sample += pass;
-      count -= pass;
 
       goto found;
     }
@@ -1216,7 +1215,6 @@ Mp4Meta::mp4_update_stsc_atom(Mp4Trak *trak)
     return -1;
 
   start_sample = (uint32_t)trak->start_sample;
-  entries = trak->sample_to_chunk_entries - 1;
 
   readerp = TSIOBufferReaderClone(trak->stsc_data.reader);
 
