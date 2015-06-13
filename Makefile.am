@@ -29,7 +29,7 @@ export CCACHE_BASEDIR
 # proxy/api/ts has to be built first, since so much of libraries and "core
 # depends on the generates ts/ts.h include file.
 
-SUBDIRS = lib/ck proxy/api/ts iocore lib proxy/hdrs proxy/shared mgmt proxy cmd plugins tools example rc doc
+SUBDIRS = proxy/api/ts iocore lib proxy/hdrs proxy/shared mgmt proxy cmd plugins tools example rc doc
 
 
 DIST_BUILD_USER=`id -nu`
@@ -99,7 +99,7 @@ submodules:
 	git submodule update --init
 
 clang-format:
-	for f in `find $(top_srcdir) -iname \*.[ch] -o -iname \*.cc | fgrep -v -e lib/ck -e lib/luajit -e lib/tsconfig`; do \
+	for f in `find $(top_srcdir) -iname \*.[ch] -o -iname \*.cc | fgrep -v -e lib/luajit -e lib/tsconfig`; do \
 	  echo $$f; clang-format -i $$f; done
 
 help:

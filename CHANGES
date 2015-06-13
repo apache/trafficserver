@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-3689] Remove libck.
+
   *) [TS-3282] Add mp4 streaming plugin.
 
   *) [TS-3477] Change the default thread affinity to 1 (NUMA node).

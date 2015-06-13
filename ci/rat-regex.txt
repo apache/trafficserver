@@ -55,6 +55,5 @@ port\.h
 ^HashSip.cc$
 ^TsConfigGrammar[.][ch]$
 ^luajit$
-^ck$
 ^.*crt$
 ^.*key$
