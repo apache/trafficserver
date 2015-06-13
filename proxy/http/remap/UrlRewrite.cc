@@ -90,7 +90,6 @@ UrlRewrite::UrlRewrite()
   REC_ReadConfigInteger(mgmt_autoconf_port, "proxy.config.admin.autoconf_port");
   REC_ReadConfigInteger(default_to_pac, "proxy.config.url_remap.default_to_server_pac");
   REC_ReadConfigInteger(default_to_pac_port, "proxy.config.url_remap.default_to_server_pac_port");
-  REC_ReadConfigInteger(url_remap_mode, "proxy.config.url_remap.url_remap_mode");
   REC_ReadConfigInteger(backdoor_enabled, "proxy.config.url_remap.handle_backdoor_urls");
 
   if (0 == this->BuildTable(config_file_path)) {

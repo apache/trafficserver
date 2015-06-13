@@ -90,7 +90,6 @@ init_reverse_proxy()
   REC_RegisterConfigUpdateFunc("proxy.config.url_remap.default_to_server_pac", url_rewrite_CB, (void *)DEFAULT_TO_PAC_CHANGED);
   REC_RegisterConfigUpdateFunc("proxy.config.url_remap.default_to_server_pac_port", url_rewrite_CB,
                                (void *)DEFAULT_TO_PAC_PORT_CHANGED);
-  REC_RegisterConfigUpdateFunc("proxy.config.url_remap.url_remap_mode", url_rewrite_CB, (void *)URL_REMAP_MODE_CHANGED);
   REC_RegisterConfigUpdateFunc("proxy.config.http.referer_default_redirect", url_rewrite_CB, (void *)HTTP_DEFAULT_REDIRECT_CHANGED);
   return 0;
 }

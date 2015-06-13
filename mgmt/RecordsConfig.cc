@@ -1220,12 +1220,6 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.url_remap.pristine_host_hdr", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
-  // url remap mode
-  // # 0 - same as URL_REMAP_ALL (instead of disabling all remapping)
-  // # 1 - URL_REMAP_ALL remap url's of all requests
-  // # 2 - URL_REMAP_FOR_OS remap url's for requests to OS's only
-  {RECT_CONFIG, "proxy.config.url_remap.url_remap_mode", RECD_INT, "1", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-2]", RECA_NULL}
-  ,
   {RECT_CONFIG, "proxy.config.url_remap.handle_backdoor_urls", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
 
