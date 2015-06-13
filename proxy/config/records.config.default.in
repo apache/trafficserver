@@ -16,7 +16,7 @@ CONFIG proxy.config.accept_threads INT 1
 CONFIG proxy.config.task_threads INT 2
 CONFIG proxy.config.cache.threads_per_disk INT 8
     # https://docs.trafficserver.apache.org/records.config#proxy-config-exec-thread-affinity
-CONFIG proxy.config.exec_thread.affinity INT 0
+CONFIG proxy.config.exec_thread.affinity INT 1
 
 ##############################################################################
 # Specify server addresses and ports to bind for HTTP and HTTPS. Docs:

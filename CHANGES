@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-3477] Change the default thread affinity to 1 (NUMA node).
+
   *) [TS-481] Remove proxy.config.url_remap.url_remap_mode config.
 
   *) [TS-667] Update docs to explain how to use alternate disk paths.
