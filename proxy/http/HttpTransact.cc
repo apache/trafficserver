@@ -388,7 +388,7 @@ does_method_effect_cache(int method)
 inline static HttpTransact::StateMachineAction_t
 how_to_open_connection(HttpTransact::State *s)
 {
-  ink_assert(s->pending_work == NULL);
+  ink_assert((s->pending_work == NULL) || (s->current.request_to == PARENT_PROXY));
 
   // Originally we returned which type of server to open
   // Now, however, we may want to issue a cache
@@ -2689,11 +2689,6 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
         //        ink_release_assert(s->current.request_to == PARENT_PROXY ||
         //                    s->http_config_param->no_dns_forward_to_parent != 0);
 
-        // Set ourselves up to handle pending revalidate issues
-        //  after the PP DNS lookup
-        ink_assert(s->pending_work == NULL);
-        s->pending_work = issue_revalidate;
-
         // We must be going a PARENT PROXY since so did
         //  origin server DNS lookup right after state Start
         //
@@ -2702,6 +2697,11 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
         //  missing ip but we won't take down the system
         //
         if (s->current.request_to == PARENT_PROXY) {
+          // Set ourselves up to handle pending revalidate issues
+          //  after the PP DNS lookup
+          ink_assert(s->pending_work == NULL);
+          s->pending_work = issue_revalidate;
+
           TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, PPDNSLookup);
         } else if (s->current.request_to == ORIGIN_SERVER) {
           TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, OSDNSLookup);
