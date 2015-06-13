@@ -3,9 +3,9 @@ Changes with Apache Traffic Server 6.0.0
 
   *) [TS-667] Update docs to explain how to use alternate disk paths.
 
-  *) [TS-3455]: Fix debug assert in parent proxy scenario.
+  *) [TS-3455] Fix debug assert in parent proxy scenario.
 
-  *) [TS-3126]: Remove the config setting that controls sending of HTTP status
+  *) [TS-3126] Remove the config setting that controls sending of HTTP status
      response (408) on a POST failure (e.g timeout) and make the sending of 408
      default.
 
