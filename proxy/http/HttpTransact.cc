@@ -388,7 +388,7 @@ does_method_effect_cache(int method)
 inline static HttpTransact::StateMachineAction_t
 how_to_open_connection(HttpTransact::State *s)
 {
-  ink_assert((s->pending_work == NULL) || (s->current.request_to == PARENT_PROXY));
+  ink_assert((s->pending_work == NULL) || (s->current.request_to == HttpTransact::PARENT_PROXY));
 
   // Originally we returned which type of server to open
   // Now, however, we may want to issue a cache
