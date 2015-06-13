@@ -39,7 +39,7 @@
 #      /dev/ada1            					# FreeBSD
 #
 # Note that disks are identified by id or path. This is to prevent changes
-# by the kernel (which could occur if a disk was simply described as /dev/sda, sdb, etc).
+# by the kernel (which could occur if a disk was simply described as /dev/sda, sdb, etc.).
 #
 # Also note that when using these raw devices in O_DIRECT mode, you
 # do not need to specify the partition size. It's automatically
