@@ -2002,38 +2002,25 @@ Logging Configuration
 
    Enables (``1``) or disables (``0``) custom logging.
 
+   cjq
 .. note::
     The following defaults (with the format``CONFIG proxy.config.log.[format].[default]`` have been removed from ``records.config``.They can be accessed by editing :file:`logs_xml.config`.
 
-    The formats can be either ``squid`` (Squid Format), ``common`` (Netscape Common),  ``extended`` (Netscape Extended), or  ``extended2`` (Netscape Extended-2).
+    - ``log_enabled`` INT 1
+        Enables (``1``) or disables (``0``) the file format.
 
-    More details here:
-      `Squid <../working-log-files/log-format#SquidFormat>`_.
-      :ref:`Common <admin-log-formats-netscape-common>`.
-      :ref:`Extended <admin-log-formats-netscape-extended>`.
-      :ref:`Extended2 <admin-log-formats-netscape-extended2>`.
+    - ``log_is_ascii`` INT 0
+        The log file type:
+           - ``1`` = ASCII
+           - ``0`` = binary
 
-   .. ts:cv:: log_enabled INT 1
-      :reloadable:
+    - ``log_name`` STRING [format]
+        The filename (ex. :ref:`squid log <log-formats-squid-format>`).
 
-      Enables (``1``) or disables (``0``) the file format.
+    - ``log_header_ STRING NULL
+        The file header text (ex. :ref:`squid log <log-formats-squid-format>`).
 
-   .. ts:cv:: log_is_ascii INT 0
-      :reloadable:
-
-      The log file type:
-
-      -  ``1`` = ASCII
-      -  ``0`` = binary
-
-   .. ts:cv:: log_name STRING [format]
-      :reloadable:
-
-      The filename (ex: :ref:`squid log <log-formats-squid-format>`).
-
-   .. ts:cv:: log_header STRING NULL
-
-      The file header text (ex: :ref:`squid log <log-formats-squid-format>`).
+    The format can be either ``squid`` (Squid Format), ``common`` (Netscape Common),  ``extended`` (Netscape Extended), or  ``extended2`` (Netscape Extended-2).
 
 .. ts:cv:: CONFIG proxy.config.log.separate_icp_logs INT 0
    :reloadable:
