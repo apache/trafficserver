@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-3163] Apply socket configurations to outbound connections.
+     Author: Wei Sun
+
   *) [TS-3580] Implement a cache generation ID configuration.
 
   *) [TS-3365] Enable C99 by default.
