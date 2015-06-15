@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-2054] Generate warning for reserved port open failure.
+
   *) [TS-3170] Eliminate proxy pac / autoconf features, and backdoors. This
    also eliminates almost everything in web2, leaving just a bit of cluster
    code which I moved to the cmd/traffic_manager code area.
