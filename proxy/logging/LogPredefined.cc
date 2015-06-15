@@ -54,10 +54,8 @@ PreDefinedFormatList::~PreDefinedFormatList()
 void
 PreDefinedFormatList::init(LogConfig *config)
 {
-  LogFormat *fmt;
-
-// All these predefined formats work with log collation. They are optionally binary or ASCII, each
-// with a different config option.
-#define make_format(is_ascii) ((is_ascii) ? LOG_FILE_ASCII : LOG_FILE_BINARY)
-#undef make_format
+  // All these predefined formats work with log collation. They are optionally binary or ASCII, each
+  // with a different config option.
+  #define make_format(is_ascii) ((is_ascii) ? LOG_FILE_ASCII : LOG_FILE_BINARY)
+  #undef make_format
 }
