@@ -1,6 +1,10 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-3170] Eliminate proxy pac / autoconf features, and backdoors. This
+   also eliminates almost everything in web2, leaving just a bit of cluster
+   code which I moved to the cmd/traffic_manager code area.
+
   *) [TS-2848] Check for null server in HttpSM::release_server_session
 
   *) [TS-3163] Apply socket configurations to outbound connections.
