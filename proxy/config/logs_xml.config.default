@@ -403,7 +403,7 @@ The following <LogFormat> formats are formerly built-in log-formats.
 </LogFormat>
 
 <LogFormat>
-  <Name = "common/>
+  <Name = "common"/>
   <Format = "%<chi> - %<caun> [%<cqtn>] \"%<cqtx>\" %<pssc> %<pscl>"/>
 </LogFormat>
 
