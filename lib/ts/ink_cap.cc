@@ -27,6 +27,8 @@
 #include "ink_thread.h"
 
 #include <grp.h>
+#include <unistd.h>
+#include <sys/types.h>
 
 #if HAVE_SYS_CAPABILITY_H
 #include <sys/capability.h>
