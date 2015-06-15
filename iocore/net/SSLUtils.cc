@@ -27,6 +27,7 @@
 #include "ink_cap.h"
 #include "P_OCSPStapling.h"
 #include "SSLSessionCache.h"
+#include "SSLDynlock.h"
 
 #include <string>
 #include <openssl/err.h>
@@ -795,6 +796,9 @@ SSLInitializeLibrary()
 
     CRYPTO_set_locking_callback(SSL_locking_callback);
     CRYPTO_THREADID_set_callback(SSL_pthreads_thread_id);
+    CRYPTO_set_dynlock_create_callback(ssl_dyn_create_callback);
+    CRYPTO_set_dynlock_lock_callback(ssl_dyn_lock_callback);
+    CRYPTO_set_dynlock_destroy_callback(ssl_dyn_destroy_callback);
   }
 
 #ifdef SSL_CTX_set_tlsext_ticket_key_cb

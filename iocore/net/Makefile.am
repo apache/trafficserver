@@ -115,7 +115,8 @@ libinknet_a_SOURCES = \
   UnixNetProcessor.cc \
   UnixNetVConnection.cc \
   UnixUDPConnection.cc \
-  UnixUDPNet.cc
+  UnixUDPNet.cc \
+  SSLDynlock.cc
 
 #test_UNUSED_SOURCES = \
 #  NetTest-http-server.c \
