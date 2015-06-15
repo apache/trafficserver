@@ -95,7 +95,7 @@ sync_thr(void *data)
     } else {
       // If we didn't sync to disk, check whether we need to update ....
       if (configFiles->isConfigStale()) {
-        RecSetRecordInt("proxy.node.config.reconfigure_required", 1);
+        RecSetRecordInt("proxy.node.config.reconfigure_required", 1, REC_SOURCE_DEFAULT);
       }
     }
 
@@ -114,16 +114,16 @@ config_update_thr(void * /* data */)
   while (true) {
     switch (RecExecConfigUpdateCbs(REC_LOCAL_UPDATE_REQUIRED)) {
     case RECU_RESTART_TS:
-      RecSetRecordInt("proxy.node.config.restart_required.proxy", 1);
+      RecSetRecordInt("proxy.node.config.restart_required.proxy", 1, REC_SOURCE_DEFAULT);
       break;
     case RECU_RESTART_TM:
-      RecSetRecordInt("proxy.node.config.restart_required.proxy", 1);
-      RecSetRecordInt("proxy.node.config.restart_required.manager", 1);
+      RecSetRecordInt("proxy.node.config.restart_required.proxy", 1, REC_SOURCE_DEFAULT);
+      RecSetRecordInt("proxy.node.config.restart_required.manager", 1, REC_SOURCE_DEFAULT);
       break;
     case RECU_RESTART_TC:
-      RecSetRecordInt("proxy.node.config.restart_required.proxy", 1);
-      RecSetRecordInt("proxy.node.config.restart_required.manager", 1);
-      RecSetRecordInt("proxy.node.config.restart_required.cop", 1);
+      RecSetRecordInt("proxy.node.config.restart_required.proxy", 1, REC_SOURCE_DEFAULT);
+      RecSetRecordInt("proxy.node.config.restart_required.manager", 1, REC_SOURCE_DEFAULT);
+      RecSetRecordInt("proxy.node.config.restart_required.cop", 1, REC_SOURCE_DEFAULT);
       break;
     case RECU_NULL:
     case RECU_DYNAMIC:

@@ -71,14 +71,14 @@ varSetFromStr(const char *varName, const char *value)
   switch (varDataType) {
   case RECD_INT:
     if (sscanf(value, "%" PRId64 "", &data.rec_int) == 1) {
-      RecSetRecordInt((char *)varName, data.rec_int);
+      RecSetRecordInt((char *)varName, data.rec_int, REC_SOURCE_EXPLICIT);
     } else {
       found = false;
     }
     break;
   case RECD_COUNTER:
     if (sscanf(value, "%" PRId64 "", &data.rec_counter) == 1) {
-      RecSetRecordCounter((char *)varName, data.rec_counter);
+      RecSetRecordCounter((char *)varName, data.rec_counter, REC_SOURCE_EXPLICIT);
     } else {
       found = false;
     }
@@ -86,16 +86,16 @@ varSetFromStr(const char *varName, const char *value)
   case RECD_FLOAT:
     // coverity[secure_coding]
     if (sscanf(value, "%f", &data.rec_float) == 1) {
-      RecSetRecordFloat((char *)varName, data.rec_float);
+      RecSetRecordFloat((char *)varName, data.rec_float, REC_SOURCE_EXPLICIT);
     } else {
       found = false;
     }
     break;
   case RECD_STRING:
     if (*value == '\0') {
-      RecSetRecordString((char *)varName, NULL);
+      RecSetRecordString((char *)varName, NULL, REC_SOURCE_EXPLICIT);
     } else {
-      RecSetRecordString((char *)varName, (char *)value);
+      RecSetRecordString((char *)varName, (char *)value, REC_SOURCE_EXPLICIT);
     }
     break;
   case RECD_NULL:
@@ -130,17 +130,17 @@ varSetFloat(const char *varName, RecFloat value, bool convert)
 
   switch (varDataType) {
   case RECD_FLOAT:
-    RecSetRecordFloat((char *)varName, (RecFloat)value);
+    RecSetRecordFloat((char *)varName, (RecFloat)value, REC_SOURCE_EXPLICIT);
     break;
   case RECD_INT:
     if (convert) {
       value += 0.5; // rounding up
-      RecSetRecordInt((char *)varName, (RecInt)value);
+      RecSetRecordInt((char *)varName, (RecInt)value, REC_SOURCE_EXPLICIT);
       break;
     }
   case RECD_COUNTER:
     if (convert) {
-      RecSetRecordCounter((char *)varName, (RecCounter)value);
+      RecSetRecordCounter((char *)varName, (RecCounter)value, REC_SOURCE_EXPLICIT);
       break;
     }
   case RECD_STRING:
@@ -176,16 +176,16 @@ varSetCounter(const char *varName, RecCounter value, bool convert)
 
   switch (varDataType) {
   case RECD_COUNTER:
-    RecSetRecordCounter((char *)varName, (RecCounter)value);
+    RecSetRecordCounter((char *)varName, (RecCounter)value, REC_SOURCE_EXPLICIT);
     break;
   case RECD_INT:
     if (convert) {
-      RecSetRecordInt((char *)varName, (RecInt)value);
+      RecSetRecordInt((char *)varName, (RecInt)value, REC_SOURCE_EXPLICIT);
       break;
     }
   case RECD_FLOAT:
     if (convert) {
-      RecSetRecordFloat((char *)varName, (RecFloat)value);
+      RecSetRecordFloat((char *)varName, (RecFloat)value, REC_SOURCE_EXPLICIT);
       break;
     }
   case RECD_STRING:
@@ -221,16 +221,16 @@ varSetInt(const char *varName, RecInt value, bool convert)
 
   switch (varDataType) {
   case RECD_INT:
-    RecSetRecordInt((char *)varName, (RecInt)value);
+    RecSetRecordInt((char *)varName, (RecInt)value, REC_SOURCE_EXPLICIT);
     break;
   case RECD_COUNTER:
     if (convert) {
-      RecSetRecordCounter((char *)varName, (RecCounter)value);
+      RecSetRecordCounter((char *)varName, (RecCounter)value, REC_SOURCE_EXPLICIT);
       break;
     }
   case RECD_FLOAT:
     if (convert) {
-      RecSetRecordFloat((char *)varName, (RecFloat)value);
+      RecSetRecordFloat((char *)varName, (RecFloat)value, REC_SOURCE_EXPLICIT);
       break;
     }
   case RECD_STRING:
@@ -255,13 +255,13 @@ varSetData(RecDataT varType, const char *varName, RecData value)
 
   switch (varType) {
   case RECD_INT:
-    err = RecSetRecordInt((char *)varName, value.rec_int);
+    err = RecSetRecordInt((char *)varName, value.rec_int, REC_SOURCE_EXPLICIT);
     break;
   case RECD_COUNTER:
-    err = RecSetRecordCounter((char *)varName, value.rec_counter);
+    err = RecSetRecordCounter((char *)varName, value.rec_counter, REC_SOURCE_EXPLICIT);
     break;
   case RECD_FLOAT:
-    err = RecSetRecordFloat((char *)varName, value.rec_float);
+    err = RecSetRecordFloat((char *)varName, value.rec_float, REC_SOURCE_EXPLICIT);
     break;
   default:
     Fatal("unsupport type:%d\n", varType);

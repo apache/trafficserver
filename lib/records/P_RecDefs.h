@@ -98,6 +98,7 @@ struct RecConfigMeta {
   RecCheckT check_type;
   char *check_expr;
   RecAccessT access_type;
+  RecSourceT source; ///< Source of the configuration value.
 };
 
 struct RecRecord {

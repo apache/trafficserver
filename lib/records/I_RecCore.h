@@ -41,7 +41,8 @@ int RecSetDiags(Diags *diags);
 //-------------------------------------------------------------------------
 // Config File Parsing
 //-------------------------------------------------------------------------
-typedef void (*RecConfigEntryCallback)(RecT rec_type, RecDataT data_type, const char *name, const char *value, bool inc_version);
+typedef void (*RecConfigEntryCallback)(RecT rec_type, RecDataT data_type, const char *name, const char *value, RecSourceT source,
+                                       bool inc_version);
 
 void RecConfigFileInit(void);
 int RecConfigFileParse(const char *path, RecConfigEntryCallback handler, bool inc_version);
@@ -106,16 +107,16 @@ int _RecRegisterStatCounter(RecT rec_type, const char *name, RecCounter data_def
 //-------------------------------------------------------------------------
 
 int RecRegisterConfigInt(RecT rec_type, const char *name, RecInt data_default, RecUpdateT update_type, RecCheckT check_type,
-                         const char *ccheck_regex, RecAccessT access_type = RECA_NULL);
+                         const char *ccheck_regex, RecSourceT source, RecAccessT access_type = RECA_NULL);
 
 int RecRegisterConfigFloat(RecT rec_type, const char *name, RecFloat data_default, RecUpdateT update_type, RecCheckT check_type,
-                           const char *check_regex, RecAccessT access_type = RECA_NULL);
+                           const char *check_regex, RecSourceT source, RecAccessT access_type = RECA_NULL);
 
 int RecRegisterConfigString(RecT rec_type, const char *name, const char *data_default, RecUpdateT update_type, RecCheckT check_type,
-                            const char *check_regex, RecAccessT access_type = RECA_NULL);
+                            const char *check_regex, RecSourceT source, RecAccessT access_type = RECA_NULL);
 
 int RecRegisterConfigCounter(RecT rec_type, const char *name, RecCounter data_default, RecUpdateT update_type, RecCheckT check_type,
-                             const char *check_regex, RecAccessT access_type = RECA_NULL);
+                             const char *check_regex, RecSourceT source, RecAccessT access_type = RECA_NULL);
 
 //-------------------------------------------------------------------------
 // Config Change Notification
@@ -145,11 +146,11 @@ int RecRegisterRawStatUpdateFunc(const char *name, RecRawStatBlock *rsb, int id,
 // already been taken out for the callback.
 
 // RecSetRecordConvert -> WebMgmtUtils.cc::varSetFromStr()
-int RecSetRecordConvert(const char *name, const RecString rec_string, bool lock = true, bool inc_version = true);
-int RecSetRecordInt(const char *name, RecInt rec_int, bool lock = true, bool inc_version = true);
-int RecSetRecordFloat(const char *name, RecFloat rec_float, bool lock = true, bool inc_version = true);
-int RecSetRecordString(const char *name, const RecString rec_string, bool lock = true, bool inc_version = true);
-int RecSetRecordCounter(const char *name, RecCounter rec_counter, bool lock = true, bool inc_version = true);
+int RecSetRecordConvert(const char *name, const RecString rec_string, RecSourceT source, bool lock = true, bool inc_version = true);
+int RecSetRecordInt(const char *name, RecInt rec_int, RecSourceT source, bool lock = true, bool inc_version = true);
+int RecSetRecordFloat(const char *name, RecFloat rec_float, RecSourceT source, bool lock = true, bool inc_version = true);
+int RecSetRecordString(const char *name, const RecString rec_string, RecSourceT source, bool lock = true, bool inc_version = true);
+int RecSetRecordCounter(const char *name, RecCounter rec_counter, RecSourceT source, bool lock = true, bool inc_version = true);
 
 int RecGetRecordInt(const char *name, RecInt *rec_int, bool lock = true);
 int RecGetRecordFloat(const char *name, RecFloat *rec_float, bool lock = true);
@@ -176,6 +177,7 @@ int RecGetRecordUpdateType(const char *name, RecUpdateT *update_type, bool lock 
 int RecGetRecordCheckType(const char *name, RecCheckT *check_type, bool lock = true);
 int RecGetRecordCheckExpr(const char *name, char **check_expr, bool lock = true);
 int RecGetRecordDefaultDataString_Xmalloc(char *name, char **buf, bool lock = true);
+int RecGetRecordSource(const char *name, RecSourceT *source, bool lock = true);
 
 int RecGetRecordAccessType(const char *name, RecAccessT *secure, bool lock = true);
 int RecSetRecordAccessType(const char *name, RecAccessT secure, bool lock = true);

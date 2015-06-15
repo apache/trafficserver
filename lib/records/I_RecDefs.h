@@ -121,6 +121,15 @@ enum RecCheckT {
   RECC_IP    // config is an ip address
 };
 
+/// The source of the value.
+/// @internal @c REC_SOURCE_NULL is useful for a return value, I don't see using it in the actual data.
+enum RecSourceT {
+  REC_SOURCE_NULL,     ///< No source / value not set.
+  REC_SOURCE_DEFAULT,  ///< Built in default.
+  REC_SOURCE_EXPLICIT, ///< Set by administrator (config file, external API, cluster, etc.)
+  REC_SOURCE_ENV       ///< Process environment variable.
+};
+
 enum RecModeT {
   RECM_NULL,
   RECM_CLIENT,

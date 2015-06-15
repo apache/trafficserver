@@ -2336,7 +2336,7 @@ checkBackDoor(int req_fd, char *message)
       return false;
     }
     // TODO: I think this is correct, it used to do lmgmt->record_data-> ...
-    if (RecSetRecordConvert(variable, value, true, false) == REC_ERR_OKAY) {
+    if (RecSetRecordConvert(variable, value, REC_SOURCE_EXPLICIT, true, false) == REC_ERR_OKAY) {
       ink_strlcpy(reply, "\nRecord Updated\n\n", sizeof(reply));
       mgmt_writeline(req_fd, reply, strlen(reply));
     } else {
