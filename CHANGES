@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-2848] Check for null server in HttpSM::release_server_session
+
   *) [TS-3163] Apply socket configurations to outbound connections.
      Author: Wei Sun
 
