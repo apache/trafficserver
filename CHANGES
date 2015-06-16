@@ -1,4 +1,9 @@
                                                          -*- coding: utf-8 -*-
+Changes with Apache Traffic Server 4.2.4
+
+  *) [TS-3696] Fix range check in HdrHeap::attach_str_heap() such that gcc 5.1
+   doesn't complain.
+
 Changes with Apache Traffic Server 4.2.3
 
   *) [TS-2715] Fix some ESI compile warnings, change the constants to
