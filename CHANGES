@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-3696] Fix range check in HdrHeap::attach_str_heap() such that gcc 5.1
+   doesn't complain.
+
   *) [TS-3650] Track source of configuration values.
 
   *) [TS-3651] Remove proxy.config.http.share_server_sessions
