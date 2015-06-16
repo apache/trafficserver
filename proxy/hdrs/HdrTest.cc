@@ -604,7 +604,7 @@ HdrTest::test_http_parser_eos_boundary_cases()
                {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n\r\n***BODY****", PARSE_DONE, 48},
                {"GET", PARSE_ERROR, 3},
                {"GET /index.html", PARSE_ERROR, 15},
-               {"GET /index.html\r\n", PARSE_DONE, 17},
+               {"GET /index.html\r\n", PARSE_ERROR, 17},
                {"GET /index.html HTTP/1.0", PARSE_ERROR, 24},
                {"GET /index.html HTTP/1.0\r", PARSE_ERROR, 25},
                {"GET /index.html HTTP/1.0\n", PARSE_DONE, 25},
