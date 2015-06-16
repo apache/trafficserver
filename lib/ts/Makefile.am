@@ -188,9 +188,7 @@ libtsutil_la_SOURCES = \
 #  load_http_hdr.cc \
 #  IntrusivePtrTest.cc \
 #  IpMapTest.cc \
-#  TestHttpHeader.cc \
-#  test_memchr.cc \
-#  test_strings.cc
+#  TestHttpHeader.cc
 
 # Special hacks to generate the parser rules
 $(srcdir)/ParseRules.cc: ParseRulesCType
