@@ -373,32 +373,7 @@ public:
   size_t dinf_size;
   size_t size;
 
-  BufferHandle trak_atom;
-  BufferHandle tkhd_atom;
-  BufferHandle mdia_atom;
-  BufferHandle mdhd_atom;
-  BufferHandle hdlr_atom;
-  BufferHandle minf_atom;
-  BufferHandle vmhd_atom;
-  BufferHandle smhd_atom;
-  BufferHandle dinf_atom;
-  BufferHandle stbl_atom;
-  BufferHandle stsd_atom;
-  BufferHandle stts_atom;
-  BufferHandle stts_data;
-  BufferHandle stss_atom;
-  BufferHandle stss_data;
-  BufferHandle ctts_atom;
-  BufferHandle ctts_data;
-  BufferHandle stsc_atom;
-  BufferHandle stsc_chunk;
-  BufferHandle stsc_data;
-  BufferHandle stsz_atom;
-  BufferHandle stsz_data;
-  BufferHandle stco_atom;
-  BufferHandle stco_data;
-  BufferHandle co64_atom;
-  BufferHandle co64_data;
+  BufferHandle atoms[MP4_LAST_ATOM + 1];
 
   mp4_stsc_entry stsc_chunk_entry;
 };
