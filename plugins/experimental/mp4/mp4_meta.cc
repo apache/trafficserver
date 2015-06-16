@@ -1173,13 +1173,11 @@ Mp4Meta::mp4_update_ctts_atom(Mp4Trak *trak)
     trak->ctts_atom.reader = NULL;
   }
 
-  if (trak->ctts_data.reader) {
-    TSIOBufferReaderFree(trak->ctts_data.reader);
-    TSIOBufferDestroy(trak->ctts_data.buffer);
+  TSIOBufferReaderFree(trak->ctts_data.reader);
+  TSIOBufferDestroy(trak->ctts_data.buffer);
 
-    trak->ctts_data.reader = NULL;
-    trak->ctts_data.buffer = NULL;
-  }
+  trak->ctts_data.reader = NULL;
+  trak->ctts_data.buffer = NULL;
 
   TSIOBufferReaderFree(readerp);
   return 0;
