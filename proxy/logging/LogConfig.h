@@ -209,7 +209,7 @@ private:
 
   void setup_default_values();
   void setup_collation(LogConfig *prev_config);
-  
+
   LogFilter *split_by_protocol();
   size_t split_by_hostname(LogFilter *reject_protocol);
 

@@ -447,7 +447,7 @@ LogConfig::init(LogConfig *prev_config)
 
   // ----------------------------------------------------------------------
   Log::error_log = NULL;
-  
+
   if (prev_config) {
     // Transfer objects from previous configuration.
     transfer_objects(prev_config);
@@ -705,14 +705,14 @@ LogConfig::register_config_callbacks()
   static const char *names[] = {
     "proxy.config.log.log_buffer_size", "proxy.config.log.max_secs_per_buffer", "proxy.config.log.max_space_mb_for_logs",
     "proxy.config.log.max_space_mb_for_orphan_logs", "proxy.config.log.max_space_mb_headroom", "proxy.config.log.logfile_perm",
-    "proxy.config.log.hostname", "proxy.config.log.logfile_dir", "proxy.config.log.separate_icp_logs", 
-    "proxy.config.log.separate_host_logs", "proxy.local.log.collation_mode",
-    "proxy.config.log.collation_host", "proxy.config.log.collation_port", "proxy.config.log.collation_host_tagged",
-    "proxy.config.log.collation_secret", "proxy.config.log.collation_retry_sec", "proxy.config.log.collation_max_send_buffers",
-    "proxy.config.log.rolling_enabled", "proxy.config.log.rolling_interval_sec", "proxy.config.log.rolling_offset_hr",
-    "proxy.config.log.rolling_size_mb", "proxy.config.log.auto_delete_rolled_files", "proxy.config.log.custom_logs_enabled",
-    "proxy.config.log.xml_config_file", "proxy.config.log.hosts_config_file", "proxy.config.log.sampling_frequency",
-    "proxy.config.log.file_stat_frequency", "proxy.config.log.space_used_frequency",
+    "proxy.config.log.hostname", "proxy.config.log.logfile_dir", "proxy.config.log.separate_icp_logs",
+    "proxy.config.log.separate_host_logs", "proxy.local.log.collation_mode", "proxy.config.log.collation_host",
+    "proxy.config.log.collation_port", "proxy.config.log.collation_host_tagged", "proxy.config.log.collation_secret",
+    "proxy.config.log.collation_retry_sec", "proxy.config.log.collation_max_send_buffers", "proxy.config.log.rolling_enabled",
+    "proxy.config.log.rolling_interval_sec", "proxy.config.log.rolling_offset_hr", "proxy.config.log.rolling_size_mb",
+    "proxy.config.log.auto_delete_rolled_files", "proxy.config.log.custom_logs_enabled", "proxy.config.log.xml_config_file",
+    "proxy.config.log.hosts_config_file", "proxy.config.log.sampling_frequency", "proxy.config.log.file_stat_frequency",
+    "proxy.config.log.space_used_frequency",
   };
 
 

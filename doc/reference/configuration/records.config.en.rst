@@ -2020,7 +2020,7 @@ Logging Configuration
     - ``log_header_ STRING NULL
         The file header text (ex. :ref:`squid log <log-formats-squid-format>`).
 
-    The format can be either ``squid`` (Squid Format), ``common`` (Netscape Common),  ``extended`` (Netscape Extended), 
+    The format can be either ``squid`` (Squid Format), ``common`` (Netscape Common),  ``extended`` (Netscape Extended),
     or  ``extended2`` (Netscape Extended-2).
 
 .. ts:cv:: CONFIG proxy.config.log.separate_icp_logs INT 0
