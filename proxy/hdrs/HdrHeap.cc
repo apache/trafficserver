@@ -973,6 +973,10 @@ HdrHeap::unmarshal(int buf_length, int obj_type, HdrHeapObjImpl **found_obj, Ref
 inline int
 HdrHeap::attach_str_heap(char *h_start, int h_len, RefCountObj *h_ref_obj, int *index)
 {
+  if (*index >= HDR_BUF_RONLY_HEAPS) {
+    return 0;
+  }
+
   // Loop over existing entries to see if this one is already present
   for (int z = 0; z < *index; z++) {
     if (m_ronly_heap[z].m_heap_start == h_start) {
@@ -986,10 +990,6 @@ HdrHeap::attach_str_heap(char *h_start, int h_len, RefCountObj *h_ref_obj, int *
         m_ronly_heap[z].m_heap_len = h_len;
       return 1;
     }
-  }
-
-  if (*index >= HDR_BUF_RONLY_HEAPS) {
-    return 0;
   }
 
   m_ronly_heap[*index].m_ref_count_ptr = h_ref_obj;

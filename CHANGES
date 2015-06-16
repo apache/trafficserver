@@ -1,6 +1,9 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.1
 
+  *) [TS-3696] Fix range check in HdrHeap::attach_str_heap() such that gcc 5.1
+   doesn't complain.
+
   *) [TS-3667] Make SSL Handhake read correctly handle EOF and error cases.
 
   *) [TS-3554] Memory leak on ssl_multicert.config reload.
