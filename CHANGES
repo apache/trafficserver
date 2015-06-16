@@ -3,7 +3,7 @@ Changes with Apache Traffic Server 6.0.0
 
   *) [TS-3541] Eliminate the interim cache feature.
 
-  *) [TS-3327]: Nuke the support for HTTP/0.9.
+  *) [TS-3327] Nuke the support for HTTP/0.9.
 
   *) [TS-2054] Generate warning for reserved port open failure.
 
@@ -11,18 +11,19 @@ Changes with Apache Traffic Server 6.0.0
    also eliminates almost everything in web2, leaving just a bit of cluster
    code which I moved to the cmd/traffic_manager code area.
 
-  *) [TS-2848] Check for null server in HttpSM::release_server_session
+  *) [TS-2848] Check for null server in HttpSM::release_server_session.
 
   *) [TS-3163] Apply socket configurations to outbound connections.
-     Author: Wei Sun
+   Author: Wei Sun
 
   *) [TS-3580] Implement a cache generation ID configuration.
 
   *) [TS-3365] Enable C99 by default.
 
-  *) [TS-3689] Remove libck.
+  *) [TS-3689] Remove libck for now, a better solution will be decided on for
+   v6.1.0.
 
-  *) [TS-3282] Add mp4 streaming plugin.
+  *) [TS-3282] Add MP4 streaming plugin.
 
   *) [TS-3477] Change the default thread affinity to 1 (NUMA node).
 
