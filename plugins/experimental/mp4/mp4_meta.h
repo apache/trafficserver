@@ -410,6 +410,7 @@ public:
     : start(0), cl(0), content_length(0), meta_atom_size(0), meta_avail(0), wait_next(0), need_size(0), rs(0), rate(0),
       ftyp_size(0), moov_size(0), start_pos(0), timescale(0), trak_num(0), passed(0), meta_complete(false)
   {
+    memset(trak_vec, 0, sizeof(trak_vec));
     meta_buffer = TSIOBufferCreate();
     meta_reader = TSIOBufferReaderAlloc(meta_buffer);
   }
