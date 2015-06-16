@@ -920,9 +920,9 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
   }
 
   // YTS Team, yamsat Plugin
-  // Allocate and copy partial POST data to buffers. Check for the various parameters
-  // including the maximum configured post data size
-  if (p->alive && sm->t_state.method == HTTP_WKSIDX_POST && sm->enable_redirection && (p->vc_type == HT_HTTP_CLIENT)) {
+  // Allocate and copy partial POST data to buffers for possible later use in redirect.
+  // Check for the various parameters including the maximum configured post data size
+  if (p->alive && sm->t_state.method == HTTP_WKSIDX_POST && (p->vc_type == HT_HTTP_CLIENT)) {
     Debug("http_redirect", "[HttpTunnel::producer_run] client post: %" PRId64 " max size: %" PRId64 "",
           p->buffer_start->read_avail(), HttpConfig::m_master.post_copy_size);
 
@@ -1622,19 +1622,6 @@ HttpTunnel::copy_partial_post_data()
 }
 
 // YTS Team, yamsat Plugin
-// Allocate a new buffer for static producers
-void
-HttpTunnel::allocate_redirect_postdata_producer_buffer()
-{
-  int64_t alloc_index = buffer_size_to_index(sm->t_state.hdr_info.request_content_length);
-
-  ink_release_assert(postbuf->postdata_producer_buffer == NULL);
-
-  postbuf->postdata_producer_buffer = new_MIOBuffer(alloc_index);
-  postbuf->postdata_producer_reader = postbuf->postdata_producer_buffer->alloc_reader();
-}
-
-// YTS Team, yamsat Plugin
 // Allocating the post data buffers
 void
 HttpTunnel::allocate_redirect_postdata_buffers(IOBufferReader *ua_reader)
@@ -1650,13 +1637,10 @@ HttpTunnel::allocate_redirect_postdata_buffers(IOBufferReader *ua_reader)
     postbuf->ua_buffer_reader = ua_reader;
     postbuf->postdata_copy_buffer = new_MIOBuffer(alloc_index);
     postbuf->postdata_copy_buffer_start = postbuf->postdata_copy_buffer->alloc_reader();
-    allocate_redirect_postdata_producer_buffer();
   } else {
     // Reset the buffer readers
     postbuf->postdata_copy_buffer->dealloc_reader(postbuf->postdata_copy_buffer_start);
     postbuf->postdata_copy_buffer_start = postbuf->postdata_copy_buffer->alloc_reader();
-    postbuf->postdata_producer_buffer->dealloc_reader(postbuf->postdata_producer_reader);
-    postbuf->postdata_producer_reader = postbuf->postdata_producer_buffer->alloc_reader();
   }
 }
 
@@ -1669,11 +1653,6 @@ HttpTunnel::deallocate_redirect_postdata_buffers()
   Debug("http_redirect", "[HttpTunnel::deallocate_postdata_copy_buffers]");
 
   if (postbuf != NULL) {
-    if (postbuf->postdata_producer_buffer != NULL) {
-      free_MIOBuffer(postbuf->postdata_producer_buffer);
-      postbuf->postdata_producer_buffer = NULL;
-      postbuf->postdata_producer_reader = NULL; // deallocated by the buffer
-    }
     if (postbuf->postdata_copy_buffer != NULL) {
       free_MIOBuffer(postbuf->postdata_copy_buffer);
       postbuf->postdata_copy_buffer = NULL;
