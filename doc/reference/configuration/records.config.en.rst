@@ -2002,9 +2002,9 @@ Logging Configuration
 
    Enables (``1``) or disables (``0``) custom logging.
 
-   cjq
 .. note::
-    The following defaults (with the format``CONFIG proxy.config.log.[format].[default]`` have been removed from ``records.config``.They can be accessed by editing :file:`logs_xml.config`.
+    The following defaults (with the format``CONFIG proxy.config.log.[format].[default]`` have been removed from ``records.config``.
+    They can be accessed by editing :file:`logs_xml.config`.
 
     - ``log_enabled`` INT 1
         Enables (``1``) or disables (``0``) the file format.
@@ -2020,7 +2020,8 @@ Logging Configuration
     - ``log_header_ STRING NULL
         The file header text (ex. :ref:`squid log <log-formats-squid-format>`).
 
-    The format can be either ``squid`` (Squid Format), ``common`` (Netscape Common),  ``extended`` (Netscape Extended), or  ``extended2`` (Netscape Extended-2).
+    The format can be either ``squid`` (Squid Format), ``common`` (Netscape Common),  ``extended`` (Netscape Extended), 
+    or  ``extended2`` (Netscape Extended-2).
 
 .. ts:cv:: CONFIG proxy.config.log.separate_icp_logs INT 0
    :reloadable:
