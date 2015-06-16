@@ -523,34 +523,6 @@ sub show_logging {
   my $preproc_threads = get_on_off("proxy.config.log.collation_preproc_threads");
   my $orphan_space = get_int("proxy.config.log.max_space_mb_for_orphan_logs");
 
-  my $squid_log = get_on_off("proxy.config.log.squid_log_enabled");
-  my $squid_is_ascii = get_switch("proxy.config.log.squid_log_is_ascii", {
-    "0" => "BINARY",
-    "default" => "ASCII"});
-  my $squid_file_name = get_string("proxy.config.log.squid_log_name");
-  my $squid_file_header = get_string("proxy.config.log.squid_log_header");
-  
-  my $common_log = get_on_off("proxy.config.log.common_log_enabled");
-  my $common_is_ascii = get_switch("proxy.config.log.common_log_is_ascii", {
-    "0" => "BINARY",
-    "default" => "ASCII"});
-  my $common_file_name = get_string("proxy.config.log.common_log_name");
-  my $common_file_header = get_string("proxy.config.log.common_log_header");
-  
-  my $extended_log = get_on_off("proxy.config.log.extended_log_enabled");
-  my $extended_is_ascii = get_switch("proxy.config.log.extended_log_is_ascii", {
-    "0" => "BINARY",
-    "default" => "ASCII"});
-  my $extended_file_name = get_string("proxy.config.log.extended_log_name");
-  my $extended_file_header = get_string("proxy.config.log.extended_log_header");
-  
-  my $extended2_log = get_on_off("proxy.config.log.extended2_log_enabled");
-  my $extended2_is_ascii = get_switch("proxy.config.log.extended2_log_is_ascii", {
-    "0" => "BINARY",
-    "default" => "ASCII"});
-  my $extended2_file_name = get_string("proxy.config.log.extended2_log_name");
-  my $extended2_file_header = get_string("proxy.config.log.extended2_log_header");
-  
   my $icp_log = get_on_off("proxy.config.log.separate_icp_logs");
   my $http_host_log = get_on_off("proxy.config.log.separate_host_logs");
 
@@ -575,26 +547,6 @@ Log Collation ---------------------------- $collation_mode
   Host Tagged ---------------------------- $host_tag
   Preproc Threads ------------------------ $preproc_threads
   Space Limit for Orphan Files ----------- $orphan_space MB
-
-Squid Format ----------------------------- $squid_log
-  File Type ------------------------------ $squid_is_ascii
-  File Name ------------------------------ $squid_file_name
-  File Header ---------------------------- $squid_file_header
-
-Netscape Common -------------------------- $common_log
-  File Type ------------------------------ $common_is_ascii
-  File Name ------------------------------ $common_file_name
-  File Header ---------------------------- $common_file_header
-
-Netscape Extended ------------------------ $extended_log
-  File Type ------------------------------ $extended_is_ascii
-  File Name ------------------------------ $extended_file_name
-  File Header ---------------------------- $extended_file_header
-
-Netscape Extended2 ----------------------- $extended2_log
-  File Type ------------------------------ $extended2_is_ascii
-  File Name   ---------------------------- $extended2_file_name
-  File Header ---------------------------- $extended2_file_header
 
 Splitting
   ICP Log Splitting ---------------------- $icp_log

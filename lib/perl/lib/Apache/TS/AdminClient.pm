@@ -581,19 +581,7 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.log.collation_port
  proxy.config.log.collation_retry_sec
  proxy.config.log.collation_secret
- proxy.config.log.common_log_enabled
- proxy.config.log.common_log_header
- proxy.config.log.common_log_is_ascii
- proxy.config.log.common_log_name
  proxy.config.log.custom_logs_enabled
- proxy.config.log.extended2_log_enabled
- proxy.config.log.extended2_log_header
- proxy.config.log.extended2_log_is_ascii
- proxy.config.log.extended2_log_name
- proxy.config.log.extended_log_enabled
- proxy.config.log.extended_log_header
- proxy.config.log.extended_log_is_ascii
- proxy.config.log.extended_log_name
  proxy.config.log.file_stat_frequency
  proxy.config.log.hostname
  proxy.config.log.hosts_config_file
@@ -615,10 +603,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.log.separate_host_logs
  proxy.config.log.separate_icp_logs
  proxy.config.log.space_used_frequency
- proxy.config.log.squid_log_enabled
- proxy.config.log.squid_log_header
- proxy.config.log.squid_log_is_ascii
- proxy.config.log.squid_log_name
  proxy.config.log.xml_config_file
  proxy.config.manager_binary
  proxy.config.net.connections_throttle
