@@ -1,6 +1,59 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-3541] Eliminate the interim cache feature.
+
+  *) [TS-3327] Nuke the support for HTTP/0.9.
+
+  *) [TS-2054] Generate warning for reserved port open failure.
+
+  *) [TS-3170] Eliminate proxy pac / autoconf features, and backdoors. This
+   also eliminates almost everything in web2, leaving just a bit of cluster
+   code which I moved to the cmd/traffic_manager code area.
+
+  *) [TS-2848] Check for null server in HttpSM::release_server_session.
+
+  *) [TS-3163] Apply socket configurations to outbound connections.
+   Author: Wei Sun
+
+  *) [TS-3580] Implement a cache generation ID configuration.
+
+  *) [TS-3365] Enable C99 by default.
+
+  *) [TS-3689] Remove libck for now, a better solution will be decided on for
+   v6.1.0.
+
+  *) [TS-3282] Add MP4 streaming plugin.
+
+  *) [TS-3477] Change the default thread affinity to 1 (NUMA node).
+
+  *) [TS-481] Remove proxy.config.url_remap.url_remap_mode config.
+
+  *) [TS-667] Update docs to explain how to use alternate disk paths.
+
+  *) [TS-3455] Fix debug assert in parent proxy scenario.
+
+  *) [TS-3126] Remove the config setting that controls sending of HTTP status
+     response (408) on a POST failure (e.g timeout) and make the sending of 408
+     default.
+
+  *) [TS-2512] Deprecate the channel_stats plugin.
+
+  *) [TS-3687] ATS Session Cache should remove expired sessions.
+
+  *) [TS-3453] Confusion of handling SSL events in write_to_net_io in UnixNetVConnection.cc
+
+  *) [TS-3104] Fix lockfile logic which decides whether to kill process or group.
+   Author: Victor Leschuk <leshuk@ashmanov.com>
+
+  *) [TS-3569] Replace UNSAFE_FORCE_MUTEX with an sdk_assert, and relax mutex
+   requirements on Schedule(). Also rename MUTEX_LOCK to SCOPED_MUTEX_LOCK, to
+   be more descriptive.
+
+  *) [TS-436] Added documentation for hardware sector size support.
+
+  *) [TS-3555] Add a new API TSHttpTxnCacheLookupUrlSet().
+
   *) [TS-3684] Support TSHttpTxnServerRespNoStoreSet in ts_lua plugin.
 
   *) [TS-3466] Remove unused proxy.config.user_name config.

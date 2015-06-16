@@ -113,7 +113,7 @@ struct CacheTestSM : public RegressionSM {
   void
   run()
   {
-    MUTEX_LOCK(lock, mutex, this_ethread());
+    SCOPED_MUTEX_LOCK(lock, mutex, this_ethread());
     timeout = eventProcessor.schedule_imm(this);
   }
   virtual RegressionSM *clone() = 0;

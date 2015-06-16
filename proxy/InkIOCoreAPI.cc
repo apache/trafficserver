@@ -362,7 +362,7 @@ INKUDPBind(TSCont contp, unsigned int ip, int port)
 {
   sdk_assert(sdk_sanity_check_continuation(contp) == TS_SUCCESS);
 
-  FORCE_PLUGIN_MUTEX(contp);
+  FORCE_PLUGIN_SCOPED_MUTEX(contp);
 
   struct sockaddr_in addr;
   ats_ip4_set(&addr, ip, htons(port));
@@ -376,7 +376,7 @@ INKUDPSendTo(TSCont contp, INKUDPConn udp, unsigned int ip, int port, char *data
 {
   sdk_assert(sdk_sanity_check_continuation(contp) == TS_SUCCESS);
 
-  FORCE_PLUGIN_MUTEX(contp);
+  FORCE_PLUGIN_SCOPED_MUTEX(contp);
   UDPPacket *packet = new_UDPPacket();
   UDPConnection *conn = (UDPConnection *)udp;
 
@@ -407,7 +407,7 @@ INKUDPRecvFrom(TSCont contp, INKUDPConn udp)
 {
   sdk_assert(sdk_sanity_check_continuation(contp) == TS_SUCCESS);
 
-  FORCE_PLUGIN_MUTEX(contp);
+  FORCE_PLUGIN_SCOPED_MUTEX(contp);
   UDPConnection *conn = (UDPConnection *)udp;
   return reinterpret_cast<TSAction>(conn->recv((Continuation *)contp));
 }

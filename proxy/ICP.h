@@ -238,7 +238,7 @@ class ICPConfigData
 public:
   ICPConfigData()
     : _icp_enabled(0), _icp_port(0), _icp_interface(0), _multicast_enabled(0), _icp_query_timeout(0), _cache_lookup_local(0),
-      _stale_lookup(0), _reply_to_unknown_peer(0), _default_reply_port(0)
+      _stale_lookup(0), _reply_to_unknown_peer(0), _default_reply_port(0), _cache_generation(-1)
   {
   }
   ~ICPConfigData() {} // Note: _icp_interface freed prior to delete
@@ -288,6 +288,11 @@ public:
   {
     return _default_reply_port;
   }
+  inline cache_generation_t
+  ICPCacheGeneration() const
+  {
+    return _cache_generation;
+  }
 
 private:
   //---------------------------------------------------------
@@ -302,6 +307,7 @@ private:
   int _stale_lookup;
   int _reply_to_unknown_peer;
   int _default_reply_port;
+  int64_t _cache_generation;
 };
 
 //----------------------------------------------------------------

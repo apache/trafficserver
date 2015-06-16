@@ -417,9 +417,9 @@ Local Manager
 
    The semaphore ID for the local manager.
 
-.. ts:cv:: CONFIG proxy.config.admin.autoconf_port INT 8083
+.. ts:cv:: CONFIG proxy.config.admin.synthetic_port INT 8083
 
-   The autoconfiguration port.
+   The synthetic healthcheck port.
 
 .. ts:cv:: CONFIG proxy.config.admin.number_config_bak INT 3
 
@@ -897,10 +897,6 @@ specific domains.
    Controls wether new POST requests re-use keep-alive sessions (``1``) or
    create new connections per request (``0``).
 
-.. ts:cv:: CONFIG proxy.config.http.send_408_post_timeout_response INT 0
-
-   Controls wether POST timeout sends a HTTP status 408 response (``1``)
-
 .. ts:cv:: CONFIG proxy.config.http.disallow_post_100_continue INT 0
 
    Allows you to return a 405 Method Not Supported with Posts also
@@ -1276,10 +1272,28 @@ Cache Control
    usable. See :ref:`Reducing Origin Server Requests
    <http-proxy-caching.en.html#reducing-origin-server-requests-avoiding-the-thundering-herd>`.
 
-.. ts:cv:: CONFIG proxy.config.cache.force_sector_size INT 0
+.. ts:cv:: CONFIG proxy.config.cache.force_sector_size INT 4096
    :reloadable:
 
-   Forces the use of a specific hardware sector size (512 - 8192 bytes).
+   Forces the use of a specific hardware sector size, 4096, for all disks.
+
+   SSDs and "advanced format” drives claim a sector size of 512; however, it is safe to force a higher
+   size than the hardware supports natively as we count atomicity in 512 byte increments.
+
+   4096-sized drives formatted for Windows will have partitions aligned on 63 512-byte sector boundaries,
+   so they will be unaligned. There are workarounds, but you need to do some research on your particular
+   drive. Some drives have a one-time option to switch the partition boundary, while others might require
+   reformatting or repartitioning.
+
+   To be safe in Linux, you could just use the entire drive: ``/dev/sdb`` instead of ``/dev/sdb1`` and
+   Traffic Server will do the right thing. Misaligned partitions on Linux are auto-detected.
+
+   For example: If ``/sys/block/sda/sda1/alignment_offset`` is non-zero, ATS will offset reads/writes to
+   that disk by that alignment. If Linux knows about any existing partition misalignments, ATS will compensate.
+
+   Partitions formatted to support hardware sector size of more than 512 (e.g. 4096) will result in all
+   objects stored in the cache to be integral multiples of 4096 bytes, which will result in some waste for
+   small files.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.http INT 1
    :reloadable:
@@ -1988,97 +2002,26 @@ Logging Configuration
 
    Enables (``1``) or disables (``0``) custom logging.
 
-.. ts:cv:: CONFIG proxy.config.log.squid_log_enabled INT 1
-   :reloadable:
+.. note::
+    The following defaults (with the format``CONFIG proxy.config.log.[format].[default]`` have been removed from ``records.config``.
+    They can be accessed by editing :file:`logs_xml.config`.
 
-   Enables (``1``) or disables (``0``) the `squid log file format
-   <../working-log-files/log-formats#SquidFormat>`_.
+    - ``log_enabled`` INT 1
+        Enables (``1``) or disables (``0``) the file format.
 
-.. ts:cv:: CONFIG proxy.config.log.squid_log_is_ascii INT 0
-   :reloadable:
+    - ``log_is_ascii`` INT 0
+        The log file type:
+           - ``1`` = ASCII
+           - ``0`` = binary
 
-   The squid log file type:
+    - ``log_name`` STRING [format]
+        The filename (ex. :ref:`squid log <log-formats-squid-format>`).
 
-   -  ``1`` = ASCII
-   -  ``0`` = binary
+    - ``log_header_ STRING NULL
+        The file header text (ex. :ref:`squid log <log-formats-squid-format>`).
 
-.. ts:cv:: CONFIG proxy.config.log.squid_log_name STRING squid
-   :reloadable:
-
-   The  :ref:`squid log <log-formats-squid-format>` filename.
-
-.. ts:cv:: CONFIG proxy.config.log.squid_log_header STRING NULL
-
-   The :ref:`squid log <log-formats-squid-format>` file header text.
-
-.. ts:cv:: CONFIG proxy.config.log.common_log_enabled INT 0
-   :reloadable:
-
-   Enables (``1``) or disables (``0``) the :ref:`Netscape common log file format <admin-log-formats-netscape-common>`.
-
-.. ts:cv:: CONFIG proxy.config.log.common_log_is_ascii INT 1
-   :reloadable:
-
-   The :ref:`Netscape common log <admin-log-formats-netscape-common>` file type:
-
-   -  ``1`` = ASCII
-   -  ``0`` = binary
-
-.. ts:cv:: CONFIG proxy.config.log.common_log_name STRING common
-   :reloadable:
-
-   The :ref:`Netscape common log <admin-log-formats-netscape-common>` filename.
-
-.. ts:cv:: CONFIG proxy.config.log.common_log_header STRING NULL
-   :reloadable:
-
-   The :ref:`Netscape common log <admin-log-formats-netscape-common>` file header text.
-
-.. ts:cv:: CONFIG proxy.config.log.extended_log_enabled INT 0
-   :reloadable:
-
-   Enables (``1``) or disables (``0``) the `Netscape extended log file format
-   <../working-log-files/log-formats#NetscapeFormats>`_.
-
-.. ts:cv:: CONFIG proxy.config.log.extended_log_is_ascii INT 0
-
-   The :ref:`Netscape extended log <admin-log-formats-netscape-extended>` file type:
-
-   -  ``1`` = ASCII
-   -  ``0`` = binary
-
-.. ts:cv:: CONFIG proxy.config.log.extended_log_name STRING extended
-
-   The :ref:`Netscape extended log <admin-log-formats-netscape-extended>` filename.
-
-.. ts:cv:: CONFIG proxy.config.log.extended_log_header STRING NULL
-   :reloadable:
-
-   The :ref:`Netscape extended log <admin-log-formats-netscape-extended>` file header text.
-
-.. ts:cv:: CONFIG proxy.config.log.extended2_log_enabled INT 0
-   :reloadable:
-
-   Enables (``1``) or disables (``0``) the `Netscape Extended-2 log file
-   format <../working-log-files/log-formats#NetscapeFormats>`_.
-
-.. ts:cv:: CONFIG proxy.config.log.extended2_log_is_ascii INT 1
-   :reloadable:
-
-   The :ref:`Netscape Extended-2 log <admin-log-formats-netscape-extended2>` file type:
-
-   -  ``1`` = ASCII
-   -  ``0`` = binary
-
-.. ts:cv:: CONFIG proxy.config.log.extended2_log_name STRING extended2
-   :reloadable:
-
-   The :ref:`Netscape Extended-2 log <admin-log-formats-netscape-extended2>` filename.
-
-.. ts:cv:: CONFIG proxy.config.log.extended2_log_header STRING NULL
-   :reloadable:
-
-   The :ref:`Netscape Extended-2 log <admin-log-formats-netscape-extended2>` file header text.
+    The format can be either ``squid`` (Squid Format), ``common`` (Netscape Common),  ``extended`` (Netscape Extended),
+    or  ``extended2`` (Netscape Extended-2).
 
 .. ts:cv:: CONFIG proxy.config.log.separate_icp_logs INT 0
    :reloadable:
@@ -2268,29 +2211,6 @@ URL Remap Rules
 .. ts:cv:: CONFIG proxy.config.url_remap.filename STRING remap.config
 
    Sets the name of the :file:`remap.config` file.
-
-.. ts:cv:: CONFIG proxy.config.url_remap.default_to_server_pac INT 0
-   :reloadable:
-
-   Enables (``1``) or disables (``0``) requests for a PAC file on the proxy
-   service port (8080 by default) to be redirected to the PAC
-   port. For this type of redirection to work, the variable
-   `proxy.config.reverse_proxy.enabled`_ must be set to ``1``.
-
-.. ts:cv:: CONFIG proxy.config.url_remap.default_to_server_pac_port INT -1
-   :reloadable:
-
-   Sets the PAC port so that PAC requests made to the Traffic Server
-   proxy service port are redirected this port. ``-1`` is the default
-   setting that sets the PAC port to the autoconfiguration port (the
-   default autoconfiguration port is 8083). This variable can be used
-   together with the `proxy.config.url_remap.default_to_server_pac`_
-   variable to get a PAC file from a different port. You must create
-   and run a process that serves a PAC file on this port. For example:
-   if you create a Perl script that listens on port 9000 and writes a
-   PAC file in response to any request, then you can set this variable
-   to ``9000``. Browsers that request the PAC file from a proxy server
-   on port 8080 will get the PAC file served by the Perl script.
 
 .. ts:cv:: CONFIG proxy.config.url_remap.remap_required INT 1
    :reloadable:

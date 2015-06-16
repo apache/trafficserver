@@ -142,17 +142,6 @@ LocalManager::clearStats(const char *name)
   }
 }
 
-// void LocalManager::syslogThrInit()
-//
-//    On the DEC, syslog is per thread.  This function
-//      allows a thread to init syslog with the appropriate
-//      configuration
-//
-void
-LocalManager::syslogThrInit()
-{
-}
-
 // bool LocalManager::clusterOk()
 //
 //   Returns false if the proxy has been up for more than

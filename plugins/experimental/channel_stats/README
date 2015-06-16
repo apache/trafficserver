@@ -1,3 +1,13 @@
+************************************************************
+THIS PLUGIN IS DEPRECATED IN FAVOR OF THE remap_stats PLUGIN
+************************************************************
+
+You can still run `make && make install` in this directory
+to build and install the plugin, however it will not be
+built or installed by default.
+
+************************************************************
+
 channel_stats plugin for Apache Traffic Server 3.0.0+
 
 About channel_stats plugin

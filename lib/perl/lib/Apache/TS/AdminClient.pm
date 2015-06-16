@@ -310,10 +310,7 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.accept_threads
  proxy.config.task_threads
  proxy.config.admin.admin_user
- proxy.config.admin.autoconf.localhost_only
- proxy.config.admin.autoconf.pac_filename
- proxy.config.admin.autoconf_port
- proxy.config.admin.autoconf.doc_root
+ proxy.config.admin.synthetic_port
  proxy.config.admin.cli_path
  proxy.config.admin.number_config_bak
  proxy.config.admin.user_id
@@ -584,19 +581,7 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.log.collation_port
  proxy.config.log.collation_retry_sec
  proxy.config.log.collation_secret
- proxy.config.log.common_log_enabled
- proxy.config.log.common_log_header
- proxy.config.log.common_log_is_ascii
- proxy.config.log.common_log_name
  proxy.config.log.custom_logs_enabled
- proxy.config.log.extended2_log_enabled
- proxy.config.log.extended2_log_header
- proxy.config.log.extended2_log_is_ascii
- proxy.config.log.extended2_log_name
- proxy.config.log.extended_log_enabled
- proxy.config.log.extended_log_header
- proxy.config.log.extended_log_is_ascii
- proxy.config.log.extended_log_name
  proxy.config.log.file_stat_frequency
  proxy.config.log.hostname
  proxy.config.log.hosts_config_file
@@ -618,10 +603,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.log.separate_host_logs
  proxy.config.log.separate_icp_logs
  proxy.config.log.space_used_frequency
- proxy.config.log.squid_log_enabled
- proxy.config.log.squid_log_header
- proxy.config.log.squid_log_is_ascii
- proxy.config.log.squid_log_name
  proxy.config.log.xml_config_file
  proxy.config.manager_binary
  proxy.config.net.connections_throttle
@@ -704,8 +685,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.udp.free_cancelled_pkts_sec
  proxy.config.udp.periodic_cleanup
  proxy.config.udp.send_retries
- proxy.config.url_remap.default_to_server_pac
- proxy.config.url_remap.default_to_server_pac_port
  proxy.config.url_remap.filename
  proxy.config.url_remap.pristine_host_hdr
  proxy.config.url_remap.remap_required

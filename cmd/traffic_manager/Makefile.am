@@ -29,7 +29,6 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/mgmt/api/include \
   -I$(top_srcdir)/mgmt/cluster \
   -I$(top_srcdir)/mgmt/utils \
-  -I$(top_srcdir)/mgmt/web2 \
   -I$(top_srcdir)/lib \
   -I$(top_builddir)/lib
 
@@ -47,10 +46,13 @@ traffic_manager_SOURCES = \
   StatType.cc \
   StatType.h \
   StatXML.cc \
-  StatXML.h
+  StatXML.h \
+  MgmtHandlers.cc \
+  MgmtHandlers.h \
+  WebOverview.cc \
+  WebOverview.h
 
 traffic_manager_LDADD = \
-  $(top_builddir)/mgmt/web2/libweb.a \
   $(top_builddir)/mgmt/api/libmgmtapilocal.la \
   $(top_builddir)/mgmt/libmgmt_lm.la \
   $(top_builddir)/proxy/hdrs/libhdrs.a \

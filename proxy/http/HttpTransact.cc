@@ -388,7 +388,7 @@ does_method_effect_cache(int method)
 inline static HttpTransact::StateMachineAction_t
 how_to_open_connection(HttpTransact::State *s)
 {
-  ink_assert(s->pending_work == NULL);
+  ink_assert((s->pending_work == NULL) || (s->current.request_to == HttpTransact::PARENT_PROXY));
 
   // Originally we returned which type of server to open
   // Now, however, we may want to issue a cache
@@ -709,11 +709,10 @@ HttpTransact::StartRemapRequest(State *s)
 
   const char syntxt[] = "synthetic.txt";
 
-  s->cop_test_page =
-    (ptr_len_cmp(host, host_len, local_host_ip_str, sizeof(local_host_ip_str) - 1) == 0) &&
-    (ptr_len_cmp(path, path_len, syntxt, sizeof(syntxt) - 1) == 0) && port == s->http_config_param->autoconf_port &&
-    s->method == HTTP_WKSIDX_GET && s->orig_scheme == URL_WKSIDX_HTTP &&
-    (!s->http_config_param->autoconf_localhost_only || ats_ip4_addr_cast(&s->client_info.addr.sa) == htonl(INADDR_LOOPBACK));
+  s->cop_test_page = (ptr_len_cmp(host, host_len, local_host_ip_str, sizeof(local_host_ip_str) - 1) == 0) &&
+                     (ptr_len_cmp(path, path_len, syntxt, sizeof(syntxt) - 1) == 0) &&
+                     port == s->http_config_param->synthetic_port && s->method == HTTP_WKSIDX_GET &&
+                     s->orig_scheme == URL_WKSIDX_HTTP && ats_ip4_addr_cast(&s->client_info.addr.sa) == htonl(INADDR_LOOPBACK);
 
   //////////////////////////////////////////////////////////////////
   // FIX: this logic seems awfully convoluted and hard to follow; //
@@ -2689,11 +2688,6 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
         //        ink_release_assert(s->current.request_to == PARENT_PROXY ||
         //                    s->http_config_param->no_dns_forward_to_parent != 0);
 
-        // Set ourselves up to handle pending revalidate issues
-        //  after the PP DNS lookup
-        ink_assert(s->pending_work == NULL);
-        s->pending_work = issue_revalidate;
-
         // We must be going a PARENT PROXY since so did
         //  origin server DNS lookup right after state Start
         //
@@ -2702,6 +2696,11 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
         //  missing ip but we won't take down the system
         //
         if (s->current.request_to == PARENT_PROXY) {
+          // Set ourselves up to handle pending revalidate issues
+          //  after the PP DNS lookup
+          ink_assert(s->pending_work == NULL);
+          s->pending_work = issue_revalidate;
+
           TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, PPDNSLookup);
         } else if (s->current.request_to == ORIGIN_SERVER) {
           TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, OSDNSLookup);

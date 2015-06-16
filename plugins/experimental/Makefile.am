@@ -21,7 +21,6 @@ SUBDIRS = \
  buffer_upload \
  cache_range_requests \
  cache_promote \
- channel_stats \
  collapsed_connection \
  custom_redirect \
  epic \
@@ -40,7 +39,8 @@ SUBDIRS = \
  sslheaders \
  stale_while_revalidate \
  url_sig \
- xdebug
+ xdebug \
+ mp4
 
 if HAS_MYSQL
   SUBDIRS += mysql_remap

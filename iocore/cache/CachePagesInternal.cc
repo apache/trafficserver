@@ -145,7 +145,7 @@ ShowCacheInternal::showVolConnections(int event, Event *e)
     int ib = 0, xd = 0;
     URL uu;
 
-    MUTEX_LOCK(lock2, vc->mutex, mutex->thread_holding);
+    SCOPED_MUTEX_LOCK(lock2, vc->mutex, mutex->thread_holding);
     // if vc is closed ignore - Ramki 08/30/2000
     if (vc->closed == 1)
       continue;

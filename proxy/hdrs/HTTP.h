@@ -672,7 +672,7 @@ private:
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline HTTPVersion::HTTPVersion() : m_version(HTTP_VERSION(0, 9))
+inline HTTPVersion::HTTPVersion() : m_version(HTTP_VERSION(1, 0))
 {
 }
 

@@ -54,7 +54,7 @@ copy_from_buffer_reader(void *dst, IOBufferReader *reader, unsigned nbytes)
 static int
 send_connection_event(Continuation *cont, int event, void *edata)
 {
-  MUTEX_LOCK(lock, cont->mutex, this_ethread());
+  SCOPED_MUTEX_LOCK(lock, cont->mutex, this_ethread());
   return cont->handleEvent(event, edata);
 }
 
@@ -83,7 +83,7 @@ Http2ClientSession::start()
 {
   VIO *read_vio;
 
-  MUTEX_LOCK(lock, this->mutex, this_ethread());
+  SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
 
   SET_HANDLER(&Http2ClientSession::main_event_handler);
   HTTP2_SET_SESSION_HANDLER(&Http2ClientSession::state_read_connection_preface);
@@ -322,7 +322,7 @@ Http2ClientSession::state_start_frame_read(int event, void *edata)
 
     // If we know up front that the payload is too long, nuke this connection.
     if (this->current_hdr.length > this->connection_state.server_settings.get(HTTP2_SETTINGS_MAX_FRAME_SIZE)) {
-      MUTEX_LOCK(lock, this->connection_state.mutex, this_ethread());
+      SCOPED_MUTEX_LOCK(lock, this->connection_state.mutex, this_ethread());
       if (!this->connection_state.is_state_closed()) {
         this->connection_state.send_goaway_frame(this->current_hdr.streamid, HTTP2_ERROR_FRAME_SIZE_ERROR);
       }
@@ -331,7 +331,7 @@ Http2ClientSession::state_start_frame_read(int event, void *edata)
 
     // Allow only stream id = 0 or streams started by client.
     if (this->current_hdr.streamid != 0 && !http2_is_client_streamid(this->current_hdr.streamid)) {
-      MUTEX_LOCK(lock, this->connection_state.mutex, this_ethread());
+      SCOPED_MUTEX_LOCK(lock, this->connection_state.mutex, this_ethread());
       if (!this->connection_state.is_state_closed()) {
         this->connection_state.send_goaway_frame(this->current_hdr.streamid, HTTP2_ERROR_PROTOCOL_ERROR);
       }
@@ -340,7 +340,7 @@ Http2ClientSession::state_start_frame_read(int event, void *edata)
 
     // CONTINUATIONs MUST follow behind HEADERS which doesn't have END_HEADERS
     if (this->connection_state.get_continued_id() != 0 && this->current_hdr.type != HTTP2_FRAME_TYPE_CONTINUATION) {
-      MUTEX_LOCK(lock, this->connection_state.mutex, this_ethread());
+      SCOPED_MUTEX_LOCK(lock, this->connection_state.mutex, this_ethread());
       if (!this->connection_state.is_state_closed()) {
         this->connection_state.send_goaway_frame(this->current_hdr.streamid, HTTP2_ERROR_PROTOCOL_ERROR);
       }

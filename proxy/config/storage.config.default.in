@@ -33,11 +33,15 @@
 # Examples: Using O_DIRECT on disks (Linux kernel >= 2.6.3,
 # FreeBSD > 5.3)
 #
-#      /dev/sdb             # Linux
-#      /dev/ada1            # FreeBSD
+#      /dev/disc/by-id/[Insert_ID_Here_12345]         		# Linux
+#      /dev/disc/by-path/[Insert-Path-Here:12:34:56-1.0.0.0]	# Linux
 #
+#      /dev/ada1            					# FreeBSD
 #
-# Note that when using these raw devices in O_DIRECT mode, you
+# Note that disks are identified by id or path. This is to prevent changes
+# by the kernel (which could occur if a disk was simply described as /dev/sda, sdb, etc.).
+#
+# Also note that when using these raw devices in O_DIRECT mode, you
 # do not need to specify the partition size. It's automatically
 # detected. For more examples and a complete documentation see
 #

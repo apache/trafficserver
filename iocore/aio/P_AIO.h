@@ -68,7 +68,7 @@ AIOCallbackInternal::io_complete(int event, void *data)
   if (!ok() && aio_err_callbck)
     eventProcessor.schedule_imm(aio_err_callbck, ET_CALL, AIO_EVENT_DONE);
   mutex = action.mutex;
-  MUTEX_LOCK(lock, mutex, this_ethread());
+  SCOPED_MUTEX_LOCK(lock, mutex, this_ethread());
   if (!action.cancelled)
     action.continuation->handleEvent(AIO_EVENT_DONE, this);
   return EVENT_DONE;
@@ -81,7 +81,7 @@ AIOVec::mainEvent(int /* event */, Event *)
   if (completed < size)
     return EVENT_CONT;
   else if (completed == size) {
-    MUTEX_LOCK(lock, action.mutex, this_ethread());
+    SCOPED_MUTEX_LOCK(lock, action.mutex, this_ethread());
     if (!action.cancelled)
       action.continuation->handleEvent(AIO_EVENT_DONE, first);
     delete this;

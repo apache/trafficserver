@@ -33,6 +33,8 @@
 
 #include "ink_apidefs.h"
 
+typedef int64_t cache_generation_t;
+
 enum URLType {
   URL_TYPE_NONE,
   URL_TYPE_HTTP,
@@ -212,7 +214,7 @@ void url_called_set(URLImpl *url);
 char *url_string_get_buf(URLImpl *url, char *dstbuf, int dstbuf_size, int *length);
 
 const char *url_scheme_get(URLImpl *url, int *length);
-void url_MD5_get(URLImpl *url, CryptoHash *md5);
+void url_MD5_get(const URLImpl *url, CryptoHash *md5, cache_generation_t generation = -1);
 void url_host_MD5_get(URLImpl *url, CryptoHash *md5);
 const char *url_scheme_set(HdrHeap *heap, URLImpl *url, const char *value, int value_wks_idx, int length, bool copy_string);
 
@@ -283,7 +285,7 @@ public:
   char *string_get(Arena *arena, int *length = NULL);
   char *string_get_ref(int *length = NULL);
   char *string_get_buf(char *dstbuf, int dsbuf_size, int *length = NULL);
-  void hash_get(CryptoHash *md5);
+  void hash_get(CryptoHash *md5, cache_generation_t generation = -1) const;
   void host_hash_get(CryptoHash *md5);
 
   const char *scheme_get(int *length);
@@ -470,10 +472,10 @@ URL::string_get_buf(char *dstbuf, int dsbuf_size, int *length)
   -------------------------------------------------------------------------*/
 
 inline void
-URL::hash_get(CryptoHash *md5)
+URL::hash_get(CryptoHash *md5, cache_generation_t generation) const
 {
   ink_assert(valid());
-  url_MD5_get(m_url_impl, md5);
+  url_MD5_get(m_url_impl, md5, generation);
 }
 
 /*-------------------------------------------------------------------------

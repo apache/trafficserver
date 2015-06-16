@@ -126,9 +126,9 @@ provides this and so must any substitute. This is entirely the responsibility
 of the plugin; there is no way for the |TS| core to detect such an occurrence.
 
 If :c:func:`TSHttpTxnCacheLookupUrlGet()` is called after new cache url set by
-:c:func:`TSCacheUrlSet()`, it should use a URL location created by
-:c:func:`TSUrlCreate()` as its third input parameter instead of getting
-``url_loc`` from the client request.
+:c:func:`TSHttpTxnCacheLookupUrlSet()` or :c:func:`TSCacheUrlSet()`, it should
+use a URL location created by :c:func:`TSUrlCreate()` as its third input
+parameter instead of getting ``url_loc`` from the client request.
 
 It is a requirement that the string be syntactically a URL but otherwise it is
 completely arbitrary and need not have any path. For instance, if the company

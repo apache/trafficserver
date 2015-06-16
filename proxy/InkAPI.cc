@@ -1344,10 +1344,6 @@ api_init()
   if (init) {
     init = 0;
 
-#ifndef UNSAFE_FORCE_MUTEX
-    ink_mutex_init(&big_mux, "APIMongoMutex");
-#endif
-
     /* URL schemes */
     TS_URL_SCHEME_FILE = URL_SCHEME_FILE;
     TS_URL_SCHEME_FTP = URL_SCHEME_FTP;
@@ -4246,8 +4242,6 @@ TSContSchedule(TSCont contp, ink_hrtime timeout, TSThreadPool tp)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
 
-  FORCE_PLUGIN_MUTEX(contp);
-
   INKContInternal *i = (INKContInternal *)contp;
   TSAction action;
 
@@ -4300,8 +4294,6 @@ TSContScheduleEvery(TSCont contp, ink_hrtime every, TSThreadPool tp)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
 
-  FORCE_PLUGIN_MUTEX(contp);
-
   INKContInternal *i = (INKContInternal *)contp;
   TSAction action;
 
@@ -4335,7 +4327,7 @@ TSHttpSchedule(TSCont contp, TSHttpTxn txnp, ink_hrtime timeout)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
 
-  FORCE_PLUGIN_MUTEX(contp);
+  FORCE_PLUGIN_SCOPED_MUTEX(contp);
 
   INKContInternal *i = (INKContInternal *)contp;
 
@@ -4865,6 +4857,30 @@ TSHttpTxnCacheLookupUrlGet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc obj)
   l_url = sm->t_state.cache_info.lookup_url;
   if (l_url && l_url->valid()) {
     u.copy(l_url);
+    return TS_SUCCESS;
+  }
+
+  return TS_ERROR;
+}
+
+TSReturnCode
+TSHttpTxnCacheLookupUrlSet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc obj)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_url_handle(obj) == TS_SUCCESS);
+
+  HttpSM *sm = (HttpSM *)txnp;
+  URL u, *l_url;
+
+  u.m_heap = ((HdrHeapSDKHandle *)bufp)->m_heap;
+  u.m_url_impl = (URLImpl *)obj;
+  if (!u.valid())
+    return TS_ERROR;
+
+  l_url = sm->t_state.cache_info.lookup_url;
+  if (l_url && l_url->valid()) {
+    l_url->copy(&u);
     return TS_SUCCESS;
   }
 
@@ -6347,7 +6363,7 @@ TSVConnRead(TSVConn connp, TSCont contp, TSIOBuffer bufp, int64_t nbytes)
   sdk_assert(sdk_sanity_check_iocore_structure(bufp) == TS_SUCCESS);
   sdk_assert(nbytes >= 0);
 
-  FORCE_PLUGIN_MUTEX(contp);
+  FORCE_PLUGIN_SCOPED_MUTEX(contp);
   VConnection *vc = (VConnection *)connp;
 
   return reinterpret_cast<TSVIO>(vc->do_io(VIO::READ, (INKContInternal *)contp, nbytes, (MIOBuffer *)bufp));
@@ -6361,7 +6377,7 @@ TSVConnWrite(TSVConn connp, TSCont contp, TSIOBufferReader readerp, int64_t nbyt
   sdk_assert(sdk_sanity_check_iocore_structure(readerp) == TS_SUCCESS);
   sdk_assert(nbytes >= 0);
 
-  FORCE_PLUGIN_MUTEX(contp);
+  FORCE_PLUGIN_SCOPED_MUTEX(contp);
   VConnection *vc = (VConnection *)connp;
 
   return reinterpret_cast<TSVIO>(vc->do_io_write((INKContInternal *)contp, nbytes, (IOBufferReader *)readerp));
@@ -6537,9 +6553,18 @@ TSNetConnect(TSCont contp, sockaddr const *addr)
   sdk_assert(sdk_sanity_check_continuation(contp) == TS_SUCCESS);
   sdk_assert(ats_is_ip(addr));
 
-  FORCE_PLUGIN_MUTEX(contp);
+  HttpConfigParams *http_config_param = HttpConfig::acquire();
+  NetVCOptions opt;
+  if (http_config_param) {
+    opt.set_sock_param(http_config_param->oride.sock_recv_buffer_size_out, http_config_param->oride.sock_send_buffer_size_out,
+                       http_config_param->oride.sock_option_flag_out, http_config_param->oride.sock_packet_mark_out,
+                       http_config_param->oride.sock_packet_tos_out);
+  }
+  HttpConfig::release(http_config_param);
 
-  return reinterpret_cast<TSAction>(netProcessor.connect_re(reinterpret_cast<INKContInternal *>(contp), addr));
+  FORCE_PLUGIN_SCOPED_MUTEX(contp);
+
+  return reinterpret_cast<TSAction>(netProcessor.connect_re(reinterpret_cast<INKContInternal *>(contp), addr, &opt));
 }
 
 TSAction
@@ -6554,7 +6579,7 @@ TSNetConnectTransparent(TSCont contp, sockaddr const *client_addr, sockaddr cons
   opt.local_ip.assign(client_addr);
   opt.local_port = ats_ip_port_host_order(client_addr);
 
-  FORCE_PLUGIN_MUTEX(contp);
+  FORCE_PLUGIN_SCOPED_MUTEX(contp);
 
   return reinterpret_cast<TSAction>(netProcessor.connect_re(reinterpret_cast<INKContInternal *>(contp), server_addr, &opt));
 }
@@ -6570,7 +6595,7 @@ TSNetAccept(TSCont contp, int port, int domain, int accept_threads)
 
   // TODO: Does this imply that only one "accept thread" could be
   // doing an accept at any time?
-  FORCE_PLUGIN_MUTEX(contp);
+  FORCE_PLUGIN_SCOPED_MUTEX(contp);
 
   // If it's not IPv6, force to IPv4.
   opt.ip_family = domain == AF_INET6 ? AF_INET6 : AF_INET;
@@ -6578,8 +6603,14 @@ TSNetAccept(TSCont contp, int port, int domain, int accept_threads)
   opt.local_port = port;
   opt.frequent_accept = false;
 
-  INKContInternal *i = (INKContInternal *)contp;
-  return (TSAction)netProcessor.accept(i, opt);
+  REC_ReadConfigInteger(opt.recv_bufsize, "proxy.config.net.sock_recv_buffer_size_in");
+  REC_ReadConfigInteger(opt.send_bufsize, "proxy.config.net.sock_send_buffer_size_in");
+  REC_ReadConfigInteger(opt.sockopt_flags, "proxy.config.net.sock_option_flag_in");
+  REC_ReadConfigInteger(opt.packet_mark, "proxy.config.net.sock_packet_mark_in");
+  REC_ReadConfigInteger(opt.packet_tos, "proxy.config.net.sock_packet_tos_in");
+
+  INKContInternal *i = reinterpret_cast<INKContInternal *>(contp);
+  return reinterpret_cast<TSAction>(netProcessor.accept(i, opt));
 }
 
 /* From proxy/http/HttpProxyServerMain.c: */
@@ -6616,7 +6647,7 @@ TSHostLookup(TSCont contp, const char *hostname, size_t namelen)
   sdk_assert(sdk_sanity_check_null_ptr((void *)hostname) == TS_SUCCESS);
   sdk_assert(namelen > 0);
 
-  FORCE_PLUGIN_MUTEX(contp);
+  FORCE_PLUGIN_SCOPED_MUTEX(contp);
 
   INKContInternal *i = (INKContInternal *)contp;
   return (TSAction)hostDBProcessor.getbyname_re(i, hostname, namelen);
@@ -6675,7 +6706,7 @@ TSCacheRead(TSCont contp, TSCacheKey key)
   sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_cachekey(key) == TS_SUCCESS);
 
-  FORCE_PLUGIN_MUTEX(contp);
+  FORCE_PLUGIN_SCOPED_MUTEX(contp);
 
   CacheInfo *info = (CacheInfo *)key;
   Continuation *i = (INKContInternal *)contp;
@@ -6689,7 +6720,7 @@ TSCacheWrite(TSCont contp, TSCacheKey key)
   sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_cachekey(key) == TS_SUCCESS);
 
-  FORCE_PLUGIN_MUTEX(contp);
+  FORCE_PLUGIN_SCOPED_MUTEX(contp);
 
   CacheInfo *info = (CacheInfo *)key;
   Continuation *i = (INKContInternal *)contp;
@@ -6704,7 +6735,7 @@ TSCacheRemove(TSCont contp, TSCacheKey key)
   sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_cachekey(key) == TS_SUCCESS);
 
-  FORCE_PLUGIN_MUTEX(contp);
+  FORCE_PLUGIN_SCOPED_MUTEX(contp);
 
   CacheInfo *info = (CacheInfo *)key;
   INKContInternal *i = (INKContInternal *)contp;
@@ -6718,7 +6749,7 @@ TSCacheScan(TSCont contp, TSCacheKey key, int KB_per_second)
   sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
   // NOTE: key can be NULl here, so don't check for it.
 
-  FORCE_PLUGIN_MUTEX(contp);
+  FORCE_PLUGIN_SCOPED_MUTEX(contp);
 
   INKContInternal *i = (INKContInternal *)contp;
 
@@ -7942,6 +7973,10 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   case TS_CONFIG_HTTP_CACHE_RANGE_WRITE:
     ret = &overridableHttpConfig->cache_range_write;
     break;
+  case TS_CONFIG_HTTP_CACHE_GENERATION:
+    typ = OVERRIDABLE_TYPE_INT;
+    ret = &overridableHttpConfig->cache_generation_number;
+    break;
   case TS_CONFIG_HTTP_POST_CHECK_CONTENT_LENGTH_ENABLED:
     ret = &overridableHttpConfig->post_check_content_length_enabled;
     break;
@@ -8212,6 +8247,8 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
   case 34:
     if (!strncmp(name, "proxy.config.http.chunking_enabled", length))
       cnf = TS_CONFIG_HTTP_CHUNKING_ENABLED;
+    else if (!strncmp(name, "proxy.config.http.cache.generation", length))
+      cnf = TS_CONFIG_HTTP_CACHE_GENERATION;
     break;
 
   case 35:

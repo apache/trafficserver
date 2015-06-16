@@ -68,9 +68,10 @@ public:
     captive_action.init(this);
   }
 
-  Action *open_read(URL *url, HTTPHdr *hdr, CacheLookupHttpConfig *params, time_t pin_in_cache);
+  Action *open_read(const HttpCacheKey *key, URL *url, HTTPHdr *hdr, CacheLookupHttpConfig *params, time_t pin_in_cache);
 
-  Action *open_write(URL *url, HTTPHdr *request, CacheHTTPInfo *old_info, time_t pin_in_cache, bool retry, bool allow_multiple);
+  Action *open_write(const HttpCacheKey *key, URL *url, HTTPHdr *request, CacheHTTPInfo *old_info, time_t pin_in_cache, bool retry,
+                     bool allow_multiple);
 
   CacheVConnection *cache_read_vc;
   CacheVConnection *cache_write_vc;
@@ -144,7 +145,7 @@ public:
 
 private:
   void do_schedule_in();
-  Action *do_cache_open_read();
+  Action *do_cache_open_read(const HttpCacheKey &);
 
   int state_cache_open_read(int event, void *data);
   int state_cache_open_write(int event, void *data);
@@ -165,6 +166,7 @@ private:
 
   // Common parameters
   URL *lookup_url;
+  HttpCacheKey cache_key;
 
   // to keep track of multiple cache lookups
   int lookup_max_recursive;

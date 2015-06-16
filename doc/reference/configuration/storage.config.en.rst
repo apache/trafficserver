@@ -130,19 +130,34 @@ The following example is for the Solaris operating system::
 
 Linux Example
 -------------
+.. note::
+    Rather than refer to disk devices like ``/dev/sda``, ``/dev/sdb``, etc.,
+    modern Linux supports `alternative symlinked names for disk devices
+    <https://wiki.archlinux.org/index.php/persistent_block_device_naming#by-id_and_by-path>`_ in the ``/dev/disk``
+    directory structure. As noted for the :ref:`assignment-table` the path used for the disk can effect
+    the cache if it changes. This can be ameloriated in some cases by using one of the alternate paths
+    in via ``/dev/disk``. Note that if the ``by-id`` or ``by-path`` style is used, replacing a failed drive will cause
+    that path to change because the new drive will have a different physical ID or path. The original hash string can
+    be kept by adding :arg:`id` or :arg:`path` with the original path to the storage line.
+
+    If this is not sufficient then the :arg:`id` or :arg:`path` argument should be used to create a more permanent
+    assignment table. An example would be::
+
+       /dev/sde id=cache.disk.0
+       /dev/sdg id=cache.disk.1
 
 The following example will use an entire raw disk in the Linux operating
 system::
 
-   /dev/sde volume=1
-   /dev/sdf volume=2
+   /dev/disk/by-id/[DiskA_ID]    volume=1
+   /dev/disk/by-path/[DiskB_Path]   volume=2
 
 In order to make sure :program:`traffic_server` will have access to this disk
 you can use :manpage:`udev(7)` to persistently set the right permissions. The
 following rules are targeted for an Ubuntu system, and stored in
 ``/etc/udev/rules.d/51-cache-disk.rules``::
 
-   # Assign /dev/sde and /dev/sdf to the tserver group
+   # Assign DiskA and DiskB to the tserver group
    # make the assignment final, no later changes allowed to the group!
    SUBSYSTEM=="block", KERNEL=="sd[ef]", GROUP:="tserver"
 
@@ -150,18 +165,6 @@ In order to apply these settings, trigger a reload with :manpage:`udevadm(8)`:::
 
    udevadm trigger --subsystem-match=block
 
-As an implementation note, modern Linux supports `alternative symlinked names for disk devices
-<https://wiki.archlinux.org/index.php/persistent_block_device_naming>`_ in the ``/dev/disk``
-directory structure. As noted for the :ref:`assignment-table` the path used for the disk can effect
-the cache if it changes. This can be ameloriated in some cases by using one of the alternate paths
-in via ``/dev/disk``. Note that if the ``by-id`` style is used, replacing a failed drive will cause
-that path to change because the new drive will have a different physical ID. The original hash string can be kept by adding :arg:`id` with the original path to the storage line.
-
-If this is not sufficient then the :arg:`id` argument should be used to create a more permanent assignment table. An
-example would be::
-
-   /dev/sde id=cache.disk.0
-   /dev/sdg id=cache.disk.1
 
 FreeBSD Example
 ---------------

@@ -233,7 +233,7 @@ void inline SSLSessionBucket::removeOldestSession()
 void
 SSLSessionBucket::removeSession(const SSLSessionID &id)
 {
-  MUTEX_LOCK(lock, mutex, this_ethread()); // We can't bail on contention here because this session MUST be removed.
+  SCOPED_MUTEX_LOCK(lock, mutex, this_ethread()); // We can't bail on contention here because this session MUST be removed.
   SSLSession *node = queue.head;
   while (node) {
     if (node->session_id == id) {

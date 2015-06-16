@@ -35,7 +35,6 @@
 
 struct txndata {
   char *range_value;
-  char *request_url;
 };
 
 static void handle_read_request_header(TSCont, TSEvent, void *);
@@ -104,10 +103,9 @@ range_header_check(TSHttpTxn txnp)
           req_url = TSHttpTxnEffectiveUrlStringGet(txnp, &url_length);
           snprintf(cache_key_url, 8192, "%s-%s", req_url, txn_state->range_value);
           TSDebug(PLUGIN_NAME, "Rewriting cache URL for %s to %s", req_url, cache_key_url);
-          txn_state->request_url = (char *)TSmalloc(url_length + 1);
-          strncpy(txn_state->request_url, req_url, url_length);
-          txn_state->request_url[url_length] = 0;
-
+          if (req_url) {
+            TSfree(req_url);
+          }
           // set the cache key.
           if (TS_SUCCESS != TSCacheUrlSet(txnp, cache_key_url, strlen(cache_key_url))) {
             TSDebug(PLUGIN_NAME, "TSCacheUrlSet(): failed to change the cache url to %s.", cache_key_url);
@@ -411,9 +409,12 @@ transaction_handler(TSCont contp, TSEvent event, void *edata)
     break;
   case TS_EVENT_HTTP_TXN_CLOSE:
     TSDebug(PLUGIN_NAME, "Starting handle_transaction_close().");
-    TSfree(txn_state);
-    TSfree(txn_state->range_value);
-    TSfree(txn_state->request_url);
+    if (txn_state) {
+      if (txn_state->range_value) {
+        TSfree(txn_state->range_value);
+      }
+      TSfree(txn_state);
+    }
     TSContDestroy(contp);
     break;
   default:

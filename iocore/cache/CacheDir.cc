@@ -378,97 +378,6 @@ dir_clean_vol(Vol *d)
   CHECK_DIR(d);
 }
 
-#if TS_USE_INTERIM_CACHE == 1
-static inline void
-interim_dir_clean_bucket(Dir *b, int s, Vol *vol, int offset)
-{
-  Dir *e = b, *p = NULL;
-  Dir *seg = dir_segment(s, vol);
-  do {
-    if (dir_ininterim(e) && dir_get_index(e) == offset) {
-      e = dir_delete_entry(e, p, s, vol);
-      continue;
-    }
-    p = e;
-    e = next_dir(e, seg);
-  } while (e);
-}
-
-void
-clear_interimvol_dir(Vol *v, int offset)
-{
-  for (int i = 0; i < v->segments; i++) {
-    Dir *seg = dir_segment(i, v);
-    for (int j = 0; j < v->buckets; j++) {
-      interim_dir_clean_bucket(dir_bucket(j, seg), i, v, offset);
-    }
-  }
-}
-void
-dir_clean_bucket(Dir *b, int s, InterimCacheVol *d)
-{
-  Dir *e = b, *p = NULL;
-  Vol *vol = d->vol;
-  Dir *seg = dir_segment(s, vol);
-#ifdef LOOP_CHECK_MODE
-  int loop_count = 0;
-#endif
-  do {
-#ifdef LOOP_CHECK_MODE
-    loop_count++;
-    if (loop_count > DIR_LOOP_THRESHOLD) {
-      if (dir_bucket_loop_fix(b, s, vol))
-        return;
-    }
-#endif
-    if (!dir_valid(d, e) || !dir_offset(e)) {
-      if (is_debug_tag_set("dir_clean"))
-        Debug("dir_clean", "cleaning %p tag %X boffset %" PRId64 " b %p p %p l %d", e, dir_tag(e), dir_offset(e), b, p,
-              dir_bucket_length(b, s, vol));
-      if (dir_offset(e))
-        CACHE_DEC_DIR_USED(vol->mutex);
-      e = dir_delete_entry(e, p, s, vol);
-      continue;
-    }
-    p = e;
-    e = next_dir(e, seg);
-  } while (e);
-}
-void
-dir_clean_segment(int s, InterimCacheVol *d)
-{
-  Dir *seg = dir_segment(s, d->vol);
-  for (int i = 0; i < d->vol->buckets; i++) {
-    dir_clean_bucket(dir_bucket(i, seg), s, d);
-    ink_assert(!dir_next(dir_bucket(i, seg)) || dir_offset(dir_bucket(i, seg)));
-  }
-}
-void
-dir_clean_interimvol(InterimCacheVol *d)
-{
-  for (int i = 0; i < d->vol->segments; i++)
-    dir_clean_segment(i, d);
-  CHECK_DIR(d);
-}
-
-void
-dir_clean_range_interimvol(off_t start, off_t end, InterimCacheVol *svol)
-{
-  Vol *vol = svol->vol;
-  int offset = svol - vol->interim_vols;
-
-  for (int i = 0; i < vol->buckets * DIR_DEPTH * vol->segments; i++) {
-    Dir *e = dir_index(vol, i);
-    if (dir_ininterim(e) && dir_get_index(e) == offset && !dir_token(e) && dir_offset(e) >= (int64_t)start &&
-        dir_offset(e) < (int64_t)end) {
-      CACHE_DEC_DIR_USED(vol->mutex);
-      dir_set_offset(e, 0); // delete
-    }
-  }
-
-  dir_clean_interimvol(svol);
-}
-#endif
 
 void
 dir_clear_range(off_t start, off_t end, Vol *vol)
@@ -635,9 +544,7 @@ Lagain:
                  dir_offset(e));
           dir_assign(result, e);
           *last_collision = e;
-#if !TS_USE_INTERIM_CACHE
           ink_assert(dir_offset(e) * CACHE_BLOCK_SIZE < d->len);
-#endif
           return 1;
         } else { // delete the invalid entry
           CACHE_DEC_DIR_USED(d->mutex);
@@ -699,21 +606,12 @@ Lagain:
   if (!e)
     goto Lagain;
 Llink:
-#if TS_USE_INTERIM_CACHE == 1
-  dir_assign(e, b);
-#else
   dir_set_next(e, dir_next(b));
-#endif
   dir_set_next(b, dir_to_offset(e, seg));
 Lfill:
-#if TS_USE_INTERIM_CACHE == 1
-  dir_assign_data(b, to_part);
-  dir_set_tag(b, key->slice32(2));
-#else
   dir_assign_data(e, to_part);
   dir_set_tag(e, key->slice32(2));
   ink_assert(vol_offset(d, e) < (d->skip + d->len));
-#endif
   DDebug("dir_insert", "insert %p %X into vol %d bucket %d at %p tag %X %X boffset %" PRId64 "", e, key->slice32(0), d->fd, bi, e,
          key->slice32(1), dir_tag(e), dir_offset(e));
   CHECK_DIR(d);
@@ -755,11 +653,7 @@ Lagain:
         }
       }
 #endif
-#if TS_USE_INTERIM_CACHE == 1
-      if (dir_tag(e) == t && dir_get_offset(e) == dir_get_offset(overwrite))
-#else
       if (dir_tag(e) == t && dir_offset(e) == dir_offset(overwrite))
-#endif
         goto Lfill;
       e = next_dir(e, seg);
     } while (e);
@@ -822,11 +716,7 @@ dir_delete(const CacheKey *key, Vol *d, Dir *del)
           return 0;
       }
 #endif
-#if TS_USE_INTERIM_CACHE == 1
-      if (dir_compare_tag(e, key) && dir_get_offset(e) == dir_get_offset(del)) {
-#else
       if (dir_compare_tag(e, key) && dir_offset(e) == dir_offset(del)) {
-#endif
         CACHE_DEC_DIR_USED(d->mutex);
         dir_delete_entry(e, p, s, d);
         CHECK_DIR(d);
@@ -893,11 +783,7 @@ dir_lookaside_fixup(const CacheKey *key, Vol *d)
       int res = dir_overwrite(key, d, &b->new_dir, &b->dir, false);
       DDebug("dir_lookaside", "fixup %X %X offset %" PRId64 " phase %d %d", key->slice32(0), key->slice32(1),
              dir_offset(&b->new_dir), dir_phase(&b->new_dir), res);
-#if TS_USE_INTERIM_CACHE == 1
-      int64_t o = dir_get_offset(&b->dir), n = dir_get_offset(&b->new_dir);
-#else
       int64_t o = dir_offset(&b->dir), n = dir_offset(&b->new_dir);
-#endif
       d->ram_cache->fixup(key, (uint32_t)(o >> 32), (uint32_t)o, (uint32_t)(n >> 32), (uint32_t)n);
       d->lookaside[i].remove(b);
       free_EvacuationBlock(b, d->mutex->thread_holding);
@@ -1058,26 +944,6 @@ sync_cache_dir_on_shutdown(void)
       d->header->write_serial++;
     }
 
-#if TS_USE_INTERIM_CACHE == 1
-    for (int i = 0; i < d->num_interim_vols; i++) {
-      InterimCacheVol *sv = &(d->interim_vols[i]);
-      if (sv->agg_buf_pos) {
-        Debug("cache_dir_sync", "Dir %s: flushing agg buffer first to interim", d->hash_text.get());
-        sv->header->agg_pos = sv->header->write_pos + sv->agg_buf_pos;
-
-        int r = pwrite(sv->fd, sv->agg_buffer, sv->agg_buf_pos, sv->header->write_pos);
-        if (r != sv->agg_buf_pos) {
-          ink_assert(!"flusing agg buffer failed to interim");
-          continue;
-        }
-        sv->header->last_write_pos = sv->header->write_pos;
-        sv->header->write_pos += sv->agg_buf_pos;
-        ink_assert(sv->header->write_pos == sv->header->agg_pos);
-        sv->agg_buf_pos = 0;
-        sv->header->write_serial++;
-      }
-    }
-#endif
 
     if (buflen < dirlen) {
       if (buf) {
@@ -1105,11 +971,6 @@ sync_cache_dir_on_shutdown(void)
     }
     d->footer->sync_serial = d->header->sync_serial;
 
-#if TS_USE_INTERIM_CACHE == 1
-    for (int j = 0; j < d->num_interim_vols; j++) {
-      d->interim_vols[j].header->sync_serial = d->header->sync_serial;
-    }
-#endif
     CHECK_DIR(d);
     memcpy(buf, d->raw_dir, dirlen);
     size_t B = d->header->sync_serial & 1;
@@ -1198,14 +1059,6 @@ Lrestart:
         vol->dir_sync_waiting = 1;
         if (!vol->is_io_in_progress())
           vol->aggWrite(EVENT_IMMEDIATE, 0);
-#if TS_USE_INTERIM_CACHE == 1
-        for (int i = 0; i < vol->num_interim_vols; i++) {
-          if (!vol->interim_vols[i].is_io_in_progress()) {
-            vol->interim_vols[i].sync = true;
-            vol->interim_vols[i].aggWrite(EVENT_IMMEDIATE, 0);
-          }
-        }
-#endif
         return EVENT_CONT;
       }
       Debug("cache_dir_sync", "pos: %" PRIu64 " Dir %s dirty...syncing to disk", vol->header->write_pos, vol->hash_text.get());
@@ -1230,11 +1083,6 @@ Lrestart:
       }
       vol->header->sync_serial++;
       vol->footer->sync_serial = vol->header->sync_serial;
-#if TS_USE_INTERIM_CACHE == 1
-      for (int j = 0; j < vol->num_interim_vols; j++) {
-        vol->interim_vols[j].header->sync_serial = vol->header->sync_serial;
-      }
-#endif
       CHECK_DIR(d);
       memcpy(buf, vol->raw_dir, dirlen);
       vol->dir_sync_in_progress = 1;

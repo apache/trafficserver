@@ -119,7 +119,7 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.exec_thread.limit", RECD_INT, "2", RECU_RESTART_TS, RR_NULL, RECC_INT, "[1-" TS_STR(TS_MAX_NUMBER_EVENT_THREADS) "]", RECA_READ_ONLY}
   ,
-  {RECT_CONFIG, "proxy.config.exec_thread.affinity", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-4]", RECA_READ_ONLY}
+  {RECT_CONFIG, "proxy.config.exec_thread.affinity", RECD_INT, "1", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-4]", RECA_READ_ONLY}
   ,
   {RECT_CONFIG, "proxy.config.accept_threads", RECD_INT, "1", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-" TS_STR(TS_MAX_NUMBER_EVENT_THREADS) "]", RECA_READ_ONLY}
   ,
@@ -250,13 +250,9 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.cluster.log_bogus_mc_msgs", RECD_INT, "1", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.admin.autoconf_port", RECD_INT, "8083", RECU_RESTART_TM, RR_REQUIRED, RECC_INT, "[0-65535]", RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.admin.autoconf.doc_root", RECD_STRING, TS_BUILD_SYSCONFDIR, RECU_NULL, RR_REQUIRED, RECC_NULL, NULL, RECA_NULL}
+  {RECT_CONFIG, "proxy.config.admin.synthetic_port", RECD_INT, "8083", RECU_RESTART_TM, RR_REQUIRED, RECC_INT, "[0-65535]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.admin.autoconf.localhost_only", RECD_INT, "1", RECU_RESTART_TM, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.admin.autoconf.pac_filename", RECD_STRING, "proxy.pac", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.admin.admin_user", RECD_STRING, "admin", RECU_DYNAMIC, RR_REQUIRED, RECC_STR, ".+", RECA_NO_ACCESS}
   ,
@@ -442,8 +438,6 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.http.send_100_continue_response", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.http.send_408_post_timeout_response", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
   {RECT_CONFIG, "proxy.config.http.disallow_post_100_continue", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.http.share_server_sessions", RECD_INT, "2", RECU_RESTART_TS, RR_NULL, RECC_NULL, NULL, RECA_NULL}
@@ -614,6 +608,8 @@ static const RecordElement RecordsConfig[] =
   //        # cache control #
   //        #################
   {RECT_CONFIG, "proxy.config.http.cache.http", RECD_INT, "1", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.http.cache.generation", RECD_INT, "-1", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   // Enabling this setting allows the proxy to cache empty documents. This currently requires
   // that the response has a Content-Length: header, with a value of "0".
@@ -942,12 +938,6 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.cache.target_fragment_size", RECD_INT, "1048576", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
-  // # only be used when compiled with --enable-interim-cache
-  {RECT_LOCAL, "proxy.config.cache.interim.storage", RECD_STRING, NULL, RECU_RESTART_TS, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
-  // # only be used when compiled with --enable-interim-cache
-  {RECT_CONFIG, "proxy.config.cache.interim.migrate_threshold", RECD_INT, "2", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
   //  # The maximum size of a document that will be stored in the cache.
   //  # (0 disables the maximum document size check)
   {RECT_CONFIG, "proxy.config.cache.max_doc_size", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
@@ -1134,38 +1124,6 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.log.hosts_config_file", RECD_STRING, "log_hosts.config", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.log.squid_log_enabled", RECD_INT, "1", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.log.squid_log_is_ascii", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.log.squid_log_name", RECD_STRING, "squid", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[^[:space:]]*$", RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.log.squid_log_header", RECD_STRING, NULL, RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.log.common_log_enabled", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.log.common_log_is_ascii", RECD_INT, "1", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.log.common_log_name", RECD_STRING, "common", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[^[:space:]]*$", RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.log.common_log_header", RECD_STRING, NULL, RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.log.extended_log_enabled", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.log.extended_log_is_ascii", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.log.extended_log_name", RECD_STRING, "extended", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[^[:space:]]*$", RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.log.extended_log_header", RECD_STRING, NULL, RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.log.extended2_log_enabled", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.log.extended2_log_is_ascii", RECD_INT, "1", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.log.extended2_log_name", RECD_STRING, "extended2", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[^[:space:]]*$", RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.log.extended2_log_header", RECD_STRING, NULL, RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
   {RECT_CONFIG, "proxy.config.log.separate_icp_logs", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.log.separate_host_logs", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
@@ -1212,23 +1170,11 @@ static const RecordElement RecordsConfig[] =
   //##############################################################################
   {RECT_CONFIG, "proxy.config.reverse_proxy.enabled", RECD_INT, "1", RECU_DYNAMIC, RR_REQUIRED, RECC_INT, "[0-1]", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.url_remap.default_to_server_pac", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.url_remap.default_to_server_pac_port", RECD_INT, "-1", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
   {RECT_CONFIG, "proxy.config.url_remap.filename", RECD_STRING, "remap.config", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.url_remap.remap_required", RECD_INT, "1", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.url_remap.pristine_host_hdr", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
-  ,
-  // url remap mode
-  // # 0 - same as URL_REMAP_ALL (instead of disabling all remapping)
-  // # 1 - URL_REMAP_ALL remap url's of all requests
-  // # 2 - URL_REMAP_FOR_OS remap url's for requests to OS's only
-  {RECT_CONFIG, "proxy.config.url_remap.url_remap_mode", RECD_INT, "1", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-2]", RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.url_remap.handle_backdoor_urls", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
 
   //##############################################################################

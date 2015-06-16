@@ -2387,8 +2387,8 @@ CacheContinuation::lookupEvent(int /* event ATS_UNUSED */, void * /* d ATS_UNUSE
 //            Zero (Action *) if no probe
 //////////////////////////////////////////////////////////////////////////
 Action *
-CacheContinuation::do_remote_lookup(Continuation *cont, CacheKey *key, CacheContinuation *c, CacheFragType ft, char *hostname,
-                                    int hostname_len)
+CacheContinuation::do_remote_lookup(Continuation *cont, const CacheKey *key, CacheContinuation *c, CacheFragType ft,
+                                    const char *hostname, int hostname_len)
 {
   int probe_depth = 0;
   ClusterMachine *past_probes[CONFIGURATION_HISTORY_PROBE_DEPTH] = {0};

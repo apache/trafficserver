@@ -1066,6 +1066,7 @@ HttpConfig::startup()
   // open read failure retries
   HttpEstablishStaticConfigLongLong(c.oride.max_cache_open_read_retries, "proxy.config.http.cache.max_open_read_retries");
   HttpEstablishStaticConfigLongLong(c.oride.cache_open_read_retry_time, "proxy.config.http.cache.open_read_retry_time");
+  HttpEstablishStaticConfigLongLong(c.oride.cache_generation_number, "proxy.config.http.cache.generation");
 
   // open write failure retries
   HttpEstablishStaticConfigLongLong(c.max_cache_open_write_retries, "proxy.config.http.cache.max_open_write_retries");
@@ -1089,7 +1090,6 @@ HttpConfig::startup()
   HttpEstablishStaticConfigByte(c.ignore_accept_charset_mismatch, "proxy.config.http.cache.ignore_accept_charset_mismatch");
 
   HttpEstablishStaticConfigByte(c.send_100_continue_response, "proxy.config.http.send_100_continue_response");
-  HttpEstablishStaticConfigByte(c.send_408_post_timeout_response, "proxy.config.http.send_408_post_timeout_response");
   HttpEstablishStaticConfigByte(c.disallow_post_100_continue, "proxy.config.http.disallow_post_100_continue");
   HttpEstablishStaticConfigByte(c.parser_allow_non_http, "proxy.config.http.parse.allow_non_http");
   HttpEstablishStaticConfigLongLong(c.cache_open_write_fail_action, "proxy.config.http.cache.open_write_fail_action");
@@ -1158,8 +1158,7 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.post_copy_size, "proxy.config.http.post_copy_size");
 
   // Local Manager
-  HttpEstablishStaticConfigLongLong(c.autoconf_port, "proxy.config.admin.autoconf_port");
-  HttpEstablishStaticConfigByte(c.autoconf_localhost_only, "proxy.config.admin.autoconf.localhost_only");
+  HttpEstablishStaticConfigLongLong(c.synthetic_port, "proxy.config.admin.synthetic_port");
 
   // Cluster time delta gets it own callback since it needs
   //  to use ink_atomic_swap
@@ -1330,6 +1329,7 @@ HttpConfig::reconfigure()
   // open read failure retries
   params->oride.max_cache_open_read_retries = m_master.oride.max_cache_open_read_retries;
   params->oride.cache_open_read_retry_time = m_master.oride.cache_open_read_retry_time;
+  params->oride.cache_generation_number = m_master.oride.cache_generation_number;
 
   // open write failure retries
   params->max_cache_open_write_retries = m_master.max_cache_open_write_retries;
@@ -1352,7 +1352,6 @@ HttpConfig::reconfigure()
   params->ignore_accept_charset_mismatch = m_master.ignore_accept_charset_mismatch;
 
   params->send_100_continue_response = INT_TO_BOOL(m_master.send_100_continue_response);
-  params->send_408_post_timeout_response = INT_TO_BOOL(m_master.send_408_post_timeout_response);
   params->disallow_post_100_continue = INT_TO_BOOL(m_master.disallow_post_100_continue);
   params->parser_allow_non_http = INT_TO_BOOL(m_master.parser_allow_non_http);
   params->cache_open_write_fail_action = m_master.cache_open_write_fail_action;
@@ -1416,8 +1415,7 @@ HttpConfig::reconfigure()
   params->post_copy_size = m_master.post_copy_size;
 
   // Local Manager
-  params->autoconf_port = m_master.autoconf_port;
-  params->autoconf_localhost_only = m_master.autoconf_localhost_only;
+  params->synthetic_port = m_master.synthetic_port;
 
   m_id = configProcessor.set(m_id, params);
 

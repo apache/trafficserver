@@ -54,9 +54,9 @@ SetHomePageRedirectFlag(url_mapping *new_mapping, URL &new_to_url)
 // CTOR / DTOR for the UrlRewrite class.
 //
 UrlRewrite::UrlRewrite()
-  : nohost_rules(0), reverse_proxy(0), backdoor_enabled(0), mgmt_autoconf_port(0), default_to_pac(0), default_to_pac_port(0),
-    ts_name(NULL), http_default_redirect_url(NULL), num_rules_forward(0), num_rules_reverse(0), num_rules_redirect_permanent(0),
-    num_rules_redirect_temporary(0), num_rules_forward_with_recv_port(0), _valid(false)
+  : nohost_rules(0), reverse_proxy(0), mgmt_synthetic_port(0), ts_name(NULL), http_default_redirect_url(NULL), num_rules_forward(0),
+    num_rules_reverse(0), num_rules_redirect_permanent(0), num_rules_redirect_temporary(0), num_rules_forward_with_recv_port(0),
+    _valid(false)
 {
   ats_scoped_str config_file_path;
 
@@ -87,11 +87,7 @@ UrlRewrite::UrlRewrite()
   }
 
   REC_ReadConfigInteger(reverse_proxy, "proxy.config.reverse_proxy.enabled");
-  REC_ReadConfigInteger(mgmt_autoconf_port, "proxy.config.admin.autoconf_port");
-  REC_ReadConfigInteger(default_to_pac, "proxy.config.url_remap.default_to_server_pac");
-  REC_ReadConfigInteger(default_to_pac_port, "proxy.config.url_remap.default_to_server_pac_port");
-  REC_ReadConfigInteger(url_remap_mode, "proxy.config.url_remap.url_remap_mode");
-  REC_ReadConfigInteger(backdoor_enabled, "proxy.config.url_remap.handle_backdoor_urls");
+  REC_ReadConfigInteger(mgmt_synthetic_port, "proxy.config.admin.synthetic_port");
 
   if (0 == this->BuildTable(config_file_path)) {
     _valid = true;
@@ -123,35 +119,6 @@ UrlRewrite::SetReverseFlag(int flag)
   reverse_proxy = flag;
   if (is_debug_tag_set("url_rewrite"))
     Print();
-}
-
-/**
-  Allocaites via new, and setups the default mapping to the PAC generator
-  port which is used to serve the PAC (proxy autoconfig) file.
-
-*/
-url_mapping *
-UrlRewrite::SetupPacMapping()
-{
-  const char *from_url = "http:///";
-  const char *local_url = "http://127.0.0.1/";
-
-  url_mapping *mapping;
-  int pac_generator_port;
-
-  mapping = new url_mapping;
-
-  mapping->fromURL.create(NULL);
-  mapping->fromURL.parse(from_url, strlen(from_url));
-
-  mapping->toUrl.create(NULL);
-  mapping->toUrl.parse(local_url, strlen(local_url));
-
-  pac_generator_port = (default_to_pac_port < 0) ? mgmt_autoconf_port : default_to_pac_port;
-
-  mapping->toUrl.port_set(pac_generator_port);
-
-  return mapping;
 }
 
 /**
@@ -698,7 +665,6 @@ int
 UrlRewrite::BuildTable(const char *path)
 {
   BUILD_TABLE_INFO bti;
-  url_mapping *new_mapping = NULL;
 
   ink_assert(forward_mappings.empty());
   ink_assert(reverse_mappings.empty());
@@ -711,7 +677,6 @@ UrlRewrite::BuildTable(const char *path)
   ink_assert(num_rules_redirect_temporary == 0);
   ink_assert(num_rules_forward_with_recv_port == 0);
 
-
   forward_mappings.hash_lookup = ink_hash_table_create(InkHashTableKeyType_String);
   reverse_mappings.hash_lookup = ink_hash_table_create(InkHashTableKeyType_String);
   permanent_redirects.hash_lookup = ink_hash_table_create(InkHashTableKeyType_String);
@@ -723,31 +688,6 @@ UrlRewrite::BuildTable(const char *path)
     return 3;
   }
 
-  // Add the mapping for backdoor urls if enabled.
-  // This needs to be before the default PAC mapping for ""
-  // since this is more specific
-  if (unlikely(backdoor_enabled)) {
-    new_mapping = SetupBackdoorMapping();
-    if (TableInsert(forward_mappings.hash_lookup, new_mapping, "")) {
-      num_rules_forward++;
-    } else {
-      Warning("Could not insert backdoor mapping into store");
-      delete new_mapping;
-      return 3;
-    }
-  }
-  // Add the default mapping to the manager PAC file
-  //  if we need it
-  if (default_to_pac) {
-    new_mapping = SetupPacMapping();
-    if (TableInsert(forward_mappings.hash_lookup, new_mapping, "")) {
-      num_rules_forward++;
-    } else {
-      Warning("Could not insert pac mapping into store");
-      delete new_mapping;
-      return 3;
-    }
-  }
   // Destroy unused tables
   if (num_rules_forward == 0) {
     forward_mappings.hash_lookup = ink_hash_table_destroy(forward_mappings.hash_lookup);

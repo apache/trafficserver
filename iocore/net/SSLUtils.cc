@@ -27,6 +27,7 @@
 #include "ink_cap.h"
 #include "P_OCSPStapling.h"
 #include "SSLSessionCache.h"
+#include "SSLDynlock.h"
 
 #include <string>
 #include <openssl/err.h>
@@ -185,6 +186,13 @@ SSL_CTX_add_extra_chain_cert_file(SSL_CTX *ctx, const char *chainfile)
   return true;
 }
 
+bool
+ssl_session_timed_out(SSL_SESSION *session)
+{
+  return SSL_SESSION_get_timeout(session) < (long)(time(NULL) - SSL_SESSION_get_time(session));
+}
+
+static void ssl_rm_cached_session(SSL_CTX *ctx, SSL_SESSION *sess);
 
 static SSL_SESSION *
 ssl_get_cached_session(SSL *ssl, unsigned char *id, int len, int *copy)
@@ -201,10 +209,15 @@ ssl_get_cached_session(SSL *ssl, unsigned char *id, int len, int *copy)
   SSL_SESSION *session = NULL;
 
   if (session_cache->getSession(sid, &session)) {
-    return session;
+    // Double check the timeout
+    if (session && ssl_session_timed_out(session)) {
+      // Due to bug in openssl, the timeout is checked, but only removed
+      // from the openssl built-in hash table.  The external remove cb is not called
+      ssl_rm_cached_session(SSL_get_SSL_CTX(ssl), session);
+      session = NULL;
+    }
   }
-
-  return NULL;
+  return session;
 }
 
 static int
@@ -783,6 +796,9 @@ SSLInitializeLibrary()
 
     CRYPTO_set_locking_callback(SSL_locking_callback);
     CRYPTO_THREADID_set_callback(SSL_pthreads_thread_id);
+    CRYPTO_set_dynlock_create_callback(ssl_dyn_create_callback);
+    CRYPTO_set_dynlock_lock_callback(ssl_dyn_lock_callback);
+    CRYPTO_set_dynlock_destroy_callback(ssl_dyn_destroy_callback);
   }
 
 #ifdef SSL_CTX_set_tlsext_ticket_key_cb

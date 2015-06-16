@@ -59,6 +59,10 @@ X-Cache
     skipped     The cache lookup was skipped.
     ==========  ===========
 
+X-Cache-Generation
+  The cache generation ID for this transaction, as specified by the
+  :ts:cv:`proxy.config.http.cache.generation` configuration variable.
+
 X-Milestones
     The ``X-Milestones`` header contains detailed information about
     how long the transaction took to traverse portions of the HTTP

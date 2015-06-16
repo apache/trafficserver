@@ -18,12 +18,38 @@
 
 #include "ts_lua_coroutine.h"
 
-static inline void ts_lua_async_push_item(ts_lua_async_item **head, ts_lua_async_item *node);
-static inline void ts_lua_async_destroy_item(ts_lua_async_item *node);
-static inline void ts_lua_async_destroy_chain(ts_lua_async_item **head);
+static void
+ts_lua_async_push_item(ts_lua_async_item **head, ts_lua_async_item *node)
+{
+  node->next = *head;
+  *head = node;
+}
 
+static void
+ts_lua_async_destroy_item(ts_lua_async_item *node)
+{
+  if (node->cleanup && !node->deleted) {
+    node->cleanup(node);
+  }
 
-inline ts_lua_async_item *
+  TSfree(node);
+}
+
+static void
+ts_lua_async_destroy_chain(ts_lua_async_item **head)
+{
+  ts_lua_async_item *node, *next;
+
+  node = *head;
+
+  while (node) {
+    next = node->next;
+    ts_lua_async_destroy_item(node);
+    node = next;
+  }
+}
+
+ts_lua_async_item *
 ts_lua_async_create_item(TSCont cont, async_clean func, void *d, ts_lua_cont_info *ci)
 {
   ts_lua_async_item *ai;
@@ -44,38 +70,7 @@ ts_lua_async_create_item(TSCont cont, async_clean func, void *d, ts_lua_cont_inf
   return ai;
 }
 
-static inline void
-ts_lua_async_push_item(ts_lua_async_item **head, ts_lua_async_item *node)
-{
-  node->next = *head;
-  *head = node;
-}
-
-inline void
-ts_lua_async_destroy_item(ts_lua_async_item *node)
-{
-  if (node->cleanup && !node->deleted) {
-    node->cleanup(node);
-  }
-
-  TSfree(node);
-}
-
-inline void
-ts_lua_async_destroy_chain(ts_lua_async_item **head)
-{
-  ts_lua_async_item *node, *next;
-
-  node = *head;
-
-  while (node) {
-    next = node->next;
-    ts_lua_async_destroy_item(node);
-    node = next;
-  }
-}
-
-inline void
+void
 ts_lua_release_cont_info(ts_lua_cont_info *ci)
 {
   ts_lua_main_ctx *mctx;

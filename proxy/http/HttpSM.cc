@@ -2610,7 +2610,7 @@ HttpSM::tunnel_handler_post(int event, void *data)
         ua_entry->write_buffer = NULL;
       }
     }
-    if (t_state.http_config_param->send_408_post_timeout_response && p->handler_state == HTTP_SM_POST_UA_FAIL) {
+    if (p->handler_state == HTTP_SM_POST_UA_FAIL) {
       Debug("http_tunnel", "cleanup tunnel in tunnel_handler_post");
       hsm_release_assert(ua_entry->in_tunnel == true);
       ink_assert((event == VC_EVENT_WRITE_COMPLETE) || (event == VC_EVENT_EOS));
@@ -3306,7 +3306,7 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer *p)
   switch (event) {
   case VC_EVENT_INACTIVITY_TIMEOUT:
   case VC_EVENT_ACTIVE_TIMEOUT:
-    if (t_state.http_config_param->send_408_post_timeout_response && client_response_hdr_bytes == 0) {
+    if (client_response_hdr_bytes == 0) {
       p->handler_state = HTTP_SM_POST_UA_FAIL;
       set_ua_abort(HttpTransact::ABORTED, event);
 
@@ -4342,8 +4342,12 @@ HttpSM::do_cache_lookup_and_read()
 
   DebugSM("http_seq", "[HttpSM::do_cache_lookup_and_read] [%" PRId64 "] Issuing cache lookup for URL %s", sm_id,
           c_url->string_get(&t_state.arena));
+
+  HttpCacheKey key;
+  Cache::generate_key(&key, c_url, t_state.txn_conf->cache_generation_number);
+
   Action *cache_action_handle =
-    cache_sm.open_read(c_url, &t_state.hdr_info.client_request, &(t_state.cache_info.config),
+    cache_sm.open_read(&key, c_url, &t_state.hdr_info.client_request, &(t_state.cache_info.config),
                        (time_t)((t_state.cache_control.pin_in_cache_for < 0) ? 0 : t_state.cache_control.pin_in_cache_for));
   //
   // pin_in_cache value is an open_write parameter.
@@ -4372,7 +4376,9 @@ HttpSM::do_cache_delete_all_alts(Continuation *cont)
 
   Action *cache_action_handle = NULL;
 
-  cache_action_handle = cacheProcessor.remove(cont, t_state.cache_info.lookup_url, t_state.cache_control.cluster_cache_local);
+  HttpCacheKey key;
+  Cache::generate_key(&key, t_state.cache_info.lookup_url, t_state.txn_conf->cache_generation_number);
+  cache_action_handle = cacheProcessor.remove(cont, &key, t_state.cache_control.cluster_cache_local);
   if (cont != NULL) {
     if (cache_action_handle != ACTION_RESULT_DONE) {
       ink_assert(!pending_action);
@@ -4463,8 +4469,12 @@ HttpSM::do_cache_prepare_action(HttpCacheSM *c_sm, CacheHTTPInfo *object_read_in
 
   ink_assert(s_url != NULL && s_url->valid());
   DebugSM("http_cache_write", "[%" PRId64 "] writing to cache with URL %s", sm_id, s_url->string_get(&t_state.arena));
+
+  HttpCacheKey key;
+  Cache::generate_key(&key, s_url, t_state.txn_conf->cache_generation_number);
+
   Action *cache_action_handle = c_sm->open_write(
-    s_url, &t_state.hdr_info.client_request, object_read_info,
+    &key, s_url, &t_state.hdr_info.client_request, object_read_info,
     (time_t)((t_state.cache_control.pin_in_cache_for < 0) ? 0 : t_state.cache_control.pin_in_cache_for), retry, allow_multiple);
 
   if (cache_action_handle != ACTION_RESULT_DONE) {
@@ -4992,7 +5002,7 @@ HttpSM::release_server_session(bool serve_from_cache)
     return;
   }
 
-  if (TS_SERVER_SESSION_SHARING_MATCH_NONE != t_state.txn_conf->server_session_sharing_match &&
+  if (TS_SERVER_SESSION_SHARING_MATCH_NONE != t_state.txn_conf->server_session_sharing_match && t_state.current.server != NULL &&
       t_state.current.server->keep_alive == HTTP_KEEPALIVE && t_state.hdr_info.server_response.valid() &&
       t_state.hdr_info.server_request.valid() && (t_state.hdr_info.server_response.status_get() == HTTP_STATUS_NOT_MODIFIED ||
                                                   (t_state.hdr_info.server_request.method_get_wksidx() == HTTP_WKSIDX_HEAD &&

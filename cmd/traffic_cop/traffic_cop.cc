@@ -92,7 +92,7 @@ static char manager_options[OPTIONS_LEN_MAX] = "";
 
 static char log_file[PATH_NAME_MAX] = "traffic.out";
 
-static int autoconf_port = 8083;
+static int synthetic_port = 8083;
 static int rs_port = 8088;
 static MgmtClusterType cluster_type = NO_CLUSTER;
 static int http_backdoor_port = 8084;
@@ -651,7 +651,7 @@ config_reload_records()
   Layout::relative_to(log_file, sizeof(log_file), logdir, log_filename);
 
   config_read_int("proxy.config.process_manager.mgmt_port", &http_backdoor_port, true);
-  config_read_int("proxy.config.admin.autoconf_port", &autoconf_port, true);
+  config_read_int("proxy.config.admin.synthetic_port", &synthetic_port, true);
   config_read_int("proxy.config.cluster.rsport", &rs_port, true);
   config_read_int("proxy.config.lm.sem_id", &sem_id, true);
   config_read_int("proxy.config.cop.init_sleep_time", &init_sleep_time, true);
@@ -1283,7 +1283,7 @@ test_server_http_port()
 
   // Generate a request for a the 'synthetic.txt' document the manager
   // servers up on the autoconf port.
-  snprintf(request, sizeof(request), "GET http://127.0.0.1:%d/synthetic.txt HTTP/1.0\r\n\r\n", autoconf_port);
+  snprintf(request, sizeof(request), "GET http://127.0.0.1:%d/synthetic.txt HTTP/1.0\r\n\r\n", synthetic_port);
 
   return test_http_port(http_backdoor_port, request, server_timeout * 1000, localhost, localhost);
 }

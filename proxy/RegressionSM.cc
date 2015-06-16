@@ -82,7 +82,7 @@ RegressionSM::run_in(int *apstatus, ink_hrtime t)
 void
 RegressionSM::child_done(int astatus)
 {
-  MUTEX_LOCK(l, mutex, this_ethread());
+  SCOPED_MUTEX_LOCK(l, mutex, this_ethread());
   ink_assert(nwaiting > 0);
   --nwaiting;
   set_status(astatus);

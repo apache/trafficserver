@@ -28,7 +28,6 @@
 #include "Rollback.h"
 #include "WebMgmtUtils.h"
 #include "MgmtUtils.h"
-#include "WebGlobals.h"
 #include "ExpandingArray.h"
 #include "MgmtSocket.h"
 

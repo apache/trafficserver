@@ -431,6 +431,8 @@ int
 ShowCache::lookup_url(int event, Event *e)
 {
   char header_str[300];
+  HttpCacheKey key;
+  cache_generation_t generation = -1;
 
   snprintf(header_str, sizeof(header_str), "<font color=red>%s</font>", show_cache_urlstrs[0]);
   CHECK_SHOW(begin(header_str));
@@ -438,13 +440,13 @@ ShowCache::lookup_url(int event, Event *e)
   const char *s;
   s = show_cache_urlstrs[0];
   url.parse(&s, s + strlen(s));
-  INK_MD5 md5;
-  int len;
-  url.hash_get(&md5);
-  const char *hostname = url.host_get(&len);
+
+  RecGetRecordInt("proxy.config.http.cache.generation", &generation);
+  Cache::generate_key(&key, &url, generation);
+
   SET_HANDLER(&ShowCache::handleCacheEvent);
   Action *lookup_result =
-    cacheProcessor.open_read(this, &md5, getClusterCacheLocal(&url, (char *)hostname), CACHE_FRAG_TYPE_HTTP, (char *)hostname, len);
+    cacheProcessor.open_read(this, &key.hash, getClusterCacheLocal(&url), CACHE_FRAG_TYPE_HTTP, key.hostname, key.hostlen);
   if (!lookup_result)
     lookup_result = ACTION_IO_ERROR;
   if (lookup_result == ACTION_RESULT_DONE)
@@ -482,9 +484,11 @@ ShowCache::delete_url(int event, Event *e)
   // increment the index so that the next time
   // delete_url is called you delete the next url
   urlstrs_index++;
-  int len;
-  const char *hostname = url.host_get(&len);
-  cacheProcessor.remove(this, &url, getClusterCacheLocal(&url, (char *)hostname), CACHE_FRAG_TYPE_HTTP);
+
+  HttpCacheKey key;
+  Cache::generate_key(&key, &url); // XXX choose a cache generation number ...
+
+  cacheProcessor.remove(this, &key, getClusterCacheLocal(&url), CACHE_FRAG_TYPE_HTTP);
   return EVENT_DONE;
 }
 
