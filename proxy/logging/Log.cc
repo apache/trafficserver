@@ -940,12 +940,6 @@ done:
 
   Make an entry into the current error log.  For convenience, it is given in
   both variable argument (format, ...) and stdarg (format, va_list) forms.
-
-  Note that Log::error could call Log::va_error after calling va_start
-  so that va_error handles the statistics update. However, to make
-  Log::error slightly more efficient this is not the case. The
-  downside is that one has to be careful to update both functions if
-  need be.
   -------------------------------------------------------------------------*/
 
 int
