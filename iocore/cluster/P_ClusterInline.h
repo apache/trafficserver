@@ -338,7 +338,8 @@ err_exit:
 }
 
 inline Action *
-Cluster_remove(ClusterMachine *m, Continuation *cont, const CacheKey *key, CacheFragType frag_type, const char *hostname, int host_len)
+Cluster_remove(ClusterMachine *m, Continuation *cont, const CacheKey *key, CacheFragType frag_type, const char *hostname,
+               int host_len)
 {
   if (clusterProcessor.disable_remote_cluster_ops(m)) {
     Action a;
