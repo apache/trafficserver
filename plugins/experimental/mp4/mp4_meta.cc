@@ -1633,7 +1633,10 @@ Mp4Meta::mp4_update_mdhd_duration(Mp4Trak *trak)
   mp4_mdhd_atom *mdhd;
   mp4_mdhd64_atom mdhd64;
 
+  memset(&mdhd64, 0, sizeof(mp4_mdhd64_atom));
+
   need = TSIOBufferReaderAvail(trak->mdhd_atom.reader);
+
   if (need > (int64_t)sizeof(mp4_mdhd64_atom))
     need = sizeof(mp4_mdhd64_atom);
 
@@ -1642,7 +1645,6 @@ Mp4Meta::mp4_update_mdhd_duration(Mp4Trak *trak)
 
   if (this->rs > 0) {
     cut = (uint64_t)(this->rs * trak->timescale / 1000);
-
   } else {
     cut = this->start * trak->timescale / 1000;
   }
@@ -1651,7 +1653,6 @@ Mp4Meta::mp4_update_mdhd_duration(Mp4Trak *trak)
     duration = mp4_get_32value(mdhd->duration);
     duration -= cut;
     mp4_reader_set_32value(trak->mdhd_atom.reader, offsetof(mp4_mdhd_atom, duration), duration);
-
   } else {
     duration = mp4_get_64value(mdhd64.duration);
     duration -= cut;
