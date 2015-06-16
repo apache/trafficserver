@@ -59,7 +59,7 @@ class Mp4TransformContext
 {
 public:
   Mp4TransformContext(float offset, int64_t cl)
-    : total(0), tail(0), pos(0), content_length(0), parse_over(false), raw_transform(false)
+    : total(0), tail(0), pos(0), content_length(0), meta_length(0), parse_over(false), raw_transform(false)
   {
     res_buffer = TSIOBufferCreate();
     res_reader = TSIOBufferReaderAlloc(res_buffer);
