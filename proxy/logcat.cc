@@ -42,7 +42,6 @@
 #include "LogBuffer.h"
 #include "LogUtils.h"
 #include "LogSock.h"
-#include "LogPredefined.h"
 #include "Log.h"
 
 // logcat-specific command-line flags

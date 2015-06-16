@@ -48,7 +48,6 @@
 #include "SimpleTokenizer.h"
 
 #include "LogCollationAccept.h"
-#include "LogPredefined.h"
 
 #define DISK_IS_CONFIG_FULL_MESSAGE                    \
   "Access logging to local log directory suspended - " \
@@ -447,19 +446,8 @@ LogConfig::init(LogConfig *prev_config)
   }
 
   // ----------------------------------------------------------------------
-  // Construct a new error log object candidate.
-  if (Log::error_logging_enabled()) {
-    PreDefinedFormatInfo *info;
-
-    Debug("log", "creating predefined error log object");
-    info = MakePredefinedErrorLog(this);
-    errlog = this->create_predefined_object(info, 0, NULL);
-    errlog->set_fmt_timestamps();
-    delete info;
-  } else {
-    Log::error_log = NULL;
-  }
-
+  Log::error_log = NULL;
+  
   if (prev_config) {
     // Transfer objects from previous configuration.
     transfer_objects(prev_config);
@@ -537,86 +525,6 @@ LogConfig::display(FILE *fd)
 }
 
 //-----------------------------------------------------------------------------
-// Create one object for each of the entries in the pre-defined info list
-// and apply the specified filter(s) to it.
-//
-// Normally, only one pre-defined format has been selected on the config file
-// so this function creates a single object in such case.
-//
-// This function adds the pre-defined objects to the global_object_list.
-//
-
-LogObject *
-LogConfig::create_predefined_object(const PreDefinedFormatInfo *pdi, size_t num_filters, LogFilter **filter, const char *filt_name,
-                                    bool force_extension)
-{
-  const char *obj_fname;
-  char obj_filt_fname[PATH_NAME_MAX];
-
-  ink_release_assert(pdi != NULL);
-
-  if (filt_name) {
-    ink_string_concatenate_strings_n(obj_filt_fname, PATH_NAME_MAX, pdi->filename, "-", filt_name, NULL);
-    obj_fname = obj_filt_fname;
-  } else {
-    obj_fname = pdi->filename;
-  }
-
-  if (force_extension) {
-    switch (pdi->filefmt) {
-    case LOG_FILE_ASCII:
-      ink_string_append(obj_filt_fname, (char *)LOG_FILE_ASCII_OBJECT_FILENAME_EXTENSION, PATH_NAME_MAX);
-      break;
-    case LOG_FILE_BINARY:
-      ink_string_append(obj_filt_fname, (char *)LOG_FILE_BINARY_OBJECT_FILENAME_EXTENSION, PATH_NAME_MAX);
-      break;
-    default:
-      break;
-    }
-  }
-
-  // create object with filters
-  //
-  LogObject *obj;
-  obj = new LogObject(pdi->format, logfile_dir, obj_fname, pdi->filefmt, pdi->header, (Log::RollingEnabledValues)rolling_enabled,
-                      collation_preproc_threads, rolling_interval_sec, rolling_offset_hr, rolling_size_mb);
-
-  if (pdi->collatable) {
-    if (collation_mode == Log::SEND_STD_FMTS || collation_mode == Log::SEND_STD_AND_NON_XML_CUSTOM_FMTS) {
-      LogHost *loghost = new LogHost(obj->get_full_filename(), obj->get_signature());
-      ink_assert(loghost != NULL);
-
-      loghost->set_name_port(collation_host, collation_port);
-      obj->add_loghost(loghost, false);
-    }
-  }
-
-  for (size_t i = 0; i < num_filters; ++i) {
-    obj->add_filter(filter[i]);
-  }
-
-  // give object to object manager
-  if (log_object_manager.manage_object(obj) != LogObjectManager::NO_FILENAME_CONFLICTS) {
-    delete obj;
-    return NULL;
-  }
-
-  return obj;
-}
-
-void
-LogConfig::create_predefined_objects_with_filter(const PreDefinedFormatList &predef, size_t nfilters, LogFilter **filters,
-                                                 const char *filt_name, bool force_extension)
-{
-  PreDefinedFormatInfo *pdi;
-
-  for (pdi = predef.formats.head; pdi != NULL; pdi = (pdi->link).next) {
-    this->create_predefined_object(pdi, nfilters, filters, filt_name, force_extension);
-  }
-}
-
-
-//-----------------------------------------------------------------------------
 // split_by_protocol
 //
 // This function creates the objects needed to log different protocols on
@@ -630,7 +538,7 @@ LogConfig::create_predefined_objects_with_filter(const PreDefinedFormatList &pre
 // pre-defined formats.
 //
 LogFilter *
-LogConfig::split_by_protocol(const PreDefinedFormatList &predef)
+LogConfig::split_by_protocol()
 {
   if (!separate_icp_logs) {
     return NULL;
@@ -642,7 +550,6 @@ LogConfig::split_by_protocol(const PreDefinedFormatList &predef)
   };
 
   int64_t value[] = {LOG_ENTRY_ICP, LOG_ENTRY_HTTP};
-  const char *name[] = {"icp", "http"};
   const char *filter_name[] = {"__icp__", "__http__"};
   int64_t filter_val[http]; // protocols to reject
   size_t n = 0;
@@ -655,7 +562,6 @@ LogConfig::split_by_protocol(const PreDefinedFormatList &predef)
       LogFilter *filter[1];
 
       filter[0] = new LogFilterInt(filter_name[icp], etype_field, LogFilter::ACCEPT, LogFilter::MATCH, value[icp]);
-      create_predefined_objects_with_filter(predef, countof(filter), filter, name[icp]);
       delete filter[0];
     }
     filter_val[n++] = value[icp];
@@ -676,7 +582,7 @@ LogConfig::split_by_protocol(const PreDefinedFormatList &predef)
 }
 
 size_t
-LogConfig::split_by_hostname(const PreDefinedFormatList &predef, LogFilter *reject_protocol_filter)
+LogConfig::split_by_hostname(LogFilter *reject_protocol_filter)
 {
   size_t n_hosts;
   char **host = read_log_hosts_file(&n_hosts); // allocates memory for array
@@ -699,7 +605,6 @@ LogConfig::split_by_hostname(const PreDefinedFormatList &predef, LogFilter *reje
       rp_ah[num_filt] =
         new LogFilterString(filter_name, shn_field, LogFilter::ACCEPT, LogFilter::CASE_INSENSITIVE_CONTAIN, host[i]);
 
-      create_predefined_objects_with_filter(predef, num_filt + 1, rp_ah, host[i], true);
       delete rp_ah[num_filt];
     }
 
@@ -718,7 +623,7 @@ LogConfig::split_by_hostname(const PreDefinedFormatList &predef, LogFilter *reje
     // hosts other than those specified in the hosts file and for
     // those protocols that do not have their own file
     //
-    create_predefined_objects_with_filter(predef, num_filt + 1, rp_rh);
+
     delete rp_rh[num_filt];
 
     delete[] host; // deallocate memory allocated by
@@ -748,39 +653,6 @@ void
 LogConfig::setup_log_objects()
 {
   Debug("log", "creating objects...");
-
-  // ----------------------------------------------------------------------
-  // Construct the LogObjects for the pre-defined formats.
-
-  // gather the config information for the pre-defined formats
-  //
-  PreDefinedFormatList predef;
-
-  predef.init(this);
-
-  // do protocol splitting
-  //
-  LogFilter *reject_protocol_filter = split_by_protocol(predef);
-
-  // do host splitting
-  //
-  size_t num_hosts = 0;
-  if (separate_host_logs) {
-    num_hosts = split_by_hostname(predef, reject_protocol_filter);
-  }
-
-  if (num_hosts == 0) {
-    // if no host splitting was requested, or if host splitting
-    // was not successful (e.g. empty log_hosts.config file) then
-    // create the "catch-all" object that contains logs for all
-    // protocols that do not have their own file, and for all hosts
-    //
-    LogFilter *f[1];
-    f[0] = reject_protocol_filter;
-    create_predefined_objects_with_filter(predef, countof(f), f);
-  }
-
-  delete reject_protocol_filter;
 
   // ----------------------------------------------------------------------
   // Construct the LogObjects for the custom formats

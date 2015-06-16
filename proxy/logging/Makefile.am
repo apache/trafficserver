@@ -64,8 +64,6 @@ liblogging_a_SOURCES = \
   LogLimits.h \
   LogObject.cc \
   LogObject.h \
-  LogPredefined.cc \
-  LogPredefined.h \
   LogSock.cc \
   LogSock.h \
   LogUtils.cc \
