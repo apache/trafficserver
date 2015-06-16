@@ -538,8 +538,7 @@ evacuate_fragments(CacheKey *key, CacheKey *earliest_key, int force, Vol *vol)
   while (dir_probe(key, vol, &dir, &last_collision)) {
     // next fragment cannot be a head...if it is, it must have been a
     // directory collision.
-    if (dir_head(&dir)
-          )
+    if (dir_head(&dir))
       continue;
     EvacuationBlock *b = evacuation_block_exists(&dir, vol);
     if (!b) {

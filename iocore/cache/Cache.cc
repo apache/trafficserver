@@ -1280,7 +1280,6 @@ vol_clear_init(Vol *d)
   d->header->dirty = 0;
   d->sector_size = d->header->sector_size = d->disk->hw_sector_size;
   *d->footer = *d->header;
-
 }
 
 int
@@ -1450,7 +1449,7 @@ Vol::handle_dir_read(int event, void *data)
   sector_size = header->sector_size;
 
 
-    return this->recover_data();
+  return this->recover_data();
 
 
   return EVENT_CONT;
@@ -2424,7 +2423,7 @@ CacheVC::handleRead(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     goto LramHit;
   }
 
-// check if it was read in the last open_read call
+  // check if it was read in the last open_read call
   if (*read_key == vol->first_fragment_key && dir_offset(&dir) == vol->first_fragment_offset) {
     buf = vol->first_fragment_data;
     goto LmemHit;

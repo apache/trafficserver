@@ -153,7 +153,7 @@ struct FreeDir {
   unsigned int reserved : 8;
   unsigned int prev : 16; // (2)
   unsigned int next : 16; // (3)
-  inku16 offset_high; // 0: empty
+  inku16 offset_high;     // 0: empty
 #else
   uint16_t w[5];
   FreeDir() { dir_clear(this); }
