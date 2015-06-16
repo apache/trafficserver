@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-3561] Remove proxy.config.http.share_server_sessions
+
   *) [TS-3656] Activating follow redirection in send server response hook does not work for post
 
   *) [TS-3541] Eliminate the interim cache feature.

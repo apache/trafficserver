@@ -1578,8 +1578,6 @@ HttpSM::state_http_server_open(int event, void *data)
                 httpServerSessionAllocator.alloc();
     session->sharing_pool = static_cast<TSServerSessionSharingPoolType>(t_state.txn_conf->server_session_sharing_pool);
     session->sharing_match = static_cast<TSServerSessionSharingMatchType>(t_state.txn_conf->server_session_sharing_match);
-    //    session->share_session = t_state.txn_conf->share_server_sessions;
-
     // If origin_max_connections or origin_min_keep_alive_connections is
     // set then we are metering the max and or min number
     // of connections per host.  Set enable_origin_connection_limiting
@@ -4601,9 +4599,8 @@ HttpSM::do_http_server_open(bool raw)
       hsm_release_assert(0);
     }
   }
-  // This bug was due to when share_server_sessions is set to 0
-  // and we have keep-alive, we are trying to open a new server session
-  // when we already have an attached server session.
+  // Avoid a problem where server session sharing is disabled and we have keep-alive, we are trying to open a new server
+  // session when we already have an attached server session.
   else if ((TS_SERVER_SESSION_SHARING_MATCH_NONE == t_state.txn_conf->server_session_sharing_match || is_private()) &&
            (ua_session != NULL)) {
     HttpServerSession *existing_ss = ua_session->get_server_session();

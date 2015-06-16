@@ -7702,10 +7702,6 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   case TS_CONFIG_HTTP_AUTH_SERVER_SESSION_PRIVATE:
     ret = &overridableHttpConfig->auth_server_session_private;
     break;
-  case TS_CONFIG_HTTP_SHARE_SERVER_SESSIONS:
-    ink_assert("Deprecated config key value - TS_CONFIG_HTTP_SHARE_SERVER_SESSIONS");
-    //    ret = &overridableHttpConfig->share_server_sessions;
-    break;
   case TS_CONFIG_HTTP_SERVER_SESSION_SHARING_POOL:
     ret = &overridableHttpConfig->server_session_sharing_pool;
     break;
@@ -8014,28 +8010,6 @@ TSHttpTxnConfigIntSet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtInt val
 
   s->t_state.setup_per_txn_configs();
 
-  // 4.1.X backwards compatibility - remove for 5.0
-  if (TS_CONFIG_HTTP_SHARE_SERVER_SESSIONS == conf) {
-    switch (value) {
-    case 0:
-      s->t_state.txn_conf->server_session_sharing_match = TS_SERVER_SESSION_SHARING_MATCH_NONE;
-      break;
-    case 1:
-      s->t_state.txn_conf->server_session_sharing_match = TS_SERVER_SESSION_SHARING_MATCH_BOTH;
-      s->t_state.txn_conf->server_session_sharing_pool = TS_SERVER_SESSION_SHARING_POOL_GLOBAL;
-      break;
-    case 2:
-      s->t_state.txn_conf->server_session_sharing_match = TS_SERVER_SESSION_SHARING_MATCH_BOTH;
-      s->t_state.txn_conf->server_session_sharing_pool = TS_SERVER_SESSION_SHARING_POOL_THREAD;
-      break;
-    default:
-      return TS_ERROR;
-      break; // make the compiler happy
-    }
-    return TS_SUCCESS;
-  }
-  // end 4.1.X BC
-
   void *dest = _conf_to_memberp(conf, s->t_state.txn_conf, &type);
 
   if (!dest)
@@ -8063,23 +8037,6 @@ TSHttpTxnConfigIntGet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtInt *va
 
   HttpSM *s = reinterpret_cast<HttpSM *>(txnp);
   OverridableDataType type;
-
-  // 4.1.X backwards compatibility - remove for 5.0
-  if (TS_CONFIG_HTTP_SHARE_SERVER_SESSIONS == conf) {
-    if (s->t_state.txn_conf->server_session_sharing_match == TS_SERVER_SESSION_SHARING_MATCH_NONE)
-      *value = 0;
-    else if (s->t_state.txn_conf->server_session_sharing_match == TS_SERVER_SESSION_SHARING_MATCH_BOTH &&
-             s->t_state.txn_conf->server_session_sharing_pool == TS_SERVER_SESSION_SHARING_POOL_GLOBAL)
-      *value = 1;
-    else if (s->t_state.txn_conf->server_session_sharing_match == TS_SERVER_SESSION_SHARING_MATCH_BOTH &&
-             s->t_state.txn_conf->server_session_sharing_pool == TS_SERVER_SESSION_SHARING_POOL_THREAD)
-      *value = 2;
-    else
-      return TS_ERROR;
-    return TS_SUCCESS;
-  }
-  // end 4.1.X BC
-
   void *src = _conf_to_memberp(conf, s->t_state.txn_conf, &type);
 
   if (!src)
@@ -8337,8 +8294,6 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
     case 's':
       if (!strncmp(name, "proxy.config.http.doc_in_cache_skip_dns", length))
         cnf = TS_CONFIG_HTTP_DOC_IN_CACHE_SKIP_DNS;
-      else if (!strncmp(name, "proxy.config.http.share_server_sessions", length))
-        cnf = TS_CONFIG_HTTP_SHARE_SERVER_SESSIONS;
       break;
     }
     break;

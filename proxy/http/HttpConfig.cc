@@ -155,34 +155,6 @@ http_config_cb(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNU
   return 0;
 }
 
-// Convert from the old share_server_session value to the new config vars.
-static void
-http_config_share_server_sessions_bc(HttpConfigParams *c, MgmtByte v)
-{
-  switch (v) {
-  case 0:
-    c->oride.server_session_sharing_match = TS_SERVER_SESSION_SHARING_MATCH_NONE;
-    c->oride.server_session_sharing_pool = TS_SERVER_SESSION_SHARING_POOL_GLOBAL;
-    break;
-  case 1:
-    c->oride.server_session_sharing_match = TS_SERVER_SESSION_SHARING_MATCH_BOTH;
-    c->oride.server_session_sharing_pool = TS_SERVER_SESSION_SHARING_POOL_GLOBAL;
-    break;
-  case 2:
-    c->oride.server_session_sharing_match = TS_SERVER_SESSION_SHARING_MATCH_BOTH;
-    c->oride.server_session_sharing_pool = TS_SERVER_SESSION_SHARING_POOL_THREAD;
-    break;
-  }
-}
-
-static void
-http_config_share_server_sessions_read_bc(HttpConfigParams *c)
-{
-  MgmtByte v;
-  if (REC_ERR_OKAY == RecGetRecordByte("proxy.config.http.share_server_sessions", &v))
-    http_config_share_server_sessions_bc(c, v);
-}
-
 // [amc] Not sure which is uglier, this switch or having a micro-function for each var.
 // Oh, how I long for when we can use C++eleventy lambdas without compiler problems!
 // I think for 5.0 when the BC stuff is yanked, we should probably revert this to independent callbacks.
@@ -210,8 +182,6 @@ http_server_session_sharing_cb(char const *name, RecDataT dtype, RecData data, v
     } else {
       valid_p = false;
     }
-  } else if (0 == strcasecmp("proxy.config.http.share_server_sessions", name) && RECD_INT == dtype) {
-    http_config_share_server_sessions_bc(c, data.rec_int);
   } else {
     valid_p = false;
   }
@@ -976,11 +946,6 @@ HttpConfig::startup()
   http_config_enum_read("proxy.config.http.server_session_sharing.match", SessionSharingMatchStrings,
                         c.oride.server_session_sharing_match);
 
-  // 4.2 Backwards compatibility - read this *after* the new server_session_sharing settings
-  RecRegisterConfigUpdateCb("proxy.config.http.share_server_sessions", &http_server_session_sharing_cb, &c);
-  http_config_share_server_sessions_read_bc(&c);
-  // end 4.2 BC
-
   HttpEstablishStaticConfigByte(c.oride.auth_server_session_private, "proxy.config.http.auth_server_session_private");
 
   HttpEstablishStaticConfigByte(c.oride.keep_alive_post_out, "proxy.config.http.keep_alive_post_out");
@@ -1252,7 +1217,6 @@ HttpConfig::reconfigure()
     params->oride.flow_high_water_mark = params->oride.flow_low_water_mark = 0;
   }
 
-  //  params->oride.share_server_sessions = m_master.oride.share_server_sessions;
   params->oride.server_session_sharing_pool = m_master.oride.server_session_sharing_pool;
   params->oride.server_session_sharing_match = m_master.oride.server_session_sharing_match;
   params->oride.keep_alive_post_out = m_master.oride.keep_alive_post_out;
