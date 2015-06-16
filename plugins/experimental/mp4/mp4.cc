@@ -463,7 +463,7 @@ mp4_parse_meta(Mp4TransformContext *mtc, bool body_complete)
     mtc->meta_length = TSIOBufferReaderAvail(mm->out_handle.reader);
   }
 
-  if (ret != 0 && mtc->dup_reader) {
+  if (ret != 0) {
     TSIOBufferReaderFree(mtc->dup_reader);
     mtc->dup_reader = NULL;
   }
