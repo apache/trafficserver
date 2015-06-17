@@ -1466,11 +1466,12 @@ HttpTransact::HandleApiErrorJump(State *s)
   // case the txn was reenabled in error by a plugin from hook SEND_RESPONSE_HDR.
   // build_response doesn't clean the header. So clean it up before.
   // Do fields_clear() instead of clear() to prevent memory leak
-  // and set the source to internal so chunking is handled correctly
   if (s->hdr_info.client_response.valid()) {
     s->hdr_info.client_response.fields_clear();
-    s->source = SOURCE_INTERNAL;
   }
+
+  // Set the source to internal so chunking is handled correctly
+  s->source = SOURCE_INTERNAL;
 
   /**
     The API indicated an error. Lets use a >=400 error from the state (if one's set) or fallback to a
