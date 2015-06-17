@@ -636,6 +636,25 @@ LogAccess::marshal_config_str_var(char *config_var, char *buf)
   return len;
 }
 
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
+LogAccess::marshal_milestone(TransactionMilestones::Milestone ms, char *buf)
+{
+  DEFAULT_INT_FIELD;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
+LogAccess::marshal_milestone_diff(TransactionMilestones::Milestone ms1, TransactionMilestones::Milestone ms2, char *buf)
+{
+  DEFAULT_INT_FIELD;
+}
+
+
 // To allow for a generic marshal_record function, rather than
 // multiple functions (one per data type) we always marshal a record
 // as a string of a fixed length.  We use a fixed length because the

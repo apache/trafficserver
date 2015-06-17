@@ -732,6 +732,18 @@ http_trans_stats_time_useconds_cb(void *data, void *res)
   return res;
 }
 
+void
+TransactionMilestones::ms_set(Milestone ms, ink_hrtime val)
+{
+  milestones[ms] = val;
+}
+
+ink_hrtime
+TransactionMilestones::ms_get(Milestone ms) const
+{
+  return milestones[ms];
+}
+
 int64_t
 milestone_difference_msec(const ink_hrtime start, const ink_hrtime end)
 {

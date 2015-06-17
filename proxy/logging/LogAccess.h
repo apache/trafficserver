@@ -281,6 +281,13 @@ public:
   int marshal_record(char *record, char *buf);
 
   //
+  // milestones access
+  //
+  inkcoreapi virtual int marshal_milestone(TransactionMilestones::Milestone ms, char *buf);
+  inkcoreapi virtual int marshal_milestone_diff(TransactionMilestones::Milestone ms1, TransactionMilestones::Milestone ms2,
+                                                char *buf);
+
+  //
   // unmarshalling routines
   //
   // They used to return a string; now they unmarshal directly into the

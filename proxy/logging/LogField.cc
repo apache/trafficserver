@@ -37,7 +37,7 @@
 #include "Log.h"
 
 const char *container_names[] = {"not-a-container", "cqh", "psh", "pqh", "ssh", "cssh", "ecqh", "epsh", "epqh", "essh", "ecssh",
-                                 "icfg", "scfg", "record", ""};
+                                 "icfg", "scfg", "record", "ms", "msdiff", ""};
 
 const char *aggregate_names[] = {"not-an-agg-op", "COUNT", "SUM", "AVG", "FIRST", "LAST", ""};
 
@@ -118,6 +118,42 @@ LogSlice::toStrOffset(int strlen, int *offset)
 /*-------------------------------------------------------------------------
   LogField::LogField
   -------------------------------------------------------------------------*/
+struct cmp_str {
+  bool operator()(char const *a, char const *b) { return std::strcmp(a, b) < 0; }
+};
+
+typedef std::map<const char *, TransactionMilestones::Milestone, cmp_str> milestone_map;
+static milestone_map m_milestone_map;
+
+struct milestone {
+  const char *msname;
+  TransactionMilestones::Milestone mstype;
+};
+
+static const milestone milestones[] = {
+  {"MILESTONE_UA_BEGIN", TransactionMilestones::UA_BEGIN},
+  {"MILESTONE_UA_FIRST_READ", TransactionMilestones::UA_FIRST_READ},
+  {"MILESTONE_UA_READ_HEADER_DONE", TransactionMilestones::UA_READ_HEADER_DONE},
+  {"MILESTONE_UA_BEGIN_WRITE", TransactionMilestones::UA_BEGIN_WRITE},
+  {"MILESTONE_UA_CLOSE", TransactionMilestones::UA_CLOSE},
+  {"MILESTONE_SERVER_FIRST_CONNECT", TransactionMilestones::SERVER_FIRST_CONNECT},
+  {"MILESTONE_SERVER_CONNECT", TransactionMilestones::SERVER_CONNECT},
+  {"MILESTONE_SERVER_CONNECT_END", TransactionMilestones::SERVER_CONNECT_END},
+  {"MILESTONE_SERVER_BEGIN_WRITE", TransactionMilestones::SERVER_BEGIN_WRITE},
+  {"MILESTONE_SERVER_FIRST_READ", TransactionMilestones::SERVER_FIRST_READ},
+  {"MILESTONE_SERVER_READ_HEADER_DONE", TransactionMilestones::SERVER_READ_HEADER_DONE},
+  {"MILESTONE_SERVER_CLOSE", TransactionMilestones::SERVER_CLOSE},
+  {"MILESTONE_CACHE_OPEN_READ_BEGIN", TransactionMilestones::CACHE_OPEN_READ_BEGIN},
+  {"MILESTONE_CACHE_OPEN_READ_END", TransactionMilestones::CACHE_OPEN_READ_END},
+  {"MILESTONE_CACHE_OPEN_WRITE_BEGIN", TransactionMilestones::CACHE_OPEN_WRITE_BEGIN},
+  {"MILESTONE_CACHE_OPEN_WRITE_END", TransactionMilestones::CACHE_OPEN_WRITE_END},
+  {"MILESTONE_DNS_LOOKUP_BEGIN", TransactionMilestones::DNS_LOOKUP_BEGIN},
+  {"MILESTONE_DNS_LOOKUP_END", TransactionMilestones::DNS_LOOKUP_END},
+  {"MILESTONE_SM_START", TransactionMilestones::SM_START},
+  {"MILESTONE_SM_FINISH", TransactionMilestones::SM_FINISH},
+  {"MILESTONE_PLUGIN_ACTIVE", TransactionMilestones::PLUGIN_ACTIVE},
+  {"MILESTONE_PLUGIN_TOTAL", TransactionMilestones::PLUGIN_TOTAL},
+};
 
 // Generic field ctor
 LogField::LogField(const char *name, const char *symbol, Type type, MarshalFunc marshal, UnmarshalFunc unmarshal, SetFunc _setfunc)
@@ -132,6 +168,12 @@ LogField::LogField(const char *name, const char *symbol, Type type, MarshalFunc 
 
   m_time_field = (strcmp(m_symbol, "cqts") == 0 || strcmp(m_symbol, "cqth") == 0 || strcmp(m_symbol, "cqtq") == 0 ||
                   strcmp(m_symbol, "cqtn") == 0 || strcmp(m_symbol, "cqtd") == 0 || strcmp(m_symbol, "cqtt") == 0);
+
+  if (m_milestone_map.empty()) {
+    for (unsigned i = 0; i < countof(milestones); ++i) {
+      m_milestone_map.insert(std::make_pair(milestones[i].msname, milestones[i].mstype));
+    }
+  }
 }
 
 LogField::LogField(const char *name, const char *symbol, Type type, MarshalFunc marshal, UnmarshalFuncWithMap unmarshal,
@@ -148,6 +190,12 @@ LogField::LogField(const char *name, const char *symbol, Type type, MarshalFunc 
 
   m_time_field = (strcmp(m_symbol, "cqts") == 0 || strcmp(m_symbol, "cqth") == 0 || strcmp(m_symbol, "cqtq") == 0 ||
                   strcmp(m_symbol, "cqtn") == 0 || strcmp(m_symbol, "cqtd") == 0 || strcmp(m_symbol, "cqtt") == 0);
+
+  if (m_milestone_map.empty()) {
+    for (unsigned i = 0; i < countof(milestones); ++i) {
+      m_milestone_map.insert(std::make_pair(milestones[i].msname, milestones[i].mstype));
+    }
+  }
 }
 
 // Container field ctor
@@ -186,6 +234,15 @@ LogField::LogField(const char *field, Container container, SetFunc _setfunc)
     m_unmarshal_func = &(LogAccess::unmarshal_record);
     break;
 
+  case MS:
+  case MSDIFF:
+    if (m_milestone_map.empty()) {
+      for (unsigned i = 0; i < countof(milestones); ++i) {
+        m_milestone_map.insert(std::make_pair(milestones[i].msname, milestones[i].mstype));
+      }
+    }
+    m_unmarshal_func = &(LogAccess::unmarshal_int_to_str);
+    break;
   default:
     Note("Invalid container type in LogField ctor: %d", container);
   }
@@ -210,6 +267,51 @@ LogField::~LogField()
 {
   ats_free(m_name);
   ats_free(m_symbol);
+}
+
+TransactionMilestones::Milestone
+LogField::milestone_from_m_name(const char *m_name)
+{
+  milestone_map::iterator it;
+  TransactionMilestones::Milestone result = TransactionMilestones::LAST_ENTRY;
+
+  it = m_milestone_map.find(m_name);
+  if (it != m_milestone_map.end())
+    result = it->second;
+
+  return result;
+}
+
+int
+LogField::milestones_from_m_name(const char *m_name, TransactionMilestones::Milestone *ms1, TransactionMilestones::Milestone *ms2)
+{
+  milestone_map::iterator it;
+  char *ms_name;
+  size_t ms_name_len, skip;
+
+  ms_name_len = strcspn(m_name, " -");
+  ms_name = strndup(m_name, ms_name_len);
+  it = m_milestone_map.find(ms_name);
+  free(ms_name);
+  if (it != m_milestone_map.end()) {
+    *ms1 = it->second;
+  } else {
+    for (it = m_milestone_map.begin(); it != m_milestone_map.end(); ++it)
+
+      return -1;
+  }
+
+  skip = strspn(m_name + ms_name_len, " -");
+  ms_name = strdup(m_name + ms_name_len + skip);
+  it = m_milestone_map.find(ms_name);
+  free(ms_name);
+  if (it != m_milestone_map.end()) {
+    *ms2 = it->second;
+  } else {
+    return -1;
+  }
+
+  return 0;
 }
 
 /*-------------------------------------------------------------------------
@@ -249,6 +351,21 @@ LogField::marshal_len(LogAccess *lad)
 
   case RECORD:
     return lad->marshal_record(m_name, NULL);
+
+  case MS: {
+    TransactionMilestones::Milestone ms = milestone_from_m_name(m_name);
+    if (TransactionMilestones::LAST_ENTRY == ms)
+      return 0;
+    return lad->marshal_milestone(ms, NULL);
+  }
+
+  case MSDIFF: {
+    TransactionMilestones::Milestone ms1, ms2;
+    int rv = milestones_from_m_name(m_name, &ms1, &ms2);
+    if (0 != rv)
+      return 0;
+    return lad->marshal_milestone_diff(ms1, ms2, NULL);
+  }
 
   default:
     return 0;
@@ -299,6 +416,21 @@ LogField::marshal(LogAccess *lad, char *buf)
 
   case RECORD:
     return lad->marshal_record(m_name, buf);
+
+  case MS: {
+    TransactionMilestones::Milestone ms = milestone_from_m_name(m_name);
+    if (TransactionMilestones::LAST_ENTRY == ms)
+      return 0;
+    return lad->marshal_milestone(ms, buf);
+  }
+
+  case MSDIFF: {
+    TransactionMilestones::Milestone ms1, ms2;
+    int rv = milestones_from_m_name(m_name, &ms1, &ms2);
+    if (0 != rv)
+      return 0;
+    return lad->marshal_milestone_diff(ms1, ms2, buf);
+  }
 
   default:
     return 0;
@@ -467,10 +599,13 @@ LogField::valid_aggregate_name(char *name)
 bool
 LogField::fieldlist_contains_aggregates(char *fieldlist)
 {
+  char *match;
   bool contains_aggregates = false;
   for (int i = 1; i < LogField::N_AGGREGATES; i++) {
-    if (strstr(fieldlist, aggregate_names[i]) != NULL) {
-      contains_aggregates = true;
+    if ((match = strstr(fieldlist, aggregate_names[i])) != NULL) {
+      // verify that the aggregate string is not part of a container field name.
+      if ((strchr(fieldlist, '{') == NULL) && (strchr(match, '}') == NULL))
+        contains_aggregates = true;
     }
   }
   return contains_aggregates;

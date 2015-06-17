@@ -27,6 +27,7 @@
 
 #include "libts.h"
 #include "LogFieldAliasMap.h"
+#include "StatSystem.h"
 
 class LogAccess;
 
@@ -103,6 +104,8 @@ public:
     ICFG,
     SCFG,
     RECORD,
+    MS,
+    MSDIFF,
     N_CONTAINERS,
   };
 
@@ -185,6 +188,8 @@ private:
   bool m_time_field;
   Ptr<LogFieldAliasMap> m_alias_map; // map sINT <--> string
   SetFunc m_set_func;
+  TransactionMilestones::Milestone milestone_from_m_name(const char *m_name);
+  int milestones_from_m_name(const char *m_name, TransactionMilestones::Milestone *m1, TransactionMilestones::Milestone *m2);
 
 public:
   LINK(LogField, link);
