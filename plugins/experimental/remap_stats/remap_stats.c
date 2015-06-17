@@ -244,7 +244,7 @@ TSPluginInit(int argc, const char *argv[])
   info.support_email = "dev@trafficserver.apache.org";
 
   if (TSPluginRegister(TS_SDK_VERSION_3_0, &info) != TS_SUCCESS) {
-    TSError("Plugin registration failed.");
+    TSError("[remap_stats] Plugin registration failed.");
     return;
   } else
     TSDebug(DEBUG_TAG, "Plugin registration succeeded.");

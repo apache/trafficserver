@@ -487,7 +487,7 @@ TSPluginInit(int argc, const char *argv[])
   }
 
   if (!pstate->config_file) {
-    TSError("Plugin requires a --config option along with a config file name.");
+    TSError("[regex_revalidate] Plugin requires a --config option along with a config file name.");
     free_plugin_state_t(pstate);
     return;
   }
@@ -504,14 +504,14 @@ TSPluginInit(int argc, const char *argv[])
   info.support_email = "dev@trafficserver.apache.org";
 
   if (TSPluginRegister(TS_SDK_VERSION_3_0, &info) != TS_SUCCESS) {
-    TSError("Plugin registration failed.");
+    TSError("[regex_revalidate] Plugin registration failed.");
     free_plugin_state_t(pstate);
     return;
   } else
     TSDebug(LOG_PREFIX, "Plugin registration succeeded.");
 
   if (!check_ts_version()) {
-    TSError("Plugin requires Traffic Server %d.%d.%d", TS_VERSION_MAJOR, TS_VERSION_MINOR, TS_VERSION_MICRO);
+    TSError("[regex_revalidate] Plugin requires Traffic Server %d.%d.%d", TS_VERSION_MAJOR, TS_VERSION_MINOR, TS_VERSION_MICRO);
     free_plugin_state_t(pstate);
     return;
   }

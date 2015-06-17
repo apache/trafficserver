@@ -50,7 +50,7 @@ RuleSet::add_condition(Parser &p)
     TSDebug(PLUGIN_NAME, "   Adding condition: %%{%s} with arg: %s\n", p.get_op().c_str(), p.get_arg().c_str());
     c->initialize(p);
     if (!c->set_hook(_hook)) {
-      TSError("%s: can't use this condition in this hook", PLUGIN_NAME);
+      TSError("[%s] can't use this condition in this hook", PLUGIN_NAME);
       return;
     }
     if (NULL == _cond) {
@@ -76,7 +76,7 @@ RuleSet::add_operator(Parser &p)
     TSDebug(PLUGIN_NAME, "   Adding operator: %s(%s)\n", p.get_op().c_str(), p.get_arg().c_str());
     o->initialize(p);
     if (!o->set_hook(_hook)) {
-      TSError("%s: can't use this operator in this hook", PLUGIN_NAME);
+      TSError("[%s] can't use this operator in this hook", PLUGIN_NAME);
       return;
     }
     if (NULL == _oper) {

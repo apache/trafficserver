@@ -124,7 +124,7 @@ public:
   void
   usage() const
   {
-    TSError(PLUGIN_NAME, "Usage: @plugin=%s.so @pparam=--policy=chance @pparam=--sample=<x>%", PLUGIN_NAME);
+    TSError("[cache_promote] Usage: @plugin=%s.so @pparam=--policy=chance @pparam=--sample=<x>%");
   }
 
   const char *
@@ -285,7 +285,7 @@ public:
   void
   usage() const
   {
-    TSError(PLUGIN_NAME, "Usage: @plugin=%s.so @pparam=--policy=lru @pparam=--buckets=<n> --hits=<m> --sample=<x>", PLUGIN_NAME);
+    TSError("[cache_promote] Usage: @plugin=%s.so @pparam=--policy=lru @pparam=--buckets=<n> --hits=<m> --sample=<x>");
   }
 
   const char *
@@ -336,7 +336,7 @@ public:
         } else if (0 == strncasecmp(optarg, "lru", 3)) {
           _policy = new LRUPolicy();
         } else {
-          TSError("Unknown policy --policy=%s", optarg);
+          TSError("[cache_promote] Unknown policy --policy=%s", optarg);
           return false;
         }
         if (_policy) {
@@ -349,14 +349,14 @@ public:
             _policy->setSample(optarg);
           } else {
             if (!_policy->parseOption(opt, optarg)) {
-              TSError("The specified policy (%s) does not support the -%c option", _policy->policyName(), opt);
+              TSError("[cache_promote] The specified policy (%s) does not support the -%c option", _policy->policyName(), opt);
               delete _policy;
               _policy = NULL;
               return false;
             }
           }
         } else {
-          TSError("The --policy=<n> parameter must come first on the remap configuration");
+          TSError("[cache_promote] The --policy=<n> parameter must come first on the remap configuration");
           return false;
         }
       }

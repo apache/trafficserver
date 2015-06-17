@@ -49,7 +49,7 @@ TSPluginInit(int argc, const char *argv[])
   info.support_email = "ts-api-support@MyCompany.com";
 
   if (TSPluginRegister(TS_SDK_VERSION_3_0, &info) != TS_SUCCESS) {
-    TSError("Plugin registration failed.\n");
+    TSError("[file-1] Plugin registration failed.");
   }
 
   for (i = 1; i < argc; i++) {

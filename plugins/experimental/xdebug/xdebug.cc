@@ -351,7 +351,7 @@ TSPluginInit(int /* argc */, const char * /*argv */ [])
   info.support_email = (char *)"dev@trafficserver.apache.org";
 
   if (TSPluginRegister(TS_SDK_VERSION_3_0, &info) != TS_SUCCESS) {
-    TSError("xdebug plugin registration failed");
+    TSError("[xdebug] Plugin registration failed");
   }
 
   TSReleaseAssert(TSHttpArgIndexReserve("xdebug", "xdebug header requests", &XArgIndex) == TS_SUCCESS);

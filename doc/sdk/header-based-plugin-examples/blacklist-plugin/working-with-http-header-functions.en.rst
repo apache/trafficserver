@@ -35,19 +35,19 @@ transaction. This is done in the ``handle_dns`` routine, using
    int host_length;
  
    if (TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
-      TSError("couldn't retrieve client request header\n");
+      TSError("[blacklist] Couldn't retrieve client request header");
       goto done;
    }
  
    if (TSHttpHdrUrlGet(bufp, hdr_loc, &url_loc) != TS_SUCCESS) {
-      TSError("couldn't retrieve request url\n");
+      TSError("[blacklist] Couldn't retrieve request url");
       TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
       goto done;
    }
  
    host = TSUrlHostGet(bufp, url_loc, &host_length);
    if (!host) {
-      TSError("couldn't retrieve request hostname\n");
+      TSError("[blacklist] couldn't retrieve request hostname");
       TSHandleMLocRelease(bufp, hdr_loc, url_loc);
       TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
       goto done;

@@ -59,7 +59,7 @@ TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf */, int /* errbuf_size */)
 {
   if (argc < 3) {
-    TSError("Unable to create remap instance, need more parameters");
+    TSError("[geoip_acl] Unable to create remap instance, need more parameters");
     return TS_ERROR;
   } else {
     Acl *a = NULL;
@@ -73,7 +73,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf */, int /
       a->process_args(argc, argv);
       *ih = static_cast<void *>(a);
     } else {
-      TSError("Unable to create remap instance, no supported ACL specified as first parameter");
+      TSError("[geoip_acl] Unable to create remap instance, no supported ACL specified as first parameter");
       return TS_ERROR;
     }
   }

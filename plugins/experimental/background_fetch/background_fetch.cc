@@ -141,7 +141,7 @@ struct BgFetchData {
     TSMBufferDestroy(mbuf);
 
     if (vc) {
-      TSError("%s: Destroyed BgFetchDATA while VC was alive", PLUGIN_NAME);
+      TSError("[%s] Destroyed BgFetchDATA while VC was alive", PLUGIN_NAME);
       TSVConnClose(vc);
       vc = NULL;
     }
@@ -226,10 +226,10 @@ BgFetchData::initialize(TSMBuffer request, TSMLoc req_hdr, TSHttpTxn txnp)
     } else if (ip->sa_family == AF_INET6) {
       memcpy(&client_ip, ip, sizeof(sockaddr_in6));
     } else {
-      TSError("%s: Unknown address family %d", PLUGIN_NAME, ip->sa_family);
+      TSError("[%s] Unknown address family %d", PLUGIN_NAME, ip->sa_family);
     }
   } else {
-    TSError("%s: failed to get client host info", PLUGIN_NAME);
+    TSError("[%s] Failed to get client host info", PLUGIN_NAME);
     return false;
   }
 
@@ -355,7 +355,7 @@ cont_bg_fetch(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
         TSDebug(PLUGIN_NAME, "Client IPv6 = %s", buf);
         break;
       default:
-        TSError("%s: Unknown address family %d", PLUGIN_NAME, sockaddress->sa_family);
+        TSError("[%s] Unknown address family %d", PLUGIN_NAME, sockaddress->sa_family);
         break;
       }
       TSDebug(PLUGIN_NAME, "Starting bg fetch on: %s", data->getUrl());
@@ -373,7 +373,7 @@ cont_bg_fetch(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
       data->w_vio = TSVConnWrite(data->vc, contp, data->req_io_buf_reader, TSIOBufferReaderAvail(data->req_io_buf_reader));
     } else {
       delete data;
-      TSError("%s: failed to connect to internal process, major malfunction", PLUGIN_NAME);
+      TSError("[%s] Failed to connect to internal process, major malfunction", PLUGIN_NAME);
     }
     break;
 
@@ -488,7 +488,7 @@ cont_handle_response(TSCont contp, TSEvent event, void *edata)
 
   if (NULL == config) {
     // something seriously wrong..
-    TSError("%s: can't get configurations", PLUGIN_NAME);
+    TSError("[%s] Can't get configurations", PLUGIN_NAME);
   } else {
     switch (event) {
     case TS_EVENT_HTTP_READ_RESPONSE_HDR:
@@ -517,7 +517,7 @@ cont_handle_response(TSCont contp, TSEvent event, void *edata)
       config->release(); // Release the configuration lease when txn closes
       break;
     default:
-      TSError("%s: unknown event for this plugin", PLUGIN_NAME);
+      TSError("[%s] Unknown event for this plugin", PLUGIN_NAME);
       TSDebug(PLUGIN_NAME, "unknown event for this plugin");
       break;
     }
@@ -544,7 +544,7 @@ TSPluginInit(int argc, const char *argv[])
   info.support_email = (char *)"dev@trafficserver.apache.org";
 
   if (TS_SUCCESS != TSPluginRegister(TS_SDK_VERSION_3_0, &info)) {
-    TSError("%s: plugin registration failed.\n", PLUGIN_NAME);
+    TSError("[%s] Plugin registration failed.", PLUGIN_NAME);
   }
 
   TSCont cont = TSContCreate(cont_handle_response, NULL);

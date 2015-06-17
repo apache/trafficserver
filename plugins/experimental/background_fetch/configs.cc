@@ -33,7 +33,7 @@ BgFetchConfig::readConfig(const char *config_file)
   TSFile file;
 
   if (NULL == config_file) {
-    TSError("%s: invalid config file", PLUGIN_NAME);
+    TSError("[%s] invalid config file", PLUGIN_NAME);
     return false;
   }
 
@@ -45,7 +45,7 @@ BgFetchConfig::readConfig(const char *config_file)
     snprintf(file_path, sizeof(file_path), "%s/%s", TSInstallDirGet(), config_file);
     file = TSfopen(file_path, "r");
     if (NULL == file) {
-      TSError("%s: invalid config file", PLUGIN_NAME);
+      TSError("[%s] invalid config file", PLUGIN_NAME);
       return false;
     }
   }
@@ -59,7 +59,7 @@ BgFetchConfig::readConfig(const char *config_file)
 
     // make sure line was not bigger than buffer
     if (NULL == (eol = strchr(buffer, '\n')) && NULL == (eol = strstr(buffer, "\r\n"))) {
-      TSError("%s: exclusion line too long, did not get a good line in cfg, skipping, line: %s", PLUGIN_NAME, buffer);
+      TSError("[%s] exclusion line too long, did not get a good line in cfg, skipping, line: %s", PLUGIN_NAME, buffer);
       memset(buffer, 0, sizeof(buffer));
       continue;
     }
@@ -83,7 +83,7 @@ BgFetchConfig::readConfig(const char *config_file)
         if (!strcmp(cfg_type, "exclude")) {
           exclude = true;
         } else if (strcmp(cfg_type, "include")) {
-          TSError("%s: invalid specifier %s, skipping config line", PLUGIN_NAME, cfg_type);
+          TSError("[%s] invalid specifier %s, skipping config line", PLUGIN_NAME, cfg_type);
           memset(buffer, 0, sizeof(buffer));
           continue;
         }
@@ -93,7 +93,7 @@ BgFetchConfig::readConfig(const char *config_file)
           if (cfg_value) {
             if (!strcmp(cfg_name, "Content-Length")) {
               if ((cfg_value[0] != '<') && (cfg_value[0] != '>')) {
-                TSError("%s: invalid content-len condition %s, skipping config value", PLUGIN_NAME, cfg_value);
+                TSError("[%s] invalid content-len condition %s, skipping config value", PLUGIN_NAME, cfg_value);
                 memset(buffer, 0, sizeof(buffer));
                 continue;
               }
@@ -109,7 +109,7 @@ BgFetchConfig::readConfig(const char *config_file)
 
             TSDebug(PLUGIN_NAME, "adding background_fetch exclusion rule %d for %s: %s", exclude, cfg_name, cfg_value);
           } else {
-            TSError("%s: invalid value %s, skipping config line", PLUGIN_NAME, cfg_name);
+            TSError("[%s] invalid value %s, skipping config line", PLUGIN_NAME, cfg_name);
           }
         }
       }

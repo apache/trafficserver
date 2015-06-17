@@ -179,7 +179,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
   *ih = (void *)ri;
 
   if (ri == NULL) {
-    TSError("Unable to create remap instance");
+    TSError("[hipes] Unable to create remap instance");
     return TS_ERROR;
   }
 
@@ -188,7 +188,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
     std::string::size_type sep = arg.find_first_of(":");
 
     if (sep == std::string::npos) {
-      TSError("Malformed options in url_remap: %s", argv[ix]);
+      TSError("[hipes] Malformed options in url_remap: %s", argv[ix]);
     } else {
       std::string arg_val = arg.substr(sep + 1, std::string::npos);
 
@@ -229,7 +229,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
       } else if (arg.compare(0, 11, "dns_timeout") == 0) {
         ri->dns_timeout = atoi(arg_val.c_str());
       } else {
-        TSError("Unknown url_remap option: %s", argv[ix]);
+        TSError("[hipes] Unknown url_remap option: %s", argv[ix]);
       }
     }
   }
@@ -435,7 +435,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
     }
 
     if (len > MAX_REDIRECT_URL) {
-      TSError("Redirect in HIPES URL too long");
+      TSError("[hipes] Redirect in HIPES URL too long");
       TSHttpTxnSetHttpRetStatus(rh, TS_HTTP_STATUS_REQUEST_URI_TOO_LONG);
     } else {
       int port = -1;

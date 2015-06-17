@@ -106,7 +106,7 @@ Load_Config_File()
 
     cv._errata.write(error_buffer, sizeof(error_buffer), 0, 0, 0, "");
     TSDebug(PN, "Failed to parse %s as TSConfig format", ConfigPath.c_str());
-    TSError(PCP "Failed to parse %s as TSConfig format", ConfigPath.c_str());
+    TSError("[ssl_cert_loader] Failed to parse %s as TSConfig format", ConfigPath.c_str());
     TSDebug(PN, "Errors: %s", error_buffer);
     return -1;
   }
@@ -132,7 +132,7 @@ Load_Configuration()
   int ret = Load_Config_File();
 
   if (ret != 0) {
-    TSError(PCP "Failed to load the config file, check debug output for errata");
+    TSError("[ssl_cert_loader] Failed to load the config file, check debug output for errata");
   }
 
   Value root = Config.getRoot();
@@ -507,15 +507,15 @@ TSPluginInit(int argc, const char *argv[])
   }
 
   if (TS_SUCCESS != TSPluginRegister(TS_SDK_VERSION_2_0, &info)) {
-    TSError(PCP "registration failed.");
+    TSError("[ssl_cert_loader] Registration failed.");
   } else if (TSTrafficServerVersionGetMajor() < 5) {
-    TSError(PCP "requires Traffic Server 5.0 or later.");
+    TSError("[ssl_cert_loader] Requires Traffic Server 5.0 or later.");
   } else if (0 == (cb_pa = TSContCreate(&CB_Pre_Accept, TSMutexCreate()))) {
-    TSError(PCP "Failed to pre-accept callback.");
+    TSError("[ssl_cert_loader] Failed to pre-accept callback.");
   } else if (0 == (cb_lc = TSContCreate(&CB_Life_Cycle, TSMutexCreate()))) {
-    TSError(PCP "Failed to lifecycle callback.");
+    TSError("[ssl_cert_loader] Failed to lifecycle callback.");
   } else if (0 == (cb_sni = TSContCreate(&CB_servername, TSMutexCreate()))) {
-    TSError(PCP "Failed to create SNI callback.");
+    TSError("[ssl_cert_loader] Failed to create SNI callback.");
   } else {
     TSLifecycleHookAdd(TS_LIFECYCLE_PORTS_INITIALIZED_HOOK, cb_lc);
     TSHttpHookAdd(TS_VCONN_PRE_ACCEPT_HOOK, cb_pa);
@@ -529,7 +529,7 @@ TSPluginInit(int argc, const char *argv[])
       TSContDestroy(cb_pa);
     if (cb_lc)
       TSContDestroy(cb_lc);
-    TSError(PCP "not initialized");
+    TSError("[ssl_cert_loader] Not initialized");
   }
   TSDebug(PN, "Plugin %s", success ? "online" : "offline");
 
@@ -541,7 +541,7 @@ TSPluginInit(int argc, const char *argv[])
 void
 TSPluginInit(int, const char *[])
 {
-  TSError(PCP "requires TLS SNI which is not available.");
+  TSError("[ssl_cert_loader] Requires TLS SNI which is not available.");
 }
 
 #endif // TS_USE_TLS_SNI

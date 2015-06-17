@@ -163,7 +163,7 @@ ts_lua_client_response_header_set(lua_State *L)
 
   } else if (TSMimeHdrFieldCreateNamed(http_ctx->client_response_bufp, http_ctx->client_response_hdrp, key, key_len, &field_loc) !=
              TS_SUCCESS) {
-    TSError("[%s] TSMimeHdrFieldCreateNamed error", __FUNCTION__);
+    TSError("[ts_lua][%s] TSMimeHdrFieldCreateNamed error", __FUNCTION__);
     return 0;
 
   } else {

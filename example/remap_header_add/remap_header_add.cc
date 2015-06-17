@@ -96,7 +96,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, NOWARN_UNUSED char *errbuf
   TSDebug(TAG, "TSRemapNewInstance()");
 
   if (!argv || !ih) {
-    TSError(TAG ": Unable to load plugin because missing argv or ih.");
+    TSError("[remap_header_add] Unable to load plugin because missing argv or ih.");
     return TS_ERROR;
   }
 
@@ -147,7 +147,7 @@ TSRemapDoRemap(void *ih, NOWARN_UNUSED TSHttpTxn txn, NOWARN_UNUSED TSRemapReque
   remap_line *rl = (remap_line *)ih;
 
   if (!rl || !rri) {
-    TSError(TAG ": rl or rri is null.");
+    TSError("[remap_header_add] rl or rri is null.");
     return TSREMAP_NO_REMAP;
   }
 
@@ -156,7 +156,7 @@ TSRemapDoRemap(void *ih, NOWARN_UNUSED TSHttpTxn txn, NOWARN_UNUSED TSRemapReque
   TSMBuffer req_bufp;
   TSMLoc req_loc;
   if (TSHttpTxnClientReqGet(txn, &req_bufp, &req_loc) != TS_SUCCESS) {
-    TSError(TAG ": Error while retrieving client request header");
+    TSError("[remap_header_add] Error while retrieving client request header");
     return TSREMAP_NO_REMAP;
   }
 
@@ -169,7 +169,7 @@ TSRemapDoRemap(void *ih, NOWARN_UNUSED TSHttpTxn txn, NOWARN_UNUSED TSRemapReque
       TSMimeHdrFieldAppend(req_bufp, req_loc, field_loc);
       TSMimeHdrFieldValueStringInsert(req_bufp, req_loc, field_loc, 0, rl->val[i], strlen(rl->val[i]));
     } else {
-      TSError(TAG ": Failure on TSMimeHdrFieldCreate");
+      TSError("[remap_header_add] Failure on TSMimeHdrFieldCreate");
     }
   }
 

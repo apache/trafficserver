@@ -44,7 +44,7 @@ MakeBalancerInstance(const char *opt)
   } else if (len == lengthof("roundrobin") && strncmp(opt, "roundrobin", len) == 0) {
     return MakeRoundRobinBalancer(end ? end + 1 : NULL);
   } else {
-    TSError("balancer: invalid balancing policy '%.*s'", (int)len, opt);
+    TSError("[balancer] Invalid balancing policy '%.*s'", (int)len, opt);
     return NULL;
   }
 }
@@ -82,7 +82,7 @@ MakeBalancerTarget(const char *strval)
   }
 
   if (target.port > INT16_MAX) {
-    TSError("balancer: ignoring invalid port number for target '%s'", strval);
+    TSError("[balancer] Ignoring invalid port number for target '%s'", strval);
     target.port = 0;
   }
 

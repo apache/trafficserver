@@ -35,7 +35,7 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
   const char *ts_version = TSTrafficServerVersionGet();
 
   if (!ts_version) {
-    TSError("Can't get Traffic Server verion.\n");
+    TSError("[version] Can't get Traffic Server verion.\n");
     return;
   }
 
@@ -45,7 +45,7 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
   int patch_ts_version = 0;
 
   if (sscanf(ts_version, "%d.%d.%d", &major_ts_version, &minor_ts_version, &patch_ts_version) != 3) {
-    TSError("Can't extract verions.\n");
+    TSError("[version] Can't extract verions.\n");
     return;
   }
 
@@ -59,7 +59,7 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
 #else
   if (TSPluginRegister(TS_SDK_VERSION_3_0, &info) != TS_SUCCESS) {
 #endif
-    TSError("Plugin registration failed. \n");
+    TSError("[version] Plugin registration failed. \n");
   }
 
   TSDebug("debug-version-plugin", "Running in Apache Traffic Server: v%d.%d.%d\n", major_ts_version, minor_ts_version,
