@@ -563,6 +563,7 @@ UnixNetVConnection::get_data(int id, void *data)
   union {
     TSVIO *vio;
     void *data;
+    int *n;
   } ptr;
 
   ptr.data = data;
@@ -573,6 +574,9 @@ UnixNetVConnection::get_data(int id, void *data)
     return true;
   case TS_API_DATA_WRITE_VIO:
     *ptr.vio = (TSVIO) & this->write.vio;
+    return true;
+  case TS_API_DATA_CLOSED:
+    *ptr.n = this->closed;
     return true;
   default:
     return false;

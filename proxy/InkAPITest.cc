@@ -7109,6 +7109,8 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_TSHttpConnectIntercept)(RegressionTest *test, 
   sockaddr_in addr;
   ats_ip4_set(&addr, 1, 1);
   data->vc = TSHttpConnect(ats_ip_sa_cast(&addr));
+  if (TSVConnClosedGet(data->vc))
+    SDK_RPRINT(data->test, "TSHttpConnect", "TestCase 1", TC_FAIL, "Connect reported as closed immediately after open");
   synclient_txn_send_request_to_vc(data->browser, data->request, data->vc);
 
   /* Wait until transaction is done */

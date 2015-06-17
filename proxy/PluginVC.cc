@@ -938,6 +938,9 @@ PluginVC::get_data(int id, void *data)
       *(void **)data = core_obj->active_data;
     }
     return true;
+  case TS_API_DATA_CLOSED:
+    *static_cast<int*>(data) = this->closed;
+    return true;
   default:
     *(void **)data = NULL;
     return false;

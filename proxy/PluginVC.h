@@ -60,7 +60,7 @@ enum PluginVC_t {
 
 // For the id in set_data/get_data
 enum {
-  PLUGIN_VC_DATA_LOCAL,
+  PLUGIN_VC_DATA_LOCAL = TS_API_DATA_LAST,
   PLUGIN_VC_DATA_REMOTE,
 };
 

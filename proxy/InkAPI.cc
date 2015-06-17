@@ -6349,9 +6349,9 @@ TSVConnClosedGet(TSVConn connp)
   sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
 
   VConnection *vc = (VConnection *)connp;
-  int data;
-
-  vc->get_data(TS_API_DATA_CLOSED, &data); // Can not fail for this case
+  int data = 0;
+  bool f = vc->get_data(TS_API_DATA_CLOSED, &data);
+  ink_assert(f); // This can fail in some cases, we need to track those down.
   return data;
 }
 
