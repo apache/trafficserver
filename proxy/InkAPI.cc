@@ -6540,11 +6540,11 @@ TSNetVConnRemoteAddrGet(TSVConn connp)
 }
 
 void
-TSNetVConnSSLSessionCachedHitSet(TSVConn connp, bool state)
+TSNetVConnSSLSessionCachedHitSet(TSVConn connp, int state)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
   SSLNetVConnection *vc = reinterpret_cast<SSLNetVConnection *>(connp);
-  vc->setSSLSessionCacheHit(state);
+  vc->setSSLSessionCacheHit((0 != state) ? true : false);
 }
 
 TSAction
