@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-3153]: Add SessionAccept object pointer  to SSLNetVC.
+
   *) [TS-3696] Fix range check in HdrHeap::attach_str_heap() such that gcc 5.1
    doesn't complain.
 
