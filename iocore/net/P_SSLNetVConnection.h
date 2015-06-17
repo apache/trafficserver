@@ -162,6 +162,18 @@ public:
     transparentPassThrough = val;
   };
 
+  void
+  set_session_accept_pointer(SessionAccept *acceptPtr)
+  {
+    sessionAcceptPtr = acceptPtr;
+  };
+
+  SessionAccept *
+  get_session_accept_pointer(void) const
+  {
+    return sessionAcceptPtr;
+  };
+
   // Copy up here so we overload but don't override
   using super::reenable;
 
@@ -243,6 +255,7 @@ private:
 
   const SSLNextProtocolSet *npnSet;
   Continuation *npnEndpoint;
+  SessionAccept *sessionAcceptPtr;
 };
 
 typedef int (SSLNetVConnection::*SSLNetVConnHandler)(int, void *);

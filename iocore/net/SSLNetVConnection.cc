@@ -755,7 +755,7 @@ SSLNetVConnection::SSLNetVConnection()
   : ssl(NULL), sslHandshakeBeginTime(0), sslLastWriteTime(0), sslTotalBytesSent(0), hookOpRequested(TS_SSL_HOOK_OP_DEFAULT),
     sslHandShakeComplete(false), sslClientConnection(false), sslClientRenegotiationAbort(false), handShakeBuffer(NULL),
     handShakeHolder(NULL), handShakeReader(NULL), handShakeBioStored(0), sslPreAcceptHookState(SSL_HOOKS_INIT),
-    sslHandshakeHookState(HANDSHAKE_HOOKS_PRE), npnSet(NULL), npnEndpoint(NULL)
+    sslHandshakeHookState(HANDSHAKE_HOOKS_PRE), npnSet(NULL), npnEndpoint(NULL), sessionAcceptPtr(NULL)
 {
 }
 
@@ -826,6 +826,7 @@ SSLNetVConnection::free(EThread *t)
   hookOpRequested = TS_SSL_HOOK_OP_DEFAULT;
   npnSet = NULL;
   npnEndpoint = NULL;
+  sessionAcceptPtr = NULL;
   free_handshake_buffers();
 
   if (from_accept_thread) {
