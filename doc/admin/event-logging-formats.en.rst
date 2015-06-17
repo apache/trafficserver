@@ -293,6 +293,18 @@ The following list describes Traffic Server custom logging fields.
 ``fsiz``
     The size of the file (*n* bytes) as seen by the origin server.
 
+
+.. _ms:
+
+``{Milestone field name}ms``
+    The timestamp in milliseconds of a specific milestone for this request.
+
+
+.. _msdiff:
+
+``{Milestone field name1-Milestone field name2}msdiff``
+    The difference in milliseconds of between two milestones.
+
 .. _pfsc:
 
 ``pfsc``
