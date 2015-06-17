@@ -141,6 +141,9 @@ public:
   virtual int marshal_http_header_field(LogField::Container container, char *field, char *buf);
   virtual int marshal_http_header_field_escapify(LogField::Container container, char *field, char *buf);
 
+  virtual int marshal_milestone(TransactionMilestones::Milestone ms, char *buf);
+  virtual int marshal_milestone_diff(TransactionMilestones::Milestone ms1, TransactionMilestones::Milestone ms2, char *buf);
+
   virtual void set_client_req_url(char *, int);                // STR
   virtual void set_client_req_url_canon(char *, int);          // STR
   virtual void set_client_req_unmapped_url_canon(char *, int); // STR

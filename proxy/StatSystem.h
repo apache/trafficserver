@@ -49,79 +49,103 @@
 class TransactionMilestones
 {
 public:
-  TransactionMilestones()
-    : ua_begin(0), ua_first_read(0), ua_read_header_done(0), ua_begin_write(0), ua_close(0), server_first_connect(0),
-      server_connect(0), server_connect_end(0), server_begin_write(0), server_first_read(0), server_read_header_done(0),
-      server_close(0), cache_open_read_begin(0), cache_open_read_end(0), cache_open_write_begin(0), cache_open_write_end(0),
-      dns_lookup_begin(0), dns_lookup_end(0), sm_start(0), sm_finish(0), plugin_active(0), plugin_total(0)
+  // Used for array indexes, insert new value before _LAST one
+  enum Milestone {
+    ////////////////////////////////////////////////////////
+    // user agent:                                        //
+    // user_agent_begin represents the time this          //
+    // transaction started. If this is the first          //
+    // transaction in a connection, then user_agent_begin //
+    // is set to accept time. otherwise it is set to      //
+    // first read time.                                   //
+    ////////////////////////////////////////////////////////
+    UA_BEGIN = 0,
+    UA_FIRST_READ,
+    UA_READ_HEADER_DONE,
+    UA_BEGIN_WRITE,
+    UA_CLOSE,
+
+    ////////////////////////////////////////////////////////
+    // server (origin_server , parent, blind tunnnel //
+    ////////////////////////////////////////////////////////
+    SERVER_FIRST_CONNECT,
+    SERVER_CONNECT,
+    SERVER_CONNECT_END,
+    SERVER_BEGIN_WRITE,      //  http only
+    SERVER_FIRST_READ,       //  http only
+    SERVER_READ_HEADER_DONE, //  http only
+    SERVER_CLOSE,
+
+    CACHE_OPEN_READ_BEGIN,
+    CACHE_OPEN_READ_END,
+    CACHE_OPEN_WRITE_BEGIN,
+    CACHE_OPEN_WRITE_END,
+
+    DNS_LOOKUP_BEGIN,
+    DNS_LOOKUP_END,
+
+    ///////////////////
+    // state machine //
+    ///////////////////
+    SM_START,
+    SM_FINISH,
+
+    //////////////////
+    // API activity //
+    //////////////////
+    // Total amount of time spent in API calls converted to a timestamp.
+    // (subtract @a sm_start to get the actual time)
+    /// Time spent in API callout.
+    PLUGIN_ACTIVE,
+    /// Time spent in API state during the transaction.
+    PLUGIN_TOTAL,
+    LAST_ENTRY
+    // TODO: Should we instrument these at some point?
+    // CACHE_READ_BEGIN;
+    // CACHE_READ_END;
+    // CACHE_WRITE_BEGIN;
+    // CACHE_WRITE_END;
+  };
+
+  TransactionMilestones() { ink_zero(milestones); }
+
+  ink_hrtime &operator[](Milestone ms) { return milestones[ms]; }
+
+  const ink_hrtime &operator[](Milestone ms) const { return milestones[ms]; }
+
+  /**
+   * Takes two milestones and returns the difference.
+   * @param start The start time
+   * @param end The end time
+   * @return A double that is the time in seconds
+   */
+  int64_t
+  difference_msec(Milestone ms_start, Milestone ms_end) const
   {
+    if (milestones[ms_end] == 0) {
+      return -1;
+    }
+    return (milestones[ms_end] - milestones[ms_start]) / 1000000;
   }
 
+  double
+  difference(Milestone ms_start, Milestone ms_end) const
+  {
+    if (milestones[ms_end] == 0) {
+      return -1;
+    }
+    return (double)(milestones[ms_end] - milestones[ms_start]) / 1000000000;
+  }
 
-  ////////////////////////////////////////////////////////
-  // user agent:                                        //
-  // user_agent_begin represents the time this          //
-  // transaction started. If this is the first          //
-  // transaction in a connection, then user_agent_begin //
-  // is set to accept time. otherwise it is set to      //
-  // first read time.                                   //
-  ////////////////////////////////////////////////////////
-  ink_hrtime ua_begin;
-  ink_hrtime ua_first_read;
-  ink_hrtime ua_read_header_done;
-  ink_hrtime ua_begin_write;
-  ink_hrtime ua_close;
+  ink_hrtime
+  elapsed(Milestone ms_start, Milestone ms_end) const
+  {
+    return milestones[ms_end] - milestones[ms_start];
+  }
 
-  ////////////////////////////////////////////////////////
-  // server (origin_server , parent, blind tunnnel //
-  ////////////////////////////////////////////////////////
-  ink_hrtime server_first_connect;
-  ink_hrtime server_connect;
-  ink_hrtime server_connect_end;
-  ink_hrtime server_begin_write;      //  http only
-  ink_hrtime server_first_read;       //  http only
-  ink_hrtime server_read_header_done; //  http only
-  ink_hrtime server_close;
-
-  ink_hrtime cache_open_read_begin;
-  ink_hrtime cache_open_read_end;
-  ink_hrtime cache_open_write_begin;
-  ink_hrtime cache_open_write_end;
-
-  ink_hrtime dns_lookup_begin;
-  ink_hrtime dns_lookup_end;
-
-  ///////////////////
-  // state machine //
-  ///////////////////
-  ink_hrtime sm_start;
-  ink_hrtime sm_finish;
-
-  //////////////////
-  // API activity //
-  //////////////////
-  // Total amount of time spent in API calls converted to a timestamp.
-  // (subtract @a sm_start to get the actual time)
-  /// Time spent in API callout.
-  ink_hrtime plugin_active;
-  /// Time spent in API state during the transaction.
-  ink_hrtime plugin_total;
-
-  // TODO: Should we instrument these at some point?
-  // ink_hrtime  cache_read_begin;
-  // ink_hrtime  cache_read_end;
-  // ink_hrtime  cache_write_begin;
-  // ink_hrtime  cache_write_end;
+private:
+  ink_hrtime milestones[LAST_ENTRY];
 };
-
-/**
- * Takes two milestones and returns the difference.
- * @param start The start time
- * @param end The end time
- * @return A double that is the time in seconds
- */
-double milestone_difference(const ink_hrtime start, const ink_hrtime end);
-int64_t milestone_difference_msec(const ink_hrtime start, const ink_hrtime end);
 
 // Modularization Project: Build w/o thread-local-dyn-stats
 // temporarily until we switch over to librecords.  Revert to old

@@ -27,6 +27,7 @@
 
 #include "libts.h"
 #include "LogFieldAliasMap.h"
+#include "StatSystem.h"
 
 class LogAccess;
 
@@ -103,6 +104,8 @@ public:
     ICFG,
     SCFG,
     RECORD,
+    MS,
+    MSDMS,
     N_CONTAINERS,
   };
 
@@ -167,6 +170,7 @@ public:
   void set_aggregate_op(Aggregate agg_op);
   void update_aggregate(int64_t val);
 
+  static void init_milestone_container(void);
   static Container valid_container_name(char *name);
   static Aggregate valid_aggregate_name(char *name);
   static bool fieldlist_contains_aggregates(char *fieldlist);
@@ -182,9 +186,13 @@ private:
   Aggregate m_agg_op;
   int64_t m_agg_cnt;
   int64_t m_agg_val;
+  TransactionMilestones::Milestone m_milestone1; ///< Used for MS and MSDMS as the first (or only) milestone.
+  TransactionMilestones::Milestone m_milestone2; ///< Second milestone for MSDMS
   bool m_time_field;
   Ptr<LogFieldAliasMap> m_alias_map; // map sINT <--> string
   SetFunc m_set_func;
+  TransactionMilestones::Milestone milestone_from_m_name();
+  int milestones_from_m_name(TransactionMilestones::Milestone *m1, TransactionMilestones::Milestone *m2);
 
 public:
   LINK(LogField, link);

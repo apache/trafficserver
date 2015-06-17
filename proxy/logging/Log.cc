@@ -318,6 +318,11 @@ Log::init_fields()
   LogField *field;
 
   //
+  // Initializes material to find a milestone name from their
+  // name in a rapid manner.
+  field->init_milestone_container();
+
+  //
   // Create a hash table that will be used to find the global field
   // objects from their symbol names in a rapid manner.
   //
