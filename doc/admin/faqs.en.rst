@@ -606,7 +606,7 @@ other on the Origin side). Traffic Server supports two kinds of timers "Active" 
 "Inactive" timers for each side respectively, as applicable at a given state. The below
 picture illustrates the specific timers run at various states in the current implementation.
 
-.. figure:: ../static/images/admin/transaction_states_and_timers.jpg
+.. figure:: ../static/images/admin/transaction_states_timers.jpg
    :align: center
    :alt: Active and Inactive Timers in various states
 
