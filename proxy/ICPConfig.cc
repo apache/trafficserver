@@ -46,7 +46,7 @@
 //    hostname (string)         -- hostname, used only if (host_ip_str == 0)
 //    host_ip_str (string)      -- decimal dot notation; if null get IP
 //                                   addresss via lookup on hostname
-//    ctype (int)               -- 1=Parent, 2=Sibling
+//    ctype (int)               -- 1=Parent, 2=Sibling, 3=local
 //    proxy_port (int)          -- TCP Port #
 //    icp_port (int)            -- UDP Port #
 //    multicast_member          -- 0=No 1=Yes
@@ -558,7 +558,7 @@ ICPConfiguration::icp_config_change_callback(void *data, void *value, int startu
   //  Each line is formatted as follows with ":" separator for each field
   //    - hostname (string)           -- Identifier for entry
   //    - host_ip_str (string)        -- decimal dot notation
-  //    - ctype (int)                 -- 1=Parent, 2=Sibling
+  //    - ctype (int)                 -- 1=Parent, 2=Sibling, 3=Local
   //    - proxy_port (int)            -- TCP Port #
   //    - icp_port (int)              -- UDP Port #
   //    - multicast_member            -- 0=No 1=Yes
@@ -666,7 +666,7 @@ ICPConfiguration::icp_config_change_callback(void *data, void *value, int startu
     *next++ = 0;
     if (cur != (next - 1)) {
       P[n]._ctype = atoi(cur);
-      if ((P[n]._ctype != PeerConfigData::CTYPE_PARENT) && (P[n]._ctype != PeerConfigData::CTYPE_SIBLING)) {
+      if ((P[n]._ctype != PeerConfigData::CTYPE_PARENT) && (P[n]._ctype != PeerConfigData::CTYPE_SIBLING) && (P[n]._ctype != PeerConfigData::CTYPE_LOCAL)) {
         RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "read icp.config, bad ctype, line %d", ln);
         error = 1;
         break;
