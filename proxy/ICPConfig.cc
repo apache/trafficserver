@@ -666,7 +666,8 @@ ICPConfiguration::icp_config_change_callback(void *data, void *value, int startu
     *next++ = 0;
     if (cur != (next - 1)) {
       P[n]._ctype = atoi(cur);
-      if ((P[n]._ctype != PeerConfigData::CTYPE_PARENT) && (P[n]._ctype != PeerConfigData::CTYPE_SIBLING) && (P[n]._ctype != PeerConfigData::CTYPE_LOCAL)) {
+      if ((P[n]._ctype != PeerConfigData::CTYPE_PARENT) && (P[n]._ctype != PeerConfigData::CTYPE_SIBLING) &&
+          (P[n]._ctype != PeerConfigData::CTYPE_LOCAL)) {
         RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "read icp.config, bad ctype, line %d", ln);
         error = 1;
         break;
