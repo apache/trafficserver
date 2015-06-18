@@ -798,8 +798,8 @@ public:
 
     HttpConfigParams *http_config_param;
     CacheLookupInfo cache_info;
-    bool force_dns;
     DNSLookupInfo dns_info;
+    bool force_dns;
     RedirectInfo redirect_info;
     unsigned int updated_server_version;
     unsigned int cache_open_write_fail_action;
@@ -831,9 +831,9 @@ public:
 
     bool backdoor_request; // internal
     bool cop_test_page;    // internal
+    HttpRequestData request_data;
     ParentConfigParams *parent_params;
     ParentResult parent_result;
-    HttpRequestData request_data;
     CacheControlResult cache_control;
     CacheLookupResult_t cache_lookup_result;
     // FilterResult             content_control;
@@ -879,6 +879,10 @@ public:
 
     StatBlock first_stats;
     StatBlock *current_stats;
+    
+    // new ACL filtering result (calculated immediately after remap)
+    bool client_connection_enabled;
+    bool acl_filtering_performed;
 
     // for negative caching
     bool negative_caching;
@@ -886,10 +890,6 @@ public:
     bool srv_lookup;
     // for authenticated content caching
     CacheAuth_t www_auth_content;
-
-    // new ACL filtering result (calculated immediately after remap)
-    bool client_connection_enabled;
-    bool acl_filtering_performed;
 
     // INK API/Remap API plugin interface
     void *remap_plugin_instance;
@@ -978,8 +978,9 @@ public:
         internal_msg_buffer_size(0), internal_msg_buffer_fast_allocator_size(-1), icp_lookup_success(false), scheme(-1), 
         next_hop_scheme(scheme), orig_scheme(scheme), method(0), cause_of_death_errno(-UNKNOWN_INTERNAL_ERROR),
         client_request_time(UNDEFINED_TIME), request_sent_time(UNDEFINED_TIME), response_received_time(UNDEFINED_TIME), 
-        plugin_set_expire_time(UNDEFINED_TIME), state_machine_id(0), first_stats(), current_stats(NULL), negative_caching(false),
-        srv_lookup(false), www_auth_content(CACHE_AUTH_NONE), client_connection_enabled(true), acl_filtering_performed(false),
+        plugin_set_expire_time(UNDEFINED_TIME), state_machine_id(0), first_stats(), current_stats(NULL), 
+        client_connection_enabled(true), acl_filtering_performed(false), negative_caching(false),
+        srv_lookup(false), www_auth_content(CACHE_AUTH_NONE), 
         remap_plugin_instance(0), fp_tsremap_os_response(NULL), http_return_code(HTTP_STATUS_NONE),
         api_txn_active_timeout_value(-1), api_txn_connect_timeout_value(-1), api_txn_dns_timeout_value(-1),
         api_txn_no_activity_timeout_value(-1), cache_req_hdr_heap_handle(NULL), cache_resp_hdr_heap_handle(NULL),
