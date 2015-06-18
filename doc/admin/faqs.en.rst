@@ -601,7 +601,7 @@ Timers applicable to various states in the transaction
 -----------------------------------------------------
 
 Traffic Server runs a variety of timers at various states of a transaction. Typically,
-a given transaction may involve upto two connections (one on the UA/client side and the
+a given transaction may include upto two connections (one on the UA/client side and the
 other on the Origin side). Traffic Server supports two kinds of timers "Active" and
 "Inactive" timers for each side respectively, as applicable at a given state. The below
 picture illustrates the specific timers run at various states in the current implementation.
