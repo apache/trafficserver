@@ -597,3 +597,16 @@ performance on your origin servers, you may adjust the origin connection timeout
 in Traffic Server by changing :ts:cv:`proxy.config.http.connect_attempts_timeout`
 in :file:`records.config` to a larger value.
 
+Timers applicable to various states in the transaction
+-----------------------------------------------------
+
+Traffic Server runs a variety of timers at various states of a transaction. Typically,
+a given transaction may involve upto two connections (one on the UA/client side and the
+other on the Origin side). Traffic Server supports two kinds of timers "Active" and
+"Inactive" timers for each side respectively, as applicable at a given state. The below
+picture illustrates the specific timers run at various states in the current implementation.
+
+.. figure:: ../static/images/admin/transaction_states_and_timers.jpg
+   :align: center
+   :alt: Active and Inactive Timers in various states
+
