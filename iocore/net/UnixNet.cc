@@ -59,7 +59,7 @@ public:
   check_inactivity(int event, Event *e)
   {
     (void)event;
-    ink_hrtime now = ink_get_hrtime();
+    ink_hrtime now = Thread::get_hrtime();
     NetHandler &nh = *get_NetHandler(this_ethread());
 
     Debug("inactivity_cop_check", "Checking inactivity on Thread-ID #%d", this_ethread()->id);

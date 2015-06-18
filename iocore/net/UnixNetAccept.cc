@@ -54,7 +54,7 @@ send_throttle_message(NetAccept *na)
   afd.events = POLLIN;
 
   int n = 0;
-  while (check_net_throttle(ACCEPT, ink_get_hrtime()) && n < THROTTLE_AT_ONCE - 1 && (socketManager.poll(&afd, 1, 0) > 0)) {
+  while (check_net_throttle(ACCEPT, Thread::get_hrtime()) && n < THROTTLE_AT_ONCE - 1 && (socketManager.poll(&afd, 1, 0) > 0)) {
     int res = 0;
     if ((res = na->server.accept(&con[n])) < 0)
       return res;
@@ -115,7 +115,7 @@ net_accept(NetAccept *na, void *ep, bool blockable)
     count++;
     na->alloc_cache = NULL;
 
-    vc->submit_time = ink_get_hrtime();
+    vc->submit_time = Thread::get_hrtime();
     ats_ip_copy(&vc->server_addr, &vc->con.addr);
     vc->mutex = new_ProxyMutex();
     vc->action_ = *na->action_;
@@ -240,7 +240,7 @@ NetAccept::do_blocking_accept(EThread *t)
   // do-while for accepting all the connections
   // added by YTS Team, yamsat
   do {
-    ink_hrtime now = ink_get_hrtime();
+    ink_hrtime now = Thread::get_hrtime();
 
     // Throttle accepts
 
@@ -251,7 +251,7 @@ NetAccept::do_blocking_accept(EThread *t)
       } else if (send_throttle_message(this) < 0) {
         goto Lerror;
       }
-      now = ink_get_hrtime();
+      now = Thread::get_hrtime();
     }
 
     if ((res = server.accept(&con)) < 0) {
@@ -358,7 +358,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
   int loop = accept_till_done;
 
   do {
-    if (!backdoor && check_net_throttle(ACCEPT, ink_get_hrtime())) {
+    if (!backdoor && check_net_throttle(ACCEPT, Thread::get_hrtime())) {
       ifd = -1;
       return EVENT_CONT;
     }
@@ -435,7 +435,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
     NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, 1);
     vc->id = net_next_connection_number();
 
-    vc->submit_time = ink_get_hrtime();
+    vc->submit_time = Thread::get_hrtime();
     ats_ip_copy(&vc->server_addr, &vc->con.addr);
     vc->set_is_transparent(server.f_inbound_transparent);
     vc->mutex = new_ProxyMutex();

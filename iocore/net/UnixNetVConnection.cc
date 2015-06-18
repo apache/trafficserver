@@ -82,7 +82,7 @@ net_activity(UnixNetVConnection *vc, EThread *thread)
   }
 #else
   if (vc->inactivity_timeout_in)
-    vc->next_inactivity_timeout_at = ink_get_hrtime() + vc->inactivity_timeout_in;
+    vc->next_inactivity_timeout_at = Thread::get_hrtime() + vc->inactivity_timeout_in;
   else
     vc->next_inactivity_timeout_at = 0;
 #endif
@@ -870,7 +870,7 @@ UnixNetVConnection::set_enabled(VIO *vio)
   }
 #else
   if (!next_inactivity_timeout_at && inactivity_timeout_in)
-    next_inactivity_timeout_at = ink_get_hrtime() + inactivity_timeout_in;
+    next_inactivity_timeout_at = Thread::get_hrtime() + inactivity_timeout_in;
 #endif
 }
 
@@ -1087,7 +1087,7 @@ UnixNetVConnection::mainEvent(int event, Event *e)
     /* BZ 49408 */
     // ink_assert(inactivity_timeout_in);
     // ink_assert(next_inactivity_timeout_at < ink_get_hrtime());
-    if (!inactivity_timeout_in || next_inactivity_timeout_at > ink_get_hrtime())
+    if (!inactivity_timeout_in || next_inactivity_timeout_at > Thread::get_hrtime())
       return EVENT_CONT;
     signal_event = VC_EVENT_INACTIVITY_TIMEOUT;
     signal_timeout_at = &next_inactivity_timeout_at;

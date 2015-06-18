@@ -539,7 +539,7 @@ new_CacheVC(Continuation *cont)
   c->_action = cont;
   c->initial_thread = t->tt == DEDICATED ? NULL : t;
   c->mutex = cont->mutex;
-  c->start_time = ink_get_hrtime();
+  c->start_time = Thread::get_hrtime();
   ink_assert(c->trigger == NULL);
   Debug("cache_new", "new %p", c);
 #ifdef CACHE_STAT_PAGES

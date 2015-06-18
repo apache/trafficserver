@@ -1031,7 +1031,7 @@ Lrestart:
     }
 
     if (!vol->dir_sync_in_progress)
-      start_time = ink_get_hrtime();
+      start_time = Thread::get_hrtime();
 
     // recompute hit_evacuate_window
     vol->hit_evacuate_window = (vol->data_blocks * cache_config_hit_evacuate_percent) / 100;
@@ -1109,7 +1109,7 @@ Lrestart:
     } else {
       vol->dir_sync_in_progress = 0;
       CACHE_INCREMENT_DYN_STAT(cache_directory_sync_count_stat);
-      CACHE_SUM_DYN_STAT(cache_directory_sync_time_stat, ink_get_hrtime() - start_time);
+      CACHE_SUM_DYN_STAT(cache_directory_sync_time_stat, Thread::get_hrtime() - start_time);
       start_time = 0;
       goto Ldone;
     }

@@ -155,10 +155,11 @@ public:
   execute()
   {
   }
+
+  static ink_hrtime get_hrtime();
+  static ink_hrtime get_based_hrtime();
 };
 
-extern ink_hrtime ink_get_hrtime();
-extern ink_hrtime ink_get_based_hrtime();
 extern Thread *this_thread();
 
 #endif /*_I_Thread_h*/

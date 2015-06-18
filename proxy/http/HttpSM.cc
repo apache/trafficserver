@@ -94,7 +94,7 @@ milestone_update_api_time(TransactionMilestones &milestones, ink_hrtime &api_tim
     bool active = api_timer >= 0;
     if (!active)
       api_timer = -api_timer;
-    delta = ink_get_hrtime() - api_timer;
+    delta = Thread::get_hrtime() - api_timer;
     api_timer = 0;
     // Exactly zero is a problem because we want to signal *something* happened
     // vs. no API activity at all. This can happen when the API time is less than
@@ -317,7 +317,7 @@ HttpSM::destroy()
 void
 HttpSM::init()
 {
-  milestones.sm_start = ink_get_hrtime();
+  milestones.sm_start = Thread::get_hrtime();
 
   magic = HTTP_SM_MAGIC_ALIVE;
   sm_id = 0;
@@ -468,7 +468,7 @@ HttpSM::start_sub_sm()
 void
 HttpSM::attach_client_session(HttpClientSession *client_vc, IOBufferReader *buffer_reader)
 {
-  milestones.ua_begin = ink_get_hrtime();
+  milestones.ua_begin = Thread::get_hrtime();
   ink_assert(client_vc != NULL);
 
   ua_session = client_vc;
@@ -597,7 +597,7 @@ HttpSM::state_read_client_request_header(int event, void *data)
   //   the accept timeout by the HttpClientSession
   //
   if (client_request_hdr_bytes == 0) {
-    milestones.ua_first_read = ink_get_hrtime();
+    milestones.ua_first_read = Thread::get_hrtime();
     ua_session->get_netvc()->set_inactivity_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_no_activity_timeout_in));
   }
   /////////////////////
@@ -660,7 +660,7 @@ HttpSM::state_read_client_request_header(int event, void *data)
     }
     http_parser_clear(&http_parser);
     ua_entry->vc_handler = &HttpSM::state_watch_for_client_abort;
-    milestones.ua_read_header_done = ink_get_hrtime();
+    milestones.ua_read_header_done = Thread::get_hrtime();
   }
 
   switch (state) {
@@ -826,7 +826,7 @@ HttpSM::state_watch_for_client_abort(int event, void *data)
       ua_entry->read_vio->nbytes = ua_entry->read_vio->ndone;
     }
     mark_server_down_on_client_abort();
-    milestones.ua_close = ink_get_hrtime();
+    milestones.ua_close = Thread::get_hrtime();
     set_ua_abort(HttpTransact::ABORTED, event);
     terminate_sm = true;
     break;
@@ -967,7 +967,7 @@ HttpSM::state_read_push_response_header(int event, void *data)
     // Disable further IO
     ua_entry->read_vio->nbytes = ua_entry->read_vio->ndone;
     http_parser_clear(&http_parser);
-    milestones.server_read_header_done = ink_get_hrtime();
+    milestones.server_read_header_done = Thread::get_hrtime();
   }
 
   switch (state) {
@@ -1001,7 +1001,7 @@ HttpSM::state_raw_http_server_open(int event, void *data)
 {
   STATE_ENTER(&HttpSM::state_raw_http_server_open, event);
   ink_assert(server_entry == NULL);
-  milestones.server_connect_end = ink_get_hrtime();
+  milestones.server_connect_end = Thread::get_hrtime();
   NetVConnection *netvc = NULL;
 
   pending_action = NULL;
@@ -1313,7 +1313,7 @@ HttpSM::state_api_callout(int event, void *data)
           plugin_lock = MUTEX_TAKE_TRY_LOCK(cur_hook->m_cont->mutex, mutex->thread_holding);
 
           if (!plugin_lock) {
-            api_timer = -ink_get_hrtime();
+            api_timer = -Thread::get_hrtime();
             HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_api_callout);
             ink_assert(pending_action == NULL);
             pending_action = mutex->thread_holding->schedule_in(this, HRTIME_MSECONDS(10));
@@ -1329,11 +1329,11 @@ HttpSM::state_api_callout(int event, void *data)
         APIHook *hook = cur_hook;
         cur_hook = cur_hook->next();
 
-        api_timer = ink_get_hrtime();
+        api_timer = Thread::get_hrtime();
         hook->invoke(TS_EVENT_HTTP_READ_REQUEST_HDR + cur_hook_id, this);
         if (api_timer > 0) {
           milestone_update_api_time(milestones, api_timer);
-          api_timer = -ink_get_hrtime(); // set in order to track non-active callout duration
+          api_timer = -Thread::get_hrtime(); // set in order to track non-active callout duration
           // which means that if we get back from the invoke with api_timer < 0 we're already
           // tracking a non-complete callout from a chain so just let it ride. It will get cleaned
           // up in state_api_callback.
@@ -1568,7 +1568,7 @@ HttpSM::state_http_server_open(int event, void *data)
   // TODO decide whether to uncomment after finish testing redirect
   // ink_assert(server_entry == NULL);
   pending_action = NULL;
-  milestones.server_connect_end = ink_get_hrtime();
+  milestones.server_connect_end = Thread::get_hrtime();
   HttpServerSession *session;
 
   switch (event) {
@@ -1699,7 +1699,7 @@ HttpSM::state_read_server_response_header(int event, void *data)
   //   the connect timeout when we set up to read the header
   //
   if (server_response_hdr_bytes == 0) {
-    milestones.server_first_read = ink_get_hrtime();
+    milestones.server_first_read = Thread::get_hrtime();
 
     if (t_state.api_txn_no_activity_timeout_value != -1) {
       server_session->get_netvc()->set_inactivity_timeout(HRTIME_MSECONDS(t_state.api_txn_no_activity_timeout_value));
@@ -1736,7 +1736,7 @@ HttpSM::state_read_server_response_header(int event, void *data)
     // Disable further IO
     server_entry->read_vio->nbytes = server_entry->read_vio->ndone;
     http_parser_clear(&http_parser);
-    milestones.server_read_header_done = ink_get_hrtime();
+    milestones.server_read_header_done = Thread::get_hrtime();
   }
 
   switch (state) {
@@ -2054,7 +2054,7 @@ HttpSM::process_hostdb_info(HostDBInfo *r)
     ink_assert(!t_state.host_db_info.round_robin);
   }
 
-  milestones.dns_lookup_end = ink_get_hrtime();
+  milestones.dns_lookup_end = Thread::get_hrtime();
 
   if (is_debug_tag_set("http_timeout")) {
     if (t_state.api_txn_dns_timeout_value != -1) {
@@ -2321,7 +2321,7 @@ int
 HttpSM::state_cache_open_write(int event, void *data)
 {
   STATE_ENTER(&HttpSM : state_cache_open_write, event);
-  milestones.cache_open_write_end = ink_get_hrtime();
+  milestones.cache_open_write_end = Thread::get_hrtime();
   pending_action = NULL;
 
   switch (event) {
@@ -2422,7 +2422,7 @@ int
 HttpSM::state_cache_open_read(int event, void *data)
 {
   STATE_ENTER(&HttpSM::state_cache_open_read, event);
-  milestones.cache_open_read_end = ink_get_hrtime();
+  milestones.cache_open_read_end = Thread::get_hrtime();
 
   ink_assert(server_entry == NULL);
   ink_assert(t_state.cache_info.object_read == 0);
@@ -2805,7 +2805,7 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer *p)
 {
   STATE_ENTER(&HttpSM::tunnel_handler_server, event);
 
-  milestones.server_close = ink_get_hrtime();
+  milestones.server_close = Thread::get_hrtime();
 
   bool close_connection = false;
 
@@ -3045,7 +3045,7 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer *c)
 
   STATE_ENTER(&HttpSM::tunnel_handler_ua, event);
   ink_assert(c->vc == ua_session);
-  milestones.ua_close = ink_get_hrtime();
+  milestones.ua_close = Thread::get_hrtime();
 
   switch (event) {
   case VC_EVENT_EOS:
@@ -3889,7 +3889,7 @@ HttpSM::do_hostdb_lookup()
   ink_assert(t_state.dns_info.lookup_name != NULL);
   ink_assert(pending_action == NULL);
 
-  milestones.dns_lookup_begin = ink_get_hrtime();
+  milestones.dns_lookup_begin = Thread::get_hrtime();
   bool use_srv_records = t_state.srv_lookup;
 
   if (use_srv_records) {
@@ -4315,7 +4315,7 @@ HttpSM::do_cache_lookup_and_read()
 
   HTTP_INCREMENT_TRANS_STAT(http_cache_lookups_stat);
 
-  milestones.cache_open_read_begin = ink_get_hrtime();
+  milestones.cache_open_read_begin = Thread::get_hrtime();
   t_state.cache_lookup_result = HttpTransact::CACHE_LOOKUP_NONE;
   t_state.cache_info.lookup_count++;
   // YTS Team, yamsat Plugin
@@ -4382,7 +4382,7 @@ HttpSM::do_cache_prepare_write()
 {
   // statistically no need to retry when we are trying to lock
   // LOCK_URL_SECOND url because the server's behavior is unlikely to change
-  milestones.cache_open_write_begin = ink_get_hrtime();
+  milestones.cache_open_write_begin = Thread::get_hrtime();
   bool retry = (t_state.api_lock_url == HttpTransact::LOCK_URL_FIRST);
   do_cache_prepare_action(&cache_sm, t_state.cache_info.object_read, retry);
 }
@@ -4515,7 +4515,7 @@ HttpSM::do_http_server_open(bool raw)
 
   DebugSM("http_seq", "[HttpSM::do_http_server_open] Sending request to server");
 
-  milestones.server_connect = ink_get_hrtime();
+  milestones.server_connect = Thread::get_hrtime();
   if (milestones.server_first_connect == 0) {
     milestones.server_first_connect = milestones.server_connect;
   }
@@ -4821,7 +4821,7 @@ HttpSM::do_api_callout_internal()
     break;
   case HttpTransact::SM_ACTION_API_SEND_RESPONSE_HDR:
     cur_hook_id = TS_HTTP_SEND_RESPONSE_HDR_HOOK;
-    milestones.ua_begin_write = ink_get_hrtime();
+    milestones.ua_begin_write = Thread::get_hrtime();
     break;
   case HttpTransact::SM_ACTION_API_SM_SHUTDOWN:
     if (callout_state == HTTP_API_IN_CALLOUT || callout_state == HTTP_API_DEFERED_SERVER_ERROR) {
@@ -4963,7 +4963,7 @@ HttpSM::mark_server_down_on_client_abort()
     if (milestones.server_first_connect != 0 && milestones.server_first_read == 0) {
       // Check to see if client waited for the threshold
       //  to declare the origin server as down
-      ink_hrtime wait = ink_get_hrtime() - milestones.server_first_connect;
+      ink_hrtime wait = Thread::get_hrtime() - milestones.server_first_connect;
       if (wait < 0) {
         wait = 0;
       }
@@ -5653,7 +5653,7 @@ HttpSM::setup_server_send_request()
     server_request_body_bytes = msg_len;
   }
 
-  milestones.server_begin_write = ink_get_hrtime();
+  milestones.server_begin_write = Thread::get_hrtime();
   server_entry->write_vio = server_entry->vc->do_io_write(this, hdr_length, buf_start);
 }
 
@@ -6317,7 +6317,7 @@ HttpSM::setup_blind_tunnel(bool send_response_hdr)
   IOBufferReader *r_from = from_ua_buf->alloc_reader();
   IOBufferReader *r_to = to_ua_buf->alloc_reader();
 
-  milestones.server_begin_write = ink_get_hrtime();
+  milestones.server_begin_write = Thread::get_hrtime();
   if (send_response_hdr) {
     client_response_hdr_bytes = write_response_header_into_buffer(&t_state.hdr_info.client_response, to_ua_buf);
   } else {
@@ -6559,7 +6559,7 @@ HttpSM::kill_this()
 void
 HttpSM::update_stats()
 {
-  milestones.sm_finish = ink_get_hrtime();
+  milestones.sm_finish = Thread::get_hrtime();
 
   if (t_state.cop_test_page && !t_state.http_config_param->record_cop_page) {
     DebugSM("http_seq", "Skipping cop heartbeat logging & stats due to config");
@@ -6593,7 +6593,7 @@ HttpSM::update_stats()
   // ua_close will not be assigned properly in some exceptional situation.
   // TODO: Assign ua_close with suitable value when HttpTunnel terminates abnormally.
   if (milestones.ua_close == 0 && milestones.ua_read_header_done > 0)
-    milestones.ua_close = ink_get_hrtime();
+    milestones.ua_close = Thread::get_hrtime();
 
   // request_process_time  = The time after the header is parsed to the completion of the transaction
   ink_hrtime request_process_time = milestones.ua_close - milestones.ua_read_header_done;
