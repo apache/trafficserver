@@ -374,17 +374,15 @@ private:
   DISALLOW_COPY_AND_ASSIGN(ConditionIncomingPort);
 };
 
-//Transact Count
+// Transact Count
 class ConditionTransactCount : public Condition
 {
   typedef Matchers<int> MatcherType;
-  public:
-    ConditionTransactCount()
-    {
-      TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionTransactCount");
-    }
 
-  void initialize(Parser& p);
+public:
+  ConditionTransactCount() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionTransactCount"); }
+
+  void initialize(Parser &p);
   void append_value(std::string &s, const Resources &res);
 
 protected:

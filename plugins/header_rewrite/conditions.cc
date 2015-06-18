@@ -617,25 +617,25 @@ ConditionIncomingPort::append_value(std::string &s, const Resources &res)
 
 // ConditionTransactCount
 void
-ConditionTransactCount::initialize(Parser& p)
+ConditionTransactCount::initialize(Parser &p)
 {
   Condition::initialize(p);
 
-  MatcherType* match = new MatcherType(_cond_op);
-  std::string const& arg = p.get_arg();
+  MatcherType *match = new MatcherType(_cond_op);
+  std::string const &arg = p.get_arg();
   match->set(strtol(arg.c_str(), NULL, 10));
 
   _matcher = match;
 }
 
 bool
-ConditionTransactCount::eval(const Resources& res)
+ConditionTransactCount::eval(const Resources &res)
 {
   TSHttpSsn ssn = TSHttpTxnSsnGet(res.txnp);
   bool rval = false;
   if (ssn) {
     int n = TSHttpSsnTransactionCount(ssn);
-    rval = static_cast<MatcherType*>(_matcher)->test(n);
+    rval = static_cast<MatcherType *>(_matcher)->test(n);
     TSDebug(PLUGIN_NAME, "Evaluating TXN-COUNT(): %d: rval: %s", n, rval ? "true" : "false");
   } else {
     TSDebug(PLUGIN_NAME, "Evaluation TXN-COUNT(): No session found, returning false");
@@ -644,10 +644,10 @@ ConditionTransactCount::eval(const Resources& res)
 }
 
 void
-ConditionTransactCount::append_value(std::string& s, Resources const& res)
+ConditionTransactCount::append_value(std::string &s, Resources const &res)
 {
   TSHttpSsn ssn = TSHttpTxnSsnGet(res.txnp);
-  
+
   if (ssn) {
     char value[32]; // enough for UINT64_MAX
     int count = TSHttpSsnTransactionCount(ssn);
