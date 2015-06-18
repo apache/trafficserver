@@ -22,13 +22,13 @@ hosting.config
 .. configfile:: hosting.config
 
 The :file:`hosting.config` file (by default, located in 
-``/usr/local/etc/trafficserver/``) you to assign cache partitions to
+``/usr/local/etc/trafficserver/``) you to assign cache volumes to
 specific origin servers and/or domains so that you can manage cache
 space efficiently and restrict disk usage. For step-by-step instructions
 on partitioning the cache according to origin servers and/or domains,
 refer to :ref:`partitioning-the-cache`.
 
-Before you can assign cache partitions to specific
+Before you can assign cache volumes to specific
 origin servers and/or domains, you must first partition your cache
 according to size and protocol in the :file:`volume.config`
 file.
@@ -49,11 +49,11 @@ Format
 Each line in the :file:`hosting.config` file must have one of the following
 formats::
 
-    hostname=HOST partition=NUMBERS
-    domain=DOMAIN partition=NUMBERS
+    hostname=HOST volume=NUMBERS
+    domain=DOMAIN volume=NUMBERS
 
 where ``HOST`` is the fully-qualified hostname of the origin server
-whose content you want to store on a particular partition (for example,
+whose content you want to store on a particular volume (for example,
 ``www.myhost.com``); ``DOMAIN`` is the domain whose content you
 want to store on a particular partition(for example, ``mydomain.com``);
 and ``NUMBERS`` is a comma-separated list of the partitions on
@@ -71,29 +71,28 @@ Generic Partition
 =================
 
 When configuring the :file:`hosting.config` file, you must assign a generic
-partition to use for content that does not belong to any of the origin
-servers or domains listed. If all partitions for a particular origin
+volume to use for content that does not belong to any of the origin
+servers or domains listed. If all volumes for a particular origin
 server become corrupt, Traffic Server will also use the generic
-partition to store content for that origin server.
+volume to store content for that origin server.
 
-The generic partition must have the following format::
+The generic volume must have the following format::
 
-    hostname=* partition=NUMBERS
+    hostname=* volume=NUMBERS
 
 where ``NUMBERS`` is a comma-separated list of generic
-partitions.
+volumes.
 
 Examples
 ========
 
 The following example configures Traffic Server to store content from
-the domain ``mydomain.com`` in partition 1 and content from
-``www.myhost.com`` in partition 2. Traffic Server stores content from
-all other origin servers in partitions 3 and 4.
+the domain ``mydomain.com`` in volume 1 and content from
+``www.myhost.com`` in volume 2. Traffic Server stores content from
+all other origin servers in volumes 3 and 4.
 
 ::
 
-    domain=mydomain.com partition=1
-    hostname=www.myhost.com partition=2
-    hostname=* partition=3,4
-
+    domain=mydomain.com volume=1
+    hostname=www.myhost.com volume=2
+    hostname=* volume=3,4
