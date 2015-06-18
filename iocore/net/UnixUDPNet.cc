@@ -272,7 +272,7 @@ UDPReadContinuation::init_read(int rfd, IOBufferBlock *buf, int len, struct sock
   fromaddr = ats_ip6_cast(fromaddr_);
   fromaddrlen = fromaddrlen_;
   SET_HANDLER(&UDPReadContinuation::readPollEvent);
-  period = NET_PERIOD;
+  period = -HRTIME_MSECONDS(net_event_period);
   setupPollDescriptor();
   this_ethread()->schedule_every(this, period);
 }

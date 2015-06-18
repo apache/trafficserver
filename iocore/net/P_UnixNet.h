@@ -141,7 +141,6 @@ extern int http_accept_port_number;
 #define THROTTLE_FD_HEADROOM (128 + 64) // CACHE_DB_FDS + 64
 
 #define TRANSIENT_ACCEPT_ERROR_MESSAGE_EVERY HRTIME_HOURS(24)
-#define NET_RETRY_DELAY HRTIME_MSECONDS(10)
 
 // also the 'throttle connect headroom'
 #define THROTTLE_AT_ONCE 5
@@ -151,12 +150,8 @@ extern int http_accept_port_number;
 #define NET_THROTTLE_ACCEPT_HEADROOM 1.1  // 10%
 #define NET_THROTTLE_CONNECT_HEADROOM 1.0 // 0%
 #define NET_THROTTLE_MESSAGE_EVERY HRTIME_MINUTES(10)
-#define NET_PERIOD -HRTIME_MSECONDS(5)
-#define ACCEPT_PERIOD -HRTIME_MSECONDS(4)
-#define NET_THROTTLE_DELAY 50 /* mseconds */
 
 #define PRINT_IP(x) ((uint8_t *)&(x))[0], ((uint8_t *)&(x))[1], ((uint8_t *)&(x))[2], ((uint8_t *)&(x))[3]
-
 
 // function prototype needed for SSLUnixNetVConnection
 unsigned int net_next_connection_number();

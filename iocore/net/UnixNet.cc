@@ -401,7 +401,7 @@ NetHandler::startNetEvent(int event, Event *e)
 {
   (void)event;
   SET_HANDLER((NetContHandler)&NetHandler::mainNetEvent);
-  e->schedule_every(NET_PERIOD);
+  e->schedule_every(-HRTIME_MSECONDS(net_event_period));
   trigger_event = e;
   return EVENT_CONT;
 }
@@ -436,7 +436,7 @@ NetHandler::process_enabled_list(NetHandler *nh)
 
 //
 // The main event for NetHandler
-// This is called every NET_PERIOD, and handles all IO operations scheduled
+// This is called every proxy.config.net.event_period, and handles all IO operations scheduled
 // for this period.
 //
 int

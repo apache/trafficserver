@@ -987,7 +987,7 @@ UnixNetVConnection::startEvent(int /* event ATS_UNUSED */, Event *e)
 {
   MUTEX_TRY_LOCK(lock, get_NetHandler(e->ethread)->mutex, e->ethread);
   if (!lock.is_locked()) {
-    e->schedule_in(NET_RETRY_DELAY);
+    e->schedule_in(HRTIME_MSECONDS(net_retry_delay));
     return EVENT_CONT;
   }
   if (!action_.cancelled)
@@ -1005,10 +1005,10 @@ UnixNetVConnection::acceptEvent(int event, Event *e)
   MUTEX_TRY_LOCK(lock, get_NetHandler(thread)->mutex, e->ethread);
   if (!lock.is_locked()) {
     if (event == EVENT_NONE) {
-      thread->schedule_in(this, NET_RETRY_DELAY);
+      thread->schedule_in(this, HRTIME_MSECONDS(net_retry_delay));
       return EVENT_DONE;
     } else {
-      e->schedule_in(NET_RETRY_DELAY);
+      e->schedule_in(HRTIME_MSECONDS(net_retry_delay));
       return EVENT_CONT;
     }
   }
@@ -1062,7 +1062,7 @@ UnixNetVConnection::mainEvent(int event, Event *e)
 #ifndef INACTIVITY_TIMEOUT
     if (e == active_timeout)
 #endif
-      e->schedule_in(NET_RETRY_DELAY);
+      e->schedule_in(HRTIME_MSECONDS(net_retry_delay));
     return EVENT_CONT;
   }
   if (e->cancelled)

@@ -356,6 +356,29 @@ Unless explicitly specified in `proxy.config.http.server_ports`_ the server port
 
       LOCAL proxy.local.outgoing_ip_to_bind STRING 192.168.101.17 [fc07:192:168:101::17]
 
+.. ts:cv:: CONFIG proxy.config.net.event_period INT 10
+
+   How often, in milli-seconds, to schedule IO event processing. This is
+   unlikely to be necessary to tune, and we discourage setting it to a value
+   smaller than 10ms (on Linux).
+
+.. ts:cv:: CONFIG proxy.config.net.accept_period INT 10
+
+   How often, in milli-seconds, to schedule accept() processing. This is
+   unlikely to be necessary to tune, and we discourage setting it to a value
+   smaller than 10ms (on Linux).
+
+.. ts:cv:: CONFIG proxy.config.net.retry_delay INT 10
+   :reloadable:
+
+   How long to wait until we retry various events that would otherwise block
+   the network processing threads (e.g. locks). We discourage setting this to
+   a value smaller than 10ms (on Linux).
+
+.. ts:cv:: CONFIG proxy.config.net.throttle_delay INT 50
+   :reloadable:
+
+   When we trigger a throttling scenario, this how long our accept() are delayed.
 Cluster
 =======
 

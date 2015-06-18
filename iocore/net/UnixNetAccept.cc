@@ -60,13 +60,13 @@ send_throttle_message(NetAccept *na)
       return res;
     n++;
   }
-  safe_delay(NET_THROTTLE_DELAY / 2);
+  safe_delay(net_throttle_delay / 2);
   int i = 0;
   for (i = 0; i < n; i++) {
     socketManager.read(con[i].fd, dummy_read_request, 4096);
     socketManager.write(con[i].fd, unix_netProcessor.throttle_error_message, strlen(unix_netProcessor.throttle_error_message));
   }
-  safe_delay(NET_THROTTLE_DELAY / 2);
+  safe_delay(net_throttle_delay / 2);
   for (i = 0; i < n; i++)
     con[i].close();
   return 0;
@@ -170,7 +170,7 @@ NetAccept::init_accept(EThread *t, bool isTransparent)
   if (do_listen(NON_BLOCKING, isTransparent))
     return;
   SET_HANDLER((NetAcceptHandler)&NetAccept::acceptEvent);
-  period = ACCEPT_PERIOD;
+  period = -HRTIME_MSECONDS(net_accept_period);
   t->schedule_every(this, period, etype);
 }
 
@@ -186,7 +186,7 @@ NetAccept::init_accept_per_thread(bool isTransparent)
     SET_HANDLER((NetAcceptHandler)&NetAccept::acceptFastEvent);
   else
     SET_HANDLER((NetAcceptHandler)&NetAccept::acceptEvent);
-  period = ACCEPT_PERIOD;
+  period = -HRTIME_MSECONDS(net_accept_period);
 
   NetAccept *a;
   n = eventProcessor.n_threads_for_type[ET_NET];
@@ -247,7 +247,7 @@ NetAccept::do_blocking_accept(EThread *t)
     while (!backdoor && check_net_throttle(ACCEPT, now)) {
       check_throttle_warning();
       if (!unix_netProcessor.throttle_error_message) {
-        safe_delay(NET_THROTTLE_DELAY);
+        safe_delay(net_throttle_delay);
       } else if (send_throttle_message(this) < 0) {
         goto Lerror;
       }
@@ -260,7 +260,7 @@ NetAccept::do_blocking_accept(EThread *t)
       if (seriousness >= 0) { // not so bad
         if (!seriousness)     // bad enough to warn about
           check_transient_accept_error(res);
-        safe_delay(NET_THROTTLE_DELAY);
+        safe_delay(net_throttle_delay);
         return 0;
       }
       if (!action_->cancelled) {

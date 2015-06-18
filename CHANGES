@@ -1,11 +1,16 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-3488] Change some network defines to librecords configurations. We
+   also tune some of them back, to avoid the < 10ms spin issues (but this can
+   be changed now in records.config).
+
   *) [TS-3589] Add TXN-COUNT condition to header_rewrite plugin.
 
-  *) [TS-3058]: Fix TSVConnGetClosed to return a useful value in more situations.
+  *) [TS-3058] Fix TSVConnGetClosed to return a useful value in more
+   situations.
 
-  *) [TS-3153]: Add SessionAccept object pointer  to SSLNetVC.
+  *) [TS-3153] Add SessionAccept object pointer to SSLNetVC.
 
   *) [TS-3696] Fix range check in HdrHeap::attach_str_heap() such that gcc 5.1
    doesn't complain.

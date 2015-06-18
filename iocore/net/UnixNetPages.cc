@@ -56,7 +56,7 @@ struct ShowNet : public ShowCont {
     NetHandler *nh = get_NetHandler(ethread);
     MUTEX_TRY_LOCK(lock, nh->mutex, ethread);
     if (!lock.is_locked()) {
-      ethread->schedule_in(this, NET_RETRY_DELAY);
+      ethread->schedule_in(this, HRTIME_MSECONDS(net_retry_delay));
       return EVENT_DONE;
     }
 
@@ -150,7 +150,7 @@ struct ShowNet : public ShowCont {
     PollDescriptor *pollDescriptor = get_PollDescriptor(ethread);
     MUTEX_TRY_LOCK(lock, nh->mutex, ethread);
     if (!lock.is_locked()) {
-      ethread->schedule_in(this, NET_RETRY_DELAY);
+      ethread->schedule_in(this, HRTIME_MSECONDS(net_retry_delay));
       return EVENT_DONE;
     }
 
