@@ -1548,7 +1548,10 @@ HttpSM::handle_api_return()
     call_transact_and_set_next_state(HttpTransact::HandleRequest);
     break;
   }
-
+  case HttpTransact::SM_ACTION_SSL_TUNNEL: {
+    setup_blind_tunnel(true);
+    break;
+  }
   default: {
     ink_release_assert(!"Should not get here");
   }
@@ -7142,7 +7145,8 @@ HttpSM::set_next_state()
   }
 
   case HttpTransact::SM_ACTION_SSL_TUNNEL: {
-    setup_blind_tunnel(true);
+    t_state.api_next_action = HttpTransact::SM_ACTION_API_SEND_RESPONSE_HDR;
+    do_api_callout();
     break;
   }
 

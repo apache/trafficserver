@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-3708] Call SEND_RESP_HDRS hookpoint for CONNECT responses.
+
   *) [TS-3488] Change some network defines to librecords configurations. We
    also tune some of them back, to avoid the < 10ms spin issues (but this can
    be changed now in records.config).
