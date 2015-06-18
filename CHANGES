@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 6.0.0
 
+  *) [TS-3136] Change default TLS cipher suites
+
   *) [TS-3589] Add TXN-COUNT condition to header_rewrite plugin.
 
   *) [TS-3058]: Fix TSVConnGetClosed to return a useful value in more situations.
@@ -14,8 +16,7 @@ Changes with Apache Traffic Server 6.0.0
 
   *) [TS-3651] Remove proxy.config.http.share_server_sessions.
 
-  *) [TS-3656] Activating follow redirection in send server response hook does
-   not work for post.
+  *) [TS-3536] Activating follow redirection in send server response hook does not work for post.
 
   *) [TS-3541] Eliminate the interim cache feature.
 
