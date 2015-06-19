@@ -76,7 +76,7 @@ int64_t TSCacheHttpInfoSizeGet(TSCacheHttpInfo infop);
 tsapi int TSMimeHdrFieldEqual(TSMBuffer bufp, TSMLoc hdr_obj, TSMLoc field1, TSMLoc field2);
 tsapi TSReturnCode TSHttpTxnHookRegisteredFor(TSHttpTxn txnp, TSHttpHookID id, TSEventFunc funcp);
 
-/* for Media-IXT mms over http */
+/* Various HTTP "control" modes */
 typedef enum {
   TS_HTTP_CNTL_GET_LOGGING_MODE,
   TS_HTTP_CNTL_SET_LOGGING_MODE,

@@ -2141,13 +2141,13 @@ HostDBContinuation::backgroundEvent(int /* event ATS_UNUSED */, Event * /* e ATS
     } else {
       hostdb_hostfile_check_timestamp = hostdb_current_interval;
       if (*hostdb_hostfile_path) {
-	if (0 == stat(hostdb_hostfile_path, &info)) {
-	  if (info.st_mtime > (time_t)hostdb_hostfile_update_timestamp) {
-	    update_p = true; // same file but it's changed.
-	  }
-	} else {
-	  Debug("hostdb", "Failed to stat host file '%s'", hostdb_hostfile_path);
-	}
+        if (0 == stat(hostdb_hostfile_path, &info)) {
+          if (info.st_mtime > (time_t)hostdb_hostfile_update_timestamp) {
+            update_p = true; // same file but it's changed.
+          }
+        } else {
+          Debug("hostdb", "Failed to stat host file '%s'", hostdb_hostfile_path);
+        }
       }
     }
     if (update_p) {
