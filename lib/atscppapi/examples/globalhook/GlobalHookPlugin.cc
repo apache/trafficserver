@@ -36,7 +36,7 @@ public:
 void
 TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
 {
-  atscppapi::TSRegisterPlugin( std::string("CPP_Example_GlobalHookPplugin"),  std::string("apache"),  std::string("info@example.com"));
+  TSRegisterPlugin("CPP_Example_GlobalHookPplugin", "apache", "users@trafficserver.apache.org");
   std::cout << "Hello from " << argv[0] << std::endl;
   new GlobalHookPlugin();
 }

@@ -75,7 +75,7 @@ public:
 void
 TSPluginInit(int /* argc ATS_UNUSED */, const char * /* argv ATS_UNUSED */ [])
 {
-  atscppapi::TSRegisterPlugin( std::string("CPP_Example_AsyncHttpFetchStreaming"),  std::string("apache"),  std::string("info@example.com"));
+  TSRegisterPlugin("CPP_Example_AsyncHttpFetchStreaming", "apache", "users@trafficserver.apache.org");
   new InterceptInstaller();
 }
 

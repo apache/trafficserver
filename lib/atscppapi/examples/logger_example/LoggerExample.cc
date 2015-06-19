@@ -102,7 +102,7 @@ private:
 void
 TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
 {
-  atscppapi::TSRegisterPlugin( std::string("CPP_Example_Logger"),  std::string("apache"),  std::string("info@example.com"));
+  TSRegisterPlugin("CPP_Example_Logger", "apache", "users@trafficserver.apache.org");
   // Create a new logger
   // This will create a log file with the name logger_example.log (since we left off
   //    the extension it will automatically add .log)

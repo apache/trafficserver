@@ -80,6 +80,6 @@ public:
 void
 TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
 {
-  atscppapi::TSRegisterPlugin( std::string("CPP_Example_PostBuffer"),  std::string("apache"),  std::string("info@example.com"));
+  TSRegisterPlugin("CPP_Example_PostBuffer", "apache", "users@trafficserver.apache.org");
   new GlobalHookPlugin();
 }
