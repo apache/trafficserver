@@ -2122,23 +2122,37 @@ HostDBContinuation::backgroundEvent(int /* event ATS_UNUSED */, Event * /* e ATS
   if (hostdb_hostfile_check_interval && // enabled
       (hostdb_current_interval - hostdb_hostfile_check_timestamp) * (HOST_DB_TIMEOUT_INTERVAL / HRTIME_SECOND) >
         hostdb_hostfile_check_interval) {
+    bool update_p = false; // do we need to reparse the file and update?
     struct stat info;
     char path[sizeof(hostdb_hostfile_path)];
 
     REC_ReadConfigString(path, "proxy.config.hostdb.host_file.path", sizeof(path));
     if (0 != strcasecmp(hostdb_hostfile_path, path)) {
-      Debug("hostdb", "Update host file '%s' <- '%s'", path, hostdb_hostfile_path);
+      Debug("hostdb", "Update host file '%s' -> '%s'", (*hostdb_hostfile_path ? hostdb_hostfile_path : "*-none-*"),
+            (*path ? path : "*-none-*"));
       // path to hostfile changed
       hostdb_hostfile_update_timestamp = 0; // never updated from this file
-      memcpy(hostdb_hostfile_path, path, sizeof(hostdb_hostfile_path));
-    }
-    hostdb_hostfile_check_timestamp = hostdb_current_interval;
-    if (0 == stat(hostdb_hostfile_path, &info)) {
-      if (info.st_mtime > (time_t)hostdb_hostfile_update_timestamp) {
-        ParseHostFile(hostdb_hostfile_path);
+      if ('\0' != *path) {
+        memcpy(hostdb_hostfile_path, path, sizeof(hostdb_hostfile_path));
+      } else {
+        hostdb_hostfile_path[0] = 0; // mark as not there
       }
+      update_p = true;
     } else {
-      Debug("hostdb", "Failed to stat host file '%s'", hostdb_hostfile_path);
+      hostdb_hostfile_check_timestamp = hostdb_current_interval;
+      if (*hostdb_hostfile_path) {
+	if (0 == stat(hostdb_hostfile_path, &info)) {
+	  if (info.st_mtime > (time_t)hostdb_hostfile_update_timestamp) {
+	    update_p = true; // same file but it's changed.
+	  }
+	} else {
+	  Debug("hostdb", "Failed to stat host file '%s'", hostdb_hostfile_path);
+	}
+      }
+    }
+    if (update_p) {
+      Debug("hostdb", "Updating from host file");
+      ParseHostFile(hostdb_hostfile_path);
     }
   }
 
@@ -2592,7 +2606,7 @@ HostDBFileContinuation::setDBEntry()
   uint64_t folded_md5 = fold_md5(md5);
 
   // remove the old one to prevent buildup
-  if (0 != (r = hostDB.lookup_block(folded_md5, 3))) {
+  if (0 != (r = hostDB.lookup_block(folded_md5, hostDB.levels))) {
     hostDB.delete_block(r);
     Debug("hostdb", "Update host file entry %s - %" PRIx64 ".%" PRIx64, name, md5[0], md5[1]);
   } else {
@@ -2628,6 +2642,7 @@ HostDBFileContinuation::insertEvent(int, void *)
   r = this->setDBEntry();
   r->reverse_dns = false;
   r->is_srv = false;
+  r->data.ip.assign(HostFilePairs[idx].ip);
   if (k > 1) {
     // multiple entries, need round robin
     int s = HostDBRoundRobin::size(k, false);
@@ -2648,9 +2663,9 @@ HostDBFileContinuation::insertEvent(int, void *)
       r->round_robin = true;
       rr_data->good = k;
       rr_data->current = 0;
+      rr_data->rrcount = dst;
     }
   } else {
-    r->data.ip.assign(HostFilePairs[idx].ip);
     r->round_robin = false;
   }
 
@@ -2769,7 +2784,6 @@ ParseHostLine(char *l)
 void
 ParseHostFile(char const *path)
 {
-  bool success = false;
   // Test and set for update in progress.
   if (0 != ink_atomic_swap(&HostDBFileUpdateActive, 1)) {
     Debug("hostdb", "Skipped load of host file because update already in progress");
@@ -2777,57 +2791,57 @@ ParseHostFile(char const *path)
   }
   Debug("hostdb", "Loading host file '%s'", path);
 
-  ats_scoped_fd fd(open(path, O_RDONLY));
-  if (fd >= 0) {
-    struct stat info;
-    if (0 == fstat(fd, &info)) {
-      // +1 in case no terminating newline
-      int64_t size = info.st_size + 1;
-      HostFileText = static_cast<char *>(ats_malloc(size));
-      if (HostFileText) {
-        char *base = HostFileText;
-        char *limit;
+  if (*path) {
+    ats_scoped_fd fd(open(path, O_RDONLY));
+    if (fd >= 0) {
+      struct stat info;
+      if (0 == fstat(fd, &info)) {
+        // +1 in case no terminating newline
+        int64_t size = info.st_size + 1;
+        HostFileText = static_cast<char *>(ats_malloc(size));
+        if (HostFileText) {
+          char *base = HostFileText;
+          char *limit;
 
-        size = read(fd, HostFileText, info.st_size);
-        limit = HostFileText + size;
-        *limit = 0;
+          size = read(fd, HostFileText, info.st_size);
+          limit = HostFileText + size;
+          *limit = 0;
 
-        // We need to get a list of all name/addr pairs so that we can
-        // group names for round robin records. Also note that the
-        // pairs have pointer back in to the text storage for the file
-        // so we need to keep that until we're done with @a pairs.
-        while (base < limit) {
-          char *spot = strchr(base, '\n');
+          // We need to get a list of all name/addr pairs so that we can
+          // group names for round robin records. Also note that the
+          // pairs have pointer back in to the text storage for the file
+          // so we need to keep that until we're done with @a pairs.
+          while (base < limit) {
+            char *spot = strchr(base, '\n');
 
-          // terminate the line.
-          if (0 == spot)
-            spot = limit; // no trailing EOL, grab remaining
-          else
-            *spot = 0;
+            // terminate the line.
+            if (0 == spot)
+              spot = limit; // no trailing EOL, grab remaining
+            else
+              *spot = 0;
 
-          while (base < spot && isspace(*base))
-            ++base;                        // skip leading ws
-          if (*base != '#' && base < spot) // non-empty non-comment line
-            ParseHostLine(base);
-          base = spot + 1;
-        }
+            while (base < spot && isspace(*base))
+              ++base;                        // skip leading ws
+            if (*base != '#' && base < spot) // non-empty non-comment line
+              ParseHostLine(base);
+            base = spot + 1;
+          }
 
-        hostdb_hostfile_update_timestamp = hostdb_current_interval;
-        success = true;
-        if (!HostFilePairs.empty()) {
-          // Need to sort by name so multiple address hosts are
-          // contiguous.
-          std::sort(HostFilePairs.begin(), HostFilePairs.end(), &CmpHostFilePair);
-          HostDBFileContinuation::scheduleUpdate(0);
-        } else if (!HostFileKeys.empty()) {
-          HostDBFileContinuation::scheduleRemove(-1, 0);
-        } else {
-          // Nothing in new data, nothing in old data, just clean up.
-          HostDBFileContinuation::finish(0);
+          hostdb_hostfile_update_timestamp = hostdb_current_interval;
         }
       }
     }
   }
-  if (!success)
-    HostDBFileUpdateActive = 0;
+
+  if (!HostFilePairs.empty()) {
+    // Need to sort by name so multiple address hosts are
+    // contiguous.
+    std::sort(HostFilePairs.begin(), HostFilePairs.end(), &CmpHostFilePair);
+    HostDBFileContinuation::scheduleUpdate(0);
+  } else if (!HostFileKeys.empty()) {
+    HostDBFileContinuation::scheduleRemove(-1, 0);
+  } else {
+    // Nothing in new data, nothing in old data, just clean up.
+    HostDBFileContinuation::finish(0);
+  }
 }
