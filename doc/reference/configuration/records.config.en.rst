@@ -242,7 +242,7 @@ A value of ``0`` means no signal will be sent.
 
    The new default thread stack size, for all threads. The original default is set at 1 MB.
 
-.. ts:cv:: CONFIG proxy.config.exec_thread.affinity INT 0
+.. ts:cv:: CONFIG proxy.config.exec_thread.affinity INT 1
 
    Bind threads to specific processing units.
 
@@ -250,7 +250,7 @@ A value of ``0`` means no signal will be sent.
 Value Effect
 ===== ====================
 0     assign threads to machine
-1     assign threads to NUMA nodes
+1     assign threads to NUMA nodes [default]
 2     assign threads to sockets
 3     assign threads to cores
 4     assign threads to processing units
@@ -763,16 +763,6 @@ Value Effect
        If :ts:cv:`proxy.config.http.use_client_target_addr` is set to 1, options 2 and 3 cause the proxy to use
        the client HTTP version for upstream requests.
 
-.. ts:cv:: CONFIG proxy.config.http.share_server_sessions INT 2
-   :deprecated:
-
-   Enables (``1``) or disables (``0``) the reuse of server sessions. The
-   default (``2``) is similar to enabled, except it creates a server session
-   pool per network thread. This has the best performance characteristics.
-   Note that setting this parameter to (``2``) will not work correctly unless
-   the dedicated SSL threads are disabled (:ts:cv:`proxy.config.ssl.number.threads`
-   is set to (``-1``)).
-
 .. ts:cv:: CONFIG proxy.config.http.auth_server_session_private INT 1
 
    If enabled (``1``) anytime a request contains a (``Authorization``), (``Proxy-Authorization``)
@@ -1042,7 +1032,7 @@ The default value of ``0`` specifies that there is no timeout.
 Origin Server Connect Attempts
 ==============================
 
-.. ts:cv:: CONFIG proxy.config.http.connect_attempts_max_retries INT 6
+.. ts:cv:: CONFIG proxy.config.http.connect_attempts_max_retries INT 3
    :reloadable:
    :overridable:
 
@@ -1051,7 +1041,7 @@ Origin Server Connect Attempts
    reached, the origin is marked dead.  After this, the setting  `proxy.config.http.connect_attempts_max_retries_dead_server`_
    is used to limit the number of retry attempts to the known dead origin.
 
-.. ts:cv:: CONFIG proxy.config.http.connect_attempts_max_retries_dead_server INT 3
+.. ts:cv:: CONFIG proxy.config.http.connect_attempts_max_retries_dead_server INT 1
    :reloadable:
    :overridable:
 
@@ -1103,7 +1093,7 @@ Origin Server Connect Attempts
    The timeout value (in seconds) for an origin server connection when the client request is a ``POST`` or ``PUT``
    request.
 
-.. ts:cv:: CONFIG proxy.config.http.down_server.cache_time INT 300
+.. ts:cv:: CONFIG proxy.config.http.down_server.cache_time INT 60
    :reloadable:
    :overridable:
 
@@ -1295,10 +1285,10 @@ Cache Control
    usable. See :ref:`Reducing Origin Server Requests
    <http-proxy-caching.en.html#reducing-origin-server-requests-avoiding-the-thundering-herd>`.
 
-.. ts:cv:: CONFIG proxy.config.cache.force_sector_size INT 4096
+.. ts:cv:: CONFIG proxy.config.cache.force_sector_size INT 0
    :reloadable:
 
-   Forces the use of a specific hardware sector size, 4096, for all disks.
+   Forces the use of a specific hardware sector size, e.g. 4096, for all disks.
 
    SSDs and "advanced format” drives claim a sector size of 512; however, it is safe to force a higher
    size than the hardware supports natively as we count atomicity in 512 byte increments.
@@ -1502,7 +1492,7 @@ Cache Control
 
    Specifies the maximum object size that will be cached. ``0`` is unlimited.
 
-.. ts:cv:: CONFIG proxy.config.cache.permit.pinning INT 1
+.. ts:cv:: CONFIG proxy.config.cache.permit.pinning INT 0
    :reloadable:
 
    When enabled (``1``), Traffic Server will keep certain HTTP objects in the cache for a certain time as specified in cache.config.
@@ -1867,7 +1857,7 @@ uses the same origin server for the same client, for as long as the origin serve
 set to :arg:`N` the IP address is rotated if more than :arg:`N` seconds have past since the first time the
 current address was used.
 
-.. ts:cv:: CONFIG proxy.config.hostdb.host_file.path STRING /etc/hosts
+.. ts:cv:: CONFIG proxy.config.hostdb.host_file.path STRING NULL
 
    Set the file path for an external host file.
 
@@ -2186,7 +2176,7 @@ Diagnostic Logging Configuration
 
         CONFIG proxy.config.diags.output.debug STRING SL
 
-.. ts:cv:: CONFIG proxy.config.diags.show_location INT 1
+.. ts:cv:: CONFIG proxy.config.diags.show_location INT 0
 
    Annotates diagnostic messages with the source code location.
 
@@ -2413,7 +2403,7 @@ SSL Termination
   This configuration specifies the maximum number of entries
   the SSL session cache may contain.
 
-.. ts:cv:: CONFIG proxy.config.ssl.session_cache.num_buckets INT 1024
+.. ts:cv:: CONFIG proxy.config.ssl.session_cache.num_buckets INT 256
 
   This configuration specifies the number of buckets to use with the
   Traffic Server SSL session cache implementation. The TS implementation
@@ -2511,7 +2501,7 @@ ICP Configuration
 
    Refer to :ref:`<admin-icp-peering>`.
 
-.. ts:cv:: CONFIG proxy.config.icp.icp_interface STRING your_interface
+.. ts:cv:: CONFIG proxy.config.icp.icp_interface STRING NULL
 
    Specifies the network interface used for ICP traffic.
 
@@ -2579,17 +2569,17 @@ HTTP/2 Configuration
 SPDY Configuration
 ==================
 
-.. ts:cv:: CONFIG proxy.config.spdy.accept_no_activity_timeout INT 30
+.. ts:cv:: CONFIG proxy.config.spdy.accept_no_activity_timeout INT 120
    :reloadable:
 
    How long a SPDY connection will be kept open after an accept without any streams created.
 
-.. ts:cv:: CONFIG proxy.config.spdy.no_activity_timeout_in INT 30
+.. ts:cv:: CONFIG proxy.config.spdy.no_activity_timeout_in INT 115
    :reloadable:
 
    How long a stream is kept open without activity.
 
-.. ts:cv:: CONFIG proxy.config.spdy.initial_window_size_in INT 65536
+.. ts:cv:: CONFIG proxy.config.spdy.initial_window_size_in INT 1048576
    :reloadable:
 
    The initial window size for inbound connections.

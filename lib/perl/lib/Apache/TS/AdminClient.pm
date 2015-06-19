@@ -549,7 +549,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.http.send_http11_requests
  proxy.config.http.server_max_connections
  proxy.config.http.server_port
- proxy.config.http.share_server_sessions
  proxy.config.http.slow.log.threshold
  proxy.config.http.connect_ports
  proxy.config.http.transaction_active_timeout_in

@@ -64,7 +64,6 @@ The following configurations (from ``records.config``) are overridable.
 |   :ts:cv:`proxy.config.http.keep_alive_enabled_in`
 |   :ts:cv:`proxy.config.http.keep_alive_enabled_out`
 |   :ts:cv:`proxy.config.http.keep_alive_post_out`
-|   :ts:cv:`proxy.config.http.share_server_sessions`
 |   :ts:cv:`proxy.config.net.sock_recv_buffer_size_out`
 |   :ts:cv:`proxy.config.net.sock_send_buffer_size_out`
 |   :ts:cv:`proxy.config.net.sock_option_flag_out`
