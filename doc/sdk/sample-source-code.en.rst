@@ -272,7 +272,7 @@ This plugin illustrates:
            info.vendor_name = "DsCompany";
            info.support_email = "ts-api-support@DsCompany.com";
 
-           if (!TSPluginRegister (TS_SDK_VERSION_2_0 , &info)) {
+           if (!TSPluginRegister (&info)) {
                TSError ("Plugin registration failed.\n");
            }
 

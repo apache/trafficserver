@@ -53,12 +53,8 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
   info.vendor_name = "MyCompany";
   info.support_email = "ts-api-support@MyCompany.com";
 
-// partial compilation
-#if (TS_VERSION_NUMBER < 3000000)
-  if (TSPluginRegister(TS_SDK_VERSION_2_0, &info) != TS_SUCCESS) {
-#else
-  if (TSPluginRegister(TS_SDK_VERSION_3_0, &info) != TS_SUCCESS) {
-#endif
+
+  if (TSPluginRegister(&info) != TS_SUCCESS) {
     TSError("Plugin registration failed. \n");
   }
 

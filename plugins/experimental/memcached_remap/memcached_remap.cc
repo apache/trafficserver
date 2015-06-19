@@ -172,7 +172,7 @@ TSPluginInit(int argc, const char *argv[])
   info.support_email = const_cast<char *>("dev@trafficserver.apache.org");
 
   TSDebug(PLUGIN_NAME, "about to init memcached\n");
-  if (TSPluginRegister(TS_SDK_VERSION_2_0, &info) != TS_SUCCESS) {
+  if (TSPluginRegister(&info) != TS_SUCCESS) {
     TSError("memcached_remap: plugin registration failed.\n");
     return;
   }

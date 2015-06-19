@@ -183,7 +183,7 @@ TSPluginInit(int argc, const char *argv[])
     TSDebug(PN, "No config path set in arguments, using default: %s", DEFAULT_CONFIG_PATH);
   }
 
-  if (TS_SUCCESS != TSPluginRegister(TS_SDK_VERSION_2_0, &info)) {
+  if (TS_SUCCESS != TSPluginRegister(&info)) {
     TSError(PCP "registration failed.");
   } else if (TSTrafficServerVersionGetMajor() < 2) {
     TSError(PCP "requires Traffic Server 2.0 or later.");

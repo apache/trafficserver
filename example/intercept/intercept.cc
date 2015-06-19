@@ -537,7 +537,7 @@ TSPluginInit(int /* argc */, const char * /* argv */ [])
   info.vendor_name = (char *)"MyCompany";
   info.support_email = (char *)"ts-api-support@MyCompany.com";
 
-  if (TSPluginRegister(TS_SDK_VERSION_3_0, &info) != TS_SUCCESS) {
+  if (TSPluginRegister(&info) != TS_SUCCESS) {
     VERROR("plugin registration failed\n");
   }
 

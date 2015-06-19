@@ -148,14 +148,12 @@ int TSTrafficServerVersionGetPatch(void);
     Traffic Server version currently running also supports your plugin.
     See the SDK sample code for usage.
 
-    @param sdk_version earliest version of the Traffic Server SDK that
-      supports your plugin.
     @param plugin_info contains registration information about your
       plugin. See TSPluginRegistrationInfo.
     @return TS_ERROR if the plugin registration failed.
 
  */
-tsapi TSReturnCode TSPluginRegister(TSSDKVersion sdk_version, TSPluginRegistrationInfo *plugin_info);
+tsapi TSReturnCode TSPluginRegister(TSPluginRegistrationInfo *plugin_info);
 
 /* --------------------------------------------------------------------------
    Files */

@@ -88,7 +88,7 @@ TSPluginInit(int argc, const char *argv[])
   info.vendor_name = "My Company";
   info.support_email = "ts-api-support@MyCompany.com";
 
-  if (TSPluginRegister(TS_SDK_VERSION_3_0, &info) != TS_SUCCESS) {
+  if (TSPluginRegister(&info) != TS_SUCCESS) {
     TSError("[lifecycle-plugin] Plugin registration failed.\n");
     goto Lerror;
   }

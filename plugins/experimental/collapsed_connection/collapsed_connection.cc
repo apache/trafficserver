@@ -1113,7 +1113,7 @@ TSPluginInit(int argc, const char *argv[])
   info.vendor_name = const_cast<char *>(PLUGIN_VENDOR);
   info.support_email = const_cast<char *>(PLUGIN_SUPPORT);
 
-  if (TS_SUCCESS != TSPluginRegister(TS_SDK_VERSION_3_0, &info)) {
+  if (TS_SUCCESS != TSPluginRegister(&info)) {
     TSError("Plugin registration failed");
     return;
   }

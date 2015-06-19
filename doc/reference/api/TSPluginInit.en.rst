@@ -28,7 +28,7 @@ Synopsis
 `#include <ts/ts.h>`
 
 .. function:: void TSPluginInit(int argc, const char* argv[])
-.. function:: TSReturnCode TSPluginRegister(TSSDKVersion sdk_version, TSPluginRegistrationInfo* plugin_info)
+.. function:: TSReturnCode TSPluginRegister(TSPluginRegistrationInfo* plugin_info)
 
 Description
 ===========
@@ -66,7 +66,7 @@ Examples
         info.vendor_name = "MyCompany";
         info.support_email = "ts-api-support@MyCompany.com";
 
-        if (TSPluginRegister(TS_SDK_VERSION_3_0 , &info) != TS_SUCCESS) {
+        if (TSPluginRegister(&info) != TS_SUCCESS) {
             TSError("Plugin registration failed. 0);
         }
     }

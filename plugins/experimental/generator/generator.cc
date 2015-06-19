@@ -596,7 +596,7 @@ TSPluginInit(int /* argc */, const char * /* argv */ [])
   info.vendor_name = (char *)"Apache Software Foundation";
   info.support_email = (char *)"dev@trafficserver.apache.org";
 
-  if (TSPluginRegister(TS_SDK_VERSION_3_0, &info) != TS_SUCCESS) {
+  if (TSPluginRegister(&info) != TS_SUCCESS) {
     VERROR("plugin registration failed\n");
   }
 

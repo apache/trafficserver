@@ -71,7 +71,7 @@ ensures it's running with a compatible version of Traffic Server.
           info.vendor_name = "MyCompany";
           info.support_email = "ts-api-support@MyCompany.com";
 
-          if (!TSPluginRegister (TS_SDK_VERSION_2_0 , &info)) {
+          if (!TSPluginRegister(&info)) {
              TSError ("Plugin registration failed. \n");
           }
 

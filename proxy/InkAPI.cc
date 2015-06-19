@@ -1774,19 +1774,11 @@ TSPluginDirGet(void)
 ////////////////////////////////////////////////////////////////////
 
 TSReturnCode
-TSPluginRegister(TSSDKVersion sdk_version, TSPluginRegistrationInfo *plugin_info)
+TSPluginRegister(TSPluginRegistrationInfo *plugin_info)
 {
   sdk_assert(sdk_sanity_check_null_ptr((void *)plugin_info) == TS_SUCCESS);
 
   if (!plugin_reg_current) {
-    return TS_ERROR;
-  }
-
-  switch (sdk_version) {
-  case TS_SDK_VERSION_2_0:
-  case TS_SDK_VERSION_3_0:
-    break;
-  default:
     return TS_ERROR;
   }
 

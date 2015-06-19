@@ -5520,11 +5520,6 @@ typedef enum {
 } ORIG_TSVConnCloseFlags;
 
 typedef enum {
-  ORIG_TS_SDK_VERSION_2_0 = 0,
-  ORIG_TS_SDK_VERSION_3_0,
-} ORIG_TSSDKVersion;
-
-typedef enum {
   ORIG_TS_ERROR = -1,
   ORIG_TS_SUCCESS = 0,
 } ORIG_TSReturnCode;
@@ -5666,9 +5661,6 @@ REGRESSION_TEST(SDK_API_TSConstant)(RegressionTest *test, int /* atype ATS_UNUSE
 
   PRINT_DIFF(TS_VC_CLOSE_ABORT);
   PRINT_DIFF(TS_VC_CLOSE_NORMAL);
-
-  PRINT_DIFF(TS_SDK_VERSION_2_0);
-  PRINT_DIFF(TS_SDK_VERSION_3_0);
 
   PRINT_DIFF(TS_ERROR);
   PRINT_DIFF(TS_SUCCESS);
