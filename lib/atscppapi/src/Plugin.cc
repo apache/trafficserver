@@ -27,7 +27,7 @@ const std::string atscppapi::HOOK_TYPE_STRINGS[] = {
   std::string("HOOK_OS_DNS"), std::string("HOOK_READ_REQUEST_HEADERS"), std::string("HOOK_READ_CACHE_HEADERS"),
   std::string("HOOK_CACHE_LOOKUP_COMPLETE"), std::string("HOOK_SELECT_ALT")};
 
-void atscppapi::TSRegisterPlugin(std::string name, std::string vendor, std::string email)
+void atscppapi::RegisterGlobalPlugin(std::string name, std::string vendor, std::string email)
 {
    TSPluginRegistrationInfo info;
    info.plugin_name=const_cast<char*>(name.c_str());

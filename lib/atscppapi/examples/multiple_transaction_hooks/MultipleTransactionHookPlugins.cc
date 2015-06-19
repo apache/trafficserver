@@ -105,6 +105,6 @@ public:
 void
 TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
 {
-  TSRegisterPlugin("CPP_Example_MultipleTransactionHook", "apache", "users@trafficserver.apache.org");
+  RegisterGlobalPlugin("CPP_Example_MultipleTransactionHook", "apache", "users@trafficserver.apache.org");
   new GlobalHookPlugin();
 }

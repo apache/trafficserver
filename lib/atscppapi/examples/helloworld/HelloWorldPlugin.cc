@@ -33,6 +33,6 @@ TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
 {
 
   std::cout << "Hello from " << argv[0] << std::endl;
-  atscppapi::TSRegisterPlugin("CPP_Example_HelloWorld", "apache", "users@trafficserver.apache.org");
+  atscppapi::RegisterGlobalPlugin("CPP_Example_HelloWorld", "apache", "users@trafficserver.apache.org");
   new HelloWorldPlugin();
 }

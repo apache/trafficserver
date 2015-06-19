@@ -71,7 +71,7 @@ public:
 void
 TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
 {
-  TSRegisterPlugin("CPP_Example_InternalTransactionHandling", "apache", "users@trafficserver.apache.org");
+  RegisterGlobalPlugin("CPP_Example_InternalTransactionHandling", "apache", "users@trafficserver.apache.org");
   TS_DEBUG(TAG, "Loaded async_http_fetch_example plugin");
   new AllTransactionsGlobalPlugin();
   new NoInternalTransactionsGlobalPlugin();

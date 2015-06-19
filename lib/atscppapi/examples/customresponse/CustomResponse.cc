@@ -85,6 +85,6 @@ public:
 void
 TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
 {
-  TSRegisterPlugin("CPP_Example_CustomResponse", "apache", "users@trafficserver.apache.org");
+  RegisterGlobalPlugin("CPP_Example_CustomResponse", "apache", "users@trafficserver.apache.org");
   new ClientRedirectGlobalPlugin();
 }
