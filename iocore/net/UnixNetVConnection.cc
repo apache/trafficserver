@@ -103,14 +103,16 @@ close_UnixNetVConnection(UnixNetVConnection *vc, EThread *t)
     vc->inactivity_timeout->cancel_action(vc);
     vc->inactivity_timeout = NULL;
   }
-#else
-  vc->next_inactivity_timeout_at = 0;
-#endif
-  vc->inactivity_timeout_in = 0;
   if (vc->active_timeout) {
     vc->active_timeout->cancel_action(vc);
     vc->active_timeout = NULL;
   }
+#else
+  vc->next_inactivity_timeout_at = 0;
+  vc->next_activity_timeout_at = 0;
+#endif
+  vc->inactivity_timeout_in = 0;
+
   vc->active_timeout_in = 0;
   nh->open_list.remove(vc);
   nh->cop_list.remove(vc);
@@ -124,7 +126,8 @@ close_UnixNetVConnection(UnixNetVConnection *vc, EThread *t)
     nh->write_enable_list.remove(vc);
     vc->write.in_enabled_list = 0;
   }
-  vc->remove_from_keep_alive_lru();
+  vc->remove_from_keep_alive_queue();
+  vc->remove_from_active_queue();
   vc->free(t);
 }
 
@@ -842,11 +845,11 @@ UnixNetVConnection::reenable_re(VIO *vio)
 UnixNetVConnection::UnixNetVConnection()
   : closed(0), inactivity_timeout_in(0), active_timeout_in(0),
 #ifdef INACTIVITY_TIMEOUT
-    inactivity_timeout(NULL),
+    inactivity_timeout(NULL), active_timeout(NULL),
 #else
-    next_inactivity_timeout_at(0),
+    next_inactivity_timeout_at(0), next_activity_timeout_at(0),
 #endif
-    active_timeout(NULL), nh(NULL), id(0), flags(0), recursion(0), submit_time(0), oob_ptr(0), from_accept_thread(false)
+    nh(NULL), id(0), flags(0), recursion(0), submit_time(0), oob_ptr(0), from_accept_thread(false)
 {
   memset(&local_addr, 0, sizeof local_addr);
   memset(&server_addr, 0, sizeof server_addr);
@@ -1059,7 +1062,7 @@ UnixNetVConnection::mainEvent(int event, Event *e)
   if (!hlock.is_locked() || !rlock.is_locked() || !wlock.is_locked() ||
       (read.vio.mutex.m_ptr && rlock.get_mutex() != read.vio.mutex.m_ptr) ||
       (write.vio.mutex.m_ptr && wlock.get_mutex() != write.vio.mutex.m_ptr)) {
-#ifndef INACTIVITY_TIMEOUT
+#ifdef INACTIVITY_TIMEOUT
     if (e == active_timeout)
 #endif
       e->schedule_in(HRTIME_MSECONDS(net_retry_delay));
@@ -1081,6 +1084,10 @@ UnixNetVConnection::mainEvent(int event, Event *e)
   if (e == inactivity_timeout) {
     signal_event = VC_EVENT_INACTIVITY_TIMEOUT;
     signal_timeout = &inactivity_timeout;
+  } else if {
+    ink_assert(e == active_timeout);
+    signal_event = VC_EVENT_ACTIVE_TIMEOUT;
+    signal_timeout = &active_timeout;
   }
 #else
   if (event == EVENT_IMMEDIATE) {
@@ -1093,11 +1100,7 @@ UnixNetVConnection::mainEvent(int event, Event *e)
     signal_timeout_at = &next_inactivity_timeout_at;
   }
 #endif
-  else {
-    ink_assert(e == active_timeout);
-    signal_event = VC_EVENT_ACTIVE_TIMEOUT;
-    signal_timeout = &active_timeout;
-  }
+
   *signal_timeout = 0;
   *signal_timeout_at = 0;
   writer_cont = write.vio._cont;
@@ -1231,7 +1234,9 @@ UnixNetVConnection::free(EThread *t)
   ink_assert(!write.ready_link.prev && !write.ready_link.next);
   ink_assert(!write.enable_link.next);
   ink_assert(!link.next && !link.prev);
+#ifdef INACTIVITY_TIMEOUT
   ink_assert(!active_timeout);
+#endif
   ink_assert(con.fd == NO_FD);
   ink_assert(t == this_ethread());
 

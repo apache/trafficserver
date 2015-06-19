@@ -113,7 +113,7 @@ SpdyClientSession::init(NetVConnection *netvc)
   start_time = TShrtime();
 
   this->vc->set_inactivity_timeout(HRTIME_SECONDS(spdy_accept_no_activity_timeout));
-  vc->add_to_keep_alive_lru();
+  vc->add_to_keep_alive_queue();
   SET_HANDLER(&SpdyClientSession::state_session_start);
 }
 

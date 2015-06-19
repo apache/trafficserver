@@ -316,7 +316,7 @@ spdy_on_ctrl_recv_callback(spdylay_session *session, spdylay_frame_type type, sp
     req->append_nv(frame->syn_stream.nv);
     req->append_nv(no_keep_alive);
     sm->req_map[stream_id] = req;
-    sm->vc->add_to_keep_alive_lru();
+    sm->vc->add_to_active_queue();
     spdy_process_syn_stream_frame(sm, req);
     break;
 

@@ -865,15 +865,22 @@ PluginVC::get_inactivity_timeout()
 }
 
 void
-PluginVC::add_to_keep_alive_lru()
+PluginVC::add_to_keep_alive_queue()
 {
   // do nothing
 }
 
 void
-PluginVC::remove_from_keep_alive_lru()
+PluginVC::remove_from_keep_alive_queue()
 {
   // do nothing
+}
+
+bool
+PluginVC::add_to_active_queue()
+{
+  // do nothing
+  return false;
 }
 
 SOCKET

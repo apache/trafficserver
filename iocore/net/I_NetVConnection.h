@@ -429,9 +429,11 @@ public:
   */
   virtual void cancel_inactivity_timeout() = 0;
 
-  virtual void add_to_keep_alive_lru() = 0;
+  virtual void add_to_keep_alive_queue() = 0;
 
-  virtual void remove_from_keep_alive_lru() = 0;
+  virtual void remove_from_keep_alive_queue() = 0;
+
+  virtual bool add_to_active_queue() = 0;
 
   /** @return the current active_timeout value in nanosecs */
   virtual ink_hrtime get_active_timeout() = 0;

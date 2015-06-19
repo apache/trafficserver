@@ -392,24 +392,25 @@ Connection::apply_options(NetVCOptions const &opt)
 }
 
 void
-UnixNetVConnection::add_to_keep_alive_lru()
+UnixNetVConnection::add_to_keep_alive_queue()
 {
-  Debug("socket", "UnixNetVConnection::add_to_keep_alive_lru NetVC=%p", this);
-  if (nh->keep_alive_list.in(this)) {
-    nh->keep_alive_list.remove(this);
-    nh->keep_alive_list.enqueue(this);
-  } else {
-    nh->keep_alive_list.enqueue(this);
-    ++nh->keep_alive_lru_size;
-  }
+  nh->add_to_keep_alive_queue(this);
 }
 
 void
-UnixNetVConnection::remove_from_keep_alive_lru()
+UnixNetVConnection::remove_from_keep_alive_queue()
 {
-  Debug("socket", "UnixNetVConnection::remove_from_keep_alive_lru NetVC=%p", this);
-  if (nh->keep_alive_list.in(this)) {
-    nh->keep_alive_list.remove(this);
-    --nh->keep_alive_lru_size;
-  }
+  nh->remove_from_keep_alive_queue(this);
+}
+
+bool
+UnixNetVConnection::add_to_active_queue()
+{
+  return nh->add_to_active_queue(this);
+}
+
+void
+UnixNetVConnection::remove_from_active_queue()
+{
+  nh->remove_from_active_queue(this);
 }

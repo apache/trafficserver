@@ -181,7 +181,7 @@ public:
       this->req_map.erase(streamId);
     }
     if (req_map.empty() == true) {
-      vc->add_to_keep_alive_lru();
+      vc->add_to_keep_alive_queue();
     }
   }
 

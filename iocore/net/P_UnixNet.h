@@ -185,8 +185,19 @@ public:
   DList(UnixNetVConnection, cop_link) cop_list;
   ASLLM(UnixNetVConnection, NetState, read, enable_link) read_enable_list;
   ASLLM(UnixNetVConnection, NetState, write, enable_link) write_enable_list;
-  Que(UnixNetVConnection, keep_alive_link) keep_alive_list;
-  uint32_t keep_alive_lru_size;
+  Que(UnixNetVConnection, keep_alive_queue_link) keep_alive_queue;
+  uint32_t keep_alive_queue_size;
+  Que(UnixNetVConnection, active_queue_link) active_queue;
+  uint32_t active_queue_size;
+  uint32_t max_connections_per_thread_in;
+  uint32_t max_connections_active_per_thread_in;
+
+  // configuration settings for managing the active and keep-alive queues
+  uint32_t max_connections_in;
+  uint32_t max_connections_active_in;
+  uint32_t inactive_threashold_in;
+  uint32_t transaction_no_activity_timeout_in;
+  uint32_t keep_alive_no_activity_timeout_in;
 
   time_t sec;
   int cycles;
@@ -195,8 +206,19 @@ public:
   int mainNetEvent(int event, Event *data);
   int mainNetEventExt(int event, Event *data);
   void process_enabled_list(NetHandler *);
+  void manage_keep_alive_queue();
+  bool manage_active_queue();
+  void add_to_keep_alive_queue(UnixNetVConnection *vc);
+  void remove_from_keep_alive_queue(UnixNetVConnection *vc);
+  bool add_to_active_queue(UnixNetVConnection *vc);
+  void remove_from_active_queue(UnixNetVConnection *vc);
+  void configure_per_thread();
 
   NetHandler();
+
+private:
+  void _close_vc(UnixNetVConnection *vc, ink_hrtime now, int &handle_event, int &closed, int &total_idle_time,
+                 int &total_idle_count);
 };
 
 static inline NetHandler *
