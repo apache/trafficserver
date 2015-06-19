@@ -91,6 +91,10 @@ enum SSL_Stats {
   ssl_sni_name_set_failure,
   ssl_total_success_handshake_count_out_stat,
 
+  /* ocsp stapling stats */
+  ssl_ocsp_revoked_cert_stat,
+  ssl_ocsp_unknown_cert_stat,
+
   ssl_cipher_stats_start = 100,
   ssl_cipher_stats_end = 300,
 

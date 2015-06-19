@@ -110,19 +110,19 @@ ssl_stapling_init_cert(SSL_CTX *ctx, X509 *cert, char *certname)
   STACK_OF(OPENSSL_STRING) *aia = NULL;
 
   if (!cert) {
-    Debug("ssl", "Null cert passed in");
+    Debug("ssl_ocsp", "Null cert passed in");
     return false;
   }
 
   cinf = (certinfo *)SSL_CTX_get_ex_data(ctx, ssl_stapling_index);
   if (cinf) {
-    Debug("ssl", "certificate already initialized!");
+    Debug("ssl_ocsp", "certificate already initialized!");
     return false;
   }
 
   cinf = (certinfo *)OPENSSL_malloc(sizeof(certinfo));
   if (!cinf) {
-    Debug("ssl", "error allocating memory!");
+    Debug("ssl_ocsp", "error allocating memory!");
     return false;
   }
 
@@ -138,7 +138,7 @@ ssl_stapling_init_cert(SSL_CTX *ctx, X509 *cert, char *certname)
 
   issuer = stapling_get_issuer(ctx, cert);
   if (issuer == NULL) {
-    Debug("ssl", "cannot get issuer certificate from %s!", certname);
+    Debug("ssl_ocsp", "cannot get issuer certificate from %s!", certname);
     return false;
   }
 
@@ -151,12 +151,12 @@ ssl_stapling_init_cert(SSL_CTX *ctx, X509 *cert, char *certname)
   if (aia)
     cinf->uri = sk_OPENSSL_STRING_pop(aia);
   if (!cinf->uri) {
-    Debug("ssl", "no responder URI in %s", certname);
+    Debug("ssl_ocsp", "no responder URI in %s", certname);
   }
   if (aia)
     X509_email_free(aia);
 
-  Debug("ssl", "success to init certinfo into SSL_CTX: %p", ctx);
+  Debug("ssl_ocsp", "success to init certinfo into SSL_CTX: %p", ctx);
   return true;
 }
 
@@ -199,7 +199,7 @@ stapling_cache_response(OCSP_RESPONSE *rsp, certinfo *cinf)
   cinf->expire_time = time(NULL) + SSLConfigParams::ssl_ocsp_cache_timeout;
   ink_mutex_release(&cinf->stapling_mutex);
 
-  Debug("ssl", "stapling_cache_response: success to cache response");
+  Debug("ssl_ocsp", "stapling_cache_response: success to cache response");
   return true;
 }
 
@@ -229,6 +229,20 @@ stapling_check_response(certinfo *cinf, OCSP_RESPONSE *rsp)
   } else {
     OCSP_check_validity(thisupd, nextupd, 300, -1);
   }
+
+  switch (status) {
+  case V_OCSP_CERTSTATUS_GOOD:
+    break;
+  case V_OCSP_CERTSTATUS_REVOKED:
+    SSL_INCREMENT_DYN_STAT(ssl_ocsp_revoked_cert_stat);
+    break;
+  case V_OCSP_CERTSTATUS_UNKNOWN:
+    SSL_INCREMENT_DYN_STAT(ssl_ocsp_unknown_cert_stat);
+    break;
+  default:
+    break;
+  }
+
   OCSP_BASICRESP_free(bs);
 
   return SSL_TLSEXT_ERR_OK;
@@ -276,7 +290,7 @@ process_responder(OCSP_REQUEST *req, char *host, char *path, char *port, int req
 
   BIO_set_nbio(cbio, 1);
   if (BIO_do_connect(cbio) <= 0 && !BIO_should_retry(cbio)) {
-    Debug("ssl", "process_responder: fail to connect to OCSP respond server");
+    Debug("ssl_ocsp", "process_responder: fail to connect to OCSP respond server");
     goto end;
   }
   resp = query_responder(cbio, host, path, req, req_timeout);
@@ -297,7 +311,7 @@ stapling_refresh_response(certinfo *cinf, OCSP_RESPONSE **prsp)
   int ssl_flag = 0;
   int req_timeout = -1;
 
-  Debug("ssl", "stapling_refresh_response: querying responder");
+  Debug("ssl_ocsp", "stapling_refresh_response: querying responder");
   *prsp = NULL;
 
   if (!OCSP_parse_url(cinf->uri, &host, &port, &path, &ssl_flag)) {
@@ -321,7 +335,7 @@ stapling_refresh_response(certinfo *cinf, OCSP_RESPONSE **prsp)
   }
 
   if (OCSP_response_status(*prsp) == OCSP_RESPONSE_STATUS_SUCCESSFUL) {
-    Debug("ssl", "stapling_refresh_response: query response received");
+    Debug("ssl_ocsp", "stapling_refresh_response: query response received");
     stapling_check_response(cinf, *prsp);
   } else {
     Error("stapling_refresh_response: responder error");
@@ -330,7 +344,7 @@ stapling_refresh_response(certinfo *cinf, OCSP_RESPONSE **prsp)
   if (!stapling_cache_response(*prsp, cinf)) {
     Error("stapling_refresh_response: can not cache response");
   } else {
-    Debug("ssl", "stapling_refresh_response: success to refresh response");
+    Debug("ssl_ocsp", "stapling_refresh_response: success to refresh response");
   }
 
 done:
@@ -342,7 +356,7 @@ done:
 
 err:
   rv = false;
-  Debug("ssl", "stapling_refresh_response: fail to refresh response");
+  Debug("ssl_ocsp", "stapling_refresh_response: fail to refresh response");
   goto done;
 }
 
@@ -392,7 +406,7 @@ ssl_callback_ocsp_stapling(SSL *ssl)
   // originally was, cinf = stapling_get_cert_info(ssl->ctx);
   cinf = stapling_get_cert_info(SSL_get_SSL_CTX(ssl));
   if (cinf == NULL) {
-    Debug("ssl", "ssl_callback_ocsp_stapling: fail to get certificate information");
+    Debug("ssl_ocsp", "ssl_callback_ocsp_stapling: fail to get certificate information");
     return SSL_TLSEXT_ERR_NOACK;
   }
 
@@ -400,7 +414,7 @@ ssl_callback_ocsp_stapling(SSL *ssl)
   current_time = time(NULL);
   if (cinf->resp_derlen == 0 || cinf->is_expire || cinf->expire_time < current_time) {
     ink_mutex_release(&cinf->stapling_mutex);
-    Debug("ssl", "ssl_callback_ocsp_stapling: fail to get certificate status");
+    Debug("ssl_ocsp", "ssl_callback_ocsp_stapling: fail to get certificate status");
     return SSL_TLSEXT_ERR_NOACK;
   } else {
     unsigned char *p = (unsigned char *)OPENSSL_malloc(cinf->resp_derlen);
@@ -408,7 +422,7 @@ ssl_callback_ocsp_stapling(SSL *ssl)
     memcpy(p, cinf->resp_der, cinf->resp_derlen);
     ink_mutex_release(&cinf->stapling_mutex);
     SSL_set_tlsext_status_ocsp_resp(ssl, p, len);
-    Debug("ssl", "ssl_callback_ocsp_stapling: success to get certificate status");
+    Debug("ssl_ocsp", "ssl_callback_ocsp_stapling: success to get certificate status");
     return SSL_TLSEXT_ERR_OK;
   }
 }

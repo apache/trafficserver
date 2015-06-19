@@ -935,6 +935,12 @@ SSLInitializeStatistics()
   RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_sni_name_set_failure", RECD_INT, RECP_PERSISTENT,
                      (int)ssl_sni_name_set_failure, RecRawStatSyncCount);
 
+  /* ocsp stapling stats */
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_ocsp_revoked_cert_stat", RECD_INT, RECP_PERSISTENT,
+                     (int)ssl_ocsp_revoked_cert_stat, RecRawStatSyncCount);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_ocsp_unknown_cert_stat", RECD_INT, RECP_PERSISTENT,
+                     (int)ssl_ocsp_unknown_cert_stat, RecRawStatSyncCount);
+
   // Get and register the SSL cipher stats. Note that we are using the default SSL context to obtain
   // the cipher list. This means that the set of ciphers is fixed by the build configuration and not
   // filtered by proxy.config.ssl.server.cipher_suite. This keeps the set of cipher suites stable across
