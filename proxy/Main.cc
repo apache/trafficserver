@@ -89,6 +89,7 @@ extern "C" int plock(int);
 #include "I_Tasks.h"
 #include "InkAPIInternal.h"
 #include "HTTP2.h"
+#include "ts/ink_config.h"
 
 #include <ts/ink_cap.h>
 
@@ -180,21 +181,8 @@ static const ArgumentDescription argument_descriptions[] = {
   {"dprintf_level", 'o', "Debug output level", "I", &cmd_line_dprintf_level, "PROXY_DPRINTF_LEVEL", NULL},
 
 #if TS_HAS_TESTS
-  {"regression", 'R',
-#ifdef DEBUG
-   "Regression Level (quick:1..long:3)",
-#else
-   0,
-#endif
-   "I", &regression_level, "PROXY_REGRESSION", NULL},
-  {"regression_test", 'r',
-
-#ifdef DEBUG
-   "Run Specific Regression Test",
-#else
-   0,
-#endif
-   "S512", regression_test, "PROXY_REGRESSION_TEST", NULL},
+  {"regression", 'R', "Regression Level (quick:1..long:3)", "I", &regression_level, "PROXY_REGRESSION", NULL},
+  {"regression_test", 'r', "Run Specific Regression Test", "S512", regression_test, "PROXY_REGRESSION_TEST", NULL},
 #endif // TS_HAS_TESTS
 
 #if TS_USE_DIAGS
