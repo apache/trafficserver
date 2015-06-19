@@ -1576,10 +1576,10 @@ HttpSM::state_http_server_open(int event, void *data)
 
   switch (event) {
   case NET_EVENT_OPEN:
-    session = (TS_SERVER_SESSION_SHARING_POOL_THREAD == t_state.txn_conf->server_session_sharing_pool) ?
+    session = (TS_SERVER_SESSION_SHARING_POOL_THREAD == t_state.http_config_param->server_session_sharing_pool) ?
                 THREAD_ALLOC_INIT(httpServerSessionAllocator, mutex->thread_holding) :
                 httpServerSessionAllocator.alloc();
-    session->sharing_pool = static_cast<TSServerSessionSharingPoolType>(t_state.txn_conf->server_session_sharing_pool);
+    session->sharing_pool = static_cast<TSServerSessionSharingPoolType>(t_state.http_config_param->server_session_sharing_pool);
     session->sharing_match = static_cast<TSServerSessionSharingMatchType>(t_state.txn_conf->server_session_sharing_match);
     // If origin_max_connections or origin_min_keep_alive_connections is
     // set then we are metering the max and or min number

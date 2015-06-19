@@ -173,15 +173,6 @@ http_server_session_sharing_cb(char const *name, RecDataT dtype, RecData data, v
     } else {
       valid_p = false;
     }
-  } else if (0 == strcasecmp("proxy.config.http.server_session_sharing.pool", name)) {
-    MgmtByte &match = c->oride.server_session_sharing_pool;
-    if (RECD_INT == dtype) {
-      match = static_cast<TSServerSessionSharingPoolType>(data.rec_int);
-    } else if (RECD_STRING == dtype && http_config_enum_search(data.rec_string, SessionSharingPoolStrings, match)) {
-      // empty
-    } else {
-      valid_p = false;
-    }
   } else {
     valid_p = false;
   }
@@ -939,9 +930,6 @@ HttpConfig::startup()
   HttpEstablishStaticConfigByte(c.oride.post_check_content_length_enabled, "proxy.config.http.post.check.content_length.enabled");
 
   // [amc] This is a bit of a mess, need to figure out to make this cleaner.
-  RecRegisterConfigUpdateCb("proxy.config.http.server_session_sharing.pool", &http_server_session_sharing_cb, &c);
-  http_config_enum_read("proxy.config.http.server_session_sharing.pool", SessionSharingPoolStrings,
-                        c.oride.server_session_sharing_pool);
   RecRegisterConfigUpdateCb("proxy.config.http.server_session_sharing.match", &http_server_session_sharing_cb, &c);
   http_config_enum_read("proxy.config.http.server_session_sharing.match", SessionSharingMatchStrings,
                         c.oride.server_session_sharing_match);
@@ -1217,7 +1205,6 @@ HttpConfig::reconfigure()
     params->oride.flow_high_water_mark = params->oride.flow_low_water_mark = 0;
   }
 
-  params->oride.server_session_sharing_pool = m_master.oride.server_session_sharing_pool;
   params->oride.server_session_sharing_match = m_master.oride.server_session_sharing_match;
   params->oride.keep_alive_post_out = m_master.oride.keep_alive_post_out;
 

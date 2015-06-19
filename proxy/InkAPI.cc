@@ -7694,9 +7694,6 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   case TS_CONFIG_HTTP_AUTH_SERVER_SESSION_PRIVATE:
     ret = &overridableHttpConfig->auth_server_session_private;
     break;
-  case TS_CONFIG_HTTP_SERVER_SESSION_SHARING_POOL:
-    ret = &overridableHttpConfig->server_session_sharing_pool;
-    break;
   case TS_CONFIG_HTTP_SERVER_SESSION_SHARING_MATCH:
     ret = &overridableHttpConfig->server_session_sharing_match;
     break;
@@ -8436,10 +8433,6 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
         cnf = TS_CONFIG_HTTP_CONNECT_ATTEMPTS_RR_RETRIES;
       else if (!strncmp(name, "proxy.config.http.cache.max_open_read_retries", length))
         cnf = TS_CONFIG_HTTP_CACHE_MAX_OPEN_READ_RETRIES;
-      break;
-    case 'l':
-      if (0 == strncmp(name, "proxy.config.http.server_session_sharing.pool", length))
-        cnf = TS_CONFIG_HTTP_SERVER_SESSION_SHARING_POOL;
       break;
     case 'e':
       if (0 == strncmp(name, "proxy.config.http.auth_server_session_private", length))

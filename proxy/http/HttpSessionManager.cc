@@ -265,7 +265,7 @@ HttpSessionManager::acquire_session(Continuation * /* cont ATS_UNUSED */, sockad
   // Now check to see if we have a connection in our shared connection pool
   EThread *ethread = this_ethread();
 
-  if (TS_SERVER_SESSION_SHARING_POOL_THREAD == sm->t_state.txn_conf->server_session_sharing_pool) {
+  if (TS_SERVER_SESSION_SHARING_POOL_THREAD == sm->t_state.http_config_param->server_session_sharing_pool) {
     to_return = ethread->server_session_pool->acquireSession(ip, hostname_hash, match_style);
   } else {
     MUTEX_TRY_LOCK(lock, m_g_pool->mutex, ethread);
