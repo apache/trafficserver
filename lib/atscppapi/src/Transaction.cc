@@ -25,13 +25,11 @@
 #include <cstring>
 #include <map>
 #include <string>
-#include <ts/ts.h>
 #include <ink_memory.h>
 #include "atscppapi/shared_ptr.h"
 #include "logging_internal.h"
 #include "utils_internal.h"
 #include "atscppapi/noncopyable.h"
-
 using std::map;
 using std::string;
 using namespace atscppapi;
@@ -96,6 +94,48 @@ Transaction::~Transaction()
     TSHandleMLocRelease(state_->client_response_hdr_buf_, NULL_PARENT_LOC, state_->client_response_hdr_loc_);
   }
   delete state_;
+}
+
+bool Transaction::configIntSet(TSOverridableConfigKey conf, int value)
+{
+    return (TS_SUCCESS==TSHttpTxnConfigIntSet(state_->txn_,conf,(TSMgmtInt)value));
+}
+bool Transaction::configIntGet(TSOverridableConfigKey conf, int *value)
+{
+    return (TS_SUCCESS==TSHttpTxnConfigIntGet(state_->txn_, conf, (TSMgmtInt*)value));
+}
+
+bool Transaction::configFloatSet(TSOverridableConfigKey conf, float value)
+{
+    return (TS_SUCCESS==TSHttpTxnConfigFloatSet(state_->txn_,conf,(TSMgmtFloat)value));
+}
+
+bool Transaction::configFloatGet(TSOverridableConfigKey conf, float *value)
+{
+    return (TS_SUCCESS==TSHttpTxnConfigFloatGet(state_->txn_, conf, value));
+}
+
+bool Transaction::configStringSet(TSOverridableConfigKey conf, std::string const& value,int length)
+{
+    return (TS_SUCCESS==TSHttpTxnConfigStringSet(state_->txn_,conf,(TSMgmtString)value.c_str(),length));
+}
+
+bool Transaction::configStringGet(TSOverridableConfigKey conf,std::string& value, int* length)
+{
+   const char* svalue;
+   TSReturnCode res=TSHttpTxnConfigStringGet(state_->txn_, conf, &svalue,length);
+   if(res==TS_SUCCESS)
+   {
+      value.assign(svalue);
+      return true;
+   }
+   else
+       return false;
+}
+
+bool Transaction::configFind(std::string const& name, int length, TSOverridableConfigKey *conf, TSRecordDataType *type)
+{
+    return (TS_SUCCESS==TSHttpTxnConfigFind(name.c_str(),length,conf,type));
 }
 
 void
