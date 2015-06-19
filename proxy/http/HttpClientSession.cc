@@ -121,7 +121,7 @@ HttpClientSession::new_transaction()
   ink_assert(current_reader == NULL);
   PluginIdentity *pi = dynamic_cast<PluginIdentity *>(client_vc);
 
-  if (client_vc->add_to_active_queue() == false) {
+  if (!pi && client_vc->add_to_active_queue() == false) {
     // no room in the active queue close the connection
     this->do_io_close();
     return;
