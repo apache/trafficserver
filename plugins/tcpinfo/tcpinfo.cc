@@ -320,9 +320,9 @@ TSPluginInit(int argc, const char *argv[])
   info.vendor_name = (char *)"Apache Software Foundation";
   info.support_email = (char *)"dev@trafficserver.apache.org";
 
-  if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError("[tcpinfo] plugin registration failed");
-  }
+//  if (TSPluginRegister(&info) != TS_SUCCESS) {
+//    TSError("[tcpinfo] plugin registration failed");
+//  }
 
   optind = 0;
   for (;;) {
