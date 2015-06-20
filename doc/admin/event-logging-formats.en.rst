@@ -306,9 +306,9 @@ The following list describes Traffic Server custom logging fields.
     The timestamp in milliseconds of a specific milestone for this request.
 
 
-.. _msdiff:
+.. _msdms
 
-``{Milestone field name1-Milestone field name2}msdiff``
+``{Milestone field name1-Milestone field name2}msdms``
     The difference in milliseconds of between two milestones.
 
 .. _pfsc:
