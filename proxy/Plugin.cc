@@ -116,16 +116,12 @@ plugin_load(int argc, char *argv[], bool validateOnly)
     plugin_reg_current->dlh = handle;
 
     init = (init_func_t)dlsym(plugin_reg_current->dlh, "TSPluginInit");
-    if (!init || plugin_reg_current->plugin_registered == false) {
+    if (!init) {
       delete plugin_reg_current;
       if (validateOnly) {
         return false;
       }
-      if (!init) {
-        Fatal("unable to find TSPluginInit function in '%s': %s", path, dlerror());
-      } else {
-        Fatal("plugin not registered by calling TSPluginRegister");
-      }
+      Fatal("unable to find TSPluginInit function in '%s': %s", path, dlerror());
       return false; // this line won't get called since Fatal brings down ATS
     }
 
@@ -135,7 +131,8 @@ plugin_load(int argc, char *argv[], bool validateOnly)
   if (plugin_reg_current->plugin_registered) {
     plugin_reg_list.push(plugin_reg_current);
   } else {
-    delete plugin_reg_current;
+    Fatal("plugin not registered by calling TSPluginRegister");
+    return false; // this line won't get called since Fatal brings down ATS
   }
 
   plugin_reg_current = NULL;
