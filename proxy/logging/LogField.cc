@@ -37,7 +37,7 @@
 #include "Log.h"
 
 const char *container_names[] = {"not-a-container", "cqh", "psh", "pqh", "ssh", "cssh", "ecqh", "epsh", "epqh", "essh", "ecssh",
-                                 "icfg", "scfg", "record", "ms", "msdiff", ""};
+                                 "icfg", "scfg", "record", "ms", "msdms", ""};
 
 const char *aggregate_names[] = {"not-an-agg-op", "COUNT", "SUM", "AVG", "FIRST", "LAST", ""};
 
@@ -235,7 +235,7 @@ LogField::LogField(const char *field, Container container, SetFunc _setfunc)
     break;
 
   case MS:
-  case MSDIFF:
+  case MSDMS:
     if (m_milestone_map.empty()) {
       for (unsigned i = 0; i < countof(milestones); ++i) {
         m_milestone_map.insert(std::make_pair(milestones[i].msname, milestones[i].mstype));
@@ -359,7 +359,7 @@ LogField::marshal_len(LogAccess *lad)
     return lad->marshal_milestone(ms, NULL);
   }
 
-  case MSDIFF: {
+  case MSDMS: {
     TransactionMilestones::Milestone ms1, ms2;
     int rv = milestones_from_m_name(m_name, &ms1, &ms2);
     if (0 != rv)
@@ -424,7 +424,7 @@ LogField::marshal(LogAccess *lad, char *buf)
     return lad->marshal_milestone(ms, buf);
   }
 
-  case MSDIFF: {
+  case MSDMS: {
     TransactionMilestones::Milestone ms1, ms2;
     int rv = milestones_from_m_name(m_name, &ms1, &ms2);
     if (0 != rv)

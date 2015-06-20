@@ -105,7 +105,7 @@ public:
     SCFG,
     RECORD,
     MS,
-    MSDIFF,
+    MSDMS,
     N_CONTAINERS,
   };
 
