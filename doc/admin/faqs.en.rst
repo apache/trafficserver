@@ -588,6 +588,16 @@ the system log files (``/var/log/messages``)::
 To avoid memory exhaustion, add more RAM to the system or reduce the
 load on Traffic Server.
 
+Config checker
+--------------
+
+Traffic Server supports the below command to validate the config offline, inorder to
+allow the config to be pre-checked for possible service disruptions due to synatx errors::
+
+   traffic_server -Cverify_config -D<config_dir>
+
+<config_dir> is the location of the config files to be validated.
+
 Connection timeouts with the origin server
 ------------------------------------------
 
