@@ -805,7 +805,7 @@ Peer::LogRecvMsg(ICPMsg_t *m, int valid)
   // Note: ICPMsg_t (m) is in native byte order
 
   // Note numerous stats on a per peer basis
-  _stats.last_receive = ink_get_hrtime();
+  _stats.last_receive = Thread::get_hrtime();
   if ((m->h.opcode >= ICP_OP_QUERY) && (m->h.opcode <= ICP_OP_LAST)) {
     _stats.recv[m->h.opcode]++;
   } else {
@@ -962,7 +962,7 @@ ParentSiblingPeer::LogSendMsg(ICPMsg_t *m, sockaddr const * /* sa ATS_UNUSED */)
   // Note: ICPMsg_t (m) is in network byte order
 
   // Note numerous stats on a per peer basis
-  _stats.last_send = ink_get_hrtime();
+  _stats.last_send = Thread::get_hrtime();
   _stats.sent[m->h.opcode]++;
   _stats.total_sent++;
 }
@@ -1089,7 +1089,7 @@ MultiCastPeer::LogSendMsg(ICPMsg_t *m, sockaddr const *sa)
 
   } else {
     // Note numerous stats on MultiCast peer and each member peer
-    _stats.last_send = ink_get_hrtime();
+    _stats.last_send = Thread::get_hrtime();
     _stats.sent[m->h.opcode]++;
     _stats.total_sent++;
 
@@ -1273,7 +1273,7 @@ ICPPeriodicCont::DoReconfigAction(int event, Event *e)
 ink_hrtime
 ICPlog::GetElapsedTime()
 {
-  return (ink_get_hrtime() - _s->_start_time);
+  return (Thread::get_hrtime() - _s->_start_time);
 }
 
 sockaddr const *

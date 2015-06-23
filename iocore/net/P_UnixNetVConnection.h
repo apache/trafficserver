@@ -336,7 +336,7 @@ UnixNetVConnection::set_inactivity_timeout(ink_hrtime timeout)
   } else
     inactivity_timeout = 0;
 #else
-  next_inactivity_timeout_at = ink_get_hrtime() + timeout;
+  next_inactivity_timeout_at =  Thread::get_hrtime() + timeout;
 #endif
 }
 
@@ -366,7 +366,7 @@ UnixNetVConnection::set_active_timeout(ink_hrtime timeout)
   } else
     active_timeout = 0;
 #else
-  next_activity_timeout_at = ink_get_hrtime() + timeout;
+  next_activity_timeout_at = Thread::get_hrtime() + timeout;
 #endif
 }
 

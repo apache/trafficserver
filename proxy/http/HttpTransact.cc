@@ -8298,11 +8298,11 @@ ink_cluster_time(void)
 
 #ifdef DEBUG
   ink_mutex_acquire(&http_time_lock);
-  ink_time_t local_time = ink_get_hrtime() / HRTIME_SECOND;
+  ink_time_t local_time = Thread::get_hrtime() / HRTIME_SECOND;
   last_http_local_time = local_time;
   ink_mutex_release(&http_time_lock);
 #else
-  ink_time_t local_time = ink_get_hrtime() / HRTIME_SECOND;
+  ink_time_t local_time = Thread::get_hrtime() / HRTIME_SECOND;
 #endif
 
   highest_delta = (int)HttpConfig::m_master.cluster_time_delta;

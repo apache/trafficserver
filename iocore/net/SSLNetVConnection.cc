@@ -1007,7 +1007,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
     sslHandShakeComplete = true;
 
     if (sslHandshakeBeginTime) {
-      const ink_hrtime ssl_handshake_time = ink_get_hrtime() - sslHandshakeBeginTime;
+      const ink_hrtime ssl_handshake_time = Thread::get_hrtime() - sslHandshakeBeginTime;
       Debug("ssl", "ssl handshake time:%" PRId64, ssl_handshake_time);
       sslHandshakeBeginTime = 0;
       SSL_INCREMENT_DYN_STAT_EX(ssl_total_handshake_time_stat, ssl_handshake_time);

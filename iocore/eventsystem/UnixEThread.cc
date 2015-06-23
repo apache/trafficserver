@@ -134,7 +134,7 @@ EThread::process_event(Event *e, int calling_code)
         if (e->period < 0)
           e->timeout_at = e->period;
         else {
-          cur_time = ink_get_based_hrtime();
+          cur_time = get_hrtime();
           e->timeout_at = cur_time + e->period;
           if (e->timeout_at < cur_time)
             e->timeout_at = cur_time;

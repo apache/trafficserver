@@ -91,7 +91,7 @@ ClusterProcessor::internal_invoke_remote(ClusterHandler *ch, int cluster_fn, voi
     c = OutgoingControl::alloc();
   }
   CLUSTER_INCREMENT_DYN_STAT(CLUSTER_CTRL_MSGS_SENT_STAT);
-  c->submit_time = ink_get_hrtime();
+  c->submit_time = Thread::get_hrtime();
 
   if (malloced) {
     c->set_data((char *)data, len);
@@ -184,7 +184,7 @@ ClusterProcessor::invoke_remote_data(ClusterHandler *ch, int cluster_fn, void *d
   mh.token = *token;
 
   OutgoingControl *chdr = OutgoingControl::alloc();
-  chdr->submit_time = ink_get_hrtime();
+  chdr->submit_time = Thread::get_hrtime();
   chdr->len = sizeof(int32_t) + sizeof(mh);
   chdr->alloc_data();
   *(int32_t *)chdr->data = -1; // always -1 for compound message
@@ -243,7 +243,7 @@ ClusterProcessor::open_local(Continuation *cont, ClusterMachine * /* m ATS_UNUSE
   ProxyMutex *mutex = thread->mutex;
   ClusterVConnection *vc = clusterVCAllocator.alloc();
   vc->new_connect_read = (options & CLUSTER_OPT_CONN_READ ? 1 : 0);
-  vc->start_time = ink_get_hrtime();
+  vc->start_time = Thread::get_hrtime();
   vc->last_activity_time = vc->start_time;
   vc->ch = ch;
   vc->token.alloc();
@@ -313,7 +313,7 @@ ClusterProcessor::connect_local(Continuation *cont, ClusterVCToken *token, int c
   ProxyMutex *mutex = thread->mutex;
   ClusterVConnection *vc = clusterVCAllocator.alloc();
   vc->new_connect_read = (options & CLUSTER_OPT_CONN_READ ? 1 : 0);
-  vc->start_time = ink_get_hrtime();
+  vc->start_time = Thread::get_hrtime();
   vc->last_activity_time = vc->start_time;
   vc->ch = ch;
   vc->token = *token;

@@ -229,7 +229,7 @@ void
 ClusterLoadMonitor::recv_cluster_load_msg(cluster_load_ping_msg *m)
 {
   // We have received back our ping message.
-  ink_hrtime now = ink_get_hrtime();
+  ink_hrtime now = Thread::get_hrtime();
 
   if ((now >= m->send_time) &&
       ((m->sequence_number >= cluster_load_msg_start_sequence_number) && (m->sequence_number < cluster_load_msg_sequence_number))) {
@@ -285,7 +285,7 @@ ClusterLoadMonitor::cluster_load_periodic(int /* event ATS_UNUSED */, Event * /*
   }
   // Generate periodic ping messages.
 
-  ink_hrtime current_time = ink_get_hrtime();
+  ink_hrtime current_time = Thread::get_hrtime();
   if ((current_time - last_ping_message_sent) > HRTIME_MSECONDS(ping_message_send_msec_interval)) {
     send_cluster_load_msg(current_time);
     last_ping_message_sent = current_time;
