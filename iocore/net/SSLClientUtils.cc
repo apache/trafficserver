@@ -24,10 +24,15 @@
 #include "libts.h"
 #include "P_Net.h"
 #include "P_SSLClientUtils.h"
+#include "P_TicketCache.h"
+
 
 #include <openssl/err.h>
 #include <openssl/pem.h>
 #include <openssl/x509.h>
+
+TicketCache *ticket_cache; // declared extern in P_SSLConfig.h
+
 
 #if (OPENSSL_VERSION_NUMBER >= 0x10000000L) // openssl returns a const SSL_METHOD
 typedef const SSL_METHOD *ink_ssl_method_t;
@@ -108,7 +113,8 @@ SSLInitClientContext(const SSLConfigParams *params)
   // to do the seeding of the PRNG for us. This is the case for all platforms that
   // has /dev/urandom for example.
 
-  meth = SSLv23_client_method();
+  /* TODO: OLD.. DELTE ME meth = SSLv23_client_method(); */
+  meth = TLSv1_2_client_method(); 
   client_ctx = SSL_CTX_new(meth);
 
   // disable selected protocols

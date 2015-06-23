@@ -38,6 +38,7 @@
 #include "P_SSLUtils.h"
 #include "P_SSLCertLookup.h"
 #include "SSLSessionCache.h"
+#include "P_TicketCache.h"
 #include <records/I_RecHttp.h>
 
 int SSLConfig::configid = 0;
@@ -245,6 +246,7 @@ SSLConfigParams::initialize()
   ats_free(CACertRelativePath);
 
   // SSL session cache configurations
+  // SSL session cache - Used on client side of ATS (ATS is an SSL/TLS server)
   REC_ReadConfigInteger(ssl_session_cache, "proxy.config.ssl.session_cache");
   REC_ReadConfigInteger(ssl_session_cache_size, "proxy.config.ssl.session_cache.size");
   REC_ReadConfigInteger(ssl_session_cache_num_buckets, "proxy.config.ssl.session_cache.num_buckets");
@@ -258,6 +260,14 @@ SSLConfigParams::initialize()
 
   if (ssl_session_cache == SSL_SESSION_CACHE_MODE_SERVER_ATS_IMPL) {
     session_cache = new SSLSessionCache();
+  }
+
+  // TLS ticket cache configurations
+  // TLS ticket cache -  Used on origin server side. (ATS is a TLS client)
+  {
+  int useTicketCache;
+  REC_ReadConfigInteger(useTicketCache, "proxy.config.ssl.client.cache_session_tickets");
+  ticket_cache = new TicketCache( (bool) (useTicketCache == 1)?true:false ); 
   }
 
   // SSL record size

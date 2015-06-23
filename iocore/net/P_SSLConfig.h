@@ -33,6 +33,8 @@
 
 #include "ProxyConfig.h"
 #include "SSLSessionCache.h"
+#include "P_TicketCache.h"
+
 
 struct SSLCertLookup;
 
@@ -133,6 +135,9 @@ private:
   static int configid;
 };
 
-extern SSLSessionCache *session_cache;
+extern SSLSessionCache *session_cache; // for SSL/TLS-client connection to ATS as a server
+extern TicketCache *ticket_cache; // for TLS-ATS-client connection to origin server 
+
+
 
 #endif
