@@ -933,8 +933,7 @@ HttpConfig::startup()
   RecRegisterConfigUpdateCb("proxy.config.http.server_session_sharing.match", &http_server_session_sharing_cb, &c);
   http_config_enum_read("proxy.config.http.server_session_sharing.match", SessionSharingMatchStrings,
                         c.oride.server_session_sharing_match);
-  http_config_enum_read("proxy.config.http.server_session_sharing.pool", SessionSharingPoolStrings,
-                        c.server_session_sharing_pool);
+  http_config_enum_read("proxy.config.http.server_session_sharing.pool", SessionSharingPoolStrings, c.server_session_sharing_pool);
 
   HttpEstablishStaticConfigByte(c.oride.auth_server_session_private, "proxy.config.http.auth_server_session_private");
 

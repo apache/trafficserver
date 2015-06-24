@@ -125,9 +125,9 @@ TSPluginInit(int argc, const char *argv[])
 {
   TSPluginRegistrationInfo info;
 
-  info.plugin_name = (char*)"";
-  info.vendor_name = (char*)"Apache Software Foundation";
-  info.support_email = (char*)"dev@trafficserver.apache.org";
+  info.plugin_name = (char *)"";
+  info.vendor_name = (char *)"Apache Software Foundation";
+  info.support_email = (char *)"dev@trafficserver.apache.org";
   /* This plugin supports following types of url redirect here:
    *
    * 1. User can specify a particular redirect-url header name in the plugin command line,
@@ -154,7 +154,7 @@ TSPluginInit(int argc, const char *argv[])
     redirect_url_header_len = strlen(redirect_url_header);
   }
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-      TSError ("[custom_redirect] Plugin registration failed.");
+    TSError("[custom_redirect] Plugin registration failed.");
   }
   TSError("[custom_redirect] Plugin registered successfully.");
   TSCont mainCont = TSContCreate(plugin_main_handler, NULL);

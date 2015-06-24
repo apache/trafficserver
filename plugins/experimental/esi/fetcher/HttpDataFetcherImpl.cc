@@ -142,7 +142,8 @@ HttpDataFetcherImpl::handleFetchEvent(TSEvent event, void *edata)
 
   int event_id = (static_cast<int>(event) - FETCH_EVENT_ID_BASE) % 3;
   if (event_id != 0) { // failure or timeout
-    TSError("[HttpDataFetcherImpl][%s] Received failure/timeout event id %d for request [%s]", __FUNCTION__, event_id, req_str.data());
+    TSError("[HttpDataFetcherImpl][%s] Received failure/timeout event id %d for request [%s]", __FUNCTION__, event_id,
+            req_str.data());
     return true;
   }
 

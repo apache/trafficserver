@@ -151,11 +151,13 @@ handleRead(SContData *cont_data, bool &read_complete)
           TSMLoc content_len_loc =
             TSMimeHdrFieldFind(cont_data->req_hdr_bufp, cont_data->req_hdr_loc, TS_MIME_FIELD_CONTENT_LENGTH, -1);
           if (!content_len_loc) {
-            TSError("[server_intercept][%s] Error while searching content length header [%s]", __FUNCTION__, TS_MIME_FIELD_CONTENT_LENGTH);
+            TSError("[server_intercept][%s] Error while searching content length header [%s]", __FUNCTION__,
+                    TS_MIME_FIELD_CONTENT_LENGTH);
             return false;
           }
           if (!content_len_loc) {
-            TSError("[server_intercept][%s] request doesn't contain content length header [%s]", __FUNCTION__, TS_MIME_FIELD_CONTENT_TYPE);
+            TSError("[server_intercept][%s] request doesn't contain content length header [%s]", __FUNCTION__,
+                    TS_MIME_FIELD_CONTENT_TYPE);
             return false;
           }
           cont_data->req_content_len =
@@ -246,7 +248,8 @@ processRequest(SContData *cont_data)
 
   int body_size = static_cast<int>(cont_data->body.size());
   if (cont_data->req_content_len != body_size) {
-    TSError("[server_intercept][%s] Read only %d bytes of body; expecting %d bytes", __FUNCTION__, body_size, cont_data->req_content_len);
+    TSError("[server_intercept][%s] Read only %d bytes of body; expecting %d bytes", __FUNCTION__, body_size,
+            cont_data->req_content_len);
   }
 
   char buf[64];

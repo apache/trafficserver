@@ -33,11 +33,11 @@
 #include <ts/ts.h>
 
 // This gets the PRI*64 types
-# define __STDC_FORMAT_MACROS 1
-# include <inttypes.h>
+#define __STDC_FORMAT_MACROS 1
+#include <inttypes.h>
 
-# define PLUGIN_NAME "txn-data-sink"
-# define PCP "[" PLUGIN_NAME "]"
+#define PLUGIN_NAME "txn-data-sink"
+#define PCP "[" PLUGIN_NAME "]"
 
 // Activate the data sink if this field is present in the request.
 static char const FLAG_MIME_FIELD[] = "TS-Agent";
@@ -53,7 +53,7 @@ typedef struct {
 static int
 client_reader(TSCont contp, TSEvent event, void *edata)
 {
-  SinkData* data = TSContDataGet(contp);
+  SinkData *data = TSContDataGet(contp);
 
   // If we got closed, we're done.
   if (TSVConnClosedGet(contp)) {
@@ -80,26 +80,26 @@ client_reader(TSCont contp, TSEvent event, void *edata)
     break;
   case TS_EVENT_VCONN_READ_READY:
   case TS_EVENT_IMMEDIATE:
-    TSDebug(PLUGIN_NAME, "Data event - %s", event == TS_EVENT_IMMEDIATE ? "IMMEDIATE":"READ_READY");
+    TSDebug(PLUGIN_NAME, "Data event - %s", event == TS_EVENT_IMMEDIATE ? "IMMEDIATE" : "READ_READY");
     // Look for data and if we find any, consume.
     if (TSVIOBufferGet(input_vio)) {
       TSIOBufferReader reader = TSVIOReaderGet(input_vio);
       int64_t n = TSIOBufferReaderAvail(reader);
       if (n > 0) {
-	TSIOBufferReaderConsume(reader, n);
-	TSVIONDoneSet(input_vio, TSVIONDoneGet(input_vio) + n);
-	data->total += n; // internal accounting so we can print the value at the end.
-	TSDebug(PLUGIN_NAME, "Consumed %" PRId64 " bytes", n);
+        TSIOBufferReaderConsume(reader, n);
+        TSVIONDoneSet(input_vio, TSVIONDoneGet(input_vio) + n);
+        data->total += n; // internal accounting so we can print the value at the end.
+        TSDebug(PLUGIN_NAME, "Consumed %" PRId64 " bytes", n);
       }
       if (TSVIONTodoGet(input_vio) > 0) {
-	// signal that we can accept more data.
-	TSContCall(TSVIOContGet(input_vio), TS_EVENT_VCONN_WRITE_READY, input_vio);
+        // signal that we can accept more data.
+        TSContCall(TSVIOContGet(input_vio), TS_EVENT_VCONN_WRITE_READY, input_vio);
       } else {
-	TSDebug(PLUGIN_NAME, "send WRITE_COMPLETE");
-	TSContCall(TSVIOContGet(input_vio), TS_EVENT_VCONN_WRITE_COMPLETE, input_vio);
+        TSDebug(PLUGIN_NAME, "send WRITE_COMPLETE");
+        TSContCall(TSVIOContGet(input_vio), TS_EVENT_VCONN_WRITE_COMPLETE, input_vio);
       }
     } else { // buffer gone, we're done.
-      TSDebug(PLUGIN_NAME, "upstream buffer disappeared - %"PRId64" bytes", data->total);
+      TSDebug(PLUGIN_NAME, "upstream buffer disappeared - %" PRId64 " bytes", data->total);
     }
     break;
   default:
@@ -139,7 +139,7 @@ client_add(TSHttpTxn txnp)
 static int
 main_hook(TSCont contp, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp = (TSHttpTxn) edata;
+  TSHttpTxn txnp = (TSHttpTxn)edata;
 
   TSDebug(PLUGIN_NAME, "Checking transaction");
   switch (event) {

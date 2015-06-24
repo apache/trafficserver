@@ -49,8 +49,8 @@
 **************************************************/
 #define PLUGIN_NAME "buffer_upload"
 //#define LOG_SET_FUNCTION_NAME(NAME) const char * FUNCTION_NAME = NAME
-#define LOG_ERROR(API_NAME)                                                                                              \
-  {                                                                                                                      \
+#define LOG_ERROR(API_NAME)                                                                                               \
+  {                                                                                                                       \
     TSError("[%s] %s %s %s File %s, line number %d", PLUGIN_NAME, API_NAME, "APIFAIL", __FUNCTION__, __FILE__, __LINE__); \
   }
 #define LOG_ERROR_AND_RETURN(API_NAME) \

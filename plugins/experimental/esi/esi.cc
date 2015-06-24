@@ -1027,8 +1027,8 @@ addMimeHeaderField(TSMBuffer bufp, TSMLoc hdr_loc, const char *name, int name_le
       TSError("[esi][%s] Error while setting name [%.*s] for MIME header field", __FUNCTION__, name_len, name);
     } else {
       if (TSMimeHdrFieldValueStringInsert(bufp, hdr_loc, field_loc, 0, value, value_len) != TS_SUCCESS) {
-        TSError("[esi][%s] Error while inserting value [%.*s] string to MIME field [%.*s]", __FUNCTION__, value_len, value, name_len,
-                name);
+        TSError("[esi][%s] Error while inserting value [%.*s] string to MIME field [%.*s]", __FUNCTION__, value_len, value,
+                name_len, name);
       } else {
         if (TSMimeHdrFieldAppend(bufp, hdr_loc, field_loc) != TS_SUCCESS) {
           TSError("[esi][%s] Error while appending MIME field with name [%.*s] and value [%.*s]", __FUNCTION__, name_len, name,

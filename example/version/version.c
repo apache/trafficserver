@@ -57,13 +57,12 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
 // partial compilation
 #if (TS_VERSION_NUMBER < 3000000)
   if (TSPluginRegister(TS_SDK_VERSION_2_0, &info) != TS_SUCCESS) {
-#elif (TS_VERSION_NUMBER < 6000000)
+#elif(TS_VERSION_NUMBER < 6000000)
   if (TSPluginRegister(TS_SDK_VERSION_3_0, &info) != TS_SUCCESS) {
 #else
   if (TSPluginRegister(&info) != TS_SUCCESS) {
 #endif
     TSError("[version] Plugin registration failed. \n");
-
   }
 
   TSDebug("debug-version-plugin", "Running in Apache Traffic Server: v%d.%d.%d\n", major_ts_version, minor_ts_version,

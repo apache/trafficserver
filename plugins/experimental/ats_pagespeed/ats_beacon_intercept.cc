@@ -234,7 +234,8 @@ processRequest(InterceptCtx *cont_data)
   string reply_header("HTTP/1.1 204 No Content\r\n");
   int body_size = static_cast<int>(cont_data->body.size());
   if (cont_data->req_content_len != body_size) {
-    TSError("[ats_beacon_intercept][%s] Read only %d bytes of body; expecting %d bytes", __FUNCTION__, body_size, cont_data->req_content_len);
+    TSError("[ats_beacon_intercept][%s] Read only %d bytes of body; expecting %d bytes", __FUNCTION__, body_size,
+            cont_data->req_content_len);
   }
 
   char buf[64];

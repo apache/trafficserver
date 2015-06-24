@@ -240,7 +240,8 @@ struct DNSHandler : public Continuation {
             (ink_hrtime)HRTIME_SECONDS(dns_failover_period));
       Debug("dns", "\tdelta time is %" PRId64 "", (Thread::get_hrtime() - crossed_failover_number[i]));
     }
-    return (crossed_failover_number[i] && ((Thread::get_hrtime() - crossed_failover_number[i]) > HRTIME_SECONDS(dns_failover_period)));
+    return (crossed_failover_number[i] &&
+            ((Thread::get_hrtime() - crossed_failover_number[i]) > HRTIME_SECONDS(dns_failover_period)));
   }
 
   bool
