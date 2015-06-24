@@ -124,7 +124,7 @@ public:
   void
   usage() const
   {
-    TSError("[%s] Usage: @plugin=%s.so @pparam=--policy=chance @pparam=--sample=<x>\%", PLUGIN_NAME, PLUGIN_NAME);
+    TSError("[%s] Usage: @plugin=%s.so @pparam=--policy=chance @pparam=--sample=<x>%", PLUGIN_NAME, PLUGIN_NAME);
   }
 
   const char *
