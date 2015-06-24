@@ -119,10 +119,10 @@ LogSlice::toStrOffset(int strlen, int *offset)
   LogField::LogField
   -------------------------------------------------------------------------*/
 struct cmp_str {
-  bool operator()(char const *a, char const *b) { return std::strcmp(a, b) < 0; }
+  bool operator()(ts::ConstBuffer a, ts::ConstBuffer b) { return memcmp(a._ptr, b._ptr, MAX(a._size, b._size)) < 0; }
 };
 
-typedef std::map<const char *, TransactionMilestones::Milestone, cmp_str> milestone_map;
+typedef std::map<ts::ConstBuffer, TransactionMilestones::Milestone, cmp_str> milestone_map;
 static milestone_map m_milestone_map;
 
 struct milestone {
@@ -171,7 +171,8 @@ LogField::LogField(const char *name, const char *symbol, Type type, MarshalFunc 
 
   if (m_milestone_map.empty()) {
     for (unsigned i = 0; i < countof(milestones); ++i) {
-      m_milestone_map.insert(std::make_pair(milestones[i].msname, milestones[i].mstype));
+      m_milestone_map.insert(
+        std::make_pair(ts::ConstBuffer(milestones[i].msname, strlen(milestones[i].msname)), milestones[i].mstype));
     }
   }
 }
@@ -193,7 +194,8 @@ LogField::LogField(const char *name, const char *symbol, Type type, MarshalFunc 
 
   if (m_milestone_map.empty()) {
     for (unsigned i = 0; i < countof(milestones); ++i) {
-      m_milestone_map.insert(std::make_pair(milestones[i].msname, milestones[i].mstype));
+      m_milestone_map.insert(
+        std::make_pair(ts::ConstBuffer(milestones[i].msname, strlen(milestones[i].msname)), milestones[i].mstype));
     }
   }
 }
@@ -238,7 +240,8 @@ LogField::LogField(const char *field, Container container, SetFunc _setfunc)
   case MSDMS:
     if (m_milestone_map.empty()) {
       for (unsigned i = 0; i < countof(milestones); ++i) {
-        m_milestone_map.insert(std::make_pair(milestones[i].msname, milestones[i].mstype));
+        m_milestone_map.insert(
+          std::make_pair(ts::ConstBuffer(milestones[i].msname, strlen(milestones[i].msname)), milestones[i].mstype));
       }
     }
     m_unmarshal_func = &(LogAccess::unmarshal_int_to_str);
@@ -270,12 +273,12 @@ LogField::~LogField()
 }
 
 TransactionMilestones::Milestone
-LogField::milestone_from_m_name(const char *m_name)
+LogField::milestone_from_m_name()
 {
   milestone_map::iterator it;
   TransactionMilestones::Milestone result = TransactionMilestones::LAST_ENTRY;
 
-  it = m_milestone_map.find(m_name);
+  it = m_milestone_map.find(ts::ConstBuffer(m_name, strlen(m_name)));
   if (it != m_milestone_map.end())
     result = it->second;
 
@@ -283,28 +286,21 @@ LogField::milestone_from_m_name(const char *m_name)
 }
 
 int
-LogField::milestones_from_m_name(const char *m_name, TransactionMilestones::Milestone *ms1, TransactionMilestones::Milestone *ms2)
+LogField::milestones_from_m_name(TransactionMilestones::Milestone *ms1, TransactionMilestones::Milestone *ms2)
 {
   milestone_map::iterator it;
-  char *ms_name;
-  size_t ms_name_len, skip;
+  ts::ConstBuffer ms1_name, ms2_name(m_name, strlen(m_name));
 
-  ms_name_len = strcspn(m_name, " -");
-  ms_name = strndup(m_name, ms_name_len);
-  it = m_milestone_map.find(ms_name);
-  free(ms_name);
+  ms1_name = ms2_name.splitOn('-');
+
+  it = m_milestone_map.find(ms1_name);
   if (it != m_milestone_map.end()) {
     *ms1 = it->second;
   } else {
-    for (it = m_milestone_map.begin(); it != m_milestone_map.end(); ++it)
-
-      return -1;
+    return -1;
   }
 
-  skip = strspn(m_name + ms_name_len, " -");
-  ms_name = strdup(m_name + ms_name_len + skip);
-  it = m_milestone_map.find(ms_name);
-  free(ms_name);
+  it = m_milestone_map.find(ms2_name);
   if (it != m_milestone_map.end()) {
     *ms2 = it->second;
   } else {
@@ -353,7 +349,7 @@ LogField::marshal_len(LogAccess *lad)
     return lad->marshal_record(m_name, NULL);
 
   case MS: {
-    TransactionMilestones::Milestone ms = milestone_from_m_name(m_name);
+    TransactionMilestones::Milestone ms = milestone_from_m_name();
     if (TransactionMilestones::LAST_ENTRY == ms)
       return 0;
     return lad->marshal_milestone(ms, NULL);
@@ -361,7 +357,7 @@ LogField::marshal_len(LogAccess *lad)
 
   case MSDMS: {
     TransactionMilestones::Milestone ms1, ms2;
-    int rv = milestones_from_m_name(m_name, &ms1, &ms2);
+    int rv = milestones_from_m_name(&ms1, &ms2);
     if (0 != rv)
       return 0;
     return lad->marshal_milestone_diff(ms1, ms2, NULL);
@@ -418,7 +414,7 @@ LogField::marshal(LogAccess *lad, char *buf)
     return lad->marshal_record(m_name, buf);
 
   case MS: {
-    TransactionMilestones::Milestone ms = milestone_from_m_name(m_name);
+    TransactionMilestones::Milestone ms = milestone_from_m_name();
     if (TransactionMilestones::LAST_ENTRY == ms)
       return 0;
     return lad->marshal_milestone(ms, buf);
@@ -426,7 +422,7 @@ LogField::marshal(LogAccess *lad, char *buf)
 
   case MSDMS: {
     TransactionMilestones::Milestone ms1, ms2;
-    int rv = milestones_from_m_name(m_name, &ms1, &ms2);
+    int rv = milestones_from_m_name(&ms1, &ms2);
     if (0 != rv)
       return 0;
     return lad->marshal_milestone_diff(ms1, ms2, buf);

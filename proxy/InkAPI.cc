@@ -5932,7 +5932,7 @@ TSHttpTxnMilestoneGet(TSHttpTxn txnp, TSMilestonesType milestone, ink_hrtime *ti
     *time = -1;
     ret = TS_ERROR;
   } else {
-    *time = sm->milestones.ms_get((TransactionMilestones::Milestone)milestone);
+    *time = sm->milestones[(TransactionMilestones::Milestone)milestone];
   }
 
   return ret;

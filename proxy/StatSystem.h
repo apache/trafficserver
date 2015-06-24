@@ -107,27 +107,39 @@ public:
     // CACHE_WRITE_END;
   };
 
-  TransactionMilestones()
-  { // constructor to initialize array elements to zero in case user wants to
-    for (int i = 0; i < LAST_ENTRY; i++)
-      milestones[i] = 0;
+  TransactionMilestones() { ink_zero(milestones); }
+
+  ink_hrtime &operator[](Milestone ms) { return milestones[ms]; }
+
+  const ink_hrtime &operator[](Milestone ms) const { return milestones[ms]; }
+
+  /**
+   * Takes two milestones and returns the difference.
+   * @param start The start time
+   * @param end The end time
+   * @return A double that is the time in seconds
+   */
+  int64_t
+  difference_msec(Milestone ms_start, Milestone ms_end) const
+  {
+    if (milestones[ms_end] == 0) {
+      return -1;
+    }
+    return (milestones[ms_end] - milestones[ms_start]) / 1000000;
   }
 
-  void ms_set(Milestone ms, ink_hrtime val);
-  ink_hrtime ms_get(Milestone ms) const;
+  double
+  difference(Milestone ms_start, Milestone ms_end) const
+  {
+    if (milestones[ms_end] == 0) {
+      return -1;
+    }
+    return (double)(milestones[ms_end] - milestones[ms_start]) / 1000000000;
+  }
 
 private:
   ink_hrtime milestones[LAST_ENTRY];
 };
-
-/**
- * Takes two milestones and returns the difference.
- * @param start The start time
- * @param end The end time
- * @return A double that is the time in seconds
- */
-double milestone_difference(const ink_hrtime start, const ink_hrtime end);
-int64_t milestone_difference_msec(const ink_hrtime start, const ink_hrtime end);
 
 // Modularization Project: Build w/o thread-local-dyn-stats
 // temporarily until we switch over to librecords.  Revert to old
