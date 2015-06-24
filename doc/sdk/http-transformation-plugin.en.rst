@@ -163,3 +163,21 @@ structure. Since only a single writer is allowed, there is no
 corresponding ``TSIOBufferWriter`` data structure. The writer simply
 modifies the IO buffer directly.
 
+Transaction Data Sink
+~~~~~~~~~~~~~~~~~~~~~
+
+The hook `TS_HTTP_RESPONSE_CLIENT_HOOK` is a hook that supports a special type of transformation, one with only input and no output.
+Although the transformation doesn't provide data back to Traffic Server it can do anything else with the data, such as writing it
+to another output device or process. It must, however, consume all the data for the transaction. There are two primary use cases.
+
+#. Tap in to the transaction to provide the data for external processing.
+#. Maintain the transaction.
+
+For the latter it is important to note that if all consumers of a transaction (primarily the user agent) shut down the transaction is also
+terminated, including the connection to the origin server. A data sink transform, unlike a standard transform, is considered to be a consumer
+and will keep the transaction and the origin server connection up. This is useful when the transaction is in some way expensive and should
+run to completion even if the user agent disconnects. Examples would be a standard transform that is expensive to initiate, or expensive
+origin server connections that should be :ts:cv:`shared <proxy.config.http.server_session_sharing.match>`.
+
+There is an `example plugin <https://github.com/apache/trafficserver/blob/master/example/txn-data-sink/txn-data-sink.c>`_ that demonstrates
+this used as a pure data sink to keep the transaction up regardless of whether the user agent disconnects.

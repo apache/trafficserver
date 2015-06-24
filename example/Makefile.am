@@ -45,6 +45,7 @@ plugins = \
   ssl-sni.la \
   ssl-sni-whitelist.la \
   thread-1.la \
+  txn-data-sink.la \
   version.la
 
 if BUILD_EXAMPLE_PLUGINS
@@ -74,6 +75,7 @@ remap_header_add_la_SOURCES = remap_header_add/remap_header_add.cc
 response_header_1_la_SOURCES = response-header-1/response-header-1.c
 server_transform_la_SOURCES = server-transform/server-transform.c
 thread_1_la_SOURCES = thread-1/thread-1.c
+txn_data_sink_la_SOURCES = txn-data-sink/txn-data-sink.c
 psi_la_SOURCES = thread-pool/psi.c thread-pool/thread.c
 version_la_SOURCES = version/version.c
 secure_link_la_SOURCES = secure-link/secure-link.c
