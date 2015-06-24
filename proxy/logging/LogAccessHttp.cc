@@ -957,8 +957,8 @@ int
 LogAccessHttp::marshal_server_resp_time_ms(char *buf)
 {
   if (buf) {
-    ink_hrtime elapsed = m_http_sm->milestones.ms_get(TransactionMilestones::SERVER_CLOSE) -
-                         m_http_sm->milestones.ms_get(TransactionMilestones::SERVER_CONNECT);
+    ink_hrtime elapsed =
+      m_http_sm->milestones[TransactionMilestones::SERVER_CLOSE] - m_http_sm->milestones[TransactionMilestones::SERVER_CONNECT];
     int64_t val = (int64_t)ink_hrtime_to_msec(elapsed);
     marshal_int(buf, val);
   }
@@ -969,8 +969,8 @@ int
 LogAccessHttp::marshal_server_resp_time_s(char *buf)
 {
   if (buf) {
-    ink_hrtime elapsed = m_http_sm->milestones.ms_get(TransactionMilestones::SERVER_CLOSE) -
-                         m_http_sm->milestones.ms_get(TransactionMilestones::SERVER_CONNECT);
+    ink_hrtime elapsed =
+      m_http_sm->milestones[TransactionMilestones::SERVER_CLOSE] - m_http_sm->milestones[TransactionMilestones::SERVER_CONNECT];
     int64_t val = (int64_t)ink_hrtime_to_sec(elapsed);
     marshal_int(buf, val);
   }
@@ -1118,8 +1118,8 @@ int
 LogAccessHttp::marshal_transfer_time_ms(char *buf)
 {
   if (buf) {
-    ink_hrtime elapsed = m_http_sm->milestones.ms_get(TransactionMilestones::SM_FINISH) -
-                         m_http_sm->milestones.ms_get(TransactionMilestones::SM_START);
+    ink_hrtime elapsed =
+      m_http_sm->milestones[TransactionMilestones::SM_FINISH] - m_http_sm->milestones[TransactionMilestones::SM_START];
     int64_t val = (int64_t)ink_hrtime_to_msec(elapsed);
     marshal_int(buf, val);
   }
@@ -1130,8 +1130,8 @@ int
 LogAccessHttp::marshal_transfer_time_s(char *buf)
 {
   if (buf) {
-    ink_hrtime elapsed = m_http_sm->milestones.ms_get(TransactionMilestones::SM_FINISH) -
-                         m_http_sm->milestones.ms_get(TransactionMilestones::SM_START);
+    ink_hrtime elapsed =
+      m_http_sm->milestones[TransactionMilestones::SM_FINISH] - m_http_sm->milestones[TransactionMilestones::SM_START];
     int64_t val = (int64_t)ink_hrtime_to_sec(elapsed);
     marshal_int(buf, val);
   }
@@ -1382,7 +1382,7 @@ int
 LogAccessHttp::marshal_milestone(TransactionMilestones::Milestone ms, char *buf)
 {
   if (buf) {
-    int64_t val = ink_hrtime_to_msec(m_http_sm->milestones.ms_get(ms));
+    int64_t val = ink_hrtime_to_msec(m_http_sm->milestones[ms]);
     marshal_int(buf, val);
   }
   return INK_MIN_ALIGN;
@@ -1393,7 +1393,7 @@ int
 LogAccessHttp::marshal_milestone_diff(TransactionMilestones::Milestone ms1, TransactionMilestones::Milestone ms2, char *buf)
 {
   if (buf) {
-    ink_hrtime elapsed = m_http_sm->milestones.ms_get(ms1) - m_http_sm->milestones.ms_get(ms2);
+    ink_hrtime elapsed = m_http_sm->milestones[ms1] - m_http_sm->milestones[ms2];
     int64_t val = (int64_t)ink_hrtime_to_msec(elapsed);
     marshal_int(buf, val);
   }
