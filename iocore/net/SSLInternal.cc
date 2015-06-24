@@ -43,4 +43,52 @@ SSL_set_rbio(SSL *ssl, BIO *rbio)
   ssl->rbio = rbio;
 }
 
+unsigned char *SSL_get_session_ticket(SSLNetVConnection *sslvc)
+{
+/* this routine will no longer have a reason-to-be when openssl implements and 
+ * releases SSL_SESSION_get_ticket() */
+/* https://www.openssl.org/docs/ssl/SSL_SESSION_get_ticket.htm */
+
+        SSL_SESSION *sess;
+
+        if (sslvc && sslvc->ssl) {
+                if ((sess = SSL_get_session(sslvc->ssl))) {
+                        return (unsigned char *) sess->tlsext_tick;
+                }
+        }
+
+        return (unsigned char *) 0;
+}
+
+size_t SSL_get_session_ticket_length(SSLNetVConnection *sslvc)
+{
+        SSL_SESSION *sess;
+
+        if (sslvc && sslvc->ssl) {
+                if ((sess = SSL_get_session(sslvc->ssl))) {
+                        return sess->tlsext_ticklen;
+                }
+        }
+
+        return (size_t) 0;
+}
+
+long SSL_get_session_ticket_lifetime_hint(SSLNetVConnection *sslvc)
+{
+/* this routine will no longer have a reason-to-be when openssl implements and 
+ * releases SSL_SESSION_get_ticket_lifetime_hint() */
+/* https://www.openssl.org/docs/ssl/SSL_SESSION_get_ticket_lifetime_hint.html */
+
+        SSL_SESSION *sess;
+
+        if (sslvc && sslvc->ssl) {
+                if ((sess = SSL_get_session(sslvc->ssl))) {
+                        return sess->tlsext_tick_lifetime_hint;
+                }
+        }
+
+        return (long) 0;
+}
+
+
 #endif

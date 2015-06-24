@@ -79,6 +79,7 @@ libinknet_a_SOURCES = \
   P_SSLNextProtocolAccept.h \
   P_SSLNextProtocolSet.h \
   P_SSLUtils.h \
+  P_TicketCache.h \
   P_SSLClientUtils.h \
   P_OCSPStapling.h \
   P_Socks.h \
@@ -104,6 +105,7 @@ libinknet_a_SOURCES = \
   SSLNextProtocolAccept.cc \
   SSLNextProtocolSet.cc \
   SSLUtils.cc \
+  TicketCache.cc \
   SSLClientUtils.cc \
   OCSPStapling.cc \
   Socks.cc \
