@@ -210,23 +210,26 @@ Http2DynamicTable::get_header_from_indexing_tables(uint32_t index, MIMEFieldWrap
 // Whenever the maximum size for the header table is reduced, entries
 // are evicted from the end of the header table until the size of the
 // header table is less than or equal to the maximum size.
-void
+bool
 Http2DynamicTable::set_dynamic_table_size(uint32_t new_size)
 {
-  uint32_t old_size = _settings_dynamic_table_size;
-  while (old_size > new_size) {
+  while (_current_size > new_size) {
+    if (_headers.n <= 0) {
+      return false;
+    }
     int last_name_len, last_value_len;
     MIMEField *last_field = _headers.last();
 
     last_field->name_get(&last_name_len);
     last_field->value_get(&last_value_len);
-    old_size -= ADDITIONAL_OCTETS + last_name_len + last_value_len;
+    _current_size -= ADDITIONAL_OCTETS + last_name_len + last_value_len;
 
     _headers.remove_index(_headers.length() - 1);
     _mhdr->field_delete(last_field, false);
   }
 
   _settings_dynamic_table_size = new_size;
+  return true;
 }
 
 void
@@ -684,7 +687,9 @@ update_dynamic_table_size(const uint8_t *buf_start, const uint8_t *buf_end, Http
   if (len == HPACK_ERROR_COMPRESSION_ERROR)
     return HPACK_ERROR_COMPRESSION_ERROR;
 
-  dynamic_table.set_dynamic_table_size(size);
+  if (dynamic_table.set_dynamic_table_size(size) == false) {
+    return HPACK_ERROR_COMPRESSION_ERROR;
+  }
 
   return len;
 }
