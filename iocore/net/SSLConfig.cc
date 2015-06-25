@@ -57,6 +57,9 @@ init_ssl_ctx_func SSLConfigParams::init_ssl_ctx_cb = NULL;
 
 static ConfigUpdateHandler<SSLCertificateConfig> *sslCertUpdate;
 
+extern bool client_tls_version_ext_compatible; // Does client TLS config version support TLS-extensions?
+
+
 SSLConfigParams::SSLConfigParams()
 {
   serverCertPathOnly = serverCertChainFilename = configFilePath = serverCACertFilename = serverCACertPath = clientCertPath =
@@ -140,6 +143,7 @@ SSLConfigParams::initialize()
   char *clientCACertRelativePath = NULL;
   char *ssl_server_ca_cert_filename = NULL;
   char *ssl_client_ca_cert_filename = NULL;
+  int support_old_client_SSL; 
 
   cleanup();
 
@@ -163,12 +167,19 @@ SSLConfigParams::initialize()
   if (!options)
     ssl_ctx_options |= SSL_OP_NO_TLSv1;
 
+  support_old_client_SSL = 0;
   REC_ReadConfigInteger(client_ssl_options, "proxy.config.ssl.client.SSLv2");
+  support_old_client_SSL  |= client_ssl_options;
   if (!client_ssl_options)
     ssl_client_ctx_protocols |= SSL_OP_NO_SSLv2;
   REC_ReadConfigInteger(client_ssl_options, "proxy.config.ssl.client.SSLv3");
+  support_old_client_SSL  |= client_ssl_options;
+
+  client_tls_version_ext_compatible = (bool) (support_old_client_SSL == 0)? true: false;
+
   if (!client_ssl_options)
     ssl_client_ctx_protocols |= SSL_OP_NO_SSLv3;
+
   REC_ReadConfigInteger(client_ssl_options, "proxy.config.ssl.client.TLSv1");
   if (!client_ssl_options)
     ssl_client_ctx_protocols |= SSL_OP_NO_TLSv1;
@@ -267,7 +278,20 @@ SSLConfigParams::initialize()
   {
   int useTicketCache;
   REC_ReadConfigInteger(useTicketCache, "proxy.config.ssl.client.cache_session_tickets");
-  ticket_cache = new TicketCache( (bool) (useTicketCache == 1)?true:false ); 
+  if (useTicketCache) {
+     if (!client_tls_version_ext_compatible) {
+            /* Admin is trying to turn on session ticket cache while SSLv2 & SSLv3 enabled. 
+               warn them that this can not be so. */
+            Warning("SSLv2 and SSLv3 support are mutually exclusive with TLS-Extensions e.g. session ticket support. Disabling session ticket cache support. Turn off SSLv2 & SSLv3 to enable (proxy.config.ssl.client.SSLv2 and proxy.config.ssl.client.SSLv3).");
+            Debug("ssl.ticket","SSLv2 and SSLv3 support are mutually exclusive with TLS-Extensions e.g. session ticket support. Disabling session ticket cache support. Turn off SSLv2 & SSLv3 to enable (proxy.config.ssl.client.SSLv2 and proxy.config.ssl.client.SSLv3).");
+            ticket_cache->enableCache(false);
+        }
+     else {
+            ticket_cache->enableCache(true);
+	}
+     }
+  else
+        ticket_cache->enableCache(false);
   }
 
   // SSL record size
@@ -309,6 +333,8 @@ SSLConfigParams::initialize()
 void
 SSLConfig::startup()
 {
+  ticket_cache = new TicketCache(false); 
+
   reconfigure();
 }
 

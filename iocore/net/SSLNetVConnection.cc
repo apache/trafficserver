@@ -1108,7 +1108,7 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
 
 #endif
   char *hostname = options.sni_servername.get();
-  if (hostname && (*hostname)) {
+  if (hostname) {
      unsigned char ticket[ST_SESSION_TICKET_MAX_LENGTH+1];
      size_t ticketLength;
      if (0 < (ticketLength = ticket_cache->lookup(hostname, ticket, ST_SESSION_TICKET_MAX_LENGTH))) {

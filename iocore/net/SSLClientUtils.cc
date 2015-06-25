@@ -32,6 +32,7 @@
 #include <openssl/x509.h>
 
 TicketCache *ticket_cache; // declared extern in P_SSLConfig.h
+bool client_tls_version_ext_compatible = false; // i.e. client TLSv1.0+ only */
 
 
 #if (OPENSSL_VERSION_NUMBER >= 0x10000000L) // openssl returns a const SSL_METHOD
@@ -113,8 +114,17 @@ SSLInitClientContext(const SSLConfigParams *params)
   // to do the seeding of the PRNG for us. This is the case for all platforms that
   // has /dev/urandom for example.
 
-  /* TODO: OLD.. DELTE ME meth = SSLv23_client_method(); */
-  meth = TLSv1_2_client_method(); 
+
+  // Note, this selection between the SSL/TLSvX_client_methods() is currently necessary,
+  // for client side session ticket handling, due to what appears to be a bug 
+  // in OpenSSL's SSLv23_client_method(). At a later point, this may be fixed. 
+  // Currently, it seems all of the OpenSSL TLSvX_client_methods() work fine 
+  // with client side session ticket. issue is only with SSLv23_client_method().
+  if (client_tls_version_ext_compatible)
+      meth = TLSv1_client_method();
+  else
+      meth = SSLv23_client_method();
+
   client_ctx = SSL_CTX_new(meth);
 
   // disable selected protocols
