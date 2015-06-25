@@ -113,7 +113,7 @@ public:
 
   void add_header_field(const MIMEField *field);
   int get_header_from_indexing_tables(uint32_t index, MIMEFieldWrapper &header_field) const;
-  void set_dynamic_table_size(uint32_t new_size);
+  bool set_dynamic_table_size(uint32_t new_size);
 
 private:
   const MIMEField *
