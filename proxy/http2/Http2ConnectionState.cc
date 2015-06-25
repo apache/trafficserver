@@ -640,8 +640,8 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
     Http2ErrorCode error;
 
     //  Implementations MUST ignore and discard any frame that has a type that is unknown.
-    ink_assert(frame->header().type < Http2FrameType::HTTP2_FRAME_TYPE_MAX);
-    if (frame->header().type >= Http2FrameType::HTTP2_FRAME_TYPE_MAX) {
+    ink_assert(frame->header().type < HTTP2_FRAME_TYPE_MAX);
+    if (frame->header().type >= HTTP2_FRAME_TYPE_MAX) {
       return 0;
     }
 
