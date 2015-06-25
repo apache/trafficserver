@@ -38,4 +38,4 @@ long SSL_get_session_ticket_lifetime_hint(SSLNetVConnection *sslvc);
 
 void SSL_set_session_ticket(SSLNetVConnection *sslvc, void *ticket, size_t ticketLength);
 
-#endif /*SSLINTERNAL_H_BEEN_INCLUDED_BEFORE */
+#endif 
