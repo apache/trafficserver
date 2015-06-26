@@ -186,6 +186,9 @@ private:
   Aggregate m_agg_op;
   int64_t m_agg_cnt;
   int64_t m_agg_val;
+  TransactionMilestones::Milestone m_milestone;
+  TransactionMilestones::Milestone m_milestone1;
+  TransactionMilestones::Milestone m_milestone2;
   bool m_time_field;
   Ptr<LogFieldAliasMap> m_alias_map; // map sINT <--> string
   SetFunc m_set_func;

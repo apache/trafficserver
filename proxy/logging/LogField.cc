@@ -171,7 +171,8 @@ LogField::init_milestone_container(void)
 LogField::LogField(const char *name, const char *symbol, Type type, MarshalFunc marshal, UnmarshalFunc unmarshal, SetFunc _setfunc)
   : m_name(ats_strdup(name)), m_symbol(ats_strdup(symbol)), m_type(type), m_container(NO_CONTAINER), m_marshal_func(marshal),
     m_unmarshal_func(unmarshal), m_unmarshal_func_map(NULL), m_agg_op(NO_AGGREGATE), m_agg_cnt(0), m_agg_val(0),
-    m_time_field(false), m_alias_map(0), m_set_func(_setfunc)
+    m_milestone(TransactionMilestones::LAST_ENTRY), m_milestone1(TransactionMilestones::LAST_ENTRY),
+    m_milestone2(TransactionMilestones::LAST_ENTRY), m_time_field(false), m_alias_map(0), m_set_func(_setfunc)
 {
   ink_assert(m_name != NULL);
   ink_assert(m_symbol != NULL);
@@ -186,7 +187,8 @@ LogField::LogField(const char *name, const char *symbol, Type type, MarshalFunc 
                    Ptr<LogFieldAliasMap> map, SetFunc _setfunc)
   : m_name(ats_strdup(name)), m_symbol(ats_strdup(symbol)), m_type(type), m_container(NO_CONTAINER), m_marshal_func(marshal),
     m_unmarshal_func(NULL), m_unmarshal_func_map(unmarshal), m_agg_op(NO_AGGREGATE), m_agg_cnt(0), m_agg_val(0),
-    m_time_field(false), m_alias_map(map), m_set_func(_setfunc)
+    m_milestone(TransactionMilestones::LAST_ENTRY), m_milestone1(TransactionMilestones::LAST_ENTRY),
+    m_milestone2(TransactionMilestones::LAST_ENTRY), m_time_field(false), m_alias_map(map), m_set_func(_setfunc)
 {
   ink_assert(m_name != NULL);
   ink_assert(m_symbol != NULL);
@@ -196,72 +198,6 @@ LogField::LogField(const char *name, const char *symbol, Type type, MarshalFunc 
 
   m_time_field = (strcmp(m_symbol, "cqts") == 0 || strcmp(m_symbol, "cqth") == 0 || strcmp(m_symbol, "cqtq") == 0 ||
                   strcmp(m_symbol, "cqtn") == 0 || strcmp(m_symbol, "cqtd") == 0 || strcmp(m_symbol, "cqtt") == 0);
-}
-
-// Container field ctor
-LogField::LogField(const char *field, Container container, SetFunc _setfunc)
-  : m_name(ats_strdup(field)), m_symbol(ats_strdup(container_names[container])), m_type(LogField::STRING), m_container(container),
-    m_marshal_func(NULL), m_unmarshal_func(NULL), m_unmarshal_func_map(NULL), m_agg_op(NO_AGGREGATE), m_agg_cnt(0), m_agg_val(0),
-    m_time_field(false), m_alias_map(0), m_set_func(_setfunc)
-{
-  ink_assert(m_name != NULL);
-  ink_assert(m_symbol != NULL);
-  ink_assert(m_type >= 0 && m_type < N_TYPES);
-
-  m_time_field = (strcmp(m_symbol, "cqts") == 0 || strcmp(m_symbol, "cqth") == 0 || strcmp(m_symbol, "cqtq") == 0 ||
-                  strcmp(m_symbol, "cqtn") == 0 || strcmp(m_symbol, "cqtd") == 0 || strcmp(m_symbol, "cqtt") == 0);
-
-  switch (m_container) {
-  case CQH:
-  case PSH:
-  case PQH:
-  case SSH:
-  case CSSH:
-  case ECQH:
-  case EPSH:
-  case EPQH:
-  case ESSH:
-  case ECSSH:
-  case SCFG:
-    m_unmarshal_func = (UnmarshalFunc) & (LogAccess::unmarshal_str);
-    break;
-
-  case ICFG:
-    m_unmarshal_func = &(LogAccess::unmarshal_int_to_str);
-    break;
-
-  case RECORD:
-    m_unmarshal_func = &(LogAccess::unmarshal_record);
-    break;
-
-  case MS:
-  case MSDMS:
-    m_unmarshal_func = &(LogAccess::unmarshal_int_to_str);
-    break;
-  default:
-    Note("Invalid container type in LogField ctor: %d", container);
-  }
-}
-
-// Copy ctor
-LogField::LogField(const LogField &rhs)
-  : m_name(ats_strdup(rhs.m_name)), m_symbol(ats_strdup(rhs.m_symbol)), m_type(rhs.m_type), m_container(rhs.m_container),
-    m_marshal_func(rhs.m_marshal_func), m_unmarshal_func(rhs.m_unmarshal_func), m_unmarshal_func_map(rhs.m_unmarshal_func_map),
-    m_agg_op(rhs.m_agg_op), m_agg_cnt(0), m_agg_val(0), m_time_field(rhs.m_time_field), m_alias_map(rhs.m_alias_map),
-    m_set_func(rhs.m_set_func)
-{
-  ink_assert(m_name != NULL);
-  ink_assert(m_symbol != NULL);
-  ink_assert(m_type >= 0 && m_type < N_TYPES);
-}
-
-/*-------------------------------------------------------------------------
-  LogField::~LogField
-  -------------------------------------------------------------------------*/
-LogField::~LogField()
-{
-  ats_free(m_name);
-  ats_free(m_symbol);
 }
 
 TransactionMilestones::Milestone
@@ -302,6 +238,85 @@ LogField::milestones_from_m_name(TransactionMilestones::Milestone *ms1, Transact
   return 0;
 }
 
+// Container field ctor
+LogField::LogField(const char *field, Container container, SetFunc _setfunc)
+  : m_name(ats_strdup(field)), m_symbol(ats_strdup(container_names[container])), m_type(LogField::STRING), m_container(container),
+    m_marshal_func(NULL), m_unmarshal_func(NULL), m_unmarshal_func_map(NULL), m_agg_op(NO_AGGREGATE), m_agg_cnt(0), m_agg_val(0),
+    m_milestone(TransactionMilestones::LAST_ENTRY), m_milestone1(TransactionMilestones::LAST_ENTRY),
+    m_milestone2(TransactionMilestones::LAST_ENTRY), m_time_field(false), m_alias_map(0), m_set_func(_setfunc)
+{
+  ink_assert(m_name != NULL);
+  ink_assert(m_symbol != NULL);
+  ink_assert(m_type >= 0 && m_type < N_TYPES);
+
+  m_time_field = (strcmp(m_symbol, "cqts") == 0 || strcmp(m_symbol, "cqth") == 0 || strcmp(m_symbol, "cqtq") == 0 ||
+                  strcmp(m_symbol, "cqtn") == 0 || strcmp(m_symbol, "cqtd") == 0 || strcmp(m_symbol, "cqtt") == 0);
+
+  switch (m_container) {
+  case CQH:
+  case PSH:
+  case PQH:
+  case SSH:
+  case CSSH:
+  case ECQH:
+  case EPSH:
+  case EPQH:
+  case ESSH:
+  case ECSSH:
+  case SCFG:
+    m_unmarshal_func = (UnmarshalFunc) & (LogAccess::unmarshal_str);
+    break;
+
+  case ICFG:
+    m_unmarshal_func = &(LogAccess::unmarshal_int_to_str);
+    break;
+
+  case RECORD:
+    m_unmarshal_func = &(LogAccess::unmarshal_record);
+    break;
+
+  case MS:
+    m_milestone = milestone_from_m_name();
+    if (TransactionMilestones::LAST_ENTRY == m_milestone)
+      Note("Invalid milestone name in LogField ctor: %s", m_name);
+    m_unmarshal_func = &(LogAccess::unmarshal_int_to_str);
+    break;
+
+  case MSDMS: {
+    int rv = milestones_from_m_name(&m_milestone1, &m_milestone2);
+    if (0 != rv)
+      Note("Invalid milestone range in LogField ctor: %s", m_name);
+    m_unmarshal_func = &(LogAccess::unmarshal_int_to_str);
+    break;
+  }
+
+  default:
+    Note("Invalid container type in LogField ctor: %d", container);
+  }
+}
+
+// Copy ctor
+LogField::LogField(const LogField &rhs)
+  : m_name(ats_strdup(rhs.m_name)), m_symbol(ats_strdup(rhs.m_symbol)), m_type(rhs.m_type), m_container(rhs.m_container),
+    m_marshal_func(rhs.m_marshal_func), m_unmarshal_func(rhs.m_unmarshal_func), m_unmarshal_func_map(rhs.m_unmarshal_func_map),
+    m_agg_op(rhs.m_agg_op), m_agg_cnt(0), m_agg_val(0), m_milestone(TransactionMilestones::LAST_ENTRY),
+    m_milestone1(TransactionMilestones::LAST_ENTRY), m_milestone2(TransactionMilestones::LAST_ENTRY),
+    m_time_field(rhs.m_time_field), m_alias_map(rhs.m_alias_map), m_set_func(rhs.m_set_func)
+{
+  ink_assert(m_name != NULL);
+  ink_assert(m_symbol != NULL);
+  ink_assert(m_type >= 0 && m_type < N_TYPES);
+}
+
+/*-------------------------------------------------------------------------
+  LogField::~LogField
+  -------------------------------------------------------------------------*/
+LogField::~LogField()
+{
+  ats_free(m_name);
+  ats_free(m_symbol);
+}
+
 /*-------------------------------------------------------------------------
   LogField::marshal_len
 
@@ -340,20 +355,11 @@ LogField::marshal_len(LogAccess *lad)
   case RECORD:
     return lad->marshal_record(m_name, NULL);
 
-  case MS: {
-    TransactionMilestones::Milestone ms = milestone_from_m_name();
-    if (TransactionMilestones::LAST_ENTRY == ms)
-      return 0;
-    return lad->marshal_milestone(ms, NULL);
-  }
+  case MS:
+    return lad->marshal_milestone(m_milestone, NULL);
 
-  case MSDMS: {
-    TransactionMilestones::Milestone ms1, ms2;
-    int rv = milestones_from_m_name(&ms1, &ms2);
-    if (0 != rv)
-      return 0;
-    return lad->marshal_milestone_diff(ms1, ms2, NULL);
-  }
+  case MSDMS:
+    return lad->marshal_milestone_diff(m_milestone1, m_milestone2, NULL);
 
   default:
     return 0;
@@ -405,20 +411,11 @@ LogField::marshal(LogAccess *lad, char *buf)
   case RECORD:
     return lad->marshal_record(m_name, buf);
 
-  case MS: {
-    TransactionMilestones::Milestone ms = milestone_from_m_name();
-    if (TransactionMilestones::LAST_ENTRY == ms)
-      return 0;
-    return lad->marshal_milestone(ms, buf);
-  }
+  case MS:
+    return lad->marshal_milestone(m_milestone, buf);
 
-  case MSDMS: {
-    TransactionMilestones::Milestone ms1, ms2;
-    int rv = milestones_from_m_name(&ms1, &ms2);
-    if (0 != rv)
-      return 0;
-    return lad->marshal_milestone_diff(ms1, ms2, buf);
-  }
+  case MSDMS:
+    return lad->marshal_milestone_diff(m_milestone1, m_milestone2, buf);
 
   default:
     return 0;
