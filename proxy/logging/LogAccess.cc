@@ -245,6 +245,15 @@ LogAccess::marshal_client_req_tcp_reused(char *buf)
   -------------------------------------------------------------------------*/
 
 int
+LogAccess::marshal_client_req_is_ssl(char *buf)
+{
+  DEFAULT_INT_FIELD;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
 LogAccess::marshal_client_req_ssl_reused(char *buf)
 {
   DEFAULT_INT_FIELD;

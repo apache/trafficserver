@@ -15,7 +15,7 @@
    permissions and limitations under the License.
 
 
-TSVConnIsSsl
+TSNetVConnSSLCachedHitSet
 ============
 
 Synopsis
