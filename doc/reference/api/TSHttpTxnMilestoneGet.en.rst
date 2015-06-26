@@ -61,6 +61,8 @@ Value                                           Milestone
 :const:`TS_MILESTONE_DNS_LOOKUP_END`            Host resolution resolves.
 :const:`TS_MILESTONE_SM_START`                  Transaction state machine is initialized.
 :const:`TS_MILESTONE_SM_FINISH`                 Transaction has finished, state machine final logging has started.
+:const:`TS_MILESTONE_PLUGIN_ACTIVE`             Amount of time plugins were active plus start time.
+:const:`TS_MILESTONE_PLUGIN_TOTAL`              Wall time while plugins were active plus start time.
 =============================================== ==========
 
 *  The server connect times predate the transmission of the ``SYN`` packet. That is, before a connection to the
@@ -74,6 +76,16 @@ Value                                           Milestone
    leaving the last I/O time as the final value.
 
 *  The cache ``OPEN`` milestones time only the initial setup, the "open", not the full read or write.
+
+*  :const:`TS_MILESTONE_PLUGIN_ACTIVE` and :const:`TS_MILESTONE_PLUGIN_TOTAL` are different from the other milestones as
+   they measure elapsed time, not event time. The value is the elapsed time *plus* :const:`TS_MILESTONE_SM_START`. This
+   was decided to be more convenient because then these milestones can be handled / displayed in the same way as the
+   other milestones, as offsets from :const:`TS_MILESTONE_SM_START`.
+
+   :const:`TS_MILESTONE_PLUGIN_ACTIVE` value is the amount of time the plugin was active, that is performing
+   computation. :const:`TS_MILESTONE_PLUGIN_TOTAL` is the wall time which includes any time the transaction was blocked
+   while a plugin was active. For instance if a plugin waits on an external event, that waiting time will be in
+   :const:`TS_MILESTONE_PLUGIN_TOTAL` but not in :const:`TS_MILESTONE_PLUGIN_ACTIVE`.
 
 Return values
 =============
