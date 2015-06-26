@@ -137,6 +137,12 @@ public:
     return (double)(milestones[ms_end] - milestones[ms_start]) / 1000000000;
   }
 
+  ink_hrtime
+  elapsed(Milestone ms_start, Milestone ms_end) const
+  {
+    return milestones[ms_end] - milestones[ms_start];
+  }
+
 private:
   ink_hrtime milestones[LAST_ENTRY];
 };

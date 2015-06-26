@@ -6588,7 +6588,7 @@ HttpSM::update_stats()
     }
   }
 
-  ink_hrtime total_time = milestones[TransactionMilestones::SM_FINISH] - milestones[TransactionMilestones::SM_START];
+  ink_hrtime total_time = milestones.elapsed(TransactionMilestones::SM_START, TransactionMilestones::SM_FINISH);
 
   // ua_close will not be assigned properly in some exceptional situation.
   // TODO: Assign ua_close with suitable value when HttpTunnel terminates abnormally.
@@ -6603,14 +6603,14 @@ HttpSM::update_stats()
 
   ink_hrtime ua_write_time;
   if (milestones[TransactionMilestones::UA_BEGIN_WRITE] != 0 && milestones[TransactionMilestones::UA_CLOSE] != 0) {
-    ua_write_time = milestones[TransactionMilestones::UA_CLOSE] - milestones[TransactionMilestones::UA_BEGIN_WRITE];
+    ua_write_time = milestones.elapsed(TransactionMilestones::UA_BEGIN_WRITE, TransactionMilestones::UA_CLOSE);
   } else {
     ua_write_time = -1;
   }
 
   ink_hrtime os_read_time;
   if (milestones[TransactionMilestones::SERVER_READ_HEADER_DONE] != 0 && milestones[TransactionMilestones::SERVER_CLOSE] != 0) {
-    os_read_time = milestones[TransactionMilestones::SERVER_CLOSE] - milestones[TransactionMilestones::SERVER_READ_HEADER_DONE];
+    os_read_time = milestones.elapsed(TransactionMilestones::SERVER_READ_HEADER_DONE, TransactionMilestones::SERVER_CLOSE);
   } else {
     os_read_time = -1;
   }

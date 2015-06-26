@@ -170,6 +170,7 @@ public:
   void set_aggregate_op(Aggregate agg_op);
   void update_aggregate(int64_t val);
 
+  static void init_milestone_container(void);
   static Container valid_container_name(char *name);
   static Aggregate valid_aggregate_name(char *name);
   static bool fieldlist_contains_aggregates(char *fieldlist);

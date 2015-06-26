@@ -118,6 +118,7 @@ LogSlice::toStrOffset(int strlen, int *offset)
 /*-------------------------------------------------------------------------
   LogField::LogField
   -------------------------------------------------------------------------*/
+
 struct cmp_str {
   bool operator()(ts::ConstBuffer a, ts::ConstBuffer b) { return memcmp(a._ptr, b._ptr, MAX(a._size, b._size)) < 0; }
 };
@@ -155,6 +156,17 @@ static const milestone milestones[] = {
   {"MILESTONE_PLUGIN_TOTAL", TransactionMilestones::PLUGIN_TOTAL},
 };
 
+void
+LogField::init_milestone_container(void)
+{
+  if (m_milestone_map.empty()) {
+    for (unsigned i = 0; i < countof(milestones); ++i) {
+      m_milestone_map.insert(
+        std::make_pair(ts::ConstBuffer(milestones[i].msname, strlen(milestones[i].msname)), milestones[i].mstype));
+    }
+  }
+}
+
 // Generic field ctor
 LogField::LogField(const char *name, const char *symbol, Type type, MarshalFunc marshal, UnmarshalFunc unmarshal, SetFunc _setfunc)
   : m_name(ats_strdup(name)), m_symbol(ats_strdup(symbol)), m_type(type), m_container(NO_CONTAINER), m_marshal_func(marshal),
@@ -168,13 +180,6 @@ LogField::LogField(const char *name, const char *symbol, Type type, MarshalFunc 
 
   m_time_field = (strcmp(m_symbol, "cqts") == 0 || strcmp(m_symbol, "cqth") == 0 || strcmp(m_symbol, "cqtq") == 0 ||
                   strcmp(m_symbol, "cqtn") == 0 || strcmp(m_symbol, "cqtd") == 0 || strcmp(m_symbol, "cqtt") == 0);
-
-  if (m_milestone_map.empty()) {
-    for (unsigned i = 0; i < countof(milestones); ++i) {
-      m_milestone_map.insert(
-        std::make_pair(ts::ConstBuffer(milestones[i].msname, strlen(milestones[i].msname)), milestones[i].mstype));
-    }
-  }
 }
 
 LogField::LogField(const char *name, const char *symbol, Type type, MarshalFunc marshal, UnmarshalFuncWithMap unmarshal,
@@ -191,13 +196,6 @@ LogField::LogField(const char *name, const char *symbol, Type type, MarshalFunc 
 
   m_time_field = (strcmp(m_symbol, "cqts") == 0 || strcmp(m_symbol, "cqth") == 0 || strcmp(m_symbol, "cqtq") == 0 ||
                   strcmp(m_symbol, "cqtn") == 0 || strcmp(m_symbol, "cqtd") == 0 || strcmp(m_symbol, "cqtt") == 0);
-
-  if (m_milestone_map.empty()) {
-    for (unsigned i = 0; i < countof(milestones); ++i) {
-      m_milestone_map.insert(
-        std::make_pair(ts::ConstBuffer(milestones[i].msname, strlen(milestones[i].msname)), milestones[i].mstype));
-    }
-  }
 }
 
 // Container field ctor
@@ -238,12 +236,6 @@ LogField::LogField(const char *field, Container container, SetFunc _setfunc)
 
   case MS:
   case MSDMS:
-    if (m_milestone_map.empty()) {
-      for (unsigned i = 0; i < countof(milestones); ++i) {
-        m_milestone_map.insert(
-          std::make_pair(ts::ConstBuffer(milestones[i].msname, strlen(milestones[i].msname)), milestones[i].mstype));
-      }
-    }
     m_unmarshal_func = &(LogAccess::unmarshal_int_to_str);
     break;
   default:
@@ -566,7 +558,6 @@ LogField::update_aggregate(int64_t val)
                    "new val = %" PRId64 ", cnt = %" PRId64 "",
         m_symbol, val, m_agg_val, m_agg_cnt);
 }
-
 
 LogField::Container
 LogField::valid_container_name(char *name)
