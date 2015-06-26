@@ -1393,7 +1393,7 @@ int
 LogAccessHttp::marshal_milestone_diff(TransactionMilestones::Milestone ms1, TransactionMilestones::Milestone ms2, char *buf)
 {
   if (buf) {
-    ink_hrtime elapsed = m_http_sm->milestones[ms1] - m_http_sm->milestones[ms2];
+    ink_hrtime elapsed = m_http_sm->milestones.elapsed(ms2, ms1);
     int64_t val = (int64_t)ink_hrtime_to_msec(elapsed);
     marshal_int(buf, val);
   }
