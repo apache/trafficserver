@@ -284,9 +284,17 @@ HostDBRoundRobin::select_best_http(sockaddr const *client_ip, ink_time_t now, in
   int best_any = 0;
   int best_up = -1;
 
+  // Basic round robin, increment current and mod with how many we have
   if (HostDBProcessor::hostdb_strict_round_robin) {
     Debug("hostdb", "Using strict round robin");
-    best_up = current++ % good;
+    // Check that the host we selected is alive
+    for (int i=0; i < good; i++){
+      best_any = current++ % good;
+      if (info[best_any].alive(now, fail_window)){
+        best_up = best_any;
+        break;
+      }
+    }
   } else if (HostDBProcessor::hostdb_timed_round_robin > 0) {
     Debug("hostdb", "Using timed round-robin for HTTP");
     if ((now - timed_rr_ctime) > HostDBProcessor::hostdb_timed_round_robin) {
@@ -294,7 +302,13 @@ HostDBRoundRobin::select_best_http(sockaddr const *client_ip, ink_time_t now, in
       ++current;
       timed_rr_ctime = now;
     }
-    best_up = current % good;
+    for (int i=0; i < good; i++){
+      best_any = current++ % good;
+      if (info[best_any].alive(now, fail_window)){
+        best_up = best_any;
+        break;
+      }
+    }
     Debug("hostdb", "Using %d for best_up", best_up);
   } else {
     Debug("hostdb", "Using default round robin");
@@ -308,31 +322,10 @@ HostDBRoundRobin::select_best_http(sockaddr const *client_ip, ink_time_t now, in
         best_any = i;
         best_hash_any = h;
       }
-      if (info[i].app.http_data.last_failure == 0 || (unsigned int)(now - fail_window) > info[i].app.http_data.last_failure) {
-        // Entry is marked up
+      if (info[i].alive(now, fail_window)){
         if (best_hash_up <= h) {
           best_up = i;
           best_hash_up = h;
-        }
-      } else {
-        // Entry is marked down.  Make sure some nasty clock skew
-        //  did not occur.  Use the retry time to set an upper bound
-        //  as to how far in the future we should tolerate bogus last
-        //  failure times.  This sets the upper bound that we would ever
-        //  consider a server down to 2*down_server_timeout
-        if (now + fail_window < (int32_t)(info[i].app.http_data.last_failure)) {
-#ifdef DEBUG
-          // because this region is mmaped, I cann't get anything
-          //   useful from the structure in core files,  therefore
-          //   copy the revelvant info to the stack so it will
-          //   be readble in the core
-          HostDBInfo current_info;
-          HostDBRoundRobin current_rr;
-          memcpy(&current_info, &info[i], sizeof(HostDBInfo));
-          memcpy(&current_rr, this, sizeof(HostDBRoundRobin));
-#endif
-          ink_assert(!"extreme clock skew");
-          info[i].app.http_data.last_failure = 0;
         }
       }
     }
