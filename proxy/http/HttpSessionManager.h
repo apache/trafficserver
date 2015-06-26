@@ -43,6 +43,12 @@ class HttpSM;
 
 void initialize_thread_for_http_sessions(EThread *thread, int thread_index);
 
+enum HSMresult_t {
+  HSM_DONE,
+  HSM_RETRY,
+  HSM_NOT_FOUND,
+};
+
 /** A pool of server sessions.
 
     This is a continuation so that it can get callbacks from the server sessions.
@@ -126,7 +132,8 @@ public:
 
       @return A pointer to the session or @c NULL if not matching session was found.
   */
-  HttpServerSession *acquireSession(sockaddr const *addr, INK_MD5 const &host_hash, TSServerSessionSharingMatchType match_style);
+  HSMresult_t acquireSession(sockaddr const *addr, INK_MD5 const &host_hash, TSServerSessionSharingMatchType match_style,
+                             HttpServerSession *&server_session);
   /** Release a session to to pool.
    */
   void releaseSession(HttpServerSession *ss);
@@ -138,12 +145,6 @@ public:
   // Note that each server session is stored in both pools.
   IPHashTable m_ip_pool;
   HostHashTable m_host_pool;
-};
-
-enum HSMresult_t {
-  HSM_DONE,
-  HSM_RETRY,
-  HSM_NOT_FOUND,
 };
 
 class HttpSessionManager

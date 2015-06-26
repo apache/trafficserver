@@ -170,7 +170,6 @@ HttpServerSession::release()
 
   HSMresult_t r = httpSessionManager.release_session(this);
 
-
   if (r == HSM_RETRY) {
     // Session could not be put in the session manager
     //  due to lock contention
