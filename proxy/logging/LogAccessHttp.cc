@@ -581,6 +581,20 @@ LogAccessHttp::marshal_client_req_tcp_reused(char *buf)
   -------------------------------------------------------------------------*/
 
 int
+LogAccessHttp::marshal_client_req_is_ssl(char *buf)
+{
+  if (buf) {
+    int64_t is_ssl;
+    is_ssl = m_http_sm->client_connection_is_ssl;
+    marshal_int(buf, is_ssl);
+  }
+  return INK_MIN_ALIGN;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
 LogAccessHttp::marshal_client_req_ssl_reused(char *buf)
 {
   if (buf) {
