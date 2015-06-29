@@ -82,8 +82,8 @@ conditions are being met:
 
 -  All nodes are running the same operating system:
 
-   -  The same distribution, e.g.: RHEL 5.5
-   -  The same kernel, e.g.: 2.6.18-194.17.1.el5
+   -  The same distribution, e.g.: RHEL 6.6
+   -  The same kernel, e.g.: 2.6.32-504.23.4.el6
    -  The same architecture, e.g.: x86_64
 
 -  All nodes have the same version of Traffic Server installed
