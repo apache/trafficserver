@@ -748,6 +748,30 @@ RecSetRecordAccessType(const char *name, RecAccessT access, bool lock)
   return err;
 }
 
+int
+RecGetRecordSource(const char *name, RecSourceT *source, bool lock)
+{
+  int err = REC_ERR_FAIL;
+  RecRecord *r = NULL;
+
+  if (lock) {
+    ink_rwlock_rdlock(&g_records_rwlock);
+  }
+
+  if (ink_hash_table_lookup(g_records_ht, name, (void **)&r)) {
+    rec_mutex_acquire(&(r->lock));
+    *source = r->config_meta.source;
+    err = REC_ERR_OKAY;
+    rec_mutex_release(&(r->lock));
+  }
+
+  if (lock) {
+    ink_rwlock_unlock(&g_records_rwlock);
+  }
+
+  return err;
+}
+
 
 //-------------------------------------------------------------------------
 // RecRegisterStat
