@@ -75,7 +75,8 @@ ServerSessionPool::match(HttpServerSession *ss, sockaddr const *addr, INK_MD5 co
 }
 
 HSMresult_t
-ServerSessionPool::acquireSession(sockaddr const *addr, INK_MD5 const &hostname_hash, TSServerSessionSharingMatchType match_style, HttpServerSession *&to_return)
+ServerSessionPool::acquireSession(sockaddr const *addr, INK_MD5 const &hostname_hash, TSServerSessionSharingMatchType match_style,
+                                  HttpServerSession *&to_return)
 {
   HSMresult_t zret = HSM_NOT_FOUND;
   if (TS_SERVER_SESSION_SHARING_MATCH_HOST == match_style) {
@@ -265,7 +266,9 @@ HttpSessionManager::acquire_session(Continuation * /* cont ATS_UNUSED */, sockad
   // Now check to see if we have a connection in our shared connection pool
   EThread *ethread = this_ethread();
 
-  ProxyMutex * pool_mutex = (TS_SERVER_SESSION_SHARING_POOL_THREAD == sm->t_state.http_config_param->server_session_sharing_pool) ? ethread->server_session_pool->mutex : m_g_pool->mutex;
+  ProxyMutex *pool_mutex = (TS_SERVER_SESSION_SHARING_POOL_THREAD == sm->t_state.http_config_param->server_session_sharing_pool) ?
+                             ethread->server_session_pool->mutex :
+                             m_g_pool->mutex;
   MUTEX_TRY_LOCK(lock, pool_mutex, ethread);
   if (lock.is_locked()) {
     if (TS_SERVER_SESSION_SHARING_POOL_THREAD == sm->t_state.http_config_param->server_session_sharing_pool) {
@@ -278,9 +281,9 @@ HttpSessionManager::acquire_session(Continuation * /* cont ATS_UNUSED */, sockad
     if (to_return) {
       Debug("http_ss", "[%" PRId64 "] [acquire session] return session from shared pool", to_return->con_id);
       to_return->state = HSS_ACTIVE;
-      // Holding the pool lock and the sm lock 
+      // Holding the pool lock and the sm lock
       // the attach_server_session will issue the do_io_read under the sm lock
-      // Must be careful to transfer the lock for the read vio because 
+      // Must be careful to transfer the lock for the read vio because
       // the server VC may be moving between threads TS-3266
       sm->attach_server_session(to_return);
       retval = HSM_DONE;
