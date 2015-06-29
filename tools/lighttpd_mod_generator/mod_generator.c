@@ -1,6 +1,6 @@
 /** @file
 
-    Main file for the tstop application.
+    Main file for the generator plugin for lighttpd
 
     @section license License
 

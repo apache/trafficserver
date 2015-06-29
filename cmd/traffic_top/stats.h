@@ -1,6 +1,6 @@
 /** @file
 
-    Include file for the tstop stats.
+    Include file for the traffic_top stats.
 
     @section license License
 
