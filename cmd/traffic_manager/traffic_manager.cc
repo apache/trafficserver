@@ -601,15 +601,13 @@ main(int argc, char **argv)
   diags->cleanup_func = mgmt_cleanup;
 
   // Setup the exported manager version records.
-  RecSetRecordString("proxy.node.version.manager.short", appVersionInfo.VersionStr);
-  RecSetRecordString("proxy.node.version.manager.long", appVersionInfo.FullVersionInfoStr);
-  RecSetRecordString("proxy.node.version.manager.build_number", appVersionInfo.BldNumStr);
-  RecSetRecordString("proxy.node.version.manager.build_time", appVersionInfo.BldTimeStr);
-  RecSetRecordString("proxy.node.version.manager.build_date", appVersionInfo.BldDateStr);
-  RecSetRecordString("proxy.node.version.manager.build_machine", appVersionInfo.BldMachineStr);
-  RecSetRecordString("proxy.node.version.manager.build_person", appVersionInfo.BldPersonStr);
-  //    RecSetRecordString("proxy.node.version.manager.build_compile_flags",
-  //                       appVersionInfo.BldCompileFlagsStr);
+  RecSetRecordString("proxy.node.version.manager.short", appVersionInfo.VersionStr, REC_SOURCE_DEFAULT);
+  RecSetRecordString("proxy.node.version.manager.long", appVersionInfo.FullVersionInfoStr, REC_SOURCE_DEFAULT);
+  RecSetRecordString("proxy.node.version.manager.build_number", appVersionInfo.BldNumStr, REC_SOURCE_DEFAULT);
+  RecSetRecordString("proxy.node.version.manager.build_time", appVersionInfo.BldTimeStr, REC_SOURCE_DEFAULT);
+  RecSetRecordString("proxy.node.version.manager.build_date", appVersionInfo.BldDateStr, REC_SOURCE_DEFAULT);
+  RecSetRecordString("proxy.node.version.manager.build_machine", appVersionInfo.BldMachineStr, REC_SOURCE_DEFAULT);
+  RecSetRecordString("proxy.node.version.manager.build_person", appVersionInfo.BldPersonStr, REC_SOURCE_DEFAULT);
 
   if (log_to_syslog) {
     char sys_var[] = "proxy.config.syslog_facility";
@@ -670,7 +668,7 @@ main(int argc, char **argv)
   }
 
   if (proxy_backdoor != -1) {
-    RecSetRecordInt("proxy.config.process_manager.mgmt_port", proxy_backdoor);
+    RecSetRecordInt("proxy.config.process_manager.mgmt_port", proxy_backdoor, REC_SOURCE_DEFAULT);
   }
 
   if (cluster_rsport == -1) {

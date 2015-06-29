@@ -195,9 +195,9 @@ recv_message_cb(RecMessage *msg, RecMessageT msg_type, void * /* cookie */)
     if (RecMessageUnmarshalFirst(msg, &itr, &r) != REC_ERR_FAIL) {
       do {
         if (REC_TYPE_IS_STAT(r->rec_type)) {
-          RecSetRecord(r->rec_type, r->name, r->data_type, &(r->data), &(r->stat_meta.data_raw));
+          RecSetRecord(r->rec_type, r->name, r->data_type, &(r->data), &(r->stat_meta.data_raw), REC_SOURCE_EXPLICIT);
         } else {
-          RecSetRecord(r->rec_type, r->name, r->data_type, &(r->data), NULL);
+          RecSetRecord(r->rec_type, r->name, r->data_type, &(r->data), NULL, REC_SOURCE_EXPLICIT);
         }
       } while (RecMessageUnmarshalNext(msg, &itr, &r) != REC_ERR_FAIL);
     }
@@ -211,7 +211,7 @@ recv_message_cb(RecMessage *msg, RecMessageT msg_type, void * /* cookie */)
         if (REC_TYPE_IS_STAT(r->rec_type)) {
           RecResetStatRecord(r->name);
         } else {
-          RecSetRecord(r->rec_type, r->name, r->data_type, &(r->data), NULL);
+          RecSetRecord(r->rec_type, r->name, r->data_type, &(r->data), NULL, REC_SOURCE_EXPLICIT);
         }
       } while (RecMessageUnmarshalNext(msg, &itr, &r) != REC_ERR_FAIL);
     }
@@ -225,7 +225,7 @@ recv_message_cb(RecMessage *msg, RecMessageT msg_type, void * /* cookie */)
           RecRegisterStat(r->rec_type, r->name, r->data_type, r->data_default, r->stat_meta.persist_type);
         } else if (REC_TYPE_IS_CONFIG(r->rec_type)) {
           RecRegisterConfig(r->rec_type, r->name, r->data_type, r->data_default, r->config_meta.update_type,
-                            r->config_meta.check_type, r->config_meta.check_expr, r->config_meta.access_type);
+                            r->config_meta.check_type, r->config_meta.check_expr, REC_SOURCE_EXPLICIT, r->config_meta.access_type);
         }
       } while (RecMessageUnmarshalNext(msg, &itr, &r) != REC_ERR_FAIL);
     }
@@ -315,7 +315,8 @@ _RecRegisterStatCounter(RecT rec_type, const char *name, RecCounter data_default
   RecRecord *r;                                                                                                                 \
   RecData my_data_default;                                                                                                      \
   my_data_default.A = data_default;                                                                                             \
-  if ((r = RecRegisterConfig(rec_type, name, B, my_data_default, update_type, check_type, check_regex, access_type)) != NULL) { \
+  if ((r = RecRegisterConfig(rec_type, name, B, my_data_default, update_type, check_type, check_regex, source, access_type)) != \
+      NULL) {                                                                                                                   \
     if (i_am_the_record_owner(r->rec_type)) {                                                                                   \
       r->sync_required = r->sync_required | REC_PEER_SYNC_REQUIRED;                                                             \
     } else {                                                                                                                    \
@@ -328,7 +329,7 @@ _RecRegisterStatCounter(RecT rec_type, const char *name, RecCounter data_default
 
 int
 RecRegisterConfigInt(RecT rec_type, const char *name, RecInt data_default, RecUpdateT update_type, RecCheckT check_type,
-                     const char *check_regex, RecAccessT access_type)
+                     const char *check_regex, RecSourceT source, RecAccessT access_type)
 {
   ink_assert((rec_type == RECT_CONFIG) || (rec_type == RECT_LOCAL));
   REC_REGISTER_CONFIG_XXX(rec_int, RECD_INT);
@@ -336,7 +337,7 @@ RecRegisterConfigInt(RecT rec_type, const char *name, RecInt data_default, RecUp
 
 int
 RecRegisterConfigFloat(RecT rec_type, const char *name, RecFloat data_default, RecUpdateT update_type, RecCheckT check_type,
-                       const char *check_regex, RecAccessT access_type)
+                       const char *check_regex, RecSourceT source, RecAccessT access_type)
 {
   ink_assert((rec_type == RECT_CONFIG) || (rec_type == RECT_LOCAL));
   REC_REGISTER_CONFIG_XXX(rec_float, RECD_FLOAT);
@@ -345,7 +346,7 @@ RecRegisterConfigFloat(RecT rec_type, const char *name, RecFloat data_default, R
 
 int
 RecRegisterConfigString(RecT rec_type, const char *name, const char *data_default_tmp, RecUpdateT update_type, RecCheckT check_type,
-                        const char *check_regex, RecAccessT access_type)
+                        const char *check_regex, RecSourceT source, RecAccessT access_type)
 {
   RecString data_default = (RecString)data_default_tmp;
   ink_assert((rec_type == RECT_CONFIG) || (rec_type == RECT_LOCAL));
@@ -354,7 +355,7 @@ RecRegisterConfigString(RecT rec_type, const char *name, const char *data_defaul
 
 int
 RecRegisterConfigCounter(RecT rec_type, const char *name, RecCounter data_default, RecUpdateT update_type, RecCheckT check_type,
-                         const char *check_regex, RecAccessT access_type)
+                         const char *check_regex, RecSourceT source, RecAccessT access_type)
 {
   ink_assert((rec_type == RECT_CONFIG) || (rec_type == RECT_LOCAL));
   REC_REGISTER_CONFIG_XXX(rec_counter, RECD_COUNTER);
@@ -365,7 +366,8 @@ RecRegisterConfigCounter(RecT rec_type, const char *name, RecCounter data_defaul
 // RecSetRecordXXX
 //-------------------------------------------------------------------------
 int
-RecSetRecord(RecT rec_type, const char *name, RecDataT data_type, RecData *data, RecRawStat *data_raw, bool lock, bool inc_version)
+RecSetRecord(RecT rec_type, const char *name, RecDataT data_type, RecData *data, RecRawStat *data_raw, RecSourceT source, bool lock,
+             bool inc_version)
 {
   int err = REC_ERR_OKAY;
   RecRecord *r1;
@@ -418,6 +420,8 @@ RecSetRecord(RecT rec_type, const char *name, RecDataT data_type, RecData *data,
         }
         if (REC_TYPE_IS_STAT(r1->rec_type) && (data_raw != NULL)) {
           r1->stat_meta.data_raw = *data_raw;
+        } else if (REC_TYPE_IS_CONFIG(r1->rec_type)) {
+          r1->config_meta.source = source;
         }
       }
       rec_mutex_release(&(r1->lock));
@@ -433,6 +437,8 @@ RecSetRecord(RecT rec_type, const char *name, RecDataT data_type, RecData *data,
       r2.data = *data;
       if (REC_TYPE_IS_STAT(r2.rec_type) && (data_raw != NULL)) {
         r2.stat_meta.data_raw = *data_raw;
+      } else if (REC_TYPE_IS_CONFIG(r2.rec_type)) {
+        r2.config_meta.source = source;
       }
       err = send_set_message(&r2);
       RecRecordFree(&r2);
@@ -451,6 +457,8 @@ RecSetRecord(RecT rec_type, const char *name, RecDataT data_type, RecData *data,
     RecDataSet(data_type, &(r1->data), data);
     if (REC_TYPE_IS_STAT(r1->rec_type) && (data_raw != NULL)) {
       r1->stat_meta.data_raw = *data_raw;
+    } else if (REC_TYPE_IS_CONFIG(r1->rec_type)) {
+      r1->config_meta.source = source;
     }
     if (i_am_the_record_owner(r1->rec_type)) {
       r1->sync_required = r1->sync_required | REC_PEER_SYNC_REQUIRED;
@@ -469,43 +477,43 @@ Ldone:
 }
 
 int
-RecSetRecordConvert(const char *name, const RecString rec_string, bool lock, bool inc_version)
+RecSetRecordConvert(const char *name, const RecString rec_string, RecSourceT source, bool lock, bool inc_version)
 {
   RecData data;
   data.rec_string = rec_string;
-  return RecSetRecord(RECT_NULL, name, RECD_NULL, &data, NULL, lock, inc_version);
+  return RecSetRecord(RECT_NULL, name, RECD_NULL, &data, NULL, source, lock, inc_version);
 }
 
 int
-RecSetRecordInt(const char *name, RecInt rec_int, bool lock, bool inc_version)
+RecSetRecordInt(const char *name, RecInt rec_int, RecSourceT source, bool lock, bool inc_version)
 {
   RecData data;
   data.rec_int = rec_int;
-  return RecSetRecord(RECT_NULL, name, RECD_INT, &data, NULL, lock, inc_version);
+  return RecSetRecord(RECT_NULL, name, RECD_INT, &data, NULL, source, lock, inc_version);
 }
 
 int
-RecSetRecordFloat(const char *name, RecFloat rec_float, bool lock, bool inc_version)
+RecSetRecordFloat(const char *name, RecFloat rec_float, RecSourceT source, bool lock, bool inc_version)
 {
   RecData data;
   data.rec_float = rec_float;
-  return RecSetRecord(RECT_NULL, name, RECD_FLOAT, &data, NULL, lock, inc_version);
+  return RecSetRecord(RECT_NULL, name, RECD_FLOAT, &data, NULL, source, lock, inc_version);
 }
 
 int
-RecSetRecordString(const char *name, const RecString rec_string, bool lock, bool inc_version)
+RecSetRecordString(const char *name, const RecString rec_string, RecSourceT source, bool lock, bool inc_version)
 {
   RecData data;
   data.rec_string = rec_string;
-  return RecSetRecord(RECT_NULL, name, RECD_STRING, &data, NULL, lock, inc_version);
+  return RecSetRecord(RECT_NULL, name, RECD_STRING, &data, NULL, source, lock, inc_version);
 }
 
 int
-RecSetRecordCounter(const char *name, RecCounter rec_counter, bool lock, bool inc_version)
+RecSetRecordCounter(const char *name, RecCounter rec_counter, RecSourceT source, bool lock, bool inc_version)
 {
   RecData data;
   data.rec_counter = rec_counter;
-  return RecSetRecord(RECT_NULL, name, RECD_COUNTER, &data, NULL, lock, inc_version);
+  return RecSetRecord(RECT_NULL, name, RECD_COUNTER, &data, NULL, source, lock, inc_version);
 }
 
 
@@ -535,7 +543,7 @@ RecReadStatsFile()
         // not registered yet. Either way, it's ok to just set the persisted value and keep going.
         if (RecGetRecordPersistenceType(r->name, &persist_type, false /* lock */) != REC_ERR_OKAY) {
           RecDebug(DL_Debug, "restoring value for persisted stat '%s'", r->name);
-          RecSetRecord(r->rec_type, r->name, r->data_type, &(r->data), &(r->stat_meta.data_raw), false);
+          RecSetRecord(r->rec_type, r->name, r->data_type, &(r->data), &(r->stat_meta.data_raw), REC_SOURCE_EXPLICIT, false);
           continue;
         }
 
@@ -554,7 +562,7 @@ RecReadStatsFile()
         }
 
         RecDebug(DL_Debug, "restoring value for persisted stat '%s'", r->name);
-        RecSetRecord(r->rec_type, r->name, r->data_type, &(r->data), &(r->stat_meta.data_raw), false);
+        RecSetRecord(r->rec_type, r->name, r->data_type, &(r->data), &(r->stat_meta.data_raw), REC_SOURCE_EXPLICIT, false);
       } while (RecMessageUnmarshalNext(m, &itr, &r) != REC_ERR_FAIL);
     }
   }
@@ -611,13 +619,13 @@ RecSyncStatsFile()
 
 // Consume a parsed record, pushing it into the records hash table.
 static void
-RecConsumeConfigEntry(RecT rec_type, RecDataT data_type, const char *name, const char *value, bool inc_version)
+RecConsumeConfigEntry(RecT rec_type, RecDataT data_type, const char *name, const char *value, RecSourceT source, bool inc_version)
 {
   RecData data;
 
   memset(&data, 0, sizeof(RecData));
   RecDataSetFromString(data_type, &data, value);
-  RecSetRecord(rec_type, name, data_type, &data, NULL, false, inc_version);
+  RecSetRecord(rec_type, name, data_type, &data, NULL, source, false, inc_version);
   RecDataClear(data_type, &data);
 }
 

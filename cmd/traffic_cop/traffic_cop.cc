@@ -475,7 +475,8 @@ transient_error(int error, int wait_ms)
 }
 
 static void
-config_register_variable(RecT rec_type, RecDataT data_type, const char *name, const char *value, bool /* inc_version */)
+config_register_variable(RecT rec_type, RecDataT data_type, const char *name, const char *value, RecSourceT /* source */,
+                         bool /* inc_version */)
 {
   configTable[std::string(name)] = ConfigValue(rec_type, data_type, value);
 }

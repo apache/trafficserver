@@ -175,11 +175,22 @@ http_config_share_server_sessions_bc(HttpConfigParams *c, MgmtByte v)
   }
 }
 
+static bool
+http_config_is_set_by_admin(char const *name)
+{
+  RecSourceT vs;
+  return REC_ERR_OKAY == RecGetRecordSource(name, &vs) && vs != REC_SOURCE_DEFAULT && vs != REC_SOURCE_NULL;
+}
+
 static void
 http_config_share_server_sessions_read_bc(HttpConfigParams *c)
 {
   MgmtByte v;
-  if (REC_ERR_OKAY == RecGetRecordByte("proxy.config.http.share_server_sessions", &v))
+  // We use the old value only if it's set and neither of the new ones are set.
+  if (http_config_is_set_by_admin("proxy.config.http.share_server_sessions") &&
+      REC_ERR_OKAY == RecGetRecordByte("proxy.config.http.share_server_sessions", &v) &&
+      !http_config_is_set_by_admin("proxy.config.http.server_session_sharing.pool") &&
+      !http_config_is_set_by_admin("proxy.config.http.server_session_sharing.match"))
     http_config_share_server_sessions_bc(c, v);
 }
 
@@ -192,7 +203,7 @@ http_server_session_sharing_cb(char const *name, RecDataT dtype, RecData data, v
   bool valid_p = true;
   HttpConfigParams *c = static_cast<HttpConfigParams *>(cookie);
 
-  if (0 == strcasecmp("proxy.config.http.server_session_sharing.pool", name)) {
+  if (0 == strcasecmp("proxy.config.http.server_session_sharing.match", name)) {
     MgmtByte &match = c->oride.server_session_sharing_match;
     if (RECD_INT == dtype) {
       match = static_cast<TSServerSessionSharingMatchType>(data.rec_int);
@@ -201,7 +212,7 @@ http_server_session_sharing_cb(char const *name, RecDataT dtype, RecData data, v
     } else {
       valid_p = false;
     }
-  } else if (0 == strcasecmp("proxy.config.http.server_session_sharing.match", name)) {
+  } else if (0 == strcasecmp("proxy.config.http.server_session_sharing.pool", name)) {
     MgmtByte &match = c->oride.server_session_sharing_pool;
     if (RECD_INT == dtype) {
       match = static_cast<TSServerSessionSharingPoolType>(data.rec_int);
@@ -932,11 +943,6 @@ HttpConfig::startup()
   HttpEstablishStaticConfigByte(c.oride.post_check_content_length_enabled, "proxy.config.http.post.check.content_length.enabled");
   // HttpEstablishStaticConfigByte(c.oride.share_server_sessions, "proxy.config.http.share_server_sessions");
 
-  // 4.2 Backwards compatibility
-  RecRegisterConfigUpdateCb("proxy.config.http.share_server_sessions", &http_server_session_sharing_cb, &c);
-  http_config_share_server_sessions_read_bc(&c);
-  // end 4.2 BC
-
   // [amc] This is a bit of a mess, need to figure out to make this cleaner.
   RecRegisterConfigUpdateCb("proxy.config.http.server_session_sharing.pool", &http_server_session_sharing_cb, &c);
   http_config_enum_read("proxy.config.http.server_session_sharing.pool", SessionSharingPoolStrings,
@@ -944,6 +950,11 @@ HttpConfig::startup()
   RecRegisterConfigUpdateCb("proxy.config.http.server_session_sharing.match", &http_server_session_sharing_cb, &c);
   http_config_enum_read("proxy.config.http.server_session_sharing.match", SessionSharingMatchStrings,
                         c.oride.server_session_sharing_match);
+
+  // 4.2 Backwards compatibility
+  RecRegisterConfigUpdateCb("proxy.config.http.share_server_sessions", &http_server_session_sharing_cb, &c);
+  http_config_share_server_sessions_read_bc(&c);
+  // end 4.2 BC
 
   HttpEstablishStaticConfigByte(c.oride.auth_server_session_private, "proxy.config.http.auth_server_session_private");
 

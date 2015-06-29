@@ -537,7 +537,7 @@ CB_After_Cache_Init()
   }
 
   time_t cache_ready_at = time(NULL);
-  RecSetRecordInt("proxy.node.restarts.proxy.cache_ready_time", cache_ready_at);
+  RecSetRecordInt("proxy.node.restarts.proxy.cache_ready_time", cache_ready_at, REC_SOURCE_DEFAULT);
 
   // Alert the plugins the cache is initialized.
   hook = lifecycle_hooks->get(TS_LIFECYCLE_CACHE_READY_HOOK);
