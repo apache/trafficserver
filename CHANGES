@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.1
 
+  *) [TS-3642] Server session sharing configuration not working.
+
   *) [TS-3650] Track source of configuration values.
 
   *) [TS-3696] Fix range check in HdrHeap::attach_str_heap() such that gcc 5.1
