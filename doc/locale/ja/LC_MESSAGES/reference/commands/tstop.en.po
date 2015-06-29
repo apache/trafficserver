@@ -26,10 +26,10 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../../reference/commands/tstop.en.rst:20
-msgid "tstop"
+#: ../../reference/commands/traffic_top.en.rst:20
+msgid "traffic_top"
 msgstr ""
 
-#: ../../reference/commands/tstop.en.rst:25
+#: ../../reference/commands/traffic_top.en.rst:25
 msgid "Description"
 msgstr ""

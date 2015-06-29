@@ -1080,9 +1080,9 @@ AX_WITH_CURSES
 CFLAGS="$__saved_CFLAGS"
 
 AX_LIB_CURL([7.19], [
-    AM_CONDITIONAL([BUILD_TSTOP], [test "x$ax_cv_curses" = "xyes"])
+    AM_CONDITIONAL([BUILD_TRAFFIC_TOP], [test "x$ax_cv_curses" = "xyes"])
   ], [
-    AM_CONDITIONAL([BUILD_TSTOP], [false])
+    AM_CONDITIONAL([BUILD_TRAFFIC_TOP], [false])
   ]
 )
 
