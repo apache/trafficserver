@@ -280,8 +280,8 @@ struct HostDBInfo {
         HostDBRoundRobin current_rr;
         memcpy(&current_info, &info[i], sizeof(HostDBInfo));
         memcpy(&current_rr, this, sizeof(HostDBRoundRobin));
-#endif
         ink_assert(!"extreme clock skew");
+#endif
         app.http_data.last_failure = 0;
         return false;
       }
