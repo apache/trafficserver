@@ -225,6 +225,12 @@ public:
     return iobuf;
   }
 
+  void
+  set_ssl_iobuf(MIOBuffer* buf)
+  {
+    iobuf = buf;
+  }
+
   IOBufferReader*
   get_ssl_reader()
   {

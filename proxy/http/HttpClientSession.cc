@@ -308,6 +308,11 @@ HttpClientSession::do_io_close(int alerrno)
     client_vc->set_active_timeout(HRTIME_SECONDS(current_reader->t_state.txn_conf->keep_alive_no_activity_timeout_out));
   } else {
     read_state = HCS_CLOSED;
+    // clean up ssl's first byte iobuf
+    SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(client_vc);
+    if (ssl_vc) {
+      ssl_vc->set_ssl_iobuf(NULL);
+    }
     if (upgrade_to_h2c) {
       Http2ClientSession *h2_session = http2ClientSessionAllocator.alloc();
 

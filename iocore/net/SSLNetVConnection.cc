@@ -860,6 +860,9 @@ SSLNetVConnection::free(EThread *t)
     SSL_free(ssl);
     ssl = NULL;
   }
+  if (iobuf) {
+    free_MIOBuffer(iobuf);
+  }
   sslHandShakeComplete = false;
   sslClientConnection = false;
   sslHandshakeBeginTime = 0;
