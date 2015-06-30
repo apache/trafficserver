@@ -53,6 +53,10 @@ distclean-local:
 doxygen:
 	@cd doc && $(MAKE) $(AM_MAKEFLAGS) $@
 
+gen-changelog:
+	./changelog.pl $(VERSION) > CHANGELOG-$(VERSION)
+	git add CHANGELOG-$(VERSION) && git commit -m "Adding CHANGELOG-$(VERSION)"
+
 asf-dist: asf-distdir
 	tardir=$(distdir) && $(am__tar) --mtime=./configure.ac | bzip2 -9 -c >$(distdir).tar.bz2
 	@$(am__remove_distdir)
@@ -61,7 +65,7 @@ asf-dist-rc: asf-distdir
 	tardir=$(distdir) && $(am__tar) --mtime=./configure.ac | bzip2 -9 -c >$(distdir)-rc$(RC).tar.bz2
 	@$(am__remove_distdir)
 
-asf-distdir:
+asf-distdir: gen-changelog
 	@$(am__remove_distdir)
 	test -d .git && git clone . $(distdir)
 	cd $(distdir) && git submodule update --init && autoreconf -i
@@ -122,4 +126,3 @@ help:
 	echo 'install          install by copying the built files to system-wide dirs' && \
 	echo 'install-strip    same as install but then strips debugging symbols' && \
 	echo 'install-examples install examples by copying the built files to system-wide dirs'
-
