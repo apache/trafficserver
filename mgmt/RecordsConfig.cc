@@ -1282,6 +1282,8 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.ssl.server.dhparams_file", RECD_STRING, NULL, RECU_RESTART_TS, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
+  {RECT_CONFIG, "proxy.config.ssl.handshake_timeout_in", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-65535]", RECA_NULL}
+  ,
   //##############################################################################
   //#
   //# OCSP (Online Certificate Status Protocol) Stapling Configuration

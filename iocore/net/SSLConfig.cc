@@ -48,6 +48,7 @@ bool SSLConfigParams::ssl_ocsp_enabled = false;
 int SSLConfigParams::ssl_ocsp_cache_timeout = 3600;
 int SSLConfigParams::ssl_ocsp_request_timeout = 10;
 int SSLConfigParams::ssl_ocsp_update_period = 60;
+int SSLConfigParams::ssl_handshake_timeout_in = 0;
 size_t SSLConfigParams::session_cache_number_buckets = 1024;
 bool SSLConfigParams::session_cache_skip_on_lock_contention = false;
 size_t SSLConfigParams::session_cache_max_bucket_size = 100;
@@ -268,6 +269,8 @@ SSLConfigParams::initialize()
   REC_EstablishStaticConfigInt32(ssl_ocsp_cache_timeout, "proxy.config.ssl.ocsp.cache_timeout");
   REC_EstablishStaticConfigInt32(ssl_ocsp_request_timeout, "proxy.config.ssl.ocsp.request_timeout");
   REC_EstablishStaticConfigInt32(ssl_ocsp_update_period, "proxy.config.ssl.ocsp.update_period");
+
+  REC_ReadConfigInt32(ssl_handshake_timeout_in, "proxy.config.ssl.handshake_timeout_in");
 
   // ++++++++++++++++++++++++ Client part ++++++++++++++++++++
   client_verify_depth = 7;

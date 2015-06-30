@@ -92,6 +92,7 @@ struct SSLConfigParams : public ConfigInfo {
   static int ssl_ocsp_cache_timeout;
   static int ssl_ocsp_request_timeout;
   static int ssl_ocsp_update_period;
+  static int ssl_handshake_timeout_in;
 
   static size_t session_cache_number_buckets;
   static size_t session_cache_max_bucket_size;

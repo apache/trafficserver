@@ -465,6 +465,17 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
       this->read.triggered = 0;
       readSignalError(nh, err);
     } else if (ret == SSL_HANDSHAKE_WANT_READ || ret == SSL_HANDSHAKE_WANT_ACCEPT) {
+      if (SSLConfigParams::ssl_handshake_timeout_in > 0) {
+        double handshake_time = ((ink_get_hrtime_internal() - sslHandshakeBeginTime)/1000000000);
+        Debug ("ssl", "ssl handshake for vc %p, took %.3f seconds, configured handshake_timer: %d", this, handshake_time, SSLConfigParams::ssl_handshake_timeout_in);
+        if (handshake_time > SSLConfigParams::ssl_handshake_timeout_in) {
+          Debug ("ssl", "ssl handshake for vc %p, expired, release the connection", this);
+          read.triggered = 0;
+          nh->read_ready_list.remove(this);
+          readSignalError(nh, VC_EVENT_EOS);
+          return;
+        }
+      }
       read.triggered = 0;
       nh->read_ready_list.remove(this);
       readReschedule(nh);
@@ -839,6 +850,11 @@ SSLNetVConnection::free(EThread *t)
 int
 SSLNetVConnection::sslStartHandShake(int event, int &err)
 {
+  if (sslHandshakeBeginTime == 0) {
+    sslHandshakeBeginTime = ink_get_hrtime_internal();
+    // net_activity will not be triggered until after the handshake
+    set_inactivity_timeout(HRTIME_SECONDS(SSLConfigParams::ssl_handshake_timeout_in));
+  }
   switch (event) {
   case SSL_EVENT_SERVER:
     if (this->ssl == NULL) {
