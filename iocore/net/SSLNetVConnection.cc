@@ -190,8 +190,8 @@ ssl_read_from_net(SSLNetVConnection *sslvc, EThread *lthread, int64_t &ret)
   MIOBufferAccessor &buf = s->vio.buffer;
   IOBufferBlock *b = buf.writer()->first_write_block();
   int event = SSL_READ_ERROR_NONE;
-  int64_t bytes_read;
-  int64_t block_write_avail;
+  int64_t bytes_read = 0;
+  int64_t block_write_avail = 0;
   ssl_error_t sslErr = SSL_ERROR_NONE;
   int64_t nread = 0;
 
@@ -214,7 +214,10 @@ ssl_read_from_net(SSLNetVConnection *sslvc, EThread *lthread, int64_t &ret)
         SSLDebugBufferPrint("ssl_buff", b->end() + offset, nread, "SSL Read");
 #endif
 
-        ink_assert(nread);
+        if(nread == 0) {
+          Debug ("ssl", "SSL_read 0 bytes read, total bytes read till now %" PRId64 ", for vc %p", bytes_read, sslvc);
+          break;
+        }
 
         bytes_read += nread;
         offset += nread;
@@ -267,7 +270,7 @@ ssl_read_from_net(SSLNetVConnection *sslvc, EThread *lthread, int64_t &ret)
     } // while( block_write_avail > 0 )
   }   // for ( bytes_read = 0; (b != 0); b = b->next)
 
-  if (bytes_read > 0) {
+  if ((bytes_read > 0) && (event != SSL_READ_EOS)) {
     Debug("ssl", "[SSL_NetVConnection::ssl_read_from_net] bytes_read=%" PRId64, bytes_read);
     buf.writer()->fill(bytes_read);
     s->vio.ndone += bytes_read;
@@ -464,7 +467,18 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
     if (ret == EVENT_ERROR) {
       this->read.triggered = 0;
       readSignalError(nh, err);
-    } else if (ret == SSL_HANDSHAKE_WANT_READ || ret == SSL_HANDSHAKE_WANT_ACCEPT) {
+    } else if (ret == SSL_HANDSHAKE_WANT_READ || ret == SSL_HANDSHAKE_WANT_ACCEPT || ret == EVENT_CONT) {
+      if (SSLConfigParams::ssl_handshake_timeout_in > 0) {
+        double handshake_time = ((ink_get_hrtime_internal() - sslHandshakeBeginTime)/1000000000);
+        Debug ("ssl", "ssl handshake for vc %p, took %.3f seconds, configured handshake_timer: %d", this, handshake_time, SSLConfigParams::ssl_handshake_timeout_in);
+        if (handshake_time > SSLConfigParams::ssl_handshake_timeout_in) {
+          Debug ("ssl", "ssl handshake for vc %p, expired, release the connection", this);
+          read.triggered = 0;
+          nh->read_ready_list.remove(this);
+          readSignalError(nh, VC_EVENT_EOS);
+          return;
+        }
+      }
       read.triggered = 0;
       nh->read_ready_list.remove(this);
       readReschedule(nh);
@@ -477,6 +491,26 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
       // the handshake is complete. Otherwise set up for continuing read
       // operations.
       if (ntodo <= 0) {
+        if (!getSSLClientConnection()) {
+          // we will not see another ET epoll event if the first byte is already
+          // in the ssl buffers, so, SSL_read if there's anything already..
+          Debug ("ssl", "ssl handshake completed on vc %p, check to see if first byte, is already in the ssl buffers", this);
+          this->iobuf = new_MIOBuffer(BUFFER_SIZE_INDEX_4K);
+          this->reader = this->iobuf->alloc_reader();
+          s->vio.buffer.writer_for(this->iobuf);
+          if (this->iobuf) {
+            ret = ssl_read_from_net(this, lthread, r);
+            if (ret == SSL_READ_EOS) {
+              this->eosRcvd = true;
+            }
+            int pending = SSL_pending (this->ssl);
+            if (r > 0 || pending > 0) {
+              Debug ("ssl", "ssl read right after handshake, read %" PRId64 ", pending %d bytes, for vc %p", r, pending, this);
+            }
+          }
+          read.triggered = 0;
+          read_disable(nh, this);
+        }
         readSignalDone(VC_EVENT_READ_COMPLETE, nh);
       } else {
         read.triggered = 1;
@@ -580,6 +614,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
     // close the connection if we have SSL_READ_EOS, this is the return value from ssl_read_from_net() if we get an
     // SSL_ERROR_ZERO_RETURN from SSL_get_error()
     // SSL_ERROR_ZERO_RETURN means that the origin server closed the SSL connection
+    eosRcvd = true;
     read.triggered = 0;
     readSignalDone(VC_EVENT_EOS, nh);
 
@@ -755,7 +790,8 @@ SSLNetVConnection::SSLNetVConnection()
   : ssl(NULL), sslHandshakeBeginTime(0), sslLastWriteTime(0), sslTotalBytesSent(0), hookOpRequested(TS_SSL_HOOK_OP_DEFAULT),
     sslHandShakeComplete(false), sslClientConnection(false), sslClientRenegotiationAbort(false), handShakeBuffer(NULL),
     handShakeHolder(NULL), handShakeReader(NULL), handShakeBioStored(0), sslPreAcceptHookState(SSL_HOOKS_INIT),
-    sslHandshakeHookState(HANDSHAKE_HOOKS_PRE), npnSet(NULL), npnEndpoint(NULL), sessionAcceptPtr(NULL)
+    sslHandshakeHookState(HANDSHAKE_HOOKS_PRE), npnSet(NULL), npnEndpoint(NULL), sessionAcceptPtr(NULL), iobuf(NULL),
+    reader(NULL), eosRcvd(false)
 {
 }
 
@@ -801,13 +837,24 @@ SSLNetVConnection::free(EThread *t)
   read.vio.mutex.clear();
   write.vio.mutex.clear();
   this->mutex.clear();
+  this->ep.stop();
+  this->con.close();
   flags = 0;
   SET_CONTINUATION_HANDLER(this, (SSLNetVConnHandler)&SSLNetVConnection::startEvent);
+  nh->read_ready_list.remove(this);
+  nh->write_ready_list.remove(this);
   nh = NULL;
   read.triggered = 0;
   write.triggered = 0;
+  read.enabled = 0;
+  write.enabled = 0;
+  read.vio._cont = NULL;
+  write.vio._cont = NULL;
+  read.vio.vc_server = NULL;
+  write.vio.vc_server = NULL;
   options.reset();
   closed = 0;
+
   ink_assert(con.fd == NO_FD);
   if (ssl != NULL) {
     SSL_free(ssl);
@@ -815,6 +862,7 @@ SSLNetVConnection::free(EThread *t)
   }
   sslHandShakeComplete = false;
   sslClientConnection = false;
+  sslHandshakeBeginTime = 0;
   sslLastWriteTime = 0;
   sslTotalBytesSent = 0;
   sslClientRenegotiationAbort = false;
@@ -827,6 +875,10 @@ SSLNetVConnection::free(EThread *t)
   npnSet = NULL;
   npnEndpoint = NULL;
   sessionAcceptPtr = NULL;
+  iobuf = NULL;
+  reader = NULL;
+  eosRcvd = false;
+  sslHandShakeComplete = false;
   free_handshake_buffers();
 
   if (from_accept_thread) {
@@ -839,6 +891,11 @@ SSLNetVConnection::free(EThread *t)
 int
 SSLNetVConnection::sslStartHandShake(int event, int &err)
 {
+  if (sslHandshakeBeginTime == 0) {
+    sslHandshakeBeginTime = ink_get_hrtime_internal();
+    set_inactivity_timeout(HRTIME_SECONDS(SSLConfigParams::ssl_handshake_timeout_in));
+  }
+
   switch (event) {
   case SSL_EVENT_SERVER:
     if (this->ssl == NULL) {
@@ -1008,8 +1065,8 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
 
     if (sslHandshakeBeginTime) {
       const ink_hrtime ssl_handshake_time = Thread::get_hrtime() - sslHandshakeBeginTime;
-      Debug("ssl", "ssl handshake time:%" PRId64, ssl_handshake_time);
       sslHandshakeBeginTime = 0;
+      Debug("ssl", "ssl handshake time:%" PRId64, ssl_handshake_time);
       SSL_INCREMENT_DYN_STAT_EX(ssl_total_handshake_time_stat, ssl_handshake_time);
       SSL_INCREMENT_DYN_STAT(ssl_total_success_handshake_count_in_stat);
     }
