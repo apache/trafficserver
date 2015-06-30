@@ -707,6 +707,30 @@ HttpSM::state_read_client_request_header(int event, void *data)
       ua_session->m_active = true;
       HTTP_INCREMENT_DYN_STAT(http_current_active_client_connections_stat);
     }
+
+    if (t_state.hdr_info.client_request.version_get() == HTTPVersion(1, 1) &&
+        (t_state.hdr_info.client_request.method_get_wksidx() == HTTP_WKSIDX_POST ||
+         t_state.hdr_info.client_request.method_get_wksidx() == HTTP_WKSIDX_PUT) &&
+        t_state.http_config_param->send_100_continue_response) {
+      int len = 0;
+      const char *expect = t_state.hdr_info.client_request.value_get(MIME_FIELD_EXPECT, MIME_LEN_EXPECT, &len);
+      // When receive an "Expect: 100-continue" request from client, ATS sends a "100 Continue" response to client
+      // imediately, before receive the real response from original server.
+      if ((len == HTTP_LEN_100_CONTINUE) && (strncasecmp(expect, HTTP_VALUE_100_CONTINUE, HTTP_LEN_100_CONTINUE) == 0)) {
+        int64_t alloc_index = buffer_size_to_index(len_100_continue_response);
+        if (ua_entry->write_buffer) {
+          free_MIOBuffer(ua_entry->write_buffer);
+          ua_entry->write_buffer = NULL;
+        }
+        ua_entry->write_buffer = new_MIOBuffer(alloc_index);
+        IOBufferReader *buf_start = ua_entry->write_buffer->alloc_reader();
+
+        DebugSM("http_seq", "send 100 Continue response to client");
+        int64_t nbytes = ua_entry->write_buffer->write(str_100_continue_response, len_100_continue_response);
+        ua_session->do_io_write(ua_session->get_netvc(), nbytes, buf_start);
+      }
+    }
+
     if (t_state.hdr_info.client_request.method_get_wksidx() == HTTP_WKSIDX_TRACE ||
         (t_state.hdr_info.request_content_length == 0 && t_state.client_info.transfer_encoding != HttpTransact::CHUNKED_ENCODING)) {
       // Enable further IO to watch for client aborts
@@ -1847,25 +1871,6 @@ HttpSM::state_send_server_request_header(int event, void *data)
       if (post_transform_info.vc) {
         setup_transform_to_server_transfer();
       } else {
-        if (t_state.http_config_param->send_100_continue_response) {
-          int len = 0;
-          const char *expect = t_state.hdr_info.client_request.value_get(MIME_FIELD_EXPECT, MIME_LEN_EXPECT, &len);
-          // When receive an "Expect: 100-continue" request from client, ATS sends a "100 Continue" response to client
-          // imediately, before receive the real response from original server.
-          if ((len == HTTP_LEN_100_CONTINUE) && (strncasecmp(expect, HTTP_VALUE_100_CONTINUE, HTTP_LEN_100_CONTINUE) == 0)) {
-            int64_t alloc_index = buffer_size_to_index(len_100_continue_response);
-            if (ua_entry->write_buffer) {
-              free_MIOBuffer(ua_entry->write_buffer);
-              ua_entry->write_buffer = NULL;
-            }
-            ua_entry->write_buffer = new_MIOBuffer(alloc_index);
-            IOBufferReader *buf_start = ua_entry->write_buffer->alloc_reader();
-
-            DebugSM("http_seq", "send 100 Continue response to client");
-            int64_t nbytes = ua_entry->write_buffer->write(str_100_continue_response, len_100_continue_response);
-            ua_session->do_io_write(ua_session->get_netvc(), nbytes, buf_start);
-          }
-        }
         do_setup_post_tunnel(HTTP_SERVER_VC);
       }
     } else {
