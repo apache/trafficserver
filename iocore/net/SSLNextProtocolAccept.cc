@@ -87,7 +87,7 @@ struct SSLNextProtocolTrampoline : public Continuation {
     case VC_EVENT_INACTIVITY_TIMEOUT:
       netvc->do_io(VIO::CLOSE);
       delete this;
-      return EVENT_CONT;
+      return EVENT_ERROR;
     case VC_EVENT_READ_COMPLETE:
       break;
     default:
