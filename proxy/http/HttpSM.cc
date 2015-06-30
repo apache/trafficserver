@@ -545,8 +545,7 @@ HttpSM::setup_client_read_request_header()
   ua_entry->read_vio = ua_session->do_io_read(this, INT64_MAX, ua_buffer_reader->mbuf);
   // The header may already be in the buffer if this
   //  a request from a keep-alive connection
-  if (ua_buffer_reader->read_avail() > 0)
-    handleEvent(VC_EVENT_READ_READY, ua_entry->read_vio);
+  handleEvent(VC_EVENT_READ_READY, ua_entry->read_vio);
 }
 
 void
@@ -569,6 +568,12 @@ HttpSM::state_read_client_request_header(int event, void *data)
   int bytes_used = 0;
   ink_assert(ua_entry->eos == false);
 
+  // check to see if there was an EOS received on the SSL connection
+  SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(ua_session->get_netvc());
+  if (ssl_vc && ssl_vc->isEosRcvd()) {
+    DebugSM ("http", "EOS for ssl vc %p at read_first_btye state", ua_session->get_netvc());
+    event = VC_EVENT_EOS;
+  }
   switch (event) {
   case VC_EVENT_READ_READY:
   case VC_EVENT_READ_COMPLETE:
@@ -577,8 +582,6 @@ HttpSM::state_read_client_request_header(int event, void *data)
 
   case VC_EVENT_EOS:
     ua_entry->eos = true;
-    if (client_request_hdr_bytes != 0)
-      break;
   // Fall through
   case VC_EVENT_ERROR:
   case VC_EVENT_INACTIVITY_TIMEOUT:
