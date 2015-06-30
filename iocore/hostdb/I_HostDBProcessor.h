@@ -271,17 +271,6 @@ struct HostDBInfo {
       //  failure times.  This sets the upper bound that we would ever
       //  consider a server down to 2*down_server_timeout
       if (now + fail_window < last_failure) {
-#ifdef DEBUG
-        // because this region is mmaped, I cann't get anything
-        //   useful from the structure in core files,  therefore
-        //   copy the revelvant info to the stack so it will
-        //   be readble in the core
-        HostDBInfo current_info;
-        HostDBRoundRobin current_rr;
-        memcpy(&current_info, &info[i], sizeof(HostDBInfo));
-        memcpy(&current_rr, this, sizeof(HostDBRoundRobin));
-        ink_assert(!"extreme clock skew");
-#endif
         app.http_data.last_failure = 0;
         return false;
       }
