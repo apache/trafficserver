@@ -270,7 +270,7 @@ ssl_read_from_net(SSLNetVConnection *sslvc, EThread *lthread, int64_t &ret)
     } // while( block_write_avail > 0 )
   }   // for ( bytes_read = 0; (b != 0); b = b->next)
 
-  if ((bytes_read > 0) && (event != SSL_READ_EOS)) {
+  if (bytes_read > 0) {
     Debug("ssl", "[SSL_NetVConnection::ssl_read_from_net] bytes_read=%" PRId64, bytes_read);
     buf.writer()->fill(bytes_read);
     s->vio.ndone += bytes_read;

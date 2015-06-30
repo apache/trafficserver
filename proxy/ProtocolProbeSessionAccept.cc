@@ -156,8 +156,15 @@ ProtocolProbeSessionAccept::mainEvent(int event, void *data)
 
     // XXX we need to apply accept inactivity timeout here ...
 
-    vio = netvc->do_io_read(probe, BUFFER_SIZE_FOR_INDEX(ProtocolProbeTrampoline::buffer_size_index), probe->iobuf);
-    vio->reenable();
+    if (!probe->reader->is_read_avail_more_than(0)) {
+      Debug ("http", "probe needs data, read..");
+      vio = netvc->do_io_read(probe, BUFFER_SIZE_FOR_INDEX(ProtocolProbeTrampoline::buffer_size_index), probe->iobuf);
+      vio->reenable();
+    } else {
+      Debug ("http", "probe already has data, call ioComplete directly..");
+      vio = netvc->do_io_read(NULL, 0, NULL);
+      probe->ioCompletionEvent(VC_EVENT_READ_COMPLETE, (void*)vio);
+    }
     return EVENT_CONT;
   }
 
