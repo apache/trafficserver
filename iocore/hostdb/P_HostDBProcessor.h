@@ -288,9 +288,9 @@ HostDBRoundRobin::select_best_http(sockaddr const *client_ip, ink_time_t now, in
   if (HostDBProcessor::hostdb_strict_round_robin) {
     Debug("hostdb", "Using strict round robin");
     // Check that the host we selected is alive
-    for (int i=0; i < good; i++){
+    for (int i = 0; i < good; i++) {
       best_any = current++ % good;
-      if (info[best_any].alive(now, fail_window)){
+      if (info[best_any].alive(now, fail_window)) {
         best_up = best_any;
         break;
       }
@@ -302,9 +302,9 @@ HostDBRoundRobin::select_best_http(sockaddr const *client_ip, ink_time_t now, in
       ++current;
       timed_rr_ctime = now;
     }
-    for (int i=0; i < good; i++){
+    for (int i = 0; i < good; i++) {
       best_any = current++ % good;
-      if (info[best_any].alive(now, fail_window)){
+      if (info[best_any].alive(now, fail_window)) {
         best_up = best_any;
         break;
       }
@@ -322,7 +322,7 @@ HostDBRoundRobin::select_best_http(sockaddr const *client_ip, ink_time_t now, in
         best_any = i;
         best_hash_any = h;
       }
-      if (info[i].alive(now, fail_window)){
+      if (info[i].alive(now, fail_window)) {
         if (best_hash_up <= h) {
           best_up = i;
           best_hash_up = h;

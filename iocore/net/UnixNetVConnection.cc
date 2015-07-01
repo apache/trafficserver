@@ -1042,10 +1042,10 @@ UnixNetVConnection::acceptEvent(int event, Event *e)
   nh->open_list.enqueue(this);
 
 #ifdef USE_EDGE_TRIGGER
-    // Set the vc as triggered and place it in the read ready queue in case there is already data on the socket.
-    Debug("iocore_net", "acceptEvent : Setting triggered and adding to the read ready queue");
-    read.triggered = 1;
-    nh->read_ready_list.enqueue(this);
+  // Set the vc as triggered and place it in the read ready queue in case there is already data on the socket.
+  Debug("iocore_net", "acceptEvent : Setting triggered and adding to the read ready queue");
+  read.triggered = 1;
+  nh->read_ready_list.enqueue(this);
 #endif
 
   if (inactivity_timeout_in) {

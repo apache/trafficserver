@@ -59,7 +59,8 @@ struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessio
   static const unsigned buffer_size_index = CLIENT_CONNECTION_FIRST_READ_BUFFER_SIZE_INDEX;
   IOBufferReader *reader;
 
-  explicit ProtocolProbeTrampoline(const ProtocolProbeSessionAccept *probe, ProxyMutex *mutex, MIOBuffer *buffer, IOBufferReader *reader)
+  explicit ProtocolProbeTrampoline(const ProtocolProbeSessionAccept *probe, ProxyMutex *mutex, MIOBuffer *buffer,
+                                   IOBufferReader *reader)
     : Continuation(mutex), probeParent(probe)
   {
     this->iobuf = buffer ? buffer : new_MIOBuffer(buffer_size_index);
@@ -146,24 +147,24 @@ ProtocolProbeSessionAccept::mainEvent(int event, void *data)
     VIO *vio;
     NetVConnection *netvc = static_cast<NetVConnection *>(data);
     SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(netvc);
-    MIOBuffer* buf = NULL;
+    MIOBuffer *buf = NULL;
     IOBufferReader *reader = NULL;
     if (ssl_vc) {
       buf = ssl_vc->get_ssl_iobuf();
       reader = ssl_vc->get_ssl_reader();
     }
-    ProtocolProbeTrampoline * probe = new ProtocolProbeTrampoline(this, netvc->mutex, buf, reader);
+    ProtocolProbeTrampoline *probe = new ProtocolProbeTrampoline(this, netvc->mutex, buf, reader);
 
     // XXX we need to apply accept inactivity timeout here ...
 
     if (!probe->reader->is_read_avail_more_than(0)) {
-      Debug ("http", "probe needs data, read..");
+      Debug("http", "probe needs data, read..");
       vio = netvc->do_io_read(probe, BUFFER_SIZE_FOR_INDEX(ProtocolProbeTrampoline::buffer_size_index), probe->iobuf);
       vio->reenable();
     } else {
-      Debug ("http", "probe already has data, call ioComplete directly..");
+      Debug("http", "probe already has data, call ioComplete directly..");
       vio = netvc->do_io_read(NULL, 0, NULL);
-      probe->ioCompletionEvent(VC_EVENT_READ_COMPLETE, (void*)vio);
+      probe->ioCompletionEvent(VC_EVENT_READ_COMPLETE, (void *)vio);
     }
     return EVENT_CONT;
   }

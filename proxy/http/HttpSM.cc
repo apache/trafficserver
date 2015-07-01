@@ -571,7 +571,7 @@ HttpSM::state_read_client_request_header(int event, void *data)
   // check to see if there was an EOS received on the SSL connection
   SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(ua_session->get_netvc());
   if (ssl_vc && ssl_vc->isEosRcvd()) {
-    DebugSM ("http", "EOS for ssl vc %p at read_first_btye state", ua_session->get_netvc());
+    DebugSM("http", "EOS for ssl vc %p at read_first_btye state", ua_session->get_netvc());
     event = VC_EVENT_EOS;
   }
   switch (event) {

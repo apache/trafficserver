@@ -219,19 +219,19 @@ public:
   // least some of the hooks
   bool calledHooks(TSHttpHookID /* eventId */) { return (this->sslHandshakeHookState != HANDSHAKE_HOOKS_PRE); }
 
-  MIOBuffer*
+  MIOBuffer *
   get_ssl_iobuf()
   {
     return iobuf;
   }
 
   void
-  set_ssl_iobuf(MIOBuffer* buf)
+  set_ssl_iobuf(MIOBuffer *buf)
   {
     iobuf = buf;
   }
 
-  IOBufferReader*
+  IOBufferReader *
   get_ssl_reader()
   {
     return reader;
