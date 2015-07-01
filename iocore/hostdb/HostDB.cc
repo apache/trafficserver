@@ -238,6 +238,7 @@ HostDBCache::HostDBCache()
   max_hits = (1 << HOST_DB_HITS_BITS) - 1;
   version.ink_major = HOST_DB_CACHE_MAJOR_VERSION;
   version.ink_minor = HOST_DB_CACHE_MINOR_VERSION;
+  hosts_file_ptr = new RefCountedHostsFileMap();
 }
 
 
@@ -659,6 +660,21 @@ db_mark_for(IpAddr const &ip)
 HostDBInfo *
 probe(ProxyMutex *mutex, HostDBMD5 const &md5, bool ignore_timeout)
 {
+  // If we have an entry in our hosts file, we don't need to bother with DNS
+  Ptr<RefCountedHostsFileMap> current_host_file_map = hostDB.hosts_file_ptr;
+
+  ts::ConstBuffer hname(md5.host_name, md5.host_len);
+  HostsFileMap::iterator find_result = current_host_file_map->hosts_file_map.find(hname);
+  if (find_result != current_host_file_map->hosts_file_map.end()) {
+    // TODO: Something to make this not local :/
+    static HostDBInfo r;
+    r.round_robin = false;
+    r.reverse_dns = false;
+    r.is_srv = false;
+    ats_ip_set(r.ip(), (*find_result).second);
+    return &r;
+  }
+
   ink_assert(this_ethread() == hostDB.lock_for_bucket((int)(fold_md5(md5.hash) % hostDB.buckets))->thread_holding);
   if (hostdb_enable) {
     uint64_t folded_md5 = fold_md5(md5.hash);
@@ -2527,19 +2543,6 @@ struct HostDBFileContinuation : public Continuation {
 
   HostDBFileContinuation() : Continuation(0) {}
 
-  int insertEvent(int event, void *data);
-  int removeEvent(int event, void *data);
-
-  /// Set the current entry in the HostDB.
-  HostDBInfo *setDBEntry();
-  /// Create and schedule an update continuation.
-  static void scheduleUpdate(int idx,       ///< Pair index to process.
-                             Keys *keys = 0 ///< Key table if any.
-                             );
-  /// Create and schedule a remove continuation.
-  static void scheduleRemove(int idx,   ///< Index of current new key to check against.
-                             Keys *keys ///< new valid keys
-                             );
   /// Finish update
   static void finish(Keys *keys ///< Valid keys from update.
                      );
@@ -2562,21 +2565,9 @@ HostDBFileContinuation::destroy()
 // proceeding at a time in any case so we might as well make these
 // globals.
 int HostDBFileUpdateActive = 0;
-// Contents of the host file. We keep this around because other data
-// points in to it (to minimize allocations).
-ats_scoped_str HostFileText;
-// Accumulated pairs of <IP address, host>
-std::vector<HostFilePair> HostFilePairs;
-// Entries from last update.
-HostDBFileContinuation::Keys HostFileKeys;
-/// Ordering operator for HostFilePair.
-/// We want to group first by name and then by address family.
-bool
-CmpHostFilePair(HostFilePair const &lhs, HostFilePair const &rhs)
-{
-  int zret = strcasecmp(lhs.name, rhs.name);
-  return zret < 0 || (0 == zret && lhs.ip < rhs.ip);
-}
+// map of hostname -> IpAddr
+Ptr<RefCountedHostsFileMap> parsed_hosts_file_ptr(new RefCountedHostsFileMap());
+
 // Actual ordering doesn't matter as long as it's consistent.
 bool
 CmpMD5(INK_MD5 const &lhs, INK_MD5 const &rhs)
@@ -2584,185 +2575,6 @@ CmpMD5(INK_MD5 const &lhs, INK_MD5 const &rhs)
   return lhs[0] < rhs[0] || (lhs[0] == rhs[0] && lhs[1] < rhs[1]);
 }
 
-/// Finish current update.
-void
-HostDBFileContinuation::finish(Keys *keys)
-{
-  HostFilePairs.clear();
-  HostFileKeys.clear();
-  if (keys) {
-    std::swap(*keys, HostFileKeys); // put the new keys in place and dump the previous.
-    delete keys;
-  }
-
-  HostFileText = 0;
-  HostDBFileUpdateActive = 0;
-}
-
-HostDBInfo *
-HostDBFileContinuation::setDBEntry()
-{
-  HostDBInfo *r;
-  uint64_t folded_md5 = fold_md5(md5);
-
-  // remove the old one to prevent buildup
-  if (0 != (r = hostDB.lookup_block(folded_md5, hostDB.levels))) {
-    hostDB.delete_block(r);
-    Debug("hostdb", "Update host file entry %s - %" PRIx64 ".%" PRIx64, name, md5[0], md5[1]);
-  } else {
-    Debug("hostdb", "Add host file entry %s - %" PRIx64 ".%" PRIx64, name, md5[0], md5[1]);
-  }
-
-  r = hostDB.insert_block(folded_md5, NULL, 0);
-  r->md5_high = md5[1];
-  r->ip_timeout_interval = 0; // special value - no timeout.
-  r->ip_timestamp = hostdb_current_interval;
-  keys->push_back(md5);
-  return r;
-}
-
-int
-HostDBFileContinuation::insertEvent(int, void *)
-{
-  int n = HostFilePairs.size();
-  HostFilePair const &first = HostFilePairs[idx];
-  int last = idx + 1;
-  HostDBInfo *r = 0;
-
-  ink_assert(idx < n);
-
-  // Get the set of addresses for this name.
-  while (last < n && 0 == strcasecmp(first.name, HostFilePairs[last].name) && first.ip.family() == HostFilePairs[last].ip.family())
-    ++last;
-  // Address set is now (idx, last].
-
-  int k = last - idx; // # of addrs for this name
-  ink_assert(k > 0);
-
-  r = this->setDBEntry();
-  r->reverse_dns = false;
-  r->is_srv = false;
-  r->data.ip.assign(HostFilePairs[idx].ip);
-  if (k > 1) {
-    // multiple entries, need round robin
-    int s = HostDBRoundRobin::size(k, false);
-    HostDBRoundRobin *rr_data = static_cast<HostDBRoundRobin *>(hostDB.alloc(&r->app.rr.offset, s));
-    if (rr_data) {
-      int dst = 0; // index of destination RR item.
-      for (int src = idx; src < last; ++src, ++dst) {
-        HostDBInfo &item = rr_data->info[dst];
-        item.data.ip.assign(HostFilePairs[src].ip);
-        item.full = 1;
-        item.round_robin = false;
-        item.reverse_dns = false;
-        item.is_srv = false;
-        item.md5_high = r->md5_high;
-        item.md5_low = r->md5_low;
-        item.md5_low_low = r->md5_low_low;
-      }
-      r->round_robin = true;
-      rr_data->good = k;
-      rr_data->current = 0;
-      rr_data->rrcount = dst;
-    }
-  } else {
-    r->round_robin = false;
-  }
-
-  if (last < n) { // more entries to process
-    // We create a new continuation rather than using this one to
-    // avoid mutex issues - it is critical that the continuation use
-    // the bucket mutex to guarantee a data lock for update. It's
-    // unclear if changing the mutex to this continuation will do that
-    // properly. Because we use a class allocator we should achieve
-    // efficient allocations quickly even for large host files.
-    this->scheduleUpdate(last, keys);
-  } else {
-    std::sort(keys->begin(), keys->end(), &CmpMD5);
-    //    keys->qsort(&CmpMD5);
-    // Switch to removing dead entries.
-    this->scheduleRemove(keys->size() - 1, keys);
-  }
-  // This continuation is done.
-  this->destroy();
-  return EVENT_DONE;
-}
-
-int
-HostDBFileContinuation::removeEvent(int, void *)
-{
-  HostDBInfo *r;
-  uint64_t folded_md5 = fold_md5(md5);
-  Debug("hostdb", "Remove host file entry %" PRIx64 ".%" PRIx64, md5[0], md5[1]);
-  if (0 != (r = hostDB.lookup_block(folded_md5, 3)))
-    hostDB.delete_block(r);
-  this->scheduleRemove(idx, keys);
-  this->destroy();
-  return EVENT_DONE;
-}
-
-void
-HostDBFileContinuation::scheduleUpdate(int idx, Keys *keys)
-{
-  HostDBFileContinuation *c = hostDBFileContAllocator.alloc();
-  HostFilePair &pair = HostFilePairs[idx];
-  HostDBMD5 md5;
-
-  md5.set_host(pair.name, strlen(pair.name));
-  md5.db_mark = db_mark_for(pair.ip);
-  md5.refresh();
-
-  SET_CONTINUATION_HANDLER(c, &HostDBFileContinuation::insertEvent);
-  c->idx = idx;
-  c->name = pair.name;
-  c->keys = keys ? keys : new Keys;
-  c->md5 = md5.hash;
-  c->mutex = hostDB.lock_for_bucket(fold_md5(md5.hash) % hostDB.buckets);
-  eventProcessor.schedule_imm(c, ET_CALL, EVENT_IMMEDIATE, 0);
-}
-
-void
-HostDBFileContinuation::scheduleRemove(int idx, Keys *keys)
-{
-  bool targetp = false; // Have a valid target?
-  INK_MD5 md5;
-
-  // See if we have a target.
-  if (HostFileKeys.size() > 0) {
-    md5 = HostFileKeys.back();
-    HostFileKeys.pop_back();
-    targetp = true;
-    // Move backwards through the valid items and the previous
-    // keys, removing if we have a prev key that's bigger than
-    // the current valid key (which means it's not currently valid).
-    while (idx >= 0) {
-      if (CmpMD5((*keys)[idx], md5)) { // prev is not valid, remove
-        break;
-      } else if (CmpMD5(md5, (*keys)[idx])) {
-        --idx; // prev is smaller, skip current and keep checking
-      } else if (!HostFileKeys.empty()) {
-        md5 = HostFileKeys.back();
-        HostFileKeys.pop_back(); // match, move to next potential target
-        --idx;
-      } else { // ran out of things to remove.
-        targetp = false;
-        break;
-      }
-    }
-  }
-
-  if (targetp) {
-    HostDBFileContinuation *c = hostDBFileContAllocator.alloc();
-    SET_CONTINUATION_HANDLER(c, &HostDBFileContinuation::removeEvent);
-    c->md5 = md5;
-    c->idx = idx;
-    c->keys = keys;
-    c->mutex = hostDB.lock_for_bucket(fold_md5(c->md5) % hostDB.buckets);
-    eventProcessor.schedule_imm(c, ET_CALL, EVENT_IMMEDIATE, 0);
-  } else {
-    self::finish(keys);
-  }
-}
 
 void
 ParseHostLine(char *l)
@@ -2771,11 +2583,14 @@ ParseHostLine(char *l)
   int n_elts = elts.Initialize(l, SHARE_TOKS);
   // Elements should be the address then a list of host names.
   // Don't use RecHttpLoadIp because the address *must* be literal.
-  HostFilePair item;
-  if (n_elts > 1 && 0 == item.ip.load(elts[0]) && !item.ip.isLoopback()) {
+  IpAddr ip;
+  if (n_elts > 1 && 0 == ip.load(elts[0]) && !ip.isLoopback()) {
     for (int i = 1; i < n_elts; ++i) {
-      item.name = elts[i];
-      HostFilePairs.push_back(item);
+      ts::ConstBuffer name(elts[i], strlen(elts[i]));
+      // If we don't have an entry already (host files only support single IPs for a given name)
+      if (parsed_hosts_file_ptr->hosts_file_map.find(name) == parsed_hosts_file_ptr->hosts_file_map.end()) {
+        parsed_hosts_file_ptr->hosts_file_map[name] = ip;
+      }
     }
   }
 }
@@ -2798,13 +2613,14 @@ ParseHostFile(char const *path)
       if (0 == fstat(fd, &info)) {
         // +1 in case no terminating newline
         int64_t size = info.st_size + 1;
-        HostFileText = static_cast<char *>(ats_malloc(size));
-        if (HostFileText) {
-          char *base = HostFileText;
+
+        parsed_hosts_file_ptr->HostFileText = static_cast<char *>(ats_malloc(size));
+        if (parsed_hosts_file_ptr->HostFileText) {
+          char *base = parsed_hosts_file_ptr->HostFileText;
           char *limit;
 
-          size = read(fd, HostFileText, info.st_size);
-          limit = HostFileText + size;
+          size = read(fd, parsed_hosts_file_ptr->HostFileText, info.st_size);
+          limit = parsed_hosts_file_ptr->HostFileText + size;
           *limit = 0;
 
           // We need to get a list of all name/addr pairs so that we can
@@ -2833,15 +2649,8 @@ ParseHostFile(char const *path)
     }
   }
 
-  if (!HostFilePairs.empty()) {
-    // Need to sort by name so multiple address hosts are
-    // contiguous.
-    std::sort(HostFilePairs.begin(), HostFilePairs.end(), &CmpHostFilePair);
-    HostDBFileContinuation::scheduleUpdate(0);
-  } else if (!HostFileKeys.empty()) {
-    HostDBFileContinuation::scheduleRemove(-1, 0);
-  } else {
-    // Nothing in new data, nothing in old data, just clean up.
-    HostDBFileContinuation::finish(0);
-  }
+  // Swap out hostDB's map for ours
+  hostDB.hosts_file_ptr = parsed_hosts_file_ptr;
+  // Make a new map, so we can do it all again
+  parsed_hosts_file_ptr = new RefCountedHostsFileMap();
 }

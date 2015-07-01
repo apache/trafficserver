@@ -190,6 +190,18 @@ extern RecRawStatBlock *hostdb_rsb;
 #define HOSTDB_DECREMENT_THREAD_DYN_STAT(_s, _t) RecIncrRawStatSum(hostdb_rsb, _t, (int)_s, -1);
 
 
+struct CmpConstBuffferCaseInsensitive {
+  bool operator()(ts::ConstBuffer a, ts::ConstBuffer b) { return ptr_len_casecmp(a._ptr, a._size, b._ptr, b._size) < 0;}
+};
+
+// Our own typedef for the host file mapping
+typedef std::map<ts::ConstBuffer, IpAddr, CmpConstBuffferCaseInsensitive> HostsFileMap;
+// A to hold a ref-counted map
+struct RefCountedHostsFileMap : public RefCountObj {
+  HostsFileMap hosts_file_map;
+  ats_scoped_str HostFileText;
+};
+
 //
 // HostDBCache (Private)
 //
@@ -209,6 +221,9 @@ struct HostDBCache : public MultiCache<HostDBInfo> {
   {
     return sizeof(HostDBInfo) * 2 + 512 * hostdb_srv_enabled;
   }
+
+  // Map to contain all of the host file overrides, initialize it to empty
+  Ptr<RefCountedHostsFileMap> hosts_file_ptr;
 
   Queue<HostDBContinuation, Continuation::Link_link> pending_dns[MULTI_CACHE_PARTITIONS];
   Queue<HostDBContinuation, Continuation::Link_link> &pending_dns_for_hash(INK_MD5 &md5);
