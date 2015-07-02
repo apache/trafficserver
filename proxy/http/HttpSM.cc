@@ -545,8 +545,7 @@ HttpSM::setup_client_read_request_header()
   ua_entry->read_vio = ua_session->do_io_read(this, INT64_MAX, ua_buffer_reader->mbuf);
   // The header may already be in the buffer if this
   //  a request from a keep-alive connection
-  if (ua_buffer_reader->read_avail() > 0)
-    handleEvent(VC_EVENT_READ_READY, ua_entry->read_vio);
+  handleEvent(VC_EVENT_READ_READY, ua_entry->read_vio);
 }
 
 void
@@ -569,6 +568,12 @@ HttpSM::state_read_client_request_header(int event, void *data)
   int bytes_used = 0;
   ink_assert(ua_entry->eos == false);
 
+  // check to see if there was an EOS received on the SSL connection
+  SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(ua_session->get_netvc());
+  if (ssl_vc && ssl_vc->isEosRcvd()) {
+    DebugSM("http", "EOS for ssl vc %p at read_first_btye state", ua_session->get_netvc());
+    event = VC_EVENT_EOS;
+  }
   switch (event) {
   case VC_EVENT_READ_READY:
   case VC_EVENT_READ_COMPLETE:
@@ -577,8 +582,6 @@ HttpSM::state_read_client_request_header(int event, void *data)
 
   case VC_EVENT_EOS:
     ua_entry->eos = true;
-    if (client_request_hdr_bytes != 0)
-      break;
   // Fall through
   case VC_EVENT_ERROR:
   case VC_EVENT_INACTIVITY_TIMEOUT:
@@ -704,6 +707,30 @@ HttpSM::state_read_client_request_header(int event, void *data)
       ua_session->m_active = true;
       HTTP_INCREMENT_DYN_STAT(http_current_active_client_connections_stat);
     }
+
+    if (t_state.hdr_info.client_request.version_get() == HTTPVersion(1, 1) &&
+        (t_state.hdr_info.client_request.method_get_wksidx() == HTTP_WKSIDX_POST ||
+         t_state.hdr_info.client_request.method_get_wksidx() == HTTP_WKSIDX_PUT) &&
+        t_state.http_config_param->send_100_continue_response) {
+      int len = 0;
+      const char *expect = t_state.hdr_info.client_request.value_get(MIME_FIELD_EXPECT, MIME_LEN_EXPECT, &len);
+      // When receive an "Expect: 100-continue" request from client, ATS sends a "100 Continue" response to client
+      // imediately, before receive the real response from original server.
+      if ((len == HTTP_LEN_100_CONTINUE) && (strncasecmp(expect, HTTP_VALUE_100_CONTINUE, HTTP_LEN_100_CONTINUE) == 0)) {
+        int64_t alloc_index = buffer_size_to_index(len_100_continue_response);
+        if (ua_entry->write_buffer) {
+          free_MIOBuffer(ua_entry->write_buffer);
+          ua_entry->write_buffer = NULL;
+        }
+        ua_entry->write_buffer = new_MIOBuffer(alloc_index);
+        IOBufferReader *buf_start = ua_entry->write_buffer->alloc_reader();
+
+        DebugSM("http_seq", "send 100 Continue response to client");
+        int64_t nbytes = ua_entry->write_buffer->write(str_100_continue_response, len_100_continue_response);
+        ua_session->do_io_write(ua_session->get_netvc(), nbytes, buf_start);
+      }
+    }
+
     if (t_state.hdr_info.client_request.method_get_wksidx() == HTTP_WKSIDX_TRACE ||
         (t_state.hdr_info.request_content_length == 0 && t_state.client_info.transfer_encoding != HttpTransact::CHUNKED_ENCODING)) {
       // Enable further IO to watch for client aborts
@@ -1844,25 +1871,6 @@ HttpSM::state_send_server_request_header(int event, void *data)
       if (post_transform_info.vc) {
         setup_transform_to_server_transfer();
       } else {
-        if (t_state.http_config_param->send_100_continue_response) {
-          int len = 0;
-          const char *expect = t_state.hdr_info.client_request.value_get(MIME_FIELD_EXPECT, MIME_LEN_EXPECT, &len);
-          // When receive an "Expect: 100-continue" request from client, ATS sends a "100 Continue" response to client
-          // imediately, before receive the real response from original server.
-          if ((len == HTTP_LEN_100_CONTINUE) && (strncasecmp(expect, HTTP_VALUE_100_CONTINUE, HTTP_LEN_100_CONTINUE) == 0)) {
-            int64_t alloc_index = buffer_size_to_index(len_100_continue_response);
-            if (ua_entry->write_buffer) {
-              free_MIOBuffer(ua_entry->write_buffer);
-              ua_entry->write_buffer = NULL;
-            }
-            ua_entry->write_buffer = new_MIOBuffer(alloc_index);
-            IOBufferReader *buf_start = ua_entry->write_buffer->alloc_reader();
-
-            DebugSM("http_seq", "send 100 Continue response to client");
-            int64_t nbytes = ua_entry->write_buffer->write(str_100_continue_response, len_100_continue_response);
-            ua_session->do_io_write(ua_session->get_netvc(), nbytes, buf_start);
-          }
-        }
         do_setup_post_tunnel(HTTP_SERVER_VC);
       }
     } else {
@@ -3935,12 +3943,16 @@ HttpSM::do_hostdb_lookup()
   } else { /* we aren't using SRV stuff... */
     DebugSM("http_seq", "[HttpSM::do_hostdb_lookup] Doing DNS Lookup");
 
+    // If there is not a current server, we must be looking up the origin
+    //  server at the beginning of the transaction
+    int server_port = t_state.current.server ? t_state.current.server->port : t_state.server_info.port;
+
     if (t_state.api_txn_dns_timeout_value != -1) {
       DebugSM("http_timeout", "beginning DNS lookup. allowing %d mseconds for DNS lookup", t_state.api_txn_dns_timeout_value);
     }
 
     HostDBProcessor::Options opt;
-
+    opt.port = server_port;
     opt.flags = (t_state.cache_info.directives.does_client_permit_dns_storing) ? HostDBProcessor::HOSTDB_DO_NOT_FORCE_DNS :
                                                                                  HostDBProcessor::HOSTDB_FORCE_DNS_RELOAD;
     opt.timeout = (t_state.api_txn_dns_timeout_value != -1) ? t_state.api_txn_dns_timeout_value : 0;

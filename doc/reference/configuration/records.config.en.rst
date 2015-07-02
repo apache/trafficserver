@@ -2449,6 +2449,12 @@ SSL Termination
   This feature requires Traffic Server to be built with POSIX
   capabilities enabled.
 
+.. ts:cv:: CONFIG proxy.config.ssl.handshake_timeout_in INT 0
+
+  When enabled this limits the total duration for the server side SSL
+  handshake.
+    
+
 Client-Related Configuration
 ----------------------------
 

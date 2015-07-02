@@ -276,7 +276,6 @@ struct HostDBInfo {
       }
       return false;
     }
-
   }
   bool
   failed()

@@ -59,11 +59,12 @@ struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessio
   static const unsigned buffer_size_index = CLIENT_CONNECTION_FIRST_READ_BUFFER_SIZE_INDEX;
   IOBufferReader *reader;
 
-  explicit ProtocolProbeTrampoline(const ProtocolProbeSessionAccept *probe, ProxyMutex *mutex)
+  explicit ProtocolProbeTrampoline(const ProtocolProbeSessionAccept *probe, ProxyMutex *mutex, MIOBuffer *buffer,
+                                   IOBufferReader *reader)
     : Continuation(mutex), probeParent(probe)
   {
-    this->iobuf = new_MIOBuffer(buffer_size_index);
-    reader = iobuf->alloc_reader(); // reader must be allocated only on a new MIOBuffer.
+    this->iobuf = buffer ? buffer : new_MIOBuffer(buffer_size_index);
+    this->reader = reader ? reader : iobuf->alloc_reader(); // reader must be allocated only on a new MIOBuffer.
     SET_HANDLER(&ProtocolProbeTrampoline::ioCompletionEvent);
   }
 
@@ -124,7 +125,11 @@ struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessio
     return EVENT_CONT;
 
   done:
-    free_MIOBuffer(this->iobuf);
+    SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(netvc);
+    if (!ssl_vc || (this->iobuf != ssl_vc->get_ssl_iobuf())) {
+      free_MIOBuffer(this->iobuf);
+    }
+    this->iobuf = NULL;
     delete this;
     return EVENT_CONT;
   }
@@ -141,12 +146,26 @@ ProtocolProbeSessionAccept::mainEvent(int event, void *data)
 
     VIO *vio;
     NetVConnection *netvc = static_cast<NetVConnection *>(data);
-    ProtocolProbeTrampoline *probe = new ProtocolProbeTrampoline(this, netvc->mutex);
+    SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(netvc);
+    MIOBuffer *buf = NULL;
+    IOBufferReader *reader = NULL;
+    if (ssl_vc) {
+      buf = ssl_vc->get_ssl_iobuf();
+      reader = ssl_vc->get_ssl_reader();
+    }
+    ProtocolProbeTrampoline *probe = new ProtocolProbeTrampoline(this, netvc->mutex, buf, reader);
 
     // XXX we need to apply accept inactivity timeout here ...
 
-    vio = netvc->do_io_read(probe, BUFFER_SIZE_FOR_INDEX(ProtocolProbeTrampoline::buffer_size_index), probe->iobuf);
-    vio->reenable();
+    if (!probe->reader->is_read_avail_more_than(0)) {
+      Debug("http", "probe needs data, read..");
+      vio = netvc->do_io_read(probe, BUFFER_SIZE_FOR_INDEX(ProtocolProbeTrampoline::buffer_size_index), probe->iobuf);
+      vio->reenable();
+    } else {
+      Debug("http", "probe already has data, call ioComplete directly..");
+      vio = netvc->do_io_read(NULL, 0, NULL);
+      probe->ioCompletionEvent(VC_EVENT_READ_COMPLETE, (void *)vio);
+    }
     return EVENT_CONT;
   }
 

@@ -589,8 +589,11 @@ UnixNetVConnection::get_data(int id, void *data)
 VIO *
 UnixNetVConnection::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
 {
-  ink_assert(!closed);
   ink_assert(c || 0 == nbytes);
+  if (closed) {
+    Error("do_io_read invoked on closed vc %p, cont %p, nbytes %" PRId64 ", buf %p", this, c, nbytes, buf);
+    return NULL;
+  }
   read.vio.op = VIO::READ;
   read.vio.mutex = c ? c->mutex : this->mutex;
   read.vio._cont = c;
@@ -611,7 +614,10 @@ UnixNetVConnection::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
 VIO *
 UnixNetVConnection::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *reader, bool owner)
 {
-  ink_assert(!closed);
+  if (closed) {
+    Error("do_io_write invoked on closed vc %p, cont %p, nbytes %" PRId64 ", reader %p", this, c, nbytes, reader);
+    return NULL;
+  }
   write.vio.op = VIO::WRITE;
   write.vio.mutex = c ? c->mutex : this->mutex;
   write.vio._cont = c;
@@ -1035,6 +1041,13 @@ UnixNetVConnection::acceptEvent(int event, Event *e)
 
   nh->open_list.enqueue(this);
 
+#ifdef USE_EDGE_TRIGGER
+  // Set the vc as triggered and place it in the read ready queue in case there is already data on the socket.
+  Debug("iocore_net", "acceptEvent : Setting triggered and adding to the read ready queue");
+  read.triggered = 1;
+  nh->read_ready_list.enqueue(this);
+#endif
+
   if (inactivity_timeout_in) {
     UnixNetVConnection::set_inactivity_timeout(inactivity_timeout_in);
   }
@@ -1229,6 +1242,12 @@ UnixNetVConnection::free(EThread *t)
   nh = NULL;
   read.triggered = 0;
   write.triggered = 0;
+  read.enabled = 0;
+  write.enabled = 0;
+  read.vio._cont = NULL;
+  write.vio._cont = NULL;
+  read.vio.vc_server = NULL;
+  write.vio.vc_server = NULL;
   options.reset();
   closed = 0;
   ink_assert(!read.ready_link.prev && !read.ready_link.next);
