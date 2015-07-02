@@ -53,8 +53,8 @@ distclean-local:
 doxygen:
 	@cd doc && $(MAKE) $(AM_MAKEFLAGS) $@
 
-gen-changelog:
-	./changelog.pl $(VERSION) > CHANGELOG-$(VERSION)
+changelog:
+	./tools/changelog.pl $(VERSION) > CHANGELOG-$(VERSION)
 	git add CHANGELOG-$(VERSION) && git commit -m "Adding CHANGELOG-$(VERSION)"
 
 asf-dist: asf-distdir
@@ -65,7 +65,7 @@ asf-dist-rc: asf-distdir
 	tardir=$(distdir) && $(am__tar) --mtime=./configure.ac | bzip2 -9 -c >$(distdir)-rc$(RC).tar.bz2
 	@$(am__remove_distdir)
 
-asf-distdir: gen-changelog
+asf-distdir:
 	@$(am__remove_distdir)
 	test -d .git && git clone . $(distdir)
 	cd $(distdir) && git submodule update --init && autoreconf -i
@@ -81,7 +81,7 @@ asf-dist-sign-rc: asf-dist-rc
 	sha1sum -b $(distdir)-rc$(RC).tar.bz2 >$(distdir)-rc$(RC).tar.bz2.sha1
 	gpg --armor --output $(distdir)-rc$(RC).tar.bz2.asc  --detach-sig $(distdir)-rc$(RC).tar.bz2
 
-release: asf-dist-sign
+release: changelog asf-dist-sign
 	git tag -fs -m "Release $(VERSION)" $(VERSION)
 
 rel-candidate: asf-dist-sign-rc
