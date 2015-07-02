@@ -55,7 +55,7 @@ doxygen:
 
 changelog:
 	./tools/changelog.pl $(VERSION) > CHANGELOG-$(VERSION)
-	git add CHANGELOG-$(VERSION) && git commit -m "Adding CHANGELOG-$(VERSION)"
+	-git add CHANGELOG-$(VERSION) && git commit -m "Adding CHANGELOG-$(VERSION)"
 
 asf-dist: asf-distdir
 	tardir=$(distdir) && $(am__tar) --mtime=./configure.ac | bzip2 -9 -c >$(distdir).tar.bz2
@@ -84,7 +84,7 @@ asf-dist-sign-rc: asf-dist-rc
 release: changelog asf-dist-sign
 	git tag -fs -m "Release $(VERSION)" $(VERSION)
 
-rel-candidate: asf-dist-sign-rc
+rel-candidate: changelog asf-dist-sign-rc
 	git tag -fs -m "Release Candidate $(VERSION)-rc$(RC)" $(VERSION)-rc$(RC)
 
 examples: all
