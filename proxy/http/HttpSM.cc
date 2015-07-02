@@ -582,6 +582,9 @@ HttpSM::state_read_client_request_header(int event, void *data)
 
   case VC_EVENT_EOS:
     ua_entry->eos = true;
+    if ((client_request_hdr_bytes > 0) && is_transparent_passthrough_allowed() && (ua_raw_buffer_reader != NULL)) {
+      break;
+    }
   // Fall through
   case VC_EVENT_ERROR:
   case VC_EVENT_INACTIVITY_TIMEOUT:
