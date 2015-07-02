@@ -52,8 +52,7 @@ sub jira_search
   $curl->setopt(CURLOPT_WRITEDATA, \$resp_body);
   $curl->setopt(CURLOPT_URL, $url . $endpoint);
   my $retcode = $curl->perform();
-  if ($retcode == 0) {
-    my $response_code = $curl->getinfo(CURLINFO_HTTP_CODE);
+  if ($retcode == 0 && $curl->getinfo(CURLINFO_HTTP_CODE) == 200) {
     return from_json($resp_body);
   }
 
@@ -68,6 +67,11 @@ do
 {
   $issues = jira_search($url, $jql, $count);
 
+  if (!defined($issues))
+  {
+    exit 1;
+  }
+
   foreach my $issue (@{ $issues->{issues} })
   {
     if (defined($issue))
@@ -78,6 +82,11 @@ do
   }
 }
 while ($count < $issues->{total});
+
+if (!defined($changelog))
+{
+  exit 1;
+}
 
 print "                                                         -*- coding: utf-8 -*-\n\n";
 print "Changes with Apache Traffic Server $fixversion\n";
