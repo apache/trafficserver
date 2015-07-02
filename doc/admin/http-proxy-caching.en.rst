@@ -764,6 +764,8 @@ All four configurations are required, for the following reasons:
 -  :ts:cv:`proxy.config.cache.enable_read_while_writer` being set to ``1`` turns
    the feature on, as it is off (``0``) by default.
 
+.. _background_fill:
+
 -  The background fill feature (both
    :ts:cv:`proxy.config.http.background_fill_active_timeout` and
    :ts:cv:`proxy.config.http.background_fill_completed_threshold`) should be
