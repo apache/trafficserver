@@ -494,9 +494,9 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
           // in the ssl buffers, so, SSL_read if there's anything already..
           Debug("ssl", "ssl handshake completed on vc %p, check to see if first byte, is already in the ssl buffers", this);
           this->iobuf = new_MIOBuffer(BUFFER_SIZE_INDEX_4K);
-          this->reader = this->iobuf->alloc_reader();
-          s->vio.buffer.writer_for(this->iobuf);
           if (this->iobuf) {
+            this->reader = this->iobuf->alloc_reader();
+            s->vio.buffer.writer_for(this->iobuf);
             ret = ssl_read_from_net(this, lthread, r);
             if (ret == SSL_READ_EOS) {
               this->eosRcvd = true;
@@ -505,6 +505,8 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
             if (r > 0 || pending > 0) {
               Debug("ssl", "ssl read right after handshake, read %" PRId64 ", pending %d bytes, for vc %p", r, pending, this);
             }
+          } else {
+            Error("failed to allocate MIOBuffer after handshake, vc %p", this);
           }
           read.triggered = 0;
           read_disable(nh, this);
