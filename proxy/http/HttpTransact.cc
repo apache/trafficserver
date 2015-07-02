@@ -3643,6 +3643,17 @@ HttpTransact::handle_response_from_server(State *s)
     s->current.server->set_connect_fail(EUSERS); // too many users
     handle_server_connection_not_open(s);
     break;
+  case CONNECTION_CLOSED:
+    /* fall through */
+  case PARSE_ERROR:
+    /* fall through */
+  case BAD_INCOMING_RESPONSE: {
+    // this case should not be allowed to retry because we'll end up making another request
+    DebugTxn("http_trans", "[handle_response_from_server] Transaction received a bad response or a partial response, not retrying...");
+    SET_VIA_STRING(VIA_DETAIL_SERVER_CONNECT, VIA_DETAIL_SERVER_FAILURE);
+    handle_server_connection_not_open(s);
+    break;
+  }
   case OPEN_RAW_ERROR:
   /* fall through */
   case CONNECTION_ERROR:
@@ -3650,12 +3661,6 @@ HttpTransact::handle_response_from_server(State *s)
   case STATE_UNDEFINED:
   /* fall through */
   case INACTIVE_TIMEOUT:
-  /* fall through */
-  case PARSE_ERROR:
-  /* fall through */
-  case CONNECTION_CLOSED:
-  /* fall through */
-  case BAD_INCOMING_RESPONSE:
     // Set to generic I/O error if not already set specifically.
     if (!s->current.server->had_connect_fail())
       s->current.server->set_connect_fail(EIO);
