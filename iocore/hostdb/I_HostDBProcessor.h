@@ -452,6 +452,8 @@ struct HostDBProcessor : public Processor {
 
   inkcoreapi Action *getbyname_re(Continuation *cont, const char *hostname, int len, Options const &opt = DEFAULT_OPTIONS);
 
+  Action *getbynameport_re(Continuation *cont, const char *hostname, int len, Options const &opt = DEFAULT_OPTIONS);
+
   Action *getSRVbyname_imm(Continuation *cont, process_srv_info_pfn process_srv_info, const char *hostname, int len,
                            Options const &opt = DEFAULT_OPTIONS);
 

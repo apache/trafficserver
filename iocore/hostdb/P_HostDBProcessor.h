@@ -191,7 +191,7 @@ extern RecRawStatBlock *hostdb_rsb;
 
 
 struct CmpConstBuffferCaseInsensitive {
-  bool operator()(ts::ConstBuffer a, ts::ConstBuffer b) { return ptr_len_casecmp(a._ptr, a._size, b._ptr, b._size) < 0;}
+  bool operator()(ts::ConstBuffer a, ts::ConstBuffer b) { return ptr_len_casecmp(a._ptr, a._size, b._ptr, b._size) < 0; }
 };
 
 // Our own typedef for the host file mapping

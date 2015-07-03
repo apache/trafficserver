@@ -870,6 +870,25 @@ HostDBProcessor::getbyname_re(Continuation *cont, const char *ahostname, int len
   return getby(cont, ahostname, len, 0, force_dns, opt.host_res_style, opt.timeout);
 }
 
+Action *
+HostDBProcessor::getbynameport_re(Continuation *cont, const char *ahostname, int len, Options const &opt)
+{
+  bool force_dns = false;
+  EThread *thread = this_ethread();
+  ProxyMutex *mutex = thread->mutex;
+
+  if (opt.flags & HOSTDB_FORCE_DNS_ALWAYS)
+    force_dns = true;
+  else if (opt.flags & HOSTDB_FORCE_DNS_RELOAD) {
+    force_dns = (hostdb_re_dns_on_reload ? true : false);
+    if (force_dns)
+      HOSTDB_INCREMENT_DYN_STAT(hostdb_re_dns_on_reload_stat);
+  }
+  sockaddr sa;
+  ats_ip4_set(&sa, NULL, htons(opt.port));
+  return getby(cont, ahostname, len, &sa, force_dns, opt.host_res_style, opt.timeout);
+}
+
 
 /* Support SRV records */
 Action *
@@ -2267,6 +2286,7 @@ struct ShowHostDB;
 typedef int (ShowHostDB::*ShowHostDBEventHandler)(int event, Event *data);
 struct ShowHostDB : public ShowCont {
   char *name;
+  uint16_t port;
   IpEndpoint ip;
   bool force;
 
@@ -2294,10 +2314,12 @@ struct ShowHostDB : public ShowCont {
   showLookup(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   {
     SET_HANDLER(&ShowHostDB::showLookupDone);
-    if (name)
-      hostDBProcessor.getbyname_re(this, name, 0,
-                                   HostDBProcessor::Options().setFlags(force ? HostDBProcessor::HOSTDB_FORCE_DNS_ALWAYS : 0));
-    else
+    if (name) {
+      HostDBProcessor::Options opts;
+      opts.port = port;
+      opts.flags = HostDBProcessor::HOSTDB_DO_NOT_FORCE_DNS;
+      hostDBProcessor.getbynameport_re(this, name, strlen(name), opts);
+    } else
       hostDBProcessor.getbyaddr_re(this, &ip.sa);
     return EVENT_CONT;
   }
@@ -2312,6 +2334,7 @@ struct ShowHostDB : public ShowCont {
                     r->reverse_dns ? "Reverse DNS" : "DNS"));
     CHECK_SHOW(show("<tr><td>%s</td><td>%u</td></tr>\n", "App1", r->app.allotment.application1));
     CHECK_SHOW(show("<tr><td>%s</td><td>%u</td></tr>\n", "App2", r->app.allotment.application2));
+    CHECK_SHOW(show("<tr><td>%s</td><td>%u</td></tr>\n", "LastFailure", r->app.http_data.last_failure));
     if (!rr) {
       CHECK_SHOW(show("<tr><td>%s</td><td>%s</td></tr>\n", "Stale", r->is_ip_stale() ? "Yes" : "No"));
       CHECK_SHOW(show("<tr><td>%s</td><td>%s</td></tr>\n", "Timed-Out", r->is_ip_timeout() ? "Yes" : "No"));
@@ -2403,8 +2426,16 @@ register_ShowHostDB(Continuation *c, HTTPHdr *h)
     char *gn = NULL;
     if (s->sarg)
       gn = (char *)memchr(s->sarg, '=', strlen(s->sarg));
-    if (gn)
+    if (gn) {
       s->name = gn + 1;
+      char *pos = strstr(s->name, "%3A");
+      if (pos != NULL) {
+        s->port = atoi(pos + 3);
+        *pos = '\0'; // Null terminate name
+      } else {
+        s->port = 0;
+      }
+    }
     SET_CONTINUATION_HANDLER(s, &ShowHostDB::showLookup);
   }
   this_ethread()->schedule_imm(s);
