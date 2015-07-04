@@ -1924,6 +1924,7 @@ AS_IF([test "x$enable_experimental_plugins" = "xyes"], [
     plugins/experimental/url_sig/Makefile
     plugins/experimental/xdebug/Makefile
     plugins/experimental/mp4/Makefile
+    plugins/experimental/stream_editor/Makefile
 ])])
 
 AS_IF([test "x$enable_cppapi" = "xyes"], [

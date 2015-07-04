@@ -16,7 +16,6 @@
 
 include $(top_srcdir)/build/plugins.mk
 
-pkglib_LTLIBRARIES = stream-editor.la
-epic_la_SOURCES = stream-editor.cc
-epic_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
-
+pkglib_LTLIBRARIES = stream_editor.la
+stream_editor_la_SOURCES = stream_editor.cc
+stream_editor_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)

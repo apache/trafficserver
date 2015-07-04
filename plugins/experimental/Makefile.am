@@ -41,7 +41,7 @@ SUBDIRS = \
  url_sig \
  xdebug \
  mp4 \
- stream-editor
+ stream_editor
 
 if HAS_MYSQL
   SUBDIRS += mysql_remap
