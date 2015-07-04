@@ -357,7 +357,6 @@ private:
     unsigned int priority;
     match_t *from;
     char *to;
-    size_t to_len;
 public:
     rule_t(const char *line) : scope(NULL), priority(5), from(NULL), to(NULL) {
         const char *scope_spec = strcasestr(line, "scope:");
@@ -451,22 +450,22 @@ public:
         to_spec += 3;
         delim = *to_spec;
         if (isalnum(delim)) {
-            to_len = strcspn(to_spec, " \t\r\n");
+            len = strcspn(to_spec, " \t\r\n");
         }
         else {
             const char *end = strchr(++to_spec, delim);
             if (end) {
-                to_len = end - to_spec;
+                len = end - to_spec;
             }
             else {
                 /* it wasn't a delimiter after all */
-                to_len = strcspn(--to_spec, " \t\r\n");
+                len = strcspn(--to_spec, " \t\r\n");
             }
         }
-        to = TSstrndup(to_spec, to_len);
+        to = TSstrndup(to_spec, len);
     }
     rule_t(const rule_t& r) : scope(r.scope), priority(r.priority),
-                              from(r.from), to(r.to), to_len(r.to_len) { }
+                              from(r.from), to(r.to) { }
 /* FIXME - since rules get copied per-request, we can't delete these.
    But we can leave these to leak 'cos they're only ever created
    as a one-off at startup.  Would be cleaner to refcount or to
