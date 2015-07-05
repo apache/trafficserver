@@ -587,6 +587,7 @@ process_block(contdata_t *contdata, TSIOBufferReader reader)
     keep = 0;
     buf = contdata->contbuf.c_str();
     buflen = contdata->contbuf.length();
+    nbytes = 0;
   } else {
     block = TSIOBufferReaderStart(reader);
     buf = TSIOBufferBlockReadStart(block, reader, &nbytes);
