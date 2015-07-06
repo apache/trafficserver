@@ -218,6 +218,15 @@ LogAccess::marshal_client_req_http_version(char *buf)
   -------------------------------------------------------------------------*/
 
 int
+LogAccess::marshal_client_req_protocol_version(char *buf)
+{
+  DEFAULT_STR_FIELD;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
 LogAccess::marshal_client_req_header_len(char *buf)
 {
   DEFAULT_INT_FIELD;

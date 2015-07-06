@@ -89,7 +89,7 @@ public:
 extern ClassAllocator<SpdyRequest> spdyRequestAllocator;
 
 // class SpdyClientSession : public Continuation, public PluginIdentity
-class SpdyClientSession : public ProxyClientSession
+class SpdyClientSession : public ProxyClientSession, public PluginIdentity
 {
 public:
   typedef ProxyClientSession super; ///< Parent type.
