@@ -52,14 +52,22 @@ msgid ""
 "rolling_enabled` setting."
 msgstr ""
 
-#: ../../reference/api/TSTextLogObjectCreate.en.rst:53
+#: ../../reference/api/TSTextLogObjectCreate.en.rst:58
 msgid "See also"
 msgstr ""
 
-#: ../../reference/api/TSTextLogObjectCreate.en.rst:55
+#: ../../reference/api/TSTextLogObjectCreate.en.rst:60
 msgid ":manpage:`TSAPI(3ts)`"
 msgstr ""
 
 #: ../../reference/api/TSTextLogObjectCreate.en.rst:24
 msgid "Traffic Server text logging API."
+msgstr ""
+
+#: ../../reference/api/TSTextLogObjectCreate.en.rst:52
+msgid ""
+"It's also important to call :func:`TSTextLogObjectRollingEnabledSet` before "
+"any of the other APIs that modifies the rolling object. This is due to the "
+"fact that this API dictates which rolling mode should be used, and "
+"therefore affects further modifications of the logging object."
 msgstr ""

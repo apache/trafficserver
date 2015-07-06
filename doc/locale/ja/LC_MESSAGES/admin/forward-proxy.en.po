@@ -29,7 +29,7 @@ msgstr ""
 msgid "Forward Proxy"
 msgstr "フォワードプロキシー"
 
-#: ../../admin/forward-proxy.en.rst:113
+#: ../../admin/forward-proxy.en.rst:107
 msgid "Security Considerations"
 msgstr "セキュリティの考慮"
 
@@ -91,7 +91,7 @@ msgstr ""
 msgid "Proxy Configuration"
 msgstr ""
 
-#: ../../admin/forward-proxy.en.rst:48
+#: ../../admin/forward-proxy.en.rst:67
 msgid ""
 "Permit Traffic Server to process requests for hosts not explicitly "
 "configured in the remap rules, by modifying :ts:cv:`proxy.config.url_remap."
@@ -153,16 +153,7 @@ msgid ""
 "browser being issued through the single forward proxy as configured."
 msgstr ""
 
-#: ../../admin/forward-proxy.en.rst:106
-msgid ""
-"Alternatively, you may configure clients to use the more dynamic :ts:cv:"
-"`proxy.config.url_remap.default_to_server_pac` port, which will deliver a "
-"Javascript based PAC configuration to the client. This permits you to "
-"configure rules on which proxy servers are used for various types of "
-"requests, or to allow some requests to bypass proxies all together."
-msgstr ""
-
-#: ../../admin/forward-proxy.en.rst:115
+#: ../../admin/forward-proxy.en.rst:109
 msgid ""
 "It's important to note that once your Apache Traffic Server is configured "
 "as a forward proxy it will indiscriminately accept proxy requests from "
@@ -170,13 +161,19 @@ msgid ""
 "*Open Proxy*."
 msgstr ""
 
-#: ../../admin/forward-proxy.en.rst:119
+#: ../../admin/forward-proxy.en.rst:113
 msgid ""
 "This is generally not desirable, as it will permit anyone to potentially "
 "use your network as the source of traffic to sites of their choosing. To "
 "avoid this, you'll have to make sure your proxy server is either only "
 "reachable from within your private network or is secured by firewall rules "
 "that permit only those you wish to have access to the proxy."
+msgstr ""
+
+#: ../../admin/forward-proxy.en.rst:64
+msgid ""
+"Configuring basic forward proxy operation in Traffic Server is quite simple "
+"and straightforward."
 msgstr ""
 
 #~ msgid ""

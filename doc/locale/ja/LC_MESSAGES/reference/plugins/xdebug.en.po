@@ -145,17 +145,27 @@ msgstr ""
 msgid "The cache lookup was skipped."
 msgstr ""
 
-#: ../../reference/plugins/xdebug.en.rst:67
+#: ../../reference/plugins/xdebug.en.rst:71
 msgid "X-Milestones"
 msgstr ""
 
-#: ../../reference/plugins/xdebug.en.rst:63
+#: ../../reference/plugins/xdebug.en.rst:67
 msgid ""
 "The ``X-Milestones`` header contains detailed information about how long "
 "the transaction took to traverse portions of the HTTP state machine. The "
 "timing information is obtained from the :c:func:`TSHttpTxnMilestoneGet` "
 "API. Each milestone value is a fractional number of seconds since the "
 "beginning of the transaction."
+msgstr ""
+
+#: ../../reference/plugins/xdebug.en.rst:64
+msgid "X-Cache-Generation"
+msgstr ""
+
+#: ../../reference/plugins/xdebug.en.rst:63
+msgid ""
+"The cache generation ID for this transaction, as specified by the :ts:cv:"
+"`proxy.config.http.cache.generation` configuration variable."
 msgstr ""
 
 #~ msgid ""

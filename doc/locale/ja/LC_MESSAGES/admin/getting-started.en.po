@@ -25,10 +25,6 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../../admin/getting-started.en.rst:4
-msgid "Getting Started"
-msgstr "はじめに"
-
 #: ../../admin/getting-started.en.rst:64
 msgid "Building Traffic Server"
 msgstr "Traffic Server のビルド"
@@ -313,6 +309,13 @@ msgid ""
 "Finally, you can build trafficserver following the steps in the previous "
 "section along with an additional option --enable-spdy as below  ::"
 msgstr ""
+
+#: ../../admin/getting-started.en.rst:4
+msgid "Admin - Getting Started"
+msgstr ""
+
+#~ msgid "Getting Started"
+#~ msgstr "はじめに"
 
 #~ msgid ""
 #~ "If your distribution does not come with a prepackaged Traffic Server, "

@@ -209,14 +209,6 @@ msgstr ""
 msgid "All nodes are running the same operating system:"
 msgstr "すべてのノードが同じオペレーティングシステム上で動作していること"
 
-#: ../../admin/cluster-howto.en.rst:85
-msgid "The same distribution, e.g.: RHEL 5.5"
-msgstr "同じディストリビューション 例: RHEL 5.5"
-
-#: ../../admin/cluster-howto.en.rst:86
-msgid "The same kernel, e.g.: 2.6.18-194.17.1.el5"
-msgstr "同じカーネル 例: 2.6.18-194.17.1.el5"
-
 #: ../../admin/cluster-howto.en.rst:87
 msgid "The same architecture, e.g.: x86_64"
 msgstr "同じアーキテクチャ 例: x86_64"
@@ -365,6 +357,20 @@ msgid ""
 "removing the need to manually duplicate configuration changes across each "
 "node individually."
 msgstr ""
+
+#: ../../admin/cluster-howto.en.rst:85
+msgid "The same distribution, e.g.: RHEL 6.6"
+msgstr ""
+
+#: ../../admin/cluster-howto.en.rst:86
+msgid "The same kernel, e.g.: 2.6.32-504.23.4.el6"
+msgstr ""
+
+#~ msgid "The same distribution, e.g.: RHEL 5.5"
+#~ msgstr "同じディストリビューション 例: RHEL 5.5"
+
+#~ msgid "The same kernel, e.g.: 2.6.18-194.17.1.el5"
+#~ msgstr "同じカーネル 例: 2.6.18-194.17.1.el5"
 
 #~ msgid ""
 #~ "After successfully joining a cluster, all changes of global "

@@ -99,32 +99,16 @@ msgid ""
 msgstr "次の一覧は指定可能な primary destinations とその値です。"
 
 #: ../../reference/configuration/congestion.config.en.rst:59
-msgid "*``dest_domain``* {#dest_domain}"
-msgstr "*``dest_domain``* {#dest_domain}"
-
-#: ../../reference/configuration/congestion.config.en.rst:59
 msgid "A requested domain name."
 msgstr "リクエストされたドメイン名。"
-
-#: ../../reference/configuration/congestion.config.en.rst:62
-msgid "*``dest_host``* {#dest_host}"
-msgstr "*``dest_host``* {#dest_host}"
 
 #: ../../reference/configuration/congestion.config.en.rst:62
 msgid "A requested hostname."
 msgstr "リクエストされたホスト名。"
 
 #: ../../reference/configuration/congestion.config.en.rst:65
-msgid "*``dest_ip``* {#dest_ip}"
-msgstr "*``dest_ip``* {#dest_ip}"
-
-#: ../../reference/configuration/congestion.config.en.rst:65
 msgid "A requested IP address."
 msgstr "リクエストされた IP アドレス。"
-
-#: ../../reference/configuration/congestion.config.en.rst:68
-msgid "*``url_regex``* {#url_regex}"
-msgstr "*``url_regex``* {#url_regex}"
 
 #: ../../reference/configuration/congestion.config.en.rst:68
 msgid "A regular expression (regex) to be found in a URL."
@@ -143,16 +127,8 @@ msgstr ""
 "させることはできません。"
 
 #: ../../reference/configuration/congestion.config.en.rst:76
-msgid "*``port``* {#port}"
-msgstr "*``port``* {#port}"
-
-#: ../../reference/configuration/congestion.config.en.rst:76
 msgid "A requested URL port or range of ports."
 msgstr "リクエストされた URL のポートもしくはポートの範囲。"
-
-#: ../../reference/configuration/congestion.config.en.rst:79
-msgid "*``prefix``* {#prefix}"
-msgstr "*``prefix``* {#prefix}"
 
 #: ../../reference/configuration/congestion.config.en.rst:79
 msgid "A prefix in the path part of a URL."
@@ -161,10 +137,6 @@ msgstr "URL のパス部分のプレフィックス。"
 #: ../../reference/configuration/congestion.config.en.rst:81
 msgid "The following list shows the possible tags and their allowed values."
 msgstr "次の一覧は指定可能なタグとその値です。"
-
-#: ../../reference/configuration/congestion.config.en.rst:87
-msgid "*``max_connection_failures``* {#max_connection_failures}"
-msgstr "*``max_connection_failures``* {#max_connection_failures}"
 
 #: ../../reference/configuration/congestion.config.en.rst:84
 msgid ""
@@ -175,10 +147,6 @@ msgstr ""
 "デフォルト: ``5`` Traffic Server がオリジンサーバーを輻輳状態とマークするま"
 "でに下記で説明される fail window 内で許される最大接続失敗数。"
 
-#: ../../reference/configuration/congestion.config.en.rst:93
-msgid "*``fail_window``* {#fail_window}"
-msgstr "*``fail_window``* {#fail_window}"
-
 #: ../../reference/configuration/congestion.config.en.rst:90
 msgid ""
 "Default: ``120`` seconds. The time period during which the maximum number "
@@ -188,10 +156,6 @@ msgstr ""
 "デフォルト: ``120`` 秒。Traffic Server がオリジンサーバーを輻輳状態とマーク"
 "するまでに最大数の接続失敗を起こせる期間。"
 
-#: ../../reference/configuration/congestion.config.en.rst:98
-msgid "*``proxy_retry_interval``* {#proxy_retry_interval}"
-msgstr "*``proxy_retry_interval``* {#proxy_retry_interval}"
-
 #: ../../reference/configuration/congestion.config.en.rst:96
 msgid ""
 "Default: ``10`` seconds. The number of seconds that Traffic Server waits "
@@ -199,10 +163,6 @@ msgid ""
 msgstr ""
 "デフォルト: ``10`` 秒。Traffic Server が輻輳したオリジンサーバーに再び接続す"
 "るまでに待つ秒数。"
-
-#: ../../reference/configuration/congestion.config.en.rst:103
-msgid "*``client_wait_interval``* {#client_wait_interval}"
-msgstr "*``client_wait_interval``* {#client_wait_interval}"
 
 #: ../../reference/configuration/congestion.config.en.rst:101
 msgid ""
@@ -212,19 +172,11 @@ msgstr ""
 "デフォルト: ``300`` 秒。輻輳したオリジンサーバーにリトライするまでにクライア"
 "ントに待たせる秒数。"
 
-#: ../../reference/configuration/congestion.config.en.rst:108
-msgid "*``wait_interval_alpha``* {#wait_interval_alpha}"
-msgstr "*``wait_interval_alpha``* {#wait_interval_alpha}"
-
 #: ../../reference/configuration/congestion.config.en.rst:106
 msgid ""
 "Default: ``30`` seconds The upper limit for a random number that is added "
 "to the wait interval."
 msgstr "デフォルト: ``30`` 秒。wait interval にランダムに加算される数の上限。"
-
-#: ../../reference/configuration/congestion.config.en.rst:114
-msgid "*``live_os_conn_timeout``* {#live_os_conn_timeout}"
-msgstr "*``live_os_conn_timeout``* {#live_os_conn_timeout}"
 
 #: ../../reference/configuration/congestion.config.en.rst:111
 msgid ""
@@ -236,10 +188,6 @@ msgstr ""
 "の接続のタイムアウト。クライアントがタイムアウトが発生する前にリクエストを停"
 "止した場合、Traffic Server は接続失敗を記録しません。"
 
-#: ../../reference/configuration/congestion.config.en.rst:119
-msgid "*``live_os_conn_retries``* {#live_os_conn_retries}"
-msgstr "*``live_os_conn_retries``* {#live_os_conn_retries}"
-
 #: ../../reference/configuration/congestion.config.en.rst:117
 msgid ""
 "Default: ``2`` The maximum number of retries allowed to the live "
@@ -247,14 +195,6 @@ msgid ""
 msgstr ""
 "デフォルト: ``2`` 生きている (輻輳していない) オリジンサーバーに対して許され"
 "る最大リトライ数。"
-
-#: ../../reference/configuration/congestion.config.en.rst:123
-msgid "*``dead_os_conn_timeout``* {#dead_os_conn_timeout}"
-msgstr "*``dead_os_conn_timeout``* {#dead_os_conn_timeout}"
-
-#: ../../reference/configuration/congestion.config.en.rst:128
-msgid "*``dead_os_conn_retries``* {#dead_os_conn_retries}"
-msgstr "*``dead_os_conn_retries``* {#dead_os_conn_retries}"
 
 #: ../../reference/configuration/congestion.config.en.rst:126
 msgid ""
@@ -264,10 +204,6 @@ msgstr ""
 "デフォルト: ``1`` 輻輳しているオリジンサーバーに対して許される最大リトライ"
 "数。"
 
-#: ../../reference/configuration/congestion.config.en.rst:133
-msgid "*``max_connection``* {#max_connection}"
-msgstr "*``max_connection``* {#max_connection}"
-
 #: ../../reference/configuration/congestion.config.en.rst:131
 msgid ""
 "Default: ``-1`` The maximum number of connections allowed from Traffic "
@@ -276,10 +212,6 @@ msgstr ""
 "デフォルト: ``-1`` Traffic Server からオリジンサーバーに対して許される最大接"
 "続数"
 
-#: ../../reference/configuration/congestion.config.en.rst:138
-msgid "*``error_page``* {#error_page}"
-msgstr "*``error_page``* {#error_page}"
-
 #: ../../reference/configuration/congestion.config.en.rst:136
 msgid ""
 "Default: ``\"congestion#retryAfter\"`` The error page sent to the client "
@@ -287,10 +219,6 @@ msgid ""
 msgstr ""
 "デフォルト: ``\"congestion#retryAfter\"`` サーバーが輻輳した際にクライアント"
 "に送信されるエラーページ。値はクォーテーションで囲まなければなりません。"
-
-#: ../../reference/configuration/congestion.config.en.rst:151
-msgid "*:file:`congestion.config`* {#congestion_scheme}"
-msgstr "*:file:`congestion.config`* {#congestion_scheme}"
 
 #: ../../reference/configuration/congestion.config.en.rst:141
 msgid ""
@@ -393,6 +321,132 @@ msgid ""
 "file only if you enable the :ts:cv:`proxy.config.http.congestion_control."
 "enabled` option."
 msgstr ""
+
+#: ../../reference/configuration/congestion.config.en.rst:59
+msgid "``dest_domain``"
+msgstr ""
+
+#: ../../reference/configuration/congestion.config.en.rst:62
+msgid "``dest_host``"
+msgstr ""
+
+#: ../../reference/configuration/congestion.config.en.rst:65
+msgid "``dest_ip``"
+msgstr ""
+
+#: ../../reference/configuration/congestion.config.en.rst:68
+msgid "``url_regex``"
+msgstr ""
+
+#: ../../reference/configuration/congestion.config.en.rst:76
+msgid "``port``"
+msgstr ""
+
+#: ../../reference/configuration/congestion.config.en.rst:79
+msgid "``prefix``"
+msgstr ""
+
+#: ../../reference/configuration/congestion.config.en.rst:87
+msgid "``max_connection_failures``"
+msgstr ""
+
+#: ../../reference/configuration/congestion.config.en.rst:93
+msgid "``fail_window``"
+msgstr ""
+
+#: ../../reference/configuration/congestion.config.en.rst:98
+msgid "``proxy_retry_interval``"
+msgstr ""
+
+#: ../../reference/configuration/congestion.config.en.rst:103
+msgid "``client_wait_interval``"
+msgstr ""
+
+#: ../../reference/configuration/congestion.config.en.rst:108
+msgid "``wait_interval_alpha``"
+msgstr ""
+
+#: ../../reference/configuration/congestion.config.en.rst:114
+msgid "``live_os_conn_timeout``"
+msgstr ""
+
+#: ../../reference/configuration/congestion.config.en.rst:119
+msgid "``live_os_conn_retries``"
+msgstr ""
+
+#: ../../reference/configuration/congestion.config.en.rst:123
+msgid "``dead_os_conn_timeout``"
+msgstr ""
+
+#: ../../reference/configuration/congestion.config.en.rst:128
+msgid "``dead_os_conn_retries``"
+msgstr ""
+
+#: ../../reference/configuration/congestion.config.en.rst:133
+msgid "``max_connection``"
+msgstr ""
+
+#: ../../reference/configuration/congestion.config.en.rst:138
+msgid "``error_page``"
+msgstr ""
+
+#: ../../reference/configuration/congestion.config.en.rst:151
+msgid "``congestion_scheme``"
+msgstr ""
+
+#~ msgid "*``dest_domain``* {#dest_domain}"
+#~ msgstr "*``dest_domain``* {#dest_domain}"
+
+#~ msgid "*``dest_host``* {#dest_host}"
+#~ msgstr "*``dest_host``* {#dest_host}"
+
+#~ msgid "*``dest_ip``* {#dest_ip}"
+#~ msgstr "*``dest_ip``* {#dest_ip}"
+
+#~ msgid "*``url_regex``* {#url_regex}"
+#~ msgstr "*``url_regex``* {#url_regex}"
+
+#~ msgid "*``port``* {#port}"
+#~ msgstr "*``port``* {#port}"
+
+#~ msgid "*``prefix``* {#prefix}"
+#~ msgstr "*``prefix``* {#prefix}"
+
+#~ msgid "*``max_connection_failures``* {#max_connection_failures}"
+#~ msgstr "*``max_connection_failures``* {#max_connection_failures}"
+
+#~ msgid "*``fail_window``* {#fail_window}"
+#~ msgstr "*``fail_window``* {#fail_window}"
+
+#~ msgid "*``proxy_retry_interval``* {#proxy_retry_interval}"
+#~ msgstr "*``proxy_retry_interval``* {#proxy_retry_interval}"
+
+#~ msgid "*``client_wait_interval``* {#client_wait_interval}"
+#~ msgstr "*``client_wait_interval``* {#client_wait_interval}"
+
+#~ msgid "*``wait_interval_alpha``* {#wait_interval_alpha}"
+#~ msgstr "*``wait_interval_alpha``* {#wait_interval_alpha}"
+
+#~ msgid "*``live_os_conn_timeout``* {#live_os_conn_timeout}"
+#~ msgstr "*``live_os_conn_timeout``* {#live_os_conn_timeout}"
+
+#~ msgid "*``live_os_conn_retries``* {#live_os_conn_retries}"
+#~ msgstr "*``live_os_conn_retries``* {#live_os_conn_retries}"
+
+#~ msgid "*``dead_os_conn_timeout``* {#dead_os_conn_timeout}"
+#~ msgstr "*``dead_os_conn_timeout``* {#dead_os_conn_timeout}"
+
+#~ msgid "*``dead_os_conn_retries``* {#dead_os_conn_retries}"
+#~ msgstr "*``dead_os_conn_retries``* {#dead_os_conn_retries}"
+
+#~ msgid "*``max_connection``* {#max_connection}"
+#~ msgstr "*``max_connection``* {#max_connection}"
+
+#~ msgid "*``error_page``* {#error_page}"
+#~ msgstr "*``error_page``* {#error_page}"
+
+#~ msgid "*:file:`congestion.config`* {#congestion_scheme}"
+#~ msgstr "*:file:`congestion.config`* {#congestion_scheme}"
 
 #~ msgid ""
 #~ "The :file:`congestion.config` file (by default, located in ``/opt/"

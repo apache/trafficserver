@@ -199,14 +199,6 @@ msgid ""
 "such an occurrence."
 msgstr ""
 
-#: ../../arch/cache/cache-appendix.en.rst:128
-msgid ""
-"If :c:func:`TSHttpTxnCacheLookupUrlGet()` is called after new cache url set "
-"by :c:func:`TSCacheUrlSet()`, it should use a URL location created by :c:"
-"func:`TSUrlCreate()` as its third input parameter instead of getting "
-"``url_loc`` from the client request."
-msgstr ""
-
 #: ../../arch/cache/cache-appendix.en.rst:133
 msgid ""
 "It is a requirement that the string be syntactically a URL but otherwise it "
@@ -252,4 +244,12 @@ msgid ""
 "common case is the one described above where the goal is to elide elements "
 "of the URL that do not affect the content to minimize cache footprint and "
 "improve cache hit rates."
+msgstr ""
+
+#: ../../arch/cache/cache-appendix.en.rst:128
+msgid ""
+"If :c:func:`TSHttpTxnCacheLookupUrlGet()` is called after new cache url set "
+"by :c:func:`TSHttpTxnCacheLookupUrlSet()` or :c:func:`TSCacheUrlSet()`, it "
+"should use a URL location created by :c:func:`TSUrlCreate()` as its third "
+"input parameter instead of getting ``url_loc`` from the client request."
 msgstr ""

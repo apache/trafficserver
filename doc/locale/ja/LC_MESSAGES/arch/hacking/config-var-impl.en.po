@@ -11,159 +11,159 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../../arch/hacking/config-var-impl.en.rst:48
+#: ../../arch/hacking/config-var-impl.en.rst:56
 msgid "Configuration Variable Implementation"
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:50
+#: ../../arch/hacking/config-var-impl.en.rst:58
 msgid ""
 "Adding a new configuration variable in :file:`records.config` requires a "
 "number of steps which are mostly documented here."
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:58
+#: ../../arch/hacking/config-var-impl.en.rst:66
 msgid "Defining the Variable"
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:92
+#: ../../arch/hacking/config-var-impl.en.rst:100
 msgid "type:``RecT``"
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:68
+#: ../../arch/hacking/config-var-impl.en.rst:76
 msgid "``RECT_NULL``"
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:68
+#: ../../arch/hacking/config-var-impl.en.rst:76
 msgid "Undefined record."
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:71
+#: ../../arch/hacking/config-var-impl.en.rst:79
 msgid "``RECT_CONFIG``"
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:71
+#: ../../arch/hacking/config-var-impl.en.rst:79
 msgid "General configuration variable."
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:74
+#: ../../arch/hacking/config-var-impl.en.rst:82
 msgid "``RECT_PROCESS``"
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:74
+#: ../../arch/hacking/config-var-impl.en.rst:82
 msgid "Process related statistic."
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:77
+#: ../../arch/hacking/config-var-impl.en.rst:85
 msgid "``RECT_NODE``"
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:77
+#: ../../arch/hacking/config-var-impl.en.rst:85
 msgid "Local statistic."
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:80
+#: ../../arch/hacking/config-var-impl.en.rst:88
 msgid "``RECT_CLUSTER``"
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:80
+#: ../../arch/hacking/config-var-impl.en.rst:88
 msgid "Cluster statistic."
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:83
+#: ../../arch/hacking/config-var-impl.en.rst:91
 msgid "``RECT_LOCAL``"
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:83
+#: ../../arch/hacking/config-var-impl.en.rst:91
 msgid "Configuration variable that is explicitly not shared across a cluster."
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:86
+#: ../../arch/hacking/config-var-impl.en.rst:94
 msgid "``RECT_PLUGIN``"
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:86
+#: ../../arch/hacking/config-var-impl.en.rst:94
 msgid "Plugin created statistic."
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:98
+#: ../../arch/hacking/config-var-impl.en.rst:106
 msgid "name:``char const*``"
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:102
+#: ../../arch/hacking/config-var-impl.en.rst:110
 msgid "value_type:``RecDataT``"
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:101
+#: ../../arch/hacking/config-var-impl.en.rst:109
 msgid ""
 "The data type of the value. It should be one of ``RECD_INT``, "
 "``RECD_STRING``, ``RECD_FLOAT`` as appropriate."
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:106
+#: ../../arch/hacking/config-var-impl.en.rst:114
 msgid "default:``char const*``"
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:105
+#: ../../arch/hacking/config-var-impl.en.rst:113
 msgid ""
 "The default value for the variable. This is always a string regardless of "
 "the *value_type*."
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:112
+#: ../../arch/hacking/config-var-impl.en.rst:120
 msgid "update:``RecUpdateT``"
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:112
+#: ../../arch/hacking/config-var-impl.en.rst:120
 msgid "``RECU_NULL``"
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:112
+#: ../../arch/hacking/config-var-impl.en.rst:120
 msgid "Behavior is unknown or unspecified."
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:117
+#: ../../arch/hacking/config-var-impl.en.rst:125
 msgid "``RECU_DYNAMIC``"
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:117
+#: ../../arch/hacking/config-var-impl.en.rst:125
 msgid "This can be updated via command line tools."
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:120
+#: ../../arch/hacking/config-var-impl.en.rst:128
 msgid "``RECD_RESTART_TS``"
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:120
+#: ../../arch/hacking/config-var-impl.en.rst:128
 msgid ""
 "The :ref:`traffic_server` process must be restarted for a new value to take "
 "effect."
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:123
+#: ../../arch/hacking/config-var-impl.en.rst:131
 msgid "``RECD_RESTART_TM``"
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:123
+#: ../../arch/hacking/config-var-impl.en.rst:131
 msgid ""
 "The :ref:`traffic_manager` process must be restarted for a new value to "
 "take effect."
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:126
+#: ../../arch/hacking/config-var-impl.en.rst:134
 msgid "``RECD_RESTART_TC``"
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:126
+#: ../../arch/hacking/config-var-impl.en.rst:134
 msgid ""
 "The :ref:`traffic_cop` process must be restarted for a new value to take "
 "effect."
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:132
+#: ../../arch/hacking/config-var-impl.en.rst:140
 msgid "required:``RecordRequiredType``"
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:129
+#: ../../arch/hacking/config-var-impl.en.rst:137
 msgid ""
 "Effectively a boolean that specifies if the record is required to be "
 "present, with ``RR_NULL`` meaning not required and ``RR_REQUIRED`` "
@@ -171,75 +171,75 @@ msgid ""
 "major incompatibility, ``RR_NULL`` is generally the better choice."
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:148
+#: ../../arch/hacking/config-var-impl.en.rst:156
 msgid "check:``RecCheckT``"
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:139
+#: ../../arch/hacking/config-var-impl.en.rst:147
 msgid "``RECC_NULL``"
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:139
+#: ../../arch/hacking/config-var-impl.en.rst:147
 msgid "No additional checking."
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:142
+#: ../../arch/hacking/config-var-impl.en.rst:150
 msgid "``RECC_STR``"
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:142
+#: ../../arch/hacking/config-var-impl.en.rst:150
 msgid "Verify the value is a string."
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:145
+#: ../../arch/hacking/config-var-impl.en.rst:153
 msgid "``RECC_INT``"
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:145
+#: ../../arch/hacking/config-var-impl.en.rst:153
 msgid "Verify the value is an integer."
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:148
+#: ../../arch/hacking/config-var-impl.en.rst:156
 msgid "``RECC_IP``"
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:148
+#: ../../arch/hacking/config-var-impl.en.rst:156
 msgid "Verify the value is an IP address. Unknown if this checks for IPv6."
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:155
+#: ../../arch/hacking/config-var-impl.en.rst:163
 msgid "pattern:``char const*``"
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:168
+#: ../../arch/hacking/config-var-impl.en.rst:176
 msgid "access:``RecAccessT``"
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:161
+#: ../../arch/hacking/config-var-impl.en.rst:169
 msgid "``RECA_NULL``"
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:161
+#: ../../arch/hacking/config-var-impl.en.rst:169
 msgid "The value is read / write."
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:164
+#: ../../arch/hacking/config-var-impl.en.rst:172
 msgid "``RECA_READ_ONLY``"
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:164
+#: ../../arch/hacking/config-var-impl.en.rst:172
 msgid "The value is read only."
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:168
+#: ../../arch/hacking/config-var-impl.en.rst:176
 msgid "``RECA_NO_ACCESS``"
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:171
+#: ../../arch/hacking/config-var-impl.en.rst:179
 msgid "Variable Infrastructure"
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:173
+#: ../../arch/hacking/config-var-impl.en.rst:181
 msgid ""
 "The primary effort in defining a configuration variable is handling "
 "updates, generally via :option:`traffic_line -x`. This is handled in a "
@@ -250,35 +250,35 @@ msgid ""
 "HTTP configuration variables should be dynamic if possible."
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:182
+#: ../../arch/hacking/config-var-impl.en.rst:190
 msgid "Documentation and Defaults"
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:197
+#: ../../arch/hacking/config-var-impl.en.rst:205
 msgid "reloadable"
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:197
+#: ../../arch/hacking/config-var-impl.en.rst:205
 msgid ""
 "The variable can be reloaded via command line on a running Traffic Server."
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:200
+#: ../../arch/hacking/config-var-impl.en.rst:208
 msgid "metric"
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:200
+#: ../../arch/hacking/config-var-impl.en.rst:208
 msgid ""
 "Specify the units for the value. This is critical for variables that use "
 "unexpected or non-obvious metrics, such as minutes instead of seconds, or "
 "disk sectors instead of bytes."
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:203
+#: ../../arch/hacking/config-var-impl.en.rst:211
 msgid "deprecated"
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:203
+#: ../../arch/hacking/config-var-impl.en.rst:211
 msgid "Mark a variable as deprecated."
 msgstr ""
 
@@ -286,17 +286,17 @@ msgstr ""
 msgid "Example"
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:212
+#: ../../arch/hacking/config-var-impl.en.rst:220
 msgid ""
 "If you need to refer to another configuration variable in the "
 "documentation, you can use the form ::"
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:227
+#: ../../arch/hacking/config-var-impl.en.rst:235
 msgid "Handling Updates"
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:229
+#: ../../arch/hacking/config-var-impl.en.rst:237
 msgid ""
 "The simplest mechanism for handling updates is the "
 "``REC_EstablishStaticConfigXXX`` family of functions. This mechanism will "
@@ -305,7 +305,7 @@ msgid ""
 "atomic operations. Use of these variables must keep that in mind."
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:235
+#: ../../arch/hacking/config-var-impl.en.rst:243
 msgid ""
 "If a variable requires additional handling when updated a callback can be "
 "registered which is called when the variable is updated. This is what the "
@@ -315,29 +315,29 @@ msgid ""
 "RecCore.cc|_."
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:245
+#: ../../arch/hacking/config-var-impl.en.rst:253
 msgid "``char const*`` *name*"
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:245
+#: ../../arch/hacking/config-var-impl.en.rst:253
 msgid "The variable name."
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:252
+#: ../../arch/hacking/config-var-impl.en.rst:260
 msgid "*callback*"
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:256
+#: ../../arch/hacking/config-var-impl.en.rst:264
 msgid "``void*`` *cookie*"
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:255
+#: ../../arch/hacking/config-var-impl.en.rst:263
 msgid ""
 "A value passed to the *callback*. This is only for the callback, the "
 "internals simply store it and pass it on."
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:264
+#: ../../arch/hacking/config-var-impl.en.rst:272
 msgid ""
 "The callback occurs asynchronously. For HTTP variables as described in the "
 "next section, this is handled by the more specialized HTTP update "
@@ -345,49 +345,35 @@ msgid ""
 "conditions."
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:271
+#: ../../arch/hacking/config-var-impl.en.rst:279
 msgid "HTTP Configuation Values"
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:301
+#: ../../arch/hacking/config-var-impl.en.rst:309
 msgid "Overridable Variables"
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:303
-msgid ""
-"HTTP related variables that are changeable per transaction are stored in "
-"the ``OverridableHttpConfigParams`` structure, an instance of which is the "
-"``oride`` member of ``HTTPConfigParams`` and therefore the points in the "
-"previous section still apply. The only difference for that is the further "
-"``.oride`` in the structure references."
-msgstr ""
-
-#: ../../arch/hacking/config-var-impl.en.rst:313
-msgid ""
-"Add a value to the ``TSOverridableConfigKey`` enumeration in |ts.h.in|_."
-msgstr ""
-
-#: ../../arch/hacking/config-var-impl.en.rst:315
+#: ../../arch/hacking/config-var-impl.en.rst:322
 msgid ""
 "Augment the ``TSHttpTxnConfigFind`` function to return this enumeration "
 "value when given the name of the configuration variable. Be sure to count "
 "the charaters very carefully."
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:319
+#: ../../arch/hacking/config-var-impl.en.rst:326
 msgid ""
 "Augment the ``_conf_to_memberp`` function in |InkAPI.cc|_ to return a "
 "pointer to the appropriate member of ``OverridableHttpConfigParams`` and "
 "set the type if not a byte value."
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:323
+#: ../../arch/hacking/config-var-impl.en.rst:330
 msgid ""
 "Update the testing logic in |InkAPITest.cc|_ by adding the string name of "
 "the configuration variable to the ``SDK_Overridable_Configs`` array."
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:53
+#: ../../arch/hacking/config-var-impl.en.rst:61
 msgid ""
 "Before adding a new configuration variable, please discuss it on the "
 "mailing list. It will commonly be the case that a better name, or a more "
@@ -395,18 +381,18 @@ msgid ""
 "be suggested."
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:60
+#: ../../arch/hacking/config-var-impl.en.rst:68
 msgid ""
 "To begin, the new configuration variables must be added to |RecordsConfig."
 "cc|_. This contains a long array of configuration variable records. The "
 "fields for each record are:"
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:65
+#: ../../arch/hacking/config-var-impl.en.rst:73
 msgid "Type of record. The valid values are:"
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:88
+#: ../../arch/hacking/config-var-impl.en.rst:96
 msgid ""
 "In general, ``RECT_CONFIG`` should be used unless it is required that the "
 "value not be shared among members of a cluster, in which case "
@@ -415,7 +401,7 @@ msgid ""
 "``.local.`` instead of ``.config.``."
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:95
+#: ../../arch/hacking/config-var-impl.en.rst:103
 msgid ""
 "The fully qualified name of the configuration variable. Although there "
 "appears to be a hierarchial naming scheme, that's just a convention, and it "
@@ -423,41 +409,41 @@ msgid ""
 "to the hierarchial scheme."
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:109
+#: ../../arch/hacking/config-var-impl.en.rst:117
 msgid "Information about how the variable is updated. The valid values are:"
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:135
+#: ../../arch/hacking/config-var-impl.en.rst:143
 msgid ""
 "Additional type checking. It is unclear if this is actually implemented. "
 "The valid values are:"
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:153
+#: ../../arch/hacking/config-var-impl.en.rst:161
 msgid ""
 "This provides a regular expressions (PCRE format) for validating the value, "
 "beyond the basic type validation performed by ``RecCheckT``. This can be "
 "``NULL`` if there is no regular expression to use."
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:158
+#: ../../arch/hacking/config-var-impl.en.rst:166
 msgid "Access control. The valid values are:"
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:167
+#: ../../arch/hacking/config-var-impl.en.rst:175
 msgid ""
 "No access to the value; only privileged level parts of ATS can access the "
 "value."
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:184
+#: ../../arch/hacking/config-var-impl.en.rst:192
 msgid ""
 "A configuration variable should be documented in :file:`records.config`. "
 "There are many examples in the file already that can be used for guidance. "
 "The general format is to use the tag ::"
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:190
+#: ../../arch/hacking/config-var-impl.en.rst:198
 msgid ""
 "The arguments to this are the same as for the configuration file. The "
 "documentation generator will pick out key bits and use them to decorate the "
@@ -466,19 +452,19 @@ msgid ""
 "These are:"
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:209
+#: ../../arch/hacking/config-var-impl.en.rst:217
 msgid "\\:ts\\:cv\\:\\`custom.variable\\`"
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:209
+#: ../../arch/hacking/config-var-impl.en.rst:217
 msgid "minutes"
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:217
+#: ../../arch/hacking/config-var-impl.en.rst:225
 msgid "This will display the name as a link to the full definition."
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:219
+#: ../../arch/hacking/config-var-impl.en.rst:227
 msgid ""
 "In general, a new configuration variable should not be present in the "
 "default :file:`records.config`. If it is added, such defaults should be "
@@ -488,13 +474,13 @@ msgid ""
 "override whatever default you put in the code for new installs."
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:241
+#: ../../arch/hacking/config-var-impl.en.rst:249
 msgid ""
 "To register a configuration variable callback, call "
 "``RecRegisterConfigUpdateCb`` with the arguments:"
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:248
+#: ../../arch/hacking/config-var-impl.en.rst:256
 msgid ""
 "A function with the signature ``<int (char const* name, RecDataT type, "
 "RecData data, void* cookie)>``. The :arg:`name` value passed is the same as "
@@ -504,14 +490,14 @@ msgid ""
 "return ``REC_ERR_OKAY``."
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:258
+#: ../../arch/hacking/config-var-impl.en.rst:266
 msgid ""
 "*callback* is called under lock so it should be quick and not block. If "
 "that is necessary a :term:`continuation` should be scheduled to handle the "
 "required action."
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:273
+#: ../../arch/hacking/config-var-impl.en.rst:281
 msgid ""
 "Variables used for HTTP processing should be declared as members of the "
 "``HTTPConfigParams`` structure (but see :ref:`overridable-config-vars` for "
@@ -519,7 +505,7 @@ msgid ""
 "handle synchronization and initialization issues."
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:278
+#: ../../arch/hacking/config-var-impl.en.rst:286
 msgid ""
 "The configuration logic maintains two copies of the ``HTTPConfigParams`` "
 "structure, the master copy and the current copy. The master copy is kept in "
@@ -531,7 +517,7 @@ msgid ""
 "interacts with this mechanism to avoid race conditions."
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:287
+#: ../../arch/hacking/config-var-impl.en.rst:295
 msgid ""
 "For each variable, a mapping between the variable name and the appropriate "
 "member in the master copy should be established between in the "
@@ -540,7 +526,7 @@ msgid ""
 "do so."
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:292
+#: ../../arch/hacking/config-var-impl.en.rst:300
 msgid ""
 "The ``HTTPConfig::reconfigure`` method handles the current copy of the HTTP "
 "configuration variables. Logic should be added here to copy the value from "
@@ -549,9 +535,36 @@ msgid ""
 "checked and enforced in this method."
 msgstr ""
 
-#: ../../arch/hacking/config-var-impl.en.rst:309
+#: ../../arch/hacking/config-var-impl.en.rst:316
 msgid ""
 "The variable is required to be accessible from the transaction API. In "
 "addition to any custom API functions used to access the value, the "
 "following items are required for generic access:"
+msgstr ""
+
+#: ../../arch/hacking/config-var-impl.en.rst:311
+msgid ""
+"HTTP related variables that are changeable per transaction are stored in "
+"the ``OverridableHttpConfigParams`` structure, an instance of which is the "
+"``oride`` member of ``HTTPConfigParams`` and therefore the points in the "
+"previous section still apply. The only difference for that is the further "
+"``.oride`` member specifier in the structure references."
+msgstr ""
+
+#: ../../arch/hacking/config-var-impl.en.rst:320
+msgid ""
+"Add a value to the ``TSOverridableConfigKey`` enumeration in |apidefs.h.in|"
+"_."
+msgstr ""
+
+#: ../../arch/hacking/config-var-impl.en.rst:333
+msgid ""
+"Update the Lua plugin enumeration ``TSLuaOverridableConfigKey`` in |"
+"ts_lua_http_config.c|_."
+msgstr ""
+
+#: ../../arch/hacking/config-var-impl.en.rst:335
+msgid ""
+"Update the documentation of :ref:`ts-overridable-config` in |"
+"TSHttpOverridableConfig.en.rst|_."
 msgstr ""

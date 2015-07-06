@@ -51,47 +51,47 @@ msgid ""
 "is to use per remap rules in remap.config::"
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:55
+#: ../../reference/plugins/header_rewrite.en.rst:52
 msgid "Operators"
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:57
+#: ../../reference/plugins/header_rewrite.en.rst:54
 msgid "The following operators are available::"
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:73
+#: ../../reference/plugins/header_rewrite.en.rst:70
 msgid "Where qual is one of the support URL qualifiers::"
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:82
+#: ../../reference/plugins/header_rewrite.en.rst:79
 msgid "For example (as a remap rule)::"
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:88
+#: ../../reference/plugins/header_rewrite.en.rst:85
 msgid "Operator flags"
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:97
+#: ../../reference/plugins/header_rewrite.en.rst:94
 msgid "Variable expansion"
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:98
+#: ../../reference/plugins/header_rewrite.en.rst:95
 msgid ""
 "Currently only limited variable expansion is supported in add-header. "
 "Supported substitutions include::"
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:109
+#: ../../reference/plugins/header_rewrite.en.rst:106
 msgid "Conditions"
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:110
+#: ../../reference/plugins/header_rewrite.en.rst:107
 msgid ""
 "The conditions are used as qualifiers: The operators specified will only be "
 "evaluated if the condition(s) are met::"
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:132
+#: ../../reference/plugins/header_rewrite.en.rst:131
 msgid ""
 "The difference between HEADER and CLIENT-HEADER is that HEADER adapts to "
 "the hook it's running in, whereas CLIENT-HEADER always applies to the "
@@ -99,78 +99,60 @@ msgid ""
 "if no other conditions are specified."
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:137
+#: ../../reference/plugins/header_rewrite.en.rst:136
 msgid ""
 "These conditions have to be first in a ruleset, and you can only have one "
 "in each rule. This implies that a new hook condition starts a new rule as "
 "well.::"
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:146
+#: ../../reference/plugins/header_rewrite.en.rst:145
 msgid ""
 "For remap.config plugin instanations, the default hook is named "
 "REMAP_PSEUDO_HOOK. This can be useful if you are mixing other hooks in a "
 "configuration, but being the default it is also optional."
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:152
+#: ../../reference/plugins/header_rewrite.en.rst:164
 msgid "Condition flags"
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:164
+#: ../../reference/plugins/header_rewrite.en.rst:176
 msgid "Operands to conditions"
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:172
-msgid "The absence of a \"matcher\" means value exists)."
-msgstr ""
-
-#: ../../reference/plugins/header_rewrite.en.rst:175
+#: ../../reference/plugins/header_rewrite.en.rst:187
 msgid "Values"
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:176
+#: ../../reference/plugins/header_rewrite.en.rst:188
 msgid "Setting e.g. a header with a value can take the following formats:"
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:178
+#: ../../reference/plugins/header_rewrite.en.rst:190
 msgid "Any of the cond definitions, that extracts a value from the request"
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:179
+#: ../../reference/plugins/header_rewrite.en.rst:191
 msgid "$N 0 <= N <= 9, as grouped in a regular expression"
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:180
+#: ../../reference/plugins/header_rewrite.en.rst:192
 msgid "string (which can contain the above)"
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:181
+#: ../../reference/plugins/header_rewrite.en.rst:193
 msgid "null"
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:184
+#: ../../reference/plugins/header_rewrite.en.rst:196
 msgid "Examples"
 msgstr ""
 
-#: ../../reference/plugins/header_rewrite.en.rst:90
+#: ../../reference/plugins/header_rewrite.en.rst:87
 msgid ""
 "The operator flags are optional, and must not contain whitespaces inside "
 "the brackets. Currently, only one flag is supported::"
-msgstr ""
-
-#: ../../reference/plugins/header_rewrite.en.rst:154
-msgid ""
-"The condition flags are optional, and you can combine more than one into a "
-"comma separated list of flags. Note that whitespaces are not allowed inside "
-"the brackets::"
-msgstr ""
-
-#: ../../reference/plugins/header_rewrite.en.rst:50
-msgid ""
-"Configuration filenames without an absolute paths are searched for in the "
-"default configuration directory. This is typically where your main "
-"configuration files are, e.g. ``/usr/local/etc/trafficserver``."
 msgstr ""
 
 #: ../../reference/plugins/header_rewrite.en.rst:40
@@ -179,8 +161,53 @@ msgid ""
 "phase (the default) causes a transaction hook to be instantiated and used "
 "at a later time. This allows you to setup e.g. a rule that gets executed "
 "during the origin response header parsing, using READ_RESPONSE_HDR_HOOK. "
-"Note that inorder to setup the plugin with rules that are not to be "
-"executed during the remap phase (e.g. SEND_REQUEST_HDR_HOOK, "
-"READ_RESPONSE_HDR_HOOK etc), global hooks must be setup via the below entry "
-"in plugin.config ::"
+"Note that the remap mode of the plugin can only execute rules on hooks that "
+"occur at remap phase or later (e.g. SEND_REQUEST_HDR_HOOK, "
+"READ_RESPONSE_HDR_HOOK etc),"
+msgstr ""
+
+#: ../../reference/plugins/header_rewrite.en.rst:47
+msgid ""
+"Configuration filenames without an absolute path are searched for in the "
+"default configuration directory. This is typically where your main "
+"configuration files are, e.g. ``/usr/local/etc/trafficserver``."
+msgstr ""
+
+#: ../../reference/plugins/header_rewrite.en.rst:150
+msgid "CLIENT-URL, URL, URL-FROM, and URL-TO"
+msgstr ""
+
+#: ../../reference/plugins/header_rewrite.en.rst:151
+msgid ""
+"URL adapts to the hook it's running in and CLIENT-URL will always give you "
+"the client URL.  FROM-URL and TO-URL are from the remap rule that matched "
+"and can only be used if the plugin is a being run as a remap plugin.  An "
+"option is required to match that section of the URL."
+msgstr ""
+
+#: ../../reference/plugins/header_rewrite.en.rst:157
+msgid "Supported Option Names:"
+msgstr ""
+
+#: ../../reference/plugins/header_rewrite.en.rst:157
+msgid "HOST"
+msgstr ""
+
+#: ../../reference/plugins/header_rewrite.en.rst:160
+msgid "Example:"
+msgstr ""
+
+#: ../../reference/plugins/header_rewrite.en.rst:160
+msgid "cond %{URL:HOST} =www.example.com"
+msgstr ""
+
+#: ../../reference/plugins/header_rewrite.en.rst:166
+msgid ""
+"The condition flags are optional, and you can combine more than one into a "
+"comma-separated list of flags. Note that whitespaces are not allowed inside "
+"the brackets::"
+msgstr ""
+
+#: ../../reference/plugins/header_rewrite.en.rst:184
+msgid "The absence of a \"matcher\" means value exists."
 msgstr ""

@@ -146,8 +146,7 @@ msgstr ""
 #: ../../admin/http-proxy-caching.en.rst:158
 #: ../../admin/http-proxy-caching.en.rst:174
 #: ../../admin/http-proxy-caching.en.rst:193
-#: ../../admin/http-proxy-caching.en.rst:281
-#: ../../admin/http-proxy-caching.en.rst:337
+#: ../../admin/http-proxy-caching.en.rst:279
 msgid ""
 "Run the :option:`traffic_ctl config reload` command to apply the configuration "
 "changes."
@@ -247,7 +246,7 @@ msgstr ""
 "ンの一つを選ぶことによって、 Traffic Server が新鮮さを評価する方法を再設定す"
 "ることができます。"
 
-#: ../../admin/http-proxy-caching.en.rst:273
+#: ../../admin/http-proxy-caching.en.rst:271
 msgid ""
 "To configure how Traffic Server revalidates objects in the cache, you can "
 "set specific revalidation rules in :file:`cache.config`."
@@ -255,86 +254,33 @@ msgstr ""
 "Traffic Server がキャッシュしているオブジェクトを再検証する方法を設定するに"
 "は :file:`cache.config` に特定の再検証のルールを設定してください。"
 
-#: ../../admin/http-proxy-caching.en.rst:276
+#: ../../admin/http-proxy-caching.en.rst:274
 msgid "To configure revalidation options"
 msgstr "再検証のオプションを設定するには"
 
-#: ../../admin/http-proxy-caching.en.rst:286
-msgid "Scheduling Updates to Local Cache Content"
-msgstr "ローカルキャッシュコンテンツの計画アップデート"
-
-#: ../../admin/http-proxy-caching.en.rst:305
-msgid ""
-"Enable the scheduled update option and configure optional retry settings."
-msgstr "計画アップデートオプションの有効化とオプショナルなリトライ設定の指定"
-
-#: ../../admin/http-proxy-caching.en.rst:323
-msgid "Configuring the Scheduled Update Option"
-msgstr "計画アップデートオプションの設定"
-
-#: ../../admin/http-proxy-caching.en.rst:325
-msgid "To configure the scheduled update option"
-msgstr "計画アップデートオプションを設定するためには"
-
-#: ../../admin/http-proxy-caching.en.rst:327
-msgid ""
-"Edit :file:`update.config` to enter a line in the file for each URL you "
-"want to update."
-msgstr ""
-":file:`update.config` にアップデートしたい URL を一行毎に書いてください"
-
-#: ../../admin/http-proxy-caching.en.rst:332
-msgid ":ts:cv:`proxy.config.update.enabled`"
-msgstr ":ts:cv:`proxy.config.update.enabled`"
-
-#: ../../admin/http-proxy-caching.en.rst:333
-msgid ":ts:cv:`proxy.config.update.retry_count`"
-msgstr ":ts:cv:`proxy.config.update.retry_count`"
-
-#: ../../admin/http-proxy-caching.en.rst:334
-msgid ":ts:cv:`proxy.config.update.retry_interval`"
-msgstr ":ts:cv:`proxy.config.update.retry_interval`"
-
-#: ../../admin/http-proxy-caching.en.rst:335
-msgid ":ts:cv:`proxy.config.update.concurrent_updates`"
-msgstr ":ts:cv:`proxy.config.update.concurrent_updates`"
-
-#: ../../admin/http-proxy-caching.en.rst:359
-#: ../../admin/http-proxy-caching.en.rst:390
-#: ../../admin/http-proxy-caching.en.rst:445
-#: ../../admin/http-proxy-caching.en.rst:498
-#: ../../admin/http-proxy-caching.en.rst:542
-#: ../../admin/http-proxy-caching.en.rst:568
-#: ../../admin/http-proxy-caching.en.rst:605
-#: ../../admin/http-proxy-caching.en.rst:626
-#: ../../admin/http-proxy-caching.en.rst:653
-#: ../../admin/http-proxy-caching.en.rst:669
-#: ../../admin/http-proxy-caching.en.rst:697
-#: ../../admin/http-proxy-caching.en.rst:725
-#: ../../admin/http-proxy-caching.en.rst:757
+#: ../../admin/http-proxy-caching.en.rst:303
+#: ../../admin/http-proxy-caching.en.rst:358
+#: ../../admin/http-proxy-caching.en.rst:411
+#: ../../admin/http-proxy-caching.en.rst:455
+#: ../../admin/http-proxy-caching.en.rst:481
+#: ../../admin/http-proxy-caching.en.rst:518
+#: ../../admin/http-proxy-caching.en.rst:539
+#: ../../admin/http-proxy-caching.en.rst:566
+#: ../../admin/http-proxy-caching.en.rst:582
+#: ../../admin/http-proxy-caching.en.rst:610
+#: ../../admin/http-proxy-caching.en.rst:638
+#: ../../admin/http-proxy-caching.en.rst:670
 msgid ""
 "Run the command :option:`traffic_ctl config reload` to apply the configuration "
 "changes."
 msgstr ""
 "設定変更を適用するために :option:`traffic_ctl config reload` を実行してください。"
 
-#: ../../admin/http-proxy-caching.en.rst:363
-msgid ""
-"When you enable the Force Immediate Update option, Traffic Server "
-"continually updates the URLs specified in :file:`update.config` until you "
-"disable the option. To disable the Force Immediate Update option, set :ts:"
-"cv:`proxy.config.update.force` to ``0`` (zero)."
-msgstr ""
-"強制即時アップデートオプションを有効にした場合、Traffic Server はこのオプ"
-"ションが無効化されるまで :file:`update.config` ファイルに指定された URL を"
-"アップデートし続けます。強制即時アップデートオプションを無効化するために"
-"は、 :ts:cv:`proxy.config.update.force` 変数を ``0`` (ゼロ) にしてください。"
-
-#: ../../admin/http-proxy-caching.en.rst:371
+#: ../../admin/http-proxy-caching.en.rst:284
 msgid "Pushing Content into the Cache"
 msgstr "コンテンツのキャッシュへのプッシュ"
 
-#: ../../admin/http-proxy-caching.en.rst:373
+#: ../../admin/http-proxy-caching.en.rst:286
 msgid ""
 "Traffic Server supports the HTTP ``PUSH`` method of content delivery. Using "
 "HTTP ``PUSH``, you can deliver content directly into the cache without "
@@ -344,11 +290,11 @@ msgstr ""
 "す。HTTP ``PUSH`` を使用すると、クライアントからのリクエスト無しに直接コンテ"
 "ンツをキャッシュの中に入れることができます。"
 
-#: ../../admin/http-proxy-caching.en.rst:378
+#: ../../admin/http-proxy-caching.en.rst:291
 msgid "Configuring Traffic Server for PUSH Requests"
 msgstr "PUSH リクエスト用の Traffic Server の設定"
 
-#: ../../admin/http-proxy-caching.en.rst:380
+#: ../../admin/http-proxy-caching.en.rst:293
 msgid ""
 "Before you can deliver content into your cache using HTTP ``PUSH``, you "
 "must configure Traffic Server to accept ``PUSH`` requests."
@@ -356,11 +302,11 @@ msgstr ""
 "HTTP ``PUSH`` を使用してコンテンツをキャッシュの中に入れる前に、Traffic "
 "Server が ``PUSH`` リクエストを受け入れるように設定する必要があります。"
 
-#: ../../admin/http-proxy-caching.en.rst:393
+#: ../../admin/http-proxy-caching.en.rst:306
 msgid "Understanding HTTP PUSH"
 msgstr "HTTP PUSH の理解"
 
-#: ../../admin/http-proxy-caching.en.rst:395
+#: ../../admin/http-proxy-caching.en.rst:308
 msgid ""
 "``PUSH`` uses the HTTP 1.1 message format. The body of a ``PUSH`` request "
 "contains the response header and response body that you want to place in "
@@ -370,15 +316,15 @@ msgstr ""
 "トのボディはキャッシュに入れたいレスポンスヘッダーとレスポンスボディを含みま"
 "す。下記は ``PUSH`` リクエストの例です。"
 
-#: ../../admin/http-proxy-caching.en.rst:418
+#: ../../admin/http-proxy-caching.en.rst:331
 msgid "Tools that will help manage pushing"
 msgstr "プッシュを手助けするツール"
 
-#: ../../admin/http-proxy-caching.en.rst:425
+#: ../../admin/http-proxy-caching.en.rst:338
 msgid "Pinning Content in the Cache"
 msgstr "コンテンツのキャッシュへのピン留め"
 
-#: ../../admin/http-proxy-caching.en.rst:440
+#: ../../admin/http-proxy-caching.en.rst:353
 msgid ""
 "Add a rule in :file:`cache.config` for each URL you want Traffic Server to "
 "pin in the cache. For example::"
@@ -386,7 +332,7 @@ msgstr ""
 "Traffic Server にキャッシュに留めさせたい URL 毎に :file:`cache.config` に"
 "ルールを追加してください。例:"
 
-#: ../../admin/http-proxy-caching.en.rst:450
+#: ../../admin/http-proxy-caching.en.rst:363
 msgid ""
 "When Traffic Server receives a request for a web object that is not in the "
 "cache, it retrieves the object from the origin server and serves it to the "
@@ -398,11 +344,11 @@ msgstr ""
 "す。その際に、Traffic Server は将来のリクエストに備えてキャッシュに保存する"
 "前に、オブジェクトがキャッシュ可能かどうか確認します。"
 
-#: ../../admin/http-proxy-caching.en.rst:448
+#: ../../admin/http-proxy-caching.en.rst:361
 msgid "Caching HTTP Objects"
 msgstr "HTTP オブジェクトのキャッシュ"
 
-#: ../../admin/http-proxy-caching.en.rst:455
+#: ../../admin/http-proxy-caching.en.rst:368
 msgid ""
 "Traffic Server responds to caching directives from clients and origin "
 "servers, as well as directives you specify through configuration options "
@@ -412,11 +358,11 @@ msgstr ""
 "に、クライアントやオリジンサーバーからのキャッシュのディレクティブに反応しま"
 "す。"
 
-#: ../../admin/http-proxy-caching.en.rst:460
+#: ../../admin/http-proxy-caching.en.rst:373
 msgid "Client Directives"
 msgstr "クライアントディレクティブ"
 
-#: ../../admin/http-proxy-caching.en.rst:476
+#: ../../admin/http-proxy-caching.en.rst:389
 msgid ""
 "By default, Traffic Server caches objects served in response to requests "
 "that contain cookies (unless the object is text). You can configure Traffic "
@@ -431,11 +377,11 @@ msgstr ""
 "クッキーを持った画像だけをキャッシュする。より詳しくは `クッキーオブジェクト"
 "のキャッシュ`_ を参照してください。"
 
-#: ../../admin/http-proxy-caching.en.rst:483
+#: ../../admin/http-proxy-caching.en.rst:396
 msgid "Configuring Traffic Server to Ignore Client no-cache Headers"
 msgstr "クライアントの no-cache ヘッダーを無視する Traffic Server の設定"
 
-#: ../../admin/http-proxy-caching.en.rst:485
+#: ../../admin/http-proxy-caching.en.rst:398
 msgid ""
 "By default, Traffic Server strictly observes client ``Cache-Control: no-"
 "cache`` directives. If a requested object contains a ``no-cache`` header, "
@@ -452,11 +398,11 @@ msgstr ""
 "の場合、クライアントからのリクエストの ``no-cache`` ヘッダーを無視して、"
 "キャッシュからオブジェクトを配信します。"
 
-#: ../../admin/http-proxy-caching.en.rst:501
+#: ../../admin/http-proxy-caching.en.rst:414
 msgid "Origin Server Directives"
 msgstr "オリジンサーバーディレクティブ"
 
-#: ../../admin/http-proxy-caching.en.rst:512
+#: ../../admin/http-proxy-caching.en.rst:425
 msgid ""
 "To configure Traffic Server to ignore ``WWW-Authenticate`` headers, refer "
 "to `Configuring Traffic Server to Ignore WWW-Authenticate Headers`_."
@@ -465,7 +411,7 @@ msgstr ""
 "は `WWW-Authenticate ヘッダーを無視する Traffic Server の設定`_ を参照してく"
 "ださい。"
 
-#: ../../admin/http-proxy-caching.en.rst:519
+#: ../../admin/http-proxy-caching.en.rst:432
 msgid ""
 "To configure Traffic Server to ignore ``no-cache`` headers, refer to "
 "`Configuring Traffic Server to Ignore Server no-cache Headers`_."
@@ -474,11 +420,11 @@ msgstr ""
 "バーの no-cache ヘッダーを無視する Traffic Server の設定`_ を参照してくださ"
 "い。"
 
-#: ../../admin/http-proxy-caching.en.rst:525
+#: ../../admin/http-proxy-caching.en.rst:438
 msgid "Configuring Traffic Server to Ignore Server no-cache Headers"
 msgstr "サーバーの no-cache ヘッダーを無視する Traffic Server の設定"
 
-#: ../../admin/http-proxy-caching.en.rst:527
+#: ../../admin/http-proxy-caching.en.rst:440
 msgid ""
 "By default, Traffic Server strictly observes ``Cache-Control: no-cache`` "
 "directives. A response from an origin server with a ``no-cache`` header is "
@@ -495,11 +441,11 @@ msgstr ""
 "``no-cache`` ディレクティブを守るデフォルトの振る舞いはほとんどの場合に適切"
 "です。"
 
-#: ../../admin/http-proxy-caching.en.rst:545
+#: ../../admin/http-proxy-caching.en.rst:458
 msgid "Configuring Traffic Server to Ignore WWW-Authenticate Headers"
 msgstr "WWW-Authenticate ヘッダーを無視する Traffic Server の設定"
 
-#: ../../admin/http-proxy-caching.en.rst:547
+#: ../../admin/http-proxy-caching.en.rst:460
 msgid ""
 "By default, Traffic Server does not cache objects that contain ``WWW-"
 "Authenticate`` response headers. The ``WWW-Authenticate`` header contains "
@@ -511,7 +457,7 @@ msgstr ""
 "ントがオリジンサーバーへのチャレンジレスポンス認証の際に使う認証パラメーター"
 "を含んでいます。"
 
-#: ../../admin/http-proxy-caching.en.rst:552
+#: ../../admin/http-proxy-caching.en.rst:465
 msgid ""
 "When you configure Traffic Server to ignore origin server ``WWW-"
 "Authenticate`` headers, all objects with ``WWW-Authenticate`` headers are "
@@ -528,11 +474,11 @@ msgstr ""
 "Traffic Server を設定するのは HTTP 1.1 に精通してる場合にだけにしてくださ"
 "い。"
 
-#: ../../admin/http-proxy-caching.en.rst:571
+#: ../../admin/http-proxy-caching.en.rst:484
 msgid "Configuration Directives"
 msgstr "設定ディレクティブ"
 
-#: ../../admin/http-proxy-caching.en.rst:573
+#: ../../admin/http-proxy-caching.en.rst:486
 msgid ""
 "In addition to client and origin server directives, Traffic Server responds "
 "to directives you specify through configuration options and files."
@@ -540,23 +486,23 @@ msgstr ""
 "クライアントやオリジンサーバーのディレクティブに加えて、Traffic Server は設"
 "定オプションやファイルを通じて設定したディレクティブにも反応します。"
 
-#: ../../admin/http-proxy-caching.en.rst:577
+#: ../../admin/http-proxy-caching.en.rst:490
 msgid "You can configure Traffic Server to do the following:"
 msgstr "次のように Traffic Server を設定することができます。"
 
-#: ../../admin/http-proxy-caching.en.rst:591
+#: ../../admin/http-proxy-caching.en.rst:504
 msgid "Disabling HTTP Object Caching"
 msgstr "HTTP オブジェクトキャッシュの無効化"
 
-#: ../../admin/http-proxy-caching.en.rst:608
+#: ../../admin/http-proxy-caching.en.rst:521
 msgid "Caching Dynamic Content"
 msgstr "動的コンテンツのキャッシュ"
 
-#: ../../admin/http-proxy-caching.en.rst:629
+#: ../../admin/http-proxy-caching.en.rst:542
 msgid "Caching Cookied Objects"
 msgstr "クッキーオブジェクトのキャッシュ"
 
-#: ../../admin/http-proxy-caching.en.rst:633
+#: ../../admin/http-proxy-caching.en.rst:546
 msgid ""
 "By default, Traffic Server caches objects served in response to requests "
 "that contain cookies. This is true for all types of objects except for "
@@ -573,23 +519,23 @@ msgstr ""
 "です。テキストではないオブジェクトの場合、個人的なヘッダーは配信されたり使わ"
 "れたりしません。"
 
-#: ../../admin/http-proxy-caching.en.rst:640
+#: ../../admin/http-proxy-caching.en.rst:553
 msgid "You can reconfigure Traffic Server to:"
 msgstr "次のように Traffic Server を設定し直すことができます。"
 
-#: ../../admin/http-proxy-caching.en.rst:644
+#: ../../admin/http-proxy-caching.en.rst:557
 msgid "Cache cookied content that is of image type only."
 msgstr "クッキーを含む画像のみキャッシュする"
 
-#: ../../admin/http-proxy-caching.en.rst:646
+#: ../../admin/http-proxy-caching.en.rst:559
 msgid "Cache all cookied content regardless of type."
 msgstr "タイプを考慮せずクッキーを含む全てのコンテンツをキャッシュする"
 
-#: ../../admin/http-proxy-caching.en.rst:656
+#: ../../admin/http-proxy-caching.en.rst:569
 msgid "Forcing Object Caching"
 msgstr "オブジェクトの強制キャッシュ"
 
-#: ../../admin/http-proxy-caching.en.rst:658
+#: ../../admin/http-proxy-caching.en.rst:571
 msgid ""
 "You can force Traffic Server to cache specific URLs (including dynamic "
 "URLs) for a specified duration, regardless of ``Cache-Control`` response "
@@ -599,7 +545,7 @@ msgstr ""
 "的 URL も含む) をキャッシュすることを Traffic Server に強制することができま"
 "す。"
 
-#: ../../admin/http-proxy-caching.en.rst:664
+#: ../../admin/http-proxy-caching.en.rst:577
 msgid ""
 "Add a rule for each URL you want Traffic Server to pin to the cache :file:"
 "`cache.config`::"
@@ -607,31 +553,31 @@ msgstr ""
 "Traffic Server にキャッシュに留めさせたい URL 毎に :file:`cache.config` に"
 "ルールを追加してください。"
 
-#: ../../admin/http-proxy-caching.en.rst:672
+#: ../../admin/http-proxy-caching.en.rst:585
 msgid "Caching HTTP Alternates"
 msgstr "HTTP オブジェクトの代替のキャッシュ"
 
-#: ../../admin/http-proxy-caching.en.rst:686
+#: ../../admin/http-proxy-caching.en.rst:599
 msgid "Configuring How Traffic Server Caches Alternates"
 msgstr "Traffic Server がキャッシュする代替の設定"
 
-#: ../../admin/http-proxy-caching.en.rst:692
+#: ../../admin/http-proxy-caching.en.rst:605
 msgid ":ts:cv:`proxy.config.http.cache.enable_default_vary_headers`"
 msgstr ":ts:cv:`proxy.config.http.cache.enable_default_vary_headers`"
 
-#: ../../admin/http-proxy-caching.en.rst:693
+#: ../../admin/http-proxy-caching.en.rst:606
 msgid ":ts:cv:`proxy.config.http.cache.vary_default_text`"
 msgstr ":ts:cv:`proxy.config.http.cache.vary_default_text`"
 
-#: ../../admin/http-proxy-caching.en.rst:694
+#: ../../admin/http-proxy-caching.en.rst:607
 msgid ":ts:cv:`proxy.config.http.cache.vary_default_images`"
 msgstr ":ts:cv:`proxy.config.http.cache.vary_default_images`"
 
-#: ../../admin/http-proxy-caching.en.rst:695
+#: ../../admin/http-proxy-caching.en.rst:608
 msgid ":ts:cv:`proxy.config.http.cache.vary_default_other`"
 msgstr ":ts:cv:`proxy.config.http.cache.vary_default_other`"
 
-#: ../../admin/http-proxy-caching.en.rst:701
+#: ../../admin/http-proxy-caching.en.rst:614
 msgid ""
 "If you specify ``Cookie`` as the header field on which to vary in the above "
 "variables, make sure that the variable :ts:cv:`proxy.config.http.cache."
@@ -641,11 +587,11 @@ msgstr ""
 "合、 :ts:cv:`proxy.config.http.cache.cache_responses_to_cookies` が適切に"
 "セットされていることを確認して下さい。"
 
-#: ../../admin/http-proxy-caching.en.rst:707
+#: ../../admin/http-proxy-caching.en.rst:620
 msgid "Limiting the Number of Alternates for an Object"
 msgstr "オブジェクトの代替数の制限"
 
-#: ../../admin/http-proxy-caching.en.rst:709
+#: ../../admin/http-proxy-caching.en.rst:622
 msgid ""
 "You can limit the number of alternates Traffic Server can cache per object "
 "(the default is 3)."
@@ -653,7 +599,7 @@ msgstr ""
 "Traffic Server がオブジェクト毎にキャッシュする代替数を制限することができま"
 "す。(デフォルトは 3 です)"
 
-#: ../../admin/http-proxy-caching.en.rst:714
+#: ../../admin/http-proxy-caching.en.rst:627
 msgid ""
 "Large numbers of alternates can affect Traffic Server cache performance "
 "because all alternates have the same URL. Although Traffic Server can look "
@@ -665,15 +611,15 @@ msgstr ""
 "ス中の URL をとても高速に検索しますが、キャッシュストアの中に使用可能な代替"
 "があるかはシーケンシャルにスキャンしなければなりません。"
 
-#: ../../admin/http-proxy-caching.en.rst:730
+#: ../../admin/http-proxy-caching.en.rst:643
 msgid "Using Congestion Control"
 msgstr "輻輳制御"
 
-#: ../../admin/http-proxy-caching.en.rst:762
+#: ../../admin/http-proxy-caching.en.rst:675
 msgid "Using Transaction Buffering Control"
 msgstr "トランザクションバッファリング制御"
 
-#: ../../admin/http-proxy-caching.en.rst:773
+#: ../../admin/http-proxy-caching.en.rst:686
 msgid ""
 "This problem can be ameloriated by controlling the amount of buffer space "
 "used by a transaction. A high water and low water mark are set in terms of "
@@ -690,7 +636,7 @@ msgstr ""
 "す。使われているバッファースペースが low water マークを下回り、外部のデータ "
 "I/O が再開されるまで内側のオペレーションはフルスピードで進み続けます。"
 
-#: ../../admin/http-proxy-caching.en.rst:781
+#: ../../admin/http-proxy-caching.en.rst:694
 msgid ""
 "Although this is intended primarily to limit the memory usage of Traffic "
 "Server it can also serve as a crude rate limiter by setting a buffer limit "
@@ -704,7 +650,7 @@ msgstr ""
 "とによります。これはオリジンサーバーへのコネクションがクライアント側のコネク"
 "ションスピードにより大まかに制限されることをもたします。"
 
-#: ../../admin/http-proxy-caching.en.rst:787
+#: ../../admin/http-proxy-caching.en.rst:700
 msgid ""
 "Traffic Server does network I/O in large chunks (32K or so) and therefore "
 "the granularity of transaction buffering control is limited to a similar "
@@ -714,7 +660,7 @@ msgstr ""
 "よって、トランザクションバッファリングコントロールの粒度は同じような値に制限"
 "されています。"
 
-#: ../../admin/http-proxy-caching.en.rst:790
+#: ../../admin/http-proxy-caching.en.rst:703
 msgid ""
 "The buffer size calculations include all elements in the transaction, "
 "including any buffers associated with :ref:`transform plugins <transform-"
@@ -724,7 +670,7 @@ msgstr ""
 "ref:`transform plugins <transform-plugin>` に紐づけられているどんなバッ"
 "ファーも含みます。"
 
-#: ../../admin/http-proxy-caching.en.rst:793
+#: ../../admin/http-proxy-caching.en.rst:706
 msgid ""
 "Transaction buffering control can be enabled globally by using "
 "configuration variables or by :c:func:`TSHttpTxnConfigIntSet` in a plugin."
@@ -733,39 +679,39 @@ msgstr ""
 "ることもできます。また :c:func:`TSHttpTxnConfigIntSet` を使用してプラグイン"
 "の中で有効化することもできます。"
 
-#: ../../admin/http-proxy-caching.en.rst:797
+#: ../../admin/http-proxy-caching.en.rst:710
 msgid "Value"
 msgstr "値"
 
-#: ../../admin/http-proxy-caching.en.rst:797
+#: ../../admin/http-proxy-caching.en.rst:710
 msgid "Variable"
 msgstr "変数"
 
-#: ../../admin/http-proxy-caching.en.rst:799
+#: ../../admin/http-proxy-caching.en.rst:712
 msgid "Enable buffering"
 msgstr "バッファーの有効化"
 
-#: ../../admin/http-proxy-caching.en.rst:799
+#: ../../admin/http-proxy-caching.en.rst:712
 msgid ":ts:cv:`proxy.config.http.flow_control.enabled`"
 msgstr ":ts:cv:`proxy.config.http.flow_control.enabled`"
 
-#: ../../admin/http-proxy-caching.en.rst:800
+#: ../../admin/http-proxy-caching.en.rst:713
 msgid "Set high water"
 msgstr "high water の設定"
 
-#: ../../admin/http-proxy-caching.en.rst:800
+#: ../../admin/http-proxy-caching.en.rst:713
 msgid ":ts:cv:`proxy.config.http.flow_control.high_water`"
 msgstr ":ts:cv:`proxy.config.http.flow_control.high_water`"
 
-#: ../../admin/http-proxy-caching.en.rst:801
+#: ../../admin/http-proxy-caching.en.rst:714
 msgid "Set low water"
 msgstr "low water の設定"
 
-#: ../../admin/http-proxy-caching.en.rst:801
+#: ../../admin/http-proxy-caching.en.rst:714
 msgid ":ts:cv:`proxy.config.http.flow_control.low_water`"
 msgstr ":ts:cv:`proxy.config.http.flow_control.low_water`"
 
-#: ../../admin/http-proxy-caching.en.rst:804
+#: ../../admin/http-proxy-caching.en.rst:717
 msgid ""
 "Be careful to always have the low water mark equal or less than the high "
 "water mark. If you set only one, the other will be set to the same value."
@@ -773,11 +719,11 @@ msgstr ""
 "low water マークは high water マークと常に同じか少ないことに注意してくださ"
 "い。一方だけを設定すると、もう一方は同じ値に設定されます。"
 
-#: ../../admin/http-proxy-caching.en.rst:813
+#: ../../admin/http-proxy-caching.en.rst:726
 msgid "Reducing Origin Server Requests (Avoiding the Thundering Herd)"
 msgstr "オリジンサーバーへのリクエストの削減(Thundering Herd 問題を避ける)"
 
-#: ../../admin/http-proxy-caching.en.rst:815
+#: ../../admin/http-proxy-caching.en.rst:728
 msgid ""
 "When an object can not be served from cache, the request will be proxied to "
 "the origin server. For a popular object, this can result in many near "
@@ -791,23 +737,23 @@ msgstr ""
 "ソースを使うかもしれません。Traffic Server にはこのシナリオを避けられるいく"
 "つかの機能があります。"
 
-#: ../../admin/http-proxy-caching.en.rst:822
+#: ../../admin/http-proxy-caching.en.rst:735
 msgid "Read While Writer"
 msgstr "Read While Writer"
 
-#: ../../admin/http-proxy-caching.en.rst:849
+#: ../../admin/http-proxy-caching.en.rst:762
 msgid "All four configurations are required, for the following reasons:"
 msgstr "次の理由により、４つ全ての設定が必要です。"
 
-#: ../../admin/http-proxy-caching.en.rst:875
+#: ../../admin/http-proxy-caching.en.rst:788
 msgid "Fuzzy Revalidation"
 msgstr "Fuzzy Revalidation"
 
-#: ../../admin/http-proxy-caching.en.rst:929
+#: ../../admin/http-proxy-caching.en.rst:842
 msgid "Open Read Retry Timeout"
 msgstr "Open Read Retry Timeout"
 
-#: ../../admin/http-proxy-caching.en.rst:958
+#: ../../admin/http-proxy-caching.en.rst:871
 msgid ""
 "Since ATS now supports setting these settings per-request or remap rule, "
 "you can configure this to be suitable for your setup much more easily."
@@ -1019,118 +965,37 @@ msgstr ""
 msgid "Never revalidate HTTP objects in the cache with the origin server."
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:268
+#: ../../admin/http-proxy-caching.en.rst:269
 msgid ""
 "*Traffic Server considers all HTTP objects without* ``Expires`` *or* "
 "``Cache-control`` *headers to be stale:*"
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:270
+#: ../../admin/http-proxy-caching.en.rst:269
 msgid ""
 "Revalidate all HTTP objects without ``Expires`` or ``Cache-Control`` "
 "headers."
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:278
+#: ../../admin/http-proxy-caching.en.rst:276
 msgid ""
 "Edit the variable :ts:cv:`proxy.config.http.cache.when_to_revalidate` in :"
 "file:`records.config`."
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:288
-msgid ""
-"To further increase performance and to ensure that HTTP objects are fresh "
-"in the cache, you can use the *Scheduled Update* option. This configures "
-"Traffic Server to load specific objects into the cache at scheduled times, "
-"regardless of whether there is an active client request for those objects "
-"at the scheduled time. You might find this especially beneficial in a "
-"reverse proxy setup, where you can preload content you anticipate will be "
-"in demand."
-msgstr ""
-
 #: ../../admin/http-proxy-caching.en.rst:296
-msgid "To use the scheduled update option, you must:"
-msgstr ""
-
-#: ../../admin/http-proxy-caching.en.rst:298
-msgid ""
-"Specify the list of URLs that contain the objects you want to schedule for "
-"update."
-msgstr ""
-
-#: ../../admin/http-proxy-caching.en.rst:301
-msgid "Specify the time the update should take place."
-msgstr ""
-
-#: ../../admin/http-proxy-caching.en.rst:303
-msgid "Specify the recursion depth for the URL."
-msgstr ""
-
-#: ../../admin/http-proxy-caching.en.rst:308
-msgid ""
-"Traffic Server uses the information you provide to determine URLs for which "
-"it is responsible. For each URL, Traffic Server derives all recursive URLs "
-"(if applicable) and then generates a unique URL list. Using this list, "
-"Traffic Server initiates an HTTP ``GET`` for each unaccessed URL. It "
-"ensures that it remains within the user-defined limits for HTTP concurrency "
-"at any given time. The system logs the completion of all HTTP ``GET`` "
-"operations so you can monitor the performance of this feature."
-msgstr ""
-
-#: ../../admin/http-proxy-caching.en.rst:317
-msgid ""
-"Traffic Server also provides a *Force Immediate Update* option that enables "
-"you to update URLs immediately without waiting for the specified update "
-"time to occur. You can use this option to test your scheduled update "
-"configuration. Refer to `Forcing an Immediate Update`_."
-msgstr ""
-
-#: ../../admin/http-proxy-caching.en.rst:330
-msgid "Adjust the following variables in :file:`records.config`:"
-msgstr ""
-
-#: ../../admin/http-proxy-caching.en.rst:340
-msgid "Forcing Immediate Updates"
-msgstr ""
-
-#: ../../admin/http-proxy-caching.en.rst:342
-msgid ""
-"Traffic Server provides a *Force Immediate Update* option that enables you "
-"to immediately verify the URLs listed in :file:`update.config`. This option "
-"disregards the offset hour and interval set in :file:`update.config` and "
-"immediately updates the URLs listed."
-msgstr ""
-
-#: ../../admin/http-proxy-caching.en.rst:347
-msgid "To configure the Force Immediate Update option:"
-msgstr ""
-
-#: ../../admin/http-proxy-caching.en.rst:349
-msgid ""
-"Enable :ts:cv:`proxy.config.update.enabled` in :file:`records.config`::"
-msgstr ""
-
-#: ../../admin/http-proxy-caching.en.rst:353
-msgid "Enable :ts:cv:`proxy.config.update.force` in :file:`records.config`::"
-msgstr ""
-
-#: ../../admin/http-proxy-caching.en.rst:357
-msgid "While enabled, this overrides all normal scheduling intervals."
-msgstr ""
-
-#: ../../admin/http-proxy-caching.en.rst:383
 msgid ""
 "Edit :file:`ip_allow.config` to allow ``PUSH`` from the appropriate "
 "addresses."
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:385
+#: ../../admin/http-proxy-caching.en.rst:298
 msgid ""
 "Update :ts:cv:`proxy.config.http.push_method_enabled` in :file:`records."
 "config`::"
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:412
+#: ../../admin/http-proxy-caching.en.rst:325
 msgid ""
 "Your ``PUSH`` headers must include ``Content-length``, the value for which "
 "must include both headers and body byte counts. The value is not optional, "
@@ -1138,14 +1003,14 @@ msgid ""
 "behavior."
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:420
+#: ../../admin/http-proxy-caching.en.rst:333
 msgid ""
 "Traffic Server comes with a Perl script for pushing, :program:`tspush`, "
 "which can assist with understanding how to write scripts for pushing "
 "content yourself."
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:427
+#: ../../admin/http-proxy-caching.en.rst:340
 msgid ""
 "The *Cache Pinning Option* configures Traffic Server to keep certain HTTP "
 "objects in the cache for a specified time. You can use this option to "
@@ -1155,117 +1020,117 @@ msgid ""
 "it is indeed cacheable."
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:434
+#: ../../admin/http-proxy-caching.en.rst:347
 msgid "To set cache pinning rules:"
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:436
+#: ../../admin/http-proxy-caching.en.rst:349
 msgid ""
 "Enable :ts:cv:`proxy.config.cache.permit.pinning` in :file:`records."
 "config`::"
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:462
+#: ../../admin/http-proxy-caching.en.rst:375
 msgid ""
 "By default, Traffic Server does not cache objects with the following "
 "request headers:"
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:465
+#: ../../admin/http-proxy-caching.en.rst:378
 msgid "``Authorization``"
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:467
-#: ../../admin/http-proxy-caching.en.rst:506
+#: ../../admin/http-proxy-caching.en.rst:380
+#: ../../admin/http-proxy-caching.en.rst:419
 msgid "``Cache-Control: no-store``"
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:469
-#: ../../admin/http-proxy-caching.en.rst:517
+#: ../../admin/http-proxy-caching.en.rst:382
+#: ../../admin/http-proxy-caching.en.rst:430
 msgid "``Cache-Control: no-cache``"
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:471
+#: ../../admin/http-proxy-caching.en.rst:384
 msgid ""
 "To configure Traffic Server to ignore this request header, refer to "
 "`Configuring Traffic Server to Ignore Client no-cache Headers`_."
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:474
+#: ../../admin/http-proxy-caching.en.rst:387
 msgid "``Cookie`` (for text objects)"
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:493
+#: ../../admin/http-proxy-caching.en.rst:406
 msgid ""
 "Edit :ts:cv:`proxy.config.http.cache.ignore_client_no_cache` in :file:"
 "`records.config`. ::"
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:503
+#: ../../admin/http-proxy-caching.en.rst:416
 msgid ""
 "By default, Traffic Server does not cache objects with the following "
 "response headers:"
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:508
+#: ../../admin/http-proxy-caching.en.rst:421
 msgid "``Cache-Control: private``"
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:510
+#: ../../admin/http-proxy-caching.en.rst:423
 msgid "``WWW-Authenticate``"
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:515
+#: ../../admin/http-proxy-caching.en.rst:428
 msgid "``Set-Cookie``"
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:522
+#: ../../admin/http-proxy-caching.en.rst:435
 msgid "``Expires`` header with a value of 0 (zero) or a past date."
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:535
+#: ../../admin/http-proxy-caching.en.rst:448
 msgid "To configure Traffic Server to ignore server ``no-cache`` headers:"
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:537
+#: ../../admin/http-proxy-caching.en.rst:450
 msgid ""
 "Edit :ts:cv:`proxy.config.http.cache.ignore_server_no_cache` in :file:"
 "`records.config`. ::"
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:560
+#: ../../admin/http-proxy-caching.en.rst:473
 msgid ""
 "To configure Traffic Server to ignore server ``WWW-Authenticate`` headers:"
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:563
+#: ../../admin/http-proxy-caching.en.rst:476
 msgid ""
 "Edit :ts:cv:`proxy.config.http.cache.ignore_authentication` in :file:"
 "`records.config`. ::"
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:579
+#: ../../admin/http-proxy-caching.en.rst:492
 msgid "Not cache any HTTP objects. Refer to `Disabling HTTP Object Caching`_."
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:581
+#: ../../admin/http-proxy-caching.en.rst:494
 msgid ""
 "Cache *dynamic content*. That is, objects with URLs that end in ``.asp`` or "
 "contain a question mark (``?``), semicolon (``;``), or ``cgi``. For more "
 "information, refer to `Caching Dynamic Content`_."
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:585
+#: ../../admin/http-proxy-caching.en.rst:498
 msgid ""
 "Cache objects served in response to the ``Cookie:`` header. Refer to "
 "`Caching Cookied Objects`_."
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:588
+#: ../../admin/http-proxy-caching.en.rst:501
 msgid "Observe ``never-cache`` rules in :file:`cache.config`."
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:593
+#: ../../admin/http-proxy-caching.en.rst:506
 msgid ""
 "By default, Traffic Server caches all HTTP objects except those for which "
 "you have set ``never-cache`` as :ref:`action rules <cache-config-format-"
@@ -1274,17 +1139,17 @@ msgid ""
 "cached, as detailed below."
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:599
+#: ../../admin/http-proxy-caching.en.rst:512
 msgid "To disable HTTP object caching manually:"
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:601
+#: ../../admin/http-proxy-caching.en.rst:514
 msgid ""
 "Set :ts:cv:`proxy.config.http.enabled` to ``0`` in :file:`records."
 "config`. ::"
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:610
+#: ../../admin/http-proxy-caching.en.rst:523
 msgid ""
 "A URL is considered dynamic if it ends in ``.asp`` or contains a question "
 "mark (``?``), a semicolon (``;``), or ``cgi``. By default, Traffic Server "
@@ -1294,37 +1159,37 @@ msgid ""
 "headers."
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:617
+#: ../../admin/http-proxy-caching.en.rst:530
 msgid ""
 "To configure Traffic Server's cache behaviour in regard to dynamic content:"
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:620
+#: ../../admin/http-proxy-caching.en.rst:533
 msgid ""
 "Edit :ts:cv:`proxy.config.http.cache.cache_urls_that_look_dynamic` in :file:"
 "`records.config`. To disable caching, set the variable to ``0``, and to "
 "explicitly permit caching use ``1``. ::"
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:642
+#: ../../admin/http-proxy-caching.en.rst:555
 msgid "Not cache cookied content of any type."
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:648
+#: ../../admin/http-proxy-caching.en.rst:561
 msgid "To configure how Traffic Server caches cookied content:"
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:650
+#: ../../admin/http-proxy-caching.en.rst:563
 msgid ""
 "Edit :ts:cv:`proxy.config.http.cache.cache_responses_to_cookies` in :file:"
 "`records.config`."
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:662
+#: ../../admin/http-proxy-caching.en.rst:575
 msgid "To force document caching:"
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:674
+#: ../../admin/http-proxy-caching.en.rst:587
 msgid ""
 "Some origin servers answer requests to the same URL with a variety of "
 "objects. The content of these objects can vary widely, according to whether "
@@ -1338,25 +1203,21 @@ msgid ""
 "of an object allowed in the cache."
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:688
-msgid "To configure how Traffic Server caches alternates::"
-msgstr ""
-
-#: ../../admin/http-proxy-caching.en.rst:690
+#: ../../admin/http-proxy-caching.en.rst:603
 msgid "Edit the following variables in :file:`records.config`:"
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:719
+#: ../../admin/http-proxy-caching.en.rst:632
 msgid "To alter the limit on the number of alternates:"
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:721
+#: ../../admin/http-proxy-caching.en.rst:634
 msgid ""
 "Edit :ts:cv:`proxy.config.cache.limits.http.max_alts` in :file:`records."
 "config`. ::"
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:732
+#: ../../admin/http-proxy-caching.en.rst:645
 msgid ""
 "The *Congestion Control* option enables you to configure Traffic Server to "
 "stop forwarding HTTP requests to origin servers when they become congested. "
@@ -1364,42 +1225,42 @@ msgid ""
 "origin server later."
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:737
+#: ../../admin/http-proxy-caching.en.rst:650
 msgid "To enable this option:"
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:739
+#: ../../admin/http-proxy-caching.en.rst:652
 msgid ""
 "Set :ts:cv:`proxy.config.http.congestion_control.enabled` to ``1`` in :file:"
 "`records.config`. ::"
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:744
+#: ../../admin/http-proxy-caching.en.rst:657
 msgid "Create rules in :file:`congestion.config` to specify:"
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:746
+#: ../../admin/http-proxy-caching.en.rst:659
 msgid "Which origin servers Traffic Server tracks for congestion."
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:748
+#: ../../admin/http-proxy-caching.en.rst:661
 msgid ""
 "The timeouts Traffic Server uses, depending on whether a server is "
 "congested."
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:751
+#: ../../admin/http-proxy-caching.en.rst:664
 msgid ""
 "The page Traffic Server sends to the client when a server becomes congested."
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:754
+#: ../../admin/http-proxy-caching.en.rst:667
 msgid ""
 "Whether Traffic Server tracks the origin servers by IP address or by "
 "hostname."
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:764
+#: ../../admin/http-proxy-caching.en.rst:677
 msgid ""
 "By default, I/O operations are run at full speed, as fast as either Traffic "
 "Server, the network, or the cache can support. This can be problematic for "
@@ -1412,29 +1273,29 @@ msgid ""
 "TS-1496>`_."
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:797
+#: ../../admin/http-proxy-caching.en.rst:710
 msgid ":c:func:`TSHttpTxnConfigIntSet` key"
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:799
+#: ../../admin/http-proxy-caching.en.rst:712
 msgid ":c:data:`TS_CONFIG_HTTP_FLOW_CONTROL_ENABLED`"
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:800
+#: ../../admin/http-proxy-caching.en.rst:713
 msgid ":c:data:`TS_CONFIG_HTTP_FLOW_CONTROL_HIGH_WATER`"
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:801
+#: ../../admin/http-proxy-caching.en.rst:714
 msgid ":c:data:`TS_CONFIG_HTTP_FLOW_CONTROL_LOW_WATER`"
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:807
+#: ../../admin/http-proxy-caching.en.rst:720
 msgid ""
 "If using :c:func:`TSHttpTxnConfigIntSet`, it must be called no later than :"
 "c:data:`TS_HTTP_READ_RESPONSE_HDR_HOOK`."
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:824
+#: ../../admin/http-proxy-caching.en.rst:737
 msgid ""
 "When Traffic Server goes to fetch something from origin, and upon receiving "
 "the response, any number of clients can be allowed to start serving the "
@@ -1442,7 +1303,7 @@ msgid ""
 "the object has been received."
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:829
+#: ../../admin/http-proxy-caching.en.rst:742
 msgid ""
 "While some other HTTP proxies permit clients to begin reading the response "
 "immediately upon the proxy receiving data from the origin server, ATS does "
@@ -1452,7 +1313,7 @@ msgid ""
 "knowing whether a response is going to be cacheable."
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:836
+#: ../../admin/http-proxy-caching.en.rst:749
 msgid ""
 "As non-cacheable responses from an origin server are generally due to that "
 "content being unique to different client requests, ATS will not enable read-"
@@ -1460,19 +1321,19 @@ msgid ""
 "cache the object."
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:841
+#: ../../admin/http-proxy-caching.en.rst:754
 msgid ""
 "The following settings must be made in :file:`records.config` to enable "
 "read-while-writer functionality in ATS::"
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:851
+#: ../../admin/http-proxy-caching.en.rst:764
 msgid ""
 ":ts:cv:`proxy.config.cache.enable_read_while_writer` being set to ``1`` "
 "turns the feature on, as it is off (``0``) by default."
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:854
+#: ../../admin/http-proxy-caching.en.rst:767
 msgid ""
 "The background fill feature (both :ts:cv:`proxy.config.http."
 "background_fill_active_timeout` and :ts:cv:`proxy.config.http."
@@ -1483,32 +1344,32 @@ msgid ""
 "writer."
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:862
+#: ../../admin/http-proxy-caching.en.rst:775
 msgid ""
 "As such, you should set the background fill timeouts and threshold to zero; "
 "this assures they never time out and are always allowed to kick in."
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:865
+#: ../../admin/http-proxy-caching.en.rst:778
 msgid ""
 "The :ts:cv:`proxy.config.cache.max_doc_size` should be unlimited (set to "
 "0), since the object size may be unknown, and going over this limit would "
 "cause a disconnect on the objects being served."
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:869
+#: ../../admin/http-proxy-caching.en.rst:782
 msgid ""
 "Once these are enabled, you have something that is very close, but not "
 "quite the same, to Squid's Collapsed Forwarding."
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:877
+#: ../../admin/http-proxy-caching.en.rst:790
 msgid ""
 "Traffic Server can be set to attempt to revalidate an object before it "
 "becomes stale in cache. :file:`records.config` contains the settings::"
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:884
+#: ../../admin/http-proxy-caching.en.rst:797
 msgid ""
 "For every request for an object that occurs :ts:cv:`proxy.config.http.cache."
 "fuzz.time` before (in the example above, 240 seconds) the object is set to "
@@ -1517,14 +1378,14 @@ msgid ""
 "to the origin."
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:892
+#: ../../admin/http-proxy-caching.en.rst:805
 msgid ""
 "When revalidation occurs, the requested object is no longer available to be "
 "served from cache. Subsequent requests for that object will be proxied to "
 "the origin."
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:896
+#: ../../admin/http-proxy-caching.en.rst:809
 msgid ""
 "For objects getting a few requests per second, these settings would offer a "
 "fairly low probability of revalidating the cached object before it becomes "
@@ -1533,7 +1394,7 @@ msgid ""
 "upon the objects going stale."
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:902
+#: ../../admin/http-proxy-caching.en.rst:815
 msgid ""
 "Once request raise rise, the same ``fuzz.probability`` leads to a greater "
 "chance the object may be revalidated before becoming stale. This can "
@@ -1542,13 +1403,13 @@ msgid ""
 "for revalidations."
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:908
+#: ../../admin/http-proxy-caching.en.rst:821
 msgid ""
 "These settings are also overridable by remap rules and via plugins, so can "
 "be adjusted per request if necessary."
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:911
+#: ../../admin/http-proxy-caching.en.rst:824
 msgid ""
 "Finally, :ts:cv:`proxy.config.http.cache.fuzz.min_time` allows for "
 "different time periods to evaluate the probability of revalidation for "
@@ -1557,7 +1418,7 @@ msgid ""
 "TTLs would start at ``fuzz.time``."
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:917
+#: ../../admin/http-proxy-caching.en.rst:830
 msgid ""
 "A logarithmic like function between determines the revalidation evaluation "
 "start time (which will be between ``fuzz.min_time`` and ``fuzz.time``). As "
@@ -1568,13 +1429,13 @@ msgid ""
 "`remap.config` settings."
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:925
+#: ../../admin/http-proxy-caching.en.rst:838
 msgid ""
 "These configuration options are similar to Squid's refresh_stale_hit "
 "configuration option."
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:931
+#: ../../admin/http-proxy-caching.en.rst:844
 msgid ""
 "The open read retry configurations attempt to reduce the number of "
 "concurrent requests to the origin for a given object. While an object is "
@@ -1590,7 +1451,7 @@ msgid ""
 "request is allowed through."
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:946
+#: ../../admin/http-proxy-caching.en.rst:859
 msgid ""
 "These settings are inappropriate when objects are uncacheable. In those "
 "cases, requests for an object effectively become serialized. The subsequent "
@@ -1598,7 +1459,7 @@ msgid ""
 "being proxied to the origin."
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:951
+#: ../../admin/http-proxy-caching.en.rst:864
 msgid ""
 "It is advisable that this setting be used in conjunction with `Read While "
 "Writer`_ for big (those that take longer than (``max_open_read_retries`` x "
@@ -1609,17 +1470,65 @@ msgid ""
 "server."
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:961
+#: ../../admin/http-proxy-caching.en.rst:874
 msgid "The configurations are (with defaults)::"
 msgstr ""
 
-#: ../../admin/http-proxy-caching.en.rst:966
+#: ../../admin/http-proxy-caching.en.rst:879
 msgid ""
 "The defaults are such that the feature is disabled and every connection is "
 "allowed to go to origin without artificial delay. When enabled, you will "
 "try ``max_open_read_retries`` times, each with an ``open_read_retry_time`` "
 "timeout."
 msgstr ""
+
+#: ../../admin/http-proxy-caching.en.rst:601
+msgid "To configure how Traffic Server caches alternates:"
+msgstr ""
+
+#~ msgid "Scheduling Updates to Local Cache Content"
+#~ msgstr "ローカルキャッシュコンテンツの計画アップデート"
+
+#~ msgid ""
+#~ "Enable the scheduled update option and configure optional retry settings."
+#~ msgstr ""
+#~ "計画アップデートオプションの有効化とオプショナルなリトライ設定の指定"
+
+#~ msgid "Configuring the Scheduled Update Option"
+#~ msgstr "計画アップデートオプションの設定"
+
+#~ msgid "To configure the scheduled update option"
+#~ msgstr "計画アップデートオプションを設定するためには"
+
+#~ msgid ""
+#~ "Edit :file:`update.config` to enter a line in the file for each URL you "
+#~ "want to update."
+#~ msgstr ""
+#~ ":file:`update.config` にアップデートしたい URL を一行毎に書いてください"
+
+#~ msgid ":ts:cv:`proxy.config.update.enabled`"
+#~ msgstr ":ts:cv:`proxy.config.update.enabled`"
+
+#~ msgid ":ts:cv:`proxy.config.update.retry_count`"
+#~ msgstr ":ts:cv:`proxy.config.update.retry_count`"
+
+#~ msgid ":ts:cv:`proxy.config.update.retry_interval`"
+#~ msgstr ":ts:cv:`proxy.config.update.retry_interval`"
+
+#~ msgid ":ts:cv:`proxy.config.update.concurrent_updates`"
+#~ msgstr ":ts:cv:`proxy.config.update.concurrent_updates`"
+
+#~ msgid ""
+#~ "When you enable the Force Immediate Update option, Traffic Server "
+#~ "continually updates the URLs specified in :file:`update.config` until "
+#~ "you disable the option. To disable the Force Immediate Update option, "
+#~ "set :ts:cv:`proxy.config.update.force` to ``0`` (zero)."
+#~ msgstr ""
+#~ "強制即時アップデートオプションを有効にした場合、Traffic Server はこのオプ"
+#~ "ションが無効化されるまで :file:`update.config` ファイルに指定された URL "
+#~ "をアップデートし続けます。強制即時アップデートオプションを無効化するため"
+#~ "には、 :ts:cv:`proxy.config.update.force` 変数を ``0`` (ゼロ) にしてくだ"
+#~ "さい。"
 
 #~ msgid ""
 #~ "Web proxy caching enables you to store copies of frequently-accessed web "

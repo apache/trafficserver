@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -41,23 +40,11 @@ msgid ""
 "``TSContCreate``"
 msgstr ""
 
-#: ../../sdk/getting-started/naming-conventions.en.rst:27
-msgid ""
-"Enumerated values are always written in all uppercase letters. "
-"**Examples**: *``TS_EVENT_NONE``* and *``TS_VC_CLOSE_ABORT``*"
-msgstr ""
-
 #: ../../sdk/getting-started/naming-conventions.en.rst:30
 msgid ""
 "Constant values are all uppercase; enumerated values can be seen as a "
 "subset of constants. **Examples**: ``TS_URL_SCHEME_FILE`` and "
 "``TS_MIME_FIELD_ACCEPT``"
-msgstr ""
-
-#: ../../sdk/getting-started/naming-conventions.en.rst:34
-msgid ""
-"The names of defined types are mixed-case. **Examples**: *``TSHttpSsn``* "
-"and *``TSHttpTxn``*"
 msgstr ""
 
 #: ../../sdk/getting-started/naming-conventions.en.rst:37
@@ -80,4 +67,16 @@ msgid ""
 "Common verbs like ``Create``, ``Destroy``, ``Get``, ``Set``, ``Copy``, "
 "``Find``, ``Retrieve``, ``Insert``, ``Remove``, and ``Delete`` are used "
 "only when appropriate."
+msgstr ""
+
+#: ../../sdk/getting-started/naming-conventions.en.rst:27
+msgid ""
+"Enumerated values are always written in all uppercase letters. "
+"**Examples**: ``TS_EVENT_NONE`` and ``TS_VC_CLOSE_ABORT``"
+msgstr ""
+
+#: ../../sdk/getting-started/naming-conventions.en.rst:34
+msgid ""
+"The names of defined types are mixed-case. **Examples**: ``TSHttpSsn`` and "
+"``TSHttpTxn``"
 msgstr ""

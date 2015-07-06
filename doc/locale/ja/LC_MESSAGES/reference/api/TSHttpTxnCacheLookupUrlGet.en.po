@@ -16,13 +16,34 @@ msgid "TSHttpTxnCacheLookupUrlGet"
 msgstr ""
 
 #: ../../reference/api/TSHttpTxnCacheLookupUrlGet.en.rst:22
+#: ../../reference/api/TSHttpTxnCacheLookupUrlGet.en.rst:41
 msgid "Synopsis"
 msgstr ""
 
 #: ../../reference/api/TSHttpTxnCacheLookupUrlGet.en.rst:24
+#: ../../reference/api/TSHttpTxnCacheLookupUrlGet.en.rst:43
 msgid "`#include <ts/ts.h>`"
 msgstr ""
 
 #: ../../reference/api/TSHttpTxnCacheLookupUrlGet.en.rst:30
+#: ../../reference/api/TSHttpTxnCacheLookupUrlGet.en.rst:49
 msgid "Description"
+msgstr ""
+
+#: ../../reference/api/TSHttpTxnCacheLookupUrlGet.en.rst:32
+msgid ""
+"Get the current cache key URL, also referred to as the lookup URL. This "
+"must be stored in a properly allocated URL object, typically created with "
+"a :c:func:`TSUrlCreate()`."
+msgstr ""
+
+#: ../../reference/api/TSHttpTxnCacheLookupUrlGet.en.rst:38
+msgid "TSHttpTxnCacheLookupUrlSet"
+msgstr ""
+
+#: ../../reference/api/TSHttpTxnCacheLookupUrlGet.en.rst:51
+msgid ""
+"Set the current cache key URL, also referred to as the lookup URL. This "
+"must be stored in a properly allocated URL object, typically created with "
+"a :c:func:`TSUrlCreate()` or :c:func:`TSUrlClone()`."
 msgstr ""

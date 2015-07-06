@@ -15,29 +15,6 @@ msgstr ""
 msgid "Session Protocol"
 msgstr "セッションプロトコル"
 
-#: ../../admin/session-protocol.en.rst:23
-msgid ""
-"Traffic Server supports some session level protocols in place of, or on top "
-"of."
-msgstr ""
-"Traffic Server は HTTP の中もしくは上でいくつかのセッションレベルプロトコル"
-"をサポートしています。"
-
-#: ../../admin/session-protocol.en.rst:24
-msgid ""
-"HTTP. These can be provided by a plugin (see :ref:`new-protocol-plugins`) or"
-msgstr "これらはプラグイン ( :ref:`new-protocol-plugins` を参照 ) もしくは "
-
-#: ../../admin/session-protocol.en.rst:25
-msgid ""
-"be one that is supported directly by Traffic Server. The `SPDY <http://www."
-"chromium.org/spdy>`_ protocol is the only one currently supported, but it "
-"is planned to support HTTP 2 when that is finalized."
-msgstr ""
-"Traffic Server に直接サポートされることによって提供されます。`SPDY <http://"
-"www.chromium.org/spdy>`_ プロトコルは現在サポートされている唯一のプロトコル"
-"ですが、HTTP2 の仕様が決まった際にはそのサポートも計画されています。"
-
 #: ../../admin/session-protocol.en.rst:29
 msgid ""
 "Session protocols are specified by explicit names, based on the `NPN "
@@ -128,3 +105,35 @@ msgstr ""
 "グは非 TLS のプロキシーポートでクライアントによってどのプロトコルが使われて"
 "いるかを判定するためのものです。もし検出されたプロトコルがそのプロキシーポー"
 "トで対応されていない場合、接続は破棄されます。"
+
+#: ../../admin/session-protocol.en.rst:23
+msgid ""
+"Traffic Server supports some session level protocols in place of, or on top "
+"of HTTP. These can be provided by a plugin (see :ref:`new-protocol-"
+"plugins`) or be one that is supported directly by Traffic Server. The `SPDY "
+"<http://www.chromium.org/spdy>`_ protocol is the only one currently "
+"supported, but it is planned to support HTTP 2 when that is finalized."
+msgstr ""
+
+#~ msgid ""
+#~ "Traffic Server supports some session level protocols in place of, or on "
+#~ "top of."
+#~ msgstr ""
+#~ "Traffic Server は HTTP の中もしくは上でいくつかのセッションレベルプロトコ"
+#~ "ルをサポートしています。"
+
+#~ msgid ""
+#~ "HTTP. These can be provided by a plugin (see :ref:`new-protocol-"
+#~ "plugins`) or"
+#~ msgstr ""
+#~ "これらはプラグイン ( :ref:`new-protocol-plugins` を参照 ) もしくは "
+
+#~ msgid ""
+#~ "be one that is supported directly by Traffic Server. The `SPDY <http://"
+#~ "www.chromium.org/spdy>`_ protocol is the only one currently supported, "
+#~ "but it is planned to support HTTP 2 when that is finalized."
+#~ msgstr ""
+#~ "Traffic Server に直接サポートされることによって提供されます。`SPDY "
+#~ "<http://www.chromium.org/spdy>`_ プロトコルは現在サポートされている唯一の"
+#~ "プロトコルですが、HTTP2 の仕様が決まった際にはそのサポートも計画されてい"
+#~ "ます。"
