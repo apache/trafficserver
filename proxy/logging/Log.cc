@@ -434,6 +434,11 @@ Log::init_fields()
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cqhv", field);
 
+  field = new LogField("client_req_protocol_version", "cqpv", LogField::dINT, &LogAccess::marshal_client_req_protocol_version,
+                       (LogField::UnmarshalFunc) &LogAccess::unmarshal_str);
+  global_field_list.add(field, false);
+  ink_hash_table_insert(field_symbol_hash, "cqpv", field);
+
   field = new LogField("client_req_header_len", "cqhl", LogField::sINT, &LogAccess::marshal_client_req_header_len,
                        &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);

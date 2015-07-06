@@ -63,7 +63,7 @@ FetchSM::httpConnect()
   char const *tag = pi ? pi->getPluginTag() : "fetchSM";
   int64_t id = pi ? pi->getPluginId() : 0;
 
-  Debug(DEBUG_TAG, "[%s] calling httpconnect write", __FUNCTION__);
+  Debug(DEBUG_TAG, "[%s] calling httpconnect write pi=%p tag=%s id=%d", __FUNCTION__, pi, tag, id);
   http_vc = reinterpret_cast<PluginVC *>(TSHttpConnectWithPluginId(&_addr.sa, tag, id));
 
   /*

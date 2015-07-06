@@ -573,6 +573,43 @@ LogAccessHttp::marshal_client_req_http_version(char *buf)
   -------------------------------------------------------------------------*/
 
 int
+LogAccessHttp::marshal_client_req_protocol_version(char *buf)
+{
+  int len = INK_MIN_ALIGN;
+  char const *tag = m_http_sm->plugin_tag;
+
+  if (!tag) {
+    if (m_client_request) {
+      HTTPVersion versionObject = m_client_request->version_get();
+      int64_t major = HTTP_MAJOR(versionObject.m_version);
+      int64_t minor = HTTP_MINOR(versionObject.m_version);
+      if (major == 1 && minor == 1) {
+        tag = "http/1.1";
+      } else if (major == 1 && minor == 0) {
+        tag = "http/1.0";
+      } else if (major == 0 && minor == 9) {
+        tag = "http/0.9";
+      } // else invalid http version
+      len = LogAccess::strlen(tag);
+    } else {
+      tag = "*";
+    }
+  } else {
+    len = LogAccess::strlen(tag);
+  }
+
+  if (buf) {
+    marshal_str(buf, tag, len);
+  }
+
+  return len; 
+}
+
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
 LogAccessHttp::marshal_client_req_header_len(char *buf)
 {
   if (buf) {
