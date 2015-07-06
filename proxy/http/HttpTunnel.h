@@ -260,12 +260,16 @@ struct HttpTunnelProducer {
 class PostDataBuffers
 {
 public:
-  PostDataBuffers() : postdata_copy_buffer(NULL), postdata_copy_buffer_start(NULL), ua_buffer_reader(NULL)
+  PostDataBuffers()
+    : postdata_producer_buffer(NULL), postdata_copy_buffer(NULL), postdata_producer_reader(NULL), postdata_copy_buffer_start(NULL),
+      ua_buffer_reader(NULL)
   {
     Debug("http_redirect", "[PostDataBuffers::PostDataBuffers]");
   }
 
+  MIOBuffer *postdata_producer_buffer;
   MIOBuffer *postdata_copy_buffer;
+  IOBufferReader *postdata_producer_reader;
   IOBufferReader *postdata_copy_buffer_start;
   IOBufferReader *ua_buffer_reader;
 };
@@ -310,6 +314,7 @@ public:
 
   // YTS Team, yamsat Plugin
   void copy_partial_post_data();
+  void allocate_redirect_postdata_producer_buffer();
   void allocate_redirect_postdata_buffers(IOBufferReader *ua_reader);
   void deallocate_redirect_postdata_buffers();
 
