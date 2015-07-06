@@ -4171,8 +4171,8 @@ msgid ""
 "This configuration will be eliminated for v6.0.0, where HTTP/2 is enabled "
 "by default and controlled via the ports configuration."
 msgstr ""
-"この設定は v6.0.0 で削除され、HTTP/2 はデフォルトで有効となり、ポート設定"
-"によって制御されるようになります。"
+"この設定は v6.0.0 で削除され、HTTP/2 はデフォルトで有効となり、ポート設定に"
+"よって制御されるようになります。"
 
 #: ../../reference/configuration/records.config.en.rst:2508
 msgid ""
@@ -4210,8 +4210,8 @@ msgid ""
 "Reloading this value affects only new SPDY connections, not the ones "
 "already established.."
 msgstr ""
-"この値の再読み込みは新しい SPDY のコネクションでのみ適用され、 すでに確率"
-"したコネクションには適用されません。"
+"この値の再読み込みは新しい SPDY のコネクションでのみ適用され、 すでに確率し"
+"たコネクションには適用されません。"
 
 #: ../../reference/configuration/records.config.en.rst:2639
 #: ../../reference/configuration/records.config.en.rst:2662
