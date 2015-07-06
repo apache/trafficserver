@@ -337,7 +337,6 @@ msgid "Flag: first fragment in an object"
 msgstr "オブジェクトの先頭のフラグメントを示すフラグ"
 
 #: ../../arch/cache/cache-arch.en.rst:509
-#: ../../arch/cache/cache-arch.en.rst:416
 msgid "pinned"
 msgstr "pinned"
 
@@ -691,38 +690,6 @@ msgstr ""
 
 #: ../../arch/cache/cache-arch.en.rst:1145
 msgid "Footnotes"
-msgstr ""
-
-#: ../../arch/cache/cache-arch.en.rst:120
-msgid "cache directory"
-msgstr ""
-
-#: ../../arch/cache/cache-arch.en.rst:126
-msgid "directory entry"
-msgstr ""
-
-#: ../../arch/cache/cache-arch.en.rst:127
-msgid "fragment"
-msgstr ""
-
-#: ../../arch/cache/cache-arch.en.rst:128
-msgid "cache ID"
-msgstr ""
-
-#: ../../arch/cache/cache-arch.en.rst:329
-msgid "alternate"
-msgstr ""
-
-#: ../../arch/cache/cache-arch.en.rst:584
-msgid "DIR_DEPTH"
-msgstr ""
-
-#: ../../arch/cache/cache-arch.en.rst:584
-msgid "index segment"
-msgstr ""
-
-#: ../../arch/cache/cache-arch.en.rst:584
-msgid "index buckets"
 msgstr ""
 
 #: ../../arch/cache/cache-arch.en.rst:58

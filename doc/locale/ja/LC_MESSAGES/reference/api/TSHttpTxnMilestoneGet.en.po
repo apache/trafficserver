@@ -213,19 +213,19 @@ msgstr ""
 msgid "Transaction has finished, state machine final logging has started."
 msgstr ""
 
-#: ../../reference/api/TSHttpTxnMilestoneGet.en.rst:66
+#: ../../reference/api/TSHttpTxnMilestoneGet.en.rst:68
 msgid ""
 "The server connect times predate the transmission of the ``SYN`` packet. "
 "That is, before a connection to the origin server is completed."
 msgstr ""
 
-#: ../../reference/api/TSHttpTxnMilestoneGet.en.rst:69
+#: ../../reference/api/TSHttpTxnMilestoneGet.en.rst:71
 msgid ""
 "A connection attempt is *resolved* when no more connection related activity "
 "remains to be done, and the connection is either established or has failed."
 msgstr ""
 
-#: ../../reference/api/TSHttpTxnMilestoneGet.en.rst:72
+#: ../../reference/api/TSHttpTxnMilestoneGet.en.rst:74
 msgid ""
 ":const:`TS_MILESTONE_UA_CLOSE` and :const:`TS_MILESTONE_SERVER_CLOSE` are "
 "updated continuously during the life of the transaction, every time there "
@@ -233,30 +233,66 @@ msgid ""
 "closed, leaving the last I/O time as the final value."
 msgstr ""
 
-#: ../../reference/api/TSHttpTxnMilestoneGet.en.rst:76
+#: ../../reference/api/TSHttpTxnMilestoneGet.en.rst:78
 msgid ""
 "The cache ``OPEN`` milestones time only the initial setup, the \"open\", "
 "not the full read or write."
 msgstr ""
 
-#: ../../reference/api/TSHttpTxnMilestoneGet.en.rst:79
+#: ../../reference/api/TSHttpTxnMilestoneGet.en.rst:91
 msgid "Return values"
 msgstr ""
 
-#: ../../reference/api/TSHttpTxnMilestoneGet.en.rst:81
+#: ../../reference/api/TSHttpTxnMilestoneGet.en.rst:93
 msgid ""
 ":const:`TS_SUCCESS` if successful and :arg:`time` was updated, otherwise :"
 "const:`TS_ERROR`."
 msgstr ""
 
-#: ../../reference/api/TSHttpTxnMilestoneGet.en.rst:84
+#: ../../reference/api/TSHttpTxnMilestoneGet.en.rst:96
 msgid "See also"
 msgstr ""
 
-#: ../../reference/api/TSHttpTxnMilestoneGet.en.rst:85
+#: ../../reference/api/TSHttpTxnMilestoneGet.en.rst:97
 msgid ":manpage:`TSAPI(3ts)`"
 msgstr ""
 
 #: ../../reference/api/TSHttpTxnMilestoneGet.en.rst:24
 msgid "Get a specified milestone timer value for the current transaction."
+msgstr ""
+
+#: ../../reference/api/TSHttpTxnMilestoneGet.en.rst:64
+msgid ":const:`TS_MILESTONE_PLUGIN_ACTIVE`"
+msgstr ""
+
+#: ../../reference/api/TSHttpTxnMilestoneGet.en.rst:64
+msgid "Amount of time plugins were active plus start time."
+msgstr ""
+
+#: ../../reference/api/TSHttpTxnMilestoneGet.en.rst:65
+msgid ":const:`TS_MILESTONE_PLUGIN_TOTAL`"
+msgstr ""
+
+#: ../../reference/api/TSHttpTxnMilestoneGet.en.rst:65
+msgid "Wall time while plugins were active plus start time."
+msgstr ""
+
+#: ../../reference/api/TSHttpTxnMilestoneGet.en.rst:80
+msgid ""
+":const:`TS_MILESTONE_PLUGIN_ACTIVE` and :const:`TS_MILESTONE_PLUGIN_TOTAL` "
+"are different from the other milestones as they measure elapsed time, not "
+"event time. The value is the elapsed time *plus* :const:"
+"`TS_MILESTONE_SM_START`. This was decided to be more convenient because "
+"then these milestones can be handled / displayed in the same way as the "
+"other milestones, as offsets from :const:`TS_MILESTONE_SM_START`."
+msgstr ""
+
+#: ../../reference/api/TSHttpTxnMilestoneGet.en.rst:85
+msgid ""
+":const:`TS_MILESTONE_PLUGIN_ACTIVE` value is the amount of time the plugin "
+"was active, that is performing computation. :const:"
+"`TS_MILESTONE_PLUGIN_TOTAL` is the wall time which includes any time the "
+"transaction was blocked while a plugin was active. For instance if a plugin "
+"waits on an external event, that waiting time will be in :const:"
+"`TS_MILESTONE_PLUGIN_TOTAL` but not in :const:`TS_MILESTONE_PLUGIN_ACTIVE`."
 msgstr ""

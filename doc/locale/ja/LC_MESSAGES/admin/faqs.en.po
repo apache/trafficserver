@@ -382,7 +382,7 @@ msgstr ""
 "メモリーの消耗を防ぐために、システムにもっと RAM を追加するか Traffic "
 "Server の負荷を減らしてください。"
 
-#: ../../admin/faqs.en.rst:592
+#: ../../admin/faqs.en.rst:602
 msgid "Connection timeouts with the origin server"
 msgstr "オリジンサーバーとの接続タイムアウト"
 
@@ -1157,13 +1157,42 @@ msgid ""
 "not set this variable below the minimum value of ``100``."
 msgstr ""
 
-#: ../../admin/faqs.en.rst:594
+#: ../../admin/faqs.en.rst:604
 msgid ""
 "By default, Traffic Server will timeout after 30 seconds when contacting "
 "origin servers. If you cannot avoid such timeouts by otherwise addressing "
 "the performance on your origin servers, you may adjust the origin "
 "connection timeout in Traffic Server by changing :ts:cv:`proxy.config.http."
 "connect_attempts_timeout` in :file:`records.config` to a larger value."
+msgstr ""
+
+#: ../../admin/faqs.en.rst:592
+msgid "Config checker"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:594
+msgid ""
+"Traffic Server supports the below command to validate the config offline, "
+"inorder to allow the config to be pre-checked for possible service "
+"disruptions due to synatx errors::"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:599
+msgid "<config_dir> is the location of the config files to be validated."
+msgstr ""
+
+#: ../../admin/faqs.en.rst:611
+msgid "Timers applicable to various states in the transaction"
+msgstr ""
+
+#: ../../admin/faqs.en.rst:613
+msgid ""
+"Traffic Server runs a variety of timers at various states of a transaction. "
+"Typically, a given transaction may include upto two connections (one on the "
+"UA/client side and the other on the Origin side). Traffic Server supports "
+"two kinds of timers \"Active\" and \"Inactive\" timers for each side "
+"respectively, as applicable at a given state. The below picture illustrates "
+"the specific timers run at various states in the current implementation."
 msgstr ""
 
 #~ msgid ""

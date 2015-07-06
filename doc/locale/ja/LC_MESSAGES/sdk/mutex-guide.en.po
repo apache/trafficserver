@@ -305,3 +305,17 @@ msgid ""
 "`blacklist-1.c` code; start by looking at the :c:func:`TSPluginInit` "
 "function."
 msgstr ""
+
+#: ../../sdk/mutex-guide.en.rst:0
+msgid "Create a mutex for the continuation using ``TSMutexCreate``."
+msgstr ""
+
+#: ../../sdk/mutex-guide.en.rst:0
+msgid "For example:"
+msgstr ""
+
+#: ../../sdk/mutex-guide.en.rst:0
+msgid ""
+"When you create the continuation, specify this mutex as the continuation's "
+"mutex."
+msgstr ""

@@ -56,10 +56,6 @@ msgstr ""
 msgid "Each field is described in the following list."
 msgstr ""
 
-#: ../../reference/configuration/icp.config.en.rst:48
-msgid "*``host``* {#host}"
-msgstr ""
-
 #: ../../reference/configuration/icp.config.en.rst:45
 msgid "The hostname of the ICP peer."
 msgstr ""
@@ -70,10 +66,6 @@ msgid ""
 "you must specify the IP address."
 msgstr ""
 
-#: ../../reference/configuration/icp.config.en.rst:54
-msgid "*``host_IP``* {#host_IP}"
-msgstr ""
-
 #: ../../reference/configuration/icp.config.en.rst:51
 msgid "The IP address of the ICP peer."
 msgstr ""
@@ -82,10 +74,6 @@ msgstr ""
 msgid ""
 "This field is optional; if you do not specify the IP address of the ICP "
 "peer, you must specify the hostname."
-msgstr ""
-
-#: ../../reference/configuration/icp.config.en.rst:60
-msgid "*``ctype``* {#ctype}"
 msgstr ""
 
 #: ../../reference/configuration/icp.config.en.rst:57
@@ -101,73 +89,89 @@ msgid "2 to indicate an ICP sibling cache"
 msgstr ""
 
 #: ../../reference/configuration/icp.config.en.rst:64
-msgid "*``proxy_port``* {#proxy_port}"
-msgstr ""
-
-#: ../../reference/configuration/icp.config.en.rst:63
 msgid ""
 "The port number of the TCP port used by the ICP peer for proxy "
 "communication."
 msgstr ""
 
 #: ../../reference/configuration/icp.config.en.rst:68
-msgid "*``icp_port``* {#icp_port}"
-msgstr ""
-
-#: ../../reference/configuration/icp.config.en.rst:67
 msgid ""
 "The port number of the UDP port used by the ICP peer for ICP communication."
 msgstr ""
 
-#: ../../reference/configuration/icp.config.en.rst:74
-msgid "*``MC_on``* {#mc_on}"
-msgstr ""
-
-#: ../../reference/configuration/icp.config.en.rst:71
+#: ../../reference/configuration/icp.config.en.rst:72
 msgid "Enable or disable MultiCast:"
 msgstr ""
 
-#: ../../reference/configuration/icp.config.en.rst:73
+#: ../../reference/configuration/icp.config.en.rst:74
 msgid "0 if multicast is disabled"
 msgstr ""
 
-#: ../../reference/configuration/icp.config.en.rst:74
+#: ../../reference/configuration/icp.config.en.rst:75
 msgid "1 if multicast is enabled"
 msgstr ""
 
-#: ../../reference/configuration/icp.config.en.rst:77
-msgid "*``MC_ip``* {#mc_ip}"
-msgstr ""
-
-#: ../../reference/configuration/icp.config.en.rst:77
+#: ../../reference/configuration/icp.config.en.rst:78
 msgid "The MultiCast IP address."
 msgstr ""
 
-#: ../../reference/configuration/icp.config.en.rst:86
-msgid "*``MC_ttl``* {#mc_ttl}"
-msgstr ""
-
-#: ../../reference/configuration/icp.config.en.rst:80
+#: ../../reference/configuration/icp.config.en.rst:81
 msgid "The multicast time to live. Use the following options:"
 msgstr ""
 
-#: ../../reference/configuration/icp.config.en.rst:82
+#: ../../reference/configuration/icp.config.en.rst:83
 msgid ""
 "1 if IP multicast datagrams will not be forwarded beyond a single subnetwork"
 msgstr ""
 
-#: ../../reference/configuration/icp.config.en.rst:84
+#: ../../reference/configuration/icp.config.en.rst:85
 msgid ""
 "2 to allow delivery of IP multicast datagrams to more than one subnet (if "
 "there are one or more multicast routers attached to the first hop subnet)."
 msgstr ""
 
-#: ../../reference/configuration/icp.config.en.rst:89
+#: ../../reference/configuration/icp.config.en.rst:90
 msgid "Examples"
 msgstr ""
 
-#: ../../reference/configuration/icp.config.en.rst:91
+#: ../../reference/configuration/icp.config.en.rst:92
 msgid ""
 "The following example configuration is for three nodes: the local host, one "
 "parent, and one sibling."
+msgstr ""
+
+#: ../../reference/configuration/icp.config.en.rst:48
+msgid "``host``"
+msgstr ""
+
+#: ../../reference/configuration/icp.config.en.rst:54
+msgid "``host_IP``"
+msgstr ""
+
+#: ../../reference/configuration/icp.config.en.rst:61
+msgid "``ctype``"
+msgstr ""
+
+#: ../../reference/configuration/icp.config.en.rst:61
+msgid "3 to indicate an ICP local cache"
+msgstr ""
+
+#: ../../reference/configuration/icp.config.en.rst:65
+msgid "``proxy_port``"
+msgstr ""
+
+#: ../../reference/configuration/icp.config.en.rst:69
+msgid "``icp_port``"
+msgstr ""
+
+#: ../../reference/configuration/icp.config.en.rst:75
+msgid "``MC_on``"
+msgstr ""
+
+#: ../../reference/configuration/icp.config.en.rst:78
+msgid "``MC_ip``"
+msgstr ""
+
+#: ../../reference/configuration/icp.config.en.rst:87
+msgid "``MC_ttl``"
 msgstr ""

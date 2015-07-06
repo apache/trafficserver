@@ -91,13 +91,6 @@ msgid ""
 "incomplete."
 msgstr ""
 
-#: ../../reference/commands/traffic_crashlog.en.rst:85
-msgid ""
-":program:`traffic_crashlog` may generate a crash log containing information "
-"you would rather not share outside your organization. Please examine the "
-"crash log carefully before posting it in a publc forum."
-msgstr ""
-
 #: ../../reference/commands/traffic_crashlog.en.rst:90
 msgid "See also"
 msgstr ""
@@ -106,4 +99,11 @@ msgstr ""
 msgid ""
 ":manpage:`records.config(5)`, :manpage:`traffic_manager(8)`, :manpage:"
 "`traffic_server(8)`"
+msgstr ""
+
+#: ../../reference/commands/traffic_crashlog.en.rst:85
+msgid ""
+":program:`traffic_crashlog` may generate a crash log containing information "
+"you would rather not share outside your organization. Please examine the "
+"crash log carefully before posting it in a public forum."
 msgstr ""

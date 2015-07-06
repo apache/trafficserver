@@ -29,19 +29,19 @@ msgstr ""
 msgid "traffic_line"
 msgstr "traffic_line"
 
-#: ../../reference/commands/traffic_line.en.rst:23
+#: ../../reference/commands/traffic_line.en.rst:29
 msgid "Synopsis"
 msgstr "概要"
 
-#: ../../reference/commands/traffic_line.en.rst:26
+#: ../../reference/commands/traffic_line.en.rst:32
 msgid ":program:`traffic_line` [options]"
 msgstr ":program:`traffic_line` [options]"
 
-#: ../../reference/commands/traffic_line.en.rst:31
+#: ../../reference/commands/traffic_line.en.rst:37
 msgid "Description"
 msgstr "解説"
 
-#: ../../reference/commands/traffic_line.en.rst:33
+#: ../../reference/commands/traffic_line.en.rst:39
 msgid ""
 ":program:`traffic_line` is used to execute individual Traffic Server "
 "commands and to script multiple commands in a shell."
@@ -49,11 +49,11 @@ msgstr ""
 ":program:`traffic_line` はシェルの中で単一の Traffic Server コマンドを実行し"
 "たり、複数のコマンドを書くために使われます。"
 
-#: ../../reference/commands/traffic_line.en.rst:37
+#: ../../reference/commands/traffic_line.en.rst:43
 msgid "Options"
 msgstr "オプション"
 
-#: ../../reference/commands/traffic_line.en.rst:43
+#: ../../reference/commands/traffic_line.en.rst:49
 msgid ""
 "Bounce all Traffic Server nodes in the cluster. Bouncing Traffic Server "
 "shuts down and immediately restarts Traffic Server, node-by-node."
@@ -62,7 +62,7 @@ msgstr ""
 "へ Traffic Server のバウンシングはシャットダウンし、すぐに Traffic Server を"
 "再起動します。"
 
-#: ../../reference/commands/traffic_line.en.rst:49
+#: ../../reference/commands/traffic_line.en.rst:55
 msgid ""
 "Bounce Traffic Server on the local node. Bouncing Traffic Server shuts down "
 "and immediately restarts the Traffic Server node."
@@ -70,19 +70,19 @@ msgstr ""
 "ローカルノードで Traffic Server を再起動させます。Traffic Server のバウンス"
 "はシャットダウンし、すぐに Traffic Server ノードを再起動します。"
 
-#: ../../reference/commands/traffic_line.en.rst:54
+#: ../../reference/commands/traffic_line.en.rst:60
 msgid "Clears accumulated statistics on all nodes in the cluster."
 msgstr "クラスター内の全てのノードに蓄積された統計をクリアします。"
 
-#: ../../reference/commands/traffic_line.en.rst:58
+#: ../../reference/commands/traffic_line.en.rst:64
 msgid "Clears accumulated statistics on the local node."
 msgstr "ローカルノードに蓄積された統計をクリアします。"
 
-#: ../../reference/commands/traffic_line.en.rst:71
+#: ../../reference/commands/traffic_line.en.rst:77
 msgid "Print usage information and exit."
 msgstr "使い方の情報を表示し、終了します。"
 
-#: ../../reference/commands/traffic_line.en.rst:75
+#: ../../reference/commands/traffic_line.en.rst:81
 msgid ""
 "Restart the :program:`traffic_manager` and :program:`traffic_server` "
 "processes on the local node."
@@ -90,7 +90,7 @@ msgstr ""
 "ローカルノードの :program:`traffic_manager` と :program:`traffic_server` プ"
 "ロセスを再起動します。"
 
-#: ../../reference/commands/traffic_line.en.rst:80
+#: ../../reference/commands/traffic_line.en.rst:86
 msgid ""
 "Restart the :program:`traffic_manager` process and the :program:"
 "`traffic_server` process on all the nodes in a cluster."
@@ -98,28 +98,28 @@ msgstr ""
 "クラスター内の全てのノードの :program:`traffic_manager` プロセスと :program:"
 "`traffic_server` プロセスを再起動します。"
 
-#: ../../reference/commands/traffic_line.en.rst:90
+#: ../../reference/commands/traffic_line.en.rst:96
 msgid ""
 "Display specific performance statistics or a current configuration setting."
 msgstr "特定のパフォーマンス統計や現在の設定を表示します。"
 
-#: ../../reference/commands/traffic_line.en.rst:102
+#: ../../reference/commands/traffic_line.en.rst:108
 msgid "Shut down Traffic Server on the local node."
 msgstr "ローカルノードの Traffic Server をシャットダウンします。"
 
-#: ../../reference/commands/traffic_line.en.rst:106
+#: ../../reference/commands/traffic_line.en.rst:112
 msgid "Start Traffic Server on the local node."
 msgstr "ローカルノードの Traffic Server を起動します。"
 
-#: ../../reference/commands/traffic_line.en.rst:110
+#: ../../reference/commands/traffic_line.en.rst:116
 msgid "Specify the value to set when setting a configuration variable."
 msgstr "設定変数を設定する際の値を記述します。"
 
-#: ../../reference/commands/traffic_line.en.rst:114
+#: ../../reference/commands/traffic_line.en.rst:120
 msgid "Print version information and exit."
 msgstr "バージョン情報を表示して、終了します。"
 
-#: ../../reference/commands/traffic_line.en.rst:118
+#: ../../reference/commands/traffic_line.en.rst:124
 msgid ""
 "Initiate a Traffic Server configuration file reread. Use this command to "
 "update the running configuration after any configuration file modification."
@@ -127,31 +127,31 @@ msgstr ""
 "Traffic Server 設定ファイルの再読み込みを始めます。設定ファイルを変更した後"
 "で、実行する設定を更新するのにこのコマンドを使用してください。"
 
-#: ../../reference/commands/traffic_line.en.rst:128
+#: ../../reference/commands/traffic_line.en.rst:134
 msgid "Reset performance statistics to zero across the cluster."
 msgstr "クラスター内のパフォーマンス統計をゼロにリセットします。"
 
-#: ../../reference/commands/traffic_line.en.rst:132
+#: ../../reference/commands/traffic_line.en.rst:138
 msgid "Reset performance statistics to zero on the local node."
 msgstr "ローカルノードのパフォーマンス統計をゼロにリセットします。"
 
-#: ../../reference/commands/traffic_line.en.rst:158
+#: ../../reference/commands/traffic_line.en.rst:164
 msgid "Performance Statistics"
 msgstr "パフォーマンス統計"
 
-#: ../../reference/commands/traffic_line.en.rst:281
+#: ../../reference/commands/traffic_line.en.rst:287
 msgid "Examples"
 msgstr "例"
 
-#: ../../reference/commands/traffic_line.en.rst:283
+#: ../../reference/commands/traffic_line.en.rst:289
 msgid "Configure Traffic Server to log in Squid format::"
 msgstr "Squid フォーマットでログを取るように Traffic Server を設定するには"
 
-#: ../../reference/commands/traffic_line.en.rst:290
+#: ../../reference/commands/traffic_line.en.rst:296
 msgid "See also"
 msgstr "参照"
 
-#: ../../reference/commands/traffic_line.en.rst:136
+#: ../../reference/commands/traffic_line.en.rst:142
 msgid ""
 "Mark a cache storage device as offline. The storage is identified by a "
 "*path* which must match exactly a path specified in :file:`storage.config`. "
@@ -167,11 +167,11 @@ msgstr ""
 "はそのストレージが故障したときとまったく同じ効果を持っています。これは :"
 "program:`traffic_server` プロセスのリスタートをまたいで持続しません。"
 
-#: ../../reference/commands/traffic_line.en.rst:143
+#: ../../reference/commands/traffic_line.en.rst:149
 msgid "List all alarm events that have not been acknowledged (cleared)."
 msgstr "承認 ( 消去 ) されていないすべてのアラームイベントを一覧表示します。"
 
-#: ../../reference/commands/traffic_line.en.rst:147
+#: ../../reference/commands/traffic_line.en.rst:153
 msgid ""
 "Clear (acknowledge) an alarm event. The arguments are \"all\" for all "
 "current alarms, a specific alarm number (e.g. ''1''), or an alarm string "
@@ -181,13 +181,13 @@ msgstr ""
 "ラーム、特定のアラーム番号 ( 例 ``1``) 、もしくはアラーム文字列識別子 ( 例 "
 "''MGMT_ALARM_PROXY_CONFIG_ERROR'') です。"
 
-#: ../../reference/commands/traffic_line.en.rst:153
+#: ../../reference/commands/traffic_line.en.rst:159
 msgid ""
 "Show the current proxy server status, indicating if we're running or not."
 msgstr ""
 "プロキシーサーバーが実行中かどうかを示している現在の状態を表示します。"
 
-#: ../../reference/commands/traffic_line.en.rst:85
+#: ../../reference/commands/traffic_line.en.rst:91
 msgid ""
 "Display the current values of all performance statistics or configuration "
 "variables whose names match the given regular expression."
@@ -195,11 +195,11 @@ msgstr ""
 "すべてのパフォーマンス統計もしくは与えられた正規表現にマッチする名前をもつ設"
 "定変数の現在の値を表示します。"
 
-#: ../../reference/commands/traffic_line.en.rst:162
+#: ../../reference/commands/traffic_line.en.rst:168
 msgid "proxy.process.ssl.user_agent_other_errors"
 msgstr "proxy.process.ssl.user_agent_other_errors"
 
-#: ../../reference/commands/traffic_line.en.rst:161
+#: ../../reference/commands/traffic_line.en.rst:167
 msgid ""
 "Total number of *other* ssl client connection errors (counts ssl errors "
 "that are not captured in other user agent stats below)"
@@ -207,86 +207,86 @@ msgstr ""
 "*その他*\\ の クライアント側の SSL 接続エラーの総数 ( 以下のその他のユーザー"
 "エージェント統計に数えられない SSL エラーをカウントします )"
 
-#: ../../reference/commands/traffic_line.en.rst:166
+#: ../../reference/commands/traffic_line.en.rst:172
 msgid "proxy.process.ssl.user_agent_expired_cert"
 msgstr "proxy.process.ssl.user_agent_expired_cert"
 
-#: ../../reference/commands/traffic_line.en.rst:165
+#: ../../reference/commands/traffic_line.en.rst:171
 msgid ""
 "Total number of ssl client connection failures where the cert was expired."
 msgstr "証明書の期限切れによるクライアント側の SSL 接続の失敗の総数"
 
-#: ../../reference/commands/traffic_line.en.rst:170
+#: ../../reference/commands/traffic_line.en.rst:176
 msgid "proxy.process.ssl.user_agent_revoked_cert"
 msgstr "proxy.process.ssl.user_agent_revoked_cert"
 
-#: ../../reference/commands/traffic_line.en.rst:169
+#: ../../reference/commands/traffic_line.en.rst:175
 msgid ""
 "Total number of ssl client connection failures where the cert was revoked."
 msgstr "証明書の失効によるクライアント側の SSL 接続の失敗の総数"
 
-#: ../../reference/commands/traffic_line.en.rst:174
+#: ../../reference/commands/traffic_line.en.rst:180
 msgid "proxy.process.ssl.user_agent_unknown_cert"
 msgstr "proxy.process.ssl.user_agent_unknown_cert"
 
-#: ../../reference/commands/traffic_line.en.rst:173
+#: ../../reference/commands/traffic_line.en.rst:179
 msgid ""
 "Total number of ssl client connection failures related to the cert, but "
 "specific error was unknown."
 msgstr "原因不明な証明書に関するクライアント側の SSL 接続の失敗の総数"
 
-#: ../../reference/commands/traffic_line.en.rst:178
+#: ../../reference/commands/traffic_line.en.rst:184
 msgid "proxy.process.ssl.user_agent_cert_verify_failed"
 msgstr "proxy.process.ssl.user_agent_cert_verify_failed"
 
-#: ../../reference/commands/traffic_line.en.rst:177
+#: ../../reference/commands/traffic_line.en.rst:183
 msgid ""
 "Total number of ssl client connection failures where cert verification "
 "failed."
 msgstr "証明書の検証失敗によるクライアント側の SSL 接続の失敗の総数"
 
-#: ../../reference/commands/traffic_line.en.rst:181
+#: ../../reference/commands/traffic_line.en.rst:187
 msgid "proxy.process.ssl.user_agent_bad_cert"
 msgstr "proxy.process.ssl.user_agent_bad_cert"
 
-#: ../../reference/commands/traffic_line.en.rst:181
+#: ../../reference/commands/traffic_line.en.rst:187
 msgid "Total number of ssl client connection failures where the cert is bad."
 msgstr "証明書の異常によるクライアント側の SSL 接続の失敗の総数"
 
-#: ../../reference/commands/traffic_line.en.rst:185
+#: ../../reference/commands/traffic_line.en.rst:191
 msgid "proxy.process.ssl.user_agent_decryption_failed"
 msgstr "proxy.process.ssl.user_agent_decryption_failed"
 
-#: ../../reference/commands/traffic_line.en.rst:184
+#: ../../reference/commands/traffic_line.en.rst:190
 msgid ""
 "Total number of ssl client connection decryption failures (during "
 "negotiation)."
 msgstr ""
 "クライアント側の SSL 接続における ( ネゴシエーション中の ) 復号化失敗の総数"
 
-#: ../../reference/commands/traffic_line.en.rst:189
+#: ../../reference/commands/traffic_line.en.rst:195
 msgid "proxy.process.ssl.user_agent_wrong_version"
 msgstr "proxy.process.ssl.user_agent_wrong_version"
 
-#: ../../reference/commands/traffic_line.en.rst:188
+#: ../../reference/commands/traffic_line.en.rst:194
 msgid ""
 "Total number of ssl client connections that provided an invalid protocol "
 "version."
 msgstr "無効なプロトコルバージョンを渡したクライアント側の SSL 接続の総数"
 
-#: ../../reference/commands/traffic_line.en.rst:192
+#: ../../reference/commands/traffic_line.en.rst:198
 msgid "proxy.process.ssl.user_agent_unknown_ca"
 msgstr "proxy.process.ssl.user_agent_unknown_ca"
 
-#: ../../reference/commands/traffic_line.en.rst:192
+#: ../../reference/commands/traffic_line.en.rst:198
 msgid "Total number of ssl client connection that failed due to unknown ca."
 msgstr "不明な CA により失敗したクライアント側の SSL 接続の総数"
 
-#: ../../reference/commands/traffic_line.en.rst:196
+#: ../../reference/commands/traffic_line.en.rst:202
 msgid "proxy.process.ssl.origin_server_other_errors"
 msgstr "proxy.process.ssl.origin_server_other_errors"
 
-#: ../../reference/commands/traffic_line.en.rst:195
+#: ../../reference/commands/traffic_line.en.rst:201
 msgid ""
 "Total number of *other* ssl origin server connection errors (counts ssl "
 "errors that are not captured in other origin server stats below)."
@@ -294,60 +294,60 @@ msgstr ""
 "*その他*\\ のオリジンサーバー側の SSL 接続エラーの総数 ( 以下のその他のオリ"
 "ジンサーバー統計に数えられない SSL エラーをカウントします )"
 
-#: ../../reference/commands/traffic_line.en.rst:200
+#: ../../reference/commands/traffic_line.en.rst:206
 msgid "proxy.process.ssl.origin_server_expired_cert"
 msgstr "proxy.process.ssl.origin_server_expired_cert"
 
-#: ../../reference/commands/traffic_line.en.rst:199
+#: ../../reference/commands/traffic_line.en.rst:205
 msgid ""
 "Total number of ssl origin server connection failures where the cert was "
 "expired."
 msgstr "証明書の期限切れによるオリジンサーバー側の SSL 接続の失敗の総数"
 
-#: ../../reference/commands/traffic_line.en.rst:204
+#: ../../reference/commands/traffic_line.en.rst:210
 msgid "proxy.process.ssl.origin_server_revoked_cert"
 msgstr "proxy.process.ssl.origin_server_revoked_cert"
 
-#: ../../reference/commands/traffic_line.en.rst:203
+#: ../../reference/commands/traffic_line.en.rst:209
 msgid ""
 "Total number of ssl origin server connection failures where the cert was "
 "revoked."
 msgstr "証明書の失効によるオリジンサーバー側の SSL 接続の失敗の総数"
 
-#: ../../reference/commands/traffic_line.en.rst:208
+#: ../../reference/commands/traffic_line.en.rst:214
 msgid "proxy.process.ssl.origin_server_unknown_cert"
 msgstr "proxy.process.ssl.origin_server_unknown_cert"
 
-#: ../../reference/commands/traffic_line.en.rst:207
+#: ../../reference/commands/traffic_line.en.rst:213
 msgid ""
 "Total number of ssl origin server connection failures related to the cert "
 "where specific error was unknown."
 msgstr "原因不明な証明書に関するオリジンサーバー側の SSL 接続の失敗の総数"
 
-#: ../../reference/commands/traffic_line.en.rst:212
+#: ../../reference/commands/traffic_line.en.rst:218
 msgid "proxy.process.ssl.origin_server_cert_verify_failed"
 msgstr "proxy.process.ssl.origin_server_cert_verify_failed"
 
-#: ../../reference/commands/traffic_line.en.rst:211
+#: ../../reference/commands/traffic_line.en.rst:217
 msgid ""
 "Total number of ssl origin server connection failures where cert "
 "verification failed."
 msgstr "証明書の検証失敗によるオリジンサーバー側の SSL 接続の失敗の総数"
 
-#: ../../reference/commands/traffic_line.en.rst:216
+#: ../../reference/commands/traffic_line.en.rst:222
 msgid "proxy.process.ssl.origin_server_bad_cert"
 msgstr "proxy.process.ssl.origin_server_bad_cert"
 
-#: ../../reference/commands/traffic_line.en.rst:215
+#: ../../reference/commands/traffic_line.en.rst:221
 msgid ""
 "Total number of ssl origin server connection failures where the cert is bad."
 msgstr "証明書の異常によるオリジンサーバー側の SSL 接続の失敗の総数"
 
-#: ../../reference/commands/traffic_line.en.rst:220
+#: ../../reference/commands/traffic_line.en.rst:226
 msgid "proxy.process.ssl.origin_server_decryption_failed"
 msgstr "proxy.process.ssl.origin_server_decryption_failed"
 
-#: ../../reference/commands/traffic_line.en.rst:219
+#: ../../reference/commands/traffic_line.en.rst:225
 msgid ""
 "Total number of ssl origin server connection decryption failures (during "
 "negotiation)."
@@ -355,38 +355,38 @@ msgstr ""
 "オリジンサーバー側の SSL 接続における ( ネゴシエーション中の ) 復号化失敗の"
 "総数"
 
-#: ../../reference/commands/traffic_line.en.rst:224
+#: ../../reference/commands/traffic_line.en.rst:230
 msgid "proxy.process.ssl.origin_server_wrong_version"
 msgstr "proxy.process.ssl.origin_server_wrong_version"
 
-#: ../../reference/commands/traffic_line.en.rst:223
+#: ../../reference/commands/traffic_line.en.rst:229
 msgid ""
 "Total number of ssl origin server connections that provided an invalid "
 "protocol version."
 msgstr "無効なプロトコルバージョンを渡したオリジンサーバー側の SSL 接続の総数"
 
-#: ../../reference/commands/traffic_line.en.rst:228
+#: ../../reference/commands/traffic_line.en.rst:234
 msgid "proxy.process.ssl.origin_server_unknown_ca"
 msgstr "proxy.process.ssl.origin_server_unknown_ca"
 
-#: ../../reference/commands/traffic_line.en.rst:227
+#: ../../reference/commands/traffic_line.en.rst:233
 msgid ""
 "Total number of ssl origin server connection that failed due to unknown ca."
 msgstr "不明な CA により失敗したオリジンサーバー側の SSL 接続の総数"
 
-#: ../../reference/commands/traffic_line.en.rst:231
+#: ../../reference/commands/traffic_line.en.rst:237
 msgid "proxy.process.ssl.user_agent_sessions"
 msgstr "proxy.process.ssl.user_agent_sessions"
 
-#: ../../reference/commands/traffic_line.en.rst:231
+#: ../../reference/commands/traffic_line.en.rst:237
 msgid "Total number of ssl/tls sessions created."
 msgstr "作成された SSL/TLS セッションの総数"
 
-#: ../../reference/commands/traffic_line.en.rst:235
+#: ../../reference/commands/traffic_line.en.rst:241
 msgid "proxy.process.ssl.user_agent_session_hit"
 msgstr "proxy.process.ssl.user_agent_session_hit"
 
-#: ../../reference/commands/traffic_line.en.rst:234
+#: ../../reference/commands/traffic_line.en.rst:240
 msgid ""
 "Total number of session hits.  A previous session was reused which resulted "
 "in an abbreviated ssl client negotiation."
@@ -394,11 +394,11 @@ msgstr ""
 "セッションヒットの総数。SSL クライアントのネゴシエーションが省略され、前回の"
 "セッションが再利用された。"
 
-#: ../../reference/commands/traffic_line.en.rst:239
+#: ../../reference/commands/traffic_line.en.rst:245
 msgid "proxy.process.ssl.user_agent_session_miss"
 msgstr "proxy.process.ssl.user_agent_session_miss"
 
-#: ../../reference/commands/traffic_line.en.rst:238
+#: ../../reference/commands/traffic_line.en.rst:244
 msgid ""
 "Total number of session misses.  The ssl client provided a session id that "
 "was not found in cache and, therefore, could not be used."
@@ -406,11 +406,11 @@ msgstr ""
 "セッションミスの総数。SSL クライアントがセッション ID を提供したがキャッシュ"
 "内に見つからず使用できなかった。"
 
-#: ../../reference/commands/traffic_line.en.rst:243
+#: ../../reference/commands/traffic_line.en.rst:249
 msgid "proxy.process.ssl.user_agent_session_timeout"
 msgstr "proxy.process.ssl.user_agent_session_timeout"
 
-#: ../../reference/commands/traffic_line.en.rst:242
+#: ../../reference/commands/traffic_line.en.rst:248
 msgid ""
 "Total number of session timeouts.  The ssl client provided a session, but "
 "it could not be used because it was past the session timeout."
@@ -418,11 +418,11 @@ msgstr ""
 "セッションタイムアウトの総数。SSL クライアントがセッションを提供したが、セッ"
 "ションタイムアウトを経過していたので使用できなかった。"
 
-#: ../../reference/commands/traffic_line.en.rst:257
+#: ../../reference/commands/traffic_line.en.rst:263
 msgid "proxy.process.ssl.cipher.user_agent.{CIPHERNAME}"
 msgstr "proxy.process.ssl.cipher.user_agent.{CIPHERNAME}"
 
-#: ../../reference/commands/traffic_line.en.rst:246
+#: ../../reference/commands/traffic_line.en.rst:252
 msgid ""
 "Total number of ssl client connections that used cipherName.  The list of "
 "cipher statistics is dynamic and depends upon the installed ciphers and "
@@ -435,11 +435,11 @@ msgstr ""
 "cipher_suite` の設定によります。指定できる chiper 統計の一覧は :option:"
 "`traffic_line -m` で確認できます。例::"
 
-#: ../../reference/commands/traffic_line.en.rst:292
+#: ../../reference/commands/traffic_line.en.rst:298
 msgid ":manpage:`records.config(5)`, :manpage:`storage.config(5)`"
 msgstr ":manpage:`records.config(5)`, :manpage:`storage.config(5)`"
 
-#: ../../reference/commands/traffic_line.en.rst:95
+#: ../../reference/commands/traffic_line.en.rst:101
 msgid ""
 "Set the configuration variable named *VAR*. The value of the configuration "
 "variable is given by the :option:`traffic_line -v` option. Refer to the :"
@@ -447,7 +447,7 @@ msgid ""
 "variables you can specify."
 msgstr ""
 
-#: ../../reference/commands/traffic_line.en.rst:62
+#: ../../reference/commands/traffic_line.en.rst:68
 msgid ""
 "This option modifies the behavior of :option:`traffic_line -b` and :option:"
 "`traffic_line -L` such that :program:`traffic_server` is not shut down "
@@ -456,17 +456,17 @@ msgid ""
 "variable."
 msgstr ""
 
-#: ../../reference/commands/traffic_line.en.rst:122
+#: ../../reference/commands/traffic_line.en.rst:128
 msgid ""
 "The timestamp of the last reconfiguration event (in seconds since epoch) is "
 "published in the `proxy.node.config.reconfigure_time` metric."
 msgstr ""
 
-#: ../../reference/commands/traffic_line.en.rst:260
+#: ../../reference/commands/traffic_line.en.rst:266
 msgid "Cache Statistics"
 msgstr ""
 
-#: ../../reference/commands/traffic_line.en.rst:262
+#: ../../reference/commands/traffic_line.en.rst:268
 msgid ""
 "Cache statistics come in two varieties, global and per cache volume. These "
 "will be listed here in the global form. To get a cache volume statistic add "
@@ -476,43 +476,50 @@ msgid ""
 "volume is `proxy.process.cache.volume_3.sync.bytes`."
 msgstr ""
 
-#: ../../reference/commands/traffic_line.en.rst:268
+#: ../../reference/commands/traffic_line.en.rst:274
 msgid "proxy.process.cache.sync.bytes"
 msgstr ""
 
-#: ../../reference/commands/traffic_line.en.rst:268
+#: ../../reference/commands/traffic_line.en.rst:274
 msgid ""
 "The total number of bytes written to disk to synchronize the cache "
 "directory."
 msgstr ""
 
-#: ../../reference/commands/traffic_line.en.rst:271
+#: ../../reference/commands/traffic_line.en.rst:277
 msgid "proxy.process.cache.sync.time"
 msgstr ""
 
-#: ../../reference/commands/traffic_line.en.rst:271
+#: ../../reference/commands/traffic_line.en.rst:277
 msgid ""
 "The total time, in nanoseconds, during which the cache directory was being "
 "written to disk."
 msgstr ""
 
-#: ../../reference/commands/traffic_line.en.rst:274
+#: ../../reference/commands/traffic_line.en.rst:280
 msgid "proxy.process.cache.sync.count"
 msgstr ""
 
-#: ../../reference/commands/traffic_line.en.rst:274
+#: ../../reference/commands/traffic_line.en.rst:280
 msgid "The number of times a cache directory sync has been done."
 msgstr ""
 
-#: ../../reference/commands/traffic_line.en.rst:278
+#: ../../reference/commands/traffic_line.en.rst:284
 msgid "proxy.process.cache.wrap_count"
 msgstr ""
 
-#: ../../reference/commands/traffic_line.en.rst:277
+#: ../../reference/commands/traffic_line.en.rst:283
 msgid ""
 "The number of times a cache stripe has cycled. Each stripe is a circular "
 "buffer and this is incremented each time the write cursor is reset to the "
 "start of the stripe."
+msgstr ""
+
+#: ../../reference/commands/traffic_line.en.rst:24
+msgid ""
+"This utility is deprecated as of v6.0.0, and replaced with :program:"
+"`traffic_ctl`. You should change your tools / scripts to use this new "
+"application instead."
 msgstr ""
 
 #~ msgid ""

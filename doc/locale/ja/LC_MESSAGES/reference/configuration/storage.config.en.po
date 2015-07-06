@@ -161,7 +161,7 @@ msgstr ""
 msgid "Linux Example"
 msgstr "Linux の例"
 
-#: ../../reference/configuration/storage.config.en.rst:134
+#: ../../reference/configuration/storage.config.en.rst:149
 msgid ""
 "The following example will use an entire raw disk in the Linux operating "
 "system::"
@@ -169,7 +169,7 @@ msgstr ""
 "以下の例では、Linux オペレーティングシステムにおいてローディスクを使用しま"
 "す。::"
 
-#: ../../reference/configuration/storage.config.en.rst:140
+#: ../../reference/configuration/storage.config.en.rst:155
 msgid ""
 "In order to make sure :program:`traffic_server` will have access to this "
 "disk you can use :manpage:`udev(7)` to persistently set the right "
@@ -181,11 +181,11 @@ msgstr ""
 "できます。以下のルールはUbuntuをターゲットにされており、 ``/etc/udev/rules."
 "d/51-cache-disk.rules`` に保存されます::"
 
-#: ../../reference/configuration/storage.config.en.rst:167
+#: ../../reference/configuration/storage.config.en.rst:170
 msgid "FreeBSD Example"
 msgstr "FreeBSD の例"
 
-#: ../../reference/configuration/storage.config.en.rst:169
+#: ../../reference/configuration/storage.config.en.rst:172
 msgid ""
 "Starting with 5.1 FreeBSD dropped support for explicit raw devices. All "
 "devices on FreeBSD can be accessed raw now."
@@ -193,7 +193,7 @@ msgstr ""
 "5.1 FreeBSD から、明示的なローデバイスのサポートは終了しました。FreeBSDにお"
 "いて全デバイスは、現在、生でアクセス可能です。"
 
-#: ../../reference/configuration/storage.config.en.rst:172
+#: ../../reference/configuration/storage.config.en.rst:175
 msgid ""
 "The following example will use an entire raw disk in the FreeBSD operating "
 "system::"
@@ -201,7 +201,7 @@ msgstr ""
 "以下の例では、FreeBSD オペレーティングシステムでローディスク全体を使用しま"
 "す。::"
 
-#: ../../reference/configuration/storage.config.en.rst:178
+#: ../../reference/configuration/storage.config.en.rst:181
 msgid ""
 "In order to make sure :program:`traffic_server` will have access to this "
 "disk you can use :manpage:`devfs(8)` to persistently set the right "
@@ -215,7 +215,7 @@ msgstr ""
 msgid "``G`` Gigabytes (1024^3 or 1,073,741,824 bytes)"
 msgstr "``G`` ギガバイト (1024^3 または 1,073,741,824 バイト)"
 
-#: ../../reference/configuration/storage.config.en.rst:149
+#: ../../reference/configuration/storage.config.en.rst:164
 msgid ""
 "In order to apply these settings, trigger a reload with :manpage:"
 "`udevadm(8)`:::"
@@ -285,26 +285,6 @@ msgid ""
 "hardware changes and failures."
 msgstr ""
 
-#: ../../reference/configuration/storage.config.en.rst:153
-msgid ""
-"As an implementation note, modern Linux supports `alternative symlinked "
-"names for disk devices <https://wiki.archlinux.org/index.php/"
-"persistent_block_device_naming>`_ in the ``/dev/disk`` directory structure. "
-"As noted for the :ref:`assignment-table` the path used for the disk can "
-"effect the cache if it changes. This can be ameloriated in some cases by "
-"using one of the alternate paths in via ``/dev/disk``. Note that if the "
-"``by-id`` style is used, replacing a failed drive will cause that path to "
-"change because the new drive will have a different physical ID. The "
-"original hash string can be kept by adding :arg:`id` with the original path "
-"to the storage line."
-msgstr ""
-
-#: ../../reference/configuration/storage.config.en.rst:160
-msgid ""
-"If this is not sufficient then the :arg:`id` argument should be used to "
-"create a more permanent assignment table. An example would be::"
-msgstr ""
-
 #: ../../reference/configuration/storage.config.en.rst:24
 msgid ""
 "The :file:`storage.config` file (by default, located in ``/usr/local/etc/"
@@ -312,6 +292,27 @@ msgid ""
 "partitions that make up the Traffic Server cache. After you modify the :"
 "file:`storage.config` file the new settings will not be effective until "
 "Traffic Server is restarted."
+msgstr ""
+
+#: ../../reference/configuration/storage.config.en.rst:134
+msgid ""
+"Rather than refer to disk devices like ``/dev/sda``, ``/dev/sdb``, etc., "
+"modern Linux supports `alternative symlinked names for disk devices "
+"<https://wiki.archlinux.org/index.php/persistent_block_device_naming#by-"
+"id_and_by-path>`_ in the ``/dev/disk`` directory structure. As noted for "
+"the :ref:`assignment-table` the path used for the disk can effect the cache "
+"if it changes. This can be ameloriated in some cases by using one of the "
+"alternate paths in via ``/dev/disk``. Note that if the ``by-id`` or ``by-"
+"path`` style is used, replacing a failed drive will cause that path to "
+"change because the new drive will have a different physical ID or path. The "
+"original hash string can be kept by adding :arg:`id` or :arg:`path` with "
+"the original path to the storage line."
+msgstr ""
+
+#: ../../reference/configuration/storage.config.en.rst:143
+msgid ""
+"If this is not sufficient then the :arg:`id` or :arg:`path` argument should "
+"be used to create a more permanent assignment table. An example would be::"
 msgstr ""
 
 #~ msgid "The format of the :file:`storage.config` file is::"

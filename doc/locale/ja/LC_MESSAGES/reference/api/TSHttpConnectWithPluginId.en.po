@@ -90,17 +90,6 @@ msgid ""
 "target system) by reading and writing on this virtual connection."
 msgstr ""
 
-#: ../../reference/api/TSHttpConnectWithPluginId.en.rst:71
-msgid "This function only opens the connection - to drive the"
-msgstr ""
-
-#: ../../reference/api/TSHttpConnectWithPluginId.en.rst:72
-msgid ""
-"transaction an actual HTTP request must be sent and the HTTP response "
-"handled. The transaction is handled as a standard HTTP transaction and all "
-"of the standard configuration options and plugins will operate on it."
-msgstr ""
-
 #: ../../reference/api/TSHttpConnectWithPluginId.en.rst:77
 msgid ""
 "The combination of tag and id is intended to enable correlation in log post "
@@ -133,4 +122,12 @@ msgstr ""
 msgid ""
 ":manpage:`TSHttpConnect(3ts)`, :manpage:`TSNetConnect(3ts)`, :manpage:"
 "`TSAPI(3ts)`"
+msgstr ""
+
+#: ../../reference/api/TSHttpConnectWithPluginId.en.rst:71
+msgid ""
+"This function only opens the connection - to drive the transaction an "
+"actual HTTP request must be sent and the HTTP response handled. The "
+"transaction is handled as a standard HTTP transaction and all of the "
+"standard configuration options and plugins will operate on it."
 msgstr ""

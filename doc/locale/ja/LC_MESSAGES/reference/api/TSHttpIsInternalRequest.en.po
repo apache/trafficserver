@@ -37,36 +37,43 @@ msgid ""
 "originated within Traffic Server."
 msgstr ""
 
-#: ../../reference/api/TSHttpIsInternalRequest.en.rst:40
+#: ../../reference/api/TSHttpIsInternalRequest.en.rst:42
 msgid ""
 ":func:`TSHttpIsInternalSession` tests whether a HTTP session was originated "
 "within Traffic Server."
 msgstr ""
 
-#: ../../reference/api/TSHttpIsInternalRequest.en.rst:46
+#: ../../reference/api/TSHttpIsInternalRequest.en.rst:50
 msgid "Return Values"
 msgstr ""
 
-#: ../../reference/api/TSHttpIsInternalRequest.en.rst:48
+#: ../../reference/api/TSHttpIsInternalRequest.en.rst:52
 msgid ""
 "Both these APIs returns a :type:`TSReturnCode`, indicating whether the "
 "object was internal (:data:`TS_SUCCESS`) or not (:data:`TS_ERROR`)."
 msgstr ""
 
-#: ../../reference/api/TSHttpIsInternalRequest.en.rst:52
+#: ../../reference/api/TSHttpIsInternalRequest.en.rst:56
 msgid "Examples"
 msgstr ""
 
-#: ../../reference/api/TSHttpIsInternalRequest.en.rst:54
+#: ../../reference/api/TSHttpIsInternalRequest.en.rst:58
 msgid ""
 "The ESI plugin uses :func:`TSHttpIsInternalRequest` to ignore requests that "
 "is had generated while fetching portions of an ESI document:"
 msgstr ""
 
-#: ../../reference/api/TSHttpIsInternalRequest.en.rst:62
+#: ../../reference/api/TSHttpIsInternalRequest.en.rst:66
 msgid "See also"
 msgstr ""
 
-#: ../../reference/api/TSHttpIsInternalRequest.en.rst:63
+#: ../../reference/api/TSHttpIsInternalRequest.en.rst:67
 msgid ":manpage:`TSAPI(3ts)`"
+msgstr ""
+
+#: ../../reference/api/TSHttpIsInternalRequest.en.rst:38
+#: ../../reference/api/TSHttpIsInternalRequest.en.rst:40
+#: ../../reference/api/TSHttpIsInternalRequest.en.rst:45
+#: ../../reference/api/TSHttpIsInternalRequest.en.rst:47
+msgid "Deprecated"
 msgstr ""
