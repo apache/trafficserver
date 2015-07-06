@@ -36,7 +36,7 @@ sub addStat($$$) {
 sub displayStat($) {
   my($stats) = @_;
 
-  printf("%25s %10s %10s %10s %10s %10s %10s %10s\n", "key", "total", "count", "mean", "median", '95th', "min", "max");
+  printf("%25s %10s %10s %10s %10s %10s %10s %10s %10s\n", 'key', 'total', 'count', 'mean', 'median', '95th', '99th', 'min', 'max');
   foreach my $key ('ua_begin', 'ua_first_read', 'ua_read_header_done', 'cache_open_read_begin', 'cache_open_read_end', 'dns_lookup_begin', 'dns_lookup_end', 'server_connect', 'server_first_read', 'server_read_header_done', 'server_close', 'ua_close', 'sm_finish') {
 
     my $count = $stats->{$key}->{count};
@@ -49,12 +49,13 @@ sub displayStat($) {
     my @sorted = sort {$a <=> $b} @{$stats->{$key}->{values}};
     my $median = $sorted[int($count/2)];
     my $p95th = $sorted[int($count * .95)];
+    my $p99th = $sorted[int($count * .99)];
     my $min = $sorted[0];
     my $max = $sorted[$count - 1];
     my $mean = 0;
     $mean = $total / $count if $count > 0;
 
-    printf("%25s %10.2f %10.2f %10.2f %10.2f %10.2f %10.2f %10.2f\n", $key, $total, $count, $mean, $median, $p95th, $min, $max);
+    printf("%25s %10.2f %10.2f %10.2f %10.2f %10.2f %10.2f %10.2f %10.2f\n", $key, $total, $count, $mean, $median, $p95th, $p99th, $min, $max);
   }
   print "NOTE: Times are in seconds\n";
 }
