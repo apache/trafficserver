@@ -102,8 +102,9 @@ msgstr ""
 
 #: ../../admin/explicit-proxy-caching.en.rst:74
 msgid ""
-"Specify the port Traffic Server uses to serve the its synthetic healthchecks. The default "
-"port is 8083, see :ts:cv:`proxy.config.admin.synthetic_port`."
+"Specify the port Traffic Server uses to serve the its synthetic "
+"healthchecks. The default port is 8083, see :ts:cv:`proxy.config.admin."
+"synthetic_port`."
 msgstr ""
 "PAC ファイルを提供するために Traffic Server が使用するポートを指定する。デ"
 "フォルトポートは 8083 です。:ts:cv:`proxy.config.admin.autoconf_port` を参照"
