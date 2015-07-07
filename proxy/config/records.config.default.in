@@ -146,6 +146,7 @@ CONFIG proxy.config.log.rolling_enabled INT 1
 CONFIG proxy.config.log.rolling_interval_sec INT 86400
 CONFIG proxy.config.log.rolling_size_mb INT 10
 CONFIG proxy.config.log.auto_delete_rolled_files INT 1
+CONFIG proxy.config.log.periodic_tasks_interval INT 5
 
 ##############################################################################
 # These settings control remapping, and if the proxy allows (open) forward proxy or not. Docs:

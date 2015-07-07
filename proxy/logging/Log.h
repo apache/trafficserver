@@ -448,6 +448,7 @@ public:
   // reconfiguration stuff
   static void change_configuration();
   static int handle_logging_mode_change(const char *name, RecDataT data_type, RecData data, void *cookie);
+  static int handle_periodic_tasks_int_change(const char *name, RecDataT data_type, RecData data, void *cookie);
 
   Log(); // shut up stupid DEC C++ compiler
 
@@ -461,6 +462,7 @@ private:
   static int init_status;
   static int config_flags;
   static bool logging_mode_changed;
+  static int periodic_tasks_interval;
 
   // -- member functions that are not allowed --
   Log(const Log &rhs);

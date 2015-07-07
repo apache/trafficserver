@@ -57,7 +57,7 @@
 
 #include "ink_apidefs.h"
 
-#define PERIODIC_TASKS_INTERVAL 5 // TODO: Maybe this should be done as a config option
+#define PERIODIC_TASKS_INTERVAL_FALLBACK 5
 
 // Log global objects
 inkcoreapi LogObject *Log::error_log = NULL;
@@ -82,6 +82,7 @@ int Log::collation_port;
 int Log::init_status = 0;
 int Log::config_flags = 0;
 bool Log::logging_mode_changed = false;
+int Log::periodic_tasks_interval = PERIODIC_TASKS_INTERVAL_FALLBACK;
 
 // Hash table for LogField symbols
 InkHashTable *Log::field_symbol_hash = 0;
@@ -223,6 +224,7 @@ Log::periodic_tasks(long time_now)
     change_configuration();
   } else if (logging_mode > LOG_MODE_NONE || config->collation_mode == Log::COLLATION_HOST || config->has_api_objects()) {
     Debug("log-periodic", "Performing periodic tasks");
+    Debug("log-periodic", "Periodic task interval = %d", periodic_tasks_interval);
 
     // Check if space is ok and update the space used
     //
@@ -741,6 +743,24 @@ Log::handle_logging_mode_change(const char * /* name ATS_UNUSED */, RecDataT /* 
   return 0;
 }
 
+int
+Log::handle_periodic_tasks_int_change(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */,
+                                       RecData data, void * /* cookie ATS_UNSED */)
+{
+  Debug("log-periodic", "periodic task interval changed");
+  if (data.rec_int <= 0) {
+    periodic_tasks_interval = PERIODIC_TASKS_INTERVAL_FALLBACK;
+    Error("new periodic tasks interval = %d is invalid, falling back to default = %d"
+           ,data.rec_int, PERIODIC_TASKS_INTERVAL_FALLBACK);
+  }
+  else {
+    periodic_tasks_interval = data.rec_int;
+    Debug("log-periodic", "periodic task interval changed to %d", periodic_tasks_interval);
+  }
+  return REC_ERR_OKAY; 
+}
+
+
 void
 Log::init(int flags)
 {
@@ -783,6 +803,17 @@ Log::init(int flags)
       }
     }
   }
+
+  // periodic task interval are set on a per instance basis
+  periodic_tasks_interval = (int)REC_ConfigReadInteger("proxy.config.log.periodic_tasks_interval");
+  if (periodic_tasks_interval <= 0) {
+    Error("proxy.config.log.periodic_tasks_interval = %d is invalid",periodic_tasks_interval);
+    Note("falling back to default periodic tasks interval = %d",PERIODIC_TASKS_INTERVAL_FALLBACK);
+    periodic_tasks_interval = PERIODIC_TASKS_INTERVAL_FALLBACK;
+  }
+
+  REC_RegisterConfigUpdateFunc("proxy.config.log.periodic_tasks_interval", 
+      &Log::handle_periodic_tasks_int_change, NULL);
 
   // if remote management is enabled, do all necessary initialization to
   // be able to handle a logging mode change
@@ -1128,7 +1159,7 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
     // Time to work on periodic events??
     //
     now = Thread::get_hrtime() / HRTIME_SECOND;
-    if (now >= last_time + PERIODIC_TASKS_INTERVAL) {
+    if (now >= last_time + periodic_tasks_interval) {
       Debug("log-preproc", "periodic tasks for %" PRId64, (int64_t)now);
       periodic_tasks(now);
       last_time = Thread::get_hrtime() / HRTIME_SECOND;
