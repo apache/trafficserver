@@ -744,20 +744,19 @@ Log::handle_logging_mode_change(const char * /* name ATS_UNUSED */, RecDataT /* 
 }
 
 int
-Log::handle_periodic_tasks_int_change(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */,
-                                       RecData data, void * /* cookie ATS_UNSED */)
+Log::handle_periodic_tasks_int_change(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */, RecData data,
+                                      void * /* cookie ATS_UNSED */)
 {
   Debug("log-periodic", "periodic task interval changed");
   if (data.rec_int <= 0) {
     periodic_tasks_interval = PERIODIC_TASKS_INTERVAL_FALLBACK;
-    Error("new periodic tasks interval = %d is invalid, falling back to default = %d"
-           ,data.rec_int, PERIODIC_TASKS_INTERVAL_FALLBACK);
-  }
-  else {
+    Error("new periodic tasks interval = %d is invalid, falling back to default = %d", data.rec_int,
+          PERIODIC_TASKS_INTERVAL_FALLBACK);
+  } else {
     periodic_tasks_interval = data.rec_int;
     Debug("log-periodic", "periodic task interval changed to %d", periodic_tasks_interval);
   }
-  return REC_ERR_OKAY; 
+  return REC_ERR_OKAY;
 }
 
 
@@ -807,13 +806,12 @@ Log::init(int flags)
   // periodic task interval are set on a per instance basis
   periodic_tasks_interval = (int)REC_ConfigReadInteger("proxy.config.log.periodic_tasks_interval");
   if (periodic_tasks_interval <= 0) {
-    Error("proxy.config.log.periodic_tasks_interval = %d is invalid",periodic_tasks_interval);
-    Note("falling back to default periodic tasks interval = %d",PERIODIC_TASKS_INTERVAL_FALLBACK);
+    Error("proxy.config.log.periodic_tasks_interval = %d is invalid", periodic_tasks_interval);
+    Note("falling back to default periodic tasks interval = %d", PERIODIC_TASKS_INTERVAL_FALLBACK);
     periodic_tasks_interval = PERIODIC_TASKS_INTERVAL_FALLBACK;
   }
 
-  REC_RegisterConfigUpdateFunc("proxy.config.log.periodic_tasks_interval", 
-      &Log::handle_periodic_tasks_int_change, NULL);
+  REC_RegisterConfigUpdateFunc("proxy.config.log.periodic_tasks_interval", &Log::handle_periodic_tasks_int_change, NULL);
 
   // if remote management is enabled, do all necessary initialization to
   // be able to handle a logging mode change
