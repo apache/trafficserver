@@ -69,7 +69,6 @@ LogFile::LogFile(const char *name, const char *header, LogFileFormat format, uin
   m_start_time = 0L;
   m_end_time = 0L;
   m_bytes_written = 0;
-  m_size_bytes = 0;
   m_ascii_buffer_size = (ascii_buffer_size < max_line_size ? max_line_size : ascii_buffer_size);
 
   Debug("log-file", "exiting LogFile constructor, m_name=%s, this=%p", m_name, this);
