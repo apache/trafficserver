@@ -2615,7 +2615,7 @@ ParseHostLine(char *l)
   // Elements should be the address then a list of host names.
   // Don't use RecHttpLoadIp because the address *must* be literal.
   IpAddr ip;
-  if (n_elts > 1 && 0 == ip.load(elts[0]) && !ip.isLoopback()) {
+  if (n_elts > 1 && 0 == ip.load(elts[0])) {
     for (int i = 1; i < n_elts; ++i) {
       ts::ConstBuffer name(elts[i], strlen(elts[i]));
       // If we don't have an entry already (host files only support single IPs for a given name)
