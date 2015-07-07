@@ -1171,7 +1171,7 @@ static const RecordElement RecordsConfig[] =
   {RECT_CONFIG, "proxy.config.log.max_line_size", RECD_INT, "9216", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   // How often periodic tasks get executed in the Log.cc infrastructure
-  {RECT_CONFIG, "proxy.config.log.periodic_tasks_interval", RECD_INT, "5", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  {RECT_CONFIG, "proxy.config.log.periodic_tasks_interval", RECD_INT, "5", RECU_DYNAMIC, RR_NULL, RECC_NULL, "^[0-9]+$", RECA_NULL}
   ,
 
   //##############################################################################
