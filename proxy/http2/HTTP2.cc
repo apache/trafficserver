@@ -495,6 +495,12 @@ convert_from_2_to_1_1_header(HTTPHdr *headers)
       return PARSE_ERROR;
     }
 
+    // 8.1.2.5 Combine Cookie headers
+    field = headers->field_find(MIME_FIELD_COOKIE, MIME_LEN_COOKIE);
+    if (field) {
+      headers->field_combine_dups(field, true, ';');
+    }
+
     // Convert HTTP version to 1.1
     int32_t version = HTTP_VERSION(1, 1);
     http_hdr_version_set(headers->m_http, version);
