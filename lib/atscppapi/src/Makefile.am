@@ -20,7 +20,7 @@ TS_PLUGIN_CPPFLAGS = \
   -I$(top_builddir)/lib/ts \
   -I$(top_srcdir)/lib/ts
 
-AM_CXXFLAGS = -Iinclude $(TS_PLUGIN_CPPFLAGS)
+AM_CXXFLAGS = -Iinclude $(TS_PLUGIN_CPPFLAGS) -I$(srcdir)/include
 
 # build the library
 lib_LTLIBRARIES = libatscppapi.la
@@ -51,7 +51,7 @@ libatscppapi_la_SOURCES = GlobalPlugin.cc \
                           InterceptPlugin.cc
 
 library_includedir=$(includedir)/atscppapi
-base_include_folder = include/atscppapi/
+base_include_folder = $(srcdir)/include/atscppapi/
 
 library_include_HEADERS = $(base_include_folder)/GlobalPlugin.h \
 			  $(base_include_folder)/Plugin.h \
