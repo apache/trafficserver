@@ -1329,22 +1329,22 @@ MIMEHdr::field_value_append(MIMEField *field, const char *value_str, int value_l
   field->value_append(m_heap, m_mime, value_str, value_len, prepend_comma, separator);
 }
 
-
-
 inline void
 MIMEHdr::field_combine_dups(MIMEField *field, bool prepend_comma, const char separator)
 {
-  if (field->has_dups()) {
-    MIMEField *duplicate = field->m_next_dup;
-    field_combine_dups(duplicate, prepend_comma, separator);
+  MIMEField *current = field->m_next_dup;
+  MIMEField *next = NULL;
 
+  while (current) {
+    next = current->m_next_dup;
 
     int value_len = 0;
-    const char *value_str = duplicate->value_get(&value_len);
+    const char *value_str = current->value_get(&value_len);
     if (value_len > 0) {
       field->value_append(m_heap, m_mime, value_str, value_len, prepend_comma, separator);
     }
-    field_delete(duplicate);
+    field_delete(current, false); // don't delete duplicates
+    current = next;
   }
 }
 
