@@ -170,6 +170,24 @@ The following list describes Traffic Server custom logging fields.
     mm is the two-digit minutes value, and ss is the 2-digit seconds
     value (for example, 16:01:19).
 
+.. _cqtr:
+
+``cqtr``
+    The TCP reused status; indicates if this client request went through
+    an already established connection.
+
+.. _cqssl:
+
+``cqssl``
+    The SSL client request status indicates if this client connection
+    is over SSL.
+
+.. _cqssr:
+
+``cqssr``
+    The SSL session/ticket reused status; indicates if this request hit
+    the SSL session/ticket and avoided a full SSL handshake.
+
 .. _cqtx:
 
 ``cqtx``
