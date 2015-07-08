@@ -387,8 +387,8 @@ EXCLUSIVE_REGRESSION_TEST(cache)(RegressionTest *t, int /* atype ATS_UNUSED */, 
 
   r_sequential(t, write_test.clone(), lookup_test.clone(), r_sequential(t, 10, read_test.clone()), remove_test.clone(),
                lookup_fail_test.clone(), read_fail_test.clone(), remove_fail_test.clone(), replace_write_test.clone(),
-               replace_test.clone(), replace_read_test.clone(), large_write_test.clone(), pread_test.clone(), NULL_PTR)
-    ->run(pstatus);
+               replace_test.clone(), replace_read_test.clone(), large_write_test.clone(), pread_test.clone(),
+               NULL_PTR)->run(pstatus);
   return;
 }
 
