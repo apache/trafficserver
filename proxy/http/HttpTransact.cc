@@ -8865,75 +8865,84 @@ HttpTransact::update_size_and_time_stats(State *s, ink_hrtime total_time, ink_hr
 
   // update milestones stats
   if (http_ua_begin_time_stat) {
-    HTTP_SUM_TRANS_STAT(http_ua_begin_time_stat, milestone_difference_msec(milestones.sm_start, milestones.ua_begin))
+    HTTP_SUM_TRANS_STAT(http_ua_begin_time_stat,
+                        milestones.difference_msec(TransactionMilestones::SM_START, TransactionMilestones::UA_BEGIN))
   }
   if (http_ua_first_read_time_stat) {
-    HTTP_SUM_TRANS_STAT(http_ua_first_read_time_stat, milestone_difference_msec(milestones.sm_start, milestones.ua_first_read))
+    HTTP_SUM_TRANS_STAT(http_ua_first_read_time_stat,
+                        milestones.difference_msec(TransactionMilestones::SM_START, TransactionMilestones::UA_FIRST_READ))
   }
   if (http_ua_read_header_done_time_stat) {
     HTTP_SUM_TRANS_STAT(http_ua_read_header_done_time_stat,
-                        milestone_difference_msec(milestones.sm_start, milestones.ua_read_header_done))
+                        milestones.difference_msec(TransactionMilestones::SM_START, TransactionMilestones::UA_READ_HEADER_DONE))
   }
   if (http_ua_begin_write_time_stat) {
-    HTTP_SUM_TRANS_STAT(http_ua_begin_write_time_stat, milestone_difference_msec(milestones.sm_start, milestones.ua_begin_write))
+    HTTP_SUM_TRANS_STAT(http_ua_begin_write_time_stat,
+                        milestones.difference_msec(TransactionMilestones::SM_START, TransactionMilestones::UA_BEGIN_WRITE))
   }
   if (http_ua_close_time_stat) {
-    HTTP_SUM_TRANS_STAT(http_ua_close_time_stat, milestone_difference_msec(milestones.sm_start, milestones.ua_close))
+    HTTP_SUM_TRANS_STAT(http_ua_close_time_stat,
+                        milestones.difference_msec(TransactionMilestones::SM_START, TransactionMilestones::UA_CLOSE))
   }
   if (http_server_first_connect_time_stat) {
     HTTP_SUM_TRANS_STAT(http_server_first_connect_time_stat,
-                        milestone_difference_msec(milestones.sm_start, milestones.server_first_connect))
+                        milestones.difference_msec(TransactionMilestones::SM_START, TransactionMilestones::SERVER_FIRST_CONNECT))
   }
   if (http_server_connect_time_stat) {
-    HTTP_SUM_TRANS_STAT(http_server_connect_time_stat, milestone_difference_msec(milestones.sm_start, milestones.server_connect))
+    HTTP_SUM_TRANS_STAT(http_server_connect_time_stat,
+                        milestones.difference_msec(TransactionMilestones::SM_START, TransactionMilestones::SERVER_CONNECT))
   }
   if (http_server_connect_end_time_stat) {
     HTTP_SUM_TRANS_STAT(http_server_connect_end_time_stat,
-                        milestone_difference_msec(milestones.sm_start, milestones.server_connect_end))
+                        milestones.difference_msec(TransactionMilestones::SM_START, TransactionMilestones::SERVER_CONNECT_END))
   }
   if (http_server_begin_write_time_stat) {
     HTTP_SUM_TRANS_STAT(http_server_begin_write_time_stat,
-                        milestone_difference_msec(milestones.sm_start, milestones.server_begin_write))
+                        milestones.difference_msec(TransactionMilestones::SM_START, TransactionMilestones::SERVER_BEGIN_WRITE))
   }
   if (http_server_first_read_time_stat) {
     HTTP_SUM_TRANS_STAT(http_server_first_read_time_stat,
-                        milestone_difference_msec(milestones.sm_start, milestones.server_first_read))
+                        milestones.difference_msec(TransactionMilestones::SM_START, TransactionMilestones::SERVER_FIRST_READ))
   }
   if (http_server_read_header_done_time_stat) {
     HTTP_SUM_TRANS_STAT(http_server_read_header_done_time_stat,
-                        milestone_difference_msec(milestones.sm_start, milestones.server_read_header_done))
+                        milestones.difference_msec(TransactionMilestones::SM_START, TransactionMilestones::SERVER_READ_HEADER_DONE))
   }
   if (http_server_close_time_stat) {
-    HTTP_SUM_TRANS_STAT(http_server_close_time_stat, milestone_difference_msec(milestones.sm_start, milestones.server_close))
+    HTTP_SUM_TRANS_STAT(http_server_close_time_stat,
+                        milestones.difference_msec(TransactionMilestones::SM_START, TransactionMilestones::SERVER_CLOSE))
   }
   if (http_cache_open_read_begin_time_stat) {
     HTTP_SUM_TRANS_STAT(http_cache_open_read_begin_time_stat,
-                        milestone_difference_msec(milestones.sm_start, milestones.cache_open_read_begin))
+                        milestones.difference_msec(TransactionMilestones::SM_START, TransactionMilestones::CACHE_OPEN_READ_BEGIN))
   }
   if (http_cache_open_read_end_time_stat) {
     HTTP_SUM_TRANS_STAT(http_cache_open_read_end_time_stat,
-                        milestone_difference_msec(milestones.sm_start, milestones.cache_open_read_end))
+                        milestones.difference_msec(TransactionMilestones::SM_START, TransactionMilestones::CACHE_OPEN_READ_END))
   }
   if (http_cache_open_write_begin_time_stat) {
     HTTP_SUM_TRANS_STAT(http_cache_open_write_begin_time_stat,
-                        milestone_difference_msec(milestones.sm_start, milestones.cache_open_write_begin))
+                        milestones.difference_msec(TransactionMilestones::SM_START, TransactionMilestones::CACHE_OPEN_WRITE_BEGIN))
   }
   if (http_cache_open_write_end_time_stat) {
     HTTP_SUM_TRANS_STAT(http_cache_open_write_end_time_stat,
-                        milestone_difference_msec(milestones.sm_start, milestones.cache_open_write_end))
+                        milestones.difference_msec(TransactionMilestones::SM_START, TransactionMilestones::CACHE_OPEN_WRITE_END))
   }
   if (http_dns_lookup_begin_time_stat) {
     HTTP_SUM_TRANS_STAT(http_dns_lookup_begin_time_stat,
-                        milestone_difference_msec(milestones.sm_start, milestones.dns_lookup_begin))
+                        milestones.difference_msec(TransactionMilestones::SM_START, TransactionMilestones::DNS_LOOKUP_BEGIN))
   }
   if (http_dns_lookup_end_time_stat) {
-    HTTP_SUM_TRANS_STAT(http_dns_lookup_end_time_stat, milestone_difference_msec(milestones.sm_start, milestones.dns_lookup_end))
+    HTTP_SUM_TRANS_STAT(http_dns_lookup_end_time_stat,
+                        milestones.difference_msec(TransactionMilestones::SM_START, TransactionMilestones::DNS_LOOKUP_END))
   }
   if (http_sm_start_time_stat) {
-    HTTP_SUM_TRANS_STAT(http_sm_start_time_stat, milestone_difference_msec(milestones.sm_start, milestones.sm_start))
+    HTTP_SUM_TRANS_STAT(http_sm_start_time_stat,
+                        milestones.difference_msec(TransactionMilestones::SM_START, TransactionMilestones::SM_START))
   }
   if (http_sm_finish_time_stat) {
-    HTTP_SUM_TRANS_STAT(http_sm_finish_time_stat, milestone_difference_msec(milestones.sm_start, milestones.sm_finish))
+    HTTP_SUM_TRANS_STAT(http_sm_finish_time_stat,
+                        milestones.difference_msec(TransactionMilestones::SM_START, TransactionMilestones::SM_FINISH))
   }
 }
 
