@@ -501,10 +501,12 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
             if (ret == SSL_READ_EOS) {
               this->eosRcvd = true;
             }
+#if DEBUG
             int pending = SSL_pending(this->ssl);
             if (r > 0 || pending > 0) {
               Debug("ssl", "ssl read right after handshake, read %" PRId64 ", pending %d bytes, for vc %p", r, pending, this);
             }
+#endif
           } else {
             Error("failed to allocate MIOBuffer after handshake, vc %p", this);
           }
