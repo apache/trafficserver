@@ -885,7 +885,7 @@ HostDBProcessor::getbynameport_re(Continuation *cont, const char *ahostname, int
       HOSTDB_INCREMENT_DYN_STAT(hostdb_re_dns_on_reload_stat);
   }
   sockaddr sa;
-  ats_ip4_set(&sa, NULL, htons(opt.port));
+  ats_ip4_set(&sa, INADDR_ANY, htons(opt.port));
   return getby(cont, ahostname, len, &sa, force_dns, opt.host_res_style, opt.timeout);
 }
 
