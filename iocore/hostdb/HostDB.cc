@@ -2684,4 +2684,6 @@ ParseHostFile(char const *path)
   hostDB.hosts_file_ptr = parsed_hosts_file_ptr;
   // Make a new map, so we can do it all again
   parsed_hosts_file_ptr = new RefCountedHostsFileMap();
+  // Mark this one as completed, so we can allow another update to happen
+  HostDBFileUpdateActive = 0;
 }
