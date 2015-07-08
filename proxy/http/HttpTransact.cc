@@ -1434,7 +1434,7 @@ HttpTransact::setup_plugin_request_intercept(State *s)
   s->server_info.keep_alive = HTTP_NO_KEEPALIVE;
   s->host_db_info.app.http_data.http_version = HostDBApplicationInfo::HTTP_VERSION_10;
   s->host_db_info.app.http_data.pipeline_max = 1;
-  s->server_info.dst_addr.setToAnyAddr(AF_INET); // must set an address or we can't set the port.
+  s->server_info.dst_addr.setToAnyAddr(AF_INET);                                 // must set an address or we can't set the port.
   s->server_info.dst_addr.port() = htons(s->hdr_info.client_request.port_get()); // this is the info that matters.
 
   // Build the request to the server
@@ -8867,12 +8867,10 @@ HttpTransact::update_size_and_time_stats(State *s, ink_hrtime total_time, ink_hr
 
   // update milestones stats
   if (http_ua_begin_time_stat) {
-    HTTP_SUM_TRANS_STAT(http_ua_begin_time_stat,
-                        milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_UA_BEGIN))
+    HTTP_SUM_TRANS_STAT(http_ua_begin_time_stat, milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_UA_BEGIN))
   }
   if (http_ua_first_read_time_stat) {
-    HTTP_SUM_TRANS_STAT(http_ua_first_read_time_stat,
-                        milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_UA_FIRST_READ))
+    HTTP_SUM_TRANS_STAT(http_ua_first_read_time_stat, milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_UA_FIRST_READ))
   }
   if (http_ua_read_header_done_time_stat) {
     HTTP_SUM_TRANS_STAT(http_ua_read_header_done_time_stat,
@@ -8883,8 +8881,7 @@ HttpTransact::update_size_and_time_stats(State *s, ink_hrtime total_time, ink_hr
                         milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_UA_BEGIN_WRITE))
   }
   if (http_ua_close_time_stat) {
-    HTTP_SUM_TRANS_STAT(http_ua_close_time_stat,
-                        milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_UA_CLOSE))
+    HTTP_SUM_TRANS_STAT(http_ua_close_time_stat, milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_UA_CLOSE))
   }
   if (http_server_first_connect_time_stat) {
     HTTP_SUM_TRANS_STAT(http_server_first_connect_time_stat,
@@ -8911,8 +8908,7 @@ HttpTransact::update_size_and_time_stats(State *s, ink_hrtime total_time, ink_hr
                         milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_READ_HEADER_DONE))
   }
   if (http_server_close_time_stat) {
-    HTTP_SUM_TRANS_STAT(http_server_close_time_stat,
-                        milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_CLOSE))
+    HTTP_SUM_TRANS_STAT(http_server_close_time_stat, milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_CLOSE))
   }
   if (http_cache_open_read_begin_time_stat) {
     HTTP_SUM_TRANS_STAT(http_cache_open_read_begin_time_stat,
@@ -8939,12 +8935,10 @@ HttpTransact::update_size_and_time_stats(State *s, ink_hrtime total_time, ink_hr
                         milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_DNS_LOOKUP_END))
   }
   if (http_sm_start_time_stat) {
-    HTTP_SUM_TRANS_STAT(http_sm_start_time_stat,
-                        milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SM_START))
+    HTTP_SUM_TRANS_STAT(http_sm_start_time_stat, milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SM_START))
   }
   if (http_sm_finish_time_stat) {
-    HTTP_SUM_TRANS_STAT(http_sm_finish_time_stat,
-                        milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SM_FINISH))
+    HTTP_SUM_TRANS_STAT(http_sm_finish_time_stat, milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SM_FINISH))
   }
 }
 

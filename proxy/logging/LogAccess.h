@@ -288,8 +288,7 @@ public:
   // milestones access
   //
   inkcoreapi virtual int marshal_milestone(TSMilestonesType ms, char *buf);
-  inkcoreapi virtual int marshal_milestone_diff(TSMilestonesType ms1, TSMilestonesType ms2,
-                                                char *buf);
+  inkcoreapi virtual int marshal_milestone_diff(TSMilestonesType ms1, TSMilestonesType ms2, char *buf);
 
   //
   // unmarshalling routines

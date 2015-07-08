@@ -655,11 +655,11 @@ public:
     TransferEncoding_t transfer_encoding;
 
     /** This is the source address of the connection from the point of view of the transaction.
-	It is the address of the source of the request.
+        It is the address of the source of the request.
     */
     IpEndpoint src_addr;
     /** This is the destination address of the connection from the point of view of the transaction.
-	It is the address of the target of the request.
+        It is the address of the target of the request.
     */
     IpEndpoint dst_addr;
 

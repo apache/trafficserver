@@ -3947,7 +3947,9 @@ HttpSM::do_hostdb_lookup()
       historical_action = pending_action;
     } else {
       char *host_name = t_state.dns_info.srv_lookup_success ? t_state.dns_info.srv_hostname : t_state.dns_info.lookup_name;
-      opt.port = t_state.dns_info.srv_lookup_success ? t_state.dns_info.srv_port : t_state.server_info.dst_addr.isValid() ? t_state.server_info.dst_addr.host_order_port() : t_state.hdr_info.client_request.port_get();
+      opt.port = t_state.dns_info.srv_lookup_success ? t_state.dns_info.srv_port : t_state.server_info.dst_addr.isValid() ?
+                                                       t_state.server_info.dst_addr.host_order_port() :
+                                                       t_state.hdr_info.client_request.port_get();
       opt.flags = (t_state.cache_info.directives.does_client_permit_dns_storing) ? HostDBProcessor::HOSTDB_DO_NOT_FORCE_DNS :
                                                                                    HostDBProcessor::HOSTDB_FORCE_DNS_RELOAD;
       opt.timeout = (t_state.api_txn_dns_timeout_value != -1) ? t_state.api_txn_dns_timeout_value : 0;
@@ -3969,7 +3971,10 @@ HttpSM::do_hostdb_lookup()
 
     // If there is not a current server, we must be looking up the origin
     //  server at the beginning of the transaction
-    int server_port = t_state.current.server ? t_state.current.server->dst_addr.host_order_port() : t_state.server_info.dst_addr.isValid() ? t_state.server_info.dst_addr.host_order_port() : t_state.hdr_info.client_request.port_get();
+    int server_port =
+      t_state.current.server ? t_state.current.server->dst_addr.host_order_port() : t_state.server_info.dst_addr.isValid() ?
+                               t_state.server_info.dst_addr.host_order_port() :
+                               t_state.hdr_info.client_request.port_get();
 
     if (t_state.api_txn_dns_timeout_value != -1) {
       DebugSM("http_timeout", "beginning DNS lookup. allowing %d mseconds for DNS lookup", t_state.api_txn_dns_timeout_value);
@@ -6636,8 +6641,7 @@ HttpSM::update_stats()
     milestones[TS_MILESTONE_UA_CLOSE] = Thread::get_hrtime();
 
   // request_process_time  = The time after the header is parsed to the completion of the transaction
-  ink_hrtime request_process_time =
-    milestones[TS_MILESTONE_UA_CLOSE] - milestones[TS_MILESTONE_UA_READ_HEADER_DONE];
+  ink_hrtime request_process_time = milestones[TS_MILESTONE_UA_CLOSE] - milestones[TS_MILESTONE_UA_READ_HEADER_DONE];
 
   HttpTransact::client_result_stat(&t_state, total_time, request_process_time);
 
@@ -6729,8 +6733,8 @@ HttpSM::update_stats()
           "sm_finish: %.3f "
           "plugin_active: %.3f "
           "plugin_total: %.3f",
-          sm_id, client_ip, t_state.client_info.src_addr.host_order_port(), url_string, status, unique_id_string,
-          redirection_tries, client_response_body_bytes, fd, t_state.client_info.state, t_state.server_info.state,
+          sm_id, client_ip, t_state.client_info.src_addr.host_order_port(), url_string, status, unique_id_string, redirection_tries,
+          client_response_body_bytes, fd, t_state.client_info.state, t_state.server_info.state,
           milestones.difference(TS_MILESTONE_SM_START, TS_MILESTONE_UA_BEGIN),
           milestones.difference(TS_MILESTONE_SM_START, TS_MILESTONE_UA_FIRST_READ),
           milestones.difference(TS_MILESTONE_SM_START, TS_MILESTONE_UA_READ_HEADER_DONE),

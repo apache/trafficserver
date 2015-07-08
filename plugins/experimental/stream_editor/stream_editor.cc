@@ -500,13 +500,18 @@ public:
   }
 
   rule_t(const rule_t &r) : scope(r.scope), priority(r.priority), from(r.from), to(r.to), refcount(r.refcount) { ++*refcount; }
-  ~rule_t() {
+  ~rule_t()
+  {
     if (!refcount || !--*refcount) {
-      if (scope) delete scope;
-      if (from) delete from;
-      if (to) TSfree(to);
+      if (scope)
+        delete scope;
+      if (from)
+        delete from;
+      if (to)
+        TSfree(to);
     }
-    if (refcount) delete refcount;
+    if (refcount)
+      delete refcount;
   }
 
   bool
