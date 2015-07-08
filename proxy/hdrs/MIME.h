@@ -1330,7 +1330,6 @@ MIMEHdr::field_value_append(MIMEField *field, const char *value_str, int value_l
 }
 
 
-
 inline void
 MIMEHdr::field_combine_dups(MIMEField *field, bool prepend_comma, const char separator)
 {
