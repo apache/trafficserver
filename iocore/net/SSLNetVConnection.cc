@@ -790,7 +790,7 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, i
 
 SSLNetVConnection::SSLNetVConnection()
   : ssl(NULL), sslHandshakeBeginTime(0), sslLastWriteTime(0), sslTotalBytesSent(0), hookOpRequested(TS_SSL_HOOK_OP_DEFAULT),
-    sslHandShakeComplete(false), sslClientConnection(false), sslClientRenegotiationAbort(false), handShakeBuffer(NULL),
+    sslHandShakeComplete(false), sslClientConnection(false), sslClientRenegotiationAbort(false), sslSessionCacheHit(false), handShakeBuffer(NULL),
     handShakeHolder(NULL), handShakeReader(NULL), handShakeBioStored(0), sslPreAcceptHookState(SSL_HOOKS_INIT),
     sslHandshakeHookState(HANDSHAKE_HOOKS_PRE), npnSet(NULL), npnEndpoint(NULL), sessionAcceptPtr(NULL), iobuf(NULL), reader(NULL),
     eosRcvd(false)
@@ -870,6 +870,7 @@ SSLNetVConnection::free(EThread *t)
   sslLastWriteTime = 0;
   sslTotalBytesSent = 0;
   sslClientRenegotiationAbort = false;
+  sslSessionCacheHit = false;
   if (SSL_HOOKS_ACTIVE == sslPreAcceptHookState) {
     Error("SSLNetVconnection freed with outstanding hook");
   }

@@ -601,6 +601,34 @@ LogAccessHttp::marshal_client_req_body_len(char *buf)
   return INK_MIN_ALIGN;
 }
 
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
+LogAccessHttp::marshal_client_req_tcp_reused(char *buf)
+{
+  if (buf) {
+    int64_t tcp_reused;
+    tcp_reused = m_http_sm->client_tcp_reused;
+    marshal_int(buf, tcp_reused);
+  }
+  return INK_MIN_ALIGN;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
+LogAccessHttp::marshal_client_req_ssl_reused(char *buf)
+{
+  if (buf) {
+    int64_t ssl_session_reused;
+    ssl_session_reused = m_http_sm->client_ssl_reused;
+    marshal_int(buf, ssl_session_reused);
+  }
+  return INK_MIN_ALIGN;
+}
+
 int
 LogAccessHttp::marshal_client_finish_status_code(char *buf)
 {

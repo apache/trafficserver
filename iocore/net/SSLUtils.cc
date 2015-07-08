@@ -215,6 +215,8 @@ ssl_get_cached_session(SSL *ssl, unsigned char *id, int len, int *copy)
       // from the openssl built-in hash table.  The external remove cb is not called
       ssl_rm_cached_session(SSL_get_SSL_CTX(ssl), session);
       session = NULL;
+    } else if (session) {
+      SSLNetVConnection *netvc = (SSLNetVConnection *)SSL_get_app_data(ssl);
     }
   }
   return session;
@@ -1950,6 +1952,8 @@ ssl_callback_session_ticket(SSL *ssl, unsigned char *keyname, unsigned char *iv,
         if (i != 0) // The number of tickets decrypted with "older" keys.
           SSL_INCREMENT_DYN_STAT(ssl_total_tickets_verified_old_key_stat);
 
+        SSLNetVConnection *netvc = (SSLNetVConnection *)SSL_get_app_data(ssl);
+        netvc->setSSLSessionCacheHit(true);
         // When we decrypt with an "older" key, encrypt the ticket again with the most recent key.
         return (i == 0) ? 1 : 2;
       }
