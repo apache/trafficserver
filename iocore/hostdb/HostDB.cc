@@ -2388,8 +2388,9 @@ struct ShowHostDB : public ShowCont {
   }
 
 
-  ShowHostDB(Continuation *c, HTTPHdr *h) : ShowCont(c, h), name(0), force(0), port(0)
+  ShowHostDB(Continuation *c, HTTPHdr *h) : ShowCont(c, h), name(0), port(0), force(0)
   {
+
     ats_ip_invalidate(&ip);
     SET_HANDLER(&ShowHostDB::showMain);
   }
