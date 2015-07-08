@@ -383,9 +383,10 @@ private:
   unsigned int priority;
   match_t *from;
   char *to;
+  int *refcount;
 
 public:
-  rule_t(const char *line) : scope(NULL), priority(5), from(NULL), to(NULL)
+  rule_t(const char *line) : scope(NULL), priority(5), from(NULL), to(NULL), refcount(NULL)
   {
     const char *scope_spec = strcasestr(line, "scope:");
     const char *from_spec = strcasestr(line, "from:");
@@ -494,24 +495,24 @@ public:
       }
     }
     to = TSstrndup(to_spec, len);
+
+    refcount = new int(1);
   }
 
-  rule_t(const rule_t &r) : scope(r.scope), priority(r.priority), from(r.from), to(r.to) {}
-  /* FIXME - since rules get copied per-request, we can't delete these.
-     But we can leave these to leak 'cos they're only ever created
-     as a one-off at startup.  Would be cleaner to refcount or to
-     use subclasses with and without destructor for original vs copy.
-      ~rule_t() {
-          if (scope) delete scope;
-          if (from) delete from;
-          if (to) TSfree(to);
-      }
-  */
+  rule_t(const rule_t &r) : scope(r.scope), priority(r.priority), from(r.from), to(r.to), refcount(r.refcount) { ++*refcount; }
+  ~rule_t() {
+    if (!refcount || !--*refcount) {
+      if (scope) delete scope;
+      if (from) delete from;
+      if (to) TSfree(to);
+    }
+    if (refcount) delete refcount;
+  }
 
   bool
   in_scope(TSHttpTxn tx) const
   {
-    /* if no scope is specified then everything is in-scope */
+    /* if no scope was specified then everything is in-scope */
     return scope ? scope->in_scope(tx) : true;
   }
 
