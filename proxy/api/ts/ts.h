@@ -1704,7 +1704,6 @@ tsapi TSVConn TSTransformOutputVConnGet(TSVConn connp);
    Net VConnections */
 
 tsapi struct sockaddr const *TSNetVConnRemoteAddrGet(TSVConn vc);
-tsapi void TSNetVConnSSLCachedHitSet(TSVConn vc, bool state);
 
 /**
     Opens a network connection to the host specified by ip on the port
