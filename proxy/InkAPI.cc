@@ -5933,12 +5933,11 @@ TSHttpTxnMilestoneGet(TSHttpTxn txnp, TSMilestonesType milestone, ink_hrtime *ti
   HttpSM *sm = (HttpSM *)txnp;
   TSReturnCode ret = TS_SUCCESS;
 
-  if ((milestone < (TSMilestonesType)TransactionMilestones::UA_BEGIN) ||
-      (milestone >= (TSMilestonesType)TransactionMilestones::LAST_ENTRY)) {
+  if ((milestone < TS_MILESTONE_UA_BEGIN) || (milestone >= TS_MILESTONE_LAST_ENTRY)) {
     *time = -1;
     ret = TS_ERROR;
   } else {
-    *time = sm->milestones[(TransactionMilestones::Milestone)milestone];
+    *time = sm->milestones[milestone];
   }
 
   return ret;

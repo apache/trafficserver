@@ -103,13 +103,13 @@ milestone_update_api_time(TransactionMilestones &milestones, ink_hrtime &api_tim
     if (0 == delta)
       ++delta;
 
-    if (0 == milestones[TransactionMilestones::PLUGIN_TOTAL])
-      milestones[TransactionMilestones::PLUGIN_TOTAL] = milestones[TransactionMilestones::SM_START];
-    milestones[TransactionMilestones::PLUGIN_TOTAL] = milestones[TransactionMilestones::PLUGIN_TOTAL] + delta;
+    if (0 == milestones[TS_MILESTONE_PLUGIN_TOTAL])
+      milestones[TS_MILESTONE_PLUGIN_TOTAL] = milestones[TS_MILESTONE_SM_START];
+    milestones[TS_MILESTONE_PLUGIN_TOTAL] = milestones[TS_MILESTONE_PLUGIN_TOTAL] + delta;
     if (active) {
-      if (0 == milestones[TransactionMilestones::PLUGIN_ACTIVE])
-        milestones[TransactionMilestones::PLUGIN_ACTIVE] = milestones[TransactionMilestones::SM_START];
-      milestones[TransactionMilestones::PLUGIN_ACTIVE] = milestones[TransactionMilestones::PLUGIN_ACTIVE] + delta;
+      if (0 == milestones[TS_MILESTONE_PLUGIN_ACTIVE])
+        milestones[TS_MILESTONE_PLUGIN_ACTIVE] = milestones[TS_MILESTONE_SM_START];
+      milestones[TS_MILESTONE_PLUGIN_ACTIVE] = milestones[TS_MILESTONE_PLUGIN_ACTIVE] + delta;
     }
   }
 }
@@ -318,7 +318,7 @@ HttpSM::destroy()
 void
 HttpSM::init()
 {
-  milestones[TransactionMilestones::SM_START] = Thread::get_hrtime();
+  milestones[TS_MILESTONE_SM_START] = Thread::get_hrtime();
 
   magic = HTTP_SM_MAGIC_ALIVE;
   sm_id = 0;
@@ -469,7 +469,7 @@ HttpSM::start_sub_sm()
 void
 HttpSM::attach_client_session(HttpClientSession *client_vc, IOBufferReader *buffer_reader)
 {
-  milestones[TransactionMilestones::UA_BEGIN] = Thread::get_hrtime();
+  milestones[TS_MILESTONE_UA_BEGIN] = Thread::get_hrtime();
   ink_assert(client_vc != NULL);
 
   ua_session = client_vc;
@@ -614,7 +614,7 @@ HttpSM::state_read_client_request_header(int event, void *data)
   //   the accept timeout by the HttpClientSession
   //
   if (client_request_hdr_bytes == 0) {
-    milestones[TransactionMilestones::UA_FIRST_READ] = Thread::get_hrtime();
+    milestones[TS_MILESTONE_UA_FIRST_READ] = Thread::get_hrtime();
     ua_session->get_netvc()->set_inactivity_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_no_activity_timeout_in));
   }
   /////////////////////
@@ -677,7 +677,7 @@ HttpSM::state_read_client_request_header(int event, void *data)
     }
     http_parser_clear(&http_parser);
     ua_entry->vc_handler = &HttpSM::state_watch_for_client_abort;
-    milestones[TransactionMilestones::UA_READ_HEADER_DONE] = Thread::get_hrtime();
+    milestones[TS_MILESTONE_UA_READ_HEADER_DONE] = Thread::get_hrtime();
   }
 
   switch (state) {
@@ -867,7 +867,7 @@ HttpSM::state_watch_for_client_abort(int event, void *data)
       ua_entry->read_vio->nbytes = ua_entry->read_vio->ndone;
     }
     mark_server_down_on_client_abort();
-    milestones[TransactionMilestones::UA_CLOSE] = Thread::get_hrtime();
+    milestones[TS_MILESTONE_UA_CLOSE] = Thread::get_hrtime();
     set_ua_abort(HttpTransact::ABORTED, event);
     terminate_sm = true;
     break;
@@ -1008,7 +1008,7 @@ HttpSM::state_read_push_response_header(int event, void *data)
     // Disable further IO
     ua_entry->read_vio->nbytes = ua_entry->read_vio->ndone;
     http_parser_clear(&http_parser);
-    milestones[TransactionMilestones::SERVER_READ_HEADER_DONE] = Thread::get_hrtime();
+    milestones[TS_MILESTONE_SERVER_READ_HEADER_DONE] = Thread::get_hrtime();
   }
 
   switch (state) {
@@ -1042,7 +1042,7 @@ HttpSM::state_raw_http_server_open(int event, void *data)
 {
   STATE_ENTER(&HttpSM::state_raw_http_server_open, event);
   ink_assert(server_entry == NULL);
-  milestones[TransactionMilestones::SERVER_CONNECT_END] = Thread::get_hrtime();
+  milestones[TS_MILESTONE_SERVER_CONNECT_END] = Thread::get_hrtime();
   NetVConnection *netvc = NULL;
 
   pending_action = NULL;
@@ -1612,7 +1612,7 @@ HttpSM::state_http_server_open(int event, void *data)
   // TODO decide whether to uncomment after finish testing redirect
   // ink_assert(server_entry == NULL);
   pending_action = NULL;
-  milestones[TransactionMilestones::SERVER_CONNECT_END] = Thread::get_hrtime();
+  milestones[TS_MILESTONE_SERVER_CONNECT_END] = Thread::get_hrtime();
   HttpServerSession *session;
 
   switch (event) {
@@ -1742,7 +1742,7 @@ HttpSM::state_read_server_response_header(int event, void *data)
   //   the connect timeout when we set up to read the header
   //
   if (server_response_hdr_bytes == 0) {
-    milestones[TransactionMilestones::SERVER_FIRST_READ] = Thread::get_hrtime();
+    milestones[TS_MILESTONE_SERVER_FIRST_READ] = Thread::get_hrtime();
 
     if (t_state.api_txn_no_activity_timeout_value != -1) {
       server_session->get_netvc()->set_inactivity_timeout(HRTIME_MSECONDS(t_state.api_txn_no_activity_timeout_value));
@@ -1779,7 +1779,7 @@ HttpSM::state_read_server_response_header(int event, void *data)
     // Disable further IO
     server_entry->read_vio->nbytes = server_entry->read_vio->ndone;
     http_parser_clear(&http_parser);
-    milestones[TransactionMilestones::SERVER_READ_HEADER_DONE] = Thread::get_hrtime();
+    milestones[TS_MILESTONE_SERVER_READ_HEADER_DONE] = Thread::get_hrtime();
   }
 
   switch (state) {
@@ -2086,11 +2086,11 @@ HttpSM::process_hostdb_info(HostDBInfo *r)
     ink_assert(!t_state.host_db_info.round_robin);
   }
 
-  milestones[TransactionMilestones::DNS_LOOKUP_END] = Thread::get_hrtime();
+  milestones[TS_MILESTONE_DNS_LOOKUP_END] = Thread::get_hrtime();
 
   if (is_debug_tag_set("http_timeout")) {
     if (t_state.api_txn_dns_timeout_value != -1) {
-      int foo = (int)(milestones.difference_msec(TransactionMilestones::DNS_LOOKUP_BEGIN, TransactionMilestones::DNS_LOOKUP_END));
+      int foo = (int)(milestones.difference_msec(TS_MILESTONE_DNS_LOOKUP_BEGIN, TS_MILESTONE_DNS_LOOKUP_END));
       DebugSM("http_timeout", "DNS took: %d msec", foo);
     }
   }
@@ -2353,7 +2353,7 @@ int
 HttpSM::state_cache_open_write(int event, void *data)
 {
   STATE_ENTER(&HttpSM : state_cache_open_write, event);
-  milestones[TransactionMilestones::CACHE_OPEN_WRITE_END] = Thread::get_hrtime();
+  milestones[TS_MILESTONE_CACHE_OPEN_WRITE_END] = Thread::get_hrtime();
   pending_action = NULL;
 
   switch (event) {
@@ -2454,7 +2454,7 @@ int
 HttpSM::state_cache_open_read(int event, void *data)
 {
   STATE_ENTER(&HttpSM::state_cache_open_read, event);
-  milestones[TransactionMilestones::CACHE_OPEN_READ_END] = Thread::get_hrtime();
+  milestones[TS_MILESTONE_CACHE_OPEN_READ_END] = Thread::get_hrtime();
 
   ink_assert(server_entry == NULL);
   ink_assert(t_state.cache_info.object_read == 0);
@@ -2837,7 +2837,7 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer *p)
 {
   STATE_ENTER(&HttpSM::tunnel_handler_server, event);
 
-  milestones[TransactionMilestones::SERVER_CLOSE] = Thread::get_hrtime();
+  milestones[TS_MILESTONE_SERVER_CLOSE] = Thread::get_hrtime();
 
   bool close_connection = false;
 
@@ -3077,7 +3077,7 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer *c)
 
   STATE_ENTER(&HttpSM::tunnel_handler_ua, event);
   ink_assert(c->vc == ua_session);
-  milestones[TransactionMilestones::UA_CLOSE] = Thread::get_hrtime();
+  milestones[TS_MILESTONE_UA_CLOSE] = Thread::get_hrtime();
 
   switch (event) {
   case VC_EVENT_EOS:
@@ -3924,7 +3924,7 @@ HttpSM::do_hostdb_lookup()
   ink_assert(t_state.dns_info.lookup_name != NULL);
   ink_assert(pending_action == NULL);
 
-  milestones[TransactionMilestones::DNS_LOOKUP_BEGIN] = Thread::get_hrtime();
+  milestones[TS_MILESTONE_DNS_LOOKUP_BEGIN] = Thread::get_hrtime();
   bool use_srv_records = t_state.srv_lookup;
 
   if (use_srv_records) {
@@ -4355,7 +4355,7 @@ HttpSM::do_cache_lookup_and_read()
 
   HTTP_INCREMENT_TRANS_STAT(http_cache_lookups_stat);
 
-  milestones[TransactionMilestones::CACHE_OPEN_READ_BEGIN] = Thread::get_hrtime();
+  milestones[TS_MILESTONE_CACHE_OPEN_READ_BEGIN] = Thread::get_hrtime();
   t_state.cache_lookup_result = HttpTransact::CACHE_LOOKUP_NONE;
   t_state.cache_info.lookup_count++;
   // YTS Team, yamsat Plugin
@@ -4422,7 +4422,7 @@ HttpSM::do_cache_prepare_write()
 {
   // statistically no need to retry when we are trying to lock
   // LOCK_URL_SECOND url because the server's behavior is unlikely to change
-  milestones[TransactionMilestones::CACHE_OPEN_WRITE_BEGIN] = Thread::get_hrtime();
+  milestones[TS_MILESTONE_CACHE_OPEN_WRITE_BEGIN] = Thread::get_hrtime();
   bool retry = (t_state.api_lock_url == HttpTransact::LOCK_URL_FIRST);
   do_cache_prepare_action(&cache_sm, t_state.cache_info.object_read, retry);
 }
@@ -4554,20 +4554,20 @@ HttpSM::do_http_server_open(bool raw)
 
   DebugSM("http_seq", "[HttpSM::do_http_server_open] Sending request to server");
 
-  milestones[TransactionMilestones::SERVER_CONNECT] = Thread::get_hrtime();
-  if (milestones[TransactionMilestones::SERVER_FIRST_CONNECT] == 0) {
-    milestones[TransactionMilestones::SERVER_FIRST_CONNECT] = milestones[TransactionMilestones::SERVER_CONNECT];
+  milestones[TS_MILESTONE_SERVER_CONNECT] = Thread::get_hrtime();
+  if (milestones[TS_MILESTONE_SERVER_FIRST_CONNECT] == 0) {
+    milestones[TS_MILESTONE_SERVER_FIRST_CONNECT] = milestones[TS_MILESTONE_SERVER_CONNECT];
   }
 
   if (t_state.pCongestionEntry != NULL) {
     if (t_state.pCongestionEntry->F_congested() &&
-        (!t_state.pCongestionEntry->proxy_retry(milestones[TransactionMilestones::SERVER_CONNECT]))) {
+        (!t_state.pCongestionEntry->proxy_retry(milestones[TS_MILESTONE_SERVER_CONNECT]))) {
       t_state.congestion_congested_or_failed = 1;
       t_state.pCongestionEntry->stat_inc_F();
       CONGEST_INCREMENT_DYN_STAT(congested_on_F_stat);
       handleEvent(CONGESTION_EVENT_CONGESTED_ON_F, NULL);
       return;
-    } else if (t_state.pCongestionEntry->M_congested(ink_hrtime_to_sec(milestones[TransactionMilestones::SERVER_CONNECT]))) {
+    } else if (t_state.pCongestionEntry->M_congested(ink_hrtime_to_sec(milestones[TS_MILESTONE_SERVER_CONNECT]))) {
       t_state.pCongestionEntry->stat_inc_M();
       t_state.congestion_congested_or_failed = 1;
       CONGEST_INCREMENT_DYN_STAT(congested_on_M_stat);
@@ -4861,7 +4861,7 @@ HttpSM::do_api_callout_internal()
     break;
   case HttpTransact::SM_ACTION_API_SEND_RESPONSE_HDR:
     cur_hook_id = TS_HTTP_SEND_RESPONSE_HDR_HOOK;
-    milestones[TransactionMilestones::UA_BEGIN_WRITE] = Thread::get_hrtime();
+    milestones[TS_MILESTONE_UA_BEGIN_WRITE] = Thread::get_hrtime();
     break;
   case HttpTransact::SM_ACTION_API_SM_SHUTDOWN:
     if (callout_state == HTTP_API_IN_CALLOUT || callout_state == HTTP_API_DEFERED_SERVER_ERROR) {
@@ -5002,10 +5002,10 @@ HttpSM::mark_server_down_on_client_abort()
   //  the actual origin server is one that is hung   //
   /////////////////////////////////////////////////////
   if (t_state.current.request_to == HttpTransact::ORIGIN_SERVER && t_state.hdr_info.request_content_length == 0) {
-    if (milestones[TransactionMilestones::SERVER_FIRST_CONNECT] != 0 && milestones[TransactionMilestones::SERVER_FIRST_READ] == 0) {
+    if (milestones[TS_MILESTONE_SERVER_FIRST_CONNECT] != 0 && milestones[TS_MILESTONE_SERVER_FIRST_READ] == 0) {
       // Check to see if client waited for the threshold
       //  to declare the origin server as down
-      ink_hrtime wait = Thread::get_hrtime() - milestones[TransactionMilestones::SERVER_FIRST_CONNECT];
+      ink_hrtime wait = Thread::get_hrtime() - milestones[TS_MILESTONE_SERVER_FIRST_CONNECT];
       if (wait < 0) {
         wait = 0;
       }
@@ -5693,7 +5693,7 @@ HttpSM::setup_server_send_request()
     server_request_body_bytes = msg_len;
   }
 
-  milestones[TransactionMilestones::SERVER_BEGIN_WRITE] = Thread::get_hrtime();
+  milestones[TS_MILESTONE_SERVER_BEGIN_WRITE] = Thread::get_hrtime();
   server_entry->write_vio = server_entry->vc->do_io_write(this, hdr_length, buf_start);
 }
 
@@ -5723,7 +5723,7 @@ HttpSM::setup_server_read_response_header()
   t_state.hdr_info.server_response.create(HTTP_TYPE_RESPONSE);
   http_parser_clear(&http_parser);
   server_response_hdr_bytes = 0;
-  milestones[TransactionMilestones::SERVER_READ_HEADER_DONE] = 0;
+  milestones[TS_MILESTONE_SERVER_READ_HEADER_DONE] = 0;
 
   // We already done the READ when we setup the connection to
   //   read the request header
@@ -6357,7 +6357,7 @@ HttpSM::setup_blind_tunnel(bool send_response_hdr)
   IOBufferReader *r_from = from_ua_buf->alloc_reader();
   IOBufferReader *r_to = to_ua_buf->alloc_reader();
 
-  milestones[TransactionMilestones::SERVER_BEGIN_WRITE] = Thread::get_hrtime();
+  milestones[TS_MILESTONE_SERVER_BEGIN_WRITE] = Thread::get_hrtime();
   if (send_response_hdr) {
     client_response_hdr_bytes = write_response_header_into_buffer(&t_state.hdr_info.client_response, to_ua_buf);
   } else {
@@ -6599,7 +6599,7 @@ HttpSM::kill_this()
 void
 HttpSM::update_stats()
 {
-  milestones[TransactionMilestones::SM_FINISH] = Thread::get_hrtime();
+  milestones[TS_MILESTONE_SM_FINISH] = Thread::get_hrtime();
 
   if (t_state.cop_test_page && !t_state.http_config_param->record_cop_page) {
     DebugSM("http_seq", "Skipping cop heartbeat logging & stats due to config");
@@ -6628,29 +6628,29 @@ HttpSM::update_stats()
     }
   }
 
-  ink_hrtime total_time = milestones.elapsed(TransactionMilestones::SM_START, TransactionMilestones::SM_FINISH);
+  ink_hrtime total_time = milestones.elapsed(TS_MILESTONE_SM_START, TS_MILESTONE_SM_FINISH);
 
   // ua_close will not be assigned properly in some exceptional situation.
   // TODO: Assign ua_close with suitable value when HttpTunnel terminates abnormally.
-  if (milestones[TransactionMilestones::UA_CLOSE] == 0 && milestones[TransactionMilestones::UA_READ_HEADER_DONE] > 0)
-    milestones[TransactionMilestones::UA_CLOSE] = Thread::get_hrtime();
+  if (milestones[TS_MILESTONE_UA_CLOSE] == 0 && milestones[TS_MILESTONE_UA_READ_HEADER_DONE] > 0)
+    milestones[TS_MILESTONE_UA_CLOSE] = Thread::get_hrtime();
 
   // request_process_time  = The time after the header is parsed to the completion of the transaction
   ink_hrtime request_process_time =
-    milestones[TransactionMilestones::UA_CLOSE] - milestones[TransactionMilestones::UA_READ_HEADER_DONE];
+    milestones[TS_MILESTONE_UA_CLOSE] - milestones[TS_MILESTONE_UA_READ_HEADER_DONE];
 
   HttpTransact::client_result_stat(&t_state, total_time, request_process_time);
 
   ink_hrtime ua_write_time;
-  if (milestones[TransactionMilestones::UA_BEGIN_WRITE] != 0 && milestones[TransactionMilestones::UA_CLOSE] != 0) {
-    ua_write_time = milestones.elapsed(TransactionMilestones::UA_BEGIN_WRITE, TransactionMilestones::UA_CLOSE);
+  if (milestones[TS_MILESTONE_UA_BEGIN_WRITE] != 0 && milestones[TS_MILESTONE_UA_CLOSE] != 0) {
+    ua_write_time = milestones.elapsed(TS_MILESTONE_UA_BEGIN_WRITE, TS_MILESTONE_UA_CLOSE);
   } else {
     ua_write_time = -1;
   }
 
   ink_hrtime os_read_time;
-  if (milestones[TransactionMilestones::SERVER_READ_HEADER_DONE] != 0 && milestones[TransactionMilestones::SERVER_CLOSE] != 0) {
-    os_read_time = milestones.elapsed(TransactionMilestones::SERVER_READ_HEADER_DONE, TransactionMilestones::SERVER_CLOSE);
+  if (milestones[TS_MILESTONE_SERVER_READ_HEADER_DONE] != 0 && milestones[TS_MILESTONE_SERVER_CLOSE] != 0) {
+    os_read_time = milestones.elapsed(TS_MILESTONE_SERVER_READ_HEADER_DONE, TS_MILESTONE_SERVER_CLOSE);
   } else {
     os_read_time = -1;
   }
@@ -6731,21 +6731,21 @@ HttpSM::update_stats()
           "plugin_total: %.3f",
           sm_id, client_ip, t_state.client_info.src_addr.host_order_port(), url_string, status, unique_id_string,
           redirection_tries, client_response_body_bytes, fd, t_state.client_info.state, t_state.server_info.state,
-          milestones.difference(TransactionMilestones::SM_START, TransactionMilestones::UA_BEGIN),
-          milestones.difference(TransactionMilestones::SM_START, TransactionMilestones::UA_FIRST_READ),
-          milestones.difference(TransactionMilestones::SM_START, TransactionMilestones::UA_READ_HEADER_DONE),
-          milestones.difference(TransactionMilestones::SM_START, TransactionMilestones::CACHE_OPEN_READ_BEGIN),
-          milestones.difference(TransactionMilestones::SM_START, TransactionMilestones::CACHE_OPEN_READ_END),
-          milestones.difference(TransactionMilestones::SM_START, TransactionMilestones::DNS_LOOKUP_BEGIN),
-          milestones.difference(TransactionMilestones::SM_START, TransactionMilestones::DNS_LOOKUP_END),
-          milestones.difference(TransactionMilestones::SM_START, TransactionMilestones::SERVER_CONNECT),
-          milestones.difference(TransactionMilestones::SM_START, TransactionMilestones::SERVER_FIRST_READ),
-          milestones.difference(TransactionMilestones::SM_START, TransactionMilestones::SERVER_READ_HEADER_DONE),
-          milestones.difference(TransactionMilestones::SM_START, TransactionMilestones::SERVER_CLOSE),
-          milestones.difference(TransactionMilestones::SM_START, TransactionMilestones::UA_CLOSE),
-          milestones.difference(TransactionMilestones::SM_START, TransactionMilestones::SM_FINISH),
-          milestones.difference(TransactionMilestones::SM_START, TransactionMilestones::PLUGIN_ACTIVE),
-          milestones.difference(TransactionMilestones::SM_START, TransactionMilestones::PLUGIN_TOTAL));
+          milestones.difference(TS_MILESTONE_SM_START, TS_MILESTONE_UA_BEGIN),
+          milestones.difference(TS_MILESTONE_SM_START, TS_MILESTONE_UA_FIRST_READ),
+          milestones.difference(TS_MILESTONE_SM_START, TS_MILESTONE_UA_READ_HEADER_DONE),
+          milestones.difference(TS_MILESTONE_SM_START, TS_MILESTONE_CACHE_OPEN_READ_BEGIN),
+          milestones.difference(TS_MILESTONE_SM_START, TS_MILESTONE_CACHE_OPEN_READ_END),
+          milestones.difference(TS_MILESTONE_SM_START, TS_MILESTONE_DNS_LOOKUP_BEGIN),
+          milestones.difference(TS_MILESTONE_SM_START, TS_MILESTONE_DNS_LOOKUP_END),
+          milestones.difference(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_CONNECT),
+          milestones.difference(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_FIRST_READ),
+          milestones.difference(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_READ_HEADER_DONE),
+          milestones.difference(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_CLOSE),
+          milestones.difference(TS_MILESTONE_SM_START, TS_MILESTONE_UA_CLOSE),
+          milestones.difference(TS_MILESTONE_SM_START, TS_MILESTONE_SM_FINISH),
+          milestones.difference(TS_MILESTONE_SM_START, TS_MILESTONE_PLUGIN_ACTIVE),
+          milestones.difference(TS_MILESTONE_SM_START, TS_MILESTONE_PLUGIN_TOTAL));
   }
 }
 

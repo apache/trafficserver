@@ -37,6 +37,7 @@
 #endif
 
 #include "ink_apidefs.h"
+#include "apidefs.h"
 
 #define STATS_MAJOR_VERSION 6 // increment when changing the stats!
 #define DEFAULT_SNAP_FILENAME "stats.snap"
@@ -49,69 +50,12 @@
 class TransactionMilestones
 {
 public:
-  // Used for array indexes, insert new value before _LAST one
-  enum Milestone {
-    ////////////////////////////////////////////////////////
-    // user agent:                                        //
-    // user_agent_begin represents the time this          //
-    // transaction started. If this is the first          //
-    // transaction in a connection, then user_agent_begin //
-    // is set to accept time. otherwise it is set to      //
-    // first read time.                                   //
-    ////////////////////////////////////////////////////////
-    UA_BEGIN = 0,
-    UA_FIRST_READ,
-    UA_READ_HEADER_DONE,
-    UA_BEGIN_WRITE,
-    UA_CLOSE,
-
-    ////////////////////////////////////////////////////////
-    // server (origin_server , parent, blind tunnnel //
-    ////////////////////////////////////////////////////////
-    SERVER_FIRST_CONNECT,
-    SERVER_CONNECT,
-    SERVER_CONNECT_END,
-    SERVER_BEGIN_WRITE,      //  http only
-    SERVER_FIRST_READ,       //  http only
-    SERVER_READ_HEADER_DONE, //  http only
-    SERVER_CLOSE,
-
-    CACHE_OPEN_READ_BEGIN,
-    CACHE_OPEN_READ_END,
-    CACHE_OPEN_WRITE_BEGIN,
-    CACHE_OPEN_WRITE_END,
-
-    DNS_LOOKUP_BEGIN,
-    DNS_LOOKUP_END,
-
-    ///////////////////
-    // state machine //
-    ///////////////////
-    SM_START,
-    SM_FINISH,
-
-    //////////////////
-    // API activity //
-    //////////////////
-    // Total amount of time spent in API calls converted to a timestamp.
-    // (subtract @a sm_start to get the actual time)
-    /// Time spent in API callout.
-    PLUGIN_ACTIVE,
-    /// Time spent in API state during the transaction.
-    PLUGIN_TOTAL,
-    LAST_ENTRY
-    // TODO: Should we instrument these at some point?
-    // CACHE_READ_BEGIN;
-    // CACHE_READ_END;
-    // CACHE_WRITE_BEGIN;
-    // CACHE_WRITE_END;
-  };
 
   TransactionMilestones() { ink_zero(milestones); }
 
-  ink_hrtime &operator[](Milestone ms) { return milestones[ms]; }
+  ink_hrtime& operator[] (TSMilestonesType ms) { return milestones[ms]; }
 
-  const ink_hrtime &operator[](Milestone ms) const { return milestones[ms]; }
+  ink_hrtime operator[] (TSMilestonesType ms) const { return milestones[ms]; }
 
   /**
    * Takes two milestones and returns the difference.
@@ -120,7 +64,7 @@ public:
    * @return A double that is the time in seconds
    */
   int64_t
-  difference_msec(Milestone ms_start, Milestone ms_end) const
+  difference_msec(TSMilestonesType ms_start, TSMilestonesType ms_end) const
   {
     if (milestones[ms_end] == 0) {
       return -1;
@@ -129,7 +73,7 @@ public:
   }
 
   double
-  difference(Milestone ms_start, Milestone ms_end) const
+  difference(TSMilestonesType ms_start, TSMilestonesType ms_end) const
   {
     if (milestones[ms_end] == 0) {
       return -1;
@@ -138,13 +82,13 @@ public:
   }
 
   ink_hrtime
-  elapsed(Milestone ms_start, Milestone ms_end) const
+  elapsed(TSMilestonesType ms_start, TSMilestonesType ms_end) const
   {
     return milestones[ms_end] - milestones[ms_start];
   }
 
 private:
-  ink_hrtime milestones[LAST_ENTRY];
+  ink_hrtime milestones[TS_MILESTONE_LAST_ENTRY];
 };
 
 // Modularization Project: Build w/o thread-local-dyn-stats

@@ -1000,7 +1000,7 @@ LogAccessHttp::marshal_server_resp_time_ms(char *buf)
 {
   if (buf) {
     ink_hrtime elapsed =
-      m_http_sm->milestones[TransactionMilestones::SERVER_CLOSE] - m_http_sm->milestones[TransactionMilestones::SERVER_CONNECT];
+      m_http_sm->milestones[TS_MILESTONE_SERVER_CLOSE] - m_http_sm->milestones[TS_MILESTONE_SERVER_CONNECT];
     int64_t val = (int64_t)ink_hrtime_to_msec(elapsed);
     marshal_int(buf, val);
   }
@@ -1012,7 +1012,7 @@ LogAccessHttp::marshal_server_resp_time_s(char *buf)
 {
   if (buf) {
     ink_hrtime elapsed =
-      m_http_sm->milestones[TransactionMilestones::SERVER_CLOSE] - m_http_sm->milestones[TransactionMilestones::SERVER_CONNECT];
+      m_http_sm->milestones[TS_MILESTONE_SERVER_CLOSE] - m_http_sm->milestones[TS_MILESTONE_SERVER_CONNECT];
     int64_t val = (int64_t)ink_hrtime_to_sec(elapsed);
     marshal_int(buf, val);
   }
@@ -1161,7 +1161,7 @@ LogAccessHttp::marshal_transfer_time_ms(char *buf)
 {
   if (buf) {
     ink_hrtime elapsed =
-      m_http_sm->milestones[TransactionMilestones::SM_FINISH] - m_http_sm->milestones[TransactionMilestones::SM_START];
+      m_http_sm->milestones[TS_MILESTONE_SM_FINISH] - m_http_sm->milestones[TS_MILESTONE_SM_START];
     int64_t val = (int64_t)ink_hrtime_to_msec(elapsed);
     marshal_int(buf, val);
   }
@@ -1173,7 +1173,7 @@ LogAccessHttp::marshal_transfer_time_s(char *buf)
 {
   if (buf) {
     ink_hrtime elapsed =
-      m_http_sm->milestones[TransactionMilestones::SM_FINISH] - m_http_sm->milestones[TransactionMilestones::SM_START];
+      m_http_sm->milestones[TS_MILESTONE_SM_FINISH] - m_http_sm->milestones[TS_MILESTONE_SM_START];
     int64_t val = (int64_t)ink_hrtime_to_sec(elapsed);
     marshal_int(buf, val);
   }
@@ -1421,7 +1421,7 @@ LogAccessHttp::marshal_http_header_field_escapify(LogField::Container container,
 
 
 int
-LogAccessHttp::marshal_milestone(TransactionMilestones::Milestone ms, char *buf)
+LogAccessHttp::marshal_milestone(TSMilestonesType ms, char *buf)
 {
   if (buf) {
     int64_t val = ink_hrtime_to_msec(m_http_sm->milestones[ms]);
@@ -1432,7 +1432,7 @@ LogAccessHttp::marshal_milestone(TransactionMilestones::Milestone ms, char *buf)
 
 
 int
-LogAccessHttp::marshal_milestone_diff(TransactionMilestones::Milestone ms1, TransactionMilestones::Milestone ms2, char *buf)
+LogAccessHttp::marshal_milestone_diff(TSMilestonesType ms1, TSMilestonesType ms2, char *buf)
 {
   if (buf) {
     ink_hrtime elapsed = m_http_sm->milestones.elapsed(ms2, ms1);

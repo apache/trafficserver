@@ -674,7 +674,7 @@ LogAccess::marshal_config_str_var(char *config_var, char *buf)
   -------------------------------------------------------------------------*/
 
 int
-LogAccess::marshal_milestone(TransactionMilestones::Milestone ms, char *buf)
+LogAccess::marshal_milestone(TSMilestonesType ms, char *buf)
 {
   DEFAULT_INT_FIELD;
 }
@@ -683,7 +683,7 @@ LogAccess::marshal_milestone(TransactionMilestones::Milestone ms, char *buf)
   -------------------------------------------------------------------------*/
 
 int
-LogAccess::marshal_milestone_diff(TransactionMilestones::Milestone ms1, TransactionMilestones::Milestone ms2, char *buf)
+LogAccess::marshal_milestone_diff(TSMilestonesType ms1, TSMilestonesType ms2, char *buf)
 {
   DEFAULT_INT_FIELD;
 }
