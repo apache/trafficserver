@@ -82,7 +82,7 @@ int Log::collation_port;
 int Log::init_status = 0;
 int Log::config_flags = 0;
 bool Log::logging_mode_changed = false;
-int Log::periodic_tasks_interval = PERIODIC_TASKS_INTERVAL_FALLBACK;
+uint32_t Log::periodic_tasks_interval = PERIODIC_TASKS_INTERVAL_FALLBACK;
 
 // Hash table for LogField symbols
 InkHashTable *Log::field_symbol_hash = 0;
@@ -750,11 +750,11 @@ Log::handle_periodic_tasks_int_change(const char * /* name ATS_UNUSED */, RecDat
   Debug("log-periodic", "periodic task interval changed");
   if (data.rec_int <= 0) {
     periodic_tasks_interval = PERIODIC_TASKS_INTERVAL_FALLBACK;
-    Error("new periodic tasks interval = %d is invalid, falling back to default = %d", data.rec_int,
+    Error("new periodic tasks interval = %d is invalid, falling back to default = %d", (int)data.rec_int,
           PERIODIC_TASKS_INTERVAL_FALLBACK);
   } else {
-    periodic_tasks_interval = data.rec_int;
-    Debug("log-periodic", "periodic task interval changed to %d", periodic_tasks_interval);
+    periodic_tasks_interval = (uint32_t)data.rec_int;
+    Debug("log-periodic", "periodic task interval changed to %u", periodic_tasks_interval);
   }
   return REC_ERR_OKAY;
 }
@@ -804,12 +804,13 @@ Log::init(int flags)
   }
 
   // periodic task interval are set on a per instance basis
-  periodic_tasks_interval = (int)REC_ConfigReadInteger("proxy.config.log.periodic_tasks_interval");
-  if (periodic_tasks_interval <= 0) {
-    Error("proxy.config.log.periodic_tasks_interval = %d is invalid", periodic_tasks_interval);
+  int pti = (int)REC_ConfigReadInteger("proxy.config.log.periodic_tasks_interval");
+  if (pti <= 0) {
+    Error("proxy.config.log.periodic_tasks_interval = %d is invalid", pti);
     Note("falling back to default periodic tasks interval = %d", PERIODIC_TASKS_INTERVAL_FALLBACK);
     periodic_tasks_interval = PERIODIC_TASKS_INTERVAL_FALLBACK;
-  }
+  } else
+    periodic_tasks_interval = (uint32_t)pti;
 
   REC_RegisterConfigUpdateFunc("proxy.config.log.periodic_tasks_interval", &Log::handle_periodic_tasks_int_change, NULL);
 

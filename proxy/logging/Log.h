@@ -462,7 +462,7 @@ private:
   static int init_status;
   static int config_flags;
   static bool logging_mode_changed;
-  static int periodic_tasks_interval;
+  static uint32_t periodic_tasks_interval;
 
   // -- member functions that are not allowed --
   Log(const Log &rhs);
