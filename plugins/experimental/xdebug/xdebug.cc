@@ -169,8 +169,10 @@ InjectMilestonesHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
   // this hook, so we skip those ...
   static const milestone milestones[] = {
     {TS_MILESTONE_UA_BEGIN, "UA-BEGIN"},
+    {TS_MILESTONE_UA_FIRST_READ, "UA-FIRST-READ"},
     {TS_MILESTONE_UA_READ_HEADER_DONE, "UA-READ-HEADER-DONE"},
     {TS_MILESTONE_UA_BEGIN_WRITE, "UA-BEGIN-WRITE"},
+    {TS_MILESTONE_UA_CLOSE, "UA-CLOSE"},
     {TS_MILESTONE_SERVER_FIRST_CONNECT, "SERVER-FIRST-CONNECT"},
     {TS_MILESTONE_SERVER_CONNECT, "SERVER-CONNECT"},
     {TS_MILESTONE_SERVER_CONNECT_END, "SERVER-CONNECT-END"},
@@ -184,6 +186,9 @@ InjectMilestonesHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
     {TS_MILESTONE_CACHE_OPEN_WRITE_END, "CACHE-OPEN-WRITE-END"},
     {TS_MILESTONE_DNS_LOOKUP_BEGIN, "DNS-LOOKUP-BEGIN"},
     {TS_MILESTONE_DNS_LOOKUP_END, "DNS-LOOKUP-END"},
+    // SM_START is deliberately excluded because as all the times are printed relative to it
+    // it would always be zero.
+    {TS_MILESTONE_SM_FINISH, "SM-FINISH"},
     {TS_MILESTONE_PLUGIN_ACTIVE, "PLUGIN-ACTIVE"},
     {TS_MILESTONE_PLUGIN_TOTAL, "PLUGIN-TOTAL"},
   };
