@@ -55,7 +55,6 @@ SSLSessionCache::getSession(const SSLSessionID &sid, SSL_SESSION **sess) const
   uint64_t hash = sid.hash();
   uint64_t target_bucket = hash % nbuckets;
   SSLSessionBucket *bucket = &session_bucket[target_bucket];
-  bool ret = false;
 
   if (is_debug_tag_set("ssl.session_cache")) {
     char buf[sid.len * 2 + 1];
@@ -64,14 +63,7 @@ SSLSessionCache::getSession(const SSLSessionID &sid, SSL_SESSION **sess) const
           target_bucket, bucket, buf, hash);
   }
 
-  ret = bucket->getSession(sid, sess);
-
-  if (ret)
-    SSL_INCREMENT_DYN_STAT(ssl_session_cache_hit);
-  else
-    SSL_INCREMENT_DYN_STAT(ssl_session_cache_miss);
-
-  return ret;
+  return bucket->getSession(sid, sess);
 }
 
 void

@@ -209,16 +209,24 @@ ssl_get_cached_session(SSL *ssl, unsigned char *id, int len, int *copy)
   SSL_SESSION *session = NULL;
 
   if (session_cache->getSession(sid, &session)) {
+    ink_assert(session);
+
     // Double check the timeout
-    if (session && ssl_session_timed_out(session)) {
+    if (ssl_session_timed_out(session)) {
+      SSL_INCREMENT_DYN_STAT(ssl_session_cache_miss);
       // Due to bug in openssl, the timeout is checked, but only removed
       // from the openssl built-in hash table.  The external remove cb is not called
+#if 0 // This is currently eliminated, since it breaks things in odd ways (see TS-3710)
       ssl_rm_cached_session(SSL_get_SSL_CTX(ssl), session);
       session = NULL;
-    } else if (session) {
+#endif
+    } else {
       SSLNetVConnection *netvc = (SSLNetVConnection *)SSL_get_app_data(ssl);
+      SSL_INCREMENT_DYN_STAT(ssl_session_cache_hit);
       netvc->setSSLSessionCacheHit(true);
     }
+  } else {
+    SSL_INCREMENT_DYN_STAT(ssl_session_cache_miss);
   }
   return session;
 }
