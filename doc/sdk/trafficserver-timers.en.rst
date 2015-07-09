@@ -1,5 +1,5 @@
-Transaction Timers
-******************
+HTTP Transaction Timers
+***********************
 
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
@@ -18,8 +18,8 @@ Transaction Timers
   specific language governing permissions and limitations
   under the License.
 
-Timers applicable to various states in a transaction
------------------------------------------------------
+Transaction Timers at various states
+------------------------------------
 
 Traffic Server runs a variety of timers at various states of a transaction. Typically,
 a given transaction may include upto two connections (one on the UA/client side and the
