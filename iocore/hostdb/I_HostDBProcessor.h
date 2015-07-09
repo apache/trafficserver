@@ -460,6 +460,7 @@ struct HostDBProcessor : public Processor {
   Action *getbyname_imm(Continuation *cont, process_hostdb_info_pfn process_hostdb_info, const char *hostname, int len,
                         Options const &opt = DEFAULT_OPTIONS);
 
+  Action *getall(Continuation *cont);
 
   /** Lookup Hostinfo by addr */
   Action *

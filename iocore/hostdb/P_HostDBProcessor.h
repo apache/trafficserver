@@ -482,6 +482,7 @@ struct HostDBContinuation : public Continuation {
   unsigned int round_robin : 1;
 
   int probeEvent(int event, Event *e);
+  int probeAllEvent(int event, Event *e);
   int clusterEvent(int event, Event *e);
   int clusterResponseEvent(int event, Event *e);
   int dnsEvent(int event, HostEnt *e);
