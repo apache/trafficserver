@@ -418,6 +418,7 @@ struct HostDBCache;
 typedef void (Continuation::*process_hostdb_info_pfn)(HostDBInfo *r);
 typedef void (Continuation::*process_srv_info_pfn)(HostDBInfo *r);
 
+  Action *iterate(Continuation *cont);
 
 /** The Host Databse access interface. */
 struct HostDBProcessor : public Processor {
@@ -474,6 +475,7 @@ struct HostDBProcessor : public Processor {
   Action *getbyname_imm(Continuation *cont, process_hostdb_info_pfn process_hostdb_info, const char *hostname, int len,
                         Options const &opt = DEFAULT_OPTIONS);
 
+  Action *getall(Continuation *cont);
 
   /** Lookup Hostinfo by addr */
   Action *
