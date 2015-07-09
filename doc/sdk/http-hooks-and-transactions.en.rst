@@ -151,5 +151,5 @@ below.
 .. toctree::
   :maxdepth: 1
 
-  Transaction Timers: <trafficserver-timers.en>
+  Transaction Timers: Trafficserver Timers at different states <trafficserver-timers.en>
 
