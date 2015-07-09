@@ -142,3 +142,9 @@ HTTP Transaction State Diagram
      TS_HTTP_TXN_CLOSE_HOOK [shape = box];
    }
 
+Timers applicable to various states in a transaction
+-----------------------------------------------------
+
+For an overview of HTTP transaction timers, refer to the transaction timer diagram
+in `traffic-server-timerstraffic-server-timers`.
+
