@@ -290,6 +290,7 @@ static const huffman_entry huffman_table[] = {{0x1ff8, 13},
 typedef struct node {
   node *left, *right;
   char ascii_code;
+  bool leaf_node;
 } Node;
 
 Node *HUFFMAN_TREE_ROOT;
@@ -301,6 +302,7 @@ make_huffman_tree_node()
   n->left = NULL;
   n->right = NULL;
   n->ascii_code = '\0';
+  n->leaf_node = false;
   return n;
 }
 
@@ -327,6 +329,7 @@ make_huffman_tree()
       bit_len--;
     }
     current->ascii_code = i;
+    current->leaf_node = true;
   }
   return root;
 }
@@ -370,7 +373,7 @@ huffman_decode(char *dst_start, const uint8_t *src, uint32_t src_len)
       current = current->left;
     }
 
-    if (current->ascii_code) {
+    if (current->leaf_node == true) {
       *dst_end = current->ascii_code;
       ++dst_end;
       current = HUFFMAN_TREE_ROOT;

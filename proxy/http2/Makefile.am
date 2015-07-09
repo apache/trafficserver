@@ -46,3 +46,16 @@ libhttp2_a_SOURCES = \
   Http2SessionAccept.h \
   HuffmanCodec.cc \
   HuffmanCodec.h
+
+noinst_PROGRAMS = \
+  test_Huffmancode
+
+TESTS = test_Huffmancode
+
+test_Huffmancode_LDADD = \
+  $(top_builddir)/lib/ts/libtsutil.la
+
+test_Huffmancode_SOURCES = \
+  test_Huffmancode.cc \
+  HuffmanCodec.cc \
+  HuffmanCodec.h
