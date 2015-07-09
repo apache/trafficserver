@@ -7,9 +7,10 @@ using namespace std;
 void
 test()
 {
-  char *dst_start = (char *)malloc(1024 * 2);
-  char string[1024];
-  for (int i = 0; i < 1024; i++) {
+  const int size = 1024;
+  char *dst_start = (char *)malloc(size * 2);
+  char string[size];
+  for (int i = 0; i < size; i++) {
     long num = lrand48();
     string[i] = (char)num;
   }
@@ -22,6 +23,8 @@ test()
   for (int i = 0; i < bytes; i++) {
     cout << i << " " << (int)dst_start[i] << " " << dst_start[i] << endl;
   }
+
+  free(dst_start);
 }
 
 int
