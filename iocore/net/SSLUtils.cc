@@ -281,7 +281,14 @@ set_context_cert(SSL *ssl)
   bool found = true;
   int retval = 1;
 
-  Debug("ssl", "set_context_cert ssl=%p server=%s handshake_complete=%d", ssl, servername, netvc->getSSLHandShakeComplete());
+  Debug("ssl", "set_context_cert ssl=%p server=%s handshake_complete=%d", ssl, servername,
+    netvc->getSSLHandShakeComplete());
+  // set SSL trace (we do this a little later in the USE_TLS_SNI case so we can get the servername
+  if(SSLConfigParams::ssl_wire_trace_enabled){
+    bool trace = netvc->computeSSLTrace();      
+    Debug("ssl", "sslnetvc. setting trace to=%s", trace ? "true" : "false");
+    netvc->setSSLTrace(trace);
+  }
 
   // catch the client renegotiation early on
   if (SSLConfigParams::ssl_allow_client_renegotiation == false && netvc->getSSLHandShakeComplete()) {
