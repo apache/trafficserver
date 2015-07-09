@@ -56,6 +56,7 @@ Contents:
   http-transformation-plugin.en
   new-protocol-plugins.en
   http-hooks-and-transactions.en
+  trafficserver-timers.en
   misc-interface-guide.en
   http-headers.en
   mutex-guide.en
