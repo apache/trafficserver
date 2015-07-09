@@ -607,9 +607,3 @@ performance on your origin servers, you may adjust the origin connection timeout
 in Traffic Server by changing :ts:cv:`proxy.config.http.connect_attempts_timeout`
 in :file:`records.config` to a larger value.
 
-Timers applicable to various states in a transaction
------------------------------------------------------
-
-For an overview of HTTP transaction timers, refer to the transaction timer diagram
-in :file:`trafficserver-timers`.
-
