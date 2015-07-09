@@ -957,6 +957,7 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
     // net_activity will not be triggered until after the handshake
     set_inactivity_timeout(HRTIME_SECONDS(SSLConfigParams::ssl_handshake_timeout_in));
   }
+
   switch (event) {
   case SSL_EVENT_SERVER:
     if (this->ssl == NULL) {
@@ -1294,7 +1295,6 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
 
     TraceIn(trace, get_remote_addr(), get_remote_port(),
         "SSL client handshake completed successfully");
-    // do we want to include cert info in trace?
 
     sslHandShakeComplete = true;
     return EVENT_DONE;
