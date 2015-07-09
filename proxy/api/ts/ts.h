@@ -30,7 +30,7 @@
 #ifndef __TS_API_H__
 #define __TS_API_H__
 
-#include "apidefs.h"
+#include <ts/apidefs.h>
 
 #ifdef __cplusplus
 extern "C" {

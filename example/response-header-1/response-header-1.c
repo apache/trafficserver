@@ -53,7 +53,7 @@
 #include <ctype.h>
 
 #include "ts/ts.h"
-#include "ink_defs.h"
+#include "ts/ink_defs.h"
 
 static int init_buffer_status;
 

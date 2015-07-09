@@ -25,7 +25,7 @@
 #include <string.h>
 
 #include "ts/ts.h"
-#include "ink_defs.h"
+#include "ts/ink_defs.h"
 
 #define MAX_NSITES 500
 #define RETRY_TIME 10

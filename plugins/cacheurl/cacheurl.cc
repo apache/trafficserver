@@ -27,8 +27,9 @@
 
 #include "ts/ts.h"
 #include "ts/remap.h"
-#include "ink_defs.h"
-#include "ink_memory.h"
+
+#include "ts/ink_defs.h"
+#include "ts/ink_memory.h"
 
 #include <string>
 #include <vector>

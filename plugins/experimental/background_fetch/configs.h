@@ -28,7 +28,7 @@
 #include <stdlib.h>
 
 #include "rules.h"
-#include "ink_atomic.h"
+#include "ts/ink_atomic.h"
 
 // Constants
 const char PLUGIN_NAME[] = "background_fetch";

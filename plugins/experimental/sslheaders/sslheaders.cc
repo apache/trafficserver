@@ -17,7 +17,7 @@
  */
 
 #include "sslheaders.h"
-#include "ink_memory.h"
+#include "ts/ink_memory.h"
 
 #include <getopt.h>
 #include <openssl/ssl.h>

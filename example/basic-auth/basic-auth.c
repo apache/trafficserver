@@ -28,7 +28,7 @@
 #include <unistd.h>
 
 #include "ts/ts.h"
-#include "ink_defs.h"
+#include "ts/ink_defs.h"
 
 
 static char base64_codes[256];

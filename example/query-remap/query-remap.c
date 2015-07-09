@@ -27,7 +27,7 @@
 
 #include "ts/ts.h"
 #include "ts/remap.h"
-#include "ink_defs.h"
+#include "ts/ink_defs.h"
 
 #define PLUGIN_NAME "query_remap"
 

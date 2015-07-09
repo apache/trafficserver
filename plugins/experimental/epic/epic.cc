@@ -29,7 +29,8 @@
 #include <inttypes.h>
 #include <set>
 #include <string>
-#include "ink_defs.h"
+
+#include "ts/ink_defs.h"
 
 #define debug_tag(tag, fmt, ...)          \
   do {                                    \

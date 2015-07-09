@@ -24,7 +24,7 @@
 #include <stdio.h>
 
 #include "ts/ts.h"
-#include "ink_defs.h"
+#include "ts/ink_defs.h"
 
 void
 TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)

@@ -25,8 +25,8 @@
 
 #include <string>
 
-#include "ink_defs.h"
-#include "ink_platform.h"
+#include "ts/ink_defs.h"
+#include "ts/ink_platform.h"
 
 std::string getIP(sockaddr const *s_sockaddr);
 char *getIP(sockaddr const *s_sockaddr, char res[INET6_ADDRSTRLEN]);

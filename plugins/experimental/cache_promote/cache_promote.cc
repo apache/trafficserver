@@ -30,7 +30,7 @@
 
 #include "ts/ts.h"
 #include "ts/remap.h"
-#include "ink_config.h"
+#include "ts/ink_config.h"
 
 
 static const char *PLUGIN_NAME = "cache_promote";

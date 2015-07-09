@@ -37,7 +37,7 @@
 #include <stdio.h>
 
 #include "ts/ts.h"
-#include "ink_defs.h"
+#include "ts/ink_defs.h"
 
 #define TS_NULL_MUTEX NULL
 #define STATE_BUFFER_DATA 0

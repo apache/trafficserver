@@ -37,9 +37,9 @@
 #include <ctype.h>
 
 // Get some specific stuff from libts, yes, we can do that now that we build inside the core.
-#include "ink_platform.h"
-#include "ink_atomic.h"
-#include "ink_time.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_atomic.h"
+#include "ts/ink_time.h"
 
 #ifdef HAVE_PCRE_PCRE_H
 #include <pcre/pcre.h>

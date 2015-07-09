@@ -17,7 +17,7 @@
 */
 
 
-#include "ink_platform.h"
+#include "ts/ink_platform.h"
 #include <netinet/in.h>
 #include "ts_lua_util.h"
 

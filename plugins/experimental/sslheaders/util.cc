@@ -18,7 +18,7 @@
 
 #include "sslheaders.h"
 #include <memory>
-#include <ink_defs.h>
+#include "ts/ink_defs.h"
 
 // Count of fields (not including SSL_HEADERS_FIELD_NONE).
 #define NUMFIELDS (SSL_HEADERS_FIELD_MAX - 1)

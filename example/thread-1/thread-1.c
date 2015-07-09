@@ -35,7 +35,7 @@
 #include <string.h>
 
 #include "ts/ts.h"
-#include "ink_defs.h"
+#include "ts/ink_defs.h"
 
 static void *
 reenable_txn(void *data)

@@ -41,7 +41,7 @@
 #include <string.h>
 
 #include "ts/ts.h"
-#include "ink_defs.h"
+#include "ts/ink_defs.h"
 
 #define ASSERT_SUCCESS(_x) TSAssert((_x) == TS_SUCCESS)
 

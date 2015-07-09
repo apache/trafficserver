@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "ink_defs.h"
+#include "ts/ink_defs.h"
 #include "serverIntercept.h"
 
 #include <string>

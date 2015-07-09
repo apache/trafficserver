@@ -27,7 +27,7 @@
 #include "ts/ts.h"
 
 #include "thread.h"
-#include "ink_defs.h"
+#include "ts/ink_defs.h"
 
 #define DBGTAG "xthread"
 

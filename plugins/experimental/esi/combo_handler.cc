@@ -33,7 +33,7 @@
 #include "ts/ts.h"
 #include "ts/experimental.h"
 #include "ts/remap.h"
-#include "ink_defs.h"
+#include "ts/ink_defs.h"
 
 #include "HttpDataFetcherImpl.h"
 #include "gzip.h"

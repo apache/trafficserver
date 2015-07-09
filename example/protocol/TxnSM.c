@@ -23,7 +23,7 @@
 
 #include <sys/types.h>
 #include <netinet/in.h>
-#include "ink_defs.h"
+#include "ts/ink_defs.h"
 
 #include "TxnSM.h"
 

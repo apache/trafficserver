@@ -57,7 +57,7 @@
 #include <netinet/in.h>
 
 #include "ts/ts.h"
-#include "ink_defs.h"
+#include "ts/ink_defs.h"
 
 #define STATE_BUFFER 1
 #define STATE_CONNECT 2

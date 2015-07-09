@@ -20,7 +20,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <strings.h>
-#include "ink_defs.h"
+#include "ts/ink_defs.h"
 
 // The name of the debug request header. This should probably be configurable.
 #define X_DEBUG_HEADER "X-Debug"

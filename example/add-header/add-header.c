@@ -37,7 +37,7 @@
 #include <string.h>
 
 #include "ts/ts.h"
-#include "ink_defs.h"
+#include "ts/ink_defs.h"
 
 static TSMBuffer hdr_bufp;
 static TSMLoc hdr_loc;
