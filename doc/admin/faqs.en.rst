@@ -611,5 +611,5 @@ Timers applicable to various states in a transaction
 -----------------------------------------------------
 
 For an overview of HTTP transaction timers, refer to the transaction timer diagram
-in `traffic-server-timerstraffic-server-timers`.
+in :file:`trafficserver-timers`.
 
