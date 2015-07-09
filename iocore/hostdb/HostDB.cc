@@ -1858,6 +1858,7 @@ HostDBContinuation::probeAllEvent(int event, Event *e)
    }
 
   action.continuation->handleEvent(EVENT_DONE, NULL);
+  hostdb_cont_free(this);
   return EVENT_DONE;
 }
 
