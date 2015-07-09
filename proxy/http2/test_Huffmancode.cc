@@ -10,7 +10,7 @@ test()
   char *dst_start = (char *)malloc(1024 * 2);
   char string[1024];
   for (int i = 0; i < 1024; i++) {
-    int num = rand();
+    long num = lrand48();
     string[i] = (char)num;
   }
   const uint8_t *src = (const uint8_t *)string;
