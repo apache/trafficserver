@@ -31,7 +31,7 @@
 #ifndef EVENT_NOTIFY_H
 #define EVENT_NOTIFY_H
 
-#include "ink_thread.h"
+#include "ts/ink_thread.h"
 
 class EventNotify
 {

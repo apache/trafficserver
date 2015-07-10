@@ -41,9 +41,9 @@
 #define _Allocator_h_
 
 #include <stdlib.h>
-#include "ink_queue.h"
-#include "ink_defs.h"
-#include "ink_resource.h"
+#include "ts/ink_queue.h"
+#include "ts/ink_defs.h"
+#include "ts/ink_resource.h"
 
 #define RND16(_x) (((_x) + 15) & ~15)
 

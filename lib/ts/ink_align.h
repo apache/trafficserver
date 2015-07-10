@@ -25,7 +25,7 @@
 #ifndef _ink_align_h_
 #define _ink_align_h_
 
-#include "ink_time.h"
+#include "ts/ink_time.h"
 
 union Alias32 {
   uint8_t byte[4];

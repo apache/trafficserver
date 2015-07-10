@@ -35,7 +35,7 @@
 #if !defined(_Ptr_h_)
 #define _Ptr_h_
 
-#include "ink_atomic.h"
+#include "ts/ink_atomic.h"
 
 ////////////////////////////////////////////////////////////////////////
 //

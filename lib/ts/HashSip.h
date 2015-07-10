@@ -22,7 +22,7 @@
 #ifndef __HASH_SIP_H__
 #define __HASH_SIP_H__
 
-#include "Hash.h"
+#include "ts/Hash.h"
 #include <stdint.h>
 
 /*

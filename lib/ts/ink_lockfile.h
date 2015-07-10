@@ -24,8 +24,8 @@
 #ifndef __INK_LOCKFILE_H__
 #define __INK_LOCKFILE_H__
 
-#include "ink_defs.h"
-#include "ink_string.h"
+#include "ts/ink_defs.h"
+#include "ts/ink_string.h"
 
 #define COP_LOCK "cop.lock"
 #define MANAGER_LOCK "manager.lock"

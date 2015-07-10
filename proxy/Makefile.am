@@ -37,6 +37,7 @@ AM_CPPFLAGS = \
   $(iocore_include_dirs) \
   -I$(top_srcdir)/lib/records \
   -I$(top_srcdir)/lib/ts \
+  -I$(top_builddir)/lib/ts \
   -I$(srcdir)/http \
   -I$(srcdir)/http2 \
   -I$(srcdir)/spdy \

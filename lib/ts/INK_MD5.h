@@ -24,9 +24,9 @@
 #ifndef _INK_MD5_h_
 #define _INK_MD5_h_
 
-#include "ink_code.h"
-#include "ink_defs.h"
-#include "CryptoHash.h"
+#include "ts/ink_code.h"
+#include "ts/ink_defs.h"
+#include "ts/CryptoHash.h"
 
 class MD5Context : public CryptoContext
 {

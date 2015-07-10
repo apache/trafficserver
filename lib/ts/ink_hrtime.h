@@ -31,8 +31,8 @@
 #if !defined(_ink_hrtime_h_)
 #define _ink_hrtime_h_
 
-#include "ink_config.h"
-#include "ink_assert.h"
+#include "ts/ink_config.h"
+#include "ts/ink_assert.h"
 #include <time.h>
 #include <sys/time.h>
 #include <stdlib.h>

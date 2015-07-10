@@ -30,8 +30,8 @@
 #ifndef _INK_RWLOCK_H_
 #define _INK_RWLOCK_H_
 
-#include "ink_mutex.h"
-#include "ink_thread.h"
+#include "ts/ink_mutex.h"
+#include "ts/ink_thread.h"
 
 #define RW_MAGIC 0x19283746
 

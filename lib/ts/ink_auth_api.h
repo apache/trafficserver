@@ -27,7 +27,7 @@
 #include <sys/types.h>
 #include <string.h>
 
-#include "ink_defs.h"
+#include "ts/ink_defs.h"
 
 typedef union {
   uint64_t u64[2];

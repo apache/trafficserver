@@ -24,7 +24,10 @@ AM_CFLAGS += @FLEX_CFLAGS@
 AM_YFLAGS = --yacc -d -p tsconfig
 
 AM_CPPFLAGS = \
-  -I$(top_srcdir)/lib 
+  -I$(top_srcdir)/lib \
+  -I$(top_builddir)/lib \
+  -I$(top_srcdir)/lib/ts \
+  -I$(top_builddir)/lib/ts
 
 BUILT_SOURCES = \
   TsConfigGrammar.hpp

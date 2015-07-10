@@ -41,10 +41,10 @@
 #include <string.h>
 #include <stdint.h>
 #include <assert.h>
-#include "ink_defs.h"
 
-#include "ink_apidefs.h"
-#include "ink_mutex.h"
+#include "ts/ink_defs.h"
+#include "ts/ink_apidefs.h"
+#include "ts/ink_mutex.h"
 
 typedef volatile int8_t vint8;
 typedef volatile int16_t vint16;

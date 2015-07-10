@@ -20,6 +20,7 @@
 AM_CPPFLAGS = \
   -I$(top_srcdir)/lib/records \
   -I$(top_srcdir)/lib/ts \
+  -I$(top_builddir)/lib/ts \
   -I$(top_srcdir)/mgmt \
   -I$(top_srcdir)/mgmt/api/include \
   -I$(top_srcdir)/mgmt/utils \

@@ -26,6 +26,7 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/proxy \
   -I$(top_srcdir)/lib/records \
   -I$(top_srcdir)/lib/ts \
+  -I$(top_builddir)/lib/ts \
   -I$(top_builddir)/lib \
   -I$(top_srcdir)/lib \
   @OPENSSL_INCLUDES@

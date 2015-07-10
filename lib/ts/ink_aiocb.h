@@ -32,7 +32,7 @@
 #ifndef _ink_aiocb_h_
 #define _ink_aiocb_h_
 
-#include "ink_defs.h"
+#include "ts/ink_defs.h"
 
 /* TODO use native aiocb where possible */
 

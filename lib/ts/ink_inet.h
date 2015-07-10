@@ -28,9 +28,9 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <sys/socket.h>
-#include "ink_memory.h"
-#include "ink_apidefs.h"
-#include "TsBuffer.h"
+#include "ts/ink_memory.h"
+#include "ts/ink_apidefs.h"
+#include "ts/TsBuffer.h"
 
 #define INK_GETHOSTBYNAME_R_DATA_SIZE 1024
 #define INK_GETHOSTBYADDR_R_DATA_SIZE 1024

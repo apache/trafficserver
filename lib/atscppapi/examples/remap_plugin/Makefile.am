@@ -22,4 +22,4 @@ AM_CPPFLAGS += -I$(top_srcdir)/lib/atscppapi/src/include -Wno-unused-variable
 target=RemapPlugin.so
 pkglib_LTLIBRARIES = RemapPlugin.la
 RemapPlugin_la_SOURCES = RemapPlugin.cc
-RemapPlugin_la_LDFLAGS = -module -avoid-version -shared -L$(top_srcdir)/lib/atscppapi/src/ -latscppapi $(TS_PLUGIN_LDFLAGS)
+RemapPlugin_la_LDFLAGS = -module -avoid-version -shared -L$(top_builddir)/lib/atscppapi/src/ -latscppapi $(TS_PLUGIN_LDFLAGS)

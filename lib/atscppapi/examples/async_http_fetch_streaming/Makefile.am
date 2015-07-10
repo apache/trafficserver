@@ -22,4 +22,4 @@ AM_CPPFLAGS += -I$(top_srcdir)/lib/atscppapi/src/include -Wno-unused-variable
 target=AsyncHttpFetchStreaming.so
 pkglib_LTLIBRARIES = AsyncHttpFetchStreaming.la
 AsyncHttpFetchStreaming_la_SOURCES = AsyncHttpFetchStreaming.cc
-AsyncHttpFetchStreaming_la_LDFLAGS = -module -avoid-version -shared -L$(top_srcdir)/lib/atscppapi/src/ -latscppapi $(TS_PLUGIN_LDFLAGS)
+AsyncHttpFetchStreaming_la_LDFLAGS = -module -avoid-version -shared -L$(top_builddir)/lib/atscppapi/src/ -latscppapi $(TS_PLUGIN_LDFLAGS)

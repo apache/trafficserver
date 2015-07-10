@@ -22,4 +22,4 @@ AM_CPPFLAGS += -I$(top_srcdir)/lib/atscppapi/src/include -Wno-unused-variable
 target=GlobalHookPlugin.so
 pkglib_LTLIBRARIES = GlobalHookPlugin.la
 GlobalHookPlugin_la_SOURCES = GlobalHookPlugin.cc
-GlobalHookPlugin_la_LDFLAGS = -module -avoid-version -shared -L$(top_srcdir)/lib/atscppapi/src/ -latscppapi $(TS_PLUGIN_LDFLAGS)
+GlobalHookPlugin_la_LDFLAGS = -module -avoid-version -shared -L$(top_builddir)/lib/atscppapi/src/ -latscppapi $(TS_PLUGIN_LDFLAGS)

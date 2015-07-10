@@ -34,9 +34,9 @@
 #ifndef _ink_time_h_
 #define _ink_time_h_
 
-#include "ink_platform.h"
-#include "ink_defs.h"
-#include "ink_hrtime.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_defs.h"
+#include "ts/ink_hrtime.h"
 
 /*===========================================================================*
 

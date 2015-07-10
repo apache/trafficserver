@@ -26,15 +26,16 @@
 #include <memory.h>
 #include <inttypes.h>
 #include <ts/ts.h>
-#include <ink_config.h>
 #include <tsconfig/TsValue.h>
 #include <openssl/ssl.h>
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
-#include <ts/ink_inet.h>
 #include <getopt.h>
-#include <ts/IpMap.h>
 #include "domain-tree.h"
+
+#include "ts/ink_inet.h"
+#include "ts/ink_config.h"
+#include "ts/IpMap.h"
 
 using ts::config::Configuration;
 using ts::config::Value;

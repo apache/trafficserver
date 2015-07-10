@@ -21,8 +21,8 @@
   limitations under the License.
  */
 
-#include "libts.h"
-#include "ink_platform.h"
+#include "ts/libts.h"
+#include "ts/ink_platform.h"
 
 // This isn't really a unit test. It's just a dumb little program to probe the disk
 // geometry of an arbitrary device file. That's useful when figuring out how ATS will

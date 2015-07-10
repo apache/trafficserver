@@ -22,4 +22,4 @@ AM_CPPFLAGS += -I$(top_srcdir)/lib/atscppapi/src/include -Wno-unused-variable
 target=ServerResponse.so
 pkglib_LTLIBRARIES = ServerResponse.la
 ServerResponse_la_SOURCES = ServerResponse.cc
-ServerResponse_la_LDFLAGS = -module -avoid-version -shared -L$(top_srcdir)/lib/atscppapi/src/ -latscppapi $(TS_PLUGIN_LDFLAGS)
+ServerResponse_la_LDFLAGS = -module -avoid-version -shared -L$(top_builddir)/lib/atscppapi/src/ -latscppapi $(TS_PLUGIN_LDFLAGS)

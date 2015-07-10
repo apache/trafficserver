@@ -22,7 +22,7 @@
 #ifndef __HASH_MD5_H__
 #define __HASH_MD5_H__
 
-#include "Hash.h"
+#include "ts/Hash.h"
 #include <openssl/evp.h>
 
 struct ATSHashMD5 : ATSHash {

@@ -30,8 +30,8 @@
 #define _INK_THREAD_H
 
 
-#include "ink_hrtime.h"
-#include "ink_defs.h"
+#include "ts/ink_hrtime.h"
+#include "ts/ink_defs.h"
 #include <sched.h>
 
 
@@ -93,9 +93,9 @@ typedef struct timespec ink_timestruc;
 typedef timestruc_t ink_timestruc;
 #endif
 
-#include "ink_mutex.h"
 #include <errno.h>
-#include "ink_assert.h"
+#include "ts/ink_mutex.h"
+#include "ts/ink_assert.h"
 
 //////////////////////////////////////////////////////////////////////////////
 //

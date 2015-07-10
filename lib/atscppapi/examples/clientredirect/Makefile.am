@@ -22,4 +22,4 @@ AM_CPPFLAGS += -I$(top_srcdir)/lib/atscppapi/src/include -Wno-unused-variable
 target=ClientRedirect.so
 pkglib_LTLIBRARIES = ClientRedirect.la
 ClientRedirect_la_SOURCES = ClientRedirect.cc
-ClientRedirect_la_LDFLAGS =  -module -avoid-version -shared -L$(top_srcdir)/lib/atscppapi/src/ -latscppapi $(TS_PLUGIN_LDFLAGS)
+ClientRedirect_la_LDFLAGS =  -module -avoid-version -shared -L$(top_builddir)/lib/atscppapi/src/ -latscppapi $(TS_PLUGIN_LDFLAGS)

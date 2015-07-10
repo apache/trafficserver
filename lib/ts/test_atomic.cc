@@ -27,9 +27,10 @@
 #include <time.h>
 #include <poll.h>
 #include <pthread.h>
-#include "ink_atomic.h"
-#include "ink_queue.h"
-#include "ink_thread.h"
+
+#include "ts/ink_atomic.h"
+#include "ts/ink_queue.h"
+#include "ts/ink_thread.h"
 
 
 #ifndef LONG_ATOMICLIST_TEST

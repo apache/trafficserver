@@ -25,7 +25,7 @@
 #ifndef _ink_platform_h
 #define _ink_platform_h
 
-#include "ink_config.h"
+#include "ts/ink_config.h"
 
 #include <stdio.h>
 #include <stdarg.h>

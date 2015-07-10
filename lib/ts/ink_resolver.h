@@ -69,8 +69,9 @@
 #ifndef _ink_resolver_h_
 #define _ink_resolver_h_
 
-#include "ink_platform.h"
-#include <ts/ink_inet.h>
+#include "ts/ink_platform.h"
+#include "ts/ink_inet.h"
+
 #include <resolv.h>
 #include <arpa/nameser.h>
 

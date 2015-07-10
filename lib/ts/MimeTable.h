@@ -25,8 +25,8 @@
 #define _MimeTable_h_
 
 #include <string.h>
-#include "ink_defs.h"
-#include "ink_string.h"
+#include "ts/ink_defs.h"
+#include "ts/ink_string.h"
 
 struct MimeTableEntry {
   const char *name;

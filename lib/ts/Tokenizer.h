@@ -102,7 +102,7 @@
  *
  *******************************************************************/
 
-#include "ink_apidefs.h"
+#include "ts/ink_apidefs.h"
 
 #define COPY_TOKS (1u << 0)
 #define SHARE_TOKS (1u << 1)

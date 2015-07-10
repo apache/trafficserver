@@ -34,9 +34,9 @@
 
 ***********************************************************************/
 
-#include "ink_platform.h"
-#include "ink_defs.h"
-#include "ink_apidefs.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_defs.h"
+#include "ts/ink_apidefs.h"
 
 /*
   For information on the structure of the x86_64 memory map:

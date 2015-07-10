@@ -22,4 +22,4 @@ AM_CPPFLAGS += -I$(top_srcdir)/lib/atscppapi/src/include -Wno-unused-variable
 target=TransactionHookPlugin.so
 pkglib_LTLIBRARIES = TransactionHookPlugin.la
 TransactionHookPlugin_la_SOURCES = TransactionHookPlugin.cc
-TransactionHookPlugin_la_LDFLAGS = -module -avoid-version -shared -L$(top_srcdir)/lib/atscppapi/src/ -latscppapi  $(TS_PLUGIN_LDFLAGS)
+TransactionHookPlugin_la_LDFLAGS = -module -avoid-version -shared -L$(top_builddir)/lib/atscppapi/src/ -latscppapi  $(TS_PLUGIN_LDFLAGS)

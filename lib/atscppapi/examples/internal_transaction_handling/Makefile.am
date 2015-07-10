@@ -22,4 +22,4 @@ AM_CPPFLAGS += -I$(top_srcdir)/lib/atscppapi/src/include -Wno-unused-variable
 target=InternalTransactionHandling.so
 pkglib_LTLIBRARIES = InternalTransactionHandling.la
 InternalTransactionHandling_la_SOURCES = InternalTransactionHandling.cc
-InternalTransactionHandling_la_LDFLAGS = -module -avoid-version -shared -L$(top_srcdir)/lib/atscppapi/src/ -latscppapi $(TS_PLUGIN_LDFLAGS)
+InternalTransactionHandling_la_LDFLAGS = -module -avoid-version -shared -L$(top_builddir)/lib/atscppapi/src/ -latscppapi $(TS_PLUGIN_LDFLAGS)

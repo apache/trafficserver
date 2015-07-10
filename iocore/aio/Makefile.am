@@ -21,7 +21,8 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/lib \
   -I$(top_builddir)/lib \
   -I$(top_srcdir)/lib/records \
-  -I$(top_srcdir)/lib/ts
+  -I$(top_srcdir)/lib/ts \
+  -I$(top_builddir)/lib/ts
 
 TESTS = test_AIO.sample
 

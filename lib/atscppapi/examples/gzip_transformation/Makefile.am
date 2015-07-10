@@ -22,4 +22,4 @@ AM_CPPFLAGS += -I$(top_srcdir)/lib/atscppapi/src/include -Wno-unused-variable
 target=GzipTransformationPlugin.so
 pkglib_LTLIBRARIES = GzipTransformationPlugin.la
 GzipTransformationPlugin_la_SOURCES = GzipTransformationPlugin.cc
-GzipTransformationPlugin_la_LDFLAGS = -module -avoid-version -shared -L$(top_srcdir)/lib/atscppapi/src/ -latscppapi $(TS_PLUGIN_LDFLAGS)
+GzipTransformationPlugin_la_LDFLAGS = -module -avoid-version -shared -L$(top_builddir)/lib/atscppapi/src/ -latscppapi $(TS_PLUGIN_LDFLAGS)

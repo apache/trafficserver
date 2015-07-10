@@ -23,4 +23,4 @@ target=NullTransformationPlugin.so
 
 pkglib_LTLIBRARIES = NullTransformationPlugin.la
 NullTransformationPlugin_la_SOURCES = NullTransformationPlugin.cc
-NullTransformationPlugin_la_LDFLAGS = -module -avoid-version -shared -L$(top_srcdir)/lib/atscppapi/src/ -latscppapi  $(TS_PLUGIN_LDFLAGS)
+NullTransformationPlugin_la_LDFLAGS = -module -avoid-version -shared -L$(top_builddir)/lib/atscppapi/src/ -latscppapi  $(TS_PLUGIN_LDFLAGS)

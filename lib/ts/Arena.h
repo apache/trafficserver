@@ -27,7 +27,7 @@
 
 #include <sys/types.h>
 #include <memory.h>
-#include "ink_assert.h"
+#include "ts/ink_assert.h"
 
 
 struct ArenaBlock {

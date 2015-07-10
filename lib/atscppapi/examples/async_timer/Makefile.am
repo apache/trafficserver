@@ -21,4 +21,4 @@ AM_CPPFLAGS += -I$(top_srcdir)/lib/atscppapi/src/include -Wno-unused-variable
 target=AsyncTimer.so
 pkglib_LTLIBRARIES = AsyncTimer.la
 AsyncTimer_la_SOURCES = AsyncTimer.cc
-AsyncTimer_la_LDFLAGS =  -module -avoid-version -shared -L$(top_srcdir)/lib/atscppapi/src/ -latscppapi $(TS_PLUGIN_LDFLAGS)
+AsyncTimer_la_LDFLAGS =  -module -avoid-version -shared -L$(top_builddir)/lib/atscppapi/src/ -latscppapi $(TS_PLUGIN_LDFLAGS)

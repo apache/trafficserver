@@ -36,10 +36,10 @@
 #define __DIAGS_H___
 
 #include <stdarg.h>
-#include "ink_error.h"
-#include "ink_mutex.h"
-#include "Regex.h"
-#include "ink_apidefs.h"
+#include "ts/ink_error.h"
+#include "ts/ink_mutex.h"
+#include "ts/Regex.h"
+#include "ts/ink_apidefs.h"
 
 #define DIAGS_MAGIC 0x12345678
 
