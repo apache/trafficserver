@@ -2158,6 +2158,12 @@ server, refer to :file:`logs_xml.config`.
    -  ``2`` = log every second transaction
    -  ``3`` = log every third transaction and so on...
 
+.. ts:cv:: CONFIG proxy.config.log.periodic_tasks_interval INT 5
+   :reloadable:
+   :metric: seconds
+
+   How often Traffic Server executes log related periodic tasks, in seconds
+
 .. ts:cv:: CONFIG proxy.config.http.slow.log.threshold INT 0
    :reloadable:
    :metric: milliseconds
