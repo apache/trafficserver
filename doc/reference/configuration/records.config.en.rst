@@ -1285,6 +1285,13 @@ Cache Control
    usable. See :ref:`Reducing Origin Server Requests
    <http-proxy-caching.en.html#reducing-origin-server-requests-avoiding-the-thundering-herd>`.
 
+.. ts:cv:: CONFIG proxy.config.cache.read_while_writer.max_retries INT 10
+   :reloadable:
+
+   Specifies how many retries (100msec each) trafficserver attempts to trigger read_while_writer
+   on failing to obtain the write VC mutex or until the first fragment is downloaded for the
+   object being downloaded.
+
 .. ts:cv:: CONFIG proxy.config.cache.force_sector_size INT 0
    :reloadable:
 
@@ -1650,6 +1657,18 @@ all the different user-agent versions of documents it encounters.
    :reloadable:
 
     The number of times to attempt fetching an object from cache if there was an equivalent request in flight.
+
+.. ts:cv:: CONFIG proxy.config.http.cache.open_write_fail_action INT 0
+   :reloadable:
+
+    This bit-map setting indicates the action taken on failing to obtain the cache open write lock on either a cache miss or
+    a cache hit stale. This typically happens when there is more than one request to the same cache object simultaneously.
+    During such scenario, all but one (which goes to the origin) request is served either a stale copy or an error depending
+    on the setting.
+
+   -  ``0`` = default, disable cache and goto origin server
+   -  ``1`` = return a 502 error
+   -  ``2`` = serve stale if object's age is under `proxy.config.http.cache.max_stale_age`, else, goto origin server
 
 Customizable User Response Pages
 ================================
