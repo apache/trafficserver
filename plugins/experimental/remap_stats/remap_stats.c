@@ -19,8 +19,8 @@
   limitations under the License.
  */
 
-#include "ink_config.h"
-#include "ink_defs.h"
+#include "ts/ink_config.h"
+#include "ts/ink_defs.h"
 
 #include "ts/ts.h"
 #include <stdint.h>
