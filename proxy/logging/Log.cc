@@ -825,19 +825,19 @@ Log::init(int flags)
       } else {
         logging_mode = (LoggingMode)val;
       }
+      // periodic task interval are set on a per instance basis
+      MgmtInt pti = REC_ConfigReadInteger("proxy.config.log.periodic_tasks_interval");
+      if (pti <= 0) {
+        Error("proxy.config.log.periodic_tasks_interval = %" PRId64 " is invalid", pti);
+        Note("falling back to default periodic tasks interval = %d", PERIODIC_TASKS_INTERVAL_FALLBACK);
+        periodic_tasks_interval = PERIODIC_TASKS_INTERVAL_FALLBACK;
+      } else {
+        periodic_tasks_interval = static_cast<uint32_t>(pti);
+      }
+
+      REC_RegisterConfigUpdateFunc("proxy.config.log.periodic_tasks_interval", &Log::handle_periodic_tasks_int_change, NULL);
     }
   }
-
-  // periodic task interval are set on a per instance basis
-  int pti = (int)REC_ConfigReadInteger("proxy.config.log.periodic_tasks_interval");
-  if (pti <= 0) {
-    Error("proxy.config.log.periodic_tasks_interval = %d is invalid", pti);
-    Note("falling back to default periodic tasks interval = %d", PERIODIC_TASKS_INTERVAL_FALLBACK);
-    periodic_tasks_interval = PERIODIC_TASKS_INTERVAL_FALLBACK;
-  } else
-    periodic_tasks_interval = (uint32_t)pti;
-
-  REC_RegisterConfigUpdateFunc("proxy.config.log.periodic_tasks_interval", &Log::handle_periodic_tasks_int_change, NULL);
 
   // if remote management is enabled, do all necessary initialization to
   // be able to handle a logging mode change
