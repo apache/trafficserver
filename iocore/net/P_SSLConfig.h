@@ -99,11 +99,11 @@ struct SSLConfigParams : public ConfigInfo {
   static bool session_cache_skip_on_lock_contention;
 
   // TS-3435 Wiretracing for SSL Connections
-  static int    ssl_wire_trace_enabled;
-  static char * ssl_wire_trace_addr;
-  static IpAddr * ssl_wire_trace_ip;
-  static int    ssl_wire_trace_percentage;
-  static char * ssl_wire_trace_server_name;
+  static int ssl_wire_trace_enabled;
+  static char *ssl_wire_trace_addr;
+  static IpAddr *ssl_wire_trace_ip;
+  static int ssl_wire_trace_percentage;
+  static char *ssl_wire_trace_server_name;
 
   static init_ssl_ctx_func init_ssl_ctx_cb;
 

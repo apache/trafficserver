@@ -306,24 +306,22 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
 
       if (vc->origin_trace) {
         char origin_trace_ip[INET6_ADDRSTRLEN];
-        
-        ats_ip_ntop(vc->origin_trace_addr, origin_trace_ip, sizeof (origin_trace_ip));
+
+        ats_ip_ntop(vc->origin_trace_addr, origin_trace_ip, sizeof(origin_trace_ip));
 
         if (r > 0) {
-          TraceIn((vc->origin_trace), vc->get_remote_addr(), vc->get_remote_port(),
-                  "CLIENT %s:%d\tbytes=%d\n%.*s", origin_trace_ip, vc->origin_trace_port, (int)r,
-                  (int)r, (char *)tiovec[0].iov_base);
-        
-        } else if (r == 0) {
-          TraceIn((vc->origin_trace), vc->get_remote_addr(), vc->get_remote_port(),
-                  "CLIENT %s:%d closed connection", origin_trace_ip, vc->origin_trace_port);
-        } else {
-          TraceIn((vc->origin_trace), vc->get_remote_addr(), vc->get_remote_port(),
-                  "CLIENT %s:%d error=%s", origin_trace_ip, vc->origin_trace_port, strerror(errno));
-        }
+          TraceIn((vc->origin_trace), vc->get_remote_addr(), vc->get_remote_port(), "CLIENT %s:%d\tbytes=%d\n%.*s", origin_trace_ip,
+                  vc->origin_trace_port, (int)r, (int)r, (char *)tiovec[0].iov_base);
 
+        } else if (r == 0) {
+          TraceIn((vc->origin_trace), vc->get_remote_addr(), vc->get_remote_port(), "CLIENT %s:%d closed connection",
+                  origin_trace_ip, vc->origin_trace_port);
+        } else {
+          TraceIn((vc->origin_trace), vc->get_remote_addr(), vc->get_remote_port(), "CLIENT %s:%d error=%s", origin_trace_ip,
+                  vc->origin_trace_port, strerror(errno));
+        }
       }
-      
+
       total_read += rattempted;
     } while (rattempted && r == rattempted && total_read < toread);
 
@@ -880,8 +878,8 @@ UnixNetVConnection::UnixNetVConnection()
 #else
     next_inactivity_timeout_at(0), next_activity_timeout_at(0),
 #endif
-    nh(NULL), id(0), flags(0), recursion(0), submit_time(0), oob_ptr(0), from_accept_thread(false),
-    origin_trace(false), origin_trace_addr(NULL), origin_trace_port(0)
+    nh(NULL), id(0), flags(0), recursion(0), submit_time(0), oob_ptr(0), from_accept_thread(false), origin_trace(false),
+    origin_trace_addr(NULL), origin_trace_port(0)
 {
   memset(&local_addr, 0, sizeof local_addr);
   memset(&server_addr, 0, sizeof server_addr);
@@ -962,24 +960,22 @@ UnixNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, 
       r = socketManager.write(con.fd, tiovec[0].iov_base, tiovec[0].iov_len);
     else
       r = socketManager.writev(con.fd, &tiovec[0], niov);
-    
+
     if (origin_trace) {
       char origin_trace_ip[INET6_ADDRSTRLEN];
-      ats_ip_ntop(origin_trace_addr, origin_trace_ip, sizeof (origin_trace_ip));
+      ats_ip_ntop(origin_trace_addr, origin_trace_ip, sizeof(origin_trace_ip));
 
       if (r > 0) {
-        TraceOut(origin_trace, get_remote_addr(), get_remote_port(),
-            "CLIENT %s:%d\tbytes=%d\n%.*s", origin_trace_ip, origin_trace_port, (int)r,
-            (int)r, (char *)tiovec[0].iov_base);
-        
-      } else if (r == 0) {
-        TraceOut(origin_trace, get_remote_addr(), get_remote_port(),
-            "CLIENT %s:%d closed connection", origin_trace_ip, origin_trace_port);
-      } else {
-        TraceOut(origin_trace, get_remote_addr(), get_remote_port(),
-            "CLIENT %s:%d error=%s", origin_trace_ip, origin_trace_port, strerror(errno));
-      }
+        TraceOut(origin_trace, get_remote_addr(), get_remote_port(), "CLIENT %s:%d\tbytes=%d\n%.*s", origin_trace_ip,
+                 origin_trace_port, (int)r, (int)r, (char *)tiovec[0].iov_base);
 
+      } else if (r == 0) {
+        TraceOut(origin_trace, get_remote_addr(), get_remote_port(), "CLIENT %s:%d closed connection", origin_trace_ip,
+                 origin_trace_port);
+      } else {
+        TraceOut(origin_trace, get_remote_addr(), get_remote_port(), "CLIENT %s:%d error=%s", origin_trace_ip, origin_trace_port,
+                 strerror(errno));
+      }
     }
 
     ProxyMutex *mutex = thread->mutex;

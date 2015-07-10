@@ -253,15 +253,19 @@ public:
     return eosRcvd;
   }
 
-  bool getSSLTrace() const {
+  bool
+  getSSLTrace() const
+  {
     return sslTrace || super::origin_trace;
   };
 
-  void setSSLTrace(bool state){
+  void
+  setSSLTrace(bool state)
+  {
     sslTrace = state;
   };
 
-  bool computeSSLTrace(); 
+  bool computeSSLTrace();
 
 private:
   SSLNetVConnection(const SSLNetVConnection &);

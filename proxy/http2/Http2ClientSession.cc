@@ -395,11 +395,11 @@ Http2ClientSession::state_complete_frame_read(int event, void *edata)
 int64_t
 Http2ClientSession::getPluginId() const
 {
-    return con_id;
+  return con_id;
 }
 
-char const*
+char const *
 Http2ClientSession::getPluginTag() const
 {
-    return "http/2";
+  return "http/2";
 }

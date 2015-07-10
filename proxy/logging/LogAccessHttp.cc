@@ -602,7 +602,7 @@ LogAccessHttp::marshal_client_req_protocol_version(char *buf)
     marshal_str(buf, tag, len);
   }
 
-  return len; 
+  return len;
 }
 
 

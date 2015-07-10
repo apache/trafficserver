@@ -442,7 +442,7 @@ Log::init_fields()
   ink_hash_table_insert(field_symbol_hash, "cqhv", field);
 
   field = new LogField("client_req_protocol_version", "cqpv", LogField::dINT, &LogAccess::marshal_client_req_protocol_version,
-                       (LogField::UnmarshalFunc) &LogAccess::unmarshal_str);
+                       (LogField::UnmarshalFunc) & LogAccess::unmarshal_str);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cqpv", field);
 
@@ -1051,14 +1051,13 @@ Log::va_error(const char *format, va_list ap)
 /*-------------------------------------------------------------------------
   Log::trace
 
-  These functions are used for wiretracing of incoming SSL connections. 
+  These functions are used for wiretracing of incoming SSL connections.
   They are an extension of the existing Log::error functionality but with
   special formatting and handling of the non null terminated buffer.
   -------------------------------------------------------------------------*/
 
-void 
-Log::trace_in(const sockaddr *peer_addr, uint16_t peer_port,
-    const char *format_string, ...) 
+void
+Log::trace_in(const sockaddr *peer_addr, uint16_t peer_port, const char *format_string, ...)
 {
   va_list ap;
   va_start(ap, format_string);
@@ -1066,9 +1065,8 @@ Log::trace_in(const sockaddr *peer_addr, uint16_t peer_port,
   va_end(ap);
 }
 
-void 
-Log::trace_out(const sockaddr *peer_addr, uint16_t peer_port,
-    const char *format_string, ...)
+void
+Log::trace_out(const sockaddr *peer_addr, uint16_t peer_port, const char *format_string, ...)
 {
   va_list ap;
   va_start(ap, format_string);
@@ -1077,8 +1075,7 @@ Log::trace_out(const sockaddr *peer_addr, uint16_t peer_port,
 }
 
 void
-Log::trace_va(bool in, const sockaddr *peer_addr, uint16_t peer_port,
-    const char *format_string, va_list ap)
+Log::trace_va(bool in, const sockaddr *peer_addr, uint16_t peer_port, const char *format_string, va_list ap)
 {
   if (!peer_addr || !format_string) {
     return;
@@ -1086,13 +1083,12 @@ Log::trace_va(bool in, const sockaddr *peer_addr, uint16_t peer_port,
 
   char ip[INET6_ADDRSTRLEN];
   ats_ip_ntop(peer_addr, ip, sizeof(ip));
-  
+
   struct timeval tp;
   ink_gethrtimeofday(&tp, NULL);
 
-  Log::error("[%9d.%03d] Trace {0x%" PRIx64 "} %s %s:%d: ",
-    (int) tp.tv_sec, (int) (tp.tv_usec / 1000), 
-    (uint64_t) pthread_self(), in ? "RECV" : "SEND", ip, peer_port);
+  Log::error("[%9d.%03d] Trace {0x%" PRIx64 "} %s %s:%d: ", (int)tp.tv_sec, (int)(tp.tv_usec / 1000), (uint64_t)pthread_self(),
+             in ? "RECV" : "SEND", ip, peer_port);
   Log::va_error(format_string, ap);
   Log::error("[End Trace]\n");
 }

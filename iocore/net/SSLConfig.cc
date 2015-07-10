@@ -57,11 +57,11 @@ init_ssl_ctx_func SSLConfigParams::init_ssl_ctx_cb = NULL;
 // TS-3534 Wiretracing for SSL Connections
 int SSLConfigParams::ssl_wire_trace_enabled = 0;
 char *SSLConfigParams::ssl_wire_trace_addr = NULL;
-IpAddr * SSLConfigParams::ssl_wire_trace_ip = NULL;
+IpAddr *SSLConfigParams::ssl_wire_trace_ip = NULL;
 int SSLConfigParams::ssl_wire_trace_percentage = 0;
 char *SSLConfigParams::ssl_wire_trace_server_name = NULL;
 
-static ConfigUpdateHandler<SSLCertificateConfig> * sslCertUpdate;
+static ConfigUpdateHandler<SSLCertificateConfig> *sslCertUpdate;
 
 SSLConfigParams::SSLConfigParams()
 {
@@ -305,12 +305,12 @@ SSLConfigParams::initialize()
 
   REC_ReadConfigInt32(ssl_allow_client_renegotiation, "proxy.config.ssl.allow_client_renegotiation");
 
-  //SSL Wire Trace configurations
+  // SSL Wire Trace configurations
   REC_ReadConfigInteger(ssl_wire_trace_enabled, "proxy.config.ssl.wire_trace_enabled");
-  if(ssl_wire_trace_enabled){
+  if (ssl_wire_trace_enabled) {
     // wire trace specific source ip
     REC_ReadConfigStringAlloc(ssl_wire_trace_addr, "proxy.config.ssl.wire_trace_addr");
-    if(ssl_wire_trace_addr){
+    if (ssl_wire_trace_addr) {
       ssl_wire_trace_ip = new IpAddr();
       ssl_wire_trace_ip->load(ssl_wire_trace_addr);
     } else {

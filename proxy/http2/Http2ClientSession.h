@@ -199,7 +199,7 @@ public:
     return upgrade_context;
   }
 
-  virtual char const* getPluginTag() const;
+  virtual char const *getPluginTag() const;
   virtual int64_t getPluginId() const;
 
 private:
