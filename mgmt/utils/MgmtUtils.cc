@@ -20,9 +20,9 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-#include "libts.h"
+#include "ts/libts.h"
 #include "MgmtUtils.h"
-#include "Diags.h"
+#include "ts/Diags.h"
 
 #include "LocalManager.h"
 

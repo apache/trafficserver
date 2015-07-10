@@ -22,10 +22,10 @@
  */
 
 #include "traffic_crashlog.h"
-#include "ink_args.h"
-#include "ink_cap.h"
-#include "I_Version.h"
-#include "I_Layout.h"
+#include "ts/ink_args.h"
+#include "ts/ink_cap.h"
+#include "ts/I_Version.h"
+#include "ts/I_Layout.h"
 #include "I_RecProcess.h"
 #include "RecordsConfig.h"
 

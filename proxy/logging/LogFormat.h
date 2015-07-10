@@ -26,7 +26,7 @@
 
 #define LOG_FIELD_MARKER '\377'
 
-#include "libts.h"
+#include "ts/libts.h"
 #include "LogField.h"
 #include "InkXml.h"
 

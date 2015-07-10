@@ -41,7 +41,7 @@
 #ifndef __I_NET_H_
 #define __I_NET_H_
 
-#include "I_Version.h"
+#include "ts/I_Version.h"
 #include "I_EventSystem.h"
 #include <netinet/in.h>
 

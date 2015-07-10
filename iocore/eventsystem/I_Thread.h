@@ -64,7 +64,7 @@
 -- - include I_Event.h or
   P_Event.h
 #endif
-#include "libts.h"
+#include "ts/libts.h"
 #include "I_ProxyAllocator.h"
   class Thread;
 class ProxyMutex;

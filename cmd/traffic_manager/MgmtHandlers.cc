@@ -27,8 +27,8 @@
  *
  ****************************************************************************/
 
-#include "libts.h"
-#include "I_Layout.h"
+#include "ts/libts.h"
+#include "ts/I_Layout.h"
 #include "LocalManager.h"
 #include "Alarms.h"
 #include "MgmtUtils.h"

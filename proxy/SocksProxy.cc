@@ -27,7 +27,7 @@
 
 
 */
-#include "libts.h"
+#include "ts/libts.h"
 #include "StatSystem.h"
 #include "P_Net.h"
 #include "I_OneWayTunnel.h"

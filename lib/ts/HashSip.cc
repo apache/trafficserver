@@ -8,7 +8,7 @@ https://github.com/floodyberry/siphash
 
  */
 
-#include "HashSip.h"
+#include "ts/HashSip.h"
 #include <cstring>
 
 #define SIP_BLOCK_SIZE 8

@@ -21,8 +21,8 @@
   limitations under the License.
  */
 
-#include "libts.h"
-#include "Regex.h"
+#include "ts/libts.h"
+#include "ts/Regex.h"
 
 #ifdef PCRE_CONFIG_JIT
 struct RegexThreadKey {

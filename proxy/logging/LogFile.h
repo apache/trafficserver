@@ -28,7 +28,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-#include "libts.h"
+#include "ts/libts.h"
 #include "LogBufferSink.h"
 
 class LogSock;

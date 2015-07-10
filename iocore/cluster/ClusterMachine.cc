@@ -26,10 +26,10 @@
   Machine.cc
  ****************************************************************************/
 
-#include "ink_config.h"
+#include "ts/ink_config.h"
 #include <unistd.h>
 #include "P_Cluster.h"
-#include "I_Layout.h"
+#include "ts/I_Layout.h"
 extern int num_of_cluster_threads;
 
 MachineList *machines_config = NULL;

@@ -21,12 +21,12 @@
   limitations under the License.
  */
 
-#include "libts.h"
+#include "ts/libts.h"
 
-#include "ink_args.h"
-#include "I_Version.h"
-#include "Tokenizer.h"
-#include "TextBuffer.h"
+#include "ts/ink_args.h"
+#include "ts/I_Version.h"
+#include "ts/Tokenizer.h"
+#include "ts/TextBuffer.h"
 #include "mgmtapi.h"
 #include <stdio.h>
 #include <string.h>

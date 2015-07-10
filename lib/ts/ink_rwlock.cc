@@ -21,8 +21,8 @@
   limitations under the License.
  */
 
-#include "ink_config.h"
-#include "ink_rwlock.h"
+#include "ts/ink_config.h"
+#include "ts/ink_rwlock.h"
 
 //-------------------------------------------------------------------------
 // ink_rwlock_init

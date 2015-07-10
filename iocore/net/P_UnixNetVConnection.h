@@ -32,7 +32,7 @@
 #ifndef __P_UNIXNETVCONNECTION_H__
 #define __P_UNIXNETVCONNECTION_H__
 
-#include "ink_sock.h"
+#include "ts/ink_sock.h"
 #include "I_NetVConnection.h"
 #include "P_UnixNetState.h"
 #include "P_Connection.h"

@@ -22,13 +22,13 @@
  */
 
 
-#include "libts.h"
-#include "ink_platform.h"
+#include "ts/libts.h"
+#include "ts/ink_platform.h"
 #include "MgmtUtils.h"
-#include "I_Layout.h"
+#include "ts/I_Layout.h"
 #include "LocalManager.h"
 #include "MgmtSocket.h"
-#include "ink_cap.h"
+#include "ts/ink_cap.h"
 #include "FileManager.h"
 #include "ClusterCom.h"
 #include "VMap.h"

@@ -21,14 +21,14 @@
   limitations under the License.
  */
 
-#include "libts.h"
-#include "I_Layout.h"
-#include "I_Version.h"
+#include "ts/libts.h"
+#include "ts/I_Layout.h"
+#include "ts/I_Version.h"
 #include "I_RecCore.h"
 #include "mgmtapi.h"
 #include "RecordsConfig.h"
 #include "ClusterCom.h"
-#include "ink_cap.h"
+#include "ts/ink_cap.h"
 
 #include <string>
 #include <map>

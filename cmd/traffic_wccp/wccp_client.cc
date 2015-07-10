@@ -36,11 +36,11 @@
 
 #include <poll.h>
 
-#include "ink_memory.h"
+#include "ts/ink_memory.h"
 #include "Wccp.h"
 #include "WccpUtil.h"
 #include "tsconfig/TsValue.h"
-#include "ink_lockfile.h"
+#include "ts/ink_lockfile.h"
 
 #define WCCP_LOCK "wccp.pid"
 

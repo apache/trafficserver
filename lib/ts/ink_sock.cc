@@ -27,7 +27,7 @@
 
 
 ***************************************************************************/
-#include "libts.h"
+#include "ts/libts.h"
 
 //
 // Compilation options

@@ -33,7 +33,7 @@
 #ifndef _CONTROL_BASE_H_
 #define _CONTROL_BASE_H_
 
-#include "libts.h"
+#include "ts/libts.h"
 
 class HttpRequestData;
 class Tokenizer;

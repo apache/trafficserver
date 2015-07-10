@@ -294,7 +294,7 @@
 #define LOG_H
 
 #include <stdarg.h>
-#include "libts.h"
+#include "ts/libts.h"
 #include "P_RecProcess.h"
 #include "LogFile.h"
 #include "LogBuffer.h"

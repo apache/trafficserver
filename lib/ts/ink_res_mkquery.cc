@@ -65,8 +65,8 @@
  */
 
 
-#include "ink_config.h"
-#include "ink_defs.h"
+#include "ts/ink_config.h"
+#include "ts/ink_defs.h"
 
 #include <sys/types.h>
 #include <sys/param.h>
@@ -80,8 +80,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "ink_error.h"
-#include "ink_resolver.h"
+#include "ts/ink_error.h"
+#include "ts/ink_resolver.h"
 
 #define SPRINTF(x) (sprintf x)
 

@@ -24,7 +24,7 @@
 #define _HOSTDB_CC_
 
 #include "P_HostDB.h"
-#include "I_Layout.h"
+#include "ts/I_Layout.h"
 #include "Show.h"
 
 #include <vector>
@@ -35,7 +35,7 @@
 //#define Warning
 //#define Note
 
-#include "ink_apidefs.h"
+#include "ts/ink_apidefs.h"
 
 HostDBProcessor hostDBProcessor;
 int HostDBProcessor::hostdb_strict_round_robin = 0;

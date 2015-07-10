@@ -38,8 +38,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "ink_hash_table.h"
-#include "ink_mutex.h"
+#include "ts/ink_hash_table.h"
+#include "ts/ink_mutex.h"
 
 class AppVersionInfo;
 

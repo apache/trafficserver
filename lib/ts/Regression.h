@@ -24,8 +24,8 @@
 #ifndef _Regression_h
 #define _Regression_h
 
-#include "libts.h"
-#include "Regex.h"
+#include "ts/libts.h"
+#include "ts/Regex.h"
 
 //   Each module should provide one or more regression tests
 //

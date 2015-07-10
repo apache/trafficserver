@@ -19,10 +19,10 @@
   limitations under the License.
  */
 
-#include "ink_config.h"
+#include "ts/ink_config.h"
 
 #include "P_Net.h"
-#include "I_Layout.h"
+#include "ts/I_Layout.h"
 #include "I_RecHttp.h"
 #include "P_SSLUtils.h"
 #include "P_OCSPStapling.h"

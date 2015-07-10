@@ -28,7 +28,7 @@
 #include "P_CacheTest.h"
 #include "StatPages.h"
 
-#include "I_Layout.h"
+#include "ts/I_Layout.h"
 
 #ifdef HTTP_CACHE
 #include "HttpTransactCache.h"
@@ -38,7 +38,7 @@
 #include "P_CacheBC.h"
 #endif
 
-#include "hugepages.h"
+#include "ts/hugepages.h"
 
 // Compilation Options
 #define USELESS_REENABLES // allow them for now

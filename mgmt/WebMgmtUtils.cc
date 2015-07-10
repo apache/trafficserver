@@ -21,12 +21,12 @@
   limitations under the License.
  */
 
-#include "libts.h"
+#include "ts/libts.h"
 #include "LocalManager.h"
 #include "MgmtUtils.h"
 #include "WebMgmtUtils.h"
 #include "MultiFile.h"
-#include "Regex.h"
+#include "ts/Regex.h"
 
 /****************************************************************************
  *

@@ -32,12 +32,12 @@
 
  ****************************************************************************/
 
-#include "libts.h"
+#include "ts/libts.h"
 
-#include "Arena.h"
+#include "ts/Arena.h"
 #include "HTTP.h"
 #include "MIME.h"
-#include "Regex.h"
+#include "ts/Regex.h"
 #include "URL.h"
 #include "HttpCompat.h"
 

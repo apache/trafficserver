@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "libts.h"
+#include "ts/libts.h"
 
 #include <strings.h>
 #include <math.h>
@@ -32,10 +32,10 @@
 #include "HttpCacheSM.h" //Added to get the scope of HttpCacheSM object - YTS Team, yamsat
 #include "HttpDebugNames.h"
 #include "time.h"
-#include "ParseRules.h"
+#include "ts/ParseRules.h"
 #include "HTTP.h"
 #include "HdrUtils.h"
-#include "MimeTable.h"
+#include "ts/MimeTable.h"
 #include "logging/Log.h"
 #include "logging/LogUtils.h"
 #include "Error.h"

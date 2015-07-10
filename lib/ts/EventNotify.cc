@@ -27,9 +27,9 @@
   Generic event notify mechanism among threads.
 **************************************************************************/
 
-#include "EventNotify.h"
-#include "ink_hrtime.h"
-#include "ink_defs.h"
+#include "ts/EventNotify.h"
+#include "ts/ink_hrtime.h"
+#include "ts/ink_defs.h"
 
 #ifdef HAVE_EVENTFD
 #include <sys/eventfd.h>

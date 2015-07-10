@@ -31,7 +31,7 @@
 
  ****************************************************************************/
 
-#include "libts.h"
+#include "ts/libts.h"
 #include "HdrUtils.h"
 
 #define GETNEXT()     \

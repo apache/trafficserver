@@ -37,7 +37,7 @@
 
  ****************************************************************************/
 
-#include "libts.h"
+#include "ts/libts.h"
 #include "HTTP.h"
 #include "P_EventSystem.h"
 

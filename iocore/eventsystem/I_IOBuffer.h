@@ -39,8 +39,8 @@
 #if !defined(I_IOBuffer_h)
 #define I_IOBuffer_h
 
-#include "libts.h"
-#include "ink_resource.h"
+#include "ts/libts.h"
+#include "ts/ink_resource.h"
 
 struct MIOBufferAccessor;
 

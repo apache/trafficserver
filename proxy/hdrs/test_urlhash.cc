@@ -25,10 +25,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "Arena.h"
+#include "ts/Arena.h"
 #include "HTTP.h"
 #include "MIME.h"
-#include "Regex.h"
+#include "ts/Regex.h"
 #include "URL.h"
 #include "HttpCompat.h"
 

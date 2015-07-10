@@ -21,8 +21,8 @@
   limitations under the License.
  */
 
-#include "ink_mutex.h"
-#include "libts.h"
+#include "ts/ink_mutex.h"
+#include "ts/libts.h"
 #include <assert.h>
 #include <string.h>
 

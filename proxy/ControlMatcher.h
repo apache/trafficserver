@@ -87,13 +87,13 @@
 #ifndef _CONTROL_MATCHER_H_
 #define _CONTROL_MATCHER_H_
 
-#include "DynArray.h"
+#include "ts/DynArray.h"
 #include <ts/IpMap.h>
 
-#include "ink_apidefs.h"
-#include "ink_defs.h"
+#include "ts/ink_apidefs.h"
+#include "ts/ink_defs.h"
 #include "HTTP.h"
-#include "Regex.h"
+#include "ts/Regex.h"
 
 #ifdef HAVE_CTYPE_H
 #include <ctype.h>

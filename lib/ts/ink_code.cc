@@ -23,10 +23,10 @@
 
 #include <string.h>
 #include <stdio.h>
-#include "ink_code.h"
-#include "INK_MD5.h"
-#include "ink_assert.h"
-#include "INK_MD5.h"
+#include "ts/ink_code.h"
+#include "ts/INK_MD5.h"
+#include "ts/ink_assert.h"
+#include "ts/INK_MD5.h"
 
 ats::CryptoHash const ats::CRYPTO_HASH_ZERO; // default constructed is correct.
 

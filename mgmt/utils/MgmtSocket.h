@@ -24,7 +24,7 @@
 #ifndef _MGMT_SOCKET_H_
 #define _MGMT_SOCKET_H_
 
-#include "ink_platform.h"
+#include "ts/ink_platform.h"
 
 //-------------------------------------------------------------------------
 // defines

@@ -22,10 +22,10 @@
  */
 
 /***************************************/
-#include "ink_platform.h"
-#include "Tokenizer.h"
-#include "ink_assert.h"
-#include "ink_memory.h"
+#include "ts/ink_platform.h"
+#include "ts/Tokenizer.h"
+#include "ts/ink_assert.h"
+#include "ts/ink_memory.h"
 
 /****************************************************************************
  *
@@ -372,7 +372,7 @@ Tokenizer::ReUse()
 }
 
 #if TS_HAS_TESTS
-#include "TestBox.h"
+#include "ts/TestBox.h"
 
 REGRESSION_TEST(libts_Tokenizer)(RegressionTest *test, int /* atype ATS_UNUSED */, int *pstatus)
 {

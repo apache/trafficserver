@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "ink_config.h"
+#include "ts/ink_config.h"
 #include "FetchSM.h"
 #include <stdio.h>
 #include "HTTP.h"

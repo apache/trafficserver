@@ -21,8 +21,8 @@
   limitations under the License.
  */
 
-#include "libts.h"
-#include "TextBuffer.h"
+#include "ts/libts.h"
+#include "ts/TextBuffer.h"
 
 /****************************************************************************
  *

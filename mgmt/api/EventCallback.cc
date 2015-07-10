@@ -29,8 +29,8 @@
  *
  ***************************************************************************/
 
-#include "ink_config.h"
-#include "ink_memory.h"
+#include "ts/ink_config.h"
+#include "ts/ink_memory.h"
 
 #include "EventCallback.h"
 #include "CoreAPIShared.h"

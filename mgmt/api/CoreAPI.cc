@@ -29,15 +29,15 @@
  *
  ***************************************************************************/
 
-#include "libts.h"
+#include "ts/libts.h"
 #include "MgmtUtils.h"
 #include "LocalManager.h"
 #include "ClusterCom.h"
 #include "FileManager.h"
 #include "Rollback.h"
 #include "WebMgmtUtils.h"
-#include "Diags.h"
-#include "ink_hash_table.h"
+#include "ts/Diags.h"
+#include "ts/ink_hash_table.h"
 #include "ExpandingArray.h"
 //#include "I_AccCrypto.h"
 
@@ -45,8 +45,8 @@
 #include "CoreAPIShared.h"
 #include "CfgContextUtils.h"
 #include "EventCallback.h"
-#include "I_Layout.h"
-#include "ink_cap.h"
+#include "ts/I_Layout.h"
+#include "ts/ink_cap.h"
 
 // global variable
 CallbackTable *local_event_callbacks;

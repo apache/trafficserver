@@ -24,9 +24,9 @@
 #define _Main_h_
 
 #include <ts/ink_defs.h>
-#include "libts.h"
-#include "Regression.h"
-#include "I_Version.h"
+#include "ts/libts.h"
+#include "ts/Regression.h"
+#include "ts/I_Version.h"
 
 
 //

@@ -22,12 +22,12 @@
  */
 
 
-#include "libts.h"
+#include "ts/libts.h"
 #include "LocalManager.h"
 #include "ClusterCom.h"
 #include "MgmtUtils.h"
 #include "Alarms.h"
-#include "Diags.h"
+#include "ts/Diags.h"
 
 #include "P_RecCore.h"
 

@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "libts.h" /* MAGIC_EDITING_TAG */
+#include "ts/libts.h" /* MAGIC_EDITING_TAG */
 
 MimeTableEntry MimeTable::m_table[] = {{"ai", "application/postscript", "8bit", "text"},
                                        {"aif", "audio/x-aiff", "binary", "sound"},

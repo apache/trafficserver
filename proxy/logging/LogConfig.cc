@@ -21,18 +21,18 @@
   limitations under the License.
  */
 
-#include "libts.h"
-#include "I_Layout.h"
+#include "ts/libts.h"
+#include "ts/I_Layout.h"
 
 #ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
 #endif
 
-#include "ink_platform.h"
-#include "ink_file.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_file.h"
 
 #include "Main.h"
-#include "List.h"
+#include "ts/List.h"
 #include "InkXml.h"
 
 #include "Log.h"
@@ -45,7 +45,7 @@
 #include "LogObject.h"
 #include "LogConfig.h"
 #include "LogUtils.h"
-#include "SimpleTokenizer.h"
+#include "ts/SimpleTokenizer.h"
 
 #include "LogCollationAccept.h"
 

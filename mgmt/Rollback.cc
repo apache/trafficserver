@@ -21,15 +21,15 @@
   limitations under the License.
  */
 
-#include "libts.h"
+#include "ts/libts.h"
 #include "LocalManager.h"
 #include "Rollback.h"
 #include "WebMgmtUtils.h"
 #include "MgmtUtils.h"
 #include "ExpandingArray.h"
 #include "MgmtSocket.h"
-#include "ink_cap.h"
-#include "I_Layout.h"
+#include "ts/ink_cap.h"
+#include "ts/I_Layout.h"
 #include "FileManager.h"
 
 #define MAX_VERSION_DIGITS 11

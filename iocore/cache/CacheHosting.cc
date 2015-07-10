@@ -22,7 +22,7 @@
  */
 
 #include "P_Cache.h"
-#include "I_Layout.h"
+#include "ts/I_Layout.h"
 
 extern int gndisks;
 

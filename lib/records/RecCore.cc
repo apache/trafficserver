@@ -21,12 +21,12 @@
   limitations under the License.
  */
 
-#include "libts.h"
+#include "ts/libts.h"
 
 #include "P_RecFile.h"
 #include "P_RecCore.h"
 #include "P_RecUtils.h"
-#include "I_Layout.h"
+#include "ts/I_Layout.h"
 
 static bool g_initialized = false;
 

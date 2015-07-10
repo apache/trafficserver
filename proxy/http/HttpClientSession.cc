@@ -30,8 +30,8 @@
 
  ****************************************************************************/
 
-#include "ink_config.h"
-#include "Allocator.h"
+#include "ts/ink_config.h"
+#include "ts/Allocator.h"
 #include "HttpClientSession.h"
 #include "HttpSM.h"
 #include "HttpDebugNames.h"

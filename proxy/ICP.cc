@@ -28,7 +28,7 @@
 
 ****************************************************************************/
 
-#include "libts.h"
+#include "ts/libts.h"
 #include "Main.h"
 #include "P_EventSystem.h"
 #include "P_Cache.h"

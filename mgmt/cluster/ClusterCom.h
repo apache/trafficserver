@@ -42,9 +42,9 @@
 #ifndef _CLUSTER_COM_H
 #define _CLUSTER_COM_H
 
-#include "ink_platform.h"
+#include "ts/ink_platform.h"
 #include "P_RecDefs.h"
-#include "I_Version.h"
+#include "ts/I_Version.h"
 #include "Rollback.h"
 
 class FileManager;

@@ -24,8 +24,8 @@
 #ifndef _I_REC_MUTEX_H_
 #define _I_REC_MUTEX_H_
 
-#include "ink_mutex.h"
-#include "ink_thread.h"
+#include "ts/ink_mutex.h"
+#include "ts/ink_thread.h"
 
 /**
   A wrapper to ink_mutex class. It allows multiple acquire of mutex lock

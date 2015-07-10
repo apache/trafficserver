@@ -29,15 +29,15 @@
 #if !defined(_StatSystem_h_)
 #define _StatSystem_h_
 
-#include "ink_platform.h"
-#include "ink_hrtime.h"
-#include "ink_atomic.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_hrtime.h"
+#include "ts/ink_atomic.h"
 #ifdef USE_LOCKS_FOR_DYN_STATS
 #include "Lock.h"
 #endif
 
-#include "ink_apidefs.h"
-#include "apidefs.h"
+#include "ts/ink_apidefs.h"
+#include "ts/apidefs.h"
 
 #define STATS_MAJOR_VERSION 6 // increment when changing the stats!
 #define DEFAULT_SNAP_FILENAME "stats.snap"

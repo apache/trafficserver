@@ -22,8 +22,8 @@
  */
 
 
-#include "libts.h"
-#include "ink_platform.h"
+#include "ts/libts.h"
+#include "ts/ink_platform.h"
 
 #include "CfgContextImpl.h"
 #include "CfgContextUtils.h"

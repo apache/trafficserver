@@ -35,7 +35,7 @@
 #ifndef _HdrTest_H_
 #define _HdrTest_H_
 
-#include "Regression.h"
+#include "ts/Regression.h"
 
 class HdrTest
 {

@@ -28,7 +28,7 @@
  *
  *
  ****************************************************************************/
-#include "libts.h"
+#include "ts/libts.h"
 
 struct syslog_fac {
   char *long_str;

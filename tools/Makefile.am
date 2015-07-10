@@ -25,7 +25,6 @@ pkgconfig_DATA = trafficserver.pc
 AM_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
 AM_CPPFLAGS = $(iocore_include_dirs) \
   -I$(top_srcdir)/lib \
-  -I$(top_srcdir)/lib/ts -I$(top_builddir)/lib/ts \
   -I$(top_srcdir)/lib/wccp
 
 if BUILD_TEST_TOOLS

@@ -27,7 +27,7 @@
 
  ***************************************************************************/
 
-#include "libts.h"
+#include "ts/libts.h"
 
 #include <errno.h>
 #include <sys/types.h>

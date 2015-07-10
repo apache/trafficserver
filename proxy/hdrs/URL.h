@@ -24,14 +24,14 @@
 #ifndef __URL_H__
 #define __URL_H__
 
-#include "Arena.h"
+#include "ts/Arena.h"
 #include "HdrToken.h"
 #include "HdrHeap.h"
-#include "INK_MD5.h"
-#include "MMH.h"
+#include "ts/INK_MD5.h"
+#include "ts/MMH.h"
 #include "MIME.h"
 
-#include "ink_apidefs.h"
+#include "ts/ink_apidefs.h"
 
 typedef int64_t cache_generation_t;
 

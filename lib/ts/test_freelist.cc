@@ -23,8 +23,8 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include "ink_thread.h"
-#include "ink_queue.h"
+#include "ts/ink_thread.h"
+#include "ts/ink_queue.h"
 
 
 #define NTHREADS 64

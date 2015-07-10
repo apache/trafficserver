@@ -26,10 +26,10 @@ Assertions
 
 ***************************************************************************/
 
-#include "ink_platform.h"
-#include "ink_assert.h"
-#include "ink_error.h"
-#include "ink_string.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_assert.h"
+#include "ts/ink_error.h"
+#include "ts/ink_string.h"
 
 void
 _ink_assert(const char *expression, const char *file, int line)

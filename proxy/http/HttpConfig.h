@@ -41,8 +41,8 @@
 #include <ctype.h>
 #endif
 
-#include "libts.h"
-#include "Regex.h"
+#include "ts/libts.h"
+#include "ts/Regex.h"
 #include "HttpProxyAPIEnums.h"
 #include "ProxyConfig.h"
 #include "P_RecProcess.h"

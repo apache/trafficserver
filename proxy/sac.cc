@@ -21,8 +21,8 @@
   limitations under the License.
  */
 
-#include "libts.h"
-#include "I_Layout.h"
+#include "ts/libts.h"
+#include "ts/I_Layout.h"
 #include "P_Net.h"
 
 #define PROGRAM_NAME "traffic_sac"

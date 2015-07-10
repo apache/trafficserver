@@ -16,9 +16,9 @@
  * limitations under the License.
  */
 
-#include "ink_defs.h"
-#include "ink_thread.h"
-#include "ink_inet.h"
+#include "ts/ink_defs.h"
+#include "ts/ink_thread.h"
+#include "ts/ink_inet.h"
 
 #include <ts/TestBox.h>
 #include <MgmtMarshall.h>

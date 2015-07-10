@@ -21,14 +21,14 @@
   limitations under the License.
  */
 
-#include "libts.h"
+#include "ts/libts.h"
 
 #include "P_RecCore.h"
 #include "P_RecFile.h"
 #include "P_RecMessage.h"
 #include "P_RecUtils.h"
 #include "P_RecCore.h"
-#include "I_Layout.h"
+#include "ts/I_Layout.h"
 
 static RecMessageRecvCb g_recv_cb = NULL;
 static void *g_recv_cookie = NULL;

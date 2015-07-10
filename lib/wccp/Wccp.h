@@ -26,8 +26,8 @@
 #include <ts/TsBuffer.h>
 #include <tsconfig/Errata.h>
 #include <memory.h>
-#include <ink_defs.h>
-#include <ink_memory.h>
+#include "ts/ink_defs.h"
+#include "ts/ink_memory.h"
 // Nasty, defining this with no prefix. The value is still available
 // in TS_VERSION_STRING.
 #undef VERSION

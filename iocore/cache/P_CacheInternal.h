@@ -25,7 +25,7 @@
 #ifndef _P_CACHE_INTERNAL_H__
 #define _P_CACHE_INTERNAL_H__
 
-#include "libts.h"
+#include "ts/libts.h"
 
 #ifdef HTTP_CACHE
 #include "HTTP.h"

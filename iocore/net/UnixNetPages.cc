@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "libts.h"
+#include "ts/libts.h"
 #include "P_Net.h"
 #include "Show.h"
 #include "I_Tasks.h"

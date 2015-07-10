@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "libts.h"
+#include "ts/libts.h"
 
 #include "HttpTransact.h"
 #include "HttpTransactHeaders.h"
@@ -30,7 +30,7 @@
 #include "HTTP.h"
 #include "HttpCompat.h"
 #include "Error.h"
-#include "InkErrno.h"
+#include "ts/InkErrno.h"
 
 ClassAllocator<CacheLookupHttpConfig> CacheLookupHttpConfigAllocator("CacheLookupHttpConfigAllocator");
 

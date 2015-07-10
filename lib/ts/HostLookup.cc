@@ -27,9 +27,9 @@
  *
  *
  ****************************************************************************/
-#include "libts.h"
-#include "HostLookup.h"
-#include "MatcherUtils.h"
+#include "ts/libts.h"
+#include "ts/HostLookup.h"
+#include "ts/MatcherUtils.h"
 
 // bool domaincmp(const char* hostname, const char* domain)
 //

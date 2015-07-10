@@ -21,9 +21,9 @@
   limitations under the License.
  */
 
-#include "libts.h"
+#include "ts/libts.h"
 #include "P_Cache.h"
-#include "I_Layout.h"
+#include "ts/I_Layout.h"
 
 #if HAVE_LINUX_MAJOR_H
 #include <linux/major.h>

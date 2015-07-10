@@ -32,7 +32,7 @@
  class.
 
  ***************************************************************************/
-#include "libts.h"
+#include "ts/libts.h"
 
 #include "Error.h"
 #include "Main.h"
@@ -53,9 +53,9 @@
 #include "LogUtils.h"
 #include "Log.h"
 #include "LogSock.h"
-#include "SimpleTokenizer.h"
+#include "ts/SimpleTokenizer.h"
 
-#include "ink_apidefs.h"
+#include "ts/ink_apidefs.h"
 
 #define PERIODIC_TASKS_INTERVAL_FALLBACK 5
 

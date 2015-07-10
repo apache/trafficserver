@@ -21,15 +21,15 @@
   limitations under the License.
  */
 
-#include "ink_config.h"
+#include "ts/ink_config.h"
 
 #include "P_SSLCertLookup.h"
 #include "P_SSLUtils.h"
 #include "P_SSLConfig.h"
 #include "I_EventSystem.h"
-#include "I_Layout.h"
-#include "Regex.h"
-#include "Trie.h"
+#include "ts/I_Layout.h"
+#include "ts/Regex.h"
+#include "ts/Trie.h"
 #include "ts/TestBox.h"
 
 struct SSLAddressLookupKey {

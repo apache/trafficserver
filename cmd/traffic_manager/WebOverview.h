@@ -24,10 +24,10 @@
 #ifndef _WEB_OVERVIEW_H_
 #define _WEB_OVERVIEW_H_
 
-#include "ink_hash_table.h"
-#include "ink_mutex.h"
-#include "TextBuffer.h"
-#include "List.h"
+#include "ts/ink_hash_table.h"
+#include "ts/ink_mutex.h"
+#include "ts/TextBuffer.h"
+#include "ts/List.h"
 
 #include "ExpandingArray.h"
 #include "ClusterCom.h"

@@ -21,12 +21,12 @@
   limitations under the License.
  */
 
-#include "libts.h"
+#include "ts/libts.h"
 #undef std // FIXME: remove dependency on the STL
-#include "ink_config.h"
-#include "ink_file.h"
-#include "I_Layout.h"
-#include "I_Version.h"
+#include "ts/ink_config.h"
+#include "ts/ink_file.h"
+#include "ts/I_Layout.h"
+#include "ts/I_Version.h"
 
 // Includes and namespaces etc.
 #include "LogStandalone.cc"

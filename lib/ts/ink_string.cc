@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "libts.h" /* MAGIC_EDITING_TAG */
+#include "ts/libts.h" /* MAGIC_EDITING_TAG */
 
 #include <assert.h>
 #include <stdarg.h>

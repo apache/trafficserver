@@ -24,7 +24,7 @@
 #ifndef _I_REC_CORE_H_
 #define _I_REC_CORE_H_
 
-#include "Diags.h"
+#include "ts/Diags.h"
 
 #include "I_RecDefs.h"
 #include "I_RecAlarms.h"

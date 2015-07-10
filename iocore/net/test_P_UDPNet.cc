@@ -25,7 +25,7 @@
 #include <stdlib.h>
 
 #include "P_Net.h"
-#include "libts.h"
+#include "ts/libts.h"
 
 // Diags stuff from test_I_Net.cc:
 Diags *diags;

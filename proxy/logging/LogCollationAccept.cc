@@ -25,7 +25,7 @@
 // include files
 //-------------------------------------------------------------------------
 
-#include "libts.h"
+#include "ts/libts.h"
 #include "P_EventSystem.h"
 
 #include "Log.h"

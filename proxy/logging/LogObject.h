@@ -25,7 +25,7 @@
 #ifndef LOG_OBJECT_H
 #define LOG_OBJECT_H
 
-#include "libts.h"
+#include "ts/libts.h"
 #include "Log.h"
 #include "LogFile.h"
 #include "LogFormat.h"

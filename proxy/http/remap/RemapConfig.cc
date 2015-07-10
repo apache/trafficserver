@@ -24,11 +24,11 @@
 #include "RemapConfig.h"
 #include "UrlRewrite.h"
 #include "ReverseProxy.h"
-#include "I_Layout.h"
+#include "ts/I_Layout.h"
 #include "HTTP.h"
-#include "libts.h"
-#include "ink_cap.h"
-#include "ink_file.h"
+#include "ts/libts.h"
+#include "ts/ink_cap.h"
+#include "ts/ink_file.h"
 
 #define modulePrefix "[ReverseProxy]"
 

@@ -29,7 +29,7 @@
 
  ****************************************************************************/
 #include "HttpHeaderTokenizer.h"
-#include "ink_assert.h"
+#include "ts/ink_assert.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>

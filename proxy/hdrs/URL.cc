@@ -23,11 +23,11 @@
 
 #include <assert.h>
 #include <new>
-#include "libts.h"
+#include "ts/libts.h"
 #include "URL.h"
 #include "MIME.h"
 #include "HTTP.h"
-#include "Diags.h"
+#include "ts/Diags.h"
 
 const char *URL_SCHEME_FILE;
 const char *URL_SCHEME_FTP;

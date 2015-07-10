@@ -29,7 +29,7 @@
  *
  ****************************************************************************/
 
-#include "libts.h" /* MAGIC_EDITING_TAG */
+#include "ts/libts.h" /* MAGIC_EDITING_TAG */
 
 config_parse_error::config_parse_error(const char *fmt, ...)
 {

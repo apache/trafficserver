@@ -21,7 +21,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-#include "libts.h"
+#include "ts/libts.h"
 
 #include "CoreAPIShared.h"
 #include "MgmtSocket.h"

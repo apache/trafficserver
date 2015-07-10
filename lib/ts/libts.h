@@ -41,7 +41,7 @@
 #define std *** _FIXME_REMOVE_DEPENDENCY_ON_THE_STL_ ***
 */
 
-#include "hugepages.h"
+#include "ts/hugepages.h"
 #include "ts/ink_config.h"
 #include "ts/ink_platform.h"
 #include "ts/ink_align.h"

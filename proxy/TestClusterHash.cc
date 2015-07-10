@@ -26,7 +26,7 @@
   TestClusterHash.cc
  ****************************************************************************/
 #include "Cluster.h"
-#include "libts.h"
+#include "ts/libts.h"
 
 
 //

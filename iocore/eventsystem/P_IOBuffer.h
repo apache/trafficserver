@@ -25,8 +25,8 @@
 #if !defined(_P_IOBuffer_h)
 #define _P_IOBuffer_h
 
-#include "libts.h"
-#include "ink_resource.h"
+#include "ts/libts.h"
+#include "ts/ink_resource.h"
 
 
 // TODO: I think we're overly aggressive here on making MIOBuffer 64-bit

@@ -26,9 +26,9 @@
 
 **************************************************************************/
 
-#include "libts.h"
-#include "signals.h"
-#include "ink_stack_trace.h"
+#include "ts/libts.h"
+#include "ts/signals.h"
+#include "ts/ink_stack_trace.h"
 
 bool
 signal_check_handler(int signal, signal_handler_t handler)

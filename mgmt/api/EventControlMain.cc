@@ -29,7 +29,7 @@
  *
  ***************************************************************************/
 
-#include "libts.h"
+#include "ts/libts.h"
 #include "LocalManager.h"
 #include "MgmtSocket.h"
 #include "MgmtMarshall.h"

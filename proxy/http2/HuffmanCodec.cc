@@ -22,7 +22,7 @@
  */
 
 #include "HuffmanCodec.h"
-#include "libts.h"
+#include "ts/libts.h"
 
 struct huffman_entry {
   uint32_t code_as_hex;

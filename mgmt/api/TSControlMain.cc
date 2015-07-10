@@ -31,7 +31,7 @@
  ***************************************************************************/
 
 #include "mgmtapi.h"
-#include "libts.h"
+#include "ts/libts.h"
 #include "LocalManager.h"
 #include "MgmtUtils.h"
 #include "MgmtSocket.h"

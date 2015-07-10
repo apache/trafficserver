@@ -38,7 +38,7 @@
 #ifndef _EVENT_CALLBACK_H_
 #define _EVENT_CALLBACK_H_
 
-#include "ink_llqueue.h"
+#include "ts/ink_llqueue.h"
 
 #include "mgmtapi.h"
 #include "CoreAPIShared.h"

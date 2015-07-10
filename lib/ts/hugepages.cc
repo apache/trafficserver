@@ -21,8 +21,8 @@
 
 #include <cstdio>
 #include <sys/mman.h>
-#include "Diags.h"
-#include "ink_align.h"
+#include "ts/Diags.h"
+#include "ts/ink_align.h"
 
 #define DEBUG_TAG "hugepages"
 

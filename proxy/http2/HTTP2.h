@@ -24,8 +24,8 @@
 #ifndef __HTTP2_H__
 #define __HTTP2_H__
 
-#include "ink_defs.h"
-#include "ink_memory.h"
+#include "ts/ink_defs.h"
+#include "ts/ink_memory.h"
 #include "HPACK.h"
 #include "MIME.h"
 #include "P_RecDefs.h"

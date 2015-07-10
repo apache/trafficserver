@@ -22,8 +22,8 @@
  */
 
 //
-#include "libts.h"
-#include "Map.h"
+#include "ts/libts.h"
+#include "ts/Map.h"
 
 #ifndef _HTTP_CONNECTION_COUNT_H_
 

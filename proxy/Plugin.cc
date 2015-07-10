@@ -22,15 +22,15 @@
  */
 
 #include <stdio.h>
-#include "ink_platform.h"
-#include "ink_file.h"
-#include "ParseRules.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_file.h"
+#include "ts/ParseRules.h"
 #include "I_RecCore.h"
-#include "I_Layout.h"
+#include "ts/I_Layout.h"
 #include "InkAPIInternal.h"
 #include "Main.h"
 #include "Plugin.h"
-#include "ink_cap.h"
+#include "ts/ink_cap.h"
 
 static const char *plugin_dir = ".";
 

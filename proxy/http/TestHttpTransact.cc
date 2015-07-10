@@ -23,7 +23,7 @@
 
 #include "HttpNet.h"
 #include <iostream.h>
-#include "ink_assert.h"
+#include "ts/ink_assert.h"
 #include "DebugStream.h"
 #include "IOBuffer.h"
 #include "Main.h"

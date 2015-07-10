@@ -30,7 +30,7 @@
 
  ****************************************************************************/
 
-#include "libts.h"
+#include "ts/libts.h"
 #include "HdrHeap.h"
 #include "URL.h"
 #include "MIME.h"

@@ -21,16 +21,16 @@
   limitations under the License.
  */
 
-#include "ink_sys_control.h"
-#include "ink_cap.h"
+#include "ts/ink_sys_control.h"
+#include "ts/ink_cap.h"
 
 #include "WebMgmtUtils.h"
 #include "NetworkUtilsRemote.h"
 #include "ClusterCom.h"
 #include "VMap.h"
 #include "FileManager.h"
-#include "I_Layout.h"
-#include "I_Version.h"
+#include "ts/I_Layout.h"
+#include "ts/I_Version.h"
 #include "DiagsConfig.h"
 #include "HTTP.h"
 #include "CoreAPI.h"

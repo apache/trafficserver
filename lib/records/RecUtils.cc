@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "libts.h"
+#include "ts/libts.h"
 #include "P_RecUtils.h"
 #include "P_RecCore.h"
 

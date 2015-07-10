@@ -31,11 +31,11 @@
  *
  */
 
-#include "libts.h"
+#include "ts/libts.h"
 
-#include "I_Version.h"
+#include "ts/I_Version.h"
 
-#include "TextBuffer.h"
+#include "ts/TextBuffer.h"
 #include "MgmtSocket.h"
 
 #include "LocalManager.h"

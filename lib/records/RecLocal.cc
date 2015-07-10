@@ -21,9 +21,9 @@
   limitations under the License.
  */
 
-#include "libts.h"
+#include "ts/libts.h"
 #include "Rollback.h"
-#include "ParseRules.h"
+#include "ts/ParseRules.h"
 #include "P_RecCore.h"
 #include "P_RecLocal.h"
 #include "P_RecMessage.h"

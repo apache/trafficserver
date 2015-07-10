@@ -28,7 +28,7 @@
  *
  ****************************************************************************/
 
-#include "libts.h"
+#include "ts/libts.h"
 #include "Main.h"
 #include "IPAllow.h"
 #include "ProxyConfig.h"

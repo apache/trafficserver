@@ -55,7 +55,7 @@
 */
 
 
-#include "libts.h"
+#include "ts/libts.h"
 
 #define NN 312
 #define MM 156

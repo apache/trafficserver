@@ -23,7 +23,7 @@
 
 #include <stdio.h>
 #include "InkXml.h"
-#include <ink_assert.h>
+#include "ts/ink_assert.h"
 
 int
 main()

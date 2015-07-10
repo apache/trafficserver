@@ -28,7 +28,7 @@
 #define _MGMT_API_DEFS_
 
 #include "mgmtapi.h"
-#include "ink_llqueue.h"
+#include "ts/ink_llqueue.h"
 
 // for buffer used temporarily to parse incoming commands.
 #ifndef MAX_BUF_SIZE

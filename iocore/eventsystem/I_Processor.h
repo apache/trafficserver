@@ -25,7 +25,7 @@
 #ifndef _I_Processor_h_
 #define _I_Processor_h_
 
-#include "libts.h"
+#include "ts/libts.h"
 
 #define PROCESSOR_RECONFIGURE 0x01
 #define PROCESSOR_CHECK 0x02

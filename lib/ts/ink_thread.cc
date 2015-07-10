@@ -28,7 +28,7 @@
   Generic threads interface.
 **************************************************************************/
 
-#include "libts.h"
+#include "ts/libts.h"
 
 // // ignore the compiler warning... so that this can be used
 // // in the face of changes to the Solaris header files (see "man thread")

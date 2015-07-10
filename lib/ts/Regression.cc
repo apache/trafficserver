@@ -28,8 +28,8 @@
 
  ****************************************************************************/
 
-#include "libts.h"
-#include "Regression.h"
+#include "ts/libts.h"
+#include "ts/Regression.h"
 
 static RegressionTest *test = NULL;
 static RegressionTest *exclusive_test = NULL;

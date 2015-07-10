@@ -28,13 +28,13 @@
  *
  ****************************************************************************/
 
-#include "libts.h"
+#include "ts/libts.h"
 
 #ifdef SPLIT_DNS
 #include <sys/types.h>
 #include "P_SplitDNS.h"
-#include "MatcherUtils.h"
-#include "HostLookup.h"
+#include "ts/MatcherUtils.h"
+#include "ts/HostLookup.h"
 
 
 /* --------------------------------------------------------------
