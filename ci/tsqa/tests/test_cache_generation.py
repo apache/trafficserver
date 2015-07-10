@@ -53,8 +53,9 @@ class TestCacheGeneration(helpers.EnvironmentCase):
 
     def _ctl(self, *args):
         cmd = [os.path.join(self.environment.layout.bindir, 'traffic_ctl')] + list(args)
-        out, _ = tsqa.utils.run_sync_command(cmd,
-                env=self.environment.shell_env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+        out, _ = tsqa.utils.run_sync_command(
+            cmd,
+            env=self.environment.shell_env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
         )
         return out
 
@@ -156,4 +157,3 @@ class TestCacheGeneration(helpers.EnvironmentCase):
                 gencount = gencount + 1
 
         self.assertNotEqual(gencount, 0, msg='proxy.config.http.cache.generation never updated')
-

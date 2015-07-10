@@ -17,13 +17,12 @@
 from OpenSSL import SSL
 import socket
 import subprocess
-import time
 
 import helpers
 import tsqa.utils
 
 import os
-import tsqa.utils
+
 
 # helper function to get the path of a program.
 def which(program):
@@ -40,10 +39,12 @@ def which(program):
             if is_exe(exe_file):
                 return exe_file
     return None
-"""
- Test TLS session resumption through session tickets and TLS ticket key rotation.
-"""
+
+
 class TestTLSTicketKeyRotation(helpers.EnvironmentCase):
+    """
+     Test TLS session resumption through session tickets and TLS ticket key rotation.
+    """
     @classmethod
     def setUpEnv(cls, env):
         '''
@@ -80,7 +81,7 @@ class TestTLSTicketKeyRotation(helpers.EnvironmentCase):
 
         # openssl s_client -connect 127.0.0.1:443 -tls1 < /dev/null
         sess = os.path.join(self.environment.layout.logdir, 'sess')
-        ticket_cmd = 'echo | openssl s_client -connect {0}:{1} -sess_out {2}'.format(addr[0], addr[1], sess);
+        ticket_cmd = 'echo | openssl s_client -connect {0}:{1} -sess_out {2}'.format(addr[0], addr[1], sess)
 
         # check whether TLS session tickets are received by s_client.
         stdout, _ = tsqa.utils.run_sync_command(ticket_cmd, stdout=subprocess.PIPE, shell=True)
@@ -94,7 +95,7 @@ class TestTLSTicketKeyRotation(helpers.EnvironmentCase):
 
         # check whether the session has been reused
         reused = False
-        ticket_cmd = 'echo | openssl s_client -connect {0}:{1} -sess_in {2}'.format(addr[0], addr[1], sess);
+        ticket_cmd = 'echo | openssl s_client -connect {0}:{1} -sess_in {2}'.format(addr[0], addr[1], sess)
         stdout, _ = tsqa.utils.run_sync_command(ticket_cmd, stdout=subprocess.PIPE, shell=True)
         for line in stdout.splitlines():
             text = line.strip()
@@ -105,7 +106,7 @@ class TestTLSTicketKeyRotation(helpers.EnvironmentCase):
 
         # negative test case. The session is not reused.
         reused = False
-        ticket_cmd = 'echo | openssl s_client -connect {0}:{1}'.format(addr[0], addr[1]);
+        ticket_cmd = 'echo | openssl s_client -connect {0}:{1}'.format(addr[0], addr[1])
         stdout, _ = tsqa.utils.run_sync_command(ticket_cmd, stdout=subprocess.PIPE, shell=True)
         for line in stdout.splitlines():
             text = line.strip()
@@ -136,7 +137,7 @@ class TestTLSTicketKeyRotation(helpers.EnvironmentCase):
 
         # Check whether the config file exists.
         self.assertTrue(os.path.isfile(ssl_multicert), ssl_multicert)
-        touch_cmd = which('touch') + ' ' +  ssl_multicert
+        touch_cmd = which('touch') + ' ' + ssl_multicert
         tsqa.utils.run_sync_command(touch_cmd, stdout=subprocess.PIPE, shell=True)
 
         count = 0
