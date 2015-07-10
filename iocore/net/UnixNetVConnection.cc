@@ -1123,8 +1123,10 @@ UnixNetVConnection::mainEvent(int event, Event *e)
       e->schedule_in(HRTIME_MSECONDS(net_retry_delay));
     return EVENT_CONT;
   }
-  if (e->cancelled)
+
+  if (e->cancelled) {
     return EVENT_DONE;
+  }
 
   int signal_event;
   Event **signal_timeout;
@@ -1139,7 +1141,7 @@ UnixNetVConnection::mainEvent(int event, Event *e)
   if (e == inactivity_timeout) {
     signal_event = VC_EVENT_INACTIVITY_TIMEOUT;
     signal_timeout = &inactivity_timeout;
-  } else if {
+  } else {
     ink_assert(e == active_timeout);
     signal_event = VC_EVENT_ACTIVE_TIMEOUT;
     signal_timeout = &active_timeout;
@@ -1153,6 +1155,9 @@ UnixNetVConnection::mainEvent(int event, Event *e)
       return EVENT_CONT;
     signal_event = VC_EVENT_INACTIVITY_TIMEOUT;
     signal_timeout_at = &next_inactivity_timeout_at;
+  } else {
+    signal_event = VC_EVENT_ACTIVE_TIMEOUT;
+    signal_timeout_at = &next_activity_timeout_at;
   }
 #endif
 
