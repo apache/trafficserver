@@ -1132,8 +1132,7 @@ UnixNetVConnection::mainEvent(int event, Event *e)
   Event **signal_timeout;
   Continuation *reader_cont = NULL;
   Continuation *writer_cont = NULL;
-  ink_hrtime next_activity_timeout_at = 0;
-  ink_hrtime *signal_timeout_at = &next_activity_timeout_at;
+  ink_hrtime *signal_timeout_at = NULL;
   Event *t = NULL;
   signal_timeout = &t;
 
