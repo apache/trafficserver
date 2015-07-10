@@ -18,6 +18,7 @@
 include $(top_srcdir)/build/plugins.mk
 
 AM_CPPFLAGS += -I$(top_srcdir)/lib/atscppapi/src/include -Wno-unused-variable
+
 target=boom.so
 pkglib_LTLIBRARIES = boom.la
 boom_la_SOURCES = boom.cc

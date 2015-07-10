@@ -18,6 +18,7 @@
 include $(top_srcdir)/build/plugins.mk
 
 AM_CPPFLAGS += -I$(top_srcdir)/lib/atscppapi/src/include -Wno-unused-variable
+
 target=AsyncTimer.so
 pkglib_LTLIBRARIES = AsyncTimer.la
 AsyncTimer_la_SOURCES = AsyncTimer.cc

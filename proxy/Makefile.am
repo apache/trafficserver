@@ -49,7 +49,6 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/mgmt/utils \
   -I$(top_srcdir)/proxy/api/ts \
   -I$(top_srcdir)/lib \
-  -I$(top_builddir)/lib \
   @OPENSSL_INCLUDES@
 
 # NOTE: it is safe to use AM_LDFLAGS here because we are only building executables. If we start
