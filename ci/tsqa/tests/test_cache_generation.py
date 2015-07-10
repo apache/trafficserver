@@ -40,8 +40,8 @@ class TestCacheGeneration(helpers.EnvironmentCase):
 
     def _fetch(self, path):
         url = 'http://127.0.0.1:{}/{}'.format(
-                self.configs['records.config']['CONFIG']['proxy.config.http.server_ports'],
-                path
+            self.configs['records.config']['CONFIG']['proxy.config.http.server_ports'],
+            path
         )
         log.debug('get {}'.format(url))
         return requests.get(url, headers={'x-debug': 'x-cache,x-cache-key,via,x-cache-generation'})

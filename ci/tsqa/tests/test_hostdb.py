@@ -149,7 +149,6 @@ class TestHostDBHostsFile(helpers.EnvironmentCase, tsqa.test_cases.HTTPBinCase):
         cls.configs['remap.config'].add_line('map http://local2/ http://local2:{0}/'.format(cls.socket_server.port))
         cls.configs['remap.config'].add_line('map http://local3/ http://local3:{0}/'.format(cls.socket_server.port))
 
-
     def test_basic(self):
         '''
         Test basic fnctionality of hosts files

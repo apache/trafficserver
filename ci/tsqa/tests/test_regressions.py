@@ -52,6 +52,7 @@ class TestRegressions(helpers.EnvironmentCase):
         cmd = [os.path.join(self.environment.layout.bindir, 'traffic_server'), '-R', '1']
         tsqa.utils.run_sync_command(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
+
 class TestRegressionsLinuxNativeAIO(TestRegressions):
     '''
     Run the built-in traffic_server regression test suite with
