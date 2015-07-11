@@ -23,6 +23,7 @@ Command Reference
 
    traffic_cop.en
    traffic_crashlog.en
+   traffic_ctl.en
    traffic_line.en
    traffic_logcat.en
    traffic_logstats.en

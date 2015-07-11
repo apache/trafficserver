@@ -22,6 +22,7 @@ man_pages = [
   ('reference/api/' + filename[:-4], filename.split('.', 1)[0], '', None, '3ts') for filename in os.listdir('reference/api') if filename != 'index.en.rst' and filename.endswith('.rst')] + [
 
   ('reference/commands/traffic_cop.en', 'traffic_cop', u'Traffic Server watchdog', None, '8'),
+  ('reference/commands/traffic_ctl.en', 'traffic_ctl', u'Traffic Server management tool', None, '8'),
   ('reference/commands/traffic_crashlog.en', 'traffic_crashlog', u'Traffic Server crash log helper', None, '8'),
   ('reference/commands/traffic_line.en', 'traffic_line', u'Traffic Server command line', None, '8'),
   ('reference/commands/traffic_logcat.en', 'traffic_logcat', u'Traffic Server log spooler', None, '8'),
