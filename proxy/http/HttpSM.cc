@@ -4956,8 +4956,6 @@ HttpSM::mark_host_failure(HostDBInfo *info, time_t time_down)
 
   DebugSM("http", "[%" PRId64 "] hostdb update marking IP: %s as down", sm_id,
           ats_ip_nptop(&t_state.current.server->dst_addr.sa, addrbuf, sizeof(addrbuf)));
-  DebugSM("http", "[%" PRId64 "] hostdb update marking IP: %s as down", sm_id,
-          ats_ip_nptop(&t_state.current.server->dst_addr.sa, addrbuf, sizeof(addrbuf)));
 }
 
 void

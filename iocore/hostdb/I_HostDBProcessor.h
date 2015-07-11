@@ -152,6 +152,17 @@ struct HostDBInfo {
 
   char *hostname();
   char *srvname(HostDBRoundRobin *rr);
+  /// Check if this entry is a round robin entry.
+  bool
+  is_rr() const
+  {
+    return 0 != round_robin;
+  }
+  bool
+  is_rr_elt() const
+  {
+    return 0 != round_robin_elt;
+  }
   HostDBRoundRobin *rr();
 
   /** Indicate that the HostDBInfo is BAD and should be deleted. */
@@ -240,17 +251,20 @@ struct HostDBInfo {
   // if this is 0 then no timeout.
   unsigned int ip_timeout_interval;
 
+  // Make sure we only have 8 bits of these flags before the @a md5_low_low
   unsigned int full : 1;
   unsigned int backed : 1; // duplicated in lower level
   unsigned int deleted : 1;
   unsigned int hits : 3;
 
-  unsigned int is_srv : 1; // steal a bit from ip_timeout_interval
-  unsigned int round_robin : 1;
+  unsigned int is_srv : 1;
   unsigned int reverse_dns : 1;
 
   unsigned int md5_low_low : 24;
   unsigned int md5_low;
+
+  unsigned int round_robin : 1;     // This is the root of a round robin block
+  unsigned int round_robin_elt : 1; // This is an address in a round robin block
 
   uint64_t md5_high;
 

@@ -651,7 +651,6 @@ public:
     /// zero means no failure (not attempted, succeeded).
     int connect_result;
     char *name;
-    bool dns_round_robin;
     TransferEncoding_t transfer_encoding;
 
     /** This is the source address of the connection from the point of view of the transaction.
@@ -688,8 +687,8 @@ public:
 
     ConnectionAttributes()
       : http_version(), keep_alive(HTTP_KEEPALIVE_UNDEFINED), receive_chunked_response(false), pipeline_possible(false),
-        proxy_connect_hdr(false), connect_result(0), name(NULL), dns_round_robin(false), transfer_encoding(NO_TRANSFER_ENCODING),
-        state(STATE_UNDEFINED), abort(ABORT_UNDEFINED), port_attribute(HttpProxyPort::TRANSPORT_DEFAULT), is_transparent(false)
+        proxy_connect_hdr(false), connect_result(0), name(NULL), transfer_encoding(NO_TRANSFER_ENCODING), state(STATE_UNDEFINED),
+        abort(ABORT_UNDEFINED), port_attribute(HttpProxyPort::TRANSPORT_DEFAULT), is_transparent(false)
     {
       memset(&src_addr, 0, sizeof(src_addr));
       memset(&dst_addr, 0, sizeof(dst_addr));

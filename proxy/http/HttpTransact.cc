@@ -1540,7 +1540,6 @@ HttpTransact::PPDNSLookup(State *s)
     ats_ip_copy(&s->parent_info.dst_addr, s->host_db_info.ip());
     s->parent_info.dst_addr.port() = htons(s->parent_result.port);
     get_ka_info_from_host_db(s, &s->parent_info, &s->client_info, &s->host_db_info);
-    s->parent_info.dns_round_robin = s->host_db_info.round_robin;
 
     char addrbuf[INET6_ADDRSTRLEN];
     DebugTxn("http_trans", "[PPDNSLookup] DNS lookup for sm_id[%" PRId64 "] successful IP: %s", s->state_machine->sm_id,
@@ -1592,11 +1591,16 @@ HttpTransact::ReDNSRoundRobin(State *s)
     s->current.server->clear_connect_fail();
 
     // Our ReDNS of the server succeeded so update the necessary
-    //  information and try again
+    //  information and try again. Need to preserve the current port value if possible.
+    in_port_t server_port =
+      s->current.server ? s->current.server->dst_addr.host_order_port() : s->server_info.dst_addr.isValid() ?
+                               s->server_info.dst_addr.host_order_port() :
+                               s->hdr_info.client_request.port_get();
+
     ats_ip_copy(&s->server_info.dst_addr, s->host_db_info.ip());
+    s->server_info.dst_addr.port() = htons(server_port);
     ats_ip_copy(&s->request_data.dest_ip, &s->server_info.dst_addr);
     get_ka_info_from_host_db(s, &s->server_info, &s->client_info, &s->host_db_info);
-    s->server_info.dns_round_robin = s->host_db_info.round_robin;
 
     char addrbuf[INET6_ADDRSTRLEN];
     DebugTxn("http_trans", "[ReDNSRoundRobin] DNS lookup for O.S. successful IP: %s",
@@ -1741,7 +1745,6 @@ HttpTransact::OSDNSLookup(State *s)
   s->server_info.dst_addr.port() = htons(s->hdr_info.client_request.port_get()); // now we can set the port.
   ats_ip_copy(&s->request_data.dest_ip, &s->server_info.dst_addr);
   get_ka_info_from_host_db(s, &s->server_info, &s->client_info, &s->host_db_info);
-  s->server_info.dns_round_robin = s->host_db_info.round_robin;
 
   char addrbuf[INET6_ADDRSTRLEN];
   DebugTxn("http_trans", "[OSDNSLookup] DNS lookup for O.S. successful "
@@ -3693,7 +3696,7 @@ HttpTransact::handle_response_from_server(State *s)
         // families - that is locked in by the client source address.
         s->state_machine->ua_session->host_res_style = ats_host_res_match(&s->current.server->dst_addr.sa);
         TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, OSDNSLookup);
-      } else if ((s->dns_info.srv_lookup_success || s->server_info.dns_round_robin) &&
+      } else if ((s->dns_info.srv_lookup_success || s->host_db_info.is_rr_elt()) &&
                  (s->txn_conf->connect_attempts_rr_retries > 0) &&
                  (s->current.attempts % s->txn_conf->connect_attempts_rr_retries == 0)) {
         delete_server_rr_entry(s, max_connect_retries);

@@ -669,6 +669,7 @@ probe(ProxyMutex *mutex, HostDBMD5 const &md5, bool ignore_timeout)
     // TODO: Something to make this not local :/
     static HostDBInfo r;
     r.round_robin = false;
+    r.round_robin_elt = false;
     r.reverse_dns = false;
     r.is_srv = false;
     ats_ip_set(r.ip(), (*find_result).second);
@@ -1268,6 +1269,7 @@ HostDBContinuation::lookup_done(IpAddr const &ip, char const *aname, bool around
     }
     i = insert(hostdb_ip_fail_timeout_interval); // currently ... 0
     i->round_robin = false;
+    i->round_robin_elt = false;
     i->is_srv = is_srv();
     i->reverse_dns = !is_byname() && !is_srv();
 
@@ -1299,6 +1301,7 @@ HostDBContinuation::lookup_done(IpAddr const &ip, char const *aname, bool around
       ttl_seconds = 1;
 
     i = insert(ttl_seconds);
+    i->round_robin_elt = false; // only true for elements explicitly added as RR elements.
     if (is_byname()) {
       ip_text_buffer b;
       Debug("hostdb", "done %s TTL %d", ip.toString(b, sizeof b), ttl_seconds);
@@ -1539,6 +1542,7 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
 
             memset(&item, 0, sizeof(item));
             item.round_robin = 0;
+            item.round_robin_elt = 1;
             item.reverse_dns = 0;
             item.is_srv = 1;
             item.data.srv.srv_weight = t->weight;
@@ -1585,6 +1589,7 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
               ip_addr_set(item.ip(), af, e->ent.h_addr_list[ii]);
               item.full = 1;
               item.round_robin = 0;
+              item.round_robin_elt = 1;
               item.reverse_dns = 0;
               item.is_srv = 0;
               item.md5_high = r->md5_high;
@@ -1604,6 +1609,7 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
         ink_assert(!"out of room in hostdb data area");
         Warning("out of room in hostdb for round-robin DNS data");
         r->round_robin = 0;
+        r->round_robin_elt = 0;
       }
     }
     if (!failed && !rr && !is_srv())
