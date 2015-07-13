@@ -112,7 +112,7 @@ rcv_data_frame(Http2ClientSession &cs, Http2ConnectionState &cstate, const Http2
     return HTTP2_ERROR_NO_ERROR;
   }
 
-  // Check whether Window Size is appeptable.
+  // Check whether Window Size is acceptable
   if (cstate.server_rwnd < payload_length || stream->server_rwnd < payload_length) {
     return HTTP2_ERROR_FLOW_CONTROL_ERROR;
   }
@@ -890,10 +890,10 @@ Http2ConnectionState::send_headers_frame(FetchSM *fetch_sm)
   Http2Stream *stream = static_cast<Http2Stream *>(fetch_sm->ext_get_user_data());
   HTTPHdr *resp_header = reinterpret_cast<HTTPHdr *>(fetch_sm->resp_hdr_bufp());
 
-  // Write psuedo headers
+  // Write pseudo headers
   payload_length += http2_write_psuedo_headers(resp_header, payload_buffer, buf_len, *(this->remote_dynamic_table));
 
-  // If response body is empry, set END_STREAM flag to HEADERS frame
+  // If response body is empty, set END_STREAM flag to HEADERS frame
   // Must check to ensure content-length is there.  Otherwise the value defaults to 0
   if (resp_header->presence(MIME_PRESENCE_CONTENT_LENGTH) && resp_header->get_content_length() == 0) {
     flags |= HTTP2_FLAGS_HEADERS_END_STREAM;
@@ -923,6 +923,8 @@ Http2ConnectionState::send_headers_frame(FetchSM *fetch_sm)
     // xmit event
     SCOPED_MUTEX_LOCK(lock, this->ua_session->mutex, this_ethread());
     this->ua_session->handleEvent(HTTP2_SESSION_EVENT_XMIT, &headers);
+
+    payload_length = 0; // we will reuse the same buffer for more headers
   } while (cont);
 }
 
