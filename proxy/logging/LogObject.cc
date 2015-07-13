@@ -970,7 +970,7 @@ LogObjectManager::_solve_filename_conflicts(LogObject *log_object, int maxConfli
     // file exists, try to read metafile to get object signature
     //
     uint64_t signature = 0;
-    MetaInfo meta_info(filename);
+    BaseMetaInfo meta_info(filename);
     bool conflicts = true;
 
     if (meta_info.file_open_successful()) {

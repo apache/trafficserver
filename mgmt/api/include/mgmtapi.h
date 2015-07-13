@@ -50,6 +50,9 @@ extern "C" {
 #define TS_RES_MEM_PATH TS_RES_PATH("memory/")
 #endif
 
+#define TM_OPT_BIND_STDOUT "bind_stdout"
+#define TM_OPT_BIND_STDERR "bind_stderr"
+
 /***************************************************************************
  * Error and Return Values
  ***************************************************************************/

@@ -731,7 +731,6 @@ spawn_manager()
   char *options[OPTIONS_MAX];
   char *last;
   char *tok;
-  int log_fd;
   int err;
   int key;
 
@@ -767,6 +766,26 @@ spawn_manager()
     exit(1);
   }
 
+  // Move any traffic.out that we can not write to, out
+  //  of the way (TSqa2232)
+  // coverity[fs_check_call]
+  if (access(log_file, W_OK) < 0 && errno == EACCES) {
+    char old_log_file[PATH_NAME_MAX];
+    snprintf(old_log_file, sizeof(old_log_file), "%s.old", log_file);
+    // coverity[toctou]
+    rename(log_file, old_log_file);
+    cop_log(COP_WARNING, "rename %s to %s as it is not accessible.\n", log_file, old_log_file);
+  }
+
+  // Bind stdout and stderr of traffic_manager to traffic.out
+  int max_opts_len = OPTIONS_LEN_MAX - strlen(manager_options);
+  char tm_opt_buf[max_opts_len];
+  int cx = snprintf(tm_opt_buf, max_opts_len, " --%s %s --%s %s", TM_OPT_BIND_STDOUT, log_file, TM_OPT_BIND_STDERR, log_file);
+  if (cx >= 0 && cx < max_opts_len)
+    strcat(manager_options, tm_opt_buf);
+  else
+    cop_log(COP_WARNING, "bind_stdout and bind_stderr flags are too long, not binding anything\n");
+
   cop_log_trace("spawn_manager: Launching %s with options '%s'\n", prog, manager_options);
   int i;
   for (i = 0; i < OPTIONS_MAX; i++) {
@@ -782,29 +801,8 @@ spawn_manager()
     }
   }
 
-  // Move any traffic.out that we can not write to, out
-  //  of the way (TSqa2232)
-  // coverity[fs_check_call]
-  if (access(log_file, W_OK) < 0 && errno == EACCES) {
-    char old_log_file[PATH_NAME_MAX];
-    snprintf(old_log_file, sizeof(old_log_file), "%s.old", log_file);
-    // coverity[toctou]
-    rename(log_file, old_log_file);
-    cop_log(COP_WARNING, "rename %s to %s as it is not accessible.\n", log_file, old_log_file);
-  }
-  // coverity[toctou]
-  if ((log_fd = open(log_file, O_WRONLY | O_APPEND | O_CREAT, 0644)) < 0) {
-    cop_log(COP_WARNING, "unable to open log file \"%s\" [%d '%s']\n", log_file, errno, strerror(errno));
-  }
-
   err = fork();
   if (err == 0) {
-    if (log_fd >= 0) {
-      dup2(log_fd, STDOUT_FILENO);
-      dup2(log_fd, STDERR_FILENO);
-      close(log_fd);
-    }
-
     EnableDeathSignal(SIGTERM);
 
     err = execv(prog, options);
@@ -813,10 +811,6 @@ spawn_manager()
   } else if (err == -1) {
     cop_log(COP_FATAL, "unable to fork [%d '%s']\n", errno, strerror(errno));
     exit(1);
-  }
-
-  if (log_fd >= 0) {
-    close(log_fd);
   }
 
   manager_failures = 0;

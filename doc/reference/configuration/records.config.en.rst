@@ -214,6 +214,28 @@ A value of ``0`` means no signal will be sent.
    The name and location of the file that contains warnings, status messages, and error messages produced by the Traffic Server
    processes. If no path is specified, then Traffic Server creates the file in its logging directory.
 
+.. ts:cv:: CONFIG proxy.config.output.logfile.rolling_enabled INT 0
+   :reloadable:
+
+   Specifies how the output log is rolled. You can specify the following values:
+
+   -  ``0`` = disables output log rolling
+   -  ``1`` = enables output log rolling at specific intervals (specified with the
+       :ts:cv:`proxy.config.output.logfile.rolling_interval_sec` variable). The "clock" starts ticking on Traffic Server boot
+   -  ``2`` = enables output log rolling when the output log reaches a specific size (specified with the :ts:cv:`proxy.config.output.logfile.rolling_size_mb` variable)
+
+.. ts:cv:: CONFIG proxy.config.output.logfile.rolling_interval_sec INT 3600
+   :reloadable:
+   :metric: seconds
+
+   Specifies how often the output log is rolled, in seconds. The timer starts on Traffic Server bootup.
+
+.. ts:cv:: CONFIG proxy.config.output.logfile.rolling_size_mb INT 100
+   :reloadable:
+   :metric: megabytes
+
+   Specifies at what size to roll the output log at.
+
 .. ts:cv:: CONFIG proxy.config.snapshot_dir STRING snapshots
 
    The directory in which Traffic Server stores configuration
@@ -2275,6 +2297,28 @@ ssl           TLS termination and certificate processing
   Traffic Server plugins will typically log debug messages using
   the :c:func:`TSDebug` API, passing the plugin name as the debug
   tag.
+
+.. ts:cv:: CONFIG proxy.config.diags.logfile.rolling_enabled INT 0
+   :reloadable:
+
+   Specifies how the diagnostics log is rolled. You can specify the following values:
+
+   -  ``0`` = disables diagnostics log rolling
+   -  ``1`` = enables diagnostics log rolling at specific intervals (specified with the
+       :ts:cv:`proxy.config.diags.logfile.rolling_interval_sec` variable). The "clock" starts ticking on Traffic Server boot
+   -  ``2`` = enables diagnostics log rolling when the diagnostics log reaches a specific size (specified with the :ts:cv:`proxy.config.diags.logfile.rolling_size_mb` variable)
+
+.. ts:cv:: CONFIG proxy.config.diags.logfile.rolling_interval_sec INT 3600
+   :reloadable:
+   :metric: seconds
+
+   Specifies how often the diagnostics log is rolled, in seconds. The timer starts on Traffic Server bootup.
+
+.. ts:cv:: CONFIG proxy.config.diags.logfile.rolling_size_mb INT 100
+   :reloadable:
+   :metric: megabytes
+
+   Specifies at what size to roll the diagnostics log at.
 
 Reverse Proxy
 =============

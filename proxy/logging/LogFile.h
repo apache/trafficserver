@@ -35,91 +35,8 @@ class LogSock;
 class LogBuffer;
 struct LogBufferHeader;
 class LogObject;
-
-#define LOGFILE_ROLLED_EXTENSION ".old"
-#define LOGFILE_SEPARATOR_STRING "_"
-
-/*-------------------------------------------------------------------------
-  MetaInfo
-
-  Meta information for LogFile
-  -------------------------------------------------------------------------*/
-class MetaInfo
-{
-public:
-  enum {
-    DATA_FROM_METAFILE = 1, // metadata was read (or attempted to)
-    // from metafile
-    VALID_CREATION_TIME = 2, // creation time is valid
-    VALID_SIGNATURE = 4,     // signature is valid
-    // (i.e., creation time only)
-    FILE_OPEN_SUCCESSFUL = 8 // metafile was opened successfully
-  };
-
-  enum {
-    BUF_SIZE = 640 // size of read/write buffer
-  };
-
-private:
-  char *_filename;                // the name of the meta file
-  time_t _creation_time;          // file creation time
-  uint64_t _log_object_signature; // log object signature
-  int _flags;                     // metainfo status flags
-  char _buffer[BUF_SIZE];         // read/write buffer
-
-  void _read_from_file();
-  void _write_to_file();
-  void _build_name(const char *filename);
-
-public:
-  MetaInfo(const char *filename) : _flags(0)
-  {
-    _build_name(filename);
-    _read_from_file();
-  }
-
-  MetaInfo(char *filename, time_t creation, uint64_t signature)
-    : _creation_time(creation), _log_object_signature(signature), _flags(VALID_CREATION_TIME | VALID_SIGNATURE)
-  {
-    _build_name(filename);
-    _write_to_file();
-  }
-
-  ~MetaInfo() { ats_free(_filename); }
-
-  bool
-  get_creation_time(time_t *time)
-  {
-    if (_flags & VALID_CREATION_TIME) {
-      *time = _creation_time;
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  bool
-  get_log_object_signature(uint64_t *signature)
-  {
-    if (_flags & VALID_SIGNATURE) {
-      *signature = _log_object_signature;
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  bool
-  data_from_metafile() const
-  {
-    return (_flags & DATA_FROM_METAFILE ? true : false);
-  }
-  bool
-  file_open_successful()
-  {
-    return (_flags & FILE_OPEN_SUCCESSFUL ? true : false);
-  }
-};
+class BaseLogFile;
+class BaseMetaInfo;
 
 /*-------------------------------------------------------------------------
   LogFile
@@ -177,7 +94,12 @@ public:
   off_t
   get_size_bytes() const
   {
-    return m_file_format != LOG_FILE_PIPE ? m_bytes_written : 0;
+    if (m_file_format == LOG_FILE_PIPE)
+      return 0;
+    else if (m_log)
+      return m_log->get_size_bytes();
+    else
+      return 0;
   };
   int
   do_filesystem_checks()
@@ -186,14 +108,10 @@ public:
   }; // TODO: this need to be tidy up when to redo the file checking
 
 public:
-  bool
-  is_open()
-  {
-    return (m_fd >= 0);
-  }
+  bool is_open();
   void close_file();
-
   void check_fd();
+  int get_fd();
   static int writeln(char *data, int len, int fd, const char *path);
 
 public:
@@ -203,18 +121,14 @@ private:
   char *m_name;
 
 public:
+  BaseLogFile *m_log; // BaseLogFile backs the actual file on disk
   char *m_header;
   uint64_t m_signature; // signature of log object stored
-  MetaInfo *m_meta_info;
 
   size_t m_ascii_buffer_size; // size of ascii buffer
   size_t m_max_line_size;     // size of longest log line (record)
 
-  int m_fd;
-  long m_start_time;
-  long m_end_time;
-  volatile uint64_t m_bytes_written;
-
+  int m_fd; // this could back m_log or a pipe, depending on the situation
 public:
   Link<LogFile> link;
 
