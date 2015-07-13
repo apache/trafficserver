@@ -24,10 +24,9 @@
 #include <stdio.h>
 
 #include "ts/ts.h"
-#include "ts/ink_defs.h"
 
 void
-TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
+TSPluginInit(int argc , const char *argv[])
 {
   TSPluginRegistrationInfo info;
 
