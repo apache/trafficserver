@@ -622,21 +622,19 @@ http2_write_header_fragment(HTTPHdr *in, MIMEFieldIter &field_iter, uint8_t *out
     }
 
     MIMEFieldIter current_iter = field_iter;
-    do {
-      MIMEFieldWrapper header(field, in->m_heap, in->m_http->m_fields_impl);
-      if ((len = encode_literal_header_field(p, end, header, HPACK_FIELD_INDEXED_LITERAL)) == -1) {
-        if (!cont) {
-          // Parsing a part of headers is done
-          cont = true;
-          field_iter = current_iter;
-          return p - out;
-        } else {
-          // Parse error
-          return -1;
-        }
+    MIMEFieldWrapper header(field, in->m_heap, in->m_http->m_fields_impl);
+    if ((len = encode_literal_header_field(p, end, header, HPACK_FIELD_INDEXED_LITERAL)) == -1) {
+      if (!cont) {
+        // Parsing a part of headers is done
+        cont = true;
+        field_iter = current_iter;
+        return p - out;
+      } else {
+        // Parse error
+        return -1;
       }
-      p += len;
-    } while (field->has_dups() && (field = field->m_next_dup) != NULL);
+    }
+    p += len;
   }
 
   // Parsing all headers is done
