@@ -23,7 +23,8 @@
 
 #ifndef __DIAGSCONFIG_H__
 #define __DIAGSCONFIG_H__
-#include "ts/Diags.h"
+#include "Diags.h"
+#include "BaseLogFile.h"
 
 struct DiagsConfig {
   void reconfigure_diags();
@@ -37,7 +38,7 @@ struct DiagsConfig {
 
 private:
   bool callbacks_established;
-  FILE *diags_log_fp;
+  BaseLogFile *diags_log;
 
 public:
   Diags *diags;

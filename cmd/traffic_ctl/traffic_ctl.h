@@ -28,8 +28,9 @@
 #include "ts/Diags.h"
 #include "ts/ink_memory.h"
 #include "mgmtapi.h"
-#include "ts/ink_args.h"
-#include "ts/I_Version.h"
+#include "ink_args.h"
+#include "I_Version.h"
+#include "BaseLogFile.h"
 
 #include <vector>
 #include <string>

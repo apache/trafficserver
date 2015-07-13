@@ -101,13 +101,14 @@ SrcLoc::str(char *buf, int buflen) const
 //
 //////////////////////////////////////////////////////////////////////////////
 
-Diags::Diags(const char *bdt, const char *bat, FILE *_diags_log_fp)
-  : diags_log_fp(_diags_log_fp), magic(DIAGS_MAGIC), show_location(0), base_debug_tags(NULL), base_action_tags(NULL)
+Diags::Diags(const char *bdt, const char *bat, BaseLogFile *_diags_log)
+  : stdout_log(NULL), stderr_log(NULL), magic(DIAGS_MAGIC), show_location(0), base_debug_tags(NULL), base_action_tags(NULL)
 {
   int i;
 
   cleanup_func = NULL;
   ink_mutex_init(&tag_table_lock, "Diags::tag_table_lock");
+  ink_mutex_init(&rotate_lock, "Diags::rotate_lock");
 
   ////////////////////////////////////////////////////////
   // initialize the default, base debugging/action tags //
@@ -131,6 +132,15 @@ Diags::Diags(const char *bdt, const char *bat, FILE *_diags_log_fp)
     config.outputs[i].to_diagslog = true;
   }
 
+  // create default stdout and stderr BaseLogFile objects
+  // (in case the user of this class doesn't specify in the future)
+  stdout_log = new BaseLogFile("stdout");
+  stderr_log = new BaseLogFile("stderr");
+  stdout_log->open_file(); // should never fail
+  stderr_log->open_file(); // should never fail
+
+  setup_diagslog(_diags_log);
+
   //////////////////////////////////////////////////////////////////
   // start off with empty tag tables, will build in reconfigure() //
   //////////////////////////////////////////////////////////////////
@@ -138,11 +148,34 @@ Diags::Diags(const char *bdt, const char *bat, FILE *_diags_log_fp)
   activated_tags[DiagsTagType_Debug] = NULL;
   activated_tags[DiagsTagType_Action] = NULL;
   prefix_str = "";
+
+  outputlog_rolling_enabled = RollingEnabledValues::NO_ROLLING;
+  outputlog_rolling_interval = -1;
+  outputlog_rolling_size = -1;
+  diagslog_rolling_enabled = RollingEnabledValues::NO_ROLLING;
+  diagslog_rolling_interval = -1;
+  diagslog_rolling_size = -1;
+
+  outputlog_time_last_roll = time(0);
+  diagslog_time_last_roll = time(0);
 }
 
 Diags::~Diags()
 {
-  diags_log_fp = NULL;
+  if (diags_log) {
+    delete diags_log;
+    diags_log = NULL;
+  }
+
+  if (stdout_log) {
+    delete stdout_log;
+    stdout_log = NULL;
+  }
+
+  if (stderr_log) {
+    delete stderr_log;
+    stderr_log = NULL;
+  }
 
   ats_free((void *)base_debug_tags);
   ats_free((void *)base_action_tags);
@@ -282,42 +315,46 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SrcLoc *loc
 
   lock();
   if (config.outputs[diags_level].to_diagslog) {
-    if (diags_log_fp) {
+    if (diags_log && diags_log->m_fp) {
       va_list ap_scratch;
       va_copy(ap_scratch, ap);
       buffer = format_buf_w_ts;
-      vfprintf(diags_log_fp, buffer, ap_scratch);
+      vfprintf(diags_log->m_fp, buffer, ap_scratch);
       {
         int len = strlen(buffer);
         if (len > 0 && buffer[len - 1] != '\n') {
-          putc('\n', diags_log_fp);
+          putc('\n', diags_log->m_fp);
         }
       }
     }
   }
 
   if (config.outputs[diags_level].to_stdout) {
-    va_list ap_scratch;
-    va_copy(ap_scratch, ap);
-    buffer = format_buf_w_ts;
-    vfprintf(stdout, buffer, ap_scratch);
-    {
-      int len = strlen(buffer);
-      if (len > 0 && buffer[len - 1] != '\n') {
-        putc('\n', stdout);
+    if (stdout_log && stdout_log->m_fp) {
+      va_list ap_scratch;
+      va_copy(ap_scratch, ap);
+      buffer = format_buf_w_ts;
+      vfprintf(stdout_log->m_fp, buffer, ap_scratch);
+      {
+        int len = strlen(buffer);
+        if (len > 0 && buffer[len - 1] != '\n') {
+          putc('\n', stdout_log->m_fp);
+        }
       }
     }
   }
 
   if (config.outputs[diags_level].to_stderr) {
-    va_list ap_scratch;
-    va_copy(ap_scratch, ap);
-    buffer = format_buf_w_ts;
-    vfprintf(stderr, buffer, ap_scratch);
-    {
-      int len = strlen(buffer);
-      if (len > 0 && buffer[len - 1] != '\n') {
-        putc('\n', stderr);
+    if (stderr_log && stderr_log->m_fp) {
+      va_list ap_scratch;
+      va_copy(ap_scratch, ap);
+      buffer = format_buf_w_ts;
+      vfprintf(stderr_log->m_fp, buffer, ap_scratch);
+      {
+        int len = strlen(buffer);
+        if (len > 0 && buffer[len - 1] != '\n') {
+          putc('\n', stderr_log->m_fp);
+        }
       }
     }
   }
@@ -546,4 +583,327 @@ Diags::error_va(DiagsLevel level, const char *file, const char *func, const int 
     }
     ink_fatal_va(format_string, ap2);
   }
+}
+
+/*
+ * Sets up and error handles the given BaseLogFile object to work
+ * with this instance of Diags
+ */
+void
+Diags::setup_diagslog(BaseLogFile *blf)
+{
+  diags_log = blf;
+  if (!diags_log)
+    return;
+
+  // get file stream from BaseLogFile filedes
+  if (blf->open_file() == BaseLogFile::LOG_FILE_NO_ERROR) {
+    if (blf->m_fp) {
+      int status;
+      status = setvbuf(blf->m_fp, NULL, _IOLBF, 512);
+      if (status != 0) {
+        log_log_error("Could not setvbuf() for %s\n", blf->get_name());
+        blf->close_file();
+        delete blf;
+        diags_log = NULL;
+      }
+    } else {
+      log_log_error("Could not open diags log file: %s\n", strerror(errno));
+    }
+  }
+  log_log_trace("Exiting setup_diagslog, name=%s, this=%p\n", blf->get_name(), this);
+}
+
+void
+Diags::config_roll_diagslog(RollingEnabledValues re, int ri, int rs)
+{
+  diagslog_rolling_enabled = re;
+  diagslog_rolling_interval = ri;
+  diagslog_rolling_size = rs;
+}
+
+void
+Diags::config_roll_outputlog(RollingEnabledValues re, int ri, int rs)
+{
+  outputlog_rolling_enabled = re;
+  outputlog_rolling_interval = ri;
+  outputlog_rolling_size = rs;
+}
+
+/*
+ * Checks diags_log 's underlying file on disk and see if it needs to be rolled,
+ * and does so if necessary.
+ *
+ * This function will replace the current BaseLogFile object with a new one
+ * (if we choose to roll), as each BaseLogFile object logically represents one
+ * file on disk.
+ *
+ * Note that, however, cross process race conditions may still exist, especially with
+ * the metafile, and further work with flock() for fcntl() may still need to be done.
+ *
+ * Returns true if any logs rolled, false otherwise
+ */
+bool
+Diags::should_roll_diagslog()
+{
+  bool ret_val = false;
+
+  log_log_trace("should_roll_diagslog() was called\n");
+  log_log_trace("rolling_enabled = %d, output_rolling_size = %d, output_rolling_interval = %d\n", diagslog_rolling_enabled,
+                diagslog_rolling_size, diagslog_rolling_interval);
+  log_log_trace("RollingEnabledValues::ROLL_ON_TIME = %d\n", RollingEnabledValues::ROLL_ON_TIME);
+  log_log_trace("time(0) - last_roll_time = %d\n", time(0) - diagslog_time_last_roll);
+
+  // Roll diags_log if necessary
+  if (diags_log && diags_log->is_init()) {
+    if (diagslog_rolling_enabled == RollingEnabledValues::ROLL_ON_SIZE) {
+      struct stat buf;
+      fstat(fileno(diags_log->m_fp), &buf);
+      int size = buf.st_size;
+      if (diagslog_rolling_size != -1 && size >= (diagslog_rolling_size * BYTES_IN_MB)) {
+        fflush(diags_log->m_fp);
+        if (diags_log->roll()) {
+          char *oldname = ats_strdup(diags_log->get_name());
+          log_log_trace("in should_roll_logs() for diags.log, oldname=%s\n", oldname);
+          delete diags_log;
+          setup_diagslog(new BaseLogFile(oldname));
+          ats_free(oldname);
+          ret_val = true;
+        }
+      }
+    } else if (diagslog_rolling_enabled == RollingEnabledValues::ROLL_ON_TIME) {
+      time_t now = time(0);
+      if (diagslog_rolling_interval != -1 && (now - diagslog_time_last_roll) >= diagslog_rolling_interval) {
+        fflush(diags_log->m_fp);
+        if (diags_log->roll()) {
+          diagslog_time_last_roll = now;
+          char *oldname = ats_strdup(diags_log->get_name());
+          log_log_trace("in should_roll_logs() for diags.log, oldname=%s\n", oldname);
+          delete diags_log;
+          setup_diagslog(new BaseLogFile(oldname));
+          ats_free(oldname);
+          ret_val = true;
+        }
+      }
+    }
+  }
+
+  return ret_val;
+}
+
+/*
+ * Checks stdout_log and stderr_log if their underlying files on disk need to be
+ * rolled, and does so if necessary.
+ *
+ * This function will replace the current BaseLogFile objects with a
+ * new one (if we choose to roll), as each BaseLogFile object logically
+ * represents one file on disk
+ *
+ * Note that, however, cross process race conditions may still exist, especially with
+ * the metafile, and further work with flock() for fcntl() may still need to be done.
+ *
+ * Returns true if any logs rolled, false otherwise
+ */
+bool
+Diags::should_roll_outputlog()
+{
+  bool ret_val = false;
+  bool need_consider_stderr = true;
+
+  /*
+  log_log_trace("should_roll_outputlog() was called\n");
+  log_log_trace("rolling_enabled = %d, output_rolling_size = %d, output_rolling_interval = %d\n", outputlog_rolling_enabled,
+                outputlog_rolling_size, outputlog_rolling_interval);
+  log_log_trace("RollingEnabledValues::ROLL_ON_TIME = %d\n", RollingEnabledValues::ROLL_ON_TIME);
+  log_log_trace("time(0) - last_roll_time = %d\n", time(0) - outputlog_time_last_roll);
+  log_log_trace("stdout_log = %p\n", stdout_log);
+  */
+
+  // Roll stdout_log if necessary
+  if (stdout_log && stdout_log->is_init()) {
+    if (outputlog_rolling_enabled == RollingEnabledValues::ROLL_ON_SIZE) {
+      struct stat buf;
+      fstat(fileno(stdout_log->m_fp), &buf);
+      int size = buf.st_size;
+      if (outputlog_rolling_size != -1 && size >= outputlog_rolling_size * BYTES_IN_MB) {
+        // since usually stdout and stderr are the same file on disk, we should just
+        // play it safe and just flush both BaseLogFiles
+        if (stderr_log && stderr_log->is_init())
+          fflush(stderr_log->m_fp);
+        fflush(stdout_log->m_fp);
+
+        if (stdout_log->roll()) {
+          char *oldname = ats_strdup(stdout_log->get_name());
+          log_log_trace("in should_roll_logs(), oldname=%s\n", oldname);
+          set_stdout_output(oldname);
+
+          // if stderr and stdout are redirected to the same place, we should
+          // update the stderr_log object as well
+          if (!strcmp(oldname, stderr_log->get_name())) {
+            log_log_trace("oldname == stderr_log->get_name()\n");
+            set_stderr_output(oldname);
+            need_consider_stderr = false;
+          }
+          ats_free(oldname);
+          ret_val = true;
+        }
+      }
+    } else if (outputlog_rolling_enabled == RollingEnabledValues::ROLL_ON_TIME) {
+      time_t now = time(0);
+      if (outputlog_rolling_interval != -1 && (now - outputlog_time_last_roll) >= outputlog_rolling_interval) {
+        // since usually stdout and stderr are the same file on disk, we should just
+        // play it safe and just flush both BaseLogFiles
+        if (stderr_log && stderr_log->is_init())
+          fflush(stderr_log->m_fp);
+        fflush(stdout_log->m_fp);
+
+        if (stdout_log->roll()) {
+          outputlog_time_last_roll = now;
+          char *oldname = ats_strdup(stdout_log->get_name());
+          log_log_trace("in should_roll_logs(), oldname=%s\n", oldname);
+          set_stdout_output(oldname);
+
+          // if stderr and stdout are redirected to the same place, we should
+          // update the stderr_log object as well
+          if (!strcmp(oldname, stderr_log->get_name())) {
+            log_log_trace("oldname == stderr_log->get_name()\n");
+            set_stderr_output(oldname);
+            need_consider_stderr = false;
+          }
+          ats_free(oldname);
+          ret_val = true;
+        }
+      }
+    }
+  }
+
+  // This assertion has to be true since log rolling for traffic.out is only ever enabled
+  // (and useful) when traffic_server is NOT running in stand alone mode. If traffic_server
+  // is NOT running in stand alone mode, then stderr and stdout SHOULD ALWAYS be pointing
+  // to the same file (traffic.out).
+  //
+  // If for some reason, someone wants the feature to have stdout pointing to some file on
+  // disk, and stderr pointing to a different file on disk, and then also wants both files to
+  // rotate according to the (same || different) scheme, it would not be difficult to add
+  // some more config options in records.config and said feature into this function.
+  if (ret_val)
+    ink_assert(!need_consider_stderr);
+
+  return ret_val;
+}
+
+/*
+ * Binds stdout to _bind_stdout, provided that _bind_stdout != "".
+ * Also sets up a BaseLogFile for stdout.
+ *
+ * Returns true on binding and setup, false otherwise
+ *
+ * TODO make this a generic function (ie combine set_stdout_output and
+ * set_stderr_output
+ */
+bool
+Diags::set_stdout_output(const char *_bind_stdout)
+{
+  if (strcmp(_bind_stdout, "") == 0)
+    return false;
+
+  if (stdout_log) {
+    delete stdout_log;
+    stdout_log = NULL;
+  }
+
+  // get root
+  ElevateAccess elevate(true);
+
+  // create backing BaseLogFile for stdout
+  stdout_log = new BaseLogFile(_bind_stdout);
+
+  // on any errors we quit
+  if (!stdout_log || stdout_log->open_file() != BaseLogFile::LOG_FILE_NO_ERROR) {
+    fprintf(stderr, "[Warning]: unable to open file=%s to bind stdout to\n", _bind_stdout);
+    delete stdout_log;
+    stdout_log = NULL;
+    return false;
+  }
+  if (!stdout_log->m_fp) {
+    fprintf(stderr, "[Warning]: file pointer for stdout %s = NULL\n", _bind_stdout);
+    delete stdout_log;
+    stdout_log = NULL;
+    return false;
+  }
+
+  return rebind_stdout(fileno(stdout_log->m_fp));
+}
+
+/*
+ * Binds stderr to _bind_stderr, provided that _bind_stderr != "".
+ * Also sets up a BaseLogFile for stderr.
+ *
+ * Returns true on binding and setup, false otherwise
+ */
+bool
+Diags::set_stderr_output(const char *_bind_stderr)
+{
+  if (strcmp(_bind_stderr, "") == 0)
+    return false;
+
+  if (stderr_log) {
+    delete stderr_log;
+    stderr_log = NULL;
+  }
+  // get root
+  ElevateAccess elevate(true);
+
+  // create backing BaseLogFile for stdout
+  stderr_log = new BaseLogFile(_bind_stderr);
+
+  // on any errors we quit
+  if (!stderr_log || stderr_log->open_file() != BaseLogFile::LOG_FILE_NO_ERROR) {
+    fprintf(stderr, "[Warning]: unable to open file=%s to bind stderr to\n", _bind_stderr);
+    delete stderr_log;
+    stderr_log = NULL;
+    return false;
+  }
+  if (!stderr_log->m_fp) {
+    fprintf(stderr, "[Warning]: file pointer for stderr %s = NULL\n", _bind_stderr);
+    delete stderr_log;
+    stderr_log = NULL;
+    return false;
+  }
+
+  return rebind_stderr(fileno(stderr_log->m_fp));
+}
+
+/*
+ * Helper function that rebinds stdout to specified file descriptor
+ *
+ * Returns true on success, false otherwise
+ */
+bool
+Diags::rebind_stdout(int new_fd)
+{
+  if (new_fd < 0)
+    fprintf(stdout, "[Warning]: TS unable to bind stdout to new file descriptor=%d", new_fd);
+  else {
+    dup2(new_fd, STDOUT_FILENO);
+    return true;
+  }
+  return false;
+}
+
+/*
+ * Helper function that rebinds stderr to specified file descriptor
+ *
+ * Returns true on success, false otherwise
+ */
+bool
+Diags::rebind_stderr(int new_fd)
+{
+  if (new_fd < 0)
+    fprintf(stdout, "[Warning]: TS unable to bind stderr to new file descriptor=%d", new_fd);
+  else {
+    dup2(new_fd, STDERR_FILENO);
+    return true;
+  }
+  return false;
 }
