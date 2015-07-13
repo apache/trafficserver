@@ -92,6 +92,11 @@ HttpClientSession::destroy()
     HTTP_DECREMENT_DYN_STAT(http_current_client_connections_stat);
     conn_decrease = false;
   }
+  // Make sure we clean up ua_session in our HttpSM
+  // Otherwise, we will try to double free it in HttpSM::kill_this
+  if (current_reader) {
+    current_reader->ua_session = NULL;
+  }
 
   super::destroy();
   THREAD_FREE(this, httpClientSessionAllocator, this_thread());
@@ -327,6 +332,9 @@ HttpClientSession::do_io_close(int alerrno)
     HTTP_SUM_DYN_STAT(http_transactions_per_client_con, transact_count);
     HTTP_DECREMENT_DYN_STAT(http_current_client_connections_stat);
     conn_decrease = false;
+
+    // Should only be triggering the hooks for session close
+    // if this is a SSLNetVConnection or a UnixNetVConnection
     do_api_callout(TS_HTTP_SSN_CLOSE_HOOK);
   }
 }

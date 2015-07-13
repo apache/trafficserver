@@ -672,7 +672,10 @@ NetHandler::_close_vc(UnixNetVConnection *vc, ink_hrtime now, int &handle_event,
     ++closed;
   } else {
     vc->next_inactivity_timeout_at = now;
-    keep_alive_queue.head->handleEvent(EVENT_IMMEDIATE, NULL);
+    // Found a case where the keep_alive_queue.head was NULL while running regression
+    // with non-standard configuration
+    if (keep_alive_queue.head)
+      keep_alive_queue.head->handleEvent(EVENT_IMMEDIATE, NULL);
     ++handle_event;
   }
 }
