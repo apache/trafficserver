@@ -1288,9 +1288,19 @@ Cache Control
 .. ts:cv:: CONFIG proxy.config.cache.read_while_writer.max_retries INT 10
    :reloadable:
 
-   Specifies how many retries (100msec each) trafficserver attempts to trigger read_while_writer
-   on failing to obtain the write VC mutex or until the first fragment is downloaded for the
-   object being downloaded.
+   Specifies how many retries trafficserver attempts to trigger read_while_writer on failing
+   to obtain the write VC mutex or until the first fragment is downloaded for the
+   object being downloaded. The retry duration is specified using the setting
+   ts:cv:`proxy.config.cache.read_while_writer.delay`
+
+.. ts:cv:: CONFIG proxy.config.cache.read_while_writer.delay INT 50
+   :reloadable:
+
+   Specifies the delay in msec, trafficserver waits to reattempt read_while_writer
+   on failing to obtain the write VC mutex or until the first fragment is downloaded
+   for the object being downloaded. Note that trafficserver implements a progressive
+   delay in reattempting, by doubling the configured duration from the third reattempt
+   onwards.
 
 .. ts:cv:: CONFIG proxy.config.cache.force_sector_size INT 0
    :reloadable:
