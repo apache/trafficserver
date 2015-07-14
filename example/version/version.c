@@ -26,7 +26,7 @@
 #include "ts/ts.h"
 
 void
-TSPluginInit(int argc , const char *argv[])
+TSPluginInit(int argc, const char *argv[])
 {
   TSPluginRegistrationInfo info;
 
