@@ -119,9 +119,11 @@ LogSlice::toStrOffset(int strlen, int *offset)
   LogField::LogField
   -------------------------------------------------------------------------*/
 
-struct cmp_str {
-  bool operator()(ts::ConstBuffer a, ts::ConstBuffer b) const { return memcmp(a._ptr, b._ptr, MAX(a._size, b._size)) < 0; }
-};
+namespace {
+  struct cmp_str {
+    bool operator()(ts::ConstBuffer a, ts::ConstBuffer b) const { return ptr_len_casecmp(a._ptr, a._size, b._ptr, b._size) == 0; }
+  };
+}
 
 typedef std::map<ts::ConstBuffer, TSMilestonesType, cmp_str> milestone_map;
 static milestone_map m_milestone_map;
