@@ -1,6 +1,3 @@
-#if !defined CRYPTO_HASH_HEADER
-#define CRYPTO_HASH_HEADER
-
 /** @file
     Protocol class for crypto hashes.
 
@@ -23,7 +20,13 @@
     limitations under the License.
  */
 
+#if !defined CRYPTO_HASH_HEADER
+#define CRYPTO_HASH_HEADER
+
 /// Apache Traffic Server commons.
+
+#include "ts/ink_code.h"
+
 namespace ats
 {
 /// Crypto hash output.

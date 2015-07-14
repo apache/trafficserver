@@ -29,7 +29,7 @@
    SSL Configurations
  ****************************************************************************/
 
-#include "ts/libts.h"
+#include "ts/ink_platform.h"
 #include "ts/I_Layout.h"
 
 #include <string.h>

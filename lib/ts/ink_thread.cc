@@ -28,7 +28,8 @@
   Generic threads interface.
 **************************************************************************/
 
-#include "ts/libts.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_thread.h"
 
 // // ignore the compiler warning... so that this can be used
 // // in the face of changes to the Solaris header files (see "man thread")

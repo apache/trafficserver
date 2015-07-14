@@ -39,7 +39,7 @@
 #ifndef __P_NETACCEPT_H__
 #define __P_NETACCEPT_H__
 
-#include "ts/libts.h"
+#include "ts/ink_platform.h"
 #include "P_Connection.h"
 
 

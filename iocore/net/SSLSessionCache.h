@@ -28,7 +28,7 @@
 #include "P_EventSystem.h"
 #include "P_AIO.h"
 #include "I_RecProcess.h"
-#include "ts/libts.h"
+#include "ts/ink_platform.h"
 #include "P_SSLUtils.h"
 #include "ts/RbTree.h"
 #include <openssl/ssl.h>

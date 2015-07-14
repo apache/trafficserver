@@ -24,12 +24,15 @@
 #ifndef _TRAFFIC_CTRL_H_
 #define _TRAFFIC_CTRL_H_
 
-#include "ts/libts.h"
+#include "ts/ink_platform.h"
+#include "ts/Diags.h"
+#include "ts/ink_memory.h"
 #include "mgmtapi.h"
 #include "ts/ink_args.h"
 #include "ts/I_Version.h"
 
 #include <vector>
+#include <string>
 
 struct subcommand {
   int (*handler)(unsigned, const char **);

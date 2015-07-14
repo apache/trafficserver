@@ -25,7 +25,7 @@
 
   SocketManager.cc
  ****************************************************************************/
-#include "ts/libts.h"
+#include "ts/ink_platform.h"
 #include "P_EventSystem.h"
 
 SocketManager socketManager;

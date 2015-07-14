@@ -28,7 +28,7 @@
  *
  ****************************************************************************/
 
-#include "ts/libts.h"
+#include "ts/ink_platform.h"
 
 #ifdef SPLIT_DNS
 #include <sys/types.h>

@@ -25,6 +25,7 @@
 #ifndef __NETVCONNECTION_H__
 #define __NETVCONNECTION_H__
 
+#include "ts/ink_inet.h"
 #include "I_Action.h"
 #include "I_VConnection.h"
 #include "I_Event.h"

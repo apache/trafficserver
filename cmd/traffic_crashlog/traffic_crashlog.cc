@@ -26,6 +26,7 @@
 #include "ts/ink_cap.h"
 #include "ts/I_Version.h"
 #include "ts/I_Layout.h"
+#include "ts/ink_syslog.h"
 #include "I_RecProcess.h"
 #include "RecordsConfig.h"
 

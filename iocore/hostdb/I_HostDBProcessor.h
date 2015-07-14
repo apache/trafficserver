@@ -24,6 +24,11 @@
 #ifndef _I_HostDBProcessor_h_
 #define _I_HostDBProcessor_h_
 
+#include "ts/HashFNV.h"
+#include "ts/ink_time.h"
+#include "ts/INK_MD5.h"
+#include "ts/ink_align.h"
+#include "ts/ink_resolver.h"
 #include "I_EventSystem.h"
 #include "SRV.h"
 

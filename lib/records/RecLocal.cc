@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "ts/libts.h"
+#include "ts/ink_platform.h"
 #include "Rollback.h"
 #include "ts/ParseRules.h"
 #include "P_RecCore.h"

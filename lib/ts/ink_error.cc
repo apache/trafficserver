@@ -22,7 +22,7 @@
 
  */
 
-#include "ts/libts.h"
+#include "ts/ink_platform.h"
 #include "ts/ink_error.h"
 #include "ts/ink_stack_trace.h"
 

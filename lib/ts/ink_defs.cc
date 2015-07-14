@@ -28,8 +28,8 @@
 
  ****************************************************************************/
 
-#include "ts/libts.h"
 #include "ts/ink_platform.h"
+
 #if defined(linux) || defined(freebsd) || defined(darwin)
 #include <sys/types.h>
 #include <sys/param.h>

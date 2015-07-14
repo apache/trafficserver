@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "ts/libts.h"
+#include "ts/ink_platform.h"
 #include "P_Cache.h"
 #include "ts/I_Layout.h"
 

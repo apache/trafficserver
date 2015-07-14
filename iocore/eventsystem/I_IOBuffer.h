@@ -39,7 +39,11 @@
 #if !defined(I_IOBuffer_h)
 #define I_IOBuffer_h
 
-#include "ts/libts.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_apidefs.h"
+#include "ts/Allocator.h"
+#include "ts/Ptr.h"
+#include "ts/ink_assert.h"
 #include "ts/ink_resource.h"
 
 struct MIOBufferAccessor;

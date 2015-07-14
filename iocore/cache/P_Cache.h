@@ -24,7 +24,7 @@
 #ifndef _P_CACHE_H__
 #define _P_CACHE_H__
 
-#include "ts/libts.h"
+#include "ts/ink_platform.h"
 #include "P_EventSystem.h"
 #include "P_AIO.h"
 #include "I_RecProcess.h"

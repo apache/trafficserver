@@ -24,7 +24,7 @@
 #ifndef _SRV_h_
 #define _SRV_h_
 
-#include "ts/libts.h"
+#include "ts/ink_platform.h"
 #include "I_HostDBProcessor.h"
 
 struct HostDBInfo;

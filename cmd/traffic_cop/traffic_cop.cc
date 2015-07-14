@@ -21,7 +21,13 @@
   limitations under the License.
  */
 
-#include "ts/libts.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_syslog.h"
+#include "ts/ink_stack_trace.h"
+#include "ts/ink_lockfile.h"
+#include "ts/ink_sock.h"
+#include "ts/ink_args.h"
+#include "ts/ink_file.h"
 #include "ts/I_Layout.h"
 #include "ts/I_Version.h"
 #include "I_RecCore.h"

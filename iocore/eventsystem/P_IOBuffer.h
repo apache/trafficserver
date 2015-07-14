@@ -25,7 +25,7 @@
 #if !defined(_P_IOBuffer_h)
 #define _P_IOBuffer_h
 
-#include "ts/libts.h"
+#include "ts/ink_platform.h"
 #include "ts/ink_resource.h"
 
 

@@ -21,7 +21,7 @@
 
 #include "ts/ink_config.h"
 #include "records/I_RecHttp.h"
-#include "ts/libts.h"
+#include "ts/ink_platform.h"
 #include "P_Net.h"
 #include "P_SSLClientUtils.h"
 

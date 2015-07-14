@@ -21,7 +21,9 @@
   limitations under the License.
  */
 
-#include "ts/libts.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_thread.h"
+#include "ts/ink_memory.h"
 #include "ts/Regex.h"
 
 #ifdef PCRE_CONFIG_JIT

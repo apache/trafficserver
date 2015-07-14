@@ -32,8 +32,7 @@ autoreconf -fi
     --enable-example-plugins \
     --enable-test-tools \
     --enable-wccp \
-    ${enable_cppapi} \
-    CORES=2
+    ${enable_cppapi}
 
 ${ATS_MAKE} -j5 V=1
 #${ATS_MAKE} check VERBOSE=Y

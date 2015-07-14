@@ -31,7 +31,7 @@
 #ifndef _P_HostDB_h_
 #define _P_HostDB_h_
 
-#include "ts/libts.h"
+#include "ts/ink_platform.h"
 
 #ifdef SPLIT_DNS
 #include "P_SplitDNS.h"

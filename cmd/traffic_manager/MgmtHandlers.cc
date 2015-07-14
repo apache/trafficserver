@@ -27,7 +27,8 @@
  *
  ****************************************************************************/
 
-#include "ts/libts.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_sock.h"
 #include "ts/I_Layout.h"
 #include "LocalManager.h"
 #include "Alarms.h"
