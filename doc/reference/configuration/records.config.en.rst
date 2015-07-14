@@ -236,7 +236,7 @@ A value of ``0`` means no signal will be sent.
 
 .. ts:cv:: CONFIG proxy.config.accept_threads INT 1
 
-   When enabled (``1``), runs a separate thread for accept processing. If disabled (``0``), then only 1 thread can be created.
+   The number of accept threads Traffic Server. If disabled (``0``), then accepts will be done in each of the worker threads.
 
 .. ts:cv:: CONFIG proxy.config.thread.default.stacksize  INT 1048576
 
@@ -2488,7 +2488,7 @@ SSL Termination
 
   When enabled this limits the total duration for the server side SSL
   handshake.
-    
+
 
 Client-Related Configuration
 ----------------------------
