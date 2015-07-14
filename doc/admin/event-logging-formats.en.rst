@@ -147,6 +147,11 @@ The following list describes Traffic Server custom logging fields.
 ``cqhv``
     The client request HTTP version.
 
+.. _cqpv:
+
+``cqhv``
+    The client request protocol & version.
+
 .. _cqtd:
 
 ``cqtd``
