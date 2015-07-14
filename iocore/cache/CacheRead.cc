@@ -336,7 +336,11 @@ CacheVC::openReadFromWriter(int event, Event *e)
       return openReadStartHead(event, e);
     } else if (ret == EVENT_CONT) {
       ink_assert(!write_vc);
-      VC_SCHED_WRITER_RETRY();
+      if (writer_lock_retry < cache_config_read_while_writer_max_retries) {
+        VC_SCHED_WRITER_RETRY();
+      } else {
+        return openReadFromWriterFailure(CACHE_EVENT_OPEN_READ_FAILED, (Event *)-err);
+      }
     } else
       ink_assert(write_vc);
   } else {
@@ -587,8 +591,14 @@ CacheVC::openReadReadDone(int event, Event *e)
         DDebug("cache_read_agg", "%p: key: %X ReadRead writer aborted: %d", this, first_key.slice32(1), (int)vio.ndone);
         goto Lerror;
       }
-      DDebug("cache_read_agg", "%p: key: %X ReadRead retrying: %d", this, first_key.slice32(1), (int)vio.ndone);
-      VC_SCHED_WRITER_RETRY(); // wait for writer
+      if (writer_lock_retry < cache_config_read_while_writer_max_retries) {
+        DDebug("cache_read_agg", "%p: key: %X ReadRead retrying: %d", this, first_key.slice32(1), (int)vio.ndone);
+        VC_SCHED_WRITER_RETRY(); // wait for writer
+      } else {
+        DDebug("cache_read_agg", "%p: key: %X ReadRead retries exhausted, bailing..: %d", this, first_key.slice32(1),
+               (int)vio.ndone);
+        goto Ldone;
+      }
     }
     // fall through for truncated documents
   }
