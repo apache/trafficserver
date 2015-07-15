@@ -1038,6 +1038,61 @@ HostDBProcessor::getbyname_imm(Continuation *cont, process_hostdb_info_pfn proce
   return &c->action;
 }
 
+Action *
+HostDBProcessor::getall(Continuation *cont)
+{
+  ink_assert(cont->mutex->thread_holding == this_ethread());
+  EThread *thread = cont->mutex->thread_holding;
+  ProxyMutex *mutex = thread->mutex;
+
+  HOSTDB_INCREMENT_DYN_STAT(hostdb_total_lookups_stat);
+
+Action *
+HostDBProcessor::iterate(Continuation *cont)
+{
+  ink_assert(cont->mutex->thread_holding == this_ethread());
+  EThread *thread = cont->mutex->thread_holding;
+  ProxyMutex *mutex = thread->mutex;
+
+  HOSTDB_INCREMENT_DYN_STAT(hostdb_total_lookups_stat);
+
+
+  HostDBContinuation *c = hostDBContAllocator.alloc();
+  HostDBContinuation::Options copt;
+  copt.cont = cont;
+  copt.force_dns = false;
+  copt.timeout = 0;
+  copt.host_res_style = HOST_RES_NONE;
+  c->init(HostDBMD5(), copt);
+  c->current_iterate_pos = 0;
+  SET_CONTINUATION_HANDLER(c, (HostDBContHandler)&HostDBContinuation::iterateEvent);
+
+  if (thread->mutex == cont->mutex) {
+    thread->schedule_in(c, HOST_DB_RETRY_PERIOD);
+  } else {
+    dnsProcessor.thread->schedule_imm(c);
+  }
+
+  return &c->action;
+}
+
+  HostDBContinuation *c = hostDBContAllocator.alloc();
+  HostDBContinuation::Options copt;
+  copt.cont = cont;
+  copt.force_dns = false;
+  copt.timeout = 0;
+  copt.host_res_style = HOST_RES_NONE;
+  c->init(HostDBMD5(), copt);
+  SET_CONTINUATION_HANDLER(c, (HostDBContHandler)&HostDBContinuation::probeAllEvent);
+
+  if (thread->mutex == cont->mutex) {
+    thread->schedule_in(c, HOST_DB_RETRY_PERIOD);
+  } else {
+    dnsProcessor.thread->schedule_imm(c);
+  }
+
+  return &c->action;
+}
 
 static void
 do_setby(HostDBInfo *r, HostDBApplicationInfo *app, const char *hostname, IpAddr const &ip, bool is_srv = false)
@@ -1789,6 +1844,60 @@ HostDBContinuation::make_put_message(HostDBInfo *r, Continuation *c, char *buf, 
   return len;
 }
 
+int
+HostDBContinuation::iterateEvent(int event, Event *e)
+{
+  Debug("hostdb", "iterateEvent event=%d eventp=%p", event, e);
+  ink_assert(!link.prev && !link.next);
+  EThread *t = e ? e->ethread : this_ethread();
+
+  MUTEX_TRY_LOCK_FOR(lock, action.mutex, t, action.continuation);
+  if (!lock.is_locked()) {
+    Debug("hostdb", "iterateEvent event=%d eventp=%p: reschedule due to not getting action mutex", event, e);
+    mutex->thread_holding->schedule_in(this, HOST_DB_RETRY_PERIOD);
+    return EVENT_CONT;
+  }
+
+  if (action.cancelled) {
+    hostdb_cont_free(this);
+    return EVENT_DONE;
+  }
+
+  // let's iterate through another record and then reschedule ourself.
+  if (current_iterate_pos < hostDB.buckets) {
+     // do 100 at a time
+     int end = min(current_iterate_pos + 100, hostDB.buckets);
+     for (; current_iterate_pos < end; ++current_iterate_pos) {
+       ProxyMutex *bucket_mutex = hostDB.lock_for_bucket(current_iterate_pos);
+       MUTEX_TRY_LOCK_FOR(lock_bucket, bucket_mutex, t, this);
+       if (!lock_bucket.is_locked()) {
+         // we couldn't get the bucket lock, let's just reschedule and try later.
+         Debug("hostdb", "iterateEvent event=%d eventp=%p: reschedule due to not getting bucket mutex", event, e);
+         mutex->thread_holding->schedule_in(this, HOST_DB_RETRY_PERIOD);
+         return EVENT_CONT;
+       }
+
+       for (unsigned int l = 0; l < hostDB.levels; ++l) {
+         HostDBInfo *r = reinterpret_cast<HostDBInfo*>(hostDB.data + hostDB.level_offset[l] + hostDB.bucketsize[l] * current_iterate_pos);
+         if (!r->deleted && !r->failed()) {
+           action.continuation->handleEvent(EVENT_INTERVAL, static_cast<void*>(r));
+         }
+       }
+     }
+
+     // And reschedule ourselves to pickup the next bucket after HOST_DB_RETRY_PERIOD.
+     Debug("hostdb", "iterateEvent event=%d eventp=%p: completed current iteration %d of %d", event, e, current_iterate_pos, hostDB.buckets);
+     mutex->thread_holding->schedule_in(this, HOST_DB_ITERATE_PERIOD);
+     return EVENT_CONT;
+  } else {
+    Debug("hostdb", "iterateEvent event=%d eventp=%p: completed FINAL iteration %d", event, e, current_iterate_pos);
+    // if there are no more buckets, then we're done.
+    action.continuation->handleEvent(EVENT_DONE, NULL);
+    hostdb_cont_free(this);
+  }
+
+  return EVENT_DONE;
+}
 
 //
 // Build the put message and send it
@@ -1807,6 +1916,39 @@ HostDBContinuation::do_put_response(ClusterMachine *m, HostDBInfo *r, Continuati
   clusterProcessor.invoke_remote(m->pop_ClusterHandler(), PUT_HOSTINFO_CLUSTER_FUNCTION, (char *)&msg, len);
 }
 
+int
+HostDBContinuation::probeAllEvent(int event, Event *e)
+{
+  Debug("hostdb", "probeAllEvent event=%d eventp=%p", event, e);
+  ink_assert(!link.prev && !link.next);
+  EThread *t = e ? e->ethread : this_ethread();
+
+  MUTEX_TRY_LOCK_FOR(lock, action.mutex, t, action.continuation);
+  if (!lock.is_locked()) {
+    mutex->thread_holding->schedule_in(this, HOST_DB_RETRY_PERIOD);
+    return EVENT_CONT;
+  }
+
+  if (action.cancelled) {
+    hostdb_cont_free(this);
+    return EVENT_DONE;
+  }
+
+  for (int i = 0; i < hostDB.buckets; ++i) {
+     ProxyMutex *bucket_mutex = hostDB.lock_for_bucket(i);
+     SCOPED_MUTEX_LOCK(lock, bucket_mutex, t);
+     for (unsigned int l = 0; l < hostDB.levels; ++l) {
+       HostDBInfo *r = reinterpret_cast<HostDBInfo*>(hostDB.data + hostDB.level_offset[l] + hostDB.bucketsize[l] * i);
+       if (!r->deleted && !r->failed()) {
+         action.continuation->handleEvent(EVENT_INTERVAL, static_cast<void*>(r));
+       }
+     }
+   }
+
+  action.continuation->handleEvent(EVENT_DONE, NULL);
+  hostdb_cont_free(this);
+  return EVENT_DONE;
+}
 
 //
 // Probe state
@@ -2300,6 +2442,7 @@ struct ShowHostDB : public ShowCont {
   showMain(int event, Event *e)
   {
     CHECK_SHOW(begin("HostDB"));
+    CHECK_SHOW(show("<a href=\"./showall\">Show all HostDB records<a/><hr>"));
     CHECK_SHOW(show("<form method = GET action = \"./name\">\n"
                     "Lookup by name (e.g. trafficserver.apache.org):<br>\n"
                     "<input type=text name=name size=64 maxlength=256>\n"
@@ -2327,6 +2470,56 @@ struct ShowHostDB : public ShowCont {
       hostDBProcessor.getbynameport_re(this, name, strlen(name), opts);
     } else
       hostDBProcessor.getbyaddr_re(this, &ip.sa);
+    return EVENT_CONT;
+  }
+
+  int
+  showAll(int event , Event *e)
+  {
+    CHECK_SHOW(begin("HostDB All Records"));
+    CHECK_SHOW(show("<hr>"));
+    SET_HANDLER(&ShowHostDB::showAllEvent);
+    hostDBProcessor.getall(this);
+    return EVENT_CONT;
+  }
+
+  int
+  showAllEvent(int event, Event *e)
+  {
+    HostDBInfo *r = (HostDBInfo *)e;
+    if (event == EVENT_INTERVAL) {
+      HostDBInfo *r = reinterpret_cast<HostDBInfo *>(e);
+      return showOne(r,false,event,e);
+    } else if (event == EVENT_DONE) {
+      return complete(event, e);
+    } else {
+      ink_assert(!"unexpected event");
+    }
+    return EVENT_CONT;
+  }
+
+  int
+  showAll(int event , Event *e)
+  {
+    CHECK_SHOW(begin("HostDB All Records"));
+    CHECK_SHOW(show("<hr>"));
+    SET_HANDLER(&ShowHostDB::showAllEvent);
+    hostDBProcessor.iterate(this);
+    return EVENT_CONT;
+  }
+
+  int
+  showAllEvent(int event, Event *e)
+  {
+    HostDBInfo *r = (HostDBInfo *)e;
+    if (event == EVENT_INTERVAL) {
+      HostDBInfo *r = reinterpret_cast<HostDBInfo *>(e);
+      return showOne(r,false,event,e);
+    } else if (event == EVENT_DONE) {
+      return complete(event, e);
+    } else {
+      ink_assert(!"unexpected event");
+    }
     return EVENT_CONT;
   }
 
@@ -2443,6 +2636,9 @@ register_ShowHostDB(Continuation *c, HTTPHdr *h)
       }
     }
     SET_CONTINUATION_HANDLER(s, &ShowHostDB::showLookup);
+  } else if (STR_LEN_EQ_PREFIX(path, path_len, "showall")) {
+    Debug("hostdb", "dumping all hostdb records");
+    SET_CONTINUATION_HANDLER(s, &ShowHostDB::showAll);
   }
   this_ethread()->schedule_imm(s);
   return &s->action;

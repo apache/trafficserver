@@ -138,6 +138,7 @@ HOSTDB_CLIENT_IP_HASH(sockaddr const *lhs, sockaddr const *rhs)
 // period to wait for a remote probe...
 #define HOST_DB_CLUSTER_TIMEOUT HRTIME_MSECONDS(5000)
 #define HOST_DB_RETRY_PERIOD HRTIME_MSECONDS(20)
+#define HOST_DB_ITERATE_PERIOD HRTIME_MSECONDS(5)
 
 //#define TEST(_x) _x
 #define TEST(_x)
@@ -482,6 +483,7 @@ struct HostDBContinuation : public Continuation {
   unsigned int round_robin : 1;
 
   int probeEvent(int event, Event *e);
+  int probeAllEvent(int event, Event *e);
   int clusterEvent(int event, Event *e);
   int clusterResponseEvent(int event, Event *e);
   int dnsEvent(int event, HostEnt *e);
@@ -535,7 +537,7 @@ struct HostDBContinuation : public Continuation {
 
   HostDBContinuation()
     : Continuation(NULL), ttl(0), host_res_style(DEFAULT_OPTIONS.host_res_style), dns_lookup_timeout(DEFAULT_OPTIONS.timeout),
-      timeout(0), from(0), from_cont(0), probe_depth(0), missing(false), force_dns(DEFAULT_OPTIONS.force_dns), round_robin(false)
+      timeout(0), from(0), from_cont(0), probe_depth(0), current_iterate_pos(0), missing(false), force_dns(DEFAULT_OPTIONS.force_dns), round_robin(false)
   {
     ink_zero(md5_host_name_store);
     ink_zero(md5.hash);
