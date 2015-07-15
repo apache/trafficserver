@@ -2425,7 +2425,6 @@ struct ShowHostDB : public ShowCont {
   int
   showAllEvent(int event, Event *e)
   {
-    HostDBInfo *r = (HostDBInfo *)e;
     if (event == EVENT_INTERVAL) {
       HostDBInfo *r = reinterpret_cast<HostDBInfo *>(e);
       return showOne(r,false,event,e);
