@@ -266,7 +266,6 @@ OperatorSetDestination::exec(const Resources &res) const
 }
 
 
-/// TODO and XXX: These currently only support when running as remap plugin.
 // OperatorSetRedirect
 void
 OperatorSetRedirect::initialize(Parser &p)
@@ -283,6 +282,7 @@ OperatorSetRedirect::initialize(Parser &p)
 
   require_resources(RSRC_SERVER_RESPONSE_HEADERS);
   require_resources(RSRC_CLIENT_RESPONSE_HEADERS);
+  require_resources(RSRC_CLIENT_REQUEST_HEADERS);
   require_resources(RSRC_RESPONSE_STATUS);
 }
 
@@ -290,54 +290,103 @@ OperatorSetRedirect::initialize(Parser &p)
 void
 OperatorSetRedirect::exec(const Resources &res) const
 {
-  if (res._rri) {
-    if (res.bufp && res.hdr_loc) {
-      std::string value;
+  if (res.bufp && res.hdr_loc && res.client_bufp && res.client_hdr_loc) {
+    std::string value;
 
-      _location.append_value(value, res);
+    _location.append_value(value, res);
 
-      if (_location.need_expansion()) {
-        VariableExpander ve(value);
-        value = ve.expand(res);
+    if (_location.need_expansion()) {
+      VariableExpander ve(value);
+      value = ve.expand(res);
+    }
+
+    bool remap = false;
+    if (NULL != res._rri) {
+      remap = true;
+      TSDebug(PLUGIN_NAME, "OperatorSetRedirect:exec() invoked from remap plugin");
+    } else {
+      TSDebug(PLUGIN_NAME, "OperatorSetRedirect:exec() not invoked from remap plugin");
+    }
+
+    TSMBuffer bufp;
+    TSMLoc url_loc;
+    if (remap) {
+      // Handle when called from remap plugin.
+      bufp = res._rri->requestBufp;
+      url_loc = res._rri->requestUrl;
+    } else {
+      // Handle when not called from remap plugin.
+      bufp = res.client_bufp;
+      if (TS_SUCCESS != TSHttpHdrUrlGet(res.client_bufp, res.client_hdr_loc, &url_loc)) {
+        TSDebug(PLUGIN_NAME, "Could not get client URL");
       }
+    }
 
-      // Replace %{PATH} to original path
-      size_t pos_path = 0;
-
-      if ((pos_path = value.find("%{PATH}")) != std::string::npos) {
-        value.erase(pos_path, 7); // erase %{PATH} from the rewritten to url
-        int path_len = 0;
-        const char *path = TSUrlPathGet(res._rri->requestBufp, res._rri->requestUrl, &path_len);
-        if (path_len > 0) {
-          TSDebug(PLUGIN_NAME, "Find %%{PATH} in redirect url, replace it with: %.*s", path_len, path);
-          value.insert(pos_path, path, path_len);
-        }
+    // Replace %{PATH} to original path
+    size_t pos_path = 0;
+    if ((pos_path = value.find("%{PATH}")) != std::string::npos) {
+      value.erase(pos_path, 7); // erase %{PATH} from the rewritten to url
+      int path_len = 0;
+      const char *path = NULL;
+      path = TSUrlPathGet(bufp, url_loc, &path_len);
+      if (path_len > 0) {
+        TSDebug(PLUGIN_NAME, "Find %%{PATH} in redirect url, replace it with: %.*s", path_len, path);
+        value.insert(pos_path, path, path_len);
       }
+    }
 
-      // Append the original query string
-      int query_len = 0;
-      const char *query = TSUrlHttpQueryGet(res._rri->requestBufp, res._rri->requestUrl, &query_len);
-      if ((get_oper_modifiers() & OPER_QSA) && (query_len > 0)) {
-        TSDebug(PLUGIN_NAME, "QSA mode, append original query string: %.*s", query_len, query);
-        std::string connector = (value.find("?") == std::string::npos) ? "?" : "&";
-        value.append(connector);
-        value.append(query, query_len);
-      }
+    // Append the original query string
+    int query_len = 0;
+    const char *query = NULL;
+    query = TSUrlHttpQueryGet(bufp, url_loc, &query_len);
+    if ((get_oper_modifiers() & OPER_QSA) && (query_len > 0)) {
+      TSDebug(PLUGIN_NAME, "QSA mode, append original query string: %.*s", query_len, query);
+      std::string connector = (value.find("?") == std::string::npos) ? "?" : "&";
+      value.append(connector);
+      value.append(query, query_len);
+    }
 
+    // Prepare the destination URL for the redirect.
+    const char *start = value.c_str();
+    const char *end = value.size() + start;
+    if (remap) {
+      // Set new location.
+      TSUrlParse(bufp, url_loc, &start, end);
+      // Set the new status.
       TSHttpTxnSetHttpRetStatus(res.txnp, (TSHttpStatus)_status.get_int_value());
       const_cast<Resources &>(res).changed_url = true;
       res._rri->redirect = 1;
+    } else {
+      // Set new location.
+      TSMLoc field_loc;
+      std::string header("Location");
+      if (TS_SUCCESS == TSMimeHdrFieldCreateNamed(res.bufp, res.hdr_loc, header.c_str(), header.size(), &field_loc)) {
+        if (TS_SUCCESS == TSMimeHdrFieldValueStringSet(res.bufp, res.hdr_loc, field_loc, -1, value.c_str(), value.size())) {
+          TSDebug(PLUGIN_NAME, "   Adding header %s", header.c_str());
+          TSMimeHdrFieldAppend(res.bufp, res.hdr_loc, field_loc);
+        }
+        TSHandleMLocRelease(res.bufp, res.hdr_loc, field_loc);
+      }
 
-      // TSHttpHdrStatusSet(res.bufp, res.hdr_loc, (TSHttpStatus)_status.get_int_value());
-      const char *start = value.c_str();
-      const char *end = value.size() + start;
-      TSUrlParse(res._rri->requestBufp, res._rri->requestUrl, &start, end);
-      TSDebug(PLUGIN_NAME, "OperatorSetRedirect::exec() invoked with destination=%s and status code=%d", value.c_str(),
-              _status.get_int_value());
+      // Set the new status code and reason.
+      TSHttpStatus status = (TSHttpStatus)_status.get_int_value();
+      const char *reason = TSHttpHdrReasonLookup(status);
+      size_t len = strlen(reason);
+      TSHttpHdrStatusSet(res.bufp, res.hdr_loc, status);
+      TSHttpHdrReasonSet(res.bufp, res.hdr_loc, reason, len);
+
+      // Set the body.
+      std::string msg = "<HTML>\n<HEAD>\n<TITLE>Document Has Moved</TITLE>\n</HEAD>\n"
+                        "<BODY BGCOLOR=\"white\" FGCOLOR=\"black\">\n"
+                        "<H1>Document Has Moved</H1>\n<HR>\n<FONT FACE=\"Helvetica,Arial\"><B>\n"
+                        "Description: The document you requested has moved to a new location."
+                        " The new location is \"" +
+                        value + "\".\n</B></FONT>\n<HR>\n</BODY>\n";
+      TSHttpTxnErrorBodySet(res.txnp, TSstrdup(msg.c_str()), msg.length(), TSstrdup("text/html"));
     }
 
-  } else {
-    // TODO: Handle the non-remap case here (InkAPI hooks)
+    TSDebug(PLUGIN_NAME, "OperatorSetRedirect::exec() invoked with destination=%s and status code=%d", value.c_str(),
+            _status.get_int_value());
   }
 }
 
