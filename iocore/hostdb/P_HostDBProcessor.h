@@ -470,6 +470,7 @@ struct HostDBContinuation : public Continuation {
   Continuation *from_cont;
   HostDBApplicationInfo app;
   int probe_depth;
+  int current_iterate_pos;
   ClusterMachine *past_probes[CONFIGURATION_HISTORY_PROBE_DEPTH];
   //  char name[MAXDNAME];
   //  int namelen;
@@ -483,7 +484,7 @@ struct HostDBContinuation : public Continuation {
   unsigned int round_robin : 1;
 
   int probeEvent(int event, Event *e);
-  int probeAllEvent(int event, Event *e);
+  int iterateEvent(int event, Event *e);
   int clusterEvent(int event, Event *e);
   int clusterResponseEvent(int event, Event *e);
   int dnsEvent(int event, HostEnt *e);
