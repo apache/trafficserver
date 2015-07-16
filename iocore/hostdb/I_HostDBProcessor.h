@@ -418,7 +418,7 @@ struct HostDBCache;
 typedef void (Continuation::*process_hostdb_info_pfn)(HostDBInfo *r);
 typedef void (Continuation::*process_srv_info_pfn)(HostDBInfo *r);
 
-  Action *iterate(Continuation *cont);
+Action *iterate(Continuation *cont);
 
 /** The Host Databse access interface. */
 struct HostDBProcessor : public Processor {
