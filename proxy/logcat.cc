@@ -21,7 +21,8 @@
   limitations under the License.
  */
 
-#include "ts/libts.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_args.h"
 #include "ts/I_Layout.h"
 
 #define PROGRAM_NAME "traffic_logcat"

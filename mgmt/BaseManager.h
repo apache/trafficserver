@@ -37,6 +37,7 @@
 #include "ts/ink_thread.h"
 #include "ts/ink_mutex.h"
 #include "ts/ink_llqueue.h"
+#include "ts/ink_hash_table.h"
 
 #include "MgmtDefs.h"
 

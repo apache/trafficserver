@@ -29,6 +29,8 @@
  ****************************************************************************/
 
 #include "ts/ink_platform.h"
+#include "ts/ink_sprintf.h"
+#include "ts/ink_file.h"
 #include "HttpBodyFactory.h"
 #include <unistd.h>
 #include <dirent.h>

@@ -22,6 +22,7 @@
   limitations under the License.
  */
 #include "ts/ink_config.h"
+#include "ts/ink_string.h"
 
 #include <assert.h>
 #include <stdio.h>

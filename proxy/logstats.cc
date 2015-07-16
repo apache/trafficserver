@@ -22,10 +22,12 @@
  */
 
 #include "ts/ink_platform.h"
-#include "ts/ink_config.h"
 #include "ts/ink_file.h"
 #include "ts/I_Layout.h"
 #include "ts/I_Version.h"
+#include "ts/HashFNV.h"
+#include "ts/ink_args.h"
+#include "ts/MatcherUtils.h"
 
 // Includes and namespaces etc.
 #include "LogStandalone.cc"

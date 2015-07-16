@@ -22,6 +22,7 @@
  */
 
 #include "ts/ink_platform.h"
+#include "ts/ink_args.h"
 #include "ts/I_Layout.h"
 #include "P_Net.h"
 

@@ -26,7 +26,8 @@
   Machine.cc
  ****************************************************************************/
 
-#include "ts/ink_config.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_file.h"
 #include <unistd.h>
 #include "P_Cluster.h"
 #include "ts/I_Layout.h"

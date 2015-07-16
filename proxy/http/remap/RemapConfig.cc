@@ -30,6 +30,7 @@
 #include "ts/List.h"
 #include "ts/ink_cap.h"
 #include "ts/ink_file.h"
+#include "ts/Tokenizer.h"
 
 #define modulePrefix "[ReverseProxy]"
 

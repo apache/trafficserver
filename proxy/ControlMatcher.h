@@ -90,6 +90,7 @@
 #include "ts/DynArray.h"
 #include "ts/ink_hash_table.h"
 #include "ts/IpMap.h"
+#include "ts/MatcherUtils.h"
 
 #include "ts/ink_apidefs.h"
 #include "ts/ink_defs.h"

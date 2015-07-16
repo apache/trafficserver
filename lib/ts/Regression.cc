@@ -28,7 +28,8 @@
 
  ****************************************************************************/
 
-#include "ts/libts.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_assert.h"
 #include "ts/Regression.h"
 
 static RegressionTest *test = NULL;

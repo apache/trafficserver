@@ -24,6 +24,7 @@
 #include <stdio.h>
 
 #include "ts/ink_platform.h"
+#include "ts/ink_base64.h"
 #include "ts/I_Layout.h"
 
 #include "ts.h"

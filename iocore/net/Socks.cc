@@ -32,6 +32,8 @@
 
 #include "P_Net.h"
 #include "ts/I_Layout.h"
+#include "ts/ink_sock.h"
+#include "ts/InkErrno.h"
 #include <ts/IpMapConf.h>
 
 socks_conf_struct *g_socks_conf_stuff = 0;

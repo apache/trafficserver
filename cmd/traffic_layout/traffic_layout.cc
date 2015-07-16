@@ -23,7 +23,6 @@
 
 #include "ts/ink_platform.h"
 #include "ts/ink_args.h"
-#include "ts/ink_config.h"
 #include "ts/I_Version.h"
 #include "ts/I_Layout.h"
 #include "I_RecProcess.h"

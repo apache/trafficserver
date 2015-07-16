@@ -29,6 +29,7 @@
  ****************************************************************************/
 
 #include "ts/ink_platform.h"
+#include "ts/Tokenizer.h"
 
 #ifdef SPLIT_DNS
 #include <sys/types.h>

@@ -28,6 +28,8 @@
 #endif
 
 #include "ts/ink_config.h"
+#include "ts/ink_sprintf.h"
+#include "ts/ink_file.h"
 #include <sys/types.h>
 
 #include <errno.h>

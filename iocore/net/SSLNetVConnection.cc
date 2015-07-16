@@ -21,6 +21,7 @@
   limitations under the License.
  */
 #include "ts/ink_config.h"
+#include "ts/EventNotify.h"
 #include "records/I_RecHttp.h"
 #include "P_Net.h"
 #include "P_SSLNextProtocolSet.h"

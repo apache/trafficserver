@@ -25,6 +25,7 @@
 #define _I_Lock_h_
 
 #include "ts/ink_platform.h"
+#include "ts/Diags.h"
 #include "I_Thread.h"
 
 #define MAX_LOCK_TIME HRTIME_MSECONDS(200)

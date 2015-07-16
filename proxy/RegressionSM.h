@@ -25,6 +25,8 @@
 #define _RegressionSM_h
 
 #include "I_EventSystem.h"
+#include "ts/Regression.h"
+#include "ts/DynArray.h"
 
 /*
   Regression Test Composition State Machine

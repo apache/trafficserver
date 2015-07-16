@@ -26,6 +26,7 @@
 #define _P_CACHE_INTERNAL_H__
 
 #include "ts/ink_platform.h"
+#include "ts/InkErrno.h"
 
 #ifdef HTTP_CACHE
 #include "HTTP.h"

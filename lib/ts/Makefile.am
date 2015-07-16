@@ -176,7 +176,6 @@ libtsutil_la_SOURCES = \
   ink_thread.h \
   ink_time.cc \
   ink_time.h \
-  libts.h \
   llqueue.cc \
   lockfile.cc \
   signals.cc \

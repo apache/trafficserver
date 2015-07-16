@@ -42,6 +42,7 @@
 #endif
 
 #include "ts/ink_platform.h"
+#include "ts/ink_inet.h"
 #include "ts/Regex.h"
 #include "HttpProxyAPIEnums.h"
 #include "ProxyConfig.h"

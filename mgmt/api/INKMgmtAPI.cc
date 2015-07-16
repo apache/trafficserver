@@ -29,7 +29,9 @@
  *
  *
  ***************************************************************************/
-#include "ts/libts.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_code.h"
+#include "ts/ParseRules.h"
 #include <limits.h>
 #include "ts/I_Layout.h"
 

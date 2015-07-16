@@ -21,6 +21,8 @@
   limitations under the License.
  */
 #include "ts/ink_platform.h"
+#include "ts/HashSip.h"
+#include "ts/Tokenizer.h"
 #include "P_EventSystem.h"
 #include "ParentSelection.h"
 #include "ControlMatcher.h"
