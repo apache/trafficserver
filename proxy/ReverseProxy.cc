@@ -27,7 +27,7 @@
 
  */
 
-#include "ts/libts.h"
+#include "ts/ink_platform.h"
 #include <dlfcn.h>
 #include "Main.h"
 #include "Error.h"

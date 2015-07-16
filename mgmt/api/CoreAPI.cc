@@ -29,7 +29,9 @@
  *
  ***************************************************************************/
 
-#include "ts/libts.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_file.h"
+#include "ts/ParseRules.h"
 #include "MgmtUtils.h"
 #include "LocalManager.h"
 #include "ClusterCom.h"

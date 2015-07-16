@@ -22,7 +22,8 @@
  */
 
 
-#include "ts/libts.h"
+#include "ts/ink_platform.h"
+
 #undef HTTP_CACHE
 #include "InkAPIInternal.h"
 #include "MgmtUtils.h"

@@ -25,7 +25,7 @@
 #ifndef LOG_SOCK_H
 #define LOG_SOCK_H
 
-#include "ts/libts.h"
+#include "ts/ink_platform.h"
 
 /*-------------------------------------------------------------------------
   LogSock

@@ -88,7 +88,8 @@
 #define _CONTROL_MATCHER_H_
 
 #include "ts/DynArray.h"
-#include <ts/IpMap.h>
+#include "ts/ink_hash_table.h"
+#include "ts/IpMap.h"
 
 #include "ts/ink_apidefs.h"
 #include "ts/ink_defs.h"

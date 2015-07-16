@@ -32,7 +32,9 @@
 
  ****************************************************************************/
 
-#include "ts/libts.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_memory.h"
+#include "ts/ink_time.h"
 
 #include "ts/Arena.h"
 #include "HTTP.h"

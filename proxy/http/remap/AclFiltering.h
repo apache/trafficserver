@@ -25,7 +25,7 @@
 #define _ACL_FILTERING_H_
 
 #include "Main.h"
-//#include "YAddr.h"
+#include "ts/ink_inet.h"
 
 #include <string>
 #include <set>

@@ -28,8 +28,10 @@
  *
  ****************************************************************************/
 
-#include "ts/ink_config.h"
 #include <sys/types.h>
+
+#include "ts/ink_config.h"
+#include "ts/MatcherUtils.h"
 #include "Main.h"
 #include "ProxyConfig.h"
 #include "ControlMatcher.h"

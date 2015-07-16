@@ -22,7 +22,9 @@
  */
 
 #include "ts/ink_defs.h"
-#include "ts/libts.h"
+#include "ts/ink_platform.h"
+#include "ts/TsBuffer.h"
+#include "ts/ink_inet.h"
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>

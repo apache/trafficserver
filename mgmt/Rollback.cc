@@ -21,7 +21,11 @@
   limitations under the License.
  */
 
-#include "ts/libts.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_string.h"
+#include "ts/ink_memory.h"
+#include "ts/ink_time.h"
+#include "ts/ink_file.h"
 #include "LocalManager.h"
 #include "Rollback.h"
 #include "WebMgmtUtils.h"

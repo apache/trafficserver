@@ -33,7 +33,7 @@
 #ifndef _HTTP_TUNNEL_H_
 #define _HTTP_TUNNEL_H_
 
-#include "ts/libts.h"
+#include "ts/ink_platform.h"
 #include "P_EventSystem.h"
 
 // Get rid of any previous definition first... /leif

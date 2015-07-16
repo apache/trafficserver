@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#include "ts/libts.h"
-#undef std // FIXME: remove dependency on the STL
+#include "ts/ink_platform.h"
 #include "ts/ink_config.h"
 #include "ts/ink_file.h"
 #include "ts/I_Layout.h"

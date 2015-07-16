@@ -31,6 +31,7 @@
 #include "URL.h"
 #include "RemapPluginInfo.h"
 #include "ts/Regex.h"
+#include "ts/List.h"
 
 static const unsigned int MAX_REMAP_PLUGIN_CHAIN = 10;
 

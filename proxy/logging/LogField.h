@@ -25,7 +25,8 @@
 #ifndef LOG_FIELD_H
 #define LOG_FIELD_H
 
-#include "ts/libts.h"
+#include "ts/ink_platform.h"
+#include "ts/List.h"
 #include "LogFieldAliasMap.h"
 #include "StatSystem.h"
 

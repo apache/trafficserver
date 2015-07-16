@@ -28,7 +28,7 @@
 
 ****************************************************************************/
 
-#include "ts/libts.h"
+#include "ts/ink_platform.h"
 #include "P_EventSystem.h"
 #include "P_Cache.h"
 #include "P_Net.h"

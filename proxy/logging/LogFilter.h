@@ -25,7 +25,7 @@
 #ifndef LOG_FILTER_H
 #define LOG_FILTER_H
 
-#include "ts/libts.h"
+#include "ts/ink_platform.h"
 #include "ts/IpMap.h"
 #include "LogAccess.h"
 #include "LogField.h"

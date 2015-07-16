@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "ts/libts.h"
+#include "ts/ink_platform.h"
 
 #include "HttpTransact.h"
 #include "HttpTransactHeaders.h"

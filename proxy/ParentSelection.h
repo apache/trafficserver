@@ -40,7 +40,7 @@
 
 #include "P_RecProcess.h"
 
-#include "ts/libts.h"
+#include "ts/ink_platform.h"
 
 #define MAX_PARENTS 64
 

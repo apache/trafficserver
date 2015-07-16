@@ -28,7 +28,7 @@
 
  ****************************************************************************/
 
-#include "ts/libts.h"
+#include "ts/ink_platform.h"
 #include "HttpBodyFactory.h"
 #include <unistd.h>
 #include <dirent.h>

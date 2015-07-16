@@ -30,8 +30,10 @@
 #define _StatSystem_h_
 
 #include "ts/ink_platform.h"
+#include "ts/ink_memory.h"
 #include "ts/ink_hrtime.h"
 #include "ts/ink_atomic.h"
+
 #ifdef USE_LOCKS_FOR_DYN_STATS
 #include "Lock.h"
 #endif

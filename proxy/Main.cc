@@ -32,7 +32,7 @@
 
 #include "ts/ink_config.h"
 
-#include "ts/libts.h"
+#include "ts/ink_platform.h"
 #include "ts/ink_sys_control.h"
 #include <syslog.h>
 

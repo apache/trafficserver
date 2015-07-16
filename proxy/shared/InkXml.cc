@@ -26,7 +26,9 @@
 
 
  ***************************************************************************/
-#include "ts/libts.h"
+#include "ts/ink_platform.h"
+#include "ts/Diags.h"
+#include "ts/ParseRules.h"
 
 #include "InkXml.h"
 

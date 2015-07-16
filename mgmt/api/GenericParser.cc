@@ -21,7 +21,8 @@
   limitations under the License.
  */
 
-#include "ts/libts.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_string.h"
 #include "GenericParser.h"
 
 /***************************************************************************

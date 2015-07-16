@@ -27,7 +27,7 @@
  *
  *
  ****************************************************************************/
-#include "ts/libts.h"
+#include "ts/ink_platform.h"
 #include "I_Net.h"
 #include "CongestionDB.h"
 #include "Congestion.h"

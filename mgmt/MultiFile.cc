@@ -21,9 +21,8 @@
   limitations under the License.
  */
 
-#include "ts/libts.h"
-
 #include "ts/ink_platform.h"
+#include "ts/ink_memory.h"
 #include "ts/ink_defs.h"
 #include "ts/ink_assert.h"
 #include "ts/ink_error.h"

@@ -26,7 +26,7 @@
 
 
  ***************************************************************************/
-#include "ts/libts.h"
+#include "ts/ink_platform.h"
 
 #include "Error.h"
 

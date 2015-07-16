@@ -41,7 +41,7 @@
 #include <ctype.h>
 #endif
 
-#include "ts/libts.h"
+#include "ts/ink_platform.h"
 #include "ts/Regex.h"
 #include "HttpProxyAPIEnums.h"
 #include "ProxyConfig.h"

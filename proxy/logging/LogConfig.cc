@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "ts/libts.h"
+#include "ts/ink_platform.h"
 #include "ts/I_Layout.h"
 
 #ifdef HAVE_SYS_PARAM_H

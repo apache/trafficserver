@@ -34,7 +34,7 @@
 #if !defined _Error_h_
 #define _Error_h_
 
-#include "ts/libts.h"
+#include "ts/ink_platform.h"
 #include "ts/Diags.h"
 
 //////////////////////////////////////////////////////////////////////////////

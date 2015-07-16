@@ -21,7 +21,10 @@
   limitations under the License.
  */
 
-#include "ts/libts.h"
+#include "ts/ink_platform.h"
+#include "ts/HashFNV.h"
+#include "ts/Diags.h"
+#include "ts/ink_memory.h"
 #include <stdio.h>
 #include "ts/Allocator.h"
 #include "HTTP.h"

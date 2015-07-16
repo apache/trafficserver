@@ -26,7 +26,7 @@
   TestClusterHash.cc
  ****************************************************************************/
 #include "Cluster.h"
-#include "ts/libts.h"
+#include "ts/ink_platform.h"
 
 
 //

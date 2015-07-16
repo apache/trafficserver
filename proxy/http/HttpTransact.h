@@ -25,7 +25,7 @@
 #if !defined(_HttpTransact_h_)
 #define _HttpTransact_h_
 
-#include "ts/libts.h"
+#include "ts/ink_platform.h"
 #include "P_HostDB.h"
 #include "P_Net.h"
 #include "HttpConfig.h"

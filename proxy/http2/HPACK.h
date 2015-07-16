@@ -24,7 +24,9 @@
 #ifndef __HPACK_H__
 #define __HPACK_H__
 
-#include "ts/libts.h"
+#include "ts/ink_platform.h"
+#include "ts/Vec.h"
+#include "ts/Diags.h"
 #include "HTTP.h"
 
 // Constant strings for pseudo headers of HPACK

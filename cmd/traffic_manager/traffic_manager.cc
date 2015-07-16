@@ -23,6 +23,10 @@
 
 #include "ts/ink_sys_control.h"
 #include "ts/ink_cap.h"
+#include "ts/ink_lockfile.h"
+#include "ts/ink_sock.h"
+#include "ts/ink_args.h"
+#include "ts/ink_syslog.h"
 
 #include "WebMgmtUtils.h"
 #include "NetworkUtilsRemote.h"

@@ -105,7 +105,7 @@ int program_counter = 0;
 #include <stdlib.h>
 #include <stdint.h>
 #include <math.h>
-#include "ts/libts.h"
+#include "ts/ink_platform.h"
 #include "CoreUtils.h"
 #endif /* darwin || freebsd || solaris */
 

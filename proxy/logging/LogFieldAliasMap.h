@@ -33,7 +33,7 @@
 #include <stdarg.h>
 #include <string.h>
 
-#include "ts/libts.h"
+#include "ts/ink_platform.h"
 #include "ts/Ptr.h"
 #include "LogUtils.h"
 #include "ts/ink_string.h"

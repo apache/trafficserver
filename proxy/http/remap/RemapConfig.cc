@@ -26,7 +26,8 @@
 #include "ReverseProxy.h"
 #include "ts/I_Layout.h"
 #include "HTTP.h"
-#include "ts/libts.h"
+#include "ts/ink_platform.h"
+#include "ts/List.h"
 #include "ts/ink_cap.h"
 #include "ts/ink_file.h"
 

@@ -28,7 +28,9 @@
  ***************************************************************************/
 #ifndef LOG_ACCESS_H
 #define LOG_ACCESS_H
-#include "ts/libts.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_inet.h"
+#include "ts/ink_align.h"
 #include "LogField.h"
 
 /*-------------------------------------------------------------------------

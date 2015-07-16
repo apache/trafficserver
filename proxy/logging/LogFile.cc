@@ -27,7 +27,7 @@
 
  ***************************************************************************/
 
-#include "ts/libts.h"
+#include "ts/ink_platform.h"
 
 #include <errno.h>
 #include <sys/types.h>

@@ -20,7 +20,8 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-#include "ts/libts.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_sock.h"
 #include "MgmtUtils.h"
 #include "ts/Diags.h"
 

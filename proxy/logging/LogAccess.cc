@@ -31,7 +31,7 @@
   to provide support for marshalling and unmarshalling support for the other
   LogAccess derived classes.
  */
-#include "ts/libts.h"
+#include "ts/ink_platform.h"
 
 #include "Error.h"
 #include "HTTP.h"

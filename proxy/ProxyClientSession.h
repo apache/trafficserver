@@ -24,7 +24,7 @@
 #ifndef __PROXY_CLIENT_SESSION_H__
 #define __PROXY_CLIENT_SESSION_H__
 
-#include "ts/libts.h"
+#include "ts/ink_platform.h"
 #include "P_Net.h"
 #include "InkAPIInternal.h"
 

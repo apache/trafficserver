@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "ts/libts.h"
+#include "ts/ink_platform.h"
 
 #include <strings.h>
 #include <math.h>

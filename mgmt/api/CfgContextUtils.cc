@@ -21,8 +21,9 @@
   limitations under the License.
  */
 
-#include "ts/libts.h"
 #include "ts/ink_platform.h"
+#include "ts/ParseRules.h"
+#include "ts/ink_string.h"
 #include "CfgContextUtils.h"
 #include "ts/Tokenizer.h"
 /***************************************************************************

@@ -22,8 +22,9 @@
  */
 
 
-#include "ts/libts.h"
 #include "ts/ink_platform.h"
+#include "ts/ink_sock.h"
+#include "ts/ink_file.h"
 #include "MgmtUtils.h"
 #include "ts/I_Layout.h"
 #include "LocalManager.h"
