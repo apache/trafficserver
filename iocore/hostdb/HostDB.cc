@@ -2444,6 +2444,9 @@ struct ShowHostDB : public ShowCont {
     CHECK_SHOW(show("<table border=1>\n"));
     CHECK_SHOW(show("<tr><td>%s</td><td>%s%s</td></tr>\n", "Type", r->round_robin ? "Round-Robin" : "",
                     r->reverse_dns ? "Reverse DNS" : "DNS"));
+
+    // Let's display the MD5.
+    CHECK_SHOW(show("<tr><td>%s</td><td>%0.16llx %0.8x %0.8x</td></tr>\n", "MD5 (high, low, low low)", r->md5_high, r->md5_low, r->md5_low_low));
     CHECK_SHOW(show("<tr><td>%s</td><td>%u</td></tr>\n", "App1", r->app.allotment.application1));
     CHECK_SHOW(show("<tr><td>%s</td><td>%u</td></tr>\n", "App2", r->app.allotment.application2));
     CHECK_SHOW(show("<tr><td>%s</td><td>%u</td></tr>\n", "LastFailure", r->app.http_data.last_failure));
