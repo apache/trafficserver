@@ -305,9 +305,9 @@ DNSProcessor::dns_init()
     }
     ats_free(ns_list);
   }
-  // The default domain (4th param) and search list (5th param) will
+  // The default domain (5th param) and search list (6th param) will
   // come from /etc/resolv.conf.
-  if (ink_res_init(&l_res, nameserver, nserv, NULL, NULL, dns_resolv_conf) < 0)
+  if (ink_res_init(&l_res, nameserver, nserv, dns_search, NULL, NULL, dns_resolv_conf) < 0)
     Warning("Failed to build DNS res records for the servers (%s).  Using resolv.conf.", dns_ns_list);
 
   // Check for local forced bindings.

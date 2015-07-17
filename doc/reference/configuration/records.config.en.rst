@@ -1748,7 +1748,9 @@ DNS
 .. ts:cv:: CONFIG proxy.config.dns.search_default_domains INT 0
    :Reloadable:
 
-   Enables (``1``) or disables (``0``) local domain expansion.
+   - ``0`` = disables local domain expansion
+   - ``1`` = enable local domain expansion
+   - ``2`` = enable local domain expansion, but restrain splitting local domain name
 
 Traffic Server can attempt to resolve unqualified hostnames by
 expanding to the local domain. For example if a client makes a
