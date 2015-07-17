@@ -3183,7 +3183,7 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer *c)
     // so the session_close hook occurs after the transaction close hook
     // Also delaying the session release to kill_this in the keep_alive case
     // so we don't lose any keep-alive opportunities
-  } 
+  }
 
   return 0;
 }
@@ -6562,7 +6562,7 @@ HttpSM::kill_this()
     // If this is a keep-alive client connection, just relase the client
     // session rather than closing it.
     if (t_state.client_info.keep_alive == HTTP_KEEPALIVE &&
-      (t_state.www_auth_content != HttpTransact::CACHE_AUTH_SERVE || ua_session->get_bound_ss())) {
+        (t_state.www_auth_content != HttpTransact::CACHE_AUTH_SERVE || ua_session->get_bound_ss())) {
       // successful keep-alive, release the client session instead of destroying it
       ink_assert(ua_buffer_reader != NULL);
       ua_session->release(ua_buffer_reader);

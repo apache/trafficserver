@@ -118,7 +118,7 @@ public:
     return NULL;
   }
   void start();
-  
+
   void do_io_close(int lerrno = -1);
   void
   do_io_shutdown(ShutdownHowTo_t howto)
