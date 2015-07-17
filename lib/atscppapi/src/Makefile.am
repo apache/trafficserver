@@ -15,12 +15,12 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-TS_PLUGIN_CPPFLAGS = \
+AM_CPPFLAGS = \
+  -I$(top_srcdir)/$(subdir)/include \
+  -I$(top_builddir)/proxy/api \
   -I$(top_srcdir)/proxy/api \
-  -I$(top_builddir)/lib/ts \
-  -I$(top_srcdir)/lib/ts
+  -I$(top_srcdir)/lib
 
-AM_CXXFLAGS = -I$(top_srcdir)/$(subdir)/include $(TS_PLUGIN_CPPFLAGS)
 
 # build the library
 lib_LTLIBRARIES = libatscppapi.la

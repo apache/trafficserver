@@ -23,7 +23,7 @@
 
 #if !defined(_REMAPPLUGININFO_h_)
 #define _REMAPPLUGININFO_h_
-#include "libts.h"
+#include "ts/ink_platform.h"
 #include "api/ts/ts.h"
 #include "api/ts/remap.h"
 

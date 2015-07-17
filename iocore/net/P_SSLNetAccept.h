@@ -39,7 +39,7 @@
 #if !defined(_SSLNetAccept_h_)
 #define _SSLNetAccept_h_
 
-#include "libts.h"
+#include "ts/ink_platform.h"
 #include "P_Connection.h"
 #include "P_NetAccept.h"
 

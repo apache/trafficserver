@@ -29,9 +29,11 @@
  *
  *
  ***************************************************************************/
-#include "libts.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_code.h"
+#include "ts/ParseRules.h"
 #include <limits.h>
-#include "I_Layout.h"
+#include "ts/I_Layout.h"
 
 #include "mgmtapi.h"
 #include "CfgContextManager.h"
@@ -40,7 +42,7 @@
 #include "CoreAPI.h"
 #include "CoreAPIShared.h"
 
-#include "TextBuffer.h"
+#include "ts/TextBuffer.h"
 
 // forward declarations
 void init_pdss_format(TSPdSsFormat &info);

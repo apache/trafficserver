@@ -24,7 +24,7 @@
 #ifndef _NETWORK_UTILS_LOCAL_H_
 #define _NETWORK_UTILS_LOCAL_H_
 
-#include "ink_defs.h"
+#include "ts/ink_defs.h"
 #include "mgmtapi.h"
 
 /*****************************************************************************

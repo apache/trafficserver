@@ -29,7 +29,7 @@
 
 **************************************************************************/
 #include "P_EventSystem.h"
-#include "Diags.h"
+#include "ts/Diags.h"
 
 ClassAllocator<ProxyMutex> mutexAllocator("mutexAllocator");
 

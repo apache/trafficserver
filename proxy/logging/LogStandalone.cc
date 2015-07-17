@@ -27,9 +27,10 @@
 
  ***************************************************************************/
 
-#include "libts.h"
-#include "ink_sys_control.h"
-#include "signals.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_lockfile.h"
+#include "ts/ink_sys_control.h"
+#include "ts/signals.h"
 #include "DiagsConfig.h"
 #include "Main.h"
 

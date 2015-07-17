@@ -34,9 +34,9 @@
 #ifndef _HTTP_PAGES_H_
 #define _HTTP_PAGES_H_
 
-#include "libts.h"
+#include "ts/ink_platform.h"
 #include "P_EventSystem.h"
-#include "DynArray.h"
+#include "ts/DynArray.h"
 #include "HTTP.h"
 #include "StatPages.h"
 #include "HttpSM.h"

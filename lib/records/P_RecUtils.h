@@ -24,8 +24,8 @@
 #ifndef _P_REC_UTILS_H_
 #define _P_REC_UTILS_H_
 
-#include "Diags.h"
-#include "ink_atomic.h"
+#include "ts/Diags.h"
+#include "ts/ink_atomic.h"
 
 #include "P_RecDefs.h"
 

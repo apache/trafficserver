@@ -21,10 +21,10 @@
   limitations under the License.
  */
 
-#include "ink_config.h"
-#include "ink_defs.h"
-#include "ink_assert.h"
-#include "ink_memory.h"
+#include "ts/ink_config.h"
+#include "ts/ink_defs.h"
+#include "ts/ink_assert.h"
+#include "ts/ink_memory.h"
 #include "mgmtapi.h"
 #include "NetworkMessage.h"
 

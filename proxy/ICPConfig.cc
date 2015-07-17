@@ -28,7 +28,8 @@
 
 ****************************************************************************/
 
-#include "libts.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_file.h"
 #include "P_EventSystem.h"
 #include "P_Cache.h"
 #include "P_Net.h"
@@ -38,7 +39,7 @@
 #include "ICPProcessor.h"
 #include "ICPlog.h"
 #include "BaseManager.h"
-#include "I_Layout.h"
+#include "ts/I_Layout.h"
 
 //--------------------------------------------------------------------------
 //  Each ICP peer is described in "icp.config" with the

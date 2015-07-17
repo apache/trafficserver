@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "ink_hrtime.h"
+#include "ts/ink_hrtime.h"
 #include "P_RecUtils.h"
 #include "test_RecordsConfig.h"
 

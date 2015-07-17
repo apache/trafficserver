@@ -25,8 +25,8 @@
 
 #include "time.h"
 
-#include "libts.h"
-#include "Arena.h"
+#include "ts/ink_platform.h"
+#include "ts/Arena.h"
 
 namespace LogUtils
 {

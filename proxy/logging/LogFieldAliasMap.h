@@ -33,10 +33,10 @@
 #include <stdarg.h>
 #include <string.h>
 
-#include "libts.h"
-#include "Ptr.h"
+#include "ts/ink_platform.h"
+#include "ts/Ptr.h"
 #include "LogUtils.h"
-#include "ink_string.h"
+#include "ts/ink_string.h"
 
 /*****************************************************************************
 

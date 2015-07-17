@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "libts.h"
+#include "ts/ink_platform.h"
 
 #include <strings.h>
 #include <math.h>
@@ -32,10 +32,10 @@
 #include "HttpCacheSM.h" //Added to get the scope of HttpCacheSM object - YTS Team, yamsat
 #include "HttpDebugNames.h"
 #include "time.h"
-#include "ParseRules.h"
+#include "ts/ParseRules.h"
 #include "HTTP.h"
 #include "HdrUtils.h"
-#include "MimeTable.h"
+#include "ts/MimeTable.h"
 #include "logging/Log.h"
 #include "logging/LogUtils.h"
 #include "Error.h"
@@ -1592,9 +1592,10 @@ HttpTransact::ReDNSRoundRobin(State *s)
 
     // Our ReDNS of the server succeeded so update the necessary
     //  information and try again. Need to preserve the current port value if possible.
-    in_port_t server_port = s->current.server ? s->current.server->dst_addr.host_order_port() : s->server_info.dst_addr.isValid() ?
-                                                s->server_info.dst_addr.host_order_port() :
-                                                s->hdr_info.client_request.port_get();
+    in_port_t server_port = s->current.server->dst_addr.host_order_port();
+    // Temporary check to make sure the port preservation can be depended upon. That should be the case
+    // because we get here only after trying a connection. Remove for 6.2.
+    ink_assert(s->current.server->dst_addr.isValid() && 0 != server_port);
 
     ats_ip_copy(&s->server_info.dst_addr, s->host_db_info.ip());
     s->server_info.dst_addr.port() = htons(server_port);

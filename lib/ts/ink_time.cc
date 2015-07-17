@@ -28,11 +28,11 @@
 
  ****************************************************************************/
 
-#include "ink_platform.h"
-#include "ink_defs.h"
-#include "ink_time.h"
-#include "ink_assert.h"
-#include "ink_string.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_defs.h"
+#include "ts/ink_time.h"
+#include "ts/ink_assert.h"
+#include "ts/ink_string.h"
 
 #include <locale.h>
 #include <sys/resource.h>

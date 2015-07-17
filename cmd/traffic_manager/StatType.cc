@@ -30,12 +30,12 @@
  *
  ****************************************************************************/
 
-#include "ink_config.h"
+#include "ts/ink_config.h"
 #include "StatType.h"
 #include "MgmtUtils.h"
-#include "ink_hrtime.h"
+#include "ts/ink_hrtime.h"
 #include "WebOverview.h"
-#include "Tokenizer.h"
+#include "ts/Tokenizer.h"
 
 bool StatError = false; // global error flag
 bool StatDebug = false; // global debug flag

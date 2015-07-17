@@ -30,7 +30,8 @@
  *
  ****************************************************************************/
 
-#include "libts.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_string.h"
 #include "StatProcessor.h"
 #include "FileManager.h"
 

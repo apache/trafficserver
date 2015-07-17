@@ -24,7 +24,7 @@
 #if !defined(_HttpSessionAccept_h_)
 #define _HttpSessionAccept_h_
 
-#include "libts.h"
+#include "ts/ink_platform.h"
 #include "records/I_RecHttp.h"
 #include "P_EventSystem.h"
 #include "HttpConfig.h"

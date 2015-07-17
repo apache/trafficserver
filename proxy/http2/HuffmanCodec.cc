@@ -22,7 +22,9 @@
  */
 
 #include "HuffmanCodec.h"
-#include "libts.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_memory.h"
+#include "ts/ink_defs.h"
 
 struct huffman_entry {
   uint32_t code_as_hex;

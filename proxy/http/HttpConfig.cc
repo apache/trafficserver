@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "ink_config.h"
+#include "ts/ink_config.h"
 #include <ctype.h>
 #include <string.h>
 #include "HttpConfig.h"

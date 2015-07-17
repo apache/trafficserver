@@ -33,6 +33,7 @@
 
 #include "ProxyConfig.h"
 #include "SSLSessionCache.h"
+#include "ts/ink_inet.h"
 
 struct SSLCertLookup;
 

@@ -28,7 +28,7 @@
 #if !defined(_REMAPPLUGINS_h_)
 #define _REMAPPLUGINS_h_
 
-#include "libts.h"
+#include "ts/ink_platform.h"
 #include "I_EventSystem.h"
 #include "RemapProcessor.h"
 #include "api/ts/ts.h"

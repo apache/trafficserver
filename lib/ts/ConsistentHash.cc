@@ -19,7 +19,7 @@
   limitations under the License.
  */
 
-#include "ConsistentHash.h"
+#include "ts/ConsistentHash.h"
 #include <cstring>
 #include <string>
 #include <sstream>

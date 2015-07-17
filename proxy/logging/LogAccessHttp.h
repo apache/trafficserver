@@ -25,7 +25,7 @@
 #ifndef LOG_ACCESS_HTTP_H
 #define LOG_ACCESS_HTTP_H
 
-#include "Arena.h"
+#include "ts/Arena.h"
 #include "HTTP.h"
 #include "LogAccess.h"
 

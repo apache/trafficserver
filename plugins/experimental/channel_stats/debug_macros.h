@@ -19,7 +19,7 @@
 #ifndef _DBG_MACROS_H
 #define _DBG_MACROS_H
 
-#include "ink_defs.h"
+#include "ts/ink_defs.h"
 
 #define TAG PLUGIN_NAME
 #define API_TAG PLUGIN_NAME ".api"

@@ -22,6 +22,8 @@
  */
 
 #include "P_Net.h"
+#include "ts/InkErrno.h"
+#include "ts/ink_sock.h"
 
 // For Stat Pages
 #include "StatPages.h"

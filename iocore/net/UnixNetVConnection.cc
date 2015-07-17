@@ -22,7 +22,8 @@
 */
 
 #include "P_Net.h"
-#include "libts.h"
+#include "ts/ink_platform.h"
+#include "ts/InkErrno.h"
 #include "Log.h"
 
 #define STATE_VIO_OFFSET ((uintptr_t) & ((NetState *)0)->vio)

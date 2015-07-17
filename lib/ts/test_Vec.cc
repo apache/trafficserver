@@ -24,8 +24,8 @@
 
 #include <stdint.h>
 #include <stdio.h>
-#include <ink_assert.h>
-#include "Vec.h"
+#include "ts/ink_assert.h"
+#include "ts/Vec.h"
 
 static void
 test_append()

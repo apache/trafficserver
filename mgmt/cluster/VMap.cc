@@ -28,14 +28,14 @@
  *
  *
  */
-#include "ink_platform.h"
+#include "ts/ink_platform.h"
 
 #include "LocalManager.h"
 #include "VMap.h"
 #include "ClusterCom.h"
 #include "MgmtUtils.h"
 #include "P_RecLocal.h"
-#include "I_Layout.h"
+#include "ts/I_Layout.h"
 
 // for linux and freebsd
 #ifndef C_ISUID

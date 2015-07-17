@@ -21,10 +21,11 @@
   limitations under the License.
  */
 
-#include "libts.h"
-#include "ink_platform.h"
+#include "ts/ink_platform.h"
+#include "ts/ParseRules.h"
+#include "ts/ink_string.h"
 #include "CfgContextUtils.h"
-#include "Tokenizer.h"
+#include "ts/Tokenizer.h"
 /***************************************************************************
  * Conversion Functions
  ***************************************************************************/

@@ -21,10 +21,10 @@
   limitations under the License.
  */
 
-#include "ink_defs.h"
+#include "ts/ink_defs.h"
 #include "UrlMapping.h"
 #include "I_RecCore.h"
-#include "ink_cap.h"
+#include "ts/ink_cap.h"
 /**
  *
 **/

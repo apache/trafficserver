@@ -23,7 +23,7 @@
 /* UnionFind after Tarjan */
 
 #include <stdint.h>
-#include "Vec.h"
+#include "ts/Vec.h"
 
 const uintptr_t prime2[] = {1,       3,       7,       13,       31,       61,       127,       251,       509,      1021,
                             2039,    4093,    8191,    16381,    32749,    65521,    131071,    262139,    524287,   1048573,

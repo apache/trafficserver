@@ -25,7 +25,7 @@
 #include <cstring>
 #include <map>
 #include <string>
-#include <ink_memory.h>
+#include "ts/ink_memory.h"
 #include "atscppapi/shared_ptr.h"
 #include "logging_internal.h"
 #include "utils_internal.h"

@@ -34,6 +34,7 @@
 #include "Main.h"
 #include "P_EventSystem.h"
 #include "ControlBase.h"
+#include "ts/MatcherUtils.h"
 
 struct RequestData;
 

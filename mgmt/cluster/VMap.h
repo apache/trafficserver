@@ -24,7 +24,9 @@
 #ifndef _VMAP_H
 #define _VMAP_H
 
-#include "libts.h"
+#include "ts/ink_platform.h"
+#include "ts/I_Version.h"
+#include "ts/ink_string.h"
 
 #define MAX_INTERFACE 16
 #define MAX_SUB_ID 8

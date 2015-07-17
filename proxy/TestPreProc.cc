@@ -26,8 +26,8 @@
 #include "HttpPreProc.h"
 #include "HttpMessage.h"
 #include "HttpPreProcMessageManager.h"
-#include "RawHashTable.h"
-#include "ink_time.h" /* ink_time_wall_seconds() */
+#include "ts/RawHashTable.h"
+#include "ts/ink_time.h" /* ink_time_wall_seconds() */
 #include <string.h>
 #include <iostream.h>
 

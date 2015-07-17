@@ -28,7 +28,9 @@
 
  ****************************************************************************/
 
-#include "libts.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_sprintf.h"
+#include "ts/ink_file.h"
 #include "HttpBodyFactory.h"
 #include <unistd.h>
 #include <dirent.h>
@@ -39,7 +41,7 @@
 #include <logging/LogAccess.h>
 #include <logging/LogAccessHttp.h>
 #include "HttpCompat.h"
-#include "I_Layout.h"
+#include "ts/I_Layout.h"
 
 //////////////////////////////////////////////////////////////////////
 // The HttpBodyFactory creates HTTP response page bodies, supported //

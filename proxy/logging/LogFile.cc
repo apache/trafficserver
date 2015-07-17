@@ -27,7 +27,9 @@
 
  ***************************************************************************/
 
-#include "libts.h"
+#include "ts/ink_platform.h"
+#include "ts/SimpleTokenizer.h"
+#include "ts/ink_file.h"
 
 #include <errno.h>
 #include <sys/types.h>

@@ -21,7 +21,9 @@
   limitations under the License.
  */
 
-#include "libts.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_memory.h"
+#include "ts/ink_assert.h"
 #include "MgmtMarshall.h"
 #include "MgmtSocket.h"
 

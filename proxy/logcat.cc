@@ -21,8 +21,9 @@
   limitations under the License.
  */
 
-#include "libts.h"
-#include "I_Layout.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_args.h"
+#include "ts/I_Layout.h"
 
 #define PROGRAM_NAME "traffic_logcat"
 #define MAX_LOGBUFFER_SIZE 65536

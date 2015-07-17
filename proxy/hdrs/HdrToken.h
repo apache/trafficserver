@@ -26,13 +26,13 @@
 
 #include <assert.h>
 #include <sys/types.h>
-#include "ink_assert.h"
-#include "ink_atomic.h"
-#include "ink_defs.h"
-#include "ink_string.h"
-#include "Allocator.h"
-#include "Regex.h"
-#include "ink_apidefs.h"
+#include "ts/ink_assert.h"
+#include "ts/ink_atomic.h"
+#include "ts/ink_defs.h"
+#include "ts/ink_string.h"
+#include "ts/Allocator.h"
+#include "ts/Regex.h"
+#include "ts/ink_apidefs.h"
 
 ////////////////////////////////////////////////////////////////////////////
 //

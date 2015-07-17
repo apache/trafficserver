@@ -30,7 +30,7 @@
 
 #include <sys/types.h>
 
-#include "ink_config.h"
+#include "ts/ink_config.h"
 #include "CacheControl.h"
 #include "ControlMatcher.h"
 #include "Main.h"
@@ -41,7 +41,7 @@
 #include "HttpConfig.h"
 #include "StatSystem.h"
 #include "P_Cache.h"
-#include "Regex.h"
+#include "ts/Regex.h"
 
 static const char modulePrefix[] = "[CacheControl]";
 

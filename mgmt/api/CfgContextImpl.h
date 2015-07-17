@@ -34,7 +34,7 @@
 #include "CfgContextDefs.h"
 #include "GenericParser.h" /* use for TokenList */
 
-#include "List.h"
+#include "ts/List.h"
 
 
 /**********************************************************************

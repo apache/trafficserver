@@ -33,9 +33,9 @@
 #ifndef _MGMT_HASH_TABLE_H
 #define _MGMT_HASH_TABLE_H
 
-#include "ink_memory.h"
-#include "ink_hash_table.h"
-#include "ink_mutex.h"
+#include "ts/ink_memory.h"
+#include "ts/ink_hash_table.h"
+#include "ts/ink_mutex.h"
 
 class MgmtHashTable
 {

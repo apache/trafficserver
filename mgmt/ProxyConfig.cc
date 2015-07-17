@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "libts.h"
+#include "ts/ink_platform.h"
 #include "ProxyConfig.h"
 #include "P_EventSystem.h"
 #include "ts/TestBox.h"

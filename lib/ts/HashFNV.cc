@@ -7,7 +7,7 @@
   Currently implemented FNV-1a 32bit and FNV-1a 64bit
  */
 
-#include "HashFNV.h"
+#include "ts/HashFNV.h"
 
 static const uint32_t FNV_INIT_32 = 0x811c9dc5u;
 static const uint64_t FNV_INIT_64 = 0xcbf29ce484222325ull;

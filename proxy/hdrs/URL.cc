@@ -23,11 +23,13 @@
 
 #include <assert.h>
 #include <new>
-#include "libts.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_memory.h"
+#include "ts/TsBuffer.h"
 #include "URL.h"
 #include "MIME.h"
 #include "HTTP.h"
-#include "Diags.h"
+#include "ts/Diags.h"
 
 const char *URL_SCHEME_FILE;
 const char *URL_SCHEME_FTP;

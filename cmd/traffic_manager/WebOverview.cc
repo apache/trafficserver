@@ -28,8 +28,8 @@
  *
  ****************************************************************************/
 
-#include "libts.h"
-
+#include "ts/ink_platform.h"
+#include "ts/ink_string.h"
 #include "MgmtDefs.h"
 #include "WebOverview.h"
 #include "WebMgmtUtils.h"
@@ -38,7 +38,7 @@
 #include "ClusterCom.h"
 #include "MgmtUtils.h"
 #include "MgmtDefs.h"
-#include "Diags.h"
+#include "ts/Diags.h"
 
 // Make this pointer to avoid nasty destruction
 //   problems do to alarm

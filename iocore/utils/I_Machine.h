@@ -31,6 +31,8 @@
 #ifndef _I_Machine_h
 #define _I_Machine_h
 
+#include "ts/ink_inet.h"
+
 
 /**
   The Machine is a simple place holder for the hostname and the ip

@@ -21,7 +21,8 @@
   limitations under the License.
  */
 
-#include "libts.h" /* MAGIC_EDITING_TAG */
+#include "ts/ink_platform.h"
+#include "ts/ink_assert.h"
 
 #include <assert.h>
 #include <stdarg.h>

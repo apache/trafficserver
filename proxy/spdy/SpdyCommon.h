@@ -36,7 +36,7 @@
 
 #include "P_Net.h"
 #include "ts/ts.h"
-#include "ts/libts.h"
+#include "ts/ink_platform.h"
 #include "ts/experimental.h"
 #include <spdylay/spdylay.h>
 using namespace std;

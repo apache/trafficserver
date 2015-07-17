@@ -22,8 +22,8 @@
 #ifndef __P_SSLUTILS_H__
 #define __P_SSLUTILS_H__
 
-#include "ink_config.h"
-#include "Diags.h"
+#include "ts/ink_config.h"
+#include "ts/Diags.h"
 #include "P_SSLClientUtils.h"
 
 #define OPENSSL_THREAD_DEFINES

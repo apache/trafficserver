@@ -21,13 +21,16 @@
   limitations under the License.
  */
 
-#include "libts.h"
+#include "ts/ink_platform.h"
+#include "ts/HashFNV.h"
+#include "ts/Diags.h"
+#include "ts/ink_memory.h"
 #include <stdio.h>
-#include "Allocator.h"
+#include "ts/Allocator.h"
 #include "HTTP.h"
 #include "HdrToken.h"
 #include "MIME.h"
-#include "Regex.h"
+#include "ts/Regex.h"
 #include "URL.h"
 
 /*

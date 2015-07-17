@@ -28,7 +28,8 @@
 
  ****************************************************************************/
 
-#include "libts.h" /* MAGIC_EDITING_TAG */
+#include "ts/ink_platform.h"
+#include "ts/ParseRules.h"
 
 const unsigned int parseRulesCType[256] = {
 #include "ParseRulesCType"

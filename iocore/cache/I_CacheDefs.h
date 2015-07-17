@@ -25,6 +25,8 @@
 #ifndef _I_CACHE_DEFS_H__
 #define _I_CACHE_DEFS_H__
 
+#include "ts/CryptoHash.h"
+
 #define CACHE_INIT_FAILED -1
 #define CACHE_INITIALIZING 0
 #define CACHE_INITIALIZED 1

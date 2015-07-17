@@ -21,11 +21,10 @@
   limitations under the License.
  */
 
-#include "libts.h"
-#include "ink_args.h"
-#include "ink_config.h"
-#include "I_Version.h"
-#include "I_Layout.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_args.h"
+#include "ts/I_Version.h"
+#include "ts/I_Layout.h"
 #include "I_RecProcess.h"
 #include "RecordsConfig.h"
 

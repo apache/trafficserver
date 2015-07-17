@@ -23,6 +23,8 @@
 
 #ifndef _P_UnixEventProcessor_h_
 #define _P_UnixEventProcessor_h_
+
+#include "ts/ink_align.h"
 #include "I_EventProcessor.h"
 
 const int LOAD_BALANCE_INTERVAL = 1;

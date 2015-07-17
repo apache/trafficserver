@@ -24,7 +24,7 @@
 #ifndef _I_PriorityEventQueue_h_
 #define _I_PriorityEventQueue_h_
 
-#include "libts.h"
+#include "ts/ink_platform.h"
 #include "I_Event.h"
 
 

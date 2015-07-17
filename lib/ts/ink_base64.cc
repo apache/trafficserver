@@ -31,8 +31,9 @@
  * These routines return char*'s to malloc-ed strings.  The caller is
  * responsible for freeing the strings.
  */
-#include "libts.h"
-#include "ink_assert.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_base64.h"
+#include "ts/ink_assert.h"
 
 // TODO: The code here seems a bit klunky, and could probably be improved a bit.
 

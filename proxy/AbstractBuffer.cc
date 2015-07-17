@@ -21,12 +21,12 @@
   limitations under the License.
  */
 
-#include "ink_config.h"
+#include "ts/ink_config.h"
 #include <assert.h>
 #include <string.h>
 #include "AbstractBuffer.h"
 /* #include "CacheAtomic.h" */
-#include "ink_align.h"
+#include "ts/ink_align.h"
 
 
 /*-------------------------------------------------------------------------

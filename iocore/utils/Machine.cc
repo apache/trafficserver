@@ -21,7 +21,10 @@
   limitations under the License.
  */
 
-#include "libts.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_inet.h"
+#include "ts/ink_assert.h"
+#include "ts/Diags.h"
 #include "I_Machine.h"
 
 #if HAVE_IFADDRS_H

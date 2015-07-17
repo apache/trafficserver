@@ -36,7 +36,8 @@
 #ifndef _I_Continuation_h_
 #define _I_Continuation_h_
 
-#include "libts.h"
+#include "ts/ink_platform.h"
+#include "ts/List.h"
 #include "I_Lock.h"
 
 class Continuation;

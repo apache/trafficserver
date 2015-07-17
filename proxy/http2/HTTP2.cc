@@ -24,7 +24,7 @@
 #include "HTTP2.h"
 #include "HPACK.h"
 #include "HuffmanCodec.h"
-#include "ink_assert.h"
+#include "ts/ink_assert.h"
 #include "P_RecCore.h"
 #include "P_RecProcess.h"
 
@@ -789,7 +789,7 @@ Http2::init()
 
 #if TS_HAS_TESTS
 
-#include "TestBox.h"
+#include "ts/TestBox.h"
 
 // Constants for regression test
 const static int BUFSIZE_FOR_REGRESSION_TEST = 128;

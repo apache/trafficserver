@@ -34,7 +34,7 @@
 #include "ProxyConfig.h"
 #include "StatPages.h"
 #include "HTTP.h"
-#include "I_Layout.h"
+#include "ts/I_Layout.h"
 
 // defines
 

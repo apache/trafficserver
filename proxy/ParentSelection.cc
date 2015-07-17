@@ -20,7 +20,9 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-#include "libts.h"
+#include "ts/ink_platform.h"
+#include "ts/HashSip.h"
+#include "ts/Tokenizer.h"
 #include "P_EventSystem.h"
 #include "ParentSelection.h"
 #include "ControlMatcher.h"

@@ -29,7 +29,13 @@
  *
  ****************************************************************************/
 
-#include "libts.h" /* MAGIC_EDITING_TAG */
+#include "ts/ink_platform.h"
+#include "ts/Diags.h"
+#include "ts/ink_memory.h"
+#include "ts/ink_inet.h"
+#include "ts/ink_assert.h"
+#include "ts/MatcherUtils.h"
+#include "ts/Tokenizer.h"
 
 config_parse_error::config_parse_error(const char *fmt, ...)
 {

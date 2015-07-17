@@ -21,8 +21,8 @@
   limitations under the License.
  */
 
-#include "ink_platform.h"
-#include "ink_lockfile.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_lockfile.h"
 
 #define LOCKFILE_BUF_LEN 16 // 16 bytes should be enought for a pid
 

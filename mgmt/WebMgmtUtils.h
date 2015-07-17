@@ -34,8 +34,8 @@
  *
  ****************************************************************************/
 
-#include "ink_hash_table.h"
-#include "TextBuffer.h"
+#include "ts/ink_hash_table.h"
+#include "ts/TextBuffer.h"
 #include "ExpandingArray.h"
 
 #include "P_RecCore.h"

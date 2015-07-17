@@ -22,7 +22,7 @@
  */
 
 
-#include "ink_config.h"
+#include "ts/ink_config.h"
 #include "RecordsConfig.h"
 
 #if TS_USE_REMOTE_UNWINDING

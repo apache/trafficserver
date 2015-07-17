@@ -32,11 +32,11 @@
 #if !defined(_SSLNetVConnection_h_)
 #define _SSLNetVConnection_h_
 
-#include "libts.h"
+#include "ts/ink_platform.h"
 #include "P_EventSystem.h"
 #include "P_UnixNetVConnection.h"
 #include "P_UnixNet.h"
-#include "apidefs.h"
+#include "ts/apidefs.h"
 
 #include <openssl/ssl.h>
 #include <openssl/err.h>

@@ -34,14 +34,14 @@
 
  ****************************************************************************/
 
-#include "ink_platform.h"
-#include "ink_memory.h"
-#include "ink_defs.h"
-#include "ink_error.h"
-#include "ink_assert.h"
-#include "ink_time.h"
-#include "ink_hrtime.h"
-#include "Diags.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_memory.h"
+#include "ts/ink_defs.h"
+#include "ts/ink_error.h"
+#include "ts/ink_assert.h"
+#include "ts/ink_time.h"
+#include "ts/ink_hrtime.h"
+#include "ts/Diags.h"
 
 int diags_on_for_plugins = 0;
 bool DiagsConfigState::enabled[2] = {false, false};

@@ -31,7 +31,7 @@
 
 
  ***************************************************************************/
-#include "libts.h"
+#include "ts/ink_platform.h"
 #include "Error.h"
 #include "HTTP.h"
 #include "ICP.h"

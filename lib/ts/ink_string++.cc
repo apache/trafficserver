@@ -30,7 +30,11 @@
 
  ****************************************************************************/
 
-#include "libts.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_string++.h"
+#include "ts/ink_assert.h"
+#include "ts/ink_memory.h"
+#include "ts/ink_align.h"
 
 /***********************************************************************
  *                                                                     *

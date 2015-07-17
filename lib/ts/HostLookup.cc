@@ -27,9 +27,15 @@
  *
  *
  ****************************************************************************/
-#include "libts.h"
-#include "HostLookup.h"
-#include "MatcherUtils.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_memory.h"
+#include "ts/DynArray.h"
+#include "ts/ink_inet.h"
+#include "ts/ink_assert.h"
+#include "ts/ink_hash_table.h"
+#include "ts/Tokenizer.h"
+#include "ts/HostLookup.h"
+#include "ts/MatcherUtils.h"
 
 // bool domaincmp(const char* hostname, const char* domain)
 //

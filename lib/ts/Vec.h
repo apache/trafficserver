@@ -28,7 +28,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/types.h>
-#include "defalloc.h"
+#include "ts/defalloc.h"
 #include "ts/ink_assert.h"
 
 // Simple Vector class, also supports open hashed sets

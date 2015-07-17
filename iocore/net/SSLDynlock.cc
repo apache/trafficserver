@@ -19,7 +19,12 @@
   limitations under the License.
  */
 
-#include "libts.h"
+#include <openssl/crypto.h>
+
+#include "ts/ink_platform.h"
+#include "ts/ink_mutex.h"
+#include "ts/ink_assert.h"
+#include "ts/Diags.h"
 
 struct CRYPTO_dynlock_value {
   CRYPTO_dynlock_value(const char *f, int l) : file(f), line(l) { pthread_mutex_init(&mutex, NULL); }

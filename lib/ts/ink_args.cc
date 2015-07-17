@@ -26,7 +26,13 @@ Process arguments
 
 ****************************************************************************/
 
-#include "libts.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_args.h"
+#include "ts/Diags.h"
+#include "ts/I_Version.h"
+#include "ts/ink_file.h"
+#include "ts/ink_memory.h"
+#include "ts/ink_string.h"
 
 //
 //  Global variables

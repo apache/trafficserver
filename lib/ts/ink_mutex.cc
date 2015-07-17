@@ -21,10 +21,10 @@
   limitations under the License.
  */
 
-#include "ink_error.h"
-#include "ink_defs.h"
+#include "ts/ink_error.h"
+#include "ts/ink_defs.h"
 #include <assert.h>
 #include "stdio.h"
-#include "ink_mutex.h"
+#include "ts/ink_mutex.h"
 
 ink_mutex __global_death = PTHREAD_MUTEX_INITIALIZER;

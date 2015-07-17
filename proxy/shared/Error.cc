@@ -32,7 +32,9 @@
 #include "proxy/Main.h"
 #include "Error.h"
 #include <time.h>
-#include "ink_platform.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_assert.h"
+#include "ts/ink_thread.h"
 
 ErrorClass::~ErrorClass()
 {

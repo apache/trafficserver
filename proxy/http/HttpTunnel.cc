@@ -30,12 +30,12 @@
 
 ****************************************************************************/
 
-#include "ink_config.h"
+#include "ts/ink_config.h"
 #include "HttpConfig.h"
 #include "HttpTunnel.h"
 #include "HttpSM.h"
 #include "HttpDebugNames.h"
-#include "ParseRules.h"
+#include "ts/ParseRules.h"
 
 static const int min_block_transfer_bytes = 256;
 static char const *const CHUNK_HEADER_FMT = "%" PRIx64 "\r\n";

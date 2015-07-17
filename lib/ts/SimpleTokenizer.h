@@ -27,6 +27,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include "ts/ink_memory.h"
 
 /*-----------------------------------------------------------------------------
   SimpleTokenizer

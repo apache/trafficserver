@@ -24,8 +24,9 @@
 #define _HOSTDB_CC_
 
 #include "P_HostDB.h"
-#include "I_Layout.h"
+#include "ts/I_Layout.h"
 #include "Show.h"
+#include "ts/Tokenizer.h"
 
 #include <vector>
 #include <algorithm>
@@ -35,7 +36,7 @@
 //#define Warning
 //#define Note
 
-#include "ink_apidefs.h"
+#include "ts/ink_apidefs.h"
 
 HostDBProcessor hostDBProcessor;
 int HostDBProcessor::hostdb_strict_round_robin = 0;
@@ -1838,30 +1839,32 @@ HostDBContinuation::iterateEvent(int event, Event *e)
 
   // let's iterate through another record and then reschedule ourself.
   if (current_iterate_pos < hostDB.buckets) {
-     // do 100 at a time
-     int end = min(current_iterate_pos + 100, hostDB.buckets);
-     for (; current_iterate_pos < end; ++current_iterate_pos) {
-       ProxyMutex *bucket_mutex = hostDB.lock_for_bucket(current_iterate_pos);
-       MUTEX_TRY_LOCK_FOR(lock_bucket, bucket_mutex, t, this);
-       if (!lock_bucket.is_locked()) {
-         // we couldn't get the bucket lock, let's just reschedule and try later.
-         Debug("hostdb", "iterateEvent event=%d eventp=%p: reschedule due to not getting bucket mutex", event, e);
-         mutex->thread_holding->schedule_in(this, HOST_DB_RETRY_PERIOD);
-         return EVENT_CONT;
-       }
+    // do 100 at a time
+    int end = min(current_iterate_pos + 100, hostDB.buckets);
+    for (; current_iterate_pos < end; ++current_iterate_pos) {
+      ProxyMutex *bucket_mutex = hostDB.lock_for_bucket(current_iterate_pos);
+      MUTEX_TRY_LOCK_FOR(lock_bucket, bucket_mutex, t, this);
+      if (!lock_bucket.is_locked()) {
+        // we couldn't get the bucket lock, let's just reschedule and try later.
+        Debug("hostdb", "iterateEvent event=%d eventp=%p: reschedule due to not getting bucket mutex", event, e);
+        mutex->thread_holding->schedule_in(this, HOST_DB_RETRY_PERIOD);
+        return EVENT_CONT;
+      }
 
-       for (unsigned int l = 0; l < hostDB.levels; ++l) {
-         HostDBInfo *r = reinterpret_cast<HostDBInfo*>(hostDB.data + hostDB.level_offset[l] + hostDB.bucketsize[l] * current_iterate_pos);
-         if (!r->deleted && !r->failed()) {
-           action.continuation->handleEvent(EVENT_INTERVAL, static_cast<void*>(r));
-         }
-       }
-     }
+      for (unsigned int l = 0; l < hostDB.levels; ++l) {
+        HostDBInfo *r =
+          reinterpret_cast<HostDBInfo *>(hostDB.data + hostDB.level_offset[l] + hostDB.bucketsize[l] * current_iterate_pos);
+        if (!r->deleted && !r->failed()) {
+          action.continuation->handleEvent(EVENT_INTERVAL, static_cast<void *>(r));
+        }
+      }
+    }
 
-     // And reschedule ourselves to pickup the next bucket after HOST_DB_RETRY_PERIOD.
-     Debug("hostdb", "iterateEvent event=%d eventp=%p: completed current iteration %d of %d", event, e, current_iterate_pos, hostDB.buckets);
-     mutex->thread_holding->schedule_in(this, HOST_DB_ITERATE_PERIOD);
-     return EVENT_CONT;
+    // And reschedule ourselves to pickup the next bucket after HOST_DB_RETRY_PERIOD.
+    Debug("hostdb", "iterateEvent event=%d eventp=%p: completed current iteration %d of %d", event, e, current_iterate_pos,
+          hostDB.buckets);
+    mutex->thread_holding->schedule_in(this, HOST_DB_ITERATE_PERIOD);
+    return EVENT_CONT;
   } else {
     Debug("hostdb", "iterateEvent event=%d eventp=%p: completed FINAL iteration %d", event, e, current_iterate_pos);
     // if there are no more buckets, then we're done.
@@ -2413,7 +2416,7 @@ struct ShowHostDB : public ShowCont {
   }
 
   int
-  showAll(int event , Event *e)
+  showAll(int event, Event *e)
   {
     CHECK_SHOW(begin("HostDB All Records"));
     CHECK_SHOW(show("<hr>"));
@@ -2427,7 +2430,7 @@ struct ShowHostDB : public ShowCont {
   {
     if (event == EVENT_INTERVAL) {
       HostDBInfo *r = reinterpret_cast<HostDBInfo *>(e);
-      return showOne(r,false,event,e);
+      return showOne(r, false, event, e);
     } else if (event == EVENT_DONE) {
       return complete(event, e);
     } else {

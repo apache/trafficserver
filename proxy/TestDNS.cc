@@ -38,7 +38,7 @@
 #include <string.h>
 #include "VConnection.h"
 #include "stdio.h"
-#include "libts.h"
+#include "ts/ink_platform.h"
 #define N_STATE_MACHINES 1000
 #define MEASUREMENT_INTERVAL 100
 class TestDnsStateMachine;

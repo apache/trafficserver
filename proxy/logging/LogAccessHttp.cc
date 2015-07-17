@@ -30,7 +30,7 @@
 
 
  ***************************************************************************/
-#include "libts.h"
+#include "ts/ink_platform.h"
 #include "Error.h"
 #include "LogAccessHttp.h"
 #include "http/HttpSM.h"

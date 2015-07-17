@@ -26,6 +26,10 @@
 #include <openssl/ssl.h>
 #include <openssl/bio.h>
 
+#include "ts/ink_apidefs.h"
+#include "ts/Diags.h"
+#include "ts/ink_resource.h"
+#include "ts/ink_queue.h"
 #include "ts/X509HostnameValidator.h"
 #include "ts/TestBox.h"
 

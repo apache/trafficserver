@@ -22,7 +22,8 @@
  */
 
 #include "I_EventSystem.h"
-#include "I_Layout.h"
+#include "ts/I_Layout.h"
+#include "ts/ink_string.h"
 
 #define TEST_TIME_SECOND 60
 #define TEST_THREADS 2

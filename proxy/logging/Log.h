@@ -294,7 +294,10 @@
 #define LOG_H
 
 #include <stdarg.h>
-#include "libts.h"
+#include "ts/ink_platform.h"
+#include "ts/EventNotify.h"
+#include "ts/ink_hash_table.h"
+#include "ts/Regression.h"
 #include "P_RecProcess.h"
 #include "LogFile.h"
 #include "LogBuffer.h"

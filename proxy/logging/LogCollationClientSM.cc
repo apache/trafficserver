@@ -25,7 +25,7 @@
 // include files
 //-------------------------------------------------------------------------
 
-#include "libts.h"
+#include "ts/ink_platform.h"
 
 #include <stdio.h>
 #include <stdlib.h>

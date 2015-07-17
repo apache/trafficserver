@@ -19,7 +19,7 @@
   limitations under the License.
  */
 
-#include "HashMD5.h"
+#include "ts/HashMD5.h"
 
 ATSHashMD5::ATSHashMD5(void)
 {

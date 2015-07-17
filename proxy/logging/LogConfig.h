@@ -25,7 +25,7 @@
 #ifndef LOG_CONFIG_H
 #define LOG_CONFIG_H
 
-#include "libts.h"
+#include "ts/ink_platform.h"
 #include "P_RecProcess.h"
 #include "ProxyConfig.h"
 

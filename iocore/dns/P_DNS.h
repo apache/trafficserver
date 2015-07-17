@@ -30,7 +30,7 @@
 #if !defined(_P_DNS_h_)
 #define _P_DNS_h_
 
-#include "libts.h"
+#include "ts/ink_platform.h"
 #include "I_DNS.h"
 #include "P_EventSystem.h"
 #include "I_Cache.h"

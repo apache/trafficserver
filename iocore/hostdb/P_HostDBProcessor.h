@@ -538,7 +538,8 @@ struct HostDBContinuation : public Continuation {
 
   HostDBContinuation()
     : Continuation(NULL), ttl(0), host_res_style(DEFAULT_OPTIONS.host_res_style), dns_lookup_timeout(DEFAULT_OPTIONS.timeout),
-      timeout(0), from(0), from_cont(0), probe_depth(0), current_iterate_pos(0), missing(false), force_dns(DEFAULT_OPTIONS.force_dns), round_robin(false)
+      timeout(0), from(0), from_cont(0), probe_depth(0), current_iterate_pos(0), missing(false),
+      force_dns(DEFAULT_OPTIONS.force_dns), round_robin(false)
   {
     ink_zero(md5_host_name_store);
     ink_zero(md5.hash);

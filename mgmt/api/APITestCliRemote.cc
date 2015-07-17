@@ -93,13 +93,13 @@
  * reset_stats - resets all statistics to default values
  */
 
-#include "ink_config.h"
-#include "ink_defs.h"
+#include "ts/ink_config.h"
+#include "ts/ink_defs.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <strings.h>
-#include "ink_string.h"
+#include "ts/ink_string.h"
 
 #include "mgmtapi.h"
 #include "CfgContextUtils.h"

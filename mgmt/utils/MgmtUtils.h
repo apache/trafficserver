@@ -34,8 +34,8 @@
 #ifndef _MGMT_UTILS_H
 #define _MGMT_UTILS_H
 
-#include "ink_platform.h"
-#include "Diags.h"
+#include "ts/ink_platform.h"
+#include "ts/Diags.h"
 
 #include "P_RecCore.h"
 

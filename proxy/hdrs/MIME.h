@@ -26,9 +26,9 @@
 
 #include <sys/time.h>
 
-#include "ink_assert.h"
-#include "ink_apidefs.h"
-#include "ink_string++.h"
+#include "ts/ink_assert.h"
+#include "ts/ink_apidefs.h"
+#include "ts/ink_string++.h"
 #include "HdrHeap.h"
 #include "HdrToken.h"
 

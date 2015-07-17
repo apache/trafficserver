@@ -21,9 +21,12 @@
   limitations under the License.
  */
 
-#include "libts.h"
 #include <unistd.h>
 #include <limits.h>
+#include "ts/ink_platform.h"
+#include "ts/ink_file.h"
+#include "ts/ink_string.h"
+#include "ts/ink_memory.h"
 
 #if HAVE_SYS_STAT_H
 #include <sys/stat.h>

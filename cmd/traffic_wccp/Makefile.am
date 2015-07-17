@@ -21,7 +21,6 @@
 AM_CPPFLAGS = $(iocore_include_dirs) \
   -I$(top_srcdir)/lib \
   -I$(top_srcdir)/lib/records \
-  -I$(top_srcdir)/lib/ts \
   -I$(top_srcdir)/lib/wccp \
   @OPENSSL_INCLUDES@
 

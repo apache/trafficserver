@@ -32,7 +32,7 @@
 #ifndef __P_SSLNETPROCESSOR_H
 #define __P_SSLNETPROCESSOR_H
 
-#include "libts.h"
+#include "ts/ink_platform.h"
 #include "P_Net.h"
 #include "P_SSLConfig.h"
 #include <openssl/ssl.h>

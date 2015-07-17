@@ -28,13 +28,14 @@
  *
  ****************************************************************************/
 
-#include "libts.h"
+#include "ts/ink_platform.h"
+#include "ts/Tokenizer.h"
 
 #ifdef SPLIT_DNS
 #include <sys/types.h>
 #include "P_SplitDNS.h"
-#include "MatcherUtils.h"
-#include "HostLookup.h"
+#include "ts/MatcherUtils.h"
+#include "ts/HostLookup.h"
 
 
 /* --------------------------------------------------------------

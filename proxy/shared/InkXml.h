@@ -25,7 +25,7 @@
 #ifndef INK_XML_H
 #define INK_XML_H
 
-#include "List.h"
+#include "ts/List.h"
 
 /*-------------------------------------------------------------------------
   InkXml.h

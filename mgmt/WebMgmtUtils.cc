@@ -21,12 +21,16 @@
   limitations under the License.
  */
 
-#include "libts.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_string.h"
+#include "ts/Tokenizer.h"
+#include "ts/ink_code.h"
+#include "ts/ink_file.h"
 #include "LocalManager.h"
 #include "MgmtUtils.h"
 #include "WebMgmtUtils.h"
 #include "MultiFile.h"
-#include "Regex.h"
+#include "ts/Regex.h"
 
 /****************************************************************************
  *

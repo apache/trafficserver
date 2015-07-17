@@ -50,7 +50,7 @@
 #ifndef __CONNECTION_H__
 #define __CONNECTION_H__
 
-#include "libts.h"
+#include "ts/ink_platform.h"
 
 struct NetVCOptions;
 

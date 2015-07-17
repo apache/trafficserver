@@ -23,8 +23,8 @@
 #include "WccpUtil.h"
 #include "WccpMeta.h"
 #include <errno.h>
-#include "ink_string.h"
-#include "ink_defs.h"
+#include "ts/ink_string.h"
+#include "ts/ink_defs.h"
 // ------------------------------------------------------
 namespace wccp
 {

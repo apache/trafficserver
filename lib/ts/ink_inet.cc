@@ -21,7 +21,12 @@
   limitations under the License.
  */
 
-#include "libts.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_defs.h"
+#include "ts/ink_inet.h"
+#include "ts/ParseRules.h"
+#include "ts/ink_code.h"
+#include "ts/ink_assert.h"
 #include "ts/TestBox.h"
 
 #if defined(darwin)

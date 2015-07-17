@@ -19,7 +19,7 @@
   limitations under the License.
  */
 
-#include "ink_config.h"
+#include "ts/ink_config.h"
 #include "P_Net.h"
 
 typedef int (SSLNetAccept::*SSLNetAcceptHandler)(int, void *);

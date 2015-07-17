@@ -26,7 +26,7 @@
 
 
  ***************************************************************************/
-#include "libts.h"
+#include "ts/ink_platform.h"
 
 #include "Error.h"
 #include "LogUtils.h"
@@ -39,8 +39,8 @@
 #include "LogObject.h"
 #include "LogConfig.h"
 #include "Log.h"
-//#include "ink_ctype.h"
-#include "SimpleTokenizer.h"
+//#include "ts/ink_ctype.h"
+#include "ts/SimpleTokenizer.h"
 
 const char *LogFilter::OPERATOR_NAME[] = {"MATCH", "CASE_INSENSITIVE_MATCH", "CONTAIN", "CASE_INSENSITIVE_CONTAIN"};
 const char *LogFilter::ACTION_NAME[] = {"REJECT", "ACCEPT", "WIPE_FIELD_VALUE"};

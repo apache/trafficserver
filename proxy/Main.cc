@@ -30,10 +30,14 @@
 
  ****************************************************************************/
 
-#include "ink_config.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_sys_control.h"
+#include "ts/ink_args.h"
+#include "ts/ink_lockfile.h"
+#include "ts/ink_stack_trace.h"
+#include "ts/ink_syslog.h"
+#include "ts/hugepages.h"
 
-#include "libts.h"
-#include "ink_sys_control.h"
 #include <syslog.h>
 
 #if !defined(linux)
@@ -51,7 +55,7 @@ extern "C" int plock(int);
 #endif
 
 #include "Main.h"
-#include "signals.h"
+#include "ts/signals.h"
 #include "Error.h"
 #include "StatSystem.h"
 #include "P_EventSystem.h"
@@ -62,7 +66,7 @@ extern "C" int plock(int);
 #include "P_Cluster.h"
 #include "P_HostDB.h"
 #include "P_Cache.h"
-#include "I_Layout.h"
+#include "ts/I_Layout.h"
 #include "I_Machine.h"
 #include "RecordsConfig.h"
 #include "I_RecProcess.h"
@@ -89,7 +93,6 @@ extern "C" int plock(int);
 #include "I_Tasks.h"
 #include "InkAPIInternal.h"
 #include "HTTP2.h"
-#include "ts/ink_config.h"
 
 #include <ts/ink_cap.h>
 

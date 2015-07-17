@@ -36,11 +36,10 @@
 #include "ControlBase.h"
 #include "ControlMatcher.h"
 
-#include "ink_apidefs.h"
-
 #include "P_RecProcess.h"
 
-#include "libts.h"
+#include "ts/ink_platform.h"
+#include "ts/ConsistentHash.h"
 
 #define MAX_PARENTS 64
 

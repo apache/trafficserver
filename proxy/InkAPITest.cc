@@ -27,7 +27,9 @@
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
-#include "ink_config.h"
+#include "ts/ink_config.h"
+#include "ts/ink_sprintf.h"
+#include "ts/ink_file.h"
 #include <sys/types.h>
 
 #include <errno.h>
@@ -38,7 +40,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "Regression.h"
+#include "ts/Regression.h"
 #include "api/ts/ts.h"
 #include "api/ts/experimental.h"
 #include "I_RecCore.h"

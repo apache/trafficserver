@@ -65,8 +65,8 @@
  */
 
 
-#include "ink_platform.h"
-#include "ink_defs.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_defs.h"
 
 #include <sys/types.h>
 #include <sys/param.h>
@@ -85,10 +85,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "ink_string.h"
-#include "ink_resolver.h"
-#include "ink_inet.h"
-#include "Tokenizer.h"
+#include "ts/ink_string.h"
+#include "ts/ink_resolver.h"
+#include "ts/ink_inet.h"
+#include "ts/Tokenizer.h"
 
 #if !defined(isascii) /* XXX - could be a function */
 #define isascii(c) (!(c & 0200))

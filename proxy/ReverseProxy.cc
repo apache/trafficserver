@@ -27,7 +27,7 @@
 
  */
 
-#include "libts.h"
+#include "ts/ink_platform.h"
 #include <dlfcn.h>
 #include "Main.h"
 #include "Error.h"
@@ -36,8 +36,8 @@
 #include "P_Cache.h"
 #include "ProxyConfig.h"
 #include "ReverseProxy.h"
-#include "MatcherUtils.h"
-#include "Tokenizer.h"
+#include "ts/MatcherUtils.h"
+#include "ts/Tokenizer.h"
 #include "api/ts/remap.h"
 #include "RemapPluginInfo.h"
 #include "RemapProcessor.h"
