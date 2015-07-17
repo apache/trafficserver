@@ -383,7 +383,6 @@ LogObject::_checkout_write(size_t *write_offset, size_t bytes_needed)
   LogBuffer *buffer;
   LogBuffer *new_buffer;
   bool retry = true;
-  uint32_t count = 0;
 
   do {
     // To avoid a race condition, we keep a count of held references in
@@ -391,7 +390,6 @@ LogObject::_checkout_write(size_t *write_offset, size_t bytes_needed)
     head_p h;
     int result = 0;
     do {
-      ++count;
       INK_QUEUE_LD(h, m_log_buffer);
       head_p new_h;
       SET_FREELIST_POINTER_VERSION(new_h, FREELIST_POINTER(h), FREELIST_VERSION(h) + 1);
@@ -489,9 +487,6 @@ LogObject::_checkout_write(size_t *write_offset, size_t bytes_needed)
   // only to set it as full
   if (result_code == LogBuffer::LB_BUFFER_TOO_SMALL) {
     buffer = NULL;
-  }
-  if (count > 1) {
-    Error("spinning too much in logging %d", count);
   }
   return buffer;
 }
