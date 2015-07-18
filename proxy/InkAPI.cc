@@ -7909,7 +7909,10 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
     typ = OVERRIDABLE_TYPE_INT;
     ret = &overridableHttpConfig->slow_log_threshold;
     break;
-
+  case TS_CONFIG_SSL_CLIENT_VERIFY_SERVER:
+    typ = OVERRIDABLE_TYPE_INT;
+    ret = &overridableHttpConfig->ssl_client_verify_server;
+    break;
   // This helps avoiding compiler warnings, yet detect unhandled enum members.
   case TS_CONFIG_NULL:
   case TS_CONFIG_LAST_ENTRY:
@@ -8177,6 +8180,9 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
       if (!strncmp(name, "proxy.config.http.response_server_str", length)) {
         cnf = TS_CONFIG_HTTP_RESPONSE_SERVER_STR;
         typ = TS_RECORDDATATYPE_STRING;
+      }
+      else if (!strncmp(name, "proxy.config.ssl.client.verify.server", length)) {
+        cnf = TS_CONFIG_SSL_CLIENT_VERIFY_SERVER;
       }
       break;
     case 't':

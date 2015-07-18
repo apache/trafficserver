@@ -7206,7 +7206,7 @@ const char *SDK_Overridable_Configs[TS_CONFIG_LAST_ENTRY] = {
   "proxy.config.ssl.hsts_max_age", "proxy.config.ssl.hsts_include_subdomains", "proxy.config.http.cache.open_read_retry_time",
   "proxy.config.http.cache.max_open_read_retries", "proxy.config.http.cache.range.write",
   "proxy.config.http.post.check.content_length.enabled", "proxy.config.http.global_user_agent_header",
-  "proxy.config.http.auth_server_session_private", "proxy.config.http.slow.log.threshold", "proxy.config.http.cache.generation"};
+  "proxy.config.http.auth_server_session_private", "proxy.config.http.slow.log.threshold", "proxy.config.http.cache.generation", "proxy.config.sslclient.verify.server"};
 
 REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS)(RegressionTest *test, int /* atype ATS_UNUSED */, int *pstatus)
 {
