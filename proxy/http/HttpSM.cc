@@ -1059,7 +1059,8 @@ HttpSM::state_raw_http_server_open(int event, void *data)
     server_entry->vc = netvc = (NetVConnection *)data;
     server_entry->vc_type = HTTP_RAW_SERVER_VC;
     t_state.current.state = HttpTransact::CONNECTION_ALIVE;
-
+    
+    
     netvc->set_inactivity_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_no_activity_timeout_out));
     netvc->set_active_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_active_timeout_out));
     break;
@@ -5128,6 +5129,10 @@ HttpSM::handle_http_server_open()
   //          server session's first transaction.
   if (NULL != server_session) {
     NetVConnection *vc = server_session->get_netvc();
+    SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(vc);
+    if (ssl_vc) {
+      ssl_vc->setClientVerifyEnable((t_state.txn_conf->ssl_client_verify_server)?true:false);
+    }
     if (vc != NULL && (vc->options.sockopt_flags != t_state.txn_conf->sock_option_flag_out ||
                        vc->options.packet_mark != t_state.txn_conf->sock_packet_mark_out ||
                        vc->options.packet_tos != t_state.txn_conf->sock_packet_tos_out)) {
