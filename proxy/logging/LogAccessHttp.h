@@ -95,6 +95,7 @@ public:
   virtual int marshal_proxy_req_body_len(char *);    // INT
   virtual int marshal_proxy_req_server_name(char *); // STR
   virtual int marshal_proxy_req_server_ip(char *);   // INT
+  virtual int marshal_proxy_req_server_port(char *); // INT
   virtual int marshal_proxy_hierarchy_route(char *); // INT
   virtual int marshal_proxy_host_port(char *);       // INT
 

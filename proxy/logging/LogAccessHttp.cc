@@ -906,6 +906,16 @@ LogAccessHttp::marshal_proxy_req_server_ip(char *buf)
   return marshal_ip(buf, m_http_sm->t_state.current.server != NULL ? &m_http_sm->t_state.current.server->dst_addr.sa : 0);
 }
 
+int
+LogAccessHttp::marshal_proxy_req_server_port(char *buf)
+{
+  if (buf) {
+      uint16_t port = ntohs(m_http_sm->t_state.current.server != NULL ? m_http_sm->t_state.current.server->dst_addr.port() : 0);
+      marshal_int(buf, port);
+  }
+  return INK_MIN_ALIGN;
+}
+
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
