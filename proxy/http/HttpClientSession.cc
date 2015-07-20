@@ -313,7 +313,7 @@ HttpClientSession::do_io_close(int alerrno)
     if (ssl_vc) {
       ssl_vc->set_ssl_iobuf(NULL);
     }
-    if (upgrade_to_h2c) {
+    if (upgrade_to_h2c && this->current_reader) {
       Http2ClientSession *h2_session = http2ClientSessionAllocator.alloc();
 
       h2_session->set_upgrade_context(&current_reader->t_state.hdr_info.client_request);

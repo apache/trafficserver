@@ -162,8 +162,6 @@ public:
   static const char *memchr(const char *s, char c, int max_length);
   static const char *strchr(const char *s, char c);
 
-  static unsigned char *scan_while(unsigned char *ptr, unsigned int n, uint32_t bitmask);
-
 private:
   ParseRules(const ParseRules &);
   ParseRules &operator=(const ParseRules &);

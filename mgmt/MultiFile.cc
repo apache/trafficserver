@@ -125,6 +125,7 @@ MultiFile::WalkFiles(ExpandingArray *fileList)
     } else {
       if (stat(records_config_filePath, &records_config_fileInfo) < 0) {
         delete[] filePath;
+        delete[] records_config_filePath;
         continue;
       }
       // Ignore ., .., and any dot files

@@ -4007,7 +4007,7 @@ TSCacheHttpInfoReqGet(TSCacheHttpInfo infop, TSMBuffer *bufp, TSMLoc *obj)
 
   *(reinterpret_cast<HTTPHdr **>(bufp)) = info->request_get();
   *obj = reinterpret_cast<TSMLoc>(info->request_get()->m_http);
-  sdk_sanity_check_mbuffer(*bufp);
+  sdk_assert(sdk_sanity_check_mbuffer(*bufp) == TS_SUCCESS);
 }
 
 
@@ -4018,7 +4018,7 @@ TSCacheHttpInfoRespGet(TSCacheHttpInfo infop, TSMBuffer *bufp, TSMLoc *obj)
 
   *(reinterpret_cast<HTTPHdr **>(bufp)) = info->response_get();
   *obj = reinterpret_cast<TSMLoc>(info->response_get()->m_http);
-  sdk_sanity_check_mbuffer(*bufp);
+  sdk_assert(sdk_sanity_check_mbuffer(*bufp) == TS_SUCCESS);
 }
 
 time_t
@@ -4592,7 +4592,7 @@ TSHttpTxnClientRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
   if (hptr->valid()) {
     *(reinterpret_cast<HTTPHdr **>(bufp)) = hptr;
     *obj = reinterpret_cast<TSMLoc>(hptr->m_http);
-    sdk_sanity_check_mbuffer(*bufp);
+    sdk_assert(sdk_sanity_check_mbuffer(*bufp) == TS_SUCCESS);
     return TS_SUCCESS;
   }
 
@@ -4613,7 +4613,7 @@ TSHttpTxnServerReqGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
   if (hptr->valid()) {
     *(reinterpret_cast<HTTPHdr **>(bufp)) = hptr;
     *obj = reinterpret_cast<TSMLoc>(hptr->m_http);
-    sdk_sanity_check_mbuffer(*bufp);
+    sdk_assert(sdk_sanity_check_mbuffer(*bufp) == TS_SUCCESS);
     return TS_SUCCESS;
   }
 
@@ -4633,7 +4633,7 @@ TSHttpTxnServerRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
   if (hptr->valid()) {
     *(reinterpret_cast<HTTPHdr **>(bufp)) = hptr;
     *obj = reinterpret_cast<TSMLoc>(hptr->m_http);
-    sdk_sanity_check_mbuffer(*bufp);
+    sdk_assert(sdk_sanity_check_mbuffer(*bufp) == TS_SUCCESS);
     return TS_SUCCESS;
   }
 
@@ -4673,7 +4673,7 @@ TSHttpTxnCachedReqGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
 
   *(reinterpret_cast<HdrHeapSDKHandle **>(bufp)) = *handle;
   *obj = reinterpret_cast<TSMLoc>(cached_hdr->m_http);
-  sdk_sanity_check_mbuffer(*bufp);
+  sdk_assert(sdk_sanity_check_mbuffer(*bufp) == TS_SUCCESS);
 
   return TS_SUCCESS;
 }
@@ -4711,7 +4711,7 @@ TSHttpTxnCachedRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
 
   *(reinterpret_cast<HdrHeapSDKHandle **>(bufp)) = *handle;
   *obj = reinterpret_cast<TSMLoc>(cached_hdr->m_http);
-  sdk_sanity_check_mbuffer(*bufp);
+  sdk_assert(sdk_sanity_check_mbuffer(*bufp) == TS_SUCCESS);
 
   return TS_SUCCESS;
 }
@@ -4745,7 +4745,7 @@ TSHttpTxnCachedRespModifiableGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
   ink_assert(c_resp != NULL && c_resp->valid());
   *(reinterpret_cast<HTTPHdr **>(bufp)) = c_resp;
   *obj = reinterpret_cast<TSMLoc>(c_resp->m_http);
-  sdk_sanity_check_mbuffer(*bufp);
+  sdk_assert(sdk_sanity_check_mbuffer(*bufp) == TS_SUCCESS);
 
   return TS_SUCCESS;
 }
@@ -8671,13 +8671,13 @@ TSHttpTxnIsCacheable(TSHttpTxn txnp, TSMBuffer request, TSMBuffer response)
   // We allow for either request or response to be empty (or both), in
   // which case we default to the transactions request or response.
   if (request) {
-    sdk_sanity_check_mbuffer(request);
+    sdk_assert(sdk_sanity_check_mbuffer(request) == TS_SUCCESS);
     req = reinterpret_cast<HTTPHdr *>(request);
   } else {
     req = &(sm->t_state.hdr_info.client_request);
   }
   if (response) {
-    sdk_sanity_check_mbuffer(response);
+    sdk_assert(sdk_sanity_check_mbuffer(response) == TS_SUCCESS);
     resp = reinterpret_cast<HTTPHdr *>(response);
   } else {
     resp = &(sm->t_state.hdr_info.server_response);

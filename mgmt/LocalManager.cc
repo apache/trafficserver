@@ -601,7 +601,7 @@ LocalManager::handleMgmtMsgFromProcesses(MgmtMessageHdr *mh)
                 data_raw);
       break;
     }
-  }
+  } break;
   case MGMT_SIGNAL_LOG_FILES_ROLLED: {
     Debug("lm", "Rolling logs %s", (char *)data_raw);
     break;

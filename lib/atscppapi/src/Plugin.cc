@@ -34,5 +34,6 @@ atscppapi::RegisterGlobalPlugin(std::string name, std::string vendor, std::strin
   info.plugin_name = const_cast<char *>(name.c_str());
   info.vendor_name = const_cast<char *>(vendor.c_str());
   info.support_email = const_cast<char *>(email.c_str());
-  TSPluginRegister(&info);
+  if (TSPluginRegister(&info) != TS_SUCCESS)
+    TSError("[Plugin.cc] Plugin registration failed.");
 }
