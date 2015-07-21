@@ -92,6 +92,11 @@ LogAccess::marshal_client_host_ip(char *buf)
   DEFAULT_IP_FIELD;
 }
 
+int
+LogAccess::marshal_host_interface_ip(char *buf)
+{
+  DEFAULT_IP_FIELD;
+}
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 int

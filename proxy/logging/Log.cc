@@ -344,7 +344,18 @@ Log::init_fields()
     new LogField("client_host_ip_hex", "chih", LogField::IP, &LogAccess::marshal_client_host_ip, &LogAccess::unmarshal_ip_to_hex);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "chih", field);
+  
+  // interface ip 
 
+  field = new LogField("host_interface_ip", "hii", LogField::IP, &LogAccess::marshal_host_interface_ip, &LogAccess::unmarshal_ip_to_str);
+  global_field_list.add(field, false);
+  ink_hash_table_insert(field_symbol_hash, "hii", field);
+
+  field =
+    new LogField("host_interface_ip_hex", "hiih", LogField::IP, &LogAccess::marshal_host_interface_ip, &LogAccess::unmarshal_ip_to_hex);
+  global_field_list.add(field, false);
+  ink_hash_table_insert(field_symbol_hash, "hiih", field);
+  // interface ip end
   field = new LogField("client_auth_user_name", "caun", LogField::STRING, &LogAccess::marshal_client_auth_user_name,
                        (LogField::UnmarshalFunc) & LogAccess::unmarshal_str);
   global_field_list.add(field, false);

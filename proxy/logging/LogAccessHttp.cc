@@ -237,6 +237,12 @@ LogAccessHttp::marshal_client_host_ip(char *buf)
   return marshal_ip(buf, &m_http_sm->t_state.client_info.src_addr.sa);
 }
 
+int
+LogAccessHttp::marshal_host_interface_ip(char *buf)
+{
+  return marshal_ip(buf, &m_http_sm->t_state.client_info.dst_addr.sa);
+}
+
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 int
