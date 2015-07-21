@@ -84,11 +84,13 @@ EXCLUSIVE_REGRESSION_TEST(Congestion_HashTable)(RegressionTest *t, int /* atype 
     if (i % 2 == 1 && data == 0) {
       rprintf(t, "verify content failed: key(%d) deleted\n", i);
       *pstatus = REGRESSION_TEST_FAILED;
+      delete htable;
       return;
     }
     if (data != 0 && data != i) {
       rprintf(t, "verify content failed: key(%d) data(%d)\n", i, data);
       *pstatus = REGRESSION_TEST_FAILED;
+      delete htable;
       return;
     }
     if (i % (count / 50) == 0)
@@ -128,6 +130,7 @@ EXCLUSIVE_REGRESSION_TEST(Congestion_HashTable)(RegressionTest *t, int /* atype 
       if (data != htable->lookup_entry(data)) {
         rprintf(t, "verify content failed: key(%d) data(%d)\n", data, htable->lookup_entry(data));
         *pstatus = REGRESSION_TEST_FAILED;
+        delete htable;
         return;
       }
     }
@@ -137,6 +140,7 @@ EXCLUSIVE_REGRESSION_TEST(Congestion_HashTable)(RegressionTest *t, int /* atype 
   if (new_count != 0) {
     rprintf(t, "there are %d extra entries in the table\n", new_count);
     *pstatus = REGRESSION_TEST_FAILED;
+    delete htable;
     return;
   }
 
@@ -157,6 +161,7 @@ EXCLUSIVE_REGRESSION_TEST(Congestion_HashTable)(RegressionTest *t, int /* atype 
   if (new_count != 0) {
     rprintf(t, "there are %d extra entries in the table\n", new_count);
     *pstatus = REGRESSION_TEST_FAILED;
+    delete htable;
     return;
   }
 
