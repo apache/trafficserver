@@ -1333,25 +1333,17 @@ inline void
 MIMEHdr::field_combine_dups(MIMEField *field, bool prepend_comma, const char separator)
 {
   MIMEField *current = field->m_next_dup;
-  MIMEField *next = NULL;
-
-  // clean up the heaps so we don't run this in the middle of appending and moving source location
-  m_heap->coalesce_str_heaps();
 
   while (current) {
-    next = current->m_next_dup;
-
     int value_len = 0;
     const char *value_str = current->value_get(&value_len);
+
     if (value_len > 0) {
+      HdrHeap::HeapGuard guard(m_heap, value_str); // reference count the source string so it doesn't get moved
       field->value_append(m_heap, m_mime, value_str, value_len, prepend_comma, separator);
     }
-    current = next;
-  }
-
-  // save the deletes to the end so we don't call coalesce_str_heaps in the middle of the appends
-  if (field->m_next_dup) {
-    field_delete(field->m_next_dup, true); // delete the duplicates
+    field_delete(current, false); // don't delete duplicates
+    current = field->m_next_dup;
   }
 }
 
