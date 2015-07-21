@@ -1690,6 +1690,7 @@ Customizable User Response Pages
 
    -  ``1`` = enable customizable user response pages in the default directory only
    -  ``2`` = enable language-targeted user response pages
+   -  ``3`` = enable host-targeted user response pages
 
 .. ts:cv:: CONFIG proxy.config.body_factory.enable_logging INT 0
 
