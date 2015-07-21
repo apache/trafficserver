@@ -91,3 +91,8 @@ lib/ts/HashSip.cc contains code derived from code at https://github.com/floodybe
 The code is public domain.
 
 The algorithm info can be found at: https://131002.net/siphash/
+
+~~
+
+lib/raft developed by Google.
+Copyright 2014 Google Inc. All Rights Reserved.
