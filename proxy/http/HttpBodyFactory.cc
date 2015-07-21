@@ -419,10 +419,13 @@ HttpBodyFactory::fabricate(StrList *acpt_language_list, StrList *acpt_charset_li
     Debug("body_factory", "  customization disabled, returning NULL template");
     return (NULL);
   }
+
   // what set should we use (language target if enable_customizations == 2)
   if (enable_customizations == 2)
     set = determine_set_by_language(acpt_language_list, acpt_charset_list);
-  else
+  else if (enable_customizations == 3) {
+    set = determine_set_by_host(context);
+  } else
     set = "default";
 
   if (set_return)
@@ -443,6 +446,23 @@ HttpBodyFactory::fabricate(StrList *acpt_language_list, StrList *acpt_charset_li
   return (buffer);
 }
 
+
+// LOCKING: must be called with lock taken
+const char *
+HttpBodyFactory::determine_set_by_host(HttpTransact::State *context) {
+  const char *set;
+  RawHashTable_Value v;
+  int host_len = context->hh_info.host_len;
+  char host_buffer[host_len + 1];
+  strncpy(host_buffer, context->hh_info.request_host, host_len);
+  host_buffer[host_len] = '\0';
+  if (table_of_sets->getValue((RawHashTable_Key)host_buffer, &v)) {
+    set = table_of_sets->getKeyFromBinding(table_of_sets->getCurrentBinding((RawHashTable_Key)host_buffer));
+  } else {
+    set = "default";
+  }
+  return set;
+}
 
 // LOCKING: must be called with lock taken
 const char *
