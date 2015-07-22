@@ -1065,23 +1065,14 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
     return EVENT_DONE;
   }
 
-  // All the pre-accept hooks have completed, proceed with the actual accept.
+  int retval = 1; // Initialze with a non-error value
 
+  // All the pre-accept hooks have completed, proceed with the actual accept.
   if (BIO_eof(SSL_get_rbio(this->ssl))) { // No more data in the buffer
     // Read from socket to fill in the BIO buffer with the
     // raw handshake data before calling the ssl accept calls.
-    int retval = this->read_raw_data();
-    if (retval < 0) {
-      if (retval == -EAGAIN) {
-        // No data at the moment, hang tight
-        SSLDebugVC(this, "SSL handshake: EAGAIN");
-        return SSL_HANDSHAKE_WANT_READ;
-      } else {
-        // An error, make us go away
-        SSLDebugVC(this, "SSL handshake error: read_retval=%d", retval);
-        return EVENT_ERROR;
-      }
-    } else if (retval == 0) {
+    retval = this->read_raw_data();
+    if (retval == 0) {
       // EOF, go away, we stopped in the handshake
       SSLDebugVC(this, "SSL handshake error: EOF");
       return EVENT_ERROR;
@@ -1183,6 +1174,15 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
 
   case SSL_ERROR_WANT_READ:
     TraceIn(trace, get_remote_addr(), get_remote_port(), "SSL server handshake ERROR_WANT_READ");
+    if (retval == -EAGAIN) {
+      // No data at the moment, hang tight
+      SSLDebugVC(this, "SSL handshake: EAGAIN");
+      return SSL_HANDSHAKE_WANT_READ;
+    } else if (retval < 0)  {
+      // An error, make us go away
+      SSLDebugVC(this, "SSL handshake error: read_retval=%d", retval);
+      return EVENT_ERROR;
+    }
     return SSL_HANDSHAKE_WANT_READ;
 
 // This value is only defined in openssl has been patched to
