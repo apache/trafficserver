@@ -94,7 +94,7 @@ SpdyClientSession::init(NetVConnection *netvc)
 {
   int r;
 
-  this->mutex = new_ProxyMutex();
+  this->mutex = netvc->mutex;
   this->vc = netvc;
   this->req_map.clear();
 

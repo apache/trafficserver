@@ -1,0 +1,157 @@
+#
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+#OPTIMIZE=1
+DEBUG=1
+#PROFILE=1
+PREFIX=/usr/local
+OUT_DIR=.
+
+# Use default if no configuration specified.
+CXX ?= g++
+#CXX = clang
+AR ?= ar
+
+PROTOC = protoc
+PYTHONPATH := .:$(PATHONPATH)
+
+.PHONY: all depend install
+
+ifdef OPTIMIZE
+CXXFLAGS += -O3
+endif
+ifdef DEBUG
+CXXFLAGS += -ggdb
+endif
+ifdef PROFILE
+CXXFLAGS += -O3 -g
+endif
+
+OS_TYPE = $(shell uname -s | \
+	    awk '{ split($$1,a,"_"); printf("%s", a[1]);  }')
+OS_VERSION = $(shell uname -r | \
+	       awk '{ split($$1,a,"."); sub("V","",a[1]); \
+	         printf("%d%d%d",a[1],a[2],a[3]); }')
+ARCH = $(shell uname -m)
+ifeq ($(ARCH),i386)
+  ARCH = x86
+endif
+ifeq ($(ARCH),i486)
+  ARCH = x86
+endif
+ifeq ($(ARCH),i586)
+  ARCH = x86
+endif
+ifeq ($(ARCH),i686)
+  ARCH = x86
+endif
+
+ifeq ($(ARCH),x86)
+ifneq ($(OS_TYPE),Darwin)
+# Darwin lies
+$(error 64-bit required)
+endif
+endif
+ifeq ($(OS_TYPE),Darwin)
+  ARFLAGS = crvs
+else
+  ARFLAGS = crv
+endif
+
+ifneq ($(OS_TYPE),CYGWIN)
+ifneq ($(OS_TYPE),Darwin)
+  LIBS += -lrt -lpthread
+endif
+endif
+
+
+# Function for getting a set of source files.
+get_srcs = $(shell find $(1) -name \*.c -or -name \*.cpp -or -name \*.cc -a ! -name \*_test.cc | tr "\n" " ")
+
+PROTOS = raft
+PROTO_SOURCES = $(addsuffix .pb.cc,$(PROTOS))
+PROTO_INCLUDES = $(addsuffix .pb.h,$(PROTOS))
+PROTO_PYTHON = $(addsuffix _pb2.py,$(PROTOS))
+TEST_SOURCES = $(shell find . -name \*_test.cc)
+TESTS = $(basename $(TEST_SOURCES))
+SOURCES = $(PROTO_SOURCES) $(TEST_SOURCES)
+
+GTEST_DIR = /usr/include/gtest
+GTEST_LIB = /usr/lib
+
+CXXFLAGS += $(OPT)
+CXXFLAGS += -std=c++11
+CXXFLAGS += -I. -I./include -I./util -I./common -I$(GTEST_DIR) \
+	    -I/usr/local/include -I/usr/include
+CXXFLAGS += `pkg-config --cflags protobuf`
+
+LIBS += -L/usr/local/lib/ -L/usr/lib -lgflags
+#LIBS += -L/usr/local/lib/ -L/usr/lib
+LIBS += `pkg-config --libs protobuf`
+
+source_to_object = $(addsuffix .o,$(basename $(1)))
+source_to_depend = $(addsuffix .d,$(basename $(1)))
+
+default: all
+
+all: $(TESTS)
+
+depend: $(call source_to_depend,$(SOURCES))
+	@echo Building $(call source_to_depend,$(SOURCES))
+
+test: $(TESTS)
+	for t in $^; \
+		do \
+			echo "***** Running $$t"; \
+			rm -rf $(TEST_TMPDIR); \
+			mkdir $(TEST_TMPDIR); \
+			./$$t --test_tmpdir=$(TEST_TMPDIR) || exit 1; \
+		done; \
+	rm -rf $(TEST_TMPDIR)
+	@echo "All tests pass!"
+
+clean:
+	-rm -f `find . -type f -name '*.pb.*'`
+	-rm -f `find . -type f -name '*_pb2.py'`
+	-rm -f `find . -type f -name '*.o'`
+	-rm -f `find . -type f -name '*.pyc'`
+	-rm -f `find . -type f -name '*.d'`
+	-rm -f $(PROTO_INCLUDES) $(PROTO_SOURCES) $(PROTO_PYTHON)
+	-rm -f $(TESTS)
+
+%_test: raft.pb.o %_test.cc
+	$(CXX) -o $@ $*_test.cc $(CXXFLAGS) raft.pb.o $(LIBS) $(GTEST_LIB)/libgtest.a $(GTEST_LIB)/libgtest_main.a
+
+%.pb.cc %.pb.h %_pb2.py: %.proto
+	$(PROTOC) $^ --cpp_out=. --python_out=.
+
+%.o: %.cc $(MODULE_INCLUDES) $(CODEGEN_FILES)
+	$(CXX) -c $*.cc -o $(OUT_DIR)/$@ $(CXXFLAGS)
+
+%.d: %.cc $(MODULE_INCLUDES) $(CODEGEN_FILES)
+	$(CXX) -MM $*.cc $(CXXFLAGS) > $*.d
+
+%.cc: %.lex
+	flex -o $@ $^
+
+%.cc %.h: %.y
+	bison --output=$*.cc --defines=$*.h $^
+
+
+ifneq ($(MAKECMDGOALS),clean)
+  -include $(call source_to_depend,$(SOURCES))
+endif
