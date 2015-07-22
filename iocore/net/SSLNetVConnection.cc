@@ -1178,7 +1178,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
       // No data at the moment, hang tight
       SSLDebugVC(this, "SSL handshake: EAGAIN");
       return SSL_HANDSHAKE_WANT_READ;
-    } else if (retval < 0)  {
+    } else if (retval < 0) {
       // An error, make us go away
       SSLDebugVC(this, "SSL handshake error: read_retval=%d", retval);
       return EVENT_ERROR;
