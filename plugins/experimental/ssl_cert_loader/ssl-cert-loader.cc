@@ -479,9 +479,9 @@ TSPluginInit(int argc, const char *argv[])
 {
   bool success = false;
   TSPluginRegistrationInfo info;
-  TSCont cb_pa = 0;   // pre-accept callback continuation
-  TSCont cb_lc = 0;   // life cycle callback continuuation
-  TSCont cb_sni = 0;  // SNI callback continuuation
+  TSCont cb_pa = 0;  // pre-accept callback continuation
+  TSCont cb_lc = 0;  // life cycle callback continuuation
+  TSCont cb_sni = 0; // SNI callback continuuation
   static const struct option longopt[] = {{const_cast<char *>("config"), required_argument, NULL, 'c'},
                                           {NULL, no_argument, NULL, '\0'}};
 
