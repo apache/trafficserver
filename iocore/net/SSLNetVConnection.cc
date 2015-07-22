@@ -445,49 +445,46 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
       ret = sslStartHandShake(SSL_EVENT_SERVER, err);
     }
     // If we have flipped to blind tunnel, don't read ahead
-    if (this->handShakeReader) {
-      if (this->attributes != HttpProxyPort::TRANSPORT_BLIND_TUNNEL) {
-        // Check and consume data that has been read
-        if (BIO_eof(SSL_get_rbio(this->ssl))) {
-          this->handShakeReader->consume(this->handShakeBioStored);
-          this->handShakeBioStored = 0;
-        }
-      } else {
-        // Now in blind tunnel. Set things up to read what is in the buffer
-        // Must send the READ_COMPLETE here before considering
-        // forwarding on the handshake buffer, so the
-        // SSLNextProtocolTrampoline has a chance to do its
-        // thing before forwarding the buffers.
-        this->readSignalDone(VC_EVENT_READ_COMPLETE, nh);
-
-        // If the handshake isn't set yet, this means the tunnel
-        // decision was make in the SNI callback.  We must move
-        // the client hello message back into the standard read.vio
-        // so it will get forwarded onto the origin server
-        if (!this->getSSLHandShakeComplete()) {
-          this->sslHandShakeComplete = 1;
-
-          // Copy over all data already read in during the SSL_accept
-          // (the client hello message)
-          NetState *s = &this->read;
-          MIOBufferAccessor &buf = s->vio.buffer;
-          int64_t r = buf.writer()->write(this->handShakeHolder);
-          s->vio.nbytes += r;
-          s->vio.ndone += r;
-
-          // Clean up the handshake buffers
-          this->free_handshake_buffers();
-
-          if (r > 0) {
-            // Kick things again, so the data that was copied into the
-            // vio.read buffer gets processed
-            this->readSignalDone(VC_EVENT_READ_COMPLETE, nh);
-          }
-        }
-        return;
+    if (this->handShakeReader && this->attributes != HttpProxyPort::TRANSPORT_BLIND_TUNNEL) {
+      // Check and consume data that has been read
+      if (BIO_eof(SSL_get_rbio(this->ssl))) {
+        this->handShakeReader->consume(this->handShakeBioStored);
+        this->handShakeBioStored = 0;
       }
-    }
+    } else if (this->attributes == HttpProxyPort::TRANSPORT_BLIND_TUNNEL) {
+      // Now in blind tunnel. Set things up to read what is in the buffer
+      // Must send the READ_COMPLETE here before considering
+      // forwarding on the handshake buffer, so the
+      // SSLNextProtocolTrampoline has a chance to do its
+      // thing before forwarding the buffers.
+      this->readSignalDone(VC_EVENT_READ_COMPLETE, nh);
 
+      // If the handshake isn't set yet, this means the tunnel
+      // decision was make in the SNI callback.  We must move
+      // the client hello message back into the standard read.vio
+      // so it will get forwarded onto the origin server
+      if (!this->getSSLHandShakeComplete()) {
+        this->sslHandShakeComplete = 1;
+
+        // Copy over all data already read in during the SSL_accept
+        // (the client hello message)
+        NetState *s = &this->read;
+        MIOBufferAccessor &buf = s->vio.buffer;
+        int64_t r = buf.writer()->write(this->handShakeHolder);
+        s->vio.nbytes += r;
+        s->vio.ndone += r;
+
+        // Clean up the handshake buffers
+        this->free_handshake_buffers();
+
+        if (r > 0) {
+          // Kick things again, so the data that was copied into the
+          // vio.read buffer gets processed
+          this->readSignalDone(VC_EVENT_READ_COMPLETE, nh);
+        }
+      }
+      return;
+    }
     if (ret == EVENT_ERROR) {
       this->read.triggered = 0;
       readSignalError(nh, err);

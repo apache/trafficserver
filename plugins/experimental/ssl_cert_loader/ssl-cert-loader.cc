@@ -521,7 +521,6 @@ TSPluginInit(int argc, const char *argv[])
     TSLifecycleHookAdd(TS_LIFECYCLE_PORTS_INITIALIZED_HOOK, cb_lc);
     TSHttpHookAdd(TS_VCONN_PRE_ACCEPT_HOOK, cb_pa);
     TSHttpHookAdd(TS_SSL_SNI_HOOK, cb_sni);
-    TSHttpHookAdd(TS_SSL_SNI_HOOK, cb_sni2);
     success = true;
   }
 
