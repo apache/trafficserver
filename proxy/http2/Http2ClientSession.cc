@@ -138,6 +138,7 @@ Http2ClientSession::set_upgrade_context(HTTPHdr *h)
   upgrade_context.req_header->copy(h);
 
   MIMEField *settings = upgrade_context.req_header->field_find(MIME_FIELD_HTTP2_SETTINGS, MIME_LEN_HTTP2_SETTINGS);
+  ink_release_assert(settings!=NULL);
   int svlen;
   const char *sv = settings->value_get(&svlen);
 

@@ -45,6 +45,7 @@ unsigned char *
 ParseRules::scan_while(unsigned char *ptr, unsigned int n, uint32_t bitmask)
 {
   unsigned int i;
+  int k=-1;
   uint32_t *wptr;
   unsigned char *align_ptr;
   uintptr_t f_bytes, b_bytes, words, align_off;
@@ -65,17 +66,21 @@ ParseRules::scan_while(unsigned char *ptr, unsigned int n, uint32_t bitmask)
     switch (align_off) {
     case 1:
       if (!is_type(align_ptr[1], bitmask))
-        return (&ptr[1]);
+          k=1;
+      break;
     case 2:
       if (!is_type(align_ptr[2], bitmask))
-        return (&ptr[2]);
+          k=2;
+      break;
     case 3:
       if (!is_type(align_ptr[3], bitmask))
-        return (&ptr[3]);
+          k=3;
       break;
     default:
       break;
     }
+    if(k!=-1)
+        return &ptr[k];
 
     b_bytes = n - ((words << 2) + f_bytes);
 
@@ -96,29 +101,31 @@ ParseRules::scan_while(unsigned char *ptr, unsigned int n, uint32_t bitmask)
     }
 
     align_ptr = (unsigned char *)&(wptr[words]);
-
+    k=-1;
     switch (b_bytes) {
     case 1:
       if (!is_type(align_ptr[0], bitmask))
-        return (&align_ptr[0]);
+          k=0;
       break;
     case 2:
       if (!is_type(align_ptr[0], bitmask))
-        return (&align_ptr[0]);
+          k=0;
       if (!is_type(align_ptr[1], bitmask))
-        return (&align_ptr[1]);
+          k=1;
       break;
     case 3:
       if (!is_type(align_ptr[0], bitmask))
-        return (&align_ptr[0]);
+          k=0;
       if (!is_type(align_ptr[1], bitmask))
-        return (&align_ptr[1]);
+          k=1;
       if (!is_type(align_ptr[2], bitmask))
-        return (&align_ptr[2]);
+          k=2;
       break;
     default:
       break;
     }
+    if(-1!=k)
+        return &align_ptr[k];
   }
   return 0;
 }
