@@ -208,12 +208,12 @@ SpdyClientSession::start()
     {SPDYLAY_SETTINGS_INITIAL_WINDOW_SIZE, SPDYLAY_ID_FLAG_SETTINGS_NONE, spdy_initial_window_size}};
   int r;
 
-  if (this->write_vio && (TSIOBufferReaderAvail(this->req_reader) > 0)) {
-    spdy_process_read(TS_EVENT_VCONN_WRITE_READY, this);
-  }
-
   this->read_vio = (TSVIO) this->vc->do_io_read(this, INT64_MAX, reinterpret_cast<MIOBuffer *>(this->req_buffer));
   this->write_vio = (TSVIO) this->vc->do_io_write(this, INT64_MAX, reinterpret_cast<IOBufferReader *>(this->resp_reader));
+
+  if (TSIOBufferReaderAvail(this->req_reader) > 0) {
+    spdy_process_read(TS_EVENT_VCONN_WRITE_READY, this);
+  }
 
   SET_HANDLER(&SpdyClientSession::state_session_readwrite);
 
