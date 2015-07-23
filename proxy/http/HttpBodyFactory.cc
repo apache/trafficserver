@@ -449,7 +449,8 @@ HttpBodyFactory::fabricate(StrList *acpt_language_list, StrList *acpt_charset_li
 
 // LOCKING: must be called with lock taken
 const char *
-HttpBodyFactory::determine_set_by_host(HttpTransact::State *context) {
+HttpBodyFactory::determine_set_by_host(HttpTransact::State *context)
+{
   const char *set;
   RawHashTable_Value v;
   int host_len = context->hh_info.host_len;
