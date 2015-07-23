@@ -662,6 +662,7 @@ HostDBInfo *
 probe(ProxyMutex *mutex, HostDBMD5 const &md5, bool ignore_timeout)
 {
   // If we have an entry in our hosts file, we don't need to bother with DNS
+  // Make a local copy/reference so we don't have to worry about updates.
   Ptr<RefCountedHostsFileMap> current_host_file_map = hostDB.hosts_file_ptr;
 
   ts::ConstBuffer hname(md5.host_name, md5.host_len);
@@ -2731,8 +2732,6 @@ HostDBFileContinuation::destroy()
 // proceeding at a time in any case so we might as well make these
 // globals.
 int HostDBFileUpdateActive = 0;
-// map of hostname -> IpAddr
-Ptr<RefCountedHostsFileMap> parsed_hosts_file_ptr(new RefCountedHostsFileMap());
 
 // Actual ordering doesn't matter as long as it's consistent.
 bool
@@ -2743,7 +2742,7 @@ CmpMD5(INK_MD5 const &lhs, INK_MD5 const &rhs)
 
 
 void
-ParseHostLine(char *l)
+ParseHostLine(RefCountedHostsFileMap *map, char *l)
 {
   Tokenizer elts(" \t");
   int n_elts = elts.Initialize(l, SHARE_TOKS);
@@ -2754,8 +2753,8 @@ ParseHostLine(char *l)
     for (int i = 1; i < n_elts; ++i) {
       ts::ConstBuffer name(elts[i], strlen(elts[i]));
       // If we don't have an entry already (host files only support single IPs for a given name)
-      if (parsed_hosts_file_ptr->hosts_file_map.find(name) == parsed_hosts_file_ptr->hosts_file_map.end()) {
-        parsed_hosts_file_ptr->hosts_file_map[name] = ip;
+      if (map->hosts_file_map.find(name) == map->hosts_file_map.end()) {
+        map->hosts_file_map[name] = ip;
       }
     }
   }
@@ -2765,6 +2764,8 @@ ParseHostLine(char *l)
 void
 ParseHostFile(char const *path)
 {
+  Ptr<RefCountedHostsFileMap> parsed_hosts_file_ptr;
+
   // Test and set for update in progress.
   if (0 != ink_atomic_swap(&HostDBFileUpdateActive, 1)) {
     Debug("hostdb", "Skipped load of host file because update already in progress");
@@ -2780,6 +2781,7 @@ ParseHostFile(char const *path)
         // +1 in case no terminating newline
         int64_t size = info.st_size + 1;
 
+        parsed_hosts_file_ptr = new RefCountedHostsFileMap;
         parsed_hosts_file_ptr->HostFileText = static_cast<char *>(ats_malloc(size));
         if (parsed_hosts_file_ptr->HostFileText) {
           char *base = parsed_hosts_file_ptr->HostFileText;
@@ -2805,7 +2807,7 @@ ParseHostFile(char const *path)
             while (base < spot && isspace(*base))
               ++base;                        // skip leading ws
             if (*base != '#' && base < spot) // non-empty non-comment line
-              ParseHostLine(base);
+              ParseHostLine(parsed_hosts_file_ptr, base);
             base = spot + 1;
           }
 
@@ -2815,10 +2817,9 @@ ParseHostFile(char const *path)
     }
   }
 
-  // Swap out hostDB's map for ours
+  // Rotate the host file maps down.
+  hostDB.prev_hosts_file_ptr = hostDB.hosts_file_ptr;
   hostDB.hosts_file_ptr = parsed_hosts_file_ptr;
-  // Make a new map, so we can do it all again
-  parsed_hosts_file_ptr = new RefCountedHostsFileMap();
   // Mark this one as completed, so we can allow another update to happen
   HostDBFileUpdateActive = 0;
 }
