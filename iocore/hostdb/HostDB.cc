@@ -2430,7 +2430,20 @@ struct ShowHostDB : public ShowCont {
   {
     if (event == EVENT_INTERVAL) {
       HostDBInfo *r = reinterpret_cast<HostDBInfo *>(e);
-      return showOne(r, false, event, e);
+      showOne(r,false,event,e);
+      if (r->round_robin) {
+              HostDBRoundRobin *rr_data = r->rr();
+              if (rr_data) {
+                CHECK_SHOW(show("<table border=1>\n"));
+                CHECK_SHOW(show("<tr><td>%s</td><td>%d</td></tr>\n", "Total", rr_data->rrcount));
+                CHECK_SHOW(show("<tr><td>%s</td><td>%d</td></tr>\n", "Good", rr_data->good));
+                CHECK_SHOW(show("<tr><td>%s</td><td>%d</td></tr>\n", "Current", rr_data->current));
+                CHECK_SHOW(show("</table>\n"));
+
+                for (int i = 0; i < rr_data->rrcount; i++)
+                  showOne(&rr_data->info[i], true, event, e);
+              }
+     }
     } else if (event == EVENT_DONE) {
       return complete(event, e);
     } else {
