@@ -125,7 +125,7 @@ new_HdrHeap(int size)
 
   //    Debug("hdrs", "Allocated header heap in size %d", size);
 
-  // Patch vritual function table ptr
+  // Patch virtual function table ptr
   *((void **)h) = *((void **)&proto_heap);
 
   h->m_size = size;
