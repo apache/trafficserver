@@ -2747,9 +2747,9 @@ ParseHostLine(RefCountedHostsFileMap *map, char *l)
       ts::ConstBuffer name(elts[i], strlen(elts[i]));
       // If we don't have an entry already (host files only support single IPs for a given name)
       if (map->hosts_file_map.find(name) == map->hosts_file_map.end()) {
-	HostsFileMap::mapped_type& item = map->hosts_file_map[name];
-	item.round_robin = false;
-	item.round_robin_elt = false;
+        HostsFileMap::mapped_type &item = map->hosts_file_map[name];
+        item.round_robin = false;
+        item.round_robin_elt = false;
         item.reverse_dns = false;
         item.is_srv = false;
         ats_ip_set(item.ip(), ip);
@@ -2820,7 +2820,8 @@ ParseHostFile(char const *path)
   // 2) The HostDB clients (essentially the HttpSM) copies the HostDB record or data over to local storage during event processing,
   //    which means the data only has to be valid until the event chaining rolls back up to the event processor. This will certainly
   //    be less than 1s
-  // The combination of these means keeping one file back in the rotation is sufficient to keep any outstanding references valid until
+  // The combination of these means keeping one file back in the rotation is sufficient to keep any outstanding references valid
+  // until
   // dropped.
   hostDB.prev_hosts_file_ptr = hostDB.hosts_file_ptr;
   hostDB.hosts_file_ptr = parsed_hosts_file_ptr;
