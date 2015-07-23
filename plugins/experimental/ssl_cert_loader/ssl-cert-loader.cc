@@ -479,10 +479,9 @@ TSPluginInit(int argc, const char *argv[])
 {
   bool success = false;
   TSPluginRegistrationInfo info;
-  TSCont cb_pa = 0;   // pre-accept callback continuation
-  TSCont cb_lc = 0;   // life cycle callback continuuation
-  TSCont cb_sni = 0;  // SNI callback continuuation
-  TSCont cb_sni2 = 0; // SNI callback continuuation
+  TSCont cb_pa = 0;  // pre-accept callback continuation
+  TSCont cb_lc = 0;  // life cycle callback continuuation
+  TSCont cb_sni = 0; // SNI callback continuuation
   static const struct option longopt[] = {{const_cast<char *>("config"), required_argument, NULL, 'c'},
                                           {NULL, no_argument, NULL, '\0'}};
 
@@ -521,7 +520,6 @@ TSPluginInit(int argc, const char *argv[])
     TSLifecycleHookAdd(TS_LIFECYCLE_PORTS_INITIALIZED_HOOK, cb_lc);
     TSHttpHookAdd(TS_VCONN_PRE_ACCEPT_HOOK, cb_pa);
     TSHttpHookAdd(TS_SSL_SNI_HOOK, cb_sni);
-    TSHttpHookAdd(TS_SSL_SNI_HOOK, cb_sni2);
     success = true;
   }
 
