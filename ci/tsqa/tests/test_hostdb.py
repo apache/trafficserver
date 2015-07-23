@@ -57,6 +57,28 @@ class EchoServerIpHandler(SocketServer.BaseRequestHandler):
             self.request.sendall(resp)
 
 
+class TestHostDBBadResolvConf(helpers.EnvironmentCase):
+    '''
+    Test that ATS can handle an empty resolv_conf
+    '''
+    @classmethod
+    def setUpEnv(cls, env):
+        cls.configs['records.config']['CONFIG'].update({
+            'proxy.config.http.response_server_enabled': 2,  # only add server headers when there weren't any
+            'proxy.config.hostdb.lookup_timeout': 2,
+            'proxy.config.dns.resolv_conf': '/tmp/non_existant_file',
+            'proxy.config.url_remap.remap_required': 0,
+
+        })
+
+    def test_working(self):
+        start = time.time()
+        ret = requests.get('http://trafficserver.readthedocs.org',
+                           proxies=self.proxies,
+                           )
+        self.assertEqual(ret.status_code, 502)
+
+
 class TestHostDBPartiallyFailedDNS(helpers.EnvironmentCase):
     '''
     Tests for how hostdb handles when there is one failed and one working resolver
