@@ -195,6 +195,13 @@ Http2ClientSession::do_io_close(int alerrno)
   DebugHttp2Ssn0("session closed");
 
   ink_assert(this->mutex->thread_holding == this_ethread());
+  if (client_vc) {
+    // clean up ssl's first byte iobuf
+    SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(client_vc);
+    if (ssl_vc) {
+      ssl_vc->set_ssl_iobuf(NULL);
+    }
+  }
   HTTP2_DECREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_CLIENT_SESSION_COUNT, this->mutex->thread_holding);
   send_connection_event(&this->connection_state, HTTP2_SESSION_EVENT_FINI, this);
   do_api_callout(TS_HTTP_SSN_CLOSE_HOOK);

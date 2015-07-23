@@ -65,7 +65,15 @@ Http2SessionAccept::mainEvent(int event, void *data)
   ink_release_assert((event == NET_EVENT_ACCEPT) ? (data != 0) : (1));
 
   if (event == NET_EVENT_ACCEPT) {
-    this->accept(static_cast<NetVConnection *>(data), NULL, NULL);
+    NetVConnection *netvc = static_cast<NetVConnection *>(data);
+    SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(netvc);
+    MIOBuffer *iobuf = NULL;
+    IOBufferReader *reader = NULL;
+    if (ssl_vc) {
+      iobuf = ssl_vc->get_ssl_iobuf();
+      reader = ssl_vc->get_ssl_reader();
+    }
+    this->accept(static_cast<NetVConnection *>(data), iobuf, reader);
     return EVENT_CONT;
   }
 

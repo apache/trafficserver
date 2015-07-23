@@ -143,6 +143,11 @@ SpdyClientSession::clear()
   this->mutex = NULL;
 
   if (vc) {
+    // clean up ssl's first byte iobuf
+    SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(vc);
+    if (ssl_vc) {
+      ssl_vc->set_ssl_iobuf(NULL);
+    }
     TSVConnClose(reinterpret_cast<TSVConn>(vc));
     vc = NULL;
   }
@@ -203,7 +208,7 @@ SpdyClientSession::start()
     {SPDYLAY_SETTINGS_INITIAL_WINDOW_SIZE, SPDYLAY_ID_FLAG_SETTINGS_NONE, spdy_initial_window_size}};
   int r;
 
-  if (TSIOBufferReaderAvail(this->req_reader) > 0) {
+  if (this->write_vio && (TSIOBufferReaderAvail(this->req_reader) > 0)) {
     spdy_process_read(TS_EVENT_VCONN_WRITE_READY, this);
   }
 

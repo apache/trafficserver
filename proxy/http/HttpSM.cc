@@ -614,7 +614,7 @@ HttpSM::state_read_client_request_header(int event, void *data)
   //   time we've been called.  The timeout had been set to
   //   the accept timeout by the HttpClientSession
   //
-  if (client_request_hdr_bytes == 0) {
+  if ((ua_buffer_reader->read_avail() > 0) && (client_request_hdr_bytes == 0)) {
     milestones[TS_MILESTONE_UA_FIRST_READ] = Thread::get_hrtime();
     ua_session->get_netvc()->set_inactivity_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_no_activity_timeout_in));
   }
