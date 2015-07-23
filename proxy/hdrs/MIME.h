@@ -184,7 +184,7 @@ struct MIMEFieldBlockImpl : public HdrHeapObjImpl {
   MIMEFieldBlockImpl *m_next;
   MIMEField m_field_slots[MIME_FIELD_BLOCK_SLOTS];
   // mime_hdr_copy_onto assumes that m_field_slots is last --
-  // don't add any new fields afterit.
+  // don't add any new fields after it.
 
   // Marshaling Functions
   int marshal(MarshalXlate *ptr_xlate, int num_ptr, MarshalXlate *str_xlate, int num_str);
