@@ -187,6 +187,7 @@ private:
                   const char **set_return = NULL);
 
   const char *determine_set_by_language(StrList *acpt_language_list, StrList *acpt_charset_list);
+  const char *determine_set_by_host(HttpTransact::State *context);
   HttpBodyTemplate *find_template(const char *set, const char *type, HttpBodySet **body_set_return);
   bool is_response_suppressed(HttpTransact::State *context);
   bool
