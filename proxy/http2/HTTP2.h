@@ -314,6 +314,7 @@ public:
   static uint32_t max_frame_size;
   static uint32_t header_table_size;
   static uint32_t max_header_list_size;
+  static uint32_t max_request_header_size;
 
   static void init();
 };

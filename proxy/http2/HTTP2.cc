@@ -762,6 +762,7 @@ uint32_t Http2::initial_window_size = 1048576;
 uint32_t Http2::max_frame_size = 16384;
 uint32_t Http2::header_table_size = 4096;
 uint32_t Http2::max_header_list_size = 4294967295;
+uint32_t Http2::max_request_header_size = 131072;
 
 void
 Http2::init()
@@ -771,6 +772,7 @@ Http2::init()
   REC_EstablishStaticConfigInt32U(max_frame_size, "proxy.config.http2.max_frame_size");
   REC_EstablishStaticConfigInt32U(header_table_size, "proxy.config.http2.header_table_size");
   REC_EstablishStaticConfigInt32U(max_header_list_size, "proxy.config.http2.max_header_list_size");
+  REC_EstablishStaticConfigInt32U(max_request_header_size, "proxy.config.http.request_header_max_size");
 
   // Setup statistics
   http2_rsb = RecAllocateRawStatBlock(static_cast<int>(HTTP2_N_STATS));

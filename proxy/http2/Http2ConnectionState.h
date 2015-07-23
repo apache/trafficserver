@@ -106,6 +106,7 @@ public:
     HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_CLIENT_STREAM_COUNT, _thread);
     _start_time = ink_hrtime();
     _req_header.create(HTTP_TYPE_REQUEST);
+    request_header_length = 0;
   }
 
   ~Http2Stream()
@@ -175,6 +176,8 @@ public:
   ssize_t client_rwnd, server_rwnd;
 
   LINK(Http2Stream, link);
+
+  uint32_t request_header_length;
 
 private:
   ink_hrtime _start_time;

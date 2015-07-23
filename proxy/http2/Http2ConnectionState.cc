@@ -169,6 +169,13 @@ rcv_headers_frame(Http2ClientSession &cs, Http2ConnectionState &cstate, const Ht
     return HTTP2_ERROR_PROTOCOL_ERROR;
   }
 
+  // keep track of how many bytes we get in the frame
+  stream->request_header_length += payload_length;
+  if (stream->request_header_length > Http2::max_request_header_size) {
+    Error("HTTP/2 payload for headers exceeded: %u", stream->request_header_length);
+    return HTTP2_ERROR_PROTOCOL_ERROR;
+  }
+
   // A receiver MUST treat the receipt of any other type of frame or
   // a frame on a different stream as a connection error of type PROTOCOL_ERROR.
   if (cstate.get_continued_id() != 0) {
@@ -539,6 +546,13 @@ rcv_continuation_frame(Http2ClientSession &cs, Http2ConnectionState &cstate, con
   for (;;) {
     unsigned read_bytes = read_rcv_buffer(buf + remaining_bytes, sizeof(buf) - remaining_bytes, nbytes, frame);
     IOVec header_block_fragment = make_iovec(buf, read_bytes + remaining_bytes);
+
+    // keep track of how many bytes we get in the frame
+    stream->request_header_length += frame.header().length;
+    if (stream->request_header_length > Http2::max_request_header_size) {
+      Error("HTTP/2 payload for headers exceeded: %u", stream->request_header_length);
+      return HTTP2_ERROR_PROTOCOL_ERROR;
+    }
 
     bool cont = nbytes < frame.header().length || !(frame.header().flags & HTTP2_FLAGS_HEADERS_END_HEADERS);
     int64_t decoded_bytes = stream->decode_request_header(header_block_fragment, *cstate.local_dynamic_table, cont);
