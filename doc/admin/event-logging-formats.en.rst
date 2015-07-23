@@ -109,6 +109,16 @@ The following list describes Traffic Server custom logging fields.
 ``chih``
     The IP address of the client's host machine in hexadecimal.
 
+.. _hii:
+
+``hii``
+    This is the incoming (interface) ip for traffic server, in otherwords this is the ip address the client connected to.
+
+.. _hiih:
+
+``hiih``
+    The the incoming (interface) ip in hexadecimal.
+
 .. _chp:
 
 ``chp``
