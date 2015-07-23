@@ -1,3 +1,0 @@
-[submodule "lib/luajit"]
-	path = lib/luajit
-	url = http://luajit.org/git/luajit-2.0.git
