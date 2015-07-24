@@ -68,6 +68,7 @@ asf-dist-rc: asf-distdir
 asf-distdir:
 	@$(am__remove_distdir)
 	test -d .git && git clone . $(distdir)
+	cd $(distdir) && autoreconf -i
 	$(RM) -r -- $(distdir)/autom4te.cache $(distdir)/ci `find $(distdir) -name .git -o -name .gitignore -o -name .gitmodules`
 
 asf-dist-sign: asf-dist
