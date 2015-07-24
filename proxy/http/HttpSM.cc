@@ -3173,9 +3173,19 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer *c)
 
   ink_assert(ua_entry->vc == c->vc);
   if (close_connection) {
-    // If the client could be pipelining, we need to set the ua_session into half close mode
+    // If the client could be pipelining or is doing a POST, we need to
+    //   set the ua_session into half close mode
 
-    if (t_state.client_info.pipeline_possible == true && c->producer->vc_type != HT_STATIC && event == VC_EVENT_WRITE_COMPLETE) {
+    // only external POSTs should be subject to this logic; ruling out internal POSTs here
+    bool is_eligible_post_request = (t_state.method == HTTP_WKSIDX_POST);
+    if (is_eligible_post_request) {
+      NetVConnection *vc = ua_session->get_netvc();
+      if (vc) {
+        is_eligible_post_request = vc->get_is_internal_request() ? false : true;
+      }
+    }
+    if ((is_eligible_post_request || t_state.client_info.pipeline_possible == true) && c->producer->vc_type != HT_STATIC &&
+        event == VC_EVENT_WRITE_COMPLETE) {
       ua_session->set_half_close_flag();
     }
 
