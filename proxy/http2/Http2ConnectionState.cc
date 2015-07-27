@@ -85,24 +85,24 @@ rcv_data_frame(Http2ClientSession &cs, Http2ConnectionState &cstate, const Http2
     return HTTP2_ERROR_NO_ERROR;
   }
 
-  stream->increment_data_length(payload_length);
+  if (frame.header().flags & HTTP2_FLAGS_DATA_PADDED) {
+    frame.reader()->memcpy(&pad_length, HTTP2_DATA_PADLEN_LEN, nbytes);
+    nbytes += HTTP2_DATA_PADLEN_LEN;
+    if (pad_length > payload_length) {
+      // If the length of the padding is the length of the
+      // frame payload or greater, the recipient MUST treat this as a
+      // connection error of type PROTOCOL_ERROR.
+      return HTTP2_ERROR_PROTOCOL_ERROR;
+    }
+  }
+
+  stream->increment_data_length(payload_length - pad_length - nbytes);
   if (frame.header().flags & HTTP2_FLAGS_DATA_END_STREAM) {
     if (!stream->change_state(frame.header().type, frame.header().flags)) {
       cstate.send_rst_stream_frame(id, HTTP2_ERROR_STREAM_CLOSED);
       return HTTP2_ERROR_NO_ERROR;
     }
     if (!stream->payload_length_is_valid()) {
-      return HTTP2_ERROR_PROTOCOL_ERROR;
-    }
-  }
-
-  if (frame.header().flags & HTTP2_FLAGS_DATA_PADDED) {
-    frame.reader()->memcpy(&pad_length, HTTP2_DATA_PADLEN_LEN, nbytes);
-
-    if (pad_length > payload_length) {
-      // If the length of the padding is the length of the
-      // frame payload or greater, the recipient MUST treat this as a
-      // connection error of type PROTOCOL_ERROR.
       return HTTP2_ERROR_PROTOCOL_ERROR;
     }
   }
