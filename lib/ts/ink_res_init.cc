@@ -432,7 +432,7 @@ ink_res_init(ink_res_state statp,         ///< State object to update.
 
 #define MATCH(line, name) \
   (!strncmp(line, name, sizeof(name) - 1) && (line[sizeof(name) - 1] == ' ' || line[sizeof(name) - 1] == '\t'))
-
+retry_load_resolve_conf:
   if ((fp = fopen(pResolvConf, "r")) != NULL) {
     /* read the config file */
     while (fgets(buf, sizeof(buf), fp) != NULL) {
@@ -521,8 +521,17 @@ ink_res_init(ink_res_state statp,         ///< State object to update.
     (void)fclose(fp);
   }
 
-  if (nserv > 0)
-    statp->nscount = nserv;
+  if (nserv == 0 && strcmp(pResolvConf, "/etc/resolv.conf") != 0) {
+    syslog(LOG_WARNING, "WARNING: trying default because user specified did not have any resolvers");
+    pResolvConf = "/etc/resolv.conf";
+    goto retry_load_resolve_conf;
+  }
+  if (nserv == 0) {
+    syslog(LOG_ERR, "ERR: aborting the traffic server because it did not have any resolvers");
+    abort();
+  }
+
+  statp->nscount = nserv;
 
   if (statp->defdname[0] == 0 && gethostname(buf, sizeof(statp->defdname) - 1) == 0 && (cp = strchr(buf, '.')) != NULL)
     ink_strlcpy(statp->defdname, cp + 1, sizeof(statp->defdname));
