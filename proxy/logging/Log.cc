@@ -599,6 +599,11 @@ Log::init_fields()
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "pqsi", field);
 
+  field = new LogField("proxy_req_server_port", "pqsp", LogField::sINT, &LogAccess::marshal_proxy_req_server_port,
+                       &LogAccess::unmarshal_int_to_str);
+  global_field_list.add(field, false);
+  ink_hash_table_insert(field_symbol_hash, "pqsp", field);
+
   Ptr<LogFieldAliasTable> hierarchy_map = make_ptr(new LogFieldAliasTable);
   hierarchy_map->init(
     36, SQUID_HIER_EMPTY, "EMPTY", SQUID_HIER_NONE, "NONE", SQUID_HIER_DIRECT, "DIRECT", SQUID_HIER_SIBLING_HIT, "SIBLING_HIT",

@@ -394,6 +394,15 @@ LogAccess::marshal_proxy_req_server_ip(char *buf)
   -------------------------------------------------------------------------*/
 
 int
+LogAccess::marshal_proxy_req_server_port(char *buf)
+{
+  DEFAULT_INT_FIELD;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
 LogAccess::marshal_proxy_hierarchy_route(char *buf)
 {
   DEFAULT_INT_FIELD;
