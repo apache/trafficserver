@@ -249,6 +249,12 @@ public:
 
   void update_initial_rwnd(Http2WindowSize new_size);
 
+  Http2StreamId
+  get_latest_stream_id() const
+  {
+    return latest_streamid;
+  }
+
   // Continuated header decoding
   Http2StreamId
   get_continued_id() const
@@ -285,6 +291,10 @@ private:
   Http2ConnectionState(const Http2ConnectionState &);            // noncopyable
   Http2ConnectionState &operator=(const Http2ConnectionState &); // noncopyable
 
+  // NOTE: 'stream_list' has only active streams.
+  //   If given Stream Identifier is not found in stream_list and it is less than or equal to latest_streamid, the state of Stream
+  //   is CLOSED.
+  //   If given Stream Identifier is not found in stream_list and it is greater than latest_streamid, the state of Stream is IDLE.
   DLL<Http2Stream> stream_list;
   Http2StreamId latest_streamid;
 
