@@ -28,11 +28,11 @@
 
  ****************************************************************************/
 
-#include "ink_config.h"
+#include "ts/ink_config.h"
 #include "ProxyConfig.h"
 #include "StatPages.h"
 #include "HdrUtils.h"
-#include "MatcherUtils.h"
+#include "ts/MatcherUtils.h"
 
 #define MAX_STAT_PAGES 32
 

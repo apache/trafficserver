@@ -24,7 +24,8 @@
 #ifndef _I_Lock_h_
 #define _I_Lock_h_
 
-#include "libts.h"
+#include "ts/ink_platform.h"
+#include "ts/Diags.h"
 #include "I_Thread.h"
 
 #define MAX_LOCK_TIME HRTIME_MSECONDS(200)
@@ -302,7 +303,7 @@ Mutex_trylock(
 #ifdef DEBUG
     m->srcloc = location;
     m->handler = ahandler;
-    m->hold_time = ink_get_hrtime();
+    m->hold_time = Thread::get_hrtime();
 #ifdef MAX_LOCK_TAKEN
     m->taken++;
 #endif // MAX_LOCK_TAKEN
@@ -351,7 +352,7 @@ Mutex_trylock_spin(
 #ifdef DEBUG
     m->srcloc = location;
     m->handler = ahandler;
-    m->hold_time = ink_get_hrtime();
+    m->hold_time = Thread::get_hrtime();
 #ifdef MAX_LOCK_TAKEN
     m->taken++;
 #endif // MAX_LOCK_TAKEN
@@ -384,7 +385,7 @@ Mutex_lock(
 #ifdef DEBUG
     m->srcloc = location;
     m->handler = ahandler;
-    m->hold_time = ink_get_hrtime();
+    m->hold_time = Thread::get_hrtime();
 #ifdef MAX_LOCK_TAKEN
     m->taken++;
 #endif // MAX_LOCK_TAKEN
@@ -409,7 +410,7 @@ Mutex_unlock(ProxyMutex *m, EThread *t)
     m->nthread_holding--;
     if (!m->nthread_holding) {
 #ifdef DEBUG
-      if (ink_get_hrtime() - m->hold_time > MAX_LOCK_TIME)
+      if (Thread::get_hrtime() - m->hold_time > MAX_LOCK_TIME)
         lock_holding(m->srcloc, m->handler);
 #ifdef MAX_LOCK_TAKEN
       if (m->taken > MAX_LOCK_TAKEN)

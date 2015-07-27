@@ -22,7 +22,7 @@
  */
 
 
-#include "ink_config.h"
+#include "ts/ink_config.h"
 #include "RecordsConfig.h"
 
 #if TS_USE_REMOTE_UNWINDING
@@ -966,6 +966,8 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.cache.read_while_writer.max_retries", RECD_INT, "10", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
+  {RECT_CONFIG, "proxy.config.cache.read_while_writer_retry.delay", RECD_INT, "50", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  ,
 
   //##############################################################################
   //#
@@ -1170,6 +1172,9 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.log.max_line_size", RECD_INT, "9216", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
+  // How often periodic tasks get executed in the Log.cc infrastructure
+  {RECT_CONFIG, "proxy.config.log.periodic_tasks_interval", RECD_INT, "5", RECU_DYNAMIC, RR_NULL, RECC_NULL, "^[0-9]+$", RECA_NULL}
+  ,
 
   //##############################################################################
   //#
@@ -1281,6 +1286,16 @@ static const RecordElement RecordsConfig[] =
   {RECT_CONFIG, "proxy.config.ssl.allow_client_renegotiation", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.ssl.server.dhparams_file", RECD_STRING, NULL, RECU_RESTART_TS, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.ssl.handshake_timeout_in", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-65535]", RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.ssl.wire_trace_enabled", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-2]", RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.ssl.wire_trace_addr", RECD_STRING, NULL , RECU_RESTART_TS, RR_NULL, RECC_IP, "[0-255]\\.[0-255]\\.[0-255]\\.[0-255]", RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.ssl.wire_trace_percentage", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-100]", RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.ssl.wire_trace_server_name", RECD_STRING, NULL , RECU_RESTART_TS, RR_NULL, RECC_STR, ".*", RECA_NULL}
   ,
   //##############################################################################
   //#
@@ -1988,7 +2003,6 @@ static const RecordElement RecordsConfig[] =
   //#
   //###########
   {RECT_CONFIG, "proxy.config.cache.http.compatibility.4-2-0-fixup", RECD_INT, "1", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-
 };
 // clang-format on
 

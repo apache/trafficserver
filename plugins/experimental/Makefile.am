@@ -40,7 +40,8 @@ SUBDIRS = \
  stale_while_revalidate \
  url_sig \
  xdebug \
- mp4
+ mp4 \
+ stream_editor
 
 if HAS_MYSQL
   SUBDIRS += mysql_remap

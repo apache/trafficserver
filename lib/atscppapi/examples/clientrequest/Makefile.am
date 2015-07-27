@@ -15,16 +15,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-AM_CPPFLAGS = -I$(top_srcdir)/lib/atscppapi/src/include -Wno-unused-variable
+include $(top_srcdir)/build/plugins.mk
+
+AM_CPPFLAGS += -I$(top_srcdir)/lib/atscppapi/src/include -Wno-unused-variable
 
 target=ClientRequest.so
-pkglibdir = ${pkglibexecdir}
 pkglib_LTLIBRARIES = ClientRequest.la
 ClientRequest_la_SOURCES = ClientRequest.cc
-ClientRequest_la_LDFLAGS =  -module -avoid-version -shared -L$(top_srcdir)/lib/atscppapi/src/ -latscppapi
-
-all:
-	ln -sf .libs/$(target)
-
-clean-local:
-	rm -f $(target)
+ClientRequest_la_LDFLAGS =  -module -avoid-version -shared -L$(top_builddir)/lib/atscppapi/src/ -latscppapi $(TS_PLUGIN_LDFLAGS)

@@ -34,9 +34,7 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/proxy \
   -I$(top_srcdir)/proxy/hdrs \
   -I$(top_srcdir)/lib/records \
-  -I$(top_srcdir)/lib/ts \
-  -I$(top_srcdir)/lib \
-  -I$(top_builddir)/lib
+  -I$(top_srcdir)/lib
 
 libmgmt_c_la_SOURCES = \
   RecordsConfig.cc \

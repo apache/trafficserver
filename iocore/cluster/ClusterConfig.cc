@@ -303,7 +303,7 @@ configuration_add_machine(ClusterConfiguration *c, ClusterMachine *m)
   cc->n_machines++;
 
   cc->link.next = c;
-  cc->changed = ink_get_hrtime();
+  cc->changed = Thread::get_hrtime();
   ink_assert(cc->n_machines < CLUSTER_MAX_MACHINES);
 
   build_cluster_hash_table(cc);
@@ -335,7 +335,7 @@ configuration_remove_machine(ClusterConfiguration *c, ClusterMachine *m)
   ink_assert(cc->n_machines > 0);
 
   cc->link.next = c;
-  cc->changed = ink_get_hrtime();
+  cc->changed = Thread::get_hrtime();
 
   build_cluster_hash_table(cc);
   INK_MEMORY_BARRIER; // commit writes before freeing old hash table
@@ -362,7 +362,7 @@ cluster_machine_at_depth(unsigned int hash, int *pprobe_depth, ClusterMachine **
 #endif
   ClusterConfiguration *cc = this_cluster()->current_configuration();
   ClusterConfiguration *next_cc = cc;
-  ink_hrtime now = ink_get_hrtime();
+  ink_hrtime now = Thread::get_hrtime();
   int fake_probe_depth = 0;
   int &probe_depth = pprobe_depth ? (*pprobe_depth) : fake_probe_depth;
   int tprobe_depth = probe_depth;

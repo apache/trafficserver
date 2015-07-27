@@ -30,9 +30,9 @@
 #define _GENERIC_PARSER_H_
 
 #include <string.h>
-#include "ink_assert.h"
-#include "Tokenizer.h"
-#include "List.h"
+#include "ts/ink_assert.h"
+#include "ts/Tokenizer.h"
+#include "ts/List.h"
 #include "mgmtapi.h" // INKFileNameT
 
 #define MIN_CONFIG_TOKEN 1

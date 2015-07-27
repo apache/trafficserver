@@ -25,7 +25,7 @@
   recording log entries. See the header file LogBuffer.h for more
   information on the structure of a LogBuffer.
  */
-#include "libts.h"
+#include "ts/ink_platform.h"
 
 #include <stdio.h>
 #include <stdlib.h>

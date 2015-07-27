@@ -49,7 +49,8 @@ sub jira_search
   $curl->setopt(CURLOPT_POST, 1);
   $curl->setopt(CURLOPT_POSTFIELDS, $req_body);
   $curl->setopt(CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-  $curl->setopt(CURLOPT_WRITEDATA, \$resp_body);
+  open(my $fileb, ">", \$resp_body);
+  $curl->setopt(CURLOPT_WRITEDATA, $fileb);
   $curl->setopt(CURLOPT_URL, $url . $endpoint);
   my $retcode = $curl->perform();
   if ($retcode == 0 && $curl->getinfo(CURLINFO_HTTP_CODE) == 200) {

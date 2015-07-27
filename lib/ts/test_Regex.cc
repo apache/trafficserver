@@ -19,9 +19,9 @@
   limitations under the License.
 */
 
-#include <ink_assert.h>
-#include <ink_defs.h>
-#include "Regex.h"
+#include "ts/ink_assert.h"
+#include "ts/ink_defs.h"
+#include "ts/Regex.h"
 
 typedef struct {
   char subject[100];

@@ -23,7 +23,7 @@
 
 #ifndef __DIAGSCONFIG_H__
 #define __DIAGSCONFIG_H__
-#include "Diags.h"
+#include "ts/Diags.h"
 
 struct DiagsConfig {
   void reconfigure_diags();

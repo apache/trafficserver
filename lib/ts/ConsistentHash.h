@@ -22,7 +22,7 @@
 #ifndef __CONSISTENT_HASH_H__
 #define __CONSISTENT_HASH_H__
 
-#include "Hash.h"
+#include "ts/Hash.h"
 #include <stdint.h>
 #include <iostream>
 #include <map>

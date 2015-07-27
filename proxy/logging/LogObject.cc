@@ -26,9 +26,9 @@
 
 
  ***************************************************************************/
-#include "libts.h"
-
-
+#include "ts/ink_platform.h"
+#include "ts/CryptoHash.h"
+#include "ts/INK_MD5.h"
 #include "Error.h"
 #include "P_EventSystem.h"
 #include "LogUtils.h"
@@ -1406,7 +1406,7 @@ REGRESSION_TEST(LogObjectManager_Transfer)(RegressionTest *t, int /* atype ATS_U
     rprintf(t, "mgr1 has %d objects, mgr2 has %d objects\n", (int)mgr1.get_num_objects(), (int)mgr2.get_num_objects());
 
     rprintf(t, "running Log::periodoc_tasks()\n");
-    Log::periodic_tasks(ink_get_hrtime() / HRTIME_SECOND);
+    Log::periodic_tasks(Thread::get_hrtime() / HRTIME_SECOND);
     rprintf(t, "Log::periodoc_tasks() done\n");
   }
 

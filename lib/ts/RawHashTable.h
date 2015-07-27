@@ -31,9 +31,8 @@
 #ifndef _RawHashTable_h_
 #define _RawHashTable_h_
 
-#include "libts.h"
-
-#include "ink_apidefs.h"
+#include "ts/ink_apidefs.h"
+#include "ts/ink_hash_table.h"
 
 //////////////////////////////////////////////////////////////////////////////
 //

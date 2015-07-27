@@ -94,7 +94,7 @@ struct CacheTestSM : public RegressionSM {
   void
   make_request()
   {
-    start_time = ink_get_hrtime();
+    start_time = Thread::get_hrtime();
     make_request_internal();
   }
   virtual void make_request_internal() = 0;

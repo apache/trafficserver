@@ -25,8 +25,9 @@
 #define __ABSTRACT_BUFFER_H__
 
 
-#include "libts.h"
-
+#include "ts/ink_platform.h"
+#include "ts/ink_atomic.h"
+#include "ts/ink_assert.h"
 
 enum ABError {
   AB_ERROR_OK,

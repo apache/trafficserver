@@ -33,10 +33,10 @@
 #ifndef _HDR_HEAP_H_
 #define _HDR_HEAP_H_
 
-#include "Ptr.h"
-#include "ink_defs.h"
-#include "ink_assert.h"
-#include "Arena.h"
+#include "ts/Ptr.h"
+#include "ts/ink_defs.h"
+#include "ts/ink_assert.h"
+#include "ts/Arena.h"
 #include "HdrToken.h"
 
 // Objects in the heap must currently be aligned to 8 byte boundaries,

@@ -31,7 +31,7 @@
 
 #include <stdio.h>
 #include "ts/ts.h"
-#include "ink_defs.h"
+#include "ts/ink_defs.h"
 
 static INKStat transaction_count;
 static INKStat session_count;
@@ -98,7 +98,8 @@ TSPluginInit(int argc, const char *argv[])
   info.support_email = "ts-api-support@MyCompany.com";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError("[PluginInit] Plugin registration failed.\n");
+    TSError("[session-1] Plugin registration failed.\n");
+
     goto error;
   }
 
@@ -110,5 +111,5 @@ TSPluginInit(int argc, const char *argv[])
   TSHttpHookAdd(TS_HTTP_SSN_START_HOOK, contp);
 
 error:
-  TSError("[PluginInit] Plugin not initialized");
+  TSError("[session-1] Plugin not initialized");
 }

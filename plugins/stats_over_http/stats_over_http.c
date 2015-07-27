@@ -34,7 +34,7 @@
 #include <inttypes.h>
 #include <getopt.h>
 
-#include "ink_defs.h"
+#include "ts/ink_defs.h"
 
 #define PLUGIN_NAME "stats_over_http"
 
@@ -111,12 +111,12 @@ stats_process_read(TSCont contp, TSEvent event, stats_state *my_state)
     TSVConnShutdown(my_state->net_vc, 1, 0);
     my_state->write_vio = TSVConnWrite(my_state->net_vc, contp, my_state->resp_reader, INT64_MAX);
   } else if (event == TS_EVENT_ERROR) {
-    TSError("stats_process_read: Received TS_EVENT_ERROR\n");
+    TSError("[%s] stats_process_read: Received TS_EVENT_ERROR", PLUGIN_NAME);
   } else if (event == TS_EVENT_VCONN_EOS) {
     /* client may end the connection, simply return */
     return;
   } else if (event == TS_EVENT_NET_ACCEPT_FAILED) {
-    TSError("stats_process_read: Received TS_EVENT_NET_ACCEPT_FAILED\n");
+    TSError("[%s] stats_process_read: Received TS_EVENT_NET_ACCEPT_FAILED", PLUGIN_NAME);
   } else {
     printf("Unexpected Event %d\n", event);
     TSReleaseAssert(!"Unexpected Event");
@@ -208,7 +208,7 @@ stats_process_write(TSCont contp, TSEvent event, stats_state *my_state)
   } else if (TS_EVENT_VCONN_WRITE_COMPLETE) {
     stats_cleanup(contp, my_state);
   } else if (event == TS_EVENT_ERROR) {
-    TSError("stats_process_write: Received TS_EVENT_ERROR\n");
+    TSError("[%s] stats_process_write: Received TS_EVENT_ERROR", PLUGIN_NAME);
   } else {
     TSReleaseAssert(!"Unexpected Event");
   }

@@ -36,12 +36,12 @@
  *
  ***************************************************************************/
 
-#include "ink_config.h"
-#include "ink_defs.h"
+#include "ts/ink_config.h"
+#include "ts/ink_defs.h"
 #include <strings.h>
-#include "ink_string.h"
-#include "I_Layout.h"
-#include "ParseRules.h"
+#include "ts/ink_string.h"
+#include "ts/I_Layout.h"
+#include "ts/ParseRules.h"
 #include "CoreAPI.h"
 #include "CoreAPIShared.h"
 #include "CfgContextUtils.h"

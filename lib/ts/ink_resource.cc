@@ -21,9 +21,9 @@
   limitations under the License.
  */
 
-#include "ink_assert.h"
-#include "ink_atomic.h"
-#include "ink_resource.h"
+#include "ts/ink_assert.h"
+#include "ts/ink_atomic.h"
+#include "ts/ink_resource.h"
 
 volatile int res_track_memory = 0; // Disabled by default
 

@@ -30,8 +30,8 @@
 
  ****************************************************************************/
 
-#include "ink_config.h"
-#include "Allocator.h"
+#include "ts/ink_config.h"
+#include "ts/Allocator.h"
 #include "HttpClientSession.h"
 #include "HttpSM.h"
 #include "HttpDebugNames.h"
@@ -91,6 +91,11 @@ HttpClientSession::destroy()
   if (conn_decrease) {
     HTTP_DECREMENT_DYN_STAT(http_current_client_connections_stat);
     conn_decrease = false;
+  }
+  // Make sure we clean up ua_session in our HttpSM
+  // Otherwise, we will try to double free it in HttpSM::kill_this
+  if (current_reader) {
+    current_reader->ua_session = NULL;
   }
 
   super::destroy();
@@ -200,6 +205,14 @@ HttpClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBu
 
   DebugHttpSsn("[%" PRId64 "] session born, netvc %p", con_id, new_vc);
 
+  if (!iobuf) {
+    SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(new_vc);
+    if (ssl_vc) {
+      iobuf = ssl_vc->get_ssl_iobuf();
+      sm_reader = ssl_vc->get_ssl_reader();
+    }
+  }
+
   read_buffer = iobuf ? iobuf : new_MIOBuffer(HTTP_HEADER_BUFFER_SIZE_INDEX);
   sm_reader = reader ? reader : read_buffer->alloc_reader();
 
@@ -300,6 +313,11 @@ HttpClientSession::do_io_close(int alerrno)
     client_vc->set_active_timeout(HRTIME_SECONDS(current_reader->t_state.txn_conf->keep_alive_no_activity_timeout_out));
   } else {
     read_state = HCS_CLOSED;
+    // clean up ssl's first byte iobuf
+    SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(client_vc);
+    if (ssl_vc) {
+      ssl_vc->set_ssl_iobuf(NULL);
+    }
     if (upgrade_to_h2c) {
       Http2ClientSession *h2_session = http2ClientSessionAllocator.alloc();
 
@@ -314,6 +332,9 @@ HttpClientSession::do_io_close(int alerrno)
     HTTP_SUM_DYN_STAT(http_transactions_per_client_con, transact_count);
     HTTP_DECREMENT_DYN_STAT(http_current_client_connections_stat);
     conn_decrease = false;
+
+    // Should only be triggering the hooks for session close
+    // if this is a SSLNetVConnection or a UnixNetVConnection
     do_api_callout(TS_HTTP_SSN_CLOSE_HOOK);
   }
 }

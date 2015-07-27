@@ -21,10 +21,10 @@
     limitations under the License.
 */
 
-#include "ink_config.h"
-#include "Diags.h"
-#include "ink_cap.h"
-#include "ink_thread.h"
+#include "ts/ink_config.h"
+#include "ts/Diags.h"
+#include "ts/ink_cap.h"
+#include "ts/ink_thread.h"
 
 #include <grp.h>
 

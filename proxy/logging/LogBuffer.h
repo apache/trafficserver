@@ -25,7 +25,7 @@
 #ifndef LOG_BUFFER_H
 #define LOG_BUFFER_H
 
-#include "libts.h"
+#include "ts/ink_platform.h"
 #include "LogFormat.h"
 #include "LogLimits.h"
 #include "LogAccess.h"

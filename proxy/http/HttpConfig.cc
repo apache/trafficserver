@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "ink_config.h"
+#include "ts/ink_config.h"
 #include <ctype.h>
 #include <string.h>
 #include "HttpConfig.h"
@@ -933,8 +933,7 @@ HttpConfig::startup()
   RecRegisterConfigUpdateCb("proxy.config.http.server_session_sharing.match", &http_server_session_sharing_cb, &c);
   http_config_enum_read("proxy.config.http.server_session_sharing.match", SessionSharingMatchStrings,
                         c.oride.server_session_sharing_match);
-  http_config_enum_read("proxy.config.http.server_session_sharing.pool", SessionSharingPoolStrings,
-                        c.server_session_sharing_pool);
+  http_config_enum_read("proxy.config.http.server_session_sharing.pool", SessionSharingPoolStrings, c.server_session_sharing_pool);
 
   HttpEstablishStaticConfigByte(c.oride.auth_server_session_private, "proxy.config.http.auth_server_session_private");
 
@@ -1208,6 +1207,7 @@ HttpConfig::reconfigure()
   }
 
   params->oride.server_session_sharing_match = m_master.oride.server_session_sharing_match;
+  params->server_session_sharing_pool = m_master.server_session_sharing_pool;
   params->oride.keep_alive_post_out = m_master.oride.keep_alive_post_out;
 
   params->oride.keep_alive_no_activity_timeout_in = m_master.oride.keep_alive_no_activity_timeout_in;

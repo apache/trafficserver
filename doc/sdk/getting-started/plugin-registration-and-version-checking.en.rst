@@ -72,11 +72,11 @@ ensures it's running with a compatible version of Traffic Server.
           info.support_email = "ts-api-support@MyCompany.com";
 
           if (!TSPluginRegister(&info)) {
-             TSError ("Plugin registration failed. \n");
+             TSError ("[plugin_name] Plugin registration failed.");
           }
 
           if (!check_ts_version()) {
-             TSError ("Plugin requires Traffic Server 2.0 or later\n");
+             TSError ("[plugin_name] Plugin requires Traffic Server 2.0 or later");
              return;
           }
 

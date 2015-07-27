@@ -56,9 +56,9 @@
 
 #include <stdint.h>
 
-#include "ink_assert.h"
-#include "ink_queue.h"
-#include "defalloc.h"
+#include "ts/ink_assert.h"
+#include "ts/ink_queue.h"
+#include "ts/defalloc.h"
 
 //
 //      Link cell for singly-linked list of objects of type C.

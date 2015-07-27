@@ -22,8 +22,10 @@
  */
 
 //
-#include "libts.h"
-#include "Map.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_inet.h"
+#include "ts/ink_mutex.h"
+#include "ts/Map.h"
 
 #ifndef _HTTP_CONNECTION_COUNT_H_
 

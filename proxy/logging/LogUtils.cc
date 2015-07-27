@@ -21,7 +21,8 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-#include "ink_config.h"
+#include "ts/ink_config.h"
+#include "ts/ink_string.h"
 
 #include <assert.h>
 #include <stdio.h>

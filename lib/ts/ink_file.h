@@ -32,7 +32,7 @@
 #ifndef _ink_file_h_
 #define _ink_file_h_
 
-#include "ink_config.h"
+#include "ts/ink_config.h"
 
 #include <stdio.h>
 #include <sys/types.h>

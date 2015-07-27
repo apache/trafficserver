@@ -29,7 +29,7 @@
 #include "debug_macros.h"
 #include "misc.h"
 #include "configuration.h"
-//#include "ink_defs.h"
+//#include "ts/ink_defs.h"
 
 using namespace std;
 using namespace Gzip;

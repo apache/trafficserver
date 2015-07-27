@@ -44,7 +44,7 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 
-#include "ink_defs.h"
+#include "ts/ink_defs.h"
 #include "ts/ts.h"
 #include "ts/remap.h"
 
@@ -146,7 +146,7 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
   info.support_email = (char *)"";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError("Plugin registration failed. \n");
+    TSError("[remap] Plugin registration failed.");
   }
   TSDebug("debug-remap", "TSPluginInit: Remap plugin started\n");
 }

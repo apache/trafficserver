@@ -36,7 +36,6 @@ TESTS = \
 AM_CPPFLAGS = \
   $(iocore_include_dirs) \
   -I$(top_srcdir)/lib/records \
-  -I$(top_srcdir)/lib/ts \
   -I$(srcdir)/http \
   -I$(srcdir)/http2 \
   -I$(srcdir)/spdy \
@@ -48,7 +47,6 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/mgmt/utils \
   -I$(top_srcdir)/proxy/api/ts \
   -I$(top_srcdir)/lib \
-  -I$(top_builddir)/lib \
   @OPENSSL_INCLUDES@
 
 # NOTE: it is safe to use AM_LDFLAGS here because we are only building executables. If we start

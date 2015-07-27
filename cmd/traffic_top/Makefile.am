@@ -21,9 +21,6 @@ if BUILD_TRAFFIC_TOP
 AM_CPPFLAGS = \
   $(iocore_include_dirs) \
   -I$(top_srcdir)/lib \
-  -I$(top_builddir)/lib \
-  -I$(top_srcdir)/lib/ts \
-  -I$(top_builddir)/lib/ts \
   -I$(top_srcdir)/mgmt/api/include \
   @CURL_CFLAGS@
 

@@ -53,7 +53,7 @@ struct config {
 static void
 free_cfg(struct config *cfg)
 {
-  TSError("Cleaning up...");
+  TSError("[url_sig] Cleaning up...");
   TSfree(cfg->err_url);
 
   if (cfg->regex_extra)
@@ -124,7 +124,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
       continue;
     char *pos = strchr(line, '=');
     if (pos == NULL) {
-      TSError("Error parsing line %d of file %s (%s).", line_no, config_file, line);
+      TSError("[url_sig] Error parsing line %d of file %s (%s).", line_no, config_file, line);
       continue;
     }
     *pos = '\0';
@@ -193,7 +193,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
           cfg->regex, options, &errptr); // We do not need to check the error here because we can still run without the studying?
       }
     } else {
-      TSError("Error parsing line %d of file %s (%s).", line_no, config_file, line);
+      TSError("[url_sig] Error parsing line %d of file %s (%s).", line_no, config_file, line);
     }
   }
 
@@ -238,9 +238,9 @@ err_log(char *url, char *msg)
 {
   if (msg && url) {
     TSDebug(PLUGIN_NAME, "[URL=%s]: %s", url, msg);
-    TSError("[URL=%s]: %s", url, msg); // This goes to error.log
+    TSError("[url_sig] [URL=%s]: %s", url, msg); // This goes to error.log
   } else {
-    TSError("Invalid err_log request");
+    TSError("[url_sig] Invalid err_log request");
   }
 }
 
@@ -513,7 +513,7 @@ allow:
   /* drop the query string so we can cache-hit */
   rval = TSUrlHttpQuerySet(rri->requestBufp, rri->requestUrl, NULL, 0);
   if (rval != TS_SUCCESS) {
-    TSError("Error stripping query string: %d.", rval);
+    TSError("[url_sig] Error stripping query string: %d.", rval);
   }
   return TSREMAP_NO_REMAP;
 }

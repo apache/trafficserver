@@ -24,12 +24,13 @@
 #include <string>
 #include <string.h>
 #include <zlib.h>
-#include <ts/ts.h>
+
+#include "ts/ts.h"
+#include "ts/ink_defs.h"
+
 #include "debug_macros.h"
 #include "misc.h"
 #include "configuration.h"
-
-#include "ink_defs.h"
 
 using namespace std;
 using namespace Gzip;

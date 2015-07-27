@@ -45,13 +45,8 @@ If a client disconnects during the time that Traffic Server is downloading a lar
 -----------------------------------------------------------------------------------------------------------------------------------
 
 When a client disconnects during an HTTP operation, Traffic Server
-continues to download the object from the origin server for up to 10
-seconds. If the transfer from the origin server completes successfully
-within 10 seconds after the client disconnect, then Traffic Server
-stores the object in cache. If the origin server download does *not*
-complete successfully within 10 seconds, then Traffic Server disconnects
-from the origin server and deletes the object from cache. Traffic Server
-does not store partial documents in the cache.
+can continue to download the object from the origin server, using the :ref:`background fill feature <background_fill>`.
+It will continue downloading based on the :ts:cv:`proxy.config.http.background_fill_active_timeout` and :ts:cv:`proxy.config.http.background_fill_completed_threshold` settings.
 
 Can Traffic Server cache Java applets, JavaScript programs, or other application files like VBScript?
 -----------------------------------------------------------------------------------------------------
@@ -588,6 +583,16 @@ the system log files (``/var/log/messages``)::
 To avoid memory exhaustion, add more RAM to the system or reduce the
 load on Traffic Server.
 
+Config checker
+--------------
+
+Traffic Server supports the below command to validate the config offline, inorder to
+allow the config to be pre-checked for possible service disruptions due to synatx errors::
+
+   traffic_server -Cverify_config -D<config_dir>
+
+<config_dir> is the location of the config files to be validated.
+
 Connection timeouts with the origin server
 ------------------------------------------
 
@@ -596,17 +601,4 @@ origin servers. If you cannot avoid such timeouts by otherwise addressing the
 performance on your origin servers, you may adjust the origin connection timeout
 in Traffic Server by changing :ts:cv:`proxy.config.http.connect_attempts_timeout`
 in :file:`records.config` to a larger value.
-
-Timers applicable to various states in the transaction
------------------------------------------------------
-
-Traffic Server runs a variety of timers at various states of a transaction. Typically,
-a given transaction may include upto two connections (one on the UA/client side and the
-other on the Origin side). Traffic Server supports two kinds of timers "Active" and
-"Inactive" timers for each side respectively, as applicable at a given state. The below
-picture illustrates the specific timers run at various states in the current implementation.
-
-.. figure:: ../static/images/admin/transaction_states_timers.svg
-   :align: center
-   :alt: Active and Inactive Timers in various states
 

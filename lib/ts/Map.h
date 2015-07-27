@@ -26,9 +26,10 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include "ink_assert.h"
-#include "List.h"
-#include "Vec.h"
+
+#include "ts/ink_assert.h"
+#include "ts/List.h"
+#include "ts/Vec.h"
 
 #define MAP_INTEGRAL_SIZE (1 << (2))
 //#define MAP_INITIAL_SHIFT               ((2)+1)

@@ -21,8 +21,10 @@
   limitations under the License.
  */
 
-#include "ink_mutex.h"
-#include "libts.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_memory.h"
+#include "ts/Allocator.h"
+#include "ts/Arena.h"
 #include <assert.h>
 #include <string.h>
 

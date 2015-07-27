@@ -27,12 +27,12 @@
 
 #include <stdarg.h> // for va_list
 
-#include "ink_llqueue.h"
+#include "ts/ink_llqueue.h"
 #include "MgmtDefs.h" // MgmtInt, MgmtFloat, etc
 
 #include "mgmtapi.h"
 #include "CfgContextDefs.h"
-#include "Tokenizer.h"
+#include "ts/Tokenizer.h"
 
 TSMgmtError Init(const char *socket_path = NULL, TSInitOptionT options = TS_MGMT_OPT_DEFAULTS);
 TSMgmtError Terminate();

@@ -26,6 +26,7 @@
 
 #include "P_Cache.h"
 #include "I_Tasks.h"
+#include "ts/fastlz.h"
 #if TS_HAS_LIBZ
 #include <zlib.h>
 #endif

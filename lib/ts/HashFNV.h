@@ -28,7 +28,7 @@
 #ifndef __HASH_FNV_H__
 #define __HASH_FNV_H__
 
-#include "Hash.h"
+#include "ts/Hash.h"
 #include <stdint.h>
 
 struct ATSHash32FNV1a : ATSHash32 {

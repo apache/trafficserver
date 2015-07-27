@@ -28,7 +28,7 @@
 
 ****************************************************************************/
 
-#include "libts.h"
+#include "ts/ink_platform.h"
 #include "Main.h"
 #include "P_EventSystem.h"
 #include "P_Cache.h"
@@ -293,7 +293,7 @@ ICPPeerReadCont::init(ICPProcessor *ICPpr, Peer *p, int lookup_local)
 {
   PeerReadData *s = PeerReadDataAllocator.alloc();
   s->init();
-  s->_start_time = ink_get_hrtime();
+  s->_start_time = Thread::get_hrtime();
   s->_peer = p;
   s->_next_state = READ_ACTIVE;
   s->_cache_lookup_local = lookup_local;
@@ -458,7 +458,7 @@ ICPPeerReadCont::ICPPeerQueryCont(int /* event ATS_UNUSED */, Event * /* e ATS_U
 
     Cache::generate_key(&key, &_state->_cachelookupURL, cfg->ICPCacheGeneration());
     _state->_queryResult = ~CACHE_EVENT_LOOKUP_FAILED;
-    _start_time = ink_get_hrtime();
+    _start_time = Thread::get_hrtime();
 
     if (pluginFreshnessCalcFunc && cfg->ICPStaleLookup()) {
       //////////////////////////////////////////////////////////////
@@ -911,7 +911,7 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData *s, Event *e)
 
       MUTEX_UNTAKE_LOCK(ICPReqContMutex, ethread);
       if (request_start_time) {
-        ICP_SUM_DYN_STAT(total_icp_response_time_stat, (ink_get_hrtime() - request_start_time));
+        ICP_SUM_DYN_STAT(total_icp_response_time_stat, (Thread::get_hrtime() - request_start_time));
       }
       RECORD_ICP_STATE_CHANGE(s, 0, READ_NOT_ACTIVE);
       s->_next_state = READ_NOT_ACTIVE;
@@ -936,7 +936,7 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData *s, Event *e)
       } else {
         // Last read was valid, see if any more read data before exiting
         s->reset();
-        s->_start_time = ink_get_hrtime();
+        s->_start_time = Thread::get_hrtime();
         s->_next_state = READ_ACTIVE;
         RECORD_ICP_STATE_CHANGE(s, 0, READ_ACTIVE);
         break; // restart
@@ -1299,7 +1299,7 @@ ICPRequestCont::ICPStateMachine(int event, void *d)
         _cont->handleEvent(_ret_status, (void *)&_ret_sockaddr);
       }
       MUTEX_UNTAKE_LOCK(mutex, this_ethread());
-      ICP_SUM_DYN_STAT(total_icp_request_time_stat, (ink_get_hrtime() - _start_time));
+      ICP_SUM_DYN_STAT(total_icp_request_time_stat, (Thread::get_hrtime() - _start_time));
 
       _next_state = ICP_WAIT_SEND_COMPLETE;
       break; // move to next_state

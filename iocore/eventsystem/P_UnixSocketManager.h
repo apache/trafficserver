@@ -32,7 +32,8 @@
 #ifndef _P_UnixSocketManager_h_
 #define _P_UnixSocketManager_h_
 
-#include "libts.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_sock.h"
 #include "I_SocketManager.h"
 
 

@@ -24,7 +24,8 @@
     limitations under the License.
 */
 
-#include <ts/Regression.h>
+#include <stdarg.h>
+#include "ts/Regression.h"
 
 namespace
 {

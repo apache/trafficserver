@@ -236,7 +236,7 @@ A value of ``0`` means no signal will be sent.
 
 .. ts:cv:: CONFIG proxy.config.accept_threads INT 1
 
-   When enabled (``1``), runs a separate thread for accept processing. If disabled (``0``), then only 1 thread can be created.
+   The number of accept threads Traffic Server. If disabled (``0``), then accepts will be done in each of the worker threads.
 
 .. ts:cv:: CONFIG proxy.config.thread.default.stacksize  INT 1048576
 
@@ -1285,6 +1285,23 @@ Cache Control
    usable. See :ref:`Reducing Origin Server Requests
    <http-proxy-caching.en.html#reducing-origin-server-requests-avoiding-the-thundering-herd>`.
 
+.. ts:cv:: CONFIG proxy.config.cache.read_while_writer.max_retries INT 10
+   :reloadable:
+
+   Specifies how many retries trafficserver attempts to trigger read_while_writer on failing
+   to obtain the write VC mutex or until the first fragment is downloaded for the
+   object being downloaded. The retry duration is specified using the setting
+   :ts:cv:`proxy.config.cache.read_while_writer.delay`
+
+.. ts:cv:: CONFIG proxy.config.cache.read_while_writer.delay INT 50
+   :reloadable:
+
+   Specifies the delay in msec, trafficserver waits to reattempt read_while_writer
+   on failing to obtain the write VC mutex or until the first fragment is downloaded
+   for the object being downloaded. Note that trafficserver implements a progressive
+   delay in reattempting, by doubling the configured duration from the third reattempt
+   onwards.
+
 .. ts:cv:: CONFIG proxy.config.cache.force_sector_size INT 0
    :reloadable:
 
@@ -1651,6 +1668,18 @@ all the different user-agent versions of documents it encounters.
 
     The number of times to attempt fetching an object from cache if there was an equivalent request in flight.
 
+.. ts:cv:: CONFIG proxy.config.http.cache.open_write_fail_action INT 0
+   :reloadable:
+
+    This bit-map setting indicates the action taken on failing to obtain the cache open write lock on either a cache miss or
+    a cache hit stale. This typically happens when there is more than one request to the same cache object simultaneously.
+    During such scenario, all but one (which goes to the origin) request is served either a stale copy or an error depending
+    on the setting.
+
+   -  ``0`` = default, disable cache and goto origin server
+   -  ``1`` = return a 502 error on a cache miss
+   -  ``2`` = serve stale if object's age is under :ref:`proxy.config.http.cache.max_stale_age`, else, goto origin server
+
 Customizable User Response Pages
 ================================
 
@@ -1661,6 +1690,7 @@ Customizable User Response Pages
 
    -  ``1`` = enable customizable user response pages in the default directory only
    -  ``2`` = enable language-targeted user response pages
+   -  ``3`` = enable host-targeted user response pages
 
 .. ts:cv:: CONFIG proxy.config.body_factory.enable_logging INT 0
 
@@ -1719,7 +1749,9 @@ DNS
 .. ts:cv:: CONFIG proxy.config.dns.search_default_domains INT 0
    :Reloadable:
 
-   Enables (``1``) or disables (``0``) local domain expansion.
+   - ``0`` = disables local domain expansion
+   - ``1`` = enable local domain expansion
+   - ``2`` = enable local domain expansion, but restrain splitting local domain name
 
 Traffic Server can attempt to resolve unqualified hostnames by
 expanding to the local domain. For example if a client makes a
@@ -2139,6 +2171,12 @@ server, refer to :file:`logs_xml.config`.
    -  ``2`` = log every second transaction
    -  ``3`` = log every third transaction and so on...
 
+.. ts:cv:: CONFIG proxy.config.log.periodic_tasks_interval INT 5
+   :reloadable:
+   :metric: seconds
+
+   How often Traffic Server executes log related periodic tasks, in seconds
+
 .. ts:cv:: CONFIG proxy.config.http.slow.log.threshold INT 0
    :reloadable:
    :metric: milliseconds
@@ -2448,6 +2486,12 @@ SSL Termination
 
   This feature requires Traffic Server to be built with POSIX
   capabilities enabled.
+
+.. ts:cv:: CONFIG proxy.config.ssl.handshake_timeout_in INT 0
+
+  When enabled this limits the total duration for the server side SSL
+  handshake.
+
 
 Client-Related Configuration
 ----------------------------

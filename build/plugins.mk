@@ -25,8 +25,6 @@ TS_PLUGIN_LDFLAGS = \
 TS_PLUGIN_CPPFLAGS = \
   -I$(top_builddir)/proxy/api \
   -I$(top_srcdir)/proxy/api \
-  -I$(top_builddir)/lib/ts \
-  -I$(top_srcdir)/lib/ts \
   -I$(top_srcdir)/lib
 
 # Provide a default AM_CPPFLAGS. Automake handles this correctly, but libtool

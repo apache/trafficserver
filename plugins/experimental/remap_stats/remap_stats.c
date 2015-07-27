@@ -19,8 +19,8 @@
   limitations under the License.
  */
 
-#include "ink_config.h"
-#include "ink_defs.h"
+#include "ts/ink_config.h"
+#include "ts/ink_defs.h"
 
 #include "ts/ts.h"
 #include <stdint.h>
@@ -244,7 +244,8 @@ TSPluginInit(int argc, const char *argv[])
   info.support_email = "dev@trafficserver.apache.org";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError("Plugin registration failed.");
+    TSError("[remap_stats] Plugin registration failed.");
+
     return;
   } else
     TSDebug(DEBUG_TAG, "Plugin registration succeeded.");

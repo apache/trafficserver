@@ -14,16 +14,12 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-AM_CPPFLAGS = -I$(top_srcdir)/lib/atscppapi/src/include -Wno-unused-variable
+
+include $(top_srcdir)/build/plugins.mk
+
+AM_CPPFLAGS += -I$(top_srcdir)/lib/atscppapi/src/include -Wno-unused-variable
 
 target=InternalTransactionHandling.so
-pkglibdir = ${pkglibexecdir}
 pkglib_LTLIBRARIES = InternalTransactionHandling.la
 InternalTransactionHandling_la_SOURCES = InternalTransactionHandling.cc
-InternalTransactionHandling_la_LDFLAGS = -module -avoid-version -shared -L$(top_srcdir)/lib/atscppapi/src/ -latscppapi
-
-all:
-	ln -sf .libs/$(target)
-
-clean-local:
-	rm -f $(target)
+InternalTransactionHandling_la_LDFLAGS = -module -avoid-version -shared -L$(top_builddir)/lib/atscppapi/src/ -latscppapi $(TS_PLUGIN_LDFLAGS)

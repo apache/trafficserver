@@ -28,8 +28,8 @@ Process arguments
 
 #ifndef _INK_ARGS_H
 #define _INK_ARGS_H
-#include "ink_defs.h"
-#include "ink_apidefs.h"
+#include "ts/ink_defs.h"
+#include "ts/ink_apidefs.h"
 
 #if HAVE_SYSEXITS_H
 #include <sysexits.h>

@@ -25,7 +25,7 @@
 #include <stdlib.h>
 
 #include "I_Net.h"
-#include "List.h"
+#include "ts/List.h"
 
 // Diags stuff from test_I_Net.cc:
 Diags *diags;

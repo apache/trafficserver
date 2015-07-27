@@ -21,8 +21,9 @@
   limitations under the License.
  */
 
-#include "libts.h"
-#include "I_Layout.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_file.h"
+#include "ts/I_Layout.h"
 #include "FileManager.h"
 #include "Main.h"
 #include "Rollback.h"

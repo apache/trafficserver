@@ -32,7 +32,8 @@
 #ifndef _HTTP_CLIENT_SESSION_H_
 #define _HTTP_CLIENT_SESSION_H_
 
-#include "libts.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_resolver.h"
 #include "P_Net.h"
 #include "InkAPIInternal.h"
 #include "HTTP.h"

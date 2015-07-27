@@ -19,12 +19,12 @@
   limitations under the License.
  */
 
-#include "ink_config.h"
+#include "ts/ink_platform.h"
+#include "ts/SimpleTokenizer.h"
 #include "records/I_RecHttp.h"
-#include "libts.h"
-#include "I_Layout.h"
+#include "ts/I_Layout.h"
 #include "P_Net.h"
-#include "ink_cap.h"
+#include "ts/ink_cap.h"
 #include "P_OCSPStapling.h"
 #include "SSLSessionCache.h"
 #include "SSLDynlock.h"
@@ -201,7 +201,24 @@ ssl_get_cached_session(SSL *ssl, unsigned char *id, int len, int *copy)
   SSL_SESSION *session = NULL;
 
   if (session_cache->getSession(sid, &session)) {
-    return session;
+    ink_assert(session);
+
+    // Double check the timeout
+    if (ssl_session_timed_out(session)) {
+      SSL_INCREMENT_DYN_STAT(ssl_session_cache_miss);
+// Due to bug in openssl, the timeout is checked, but only removed
+// from the openssl built-in hash table.  The external remove cb is not called
+#if 0 // This is currently eliminated, since it breaks things in odd ways (see TS-3710)
+      ssl_rm_cached_session(SSL_get_SSL_CTX(ssl), session);
+      session = NULL;
+#endif
+    } else {
+      SSLNetVConnection *netvc = (SSLNetVConnection *)SSL_get_app_data(ssl);
+      SSL_INCREMENT_DYN_STAT(ssl_session_cache_hit);
+      netvc->setSSLSessionCacheHit(true);
+    }
+  } else {
+    SSL_INCREMENT_DYN_STAT(ssl_session_cache_miss);
   }
 
   return NULL;
@@ -258,6 +275,12 @@ set_context_cert(SSL *ssl)
   int retval = 1;
 
   Debug("ssl", "set_context_cert ssl=%p server=%s handshake_complete=%d", ssl, servername, netvc->getSSLHandShakeComplete());
+  // set SSL trace (we do this a little later in the USE_TLS_SNI case so we can get the servername
+  if (SSLConfigParams::ssl_wire_trace_enabled) {
+    bool trace = netvc->computeSSLTrace();
+    Debug("ssl", "sslnetvc. setting trace to=%s", trace ? "true" : "false");
+    netvc->setSSLTrace(trace);
+  }
 
   // catch the client renegotiation early on
   if (SSLConfigParams::ssl_allow_client_renegotiation == false && netvc->getSSLHandShakeComplete()) {
@@ -1937,6 +1960,8 @@ ssl_callback_session_ticket(SSL *ssl, unsigned char *keyname, unsigned char *iv,
         if (i != 0) // The number of tickets decrypted with "older" keys.
           SSL_INCREMENT_DYN_STAT(ssl_total_tickets_verified_old_key_stat);
 
+        SSLNetVConnection *netvc = (SSLNetVConnection *)SSL_get_app_data(ssl);
+        netvc->setSSLSessionCacheHit(true);
         // When we decrypt with an "older" key, encrypt the ticket again with the most recent key.
         return (i == 0) ? 1 : 2;
       }

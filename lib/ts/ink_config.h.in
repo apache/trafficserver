@@ -28,6 +28,8 @@
 // Note: All "defines" should be prefixed with TS_ when appropriate, please
 // don't use ATS_ any more.
 
+// Note 2: If you make changes here, please update the traffic_layout.cc file as well.
+
 /* GENERATED FILE WARNING!  DO NOT EDIT ink_config.h
  *
  * You must modify ink_config.h.in instead.
@@ -92,15 +94,15 @@
 #define TS_HAS_WCCP                    @has_wccp@
 
 #define TS_MAX_THREADS_IN_EACH_THREAD_TYPE  @max_threads_per_type@
-#define TS_MAX_NUMBER_EVENT_THREADS  @max_event_threads@
+#define TS_MAX_NUMBER_EVENT_THREADS    @max_event_threads@
 
 #define TS_MAX_HOST_NAME_LEN           @max_host_name_len@
 
-# define TS_MAX_API_STATS               @max_api_stats@
+#define TS_MAX_API_STATS               @max_api_stats@
 
 
-# define SPLIT_DNS                      1
-# define HTTP_CACHE                     1
+#define SPLIT_DNS                      1
+#define HTTP_CACHE                     1
 
 /* Defaults for user / group */
 #define TS_PKGSYSUSER                   "@pkgsysuser@"

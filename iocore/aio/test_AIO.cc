@@ -23,7 +23,7 @@
 
 #include "P_AIO.h"
 #include "InkAPIInternal.h"
-#include "I_Layout.h"
+#include "ts/I_Layout.h"
 #include <iostream>
 #include <fstream>
 
@@ -332,11 +332,11 @@ int
 AIO_Device::do_fd(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
   if (!time_start) {
-    time_start = ink_get_hrtime();
+    time_start = Thread::get_hrtime();
     fprintf(stderr, "Starting the aio_testing \n");
   }
-  if ((ink_get_hrtime() - time_start) > (run_time * HRTIME_SECOND)) {
-    time_end = ink_get_hrtime();
+  if ((Thread::get_hrtime() - time_start) > (run_time * HRTIME_SECOND)) {
+    time_end = Thread::get_hrtime();
     ink_atomic_increment(&n_accessors, -1);
     if (n_accessors <= 0)
       dump_summary();

@@ -30,7 +30,7 @@
 #include <iterator>
 
 // Using ink_inet API is cheating, but I was too lazy to write new IPv6 address parsing routines ;)
-#include "ink_inet.h"
+#include "ts/ink_inet.h"
 
 // The policy type is the first comma-separated token.
 static BalancerInstance *
@@ -44,7 +44,7 @@ MakeBalancerInstance(const char *opt)
   } else if (len == lengthof("roundrobin") && strncmp(opt, "roundrobin", len) == 0) {
     return MakeRoundRobinBalancer(end ? end + 1 : NULL);
   } else {
-    TSError("balancer: invalid balancing policy '%.*s'", (int)len, opt);
+    TSError("[balancer] Invalid balancing policy '%.*s'", (int)len, opt);
     return NULL;
   }
 }
@@ -82,7 +82,7 @@ MakeBalancerTarget(const char *strval)
   }
 
   if (target.port > INT16_MAX) {
-    TSError("balancer: ignoring invalid port number for target '%s'", strval);
+    TSError("[balancer] Ignoring invalid port number for target '%s'", strval);
     target.port = 0;
   }
 

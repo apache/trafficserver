@@ -24,13 +24,14 @@
 #ifndef _URL_MAPPING_H_
 #define _URL_MAPPING_H_
 
-#include "ink_config.h"
+#include "ts/ink_config.h"
 #include "AclFiltering.h"
 #include "Main.h"
 #include "Error.h"
 #include "URL.h"
 #include "RemapPluginInfo.h"
-#include "Regex.h"
+#include "ts/Regex.h"
+#include "ts/List.h"
 
 static const unsigned int MAX_REMAP_PLUGIN_CHAIN = 10;
 

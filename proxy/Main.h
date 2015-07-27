@@ -23,10 +23,11 @@
 #ifndef _Main_h_
 #define _Main_h_
 
+#include "ts/ink_platform.h"
+#include "ts/ink_apidefs.h"
 #include <ts/ink_defs.h>
-#include "libts.h"
-#include "Regression.h"
-#include "I_Version.h"
+#include "ts/Regression.h"
+#include "ts/I_Version.h"
 
 
 //

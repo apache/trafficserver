@@ -21,8 +21,9 @@
   limitations under the License.
  */
 
-#include "libts.h"
-#include "ink_stack_trace.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_stack_trace.h"
+#include "ts/ink_args.h"
 
 #include <strings.h>
 #include <stdio.h>

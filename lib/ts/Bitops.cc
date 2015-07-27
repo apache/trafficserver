@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "Bitops.h"
+#include "ts/Bitops.h"
 
 
 unsigned char bit_table[256] = {

@@ -20,7 +20,11 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-#include "libts.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_memory.h"
+#include "ts/ink_defs.h"
+#include "ts/ink_stack_trace.h"
+#include "ts/Diags.h"
 
 #include <assert.h>
 #if defined(linux)

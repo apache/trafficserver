@@ -25,7 +25,7 @@
 #ifndef LOG_ACCESS_HTTP_H
 #define LOG_ACCESS_HTTP_H
 
-#include "Arena.h"
+#include "ts/Arena.h"
 #include "HTTP.h"
 #include "LogAccess.h"
 
@@ -56,6 +56,7 @@ public:
   // client -> proxy fields
   //
   virtual int marshal_client_host_ip(char *);                // STR
+  virtual int marshal_host_interface_ip(char *);             // STR
   virtual int marshal_client_host_port(char *);              // INT
   virtual int marshal_client_auth_user_name(char *);         // STR
   virtual int marshal_client_req_text(char *);               // STR
@@ -68,8 +69,12 @@ public:
   virtual int marshal_client_req_url_path(char *);           // STR
   virtual int marshal_client_req_url_scheme(char *);         // STR
   virtual int marshal_client_req_http_version(char *);       // INT
+  virtual int marshal_client_req_protocol_version(char *);   // STR
   virtual int marshal_client_req_header_len(char *);         // INT
   virtual int marshal_client_req_body_len(char *);           // INT
+  virtual int marshal_client_req_tcp_reused(char *);         // INT
+  virtual int marshal_client_req_is_ssl(char *);             // INT
+  virtual int marshal_client_req_ssl_reused(char *);         // INT
   virtual int marshal_client_finish_status_code(char *);     // INT
 
   //
@@ -91,6 +96,7 @@ public:
   virtual int marshal_proxy_req_body_len(char *);    // INT
   virtual int marshal_proxy_req_server_name(char *); // STR
   virtual int marshal_proxy_req_server_ip(char *);   // INT
+  virtual int marshal_proxy_req_server_port(char *); // INT
   virtual int marshal_proxy_hierarchy_route(char *); // INT
   virtual int marshal_proxy_host_port(char *);       // INT
 
@@ -140,6 +146,9 @@ public:
   //
   virtual int marshal_http_header_field(LogField::Container container, char *field, char *buf);
   virtual int marshal_http_header_field_escapify(LogField::Container container, char *field, char *buf);
+
+  virtual int marshal_milestone(TSMilestonesType ms, char *buf);
+  virtual int marshal_milestone_diff(TSMilestonesType ms1, TSMilestonesType ms2, char *buf);
 
   virtual void set_client_req_url(char *, int);                // STR
   virtual void set_client_req_url_canon(char *, int);          // STR

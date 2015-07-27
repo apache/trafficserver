@@ -31,7 +31,8 @@
 #ifndef _Proxy_Config_h
 #define _Proxy_Config_h
 
-#include "libts.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_memory.h"
 #include "ProcessManager.h"
 #include "I_EventSystem.h"
 

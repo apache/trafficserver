@@ -22,6 +22,8 @@
  */
 
 #include "RemapPluginInfo.h"
+#include "ts/ink_string.h"
+#include "ts/ink_memory.h"
 
 remap_plugin_info::remap_plugin_info(char *_path)
   : next(0), path(NULL), path_size(0), dlh(NULL), fp_tsremap_init(NULL), fp_tsremap_done(NULL), fp_tsremap_new_instance(NULL),

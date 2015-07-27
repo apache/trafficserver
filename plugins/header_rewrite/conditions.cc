@@ -384,7 +384,7 @@ ConditionUrl::eval(const Resources &res)
       TSDebug(PLUGIN_NAME, "   Using the to url");
       url = res._rri->mapToUrl;
     } else {
-      TSError("header_rewrite: Invalid option value");
+      TSError("[header_rewrite] Invalid option value");
       return false;
     }
   } else {
@@ -396,11 +396,11 @@ ConditionUrl::eval(const Resources &res)
       bufp = res.bufp;
       hdr_loc = res.hdr_loc;
     } else {
-      TSError("header_rewrite: Rule not supported at this hook");
+      TSError("[header_rewrite] Rule not supported at this hook");
       return false;
     }
     if (TSHttpHdrUrlGet(bufp, hdr_loc, &url) != TS_SUCCESS) {
-      TSError("header_rewrite: Error getting the URL");
+      TSError("[header_rewrite] Error getting the URL");
       return false;
     }
   }
@@ -438,7 +438,7 @@ ConditionDBM::initialize(Parser &p)
     //   TSError("Failed to open DBM file: %s", _file.c_str());
     // }
   } else {
-    TSError("%s: Malformed DBM condition", PLUGIN_NAME);
+    TSError("[%s] Malformed DBM condition", PLUGIN_NAME);
   }
 }
 

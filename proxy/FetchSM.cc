@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "ink_config.h"
+#include "ts/ink_config.h"
 #include "FetchSM.h"
 #include <stdio.h>
 #include "HTTP.h"
@@ -63,7 +63,7 @@ FetchSM::httpConnect()
   char const *tag = pi ? pi->getPluginTag() : "fetchSM";
   int64_t id = pi ? pi->getPluginId() : 0;
 
-  Debug(DEBUG_TAG, "[%s] calling httpconnect write", __FUNCTION__);
+  Debug(DEBUG_TAG, "[%s] calling httpconnect write pi=%p tag=%s id=%" PRId64, __FUNCTION__, pi, tag, id);
   http_vc = reinterpret_cast<PluginVC *>(TSHttpConnectWithPluginId(&_addr.sa, tag, id));
 
   /*

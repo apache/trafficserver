@@ -21,7 +21,8 @@
   limitations under the License.
  */
 
-#include "libts.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_string.h"
 #include "P_RecFile.h"
 #include "P_RecDefs.h"
 #include "P_RecUtils.h"

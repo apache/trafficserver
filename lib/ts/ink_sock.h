@@ -30,10 +30,10 @@
 #if !defined(_ink_sock_h_)
 #define _ink_sock_h_
 
-#include "ink_platform.h"
-#include "ink_defs.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_defs.h"
 
-#include "ink_apidefs.h"
+#include "ts/ink_apidefs.h"
 
 int safe_setsockopt(int s, int level, int optname, char *optval, int optlevel);
 int safe_getsockopt(int s, int level, int optname, char *optval, int *optlevel);

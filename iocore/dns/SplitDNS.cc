@@ -28,13 +28,14 @@
  *
  ****************************************************************************/
 
-#include "libts.h"
+#include "ts/ink_platform.h"
+#include "ts/Tokenizer.h"
 
 #ifdef SPLIT_DNS
 #include <sys/types.h>
 #include "P_SplitDNS.h"
-#include "MatcherUtils.h"
-#include "HostLookup.h"
+#include "ts/MatcherUtils.h"
+#include "ts/HostLookup.h"
 
 
 /* --------------------------------------------------------------
@@ -498,7 +499,8 @@ SplitDNSRecord::Init(matcher_line *line_info)
   ink_res_state res = new ts_imp_res_state;
 
   memset(res, 0, sizeof(ts_imp_res_state));
-  if ((-1 == ink_res_init(res, m_servers.x_server_ip, m_dnsSrvr_cnt, m_servers.x_def_domain, m_servers.x_domain_srch_list, NULL))) {
+  if ((-1 == ink_res_init(res, m_servers.x_server_ip, m_dnsSrvr_cnt, dns_search, m_servers.x_def_domain,
+                          m_servers.x_domain_srch_list, NULL))) {
     char ab[INET6_ADDRPORTSTRLEN];
     return config_parse_error("Failed to build res record for the servers %s ...",
                               ats_ip_ntop(&m_servers.x_server_ip[0].sa, ab, sizeof ab));

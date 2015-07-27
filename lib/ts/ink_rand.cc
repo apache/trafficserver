@@ -55,7 +55,8 @@
 */
 
 
-#include "libts.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_rand.h"
 
 #define NN 312
 #define MM 156

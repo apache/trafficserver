@@ -27,7 +27,7 @@
 #include <alloca.h>
 #include <hwloc.h>
 #endif
-#include "ink_defs.h"
+#include "ts/ink_defs.h"
 
 EventType
 EventProcessor::spawn_event_threads(int n_threads, const char *et_name, size_t stacksize)

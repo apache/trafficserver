@@ -24,6 +24,8 @@
 #ifndef LIB_TS_X509HOSTNAMEVALIDATOR_H_
 #define LIB_TS_X509HOSTNAMEVALIDATOR_H_
 
+#include <openssl/x509.h>
+
 /*
  * Validate that the certificate is for the specified hostname/IP address
  * @param cert The X509 certificate we match against

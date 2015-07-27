@@ -102,11 +102,18 @@ public:
     : client_rwnd(initial_rwnd), server_rwnd(initial_rwnd), _id(sid), _state(HTTP2_STREAM_STATE_IDLE), _fetch_sm(NULL),
       body_done(false), data_length(0)
   {
+    _thread = this_ethread();
+    HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_CLIENT_STREAM_COUNT, _thread);
+    _start_time = ink_hrtime();
     _req_header.create(HTTP_TYPE_REQUEST);
+    request_header_length = 0;
   }
 
   ~Http2Stream()
   {
+    HTTP2_DECREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_CLIENT_STREAM_COUNT, _thread);
+    ink_hrtime end_time = ink_hrtime();
+    HTTP2_SUM_THREAD_DYN_STAT(HTTP2_STAT_TOTAL_TRANSACTIONS_TIME, _thread, end_time - _start_time);
     _req_header.destroy();
 
     if (_fetch_sm) {
@@ -170,7 +177,11 @@ public:
 
   LINK(Http2Stream, link);
 
+  uint32_t request_header_length;
+
 private:
+  ink_hrtime _start_time;
+  EThread *_thread;
   Http2StreamId _id;
   Http2StreamState _state;
 

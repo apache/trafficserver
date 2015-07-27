@@ -87,7 +87,7 @@
 /* modify the "note" in process_core */
 /* Document properly */
 
-#include "ink_config.h"
+#include "ts/ink_config.h"
 
 #if defined(linux)
 #include "CoreUtils.h"
@@ -105,7 +105,7 @@ int program_counter = 0;
 #include <stdlib.h>
 #include <stdint.h>
 #include <math.h>
-#include "libts.h"
+#include "ts/ink_platform.h"
 #include "CoreUtils.h"
 #endif /* darwin || freebsd || solaris */
 

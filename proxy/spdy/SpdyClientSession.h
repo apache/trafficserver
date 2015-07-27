@@ -56,7 +56,7 @@ public:
   void clear();
 
   void
-  append_nv(const char *const *nv)
+  append_nv(char **nv)
   {
     for (int i = 0; nv[i]; i += 2) {
       headers.push_back(make_pair(nv[i], nv[i + 1]));
@@ -89,7 +89,7 @@ public:
 extern ClassAllocator<SpdyRequest> spdyRequestAllocator;
 
 // class SpdyClientSession : public Continuation, public PluginIdentity
-class SpdyClientSession : public ProxyClientSession
+class SpdyClientSession : public ProxyClientSession, public PluginIdentity
 {
 public:
   typedef ProxyClientSession super; ///< Parent type.
@@ -117,11 +117,8 @@ public:
     ink_release_assert(false);
     return NULL;
   }
-  void
-  start()
-  {
-    ink_release_assert(false);
-  }
+  void start();
+
   void do_io_close(int lerrno = -1);
   void
   do_io_shutdown(ShutdownHowTo_t howto)

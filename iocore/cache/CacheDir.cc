@@ -24,13 +24,13 @@
 
 #include "P_Cache.h"
 
-#include "hugepages.h"
+#include "ts/hugepages.h"
 
 // #define LOOP_CHECK_MODE 1
 #ifdef LOOP_CHECK_MODE
 #define DIR_LOOP_THRESHOLD 1000
 #endif
-#include "ink_stack_trace.h"
+#include "ts/ink_stack_trace.h"
 
 #define CACHE_INC_DIR_USED(_m)                            \
   do {                                                    \
@@ -1031,7 +1031,7 @@ Lrestart:
     }
 
     if (!vol->dir_sync_in_progress)
-      start_time = ink_get_hrtime();
+      start_time = Thread::get_hrtime();
 
     // recompute hit_evacuate_window
     vol->hit_evacuate_window = (vol->data_blocks * cache_config_hit_evacuate_percent) / 100;
@@ -1109,7 +1109,7 @@ Lrestart:
     } else {
       vol->dir_sync_in_progress = 0;
       CACHE_INCREMENT_DYN_STAT(cache_directory_sync_count_stat);
-      CACHE_SUM_DYN_STAT(cache_directory_sync_time_stat, ink_get_hrtime() - start_time);
+      CACHE_SUM_DYN_STAT(cache_directory_sync_time_stat, Thread::get_hrtime() - start_time);
       start_time = 0;
       goto Ldone;
     }

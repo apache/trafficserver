@@ -26,7 +26,7 @@
 #include "ReverseProxy.h"
 #include "UrlMappingPathIndex.h"
 #include "RemapConfig.h"
-#include "I_Layout.h"
+#include "ts/I_Layout.h"
 #include "HttpSM.h"
 
 #define modulePrefix "[ReverseProxy]"
@@ -388,7 +388,7 @@ UrlRewrite::PerformACLFiltering(HttpTransact::State *s, url_mapping *map)
     int method_wksidx = (method != -1) ? (method - HTTP_WKSIDX_CONNECT) : -1;
     bool client_enabled_flag = true;
 
-    ink_release_assert(ats_is_ip(&s->client_info.addr));
+    ink_release_assert(ats_is_ip(&s->client_info.src_addr));
 
     for (acl_filter_rule *rp = map->filter; rp && client_enabled_flag; rp = rp->next) {
       bool match = true;
@@ -406,7 +406,7 @@ UrlRewrite::PerformACLFiltering(HttpTransact::State *s, url_mapping *map)
       if (match && rp->src_ip_valid) {
         match = false;
         for (int j = 0; j < rp->src_ip_cnt && !match; j++) {
-          bool in_range = rp->src_ip_array[j].contains(s->client_info.addr);
+          bool in_range = rp->src_ip_array[j].contains(s->client_info.src_addr);
           if (rp->src_ip_array[j].invert) {
             if (!in_range) {
               match = true;

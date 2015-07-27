@@ -24,10 +24,10 @@
 #ifndef _URL_REWRITE_H_
 #define _URL_REWRITE_H_
 
-#include "ink_config.h"
+#include "ts/ink_config.h"
 #include "UrlMapping.h"
 #include "HttpTransact.h"
-#include "Regex.h"
+#include "ts/Regex.h"
 
 #define URL_REMAP_FILTER_NONE 0x00000000
 #define URL_REMAP_FILTER_REFERER 0x00000001      /* enable "referer" header validation */

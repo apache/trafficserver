@@ -20,7 +20,6 @@
 AM_CPPFLAGS = $(iocore_include_dirs) \
   -I$(top_srcdir)/lib \
   -I$(top_srcdir)/lib/records \
-  -I$(top_srcdir)/lib/ts \
   -I$(top_srcdir)/mgmt \
   -I$(top_srcdir)/mgmt/cluster \
   -I$(top_srcdir)/mgmt/api/include

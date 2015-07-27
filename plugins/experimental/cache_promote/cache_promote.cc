@@ -30,10 +30,12 @@
 
 #include "ts/ts.h"
 #include "ts/remap.h"
-#include "ink_config.h"
+#include "ts/ink_config.h"
 
 
 static const char *PLUGIN_NAME = "cache_promote";
+TSCont gNocacheCont;
+
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 // Note that all options for all policies has to go here. Not particularly pretty...
@@ -124,7 +126,7 @@ public:
   void
   usage() const
   {
-    TSError(PLUGIN_NAME, "Usage: @plugin=%s.so @pparam=--policy=chance @pparam=--sample=<x>%", PLUGIN_NAME);
+    TSError("[%s] Usage: @plugin=%s.so @pparam=--policy=chance @pparam=--sample=<x>%%", PLUGIN_NAME, PLUGIN_NAME);
   }
 
   const char *
@@ -285,7 +287,8 @@ public:
   void
   usage() const
   {
-    TSError(PLUGIN_NAME, "Usage: @plugin=%s.so @pparam=--policy=lru @pparam=--buckets=<n> --hits=<m> --sample=<x>", PLUGIN_NAME);
+    TSError("[%s] Usage: @plugin=%s.so @pparam=--policy=lru @pparam=--buckets=<n> --hits=<m> --sample=<x>", PLUGIN_NAME,
+            PLUGIN_NAME);
   }
 
   const char *
@@ -336,7 +339,7 @@ public:
         } else if (0 == strncasecmp(optarg, "lru", 3)) {
           _policy = new LRUPolicy();
         } else {
-          TSError("Unknown policy --policy=%s", optarg);
+          TSError("[%s] Unknown policy --policy=%s", PLUGIN_NAME, optarg);
           return false;
         }
         if (_policy) {
@@ -349,14 +352,14 @@ public:
             _policy->setSample(optarg);
           } else {
             if (!_policy->parseOption(opt, optarg)) {
-              TSError("The specified policy (%s) does not support the -%c option", _policy->policyName(), opt);
+              TSError("[%s] The specified policy (%s) does not support the -%c option", PLUGIN_NAME, _policy->policyName(), opt);
               delete _policy;
               _policy = NULL;
               return false;
             }
           }
         } else {
-          TSError("The --policy=<n> parameter must come first on the remap configuration");
+          TSError("[%s] The --policy=<n> parameter must come first on the remap configuration", PLUGIN_NAME);
           return false;
         }
       }
@@ -369,6 +372,20 @@ private:
   PromotionPolicy *_policy;
 };
 
+
+//////////////////////////////////////////////////////////////////////////////////////////////
+// Little helper continuation, to turn off writing to the cache. ToDo: when we have proper
+// APIs to make requests / responses, we can remove this completely.
+static int
+cont_nocache_response(TSCont contp, TSEvent event, void *edata)
+{
+  TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
+
+  TSHttpTxnServerRespNoStoreSet(txnp, 1);
+  // Reenable and continue with the state machine.
+  TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
+  return 0;
+}
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 // Main "plugin", a TXN hook in the TS_HTTP_READ_CACHE_HDR_HOOK. Unless the policy allows
@@ -398,7 +415,7 @@ cont_handle_policy(TSCont contp, TSEvent event, void *edata)
             TSDebug(PLUGIN_NAME, "cache-status is %d, and leaving cache on (promoted)", obj_status);
           } else {
             TSDebug(PLUGIN_NAME, "cache-status is %d, and turning off the cache (not promoted)", obj_status);
-            TSHttpTxnHookAdd(txnp, TS_HTTP_READ_RESPONSE_HDR_HOOK, contp);
+            TSHttpTxnHookAdd(txnp, TS_HTTP_READ_RESPONSE_HDR_HOOK, gNocacheCont);
           }
           break;
         default:
@@ -410,11 +427,6 @@ cont_handle_policy(TSCont contp, TSEvent event, void *edata)
     } else {
       TSDebug(PLUGIN_NAME, "Request is an internal (plugin) request, implicitly promoted");
     }
-    break;
-
-  // Temporaray hack, to deal with the fact that we can turn off the cache earlier
-  case TS_EVENT_HTTP_READ_RESPONSE_HDR:
-    TSHttpTxnServerRespNoStoreSet(txnp, 1);
     break;
 
   // Should not happen
@@ -445,6 +457,8 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
              (api_info->tsremap_version & 0xffff));
     return TS_ERROR;
   }
+
+  gNocacheCont = TSContCreate(cont_nocache_response, NULL);
 
   TSDebug(PLUGIN_NAME, "remap plugin is successfully initialized");
   return TS_SUCCESS; /* success */

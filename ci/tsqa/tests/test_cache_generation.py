@@ -40,8 +40,8 @@ class TestCacheGeneration(helpers.EnvironmentCase):
 
     def _fetch(self, path):
         url = 'http://127.0.0.1:{}/{}'.format(
-                self.configs['records.config']['CONFIG']['proxy.config.http.server_ports'],
-                path
+            self.configs['records.config']['CONFIG']['proxy.config.http.server_ports'],
+            path
         )
         log.debug('get {}'.format(url))
         return requests.get(url, headers={'x-debug': 'x-cache,x-cache-key,via,x-cache-generation'})
@@ -53,8 +53,9 @@ class TestCacheGeneration(helpers.EnvironmentCase):
 
     def _ctl(self, *args):
         cmd = [os.path.join(self.environment.layout.bindir, 'traffic_ctl')] + list(args)
-        out, _ = tsqa.utils.run_sync_command(cmd,
-                env=self.environment.shell_env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+        out, _ = tsqa.utils.run_sync_command(
+            cmd,
+            env=self.environment.shell_env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
         )
         return out
 
@@ -156,4 +157,3 @@ class TestCacheGeneration(helpers.EnvironmentCase):
                 gencount = gencount + 1
 
         self.assertNotEqual(gencount, 0, msg='proxy.config.http.cache.generation never updated')
-

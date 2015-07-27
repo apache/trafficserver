@@ -764,6 +764,8 @@ All four configurations are required, for the following reasons:
 -  :ts:cv:`proxy.config.cache.enable_read_while_writer` being set to ``1`` turns
    the feature on, as it is off (``0``) by default.
 
+.. _background_fill:
+
 -  The background fill feature (both
    :ts:cv:`proxy.config.http.background_fill_active_timeout` and
    :ts:cv:`proxy.config.http.background_fill_completed_threshold`) should be
@@ -781,6 +783,15 @@ All four configurations are required, for the following reasons:
 
 Once these are enabled, you have something that is very close, but not quite
 the same, to Squid's Collapsed Forwarding.
+
+In addition to the above settings, the settings :ts:cv:`proxy.config.cache.read_while_writer.max_retries`
+and :ts:cv:`proxy.config.cache.read_while_writer.delay` allow to control the number
+of retries TS attempts to trigger read-while-writer until the download of first fragment
+of the object is completed::
+
+    CONFIG proxy.config.cache.read_while_writer.max_retries INT 10
+
+    CONFIG proxy.config.cache.read_while_writer.delay INT 50
 
 .. _fuzzy-revalidation:
 
@@ -879,4 +890,13 @@ The configurations are (with defaults)::
 The defaults are such that the feature is disabled and every connection is
 allowed to go to origin without artificial delay. When enabled, you will try
 ``max_open_read_retries`` times, each with an ``open_read_retry_time`` timeout.
+
+Open Write Fail Action
+----------------------
+
+In addition to the open read retry settings TS supports a new setting
+:ts:cv:`proxy.config.http.cache.open_write_fail_action` that allows to further
+reduce multiple concurrent requests hitting the origin for the same object by
+either returning a stale copy, in case of hit-stale or an error in case of cache
+miss for all but one of the requests.
 

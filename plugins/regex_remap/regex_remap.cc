@@ -37,9 +37,9 @@
 #include <ctype.h>
 
 // Get some specific stuff from libts, yes, we can do that now that we build inside the core.
-#include "ink_platform.h"
-#include "ink_atomic.h"
-#include "ink_time.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_atomic.h"
+#include "ts/ink_time.h"
 
 #ifdef HAVE_PCRE_PCRE_H
 #include <pcre/pcre.h>
@@ -334,7 +334,7 @@ RemapRegex::initialize(const std::string &reg, const std::string &sub, const std
       _lowercase_substitutions = true;
     } else if (opt_val.size() <= 0) {
       // All other options have a required value
-      TSError("Malformed options: %s", opt.c_str());
+      TSError("[%s] Malformed options: %s", PLUGIN_NAME, opt.c_str());
       break;
     } else if (opt.compare(start, 6, "status") == 0) {
       _status = static_cast<TSHttpStatus>(strtol(opt_val.c_str(), NULL, 10));
@@ -367,7 +367,7 @@ RemapRegex::initialize(const std::string &reg, const std::string &sub, const std
           cur->data_len = opt_val.size();
           break;
         default:
-          TSError("%s: configuration variable '%s' is of an unsupported type", PLUGIN_NAME, opt_name.c_str());
+          TSError("[%s] configuration variable '%s' is of an unsupported type", PLUGIN_NAME, opt_name.c_str());
           delete cur;
           return false;
         }
@@ -384,7 +384,7 @@ RemapRegex::initialize(const std::string &reg, const std::string &sub, const std
           last_override = cur;
         }
       } else {
-        TSError("Unknown options: %s", opt.c_str());
+        TSError("[%s] Unknown options: %s", PLUGIN_NAME, opt.c_str());
       }
     }
     start = opt.find_first_of("@", pos2);
@@ -717,12 +717,12 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
 
   *ih = (void *)ri;
   if (ri == NULL) {
-    TSError("Unable to create remap instance");
+    TSError("[%s] Unable to create remap instance", PLUGIN_NAME);
     return TS_ERROR;
   }
 
   if (argc < 3) {
-    TSError("%s missing configuration file", PLUGIN_NAME);
+    TSError("[%s] missing configuration file", PLUGIN_NAME);
     return TS_ERROR;
   }
 
@@ -745,7 +745,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
     } else if (strncmp(argv[i], "no-matrix-parameters", 18) == 0) {
       ri->matrix_params = false;
     } else {
-      TSError("%s: invalid option '%s'", PLUGIN_NAME, argv[i]);
+      TSError("[%s] invalid option '%s'", PLUGIN_NAME, argv[i]);
     }
   }
 
@@ -760,13 +760,13 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
   }
 
   if (0 != access(ri->filename.c_str(), R_OK)) {
-    TSError("%s: failed to access %s: %s", PLUGIN_NAME, ri->filename.c_str(), strerror(errno));
+    TSError("[%s] failed to access %s: %s", PLUGIN_NAME, ri->filename.c_str(), strerror(errno));
     return TS_ERROR;
   }
 
   f.open((ri->filename).c_str(), std::ios::in);
   if (!f.is_open()) {
-    TSError("%s: unable to open %s", PLUGIN_NAME, (ri->filename).c_str());
+    TSError("[%s] unable to open %s", PLUGIN_NAME, (ri->filename).c_str());
     return TS_ERROR;
   }
   TSDebug(PLUGIN_NAME, "Loading regular expressions from %s", (ri->filename).c_str());
@@ -809,12 +809,12 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
 
     if (regex.empty()) {
       // No regex found on this line
-      TSError("no regexp found in %s: line %d", (ri->filename).c_str(), lineno);
+      TSError("[%s] no regexp found in %s: line %d", PLUGIN_NAME, (ri->filename).c_str(), lineno);
       continue;
     }
     if (subst.empty() && options.empty()) {
       // No substitution found on this line (and no options)
-      TSError("no substitution string found in %s: line %d", (ri->filename).c_str(), lineno);
+      TSError("[%s] no substitution string found in %s: line %d", PLUGIN_NAME, (ri->filename).c_str(), lineno);
       continue;
     }
 
@@ -822,13 +822,13 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
     RemapRegex *cur = new RemapRegex();
 
     if (!cur->initialize(regex, subst, options)) {
-      TSError("%s: can't create a new regex remap rule", PLUGIN_NAME);
+      TSError("[%s] can't create a new regex remap rule", PLUGIN_NAME);
       delete cur;
       continue;
     }
 
     if (cur->compile(&error, &erroffset) < 0) {
-      TSError("%s: PCRE failed in %s (line %d) at offset %d: %s", PLUGIN_NAME, (ri->filename).c_str(), lineno, erroffset, error);
+      TSError("[%s] PCRE failed in %s (line %d) at offset %d: %s", PLUGIN_NAME, (ri->filename).c_str(), lineno, erroffset, error);
       delete (cur);
     } else {
       TSDebug(PLUGIN_NAME, "Added regex=%s with subs=%s and options `%s'", regex.c_str(), subst.c_str(), options.c_str());
@@ -844,7 +844,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
 
   // Make sure we got something...
   if (ri->first == NULL) {
-    TSError("%s: no regular expressions from the maps", PLUGIN_NAME);
+    TSError("[%s] no regular expressions from the maps", PLUGIN_NAME);
     return TS_ERROR;
   }
 
@@ -1059,7 +1059,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
           // Setup the new URL
           if (TS_PARSE_ERROR == TSUrlParse(rri->requestBufp, rri->requestUrl, &start, start + dest_len)) {
             TSHttpTxnSetHttpRetStatus(txnp, TS_HTTP_STATUS_INTERNAL_SERVER_ERROR);
-            TSError("can't parse substituted URL string");
+            TSError("[%s] can't parse substituted URL string", PLUGIN_NAME);
           }
         }
         break;

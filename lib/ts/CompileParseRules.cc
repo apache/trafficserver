@@ -23,7 +23,7 @@
 
 #define COMPILE_PARSE_RULES
 
-#include "ParseRules.h"
+#include "ts/ParseRules.h"
 
 const unsigned int parseRulesCType[256] = {0};
 const char parseRulesCTypeToUpper[256] = {0};
@@ -36,7 +36,7 @@ char tparseRulesCTypeToLower[256];
 
 #include <stdio.h>
 #include <ctype.h>
-#include "ink_string.h"
+#include "ts/ink_string.h"
 
 static char *
 uint_to_binary(unsigned int u)

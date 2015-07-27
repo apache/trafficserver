@@ -24,10 +24,11 @@
 #ifndef __HTTP2_H__
 #define __HTTP2_H__
 
-#include "ink_defs.h"
-#include "ink_memory.h"
+#include "ts/ink_defs.h"
+#include "ts/ink_memory.h"
 #include "HPACK.h"
 #include "MIME.h"
+#include "P_RecDefs.h"
 
 class HTTPHdr;
 
@@ -58,6 +59,21 @@ const uint32_t HTTP2_INITIAL_WINDOW_SIZE = 65535;
 const uint32_t HTTP2_MAX_FRAME_SIZE = 16384;
 const uint32_t HTTP2_HEADER_TABLE_SIZE = 4096;
 const uint32_t HTTP2_MAX_HEADER_LIST_SIZE = UINT_MAX;
+
+// Statistics
+enum {
+  HTTP2_STAT_CURRENT_CLIENT_SESSION_COUNT,  // Current # of active HTTP2 sessions.
+  HTTP2_STAT_CURRENT_CLIENT_STREAM_COUNT,   // Current # of active HTTP2 streams.
+  HTTP2_STAT_TOTAL_TRANSACTIONS_TIME,       // Total stream time and streams
+  HTTP2_STAT_TOTAL_CLIENT_CONNECTION_COUNT, // Total connections running http2
+
+  HTTP2_N_STATS // Terminal counter, NOT A STAT INDEX.
+};
+
+#define HTTP2_INCREMENT_THREAD_DYN_STAT(_s, _t) RecIncrRawStat(http2_rsb, _t, (int)_s, 1);
+#define HTTP2_DECREMENT_THREAD_DYN_STAT(_s, _t) RecIncrRawStat(http2_rsb, _t, (int)_s, -1);
+#define HTTP2_SUM_THREAD_DYN_STAT(_s, _t, _v) RecIncrRawStat(http2_rsb, _t, (int)_s, _v);
+extern RecRawStatBlock *http2_rsb; // Container for statistics.
 
 // 6.9.1 The Flow Control Window
 static const Http2WindowSize HTTP2_MAX_WINDOW_SIZE = 0x7FFFFFFF;
@@ -298,6 +314,7 @@ public:
   static uint32_t max_frame_size;
   static uint32_t header_table_size;
   static uint32_t max_header_list_size;
+  static uint32_t max_request_header_size;
 
   static void init();
 };

@@ -21,15 +21,15 @@
   limitations under the License.
  */
 
-#include "ink_config.h"
-#include "ink_memory.h"
+#include "ts/ink_config.h"
+#include "ts/ink_memory.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <limits.h>
 
-#include "ink_llqueue.h"
+#include "ts/ink_llqueue.h"
 #include "errno.h"
 
 #define RECORD_CHUNK 1024

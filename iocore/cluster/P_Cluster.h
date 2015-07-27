@@ -24,7 +24,7 @@
 #ifndef _P_CLUSTER_H__
 #define _P_CLUSTER_H__
 
-#include "libts.h"
+#include "ts/ink_platform.h"
 #include "P_EventSystem.h"
 #include "I_RecProcess.h"
 #include "P_Net.h"

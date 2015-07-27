@@ -476,6 +476,7 @@ encode_literal_header_field(uint8_t *buf_start, const uint8_t *buf_end, const MI
 
   p += len;
 
+  Debug("http2_hpack_encode", "Encoded field: %.*s: %.*s", name_len, name, value_len, value);
   return p - buf_start;
 }
 
@@ -583,7 +584,7 @@ decode_indexed_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, 
     const char *decoded_value = header.value_get(&decoded_value_len);
 
     Arena arena;
-    Debug("http2_hpack_decode", "Decoded field:  %s: %s\n", arena.str_store(decoded_name, decoded_name_len),
+    Debug("http2_hpack_decode", "Decoded field: %s: %s", arena.str_store(decoded_name, decoded_name_len),
           arena.str_store(decoded_value, decoded_value_len));
   }
 
@@ -667,7 +668,7 @@ decode_literal_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, 
     int decoded_value_len;
     const char *decoded_value = header.value_get(&decoded_value_len);
 
-    Debug("http2_hpack_decode", "Decoded field:  %s: %s\n", arena.str_store(decoded_name, decoded_name_len),
+    Debug("http2_hpack_decode", "Decoded field: %s: %s", arena.str_store(decoded_name, decoded_name_len),
           arena.str_store(decoded_value, decoded_value_len));
   }
 

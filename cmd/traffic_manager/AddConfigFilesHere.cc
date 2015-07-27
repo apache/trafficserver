@@ -21,10 +21,10 @@
   limitations under the License.
  */
 
-#include "ink_platform.h"
+#include "ts/ink_platform.h"
 #include "MgmtUtils.h"
 #include "ConfigParse.h"
-#include "Diags.h"
+#include "ts/Diags.h"
 #include "FileManager.h"
 
 extern FileManager *configFiles;

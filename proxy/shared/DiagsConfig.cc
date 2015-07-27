@@ -21,8 +21,10 @@
   limitations under the License.
  */
 
-#include "libts.h"
-#include "I_Layout.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_memory.h"
+#include "ts/ink_file.h"
+#include "ts/I_Layout.h"
 #include "DiagsConfig.h"
 #include "P_RecCore.h"
 

@@ -24,11 +24,11 @@
 #ifndef _P_REC_CORE_H_
 #define _P_REC_CORE_H_
 
-#include "ink_thread.h"
-#include "ink_hash_table.h"
-#include "ink_llqueue.h"
-#include "ink_rwlock.h"
-#include "TextBuffer.h"
+#include "ts/ink_thread.h"
+#include "ts/ink_hash_table.h"
+#include "ts/ink_llqueue.h"
+#include "ts/ink_rwlock.h"
+#include "ts/TextBuffer.h"
 
 #include "I_RecCore.h"
 #include "P_RecDefs.h"

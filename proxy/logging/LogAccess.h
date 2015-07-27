@@ -28,7 +28,9 @@
  ***************************************************************************/
 #ifndef LOG_ACCESS_H
 #define LOG_ACCESS_H
-#include "libts.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_inet.h"
+#include "ts/ink_align.h"
 #include "LogField.h"
 
 /*-------------------------------------------------------------------------
@@ -169,6 +171,7 @@ public:
   // client -> proxy fields
   //
   inkcoreapi virtual int marshal_client_host_ip(char *);        // STR
+  inkcoreapi virtual int marshal_host_interface_ip(char *);     // STR
   inkcoreapi virtual int marshal_client_host_port(char *);      // INT
   inkcoreapi virtual int marshal_client_auth_user_name(char *); // STR
   int marshal_client_req_timestamp_sec(char *);                 // INT
@@ -183,8 +186,12 @@ public:
   inkcoreapi virtual int marshal_client_req_url_path(char *);           // STR
   inkcoreapi virtual int marshal_client_req_url_scheme(char *);         // STR
   inkcoreapi virtual int marshal_client_req_http_version(char *);       // INT
+  inkcoreapi virtual int marshal_client_req_protocol_version(char *);   // STR
   inkcoreapi virtual int marshal_client_req_header_len(char *);         // INT
   inkcoreapi virtual int marshal_client_req_body_len(char *);           // INT
+  inkcoreapi virtual int marshal_client_req_tcp_reused(char *);         // INT
+  inkcoreapi virtual int marshal_client_req_is_ssl(char *);             // INT
+  inkcoreapi virtual int marshal_client_req_ssl_reused(char *);         // INT
   inkcoreapi virtual int marshal_client_finish_status_code(char *);     // INT
 
   //
@@ -207,6 +214,7 @@ public:
   inkcoreapi virtual int marshal_proxy_req_body_len(char *);    // INT
   inkcoreapi virtual int marshal_proxy_req_server_name(char *); // STR
   inkcoreapi virtual int marshal_proxy_req_server_ip(char *);   // INT
+  inkcoreapi virtual int marshal_proxy_req_server_port(char *); // INT
   inkcoreapi virtual int marshal_proxy_hierarchy_route(char *); // INT
   inkcoreapi virtual int marshal_proxy_host_name(char *);       // STR
   inkcoreapi virtual int marshal_proxy_host_ip(char *);         // STR
@@ -280,6 +288,12 @@ public:
   // generic record access
   //
   int marshal_record(char *record, char *buf);
+
+  //
+  // milestones access
+  //
+  inkcoreapi virtual int marshal_milestone(TSMilestonesType ms, char *buf);
+  inkcoreapi virtual int marshal_milestone_diff(TSMilestonesType ms1, TSMilestonesType ms2, char *buf);
 
   //
   // unmarshalling routines

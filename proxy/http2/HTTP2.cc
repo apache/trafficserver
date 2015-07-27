@@ -24,11 +24,20 @@
 #include "HTTP2.h"
 #include "HPACK.h"
 #include "HuffmanCodec.h"
-#include "ink_assert.h"
-#include "I_RecCore.h"
+#include "ts/ink_assert.h"
+#include "P_RecCore.h"
+#include "P_RecProcess.h"
 
 const char *const HTTP2_CONNECTION_PREFACE = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n";
 static size_t HPACK_LEN_STATUS_VALUE_STR = 3;
+
+// Statistics
+RecRawStatBlock *http2_rsb;
+static char const *const HTTP2_STAT_CURRENT_CLIENT_SESSION_NAME = "proxy.process.http2.current_client_sessions";
+static char const *const HTTP2_STAT_CURRENT_CLIENT_STREAM_NAME = "proxy.process.http2.current_client_streams";
+static char const *const HTTP2_STAT_TOTAL_CLIENT_STREAM_NAME = "proxy.process.http2.total_client_streams";
+static char const *const HTTP2_STAT_TOTAL_TRANSACTIONS_TIME_NAME = "proxy.process.http2.total_transactions_time";
+static char const *const HTTP2_STAT_TOTAL_CLIENT_CONNECTION_NAME = "proxy.process.http2.total_client_connections";
 
 union byte_pointer {
   byte_pointer(void *p) : ptr(p) {}
@@ -535,8 +544,6 @@ convert_from_2_to_1_1_header(HTTPHdr *headers)
   headers->field_delete(MIME_FIELD_TRANSFER_ENCODING, MIME_LEN_TRANSFER_ENCODING);
   headers->field_delete(MIME_FIELD_UPGRADE, MIME_LEN_UPGRADE);
 
-  headers->value_set(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION, HTTP_VALUE_CLOSE, HTTP_LEN_CLOSE);
-
   return PARSE_DONE;
 }
 
@@ -613,21 +620,19 @@ http2_write_header_fragment(HTTPHdr *in, MIMEFieldIter &field_iter, uint8_t *out
     }
 
     MIMEFieldIter current_iter = field_iter;
-    do {
-      MIMEFieldWrapper header(field, in->m_heap, in->m_http->m_fields_impl);
-      if ((len = encode_literal_header_field(p, end, header, HPACK_FIELD_INDEXED_LITERAL)) == -1) {
-        if (!cont) {
-          // Parsing a part of headers is done
-          cont = true;
-          field_iter = current_iter;
-          return p - out;
-        } else {
-          // Parse error
-          return -1;
-        }
+    MIMEFieldWrapper header(field, in->m_heap, in->m_http->m_fields_impl);
+    if ((len = encode_literal_header_field(p, end, header, HPACK_FIELD_INDEXED_LITERAL)) == -1) {
+      if (!cont) {
+        // Parsing a part of headers is done
+        cont = true;
+        field_iter = current_iter;
+        return p - out;
+      } else {
+        // Parse error
+        return -1;
       }
-      p += len;
-    } while (field->has_dups() && (field = field->m_next_dup) != NULL);
+    }
+    p += len;
   }
 
   // Parsing all headers is done
@@ -755,6 +760,7 @@ uint32_t Http2::initial_window_size = 1048576;
 uint32_t Http2::max_frame_size = 16384;
 uint32_t Http2::header_table_size = 4096;
 uint32_t Http2::max_header_list_size = 4294967295;
+uint32_t Http2::max_request_header_size = 131072;
 
 void
 Http2::init()
@@ -764,12 +770,26 @@ Http2::init()
   REC_EstablishStaticConfigInt32U(max_frame_size, "proxy.config.http2.max_frame_size");
   REC_EstablishStaticConfigInt32U(header_table_size, "proxy.config.http2.header_table_size");
   REC_EstablishStaticConfigInt32U(max_header_list_size, "proxy.config.http2.max_header_list_size");
+  REC_EstablishStaticConfigInt32U(max_request_header_size, "proxy.config.http.request_header_max_size");
+
+  // Setup statistics
+  http2_rsb = RecAllocateRawStatBlock(static_cast<int>(HTTP2_N_STATS));
+  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_CURRENT_CLIENT_SESSION_NAME, RECD_INT, RECP_NON_PERSISTENT,
+                     static_cast<int>(HTTP2_STAT_CURRENT_CLIENT_SESSION_COUNT), RecRawStatSyncSum);
+  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_CURRENT_CLIENT_STREAM_NAME, RECD_INT, RECP_NON_PERSISTENT,
+                     static_cast<int>(HTTP2_STAT_CURRENT_CLIENT_STREAM_COUNT), RecRawStatSyncSum);
+  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_TOTAL_CLIENT_STREAM_NAME, RECD_INT, RECP_PERSISTENT,
+                     static_cast<int>(HTTP2_STAT_TOTAL_TRANSACTIONS_TIME), RecRawStatSyncCount);
+  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_TOTAL_TRANSACTIONS_TIME_NAME, RECD_INT, RECP_PERSISTENT,
+                     static_cast<int>(HTTP2_STAT_TOTAL_TRANSACTIONS_TIME), RecRawStatSyncSum);
+  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_TOTAL_CLIENT_CONNECTION_NAME, RECD_INT, RECP_PERSISTENT,
+                     static_cast<int>(HTTP2_STAT_TOTAL_CLIENT_CONNECTION_COUNT), RecRawStatSyncSum);
 }
 
 
 #if TS_HAS_TESTS
 
-#include "TestBox.h"
+#include "ts/TestBox.h"
 
 // Constants for regression test
 const static int BUFSIZE_FOR_REGRESSION_TEST = 128;

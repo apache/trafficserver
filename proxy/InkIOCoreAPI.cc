@@ -27,7 +27,7 @@
  * file to ensure that it gets exported as a global symbol in TS
  */
 
-#include "libts.h"
+#include "ts/ink_platform.h"
 #include "api/ts/InkAPIPrivateIOCore.h"
 #if defined(solaris) && !defined(__GNUC__)
 #include "P_EventSystem.h" // I_EventSystem.h
@@ -352,7 +352,7 @@ TSVIOMutexGet(TSVIO viop)
 ink_hrtime
 INKBasedTimeGet()
 {
-  return ink_get_based_hrtime();
+  return Thread::get_hrtime();
 }
 
 /* UDP Connection Interface */

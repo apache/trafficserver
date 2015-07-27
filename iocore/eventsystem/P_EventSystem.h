@@ -31,7 +31,7 @@
 #ifndef _P_EventSystem_h
 #define _P_EventSystem_h
 
-#include "libts.h"
+#include "ts/ink_platform.h"
 
 #include "I_EventSystem.h"
 

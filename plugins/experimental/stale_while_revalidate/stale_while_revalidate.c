@@ -30,7 +30,7 @@
 #include <getopt.h>
 #include <arpa/inet.h>
 
-#include "ink_defs.h"
+#include "ts/ink_defs.h"
 #include "ts/ts.h"
 #include "ts/experimental.h"
 
@@ -352,7 +352,7 @@ consume_resource(TSCont cont, TSEvent event ATS_UNUSED, void *edata ATS_UNUSED)
     TSContDestroy(cont);
     break;
   default:
-    TSError("Unknown event %d.", event);
+    TSError("[stale_while_revalidate] Unknown event %d.", event);
     break;
   }
 
@@ -616,7 +616,8 @@ TSPluginInit(int argc, const char *argv[])
   info.support_email = "dev@trafficserver.apache.org";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError("Plugin registration failed.\n");
+    TSError("[%s] Plugin registration failed.\n", PLUGIN_NAME);
+
     return;
   } else {
     TSDebug(PLUGIN_NAME, "Plugin registration succeeded.\n");

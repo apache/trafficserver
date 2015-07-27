@@ -26,9 +26,9 @@
 
 #include <sys/time.h>
 
-#include "ink_assert.h"
-#include "ink_apidefs.h"
-#include "ink_string++.h"
+#include "ts/ink_assert.h"
+#include "ts/ink_apidefs.h"
+#include "ts/ink_string++.h"
 #include "HdrHeap.h"
 #include "HdrToken.h"
 
@@ -184,7 +184,7 @@ struct MIMEFieldBlockImpl : public HdrHeapObjImpl {
   MIMEFieldBlockImpl *m_next;
   MIMEField m_field_slots[MIME_FIELD_BLOCK_SLOTS];
   // mime_hdr_copy_onto assumes that m_field_slots is last --
-  // don't add any new fields afterit.
+  // don't add any new fields after it.
 
   // Marshaling Functions
   int marshal(MarshalXlate *ptr_xlate, int num_ptr, MarshalXlate *str_xlate, int num_str);
@@ -1333,18 +1333,17 @@ inline void
 MIMEHdr::field_combine_dups(MIMEField *field, bool prepend_comma, const char separator)
 {
   MIMEField *current = field->m_next_dup;
-  MIMEField *next = NULL;
 
   while (current) {
-    next = current->m_next_dup;
-
     int value_len = 0;
     const char *value_str = current->value_get(&value_len);
+
     if (value_len > 0) {
+      HdrHeap::HeapGuard guard(m_heap, value_str); // reference count the source string so it doesn't get moved
       field->value_append(m_heap, m_mime, value_str, value_len, prepend_comma, separator);
     }
     field_delete(current, false); // don't delete duplicates
-    current = next;
+    current = field->m_next_dup;
   }
 }
 

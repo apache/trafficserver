@@ -24,7 +24,7 @@
 #if !defined(_P_Freer_h_)
 #define _P_Freer_h_
 
-#include "libts.h"
+#include "ts/ink_platform.h"
 #include "I_Tasks.h"
 
 // Note that these should not be used for memory that wishes to retain

@@ -27,7 +27,7 @@
  *
  *
  ****************************************************************************/
-#include "libts.h"
+#include "ts/ink_platform.h"
 #include "I_Net.h"
 #include "CongestionDB.h"
 #include "Congestion.h"
@@ -618,7 +618,7 @@ CongestionEntry::sprint(char *buf, int buflen, int format)
   ink_hrtime timestamp = 0;
   char state;
   if (pRecord->max_connection >= 0 && m_num_connections >= pRecord->max_connection) {
-    timestamp = ink_hrtime_to_sec(ink_get_hrtime());
+    timestamp = ink_hrtime_to_sec(Thread::get_hrtime());
     state = 'M';
   } else {
     timestamp = m_last_congested;

@@ -186,7 +186,7 @@ ts_lua_add_package_path_items(lua_State *L, ts_lua_package_path *pp, int n)
 
   for (i = 0; i < n; i++) {
     if (new_path_len + pp[i].len + 1 >= sizeof(new_path)) {
-      TSError("extended package.path is too long.");
+      TSError("[ts_lua] Extended package.path is too long.");
       return -1;
     }
 
@@ -332,7 +332,7 @@ ts_lua_add_package_cpath_items(lua_State *L, ts_lua_package_path *pp, int n)
 
   for (i = 0; i < n; i++) {
     if (new_path_len + pp[i].len + 1 >= sizeof(new_path)) {
-      TSError("extended package.cpath is too long.");
+      TSError("[ts_lua] Extended package.cpath is too long.");
       return -1;
     }
 

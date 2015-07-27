@@ -25,6 +25,7 @@
 #define __HTTP2_CLIENT_SESSION_H__
 
 #include "HTTP2.h"
+#include "Plugin.h"
 #include "ProxyClientSession.h"
 #include "Http2ConnectionState.h"
 
@@ -143,7 +144,7 @@ private:
   } hdr;
 };
 
-class Http2ClientSession : public ProxyClientSession
+class Http2ClientSession : public ProxyClientSession, public PluginIdentity
 {
 public:
   typedef ProxyClientSession super; ///< Parent type.
@@ -198,6 +199,8 @@ public:
     return upgrade_context;
   }
 
+  virtual char const *getPluginTag() const;
+  virtual int64_t getPluginId() const;
 
 private:
   Http2ClientSession(Http2ClientSession &);                  // noncopyable

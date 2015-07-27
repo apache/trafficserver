@@ -294,7 +294,10 @@
 #define LOG_H
 
 #include <stdarg.h>
-#include "libts.h"
+#include "ts/ink_platform.h"
+#include "ts/EventNotify.h"
+#include "ts/ink_hash_table.h"
+#include "ts/Regression.h"
 #include "P_RecProcess.h"
 #include "LogFile.h"
 #include "LogBuffer.h"
@@ -418,6 +421,13 @@ public:
   inkcoreapi static int va_error(const char *format, va_list ap);
   inkcoreapi static int error(const char *format, ...) TS_PRINTFLIKE(1, 2);
 
+  /////////////////////////////////////////////////////////////////////////
+  // 'Wire tracing' enabled by source ip or by percentage of connections //
+  /////////////////////////////////////////////////////////////////////////
+  static void trace_in(const sockaddr *peer_addr, uint16_t peer_port, const char *format_string, ...) TS_PRINTFLIKE(3, 4);
+  static void trace_out(const sockaddr *peer_addr, uint16_t peer_port, const char *format_string, ...) TS_PRINTFLIKE(3, 4);
+  static void trace_va(bool in, const sockaddr *peer_addr, uint16_t peer_port, const char *format_string, va_list ap);
+
   // public data members
   inkcoreapi static LogObject *error_log;
   static LogConfig *config;
@@ -448,6 +458,7 @@ public:
   // reconfiguration stuff
   static void change_configuration();
   static int handle_logging_mode_change(const char *name, RecDataT data_type, RecData data, void *cookie);
+  static int handle_periodic_tasks_int_change(const char *name, RecDataT data_type, RecData data, void *cookie);
 
   Log(); // shut up stupid DEC C++ compiler
 
@@ -461,6 +472,7 @@ private:
   static int init_status;
   static int config_flags;
   static bool logging_mode_changed;
+  static uint32_t periodic_tasks_interval;
 
   // -- member functions that are not allowed --
   Log(const Log &rhs);
@@ -473,5 +485,12 @@ LogRollingEnabledIsValid(int enabled)
 {
   return (enabled >= Log::NO_ROLLING || enabled < Log::INVALID_ROLLING_VALUE);
 }
+
+#define TraceIn(flag, ...) \
+  if (flag)                \
+  Log::trace_in(__VA_ARGS__)
+#define TraceOut(flag, ...) \
+  if (flag)                 \
+  Log::trace_out(__VA_ARGS__)
 
 #endif

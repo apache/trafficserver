@@ -23,6 +23,7 @@
 
 #include "Http2ClientSession.h"
 #include "HttpDebugNames.h"
+#include "ts/ink_base64.h"
 
 #define STATE_ENTER(state_name, event)                                                       \
   do {                                                                                       \
@@ -104,6 +105,10 @@ Http2ClientSession::start()
 void
 Http2ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader, bool backdoor)
 {
+  ink_assert(new_vc->mutex->thread_holding == this_ethread());
+  HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_CLIENT_SESSION_COUNT, new_vc->mutex->thread_holding);
+  HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_TOTAL_CLIENT_CONNECTION_COUNT, new_vc->mutex->thread_holding);
+
   // HTTP/2 for the backdoor connections? Let's not deal woth that yet.
   ink_release_assert(backdoor == false);
 
@@ -189,9 +194,16 @@ Http2ClientSession::do_io_close(int alerrno)
 {
   DebugHttp2Ssn0("session closed");
 
+  ink_assert(this->mutex->thread_holding == this_ethread());
+  if (client_vc) {
+    // clean up ssl's first byte iobuf
+    SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(client_vc);
+    if (ssl_vc) {
+      ssl_vc->set_ssl_iobuf(NULL);
+    }
+  }
+  HTTP2_DECREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_CLIENT_SESSION_COUNT, this->mutex->thread_holding);
   send_connection_event(&this->connection_state, HTTP2_SESSION_EVENT_FINI, this);
-
-
   do_api_callout(TS_HTTP_SSN_CLOSE_HOOK);
 }
 
@@ -386,4 +398,16 @@ Http2ClientSession::state_complete_frame_read(int event, void *edata)
 
   vio->reenable();
   return 0;
+}
+
+int64_t
+Http2ClientSession::getPluginId() const
+{
+  return con_id;
+}
+
+char const *
+Http2ClientSession::getPluginTag() const
+{
+  return "http/2";
 }

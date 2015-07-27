@@ -72,19 +72,19 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
             expire = TSstrdup(val);
           }
         } else {
-          TSError("Invalid parameter [%s]", ptr);
+          TSError("[secure_link] Invalid parameter [%s]", ptr);
           break;
         }
       } while ((ptr = strtok_r(NULL, "&", &saveptr)) != NULL);
     } else {
-      TSError("strtok didn't find a & in the query string");
+      TSError("[secure_link] strtok didn't find a & in the query string");
       /* this is just example, so set fake params to prevent plugin crash */
       token = TSstrdup("d41d8cd98f00b204e9800998ecf8427e");
       expire = TSstrdup("00000000");
     }
     TSfree(s);
   } else {
-    TSError("TSUrlHttpQueryGet returns empty value");
+    TSError("[secure_link] TSUrlHttpQueryGet returns empty value");
   }
 
   ph = TSUrlPathGet(rri->requestBufp, rri->requestUrl, &len);
@@ -96,7 +96,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
     path = TSstrdup(s);
     TSfree(s);
   } else {
-    TSError("TSUrlPathGet returns empty value");
+    TSError("[secure_link] TSUrlPathGet returns empty value");
     /* this is just example, so set fake params to prevent plugin crash */
     path = TSstrdup("example/");
   }
@@ -172,7 +172,7 @@ TSRemapNewInstance(int argc, char **argv, void **ih, char *errbuf, int errbuf_si
         TSDebug(PLUGIN_NAME, "Unknown parameter [%s]", argv[i]);
       }
     } else {
-      TSError("Invalid parameter [%s]", argv[i]);
+      TSError("[secure_link] Invalid parameter [%s]", argv[i]);
     }
   }
 

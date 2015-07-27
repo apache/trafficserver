@@ -57,14 +57,14 @@
 
 #include <strings.h>
 #include <sys/types.h>
-#include "libts.h"
+#include "ts/ink_platform.h"
 #include "HTTP.h"
 #include "HttpConfig.h"
 #include "HttpCompat.h"
 #include "HttpTransact.h"
 #include "Error.h"
 #include "Main.h"
-#include "RawHashTable.h"
+#include "ts/RawHashTable.h"
 
 
 #define HTTP_BODY_TEMPLATE_MAGIC 0xB0DFAC00
@@ -187,6 +187,7 @@ private:
                   const char **set_return = NULL);
 
   const char *determine_set_by_language(StrList *acpt_language_list, StrList *acpt_charset_list);
+  const char *determine_set_by_host(HttpTransact::State *context);
   HttpBodyTemplate *find_template(const char *set, const char *type, HttpBodySet **body_set_return);
   bool is_response_suppressed(HttpTransact::State *context);
   bool

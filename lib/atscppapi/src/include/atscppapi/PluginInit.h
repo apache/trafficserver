@@ -23,7 +23,7 @@
 #pragma once
 #ifndef ATSCPPAPI_PLUGININIT_H_
 #define ATSCPPAPI_PLUGININIT_H_
-#include <../ts/apidefs.h>
+#include <ts/apidefs.h>
 #include <atscppapi/utils.h>
 extern "C" {
 

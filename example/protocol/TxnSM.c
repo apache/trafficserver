@@ -23,7 +23,7 @@
 
 #include <sys/types.h>
 #include <netinet/in.h>
-#include "ink_defs.h"
+#include "ts/ink_defs.h"
 
 #include "TxnSM.h"
 
@@ -274,7 +274,7 @@ state_handle_cache_lookup(TSCont contp, TSEvent event, TSVConn vc)
     /* Write log */
     ret_val = TSTextLogObjectWrite(protocol_plugin_log, "%s %s %d \n", txn_sm->q_file_name, txn_sm->q_server_name, 1);
     if (ret_val != TS_SUCCESS)
-      TSError("fail to write into log");
+      TSError("[protocol] Fail to write into log");
 
     txn_sm->q_cache_vc = vc;
     txn_sm->q_pending_action = NULL;
@@ -306,7 +306,7 @@ state_handle_cache_lookup(TSCont contp, TSEvent event, TSVConn vc)
     ret_val = TSTextLogObjectWrite(protocol_plugin_log, "%s %s %d \n", txn_sm->q_file_name, txn_sm->q_server_name, 0);
 
     if (ret_val != TS_SUCCESS)
-      TSError("fail to write into log");
+      TSError("[protocol] Fail to write into log");
 
     set_handler(txn_sm->q_current_handler, (TxnSMHandler)&state_handle_cache_prepare_for_write);
     txn_sm->q_pending_action = TSCacheWrite(contp, txn_sm->q_key);
@@ -409,7 +409,7 @@ state_handle_cache_prepare_for_write(TSCont contp, TSEvent event, TSVConn vc)
     txn_sm->q_cache_vc = vc;
     break;
   default:
-    TSError("can't open cache write_vc, aborting txn");
+    TSError("[protocol] Can't open cache write_vc, aborting txn");
     txn_sm->q_cache_vc = NULL;
     return prepare_to_die(contp);
     break;

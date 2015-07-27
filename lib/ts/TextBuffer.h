@@ -32,8 +32,8 @@
  *
  ****************************************************************************/
 
-#include "ink_platform.h"
-#include "ink_apidefs.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_apidefs.h"
 
 class textBuffer
 {

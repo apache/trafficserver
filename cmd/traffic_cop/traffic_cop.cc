@@ -21,14 +21,20 @@
   limitations under the License.
  */
 
-#include "libts.h"
-#include "I_Layout.h"
-#include "I_Version.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_syslog.h"
+#include "ts/ink_stack_trace.h"
+#include "ts/ink_lockfile.h"
+#include "ts/ink_sock.h"
+#include "ts/ink_args.h"
+#include "ts/ink_file.h"
+#include "ts/I_Layout.h"
+#include "ts/I_Version.h"
 #include "I_RecCore.h"
 #include "mgmtapi.h"
 #include "RecordsConfig.h"
 #include "ClusterCom.h"
-#include "ink_cap.h"
+#include "ts/ink_cap.h"
 
 #include <string>
 #include <map>

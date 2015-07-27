@@ -36,20 +36,20 @@
 
   ****************************************************************************/
 
-#include "ink_config.h"
+#include "ts/ink_config.h"
 #include <assert.h>
 #include <memory.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/mman.h>
-#include "ink_atomic.h"
-#include "ink_queue.h"
-#include "ink_memory.h"
-#include "ink_error.h"
-#include "ink_assert.h"
-#include "ink_align.h"
-#include "hugepages.h"
+#include "ts/ink_atomic.h"
+#include "ts/ink_queue.h"
+#include "ts/ink_memory.h"
+#include "ts/ink_error.h"
+#include "ts/ink_assert.h"
+#include "ts/ink_align.h"
+#include "ts/hugepages.h"
 
 inkcoreapi volatile int64_t fastalloc_mem_in_use = 0;
 inkcoreapi volatile int64_t fastalloc_mem_total = 0;

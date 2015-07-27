@@ -36,7 +36,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
-#include "ink_apidefs.h"
+#include "ts/ink_apidefs.h"
 
 /*===========================================================================*
 

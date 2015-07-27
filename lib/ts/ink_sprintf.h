@@ -36,8 +36,8 @@
 
 #include <stdio.h>
 #include <stdarg.h>
-#include "ink_apidefs.h"
-#include "ink_defs.h"
+#include "ts/ink_apidefs.h"
+#include "ts/ink_defs.h"
 
 int ink_bsprintf(char *buffer, const char *format, ...) TS_PRINTFLIKE(2, 3);
 int ink_bvsprintf(char *buffer, const char *format, va_list ap);

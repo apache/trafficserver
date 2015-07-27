@@ -34,7 +34,7 @@
 ***********************************************************************/
 #include <stdio.h>
 
-#include "ink_defs.h"
+#include "ts/ink_defs.h"
 
 #if defined(POSIX_THREAD)
 #include <pthread.h>

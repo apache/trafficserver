@@ -41,7 +41,7 @@ AC_CONFIG_AUX_DIR([build/aux])
 AC_CONFIG_SRCDIR([proxy/Main.cc])
 AC_CONFIG_MACRO_DIR([build])
 AM_INIT_AUTOMAKE([-Wall -Werror tar-ustar foreign no-installinfo no-installman subdir-objects 1.9.2])
-AC_CONFIG_HEADERS([lib/ts/ink_autoconf.h])
+AC_CONFIG_HEADERS([lib/ink_autoconf.h])
 
 # Configure with --disable-silent-rules to get verbose output. For more info, see
 # http://www.gnu.org/software/automake/manual/html_node/Automake-silent_002drules-Option.html
@@ -1924,6 +1924,7 @@ AS_IF([test "x$enable_experimental_plugins" = "xyes"], [
     plugins/experimental/url_sig/Makefile
     plugins/experimental/xdebug/Makefile
     plugins/experimental/mp4/Makefile
+    plugins/experimental/stream_editor/Makefile
 ])])
 
 AS_IF([test "x$enable_cppapi" = "xyes"], [

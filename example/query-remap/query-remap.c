@@ -27,7 +27,7 @@
 
 #include "ts/ts.h"
 #include "ts/remap.h"
-#include "ink_defs.h"
+#include "ts/ink_defs.h"
 
 #define PLUGIN_NAME "query_remap"
 
@@ -59,7 +59,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf ATS_UNUSED, i
   TSDebug(PLUGIN_NAME, "new instance fromURL: %s toURL: %s", argv[0], argv[1]);
 
   if (argc < 4) {
-    TSError("Missing parameters for " PLUGIN_NAME);
+    TSError("[query_remap] Missing parameters");
     return -1;
   }
 
@@ -118,7 +118,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh ATS_UNUSED, TSRemapRequestInfo *rri)
   query_remap_info *qri = (query_remap_info *)ih;
 
   if (!qri || !rri) {
-    TSError(PLUGIN_NAME "NULL private data or RRI");
+    TSError("[query_remap] NULL private data or RRI");
     return TSREMAP_NO_REMAP;
   }
 

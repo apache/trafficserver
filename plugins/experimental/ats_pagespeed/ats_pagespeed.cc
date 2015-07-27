@@ -221,7 +221,7 @@ ps_determine_request_options(const RewriteOptions *domain_options, /* may be nul
   if (!server_context->GetQueryOptions(request_context, domain_options, url, request_headers, response_headers, &rewrite_query)) {
     // Failed to parse query params or request headers.  Treat this as if there
     // were no query params given.
-    TSError("ps_route request: parsing headers or query params failed.");
+    TSError("[ats_pagespeed] ps_route request: parsing headers or query params failed.");
     return NULL;
   }
 
@@ -471,11 +471,11 @@ ats_transform_init(TSCont contp, TransformCtx *ctx)
 
   // TODO: check cleanup flow
   if (TSHttpTxnTransformRespGet(ctx->txn, &bufp, &hdr_loc) != TS_SUCCESS) {
-    TSError("Error TSHttpTxnTransformRespGet");
+    TSError("[ats_pagespeed] TSHttpTxnTransformRespGet failed");
     return;
   }
   if (TSHttpTxnClientReqGet(ctx->txn, &reqp, &req_hdr_loc) != TS_SUCCESS) {
-    TSError("Error TSHttpTxnClientReqGet");
+    TSError("[ats_pagespeed] TSHttpTxnClientReqGet failed");
     return;
   }
 
@@ -590,13 +590,13 @@ ats_transform_one(TransformCtx *ctx, TSIOBufferReader upstream_reader, int amoun
   while (amount > 0) {
     downstream_blkp = TSIOBufferReaderStart(upstream_reader);
     if (!downstream_blkp) {
-      TSError("couldn't get from IOBufferBlock");
+      TSError("[ats_pagespeed] Couldn't get from IOBufferBlock");
       return;
     }
 
     upstream_buffer = TSIOBufferBlockReadStart(downstream_blkp, upstream_reader, &upstream_length);
     if (!upstream_buffer) {
-      TSError("couldn't get from TSIOBufferBlockReadStart");
+      TSError("[ats_pagespeed] Couldn't get from TSIOBufferBlockReadStart");
       return;
     }
 
@@ -620,7 +620,7 @@ ats_transform_one(TransformCtx *ctx, TSIOBufferReader upstream_reader, int amoun
       while (ctx->inflater->HasUnconsumedInput()) {
         int num_inflated_bytes = ctx->inflater->InflateBytes(buf, net_instaweb::kStackBufferSize);
         if (num_inflated_bytes < 0) {
-          TSError("Corrupted inflation");
+          TSError("[ats_pagespeed] Corrupted inflation");
         } else if (num_inflated_bytes > 0) {
           if (ctx->recorder != NULL) {
             ctx->recorder->Write(StringPiece(buf, num_inflated_bytes), ats_process_context->message_handler());
@@ -1164,7 +1164,7 @@ RegisterPlugin()
   info.support_email = (char *)"dev@trafficserver.apache.org";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError("Failed to register ATSSpeed");
+    TSError("[ats_pagespeed] Failed to register");
     return false;
   }
 
@@ -1201,7 +1201,7 @@ process_configuration()
       s.append(ent->d_name);
       fprintf(stderr, "parse [%s]\n", s.c_str());
       if (!new_config->Parse(s.c_str())) {
-        TSError("Error parsing %s", s.c_str());
+        TSError("[ats_pagespeed] Error parsing %s", s.c_str());
       }
     }
     closedir(dir);

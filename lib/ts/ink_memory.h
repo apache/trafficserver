@@ -27,7 +27,7 @@
 #include <string.h>
 #include <strings.h>
 
-#include "ink_config.h"
+#include "ts/ink_config.h"
 
 #if HAVE_UNISTD_H
 #include <unistd.h>

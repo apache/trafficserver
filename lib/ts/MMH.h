@@ -24,9 +24,9 @@
 #ifndef _MMH_h_
 #define _MMH_h_
 
-#include "ink_code.h"
-#include "ink_defs.h"
-#include "CryptoHash.h"
+#include "ts/ink_code.h"
+#include "ts/ink_defs.h"
+#include "ts/CryptoHash.h"
 
 struct MMH_CTX {
   uint64_t state[4];

@@ -21,7 +21,8 @@
   limitations under the License.
  */
 
-#include "libts.h"
+#include "ts/ink_platform.h"
+#include "ts/EventNotify.h"
 
 #include "I_Tasks.h"
 

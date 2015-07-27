@@ -31,8 +31,8 @@
  * Created by: Lan Tran
  *
  ***************************************************************************/
-#include "ink_platform.h"
-#include "ink_string.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_string.h"
 #include "CfgContextManager.h"
 #include "CfgContextUtils.h"
 #include "CoreAPI.h"

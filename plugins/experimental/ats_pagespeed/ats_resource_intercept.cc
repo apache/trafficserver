@@ -177,7 +177,7 @@ resource_intercept(TSCont cont, TSEvent event, void *edata)
       if (numBytesWritten == numBytesToWrite) {
         TSVConnWrite(intercept_ctx->vconn, cont, intercept_ctx->resp_reader, numBytesToWrite);
       } else {
-        TSError("Not all output could be written in one go");
+        TSError("[ats_resource_intercept] Not all output could be written in one go");
         DCHECK(false);
       }
     }
@@ -194,18 +194,18 @@ resource_intercept(TSCont cont, TSEvent event, void *edata)
     shutDown = true;
     break;
   case TS_EVENT_ERROR:
-    TSError("vconn event: error %s", intercept_ctx->request_ctx->url_string->c_str());
+    TSError("[ats_resource_intercept] vconn event: error %s", intercept_ctx->request_ctx->url_string->c_str());
     shutDown = true;
     break;
   case TS_EVENT_NET_ACCEPT_FAILED:
-    TSError("vconn event: accept failed");
+    TSError("[ats_resource_intercept] vconn event: accept failed");
     shutDown = true;
     break;
   case TS_EVENT_IMMEDIATE:
   case TS_EVENT_TIMEOUT:
     break;
   default:
-    TSError("default clause event: %d", event);
+    TSError("[ats_resource_intercept] Default clause event: %d", event);
     break;
   }
 
@@ -287,7 +287,7 @@ read_cache_header_callback(TSCont cont, TSEvent event, void *edata)
     TSMBuffer reqp;
     TSMLoc req_hdr_loc;
     if (TSHttpTxnClientReqGet(ctx->txn, &reqp, &req_hdr_loc) != TS_SUCCESS) {
-      TSError("Error TSHttpTxnClientReqGet for resource!");
+      TSError("[ats_resource_intercept] Error TSHttpTxnClientReqGet for resource!");
       TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
       return 0;
     }

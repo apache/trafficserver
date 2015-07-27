@@ -56,11 +56,14 @@ cmd/traffic_layout/traffic_layout
 cmd/traffic_via/traffic_via
 cmd/traffic_wccp/traffic_wccp
 
+lib/stamp-h1
+lib/ink_autoconf.h
+lib/ink_autoconf.h.in
+lib/ts/stamp-h1
 lib/ts/ink_autoconf.h
 lib/ts/ink_autoconf.h.in
 lib/ts/ink_config.h
 lib/ts/apidefs.h
-lib/ts/stamp-h1
 lib/ts/CompileParseRules
 lib/ts/ParseRulesCType
 lib/ts/ParseRulesCTypeToLower
@@ -83,6 +86,7 @@ iocore/eventsystem/test_Buffer
 iocore/eventsystem/test_Event
 proxy/config/records.config.default
 proxy/config/storage.config.default
+proxy/http2/test_Huffmancode
 plugins/experimental/esi/*_test
 plugins/experimental/spdy/zstream_test
 plugins/experimental/sslheaders/test_sslheaders

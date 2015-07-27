@@ -28,7 +28,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-#include "libts.h"
+#include "ts/ink_platform.h"
 #include "LogBufferSink.h"
 
 class LogSock;
@@ -195,7 +195,6 @@ public:
 
   void check_fd();
   static int writeln(char *data, int len, int fd, const char *path);
-  void read_metadata();
 
 public:
   LogFileFormat m_file_format;
@@ -215,7 +214,6 @@ public:
   long m_start_time;
   long m_end_time;
   volatile uint64_t m_bytes_written;
-  off_t m_size_bytes; // current size of file in bytes
 
 public:
   Link<LogFile> link;

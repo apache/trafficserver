@@ -69,7 +69,7 @@ Event::schedule_in(ink_hrtime atimeout_in, int acallback_event)
   ink_assert(ethread == this_ethread());
   if (in_the_priority_queue)
     ethread->EventQueue.remove(this);
-  timeout_at = ink_get_based_hrtime() + atimeout_in;
+  timeout_at = Thread::get_hrtime() + atimeout_in;
   period = 0;
   immediate = false;
   mutex = continuation->mutex;
@@ -88,7 +88,7 @@ Event::schedule_every(ink_hrtime aperiod, int acallback_event)
   if (aperiod < 0) {
     timeout_at = aperiod;
   } else {
-    timeout_at = ink_get_based_hrtime() + aperiod;
+    timeout_at = Thread::get_hrtime() + aperiod;
   }
   period = aperiod;
   immediate = false;

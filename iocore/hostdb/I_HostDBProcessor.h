@@ -24,6 +24,11 @@
 #ifndef _I_HostDBProcessor_h_
 #define _I_HostDBProcessor_h_
 
+#include "ts/HashFNV.h"
+#include "ts/ink_time.h"
+#include "ts/INK_MD5.h"
+#include "ts/ink_align.h"
+#include "ts/ink_resolver.h"
 #include "I_EventSystem.h"
 #include "SRV.h"
 
@@ -152,6 +157,22 @@ struct HostDBInfo {
 
   char *hostname();
   char *srvname(HostDBRoundRobin *rr);
+  /// Check if this entry is the root of a round robin entry.
+  /// If @c true then this entry needs to be converted to a specific element of the round robin to be used.
+  bool
+  is_rr() const
+  {
+    return 0 != round_robin;
+  }
+  /// Check if this entry is an element of a round robin entry.
+  /// If @c true then this entry is part of and was obtained from a round robin root. This is useful if the
+  /// address doesn't work - a retry can probably get a new address by doing another lookup and resolving to
+  /// a different element of the round robin.
+  bool
+  is_rr_elt() const
+  {
+    return 0 != round_robin_elt;
+  }
   HostDBRoundRobin *rr();
 
   /** Indicate that the HostDBInfo is BAD and should be deleted. */
@@ -240,20 +261,46 @@ struct HostDBInfo {
   // if this is 0 then no timeout.
   unsigned int ip_timeout_interval;
 
+  // Make sure we only have 8 bits of these flags before the @a md5_low_low
   unsigned int full : 1;
   unsigned int backed : 1; // duplicated in lower level
   unsigned int deleted : 1;
   unsigned int hits : 3;
 
-  unsigned int is_srv : 1; // steal a bit from ip_timeout_interval
-  unsigned int round_robin : 1;
+  unsigned int is_srv : 1;
   unsigned int reverse_dns : 1;
 
   unsigned int md5_low_low : 24;
   unsigned int md5_low;
 
+  unsigned int round_robin : 1;     // This is the root of a round robin block
+  unsigned int round_robin_elt : 1; // This is an address in a round robin block
+
   uint64_t md5_high;
 
+  /*
+   * Given the current time `now` and the fail_window, determine if this real is alive
+   */
+  bool
+  alive(ink_time_t now, int32_t fail_window)
+  {
+    unsigned int last_failure = app.http_data.last_failure;
+
+    if (last_failure == 0 || (unsigned int)(now - fail_window) > last_failure) {
+      return true;
+    } else {
+      // Entry is marked down.  Make sure some nasty clock skew
+      //  did not occur.  Use the retry time to set an upper bound
+      //  as to how far in the future we should tolerate bogus last
+      //  failure times.  This sets the upper bound that we would ever
+      //  consider a server down to 2*down_server_timeout
+      if (now + fail_window < last_failure) {
+        app.http_data.last_failure = 0;
+        return false;
+      }
+      return false;
+    }
+  }
   bool
   failed()
   {
@@ -381,6 +428,7 @@ struct HostDBCache;
 typedef void (Continuation::*process_hostdb_info_pfn)(HostDBInfo *r);
 typedef void (Continuation::*process_srv_info_pfn)(HostDBInfo *r);
 
+Action *iterate(Continuation *cont);
 
 /** The Host Databse access interface. */
 struct HostDBProcessor : public Processor {
@@ -429,12 +477,15 @@ struct HostDBProcessor : public Processor {
 
   inkcoreapi Action *getbyname_re(Continuation *cont, const char *hostname, int len, Options const &opt = DEFAULT_OPTIONS);
 
+  Action *getbynameport_re(Continuation *cont, const char *hostname, int len, Options const &opt = DEFAULT_OPTIONS);
+
   Action *getSRVbyname_imm(Continuation *cont, process_srv_info_pfn process_srv_info, const char *hostname, int len,
                            Options const &opt = DEFAULT_OPTIONS);
 
   Action *getbyname_imm(Continuation *cont, process_hostdb_info_pfn process_hostdb_info, const char *hostname, int len,
                         Options const &opt = DEFAULT_OPTIONS);
 
+  Action *iterate(Continuation *cont);
 
   /** Lookup Hostinfo by addr */
   Action *

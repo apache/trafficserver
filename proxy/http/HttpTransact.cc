@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "libts.h"
+#include "ts/ink_platform.h"
 
 #include <strings.h>
 #include <math.h>
@@ -32,10 +32,10 @@
 #include "HttpCacheSM.h" //Added to get the scope of HttpCacheSM object - YTS Team, yamsat
 #include "HttpDebugNames.h"
 #include "time.h"
-#include "ParseRules.h"
+#include "ts/ParseRules.h"
 #include "HTTP.h"
 #include "HdrUtils.h"
-#include "MimeTable.h"
+#include "ts/MimeTable.h"
 #include "logging/Log.h"
 #include "logging/LogUtils.h"
 #include "Error.h"
@@ -239,7 +239,7 @@ find_server_and_update_current_info(HttpTransact::State *s)
       //  to go the origin server, we can only obey this if we
       //  dns'ed the origin server
       if (s->parent_result.r == PARENT_DIRECT && s->http_config_param->no_dns_forward_to_parent != 0) {
-        ink_assert(!ats_is_ip(&s->server_info.addr));
+        ink_assert(!s->server_info.dst_addr.isValid());
         s->parent_result.r = PARENT_FAIL;
       }
       break;
@@ -268,7 +268,6 @@ find_server_and_update_current_info(HttpTransact::State *s)
   switch (s->parent_result.r) {
   case PARENT_SPECIFIED:
     s->parent_info.name = s->arena.str_store(s->parent_result.hostname, strlen(s->parent_result.hostname));
-    s->parent_info.port = s->parent_result.port;
     update_current_info(&s->current, &s->parent_info, HttpTransact::PARENT_PROXY, (s->current.attempts)++);
     update_dns_info(&s->dns_info, &s->current, 0, &s->arena);
     ink_assert(s->dns_info.looking_up == HttpTransact::PARENT_PROXY);
@@ -712,7 +711,7 @@ HttpTransact::StartRemapRequest(State *s)
   s->cop_test_page = (ptr_len_cmp(host, host_len, local_host_ip_str, sizeof(local_host_ip_str) - 1) == 0) &&
                      (ptr_len_cmp(path, path_len, syntxt, sizeof(syntxt) - 1) == 0) &&
                      port == s->http_config_param->synthetic_port && s->method == HTTP_WKSIDX_GET &&
-                     s->orig_scheme == URL_WKSIDX_HTTP && ats_ip4_addr_cast(&s->client_info.addr.sa) == htonl(INADDR_LOOPBACK);
+                     s->orig_scheme == URL_WKSIDX_HTTP && ats_ip4_addr_cast(&s->client_info.dst_addr.sa) == htonl(INADDR_LOOPBACK);
 
   //////////////////////////////////////////////////////////////////
   // FIX: this logic seems awfully convoluted and hard to follow; //
@@ -845,8 +844,10 @@ HttpTransact::EndRemapRequest(State *s)
         // socket when there is no host. Need to handle DNS failure elsewhere.
       } else if (host == NULL) { /* no host */
         build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Host Header Required", "request#no_host", NULL);
+        s->squid_codes.log_code = SQUID_LOG_ERR_INVALID_URL;
       } else {
         build_error_response(s, HTTP_STATUS_NOT_FOUND, "Not Found on Accelerator", "urlrouting#no_mapping", NULL);
+        s->squid_codes.log_code = SQUID_LOG_ERR_INVALID_URL;
       }
       s->reverse_proxy = false;
       goto done;
@@ -859,6 +860,7 @@ HttpTransact::EndRemapRequest(State *s)
 
       SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
       build_error_response(s, HTTP_STATUS_NOT_FOUND, "Not Found", "urlrouting#no_mapping", NULL);
+      s->squid_codes.log_code = SQUID_LOG_ERR_INVALID_URL;
 
       s->reverse_proxy = false;
       goto done;
@@ -1364,7 +1366,7 @@ HttpTransact::HandleRequest(State *s)
       //  DNS service available, we just want to forward the request
       //  the parent proxy.  In this case, we never find out the
       //  origin server's ip.  So just skip past OSDNS
-      ats_ip_invalidate(&s->server_info.addr);
+      ats_ip_invalidate(&s->server_info.dst_addr);
       StartAccessControl(s);
       return;
     } else if (s->http_config_param->no_origin_server_dns) {
@@ -1432,6 +1434,8 @@ HttpTransact::setup_plugin_request_intercept(State *s)
   s->server_info.keep_alive = HTTP_NO_KEEPALIVE;
   s->host_db_info.app.http_data.http_version = HostDBApplicationInfo::HTTP_VERSION_10;
   s->host_db_info.app.http_data.pipeline_max = 1;
+  s->server_info.dst_addr.setToAnyAddr(AF_INET);                                 // must set an address or we can't set the port.
+  s->server_info.dst_addr.port() = htons(s->hdr_info.client_request.port_get()); // this is the info that matters.
 
   // Build the request to the server
   build_request(s, &s->hdr_info.client_request, &s->hdr_info.server_request, s->client_info.http_version);
@@ -1520,7 +1524,7 @@ HttpTransact::PPDNSLookup(State *s)
   if (!s->dns_info.lookup_success) {
     // DNS lookup of parent failed, find next parent or o.s.
     find_server_and_update_current_info(s);
-    if (!ats_is_ip(&s->current.server->addr)) {
+    if (!s->current.server->dst_addr.isValid()) {
       if (s->current.request_to == PARENT_PROXY) {
         TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, PPDNSLookup);
       } else {
@@ -1533,13 +1537,13 @@ HttpTransact::PPDNSLookup(State *s)
     }
   } else {
     // lookup succeeded, open connection to p.p.
-    ats_ip_copy(&s->parent_info.addr, s->host_db_info.ip());
+    ats_ip_copy(&s->parent_info.dst_addr, s->host_db_info.ip());
+    s->parent_info.dst_addr.port() = htons(s->parent_result.port);
     get_ka_info_from_host_db(s, &s->parent_info, &s->client_info, &s->host_db_info);
-    s->parent_info.dns_round_robin = s->host_db_info.round_robin;
 
     char addrbuf[INET6_ADDRSTRLEN];
     DebugTxn("http_trans", "[PPDNSLookup] DNS lookup for sm_id[%" PRId64 "] successful IP: %s", s->state_machine->sm_id,
-             ats_ip_ntop(&s->parent_info.addr.sa, addrbuf, sizeof(addrbuf)));
+             ats_ip_ntop(&s->parent_info.dst_addr.sa, addrbuf, sizeof(addrbuf)));
   }
 
   // Since this function can be called several times while retrying
@@ -1587,15 +1591,20 @@ HttpTransact::ReDNSRoundRobin(State *s)
     s->current.server->clear_connect_fail();
 
     // Our ReDNS of the server succeeded so update the necessary
-    //  information and try again
-    ats_ip_copy(&s->server_info.addr, s->host_db_info.ip());
-    ats_ip_copy(&s->request_data.dest_ip, &s->server_info.addr);
+    //  information and try again. Need to preserve the current port value if possible.
+    in_port_t server_port = s->current.server->dst_addr.host_order_port();
+    // Temporary check to make sure the port preservation can be depended upon. That should be the case
+    // because we get here only after trying a connection. Remove for 6.2.
+    ink_assert(s->current.server->dst_addr.isValid() && 0 != server_port);
+
+    ats_ip_copy(&s->server_info.dst_addr, s->host_db_info.ip());
+    s->server_info.dst_addr.port() = htons(server_port);
+    ats_ip_copy(&s->request_data.dest_ip, &s->server_info.dst_addr);
     get_ka_info_from_host_db(s, &s->server_info, &s->client_info, &s->host_db_info);
-    s->server_info.dns_round_robin = s->host_db_info.round_robin;
 
     char addrbuf[INET6_ADDRSTRLEN];
     DebugTxn("http_trans", "[ReDNSRoundRobin] DNS lookup for O.S. successful IP: %s",
-             ats_ip_ntop(&s->server_info.addr.sa, addrbuf, sizeof(addrbuf)));
+             ats_ip_ntop(&s->server_info.dst_addr.sa, addrbuf, sizeof(addrbuf)));
 
     s->next_action = how_to_open_connection(s);
   } else {
@@ -1713,7 +1722,7 @@ HttpTransact::OSDNSLookup(State *s)
     // HostDB addresses. We use those if they're different from the CTA.
     // In all cases we now commit to client or HostDB for our source.
     if (s->host_db_info.round_robin) {
-      HostDBInfo *cta = s->host_db_info.rr()->select_next(&s->current.server->addr.sa);
+      HostDBInfo *cta = s->host_db_info.rr()->select_next(&s->current.server->dst_addr.sa);
       if (cta) {
         // found another addr, lock in host DB.
         s->host_db_info = *cta;
@@ -1722,7 +1731,7 @@ HttpTransact::OSDNSLookup(State *s)
         // nothing else there, continue with CTA.
         s->dns_info.os_addr_style = DNSLookupInfo::OS_ADDR_USE_CLIENT;
       }
-    } else if (ats_ip_addr_eq(s->host_db_info.ip(), &s->server_info.addr.sa)) {
+    } else if (ats_ip_addr_eq(s->host_db_info.ip(), &s->server_info.dst_addr.sa)) {
       s->dns_info.os_addr_style = DNSLookupInfo::OS_ADDR_USE_CLIENT;
     } else {
       s->dns_info.os_addr_style = DNSLookupInfo::OS_ADDR_USE_HOSTDB;
@@ -1732,15 +1741,15 @@ HttpTransact::OSDNSLookup(State *s)
   // Check to see if can fullfill expect requests based on the cached
   // update some state variables with hostdb information that has
   // been provided.
-  ats_ip_copy(&s->server_info.addr, s->host_db_info.ip());
-  ats_ip_copy(&s->request_data.dest_ip, &s->server_info.addr);
+  ats_ip_copy(&s->server_info.dst_addr, s->host_db_info.ip());
+  s->server_info.dst_addr.port() = htons(s->hdr_info.client_request.port_get()); // now we can set the port.
+  ats_ip_copy(&s->request_data.dest_ip, &s->server_info.dst_addr);
   get_ka_info_from_host_db(s, &s->server_info, &s->client_info, &s->host_db_info);
-  s->server_info.dns_round_robin = s->host_db_info.round_robin;
 
   char addrbuf[INET6_ADDRSTRLEN];
   DebugTxn("http_trans", "[OSDNSLookup] DNS lookup for O.S. successful "
                          "IP: %s",
-           ats_ip_ntop(&s->server_info.addr.sa, addrbuf, sizeof(addrbuf)));
+           ats_ip_ntop(&s->server_info.dst_addr.sa, addrbuf, sizeof(addrbuf)));
 
   // so the dns lookup was a success, but the lookup succeeded on
   // a hostname which was expanded by the traffic server. we should
@@ -2685,7 +2694,7 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
     if (server_up || s->stale_icp_lookup) {
       bool check_hostdb = get_ka_info_from_config(s, s->current.server);
       DebugTxn("http_trans", "CacheOpenReadHit - check_hostdb %d", check_hostdb);
-      if (!s->stale_icp_lookup && (check_hostdb || !ats_is_ip(&s->current.server->addr))) {
+      if (!s->stale_icp_lookup && (check_hostdb || !s->current.server->dst_addr.isValid())) {
         //        ink_release_assert(s->current.request_to == PARENT_PROXY ||
         //                    s->http_config_param->no_dns_forward_to_parent != 0);
 
@@ -3110,7 +3119,7 @@ HttpTransact::HandleCacheOpenReadMiss(State *s)
 
   if (!h->is_cache_control_set(HTTP_VALUE_ONLY_IF_CACHED)) {
     find_server_and_update_current_info(s);
-    if (!ats_is_ip(&s->current.server->addr)) {
+    if (!s->current.server->dst_addr.isValid()) {
       ink_release_assert(s->current.request_to == PARENT_PROXY || s->http_config_param->no_dns_forward_to_parent != 0);
       if (s->current.request_to == PARENT_PROXY) {
         TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, HttpTransact::PPDNSLookup);
@@ -3152,13 +3161,13 @@ HttpTransact::HandleICPLookup(State *s)
   if (s->icp_lookup_success == true) {
     HTTP_INCREMENT_TRANS_STAT(http_icp_suggested_lookups_stat);
     DebugTxn("http_trans", "[HandleICPLookup] Success, sending request to icp suggested host.");
-    ats_ip4_set(&s->icp_info.addr, s->icp_ip_result.sin_addr.s_addr);
-    s->icp_info.port = ntohs(s->icp_ip_result.sin_port);
+    ats_ip4_set(&s->icp_info.dst_addr, s->icp_ip_result.sin_addr.s_addr);
+    s->icp_info.dst_addr.port() = ntohs(s->icp_ip_result.sin_port);
 
     // TODO in this case we should go to the miss case
     // just a little shy about using goto's, that's all.
-    ink_release_assert((s->icp_info.port != s->client_info.port) ||
-                       (ats_ip_addr_cmp(&s->icp_info.addr.sa, &Machine::instance()->ip.sa) != 0));
+    ink_release_assert((s->icp_info.dst_addr.port() != s->client_info.dst_addr.port()) ||
+                       (ats_ip_addr_cmp(&s->icp_info.dst_addr.sa, &Machine::instance()->ip.sa) != 0));
 
     // Since the ICPDNSLookup is not called, these two
     //   values are not initialized.
@@ -3180,10 +3189,10 @@ HttpTransact::HandleICPLookup(State *s)
     SET_VIA_STRING(VIA_DETAIL_CACHE_LOOKUP, VIA_DETAIL_MISS_NOT_CACHED);
     DebugTxn("http_trans", "[HandleICPLookup] Failure, sending request to forward server.");
     s->parent_info.name = NULL;
-    ink_zero(s->parent_info.addr);
+    ink_zero(s->parent_info.dst_addr);
 
     find_server_and_update_current_info(s);
-    if (!ats_is_ip(&s->current.server->addr)) {
+    if (!ats_is_ip(&s->current.server->dst_addr)) {
       if (s->current.request_to == PARENT_PROXY) {
         TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, PPDNSLookup);
       } else {
@@ -3461,7 +3470,7 @@ HttpTransact::handle_response_from_icp_suggested_host(State *s)
     // send request to parent proxy now if there is
     // one or else directly to the origin server.
     find_server_and_update_current_info(s);
-    if (!ats_is_ip(&s->current.server->addr)) {
+    if (!ats_is_ip(&s->current.server->dst_addr)) {
       if (s->current.request_to == PARENT_PROXY) {
         TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, PPDNSLookup);
       } else {
@@ -3525,7 +3534,7 @@ HttpTransact::handle_response_from_parent(State *s)
 
     char addrbuf[INET6_ADDRSTRLEN];
     DebugTxn("http_trans", "[%d] failed to connect to parent %s", s->current.attempts,
-             ats_ip_ntop(&s->current.server->addr.sa, addrbuf, sizeof(addrbuf)));
+             ats_ip_ntop(&s->current.server->dst_addr.sa, addrbuf, sizeof(addrbuf)));
 
     // If the request is not retryable, just give up!
     if (!is_request_retryable(s)) {
@@ -3640,6 +3649,18 @@ HttpTransact::handle_response_from_server(State *s)
     s->current.server->set_connect_fail(EUSERS); // too many users
     handle_server_connection_not_open(s);
     break;
+  case CONNECTION_CLOSED:
+  /* fall through */
+  case PARSE_ERROR:
+  /* fall through */
+  case BAD_INCOMING_RESPONSE: {
+    // this case should not be allowed to retry because we'll end up making another request
+    DebugTxn("http_trans",
+             "[handle_response_from_server] Transaction received a bad response or a partial response, not retrying...");
+    SET_VIA_STRING(VIA_DETAIL_SERVER_CONNECT, VIA_DETAIL_SERVER_FAILURE);
+    handle_server_connection_not_open(s);
+    break;
+  }
   case OPEN_RAW_ERROR:
   /* fall through */
   case CONNECTION_ERROR:
@@ -3647,12 +3668,6 @@ HttpTransact::handle_response_from_server(State *s)
   case STATE_UNDEFINED:
   /* fall through */
   case INACTIVE_TIMEOUT:
-  /* fall through */
-  case PARSE_ERROR:
-  /* fall through */
-  case CONNECTION_CLOSED:
-  /* fall through */
-  case BAD_INCOMING_RESPONSE:
     // Set to generic I/O error if not already set specifically.
     if (!s->current.server->had_connect_fail())
       s->current.server->set_connect_fail(EIO);
@@ -3679,9 +3694,9 @@ HttpTransact::handle_response_from_server(State *s)
         // Force host resolution to have the same family as the client.
         // Because this is a transparent connection, we can't switch address
         // families - that is locked in by the client source address.
-        s->state_machine->ua_session->host_res_style = ats_host_res_match(&s->current.server->addr.sa);
+        s->state_machine->ua_session->host_res_style = ats_host_res_match(&s->current.server->dst_addr.sa);
         TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, OSDNSLookup);
-      } else if ((s->dns_info.srv_lookup_success || s->server_info.dns_round_robin) &&
+      } else if ((s->dns_info.srv_lookup_success || s->host_db_info.is_rr_elt()) &&
                  (s->txn_conf->connect_attempts_rr_retries > 0) &&
                  (s->current.attempts % s->txn_conf->connect_attempts_rr_retries == 0)) {
         delete_server_rr_entry(s, max_connect_retries);
@@ -3731,7 +3746,7 @@ HttpTransact::delete_server_rr_entry(State *s, int max_retries)
   char addrbuf[INET6_ADDRSTRLEN];
 
   DebugTxn("http_trans", "[%d] failed to connect to %s", s->current.attempts,
-           ats_ip_ntop(&s->current.server->addr.sa, addrbuf, sizeof(addrbuf)));
+           ats_ip_ntop(&s->current.server->dst_addr.sa, addrbuf, sizeof(addrbuf)));
   DebugTxn("http_trans", "[delete_server_rr_entry] marking rr entry "
                          "down and finding next one");
   ink_assert(s->current.server->had_connect_fail());
@@ -3767,7 +3782,7 @@ HttpTransact::retry_server_connection_not_open(State *s, ServerState_t conn_stat
   char *url_string = s->hdr_info.client_request.url_string_get(&s->arena);
 
   DebugTxn("http_trans", "[%d] failed to connect [%d] to %s", s->current.attempts, conn_state,
-           ats_ip_ntop(&s->current.server->addr.sa, addrbuf, sizeof(addrbuf)));
+           ats_ip_ntop(&s->current.server->dst_addr.sa, addrbuf, sizeof(addrbuf)));
 
   //////////////////////////////////////////
   // on the first connect attempt failure //
@@ -3776,7 +3791,7 @@ HttpTransact::retry_server_connection_not_open(State *s, ServerState_t conn_stat
   if (0 == s->current.attempts)
     Log::error("CONNECT:[%d] could not connect [%s] to %s for '%s'", s->current.attempts,
                HttpDebugNames::get_server_state_name(conn_state),
-               ats_ip_ntop(&s->current.server->addr.sa, addrbuf, sizeof(addrbuf)), url_string ? url_string : "<none>");
+               ats_ip_ntop(&s->current.server->dst_addr.sa, addrbuf, sizeof(addrbuf)), url_string ? url_string : "<none>");
 
   if (url_string) {
     s->arena.str_free(url_string);
@@ -3942,7 +3957,8 @@ HttpTransact::handle_forward_server_connection_open(State *s)
       s->api_server_response_ignore = true;
     }
     // s->cache_info.action = CACHE_PREPARE_TO_SERVE;
-    // xing xing in the tunneling case, need to check when the cache_read_vc is closed, make sure the cache_read_vc is closed right
+    // xing xing in the tunneling case, need to check when the cache_read_vc is closed, make sure the cache_read_vc is closed
+    // right
     // away
   }
 
@@ -5143,11 +5159,11 @@ HttpTransact::add_client_ip_to_outgoing_request(State *s, HTTPHdr *request)
   char ip_string[INET6_ADDRSTRLEN + 1] = {'\0'};
   size_t ip_string_size = 0;
 
-  if (!ats_is_ip(&s->client_info.addr.sa))
+  if (!ats_is_ip(&s->client_info.src_addr.sa))
     return;
 
   // Always prepare the IP string.
-  if (ats_ip_ntop(&s->client_info.addr.sa, ip_string, sizeof(ip_string)) != NULL) {
+  if (ats_ip_ntop(&s->client_info.src_addr.sa, ip_string, sizeof(ip_string)) != NULL) {
     ip_string_size += strlen(ip_string);
   } else {
     // Failure, omg
@@ -5511,13 +5527,12 @@ void
 HttpTransact::initialize_state_variables_for_origin_server(State *s, HTTPHdr *incoming_request, bool second_time)
 {
   if (s->server_info.name && !second_time) {
-    ink_assert(s->server_info.port != 0);
+    ink_assert(s->server_info.dst_addr.port() != 0);
   }
 
   int host_len;
   const char *host = incoming_request->host_get(&host_len);
   s->server_info.name = s->arena.str_store(host, host_len);
-  s->server_info.port = incoming_request->port_get();
 
   if (second_time) {
     s->dns_info.attempts = 0;
@@ -5580,7 +5595,6 @@ HttpTransact::initialize_state_variables_from_request(State *s, HTTPHdr *obsolet
 
   if (!s->server_info.name || s->redirect_info.redirect_in_process) {
     s->server_info.name = s->arena.str_store(host_name, host_len);
-    s->server_info.port = incoming_request->port_get();
   }
 
   s->next_hop_scheme = s->scheme = incoming_request->url_get()->scheme_get_wksidx();
@@ -5647,7 +5661,7 @@ HttpTransact::initialize_state_variables_from_request(State *s, HTTPHdr *obsolet
   s->request_data.hdr = &s->hdr_info.client_request;
 
   s->request_data.hostname_str = s->arena.str_store(host_name, host_len);
-  ats_ip_copy(&s->request_data.src_ip, &s->client_info.addr);
+  ats_ip_copy(&s->request_data.src_ip, &s->client_info.src_addr);
   memset(&s->request_data.dest_ip, 0, sizeof(s->request_data.dest_ip));
   if (s->state_machine->ua_session) {
     s->request_data.incoming_port = s->state_machine->ua_session->get_netvc()->get_local_port();
@@ -6519,7 +6533,7 @@ HttpTransact::process_quick_http_filter(State *s, int method)
     if (deny_request) {
       if (is_debug_tag_set("ip-allow")) {
         ip_text_buffer ipb;
-        Debug("ip-allow", "Quick filter denial on %s:%s with mask %x", ats_ip_ntop(&s->client_info.addr.sa, ipb, sizeof(ipb)),
+        Debug("ip-allow", "Quick filter denial on %s:%s with mask %x", ats_ip_ntop(&s->client_info.src_addr.sa, ipb, sizeof(ipb)),
               hdrtoken_index_to_wks(method), acl_record ? acl_record->_method_mask : 0x0);
       }
       s->client_connection_enabled = false;
@@ -6594,8 +6608,8 @@ HttpTransact::will_this_request_self_loop(State *s)
   ////////////////////////////////////////
   if (s->dns_info.lookup_success) {
     if (ats_ip_addr_eq(s->host_db_info.ip(), &Machine::instance()->ip.sa)) {
-      uint16_t host_port = s->hdr_info.client_request.url_get()->port_get();
-      uint16_t local_port = ats_ip_port_host_order(&s->client_info.addr);
+      in_port_t host_port = s->hdr_info.client_request.url_get()->port_get();
+      in_port_t local_port = s->client_info.src_addr.host_order_port();
       if (host_port == local_port) {
         switch (s->dns_info.looking_up) {
         case ORIGIN_SERVER:
@@ -8174,7 +8188,7 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
   if (s->http_config_param->errors_log_error_pages && status_code >= HTTP_STATUS_BAD_REQUEST) {
     char ip_string[INET6_ADDRSTRLEN];
 
-    Log::error("RESPONSE: sent %s status %d (%s) for '%s'", ats_ip_ntop(&s->client_info.addr.sa, ip_string, sizeof(ip_string)),
+    Log::error("RESPONSE: sent %s status %d (%s) for '%s'", ats_ip_ntop(&s->client_info.src_addr.sa, ip_string, sizeof(ip_string)),
                status_code, reason_phrase, (url_string ? url_string : "<none>"));
   }
 
@@ -8298,11 +8312,11 @@ ink_cluster_time(void)
 
 #ifdef DEBUG
   ink_mutex_acquire(&http_time_lock);
-  ink_time_t local_time = ink_get_hrtime() / HRTIME_SECOND;
+  ink_time_t local_time = Thread::get_hrtime() / HRTIME_SECOND;
   last_http_local_time = local_time;
   ink_mutex_release(&http_time_lock);
 #else
-  ink_time_t local_time = ink_get_hrtime() / HRTIME_SECOND;
+  ink_time_t local_time = Thread::get_hrtime() / HRTIME_SECOND;
 #endif
 
   highest_delta = (int)HttpConfig::m_master.cluster_time_delta;
@@ -8856,75 +8870,78 @@ HttpTransact::update_size_and_time_stats(State *s, ink_hrtime total_time, ink_hr
 
   // update milestones stats
   if (http_ua_begin_time_stat) {
-    HTTP_SUM_TRANS_STAT(http_ua_begin_time_stat, milestone_difference_msec(milestones.sm_start, milestones.ua_begin))
+    HTTP_SUM_TRANS_STAT(http_ua_begin_time_stat, milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_UA_BEGIN))
   }
   if (http_ua_first_read_time_stat) {
-    HTTP_SUM_TRANS_STAT(http_ua_first_read_time_stat, milestone_difference_msec(milestones.sm_start, milestones.ua_first_read))
+    HTTP_SUM_TRANS_STAT(http_ua_first_read_time_stat, milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_UA_FIRST_READ))
   }
   if (http_ua_read_header_done_time_stat) {
     HTTP_SUM_TRANS_STAT(http_ua_read_header_done_time_stat,
-                        milestone_difference_msec(milestones.sm_start, milestones.ua_read_header_done))
+                        milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_UA_READ_HEADER_DONE))
   }
   if (http_ua_begin_write_time_stat) {
-    HTTP_SUM_TRANS_STAT(http_ua_begin_write_time_stat, milestone_difference_msec(milestones.sm_start, milestones.ua_begin_write))
+    HTTP_SUM_TRANS_STAT(http_ua_begin_write_time_stat,
+                        milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_UA_BEGIN_WRITE))
   }
   if (http_ua_close_time_stat) {
-    HTTP_SUM_TRANS_STAT(http_ua_close_time_stat, milestone_difference_msec(milestones.sm_start, milestones.ua_close))
+    HTTP_SUM_TRANS_STAT(http_ua_close_time_stat, milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_UA_CLOSE))
   }
   if (http_server_first_connect_time_stat) {
     HTTP_SUM_TRANS_STAT(http_server_first_connect_time_stat,
-                        milestone_difference_msec(milestones.sm_start, milestones.server_first_connect))
+                        milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_FIRST_CONNECT))
   }
   if (http_server_connect_time_stat) {
-    HTTP_SUM_TRANS_STAT(http_server_connect_time_stat, milestone_difference_msec(milestones.sm_start, milestones.server_connect))
+    HTTP_SUM_TRANS_STAT(http_server_connect_time_stat,
+                        milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_CONNECT))
   }
   if (http_server_connect_end_time_stat) {
     HTTP_SUM_TRANS_STAT(http_server_connect_end_time_stat,
-                        milestone_difference_msec(milestones.sm_start, milestones.server_connect_end))
+                        milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_CONNECT_END))
   }
   if (http_server_begin_write_time_stat) {
     HTTP_SUM_TRANS_STAT(http_server_begin_write_time_stat,
-                        milestone_difference_msec(milestones.sm_start, milestones.server_begin_write))
+                        milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_BEGIN_WRITE))
   }
   if (http_server_first_read_time_stat) {
     HTTP_SUM_TRANS_STAT(http_server_first_read_time_stat,
-                        milestone_difference_msec(milestones.sm_start, milestones.server_first_read))
+                        milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_FIRST_READ))
   }
   if (http_server_read_header_done_time_stat) {
     HTTP_SUM_TRANS_STAT(http_server_read_header_done_time_stat,
-                        milestone_difference_msec(milestones.sm_start, milestones.server_read_header_done))
+                        milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_READ_HEADER_DONE))
   }
   if (http_server_close_time_stat) {
-    HTTP_SUM_TRANS_STAT(http_server_close_time_stat, milestone_difference_msec(milestones.sm_start, milestones.server_close))
+    HTTP_SUM_TRANS_STAT(http_server_close_time_stat, milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_CLOSE))
   }
   if (http_cache_open_read_begin_time_stat) {
     HTTP_SUM_TRANS_STAT(http_cache_open_read_begin_time_stat,
-                        milestone_difference_msec(milestones.sm_start, milestones.cache_open_read_begin))
+                        milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_CACHE_OPEN_READ_BEGIN))
   }
   if (http_cache_open_read_end_time_stat) {
     HTTP_SUM_TRANS_STAT(http_cache_open_read_end_time_stat,
-                        milestone_difference_msec(milestones.sm_start, milestones.cache_open_read_end))
+                        milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_CACHE_OPEN_READ_END))
   }
   if (http_cache_open_write_begin_time_stat) {
     HTTP_SUM_TRANS_STAT(http_cache_open_write_begin_time_stat,
-                        milestone_difference_msec(milestones.sm_start, milestones.cache_open_write_begin))
+                        milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_CACHE_OPEN_WRITE_BEGIN))
   }
   if (http_cache_open_write_end_time_stat) {
     HTTP_SUM_TRANS_STAT(http_cache_open_write_end_time_stat,
-                        milestone_difference_msec(milestones.sm_start, milestones.cache_open_write_end))
+                        milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_CACHE_OPEN_WRITE_END))
   }
   if (http_dns_lookup_begin_time_stat) {
     HTTP_SUM_TRANS_STAT(http_dns_lookup_begin_time_stat,
-                        milestone_difference_msec(milestones.sm_start, milestones.dns_lookup_begin))
+                        milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_DNS_LOOKUP_BEGIN))
   }
   if (http_dns_lookup_end_time_stat) {
-    HTTP_SUM_TRANS_STAT(http_dns_lookup_end_time_stat, milestone_difference_msec(milestones.sm_start, milestones.dns_lookup_end))
+    HTTP_SUM_TRANS_STAT(http_dns_lookup_end_time_stat,
+                        milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_DNS_LOOKUP_END))
   }
   if (http_sm_start_time_stat) {
-    HTTP_SUM_TRANS_STAT(http_sm_start_time_stat, milestone_difference_msec(milestones.sm_start, milestones.sm_start))
+    HTTP_SUM_TRANS_STAT(http_sm_start_time_stat, milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SM_START))
   }
   if (http_sm_finish_time_stat) {
-    HTTP_SUM_TRANS_STAT(http_sm_finish_time_stat, milestone_difference_msec(milestones.sm_start, milestones.sm_finish))
+    HTTP_SUM_TRANS_STAT(http_sm_finish_time_stat, milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SM_FINISH))
   }
 }
 

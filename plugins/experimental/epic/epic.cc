@@ -29,7 +29,8 @@
 #include <inttypes.h>
 #include <set>
 #include <string>
-#include "ink_defs.h"
+
+#include "ts/ink_defs.h"
 
 #define debug_tag(tag, fmt, ...)          \
   do {                                    \
@@ -43,7 +44,7 @@
 #if defined(DEBUG)
 #define error(fmt, ...) debug(fmt, ##__VA_ARGS__)
 #else
-#define error(fmt, ...) TSError("epic:%s:%d: " fmt, __func__, __LINE__, ##__VA_ARGS__)
+#define error(fmt, ...) TSError("[epic]%s:%d: " fmt, __func__, __LINE__, ##__VA_ARGS__)
 #endif
 
 static TSHRTime epic_period;

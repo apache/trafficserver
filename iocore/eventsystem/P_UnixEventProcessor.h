@@ -23,6 +23,8 @@
 
 #ifndef _P_UnixEventProcessor_h_
 #define _P_UnixEventProcessor_h_
+
+#include "ts/ink_align.h"
 #include "I_EventProcessor.h"
 
 const int LOAD_BALANCE_INTERVAL = 1;
@@ -129,7 +131,7 @@ EventProcessor::schedule_in(Continuation *cont, ink_hrtime t, EventType et, int 
   ink_assert(et < MAX_EVENT_TYPES);
   e->callback_event = callback_event;
   e->cookie = cookie;
-  return schedule(e->init(cont, ink_get_based_hrtime() + t, 0), et);
+  return schedule(e->init(cont, Thread::get_hrtime() + t, 0), et);
 }
 
 TS_INLINE Event *
@@ -144,7 +146,7 @@ EventProcessor::schedule_every(Continuation *cont, ink_hrtime t, EventType et, i
   if (t < 0)
     return schedule(e->init(cont, t, t), et);
   else
-    return schedule(e->init(cont, ink_get_based_hrtime() + t, t), et);
+    return schedule(e->init(cont, Thread::get_hrtime() + t, t), et);
 }
 
 

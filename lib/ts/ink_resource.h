@@ -24,7 +24,7 @@
 #ifndef __INK_RESOURCE_H__
 #define __INK_RESOURCE_H__
 
-#include "ink_mutex.h"
+#include "ts/ink_mutex.h"
 #include <map>
 
 extern volatile int res_track_memory; /* set this to zero to disable resource tracking */

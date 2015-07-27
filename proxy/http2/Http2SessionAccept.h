@@ -24,7 +24,7 @@
 #ifndef __HTTP2_SESSION_ACCEPT_H__
 #define __HTTP2_SESSION_ACCEPT_H__
 
-#include "libts.h"
+#include "ts/ink_platform.h"
 #include "I_Net.h"
 
 // XXX HttpSessionAccept::Options needs to be refactored and separated from HttpSessionAccept so that

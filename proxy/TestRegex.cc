@@ -22,7 +22,7 @@
  */
 
 #include "Main.h"
-#include "Regex.h"
+#include "ts/Regex.h"
 
 void
 test()

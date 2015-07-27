@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "ink_platform.h"
+#include "ts/ink_platform.h"
 #include "MgmtSocket.h"
 
 #if HAVE_UCRED_H

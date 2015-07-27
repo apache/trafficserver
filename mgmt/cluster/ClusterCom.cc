@@ -31,11 +31,13 @@
  *
  */
 
-#include "libts.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_sock.h"
+#include "ts/ink_file.h"
 
-#include "I_Version.h"
+#include "ts/I_Version.h"
 
-#include "TextBuffer.h"
+#include "ts/TextBuffer.h"
 #include "MgmtSocket.h"
 
 #include "LocalManager.h"

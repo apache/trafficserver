@@ -579,7 +579,7 @@ PrefetchTransform::redirect(HTTPHdr *resp)
       }
 
       Debug("PrefetchTransform", "Found embedded URL: %s", redirect_url);
-      entry->req_ip = m_sm->t_state.client_info.addr;
+      entry->req_ip = m_sm->t_state.client_info.src_addr;
 
       PrefetchBlaster *blaster = prefetchBlasterAllocator.alloc();
       blaster->init(entry, &m_sm->t_state.hdr_info.client_request, this);
@@ -602,7 +602,7 @@ PrefetchTransform::parse_data(IOBufferReader *reader)
       continue;
     }
     // Debug("PrefetchParserURLs", "Found embedded URL: %s", url_start);
-    ats_ip_copy(&entry->req_ip, &m_sm->t_state.client_info.addr);
+    ats_ip_copy(&entry->req_ip, &m_sm->t_state.client_info.src_addr);
 
     PrefetchBlaster *blaster = prefetchBlasterAllocator.alloc();
     blaster->init(entry, &m_sm->t_state.hdr_info.client_request, this);
@@ -645,7 +645,7 @@ check_n_attach_prefetch_transform(HttpSM *sm, HTTPHdr *resp, bool from_cache)
   INKVConnInternal *prefetch_trans;
   ip_text_buffer client_ipb;
 
-  IpEndpoint client_ip = sm->t_state.client_info.addr;
+  IpEndpoint client_ip = sm->t_state.client_info.src_addr;
 
   // we depend on this to setup @a client_ipb for all subsequent Debug().
   Debug("PrefetchParser", "Checking response for request from %s\n", ats_ip_ntop(&client_ip, client_ipb, sizeof(client_ipb)));

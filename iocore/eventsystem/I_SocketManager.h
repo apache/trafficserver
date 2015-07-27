@@ -33,7 +33,7 @@
 #ifndef _I_SocketManager_h_
 #define _I_SocketManager_h_
 
-#include "libts.h"
+#include "ts/ink_platform.h"
 #include "I_EventSystem.h"
 #include "I_Thread.h"
 

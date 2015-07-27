@@ -21,7 +21,9 @@
   limitations under the License.
  */
 
-#include "libts.h"
+#include "ts/ink_platform.h"
+#include "ts/I_Version.h"
+#include "ts/ink_string.h"
 
 AppVersionInfo::AppVersionInfo()
 {

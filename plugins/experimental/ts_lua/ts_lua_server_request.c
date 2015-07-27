@@ -16,7 +16,7 @@
   limitations under the License.
 */
 
-#include "ink_platform.h"
+#include "ts/ink_platform.h"
 #include <netinet/in.h>
 #include "ts_lua_util.h"
 
@@ -211,7 +211,7 @@ ts_lua_server_request_header_set(lua_State *L)
 
   } else if (TSMimeHdrFieldCreateNamed(http_ctx->server_request_bufp, http_ctx->server_request_hdrp, key, key_len, &field_loc) !=
              TS_SUCCESS) {
-    TSError("[%s] TSMimeHdrFieldCreateNamed error", __FUNCTION__);
+    TSError("[ts_lua][%s] TSMimeHdrFieldCreateNamed error", __FUNCTION__);
     return 0;
 
   } else {

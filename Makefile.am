@@ -68,7 +68,7 @@ asf-dist-rc: asf-distdir
 asf-distdir:
 	@$(am__remove_distdir)
 	test -d .git && git clone . $(distdir)
-	cd $(distdir) && git submodule update --init && autoreconf -i
+	cd $(distdir) && autoreconf -i
 	$(RM) -r -- $(distdir)/autom4te.cache $(distdir)/ci `find $(distdir) -name .git -o -name .gitignore -o -name .gitmodules`
 
 asf-dist-sign: asf-dist
@@ -99,9 +99,6 @@ install-data-hook:
 rat:
 	java -jar $(top_srcdir)/ci/apache-rat-0.11-SNAPSHOT.jar -E $(top_srcdir)/ci/rat-regex.txt  -d $(top_srcdir)
 
-submodules:
-	git submodule update --init
-
 clang-format:
 	for f in `find $(top_srcdir) -iname \*.[ch] -o -iname \*.cc | fgrep -v -e lib/luajit -e lib/tsconfig`; do \
 	  echo $$f; clang-format -i $$f; done
@@ -119,11 +116,9 @@ help:
 	echo 'rel-candidate    recreate a signed relelease candidate source package and a signed git tag' && \
 	echo 'distcheck        verify dist by performing VPATH build and then distclean' && \
 	echo 'rat              produce a RAT licence compliance report of the source' && \
-	echo 'submodules       update the git submodules' && \
 	echo 'doxygen          generate doxygen docs in doc/html dir' && \
-	echo 'clang-format     run clang-format over most C and C++ files (not git submodules/trees)' && \
+	echo 'clang-format     run clang-format over most C and C++ files (not git subtrees)' && \
 	echo 'help             display this list of make targets' && \
 	echo 'install          install by copying the built files to system-wide dirs' && \
 	echo 'install-strip    same as install but then strips debugging symbols' && \
 	echo 'install-examples install examples by copying the built files to system-wide dirs'
-

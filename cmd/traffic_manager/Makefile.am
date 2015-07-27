@@ -20,7 +20,6 @@ bin_PROGRAMS = traffic_manager
 AM_CPPFLAGS = \
   $(iocore_include_dirs) \
   -I$(top_srcdir)/lib/records \
-  -I$(top_srcdir)/lib/ts \
   -I$(top_srcdir)/proxy \
   -I$(top_srcdir)/proxy/hdrs \
   -I$(top_srcdir)/proxy/shared \
@@ -29,8 +28,7 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/mgmt/api/include \
   -I$(top_srcdir)/mgmt/cluster \
   -I$(top_srcdir)/mgmt/utils \
-  -I$(top_srcdir)/lib \
-  -I$(top_builddir)/lib
+  -I$(top_srcdir)/lib
 
 AM_LDFLAGS = \
   @EXTRA_CXX_LDFLAGS@ \

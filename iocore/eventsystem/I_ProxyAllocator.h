@@ -31,7 +31,7 @@
 #ifndef _I_ProxyAllocator_h_
 #define _I_ProxyAllocator_h_
 
-#include "libts.h"
+#include "ts/ink_platform.h"
 
 class EThread;
 

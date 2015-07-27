@@ -23,7 +23,8 @@
 
 #ifndef __BITOPS_H__
 #define __BITOPS_H__
-#include "libts.h"
+
+#include <strings.h>
 
 /**
   Find First (bit) Set. Index starts at 1.

@@ -19,7 +19,7 @@
   limitations under the License.
  */
 
-#include "Hash.h"
+#include "ts/Hash.h"
 #include <cstring>
 
 ATSHashBase::~ATSHashBase()

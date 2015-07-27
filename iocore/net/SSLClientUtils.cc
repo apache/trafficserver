@@ -19,15 +19,15 @@
   limitations under the License.
  */
 
-#include "ink_config.h"
+#include "ts/ink_config.h"
 #include "records/I_RecHttp.h"
-#include "libts.h"
+#include "ts/ink_platform.h"
+#include "ts/X509HostnameValidator.h"
 #include "P_Net.h"
 #include "P_SSLClientUtils.h"
 
 #include <openssl/err.h>
 #include <openssl/pem.h>
-#include <openssl/x509.h>
 
 #if (OPENSSL_VERSION_NUMBER >= 0x10000000L) // openssl returns a const SSL_METHOD
 typedef const SSL_METHOD *ink_ssl_method_t;

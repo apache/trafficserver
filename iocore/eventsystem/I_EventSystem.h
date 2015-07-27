@@ -25,7 +25,7 @@
 #ifndef _I_EventSystem_h
 #define _I_EventSystem_h
 
-#include "libts.h"
+#include "ts/ink_platform.h"
 
 #include "I_IOBuffer.h"
 #include "I_Action.h"

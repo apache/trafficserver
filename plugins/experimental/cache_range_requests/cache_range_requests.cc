@@ -374,8 +374,8 @@ TSPluginInit(int argc, const char *argv[])
   info.support_email = (char *)"John_Rushford@cable.comcast.com";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError("[%s] TSPluginInit(): Plugin registration failed.\n", PLUGIN_NAME);
-    TSError("[%s] Unable to initialize plugin (disabled).\n", PLUGIN_NAME);
+    TSError("[%s] TSPluginInit(): Plugin registration failed.", PLUGIN_NAME);
+    TSError("[%s] Unable to initialize plugin (disabled).", PLUGIN_NAME);
     return;
   }
 

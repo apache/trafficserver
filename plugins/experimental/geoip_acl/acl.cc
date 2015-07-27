@@ -39,7 +39,7 @@ Acl::read_html(const char *fn)
     f.close();
     TSDebug(PLUGIN_NAME, "Loaded HTML from %s", fn);
   } else {
-    TSError("Unable to open HTML file %s", fn);
+    TSError("[geoip_acl] Unable to open HTML file %s", fn);
   }
 }
 
@@ -71,7 +71,7 @@ RegexAcl::parse_line(const char *filename, const std::string &line, int lineno)
         else if (tmp == "deny")
           _acl->set_allow(false);
         else {
-          TSError("Bad action on in %s:line %d: %s", filename, lineno, tmp.c_str());
+          TSError("[geoip_acl] Bad action on in %s:line %d: %s", filename, lineno, tmp.c_str());
           return false;
         }
         // The rest are "tokens"
@@ -102,11 +102,11 @@ RegexAcl::compile(const std::string &str, const char *filename, int lineno)
   if (NULL != _rex) {
     _extra = pcre_study(_rex, 0, &error);
     if ((NULL == _extra) && error && (*error != 0)) {
-      TSError("Failed to study regular expression in %s:line %d at offset %d: %s\n", filename, lineno, erroffset, error);
+      TSError("[geoip_acl] Failed to study regular expression in %s:line %d at offset %d: %s", filename, lineno, erroffset, error);
       return false;
     }
   } else {
-    TSError("Failed to compile regular expression in %s:line %d: %s\n", filename, lineno, error);
+    TSError("[geoip_acl] Failed to compile regular expression in %s:line %d: %s", filename, lineno, error);
     return false;
   }
 
@@ -141,7 +141,7 @@ CountryAcl::add_token(const std::string &str)
     _iso_country_codes[iso] = true;
     TSDebug(PLUGIN_NAME, "Added %s(%d) to remap rule, ACL=%d", str.c_str(), iso, _allow);
   } else {
-    TSError("Tried setting an ISO code (%d) outside the supported range", iso);
+    TSError("[geoip_acl] Tried setting an ISO code (%d) outside the supported range", iso);
   }
 }
 
@@ -172,7 +172,7 @@ CountryAcl::read_regex(const char *fn)
     f.close();
     TSDebug(PLUGIN_NAME, "Loaded regex rules from %s", fn);
   } else {
-    TSError("Unable to open regex file %s", fn);
+    TSError("[geoip_acl] Unable to open regex file %s", fn);
   }
 }
 

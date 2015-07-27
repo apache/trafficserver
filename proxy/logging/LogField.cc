@@ -27,7 +27,7 @@
  This file implements the LogField object, which is the central
  representation of a logging field.
  ***************************************************************************/
-#include "libts.h"
+#include "ts/ink_platform.h"
 
 #include "Error.h"
 #include "LogUtils.h"
@@ -37,7 +37,7 @@
 #include "Log.h"
 
 const char *container_names[] = {"not-a-container", "cqh", "psh", "pqh", "ssh", "cssh", "ecqh", "epsh", "epqh", "essh", "ecssh",
-                                 "icfg", "scfg", "record", ""};
+                                 "icfg", "scfg", "record", "ms", "msdms", ""};
 
 const char *aggregate_names[] = {"not-an-agg-op", "COUNT", "SUM", "AVG", "FIRST", "LAST", ""};
 
@@ -119,11 +119,63 @@ LogSlice::toStrOffset(int strlen, int *offset)
   LogField::LogField
   -------------------------------------------------------------------------*/
 
+namespace
+{
+struct cmp_str {
+  bool operator()(ts::ConstBuffer a, ts::ConstBuffer b) const { return ptr_len_casecmp(a._ptr, a._size, b._ptr, b._size) < 0; }
+};
+}
+
+typedef std::map<ts::ConstBuffer, TSMilestonesType, cmp_str> milestone_map;
+static milestone_map m_milestone_map;
+
+struct milestone {
+  const char *msname;
+  TSMilestonesType mstype;
+};
+
+static const milestone milestones[] = {
+  {"TS_MILESTONE_UA_BEGIN", TS_MILESTONE_UA_BEGIN},
+  {"TS_MILESTONE_UA_FIRST_READ", TS_MILESTONE_UA_FIRST_READ},
+  {"TS_MILESTONE_UA_READ_HEADER_DONE", TS_MILESTONE_UA_READ_HEADER_DONE},
+  {"TS_MILESTONE_UA_BEGIN_WRITE", TS_MILESTONE_UA_BEGIN_WRITE},
+  {"TS_MILESTONE_UA_CLOSE", TS_MILESTONE_UA_CLOSE},
+  {"TS_MILESTONE_SERVER_FIRST_CONNECT", TS_MILESTONE_SERVER_FIRST_CONNECT},
+  {"TS_MILESTONE_SERVER_CONNECT", TS_MILESTONE_SERVER_CONNECT},
+  {"TS_MILESTONE_SERVER_CONNECT_END", TS_MILESTONE_SERVER_CONNECT_END},
+  {"TS_MILESTONE_SERVER_BEGIN_WRITE", TS_MILESTONE_SERVER_BEGIN_WRITE},
+  {"TS_MILESTONE_SERVER_FIRST_READ", TS_MILESTONE_SERVER_FIRST_READ},
+  {"TS_MILESTONE_SERVER_READ_HEADER_DONE", TS_MILESTONE_SERVER_READ_HEADER_DONE},
+  {"TS_MILESTONE_SERVER_CLOSE", TS_MILESTONE_SERVER_CLOSE},
+  {"TS_MILESTONE_CACHE_OPEN_READ_BEGIN", TS_MILESTONE_CACHE_OPEN_READ_BEGIN},
+  {"TS_MILESTONE_CACHE_OPEN_READ_END", TS_MILESTONE_CACHE_OPEN_READ_END},
+  {"TS_MILESTONE_CACHE_OPEN_WRITE_BEGIN", TS_MILESTONE_CACHE_OPEN_WRITE_BEGIN},
+  {"TS_MILESTONE_CACHE_OPEN_WRITE_END", TS_MILESTONE_CACHE_OPEN_WRITE_END},
+  {"TS_MILESTONE_DNS_LOOKUP_BEGIN", TS_MILESTONE_DNS_LOOKUP_BEGIN},
+  {"TS_MILESTONE_DNS_LOOKUP_END", TS_MILESTONE_DNS_LOOKUP_END},
+  {"TS_MILESTONE_SM_START", TS_MILESTONE_SM_START},
+  {"TS_MILESTONE_SM_FINISH", TS_MILESTONE_SM_FINISH},
+  {"TS_MILESTONE_PLUGIN_ACTIVE", TS_MILESTONE_PLUGIN_ACTIVE},
+  {"TS_MILESTONE_PLUGIN_TOTAL", TS_MILESTONE_PLUGIN_TOTAL},
+};
+
+void
+LogField::init_milestone_container(void)
+{
+  if (m_milestone_map.empty()) {
+    for (unsigned i = 0; i < countof(milestones); ++i) {
+      m_milestone_map.insert(
+        std::make_pair(ts::ConstBuffer(milestones[i].msname, strlen(milestones[i].msname)), milestones[i].mstype));
+    }
+  }
+}
+
 // Generic field ctor
 LogField::LogField(const char *name, const char *symbol, Type type, MarshalFunc marshal, UnmarshalFunc unmarshal, SetFunc _setfunc)
   : m_name(ats_strdup(name)), m_symbol(ats_strdup(symbol)), m_type(type), m_container(NO_CONTAINER), m_marshal_func(marshal),
     m_unmarshal_func(unmarshal), m_unmarshal_func_map(NULL), m_agg_op(NO_AGGREGATE), m_agg_cnt(0), m_agg_val(0),
-    m_time_field(false), m_alias_map(0), m_set_func(_setfunc)
+    m_milestone1(TS_MILESTONE_LAST_ENTRY), m_milestone2(TS_MILESTONE_LAST_ENTRY), m_time_field(false), m_alias_map(0),
+    m_set_func(_setfunc)
 {
   ink_assert(m_name != NULL);
   ink_assert(m_symbol != NULL);
@@ -138,7 +190,8 @@ LogField::LogField(const char *name, const char *symbol, Type type, MarshalFunc 
                    Ptr<LogFieldAliasMap> map, SetFunc _setfunc)
   : m_name(ats_strdup(name)), m_symbol(ats_strdup(symbol)), m_type(type), m_container(NO_CONTAINER), m_marshal_func(marshal),
     m_unmarshal_func(NULL), m_unmarshal_func_map(unmarshal), m_agg_op(NO_AGGREGATE), m_agg_cnt(0), m_agg_val(0),
-    m_time_field(false), m_alias_map(map), m_set_func(_setfunc)
+    m_milestone1(TS_MILESTONE_LAST_ENTRY), m_milestone2(TS_MILESTONE_LAST_ENTRY), m_time_field(false), m_alias_map(map),
+    m_set_func(_setfunc)
 {
   ink_assert(m_name != NULL);
   ink_assert(m_symbol != NULL);
@@ -150,11 +203,50 @@ LogField::LogField(const char *name, const char *symbol, Type type, MarshalFunc 
                   strcmp(m_symbol, "cqtn") == 0 || strcmp(m_symbol, "cqtd") == 0 || strcmp(m_symbol, "cqtt") == 0);
 }
 
+TSMilestonesType
+LogField::milestone_from_m_name()
+{
+  milestone_map::iterator it;
+  TSMilestonesType result = TS_MILESTONE_LAST_ENTRY;
+
+  it = m_milestone_map.find(ts::ConstBuffer(m_name, strlen(m_name)));
+  if (it != m_milestone_map.end())
+    result = it->second;
+
+  return result;
+}
+
+int
+LogField::milestones_from_m_name(TSMilestonesType *ms1, TSMilestonesType *ms2)
+{
+  milestone_map::iterator it;
+  ts::ConstBuffer ms1_name, ms2_name(m_name, strlen(m_name));
+
+  ms1_name = ms2_name.splitOn('-');
+
+  it = m_milestone_map.find(ms1_name);
+  if (it != m_milestone_map.end()) {
+    *ms1 = it->second;
+  } else {
+    return -1;
+  }
+
+  it = m_milestone_map.find(ms2_name);
+  if (it != m_milestone_map.end()) {
+    *ms2 = it->second;
+  } else {
+    return -1;
+  }
+
+  return 0;
+}
+
 // Container field ctor
 LogField::LogField(const char *field, Container container, SetFunc _setfunc)
   : m_name(ats_strdup(field)), m_symbol(ats_strdup(container_names[container])), m_type(LogField::STRING), m_container(container),
     m_marshal_func(NULL), m_unmarshal_func(NULL), m_unmarshal_func_map(NULL), m_agg_op(NO_AGGREGATE), m_agg_cnt(0), m_agg_val(0),
-    m_time_field(false), m_alias_map(0), m_set_func(_setfunc)
+    m_milestone1(TS_MILESTONE_LAST_ENTRY), m_milestone2(TS_MILESTONE_LAST_ENTRY), m_time_field(false), m_alias_map(0),
+    m_set_func(_setfunc)
 {
   ink_assert(m_name != NULL);
   ink_assert(m_symbol != NULL);
@@ -186,6 +278,21 @@ LogField::LogField(const char *field, Container container, SetFunc _setfunc)
     m_unmarshal_func = &(LogAccess::unmarshal_record);
     break;
 
+  case MS:
+    m_milestone1 = milestone_from_m_name();
+    if (TS_MILESTONE_LAST_ENTRY == m_milestone1)
+      Note("Invalid milestone name in LogField ctor: %s", m_name);
+    m_unmarshal_func = &(LogAccess::unmarshal_int_to_str);
+    break;
+
+  case MSDMS: {
+    int rv = milestones_from_m_name(&m_milestone1, &m_milestone2);
+    if (0 != rv)
+      Note("Invalid milestone range in LogField ctor: %s", m_name);
+    m_unmarshal_func = &(LogAccess::unmarshal_int_to_str);
+    break;
+  }
+
   default:
     Note("Invalid container type in LogField ctor: %d", container);
   }
@@ -195,8 +302,8 @@ LogField::LogField(const char *field, Container container, SetFunc _setfunc)
 LogField::LogField(const LogField &rhs)
   : m_name(ats_strdup(rhs.m_name)), m_symbol(ats_strdup(rhs.m_symbol)), m_type(rhs.m_type), m_container(rhs.m_container),
     m_marshal_func(rhs.m_marshal_func), m_unmarshal_func(rhs.m_unmarshal_func), m_unmarshal_func_map(rhs.m_unmarshal_func_map),
-    m_agg_op(rhs.m_agg_op), m_agg_cnt(0), m_agg_val(0), m_time_field(rhs.m_time_field), m_alias_map(rhs.m_alias_map),
-    m_set_func(rhs.m_set_func)
+    m_agg_op(rhs.m_agg_op), m_agg_cnt(0), m_agg_val(0), m_milestone1(TS_MILESTONE_LAST_ENTRY),
+    m_milestone2(TS_MILESTONE_LAST_ENTRY), m_time_field(rhs.m_time_field), m_alias_map(rhs.m_alias_map), m_set_func(rhs.m_set_func)
 {
   ink_assert(m_name != NULL);
   ink_assert(m_symbol != NULL);
@@ -250,6 +357,12 @@ LogField::marshal_len(LogAccess *lad)
   case RECORD:
     return lad->marshal_record(m_name, NULL);
 
+  case MS:
+    return lad->marshal_milestone(m_milestone1, NULL);
+
+  case MSDMS:
+    return lad->marshal_milestone_diff(m_milestone1, m_milestone2, NULL);
+
   default:
     return 0;
   }
@@ -299,6 +412,12 @@ LogField::marshal(LogAccess *lad, char *buf)
 
   case RECORD:
     return lad->marshal_record(m_name, buf);
+
+  case MS:
+    return lad->marshal_milestone(m_milestone1, buf);
+
+  case MSDMS:
+    return lad->marshal_milestone_diff(m_milestone1, m_milestone2, buf);
 
   default:
     return 0;
@@ -439,7 +558,6 @@ LogField::update_aggregate(int64_t val)
         m_symbol, val, m_agg_val, m_agg_cnt);
 }
 
-
 LogField::Container
 LogField::valid_container_name(char *name)
 {
@@ -467,10 +585,13 @@ LogField::valid_aggregate_name(char *name)
 bool
 LogField::fieldlist_contains_aggregates(char *fieldlist)
 {
+  char *match;
   bool contains_aggregates = false;
   for (int i = 1; i < LogField::N_AGGREGATES; i++) {
-    if (strstr(fieldlist, aggregate_names[i]) != NULL) {
-      contains_aggregates = true;
+    if ((match = strstr(fieldlist, aggregate_names[i])) != NULL) {
+      // verify that the aggregate string is not part of a container field name.
+      if ((strchr(fieldlist, '{') == NULL) && (strchr(match, '}') == NULL))
+        contains_aggregates = true;
     }
   }
   return contains_aggregates;

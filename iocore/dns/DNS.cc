@@ -305,9 +305,9 @@ DNSProcessor::dns_init()
     }
     ats_free(ns_list);
   }
-  // The default domain (4th param) and search list (5th param) will
+  // The default domain (5th param) and search list (6th param) will
   // come from /etc/resolv.conf.
-  if (ink_res_init(&l_res, nameserver, nserv, NULL, NULL, dns_resolv_conf) < 0)
+  if (ink_res_init(&l_res, nameserver, nserv, dns_search, NULL, NULL, dns_resolv_conf) < 0)
     Warning("Failed to build DNS res records for the servers (%s).  Using resolv.conf.", dns_ns_list);
 
   // Check for local forced bindings.
@@ -367,7 +367,7 @@ DNSEntry::init(const char *x, int len, int qtype_arg, Continuation *acont, DNSPr
       qtype = T_AAAA;
     }
   }
-  submit_time = ink_get_hrtime();
+  submit_time = Thread::get_hrtime();
   action = acont;
   submit_thread = acont->mutex->thread_holding;
 
@@ -577,7 +577,7 @@ DNSHandler::retry_named(int ndx, ink_hrtime t, bool reopen)
 void
 DNSHandler::try_primary_named(bool reopen)
 {
-  ink_hrtime t = ink_get_hrtime();
+  ink_hrtime t = Thread::get_hrtime();
   if (reopen && ((t - last_primary_reopen) > DNS_PRIMARY_REOPEN_PERIOD)) {
     Debug("dns", "try_primary_named: reopening primary DNS connection");
     last_primary_reopen = t;
@@ -796,7 +796,7 @@ DNSHandler::mainEvent(int event, Event *e)
 {
   recv_dns(event, e);
   if (dns_ns_rr) {
-    ink_hrtime t = ink_get_hrtime();
+    ink_hrtime t = Thread::get_hrtime();
     if (t - last_primary_retry > DNS_PRIMARY_RETRY_PERIOD) {
       for (int i = 0; i < n_con; i++) {
         if (ns_down[i]) {
@@ -993,7 +993,7 @@ write_dns_event(DNSHandler *h, DNSEntry *e)
   ++h->in_flight;
   DNS_INCREMENT_DYN_STAT(dns_in_flight_stat);
 
-  e->send_time = ink_get_hrtime();
+  e->send_time = Thread::get_hrtime();
 
   if (e->timeout)
     e->timeout->cancel();
@@ -1159,9 +1159,9 @@ dns_result(DNSHandler *h, DNSEntry *e, HostEnt *ent, bool retry)
     ent = NULL;
   if (!cancelled) {
     if (!ent) {
-      DNS_SUM_DYN_STAT(dns_fail_time_stat, ink_get_hrtime() - e->submit_time);
+      DNS_SUM_DYN_STAT(dns_fail_time_stat, Thread::get_hrtime() - e->submit_time);
     } else {
-      DNS_SUM_DYN_STAT(dns_success_time_stat, ink_get_hrtime() - e->submit_time);
+      DNS_SUM_DYN_STAT(dns_success_time_stat, Thread::get_hrtime() - e->submit_time);
     }
   }
   h->entries.remove(e);
@@ -1298,7 +1298,7 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
   --(handler->in_flight);
   DNS_DECREMENT_DYN_STAT(dns_in_flight_stat);
 
-  DNS_SUM_DYN_STAT(dns_response_time_stat, ink_get_hrtime() - e->send_time);
+  DNS_SUM_DYN_STAT(dns_response_time_stat, Thread::get_hrtime() - e->send_time);
 
   if (h->rcode != NOERROR || !h->ancount) {
     Debug("dns", "received rcode = %d", h->rcode);

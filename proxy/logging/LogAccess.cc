@@ -31,7 +31,7 @@
   to provide support for marshalling and unmarshalling support for the other
   LogAccess derived classes.
  */
-#include "libts.h"
+#include "ts/ink_platform.h"
 
 #include "Error.h"
 #include "HTTP.h"
@@ -92,6 +92,11 @@ LogAccess::marshal_client_host_ip(char *buf)
   DEFAULT_IP_FIELD;
 }
 
+int
+LogAccess::marshal_host_interface_ip(char *buf)
+{
+  DEFAULT_IP_FIELD;
+}
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 int
@@ -218,6 +223,15 @@ LogAccess::marshal_client_req_http_version(char *buf)
   -------------------------------------------------------------------------*/
 
 int
+LogAccess::marshal_client_req_protocol_version(char *buf)
+{
+  DEFAULT_STR_FIELD;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
 LogAccess::marshal_client_req_header_len(char *buf)
 {
   DEFAULT_INT_FIELD;
@@ -228,6 +242,33 @@ LogAccess::marshal_client_req_header_len(char *buf)
 
 int
 LogAccess::marshal_client_req_body_len(char *buf)
+{
+  DEFAULT_INT_FIELD;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
+LogAccess::marshal_client_req_tcp_reused(char *buf)
+{
+  DEFAULT_INT_FIELD;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
+LogAccess::marshal_client_req_is_ssl(char *buf)
+{
+  DEFAULT_INT_FIELD;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
+LogAccess::marshal_client_req_ssl_reused(char *buf)
 {
   DEFAULT_INT_FIELD;
 }
@@ -347,6 +388,15 @@ int
 LogAccess::marshal_proxy_req_server_ip(char *buf)
 {
   DEFAULT_IP_FIELD;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
+LogAccess::marshal_proxy_req_server_port(char *buf)
+{
+  DEFAULT_INT_FIELD;
 }
 
 /*-------------------------------------------------------------------------
@@ -642,6 +692,25 @@ LogAccess::marshal_config_str_var(char *config_var, char *buf)
   ats_free(str);
   return len;
 }
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
+LogAccess::marshal_milestone(TSMilestonesType ms, char *buf)
+{
+  DEFAULT_INT_FIELD;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
+LogAccess::marshal_milestone_diff(TSMilestonesType ms1, TSMilestonesType ms2, char *buf)
+{
+  DEFAULT_INT_FIELD;
+}
+
 
 // To allow for a generic marshal_record function, rather than
 // multiple functions (one per data type) we always marshal a record

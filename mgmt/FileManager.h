@@ -33,8 +33,8 @@
 
 #include <stdio.h>
 
-#include "ink_hash_table.h"
-#include "List.h"
+#include "ts/ink_hash_table.h"
+#include "ts/List.h"
 #include "Rollback.h"
 #include "MultiFile.h"
 

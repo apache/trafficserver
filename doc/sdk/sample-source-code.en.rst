@@ -80,20 +80,20 @@ This plugin illustrates:
            int host_length;
 
            if (!TSHttpTxnClientReqGet (txnp, &bufp, &hdr_loc)) {
-               TSError ("couldn't retrieve client request header\n");
+               TSError ("[blacklist-1] Couldn't retrieve client request header");
                goto done;
            }
 
            url_loc = TSHttpHdrUrlGet (bufp, hdr_loc);
            if (!url_loc) {
-               TSError ("couldn't retrieve request url\n");
+               TSError ("[blacklist-1] Couldn't retrieve request url");
                TSHandleMLocRelease (bufp, TS_NULL_MLOC, hdr_loc);
                goto done;
            }
 
            host = TSUrlHostGet (bufp, url_loc, &host_length);
            if (!host) {
-               TSError ("couldn't retrieve request hostname\n");
+               TSError ("[blacklist-1] Couldn't retrieve request hostname");
                TSHandleMLocRelease (bufp, hdr_loc, url_loc);
                TSHandleMLocRelease (bufp, TS_NULL_MLOC, hdr_loc);
                goto done;
@@ -136,7 +136,7 @@ This plugin illustrates:
            int url_length;
 
            if (!TSHttpTxnClientRespGet (txnp, &bufp, &hdr_loc)) {
-               TSError ("couldn't retrieve client response header\n");
+               TSError ("[blacklist-1] Couldn't retrieve client response header");
                goto done;
            }
 
@@ -146,14 +146,14 @@ This plugin illustrates:
                strlen (TSHttpHdrReasonLookup (TS_HTTP_STATUS_FORBIDDEN)) );
 
            if (!TSHttpTxnClientReqGet (txnp, &bufp, &hdr_loc)) {
-               TSError ("couldn't retrieve client request header\n");
+               TSError ("[blacklist-1] Couldn't retrieve client request header");
                TSHandleMLocRelease (bufp, TS_NULL_MLOC, hdr_loc);
                goto done;
            }
 
            url_loc = TSHttpHdrUrlGet (bufp, hdr_loc);
            if (!url_loc) {
-               TSError ("couldn't retrieve request url\n");
+               TSError ("[blacklist-1] Couldn't retrieve request url");
                TSHandleMLocRelease (bufp, TS_NULL_MLOC, hdr_loc);
                goto done;
            }
@@ -207,8 +207,8 @@ This plugin illustrates:
 
                TSfclose (file);
            } else {
-              TSError ("unable to open %s\n", blacklist_file);
-              TSError ("all sites will be allowed\n", blacklist_file);
+              TSError ("[blacklist-1] Unable to open %s", blacklist_file);
+              TSError ("[blacklist-1] All sites will be allowed", blacklist_file);
            }
 
            TSMutexUnlock (sites_mutex);
@@ -272,12 +272,12 @@ This plugin illustrates:
            info.vendor_name = "DsCompany";
            info.support_email = "ts-api-support@DsCompany.com";
 
-           if (!TSPluginRegister (&info)) {
-               TSError ("Plugin registration failed.\n");
+           if (!TSPluginRegister(&info)) {
+               TSError ("[blacklist-1] Plugin registration failed.");
            }
 
            if (!check_ts_version()) {
-              TSError ("Plugin requires Traffic Server 2.0 or later\n");
+              TSError ("[blacklist-1] Plugin requires Traffic Server 2.0 or later");
               return;
            }
 

@@ -65,8 +65,8 @@
  */
 
 
-#include "ink_platform.h"
-#include "ink_defs.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_defs.h"
 
 #include <sys/types.h>
 #include <sys/param.h>
@@ -85,10 +85,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "ink_string.h"
-#include "ink_resolver.h"
-#include "ink_inet.h"
-#include "Tokenizer.h"
+#include "ts/ink_string.h"
+#include "ts/ink_resolver.h"
+#include "ts/ink_inet.h"
+#include "ts/Tokenizer.h"
 
 #if !defined(isascii) /* XXX - could be a function */
 #define isascii(c) (!(c & 0200))
@@ -292,6 +292,7 @@ int
 ink_res_init(ink_res_state statp,         ///< State object to update.
              IpEndpoint const *pHostList, ///< Additional servers.
              size_t pHostListSize,        ///< # of entries in @a pHostList.
+             int dnsSearch,               /// Option of search_default_domains.
              const char *pDefDomain,      ///< Default domain (may be NULL).
              const char *pSearchList,     ///< Unknown
              const char *pResolvConf      ///< Path to configuration file.
@@ -532,19 +533,21 @@ ink_res_init(ink_res_state statp,         ///< State object to update.
     *pp++ = statp->defdname;
     *pp = NULL;
 
-    dots = 0;
-    for (cp = statp->defdname; *cp; cp++)
-      dots += (*cp == '.');
+    if (dnsSearch == 1) {
+      dots = 0;
+      for (cp = statp->defdname; *cp; cp++)
+        dots += (*cp == '.');
 
-    cp = statp->defdname;
-    while (pp < statp->dnsrch + INK_MAXDFLSRCH) {
-      if (dots < INK_LOCALDOMAINPARTS)
-        break;
-      cp = strchr(cp, '.') + 1; /*%< we know there is one */
-      *pp++ = cp;
-      dots--;
+      cp = statp->defdname;
+      while (pp < statp->dnsrch + INK_MAXDFLSRCH) {
+        if (dots < INK_LOCALDOMAINPARTS)
+          break;
+        cp = strchr(cp, '.') + 1; /*%< we know there is one */
+        *pp++ = cp;
+        dots--;
+      }
+      *pp = NULL;
     }
-    *pp = NULL;
 #ifdef DEBUG
     if (statp->options & INK_RES_DEBUG) {
       printf(";; res_init()... default dnsrch list:\n");

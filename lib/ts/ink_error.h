@@ -33,8 +33,8 @@
 #define _ink_error_h_
 
 #include <stdarg.h>
-#include "ink_platform.h"
-#include "ink_apidefs.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_apidefs.h"
 
 void ink_fatal_va(const char *message_format, va_list ap) TS_NORETURN;
 void ink_fatal(const char *message_format, ...) TS_PRINTFLIKE(1, 2) TS_NORETURN;

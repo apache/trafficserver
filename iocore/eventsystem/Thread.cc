@@ -29,6 +29,7 @@
 
 **************************************************************************/
 #include "P_EventSystem.h"
+#include "ts/ink_string.h"
 
 ///////////////////////////////////////////////
 // Common Interface impl                     //
@@ -100,4 +101,10 @@ Thread::start(const char *name, size_t stacksize, ThreadFunction f, void *a)
   tid = ink_thread_create(spawn_thread_internal, (void *)p, 0, stacksize);
 
   return tid;
+}
+
+ink_hrtime
+Thread::get_hrtime()
+{
+  return Thread::cur_time;
 }

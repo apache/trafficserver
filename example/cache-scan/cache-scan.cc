@@ -32,7 +32,7 @@
 
 #include "ts/ts.h"
 #include "ts/experimental.h"
-#include "ink_defs.h"
+#include "ts/ink_defs.h"
 
 static TSCont global_contp;
 
@@ -175,7 +175,7 @@ handle_scan(TSCont contp, TSEvent event, void *edata)
     return TS_CACHE_SCAN_RESULT_DONE;
   }
 
-  TSError("Unknown event in handle_scan: %d", event);
+  TSError("[cache-scan] Unknown event in handle_scan: %d", event);
   return -1;
 }
 
@@ -233,7 +233,7 @@ cleanup(TSCont contp)
 
     if (cstate->key_to_delete) {
       if (TSCacheKeyDestroy(cstate->key_to_delete) == TS_ERROR) {
-        TSError("failed to destroy cache key");
+        TSError("[cache-scan] Failed to destroy cache key");
       }
       cstate->key_to_delete = NULL;
     }
@@ -331,7 +331,7 @@ cache_intercept(TSCont contp, TSEvent event, void *edata)
     cleanup(contp);
     return 0;
   default:
-    TSError("Unknown event in cache_intercept: %d", event);
+    TSError("[cache-scan] Unknown event in cache_intercept: %d", event);
     cleanup(contp);
     return 0;
   }
@@ -387,13 +387,13 @@ setup_request(TSCont contp, TSHttpTxn txnp)
   TSAssert(contp == global_contp);
 
   if (TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
-    TSError("couldn't retrieve client request header");
+    TSError("[cache-scan] Couldn't retrieve client request header");
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     return TS_SUCCESS;
   }
 
   if (TSHttpHdrUrlGet(bufp, hdr_loc, &url_loc) != TS_SUCCESS) {
-    TSError("couldn't retrieve request url");
+    TSError("[cache-scan] Couldn't retrieve request url");
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     return TS_SUCCESS;
@@ -401,7 +401,7 @@ setup_request(TSCont contp, TSHttpTxn txnp)
 
   path = TSUrlPathGet(bufp, url_loc, &path_len);
   if (!path) {
-    TSError("couldn't retrieve request path");
+    TSError("[cache-scan] Couldn't retrieve request path");
     TSHandleMLocRelease(bufp, hdr_loc, url_loc);
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
@@ -441,7 +441,7 @@ setup_request(TSCont contp, TSHttpTxn txnp)
         TSUrlCreate(urlBuf, &urlLoc);
         if (TSUrlParse(urlBuf, urlLoc, (const char **)&start, end) != TS_PARSE_DONE ||
             TSCacheKeyDigestFromUrlSet(cstate->key_to_delete, urlLoc) != TS_SUCCESS) {
-          TSError("CacheKeyDigestFromUrlSet failed");
+          TSError("[cache-scan] CacheKeyDigestFromUrlSet failed");
           TSCacheKeyDestroy(cstate->key_to_delete);
           TSfree(cstate);
           TSHandleMLocRelease(urlBuf, NULL, urlLoc);

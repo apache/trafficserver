@@ -28,12 +28,12 @@
 
  ****************************************************************************/
 
-#include "libts.h"
-#include "I_Layout.h"
+#include "ts/ink_platform.h"
+#include "ts/I_Layout.h"
 #include "P_HostDB.h"
 #include "P_MultiCache.h"
 #include "P_EventSystem.h" // FIXME: need to have this in I_* header files.
-#include "ink_file.h"
+#include "ts/ink_file.h"
 
 static const int MC_SYNC_MIN_PAUSE_TIME = HRTIME_MSECONDS(200); // Pause for at least 200ms
 

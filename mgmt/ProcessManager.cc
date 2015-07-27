@@ -22,15 +22,16 @@
  */
 
 
-#include "libts.h"
+#include "ts/ink_platform.h"
+
 #undef HTTP_CACHE
 #include "InkAPIInternal.h"
 #include "MgmtUtils.h"
 #include "ProcessManager.h"
 
-#include "ink_apidefs.h"
+#include "ts/ink_apidefs.h"
 #include "MgmtSocket.h"
-#include "I_Layout.h"
+#include "ts/I_Layout.h"
 
 /*
  * Global ProcessManager

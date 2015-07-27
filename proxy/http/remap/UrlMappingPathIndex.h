@@ -23,13 +23,13 @@
 #ifndef _URL_MAPPING_PATH_INDEX_H
 #define _URL_MAPPING_PATH_INDEX_H
 
-#include "libts.h"
+#include "ts/ink_platform.h"
 #undef std // FIXME: remove dependancy on the STL
 #include <map>
 
 #include "URL.h"
 #include "UrlMapping.h"
-#include "Trie.h"
+#include "ts/Trie.h"
 
 class UrlMappingPathIndex
 {

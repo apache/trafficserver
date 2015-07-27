@@ -32,12 +32,12 @@
  *
  ****************************************************************************/
 
-#include "ink_platform.h"
+#include "ts/ink_platform.h"
 #include <stdarg.h>
 #include "MgmtUtils.h"
 #include "MgmtDefs.h"
 #include "WebMgmtUtils.h"
-#include "ink_hrtime.h"
+#include "ts/ink_hrtime.h"
 #include "LocalManager.h"
 #include "WebOverview.h"
 

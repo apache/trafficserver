@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "libts.h"
+#include "ts/ink_platform.h"
 #include "P_Net.h"
 #include "Show.h"
 #include "I_Tasks.h"
@@ -60,7 +60,7 @@ struct ShowNet : public ShowCont {
       return EVENT_DONE;
     }
 
-    ink_hrtime now = ink_get_hrtime();
+    ink_hrtime now = Thread::get_hrtime();
     forl_LL(UnixNetVConnection, vc, nh->open_list)
     {
       //      uint16_t port = ats_ip_port_host_order(&addr.sa);

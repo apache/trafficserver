@@ -214,7 +214,7 @@ ts_lua_del_module(ts_lua_instance_conf *conf, ts_lua_main_ctx *arr, int n)
 
     if (lua_type(L, -1) == LUA_TFUNCTION) {
       if (lua_pcall(L, 0, 0, 0)) {
-        TSError("[%s] lua_pcall %s failed: %s", __FUNCTION__, conf->script, lua_tostring(L, -1));
+        TSError("[ts_lua][%s] lua_pcall %s failed: %s", __FUNCTION__, conf->script, lua_tostring(L, -1));
       }
 
     } else {
@@ -733,7 +733,7 @@ ts_lua_http_cont_handler(TSCont contp, TSEvent ev, void *edata)
     lua_getglobal(L, TS_LUA_FUNCTION_TXN_CLOSE);
     if (lua_type(L, -1) == LUA_TFUNCTION) {
       if (lua_pcall(L, 0, 1, 0)) {
-        TSError("lua_pcall failed: %s", lua_tostring(L, -1));
+        TSError("[ts_lua] lua_pcall failed: %s", lua_tostring(L, -1));
       }
     }
 
@@ -762,7 +762,7 @@ ts_lua_http_cont_handler(TSCont contp, TSEvent ev, void *edata)
     break;
 
   default: // coroutine failed
-    TSError("lua_resume failed: %s", lua_tostring(L, -1));
+    TSError("[ts_lua] lua_resume failed: %s", lua_tostring(L, -1));
     rc = -1;
     lua_pop(L, 1);
     break;

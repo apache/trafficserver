@@ -38,9 +38,9 @@
 
 #include "MgmtUtils.h"
 #include "BaseManager.h"
-#include "ink_sock.h"
+#include "ts/ink_sock.h"
 
-#include "ink_apidefs.h"
+#include "ts/ink_apidefs.h"
 
 class ConfigUpdateCbTable;
 

@@ -26,16 +26,16 @@
 
 
  ***************************************************************************/
-#include "ink_config.h"
+#include "ts/ink_config.h"
 
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 
-#include "INK_MD5.h"
+#include "ts/INK_MD5.h"
 
 #include "Error.h"
-#include "SimpleTokenizer.h"
+#include "ts/SimpleTokenizer.h"
 
 #include "LogUtils.h"
 #include "LogFile.h"

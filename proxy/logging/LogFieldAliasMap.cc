@@ -27,9 +27,10 @@
 
  ***************************************************************************/
 
-#include "ink_config.h"
+#include "ts/ink_config.h"
 #include "LogFieldAliasMap.h"
-#include "ink_assert.h"
+#include "ts/ink_assert.h"
+#include "ts/ink_memory.h"
 
 void
 LogFieldAliasTable::init(size_t numPairs, ...)

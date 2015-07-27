@@ -1,12 +1,12 @@
 #if !defined(TS_IP_MAP_HEADER)
 #define TS_IP_MAP_HEADER
 
-#include "ink_platform.h"
-#include "ink_defs.h"
-#include "RbTree.h"
-#include <ts/ink_inet.h>
-#include <ts/IntrusiveDList.h>
-#include <ts/ink_assert.h>
+#include "ts/ink_platform.h"
+#include "ts/ink_defs.h"
+#include "ts/RbTree.h"
+#include "ts/ink_inet.h"
+#include "ts/IntrusiveDList.h"
+#include "ts/ink_assert.h"
 
 /** @file
 

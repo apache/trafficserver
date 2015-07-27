@@ -41,7 +41,7 @@
 #include <string.h>
 
 #include "ts/ts.h"
-#include "ink_defs.h"
+#include "ts/ink_defs.h"
 
 #define ASSERT_SUCCESS(_x) TSAssert((_x) == TS_SUCCESS)
 
@@ -353,17 +353,17 @@ TSPluginInit(int argc, const char *argv[])
   info.support_email = "ts-api-support@MyCompany.com";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError("Plugin registration failed.\n");
+    TSError("[append-transform] Plugin registration failed.");
     goto Lerror;
   }
 
   if (argc != 2) {
-    TSError("usage: %s <filename>\n", argv[0]);
+    TSError("[append-transform] Usage: %s <filename>", argv[0]);
     goto Lerror;
   }
 
   if (!load(argv[1])) {
-    TSError("[append-transform] Could not load %s\n", argv[1]);
+    TSError("[append-transform] Could not load %s", argv[1]);
     goto Lerror;
   }
 
@@ -372,5 +372,5 @@ TSPluginInit(int argc, const char *argv[])
 
 Lerror:
 
-  TSError("[append-transform] Unable to initialize plugin\n");
+  TSError("[append-transform] Unable to initialize plugin");
 }

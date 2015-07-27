@@ -22,12 +22,15 @@
  */
 
 
-#include "libts.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_string.h"
+#include "ts/ink_file.h"
+#include "ts/ink_time.h"
 #include "LocalManager.h"
 #include "ClusterCom.h"
 #include "MgmtUtils.h"
 #include "Alarms.h"
-#include "Diags.h"
+#include "ts/Diags.h"
 
 #include "P_RecCore.h"
 

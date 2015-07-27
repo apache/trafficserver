@@ -31,7 +31,7 @@
 #ifndef _Store_h_
 #define _Store_h_
 
-#include "libts.h"
+#include "ts/ink_platform.h"
 
 #define STORE_BLOCK_SIZE 8192
 #define STORE_BLOCK_SHIFT 13

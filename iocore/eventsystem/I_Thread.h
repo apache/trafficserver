@@ -64,7 +64,8 @@
 -- - include I_Event.h or
   P_Event.h
 #endif
-#include "libts.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_thread.h"
 #include "I_ProxyAllocator.h"
   class Thread;
 class ProxyMutex;
@@ -155,10 +156,10 @@ public:
   execute()
   {
   }
+
+  static ink_hrtime get_hrtime();
 };
 
-extern ink_hrtime ink_get_hrtime();
-extern ink_hrtime ink_get_based_hrtime();
 extern Thread *this_thread();
 
 #endif /*_I_Thread_h*/

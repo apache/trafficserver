@@ -34,9 +34,10 @@
 #ifndef _BASE_MANAGER_H
 #define _BASE_MANAGER_H
 
-#include "ink_thread.h"
-#include "ink_mutex.h"
-#include "ink_llqueue.h"
+#include "ts/ink_thread.h"
+#include "ts/ink_mutex.h"
+#include "ts/ink_llqueue.h"
+#include "ts/ink_hash_table.h"
 
 #include "MgmtDefs.h"
 

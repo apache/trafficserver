@@ -21,14 +21,16 @@
   limitations under the License.
  */
 
-#include "ink_defs.h"
-#include "libts.h"
+#include "ts/ink_defs.h"
+#include "ts/ink_platform.h"
+#include "ts/TsBuffer.h"
+#include "ts/ink_inet.h"
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
 #include "HTTP.h"
 #include "HdrToken.h"
-#include "Diags.h"
+#include "ts/Diags.h"
 
 /***********************************************************************
  *                                                                     *

@@ -32,7 +32,9 @@
 #ifndef _MATCHER_UTILS_H_
 #define _MATCHER_UTILS_H_
 
-#include "ParseRules.h"
+#include "ts/ParseRules.h"
+#include "ts/ink_inet.h"
+
 // Look in MatcherUtils.cc for comments on function usage
 char *readIntoBuffer(const char *file_path, const char *module_name, int *read_size_ptr);
 

@@ -21,8 +21,10 @@
   limitations under the License.
  */
 
-#include "ink_defs.h"
-#include "libts.h"
+#include "ts/ink_defs.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_memory.h"
+#include "ts/TsBuffer.h"
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>

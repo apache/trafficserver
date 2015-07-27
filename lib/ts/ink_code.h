@@ -24,9 +24,9 @@
 #ifndef _ink_code_h_
 #define _ink_code_h_
 
-#include "ink_apidefs.h"
+#include "ts/ink_apidefs.h"
+#include "ts/ink_defs.h"
 #include <openssl/md5.h>
-#include "ink_defs.h"
 
 /* INK_MD5 context. */
 typedef MD5_CTX INK_DIGEST_CTX;

@@ -28,14 +28,17 @@
  *
  ****************************************************************************/
 
-#include "ink_config.h"
 #include <sys/types.h>
+
+#include "ts/ink_config.h"
+#include "ts/MatcherUtils.h"
+#include "ts/Tokenizer.h"
 #include "Main.h"
 #include "ProxyConfig.h"
 #include "ControlMatcher.h"
 #include "CacheControl.h"
 #include "ParentSelection.h"
-#include "HostLookup.h"
+#include "ts/HostLookup.h"
 #include "HTTP.h"
 #include "URL.h"
 #include "P_EventSystem.h"

@@ -20,7 +20,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <strings.h>
-#include "ink_defs.h"
+#include "ts/ink_defs.h"
 
 // The name of the debug request header. This should probably be configurable.
 #define X_DEBUG_HEADER "X-Debug"
@@ -356,7 +356,7 @@ TSPluginInit(int /* argc */, const char * /*argv */ [])
   info.support_email = (char *)"dev@trafficserver.apache.org";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError("xdebug plugin registration failed");
+    TSError("[xdebug] Plugin registration failed");
   }
 
   TSReleaseAssert(TSHttpArgIndexReserve("xdebug", "xdebug header requests", &XArgIndex) == TS_SUCCESS);

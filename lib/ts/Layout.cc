@@ -21,8 +21,12 @@
   limitations under the License.
  */
 
-#include "libts.h"
-#include "I_Layout.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_assert.h"
+#include "ts/ink_file.h"
+#include "ts/ink_memory.h"
+#include "ts/ink_string.h"
+#include "ts/I_Layout.h"
 
 static Layout *layout = NULL;
 

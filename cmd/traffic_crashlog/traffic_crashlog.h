@@ -24,7 +24,10 @@
 #ifndef __TRAFFIC_CRASHLOG_H__
 #define __TRAFFIC_CRASHLOG_H__
 
-#include "libts.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_memory.h"
+#include "ts/Diags.h"
+#include "ts/TextBuffer.h"
 #include "mgmtapi.h"
 
 // ucontext.h is deprecated on Darwin, and we really only need it on Linux, so only

@@ -94,7 +94,7 @@ SpdyClientSession::init(NetVConnection *netvc)
 {
   int r;
 
-  this->mutex = new_ProxyMutex();
+  this->mutex = netvc->mutex;
   this->vc = netvc;
   this->req_map.clear();
 
@@ -114,7 +114,6 @@ SpdyClientSession::init(NetVConnection *netvc)
 
   this->vc->set_inactivity_timeout(HRTIME_SECONDS(spdy_accept_no_activity_timeout));
   vc->add_to_keep_alive_queue();
-  SET_HANDLER(&SpdyClientSession::state_session_start);
 }
 
 void
@@ -144,6 +143,11 @@ SpdyClientSession::clear()
   this->mutex = NULL;
 
   if (vc) {
+    // clean up ssl's first byte iobuf
+    SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(vc);
+    if (ssl_vc) {
+      ssl_vc->set_ssl_iobuf(NULL);
+    }
     TSVConnClose(reinterpret_cast<TSVConn>(vc));
     vc = NULL;
   }
@@ -193,23 +197,23 @@ SpdyClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBu
   sm->resp_buffer = TSIOBufferCreate();
   sm->resp_reader = TSIOBufferReaderAlloc(sm->resp_buffer);
 
-  eventProcessor.schedule_imm(sm, ET_NET);
+  do_api_callout(TS_HTTP_SSN_START_HOOK);
 }
 
-int
-SpdyClientSession::state_session_start(int /* event */, void * /* edata */)
+void
+SpdyClientSession::start()
 {
   const spdylay_settings_entry entries[] = {
     {SPDYLAY_SETTINGS_MAX_CONCURRENT_STREAMS, SPDYLAY_ID_FLAG_SETTINGS_NONE, spdy_max_concurrent_streams},
     {SPDYLAY_SETTINGS_INITIAL_WINDOW_SIZE, SPDYLAY_ID_FLAG_SETTINGS_NONE, spdy_initial_window_size}};
   int r;
 
+  this->read_vio = (TSVIO) this->vc->do_io_read(this, INT64_MAX, reinterpret_cast<MIOBuffer *>(this->req_buffer));
+  this->write_vio = (TSVIO) this->vc->do_io_write(this, INT64_MAX, reinterpret_cast<IOBufferReader *>(this->resp_reader));
+
   if (TSIOBufferReaderAvail(this->req_reader) > 0) {
     spdy_process_read(TS_EVENT_VCONN_WRITE_READY, this);
   }
-
-  this->read_vio = (TSVIO) this->vc->do_io_read(this, INT64_MAX, reinterpret_cast<MIOBuffer *>(this->req_buffer));
-  this->write_vio = (TSVIO) this->vc->do_io_write(this, INT64_MAX, reinterpret_cast<IOBufferReader *>(this->resp_reader));
 
   SET_HANDLER(&SpdyClientSession::state_session_readwrite);
 
@@ -224,7 +228,6 @@ SpdyClientSession::state_session_start(int /* event */, void * /* edata */)
   }
 
   TSVIOReenable(this->write_vio);
-  return EVENT_CONT;
 }
 
 int

@@ -22,9 +22,9 @@
 
  */
 
-#include "libts.h"
-#include "ink_error.h"
-#include "ink_stack_trace.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_error.h"
+#include "ts/ink_stack_trace.h"
 
 #include <syslog.h>
 #include <signal.h> /* MAGIC_EDITING_TAG */

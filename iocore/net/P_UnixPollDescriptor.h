@@ -30,7 +30,7 @@
 #ifndef __P_UNIXPOLLDESCRIPTOR_H__
 #define __P_UNIXPOLLDESCRIPTOR_H__
 
-#include "libts.h"
+#include "ts/ink_platform.h"
 
 #if TS_USE_KQUEUE
 #include <sys/event.h>

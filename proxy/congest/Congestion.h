@@ -31,7 +31,7 @@
 #ifndef CONGESTION_H_
 #define CONGESTION_H_
 
-#include "libts.h"
+#include "ts/ink_platform.h"
 #include "P_EventSystem.h"
 #include "ControlBase.h"
 #include "ControlMatcher.h"
@@ -288,7 +288,7 @@ CongestionEntry::client_retry_after()
 {
   int prat = 0;
   if (F_congested()) {
-    prat = pRecord->proxy_retry_interval + m_history.last_event - ink_hrtime_to_sec(ink_get_hrtime());
+    prat = pRecord->proxy_retry_interval + m_history.last_event - ink_hrtime_to_sec(Thread::get_hrtime());
     if (prat < 0)
       prat = 0;
   }

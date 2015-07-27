@@ -32,11 +32,11 @@
  *
  ****************************************************************************/
 
-#include "ink_platform.h"
-#include "ink_mutex.h"
-#include "ink_assert.h"
-#include "TextBuffer.h"
-#include "List.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_mutex.h"
+#include "ts/ink_assert.h"
+#include "ts/TextBuffer.h"
+#include "ts/List.h"
 
 class FileManager;
 

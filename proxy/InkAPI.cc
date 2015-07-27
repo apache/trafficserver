@@ -23,8 +23,9 @@
 
 #include <stdio.h>
 
-#include "libts.h"
-#include "I_Layout.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_base64.h"
+#include "ts/I_Layout.h"
 
 #include "ts.h"
 #include "InkAPIInternal.h"
@@ -1703,7 +1704,7 @@ TSdrandom()
 ink_hrtime
 TShrtime()
 {
-  return ink_get_based_hrtime();
+  return Thread::get_hrtime();
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -5287,7 +5288,7 @@ TSHttpTxnServerAddrGet(TSHttpTxn txnp)
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
   HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
-  return &sm->t_state.server_info.addr.sa;
+  return &sm->t_state.server_info.dst_addr.sa;
 }
 
 TSReturnCode
@@ -5296,9 +5297,7 @@ TSHttpTxnServerAddrSet(TSHttpTxn txnp, struct sockaddr const *addr)
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
   HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
-  if (ats_ip_copy(&sm->t_state.server_info.addr.sa, addr)) {
-    ats_ip_port_cast(&sm->t_state.server_info.addr.sa) = ats_ip_port_cast(addr);
-    sm->t_state.server_info.port = htons(ats_ip_port_cast(addr));
+  if (ats_ip_copy(&sm->t_state.server_info.dst_addr.sa, addr)) {
     sm->t_state.api_server_addr_set = true;
     return TS_SUCCESS;
   } else {
@@ -5311,8 +5310,8 @@ TSHttpTxnClientIncomingPortSet(TSHttpTxn txnp, int port)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
-  HttpSM *sm = (HttpSM *)txnp;
-  sm->t_state.client_info.port = port;
+  HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
+  sm->t_state.client_info.dst_addr.port() = htons(port);
 }
 
 // [amc] This might use the port. The code path should do that but it
@@ -5349,7 +5348,7 @@ TSHttpTxnNextHopAddrGet(TSHttpTxn txnp)
   if (sm->t_state.current.server == NULL)
     return NULL;
 
-  return &sm->t_state.current.server->addr.sa;
+  return &sm->t_state.current.server->dst_addr.sa;
 }
 
 TSReturnCode
@@ -5935,74 +5934,11 @@ TSHttpTxnMilestoneGet(TSHttpTxn txnp, TSMilestonesType milestone, ink_hrtime *ti
   HttpSM *sm = (HttpSM *)txnp;
   TSReturnCode ret = TS_SUCCESS;
 
-  switch (milestone) {
-  case TS_MILESTONE_UA_BEGIN:
-    *time = sm->milestones.ua_begin;
-    break;
-  case TS_MILESTONE_UA_READ_HEADER_DONE:
-    *time = sm->milestones.ua_read_header_done;
-    break;
-  case TS_MILESTONE_UA_BEGIN_WRITE:
-    *time = sm->milestones.ua_begin_write;
-    break;
-  case TS_MILESTONE_UA_CLOSE:
-    *time = sm->milestones.ua_close;
-    break;
-  case TS_MILESTONE_SERVER_FIRST_CONNECT:
-    *time = sm->milestones.server_first_connect;
-    break;
-  case TS_MILESTONE_SERVER_CONNECT:
-    *time = sm->milestones.server_connect;
-    break;
-  case TS_MILESTONE_SERVER_CONNECT_END:
-    *time = sm->milestones.server_connect_end;
-    break;
-  case TS_MILESTONE_SERVER_BEGIN_WRITE:
-    *time = sm->milestones.server_begin_write;
-    break;
-  case TS_MILESTONE_SERVER_FIRST_READ:
-    *time = sm->milestones.server_first_read;
-    break;
-  case TS_MILESTONE_SERVER_READ_HEADER_DONE:
-    *time = sm->milestones.server_read_header_done;
-    break;
-  case TS_MILESTONE_SERVER_CLOSE:
-    *time = sm->milestones.server_close;
-    break;
-  case TS_MILESTONE_CACHE_OPEN_READ_BEGIN:
-    *time = sm->milestones.cache_open_read_begin;
-    break;
-  case TS_MILESTONE_CACHE_OPEN_READ_END:
-    *time = sm->milestones.cache_open_read_end;
-    break;
-  case TS_MILESTONE_CACHE_OPEN_WRITE_BEGIN:
-    *time = sm->milestones.cache_open_write_begin;
-    break;
-  case TS_MILESTONE_CACHE_OPEN_WRITE_END:
-    *time = sm->milestones.cache_open_write_end;
-    break;
-  case TS_MILESTONE_DNS_LOOKUP_BEGIN:
-    *time = sm->milestones.dns_lookup_begin;
-    break;
-  case TS_MILESTONE_DNS_LOOKUP_END:
-    *time = sm->milestones.dns_lookup_end;
-    break;
-  case TS_MILESTONE_SM_START:
-    *time = sm->milestones.sm_start;
-    break;
-  case TS_MILESTONE_SM_FINISH:
-    *time = sm->milestones.sm_finish;
-    break;
-  case TS_MILESTONE_PLUGIN_ACTIVE:
-    *time = sm->milestones.plugin_active;
-    break;
-  case TS_MILESTONE_PLUGIN_TOTAL:
-    *time = sm->milestones.plugin_total;
-    break;
-  default:
+  if ((milestone < TS_MILESTONE_UA_BEGIN) || (milestone >= TS_MILESTONE_LAST_ENTRY)) {
     *time = -1;
     ret = TS_ERROR;
-    break;
+  } else {
+    *time = sm->milestones[milestone];
   }
 
   return ret;
@@ -6292,7 +6228,7 @@ TSVConnFdCreate(int fd)
   vc->action_ = &a;
 
   vc->id = net_next_connection_number();
-  vc->submit_time = ink_get_hrtime();
+  vc->submit_time = Thread::get_hrtime();
   vc->set_is_transparent(false);
   vc->mutex = new_ProxyMutex();
 

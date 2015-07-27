@@ -31,7 +31,9 @@
  *
  */
 
-#include "libts.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_hash_table.h"
+#include "ts/ink_memory.h"
 #include "BaseManager.h"
 
 

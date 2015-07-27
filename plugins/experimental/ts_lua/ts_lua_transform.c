@@ -189,7 +189,7 @@ ts_lua_transform_handler(TSCont contp, ts_lua_http_transform_ctx *transform_ctx,
       break;
 
     default: // coroutine failed
-      TSError("lua_resume failed: %s", lua_tostring(L, -1));
+      TSError("[ts_lua] lua_resume failed: %s", lua_tostring(L, -1));
       ret = 1;
       res = NULL;
       res_len = 0;

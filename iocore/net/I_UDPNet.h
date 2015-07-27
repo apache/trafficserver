@@ -32,9 +32,9 @@
 #ifndef __UDPNET_H_
 #define __UDPNET_H_
 
-#include "I_Version.h"
+#include "ts/I_Version.h"
 #include "I_EventSystem.h"
-#include "ink_inet.h"
+#include "ts/ink_inet.h"
 
 /**
    UDP service

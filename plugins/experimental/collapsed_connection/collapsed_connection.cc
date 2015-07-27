@@ -152,7 +152,7 @@ initConfig(const char *fn)
       } else if (0 == strcmp("1", fn)) {
         config->enabled = true;
       } else {
-        TSError("parameter '%s' ignored", fn);
+        TSError("[collapsed_connection] Parameter '%s' ignored", fn);
       }
     } else {
       int line_num = 0;
@@ -162,7 +162,7 @@ initConfig(const char *fn)
       TSRecordDataType type, expected_type;
 
       if (NULL == (file = TSfopen(fn, "r"))) {
-        TSError("could not open config file %s", fn);
+        TSError("[collapsed_connection] Could not open config file %s", fn);
       } else {
         while (NULL != TSfgets(file, buf, sizeof(buf))) {
           char *ln, *tok;
@@ -178,24 +178,24 @@ initConfig(const char *fn)
             continue;
 
           if (strncmp(tok, "CONFIG", 6)) {
-            TSError("file %s, line %d: non-CONFIG line encountered", fn, line_num);
+            TSError("[collapsed_connection] File %s, line %d: non-CONFIG line encountered", fn, line_num);
             continue;
           }
           // Find the configuration name
           tok = strtok_r(NULL, " \t", &ln);
           if (CcHttpTxnConfigFind(tok, -1, &name, &expected_type) != TS_SUCCESS) {
-            TSError("file %s, line %d: no records.config name given", fn, line_num);
+            TSError("[collapsed_connection] File %s, line %d: no records.config name given", fn, line_num);
             continue;
           }
           // Find the type (INT or STRING only)
           tok = strtok_r(NULL, " \t", &ln);
           if (TS_RECORDDATATYPE_NULL == (type = str_to_datatype(tok))) {
-            TSError("file %s, line %d: only INT and STRING types supported", fn, line_num);
+            TSError("[collapsed_connection] File %s, line %d: only INT and STRING types supported", fn, line_num);
             continue;
           }
 
           if (type != expected_type) {
-            TSError("file %s, line %d: mismatch between provide data type, and expected type", fn, line_num);
+            TSError("[collapsed_connection] File %s, line %d: mismatch between provide data type, and expected type", fn, line_num);
             continue;
           }
           // Find the value (which depends on the type above)
@@ -218,7 +218,7 @@ initConfig(const char *fn)
             tok = NULL;
           }
           if (!tok) {
-            TSError("file %s, line %d: the configuration must provide a value", fn, line_num);
+            TSError("[collapsed_connection] File %s, line %d: the configuration must provide a value", fn, line_num);
             continue;
           }
           // Now store the new config
@@ -1114,17 +1114,17 @@ TSPluginInit(int argc, const char *argv[])
   info.support_email = const_cast<char *>(PLUGIN_SUPPORT);
 
   if (TS_SUCCESS != TSPluginRegister(&info)) {
-    TSError("Plugin registration failed");
+    TSError("[collapsed_connection] Plugin registration failed");
     return;
   }
 
   if (TS_SUCCESS != TSMgmtIntGet("proxy.config.http.cache.http", &http_cache) || 0 == http_cache) {
-    TSError("Http cache is disabled, plugin would not work");
+    TSError("[collapsed_connection] Http cache is disabled, plugin would not work");
     return;
   }
 
   if (!(contp = TSContCreate(collapsedConnectionMainHandler, NULL))) {
-    TSError("Could not create continuation");
+    TSError("[collapsed_connection] Could not create continuation");
     return;
   }
 

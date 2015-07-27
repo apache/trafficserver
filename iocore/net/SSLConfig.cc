@@ -29,8 +29,8 @@
    SSL Configurations
  ****************************************************************************/
 
-#include "libts.h"
-#include "I_Layout.h"
+#include "ts/ink_platform.h"
+#include "ts/I_Layout.h"
 
 #include <string.h>
 #include "P_Net.h"
@@ -48,11 +48,18 @@ bool SSLConfigParams::ssl_ocsp_enabled = false;
 int SSLConfigParams::ssl_ocsp_cache_timeout = 3600;
 int SSLConfigParams::ssl_ocsp_request_timeout = 10;
 int SSLConfigParams::ssl_ocsp_update_period = 60;
+int SSLConfigParams::ssl_handshake_timeout_in = 0;
 size_t SSLConfigParams::session_cache_number_buckets = 1024;
 bool SSLConfigParams::session_cache_skip_on_lock_contention = false;
 size_t SSLConfigParams::session_cache_max_bucket_size = 100;
-
 init_ssl_ctx_func SSLConfigParams::init_ssl_ctx_cb = NULL;
+
+// TS-3534 Wiretracing for SSL Connections
+int SSLConfigParams::ssl_wire_trace_enabled = 0;
+char *SSLConfigParams::ssl_wire_trace_addr = NULL;
+IpAddr *SSLConfigParams::ssl_wire_trace_ip = NULL;
+int SSLConfigParams::ssl_wire_trace_percentage = 0;
+char *SSLConfigParams::ssl_wire_trace_server_name = NULL;
 
 static ConfigUpdateHandler<SSLCertificateConfig> *sslCertUpdate;
 
@@ -96,6 +103,7 @@ SSLConfigParams::cleanup()
   ats_free_null(cipherSuite);
   ats_free_null(client_cipherSuite);
   ats_free_null(dhparamsFile);
+  ats_free_null(ssl_wire_trace_ip);
 
   clientCertLevel = client_verify_depth = verify_depth = clientVerify = 0;
 }
@@ -269,6 +277,8 @@ SSLConfigParams::initialize()
   REC_EstablishStaticConfigInt32(ssl_ocsp_request_timeout, "proxy.config.ssl.ocsp.request_timeout");
   REC_EstablishStaticConfigInt32(ssl_ocsp_update_period, "proxy.config.ssl.ocsp.update_period");
 
+  REC_ReadConfigInt32(ssl_handshake_timeout_in, "proxy.config.ssl.handshake_timeout_in");
+
   // ++++++++++++++++++++++++ Client part ++++++++++++++++++++
   client_verify_depth = 7;
   REC_ReadConfigInt32(clientVerify, "proxy.config.ssl.client.verify.server");
@@ -294,6 +304,27 @@ SSLConfigParams::initialize()
   ats_free(ssl_client_ca_cert_filename);
 
   REC_ReadConfigInt32(ssl_allow_client_renegotiation, "proxy.config.ssl.allow_client_renegotiation");
+
+  // SSL Wire Trace configurations
+  REC_ReadConfigInteger(ssl_wire_trace_enabled, "proxy.config.ssl.wire_trace_enabled");
+  if (ssl_wire_trace_enabled) {
+    // wire trace specific source ip
+    REC_ReadConfigStringAlloc(ssl_wire_trace_addr, "proxy.config.ssl.wire_trace_addr");
+    if (ssl_wire_trace_addr) {
+      ssl_wire_trace_ip = new IpAddr();
+      ssl_wire_trace_ip->load(ssl_wire_trace_addr);
+    } else {
+      ssl_wire_trace_ip = NULL;
+    }
+    // wire trace percentage of requests
+    REC_ReadConfigInteger(ssl_wire_trace_percentage, "proxy.config.ssl.wire_trace_percentage");
+    REC_ReadConfigStringAlloc(ssl_wire_trace_server_name, "proxy.config.ssl.wire_trace_server_name");
+  } else {
+    ssl_wire_trace_addr = NULL;
+    ssl_wire_trace_ip = NULL;
+    ssl_wire_trace_percentage = 0;
+    ssl_wire_trace_server_name = NULL;
+  }
 }
 
 void

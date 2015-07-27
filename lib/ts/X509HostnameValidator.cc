@@ -26,7 +26,7 @@
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
 
-#include <ink_memory.h>
+#include "ts/ink_memory.h"
 
 typedef bool (*equal_fn)(const unsigned char *prefix, size_t prefix_len, const unsigned char *suffix, size_t suffix_len);
 

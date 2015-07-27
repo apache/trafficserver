@@ -31,7 +31,8 @@
  ***************************************************************************/
 
 #include "mgmtapi.h"
-#include "libts.h"
+#include "ts/ink_platform.h"
+#include "ts/ink_sock.h"
 #include "LocalManager.h"
 #include "MgmtUtils.h"
 #include "MgmtSocket.h"

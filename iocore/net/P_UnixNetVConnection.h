@@ -32,7 +32,7 @@
 #ifndef __P_UNIXNETVCONNECTION_H__
 #define __P_UNIXNETVCONNECTION_H__
 
-#include "ink_sock.h"
+#include "ts/ink_sock.h"
 #include "I_NetVConnection.h"
 #include "P_UnixNetState.h"
 #include "P_Connection.h"
@@ -262,6 +262,11 @@ public:
   OOB_callback *oob_ptr;
   bool from_accept_thread;
 
+  // es - origin_trace associated connections
+  bool origin_trace;
+  const sockaddr *origin_trace_addr;
+  int origin_trace_port;
+
   int startEvent(int event, Event *e);
   int acceptEvent(int event, Event *e);
   int mainEvent(int event, Event *e);
@@ -277,6 +282,24 @@ public:
   virtual void apply_options();
 
   friend void write_to_net_io(NetHandler *, UnixNetVConnection *, EThread *);
+
+  void
+  setOriginTrace(bool t)
+  {
+    origin_trace = t;
+  }
+
+  void
+  setOriginTraceAddr(const sockaddr *addr)
+  {
+    origin_trace_addr = addr;
+  }
+
+  void
+  setOriginTracePort(int port)
+  {
+    origin_trace_port = port;
+  }
 };
 
 extern ClassAllocator<UnixNetVConnection> netVCAllocator;
@@ -336,7 +359,7 @@ UnixNetVConnection::set_inactivity_timeout(ink_hrtime timeout)
   } else
     inactivity_timeout = 0;
 #else
-  next_inactivity_timeout_at = ink_get_hrtime() + timeout;
+  next_inactivity_timeout_at = Thread::get_hrtime() + timeout;
 #endif
 }
 
@@ -366,7 +389,7 @@ UnixNetVConnection::set_active_timeout(ink_hrtime timeout)
   } else
     active_timeout = 0;
 #else
-  next_activity_timeout_at = ink_get_hrtime() + timeout;
+  next_activity_timeout_at = Thread::get_hrtime() + timeout;
 #endif
 }
 

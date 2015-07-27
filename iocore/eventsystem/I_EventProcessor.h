@@ -24,7 +24,7 @@
 #ifndef _I_EventProcessor_h_
 #define _I_EventProcessor_h_
 
-#include "libts.h"
+#include "ts/ink_platform.h"
 #include "I_Continuation.h"
 #include "I_Processor.h"
 #include "I_Event.h"

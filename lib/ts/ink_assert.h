@@ -28,8 +28,8 @@ Assertions
 #ifndef _INK_ASSERT_H
 #define _INK_ASSERT_H
 
-#include "ink_apidefs.h"
-#include "ink_error.h"
+#include "ts/ink_apidefs.h"
+#include "ts/ink_error.h"
 
 #ifdef __cplusplus
 extern "C" {

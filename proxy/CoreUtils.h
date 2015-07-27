@@ -40,7 +40,7 @@
 #include <math.h>
 #include <assert.h>
 #include <elf.h>
-#include "DynArray.h"
+#include "ts/DynArray.h"
 
 #define SP_REGNUM 15 /* Contains address of top of stack USP */
 #define PC_REGNUM 12 /* Contains program counter EIP */

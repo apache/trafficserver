@@ -51,14 +51,14 @@
 #include <sys/time.h>
 #include <stdlib.h>
 
-#include "ink_defs.h"
-#include "ink_memory.h"
-#include "ink_assert.h"
-#include "INK_MD5.h"
-#include "ParseRules.h"
-#include "ink_time.h"
-#include "ink_args.h"
-#include "I_Version.h"
+#include "ts/ink_defs.h"
+#include "ts/ink_memory.h"
+#include "ts/ink_assert.h"
+#include "ts/INK_MD5.h"
+#include "ts/ParseRules.h"
+#include "ts/ink_time.h"
+#include "ts/ink_args.h"
+#include "ts/I_Version.h"
 
 /*
  FTP - Traffic Server Template

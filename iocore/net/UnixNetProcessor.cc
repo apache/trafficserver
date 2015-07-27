@@ -22,6 +22,8 @@
  */
 
 #include "P_Net.h"
+#include "ts/InkErrno.h"
+#include "ts/ink_sock.h"
 
 // For Stat Pages
 #include "StatPages.h"
@@ -222,7 +224,7 @@ UnixNetProcessor::connect_re_internal(Continuation *cont, sockaddr const *target
 
   NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, 1);
   vc->id = net_next_connection_number();
-  vc->submit_time = ink_get_hrtime();
+  vc->submit_time = Thread::get_hrtime();
   vc->setSSLClientConnection(true);
   ats_ip_copy(&vc->server_addr, target);
   vc->mutex = cont->mutex;

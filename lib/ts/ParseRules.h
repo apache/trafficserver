@@ -26,9 +26,9 @@
 
 #include <string.h>
 
-#include "ink_defs.h"
-#include "ink_apidefs.h"
-#include "ink_platform.h"
+#include "ts/ink_defs.h"
+#include "ts/ink_apidefs.h"
+#include "ts/ink_platform.h"
 
 typedef unsigned int CTypeResult;
 

@@ -22,6 +22,9 @@
 */
 
 #include "P_Net.h"
+#include "ts/ink_platform.h"
+#include "ts/InkErrno.h"
+#include "Log.h"
 
 #define STATE_VIO_OFFSET ((uintptr_t) & ((NetState *)0)->vio)
 #define STATE_FROM_VIO(_x) ((NetState *)(((char *)(_x)) - STATE_VIO_OFFSET))
@@ -82,7 +85,7 @@ net_activity(UnixNetVConnection *vc, EThread *thread)
   }
 #else
   if (vc->inactivity_timeout_in)
-    vc->next_inactivity_timeout_at = ink_get_hrtime() + vc->inactivity_timeout_in;
+    vc->next_inactivity_timeout_at = Thread::get_hrtime() + vc->inactivity_timeout_in;
   else
     vc->next_inactivity_timeout_at = 0;
 #endif
@@ -301,6 +304,25 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
         r = socketManager.readv(vc->con.fd, &tiovec[0], niov);
       }
       NET_INCREMENT_DYN_STAT(net_calls_to_read_stat);
+
+      if (vc->origin_trace) {
+        char origin_trace_ip[INET6_ADDRSTRLEN];
+
+        ats_ip_ntop(vc->origin_trace_addr, origin_trace_ip, sizeof(origin_trace_ip));
+
+        if (r > 0) {
+          TraceIn((vc->origin_trace), vc->get_remote_addr(), vc->get_remote_port(), "CLIENT %s:%d\tbytes=%d\n%.*s", origin_trace_ip,
+                  vc->origin_trace_port, (int)r, (int)r, (char *)tiovec[0].iov_base);
+
+        } else if (r == 0) {
+          TraceIn((vc->origin_trace), vc->get_remote_addr(), vc->get_remote_port(), "CLIENT %s:%d closed connection",
+                  origin_trace_ip, vc->origin_trace_port);
+        } else {
+          TraceIn((vc->origin_trace), vc->get_remote_addr(), vc->get_remote_port(), "CLIENT %s:%d error=%s", origin_trace_ip,
+                  vc->origin_trace_port, strerror(errno));
+        }
+      }
+
       total_read += rattempted;
     } while (rattempted && r == rattempted && total_read < toread);
 
@@ -589,8 +611,11 @@ UnixNetVConnection::get_data(int id, void *data)
 VIO *
 UnixNetVConnection::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
 {
-  ink_assert(!closed);
   ink_assert(c || 0 == nbytes);
+  if (closed) {
+    Error("do_io_read invoked on closed vc %p, cont %p, nbytes %" PRId64 ", buf %p", this, c, nbytes, buf);
+    return NULL;
+  }
   read.vio.op = VIO::READ;
   read.vio.mutex = c ? c->mutex : this->mutex;
   read.vio._cont = c;
@@ -611,7 +636,10 @@ UnixNetVConnection::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
 VIO *
 UnixNetVConnection::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *reader, bool owner)
 {
-  ink_assert(!closed);
+  if (closed) {
+    Error("do_io_write invoked on closed vc %p, cont %p, nbytes %" PRId64 ", reader %p", this, c, nbytes, reader);
+    return NULL;
+  }
   write.vio.op = VIO::WRITE;
   write.vio.mutex = c ? c->mutex : this->mutex;
   write.vio._cont = c;
@@ -851,7 +879,8 @@ UnixNetVConnection::UnixNetVConnection()
 #else
     next_inactivity_timeout_at(0), next_activity_timeout_at(0),
 #endif
-    nh(NULL), id(0), flags(0), recursion(0), submit_time(0), oob_ptr(0), from_accept_thread(false)
+    nh(NULL), id(0), flags(0), recursion(0), submit_time(0), oob_ptr(0), from_accept_thread(false), origin_trace(false),
+    origin_trace_addr(NULL), origin_trace_port(0)
 {
   memset(&local_addr, 0, sizeof local_addr);
   memset(&server_addr, 0, sizeof server_addr);
@@ -875,7 +904,7 @@ UnixNetVConnection::set_enabled(VIO *vio)
   }
 #else
   if (!next_inactivity_timeout_at && inactivity_timeout_in)
-    next_inactivity_timeout_at = ink_get_hrtime() + inactivity_timeout_in;
+    next_inactivity_timeout_at = Thread::get_hrtime() + inactivity_timeout_in;
 #endif
 }
 
@@ -932,6 +961,24 @@ UnixNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, 
       r = socketManager.write(con.fd, tiovec[0].iov_base, tiovec[0].iov_len);
     else
       r = socketManager.writev(con.fd, &tiovec[0], niov);
+
+    if (origin_trace) {
+      char origin_trace_ip[INET6_ADDRSTRLEN];
+      ats_ip_ntop(origin_trace_addr, origin_trace_ip, sizeof(origin_trace_ip));
+
+      if (r > 0) {
+        TraceOut(origin_trace, get_remote_addr(), get_remote_port(), "CLIENT %s:%d\tbytes=%d\n%.*s", origin_trace_ip,
+                 origin_trace_port, (int)r, (int)r, (char *)tiovec[0].iov_base);
+
+      } else if (r == 0) {
+        TraceOut(origin_trace, get_remote_addr(), get_remote_port(), "CLIENT %s:%d closed connection", origin_trace_ip,
+                 origin_trace_port);
+      } else {
+        TraceOut(origin_trace, get_remote_addr(), get_remote_port(), "CLIENT %s:%d error=%s", origin_trace_ip, origin_trace_port,
+                 strerror(errno));
+      }
+    }
+
     ProxyMutex *mutex = thread->mutex;
     NET_INCREMENT_DYN_STAT(net_calls_to_write_stat);
   } while (r == wattempted && total_written < towrite);
@@ -1035,6 +1082,13 @@ UnixNetVConnection::acceptEvent(int event, Event *e)
 
   nh->open_list.enqueue(this);
 
+#ifdef USE_EDGE_TRIGGER
+  // Set the vc as triggered and place it in the read ready queue in case there is already data on the socket.
+  Debug("iocore_net", "acceptEvent : Setting triggered and adding to the read ready queue");
+  read.triggered = 1;
+  nh->read_ready_list.enqueue(this);
+#endif
+
   if (inactivity_timeout_in) {
     UnixNetVConnection::set_inactivity_timeout(inactivity_timeout_in);
   }
@@ -1070,15 +1124,16 @@ UnixNetVConnection::mainEvent(int event, Event *e)
       e->schedule_in(HRTIME_MSECONDS(net_retry_delay));
     return EVENT_CONT;
   }
-  if (e->cancelled)
+
+  if (e->cancelled) {
     return EVENT_DONE;
+  }
 
   int signal_event;
   Event **signal_timeout;
   Continuation *reader_cont = NULL;
   Continuation *writer_cont = NULL;
-  ink_hrtime next_activity_timeout_at = 0;
-  ink_hrtime *signal_timeout_at = &next_activity_timeout_at;
+  ink_hrtime *signal_timeout_at = NULL;
   Event *t = NULL;
   signal_timeout = &t;
 
@@ -1086,7 +1141,7 @@ UnixNetVConnection::mainEvent(int event, Event *e)
   if (e == inactivity_timeout) {
     signal_event = VC_EVENT_INACTIVITY_TIMEOUT;
     signal_timeout = &inactivity_timeout;
-  } else if {
+  } else {
     ink_assert(e == active_timeout);
     signal_event = VC_EVENT_ACTIVE_TIMEOUT;
     signal_timeout = &active_timeout;
@@ -1096,10 +1151,13 @@ UnixNetVConnection::mainEvent(int event, Event *e)
     /* BZ 49408 */
     // ink_assert(inactivity_timeout_in);
     // ink_assert(next_inactivity_timeout_at < ink_get_hrtime());
-    if (!inactivity_timeout_in || next_inactivity_timeout_at > ink_get_hrtime())
+    if (!inactivity_timeout_in || next_inactivity_timeout_at > Thread::get_hrtime())
       return EVENT_CONT;
     signal_event = VC_EVENT_INACTIVITY_TIMEOUT;
     signal_timeout_at = &next_inactivity_timeout_at;
+  } else {
+    signal_event = VC_EVENT_ACTIVE_TIMEOUT;
+    signal_timeout_at = &next_activity_timeout_at;
   }
 #endif
 
@@ -1229,6 +1287,12 @@ UnixNetVConnection::free(EThread *t)
   nh = NULL;
   read.triggered = 0;
   write.triggered = 0;
+  read.enabled = 0;
+  write.enabled = 0;
+  read.vio._cont = NULL;
+  write.vio._cont = NULL;
+  read.vio.vc_server = NULL;
+  write.vio.vc_server = NULL;
   options.reset();
   closed = 0;
   ink_assert(!read.ready_link.prev && !read.ready_link.next);

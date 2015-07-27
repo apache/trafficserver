@@ -21,11 +21,11 @@
   limitations under the License.
  */
 
-#include "ink_config.h"
+#include "ts/ink_config.h"
 #include <assert.h>
 
-#include "ink_atomic.h"
-#include "ink_queue.h"
+#include "ts/ink_atomic.h"
+#include "ts/ink_queue.h"
 
 /*
  * This file was added during the debugging of Bug 50475.

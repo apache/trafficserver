@@ -24,7 +24,7 @@
 #include <stdio.h>
 
 #include "ts/ts.h"
-#include "ink_defs.h"
+#include "ts/ink_defs.h"
 
 void
 TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
@@ -36,7 +36,7 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
   info.support_email = "ts-api-support@MyCompany.com";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError("Plugin registration failed. \n");
+    TSError("[hello-world] Plugin registration failed.");
   }
 
   TSDebug("debug-hello", "Hello World!\n");

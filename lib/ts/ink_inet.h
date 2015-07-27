@@ -28,9 +28,9 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <sys/socket.h>
-#include "ink_memory.h"
-#include "ink_apidefs.h"
-#include "TsBuffer.h"
+#include "ts/ink_memory.h"
+#include "ts/ink_apidefs.h"
+#include "ts/TsBuffer.h"
 
 #define INK_GETHOSTBYNAME_R_DATA_SIZE 1024
 #define INK_GETHOSTBYADDR_R_DATA_SIZE 1024
@@ -71,9 +71,12 @@ union IpEndpoint {
   struct sockaddr_in sin;   ///< IPv4
   struct sockaddr_in6 sin6; ///< IPv6
 
+  /** Assign from a socket address.
+      The entire address (all parts) are copied if the @a ip is valid.
+  */
   self &assign(sockaddr const *ip ///< Source address, family, port.
                );
-  /// Construct from an @a addr and @a port.
+  /// Assign from an @a addr and @a port.
   self &assign(IpAddr const &addr, ///< Address and address family.
                in_port_t port = 0  ///< Port (network order).
                );
@@ -103,6 +106,8 @@ union IpEndpoint {
   in_port_t &port();
   /// Port in network order.
   in_port_t port() const;
+  /// Port in host horder.
+  in_port_t host_order_port() const;
 
   operator sockaddr *() { return &sa; }
   operator sockaddr const *() const { return &sa; }
@@ -1463,6 +1468,12 @@ inline in_port_t
 IpEndpoint::port() const
 {
   return ats_ip_port_cast(&sa);
+}
+
+inline in_port_t
+IpEndpoint::host_order_port() const
+{
+  return ntohs(this->port());
 }
 
 inline bool

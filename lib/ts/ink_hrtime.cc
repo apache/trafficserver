@@ -28,9 +28,9 @@
   This file contains code supporting the Inktomi high-resolution timer.
 **************************************************************************/
 
-#include "ink_hrtime.h"
-#include "ink_assert.h"
-#include "ink_defs.h"
+#include "ts/ink_hrtime.h"
+#include "ts/ink_assert.h"
+#include "ts/ink_defs.h"
 
 #if defined(freebsd)
 #include <sys/types.h>

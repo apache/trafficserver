@@ -37,7 +37,7 @@
 #ifndef _P_NET_VC_TEST_H_
 #define _P_NET_VC_TEST_H_
 
-#include "libts.h"
+#include "ts/ink_platform.h"
 
 class VIO;
 class MIOBuffer;

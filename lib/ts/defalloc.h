@@ -23,7 +23,7 @@
 #ifndef _defalloc_H_
 #define _defalloc_H_
 
-#include "ink_memory.h"
+#include "ts/ink_memory.h"
 
 class DefaultAlloc
 {

@@ -56,7 +56,7 @@ public:
   check_inactivity(int event, Event *e)
   {
     (void)event;
-    ink_hrtime now = ink_get_hrtime();
+    ink_hrtime now = Thread::get_hrtime();
     NetHandler &nh = *get_NetHandler(this_ethread());
 
     Debug("inactivity_cop_check", "Checking inactivity on Thread-ID #%d", this_ethread()->id);
@@ -576,7 +576,7 @@ NetHandler::manage_active_queue()
     return true;
   }
 
-  ink_hrtime now = ink_get_hrtime();
+  ink_hrtime now = Thread::get_hrtime();
 
   // loop over the non-active connections and try to close them
   UnixNetVConnection *vc = active_queue.head;
@@ -614,7 +614,7 @@ void
 NetHandler::manage_keep_alive_queue()
 {
   uint32_t total_connections_in = active_queue_size + keep_alive_queue_size;
-  ink_hrtime now = ink_get_hrtime();
+  ink_hrtime now = Thread::get_hrtime();
 
   Debug("net_queue", "max_connections_per_thread_in: %d total_connections_in: %d active_queue_size: %d keep_alive_queue_size: %d",
         max_connections_per_thread_in, total_connections_in, active_queue_size, keep_alive_queue_size);
@@ -672,7 +672,10 @@ NetHandler::_close_vc(UnixNetVConnection *vc, ink_hrtime now, int &handle_event,
     ++closed;
   } else {
     vc->next_inactivity_timeout_at = now;
-    keep_alive_queue.head->handleEvent(EVENT_IMMEDIATE, NULL);
+    // Found a case where the keep_alive_queue.head was NULL while running regression
+    // with non-standard configuration
+    if (keep_alive_queue.head)
+      keep_alive_queue.head->handleEvent(EVENT_IMMEDIATE, NULL);
     ++handle_event;
   }
 }

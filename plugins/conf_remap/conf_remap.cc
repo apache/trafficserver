@@ -18,7 +18,7 @@
 
 #include "ts/ts.h"
 #include "ts/remap.h"
-#include "ink_defs.h"
+#include "ts/ink_defs.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -90,7 +90,7 @@ RemapConfigs::parse_inline(const char *arg)
   value = std::string(sep + 1, std::distance(sep + 1, arg + strlen(arg)));
 
   if (TSHttpTxnConfigFind(key.c_str(), -1 /* len */, &name, &type) != TS_SUCCESS) {
-    TSError("%s: invalid configuration variable '%s'", PLUGIN_NAME, key.c_str());
+    TSError("[%s] Invalid configuration variable '%s'", PLUGIN_NAME, key.c_str());
     return false;
   }
 
@@ -108,7 +108,7 @@ RemapConfigs::parse_inline(const char *arg)
     }
     break;
   default:
-    TSError("%s: configuration variable '%s' is of an unsupported type", PLUGIN_NAME, key.c_str());
+    TSError("[%s] Configuration variable '%s' is of an unsupported type", PLUGIN_NAME, key.c_str());
     return false;
   }
 
@@ -144,7 +144,7 @@ RemapConfigs::parse_file(const char *filename)
   }
 
   if (NULL == (file = TSfopen(path.c_str(), "r"))) {
-    TSError("%s: could not open config file %s", PLUGIN_NAME, path.c_str());
+    TSError("[%s] Could not open config file %s", PLUGIN_NAME, path.c_str());
     return false;
   }
 
@@ -164,26 +164,26 @@ RemapConfigs::parse_file(const char *filename)
       continue;
 
     if (strncmp(tok, "CONFIG", 6)) {
-      TSError("%s: file %s, line %d: non-CONFIG line encountered", PLUGIN_NAME, path.c_str(), line_num);
+      TSError("[%s] File %s, line %d: non-CONFIG line encountered", PLUGIN_NAME, path.c_str(), line_num);
       continue;
     }
 
     // Find the configuration name
     tok = strtok_r(NULL, " \t", &ln);
     if (TSHttpTxnConfigFind(tok, -1, &name, &expected_type) != TS_SUCCESS) {
-      TSError("%s: file %s, line %d: no records.config name given", PLUGIN_NAME, path.c_str(), line_num);
+      TSError("[%s] File %s, line %d: no records.config name given", PLUGIN_NAME, path.c_str(), line_num);
       continue;
     }
 
     // Find the type (INT or STRING only)
     tok = strtok_r(NULL, " \t", &ln);
     if (TS_RECORDDATATYPE_NULL == (type = str_to_datatype(tok))) {
-      TSError("%s: file %s, line %d: only INT and STRING types supported", PLUGIN_NAME, path.c_str(), line_num);
+      TSError("[%s] file %s, line %d: only INT and STRING types supported", PLUGIN_NAME, path.c_str(), line_num);
       continue;
     }
 
     if (type != expected_type) {
-      TSError("%s: file %s, line %d: mismatch between provide data type, and expected type", PLUGIN_NAME, path.c_str(), line_num);
+      TSError("[%s] file %s, line %d: mismatch between provide data type, and expected type", PLUGIN_NAME, path.c_str(), line_num);
       continue;
     }
 
@@ -207,7 +207,7 @@ RemapConfigs::parse_file(const char *filename)
       tok = NULL;
     }
     if (!tok) {
-      TSError("%s: file %s, line %d: the configuration must provide a value", PLUGIN_NAME, path.c_str(), line_num);
+      TSError("[%s] file %s, line %d: the configuration must provide a value", PLUGIN_NAME, path.c_str(), line_num);
       continue;
     }
 
@@ -226,7 +226,7 @@ RemapConfigs::parse_file(const char *filename)
       }
       break;
     default:
-      TSError("%s: file %s, line %d: type not support (unheard of)", PLUGIN_NAME, path.c_str(), line_num);
+      TSError("[%s] file %s, line %d: type not support (unheard of)", PLUGIN_NAME, path.c_str(), line_num);
       continue;
       break;
     }
@@ -265,7 +265,7 @@ TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSED */, int /* errbuf_size ATS_UNUSED */)
 {
   if (argc < 3) {
-    TSError("Unable to create remap instance, need configuration file");
+    TSError("[%s] Unable to create remap instance, need configuration file", PLUGIN_NAME);
     return TS_ERROR;
   }
 
@@ -334,19 +334,3 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo * /* rri ATS_UNUSED */
 
   return TSREMAP_NO_REMAP; // This plugin never rewrites anything.
 }
-
-
-/*
-  local variables:
-  mode: C++
-  indent-tabs-mode: nil
-  c-basic-offset: 2
-  c-comment-only-line-offset: 0
-  c-file-offsets: ((statement-block-intro . +)
-  (label . 0)
-  (statement-cont . +)
-  (innamespace . 0))
-  end:
-
-  Indent with: /usr/bin/indent -ncs -nut -npcs -l 120 logstats.cc
-*/

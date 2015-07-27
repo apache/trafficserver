@@ -27,7 +27,7 @@
   Commonality across all platforms -- move out as required.
 
 **************************************************************************/
-#include "libts.h"
+#include "ts/ink_platform.h"
 
 #include "P_Net.h"
 

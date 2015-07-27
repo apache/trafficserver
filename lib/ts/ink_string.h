@@ -36,10 +36,10 @@
 #include <memory.h>
 #include <strings.h>
 
-#include "ink_assert.h"
-#include "ink_error.h"
-#include "ParseRules.h"
-#include "ink_apidefs.h"
+#include "ts/ink_assert.h"
+#include "ts/ink_error.h"
+#include "ts/ParseRules.h"
+#include "ts/ink_apidefs.h"
 
 
 /*===========================================================================*

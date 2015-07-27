@@ -21,9 +21,9 @@
   limitations under the License.
  */
 
-#include "ink_config.h"
-#include "apidefs.h"
-#include "libts.h"
+#include "ts/ink_config.h"
+#include "ts/apidefs.h"
+#include "ts/ink_platform.h"
 #include "P_SSLNextProtocolSet.h"
 
 // For currently defined protocol strings, see

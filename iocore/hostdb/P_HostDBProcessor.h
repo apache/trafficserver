@@ -138,6 +138,7 @@ HOSTDB_CLIENT_IP_HASH(sockaddr const *lhs, sockaddr const *rhs)
 // period to wait for a remote probe...
 #define HOST_DB_CLUSTER_TIMEOUT HRTIME_MSECONDS(5000)
 #define HOST_DB_RETRY_PERIOD HRTIME_MSECONDS(20)
+#define HOST_DB_ITERATE_PERIOD HRTIME_MSECONDS(5)
 
 //#define TEST(_x) _x
 #define TEST(_x)
@@ -190,6 +191,18 @@ extern RecRawStatBlock *hostdb_rsb;
 #define HOSTDB_DECREMENT_THREAD_DYN_STAT(_s, _t) RecIncrRawStatSum(hostdb_rsb, _t, (int)_s, -1);
 
 
+struct CmpConstBuffferCaseInsensitive {
+  bool operator()(ts::ConstBuffer a, ts::ConstBuffer b) const { return ptr_len_casecmp(a._ptr, a._size, b._ptr, b._size) < 0; }
+};
+
+// Our own typedef for the host file mapping
+typedef std::map<ts::ConstBuffer, HostDBInfo, CmpConstBuffferCaseInsensitive> HostsFileMap;
+// A to hold a ref-counted map
+struct RefCountedHostsFileMap : public RefCountObj {
+  HostsFileMap hosts_file_map;
+  ats_scoped_str HostFileText;
+};
+
 //
 // HostDBCache (Private)
 //
@@ -209,6 +222,11 @@ struct HostDBCache : public MultiCache<HostDBInfo> {
   {
     return sizeof(HostDBInfo) * 2 + 512 * hostdb_srv_enabled;
   }
+
+  // Map to contain all of the host file overrides, initialize it to empty
+  Ptr<RefCountedHostsFileMap> hosts_file_ptr;
+  // Double buffer the hosts file becase it's small and it solves dangling reference problems.
+  Ptr<RefCountedHostsFileMap> prev_hosts_file_ptr;
 
   Queue<HostDBContinuation, Continuation::Link_link> pending_dns[MULTI_CACHE_PARTITIONS];
   Queue<HostDBContinuation, Continuation::Link_link> &pending_dns_for_hash(INK_MD5 &md5);
@@ -284,9 +302,17 @@ HostDBRoundRobin::select_best_http(sockaddr const *client_ip, ink_time_t now, in
   int best_any = 0;
   int best_up = -1;
 
+  // Basic round robin, increment current and mod with how many we have
   if (HostDBProcessor::hostdb_strict_round_robin) {
     Debug("hostdb", "Using strict round robin");
-    best_up = current++ % good;
+    // Check that the host we selected is alive
+    for (int i = 0; i < good; i++) {
+      best_any = current++ % good;
+      if (info[best_any].alive(now, fail_window)) {
+        best_up = best_any;
+        break;
+      }
+    }
   } else if (HostDBProcessor::hostdb_timed_round_robin > 0) {
     Debug("hostdb", "Using timed round-robin for HTTP");
     if ((now - timed_rr_ctime) > HostDBProcessor::hostdb_timed_round_robin) {
@@ -294,7 +320,13 @@ HostDBRoundRobin::select_best_http(sockaddr const *client_ip, ink_time_t now, in
       ++current;
       timed_rr_ctime = now;
     }
-    best_up = current % good;
+    for (int i = 0; i < good; i++) {
+      best_any = current++ % good;
+      if (info[best_any].alive(now, fail_window)) {
+        best_up = best_any;
+        break;
+      }
+    }
     Debug("hostdb", "Using %d for best_up", best_up);
   } else {
     Debug("hostdb", "Using default round robin");
@@ -308,31 +340,10 @@ HostDBRoundRobin::select_best_http(sockaddr const *client_ip, ink_time_t now, in
         best_any = i;
         best_hash_any = h;
       }
-      if (info[i].app.http_data.last_failure == 0 || (unsigned int)(now - fail_window) > info[i].app.http_data.last_failure) {
-        // Entry is marked up
+      if (info[i].alive(now, fail_window)) {
         if (best_hash_up <= h) {
           best_up = i;
           best_hash_up = h;
-        }
-      } else {
-        // Entry is marked down.  Make sure some nasty clock skew
-        //  did not occur.  Use the retry time to set an upper bound
-        //  as to how far in the future we should tolerate bogus last
-        //  failure times.  This sets the upper bound that we would ever
-        //  consider a server down to 2*down_server_timeout
-        if (now + fail_window < (int32_t)(info[i].app.http_data.last_failure)) {
-#ifdef DEBUG
-          // because this region is mmaped, I cann't get anything
-          //   useful from the structure in core files,  therefore
-          //   copy the revelvant info to the stack so it will
-          //   be readble in the core
-          HostDBInfo current_info;
-          HostDBRoundRobin current_rr;
-          memcpy(&current_info, &info[i], sizeof(HostDBInfo));
-          memcpy(&current_rr, this, sizeof(HostDBRoundRobin));
-#endif
-          ink_assert(!"extreme clock skew");
-          info[i].app.http_data.last_failure = 0;
         }
       }
     }
@@ -461,6 +472,7 @@ struct HostDBContinuation : public Continuation {
   Continuation *from_cont;
   HostDBApplicationInfo app;
   int probe_depth;
+  int current_iterate_pos;
   ClusterMachine *past_probes[CONFIGURATION_HISTORY_PROBE_DEPTH];
   //  char name[MAXDNAME];
   //  int namelen;
@@ -474,6 +486,7 @@ struct HostDBContinuation : public Continuation {
   unsigned int round_robin : 1;
 
   int probeEvent(int event, Event *e);
+  int iterateEvent(int event, Event *e);
   int clusterEvent(int event, Event *e);
   int clusterResponseEvent(int event, Event *e);
   int dnsEvent(int event, HostEnt *e);
@@ -527,7 +540,8 @@ struct HostDBContinuation : public Continuation {
 
   HostDBContinuation()
     : Continuation(NULL), ttl(0), host_res_style(DEFAULT_OPTIONS.host_res_style), dns_lookup_timeout(DEFAULT_OPTIONS.timeout),
-      timeout(0), from(0), from_cont(0), probe_depth(0), missing(false), force_dns(DEFAULT_OPTIONS.force_dns), round_robin(false)
+      timeout(0), from(0), from_cont(0), probe_depth(0), current_iterate_pos(0), missing(false),
+      force_dns(DEFAULT_OPTIONS.force_dns), round_robin(false)
   {
     ink_zero(md5_host_name_store);
     ink_zero(md5.hash);
