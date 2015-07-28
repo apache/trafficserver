@@ -1364,6 +1364,12 @@ HostDBContinuation::lookup_done(IpAddr const &ip, char const *aname, bool around
       }
     }
   }
+
+  const size_t s_size = strlen(aname) + 1;
+  void *host_dest = hostDB.alloc(&i->hostname_offset, s_size);
+  ink_strlcpy((char *)host_dest, aname, s_size);
+  *((char *)host_dest + s_size) = '\0';
+
   if (from_cont)
     do_put_response(from, i, from_cont);
   ink_assert(!i->round_robin || !i->reverse_dns);
@@ -2311,6 +2317,17 @@ HostDBInfo::hostname()
   return (char *)hostDB.ptr(&data.hostname_offset, hostDB.ptr_to_partition((char *)this));
 }
 
+/*
+ * The perm_hostname exists for all records not just reverse dns records.
+ */
+char *
+HostDBInfo::perm_hostname()
+{
+  if (hostname_offset == 0)
+    return NULL;
+
+  return (char *)hostDB.ptr(&hostname_offset, hostDB.ptr_to_partition((char *)this));
+}
 
 HostDBRoundRobin *
 HostDBInfo::rr()
@@ -2373,6 +2390,8 @@ struct ShowHostDB : public ShowCont {
   uint16_t port;
   IpEndpoint ip;
   bool force;
+  bool output_json;
+  int records_seen;
 
   int
   showMain(int event, Event *e)
@@ -2412,8 +2431,12 @@ struct ShowHostDB : public ShowCont {
   int
   showAll(int event, Event *e)
   {
-    CHECK_SHOW(begin("HostDB All Records"));
-    CHECK_SHOW(show("<hr>"));
+    if (!output_json) {
+      CHECK_SHOW(begin("HostDB All Records"));
+      CHECK_SHOW(show("<hr>"));
+    } else {
+      CHECK_SHOW(show("["));
+    }
     SET_HANDLER(&ShowHostDB::showAllEvent);
     hostDBProcessor.iterate(this);
     return EVENT_CONT;
@@ -2424,22 +2447,54 @@ struct ShowHostDB : public ShowCont {
   {
     if (event == EVENT_INTERVAL) {
       HostDBInfo *r = reinterpret_cast<HostDBInfo *>(e);
+      if (output_json && records_seen++ > 0) {
+        CHECK_SHOW(show(",")); // we need to seperate records
+      }
       showOne(r, false, event, e);
       if (r->round_robin) {
         HostDBRoundRobin *rr_data = r->rr();
         if (rr_data) {
-          CHECK_SHOW(show("<table border=1>\n"));
-          CHECK_SHOW(show("<tr><td>%s</td><td>%d</td></tr>\n", "Total", rr_data->rrcount));
-          CHECK_SHOW(show("<tr><td>%s</td><td>%d</td></tr>\n", "Good", rr_data->good));
-          CHECK_SHOW(show("<tr><td>%s</td><td>%d</td></tr>\n", "Current", rr_data->current));
-          CHECK_SHOW(show("</table>\n"));
+          if (!output_json) {
+            CHECK_SHOW(show("<table border=1>\n"));
+            CHECK_SHOW(show("<tr><td>%s</td><td>%d</td></tr>\n", "Total", rr_data->rrcount));
+            CHECK_SHOW(show("<tr><td>%s</td><td>%d</td></tr>\n", "Good", rr_data->good));
+            CHECK_SHOW(show("<tr><td>%s</td><td>%d</td></tr>\n", "Current", rr_data->current));
+            CHECK_SHOW(show("</table>\n"));
+          } else {
+            CHECK_SHOW(show(",\"%s\":\"%d\",", "rr_total", rr_data->rrcount));
+            CHECK_SHOW(show("\"%s\":\"%d\",", "rr_good", rr_data->good));
+            CHECK_SHOW(show("\"%s\":\"%d\",", "rr_current", rr_data->current));
+            CHECK_SHOW(show("\"rr_records\":["));
+          }
 
-          for (int i = 0; i < rr_data->rrcount; i++)
-            showOne(&rr_data->info[i], true, event, e);
+          for (int i = 0; i < rr_data->rrcount; i++) {
+            showOne(&rr_data->info[i], true, event, e, rr_data);
+            if (output_json) {
+              CHECK_SHOW(show("}")); // we need to seperate records
+              if (i < (rr_data->rrcount - 1))
+                CHECK_SHOW(show(","));
+            }
+          }
+
+          if (!output_json) {
+            CHECK_SHOW(show("<br />\n<br />\n"));
+          } else {
+            CHECK_SHOW(show("]"));
+          }
         }
       }
+
+      if (output_json) {
+        CHECK_SHOW(show("}"));
+      }
+
     } else if (event == EVENT_DONE) {
-      return complete(event, e);
+      if (output_json) {
+        CHECK_SHOW(show("]"));
+        return completeJson(event, e);
+      } else {
+        return complete(event, e);
+      }
     } else {
       ink_assert(!"unexpected event");
     }
@@ -2448,30 +2503,73 @@ struct ShowHostDB : public ShowCont {
 
 
   int
-  showOne(HostDBInfo *r, bool rr, int event, Event *e)
+  showOne(HostDBInfo *r, bool rr, int event, Event *e, HostDBRoundRobin *hostdb_rr = NULL)
   {
     ip_text_buffer b;
-    CHECK_SHOW(show("<table border=1>\n"));
-    CHECK_SHOW(show("<tr><td>%s</td><td>%s%s</td></tr>\n", "Type", r->round_robin ? "Round-Robin" : "",
-                    r->reverse_dns ? "Reverse DNS" : "DNS"));
+    if (!output_json) {
+      CHECK_SHOW(show("<table border=1>\n"));
+      CHECK_SHOW(show("<tr><td>%s</td><td>%s%s %s</td></tr>\n", "Type", r->round_robin ? "Round-Robin" : "",
+                      r->reverse_dns ? "Reverse DNS" : "", r->is_srv ? "SRV" : "DNS"));
 
-    // Let's display the MD5.
-    CHECK_SHOW(show("<tr><td>%s</td><td>%0.16llx %0.8x %0.8x</td></tr>\n", "MD5 (high, low, low low)", r->md5_high, r->md5_low,
-                    r->md5_low_low));
-    CHECK_SHOW(show("<tr><td>%s</td><td>%u</td></tr>\n", "App1", r->app.allotment.application1));
-    CHECK_SHOW(show("<tr><td>%s</td><td>%u</td></tr>\n", "App2", r->app.allotment.application2));
-    CHECK_SHOW(show("<tr><td>%s</td><td>%u</td></tr>\n", "LastFailure", r->app.http_data.last_failure));
-    if (!rr) {
-      CHECK_SHOW(show("<tr><td>%s</td><td>%s</td></tr>\n", "Stale", r->is_ip_stale() ? "Yes" : "No"));
-      CHECK_SHOW(show("<tr><td>%s</td><td>%s</td></tr>\n", "Timed-Out", r->is_ip_timeout() ? "Yes" : "No"));
-      CHECK_SHOW(show("<tr><td>%s</td><td>%d</td></tr>\n", "TTL", r->ip_time_remaining()));
-    }
-    if (r->reverse_dns) {
-      CHECK_SHOW(show("<tr><td>%s</td><td>%s</td></tr>\n", "Hostname", r->hostname() ? r->hostname() : "<none>"));
+      if (r->perm_hostname()) {
+        CHECK_SHOW(show("<tr><td>%s</td><td>%s</td></tr>\n", "Hostname", r->perm_hostname()));
+      } else if (rr && r->is_srv && hostdb_rr) {
+        CHECK_SHOW(show("<tr><td>%s</td><td>%s</td></tr>\n", "Hostname", r->srvname(hostdb_rr)));
+      }
+
+      // Let's display the MD5.
+      CHECK_SHOW(show("<tr><td>%s</td><td>%0.16llx %0.8x %0.8x</td></tr>\n", "MD5 (high, low, low low)", r->md5_high, r->md5_low,
+                      r->md5_low_low));
+      CHECK_SHOW(show("<tr><td>%s</td><td>%u</td></tr>\n", "App1", r->app.allotment.application1));
+      CHECK_SHOW(show("<tr><td>%s</td><td>%u</td></tr>\n", "App2", r->app.allotment.application2));
+      CHECK_SHOW(show("<tr><td>%s</td><td>%u</td></tr>\n", "LastFailure", r->app.http_data.last_failure));
+      if (!rr) {
+        CHECK_SHOW(show("<tr><td>%s</td><td>%s</td></tr>\n", "Stale", r->is_ip_stale() ? "Yes" : "No"));
+        CHECK_SHOW(show("<tr><td>%s</td><td>%s</td></tr>\n", "Timed-Out", r->is_ip_timeout() ? "Yes" : "No"));
+        CHECK_SHOW(show("<tr><td>%s</td><td>%d</td></tr>\n", "TTL", r->ip_time_remaining()));
+      }
+
+      if (rr && r->is_srv) {
+        CHECK_SHOW(show("<tr><td>%s</td><td>%d</td></tr>\n", "Weight", r->data.srv.srv_weight));
+        CHECK_SHOW(show("<tr><td>%s</td><td>%d</td></tr>\n", "Priority", r->data.srv.srv_priority));
+        CHECK_SHOW(show("<tr><td>%s</td><td>%d</td></tr>\n", "Port", r->data.srv.srv_port));
+        CHECK_SHOW(show("<tr><td>%s</td><td>%x</td></tr>\n", "Key", r->data.srv.key));
+      } else if (!r->is_srv) {
+        CHECK_SHOW(show("<tr><td>%s</td><td>%s</td></tr>\n", "IP", ats_ip_ntop(r->ip(), b, sizeof b)));
+      }
+
+      CHECK_SHOW(show("</table>\n"));
     } else {
-      CHECK_SHOW(show("<tr><td>%s</td><td>%s</td></tr>\n", "IP", ats_ip_ntop(r->ip(), b, sizeof b)));
+      CHECK_SHOW(show("{"));
+      CHECK_SHOW(show("\"%s\":\"%s%s%s\",", "type", (r->round_robin && !r->is_srv) ? "roundrobin" : "",
+                      r->reverse_dns ? "reversedns" : "", r->is_srv ? "srv" : "dns"));
+
+      if (r->perm_hostname()) {
+        CHECK_SHOW(show("\"%s\":\"%s\",", "hostname", r->perm_hostname()));
+      } else if (rr && r->is_srv && hostdb_rr) {
+        CHECK_SHOW(show("\"%s\":\"%s\",", "hostname", r->srvname(hostdb_rr)));
+      }
+
+      CHECK_SHOW(show("\"%s\":\"%u\",", "app1", r->app.allotment.application1));
+      CHECK_SHOW(show("\"%s\":\"%u\",", "app2", r->app.allotment.application2));
+      CHECK_SHOW(show("\"%s\":\"%u\",", "lastfailure", r->app.http_data.last_failure));
+      if (!rr) {
+        CHECK_SHOW(show("\"%s\":\"%s\",", "stale", r->is_ip_stale() ? "yes" : "no"));
+        CHECK_SHOW(show("\"%s\":\"%s\",", "timedout", r->is_ip_timeout() ? "yes" : "no"));
+        CHECK_SHOW(show("\"%s\":\"%d\",", "ttl", r->ip_time_remaining()));
+      }
+
+      if (rr && r->is_srv) {
+        CHECK_SHOW(show("\"%s\":\"%d\",", "weight", r->data.srv.srv_weight));
+        CHECK_SHOW(show("\"%s\":\"%d\",", "priority", r->data.srv.srv_priority));
+        CHECK_SHOW(show("\"%s\":\"%d\",", "port", r->data.srv.srv_port));
+        CHECK_SHOW(show("\"%s\":\"%x\",", "key", r->data.srv.key));
+      } else if (!r->is_srv) {
+        CHECK_SHOW(show("\"%s\":\"%s\",", "ip", ats_ip_ntop(r->ip(), b, sizeof b)));
+      }
+      // Let's display the MD5.
+      CHECK_SHOW(show("\"%s\":\"%0.16llx %0.8x %0.8x\"", "md5", r->md5_high, r->md5_low, r->md5_low_low));
     }
-    CHECK_SHOW(show("</table>\n"));
     return EVENT_CONT;
   }
 
@@ -2499,11 +2597,11 @@ struct ShowHostDB : public ShowCont {
           CHECK_SHOW(show("</table>\n"));
 
           for (int i = 0; i < rr_data->rrcount; i++)
-            showOne(&rr_data->info[i], true, event, e);
+            showOne(&rr_data->info[i], true, event, e, rr_data);
         }
       }
     } else {
-      if (name) {
+      if (!name) {
         ip_text_buffer b;
         CHECK_SHOW(show("<H2>%s Not Found</H2>\n", ats_ip_ntop(&ip.sa, b, sizeof b)));
       } else {
@@ -2514,7 +2612,7 @@ struct ShowHostDB : public ShowCont {
   }
 
 
-  ShowHostDB(Continuation *c, HTTPHdr *h) : ShowCont(c, h), name(0), port(0), force(0)
+  ShowHostDB(Continuation *c, HTTPHdr *h) : ShowCont(c, h), name(0), port(0), force(0), output_json(false), records_seen(0)
   {
     ats_ip_invalidate(&ip);
     SET_HANDLER(&ShowHostDB::showMain);
@@ -2564,6 +2662,11 @@ register_ShowHostDB(Continuation *c, HTTPHdr *h)
     }
     SET_CONTINUATION_HANDLER(s, &ShowHostDB::showLookup);
   } else if (STR_LEN_EQ_PREFIX(path, path_len, "showall")) {
+    int query_len = 0;
+    const char *query = h->url_get()->query_get(&query_len);
+    if (strstr(query, "json")) {
+      s->output_json = true;
+    }
     Debug("hostdb", "dumping all hostdb records");
     SET_CONTINUATION_HANDLER(s, &ShowHostDB::showAll);
   }

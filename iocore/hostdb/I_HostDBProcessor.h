@@ -156,6 +156,7 @@ struct HostDBInfo {
   }
 
   char *hostname();
+  char *perm_hostname();
   char *srvname(HostDBRoundRobin *rr);
   /// Check if this entry is the root of a round robin entry.
   /// If @c true then this entry needs to be converted to a specific element of the round robin to be used.
@@ -255,6 +256,8 @@ struct HostDBInfo {
     int hostname_offset; ///< Some hostname thing.
     SRVInfo srv;
   } data;
+
+  int hostname_offset; // always maintain a permanent copy of the hostname for non-rev dns records.
 
   unsigned int ip_timestamp;
   // limited to HOST_DB_MAX_TTL (0x1FFFFF, 24 days)
