@@ -186,6 +186,14 @@ SSL_CTX_add_extra_chain_cert_file(SSL_CTX *ctx, const char *chainfile)
   return true;
 }
 
+bool
+ssl_session_timed_out(SSL_SESSION *session)
+{
+  return SSL_SESSION_get_timeout(session) < (long)(time(NULL) - SSL_SESSION_get_time(session));
+}
+
+static void ssl_rm_cached_session(SSL_CTX *ctx, SSL_SESSION *sess);
+
 static SSL_SESSION *
 ssl_get_cached_session(SSL *ssl, unsigned char *id, int len, int *copy)
 {
@@ -220,8 +228,7 @@ ssl_get_cached_session(SSL *ssl, unsigned char *id, int len, int *copy)
   } else {
     SSL_INCREMENT_DYN_STAT(ssl_session_cache_miss);
   }
-
-  return NULL;
+  return session;
 }
 
 static int
