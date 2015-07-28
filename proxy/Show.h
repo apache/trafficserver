@@ -87,9 +87,8 @@ public:
     return complete_error(event, e);
 
   int
-  complete(int event, Event *e)
+  finishConn(int event, Event *e)
   {
-    CHECK_SHOW(show("</BODY>\n</HTML>\n"));
     if (!action.cancelled) {
       StatPageData data(start, buf - start);
       action.continuation->handleEvent(STAT_PAGE_SUCCESS, &data);
@@ -99,6 +98,19 @@ public:
       start = NULL;
     }
     return done(VIO::CLOSE, event, e);
+  }
+
+  int
+  complete(int event, Event *e)
+  {
+    CHECK_SHOW(show("</BODY>\n</HTML>\n"));
+    return finishConn(event, e);
+  }
+
+  int
+  completeJson(int event, Event *e)
+  {
+    return finishConn(event, e);
   }
 
   int

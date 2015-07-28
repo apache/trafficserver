@@ -482,6 +482,14 @@ spdy_process_fetch_body(TSEvent event, SpdyClientSession *sm, TSFetchSM fetch_sm
 void
 SpdyClientSession::do_io_close(int alertno)
 {
+  if (vc) {
+    // vc is released (null'ed) within ProxyClientSession when handling
+    // TS_HTTP_SSN_CLOSE_HOOK, so, reset ssl_iobuf to prevent double free
+    SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(vc);
+    if (ssl_vc) {
+      ssl_vc->set_ssl_iobuf(NULL);
+    }
+  }
   // The object will be cleaned up from within ProxyClientSession::handle_api_return
   // This way, the object will still be alive for any SSN_CLOSE hooks
   do_api_callout(TS_HTTP_SSN_CLOSE_HOOK);
