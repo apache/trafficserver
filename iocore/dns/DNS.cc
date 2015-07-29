@@ -883,6 +883,13 @@ write_dns(DNSHandler *h)
   int max_nscount = h->m_res->nscount;
   if (max_nscount > MAX_NAMED)
     max_nscount = MAX_NAMED;
+  if (max_nscount <= 0) {
+    Warning("There is no name server found in the resolv.conf");
+    if (h->entries.head) {
+      dns_result(h, h->entries.head, NULL, false);
+    }
+    return;
+  }
 
   if (h->in_write_dns)
     return;
