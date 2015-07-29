@@ -1365,10 +1365,18 @@ HostDBContinuation::lookup_done(IpAddr const &ip, char const *aname, bool around
     }
   }
 
-  const size_t s_size = strlen(aname) + 1;
-  void *host_dest = hostDB.alloc(&i->hostname_offset, s_size);
-  ink_strlcpy((char *)host_dest, aname, s_size);
-  *((char *)host_dest + s_size) = '\0';
+  if (aname) {
+    const size_t s_size = strlen(aname) + 1;
+    void *host_dest = hostDB.alloc(&i->hostname_offset, s_size);
+    if (host_dest) {
+      ink_strlcpy((char *)host_dest, aname, s_size);
+      *((char *)host_dest + s_size) = '\0';
+    } else {
+      Warning("Out of room in hostdb for hostname (data area full!)");
+      hostDB.delete_block(i);
+      return NULL;
+    }
+  }
 
   if (from_cont)
     do_put_response(from, i, from_cont);
