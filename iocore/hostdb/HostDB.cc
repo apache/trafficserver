@@ -2672,7 +2672,7 @@ register_ShowHostDB(Continuation *c, HTTPHdr *h)
   } else if (STR_LEN_EQ_PREFIX(path, path_len, "showall")) {
     int query_len = 0;
     const char *query = h->url_get()->query_get(&query_len);
-    if (strstr(query, "json")) {
+    if (query && query_len && strstr(query, "json")) {
       s->output_json = true;
     }
     Debug("hostdb", "dumping all hostdb records");
