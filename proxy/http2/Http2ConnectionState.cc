@@ -614,23 +614,11 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
     // determination that HTTP/2 will be used by both peers, each endpoint MUST
     // send a connection preface as a final confirmation ... The server connection
     // preface consists of a potentially empty SETTINGS frame.
-    Http2Frame settings(HTTP2_FRAME_TYPE_SETTINGS, 0, 0);
-    settings.alloc(buffer_size_index[HTTP2_FRAME_TYPE_SETTINGS]);
 
-    // Send all settings values
-    IOVec iov = settings.write();
-    for (int i = 1; i < HTTP2_SETTINGS_MAX; i++) {
-      Http2SettingsIdentifier id = static_cast<Http2SettingsIdentifier>(i);
-      Http2SettingsParameter param;
-      param.id = id;
-      param.value = server_settings.get(id);
-      http2_write_settings(param, iov);
-      iov.iov_base = reinterpret_cast<uint8_t *>(iov.iov_base) + HTTP2_SETTINGS_PARAMETER_LEN;
-      iov.iov_len -= HTTP2_SETTINGS_PARAMETER_LEN;
-    }
-
-    settings.finalize(HTTP2_SETTINGS_PARAMETER_LEN * (HTTP2_SETTINGS_MAX - 1));
-    this->ua_session->handleEvent(HTTP2_SESSION_EVENT_XMIT, &settings);
+    // Load the server settings from the records.config / RecordsConfig.cc settings.
+    Http2ConnectionSettings configured_settings;
+    configured_settings.settings_from_configs();
+    send_settings_frame(configured_settings);
 
     if (server_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE) > HTTP2_INITIAL_WINDOW_SIZE) {
       send_window_update_frame(0, server_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE) - HTTP2_INITIAL_WINDOW_SIZE);
@@ -952,6 +940,41 @@ Http2ConnectionState::send_rst_stream_frame(Http2StreamId id, Http2ErrorCode ec)
   // xmit event
   SCOPED_MUTEX_LOCK(lock, this->ua_session->mutex, this_ethread());
   this->ua_session->handleEvent(HTTP2_SESSION_EVENT_XMIT, &rst_stream);
+}
+
+void
+Http2ConnectionState::send_settings_frame(const Http2ConnectionSettings &new_settings)
+{
+  Http2Frame settings(HTTP2_FRAME_TYPE_SETTINGS, 0, 0);
+  settings.alloc(buffer_size_index[HTTP2_FRAME_TYPE_SETTINGS]);
+
+  IOVec iov = settings.write();
+  uint32_t settings_length = 0;
+
+  for (int i = HTTP2_SETTINGS_HEADER_TABLE_SIZE; i < HTTP2_SETTINGS_MAX; ++i) {
+    Http2SettingsIdentifier id = static_cast<Http2SettingsIdentifier>(i);
+    unsigned settings_value = new_settings.get(id);
+
+    // Send only difference
+    if (settings_value != server_settings.get(id)) {
+      const Http2SettingsParameter param = {static_cast<uint16_t>(id), settings_value};
+
+      // Write settings to send buffer
+      if (!http2_write_settings(param, iov)) {
+        send_goaway_frame(0, HTTP2_ERROR_INTERNAL_ERROR);
+        return;
+      }
+      iov.iov_base = reinterpret_cast<uint8_t *>(iov.iov_base) + HTTP2_SETTINGS_PARAMETER_LEN;
+      iov.iov_len -= HTTP2_SETTINGS_PARAMETER_LEN;
+      settings_length += HTTP2_SETTINGS_PARAMETER_LEN;
+
+      // Update current settings
+      server_settings.set(id, new_settings.get(id));
+    }
+  }
+
+  settings.finalize(settings_length);
+  this->ua_session->handleEvent(HTTP2_SESSION_EVENT_XMIT, &settings);
 }
 
 void

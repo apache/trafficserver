@@ -270,7 +270,7 @@ bool http2_write_headers(const uint8_t *, size_t, const IOVec &);
 
 bool http2_write_rst_stream(uint32_t, IOVec);
 
-bool http2_write_settings(const Http2SettingsParameter &, IOVec);
+bool http2_write_settings(const Http2SettingsParameter &, const IOVec &);
 
 bool http2_write_ping(const uint8_t *, IOVec);
 

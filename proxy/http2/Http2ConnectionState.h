@@ -223,9 +223,6 @@ public:
 
     continued_buffer.iov_base = NULL;
     continued_buffer.iov_len = 0;
-
-    // Load the server settings from the records.config / RecordsConfig.cc settings.
-    server_settings.settings_from_configs();
   }
 
   void
@@ -273,6 +270,7 @@ public:
   void send_data_frame(FetchSM *fetch_sm);
   void send_headers_frame(FetchSM *fetch_sm);
   void send_rst_stream_frame(Http2StreamId id, Http2ErrorCode ec);
+  void send_settings_frame(const Http2ConnectionSettings &new_settings);
   void send_ping_frame(Http2StreamId id, uint8_t flag, const uint8_t *opaque_data);
   void send_goaway_frame(Http2StreamId id, Http2ErrorCode ec);
   void send_window_update_frame(Http2StreamId id, uint32_t size);
