@@ -653,9 +653,11 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
     Http2StreamId last_streamid = frame->header().streamid;
     Http2ErrorCode error;
 
-    //  Implementations MUST ignore and discard any frame that has a type that is unknown.
-    ink_assert(frame->header().type < HTTP2_FRAME_TYPE_MAX);
+    // 5.5 Extending HTTP/2
+    //   Implementations MUST discard frames that have unknown or unsupported types.
     if (frame->header().type >= HTTP2_FRAME_TYPE_MAX) {
+      DebugSsn(this->ua_session, "http2_cs", "[%" PRId64 "] Discard a frame which has unknown type, type=%x",
+               this->ua_session->connection_id(), frame->header().type);
       return 0;
     }
 
