@@ -254,7 +254,7 @@ mgmt_synthetic_main(void *)
       mgmt_log(stderr, "[SyntheticHealthServer] Connect by disallowed client %s, closing\n", inet_ntoa(clientInfo.sin_addr));
       close_socket(clientFD);
     } else {
-      ink_thread thrId = ink_thread_create(synthetic_thread, (void *)&clientFD);
+      ink_thread thrId = ink_thread_create(synthetic_thread, (void *)&clientFD, 1);
 
       if (thrId <= 0) {
         mgmt_log(stderr, "[SyntheticHealthServer] Failed to create worker thread");
