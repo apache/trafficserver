@@ -117,7 +117,12 @@ public:
     ink_release_assert(false);
     return NULL;
   }
-  void start();
+
+  void
+  start()
+  {
+    ink_release_assert(false);
+  }
 
   void do_io_close(int lerrno = -1);
   void
