@@ -523,9 +523,6 @@ sub show_logging {
   my $preproc_threads = get_on_off("proxy.config.log.collation_preproc_threads");
   my $orphan_space = get_int("proxy.config.log.max_space_mb_for_orphan_logs");
 
-  my $icp_log = get_on_off("proxy.config.log.separate_icp_logs");
-  my $http_host_log = get_on_off("proxy.config.log.separate_host_logs");
-
   my $custom_log = get_on_off("proxy.config.log.custom_logs_enabled");
 
   my $rolling = get_on_off("proxy.config.log.rolling_enabled");
@@ -547,10 +544,6 @@ Log Collation ---------------------------- $collation_mode
   Host Tagged ---------------------------- $host_tag
   Preproc Threads ------------------------ $preproc_threads
   Space Limit for Orphan Files ----------- $orphan_space MB
-
-Splitting
-  ICP Log Splitting ---------------------- $icp_log
-  HTTP Host Log Splitting ---------------- $http_host_log
 
 Custom Logs ------------------------------ $custom_log
 

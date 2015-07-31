@@ -81,9 +81,6 @@ LogConfig::setup_default_values()
   logfile_perm = 0644;
   logfile_dir = ats_strdup(".");
 
-  separate_icp_logs = 1;
-  separate_host_logs = false;
-
   collation_mode = Log::NO_COLLATION;
   collation_host = ats_strdup("none");
   collation_port = 0;
@@ -201,32 +198,6 @@ LogConfig::read_configuration_variables()
     fprintf(stderr, "please set 'proxy.config.log.logfile_dir'\n");
     _exit(1);
   }
-
-  //
-  // for each predefined logging format, we need to know:
-  //   - whether logging in that format is enabled
-  //   - if we're logging to a file, what the name and format (ASCII,
-  //     BINARY) are
-  //   - what header should be written down at the start of each file for
-  //     this format
-  // this is accomplished with four config variables per format:
-  //   "proxy.config.log.<format>_log_enabled" INT
-  //   "proxy.config.log.<format>_log_is_ascii" INT
-  //   "proxy.config.log.<format>_log_name" STRING
-  //   "proxy.config.log.<format>_log_header" STRING
-  //
-
-  // SPLITTING
-  // 0 means no splitting
-  // 1 means splitting
-  // for icp
-  //   -1 means filter out (do not log and do not create split file)
-  val = (int)REC_ConfigReadInteger("proxy.config.log.separate_icp_logs");
-  separate_icp_logs = (val > 0);
-
-  val = (int)REC_ConfigReadInteger("proxy.config.log.separate_host_logs");
-  separate_host_logs = (val > 0);
-
 
   // COLLATION
   val = (int)REC_ConfigReadInteger("proxy.local.log.collation_mode");
@@ -510,8 +481,6 @@ LogConfig::display(FILE *fd)
   fprintf(fd, "   hostname = %s\n", hostname);
   fprintf(fd, "   logfile_dir = %s\n", logfile_dir);
   fprintf(fd, "   logfile_perm = 0%o\n", logfile_perm);
-  fprintf(fd, "   separate_icp_logs = %d\n", separate_icp_logs);
-  fprintf(fd, "   separate_host_logs = %d\n", separate_host_logs);
   fprintf(fd, "   collation_mode = %d\n", collation_mode);
   fprintf(fd, "   collation_host = %s\n", collation_host);
   fprintf(fd, "   collation_port = %d\n", collation_port);
@@ -539,129 +508,13 @@ LogConfig::display(FILE *fd)
 }
 
 //-----------------------------------------------------------------------------
-// split_by_protocol
-//
-// This function creates the objects needed to log different protocols on
-// their own file if any of the "separate_xxx_logs" config. variable is set.
-//
-// Upon return, the pf_list argument holds the filters that reject the
-// protocols for which objects have been created. This filter list is used
-// to create the rest of the pre defined log objects.
-//
-// As input, this function requires a list wilh all information regarding
-// pre-defined formats.
-//
-LogFilter *
-LogConfig::split_by_protocol()
-{
-  if (!separate_icp_logs) {
-    return NULL;
-  }
-  // http MUST be last entry
-  enum {
-    icp = 0,
-    http,
-  };
-
-  int64_t value[] = {LOG_ENTRY_ICP, LOG_ENTRY_HTTP};
-  const char *filter_name[] = {"__icp__", "__http__"};
-  int64_t filter_val[http]; // protocols to reject
-  size_t n = 0;
-
-  LogField *etype_field = Log::global_field_list.find_by_symbol("etype");
-  ink_assert(etype_field);
-
-  if (separate_icp_logs) {
-    if (separate_icp_logs == 1) {
-      LogFilter *filter[1];
-
-      filter[0] = new LogFilterInt(filter_name[icp], etype_field, LogFilter::ACCEPT, LogFilter::MATCH, value[icp]);
-      delete filter[0];
-    }
-    filter_val[n++] = value[icp];
-  }
-
-  // At this point, separate objects for all protocols except http
-  // have been created if requested. We now add to the argument list
-  // the filters needed to reject the protocols that have already
-  // been taken care of. Note that we do not test for http since
-  // there is no "separate_http_logs" config variable and thus http
-  // could not have been taken care of at this point
-  //
-
-  if (n > 0) {
-    return new LogFilterInt("__reject_protocols__", etype_field, LogFilter::REJECT, LogFilter::MATCH, n, filter_val);
-  }
-  return NULL;
-}
-
-size_t
-LogConfig::split_by_hostname(LogFilter *reject_protocol_filter)
-{
-  size_t n_hosts;
-  char **host = read_log_hosts_file(&n_hosts); // allocates memory for array
-
-  if (n_hosts) {
-    size_t num_filt = 0;
-    LogFilter *rp_ah[2]; // rejected protocols + accepted host
-    LogField *shn_field = Log::global_field_list.find_by_symbol("shn");
-    ink_assert(shn_field);
-
-    if (reject_protocol_filter) {
-      rp_ah[num_filt++] = reject_protocol_filter;
-    }
-
-    for (size_t i = 0; i < n_hosts; ++i) {
-      // add a filter that accepts the specified hostname
-      //
-      char filter_name[LOG_MAX_FORMAT_LINE + 12];
-      snprintf(filter_name, LOG_MAX_FORMAT_LINE, "__accept_%s__", host[i]);
-      rp_ah[num_filt] =
-        new LogFilterString(filter_name, shn_field, LogFilter::ACCEPT, LogFilter::CASE_INSENSITIVE_CONTAIN, host[i]);
-
-      delete rp_ah[num_filt];
-    }
-
-    LogFilter *rp_rh[2]; // rejected protocols + rejected hosts
-
-    num_filt = 0;
-
-    if (reject_protocol_filter) {
-      rp_rh[num_filt++] = reject_protocol_filter;
-    }
-
-    rp_rh[num_filt] =
-      new LogFilterString("__reject_hosts__", shn_field, LogFilter::REJECT, LogFilter::CASE_INSENSITIVE_CONTAIN, n_hosts, host);
-
-    // create the "catch-all" object that contains logs for all
-    // hosts other than those specified in the hosts file and for
-    // those protocols that do not have their own file
-    //
-
-    delete rp_rh[num_filt];
-
-    delete[] host; // deallocate memory allocated by
-    // read_log_hosts_file
-  }
-  // host is not allocated unless n_hosts > 0
-  // coverity[leaked_storage]
-  return n_hosts;
-}
-
-//-----------------------------------------------------------------------------
 // setup_log_objects
 //
-// Construct:
-//
-// -All objects necessary to log the pre defined formats considering
-//  protocol and host splitting.
-// -All custom objects.
+// Construct: All custom objects.
 //
 // Upon return from this function:
 // - global_object_list has the aforementioned objects
 // - global_filter_list has all custom filters
-//   Note that the filters necessary to do log splitting for the pre defined
-//   format are kept private (e.g., they do not go to the global_filter_list).
 //
 void
 LogConfig::setup_log_objects()
@@ -719,14 +572,13 @@ LogConfig::register_config_callbacks()
   static const char *names[] = {
     "proxy.config.log.log_buffer_size", "proxy.config.log.max_secs_per_buffer", "proxy.config.log.max_space_mb_for_logs",
     "proxy.config.log.max_space_mb_for_orphan_logs", "proxy.config.log.max_space_mb_headroom", "proxy.config.log.logfile_perm",
-    "proxy.config.log.hostname", "proxy.config.log.logfile_dir", "proxy.config.log.separate_icp_logs",
-    "proxy.config.log.separate_host_logs", "proxy.local.log.collation_mode", "proxy.config.log.collation_host",
-    "proxy.config.log.collation_port", "proxy.config.log.collation_host_tagged", "proxy.config.log.collation_secret",
-    "proxy.config.log.collation_retry_sec", "proxy.config.log.collation_max_send_buffers", "proxy.config.log.rolling_enabled",
-    "proxy.config.log.rolling_interval_sec", "proxy.config.log.rolling_offset_hr", "proxy.config.log.rolling_size_mb",
-    "proxy.config.log.auto_delete_rolled_files", "proxy.config.log.custom_logs_enabled", "proxy.config.log.xml_config_file",
-    "proxy.config.log.hosts_config_file", "proxy.config.log.sampling_frequency", "proxy.config.log.file_stat_frequency",
-    "proxy.config.log.space_used_frequency",
+    "proxy.config.log.hostname", "proxy.config.log.logfile_dir", "proxy.local.log.collation_mode",
+    "proxy.config.log.collation_host", "proxy.config.log.collation_port", "proxy.config.log.collation_host_tagged",
+    "proxy.config.log.collation_secret", "proxy.config.log.collation_retry_sec", "proxy.config.log.collation_max_send_buffers",
+    "proxy.config.log.rolling_enabled", "proxy.config.log.rolling_interval_sec", "proxy.config.log.rolling_offset_hr",
+    "proxy.config.log.rolling_size_mb", "proxy.config.log.auto_delete_rolled_files", "proxy.config.log.custom_logs_enabled",
+    "proxy.config.log.xml_config_file", "proxy.config.log.hosts_config_file", "proxy.config.log.sampling_frequency",
+    "proxy.config.log.file_stat_frequency", "proxy.config.log.space_used_frequency",
   };
 
 
