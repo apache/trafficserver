@@ -24,6 +24,7 @@
 #include "traffic_ctl.h"
 #include <time.h>
 #include <I_RecDefs.h>
+#include <P_RecUtils.h>
 
 // Record data type names, indexed by TSRecordT.
 static const char *
@@ -145,8 +146,20 @@ format_record(const CtrlMgmtRecord &record, bool recfmt)
   CtrlMgmtRecordValue value(record);
 
   if (recfmt) {
-    // XXX Detect CONFIG or LOCAL ...
-    printf("CONFIG %s %s %s\n", record.name(), rec_typeof(record.type()), value.c_str());
+    const char *label;
+
+    switch (record.rclass()) {
+    case RECT_CONFIG:
+      label = "CONFIG ";
+      break;
+    case RECT_LOCAL:
+      label = "LOCAL ";
+      break;
+    default:
+      label = "";
+    }
+
+    printf("%s%s %s %s\n", label, record.name(), rec_typeof(record.type()), value.c_str());
   } else {
     printf("%s: %s\n", record.name(), value.c_str());
   }
@@ -174,7 +187,9 @@ config_get(unsigned argc, const char **argv)
       return CTRL_EX_ERROR;
     }
 
-    format_record(record, recfmt);
+    if (REC_TYPE_IS_CONFIG(record.rclass())) {
+      format_record(record, recfmt);
+    }
   }
 
   return CTRL_EX_OK;
@@ -285,7 +300,9 @@ config_match(unsigned argc, const char **argv)
 
     while (!reclist.empty()) {
       CtrlMgmtRecord record(reclist.next());
-      format_record(record, recfmt);
+      if (REC_TYPE_IS_CONFIG(record.rclass())) {
+        format_record(record, recfmt);
+      }
     }
   }
 

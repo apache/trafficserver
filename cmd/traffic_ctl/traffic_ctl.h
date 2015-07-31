@@ -79,6 +79,7 @@ struct CtrlMgmtRecord {
 
   const char *name() const;
   TSRecordT type() const;
+  int rclass() const;
   int64_t as_int() const;
 
 private:

@@ -498,6 +498,7 @@ mgmt_record_get_reply(OpType op, TSRecordEle *rec_ele)
 
   MgmtMarshallData reply = {NULL, 0};
   MgmtMarshallInt err;
+  MgmtMarshallInt rclass;
   MgmtMarshallInt type;
   MgmtMarshallString name = NULL;
   MgmtMarshallData value = {NULL, 0};
@@ -511,7 +512,7 @@ mgmt_record_get_reply(OpType op, TSRecordEle *rec_ele)
     return ret;
   }
 
-  ret = recv_mgmt_response(reply.ptr, reply.len, op, &err, &type, &name, &value);
+  ret = recv_mgmt_response(reply.ptr, reply.len, op, &err, &rclass, &type, &name, &value);
   ats_free(reply.ptr);
   if (ret != TS_ERR_OKAY) {
     goto done;
@@ -522,6 +523,7 @@ mgmt_record_get_reply(OpType op, TSRecordEle *rec_ele)
     goto done;
   }
 
+  rec_ele->rec_class = (TSInt)rclass;
   rec_ele->rec_type = (TSRecordT)type;
   rec_ele->rec_name = ats_strdup(name);
   mgmt_record_convert_value(rec_ele->rec_type, value, rec_ele->valueT);

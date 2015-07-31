@@ -397,6 +397,7 @@ typedef union {/* record value */
 
 typedef struct {
   char *rec_name;        /* record name */
+  TSInt rec_class;       /* record class (RecT) */
   TSRecordT rec_type;    /* record type {TS_REC_INT...} */
   TSRecordValueT valueT; /* record value */
 } TSRecordEle;

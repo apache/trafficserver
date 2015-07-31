@@ -37,6 +37,12 @@ CtrlMgmtRecord::type() const
   return this->ele->rec_type;
 }
 
+int
+CtrlMgmtRecord::rclass() const
+{
+  return this->ele->rec_class;
+}
+
 int64_t
 CtrlMgmtRecord::as_int() const
 {
