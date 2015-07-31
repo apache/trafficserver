@@ -74,6 +74,7 @@ extern RecRawStatBlock *log_rsb;
 
 struct dirent;
 struct LogCollationAccept;
+
 /*-------------------------------------------------------------------------
   this object keeps the state of the logging configuraion variables.  upon
   construction, the log configuration file is read and the logging
@@ -176,8 +177,6 @@ public:
   int max_space_mb_for_orphan_logs;
   int max_space_mb_headroom;
   int logfile_perm;
-  bool separate_icp_logs;
-  bool separate_host_logs;
   int collation_mode;
   int collation_port;
   bool collation_host_tagged;
@@ -209,9 +208,6 @@ private:
 
   void setup_default_values();
   void setup_collation(LogConfig *prev_config);
-
-  LogFilter *split_by_protocol();
-  size_t split_by_hostname(LogFilter *reject_protocol);
 
 private:
   // if true, use max_space_mb_for_orphan_logs to determine the amount

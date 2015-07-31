@@ -637,19 +637,6 @@ Traffic Server also enables you to create XML-based
 :ref:`Custom Log Formats <using-custom-log-formats>` that offer even greater
 control over log file generation.
 
-Setting Log Splitting Options
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-To set log splitting options, follow the steps below:
-
-#. In the :file:`records.config` file, edit the following variables
-
-   -  :ts:cv:`proxy.config.log.separate_icp_logs`
-   -  :ts:cv:`proxy.config.log.separate_host_logs`
-
-#. Run the command :option:`traffic_line -x` to apply the configuration
-   changes.
-
 Editing the log_hosts.config File
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

@@ -1007,14 +1007,6 @@ msgstr ""
 msgid "To set log splitting options, follow the steps below:"
 msgstr ""
 
-#: ../../admin/working-log-files.en.rst:662
-msgid ":ts:cv:`proxy.config.log.separate_icp_logs`"
-msgstr ""
-
-#: ../../admin/working-log-files.en.rst:663
-msgid ":ts:cv:`proxy.config.log.separate_host_logs`"
-msgstr ""
-
 #: ../../admin/working-log-files.en.rst:669
 msgid "Editing the log_hosts.config File"
 msgstr ""

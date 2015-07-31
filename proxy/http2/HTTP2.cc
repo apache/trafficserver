@@ -255,7 +255,7 @@ http2_write_rst_stream(uint32_t error_code, IOVec iov)
 }
 
 bool
-http2_write_settings(const Http2SettingsParameter &param, IOVec iov)
+http2_write_settings(const Http2SettingsParameter &param, const IOVec &iov)
 {
   byte_pointer ptr(iov.iov_base);
 
@@ -771,6 +771,13 @@ Http2::init()
   REC_EstablishStaticConfigInt32U(header_table_size, "proxy.config.http2.header_table_size");
   REC_EstablishStaticConfigInt32U(max_header_list_size, "proxy.config.http2.max_header_list_size");
   REC_EstablishStaticConfigInt32U(max_request_header_size, "proxy.config.http.request_header_max_size");
+
+  // If any settings is broken, ATS should not start
+  ink_release_assert(http2_settings_parameter_is_valid({HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS, max_concurrent_streams}) &&
+                     http2_settings_parameter_is_valid({HTTP2_SETTINGS_INITIAL_WINDOW_SIZE, initial_window_size}) &&
+                     http2_settings_parameter_is_valid({HTTP2_SETTINGS_MAX_FRAME_SIZE, max_frame_size}) &&
+                     http2_settings_parameter_is_valid({HTTP2_SETTINGS_HEADER_TABLE_SIZE, header_table_size}) &&
+                     http2_settings_parameter_is_valid({HTTP2_SETTINGS_MAX_HEADER_LIST_SIZE, max_header_list_size}));
 
   // Setup statistics
   http2_rsb = RecAllocateRawStatBlock(static_cast<int>(HTTP2_N_STATS));

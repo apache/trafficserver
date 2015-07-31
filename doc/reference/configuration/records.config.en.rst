@@ -2068,21 +2068,6 @@ Logging Configuration
     The format can be either ``squid`` (Squid Format), ``common`` (Netscape Common),  ``extended`` (Netscape Extended),
     or  ``extended2`` (Netscape Extended-2).
 
-.. ts:cv:: CONFIG proxy.config.log.separate_icp_logs INT 0
-   :reloadable:
-
-   When enabled (``1``), configures Traffic Server to store ICP transactions in a separate log file.
-
-   -  ``0`` = separation is disabled, all ICP transactions are recorded in the same file as HTTP transactions
-   -  ``1`` = all ICP transactions are recorded in a separate log file.
-   -  ``-1`` = filter all ICP transactions from the default log files; ICP transactions are not logged anywhere.
-
-.. ts:cv:: CONFIG proxy.config.log.separate_host_logs INT 0
-   :reloadable:
-
-   When enabled (``1``), configures Traffic Server to create a separate log file for HTTP transactions for each origin server listed in the
-   :file:`log_hosts.config` file. Refer to :ref:`HTTP Host Log Splitting <httphostlogsplitting>`.
-
 .. ts:cv:: LOCAL proxy.local.log.collation_mode INT 0
    :reloadable:
 

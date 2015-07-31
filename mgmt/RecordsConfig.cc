@@ -1134,10 +1134,6 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.log.hosts_config_file", RECD_STRING, "log_hosts.config", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.log.separate_icp_logs", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.log.separate_host_logs", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
   {RECT_CONFIG, "proxy.config.log.collation_host", RECD_STRING, NULL, RECU_DYNAMIC, RR_NULL, RECC_STR, "^[^[:space:]]*$", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.log.collation_port", RECD_INT, "8085", RECU_DYNAMIC, RR_REQUIRED, RECC_INT, "[0-65535]", RECA_NULL}
