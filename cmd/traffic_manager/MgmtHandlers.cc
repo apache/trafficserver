@@ -258,6 +258,8 @@ mgmt_synthetic_main(void *)
 
       if (thrId <= 0) {
         mgmt_log(stderr, "[SyntheticHealthServer] Failed to create worker thread");
+      } else {
+        pthread_detach(thrId); // We don't care to join this sucker
       }
     }
   }
