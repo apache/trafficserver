@@ -114,6 +114,7 @@ SpdyClientSession::init(NetVConnection *netvc)
 
   this->vc->set_inactivity_timeout(HRTIME_SECONDS(spdy_accept_no_activity_timeout));
   vc->add_to_keep_alive_queue();
+  SET_HANDLER(&SpdyClientSession::state_session_start);
 }
 
 void
@@ -197,11 +198,11 @@ SpdyClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBu
   sm->resp_buffer = TSIOBufferCreate();
   sm->resp_reader = TSIOBufferReaderAlloc(sm->resp_buffer);
 
-  do_api_callout(TS_HTTP_SSN_START_HOOK);
+  eventProcessor.schedule_imm(sm, ET_NET);
 }
 
-void
-SpdyClientSession::start()
+int
+SpdyClientSession::state_session_start(int /* event */, void * /* edata */)
 {
   const spdylay_settings_entry entries[] = {
     {SPDYLAY_SETTINGS_MAX_CONCURRENT_STREAMS, SPDYLAY_ID_FLAG_SETTINGS_NONE, spdy_max_concurrent_streams},
@@ -228,6 +229,7 @@ SpdyClientSession::start()
   }
 
   TSVIOReenable(this->write_vio);
+  return EVENT_CONT;
 }
 
 int
