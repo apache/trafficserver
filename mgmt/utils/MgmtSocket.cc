@@ -22,6 +22,7 @@
  */
 
 #include "ts/ink_platform.h"
+#include "ts/ink_assert.h"
 #include "MgmtSocket.h"
 
 #if HAVE_UCRED_H
@@ -61,9 +62,10 @@ mgmt_transient_error()
 //-------------------------------------------------------------------------
 
 int
-mgmt_accept(int s, struct sockaddr *addr, int *addrlen)
+mgmt_accept(int s, struct sockaddr *addr, socklen_t *addrlen)
 {
   int r, retries;
+  ink_assert(*addrlen != 0);
   for (retries = 0; retries < MGMT_MAX_TRANSIENT_ERRORS; retries++) {
     r = ::accept(s, addr, (socklen_t *)addrlen);
     if (r >= 0)

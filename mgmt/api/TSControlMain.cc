@@ -139,7 +139,6 @@ ts_ctrl_main(void *arg)
   InkHashTableIteratorState con_state; // used to iterate through hash table
   int fds_ready;                       // stores return value for select
   struct timeval timeout;
-  int addr_len = (sizeof(struct sockaddr));
 
   // loops until TM dies; waits for and processes requests from clients
   while (1) {
@@ -181,6 +180,7 @@ ts_ctrl_main(void *arg)
           // return TS_ERR_SYS_CALL; WHAT TO DO? just keep going
           Debug("ts_main", "[ts_ctrl_main] can't allocate new ClientT\n");
         } else { // accept connection
+          socklen_t addr_len = (sizeof(struct sockaddr));
           new_con_fd = mgmt_accept(con_socket_fd, new_client_con->adr, &addr_len);
           new_client_con->fd = new_con_fd;
           ink_hash_table_insert(accepted_con, (char *)&new_client_con->fd, new_client_con);
