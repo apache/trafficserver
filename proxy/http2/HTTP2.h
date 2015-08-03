@@ -247,6 +247,8 @@ struct Http2Priority {
 
 // 6.2 HEADERS Format
 struct Http2HeadersParameter {
+  Http2HeadersParameter() : pad_length(0) {}
+
   uint8_t pad_length;
   Http2Priority priority;
 };
@@ -314,7 +316,7 @@ bool http2_parse_goaway(IOVec, Http2Goaway &);
 
 bool http2_parse_window_update(IOVec, uint32_t &);
 
-int64_t http2_parse_header_fragment(HTTPHdr *, IOVec, Http2DynamicTable &, bool);
+int64_t http2_decode_header_blocks(HTTPHdr *, const uint8_t *, const uint8_t *, Http2DynamicTable &);
 
 MIMEParseResult convert_from_2_to_1_1_header(HTTPHdr *);
 

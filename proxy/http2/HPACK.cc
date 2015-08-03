@@ -43,8 +43,6 @@ const unsigned HPACK_LEN_STATUS = countof(":status") - 1;
 // Section 6.2), plus 32.
 const static unsigned ADDITIONAL_OCTETS = 32;
 
-const static uint32_t HEADER_FIELD_LIMIT_LENGTH = 4096;
-
 typedef enum {
   TS_HPACK_STATIC_TABLE_0 = 0,
   TS_HPACK_STATIC_TABLE_AUTHORITY,
@@ -538,7 +536,7 @@ decode_string(Arena &arena, char **str, uint32_t &str_length, const uint8_t *buf
     return HPACK_ERROR_COMPRESSION_ERROR;
   p += len;
 
-  if (encoded_string_len > HEADER_FIELD_LIMIT_LENGTH || (p + encoded_string_len) > buf_end) {
+  if ((p + encoded_string_len) > buf_end) {
     return HPACK_ERROR_COMPRESSION_ERROR;
   }
 

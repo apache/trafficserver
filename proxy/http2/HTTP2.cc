@@ -629,17 +629,17 @@ http2_write_header_fragment(HTTPHdr *in, MIMEFieldIter &field_iter, uint8_t *out
   return p - out;
 }
 
+/*
+ * Decode Header Blocks to Header List.
+ */
 int64_t
-http2_parse_header_fragment(HTTPHdr *hdr, IOVec iov, Http2DynamicTable &dynamic_table, bool cont)
+http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint8_t *buf_end, Http2DynamicTable &dynamic_table)
 {
-  const uint8_t *buf_start = (uint8_t *)iov.iov_base;
-  const uint8_t *buf_end = buf_start + iov.iov_len;
-
-  uint8_t *cursor = (uint8_t *)iov.iov_base; // place the cursor at the start
+  const uint8_t *cursor = buf_start;
   HdrHeap *heap = hdr->m_heap;
   HTTPHdrImpl *hh = hdr->m_http;
 
-  do {
+  while (cursor < buf_end) {
     int64_t read_bytes = 0;
 
     // decode a header field encoded by HPACK
@@ -651,13 +651,7 @@ http2_parse_header_fragment(HTTPHdr *hdr, IOVec iov, Http2DynamicTable &dynamic_
     case HPACK_FIELD_INDEX:
       read_bytes = decode_indexed_header_field(header, cursor, buf_end, dynamic_table);
       if (read_bytes == HPACK_ERROR_COMPRESSION_ERROR) {
-        if (cont) {
-          // Parsing a part of headers is done
-          return cursor - buf_start;
-        } else {
-          // Parse error
-          return HPACK_ERROR_COMPRESSION_ERROR;
-        }
+        return HPACK_ERROR_COMPRESSION_ERROR;
       }
       cursor += read_bytes;
       break;
@@ -666,26 +660,14 @@ http2_parse_header_fragment(HTTPHdr *hdr, IOVec iov, Http2DynamicTable &dynamic_
     case HPACK_FIELD_NEVERINDEX_LITERAL:
       read_bytes = decode_literal_header_field(header, cursor, buf_end, dynamic_table);
       if (read_bytes == HPACK_ERROR_COMPRESSION_ERROR) {
-        if (cont) {
-          // Parsing a part of headers is done
-          return cursor - buf_start;
-        } else {
-          // Parse error
-          return HPACK_ERROR_COMPRESSION_ERROR;
-        }
+        return HPACK_ERROR_COMPRESSION_ERROR;
       }
       cursor += read_bytes;
       break;
     case HPACK_FIELD_TABLESIZE_UPDATE:
       read_bytes = update_dynamic_table_size(cursor, buf_end, dynamic_table);
       if (read_bytes == HPACK_ERROR_COMPRESSION_ERROR) {
-        if (cont) {
-          // Parsing a part of headers is done
-          return cursor - buf_start;
-        } else {
-          // Parse error
-          return HPACK_ERROR_COMPRESSION_ERROR;
-        }
+        return HPACK_ERROR_COMPRESSION_ERROR;
       }
       cursor += read_bytes;
       continue;
@@ -738,10 +720,10 @@ http2_parse_header_fragment(HTTPHdr *hdr, IOVec iov, Http2DynamicTable &dynamic_
         return HPACK_ERROR_HTTP2_PROTOCOL_ERROR;
       }
     }
-  } while (cursor < buf_end);
+  }
 
   // Psuedo headers is insufficient
-  if (hdr->fields_count() < 4 && !cont) {
+  if (hdr->fields_count() < 4) {
     return HPACK_ERROR_HTTP2_PROTOCOL_ERROR;
   }
 
@@ -1153,9 +1135,9 @@ REGRESSION_TEST(HPACK_Decode)(RegressionTest *t, int, int *pstatus)
     ats_scoped_obj<HTTPHdr> headers(new HTTPHdr);
     headers->create(HTTP_TYPE_REQUEST);
 
-    http2_parse_header_fragment(headers,
-                                make_iovec(encoded_field_test_case[i].encoded_field, encoded_field_test_case[i].encoded_field_len),
-                                dynamic_table, false);
+    http2_decode_header_blocks(headers, encoded_field_test_case[i].encoded_field,
+                               encoded_field_test_case[i].encoded_field + encoded_field_test_case[i].encoded_field_len,
+                               dynamic_table);
 
     for (unsigned int j = 0; j < sizeof(raw_field_test_case[i]) / sizeof(raw_field_test_case[i][0]); j++) {
       const char *expected_name = raw_field_test_case[i][j].raw_name;
