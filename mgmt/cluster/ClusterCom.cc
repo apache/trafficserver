@@ -167,7 +167,7 @@ drainIncomingChannel(void *arg)
 
     if (mgmt_read_timeout(ccom->reliable_server_fd, ccom->mc_poll_timeout /* secs */, 0 /* usecs */) > 0) {
       /* Reliable(TCP) request */
-      int clilen = sizeof(cli_addr);
+      socklen_t clilen = sizeof(cli_addr);
       int req_fd = mgmt_accept(ccom->reliable_server_fd, (struct sockaddr *)&cli_addr, &clilen);
       if (req_fd < 0) {
         mgmt_elog(stderr, errno, "[drainIncomingChannel] error accepting "

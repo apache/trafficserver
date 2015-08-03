@@ -46,7 +46,7 @@ bool mgmt_transient_error();
 // mgmt_accept
 //-------------------------------------------------------------------------
 
-int mgmt_accept(int s, struct sockaddr *addr, int *addrlen);
+int mgmt_accept(int s, struct sockaddr *addr, socklen_t *addrlen);
 
 //-------------------------------------------------------------------------
 // mgmt_fopen

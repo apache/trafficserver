@@ -392,7 +392,6 @@ LocalManager::pollMgmtProcessServer()
 {
   int num;
   struct timeval timeout;
-  struct sockaddr_in clientAddr;
   fd_set fdlist;
 #if TS_HAS_WCCP
   int wccp_fd = wccp_cache.getSocket();
@@ -430,7 +429,8 @@ LocalManager::pollMgmtProcessServer()
       }
 #endif
       if (FD_ISSET(process_server_sockfd, &fdlist)) { /* New connection */
-        int clientLen = sizeof(clientAddr);
+        struct sockaddr_in clientAddr;
+        socklen_t clientLen = sizeof(clientAddr);
         int new_sockfd = mgmt_accept(process_server_sockfd, (struct sockaddr *)&clientAddr, &clientLen);
         MgmtMessageHdr *mh;
         int data_len;

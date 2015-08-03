@@ -269,7 +269,6 @@ event_callback_main(void *arg)
   InkHashTableIteratorState con_state; // used to iterate through hash table
   int fds_ready;                       // return value for select go here
   struct timeval timeout;
-  int addr_len = (sizeof(struct sockaddr));
 
   while (1) {
     // LINUX fix: to prevent hard-spin reset timeout on each loop
@@ -312,6 +311,7 @@ event_callback_main(void *arg)
           // Debug ("TS_Control_Main", "can't create new EventClientT for new connection\n");
         } else {
           // accept connection
+          socklen_t addr_len = (sizeof(struct sockaddr));
           new_con_fd = mgmt_accept(con_socket_fd, new_client_con->adr, &addr_len);
           new_client_con->fd = new_con_fd;
           ink_hash_table_insert(accepted_clients, (char *)&new_client_con->fd, new_client_con);
