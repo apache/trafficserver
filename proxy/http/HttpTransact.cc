@@ -3651,6 +3651,11 @@ HttpTransact::handle_response_from_server(State *s)
     break;
   case CONNECTION_CLOSED:
   /* fall through */
+    DebugTxn("http_trans",
+              "[handle_response_from_server] Transaction received a bad response or a partial response, not retrying...");
+     SET_VIA_STRING(VIA_DETAIL_SERVER_CONNECT, VIA_DETAIL_SERVER_FAILURE);
+     handle_server_connection_not_open(s);
+     break;
   case PARSE_ERROR:
   /* fall through */
   case BAD_INCOMING_RESPONSE: {
@@ -3658,7 +3663,8 @@ HttpTransact::handle_response_from_server(State *s)
     DebugTxn("http_trans",
              "[handle_response_from_server] Transaction received a bad response or a partial response, not retrying...");
     SET_VIA_STRING(VIA_DETAIL_SERVER_CONNECT, VIA_DETAIL_SERVER_FAILURE);
-    handle_server_connection_not_open(s);
+    handle_server_died(s);
+    s->next_action = SM_ACTION_SEND_ERROR_CACHE_NOOP;
     break;
   }
   case OPEN_RAW_ERROR:
