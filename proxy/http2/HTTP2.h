@@ -78,6 +78,14 @@ extern RecRawStatBlock *http2_rsb; // Container for statistics.
 // 6.9.1 The Flow Control Window
 static const Http2WindowSize HTTP2_MAX_WINDOW_SIZE = 0x7FFFFFFF;
 
+// 5.4.  Error Handling
+enum Http2ErrorClass {
+  HTTP2_ERROR_CLASS_NONE,
+  HTTP2_ERROR_CLASS_CONNECTION,
+  HTTP2_ERROR_CLASS_STREAM,
+};
+
+// 7.  Error Codes
 enum Http2ErrorCode {
   HTTP2_ERROR_NO_ERROR = 0,
   HTTP2_ERROR_PROTOCOL_ERROR = 1,
@@ -211,6 +219,18 @@ struct Http2FrameHeader {
   uint8_t type;
   uint8_t flags;
   Http2StreamId streamid;
+};
+
+// 5.4.  Error Handling
+struct Http2Error {
+  Http2Error(const Http2ErrorClass error_class = HTTP2_ERROR_CLASS_NONE, const Http2ErrorCode error_code = HTTP2_ERROR_NO_ERROR)
+  {
+    cls = error_class;
+    code = error_code;
+  };
+
+  Http2ErrorClass cls;
+  Http2ErrorCode code;
 };
 
 // 6.5.1. SETTINGS Format
