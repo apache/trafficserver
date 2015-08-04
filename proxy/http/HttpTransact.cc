@@ -5280,7 +5280,7 @@ HttpTransact::check_request_validity(State *s, HTTPHdr *incoming_hdr)
 
   if (!((scheme == URL_WKSIDX_HTTP) && (method == HTTP_WKSIDX_GET))) {
     if (scheme != URL_WKSIDX_HTTP && scheme != URL_WKSIDX_HTTPS && method != HTTP_WKSIDX_CONNECT &&
-        ((scheme == URL_WKSIDX_WS || scheme == URL_WKSIDX_WSS) && !s->is_websocket)) {
+        !((scheme == URL_WKSIDX_WS || scheme == URL_WKSIDX_WSS) && s->is_websocket)) {
       if (scheme < 0) {
         return NO_REQUEST_SCHEME;
       } else {
