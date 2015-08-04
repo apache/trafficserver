@@ -3658,7 +3658,8 @@ HttpTransact::handle_response_from_server(State *s)
     DebugTxn("http_trans",
              "[handle_response_from_server] Transaction received a bad response or a partial response, not retrying...");
     SET_VIA_STRING(VIA_DETAIL_SERVER_CONNECT, VIA_DETAIL_SERVER_FAILURE);
-    handle_server_connection_not_open(s);
+    handle_server_died(s);
+    s->next_action = SM_ACTION_SEND_ERROR_CACHE_NOOP;
     break;
   }
   case OPEN_RAW_ERROR:
@@ -5279,7 +5280,7 @@ HttpTransact::check_request_validity(State *s, HTTPHdr *incoming_hdr)
 
   if (!((scheme == URL_WKSIDX_HTTP) && (method == HTTP_WKSIDX_GET))) {
     if (scheme != URL_WKSIDX_HTTP && scheme != URL_WKSIDX_HTTPS && method != HTTP_WKSIDX_CONNECT &&
-        ((scheme == URL_WKSIDX_WS || scheme == URL_WKSIDX_WSS) && !s->is_websocket)) {
+        !((scheme == URL_WKSIDX_WS || scheme == URL_WKSIDX_WSS) && s->is_websocket)) {
       if (scheme < 0) {
         return NO_REQUEST_SCHEME;
       } else {

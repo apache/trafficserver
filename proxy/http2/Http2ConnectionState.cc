@@ -66,16 +66,22 @@ rcv_data_frame(Http2ClientSession &cs, Http2ConnectionState &cstate, const Http2
   char buf[BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_DATA])];
   unsigned nbytes = 0;
   Http2StreamId id = frame.header().streamid;
-  Http2Stream *stream = cstate.find_stream(id);
   uint8_t pad_length = 0;
   const uint32_t payload_length = frame.header().length;
 
   DebugSsn(&cs, "http2_cs", "[%" PRId64 "] Received DATA frame.", cs.connection_id());
 
-  // If a DATA frame is received whose stream identifier field is 0x0, the recipient MUST
-  // respond with a connection error of type PROTOCOL_ERROR.
-  if (id == 0 || stream == NULL) {
+  if (!http2_is_client_streamid(id)) {
     return HTTP2_ERROR_PROTOCOL_ERROR;
+  }
+
+  Http2Stream *stream = cstate.find_stream(id);
+  if (stream == NULL) {
+    if (id <= cstate.get_latest_stream_id()) {
+      return HTTP2_ERROR_STREAM_CLOSED;
+    } else {
+      return HTTP2_ERROR_PROTOCOL_ERROR;
+    }
   }
 
   // If a DATA frame is received whose stream is not in "open" or "half closed (local)" state,
@@ -163,8 +169,13 @@ rcv_headers_frame(Http2ClientSession &cs, Http2ConnectionState &cstate, const Ht
     return HTTP2_ERROR_PROTOCOL_ERROR;
   }
 
+  Http2Stream *stream = cstate.find_stream(id);
+  if (stream == NULL && id <= cstate.get_latest_stream_id()) {
+    return HTTP2_ERROR_STREAM_CLOSED;
+  }
+
   // Create new stream
-  Http2Stream *stream = cstate.create_stream(id);
+  stream = cstate.create_stream(id);
   if (!stream) {
     return HTTP2_ERROR_PROTOCOL_ERROR;
   }
@@ -290,9 +301,19 @@ rcv_rst_stream_frame(Http2ClientSession &cs, Http2ConnectionState &cstate, const
 
   DebugSsn(&cs, "http2_cs", "[%" PRId64 "] Received RST_STREAM frame.", cs.connection_id());
 
-  Http2Stream *stream = cstate.find_stream(frame.header().streamid);
-  if (frame.header().streamid == 0) {
+  Http2StreamId stream_id = frame.header().streamid;
+
+  if (!http2_is_client_streamid(stream_id)) {
     return HTTP2_ERROR_PROTOCOL_ERROR;
+  }
+
+  Http2Stream *stream = cstate.find_stream(stream_id);
+  if (stream == NULL) {
+    if (stream_id <= cstate.get_latest_stream_id()) {
+      return HTTP2_ERROR_NO_ERROR;
+    } else {
+      return HTTP2_ERROR_PROTOCOL_ERROR;
+    }
   }
 
   if (frame.header().length != HTTP2_RST_STREAM_LEN) {
@@ -480,13 +501,12 @@ rcv_window_update_frame(Http2ClientSession &cs, Http2ConnectionState &cstate, co
     // Stream level window update
     Http2Stream *stream = cstate.find_stream(sid);
 
-    // This means that a receiver could receive a
-    // WINDOW_UPDATE frame on a "half closed (remote)" or "closed" stream.
-    // A receiver MUST NOT treat this as an error.
     if (stream == NULL) {
-      // Temporarily ignore WINDOW_UPDATE
-      // TODO After supporting PRIORITY, it should be handled correctly.
-      return HTTP2_ERROR_NO_ERROR;
+      if (sid <= cstate.get_latest_stream_id()) {
+        return HTTP2_ERROR_NO_ERROR;
+      } else {
+        return HTTP2_ERROR_PROTOCOL_ERROR;
+      }
     }
 
     frame.reader()->memcpy(buf, sizeof(buf), 0);
@@ -521,7 +541,11 @@ rcv_continuation_frame(Http2ClientSession &cs, Http2ConnectionState &cstate, con
   // Find opened stream
   Http2Stream *stream = cstate.find_stream(stream_id);
   if (stream == NULL) {
-    return HTTP2_ERROR_PROTOCOL_ERROR;
+    if (stream_id <= cstate.get_latest_stream_id()) {
+      return HTTP2_ERROR_STREAM_CLOSED;
+    } else {
+      return HTTP2_ERROR_PROTOCOL_ERROR;
+    }
   }
 
   // A CONTINUATION frame MUST be preceded by a HEADERS, PUSH_PROMISE or
