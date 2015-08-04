@@ -425,6 +425,11 @@ typedef struct {
 /* Free (the contents of) a TSConfigRecordDescription */
 tsapi void TSConfigRecordDescriptionFree(TSConfigRecordDescription *val);
 
+/* Heap-allocate a TSConfigRecordDescription. */
+tsapi TSConfigRecordDescription *TSConfigRecordDescriptionCreate(void);
+/* Free and destroy a heap-allocated TSConfigRecordDescription. */
+tsapi void TSConfigRecordDescriptionDestroy(TSConfigRecordDescription *);
+
 /*--- events --------------------------------------------------------------*/
 
 /* Note: Each event has a format String associated with it from which the
@@ -1108,6 +1113,7 @@ tsapi TSMgmtError TSRecordSetString(const char *rec_name, const char *string_val
  * Output: TSMgmtError
  */
 tsapi TSMgmtError TSConfigRecordDescribe(const char *rec_name, unsigned flags, TSConfigRecordDescription *val);
+tsapi TSMgmtError TSConfigRecordDescribeMatchMlt(const char *rec_regex, unsigned flags, TSList list);
 
 /* TSRecordSetMlt: sets a set of records
  * Input:  rec_list     - list of record names the user wants to set;

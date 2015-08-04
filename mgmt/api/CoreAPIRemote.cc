@@ -534,6 +534,72 @@ done:
   return ret;
 }
 
+static TSMgmtError
+mgmt_record_describe_reply(TSConfigRecordDescription *val)
+{
+  TSMgmtError ret;
+  MgmtMarshallData reply = {NULL, 0};
+
+  ret = recv_mgmt_message(main_socket_fd, reply);
+  if (ret != TS_ERR_OKAY) {
+    return ret;
+  }
+
+  MgmtMarshallInt err;
+  MgmtMarshallString name = NULL;
+  MgmtMarshallString expr = NULL;
+  MgmtMarshallData value = {NULL, 0};
+  MgmtMarshallData deflt = {NULL, 0};
+
+  MgmtMarshallInt rtype;
+  MgmtMarshallInt rclass;
+  MgmtMarshallInt version;
+  MgmtMarshallInt rsb;
+  MgmtMarshallInt order;
+  MgmtMarshallInt access;
+  MgmtMarshallInt update;
+  MgmtMarshallInt updatetype;
+  MgmtMarshallInt checktype;
+  MgmtMarshallInt source;
+
+  ret = recv_mgmt_response(reply.ptr, reply.len, RECORD_DESCRIBE_CONFIG, &err, &name, &value, &deflt, &rtype, &rclass, &version,
+                           &rsb, &order, &access, &update, &updatetype, &checktype, &source, &expr);
+
+  ats_free(reply.ptr);
+
+  if (ret != TS_ERR_OKAY) {
+    goto done;
+  }
+
+  if (err != TS_ERR_OKAY) {
+    ret = (TSMgmtError)err;
+    goto done;
+  }
+
+  // Everything is cool, populate the description ...
+  val->rec_name = ats_strdup(name);
+  val->rec_checkexpr = ats_strdup(expr);
+  val->rec_type = (TSRecordT)rtype;
+  val->rec_class = rclass;
+  val->rec_version = version;
+  val->rec_rsb = rsb;
+  val->rec_order = order;
+  val->rec_access = access;
+  val->rec_updatetype = updatetype;
+  val->rec_checktype = checktype;
+  val->rec_source = source;
+
+  mgmt_record_convert_value(val->rec_type, value, val->rec_value);
+  mgmt_record_convert_value(val->rec_type, deflt, val->rec_default);
+
+done:
+  ats_free(name);
+  ats_free(expr);
+  ats_free(value.ptr);
+  ats_free(deflt.ptr);
+  return ret;
+}
+
 // note that the record value is being sent as chunk of memory, regardless of
 // record type; it's not being converted to a string!!
 TSMgmtError
@@ -553,14 +619,12 @@ MgmtRecordGet(const char *rec_name, TSRecordEle *rec_ele)
 }
 
 TSMgmtError
-MgmtConfigRecordDescribe(const char *rec_name, unsigned options, TSConfigRecordDescription *val)
+MgmtConfigRecordDescribeMatching(const char *rec_name, unsigned options, TSList rec_vals)
 {
   TSMgmtError ret;
   MgmtMarshallInt optype = RECORD_DESCRIBE_CONFIG;
-  MgmtMarshallInt flags = options;
+  MgmtMarshallInt flags = options | RECORD_DESCRIBE_FLAGS_MATCH;
   MgmtMarshallString record = const_cast<MgmtMarshallString>(rec_name);
-
-  MgmtMarshallData reply = {NULL, 0};
 
   // create and send request
   ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, RECORD_DESCRIBE_CONFIG, &optype, &record, &flags);
@@ -568,66 +632,53 @@ MgmtConfigRecordDescribe(const char *rec_name, unsigned options, TSConfigRecordD
     return ret;
   }
 
-  ret = recv_mgmt_message(main_socket_fd, reply);
-  if (ret != TS_ERR_OKAY) {
-    return ret;
-  } else {
-    MgmtMarshallInt err;
-    MgmtMarshallString name = NULL;
-    MgmtMarshallString expr = NULL;
-    MgmtMarshallData value = {NULL, 0};
-    MgmtMarshallData deflt = {NULL, 0};
+  for (;;) {
+    TSConfigRecordDescription *val;
 
-    MgmtMarshallInt rtype;
-    MgmtMarshallInt rclass;
-    MgmtMarshallInt version;
-    MgmtMarshallInt rsb;
-    MgmtMarshallInt order;
-    MgmtMarshallInt access;
-    MgmtMarshallInt update;
-    MgmtMarshallInt updatetype;
-    MgmtMarshallInt checktype;
-    MgmtMarshallInt source;
+    val = TSConfigRecordDescriptionCreate();
 
-    ret = recv_mgmt_response(reply.ptr, reply.len, RECORD_DESCRIBE_CONFIG, &err, &name, &value, &deflt, &rtype, &rclass, &version,
-                             &rsb, &order, &access, &update, &updatetype, &checktype, &source, &expr);
-
-    ats_free(reply.ptr);
-
+    // parse the reply to get record value and type
+    ret = mgmt_record_describe_reply(val);
     if (ret != TS_ERR_OKAY) {
-      goto done;
+      TSConfigRecordDescriptionDestroy(val);
+      goto fail;
     }
 
-    if (err != TS_ERR_OKAY) {
-      ret = (TSMgmtError)err;
-      goto done;
+    // A NULL record ends the list.
+    if (val->rec_type == TS_REC_UNDEFINED) {
+      TSConfigRecordDescriptionDestroy(val);
+      break;
     }
 
-    // Everything is cool, populate the description ...
-    val->rec_name = ats_strdup(name);
-    val->rec_checkexpr = ats_strdup(expr);
-    val->rec_type = (TSRecordT)rtype;
-    val->rec_class = rclass;
-    val->rec_version = version;
-    val->rec_rsb = rsb;
-    val->rec_order = order;
-    val->rec_access = access;
-    val->rec_updatetype = updatetype;
-    val->rec_checktype = checktype;
-    val->rec_source = source;
+    enqueue((LLQ *)rec_vals, val);
+  }
 
-    mgmt_record_convert_value(val->rec_type, value, val->rec_value);
-    mgmt_record_convert_value(val->rec_type, deflt, val->rec_default);
+  return TS_ERR_OKAY;
 
-  done:
-    ats_free(name);
-    ats_free(expr);
-    ats_free(value.ptr);
-    ats_free(deflt.ptr);
-    return ret;
+fail:
+  while (!queue_is_empty((LLQ *)rec_vals)) {
+    TSConfigRecordDescription *val = (TSConfigRecordDescription *)dequeue((LLQ *)rec_vals);
+    TSConfigRecordDescriptionDestroy(val);
   }
 
   return ret;
+}
+
+TSMgmtError
+MgmtConfigRecordDescribe(const char *rec_name, unsigned options, TSConfigRecordDescription *val)
+{
+  TSMgmtError ret;
+  MgmtMarshallInt optype = RECORD_DESCRIBE_CONFIG;
+  MgmtMarshallInt flags = options & ~RECORD_DESCRIBE_FLAGS_MATCH;
+  MgmtMarshallString record = const_cast<MgmtMarshallString>(rec_name);
+
+  // create and send request
+  ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, RECORD_DESCRIBE_CONFIG, &optype, &record, &flags);
+  if (ret != TS_ERR_OKAY) {
+    return ret;
+  }
+
+  return mgmt_record_describe_reply(val);
 }
 
 TSMgmtError
@@ -670,8 +721,8 @@ MgmtRecordGetMatching(const char *regex, TSList rec_vals)
   return TS_ERR_OKAY;
 
 fail:
-
-  for (rec_ele = (TSRecordEle *)dequeue((LLQ *)rec_vals); rec_ele; rec_ele = (TSRecordEle *)dequeue((LLQ *)rec_vals)) {
+  while (!queue_is_empty((LLQ *)rec_vals)) {
+    rec_ele = (TSRecordEle *)dequeue((LLQ *)rec_vals);
     TSRecordEleDestroy(rec_ele);
   }
 

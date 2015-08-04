@@ -455,7 +455,7 @@ RecLookupRecord(const char *name, void (*callback)(const RecRecord *, void *), v
 }
 
 int
-RecLookupMatchingRecords(const char *match, void (*callback)(const RecRecord *, void *), void *data, bool lock)
+RecLookupMatchingRecords(unsigned rec_type, const char *match, void (*callback)(const RecRecord *, void *), void *data, bool lock)
 {
   int num_records;
   DFA regex;
@@ -467,11 +467,18 @@ RecLookupMatchingRecords(const char *match, void (*callback)(const RecRecord *, 
   num_records = g_num_records;
   for (int i = 0; i < num_records; i++) {
     RecRecord *r = &(g_records[i]);
-    if (regex.match(r->name) >= 0) {
-      rec_mutex_acquire(&(r->lock));
-      callback(r, data);
-      rec_mutex_release(&(r->lock));
+
+    if ((r->rec_type & rec_type) == 0) {
+      continue;
     }
+
+    if (regex.match(r->name) < 0) {
+      continue;
+    }
+
+    rec_mutex_acquire(&(r->lock));
+    callback(r, data);
+    rec_mutex_release(&(r->lock));
   }
 
   return REC_ERR_OKAY;

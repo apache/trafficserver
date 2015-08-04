@@ -104,6 +104,13 @@ traffic_ctl config
     the record class and syntax checking expression.
 
 .. program:: traffic_ctl config
+.. option:: diff [--records]
+
+    Display configuration records that have non-default values. The
+    *--records* flag has the same behavior as :option:`traffic_ctl
+    config get --records`.
+
+.. program:: traffic_ctl config
 .. option:: get [--records] RECORD [RECORD...]
 
     Display the current value of a configuration record.

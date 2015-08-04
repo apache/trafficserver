@@ -110,43 +110,20 @@ private:
   } fmt;
 };
 
-struct CtrlMgmtRecordList {
-  CtrlMgmtRecordList() : list(TSListCreate()) {}
+struct RecordListPolicy {
+  typedef TSRecordEle *entry_type;
 
-  ~CtrlMgmtRecordList()
+  static void
+  free(entry_type e)
   {
-    this->clear();
-    TSListDestroy(this->list);
+    TSRecordEleDestroy(e);
   }
 
-  bool
-  empty() const
+  static entry_type
+  cast(void *ptr)
   {
-    return TSListIsEmpty(this->list);
+    return (entry_type)ptr;
   }
-
-  void
-  clear() const
-  {
-    while (!this->empty()) {
-      TSRecordEleDestroy((TSRecordEle *)TSListDequeue(this->list));
-    }
-  }
-
-  // Return (ownership of) the next list entry.
-  TSRecordEle *
-  next()
-  {
-    return (TSRecordEle *)TSListDequeue(this->list);
-  }
-
-  TSMgmtError match(const char *);
-
-private:
-  CtrlMgmtRecordList(const CtrlMgmtRecordList &);            // disabled
-  CtrlMgmtRecordList &operator=(const CtrlMgmtRecordList &); // disabled
-
-  TSList list;
 };
 
 template <typename T> struct CtrlMgmtList {
@@ -184,6 +161,10 @@ template <typename T> struct CtrlMgmtList {
 private:
   CtrlMgmtList(const CtrlMgmtList &);            // disabled
   CtrlMgmtList &operator=(const CtrlMgmtList &); // disabled
+};
+
+struct CtrlMgmtRecordList : CtrlMgmtList<RecordListPolicy> {
+  TSMgmtError match(const char *);
 };
 
 struct CtrlCommandLine {

@@ -441,7 +441,7 @@ handle_record_match(int fd, void *req, size_t reqlen)
   match.err = TS_ERR_OKAY;
   match.fd = fd;
 
-  if (RecLookupMatchingRecords(name, send_record_match, &match) != REC_ERR_OKAY) {
+  if (RecLookupMatchingRecords(RECT_ALL, name, send_record_match, &match) != REC_ERR_OKAY) {
     ats_free(name);
     return TS_ERR_FAIL;
   }
@@ -1017,77 +1017,95 @@ handle_server_backtrace(int fd, void *req, size_t reqlen)
 }
 
 static void
-send_record_describe(const RecRecord *rec, void *ptr)
+send_record_describe(const RecRecord *rec, void *edata)
 {
-  MgmtMarshallString rec_name = const_cast<char *>(rec->name);
+  MgmtMarshallString rec_name = NULL;
   MgmtMarshallData rec_value = {NULL, 0};
   MgmtMarshallData rec_default = {NULL, 0};
-  MgmtMarshallInt rec_type = rec->data_type;
-  MgmtMarshallInt rec_class = rec->rec_type;
-  MgmtMarshallInt rec_version = rec->version;
-  MgmtMarshallInt rec_rsb = rec->rsb_id;
-  MgmtMarshallInt rec_order = rec->order;
-  MgmtMarshallInt rec_access = rec->config_meta.access_type;
-  MgmtMarshallInt rec_update = rec->config_meta.update_required;
-  MgmtMarshallInt rec_updatetype = rec->config_meta.update_type;
-  MgmtMarshallInt rec_checktype = rec->config_meta.check_type;
-  MgmtMarshallInt rec_source = rec->config_meta.source;
-  MgmtMarshallString rec_checkexpr = rec->config_meta.check_expr;
+  MgmtMarshallInt rec_type = TS_REC_UNDEFINED;
+  MgmtMarshallInt rec_class = RECT_NULL;
+  MgmtMarshallInt rec_version = 0;
+  MgmtMarshallInt rec_rsb = 0;
+  MgmtMarshallInt rec_order = 0;
+  MgmtMarshallInt rec_access = RECA_NULL;
+  MgmtMarshallInt rec_update = RECU_NULL;
+  MgmtMarshallInt rec_updatetype = 0;
+  MgmtMarshallInt rec_checktype = RECC_NULL;
+  MgmtMarshallInt rec_source = REC_SOURCE_NULL;
+  MgmtMarshallString rec_checkexpr = NULL;
 
-  MgmtMarshallInt err = TS_ERR_OKAY;
+  TSMgmtError err = TS_ERR_OKAY;
 
-  int *fderr = (int *)ptr;
+  record_match_state *match = (record_match_state *)edata;
 
-  // We only describe config variables (for now).
-  if (!REC_TYPE_IS_CONFIG(rec->rec_type)) {
-    *fderr = TS_ERR_PARAMS;
+  if (match->err != TS_ERR_OKAY) {
     return;
   }
 
-  switch (rec_type) {
-  case RECD_INT:
-    rec_type = TS_REC_INT;
-    break;
-  case RECD_FLOAT:
-    rec_type = TS_REC_FLOAT;
-    break;
-  case RECD_STRING:
-    rec_type = TS_REC_STRING;
-    break;
-  case RECD_COUNTER:
-    rec_type = TS_REC_COUNTER;
-    break;
-  default:
-    rec_type = TS_REC_UNDEFINED;
+  if (rec) {
+    // We only describe config variables (for now).
+    if (!REC_TYPE_IS_CONFIG(rec->rec_type)) {
+      match->err = TS_ERR_PARAMS;
+      return;
+    }
+
+    rec_name = const_cast<char *>(rec->name);
+    rec_type = rec->data_type;
+    rec_class = rec->rec_type;
+    rec_version = rec->version;
+    rec_rsb = rec->rsb_id;
+    rec_order = rec->order;
+    rec_access = rec->config_meta.access_type;
+    rec_update = rec->config_meta.update_required;
+    rec_updatetype = rec->config_meta.update_type;
+    rec_checktype = rec->config_meta.check_type;
+    rec_source = rec->config_meta.source;
+    rec_checkexpr = rec->config_meta.check_expr;
+
+    switch (rec_type) {
+    case RECD_INT:
+      rec_type = TS_REC_INT;
+      break;
+    case RECD_FLOAT:
+      rec_type = TS_REC_FLOAT;
+      break;
+    case RECD_STRING:
+      rec_type = TS_REC_STRING;
+      break;
+    case RECD_COUNTER:
+      rec_type = TS_REC_COUNTER;
+      break;
+    default:
+      rec_type = TS_REC_UNDEFINED;
+    }
+
+    err = marshall_rec_data(rec->data_type, rec->data, rec_value);
+    if (err != TS_ERR_OKAY) {
+      goto done;
+    }
+
+    err = marshall_rec_data(rec->data_type, rec->data_default, rec_default);
+    if (err != TS_ERR_OKAY) {
+      goto done;
+    }
   }
 
-  err = marshall_rec_data(rec->data_type, rec->data, rec_value);
-  if (err != TS_ERR_OKAY) {
-    goto done;
-  }
-
-  err = marshall_rec_data(rec->data_type, rec->data_default, rec_default);
-  if (err != TS_ERR_OKAY) {
-    goto done;
-  }
-
-  err = send_mgmt_response(*fderr, RECORD_DESCRIBE_CONFIG, &err, &rec_name, &rec_value, &rec_default, &rec_type, &rec_class,
+  err = send_mgmt_response(match->fd, RECORD_DESCRIBE_CONFIG, &err, &rec_name, &rec_value, &rec_default, &rec_type, &rec_class,
                            &rec_version, &rec_rsb, &rec_order, &rec_access, &rec_update, &rec_updatetype, &rec_checktype,
                            &rec_source, &rec_checkexpr);
 
 done:
-  *fderr = err;
+  match->err = err;
 }
 
 static TSMgmtError
 handle_record_describe(int fd, void *req, size_t reqlen)
 {
   TSMgmtError ret;
+  record_match_state match;
   MgmtMarshallInt optype;
   MgmtMarshallInt options;
   MgmtMarshallString name;
-
-  int fderr = fd; // [in,out] variable for the fd and error
 
   ret = recv_mgmt_request(req, reqlen, RECORD_DESCRIBE_CONFIG, &optype, &name, &options);
   if (ret != TS_ERR_OKAY) {
@@ -1099,19 +1117,34 @@ handle_record_describe(int fd, void *req, size_t reqlen)
     goto done;
   }
 
-  if (RecLookupRecord(name, send_record_describe, &fderr) != REC_ERR_OKAY) {
-    ret = TS_ERR_PARAMS;
-    goto done;
+  match.err = TS_ERR_OKAY;
+  match.fd = fd;
+
+  if (options & RECORD_DESCRIBE_FLAGS_MATCH) {
+    if (RecLookupMatchingRecords(RECT_CONFIG | RECT_LOCAL, name, send_record_describe, &match) != REC_ERR_OKAY) {
+      ret = TS_ERR_PARAMS;
+      goto done;
+    }
+
+    // If successful, send a list terminator.
+    if (match.err == TS_ERR_OKAY) {
+      send_record_describe(NULL, &match);
+    }
+
+  } else {
+    if (RecLookupRecord(name, send_record_describe, &match) != REC_ERR_OKAY) {
+      ret = TS_ERR_PARAMS;
+      goto done;
+    }
   }
 
-  // If the lookup succeeded, the final error is in "fderr".
   if (ret == TS_ERR_OKAY) {
-    ret = (TSMgmtError)fderr;
+    ret = match.err;
   }
 
 done:
   ats_free(name);
-  return ret;
+  return match.err;
 }
 
 struct control_message_handler {
