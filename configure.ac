@@ -1061,9 +1061,9 @@ dnl We check for dlsym here instead of e.g. dlopen() because ASAN hijacks the la
 AC_SEARCH_LIBS([dlsym], [dl], [], [])
 
 dnl Linux has pthread symbol stubss in both libc and libpthread, so it's important to test
-dnl specifically for pthread_kill() here. In addition, ASAN hijacks pthread_create() so
+dnl specifically for pthread_yield() here. In addition, ASAN hijacks pthread_create() so
 dnl we can't use that anymore.
-AC_SEARCH_LIBS([pthread_kill], [pthread], [], [])
+AC_SEARCH_LIBS([pthread_yield], [pthread], [], [])
 
 dnl XXX The following check incorrectly causes the build to succeed
 dnl on Darwin. We should be using AC_SEARCH_LIBS, but rest_init is
