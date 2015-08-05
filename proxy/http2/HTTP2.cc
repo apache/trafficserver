@@ -534,16 +534,6 @@ convert_from_2_to_1_1_header(HTTPHdr *headers)
     headers->field_delete(HPACK_VALUE_STATUS, HPACK_LEN_STATUS);
   }
 
-  // Intermediaries SHOULD also remove other connection-
-  // specific header fields, such as Keep-Alive, Proxy-Connection,
-  // Transfer-Encoding and Upgrade, even if they are not nominated by
-  // Connection.
-  headers->field_delete(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION);
-  headers->field_delete(MIME_FIELD_KEEP_ALIVE, MIME_LEN_KEEP_ALIVE);
-  headers->field_delete(MIME_FIELD_PROXY_CONNECTION, MIME_LEN_PROXY_CONNECTION);
-  headers->field_delete(MIME_FIELD_TRANSFER_ENCODING, MIME_LEN_TRANSFER_ENCODING);
-  headers->field_delete(MIME_FIELD_UPGRADE, MIME_LEN_UPGRADE);
-
   return PARSE_DONE;
 }
 
@@ -707,6 +697,11 @@ http2_parse_header_fragment(HTTPHdr *hdr, IOVec iov, Http2DynamicTable &dynamic_
     // ':' started header name is only allowed for pseudo headers
     if (hdr->fields_count() >= 4 && (name_len <= 0 || name[0] == ':')) {
       // Decoded header field is invalid
+      return HPACK_ERROR_HTTP2_PROTOCOL_ERROR;
+    }
+
+    // rfc7540,sec8.1.2.2: Any message containing connection-specific header fields MUST be treated as malformed
+    if (name == MIME_FIELD_CONNECTION) {
       return HPACK_ERROR_HTTP2_PROTOCOL_ERROR;
     }
 
