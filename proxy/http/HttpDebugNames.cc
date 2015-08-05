@@ -90,6 +90,24 @@ HttpDebugNames::get_method_name(const char *method)
     return ("HTTP_METHOD_PUT");
   } else if (method == HTTP_METHOD_TRACE) {
     return ("HTTP_METHOD_TRACE");
+  } else if (method == HTTP_METHOD_COPY) {
+    return ("HTTP_METHOD_COPY");
+  } else if (method == HTTP_METHOD_MOVE) {
+    return ("HTTP_METHOD_MOVE");
+  } else if (method == HTTP_METHOD_PROPFIND) {
+    return ("HTTP_METHOD_PROPFIND");
+  } else if (method == HTTP_METHOD_PROPPATCH) {
+    return ("HTTP_METHOD_PROPPATCH");
+  } else if (method == HTTP_METHOD_LOCK) {
+    return ("HTTP_METHOD_LOCK");
+  } else if (method == HTTP_METHOD_UNLOCK) {
+    return ("HTTP_METHOD_UNLOCK");
+  } else if (method == HTTP_METHOD_MKCOL) {
+    return ("HTTP_METHOD_MKCOL");
+  } else if (method == HTTP_METHOD_REPORT) {
+    return ("HTTP_METHOD_REPORT");
+  } else if (method == HTTP_METHOD_CHECKOUT) {
+    return ("HTTP_METHOD_CHECKOUT");
   } else {
     return ("HTTP_METHOD_UNKNOWN");
   }

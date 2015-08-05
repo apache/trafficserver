@@ -101,7 +101,8 @@ static const char *_hdrtoken_strs[] = {
   "rtsp", "mmsu", "mmst", "mms", "wss", "ws",
 
   // HTTP methods
-  "CONNECT", "DELETE", "GET", "POST", "HEAD", "ICP_QUERY", "OPTIONS", "PURGE", "PUT", "TRACE", "PUSH",
+  "CONNECT", "DELETE", "GET", "POST", "HEAD", "ICP_QUERY", "OPTIONS", "PURGE", "PUT", "TRACE", "PUSH", "COPY", "MOVE", "PROPFIND", 
+  "PROPPATCH", "LOCK", "UNLOCK", "MKCOL", "REPORT", "CHECKOUT",
 
   // Header extensions
   "X-ID", "X-Forwarded-For", "TE", "Strict-Transport-Security", "100-continue"};
@@ -138,6 +139,15 @@ static HdrTokenTypeBinding _hdrtoken_strs_type_initializers[] = {{"file", HDRTOK
                                                                  {"PUT", HDRTOKEN_TYPE_METHOD},
                                                                  {"TRACE", HDRTOKEN_TYPE_METHOD},
                                                                  {"PUSH", HDRTOKEN_TYPE_METHOD},
+                                                                 {"COPY", HDRTOKEN_TYPE_METHOD},
+                                                                 {"MOVE", HDRTOKEN_TYPE_METHOD},
+                                                                 {"PROPFIND", HDRTOKEN_TYPE_METHOD},
+                                                                 {"PROPPATCH", HDRTOKEN_TYPE_METHOD},
+                                                                 {"LOCK", HDRTOKEN_TYPE_METHOD},
+                                                                 {"UNLOCK", HDRTOKEN_TYPE_METHOD},
+                                                                 {"MKCOL", HDRTOKEN_TYPE_METHOD},
+                                                                 {"REPORT", HDRTOKEN_TYPE_METHOD},
+                                                                 {"CHECKOUT", HDRTOKEN_TYPE_METHOD},
 
                                                                  {"max-age", HDRTOKEN_TYPE_CACHE_CONTROL},
                                                                  {"max-stale", HDRTOKEN_TYPE_CACHE_CONTROL},
@@ -344,7 +354,8 @@ static const char *_hdrtoken_commonly_tokenized_strs[] = {
   "rtsp", "mmsu", "mmst", "mms", "wss", "ws",
 
   // HTTP methods
-  "CONNECT", "DELETE", "GET", "POST", "HEAD", "ICP_QUERY", "OPTIONS", "PURGE", "PUT", "TRACE", "PUSH",
+  "CONNECT", "DELETE", "GET", "POST", "HEAD", "ICP_QUERY", "OPTIONS", "PURGE", "PUT", "TRACE", "PUSH", "COPY", "MOVE", "PROPFIND",
+  "PROPPATCH", "LOCK", "UNLOCK", "MKCOL", "REPORT", "CHECKOUT",
 
   // Header extensions
   "X-ID", "X-Forwarded-For", "TE", "Strict-Transport-Security", "100-continue"};

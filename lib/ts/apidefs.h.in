@@ -1137,6 +1137,15 @@ extern "C"
   extern tsapi const char* TS_HTTP_METHOD_PUT;
   extern tsapi const char* TS_HTTP_METHOD_TRACE;
   extern tsapi const char* TS_HTTP_METHOD_PUSH;
+  extern tsapi const char* TS_HTTP_METHOD_COPY;
+  extern tsapi const char* TS_HTTP_METHOD_MOVE;
+  extern tsapi const char* TS_HTTP_METHOD_PROPFIND;
+  extern tsapi const char* TS_HTTP_METHOD_PROPPATCH;
+  extern tsapi const char* TS_HTTP_METHOD_LOCK;
+  extern tsapi const char* TS_HTTP_METHOD_UNLOCK;
+  extern tsapi const char* TS_HTTP_METHOD_MKCOL;
+  extern tsapi const char* TS_HTTP_METHOD_REPORT;
+  extern tsapi const char* TS_HTTP_METHOD_CHECKOUT;
 
   /* --------------------------------------------------------------------------
      HTTP methods string lengths */
@@ -1151,6 +1160,15 @@ extern "C"
   extern tsapi int TS_HTTP_LEN_PUT;
   extern tsapi int TS_HTTP_LEN_TRACE;
   extern tsapi int TS_HTTP_LEN_PUSH;
+  extern tsapi int TS_HTTP_LEN_COPY;
+  extern tsapi int TS_HTTP_LEN_MOVE;
+  extern tsapi int TS_HTTP_LEN_PROPFIND;
+  extern tsapi int TS_HTTP_LEN_PROPPATCH;
+  extern tsapi int TS_HTTP_LEN_LOCK;
+  extern tsapi int TS_HTTP_LEN_UNLOCK;
+  extern tsapi int TS_HTTP_LEN_MKCOL;
+  extern tsapi int TS_HTTP_LEN_REPORT;
+  extern tsapi int TS_HTTP_LEN_CHECKOUT;
 
   /* --------------------------------------------------------------------------
      TLS Next Protocol well-known protocol names. */

@@ -60,6 +60,16 @@ const char *HTTP_METHOD_PURGE;
 const char *HTTP_METHOD_PUT;
 const char *HTTP_METHOD_TRACE;
 const char *HTTP_METHOD_PUSH;
+//Support WebDAV methods
+const char *HTTP_METHOD_COPY;
+const char *HTTP_METHOD_MOVE;
+const char *HTTP_METHOD_PROPFIND;
+const char *HTTP_METHOD_PROPPATCH;
+const char *HTTP_METHOD_LOCK;
+const char *HTTP_METHOD_UNLOCK;
+const char *HTTP_METHOD_MKCOL;
+const char *HTTP_METHOD_REPORT;
+const char *HTTP_METHOD_CHECKOUT;
 
 int HTTP_WKSIDX_CONNECT;
 int HTTP_WKSIDX_DELETE;
@@ -72,6 +82,15 @@ int HTTP_WKSIDX_PURGE;
 int HTTP_WKSIDX_PUT;
 int HTTP_WKSIDX_TRACE;
 int HTTP_WKSIDX_PUSH;
+int HTTP_WKSIDX_COPY;
+int HTTP_WKSIDX_MOVE;
+int HTTP_WKSIDX_PROPFIND;
+int HTTP_WKSIDX_PROPPATCH;
+int HTTP_WKSIDX_LOCK;
+int HTTP_WKSIDX_UNLOCK;
+int HTTP_WKSIDX_MKCOL;
+int HTTP_WKSIDX_REPORT;
+int HTTP_WKSIDX_CHECKOUT;
 int HTTP_WKSIDX_METHODS_CNT = 0;
 
 int HTTP_LEN_CONNECT;
@@ -85,6 +104,15 @@ int HTTP_LEN_PURGE;
 int HTTP_LEN_PUT;
 int HTTP_LEN_TRACE;
 int HTTP_LEN_PUSH;
+int HTTP_LEN_COPY;
+int HTTP_LEN_MOVE;
+int HTTP_LEN_PROPFIND;
+int HTTP_LEN_PROPPATCH;
+int HTTP_LEN_LOCK;
+int HTTP_LEN_UNLOCK;
+int HTTP_LEN_MKCOL;
+int HTTP_LEN_REPORT;
+int HTTP_LEN_CHECKOUT;
 
 const char *HTTP_VALUE_BYTES;
 const char *HTTP_VALUE_CHUNKED;
@@ -197,6 +225,16 @@ http_init()
     HTTP_METHOD_PUT = hdrtoken_string_to_wks("PUT");
     HTTP_METHOD_TRACE = hdrtoken_string_to_wks("TRACE");
     HTTP_METHOD_PUSH = hdrtoken_string_to_wks("PUSH");
+    HTTP_METHOD_COPY = hdrtoken_string_to_wks("COPY");
+    HTTP_METHOD_MOVE = hdrtoken_string_to_wks("MOVE");
+    HTTP_METHOD_PROPFIND = hdrtoken_string_to_wks("PROPFIND");
+    HTTP_METHOD_PROPPATCH = hdrtoken_string_to_wks("PROPPATCH");
+    HTTP_METHOD_LOCK = hdrtoken_string_to_wks("LOCK");
+    HTTP_METHOD_UNLOCK = hdrtoken_string_to_wks("UNLOCK");
+    HTTP_METHOD_MKCOL = hdrtoken_string_to_wks("MKCOL");
+    HTTP_METHOD_REPORT = hdrtoken_string_to_wks("REPORT");
+    HTTP_METHOD_CHECKOUT = hdrtoken_string_to_wks("CHECKOUT");
+
 
     // HTTP methods index calculation. Don't forget to count them!
     // Don't change the order of calculation! Each index has related bitmask (see http quick filter)
@@ -222,7 +260,24 @@ http_init()
     HTTP_WKSIDX_METHODS_CNT++;
     HTTP_WKSIDX_PUSH = hdrtoken_wks_to_index(HTTP_METHOD_PUSH);
     HTTP_WKSIDX_METHODS_CNT++;
-
+    HTTP_WKSIDX_COPY = hdrtoken_wks_to_index(HTTP_METHOD_COPY);
+    HTTP_WKSIDX_METHODS_CNT++;
+    HTTP_WKSIDX_MOVE = hdrtoken_wks_to_index(HTTP_METHOD_MOVE);
+    HTTP_WKSIDX_METHODS_CNT++;
+    HTTP_WKSIDX_PROPFIND = hdrtoken_wks_to_index(HTTP_METHOD_PROPFIND);
+    HTTP_WKSIDX_METHODS_CNT++;
+    HTTP_WKSIDX_PROPPATCH = hdrtoken_wks_to_index(HTTP_METHOD_PROPPATCH);
+    HTTP_WKSIDX_METHODS_CNT++;
+    HTTP_WKSIDX_LOCK = hdrtoken_wks_to_index(HTTP_METHOD_LOCK);
+    HTTP_WKSIDX_METHODS_CNT++;
+    HTTP_WKSIDX_UNLOCK = hdrtoken_wks_to_index(HTTP_METHOD_UNLOCK);
+    HTTP_WKSIDX_METHODS_CNT++;
+    HTTP_WKSIDX_MKCOL = hdrtoken_wks_to_index(HTTP_METHOD_MKCOL);
+    HTTP_WKSIDX_METHODS_CNT++;
+    HTTP_WKSIDX_REPORT = hdrtoken_wks_to_index(HTTP_METHOD_REPORT);
+    HTTP_WKSIDX_METHODS_CNT++;
+    HTTP_WKSIDX_CHECKOUT = hdrtoken_wks_to_index(HTTP_METHOD_CHECKOUT);
+    HTTP_WKSIDX_METHODS_CNT++;
 
     HTTP_LEN_CONNECT = hdrtoken_wks_to_length(HTTP_METHOD_CONNECT);
     HTTP_LEN_DELETE = hdrtoken_wks_to_length(HTTP_METHOD_DELETE);
@@ -235,6 +290,15 @@ http_init()
     HTTP_LEN_PUT = hdrtoken_wks_to_length(HTTP_METHOD_PUT);
     HTTP_LEN_TRACE = hdrtoken_wks_to_length(HTTP_METHOD_TRACE);
     HTTP_LEN_PUSH = hdrtoken_wks_to_length(HTTP_METHOD_PUSH);
+    HTTP_LEN_COPY = hdrtoken_wks_to_length(HTTP_METHOD_COPY);
+    HTTP_LEN_MOVE = hdrtoken_wks_to_length(HTTP_METHOD_MOVE);
+    HTTP_LEN_PROPFIND = hdrtoken_wks_to_length(HTTP_METHOD_PROPFIND);
+    HTTP_LEN_PROPPATCH = hdrtoken_wks_to_length(HTTP_METHOD_PROPPATCH);
+    HTTP_LEN_LOCK = hdrtoken_wks_to_length(HTTP_METHOD_LOCK);
+    HTTP_LEN_UNLOCK = hdrtoken_wks_to_length(HTTP_METHOD_UNLOCK);
+    HTTP_LEN_MKCOL = hdrtoken_wks_to_length(HTTP_METHOD_MKCOL);
+    HTTP_LEN_REPORT = hdrtoken_wks_to_length(HTTP_METHOD_REPORT);
+    HTTP_LEN_CHECKOUT = hdrtoken_wks_to_length(HTTP_METHOD_CHECKOUT);
 
     HTTP_VALUE_BYTES = hdrtoken_string_to_wks("bytes");
     HTTP_VALUE_CHUNKED = hdrtoken_string_to_wks("chunked");

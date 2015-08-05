@@ -90,6 +90,16 @@ REGRESSION_TEST(HttpTransact_is_request_valid)(RegressionTest *t, int /* level *
                   {"http", "POST / HTTP/1.1\r\nHost: abc.com\r\n\r\n", false},
                   {"http", "PUSH / HTTP/1.1\r\nHost: abc.com\r\n\r\n", false},
                   {"http", "PUT / HTTP/1.1\r\nHost: abc.com\r\n\r\n", false},
+		              // good copy request
+                  {"http", "COPY / HTTP/1.1\r\nHost: abc.com\r\nDestination: abc.com/test-copy\r\n", true},
+                  {"http", "MOVE / HTTP/1.1\r\nHost: abc.com\r\nDestination: abc.com/test-copy\r\n", true},
+                  {"http", "PROPFIND / HTTP/1.1\r\nHost: abc.com\r\n\r\n", true},
+                  {"http", "PROPPATCH / HTTP/1.1\r\nHost: abc.com\r\n\r\n", true},
+                  {"http", "LOCK / HTTP/1.1\r\nHost: abc.com\r\n\r\n", true},
+                  {"http", "UNLOCK / HTTP/1.1\r\nHost: abc.com\r\n\r\n", true},
+                  {"http", "MKCOL / HTTP/1.1\r\nHost: abc.com\r\n\r\n", true},
+                  {"http", "REPORT / HTTP/1.1\r\nHost: abc.com\r\n\r\n", true},
+                  {"http", "CHECKOUT / HTTP/1.1\r\nHost: abc.com\r\n\r\n", true},
                   {NULL, NULL, false}};
   for (int i = 0; requests[i].req; i++) {
     setup_client_request(&sm, requests[i].scheme, requests[i].req);

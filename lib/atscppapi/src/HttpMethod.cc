@@ -25,4 +25,7 @@
 const std::string atscppapi::HTTP_METHOD_STRINGS[] = {std::string("UNKNOWN"),   std::string("GET"),     std::string("POST"),
                                                       std::string("HEAD"),      std::string("CONNECT"), std::string("DELETE"),
                                                       std::string("ICP_QUERY"), std::string("OPTIONS"), std::string("PURGE"),
-                                                      std::string("PUT"),       std::string("TRACE"),   std::string("PUSH")};
+                                                      std::string("PUT"),       std::string("TRACE"),   std::string("PUSH"),
+                                                      std::string("COPY"),      std::string("MOVE"),    std::string("PROPFIND"),
+                                                      std::string("PROPPATCH"), std::string("LOCK"),   std::string("UNLOCK"),
+                                                      std::string("MKCOL"),    std::string("REPORT"),  std::string("CHECKOUT")};
