@@ -157,6 +157,19 @@ rec_sourceof(int rec_source)
   }
 }
 
+static const char *
+rec_labelof(int rec_class)
+{
+  switch (rec_class) {
+  case RECT_CONFIG:
+    return "CONFIG";
+  case RECT_LOCAL:
+    return "LOCAL";
+  default:
+    return NULL;
+  }
+}
+
 static std::string
 timestr(time_t tm)
 {
@@ -170,20 +183,7 @@ format_record(const CtrlMgmtRecord &record, bool recfmt)
   CtrlMgmtRecordValue value(record);
 
   if (recfmt) {
-    const char *label;
-
-    switch (record.rclass()) {
-    case RECT_CONFIG:
-      label = "CONFIG ";
-      break;
-    case RECT_LOCAL:
-      label = "LOCAL ";
-      break;
-    default:
-      label = "";
-    }
-
-    printf("%s%s %s %s\n", label, record.name(), rec_typeof(record.type()), value.c_str());
+    printf("%s %s %s %s\n", rec_labelof(record.rclass()), record.name(), rec_typeof(record.type()), value.c_str());
   } else {
     printf("%s: %s\n", record.name(), value.c_str());
   }
@@ -391,6 +391,43 @@ config_status(unsigned argc, const char **argv)
 }
 
 static int
+config_defaults(unsigned argc, const char **argv)
+{
+  int recfmt = 0;
+  const ArgumentDescription opts[] = {
+    {"records", '-', "Emit output in records.config format", "F", &recfmt, NULL, NULL},
+  };
+
+  if (!CtrlProcessArguments(argc, argv, opts, countof(opts)) || n_file_arguments != 0) {
+    return CtrlCommandUsage("config diff [OPTIONS]");
+  }
+
+  TSMgmtError error;
+  CtrlMgmtRecordDescriptionList descriptions;
+
+  error = descriptions.match(".*");
+  if (error != TS_ERR_OKAY) {
+    CtrlMgmtError(error, "failed to fetch record metadata");
+    return CTRL_EX_ERROR;
+  }
+
+  while (!descriptions.empty()) {
+    TSConfigRecordDescription *desc = descriptions.next();
+    CtrlMgmtRecordValue deflt(desc->rec_type, desc->rec_default);
+
+    if (recfmt) {
+      printf("%s %s %s %s\n", rec_labelof(desc->rec_class), desc->rec_name, rec_typeof(desc->rec_type), deflt.c_str());
+    } else {
+      printf("%s: %s\n", desc->rec_name, deflt.c_str());
+    }
+
+    TSConfigRecordDescriptionDestroy(desc);
+  }
+
+  return CTRL_EX_OK;
+}
+
+static int
 config_diff(unsigned argc, const char **argv)
 {
   int recfmt = 0;
@@ -439,20 +476,8 @@ config_diff(unsigned argc, const char **argv)
       CtrlMgmtRecordValue deflt(desc->rec_type, desc->rec_default);
 
       if (recfmt) {
-        const char *label;
-
-        switch (desc->rec_class) {
-        case RECT_CONFIG:
-          label = "CONFIG ";
-          break;
-        case RECT_LOCAL:
-          label = "LOCAL ";
-          break;
-        default:
-          label = "";
-        }
-
-        printf("%s%s %s %s # default: %s\n", label, desc->rec_name, rec_typeof(desc->rec_type), current.c_str(), deflt.c_str());
+        printf("%s %s %s %s # default: %s\n", rec_labelof(desc->rec_class), desc->rec_name, rec_typeof(desc->rec_type),
+               current.c_str(), deflt.c_str());
       } else {
         printf("%s has changed\n", desc->rec_name);
         printf("\t%-16s: %s\n", "Current Value", current.c_str());
@@ -470,6 +495,7 @@ int
 subcommand_config(unsigned argc, const char **argv)
 {
   const subcommand commands[] = {
+    {config_defaults, "defaults", "Show default information configuration values"},
     {config_describe, "describe", "Show detailed information about configuration values"},
     {config_diff, "diff", "Show non-default configuration values"},
     {config_get, "get", "Get one or more configuration values"},

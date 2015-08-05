@@ -98,7 +98,11 @@ CtrlMgmtRecordValue::init(TSRecordT _t, TSRecordValueT _v)
     snprintf(this->fmt.nbuf, sizeof(this->fmt.nbuf), "%f", _v.float_val);
     break;
   case TS_REC_STRING:
-    this->fmt.str = _v.string_val;
+    if (strcmp(_v.string_val, "") == 0) {
+      this->fmt.str = "\"\"";
+    } else {
+      this->fmt.str = _v.string_val;
+    }
     break;
   default:
     rec_type = TS_REC_STRING;

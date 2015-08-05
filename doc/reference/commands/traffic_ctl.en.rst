@@ -97,6 +97,13 @@ traffic_ctl cluster
 traffic_ctl config
 ------------------
 .. program:: traffic_ctl config
+.. option:: defaults [--records]
+
+    Display the default values for all configuration records. The
+    *--records* flag has the same behavior as :option:`traffic_ctl
+    config get --records`.
+
+.. program:: traffic_ctl config
 .. option:: describe RECORD [RECORD...]
 
     Display all the known information about a configuration record.
