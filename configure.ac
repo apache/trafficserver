@@ -1052,7 +1052,7 @@ fi
 
 AC_SEARCH_LIBS([exc_capture_context], [exc], [], [])
 AC_SEARCH_LIBS([MLD_demangle_string], [mld], [], [])
-AC_SEARCH_LIBS([dlopen], [dl], [], [])
+AC_SEARCH_LIBS([dlsym], [dl], [], [])
 AC_SEARCH_LIBS([socket], [socket], [], [])
 AC_SEARCH_LIBS([gethostbyname], [nsl], [], [])
 AC_SEARCH_LIBS([clock_gettime], [rt], [], [])
