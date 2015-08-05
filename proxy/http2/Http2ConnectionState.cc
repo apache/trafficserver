@@ -524,6 +524,17 @@ rcv_window_update_frame(Http2ClientSession &cs, Http2ConnectionState &cstate, co
       return Http2Error(HTTP2_ERROR_CLASS_CONNECTION, HTTP2_ERROR_PROTOCOL_ERROR);
     }
 
+    // A sender MUST NOT allow a flow-control window to exceed 2^31-1
+    // octets.  If a sender receives a WINDOW_UPDATE that causes a flow-
+    // control window to exceed this maximum, it MUST terminate either the
+    // stream or the connection, as appropriate.  For streams, the sender
+    // sends a RST_STREAM with an error code of FLOW_CONTROL_ERROR; for the
+    // connection, a GOAWAY frame with an error code of FLOW_CONTROL_ERROR
+    // is sent.
+    if (size > HTTP2_MAX_WINDOW_SIZE - cstate.client_rwnd) {
+      return Http2Error(HTTP2_ERROR_CLASS_CONNECTION, HTTP2_ERROR_FLOW_CONTROL_ERROR);
+    }
+
     cstate.client_rwnd += size;
     cstate.restart_streams();
   } else {
@@ -545,6 +556,17 @@ rcv_window_update_frame(Http2ClientSession &cs, Http2ConnectionState &cstate, co
     // flow control window increment of 0 as a stream error of type PROTOCOL_ERROR;
     if (size == 0) {
       return Http2Error(HTTP2_ERROR_CLASS_STREAM, HTTP2_ERROR_PROTOCOL_ERROR);
+    }
+
+    // A sender MUST NOT allow a flow-control window to exceed 2^31-1
+    // octets.  If a sender receives a WINDOW_UPDATE that causes a flow-
+    // control window to exceed this maximum, it MUST terminate either the
+    // stream or the connection, as appropriate.  For streams, the sender
+    // sends a RST_STREAM with an error code of FLOW_CONTROL_ERROR; for the
+    // connection, a GOAWAY frame with an error code of FLOW_CONTROL_ERROR
+    // is sent.
+    if (size > HTTP2_MAX_WINDOW_SIZE - stream->client_rwnd) {
+      return Http2Error(HTTP2_ERROR_CLASS_STREAM, HTTP2_ERROR_FLOW_CONTROL_ERROR);
     }
 
     stream->client_rwnd += size;
