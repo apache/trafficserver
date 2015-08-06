@@ -7495,37 +7495,33 @@ HttpSM::redirect_request(const char *redirect_url, const int redirect_len)
 
     if (host != NULL) {
       int port = clientUrl.port_get();
-      char buf[host_len + 7];
-
       int redirectSchemeLen;
       const char *redirectScheme = clientUrl.scheme_get(&redirectSchemeLen);
+
       if (redirectScheme == NULL) {
         clientUrl.scheme_set(scheme_str, scheme_len);
-        DebugSM("http_redirect", "[HttpSM::redirect_request] hsot without scheme %s", buf);
+        DebugSM("http_redirect", "[HttpSM::redirect_request] URL without scheme %.*s", redirectSchemeLen, redirectScheme);
       }
 
       if (noPortInHost) {
         int redirectSchemeIdx = clientUrl.scheme_get_wksidx();
-
         bool defaultPort =
           (((redirectSchemeIdx == URL_WKSIDX_HTTP) && (port == 80)) || ((redirectSchemeIdx == URL_WKSIDX_HTTPS) && (port == 443)));
 
-        if (!defaultPort)
+        if (!defaultPort) {
           noPortInHost = false;
+        }
       }
-
-      ink_strlcpy(buf, host, host_len + 1);
 
       if (!noPortInHost) {
-        char port_buf[6]; // handle upto 5 digit port
-        buf[host_len++] = ':';
+        char buf[host_len + 7]; // 5 + 1 + 1 ("12345" + ':' + '\0')
 
-        host_len += ink_small_itoa(port, port_buf, sizeof(port_buf));
-        ink_strlcat(buf, port_buf, sizeof(buf));
+        host_len = snprintf(buf, host_len + 7, "%.*s:%d", host_len, host, port);
+        t_state.hdr_info.client_request.value_set(MIME_FIELD_HOST, MIME_LEN_HOST, buf, host_len);
+      } else {
+        t_state.hdr_info.client_request.value_set(MIME_FIELD_HOST, MIME_LEN_HOST, host, host_len);
       }
-
       t_state.hdr_info.client_request.m_target_cached = false;
-      t_state.hdr_info.client_request.value_set(MIME_FIELD_HOST, MIME_LEN_HOST, buf, host_len);
     } else {
       // the client request didn't have a host, so use the current origin host
       if (valid_origHost) {
@@ -7533,18 +7529,15 @@ HttpSM::redirect_request(const char *redirect_url, const int redirect_len)
 
         // the client request didn't have a host, so use the current origin host
         DebugSM("http_redirect", "[HttpSM::redirect_request] keeping client request host %s://%s", next_hop_scheme, origHost);
-        char *origHost1 = strtok_r(origHost, ":", &saveptr);
-        if (origHost1 == NULL) {
+        char *origHostNoPort = strtok_r(origHost, ":", &saveptr);
+
+        if (origHostNoPort == NULL) {
           goto LhostError;
         }
-        origHost_len = strlen(origHost1);
-        int origHostPort_len = origHost_len;
-        char buf[origHostPort_len + 7];
-        ink_strlcpy(buf, origHost1, origHost_len + 1);
 
+        host_len = strlen(origHostNoPort);
         if (noPortInHost) {
           int redirectSchemeIdx = t_state.next_hop_scheme;
-
           bool defaultPort = (((redirectSchemeIdx == URL_WKSIDX_HTTP) && (origPort == 80)) ||
                               ((redirectSchemeIdx == URL_WKSIDX_HTTPS) && (origPort == 443)));
 
@@ -7553,19 +7546,18 @@ HttpSM::redirect_request(const char *redirect_url, const int redirect_len)
         }
 
         if (!noPortInHost) {
-          char port_buf[6]; // handle upto 5 digit port
-          buf[origHostPort_len++] = ':';
-          origHostPort_len += ink_small_itoa(origPort, port_buf, sizeof(port_buf));
-          ink_strlcat(buf, port_buf, sizeof(buf));
+          char buf[host_len + 7]; // 5 + 1 + 1 ("12345" + ':' + '\0')
+
+          host_len = snprintf(buf, host_len + 7, "%s:%d", origHostNoPort, origPort);
+          t_state.hdr_info.client_request.value_set(MIME_FIELD_HOST, MIME_LEN_HOST, buf, host_len);
+        } else {
+          t_state.hdr_info.client_request.value_set(MIME_FIELD_HOST, MIME_LEN_HOST, origHostNoPort, host_len);
         }
 
+        // Cleanup of state etc.
         url_nuke_proxy_stuff(clientUrl.m_url_impl);
         url_nuke_proxy_stuff(t_state.hdr_info.client_request.m_url_cached.m_url_impl);
         t_state.hdr_info.client_request.method_set(origMethod, origMethod_len);
-        if (noPortInHost)
-          t_state.hdr_info.client_request.value_set(MIME_FIELD_HOST, MIME_LEN_HOST, buf, origHost_len);
-        else
-          t_state.hdr_info.client_request.value_set(MIME_FIELD_HOST, MIME_LEN_HOST, buf, origHostPort_len);
         t_state.hdr_info.client_request.m_target_cached = false;
         clientUrl.scheme_set(scheme_str, scheme_len);
       } else {
