@@ -233,7 +233,6 @@ traffic_server_LDADD = \
   @LIBPROFILER@ \
   @SPDYLAY_LIBS@ \
   @OPENSSL_LIBS@ \
-  @LIBPTHREAD@ \
   -lm
 
 if BUILD_LUAJIT
@@ -255,7 +254,7 @@ traffic_logcat_LDADD = \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/lib/ts/libtsutil.la \
   @LIBRESOLV@ @LIBPCRE@ @LIBTCL@ @HWLOC_LIBS@\
-  @LIBEXPAT@ @LIBPROFILER@ @LIBPTHREAD@ -lm
+  @LIBEXPAT@ @LIBPROFILER@ -lm
 
 traffic_logstats_SOURCES = logstats.cc
 traffic_logstats_LDADD = \
@@ -268,7 +267,7 @@ traffic_logstats_LDADD = \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/lib/ts/libtsutil.la \
   @LIBRESOLV@ @LIBPCRE@ @LIBTCL@ @HWLOC_LIBS@ \
-  @LIBEXPAT@ @LIBPROFILER@ @LIBPTHREAD@ -lm
+  @LIBEXPAT@ @LIBPROFILER@ -lm
 
 traffic_sac_SOURCES = \
   sac.cc \
@@ -331,7 +330,6 @@ traffic_sac_LDADD = \
   @LIBPROFILER@ \
   @SPDYLAY_LIBS@ \
   @OPENSSL_LIBS@ \
-  @LIBPTHREAD@ \
   -lm
 
 if BUILD_TESTS

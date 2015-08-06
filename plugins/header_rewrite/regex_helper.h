@@ -18,7 +18,13 @@
 #ifndef REGEX_HELPER_H
 #define REGEX_HELPER_H
 
+#include "ts/ink_defs.h"
+
+#ifdef HAVE_PCRE_PCRE_H
+#include <pcre/pcre.h>
+#else
 #include <pcre.h>
+#endif
 
 #include <string>
 

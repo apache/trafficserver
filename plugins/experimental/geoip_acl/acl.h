@@ -21,7 +21,12 @@
 
 #include <ts/ts.h>
 #include <ts/remap.h>
+
+#ifdef HAVE_PCRE_PCRE_H
+#include <pcre/pcre.h>
+#else
 #include <pcre.h>
+#endif
 
 #include <string>
 
