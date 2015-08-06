@@ -916,9 +916,6 @@ fileUpdated(char *fname, bool incVersion)
   } else if (strcmp(fname, "storage.config") == 0) {
     mgmt_log(stderr, "[fileUpdated] storage.config changed, need restart auto-rebuild mode\n");
 
-  } else if (strcmp(fname, "proxy.pac") == 0) {
-    mgmt_log(stderr, "[fileUpdated] proxy.pac file has been modified\n");
-
   } else if (strcmp(fname, "icp.config") == 0) {
     lmgmt->signalFileChange("proxy.config.icp.icp_configuration");
 

@@ -96,14 +96,6 @@ msgid ""
 "perform the following configuration:"
 msgstr ""
 
-#: ../../admin/explicit-proxy-caching.en.rst:69
-msgid ""
-"Either copy an existing PAC file into the Traffic Server ``config`` "
-"directory or enter a script that defines the proxy server configuration "
-"settings in the ``proxy.pac`` file provided. The file is empty by default. "
-"A sample script is provided in `Sample PAC File`_."
-msgstr ""
-
 #: ../../admin/explicit-proxy-caching.en.rst:74
 msgid ""
 "Specify the port Traffic Server uses to serve the its synthetic healthchecks. The default "
