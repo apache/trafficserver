@@ -16,6 +16,7 @@
   limitations under the License.
  */
 
+#include "ts/ink_defs.h"
 #include "url_sig.h"
 
 #include <stdio.h>
