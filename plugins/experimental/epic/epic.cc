@@ -300,8 +300,9 @@ epic_flush_stats(TSCont /* contp */, TSEvent /* event */, void * /* edata */)
 void
 TSPluginInit(int argc, const char *argv[])
 {
-  static const struct option longopts[] = {
-    {"directory", required_argument, NULL, 'd'}, {"period", required_argument, NULL, 'p'}, {NULL, 0, NULL, 0}};
+  static const struct option longopts[] = {{const_cast<char *>("directory"), required_argument, NULL, 'd'},
+                                           {const_cast<char *>("period"), required_argument, NULL, 'p'},
+                                           {NULL, 0, NULL, 0}};
 
   TSPluginRegistrationInfo info;
 
