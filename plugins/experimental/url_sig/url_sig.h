@@ -19,7 +19,6 @@
 #ifndef URL_SIG_H_
 #define URL_SIG_H_
 
-#define VERSION "1.0"
 /* in the query string that we add to sign the url: */
 #define CIP_QSTRING "C" /* C=24.0.33.12 designates the client IP address */
 #define EXP_QSTRING "E" /* E=1356128799 means expires at (seconds since Unix epoch) */
