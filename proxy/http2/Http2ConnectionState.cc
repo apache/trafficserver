@@ -173,13 +173,13 @@ rcv_headers_frame(Http2ClientSession &cs, Http2ConnectionState &cstate, const Ht
     return Http2Error(HTTP2_ERROR_CLASS_CONNECTION, HTTP2_ERROR_PROTOCOL_ERROR);
   }
 
-  Http2Stream *stream = cstate.find_stream(id);
   if (id <= cstate.get_latest_stream_id()) {
     return Http2Error(HTTP2_ERROR_CLASS_STREAM, HTTP2_ERROR_STREAM_CLOSED);
   }
 
   // Create new stream
-  stream = cstate.create_stream(id);
+  Http2Stream *stream = cstate.create_stream(id);
+
   if (!stream) {
     return Http2Error(HTTP2_ERROR_CLASS_CONNECTION, HTTP2_ERROR_PROTOCOL_ERROR);
   }
