@@ -7928,8 +7928,12 @@ HttpTransact::build_response(State *s, HTTPHdr *base_response, HTTPHdr *outgoing
 
   // If the response is prohibited from containing a body,
   //  we know the content length is trustable for keep-alive
-  if (is_response_body_precluded(status_code, s->method))
+  if (is_response_body_precluded(status_code, s->method)) {
     s->hdr_info.trust_response_cl = true;
+    s->hdr_info.response_content_length = 0;
+    s->client_info.transfer_encoding = HttpTransact::NO_TRANSFER_ENCODING;
+    s->server_info.transfer_encoding = HttpTransact::NO_TRANSFER_ENCODING;
+  }
 
   handle_response_keep_alive_headers(s, outgoing_version, outgoing_response);
 
