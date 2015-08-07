@@ -147,6 +147,7 @@ HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State *c
     buffer = fabricate(&acpt_language_list, &acpt_charset_list, "default", context, resulting_buffer_length, &lang_ptr,
                        &charset_ptr, &set);
   }
+
   ///////////////////////////////////
   // enforce the max buffer length //
   ///////////////////////////////////
@@ -397,10 +398,12 @@ HttpBodyFactory::fabricate(StrList *acpt_language_list, StrList *acpt_charset_li
                            const char **set_return)
 {
   char *buffer;
+  const char* pType=context->txn_conf->error_response_type;
   const char *set;
   HttpBodyTemplate *t;
   HttpBodySet *body_set;
-
+  char propertyType[32];
+  Note("response type %s\n",context->txn_conf->error_response_type);
   if (set_return)
     *set_return = "???";
   *content_language_return = NULL;
@@ -430,9 +433,22 @@ HttpBodyFactory::fabricate(StrList *acpt_language_list, StrList *acpt_charset_li
 
   if (set_return)
     *set_return = set;
-
+  if(pType == NULL) // if pType is NULL
+  {
+      sprintf(propertyType,"%s",type);
+  }
+  else if(!strncmp(pType,"NONE",4))
+  {
+      sprintf(propertyType,"%s",type);
+  }
+  else
+  {
+      sprintf(propertyType,"%s_%s",pType,type);
+  }
   // see if we have a custom error page template
-  t = find_template(set, type, &body_set);
+  t = find_template(set, propertyType, &body_set);
+  if(t == NULL)
+      t=find_template(set,type,&body_set);// this executes if the propertyType is wrong and doesn't exist
   if (t == NULL) {
     Debug("body_factory", "  can't find template, returning NULL template");
     return (NULL);

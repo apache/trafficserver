@@ -386,7 +386,7 @@ struct OverridableHttpConfigParams {
       default_buffer_size_index(8), default_buffer_water_mark(32768), slow_log_threshold(0),
 
       // Strings / floats must come last
-      proxy_response_server_string(NULL), proxy_response_server_string_len(0), global_user_agent_header(NULL),
+      error_response_type(NULL),error_response_type_len(0),proxy_response_server_string(NULL), proxy_response_server_string_len(0), global_user_agent_header(NULL),
       global_user_agent_header_size(0), cache_heuristic_lm_factor(0.10), freshness_fuzz_prob(0.005), background_fill_threshold(0.5)
   {
   }
@@ -561,6 +561,8 @@ struct OverridableHttpConfigParams {
   ///////////////////////////////////////////////////////////////////
   // Server header                                                 //
   ///////////////////////////////////////////////////////////////////
+  char* error_response_type;
+  size_t error_response_type_len;
   char *proxy_response_server_string;      // This does not get free'd by us!
   size_t proxy_response_server_string_len; // Updated when server_string is set.
 
