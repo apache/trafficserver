@@ -14,6 +14,7 @@
    implied.  See the License for the specific language governing
    permissions and limitations under the License.
 
+.. default-domain:: c
 
 TSHttpTxnErrorBodyBufferSet
 ===========================
@@ -26,12 +27,14 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. c:function:: void TSHttpTxnErrorBodyBufferSet(TSHttpTxn txnp, TSIOBufferReader body, char const* mimetype)
+.. function:: void TSHttpTxnErrorBodyBufferSet(TSHttpTxn txnp, TSIOBufferReader body, char const* mimetype)
 
 
 Description
 -----------
 
-Note that both string arguments must be allocated with :c:func:`TSmalloc` or :c:func:`TSstrdup`.
+This sets the body for the response to the user agent when the status is an error code.
+
+:arg:`mimetype` must be allocated with :func:`TSmalloc` or :func:`TSstrdup`.
 The mimetype argument is optional, if not provided it defaults to "text/html".  Sending an emptry
 string would prevent setting a content type header (but that is not advised).
