@@ -107,6 +107,7 @@ class TestHeadRequestWithoutTimeout(helpers.EnvironmentCase):
                     resp = conn.recv(4096)
                     if len(resp) == 0: 
                         break
+                    response_content = resp
                     log.info(resp)
                 except:
                     break
@@ -116,3 +117,5 @@ class TestHeadRequestWithoutTimeout(helpers.EnvironmentCase):
             log.info("head request with case(%s) costs %f seconds while the timout is %f seconds." % (
                     request_case, end_time - begin_time, cls.timeout))
             cls.assertGreater(cls.timeout, end_time - begin_time)
+            if request_case == 'CL':
+                cls.assertIn('Content-Length', response_content)
