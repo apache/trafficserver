@@ -203,6 +203,16 @@ The following list describes Traffic Server custom logging fields.
     The SSL session/ticket reused status; indicates if this request hit
     the SSL session/ticket and avoided a full SSL handshake.
 
+.. _cqssv:
+
+``cqssv``
+    The SSL/TLS version used to communicate with the client.
+
+.. _cqssc:
+
+``cqssc``
+    The cipher used by ATS to communicate with the client over SSL.
+
 .. _cqtx:
 
 ``cqtx``

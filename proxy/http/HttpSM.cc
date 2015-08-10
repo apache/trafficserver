@@ -277,9 +277,9 @@ HttpSM::HttpSM()
     client_request_hdr_bytes(0), client_request_body_bytes(0), server_request_hdr_bytes(0), server_request_body_bytes(0),
     server_response_hdr_bytes(0), server_response_body_bytes(0), client_response_hdr_bytes(0), client_response_body_bytes(0),
     cache_response_hdr_bytes(0), cache_response_body_bytes(0), pushed_response_hdr_bytes(0), pushed_response_body_bytes(0),
-    client_tcp_reused(false), client_ssl_reused(false), client_connection_is_ssl(false), plugin_tag(0), plugin_id(0),
-    hooks_set(false), cur_hook_id(TS_HTTP_LAST_HOOK), cur_hook(NULL), cur_hooks(0), callout_state(HTTP_API_NO_CALLOUT),
-    terminate_sm(false), kill_this_async_done(false), parse_range_done(false)
+    client_tcp_reused(false), client_ssl_reused(false), client_connection_is_ssl(false), client_sec_protocol("-"), 
+    client_cipher_suite("-"), plugin_tag(0), plugin_id(0), hooks_set(false), cur_hook_id(TS_HTTP_LAST_HOOK), cur_hook(NULL),
+    cur_hooks(0), callout_state(HTTP_API_NO_CALLOUT), terminate_sm(false), kill_this_async_done(false), parse_range_done(false)
 {
   memset(&history, 0, sizeof(history));
   memset(&vc_table, 0, sizeof(vc_table));
@@ -481,6 +481,8 @@ HttpSM::attach_client_session(HttpClientSession *client_vc, IOBufferReader *buff
   if (ssl_vc != NULL) {
     client_connection_is_ssl = true;
     client_ssl_reused = ssl_vc->getSSLSessionCacheHit();
+    client_sec_protocol = ssl_vc->getSSLProtocol();
+    client_cipher_suite = ssl_vc->getSSLCipherSuite();
   }
 
   ink_release_assert(ua_session->get_half_close_flag() == false);
