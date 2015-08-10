@@ -402,7 +402,7 @@ HttpBodyFactory::fabricate(StrList *acpt_language_list, StrList *acpt_charset_li
   const char *set;
   HttpBodyTemplate *t;
   HttpBodySet *body_set;
-  char propertyType[32];
+  char template_base[32];
   Note("response type %s\n",context->txn_conf->body_factory_template_base);
   if (set_return)
     *set_return = "???";
@@ -435,20 +435,20 @@ HttpBodyFactory::fabricate(StrList *acpt_language_list, StrList *acpt_charset_li
     *set_return = set;
   if(pType == NULL) // if pType is NULL
   {
-      sprintf(propertyType,"%s",type);
+      sprintf(template_base,"%s",type);
   }
   else if(!strncmp(pType,"NONE",4))
   {
-      sprintf(propertyType,"%s",type);
+      sprintf(template_base,"%s",type);
   }
   else
   {
-      sprintf(propertyType,"%s_%s",pType,type);
+      sprintf(template_base,"%s_%s",pType,type);
   }
   // see if we have a custom error page template
-  t = find_template(set, propertyType, &body_set);
+  t = find_template(set, template_base, &body_set);
   if(t == NULL)
-      t=find_template(set,type,&body_set);// this executes if the propertyType is wrong and doesn't exist
+      t=find_template(set,type,&body_set);// this executes if the template_base is wrong and doesn't exist
   if (t == NULL) {
     Debug("body_factory", "  can't find template, returning NULL template");
     return (NULL);
