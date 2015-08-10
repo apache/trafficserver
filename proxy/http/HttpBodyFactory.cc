@@ -403,7 +403,7 @@ HttpBodyFactory::fabricate(StrList *acpt_language_list, StrList *acpt_charset_li
   HttpBodyTemplate *t;
   HttpBodySet *body_set;
   char template_base[32];
-  Note("response type %s\n",context->txn_conf->body_factory_template_base);
+
   if (set_return)
     *set_return = "???";
   *content_language_return = NULL;
@@ -459,7 +459,7 @@ HttpBodyFactory::fabricate(StrList *acpt_language_list, StrList *acpt_charset_li
 
   // build the custom error page
   buffer = t->build_instantiated_buffer(context, buffer_length_return);
-  Note("build_instatntiated buffer %s\n",buffer);
+
   return (buffer);
 }
 
