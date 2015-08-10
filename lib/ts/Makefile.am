@@ -43,8 +43,8 @@ libtsutil_la_SOURCES = \
   Allocator.h \
   Arena.cc \
   Arena.h \
-	BaseLogFile.cc \
-	BaseLogFile.h \
+  BaseLogFile.cc \
+  BaseLogFile.h \
   Bitops.cc \
   Bitops.h \
   ConsistentHash.cc \

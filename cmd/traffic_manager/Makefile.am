@@ -29,7 +29,7 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/mgmt/cluster \
   -I$(top_srcdir)/mgmt/utils \
   -I$(top_srcdir)/lib \
-	-I$(top_srcdir)/lib/ts 
+  -I$(top_srcdir)/lib/ts 
 
 AM_LDFLAGS = \
   @EXTRA_CXX_LDFLAGS@ \
