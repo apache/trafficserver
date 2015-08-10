@@ -292,9 +292,6 @@ BaseLogFile::open_file(int perm)
     return LOG_FILE_NO_ERROR;
   }
 
-  // get root; destructor will release access
-  // ElevateAccess accesss(true);
-
   // means this object is representing a real file on disk
   m_is_regfile = true;
 
@@ -518,10 +515,6 @@ BaseMetaInfo::_read_from_file()
 void
 BaseMetaInfo::_write_to_file()
 {
-  // get root
-  // ElevateAccess follows RAII design, the destructor will release root
-  ElevateAccess accesss(true);
-
   int fd = open(_filename, O_WRONLY | O_CREAT | O_TRUNC, LOGFILE_DEFAULT_PERMS);
   if (fd < 0) {
     log_log_error("Could not open metafile %s for writing: %s\n", _filename, strerror(errno));
