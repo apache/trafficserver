@@ -7909,9 +7909,9 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
     typ = OVERRIDABLE_TYPE_INT;
     ret = &overridableHttpConfig->slow_log_threshold;
     break;
-  case TS_CONFIG_ERROR_RESPONSE_TYPE:
+  case TS_CONFIG_BODY_FACTORY_TEMPLATES_BASE:
     typ=OVERRIDABLE_TYPE_STRING;
-    ret=&overridableHttpConfig->error_response_type;
+    ret=&overridableHttpConfig->body_factory_template_base;
     break;
   // This helps avoiding compiler warnings, yet detect unhandled enum members.
   case TS_CONFIG_NULL:
@@ -8058,13 +8058,13 @@ TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
       s->t_state.txn_conf->global_user_agent_header_size = 0;
     }
     break;
-   case TS_CONFIG_ERROR_RESPONSE_TYPE:
+   case TS_CONFIG_BODY_FACTORY_TEMPLATES_BASE:
     if(value && length >0){
-      s->t_state.txn_conf->error_response_type= const_cast<char *>(value);
-      s->t_state.txn_conf->error_response_type_len=length;
+      s->t_state.txn_conf->body_factory_template_base= const_cast<char *>(value);
+      s->t_state.txn_conf->body_factory_template_base_len=length;
     }else {
-      s->t_state.txn_conf->error_response_type = NULL;
-      s->t_state.txn_conf->error_response_type_len = 0;
+      s->t_state.txn_conf->body_factory_template_base = NULL;
+      s->t_state.txn_conf->body_factory_template_base_len = 0;
     }
         break;
   default:
@@ -8094,9 +8094,9 @@ TSHttpTxnConfigStringGet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
     *value = sm->t_state.txn_conf->global_user_agent_header;
     *length = sm->t_state.txn_conf->global_user_agent_header_size;
     break;
-  case TS_CONFIG_ERROR_RESPONSE_TYPE:
-    *value = sm->t_state.txn_conf->error_response_type;
-    *length = sm->t_state.txn_conf->error_response_type_len;
+  case TS_CONFIG_BODY_FACTORY_TEMPLATES_BASE:
+    *value = sm->t_state.txn_conf->body_factory_template_base;
+    *length = sm->t_state.txn_conf->body_factory_template_base_len;
     break;
   default:
     return TS_ERROR;
@@ -8136,11 +8136,7 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
     if (!strncmp(name, "proxy.config.http.chunking.size", length))
       cnf = TS_CONFIG_HTTP_CHUNKING_SIZE;
     break;
-  case 32:
-    if(!strncmp(name,"proxy.config.error.response.type", length))
-        cnf=TS_CONFIG_ERROR_RESPONSE_TYPE;
-        typ = TS_RECORDDATATYPE_STRING;
-    break;
+
   case 33:
     if (!strncmp(name, "proxy.config.http.cache.fuzz.time", length))
       cnf = TS_CONFIG_HTTP_CACHE_FUZZ_TIME;
@@ -8228,6 +8224,11 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
 
   case 39:
     switch (name[length - 1]) {
+    case 'e' :
+      if(!strncmp(name,"proxy.config.body_factory.template_base", length)){
+        cnf=TS_CONFIG_BODY_FACTORY_TEMPLATES_BASE;
+        typ = TS_RECORDDATATYPE_STRING;}
+    break;
     case 'm':
       if (!strncmp(name, "proxy.config.http.anonymize_remove_from", length))
         cnf = TS_CONFIG_HTTP_ANONYMIZE_REMOVE_FROM;

@@ -1065,8 +1065,8 @@ HttpConfig::startup()
 
   HttpEstablishStaticConfigStringAlloc(c.reverse_proxy_no_host_redirect, "proxy.config.header.parse.no_host_url_redirect");
   c.reverse_proxy_no_host_redirect_len = -1;
-  HttpEstablishStaticConfigStringAlloc(c.oride.error_response_type,"proxy.config.error.response.type");
-  c.oride.error_response_type_len=c.oride.error_response_type?strlen(c.oride.error_response_type):0;
+  HttpEstablishStaticConfigStringAlloc(c.oride.body_factory_template_base,"proxy.config.body_factory.template_base");
+  c.oride.body_factory_template_base_len=c.oride.body_factory_template_base?strlen(c.oride.body_factory_template_base):0;
   HttpEstablishStaticConfigByte(c.errors_log_error_pages, "proxy.config.http.errors.log_error_pages");
 
   HttpEstablishStaticConfigLongLong(c.oride.slow_log_threshold, "proxy.config.http.slow.log.threshold");
@@ -1335,8 +1335,8 @@ HttpConfig::reconfigure()
   params->oride.default_buffer_size_index = m_master.oride.default_buffer_size_index;
   params->oride.default_buffer_water_mark = m_master.oride.default_buffer_water_mark;
   params->enable_http_info = INT_TO_BOOL(m_master.enable_http_info);
-  params->oride.error_response_type=ats_strdup(m_master.oride.error_response_type);
-  params->oride.error_response_type_len=params->oride.error_response_type?strlen(params->oride.error_response_type):0;
+  params->oride.body_factory_template_base=ats_strdup(m_master.oride.body_factory_template_base);
+  params->oride.body_factory_template_base_len=params->oride.body_factory_template_base?strlen(params->oride.body_factory_template_base):0;
   params->reverse_proxy_no_host_redirect = ats_strdup(m_master.reverse_proxy_no_host_redirect);
   params->reverse_proxy_no_host_redirect_len =
     params->reverse_proxy_no_host_redirect ? strlen(params->reverse_proxy_no_host_redirect) : 0;
