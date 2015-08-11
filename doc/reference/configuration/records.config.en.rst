@@ -1332,6 +1332,18 @@ Cache Control
 
    Enables (``1``) or disables (``0``) caching of HTTP requests.
 
+.. ts:cv:: CONFIG proxy.config.http.cache.generation INT -1
+   :reloadable:
+   :overridable:
+
+   If set to a value other than ``-1``, the value if this configuration
+   option is combined with the cache key at cache lookup time.
+   Changing this value has the effect of an instantaneous, zero-cost
+   cache purge since it will cause all subsequent cache keys to
+   change. Since this is an overrideable configuration, it can be
+   used to purge the entire cache, or just a specific :file:`remap.config`
+   rule.
+
 .. ts:cv:: CONFIG proxy.config.http.cache.allow_empty_doc INT 1
    :reloadable:
 
