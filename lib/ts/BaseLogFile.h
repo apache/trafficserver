@@ -208,8 +208,6 @@ public:
   void
   set_hostname(const char *hn)
   {
-    if (m_hostname)
-      ats_free(m_hostname);
     m_hostname = ats_strdup(hn);
   }
 
@@ -227,6 +225,7 @@ public:
   volatile uint64_t m_bytes_written;
 
 private:
+  void init(const char *name);
   // member functions not allowed
   BaseLogFile();
   BaseLogFile &operator=(const BaseLogFile &);
@@ -235,11 +234,11 @@ private:
   int timestamp_to_str(long timestamp, char *buf, int size);
 
   // member variables
-  char *m_name;
-  char *m_hostname;
-  bool m_is_regfile;
-  bool m_has_signature;
   uint64_t m_signature;
+  bool m_has_signature;
+  ats_scoped_str m_name;
+  ats_scoped_str m_hostname;
+  bool m_is_regfile;
   bool m_is_init;
   BaseMetaInfo *m_meta_info;
 };

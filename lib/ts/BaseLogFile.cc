@@ -27,43 +27,32 @@
  * This consturctor creates a BaseLogFile based on a given name.
  * This is the most common way BaseLogFiles are created.
  */
-BaseLogFile::BaseLogFile(const char *name)
-  : m_name(ats_strdup(name)), m_hostname(NULL), m_is_regfile(false), m_has_signature(false), m_signature(0), m_is_init(false)
+BaseLogFile::BaseLogFile(const char *name) : m_signature(0), m_has_signature(false)
 {
-  m_fp = NULL;
-  m_start_time = time(0);
-  m_end_time = 0L;
-  m_bytes_written = 0;
-  m_meta_info = NULL;
-
-  log_log_trace("exiting BaseLogFile constructor, m_name=%s, this=%p\n", m_name, this);
+  init(name);
+  log_log_trace("exiting BaseLogFile constructor, m_name=%s, this=%p\n", (char *)m_name, this);
 }
 
 /*
  * This consturctor creates a BaseLogFile based on a given name.
  * Similar to above constructor, but is overloaded with the object signature
  */
-BaseLogFile::BaseLogFile(const char *name, uint64_t sig)
-  : m_name(ats_strdup(name)), m_hostname(NULL), m_is_regfile(false), m_has_signature(true), m_signature(sig), m_is_init(false)
+BaseLogFile::BaseLogFile(const char *name, uint64_t sig) : m_signature(sig), m_has_signature(true)
 {
-  m_fp = NULL;
-  m_start_time = time(0);
-  m_end_time = 0L;
-  m_bytes_written = 0;
-  m_meta_info = NULL;
-
-  log_log_trace("exiting BaseLogFile constructor, m_name=%s, this=%p\n", m_name, this);
+  init(name);
+  log_log_trace("exiting BaseLogFile signature constructor, m_name=%s, m_signature=%ld, this=%p\n", (char *)m_name, m_signature,
+                this);
 }
 
 /*
  * This copy constructor creates a BaseLogFile based on a given copy.
  */
 BaseLogFile::BaseLogFile(const BaseLogFile &copy)
-  : m_fp(NULL), m_start_time(copy.m_start_time), m_end_time(0L), m_bytes_written(0), m_name(ats_strdup(copy.m_name)),
-    m_hostname(ats_strdup(m_hostname)), m_is_regfile(false), m_has_signature(copy.m_has_signature), m_signature(copy.m_signature),
-    m_is_init(copy.m_is_init), m_meta_info(NULL)
+  : m_fp(NULL), m_start_time(copy.m_start_time), m_end_time(0L), m_bytes_written(0), m_signature(copy.m_signature),
+    m_has_signature(copy.m_has_signature), m_name(ats_strdup(copy.m_name)), m_hostname(ats_strdup(copy.m_hostname)),
+    m_is_regfile(false), m_is_init(copy.m_is_init), m_meta_info(NULL)
 {
-  log_log_trace("exiting BaseLogFile copy constructor, m_name=%s, this=%p\n", m_name, this);
+  log_log_trace("exiting BaseLogFile copy constructor, m_name=%s, this=%p\n", (char *)m_name, this);
 }
 
 /*
@@ -71,18 +60,31 @@ BaseLogFile::BaseLogFile(const BaseLogFile &copy)
  */
 BaseLogFile::~BaseLogFile()
 {
-  log_log_trace("entering BaseLogFile destructor, m_name=%s, this=%p\n", m_name, this);
+  log_log_trace("entering BaseLogFile destructor, m_name=%s, this=%p\n", (char *)m_name, this);
 
   if (m_is_regfile)
     close_file();
   else
-    log_log_trace("not a regular file, not closing, m_name=%s, this=%p\n", m_name, this);
-  if (m_name)
-    ats_free(m_name);
-  if (m_hostname)
-    ats_free(m_hostname);
+    log_log_trace("not a regular file, not closing, m_name=%s, this=%p\n", (char *)m_name, this);
 
   log_log_trace("exiting BaseLogFile destructor, this=%p\n", this);
+}
+
+/*
+ * Initializes the defaults of some of the common member values of this class
+ */
+void
+BaseLogFile::init(const char *name)
+{
+  m_fp = NULL;
+  m_start_time = time(0);
+  m_end_time = 0L;
+  m_bytes_written = 0;
+  m_name = ats_strdup(name);
+  m_hostname = NULL;
+  m_is_regfile = false;
+  m_is_init = false;
+  m_meta_info = NULL;
 }
 
 /*
@@ -112,20 +114,20 @@ int
 BaseLogFile::roll(long interval_start, long interval_end)
 {
   // First, let's see if a roll is even needed.
-  if (m_name == NULL || !BaseLogFile::exists(m_name)) {
-    log_log_trace("Roll not needed for %s; file doesn't exist\n", (m_name) ? m_name : "no_name\n");
+  if (m_name == NULL || !BaseLogFile::exists((char *)m_name)) {
+    log_log_trace("Roll not needed for %s; file doesn't exist\n", ((char *)m_name) ? (char *)m_name : "no_name\n");
     return 0;
   }
 
   // Then, check if this object is backing a regular file
   if (!m_is_regfile) {
-    log_log_trace("Roll not needed for %s; not regular file\n", (m_name) ? m_name : "no_name\n");
+    log_log_trace("Roll not needed for %s; not regular file\n", ((char *)m_name) ? (char *)m_name : "no_name\n");
     return 0;
   }
 
   // Read meta info if needed (if file was not opened)
   if (!m_meta_info) {
-    m_meta_info = new BaseMetaInfo(m_name);
+    m_meta_info = new BaseMetaInfo((char *)m_name);
   }
 
   // Create the new file name, which consists of a timestamp and rolled
@@ -179,10 +181,11 @@ BaseLogFile::roll(long interval_start, long interval_end)
 
   // Now that we have our timestamp values, convert them to the proper
   // timestamp formats and create the rolled file name.
-  timestamp_to_str((long)start, start_time_ext, 64);
-  timestamp_to_str((long)end, end_time_ext, 64);
-  snprintf(roll_name, LOGFILE_ROLL_MAXPATHLEN, "%s%s%s.%s-%s%s", m_name, (m_hostname ? LOGFILE_SEPARATOR_STRING : ""),
-           (m_hostname ? m_hostname : ""), start_time_ext, end_time_ext, LOGFILE_ROLLED_EXTENSION);
+  timestamp_to_str((long)start, start_time_ext, sizeof(start_time_ext));
+  timestamp_to_str((long)end, end_time_ext, sizeof(start_time_ext));
+  snprintf(roll_name, LOGFILE_ROLL_MAXPATHLEN, "%s%s%s.%s-%s%s", (char *)m_name,
+           ((char *)m_hostname ? LOGFILE_SEPARATOR_STRING : ""), ((char *)m_hostname ? (char *)m_hostname : ""), start_time_ext,
+           end_time_ext, LOGFILE_ROLLED_EXTENSION);
 
   // It may be possible that the file we want to roll into already
   // exists.  If so, then we need to add a version tag to the rolled
@@ -192,16 +195,17 @@ BaseLogFile::roll(long interval_start, long interval_end)
     log_log_trace("The rolled file %s already exists; adding version "
                   "tag %d to avoid clobbering the existing file.\n",
                   roll_name, version);
-    snprintf(roll_name, LOGFILE_ROLL_MAXPATHLEN, "%s%s%s.%s-%s.%d%s", m_name, (m_hostname ? LOGFILE_SEPARATOR_STRING : ""),
-             (m_hostname ? m_hostname : ""), start_time_ext, end_time_ext, version, LOGFILE_ROLLED_EXTENSION);
-    version++;
+    snprintf(roll_name, LOGFILE_ROLL_MAXPATHLEN, "%s%s%s.%s-%s.%d%s", (char *)m_name,
+             ((char *)m_hostname ? LOGFILE_SEPARATOR_STRING : ""), ((char *)m_hostname ? (char *)m_hostname : ""), start_time_ext,
+             end_time_ext, version, LOGFILE_ROLLED_EXTENSION);
+    ++version;
   }
 
   // It's now safe to rename the file.
-  if (::rename(m_name, roll_name) < 0) {
+  if (::rename((char *)m_name, roll_name) < 0) {
     log_log_error("Traffic Server could not rename logfile %s to %s, error %d: "
                   "%s.\n",
-                  m_name, roll_name, errno, strerror(errno));
+                  (char *)m_name, roll_name, errno, strerror(errno));
     return 0;
   }
 
@@ -209,7 +213,7 @@ BaseLogFile::roll(long interval_start, long interval_end)
   m_start_time = 0;
   m_bytes_written = 0;
 
-  log_log_trace("The logfile %s was rolled to %s.\n", m_name, roll_name);
+  log_log_trace("The logfile %s was rolled to %s.\n", (char *)m_name, roll_name);
 
   return 1;
 }
@@ -280,12 +284,15 @@ BaseLogFile::open_file(int perm)
     return LOG_FILE_NO_ERROR;
   }
 
-  if (m_name && !strcmp(m_name, "stdout")) {
+  if (!(char *)m_name) {
+    log_log_error("BaseLogFile: m_name is NULL, aborting open_file()\n");
+    return LOG_FILE_COULD_NOT_OPEN_FILE;
+  } else if (!strcmp((char *)m_name, "stdout")) {
     log_log_trace("BaseLogFile: stdout opened\n");
     m_fp = stdout;
     m_is_init = true;
     return LOG_FILE_NO_ERROR;
-  } else if (m_name && !strcmp(m_name, "stderr")) {
+  } else if (!strcmp((char *)m_name, "stderr")) {
     log_log_trace("BaseLogFile: stderr opened\n");
     m_fp = stderr;
     m_is_init = true;
@@ -297,31 +304,31 @@ BaseLogFile::open_file(int perm)
 
   // Check to see if the file exists BEFORE we try to open it, since
   // opening it will also create it.
-  bool file_exists = BaseLogFile::exists(m_name);
+  bool file_exists = BaseLogFile::exists((char *)m_name);
 
   if (file_exists) {
     if (!m_meta_info) {
       // This object must be fresh since it has not built its MetaInfo
       // so we create a new MetaInfo object that will read right away
       // (in the constructor) the corresponding metafile
-      m_meta_info = new BaseMetaInfo(m_name);
+      m_meta_info = new BaseMetaInfo((char *)m_name);
     }
   } else {
     // The log file does not exist, so we create a new MetaInfo object
     //  which will save itself to disk right away (in the constructor)
     if (m_has_signature)
-      m_meta_info = new BaseMetaInfo(m_name, (long)time(0), m_signature);
+      m_meta_info = new BaseMetaInfo((char *)m_name, (long)time(0), m_signature);
     else
-      m_meta_info = new BaseMetaInfo(m_name, (long)time(0));
+      m_meta_info = new BaseMetaInfo((char *)m_name, (long)time(0));
   }
 
   // open actual log file (not metainfo)
-  log_log_trace("BaseLogFile: attempting to open %s\n", m_name);
-  m_fp = fopen(m_name, "a+");
+  log_log_trace("BaseLogFile: attempting to open %s\n", (char *)m_name);
+  m_fp = fopen((char *)m_name, "a+");
 
   // error check
   if (!m_fp) {
-    log_log_error("Error opening log file %s: %s\n", m_name, strerror(errno));
+    log_log_error("Error opening log file %s: %s\n", (char *)m_name, strerror(errno));
     log_log_error("Actual error: %s\n", (errno == EINVAL ? "einval" : "something else"));
     return LOG_FILE_COULD_NOT_OPEN_FILE;
   }
@@ -329,14 +336,14 @@ BaseLogFile::open_file(int perm)
   // set permissions if necessary
   if (perm != -1) {
     // means LogFile passed in some permissions we need to set
-    if (chmod(m_name, perm) != 0)
-      log_log_error("Error changing logfile=%s permissions: %s\n", m_name, strerror(errno));
+    if (chmod((char *)m_name, perm) != 0)
+      log_log_error("Error changing logfile=%s permissions: %s\n", (char *)m_name, strerror(errno));
   }
 
   // set m_bytes_written to force the rolling based on filesize.
   m_bytes_written = fseek(m_fp, 0, SEEK_CUR);
 
-  log_log_trace("BaseLogFile %s is now open (fd=%d)\n", m_name, fileno(m_fp));
+  log_log_trace("BaseLogFile %s is now open (fd=%d)\n", (char *)m_name, fileno(m_fp));
   m_is_init = true;
   return LOG_FILE_NO_ERROR;
 }
@@ -349,7 +356,7 @@ BaseLogFile::close_file()
 {
   if (is_open()) {
     fclose(m_fp);
-    log_log_trace("BaseLogFile %s is closed\n", m_name);
+    log_log_trace("BaseLogFile %s is closed\n", (char *)m_name);
     m_fp = NULL;
     m_is_init = false;
   }

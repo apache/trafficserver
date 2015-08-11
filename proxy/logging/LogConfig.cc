@@ -764,7 +764,7 @@ LogConfig::update_space_used()
     if (sret != -1 && S_ISREG(sbuf.st_mode)) {
       total_space_used += (int64_t)sbuf.st_size;
 
-      if (auto_delete_rolled_files && BaseLogFile::rolled_logfile(m_dir_entry->d_name) && candidate_count < MAX_CANDIDATES) {
+      if (auto_delete_rolled_files && LogFile::rolled_logfile(m_dir_entry->d_name) && candidate_count < MAX_CANDIDATES) {
         //
         // then add this entry to the candidate list
         //

@@ -94,8 +94,8 @@ static gid_t admin_gid;
 static bool admin_user_p = false;
 static char manager_binary[PATH_NAME_MAX] = "traffic_manager";
 static char server_binary[PATH_NAME_MAX] = "traffic_server";
-static char manager_options[OPTIONS_LEN_MAX] = ""; 
-                                                  
+static char manager_options[OPTIONS_LEN_MAX] = "";
+
 
 static char log_file[PATH_NAME_MAX] = "traffic.out";
 

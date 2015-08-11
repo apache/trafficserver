@@ -274,7 +274,6 @@ private:
   time_t outputlog_time_last_roll;
   time_t diagslog_time_last_roll;
 
-
   void setup_diagslog(BaseLogFile *blf);
   bool rebind_stdout(int new_fd);
   bool rebind_stderr(int new_fd);

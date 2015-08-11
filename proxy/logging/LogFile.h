@@ -85,6 +85,8 @@ public:
 
   static int write_ascii_logbuffer(LogBufferHeader *buffer_header, int fd, const char *path, const char *alt_format = NULL);
   int write_ascii_logbuffer3(LogBufferHeader *buffer_header, const char *alt_format = NULL);
+  static bool rolled_logfile(char *file);
+  static bool exists(const char *pathname);
 
   void display(FILE *fd = stdout);
   int open_file();

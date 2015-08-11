@@ -23,8 +23,8 @@
 
 #ifndef __DIAGSCONFIG_H__
 #define __DIAGSCONFIG_H__
-#include "Diags.h"
-#include "BaseLogFile.h"
+#include "ts/Diags.h"
+#include "ts/BaseLogFile.h"
 
 struct DiagsConfig {
   void reconfigure_diags();

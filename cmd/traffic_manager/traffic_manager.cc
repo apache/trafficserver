@@ -615,7 +615,7 @@ main(int argc, const char **argv)
 
   // we must pass in bind_stdout and bind_stderr values to TS
   // we do it so TS is able to create BaseLogFiles for each value
-  if (strcmp(bind_stdout, "") != 0) {
+  if (*bind_stdout != 0) {
     lmgmt->proxy_options =
       (char *)ats_realloc(lmgmt->proxy_options, strlen(lmgmt->proxy_options) + 1 /* space */
                                                   + strlen("--bind_stdout ") + strlen(bind_stdout) + 1 /* null term */);
@@ -623,7 +623,7 @@ main(int argc, const char **argv)
     strcat(lmgmt->proxy_options, bind_stdout);
   }
 
-  if (strcmp(bind_stderr, "") != 0) {
+  if (*bind_stderr != 0) {
     lmgmt->proxy_options =
       (char *)ats_realloc(lmgmt->proxy_options, strlen(lmgmt->proxy_options) + 1 /* space */
                                                   + strlen("--bind_stderr ") + strlen(bind_stderr) + 1 /* null term */);

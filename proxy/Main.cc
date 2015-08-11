@@ -1427,7 +1427,7 @@ bind_outputs(const char *_bind_stdout, const char *_bind_stderr)
 {
   ElevateAccess a(true);
   int log_fd;
-  if (strcmp(_bind_stdout, "") != 0) {
+  if (*_bind_stdout != 0) {
     Debug("log", "binding stdout to %s", _bind_stdout);
     log_fd = open(_bind_stdout, O_WRONLY | O_APPEND | O_CREAT, 0644);
     if (log_fd < 0) {
@@ -1438,7 +1438,7 @@ bind_outputs(const char *_bind_stdout, const char *_bind_stderr)
       close(log_fd);
     }
   }
-  if (strcmp(_bind_stderr, "") != 0) {
+  if (*_bind_stderr != 0) {
     Debug("log", "binding stderr to %s", _bind_stderr);
     log_fd = open(_bind_stderr, O_WRONLY | O_APPEND | O_CREAT, 0644);
     if (log_fd < 0) {

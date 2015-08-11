@@ -42,7 +42,7 @@
 #include "I_Machine.h"
 #include "LogSock.h"
 
-#include "BaseLogFile.h"
+#include "ts/BaseLogFile.h"
 #include "LogField.h"
 #include "LogFilter.h"
 #include "LogFormat.h"
@@ -150,7 +150,7 @@ LogFile::open_file()
     return LOG_FILE_NO_ERROR;
   }
 
-  bool file_exists = BaseLogFile::exists(m_name);
+  bool file_exists = LogFile::exists(m_name);
 
   if (m_file_format == LOG_FILE_PIPE) {
     // setup pipe
@@ -492,6 +492,18 @@ LogFile::write_ascii_logbuffer3(LogBufferHeader *buffer_header, const char *alt_
   return total_bytes;
 }
 
+bool
+LogFile::rolled_logfile(char *file)
+{
+  return BaseLogFile::rolled_logfile(file);
+}
+
+bool
+LogFile::exists(const char *pathname)
+{
+  return BaseLogFile::exists(pathname);
+}
+
 /*-------------------------------------------------------------------------
   LogFile::writeln
 
@@ -558,7 +570,7 @@ LogFile::check_fd()
     // attept to re-open it, which will create the file if it's not
     // there.
     //
-    if (m_name && !BaseLogFile::exists(m_name)) {
+    if (m_name && !LogFile::exists(m_name)) {
       close_file();
     }
     stat_check_count = 0;
@@ -589,9 +601,9 @@ bool
 LogFile::is_open()
 {
   if (m_file_format == LOG_FILE_PIPE)
-    return (m_fd >= 0);
+    return m_fd >= 0;
   else
-    return (m_log && m_log->is_open());
+    return m_log && m_log->is_open();
 }
 
 /*
