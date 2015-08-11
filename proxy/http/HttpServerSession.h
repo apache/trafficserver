@@ -112,6 +112,11 @@ public:
   {
     return server_vc;
   };
+  void
+  set_netvc(NetVConnection *new_vc)
+  {
+    server_vc = new_vc;
+  }
 
   // Keys for matching hostnames
   IpEndpoint server_ip;

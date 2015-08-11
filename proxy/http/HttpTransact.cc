@@ -3826,7 +3826,6 @@ HttpTransact::handle_server_connection_not_open(State *s)
   DebugTxn("http_trans", "[handle_server_connection_not_open] (hscno)");
   DebugTxn("http_seq", "[HttpTransact::handle_server_connection_not_open] ");
   ink_assert(s->current.state != CONNECTION_ALIVE);
-  ink_assert(s->current.server->had_connect_fail());
 
   SET_VIA_STRING(VIA_SERVER_RESULT, VIA_SERVER_ERROR);
   HTTP_INCREMENT_TRANS_STAT(http_broken_server_connections_stat);
