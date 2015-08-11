@@ -467,9 +467,9 @@ SocksProxy::setupHttpRequest(unsigned char *p)
     // just use the last 4 octets as IPv4 addr:
     a->type = SOCKS_ATYPE_IPV4;
     a->addr.ipv4[0] = p[16];
-    a->addr.ipv4[0] = p[17];
-    a->addr.ipv4[0] = p[18];
-    a->addr.ipv4[0] = p[19];
+    a->addr.ipv4[1] = p[17];
+    a->addr.ipv4[2] = p[18];
+    a->addr.ipv4[3] = p[19];
 
     break;
   default:

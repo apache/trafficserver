@@ -310,6 +310,8 @@ RamCacheCLFUS::tick()
     return;
   e = lru[1].dequeue();
 Lfree:
+  if (!e) // e may be NULL after e= lru[1].dequeue()
+    return;
   e->flag_bits.lru = 0;
   history--;
   uint32_t b = e->key.slice32(3) % nbuckets;

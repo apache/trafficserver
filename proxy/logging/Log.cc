@@ -1432,6 +1432,7 @@ Log::match_logobject(LogBufferHeader *header)
         obj = NULL;
       }
     }
+    delete fmt;
   }
   return obj;
 }

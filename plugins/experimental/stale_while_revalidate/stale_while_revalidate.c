@@ -268,6 +268,7 @@ consume_resource(TSCont cont, TSEvent event ATS_UNUSED, void *edata ATS_UNUSED)
   case TS_EVENT_VCONN_WRITE_READY:
     // We shouldn't get here because we specify the exact size of the buffer.
     TSDebug(PLUGIN_NAME, "Write Ready");
+    break;
   case TS_EVENT_VCONN_WRITE_COMPLETE:
     TSDebug(PLUGIN_NAME, "Write Complete");
     // TSDebug(PLUGIN_NAME, "TSVConnShutdown()");
