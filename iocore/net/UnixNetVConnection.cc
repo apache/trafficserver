@@ -101,6 +101,9 @@ close_UnixNetVConnection(UnixNetVConnection *vc, EThread *t)
   vc->cancel_OOB();
   vc->ep.stop();
   vc->con.close();
+
+  ink_release_assert(vc->thread == t);
+
 #ifdef INACTIVITY_TIMEOUT
   if (vc->inactivity_timeout) {
     vc->inactivity_timeout->cancel_action(vc);
@@ -117,20 +120,22 @@ close_UnixNetVConnection(UnixNetVConnection *vc, EThread *t)
   vc->inactivity_timeout_in = 0;
 
   vc->active_timeout_in = 0;
-  nh->open_list.remove(vc);
-  nh->cop_list.remove(vc);
-  nh->read_ready_list.remove(vc);
-  nh->write_ready_list.remove(vc);
-  if (vc->read.in_enabled_list) {
-    nh->read_enable_list.remove(vc);
-    vc->read.in_enabled_list = 0;
+  if (nh) {
+    nh->open_list.remove(vc);
+    nh->cop_list.remove(vc);
+    nh->read_ready_list.remove(vc);
+    nh->write_ready_list.remove(vc);
+    if (vc->read.in_enabled_list) {
+      nh->read_enable_list.remove(vc);
+      vc->read.in_enabled_list = 0;
+    }
+    if (vc->write.in_enabled_list) {
+      nh->write_enable_list.remove(vc);
+      vc->write.in_enabled_list = 0;
+    }
+    vc->remove_from_keep_alive_queue();
+    vc->remove_from_active_queue();
   }
-  if (vc->write.in_enabled_list) {
-    nh->write_enable_list.remove(vc);
-    vc->write.in_enabled_list = 0;
-  }
-  vc->remove_from_keep_alive_queue();
-  vc->remove_from_active_queue();
   vc->free(t);
 }
 
@@ -252,6 +257,14 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
 
   if (!lock.is_locked()) {
     read_reschedule(nh, vc);
+    return;
+  }
+
+  // It is possible that the closed flag got set from HttpSessionManager in the
+  // global session pool case.  If so, the closed flag should be stable once we get the
+  // s->vio.mutex (the global session pool mutex).
+  if (vc->closed) {
+    close_UnixNetVConnection(vc, thread);
     return;
   }
   // if it is not enabled.
@@ -672,7 +685,7 @@ UnixNetVConnection::do_io_close(int alerrno /* = -1 */)
   write.vio._cont = NULL;
 
   EThread *t = this_ethread();
-  bool close_inline = !recursion && nh->mutex->thread_holding == t;
+  bool close_inline = !recursion && (!nh || nh->mutex->thread_holding == t);
 
   INK_WRITE_MEMORY_BARRIER;
   if (alerrno && alerrno != -1)
@@ -1183,6 +1196,34 @@ UnixNetVConnection::mainEvent(int event, Event *e)
   return EVENT_DONE;
 }
 
+int
+UnixNetVConnection::populate(Connection &con_in, Continuation *c, void *arg)
+{
+  this->con.move(con_in);
+  this->mutex = c->mutex;
+  this->thread = this_ethread();
+
+  EThread *t = this_ethread();
+  if (ep.start(get_PollDescriptor(t), this, EVENTIO_READ | EVENTIO_WRITE) < 0) {
+    Debug("iocore_net", "populate : Failed to add to epoll list\n");
+    return EVENT_ERROR;
+  }
+
+  SET_HANDLER(&UnixNetVConnection::mainEvent);
+
+  this->nh = get_NetHandler(t);
+  ink_assert(this->nh != NULL);
+  MUTEX_TRY_LOCK(lock, this->nh->mutex, t);
+  if (!lock.is_locked()) {
+    // Clean up and go home
+    return EVENT_ERROR;
+  }
+  ink_assert(nh->mutex->thread_holding == this_ethread());
+  ink_assert(!nh->open_list.in(this));
+  this->nh->open_list.enqueue(this);
+  ink_assert(this->con.fd != NO_FD);
+  return EVENT_DONE;
+}
 
 int
 UnixNetVConnection::connectUp(EThread *t, int fd)
@@ -1273,6 +1314,7 @@ fail:
 void
 UnixNetVConnection::free(EThread *t)
 {
+  ink_release_assert(t == this_ethread());
   NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, -1);
   // clear variables for reuse
   this->mutex.clear();
@@ -1317,4 +1359,52 @@ void
 UnixNetVConnection::apply_options()
 {
   con.apply_options(options);
+}
+
+/*
+ * Close down the current netVC.  Save aside the socket and SSL information
+ * and create new netVC in the current thread/netVC
+ */
+UnixNetVConnection *
+UnixNetVConnection::migrateToCurrentThread(Continuation *cont, EThread *t)
+{
+  NetHandler *client_nh = get_NetHandler(t);
+  ink_assert(client_nh);
+  if (this->nh == client_nh) {
+    // We're already there!
+    return this;
+  }
+  Connection hold_con;
+  hold_con.move(this->con);
+  SSLNetVConnection *sslvc = dynamic_cast<SSLNetVConnection *>(this);
+  SSL *save_ssl = (sslvc) ? sslvc->ssl : NULL;
+  if (save_ssl) {
+    SSL_set_ex_data(sslvc->ssl, get_ssl_client_data_index(), NULL);
+    sslvc->ssl = NULL;
+  }
+
+  // Do_io_close will signal the VC to be freed on the original thread
+  // Since we moved the con context, the fd will not be closed
+  this->do_io_close();
+
+  // Create new VC:
+  NetVConnection *new_vc = NULL;
+  if (save_ssl) {
+    new_vc = sslNetProcessor.allocate_vc(t);
+    SSLNetVConnection *sslvc = dynamic_cast<SSLNetVConnection *>(new_vc);
+    if (sslvc->populate(hold_con, cont, save_ssl) != EVENT_DONE) {
+      sslvc->do_io_close();
+      sslvc = NULL;
+    }
+    return sslvc;
+    // Update the SSL fields
+  } else {
+    new_vc = netProcessor.allocate_vc(t);
+    UnixNetVConnection *netvc = dynamic_cast<UnixNetVConnection *>(new_vc);
+    if (netvc->populate(hold_con, cont, save_ssl) != EVENT_DONE) {
+      netvc->do_io_close();
+      netvc = NULL;
+    }
+    return netvc;
+  }
 }

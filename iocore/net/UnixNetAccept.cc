@@ -451,6 +451,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
       return EVENT_DONE;
     }
 
+    ink_assert(vc->nh->mutex->thread_holding == this_ethread());
     vc->nh->open_list.enqueue(vc);
 
 #ifdef USE_EDGE_TRIGGER
@@ -464,8 +465,9 @@ NetAccept::acceptFastEvent(int event, void *ep)
       // We must be holding the lock already to do later do_io_read's
       SCOPED_MUTEX_LOCK(lock, vc->mutex, e->ethread);
       action_->continuation->handleEvent(NET_EVENT_ACCEPT, vc);
-    } else
+    } else {
       close_UnixNetVConnection(vc, e->ethread);
+    }
   } while (loop);
 
 Ldone:
