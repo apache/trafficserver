@@ -136,20 +136,39 @@ Traffic Server Alarm Messages
    addresses. You must ``setuid root`` for the ``vip_config`` file in
    the Traffic Server ``bin`` directory.
 
+.. _body-factory:
+
 HTML Messages Sent to Clients
 =============================
 
-Traffic Server returns detailed error messages to browser clients when
-there are problems with the HTTP transactions requested by the browser.
-These Traffic Server response messages correspond to standard HTTP
-response codes, but provide more information. A list of the more
-frequently encountered HTTP response codes is provided in :ref:`standard-http-response-messages`.
-You can customize the Traffic Server response messages (typically in
-``proxy/config/body_factory/default/``, but set by
-:ts:cv:`proxy.config.body_factory.template_sets_dir`).
+Traffic Server returns detailed error messages to client browsers when there are
+problems with the HTTP transactions requested by the browser. These Traffic
+Server response messages correspond to standard HTTP response codes, but provide
+more information. A list of the more frequently encountered HTTP response codes
+is provided in :ref:`standard-http-response-messages`.
+
+The error messages can be customized. The actual response is generated from a template. These
+templates are stored in files which means the errors responses can be customized by modifying these
+files. The default directory for the template files is ``PREFIX/body_factory/default``
+but this can be changed by the configuration variable
+:ts:cv:`proxy.config.body_factory.template_sets_dir`. All files in this directory are added to a
+lookup table which is consulted when the error message is generated. The name used for lookup is by
+default that listed in the :ref:`following table <body-factory-error-table>`. It can be overridden by
+:ts:cv:`proxy.config.body_factory.template_base` which, if set, is a string that is prepended to the
+search name along with an underscore. For example, if the default lookup name is
+``cache#read_error`` then by default the response will be generated from the template in the file
+named ``cache#read_error``. If the template base name were set to "apache" then the lookup would
+look for a file named ``apache_cache#read_error`` in the template table. This can be used to switch
+out error message sets or, because this variable is overridable, to select an error message set
+based on data in the transaction.
+
+The text for an error message is processed as if it were a :ref:`custom logging format <custom-logging-fields>` which
+enables customization by values present in the transaction for which the error occurred.
 
 The following table lists the hard-coded Traffic Server HTTP messages,
 with corresponding HTTP response codes and customizable files.
+
+.. _body-factory-error-table:
 
 ``Access Denied``
    ``403``

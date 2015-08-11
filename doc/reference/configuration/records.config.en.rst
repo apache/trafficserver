@@ -379,6 +379,7 @@ Unless explicitly specified in `proxy.config.http.server_ports`_ the server port
    :reloadable:
 
    When we trigger a throttling scenario, this how long our accept() are delayed.
+
 Cluster
 =======
 
@@ -1678,7 +1679,7 @@ all the different user-agent versions of documents it encounters.
 
    -  ``0`` = default, disable cache and goto origin server
    -  ``1`` = return a 502 error on a cache miss
-   -  ``2`` = serve stale if object's age is under :ref:`proxy.config.http.cache.max_stale_age`, else, goto origin server
+   -  ``2`` = serve stale if object's age is under :ts:cv:`proxy.config.http.cache.max_stale_age`, else, goto origin server
 
 Customizable User Response Pages
 ================================
@@ -1702,6 +1703,14 @@ Customizable User Response Pages
    The customizable response page default directory. If this is a
    relative path, Traffic Server resolves it relative to the
    ``PREFIX`` directory.
+
+.. ts:cv:: CONFIG proxy.config.body_factory.template_base STRING ""
+    :reloadable:
+    :overridable:
+
+    A prefix for the file name to use to find an error template file. If set (not the empty string)
+    this value and an underscore are predended to the file name to find in the template sets
+    directory. See :ref:`body-factory`.
 
 .. ts:cv:: CONFIG proxy.config.body_factory.response_suppression_mode INT 0
 
@@ -2062,7 +2071,7 @@ Logging Configuration
     - ``log_name`` STRING [format]
         The filename (ex. :ref:`squid log <log-formats-squid-format>`).
 
-    - ``log_header_ STRING NULL
+    - ``log_header`` STRING NULL
         The file header text (ex. :ref:`squid log <log-formats-squid-format>`).
 
     The format can be either ``squid`` (Squid Format), ``common`` (Netscape Common),  ``extended`` (Netscape Extended),
