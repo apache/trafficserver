@@ -67,6 +67,8 @@ directory of the Apache Traffic Server source tree. Experimental plugins can be 
   Background Fetch Plugin: allows you to proactively fetch content from Origin in a way that it will fill the object into cache <background_fetch.en>
   Balancer Plugin: balances requests across multiple origin servers <balancer.en>
   Buffer Upload Plugin: buffers POST data before connecting to the Origin server <buffer_upload.en>
+  Cache Promotion: provides additional control over when an object should be
+  allowed into the cache <cache_promote.en>
   Combohandler Plugin: provides an intelligent way to combine multiple URLs into a single URL, and have Apache Traffic Server combine the components into one response <combo_handler.en>
   Epic Plugin: emits Traffic Server metrics in a format that is consumed tby the Epic Network Monitoring System <epic.en>
   ESI Plugin: implements the ESI specification <esi.en>
