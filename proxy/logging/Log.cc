@@ -1409,18 +1409,16 @@ Log::match_logobject(LogBufferHeader *header)
   if (!obj) {
     // object does not exist yet, create it
     //
-    LogFormat *fmt = new LogFormat("__collation_format__", header->fmt_fieldlist(), header->fmt_printf());
+    LogFormat fmt("__collation_format__", header->fmt_fieldlist(), header->fmt_printf());
 
-    if (fmt->valid()) {
+    if (fmt.valid()) {
       LogFileFormat file_format = header->log_object_flags & LogObject::BINARY ?
                                     LOG_FILE_BINARY :
                                     (header->log_object_flags & LogObject::WRITES_TO_PIPE ? LOG_FILE_PIPE : LOG_FILE_ASCII);
 
-      obj = new LogObject(fmt, Log::config->logfile_dir, header->log_filename(), file_format, NULL,
+      obj = new LogObject(&fmt, Log::config->logfile_dir, header->log_filename(), file_format, NULL,
                           (Log::RollingEnabledValues)Log::config->rolling_enabled, Log::config->collation_preproc_threads,
                           Log::config->rolling_interval_sec, Log::config->rolling_offset_hr, Log::config->rolling_size_mb, true);
-
-      delete fmt; // This is copy constructed in LogObject.
 
       obj->set_remote_flag();
 
@@ -1432,7 +1430,7 @@ Log::match_logobject(LogBufferHeader *header)
         obj = NULL;
       }
     }
-    delete fmt;
   }
+
   return obj;
 }
