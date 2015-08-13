@@ -124,10 +124,6 @@ static void *mgmt_restart_shutdown_callback(void *, char *, int data_len);
 static void *mgmt_storage_device_cmd_callback(void *x, char *data, int len);
 static void init_ssl_ctx_callback(void *ctx, bool server);
 
-// XXX rename these to be more descriptive
-void stdout_log_callback(void *);
-void stderr_log_callback(void *);
-
 static int num_of_net_threads = ink_number_of_processors();
 static int num_of_udp_threads = 0;
 static int num_accept_threads = 0;
@@ -259,7 +255,7 @@ public:
       snap = now;
     } else if (sigusr2_received) {
       sigusr2_received = false;
-      Debug("log", "received SIGUSR2, reloading traffic.outl\n");
+      Debug("log", "received SIGUSR2, reloading traffic.out");
       // reload output logfile (file is usually called traffic.out)
       diags->set_stdout_output(bind_stdout);
       diags->set_stderr_output(bind_stderr);

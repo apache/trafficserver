@@ -121,6 +121,8 @@ void
 LogFile::change_name(const char *new_name)
 {
   ats_free(m_name);
+  if (m_log)
+    m_log->change_name(new_name);
   m_name = ats_strdup(new_name);
 }
 
@@ -224,6 +226,7 @@ LogFile::close_file()
     } else if (m_log) {
       m_log->close_file();
       Debug("log-file", "LogFile %s is closed", m_log->get_name());
+      delete m_log;
       m_log = NULL;
     } else {
       Warning("LogFile %s is open but was not closed", m_name);

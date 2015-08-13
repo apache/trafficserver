@@ -221,8 +221,8 @@ A value of ``0`` means no signal will be sent.
 
    -  ``0`` = disables output log rolling
    -  ``1`` = enables output log rolling at specific intervals (specified with the
-       `proxy.config.output.logfile.rolling_interval_sec`_ variable). The "clock" starts ticking on Traffic Server boot
-   -  ``2`` = enables output log rolling when the output log reaches a specific size (specified with the `proxy.config.output.logfile.rolling_size_mb`_ variable)
+       :ts:cv:`proxy.config.output.logfile.rolling_interval_sec` variable). The "clock" starts ticking on Traffic Server boot
+   -  ``2`` = enables output log rolling when the output log reaches a specific size (specified with the :ts:cv:`proxy.config.output.logfile.rolling_size_mb` variable)
 
 .. ts:cv:: CONFIG proxy.config.output.logfile.rolling_interval_sec INT 3600
    :reloadable:
@@ -2256,8 +2256,8 @@ ssl           TLS termination and certificate processing
 
    -  ``0`` = disables diagnostics log rolling
    -  ``1`` = enables diagnostics log rolling at specific intervals (specified with the
-       `proxy.config.diags.logfile.rolling_interval_sec`_ variable). The "clock" starts ticking on Traffic Server boot
-   -  ``2`` = enables diagnostics log rolling when the diagnostics log reaches a specific size (specified with the `proxy.config.diags.logfile.rolling_size_mb`_ variable)
+       :ts:cv:`proxy.config.diags.logfile.rolling_interval_sec` variable). The "clock" starts ticking on Traffic Server boot
+   -  ``2`` = enables diagnostics log rolling when the diagnostics log reaches a specific size (specified with the :ts:cv:`proxy.config.diags.logfile.rolling_size_mb` variable)
 
 .. ts:cv:: CONFIG proxy.config.diags.logfile.rolling_interval_sec INT 3600
    :reloadable:

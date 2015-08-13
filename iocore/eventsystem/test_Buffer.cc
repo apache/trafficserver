@@ -97,7 +97,7 @@ init_diags(const char *bdt, const char *bat)
   BaseLogFile *blf = new BaseLogFile(diags_logpath);
   diags = new Diags(bdt, bat, blf);
 
-  if (blf && blf->m_fp == NULL) {
+  if (blf == NULL || blf->m_fp == NULL) {
     Warning("couldn't open diags log file '%s', "
             "will not log to this file",
             diags_logpath);

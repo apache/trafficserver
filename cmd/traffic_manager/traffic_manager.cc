@@ -59,7 +59,6 @@
 #define FD_THROTTLE_HEADROOM (128 + 64) // TODO: consolidate with THROTTLE_FD_HEADROOM
 #define DIAGS_LOG_FILENAME "manager.log"
 
-
 // These globals are still referenced directly by management API.
 LocalManager *lmgmt = NULL;
 FileManager *configFiles;
@@ -730,7 +729,7 @@ main(int argc, const char **argv)
     lmgmt->processEventQueue();
     lmgmt->pollMgmtProcessServer();
 
-    // Handle rotation of output log (aka traffic.out)
+    // Handle rotation of output log (aka traffic.out) as well as DIAGS_LOG_FILENAME (aka manager.log)
     rotateLogs();
 
     // Check for a SIGHUP
