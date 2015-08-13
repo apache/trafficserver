@@ -7891,6 +7891,10 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
     typ = OVERRIDABLE_TYPE_INT;
     ret = &overridableHttpConfig->max_cache_open_read_retries;
     break;
+  case TS_CONFIG_HTTP_CACHE_OPEN_WRITE_FAIL_ACTION:
+    typ = OVERRIDABLE_TYPE_INT;
+    ret = &overridableHttpConfig->cache_open_write_fail_action;
+    break;
   case TS_CONFIG_HTTP_CACHE_RANGE_WRITE:
     ret = &overridableHttpConfig->cache_range_write;
     break;
@@ -8428,6 +8432,10 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
     case 'h':
       if (0 == strncmp(name, "proxy.config.http.server_session_sharing.match", length))
         cnf = TS_CONFIG_HTTP_SERVER_SESSION_SHARING_MATCH;
+      break;
+    case 'n':
+      if (!strncmp(name, "proxy.config.http.cache.open_write_fail_action", length))
+        cnf = TS_CONFIG_HTTP_CACHE_OPEN_WRITE_FAIL_ACTION;
       break;
     }
     break;

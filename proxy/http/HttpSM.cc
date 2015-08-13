@@ -2370,11 +2370,17 @@ HttpSM::state_cache_open_write(int event, void *data)
   case CACHE_EVENT_OPEN_WRITE_FAILED:
     // Failed on the write lock and retrying the vector
     //  for reading
-    if (t_state.http_config_param->cache_open_write_fail_action == HttpTransact::CACHE_OPEN_WRITE_FAIL_DEFAULT) {
+    if (t_state.redirect_info.redirect_in_process) {
+      DebugSM("http_redirect", "[%" PRId64 "] CACHE_EVENT_OPEN_WRITE_FAILED during redirect follow", sm_id);
+      t_state.cache_open_write_fail_action = HttpTransact::CACHE_OPEN_WRITE_FAIL_DEFAULT;
+      t_state.cache_info.write_lock_state = HttpTransact::CACHE_WL_FAIL;
+      break;
+    }
+    if (t_state.txn_conf->cache_open_write_fail_action == HttpTransact::CACHE_OPEN_WRITE_FAIL_DEFAULT) {
       t_state.cache_info.write_lock_state = HttpTransact::CACHE_WL_FAIL;
       break;
     } else {
-      t_state.cache_open_write_fail_action = t_state.http_config_param->cache_open_write_fail_action;
+      t_state.cache_open_write_fail_action = t_state.txn_conf->cache_open_write_fail_action;
       if (!t_state.cache_info.object_read) {
         // cache miss, set wl_state to fail
         t_state.cache_info.write_lock_state = HttpTransact::CACHE_WL_FAIL;

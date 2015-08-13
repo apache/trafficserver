@@ -388,7 +388,7 @@ struct OverridableHttpConfigParams {
       // Strings / floats must come last
       body_factory_template_base(NULL), body_factory_template_base_len(0), proxy_response_server_string(NULL),
       proxy_response_server_string_len(0), global_user_agent_header(NULL), global_user_agent_header_size(0),
-      cache_heuristic_lm_factor(0.10), freshness_fuzz_prob(0.005), background_fill_threshold(0.5)
+      cache_heuristic_lm_factor(0.10), freshness_fuzz_prob(0.005), background_fill_threshold(0.5), cache_open_write_fail_action(0)
   {
   }
 
@@ -576,6 +576,7 @@ struct OverridableHttpConfigParams {
   MgmtFloat cache_heuristic_lm_factor;
   MgmtFloat freshness_fuzz_prob;
   MgmtFloat background_fill_threshold;
+  MgmtInt cache_open_write_fail_action;
 };
 
 
@@ -745,7 +746,6 @@ public:
   MgmtByte send_100_continue_response;
   MgmtByte disallow_post_100_continue;
   MgmtByte parser_allow_non_http;
-  MgmtInt cache_open_write_fail_action;
   MgmtInt max_post_size;
 
   MgmtByte server_session_sharing_pool;
@@ -857,8 +857,7 @@ inline HttpConfigParams::HttpConfigParams()
     cluster_time_delta(0), redirection_enabled(0), redirection_host_no_port(0), number_of_redirections(1), post_copy_size(2048),
     ignore_accept_mismatch(0), ignore_accept_language_mismatch(0), ignore_accept_encoding_mismatch(0),
     ignore_accept_charset_mismatch(0), send_100_continue_response(0), disallow_post_100_continue(0), parser_allow_non_http(1),
-    cache_open_write_fail_action(0), max_post_size(0), server_session_sharing_pool(TS_SERVER_SESSION_SHARING_POOL_THREAD),
-    synthetic_port(0)
+    max_post_size(0), server_session_sharing_pool(TS_SERVER_SESSION_SHARING_POOL_THREAD), synthetic_port(0)
 {
 }
 
