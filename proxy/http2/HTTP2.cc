@@ -111,7 +111,8 @@ http2_are_frame_flags_valid(uint8_t ftype, uint8_t fflags)
     HTTP2_FLAGS_WINDOW_UPDATE_MASK, HTTP2_FLAGS_CONTINUATION_MASK,
   };
 
-  // The frame flags are valid for this frame if nothing outside the defined bits is set.
+  // The frame flags are valid for this frame if nothing outside the defined
+  // bits is set.
   return (fflags & ~mask[ftype]) == 0;
 }
 
@@ -325,7 +326,6 @@ http2_parse_headers_parameter(IOVec iov, Http2HeadersParameter &params)
   return true;
 }
 
-
 // 6.3.  PRIORITY
 //
 // 0                   1                   2                   3
@@ -401,7 +401,6 @@ http2_parse_settings_parameter(IOVec iov, Http2SettingsParameter &param)
   return true;
 }
 
-
 // 6.8.  GOAWAY
 //
 // 0                   1                   2                   3
@@ -428,7 +427,6 @@ http2_parse_goaway(IOVec iov, Http2Goaway &goaway)
   goaway.error_code = ntohl(ec.value);
   return true;
 }
-
 
 // 6.9.  WINDOW_UPDATE
 //
@@ -584,8 +582,10 @@ http2_write_header_fragment(HTTPHdr *in, MIMEFieldIter &field_iter, uint8_t *out
   ink_assert(http_hdr_type_get(in->m_http) != HTTP_TYPE_UNKNOWN);
   ink_assert(in);
 
-  // TODO Get a index value from the tables for the header field, and then choose a representation type.
-  // TODO Each indexing types per field should be passed by a caller, HTTP/2 implementation.
+  // TODO Get a index value from the tables for the header field, and then
+  // choose a representation type.
+  // TODO Each indexing types per field should be passed by a caller, HTTP/2
+  // implementation.
 
   // Get first header field which is required encoding
   MIMEField *field;
@@ -629,17 +629,17 @@ http2_write_header_fragment(HTTPHdr *in, MIMEFieldIter &field_iter, uint8_t *out
   return p - out;
 }
 
+/*
+ * Decode Header Blocks to Header List.
+ */
 int64_t
-http2_parse_header_fragment(HTTPHdr *hdr, IOVec iov, Http2DynamicTable &dynamic_table, bool cont)
+http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint8_t *buf_end, Http2DynamicTable &dynamic_table)
 {
-  const uint8_t *buf_start = (uint8_t *)iov.iov_base;
-  const uint8_t *buf_end = buf_start + iov.iov_len;
-
-  uint8_t *cursor = (uint8_t *)iov.iov_base; // place the cursor at the start
+  const uint8_t *cursor = buf_start;
   HdrHeap *heap = hdr->m_heap;
   HTTPHdrImpl *hh = hdr->m_http;
 
-  do {
+  while (cursor < buf_end) {
     int64_t read_bytes = 0;
 
     // decode a header field encoded by HPACK
@@ -651,13 +651,7 @@ http2_parse_header_fragment(HTTPHdr *hdr, IOVec iov, Http2DynamicTable &dynamic_
     case HPACK_FIELD_INDEX:
       read_bytes = decode_indexed_header_field(header, cursor, buf_end, dynamic_table);
       if (read_bytes == HPACK_ERROR_COMPRESSION_ERROR) {
-        if (cont) {
-          // Parsing a part of headers is done
-          return cursor - buf_start;
-        } else {
-          // Parse error
-          return HPACK_ERROR_COMPRESSION_ERROR;
-        }
+        return HPACK_ERROR_COMPRESSION_ERROR;
       }
       cursor += read_bytes;
       break;
@@ -666,26 +660,14 @@ http2_parse_header_fragment(HTTPHdr *hdr, IOVec iov, Http2DynamicTable &dynamic_
     case HPACK_FIELD_NEVERINDEX_LITERAL:
       read_bytes = decode_literal_header_field(header, cursor, buf_end, dynamic_table);
       if (read_bytes == HPACK_ERROR_COMPRESSION_ERROR) {
-        if (cont) {
-          // Parsing a part of headers is done
-          return cursor - buf_start;
-        } else {
-          // Parse error
-          return HPACK_ERROR_COMPRESSION_ERROR;
-        }
+        return HPACK_ERROR_COMPRESSION_ERROR;
       }
       cursor += read_bytes;
       break;
     case HPACK_FIELD_TABLESIZE_UPDATE:
       read_bytes = update_dynamic_table_size(cursor, buf_end, dynamic_table);
       if (read_bytes == HPACK_ERROR_COMPRESSION_ERROR) {
-        if (cont) {
-          // Parsing a part of headers is done
-          return cursor - buf_start;
-        } else {
-          // Parse error
-          return HPACK_ERROR_COMPRESSION_ERROR;
-        }
+        return HPACK_ERROR_COMPRESSION_ERROR;
       }
       cursor += read_bytes;
       continue;
@@ -700,7 +682,8 @@ http2_parse_header_fragment(HTTPHdr *hdr, IOVec iov, Http2DynamicTable &dynamic_
       return HPACK_ERROR_HTTP2_PROTOCOL_ERROR;
     }
 
-    // rfc7540,sec8.1.2.2: Any message containing connection-specific header fields MUST be treated as malformed
+    // rfc7540,sec8.1.2.2: Any message containing connection-specific header
+    // fields MUST be treated as malformed
     if (name == MIME_FIELD_CONNECTION) {
       return HPACK_ERROR_HTTP2_PROTOCOL_ERROR;
     }
@@ -738,10 +721,10 @@ http2_parse_header_fragment(HTTPHdr *hdr, IOVec iov, Http2DynamicTable &dynamic_
         return HPACK_ERROR_HTTP2_PROTOCOL_ERROR;
       }
     }
-  } while (cursor < buf_end);
+  }
 
   // Psuedo headers is insufficient
-  if (hdr->fields_count() < 4 && !cont) {
+  if (hdr->fields_count() < 4) {
     return HPACK_ERROR_HTTP2_PROTOCOL_ERROR;
   }
 
@@ -788,7 +771,6 @@ Http2::init()
                      static_cast<int>(HTTP2_STAT_TOTAL_CLIENT_CONNECTION_COUNT), RecRawStatSyncSum);
 }
 
-
 #if TS_HAS_TESTS
 
 #include "ts/TestBox.h"
@@ -799,10 +781,11 @@ const static int MAX_TEST_FIELD_NUM = 8;
 
 /***********************************************************************************
  *                                                                                 *
- *                   Test cases for regression test                                *
+ *                   Test cases for regression test *
  *                                                                                 *
- * Some test cases are based on examples of specification.                         *
- * http://tools.ietf.org/html/draft-ietf-httpbis-header-compression-09#appendix-D  *
+ * Some test cases are based on examples of specification. *
+ * http://tools.ietf.org/html/draft-ietf-httpbis-header-compression-09#appendix-D
+ **
  *                                                                                 *
  ***********************************************************************************/
 
@@ -909,7 +892,7 @@ const static struct {
 
 /***********************************************************************************
  *                                                                                 *
- *                                Regression test codes                            *
+ *                                Regression test codes *
  *                                                                                 *
  ***********************************************************************************/
 
@@ -1153,9 +1136,9 @@ REGRESSION_TEST(HPACK_Decode)(RegressionTest *t, int, int *pstatus)
     ats_scoped_obj<HTTPHdr> headers(new HTTPHdr);
     headers->create(HTTP_TYPE_REQUEST);
 
-    http2_parse_header_fragment(headers,
-                                make_iovec(encoded_field_test_case[i].encoded_field, encoded_field_test_case[i].encoded_field_len),
-                                dynamic_table, false);
+    http2_decode_header_blocks(headers, encoded_field_test_case[i].encoded_field,
+                               encoded_field_test_case[i].encoded_field + encoded_field_test_case[i].encoded_field_len,
+                               dynamic_table);
 
     for (unsigned int j = 0; j < sizeof(raw_field_test_case[i]) / sizeof(raw_field_test_case[i][0]); j++) {
       const char *expected_name = raw_field_test_case[i][j].raw_name;
