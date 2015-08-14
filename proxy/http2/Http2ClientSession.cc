@@ -42,7 +42,8 @@
 
 ClassAllocator<Http2ClientSession> http2ClientSessionAllocator("http2ClientSessionAllocator");
 
-// memcpy the requested bytes from the IOBufferReader, returning how many were actually copied.
+// memcpy the requested bytes from the IOBufferReader, returning how many were
+// actually copied.
 static inline unsigned
 copy_from_buffer_reader(void *dst, IOBufferReader *reader, unsigned nbytes)
 {
@@ -95,7 +96,8 @@ Http2ClientSession::start()
   // 3.5 HTTP/2 Connection Preface. Upon establishment of a TCP connection and
   // determination that HTTP/2 will be used by both peers, each endpoint MUST
   // send a connection preface as a final confirmation ...
-  // this->write_buffer->write(HTTP2_CONNECTION_PREFACE, HTTP2_CONNECTION_PREFACE_LEN);
+  // this->write_buffer->write(HTTP2_CONNECTION_PREFACE,
+  // HTTP2_CONNECTION_PREFACE_LEN);
 
   this->connection_state.init();
   send_connection_event(&this->connection_state, HTTP2_SESSION_EVENT_INIT, this);
@@ -150,7 +152,8 @@ Http2ClientSession::set_upgrade_context(HTTPHdr *h)
       Http2SettingsParameter param;
       if (!http2_parse_settings_parameter(make_iovec(out_buf + nbytes, HTTP2_SETTINGS_PARAMETER_LEN), param) ||
           !http2_settings_parameter_is_valid(param)) {
-        // TODO ignore incoming invalid parameters and send suitable SETTINGS frame.
+        // TODO ignore incoming invalid parameters and send suitable SETTINGS
+        // frame.
       }
       upgrade_context.client_settings.set((Http2SettingsIdentifier)param.id, param.value);
     }
@@ -186,7 +189,8 @@ Http2ClientSession::do_io_shutdown(ShutdownHowTo_t howto)
   this->client_vc->do_io_shutdown(howto);
 }
 
-// XXX Currently, we don't have a half-closed state, but we will need to implement that. After we send a GOAWAY, there
+// XXX Currently, we don't have a half-closed state, but we will need to
+// implement that. After we send a GOAWAY, there
 // are scenarios where we would like to complete the outstanding streams.
 
 void
@@ -294,8 +298,10 @@ Http2ClientSession::state_read_connection_preface(int event, void *edata)
     }
   }
 
-  // XXX We don't have enough data to check the connection preface. We should reset the accept inactivity
-  // timeout. We should have a maximum timeout to get the session started though.
+  // XXX We don't have enough data to check the connection preface. We should
+  // reset the accept inactivity
+  // timeout. We should have a maximum timeout to get the session started
+  // though.
 
   vio->reenable();
   return 0;
@@ -351,9 +357,11 @@ Http2ClientSession::state_start_frame_read(int event, void *edata)
     }
 
     // CONTINUATIONs MUST follow behind HEADERS which doesn't have END_HEADERS
-    if (this->connection_state.get_continued_id() != 0 && this->current_hdr.type != HTTP2_FRAME_TYPE_CONTINUATION) {
+    Http2StreamId continued_stream_id = this->connection_state.get_continued_stream_id();
+
+    if (continued_stream_id != 0 && this->current_hdr.type != HTTP2_FRAME_TYPE_CONTINUATION) {
       SCOPED_MUTEX_LOCK(lock, this->connection_state.mutex, this_ethread());
-      if (!this->connection_state.is_state_closed()) {
+      if (!this->connection_state.is_state_closed() || continued_stream_id != this->current_hdr.streamid) {
         this->connection_state.send_goaway_frame(this->current_hdr.streamid, HTTP2_ERROR_PROTOCOL_ERROR);
       }
       return 0;

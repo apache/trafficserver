@@ -34,7 +34,8 @@ class HTTPHdr;
 
 typedef unsigned Http2StreamId;
 
-// 6.9.2 Initial Flow Control Window Size - the flow control window can be come negative
+// 6.9.2 Initial Flow Control Window Size - the flow control window can be come
+// negative
 // so we need to track it with a signed type.
 typedef int32_t Http2WindowSize;
 
@@ -62,7 +63,8 @@ const uint32_t HTTP2_MAX_HEADER_LIST_SIZE = UINT_MAX;
 
 // Statistics
 enum {
-  HTTP2_STAT_CURRENT_CLIENT_SESSION_COUNT,  // Current # of active HTTP2 sessions.
+  HTTP2_STAT_CURRENT_CLIENT_SESSION_COUNT,  // Current # of active HTTP2
+                                            // sessions.
   HTTP2_STAT_CURRENT_CLIENT_STREAM_COUNT,   // Current # of active HTTP2 streams.
   HTTP2_STAT_TOTAL_TRANSACTIONS_TIME,       // Total stream time and streams
   HTTP2_STAT_TOTAL_CLIENT_CONNECTION_COUNT, // Total connections running http2
@@ -247,6 +249,8 @@ struct Http2Priority {
 
 // 6.2 HEADERS Format
 struct Http2HeadersParameter {
+  Http2HeadersParameter() : pad_length(0) {}
+
   uint8_t pad_length;
   Http2Priority priority;
 };
@@ -258,8 +262,10 @@ struct Http2Goaway {
   Http2StreamId last_streamid;
   uint32_t error_code;
 
-  // NOTE: we don't (de)serialize the variable length debug data at this layer because there's
-  // really nothing we can do with it without some out of band agreement. Trying to deal with it
+  // NOTE: we don't (de)serialize the variable length debug data at this layer
+  // because there's
+  // really nothing we can do with it without some out of band agreement. Trying
+  // to deal with it
   // just complicates memory management.
 };
 
@@ -314,7 +320,7 @@ bool http2_parse_goaway(IOVec, Http2Goaway &);
 
 bool http2_parse_window_update(IOVec, uint32_t &);
 
-int64_t http2_parse_header_fragment(HTTPHdr *, IOVec, Http2DynamicTable &, bool);
+int64_t http2_decode_header_blocks(HTTPHdr *, const uint8_t *, const uint8_t *, Http2DynamicTable &);
 
 MIMEParseResult convert_from_2_to_1_1_header(HTTPHdr *);
 
@@ -322,9 +328,10 @@ int64_t http2_write_psuedo_headers(HTTPHdr *, uint8_t *, uint64_t, Http2DynamicT
 
 int64_t http2_write_header_fragment(HTTPHdr *, MIMEFieldIter &, uint8_t *, uint64_t, Http2DynamicTable &, bool &);
 
-
-// Not sure where else to put this, but figure this is as good of a start as anything else.
-// Right now, only the static init() is available, which sets up some basic librecords
+// Not sure where else to put this, but figure this is as good of a start as
+// anything else.
+// Right now, only the static init() is available, which sets up some basic
+// librecords
 // dependencies.
 class Http2
 {
