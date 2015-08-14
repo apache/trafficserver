@@ -99,14 +99,14 @@ class Http2Stream
 {
 public:
   Http2Stream(Http2StreamId sid = 0, ssize_t initial_rwnd = Http2::initial_window_size)
-    : client_rwnd(initial_rwnd), server_rwnd(initial_rwnd), _id(sid), _state(HTTP2_STREAM_STATE_IDLE), _fetch_sm(NULL),
-      body_done(false), data_length(0)
+    : client_rwnd(initial_rwnd), server_rwnd(initial_rwnd), header_blocks(NULL), header_blocks_length(0), request_header_length(0),
+      end_stream(false), _id(sid), _state(HTTP2_STREAM_STATE_IDLE), _fetch_sm(NULL), body_done(false), data_length(0)
   {
     _thread = this_ethread();
     HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_CLIENT_STREAM_COUNT, _thread);
     _start_time = ink_hrtime();
+    // FIXME: Are you sure? every "stream" needs _req_header?
     _req_header.create(HTTP_TYPE_REQUEST);
-    request_header_length = 0;
   }
 
   ~Http2Stream()
@@ -119,6 +119,9 @@ public:
     if (_fetch_sm) {
       _fetch_sm->ext_destroy();
       _fetch_sm = NULL;
+    }
+    if (header_blocks) {
+      ats_free(header_blocks);
     }
   }
 
@@ -154,9 +157,10 @@ public:
   bool change_state(uint8_t type, uint8_t flags);
 
   int64_t
-  decode_request_header(const IOVec &iov, Http2DynamicTable &dynamic_table, bool cont)
+  decode_header_blocks(Http2DynamicTable &dynamic_table)
   {
-    return http2_parse_header_fragment(&_req_header, iov, dynamic_table, cont);
+    return http2_decode_header_blocks(&_req_header, (const uint8_t *)header_blocks,
+                                      (const uint8_t *)header_blocks + header_blocks_length, dynamic_table);
   }
 
   // Check entire DATA payload length if content-length: header is exist
@@ -177,7 +181,10 @@ public:
 
   LINK(Http2Stream, link);
 
-  uint32_t request_header_length;
+  uint8_t *header_blocks;
+  uint32_t header_blocks_length;  // total length of header blocks (not include Padding or other fields)
+  uint32_t request_header_length; // total length of payload (include Padding and other fields)
+  bool end_stream;
 
 private:
   ink_hrtime _start_time;
@@ -202,7 +209,7 @@ class Http2ConnectionState : public Continuation
 public:
   Http2ConnectionState()
     : Continuation(NULL), ua_session(NULL), client_rwnd(Http2::initial_window_size), server_rwnd(Http2::initial_window_size),
-      stream_list(), latest_streamid(0), client_streams_count(0), continued_id(0)
+      stream_list(), latest_streamid(0), client_streams_count(0), continued_stream_id(0)
   {
     SET_HANDLER(&Http2ConnectionState::main_event_handler);
   }
@@ -257,17 +264,20 @@ public:
 
   // Continuated header decoding
   Http2StreamId
-  get_continued_id() const
+  get_continued_stream_id() const
   {
-    return continued_id;
+    return continued_stream_id;
   }
-  const IOVec &
-  get_continued_headers() const
+  void
+  set_continued_stream_id(Http2StreamId stream_id)
   {
-    return continued_buffer;
+    continued_stream_id = stream_id;
   }
-  void set_continued_headers(const char *buf, uint32_t len, Http2StreamId id);
-  void finish_continued_headers();
+  void
+  clear_continued_stream_id()
+  {
+    continued_stream_id = 0;
+  }
 
   // Connection level window size
   ssize_t client_rwnd, server_rwnd;
@@ -301,8 +311,12 @@ private:
   // Counter for current acive streams which is started by client
   uint32_t client_streams_count;
 
-  // The buffer used for storing incomplete fragments of a header field which consists of multiple frames.
-  Http2StreamId continued_id;
+  // NOTE: Id of stream which MUST receive CONTINUATION frame.
+  //   - [RFC 7540] 6.2 HEADERS
+  //     "A HEADERS frame without the END_HEADERS flag set MUST be followed by a CONTINUATION frame for the same stream."
+  //   - [RFC 7540] 6.10 CONTINUATION
+  //     "If the END_HEADERS bit is not set, this frame MUST be followed by another CONTINUATION frame."
+  Http2StreamId continued_stream_id;
   IOVec continued_buffer;
 };
 

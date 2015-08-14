@@ -158,28 +158,31 @@ rcv_data_frame(Http2ClientSession &cs, Http2ConnectionState &cstate, const Http2
   return Http2Error(HTTP2_ERROR_CLASS_NONE);
 }
 
+/*
+ * [RFC 7540] 6.2 HEADERS Frame
+ *
+ * NOTE: HEADERS Frame and CONTINUATION Frame
+ *   1. A HEADERS frame with the END_STREAM flag set can be followed by CONTINUATION frames on the same stream.
+ *   2. A HEADERS frame without the END_HEADERS flag set MUST be followed by a CONTINUATION frame
+ */
 static Http2Error
 rcv_headers_frame(Http2ClientSession &cs, Http2ConnectionState &cstate, const Http2Frame &frame)
 {
-  char buf[BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_HEADERS])];
-  unsigned nbytes = 0;
-  Http2StreamId id = frame.header().streamid;
-  Http2HeadersParameter params;
+  const Http2StreamId stream_id = frame.header().streamid;
   const uint32_t payload_length = frame.header().length;
 
   DebugSsn(&cs, "http2_cs", "[%" PRId64 "] Received HEADERS frame.", cs.connection_id());
 
-  if (!http2_is_client_streamid(id)) {
+  if (!http2_is_client_streamid(stream_id)) {
     return Http2Error(HTTP2_ERROR_CLASS_CONNECTION, HTTP2_ERROR_PROTOCOL_ERROR);
   }
 
-  if (id <= cstate.get_latest_stream_id()) {
+  if (stream_id <= cstate.get_latest_stream_id()) {
     return Http2Error(HTTP2_ERROR_CLASS_STREAM, HTTP2_ERROR_STREAM_CLOSED);
   }
 
   // Create new stream
-  Http2Stream *stream = cstate.create_stream(id);
-
+  Http2Stream *stream = cstate.create_stream(stream_id);
   if (!stream) {
     return Http2Error(HTTP2_ERROR_CLASS_CONNECTION, HTTP2_ERROR_PROTOCOL_ERROR);
   }
@@ -192,83 +195,70 @@ rcv_headers_frame(Http2ClientSession &cs, Http2ConnectionState &cstate, const Ht
     return Http2Error(HTTP2_ERROR_CLASS_STREAM, HTTP2_ERROR_PROTOCOL_ERROR);
   }
 
-  // A receiver MUST treat the receipt of any other type of frame or
-  // a frame on a different stream as a connection error of type PROTOCOL_ERROR.
-  if (cstate.get_continued_id() != 0) {
-    return Http2Error(HTTP2_ERROR_CLASS_CONNECTION, HTTP2_ERROR_PROTOCOL_ERROR);
+  Http2HeadersParameter params;
+  uint32_t header_block_fragment_offset = 0;
+  uint32_t header_block_fragment_length = payload_length;
+
+  if (frame.header().flags & HTTP2_FLAGS_HEADERS_END_STREAM) {
+    stream->end_stream = true;
   }
 
-  // Change state. If changing is invalid, raise PROTOCOL_ERROR
-  if (!stream->change_state(frame.header().type, frame.header().flags)) {
-    return Http2Error(HTTP2_ERROR_CLASS_CONNECTION, HTTP2_ERROR_PROTOCOL_ERROR);
-  }
-
-  // Check whether padding exists or not.
+  // NOTE: Strip padding if exists
   if (frame.header().flags & HTTP2_FLAGS_HEADERS_PADDED) {
-    frame.reader()->memcpy(buf, HTTP2_HEADERS_PADLEN_LEN, nbytes);
-    nbytes += HTTP2_HEADERS_PADLEN_LEN;
+    uint8_t buf[HTTP2_HEADERS_PADLEN_LEN] = {0};
+    frame.reader()->memcpy(buf, HTTP2_HEADERS_PADLEN_LEN);
+
     if (!http2_parse_headers_parameter(make_iovec(buf, HTTP2_HEADERS_PADLEN_LEN), params)) {
       return Http2Error(HTTP2_ERROR_CLASS_CONNECTION, HTTP2_ERROR_PROTOCOL_ERROR);
     }
 
     if (params.pad_length > payload_length) {
-      // If the length of the padding is the length of the
-      // frame payload or greater, the recipient MUST treat this as a
-      // connection error of type PROTOCOL_ERROR.
       return Http2Error(HTTP2_ERROR_CLASS_CONNECTION, HTTP2_ERROR_PROTOCOL_ERROR);
     }
-  } else {
-    params.pad_length = 0;
+
+    header_block_fragment_offset += HTTP2_HEADERS_PADLEN_LEN;
+    header_block_fragment_length -= (HTTP2_HEADERS_PADLEN_LEN + params.pad_length);
   }
 
-  // Check whether parameters of priority exist or not.
-  // TODO Currently priority is NOT supported.
+  // NOTE: Parse priority parameters if exists
+  // TODO: Currently priority is NOT supported. TS-3535 will fix this.
   if (frame.header().flags & HTTP2_FLAGS_HEADERS_PRIORITY) {
-    frame.reader()->memcpy(buf, HTTP2_PRIORITY_LEN, nbytes);
-    nbytes += HTTP2_PRIORITY_LEN;
+    uint8_t buf[HTTP2_PRIORITY_LEN] = {0};
+
+    frame.reader()->memcpy(buf, HTTP2_PRIORITY_LEN, header_block_fragment_offset);
     if (!http2_parse_priority_parameter(make_iovec(buf, HTTP2_PRIORITY_LEN), params.priority)) {
       return Http2Error(HTTP2_ERROR_CLASS_CONNECTION, HTTP2_ERROR_PROTOCOL_ERROR);
     }
+
+    header_block_fragment_offset += HTTP2_PRIORITY_LEN;
+    header_block_fragment_length -= HTTP2_PRIORITY_LEN;
   }
 
-  // Parse request headers encoded by HPACK
-  const uint32_t unpadded_length = payload_length - params.pad_length;
-  uint32_t remaining_bytes = 0;
-  for (;;) {
-    size_t read_len = sizeof(buf) - remaining_bytes;
-    if (nbytes + read_len > unpadded_length)
-      read_len -= nbytes + read_len - unpadded_length;
-    unsigned read_bytes = read_rcv_buffer(buf + remaining_bytes, read_len, nbytes, frame);
-    IOVec header_block_fragment = make_iovec(buf, read_bytes + remaining_bytes);
+  stream->header_blocks = static_cast<uint8_t *>(ats_malloc(header_block_fragment_length));
+  frame.reader()->memcpy(stream->header_blocks, header_block_fragment_length, header_block_fragment_offset);
 
-    bool cont = nbytes < payload_length || !(frame.header().flags & HTTP2_FLAGS_HEADERS_END_HEADERS);
-    int64_t decoded_bytes = stream->decode_request_header(header_block_fragment, *cstate.local_dynamic_table, cont);
+  stream->header_blocks_length = header_block_fragment_length;
 
-    // 4.3. A receiver MUST terminate the connection with a
-    // connection error of type COMPRESSION_ERROR if it does
-    // not decompress a header block.
-    if (decoded_bytes == 0 || decoded_bytes == HPACK_ERROR_COMPRESSION_ERROR) {
-      return Http2Error(HTTP2_ERROR_CLASS_CONNECTION, HTTP2_ERROR_COMPRESSION_ERROR);
+  if (frame.header().flags & HTTP2_FLAGS_HEADERS_END_HEADERS) {
+    // NOTE: If there are END_HEADERS flag, decode stored Header Blocks.
+    if (!stream->change_state(HTTP2_FRAME_TYPE_HEADERS, frame.header().flags)) {
+      return Http2Error(HTTP2_ERROR_CLASS_CONNECTION, HTTP2_ERROR_PROTOCOL_ERROR);
     }
 
-    if (decoded_bytes == HPACK_ERROR_HTTP2_PROTOCOL_ERROR) {
+    const int64_t decoded_bytes = stream->decode_header_blocks(*cstate.local_dynamic_table);
+
+    if (decoded_bytes == 0 || decoded_bytes == HPACK_ERROR_COMPRESSION_ERROR) {
+      return Http2Error(HTTP2_ERROR_CLASS_CONNECTION, HTTP2_ERROR_COMPRESSION_ERROR);
+    } else if (decoded_bytes == HPACK_ERROR_HTTP2_PROTOCOL_ERROR) {
       return Http2Error(HTTP2_ERROR_CLASS_STREAM, HTTP2_ERROR_PROTOCOL_ERROR);
     }
 
-    remaining_bytes = header_block_fragment.iov_len - decoded_bytes;
-    memmove(buf, buf + header_block_fragment.iov_len - remaining_bytes, remaining_bytes);
-
-    if (nbytes >= payload_length - params.pad_length) {
-      if (!(frame.header().flags & HTTP2_FLAGS_HEADERS_END_HEADERS)) {
-        cstate.set_continued_headers(buf, remaining_bytes, id);
-      }
-      break;
-    }
-  }
-
-  // backposting
-  if (frame.header().flags & HTTP2_FLAGS_HEADERS_END_HEADERS) {
     stream->init_fetcher(cstate);
+  } else {
+    // NOTE: Expect CONTINUATION Frame. Do NOT change state of stream or decode Header Blocks.
+    DebugSsn(&cs, "http2_cs", "[%" PRId64 "] No END_HEADERS flag, expecting CONTINUATION frame.", cs.connection_id());
+
+    cstate.set_continued_stream_id(stream_id);
   }
 
   return Http2Error(HTTP2_ERROR_CLASS_NONE);
@@ -579,19 +569,29 @@ rcv_window_update_frame(Http2ClientSession &cs, Http2ConnectionState &cstate, co
   return Http2Error(HTTP2_ERROR_CLASS_NONE);
 }
 
+
+/*
+ * [RFC 7540] 6.10 CONTINUATION
+ *
+ * NOTE: Logically, the CONTINUATION frames are part of the HEADERS frame. ([RFC 7540] 6.2 HEADERS)
+ *
+ */
 static Http2Error
 rcv_continuation_frame(Http2ClientSession &cs, Http2ConnectionState &cstate, const Http2Frame &frame)
 {
-  char buf[BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_CONTINUATION])];
-  unsigned nbytes = 0;
   const Http2StreamId stream_id = frame.header().streamid;
+  const uint32_t payload_length = frame.header().length;
 
   DebugSsn(&cs, "http2_cs", "[%" PRId64 "] Received CONTINUATION frame.", cs.connection_id());
+
+  if (!http2_is_client_streamid(stream_id)) {
+    return Http2Error(HTTP2_ERROR_CLASS_CONNECTION, HTTP2_ERROR_PROTOCOL_ERROR);
+  }
 
   // Find opened stream
   // CONTINUATION frames MUST be associated with a stream.  If a
   // CONTINUATION frame is received whose stream identifier field is 0x0,
-  // the recipient MUST respond with a connection error (Section 5.4.1) of
+  // the recipient MUST respond with a connection error ([RFC 7540] Section 5.4.1) of
   // type PROTOCOL_ERROR.
   Http2Stream *stream = cstate.find_stream(stream_id);
   if (stream == NULL) {
@@ -600,70 +600,54 @@ rcv_continuation_frame(Http2ClientSession &cs, Http2ConnectionState &cstate, con
     } else {
       return Http2Error(HTTP2_ERROR_CLASS_CONNECTION, HTTP2_ERROR_PROTOCOL_ERROR);
     }
+  } else {
+    switch (stream->get_state()) {
+    case HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE:
+      return Http2Error(HTTP2_ERROR_CLASS_CONNECTION, HTTP2_ERROR_STREAM_CLOSED);
+    case HTTP2_STREAM_STATE_IDLE:
+      break;
+    default:
+      return Http2Error(HTTP2_ERROR_CLASS_CONNECTION, HTTP2_ERROR_PROTOCOL_ERROR);
+    }
   }
 
-  // A CONTINUATION frame MUST be preceded by a HEADERS, PUSH_PROMISE or
-  // CONTINUATION frame without the END_HEADERS flag set. A recipient
-  // that observes violation of this rule MUST respond with a connection
-  // error (Section 5.4.1) of type PROTOCOL_ERROR.
-  if (stream->get_state() != HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE && stream->get_state() != HTTP2_STREAM_STATE_HALF_CLOSED_LOCAL) {
+  // keep track of how many bytes we get in the frame
+  stream->request_header_length += payload_length;
+  if (stream->request_header_length > Http2::max_request_header_size) {
+    Error("HTTP/2 payload for headers exceeded: %u", stream->request_header_length);
     return Http2Error(HTTP2_ERROR_CLASS_CONNECTION, HTTP2_ERROR_PROTOCOL_ERROR);
   }
 
-  // A receiver MUST treat the receipt of any other type of frame or
-  // a frame on a different stream as a connection error of type PROTOCOL_ERROR.
-  if (stream->get_id() != cstate.get_continued_id()) {
+  if (!stream->header_blocks) {
     return Http2Error(HTTP2_ERROR_CLASS_CONNECTION, HTTP2_ERROR_PROTOCOL_ERROR);
   }
 
-  const IOVec remaining_data = cstate.get_continued_headers();
-  uint32_t remaining_bytes = remaining_data.iov_len;
-  if (remaining_bytes && remaining_data.iov_base) {
-    memcpy(buf, remaining_data.iov_base, remaining_data.iov_len);
-  }
+  uint32_t header_blocks_offset = stream->header_blocks_length;
+  stream->header_blocks_length += payload_length;
 
-  // Parse request headers encoded by HPACK
-  for (;;) {
-    unsigned read_bytes = read_rcv_buffer(buf + remaining_bytes, sizeof(buf) - remaining_bytes, nbytes, frame);
-    IOVec header_block_fragment = make_iovec(buf, read_bytes + remaining_bytes);
+  stream->header_blocks = static_cast<uint8_t *>(ats_realloc(stream->header_blocks, stream->header_blocks_length));
+  frame.reader()->memcpy(stream->header_blocks + header_blocks_offset, payload_length);
 
-    // keep track of how many bytes we get in the frame
-    stream->request_header_length += frame.header().length;
-    if (stream->request_header_length > Http2::max_request_header_size) {
-      Error("HTTP/2 payload for headers exceeded: %u", stream->request_header_length);
-      // XXX Should we respond with 431 (Request Header Fields Too Large) ?
-      return Http2Error(HTTP2_ERROR_CLASS_STREAM, HTTP2_ERROR_PROTOCOL_ERROR);
-    }
+  if (frame.header().flags & HTTP2_FLAGS_HEADERS_END_HEADERS) {
+    // NOTE: If there are END_HEADERS flag, decode stored Header Blocks.
+    cstate.clear_continued_stream_id();
 
-    bool cont = nbytes < frame.header().length || !(frame.header().flags & HTTP2_FLAGS_HEADERS_END_HEADERS);
-    int64_t decoded_bytes = stream->decode_request_header(header_block_fragment, *cstate.local_dynamic_table, cont);
-
-    // A receiver MUST terminate the connection with a
-    // connection error of type COMPRESSION_ERROR if it does
-    // not decompress a header block.
-    if (decoded_bytes == 0 || decoded_bytes == HPACK_ERROR_COMPRESSION_ERROR) {
-      return Http2Error(HTTP2_ERROR_CLASS_CONNECTION, HTTP2_ERROR_COMPRESSION_ERROR);
-    }
-
-    if (decoded_bytes == HPACK_ERROR_HTTP2_PROTOCOL_ERROR) {
+    if (!stream->change_state(HTTP2_FRAME_TYPE_CONTINUATION, frame.header().flags)) {
       return Http2Error(HTTP2_ERROR_CLASS_CONNECTION, HTTP2_ERROR_PROTOCOL_ERROR);
     }
 
-    remaining_bytes = header_block_fragment.iov_len - decoded_bytes;
-    memmove(buf, buf + header_block_fragment.iov_len - remaining_bytes, remaining_bytes);
+    const int64_t decoded_bytes = stream->decode_header_blocks(*cstate.local_dynamic_table);
 
-    if (nbytes >= frame.header().length) {
-      if (!(frame.header().flags & HTTP2_FLAGS_HEADERS_END_HEADERS)) {
-        cstate.set_continued_headers(buf, remaining_bytes, stream_id);
-      }
-      break;
+    if (decoded_bytes == 0 || decoded_bytes == HPACK_ERROR_COMPRESSION_ERROR) {
+      return Http2Error(HTTP2_ERROR_CLASS_CONNECTION, HTTP2_ERROR_COMPRESSION_ERROR);
+    } else if (decoded_bytes == HPACK_ERROR_HTTP2_PROTOCOL_ERROR) {
+      return Http2Error(HTTP2_ERROR_CLASS_CONNECTION, HTTP2_ERROR_PROTOCOL_ERROR);
     }
-  }
 
-  // backposting
-  if (frame.header().flags & HTTP2_FLAGS_HEADERS_END_HEADERS) {
-    cstate.finish_continued_headers();
     stream->init_fetcher(cstate);
+  } else {
+    // NOTE: Expect another CONTINUATION Frame. Do nothing.
+    DebugSsn(&cs, "http2_cs", "[%" PRId64 "] No END_HEADERS flag, expecting CONTINUATION frame.", cs.connection_id());
   }
 
   return Http2Error(HTTP2_ERROR_CLASS_NONE);
@@ -854,34 +838,6 @@ Http2ConnectionState::cleanup_streams()
     s = next;
   }
   client_streams_count = 0;
-}
-
-void
-Http2ConnectionState::set_continued_headers(const char *buf, uint32_t len, Http2StreamId id)
-{
-  DebugSsn(this->ua_session, "http2_cs", "[%" PRId64 "] Send CONTINUATION frame.", this->ua_session->connection_id());
-
-  if (buf && len > 0) {
-    if (!continued_buffer.iov_base) {
-      continued_buffer.iov_base = static_cast<uint8_t *>(ats_malloc(len));
-    } else if (continued_buffer.iov_len < len) {
-      continued_buffer.iov_base = ats_realloc(continued_buffer.iov_base, len);
-    }
-    continued_buffer.iov_len = len;
-
-    memcpy(continued_buffer.iov_base, buf, continued_buffer.iov_len);
-  }
-
-  continued_id = id;
-}
-
-void
-Http2ConnectionState::finish_continued_headers()
-{
-  continued_id = 0;
-  ats_free(continued_buffer.iov_base);
-  continued_buffer.iov_base = NULL;
-  continued_buffer.iov_len = 0;
 }
 
 void
@@ -1168,7 +1124,7 @@ Http2Stream::set_body_to_fetcher(const void *data, size_t len)
 }
 
 /*
- * 5.1.  Stream States
+ * 5.1. Stream States
  *
  *                       +--------+
  *                 PP    |        |    PP
@@ -1202,8 +1158,13 @@ Http2Stream::change_state(uint8_t type, uint8_t flags)
   switch (_state) {
   case HTTP2_STREAM_STATE_IDLE:
     if (type == HTTP2_FRAME_TYPE_HEADERS) {
-      if (flags & HTTP2_FLAGS_HEADERS_END_STREAM) {
-        // Skip OPEN _state
+      if (end_stream && flags & HTTP2_FLAGS_HEADERS_END_HEADERS) {
+        _state = HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE;
+      } else {
+        _state = HTTP2_STREAM_STATE_OPEN;
+      }
+    } else if (type == HTTP2_FRAME_TYPE_CONTINUATION) {
+      if (end_stream && flags & HTTP2_FLAGS_CONTINUATION_END_HEADERS) {
         _state = HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE;
       } else {
         _state = HTTP2_STREAM_STATE_OPEN;
