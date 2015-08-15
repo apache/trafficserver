@@ -1554,30 +1554,28 @@ mime_hdr_field_detach(MIMEHdrImpl *mh, MIMEField *field, bool detach_all_dups)
   // to walk the list to find the previous dup in the list to patch out
   // the dup being detached.
 
-  if (field->m_flags & MIME_FIELD_SLOT_FLAGS_DUP_HEAD) {
-    // head of list
-    if (!next_dup) {
-      // only child
+  if (field->m_flags & MIME_FIELD_SLOT_FLAGS_DUP_HEAD) // head of list?
+  {
+    if (!next_dup) // only child
+    {
       mime_hdr_unset_accelerators_and_presence_bits(mh, field);
-    } else {
-      // next guy is dup head
+    } else // next guy is dup head
+    {
       next_dup->m_flags |= MIME_FIELD_SLOT_FLAGS_DUP_HEAD;
       mime_hdr_set_accelerators_and_presence_bits(mh, next_dup);
     }
-  } else {
-    // need to walk list to find and patch out from predecessor
+  } else // need to walk list to find and patch out from predecessor
+  {
     int name_length;
     const char *name = mime_field_name_get(field, &name_length);
     MIMEField *prev = mime_hdr_field_find(mh, name, name_length);
 
-    while (prev && (prev->m_next_dup != field)) {
+    while (prev && (prev->m_next_dup != field))
       prev = prev->m_next_dup;
-    }
     ink_assert(prev != NULL);
 
-    if (prev->m_next_dup == field) {
+    if (prev->m_next_dup == field)
       prev->m_next_dup = next_dup;
-    }
   }
 
   // Field is now detached and alone
