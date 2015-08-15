@@ -80,7 +80,7 @@ rcv_data_frame(Http2ClientSession &cs, Http2ConnectionState &cstate, const Http2
   Http2Stream *stream = cstate.find_stream(id);
   if (stream == NULL) {
     if (id <= cstate.get_latest_stream_id()) {
-      return Http2Error(HTTP2_ERROR_CLASS_CONNECTION, HTTP2_ERROR_STREAM_CLOSED);
+      return Http2Error(HTTP2_ERROR_CLASS_STREAM, HTTP2_ERROR_STREAM_CLOSED);
     } else {
       return Http2Error(HTTP2_ERROR_CLASS_CONNECTION, HTTP2_ERROR_PROTOCOL_ERROR);
     }
