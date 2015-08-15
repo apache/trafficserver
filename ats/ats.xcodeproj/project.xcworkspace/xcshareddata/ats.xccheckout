@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>IDESourceControlProjectFavoriteDictionaryKey</key>
+	<false/>
+	<key>IDESourceControlProjectIdentifier</key>
+	<string>B68CA0F6-AD93-4309-BBD8-779D486EAF4A</string>
+	<key>IDESourceControlProjectName</key>
+	<string>project</string>
+	<key>IDESourceControlProjectOriginsDictionary</key>
+	<dict>
+		<key>3E7D1886603C574E8845ED8ED00B8A794ACD099B</key>
+		<string>https://git-wip-us.apache.org/repos/asf/trafficserver.git</string>
+		<key>881E4EC6C76B99CCF6EB3C199FC5E78E972258CC</key>
+		<string>http://luajit.org/git/luajit-2.0.git</string>
+	</dict>
+	<key>IDESourceControlProjectPath</key>
+	<string>ats/ats.xcodeproj/project.xcworkspace</string>
+	<key>IDESourceControlProjectRelativeInstallPathDictionary</key>
+	<dict>
+		<key>3E7D1886603C574E8845ED8ED00B8A794ACD099B</key>
+		<string>../../..</string>
+		<key>881E4EC6C76B99CCF6EB3C199FC5E78E972258CC</key>
+		<string>../../..lib/luajit/</string>
+	</dict>
+	<key>IDESourceControlProjectURL</key>
+	<string>https://git-wip-us.apache.org/repos/asf/trafficserver.git</string>
+	<key>IDESourceControlProjectVersion</key>
+	<integer>111</integer>
+	<key>IDESourceControlProjectWCCIdentifier</key>
+	<string>3E7D1886603C574E8845ED8ED00B8A794ACD099B</string>
+	<key>IDESourceControlProjectWCConfigurations</key>
+	<array>
+		<dict>
+			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
+			<string>public.vcs.git</string>
+			<key>IDESourceControlWCCIdentifierKey</key>
+			<string>881E4EC6C76B99CCF6EB3C199FC5E78E972258CC</string>
+			<key>IDESourceControlWCCName</key>
+			<string>luajit</string>
+		</dict>
+		<dict>
+			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
+			<string>public.vcs.git</string>
+			<key>IDESourceControlWCCIdentifierKey</key>
+			<string>3E7D1886603C574E8845ED8ED00B8A794ACD099B</string>
+			<key>IDESourceControlWCCName</key>
+			<string>trafficserver</string>
+		</dict>
+	</array>
+</dict>
+</plist>
