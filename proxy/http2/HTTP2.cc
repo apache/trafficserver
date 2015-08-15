@@ -347,7 +347,7 @@ http2_parse_priority_parameter(IOVec iov, Http2Priority &params)
   memcpy_and_advance(dependency.bytes, ptr);
   memcpy_and_advance(params.weight, ptr);
 
-  params.stream_dependency = ntohs(dependency.value);
+  params.stream_dependency = ntohl(dependency.value);
 
   return true;
 }
