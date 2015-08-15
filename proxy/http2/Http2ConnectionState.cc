@@ -233,6 +233,10 @@ rcv_headers_frame(Http2ClientSession &cs, Http2ConnectionState &cstate, const Ht
     if (!http2_parse_priority_parameter(make_iovec(buf, HTTP2_PRIORITY_LEN), params.priority)) {
       return Http2Error(HTTP2_ERROR_CLASS_CONNECTION, HTTP2_ERROR_PROTOCOL_ERROR);
     }
+    // Protocol error if the stream depends on itself
+    if (stream_id == params.priority.stream_dependency) {
+      return Http2Error(HTTP2_ERROR_CLASS_CONNECTION, HTTP2_ERROR_PROTOCOL_ERROR);
+    }
 
     header_block_fragment_offset += HTTP2_PRIORITY_LEN;
     header_block_fragment_length -= HTTP2_PRIORITY_LEN;
