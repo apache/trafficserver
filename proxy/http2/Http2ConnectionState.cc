@@ -740,7 +740,9 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
     }
 
     if (error.cls != HTTP2_ERROR_CLASS_NONE) {
+      EThread *ethread = this_ethread();
       if (error.cls == HTTP2_ERROR_CLASS_CONNECTION) {
+        HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_CONNECTION_ERRORS_COUNT, ethread);
         this->send_goaway_frame(last_streamid, error.code);
         cleanup_streams();
         // XXX We need to think a bit harder about how to coordinate the client
@@ -752,6 +754,7 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
         // half-closed state ...
         SET_HANDLER(&Http2ConnectionState::state_closed);
       } else if (error.cls == HTTP2_ERROR_CLASS_STREAM) {
+        HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_STREAM_ERRORS_COUNT, ethread);
         this->send_rst_stream_frame(last_streamid, error.code);
       }
     }

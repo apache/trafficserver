@@ -68,6 +68,8 @@ enum {
   HTTP2_STAT_CURRENT_CLIENT_STREAM_COUNT,   // Current # of active HTTP2 streams.
   HTTP2_STAT_TOTAL_TRANSACTIONS_TIME,       // Total stream time and streams
   HTTP2_STAT_TOTAL_CLIENT_CONNECTION_COUNT, // Total connections running http2
+  HTTP2_STAT_STREAM_ERRORS_COUNT,
+  HTTP2_STAT_CONNECTION_ERRORS_COUNT,
 
   HTTP2_N_STATS // Terminal counter, NOT A STAT INDEX.
 };
