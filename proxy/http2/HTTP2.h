@@ -245,6 +245,8 @@ struct Http2SettingsParameter {
 
 // 6.3 PRIORITY
 struct Http2Priority {
+  Http2Priority() : stream_dependency(0), weight(15) {}
+
   uint32_t stream_dependency;
   uint8_t weight;
 };
