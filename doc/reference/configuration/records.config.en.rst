@@ -2883,5 +2883,20 @@ Sockets
    exception being if you run Traffic Server with a protocol plugin, and would
    like for it to not support HTTP requests at all.
 
+.. ts:cv:: CONFIG proxy.config.http.wait_for_cache INT 0
+
+   If the cache cannot be initialized or read for some reason, this variable
+   decides whether we should continue serving the requests. This setting only 
+   takes effect if proxy.config.http.cache.http is 1 and 
+   proxy.config.http.wait_for_cache is 1.
+===== ====================
+Value Effect
+===== ====================
+0     Start listening for requests without waiting for the cache to initialize 
+1     Wait for the cache to initialize. 
+2     Wait for the cache to initialize. If none of the cache disks could be initialized, abort.
+3     Wait for the cache to initialize. If even one of the disks or volumes failed to initialize, abort.
+===== ====================
+
 .. _Traffic Shaping:
                  https://cwiki.apache.org/confluence/display/TS/Traffic+Shaping
