@@ -136,7 +136,7 @@ other conditions are specified.
 These conditions have to be first in a ruleset, and you can only have one in
 each rule. This implies that a new hook condition starts a new rule as well.::
 
-  cond %{READ_RESPONSE_HDR_HOOK}   (this is the default hook)
+  cond %{READ_RESPONSE_HDR_HOOK}   (this is the default hook for global rules)
   cond %{READ_REQUEST_HDR_HOOK}
   cond %{READ_REQUEST_PRE_REMAP_HOOK}
   cond %{SEND_REQUEST_HDR_HOOK}
@@ -144,7 +144,11 @@ each rule. This implies that a new hook condition starts a new rule as well.::
 
 For remap.config plugin instanations, the default hook is named
 REMAP_PSEUDO_HOOK. This can be useful if you are mixing other hooks in a
-configuration, but being the default it is also optional.
+configuration, but being the default it is also optional. This hook is
+executed directly as part of the remapping phase.
+
+Note that for configurations that are global, i.e. setup via
+``plugin.config``, the default hook is READ_RESPONSE_HDR_HOOK.
 
 CLIENT-URL, URL, URL-FROM, and URL-TO
 -------------------------
