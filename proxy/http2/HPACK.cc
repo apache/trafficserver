@@ -245,6 +245,7 @@ Http2DynamicTable::add_header_field(const MIMEField *field)
     // be emptied of all existing entries.
     _headers.clear();
     _mhdr->fields_clear();
+    _current_size = 0;
   } else {
     _current_size += header_size;
     while (_current_size > _settings_dynamic_table_size) {
