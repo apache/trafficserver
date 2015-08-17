@@ -107,7 +107,7 @@ HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State *c
       Log::error("BODY_FACTORY: suppressing '%s' response for url '%s'", type, url);
     }
     unlock();
-    return (nullptr);
+    return nullptr;
   }
   //////////////////////////////////////////////////////////////////////////////////
   // if language-targeting activated, get client Accept-Language & Accept-Charset //
@@ -400,7 +400,7 @@ HttpBodyFactory::fabricate(StrList *acpt_language_list, StrList *acpt_charset_li
   char *buffer;
   const char *pType = context->txn_conf->body_factory_template_base;
   const char *set;
-  HttpBodyTemplate *t;
+  HttpBodyTemplate *t = NULL;
   HttpBodySet *body_set;
   char template_base[PATH_NAME_MAX];
 
@@ -416,12 +416,12 @@ HttpBodyFactory::fabricate(StrList *acpt_language_list, StrList *acpt_charset_li
   // if error body suppressed, return NULL
   if (is_response_suppressed(context)) {
     Debug("body_factory", "  error suppression enabled, returning NULL template");
-    return (nullptr);
+    return nullptr;
   }
   // if custom error pages are disabled, return NULL
   if (!enable_customizations) {
     Debug("body_factory", "  customization disabled, returning NULL template");
-    return (nullptr);
+    return nullptr;
   }
 
   // what set should we use (language target if enable_customizations == 2)
@@ -437,17 +437,22 @@ HttpBodyFactory::fabricate(StrList *acpt_language_list, StrList *acpt_charset_li
   }
   if (pType != nullptr && 0 != *pType && 0 != strncmp(pType, "NONE", 4)) {
     sprintf(template_base, "%s_%s", pType, type);
-  } else {
-    sprintf(template_base, "%s", type);
+    t = find_template(set, template_base, &body_set);
+    // Check for default alternate.
+    if (t == nullptr) {
+      sprintf(template_base, "%s_default", pType);
+      t = find_template(set, template_base, &body_set);
+    }
   }
-  // see if we have a custom error page template
-  t = find_template(set, template_base, &body_set);
+
+  // Check for base customizations if specializations didn't work.
   if (t == nullptr) {
     t = find_template(set, type, &body_set); // this executes if the template_base is wrong and doesn't exist
   }
+
   if (t == nullptr) {
     Debug("body_factory", "  can't find template, returning NULL template");
-    return (nullptr);
+    return nullptr;
   }
 
   *content_language_return = body_set->content_language;
@@ -455,7 +460,7 @@ HttpBodyFactory::fabricate(StrList *acpt_language_list, StrList *acpt_charset_li
 
   // build the custom error page
   buffer = t->build_instantiated_buffer(context, buffer_length_return);
-  return (buffer);
+  return buffer;
 }
 
 // LOCKING: must be called with lock taken
@@ -692,8 +697,9 @@ HttpBodyFactory::load_body_set_from_directory(char *set_name, char *tmpl_dir)
   DIR *dir;
   int status;
   struct stat stat_buf;
-  char path[MAXPATHLEN + 1];
   struct dirent *dirEntry;
+  char path[MAXPATHLEN + 1];
+  static const char BASED_DEFAULT[] = "_default";
 
   ////////////////////////////////////////////////
   // ensure we can open tmpl_dir as a directory //
@@ -702,7 +708,7 @@ HttpBodyFactory::load_body_set_from_directory(char *set_name, char *tmpl_dir)
   Debug("body_factory", "  load_body_set_from_directory(%s)", tmpl_dir);
   dir = opendir(tmpl_dir);
   if (dir == nullptr) {
-    return (nullptr);
+    return nullptr;
   }
 
   /////////////////////////////////////////////
@@ -713,7 +719,7 @@ HttpBodyFactory::load_body_set_from_directory(char *set_name, char *tmpl_dir)
   status = stat(path, &stat_buf);
   if ((status < 0) || !S_ISREG(stat_buf.st_mode)) {
     closedir(dir);
-    return (nullptr);
+    return nullptr;
   }
   Debug("body_factory", "    found '%s'", path);
 
@@ -729,14 +735,19 @@ HttpBodyFactory::load_body_set_from_directory(char *set_name, char *tmpl_dir)
 
   while ((dirEntry = readdir(dir))) {
     HttpBodyTemplate *tmpl;
+    size_t d_len = strlen(dirEntry->d_name);
 
     ///////////////////////////////////////////////////////////////
-    // all template files have name of the form <type>#<subtype> //
+    // all template files must have a file name of the form      //
+    // - <type>#<subtype>                                        //
+    // - <base>_<type>#<subtype>                                 //
+    // - <base>_default   [based default]                        //
+    // - default          [global default]                       //
     ///////////////////////////////////////////////////////////////
 
-    if ((strchr(dirEntry->d_name, '#') == nullptr) && (strcmp(dirEntry->d_name, "default") != 0)) {
+    if (!(nullptr != strchr(dirEntry->d_name, '#') || (0 == strcmp(dirEntry->d_name, "default")) ||
+          (d_len >= sizeof(BASED_DEFAULT) && 0 == strcmp(dirEntry->d_name + d_len - (sizeof(BASED_DEFAULT) - 1), BASED_DEFAULT))))
       continue;
-    }
 
     snprintf(path, sizeof(path), "%s/%s", tmpl_dir, dirEntry->d_name);
     status = stat(path, &stat_buf);

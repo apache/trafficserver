@@ -145,18 +145,22 @@ is provided in :ref:`appendix-http-status-codes`.
 
 The error messages can be customized. The actual response is generated from a template. These
 templates are stored in files which means the errors responses can be customized by modifying these
-files. The default directory for the template files is ``PREFIX/body_factory/default``
-but this can be changed by the configuration variable
-:ts:cv:`proxy.config.body_factory.template_sets_dir`. All files in this directory are added to a
-lookup table which is consulted when the error message is generated. The name used for lookup is by
-default that listed in the :ref:`following table <body-factory-error-table>`. It can be overridden by
+files. The default directory for the template files is ``PREFIX/body_factory/default`` but this can
+be changed by the configuration variable :ts:cv:`proxy.config.body_factory.template_sets_dir`. All
+files in this directory are added to a lookup table which is consulted when the error message is
+generated. The name used for lookup is by default that listed in the :ref:`following table
+<body-factory-error-table>`. It can be overridden by
 :ts:cv:`proxy.config.body_factory.template_base` which, if set, is a string that is prepended to the
 search name along with an underscore. For example, if the default lookup name is
 ``cache#read_error`` then by default the response will be generated from the template in the file
-named ``cache#read_error``. If the template base name were set to "apache" then the lookup would
+named ``cache#read_error``. If the template base name were set to ``apache`` then the lookup would
 look for a file named ``apache_cache#read_error`` in the template table. This can be used to switch
 out error message sets or, because this variable is overridable, to select an error message set
-based on data in the transaction.
+based on data in the transaction. In addition the suffix ``_default`` has a special meaning. If
+there is a file with the base name and that suffix it is used as the default error page for the base
+set, instead of falling back to the global (built in) default page in the case where there is not a
+file that matches the specific error. In the example case, if the file ``apache_default`` exists
+it would be used instead of ``cache#read_error`` if there is no ``apache_cache#read_error``.
 
 The text for an error message is processed as if it were a :ref:`admin-logging-fields` which
 enables customization by values present in the transaction for which the error occurred.
