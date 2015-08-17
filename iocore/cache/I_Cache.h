@@ -65,7 +65,8 @@ typedef HTTPInfo CacheHTTPInfo;
 struct CacheProcessor : public Processor {
   CacheProcessor()
     : min_stripe_version(CACHE_DB_MAJOR_VERSION, CACHE_DB_MINOR_VERSION),
-      max_stripe_version(CACHE_DB_MAJOR_VERSION, CACHE_DB_MINOR_VERSION), cb_after_init(0)
+      max_stripe_version(CACHE_DB_MAJOR_VERSION, CACHE_DB_MINOR_VERSION), cb_after_init(0),
+      wait_for_cache(0)
   {
   }
 
@@ -140,12 +141,14 @@ struct CacheProcessor : public Processor {
       to specific the callback type and passed to the callback
       function.
   */
-  void set_after_init_callback(CALLBACK_FUNC cb);
+  void afterInitCallbackSet(CALLBACK_FUNC cb);
 
   // private members
   void diskInitialized();
 
   void cacheInitialized();
+
+  int waitForCache() const { return wait_for_cache; }
 
   static volatile uint32_t cache_ready;
   static volatile int initialized;
@@ -160,10 +163,11 @@ struct CacheProcessor : public Processor {
   VersionNumber max_stripe_version;
 
   CALLBACK_FUNC cb_after_init;
+  int wait_for_cache;
 };
 
 inline void
-CacheProcessor::set_after_init_callback(CALLBACK_FUNC cb)
+CacheProcessor::afterInitCallbackSet(CALLBACK_FUNC cb)
 {
   cb_after_init = cb;
 }

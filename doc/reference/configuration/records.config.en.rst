@@ -2925,5 +2925,33 @@ Sockets
    exception being if you run Traffic Server with a protocol plugin, and would
    like for it to not support HTTP requests at all.
 
+.. ts:cv:: CONFIG proxy.config.http.wait_for_cache INT 0
+
+   Accepting inbound connections and starting the cache are independent operations in Traffic
+   Server. This variable controls the relative timing of these operations and Traffic Server
+   dependency on cache because if cache is required then inbound connection accepts should be
+   deferred until the validity of the cache requirement is determined. If cache initialization
+   failure causes a Traffic Server shutdown this will be logged in :file:`diags.log`.
+
+===== ====================
+Value Effect
+===== ====================
+0     Decouple inbound connections and cache initialization. Connections will be accepted as soon as
+      possible and Traffic Server will run regardless of the results of cache initialization.
+
+1     Do not accept inbound connections until cache initialization has finished. Traffic server will run
+      regardless of the results of cache initialization.
+
+2     Do not accept inbound connections until cache initialization has finished and been sufficiently
+      successful that cache is enabled. This means at least one cache span is usable. If there are no
+      spans in :configfile:`storage.config` or none of the spans can be successfully parsed and
+      initialized then Traffic Server will shut down.
+
+3     Do not accept inbound connections until cache initialization has finished and been completely
+      successful. This requires at least one cache span in :configfile:`storage.config` and that every
+      span specified is valid and successfully initialized. Any error will cause Traffic Server to shut
+      down.
+===== ====================
+
 .. _Traffic Shaping:
                  https://cwiki.apache.org/confluence/display/TS/Traffic+Shaping

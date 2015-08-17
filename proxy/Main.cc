@@ -598,7 +598,7 @@ cmd_check_internal(char * /* cmd ATS_UNUSED */, bool fix = false)
   hd.reset();
 #endif
 
-  cacheProcessor.set_after_init_callback(&CB_cmd_cache_check);
+  cacheProcessor.afterInitCallbackSet(&CB_cmd_cache_check);
   if (cacheProcessor.start_internal(PROCESSOR_CHECK) < 0) {
     printf("\nbad cache configuration, %s failed\n", n);
     return CMD_FAILED;
@@ -663,7 +663,7 @@ cmd_clear(char *cmd)
   if (c_all || c_cache) {
     Note("Clearing Cache");
 
-    cacheProcessor.set_after_init_callback(&CB_cmd_cache_clear);
+    cacheProcessor.afterInitCallbackSet(&CB_cmd_cache_clear);
     if (cacheProcessor.start_internal(PROCESSOR_RECONFIGURE) < 0) {
       Note("unable to open Cache, CLEAR failed");
       return CMD_FAILED;
@@ -1699,7 +1699,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 
     pmgmt->registerPluginCallbacks(global_config_cbs);
 
-    cacheProcessor.set_after_init_callback(&CB_After_Cache_Init);
+    cacheProcessor.afterInitCallbackSet(&CB_After_Cache_Init);
     cacheProcessor.start();
 
     // UDP net-threads are turned off by default.
