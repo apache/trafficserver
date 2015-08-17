@@ -2883,5 +2883,20 @@ Sockets
    exception being if you run Traffic Server with a protocol plugin, and would
    like for it to not support HTTP requests at all.
 
+.. ts:cv:: CONFIG proxy.config.http.cache.required INT 0
+   :reloadable:
+
+   If the cache cannot be initialized or read for some reason, this variable
+   decides whether we should continue serving the requests. This setting only 
+   takes effect if proxy.config.http.cache.http is 1 and 
+   proxy.config.http.wait_for_cache is 1.
+===== ====================
+Value Effect
+===== ====================
+0     Continue serving requests even if we failed to initialize the cache
+1     Stop serving requests if none of the cache disks or volumes could be initialized
+2     Stop serving requests even if one or some of the cache disks or volumes could not be initialized
+===== ====================
+
 .. _Traffic Shaping:
                  https://cwiki.apache.org/confluence/display/TS/Traffic+Shaping

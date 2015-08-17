@@ -755,6 +755,18 @@ CacheProcessor::diskInitialized()
         bad_disks++;
     }
 
+    if (HttpConfig::m_master.oride.cache_http) {
+      if (cache_required && gndisks == bad_disks) {
+        Fatal("cache_required = %d, no disks could be read", cacheProcessor.cache_required);
+      }
+      else if (cache_required == 2 && bad_disks) {
+        Fatal("cache_required = %d, disks configured = %d, disks read = %d", 
+              cacheProcessor.cache_required,
+              theCacheStore.n_disks_from_config,
+              gndisks - bad_disks);
+      }
+    }
+
     if (bad_disks != 0) {
       // create a new array
       CacheDisk **p_good_disks;
@@ -792,6 +804,11 @@ CacheProcessor::diskInitialized()
     }
 
     if (res == -1) {
+
+      if (HttpConfig::m_master.oride.cache_http && cache_required) {
+        Fatal("cache_required = %d, no volumes could be configured", cacheProcessor.cache_required);
+      }
+
       /* problems initializing the volume.config. Punt */
       gnvol = 0;
       cacheInitialized();
@@ -2078,6 +2095,19 @@ Cache::open_done()
   Action *register_ShowCacheInternal(Continuation * c, HTTPHdr * h);
   statPagesManager.register_http("cache", register_ShowCache);
   statPagesManager.register_http("cache-internal", register_ShowCacheInternal);
+
+  if (HttpConfig::m_master.oride.cache_http) {
+    if (cacheProcessor.cache_required == 1 && total_good_nvol == 0) {
+      Fatal("cache_required = %d, no volumes could be initialized", 
+            cacheProcessor.cache_required);
+    }
+
+    if (cacheProcessor.cache_required == 2 && total_good_nvol < total_nvol) {
+      Fatal("cache_required = %d, not all volumes could be initialized", 
+            cacheProcessor.cache_required);
+    }
+  }
+
   if (total_good_nvol == 0) {
     ready = CACHE_INIT_FAILED;
     cacheProcessor.cacheInitialized();
@@ -3244,6 +3274,21 @@ ink_cache_init(ModuleVersion v)
     Warning("no cache disks specified in %s: cache disabled\n", (const char *)path);
     // exit(1);
   }
+
+  REC_ReadConfigInteger(cacheProcessor.cache_required, "proxy.config.http.cache.required");
+  if (HttpConfig::m_master.oride.cache_http) {
+    if (theCacheStore.n_disks == 0 && cacheProcessor.cache_required) {
+      Fatal("cache_required = %d, no disks could be read", cacheProcessor.cache_required);
+    }
+    else if (theCacheStore.n_disks < theCacheStore.n_disks_from_config && 
+              cacheProcessor.cache_required == 2) {
+      Fatal("cache_required = %d, disks configured = %d, disks read = %d", 
+            cacheProcessor.cache_required,
+            theCacheStore.n_disks_from_config,
+            theCacheStore.n_disks);
+    }
+  }
+
 }
 
 //----------------------------------------------------------------------------
