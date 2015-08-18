@@ -77,6 +77,7 @@ Http2ClientSession::destroy()
   super::destroy();
 
   free_MIOBuffer(this->read_buffer);
+  free_MIOBuffer(this->write_buffer);
   http2ClientSessionAllocator.free(this);
 }
 
