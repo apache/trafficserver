@@ -854,7 +854,7 @@ inline HttpConfigParams::HttpConfigParams()
     cache_vary_default_other(NULL), max_cache_open_write_retries(1), cache_enable_default_vary_headers(0), cache_post_method(0),
     connect_ports_string(NULL), connect_ports(NULL), push_method_enabled(0), referer_filter_enabled(0), referer_format_redirect(0),
     reverse_proxy_enabled(0), url_remap_required(1), record_cop_page(0), errors_log_error_pages(1), enable_http_info(0),
-    cluster_time_delta(0), redirection_enabled(0), redirection_host_no_port(0), number_of_redirections(1), post_copy_size(2048),
+    cluster_time_delta(0), redirection_enabled(0), redirection_host_no_port(1), number_of_redirections(1), post_copy_size(2048),
     ignore_accept_mismatch(0), ignore_accept_language_mismatch(0), ignore_accept_encoding_mismatch(0),
     ignore_accept_charset_mismatch(0), send_100_continue_response(0), disallow_post_100_continue(0), parser_allow_non_http(1),
     max_post_size(0), server_session_sharing_pool(TS_SERVER_SESSION_SHARING_POOL_THREAD), synthetic_port(0)
