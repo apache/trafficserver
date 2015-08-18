@@ -117,6 +117,7 @@ Http2ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   // Unique client session identifier.
   this->con_id = ProxyClientSession::next_connection_id();
   this->client_vc = new_vc;
+  client_vc->set_inactivity_timeout(HRTIME_SECONDS(Http2::accept_no_activity_timeout));
   this->mutex = new_vc->mutex;
 
   this->connection_state.mutex = new_ProxyMutex();
@@ -288,7 +289,7 @@ Http2ClientSession::state_read_connection_preface(int event, void *edata)
     this->sm_reader->consume(nbytes);
     HTTP2_SET_SESSION_HANDLER(&Http2ClientSession::state_start_frame_read);
 
-    // XXX set activity timeouts ...
+    client_vc->set_inactivity_timeout(HRTIME_SECONDS(Http2::no_activity_timeout_in));
 
     // XXX start the write VIO ...
 
