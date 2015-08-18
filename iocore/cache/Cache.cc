@@ -755,13 +755,13 @@ CacheProcessor::diskInitialized()
         bad_disks++;
     }
 
-    if (HttpConfig::m_master.oride.cache_http) {
+    if (HttpConfig::m_master.oride.cache_http && wait_for_cache) {
       if (cache_required && gndisks == bad_disks) {
-        Fatal("cache_required = %d, no disks could be read", cacheProcessor.cache_required);
+        Fatal("cache_required = %d, no disks could be read", cache_required);
       }
       else if (cache_required == 2 && bad_disks) {
         Fatal("cache_required = %d, disks configured = %d, disks read = %d", 
-              cacheProcessor.cache_required,
+              cache_required,
               theCacheStore.n_disks_from_config,
               gndisks - bad_disks);
       }
@@ -805,7 +805,7 @@ CacheProcessor::diskInitialized()
 
     if (res == -1) {
 
-      if (HttpConfig::m_master.oride.cache_http && cache_required) {
+      if (HttpConfig::m_master.oride.cache_http && wait_for_cache && cache_required) {
         Fatal("cache_required = %d, no volumes could be configured", cacheProcessor.cache_required);
       }
 
@@ -2096,7 +2096,7 @@ Cache::open_done()
   statPagesManager.register_http("cache", register_ShowCache);
   statPagesManager.register_http("cache-internal", register_ShowCacheInternal);
 
-  if (HttpConfig::m_master.oride.cache_http) {
+  if (HttpConfig::m_master.oride.cache_http && cacheProcessor.wait_for_cache) {
     if (cacheProcessor.cache_required == 1 && total_good_nvol == 0) {
       Fatal("cache_required = %d, no volumes could be initialized", 
             cacheProcessor.cache_required);
@@ -3276,7 +3276,9 @@ ink_cache_init(ModuleVersion v)
   }
 
   REC_ReadConfigInteger(cacheProcessor.cache_required, "proxy.config.http.cache.required");
-  if (HttpConfig::m_master.oride.cache_http) {
+  REC_ReadConfigInteger(cacheProcessor.wait_for_cache, "proxy.config.http.wait_for_cache");
+
+  if (HttpConfig::m_master.oride.cache_http && cacheProcessor.wait_for_cache) {
     if (theCacheStore.n_disks == 0 && cacheProcessor.cache_required) {
       Fatal("cache_required = %d, no disks could be read", cacheProcessor.cache_required);
     }
