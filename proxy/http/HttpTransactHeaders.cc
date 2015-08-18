@@ -530,7 +530,7 @@ HttpTransactHeaders::generate_and_set_squid_codes(HTTPHdr *header, char *via_str
       if ((via_string[VIA_CACHE_RESULT] == VIA_IN_CACHE_FRESH) || (via_string[VIA_CACHE_RESULT] == VIA_IN_RAM_CACHE_FRESH)) {
         log_code = SQUID_LOG_TCP_IMS_HIT;
       } else {
-        if (via_string[VIA_SERVER_RESULT] == VIA_SERVER_NOT_MODIFIED) {
+        if (via_string[VIA_CACHE_RESULT] == VIA_IN_CACHE_STALE && via_string[VIA_SERVER_RESULT] == VIA_SERVER_NOT_MODIFIED) {
           log_code = SQUID_LOG_TCP_REFRESH_HIT;
         } else {
           log_code = SQUID_LOG_TCP_IMS_MISS;
