@@ -1029,6 +1029,25 @@ The default value of ``0`` specifies that there is no timeout.
    The proportion of total document size already transferred when a client aborts at which the proxy continues fetching the document
    from the origin server to get it into the cache (a **background fill**).
 
+HTTP Redirection
+================
+
+.. ts:cv:: CONFIG proxy.config.http.redirection_enabled INT 0
+
+   This setting indicates whether Trafficserver does a redirect follow location on receiving a 3XX Redirect response from the Origin
+   server. The redirection attempt is transparent to the client and the client is served the final response from the redirected-to
+   location.
+
+.. ts:cv:: CONFIG proxy.config.http.number_of_redirections INT 1
+
+   This setting determines the maximum number of times Trafficserver does a redirect follow location on receiving a 3XX Redirect response
+   for a given client request.
+
+.. ts:cv:: CONFIG proxy.config.http.redirect_host_no_port INT 1
+
+   This setting enables Trafficserver to not include the port in the Host header in the redirect follow request for default/standard ports
+   (e.g. 80 for HTTP and 443 for HTTPS). Note that the port is still included in the Host header if it's non-default.
+
 Origin Server Connect Attempts
 ==============================
 
