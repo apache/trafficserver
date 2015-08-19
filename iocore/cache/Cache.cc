@@ -755,15 +755,14 @@ CacheProcessor::diskInitialized()
         bad_disks++;
     }
 
-    if (HttpConfig::m_master.oride.cache_http && wait_for_cache) {
-      if (cache_required && gndisks == bad_disks) {
-        Fatal("cache_required = %d, no disks could be read", cache_required);
+    if (cacheRequired()) {
+      if (gndisks == bad_disks) {
+        Fatal("no disks could be read");
       }
       else if (cache_required == 2 && bad_disks) {
-        Fatal("cache_required = %d, disks configured = %d, disks read = %d", 
-              cache_required,
+        Fatal("disks configured = %d, bad disks = %d", 
               theCacheStore.n_disks_from_config,
-              gndisks - bad_disks);
+              bad_disks);
       }
     }
 
@@ -805,8 +804,8 @@ CacheProcessor::diskInitialized()
 
     if (res == -1) {
 
-      if (HttpConfig::m_master.oride.cache_http && wait_for_cache && cache_required) {
-        Fatal("cache_required = %d, no volumes could be configured", cacheProcessor.cache_required);
+      if (cacheRequired()) {
+        Fatal("no volumes could be configured");
       }
 
       /* problems initializing the volume.config. Punt */
@@ -1056,6 +1055,13 @@ CacheProcessor::cacheInitialized()
       Warning("cache unable to open any vols, disabled");
   }
   if (cache_init_ok) {
+
+    if (cacheRequired() && cache_required == 2 &&
+        (theCache->ready == CACHE_INIT_FAILED || 
+         theStreamCache->ready == CACHE_INIT_FAILED)) {
+      Fatal("cache init partially failed");
+    }
+
     // Initialize virtual cache
     CacheProcessor::initialized = CACHE_INITIALIZED;
     CacheProcessor::cache_ready = caches_ready;
@@ -1069,6 +1075,10 @@ CacheProcessor::cacheInitialized()
   } else {
     CacheProcessor::initialized = CACHE_INIT_FAILED;
     Note("cache disabled");
+
+    if (cacheProcessor.cacheRequired()) {
+      Fatal("cache init failed");
+    }
   }
   // Fire callback to signal initialization finished.
   if (cb_after_init)
@@ -2096,15 +2106,13 @@ Cache::open_done()
   statPagesManager.register_http("cache", register_ShowCache);
   statPagesManager.register_http("cache-internal", register_ShowCacheInternal);
 
-  if (HttpConfig::m_master.oride.cache_http && cacheProcessor.wait_for_cache) {
-    if (cacheProcessor.cache_required == 1 && total_good_nvol == 0) {
-      Fatal("cache_required = %d, no volumes could be initialized", 
-            cacheProcessor.cache_required);
+  if (cacheProcessor.cacheRequired()) {
+    if (total_good_nvol == 0) {
+      Fatal("no volumes could be initialized");
     }
 
     if (cacheProcessor.cache_required == 2 && total_good_nvol < total_nvol) {
-      Fatal("cache_required = %d, not all volumes could be initialized", 
-            cacheProcessor.cache_required);
+      Fatal("not all volumes could be initialized");
     }
   }
 
@@ -3278,14 +3286,13 @@ ink_cache_init(ModuleVersion v)
   REC_ReadConfigInteger(cacheProcessor.cache_required, "proxy.config.http.cache.required");
   REC_ReadConfigInteger(cacheProcessor.wait_for_cache, "proxy.config.http.wait_for_cache");
 
-  if (HttpConfig::m_master.oride.cache_http && cacheProcessor.wait_for_cache) {
-    if (theCacheStore.n_disks == 0 && cacheProcessor.cache_required) {
-      Fatal("cache_required = %d, no disks could be read", cacheProcessor.cache_required);
+  if (cacheProcessor.cacheRequired()) {
+    if (theCacheStore.n_disks == 0) {
+      Fatal("no disks could be read");
     }
     else if (theCacheStore.n_disks < theCacheStore.n_disks_from_config && 
               cacheProcessor.cache_required == 2) {
-      Fatal("cache_required = %d, disks configured = %d, disks read = %d", 
-            cacheProcessor.cache_required,
+      Fatal("disks configured = %d, disks read = %d", 
             theCacheStore.n_disks_from_config,
             theCacheStore.n_disks);
     }
@@ -3359,6 +3366,14 @@ CacheProcessor::find_by_path(char const *path, int len)
   }
 
   return 0;
+}
+
+bool
+CacheProcessor::cacheRequired() const
+{
+  return (HttpConfig::m_master.oride.cache_http && 
+      cacheProcessor.wait_for_cache && 
+      cache_required);
 }
 
 // ----------------------------

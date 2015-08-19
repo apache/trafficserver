@@ -149,6 +149,8 @@ struct CacheProcessor : public Processor {
 
   void cacheInitialized();
 
+  bool cacheRequired() const;
+
   static volatile uint32_t cache_ready;
   static volatile int initialized;
   static volatile int start_done;
