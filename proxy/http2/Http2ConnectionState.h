@@ -240,6 +240,7 @@ public:
   {
     cleanup_streams();
 
+    mutex = NULL; // magic happens - assigning to NULL frees the ProxyMutex
     delete local_dynamic_table;
     delete remote_dynamic_table;
 
