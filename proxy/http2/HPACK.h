@@ -110,6 +110,7 @@ public:
   {
     _headers.clear();
     _mhdr->fields_clear();
+    _mhdr->destroy();
     delete _mhdr;
   }
 
