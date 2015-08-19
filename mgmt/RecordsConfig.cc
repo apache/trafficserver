@@ -2003,6 +2003,7 @@ static const RecordElement RecordsConfig[] =
 
   //###########
   //#
+  //# TS-3848
   //# Variable to control whether we should continue running the traffic_server
   //# if we HTTP caching is enabled and we fail to initialize the cache
   //#

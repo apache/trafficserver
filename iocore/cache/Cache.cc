@@ -755,6 +755,7 @@ CacheProcessor::diskInitialized()
         bad_disks++;
     }
 
+    // TS-3848
     if (cacheRequired()) {
       if (gndisks == bad_disks) {
         Fatal("no disks could be read");
@@ -804,6 +805,7 @@ CacheProcessor::diskInitialized()
 
     if (res == -1) {
 
+      // TS-3848
       if (cacheRequired()) {
         Fatal("no volumes could be configured");
       }
@@ -1056,6 +1058,7 @@ CacheProcessor::cacheInitialized()
   }
   if (cache_init_ok) {
 
+    // TS-3848
     if (cacheRequired() && cache_required == 2 &&
         (theCache->ready == CACHE_INIT_FAILED || 
          theStreamCache->ready == CACHE_INIT_FAILED)) {
@@ -1076,6 +1079,7 @@ CacheProcessor::cacheInitialized()
     CacheProcessor::initialized = CACHE_INIT_FAILED;
     Note("cache disabled");
 
+    // TS-3848
     if (cacheProcessor.cacheRequired()) {
       Fatal("cache init failed");
     }
@@ -2106,12 +2110,11 @@ Cache::open_done()
   statPagesManager.register_http("cache", register_ShowCache);
   statPagesManager.register_http("cache-internal", register_ShowCacheInternal);
 
+  // TS-3848
   if (cacheProcessor.cacheRequired()) {
-    if (total_good_nvol == 0) {
-      Fatal("no volumes could be initialized");
-    }
-
-    if (cacheProcessor.cache_required == 2 && total_good_nvol < total_nvol) {
+    if (cacheProcessor.cache_required == 2 && 
+        total_nvol && 
+        total_good_nvol < total_nvol) {
       Fatal("not all volumes could be initialized");
     }
   }
@@ -3286,6 +3289,7 @@ ink_cache_init(ModuleVersion v)
   REC_ReadConfigInteger(cacheProcessor.cache_required, "proxy.config.http.cache.required");
   REC_ReadConfigInteger(cacheProcessor.wait_for_cache, "proxy.config.http.wait_for_cache");
 
+  // TS-3848
   if (cacheProcessor.cacheRequired()) {
     if (theCacheStore.n_disks == 0) {
       Fatal("no disks could be read");
