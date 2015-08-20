@@ -46,7 +46,7 @@ void RecDumpRecordsHt(RecT rec_type);
   do { \
     RecString rec_string = 0; \
     if (RecGetRecordString_Xmalloc("proxy.config.parse_"name, &rec_string) != REC_ERR_FAIL) { \
-      if (rec_string) xfree(rec_string); \
+      if (rec_string) ats_free(rec_string); \
       printf("  parse_"name": FAIL\n"); \
       failures++; \
     } else { \
@@ -64,7 +64,7 @@ void RecDumpRecordsHt(RecT rec_type);
 	printf("  parse_"name": FAIL\n"); \
 	failures++; \
       } \
-      xfree(rec_string); \
+      ats_free(rec_string); \
     } else { \
       printf("  parse_"name": FAIL\n"); \
       failures++; \

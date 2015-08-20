@@ -70,7 +70,6 @@ typedef enum {
 InkHashTable *ink_hash_table_create(InkHashTableKeyType key_type);
 InkHashTable *ink_hash_table_destroy(InkHashTable *ht_ptr);
 InkHashTable *ink_hash_table_destroy_and_free_values(InkHashTable *ht_ptr);
-InkHashTable *ink_hash_table_destroy_and_xfree_values(InkHashTable *ht_ptr);
 inkcoreapi int ink_hash_table_isbound(InkHashTable *ht_ptr, const char *key);
 inkcoreapi int ink_hash_table_lookup(InkHashTable *ht_ptr, const char *key, InkHashTableValue *value_ptr);
 inkcoreapi int ink_hash_table_delete(InkHashTable *ht_ptr, const char *key);

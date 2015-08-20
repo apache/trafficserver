@@ -117,20 +117,6 @@ _ink_hash_table_free_entry_value(InkHashTable *ht_ptr, InkHashTableEntry *e)
   return (0);
 } /* End _ink_hash_table_free_entry_value */
 
-
-static int
-_ink_hash_table_xfree_entry_value(InkHashTable *ht_ptr, InkHashTableEntry *e)
-{
-  InkHashTableValue value;
-
-  value = ink_hash_table_entry_value(ht_ptr, e);
-  if (value != NULL) {
-    ats_free(value);
-  }
-
-  return (0);
-} /* End _ink_hash_table_xfree_entry_value */
-
 InkHashTable *
 ink_hash_table_destroy_and_free_values(InkHashTable *ht_ptr)
 {
@@ -138,15 +124,6 @@ ink_hash_table_destroy_and_free_values(InkHashTable *ht_ptr)
   ink_hash_table_destroy(ht_ptr);
   return (InkHashTable *)0;
 } /* End ink_hash_table_destroy_and_free_values */
-
-InkHashTable *
-ink_hash_table_destroy_and_xfree_values(InkHashTable *ht_ptr)
-{
-  ink_hash_table_map(ht_ptr, _ink_hash_table_xfree_entry_value);
-  ink_hash_table_destroy(ht_ptr);
-  return (InkHashTable *)0;
-} /* End ink_hash_table_destroy_and_xfree_values */
-
 
 /*---------------------------------------------------------------------------*
 

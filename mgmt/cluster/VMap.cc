@@ -216,9 +216,9 @@ VMap::VMap(char *interface, unsigned long ip, ink_mutex *m)
 VMap::~VMap()
 {
   if (id_map)
-    ink_hash_table_destroy_and_xfree_values(id_map);
+    ink_hash_table_destroy_and_free_values(id_map);
 
-  ink_hash_table_destroy_and_xfree_values(interface_realip_map);
+  ink_hash_table_destroy_and_free_values(interface_realip_map);
   ink_hash_table_destroy(our_map);
   ink_hash_table_destroy(ext_map);
   ats_free(this->interface);
@@ -322,7 +322,7 @@ VMap::lt_readAListFile(const char *fname)
   ink_mutex_acquire(mutex);
   rl_downAddrs(); /* Down everything before we re-init */
   if (id_map) {
-    ink_hash_table_destroy_and_xfree_values(id_map);
+    ink_hash_table_destroy_and_free_values(id_map);
   }
 
   id_map = ink_hash_table_create(InkHashTableKeyType_String);

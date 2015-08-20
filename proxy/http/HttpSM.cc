@@ -6018,7 +6018,7 @@ HttpSM::setup_internal_transfer(HttpSMHandler handler_arg)
                                  t_state.internal_msg_buffer_fast_allocator_size);
 
 
-    // The IOBufferBlock will xfree the msg buffer when necessary so
+    // The IOBufferBlock will free the msg buffer when necessary so
     //  eliminate our pointer to it
     t_state.internal_msg_buffer = NULL;
     t_state.internal_msg_buffer_size = 0;

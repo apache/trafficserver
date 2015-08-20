@@ -40,10 +40,10 @@
 class MgmtHashTable
 {
 public:
-  MgmtHashTable(const char *name, bool xfree_on_delete, InkHashTableKeyType type)
+  MgmtHashTable(const char *name, bool free_on_delete, InkHashTableKeyType type)
   {
     ink_mutex_init(&mutex, name);
-    destroy_and_free = xfree_on_delete;
+    destroy_and_free = free_on_delete;
     ht = ink_hash_table_create(type);
   }
 
@@ -51,7 +51,7 @@ public:
   {
     ink_mutex_acquire(&mutex);
     if (destroy_and_free) {
-      ink_hash_table_destroy_and_xfree_values(ht);
+      ink_hash_table_destroy_and_free_values(ht);
     } else {
       ink_hash_table_destroy(ht);
     }

@@ -796,7 +796,7 @@ varType(const char *varName)
 //  Creates a hash table with name value pairs
 //
 //  CALLEE must deallocate the returned hash table with
-//   ink_hash_table_destroy_and_xfree_values(InkHashTable *ht_ptr)
+//   ink_hash_table_destroy_and_free_values(InkHashTable *ht_ptr)
 //
 
 InkHashTable *
@@ -854,7 +854,7 @@ processFormSubmission(char *submission)
 //  Creates a hash table with name value pairs
 //
 //  CALLEE must deallocate the returned hash table with
-//   ink_hash_table_destroy_and_xfree_values(InkHashTable *ht_ptr)
+//   ink_hash_table_destroy_and_free_values(InkHashTable *ht_ptr)
 //
 //  Note: This function will _not_ substituteUnsafeChars()
 InkHashTable *

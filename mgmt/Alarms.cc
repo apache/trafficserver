@@ -74,8 +74,8 @@ Alarms::Alarms()
 Alarms::~Alarms()
 {
   ink_hash_table_destroy(cblist);
-  ink_hash_table_destroy_and_xfree_values(local_alarms);
-  ink_hash_table_destroy_and_xfree_values(remote_alarms);
+  ink_hash_table_destroy_and_free_values(local_alarms);
+  ink_hash_table_destroy_and_free_values(remote_alarms);
   ink_mutex_destroy(&mutex);
 } /* End Alarms::Alarms */
 
