@@ -6421,6 +6421,10 @@ TSHttpTxnIntercept(TSCont contp, TSHttpTxn txnp)
   http_sm->plugin_tunnel->set_accept_cont(i);
 }
 
+// The API below require timer values as TSHRTime parameters
+// which are in nanoseconds. Use the TS_HRTIME macros defined
+// in api/ts/experimental.h until they are promoted to stable
+// api.
 /* Net VConnections */
 void
 TSVConnInactivityTimeoutSet(TSVConn connp, TSHRTime timeout)
