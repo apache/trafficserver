@@ -180,6 +180,116 @@ These constants are usually used as return value of do_remap function.
 
 `TOP <#ts-lua-plugin>`_
 
+ts.remap.get_to_url_host
+------------------------
+**syntax:** *ts.remap.get_to_url_host()*
+
+**context:** do_remap
+
+**description**: retrieve the "to" host of the remap rule
+
+Here is an example:
+
+::
+
+    function do_remap()
+        local to_host = ts.remap.get_to_url_host()
+        ts.debug(to_host)
+        return 0
+    end
+
+`TOP <#ts-lua-plugin>`_
+
+ts.remap.get_to_url_port
+------------------------
+**syntax:** *ts.remap.get_to_url_port()*
+
+**context:** do_remap
+
+**description**: retrieve the "to" port of the remap rule
+
+`TOP <#ts-lua-plugin>`_
+
+ts.remap.get_to_url_scheme
+--------------------------
+**syntax:** *ts.remap.get_to_url_scheme()*
+
+**context:** do_remap
+
+**description**: retrieve the "to" scheme of the remap rule
+
+`TOP <#ts-lua-plugin>`_
+
+ts.remap.get_to_uri
+-------------------
+**syntax:** *ts.remap.get_to_uri()*
+
+**context:** do_remap
+
+**description**: retrieve the "to" path of the remap rule
+
+`TOP <#ts-lua-plugin>`_
+
+ts.remap.get_to_url
+-------------------
+**syntax:** *ts.remap.get_to_url()*
+
+**context:** do_remap
+
+**description**: retrieve the "to" url of the remap rule
+
+`TOP <#ts-lua-plugin>`_
+
+ts.remap.get_from_url_host
+--------------------------
+**syntax:** *ts.remap.get_from_url_host()*
+
+**context:** do_remap
+
+**description**: retrieve the "from" host of the remap rule
+
+`TOP <#ts-lua-plugin>`_
+
+ts.remap.get_from_url_port
+--------------------------
+**syntax:** *ts.remap.get_from_url_port()*
+
+**context:** do_remap
+
+**description**: retrieve the "from" port of the remap rule
+
+`TOP <#ts-lua-plugin>`_
+
+ts.remap.get_from_url_scheme
+----------------------------
+**syntax:** *ts.remap.get_from_url_scheme()*
+
+**context:** do_remap
+
+**description**: retrieve the "from" scheme of the remap rule
+
+`TOP <#ts-lua-plugin>`_
+
+ts.remap.get_from_uri
+---------------------
+**syntax:** *ts.remap.get_from_uri()*
+
+**context:** do_remap
+
+**description**: retrieve the "from" path of the remap rule
+
+`TOP <#ts-lua-plugin>`_
+
+ts.remap.get_from_url
+---------------------
+**syntax:** *ts.remap.get_from_url()*
+
+**context:** do_remap
+
+**description**: retrieve the "from" url of the remap rule
+
+`TOP <#ts-lua-plugin>`_
+
 ts.hook
 -------
 **syntax:** *ts.hook(HOOK_POINT, FUNCTION)*
@@ -667,6 +777,41 @@ Here is an example:
         ts.http.set_cache_url('http://a.tbcdn.cn/foo')
         return 0
     end
+
+`TOP <#ts-lua-plugin>`_
+
+ts.http.get_cache_lookup_url
+---------------------
+**syntax:** *ts.http.get_cache_lookup_url()*
+
+**context:** do_global_cache_lookup_complete
+
+**description:** This function can be used to get the cache lookup url for the client request.
+
+Here is an example
+
+::
+
+    function cache_lookup()
+        ts.http.set_cache_lookup_url('http://bad.com/bad.html')
+        local cache = ts.http.get_cache_lookup_url()
+        ts.debug(cache)
+    end 
+
+    function do_remap()
+        ts.hook(TS_LUA_HOOK_CACHE_LOOKUP_COMPLETE, cache_lookup)
+        return 0
+    end
+
+`TOP <#ts-lua-plugin>`_
+
+ts.http.set_cache_lookup_url
+---------------------
+**syntax:** *ts.http.set_cache_lookup_url()*
+
+**context:** do_global_cache_lookup_complete
+
+**description:** This function can be used to set the cache lookup url for the client request.
 
 `TOP <#ts-lua-plugin>`_
 
@@ -1641,6 +1786,8 @@ Here is an example:
 
 This function is usually called in do_global_read_request function
 
+`TOP <#ts-lua-plugin>`_
+
 ts.http.is_internal_request
 ---------------------------
 **syntax:** *ts.http.is_internal_request()*
@@ -1658,6 +1805,28 @@ Here is an example:
         ts.debug(internal)
         return 0
     end
+
+`TOP <#ts-lua-plugin>`_
+
+ts.http.transaction_count
+-------------------------
+**syntax:** *ts.http.transaction_count()*
+
+**context:** do_remap or do_global_* or later
+
+**description:** This function returns the number of transaction in this connection
+
+Here is an example
+
+::
+
+    function do_remap()
+        local count = ts.http.transaction_count()
+        ts.debug(tostring(count))
+        return 0
+    end
+
+`TOP <#ts-lua-plugin>`_
 
 ts.add_package_path
 -------------------
@@ -1681,7 +1850,6 @@ Here is an example:
     end
 
 `TOP <#ts-lua-plugin>`_
-
 
 ts.add_package_cpath
 --------------------
@@ -2381,7 +2549,7 @@ Here is an example:
 ::
 
     function do_remap()
-        ts.http.client_packet_mark_set(TS_LUA_TIMEOUT_DNS, 0)
+        ts.http.client_packet_mark_set(0)
         return 0
     end
 
