@@ -146,6 +146,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
   http_ctx->client_request_bufp = rri->requestBufp;
   http_ctx->client_request_hdrp = rri->requestHdrp;
   http_ctx->client_request_url = rri->requestUrl;
+  http_ctx->rri = rri;
   http_ctx->remap = 1;
   http_ctx->has_hook = 0;
 
@@ -218,6 +219,7 @@ globalHookHandler(TSCont contp, TSEvent event ATS_UNUSED, void *edata)
 
   http_ctx = ts_lua_create_http_ctx(main_ctx, conf);
   http_ctx->txnp = txnp;
+  http_ctx->rri = NULL;
   http_ctx->remap = 0;
   http_ctx->has_hook = 0;
 

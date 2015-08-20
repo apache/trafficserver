@@ -129,6 +129,8 @@ typedef struct {
   int remap;
   int has_hook;
 
+  TSRemapRequestInfo *rri;
+
 } ts_lua_http_ctx;
 
 
