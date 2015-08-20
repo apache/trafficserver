@@ -411,7 +411,7 @@ RemapRegex::compile(const char **error, int *erroffset)
   }
 
   _extra = pcre_study(_rex, 0, error);
-  if ((_extra == NULL) && (*error != 0)) {
+  if ((_extra == NULL) && error && (*error != 0)) {
     return -1;
   }
 
