@@ -4868,16 +4868,24 @@ TSHttpTxnCacheLookupUrlSet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc obj)
 
   u.m_heap = ((HdrHeapSDKHandle *)bufp)->m_heap;
   u.m_url_impl = (URLImpl *)obj;
-  if (!u.valid())
+  if (!u.valid()) {
     return TS_ERROR;
-
-  l_url = sm->t_state.cache_info.lookup_url;
-  if (l_url && l_url->valid()) {
-    l_url->copy(&u);
-    return TS_SUCCESS;
   }
 
-  return TS_ERROR;
+  l_url = sm->t_state.cache_info.lookup_url;
+  if (!l_url) {
+    sm->t_state.cache_info.lookup_url_storage.create(NULL);
+    sm->t_state.cache_info.lookup_url = &(sm->t_state.cache_info.lookup_url_storage);
+    l_url = sm->t_state.cache_info.lookup_url;
+  }
+
+  if (!l_url || !l_url->valid()) {
+    return TS_ERROR;
+  } else {
+    l_url->copy(&u);
+  }
+
+  return TS_SUCCESS;
 }
 
 // TS-1996: This API will be removed after v3.4.0 is cut. Do not use it!
