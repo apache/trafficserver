@@ -5583,12 +5583,12 @@ HttpTransact::initialize_state_variables_from_request(State *s, HTTPHdr *obsolet
     s->client_info.proxy_connect_hdr = true;
   }
 
-  // If this is an internal request, never keep alive
-  NetVConnection *vc = NULL;
   if (s->state_machine->ua_session) {
-    vc = s->state_machine->ua_session->get_netvc();
+    s->request_data.incoming_port = s->state_machine->ua_session->get_netvc()->get_local_port();
+    s->request_data.internal_txn = s->state_machine->ua_session->get_netvc()->get_is_internal_request();
   }
-  if (!s->txn_conf->keep_alive_enabled_in || (vc && vc->get_is_internal_request())) {
+  // If this is an internal request, never keep alive
+  if (!s->txn_conf->keep_alive_enabled_in || s->request_data.internal_txn) {
     s->client_info.keep_alive = HTTP_NO_KEEPALIVE;
   } else {
     s->client_info.keep_alive = incoming_request->keep_alive_get();
@@ -5668,10 +5668,6 @@ HttpTransact::initialize_state_variables_from_request(State *s, HTTPHdr *obsolet
   s->request_data.hostname_str = s->arena.str_store(host_name, host_len);
   ats_ip_copy(&s->request_data.src_ip, &s->client_info.src_addr);
   memset(&s->request_data.dest_ip, 0, sizeof(s->request_data.dest_ip));
-  if (s->state_machine->ua_session) {
-    s->request_data.incoming_port = s->state_machine->ua_session->get_netvc()->get_local_port();
-    s->request_data.internal_txn = s->state_machine->ua_session->get_netvc()->get_is_internal_request();
-  }
   s->request_data.xact_start = s->client_request_time;
   s->request_data.api_info = &s->api_info;
 
