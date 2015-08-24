@@ -240,6 +240,9 @@ struct Store {
   Store();
   ~Store();
 
+  // The number of disks/paths defined in storage.config
+  unsigned n_disks_from_config;
+  // The number of disks/paths we could actually read
   unsigned n_disks;
   Span **disk;
   //

@@ -755,6 +755,18 @@ CacheProcessor::diskInitialized()
         bad_disks++;
     }
 
+    // TS-3848
+    if (cacheRequired()) {
+      if (gndisks == bad_disks) {
+        Fatal("no disks could be read");
+      }
+      else if (cache_required == 2 && bad_disks) {
+        Fatal("disks configured = %d, bad disks = %d", 
+              theCacheStore.n_disks_from_config,
+              bad_disks);
+      }
+    }
+
     if (bad_disks != 0) {
       // create a new array
       CacheDisk **p_good_disks;
@@ -792,6 +804,12 @@ CacheProcessor::diskInitialized()
     }
 
     if (res == -1) {
+
+      // TS-3848
+      if (cacheRequired()) {
+        Fatal("no volumes could be configured");
+      }
+
       /* problems initializing the volume.config. Punt */
       gnvol = 0;
       cacheInitialized();
@@ -1039,6 +1057,14 @@ CacheProcessor::cacheInitialized()
       Warning("cache unable to open any vols, disabled");
   }
   if (cache_init_ok) {
+
+    // TS-3848
+    if (cacheRequired() && cache_required == 2 &&
+        (theCache->ready == CACHE_INIT_FAILED || 
+         theStreamCache->ready == CACHE_INIT_FAILED)) {
+      Fatal("cache init partially failed");
+    }
+
     // Initialize virtual cache
     CacheProcessor::initialized = CACHE_INITIALIZED;
     CacheProcessor::cache_ready = caches_ready;
@@ -1052,6 +1078,11 @@ CacheProcessor::cacheInitialized()
   } else {
     CacheProcessor::initialized = CACHE_INIT_FAILED;
     Note("cache disabled");
+
+    // TS-3848
+    if (cacheProcessor.cacheRequired()) {
+      Fatal("cache init failed");
+    }
   }
   // Fire callback to signal initialization finished.
   if (cb_after_init)
@@ -2078,6 +2109,16 @@ Cache::open_done()
   Action *register_ShowCacheInternal(Continuation * c, HTTPHdr * h);
   statPagesManager.register_http("cache", register_ShowCache);
   statPagesManager.register_http("cache-internal", register_ShowCacheInternal);
+
+  // TS-3848
+  if (cacheProcessor.cacheRequired()) {
+    if (cacheProcessor.cache_required == 2 && 
+        total_nvol && 
+        total_good_nvol < total_nvol) {
+      Fatal("not all volumes could be initialized");
+    }
+  }
+
   if (total_good_nvol == 0) {
     ready = CACHE_INIT_FAILED;
     cacheProcessor.cacheInitialized();
@@ -3244,6 +3285,23 @@ ink_cache_init(ModuleVersion v)
     Warning("no cache disks specified in %s: cache disabled\n", (const char *)path);
     // exit(1);
   }
+
+  REC_ReadConfigInteger(cacheProcessor.cache_required, "proxy.config.http.cache.required");
+  REC_ReadConfigInteger(cacheProcessor.wait_for_cache, "proxy.config.http.wait_for_cache");
+
+  // TS-3848
+  if (cacheProcessor.cacheRequired()) {
+    if (theCacheStore.n_disks == 0) {
+      Fatal("no disks could be read");
+    }
+    else if (theCacheStore.n_disks < theCacheStore.n_disks_from_config && 
+              cacheProcessor.cache_required == 2) {
+      Fatal("disks configured = %d, disks read = %d", 
+            theCacheStore.n_disks_from_config,
+            theCacheStore.n_disks);
+    }
+  }
+
 }
 
 //----------------------------------------------------------------------------
@@ -3312,6 +3370,14 @@ CacheProcessor::find_by_path(char const *path, int len)
   }
 
   return 0;
+}
+
+bool
+CacheProcessor::cacheRequired() const
+{
+  return (HttpConfig::m_master.oride.cache_http && 
+      cacheProcessor.wait_for_cache && 
+      cache_required);
 }
 
 // ----------------------------

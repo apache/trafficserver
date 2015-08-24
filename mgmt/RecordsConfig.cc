@@ -2003,7 +2003,17 @@ static const RecordElement RecordsConfig[] =
   //# Temporary and esoteric values.
   //#
   //###########
-  {RECT_CONFIG, "proxy.config.cache.http.compatibility.4-2-0-fixup", RECD_INT, "1", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  {RECT_CONFIG, "proxy.config.cache.http.compatibility.4-2-0-fixup", RECD_INT, "1", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL},
+
+  //###########
+  //#
+  //# TS-3848
+  //# Variable to control whether we should continue running the traffic_server
+  //# if we HTTP caching is enabled and we fail to initialize the cache
+  //#
+  //###########
+  {RECT_CONFIG, "proxy.config.http.cache.required", RECD_INT, "0", RECU_RESTART_TM, RR_NULL, RECC_INT, "[0-2]", RECA_NULL},
+ 
 };
 // clang-format on
 
