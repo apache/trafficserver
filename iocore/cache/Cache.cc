@@ -1059,9 +1059,12 @@ CacheProcessor::cacheInitialized()
   if (cache_init_ok) {
 
     // TS-3848
+    bool bTheCacheFailed = theCache && theCache->ready == CACHE_INIT_FAILED;
+    bool bTheStreamCacheFailed = theStreamCache && 
+      theStreamCache->ready == CACHE_INIT_FAILED;
+
     if (cacheRequired() && cache_required == 2 &&
-        (theCache->ready == CACHE_INIT_FAILED || 
-         theStreamCache->ready == CACHE_INIT_FAILED)) {
+        (bTheCacheFailed || bTheStreamCacheFailed)) { 
       Fatal("cache init partially failed");
     }
 
