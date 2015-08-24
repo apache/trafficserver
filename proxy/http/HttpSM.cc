@@ -844,7 +844,9 @@ HttpSM::state_watch_for_client_abort(int event, void *data)
    * client.
    */
   case VC_EVENT_EOS:
-    static_cast<HttpClientSession *>(ua_entry->vc)->get_netvc()->do_io_shutdown(IO_SHUTDOWN_READ);
+    // We got an early EOS.
+    ua_session->get_netvc()->do_io_shutdown(IO_SHUTDOWN_READ);
+    ua_entry->eos = true;
     break;
   case VC_EVENT_ERROR:
   case VC_EVENT_ACTIVE_TIMEOUT:
@@ -2920,7 +2922,7 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer *p)
     //
     // The transfer completed successfully
     //    If there is still data in the buffer, the server
-    //    sent to much indicating a failed transfer
+    //    sent too much indicating a failed transfer
     p->read_success = true;
     t_state.current.server->state = HttpTransact::TRANSACTION_COMPLETE;
     t_state.current.server->abort = HttpTransact::DIDNOT_ABORT;
@@ -3189,7 +3191,7 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer *c)
     if (is_eligible_post_request) {
       NetVConnection *vc = ua_session->get_netvc();
       if (vc) {
-        is_eligible_post_request = vc->get_is_internal_request() ? false : true;
+        is_eligible_post_request &= !vc->get_is_internal_request();
       }
     }
     if ((is_eligible_post_request || t_state.client_info.pipeline_possible == true) && c->producer->vc_type != HT_STATIC &&

@@ -5583,7 +5583,9 @@ HttpTransact::initialize_state_variables_from_request(State *s, HTTPHdr *obsolet
     s->client_info.proxy_connect_hdr = true;
   }
 
-  if (!s->txn_conf->keep_alive_enabled_in) {
+  // If this is an internal request, never keep alive
+  NetVConnection *vc = s->state_machine->ua_session->get_netvc();
+  if (!s->txn_conf->keep_alive_enabled_in || (vc && vc->get_is_internal_request())) {
     s->client_info.keep_alive = HTTP_NO_KEEPALIVE;
   } else {
     s->client_info.keep_alive = incoming_request->keep_alive_get();
