@@ -5584,7 +5584,10 @@ HttpTransact::initialize_state_variables_from_request(State *s, HTTPHdr *obsolet
   }
 
   // If this is an internal request, never keep alive
-  NetVConnection *vc = s->state_machine->ua_session->get_netvc();
+  NetVConnection *vc = NULL;
+  if (s->state_machine->ua_session) {
+    vc = s->state_machine->ua_session->get_netvc();
+  }
   if (!s->txn_conf->keep_alive_enabled_in || (vc && vc->get_is_internal_request())) {
     s->client_info.keep_alive = HTTP_NO_KEEPALIVE;
   } else {
