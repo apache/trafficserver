@@ -1388,10 +1388,8 @@ UnixNetVConnection::migrateToCurrentThread(Continuation *cont, EThread *t)
   this->do_io_close();
 
   // Create new VC:
-  NetVConnection *new_vc = NULL;
   if (save_ssl) {
-    new_vc = sslNetProcessor.allocate_vc(t);
-    SSLNetVConnection *sslvc = dynamic_cast<SSLNetVConnection *>(new_vc);
+    SSLNetVConnection *sslvc = static_cast<SSLNetVConnection *>(sslNetProcessor.allocate_vc(t));
     if (sslvc->populate(hold_con, cont, save_ssl) != EVENT_DONE) {
       sslvc->do_io_close();
       sslvc = NULL;
@@ -1399,8 +1397,7 @@ UnixNetVConnection::migrateToCurrentThread(Continuation *cont, EThread *t)
     return sslvc;
     // Update the SSL fields
   } else {
-    new_vc = netProcessor.allocate_vc(t);
-    UnixNetVConnection *netvc = dynamic_cast<UnixNetVConnection *>(new_vc);
+    UnixNetVConnection *netvc = static_cast<UnixNetVConnection *>(netProcessor.allocate_vc(t));
     if (netvc->populate(hold_con, cont, save_ssl) != EVENT_DONE) {
       netvc->do_io_close();
       netvc = NULL;
