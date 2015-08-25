@@ -733,12 +733,19 @@ CacheProcessor::start_internal(int flags)
     }
   }
 
-  if (gndisks == 0) {
-    // TS-3848
-    if (cacheRequired()) {
-        Fatal("no disks could be read");
+  // TS-3848
+  if (cacheRequired()) {
+    if (gndisks == 0) {
+      Fatal("no disks could be read");
     }
+    else if ((static_cast<unsigned int>(gndisks) < theCacheStore.n_disks_from_config)
+            && cache_required == 2) {
+      Fatal("Only %d out of %d disks could be read", 
+            gndisks, theCacheStore.n_disks_from_config);
+    }
+  }
 
+  if (gndisks == 0) {
     Warning("unable to open cache disk(s): Cache Disabled\n");
     return -1;
   }
