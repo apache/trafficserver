@@ -19,7 +19,7 @@
   limitations under the License.
  */
 
-#include "ts/ConsistentHash.h"
+#include "ConsistentHash.h"
 #include <cstring>
 #include <string>
 #include <sstream>
@@ -67,12 +67,18 @@ ATSConsistentHash::insert(ATSConsistentHashNode *node, float weight, ATSHash64 *
 }
 
 ATSConsistentHashNode *
-ATSConsistentHash::lookup(const char *url, ATSConsistentHashIter *i, bool *w, ATSHash64 *h)
+ATSConsistentHash::lookup(const char *url, size_t url_len, ATSConsistentHashIter *i, bool *w, ATSHash64 *h)
 {
   uint64_t url_hash;
   ATSConsistentHashIter NodeMapIterUp, *iter;
   ATSHash64 *thash;
   bool *wptr, wrapped = false;
+
+  if (url_len <= 0 && url) {
+    url_len = strlen(url);
+  } else {
+    url_len = 0;
+  }
 
   if (h) {
     thash = h;
@@ -95,7 +101,7 @@ ATSConsistentHash::lookup(const char *url, ATSConsistentHashIter *i, bool *w, AT
   }
 
   if (url) {
-    thash->update(url, strlen(url));
+    thash->update(url, url_len);
     thash->final();
     url_hash = thash->get();
     thash->clear();
@@ -124,12 +130,18 @@ ATSConsistentHash::lookup(const char *url, ATSConsistentHashIter *i, bool *w, AT
 }
 
 ATSConsistentHashNode *
-ATSConsistentHash::lookup_available(const char *url, ATSConsistentHashIter *i, bool *w, ATSHash64 *h)
+ATSConsistentHash::lookup_available(const char *url, size_t url_len, ATSConsistentHashIter *i, bool *w, ATSHash64 *h)
 {
   uint64_t url_hash;
   ATSConsistentHashIter NodeMapIterUp, *iter;
   ATSHash64 *thash;
   bool *wptr, wrapped = false;
+
+  if (url_len <= 0 && url) {
+    url_len = strlen(url);
+  } else {
+    url_len = 0;
+  }
 
   if (h) {
     thash = h;
@@ -152,7 +164,7 @@ ATSConsistentHash::lookup_available(const char *url, ATSConsistentHashIter *i, b
   }
 
   if (url) {
-    thash->update(url, strlen(url));
+    thash->update(url, url_len);
     thash->final();
     url_hash = thash->get();
     thash->clear();
@@ -174,6 +186,34 @@ ATSConsistentHash::lookup_available(const char *url, ATSConsistentHashIter *i, b
     } else if (*wptr && *iter == NodeMap.end()) {
       return NULL;
     }
+  }
+
+  return (*iter)->second;
+}
+
+ATSConsistentHashNode *
+ATSConsistentHash::lookup_by_hashval(uint64_t hashval, ATSConsistentHashIter *i, bool *w)
+{
+  ATSConsistentHashIter NodeMapIterUp, *iter;
+  bool *wptr, wrapped = false;
+
+  if (w) {
+    wptr = w;
+  } else {
+    wptr = &wrapped;
+  }
+
+  if (i) {
+    iter = i;
+  } else {
+    iter = &NodeMapIterUp;
+  }
+
+  *iter = NodeMap.lower_bound(hashval);
+
+  if (*iter == NodeMap.end()) {
+    *wptr = true;
+    *iter = NodeMap.begin();
   }
 
   return (*iter)->second;
