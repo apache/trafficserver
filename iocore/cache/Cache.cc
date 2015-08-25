@@ -734,6 +734,11 @@ CacheProcessor::start_internal(int flags)
   }
 
   if (gndisks == 0) {
+    // TS-3848
+    if (cacheRequired()) {
+        Fatal("no disks could be read");
+    }
+
     Warning("unable to open cache disk(s): Cache Disabled\n");
     return -1;
   }
