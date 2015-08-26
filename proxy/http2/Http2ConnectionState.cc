@@ -740,9 +740,7 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
     }
 
     if (error.cls != HTTP2_ERROR_CLASS_NONE) {
-      EThread *ethread = this_ethread();
       if (error.cls == HTTP2_ERROR_CLASS_CONNECTION) {
-        HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_CONNECTION_ERRORS_COUNT, ethread);
         this->send_goaway_frame(last_streamid, error.code);
         cleanup_streams();
         // XXX We need to think a bit harder about how to coordinate the client
@@ -754,7 +752,6 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
         // half-closed state ...
         SET_HANDLER(&Http2ConnectionState::state_closed);
       } else if (error.cls == HTTP2_ERROR_CLASS_STREAM) {
-        HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_STREAM_ERRORS_COUNT, ethread);
         this->send_rst_stream_frame(last_streamid, error.code);
       }
     }
@@ -1006,6 +1003,10 @@ Http2ConnectionState::send_rst_stream_frame(Http2StreamId id, Http2ErrorCode ec)
 {
   DebugSsn(this->ua_session, "http2_cs", "[%" PRId64 "] Send RST_STREAM frame.", this->ua_session->connection_id());
 
+  if (ec != HTTP2_ERROR_NO_ERROR) {
+    HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_STREAM_ERRORS_COUNT, this_ethread());
+  }
+
   Http2Frame rst_stream(HTTP2_FRAME_TYPE_RST_STREAM, id, 0);
 
   rst_stream.alloc(buffer_size_index[HTTP2_FRAME_TYPE_RST_STREAM]);
@@ -1072,6 +1073,10 @@ void
 Http2ConnectionState::send_goaway_frame(Http2StreamId id, Http2ErrorCode ec)
 {
   DebugSsn(this->ua_session, "http2_cs", "[%" PRId64 "] Send GOAWAY frame.", this->ua_session->connection_id());
+
+  if (ec != HTTP2_ERROR_NO_ERROR) {
+    HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_CONNECTION_ERRORS_COUNT, this_ethread());
+  }
 
   Http2Frame frame(HTTP2_FRAME_TYPE_GOAWAY, 0, 0);
   Http2Goaway goaway;
