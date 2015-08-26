@@ -100,7 +100,7 @@ class Http2Stream
 {
 public:
   Http2Stream(Http2StreamId sid = 0, ssize_t initial_rwnd = Http2::initial_window_size)
-    : client_rwnd(initial_rwnd), server_rwnd(initial_rwnd), header_blocks(NULL), header_blocks_length(0), request_header_length(0),
+    : client_rwnd(initial_rwnd), server_rwnd(Http2::initial_window_size), header_blocks(NULL), header_blocks_length(0), request_header_length(0),
       end_stream(false), _id(sid), _state(HTTP2_STREAM_STATE_IDLE), _fetch_sm(NULL), body_done(false), data_length(0)
   {
     _thread = this_ethread();
