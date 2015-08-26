@@ -863,34 +863,6 @@ Http2ConnectionState::cleanup_streams()
 }
 
 void
-Http2ConnectionState::set_continued_headers(const char *buf, uint32_t len, Http2StreamId id)
-{
-  DebugSsn(this->ua_session, "http2_cs", "[%" PRId64 "] Send CONTINUATION frame.", this->ua_session->connection_id());
-
-  if (buf && len > 0) {
-    if (!continued_buffer.iov_base) {
-      continued_buffer.iov_base = static_cast<uint8_t *>(ats_malloc(len));
-    } else if (continued_buffer.iov_len < len) {
-      continued_buffer.iov_base = ats_realloc(continued_buffer.iov_base, len);
-    }
-    continued_buffer.iov_len = len;
-
-    memcpy(continued_buffer.iov_base, buf, continued_buffer.iov_len);
-  }
-
-  continued_id = id;
-}
-
-void
-Http2ConnectionState::finish_continued_headers()
-{
-  continued_id = 0;
-  ats_free(continued_buffer.iov_base);
-  continued_buffer.iov_base = NULL;
-  continued_buffer.iov_len = 0;
-}
-
-void
 Http2ConnectionState::delete_stream(Http2Stream *stream)
 {
   stream_list.remove(stream);
