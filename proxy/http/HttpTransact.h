@@ -349,6 +349,12 @@ public:
     HTTP_TRANSACT_MAGIC_SEPARATOR = 0x12345678
   };
 
+  enum ParentOriginRetry_t { 
+    UNDEFINED_RETRY, 
+    SIMPLE_RETRY, 
+    DEAD_SERVER_RETRY 
+  };
+
   enum LookingUp_t {
     ORIGIN_SERVER,
     UNDEFINED_LOOKUP,
@@ -702,9 +708,13 @@ public:
     ink_time_t now;
     ServerState_t state;
     int attempts;
+    int simple_retry_attempts;
+    int dead_server_retry_attempts;
+    ParentOriginRetry_t retry_type;
 
     _CurrentInfo()
-      : mode(UNDEFINED_MODE), request_to(UNDEFINED_LOOKUP), server(NULL), now(0), state(STATE_UNDEFINED), attempts(1){};
+      : mode(UNDEFINED_MODE), request_to(UNDEFINED_LOOKUP), server(NULL), now(0), state(STATE_UNDEFINED), attempts(1),
+        simple_retry_attempts(0), dead_server_retry_attempts(0), retry_type(UNDEFINED_RETRY){};
   } CurrentInfo;
 
   typedef struct _DNSLookupInfo {
