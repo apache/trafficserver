@@ -254,7 +254,7 @@ ParentConfigParams::findParent(HttpRequestData *rdata, ParentResult *result)
       rec = result->rec = defaultPtr;
     } else {
       result->r = PARENT_DIRECT;
-      Debug("cdn", "Returning PARENT_DIRECT (no parents were found)");
+      Debug("parent_select", "ParentSelect::findParent(): Returning PARENT_DIRECT (no parents were found)");
       return;
     }
   }

@@ -209,7 +209,7 @@ find_server_and_update_current_info(HttpTransact::State *s)
   int host_len;
   const char *host = s->hdr_info.client_request.host_get(&host_len);
 
-  DebugTxn("http_trans", "starting find_server_adn_update_current_info()");
+  DebugTxn("http_trans", "starting find_server_and_update_current_info()");
   if (ptr_len_cmp(host, host_len, local_host_ip_str, sizeof(local_host_ip_str) - 1) == 0) {
     // Do not forward requests to local_host onto a parent.
     // I just wanted to do this for cop heartbeats, someone else
@@ -235,6 +235,7 @@ find_server_and_update_current_info(HttpTransact::State *s)
         // check to see if the parent is an origin server.
         if (!s->parent_result.rec->isParentProxy()) {
           s->parent_result.r = PARENT_ORIGIN;
+          Debug("parent_select","parent is an origin server.");
         }
       }
       break;
