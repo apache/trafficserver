@@ -156,6 +156,17 @@ The following list shows the possible actions and their allowed values.
        the origin server.
     -  ``false`` - requests do not bypass parent hierarchies.
 
+``parent_is_proxy``
+    The default is true and may be set to one of the following:
+
+    -  ``true`` - The default.  Parents listed are all proxies 
+       and normal parent routing is used.
+    -  ``false`` - The parents listed are all origin servers. The
+       usual parent selection is used for the algorithm selected,
+       see round_robin.  The request url is modified to remove
+       the fully qualified hostname if present so that only the
+       path is sent to the selected origin in the request.
+
 Examples
 ========
 
