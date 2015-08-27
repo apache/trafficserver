@@ -66,7 +66,6 @@ struct CacheProcessor : public Processor {
   CacheProcessor()
     : min_stripe_version(CACHE_DB_MAJOR_VERSION, CACHE_DB_MINOR_VERSION),
       max_stripe_version(CACHE_DB_MAJOR_VERSION, CACHE_DB_MINOR_VERSION), cb_after_init(0),
-      cache_required(0),
       wait_for_cache(0)
   {
   }
@@ -149,7 +148,7 @@ struct CacheProcessor : public Processor {
 
   void cacheInitialized();
 
-  bool cacheRequired() const;
+  int waitForCache() const;
 
   static volatile uint32_t cache_ready;
   static volatile int initialized;
@@ -164,7 +163,6 @@ struct CacheProcessor : public Processor {
   VersionNumber max_stripe_version;
 
   CALLBACK_FUNC cb_after_init;
-  int cache_required;
   int wait_for_cache;
 };
 

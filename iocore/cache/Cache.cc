@@ -734,12 +734,12 @@ CacheProcessor::start_internal(int flags)
   }
 
   // TS-3848
-  if (cacheRequired()) {
+  if (waitForCache() >= 2) {
     if (gndisks == 0) {
       Fatal("no disks could be read");
     }
     else if ((static_cast<unsigned int>(gndisks) < theCacheStore.n_disks_from_config)
-            && cache_required == 2) {
+            && waitForCache() > 2) {
       Fatal("Only %d out of %d disks could be read", 
             gndisks, theCacheStore.n_disks_from_config);
     }
@@ -768,11 +768,11 @@ CacheProcessor::diskInitialized()
     }
 
     // TS-3848
-    if (cacheRequired()) {
+    if (waitForCache() >= 2) {
       if (gndisks == bad_disks) {
         Fatal("no disks could be read");
       }
-      else if (cache_required == 2 && bad_disks) {
+      else if (waitForCache() == 3 && bad_disks) {
         Fatal("disks configured = %d, bad disks = %d", 
               theCacheStore.n_disks_from_config,
               bad_disks);
@@ -818,7 +818,7 @@ CacheProcessor::diskInitialized()
     if (res == -1) {
 
       // TS-3848
-      if (cacheRequired()) {
+      if (waitForCache() >= 2) {
         Fatal("no volumes could be configured");
       }
 
@@ -1070,16 +1070,6 @@ CacheProcessor::cacheInitialized()
   }
   if (cache_init_ok) {
 
-    // TS-3848
-    bool bTheCacheFailed = theCache && theCache->ready == CACHE_INIT_FAILED;
-    bool bTheStreamCacheFailed = theStreamCache && 
-      theStreamCache->ready == CACHE_INIT_FAILED;
-
-    if (cacheRequired() && cache_required == 2 &&
-        (bTheCacheFailed || bTheStreamCacheFailed)) { 
-      Fatal("cache init partially failed");
-    }
-
     // Initialize virtual cache
     CacheProcessor::initialized = CACHE_INITIALIZED;
     CacheProcessor::cache_ready = caches_ready;
@@ -1095,7 +1085,7 @@ CacheProcessor::cacheInitialized()
     Note("cache disabled");
 
     // TS-3848
-    if (cacheProcessor.cacheRequired()) {
+    if (cacheProcessor.waitForCache() > 1) {
       Fatal("cache init failed");
     }
   }
@@ -2126,8 +2116,12 @@ Cache::open_done()
   statPagesManager.register_http("cache-internal", register_ShowCacheInternal);
 
   // TS-3848
-  if (cacheProcessor.cacheRequired()) {
-    if (cacheProcessor.cache_required == 2 && 
+  if (cacheProcessor.waitForCache() >= 2) {
+    if (total_good_nvol == 0) {
+      Fatal("No volumes could be initialized");
+    }
+
+    if (cacheProcessor.waitForCache() == 3 && 
         total_nvol && 
         total_good_nvol < total_nvol) {
       Fatal("not all volumes could be initialized");
@@ -2147,6 +2141,12 @@ Cache::open_done()
     ready = CACHE_INIT_FAILED;
   else
     ready = CACHE_INITIALIZED;
+
+  // TS-3848
+  if (ready == CACHE_INIT_FAILED && cacheProcessor.waitForCache() >= 2) {
+    Fatal("Failed to initialize cache host table");
+  }
+
   cacheProcessor.cacheInitialized();
 
   return 0;
@@ -3301,16 +3301,15 @@ ink_cache_init(ModuleVersion v)
     // exit(1);
   }
 
-  REC_ReadConfigInteger(cacheProcessor.cache_required, "proxy.config.http.cache.required");
   REC_ReadConfigInteger(cacheProcessor.wait_for_cache, "proxy.config.http.wait_for_cache");
 
   // TS-3848
-  if (cacheProcessor.cacheRequired()) {
+  if (cacheProcessor.waitForCache() >= 2) {
     if (theCacheStore.n_disks == 0) {
       Fatal("no disks could be read");
     }
     else if (theCacheStore.n_disks < theCacheStore.n_disks_from_config && 
-              cacheProcessor.cache_required == 2) {
+              cacheProcessor.waitForCache() == 3) {
       Fatal("disks configured = %d, disks read = %d", 
             theCacheStore.n_disks_from_config,
             theCacheStore.n_disks);
@@ -3387,12 +3386,10 @@ CacheProcessor::find_by_path(char const *path, int len)
   return 0;
 }
 
-bool
-CacheProcessor::cacheRequired() const
+int
+CacheProcessor::waitForCache() const
 {
-  return (HttpConfig::m_master.oride.cache_http && 
-      cacheProcessor.wait_for_cache && 
-      cache_required);
+  return cacheProcessor.wait_for_cache;
 }
 
 // ----------------------------
