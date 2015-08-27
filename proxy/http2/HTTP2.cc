@@ -556,7 +556,7 @@ http2_write_psuedo_headers(HTTPHdr *in, uint8_t *out, uint64_t out_len, Http2Dyn
     // Add 'Status:' dummy header field
     MIMEField *status_field = mime_field_create(in->m_heap, in->m_http->m_fields_impl);
     mime_field_name_value_set(in->m_heap, in->m_mime, status_field, -1, HPACK_VALUE_STATUS, HPACK_LEN_STATUS, status_str,
-                              HPACK_LEN_STATUS_VALUE_STR, true, HPACK_LEN_STATUS + HPACK_LEN_STATUS_VALUE_STR, 0);
+                              HPACK_LEN_STATUS_VALUE_STR, 0, HPACK_LEN_STATUS + HPACK_LEN_STATUS_VALUE_STR, true);
     mime_hdr_field_attach(in->m_mime, status_field, 1, NULL);
 
     // Encode psuedo headers by HPACK
@@ -1013,7 +1013,7 @@ REGRESSION_TEST(HPACK_Encode)(RegressionTest *t, int, int *pstatus)
 
       MIMEField *field = mime_field_create(headers->m_heap, headers->m_http->m_fields_impl);
       mime_field_name_value_set(headers->m_heap, headers->m_http->m_fields_impl, field, -1, expected_name, strlen(expected_name),
-                                expected_value, strlen(expected_value), true, strlen(expected_name) + strlen(expected_value), 1);
+                                expected_value, strlen(expected_value), 1, strlen(expected_name) + strlen(expected_value), true);
       mime_hdr_field_attach(headers->m_http->m_fields_impl, field, 1, NULL);
     }
 

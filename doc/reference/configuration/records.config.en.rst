@@ -2517,6 +2517,26 @@ SSL Termination
   When enabled this limits the total duration for the server side SSL
   handshake.
 
+.. ts:cv:: CONFIG proxy.config.ssl.wire_trace_enabled INT 0
+
+  When enabled this turns on wire tracing of SSL connections that meet
+  the conditions specified by wire_trace_percentage, wire_trace_addr
+  and wire_trace_server_name.
+
+.. ts:cv:: CONFIG proxy.config.ssl.wire_trace_percentage INT 0
+
+  This specifies the percentage of traffic meeting the other wire_trace
+  conditions to be traced.
+
+.. ts:cv:: CONFIG proxy.config.ssl.wire_trace_addr STRING NULL
+
+  This specifies the client IP for which wire_traces should be printed.
+
+.. ts:cv:: CONFIG proxy.config.ssl.wire_trace_server_name STRING NULL
+
+  This specifies the server name for which wire_traces should be
+  printed. This only works if traffic_server is built with
+  TS_USE_TLS_SNI flag set to true.
 
 Client-Related Configuration
 ----------------------------
