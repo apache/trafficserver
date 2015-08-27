@@ -1,0 +1,284 @@
+Changes with Apache Traffic Server 6.0.0
+
+Bug:
+  *) [TS-481] Poorly handled remap with proxy.config.url_remap.url_remap_mode set to 2
+  *) [TS-1419] Round Robin Failover doesn't work
+  *) [TS-2054] traffic_server will not bind to a reserved port (<=1024)
+  *) [TS-2106] Normalize TSError messages in plugins (and examples)
+  *) [TS-2244] Remove legacy proxy.config.log.search_log_enabled feature
+  *) [TS-2490] traffic_cop kills TS process before it completes starting
+  *) [TS-2758] Unable to get file descriptor from transaction close
+  *) [TS-2848] ATS crash in HttpSM::release_server_session
+  *) [TS-2946] Core dump in snprintf
+  *) [TS-3029] ats-5.0.1 crash when SPDY enabled
+  *) [TS-3045] Set default value for proxy.config.ssl.number.threads to "-1", to default ET_NET threads to handle SSL connections
+  *) [TS-3058] TSVConnClosedGet() broken in 5.0.1
+  *) [TS-3104] traffic_cop can't restart traffic_manager properly
+  *) [TS-3126] Remove the config setting that controls sending of HTTP status response on a POST failure (e.g timeout)
+  *) [TS-3148] TS shows HTTP/0.9 behaviour when a request is aborted early
+  *) [TS-3242] Make RAM cache size a LOCAL config for different sizing on boxes in a cluster
+  *) [TS-3281] Splitting local domain name
+  *) [TS-3365] Enable C99 by default
+  *) [TS-3368] Deprecate traffic_line
+  *) [TS-3370] Assertion in header_rewrite plugin
+  *) [TS-3378] SpdyRequest used after free()
+  *) [TS-3382] Complaints of  CRYPTO_set_id_callback while compiling against openssl 1.1
+  *) [TS-3392] Static initialization order fiasco
+  *) [TS-3427] Compilation error of atscppapi when configured for a out-of-tree build
+  *) [TS-3440] Connect_retries re-connects even if request made it to origin
+  *) [TS-3444] Coverity fixes for v6.0.0 by zwoop
+  *) [TS-3447] Failing to remap POST requests if buffer_upload plugin is enabled and Host header contains port number
+  *) [TS-3453] Confusion of handling SSL events in write_to_net_io in UnixNetVConnection.cc
+  *) [TS-3455] Marking the cache STALE in lookup-complete causes abort()
+  *) [TS-3456] SSL blind tunnel sometimes not created 
+  *) [TS-3468] Fix command line stripe inspector
+  *) [TS-3470] traffic_server --help segfaults with SPDY
+  *) [TS-3479] Remove a very verbose Warning() from HTTP2 code
+  *) [TS-3480] Large stream id cause PROTOCOL_ERROR
+  *) [TS-3482] SETTINGS frame contains not only valid parameters
+  *) [TS-3483] Regular expression remapping doesn't work for CONNECT.
+  *) [TS-3486] Segfault in do_io_write with plugin (??)
+  *) [TS-3487] Cannot override proxy.config.http.transaction_no_activity_timeout_in per remap rule for POST methold
+  *) [TS-3489] Not able to set more than 1 accept thread per port
+  *) [TS-3491] background_fetch plugin makes too many requests
+  *) [TS-3500] pristine url is not populated when TSSkipRemappingSet is enabled
+  *) [TS-3504] Enabling proxy.config.cache.ram_cache.use_seen_filter and reloading the config causes traffic_server to core
+  *) [TS-3513] HTTP/2 core dump in the HPACK dynamic table
+  *) [TS-3514] Atomic check for gcc >4.1 breaks with gcc 5.0
+  *) [TS-3516] Build warnings with latest OS X clang
+  *) [TS-3518] Multiple ssl_ca_name's in ssl_multicert breaks all intermediate CAs
+  *) [TS-3519] HTTP/2 seeing a lot of GOAWAY frames being sent
+  *) [TS-3520] Core dump in logging unmapped url path, when the request url maps to catch-all (default) remap rule
+  *) [TS-3522] Seg Fault due to inactivity_cop after lost continutation from write_signal_and_update
+  *) [TS-3523] ATS returns 404 with reverse_proxy.enabled with no remap rules even when url_remap.remap_required is disabled
+  *) [TS-3529] Add a config option to allow ATS to start even if some certificates are bad
+  *) [TS-3530] HTTP/2 memory leak with headers and more...
+  *) [TS-3531] cacheurl plugin not working in 5.3.0->5.3.x
+  *) [TS-3536] Fixing Memory leak in POST processing
+  *) [TS-3543] Remove scheduled updates feature from core
+  *) [TS-3545] Make traffic_line and traffic_ctl more verbose
+  *) [TS-3548] psiginfo differs on illumos vs. Linux
+  *) [TS-3551] LogUtils.cc does not compile on Illumos
+  *) [TS-3552] TSHttpTxnServerRespNoStoreSet() does not always work as expected
+  *) [TS-3553] Fix illumos build
+  *) [TS-3554] ATS memory leak reloading ssl_multicert.config with many ssl cert configs
+  *) [TS-3558] proxy.config.http.auth_server_session_private not working?
+  *) [TS-3561] Use TSMutexDestroy in a couple of plugins
+  *) [TS-3564] Seg fault during redirect follow when cache is disabled
+  *) [TS-3573] Connection leak caused by TS-3522
+  *) [TS-3582] Add @in_ip to remap filters
+  *) [TS-3585] Redirection does not do DNS if cache is disabled
+  *) [TS-3588] background_fetch leaks continuations when used in remap mode
+  *) [TS-3590] H2 fetch streams marked as internal requests incorrectly
+  *) [TS-3595] Cookie header split into multiple lines with H2
+  *) [TS-3596] TSHttpTxnPluginTagGet() returns "fetchSM" over H2
+  *) [TS-3597] TLS can fail accept / handshake since commit 2a8bb593fd
+  *) [TS-3600] Missing break; statement in background_fetch plugin
+  *) [TS-3603] Debug Assert occurs in UnixNetVConnection::set_enabled when accept_threads are disabled
+  *) [TS-3605] Syntax error on Cache.cc
+  *) [TS-3608] SSL client code does not validate upstream hostname
+  *) [TS-3615] s3_auth plugin could theoretically dereference a NULL pointer
+  *) [TS-3617] Memory leak in cache_promote plugin
+  *) [TS-3618] Crashes in traffic_cop on shutdown / restart
+  *) [TS-3622] Writer doing unbounded retries for write VC to be closed during read_while_writer scenario
+  *) [TS-3628] Unable to use very large disk ( > 16T)
+  *) [TS-3630] Fails to build with GCC 5 on Mac OS 10.10.3
+  *) [TS-3631] Add config option to limit post size
+  *) [TS-3632] libwccp.a(WccpMsg.o): undefined reference to symbol MD5_Final
+  *) [TS-3635] ASAN failures when running traffic_server -R 1 ( regressions)
+  *) [TS-3649] url_sig plugin security issues (crash by HTTP request, circumvent signature)
+  *) [TS-3655] Regression test segfault
+  *) [TS-3658] ASAN triggers when using the escalate.so plugin
+  *) [TS-3661] Cache broken during 3xx redirect follow response
+  *) [TS-3664] WebSockets attempts cache lookup and blocks on multiple requests
+  *) [TS-3665] Redirect logic causing debug asserts and leaking cache_vc's
+  *) [TS-3666] Invalid response when response transform triggers TS_EVENT_ERROR
+  *) [TS-3667] SSL Handhake read does not correctly handle EOF and error cases
+  *) [TS-3668] Objects are not getting cached when cache_promote and background_fetch are enabled together
+  *) [TS-3673] Remove ink_memchr completely
+  *) [TS-3674] Bug in ts_lua plugin for adding package path 
+  *) [TS-3677] cache_range_requests - coverity issue 1304799 Resource leak.
+  *) [TS-3696] Bad range check in HdrHeap
+  *) [TS-3697] Fix frame type array check for http/2 is invalid
+  *) [TS-3707] The default for proxy.config.hostdb.host_file.path should be NULL
+  *) [TS-3708] CONNECT responses do not trigger the SEND_RESP_HDRS hookpoint
+  *) [TS-3711] Allow DHE ciphers in the ciphersuite list to be negotiable
+  *) [TS-3712] Server session sharing pool setting is ignored
+  *) [TS-3714] TS seems to stall between ua_begin and ua_first_read on some transactions resulting in high response times.
+  *) [TS-3719] HPACK error in lowering table size
+  *) [TS-3720] HostDB no longer keeps track of host failures
+  *) [TS-3721] Remove scoping on enum for HTTP2_FRAME_TYPE_MAX
+  *) [TS-3723] Failed remap shouldn't log as ERR_CONNECT_FAIL
+  *) [TS-3724] ATS doesn't properly check last_failure time for most RR methods
+  *) [TS-3725] ATS's use of host files is broken
+  *) [TS-3727] Add a timer for SSL handshake duration
+  *) [TS-3729] cache_promote: Can crash / assert under conditions where origin is very slow
+  *) [TS-3730] Fix changelog.pl for backward compatibility
+  *) [TS-3731] Missed removing some reclaimable freelist configs
+  *) [TS-3735] 6.0.0 Coverity fixes for Sudheer
+  *) [TS-3738] Lots of "spinning too much in logging" in digs.log
+  *) [TS-3744] Crash (Seg Fault) when reenabling a VIO from a continuator which is different from the VIO's continuator.
+  *) [TS-3745] UA_FIRST_READ milestone is not in API enum
+  *) [TS-3747] Error in Huffman decoder for HPACK
+  *) [TS-3749] Error log isn't recorded
+  *) [TS-3752] Problem with larger headers and HTTP/2
+  *) [TS-3754] IOBuffer memory leak
+  *) [TS-3761] tsxs tool doesn't work
+  *) [TS-3764] HTTP/2 issue when sending header frames larger than one frame
+  *) [TS-3765] HTTP/2 issue sending headers with a duplicate name multiple times
+  *) [TS-3766] Ignore unknown frame in debugging
+  *) [TS-3767] More unbounded retries within read-while-writer breaking loop detection.
+  *) [TS-3769] CID 1311647:  Null pointer dereferences in HttpTransact.cc
+  *) [TS-3774] Bug in HostDB hosts file implementation
+  *) [TS-3776] traffic_server failed assert `s->current.server->had_connect_fail()`
+  *) [TS-3778] Memory leak caused by the TS-3640.
+  *) [TS-3784] Unpleasant debug assert in when starting up a SpdyClientSession
+  *) [TS-3788] SNI callbacks stall after TS-3667 fix
+  *) [TS-3790] action=tunnel in ssl_multicert.config will cause crash
+  *) [TS-3793] Check the incoming header request length for HTTP/2 requests
+  *) [TS-3794] Enhance post SSL handshake read race condition for SPDY and H2 scenarios.
+  *) [TS-3796] Health check fails once (consistently?) during startup
+  *) [TS-3798] Server session pool not propagating to per HttpSM config
+  *) [TS-3799] Padded DATA frames lead to PROTOCOL_ERROR
+  *) [TS-3801] Correct responses when CLOSED stream receive frames.
+  *) [TS-3802] ASAN Crash with latest master due to double free of MIOBuffer in SSLNetVConnection.
+  *) [TS-3803] CID 1313321 CID 1313322: HostDB memory issues
+  *) [TS-3806] In cmd/traffic_manager: libwccp.a(WccpMsg.o): undefined reference to symbol MD5_Final
+  *) [TS-3810] traffic_manager leaks the stack from synthetic threads
+  *) [TS-3814] Treat requests with Connection header field as malformed
+  *) [TS-3817] Assertion on non (HTTP/S WS/S) request scheme in debug mode
+  *) [TS-3822] clang-analyzer: Value stored to 'stream' during its initialization is never read
+  *) [TS-3823] ASAN makes us forget to add -ldl on the LIBS
+  *) [TS-3824] Wrong #include of pcre.h in a couple of plugins
+  *) [TS-3825] epic plugin does not compile on OmniOS
+  *) [TS-3828] HEAD requests hang when origin returns Transfer-Encoding: Chunked
+  *) [TS-3836] Add error handling of Stream Priority
+  *) [TS-3839] Regression test fails by new overridable setting
+  *) [TS-3844] Don't send GOAWAY frame when receiving a DATA frame on a closed stream
+  *) [TS-3846] CID 1316404:  Uninitialized members in HTTP2.h
+  *) [TS-3851] Memory leak on the write_buffer for HTTP/2
+  *) [TS-3854] Memory leak with the headers in HTTP/2
+  *) [TS-3855] Memory leak in HTTP/2 with the ProxyMutex
+  *) [TS-3860] Buffer overflow in H2 on debug build
+  *) [TS-3869] HTTP/2 Stream uses the clients window size for the servers setting
+
+Improvement:
+  *) [TS-667] Ability to keep traffic server from initializing the wrong disks when using RAW disk mode.
+  *) [TS-1774] Make ink_hrtime_get() in Thread.cc member of the Thread class
+  *) [TS-1795] Check that records.config stays in sync
+  *) [TS-1808] OpenSSL dynlock support
+  *) [TS-1985] Eliminate built-in log formats in favor of logs_xml.config
+  *) [TS-2032] Eliminate remnant code for milestone for cache-lookup times
+  *) [TS-2080] Remove arbitrary 1 year max cache freshness limit
+  *) [TS-2151] Do we really need HttpSM::_instantiate_func() now?
+  *) [TS-2325] remap.config .include should support directories
+  *) [TS-2512] Deprecate the channel_stats plugin
+  *) [TS-2609] Header rewrite plugin *URL:HOST condition
+  *) [TS-2697] Remove the apichecker.pl script
+  *) [TS-3030] Change LuaJIT from submodule to subtree
+  *) [TS-3136] Change default TLS cipher suites
+  *) [TS-3153] Ability to disable/modify protocols based on SNI information
+  *) [TS-3158] Switch traffic_manager to standard argument processing
+  *) [TS-3163] Support proxy.config.net.sock_x_out on outbound connections created by TSNetConnect
+  *) [TS-3170] Remove autoconf.pac feature
+  *) [TS-3327] Nuke the support for HTTP/0.9
+  *) [TS-3384] Add stats for OCSP Stapling errors
+  *) [TS-3388] Add --enable-coverage configuration option
+  *) [TS-3436] Add milestone data for API times
+  *) [TS-3449] Create a dup TS API of TSHttpIsInternalRequest with name TSHttpTxnIsInternal
+  *) [TS-3450] Rename header_rewrite condition INTERNAL-TRANSACTION as INTERNAL-TXN 
+  *) [TS-3462] Change proxy.config.hostdb.lookup_timeout default from 120 -> 30s
+  *) [TS-3466] Remove unused records config: proxy.config.user_name
+  *) [TS-3475] Add configuration knobs for HTTP/2
+  *) [TS-3477] Determine thread affinity defaults automatically based on hwloc
+  *) [TS-3488] Tune and configure some NET constants
+  *) [TS-3492] Only send SETTINGS which are different than protocol defaults
+  *) [TS-3493] Grow window sizes as part of HTTP session setup
+  *) [TS-3495] Accept empty header field value
+  *) [TS-3497] Malformed requests must be treated as a stream error
+  *) [TS-3499] 6.0 Coverity fixes for Sudheer
+  *) [TS-3501] Support configuring nagle for client sockets using {{proxy.config.net.sock_option_flag_in}}
+  *) [TS-3502] TS API to get origin socket fd
+  *) [TS-3503] Add ua_first_read to milestones to track when the first byte was read from the client
+  *) [TS-3507] Add stats for the milestones
+  *) [TS-3512] Add stats for HTTP/2
+  *) [TS-3515] Use pcrejit (Regex class) for regex_map
+  *) [TS-3537] Make 32-bit platforms generate a configure time error
+  *) [TS-3538] ATS Should perform validity checks on certificate prior to serving
+  *) [TS-3539] Close FD's before exec'ing crash logger "helper" app
+  *) [TS-3541] Eliminate interim cache
+  *) [TS-3542] Eliminate reclaimable freelist
+  *) [TS-3546] Force global plugin registration with TSPluginRegister API and remove version information
+  *) [TS-3560] Make proxy.config.http.slow.log.threshold overridable
+  *) [TS-3562] background_fetch uses std::map for BgFetchRuleMap
+  *) [TS-3565] background_fetch DoRemap is suboptimal
+  *) [TS-3568] Eliminate HAVE_UNORDERED_MAP from code
+  *) [TS-3569] Replace UNSAFE_FORCE_MUTEX with an sdk_assert, and relax mutex requirements on Schedule()
+  *) [TS-3575] Make an option for traffic_layout to reproduce the configure invocation
+  *) [TS-3576] Remove the need for FIPS locking for OpenSSL
+  *) [TS-3578] Rearrange Client Session processing to give access to socket at SSN_CLOSE for all protocols
+  *) [TS-3581] Remove unused parameters from Cache::remove()
+  *) [TS-3586] Milestones/slow log data do not have visibility to internal redirect follow
+  *) [TS-3592] Cacheurl plugin tries to load config from libexec
+  *) [TS-3601] cache_promote plugin doesn't need a dedicated mutex for the txn handler
+  *) [TS-3602] Remove old experimental spdy plugin
+  *) [TS-3616] Can we eliminate BUILD_HAVE_LIBCXX ?
+  *) [TS-3634] Replace auto_ptr with ats_scoped_obj in the "core" code
+  *) [TS-3647] Add support for changing transaction overrideable config vars to CPP API
+  *) [TS-3650] Configuration variables should track their source
+  *) [TS-3651] Eliminate proxy.config.http.share_server_sessions
+  *) [TS-3654] ASAN heap-use-after-free in cache-hosting (regression)
+  *) [TS-3659] Add new config to limit maximum number of websocket connections
+  *) [TS-3662] Caching range requests plugin.
+  *) [TS-3682] Change default for proxy.config.admin.api.restricted to be '0'
+  *) [TS-3683] Add a tag to log SSL Session/Ticket HIT as well as TCP connection reused
+  *) [TS-3684] Support TSHttpTxnServerRespNoStoreSet in ts_lua plugin
+  *) [TS-3688] Change the default values for connect attempts, dead attempts, and dead server timeouts
+  *) [TS-3689] Remove libck
+  *) [TS-3698] Add gentoo support
+  *) [TS-3705] Make CTYPE_LOCAL a first class citizen
+  *) [TS-3715] Add documentation and example for TS_HTTP_RESPONSE_CLIENT_HOOK
+  *) [TS-3718] Unused members in LogFile.h
+  *) [TS-3722] Remove the old tstop symlink from "install" and packages
+  *) [TS-3732] Rename changelog.pl, move changelog Makefile.am target, and add better error handling
+  *) [TS-3759] Cleanup -Ilib/ts from build process
+  *) [TS-3781] Ability to log the The proxy request server port
+  *) [TS-3783] Upgrade to latest LuaJIT (2.0.4)
+  *) [TS-3786] Use a consensus algorithm to elect the cluster master
+  *) [TS-3800] Improve HostDB UI output
+  *) [TS-3807] Remove legacy log splitting code and docs
+  *) [TS-3811] HTTP/2 window size must not exceed 2^31-1
+  *) [TS-3820] Change default for proxy.config.http.redirect_host_no_port (to 1, enabled)
+  *) [TS-3829] Remnants of proxy.pac that needs to be removed for 6.0.0
+  *) [TS-3842] Add stats for HTTP/2 errors
+  *) [TS-3845] HPACK error when trying to delete entries from an empty table
+  *) [TS-3850] Add accept and no activity timeouts for HTTP/2
+
+New Feature:
+  *) [TS-2150] Add Milestone log tags
+  *) [TS-2152] Create a tag that logs the destination IP of the client connection
+  *) [TS-2157] Replace "addr" with appropriate "src_addr" and "dst_addr" in ConnectionAttributes
+  *) [TS-3122] Add support for hugepages
+  *) [TS-3282] mp4 streaming plugin
+  *) [TS-3313] New World order for connection management and timeouts
+  *) [TS-3448] Add an "internal" Mod to ControlMatcher (a boolean value)
+  *) [TS-3476] Add a log tag for application protocol
+  *) [TS-3484] Make inactivity_cop frequency (schedule) configurable
+  *) [TS-3505] New plugin: cache promotion policies
+  *) [TS-3524] Add a log tag to log the lookup_url (cache-key)
+  *) [TS-3534] Wiretracing for SSL connections
+  *) [TS-3549] Configurable option to avoid thundering herd due to concurrent requests for the same object
+  *) [TS-3555] Add a new API: TSHttpTxnCacheLookupUrlSet()
+  *) [TS-3580] Cache generation ID configuration
+  *) [TS-3589] Enhance header_rewrite to support TRANSACT_COUNT as a condition
+  *) [TS-3653] Add the ability to exclude by regex to url_sig plugin
+  *) [TS-3739] New plugin: stream_editor
+  *) [TS-3773] HostDB UI: add endpoint to list all records
+  *) [TS-3779] Body Factory: support per hosts error pages.
+  *) [TS-3780] Logs_xml: add logging field for incoming (interface) ip.
+
+Task:
+  *) [TS-1256] Streamline usage of PATH_NAME_MAX
+  *) [TS-3107] Remove RHEL5 from supported OS
+  *) [TS-3167] Remove the prefetch feature
+  *) [TS-3644] Remove CHANGES file from git
