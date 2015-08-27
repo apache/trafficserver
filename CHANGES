@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.2
 
+  *) [TS-3720] Revert "TS-3237: Don't segregate DNS results by port."
+
   *) [TS-3622] Add a bound to read_while_writer retries with a config setting.
 
   *) [TS-3806] Resolve undefined reference to symbol MD5_Final.
