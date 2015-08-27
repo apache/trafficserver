@@ -89,14 +89,18 @@ if (!defined($changelog))
   exit 1;
 }
 
-print "                                                         -*- coding: utf-8 -*-\n\n";
 print "Changes with Apache Traffic Server $fixversion\n";
 
 foreach my $key (sort keys %{ $changelog })
 {
-  print "\n$key:\n\n";
+  print "\n$key:\n";
   foreach my $issue (@{ $changelog->{$key} })
   {
-    print "  *) [$issue->{key}] $issue->{summary}\n\n";
+    print "  *) [$issue->{key}] ";
+    if (length($issue->{summary}) <= (131 - 15)) {
+      print "$issue->{summary}\n";
+    } else {
+      print substr($issue->{summary}, 0, (131 - 18)), "...\n";
+    }
   }
 }
