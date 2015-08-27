@@ -1508,9 +1508,9 @@ ResponseCodes::contains(int code, MgmtString r_codes)
     if (atoi(c) == code) {
       return true;
     }
-    p = strchr (c, ',');
+    p = strchr(c, ',');
     if (p != NULL) {
-      c = (p+1);
+      c = (p + 1);
     }
   } while (p != NULL);
 

@@ -394,8 +394,8 @@ struct OverridableHttpConfigParams {
       post_connect_attempts_timeout(1800), down_server_timeout(300), client_abort_threshold(10), freshness_fuzz_time(240),
       freshness_fuzz_min_time(0), max_cache_open_read_retries(-1), cache_open_read_retry_time(10), cache_generation_number(-1),
       background_fill_active_timeout(60), http_chunking_size(4096), flow_high_water_mark(0), flow_low_water_mark(0),
-      default_buffer_size_index(8), default_buffer_water_mark(32768), slow_log_threshold(0),
-      simple_retry_enabled(0), dead_server_retry_enabled(0),
+      default_buffer_size_index(8), default_buffer_water_mark(32768), slow_log_threshold(0), simple_retry_enabled(0),
+      dead_server_retry_enabled(0),
       // Strings / floats must come last
       body_factory_template_base(NULL), body_factory_template_base_len(0), proxy_response_server_string(NULL),
       proxy_response_server_string_len(0), global_user_agent_header(NULL), global_user_agent_header_size(0),

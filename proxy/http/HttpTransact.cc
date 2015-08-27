@@ -235,7 +235,7 @@ find_server_and_update_current_info(HttpTransact::State *s)
         // check to see if the parent is an origin server.
         if (!s->parent_result.rec->isParentProxy()) {
           s->parent_result.r = PARENT_ORIGIN;
-          Debug("parent_select","parent is an origin server.");
+          Debug("parent_select", "parent is an origin server.");
         }
       }
       break;
@@ -3557,7 +3557,7 @@ HttpTransact::handle_response_from_parent(State *s)
     // try a simple retry if we received a simple retryable response from the parent.
     if (s->current.retry_type == SIMPLE_RETRY || s->current.retry_type == DEAD_SERVER_RETRY) {
       if (s->current.retry_type == SIMPLE_RETRY) {
-        if (s->current.simple_retry_attempts >= s->parent_result.rec->num_parents-1) {
+        if (s->current.simple_retry_attempts >= s->parent_result.rec->num_parents - 1) {
           DebugTxn("http_trans", "SIMPLE_RETRY: retried all parents, send error to client.\n");
           next_lookup = HOST_NONE;
         } else {
@@ -3566,7 +3566,7 @@ HttpTransact::handle_response_from_parent(State *s)
           next_lookup = find_server_and_update_current_info(s);
         }
       } else { // DEAD_SERVER_RETRY
-        if (s->current.dead_server_retry_attempts >= s->parent_result.rec->num_parents-1) {
+        if (s->current.dead_server_retry_attempts >= s->parent_result.rec->num_parents - 1) {
           DebugTxn("http_trans", "DEAD_SERVER_RETRY: retried all parents, send error to client.\n");
           next_lookup = HOST_NONE;
         } else {
@@ -3576,8 +3576,7 @@ HttpTransact::handle_response_from_parent(State *s)
           next_lookup = find_server_and_update_current_info(s);
         }
       }
-    }
-    else if (s->current.attempts < s->http_config_param->parent_connect_attempts) {
+    } else if (s->current.attempts < s->http_config_param->parent_connect_attempts) {
       s->current.attempts++;
 
       // Are we done with this particular parent?

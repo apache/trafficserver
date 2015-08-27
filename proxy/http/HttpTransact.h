@@ -349,11 +349,7 @@ public:
     HTTP_TRANSACT_MAGIC_SEPARATOR = 0x12345678
   };
 
-  enum ParentOriginRetry_t { 
-    UNDEFINED_RETRY, 
-    SIMPLE_RETRY, 
-    DEAD_SERVER_RETRY 
-  };
+  enum ParentOriginRetry_t { UNDEFINED_RETRY, SIMPLE_RETRY, DEAD_SERVER_RETRY };
 
   enum LookingUp_t {
     ORIGIN_SERVER,

@@ -493,15 +493,15 @@ ParentRecord::getPathHash(HttpRequestData *hrdata, ATSHash64 *h)
 
   tmp = url->path_get(&len);
   if (tmp) {
-   h->update(tmp, len);
+    h->update(tmp, len);
   }
 
   if (!ignore_query) {
-   tmp = url->query_get(&len);
-   if (tmp) {
-    h->update("?", 1);
-    h->update(tmp, len);
-   }
+    tmp = url->query_get(&len);
+    if (tmp) {
+      h->update("?", 1);
+      h->update(tmp, len);
+    }
   }
 
   h->final();
