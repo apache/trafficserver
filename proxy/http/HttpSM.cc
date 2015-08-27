@@ -2374,17 +2374,20 @@ HttpSM::state_cache_open_write(int event, void *data)
     //  for reading
     if (t_state.redirect_info.redirect_in_process) {
       DebugSM("http_redirect", "[%" PRId64 "] CACHE_EVENT_OPEN_WRITE_FAILED during redirect follow", sm_id);
-      t_state.cache_open_write_fail_action = HttpTransact::CACHE_OPEN_WRITE_FAIL_DEFAULT;
+      t_state.cache_open_write_fail_action = HttpTransact::CACHE_WL_FAIL_ACTION_DEFAULT;
       t_state.cache_info.write_lock_state = HttpTransact::CACHE_WL_FAIL;
       break;
     }
-    if (t_state.txn_conf->cache_open_write_fail_action == HttpTransact::CACHE_OPEN_WRITE_FAIL_DEFAULT) {
+    if (t_state.txn_conf->cache_open_write_fail_action == HttpTransact::CACHE_WL_FAIL_ACTION_DEFAULT) {
       t_state.cache_info.write_lock_state = HttpTransact::CACHE_WL_FAIL;
       break;
     } else {
       t_state.cache_open_write_fail_action = t_state.txn_conf->cache_open_write_fail_action;
-      if (!t_state.cache_info.object_read) {
+      if (!t_state.cache_info.object_read ||
+          (t_state.cache_open_write_fail_action == HttpTransact::CACHE_WL_FAIL_ACTION_ERROR_ON_MISS_OR_REVALIDATE)) {
         // cache miss, set wl_state to fail
+        DebugSM("http", "[%" PRId64 "] cache object read %p, cache_wl_fail_action %d", sm_id, t_state.cache_info.object_read,
+                t_state.cache_open_write_fail_action);
         t_state.cache_info.write_lock_state = HttpTransact::CACHE_WL_FAIL;
         break;
       }
