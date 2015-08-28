@@ -652,9 +652,9 @@ static const RecordElement RecordsConfig[] =
   //       #
   //       #  0 - default. disable cache and goto origin
   //       #  1 - return error if cache miss
-  //       #  2 - serve stale until proxy.config.http.cache.max_stale_age, then goto origin, if refresh_miss
-  //       #  3 - return error if cache miss or serve stale until proxy.config.http.cache.max_stale_age, then goto origin, if refresh_miss
-  //       #  4 - return error if cache miss or cache stale
+  //       #  2 - serve stale until proxy.config.http.cache.max_stale_age, then goto origin, if revalidate
+  //       #  3 - return error if cache miss or serve stale until proxy.config.http.cache.max_stale_age, then goto origin, if revalidate
+  //       #  4 - return error if cache miss or if revalidate
   {RECT_CONFIG, "proxy.config.http.cache.open_write_fail_action", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   //       #  when_to_revalidate has 4 options:
