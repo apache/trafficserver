@@ -1144,7 +1144,7 @@ handle_record_describe(int fd, void *req, size_t reqlen)
 
 done:
   ats_free(name);
-  return match.err;
+  return ret;
 }
 
 struct control_message_handler {
