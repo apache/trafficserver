@@ -1703,10 +1703,10 @@ all the different user-agent versions of documents it encounters.
 .. ts:cv:: CONFIG proxy.config.http.cache.open_write_fail_action INT 0
    :reloadable:
 
-    This bit-map setting indicates the action taken on failing to obtain the cache open write lock on either a cache miss or
-    a cache hit stale. This typically happens when there is more than one request to the same cache object simultaneously.
-    During such scenario, all but one (which goes to the origin) request is served either a stale copy or an error depending
-    on the setting.
+    This setting indicates the action taken on failing to obtain the cache open write lock on either a cache miss or a cache
+    hit stale. This typically happens when there is more than one request to the same cache object simultaneously. During such
+    a scenario, all but one (which goes to the origin) request is served either a stale copy or an error depending on this
+    setting.
 
    -  ``0`` = default, disable cache and goto origin server
    -  ``1`` = return a 502 error on a cache miss
