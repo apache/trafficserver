@@ -238,8 +238,8 @@ Examples
 Configure Traffic Server to log in Squid format::
 
     $ traffic_ctl config set proxy.config.log.squid_log_enabled 1
-    $ traffic_line config proxy.config.log.squid_log_is_ascii 1
-    $ traffic_line config reload
+    $ traffic_ctl config set proxy.config.log.squid_log_is_ascii 1
+    $ traffic_ctl config reload
 
 See also
 ========

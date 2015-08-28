@@ -168,7 +168,7 @@ address.::
 
     dest_host=host1 scheme=http parent="parent1;parent2" round-robin=strict
 
-Run the command :option:`traffic_line -x` to apply the configuration changes.
+Run the command :option:`traffic_ctl config reload` to apply the configuration changes.
 
 .. _admin-icp-peering:
 
@@ -216,4 +216,4 @@ To configure Traffic Server to use an ICP cache hierarchy edit the following var
 Edit :file:`icp.config` file located in the Traffic Server `config` directory:
 For each ICP peer you want to identify, enter a separate rule in the :file:`icp.config` file.
 
-Run the command :option:`traffic_line -x` to apply the configuration changes.
+Run the command :option:`traffic_ctl config reload` to apply the configuration changes.

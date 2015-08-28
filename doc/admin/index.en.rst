@@ -245,7 +245,7 @@ Administration Tools
 
 Traffic Server offers the following administration options:
 
--  The Traffic Line (:program:`traffic_line`) command-line interface is a
+-  The :program:`traffic_ctl` command-line interface is a
    text-based interface from which you can monitor Traffic Server performance
    and network traffic, as well as configure the Traffic Server system. From
    Traffic Line, you can execute individual commands or script a series of
@@ -266,7 +266,7 @@ Traffic Analysis Options
 Traffic Server provides several options for network traffic analysis and
 monitoring:
 
--  Traffic Line enables you to collect and process
+-  :program:`traffic_ctl` enables you to collect and process
    statistics obtained from network traffic information.
 
 -  Transaction logging enables you to record information (in a log file)

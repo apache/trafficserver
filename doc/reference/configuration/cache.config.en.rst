@@ -33,7 +33,7 @@ web objects. You can add caching rules to specify the following:
 .. important::
 
    After you modify the :file:`cache.config` file, navigate to
-   the Traffic Server bin directory; then run the :option:`traffic_line -x`
+   the Traffic Server bin directory; then run the :option:`traffic_ctl config reload`
    command to apply changes. When you apply the changes to a node in a
    cluster, Traffic Server automatically applies the changes to all other
    nodes in the cluster.

@@ -373,7 +373,7 @@ msgstr ""
 #: ../../admin/configuring-cache.en.rst:249
 #: ../../admin/configuring-cache.en.rst:262
 msgid ""
-"Run the command :option:`traffic_line -x` to apply the configuration "
+"Run the command :option:`traffic_ctl config reload` to apply the configuration "
 "changes."
 msgstr ""
 
@@ -494,7 +494,7 @@ msgstr ""
 #: ../../admin/configuring-cache.en.rst:348
 msgid ""
 "From the Traffic Server ``bin`` directory, enter the following command to "
-"re-read the configuration file: ``traffic_line -x``"
+"re-read the configuration file: ``traffic_ctl config reload``"
 msgstr ""
 
 #: ../../admin/configuring-cache.en.rst:350

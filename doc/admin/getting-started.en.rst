@@ -177,25 +177,19 @@ as manage, control, and monitor the health of the Traffic Server system. ::
 
    bin/trafficserver start
 
-.. _start-straffic-line:
 
-Start Traffic Line
-==================
+The :program:`traffic_ctl` provides a quick way of viewing Traffic Server statistics
+and configuring the Traffic Server system via a command-line interface.
 
-Traffic Line provides a quick way of viewing Traffic Server statistics
-and configuring the Traffic Server system via a command-line interface. To
-execute individual commands or script multiple commands, refer to
-:program:`traffic_line`.
+:program:`traffic_ctl` commands take the following form::
 
-Traffic Line commands take the following form::
+     bin/traffic_ctl COMMAND COMMAND ...
 
-     bin/traffic_line -command argument
+For a list of :program:`traffic_ctl` commands, enter::
 
-For a list of :program:`traffic_line` commands, enter::
+     bin/traffic_ctl
 
-     bin/traffic_line -h
-
-Please note that :program:`traffic_line`, while a fine tool for an
+Please note that :program:`traffic_ctl`, while a fine tool for an
 administrator, is a poor choice for automation, especially that of
 monitoring. See our chapter on :ref:`monitoring-traffic`
 for how to do that more efficiently and effectively.

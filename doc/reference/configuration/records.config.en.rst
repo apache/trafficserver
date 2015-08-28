@@ -27,7 +27,7 @@ the Traffic Server software. Many of the variables in the
 :file:`records.config` file are set automatically when you set configuration
 options in Traffic Line. After you modify the
 :file:`records.config` file,
-run the command :option:`traffic_line -x` to apply the changes.
+run the command :option:`traffic_ctl config reload` to apply the changes.
 When you apply changes to one node in a cluster, Traffic Server
 automatically applies the changes to all other nodes in the cluster.
 
@@ -51,7 +51,7 @@ as it may be removed in a future release without warning.
 
 A variable marked as ``Reloadable`` can be updated via the command::
 
-   traffic_line -x
+   traffic_ctl config reload
 
 A variable marked as ``Overridable`` can be changed on a per-remap basis using plugins
 (like the :ref:`conf-remap-plugin`).
@@ -112,13 +112,13 @@ case, and replacing any dot separators with an underscore.
 
 Overriding a variable from the environment is permanent and will
 not be affected by future configuration changes made in
-:file:`records.config` or applied with :program:`traffic_line`.
+:file:`records.config` or applied with :program:`traffic_ctl`.
 
 For example, we could override the `proxy.config.product_company`_ variable
 like this::
 
    $ PROXY_CONFIG_PRODUCT_COMPANY=example traffic_cop &
-   $ traffic_line -r proxy.config.product_company
+   $ traffic_ctl config get proxy.config.product_company
 
 .. _configuration-variables:
 
@@ -282,7 +282,7 @@ Value Effect
    :reloadable:
 
   This setting specifies the number of active client connections
-  for use by :option:`traffic_line --drain`.
+  for use by :option:`traffic_ctl server restart --drain`.
 
 Network
 =======

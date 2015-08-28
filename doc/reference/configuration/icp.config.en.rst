@@ -26,7 +26,7 @@ The :file:`icp.config` file defines ICP peers (parent and sibling caches).
 .. important::
 
     After you modify the icp.config file, navigate to the
-    Traffic Server bin directory and run the :option:`traffic_line -x` command to
+    Traffic Server bin directory and run the :option:`traffic_ctl config reload` command to
     apply the changes. When you apply the changes to a node in a cluster,
     Traffic Server automatically applies the changes to all other nodes in
     the cluster.

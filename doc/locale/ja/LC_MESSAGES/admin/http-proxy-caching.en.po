@@ -295,10 +295,10 @@ msgstr ""
 #: ../../admin/http-proxy-caching.en.rst:281
 #: ../../admin/http-proxy-caching.en.rst:332
 msgid ""
-"Run the :option:`traffic_line -x` command to apply the configuration "
+"Run the :option:`traffic_ctl config reload` command to apply the configuration "
 "changes."
 msgstr ""
-"設定変更を適用するために :option:`traffic_line -x` コマンドを実行してくださ"
+"設定変更を適用するために :option:`traffic_ctl config reload` コマンドを実行してくださ"
 "い。"
 
 #: ../../admin/http-proxy-caching.en.rst:159
@@ -723,10 +723,10 @@ msgstr ""
 #: ../../admin/http-proxy-caching.en.rst:708
 #: ../../admin/http-proxy-caching.en.rst:735
 msgid ""
-"Run the command :option:`traffic_line -x` to apply the configuration "
+"Run the command :option:`traffic_ctl config reload` to apply the configuration "
 "changes."
 msgstr ""
-"設定変更を適用するために :option:`traffic_line -x` を実行してください。"
+"設定変更を適用するために :option:`traffic_ctl config reload` を実行してください。"
 
 #: ../../admin/http-proxy-caching.en.rst:356
 msgid ""

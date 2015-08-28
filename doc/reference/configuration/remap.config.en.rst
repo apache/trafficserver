@@ -44,7 +44,7 @@ Refer to  :ref:`reverse-proxy-and-http-redirects`, for information about
 redirecting HTTP requests and using reverse proxy.
 
 After you modify the :file:`remap.config` run the
-:option:`traffic_line -x` to apply the changes. When you apply the
+:option:`traffic_ctl config reload` to apply the changes. When you apply the
 changes to one node in a cluster, Traffic Server automatically applies
 the changes to all other nodes in the cluster.
 
@@ -464,7 +464,7 @@ directives are allowed.
 
   Included remap files are not currently tracked by the configuration
   subsystem. Changes to included remap files will not be noticed
-  by online configuration changes applied by :option:`traffic_line -x`
+  by online configuration changes applied by :option:`traffic_ctl config reload`
   unless :file:`remap.config` has also changed.
 
 Examples

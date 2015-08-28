@@ -58,7 +58,7 @@ whenever an alarm occurs, follow the steps below:
 
         CONFIG proxy.config.alarm_email STRING "alerts@example.com"
 
-#. Run the command :option:`traffic_line -x` to apply the configuration changes.
+#. Run the command :option:`traffic_ctl config reload` to apply the configuration changes.
 
 Using a Script File for Alarms
 ------------------------------
@@ -83,20 +83,20 @@ see.
 
 To view a statistic, enter the following command:::
 
-        traffic_line -r variable
+        traffic_ctl metric get VARIABLE
 
 where ``variable`` is the variable representing the information you
 want to view. For a list of variables you can specify, refer to :ref:`Traffic
-Line Variables <traffic-line-performance-statistics>`.
+Server Metrics <traffic-line-performance-statistics>`.
 
 For example, the following command displays the document hit rate for
 the Traffic Server node:::
 
-     traffic_line -r proxy.node.cache_hit_ratio
+     traffic_ctl metric get proxy.node.cache_hit_ratio
 
 If the Traffic Server ``bin`` directory is not in your path, then
 prepend the Traffic Line command with ``./`` (for example:
-:option:`traffic_line -r` ``variable``).
+:option:`traffic_ctl metric get` ``VARIABLE``).
 
 
 Viewing Statistics with Traffic Top

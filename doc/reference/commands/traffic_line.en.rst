@@ -290,7 +290,7 @@ Configure Traffic Server to log in Squid format::
 
     $ traffic_line -s proxy.config.log.squid_log_enabled -v 1
     $ traffic_line -s proxy.config.log.squid_log_is_ascii -v 1
-    $ traffic_line -x
+    $ traffic_ctl config reload
 
 See also
 ========

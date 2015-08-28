@@ -62,9 +62,9 @@ msgstr ""
 #: ../../reference/configuration/ssl_multicert.config.en.rst:39
 msgid ""
 "Changes to :file:`ssl_multicert.config` can be applied to a running Traffic "
-"Server using :option:`traffic_line -x`."
+"Server using :option:`traffic_ctl config reload`."
 msgstr ""
-":file:`ssl_multicert.config` への変更は :option:`traffic_line -x` の使用によ"
+":file:`ssl_multicert.config` への変更は :option:`traffic_ctl config reload` の使用によ"
 "り実行中の Traffic Server に適用できます。"
 
 #: ../../reference/configuration/ssl_multicert.config.en.rst:43

@@ -79,5 +79,5 @@ servers, however the plugin is fully reloadable so health checking
 is usualy simple to implement. Most production environments already
 have mechanisms to check service health. It is recommended that you
 write a simple script to monitor this information and rewrite
-:file:`remap.config` when appropriate. Running :option:`traffic_line -x`
+:file:`remap.config` when appropriate. Running :option:`traffic_ctl config reload`
 will reload the ``balancer`` plugin with the new set of origin servers.

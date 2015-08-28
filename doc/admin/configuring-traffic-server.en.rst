@@ -38,7 +38,7 @@ View Configuration Options in Traffic Line
 
 To view a configuration setting, enter the following command::
 
-    traffic_line -r var
+    traffic_ctl config get VARIABLE
 
 where *var* is the variable associated with the configuration
 option. For a list of variables, refer to :ref:`configuration-variables`.
@@ -49,7 +49,7 @@ Change Configuration Options in Traffic Line
 To change the value of a configuration setting, enter the following
 command::
 
-    traffic_line -s var -v value
+    traffic_config set VARIABLE VALUE
 
 where *var* is the variable associated with the configuration option
 and *value* is the value you want to use. For a list of the
@@ -63,7 +63,7 @@ Traffic Server configuration options by manually editing specific
 variables in :file:`records.config`.
 
 Traffic Server must reread the configuration files for any changes to take effect.
-This is done with :option:`traffic_line -x`. Some configuration changes require a
+This is done with :option:`traffic_ctl config reload`. Some configuration changes require a
 full restart of Traffic Server.
 
 The following is a sample portion of :file:`records.config`:

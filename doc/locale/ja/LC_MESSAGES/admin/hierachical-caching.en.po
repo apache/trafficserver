@@ -171,7 +171,7 @@ msgstr ""
 
 #: ../../admin/hierachical-caching.en.rst:132
 msgid ""
-"Run the command :option:`traffic_line -x` to apply the configuration "
+"Run the command :option:`traffic_ctl config reload` to apply the configuration "
 "changes."
 msgstr ""
 

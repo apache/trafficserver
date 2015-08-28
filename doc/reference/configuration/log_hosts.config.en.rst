@@ -26,7 +26,7 @@ files, you must list each origin server hostname in the
 :file:`log_hosts.config` file. In addition, you must enable the :ref:`httphostlogsplitting` foo! ... <../working-log-files#HTTPHostLogSplitting>`_ option. You
 should use the same :file:`log_hosts.config` file on every Traffic Server
 node in your cluster. After you modify the :file:`log_hosts.config` file,
-run the :option:`traffic_line -x` command to apply the changes.
+run the :option:`traffic_ctl config reload` command to apply the changes.
 When you apply the changes to a node in a cluster, Traffic Server automatically applies the
 changes to all other nodes in the cluster.
 

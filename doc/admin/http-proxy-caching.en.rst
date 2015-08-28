@@ -155,7 +155,7 @@ To modify the aging factor for freshness computations:
 
 #. Change the value for :ts:cv:`proxy.config.http.cache.heuristic_lm_factor`.
 
-#. Run the :option:`traffic_line -x` command to apply the configuration changes.
+#. Run the :option:`traffic_ctl config reload` command to apply the configuration changes.
 
 Setting Absolute Freshness Limits
 ---------------------------------
@@ -171,7 +171,7 @@ To specify an absolute freshness limit:
    and :ts:cv:`proxy.config.http.cache.heuristic_max_lifetime` in
    :file:`records.config`.
 
-#. Run the :option:`traffic_line -x` command to apply the configuration changes.
+#. Run the :option:`traffic_ctl config reload` command to apply the configuration changes.
 
 Specifying Header Requirements
 ------------------------------
@@ -190,7 +190,7 @@ To configure Traffic Server to cache objects with specific headers:
 #. Change the value for :ts:cv:`proxy.config.http.cache.required_headers`
    in :file:`records.config`.
 
-#. Run the :option:`traffic_line -x` command to apply the configuration changes.
+#. Run the :option:`traffic_ctl config reload` command to apply the configuration changes.
 
 Cache-Control Headers
 ---------------------
@@ -276,7 +276,7 @@ To configure revalidation options
 #. Edit the variable :ts:cv:`proxy.config.http.cache.when_to_revalidate`
    in :file:`records.config`.
 
-#. Run the :option:`traffic_line -x` command to apply the configuration changes.
+#. Run the :option:`traffic_ctl config reload` command to apply the configuration changes.
 
 .. _pushing-content-into-the-cache:
 
@@ -300,7 +300,7 @@ must configure Traffic Server to accept ``PUSH`` requests.
 
         CONFIG proxy.config.http.push_method_enabled INT 1
 
-#. Run the command :option:`traffic_line -x` to apply the configuration changes.
+#. Run the command :option:`traffic_ctl config reload` to apply the configuration changes.
 
 Understanding HTTP PUSH
 -----------------------
@@ -355,7 +355,7 @@ To set cache pinning rules:
 
       url_regex=^https?://(www.)?apache.org/dev/ pin-in-cache=12h
 
-#. Run the command :option:`traffic_line -x` to apply the configuration changes.
+#. Run the command :option:`traffic_ctl config reload` to apply the configuration changes.
 
 Caching HTTP Objects
 ====================
@@ -408,7 +408,7 @@ from its cache.
 
         CONFIG proxy.config.http.cache.ignore_client_no_cache INT 1
 
-#. Run the command :option:`traffic_line -x` to apply the configuration changes.
+#. Run the command :option:`traffic_ctl config reload` to apply the configuration changes.
 
 Origin Server Directives
 ------------------------
@@ -452,7 +452,7 @@ To configure Traffic Server to ignore server ``no-cache`` headers:
 
         CONFIG proxy.config.http.cache.ignore_server_no_cache INT 1
 
-#. Run the command :option:`traffic_line -x` to apply the configuration changes.
+#. Run the command :option:`traffic_ctl config reload` to apply the configuration changes.
 
 Configuring Traffic Server to Ignore WWW-Authenticate Headers
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -478,7 +478,7 @@ headers:
 
         CONFIG proxy.config.http.cache.ignore_authentication INT 1
 
-#. Run the command :option:`traffic_line -x` to apply the configuration changes.
+#. Run the command :option:`traffic_ctl config reload` to apply the configuration changes.
 
 Configuration Directives
 ------------------------
@@ -515,7 +515,7 @@ To disable HTTP object caching manually:
 
         CONFIG proxy.config.http.enabled INT 0
 
-#. Run the command :option:`traffic_line -x` to apply the configuration changes.
+#. Run the command :option:`traffic_ctl config reload` to apply the configuration changes.
 
 Caching Dynamic Content
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -536,7 +536,7 @@ content:
 
         CONFIG proxy.config.http.cache.cache_urls_that_look_dynamic INT 0
 
-#. Run the command :option:`traffic_line -x` to apply the configuration changes.
+#. Run the command :option:`traffic_ctl config reload` to apply the configuration changes.
 
 Caching Cookied Objects
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -563,7 +563,7 @@ To configure how Traffic Server caches cookied content:
 #. Edit :ts:cv:`proxy.config.http.cache.cache_responses_to_cookies` in
    :file:`records.config`.
 
-#. Run the command :option:`traffic_line -x` to apply the configuration changes.
+#. Run the command :option:`traffic_ctl config reload` to apply the configuration changes.
 
 Forcing Object Caching
 ======================
@@ -579,7 +579,7 @@ To force document caching:
 
        url_regex=^https?://(www.)?apache.org/dev/ ttl-in-cache=6h
 
-#. Run the command :option:`traffic_line -x` to apply the configuration changes.
+#. Run the command :option:`traffic_ctl config reload` to apply the configuration changes.
 
 Caching HTTP Alternates
 =======================
@@ -607,7 +607,7 @@ To configure how Traffic Server caches alternates:
    -  :ts:cv:`proxy.config.http.cache.vary_default_images`
    -  :ts:cv:`proxy.config.http.cache.vary_default_other`
 
-#. Run the command :option:`traffic_line -x` to apply the configuration changes.
+#. Run the command :option:`traffic_ctl config reload` to apply the configuration changes.
 
 .. note::
 
@@ -635,7 +635,7 @@ To alter the limit on the number of alternates:
 
     CONFIG proxy.config.cache.limits.http.max_alts INT 5
 
-#. Run the command :option:`traffic_line -x` to apply the configuration changes.
+#. Run the command :option:`traffic_ctl config reload` to apply the configuration changes.
 
 .. _using-congestion-control:
 
@@ -667,7 +667,7 @@ To enable this option:
    -  Whether Traffic Server tracks the origin servers by IP address or by
       hostname.
 
-#. Run the command :option:`traffic_line -x` to apply the configuration changes.
+#. Run the command :option:`traffic_ctl config reload` to apply the configuration changes.
 
 .. _transaction-buffering-control:
 

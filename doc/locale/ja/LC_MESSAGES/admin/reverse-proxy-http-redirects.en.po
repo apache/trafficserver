@@ -495,10 +495,10 @@ msgstr ""
 #: ../../admin/reverse-proxy-http-redirects.en.rst:263
 #: ../../admin/reverse-proxy-http-redirects.en.rst:306
 msgid ""
-"Run the command :option:`traffic_line -x` to apply the configuration "
+"Run the command :option:`traffic_ctl config reload` to apply the configuration "
 "changes."
 msgstr ""
-"設定の変更を適用するために :option:`traffic_line -x` コマンドを実行してくだ"
+"設定の変更を適用するために :option:`traffic_ctl config reload` コマンドを実行してくだ"
 "さい。"
 
 #: ../../admin/reverse-proxy-http-redirects.en.rst:255
@@ -562,10 +562,10 @@ msgstr ""
 
 #: ../../admin/reverse-proxy-http-redirects.en.rst:282
 msgid ""
-"Don't forget to run the command :option:`traffic_line -x` to apply the "
+"Don't forget to run the command :option:`traffic_ctl config reload` to apply the "
 "configuration changes."
 msgstr ""
-"設定の変更を適用するために :option:`traffic_line -x` コマンドを実行するのを"
+"設定の変更を適用するために :option:`traffic_ctl config reload` コマンドを実行するのを"
 "忘れないでください。"
 
 #: ../../admin/reverse-proxy-http-redirects.en.rst:286

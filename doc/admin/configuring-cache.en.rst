@@ -142,7 +142,7 @@ Changing Cache Capacity
 
 You can increase or reduce the total amount of disk space allocated to
 the cache without clearing the content. To check the size of the cache
-(in bytes), enter the command :option:`traffic_line -r` ``proxy.process.cache.bytes_total``.
+(in bytes), enter the command :option:`traffic_ctl metric get` ``proxy.process.cache.bytes_total``.
 
 Increasing Cache Capacity
 -------------------------
@@ -273,7 +273,7 @@ To partition the cache according to hostname and domain:
    volumes for a particular origin server become corrupt, then Traffic
    Server will also use the generic volume to store content for that
    origin server as per :file:`hosting.config`.
-#. Run the command :option:`traffic_line -x` to apply the configuration
+#. Run the command :option:`traffic_ctl config reload` to apply the configuration
    changes.
 
 Configuring the Cache Object Size Limit
@@ -286,7 +286,7 @@ the cache via the steps below:
 #. Set :ts:cv:`proxy.config.cache.max_doc_size`
    to specify the maximum size in bytes allowed for objects in the cache.
    A setting of ``0`` (zero) will permit cache objects to be unlimited in size.
-#. Run the command :option:`traffic_line -x` to apply the configuration
+#. Run the command :option:`traffic_ctl config reload` to apply the configuration
    changes.
 
 .. _clearing-the-cache:
@@ -379,7 +379,7 @@ To access the Cache Inspector utility:
 
       map http://yourhost.com/myCI/ http://{cache} @action=allow @src_ip=172.28.56.1-172.28.56.254
 
-#. Reload the Traffic Server configuration by running :option:`traffic_line -x`.
+#. Reload the Traffic Server configuration by running :option:`traffic_ctl config reload`.
 #. Open your web browser and configure it to use your Traffic Server as
    a proxy server. Type the following URL::
 

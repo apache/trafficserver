@@ -174,7 +174,7 @@ Traffic Server Tuning
 |TS| itself, of course, has many options you may want to consider adjusting to
 achieve optimal performance in your environment. Many of these settings are
 recorded in :file:`records.config` and may be adjusted with the
-:option:`traffic_line -s` command line utility while the server is operating.
+:option:`traffic_ctl config set` command line utility while the server is operating.
 
 CPU and Thread Optimization
 ---------------------------
