@@ -20,7 +20,6 @@ Test body_factory
 
 import os
 import requests
-import time
 import logging
 import SocketServer
 import random

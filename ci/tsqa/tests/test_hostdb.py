@@ -72,7 +72,6 @@ class TestHostDBBadResolvConf(helpers.EnvironmentCase):
         })
 
     def test_working(self):
-        start = time.time()
         ret = requests.get('http://trafficserver.readthedocs.org',
                            proxies=self.proxies,
                            )

@@ -18,7 +18,6 @@ Test Head Request
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import os
 import requests
 import time
 import logging
@@ -34,7 +33,7 @@ log = logging.getLogger(__name__)
 
 
 class HeadRequestServerHandler(SocketServer.BaseRequestHandler):
-    """ 
+    """
     A subclass of RequestHandler which will response to head requests
     """
 
@@ -53,7 +52,7 @@ class HeadRequestServerHandler(SocketServer.BaseRequestHandler):
                     'Transfer-Encoding: chunked\r\n'
                     'Vary: Accept-Encoding\r\n'
                     '\r\n'
-                    )  
+                    )
                 self.request.sendall(resp)
             elif 'CL' in data:
                 resp = ('HTTP/1.1 200 OK\r\n'
@@ -61,14 +60,14 @@ class HeadRequestServerHandler(SocketServer.BaseRequestHandler):
                     'Content-Length: 123\r\n'
                     'Vary: Accept-Encoding\r\n'
                     '\r\n'
-                    )  
+                    )
                 self.request.sendall(resp)
             else:
                 resp = ('HTTP/1.1 200 OK\r\n'
                     'Server: Apache-Coyote/1.1\r\n'
                     'Vary: Accept-Encoding\r\n'
                     '\r\n'
-                    )  
+                    )
                 self.request.sendall(resp)
 
 
@@ -105,7 +104,7 @@ class TestHeadRequestWithoutTimeout(helpers.EnvironmentCase):
             while 1:
                 try:
                     resp = conn.recv(4096)
-                    if len(resp) == 0: 
+                    if len(resp) == 0:
                         break
                     response_content = resp
                     log.info(resp)

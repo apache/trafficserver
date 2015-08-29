@@ -22,7 +22,6 @@ import os
 import requests
 import time
 import logging
-import SocketServer
 import random
 import tsqa.test_cases
 import helpers
@@ -36,7 +35,7 @@ class TestCustomLogField(helpers.EnvironmentCase):
     '''
     @classmethod
     def setUpEnv(cls, env):
-        
+
         cls.configs['remap.config'].add_line(
             'map / http://www.linkedin.com/ @action=deny'
         )

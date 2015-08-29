@@ -18,7 +18,6 @@ Test the configure entry : proxy.config.http.origin_min_keep_alive_connections
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import os
 import requests
 import time
 import logging
@@ -69,10 +68,10 @@ class TestKeepAlive_Origin_Min_connections(helpers.EnvironmentCase):
         thread.start_new_thread(simple_socket_server, (cls.traffic_server_host, cls.socket_server_port, ))
         cls.configs['remap.config'].add_line('map / http://127.0.0.1:{0}'.format(cls.socket_server_port))
         cls.origin_keep_alive_timeout = 3
-        cls.configs['records.config']['CONFIG']['origin_min_keep_alive_connections'] = 1 
-        cls.configs['records.config']['CONFIG']['keep_alive_enabled_out'] = 1 
+        cls.configs['records.config']['CONFIG']['origin_min_keep_alive_connections'] = 1
+        cls.configs['records.config']['CONFIG']['keep_alive_enabled_out'] = 1
         cls.configs['records.config']['CONFIG']['proxy.config.http.keep_alive_no_activity_timeout_out'] = cls.origin_keep_alive_timeout
-    
+
     def test_origin_min_connection(self):
         conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         conn.connect((self.traffic_server_host, self.traffic_server_port))
@@ -91,7 +90,7 @@ class TestKeepAlive_Origin_Min_connections(helpers.EnvironmentCase):
                 else:
                     second_resp = resp
                     break
-                if len(resp) == 0:  
+                if len(resp) == 0:
                     break
                 time.sleep(2 + self.origin_keep_alive_timeout)
                 conn.send(request_content)
@@ -100,4 +99,4 @@ class TestKeepAlive_Origin_Min_connections(helpers.EnvironmentCase):
         conn.shutdown(socket.SHUT_RDWR)
         conn.close()
         self.assertEqual(first_resp, second_resp)
-    
+
