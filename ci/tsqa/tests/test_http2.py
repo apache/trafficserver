@@ -24,8 +24,8 @@ import tsqa.utils
 
 try:
     import hyper
-except ImportError as e:
-    helpers.unittest.SkipTest('Cannot import hyper, skipping tests for HTTP/2')
+except ImportError:
+    raise helpers.unittest.SkipTest('Cannot import hyper, skipping tests for HTTP/2')
 
 log = logging.getLogger(__name__)
 
