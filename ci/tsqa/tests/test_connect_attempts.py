@@ -97,7 +97,7 @@ def thread_partial_response(sock):
         connection, addr = sock.accept()
         num_requests += 1
         if first:
-            connection.send('HTTP/1.1 200 OK\r\n')
+            connection.send('HTTP/1.1 500 Internal Server Error\r\n')
             connection.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, struct.pack('ii', 1, 0))
             connection.close()
             first = False
@@ -192,14 +192,13 @@ class TestOriginServerConnectAttempts(helpers.EnvironmentCase):
         '''
         url = 'http://127.0.0.1:{0}/partial_response/s'.format(self.configs['records.config']['CONFIG']['proxy.config.http.server_ports'])
         ret = requests.get(url)
-        self.assertEqual(ret.status_code, 502)
+        self.assertEqual(ret.status_code, 500)
 
     def test_reset_after_accept_origin(self):
-        '''Verify that we get 200s from origins that reset_after_accept'''
+        '''Verify that we get 502s from origins that reset_after_accept, once any bytes are sent to origin we assume we cannot re-dispatch'''
         url = 'http://127.0.0.1:{0}/reset_after_accept/s'.format(self.configs['records.config']['CONFIG']['proxy.config.http.server_ports'])
         ret = requests.get(url)
-        self.assertEqual(ret.status_code, 200)
-        self.assertGreater(int(ret.text), 0)
+        self.assertEqual(ret.status_code, 502)
 
     def test_delayed_accept_after_connect_origin(self):
         '''Verify that we get 200s from origins that delayed_accept_after_connect'''
