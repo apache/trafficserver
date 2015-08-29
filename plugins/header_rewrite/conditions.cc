@@ -247,7 +247,7 @@ ConditionHeader::append_value(std::string &s, const Resources &res)
       TSDebug(PLUGIN_NAME, "Appending HEADER(%s) to evaluation value -> %.*s", _qualifier.c_str(), len, value);
       s.append(value, len);
       // multiple headers with the same name must be semantically the same as one value which is comma seperated
-      if (next_field_loc){
+      if (next_field_loc) {
         s.append(",");
       }
       TSHandleMLocRelease(bufp, hdr_loc, field_loc);
