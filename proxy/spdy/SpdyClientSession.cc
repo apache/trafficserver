@@ -192,10 +192,10 @@ SpdyClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBu
 
   sm->init(new_vc);
 
-  sm->req_buffer = iobuf ? reinterpret_cast<TSIOBuffer>(iobuf) : TSIOBufferCreate();
+  sm->req_buffer = iobuf ? reinterpret_cast<TSIOBuffer>(iobuf) : reinterpret_cast<TSIOBuffer>(new_empty_MIOBuffer());
   sm->req_reader = reader ? reinterpret_cast<TSIOBufferReader>(reader) : TSIOBufferReaderAlloc(sm->req_buffer);
 
-  sm->resp_buffer = TSIOBufferCreate();
+  sm->resp_buffer = reinterpret_cast<TSIOBuffer>(new_empty_MIOBuffer());
   sm->resp_reader = TSIOBufferReaderAlloc(sm->resp_buffer);
 
   eventProcessor.schedule_imm(sm, ET_NET);
