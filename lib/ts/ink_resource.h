@@ -26,6 +26,7 @@
 
 #include "ts/ink_mutex.h"
 #include <map>
+#include <string>
 
 extern volatile int res_track_memory; /* set this to zero to disable resource tracking */
 
@@ -48,7 +49,7 @@ public:
 
 private:
   static Resource &lookup(const char *name);
-  static std::map<const char *, Resource *> _resourceMap;
+  static std::map<std::string, Resource *> _resourceMap;
   static ink_mutex resourceLock;
 };
 

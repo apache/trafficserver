@@ -44,6 +44,7 @@
 #include "ts/ink_queue.h"
 #include "ts/ink_defs.h"
 #include "ts/ink_resource.h"
+#include <execinfo.h>
 
 #define RND16(_x) (((_x) + 15) & ~15)
 
@@ -201,5 +202,45 @@ public:
   } proto;
 };
 
+template <class C> class TrackerClassAllocator : public ClassAllocator<C>
+{
+public:
+  TrackerClassAllocator(const char *name, unsigned int chunk_size = 128, unsigned int alignment = 16)
+    : ClassAllocator<C>(name, chunk_size, alignment)
+  {
+  }
+
+  C *
+  alloc()
+  {
+    void *callstack[128];
+    int frames = backtrace(callstack, 128);
+    char **strs = backtrace_symbols(callstack, frames);
+    char name[128];
+    snprintf(name, sizeof(name), "%s/%s", this->fl->name, strs[1]);
+    tracker.increment((char *)strs[1], (int64_t)sizeof(C));
+    C *ptr = ClassAllocator<C>::alloc();
+    reverse_lookup[ptr] = strs[1];
+    ++allocations;
+    ::free(strs);
+    return ptr;
+  }
+
+  void
+  free(C *ptr)
+  {
+    std::map<void *, std::string>::iterator it = reverse_lookup.find(ptr);
+    if (it != reverse_lookup.end()) {
+      tracker.increment(it->second.c_str(), (int64_t)sizeof(C) * -1);
+      reverse_lookup.erase(it);
+    }
+    ClassAllocator<C>::free(ptr);
+  }
+
+private:
+  ResourceTracker tracker;
+  std::map<void *, std::string> reverse_lookup;
+  uint64_t allocations;
+};
 
 #endif // _Allocator_h_

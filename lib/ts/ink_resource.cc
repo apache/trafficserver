@@ -24,10 +24,11 @@
 #include "ts/ink_assert.h"
 #include "ts/ink_atomic.h"
 #include "ts/ink_resource.h"
+#include <execinfo.h>
 
 volatile int res_track_memory = 0; // Disabled by default
 
-std::map<const char *, Resource *> ResourceTracker::_resourceMap;
+std::map<std::string, Resource *> ResourceTracker::_resourceMap;
 ink_mutex ResourceTracker::resourceLock = PTHREAD_MUTEX_INITIALIZER;
 
 /**
@@ -42,6 +43,16 @@ public:
   getValue() const
   {
     return _value;
+  }
+  int64_t
+  getIncrement() const
+  {
+    return _incrementCount;
+  }
+  int64_t
+  getDecrement() const
+  {
+    return _decrementCount;
   }
 
 private:
@@ -73,7 +84,7 @@ ResourceTracker::lookup(const char *name)
 {
   Resource *resource = NULL;
   ink_mutex_acquire(&resourceLock);
-  std::map<const char *, Resource *>::iterator it = _resourceMap.find(name);
+  std::map<std::string, Resource *>::iterator it = _resourceMap.find(name);
   if (it != _resourceMap.end()) {
     resource = it->second;
   } else {
@@ -96,14 +107,19 @@ ResourceTracker::dump(FILE *fd)
 
   ink_mutex_acquire(&resourceLock);
   if (!_resourceMap.empty()) {
-    fprintf(fd, "%50s | %20s\n", "Location", "Size In-use");
-    fprintf(fd, "---------------------------------------------------+------------------------\n");
-    for (std::map<const char *, Resource *>::const_iterator it = _resourceMap.begin(); it != _resourceMap.end(); ++it) {
+    fprintf(fd, "\n%-10s | %-10s | %-20s | %-10s | %-50s\n", "Allocs", "Frees", "Size In-use", "Avg Size", "Location");
+    fprintf(fd, "-----------|------------|----------------------|------------|"
+                "--------------------------------------------------------------------\n");
+    for (std::map<std::string, Resource *>::const_iterator it = _resourceMap.begin(); it != _resourceMap.end(); ++it) {
       const Resource &resource = *it->second;
-      fprintf(fd, "%50s | %20" PRId64 "\n", it->first, resource.getValue());
-      total += resource.getValue();
+      if (resource.getIncrement() - resource.getDecrement()) {
+        fprintf(fd, "%10" PRId64 " | %10" PRId64 " | %20" PRId64 " | %10" PRId64 " | %-50s\n", resource.getIncrement(),
+                resource.getDecrement(), resource.getValue(),
+                resource.getValue() / (resource.getIncrement() - resource.getDecrement()), it->first.c_str());
+        total += resource.getValue();
+      }
     }
+    fprintf(fd, "                          %20" PRId64 " |            | %-50s\n", total, "TOTAL");
   }
   ink_mutex_release(&resourceLock);
-  fprintf(fd, "%50s | %20" PRId64 "\n", "TOTAL", total);
 }
