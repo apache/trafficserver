@@ -23,7 +23,7 @@ Header Rewrite Plugin
 
 This is a plugin for Apache Traffic Server that allows you to
 modify various headers based on defined rules (operations) on a request or
-response. Currently, only one operation is supported.
+response.
 
 Using the plugin
 ----------------
@@ -85,14 +85,14 @@ Operator flags
 --------------
 
 The operator flags are optional, and must not contain whitespaces inside
-the brackets. Currently, only one flag is supported::
+the brackets. Two flags are available:
 
   [L]   Last rule, do not continue
   [QSA] Append query string
 
 Variable expansion
 ------------------
-Currently only limited variable expansion is supported in add-header. Supported
+Only limited variable expansion is supported in add-header. Supported
 substitutions include::
 
   %<proto>      Protocol
