@@ -65,14 +65,6 @@ inkcoreapi volatile int64_t fastalloc_mem_total = 0;
 #define DEADBEEF
 #endif
 
-// #define MEMPROTECT 1
-
-#define MEMPROTECT_SIZE 0x200
-
-#ifdef MEMPROTECT
-static const int page_size = ats_pagesize();
-#endif
-
 ink_freelist_list *freelists = NULL;
 
 inkcoreapi volatile int64_t freelist_allocated_mem = 0;
@@ -152,14 +144,6 @@ ink_freelist_new(InkFreeList *f)
       uint32_t type_size = f->type_size;
       uint32_t i;
 
-#ifdef MEMPROTECT
-      if (type_size >= MEMPROTECT_SIZE) {
-        if (f->alignment < page_size)
-          f->alignment = page_size;
-        type_size = ((type_size + page_size - 1) / page_size) * page_size * 2;
-      }
-#endif /* MEMPROTECT */
-
       void *newp = NULL;
 #ifdef DEBUG
       char *oldsbrk = (char *)sbrk(0), *newsbrk = NULL;
@@ -195,13 +179,6 @@ ink_freelist_new(InkFreeList *f)
           a[j] = str[j % 4];
 #endif
         ink_freelist_free(f, a);
-#ifdef MEMPROTECT
-        if (f->type_size >= MEMPROTECT_SIZE) {
-          a += type_size - page_size;
-          if (mprotect(a, page_size, PROT_NONE) < 0)
-            perror("mprotect");
-        }
-#endif /* MEMPROTECT */
       }
       ink_atomic_increment((int *)&f->used, f->chunk_size);
       ink_atomic_increment(&fastalloc_mem_in_use, (int64_t)f->chunk_size * f->type_size);
