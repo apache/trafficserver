@@ -251,7 +251,7 @@ REGRESSION_TEST(SDK_API_TSConfig)(RegressionTest *test, int /* atype ATS_UNUSED 
 //////////////////////////////////////////////
 
 struct SDK_NetVConn_Params {
-  SDK_NetVConn_Params(const char *_a, RegressionTest *_t, int *_p) : buffer(NULL), api(_a), port(0), test(_t), pstatus(_p), vc(NULL)
+  SDK_NetVConn_Params(const char *_a, RegressionTest *_t, int *_p) : buffer(NULL), api(_a), port(0), test(_t), pstatus(_p), server_vc(NULL), client_vc(NULL)
   {
     this->status.client = this->status.server = REGRESSION_TEST_INPROGRESS;
   }
@@ -261,8 +261,11 @@ struct SDK_NetVConn_Params {
     if (this->buffer) {
       TSIOBufferDestroy(this->buffer);
     }
-    if (this->vc) {
-      TSVConnClose(this->vc);
+    if (this->server_vc) {
+      TSVConnClose(this->server_vc);
+    }
+    if (this->client_vc) {
+      TSVConnClose(this->client_vc);
     }
   }
 
@@ -271,7 +274,9 @@ struct SDK_NetVConn_Params {
   unsigned short port;
   RegressionTest *test;
   int *pstatus;
-  TSVConn vc;
+  TSVConn server_vc;
+  TSVConn client_vc;
+  TSVIO vio;
   struct {
     int client;
     int server;
@@ -284,27 +289,29 @@ server_handler(TSCont contp, TSEvent event, void *data)
   SDK_NetVConn_Params *params = (SDK_NetVConn_Params *)TSContDataGet(contp);
 
   if (event == TS_EVENT_NET_ACCEPT) {
-    // Kick off a read so that we can receive an EOS event.
+    // Kick off a read so that we can receive a READ_COMPLETE event.
     SDK_RPRINT(params->test, params->api, "ServerEvent NET_ACCEPT", TC_PASS, "ok");
     params->buffer = TSIOBufferCreate();
-    params->vc = (TSVConn)data;
-    TSVConnRead((TSVConn)data, contp, params->buffer, 100);
-  } else if (event == TS_EVENT_VCONN_EOS) {
-    // The server end of the test passes if it receives an EOF event. This means that it must have
-    // connected to the endpoint. Since this always happens *after* the accept, we know that it is
-    // safe to delete the params.
+    params->server_vc = (TSVConn)data;
+    TSVConnRead((TSVConn)data, contp, params->buffer, 1);
+  } else if (event == TS_EVENT_VCONN_READ_COMPLETE) {
+    TSVConnShutdown((TSVConn)params->server_vc, 1, 0);
     TSContDestroy(contp);
 
-    SDK_RPRINT(params->test, params->api, "ServerEvent EOS", TC_PASS, "ok");
+    SDK_RPRINT(params->test, params->api, "ServerEvent READ_COMPLETE", TC_PASS, "ok");
     *params->pstatus = REGRESSION_TEST_PASSED;
     delete params;
   } else {
     SDK_RPRINT(params->test, params->api, "ServerEvent", TC_FAIL, "received unexpected event %d", event);
     *params->pstatus = REGRESSION_TEST_FAILED;
+
+    TSContDestroy(contp);
     delete params;
+
+    return 1;
   }
 
-  return 1;
+  return 0;
 }
 
 int
@@ -321,11 +328,11 @@ client_handler(TSCont contp, TSEvent event, void *data)
     // Fix me: how to deal with server side cont?
     TSContDestroy(contp);
     return 1;
-  } else {
+  } else if (event == TS_EVENT_NET_CONNECT) {
+    params->client_vc = (TSVConn)data;
+
     sockaddr const *addr = TSNetVConnRemoteAddrGet(static_cast<TSVConn>(data));
     uint16_t input_server_port = ats_ip_port_host_order(addr);
-
-    sleep(1); // XXX this sleep ensures the server end gets the accept event.
 
     if (ats_is_ip_loopback(addr)) {
       SDK_RPRINT(params->test, params->api, "TSNetVConnRemoteIPGet", TC_PASS, "ok");
@@ -356,10 +363,37 @@ client_handler(TSCont contp, TSEvent event, void *data)
 
     SDK_RPRINT(params->test, params->api, "TSNetConnect", TC_PASS, "ok");
 
-    // XXX We really ought to do a write/read exchange with the server. The sleep above works around this.
+    TSIOBuffer bufp = TSIOBufferCreate();
+    TSIOBufferReader readerp = TSIOBufferReaderAlloc(bufp);
+    TSIOBufferBlock block;
+    int64_t avail;
 
-    // Looks good from the client end. Next we disconnect so that the server end can set the final test status.
-    TSVConnClose((TSVConn)data);
+    block = TSIOBufferStart(bufp);
+    char *ptr_block = TSIOBufferBlockWriteStart(block, &avail);
+
+    if (avail <= 0) {
+      SDK_RPRINT(params->test, params->api, "TSIOBufferBlockWriteStart", 
+                 TC_FAIL, "No space available to write in buffer, "
+                 "expected %lldd",
+                 avail);
+      TSContDestroy(contp);
+      return 1;
+    }
+
+    memset(ptr_block, 0xff, 1);
+    TSIOBufferProduce(bufp, 1);
+
+    params->vio = TSVConnWrite((TSVConn)(data), contp, readerp, 1);
+    return 0;
+  }
+  else if (event == TS_EVENT_VCONN_WRITE_COMPLETE) {
+    TSVConnShutdown((TSVConn)params->client_vc, 0, 1);
+    TSContDestroy(contp);
+    return 0;
+  }
+  else {
+    SDK_RPRINT(params->test, params->api, "ClientConnect", TC_FAIL, 
+               "received unexpected event %d", event);
   }
 
   TSContDestroy(contp);
