@@ -521,10 +521,11 @@ ssl_context_enable_tickets(SSL_CTX *ctx, const char *ticket_key_path)
   // with any key (for rotation purposes).
   for (unsigned i = 0; i < num_ticket_keys; ++i) {
     const char *data = (const char *)ticket_key_data + (i * sizeof(ssl_ticket_key_t));
-    memcpy(keyblock->keys[i].key_name, data, sizeof(ssl_ticket_key_t::key_name));
-    memcpy(keyblock->keys[i].hmac_secret, data + sizeof(ssl_ticket_key_t::key_name), sizeof(ssl_ticket_key_t::hmac_secret));
-    memcpy(keyblock->keys[i].aes_key, data + sizeof(ssl_ticket_key_t::key_name) + sizeof(ssl_ticket_key_t::hmac_secret),
-           sizeof(ssl_ticket_key_t::aes_key));
+
+    memcpy(keyblock->keys[i].key_name, data, sizeof(keyblock->keys[i].key_name));
+    memcpy(keyblock->keys[i].hmac_secret, data + sizeof(keyblock->keys[i].key_name), sizeof(keyblock->keys[i].hmac_secret));
+    memcpy(keyblock->keys[i].aes_key, data + sizeof(keyblock->keys[i].key_name) + sizeof(keyblock->keys[i].hmac_secret),
+           sizeof(keyblock->keys[i].aes_key));
   }
 
   // Setting the callback can only fail if OpenSSL does not recognize the
@@ -1886,19 +1887,19 @@ ssl_callback_session_ticket(SSL *ssl, unsigned char *keyname, unsigned char *iv,
 
   if (enc == 1) {
     const ssl_ticket_key_t &most_recent_key = keyblock->keys[0];
-    memcpy(keyname, most_recent_key.key_name, sizeof(ssl_ticket_key_t::key_name));
+    memcpy(keyname, most_recent_key.key_name, sizeof(most_recent_key.key_name));
     RAND_pseudo_bytes(iv, EVP_MAX_IV_LENGTH);
     EVP_EncryptInit_ex(cipher_ctx, EVP_aes_128_cbc(), NULL, most_recent_key.aes_key, iv);
-    HMAC_Init_ex(hctx, most_recent_key.hmac_secret, sizeof(ssl_ticket_key_t::hmac_secret), evp_md_func, NULL);
+    HMAC_Init_ex(hctx, most_recent_key.hmac_secret, sizeof(most_recent_key.hmac_secret), evp_md_func, NULL);
 
     Debug("ssl", "create ticket for a new session.");
     SSL_INCREMENT_DYN_STAT(ssl_total_tickets_created_stat);
     return 0;
   } else if (enc == 0) {
     for (unsigned i = 0; i < keyblock->num_keys; ++i) {
-      if (memcmp(keyname, keyblock->keys[i].key_name, sizeof(ssl_ticket_key_t::key_name)) == 0) {
+      if (memcmp(keyname, keyblock->keys[i].key_name, sizeof(keyblock->keys[i].key_name)) == 0) {
         EVP_DecryptInit_ex(cipher_ctx, EVP_aes_128_cbc(), NULL, keyblock->keys[i].aes_key, iv);
-        HMAC_Init_ex(hctx, keyblock->keys[i].hmac_secret, sizeof(ssl_ticket_key_t::hmac_secret), evp_md_func, NULL);
+        HMAC_Init_ex(hctx, keyblock->keys[i].hmac_secret, sizeof(keyblock->keys[i].hmac_secret), evp_md_func, NULL);
 
         Debug("ssl", "verify the ticket for an existing session.");
         // Increase the total number of decrypted tickets.
