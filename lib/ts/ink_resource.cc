@@ -63,7 +63,7 @@ public:
   setName(const char *name)
   {
     strncpy(_name, name, sizeof(_name));
-    _name[sizeof(_name)-1] = '\0';
+    _name[sizeof(_name) - 1] = '\0';
   }
   void
   setName(const void *symbol, const char *name)
