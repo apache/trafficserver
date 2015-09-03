@@ -2930,8 +2930,8 @@ Sockets
    Accepting inbound connections and starting the cache are independent operations in Traffic
    Server. This variable controls the relative timing of these operations and Traffic Server
    dependency on cache because if cache is required then inbound connection accepts should be
-   deferred until the validity of the cache requirement is determined. If cache initialization
-   failure causes a Traffic Server shutdown this will be logged in :file:`diags.log`.
+   deferred until the validity of the cache requirement is determined. Cache initialization failure
+   will be logged in :file:`diags.log`.
 
 ===== ====================
 Value Effect
