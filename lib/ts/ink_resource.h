@@ -45,11 +45,12 @@ class ResourceTracker
 public:
   ResourceTracker(){};
   static void increment(const char *name, const int64_t size);
+  static void increment(const void *symbol, const int64_t size, const char *name);
   static void dump(FILE *fd);
 
 private:
   static Resource &lookup(const char *name);
-  static std::map<std::string, Resource *> _resourceMap;
+  static std::map<const char *, Resource *> _resourceMap;
   static ink_mutex resourceLock;
 };
 

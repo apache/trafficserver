@@ -206,41 +206,49 @@ template <class C> class TrackerClassAllocator : public ClassAllocator<C>
 {
 public:
   TrackerClassAllocator(const char *name, unsigned int chunk_size = 128, unsigned int alignment = 16)
-    : ClassAllocator<C>(name, chunk_size, alignment)
+    : ClassAllocator<C>(name, chunk_size, alignment), allocations(0), trackerLock(PTHREAD_MUTEX_INITIALIZER)
   {
   }
 
   C *
   alloc()
   {
-    void *callstack[128];
-    int frames = backtrace(callstack, 128);
-    char **strs = backtrace_symbols(callstack, frames);
-    char name[128];
-    snprintf(name, sizeof(name), "%s/%s", this->fl->name, strs[1]);
-    tracker.increment((char *)strs[1], (int64_t)sizeof(C));
+    void *callstack[3];
+    int frames = backtrace(callstack, 3);
     C *ptr = ClassAllocator<C>::alloc();
-    reverse_lookup[ptr] = strs[1];
+
+    const void *symbol = NULL;
+    if (frames == 3 && callstack[2] != NULL) {
+      symbol = callstack[2];
+    }
+
+    tracker.increment(symbol, (int64_t)sizeof(C), this->fl->name);
+    ink_mutex_acquire(&trackerLock);
+    reverse_lookup[ptr] = symbol;
     ++allocations;
-    ::free(strs);
+    ink_mutex_release(&trackerLock);
+
     return ptr;
   }
 
   void
   free(C *ptr)
   {
-    std::map<void *, std::string>::iterator it = reverse_lookup.find(ptr);
+    ink_mutex_acquire(&trackerLock);
+    std::map<void *, const void *>::iterator it = reverse_lookup.find(ptr);
     if (it != reverse_lookup.end()) {
-      tracker.increment(it->second.c_str(), (int64_t)sizeof(C) * -1);
+      tracker.increment((const void *)it->second, (int64_t)sizeof(C) * -1, NULL);
       reverse_lookup.erase(it);
     }
+    ink_mutex_release(&trackerLock);
     ClassAllocator<C>::free(ptr);
   }
 
 private:
   ResourceTracker tracker;
-  std::map<void *, std::string> reverse_lookup;
+  std::map<void *, const void *> reverse_lookup;
   uint64_t allocations;
+  ink_mutex trackerLock;
 };
 
 #endif // _Allocator_h_
