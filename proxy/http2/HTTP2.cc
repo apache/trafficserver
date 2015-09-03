@@ -263,10 +263,13 @@ http2_write_settings(const Http2SettingsParameter &param, IOVec iov)
 bool
 http2_write_ping(const uint8_t *opaque_data, IOVec iov)
 {
-  if (iov.iov_len != HTTP2_PING_LEN)
-    return false;
+  byte_pointer ptr(iov.iov_base);
 
-  memcpy(iov.iov_base, opaque_data, HTTP2_PING_LEN);
+  if (unlikely(iov.iov_len < HTTP2_PING_LEN)) {
+    return false;
+  }
+
+  write_and_advance(ptr, opaque_data, HTTP2_PING_LEN);
 
   return true;
 }
