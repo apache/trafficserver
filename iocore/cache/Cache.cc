@@ -738,7 +738,8 @@ CacheProcessor::start_internal(int flags)
   if (gndisks == 0) {
     CacheProcessor::initialized = CACHE_INIT_FAILED;
     // Have to do this here because no IO events were scheduled and so @c diskInitialized() won't be called.
-    if (cb_after_init) cb_after_init();
+    if (cb_after_init)
+      cb_after_init();
 
     if (this->waitForCache() > 1) {
       Fatal("Cache initialization failed - no disks available but cache required");
@@ -748,8 +749,10 @@ CacheProcessor::start_internal(int flags)
     }
   } else if (this->waitForCache() == 3 && static_cast<unsigned int>(gndisks) < theCacheStore.n_disks_in_config) {
     CacheProcessor::initialized = CACHE_INIT_FAILED;
-    if (cb_after_init) cb_after_init();
-    Fatal("Cache initialization failed - only %d out of %d disks were valid and all were required.", gndisks, theCacheStore.n_disks_in_config);
+    if (cb_after_init)
+      cb_after_init();
+    Fatal("Cache initialization failed - only %d out of %d disks were valid and all were required.", gndisks,
+          theCacheStore.n_disks_in_config);
   }
 
   return 0;
@@ -774,7 +777,8 @@ CacheProcessor::diskInitialized()
         // This could be passed off to @c cacheInitialized (as with volume config problems) but I think
         // the more specific error message here is worth the extra code.
         CacheProcessor::initialized = CACHE_INIT_FAILED;
-        if (cb_after_init) cb_after_init();
+        if (cb_after_init)
+          cb_after_init();
         Fatal("Cache initialization failed - only %d of %d disks were available.", gndisks, theCacheStore.n_disks_in_config);
       }
 
@@ -1061,7 +1065,6 @@ CacheProcessor::cacheInitialized()
       Warning("cache unable to open any vols, disabled");
   }
   if (cache_init_ok) {
-
     // Initialize virtual cache
     CacheProcessor::initialized = CACHE_INITIALIZED;
     CacheProcessor::cache_ready = caches_ready;
