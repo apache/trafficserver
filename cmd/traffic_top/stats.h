@@ -385,8 +385,8 @@ public:
         value = (value - old) / _time_diff;
       }
     } else if (type == 3 || type == 4) {
-      double numerator;
-      double denominator;
+      double numerator = 0;
+      double denominator = 0;
       getStat(item.numerator, numerator);
       getStat(item.denominator, denominator);
       if (denominator == 0)
