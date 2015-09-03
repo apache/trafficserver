@@ -469,7 +469,8 @@ StateAuthProxySendResponse(AuthRequestContext *auth, void * /* edata ATS_UNUSED 
 
   TSReleaseAssert(TSHttpHdrCopy(mbuf, mhdr, auth->rheader.buffer, auth->rheader.header) == TS_SUCCESS);
 
-  status = TSHttpHdrStatusGet(mbuf, mhdr), snprintf(msg, sizeof(msg), "%d %s\n", status, TSHttpHdrReasonLookup(status));
+  status = TSHttpHdrStatusGet(mbuf, mhdr);
+  snprintf(msg, sizeof(msg), "%d %s\n", status, TSHttpHdrReasonLookup(status));
 
   TSHttpTxnErrorBodySet(auth->txn, TSstrdup(msg), strlen(msg), TSstrdup("text/plain"));
 
@@ -482,8 +483,9 @@ StateAuthProxySendResponse(AuthRequestContext *auth, void * /* edata ATS_UNUSED 
 
   AuthLogDebug("sending auth proxy response for status %d", status);
 
-  TSHttpTxnReenable(auth->txn, TS_EVENT_HTTP_CONTINUE);
   TSHandleMLocRelease(mbuf, TS_NULL_MLOC, mhdr);
+  TSHttpTxnReenable(auth->txn, TS_EVENT_HTTP_CONTINUE);
+
   return TS_EVENT_CONTINUE;
 }
 
