@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.2
 
+  *) [TS-3461] Changes sizeof() to not use non-static member variables.
+
   *) [TS-3888] Initialize memory if buffer is large enough.
 
   *) [TS-3887] Use snprintf() instead of sprintf() in UrlPrintHack.
