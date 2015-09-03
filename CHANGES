@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.2
 
+  *) [TS-3888] Initialize memory if buffer is large enough.
+
   *) [TS-3887] Use snprintf() instead of sprintf() in UrlPrintHack.
 
   *) [TS-3658] ASAN triggers when using the escalate.so plugin.
