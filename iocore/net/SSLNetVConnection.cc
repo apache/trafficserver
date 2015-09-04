@@ -799,6 +799,7 @@ SSLNetVConnection::free(EThread *t)
   read.vio.mutex.clear();
   write.vio.mutex.clear();
   this->mutex.clear();
+  action_.mutex.clear();
   flags = 0;
   SET_CONTINUATION_HANDLER(this, (SSLNetVConnHandler)&SSLNetVConnection::startEvent);
   nh = NULL;
