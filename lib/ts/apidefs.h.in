@@ -73,12 +73,15 @@ extern "C" {
 #endif /* __cplusplus */
 
 /* Version info
+ * Note: Clang format seems to break the below
+ * definitions. Please make sure these are intact
+ * when running clang-format.
  */
 #define TS_VERSION_STRING "@TS_VERSION_STRING@"
-#define TS_VERSION_NUMBER @TS_VERSION_NUMBER @
-#define TS_VERSION_MAJOR @TS_VERSION_MAJOR @
-#define TS_VERSION_MINOR @TS_VERSION_MINOR @
-#define TS_VERSION_MICRO @TS_VERSION_MICRO @
+#define TS_VERSION_NUMBER @TS_VERSION_NUMBER@
+#define TS_VERSION_MAJOR @TS_VERSION_MAJOR@
+#define TS_VERSION_MINOR @TS_VERSION_MINOR@
+#define TS_VERSION_MICRO @TS_VERSION_MICRO@
 
 #define TS_HTTP_VERSION(a, b) ((((a)&0xFFFF) << 16) | ((b)&0xFFFF))
 #define TS_HTTP_MINOR(v) ((v)&0xFFFF)
