@@ -7268,7 +7268,7 @@ TSRedirectUrlSet(TSHttpTxn txnp, const char *url, const int url_len)
     sm->enable_redirection = true;
     // max-out "redirection_tries" to avoid the regular redirection being turned on in
     // this transaction improperly. This variable doesn't affect the custom-redirection
-    sm->redirection_tries = HttpConfig::m_master.number_of_redirections;
+    sm->redirection_tries = sm->t_state.txn_conf->number_of_redirections;
   }
 }
 
@@ -7929,6 +7929,14 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
     typ = OVERRIDABLE_TYPE_STRING;
     ret = &overridableHttpConfig->body_factory_template_base;
     break;
+  case TS_CONFIG_HTTP_ENABLE_REDIRECTION:
+    typ = OVERRIDABLE_TYPE_INT;
+    ret = &overridableHttpConfig->redirection_enabled;
+    break;
+  case TS_CONFIG_HTTP_NUMBER_OF_REDIRECTIONS:
+    typ = OVERRIDABLE_TYPE_INT;
+    ret = &overridableHttpConfig->number_of_redirections;
+    break;
   // This helps avoiding compiler warnings, yet detect unhandled enum members.
   case TS_CONFIG_NULL:
   case TS_CONFIG_LAST_ENTRY:
@@ -8197,6 +8205,11 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
 
   case 37:
     switch (name[length - 1]) {
+    case 'd':
+      if (!strncmp(name, "proxy.config.http.redirection_enabled", length)) {
+        cnf = TS_CONFIG_HTTP_ENABLE_REDIRECTION;
+      }
+      break;
     case 'e':
       if (!strncmp(name, "proxy.config.http.cache.max_stale_age", length))
         cnf = TS_CONFIG_HTTP_CACHE_MAX_STALE_AGE;
@@ -8284,6 +8297,8 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
         cnf = TS_CONFIG_HTTP_CACHE_REQUIRED_HEADERS;
       else if (!strncmp(name, "proxy.config.ssl.hsts_include_subdomains", length))
         cnf = TS_CONFIG_SSL_HSTS_INCLUDE_SUBDOMAINS;
+      else if (!strncmp(name, "proxy.config.http.number_of_redirections", length))
+        cnf = TS_CONFIG_HTTP_NUMBER_OF_REDIRECTIONS;
       break;
     case 't':
       if (!strncmp(name, "proxy.config.http.keep_alive_enabled_out", length))
