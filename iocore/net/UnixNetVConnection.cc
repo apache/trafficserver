@@ -1205,8 +1205,11 @@ UnixNetVConnection::populate(Connection &con_in, Continuation *c, void *arg)
 
   EThread *t = this_ethread();
   if (ep.start(get_PollDescriptor(t), this, EVENTIO_READ | EVENTIO_WRITE) < 0) {
-    Debug("iocore_net", "populate : Failed to add to epoll list\n");
-    return EVENT_ERROR;
+    // EEXIST should be ok, though it should have been cleared before we got back here
+    if (errno != EEXIST) {
+      Debug("iocore_net", "populate : Failed to add to epoll list\n");
+      return EVENT_ERROR;
+    }
   }
 
   SET_HANDLER(&UnixNetVConnection::mainEvent);
@@ -1385,6 +1388,9 @@ UnixNetVConnection::migrateToCurrentThread(Continuation *cont, EThread *t)
 
   // Do_io_close will signal the VC to be freed on the original thread
   // Since we moved the con context, the fd will not be closed
+  // Go ahead and remove the fd from the original thread's epoll structure, so it is not
+  // processed on two threads simultaneously
+  this->ep.stop();
   this->do_io_close();
 
   // Create new VC:

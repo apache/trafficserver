@@ -83,7 +83,6 @@ struct Connection {
   IpEndpoint addr;   ///< Associated address.
   bool is_bound;     ///< Flag for already bound to a local address.
   bool is_connected; ///< Flag for already connected.
-  bool is_zombie;    ///< Flag true if the fd should not be closed
   int sock_type;
 
   /** Create and initialize the socket for this connection.
@@ -142,7 +141,6 @@ struct Connection {
 
   /**
    * Move control of the socket from the argument object orig to the current object.
-   * Orig is marked as zombie, so when it is freed, the socket will not be closed
    */
   void move(Connection &);
 

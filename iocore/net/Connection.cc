@@ -62,7 +62,7 @@ NetVCOptions::toString(addr_bind_style s)
   return ANY_ADDR == s ? "any" : INTF_ADDR == s ? "interface" : "foreign";
 }
 
-Connection::Connection() : fd(NO_FD), is_bound(false), is_connected(false), is_zombie(false), sock_type(0)
+Connection::Connection() : fd(NO_FD), is_bound(false), is_connected(false), sock_type(0)
 {
   memset(&addr, 0, sizeof(addr));
 }
@@ -114,13 +114,12 @@ Connection::close()
   is_connected = false;
   is_bound = false;
   // don't close any of the standards
-  if (fd >= 2 && !is_zombie) {
+  if (fd >= 2) {
     int fd_save = fd;
     fd = NO_FD;
     return socketManager.close(fd_save);
   } else {
     fd = NO_FD;
-    is_zombie = false;
     return -EBADF;
   }
 }
@@ -135,11 +134,10 @@ Connection::move(Connection &orig)
   this->is_connected = orig.is_connected;
   this->is_bound = orig.is_bound;
   this->fd = orig.fd;
+  // The target has taken ownership of the file descriptor
+  orig.fd = NO_FD;
   this->addr = orig.addr;
   this->sock_type = orig.sock_type;
-  // The original is now the zombie
-  // The target has taken ownership of the file descriptor
-  orig.is_zombie = true;
 }
 
 static int
