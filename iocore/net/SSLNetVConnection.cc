@@ -881,6 +881,7 @@ SSLNetVConnection::free(EThread *t)
   read.vio.mutex.clear();
   write.vio.mutex.clear();
   this->mutex.clear();
+  action_.mutex.clear();
   this->ep.stop();
   this->con.close();
   flags = 0;
