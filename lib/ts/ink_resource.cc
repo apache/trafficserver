@@ -157,14 +157,16 @@ ResourceTracker::dump(FILE *fd)
                 "--------------------------------------------------------------------\n");
     for (std::map<const char *, Resource *>::const_iterator it = _resourceMap.begin(); it != _resourceMap.end(); ++it) {
       const Resource &resource = *it->second;
-      if (resource.getIncrement() - resource.getDecrement()) {
-        fprintf(fd, "%10" PRId64 " | %10" PRId64 " | %20" PRId64 " | %10" PRId64 " | %-50s\n", resource.getIncrement(),
-                resource.getDecrement(), resource.getValue(),
-                resource.getValue() / (resource.getIncrement() - resource.getDecrement()), resource.getName());
-        total += resource.getValue();
+      int64_t average_size = 0;
+      if (resource.getIncrement() - resource.getDecrement() > 0) {
+        average_size = resource.getValue() / (resource.getIncrement() - resource.getDecrement());
       }
+      fprintf(fd, "%10" PRId64 " | %10" PRId64 " | %20" PRId64 " | %10" PRId64 " | %-50s\n", resource.getIncrement(),
+              resource.getDecrement(), resource.getValue(), average_size, resource.getName());
+      total += resource.getValue();
     }
-    fprintf(fd, "                          %20" PRId64 " |            | %-50s\n", total, "TOTAL");
   }
+  fprintf(fd, "                          %20" PRId64 " |            | %-50s\n", total, "TOTAL");
+
   ink_mutex_release(&resourceLock);
 }
