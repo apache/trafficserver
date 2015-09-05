@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.2
 
+  *) [TS-3895] Mutex leak for TLS connections going to the origin.
+
   *) [TS-3889] Avoid reenabling the txn before we release the mbuf.
 
   *) [TS-3461] Changes sizeof() to not use non-static member variables.
