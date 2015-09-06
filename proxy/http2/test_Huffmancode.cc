@@ -71,6 +71,7 @@ random_test()
   char *dst_start = (char *)malloc(size * 2);
   char string[size];
   for (int i = 0; i < size; i++) {
+    // coverity[dont_call]
     long num = lrand48();
     string[i] = (char)num;
   }
