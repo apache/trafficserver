@@ -161,6 +161,7 @@ Bug:
   *) [TS-3854] Memory leak with the headers in HTTP/2
   *) [TS-3855] Memory leak in HTTP/2 with the ProxyMutex
   *) [TS-3860] Buffer overflow in H2 on debug build
+  *) [TS-3862] TSHttpTxnCacheLookupUrlSet doesn't work if lookup_url has no storage allocated.
   *) [TS-3869] HTTP/2 Stream uses the clients window size for the servers setting
   *) [TS-3874] Header-rewrite doesn't support multiple header values in conditionals
   *) [TS-3887] Use snprintf() instead of sprintf() in UrlPrintHack
