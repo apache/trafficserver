@@ -31,6 +31,7 @@ Bug:
   *) [TS-3453] Confusion of handling SSL events in write_to_net_io in UnixNetVConnection.cc
   *) [TS-3455] Marking the cache STALE in lookup-complete causes abort()
   *) [TS-3456] SSL blind tunnel sometimes not created 
+  *) [TS-3461] Max OS X 10.6.8: invalid use of non-static data member
   *) [TS-3468] Fix command line stripe inspector
   *) [TS-3470] traffic_server --help segfaults with SPDY
   *) [TS-3479] Remove a very verbose Warning() from HTTP2 code
@@ -161,6 +162,12 @@ Bug:
   *) [TS-3855] Memory leak in HTTP/2 with the ProxyMutex
   *) [TS-3860] Buffer overflow in H2 on debug build
   *) [TS-3869] HTTP/2 Stream uses the clients window size for the servers setting
+  *) [TS-3874] Header-rewrite doesn't support multiple header values in conditionals
+  *) [TS-3887] Use snprintf() instead of sprintf() in UrlPrintHack
+  *) [TS-3889] authproxy plugin reenables the TXN before releasing the mbuffer
+  *) [TS-3890] Errors in the huffman tree for HTTP/2
+  *) [TS-3895] Mutex leak for TLS connections going to the origin
+  *) [TS-3896] Crash in OpenDir::close_write
 
 Improvement:
   *) [TS-667] Ability to keep traffic server from initializing the wrong disks when using RAW disk mode.
