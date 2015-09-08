@@ -21,15 +21,21 @@ XDebug Plugin
   under the License.
 
 The `XDebug` plugin allows HTTP clients to debug the operation of
-the Traffic Server cache using the ``X-Debug`` header. The plugin
-is triggered by the presence of the ``X-Debug`` header in the client
-request. The contents of this header should be the names of the
+the Traffic Server cache using the default ``X-Debug`` header. The plugin
+is triggered by the presence of the ``X-Debug`` or the configured header in
+the client request. The contents of this header should be the names of the
 debug headers that are desired in the response. The `XDebug` plugin
 will remove the ``X-Debug`` header from the client request and
 inject the desired headers into the client response.
 
 `XDebug` is a global plugin. It is installed by adding it to the
-:file:`plugin.config` file.
+:file:`plugin.config` file. It currently takes a single, optional
+configuration option, ``--header``. E.g.
+
+    --header=ATS-My-Debug
+
+This overrides the default ``X-Debug`` header name.
+
 
 Debugging Headers
 =================
