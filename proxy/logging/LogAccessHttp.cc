@@ -711,24 +711,26 @@ LogAccessHttp::marshal_client_finish_status_code(char *buf)
 int
 LogAccessHttp::marshal_client_security_protocol(char *buf)
 {
-  int round_len = INK_MIN_ALIGN;
+  const char *proto = m_http_sm->client_sec_protocol;
+  int round_len = LogAccess::strlen(proto);
+
   if (buf) {
-    const char *proto = m_http_sm->client_sec_protocol;
-    round_len = LogAccess::strlen(proto);
     marshal_str(buf, proto, round_len);
   }
+
   return round_len;
 }
 
 int
 LogAccessHttp::marshal_client_security_cipher_suite(char *buf)
 {
-  int round_len = INK_MIN_ALIGN;
+  const char *cipher = m_http_sm->client_cipher_suite;
+  int round_len = LogAccess::strlen(cipher);
+
   if (buf) {
-    const char *cipher = m_http_sm->client_cipher_suite;
-    round_len = LogAccess::strlen(cipher);
     marshal_str(buf, cipher, round_len);
   }
+
   return round_len;
 }
 
