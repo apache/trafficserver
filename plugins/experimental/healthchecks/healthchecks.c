@@ -33,13 +33,13 @@ limitations under the License.
 #include <libgen.h>
 
 #include "ts/ts.h"
+#include "ts/ink_platform.h"
 #include "ts/ink_defs.h"
 
 static const char PLUGIN_NAME[] = "healthchecks";
 static const char SEPARATORS[] = " \t\n";
 
 #define MAX_PATH_LEN 4096
-#define MAX_FILENAME_LEN 2048
 #define MAX_BODY_LEN 16384
 #define FREELIST_TIMEOUT 300
 
@@ -54,9 +54,9 @@ ink_atomic_swap_ptr(vvoidp mem, void *value)
 
 /* Directories that we are watching for inotify IN_CREATE events. */
 typedef struct HCDirEntry_t {
-  char dname[MAX_FILENAME_LEN]; /* Directory name */
-  int wd;                       /* Watch descriptor */
-  struct HCDirEntry_t *_next;   /* Linked list */
+  char dname[MAX_PATH_LEN];   /* Directory name */
+  int wd;                     /* Watch descriptor */
+  struct HCDirEntry_t *_next; /* Linked list */
 } HCDirEntry;
 
 /* Information about a status file. This is never modified (only replaced, see HCFileInfo_t) */
@@ -70,18 +70,18 @@ typedef struct HCFileData_t {
 
 /* The only thing that should change in this struct is data, atomically swapping ptrs */
 typedef struct HCFileInfo_t {
-  char fname[MAX_FILENAME_LEN]; /* Filename */
-  char *basename;               /* The "basename" of the file */
-  char path[MAX_PATH_LEN];      /* URL path for this HC */
-  int p_len;                    /* Length of path */
-  const char *ok;               /* Header for an OK result */
-  int o_len;                    /* Length of OK header */
-  const char *miss;             /* Header for miss results */
-  int m_len;                    /* Length of miss header */
-  HCFileData *data;             /* Holds the current data for this health check file */
-  int wd;                       /* Watch descriptor */
-  HCDirEntry *dir;              /* Reference to the directory this file resides in */
-  struct HCFileInfo_t *_next;   /* Linked list */
+  char fname[MAX_PATH_LEN];   /* Filename */
+  char *basename;             /* The "basename" of the file */
+  char path[PATH_NAME_MAX];   /* URL path for this HC */
+  int p_len;                  /* Length of path */
+  const char *ok;             /* Header for an OK result */
+  int o_len;                  /* Length of OK header */
+  const char *miss;           /* Header for miss results */
+  int m_len;                  /* Length of miss header */
+  HCFileData *data;           /* Holds the current data for this health check file */
+  int wd;                     /* Watch descriptor */
+  HCDirEntry *dir;            /* Reference to the directory this file resides in */
+  struct HCFileInfo_t *_next; /* Linked list */
 } HCFileInfo;
 
 /* Global configuration */
@@ -125,7 +125,7 @@ static HCDirEntry *
 find_direntry(const char *dname, HCDirEntry *dir)
 {
   while (dir) {
-    if (!strncmp(dname, dir->dname, MAX_FILENAME_LEN))
+    if (!strncmp(dname, dir->dname, MAX_PATH_LEN))
       return dir;
     dir = dir->_next;
   }
@@ -138,20 +138,20 @@ setup_watchers(int fd)
 {
   HCFileInfo *conf = g_config;
   HCDirEntry *head_dir = NULL, *last_dir = NULL, *dir;
-  char fname[MAX_FILENAME_LEN];
+  char fname[MAX_PATH_LEN];
   char *dname;
 
   while (conf) {
     conf->wd = inotify_add_watch(fd, conf->fname, IN_DELETE_SELF | IN_CLOSE_WRITE | IN_ATTRIB);
     TSDebug(PLUGIN_NAME, "Setting up a watcher for %s", conf->fname);
-    strncpy(fname, conf->fname, MAX_FILENAME_LEN - 1);
+    strncpy(fname, conf->fname, MAX_PATH_LEN - 1);
     dname = dirname(fname);
     /* Make sure to only watch each directory once */
     if (!(dir = find_direntry(dname, head_dir))) {
       TSDebug(PLUGIN_NAME, "Setting up a watcher for directory %s", dname);
       dir = TSmalloc(sizeof(HCDirEntry));
       memset(dir, 0, sizeof(HCDirEntry));
-      strncpy(dir->dname, dname, MAX_FILENAME_LEN - 1);
+      strncpy(dir->dname, dname, MAX_PATH_LEN - 1);
       dir->wd = inotify_add_watch(fd, dname, IN_CREATE | IN_MOVED_FROM | IN_MOVED_TO | IN_ATTRIB);
       if (!head_dir)
         head_dir = dir;
@@ -320,11 +320,11 @@ parse_configs(const char *fname)
           case 0:
             if ('/' == *str)
               ++str;
-            strncpy(finfo->path, str, MAX_PATH_LEN - 1);
+            strncpy(finfo->path, str, PATH_NAME_MAX - 1);
             finfo->p_len = strlen(finfo->path);
             break;
           case 1:
-            strncpy(finfo->fname, str, MAX_FILENAME_LEN - 1);
+            strncpy(finfo->fname, str, MAX_PATH_LEN - 1);
             finfo->basename = strrchr(finfo->fname, '/');
             if (finfo->basename)
               ++(finfo->basename);
