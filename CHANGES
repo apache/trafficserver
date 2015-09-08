@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.2
 
+  *) [TS-3890] Errors in the huffman tree for HTTP/2.
+
   *) [TS-3747] Error in Huffman decoder for HPACK.
 
   *) [TS-3896] Fix crash in OpenDir::close_write from unlocked mutex.
