@@ -363,7 +363,7 @@ Http2ClientSession::state_start_frame_read(int event, void *edata)
 
     if (continued_stream_id != 0 && this->current_hdr.type != HTTP2_FRAME_TYPE_CONTINUATION) {
       SCOPED_MUTEX_LOCK(lock, this->connection_state.mutex, this_ethread());
-      if (!this->connection_state.is_state_closed() || continued_stream_id != this->current_hdr.streamid) {
+      if (!this->connection_state.is_state_closed() && continued_stream_id != this->current_hdr.streamid) {
         this->connection_state.send_goaway_frame(this->current_hdr.streamid, HTTP2_ERROR_PROTOCOL_ERROR);
       }
       return 0;
