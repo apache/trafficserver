@@ -113,6 +113,7 @@ public:
   virtual int marshal_server_resp_http_version(char *); // INT
   virtual int marshal_server_resp_time_ms(char *);      // INT
   virtual int marshal_server_resp_time_s(char *);       // INT
+  virtual int marshal_server_transact_count(char *);    // INT
 
   //
   // cache -> client fields
