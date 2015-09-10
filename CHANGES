@@ -169,6 +169,7 @@ Bug:
   *) [TS-3890] Errors in the huffman tree for HTTP/2
   *) [TS-3895] Mutex leak for TLS connections going to the origin
   *) [TS-3896] Crash in OpenDir::close_write
+  *) [TS-3897] Getting 404s with regex_map
 
 Improvement:
   *) [TS-667] Ability to keep traffic server from initializing the wrong disks when using RAW disk mode.
