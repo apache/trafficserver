@@ -47,6 +47,11 @@ Via
     :ts:cv:`proxy.config.http.insert_response_via_str` configuration variable
     to ``3`` for the request.
 
+Diags
+    If the ``Diags`` header is requested, the `XDebug` plugin enables the
+    transaction specific diagnostics for the transaction. This also requires
+    that :ts:cv:`proxy.config.diags.debug.enabled` is set to ``1``.
+
 X-Cache-Key
     The ``X-Cache-Key`` header contains the URL that identifies the HTTP object in the
     Traffic Server cache. This header is particularly useful if a custom cache

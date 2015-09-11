@@ -320,6 +320,9 @@ XScanRequestHeaders(TSCont /* contp */, TSEvent event, void *edata)
       } else if (header_field_eq("via", value, vsize)) {
         // If the client requests the Via header, enable verbose Via debugging for this transaction.
         TSHttpTxnConfigIntSet(txn, TS_CONFIG_HTTP_INSERT_RESPONSE_VIA_STR, 3);
+      } else if (header_field_eq("diags", value, vsize)) {
+        // Enable diagnostics for DebugTxn()'s only
+        TSHttpTxnDebugSet(txn, 1);
       } else {
         TSDebug("xdebug", "ignoring unrecognized debug tag '%.*s'", vsize, value);
       }
