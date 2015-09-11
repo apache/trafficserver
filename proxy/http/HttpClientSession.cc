@@ -529,9 +529,9 @@ HttpClientSession::release(IOBufferReader *r)
     SET_HANDLER(&HttpClientSession::state_keep_alive);
     ka_vio = this->do_io_read(this, INT64_MAX, read_buffer);
     ink_assert(slave_ka_vio != ka_vio);
-    client_vc->add_to_keep_alive_queue();
     client_vc->set_inactivity_timeout(HRTIME_SECONDS(ka_in));
     client_vc->cancel_active_timeout();
+    client_vc->add_to_keep_alive_queue();
   }
 }
 

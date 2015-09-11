@@ -619,7 +619,7 @@ NetHandler::manage_keep_alive_queue()
   Debug("net_queue", "max_connections_per_thread_in: %d total_connections_in: %d active_queue_size: %d keep_alive_queue_size: %d",
         max_connections_per_thread_in, total_connections_in, active_queue_size, keep_alive_queue_size);
 
-  if (total_connections_in <= max_connections_per_thread_in) {
+  if (!max_connections_per_thread_in || total_connections_in <= max_connections_per_thread_in) {
     return;
   }
 
@@ -672,7 +672,10 @@ NetHandler::_close_vc(UnixNetVConnection *vc, ink_hrtime now, int &handle_event,
     ++closed;
   } else {
     vc->next_inactivity_timeout_at = now;
-    keep_alive_queue.head->handleEvent(EVENT_IMMEDIATE, NULL);
+    // create a dummy event
+    Event event;
+    event.ethread = this_ethread();
+    keep_alive_queue.head->handleEvent(EVENT_IMMEDIATE, &event);
     ++handle_event;
   }
 }
