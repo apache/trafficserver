@@ -61,7 +61,8 @@ send_connection_event(Continuation *cont, int event, void *edata)
 }
 
 Http2ClientSession::Http2ClientSession()
-  : con_id(0), client_vc(NULL), read_buffer(NULL), sm_reader(NULL), write_buffer(NULL), sm_writer(NULL), upgrade_context()
+  : con_id(0), total_write_len(0), client_vc(NULL), read_buffer(NULL), sm_reader(NULL), write_buffer(NULL), sm_writer(NULL),
+    upgrade_context()
 {
 }
 
@@ -232,6 +233,8 @@ Http2ClientSession::main_event_handler(int event, void *edata)
 
   case HTTP2_SESSION_EVENT_XMIT: {
     Http2Frame *frame = (Http2Frame *)edata;
+    total_write_len += frame->size();
+    write_vio->nbytes = total_write_len;
     frame->xmit(this->write_buffer);
     write_reenable();
     return 0;
@@ -244,10 +247,10 @@ Http2ClientSession::main_event_handler(int event, void *edata)
     this->do_io_close();
     return 0;
 
-  case VC_EVENT_WRITE_COMPLETE:
   case VC_EVENT_WRITE_READY:
-    // After sending GOAWAY, close the connection
-    if (this->connection_state.is_state_closed() && write_vio->ntodo() <= 0) {
+    return 0;
+  case VC_EVENT_WRITE_COMPLETE:
+    if (this->connection_state.is_state_closed()) {
       this->do_io_close();
     }
     return 0;
