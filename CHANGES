@@ -153,6 +153,7 @@ Bug:
   *) [TS-3824] Wrong #include of pcre.h in a couple of plugins
   *) [TS-3825] epic plugin does not compile on OmniOS
   *) [TS-3828] HEAD requests hang when origin returns Transfer-Encoding: Chunked
+  *) [TS-3834] Close the client session after sending GOAWAY with errors
   *) [TS-3836] Add error handling of Stream Priority
   *) [TS-3839] Regression test fails by new overridable setting
   *) [TS-3844] Don't send GOAWAY frame when receiving a DATA frame on a closed stream
@@ -170,6 +171,7 @@ Bug:
   *) [TS-3895] Mutex leak for TLS connections going to the origin
   *) [TS-3896] Crash in OpenDir::close_write
   *) [TS-3897] Getting 404s with regex_map
+  *) [TS-3902] Wrong conditional for checking on continuation frame and to send the go_away frame
 
 Improvement:
   *) [TS-667] Ability to keep traffic server from initializing the wrong disks when using RAW disk mode.
@@ -262,6 +264,8 @@ Improvement:
   *) [TS-3842] Add stats for HTTP/2 errors
   *) [TS-3845] HPACK error when trying to delete entries from an empty table
   *) [TS-3850] Add accept and no activity timeouts for HTTP/2
+  *) [TS-3906] Updates to the active and idle queues
+  *) [TS-3907] Configuration cleanup for 6.0.0 release
 
 New Feature:
   *) [TS-2150] Add Milestone log tags
