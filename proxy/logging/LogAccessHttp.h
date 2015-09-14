@@ -101,6 +101,7 @@ public:
   virtual int marshal_proxy_req_server_port(char *); // INT
   virtual int marshal_proxy_hierarchy_route(char *); // INT
   virtual int marshal_proxy_host_port(char *);       // INT
+  virtual int marshal_proxy_req_is_ssl(char *);      // INT
 
   //
   // server -> proxy fields

@@ -952,6 +952,20 @@ LogAccessHttp::marshal_proxy_req_server_port(char *buf)
   -------------------------------------------------------------------------*/
 
 int
+LogAccessHttp::marshal_proxy_req_is_ssl(char *buf)
+{
+  if (buf) {
+    int64_t is_ssl;
+    is_ssl = m_http_sm->server_connection_is_ssl;
+    marshal_int(buf, is_ssl);
+  }
+  return INK_MIN_ALIGN;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
 LogAccessHttp::marshal_proxy_hierarchy_route(char *buf)
 {
   if (buf) {
