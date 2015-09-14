@@ -49,6 +49,8 @@
 #define CACHE_COMPRESSION_LIBZ 2
 #define CACHE_COMPRESSION_LIBLZMA 3
 
+enum { RAM_HIT_COMPRESS_NONE = 1, RAM_HIT_COMPRESS_FASTLZ, RAM_HIT_COMPRESS_LIBZ, RAM_HIT_COMPRESS_LIBLZMA, RAM_HIT_LAST_ENTRY };
+
 struct CacheVC;
 struct CacheDisk;
 #ifdef HTTP_CACHE
@@ -204,6 +206,17 @@ struct CacheVConnection : public VConnection {
   virtual bool set_pin_in_cache(time_t t) = 0;
   virtual time_t get_pin_in_cache() = 0;
   virtual int64_t get_object_size() = 0;
+  virtual bool
+  is_compressed_in_ram() const
+  {
+    return false;
+  }
+
+  virtual int
+  get_volume_number() const
+  {
+    return -1;
+  }
 
   /** Test if the VC can support pread.
       @return @c true if @c do_io_pread will work, @c false if not.

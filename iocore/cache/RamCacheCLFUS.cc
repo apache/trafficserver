@@ -220,6 +220,7 @@ RamCacheCLFUS::get(INK_MD5 *key, Ptr<IOBufferData> *ret_data, uint32_t auxkey1, 
       lru[e->flag_bits.lru].remove(e);
       lru[e->flag_bits.lru].enqueue(e);
       if (!e->flag_bits.lru) { // in memory
+        uint32_t ram_hit_state = RAM_HIT_COMPRESS_NONE;
         e->hits++;
         if (e->flag_bits.compressed) {
           b = (char *)ats_malloc(e->len);
@@ -230,6 +231,7 @@ RamCacheCLFUS::get(INK_MD5 *key, Ptr<IOBufferData> *ret_data, uint32_t auxkey1, 
             int l = (int)e->len;
             if ((l != (int)fastlz_decompress(e->data->data(), e->compressed_len, b, l)))
               goto Lfailed;
+            ram_hit_state = RAM_HIT_COMPRESS_FASTLZ;
             break;
           }
 #if TS_HAS_LIBZ
@@ -237,6 +239,7 @@ RamCacheCLFUS::get(INK_MD5 *key, Ptr<IOBufferData> *ret_data, uint32_t auxkey1, 
             uLongf l = e->len;
             if (Z_OK != uncompress((Bytef *)b, &l, (Bytef *)e->data->data(), e->compressed_len))
               goto Lfailed;
+            ram_hit_state = RAM_HIT_COMPRESS_LIBZ;
             break;
           }
 #endif
@@ -247,6 +250,7 @@ RamCacheCLFUS::get(INK_MD5 *key, Ptr<IOBufferData> *ret_data, uint32_t auxkey1, 
             if (LZMA_OK != lzma_stream_buffer_decode(&memlimit, 0, NULL, (uint8_t *)e->data->data(), &ipos, e->compressed_len,
                                                      (uint8_t *)b, &opos, l))
               goto Lfailed;
+            ram_hit_state = RAM_HIT_COMPRESS_LIBLZMA;
             break;
           }
 #endif
@@ -273,7 +277,7 @@ RamCacheCLFUS::get(INK_MD5 *key, Ptr<IOBufferData> *ret_data, uint32_t auxkey1, 
         }
         CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_hits_stat, 1);
         DDebug("ram_cache", "get %X %d %d size %d HIT", key->slice32(3), auxkey1, auxkey2, e->size);
-        return 1;
+        return ram_hit_state;
       } else {
         CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_misses_stat, 1);
         DDebug("ram_cache", "get %X %d %d HISTORY", key->slice32(3), auxkey1, auxkey2);

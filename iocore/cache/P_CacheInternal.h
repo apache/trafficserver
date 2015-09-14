@@ -269,6 +269,20 @@ struct CacheVC : public CacheVConnection {
     }
     return -1;
   }
+  int
+  get_volume_number() const
+  {
+    if (vol && vol->cache_vol) {
+      return vol->cache_vol->vol_number;
+    }
+    return -1;
+  }
+  bool
+  is_compressed_in_ram() const
+  {
+    ink_assert(vio.op == VIO::READ);
+    return !f.compressed_in_ram;
+  }
 
   bool writer_done();
   int calluser(int event);
@@ -477,6 +491,7 @@ struct CacheVC : public CacheVConnection {
       unsigned int readers : 1;
       unsigned int doc_from_ram_cache : 1;
       unsigned int hit_evacuate : 1;
+      unsigned int compressed_in_ram : 1; // compressed state in ram cache
 #ifdef HTTP_CACHE
       unsigned int allow_empty_doc : 1; // used for cache empty http document
 #endif

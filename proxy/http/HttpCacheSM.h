@@ -98,6 +98,48 @@ public:
     return readwhilewrite_inprogress;
   }
 
+  bool
+  is_ram_cache_hit()
+  {
+    return cache_read_vc ? (cache_read_vc->is_ram_cache_hit()) : 0;
+  }
+
+  bool
+  is_compressed_in_ram()
+  {
+    return cache_read_vc ? (cache_read_vc->is_compressed_in_ram()) : 0;
+  }
+
+  inline void
+  set_open_read_tries(int value)
+  {
+    open_read_tries = value;
+  }
+
+  int
+  get_open_read_tries()
+  {
+    return open_read_tries;
+  }
+
+  inline void
+  set_open_write_tries(int value)
+  {
+    open_write_tries = value;
+  }
+
+  int
+  get_open_write_tries()
+  {
+    return open_write_tries;
+  }
+
+  int
+  get_volume_number()
+  {
+    return cache_read_vc ? (cache_read_vc->get_volume_number()) : -1;
+  }
+
   inline void
   abort_read()
   {

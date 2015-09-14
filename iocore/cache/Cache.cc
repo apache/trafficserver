@@ -2459,7 +2459,9 @@ CacheVC::handleRead(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   // check ram cache
   ink_assert(vol->mutex->thread_holding == this_ethread());
   int64_t o = dir_offset(&dir);
-  if (vol->ram_cache->get(read_key, &buf, (uint32_t)(o >> 32), (uint32_t)o)) {
+  int ram_hit_state = vol->ram_cache->get(read_key, &buf, (uint32_t)(o >> 32), (uint32_t)o);
+  f.compressed_in_ram = (ram_hit_state > RAM_HIT_COMPRESS_NONE) ? 1 : 0;
+  if (ram_hit_state >= RAM_HIT_COMPRESS_NONE) {
     goto LramHit;
   }
 
