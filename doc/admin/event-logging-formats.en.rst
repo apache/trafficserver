@@ -511,6 +511,13 @@ The following list describes Traffic Server custom logging fields.
 ``sts``
     The time Traffic Server spends accessing the origin, in seconds.
 
+.. _sstc:
+
+``sstc``
+    The number of transactions between Traffic Server and the origin server
+    from a single server session. A value greater than 0 indicates connection
+    reuse.
+
 .. _ttms:
 
 ``ttms``
