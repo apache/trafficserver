@@ -86,6 +86,7 @@
  */
 #define MAX_CONFIG_LINE 1024
 #define MAX_RX_MATCH 10
+#define WHITESPACE " \t\r\n"
 
 #include <stdint.h>
 
@@ -432,14 +433,14 @@ public:
     }
     delim = *++from_spec;
     if (isalnum(delim)) {
-      len = strcspn(from_spec, " \t\r\n");
+      len = strcspn(from_spec, WHITESPACE);
     } else {
       const char *end = strchr(++from_spec, delim);
       if (end) {
         len = end - from_spec;
       } else {
         /* it wasn't a delimiter after all */
-        len = strcspn(--from_spec, " \t\r\n");
+        len = strcspn(--from_spec, WHITESPACE);
       }
     }
     if (rx) {
@@ -466,7 +467,7 @@ public:
         }
       }
       ++scope_spec;
-      len = strcspn(scope_spec, " 	");
+      len = strcspn(scope_spec, WHITESPACE);
       if (rx) {
         scope = new rxscope(uri, icase, scope_spec, len);
       } else {
@@ -484,14 +485,14 @@ public:
     to_spec += 3;
     delim = *to_spec;
     if (isalnum(delim)) {
-      len = strcspn(to_spec, " \t\r\n");
+      len = strcspn(to_spec, WHITESPACE);
     } else {
       const char *end = strchr(++to_spec, delim);
       if (end) {
         len = end - to_spec;
       } else {
         /* it wasn't a delimiter after all */
-        len = strcspn(--to_spec, " \t\r\n");
+        len = strcspn(--to_spec, WHITESPACE);
       }
     }
     to = TSstrndup(to_spec, len);
@@ -502,16 +503,17 @@ public:
   rule_t(const rule_t &r) : scope(r.scope), priority(r.priority), from(r.from), to(r.to), refcount(r.refcount) { ++*refcount; }
   ~rule_t()
   {
-    if (!refcount || !--*refcount) {
-      if (scope)
-        delete scope;
-      if (from)
-        delete from;
-      if (to)
-        TSfree(to);
+    if (refcount) {
+      if (!--*refcount) {
+        if (scope)
+          delete scope;
+        if (from)
+          delete from;
+        if (to)
+          TSfree(to);
+        delete refcount;
+      }
     }
-    if (refcount)
-      delete refcount;
   }
 
   bool

@@ -166,7 +166,10 @@ int RecGetRecordBool(const char *name, RecBool *rec_byte, bool lock = true);
 // Record Attributes Reading
 //------------------------------------------------------------------------
 
-int RecLookupRecord(const char *name, void (*callback)(const RecRecord *, void *), void *data, bool lock = true);
+typedef void (*RecLookupCallback)(const RecRecord *, void *);
+
+int RecLookupRecord(const char *name, RecLookupCallback callback, void *data, bool lock = true);
+int RecLookupMatchingRecords(unsigned rec_type, const char *match, RecLookupCallback callback, void *data, bool lock = true);
 
 int RecGetRecordType(const char *name, RecT *rec_type, bool lock = true);
 int RecGetRecordDataType(const char *name, RecDataT *data_type, bool lock = true);
@@ -183,7 +186,6 @@ int RecGetRecordAccessType(const char *name, RecAccessT *secure, bool lock = tru
 int RecSetRecordAccessType(const char *name, RecAccessT secure, bool lock = true);
 
 int RecGetRecordPrefix_Xmalloc(char *prefix, char **result, int *result_len);
-
 
 //------------------------------------------------------------------------
 // Signal and Alarms

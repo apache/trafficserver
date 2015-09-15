@@ -22,6 +22,7 @@
  */
 
 #include "traffic_ctl.h"
+#include <P_RecUtils.h>
 
 static int
 metric_get(unsigned argc, const char **argv)
@@ -40,7 +41,9 @@ metric_get(unsigned argc, const char **argv)
       return CTRL_EX_ERROR;
     }
 
-    printf("%s %s\n", record.name(), CtrlMgmtRecordValue(record).c_str());
+    if (REC_TYPE_IS_STAT(record.rclass())) {
+      printf("%s %s\n", record.name(), CtrlMgmtRecordValue(record).c_str());
+    }
   }
 
   return CTRL_EX_OK;
@@ -57,8 +60,6 @@ metric_match(unsigned argc, const char **argv)
     CtrlMgmtRecordList reclist;
     TSMgmtError error;
 
-    // XXX filter the results to only match metric records.
-
     error = reclist.match(file_arguments[i]);
     if (error != TS_ERR_OKAY) {
       CtrlMgmtError(error, "failed to fetch %s", file_arguments[i]);
@@ -67,7 +68,9 @@ metric_match(unsigned argc, const char **argv)
 
     while (!reclist.empty()) {
       CtrlMgmtRecord record(reclist.next());
-      printf("%s %s\n", record.name(), CtrlMgmtRecordValue(record).c_str());
+      if (REC_TYPE_IS_STAT(record.rclass())) {
+        printf("%s %s\n", record.name(), CtrlMgmtRecordValue(record).c_str());
+      }
     }
   }
 

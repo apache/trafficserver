@@ -400,7 +400,7 @@ struct OverridableHttpConfigParams {
       body_factory_template_base(NULL), body_factory_template_base_len(0), proxy_response_server_string(NULL),
       proxy_response_server_string_len(0), global_user_agent_header(NULL), global_user_agent_header_size(0),
       cache_heuristic_lm_factor(0.10), freshness_fuzz_prob(0.005), background_fill_threshold(0.5), cache_open_write_fail_action(0),
-      simple_retry_response_codes_string(NULL), dead_server_retry_response_codes_string(NULL)
+      redirection_enabled(0), number_of_redirections(1), simple_retry_response_codes_string(NULL), dead_server_retry_response_codes_string(NULL)
   {
   }
 
@@ -595,8 +595,23 @@ struct OverridableHttpConfigParams {
   MgmtFloat freshness_fuzz_prob;
   MgmtFloat background_fill_threshold;
   MgmtInt cache_open_write_fail_action;
+<<<<<<< HEAD
   MgmtString simple_retry_response_codes_string;
   MgmtString dead_server_retry_response_codes_string;
+=======
+
+  //##############################################################################
+  //#
+  //# Redirection
+  //#
+  //# 1. redirection_enabled: if set to 1, redirection is enabled.
+  //# 2. number_of_redirectionse: The maximum number of redirections YTS permits
+  //# 3. post_copy_size: The maximum POST data size YTS permits to copy
+  //#
+  //##############################################################################
+
+  MgmtByte redirection_enabled;
+  MgmtInt number_of_redirections;
 };
 
 
@@ -744,19 +759,7 @@ public:
   //  rather it is the time skew which the manager observes
   int32_t cluster_time_delta;
 
-  //##############################################################################
-  //#
-  //# Redirection
-  //#
-  //# 1. redirection_enabled: if set to 1, redirection is enabled.
-  //# 2. number_of_redirectionse: The maximum number of redirections YTS permits
-  //# 3. post_copy_size: The maximum POST data size YTS permits to copy
-  //#
-  //##############################################################################
-
-  MgmtByte redirection_enabled;
   MgmtByte redirection_host_no_port;
-  MgmtInt number_of_redirections;
   MgmtInt post_copy_size;
 
   //////////////////////////////////////////////////////////////////
@@ -879,10 +882,10 @@ inline HttpConfigParams::HttpConfigParams()
     cache_vary_default_other(NULL), max_cache_open_write_retries(1), cache_enable_default_vary_headers(0), cache_post_method(0),
     connect_ports_string(NULL), connect_ports(NULL), push_method_enabled(0), referer_filter_enabled(0), referer_format_redirect(0),
     reverse_proxy_enabled(0), url_remap_required(1), record_cop_page(0), errors_log_error_pages(1), enable_http_info(0),
-    cluster_time_delta(0), redirection_enabled(0), redirection_host_no_port(1), number_of_redirections(1), post_copy_size(2048),
-    ignore_accept_mismatch(0), ignore_accept_language_mismatch(0), ignore_accept_encoding_mismatch(0),
-    ignore_accept_charset_mismatch(0), send_100_continue_response(0), disallow_post_100_continue(0), parser_allow_non_http(1),
-    max_post_size(0), server_session_sharing_pool(TS_SERVER_SESSION_SHARING_POOL_THREAD), synthetic_port(0)
+    cluster_time_delta(0), redirection_host_no_port(1), post_copy_size(2048), ignore_accept_mismatch(0),
+    ignore_accept_language_mismatch(0), ignore_accept_encoding_mismatch(0), ignore_accept_charset_mismatch(0),
+    send_100_continue_response(0), disallow_post_100_continue(0), parser_allow_non_http(1), max_post_size(0),
+    server_session_sharing_pool(TS_SERVER_SESSION_SHARING_POOL_THREAD), synthetic_port(0)
 {
 }
 

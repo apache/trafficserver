@@ -131,6 +131,16 @@ public:
     }
   }
 
+  int64_t
+  size()
+  {
+    if (ioblock) {
+      return ioblock->size();
+    } else {
+      return sizeof(this->hdr.raw);
+    }
+  }
+
 private:
   Http2Frame(Http2Frame &);                  // noncopyable
   Http2Frame &operator=(const Http2Frame &); // noncopyable
@@ -213,6 +223,7 @@ private:
   int state_complete_frame_read(int, void *);
 
   int64_t con_id;
+  int64_t total_write_len;
   SessionHandler session_handler;
   NetVConnection *client_vc;
   MIOBuffer *read_buffer;

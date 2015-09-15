@@ -74,7 +74,9 @@ static const struct NetCmdOperation responses[] = {
   /* FILE_READ                  */ {3, {MGMT_MARSHALL_INT, MGMT_MARSHALL_INT, MGMT_MARSHALL_DATA}},
   /* FILE_WRITE                 */ {1, {MGMT_MARSHALL_INT}},
   /* RECORD_SET                 */ {2, {MGMT_MARSHALL_INT, MGMT_MARSHALL_INT}},
-  /* RECORD_GET                 */ {4, {MGMT_MARSHALL_INT, MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING, MGMT_MARSHALL_DATA}},
+  /* RECORD_GET                 */ {5,
+                                    {MGMT_MARSHALL_INT, MGMT_MARSHALL_INT, MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING,
+                                     MGMT_MARSHALL_DATA}},
   /* PROXY_STATE_GET            */ {2, {MGMT_MARSHALL_INT, MGMT_MARSHALL_INT}},
   /* PROXY_STATE_SET            */ {1, {MGMT_MARSHALL_INT}},
   /* RECONFIGURE                */ {1, {MGMT_MARSHALL_INT}},
@@ -94,7 +96,9 @@ static const struct NetCmdOperation responses[] = {
   /* STATS_RESET_NODE           */ {1, {MGMT_MARSHALL_INT}},
   /* STATS_RESET_CLUSTER        */ {1, {MGMT_MARSHALL_INT}},
   /* STORAGE_DEVICE_CMD_OFFLINE */ {1, {MGMT_MARSHALL_INT}},
-  /* RECORD_MATCH_GET           */ {4, {MGMT_MARSHALL_INT, MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING, MGMT_MARSHALL_DATA}},
+  /* RECORD_MATCH_GET           */ {5,
+                                    {MGMT_MARSHALL_INT, MGMT_MARSHALL_INT, MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING,
+                                     MGMT_MARSHALL_DATA}},
   /* API_PING                   */ {0, {}}, // no reply
   /* SERVER_BACKTRACE           */ {2, {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING}},
   /* RECORD_DESCRIBE_CONFIG     */ {15,
@@ -232,8 +236,8 @@ send_mgmt_error(int fd, OpType optype, TSMgmtError error)
 
   case RECORD_GET:
   case RECORD_MATCH_GET:
-    ink_release_assert(responses[optype].nfields == 4);
-    return send_mgmt_response(fd, optype, &ecode, &intval, &strval, &dataval);
+    ink_release_assert(responses[optype].nfields == 5);
+    return send_mgmt_response(fd, optype, &ecode, &intval, &intval, &strval, &dataval);
 
   case RECORD_DESCRIBE_CONFIG:
     ink_release_assert(responses[optype].nfields == 15);

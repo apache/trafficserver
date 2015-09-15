@@ -82,11 +82,11 @@ msgstr "もしくは、設定を指定することも可能です。"
 msgid ""
 "After modifying plugin.config, restart traffic server (sudo traffic_line -"
 "L) the configuration is re-read when a management update is given (sudo "
-"traffic_line -x)"
+"traffic_ctl config reload)"
 msgstr ""
 "plugin.config を修正後、Traffic Server をリスタート (sudo traffic_line -L) "
 "設定ファイルは管理アップデートが行われた際に再読み込みされます。(sudo "
-"traffic_line -x)"
+"traffic_ctl config reload)"
 
 #: ../../reference/plugins/gzip.en.rst:56
 msgid "Options"

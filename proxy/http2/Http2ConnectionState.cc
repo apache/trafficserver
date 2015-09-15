@@ -820,6 +820,7 @@ Http2ConnectionState::create_stream(Http2StreamId new_id)
 
   ink_assert(client_streams_count < UINT32_MAX);
   ++client_streams_count;
+  ua_session->get_netvc()->add_to_active_queue();
 
   return new_stream;
 }
@@ -860,6 +861,9 @@ Http2ConnectionState::cleanup_streams()
     s = next;
   }
   client_streams_count = 0;
+  if (!is_state_closed()) {
+    ua_session->get_netvc()->add_to_keep_alive_queue();
+  }
 }
 
 void
@@ -870,6 +874,10 @@ Http2ConnectionState::delete_stream(Http2Stream *stream)
 
   ink_assert(client_streams_count > 0);
   --client_streams_count;
+
+  if (client_streams_count == 0) {
+    ua_session->get_netvc()->add_to_keep_alive_queue();
+  }
 }
 
 void

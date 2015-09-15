@@ -97,11 +97,25 @@ traffic_ctl cluster
 traffic_ctl config
 ------------------
 .. program:: traffic_ctl config
+.. option:: defaults [--records]
+
+    Display the default values for all configuration records. The
+    *--records* flag has the same behavior as :option:`traffic_ctl
+    config get --records`.
+
+.. program:: traffic_ctl config
 .. option:: describe RECORD [RECORD...]
 
     Display all the known information about a configuration record.
     This includes the current and default values, the data type,
     the record class and syntax checking expression.
+
+.. program:: traffic_ctl config
+.. option:: diff [--records]
+
+    Display configuration records that have non-default values. The
+    *--records* flag has the same behavior as :option:`traffic_ctl
+    config get --records`.
 
 .. program:: traffic_ctl config
 .. option:: get [--records] RECORD [RECORD...]
@@ -224,8 +238,8 @@ Examples
 Configure Traffic Server to log in Squid format::
 
     $ traffic_ctl config set proxy.config.log.squid_log_enabled 1
-    $ traffic_line config proxy.config.log.squid_log_is_ascii 1
-    $ traffic_line config reload
+    $ traffic_ctl config set proxy.config.log.squid_log_is_ascii 1
+    $ traffic_ctl config reload
 
 See also
 ========

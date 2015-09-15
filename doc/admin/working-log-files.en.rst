@@ -194,7 +194,7 @@ To set log management options, follow the steps below:
    -  :ts:cv:`proxy.config.log.max_space_mb_for_logs`
    -  :ts:cv:`proxy.config.log.max_space_mb_headroom`
 
-#. Run the command :option:`traffic_line -x` to apply the configuration
+#. Run the command :option:`traffic_ctl config reload` to apply the configuration
    changes.
 
 Choosing Event Log File Formats
@@ -235,7 +235,7 @@ extended (Netscape Extended), or extended2 (Netscape Extended 2).
 Note that the squid log object is created by default, and will be used if logging is enabled.
 Users can use any number of log formats and create any number of log objects via the XML config.
 
-#. Run the command :option:`traffic_line -x` to apply the configuration
+#. Run the command :option:`traffic_ctl config reload` to apply the configuration
    changes.
 
 .. _using-custom-log-formats:
@@ -306,7 +306,7 @@ In order to accomplish this, we:
 #. Add :ref:`LogFormat`, :ref:`LogFilter`, and :ref:`LogObject`
    specifications to the configuration file :file:`logs_xml.config`.
 
-#. Run the command :option:`traffic_line -x` to apply your configuration
+#. Run the command :option:`traffic_ctl config reload` to apply your configuration
    changes.
 
 ASCII_PIPE File Mode
@@ -363,7 +363,7 @@ To create a summary log file format:
    You can specify more than one ``operator`` in the format line. For more
    information, refer to :file:`logs_xml.config`.
 
-#. Run the command :option:`traffic_line -x` to apply configuration changes .
+#. Run the command :option:`traffic_ctl config reload` to apply configuration changes .
 
 The following example format generates one entry every 10 seconds. Each entry
 contains the timestamp of the last entry of the interval, a count of the number
@@ -569,7 +569,7 @@ log files when they reach a certain size, adjust the following setting in
 
     CONFIG proxy.config.log.rolling_interval_sec INT 21600
 
-#. Run the command :option:`traffic_line -x` to apply the configuration
+#. Run the command :option:`traffic_ctl config reload` to apply the configuration
    changes.
 
 You can fine-tune log file rolling settings for a custom log file in the
@@ -664,7 +664,7 @@ To edit the log hosts list:
        webserver2
        webserver3
 
-#. Run the command :option:`traffic_line -x` to apply the configuration
+#. Run the command :option:`traffic_ctl config reload` to apply the configuration
    changes.
 
 Collating Event Log Files
@@ -744,7 +744,7 @@ following configuration adjustments in :file:`records.config`:
 
         CONFIG proxy.config.log.collation_secret STRING "seekrit"
 
-#. Run the command :option:`traffic_line -x` to apply the configuration
+#. Run the command :option:`traffic_ctl config reload` to apply the configuration
    changes.
 
 .. note::
@@ -826,7 +826,7 @@ been established, then you must restart Traffic Server.
    -  :ts:cv:`proxy.config.log.collation_host_tagged`
    -  :ts:cv:`proxy.config.log.max_space_mb_for_orphan_logs`
 
-#. Run the command :option:`traffic_line -x` to apply the configuration
+#. Run the command :option:`traffic_ctl config reload` to apply the configuration
    changes.
 
 Collating Custom Event Log Files
@@ -854,8 +854,8 @@ To collate custom event log files:
    ``port`` is the port number for communication between the collation
    server and collation clients.
 
-#. Run the command :option:`traffic_line -L` to restart Traffic Server on the
-   local node or :option:`traffic_line -M` to restart Traffic Server on all
+#. Run the command :option:`traffic_ctl server restart` to restart Traffic Server on the
+   local node or :option:`traffic_ctl cluster restart` to restart Traffic Server on all
    the nodes in a cluster.
 
 Viewing Logging Statistics

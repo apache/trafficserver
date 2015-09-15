@@ -411,13 +411,6 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
     return;
   }
 
-  if (sslClientRenegotiationAbort == true) {
-    this->read.triggered = 0;
-    readSignalError(nh, (int)r);
-    Debug("ssl", "[SSLNetVConnection::net_read_io] client renegotiation setting read signal error");
-    return;
-  }
-
   MUTEX_TRY_LOCK_FOR(lock, s->vio.mutex, lthread, s->vio._cont);
   if (!lock.is_locked()) {
     readReschedule(nh);
@@ -430,6 +423,14 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
     this->super::net_read_io(nh, lthread);
     return;
   }
+  // If the key renegotiation failed it's over, just signal the error and finish.
+  if (sslClientRenegotiationAbort == true) {
+    this->read.triggered = 0;
+    readSignalError(nh, (int)r);
+    Debug("ssl", "[SSLNetVConnection::net_read_io] client renegotiation setting read signal error");
+    return;
+  }
+
   // If it is not enabled, lower its priority.  This allows
   // a fast connection to speed match a slower connection by
   // shifting down in priority even if it could read.
@@ -888,6 +889,7 @@ SSLNetVConnection::free(EThread *t)
   read.vio.mutex.clear();
   write.vio.mutex.clear();
   this->mutex.clear();
+  action_.mutex.clear();
   this->ep.stop();
   this->con.close();
   flags = 0;

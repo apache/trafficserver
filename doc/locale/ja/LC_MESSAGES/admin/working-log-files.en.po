@@ -335,7 +335,7 @@ msgstr ""
 #: ../../admin/working-log-files.en.rst:767
 #: ../../admin/working-log-files.en.rst:834
 msgid ""
-"Run the command :option:`traffic_line -x` to apply the configuration "
+"Run the command :option:`traffic_ctl config reload` to apply the configuration "
 "changes."
 msgstr ""
 
@@ -518,7 +518,7 @@ msgstr ""
 
 #: ../../admin/working-log-files.en.rst:340
 msgid ""
-"Run the command :option:`traffic_line -x` to apply your configuration "
+"Run the command :option:`traffic_ctl config reload` to apply your configuration "
 "changes."
 msgstr ""
 
@@ -583,7 +583,7 @@ msgstr ""
 
 #: ../../admin/working-log-files.en.rst:387
 msgid ""
-"Run the command :option:`traffic_line -x` to apply configuration changes ."
+"Run the command :option:`traffic_ctl config reload` to apply configuration changes ."
 msgstr ""
 
 #: ../../admin/working-log-files.en.rst:389

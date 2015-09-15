@@ -224,7 +224,6 @@ ConditionHeader::append_value(std::string &s, const Resources &res)
 {
   TSMBuffer bufp;
   TSMLoc hdr_loc;
-  TSMLoc field_loc;
   const char *value;
   int len;
 
@@ -237,13 +236,22 @@ ConditionHeader::append_value(std::string &s, const Resources &res)
   }
 
   if (bufp && hdr_loc) {
+    TSMLoc field_loc, next_field_loc;
+
     field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, _qualifier.c_str(), _qualifier.size());
     TSDebug(PLUGIN_NAME, "Getting Header: %s, field_loc: %p", _qualifier.c_str(), field_loc);
-    if (field_loc != NULL) {
+
+    while (field_loc) {
       value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, -1, &len);
+      next_field_loc = TSMimeHdrFieldNextDup(bufp, hdr_loc, field_loc);
       TSDebug(PLUGIN_NAME, "Appending HEADER(%s) to evaluation value -> %.*s", _qualifier.c_str(), len, value);
       s.append(value, len);
+      // multiple headers with the same name must be semantically the same as one value which is comma seperated
+      if (next_field_loc) {
+        s.append(",");
+      }
       TSHandleMLocRelease(bufp, hdr_loc, field_loc);
+      field_loc = next_field_loc;
     }
   }
 }

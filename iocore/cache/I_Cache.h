@@ -49,6 +49,8 @@
 #define CACHE_COMPRESSION_LIBZ 2
 #define CACHE_COMPRESSION_LIBLZMA 3
 
+enum { RAM_HIT_COMPRESS_NONE = 1, RAM_HIT_COMPRESS_FASTLZ, RAM_HIT_COMPRESS_LIBZ, RAM_HIT_COMPRESS_LIBLZMA, RAM_HIT_LAST_ENTRY };
+
 struct CacheVC;
 struct CacheDisk;
 #ifdef HTTP_CACHE
@@ -65,7 +67,7 @@ typedef HTTPInfo CacheHTTPInfo;
 struct CacheProcessor : public Processor {
   CacheProcessor()
     : min_stripe_version(CACHE_DB_MAJOR_VERSION, CACHE_DB_MINOR_VERSION),
-      max_stripe_version(CACHE_DB_MAJOR_VERSION, CACHE_DB_MINOR_VERSION), cb_after_init(0)
+      max_stripe_version(CACHE_DB_MAJOR_VERSION, CACHE_DB_MINOR_VERSION), cb_after_init(0), wait_for_cache(0)
   {
   }
 
@@ -140,12 +142,18 @@ struct CacheProcessor : public Processor {
       to specific the callback type and passed to the callback
       function.
   */
-  void set_after_init_callback(CALLBACK_FUNC cb);
+  void afterInitCallbackSet(CALLBACK_FUNC cb);
 
   // private members
   void diskInitialized();
 
   void cacheInitialized();
+
+  int
+  waitForCache() const
+  {
+    return wait_for_cache;
+  }
 
   static volatile uint32_t cache_ready;
   static volatile int initialized;
@@ -160,10 +168,11 @@ struct CacheProcessor : public Processor {
   VersionNumber max_stripe_version;
 
   CALLBACK_FUNC cb_after_init;
+  int wait_for_cache;
 };
 
 inline void
-CacheProcessor::set_after_init_callback(CALLBACK_FUNC cb)
+CacheProcessor::afterInitCallbackSet(CALLBACK_FUNC cb)
 {
   cb_after_init = cb;
 }
@@ -197,6 +206,17 @@ struct CacheVConnection : public VConnection {
   virtual bool set_pin_in_cache(time_t t) = 0;
   virtual time_t get_pin_in_cache() = 0;
   virtual int64_t get_object_size() = 0;
+  virtual bool
+  is_compressed_in_ram() const
+  {
+    return false;
+  }
+
+  virtual int
+  get_volume_number() const
+  {
+    return -1;
+  }
 
   /** Test if the VC can support pread.
       @return @c true if @c do_io_pread will work, @c false if not.

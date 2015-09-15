@@ -27,7 +27,7 @@ the Traffic Server software. Many of the variables in the
 :file:`records.config` file are set automatically when you set configuration
 options in Traffic Line. After you modify the
 :file:`records.config` file,
-run the command :option:`traffic_line -x` to apply the changes.
+run the command :option:`traffic_ctl config reload` to apply the changes.
 When you apply changes to one node in a cluster, Traffic Server
 automatically applies the changes to all other nodes in the cluster.
 
@@ -51,7 +51,7 @@ as it may be removed in a future release without warning.
 
 A variable marked as ``Reloadable`` can be updated via the command::
 
-   traffic_line -x
+   traffic_ctl config reload
 
 A variable marked as ``Overridable`` can be changed on a per-remap basis using plugins
 (like the :ref:`conf-remap-plugin`).
@@ -112,13 +112,13 @@ case, and replacing any dot separators with an underscore.
 
 Overriding a variable from the environment is permanent and will
 not be affected by future configuration changes made in
-:file:`records.config` or applied with :program:`traffic_line`.
+:file:`records.config` or applied with :program:`traffic_ctl`.
 
 For example, we could override the `proxy.config.product_company`_ variable
 like this::
 
    $ PROXY_CONFIG_PRODUCT_COMPANY=example traffic_cop &
-   $ traffic_line -r proxy.config.product_company
+   $ traffic_ctl config get proxy.config.product_company
 
 .. _configuration-variables:
 
@@ -282,7 +282,7 @@ Value Effect
    :reloadable:
 
   This setting specifies the number of active client connections
-  for use by :option:`traffic_line --drain`.
+  for use by :option:`traffic_ctl server restart --drain`.
 
 Network
 =======
@@ -1729,14 +1729,17 @@ all the different user-agent versions of documents it encounters.
 .. ts:cv:: CONFIG proxy.config.http.cache.open_write_fail_action INT 0
    :reloadable:
 
-    This bit-map setting indicates the action taken on failing to obtain the cache open write lock on either a cache miss or
-    a cache hit stale. This typically happens when there is more than one request to the same cache object simultaneously.
-    During such scenario, all but one (which goes to the origin) request is served either a stale copy or an error depending
-    on the setting.
+    This setting indicates the action taken on failing to obtain the cache open write lock on either a cache miss or a cache
+    hit stale. This typically happens when there is more than one request to the same cache object simultaneously. During such
+    a scenario, all but one (which goes to the origin) request is served either a stale copy or an error depending on this
+    setting.
 
    -  ``0`` = default, disable cache and goto origin server
    -  ``1`` = return a 502 error on a cache miss
    -  ``2`` = serve stale if object's age is under :ts:cv:`proxy.config.http.cache.max_stale_age`, else, goto origin server
+   -  ``3`` = return a 502 error on a cache miss or serve stale on a cache revalidate
+              if object's age is under :ts:cv:`proxy.config.http.cache.max_stale_age`, else, goto origin server
+   -  ``4`` = return a 502 error on either a cache miss or on a revalidate
 
 Customizable User Response Pages
 ================================
@@ -2947,6 +2950,34 @@ Sockets
    Turn on or off support for HTTP proxying. This is rarely used, the one
    exception being if you run Traffic Server with a protocol plugin, and would
    like for it to not support HTTP requests at all.
+
+.. ts:cv:: CONFIG proxy.config.http.wait_for_cache INT 0
+
+   Accepting inbound connections and starting the cache are independent operations in Traffic
+   Server. This variable controls the relative timing of these operations and Traffic Server
+   dependency on cache because if cache is required then inbound connection accepts should be
+   deferred until the validity of the cache requirement is determined. Cache initialization failure
+   will be logged in :file:`diags.log`.
+
+===== ====================
+Value Effect
+===== ====================
+0     Decouple inbound connections and cache initialization. Connections will be accepted as soon as
+      possible and Traffic Server will run regardless of the results of cache initialization.
+
+1     Do not accept inbound connections until cache initialization has finished. Traffic server will run
+      regardless of the results of cache initialization.
+
+2     Do not accept inbound connections until cache initialization has finished and been sufficiently
+      successful that cache is enabled. This means at least one cache span is usable. If there are no
+      spans in :configfile:`storage.config` or none of the spans can be successfully parsed and
+      initialized then Traffic Server will shut down.
+
+3     Do not accept inbound connections until cache initialization has finished and been completely
+      successful. This requires at least one cache span in :configfile:`storage.config` and that every
+      span specified is valid and successfully initialized. Any error will cause Traffic Server to shut
+      down.
+===== ====================
 
 .. _Traffic Shaping:
                  https://cwiki.apache.org/confluence/display/TS/Traffic+Shaping

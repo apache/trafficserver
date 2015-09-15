@@ -37,7 +37,7 @@ of the form `*.domain.com`, ie. where `*` is the leftmost domain
 component.
 
 Changes to :file:`ssl_multicert.config` can be applied to a running
-Traffic Server using :option:`traffic_line -x`.
+Traffic Server using :option:`traffic_ctl config reload`.
 
 Format
 ======

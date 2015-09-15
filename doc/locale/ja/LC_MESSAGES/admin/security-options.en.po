@@ -57,9 +57,9 @@ msgstr ""
 #: ../../admin/security-options.en.rst:35
 #: ../../admin/security-options.en.rst:63
 msgid ""
-"Run the command :option:`traffic_line -x` to apply the configuration "
+"Run the command :option:`traffic_ctl config reload` to apply the configuration "
 "changes."
-msgstr ":option:`traffic_line -x` を実行して設定の変更を適用してください。"
+msgstr ":option:`traffic_ctl config reload` を実行して設定の変更を適用してください。"
 
 #: ../../admin/security-options.en.rst:41
 msgid "Configuring DNS Server Selection (Split DNS)"

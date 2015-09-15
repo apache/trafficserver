@@ -149,7 +149,7 @@ The following list describes Traffic Server custom logging fields.
 
 .. _cqpv:
 
-``cqhv``
+``cqpv``
     The client request protocol & version.
 
 .. _cqtd:
@@ -168,14 +168,12 @@ The following list describes Traffic Server custom logging fields.
 .. _cqtq:
 
 ``cqtq``
-    The client request timestamp, with millisecond resolution.
+    The time of the client request since January 1, 1970 UTC (EPOCH), with millisecond resolution.
 
 .. _cqts:
 
 ``cqts``
-    The client-request timestamp in Squid format; the time of the client
-    request since January 1, 1970 UTC. Time is expressed in seconds,
-    with millisecond resolution.
+    The time of the client request since January 1, 1970 UTC (EPOCH), with second resolution.
 
 .. _cqtt:
 
@@ -512,6 +510,13 @@ The following list describes Traffic Server custom logging fields.
 
 ``sts``
     The time Traffic Server spends accessing the origin, in seconds.
+
+.. _sstc:
+
+``sstc``
+    The number of transactions between Traffic Server and the origin server
+    from a single server session. A value greater than 0 indicates connection
+    reuse.
 
 .. _ttms:
 

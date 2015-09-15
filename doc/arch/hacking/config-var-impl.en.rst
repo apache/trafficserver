@@ -179,7 +179,7 @@ Variable Infrastructure
 =======================
 
 The primary effort in defining a configuration variable is handling updates,
-generally via :option:`traffic_line -x`. This is handled in a generic way, as
+generally via :option:`traffic_ctl config reload`. This is handled in a generic way, as
 described in the next section, or in a :ref:`more specialized way <http-config-var-impl>`
 (built on top of the generic mechanism) for HTTP related configuration
 variables. This is only needed if the variable is marked as dynamically

@@ -194,7 +194,7 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.diags.action.tags", RECD_STRING, NULL, RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.diags.show_location", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  {RECT_CONFIG, "proxy.config.diags.show_location", RECD_INT, "1", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.diags.output.diag", RECD_STRING, "E", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
@@ -377,7 +377,7 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.http.server_ports", RECD_STRING, "8080", RECU_RESTART_TM, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.http.wait_for_cache", RECD_INT, "0", RECU_RESTART_TM, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.http.wait_for_cache", RECD_INT, "0", RECU_RESTART_TM, RR_NULL, RECC_INT, "[0-3]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.http.insert_request_via_str", RECD_INT, "1", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
@@ -666,7 +666,9 @@ static const RecordElement RecordsConfig[] =
   //       #
   //       #  0 - default. disable cache and goto origin
   //       #  1 - return error if cache miss
-  //       #  2 - serve stale until proxy.config.http.cache.max_stale_age, then goto origin, if refresh_miss
+  //       #  2 - serve stale until proxy.config.http.cache.max_stale_age, then goto origin, if revalidate
+  //       #  3 - return error if cache miss or serve stale until proxy.config.http.cache.max_stale_age, then goto origin, if revalidate
+  //       #  4 - return error if cache miss or if revalidate
   {RECT_CONFIG, "proxy.config.http.cache.open_write_fail_action", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   //       #  when_to_revalidate has 4 options:
@@ -2017,7 +2019,8 @@ static const RecordElement RecordsConfig[] =
   //# Temporary and esoteric values.
   //#
   //###########
-  {RECT_CONFIG, "proxy.config.cache.http.compatibility.4-2-0-fixup", RECD_INT, "1", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  {RECT_CONFIG, "proxy.config.cache.http.compatibility.4-2-0-fixup", RECD_INT, "1", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL},
+
 };
 // clang-format on
 

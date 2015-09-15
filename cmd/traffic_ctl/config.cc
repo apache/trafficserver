@@ -24,6 +24,31 @@
 #include "traffic_ctl.h"
 #include <time.h>
 #include <I_RecDefs.h>
+#include <P_RecUtils.h>
+
+struct RecordDescriptionPolicy {
+  typedef TSConfigRecordDescription *entry_type;
+
+  static void
+  free(entry_type e)
+  {
+    TSConfigRecordDescriptionDestroy(e);
+  }
+
+  static entry_type
+  cast(void *ptr)
+  {
+    return (entry_type)ptr;
+  }
+};
+
+struct CtrlMgmtRecordDescriptionList : CtrlMgmtList<RecordDescriptionPolicy> {
+  TSMgmtError
+  match(const char *regex)
+  {
+    return TSConfigRecordDescribeMatchMlt(regex, 0u /* flags */, this->list);
+  }
+};
 
 // Record data type names, indexed by TSRecordT.
 static const char *
@@ -132,6 +157,19 @@ rec_sourceof(int rec_source)
   }
 }
 
+static const char *
+rec_labelof(int rec_class)
+{
+  switch (rec_class) {
+  case RECT_CONFIG:
+    return "CONFIG";
+  case RECT_LOCAL:
+    return "LOCAL";
+  default:
+    return NULL;
+  }
+}
+
 static std::string
 timestr(time_t tm)
 {
@@ -145,8 +183,7 @@ format_record(const CtrlMgmtRecord &record, bool recfmt)
   CtrlMgmtRecordValue value(record);
 
   if (recfmt) {
-    // XXX Detect CONFIG or LOCAL ...
-    printf("CONFIG %s %s %s\n", record.name(), rec_typeof(record.type()), value.c_str());
+    printf("%s %s %s %s\n", rec_labelof(record.rclass()), record.name(), rec_typeof(record.type()), value.c_str());
   } else {
     printf("%s: %s\n", record.name(), value.c_str());
   }
@@ -174,7 +211,9 @@ config_get(unsigned argc, const char **argv)
       return CTRL_EX_ERROR;
     }
 
-    format_record(record, recfmt);
+    if (REC_TYPE_IS_CONFIG(record.rclass())) {
+      format_record(record, recfmt);
+    }
   }
 
   return CTRL_EX_OK;
@@ -285,7 +324,9 @@ config_match(unsigned argc, const char **argv)
 
     while (!reclist.empty()) {
       CtrlMgmtRecord record(reclist.next());
-      format_record(record, recfmt);
+      if (REC_TYPE_IS_CONFIG(record.rclass())) {
+        format_record(record, recfmt);
+      }
     }
   }
 
@@ -349,11 +390,114 @@ config_status(unsigned argc, const char **argv)
   return CTRL_EX_OK;
 }
 
+static int
+config_defaults(unsigned argc, const char **argv)
+{
+  int recfmt = 0;
+  const ArgumentDescription opts[] = {
+    {"records", '-', "Emit output in records.config format", "F", &recfmt, NULL, NULL},
+  };
+
+  if (!CtrlProcessArguments(argc, argv, opts, countof(opts)) || n_file_arguments != 0) {
+    return CtrlCommandUsage("config diff [OPTIONS]");
+  }
+
+  TSMgmtError error;
+  CtrlMgmtRecordDescriptionList descriptions;
+
+  error = descriptions.match(".*");
+  if (error != TS_ERR_OKAY) {
+    CtrlMgmtError(error, "failed to fetch record metadata");
+    return CTRL_EX_ERROR;
+  }
+
+  while (!descriptions.empty()) {
+    TSConfigRecordDescription *desc = descriptions.next();
+    CtrlMgmtRecordValue deflt(desc->rec_type, desc->rec_default);
+
+    if (recfmt) {
+      printf("%s %s %s %s\n", rec_labelof(desc->rec_class), desc->rec_name, rec_typeof(desc->rec_type), deflt.c_str());
+    } else {
+      printf("%s: %s\n", desc->rec_name, deflt.c_str());
+    }
+
+    TSConfigRecordDescriptionDestroy(desc);
+  }
+
+  return CTRL_EX_OK;
+}
+
+static int
+config_diff(unsigned argc, const char **argv)
+{
+  int recfmt = 0;
+  const ArgumentDescription opts[] = {
+    {"records", '-', "Emit output in records.config format", "F", &recfmt, NULL, NULL},
+  };
+
+  if (!CtrlProcessArguments(argc, argv, opts, countof(opts)) || n_file_arguments != 0) {
+    return CtrlCommandUsage("config diff [OPTIONS]");
+  }
+
+  TSMgmtError error;
+  CtrlMgmtRecordDescriptionList descriptions;
+
+  error = descriptions.match(".*");
+  if (error != TS_ERR_OKAY) {
+    CtrlMgmtError(error, "failed to fetch record metadata");
+    return CTRL_EX_ERROR;
+  }
+
+  while (!descriptions.empty()) {
+    TSConfigRecordDescription *desc;
+    bool changed = false;
+
+    desc = descriptions.next();
+
+    switch (desc->rec_type) {
+    case TS_REC_INT:
+      changed = (desc->rec_value.int_val != desc->rec_default.int_val);
+      break;
+    case TS_REC_COUNTER:
+      changed = (desc->rec_value.counter_val != desc->rec_default.counter_val);
+      break;
+    case TS_REC_FLOAT:
+      changed = (desc->rec_value.float_val != desc->rec_default.float_val);
+      break;
+    case TS_REC_STRING:
+      changed = (strcmp(desc->rec_value.string_val, desc->rec_default.string_val) != 0);
+      break;
+    default:
+      break;
+    }
+
+    if (changed) {
+      CtrlMgmtRecordValue current(desc->rec_type, desc->rec_value);
+      CtrlMgmtRecordValue deflt(desc->rec_type, desc->rec_default);
+
+      if (recfmt) {
+        printf("%s %s %s %s # default: %s\n", rec_labelof(desc->rec_class), desc->rec_name, rec_typeof(desc->rec_type),
+               current.c_str(), deflt.c_str());
+      } else {
+        printf("%s has changed\n", desc->rec_name);
+        printf("\t%-16s: %s\n", "Current Value", current.c_str());
+        printf("\t%-16s: %s\n", "Default Value", deflt.c_str());
+      }
+    }
+
+    TSConfigRecordDescriptionDestroy(desc);
+  }
+
+  return CTRL_EX_OK;
+}
+
 int
 subcommand_config(unsigned argc, const char **argv)
 {
   const subcommand commands[] = {
+    {config_defaults, "defaults", "Show default information configuration values"},
     {config_describe, "describe", "Show detailed information about configuration values"},
+    {config_diff, "diff", "Show non-default configuration values"},
     {config_get, "get", "Get one or more configuration values"},
     {config_match, "match", "Get configuration matching a regular expression"},
     {config_reload, "reload", "Request a configuration reload"},

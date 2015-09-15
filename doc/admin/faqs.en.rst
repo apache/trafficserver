@@ -378,7 +378,7 @@ Traffic Line commands do not execute under the following conditions:
 
 **When you are not executing the command from $TSHome/bin**
     If the Traffic Server ``bin`` directory is not in your path, then prepend the
-    Traffic Line commands with ``./`` (for example, ``./traffic_line -h``).
+    Traffic Line commands with ``./`` (for example, ``./traffic_ctl -h``).
 
 **When multiple Traffic Server installations are present and you are not
 executing the Traffic Line command from the active Traffic Server path

@@ -65,14 +65,6 @@ inkcoreapi volatile int64_t fastalloc_mem_total = 0;
 #define DEADBEEF
 #endif
 
-// #define MEMPROTECT 1
-
-#define MEMPROTECT_SIZE 0x200
-
-#ifdef MEMPROTECT
-static const int page_size = ats_pagesize();
-#endif
-
 ink_freelist_list *freelists = NULL;
 
 inkcoreapi volatile int64_t freelist_allocated_mem = 0;
@@ -152,14 +144,6 @@ ink_freelist_new(InkFreeList *f)
       uint32_t type_size = f->type_size;
       uint32_t i;
 
-#ifdef MEMPROTECT
-      if (type_size >= MEMPROTECT_SIZE) {
-        if (f->alignment < page_size)
-          f->alignment = page_size;
-        type_size = ((type_size + page_size - 1) / page_size) * page_size * 2;
-      }
-#endif /* MEMPROTECT */
-
       void *newp = NULL;
 #ifdef DEBUG
       char *oldsbrk = (char *)sbrk(0), *newsbrk = NULL;
@@ -195,13 +179,6 @@ ink_freelist_new(InkFreeList *f)
           a[j] = str[j % 4];
 #endif
         ink_freelist_free(f, a);
-#ifdef MEMPROTECT
-        if (f->type_size >= MEMPROTECT_SIZE) {
-          a += type_size - page_size;
-          if (mprotect(a, page_size, PROT_NONE) < 0)
-            perror("mprotect");
-        }
-#endif /* MEMPROTECT */
       }
       ink_atomic_increment((int *)&f->used, f->chunk_size);
       ink_atomic_increment(&fastalloc_mem_in_use, (int64_t)f->chunk_size * f->type_size);
@@ -416,13 +393,18 @@ ink_freelists_dump(FILE *f)
   fprintf(f, "     allocated      |        in-use      | type size  |   free list name\n");
   fprintf(f, "--------------------|--------------------|------------|----------------------------------\n");
 
+  uint64_t total_allocated = 0;
+  uint64_t total_used = 0;
   fll = freelists;
   while (fll) {
     fprintf(f, " %18" PRIu64 " | %18" PRIu64 " | %10u | memory/%s\n", (uint64_t)fll->fl->allocated * (uint64_t)fll->fl->type_size,
             (uint64_t)fll->fl->used * (uint64_t)fll->fl->type_size, fll->fl->type_size,
             fll->fl->name ? fll->fl->name : "<unknown>");
+    total_allocated += fll->fl->allocated * fll->fl->type_size;
+    total_used += fll->fl->used * fll->fl->type_size;
     fll = fll->next;
   }
+  fprintf(f, " %18" PRIu64 " | %18" PRIu64 " |            | TOTAL\n", total_allocated, total_used);
 #else // ! TS_USE_FREELIST
   (void)f;
 #endif

@@ -71,7 +71,7 @@ span_file_typename(mode_t st_mode)
 }
 
 Ptr<ProxyMutex> tmp_p;
-Store::Store() : n_disks(0), disk(NULL)
+Store::Store() : n_disks_in_config(0), n_disks(0), disk(NULL)
 {
 }
 
@@ -353,6 +353,7 @@ Store::read_config()
 
     // parse
     Debug("cache_init", "Store::read_config: \"%s\"", path);
+    ++n_disks_in_config;
 
     int64_t size = -1;
     int volume_num = -1;
@@ -381,6 +382,7 @@ Store::read_config()
     }
 
     char *pp = Layout::get()->relative(path);
+
     ns = new Span;
     Debug("cache_init", "Store::read_config - ns = new Span; ns->init(\"%s\",%" PRId64 "), forced volume=%d%s%s", pp, size,
           volume_num, seed ? " id=" : "", seed ? seed : "");

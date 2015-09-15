@@ -97,7 +97,8 @@ extern "C" int plock(int);
 #include <ts/ink_cap.h>
 
 #if TS_HAS_PROFILER
-#include <google/profiler.h>
+#include <gperftools/profiler.h>
+#include <gperftools/heap-profiler.h>
 #endif
 
 //
@@ -335,6 +336,8 @@ proxy_signal_handler(int signo, siginfo_t *info, void *)
   signal_format_siginfo(signo, info, appVersionInfo.AppStr);
 
 #if TS_HAS_PROFILER
+  HeapProfilerDump("/tmp/ts_end.hprof");
+  HeapProfilerStop();
   ProfilerStop();
 #endif
 
@@ -595,7 +598,7 @@ cmd_check_internal(char * /* cmd ATS_UNUSED */, bool fix = false)
   hd.reset();
 #endif
 
-  cacheProcessor.set_after_init_callback(&CB_cmd_cache_check);
+  cacheProcessor.afterInitCallbackSet(&CB_cmd_cache_check);
   if (cacheProcessor.start_internal(PROCESSOR_CHECK) < 0) {
     printf("\nbad cache configuration, %s failed\n", n);
     return CMD_FAILED;
@@ -660,7 +663,7 @@ cmd_clear(char *cmd)
   if (c_all || c_cache) {
     Note("Clearing Cache");
 
-    cacheProcessor.set_after_init_callback(&CB_cmd_cache_clear);
+    cacheProcessor.afterInitCallbackSet(&CB_cmd_cache_clear);
     if (cacheProcessor.start_internal(PROCESSOR_RECONFIGURE) < 0) {
       Note("unable to open Cache, CLEAR failed");
       return CMD_FAILED;
@@ -1375,6 +1378,7 @@ int
 main(int /* argc ATS_UNUSED */, const char **argv)
 {
 #if TS_HAS_PROFILER
+  HeapProfilerStart("/tmp/ts.hprof");
   ProfilerStart("/tmp/ts.prof");
 #endif
   bool admin_user_p = false;
@@ -1695,7 +1699,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 
     pmgmt->registerPluginCallbacks(global_config_cbs);
 
-    cacheProcessor.set_after_init_callback(&CB_After_Cache_Init);
+    cacheProcessor.afterInitCallbackSet(&CB_After_Cache_Init);
     cacheProcessor.start();
 
     // UDP net-threads are turned off by default.

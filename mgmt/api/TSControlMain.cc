@@ -297,14 +297,58 @@ marshall_rec_data(RecDataT rec_type, const RecData &rec_data, MgmtMarshallData &
 }
 
 static TSMgmtError
-send_record_get_response(int fd, TSRecordT rec_type, const char *rec_name, const void *rec_data, size_t data_len)
+send_record_get_response(int fd, const RecRecord *rec)
 {
   MgmtMarshallInt err = TS_ERR_OKAY;
-  MgmtMarshallInt type = rec_type;
-  MgmtMarshallString name = const_cast<MgmtMarshallString>(rec_name);
-  MgmtMarshallData value = {const_cast<void *>(rec_data), data_len};
+  MgmtMarshallInt type;
+  MgmtMarshallInt rclass;
+  MgmtMarshallString name;
+  MgmtMarshallData value = {NULL, 0};
 
-  return send_mgmt_response(fd, RECORD_GET, &err, &type, &name, &value);
+  if (rec) {
+    type = rec->data_type;
+    rclass = rec->rec_type;
+    name = const_cast<MgmtMarshallString>(rec->name);
+  } else {
+    type = RECD_NULL;
+    rclass = RECT_NULL;
+    name = NULL;
+  }
+
+  switch (type) {
+  case RECD_INT:
+    type = TS_REC_INT;
+    value.ptr = (void *)&rec->data.rec_int;
+    value.len = sizeof(RecInt);
+    break;
+  case RECD_COUNTER:
+    type = TS_REC_COUNTER;
+    value.ptr = (void *)&rec->data.rec_counter;
+    value.len = sizeof(RecCounter);
+    break;
+  case RECD_FLOAT:
+    type = TS_REC_FLOAT;
+    value.ptr = (void *)&rec->data.rec_float;
+    value.len = sizeof(RecFloat);
+    break;
+  case RECD_STRING:
+    // For NULL string parameters, send the literal "NULL" to match the behavior of MgmtRecordGet(). Make sure to send
+    // the trailing NULL.
+    type = TS_REC_STRING;
+    if (rec->data.rec_string) {
+      value.ptr = rec->data.rec_string;
+      value.len = strlen(rec->data.rec_string) + 1;
+    } else {
+      value.ptr = const_cast<char *>("NULL");
+      value.len = countof("NULL");
+    }
+    break;
+  default:
+    type = TS_REC_UNDEFINED;
+    break; // skip it
+  }
+
+  return send_mgmt_response(fd, RECORD_GET, &err, &rclass, &type, &name, &value);
 }
 
 /**************************************************************************
@@ -317,13 +361,21 @@ send_record_get_response(int fd, TSRecordT rec_type, const char *rec_name, const
  * output: SUCC or ERR
  * note:
  *************************************************************************/
+static void
+send_record_get(const RecRecord *rec, void *edata)
+{
+  int *fd = (int *)edata;
+  *fd = send_record_get_response(*fd, rec);
+}
+
 static TSMgmtError
 handle_record_get(int fd, void *req, size_t reqlen)
 {
   TSMgmtError ret;
-  TSRecordEle *ele;
   MgmtMarshallInt optype;
   MgmtMarshallString name;
+
+  int fderr = fd; // [in,out] variable for the fd and error
 
   ret = recv_mgmt_request(req, reqlen, RECORD_GET, &optype, &name);
   if (ret != TS_ERR_OKAY) {
@@ -331,55 +383,33 @@ handle_record_get(int fd, void *req, size_t reqlen)
   }
 
   if (strlen(name) == 0) {
-    ats_free(name);
-    return ret;
-  }
-
-  // call CoreAPI call on Traffic Manager side
-  ele = TSRecordEleCreate();
-  ret = MgmtRecordGet(name, ele);
-  ats_free(name);
-
-  if (ret != TS_ERR_OKAY) {
+    ret = TS_ERR_PARAMS;
     goto done;
   }
 
-  // create and send reply back to client
-  switch (ele->rec_type) {
-  case TS_REC_INT:
-    ret = send_record_get_response(fd, ele->rec_type, ele->rec_name, &(ele->valueT.int_val), sizeof(TSInt));
-    break;
-  case TS_REC_COUNTER:
-    ret = send_record_get_response(fd, ele->rec_type, ele->rec_name, &(ele->valueT.counter_val), sizeof(TSCounter));
-    break;
-  case TS_REC_FLOAT:
-    ret = send_record_get_response(fd, ele->rec_type, ele->rec_name, &(ele->valueT.float_val), sizeof(TSFloat));
-    break;
-  case TS_REC_STRING:
-    // Make sure to send the NULL in the string value response.
-    if (ele->valueT.string_val) {
-      ret = send_record_get_response(fd, ele->rec_type, ele->rec_name, ele->valueT.string_val, strlen(ele->valueT.string_val) + 1);
-    } else {
-      ret = send_record_get_response(fd, ele->rec_type, ele->rec_name, "NULL", countof("NULL"));
-    }
-    break;
-  default: // invalid record type
-    ret = TS_ERR_FAIL;
+  fderr = fd;
+  if (RecLookupRecord(name, send_record_get, &fderr) != REC_ERR_OKAY) {
+    ret = TS_ERR_PARAMS;
+    goto done;
+  }
+
+  // If the lookup succeeded, the final error is in "fderr".
+  if (ret == TS_ERR_OKAY) {
+    ret = (TSMgmtError)fderr;
   }
 
 done:
-  TSRecordEleDestroy(ele);
+  ats_free(name);
   return ret;
 }
 
 struct record_match_state {
   TSMgmtError err;
   int fd;
-  DFA regex;
 };
 
 static void
-send_record_match(RecT /* rec_type */, void *edata, int /* registered */, const char *name, int data_type, RecData *rec_val)
+send_record_match(const RecRecord *rec, void *edata)
 {
   record_match_state *match = (record_match_state *)edata;
 
@@ -387,30 +417,7 @@ send_record_match(RecT /* rec_type */, void *edata, int /* registered */, const 
     return;
   }
 
-  if (match->regex.match(name) >= 0) {
-    switch (data_type) {
-    case RECD_INT:
-      match->err = send_record_get_response(match->fd, TS_REC_INT, name, &(rec_val->rec_int), sizeof(TSInt));
-      break;
-    case RECD_COUNTER:
-      match->err = send_record_get_response(match->fd, TS_REC_COUNTER, name, &(rec_val->rec_counter), sizeof(TSCounter));
-      break;
-    case RECD_STRING:
-      // For NULL string parameters, end the literal "NULL" to match the behavior of MgmtRecordGet(). Make sure to send
-      // the trailing NULL.
-      if (rec_val->rec_string) {
-        match->err = send_record_get_response(match->fd, TS_REC_STRING, name, rec_val->rec_string, strlen(rec_val->rec_string) + 1);
-      } else {
-        match->err = send_record_get_response(match->fd, TS_REC_STRING, name, "NULL", countof("NULL"));
-      }
-      break;
-    case RECD_FLOAT:
-      match->err = send_record_get_response(match->fd, TS_REC_FLOAT, name, &(rec_val->rec_float), sizeof(TSFloat));
-      break;
-    default:
-      break; // skip it
-    }
-  }
+  match->err = send_record_get_response(match->fd, rec);
 }
 
 static TSMgmtError
@@ -431,21 +438,19 @@ handle_record_match(int fd, void *req, size_t reqlen)
     return TS_ERR_FAIL;
   }
 
-  if (match.regex.compile(name, RE_CASE_INSENSITIVE | RE_UNANCHORED) != 0) {
+  match.err = TS_ERR_OKAY;
+  match.fd = fd;
+
+  if (RecLookupMatchingRecords(RECT_ALL, name, send_record_match, &match) != REC_ERR_OKAY) {
     ats_free(name);
     return TS_ERR_FAIL;
   }
 
   ats_free(name);
 
-  match.err = TS_ERR_OKAY;
-  match.fd = fd;
-
-  RecDumpRecords(RECT_NULL, send_record_match, &match);
-
   // If successful, send a list terminator.
   if (match.err == TS_ERR_OKAY) {
-    return send_record_get_response(fd, TS_REC_UNDEFINED, NULL, NULL, 0);
+    return send_record_get_response(fd, NULL);
   }
 
   return match.err;
@@ -1012,77 +1017,95 @@ handle_server_backtrace(int fd, void *req, size_t reqlen)
 }
 
 static void
-send_record_describe(const RecRecord *rec, void *ptr)
+send_record_describe(const RecRecord *rec, void *edata)
 {
-  MgmtMarshallString rec_name = const_cast<char *>(rec->name);
+  MgmtMarshallString rec_name = NULL;
   MgmtMarshallData rec_value = {NULL, 0};
   MgmtMarshallData rec_default = {NULL, 0};
-  MgmtMarshallInt rec_type = rec->data_type;
-  MgmtMarshallInt rec_class = rec->rec_type;
-  MgmtMarshallInt rec_version = rec->version;
-  MgmtMarshallInt rec_rsb = rec->rsb_id;
-  MgmtMarshallInt rec_order = rec->order;
-  MgmtMarshallInt rec_access = rec->config_meta.access_type;
-  MgmtMarshallInt rec_update = rec->config_meta.update_required;
-  MgmtMarshallInt rec_updatetype = rec->config_meta.update_type;
-  MgmtMarshallInt rec_checktype = rec->config_meta.check_type;
-  MgmtMarshallInt rec_source = rec->config_meta.source;
-  MgmtMarshallString rec_checkexpr = rec->config_meta.check_expr;
+  MgmtMarshallInt rec_type = TS_REC_UNDEFINED;
+  MgmtMarshallInt rec_class = RECT_NULL;
+  MgmtMarshallInt rec_version = 0;
+  MgmtMarshallInt rec_rsb = 0;
+  MgmtMarshallInt rec_order = 0;
+  MgmtMarshallInt rec_access = RECA_NULL;
+  MgmtMarshallInt rec_update = RECU_NULL;
+  MgmtMarshallInt rec_updatetype = 0;
+  MgmtMarshallInt rec_checktype = RECC_NULL;
+  MgmtMarshallInt rec_source = REC_SOURCE_NULL;
+  MgmtMarshallString rec_checkexpr = NULL;
 
-  MgmtMarshallInt err = TS_ERR_OKAY;
+  TSMgmtError err = TS_ERR_OKAY;
 
-  int *fderr = (int *)ptr;
+  record_match_state *match = (record_match_state *)edata;
 
-  // We only describe config variables (for now).
-  if (!REC_TYPE_IS_CONFIG(rec->rec_type)) {
-    *fderr = TS_ERR_PARAMS;
+  if (match->err != TS_ERR_OKAY) {
     return;
   }
 
-  switch (rec_type) {
-  case RECD_INT:
-    rec_type = TS_REC_INT;
-    break;
-  case RECD_FLOAT:
-    rec_type = TS_REC_FLOAT;
-    break;
-  case RECD_STRING:
-    rec_type = TS_REC_STRING;
-    break;
-  case RECD_COUNTER:
-    rec_type = TS_REC_COUNTER;
-    break;
-  default:
-    rec_type = TS_REC_UNDEFINED;
+  if (rec) {
+    // We only describe config variables (for now).
+    if (!REC_TYPE_IS_CONFIG(rec->rec_type)) {
+      match->err = TS_ERR_PARAMS;
+      return;
+    }
+
+    rec_name = const_cast<char *>(rec->name);
+    rec_type = rec->data_type;
+    rec_class = rec->rec_type;
+    rec_version = rec->version;
+    rec_rsb = rec->rsb_id;
+    rec_order = rec->order;
+    rec_access = rec->config_meta.access_type;
+    rec_update = rec->config_meta.update_required;
+    rec_updatetype = rec->config_meta.update_type;
+    rec_checktype = rec->config_meta.check_type;
+    rec_source = rec->config_meta.source;
+    rec_checkexpr = rec->config_meta.check_expr;
+
+    switch (rec_type) {
+    case RECD_INT:
+      rec_type = TS_REC_INT;
+      break;
+    case RECD_FLOAT:
+      rec_type = TS_REC_FLOAT;
+      break;
+    case RECD_STRING:
+      rec_type = TS_REC_STRING;
+      break;
+    case RECD_COUNTER:
+      rec_type = TS_REC_COUNTER;
+      break;
+    default:
+      rec_type = TS_REC_UNDEFINED;
+    }
+
+    err = marshall_rec_data(rec->data_type, rec->data, rec_value);
+    if (err != TS_ERR_OKAY) {
+      goto done;
+    }
+
+    err = marshall_rec_data(rec->data_type, rec->data_default, rec_default);
+    if (err != TS_ERR_OKAY) {
+      goto done;
+    }
   }
 
-  err = marshall_rec_data(rec->data_type, rec->data, rec_value);
-  if (err != TS_ERR_OKAY) {
-    goto done;
-  }
-
-  err = marshall_rec_data(rec->data_type, rec->data_default, rec_default);
-  if (err != TS_ERR_OKAY) {
-    goto done;
-  }
-
-  err = send_mgmt_response(*fderr, RECORD_DESCRIBE_CONFIG, &err, &rec_name, &rec_value, &rec_default, &rec_type, &rec_class,
+  err = send_mgmt_response(match->fd, RECORD_DESCRIBE_CONFIG, &err, &rec_name, &rec_value, &rec_default, &rec_type, &rec_class,
                            &rec_version, &rec_rsb, &rec_order, &rec_access, &rec_update, &rec_updatetype, &rec_checktype,
                            &rec_source, &rec_checkexpr);
 
 done:
-  *fderr = err;
+  match->err = err;
 }
 
 static TSMgmtError
 handle_record_describe(int fd, void *req, size_t reqlen)
 {
   TSMgmtError ret;
+  record_match_state match;
   MgmtMarshallInt optype;
   MgmtMarshallInt options;
   MgmtMarshallString name;
-
-  int fderr = fd; // [in,out] variable for the fd and error
 
   ret = recv_mgmt_request(req, reqlen, RECORD_DESCRIBE_CONFIG, &optype, &name, &options);
   if (ret != TS_ERR_OKAY) {
@@ -1094,14 +1117,29 @@ handle_record_describe(int fd, void *req, size_t reqlen)
     goto done;
   }
 
-  if (RecLookupRecord(name, send_record_describe, &fderr) != REC_ERR_OKAY) {
-    ret = TS_ERR_PARAMS;
-    goto done;
+  match.err = TS_ERR_OKAY;
+  match.fd = fd;
+
+  if (options & RECORD_DESCRIBE_FLAGS_MATCH) {
+    if (RecLookupMatchingRecords(RECT_CONFIG | RECT_LOCAL, name, send_record_describe, &match) != REC_ERR_OKAY) {
+      ret = TS_ERR_PARAMS;
+      goto done;
+    }
+
+    // If successful, send a list terminator.
+    if (match.err == TS_ERR_OKAY) {
+      send_record_describe(NULL, &match);
+    }
+
+  } else {
+    if (RecLookupRecord(name, send_record_describe, &match) != REC_ERR_OKAY) {
+      ret = TS_ERR_PARAMS;
+      goto done;
+    }
   }
 
-  // If the lookup succeeded, the final error is in "fderr".
   if (ret == TS_ERR_OKAY) {
-    ret = (TSMgmtError)fderr;
+    ret = match.err;
   }
 
 done:

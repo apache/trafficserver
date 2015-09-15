@@ -4833,6 +4833,41 @@ TSHttpTxnCacheLookupStatusSet(TSHttpTxn txnp, int cachelookup)
 }
 
 TSReturnCode
+TSHttpTxnInfoGet(TSHttpTxn txnp, TSHttpTxnInfoKey key, TSMgmtInt *value)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void *)value) == TS_SUCCESS);
+
+  HttpSM *s = reinterpret_cast<HttpSM *>(txnp);
+  HttpCacheSM *c_sm = &(s->get_cache_sm());
+
+  switch (key) {
+  case TS_TXN_INFO_CACHE_HIT_RAM:
+    *value = (static_cast<TSMgmtInt>(c_sm->is_ram_cache_hit()));
+    break;
+  case TS_TXN_INFO_CACHE_COMPRESSED_IN_RAM:
+    *value = (static_cast<TSMgmtInt>(c_sm->is_compressed_in_ram()));
+    break;
+  case TS_TXN_INFO_CACHE_HIT_RWW:
+    *value = (static_cast<TSMgmtInt>(c_sm->is_readwhilewrite_inprogress()));
+    break;
+  case TS_TXN_INFO_CACHE_OPEN_READ_TRIES:
+    *value = (static_cast<TSMgmtInt>(c_sm->get_open_read_tries()));
+    break;
+  case TS_TXN_INFO_CACHE_OPEN_WRITE_TRIES:
+    *value = (static_cast<TSMgmtInt>(c_sm->get_open_write_tries()));
+    break;
+  case TS_TXN_INFO_CACHE_VOLUME:
+    *value = (static_cast<TSMgmtInt>(c_sm->get_volume_number()));
+    break;
+  default:
+    return TS_ERROR;
+  }
+
+  return TS_SUCCESS;
+}
+
+TSReturnCode
 TSHttpTxnCacheLookupUrlGet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc obj)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
@@ -7268,7 +7303,7 @@ TSRedirectUrlSet(TSHttpTxn txnp, const char *url, const int url_len)
     sm->enable_redirection = true;
     // max-out "redirection_tries" to avoid the regular redirection being turned on in
     // this transaction improperly. This variable doesn't affect the custom-redirection
-    sm->redirection_tries = HttpConfig::m_master.number_of_redirections;
+    sm->redirection_tries = sm->t_state.txn_conf->number_of_redirections;
   }
 }
 
@@ -7929,6 +7964,14 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
     typ = OVERRIDABLE_TYPE_STRING;
     ret = &overridableHttpConfig->body_factory_template_base;
     break;
+  case TS_CONFIG_HTTP_ENABLE_REDIRECTION:
+    typ = OVERRIDABLE_TYPE_INT;
+    ret = &overridableHttpConfig->redirection_enabled;
+    break;
+  case TS_CONFIG_HTTP_NUMBER_OF_REDIRECTIONS:
+    typ = OVERRIDABLE_TYPE_INT;
+    ret = &overridableHttpConfig->number_of_redirections;
+    break;
   // This helps avoiding compiler warnings, yet detect unhandled enum members.
   case TS_CONFIG_NULL:
   case TS_CONFIG_LAST_ENTRY:
@@ -8197,6 +8240,11 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
 
   case 37:
     switch (name[length - 1]) {
+    case 'd':
+      if (!strncmp(name, "proxy.config.http.redirection_enabled", length)) {
+        cnf = TS_CONFIG_HTTP_ENABLE_REDIRECTION;
+      }
+      break;
     case 'e':
       if (!strncmp(name, "proxy.config.http.cache.max_stale_age", length))
         cnf = TS_CONFIG_HTTP_CACHE_MAX_STALE_AGE;
@@ -8284,6 +8332,8 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
         cnf = TS_CONFIG_HTTP_CACHE_REQUIRED_HEADERS;
       else if (!strncmp(name, "proxy.config.ssl.hsts_include_subdomains", length))
         cnf = TS_CONFIG_SSL_HSTS_INCLUDE_SUBDOMAINS;
+      else if (!strncmp(name, "proxy.config.http.number_of_redirections", length))
+        cnf = TS_CONFIG_HTTP_NUMBER_OF_REDIRECTIONS;
       break;
     case 't':
       if (!strncmp(name, "proxy.config.http.keep_alive_enabled_out", length))

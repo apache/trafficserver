@@ -894,9 +894,9 @@ UrlRewrite::_regexMappingLookup(RegexMappingList &regex_mappings, URL *request_u
     }
 
     int matches_info[MAX_REGEX_SUBS * 3];
-    int match_result = list_iter->regular_expression.exec(request_host, request_host_len, matches_info, countof(matches_info));
+    bool match_result = list_iter->regular_expression.exec(request_host, request_host_len, matches_info, countof(matches_info));
 
-    if (match_result > 0) {
+    if (match_result == true) {
       Debug("url_rewrite_regex", "Request URL host [%.*s] matched regex in mapping of rank %d "
                                  "with %d possible substitutions",
             request_host_len, request_host, reg_map_rank, match_result);
@@ -915,12 +915,9 @@ UrlRewrite::_regexMappingLookup(RegexMappingList &regex_mappings, URL *request_u
       Debug("url_rewrite_regex", "Expanded toURL to [%.*s]", expanded_url->length_get(), expanded_url->string_get_ref());
       retval = true;
       break;
-    } else if (match_result == PCRE_ERROR_NOMATCH) {
+    } else {
       Debug("url_rewrite_regex", "Request URL host [%.*s] did NOT match regex in mapping of rank %d", request_host_len,
             request_host, reg_map_rank);
-    } else {
-      Warning("pcre_exec() failed with error code %d", match_result);
-      break;
     }
   }
 

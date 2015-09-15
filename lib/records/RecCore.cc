@@ -455,6 +455,36 @@ RecLookupRecord(const char *name, void (*callback)(const RecRecord *, void *), v
 }
 
 int
+RecLookupMatchingRecords(unsigned rec_type, const char *match, void (*callback)(const RecRecord *, void *), void *data, bool lock)
+{
+  int num_records;
+  DFA regex;
+
+  if (regex.compile(match, RE_CASE_INSENSITIVE | RE_UNANCHORED) != 0) {
+    return REC_ERR_FAIL;
+  }
+
+  num_records = g_num_records;
+  for (int i = 0; i < num_records; i++) {
+    RecRecord *r = &(g_records[i]);
+
+    if ((r->rec_type & rec_type) == 0) {
+      continue;
+    }
+
+    if (regex.match(r->name) < 0) {
+      continue;
+    }
+
+    rec_mutex_acquire(&(r->lock));
+    callback(r, data);
+    rec_mutex_release(&(r->lock));
+  }
+
+  return REC_ERR_OKAY;
+}
+
+int
 RecGetRecordType(const char *name, RecT *rec_type, bool lock)
 {
   int err = REC_ERR_FAIL;
@@ -928,6 +958,7 @@ debug_record_callback(RecT /* rec_type */, void * /* edata */, int registered, c
     break;
   }
 }
+
 void
 RecDumpRecords(RecT rec_type, RecDumpEntryCb callback, void *edata)
 {

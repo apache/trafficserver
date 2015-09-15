@@ -30,6 +30,7 @@
 #include <sys/types.h>
 #include "ts/defalloc.h"
 #include "ts/ink_assert.h"
+#include "ts/Diags.h"
 
 // Simple Vector class, also supports open hashed sets
 
@@ -148,6 +149,7 @@ public:
   int read(int fd);
   void qsort(bool (*lt)(C, C));
   void qsort(bool (*lt)(const C &, const C &));
+  void swap(C *p1, C *p2);
 
 private:
   void move_internal(Vec<C, A, S> &v);
@@ -950,9 +952,17 @@ Vec<C, A, S>::read(int fd)
 
 template <class C>
 inline void
+swap(C *p1, C *p2)
+{
+  C t = *p1;
+  *p1 = *p2;
+  *p2 = t;
+}
+
+template <class C>
+inline void
 qsort_Vec(C *left, C *right, bool (*lt)(C, C))
 {
-Lagain:
   if (right - left < 5) {
     for (C *y = right - 1; y > left; y--) {
       for (C *x = left; x < y; x++) {
@@ -964,39 +974,61 @@ Lagain:
       }
     }
   } else {
-    C *i = left + 1, *j = right - 1;
-    C x = *left;
-    for (;;) {
-      while (lt(x, *j))
-        j--;
-      while (i < j && lt(*i, x))
-        i++;
-      if (i >= j)
-        break;
-      C t = *i;
-      *i = *j;
-      *j = t;
-      i++;
-      j--;
+    C *center = left + ((right - left) / 2);
+    C median;
+
+    // find the median
+    if (lt(*center, *left)) { // order left and center
+      swap(center, left);
     }
-    if (j == right - 1) {
-      *left = *(right - 1);
-      *(right - 1) = x;
-      right--;
-      goto Lagain;
+    if (lt(*(right - 1), *left)) { // order left and right
+      swap(right - 1, left);
     }
-    if (left < j)
-      qsort_Vec<C>(left, j + 1, lt);
-    if (j + 2 < right)
-      qsort_Vec<C>(j + 1, right, lt);
+    if (lt(*(right - 1), *center)) { // order right and center
+      swap((right - 1), center);
+    }
+    swap(center, right - 2); // stash the median one from the right for now
+    median = *(right - 2);   // the median of left, center and right values
+
+    // now partition, pivoting on the median value
+    // l ptr is +1 b/c we already put the lowest of the incoming left, center
+    // and right in there, ignore it for now
+    // r ptr is -2 b/c we already put the biggest of the 3 values in (right-1)
+    // and the median in (right -2)
+    C *l = left + 1, *r = right - 2;
+
+    // move l and r until they have something to do
+    while (lt(median, *(r - 1))) {
+      r--;
+    }
+    while (l < r && lt(*l, median)) {
+      l++;
+    }
+    // until l and r meet,
+    // compare l and median
+    // swap l for r if l is larger than median
+    while (l < r) {
+      if (lt(*l, median)) {
+        l++;
+      } else {
+        swap(l, r - 1);
+        r--;
+      }
+    }
+
+    swap(l, right - 2); // restore median to its rightful place
+
+    // recurse for the littles (left segment)
+    qsort_Vec<C>(left, l, lt);
+    // recurse for the bigs (right segment)
+    qsort_Vec<C>(l + 1, right, lt);
   }
 }
 
 template <class C>
 inline void
-qsort_VecRef(C *left, C *right, bool (*lt)(const C &, const C &))
+qsort_VecRef(C *left, C *right, bool (*lt)(const C &, const C &), unsigned int *p_ctr)
 {
-Lagain:
   if (right - left < 5) {
     for (C *y = right - 1; y > left; y--) {
       for (C *x = left; x < y; x++) {
@@ -1008,32 +1040,56 @@ Lagain:
       }
     }
   } else {
-    C *i = left + 1, *j = right - 1;
-    C x = *left;
-    for (;;) {
-      while (lt(x, *j))
-        j--;
-      while (i < j && lt(*i, x))
-        i++;
-      if (i >= j)
-        break;
-      C t = *i;
-      *i = *j;
-      *j = t;
-      i++;
-      j--;
+    C *center = left + ((right - left) / 2);
+    C median;
+
+    // find the median
+    if (lt(*center, *left)) { // order left and center
+      swap(center, left);
     }
-    if (j == right - 1) {
-      *left = *(right - 1);
-      *(right - 1) = x;
-      right--;
-      goto Lagain;
+    if (lt(*(right - 1), *left)) { // order left and right
+      swap(right - 1, left);
     }
-    if (left < j)
-      qsort_VecRef<C>(left, j + 1, lt);
-    if (j + 2 < right)
-      qsort_VecRef<C>(j + 1, right, lt);
+    if (lt(*(right - 1), *center)) { // order right and center
+      swap((right - 1), center);
+    }
+    swap(center, right - 2); // stash the median one from the right for now
+    median = *(right - 2);   // the median of left, center and right values
+
+    // now partition, pivoting on the median value
+    // l ptr is +1 b/c we already put the lowest of the incoming left, center
+    // and right in there, ignore it for now
+    // r ptr is -2 b/c we already put the biggest of the 3 values in (right-1)
+    // and the median in (right -2)
+    C *l = left + 1, *r = right - 2;
+
+    // move l and r until they have something to do
+    while (lt(median, *(r - 1))) {
+      r--;
+    }
+    while (l < r && lt(*l, median)) {
+      l++;
+    }
+    // until l and r meet,
+    // compare l and median
+    // swap l for r if l is larger than median
+    while (l < r) {
+      if (lt(*l, median)) {
+        l++;
+      } else {
+        swap(l, r - 1);
+        r--;
+      }
+    }
+
+    swap(l, right - 2); // restore median to its rightful place
+
+    // recurse for the littles (left segment)
+    qsort_VecRef<C>(left, l, lt, p_ctr);
+    // recurse for the bigs (right segment)
+    qsort_VecRef<C>(l + 1, right, lt, p_ctr);
   }
+  (*p_ctr)++;
 }
 
 template <class C, class A, int S>
@@ -1048,8 +1104,10 @@ template <class C, class A, int S>
 inline void
 Vec<C, A, S>::qsort(bool (*lt)(const C &, const C &))
 {
+  static unsigned int ctr = 0;
   if (n)
-    qsort_VecRef<C>(&v[0], end(), lt);
+    qsort_VecRef<C>(&v[0], end(), lt, &ctr);
+  Debug("qsort", "took %u iterations to sort %ld elements", ctr, n);
 }
 void test_vec();
 

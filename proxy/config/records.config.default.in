@@ -25,6 +25,12 @@ CONFIG proxy.config.exec_thread.affinity INT 1
 CONFIG proxy.config.http.server_ports STRING 8080
 
 ##############################################################################
+# Enable HTTP/2 Support. Docs:
+#    https://docs.trafficserver.apache.org/records.config#http-2-configuration
+##############################################################################
+CONFIG proxy.config.http2.enabled INT 0
+
+##############################################################################
 # Via: headers. Docs:
 #     https://docs.trafficserver.apache.org/records.config#proxy-config-http-insert-response-via-str
 ##############################################################################
@@ -120,6 +126,8 @@ CONFIG proxy.config.http.cache.heuristic_lm_factor FLOAT 0.10
 #    https://docs.trafficserver.apache.org/records.config#network
 ##############################################################################
 CONFIG proxy.config.net.connections_throttle INT 30000
+CONFIG proxy.config.net.max_connections_in INT 30000
+CONFIG proxy.config.net.max_connections_active_in INT 10000
 
 ##############################################################################
 # RAM and disk cache configurations. Docs:

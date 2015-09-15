@@ -733,11 +733,27 @@ CacheProcessor::start_internal(int flags)
     }
   }
 
-  if (gndisks == 0) {
-    Warning("unable to open cache disk(s): Cache Disabled\n");
-    return -1;
-  }
   start_done = 1;
+
+  if (gndisks == 0) {
+    CacheProcessor::initialized = CACHE_INIT_FAILED;
+    // Have to do this here because no IO events were scheduled and so @c diskInitialized() won't be called.
+    if (cb_after_init)
+      cb_after_init();
+
+    if (this->waitForCache() > 1) {
+      Fatal("Cache initialization failed - no disks available but cache required");
+    } else {
+      Warning("unable to open cache disk(s): Cache Disabled\n");
+      return -1; // pointless, AFAICT this is ignored.
+    }
+  } else if (this->waitForCache() == 3 && static_cast<unsigned int>(gndisks) < theCacheStore.n_disks_in_config) {
+    CacheProcessor::initialized = CACHE_INIT_FAILED;
+    if (cb_after_init)
+      cb_after_init();
+    Fatal("Cache initialization failed - only %d out of %d disks were valid and all were required.", gndisks,
+          theCacheStore.n_disks_in_config);
+  }
 
   return 0;
 }
@@ -756,7 +772,17 @@ CacheProcessor::diskInitialized()
     }
 
     if (bad_disks != 0) {
-      // create a new array
+      // Check if this is a fatal error
+      if (this->waitForCache() == 3 || (bad_disks == gndisks && this->waitForCache() == 2)) {
+        // This could be passed off to @c cacheInitialized (as with volume config problems) but I think
+        // the more specific error message here is worth the extra code.
+        CacheProcessor::initialized = CACHE_INIT_FAILED;
+        if (cb_after_init)
+          cb_after_init();
+        Fatal("Cache initialization failed - only %d of %d disks were available.", gndisks, theCacheStore.n_disks_in_config);
+      }
+
+      // still good, create a new array to hold the valid disks.
       CacheDisk **p_good_disks;
       if ((gndisks - bad_disks) > 0)
         p_good_disks = (CacheDisk **)ats_malloc((gndisks - bad_disks) * sizeof(CacheDisk *));
@@ -1053,9 +1079,15 @@ CacheProcessor::cacheInitialized()
     CacheProcessor::initialized = CACHE_INIT_FAILED;
     Note("cache disabled");
   }
+
   // Fire callback to signal initialization finished.
   if (cb_after_init)
     cb_after_init();
+
+  // TS-3848
+  if (CACHE_INIT_FAILED == CacheProcessor::initialized && cacheProcessor.waitForCache() > 1) {
+    Fatal("Cache initialization failed with cache required, exiting.");
+  }
 }
 
 void
@@ -2078,6 +2110,7 @@ Cache::open_done()
   Action *register_ShowCacheInternal(Continuation * c, HTTPHdr * h);
   statPagesManager.register_http("cache", register_ShowCache);
   statPagesManager.register_http("cache-internal", register_ShowCacheInternal);
+
   if (total_good_nvol == 0) {
     ready = CACHE_INIT_FAILED;
     cacheProcessor.cacheInitialized();
@@ -2091,6 +2124,12 @@ Cache::open_done()
     ready = CACHE_INIT_FAILED;
   else
     ready = CACHE_INITIALIZED;
+
+  // TS-3848
+  if (ready == CACHE_INIT_FAILED && cacheProcessor.waitForCache() >= 2) {
+    Fatal("Failed to initialize cache host table");
+  }
+
   cacheProcessor.cacheInitialized();
 
   return 0;
@@ -2420,7 +2459,9 @@ CacheVC::handleRead(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   // check ram cache
   ink_assert(vol->mutex->thread_holding == this_ethread());
   int64_t o = dir_offset(&dir);
-  if (vol->ram_cache->get(read_key, &buf, (uint32_t)(o >> 32), (uint32_t)o)) {
+  int ram_hit_state = vol->ram_cache->get(read_key, &buf, (uint32_t)(o >> 32), (uint32_t)o);
+  f.compressed_in_ram = (ram_hit_state > RAM_HIT_COMPRESS_NONE) ? 1 : 0;
+  if (ram_hit_state >= RAM_HIT_COMPRESS_NONE) {
     goto LramHit;
   }
 
@@ -3233,16 +3274,12 @@ ink_cache_init(ModuleVersion v)
 
   register_cache_stats(cache_rsb, "proxy.process.cache");
 
+  REC_ReadConfigInteger(cacheProcessor.wait_for_cache, "proxy.config.http.wait_for_cache");
+
   const char *err = NULL;
   if ((err = theCacheStore.read_config())) {
-    printf("%s  failed\n", err);
+    printf("Failed to read cache storage configuration - %s\n", err);
     exit(1);
-  }
-
-  if (theCacheStore.n_disks == 0) {
-    ats_scoped_str path(RecConfigReadConfigPath("proxy.config.cache.storage_filename", "storage.config"));
-    Warning("no cache disks specified in %s: cache disabled\n", (const char *)path);
-    // exit(1);
   }
 }
 

@@ -51,7 +51,7 @@ most common matches appears early in the file. In order to force a
 profile dump, you can do ::
 
     $ sudo touch remap.config
-    $ sudo traffic_line -x
+    $ sudo traffic_ctl config reload
 
 By default, only the path and query string of the URL are provided for
 the regular expressions to match. The following optional parameters can

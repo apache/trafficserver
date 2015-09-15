@@ -54,9 +54,9 @@ Signals
 =======
 
 SIGHUP
-  This signal causes a reconfiguration event, equivalent to running :program:`traffic_line -x`.
+  This signal causes a reconfiguration event, equivalent to running :program:`traffic_ctl config reload`.
 
 See also
 ========
 
-:manpage:`traffic_line(8)`
+:manpage:`traffic_ctl(8)`

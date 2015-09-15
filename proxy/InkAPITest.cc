@@ -7207,7 +7207,8 @@ const char *SDK_Overridable_Configs[TS_CONFIG_LAST_ENTRY] = {
   "proxy.config.http.cache.max_open_read_retries", "proxy.config.http.cache.range.write",
   "proxy.config.http.post.check.content_length.enabled", "proxy.config.http.global_user_agent_header",
   "proxy.config.http.auth_server_session_private", "proxy.config.http.slow.log.threshold", "proxy.config.http.cache.generation",
-  "proxy.config.body_factory.template_base", "proxy.config.http.cache.open_write_fail_action"};
+  "proxy.config.body_factory.template_base", "proxy.config.http.cache.open_write_fail_action",
+  "proxy.config.http.redirection_enabled", "proxy.config.http.number_of_redirections"};
 
 REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS)(RegressionTest *test, int /* atype ATS_UNUSED */, int *pstatus)
 {
@@ -7289,6 +7290,57 @@ REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS)(RegressionTest *test, int /* atype 
     SDK_RPRINT(test, "TSHttpTxnConfigIntSet", "TestCase1", TC_PASS, "ok");
     SDK_RPRINT(test, "TSHttpTxnConfigFloatSet", "TestCase1", TC_PASS, "ok");
     SDK_RPRINT(test, "TSHttpTxnConfigStringSet", "TestCase1", TC_PASS, "ok");
+  } else {
+    *pstatus = REGRESSION_TEST_FAILED;
+  }
+
+  return;
+}
+
+////////////////////////////////////////////////
+// SDK_API_TXN_HTTP_INFO_GET
+//
+// Unit Test for API: TSHttpTxnInfoGet
+////////////////////////////////////////////////
+
+REGRESSION_TEST(SDK_API_TXN_HTTP_INFO_GET)(RegressionTest *test, int /* atype ATS_UNUSED */, int *pstatus)
+{
+  HttpSM *s = HttpSM::allocate();
+  bool success = true;
+  TSHttpTxn txnp = reinterpret_cast<TSHttpTxn>(s);
+  TSMgmtInt ival_read;
+
+
+  s->init();
+
+  *pstatus = REGRESSION_TEST_INPROGRESS;
+  HttpCacheSM *c_sm = &(s->get_cache_sm());
+  c_sm->set_readwhilewrite_inprogress(true);
+  c_sm->set_open_read_tries(5);
+  c_sm->set_open_write_tries(8);
+
+  TSHttpTxnInfoGet(txnp, TS_TXN_INFO_CACHE_HIT_RWW, &ival_read);
+  if (ival_read == 0) {
+    SDK_RPRINT(test, "TSHttpTxnInfoGet", "TestCase1", TC_FAIL, "Failed on %d, %d != %d", TS_TXN_INFO_CACHE_HIT_RWW, ival_read, 1);
+    success = false;
+  }
+
+  TSHttpTxnInfoGet(txnp, TS_TXN_INFO_CACHE_OPEN_READ_TRIES, &ival_read);
+  if (ival_read != 5) {
+    SDK_RPRINT(test, "TSHttpTxnInfoGet", "TestCase1", TC_FAIL, "Failed on %d, %d != %d", TS_TXN_INFO_CACHE_HIT_RWW, ival_read, 5);
+    success = false;
+  }
+
+  TSHttpTxnInfoGet(txnp, TS_TXN_INFO_CACHE_OPEN_WRITE_TRIES, &ival_read);
+  if (ival_read != 8) {
+    SDK_RPRINT(test, "TSHttpTxnInfoGet", "TestCase1", TC_FAIL, "Failed on %d, %d != %d", TS_TXN_INFO_CACHE_HIT_RWW, ival_read, 8);
+    success = false;
+  }
+
+  s->destroy();
+  if (success) {
+    *pstatus = REGRESSION_TEST_PASSED;
+    SDK_RPRINT(test, "TSHttpTxnInfoGet", "TestCase1", TC_PASS, "ok");
   } else {
     *pstatus = REGRESSION_TEST_FAILED;
   }

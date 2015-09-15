@@ -278,8 +278,9 @@ HttpSM::HttpSM()
     server_response_hdr_bytes(0), server_response_body_bytes(0), client_response_hdr_bytes(0), client_response_body_bytes(0),
     cache_response_hdr_bytes(0), cache_response_body_bytes(0), pushed_response_hdr_bytes(0), pushed_response_body_bytes(0),
     client_tcp_reused(false), client_ssl_reused(false), client_connection_is_ssl(false), client_sec_protocol("-"),
-    client_cipher_suite("-"), plugin_tag(0), plugin_id(0), hooks_set(false), cur_hook_id(TS_HTTP_LAST_HOOK), cur_hook(NULL),
-    cur_hooks(0), callout_state(HTTP_API_NO_CALLOUT), terminate_sm(false), kill_this_async_done(false), parse_range_done(false)
+    client_cipher_suite("-"), server_transact_count(0), plugin_tag(0), plugin_id(0), hooks_set(false),
+    cur_hook_id(TS_HTTP_LAST_HOOK), cur_hook(NULL), cur_hooks(0), callout_state(HTTP_API_NO_CALLOUT), terminate_sm(false),
+    kill_this_async_done(false), parse_range_done(false)
 {
   memset(&history, 0, sizeof(history));
   memset(&vc_table, 0, sizeof(vc_table));
@@ -481,8 +482,10 @@ HttpSM::attach_client_session(HttpClientSession *client_vc, IOBufferReader *buff
   if (ssl_vc != NULL) {
     client_connection_is_ssl = true;
     client_ssl_reused = ssl_vc->getSSLSessionCacheHit();
-    client_sec_protocol = ssl_vc->getSSLProtocol();
-    client_cipher_suite = ssl_vc->getSSLCipherSuite();
+    const char *protocol = ssl_vc->getSSLProtocol();
+    client_sec_protocol = protocol ? protocol : "-";
+    const char *cipher = ssl_vc->getSSLCipherSuite();
+    client_cipher_suite = cipher ? cipher : "-";
   }
 
   ink_release_assert(ua_session->get_half_close_flag() == false);
@@ -761,9 +764,9 @@ HttpSM::state_read_client_request_header(int event, void *data)
     }
     // YTS Team, yamsat Plugin
     // Setting enable_redirection according to HttpConfig master
-    if ((HttpConfig::m_master.number_of_redirections > 0) ||
+    if ((t_state.txn_conf->number_of_redirections > 0) ||
         (t_state.method == HTTP_WKSIDX_POST && HttpConfig::m_master.post_copy_size))
-      enable_redirection = HttpConfig::m_master.redirection_enabled;
+      enable_redirection = t_state.txn_conf->redirection_enabled;
 
     call_transact_and_set_next_state(HttpTransact::ModifyRequest);
 
@@ -1851,7 +1854,7 @@ HttpSM::state_read_server_response_header(int event, void *data)
     t_state.api_next_action = HttpTransact::SM_ACTION_API_READ_RESPONSE_HDR;
 
     // if exceeded limit deallocate postdata buffers and disable redirection
-    if (enable_redirection && (redirection_tries < HttpConfig::m_master.number_of_redirections)) {
+    if (enable_redirection && (redirection_tries < t_state.txn_conf->number_of_redirections)) {
       ++redirection_tries;
     } else {
       tunnel.deallocate_redirect_postdata_buffers();
@@ -2374,17 +2377,20 @@ HttpSM::state_cache_open_write(int event, void *data)
     //  for reading
     if (t_state.redirect_info.redirect_in_process) {
       DebugSM("http_redirect", "[%" PRId64 "] CACHE_EVENT_OPEN_WRITE_FAILED during redirect follow", sm_id);
-      t_state.cache_open_write_fail_action = HttpTransact::CACHE_OPEN_WRITE_FAIL_DEFAULT;
+      t_state.cache_open_write_fail_action = HttpTransact::CACHE_WL_FAIL_ACTION_DEFAULT;
       t_state.cache_info.write_lock_state = HttpTransact::CACHE_WL_FAIL;
       break;
     }
-    if (t_state.txn_conf->cache_open_write_fail_action == HttpTransact::CACHE_OPEN_WRITE_FAIL_DEFAULT) {
+    if (t_state.txn_conf->cache_open_write_fail_action == HttpTransact::CACHE_WL_FAIL_ACTION_DEFAULT) {
       t_state.cache_info.write_lock_state = HttpTransact::CACHE_WL_FAIL;
       break;
     } else {
       t_state.cache_open_write_fail_action = t_state.txn_conf->cache_open_write_fail_action;
-      if (!t_state.cache_info.object_read) {
+      if (!t_state.cache_info.object_read ||
+          (t_state.cache_open_write_fail_action == HttpTransact::CACHE_WL_FAIL_ACTION_ERROR_ON_MISS_OR_REVALIDATE)) {
         // cache miss, set wl_state to fail
+        DebugSM("http", "[%" PRId64 "] cache object read %p, cache_wl_fail_action %d", sm_id, t_state.cache_info.object_read,
+                t_state.cache_open_write_fail_action);
         t_state.cache_info.write_lock_state = HttpTransact::CACHE_WL_FAIL;
         break;
       }
@@ -5606,7 +5612,7 @@ HttpSM::attach_server_session(HttpServerSession *s)
   hsm_release_assert(server_entry == NULL);
   hsm_release_assert(s->state == HSS_ACTIVE);
   server_session = s;
-  server_session->transact_count++;
+  server_transact_count = server_session->transact_count++;
 
   // Set the mutex so that we have something to update
   //   stats with
@@ -7376,7 +7382,7 @@ void
 HttpSM::do_redirect()
 {
   DebugSM("http_redirect", "[HttpSM::do_redirect]");
-  if (!enable_redirection || redirection_tries >= HttpConfig::m_master.number_of_redirections) {
+  if (!enable_redirection || redirection_tries >= t_state.txn_conf->number_of_redirections) {
     tunnel.deallocate_redirect_postdata_buffers();
     return;
   }
@@ -7679,7 +7685,7 @@ HttpSM::is_private()
 inline bool
 HttpSM::is_redirect_required()
 {
-  bool redirect_required = (enable_redirection && (redirection_tries <= HttpConfig::m_master.number_of_redirections));
+  bool redirect_required = (enable_redirection && (redirection_tries <= t_state.txn_conf->number_of_redirections));
 
   DebugSM("http_redirect", "is_redirect_required %u", redirect_required);
 

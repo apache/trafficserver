@@ -23,7 +23,7 @@ Header Rewrite Plugin
 
 This is a plugin for Apache Traffic Server that allows you to
 modify various headers based on defined rules (operations) on a request or
-response. Currently, only one operation is supported.
+response.
 
 Using the plugin
 ----------------
@@ -85,14 +85,14 @@ Operator flags
 --------------
 
 The operator flags are optional, and must not contain whitespaces inside
-the brackets. Currently, only one flag is supported::
+the brackets. Two flags are available:
 
   [L]   Last rule, do not continue
   [QSA] Append query string
 
 Variable expansion
 ------------------
-Currently only limited variable expansion is supported in add-header. Supported
+Only limited variable expansion is supported in add-header. Supported
 substitutions include::
 
   %<proto>      Protocol
@@ -159,7 +159,7 @@ is required to match that section of the URL.
 
 Supported Option Names:
    HOST
-   
+
 Example:
    cond %{URL:HOST} =www.example.com
 
@@ -208,3 +208,39 @@ Examples
   rm-header Set-Cookie
   counter plugin.header_rewrite.x-y-foobar-dc1
   cond %{HEADER:X-Y-Foobar} "Some string" [AND,NC]
+
+
+.. note:: Notes about header conditionals
+
+  In HTTP multple headers can be consolidated into a single comma separated string.
+  To avoid complex markup within header-rewrite all header conditionals are
+  evaluated against all values of the header normalized into a single comma separated string.
+  Some examples:
+
+  Conditions
+  ::
+     # rule 1
+    cond %{HEADER:foo} /bar/
+
+     # rule 2
+    cond %{HEADER:foo} =bar
+
+  Examples
+  ::
+
+    # matches 1 and 2
+    foo: bar
+
+    # matches 1
+    foo: bar
+    foo: baz
+
+    # matches 1
+    foo: baz
+    foo: bar
+
+    # matches 1
+    foo: bar,baz
+
+    # matches 1
+    foo: baz,bar

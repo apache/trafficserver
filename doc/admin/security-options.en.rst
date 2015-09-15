@@ -31,7 +31,7 @@ the proxy cache.
 #. Add a line to :file:`ip_allow.config` for each IP address or
    range of IP addresses allowed to access Traffic Server.
 
-#. Run the command :option:`traffic_line -x` to apply the configuration
+#. Run the command :option:`traffic_ctl config reload` to apply the configuration
    changes.
 
 .. _configuring-dns-server-selection-split-dns:
@@ -58,7 +58,7 @@ To configure Split DNS:
 
         CONFIG proxy.config.dns.splitDNS.enabled INT 1
 
-#. Run the command :option:`traffic_line -x` to apply the configuration changes.
+#. Run the command :option:`traffic_ctl config reload` to apply the configuration changes.
 
 .. _configuring-ssl-termination:
 
@@ -169,8 +169,8 @@ Client/Traffic Server connections, you must do the following:
 
         CONFIG proxy.config.ssl.CA.cert.path STRING "/opt/CA/certs/private-ca.pem"
 
-#. Run the command :option:`traffic_line -L` to restart Traffic Server on the
-   local node or :option:`traffic_line -M` to restart Traffic Server on all
+#. Run the command :option:`traffic_ctl server restart` to restart Traffic Server on the
+   local node or :option:`traffic_ctl cluster restart` to restart Traffic Server on all
    the nodes in a cluster.
 
 .. _traffic-server-and-origin-server-connections:
@@ -256,8 +256,8 @@ and origin server connections, you must do the following:
         CONFIG proxy.config.ssl.client.CA.cert.path STRING "/opt/ts/etc/ssl/certs/"
         CONFIG proxy.config.ssl.client.CA.cert.filename STRING "CAs.pem"
 
-#. Run the command :option:`traffic_line -L` to restart Traffic Server on the
-   local node or :option:`traffic_line -M` to restart Traffic Server on all
+#. Run the command :option:`traffic_ctl server restart` to restart Traffic Server on the
+   local node or :option:`traffic_ctl cluster restart` to restart Traffic Server on all
    the nodes in a cluster.
 
 Rotating TLS Session Ticket Keys
@@ -274,4 +274,4 @@ a ticket key file as a reverse queue in 48-byte chunks.
 
 #. Touch :file:`ssl_multicert.config` to indicate that the SSL configuration is stale.
 
-#. Run the command :option:`traffic_line -x` to apply the new ticket key.
+#. Run the command :option:`traffic_ctl config reload` to apply the new ticket key.

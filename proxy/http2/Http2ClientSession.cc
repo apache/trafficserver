@@ -61,7 +61,8 @@ send_connection_event(Continuation *cont, int event, void *edata)
 }
 
 Http2ClientSession::Http2ClientSession()
-  : con_id(0), client_vc(NULL), read_buffer(NULL), sm_reader(NULL), write_buffer(NULL), sm_writer(NULL), upgrade_context()
+  : con_id(0), total_write_len(0), client_vc(NULL), read_buffer(NULL), sm_reader(NULL), write_buffer(NULL), sm_writer(NULL),
+    upgrade_context()
 {
 }
 
@@ -232,6 +233,8 @@ Http2ClientSession::main_event_handler(int event, void *edata)
 
   case HTTP2_SESSION_EVENT_XMIT: {
     Http2Frame *frame = (Http2Frame *)edata;
+    total_write_len += frame->size();
+    write_vio->nbytes = total_write_len;
     frame->xmit(this->write_buffer);
     write_reenable();
     return 0;
@@ -244,10 +247,10 @@ Http2ClientSession::main_event_handler(int event, void *edata)
     this->do_io_close();
     return 0;
 
-  case VC_EVENT_WRITE_COMPLETE:
   case VC_EVENT_WRITE_READY:
-    // After sending GOAWAY, close the connection
-    if (this->connection_state.is_state_closed() && write_vio->ntodo() <= 0) {
+    return 0;
+  case VC_EVENT_WRITE_COMPLETE:
+    if (this->connection_state.is_state_closed()) {
       this->do_io_close();
     }
     return 0;
@@ -362,9 +365,10 @@ Http2ClientSession::state_start_frame_read(int event, void *edata)
     // CONTINUATIONs MUST follow behind HEADERS which doesn't have END_HEADERS
     Http2StreamId continued_stream_id = this->connection_state.get_continued_stream_id();
 
-    if (continued_stream_id != 0 && this->current_hdr.type != HTTP2_FRAME_TYPE_CONTINUATION) {
+    if (continued_stream_id != 0 &&
+        (continued_stream_id != this->current_hdr.streamid || this->current_hdr.type != HTTP2_FRAME_TYPE_CONTINUATION)) {
       SCOPED_MUTEX_LOCK(lock, this->connection_state.mutex, this_ethread());
-      if (!this->connection_state.is_state_closed() || continued_stream_id != this->current_hdr.streamid) {
+      if (!this->connection_state.is_state_closed()) {
         this->connection_state.send_goaway_frame(this->current_hdr.streamid, HTTP2_ERROR_PROTOCOL_ERROR);
       }
       return 0;

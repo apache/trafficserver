@@ -262,7 +262,7 @@ To create mapping rules:
 
 #. Enter the map and reverse-map rules into :file:`remap.config`.
 
-#. Run the command :option:`traffic_line -x` to apply the configuration changes.
+#. Run the command :option:`traffic_ctl config reload` to apply the configuration changes.
 
 Enabling HTTP Reverse Proxy
 ---------------------------
@@ -273,7 +273,7 @@ To enable HTTP reverse proxy:
 
     CONFIG proxy.config.reverse_proxy.enabled INT 1
 
-#. Run the command :option:`traffic_line -x` to apply the configuration changes.
+#. Run the command :option:`traffic_ctl config reload` to apply the configuration changes.
 
 Setting Optional HTTP Reverse Proxy Options
 -------------------------------------------
@@ -294,7 +294,7 @@ Traffic Server provides several reverse proxy configuration options in
    as ones that do not provide ``Host`` headers, are directed.
    See :ts:cv:`proxy.config.header.parse.no_host_url_redirect`.
 
-Run the command :option:`traffic_line -x` to apply any of these configuration
+Run the command :option:`traffic_ctl config reload` to apply any of these configuration
 changes.
 
 Redirecting HTTP Requests
@@ -318,7 +318,7 @@ To set redirect rules:
 
 #. For each redirect you want to set enter a mapping rule in :file:`remap.config`.
 
-#. Run the command :option:`traffic_line -x` to apply the configuration changes.
+#. Run the command :option:`traffic_ctl config reload` to apply the configuration changes.
 
 Example
 -------

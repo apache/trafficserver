@@ -188,6 +188,19 @@ tsapi void TSCacheHttpInfoReqGet(TSCacheHttpInfo infop, TSMBuffer *bufp, TSMLoc 
 tsapi void TSCacheHttpInfoRespGet(TSCacheHttpInfo infop, TSMBuffer *bufp, TSMLoc *offset);
 tsapi void TSCacheHttpInfoDestroy(TSCacheHttpInfo infop);
 
+/* Get Arbitrary Txn info such as cache lookup details etc as defined in TSHttpTxnInfoKey */
+/**
+   Return the particular txn info requested.
+
+   @param txnp the transaction pointer
+   @param key the requested txn info.
+   @param TSMgmtInt a pointer to a integer where the return value is stored
+
+   @return @c TS_SUCCESS if the requested info is supported, TS_ERROR otherwise
+
+*/
+tsapi TSReturnCode TSHttpTxnInfoGet(TSHttpTxn txnp, TSHttpTxnInfoKey key, TSMgmtInt *value);
+
 
 /* =====  ICP =====  */
 tsapi void TSHttpIcpDynamicSet(int value);

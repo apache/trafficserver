@@ -2961,29 +2961,34 @@ HttpTransact::handle_cache_write_lock(State *s)
     // No write lock, ignore the cache and proxy only;
     // FIX: Should just serve from cache if this is a revalidate
     s->cache_info.action = CACHE_DO_NO_ACTION;
-    if (s->cache_open_write_fail_action & CACHE_OPEN_WRITE_FAIL_ERROR_ON_MISS) {
-      DebugTxn("http_error", "cache_open_write_fail_action, cache miss, return error");
+    switch (s->cache_open_write_fail_action) {
+    case CACHE_WL_FAIL_ACTION_ERROR_ON_MISS:
+    case CACHE_WL_FAIL_ACTION_ERROR_ON_MISS_STALE_ON_REVALIDATE:
+    case CACHE_WL_FAIL_ACTION_ERROR_ON_MISS_OR_REVALIDATE:
+      DebugTxn("http_error", "cache_open_write_fail_action %d, cache miss, return error", s->cache_open_write_fail_action);
       s->cache_info.write_status = CACHE_WRITE_ERROR;
       build_error_response(s, HTTP_STATUS_BAD_GATEWAY, "Connection Failed", "connect#failed_connect", NULL);
       MIMEField *ats_field;
-      HTTPHdr *header = &(s->hdr_info.client_response);
-
+      HTTPHdr *header;
+      header = &(s->hdr_info.client_response);
       if ((ats_field = header->field_find(MIME_FIELD_ATS_INTERNAL, MIME_LEN_ATS_INTERNAL)) == NULL) {
         if (likely((ats_field = header->field_create(MIME_FIELD_ATS_INTERNAL, MIME_LEN_ATS_INTERNAL)) != NULL))
           header->field_attach(ats_field);
       }
       if (likely(ats_field)) {
-        Debug("http_error", "Adding Ats-Internal-Messages: %d", CACHE_WL_FAIL);
-        header->field_value_set_int(ats_field, CACHE_WL_FAIL);
+        int value = (s->cache_info.object_read) ? 1 : 0;
+        Debug("http_error", "Adding Ats-Internal-Messages: %d", value);
+        header->field_value_set_int(ats_field, value);
       } else {
-        Debug("http_error", "failed to add Ats-Internal-Messages: %d", CACHE_WL_FAIL);
+        Debug("http_error", "failed to add Ats-Internal-Messages");
       }
 
       TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, NULL);
       return;
-    } else {
+    default:
       s->cache_info.write_status = CACHE_WRITE_LOCK_MISS;
       remove_ims = true;
+      break;
     }
     break;
   case CACHE_WL_READ_RETRY:
@@ -7367,7 +7372,7 @@ HttpTransact::what_is_document_freshness(State *s, HTTPHdr *client_request, HTTP
   uint32_t cc_mask, cooked_cc_mask;
   uint32_t os_specifies_revalidate;
 
-  if (s->cache_open_write_fail_action & CACHE_OPEN_WRITE_FAIL_STALE_OR_REVALIDATE) {
+  if (s->cache_open_write_fail_action & CACHE_WL_FAIL_ACTION_STALE_ON_REVALIDATE) {
     if (is_stale_cache_response_returnable(s)) {
       DebugTxn("http_match", "[what_is_document_freshness] cache_serve_stale_on_write_lock_fail, return FRESH");
       return (FRESHNESS_FRESH);

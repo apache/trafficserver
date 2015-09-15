@@ -297,6 +297,7 @@ HttpSessionManager::acquire_session(Continuation * /* cont ATS_UNUSED */, sockad
                 // Close out to_return, we were't able to get a connection
                 to_return->do_io_close();
                 to_return = NULL;
+                retval = HSM_NOT_FOUND;
               } else {
                 // Keep things from timing out on us
                 new_vc->set_inactivity_timeout(new_vc->get_inactivity_timeout());

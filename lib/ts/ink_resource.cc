@@ -24,6 +24,7 @@
 #include "ts/ink_assert.h"
 #include "ts/ink_atomic.h"
 #include "ts/ink_resource.h"
+#include <execinfo.h>
 
 volatile int res_track_memory = 0; // Disabled by default
 
@@ -36,18 +37,58 @@ ink_mutex ResourceTracker::resourceLock = PTHREAD_MUTEX_INITIALIZER;
 class Resource
 {
 public:
-  Resource() : _incrementCount(0), _decrementCount(0), _value(0) {}
+  Resource() : _incrementCount(0), _decrementCount(0), _value(0), _symbol(NULL) { _name[0] = '\0'; }
   void increment(const int64_t size);
   int64_t
   getValue() const
   {
     return _value;
   }
+  int64_t
+  getIncrement() const
+  {
+    return _incrementCount;
+  }
+  int64_t
+  getDecrement() const
+  {
+    return _decrementCount;
+  }
+  void
+  setSymbol(const void *symbol)
+  {
+    _symbol = symbol;
+  }
+  void
+  setName(const char *name)
+  {
+    strncpy(_name, name, sizeof(_name));
+    _name[sizeof(_name) - 1] = '\0';
+  }
+  void
+  setName(const void *symbol, const char *name)
+  {
+    Dl_info info;
+    dladdr(symbol, &info);
+    snprintf(_name, sizeof(_name), "%s/%s", name, info.dli_sname);
+  }
+  const char *
+  getName() const
+  {
+    return _name;
+  }
+  const void *
+  getSymbol() const
+  {
+    return _symbol;
+  }
 
 private:
   int64_t _incrementCount;
   int64_t _decrementCount;
   int64_t _value;
+  const void *_symbol;
+  char _name[128];
 };
 
 void
@@ -65,6 +106,21 @@ void
 ResourceTracker::increment(const char *name, const int64_t size)
 {
   Resource &resource = lookup(name);
+  const char *lookup_name = resource.getName();
+  if (lookup_name[0] == '\0') {
+    resource.setName(name);
+  }
+  resource.increment(size);
+}
+
+void
+ResourceTracker::increment(const void *symbol, const int64_t size, const char *name)
+{
+  Resource &resource = lookup((const char *)symbol);
+  if (resource.getSymbol() == NULL && name != NULL) {
+    resource.setName(symbol, name);
+    resource.setSymbol(symbol);
+  }
   resource.increment(size);
 }
 
@@ -96,14 +152,21 @@ ResourceTracker::dump(FILE *fd)
 
   ink_mutex_acquire(&resourceLock);
   if (!_resourceMap.empty()) {
-    fprintf(fd, "%50s | %20s\n", "Location", "Size In-use");
-    fprintf(fd, "---------------------------------------------------+------------------------\n");
+    fprintf(fd, "\n%-10s | %-10s | %-20s | %-10s | %-50s\n", "Allocs", "Frees", "Size In-use", "Avg Size", "Location");
+    fprintf(fd, "-----------|------------|----------------------|------------|"
+                "--------------------------------------------------------------------\n");
     for (std::map<const char *, Resource *>::const_iterator it = _resourceMap.begin(); it != _resourceMap.end(); ++it) {
       const Resource &resource = *it->second;
-      fprintf(fd, "%50s | %20" PRId64 "\n", it->first, resource.getValue());
+      int64_t average_size = 0;
+      if (resource.getIncrement() - resource.getDecrement() > 0) {
+        average_size = resource.getValue() / (resource.getIncrement() - resource.getDecrement());
+      }
+      fprintf(fd, "%10" PRId64 " | %10" PRId64 " | %20" PRId64 " | %10" PRId64 " | %-50s\n", resource.getIncrement(),
+              resource.getDecrement(), resource.getValue(), average_size, resource.getName());
       total += resource.getValue();
     }
   }
+  fprintf(fd, "                          %20" PRId64 " |            | %-50s\n", total, "TOTAL");
+
   ink_mutex_release(&resourceLock);
-  fprintf(fd, "%50s | %20" PRId64 "\n", "TOTAL", total);
 }
