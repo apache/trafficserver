@@ -134,7 +134,7 @@ AC_DEFUN([TS_CHECK_CRYPTO_CERT_CB], [
   enable_cert_cb=yes
 
   TS_ADDTO(LIBS, [$OPENSSL_LIBS])
-
+  AC_MSG_CHECKING([for SSL_CTX_set_cert_cb])
   AC_LINK_IFELSE(
   [
     AC_LANG_PROGRAM([[
@@ -157,7 +157,7 @@ AC_DEFUN([TS_CHECK_CRYPTO_CERT_CB], [
 
   LIBS=$_cert_saved_LIBS
 
-  AC_MSG_CHECKING(whether to enable Certificate callback support)
+  AC_MSG_CHECKING(whether to enable TLS certificate callback support)
   AC_MSG_RESULT([$enable_cert_cb])
   TS_ARG_ENABLE_VAR([use], [cert-cb])
   AC_SUBST(use_cert_cb)
