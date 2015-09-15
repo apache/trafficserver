@@ -4845,7 +4845,7 @@ TSHttpTxnInfoGet(TSHttpTxn txnp, TSHttpTxnInfoKey key, TSMgmtInt *value)
   case TS_TXN_INFO_CACHE_HIT_RAM:
     *value = (static_cast<TSMgmtInt>(c_sm->is_ram_cache_hit()));
     break;
-  case TS_TXN_INFO_COMPRESSED_IN_RAM:
+  case TS_TXN_INFO_CACHE_COMPRESSED_IN_RAM:
     *value = (static_cast<TSMgmtInt>(c_sm->is_compressed_in_ram()));
     break;
   case TS_TXN_INFO_CACHE_HIT_RWW:
