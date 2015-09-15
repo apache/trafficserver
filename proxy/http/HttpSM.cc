@@ -481,8 +481,10 @@ HttpSM::attach_client_session(HttpClientSession *client_vc, IOBufferReader *buff
   if (ssl_vc != NULL) {
     client_connection_is_ssl = true;
     client_ssl_reused = ssl_vc->getSSLSessionCacheHit();
-    client_sec_protocol = ssl_vc->getSSLProtocol();
-    client_cipher_suite = ssl_vc->getSSLCipherSuite();
+    const char * protocol = ssl_vc->getSSLProtocol();
+    client_sec_protocol = protocol ? protocol : "-";
+    const char * cipher = ssl_vc->getSSLCipherSuite();
+    client_cipher_suite = cipher ? cipher : "-"; 
   }
 
   ink_release_assert(ua_session->get_half_close_flag() == false);
