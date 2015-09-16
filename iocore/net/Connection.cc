@@ -155,10 +155,12 @@ Server::setup_fd_for_listen(bool non_blocking, int recv_bufsize, int send_bufsiz
 {
   int res = 0;
   int sockopt_flag_in = 0;
-  int tfo_queue_length = 0;
-
   REC_ReadConfigInteger(sockopt_flag_in, "proxy.config.net.sock_option_flag_in");
+
+#ifdef TCP_FASTOPEN
+  int tfo_queue_length = 0;
   REC_ReadConfigInteger(tfo_queue_length, "proxy.config.net.sock_option_tfo_queue_size_in");
+#endif
 
   ink_assert(fd != NO_FD);
 
