@@ -28,8 +28,44 @@ Synopsis
 
 Description
 -----------
-Get Arbitrary Txn info such as cache lookup details etc as defined in TSHttpTxnInfoKey.
-Returns TS_SUCCESS if the requested info is supported, TS_ERROR otherwise.
+:c:func:`TSHttpTxnInfoIntGet` returns arbitrary integer-typed info about a transaction as defined in
+:c:type:TSHttpTxnInfoKey. The API will be part of a generic API umbrella that can support returning
+arbitrary info about a transaction using custom log tags. It works on multiple hooks depending on the
+requested info. For example, cache related info may be available only at or after :c:data:CACHE_LOOKUP_COMPLETE hook.
 
-The API works on multiple hooks depending on the requested info. For example, cache related info
-may be available only at or after CACHE_LOOKUP_COMPLETE hook.
+The :c:type:TSHttpTxnInfoKey currently supports the below integer-based info about a transaction ::
+
+    :c:data:TS_TXN_INFO_CACHE_HIT_RAM
+
+         This info is available at or after :c:data:CACHE_LOOKUP_COMPLETE hook. A value of 1 indicates that the response
+         is returned from RAM cache. A value of 0 indicates otherwise.
+
+    :c:data:TS_TXN_INFO_CACHE_COMPRESSED_IN_RAM
+
+         This info is available at or after :c:data:CACHE_LOOKUP_COMPLETE hook. A value of 1 indicates that the response
+         is returned from RAM cache and is compressed. A value of 0 indicates otherwise.
+
+    :c:data:TS_TXN_INFO_CACHE_HIT_RWW
+
+         This info is available at or after :c:data:CACHE_LOOKUP_COMPLETE hook. A value of 1 indicates that the response
+         is returned via Read-While-Writer functionality. A value of 0 indicates otherwise.
+
+    :c:data:TS_TXN_INFO_CACHE_OPEN_READ_TRIES
+
+         This info is available at or after :c:data:CACHE_LOOKUP_COMPLETE hook. The value indicates the number of cache open
+         read reattempts made by the transaction on cache open read failure.
+
+    :c:data:TS_TXN_INFO_CACHE_OPEN_WRITE_TRIES
+
+         This info is available at or after :c:data:CACHE_LOOKUP_COMPLETE hook. The value indicates the number of cache open
+         write reattempts made by the transaction on cache open write failure.
+
+    :c:data:TS_TXN_INFO_CACHE_VOLUME
+
+         This info is available at or after :c:data:CACHE_LOOKUP_COMPLETE hook. The value indicates the cache volume ID used
+         for the cache object associated with the transaction.
+
+Return values
+=============
+
+The API returns :c:data:TS_SUCCESS, if the requested info is supported, :c:data:TS_ERROR otherwise.
