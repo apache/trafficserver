@@ -4833,7 +4833,7 @@ TSHttpTxnCacheLookupStatusSet(TSHttpTxn txnp, int cachelookup)
 }
 
 TSReturnCode
-TSHttpTxnInfoGet(TSHttpTxn txnp, TSHttpTxnInfoKey key, TSMgmtInt *value)
+TSHttpTxnInfoIntGet(TSHttpTxn txnp, TSHttpTxnInfoKey key, TSMgmtInt *value)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void *)value) == TS_SUCCESS);

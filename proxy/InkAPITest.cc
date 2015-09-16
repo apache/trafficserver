@@ -7298,9 +7298,9 @@ REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS)(RegressionTest *test, int /* atype 
 }
 
 ////////////////////////////////////////////////
-// SDK_API_TXN_HTTP_INFO_GET
+// SDK_API_TXN_HTTP_INFO_INFO_GET
 //
-// Unit Test for API: TSHttpTxnInfoGet
+// Unit Test for API: TSHttpTxnInfoIntGet
 ////////////////////////////////////////////////
 
 REGRESSION_TEST(SDK_API_TXN_HTTP_INFO_GET)(RegressionTest *test, int /* atype ATS_UNUSED */, int *pstatus)
@@ -7319,28 +7319,28 @@ REGRESSION_TEST(SDK_API_TXN_HTTP_INFO_GET)(RegressionTest *test, int /* atype AT
   c_sm->set_open_read_tries(5);
   c_sm->set_open_write_tries(8);
 
-  TSHttpTxnInfoGet(txnp, TS_TXN_INFO_CACHE_HIT_RWW, &ival_read);
+  TSHttpTxnInfoIntGet(txnp, TS_TXN_INFO_CACHE_HIT_RWW, &ival_read);
   if (ival_read == 0) {
-    SDK_RPRINT(test, "TSHttpTxnInfoGet", "TestCase1", TC_FAIL, "Failed on %d, %d != %d", TS_TXN_INFO_CACHE_HIT_RWW, ival_read, 1);
+    SDK_RPRINT(test, "TSHttpTxnInfoIntGet", "TestCase1", TC_FAIL, "Failed on %d, %d != %d", TS_TXN_INFO_CACHE_HIT_RWW, ival_read, 1);
     success = false;
   }
 
-  TSHttpTxnInfoGet(txnp, TS_TXN_INFO_CACHE_OPEN_READ_TRIES, &ival_read);
+  TSHttpTxnInfoIntGet(txnp, TS_TXN_INFO_CACHE_OPEN_READ_TRIES, &ival_read);
   if (ival_read != 5) {
-    SDK_RPRINT(test, "TSHttpTxnInfoGet", "TestCase1", TC_FAIL, "Failed on %d, %d != %d", TS_TXN_INFO_CACHE_HIT_RWW, ival_read, 5);
+    SDK_RPRINT(test, "TSHttpTxnInfoIntGet", "TestCase1", TC_FAIL, "Failed on %d, %d != %d", TS_TXN_INFO_CACHE_HIT_RWW, ival_read, 5);
     success = false;
   }
 
-  TSHttpTxnInfoGet(txnp, TS_TXN_INFO_CACHE_OPEN_WRITE_TRIES, &ival_read);
+  TSHttpTxnInfoIntGet(txnp, TS_TXN_INFO_CACHE_OPEN_WRITE_TRIES, &ival_read);
   if (ival_read != 8) {
-    SDK_RPRINT(test, "TSHttpTxnInfoGet", "TestCase1", TC_FAIL, "Failed on %d, %d != %d", TS_TXN_INFO_CACHE_HIT_RWW, ival_read, 8);
+    SDK_RPRINT(test, "TSHttpTxnInfoIntGet", "TestCase1", TC_FAIL, "Failed on %d, %d != %d", TS_TXN_INFO_CACHE_HIT_RWW, ival_read, 8);
     success = false;
   }
 
   s->destroy();
   if (success) {
     *pstatus = REGRESSION_TEST_PASSED;
-    SDK_RPRINT(test, "TSHttpTxnInfoGet", "TestCase1", TC_PASS, "ok");
+    SDK_RPRINT(test, "TSHttpTxnInfoIntGet", "TestCase1", TC_PASS, "ok");
   } else {
     *pstatus = REGRESSION_TEST_FAILED;
   }
