@@ -856,7 +856,7 @@ create_config(RegressionTest *t, int num)
   // clear all old configurations before adding new test cases
   config_volumes.clear_all();
   switch (num) {
-  pase 0:
+  case 0:
     for (i = 0; i < gndisks; i++) {
       CacheDisk *d = gdisks[i];
       int blocks = d->num_usable_blocks;
