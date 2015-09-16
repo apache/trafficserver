@@ -2822,7 +2822,8 @@ HttpTransact::build_response_from_cache(State *s, HTTPWarningCode warning_code)
   // the function match_response_to_request_conditionals() returns
   // the code of the cached response, which means that we should send
   // back the full document.
-  HTTPStatus client_response_code = HttpTransactCache::match_response_to_request_conditionals(client_request, cached_response);
+  HTTPStatus client_response_code =
+    HttpTransactCache::match_response_to_request_conditionals(client_request, cached_response, s->response_received_time);
 
   switch (client_response_code) {
   case HTTP_STATUS_NOT_MODIFIED:
@@ -4148,8 +4149,8 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
       client_response_code = base_response->status_get();
     } else if ((s->cache_info.action == CACHE_DO_DELETE) || ((s->cache_info.action == CACHE_DO_UPDATE) && !cacheable)) {
       if (is_request_conditional(&s->hdr_info.client_request)) {
-        client_response_code = HttpTransactCache::match_response_to_request_conditionals(&s->hdr_info.client_request,
-                                                                                         s->cache_info.object_read->response_get());
+        client_response_code = HttpTransactCache::match_response_to_request_conditionals(
+          &s->hdr_info.client_request, s->cache_info.object_read->response_get(), s->response_received_time);
       } else {
         client_response_code = HTTP_STATUS_OK;
       }
@@ -4182,7 +4183,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
       if (is_request_conditional(&s->hdr_info.client_request)) {
         if (s->txn_conf->cache_when_to_revalidate != 4)
           client_response_code = HttpTransactCache::match_response_to_request_conditionals(
-            &s->hdr_info.client_request, s->cache_info.object_read->response_get());
+            &s->hdr_info.client_request, s->cache_info.object_read->response_get(), s->response_received_time);
         else
           client_response_code = server_response_code;
       } else {
@@ -4300,8 +4301,9 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
       base_response->unset_cooked_cc_need_revalidate_once();
 
       if (is_request_conditional(&s->hdr_info.client_request) &&
-          HttpTransactCache::match_response_to_request_conditionals(
-            &s->hdr_info.client_request, s->cache_info.object_read->response_get()) == HTTP_STATUS_NOT_MODIFIED) {
+          HttpTransactCache::match_response_to_request_conditionals(&s->hdr_info.client_request,
+                                                                    s->cache_info.object_read->response_get(),
+                                                                    s->response_received_time) == HTTP_STATUS_NOT_MODIFIED) {
         s->next_action = SM_ACTION_INTERNAL_CACHE_UPDATE_HEADERS;
         client_response_code = HTTP_STATUS_NOT_MODIFIED;
       } else {
@@ -4414,8 +4416,8 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
           resp->set_expires(exp_time);
         }
       } else if (is_request_conditional(&s->hdr_info.client_request) && server_response_code == HTTP_STATUS_OK) {
-        client_response_code =
-          HttpTransactCache::match_response_to_request_conditionals(&s->hdr_info.client_request, &s->hdr_info.server_response);
+        client_response_code = HttpTransactCache::match_response_to_request_conditionals(
+          &s->hdr_info.client_request, &s->hdr_info.server_response, s->response_received_time);
 
         DebugTxn("http_trans", "[hcoofsr] conditional request, 200 "
                                "response, send back 304 if possible [crc=%d]",
