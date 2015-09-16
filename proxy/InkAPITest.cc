@@ -7321,19 +7321,22 @@ REGRESSION_TEST(SDK_API_TXN_HTTP_INFO_GET)(RegressionTest *test, int /* atype AT
 
   TSHttpTxnInfoIntGet(txnp, TS_TXN_INFO_CACHE_HIT_RWW, &ival_read);
   if (ival_read == 0) {
-    SDK_RPRINT(test, "TSHttpTxnInfoIntGet", "TestCase1", TC_FAIL, "Failed on %d, %d != %d", TS_TXN_INFO_CACHE_HIT_RWW, ival_read, 1);
+    SDK_RPRINT(test, "TSHttpTxnInfoIntGet", "TestCase1", TC_FAIL, "Failed on %d, %d != %d", TS_TXN_INFO_CACHE_HIT_RWW, ival_read,
+               1);
     success = false;
   }
 
   TSHttpTxnInfoIntGet(txnp, TS_TXN_INFO_CACHE_OPEN_READ_TRIES, &ival_read);
   if (ival_read != 5) {
-    SDK_RPRINT(test, "TSHttpTxnInfoIntGet", "TestCase1", TC_FAIL, "Failed on %d, %d != %d", TS_TXN_INFO_CACHE_HIT_RWW, ival_read, 5);
+    SDK_RPRINT(test, "TSHttpTxnInfoIntGet", "TestCase1", TC_FAIL, "Failed on %d, %d != %d", TS_TXN_INFO_CACHE_HIT_RWW, ival_read,
+               5);
     success = false;
   }
 
   TSHttpTxnInfoIntGet(txnp, TS_TXN_INFO_CACHE_OPEN_WRITE_TRIES, &ival_read);
   if (ival_read != 8) {
-    SDK_RPRINT(test, "TSHttpTxnInfoIntGet", "TestCase1", TC_FAIL, "Failed on %d, %d != %d", TS_TXN_INFO_CACHE_HIT_RWW, ival_read, 8);
+    SDK_RPRINT(test, "TSHttpTxnInfoIntGet", "TestCase1", TC_FAIL, "Failed on %d, %d != %d", TS_TXN_INFO_CACHE_HIT_RWW, ival_read,
+               8);
     success = false;
   }
 
