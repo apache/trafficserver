@@ -15,18 +15,21 @@
    permissions and limitations under the License.
 
 
-TSHttpTxnInfoGet
-================
+TSHttpTxnInfoIntGet
+===================
 
 Synopsis
 --------
 
 `#include <ts/ts.h>`
 
-.. c:function:: TSReturnCode TSHttpTxnInfoGet(TSHttpTxn txnp, TSHttpTxnInfoKey key, TSMgmtInt *value)
+.. c:function:: TSReturnCode TSHttpTxnInfoIntGet(TSHttpTxn txnp, TSHttpTxnInfoKey key, TSMgmtInt *value)
 
 
 Description
 -----------
 Get Arbitrary Txn info such as cache lookup details etc as defined in TSHttpTxnInfoKey.
 Returns TS_SUCCESS if the requested info is supported, TS_ERROR otherwise.
+
+The API works on multiple hooks depending on the requested info. For example, cache related info
+may be available only at or after CACHE_LOOKUP_COMPLETE hook.
