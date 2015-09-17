@@ -121,15 +121,14 @@ http2_are_frame_flags_valid(uint8_t ftype, uint8_t fflags)
 bool
 http2_frame_header_is_valid(const Http2FrameHeader &hdr, unsigned max_frame_size)
 {
-  if (hdr.type >= HTTP2_FRAME_TYPE_MAX) {
-    return false;
-  }
-
-  if (hdr.length > max_frame_size) {
-    return false;
-  }
-
   if (!http2_are_frame_flags_valid(hdr.type, hdr.flags)) {
+    // XXX not working right now
+    // return false;
+  }
+
+  // 6.1 If a DATA frame is received whose stream identifier field is 0x0, the recipient MUST
+  // respond with a connection error (Section 5.4.1) of type PROTOCOL_ERROR.
+  if (hdr.type == HTTP2_FRAME_TYPE_DATA && hdr.streamid == 0) {
     return false;
   }
 
