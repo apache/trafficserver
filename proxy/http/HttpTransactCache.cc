@@ -1337,6 +1337,8 @@ HttpTransactCache::match_response_to_request_conditionals(HTTPHdr *request, HTTP
     if (raw_etags) {
       comma_sep_tag_list = request->value_get(MIME_FIELD_IF_NONE_MATCH, MIME_LEN_IF_NONE_MATCH, &comma_sep_tag_list_len);
     } else {
+      raw_etags = "";
+      raw_etags_len = 0;
       // no Etag in the response, so there is nothing to match
       // against those in If-none-match
       goto L1;
@@ -1347,10 +1349,6 @@ HttpTransactCache::match_response_to_request_conditionals(HTTPHdr *request, HTTP
       comma_sep_tag_list_len = 0;
     }
 
-    if (!raw_etags) {
-      raw_etags = "";
-      raw_etags_len = 0;
-    }
     ////////////////////////////////////////////////////////////////////////
     // If we have an etag and a if-none-match, we are talking to someone  //
     // who is doing a 1.1 revalidate. Since this is a GET request with no //
