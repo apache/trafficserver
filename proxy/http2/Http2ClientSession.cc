@@ -345,6 +345,7 @@ Http2ClientSession::state_start_frame_read(int event, void *edata)
       if (!this->connection_state.is_state_closed()) {
         this->connection_state.send_goaway_frame(this->current_hdr.streamid, HTTP2_ERROR_PROTOCOL_ERROR);
       }
+      return 0;
     }
 
     // If we know up front that the payload is too long, nuke this connection.
