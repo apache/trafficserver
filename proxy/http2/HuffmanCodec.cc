@@ -391,3 +391,53 @@ huffman_decode(char *dst_start, const uint8_t *src, uint32_t src_len)
 
   return dst_end - dst_start;
 }
+
+uint8_t *
+huffman_encode_append(uint8_t *dst, uint32_t src, int n = 0)
+{
+  for (int j = 3; j >= n; --j) {
+    *dst++ = ((src >> (8 * j)) & 255);
+  }
+  return dst;
+}
+
+int64_t
+huffman_encode(uint8_t *dst_start, const uint8_t *src, uint32_t src_len)
+{
+  uint8_t *dst = dst_start;
+  // NOTE: The maximum length of Huffman Code is 30, thus using uint32_t as buffer.
+  uint32_t buf = 0;
+  uint32_t remain_bits = 32;
+
+  for (uint32_t i = 0; i < src_len; ++i) {
+    const uint32_t hex = huffman_table[src[i]].code_as_hex;
+    const uint32_t bit_len = huffman_table[src[i]].bit_len;
+
+    if (remain_bits > bit_len) {
+      remain_bits = remain_bits - bit_len;
+      buf |= hex << remain_bits;
+    } else if (remain_bits == bit_len) {
+      buf |= hex;
+      dst = huffman_encode_append(dst, buf);
+      remain_bits = 32;
+      buf = 0;
+    } else {
+      buf |= hex >> (bit_len - remain_bits);
+      dst = huffman_encode_append(dst, buf);
+      remain_bits = (32 - (bit_len - remain_bits));
+      buf = hex << remain_bits;
+    }
+  }
+
+  if (buf != 0) {
+    dst = huffman_encode_append(dst, buf, remain_bits / 8);
+  }
+
+  // NOTE: Add padding w/ EOS
+  uint32_t pad_len = remain_bits % 8;
+  if (pad_len) {
+    *(dst - 1) |= 0xff >> (8 - pad_len);
+  }
+
+  return dst - dst_start;
+}
