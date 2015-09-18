@@ -31,6 +31,7 @@ import tsqa.utils
 
 log = logging.getLogger(__name__)
 
+
 # helper function to get h2spec path
 def which(program):
     def is_exe(fpath):
@@ -46,6 +47,7 @@ def which(program):
             if is_exe(exe_file):
                 return exe_file
     return None
+
 
 class TestH2Spec(helpers.EnvironmentCase, tsqa.test_cases.HTTPBinCase):
     @classmethod
