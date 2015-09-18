@@ -33,6 +33,7 @@
 
 #define PLUGIN_NAME "cache_range_requests"
 #define DEBUG_LOG(fmt, ...) TSDebug(PLUGIN_NAME, "[%s:%d] %s(): " fmt, __FILE__, __LINE__, __func__, ##__VA_ARGS__) 
+#define ERROR_LOG(fmt, ...) TSError("[%s:%d] %s(): " fmt, __FILE__, __LINE__, __func__, ##__VA_ARGS__) 
 
 struct txndata {
   char *range_value;
@@ -91,7 +92,7 @@ range_header_check(TSHttpTxn txnp)
         DEBUG_LOG("Not a range request.");
       } else {
         if (NULL == (txn_contp = TSContCreate((TSEventFunc)transaction_handler, NULL))) {
-          TSError("[%s] %s(): failed to create the transaction handler continuation.", PLUGIN_NAME, __func__);
+          ERROR_LOG("failed to create the transaction handler continuation.");
         } else {
           txn_state = (struct txndata *)TSmalloc(sizeof(struct txndata));
           txn_state->range_value = TSstrndup(hdr_value, length);
@@ -363,13 +364,13 @@ TSPluginInit(int argc, const char *argv[])
   info.support_email = (char *)"John_Rushford@cable.comcast.com";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError("[%s] TSPluginInit(): Plugin registration failed.\n", PLUGIN_NAME);
-    TSError("[%s] Unable to initialize plugin (disabled).\n", PLUGIN_NAME);
+    ERROR_LOG("Plugin registration failed.\n");
+    ERROR_LOG("Unable to initialize plugin (disabled).");
     return;
   }
 
   if (NULL == (txnp_cont = TSContCreate((TSEventFunc)handle_read_request_header, NULL))) {
-    TSError("[%s] TSContCreate(): failed to create the transaction continuation handler.", PLUGIN_NAME);
+    ERROR_LOG("failed to create the transaction continuation handler.");
     return;
   } else {
     TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, txnp_cont);
