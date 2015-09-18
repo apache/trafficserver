@@ -97,7 +97,7 @@ memcpy_and_advance(uint8_t(&dst)[N], byte_pointer &src)
   src.u8 += N;
 }
 
-void
+static void
 memcpy_and_advance(uint8_t(&dst), byte_pointer &src)
 {
   dst = *src.u8;
