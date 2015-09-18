@@ -251,7 +251,7 @@ Server::setup_fd_for_listen(bool non_blocking, int recv_bufsize, int send_bufsiz
 
 #ifdef TCP_FASTOPEN
   if ((sockopt_flag_in & NetVCOptions::SOCK_OPT_TCP_FAST_OPEN) &&
-      (res = safe_setsockopt(fd, SOL_TCP, TCP_FASTOPEN, (char *)&tfo_queue_length, sizeof(int)))) {
+      (res = safe_setsockopt(fd, IPPROTO_TCP, TCP_FASTOPEN, (char *)&tfo_queue_length, sizeof(int)))) {
     goto Lerror;
   }
 #endif
