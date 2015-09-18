@@ -21,13 +21,12 @@ Test body_factory
 import os
 import requests
 import logging
-import SocketServer
 import random
 import tsqa.test_cases
 import helpers
-import json
 
 log = logging.getLogger(__name__)
+
 
 class TestDomainSpecificBodyFactory(helpers.EnvironmentCase):
     '''
@@ -64,15 +63,11 @@ class TestDomainSpecificBodyFactory(helpers.EnvironmentCase):
       url = 'http://127.1.0.1:{0}'.format(self.configs['records.config']['CONFIG']['proxy.config.http.server_ports'])
       for i in xrange(times):
           domain = random.choice(self.domain_directory)
-          headers = {'Host' : domain}
-          r = requests.get(url, headers = headers)
+          headers = {'Host': domain}
+          r = requests.get(url, headers=headers)
           domain_in_response = no_dir_domain
           for domain_item in self.domain_directory:
               if domain_item in r.text:
                    domain_in_response = domain_item
                    break
           self.assertEqual(domain, domain_in_response)
-
-
-
-

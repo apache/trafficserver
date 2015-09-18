@@ -18,15 +18,11 @@ Test Head Request
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import requests
 import time
 import logging
 import SocketServer
-import random
 import tsqa.test_cases
 import helpers
-import json
-import select
 import socket
 
 log = logging.getLogger(__name__)
@@ -69,7 +65,6 @@ class HeadRequestServerHandler(SocketServer.BaseRequestHandler):
                     '\r\n'
                     )
                 self.request.sendall(resp)
-
 
 
 class TestHeadRequestWithoutTimeout(helpers.EnvironmentCase):

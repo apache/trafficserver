@@ -18,10 +18,8 @@ Test the configure entry : proxy.config.http.origin_min_keep_alive_connections
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import requests
 import time
 import logging
-import SocketServer
 import uuid
 import socket
 import tsqa.test_cases
@@ -30,6 +28,7 @@ import thread
 
 log = logging.getLogger(__name__)
 
+
 def simple_socket_server(host, port):
     log.info("starting the socket server")
     serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -37,13 +36,16 @@ def simple_socket_server(host, port):
     serv.setblocking(1)
     serv.listen(3)
     conn_id = uuid.uuid4().hex
+    start = None
     while True:
         conn, addr = serv.accept()
+        if start is None:
+            start = time.time()
         data = conn.recv(4096).strip()
         if data:
             log.info('Sending data back to the client: {uid}'.format(uid=conn_id))
         else:
-            log.info('Client disconnected: {timeout}seconds'.format(timeout=now))
+            log.info('Client disconnected: {timeout}seconds'.format(timeout=time.time() - start))
             break
         body = conn_id
         resp = ('HTTP/1.1 200 OK\r\n'
@@ -85,7 +87,7 @@ class TestKeepAlive_Origin_Min_connections(helpers.EnvironmentCase):
                 resp = conn.recv(4096)
                 resp = resp.split('\r\n\r\n')[1]
                 log.info(resp)
-                if first_resp == None:
+                if first_resp is None:
                     first_resp = resp
                 else:
                     second_resp = resp
@@ -99,4 +101,3 @@ class TestKeepAlive_Origin_Min_connections(helpers.EnvironmentCase):
         conn.shutdown(socket.SHUT_RDWR)
         conn.close()
         self.assertEqual(first_resp, second_resp)
-
