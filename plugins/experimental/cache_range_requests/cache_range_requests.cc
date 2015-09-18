@@ -119,7 +119,8 @@ range_header_check(TSHttpTxn txnp)
           TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_REQUEST_HDR_HOOK, txn_contp);
           TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, txn_contp);
           TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, txn_contp);
-          TSDebug(PLUGIN_NAME, "range_header_check(): Added TS_HTTP_SEND_REQUEST_HDR_HOOK, TS_HTTP_SEND_RESPONSE_HDR_HOOK, and TS_HTTP_TXN_CLOSE_HOOK");
+          TSDebug(PLUGIN_NAME, "range_header_check(): Added TS_HTTP_SEND_REQUEST_HDR_HOOK, TS_HTTP_SEND_RESPONSE_HDR_HOOK, and "
+                               "TS_HTTP_TXN_CLOSE_HOOK");
         }
       }
       TSHandleMLocRelease(hdr_bufp, req_hdrs, loc);
@@ -191,13 +192,11 @@ handle_client_send_response(TSHttpTxn txnp, struct txndata *txn_state)
     if (set_header(hdr_bufp, req_hdrs, TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE, txn_state->range_value,
                    strlen(txn_state->range_value))) {
       TSDebug(PLUGIN_NAME, "handle_client_send_response(): added range header: %s", txn_state->range_value);
-    }
-    else {
+    } else {
       TSDebug(PLUGIN_NAME, "handle_client_send_response(): set_header() failed.");
     }
-  }
-  else {
-    TSDebug(PLUGIN_NAME, "handle_client_send_response(): failed to get Request Headers."); 
+  } else {
+    TSDebug(PLUGIN_NAME, "handle_client_send_response(): failed to get Request Headers.");
   }
   TSHandleMLocRelease(response, resp_hdr, NULL);
   TSHandleMLocRelease(hdr_bufp, req_hdrs, NULL);
@@ -227,7 +226,8 @@ handle_server_read_response(TSHttpTxn txnp, struct txndata *txn_state)
       bool cacheable = TSHttpTxnIsCacheable(txnp, NULL, response);
       TSDebug(PLUGIN_NAME, "handle_server_read_response(): range is cacheable: %d", cacheable);
     } else if (TS_HTTP_STATUS_OK == status) {
-      TSDebug(PLUGIN_NAME, "handle_server_read_response(): The origin does not support range requests, attempting to disable cache write.");
+      TSDebug(PLUGIN_NAME,
+              "handle_server_read_response(): The origin does not support range requests, attempting to disable cache write.");
       if (TS_SUCCESS == TSHttpTxnServerRespNoStoreSet(txnp, 1)) {
         TSDebug(PLUGIN_NAME, "handle_server_read_response(): Cache write has been disabled for this transaction.");
       } else {
