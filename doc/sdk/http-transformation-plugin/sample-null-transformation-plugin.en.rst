@@ -103,7 +103,7 @@ Below is an overview of the null transform plugin:
     ::
 
         :::c
-        output_conn = TSTransformOutputVConnGet (con
+        output_conn = TSTransformOutputVConnGet (contp);
 
 5.  Get a handle to the input VIO. (See the ``handle_transform``
     function.)
