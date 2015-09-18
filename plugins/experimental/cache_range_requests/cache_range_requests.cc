@@ -387,7 +387,7 @@ TSPluginInit(int argc, const char *argv[])
   info.vendor_name = (char *)"Comcast";
   info.support_email = (char *)"John_Rushford@cable.comcast.com";
 
-  if (TSPluginRegister(TS_SDK_VERSION_3_0, &info) != TS_SUCCESS) {
+  if (TSPluginRegister(&info) != TS_SUCCESS) {
     TSError("[%s] TSPluginInit(): Plugin registration failed.\n", PLUGIN_NAME);
     TSError("[%s] Unable to initialize plugin (disabled).\n", PLUGIN_NAME);
     return;
