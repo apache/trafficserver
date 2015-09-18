@@ -32,7 +32,7 @@
 #include "ts/remap.h"
 
 #define PLUGIN_NAME "cache_range_requests"
-#define DEBUG_LOG(fmt, ...) TSDebug(PLUGIN_NAME, "%s(): " fmt, __func__, ##__VA_ARGS__) 
+#define DEBUG_LOG(fmt, ...) TSDebug(PLUGIN_NAME, "[%s:%d] %s(): " fmt, __FILE__, __LINE__, __func__, ##__VA_ARGS__) 
 
 struct txndata {
   char *range_value;
