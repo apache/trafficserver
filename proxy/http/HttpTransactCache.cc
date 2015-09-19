@@ -1336,33 +1336,25 @@ HttpTransactCache::match_response_to_request_conditionals(HTTPHdr *request, HTTP
 
     if (raw_etags) {
       comma_sep_tag_list = request->value_get(MIME_FIELD_IF_NONE_MATCH, MIME_LEN_IF_NONE_MATCH, &comma_sep_tag_list_len);
-    } else {
-      raw_etags = "";
-      raw_etags_len = 0;
-      // no Etag in the response, so there is nothing to match
-      // against those in If-none-match
-      goto L1;
-    }
+      if (!comma_sep_tag_list) {
+        comma_sep_tag_list = "";
+        comma_sep_tag_list_len = 0;
+      }
 
-    if (!comma_sep_tag_list) {
-      comma_sep_tag_list = "";
-      comma_sep_tag_list_len = 0;
-    }
-
-    ////////////////////////////////////////////////////////////////////////
-    // If we have an etag and a if-none-match, we are talking to someone  //
-    // who is doing a 1.1 revalidate. Since this is a GET request with no //
-    // sub-ranges, we can do a weak validation.                           //
-    ////////////////////////////////////////////////////////////////////////
-    if (do_strings_match_weakly(raw_etags, raw_etags_len, comma_sep_tag_list, comma_sep_tag_list_len)) {
-      // the response already failed If-modified-since (if one exists)
-      return HTTP_STATUS_NOT_MODIFIED;
-    } else {
-      return response->status_get();
+      ////////////////////////////////////////////////////////////////////////
+      // If we have an etag and a if-none-match, we are talking to someone  //
+      // who is doing a 1.1 revalidate. Since this is a GET request with no //
+      // sub-ranges, we can do a weak validation.                           //
+      ////////////////////////////////////////////////////////////////////////
+      if (do_strings_match_weakly(raw_etags, raw_etags_len, comma_sep_tag_list, comma_sep_tag_list_len)) {
+        // the response already failed If-modified-since (if one exists)
+        return HTTP_STATUS_NOT_MODIFIED;
+      } else {
+        return response->status_get();
+      }
     }
   }
 
-L1:
   // There is no If-none-match, and If-modified-since failed,
   // so return NOT_MODIFIED
   if (response_code != HTTP_STATUS_NONE) {
