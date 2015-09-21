@@ -85,7 +85,7 @@ range_header_check(TSHttpTxn txnp)
   TSCont txn_contp;
 
   if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &hdr_bufp, &req_hdrs)) {
-    loc = TSMimeHdrFieldFind(hdr_bufp, req_hdrs, "Range", -1);
+    loc = TSMimeHdrFieldFind(hdr_bufp, req_hdrs, TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE);
     if (TS_NULL_MLOC != loc) {
       const char *hdr_value = TSMimeHdrFieldValueStringGet(hdr_bufp, req_hdrs, loc, 0, &length);
       if (!hdr_value || length <= 0) {
