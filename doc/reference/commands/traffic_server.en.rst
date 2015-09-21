@@ -40,6 +40,15 @@ Description
 
 .. option:: -P PORT, --cluster_port PORT
 
+.. option:: -f, --disable_freelist
+
+In order to improve performance, :program:`traffic_server` caches
+commonly used data structures in a set of free object lists. This
+option disables these caches, causing :program:`traffic_server` to
+use :manpage:`malloc(3)` for every allocation. Though this option
+should not commonly be needed, it may be beneficial in memory-constrained
+environments or where the working set is highly variable.
+
 .. option:: -o LEVEL, --dprintf_level LEVEL
 
 .. option:: -R LEVEL, --regression LEVEL

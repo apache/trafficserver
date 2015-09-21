@@ -164,6 +164,7 @@ HttpBodyFactory *body_factory = NULL;
 static int accept_mss = 0;
 static int cmd_line_dprintf_level = 0; // default debug output level from ink_dprintf function
 static int poll_timeout = -1;          // No value set.
+static bool cmd_disable_freelist = 0;
 
 static volatile bool sigusr1_received = false;
 
@@ -183,6 +184,7 @@ static const ArgumentDescription argument_descriptions[] = {
   {"httpport", 'p', "Port descriptor for HTTP Accept", "S*", &http_accept_port_descriptor, "PROXY_HTTP_ACCEPT_PORT", NULL},
   {"cluster_port", 'P', "Cluster Port Number", "I", &cluster_port_number, "PROXY_CLUSTER_PORT", NULL},
   {"dprintf_level", 'o', "Debug output level", "I", &cmd_line_dprintf_level, "PROXY_DPRINTF_LEVEL", NULL},
+  {"disable_freelist", 'f', "Disable the freelist memory allocator", "T", &cmd_disable_freelist, "PROXY_DPRINTF_LEVEL", NULL},
 
 #if TS_HAS_TESTS
   {"regression", 'R', "Regression Level (quick:1..long:3)", "I", &regression_level, "PROXY_REGRESSION", NULL},
@@ -214,12 +216,10 @@ class SignalContinuation : public Continuation
 public:
   char *end;
   char *snap;
-  int fastmemsnap;
 
   SignalContinuation() : Continuation(new_ProxyMutex())
   {
     end = snap = 0;
-    fastmemsnap = 0;
     SET_HANDLER(&SignalContinuation::periodic);
   }
 
@@ -241,13 +241,8 @@ public:
       //       This is not error condition at the first place
       //       so why stderr?
       //
-      fprintf(stderr, "sbrk 0x%" PRIu64 "x from first %" PRIu64 " from last %" PRIu64 "\n", (uint64_t)((ptrdiff_t)now),
+      fprintf(stderr, "sbrk 0x%" PRIu64 " from first %" PRIu64 " from last %" PRIu64 "\n", (uint64_t)((ptrdiff_t)now),
               (uint64_t)((ptrdiff_t)(now - end)), (uint64_t)((ptrdiff_t)(now - snap)));
-#ifdef DEBUG
-      int fmdelta = fastmemtotal - fastmemsnap;
-      fprintf(stderr, "fastmem %" PRId64 " from last %" PRId64 "\n", (int64_t)fastmemtotal, (int64_t)fmdelta);
-      fastmemsnap += fmdelta;
-#endif
       snap = now;
     }
 
@@ -1404,6 +1399,10 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   command_flag = command_flag || *command_string;
   command_index = find_cmd_index(command_string);
   command_valid = command_flag && command_index >= 0;
+
+  if (cmd_disable_freelist) {
+    ink_freelist_init_ops(ink_freelist_malloc_ops());
+  }
 
   // Specific validity checks.
   if (*conf_dir && command_index != find_cmd_index(CMD_VERIFY_CONFIG)) {

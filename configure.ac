@@ -344,21 +344,6 @@ AC_ARG_ENABLE([tproxy],
 AC_MSG_RESULT([$enable_tproxy])
 
 #
-# Disable our freelist implementation, reverting it to whatever
-# allocator (malloc, tcmalloc or jemalloc) that is in use. This is
-# useful for debugging.
-#
-AC_MSG_CHECKING([whether to disable freelist])
-AC_ARG_ENABLE([freelist],
-  [AS_HELP_STRING([--disable-freelist],[turn off freelist and use allocators])],
-  [],
-  [enable_freelist="yes"]
-)
-AC_MSG_RESULT([$enable_freelist])
-TS_ARG_ENABLE_VAR([use], [freelist])
-AC_SUBST(use_freelist)
-
-#
 # Options for SPDY
 #
 AC_MSG_CHECKING([whether to enable spdy])

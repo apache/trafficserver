@@ -481,7 +481,7 @@ test_RamCache(RegressionTest *t, RamCache *cache)
 
   for (int l = 0; l < 10; l++) {
     for (int i = 0; i < 200; i++) {
-      IOBufferData *d = new (ats_malloc(sizeof(IOBufferData))) IOBufferData;
+      IOBufferData *d = THREAD_ALLOC(ioDataAllocator, this_thread());
       INK_MD5 md5;
 
       d->alloc(BUFFER_SIZE_INDEX_16K);
