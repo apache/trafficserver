@@ -172,49 +172,6 @@ class TestLogs(helpers.EnvironmentCase):
             self.assertTrue(os.path.isfile(logfile_path), logfile_path)
 
 
-class TestLogRefCounting(tsqa.test_cases.DynamicHTTPEndpointCase, helpers.EnvironmentCase):
-    @classmethod
-    def setUpEnv(cls, env):
-        '''
-        This funciton is responsible for setting up the environment for this fixture
-        This includes everything pre-daemon start
-        '''
-        cls.configs['remap.config'].add_line('map / http://127.0.0.1:{0}/\n'.format(cls.http_endpoint.address[1]))
-
-        cls.configs['plugin.config'].add_lines([
-            'tcpinfo.so --log-file=tcpinfo1 --hooks=ssn_start,txn_start,send_resp_hdr,ssn_close,txn_close --log-level=2',
-            'tcpinfo.so --log-file=tcpinfo2 --hooks=ssn_start,txn_start,send_resp_hdr,ssn_close,txn_close --log-level=2',
-            'tcpinfo.so --log-file=tcpinfo3 --hooks=ssn_start,txn_start,send_resp_hdr,ssn_close,txn_close --log-level=2',
-            'tcpinfo.so --log-file=tcpinfo4 --hooks=ssn_start,txn_start,send_resp_hdr,ssn_close,txn_close --log-level=2',
-        ])
-
-        # only add server headers when there weren't any
-        cls.configs['records.config']['CONFIG'].update({
-            'proxy.config.log.max_space_mb_for_logs': 10,
-            'proxy.config.log.max_space_mb_for_orphan_logs': 10,
-            'proxy.config.log.squid_log_enabled': 1,
-            'proxy.config.log.squid_log_is_ascii': 1,
-            'proxy.config.log.rolling_interval_sec': 60,
-            'proxy.config.log.rolling_size_mb': 1,
-            'proxy.config.log.max_space_mb_headroom': 1,
-            'proxy.config.log.max_secs_per_buffer': 1,
-        })
-
-    def test_logs_exist(self):
-        # send some requests
-        for x in xrange(0, 10):
-            ret = requests.get('http://127.0.0.1:{0}/'.format(self.configs['records.config']['CONFIG']['proxy.config.http.server_ports']))
-
-            self.assertEqual(ret.status_code, 404)
-            self.assertIn('ATS', ret.headers['server'])
-
-        # TODO: some better way to know when the logs where syncd
-        time.sleep(10)  # wait for logs to hit disk
-
-        logfile_path = os.path.join(self.environment.layout.logdir, 'squid.log')
-        self.assertTrue(os.path.isfile(logfile_path), logfile_path)
-
-
 class TestDynamicHTTPEndpointCase(tsqa.test_cases.DynamicHTTPEndpointCase, helpers.EnvironmentCase):
     @classmethod
     def setUpEnv(cls, env):
