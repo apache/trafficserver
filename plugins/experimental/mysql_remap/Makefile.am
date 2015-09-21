@@ -28,5 +28,5 @@ libmysql_remap_la_SOURCES = \
   lib/dictionary.c \
   lib/iniparser.c
 
-mysql_remap_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS) $(LIB_MYSQLCLIENT) -no-undefined
+mysql_remap_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS) $(LIB_MYSQLCLIENT)
 mysql_remap_la_LIBADD = libmysql_remap.la
