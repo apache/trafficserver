@@ -855,10 +855,10 @@ remap_load_plugin(const char **argv, int argc, url_mapping *mp, char *errbuf, in
     Debug("url_rewrite", "Argument %d: %s", k, parv[k]);
   }
 
-  void *ih;
 
   Debug("remap_plugin", "creating new plugin instance");
 
+  void *ih = NULL;
   TSReturnCode res = TS_SUCCESS;
   if (pi->fp_tsremap_new_instance) {
     res = pi->fp_tsremap_new_instance(parc, parv, &ih, tmpbuf, sizeof(tmpbuf) - 1);
