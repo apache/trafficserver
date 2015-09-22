@@ -251,8 +251,7 @@ REGRESSION_TEST(SDK_API_TSConfig)(RegressionTest *test, int /* atype ATS_UNUSED 
 //////////////////////////////////////////////
 
 struct SDK_NetVConn_Params {
-  SDK_NetVConn_Params(const char *_a, RegressionTest *_t, int *_p)
-    : buffer(NULL), api(_a), port(0), test(_t), pstatus(_p), server_vc(NULL), client_vc(NULL)
+  SDK_NetVConn_Params(const char *_a, RegressionTest *_t, int *_p) : buffer(NULL), api(_a), port(0), test(_t), pstatus(_p), server_vc(NULL), client_vc(NULL)
   {
     this->status.client = this->status.server = REGRESSION_TEST_INPROGRESS;
   }
@@ -373,8 +372,9 @@ client_handler(TSCont contp, TSEvent event, void *data)
     char *ptr_block = TSIOBufferBlockWriteStart(block, &avail);
 
     if (avail <= 0) {
-      SDK_RPRINT(params->test, params->api, "TSIOBufferBlockWriteStart", TC_FAIL, "No space available to write in buffer, "
-                                                                                  "expected %lldd",
+      SDK_RPRINT(params->test, params->api, "TSIOBufferBlockWriteStart", 
+                 TC_FAIL, "No space available to write in buffer, "
+                 "expected %lldd",
                  avail);
       TSContDestroy(contp);
       return 1;
@@ -385,12 +385,15 @@ client_handler(TSCont contp, TSEvent event, void *data)
 
     params->vio = TSVConnWrite((TSVConn)(data), contp, readerp, 1);
     return 0;
-  } else if (event == TS_EVENT_VCONN_WRITE_COMPLETE) {
+  }
+  else if (event == TS_EVENT_VCONN_WRITE_COMPLETE) {
     TSVConnShutdown((TSVConn)params->client_vc, 0, 1);
     TSContDestroy(contp);
     return 0;
-  } else {
-    SDK_RPRINT(params->test, params->api, "ClientConnect", TC_FAIL, "received unexpected event %d", event);
+  }
+  else {
+    SDK_RPRINT(params->test, params->api, "ClientConnect", TC_FAIL, 
+               "received unexpected event %d", event);
   }
 
   TSContDestroy(contp);
