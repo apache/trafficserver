@@ -1598,6 +1598,7 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
             item.md5_low = r->md5_low;
             item.md5_low_low = r->md5_low_low;
             item.full = 1;
+            item.hostname_offset = 0;
 
             item.app.allotment.application1 = 0;
             item.app.allotment.application2 = 0;
@@ -1623,6 +1624,7 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
           for (ii = 0; ii < nn; ++ii) {
             if (is_addr_valid(af, e->ent.h_addr_list[ii])) {
               HostDBInfo &item = rr_data->info[i];
+              memset(&item, 0, sizeof(item));
               ip_addr_set(item.ip(), af, e->ent.h_addr_list[ii]);
               item.full = 1;
               item.round_robin = 0;
@@ -1632,6 +1634,7 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
               item.md5_high = r->md5_high;
               item.md5_low = r->md5_low;
               item.md5_low_low = r->md5_low_low;
+              item.hostname_offset = 0;
               if (!restore_info(&item, old_r, old_info, old_rr_data)) {
                 item.app.allotment.application1 = 0;
                 item.app.allotment.application2 = 0;
