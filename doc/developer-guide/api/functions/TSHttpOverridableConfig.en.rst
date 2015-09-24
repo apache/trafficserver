@@ -107,6 +107,8 @@ The following configurations (from ``records.config``) are overridable.
 |   :ts:cv:`proxy.config.http.transaction_no_activity_timeout_in`
 |   :ts:cv:`proxy.config.http.transaction_no_activity_timeout_out`
 |   :ts:cv:`proxy.config.http.transaction_active_timeout_out`
+|   :ts:cv:`proxy.config.websocket.no_activity_timeout`
+|   :ts:cv:`proxy.config.websocket.active_timeout`
 |   :ts:cv:`proxy.config.http.origin_max_connections`
 |   :ts:cv:`proxy.config.http.connect_attempts_max_retries`
 |   :ts:cv:`proxy.config.http.connect_attempts_max_retries_dead_server`

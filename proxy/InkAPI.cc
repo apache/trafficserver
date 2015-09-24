@@ -7904,6 +7904,12 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   case TS_CONFIG_SSL_HSTS_INCLUDE_SUBDOMAINS:
     ret = &overridableHttpConfig->proxy_response_hsts_include_subdomains;
     break;
+  case TS_CONFIG_WEBSOCKET_ACTIVE_TIMEOUT:
+    ret = &overridableHttpConfig->websocket_active_timeout;
+    break;
+  case TS_CONFIG_WEBSOCKET_NO_ACTIVITY_TIMEOUT:
+    ret = &overridableHttpConfig->websocket_inactive_timeout;
+    break;
   case TS_CONFIG_HTTP_CACHE_OPEN_READ_RETRY_TIME:
     typ = OVERRIDABLE_TYPE_INT;
     ret = &overridableHttpConfig->cache_open_read_retry_time;
@@ -8254,6 +8260,8 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
         cnf = TS_CONFIG_NET_SOCK_OPTION_FLAG_OUT;
       else if (!strncmp(name, "proxy.config.net.sock_packet_mark_out", length))
         cnf = TS_CONFIG_NET_SOCK_PACKET_MARK_OUT;
+      else if (!strncmp(name, "proxy.config.websocket.active_timeout", length))
+        cnf = TS_CONFIG_WEBSOCKET_ACTIVE_TIMEOUT;
       break;
     }
     break;
@@ -8384,6 +8392,8 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
         cnf = TS_CONFIG_NET_SOCK_SEND_BUFFER_SIZE_OUT;
       else if (!strncmp(name, "proxy.config.http.connect_attempts_timeout", length))
         cnf = TS_CONFIG_HTTP_CONNECT_ATTEMPTS_TIMEOUT;
+      else if (!strncmp(name, "proxy.config.websocket.no_activity_timeout", length))
+        cnf = TS_CONFIG_WEBSOCKET_NO_ACTIVITY_TIMEOUT;
       break;
     }
     break;
