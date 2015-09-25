@@ -59,6 +59,8 @@ operator_factory(const std::string &op)
     o = new OperatorCounter();
   } else if (op == "set-conn-dscp") {
     o = new OperatorSetConnDSCP();
+  } else if (op == "set-debug") {
+    o = new OperatorSetDebug();
   } else {
     TSError("[%s] Unknown operator: %s", PLUGIN_NAME, op.c_str());
     return NULL;

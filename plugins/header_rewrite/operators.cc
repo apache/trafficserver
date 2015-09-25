@@ -644,3 +644,22 @@ OperatorSetConnDSCP::exec(const Resources &res) const
     TSHttpTxnClientPacketDscpSet(res.txnp, _ds_value.get_int_value());
   }
 }
+
+// OperatorSetDebug
+void
+OperatorSetDebug::initialize(Parser &p)
+{
+  Operator::initialize(p);
+}
+
+void
+OperatorSetDebug::initialize_hooks()
+{
+  add_allowed_hook(TS_HTTP_READ_REQUEST_HDR_HOOK);
+}
+
+void
+OperatorSetDebug::exec(const Resources &res) const
+{
+  TSHttpTxnDebugSet(res.txnp, 1);
+}

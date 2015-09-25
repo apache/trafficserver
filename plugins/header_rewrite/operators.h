@@ -257,4 +257,20 @@ private:
   Value _ds_value;
 };
 
+class OperatorSetDebug : public Operator
+{
+public:
+  OperatorSetDebug() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorSetDebug"); }
+  void initialize(Parser &p);
+
+protected:
+  void initialize_hooks();
+  void exec(const Resources &res) const;
+
+private:
+  DISALLOW_COPY_AND_ASSIGN(OperatorSetDebug);
+
+  Value _ds_value;
+};
+
 #endif // __OPERATORS_H
