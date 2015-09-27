@@ -1700,6 +1700,11 @@ all the different user-agent versions of documents it encounters.
 
     The number of times to attempt fetching an object from cache if there was an equivalent request in flight.
 
+.. ts:cv:: CONFIG proxy.config.http.cache.max_open_write_retries INT 1
+   :reloadable:
+
+    The number of times to attempt a cache open write upon failure to get a write lock.
+
 .. ts:cv:: CONFIG proxy.config.http.cache.open_write_fail_action INT 0
    :reloadable:
 
